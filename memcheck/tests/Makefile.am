@@ -47,7 +47,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	match-overrun.stderr.exp match-overrun.vgtest match-overrun.supp \
 	memalign_test.stderr.exp memalign_test.vgtest \
 	memalign2.stderr.exp memalign2.vgtest \
-	memcmptest.stderr.exp memcmptest.stdout.exp memcmptest.vgtest \
+	memcmptest.stderr.exp memcmptest.stderr.exp2 \
+	memcmptest.stdout.exp memcmptest.vgtest \
 	mempool.stderr.exp mempool.stderr.exp64 mempool.vgtest \
 	mismatches.stderr.exp mismatches.stderr.exp64 mismatches.vgtest \
 	mmaptest.stderr.exp mmaptest.vgtest \
@@ -66,6 +67,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.vgtest \
+	strchr.stderr.exp strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
 	supp1.stderr.exp supp1.vgtest \
 	supp2.stderr.exp supp2.vgtest \
@@ -98,7 +100,7 @@ check_PROGRAMS = \
 	post-syscall \
 	realloc1 realloc2 realloc3 \
 	sigaltstack signal2 sigprocmask \
-	str_tester supp1 supp2 suppfree \
+	strchr str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata \
 	vgtest_ume xml1 \
@@ -171,6 +173,7 @@ sigaltstack_SOURCES 	= sigaltstack.c
 trivialleak_SOURCES 	= trivialleak.c
 weirdioctl_SOURCES 	= weirdioctl.c
 metadata_SOURCES	= metadata.c
+strchr_SOURCES		= strchr.c
 str_tester_SOURCES	= str_tester.c
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 writev_SOURCES		= writev.c

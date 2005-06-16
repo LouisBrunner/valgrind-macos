@@ -1,0 +1,2 @@
+prog: strchr
+vgopts: -q

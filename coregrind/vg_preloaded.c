@@ -1,5 +1,6 @@
+
 /*--------------------------------------------------------------------*/
-/*--- Various things we want to wrap.               vg_intercept.c ---*/
+/*--- Client-space code for the core.               vg_preloaded.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,23 +30,29 @@
 
 
 /* ---------------------------------------------------------------------
-   ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU.  It is
-   intended for various reasons as drop-in replacements for libc
-   functions.  These functions are not called directly - they're the
-   targets of code redirection.  They're named weirdly so that the
-   intercept code can find them when the shared object is initially
-   loaded.
+   ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU. 
+
+   These functions are not called directly - they're the targets of code
+   redirection or load notifications (see pub_core_redir.h for info).
+   They're named weirdly so that the intercept code can find them when the
+   shared object is initially loaded.
+
+   Note that this filename has the "vg_" prefix because it can appear
+   in stack traces, and the "vg_" makes it a little clearer that it
+   originates from Valgrind.
    ------------------------------------------------------------------ */
 
 #include "valgrind.h"
 #include "core.h"
+#include "pub_core_debuginfo.h"     // needed for pub_core_redir.h :(
+#include "pub_core_redir.h"
 
 /* ---------------------------------------------------------------------
    Hook for running __libc_freeres once the program exits.
    ------------------------------------------------------------------ */
 
-void VG_WRAPPER(freeres)( void );
-void VG_WRAPPER(freeres)( void )
+void VG_NOTIFY_ON_LOAD(freeres)( void );
+void VG_NOTIFY_ON_LOAD(freeres)( void )
 {
    int res;
 #ifndef __UCLIBC__
@@ -59,6 +66,6 @@ void VG_WRAPPER(freeres)( void )
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                           vg_intercept.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
 

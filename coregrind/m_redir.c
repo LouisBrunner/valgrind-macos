@@ -35,6 +35,7 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_redir.h"
@@ -311,26 +312,27 @@ void VG_(resolve_seg_redirs)(SegInfo *si)
    }
 }
 
-/* Redirect a lib/symbol reference to a function at lib/symbol */
-static void add_redirect_sym_to_sym(const Char *from_lib, const Char *from_sym,
-				    const Char *to_lib, const Char *to_sym)
+static void add_redirect_X_to_X(
+   const Char *from_lib, const Char *from_sym, Addr from_addr,
+   const Char *to_lib,   const Char *to_sym,   Addr to_addr
+)
 {
    CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
 
    redir->type = R_REDIRECT;
 
-   redir->from_lib = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
-   redir->from_sym = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
-   redir->from_addr = 0;
+   if (from_lib) redir->from_lib  = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
+   if (from_sym) redir->from_sym  = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
+                 redir->from_addr = from_addr;
 
-   redir->to_lib = VG_(arena_strdup)(VG_AR_SYMTAB, to_lib);
-   redir->to_sym = VG_(arena_strdup)(VG_AR_SYMTAB, to_sym);
-   redir->to_addr = 0;
+   if (to_lib)   redir->to_lib    = VG_(arena_strdup)(VG_AR_SYMTAB, to_lib);
+   if (to_sym)   redir->to_sym    = VG_(arena_strdup)(VG_AR_SYMTAB, to_sym);
+                 redir->to_addr   = to_addr;
 
    if (VG_(clo_verbosity) >= 2 && VG_(clo_trace_redir))
       VG_(message)(Vg_UserMsg, 
-                   "REDIRECT %s(%s) to %s(%s)",
-                   from_lib, from_sym, to_lib, to_sym);
+                   "REDIRECT %s:%s(%p) to %s:%s(%p)",
+                   from_lib, from_sym, from_addr, to_lib, to_sym, to_addr);
 
    /* Check against all existing segments to see if this redirection
       can be resolved immediately */
@@ -341,57 +343,26 @@ static void add_redirect_sym_to_sym(const Char *from_lib, const Char *from_sym,
    }
 }
 
-/* Redirect a lib/symbol reference to a function at addr */
-void VG_(add_redirect_sym_to_addr)(const Char *from_lib, const Char *from_sym,
-				   Addr to_addr)
+/* Redirect a lib/symbol reference to a function at lib/symbol */
+__attribute__((unused))
+static void add_redirect_sym_to_sym(const Char *from_lib, const Char *from_sym,
+				    const Char *to_lib, const Char *to_sym)
 {
-   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
+   add_redirect_X_to_X(from_lib, from_sym, 0, to_lib, to_sym, 0);
+}
 
-   redir->type = R_REDIRECT;
-
-   redir->from_lib = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
-   redir->from_sym = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
-   redir->from_addr = 0;
-
-   redir->to_lib = NULL;
-   redir->to_sym = NULL;
-   redir->to_addr = to_addr;
-
-   if (VG_(clo_verbosity) >= 2 && VG_(clo_trace_redir))
-      VG_(message)(Vg_UserMsg, 
-                   "REDIRECT %s(%s) to %p",
-                   from_lib, from_sym, to_addr);
-
-    /* Check against all existing segments to see if this redirection
-       can be resolved immediately */
-   if (!resolve_redir_allsegs(redir)) {
-      /* nope, add to list */
-      redir->next = unresolved_redir;
-      unresolved_redir = redir;
-   }
+/* Redirect a lib/symbol reference to a function at addr */
+static void add_redirect_sym_to_addr(const Char *from_lib, const Char *from_sym,
+				     Addr to_addr)
+{
+   add_redirect_X_to_X(from_lib, from_sym, 0, NULL, NULL, to_addr);
 }
 
 /* Redirect a function at from_addr to a function at to_addr */
-void VG_(add_redirect_addr_to_addr)(Addr from_addr, Addr to_addr)
+__attribute__((unused))    // It is used, but not on all platforms...
+static void add_redirect_addr_to_addr(Addr from_addr, Addr to_addr)
 {
-   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
-
-   redir->type = R_REDIRECT;
-
-   redir->from_lib = NULL;
-   redir->from_sym = NULL;
-   redir->from_addr = from_addr;
-
-   redir->to_lib = NULL;
-   redir->to_sym = NULL;
-   redir->to_addr = to_addr;
-
-   if (VG_(clo_verbosity) >= 2 && VG_(clo_trace_redir))
-      VG_(message)(Vg_UserMsg, 
-                   "REDIRECT %p to %p",
-                   from_addr, to_addr);
-
-   add_resolved(redir);
+   add_redirect_X_to_X(NULL, NULL, from_addr, NULL, NULL, to_addr);
 }
 
 CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
@@ -443,75 +414,181 @@ Addr VG_(code_redirect)(Addr a)
 
 void VG_(setup_code_redirect_table) ( void )
 {
-   /* Overenthusiastic use of PLT bypassing by the glibc people also
-      means we need to patch the following functions to our own
-      implementations of said, in mac_replace_strmem.c.
-    */
-   add_redirect_sym_to_sym("soname:libc.so.6", "stpcpy",
-                           "*vgpreload_memcheck.so*", "stpcpy");
-
-   add_redirect_sym_to_sym("soname:ld-linux.so.2", "strlen",
-                           "*vgpreload_memcheck.so*", "strlen");
-   add_redirect_sym_to_sym("soname:libc.so.6", "strlen",
-                           "*vgpreload_memcheck.so*", "strlen");
-
-   add_redirect_sym_to_sym("soname:libc.so.6", "strnlen",
-                           "*vgpreload_memcheck.so*", "strnlen");
-
-   add_redirect_sym_to_sym("soname:ld-linux.so.2", "stpcpy",
-                           "*vgpreload_memcheck.so*", "stpcpy");
-   add_redirect_sym_to_sym("soname:libc.so.6", "stpcpy",
-                           "*vgpreload_memcheck.so*", "stpcpy");
-
-   add_redirect_sym_to_sym("soname:libc.so.6", "strchr",
-                           "*vgpreload_memcheck.so*", "strchr");
-   add_redirect_sym_to_sym("soname:ld-linux.so.2", "strchr",
-                           "*vgpreload_memcheck.so*", "strchr");
-
-   /* apparently index is the same thing as strchr */
-   add_redirect_sym_to_sym("soname:ld-linux.so.2", "index",
-                           "*vgpreload_memcheck.so*", "strchr");
-
-   add_redirect_sym_to_sym("soname:libc.so.6", "strchrnul",
-                           "*vgpreload_memcheck.so*", "glibc232_strchrnul");
-
-   add_redirect_sym_to_sym("soname:libc.so.6", "rawmemchr",
-                           "*vgpreload_memcheck.so*", "glibc232_rawmemchr");
-
-   /* amd64-linux (glibc 2.3.3, SuSE 9.2) */
-   /* apparently index is the same thing as strchr */
-   add_redirect_sym_to_sym("soname:libc.so.6", "index",
-                           "*vgpreload_memcheck.so*", "strchr");
-   add_redirect_sym_to_sym("soname:ld-linux-x86-64.so.2", "index",
-                           "*vgpreload_memcheck.so*", "strchr");
-
-   add_redirect_sym_to_sym("soname:libc.so.6", "strcpy",
-                           "*vgpreload_memcheck.so*", "strcpy");
-
-   add_redirect_sym_to_sym("soname:ld-linux-x86-64.so.2", "strcmp",
-                           "*vgpreload_memcheck.so*", "strcmp");
-   add_redirect_sym_to_sym("soname:libc.so.6", "strcmp",
-                           "*vgpreload_memcheck.so*", "strcmp");
-
-   add_redirect_sym_to_sym("soname:ld-linux-x86-64.so.2", "strlen",
-                           "*vgpreload_memcheck.so*", "strlen");
-
 #if defined(VGP_x86_linux)
    /* Redirect _dl_sysinfo_int80, which is glibc's default system call
       routine, to the routine in our trampoline page so that the
       special sysinfo unwind hack in m_stacktrace.c will kick in.  */
-   VG_(add_redirect_sym_to_addr)("soname:ld-linux.so.2", "_dl_sysinfo_int80",
-                                 VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
+   add_redirect_sym_to_addr("soname:ld-linux.so.2", "_dl_sysinfo_int80",
+                            VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
 #elif defined(VGP_amd64_linux)
    /* Redirect vsyscalls to local versions */
-   VG_(add_redirect_addr_to_addr)(0xFFFFFFFFFF600000ULL,
-                                  VG_(client_trampoline_code)+VG_(tramp_gettimeofday_offset));
-   VG_(add_redirect_addr_to_addr)(0xFFFFFFFFFF600400ULL,
-                                  VG_(client_trampoline_code)+VG_(tramp_time_offset));
+   add_redirect_addr_to_addr(0xFFFFFFFFFF600000ULL,
+                             VG_(client_trampoline_code)+VG_(tramp_gettimeofday_offset));
+   add_redirect_addr_to_addr(0xFFFFFFFFFF600400ULL,
+                             VG_(client_trampoline_code)+VG_(tramp_time_offset));
 #else
 #  error Unknown platform
 #endif
 }
+
+/* Z-decode a symbol into library:func form, eg 
+  
+     _vgi_libcZdsoZd6__ZdlPv  -->  libc.so.6:_ZdlPv
+
+   Uses the Z-encoding scheme described in pub_core_redir.h.
+   Returns True if demangle OK, False otherwise.
+*/
+static Bool Z_decode(const Char* symbol, Char* result, Int nbytes)
+{
+#  define EMIT(ch)                    \
+      do {                            \
+         if (j >= nbytes)             \
+            result[j-1] = 0;          \
+         else                         \
+            result[j++] = ch;         \
+      } while (0)
+
+   Bool error = False;
+   Int i, j = 0;
+   Int len = VG_(strlen)(symbol);
+   if (0) VG_(printf)("idm: %s\n", symbol);
+
+   i = VG_REPLACE_FUNCTION_PREFIX_LEN;
+
+   /* Chew though the Z-encoded soname part. */
+   while (True) {
+
+      if (i >= len) 
+         break;
+
+      if (symbol[i] == '_')
+         /* We found the underscore following the Z-encoded soname.
+            Just copy the rest literally. */
+         break;
+
+      if (symbol[i] != 'Z') {
+         EMIT(symbol[i]);
+         i++;
+         continue;
+      }
+
+      /* We've got a Z-escape.  Act accordingly. */
+      i++;
+      if (i >= len) {
+         /* Hmm, Z right at the end.  Something's wrong. */
+         error = True;
+         EMIT('Z');
+         break;
+      }
+      switch (symbol[i]) {
+         case 'a': EMIT('*'); break;
+         case 'p': EMIT('+'); break;
+         case 'c': EMIT(':'); break;
+         case 'd': EMIT('.'); break;
+         case 'u': EMIT('_'); break;
+         case 'h': EMIT('-'); break;
+         case 's': EMIT(' '); break;
+         case 'Z': EMIT('Z'); break;
+         default: error = True; EMIT('Z'); EMIT(symbol[i]); break;
+      }
+      i++;
+   }
+
+   if (error || i >= len || symbol[i] != '_') {
+      /* Something's wrong.  Give up. */
+      VG_(message)(Vg_UserMsg, "intercept: error demangling: %s", symbol);
+      EMIT(0);
+      return False;
+   }
+
+   /* Copy the rest of the string verbatim. */
+   i++;
+   EMIT(':');
+   while (True) {
+     if (i >= len)
+        break;
+     EMIT(symbol[i]);
+     i++;
+   }
+
+   EMIT(0);
+   if (0) VG_(printf)("%s\n", result);
+   return True;
+
+#  undef EMIT
+}
+
+// Nb: this can change the string pointed to by 'symbol'.
+static void handle_replacement_function( Char* symbol, Addr addr )
+{
+   Bool ok;
+   Int  len  = VG_(strlen)(symbol) + 1 - VG_REPLACE_FUNCTION_PREFIX_LEN;
+   Char *lib = VG_(arena_malloc)(VG_AR_SYMTAB, len+8);
+   Char *func;
+
+   // Put "soname:" at the start of lib
+   VG_(strcpy)(lib, "soname:");
+
+   ok = Z_decode(symbol, lib+7, len);
+   if (ok) {
+      // lib is "soname:<libname>:<fnname>".  Split the string at the 2nd ':'.
+      func = lib + VG_(strlen)(lib)-1;
+      while(*func != ':') func--;
+      *func = '\0';
+      func++;           // Move past the '\0'
+
+      // Now lib is "soname:<libname>" and func is "<fnname>".
+      if (0) VG_(printf)("lib A%sZ, func A%sZ\n", lib, func);
+      add_redirect_sym_to_addr(lib, func, addr);
+
+      // Overwrite the given Z-encoded name with just the fnname.
+      VG_(strcpy)(symbol, func);
+   }
+
+   VG_(arena_free)(VG_AR_SYMTAB, lib);
+}
+
+// This is specifically for stringifying VG_(x) function names.  We
+// need to do two macroexpansions to get the VG_ macro expanded before
+// stringifying.
+#define _STR(x) #x
+#define STR(x)  _STR(x)
+
+static void handle_load_notifier( Char* symbol, Addr addr )
+{
+   if (VG_(strcmp)(symbol, STR(VG_NOTIFY_ON_LOAD(freeres))) == 0)
+      VG_(set_libc_freeres_wrapper_addr)(addr);
+//   else if (VG_(strcmp)(symbol, STR(VG_WRAPPER(pthread_startfunc_wrapper))) == 0)
+//      VG_(pthread_startfunc_wrapper)((Addr)(si->offset + sym->st_value));
+   else
+      vg_assert2(0, "unrecognised load notification function: %s", symbol);
+}
+
+static Bool is_replacement_function(Char* s)
+{
+   return (0 == VG_(strncmp)(s,
+                             VG_REPLACE_FUNCTION_PREFIX,
+                             VG_REPLACE_FUNCTION_PREFIX_LEN));
+}
+
+static Bool is_load_notifier(Char* s)
+{
+   return (0 == VG_(strncmp)(s,
+                             VG_NOTIFY_ON_LOAD_PREFIX,
+                             VG_NOTIFY_ON_LOAD_PREFIX_LEN));
+}
+
+// Call this for each symbol loaded.  It determines if we need to do
+// anything special with it.  It can modify 'symbol' in-place.
+void VG_(maybe_redir_or_notify) ( Char* symbol, Addr addr )
+{
+   if (is_replacement_function(symbol))
+      handle_replacement_function(symbol, addr);
+   else 
+   if (is_load_notifier(symbol))
+      handle_load_notifier(symbol, addr);
+}
+
 
 //:: /*------------------------------------------------------------*/
 //:: /*--- General function wrapping.                           ---*/

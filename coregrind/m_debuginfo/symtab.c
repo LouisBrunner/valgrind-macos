@@ -47,7 +47,7 @@
 
 #include <elf.h>          /* ELF defns */
 
-static SegInfo* segInfo = NULL;
+static SegInfo* segInfo_list = NULL;
 
 /*------------------------------------------------------------*/
 /*--- 32/64-bit parameterisation                           ---*/
@@ -89,9 +89,6 @@ static SegInfo* segInfo = NULL;
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-static Bool
-intercept_demangle(const Char*, Char*, Int);
-
 /* Majorly rewritten Sun 3 Feb 02 to enable loading symbols from
    dlopen()ed libraries, which is something that KDE3 does a lot.
 
@@ -132,42 +129,16 @@ static void freeSegInfo ( SegInfo* si )
 
 Char *VG_(addStr) ( SegInfo* si, Char* str, Int len )
 {
-#  define EMPTY    NULL
-#  define NN       5
-   
-   /* prevN[0] has the most recent, prevN[NN-1] the least recent */
-   static Char     *prevN[NN] = { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY };
-   static SegInfo* curr_si = NULL;
    struct strchunk *chunk;
-   Int   i, space_needed;
+   Int    space_needed;
+   Char* p;
 
    if (len == -1)
       len = VG_(strlen)(str);
 
-   /* Avoid gratuitous duplication:  if we saw 'str' within the last NN,
-    * within this segment, return that index.  Saves about 200KB in glibc,
-    * extra time taken is too small to measure.  --NJN 2002-Aug-30 */
-   if (curr_si == si) {
-      for (i = NN-1; i >= 0; i--) {
-         if (EMPTY != prevN[i] 
-             && NULL != si->strchunks
-	     && 0 == VG_(memcmp)(str, prevN[i], len+1)) {
-            return prevN[i];
-         }
-      }
-   } else {
-      /* New segment */
-      curr_si = si;
-      for (i = 0; i < NN; i++) prevN[i] = EMPTY;
-   }
-   /* Shuffle prevous ones along, put new one in. */
-   for (i = NN-1; i > 0; i--)
-      prevN[i] = prevN[i-1];
-
-#  undef EMPTY
-
    space_needed = 1 + len;
 
+   // Allocate a new strtab chunk if necessary
    if (si->strchunks == NULL || 
        (si->strchunks->strtab_used + space_needed) > STRCHUNKSIZE) {
       chunk = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(*chunk));
@@ -177,16 +148,15 @@ Char *VG_(addStr) ( SegInfo* si, Char* str, Int len )
    }
    chunk = si->strchunks;
 
-   prevN[0] = &chunk->strtab[chunk->strtab_used];
-   VG_(memcpy)(prevN[0], str, len);
+   p = &chunk->strtab[chunk->strtab_used];
+   VG_(memcpy)(p, str, len);
    chunk->strtab[chunk->strtab_used+len] = '\0';
    chunk->strtab_used += space_needed;
 
-   return prevN[0];
+   return p;
 }
 
 /* Add a symbol to the symbol table. */
-
 static __inline__
 void addSym ( SegInfo* si, RiSym* sym )
 {
@@ -532,6 +502,11 @@ static Int compare_RiSym(void *va, void *vb) {
    "foo@GLIBC_2.4.2" is considered shorter than "foobar"), but if two
    symbols have the same length, the one with the version string is
    preferred.  If all else fails, use alphabetical ordering.
+
+   Very occasionally this goes wrong (eg. 'memcmp' and 'bcmp' are aliases
+   in glibc, we choose the 'bcmp' symbol because it's shorter, so we
+   can misdescribe memcmp() as bcmp()).  This is hard to avoid.  It's
+   mentioned in the FAQ file.
  */
 static RiSym *prefersym(RiSym *a, RiSym *b)
 {
@@ -549,6 +524,8 @@ static RiSym *prefersym(RiSym *a, RiSym *b)
       vlena = vpa - a->name;
    if (vpb)
       vlenb = vpb - b->name;
+
+   TRACE_SYMTAB("choosing between '%s' and '%s'\n", a->name, b->name);
 
    /* Select the shortest unversioned name */
    if (vlena < vlenb)
@@ -584,24 +561,10 @@ void canonicaliseSymtab ( SegInfo* si )
 
    VG_(ssort)(si->symtab, si->symtab_used, sizeof(*si->symtab), compare_RiSym);
 
-   for (i = 0; i < si->symtab_used; i++) {
-      if(VG_(strncmp)(si->symtab[i].name, VG_INTERCEPT_PREFIX,
-                      VG_INTERCEPT_PREFIX_LEN) == 0) {
-         int len = VG_(strlen)(si->symtab[i].name);
-         char *buf = VG_(arena_malloc)(VG_AR_SYMTAB, len), *colon;
-         intercept_demangle(si->symtab[i].name, buf, len);
-	 colon = buf + VG_(strlen)(buf) - 1;
-	 while(*colon != ':') colon--;
-	 VG_(strncpy_safely)(si->symtab[i].name, colon+1, len);
-	 VG_(arena_free)(VG_AR_SYMTAB, buf);
-      }
-   }
-
   cleanup_more:
  
-   /* If two symbols have identical address ranges, favour the
-      one with the longer name (unless the extra length is junk)
-   */
+   /* If two symbols have identical address ranges, we pick one
+      using prefersym() (see it for details). */
    do {
       n_merged = 0;
       j = si->symtab_used;
@@ -784,7 +747,7 @@ static Int compare_RiLoc(void *va, void *vb) {
 static 
 void canonicaliseLoctab ( SegInfo* si )
 {
-   Int   i, j;
+   Int i, j;
 
 #  define SWAP(ty,aa,bb) \
       do { ty tt = (aa); (aa) = (bb); (bb) = tt; } while (0);
@@ -952,132 +915,66 @@ Bool VG_(is_object_file)(const void *buf)
    return False;
 }
 
-/* Demangle an intercept symbol into library:func form
-   eg "_vgi_libcZdsoZd6__ZdlPv"  -->  "libc.so.6:_ZdlPv"
-   Uses the Z-encoding scheme described in vg_replace_malloc.c.
-   Returns True if demangle OK, False otherwise.
- */
-
-static Bool
-intercept_demangle(const Char* symbol, Char* result, Int nbytes)
+static Bool is_interesting_symbol(SegInfo* si, ElfXX_Sym* sym, 
+                                  Char* sym_name, Addr sym_addr)
 {
-#  define EMIT(ch)                    \
-      do {                            \
-         if (j >= nbytes)             \
-            result[j-1] = 0;          \
-         else                         \
-            result[j++] = ch;         \
-      } while (0)
+   /* Figure out if we're interested in the symbol.
+      Firstly, is it of the right flavour?  */
+   if ( ! ( (ELFXX_ST_BIND(sym->st_info) == STB_GLOBAL ||
+             ELFXX_ST_BIND(sym->st_info) == STB_LOCAL ||
+             ELFXX_ST_BIND(sym->st_info) == STB_WEAK)
+          &&
+            (ELFXX_ST_TYPE(sym->st_info) == STT_FUNC ||
+             (VG_(needs).data_syms 
+              && ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT))
+          )
+      )
+      return False;
 
-   Bool error = False;
-   Int i, j = 0;
-   Int len = VG_(strlen)(symbol);
-   if (0) VG_(printf)("idm: %s\n", symbol);
-
-   i = VG_INTERCEPT_PREFIX_LEN;
-
-   /* Chew though the Z-encoded soname part. */
-   while (True) {
-
-      if (i >= len) 
-         break;
-
-      if (symbol[i] == '_')
-         /* We found the underscore following the Z-encoded soname.
-            Just copy the rest literally. */
-         break;
-
-      if (symbol[i] != 'Z') {
-         EMIT(symbol[i]);
-         i++;
-         continue;
-      }
-
-      /* We've got a Z-escape.  Act accordingly. */
-      i++;
-      if (i >= len) {
-         /* Hmm, Z right at the end.  Something's wrong. */
-         error = True;
-         EMIT('Z');
-         break;
-      }
-      switch (symbol[i]) {
-         case 'a': EMIT('*'); break;
-         case 'p': EMIT('+'); break;
-         case 'c': EMIT(':'); break;
-         case 'd': EMIT('.'); break;
-         case 'u': EMIT('_'); break;
-         case 's': EMIT(' '); break;
-         case 'Z': EMIT('Z'); break;
-         default: error = True; EMIT('Z'); EMIT(symbol[i]); break;
-      }
-      i++;
+   /* Secondly, if it's apparently in a GOT or PLT, it's really
+      a reference to a symbol defined elsewhere, so ignore it. */
+   if (si->got_start != 0
+       && sym_addr >= si->got_start 
+       && sym_addr <  si->got_start + si->got_size) {
+      TRACE_SYMTAB("ignore -- in GOT: %s\n", sym_name);
+      return False;
    }
-
-   if (error || i >= len || symbol[i] != '_') {
-      /* Something's wrong.  Give up. */
-      VG_(message)(Vg_UserMsg, "intercept: error demangling: %s", symbol);
-      EMIT(0);
+   if (si->plt_start != 0
+       && sym_addr >= si->plt_start
+       && sym_addr <  si->plt_start + si->plt_size) {
+      TRACE_SYMTAB("ignore -- in PLT: %s\n", sym_name);
       return False;
    }
 
-   /* Copy the rest of the string verbatim. */
-   i++;
-   EMIT(':');
-   while (True) {
-     if (i >= len)
-        break;
-     EMIT(symbol[i]);
-     i++;
+   /* Don't bother if nameless, or zero-sized. */
+   if (sym->st_name == (ElfXX_Word)NULL
+       || /* VG_(strlen)(sym_name) == 0 */
+          /* equivalent but cheaper ... */
+          sym_name[0] == 0
+       || sym->st_size == 0) {
+      TRACE_SYMTAB("ignore -- size=0: %s\n", sym_name);
+      return False;
    }
 
-   EMIT(0);
-   if (0) VG_(printf)("%s\n", result);
+   /* This seems to significantly reduce the number of junk
+      symbols, and particularly reduces the number of
+      overlapping address ranges.  Don't ask me why ... */
+   if ((Int)sym->st_value == 0) {
+      TRACE_SYMTAB( "ignore -- valu=0: %s\n", sym_name);
+      return False;
+   }
+
+   /* If no part of the symbol falls within the mapped range,
+      ignore it. */
+   if (sym_addr+sym->st_size <= si->start
+       || sym_addr >= si->start+si->size) {
+      TRACE_SYMTAB( "ignore -- outside mapped range\n" );
+      return False;
+   }
+
+   // It is an interesting symbol!
    return True;
-
-#  undef EMIT
 }
-
-static
-void handle_intercept( SegInfo* si, Char* symbol, ElfXX_Sym* sym)
-{
-   Bool ok;
-   Int  len  = VG_(strlen)(symbol) + 1 - VG_INTERCEPT_PREFIX_LEN;
-   Char *lib = VG_(arena_malloc)(VG_AR_SYMTAB, len+8);
-   Char *func;
-
-   /* Put "soname:" at the start of lib. */
-   lib[0] = 's';
-   lib[1] = 'o';
-   lib[2] = 'n';
-   lib[3] = 'a';
-   lib[4] = 'm';
-   lib[5] = 'e';
-   lib[6] = ':';
-   lib[7] = 0;
-
-   ok = intercept_demangle(symbol, lib+7, len);
-   if (ok) {
-      func = lib + VG_(strlen)(lib)-1;
-
-      while(*func != ':') func--;
-      *func = '\0';
-
-      if (0) VG_(printf)("lib A%sZ, func A%sZ\n", lib, func+1);
-      VG_(add_redirect_sym_to_addr)(lib, func+1, si->offset + sym->st_value);
-   }
-
-   VG_(arena_free)(VG_AR_SYMTAB, lib);
-}
-
-//static
-//void handle_wrapper( SegInfo* si, Char* symbol, ElfXX_Sym* sym)
-//{
-//   if (VG_(strcmp)(symbol, STR(VG_WRAPPER(freeres))) == 0)
-//      VGA_(intercept_libc_freeres_wrapper)((Addr)(si->offset + sym->st_value));
-//   else if (VG_(strcmp)(symbol, STR(VG_WRAPPER(pthread_startfunc_wrapper))) == 0)
-//      VG_(pthread_startfunc_wrapper)((Addr)(si->offset + sym->st_value));
-//}
 
 /* Read a symbol table (normal or dynamic) */
 static
@@ -1087,9 +984,10 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
 {
    Int   i;
    Addr  sym_addr;
+   Char* sym_name;
    RiSym risym;
-   Char* t0;
    Char* name;
+   ElfXX_Sym* sym;
 
    if (o_strtab == NULL || o_symtab == NULL) {
       Char buf[80];
@@ -1105,8 +1003,8 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
    /* Perhaps should start at i = 1; ELF docs suggest that entry
       0 always denotes 'unknown symbol'. */
    for (i = 1; i < (Int)(o_symtab_sz/sizeof(ElfXX_Sym)); i++) {
-      ElfXX_Sym* sym = & o_symtab[i];
-#     if 1
+      sym      = & o_symtab[i];
+      sym_name = (Char*)(o_strtab + sym->st_name);
       sym_addr = si->offset + sym->st_value;
 
       if (VG_(clo_trace_symtab)) {
@@ -1132,107 +1030,32 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
          VG_(printf)(
             ": value %p, size %d, name %s\n",
             sym_addr, sym->st_size,
-            ( sym->st_name 
-            ? ((Char*)o_strtab+sym->st_name) 
-            : (Char*)"NONAME" ) ); 
+            ( sym->st_name ? sym_name : (Char*)"NONAME" ) ); 
       }               
-#     endif
 
-      /*
-       * Is this symbol a magic valgrind-intercept symbol?  If so,
-       * hand this off to the interceptinator.
-       */
-      if (do_intercepts) {
-         if (VG_(strncmp)((Char*)o_strtab+sym->st_name,
-                          VG_INTERCEPT_PREFIX,
-			  VG_INTERCEPT_PREFIX_LEN) == 0) {
-           handle_intercept(si, (Char*)o_strtab+sym->st_name, sym);
-         } 
-         //else if (VG_(strncmp)((Char*)o_strtab+sym->st_name,
-         //                        VG_WRAPPER_PREFIX,
-	 //			 VG_WRAPPER_PREFIX_LEN) == 0) {
-         //  handle_wrapper(si, (Char*)o_strtab+sym->st_name, sym);
-         //}
+      // Record interesting symbols in our symtab.
+      if ( is_interesting_symbol(si, sym, sym_name, sym_addr) ) {
+         vg_assert(sym->st_name != 0);
+         vg_assert(sym_name[0]  != 0);
+         name = VG_(addStr) ( si, sym_name, -1 );
+         vg_assert(name != NULL);
+
+         /*
+          * Is this symbol a magic valgrind-intercept symbol?  If so,
+          * hand this off to the redir module.  
+          *
+          * Note: this function can change the symbol name just added to
+          * the string table.  Importantly, it never makes it bigger.
+          */
+         if (do_intercepts) {
+            VG_(maybe_redir_or_notify)( name, sym_addr );
+         }
+
+         risym.addr  = sym_addr;
+         risym.size  = sym->st_size;
+         risym.name  = name;
+         addSym ( si, &risym );
       }
-
-      /* Figure out if we're interested in the symbol.
-         Firstly, is it of the right flavour?  */
-      if ( ! ( (ELFXX_ST_BIND(sym->st_info) == STB_GLOBAL ||
-                ELFXX_ST_BIND(sym->st_info) == STB_LOCAL ||
-                ELFXX_ST_BIND(sym->st_info) == STB_WEAK)
-             &&
-               (ELFXX_ST_TYPE(sym->st_info) == STT_FUNC ||
-                (VG_(needs).data_syms 
-                 && ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT))
-             )
-         )
-         continue;
-
-      /* Secondly, if it's apparently in a GOT or PLT, it's really
-         a reference to a symbol defined elsewhere, so ignore it. */
-      if (si->got_start != 0
-          && sym_addr >= si->got_start 
-          && sym_addr <  si->got_start + si->got_size) {
-         TRACE_SYMTAB("in GOT: %s\n", o_strtab+sym->st_name);
-         continue;
-      }
-      if (si->plt_start != 0
-          && sym_addr >= si->plt_start
-          && sym_addr <  si->plt_start + si->plt_size) {
-         TRACE_SYMTAB("in PLT: %s\n", o_strtab+sym->st_name);
-         continue;
-      }
-
-      /* Don't bother if nameless, or zero-sized. */
-      if (sym->st_name == (ElfXX_Word)NULL
-          || /* VG_(strlen)(o_strtab+sym->st_name) == 0 */
-             /* equivalent but cheaper ... */
-             * ((UChar*)(o_strtab+sym->st_name)) == 0
-          || sym->st_size == 0) {
-         TRACE_SYMTAB("size=0: %s\n", o_strtab+sym->st_name);
-         continue;
-      }
-
-#     if 0
-      /* Avoid _dl_ junk.  (Why?) */
-      /* 01-02-24: disabled until I find out if it really helps. */
-      if (VG_(strncmp)("_dl_", o_strtab+sym->st_name, 4) == 0
-          || VG_(strncmp)("_r_debug", 
-                          o_strtab+sym->st_name, 8) == 0) {
-         TRACE_SYMTAB("_dl_ junk: %s\n", o_strtab+sym->st_name);
-         continue;
-      }
-#     endif
-
-      /* This seems to significantly reduce the number of junk
-         symbols, and particularly reduces the number of
-         overlapping address ranges.  Don't ask me why ... */
-      if ((Int)sym->st_value == 0) {
-         TRACE_SYMTAB( "valu=0: %s\n", o_strtab+sym->st_name);
-         continue;
-      }
-
-      /* If no part of the symbol falls within the mapped range,
-         ignore it. */
-      if (sym_addr+sym->st_size <= si->start
-          || sym_addr >= si->start+si->size) {
-         TRACE_SYMTAB( "outside mapped range" );
-         continue;
-      }
-
-      /* If we reach here, it's an interesting symbol; record it. */
-      t0 = sym->st_name 
-                    ? (Char*)(o_strtab+sym->st_name) 
-                    : (Char*)"NONAME";
-      name = VG_(addStr) ( si, t0, -1 );
-      vg_assert(name != NULL
-                /* && 0==VG_(strcmp)(t0,&vg_strtab[nmoff]) */ );
-      /* VG_(printf)("%p + %d:   %p %s\n", si->start, 
-                  (Int)sym->st_value, sym_addr,  t0 ); */
-      risym.addr  = sym_addr;
-      risym.size  = sym->st_size;
-      risym.name  = name;
-      addSym ( si, &risym );
    }
 }
 
@@ -1840,15 +1663,19 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
          segment list, even if it is a bad ELF file.  Ironically,
          running this under valgrind itself hides the problem, because
          it doesn't recycle pointers... */
+      // [Nb: the prevN optimization has now been removed from addStr().
+      //  However, when I try reactivating this path of the branch I get
+      //  seg faults...  --njn 13-Jun-2005]
       freeSegInfo( si );
    } else {
-      si->next = segInfo;
-      segInfo = si;
+      // Prepend si to segInfo_list
+      si->next = segInfo_list;
+      segInfo_list = si;
 
-      canonicaliseSymtab ( si );
-      canonicaliseLoctab ( si );
+      canonicaliseSymtab   ( si );
+      canonicaliseLoctab   ( si );
       canonicaliseScopetab ( si );
-      canonicaliseCfiSI ( si );
+      canonicaliseCfiSI    ( si );
 
       /* do redirects */
       VG_(resolve_seg_redirs)( si );
@@ -1870,7 +1697,7 @@ static void unload_symbols ( Addr start, SizeT length )
    SegInfo *prev, *curr;
 
    prev = NULL;
-   curr = segInfo;
+   curr = segInfo_list;
    while (True) {
       if (curr == NULL) break;
       if (start == curr->start) break;
@@ -1890,7 +1717,7 @@ static void unload_symbols ( Addr start, SizeT length )
    vg_assert(prev == NULL || prev->next == curr);
 
    if (prev == NULL) {
-      segInfo = curr->next;
+      segInfo_list = curr->next;
    } else {
       prev->next = curr->next;
    }
@@ -2034,7 +1861,7 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/SegInfo** psi,
 
    VGP_PUSHCC(VgpSearchSyms);
 
-   for (si = segInfo; si != NULL; si = si->next) {
+   for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->start <= ptr && ptr < si->start+si->size) {
          lno = search_one_loctab ( si, ptr );
          if (lno == -1) goto not_found;
@@ -2087,7 +1914,7 @@ static void search_all_scopetabs ( Addr ptr,
 
    VGP_PUSHCC(VgpSearchSyms);
 
-   for (si = segInfo; si != NULL; si = si->next) {
+   for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->start <= ptr && ptr < si->start+si->size) {
          scno = search_one_scopetab ( si, ptr );
          if (scno == -1) goto not_found;
@@ -2215,7 +2042,7 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 {
    SegInfo* si;
 
-   for (si = segInfo; si != NULL; si = si->next) {
+   for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->start <= a && a < si->start+si->size) {
          VG_(strncpy_safely)(buf, si->filename, nbuf);
          return True;
@@ -2230,7 +2057,7 @@ SegInfo* VG_(get_obj) ( Addr a )
 {
    SegInfo* si;
 
-   for (si = segInfo; si != NULL; si = si->next) {
+   for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->start <= a && a < si->start+si->size) {
          return si;
       }
@@ -2633,7 +2460,7 @@ Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
 
    if (0) VG_(printf)("search for %p\n", *ipP);
 
-   for (si = segInfo; si != NULL; si = si->next) {
+   for (si = segInfo_list; si != NULL; si = si->next) {
       /* Use the per-SegInfo summary address ranges to skip
 	 inapplicable SegInfos quickly. */
       if (si->cfisi_used == 0)
@@ -2706,7 +2533,7 @@ Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
 const SegInfo* VG_(next_seginfo)(const SegInfo* si)
 {
    if (si == NULL)
-      return segInfo;
+      return segInfo_list;
    return si->next;
 }
 
@@ -2735,7 +2562,7 @@ VgSectKind VG_(seg_sect_kind)(Addr a)
    SegInfo* si;
    VgSectKind ret = Vg_SectUnknown;
 
-   for(si = segInfo; si != NULL; si = si->next) {
+   for(si = segInfo_list; si != NULL; si = si->next) {
       if (a >= si->start && a < (si->start + si->size)) {
 	 if (0)
 	    VG_(printf)("addr=%p si=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",

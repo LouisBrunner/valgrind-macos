@@ -30,75 +30,28 @@
 */
 
 /* ---------------------------------------------------------------------
-   All the code in this file runs on the SIMULATED CPU.  It is intended
-   for various reasons as drop-in replacements for malloc() and friends.
-   These functions have global scope, but are not intended to be called
-   directly.  See the comments in coregrind/vg_intercept.c for the
-   gory details.
+   ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU.  
+   
+   These functions are drop-in replacements for malloc() and friends.
+   They have global scope, but are not intended to be called directly.
+   See pub_core_redir.h for the gory details.
 
-   This file can be linked into the injected so file for any tool that
-   wishes to know about calls to malloc().  The tool must define all
+   This file can be linked into the vg_preload_<tool>.so file for any tool
+   that wishes to know about calls to malloc().  The tool must define all
    the functions that will be called via 'info'.
 
-   It's called vg_replace_malloc.c because this filename appears in stack
-   traces, so we want it to be something that should be obvious what it
-   means to users.
+   It is called vg_replace_malloc.c because this filename appears in stack
+   traces, so we want the name to be (hopefully!) meaningful to users.
    ------------------------------------------------------------------ */
 
-#include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */
+#include "valgrind.h"               // for VALGRIND_NON_SIMD_CALL[12]
 #include "core.h"
+#include "pub_core_debuginfo.h"     // needed for pub_core_redir.h :(
 #include "pub_core_mallocfree.h"    // for VG_MIN_MALLOC_SZB, VG_AR_CLIENT
+#include "pub_core_redir.h"         // for VG_REPLACE_FUNCTION
 #include "pub_core_replacemalloc.h"
 
-/* The general idea is: you can write a function like this:
-
-      retty ENCODE(foo, bar) ( ... args ... )
-      {
-         ... body ...
-      }
-
-   If foo is a Z-encoded soname and bar is an unencoded fn name, then
-   the core's symbol-table reading machinery and redirection machinery
-   will conspire to cause calls to the function 'bar' in object with
-   soname 'foo' to actually be routed to the function written here.
-   We use this below to define dozens of replacements of malloc, free,
-   etc.
-
-   The soname must be a Z-encoded bit of text because sonames can
-   contain dots etc which are not valid symbol names.  However, it is
-   better not to Z-encode the function name, because C++ function names
-   are already mangled, and we don't want our own Z encoding to interact
-   badly with them; furthermore there's no point, because mangled C++
-   function names are by definition already valid symbol names.
-   
-   It is important that the Z-encoded soname contains no unencoded 
-   underscores, since the intercept-handlers in vg_symtab2.c detect
-   the end of the soname by looking for the first trailing underscore.
-*/
-
-/* We use a Z-encoding scheme here, a la GHC.  This is just about
-   readable enough to make a preprocessor unnecessary.
-
-   The intercept-me function names are encoded as
-
-      _vgi_zEncodedSoname_fnname
-
-   where soname is Z-encoded but fnname isn't.
-
-   The Z-encoding scheme is as follows:
-
-   *         -->  Za    (asterisk)
-   +         -->  Zp
-   :         -->  Zc
-   .         -->  Zd
-   _         -->  Zu
-   (space)   -->  Zs
-   Z         -->  ZZ
-*/
-
-#define ENCODE(libname,fnname) VG_INTERCEPT(libname##_##fnname)
-
-/* Some handy mangled names */
+/* Some handy Z-encoded names */
 #define  m_libstc_plus_plus_star  libstdcZpZpZa   // libstdc++*
 #define  m_libc_dot_so_dot_6      libcZdsoZd6     // libc.so.6
 //#define  m_libpgc_dot_so          libpgcZdso      // libpgc.so
@@ -167,8 +120,8 @@ internal_printf(char *format, ...)
 */
 #define ALLOC_or_NULL(soname, fnname, vg_replacement) \
    \
-   void* ENCODE(soname,fnname) (SizeT n); \
-   void* ENCODE(soname,fnname) (SizeT n)  \
+   void* VG_REPLACE_FUNCTION(soname,fnname) (SizeT n); \
+   void* VG_REPLACE_FUNCTION(soname,fnname) (SizeT n)  \
    { \
       void* v; \
       \
@@ -187,8 +140,8 @@ internal_printf(char *format, ...)
 */
 #define ALLOC_or_BOMB(soname, fnname, vg_replacement)  \
    \
-   void* ENCODE(soname,fnname) (SizeT n); \
-   void* ENCODE(soname,fnname) (SizeT n)  \
+   void* VG_REPLACE_FUNCTION(soname,fnname) (SizeT n); \
+   void* VG_REPLACE_FUNCTION(soname,fnname) (SizeT n)  \
    { \
       void* v; \
       \
@@ -251,7 +204,7 @@ ALLOC_or_BOMB(m_libc_dot_so_dot_6,     __builtin_new,  __builtin_new);
 #endif
 
 
-// operator new[](unsigned int), , unmangled for some bizarre reason
+// operator new[](unsigned int), unmangled for some bizarre reason
 ALLOC_or_BOMB(m_libstc_plus_plus_star, __builtin_vec_new, __builtin_vec_new );
 ALLOC_or_BOMB(m_libc_dot_so_dot_6,     __builtin_vec_new, __builtin_vec_new );
 
@@ -285,8 +238,8 @@ ALLOC_or_BOMB(m_libc_dot_so_dot_6,     __builtin_vec_new, __builtin_vec_new );
 */
 #define FREE(soname, fnname, vg_replacement) \
    \
-   void ENCODE(soname,fnname) (void *p); \
-   void ENCODE(soname,fnname) (void *p)  \
+   void VG_REPLACE_FUNCTION(soname,fnname) (void *p); \
+   void VG_REPLACE_FUNCTION(soname,fnname) (void *p)  \
    { \
       MALLOC_TRACE(#vg_replacement "(%p)", p ); \
       if (p == NULL)  \
@@ -328,8 +281,8 @@ FREE(m_libc_dot_so_dot_6,      _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
 
 #define CALLOC(soname, fnname) \
    \
-   void* ENCODE(soname,fnname) ( SizeT nmemb, SizeT size ); \
-   void* ENCODE(soname,fnname) ( SizeT nmemb, SizeT size )  \
+   void* VG_REPLACE_FUNCTION(soname,fnname) ( SizeT nmemb, SizeT size ); \
+   void* VG_REPLACE_FUNCTION(soname,fnname) ( SizeT nmemb, SizeT size )  \
    { \
       void* v; \
       \
@@ -346,8 +299,8 @@ CALLOC(m_libc_dot_so_dot_6, calloc);
 
 #define REALLOC(soname, fnname) \
    \
-   void* ENCODE(soname,fnname) ( void* ptrV, SizeT new_size ); \
-   void* ENCODE(soname,fnname) ( void* ptrV, SizeT new_size )  \
+   void* VG_REPLACE_FUNCTION(soname,fnname) ( void* ptrV, SizeT new_size );\
+   void* VG_REPLACE_FUNCTION(soname,fnname) ( void* ptrV, SizeT new_size ) \
    { \
       void* v; \
       \
@@ -356,9 +309,9 @@ CALLOC(m_libc_dot_so_dot_6, calloc);
       if (ptrV == NULL) \
          /* We need to call a malloc-like function; so let's use \
             one which we know exists. */ \
-         return ENCODE(libcZdsoZd6,malloc) (new_size); \
+         return VG_REPLACE_FUNCTION(libcZdsoZd6,malloc) (new_size); \
       if (new_size <= 0) { \
-         ENCODE(libcZdsoZd6,free)(ptrV); \
+         VG_REPLACE_FUNCTION(libcZdsoZd6,free)(ptrV); \
          if (info.clo_trace_malloc) \
             internal_printf(" = 0" ); \
          return NULL; \
@@ -374,8 +327,8 @@ REALLOC(m_libc_dot_so_dot_6, realloc);
 
 #define MEMALIGN(soname, fnname) \
    \
-   void* ENCODE(soname,fnname) ( SizeT alignment, SizeT n ); \
-   void* ENCODE(soname,fnname) ( SizeT alignment, SizeT n )  \
+   void* VG_REPLACE_FUNCTION(soname,fnname) ( SizeT alignment, SizeT n ); \
+   void* VG_REPLACE_FUNCTION(soname,fnname) ( SizeT alignment, SizeT n )  \
    { \
       void* v; \
       \
@@ -400,10 +353,10 @@ MEMALIGN(m_libc_dot_so_dot_6, memalign);
 
 #define VALLOC(soname, fnname) \
    \
-   void* ENCODE(soname,fnname) ( SizeT size ); \
-   void* ENCODE(soname,fnname) ( SizeT size )  \
+   void* VG_REPLACE_FUNCTION(soname,fnname) ( SizeT size ); \
+   void* VG_REPLACE_FUNCTION(soname,fnname) ( SizeT size )  \
    { \
-      return ENCODE(libcZdsoZd6,memalign)(VKI_PAGE_SIZE, size); \
+      return VG_REPLACE_FUNCTION(libcZdsoZd6,memalign)(VKI_PAGE_SIZE, size); \
    }
 
 VALLOC(m_libc_dot_so_dot_6, valloc);
@@ -413,8 +366,8 @@ VALLOC(m_libc_dot_so_dot_6, valloc);
 
 #define MALLOPT(soname, fnname) \
    \
-   int ENCODE(soname, fnname) ( int cmd, int value ); \
-   int ENCODE(soname, fnname) ( int cmd, int value )  \
+   int VG_REPLACE_FUNCTION(soname, fnname) ( int cmd, int value ); \
+   int VG_REPLACE_FUNCTION(soname, fnname) ( int cmd, int value )  \
    { \
       /* In glibc-2.2.4, 1 denotes a successful return value for \
          mallopt */ \
@@ -426,8 +379,8 @@ MALLOPT(m_libc_dot_so_dot_6, mallopt);
 
 #define POSIX_MEMALIGN(soname, fnname) \
    \
-   int ENCODE(soname, fnname) ( void **memptr, SizeT alignment, SizeT size ); \
-   int ENCODE(soname, fnname) ( void **memptr, SizeT alignment, SizeT size )  \
+   int VG_REPLACE_FUNCTION(soname, fnname) ( void **memptr, SizeT alignment, SizeT size ); \
+   int VG_REPLACE_FUNCTION(soname, fnname) ( void **memptr, SizeT alignment, SizeT size )  \
    { \
       void *mem; \
       \
@@ -437,7 +390,7 @@ MALLOPT(m_libc_dot_so_dot_6, mallopt);
           || (alignment & (alignment - 1)) != 0) \
          return VKI_EINVAL; \
       \
-      mem = ENCODE(libcZdsoZd6,memalign)(alignment, size); \
+      mem = VG_REPLACE_FUNCTION(libcZdsoZd6,memalign)(alignment, size); \
       \
       if (mem != NULL) { \
         *memptr = mem; \
@@ -452,8 +405,8 @@ POSIX_MEMALIGN(m_libc_dot_so_dot_6, posix_memalign);
 
 #define MALLOC_USABLE_SIZE(soname, fnname) \
    \
-   int ENCODE(soname, fnname) ( void* p ); \
-   int ENCODE(soname, fnname) ( void* p )  \
+   int VG_REPLACE_FUNCTION(soname, fnname) ( void* p ); \
+   int VG_REPLACE_FUNCTION(soname, fnname) ( void* p )  \
    {  \
       SizeT pszB; \
       \
@@ -483,8 +436,8 @@ static void panic(const char *str)
 
 #define PANIC(soname, fnname) \
    \
-   void ENCODE(soname, fnname) ( void ); \
-   void ENCODE(soname, fnname) ( void )  \
+   void VG_REPLACE_FUNCTION(soname, fnname) ( void ); \
+   void VG_REPLACE_FUNCTION(soname, fnname) ( void )  \
    { \
       panic(#fnname); \
    }
@@ -516,8 +469,8 @@ struct mallinfo {
 
 #define MALLINFO(soname, fnname) \
    \
-   struct mallinfo ENCODE(soname, fnname) ( void ); \
-   struct mallinfo ENCODE(soname, fnname) ( void )  \
+   struct mallinfo VG_REPLACE_FUNCTION(soname, fnname) ( void ); \
+   struct mallinfo VG_REPLACE_FUNCTION(soname, fnname) ( void )  \
    { \
       /* Should really try to return something a bit more meaningful */ \
       UInt            i; \

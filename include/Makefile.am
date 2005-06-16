@@ -20,6 +20,7 @@ incinc_HEADERS = \
 	pub_tool_mallocfree.h 		\
 	pub_tool_options.h 		\
 	pub_tool_profile.h		\
+	pub_tool_redir.h		\
 	pub_tool_replacemalloc.h	\
 	pub_tool_skiplist.h 		\
 	pub_tool_stacktrace.h 		\

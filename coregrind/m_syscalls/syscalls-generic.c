@@ -2320,8 +2320,8 @@ PRE(sys_execve)
    VG_(reap_threads)(tid);
 
    { // Remove the valgrind-specific stuff from the environment so the
-     // child doesn't get vg_inject.so, vgpreload.so, etc.  This is
-     // done unconditionally, since if we are tracing the child,
+     // child doesn't get vg_preload_core.so, vg_preload_TOOL.so, etc.  
+     // This is done unconditionally, since if we are tracing the child,
      // stage1/2 will set up the appropriate client environment.
      Char** envp = (Char**)ARG3;
      if (envp != NULL) {

@@ -1,11 +1,11 @@
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-char* s1;
-char* s2;
-
+// An issue here is that in glibc memcmp() and bcmp() are aliases.  Valgrind
+// chooses the shorter name -- bcmp -- and reports that in the error
+// message, even though memcmp() was called.  This is hard to avoid.
+char *s1, *s2;
 int main ( void )
 {
   s1 = malloc(10); strcpy(s1,"fooble");

@@ -32,7 +32,7 @@ bin_PROGRAMS = \
 
 val_PROGRAMS = \
 	stage2 \
-	vg_inject.so
+	vg_preload_core.so
 
 noinst_HEADERS = \
 	core.h			\
@@ -167,12 +167,12 @@ endif
 stage2_LDADD= $(stage2_extra) \
 	-ldl
 
-vg_inject_so_SOURCES = vg_intercept.c
-vg_inject_so_CFLAGS = $(AM_CFLAGS) -fpic
-vg_inject_so_LDADD = -ldl
-vg_inject_so_LDFLAGS = \
+vg_preload_core_so_SOURCES = vg_preloaded.c
+vg_preload_core_so_CFLAGS = $(AM_CFLAGS) -fpic
+vg_preload_core_so_LDADD = -ldl
+vg_preload_core_so_LDFLAGS = \
 	-shared \
-	-Wl,--soname,vg_inject.so \
+	-Wl,--soname,vg_preload_core.so \
 	-Wl,-z,initfirst
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)

@@ -644,7 +644,7 @@ static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
 
 /* Prepare the client's environment.  This is basically a copy of our
    environment, except:
-     LD_PRELOAD=$VALGRINDLIB/vg_inject.so:($VALGRINDLIB/vgpreload_TOOL.so:)?$LD_PRELOAD
+     LD_PRELOAD=$VALGRINDLIB/vg_preload_core.so:($VALGRINDLIB/vgpreload_TOOL.so:)?$LD_PRELOAD
 
    If this is missing, then it is added.
 
@@ -655,32 +655,32 @@ static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
  */
 static char **fix_environment(char **origenv, const char *preload)
 {
-   static const char inject_so[]          = "vg_inject.so";
+   static const char preload_core_so[]    = "vg_preload_core.so";
    static const char ld_preload[]         = "LD_PRELOAD=";
    static const char valgrind_clo[]       = VALGRINDCLO "=";
    static const int  ld_preload_len       = sizeof(ld_preload)-1;
    static const int  valgrind_clo_len     = sizeof(valgrind_clo)-1;
    int ld_preload_done       = 0;
-   char *inject_path;
-   int   inject_path_len;
+   char *preload_core_path;
+   int   preload_core_path_len;
    int vgliblen = strlen(VG_(libdir));
    char **cpp;
    char **ret;
    int envc;
    const int preloadlen = (preload == NULL) ? 0 : strlen(preload);
 
-   /* Find the vg_inject.so; also make room for the tool preload
+   /* Find the vg_preload_core.so; also make room for the tool preload
       library */
-   inject_path_len = sizeof(inject_so) + vgliblen + preloadlen + 16;
-   inject_path = malloc(inject_path_len);
-   vg_assert(inject_path);
+   preload_core_path_len = sizeof(preload_core_so) + vgliblen + preloadlen + 16;
+   preload_core_path = malloc(preload_core_path_len);
+   vg_assert(preload_core_path);
 
    if (preload)
-      snprintf(inject_path, inject_path_len, "%s/%s:%s", 
-	       VG_(libdir), inject_so, preload);
+      snprintf(preload_core_path, preload_core_path_len, "%s/%s:%s", 
+	       VG_(libdir), preload_core_so, preload);
    else
-      snprintf(inject_path, inject_path_len, "%s/%s", 
-	       VG_(libdir), inject_so);
+      snprintf(preload_core_path, preload_core_path_len, "%s/%s", 
+	       VG_(libdir), preload_core_so);
    
    /* Count the original size of the env */
    envc = 0;			/* trailing NULL */
@@ -701,12 +701,12 @@ static char **fix_environment(char **origenv, const char *preload)
    /* Walk over the new environment, mashing as we go */
    for (cpp = ret; cpp && *cpp; cpp++) {
       if (memcmp(*cpp, ld_preload, ld_preload_len) == 0) {
-	 int len = strlen(*cpp) + inject_path_len;
+	 int len = strlen(*cpp) + preload_core_path_len;
 	 char *cp = malloc(len);
          vg_assert(cp);
 
 	 snprintf(cp, len, "%s%s:%s",
-		  ld_preload, inject_path, (*cpp)+ld_preload_len);
+		  ld_preload, preload_core_path, (*cpp)+ld_preload_len);
 
 	 *cpp = cp;
 	 
@@ -718,17 +718,16 @@ static char **fix_environment(char **origenv, const char *preload)
 
    /* Add the missing bits */
    if (!ld_preload_done) {
-      int len = ld_preload_len + inject_path_len;
+      int len = ld_preload_len + preload_core_path_len;
       char *cp = malloc(len);
       vg_assert(cp);
       
-      snprintf(cp, len, "%s%s",
-	       ld_preload, inject_path);
+      snprintf(cp, len, "%s%s", ld_preload, preload_core_path);
       
       ret[envc++] = cp;
    }
 
-   free(inject_path);
+   free(preload_core_path);
    ret[envc] = NULL;
 
    return ret;
@@ -2798,7 +2797,7 @@ int main(int argc, char **argv, char **envp)
    called at program exit. */
 static Addr __libc_freeres_wrapper;
 
-void VGA_(intercept_libc_freeres_wrapper)(Addr addr)
+void VG_(set_libc_freeres_wrapper_addr)(Addr addr)
 {
    __libc_freeres_wrapper = addr;
 }

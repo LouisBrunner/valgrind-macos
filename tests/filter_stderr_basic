@@ -23,7 +23,7 @@ sed "/For more details, rerun with: -v/d"                             |
 sed "s/vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../"           |
 
 # Anonymise vg_intercept lines
-sed "s/vg_intercept.c:[0-9]*/vg_intercept.c:.../"                     |
+#sed "s/vg_intercept.c:[0-9]*/vg_intercept.c:.../"                     |
 
 # Hide suppressed error counts
 sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |

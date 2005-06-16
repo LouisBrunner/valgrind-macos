@@ -54,8 +54,8 @@ extern void VG_(start_debugger) ( ThreadId tid );
 /* 64-bit counter for the number of basic blocks done. */
 extern ULong VG_(bbs_done);
 
-// Set up the libc freeres wrapper (XXX: currently unused -- ?!)
-extern void VGA_(intercept_libc_freeres_wrapper)(Addr);
+// Set up the libc freeres wrapper 
+extern void VG_(set_libc_freeres_wrapper_addr)(Addr);
 
 #endif   // __PUB_CORE_MAIN_H
 

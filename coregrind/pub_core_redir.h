@@ -33,25 +33,68 @@
 
 //--------------------------------------------------------------------
 // PURPOSE: This module deals with:
-// - code redirection: intercepting calls to client functions, and
+// - code replacement: intercepting calls to client functions, and
 //   pointing them to a different piece of code.
+// - loading notification: telling the core where certain client-space
+//   functions are when they get loaded.
 // - function wrapping: add calls to code before and after client
 //   functions execute, for inspection and/or modification.
 //
-// Nb: It's possible that this should be two modules.
+// It's possible that this should be two or three modules.
 //--------------------------------------------------------------------
 
-/* Redirection machinery */
+#include "pub_tool_redir.h"
+
+//--------------------------------------------------------------------
+// General
+//--------------------------------------------------------------------
+
+// This module needs be told about all the symbols that get loaded, so 
+// it can check if it needs to do anything special.  This is the function
+// that does that checking.  It modifies 'symbol' in-place by Z-decoding
+// it if necessary.
+void VG_(maybe_redir_or_notify) ( Char* symbol, Addr addr );
+
+//--------------------------------------------------------------------
+// Code replacement
+//--------------------------------------------------------------------
+
+// See include/pub_tool_redir.h for details on how to do code replacement.
+
+// This is the crucial redirection function.  It answers the question: 
+// should this code address be redirected somewhere else?  It's used just
+// before translating a basic block.
 extern Addr VG_(code_redirect) ( Addr orig );
 
 /* Set up some default redirects */
 extern void VG_(setup_code_redirect_table) ( void );
 
-extern void VG_(add_redirect_sym_to_addr)(const Char *from_lib,
-					  const Char *from_sym,
-					  Addr to_addr);
-extern void VG_(add_redirect_addr_to_addr)(Addr from_addr, Addr to_addr);
 extern void VG_(resolve_seg_redirs)(SegInfo *si);
+
+
+//--------------------------------------------------------------------
+// Loading notification
+//--------------------------------------------------------------------
+
+/* Functions named with this macro have the property that the core will
+   be told what their address is when they are loaded.  This can be useful
+   if the core wants to call them at some point, and so needs to know their
+   address.  This is a weaker but more general mechanism than code
+   replacement.
+
+   Functions named with this macro should be in client space, ie. in
+   vg_preload_<tool>.h or vg_preload_core.h. */
+
+#define VG_NOTIFY_ON_LOAD(name)           _vgw_##name
+#define VG_NOTIFY_ON_LOAD_PREFIX          "_vgw_"
+#define VG_NOTIFY_ON_LOAD_PREFIX_LEN      5
+
+
+//--------------------------------------------------------------------
+// Function wrapping
+//--------------------------------------------------------------------
+
+// This is currently not working(?) --njn
 
 /* Wrapping machinery */
 enum return_type {

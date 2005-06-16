@@ -322,11 +322,15 @@ static void add_redirect_X_to_X(
    redir->type = R_REDIRECT;
 
    if (from_lib) redir->from_lib  = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
+   else          redir->from_lib  = NULL;
    if (from_sym) redir->from_sym  = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
+   else          redir->from_sym  = NULL;
                  redir->from_addr = from_addr;
 
    if (to_lib)   redir->to_lib    = VG_(arena_strdup)(VG_AR_SYMTAB, to_lib);
+   else          redir->to_lib    = NULL;
    if (to_sym)   redir->to_sym    = VG_(arena_strdup)(VG_AR_SYMTAB, to_sym);
+   else          redir->to_sym    = NULL;
                  redir->to_addr   = to_addr;
 
    if (VG_(clo_verbosity) >= 2 && VG_(clo_trace_redir))
@@ -336,7 +340,10 @@ static void add_redirect_X_to_X(
 
    /* Check against all existing segments to see if this redirection
       can be resolved immediately */
-   if (!resolve_redir_allsegs(redir)) {
+   if (VG_(is_resolved)(redir)) {
+      add_resolved(redir);
+   }
+   else if (!resolve_redir_allsegs(redir)) {
       /* nope, add to list */
       redir->next = unresolved_redir;
       unresolved_redir = redir;

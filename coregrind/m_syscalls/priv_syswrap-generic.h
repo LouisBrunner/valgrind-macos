@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Private syscalls header.                     priv_syscalls.h ---*/
+/*--- Private syscalls header.              priv_syswrap-generic.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PRIV_SYSCALLS_GENERIC_H
-#define __PRIV_SYSCALLS_GENERIC_H
+#ifndef __PRIV_SYSWRAP_GENERIC_H
+#define __PRIV_SYSWRAP_GENERIC_H
 
 /* requires #include "priv_types_n_macros.h" */
 
@@ -52,7 +52,7 @@ void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname);
 extern
 Bool VG_(do_sigkill)(Int pid, Int tgid);
 
-/* So that it can be seen from syscalls-x86-linux.c. */
+/* So that it can be seen from syswrap-x86-linux.c. */
 extern 
 void VG_(mmap_segment) ( Addr a, SizeT len, UInt prot, 
                          UInt mm_flags, Int fd, ULong offset );
@@ -314,7 +314,7 @@ extern void   VG_(generic_POST_sys_shmctl)      ( TId, UW, UW, UW, UW );
 /////////////////////////////////////////////////////////////////
 
 
-#endif   // __PRIV_SYSCALLS_GENERIC_H
+#endif   // __PRIV_SYSWRAP_GENERIC_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

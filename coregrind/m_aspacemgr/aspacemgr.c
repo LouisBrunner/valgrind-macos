@@ -41,7 +41,7 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_syscall.h"
-#include "pub_core_syscalls.h"
+#include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_transtab.h"
 #include "vki_unistd.h"

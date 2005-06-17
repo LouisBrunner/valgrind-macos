@@ -66,7 +66,7 @@ noinst_HEADERS = \
 	pub_core_signals.h	\
 	pub_core_skiplist.h	\
 	pub_core_stacktrace.h	\
-	pub_core_syscalls.h	\
+	pub_core_syswrap.h	\
 	pub_core_threadmodel.h	\
 	pub_core_tooliface.h	\
 	pub_core_translate.h	\
@@ -130,7 +130,7 @@ stage2_extra= \
 	m_dispatch/libdispatch.a \
 	m_aspacemgr/libaspacemgr.a \
 	m_sigframe/libsigframe.a \
-	m_syscalls/libsyscalls.a \
+	m_syscalls/libsyswrap.a \
 	${VG_ARCH}/libarch.a \
 	@VEX_DIR@/libvex.a
 

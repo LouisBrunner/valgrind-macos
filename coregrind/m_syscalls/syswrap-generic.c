@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Wrappers for generic Unix system calls    syscalls-generic.c ---*/
+/*--- Wrappers for generic Unix system calls     syswrap-generic.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -45,10 +45,10 @@
 #include "pub_core_options.h"
 #include "pub_core_signals.h"
 #include "pub_core_syscall.h"
-#include "pub_core_syscalls.h"
+#include "pub_core_syswrap.h"
 
 #include "priv_types_n_macros.h"
-#include "priv_syscalls-generic.h"
+#include "priv_syswrap-generic.h"
 
 #include "vki_unistd.h"              /* for the __NR_* constants */
 
@@ -2341,7 +2341,7 @@ PRE(sys_execve)
       path = VG_(build_child_exename)();
    }
 
-   VG_(debugLog)(1, "syscalls", "Exec of %s\n", (HChar*)ARG1);
+   VG_(debugLog)(1, "syswrap", "Exec of %s\n", (HChar*)ARG1);
 
    if (0) {
       Char **cpp;
@@ -5628,5 +5628,5 @@ POST(sys_clock_getres)
 #undef POST
 
 /*--------------------------------------------------------------------*/
-/*--- end                                       syscalls-generic.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

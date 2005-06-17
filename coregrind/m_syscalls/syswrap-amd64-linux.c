@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Platform-specific syscalls stuff.     syscalls-amd64-linux.c ---*/
+/*--- Platform-specific syscalls stuff.      syswrap-amd64-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -42,13 +42,13 @@
 #include "pub_core_sigframe.h"
 #include "pub_core_signals.h"
 #include "pub_core_syscall.h"
-#include "pub_core_syscalls.h"
+#include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
 
 #include "priv_types_n_macros.h"
-#include "priv_syscalls-generic.h"   /* for decls of generic wrappers */
-#include "priv_syscalls-linux.h"     /* for decls of linux-ish wrappers */
-#include "priv_syscalls-main.h"
+#include "priv_syswrap-generic.h"   /* for decls of generic wrappers */
+#include "priv_syswrap-linux.h"     /* for decls of linux-ish wrappers */
+#include "priv_syswrap-main.h"
 
 #include "vki_unistd.h"              /* for the __NR_* constants */
 
@@ -132,7 +132,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 {
    ThreadId tid = (ThreadId)tidW;
 
-   VG_(debugLog)(1, "syscalls-amd64-linux", 
+   VG_(debugLog)(1, "syswrap-amd64-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
                        "VG_(thread_wrapper) called\n",
                        (ULong)tidW);
@@ -140,7 +140,7 @@ static void run_a_thread_NORETURN ( Word tidW )
    /* Run the thread all the way through. */
    VgSchedReturnCode src = VG_(thread_wrapper)(tid);  
 
-   VG_(debugLog)(1, "syscalls-amd64-linux", 
+   VG_(debugLog)(1, "syswrap-amd64-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
                        "VG_(thread_wrapper) done\n",
                        (ULong)tidW);
@@ -150,7 +150,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    if (c == 1) {
 
-      VG_(debugLog)(1, "syscalls-amd64-linux", 
+      VG_(debugLog)(1, "syswrap-amd64-linux", 
                        "run_a_thread_NORETURN(tid=%lld): "
                           "last one standing\n",
                           (ULong)tidW);
@@ -161,7 +161,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    } else {
 
-      VG_(debugLog)(1, "syscalls-amd64-linux", 
+      VG_(debugLog)(1, "syswrap-amd64-linux", 
                        "run_a_thread_NORETURN(tid=%lld): "
                           "not last one standing\n",
                           (ULong)tidW);
@@ -203,7 +203,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 */
 void VGP_(main_thread_wrapper_NORETURN)(ThreadId tid)
 {
-   VG_(debugLog)(1, "syscalls-amd64-linux", 
+   VG_(debugLog)(1, "syswrap-amd64-linux", 
                     "entering VGP_(main_thread_wrapper_NORETURN)\n");
 
    UWord* rsp = allocstack(tid);

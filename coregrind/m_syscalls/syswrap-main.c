@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Handle system calls.                         syscalls-main.c ---*/
+/*--- Handle system calls.                          syswrap-main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -40,10 +40,10 @@
 #include "pub_core_options.h"
 #include "pub_core_signals.h"
 #include "pub_core_syscall.h"
-#include "pub_core_syscalls.h"
+#include "pub_core_syswrap.h"
 
 #include "priv_types_n_macros.h"
-#include "priv_syscalls-main.h"
+#include "priv_syswrap-main.h"
 
 
 /* Useful info which needs to be recorded somewhere:
@@ -471,7 +471,7 @@ SyscallInfo syscallInfo[VG_N_THREADS];
 
 
 /* The scheduler needs to be able to zero out these records after a
-   fork, hence this is exported from m_syscalls. */
+   fork, hence this is exported from m_syswrap. */
 void VG_(clear_syscallInfo) ( Int tid )
 {
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
@@ -1051,5 +1051,5 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                          syscalls-main.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

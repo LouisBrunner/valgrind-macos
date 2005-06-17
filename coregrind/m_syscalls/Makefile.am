@@ -2,18 +2,19 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
 EXTRA_DIST = \
-	README_SYSCALLS.txt
+	README_SYSWRAP.txt
 
 noinst_HEADERS = \
 	priv_types_n_macros.h \
-	priv_syscalls-generic.h \
-	priv_syscalls-linux.h
+	priv_syswrap-generic.h \
+	priv_syswrap-linux.h \
+	priv_syswrap-main.h
 
-noinst_LIBRARIES = libsyscalls.a
+noinst_LIBRARIES = libsyswrap.a
 
-libsyscalls_a_SOURCES = \
+libsyswrap_a_SOURCES = \
 	syscall-@VG_PLATFORM@.S \
-	syscalls-generic.c \
-	syscalls-@VG_OS@.c \
-	syscalls-@VG_PLATFORM@.c \
-	syscalls-main.c
+	syswrap-generic.c \
+	syswrap-@VG_OS@.c \
+	syswrap-@VG_PLATFORM@.c \
+	syswrap-main.c

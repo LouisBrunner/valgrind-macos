@@ -50,7 +50,7 @@
 #include "pub_core_profile.h"
 #include "pub_core_redir.h"
 #include "pub_core_signals.h"
-#include "pub_core_syscalls.h"
+#include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_transtab.h"
 

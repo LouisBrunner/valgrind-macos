@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- System call wrappers, etc.               pub_core_syscalls.h ---*/
+/*--- System call wrappers, etc.                pub_core_syswrap.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_CORE_SYSCALLS_H
-#define __PUB_CORE_SYSCALLS_H
+#ifndef __PUB_CORE_SYSWRAP_H
+#define __PUB_CORE_SYSWRAP_H
 
 //--------------------------------------------------------------------
 // PURPOSE: This module contains all the syscall junk:  mostly wrappers,
@@ -72,7 +72,7 @@ extern void VGP_(cleanup_thread) ( ThreadArchState* );
 extern void VG_(init_preopened_fds) ( void );
 extern void VG_(show_open_fds) ( void );
 
-#endif   // __PUB_CORE_SYSCALLS_H
+#endif   // __PUB_CORE_SYSWRAP_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

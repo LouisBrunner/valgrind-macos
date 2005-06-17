@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- Types and macros for writing syscall wrappers.               ---*/
-/*---                                              priv_syscalls.h ---*/
+/*---                                        priv_types_n_macros.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -37,7 +37,7 @@
 
 /* This header defines types and macros which are useful for writing
    syscall wrappers.  It does not give prototypes for any such
-   headers, though: that is the job of the priv_syscalls-*.h headers.
+   headers, though: that is the job of the priv_syswrap-*.h headers.
    This header gets included in any file which defines or declares
    wrappers, and as such should only contain stuff which is relevant
    to all such files.
@@ -122,7 +122,7 @@ typedef
 
 
 /* These are defined in the relevant platform-specific files --
-   syscalls-arch-os.c */
+   syswrap-arch-os.c */
 
 extern const SyscallTableEntry VGP_(syscall_table)[];
 
@@ -348,5 +348,5 @@ static inline UWord getRES ( SyscallStatus* st ) {
 #endif   // __PRIV_TYPES_N_MACROS_H
 
 /*--------------------------------------------------------------------*/
-/*--- end                                    priv_types_n_macros.h ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

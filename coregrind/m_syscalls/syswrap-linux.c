@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Linux-specific syscalls, etc.               syscalls-linux.c ---*/
+/*--- Linux-specific syscalls, etc.                syswrap-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -43,8 +43,8 @@
 #include "pub_core_syscall.h"
 
 #include "priv_types_n_macros.h"
-#include "priv_syscalls-generic.h"
-#include "priv_syscalls-linux.h"
+#include "priv_syswrap-generic.h"
+#include "priv_syswrap-linux.h"
 
 // Run a thread from beginning to end and return the thread's
 // scheduler-return-code.
@@ -96,7 +96,7 @@ VgSchedReturnCode VG_(thread_wrapper)(Word /*ThreadId*/ tidW)
    ------------------------------------------------------------------ */
 
 // Nb: See the comment above the generic PRE/POST wrappers in
-// coregrind/vg_syscalls.c for notes about how they work.
+// m_syswrap/syswrap-generic.c for notes about how they work.
 
 #define PRE(name)       DEFN_PRE_TEMPLATE(linux, name)
 #define POST(name)      DEFN_POST_TEMPLATE(linux, name)

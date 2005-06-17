@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Platform-specific syscalls stuff.       arm-linux/syscalls.c ---*/
+/*--- Platform-specific syscalls stuff.        syswrap-arm-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*

@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Linux-specific syscalls stuff.         priv_syscalls-linux.h ---*/
+/*--- Linux-specific syscalls stuff.          priv_syswrap-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PRIV_SYSCALLS_LINUX_H
-#define __PRIV_SYSCALLS_LINUX_H
+#ifndef __PRIV_SYSWRAP_LINUX_H
+#define __PRIV_SYSWRAP_LINUX_H
 
 /* requires #include "priv_types_n_macros.h" */
 
@@ -89,7 +89,7 @@ DECL_TEMPLATE(linux, sys_io_getevents);
 DECL_TEMPLATE(linux, sys_io_submit);
 DECL_TEMPLATE(linux, sys_io_cancel);
 
-#endif   // __PRIV_SYSCALLS_LINUX_H
+#endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

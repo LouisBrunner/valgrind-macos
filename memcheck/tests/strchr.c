@@ -7,8 +7,12 @@
 
 int main(int argc, char* argv[])
 {
-   char* s = malloc(10);
-   char* a = strchr(s, '\0');
-   char* b = strrchr(s, '\0');
-   return ((int)a + (int)b);
+   char *s, *a, *b;
+   s = malloc(sizeof(char));
+
+   // Nb: s[0] is uninitialised, but almost certainly a zero
+   
+   a = strchr (s, '1');
+   b = strrchr(s, '1');
+   return 0;//((int)a + (int)b);
 }

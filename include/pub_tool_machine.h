@@ -64,6 +64,12 @@ extern void VG_(get_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
 extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
                                         SizeT size, const UChar* area );
 
+// Apply a function 'f' to all the general purpose registers in all the
+// current threads.
+// This is very Memcheck-specific -- it's used to find the roots when
+// doing leak checking.
+extern void VG_(apply_to_GP_regs)(void (*f)(UWord val));
+
 #endif   // __PUB_TOOL_MACHINE
 
 /*--------------------------------------------------------------------*/

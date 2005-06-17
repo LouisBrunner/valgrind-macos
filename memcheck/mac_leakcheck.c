@@ -37,6 +37,7 @@
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_libcsignal.h"
+#include "pub_tool_machine.h"
 
 /* Define to debug the memory-leak-detector. */
 #define VG_DEBUG_LEAKCHECK 0
@@ -684,7 +685,7 @@ void MAC_(do_detect_memory_leaks) (
    VG_(find_root_memory)(lc_scan_memory);
 
    /* Push registers onto mark stack */
-   VG_(mark_from_registers)(lc_markstack_push);
+   VG_(apply_to_GP_regs)(lc_markstack_push);
 
    /* Keep walking the heap until everything is found */
    lc_do_leakcheck(-1);

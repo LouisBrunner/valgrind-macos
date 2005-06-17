@@ -78,9 +78,6 @@ extern ThreadId VG_(first_matching_thread_stack)
    not expected to return. */
 extern void VG_(set_fault_catcher)(void (*catcher)(Int sig, Addr addr));
 
-/* Calls "mark_addr" with register values (which may or may not be pointers) */
-extern void VG_(mark_from_registers)(void (*mark_addr)(Addr addr));
-
 /* ------------------------------------------------------------------ */
 /* other, randomly useful functions */
 extern Bool VG_(has_cpuid) ( void );

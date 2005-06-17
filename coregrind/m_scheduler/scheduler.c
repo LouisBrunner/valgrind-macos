@@ -164,17 +164,6 @@ ThreadId VG_(first_matching_thread_stack)
    return VG_INVALID_THREADID;
 }
  
-void VG_(mark_from_registers)(void (*mark_addr)(Addr))
-{
-   ThreadId tid;
-
-   for(tid = 1; tid < VG_N_THREADS; tid++) {
-      if (!VG_(is_valid_tid)(tid))
-	 continue;
-      VGA_(mark_from_registers)(tid, mark_addr);
-   }
-}
-
 /* Print the scheduler status. */
 void VG_(pp_sched_status) ( void )
 {

@@ -132,27 +132,6 @@ void VGA_(init_thread1state) ( Addr client_eip,
 }
 
 /*------------------------------------------------------------*/
-/*--- Thread stuff                                         ---*/
-/*------------------------------------------------------------*/
-
-void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr))
-{
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-   ThreadArchState *arch = &tst->arch;
-
-   /* XXX ask tool about validity? */
-   (*marker)(arch->vex.guest_EAX);
-   (*marker)(arch->vex.guest_ECX);
-   (*marker)(arch->vex.guest_EDX);
-   (*marker)(arch->vex.guest_EBX);
-   (*marker)(arch->vex.guest_ESI);
-   (*marker)(arch->vex.guest_EDI);
-   (*marker)(arch->vex.guest_ESP);
-   (*marker)(arch->vex.guest_EBP);
-}
-
-
-/*------------------------------------------------------------*/
 /*--- Debugger-related operations                          ---*/
 /*------------------------------------------------------------*/
 

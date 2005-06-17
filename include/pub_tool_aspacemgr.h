@@ -49,7 +49,9 @@ extern void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init);
 /* Calls into the core used by leak-checking */
 
 /* Calls "add_rootrange" with each range of memory which looks like a
-   plausible source of root pointers. */
+   plausible source of root pointers.  This is very Memcheck-specific --
+   it's used in leak detection.
+*/
 extern void VG_(find_root_memory)(void (*add_rootrange)(Addr addr, SizeT sz));
 
 #endif   // __PUB_TOOL_ASPACEMGR

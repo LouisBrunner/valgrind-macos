@@ -32,6 +32,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
+#include "pub_core_scheduler.h"
 
 #define INSTR_PTR(regs)    ((regs).vex.VGA_INSTR_PTR)
 #define STACK_PTR(regs)    ((regs).vex.VGA_STACK_PTR)
@@ -92,6 +93,54 @@ void VG_(set_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size,
 
    VG_(memcpy)( (void*)(((Addr)(&tst->arch.vex_shadow)) + offset), area, size);
 }
+
+
+static void apply_to_GPs_of_tid(VexGuestArchState* vex, void (*f)(Addr))
+{
+#if defined(VGA_x86)
+   (*f)(vex->guest_EAX);
+   (*f)(vex->guest_ECX);
+   (*f)(vex->guest_EDX);
+   (*f)(vex->guest_EBX);
+   (*f)(vex->guest_ESI);
+   (*f)(vex->guest_EDI);
+   (*f)(vex->guest_ESP);
+   (*f)(vex->guest_EBP);
+#elif defined(VGA_amd64)
+   (*f)(vex->guest_RAX);
+   (*f)(vex->guest_RCX);
+   (*f)(vex->guest_RDX);
+   (*f)(vex->guest_RBX);
+   (*f)(vex->guest_RSI);
+   (*f)(vex->guest_RDI);
+   (*f)(vex->guest_RSP);
+   (*f)(vex->guest_RBP);
+   (*f)(vex->guest_R8);
+   (*f)(vex->guest_R9);
+   (*f)(vex->guest_R10);
+   (*f)(vex->guest_R11);
+   (*f)(vex->guest_R12);
+   (*f)(vex->guest_R13);
+   (*f)(vex->guest_R14);
+   (*f)(vex->guest_R15);
+#else
+#  error Unknown arch
+#endif
+}
+
+
+void VG_(apply_to_GP_regs)(void (*f)(UWord))
+{
+   ThreadId tid;
+
+   for (tid = 1; tid < VG_N_THREADS; tid++) {
+      if (VG_(is_valid_tid)(tid)) {
+         ThreadState* tst = VG_(get_ThreadState)(tid);
+         apply_to_GPs_of_tid(&(tst->arch.vex), f);
+      }
+   }
+}
+
 
 
 /*--------------------------------------------------------------------*/

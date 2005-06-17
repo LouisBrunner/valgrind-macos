@@ -508,6 +508,8 @@ void read_dwarf2_lineblock ( SegInfo*  si,
 
       if (*data != '/' 
           /* not an absolute path */
+          && ui->compdir != NULL
+          /* actually got something sensible for compdir */
           && VG_(strlen)(ui->compdir) + VG_(strlen)(data) + 5/*paranoia*/ < NBUF
           /* it's short enough to concatenate */) 
       {

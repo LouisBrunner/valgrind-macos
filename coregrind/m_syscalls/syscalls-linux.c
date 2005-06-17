@@ -40,6 +40,7 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_options.h"
 #include "pub_core_signals.h"
+#include "pub_core_syscall.h"
 
 #include "priv_types_n_macros.h"
 #include "priv_syscalls-generic.h"

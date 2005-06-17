@@ -47,6 +47,7 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_signals.h"
+#include "pub_core_syscall.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
 
@@ -443,7 +444,7 @@ static SysRes do_clone ( ThreadId ptid,
             start_thread_NORETURN, stack, flags, &VG_(threads)[ctid],
             child_tidptr, parent_tidptr, NULL
          );
-   res = VG_(mk_SysRes_x86_linux)( eax );
+   res = VG_(mk_SysRes)( eax );
 
    VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
 
@@ -1142,9 +1143,7 @@ PRE(sys_sigreturn)
       denote either success or failure, we must set up so that the
       driver logic copies it back unchanged.  Also, note %EAX is of
       the guest registers written by VG_(sigframe_destroy). */
-   SET_STATUS_from_SysRes(
-      VG_(mk_SysRes_x86_linux)( tst->arch.vex.guest_EAX ) 
-   );
+   SET_STATUS_from_SysRes( VG_(mk_SysRes)( tst->arch.vex.guest_EAX ) );
 
    /* Check to see if some any signals arose as a result of this. */
    *flags |= SfPollAfter;
@@ -1175,9 +1174,7 @@ PRE(sys_rt_sigreturn)
       denote either success or failure, we must set up so that the
       driver logic copies it back unchanged.  Also, note %EAX is of
       the guest registers written by VG_(sigframe_destroy). */
-   SET_STATUS_from_SysRes(
-      VG_(mk_SysRes_x86_linux)( tst->arch.vex.guest_EAX ) 
-   );
+   SET_STATUS_from_SysRes( VG_(mk_SysRes)( tst->arch.vex.guest_EAX ) );
 
    /* Check to see if some any signals arose as a result of this. */
    *flags |= SfPollAfter;

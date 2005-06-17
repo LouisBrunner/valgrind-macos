@@ -34,12 +34,6 @@
 
 
 /*----------------------------------------------------------------*/
-.globl VG_(sigreturn)
-VG_(sigreturn):
-        movq    $__NR_rt_sigreturn, %rax
-        syscall
-
-/*----------------------------------------------------------------*/
 /*
 	Perform a syscall for the client.  This will run a syscall
 	with the client's specific per-thread signal mask.

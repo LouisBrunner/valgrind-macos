@@ -33,16 +33,14 @@
 
 # XXX: must reinstate comments also -- see x86-linux/syscall.S
 
+# XXX: this is now all way out of date...
+
 .globl	VG_(do_syscall)
 VG_(do_syscall):
 	swi
 
 .globl VG_(clone)
 VG_(clone):
-	swi
-
-.globl VG_(sigreturn)
-VG_(sigreturn):
 	swi
 
 # ToDo XXX: Assembler did not like this...

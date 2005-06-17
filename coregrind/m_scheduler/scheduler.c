@@ -77,6 +77,7 @@
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
 #include "pub_core_stacktrace.h"
+#include "pub_core_syscall.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"

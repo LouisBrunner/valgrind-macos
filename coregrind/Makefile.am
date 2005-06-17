@@ -114,6 +114,7 @@ stage2_SOURCES = \
 	m_signals.c \
 	m_skiplist.c \
 	m_stacktrace.c \
+	m_syscall.c \
 	m_threadmodel.c \
 	m_tooliface.c \
 	m_translate.c \

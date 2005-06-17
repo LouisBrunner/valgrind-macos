@@ -34,6 +34,7 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
+#include "pub_core_syscall.h"
 #include "vki_unistd.h"
 
 /* ---------------------------------------------------------------------

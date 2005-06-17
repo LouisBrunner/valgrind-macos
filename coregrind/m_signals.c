@@ -96,8 +96,10 @@
 #include "pub_core_signals.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_stacktrace.h"
+#include "pub_core_syscall.h"
 #include "pub_core_syscalls.h"
 #include "pub_core_tooliface.h"
+#include "vki_unistd.h"
 
 
 /* Define to give more sanity checking for signals. */
@@ -131,7 +133,7 @@ typedef struct SigQueue {
 #  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.eax)
 #  define VGP_UCONTEXT_SYSCALL_SYSRES(uc)                       \
       /* Convert the value in uc_mcontext.eax into a SysRes. */ \
-      VG_(mk_SysRes_x86_linux)( (uc)->uc_mcontext.eax )
+      VG_(mk_SysRes)( (uc)->uc_mcontext.eax )
 
 #elif defined(VGP_amd64_linux)
 #  define VGP_UCONTEXT_INSTR_PTR(uc)      ((uc)->uc_mcontext.rip)
@@ -140,7 +142,7 @@ typedef struct SigQueue {
 #  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.rax)
 #  define VGP_UCONTEXT_SYSCALL_SYSRES(uc)                       \
       /* Convert the value in uc_mcontext.rax into a SysRes. */ \
-      VG_(mk_SysRes_amd64_linux)( (uc)->uc_mcontext.rax )
+      VG_(mk_SysRes)( (uc)->uc_mcontext.rax )
 
 #elif defined(VGP_arm_linux)
 #  define VGP_UCONTEXT_INSTR_PTR(uc)     ((uc)->uc_mcontext.arm_pc)
@@ -379,6 +381,30 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
    After a possible SCSS change, update SKSS and the kernel itself.
    ------------------------------------------------------------------ */
 
+// We need two levels of macro-expansion here to convert __NR_rt_sigreturn
+// to a number before converting it to a string... sigh.
+extern void my_sigreturn(void);
+
+#if defined(VGP_x86_linux)
+#  define _MYSIG(name) \
+   "my_sigreturn:\n" \
+   "	movl	$" #name ", %eax\n" \
+   "	int	$0x80\n"
+#elif defined(VGP_amd64_linux)
+#  define _MYSIG(name) \
+   "my_sigreturn:\n" \
+   "	movq	$" #name ", %rax\n" \
+   "	syscall\n"
+#else
+#  error Unknown platform
+#endif
+
+#define MYSIG(name)  _MYSIG(name)
+asm(
+   MYSIG(__NR_rt_sigreturn)
+);
+
+
 static void handle_SCSS_change ( Bool force_update )
 {
    Int  res, sig;
@@ -409,7 +435,7 @@ static void handle_SCSS_change ( Bool force_update )
 
       ksa.ksa_handler = skss.skss_per_sig[sig].skss_handler;
       ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
-      ksa.sa_restorer = VG_(sigreturn);
+      ksa.sa_restorer = my_sigreturn;
 
       /* block all signals in handler */
       VG_(sigfillset)( &ksa.sa_mask );
@@ -437,7 +463,7 @@ static void handle_SCSS_change ( Bool force_update )
          vg_assert(ksa_old.sa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
          vg_assert(ksa_old.sa_restorer 
-                   == VG_(sigreturn));
+                   == my_sigreturn);
          VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGKILL );
          VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGSTOP );
          vg_assert(VG_(isfullsigset)( &ksa_old.sa_mask ));

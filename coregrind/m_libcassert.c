@@ -35,6 +35,7 @@
 #include "pub_core_libcproc.h"
 #include "pub_core_main.h"
 #include "pub_core_stacktrace.h"
+#include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"
 #include "vki_unistd.h"
 

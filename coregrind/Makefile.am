@@ -9,7 +9,7 @@ MODULES = \
 	m_replacemalloc \
 	m_scheduler \
 	m_sigframe \
-	m_syscalls
+	m_syswrap
 
 ## When building, we are only interested in the current arch/OS/platform.
 ## But when doing 'make dist', we are interested in every arch/OS/platform.
@@ -130,7 +130,7 @@ stage2_extra= \
 	m_dispatch/libdispatch.a \
 	m_aspacemgr/libaspacemgr.a \
 	m_sigframe/libsigframe.a \
-	m_syscalls/libsyswrap.a \
+	m_syswrap/libsyswrap.a \
 	${VG_ARCH}/libarch.a \
 	@VEX_DIR@/libvex.a
 

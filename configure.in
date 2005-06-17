@@ -429,7 +429,7 @@ AC_OUTPUT(
    coregrind/m_replacemalloc/Makefile 
    coregrind/m_scheduler/Makefile 
    coregrind/m_sigframe/Makefile 
-   coregrind/m_syscalls/Makefile 
+   coregrind/m_syswrap/Makefile 
    coregrind/amd64/Makefile
    coregrind/arm/Makefile
    coregrind/x86/Makefile

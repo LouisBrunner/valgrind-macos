@@ -86,15 +86,6 @@ extern const Int  VG_(tramp_time_offset);
 extern Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*, 
                                      /*OUT*/VexSubArch* );
 
-// Setting up the initial thread (1) state
-extern void 
-       VGA_(init_thread1state) ( Addr client_eip, 
-                                 Addr esp_at_startup,
-                                 /*MOD*/ ThreadArchState* arch );
-
-// For attaching the debugger
-extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
-
 /* ---------------------------------------------------------------------
    Finally - autoconf-generated settings
    ------------------------------------------------------------------ */

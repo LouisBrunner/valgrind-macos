@@ -43,6 +43,8 @@
    ------------------------------------------------------------------ */
 
 #include "valgrind.h"
+#include "coregrind.h"
+
 #include "core.h"
 #include "pub_core_debuginfo.h"     // needed for pub_core_redir.h :(
 #include "pub_core_redir.h"

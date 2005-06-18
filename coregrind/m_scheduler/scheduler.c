@@ -53,13 +53,14 @@
 
    This file is almost entirely OS-independent.  The details of how
    the OS handles threading and signalling are abstracted away and
-   implemented elsewhere.
+   implemented elsewhere.  [Some of the functions have worked their
+   way back for the moment, until we do an OS port in earnest...]
  */
 
-#include "valgrind.h" /* for VG_USERREQ__RUNNING_ON_VALGRIND and
-                             VG_USERREQ__DISCARD_TRANSLATIONS, and others */
-#include "core.h"
+#include "valgrind.h"   // for VG_USERREQ__*
+#include "coregrind.h"  // for VG_USERREQ__*
 
+#include "core.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_dispatch.h"
 #include "pub_core_errormgr.h"

@@ -49,20 +49,6 @@
 
 #include "pub_core_scheduler.h"   // for types 'ThreadArchState'
 
-/* These are the internal client request codes.  The publically-visible
-   request codes are also defined in valgrind.h, and similar headers for
-   some tools. */
-
-/* Get the tool's malloc-wrapping functions */
-#define VG_USERREQ__GET_MALLOCFUNCS	    0x3030
-
-/* Internal equivalent of VALGRIND_PRINTF . */
-#define VG_USERREQ__INTERNAL_PRINTF         0x3103
-
-/* Denote the finish of __libc_freeres_wrapper(). 
-   A synonym for exit. */
-#define VG_USERREQ__LIBC_FREERES_DONE       0x3029
-
 /* ---------------------------------------------------------------------
    Exports of vg_helpers.S
    ------------------------------------------------------------------ */

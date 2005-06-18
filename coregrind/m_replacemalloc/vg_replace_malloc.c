@@ -45,6 +45,8 @@
    ------------------------------------------------------------------ */
 
 #include "valgrind.h"               // for VALGRIND_NON_SIMD_CALL[12]
+#include "coregrind.h"              // for VALGRIND_INTERNAL_PRINTF
+
 #include "core.h"
 #include "pub_core_debuginfo.h"     // needed for pub_core_redir.h :(
 #include "pub_core_mallocfree.h"    // for VG_MIN_MALLOC_SZB, VG_AR_CLIENT
@@ -81,29 +83,9 @@ static int init_done;
 /* Startup hook - called as init section */
 static void init(void) __attribute__((constructor));
 
-// Functions for printing from code within Valgrind, but which runs on the
-// sim'd CPU.  They must be functions rather than macros so that va_list can
-// be used.
-// Nb: at one point, these were used by multiple files that run on the sim'd
-// CPU, and so were *defined* in core.h with the 'weak' attribute.  That was
-// pretty ugly.  It's much better if this is the only file that needs them.
-
-__attribute__((format(__printf__, 1, 2)))
-static int
-internal_printf(char *format, ...)
-{
-   UWord _qzz_res = 0;
-   va_list vargs;
-   va_start(vargs, format);
-   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
-                           (UWord)format, (UWord)vargs, 0, 0);
-   va_end(vargs);
-   return _qzz_res;
-}
-
 #define MALLOC_TRACE(format, args...)  \
    if (info.clo_trace_malloc)          \
-      internal_printf(format, ## args )
+      VALGRIND_INTERNAL_PRINTF(format, ## args )
 
 /* Below are new versions of malloc, __builtin_new, free, 
    __builtin_delete, calloc, realloc, memalign, and friends.
@@ -312,8 +294,7 @@ CALLOC(m_libc_dot_so_dot_6, calloc);
          return VG_REPLACE_FUNCTION(libcZdsoZd6,malloc) (new_size); \
       if (new_size <= 0) { \
          VG_REPLACE_FUNCTION(libcZdsoZd6,free)(ptrV); \
-         if (info.clo_trace_malloc) \
-            internal_printf(" = 0" ); \
+         MALLOC_TRACE(" = 0"); \
          return NULL; \
       } \
       if (!init_done) init(); \

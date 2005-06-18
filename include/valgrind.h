@@ -55,6 +55,20 @@
 */
 
 
+/* This file is for inclusion into client (your!) code.
+
+   You can use these macros to manipulate and query Valgrind's 
+   execution inside your own programs.
+
+   The resulting executables will still run without Valgrind, just a
+   little bit more slowly than they otherwise would, but otherwise
+   unchanged.  When not running on valgrind, each client request
+   consumes very few (eg. < 10) instructions, so the resulting performance
+   loss is negligible unless you plan to execute client requests
+   millions of times per second.  Nevertheless, if that is still a
+   problem, you can compile with the NVALGRIND symbol defined (gcc
+   -DNVALGRIND) so that client requests are not even compiled in.  */
+
 #ifndef __VALGRIND_H
 #define __VALGRIND_H
 
@@ -70,20 +84,9 @@
 #  endif  /* NVALGRIND */
 #endif
 
-
-/* This file is for inclusion into client (your!) code.
-
-   You can use these macros to manipulate and query Valgrind's 
-   execution inside your own programs.
-
-   The resulting executables will still run without Valgrind, just a
-   little bit more slowly than they otherwise would, but otherwise
-   unchanged.  When not running on valgrind, each client request
-   consumes very few (eg. < 10) instructions, so the resulting performance
-   loss is negligible unless you plan to execute client requests
-   millions of times per second.  Nevertheless, if that is still a
-   problem, you can compile with the NVALGRIND symbol defined (gcc
-   -DNVALGRIND) so that client requests are not even compiled in.  */
+/* ------------------------------------------------------------------ */
+/* The architecture-specific part                                     */
+/* ------------------------------------------------------------------ */
 
 #ifdef NVALGRIND
 
@@ -187,6 +190,10 @@ extern void exit (int __status);
 #endif /* NVALGRIND */
 
 
+/* ------------------------------------------------------------------ */
+/* The architecture-independent part                                  */
+/* ------------------------------------------------------------------ */
+
 /* Some request codes.  There are many more of these, but most are not
    exposed to end-user view.  These are the public ones, all of the
    form 0x1000 + small_number.
@@ -231,7 +238,7 @@ typedef
           VG_USERREQ__MEMPOOL_FREE     = 0x1306,
 
           /* Allow printfs to valgrind log. */
-          VG_USERREQ__PRINTF = 0x1401,
+          VG_USERREQ__PRINTF           = 0x1401,
           VG_USERREQ__PRINTF_BACKTRACE = 0x1402,
 
           /* Stack support. */

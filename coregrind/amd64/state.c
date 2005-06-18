@@ -54,68 +54,6 @@ Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*    vex_arch,
 }
 
 
-/*------------------------------------------------------------*/
-/*--- Initialising the first thread                        ---*/
-/*------------------------------------------------------------*/
-
-/* Given a pointer to the ThreadArchState for thread 1 (the root
-   thread), initialise the VEX guest state, and copy in essential
-   starting values.
-*/
-void VGA_(init_thread1state) ( Addr client_rip, 
-                               Addr rsp_at_startup,
-			       /*MOD*/ ThreadArchState* arch )
-{
-   vg_assert(0 == sizeof(VexGuestAMD64State) % 8);
-
-   /* Zero out the initial state, and set up the simulated FPU in a
-      sane way. */
-   LibVEX_GuestAMD64_initialise(&arch->vex);
-
-   /* Zero out the shadow area. */
-   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestAMD64State));
-
-   /* Put essential stuff into the new state. */
-
-   arch->vex.guest_RSP = rsp_at_startup;
-   arch->vex.guest_RIP = client_rip;
-
-   VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
-             sizeof(VexGuestArchState));
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Debugger-related operations                          ---*/
-/*------------------------------------------------------------*/
-
-Int VGA_(ptrace_setregs_from_tst)(Int pid, ThreadArchState* arch)
-{
-   I_die_here;
-#if 0
-   struct vki_user_regs_struct regs;
-
-   regs.cs     = arch->vex.guest_CS;
-   regs.ss     = arch->vex.guest_SS;
-   regs.ds     = arch->vex.guest_DS;
-   regs.es     = arch->vex.guest_ES;
-   regs.fs     = arch->vex.guest_FS;
-   regs.gs     = arch->vex.guest_GS;
-   regs.eax    = arch->vex.guest_EAX;
-   regs.ebx    = arch->vex.guest_EBX;
-   regs.ecx    = arch->vex.guest_ECX;
-   regs.edx    = arch->vex.guest_EDX;
-   regs.esi    = arch->vex.guest_ESI;
-   regs.edi    = arch->vex.guest_EDI;
-   regs.ebp    = arch->vex.guest_EBP;
-   regs.esp    = arch->vex.guest_ESP;
-   regs.eflags = LibVEX_GuestX86_get_eflags(&arch->vex);
-   regs.eip    = arch->vex.guest_EIP;
-
-   return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
-#endif
-}
-
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

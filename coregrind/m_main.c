@@ -173,9 +173,33 @@ static void print_all_stats ( void )
 /*=== Miscellaneous global functions                               ===*/
 /*====================================================================*/
 
-static Int ptrace_setregs(Int pid, ThreadId tid)
+static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 {
-   return VGA_(ptrace_setregs_from_tst)(pid, &VG_(threads)[tid].arch);
+   struct vki_user_regs_struct regs;
+#if defined(VGA_x86)
+   regs.cs     = vex->guest_CS;
+   regs.ss     = vex->guest_SS;
+   regs.ds     = vex->guest_DS;
+   regs.es     = vex->guest_ES;
+   regs.fs     = vex->guest_FS;
+   regs.gs     = vex->guest_GS;
+   regs.eax    = vex->guest_EAX;
+   regs.ebx    = vex->guest_EBX;
+   regs.ecx    = vex->guest_ECX;
+   regs.edx    = vex->guest_EDX;
+   regs.esi    = vex->guest_ESI;
+   regs.edi    = vex->guest_EDI;
+   regs.ebp    = vex->guest_EBP;
+   regs.esp    = vex->guest_ESP;
+   regs.eflags = LibVEX_GuestX86_get_eflags(vex);
+   regs.eip    = vex->guest_EIP;
+
+   return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
+#elif defined(VGA_amd64)
+   I_die_here;
+#else
+#  error Unknown arch
+#endif
 }
 
 /* Start debugger and get it to attach to this process.  Called if the
@@ -197,9 +221,10 @@ void VG_(start_debugger) ( ThreadId tid )
 
       if ((res = VG_(waitpid)(pid, &status, 0)) == pid &&
           WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP &&
-          ptrace_setregs(pid, tid) == 0 &&
+          ptrace_setregs(pid, &(VG_(threads)[tid].arch.vex)) == 0 &&
           kill(pid, SIGSTOP) == 0 &&
-          ptrace(PTRACE_DETACH, pid, NULL, 0) == 0) {
+          ptrace(PTRACE_DETACH, pid, NULL, 0) == 0)
+      {
          Char pidbuf[15];
          Char file[30];
          Char buf[100];
@@ -2235,6 +2260,58 @@ static void build_segment_map_callback ( Addr start, SizeT size, UInt prot,
    }
 }
 
+/*====================================================================*/
+/*===  Initialise the first thread.                                ===*/
+/*====================================================================*/
+
+/* Given a pointer to the ThreadArchState for thread 1 (the root
+   thread), initialise the VEX guest state, and copy in essential
+   starting values.
+*/
+static void init_thread1state ( Addr client_ip, 
+                                Addr sp_at_startup,
+                                /*inout*/ ThreadArchState* arch )
+{
+#if defined(VGA_x86)
+   vg_assert(0 == sizeof(VexGuestX86State) % 8);
+
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestX86_initialise(&arch->vex);
+
+   /* Zero out the shadow area. */
+   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestX86State));
+
+   /* Put essential stuff into the new state. */
+   arch->vex.guest_ESP = sp_at_startup;
+   arch->vex.guest_EIP = client_ip;
+
+   /* initialise %cs, %ds and %ss to point at the operating systems
+      default code, data and stack segments */
+   asm volatile("movw %%cs, %0" : : "m" (arch->vex.guest_CS));
+   asm volatile("movw %%ds, %0" : : "m" (arch->vex.guest_DS));
+   asm volatile("movw %%ss, %0" : : "m" (arch->vex.guest_SS));
+#elif defined(VGA_amd64)
+   vg_assert(0 == sizeof(VexGuestAMD64State) % 8);
+
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestAMD64_initialise(&arch->vex);
+
+   /* Zero out the shadow area. */
+   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestAMD64State));
+
+   /* Put essential stuff into the new state. */
+   arch->vex.guest_RSP = sp_at_startup;
+   arch->vex.guest_RIP = client_ip;
+#else
+#  error Unknown arch
+#endif
+   // Tell the tool that we just wrote to the registers.
+   VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
+             sizeof(VexGuestArchState));
+}
+
 
 /*====================================================================*/
 /*=== Sanity check machinery (permanently engaged)                 ===*/
@@ -2685,11 +2762,7 @@ int main(int argc, char **argv, char **envp)
    //      setup_scheduler()      [for the rest of state 1 stuff]
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise thread 1's state\n");
-   VGA_(init_thread1state)(client_eip, sp_at_startup, &VG_(threads)[1].arch );
-
-   // Tell the tool that we just wrote to the registers.
-   VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
-             sizeof(VexGuestArchState));
+   init_thread1state(client_eip, sp_at_startup, &VG_(threads)[1].arch);
 
    //--------------------------------------------------------------
    // Initialise the pthread model

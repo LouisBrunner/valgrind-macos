@@ -39,10 +39,6 @@
 
 #include "pub_tool_options.h"
 
-/* Default destination port to be used in logging over a network, if
-   none specified. */
-#define VG_CLO_DEFAULT_LOGPORT 1500
-
 /* The max number of suppression files. */
 #define VG_CLO_MAX_SFILES 10
 

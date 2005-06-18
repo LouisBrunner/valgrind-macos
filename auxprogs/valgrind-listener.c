@@ -46,7 +46,7 @@
 
 #include "core.h"
 #include "pub_core_libcassert.h"    // For VG_BUGS_TO
-#include "pub_core_options.h"       // For VG_CLO_DEFAULT_LOGPORT
+#include "pub_core_libcfile.h"      // For VG_CLO_DEFAULT_LOGPORT
 
 
 /*---------------------------------------------------------------*/

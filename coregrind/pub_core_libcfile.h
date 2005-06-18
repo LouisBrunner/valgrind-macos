@@ -46,6 +46,10 @@ extern Int VG_(fd_hard_limit);
 extern Int VG_(safe_fd) ( Int oldfd );
 extern Int VG_(fcntl)   ( Int fd, Int cmd, Int arg );
 
+/* Default destination port to be used in logging over a network, if
+   none specified. */
+#define VG_CLO_DEFAULT_LOGPORT 1500
+
 extern Int VG_(write_socket)( Int sd, void *msg, Int count );
 extern Int VG_(connect_via_socket)( UChar* str );
 extern Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen );

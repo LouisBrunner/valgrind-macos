@@ -224,7 +224,7 @@ Int VG_(sigpending) ( vki_sigset_t* set )
 // __NR_rt_sigpending.  This function will have to be abstracted in some
 // way to account for this.  In the meantime, the easy option is to forget
 // about it for AMD64 until it's needed.
-#ifdef __amd64__
+#if defined(VGA_amd64)
    I_die_here;
 #else
    SysRes res = VG_(do_syscall1)(__NR_sigpending, (UWord)set);

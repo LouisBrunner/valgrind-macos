@@ -31,6 +31,9 @@
 #ifndef __PUB_TOOL_LIBCBASSERT_H
 #define __PUB_TOOL_LIBCBASSERT_H
 
+// Where to send bug reports to.
+#define VG_BUGS_TO "www.valgrind.org"
+
 #define tl_assert(expr)                                                 \
   ((void) ((expr) ? 0 :                                                 \
            (VG_(assert_fail) (/*isCore?*/False, #expr,                  \

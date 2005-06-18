@@ -44,10 +44,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-
-/* For VG_CLO_DEFAULT_LOGPORT and VG_BUGS_TO. */
 #include "core.h"
-#include "pub_core_options.h"
+#include "pub_core_libcassert.h"    // For VG_BUGS_TO
+#include "pub_core_options.h"       // For VG_CLO_DEFAULT_LOGPORT
 
 
 /*---------------------------------------------------------------*/

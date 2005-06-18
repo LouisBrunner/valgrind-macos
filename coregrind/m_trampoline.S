@@ -42,6 +42,8 @@
 .global VG_(tramp_sigreturn_offset)
 .global VG_(tramp_rt_sigreturn_offset)
 .global VG_(tramp_syscall_offset)
+.global VG_(tramp_gettimeofday_offset)
+.global VG_(tramp_time_offset)
 	
 VG_(trampoline_code_start):
 #if defined(VGP_x86_linux)

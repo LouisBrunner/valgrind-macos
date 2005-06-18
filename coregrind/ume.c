@@ -122,6 +122,61 @@ void foreach_map(int (*fn)(char *start, char *end,
 }
 
 /*------------------------------------------------------------*/
+/*--- Stack switching                                      ---*/
+/*------------------------------------------------------------*/
+
+// __attribute__((noreturn))
+// void jump_and_switch_stacks ( Addr stack, Addr dst );
+#if defined(VGA_x86)
+// 4(%esp) == stack
+// 8(%esp) == dst
+asm(
+".global jump_and_switch_stacks\n"
+"jump_and_switch_stacks:\n"
+"   movl   %esp, %esi\n"      // remember old stack pointer
+"   movl   4(%esi), %esp\n"   // set stack
+"   pushl  8(%esi)\n"         // dst to stack
+"   movl $0, %eax\n"          // zero all GP regs
+"   movl $0, %ebx\n"
+"   movl $0, %ecx\n"
+"   movl $0, %edx\n"
+"   movl $0, %esi\n"
+"   movl $0, %edi\n"
+"   movl $0, %ebp\n"
+"   ret\n"                    // jump to dst
+"   ud2\n"                    // should never get here
+);
+#elif defined(VGA_amd64)
+// %rdi == stack
+// %rsi == dst
+asm(
+".global jump_and_switch_stacks\n"
+"jump_and_switch_stacks:\n"
+"   movq   %rdi, %rsp\n"   // set stack
+"   pushq  %rsi\n"         // dst to stack
+"   movq $0, %rax\n"       // zero all GP regs
+"   movq $0, %rbx\n"
+"   movq $0, %rcx\n"
+"   movq $0, %rdx\n"
+"   movq $0, %rsi\n"
+"   movq $0, %rdi\n"
+"   movq $0, %rbp\n"
+"   movq $0, %r8\n"\
+"   movq $0, %r9\n"\
+"   movq $0, %r10\n"
+"   movq $0, %r11\n"
+"   movq $0, %r12\n"
+"   movq $0, %r13\n"
+"   movq $0, %r14\n"
+"   movq $0, %r15\n"
+"   ret\n"                 // jump to dst
+"   ud2\n"                 // should never get here
+);
+#else
+#  error Unknown architecture
+#endif
+
+/*------------------------------------------------------------*/
 /*--- Finding auxv on the stack                            ---*/
 /*------------------------------------------------------------*/
 

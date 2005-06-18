@@ -6,8 +6,7 @@ noinst_LIBRARIES = libarch.a
 BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds
 
-libarch_a_SOURCES = \
-	jmp_with_stack.c
+libarch_a_SOURCES =
 
 # Extract ld's default linker script and hack it to our needs
 stage2.lds: Makefile

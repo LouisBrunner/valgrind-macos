@@ -54,21 +54,12 @@ void foreach_map(int (*fn)(char *start, char *end,
    because the code at 'dst' might be wanting to scan the area above
    'stack' (viz, the auxv array), and putting spurious words on the
    stack confuses it.
+
+   This is only exported so that vgtest_ume.c can use it.
 */
 extern
 __attribute__((noreturn))
 void jump_and_switch_stacks ( Addr stack, Addr dst );
-
-
-/* Call f(arg1), but first switch stacks, using 'stack' as the new
-   stack, and use 'retaddr' as f's return-to address.  Also, clear all
-   the integer registers before entering f.*/
-extern
-__attribute__((noreturn))
-void call_on_new_stack_0_1 ( Addr stack,
-			     Addr retaddr,
-			     void (*f)(Word),
-                             Word arg1 );
 
 
 /*------------------------------------------------------------*/

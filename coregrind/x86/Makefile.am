@@ -7,8 +7,7 @@ BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds
 
 libarch_a_SOURCES = \
-	cpuid.S \
-	jmp_with_stack.c
+	cpuid.S
 
 # Extract ld's default linker script and hack it to our needs
 stage2.lds: Makefile

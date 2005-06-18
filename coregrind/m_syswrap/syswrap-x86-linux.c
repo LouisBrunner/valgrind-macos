@@ -34,7 +34,6 @@
 */
 
 #include "core.h"
-#include "ume.h"                /* for jmp_with_stack */
 #include "pub_core_debuglog.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_options.h"
@@ -201,6 +200,37 @@ static void run_a_thread_NORETURN ( Word tidW )
    /*NOTREACHED*/
    vg_assert(0);
 }
+
+
+/* Call f(arg1), but first switch stacks, using 'stack' as the new
+   stack, and use 'retaddr' as f's return-to address.  Also, clear all
+   the integer registers before entering f.*/
+__attribute__((noreturn))
+void call_on_new_stack_0_1 ( Addr stack,
+			     Addr retaddr,
+			     void (*f)(Word),
+                             Word arg1 );
+//  4(%esp) == stack
+//  8(%esp) == retaddr
+// 12(%esp) == f
+// 16(%esp) == arg1
+asm(
+"call_on_new_stack_0_1:\n"
+"   movl %esp, %esi\n"     // remember old stack pointer
+"   movl 4(%esi), %esp\n"  // set stack
+"   pushl 16(%esi)\n"      // arg1 to stack
+"   pushl  8(%esi)\n"      // retaddr to stack
+"   pushl 12(%esi)\n"      // f to stack
+"   movl $0, %eax\n"       // zero all GP regs
+"   movl $0, %ebx\n"
+"   movl $0, %ecx\n"
+"   movl $0, %edx\n"
+"   movl $0, %esi\n"
+"   movl $0, %edi\n"
+"   movl $0, %ebp\n"
+"   ret\n"                 // jump to f
+"   ud2\n"                 // should never get here
+);
 
 
 /*

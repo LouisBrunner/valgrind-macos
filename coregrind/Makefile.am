@@ -87,8 +87,7 @@ valgrind_SOURCES = \
 	ume.c \
 	\
 	stage1.c \
-	m_debuglog.c \
-	${VG_ARCH}/jmp_with_stack.c 
+	m_debuglog.c
 valgrind_DEPENDENCIES =
 valgrind_LDFLAGS=-static -g
 valgrind_LDADD=

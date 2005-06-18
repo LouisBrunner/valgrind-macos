@@ -28,7 +28,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core_asm.h"
+#include "pub_basics_asm.h"
 #include "vki_unistd.h"
 #include "libvex_guest_offsets.h"
 		

@@ -47,7 +47,7 @@
    portable way to avoid using stdarg.h. */
 #include <stdarg.h>
 
-#include "core_asm.h"   /* For definition of VG_ macro */
+#include "pub_basics_asm.h"   /* For definition of VG_ macro */
 
 /* There are no tool-visible exports from m_debuglog, hence no header
    file for it. */

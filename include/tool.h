@@ -33,7 +33,7 @@
 #include <stdarg.h>       /* ANSI varargs stuff  */
 
 #include "basic_types.h"
-#include "tool_asm.h"           /* asm stuff */
+#include "pub_basics_asm.h"      /* asm stuff */
 
 #if defined(VGO_linux)
 #  include "vki-linux.h"

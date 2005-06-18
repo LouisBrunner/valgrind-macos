@@ -1,6 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Tool-specific, asm-specific includes.             tool_asm.h ---*/
+/*--- Header imported directly by every asm file, and indirectly   ---*/
+/*--- (via pub_basics.h) by every C file.         pub_basics_asm.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,40 +29,20 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __TOOL_ASM_H
-#define __TOOL_ASM_H
+#ifndef __PUB_BASICS_ASM_H
+#define __PUB_BASICS_ASM_H
 
+/* All symbols externally visible from Valgrind are prefixed
+   as specified here to avoid namespace conflict problems.  */
 
-/* All symbols externally visible from valgrind.so are prefixed
-   as specified here.  The prefix can be changed, so as to avoid
-   namespace conflict problems.
-*/
 #define VGAPPEND(str1,str2) str1##str2
 
-/* These macros should add different prefixes so the same base
-   name can safely be used across different macros. */
-#define VG_(str)    VGAPPEND(vgPlain_,str)
-#define VGA_(str)   VGAPPEND(vgArch_,str)
-#define VGO_(str)   VGAPPEND(vgOS_,str)
-#define VGP_(str)   VGAPPEND(vgPlatform_,str)
+#define VG_(str)    VGAPPEND(vgPlain_,    str)
+#define VGA_(str)   VGAPPEND(vgArch_,     str)
+#define VGO_(str)   VGAPPEND(vgOS_,       str)
+#define VGP_(str)   VGAPPEND(vgPlatform_, str)
 
-// Print a constant from asm code.
-// Nb: you'll need to define VG_(oynk)(Int) to use this.
-#if defined(VGA_x86)
-#  define OYNK(nnn) pushal;  pushl $nnn; call VG_(oynk) ; addl $4,%esp; popal
-#elif defined(VGA_amd64)
-#  define OYNK(nnn) push %r8 ; push %r9 ; push %r10; push %r11; \
-                    push %rax; push %rbx; push %rcx; push %rdx; \
-                    push %rsi; push %rdi; \
-                    movl $nnn, %edi; call VG_(oynk); \
-                    pop %rdi; pop %rsi; pop %rdx; pop %rcx; \
-                    pop %rbx; pop %rax; pop %r11; pop %r10; \
-                    pop %r9 ; pop %r8
-#else
-#  error Unknown architecture
-#endif
-
-#endif /* ndef __TOOL_ASM_H */
+#endif /* __PUB_BASICS_ASM_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

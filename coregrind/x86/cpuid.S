@@ -28,7 +28,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core_asm.h"
+#include "pub_basics_asm.h"
 
 /*
     Bool VG_(has_cpuid)(void)

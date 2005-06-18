@@ -10,18 +10,6 @@ ToDo: vex-amd64: check above/below the line for reg-alloc
   x86-only systems.  However, am not sure where to look for the call
   into memcheck that states the new stack area.
 
-
-9 Apr 05 (starting work on memcheck for 32/64-bit and big/little endian)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* get rid of include/tool_asm.h.  I think 
-  this is left over from single-platform days, when it made
-  sense to have tool-helpers written in assembly.  Looks like we
-  need to retain coregrind/core_asm.h, though.
-
-  [tool_asm.h will need to remain in some form -- there are still assembly
-  files that need to see VG_() and related macros. --njn]
-
-
 23 March 05
 ~~~~~~~~~~~
 Do we still need ARCH_PTHREQ_RET (or *PTHREQ* for that matter) ?

@@ -68,18 +68,6 @@ extern ThreadId VG_(first_matching_thread_stack)
                         ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
                           void* d );
 
-/*====================================================================*/
-/*=== Valgrind's version of libc                                   ===*/
-/*====================================================================*/
-
-/* ------------------------------------------------------------------ */
-/* other, randomly useful functions */
-extern Bool VG_(has_cpuid) ( void );
-
-extern void VG_(cpuid) ( UInt eax,
-                         UInt *eax_ret, UInt *ebx_ret,
-                         UInt *ecx_ret, UInt *edx_ret );
-
 #endif   /* __TOOL_H */
 
 

@@ -1,6 +1,6 @@
 
 ##--------------------------------------------------------------------##
-##--- Support for determining CPU characteristics.     x86/cpuid.S ---##
+##--- CPUID interface.                                   m_cpuid.S ---##
 ##--------------------------------------------------------------------##
 
 /*
@@ -34,7 +34,8 @@
     Bool VG_(has_cpuid)(void)
  */
 .globl VG_(has_cpuid)
-VG_(has_cpuid):
+#if defined(VGA_x86)
+    VG_(has_cpuid):
         pushl   %ebp
         movl    %esp, %ebp
         pushl   %ecx
@@ -55,13 +56,19 @@ VG_(has_cpuid):
         movl    %ebp, %esp
         popl    %ebp
         ret
+#elif defined(VGA_amd64)
+    VG_(has_cpuid):
+        movq    $1, %rax
+        ret
+#endif
 
 /*
     void VG_(cpuid)(UInt eax,
-                    UInt *eax_ret, UInt *ebx_ret, UInt *ecx_ret, UInt *edx_ret)
+                    UInt* eax_ret, UInt* ebx_ret, UInt* ecx_ret, UInt* edx_ret)
  */
 .globl VG_(cpuid)
-VG_(cpuid):
+#if defined(VGA_x86)
+    VG_(cpuid):
         pushl   %ebp
         movl    %esp, %ebp
         pushl   %eax
@@ -75,22 +82,22 @@ VG_(cpuid):
         testl   %esi, %esi
         jz      1f
         movl    %eax, (%esi)
-1:
+    1:
         movl    16(%ebp), %esi
         testl   %esi, %esi
         jz      2f
         movl    %ebx, (%esi)
-2:
+    2:
         movl    20(%ebp), %esi
         testl   %esi, %esi
         jz      3f
         movl    %ecx, (%esi)
-3:
+    3:
         movl    24(%ebp), %esi
         testl   %esi, %esi
         jz      4f
         movl    %edx, (%esi)
-4:
+    4:
         popl    %esi
         popl    %edx
         popl    %ecx
@@ -99,10 +106,46 @@ VG_(cpuid):
         movl    %ebp, %esp
         popl    %ebp
         ret
+#elif defined(VGA_amd64)
+    VG_(cpuid):
+        pushq   %rbp
+        movq    %rsp, %rbp
+        pushq   %rbx
+        movl    %edi, %eax
+        movq    %rdx, %rdi
+        movq    %rcx, %r9
+        /*
+           eax_ret now in %rsi
+           ebx_ret now in %rdi
+           ecx_ret now in %r9
+           edx_ret now in %r8
+         */
+        cpuid
+        testq   %rsi, %rsi
+        jz      1f
+        movl    %eax, (%rsi)
+    1:
+        testq   %rdi, %rdi
+        jz      2f
+        movl    %ebx, (%rdi)
+    2:
+        testq   %r9, %r9
+        jz      3f
+        movl    %ecx, (%r9)
+    3:
+        testq   %r8, %r8
+        jz      4f
+        movl    %edx, (%r8)
+    4:
+        popq    %rbx
+        movq    %rbp, %rsp
+        popq    %rbp
+        ret
+#endif
         
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
-
+		
 ##--------------------------------------------------------------------##
-##--- end                                    	                   ---##
+##--- end                                                          ---##
 ##--------------------------------------------------------------------##

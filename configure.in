@@ -430,9 +430,6 @@ AC_OUTPUT(
    coregrind/m_scheduler/Makefile 
    coregrind/m_sigframe/Makefile 
    coregrind/m_syswrap/Makefile 
-   coregrind/amd64/Makefile
-   coregrind/arm/Makefile
-   coregrind/x86/Makefile
    addrcheck/Makefile
    addrcheck/tests/Makefile
    addrcheck/docs/Makefile

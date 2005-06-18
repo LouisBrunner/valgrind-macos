@@ -14,13 +14,9 @@ MODULES = \
 ## When building, we are only interested in the current arch/OS/platform.
 ## But when doing 'make dist', we are interested in every arch/OS/platform.
 ## That's what DIST_SUBDIRS specifies.
-SUBDIRS = \
-	$(VG_ARCH) \
-	$(MODULES) .
+SUBDIRS = $(MODULES) .
 
-DIST_SUBDIRS = \
-	$(VG_ARCH_ALL) \
-	$(MODULES) .
+DIST_SUBDIRS = $(MODULES) .
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" \
 		-DKICKSTART_BASE=@KICKSTART_BASE@
@@ -38,6 +34,7 @@ noinst_HEADERS = \
 	core.h			\
 	coregrind.h		\
 	pub_core_aspacemgr.h	\
+	pub_core_cpuid.h	\
 	pub_core_debuginfo.h	\
 	pub_core_debuglog.h	\
 	pub_core_demangle.h	\
@@ -96,6 +93,7 @@ valgrind_LDFLAGS=-static -g
 valgrind_LDADD=
 
 stage2_SOURCES = \
+	m_cpuid.S \
 	m_debuglog.c \
 	m_errormgr.c \
 	m_execontext.c \
@@ -135,7 +133,6 @@ stage2_extra= \
 	m_aspacemgr/libaspacemgr.a \
 	m_sigframe/libsigframe.a \
 	m_syswrap/libsyswrap.a \
-	${VG_ARCH}/libarch.a \
 	@VEX_DIR@/libvex.a
 
 ## These ones must be linked in with the --whole-archive flag, because they

@@ -902,7 +902,7 @@ POST(sys_socketpair)
 PRE(sys_semget)
 {
    PRINT("sys_semget ( %d, %d, %d )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "semget", key_t, key, int, nsems, int, semflg);
+   PRE_REG_READ3(long, "semget", vki_key_t, key, int, nsems, int, semflg);
 }
 
 PRE(sys_semop)
@@ -962,14 +962,14 @@ POST(sys_semctl)
 PRE(sys_msgget)
 {
    PRINT("sys_msgget ( %d, %d )",ARG1,ARG2);
-   PRE_REG_READ2(long, "msgget", key_t, key, int, msgflg);
+   PRE_REG_READ2(long, "msgget", vki_key_t, key, int, msgflg);
 }
 
 PRE(sys_msgsnd)
 {
    PRINT("sys_msgsnd ( %d, %p, %d, %d )",ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "msgsnd",
-                 int, msqid, struct msgbuf *, msgp, size_t, msgsz, int, msgflg);
+                 int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz, int, msgflg);
    VG_(generic_PRE_sys_msgsnd)(tid, ARG1,ARG2,ARG3,ARG4);
    if ((ARG4 & VKI_IPC_NOWAIT) == 0)
       *flags |= SfMayBlock;
@@ -979,7 +979,7 @@ PRE(sys_msgrcv)
 {
    PRINT("sys_msgrcv ( %d, %p, %d, %d, %d )",ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "msgrcv",
-                 int, msqid, struct msgbuf *, msgp, size_t, msgsz,
+                 int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz,
                  long, msgytp, int, msgflg);
    VG_(generic_PRE_sys_msgrcv)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
    if ((ARG4 & VKI_IPC_NOWAIT) == 0)
@@ -1005,7 +1005,7 @@ POST(sys_msgctl)
 PRE(sys_shmget)
 {
    PRINT("sys_shmget ( %d, %d, %d )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "shmget", key_t, key, size_t, size, int, shmflg);
+   PRE_REG_READ3(long, "shmget", vki_key_t, key, vki_size_t, size, int, shmflg);
 }
 
 PRE(wrap_sys_shmat)

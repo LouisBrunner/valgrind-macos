@@ -49,16 +49,6 @@
 
 #include "pub_core_scheduler.h"   // for types 'ThreadArchState'
 
-// ---------------------------------------------------------------------
-// Architecture-specific things defined in eg. x86/*.c
-// ---------------------------------------------------------------------
-
-// Returns the architecture and subarchitecture, or indicates
-// that this subarchitecture is unable to run Valgrind
-// Returns False to indicate we cannot proceed further.
-extern Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*, 
-                                     /*OUT*/VexSubArch* );
-
 /* ---------------------------------------------------------------------
    Finally - autoconf-generated settings
    ------------------------------------------------------------------ */

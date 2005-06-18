@@ -43,10 +43,86 @@
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"
 
+/*------------------------------------------------------------*/
+/*--- Determining arch/subarch.                            ---*/
+/*------------------------------------------------------------*/
+
+// Returns the architecture and subarchitecture, or indicates
+// that this subarchitecture is unable to run Valgrind
+// Returns False to indicate we cannot proceed further.
+static Bool getArchAndSubArch( /*OUT*/VexArch*    vex_arch, 
+                               /*OUT*/VexSubArch* vex_subarch )
+{
+#if defined(VGA_x86)
+   Bool have_sse0, have_sse1, have_sse2;
+   UInt eax, ebx, ecx, edx;
+
+   if (!VG_(has_cpuid)())
+      /* we can't do cpuid at all.  Give up. */
+      return False;
+
+   VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
+   if (eax < 1)
+     /* we can't ask for cpuid(x) for x > 0.  Give up. */
+     return False;
+
+   /* get capabilities bits into edx */
+   VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
+
+   have_sse0 = (edx & (1<<24)) != 0; /* True => have fxsave/fxrstor */
+   have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
+   have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
+
+   if (have_sse2 && have_sse1 && have_sse0) {
+      *vex_arch    = VexArchX86;
+      *vex_subarch = VexSubArchX86_sse2;
+      return True;
+   }
+
+   if (have_sse1 && have_sse0) {
+      *vex_arch    = VexArchX86;
+      *vex_subarch = VexSubArchX86_sse1;
+      return True;
+   }
+
+   if (have_sse0) {
+      *vex_arch    = VexArchX86;
+      *vex_subarch = VexSubArchX86_sse0;
+      return True;
+   }
+
+   /* we need at least SSE state to operate. */
+   return False;
+#elif defined(VGA_amd64)
+   vg_assert(VG_(has_cpuid)());
+   *vex_arch = VexArchAMD64;
+   *vex_subarch = VexSubArch_NONE;
+   return True;
+#else
+#  error Unknown architecture
+#endif
+}
+
 
 /*------------------------------------------------------------*/
 /*--- %SP-update pass                                      ---*/
 /*------------------------------------------------------------*/
+
+static Bool need_to_handle_SP_assignment(void)
+{
+   return ( VG_(tdict).track_new_mem_stack_4  ||
+            VG_(tdict).track_die_mem_stack_4  ||
+            VG_(tdict).track_new_mem_stack_8  ||
+            VG_(tdict).track_die_mem_stack_8  ||
+            VG_(tdict).track_new_mem_stack_12 ||
+            VG_(tdict).track_die_mem_stack_12 ||
+            VG_(tdict).track_new_mem_stack_16 ||
+            VG_(tdict).track_die_mem_stack_16 ||
+            VG_(tdict).track_new_mem_stack_32 ||
+            VG_(tdict).track_die_mem_stack_32 ||
+            VG_(tdict).track_new_mem_stack    ||
+            VG_(tdict).track_die_mem_stack    );
+}
 
 /* NOTE: this comment is out of date */
 
@@ -336,22 +412,6 @@ static Bool chase_into_ok ( Addr64 addr64 )
   }
 }
 
-static Bool need_to_handle_SP_assignment(void)
-{
-   return ( VG_(tdict).track_new_mem_stack_4  ||
-            VG_(tdict).track_die_mem_stack_4  ||
-            VG_(tdict).track_new_mem_stack_8  ||
-            VG_(tdict).track_die_mem_stack_8  ||
-            VG_(tdict).track_new_mem_stack_12 ||
-            VG_(tdict).track_die_mem_stack_12 ||
-            VG_(tdict).track_new_mem_stack_16 ||
-            VG_(tdict).track_die_mem_stack_16 ||
-            VG_(tdict).track_new_mem_stack_32 ||
-            VG_(tdict).track_die_mem_stack_32 ||
-            VG_(tdict).track_new_mem_stack    ||
-            VG_(tdict).track_die_mem_stack    );
-}
-
 Bool VG_(translate) ( ThreadId tid, 
                       Addr64   orig_addr,
                       Bool     debugging_translation,
@@ -373,7 +433,7 @@ Bool VG_(translate) ( ThreadId tid,
    static Bool vex_init_done = False;
 
    if (!vex_init_done) {
-      Bool ok = VGA_(getArchAndSubArch)( &vex_arch, &vex_subarch );
+      Bool ok = getArchAndSubArch( &vex_arch, &vex_subarch );
       if (!ok) {
          VG_(printf)("\n");
          VG_(printf)("valgrind: fatal error: unsupported CPU.\n");

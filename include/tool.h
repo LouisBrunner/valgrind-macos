@@ -73,12 +73,6 @@ extern ThreadId VG_(first_matching_thread_stack)
 /*====================================================================*/
 
 /* ------------------------------------------------------------------ */
-/* Register an interest in apparently internal faults; used code which
-   wanders around dangerous memory (ie, leakcheck).  The catcher is
-   not expected to return. */
-extern void VG_(set_fault_catcher)(void (*catcher)(Int sig, Addr addr));
-
-/* ------------------------------------------------------------------ */
 /* other, randomly useful functions */
 extern Bool VG_(has_cpuid) ( void );
 

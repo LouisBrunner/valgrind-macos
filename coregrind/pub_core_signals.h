@@ -35,6 +35,8 @@
 // PURPOSE: This module implements all the signal handling stuff.
 //--------------------------------------------------------------------
 
+#include "pub_tool_signals.h"       // I want to get rid of this header...
+
 /* Highest signal the kernel will let us use */
 extern Int VG_(max_signal);
 

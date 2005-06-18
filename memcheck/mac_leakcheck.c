@@ -38,6 +38,7 @@
 #include "pub_tool_libcprint.h"
 #include "pub_tool_libcsignal.h"
 #include "pub_tool_machine.h"
+#include "pub_tool_signals.h"
 
 /* Define to debug the memory-leak-detector. */
 #define VG_DEBUG_LEAKCHECK 0

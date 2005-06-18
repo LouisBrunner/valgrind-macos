@@ -83,10 +83,10 @@ SysRes VG_(mk_SysRes_Success) ( UWord val ) {
    A function for doing syscalls.
    ------------------------------------------------------------------ */
 
-extern UInt do_syscall_WRK (
-          UInt syscall_no, 
-          UInt a1, UInt a2, UInt a3,
-          UInt a4, UInt a5, UInt a6
+static UWord do_syscall_WRK (
+          UWord syscall_no, 
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6
        );
 #if defined(VGP_x86_linux)
 /* Incoming args (syscall number + up to 6 args) come on the stack.

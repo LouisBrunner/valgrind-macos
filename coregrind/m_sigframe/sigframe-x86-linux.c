@@ -39,6 +39,7 @@
 #include "pub_core_sigframe.h"
 #include "pub_core_signals.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_trampoline.h"
 
 #include "libvex_guest_x86.h"
 

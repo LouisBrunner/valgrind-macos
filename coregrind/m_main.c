@@ -52,6 +52,7 @@
 #include "pub_core_signals.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
 
 #include <dirent.h>

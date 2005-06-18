@@ -70,6 +70,7 @@ noinst_HEADERS = \
 	pub_core_syswrap.h	\
 	pub_core_threadmodel.h	\
 	pub_core_tooliface.h	\
+	pub_core_trampoline.h	\
 	pub_core_translate.h	\
 	pub_core_transtab.h	\
 	pub_core_transtab_asm.h	\
@@ -118,6 +119,7 @@ stage2_SOURCES = \
 	m_syscall.c \
 	m_threadmodel.c \
 	m_tooliface.c \
+	m_trampoline.S \
 	m_translate.c \
 	m_transtab.c \
 	\

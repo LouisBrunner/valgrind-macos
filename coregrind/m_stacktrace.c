@@ -37,6 +37,7 @@
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 #include "pub_core_stacktrace.h"
+#include "pub_core_trampoline.h"
 
 /*------------------------------------------------------------*/
 /*--- Exported functions.                                  ---*/

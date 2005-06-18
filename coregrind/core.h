@@ -49,19 +49,6 @@
 
 #include "pub_core_scheduler.h"   // for types 'ThreadArchState'
 
-/* ---------------------------------------------------------------------
-   Exports of vg_helpers.S
-   ------------------------------------------------------------------ */
-
-/* Information about trampoline code (for signal return and syscalls) */
-extern const Char VG_(trampoline_code_start);
-extern const Int  VG_(trampoline_code_length);
-extern const Int  VG_(tramp_sigreturn_offset);
-extern const Int  VG_(tramp_rt_sigreturn_offset);
-extern const Int  VG_(tramp_syscall_offset);
-extern const Int  VG_(tramp_gettimeofday_offset);
-extern const Int  VG_(tramp_time_offset);
- 
 // ---------------------------------------------------------------------
 // Architecture-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------

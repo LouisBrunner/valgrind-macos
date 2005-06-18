@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_TOOL_MACHINE
-#define __PUB_TOOL_MACHINE
+#ifndef __PUB_TOOL_MACHINE_H
+#define __PUB_TOOL_MACHINE_H
 
 /* VGA_STACK_REDZONE_SZB: how many bytes below the stack pointer are validly
  * addressible? */
@@ -70,7 +70,7 @@ extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
 // doing leak checking.
 extern void VG_(apply_to_GP_regs)(void (*f)(UWord val));
 
-#endif   // __PUB_TOOL_MACHINE
+#endif   // __PUB_TOOL_MACHINE_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

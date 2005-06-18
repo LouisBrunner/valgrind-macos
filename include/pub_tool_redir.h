@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_TOOL_REDIR
-#define __PUB_TOOL_REDIR
+#ifndef __PUB_TOOL_REDIR_H
+#define __PUB_TOOL_REDIR_H
 
 /* The following macros facilitate function replacement, which is one form
    of code replacement.
@@ -90,7 +90,7 @@
 #define VG_REPLACE_FUNCTION_PREFIX           "_vgi_"
 #define VG_REPLACE_FUNCTION_PREFIX_LEN       5
 
-#endif   // __PUB_TOOL_REDIR
+#endif   // __PUB_TOOL_REDIR_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

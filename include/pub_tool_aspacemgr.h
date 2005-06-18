@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_TOOL_ASPACEMGR
-#define __PUB_TOOL_ASPACEMGR
+#ifndef __PUB_TOOL_ASPACEMGR_H
+#define __PUB_TOOL_ASPACEMGR_H
 
 extern Bool VG_(is_client_addr) (Addr a);
 
@@ -54,7 +54,7 @@ extern void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init);
 */
 extern void VG_(find_root_memory)(void (*add_rootrange)(Addr addr, SizeT sz));
 
-#endif   // __PUB_TOOL_ASPACEMGR
+#endif   // __PUB_TOOL_ASPACEMGR_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

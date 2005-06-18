@@ -83,6 +83,9 @@ EXTRA_DIST = \
 	valgrind.vs \
 	README_MODULES.txt
 
+BUILT_SOURCES = stage2.lds
+CLEANFILES = stage2.lds
+	
 valgrind_SOURCES = \
 	ume.c \
 	\
@@ -159,11 +162,11 @@ stage2_LDFLAGS = \
 	-Wl,--whole-archive $(stage2_extra2) -Wl,--no-whole-archive \
 	-pie
 else
-stage2_DEPENDENCIES = $(st2_DEPS_common) ${VG_ARCH}/stage2.lds
+stage2_DEPENDENCIES = $(st2_DEPS_common) stage2.lds
 stage2_LDFLAGS = \
 	$(st2_LDFLAGS_common) \
 	-Wl,--whole-archive $(stage2_extra2) -Wl,--no-whole-archive \
-	-Wl,-defsym,kickstart_base=@KICKSTART_BASE@ -Wl,-T,${VG_ARCH}/stage2.lds
+	-Wl,-defsym,kickstart_base=@KICKSTART_BASE@ -Wl,-T,stage2.lds
 endif
 
 stage2_LDADD= $(stage2_extra) \
@@ -176,6 +179,16 @@ vg_preload_core_so_LDFLAGS = \
 	-shared \
 	-Wl,--soname,vg_preload_core.so \
 	-Wl,-z,initfirst
+
+# Extract ld's default linker script and hack it to our needs.
+# This relies on finding "executable_start" and replacing the address on
+# that line with kickstart_base.
+stage2.lds: Makefile
+	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/d' \
+		-e '/executable_start/s/0x[0-9A-Fa-f]\+/kickstart_base/g' > $@ \
+	|| rm -f $@
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 

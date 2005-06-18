@@ -196,8 +196,8 @@ hello_CFLAGS		= $(AM_CFLAGS) -fpie
 hello_LDFLAGS		= -pie
 else
 hello_LDFLAGS		= -Wl,-defsym,kickstart_base=0x50000000 \
-			  -Wl,-T,../../coregrind/${VG_ARCH}/stage2.lds
-hello_DEPENDENCIES 	= ../../coregrind/${VG_ARCH}/stage2.lds
+			  -Wl,-T,../../coregrind/stage2.lds
+hello_DEPENDENCIES 	= ../../coregrind/stage2.lds
 endif
 
 vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH)

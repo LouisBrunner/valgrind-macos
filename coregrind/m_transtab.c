@@ -798,7 +798,7 @@ void VG_(show_BB_profile) ( void )
                   score_cumul, buf_cumul,
                   score_here,  buf_here, tops[r]->entry, name );
       VG_(printf)("\n");
-      VG_(translate)(0, tops[r]->entry, True, VG_(clo_profile_flags));
+      VG_(translate)(0, tops[r]->entry, True, VG_(clo_profile_flags), 0);
       VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-=  end BB rank %d  "
                   "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
    }

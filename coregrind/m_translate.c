@@ -36,7 +36,6 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_main.h"       // for VG_(bbs_done)
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 #include "pub_core_redir.h"
@@ -417,7 +416,8 @@ static Bool chase_into_ok ( Addr64 addr64 )
 Bool VG_(translate) ( ThreadId tid, 
                       Addr64   orig_addr,
                       Bool     debugging_translation,
-                      Int      debugging_verbosity )
+                      Int      debugging_verbosity,
+                      ULong    bbs_done )
 {
    Addr64    redir, orig_addr0 = orig_addr;
    Int       tmpbuf_used, verbosity;
@@ -501,9 +501,9 @@ Bool VG_(translate) ( ThreadId tid,
       Char fnname[64] = "";
       VG_(get_fnname_w_offset)(orig_addr, fnname, 64);
       VG_(printf)(
-              "==== BB %d %s(0x%llx) approx BBs exec'd %lld ====\n",
+              "==== BB %d %s(0x%llx) BBs exec'd %lld ====\n",
               VG_(get_bbs_translated)(), fnname, orig_addr, 
-              VG_(bbs_done));
+              bbs_done);
    }
 
    if (seg == NULL ||

@@ -125,14 +125,6 @@ static Int  vg_argc;
 static Char **vg_argv;
 
 
-/* ---------------------------------------------------------------------
-   Running stuff                            
-   ------------------------------------------------------------------ */
-
-/* 64-bit counter for the number of basic blocks done. */
-ULong VG_(bbs_done) = 0;
-
-
 /*====================================================================*/
 /*=== Counters, for profiling purposes only                        ===*/
 /*====================================================================*/
@@ -145,8 +137,6 @@ static void print_all_stats ( void )
 {
    // Translation stats
    VG_(print_tt_tc_stats)();
-   VG_(message)(Vg_DebugMsg,
-      " dispatch: %llu jumps (bb entries).", VG_(bbs_done) );
 
    // Scheduler stats
    VG_(print_scheduler_stats)();

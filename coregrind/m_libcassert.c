@@ -34,8 +34,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
-#include "pub_core_main.h"          // for VG_(bbs_done) -- stupid!
-#include "pub_core_options.h"       // for VG_(bbs_done) -- stupid!
+#include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"
@@ -110,7 +109,9 @@ static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )
    VG_(get_StackTrace2)(ips, BACKTRACE_DEPTH, ip, sp, fp, sp, stacktop);
    VG_(pp_StackTrace)  (ips, BACKTRACE_DEPTH);
 
-   VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
+   // Don't print this, as it's not terribly interesting and avoids a
+   // dependence on m_scheduler/, which would be crazy.
+   //VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
 
    pp_sched_status();
    VG_(printf)("\n");

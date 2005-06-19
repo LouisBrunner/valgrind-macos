@@ -104,6 +104,9 @@ Bool VG_(my_fault) = True;
 /* Counts downwards in VG_(run_innerloop). */
 UInt VG_(dispatch_ctr);
 
+/* 64-bit counter for the number of basic blocks done. */
+static ULong bbs_done = 0;
+
 /* Forwards */
 static void do_client_request ( ThreadId tid );
 static void scheduler_sanity ( ThreadId tid );
@@ -117,7 +120,9 @@ static UInt n_scheduling_events_MAJOR = 0;
 void VG_(print_scheduler_stats)(void)
 {
    VG_(message)(Vg_DebugMsg,
-      "           %d/%d major/minor sched events.", 
+      "scheduler: %llu jumps (bb entries).", bbs_done );
+   VG_(message)(Vg_DebugMsg,
+      "scheduler: %d/%d major/minor sched events.", 
       n_scheduling_events_MAJOR, n_scheduling_events_MINOR);
 }
 
@@ -419,7 +424,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
    done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 0;
 
    vg_assert(done_this_time >= 0);
-   VG_(bbs_done) += (ULong)done_this_time;
+   bbs_done += (ULong)done_this_time;
 
    VGP_POPCC(VgpRun);
    return trc;
@@ -561,7 +566,7 @@ static void handle_tt_miss ( ThreadId tid )
    found = VG_(search_transtab)( NULL, ip, True/*upd_fast_cache*/ );
    if (!found) {
       /* Not found; we need to request a translation. */
-      if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/ )) {
+      if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, bbs_done )) {
 	 found = VG_(search_transtab)( NULL, ip, True ); 
          vg_assert2(found, "VG_TRC_INNER_FASTMISS: missing tt_fast entry");
       

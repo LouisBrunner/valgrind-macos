@@ -40,7 +40,8 @@ extern
 Bool VG_(translate) ( ThreadId tid, 
                       Addr64   orig_addr,
                       Bool     debugging_translation,
-                      Int      debugging_verbosity );
+                      Int      debugging_verbosity,
+                      ULong    bbs_done );
 
 #endif   // __PUB_CORE_TRANSLATE_H
 

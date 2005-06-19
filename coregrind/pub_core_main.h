@@ -51,9 +51,6 @@ Char* VG_(build_child_exename)     ( void );
 /* Something of a function looking for a home ... start up debugger. */
 extern void VG_(start_debugger) ( ThreadId tid );
 
-/* 64-bit counter for the number of basic blocks done. */
-extern ULong VG_(bbs_done);
-
 // Set up the libc freeres wrapper 
 extern void VG_(set_libc_freeres_wrapper_addr)(Addr);
 

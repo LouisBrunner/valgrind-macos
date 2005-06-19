@@ -413,6 +413,8 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
 /*=== Command line setup                                           ===*/
 /*====================================================================*/
 
+// Note that we deliberately don't free the malloc'd memory.  See comment
+// at call site.
 static char* get_file_clo(char* dir)
 {
 #  define FLEN 512
@@ -454,7 +456,10 @@ static Int count_args(char* s)
    return n;
 }
 
-/* add args out of environment, skipping multiple spaces and -- args */
+// Add args out of environment, skipping multiple spaces and "--" args.
+// We split 's' into multiple strings by replacing whitespace with nuls,
+// eg. "--aa --bb --cc" --> "--aa\0--bb\0--cc".  And for each new string
+// carved out of 's', we put a pointer to it in 'to'.
 static char** copy_args( char* s, char** to )
 {
    if (s) {
@@ -466,7 +471,7 @@ static char** copy_args( char* s, char** to )
          if    ( !*cp )                 break;
          *to++ = cp;
          while ( !VG_(isspace)(*cp) && *cp ) cp++;
-         if ( *cp ) *cp++ = '\0';            // terminate if necessary
+         if ( *cp ) *cp++ = '\0';            // terminate if not the last
          if (VG_STREQ(to[-1], "--")) to--;   // undo any '--' arg
       }
    }
@@ -480,6 +485,8 @@ static void augment_command_line(Int* vg_argc_inout, char*** vg_argv_inout)
    int    vg_argc0 = *vg_argc_inout;
    char** vg_argv0 = *vg_argv_inout;
 
+   // get_file_clo() allocates the return value with malloc().  We do not
+   // free f1_clo and f2_clo as they get put into vg_argv[] which must persist.
    char*  env_clo = getenv(VALGRINDOPTS);
    char*  f1_clo  = get_file_clo( getenv("HOME") );
    char*  f2_clo  = get_file_clo(".");
@@ -518,10 +525,6 @@ static void augment_command_line(Int* vg_argc_inout, char*** vg_argv_inout)
       to = copy_args(env_clo, to);
       to = copy_args(f2_clo,  to);
     
-      // Free memory
-      free(f1_clo);
-      free(f2_clo);
-
       /* copy original arguments, stopping at command or -- */
       while (*from) {
 	 if (**from != '-')

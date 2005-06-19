@@ -33,6 +33,10 @@
 #define _GNU_SOURCE
 #define _FILE_OFFSET_BITS 64
 
+// It seems that on SuSE 9.1 (x86) something in <fcntl.h> messes up stuff
+// acquired indirectly from vki-x86-linux.h.  Therefore our headers must be
+// included ahead of the glibc ones.  This fix is a kludge;  the right
+// solution is to entirely remove the glibc dependency.
 #include "pub_core_basics.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"

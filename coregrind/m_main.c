@@ -129,22 +129,10 @@ static Char **vg_argv;
 /*=== Counters, for profiling purposes only                        ===*/
 /*====================================================================*/
 
-/* Counts pertaining to internal sanity checking. */
-static UInt sanity_fast_count = 0;
-static UInt sanity_slow_count = 0;
-
 static void print_all_stats ( void )
 {
-   // Translation stats
    VG_(print_tt_tc_stats)();
-
-   // Scheduler stats
    VG_(print_scheduler_stats)();
-
-   VG_(message)(Vg_DebugMsg, 
-                "   sanity: %d cheap, %d expensive checks.",
-                sanity_fast_count, sanity_slow_count );
-
    VG_(print_ExeContext_stats)();
 
    // Memory stats
@@ -155,7 +143,6 @@ static void print_all_stats ( void )
       VG_(sanity_check_malloc_all)();
       VG_(print_all_arena_stats)();
       VG_(message)(Vg_DebugMsg, "");
-      //VG_(print_shadow_stats)();
    }
 }
 
@@ -2306,96 +2293,6 @@ static void init_thread1state ( Addr client_ip,
    // Tell the tool that we just wrote to the registers.
    VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
              sizeof(VexGuestArchState));
-}
-
-
-/*====================================================================*/
-/*=== Sanity check machinery (permanently engaged)                 ===*/
-/*====================================================================*/
-
-/* A fast sanity check -- suitable for calling circa once per
-   millisecond. */
-
-void VG_(sanity_check_general) ( Bool force_expensive )
-{
-   ThreadId tid;
-
-   VGP_PUSHCC(VgpCoreCheapSanity);
-
-   if (VG_(clo_sanity_level) < 1) return;
-
-   /* --- First do all the tests that we can do quickly. ---*/
-
-   sanity_fast_count++;
-
-   /* Check stuff pertaining to the memory check system. */
-
-   /* Check that nobody has spuriously claimed that the first or
-      last 16 pages of memory have become accessible [...] */
-   if (VG_(needs).sanity_checks) {
-      VGP_PUSHCC(VgpToolCheapSanity);
-      vg_assert(VG_TDICT_CALL(tool_cheap_sanity_check));
-      VGP_POPCC(VgpToolCheapSanity);
-   }
-
-   /* --- Now some more expensive checks. ---*/
-
-   /* Once every 25 times, check some more expensive stuff. */
-   if ( force_expensive
-     || VG_(clo_sanity_level) > 1
-     || (VG_(clo_sanity_level) == 1 && (sanity_fast_count % 25) == 0)) {
-
-      VGP_PUSHCC(VgpCoreExpensiveSanity);
-      sanity_slow_count++;
-
-#     if 0
-      { void zzzmemscan(void); zzzmemscan(); }
-#     endif
-
-      if ((sanity_fast_count % 250) == 0)
-         VG_(sanity_check_tt_tc)("VG_(sanity_check_general)");
-
-      if (VG_(needs).sanity_checks) {
-          VGP_PUSHCC(VgpToolExpensiveSanity);
-          vg_assert(VG_TDICT_CALL(tool_expensive_sanity_check));
-          VGP_POPCC(VgpToolExpensiveSanity);
-      }
-
-      /* Check that Segments and /proc/self/maps match up */
-      //vg_assert(VG_(sanity_check_memory)());
-
-      /* Look for stack overruns.  Visit all threads. */
-      for(tid = 1; tid < VG_N_THREADS; tid++) {
-	 SSizeT remains;
-
-	 if (VG_(threads)[tid].status == VgTs_Empty ||
-	     VG_(threads)[tid].status == VgTs_Zombie)
-	    continue;
-
-	 remains = VGA_(stack_unused)(tid);
-	 if (remains < VKI_PAGE_SIZE)
-	    VG_(message)(Vg_DebugMsg, 
-                         "WARNING: Thread %d is within %d bytes "
-                         "of running out of stack!",
-		         tid, remains);
-      }
-
-      /* 
-      if ((sanity_fast_count % 500) == 0) VG_(mallocSanityCheckAll)(); 
-      */
-      VGP_POPCC(VgpCoreExpensiveSanity);
-   }
-
-   if (VG_(clo_sanity_level) > 1) {
-      VGP_PUSHCC(VgpCoreExpensiveSanity);
-      /* Check sanity of the low-level memory manager.  Note that bugs
-         in the client's code can cause this to fail, so we don't do
-         this check unless specially asked for.  And because it's
-         potentially very expensive. */
-      VG_(sanity_check_malloc_all)();
-      VGP_POPCC(VgpCoreExpensiveSanity);
-   }
-   VGP_POPCC(VgpCoreCheapSanity);
 }
 
 

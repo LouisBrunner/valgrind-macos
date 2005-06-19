@@ -149,8 +149,6 @@ extern const HChar *VG_(prot_str)(UInt prot);
 extern Addr VG_(get_memory_from_mmap_for_client)
                (Addr base, SizeT len, UInt prot, UInt flags);
 
-//extern void VG_(print_shadow_stats)();
-
 /* Parses /proc/self/maps, calling `record_mapping' for each entry. */
 extern 
 void VG_(parse_procselfmaps) (

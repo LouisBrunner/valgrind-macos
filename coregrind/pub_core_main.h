@@ -38,9 +38,6 @@
 // things.
 //--------------------------------------------------------------------
 
-/* Sanity checks which may be done at any time.  The scheduler decides when. */
-extern void VG_(sanity_check_general) ( Bool force_expensive );
-
 /* client executable file descriptor */
 extern Int  VG_(clexecfd);
 

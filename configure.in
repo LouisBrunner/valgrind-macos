@@ -104,7 +104,7 @@ case "${host_cpu}" in
 	AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="x86"
         KICKSTART_BASE="0xb0000000"
-        ARCH_CORE_AM_CFLAGS="@FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
+        ARCH_CORE_AM_CFLAGS="@FLAG_M32@ @PREFERRED_STACK_BOUNDARY@"
         ARCH_TOOL_AM_CFLAGS="@FLAG_M32@ @PREFERRED_STACK_BOUNDARY@"
         ARCH_CORE_AM_CCASFLAGS="@FLAG_M32@"
         ;;
@@ -116,7 +116,7 @@ case "${host_cpu}" in
         # quantities; therefore going above 0x7fffffff doesn't work... this is
         # a problem.
         KICKSTART_BASE="0x70000000"
-        ARCH_CORE_AM_CFLAGS="-m64 -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=64" 
+        ARCH_CORE_AM_CFLAGS="-m64 -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@" 
         # XXX: need to use -fpic, otherwise when linking tools I get this error
         # message:
         #   relocation R_X86_64_32 can not be used when making a shared object;
@@ -131,7 +131,7 @@ case "${host_cpu}" in
 	AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="arm"
         KICKSTART_BASE="0xb0000000"
-        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
+        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
         ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
         ARCH_CORE_AM_CCASFLAGS=""
         ;;
@@ -140,7 +140,7 @@ case "${host_cpu}" in
         AC_MSG_RESULT([no (${host_cpu})])
         VG_ARCH="ppc"
         KICKSTART_BASE="0x70000000"
-        ARCH_CORE_AM_CFLAGS="-DELFSZ=32"
+        ARCH_CORE_AM_CFLAGS=""
         ARCH_TOOL_AM_CFLAGS="-fpic"
         ARCH_CORE_AM_CCASFLAGS="-Wa,-maltivec"
         AC_MSG_ERROR([PowerPC not supported. Sorry])

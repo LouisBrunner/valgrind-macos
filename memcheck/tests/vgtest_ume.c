@@ -1,4 +1,3 @@
-#define ELFSZ  32
 
 // This file is a unit self-test for ume.c, jmp_with_stack.c
 

@@ -51,12 +51,12 @@
 #include <unistd.h>
 #include <assert.h>
 
-#if	ELFSZ == 64
+#if	VG_WORDSIZE == 8
 #define ESZ(x)	Elf64_##x
-#elif	ELFSZ == 32
+#elif	VG_WORDSIZE == 4
 #define ESZ(x)	Elf32_##x
 #else
-#error ELFSZ needs to ==32 or ==64
+#error VG_WORDSIZE needs to ==4 or ==8
 #endif
 
 struct elfinfo

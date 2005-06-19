@@ -64,7 +64,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -419,21 +418,21 @@ static char* get_file_clo(char* dir)
 {
 #  define FLEN 512
    Int fd, n;
-   struct stat s1;
+   struct vki_stat s1;
    char* f_clo = NULL;
    char filename[FLEN];
 
    snprintf(filename, FLEN, "%s/.valgrindrc", ( NULL == dir ? "" : dir ) );
    fd = VG_(open)(filename, 0, VKI_S_IRUSR);
    if ( fd > 0 ) {
-      if ( 0 == fstat(fd, &s1) ) {
+      if ( 0 == VG_(fstat)(fd, &s1) ) {
          f_clo = malloc(s1.st_size+1);
          vg_assert(f_clo);
-         n = read(fd, f_clo, s1.st_size);
+         n = VG_(read)(fd, f_clo, s1.st_size);
          if (n == -1) n = 0;
          f_clo[n] = '\0';
       }
-      close(fd);
+      VG_(close)(fd);
    }
    return f_clo;
 #  undef FLEN
@@ -1293,9 +1292,9 @@ static void load_client(char* cl_argv[], const char* exec, Int need_help,
 /*====================================================================*/
 
 typedef struct {
-   char*        killpad_start;
-   char*        killpad_end;
-   struct stat* killpad_padstat;
+   char*            killpad_start;
+   char*            killpad_end;
+   struct vki_stat* killpad_padstat;
 } killpad_extra;
 
 static int killpad(char *segstart, char *segend, const char *perm, off_t off, 
@@ -1333,13 +1332,13 @@ static int killpad(char *segstart, char *segend, const char *perm, off_t off,
 // Remove padding of 'padfile' from a range of address space.
 static void as_unpad(void *start, void *end, int padfile)
 {
-   static struct stat padstat;
+   static struct vki_stat padstat;
    killpad_extra extra;
    int res;
 
    vg_assert(padfile >= 0);
    
-   res = fstat(padfile, &padstat);
+   res = VG_(fstat)(padfile, &padstat);
    vg_assert(0 == res);
    extra.killpad_padstat = &padstat;
    extra.killpad_start   = start;

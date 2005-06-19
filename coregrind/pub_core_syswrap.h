@@ -43,9 +43,6 @@ extern SSizeT VGA_(stack_unused)(ThreadId tid);
 // as if the thread had been set up by clone()
 extern void VGP_(main_thread_wrapper_NORETURN)(ThreadId tid);
 
-extern HChar* VG_(resolve_filename_nodup)(Int fd);
-extern HChar* VG_(resolve_filename)(Int fd);
-
 extern void VG_(client_syscall) ( ThreadId tid );
 
 extern void VG_(post_syscall)   ( ThreadId tid );

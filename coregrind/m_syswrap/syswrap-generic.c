@@ -286,7 +286,6 @@ SysRes mremap_segment ( Addr old_addr, SizeT old_size,
    ------------------------------------------------------------------ */
 
 /* One of these is allocated for each open file descriptor.  */
-
 typedef struct OpenFd
 {
    Int fd;                        /* The file descriptor */
@@ -296,51 +295,13 @@ typedef struct OpenFd
 } OpenFd;
 
 /* List of allocated file descriptors. */
-
 static OpenFd *allocated_fds;
 
 /* Count of open file descriptors. */
-
 static int fd_count = 0;
 
 
-
-/* Given a file descriptor, attempt to deduce its filename.  To do
-   this, we use /proc/self/fd/<FD>.  If this doesn't point to a file,
-   or if it doesn't exist, we just return NULL.  The caller is
-   responsible for copying the contents of buf out immediately. */
-
-static HChar resolve_filename_buf[VKI_PATH_MAX];
-
-HChar* VG_(resolve_filename_nodup) ( Int fd )
-{
-   HChar tmp[64];
-
-   VG_(sprintf)(tmp, "/proc/self/fd/%d", fd);
-   VG_(memset)(resolve_filename_buf, 0, VKI_PATH_MAX);
-
-   if (VG_(readlink)(tmp, resolve_filename_buf, VKI_PATH_MAX) == -1)
-      return NULL;
-
-   return (resolve_filename_buf[0] == '/') 
-             ? resolve_filename_buf 
-             : NULL;
-}
-
-/* Same as resolve_filename_nodup, except that the result is copied 
-   into new memory which the caller is responsible for freeing. */
-
-HChar* VG_(resolve_filename) ( Int fd )
-{
-   HChar* transient = VG_(resolve_filename_nodup)(fd);
-   return transient
-             ? VG_(arena_strdup)(VG_AR_CORE, transient)
-             : NULL;
-}
-
-
 /* Note the fact that a file descriptor was just closed. */
-
 static
 void record_fd_close(ThreadId tid, Int fd)
 {
@@ -373,7 +334,6 @@ void record_fd_close(ThreadId tid, Int fd)
    some such thing) or that we don't know the filename.  If the fd is
    already open, then we're probably doing a dup2() to an existing fd,
    so just overwrite the existing one. */
-
 void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname)
 {
    OpenFd *i;

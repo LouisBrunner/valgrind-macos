@@ -46,6 +46,10 @@ extern Int VG_(fd_hard_limit);
 extern Int VG_(safe_fd) ( Int oldfd );
 extern Int VG_(fcntl)   ( Int fd, Int cmd, Int arg );
 
+/* Convert an fd into a filename */
+extern HChar* VG_(resolve_filename_nodup) ( Int fd );
+extern HChar* VG_(resolve_filename)       ( Int fd );
+
 /* Default destination port to be used in logging over a network, if
    none specified. */
 #define VG_CLO_DEFAULT_LOGPORT 1500

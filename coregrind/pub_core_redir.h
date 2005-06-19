@@ -89,6 +89,8 @@ extern void VG_(resolve_seg_redirs)(SegInfo *si);
 #define VG_NOTIFY_ON_LOAD_PREFIX          "_vgw_"
 #define VG_NOTIFY_ON_LOAD_PREFIX_LEN      5
 
+// Called by m_main to get our __libc_freeres wrapper.
+extern Addr VG_(get_libc_freeres_wrapper)(void);
 
 //--------------------------------------------------------------------
 // Function wrapping

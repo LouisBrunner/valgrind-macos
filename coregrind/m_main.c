@@ -2759,26 +2759,19 @@ int main(int argc, char **argv, char **envp)
 }
 
 
-/* The we need to know the address of it so it can be
-   called at program exit. */
-static Addr __libc_freeres_wrapper;
-
-void VG_(set_libc_freeres_wrapper_addr)(Addr addr)
-{
-   __libc_freeres_wrapper = addr;
-}
-
 /* Final clean-up before terminating the process.  
    Clean up the client by calling __libc_freeres() (if requested) 
    This is Linux-specific?
 */
 static void final_tidyup(ThreadId tid)
 {
+   Addr __libc_freeres_wrapper;
+
    vg_assert(VG_(is_running_thread)(tid));
    
-   if (!VG_(needs).libc_freeres ||
-       !VG_(clo_run_libc_freeres) ||
-       __libc_freeres_wrapper == 0)
+   if ( !VG_(needs).libc_freeres ||
+        !VG_(clo_run_libc_freeres) ||
+        0 == (__libc_freeres_wrapper = VG_(get_libc_freeres_wrapper)()) )
       return;			/* can't/won't do it */
 
    if (VG_(clo_verbosity) > 2  ||

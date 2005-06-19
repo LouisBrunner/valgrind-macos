@@ -36,7 +36,6 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_main.h"       // for VG_(set_libc_freeres_wrapper_addr)
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_redir.h"
@@ -512,6 +511,13 @@ static void handle_replacement_function( Char* symbol, Addr addr )
    VG_(arena_free)(VG_AR_SYMTAB, lib);
 }
 
+static Addr __libc_freeres_wrapper = 0;
+
+Addr VG_(get_libc_freeres_wrapper)(void)
+{
+   return __libc_freeres_wrapper;
+}
+
 // This is specifically for stringifying VG_(x) function names.  We
 // need to do two macroexpansions to get the VG_ macro expanded before
 // stringifying.
@@ -521,7 +527,7 @@ static void handle_replacement_function( Char* symbol, Addr addr )
 static void handle_load_notifier( Char* symbol, Addr addr )
 {
    if (VG_(strcmp)(symbol, STR(VG_NOTIFY_ON_LOAD(freeres))) == 0)
-      VG_(set_libc_freeres_wrapper_addr)(addr);
+      __libc_freeres_wrapper = addr;
 //   else if (VG_(strcmp)(symbol, STR(VG_WRAPPER(pthread_startfunc_wrapper))) == 0)
 //      VG_(pthread_startfunc_wrapper)((Addr)(si->offset + sym->st_value));
    else

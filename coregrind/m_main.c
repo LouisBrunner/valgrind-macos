@@ -63,7 +63,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -328,9 +327,8 @@ extern char _start[];
 
 static void layout_remaining_space(Addr argc_addr, float ratio)
 {
-   Int   ires;
-   void* vres;
-   Addr  client_size, shadow_size;
+   SysRes res;
+   Addr   client_size, shadow_size;
 
    // VG_(valgrind_base) should have been set by scan_auxv, but if not,
    // this is a workable approximation
@@ -377,20 +375,23 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
 #undef SEGSIZE
 
    // Ban redzone
-   vres = mmap((void *)VG_(client_end), REDZONE_SIZE, PROT_NONE,
-               MAP_FIXED|MAP_ANON|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
-   vg_assert((void*)-1 != vres);
+   res = VG_(mmap_native)((void *)VG_(client_end), REDZONE_SIZE, VKI_PROT_NONE,
+               VKI_MAP_FIXED|VKI_MAP_ANONYMOUS|VKI_MAP_PRIVATE|VKI_MAP_NORESERVE,
+               -1, 0);
+   vg_assert(!res.isError);
 
    // Make client hole
-   ires = munmap((void*)VG_(client_base), client_size);
-   vg_assert(0 == ires);
+   res = VG_(munmap_native)((void*)VG_(client_base), client_size);
+   vg_assert(!res.isError);
 
    // Map shadow memory.
    // Initially all inaccessible, incrementally initialized as it is used
    if (shadow_size != 0) {
-      vres = mmap((char *)VG_(shadow_base), shadow_size, PROT_NONE,
-                  MAP_PRIVATE|MAP_ANON|MAP_FIXED|MAP_NORESERVE, -1, 0);
-      if ((void*)-1 == vres) {
+      res = VG_(mmap_native)((char *)VG_(shadow_base), shadow_size,
+                  VKI_PROT_NONE,
+                  VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS|VKI_MAP_FIXED|VKI_MAP_NORESERVE,
+                  -1, 0);
+      if (res.isError) {
          fprintf(stderr, 
           "valgrind: Could not allocate address space (%p bytes)\n"
           "valgrind:   for shadow memory\n"
@@ -818,7 +819,7 @@ static Addr setup_client_stack(void* init_sp,
 			       const struct exeinfo *info,
                                UInt** client_auxv)
 {
-   void* res;
+   SysRes res;
    char **cpp;
    char *strtab;		/* string table */
    char *stringbase;
@@ -912,11 +913,11 @@ static Addr setup_client_stack(void* init_sp,
    /* ==================== allocate space ==================== */
 
    /* allocate a stack - mmap enough space for the stack */
-   res = mmap((void *)VG_PGROUNDDN(cl_esp), 
+   res = VG_(mmap_native)((void *)VG_PGROUNDDN(cl_esp), 
               VG_(clstk_end) - VG_PGROUNDDN(cl_esp),
-	      PROT_READ | PROT_WRITE | PROT_EXEC, 
-	      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
-   vg_assert((void*)-1 != res); 
+	      VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 
+	      VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS|VKI_MAP_FIXED, -1, 0);
+   vg_assert(!res.isError); 
 
    /* ==================== copy client stack ==================== */
 
@@ -1302,7 +1303,7 @@ static int killpad(char *segstart, char *segend, const char *perm, off_t off,
 {
    killpad_extra* extra = ex;
    void *b, *e;
-   int res;
+   SysRes res;
 
    vg_assert(NULL != extra->killpad_padstat);
 
@@ -1323,8 +1324,8 @@ static int killpad(char *segstart, char *segend, const char *perm, off_t off,
    else
       e = segend;
    
-   res = munmap(b, (char *)e-(char *)b);
-   vg_assert(0 == res);
+   res = VG_(munmap_native)(b, (char *)e-(char *)b);
+   vg_assert(!res.isError);
    
    return 1;
 }

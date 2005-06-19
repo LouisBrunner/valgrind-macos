@@ -45,6 +45,7 @@ extern Int VG_(mprotect) ( void *start, SizeT length, UInt prot );
 
 extern SysRes VG_(mmap_native)     ( void* start, SizeT length, UInt prot,
                                      UInt flags, UInt fd, OffT offset );
+extern SysRes VG_(munmap_native)   ( void* start, SizeT length );
 extern SysRes VG_(mprotect_native) ( void *start, SizeT length, UInt prot );
 
 #endif   // __PUB_CORE_LIBCMMAN_H

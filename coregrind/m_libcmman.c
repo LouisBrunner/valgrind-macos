@@ -103,7 +103,7 @@ void* VG_(mmap)( void* start, SizeT length,
    return res.isError ? (void*)-1 : (void*)res.val;
 }
 
-static SysRes munmap_native(void *start, SizeT length)
+SysRes VG_(munmap_native)(void *start, SizeT length)
 {
    return VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
 }
@@ -111,7 +111,7 @@ static SysRes munmap_native(void *start, SizeT length)
 /* Returns -1 on failure. */
 Int VG_(munmap)( void* start, SizeT length )
 {
-   SysRes res = munmap_native(start, length);
+   SysRes res = VG_(munmap_native)(start, length);
    if (!res.isError) {
       VG_(unmap_range)((Addr)start, length);
       return 0;

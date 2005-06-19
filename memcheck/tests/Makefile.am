@@ -58,7 +58,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	new_override.stderr.exp new_override.stdout.exp new_override.vgtest \
 	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
-	pointer-trace.vgtest pointer-trace.stdout.exp \
+	pointer-trace.vgtest \
 	pointer-trace.stderr.exp pointer-trace.stderr.exp64 \
 	post-syscall.stderr.exp post-syscall.stdout.exp post-syscall.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
@@ -76,7 +76,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	toobig-allocs.stderr.exp toobig-allocs.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
 	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest \
-	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
+	metadata.stderr.exp metadata.stdout.exp metadata.vgtest-HIDING \
 	vgtest_ume.stderr.exp vgtest_ume.vgtest \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
 	xml1.stderr.exp xml1.stderr.exp64 xml1.stdout.exp xml1.vgtest \

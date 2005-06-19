@@ -14,7 +14,9 @@ TOOLS =		memcheck \
 ##		addrcheck \
 
 # Temporary: we want to compile Helgrind, but not regtest it.
-SUBDIRS = 	include coregrind . docs tests auxprogs $(TOOLS) helgrind
+# Put docs last because building the HTML is slow and we want to get
+# everything else working before we try it.
+SUBDIRS = 	include coregrind . tests auxprogs $(TOOLS) helgrind docs
 ##DIST_SUBDIRS =	$(SUBDIRS) helgrind
 
 SUPP_FILES = \

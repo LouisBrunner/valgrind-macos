@@ -40,7 +40,7 @@
 #include <string.h>
 #endif*/
 
-#include "core.h"
+#include "pub_core_basics.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_mallocfree.h"

@@ -53,7 +53,7 @@
    pthread_t identifiers and internal thread identifiers.
  */
 
-#include "core.h"
+#include "pub_core_basics.h"
 
 #if 0
 

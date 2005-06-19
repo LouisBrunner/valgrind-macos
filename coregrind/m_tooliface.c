@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
+#include "pub_core_basics.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"

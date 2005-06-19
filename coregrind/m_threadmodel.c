@@ -60,9 +60,8 @@
    introduce a separate notion of a "thread" for modelling purposes.
  */
 
-//:: 
-//:: #include "core.h"
-//:: 
+#include "pub_core_basics.h"
+
 //:: struct thread;
 //:: struct mutex;
 //:: struct condvar;

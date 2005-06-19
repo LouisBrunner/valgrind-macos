@@ -200,7 +200,7 @@ hello_LDFLAGS		= -Wl,-defsym,kickstart_base=0x50000000 \
 hello_DEPENDENCIES 	= ../../coregrind/stage2.lds
 endif
 
-vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH)
+vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH) -DVGO_$(VG_OS)
 vgtest_ume_SOURCES	= vgtest_ume.c
 vgtest_ume_LDADD	= ../../coregrind/ume.o
 

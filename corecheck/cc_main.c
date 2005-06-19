@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "tool.h"
+#include "pub_tool_basics.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_tooliface.h"
 

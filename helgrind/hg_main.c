@@ -29,7 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "tool.h"
+#include "pub_tool_basics.h"
+#include "pub_tool_threadstate.h"
 #include "pub_tool_aspacemgr.h"
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_hashtable.h"

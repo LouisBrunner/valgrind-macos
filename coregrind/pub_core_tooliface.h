@@ -55,7 +55,7 @@
 
 /* These structs are not exposed to tools to mitigate possibility of
    binary-incompatibilities when the core/tool interface changes.  Instead,
-   set functions are provided (see include/tool.h). */
+   set functions are provided (see include/pub_tool_tooliface.h). */
 
 /* ---------------------------------------------------------------------
    'Details'

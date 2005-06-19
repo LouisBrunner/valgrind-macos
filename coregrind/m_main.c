@@ -30,8 +30,8 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include "core.h"
-#include "ume.h"
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
@@ -49,11 +49,13 @@
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 #include "pub_core_redir.h"
+#include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
+#include "ume.h"
 
 #include <dirent.h>
 #include <dlfcn.h>

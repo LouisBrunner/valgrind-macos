@@ -31,8 +31,6 @@
 #ifndef __PUB_TOOL_STACKTRACE_H
 #define __PUB_TOOL_STACKTRACE_H
 
-#include "basic_types.h"
-
 // The basic stack trace type:  just an array of code addresses.
 typedef Addr* StackTrace;
 

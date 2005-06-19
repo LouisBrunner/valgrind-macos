@@ -3,7 +3,6 @@ AUTOMAKE_OPTIONS = foreign 1.6 dist-bzip2
 
 include $(top_srcdir)/Makefile.all.am 
 
-## include must be first for tool.h
 ## addrcheck must come after memcheck, for mac_*.o
 TOOLS =		memcheck \
 		cachegrind \

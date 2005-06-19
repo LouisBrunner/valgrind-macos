@@ -36,13 +36,24 @@
    only for 8-byte validity on the fast path
 */
 
-#include "mc_include.h"
-#include "memcheck.h"   /* for client requests */
+#include "pub_tool_basics.h"
 #include "pub_tool_aspacemgr.h"
+#include "pub_tool_errormgr.h"      // For mac_shared.h
+#include "pub_tool_execontext.h"    // For mac_shared.h
+#include "pub_tool_hashtable.h"     // For mac_shared.h
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_machine.h"
+#include "pub_tool_mallocfree.h"
+#include "pub_tool_options.h"
+#include "pub_tool_profile.h"       // For mac_shared.h
+#include "pub_tool_replacemalloc.h"
+#include "pub_tool_tooliface.h"
+#include "pub_tool_threadstate.h"
+
+#include "mc_include.h"
+#include "memcheck.h"   /* for client requests */
 
 
 #define EXPECTED_TAKEN(cond)     __builtin_expect((cond),1)

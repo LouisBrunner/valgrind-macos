@@ -28,7 +28,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#include "pub_basics_asm.h"
+#include "pub_tool_basics_asm.h"
 #include "vki_unistd.h"
 
 # XXX: must reinstate comments also -- see x86-linux/syscall.S

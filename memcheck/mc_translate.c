@@ -29,9 +29,13 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "mc_include.h"
+#include "pub_tool_basics.h"
+#include "pub_tool_hashtable.h"     // For mac_shared.h
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
+#include "pub_tool_profile.h"
+#include "pub_tool_tooliface.h"
+#include "mc_include.h"
 
 
 /*------------------------------------------------------------*/

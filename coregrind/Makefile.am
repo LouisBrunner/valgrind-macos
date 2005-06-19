@@ -31,9 +31,9 @@ val_PROGRAMS = \
 	vg_preload_core.so
 
 noinst_HEADERS = \
-	core.h			\
 	coregrind.h		\
 	pub_core_aspacemgr.h	\
+	pub_core_basics.h	\
 	pub_core_cpuid.h	\
 	pub_core_debuginfo.h	\
 	pub_core_debuglog.h	\
@@ -65,6 +65,7 @@ noinst_HEADERS = \
 	pub_core_stacktrace.h	\
 	pub_core_syswrap.h	\
 	pub_core_threadmodel.h	\
+	pub_core_threadstate.h	\
 	pub_core_tooliface.h	\
 	pub_core_trampoline.h	\
 	pub_core_translate.h	\
@@ -117,6 +118,7 @@ stage2_SOURCES = \
 	m_stacktrace.c \
 	m_syscall.c \
 	m_threadmodel.c \
+	m_threadstate.c \
 	m_tooliface.c \
 	m_trampoline.S \
 	m_translate.c \

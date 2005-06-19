@@ -2,9 +2,8 @@
 incincdir = $(includedir)/valgrind
 
 incinc_HEADERS = \
-	basic_types.h 			\
-	tool.h 				\
-	pub_basics_asm.h 		\
+	pub_tool_basics.h 		\
+	pub_tool_basics_asm.h 		\
 	pub_tool_aspacemgr.h 		\
 	pub_tool_cpuid.h 		\
 	pub_tool_errormgr.h 		\

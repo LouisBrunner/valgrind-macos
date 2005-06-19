@@ -28,12 +28,6 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
-
-
-// See the comment accompanying the declaration of VGA_(thread_syscall)() in
-// coregrind/core.h for an explanation of what this does, and why.
-//
 // XXX: this function and these variables should be assembly code!  See the
 // x86 version.
 const Addr VGA_(sys_before), VGA_(sys_restarted),

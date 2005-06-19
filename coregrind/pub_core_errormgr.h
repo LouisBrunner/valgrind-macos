@@ -38,8 +38,6 @@
 
 #include "pub_tool_errormgr.h"
 
-//#include "pub_core_stacktrace.h"
-
 // XXX: should this be in pthreadmodel.c?
 // These must be negative, so as to not overlap with tool error kinds.
 typedef

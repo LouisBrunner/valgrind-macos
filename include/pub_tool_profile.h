@@ -31,10 +31,9 @@
 #ifndef __PUB_TOOL_PROFILE_H
 #define __PUB_TOOL_PROFILE_H
 
-// Define this to turn on profiling.
+// Define this to turn on profiling.  (But it's currently not working...)
 //#define  VG_DO_PROFILING   1
 
-/* Override the empty definitions from tool.h */
 #ifdef VG_DO_PROFILING
 #  define VGP_PUSHCC(x)   if (VG_(clo_profile)) VG_(pushcc)(x)
 #  define VGP_POPCC(x)    if (VG_(clo_profile)) VG_(popcc)(x)

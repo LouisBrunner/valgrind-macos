@@ -29,7 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"      // needed for pub_core_main.h
 #include "pub_core_aspacemgr.h"
 #include "pub_core_cpuid.h"
 #include "pub_core_libcbase.h"

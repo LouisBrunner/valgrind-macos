@@ -343,7 +343,7 @@ in total have been seen.  In this situation you might as well
 stop your program and fix it, because Valgrind won't tell you
 anything else useful after this.  Note that the 300/30000 limits
 apply after suppressed errors are removed.  These limits are
-defined in <filename>core.h</filename> and can be increased
+defined in <filename>m_errormgr.c</filename> and can be increased
 if necessary.</para>
 
 <para>To avoid this cutoff you can use the

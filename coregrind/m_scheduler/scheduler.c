@@ -60,7 +60,8 @@
 #include "valgrind.h"   // for VG_USERREQ__*
 #include "coregrind.h"  // for VG_USERREQ__*
 
-#include "core.h"
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_dispatch.h"
 #include "pub_core_errormgr.h"
@@ -90,17 +91,12 @@
    Types and globals for the scheduler.
    ------------------------------------------------------------------ */
 
-/* ThreadId and ThreadState are defined in core.h. */
+/* ThreadId and ThreadState are defined elsewhere*/
 
 /* Defines the thread-scheduling timeslice, in terms of the number of
    basic blocks we attempt to run each thread for.  Smaller values
    give finer interleaving but much increased scheduling overheads. */
 #define SCHEDULING_QUANTUM   50000
-
-/* Globals.  A statically allocated array of threads.  NOTE: [0] is
-   never used, to simplify the simulation of initialisers for
-   LinuxThreads. */
-ThreadState VG_(threads)[VG_N_THREADS];
 
 /* If true, a fault is Valgrind-internal (ie, a bug) */
 Bool VG_(my_fault) = True;
@@ -112,7 +108,6 @@ UInt VG_(dispatch_ctr);
 static void do_client_request ( ThreadId tid );
 static void scheduler_sanity ( ThreadId tid );
 static void mostly_clear_thread_record ( ThreadId tid );
-static const HChar *name_of_thread_state ( ThreadStatus );
 
 /* Stats. */
 static UInt n_scheduling_events_MINOR = 0;
@@ -128,57 +123,11 @@ void VG_(print_scheduler_stats)(void)
 
 /* CPU semaphore, so that threads can run exclusively */
 static vg_sema_t run_sema;
-static ThreadId running_tid = VG_INVALID_THREADID;
 
 
 /* ---------------------------------------------------------------------
    Helper functions for the scheduler.
    ------------------------------------------------------------------ */
-
-__inline__
-Bool VG_(is_valid_tid) ( ThreadId tid )
-{
-   /* tid is unsigned, hence no < 0 test. */
-   if (tid == 0) return False;
-   if (tid >= VG_N_THREADS) return False;
-   if (VG_(threads)[tid].status == VgTs_Empty) return False;
-   return True;
-}
-
-
-/* For constructing error messages only: try and identify a thread
-   whose stack satisfies the predicate p, or return VG_INVALID_THREADID
-   if none do.
-*/
-ThreadId VG_(first_matching_thread_stack)
-              ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
-                void* d )
-{
-   ThreadId tid;
-
-   for (tid = 1; tid < VG_N_THREADS; tid++) {
-      if (VG_(threads)[tid].status == VgTs_Empty) continue;
-
-      if ( p ( VG_(get_SP)(tid),
-               VG_(threads)[tid].client_stack_highest_word, d ) )
-         return tid;
-   }
-   return VG_INVALID_THREADID;
-}
- 
-/* Print the scheduler status. */
-void VG_(pp_sched_status) ( void )
-{
-   Int i; 
-   VG_(printf)("\nsched status:\n"); 
-   VG_(printf)("  running_tid=%d\n", running_tid);
-   for (i = 1; i < VG_N_THREADS; i++) {
-      if (VG_(threads)[i].status == VgTs_Empty) continue;
-      VG_(printf)("\nThread %d: status = %s\n", i, name_of_thread_state(VG_(threads)[i].status));
-      VG_(get_and_pp_StackTrace)( i, VG_(clo_backtrace_size) );
-   }
-   VG_(printf)("\n");
-}
 
 static
 void print_sched_event ( ThreadId tid, Char* what )
@@ -201,20 +150,6 @@ HChar* name_of_sched_event ( UInt event )
   }
 }
 
-static
-const HChar* name_of_thread_state ( ThreadStatus state )
-{
-   switch (state) {
-   case VgTs_Empty:     return "VgTs_Empty";
-   case VgTs_Init:      return "VgTs_Init";
-   case VgTs_Runnable:  return "VgTs_Runnable";
-   case VgTs_WaitSys:   return "VgTs_WaitSys";
-   case VgTs_Yielding:  return "VgTs_Yielding";
-   case VgTs_Zombie:    return "VgTs_Zombie";
-   default:             return "VgTs_???";
-  }
-}
-
 /* Allocate a completely empty ThreadState record. */
 ThreadId VG_(alloc_ThreadState) ( void )
 {
@@ -230,25 +165,6 @@ ThreadId VG_(alloc_ThreadState) ( void )
    VG_(printf)("Increase VG_N_THREADS, rebuild and try again.\n");
    VG_(core_panic)("VG_N_THREADS is too low");
    /*NOTREACHED*/
-}
-
-ThreadState *VG_(get_ThreadState)(ThreadId tid)
-{
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
-   return &VG_(threads)[tid];
-}
-
-/* Given an LWP id (ie, real kernel thread id), find the corresponding
-   ThreadId */
-ThreadId VG_(get_lwp_tid)(Int lwp)
-{
-   ThreadId tid;
-   
-   for(tid = 1; tid < VG_N_THREADS; tid++)
-      if (VG_(threads)[tid].status != VgTs_Empty && VG_(threads)[tid].os_state.lwpid == lwp)
-	 return tid;
-
-   return VG_INVALID_THREADID;
 }
 
 /* 
@@ -268,42 +184,13 @@ void VG_(set_running)(ThreadId tid)
    tst->status = VgTs_Runnable;
    
    VG_(sema_down)(&run_sema);
-   if (running_tid != VG_INVALID_THREADID)
-      VG_(printf)("tid %d found %d running\n", tid, running_tid);
-   vg_assert(running_tid == VG_INVALID_THREADID);
-   running_tid = tid;
+   if (VG_(running_tid) != VG_INVALID_THREADID)
+      VG_(printf)("tid %d found %d running\n", tid, VG_(running_tid));
+   vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
+   VG_(running_tid) = tid;
 
    if (VG_(clo_trace_sched))
       print_sched_event(tid, "now running");
-}
-
-ThreadId VG_(get_running_tid)(void)
-{
-   return running_tid;
-}
-
-Bool VG_(is_running_thread)(ThreadId tid)
-{
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-
-   return 
-//      tst->os_state.lwpid == VG_(gettid)() &&	/* check we're this tid */
-      running_tid == tid	           &&	/* and that we've got the lock */
-      tst->status == VgTs_Runnable;		/* and we're runnable */
-}
-
-/* Return the number of non-dead Threads */
-Int VG_(count_living_threads)(void)
-{
-   Int count = 0;
-   ThreadId tid;
-
-   for(tid = 1; tid < VG_N_THREADS; tid++)
-      if (VG_(threads)[tid].status != VgTs_Empty &&
-	  VG_(threads)[tid].status != VgTs_Zombie)
-	 count++;
-
-   return count;
 }
 
 /* 
@@ -324,8 +211,8 @@ void VG_(set_sleeping)(ThreadId tid, ThreadStatus sleepstate)
 
    tst->status = sleepstate;
 
-   vg_assert(running_tid == tid);
-   running_tid = VG_INVALID_THREADID;
+   vg_assert(VG_(running_tid) == tid);
+   VG_(running_tid) = VG_INVALID_THREADID;
 
    /* Release the run_sema; this will reschedule any runnable
       thread. */
@@ -334,17 +221,9 @@ void VG_(set_sleeping)(ThreadId tid, ThreadStatus sleepstate)
    if (VG_(clo_trace_sched)) {
       Char buf[50];
       VG_(sprintf)(buf, "now sleeping in state %s", 
-                        name_of_thread_state(sleepstate));
+                        VG_(name_of_ThreadStatus)(sleepstate));
       print_sched_event(tid, buf);
    }
-}
-
-/* Return true if the thread is still alive but in the process of
-   exiting. */
-inline Bool VG_(is_exiting)(ThreadId tid)
-{
-   vg_assert(VG_(is_valid_tid)(tid));
-   return VG_(threads)[tid].exitreason != VgSrc_None;
 }
 
 /* Clear out the ThreadState and release the semaphore. Leaves the
@@ -357,7 +236,7 @@ void VG_(exit_thread)(ThreadId tid)
    vg_assert(VG_(is_exiting)(tid));
 
    mostly_clear_thread_record(tid);
-   running_tid = VG_INVALID_THREADID;
+   VG_(running_tid) = VG_INVALID_THREADID;
 
    /* There should still be a valid exitreason for this thread */
    vg_assert(VG_(threads)[tid].exitreason != VgSrc_None);
@@ -388,7 +267,7 @@ void VG_(kill_thread)(ThreadId tid)
 void VG_(vg_yield)(void)
 {
    struct vki_timespec ts = { 0, 1 };
-   ThreadId tid = running_tid;
+   ThreadId tid = VG_(running_tid);
 
    vg_assert(tid != VG_INVALID_THREADID);
    vg_assert(VG_(threads)[tid].os_state.lwpid == VG_(gettid)());
@@ -609,7 +488,7 @@ void mostly_clear_thread_record ( ThreadId tid )
 static void sched_fork_cleanup(ThreadId me)
 {
    ThreadId tid;
-   vg_assert(running_tid == me);
+   vg_assert(VG_(running_tid) == me);
 
    VG_(threads)[me].os_state.lwpid = VG_(gettid)();
    VG_(threads)[me].os_state.threadgroup = VG_(getpid)();
@@ -708,8 +587,8 @@ static void handle_syscall(ThreadId tid)
    SCHEDSETJMP(tid, jumped, VG_(client_syscall)(tid));
 
    if (!VG_(is_running_thread)(tid))
-      VG_(printf)("tid %d not running; running_tid=%d, tid %d status %d\n",
-		  tid, running_tid, tid, tst->status);
+      VG_(printf)("tid %d not running; VG_(running_tid)=%d, tid %d status %d\n",
+		  tid, VG_(running_tid), tid, tst->status);
    vg_assert(VG_(is_running_thread)(tid));
    
    if (jumped) {
@@ -1159,7 +1038,7 @@ void scheduler_sanity ( ThreadId tid )
    if (!VG_(is_running_thread)(tid)) {
       VG_(message)(Vg_DebugMsg,
 		   "Thread %d is supposed to be running, but doesn't own run_sema (owned by %d)\n", 
-		   tid, running_tid);
+		   tid, VG_(running_tid));
       bad = True;
    }
 

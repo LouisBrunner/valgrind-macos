@@ -1,14 +1,13 @@
 
 /*--------------------------------------------------------------------*/
-/*--- A header file for various private parts of Valgrind's core.  ---*/
-/*---                                                       core.h ---*/
+/*--- Header included by every core C file.      pub_core_basics.h ---*/
 /*--------------------------------------------------------------------*/
- 
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2005 Julian Seward 
+   Copyright (C) 2000-2005 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -29,14 +28,26 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __CORE_H
-#define __CORE_H
+#ifndef __PUB_CORE_BASICS_H
+#define __PUB_CORE_BASICS_H
 
-#include "tool.h"          // tool stuff
+//--------------------------------------------------------------------
+// PURPOSE: This header should be imported by every single C file
+// in the core.  It contains the basic types and other things needed
+// everywhere.
+//--------------------------------------------------------------------
+
+#include "pub_tool_basics.h"
+
+/* ---------------------------------------------------------------------
+   Other headers to include
+   ------------------------------------------------------------------ */
+
+// Might as well have the following two in here, their contents are used so
+// broadly (eg. in pub_core_threadstate.h).
 
 #include "libvex.h"
 
-// XXX: this is needed because pub_core_scheduler needs VexGuestXXXState...
 #if defined(VGA_x86)
 #  include "libvex_guest_x86.h"
 #elif defined(VGA_amd64)
@@ -45,19 +56,10 @@
 #  error Unknown arch
 #endif
 
-#include <setjmp.h>        // for jmp_buf
+#include <setjmp.h>
 
-#include "pub_core_scheduler.h"   // for types 'ThreadArchState'
-
-/* ---------------------------------------------------------------------
-   Finally - autoconf-generated settings
-   ------------------------------------------------------------------ */
-
-#include "config.h"
-
-#endif /* ndef __CORE_H */
+#endif   // __PUB_CORE_BASICS_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

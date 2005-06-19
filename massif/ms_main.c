@@ -34,7 +34,7 @@
 // be inspected step-wise to an appropriate depth.  See comments on data
 // structures below for more info on how things work.
 
-#include "tool.h"
+#include "pub_tool_basics.h"
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_hashtable.h"
 #include "pub_tool_libcbase.h"
@@ -48,6 +48,7 @@
 #include "pub_tool_profile.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_stacktrace.h"
+#include "pub_tool_threadstate.h"
 #include "pub_tool_tooliface.h"
 
 #include "valgrind.h"           // For {MALLOC,FREE}LIKE_BLOCK

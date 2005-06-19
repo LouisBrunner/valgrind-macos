@@ -47,7 +47,7 @@
 #include "valgrind.h"               // for VALGRIND_NON_SIMD_CALL[12]
 #include "coregrind.h"              // for VALGRIND_INTERNAL_PRINTF
 
-#include "core.h"
+#include "pub_core_basics.h"
 #include "pub_core_debuginfo.h"     // needed for pub_core_redir.h :(
 #include "pub_core_mallocfree.h"    // for VG_MIN_MALLOC_SZB, VG_AR_CLIENT
 #include "pub_core_redir.h"         // for VG_REPLACE_FUNCTION

@@ -1,5 +1,6 @@
-/*-*- c -*- ----------------------------------------------------------*/
-/*--- Header for lots of tool stuff.                        tool.h ---*/
+
+/*--------------------------------------------------------------------*/
+/*--- The thread state.                     pub_tool_threadstate.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -27,23 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __TOOL_H
-#define __TOOL_H
-
-#include <stdarg.h>       /* ANSI varargs stuff  */
-
-#include "basic_types.h"
-#include "pub_basics_asm.h"      /* asm stuff */
-
-#if defined(VGO_linux)
-#  include "vki-linux.h"
-#else
-#  error Unknown OS
-#endif
-
-/*====================================================================*/
-/*=== Build options and table sizes.                               ===*/
-/*====================================================================*/
+#ifndef __PUB_TOOL_THREADSTATE_H
+#define __PUB_TOOL_THREADSTATE_H
 
 /* The maximum number of pthreads that we support.  This is
    deliberately not very high since our implementation of some of the
@@ -52,12 +38,10 @@
    programs do not need many threads. */
 #define VG_N_THREADS 100
 
-/*====================================================================*/
-/*=== Useful stuff to call from generated code                     ===*/
-/*====================================================================*/
-
-/* ------------------------------------------------------------------ */
-/* Thread-related stuff */
+/* Special magic value for an invalid ThreadId.  It corresponds to
+   LinuxThreads using zero as the initial value for
+   pthread_mutex_t.__m_owner and pthread_cond_t.__c_waiting. */
+#define VG_INVALID_THREADID ((ThreadId)(0))
 
 /* Get the TID of the thread which currently has the CPU. */
 extern ThreadId VG_(get_running_tid) ( void );
@@ -68,6 +52,8 @@ extern ThreadId VG_(first_matching_thread_stack)
                         ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
                           void* d );
 
-#endif   /* __TOOL_H */
+#endif   // __PUB_TOOL_THREADSTATE_H
 
-
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

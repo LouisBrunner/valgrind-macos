@@ -28,11 +28,12 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "tool.h"
-#include "cg_arch.h"
+#include "pub_tool_basics.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
+
+#include "cg_arch.h"
 
 // All CPUID info taken from sandpile.org/a32/cpuid.htm */
 // Probably only works for Intel and AMD chips, and probably only for some of

@@ -33,8 +33,6 @@
 #define _GNU_SOURCE
 #define _FILE_OFFSET_BITS 64
 
-#include "core.h"
-
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -44,9 +42,10 @@
 #include <unistd.h>
 #include <assert.h>
 
-#include "ume.h"
+#include "pub_core_basics.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
+#include "ume.h"
 
 #if	ELFSZ == 64
 #define ESZ(x)	Elf64_##x

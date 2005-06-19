@@ -28,11 +28,11 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
-#include "pub_core_scheduler.h"
 
 #define INSTR_PTR(regs)    ((regs).vex.VGA_INSTR_PTR)
 #define STACK_PTR(regs)    ((regs).vex.VGA_STACK_PTR)

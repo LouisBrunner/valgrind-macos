@@ -33,7 +33,8 @@
    to assign the shadow state.
 */
 
-#include "core.h"
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_options.h"
@@ -43,7 +44,9 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
+#include "pub_core_scheduler.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_signals.h"
 #include "pub_core_syscall.h"

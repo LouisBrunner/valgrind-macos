@@ -29,7 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h" /* find_segment */
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -40,8 +41,6 @@
 #include "pub_core_signals.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
-
-#include "libvex_guest_x86.h"
 
 
 /* This module creates and removes signal frames for signal deliveries

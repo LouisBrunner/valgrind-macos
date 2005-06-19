@@ -23,6 +23,10 @@ profiling.</para>
 quite a few things about Valgrind, it is much easier than
 instrumenting a program from scratch yourself.</para>
 
+<para>[Nb: What follows is slightly out of date.  In particular,
+there are various references to a file include/tool.h which has been
+split into a number of header files in include/.]</para>
+
 </sect2>
 
 

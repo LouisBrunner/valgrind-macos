@@ -28,12 +28,14 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
-#include "pub_core_main.h"
+#include "pub_core_main.h"          // for VG_(bbs_done) -- stupid!
+#include "pub_core_options.h"       // for VG_(bbs_done) -- stupid!
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"
@@ -70,6 +72,21 @@ void VG_(exit)( Int status )
    vg_assert(2+2 == 5);
 }
 
+// Print the scheduler status.
+static void pp_sched_status ( void )
+{
+   Int i; 
+   VG_(printf)("\nsched status:\n"); 
+   VG_(printf)("  running_tid=%d\n", VG_(get_running_tid)());
+   for (i = 1; i < VG_N_THREADS; i++) {
+      if (VG_(threads)[i].status == VgTs_Empty) continue;
+      VG_(printf)( "\nThread %d: status = %s\n", i, 
+                   VG_(name_of_ThreadStatus)(VG_(threads)[i].status) );
+      VG_(get_and_pp_StackTrace)( i, VG_(clo_backtrace_size) );
+   }
+   VG_(printf)("\n");
+}
+
 __attribute__ ((noreturn))
 static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )
 {
@@ -95,7 +112,7 @@ static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )
 
    VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
 
-   VG_(pp_sched_status)();
+   pp_sched_status();
    VG_(printf)("\n");
    VG_(printf)("Note: see also the FAQ.txt in the source distribution.\n");
    VG_(printf)("It contains workarounds to several common problems.\n");
@@ -196,7 +213,7 @@ void VG_(unimplemented) ( Char* msg )
       "Valgrind has to exit now.  Sorry.  Bye!");
    VG_(message)(Vg_UserMsg,
       "");
-   VG_(pp_sched_status)();
+   pp_sched_status();
    VG_(exit)(1);
 }
 

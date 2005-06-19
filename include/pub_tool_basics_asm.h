@@ -1,14 +1,16 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Nulgrind: The null tool.                           nl_main.c ---*/
+/*--- Header imported directly by every asm file, and indirectly   ---*/
+/*--- (via pub_tool_basics.h) by every C file.                     ---*/
+/*---                                        pub_tool_basics_asm.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Nulgrind, the simplest possible Valgrind tool,
-   which does nothing.
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
 
-   Copyright (C) 2002-2005 Nicholas Nethercote
-      njn@valgrind.org
+   Copyright (C) 2000-2005 Julian Seward 
+      jseward@acm.org
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -28,41 +30,20 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "pub_tool_basics.h"
-#include "pub_tool_libcassert.h"
-#include "pub_tool_tooliface.h"
+#ifndef __PUB_TOOL_BASICS_ASM_H
+#define __PUB_TOOL_BASICS_ASM_H
 
-static void nl_post_clo_init(void)
-{
-}
+/* All symbols externally visible from Valgrind are prefixed
+   as specified here to avoid namespace conflict problems.  */
 
-static IRBB* nl_instrument(IRBB* bb, VexGuestLayout* layout, 
-                           IRType gWordTy, IRType hWordTy)
-{
-    return bb;
-}
+#define VGAPPEND(str1,str2) str1##str2
 
-static void nl_fini(Int exitcode)
-{
-}
+#define VG_(str)    VGAPPEND(vgPlain_,    str)
+#define VGA_(str)   VGAPPEND(vgArch_,     str)
+#define VGO_(str)   VGAPPEND(vgOS_,       str)
+#define VGP_(str)   VGAPPEND(vgPlatform_, str)
 
-static void nl_pre_clo_init(void)
-{
-   VG_(details_name)            ("Nulgrind");
-   VG_(details_version)         (NULL);
-   VG_(details_description)     ("a binary JIT-compiler");
-   VG_(details_copyright_author)(
-      "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote.");
-   VG_(details_bug_reports_to)  (VG_BUGS_TO);
-
-   VG_(basic_tool_funcs)        (nl_post_clo_init,
-                                 nl_instrument,
-                                 nl_fini);
-
-   /* No needs, no core events to track */
-}
-
-VG_DETERMINE_INTERFACE_VERSION(nl_pre_clo_init, 0)
+#endif /* __PUB_TOOL_BASICS_ASM_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

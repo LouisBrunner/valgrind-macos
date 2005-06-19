@@ -57,6 +57,13 @@ extern ULong VG_(bbs_done);
 // Set up the libc freeres wrapper 
 extern void VG_(set_libc_freeres_wrapper_addr)(Addr);
 
+// Do everything which needs doing before the process finally ends,
+// like printing reports, etc
+extern void VG_(shutdown_actions_NORETURN) (
+               ThreadId tid, 
+               VgSchedReturnCode tids_schedretcode 
+            );
+
 #endif   // __PUB_CORE_MAIN_H
 
 /*--------------------------------------------------------------------*/

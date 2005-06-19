@@ -28,7 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"      // needed for pub_core_main.h
 #include "pub_core_debuginfo.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_execontext.h"
@@ -90,7 +91,7 @@ static ThreadId last_tid_printed = 1;
 /* Errors.  Extensible (via the 'extra' field).  Tools can use a normal
    enum (with element values in the normal range (0..)) for 'ekind'. 
    Functions for getting/setting the tool-relevant fields are in
-   include/tool.h.
+   include/pub_tool_errormgr.h.
 
    When errors are found and recorded with VG_(maybe_record_error)(), all
    the tool must do is pass in the four parameters;  core will
@@ -174,7 +175,7 @@ typedef
    SuppLoc;
 
 /* Suppressions.  Tools can get/set tool-relevant parts with functions
-   declared in include/tool.h.  Extensible via the 'extra' field. 
+   declared in include/pub_tool_errormgr.h.  Extensible via the 'extra' field. 
    Tools can use a normal enum (with element values in the normal range
    (0..)) for 'skind'. */
 struct _Supp {

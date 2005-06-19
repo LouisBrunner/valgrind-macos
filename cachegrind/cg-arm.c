@@ -28,7 +28,6 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "tool.h"
 #include "cg_arch.h"
 
 void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <elf.h>
+#include "../../include/pub_tool_basics.h"
 #include "../../coregrind/ume.h"
 
 #define STKSZ   (64*1024)

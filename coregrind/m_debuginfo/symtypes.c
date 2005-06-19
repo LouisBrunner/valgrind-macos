@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "core.h"
+#include "pub_core_basics.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_debuglog.h"    /* VG_(debugLog_vprintf) */
 #include "pub_core_libcbase.h"

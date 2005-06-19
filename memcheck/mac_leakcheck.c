@@ -30,15 +30,25 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include <setjmp.h>
-#include "mac_shared.h"
+#include "pub_tool_basics.h"
 #include "pub_tool_aspacemgr.h"
+#include "pub_tool_errormgr.h"      // For mac_shared.h
+#include "pub_tool_execontext.h"    // For mac_shared.h
+#include "pub_tool_hashtable.h"     // For mac_shared.h
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_libcsignal.h"
 #include "pub_tool_machine.h"
+#include "pub_tool_mallocfree.h"
+#include "pub_tool_options.h"
+#include "pub_tool_profile.h"       // For mac_shared.h
 #include "pub_tool_signals.h"
+
+#include "mac_shared.h"
+
+#include <setjmp.h>                 // For jmp_buf
+
 
 /* Define to debug the memory-leak-detector. */
 #define VG_DEBUG_LEAKCHECK 0

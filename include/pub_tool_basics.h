@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Header included by every C file.               basic_types.h ---*/
+/*--- Header included by every tool C file.      pub_tool_basics.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,17 +28,44 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __BASIC_TYPES_H
-#define __BASIC_TYPES_H
+#ifndef __PUB_TOOL_BASICS_H
+#define __PUB_TOOL_BASICS_H
+
+//--------------------------------------------------------------------
+// PURPOSE: This header should be imported by every single C file in
+// tools.  It contains the basic types and other things needed everywhere.
+// There is no corresponding C file because this isn't a module
+// containing executable code, it's all just declarations.
+//--------------------------------------------------------------------
+
+/* ---------------------------------------------------------------------
+   Other headers to include
+   ------------------------------------------------------------------ */
+
+// VEX defines Char, UChar, Short, UShort, Int, UInt, Long, ULong,
+// Addr32, Addr64, HWord, HChar, Bool, False and True.
+#include "libvex_basictypes.h"
+
+// For the VG_() macro
+#include "pub_tool_basics_asm.h"
+
+// For varargs types
+#include <stdarg.h>
+
+// Autoconf-generated settings
+#include "config.h"
+
+// Kernel types.  Might as well have them here, they're used so broadly
+// (eg. in pub_core_threadstate.h).
+#if defined(VGO_linux)
+#  include "vki-linux.h"
+#else
+#  error Unknown OS
+#endif
 
 /* ---------------------------------------------------------------------
    builtin types
    ------------------------------------------------------------------ */
-
-#include "libvex_basictypes.h"
-
-/* VEX defines Char, UChar, Short, UShort, Int, UInt, Long, ULong,
-   Addr32, Addr64, HWord, HChar, Bool, False and True. */
 
 // By choosing the right types, we can get these right for 32-bit and 64-bit
 // platforms without having to do any conditional compilation or anything.
@@ -57,13 +84,37 @@ typedef  Word                 SSizeT;     // 32             64
 
 typedef  Word                   OffT;     // 32             64
 
-
-/* This is going to be either 4 or 8. */
-#define VG_WORDSIZE VEX_HOST_WORDSIZE
-
 #if !defined(NULL)
 #  define NULL ((void*)0)
 #endif
+
+/* ---------------------------------------------------------------------
+   non-builtin types
+   ------------------------------------------------------------------ */
+
+// These probably shouldn't be here, but moving them to their logical
+// modules results in a lot more #includes...
+
+/* ThreadIds are simply indices into the VG_(threads)[] array. */
+typedef UInt ThreadId;
+
+/* An abstraction of syscall return values.
+   When .isError == False, val holds the return value.
+   When .isError == True,  val holds the error code.
+*/
+typedef struct { 
+   UWord val;
+   Bool  isError;
+}
+SysRes;
+
+/* ---------------------------------------------------------------------
+   Miscellaneous
+   ------------------------------------------------------------------ */
+
+/* This is going to be either 4 or 8. */
+// It should probably be in m_machine.
+#define VG_WORDSIZE VEX_HOST_WORDSIZE
 
 #if defined(VGA_x86)
 #  define VGA_REGPARM(n)            __attribute__((regparm(n)))
@@ -73,35 +124,7 @@ typedef  Word                   OffT;     // 32             64
 #  error Unknown arch
 #endif
 
-/* ---------------------------------------------------------------------
-   non-builtin types
-   ------------------------------------------------------------------ */
-
-// XXX: these probably shouldn't be here...
-
-/* ThreadIds are simply indices into the VG_(threads)[] array. */
-typedef
-   UInt
-   ThreadId;
-
-/* Special magic value for an invalid ThreadId.  It corresponds to
-   LinuxThreads using zero as the initial value for
-   pthread_mutex_t.__m_owner and pthread_cond_t.__c_waiting. */
-#define VG_INVALID_THREADID ((ThreadId)(0))
-
-
-/* An abstraction of syscall return values.
-   When .isError == False, val holds the return value.
-   When .isError == True,  val holds the error code.
-*/
-typedef
-   struct { 
-      UWord val;
-      Bool  isError;
-   }
-   SysRes;
-
-#endif /* __BASIC_TYPES_H */
+#endif /* __PUB_TOOL_BASICS_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

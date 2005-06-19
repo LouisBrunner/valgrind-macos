@@ -42,12 +42,12 @@
    latter depend on this module.  DO NOT MESS WITH THESE INCLUDES
    UNLESS YOU ARE 100% CERTAIN YOU UNDERSTAND THE CONSEQUENCES.
 */
-/* This module is also different from all others in the sense that it
-   is linked into both stage1 and stage2.  
-*/
-#include "basic_types.h"        /* basic types */
-#include "pub_core_debuglog.h"  /* our own iface */
 
+/* This module is also notable because it is linked into both 
+   stage1 and stage2. */
+
+#include "pub_core_basics.h"     /* basic types */
+#include "pub_core_debuglog.h"   /* our own iface */
 
 /*------------------------------------------------------------*/
 /*--- Stuff to make us completely independent.             ---*/

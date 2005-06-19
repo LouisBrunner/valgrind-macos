@@ -29,13 +29,14 @@
 
    The GNU General Public License is contained in the file COPYING.
 */
-#include "core.h"
 
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"   // needed for pub_core_main.h
 #include "pub_core_aspacemgr.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_main.h"
+#include "pub_core_main.h"       // for VG_(set_libc_freeres_wrapper_addr)
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_redir.h"

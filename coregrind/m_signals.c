@@ -79,8 +79,8 @@
    always unblocked).
  */
 
-#include "core.h"
-
+#include "pub_core_basics.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_libcbase.h"
@@ -93,6 +93,7 @@
 #include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
+#include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
 #include "pub_core_sigframe.h"
 #include "pub_core_stacktrace.h"

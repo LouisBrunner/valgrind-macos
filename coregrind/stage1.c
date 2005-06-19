@@ -41,12 +41,12 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
-#include "core.h"
-#include "ume.h"
 #include "memcheck/memcheck.h"
+#include "pub_core_basics.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcproc.h"
+#include "ume.h"
 
 
 static int stack[SIGSTKSZ*4];

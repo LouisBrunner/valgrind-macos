@@ -50,7 +50,6 @@ extern Addr VG_(client_mapbase); // base of mappings
 extern Addr VG_(clstk_base);	 // client stack range
 extern Addr VG_(clstk_end);
 extern UWord VG_(clstk_id);      // client stack id
-extern Addr VG_(client_trampoline_code);
 
 extern Addr VG_(brk_base);	 // start of brk
 extern Addr VG_(brk_limit);	 // current brk

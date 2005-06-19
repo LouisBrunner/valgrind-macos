@@ -36,6 +36,8 @@
 // over the client's, for arcane signal return and syscall purposes...
 //--------------------------------------------------------------------
 
+extern Addr VG_(client_trampoline_code);
+
 // Platform-specifics aren't neatly factored out here, since some of the
 // constants are not used on all platforms.  But it's non-obvious how
 // to do it better.

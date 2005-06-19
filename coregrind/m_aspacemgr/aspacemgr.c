@@ -60,7 +60,6 @@ static const Bool mem_debug = False;
 Addr VG_(client_base);           /* client address space limits */
 Addr VG_(client_end);
 Addr VG_(client_mapbase);
-Addr VG_(client_trampoline_code);
 Addr VG_(clstk_base);
 Addr VG_(clstk_end);
 UWord VG_(clstk_id);

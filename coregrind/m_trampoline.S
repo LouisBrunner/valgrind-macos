@@ -37,6 +37,7 @@
    space at an arbitary address.  Therefore, this code must be completely
    position-independent.
 */
+.global VG_(client_trampoline_code)
 .global VG_(trampoline_code_start)
 .global VG_(trampoline_code_length)
 .global VG_(tramp_sigreturn_offset)
@@ -101,6 +102,8 @@ VG_(trampoline_code_start):
 tramp_code_end:
 			
 .data
+VG_(client_trampoline_code):
+	.long 0
 VG_(trampoline_code_length):
 	.long tramp_code_end - VG_(trampoline_code_start)
 VG_(tramp_sigreturn_offset):

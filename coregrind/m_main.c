@@ -115,9 +115,6 @@
 /* stage1 (main) executable */
 static Int vgexecfd = -1;
 
-/* client executable */
-Int  VG_(clexecfd) = -1;
-
 /* our argc/argv */
 static Int  vg_argc;
 static Char **vg_argv;

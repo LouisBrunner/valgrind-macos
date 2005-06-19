@@ -30,7 +30,6 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_aspacemgr.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcmman.h"

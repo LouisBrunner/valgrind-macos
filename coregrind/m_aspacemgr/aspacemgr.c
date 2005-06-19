@@ -1372,27 +1372,8 @@ Bool VG_(is_addressable)(Addr p, SizeT size, UInt prot)
 
 
 /*--------------------------------------------------------------------*/
-/*--- Manage allocation of memory on behalf of the client          ---*/
+/*--- Random function that doesn't really belong here              ---*/
 /*--------------------------------------------------------------------*/
-
-// Returns 0 on failure.
-Addr VG_(get_memory_from_mmap_for_client)
-        (Addr addr, SizeT len, UInt prot, UInt sf_flags)
-{
-   len = VG_PGROUNDUP(len);
-
-   tl_assert(!(sf_flags & SF_FIXED));
-   tl_assert(0 == addr);
-
-   addr = (Addr)VG_(mmap)((void *)addr, len, prot, 
-                          VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
-                          sf_flags | SF_CORE, -1, 0);
-   if ((Addr)-1 != addr)
-      return addr;
-   else
-      return 0;
-}
-
 
 /* We'll call any RW mmaped memory segment, within the client address
    range, which isn't SF_CORE, a root. 

@@ -166,6 +166,25 @@ void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who )
    VG_(exit)(1);
 }
 
+// Returns 0 on failure.
+Addr VG_(get_memory_from_mmap_for_client)
+        (Addr addr, SizeT len, UInt prot, UInt sf_flags)
+{
+   len = VG_PGROUNDUP(len);
+
+   tl_assert(!(sf_flags & SF_FIXED));
+   tl_assert(0 == addr);
+
+   addr = (Addr)VG_(mmap)((void *)addr, len, prot, 
+                          VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
+                          sf_flags | SF_CORE, -1, 0);
+   if ((Addr)-1 != addr)
+      return addr;
+   else
+      return 0;
+}
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

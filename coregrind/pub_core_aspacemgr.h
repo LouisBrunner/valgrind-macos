@@ -145,9 +145,6 @@ extern VGA_REGPARM(2)
 /* Return string for prot */
 extern const HChar *VG_(prot_str)(UInt prot);
 
-extern Addr VG_(get_memory_from_mmap_for_client)
-               (Addr base, SizeT len, UInt prot, UInt flags);
-
 /* Parses /proc/self/maps, calling `record_mapping' for each entry. */
 extern 
 void VG_(parse_procselfmaps) (

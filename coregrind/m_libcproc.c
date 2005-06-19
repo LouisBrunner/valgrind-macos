@@ -47,6 +47,9 @@ Int    VG_(client_argc);
 Char** VG_(client_argv);
 Char** VG_(client_envp);
 
+/* client executable file descriptor */
+Int VG_(clexecfd);
+
 /* Path to library directory */
 const Char *VG_(libdir) = VG_LIBDIR;
 

@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- The main module.                             pub_core_main.h ---*/
+/*--- Attaching a debugger.                    pub_core_debugger.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,28 +28,17 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_CORE_MAIN_H
-#define __PUB_CORE_MAIN_H
+#ifndef __PUB_CORE_DEBUGGER_H
+#define __PUB_CORE_DEBUGGER_H
 
 //--------------------------------------------------------------------
-// PURPOSE: This module is the main module, ie. the one holding main().
-// It arguably shouldn't export anything to other modules, since it depends
-// on almost every other module!  But currently it exports quite a few
-// things.
+// PURPOSE: This simple module just deals with attaching a debugger to the
+// running program.
 //--------------------------------------------------------------------
 
-// Help set up the child used when doing execve() with --trace-children=yes
-Char* VG_(build_child_VALGRINDCLO) ( Char* exename );
-Char* VG_(build_child_exename)     ( void );
+extern void VG_(start_debugger) ( ThreadId tid );
 
-// Do everything which needs doing before the process finally ends,
-// like printing reports, etc
-extern void VG_(shutdown_actions_NORETURN) (
-               ThreadId tid, 
-               VgSchedReturnCode tids_schedretcode 
-            );
-
-#endif   // __PUB_CORE_MAIN_H
+#endif   // __PUB_CORE_DEBUGGER_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

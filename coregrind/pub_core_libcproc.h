@@ -58,6 +58,9 @@
    client environment.  */
 #define VALGRINDCLO	"_VALGRIND_CLO"
 
+// Client's executable file descriptor.
+extern Int VG_(clexecfd);
+
 // Client's original rlimit data and rlimit stack
 extern struct vki_rlimit VG_(client_rlimit_data);
 extern struct vki_rlimit VG_(client_rlimit_stack);

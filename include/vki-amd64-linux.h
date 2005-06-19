@@ -220,6 +220,7 @@ struct vki_sigcontext {
 #define VKI_MAP_PRIVATE	0x02		/* Changes are private */
 #define VKI_MAP_FIXED	0x10		/* Interpret addr exactly */
 #define VKI_MAP_ANONYMOUS	0x20	/* don't use a file */
+#define VKI_MAP_NORESERVE       0x4000  /* don't check for reservations */
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-x86_64/fcntl.h

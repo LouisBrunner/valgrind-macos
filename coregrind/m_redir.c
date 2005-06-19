@@ -75,8 +75,6 @@ struct _CodeRedirect {
    Addr		from_addr;	/* old addr */
 
    /* used for redirection */
-   const Char	*to_lib;	/* library qualifier pattern */
-   const Char	*to_sym;	/* symbol */
    Addr		to_addr;	/* new addr */
 
    /* used for wrapping */
@@ -132,17 +130,9 @@ static inline Bool from_resolved(const CodeRedirect *redir)
    return redir->from_addr != 0;
 }
 
-static inline Bool to_resolved(const CodeRedirect *redir)
-{
-   if (redir->type == R_REDIRECT)
-      return redir->to_addr != 0;
-   vg_assert(redir->wrapper != NULL);
-   return True;
-}
-
 Bool VG_(is_resolved)(const CodeRedirect *redir)
 {
-   return from_resolved(redir) && to_resolved(redir);
+   return from_resolved(redir);
 }
 
 static void add_resolved(CodeRedirect *redir)
@@ -152,8 +142,7 @@ static void add_resolved(CodeRedirect *redir)
       if (VG_(clo_trace_redir)) {
          VG_(message)(Vg_DebugMsg, "  redir resolved (%s:%s=%p -> ",
                       redir->from_lib, redir->from_sym, redir->from_addr);
-         VG_(message)(Vg_DebugMsg, "                  %s:%s=%p)",
-                      redir->to_lib, redir->to_sym, redir->to_addr);
+         VG_(message)(Vg_DebugMsg, "                  %p)", redir->to_addr);
       }
 
       if (VG_(search_transtab)(NULL, (Addr64)redir->from_addr, False)) {
@@ -192,9 +181,9 @@ static void add_resolved(CodeRedirect *redir)
          else {
             /* XXX leak redir */
             if (VG_(clo_trace_redir))
-               VG_(message)(Vg_DebugMsg, "  redir %s:%s:%p->%s:%s:%p duplicated\n",
+               VG_(message)(Vg_DebugMsg, "  redir %s:%s:%p->%p duplicated\n",
                             redir->from_lib, redir->from_sym, redir->from_addr,
-                            redir->to_lib, redir->to_sym, redir->to_addr);
+                            redir->to_addr);
          }
       }
       break;
@@ -230,12 +219,6 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
 
    resolved = VG_(is_resolved)(redir);
 
-   if (0 && VG_(clo_trace_redir))
-      VG_(printf)("   consider FROM binding %s:%s -> %s:%s in %s(%s)\n",
-		  redir->from_lib, redir->from_sym,
-		  redir->to_lib, redir->to_sym,
-		  si->filename, si->soname);
-
    vg_assert(!resolved);
 
    if (!from_resolved(redir)) {
@@ -249,25 +232,12 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
       }
    }
 
-   if (!to_resolved(redir)) {
-      vg_assert(redir->type == R_REDIRECT);
-      vg_assert(redir->to_sym != NULL);
-
-      if (match_lib(redir->to_lib, si)) {
-	 redir->to_addr = VG_(reverse_search_one_symtab)(si, redir->to_sym);
-	 if (VG_(clo_trace_redir) && redir->to_addr != 0)
-	    VG_(printf)("   bind   TO: %p = %s:%s\n", 
-                        redir->to_addr,redir->to_lib, redir->to_sym );
-
-      }
-   }
-
-   resolved = from_resolved(redir) && to_resolved(redir);
+   resolved = from_resolved(redir);
 
    if (0 && VG_(clo_trace_redir))
-      VG_(printf)("resolve_redir: %s:%s from=%p %s:%s to=%p\n",
+      VG_(printf)("resolve_redir: %s:%s from=%p to=%p\n",
 		  redir->from_lib, redir->from_sym, redir->from_addr, 
-		  redir->to_lib, redir->to_sym, redir->to_addr);
+		  redir->to_addr);
 
    if (resolved) add_resolved(redir);
 
@@ -314,9 +284,8 @@ void VG_(resolve_seg_redirs)(SegInfo *si)
    }
 }
 
-static void add_redirect_X_to_X(
-   const Char *from_lib, const Char *from_sym, Addr from_addr,
-   const Char *to_lib,   const Char *to_sym,   Addr to_addr
+static void add_redirect_X_to_addr(
+   const Char *from_lib, const Char *from_sym, Addr from_addr, Addr to_addr
 )
 {
    CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
@@ -329,16 +298,14 @@ static void add_redirect_X_to_X(
    else          redir->from_sym  = NULL;
                  redir->from_addr = from_addr;
 
-   if (to_lib)   redir->to_lib    = VG_(arena_strdup)(VG_AR_SYMTAB, to_lib);
-   else          redir->to_lib    = NULL;
-   if (to_sym)   redir->to_sym    = VG_(arena_strdup)(VG_AR_SYMTAB, to_sym);
-   else          redir->to_sym    = NULL;
-                 redir->to_addr   = to_addr;
+   vg_assert(0 != to_addr);
+   redir->to_addr = to_addr;
+   redir->wrapper = 0;
 
    if (VG_(clo_verbosity) >= 2 && VG_(clo_trace_redir))
       VG_(message)(Vg_UserMsg, 
-                   "REDIRECT %s:%s(%p) to %s:%s(%p)",
-                   from_lib, from_sym, from_addr, to_lib, to_sym, to_addr);
+                   "REDIRECT %s:%s(%p) to %p",
+                   from_lib, from_sym, from_addr, to_addr);
 
    /* Check against all existing segments to see if this redirection
       can be resolved immediately */
@@ -352,26 +319,18 @@ static void add_redirect_X_to_X(
    }
 }
 
-/* Redirect a lib/symbol reference to a function at lib/symbol */
-__attribute__((unused))
-static void add_redirect_sym_to_sym(const Char *from_lib, const Char *from_sym,
-				    const Char *to_lib, const Char *to_sym)
-{
-   add_redirect_X_to_X(from_lib, from_sym, 0, to_lib, to_sym, 0);
-}
-
 /* Redirect a lib/symbol reference to a function at addr */
 static void add_redirect_sym_to_addr(const Char *from_lib, const Char *from_sym,
 				     Addr to_addr)
 {
-   add_redirect_X_to_X(from_lib, from_sym, 0, NULL, NULL, to_addr);
+   add_redirect_X_to_addr(from_lib, from_sym, 0, to_addr);
 }
 
 /* Redirect a function at from_addr to a function at to_addr */
 __attribute__((unused))    // It is used, but not on all platforms...
 static void add_redirect_addr_to_addr(Addr from_addr, Addr to_addr)
 {
-   add_redirect_X_to_X(NULL, NULL, from_addr, NULL, NULL, to_addr);
+   add_redirect_X_to_addr(NULL, NULL, from_addr, to_addr);
 }
 
 CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
@@ -385,15 +344,11 @@ CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
 
    redir->type = R_WRAPPER;
 
-   redir->from_lib = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
-   redir->from_sym = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
+   redir->from_lib  = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
+   redir->from_sym  = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
    redir->from_addr = 0;
-
-   redir->to_lib = NULL;
-   redir->to_sym = NULL;
-   redir->to_addr = 0;
-
-   redir->wrapper = wrapper;
+   redir->to_addr   = 0;
+   redir->wrapper   = wrapper;
    
    /* Check against all existing segments to see if this redirection
       can be resolved immediately */

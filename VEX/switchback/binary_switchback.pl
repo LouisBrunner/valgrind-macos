@@ -37,7 +37,7 @@ sub Exit {
 }
 
 sub Usage {
-    print "Usage: binary_switchback.pl test_name <start> <last_good> <last_bad>\n";
+    print "Usage: binary_switchback.pl test_name [last_good [last_bad]]\n";
     print "where:\n";
     print "   test_name = obj filename - without '.o'\n";
     print "   last_good = last known good bb (search space minimum)\n";

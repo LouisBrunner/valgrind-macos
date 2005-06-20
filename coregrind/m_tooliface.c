@@ -30,11 +30,10 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_aspacemgr.h"
-#include "pub_core_libcbase.h"
+#include "pub_core_aspacemgr.h"     // For VG_(get_shadow_size)()
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_mallocfree.h"
+#include "pub_core_mallocfree.h"    // For VG_(set_client_malloc_redzone_szB)()
 #include "pub_core_tooliface.h"
 
 // The core/tool dictionary of functions (initially zeroed, as we want it)
@@ -337,5 +336,6 @@ DEF(track_init_shadow_page,      Addr)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+
 
 

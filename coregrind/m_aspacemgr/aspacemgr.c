@@ -31,14 +31,12 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcfile.h"
+#include "pub_core_libcfile.h"   // For VG_(fstat), VG_(resolve_filename_nodup)
 #include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_libcproc.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_syscall.h"

@@ -34,13 +34,14 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_libcproc.h"
+#include "pub_core_libcproc.h"      // For VG_(getpid)()
 #include "pub_core_libcsignal.h"
-#include "pub_core_scheduler.h"
-#include "pub_core_stacktrace.h"
+#include "pub_core_scheduler.h"     // For VG_(set_sleeping), VG_(set_running),
+                                    //   and VG_(vg_yield)
+#include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
 #include "pub_core_tooliface.h"
 #include "pub_core_options.h"
-#include "pub_core_signals.h"
+#include "pub_core_signals.h"       // For VG_(max_signal), VG_(poll_signals)
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 

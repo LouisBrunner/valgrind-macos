@@ -31,7 +31,8 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_aspacemgr.h"
+#include "pub_core_aspacemgr.h"     // For Segment type
+#include "pub_core_debuginfo.h"
 #include "pub_core_demangle.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -43,7 +44,7 @@
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 #include "pub_core_redir.h"
-#include "pub_core_tooliface.h"
+#include "pub_core_tooliface.h"     // For VG_(needs).data_syms
 #include "priv_symtab.h"
 
 #include <elf.h>          /* ELF defns */

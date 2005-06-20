@@ -31,7 +31,7 @@
 #include "pub_core_basics.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
-#include "pub_core_libcproc.h"
+#include "pub_core_libcproc.h"      // For VG_(gettid)()
 #include "priv_sema.h"
 
 /* 

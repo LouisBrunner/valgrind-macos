@@ -35,13 +35,13 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
-#include "pub_core_libcmman.h"
+#include "pub_core_libcmman.h"      // For VG_(mmap), VG_(munmap)()
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
-#include "pub_core_stacktrace.h"
+#include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
 #include "pub_core_tooliface.h"
 #include "pub_core_options.h"
 #include "pub_core_scheduler.h"

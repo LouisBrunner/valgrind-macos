@@ -41,7 +41,7 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_options.h"
 #include "pub_core_scheduler.h"
-#include "pub_core_signals.h"
+#include "pub_core_signals.h"    // For VG_(client_signal_OK)()
 #include "pub_core_syscall.h"
 
 #include "priv_types_n_macros.h"

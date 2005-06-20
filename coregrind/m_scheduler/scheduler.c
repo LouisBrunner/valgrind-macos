@@ -64,7 +64,7 @@
 #include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_dispatch.h"
-#include "pub_core_errormgr.h"
+#include "pub_core_errormgr.h"      // For VG_(get_n_errs_found)()
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -77,11 +77,11 @@
 #include "pub_core_replacemalloc.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
-#include "pub_core_stacktrace.h"
+#include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
-#include "pub_core_translate.h"
+#include "pub_core_translate.h"     // For VG_(translate)()
 #include "pub_core_transtab.h"
 #include "vki_unistd.h"
 #include "priv_sema.h"

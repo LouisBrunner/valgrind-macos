@@ -33,6 +33,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
+
 #include "priv_symtab.h"
 
 #include <a.out.h>        /* stabs defns                    */

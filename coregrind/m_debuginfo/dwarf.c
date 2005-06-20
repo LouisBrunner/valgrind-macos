@@ -1305,6 +1305,10 @@ void VG_(read_debuginfo_dwarf1) (
 #  define FP_REG         6
 #  define SP_REG         7
 #  define RA_REG_DEFAULT 16
+#elif defined(VGP_ppc32_linux)
+#  define FP_REG         1
+#  define SP_REG         1
+#  define RA_REG_DEFAULT 8     // CAB: What's a good default ?
 #else
 #  error Unknown platform
 #endif
@@ -2188,6 +2192,11 @@ void VG_(read_callframe_info_dwarf2)
    HChar* how = NULL;
    Int    n_CIEs = 0;
    UChar* data = ehframe;
+
+#if defined(VGP_ppc32_linux)
+   // CAB: tmp hack for ppc - no stacktraces for now...
+   return;
+#endif
 
    if (VG_(clo_trace_cfi)) {
       VG_(printf)("\n-----------------------------------------------\n");

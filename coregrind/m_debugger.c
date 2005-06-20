@@ -68,6 +68,9 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
 #elif defined(VGA_amd64)
    I_die_here;
+#elif defined(VGA_ppc32)
+   I_die_here;
+   regs.gpr[0] = 0; // stop compiler complaints
 #else
 #  error Unknown arch
 #endif

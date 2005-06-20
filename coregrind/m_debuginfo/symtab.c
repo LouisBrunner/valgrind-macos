@@ -2177,6 +2177,45 @@ static Addr regaddr_from_tst(Int regno, ThreadArchState *arch)
    case 15:          return (Addr) & arch->vex.guest_R15;
    default:          return 0;
    }
+#elif defined(VGA_ppc32)
+   /* This is the Intel register encoding -- integer regs. */
+#  define R_STACK_PTR   1
+#  define R_FRAME_PTR   1
+   switch (regno) {
+   case 0:           return (Addr) & arch->vex.guest_GPR0;
+   case R_STACK_PTR: return (Addr) & arch->vex.guest_GPR1;
+   case 2:           return (Addr) & arch->vex.guest_GPR2;
+   case 3:           return (Addr) & arch->vex.guest_GPR3;
+   case 4:           return (Addr) & arch->vex.guest_GPR4;
+   case 5:           return (Addr) & arch->vex.guest_GPR5;
+   case 6:           return (Addr) & arch->vex.guest_GPR6;
+   case 7:           return (Addr) & arch->vex.guest_GPR7;
+   case 8:           return (Addr) & arch->vex.guest_GPR8;
+   case 9:           return (Addr) & arch->vex.guest_GPR9;
+   case 10:          return (Addr) & arch->vex.guest_GPR10;
+   case 11:          return (Addr) & arch->vex.guest_GPR11;
+   case 12:          return (Addr) & arch->vex.guest_GPR12;
+   case 13:          return (Addr) & arch->vex.guest_GPR13;
+   case 14:          return (Addr) & arch->vex.guest_GPR14;
+   case 15:          return (Addr) & arch->vex.guest_GPR15;
+   case 16:          return (Addr) & arch->vex.guest_GPR16;
+   case 17:          return (Addr) & arch->vex.guest_GPR17;
+   case 18:          return (Addr) & arch->vex.guest_GPR18;
+   case 19:          return (Addr) & arch->vex.guest_GPR19;
+   case 20:          return (Addr) & arch->vex.guest_GPR20;
+   case 21:          return (Addr) & arch->vex.guest_GPR21;
+   case 22:          return (Addr) & arch->vex.guest_GPR22;
+   case 23:          return (Addr) & arch->vex.guest_GPR23;
+   case 24:          return (Addr) & arch->vex.guest_GPR24;
+   case 25:          return (Addr) & arch->vex.guest_GPR25;
+   case 26:          return (Addr) & arch->vex.guest_GPR26;
+   case 27:          return (Addr) & arch->vex.guest_GPR27;
+   case 28:          return (Addr) & arch->vex.guest_GPR28;
+   case 29:          return (Addr) & arch->vex.guest_GPR29;
+   case 30:          return (Addr) & arch->vex.guest_GPR30;
+   case 31:          return (Addr) & arch->vex.guest_GPR31;
+   default:          return 0;
+   }
 #else
 #  error Unknown platform
 #endif

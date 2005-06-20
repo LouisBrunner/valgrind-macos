@@ -1,3 +1,10 @@
+20 Jun 05
+~~~~~~~~~
+PPC32 port
+* Paul wrote some code to deal with setting/clearing reservations.
+  (grep USE_MACHINE_RESERVATION, ARCH_SWITCH_TO, lwarx, stwcx.)
+  Not yet looked into, but this may be needed.
+
 11 May 05
 ~~~~~~~~~
 ToDo: vex-amd64: check above/below the line for reg-alloc

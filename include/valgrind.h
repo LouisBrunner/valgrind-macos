@@ -78,7 +78,7 @@
    any inline asms.  Note that in this file we're using the compiler's
    CPP symbols for identifying architectures, which are different to
    the ones we use within the rest of Valgrind. */
-#if !defined(__i386__) && !defined(__x86_64__)
+#if !defined(__i386__) && !defined(__x86_64__) && !defined(__powerpc__)
 #  ifndef NVALGRIND
 #    define NVALGRIND	1
 #  endif  /* NVALGRIND */
@@ -184,6 +184,33 @@ extern void exit (int __status);
 // XXX: make sure that the register holding the args and the register taking
 // the return value match what the scheduler is expecting.
 #endif  // __arm__
+
+#ifdef __powerpc__
+#define VALGRIND_MAGIC_SEQUENCE(                                        \
+        _zzq_rlval, _zzq_default, _zzq_request,                         \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
+                                                                        \
+  { volatile unsigned int _zzq_args[5];                                 \
+    register unsigned int _zzq_tmp __asm__("r3");                       \
+    register volatile unsigned int *_zzq_ptr __asm__("r4");             \
+    _zzq_args[0] = (volatile unsigned int)(_zzq_request);               \
+    _zzq_args[1] = (volatile unsigned int)(_zzq_arg1);                  \
+    _zzq_args[2] = (volatile unsigned int)(_zzq_arg2);                  \
+    _zzq_args[3] = (volatile unsigned int)(_zzq_arg3);                  \
+    _zzq_args[4] = (volatile unsigned int)(_zzq_arg4);                  \
+    _zzq_ptr = _zzq_args;                                               \
+    asm volatile("tw 0,3,27\n\t"                                        \
+                 "rlwinm 0,0,29,0,0\n\t"                                \
+                 "rlwinm 0,0,3,0,0\n\t"                                 \
+                 "rlwinm 0,0,13,0,0\n\t"                                \
+                 "rlwinm 0,0,19,0,0\n\t"                                \
+                 "nop\n\t"                                              \
+                 : "=r" (_zzq_tmp)                                      \
+                 : "0" (_zzq_default), "r" (_zzq_ptr)                   \
+                 : "memory");                                           \
+    _zzq_rlval = (__typeof__(_zzq_rlval)) _zzq_tmp;                     \
+  }
+#endif   // __powerpc__
 
 // Insert assembly code for other architectures here...
 

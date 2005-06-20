@@ -388,6 +388,8 @@ void VG_(setup_code_redirect_table) ( void )
                              VG_(client_trampoline_code)+VG_(tramp_gettimeofday_offset));
    add_redirect_addr_to_addr(0xFFFFFFFFFF600400ULL,
                              VG_(client_trampoline_code)+VG_(tramp_time_offset));
+#elif defined(VGP_ppc32_linux)
+//CAB: TODO
 #else
 #  error Unknown platform
 #endif

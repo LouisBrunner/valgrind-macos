@@ -125,6 +125,39 @@ static UInt local_sys_getpid ( void )
    return __res;
 }
 
+#elif defined(VGP_ppc32_linux)
+
+static UInt local_sys_write_stderr ( HChar* buf, Int n )
+{
+   UInt __res;
+   __asm__ volatile (
+      "li %%r0,4\n\t"      /* set %r0 = __NR_write */
+      "li %%r3,2\n\t"      /* set %r3 = stderr */
+      "mr %%r4,%1\n\t"     /* set %r4 = buf */
+      "mr %%r5,%2\n\t"     /* set %r5 = n */
+      "sc\n\t"             /* write(stderr, buf, n) */
+      "mr %0,%%r3\n"       /* set __res = r3 */
+      : "=mr" (__res)
+      : "g" (buf), "g" (n)
+      : "r0", "r3", "r4", "r5" );
+   if (__res < 0)
+      __res = -1;
+   return __res;
+}
+
+static UInt local_sys_getpid ( void )
+{
+   UInt __res;
+   __asm__ volatile (
+      "li %%r0,20\n"       /* set %r0 = __NR_getpid */
+      "\tsc\n"             /* getpid() */
+      "\tmr %0,%%r3\n"     /* set __res = r3 */
+      : "=mr" (__res)
+      :
+      : "r0" );
+   return __res;
+}
+
 #else
 # error Unknown platform
 #endif

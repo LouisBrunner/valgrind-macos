@@ -53,6 +53,10 @@
 #  define FIRST_STACK_FRAME(rbp)    (rbp)
 #  define STACK_FRAME_RET(rbp)      (((UWord*)rbp)[1])
 #  define STACK_FRAME_NEXT(rbp)     (((UWord*)rbp)[0])
+#elif defined(VGA_ppc32)
+#  define FIRST_STACK_FRAME(sp)     (sp)
+#  define STACK_FRAME_RET(sp)       (((UWord*)sp)[1])
+#  define STACK_FRAME_NEXT(sp)      (((UWord*)sp)[0])
 #else
 #  error Unknown platform
 #endif

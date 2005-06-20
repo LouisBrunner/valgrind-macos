@@ -134,7 +134,7 @@ typedef struct SigQueue {
 #  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.eax)
 #  define VGP_UCONTEXT_SYSCALL_SYSRES(uc)                       \
       /* Convert the value in uc_mcontext.eax into a SysRes. */ \
-      VG_(mk_SysRes)( (uc)->uc_mcontext.eax )
+      VG_(mk_SysRes_x86_linux)( (uc)->uc_mcontext.eax )
 
 #elif defined(VGP_amd64_linux)
 #  define VGP_UCONTEXT_INSTR_PTR(uc)      ((uc)->uc_mcontext.rip)
@@ -143,7 +143,7 @@ typedef struct SigQueue {
 #  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.rax)
 #  define VGP_UCONTEXT_SYSCALL_SYSRES(uc)                       \
       /* Convert the value in uc_mcontext.rax into a SysRes. */ \
-      VG_(mk_SysRes)( (uc)->uc_mcontext.rax )
+      VG_(mk_SysRes_amd64_linux)( (uc)->uc_mcontext.rax )
 
 #elif defined(VGP_arm_linux)
 #  define VGP_UCONTEXT_INSTR_PTR(uc)     ((uc)->uc_mcontext.arm_pc)
@@ -151,6 +151,16 @@ typedef struct SigQueue {
 #  define VGP_UCONTEXT_FRAME_PTR(uc)     ((uc)->uc_mcontext.arm_fp)
 #  define VGP_UCONTEXT_SYSCALL_NUM(uc)   ((uc)->uc_mcontext.arm_r0)
 #  error VGP_UCONTEXT_SYSCALL_RET undefined for ARM/Linux
+
+#elif defined(VGP_ppc32_linux)
+#  define VGP_UCONTEXT_INSTR_PTR(uc)      ((uc)->uc_mcontext.mc_gregs[VKI_PT_NIP])
+#  define VGP_UCONTEXT_STACK_PTR(uc)      ((uc)->uc_mcontext.mc_gregs[1])
+#  define VGP_UCONTEXT_FRAME_PTR(uc)      ((uc)->uc_mcontext.mc_gregs[1])
+#  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.mc_gregs[0])
+#  define VGP_UCONTEXT_SYSCALL_SYSRES(uc)                                \
+      /* Convert the values in uc_mcontext r3,cr into a SysRes. */       \
+      VG_(mk_SysRes_ppc32_linux)( (uc)->uc_mcontext.mc_gregs[3],         \
+				  (uc)->uc_mcontext.mc_gregs[VKI_PT_CCR] )
 
 #else
 #  error Unknown platform
@@ -396,6 +406,11 @@ extern void my_sigreturn(void);
    "my_sigreturn:\n" \
    "	movq	$" #name ", %rax\n" \
    "	syscall\n"
+#elif defined(VGP_ppc32_linux)
+#  define _MYSIG(name) \
+   "my_sigreturn:\n" \
+   "	li	0, " #name "\n" \
+   "	sc\n"
 #else
 #  error Unknown platform
 #endif

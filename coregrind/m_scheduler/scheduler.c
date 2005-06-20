@@ -760,6 +760,16 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          VG_(synth_sigill)(tid, VG_(get_IP)(tid));
          break;
 
+      case VEX_TRC_JMP_TINVAL:
+#if defined(VGA_ppc32)
+         VG_(discard_translations)(
+            (Addr64)VG_(threads)[tid].arch.vex.guest_TISTART,
+            VG_(threads)[tid].arch.vex.guest_TISTART );
+         if (0)
+            VG_(printf)("dump translations done.\n");
+#endif
+         break;
+
       default: 
 	 vg_assert2(0, "VG_(scheduler), phase 3: "
                        "unexpected thread return code (%u)", trc);
@@ -823,6 +833,9 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined(VGA_arm)
 #  define VGA_CLREQ_ARGS      guest_R0
 #  define VGA_CLREQ_RET       guest_R0
+#elif defined(VGA_ppc32)
+#  define VGA_CLREQ_ARGS      guest_GPR4
+#  define VGA_CLREQ_RET       guest_GPR3
 #else
 #  error Unknown arch
 #endif

@@ -64,6 +64,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/mman.h>
 
 #include "memcheck/memcheck.h"
 
@@ -119,6 +120,14 @@ static Int vgexecfd = -1;
 static Int  vg_argc;
 static Char **vg_argv;
 
+#if defined(VGP_ppc32_linux)
+/* From the aux vector */
+Int  VG_(cache_line_size);
+UInt VG_(hardware_capabilities);
+Addr VG_(vdso_base);
+Addr VG_(vdso_end);
+#endif
+
 
 /*====================================================================*/
 /*=== Counters, for profiling purposes only                        ===*/
@@ -143,13 +152,31 @@ static void print_all_stats ( void )
 
 
 /*====================================================================*/
+/*=== Miscellaneous global functions                               ===*/
+/*====================================================================*/
+
+#if defined(VGP_ppc32_linux)
+/* Used in scanning /proc/pid/maps for the VDSO */
+static int find_vdso(char *start, char *end, const char *perm,
+                   off_t offset, int maj, int min, int ino, void *extra)
+{
+   if ((Addr)start != VG_(vdso_base))
+      return 1;               /* keep looking */
+   /* found it */
+   VG_(vdso_end) = (Addr)end;
+   return 0;
+}
+#endif
+
+
+/*====================================================================*/
 /*=== Check we were launched by stage 1                            ===*/
 /*====================================================================*/
 
 /* Look for our AUXV table */
 static int scan_auxv(void* init_sp)
 {
-   const struct ume_auxv *auxv = find_auxv((UWord*)init_sp);
+    struct ume_auxv *auxv = find_auxv((UWord*)init_sp);
    int padfile = -1, found = 0;
 
    for (; auxv->a_type != AT_NULL; auxv++)
@@ -164,9 +191,33 @@ static int scan_auxv(void* init_sp)
 	 found |= 2;
 	 break;
 
+#if defined(VGP_ppc32_linux)
+      case AT_DCACHEBSIZE:
+      case AT_ICACHEBSIZE:
+      case AT_UCACHEBSIZE:
+	VG_(debugLog)(0, "main", "PPC32 cache line size %lu (type %lu)\n", 
+             auxv->u.a_val, auxv->a_type );
+         if (auxv->u.a_val)
+            VG_(cache_line_size) = auxv->u.a_val;
+ // XXX: Nasty hack to stop use of badly implemented cache-control instns in vex
+ auxv->u.a_val = 0;
+         break;
+
+      case AT_HWCAP:
+         VG_(hardware_capabilities) = auxv->u.a_val;
+         break;
+#endif
+
       case AT_PHDR:
          VG_(valgrind_base) = VG_PGROUNDDN(auxv->u.a_val);
          break;
+
+#if defined(VGP_ppc32_linux)
+      case AT_SYSINFO_EHDR:
+         VG_(vdso_base) = auxv->u.a_val;
+         foreach_map(find_vdso, NULL);
+         break;
+#endif
       }
 
    if ( found != (1|2) ) {
@@ -240,8 +291,27 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    vg_assert(!res.isError);
 
    // Make client hole
+#if defined(VGP_ppc32_linux)
+ {
+   Int   ires;
+   if (VG_(vdso_end) > VG_(client_base) && VG_(vdso_base) < VG_(client_end)) {
+     if (VG_(client_base) < VG_(vdso_base)) {
+       ires = munmap((void *)VG_(client_base), VG_(vdso_base) - VG_(client_base));
+       vg_assert(ires == 0);
+     }
+     if (VG_(vdso_end) < VG_(client_end)) {
+       ires = munmap((void *)VG_(vdso_end), VG_(client_end) - VG_(vdso_end));
+       vg_assert(ires == 0);
+     }
+   } else {
+     ires = munmap((void*)VG_(client_base), client_size);
+     vg_assert(ires == 0);
+   }
+ }
+#else
    res = VG_(munmap_native)((void*)VG_(client_base), client_size);
    vg_assert(!res.isError);
+#endif
 
    // Map shadow memory.
    // Initially all inaccessible, incrementally initialized as it is used
@@ -734,6 +804,10 @@ static Addr setup_client_stack(void* init_sp,
       auxsize += sizeof(*cauxv);
    }
 
+#if defined(VGP_ppc32_linux)
+   auxsize += 2 * sizeof(*cauxv);
+#endif
+
    /* OK, now we know how big the client stack is */
    stacksize =
       sizeof(Word) +			/* argc */
@@ -809,6 +883,14 @@ static Addr setup_client_stack(void* init_sp,
    auxv = (struct ume_auxv *)ptr;
    *client_auxv = (UInt *)auxv;
 
+#if defined(VGP_ppc32_linux)
+   auxv[0].a_type  = AT_IGNOREPPC;
+   auxv[0].u.a_val = AT_IGNOREPPC;
+   auxv[1].a_type  = AT_IGNOREPPC;
+   auxv[1].u.a_val = AT_IGNOREPPC;
+   auxv += 2;
+#endif
+
    for (; orig_auxv->a_type != AT_NULL; auxv++, orig_auxv++) {
       /* copy the entry... */
       *auxv = *orig_auxv;
@@ -857,6 +939,9 @@ static Addr setup_client_stack(void* init_sp,
       case AT_DCACHEBSIZE:
       case AT_ICACHEBSIZE:
       case AT_UCACHEBSIZE:
+#if defined(VGP_ppc32_linux)
+      case AT_IGNOREPPC:
+#endif
 	 /* All these are pointerless, so we don't need to do anything
 	    about them. */
 	 break;
@@ -876,14 +961,16 @@ static Addr setup_client_stack(void* init_sp,
 	    when we set up the client trampoline code page */
 	 break;
 
+#if !defined(VGP_ppc32_linux)
       case AT_SYSINFO_EHDR:
 	 /* Trash this, because we don't reproduce it */
 	 auxv->a_type = AT_IGNORE;
 	 break;
+#endif
 
       default:
 	 /* stomp out anything we don't know about */
-	 if (0)
+	 if (1)
 	    printf("stomping auxv entry %lld\n", (ULong)auxv->a_type);
 	 auxv->a_type = AT_IGNORE;
 	 break;
@@ -2156,6 +2243,7 @@ static void init_thread1state ( Addr client_ip,
    asm volatile("movw %%cs, %0" : : "m" (arch->vex.guest_CS));
    asm volatile("movw %%ds, %0" : : "m" (arch->vex.guest_DS));
    asm volatile("movw %%ss, %0" : : "m" (arch->vex.guest_SS));
+
 #elif defined(VGA_amd64)
    vg_assert(0 == sizeof(VexGuestAMD64State) % 8);
 
@@ -2169,6 +2257,21 @@ static void init_thread1state ( Addr client_ip,
    /* Put essential stuff into the new state. */
    arch->vex.guest_RSP = sp_at_startup;
    arch->vex.guest_RIP = client_ip;
+
+#elif defined(VGA_ppc32)
+   vg_assert(0 == sizeof(VexGuestPPC32State) % 8);
+
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestPPC32_initialise(&arch->vex);
+
+   /* Zero out the shadow area. */
+   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestPPC32State));
+
+   /* Put essential stuff into the new state. */
+   arch->vex.guest_GPR1 = sp_at_startup;
+   arch->vex.guest_CIA  = client_ip;
+
 #else
 #  error Unknown arch
 #endif

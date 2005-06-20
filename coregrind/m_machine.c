@@ -123,6 +123,43 @@ static void apply_to_GPs_of_tid(VexGuestArchState* vex, void (*f)(Addr))
    (*f)(vex->guest_R13);
    (*f)(vex->guest_R14);
    (*f)(vex->guest_R15);
+#elif defined(VGA_ppc32)
+   /* XXX ask tool about validity? */
+   (*f)(vex->guest_GPR0);
+   (*f)(vex->guest_GPR1);
+   (*f)(vex->guest_GPR2);
+   (*f)(vex->guest_GPR3);
+   (*f)(vex->guest_GPR4);
+   (*f)(vex->guest_GPR5);
+   (*f)(vex->guest_GPR6);
+   (*f)(vex->guest_GPR7);
+   (*f)(vex->guest_GPR8);
+   (*f)(vex->guest_GPR9);
+   (*f)(vex->guest_GPR10);
+   (*f)(vex->guest_GPR11);
+   (*f)(vex->guest_GPR12);
+   (*f)(vex->guest_GPR13);
+   (*f)(vex->guest_GPR14);
+   (*f)(vex->guest_GPR15);
+   (*f)(vex->guest_GPR16);
+   (*f)(vex->guest_GPR17);
+   (*f)(vex->guest_GPR18);
+   (*f)(vex->guest_GPR19);
+   (*f)(vex->guest_GPR20);
+   (*f)(vex->guest_GPR21);
+   (*f)(vex->guest_GPR22);
+   (*f)(vex->guest_GPR23);
+   (*f)(vex->guest_GPR24);
+   (*f)(vex->guest_GPR25);
+   (*f)(vex->guest_GPR26);
+   (*f)(vex->guest_GPR27);
+   (*f)(vex->guest_GPR28);
+   (*f)(vex->guest_GPR29);
+   (*f)(vex->guest_GPR30);
+   (*f)(vex->guest_GPR31);
+   (*f)(vex->guest_CTR);
+   (*f)(vex->guest_LR);
+
 #else
 #  error Unknown arch
 #endif

@@ -93,11 +93,18 @@ static Bool getArchAndSubArch( /*OUT*/VexArch*    vex_arch,
 
    /* we need at least SSE state to operate. */
    return False;
+
 #elif defined(VGA_amd64)
    vg_assert(VG_(has_cpuid)());
    *vex_arch = VexArchAMD64;
    *vex_subarch = VexSubArch_NONE;
    return True;
+
+#elif defined(VGA_ppc32)
+   *vex_arch    = VexArchPPC32;
+   *vex_subarch = VexSubArchPPC32_noAV;
+   return True;
+
 #else
 #  error Unknown architecture
 #endif

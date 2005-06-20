@@ -38,6 +38,8 @@
 #  include "vki_unistd-amd64-linux.h" 
 #elif defined(VGP_arm_linux)
 #  include "vki_unistd-arm-linux.h" 
+#elif defined(VGP_ppc32_linux)
+#  include "vki_unistd-ppc32-linux.h" 
 #else
 #  error Unknown platform
 #endif

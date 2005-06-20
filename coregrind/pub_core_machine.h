@@ -51,6 +51,10 @@
 #  define VGA_ELF_ENDIANNESS  ELFDATA2LSB
 #  define VGA_ELF_MACHINE     EM_ARM
 #  define VGA_ELF_CLASS       ELFCLASS32
+#elif defined(VGA_ppc32)
+#  define VGA_ELF_ENDIANNESS  ELFDATA2MSB
+#  define VGA_ELF_MACHINE     EM_PPC
+#  define VGA_ELF_CLASS       ELFCLASS32
 #else
 #  error Unknown arch
 #endif
@@ -73,6 +77,10 @@
 #  define VGA_INSTR_PTR       guest_R15
 #  define VGA_STACK_PTR       guest_R13
 #  define VGA_FRAME_PTR       guest_R11
+#elif defined(VGA_ppc32)
+#  define VGA_INSTR_PTR       guest_CIA
+#  define VGA_STACK_PTR       guest_GPR1
+#  define VGA_FRAME_PTR       guest_GPR1   // No frame ptr for PPC
 #else
 #  error Unknown arch
 #endif

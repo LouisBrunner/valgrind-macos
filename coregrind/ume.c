@@ -175,6 +175,60 @@ asm(
 "   ret\n"                 // jump to dst
 "   ud2\n"                 // should never get here
 );
+
+#elif defined(VGA_ppc32)
+/* Jump to 'dst', but first set the stack pointer to 'stack'.  Also,
+   clear all the integer registers before entering 'dst'.  It's
+   important that the stack pointer is set to exactly 'stack' and not
+   (eg) stack - apparently_harmless_looking_small_offset.  Basically
+   because the code at 'dst' might be wanting to scan the area above
+   'stack' (viz, the auxv array), and putting spurious words on the
+   stack confuses it.
+*/
+// %r3 == stack
+// %r4 == dst
+asm(
+".global jump_and_switch_stacks\n"
+"jump_and_switch_stacks:\n"
+"   mtctr %r4\n\t"         // dst to %ctr
+"   mr %r1,%r3\n\t"        // stack to %sp
+"   li 0,0\n\t"            // zero all GP regs
+"   li 3,0\n\t"
+"   li 4,0\n\t"
+"   li 5,0\n\t"
+"   li 6,0\n\t"
+"   li 7,0\n\t"
+"   li 8,0\n\t"
+"   li 9,0\n\t"
+"   li 10,0\n\t"
+"   li 11,0\n\t"
+"   li 12,0\n\t"
+"   li 13,0\n\t"           // CAB: This right? r13 = small data area ptr
+"   li 14,0\n\t"
+"   li 15,0\n\t"
+"   li 16,0\n\t"
+"   li 17,0\n\t"
+"   li 18,0\n\t"
+"   li 19,0\n\t"
+"   li 20,0\n\t"
+"   li 21,0\n\t"
+"   li 22,0\n\t"
+"   li 23,0\n\t"
+"   li 24,0\n\t"
+"   li 25,0\n\t"
+"   li 26,0\n\t"
+"   li 27,0\n\t"
+"   li 28,0\n\t"
+"   li 29,0\n\t"
+"   li 30,0\n\t"
+"   li 31,0\n\t"
+"   mtxer 0\n\t"
+"   mtcr 0\n\t"
+"   mtlr %r0\n\t"
+"   bctr\n\t"              // jump to dst
+"   trap\n"                // should never get here
+);
+
 #else
 #  error Unknown architecture
 #endif
@@ -195,6 +249,13 @@ struct ume_auxv *find_auxv(UWord* sp)
       sp++;
    sp++;
    
+#if defined(VGA_ppc32)
+# if defined AT_IGNOREPPC
+   while (*sp == AT_IGNOREPPC)        // skip AT_IGNOREPPC entries
+      sp += 2;
+# endif
+#endif
+
    return (struct ume_auxv *)sp;
 }
 

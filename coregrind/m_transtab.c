@@ -327,6 +327,24 @@ static void initialiseSector ( Int sno )
    invalidateFastCache();
 }
 
+#if defined(VGA_ppc32)
+static void invalidate_icache(void *ptr, int nbytes)
+{
+   unsigned long startaddr = (unsigned long) ptr;
+   unsigned long endaddr = startaddr + nbytes;
+   unsigned long addr;
+   unsigned long cls = 16; //VG_(cache_line_size);
+
+   startaddr &= ~(cls - 1);
+   for (addr = startaddr; addr < endaddr; addr += cls)
+      asm volatile("dcbst 0,%0" : : "r" (addr));
+   asm volatile("sync");
+   for (addr = startaddr; addr < endaddr; addr += cls)
+      asm volatile("icbi 0,%0" : : "r" (addr));
+   asm volatile("sync; isync");
+}
+#endif
+
 
 /* Add a translation of vge to TT/TC.  The translation is temporarily
    in code[0 .. code_len-1].
@@ -405,6 +423,10 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
       dstP[i] = srcP[i];
    sectors[y].tc_next += reqdQ;
    sectors[y].tt_n_inuse++;
+
+#if defined(VGA_ppc32)
+   invalidate_icache( dstP, code_len );
+#endif
 
    /* more paranoia */
    tce2 = sectors[y].tc_next;

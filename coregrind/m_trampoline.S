@@ -96,6 +96,15 @@ VG_(trampoline_code_start):
     syscall_start:
 	/* unused on amd64 */
 
+#elif defined(VGP_ppc32_linux)
+// CAB: TODO
+// Not yet used, just keeping the compiler quiet
+sigreturn_start:
+rt_sigreturn_start:
+syscall_start:
+gettimeofday_start:
+time_start:
+
 #else
 #	error Unknown platform
 #endif

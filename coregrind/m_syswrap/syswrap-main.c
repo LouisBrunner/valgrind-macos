@@ -267,7 +267,7 @@ static
 void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
                                     /*IN*/ VexGuestArchState* gst_vanilla )
 {
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    canonical->sysno = gst->guest_EAX;
    canonical->arg1  = gst->guest_EBX;
@@ -276,8 +276,8 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg4  = gst->guest_ESI;
    canonical->arg5  = gst->guest_EDI;
    canonical->arg6  = gst->guest_EBP;
-#  else
-#  if defined(VGP_amd64_linux)
+
+#elif defined(VGP_amd64_linux)
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
    canonical->sysno = gst->guest_RAX;
    canonical->arg1  = gst->guest_RDI;
@@ -286,17 +286,27 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg4  = gst->guest_R10;
    canonical->arg5  = gst->guest_R8;
    canonical->arg6  = gst->guest_R9;
-#  else
-#    error "getSyscallArgsFromGuestState: unknown arch"
-#  endif
-#  endif
+
+#elif defined(VGP_ppc32_linux)
+   VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
+   canonical->sysno = gst->guest_GPR0;
+   canonical->arg1  = gst->guest_GPR3;
+   canonical->arg2  = gst->guest_GPR4;
+   canonical->arg3  = gst->guest_GPR5;
+   canonical->arg4  = gst->guest_GPR6;
+   canonical->arg5  = gst->guest_GPR7;
+   canonical->arg6  = gst->guest_GPR8;
+
+#else
+#  error "getSyscallArgsFromGuestState: unknown arch"
+#endif
 }
 
 static 
 void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
                                     /*OUT*/VexGuestArchState* gst_vanilla )
 {
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    gst->guest_EAX = canonical->sysno;
    gst->guest_EBX = canonical->arg1;
@@ -305,8 +315,8 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_ESI = canonical->arg4;
    gst->guest_EDI = canonical->arg5;
    gst->guest_EBP = canonical->arg6;
-#  else
-#  if defined(VGP_amd64_linux)
+
+#elif defined(VGP_amd64_linux)
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
    gst->guest_RAX = canonical->sysno;
    gst->guest_RDI = canonical->arg1;
@@ -315,31 +325,48 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_R10 = canonical->arg4;
    gst->guest_R8  = canonical->arg5;
    gst->guest_R9  = canonical->arg6;
-#  else
-#    error "putSyscallArgsIntoGuestState: unknown arch"
-#  endif
-#  endif
+
+#elif defined(VGP_ppc32_linux)
+   VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
+   gst->guest_GPR0 = canonical->sysno;
+   gst->guest_GPR3 = canonical->arg1;
+   gst->guest_GPR4 = canonical->arg2;
+   gst->guest_GPR5 = canonical->arg3;
+   gst->guest_GPR6 = canonical->arg4;
+   gst->guest_GPR7 = canonical->arg5;
+   gst->guest_GPR8 = canonical->arg6;
+
+#else
+#  error "putSyscallArgsIntoGuestState: unknown arch"
+#endif
 }
 
 static
 void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
                                       /*IN*/ VexGuestArchState* gst_vanilla )
 {
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    Int               i   = (Int)gst->guest_EAX;
    canonical->what = i >= -4095 && i <= -1  ? SsFailure  : SsSuccess;
    canonical->val  = (UWord)(canonical->what==SsFailure ? -i : i);
-#  else
-#  if defined(VGP_amd64_linux)
+
+#elif defined(VGP_amd64_linux)
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
    Long                i   = (Long)gst->guest_RAX;
    canonical->what = i >= -4095 && i <= -1  ? SsFailure  : SsSuccess;
    canonical->val  = (UWord)(canonical->what==SsFailure ? -i : i);
-#  else
-#    error "getSyscallStatusFromGuestState: unknown arch"
-#  endif
-#  endif
+
+#elif defined(VGP_ppc32_linux)
+   VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
+   UInt                cr  = LibVEX_GuestPPC32_get_cr7( gst );
+   UInt                err = (cr >> 28) & 1;                   // CR7.SO
+   canonical->what = (err == 1)  ? SsFailure  : SsSuccess;
+   canonical->val  = (UWord)gst->guest_GPR3;
+
+#else
+#  error "getSyscallStatusFromGuestState: unknown arch"
+#endif
 }
 
 static 
@@ -348,7 +375,7 @@ void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
 {
    vg_assert(canonical->what == SsSuccess 
              || canonical->what == SsFailure);
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    if (canonical->what == SsFailure) {
       /* This isn't exactly right, in that really a Failure with res
@@ -358,8 +385,7 @@ void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
    } else {
       gst->guest_EAX = canonical->val;
    }
-#  else
-#  if defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux)
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
    if (canonical->what == SsFailure) {
       /* This isn't exactly right, in that really a Failure with res
@@ -369,10 +395,22 @@ void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
    } else {
       gst->guest_RAX = canonical->val;
    }
-#  else
-#    error "putSyscallStatusIntoGuestState: unknown arch"
-#  endif
-#  endif
+
+#elif defined(VGP_ppc32_linux)
+   VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
+   gst->guest_GPR3 = canonical->val;
+   gst->guest_CC_OP = 1;
+   /* XXX: Setting all of CR0, not just SO flag */
+   if (canonical->what == SsFailure)   /* set cr0.SO */
+      gst->guest_CC_DEP1 = 0x30000000;
+   else                                /* clear cr0.SO */
+      gst->guest_CC_DEP1 = 0x20000000;
+// CAB: Need to set gpr0?
+   gst->guest_GPR0 = 0;
+
+#else
+#  error "putSyscallStatusIntoGuestState: unknown arch"
+#endif
 }
 
 
@@ -383,7 +421,7 @@ void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
 static
 void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
 {
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    layout->o_sysno  = OFFSET_x86_EAX;
    layout->o_arg1   = OFFSET_x86_EBX;
    layout->o_arg2   = OFFSET_x86_ECX;
@@ -392,8 +430,8 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg5   = OFFSET_x86_EDI;
    layout->o_arg6   = OFFSET_x86_EBP;
    layout->o_retval = OFFSET_x86_EAX;
-#  else
-#  if defined(VGP_amd64_linux)
+
+#elif defined(VGP_amd64_linux)
    layout->o_sysno  = OFFSET_amd64_RAX;
    layout->o_arg1   = OFFSET_amd64_RDI;
    layout->o_arg2   = OFFSET_amd64_RSI;
@@ -402,10 +440,20 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg5   = OFFSET_amd64_R8;
    layout->o_arg6   = OFFSET_amd64_R9;
    layout->o_retval = OFFSET_amd64_RAX;
-#  else
-#    error "getSyscallLayout: unknown arch"
-#  endif
-#  endif
+
+#elif defined(VGP_ppc32_linux)
+   layout->o_sysno  = OFFSET_ppc32_GPR0;
+   layout->o_arg1   = OFFSET_ppc32_GPR3;
+   layout->o_arg2   = OFFSET_ppc32_GPR4;
+   layout->o_arg3   = OFFSET_ppc32_GPR5;
+   layout->o_arg4   = OFFSET_ppc32_GPR6;
+   layout->o_arg5   = OFFSET_ppc32_GPR7;
+   layout->o_arg6   = OFFSET_ppc32_GPR8;
+   layout->o_retval = OFFSET_ppc32_GPR3;
+
+#else
+#  error "getSyscallLayout: unknown arch"
+#endif
 }
 
 
@@ -866,7 +914,7 @@ extern const Addr VGA_(blksys_finished);
 
 void VG_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
 {
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    arch->vex.guest_EIP -= 2;             // sizeof(int $0x80)
 
    /* Make sure our caller is actually sane, and we're really backing
@@ -884,9 +932,8 @@ void VG_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
 
       vg_assert(p[0] == 0xcd && p[1] == 0x80);
    }
-#  else
 
-#  if defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux)
    arch->vex.guest_RIP -= 2;             // sizeof(syscall)
 
    /* Make sure our caller is actually sane, and we're really backing
@@ -904,11 +951,29 @@ void VG_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
 
       vg_assert(p[0] == 0x0F && p[1] == 0x05);
    }
-#  else
 
-#    error "VG_(fixup_guest_state_to_restart_syscall): unknown plat"
-#  endif
-#  endif
+#elif defined(VGP_ppc32_linux)
+   arch->vex.guest_CIA -= 4;             // sizeof(ppc32 instr)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      sc == 44 00 00 02
+   */
+   {
+      UChar *p = (UChar *)arch->vex.guest_CIA;
+
+      if (p[0] != 0x44 || p[1] != 0x0 || p[2] != 0x0 || p[3] != 0x02)
+         VG_(message)(Vg_DebugMsg,
+                      "?! restarting over syscall at %p %02x %02x %02x %02x\n",
+                      arch->vex.guest_CIA, p[0], p[1], p[2], p[3]);
+
+      vg_assert(p[0] == 0x44 && p[1] == 0x0 && p[2] == 0x0 && p[3] == 0x2);
+   }
+
+#else
+#  error "VG_(fixup_guest_state_to_restart_syscall): unknown plat"
+#endif
 }
 
 /* 

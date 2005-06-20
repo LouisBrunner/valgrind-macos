@@ -60,6 +60,8 @@
     VG_(has_cpuid):
         movq    $1, %rax
         ret
+#elif defined(VGA_appc32)
+//CAB: TODO
 #endif
 
 /*
@@ -141,6 +143,8 @@
         movq    %rbp, %rsp
         popq    %rbp
         ret
+#elif defined(VGA_appc32)
+//CAB: TODO
 #endif
         
 /* Let the linker know we don't need an executable stack */

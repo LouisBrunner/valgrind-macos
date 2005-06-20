@@ -120,6 +120,8 @@ SysRes;
 #  define VGA_REGPARM(n)            __attribute__((regparm(n)))
 #elif defined(VGA_amd64) || defined(VGA_arm)
 #  define VGA_REGPARM(n)            /* */
+#elif defined(VGA_ppc32)
+#  define VGA_REGPARM(n)            /* */
 #else
 #  error Unknown arch
 #endif

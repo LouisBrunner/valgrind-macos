@@ -93,7 +93,7 @@ AC_CANONICAL_HOST
 AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH)
 AC_SUBST(VG_ARCH_ALL)
-VG_ARCH_ALL="amd64 arm x86"
+VG_ARCH_ALL="amd64 arm ppc32 x86"
 AC_SUBST(KICKSTART_BASE)
 AC_SUBST(ARCH_CORE_AM_CFLAGS)
 AC_SUBST(ARCH_TOOL_AM_CFLAGS)
@@ -137,13 +137,12 @@ case "${host_cpu}" in
         ;;
 
      powerpc*)
-        AC_MSG_RESULT([no (${host_cpu})])
-        VG_ARCH="ppc"
-        KICKSTART_BASE="0x70000000"
+        AC_MSG_RESULT([ok (${host_cpu})])
+        VG_ARCH="ppc32"
+        KICKSTART_BASE="0x10000000"
         ARCH_CORE_AM_CFLAGS=""
         ARCH_TOOL_AM_CFLAGS="-fpic"
         ARCH_CORE_AM_CCASFLAGS="-Wa,-maltivec"
-        AC_MSG_ERROR([PowerPC not supported. Sorry])
         ;;
 
      *) 
@@ -200,12 +199,12 @@ esac
 AC_MSG_CHECKING([for a supported CPU/OS combination])
 AC_SUBST(VG_PLATFORM)
 AC_SUBST(VG_PLATFORM_ALL)
-VG_PLATFORM_ALL="amd64-linux arm-linux x86-linux"
+VG_PLATFORM_ALL="amd64-linux arm-linux ppc32-linux x86-linux"
 
 VG_PLATFORM="$VG_ARCH-$VG_OS"
 
 case $VG_PLATFORM in
-    x86-linux|amd64-linux|arm-linux)
+    x86-linux|amd64-linux|arm-linux|ppc32-linux)
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
         ;;
 
@@ -437,12 +436,14 @@ AC_OUTPUT(
    memcheck/tests/Makefile
    memcheck/tests/amd64/Makefile
    memcheck/tests/arm/Makefile
+   memcheck/tests/ppc32/Makefile
    memcheck/tests/x86/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/amd64/Makefile
    cachegrind/tests/arm/Makefile
+   cachegrind/tests/ppc32/Makefile
    cachegrind/tests/x86/Makefile
    cachegrind/docs/Makefile
    cachegrind/cg_annotate
@@ -463,6 +464,7 @@ AC_OUTPUT(
    none/tests/Makefile
    none/tests/amd64/Makefile
    none/tests/arm/Makefile
+   none/tests/ppc32/Makefile
    none/tests/x86/Makefile
    none/docs/Makefile
 ) 

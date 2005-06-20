@@ -61,9 +61,11 @@ extern SysRes VG_(do_syscall) ( UWord sysno,
 #define vgPlain_do_syscall6(s,a,b,c,d,e,f) VG_(do_syscall)((s),(a),(b),\
                                                            (c),(d),(e),(f))
 
-extern SysRes VG_(mk_SysRes)         ( UWord val );
-extern SysRes VG_(mk_SysRes_Error)   ( UWord val );
-extern SysRes VG_(mk_SysRes_Success) ( UWord val );
+extern SysRes VG_(mk_SysRes_x86_linux)   ( UWord val );
+extern SysRes VG_(mk_SysRes_amd64_linux) ( UWord val );
+extern SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt errflag );
+extern SysRes VG_(mk_SysRes_Error)       ( UWord val );
+extern SysRes VG_(mk_SysRes_Success)     ( UWord val );
 
 // The _WRK function is handwritten assembly.  It has some very magic
 // properties.  See comments at the top of

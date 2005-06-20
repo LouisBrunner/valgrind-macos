@@ -343,7 +343,7 @@ Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port )
 static
 Int my_socket ( Int domain, Int type, Int protocol )
 {
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    SysRes res;
    UWord  args[3];
    args[0] = domain;
@@ -351,18 +351,26 @@ Int my_socket ( Int domain, Int type, Int protocol )
    args[2] = protocol;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_SOCKET, (UWord)&args);
    return res.isError ? -1 : res.val;
-#  else
+
+#elif defined(VGP_amd64_linux)
    // AMD64/Linux doesn't define __NR_socketcall... see comment above
    // VG_(sigpending)() for more details.
    I_die_here;
-#  endif
+
+#elif defined(VGP_ppc32_linux)
+//CAB: TODO
+   I_die_here;
+
+#else
+#  error Unknown arch
+#endif
 }
 
 static
 Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, 
                  Int addrlen )
 {
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    SysRes res;
    UWord  args[3];
    args[0] = sockfd;
@@ -370,11 +378,19 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
    args[2] = addrlen;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_CONNECT, (UWord)&args);
    return res.isError ? -1 : res.val;
-#  else
+
+#elif defined(VGP_amd64_linux)
    // AMD64/Linux doesn't define __NR_socketcall... see comment above
    // VG_(sigpending)() for more details.
    I_die_here;
-#  endif
+
+#elif defined(VGP_ppc32_linux)
+//CAB: TODO
+   I_die_here;
+
+#else
+#  error Unknown arch
+#endif
 }
 
 Int VG_(write_socket)( Int sd, void *msg, Int count )
@@ -385,7 +401,7 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
       error is still returned. */
    Int flags = VKI_MSG_NOSIGNAL;
 
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    SysRes res;
    UWord  args[4];
    args[0] = sd;
@@ -394,18 +410,27 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    args[3] = flags;
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_SEND, (UWord)&args);
    return res.isError ? -1 : res.val;
-#  else
+
+#elif defined(VGP_amd64_linux)
    // AMD64/Linux doesn't define __NR_socketcall... see comment above
    // VG_(sigpending)() for more details.
    I_die_here;
-#  endif
+
+#elif defined(VGP_ppc32_linux)
+//CAB: TODO
+   I_die_here;
+   flags = 0; // stop compiler complaints
+
+#else
+#  error Unknown arch
+#endif
 }
 
 Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
    SysRes res;
 
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
@@ -413,21 +438,25 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_GETSOCKNAME, (UWord)&args);
    return res.isError ? -1 : res.val;
 
-#  elif defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux)
    res = VG_(do_syscall3)( __NR_getsockname,
                            (UWord)sd, (UWord)name, (UWord)namelen );
    return res.isError ? -1 : res.val;
 
-#  else
+#elif defined(VGP_ppc32_linux)
+//CAB: TODO
    I_die_here;
-#  endif
+   return res.isError ? -1 : res.val;
+#else
+#  error Unknown arch
+#endif
 }
 
 Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
    SysRes res;
 
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
@@ -435,14 +464,19 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_GETPEERNAME, (UWord)&args);
    return res.isError ? -1 : res.val;
 
-#  elif defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux)
    res = VG_(do_syscall3)( __NR_getpeername,
                            (UWord)sd, (UWord)name, (UWord)namelen );
    return res.isError ? -1 : res.val;
 
-#  else
+#elif defined(VGP_ppc32_linux)
+//CAB: TODO
    I_die_here;
-#  endif
+   return res.isError ? -1 : res.val;
+
+#else
+#  error Unknown arch
+#endif
 }
 
 Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
@@ -450,7 +484,7 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
 {
    SysRes res;
 
-#  if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux)
    UWord  args[5];
    args[0] = sd;
    args[1] = level;
@@ -460,15 +494,20 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
    res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_GETSOCKOPT, (UWord)&args);
    return res.isError ? -1 : res.val;
 
-#  elif defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux)
    res = VG_(do_syscall5)( __NR_getsockopt,
                            (UWord)sd, (UWord)level, (UWord)optname, 
                            (UWord)optval, (UWord)optlen );
    return res.isError ? -1 : res.val;
 
-#  else
+#elif defined(VGP_ppc32_linux)
+//CAB: TODO
    I_die_here;
-#  endif
+   return res.isError ? -1 : res.val;
+
+#else
+#  error Unknown arch
+#endif
 }
 
 

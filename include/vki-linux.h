@@ -70,6 +70,8 @@
 #  include "vki_posixtypes-x86-linux.h"
 #elif defined(VGA_amd64)
 #  include "vki_posixtypes-amd64-linux.h"
+#elif defined(VGA_ppc32)
+#  include "vki_posixtypes-ppc32-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -148,6 +150,8 @@ typedef unsigned int	        vki_uint;
 #  include "vki-x86-linux.h"
 #elif defined(VGA_amd64)
 #  include "vki-amd64-linux.h"
+#elif defined(VGA_ppc32)
+#  include "vki-ppc32-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -1128,11 +1132,10 @@ struct vki_io_event {
 	__vki_s64	result2;	/* secondary result */
 };
 
-#define VKI_PADDED(x,y)	x, y
 #if defined(VKI_LITTLE_ENDIAN)
-#define VKI_PADDED(x,y)	x, y
+#  define VKI_PADDED(x,y)	x, y
 #elif defined(VKI_BIG_ENDIAN)
-#define VKI_PADDED(x,y)	y, x
+#  define VKI_PADDED(x,y)	y, x
 #else
 #error edit for your odd byteorder.
 #endif

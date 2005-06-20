@@ -45,6 +45,10 @@
 #  define VGA_MIN_INSTR_SZB         4
 #  define VGA_MAX_INSTR_SZB         4 
 #  define VGA_STACK_REDZONE_SZB     0
+#elif defined(VGA_ppc32)
+#  define VGA_MIN_INSTR_SZB         4
+#  define VGA_MAX_INSTR_SZB         4 
+#  define VGA_STACK_REDZONE_SZB     0
 #else
 #  error Unknown arch
 #endif

@@ -55,6 +55,12 @@
           "movq %%rbp, %1;" \
           : "=r" (sp),\
             "=r" (fp));
+#elif defined(VGP_ppc32_linux)
+#  define GET_REAL_SP_AND_FP(sp, fp) \
+      asm("mr %0,1;" \
+          "mr %1,1;" \
+          : "=r" (sp),\
+            "=r" (fp));
 #else
 #  error Unknown platform
 #endif

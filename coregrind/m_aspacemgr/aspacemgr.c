@@ -1540,6 +1540,10 @@ Bool VGA_(setup_pointercheck)(Addr client_base, Addr client_end)
    if (0) 
       VG_(message)(Vg_DebugMsg, "ignoring --pointercheck (unimplemented)");
    return True;
+#elif defined(VGP_ppc32_linux)
+   if (0) 
+      VG_(message)(Vg_DebugMsg, "ignoring --pointercheck (unimplemented)");
+   return True;
 #else
 #  error Unknown architecture
 #endif

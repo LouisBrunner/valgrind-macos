@@ -64,7 +64,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/mman.h>
 
 #include "memcheck/memcheck.h"
 
@@ -291,27 +290,27 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    vg_assert(!res.isError);
 
    // Make client hole
-#if defined(VGP_ppc32_linux)
- {
-   Int   ires;
-   if (VG_(vdso_end) > VG_(client_base) && VG_(vdso_base) < VG_(client_end)) {
-     if (VG_(client_base) < VG_(vdso_base)) {
-       ires = munmap((void *)VG_(client_base), VG_(vdso_base) - VG_(client_base));
-       vg_assert(ires == 0);
-     }
-     if (VG_(vdso_end) < VG_(client_end)) {
-       ires = munmap((void *)VG_(vdso_end), VG_(client_end) - VG_(vdso_end));
-       vg_assert(ires == 0);
-     }
-   } else {
-     ires = munmap((void*)VG_(client_base), client_size);
-     vg_assert(ires == 0);
-   }
- }
-#else
+//zz #if defined(VGP_ppc32_linux)
+//zz  {
+//zz    Int   ires;
+//zz    if (VG_(vdso_end) > VG_(client_base) && VG_(vdso_base) < VG_(client_end)) {
+//zz      if (VG_(client_base) < VG_(vdso_base)) {
+//zz        ires = munmap((void *)VG_(client_base), VG_(vdso_base) - VG_(client_base));
+//zz        vg_assert(ires == 0);
+//zz      }
+//zz      if (VG_(vdso_end) < VG_(client_end)) {
+//zz        ires = munmap((void *)VG_(vdso_end), VG_(client_end) - VG_(vdso_end));
+//zz        vg_assert(ires == 0);
+//zz      }
+//zz    } else {
+//zz      ires = munmap((void*)VG_(client_base), client_size);
+//zz      vg_assert(ires == 0);
+//zz    }
+//zz  }
+//zz #else
    res = VG_(munmap_native)((void*)VG_(client_base), client_size);
    vg_assert(!res.isError);
-#endif
+//zz #endif
 
    // Map shadow memory.
    // Initially all inaccessible, incrementally initialized as it is used

@@ -1,0 +1,272 @@
+#! /usr/bin/perl
+#
+# Generate Valgrind's module dependence graph in 'dot' format.
+#
+# You can run it from anywhere(?) in a Valgrind source tree, but the two
+# most interesting places are:
+# - the root, to get the entire module dependence graph.
+# - coregrind/, to get the core's module dependence graph.
+#
+# It sends a dot-format graph to stdout.  You can use dot (part of the
+# "GraphViz" package) to generated a PostScript graphs like this:
+#
+#   dot -Tps foo.dot -o foo.ps
+#
+# Caveats:
+# - It's not a proper parser.  If you have a #include that is commented out,
+#   it will think it's there.  We see that particularly in m_demangle.
+# - It only looks in C files, not in header files, so it will miss any
+#   extra dependencies this causes.  Fortunately we don't have many like
+#   that.
+
+use warnings;
+use strict;
+
+#----------------------------------------------------------------------------
+# Global variables
+#----------------------------------------------------------------------------
+
+# The dependence graph is a set of src-->dst pairs, stored in a double-hash:
+#
+#   hash(src, hash(dst, dst_realname))
+#
+# Each of 'src' and 'dst' are node names.  'src' is always a module name,
+# eg. 'm_main' or 'memcheck'.  The destination is sometimes a module name,
+# and sometimes a header file.  Because Dot can't handle certain characters
+# in its node names, when 'dst' represents a header file it's a transformed
+# version of the header file name, eg. 'INT_memcheck_h' or 'EXT_sys_mman_h'.
+# The 'dst_realname' holds the original name, eg.  '"memcheck.h"' or
+# "<sys/mman.h>".  We use 'dst' for the node name in the graph, but label it
+# with 'dst_realname' and that's what gets seen.  (Although we use "" for
+# 'dst_realname' when it would be the same as 'dst'.)
+my $deps = {};
+
+# Directories to skip.  These are the defaults, they can be augmented
+# using command-line options.
+my %dirs_to_skip = ( auxprogs => 1, hp2ps => 1, tests => 1 );
+
+# Command-line variables -- things we should show.  Default is yes.
+my $show_tools   = 1;
+my $show_headers = 1;
+my $show_libc    = 1;
+
+# Modules to hide.
+my %hide;
+
+# List of all tools.
+my @tools = ( "addrcheck", "cachegrind", "corecheck", "helgrind",
+              "lackey", "massif", "memcheck", "none" );
+
+my $usage = <<END
+usage: gen-mdg [options]
+
+  options:
+    --headers=no|yes    show headers, ie. show module-to-module deps only
+    --libc=no|yes       show m_libc* modules
+    --hide=<module>     hide module named <module>
+END
+;
+
+#----------------------------------------------------------------------------
+# Subroutines
+#----------------------------------------------------------------------------
+
+sub process_cmd_line()
+{
+   for my $arg (@ARGV) { 
+
+        # --headers=yes|no
+        if ($arg =~ /^--headers=(yes|no)$/) {
+            $show_headers = 1 if ($1 eq "yes");
+            $show_headers = 0 if ($1 eq "no");
+
+        # --libc=yes|no
+        } elsif ($arg =~ /^--libc=(yes|no)$/) {
+            $show_libc = 1 if ($1 eq "yes");
+            $show_libc = 0 if ($1 eq "no");
+
+        # --hide=<module>
+        } elsif ($arg =~ /^--hide=(.*)$/) {
+            $hide{$1} = 1;
+
+        } else {
+            die $usage;
+        }
+    }
+
+    if (!$show_tools) {
+        foreach my $tool (@tools) {
+            $dirs_to_skip{$tool} = 1;
+        }
+    }
+}
+
+# Convert a header filename into a node name acceptable by dot.
+sub clean_nodename($)
+{
+    my ($s) = @_;
+    $s =~ s/"([^"]+)"/INT_$1/;  # "foo.h" --> foo.h
+    $s =~ s/<([^>]+)>/EXT_$1/;  # <foo.h> --> foo.h
+    $s =~ s/\./_/g;  # foo.h     --> foo_h
+    $s =~ s/-/_/g;   # foo-bar.h --> foo_bar_h
+    $s =~ s/\//_/g;  # bar/foo_h --> bar_foo_h
+    return $s;
+}
+
+# Convert a header filename into a node label acceptable by dot.
+sub clean_nodelabel($)
+{
+    my ($s) = @_;
+    $s =~ s/"/\\"/g;    # "foo.h" --> \"foo.h\"
+    return $s;
+}
+
+# $module is the module to which the C file $f belongs.
+sub scan_C_file($$)
+{
+    my ($module, $f) = @_;
+
+    # Skip if this is a module we want to hide
+    if ($hide{$module}) {
+        return;
+    }
+    
+    # Skip if this is a m_libc*.c file and we aren't showing them.
+    if (not $show_libc and $f =~ /^m_libc\w+.c/) {
+        return;
+    }
+
+    # Get any existing dependencies for this module, initialise if none
+    my $module_deps = $deps->{$module};
+    if (not defined $module_deps) {
+        $module_deps = {};
+    }
+    
+    # Scan the C file
+    open(CFILE, "< $f") || die "File $f not openable\n";
+    while (my $line = <CFILE>) {
+        if ($line =~ /#include\s+(("|<)[^">]+("|>))/) {
+            # Right!  We've found a #include line.
+            my $include_string = $1;
+            my $target;
+            my $realname;
+            if ($include_string =~ /"pub_(core|tool)_([\w]+).h"/) {
+                # If #include string is "pub_core_foo.h" or "pub_tool_foo.h", 
+                # the target module is m_foo.
+                $target = "m_$2";
+                $realname        = "";
+
+                # But don't show m_libc* dst modules if asked not to.
+                if (not $show_libc and $target =~ /m_libc/) {
+                    $target = "";
+                }
+
+                # And don't show hidden modules
+                if ($hide{$target}) {
+                    $target = "";
+                }
+
+            } elsif ($show_headers) {
+                # Otherwise use the #include string as-is for the target.
+                $target   = clean_nodename($include_string);
+                $realname = clean_nodelabel($include_string);
+
+            } else {
+                # Don't record anything
+                $target   = "";
+                $realname = "";
+            }
+
+            # Maybe record dependency (unless it's circular)
+            if ($target ne "" and $target ne $module) {
+                $module_deps->{$target} = $realname;
+            }
+        }
+    }
+    close(CFILE);
+
+    # Store the updated dependencies.
+    $deps->{$module} = $module_deps;
+}
+
+sub process_dir($);      # forward declarations required because of recursion
+sub process_dir($)
+{
+    my ($parentd) = @_;
+
+    # Go through each file/dir in the directory.
+    my @fs = <*>;
+    foreach my $f (@fs) {
+        if (-d $f) {
+            # Directory -- recursively process unless we want to skip it.
+            if (not exists $dirs_to_skip{$f}) {
+                chdir $f or die;
+                process_dir($f);
+                chdir ".." or die;
+            }
+
+        } elsif (-f $f) {
+            if ($f =~ /\w+\.c$/) {
+                # If this is a .c file in coregrind/, it's a module in its
+                # own right, eg. coregrind/m_redir.c --> module name of
+                # "m_redir".
+                #
+                # Otherwise, it belongs to the module whose name is that of
+                # the parent directory, eg. coregrind/m_debuginfo/symtab.c
+                # --> module name of "m_debuginfo".
+                my $module;
+                if ($parentd eq "coregrind") {
+                    $module = $f;
+                    $module =~ s/(\w+).c/$1/;     # foo.c --> foo
+                } else {
+                    $module = $parentd;
+                }
+                # Now the module/f pair is either:
+                #   -    like this:  (m_redir, m_redir.c)
+                #   - or like this:  (m_debuginfo, symtab.c)
+                scan_C_file($module, $f);
+            }
+
+        } else {
+            die "$f is not a dir nor a file\n";
+        }
+    }
+}
+
+sub print_graph()
+{
+    my %printed_realnames;
+
+    print("digraph G {\n");
+    while (my ($src, $dst_hash) = each %$deps) {
+        while (my ($dst, $dst_realname) = each %$dst_hash) {
+
+            # If the dstnode has a realname, print just the dstnode with that
+            # realname, and record it in %printed_realnames so we don't print
+            # it again.
+            if ($dst_realname ne "") {
+                if (not defined $printed_realnames{$dst}) {
+                    print("  $dst [label=\"$dst_realname\"]\n");
+                    $printed_realnames{$dst} = 1;
+                }
+            }
+            
+            # Print the src-->dst edge.
+            print("  $src -> $dst\n");
+        }
+    }
+    print("}\n");
+}
+
+#----------------------------------------------------------------------------
+# main
+#----------------------------------------------------------------------------
+process_cmd_line();
+
+my $start_dir = `basename \`pwd\``;
+chop($start_dir);           # trim newline
+process_dir($start_dir);
+
+print_graph();
+
+

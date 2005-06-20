@@ -54,7 +54,7 @@
    syscall returns a value in -1 .. -4095 as a valid result so we can
    safely test with -4095.
 */
-SysRes VG_(mk_SysRes_x86_linux) ( UWord val ) {
+SysRes VG_(mk_SysRes_x86_linux) ( Word val ) {
    SysRes res;
    res.isError = val >= -4095 && val <= -1;
    res.val     = res.isError ? -val : val;
@@ -62,15 +62,14 @@ SysRes VG_(mk_SysRes_x86_linux) ( UWord val ) {
 }
 
 /* Similarly .. */
-SysRes VG_(mk_SysRes_amd64_linux) ( UWord val ) {
+SysRes VG_(mk_SysRes_amd64_linux) ( Word val ) {
    SysRes res;
    res.isError = val >= -4095 && val <= -1;
    res.val     = res.isError ? -val : val;
    return res;
 }
 
-/* PPC uses the CR7.SO bit to flag an error (CR0 in IBM-speke)
- */
+/* PPC uses the CR7.SO bit to flag an error (CR0 in IBM-speke) */
 SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt errflag ) {
    SysRes res;
    res.isError = errflag != 0;

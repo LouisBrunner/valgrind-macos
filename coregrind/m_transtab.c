@@ -30,15 +30,15 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_debuginfo.h"
+#include "pub_core_debuginfo.h"     // For VG_(get_fnname_w_offset)()
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcmman.h"
+#include "pub_core_libcmman.h"      // For VG_(get_memory_from_mmap)()
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
-#include "pub_core_tooliface.h"
+#include "pub_core_tooliface.h"     // For VG_(details).avg_translation_sizeB
 // XXX: this module should not depend on m_translate!
-#include "pub_core_translate.h"
+#include "pub_core_translate.h"     // For VG_(translate)()
 #include "pub_core_transtab.h"
 
 /* #define DEBUG_TRANSTAB */

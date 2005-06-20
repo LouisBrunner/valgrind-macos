@@ -31,7 +31,7 @@
 #include "pub_core_basics.h"
 #include "pub_core_execontext.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcprint.h"
+#include "pub_core_libcprint.h"     // For VG_(message)()
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"

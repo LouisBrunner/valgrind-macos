@@ -30,8 +30,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_aspacemgr.h"
-#include "pub_core_debuginfo.h"
+#include "pub_core_aspacemgr.h"     // For VG_(is_addressable)()
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -267,5 +266,5 @@ void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                           m_stacktrace.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

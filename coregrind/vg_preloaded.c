@@ -46,8 +46,8 @@
 #include "coregrind.h"
 
 #include "pub_core_basics.h"
-#include "pub_core_debuginfo.h"     // needed for pub_core_redir.h :(
-#include "pub_core_redir.h"
+#include "pub_core_debuginfo.h"  // Needed for pub_core_redir.h
+#include "pub_core_redir.h"      // For VG_NOTIFY_ON_LOAD
 
 /* ---------------------------------------------------------------------
    Hook for running __libc_freeres once the program exits.

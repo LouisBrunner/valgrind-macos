@@ -37,9 +37,9 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
-#include "pub_core_redir.h"
-#include "pub_core_signals.h"
-#include "pub_core_tooliface.h"
+#include "pub_core_redir.h"         // For VG_(code_redirect)()
+#include "pub_core_signals.h"       // For VG_(synth_fault_{perms,mapping})()
+#include "pub_core_tooliface.h"     // For VG_(tdict)
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"
 

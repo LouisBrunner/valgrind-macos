@@ -95,8 +95,8 @@
 #include "pub_core_options.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
-#include "pub_core_sigframe.h"
-#include "pub_core_stacktrace.h"
+#include "pub_core_sigframe.h"      // For VG_(sigframe_create)()
+#include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"

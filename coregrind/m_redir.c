@@ -31,7 +31,7 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_aspacemgr.h"
+#include "pub_core_aspacemgr.h"     // Needed for pub_core_redir.h
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -41,7 +41,7 @@
 #include "pub_core_skiplist.h"
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
-#include "m_debuginfo/priv_symtab.h"  // XXX: bad!
+#include "m_debuginfo/priv_symtab.h"  // XXX: bad!  For SegInfo internals
 
 /*------------------------------------------------------------*/
 /*--- General purpose redirection.                         ---*/

@@ -29,7 +29,7 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_threadstate.h"
+#include "pub_core_threadstate.h"      // For VG_N_THREADS
 #include "pub_core_debugger.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_errormgr.h"
@@ -38,12 +38,11 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_libcproc.h"
+#include "pub_core_libcproc.h"         // For VG_(getpid)()
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
-#include "pub_core_stacktrace.h"
 #include "pub_core_tooliface.h"
-#include "pub_core_translate.h"
+#include "pub_core_translate.h"        // for VG_(translate)()
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/

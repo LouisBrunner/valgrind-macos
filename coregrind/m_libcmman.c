@@ -34,7 +34,6 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_libcproc.h"
 #include "pub_core_syscall.h"
 #include "vki_unistd.h"
 

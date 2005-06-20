@@ -33,11 +33,11 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_libcproc.h"
+#include "pub_core_libcproc.h"      // For VG_(gettid)()
 #include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
-#include "pub_core_tooliface.h"
+#include "pub_core_tooliface.h"     // For VG_(details)
 #include "vki_unistd.h"
 
 /* ---------------------------------------------------------------------

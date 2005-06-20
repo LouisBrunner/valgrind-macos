@@ -32,11 +32,11 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcfile.h"
+#include "pub_core_libcfile.h"   // For VG_(write)(), VG_(write_socket)()
 #include "pub_core_libcprint.h"
-#include "pub_core_libcproc.h"
+#include "pub_core_libcproc.h"   // For VG_(getpid)()
 #include "pub_core_options.h"
-#include "valgrind.h"           // for RUNNING_ON_VALGRIND
+#include "valgrind.h"            // For RUNNING_ON_VALGRIND
 
 #include <time.h>
 #include <sys/time.h>

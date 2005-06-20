@@ -36,7 +36,7 @@
 // to get file and function names, line numbers, variable types, and
 // to help stack unwinding.
 //
-// And it's internals are currently a mess.  It's interface is ugly, too.
+// And its internals are currently a mess.  Its interface is ugly, too.
 //--------------------------------------------------------------------
 
 #include "pub_tool_debuginfo.h"

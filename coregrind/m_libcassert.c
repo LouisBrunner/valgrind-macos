@@ -36,7 +36,7 @@
 #include "pub_core_libcproc.h"      // For VG_(gettid)()
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
-#include "pub_core_tooliface.h"     // For VG_(details)
+#include "pub_core_tooliface.h"     // For VG_(details).{name,bug_reports_to}
 #include "vki_unistd.h"
 
 /* ---------------------------------------------------------------------

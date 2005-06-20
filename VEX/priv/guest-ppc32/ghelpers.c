@@ -34,6 +34,7 @@
 */
 
 #include "libvex_basictypes.h"
+#include "libvex_emwarn.h"
 #include "libvex_guest_ppc32.h"
 #include "libvex_ir.h"
 #include "libvex.h"
@@ -254,9 +255,12 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_CR0to6 = 0;
 
+   vex_state->guest_FPROUND = (UInt)PPC32rm_NEAREST;
+
    vex_state->guest_XER = 0;
 
-   vex_state->guest_EMWARN = 0;
+   vex_state->guest_EMWARN = EmWarn_NONE;
+
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
 }

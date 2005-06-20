@@ -39,6 +39,24 @@
 #ifndef __LIBVEX_GUEST_PPC32_DEFS_H
 #define __LIBVEX_GUEST_PPC32_DEFS_H
 
+/* FP Rounding mode - different encoding to IR */
+typedef
+   enum {
+      PPC32rm_NEAREST = 0,
+      PPC32rm_NegINF  = 1,
+      PPC32rm_PosINF  = 2,
+      PPC32rm_ZERO    = 3
+   } PPC32RoundingMode;
+
+/* Floating point comparison values - different encoding to IR */
+typedef
+   enum {
+      PPC32cr_LT = 0x8,
+      PPC32cr_GT = 0x4,
+      PPC32cr_EQ = 0x2,
+      PPC32cr_UN = 0x1
+   }
+   PPC32CmpF64Result;
 
 /*---------------------------------------------------------*/
 /*--- ppc32 to IR conversion                            ---*/

@@ -39,7 +39,7 @@ void log_bytes ( HChar* bytes, Int nbytes )
 #define N_LINEBUF 10000
 static HChar linebuf[N_LINEBUF];
 
-#define N_ORIGBUF 1000
+#define N_ORIGBUF 10000
 #define N_TRANSBUF 5000
 
 static UChar origbuf[N_ORIGBUF];

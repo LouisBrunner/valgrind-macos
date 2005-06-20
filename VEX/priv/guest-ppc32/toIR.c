@@ -152,7 +152,11 @@ static IRBB* irbb;
 
 #define OFFB_CR0to6     offsetof(VexGuestPPC32State,guest_CR0to6)
 
+#define OFFB_FPROUND    offsetof(VexGuestPPC32State,guest_FPROUND)
+
 #define OFFB_XER        offsetof(VexGuestPPC32State,guest_XER)
+
+#define OFFB_EMWARN     offsetof(VexGuestPPC32State,guest_EMWARN)
 
 #define OFFB_TISTART    offsetof(VexGuestPPC32State,guest_TISTART)
 #define OFFB_TILEN      offsetof(VexGuestPPC32State,guest_TILEN)
@@ -173,6 +177,10 @@ static IRBB* irbb;
 #define SHIFT_CR_EQ 2
 #define SHIFT_CR_SO 1
 
+#define SHIFT_FPSCR_RN 0
+#define MASK_FPSCR_RN  (3  << SHIFT_FPSCR_RN)
+
+
 // Special purpose (i.e. non-gpr/fpr) registers
 typedef enum {
     PPC32_SPR_CIA,    // Current Instruction Address
@@ -180,8 +188,32 @@ typedef enum {
     PPC32_SPR_CTR,    // Count Register
     PPC32_SPR_XER,    // Summary Overflow
     PPC32_SPR_CR,     // Condition Register
+    PPC32_SPR_FPSCR,  // Floating Point Status/Control Register
     PPC32_SPR_MAX
 } PPC32SPR;
+
+/*
+  Note on FPSCR: Floating Point Status and Control Register
+
+  We're only keeping hold of fp rounding-mode bits, via guest_FPROUND
+  The rest of the FPSCR is set to 0x0, which corresponds to
+  'all exceptions masked'
+  
+  FPSCR[29:31] => Exception Summaries
+  FPSCR[17:28] => Exceptions
+  FPSCR[16]    => FPRF::Class Descriptor
+  FPSCR[12:15] => FPRF::Condition Code
+  FPSCR[11]    => Unused (0)
+  FPSCR[8:10]  => Exceptions
+  FPSCR[3:7]   => Exception Control
+  FPSCR[2]     => Non-IEEE mode
+  FPSCR[0:1]   => Rounding Mode
+
+  CAB: Perhaps necessary to record writes to FPRF ?
+  Set by dis_fp_cmp() instrs, also some fp arith/round/conv instrs.
+  Tested using dis_fp_scr(): e.g fpscr->cr, branch conditional...
+*/
+
 
 /* Gets from SPR (non-GPR|FPR) registers */
 static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask );
@@ -194,6 +226,9 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask );
 static void putReg        ( PPC32SPR reg, IRExpr* src );
 static void putReg_field  ( PPC32SPR reg, IRExpr* src, UInt field_idx );
 static void putReg_bit    ( PPC32SPR reg, IRExpr* src, UInt bit_idx );
+
+/* FP Helpers */
+static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ );
 
 
 
@@ -524,6 +559,64 @@ static void putIReg ( UInt archreg, IRExpr* e )
    stmt( IRStmt_Put(integerGuestRegOffset(archreg), e) );
 }
 
+
+static Int floatGuestRegOffset ( UInt archreg )
+{
+   vassert(archreg < 32);
+   
+   switch (archreg) {
+   case  0: return offsetof(VexGuestPPC32State, guest_FPR0);
+   case  1: return offsetof(VexGuestPPC32State, guest_FPR1);
+   case  2: return offsetof(VexGuestPPC32State, guest_FPR2);
+   case  3: return offsetof(VexGuestPPC32State, guest_FPR3);
+   case  4: return offsetof(VexGuestPPC32State, guest_FPR4);
+   case  5: return offsetof(VexGuestPPC32State, guest_FPR5);
+   case  6: return offsetof(VexGuestPPC32State, guest_FPR6);
+   case  7: return offsetof(VexGuestPPC32State, guest_FPR7);
+   case  8: return offsetof(VexGuestPPC32State, guest_FPR8);
+   case  9: return offsetof(VexGuestPPC32State, guest_FPR9);
+   case 10: return offsetof(VexGuestPPC32State, guest_FPR10);
+   case 11: return offsetof(VexGuestPPC32State, guest_FPR11);
+   case 12: return offsetof(VexGuestPPC32State, guest_FPR12);
+   case 13: return offsetof(VexGuestPPC32State, guest_FPR13);
+   case 14: return offsetof(VexGuestPPC32State, guest_FPR14);
+   case 15: return offsetof(VexGuestPPC32State, guest_FPR15);
+   case 16: return offsetof(VexGuestPPC32State, guest_FPR16);
+   case 17: return offsetof(VexGuestPPC32State, guest_FPR17);
+   case 18: return offsetof(VexGuestPPC32State, guest_FPR18);
+   case 19: return offsetof(VexGuestPPC32State, guest_FPR19);
+   case 20: return offsetof(VexGuestPPC32State, guest_FPR20);
+   case 21: return offsetof(VexGuestPPC32State, guest_FPR21);
+   case 22: return offsetof(VexGuestPPC32State, guest_FPR22);
+   case 23: return offsetof(VexGuestPPC32State, guest_FPR23);
+   case 24: return offsetof(VexGuestPPC32State, guest_FPR24);
+   case 25: return offsetof(VexGuestPPC32State, guest_FPR25);
+   case 26: return offsetof(VexGuestPPC32State, guest_FPR26);
+   case 27: return offsetof(VexGuestPPC32State, guest_FPR27);
+   case 28: return offsetof(VexGuestPPC32State, guest_FPR28);
+   case 29: return offsetof(VexGuestPPC32State, guest_FPR29);
+   case 30: return offsetof(VexGuestPPC32State, guest_FPR30);
+   case 31: return offsetof(VexGuestPPC32State, guest_FPR31);
+   }
+
+   vpanic("floatGuestRegOffset(ppc32)"); /*notreached*/
+}
+
+static IRExpr* getFReg ( UInt archreg )
+{
+   vassert(archreg < 32);
+   return IRExpr_Get( floatGuestRegOffset(archreg), Ity_F64 );
+}
+
+/* Ditto, but write to a reg instead. */
+static void putFReg ( UInt archreg, IRExpr* e )
+{
+   vassert(archreg < 32);
+   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_F64);
+   stmt( IRStmt_Put(floatGuestRegOffset(archreg), e) );
+}
+
+
 static void assign ( IRTemp dst, IRExpr* e )
 {
    stmt( IRStmt_Tmp(dst, e) );
@@ -784,6 +877,25 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
       }
       break;
 
+   case PPC32_SPR_FPSCR: {
+      vassert((mask & 0x3)    == 0x3    || (mask & 0x3)    == 0x0);
+      vassert((mask & 0xF000) == 0xF000 || (mask & 0xF000) == 0x0);
+      /* all masks now refer to valid fields */
+      
+      /* Vex-generated code expects to run with the FPSCR set as follows:
+	 all exceptions masked, round-to-nearest.
+	 This corresponds to a FPSCR value of 0x0. */
+
+      /* We're only keeping track of the rounding mode,
+	 so if the mask isn't asking for this, just return 0x0 */
+      if (mask & 0x3) {
+         assign( val, IRExpr_Get(OFFB_FPROUND, Ity_I32) );
+      } else {
+         assign( val, mkU32(0x0) );
+      }
+      break;      
+   }
+
    default:
       vpanic("getReg(ppc32)");
    }
@@ -893,6 +1005,44 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
 
       stmt( IRStmt_Put( OFFB_CR0to6,
                         binop(Iop_Or32, mkexpr(src_mskd), mkexpr(reg_old)) ));
+      break;
+   }
+
+   case PPC32_SPR_FPSCR: {
+      vassert((mask & 0x3)    == 0x3    || (mask & 0x3)    == 0x0);
+      vassert((mask & 0xF000) == 0xF000 || (mask & 0xF000) == 0x0);
+      /* all masks now refer to valid fields */
+
+      /* Allow writes to Rounding Mode */
+      if (mask & 0x3) {
+         stmt( IRStmt_Put( OFFB_FPROUND,
+                           binop(Iop_And32, src, mkU32(0x3)) ));
+      }
+
+      /*
+        Give EmWarn for attempted writes to:
+         - Exception Controls
+         - Non-IEEE Mode
+      */
+      if (mask & 0xFC) {  // Exception Control, Non-IEE mode
+         VexEmWarn ew = EmWarn_PPC32exns;
+
+         /* If any of the src::exception_control bits are actually set,
+            side-exit to the next insn, reporting the warning,
+            so that Valgrind's dispatcher sees the warning. */
+         put_emwarn( mkU32(ew) );
+         stmt( 
+            IRStmt_Exit(
+               binop(Iop_CmpNE32, mkU32(ew), mkU32(EmWarn_NONE)),
+               Ijk_EmWarn,
+               IRConst_U32(guest_cia_curr_instr + 4)
+               )
+            );
+      }
+
+      /*
+        Ignore all other writes
+      */
       break;
    }
 
@@ -2026,6 +2176,8 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
    
    switch (opc1) {
    case 0x2E: // lmw (Load Multiple Word, PPC32 p454)
+vassert(0);
+
       if (Ra_addr >= reg_idx) {
          vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)\n");
          return False;
@@ -2039,6 +2191,8 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
       break;
       
    case 0x2F: // stmw (Store Multiple Word, PPC32 p527)
+vassert(0);
+
       DIP("stmw r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
       for (reg_idx = Rs_addr; reg_idx<=31; reg_idx++) {
          irx_addr = binop(Iop_Add32, mkexpr(EA), mkU32(offset));
@@ -2096,6 +2250,8 @@ static Bool dis_int_ldst_str ( UInt theInstr )
 
    switch (opc2) {
    case 0x255: // lswi (Load String Word Immediate, PPC32 p455)
+vassert(0);
+
       n_regs = (NumBytes / 4) + (NumBytes%4 == 0 ? 0:1); // ceil(nb/4)
       reg_first = Rd_addr;
       reg_last = Rd_addr + n_regs - 1;
@@ -2138,10 +2294,14 @@ static Bool dis_int_ldst_str ( UInt theInstr )
       }
       
    case 0x215: // lswx (Load String Word Indexed, PPC32 p456)
+vassert(0);
+
       DIP("lswx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
       return False;
 
    case 0x2D5: // stswi (Store String Word Immediate, PPC32 p528)
+vassert(0);
+
       DIP("stswi r%d,r%d,%u\n", Rs_addr, Ra_addr, NumBytes);
       if (Ra_addr == 0) {
          assign( EA, mkU32(0) );
@@ -2173,6 +2333,8 @@ static Bool dis_int_ldst_str ( UInt theInstr )
       break;
 
    case 0x295: // stswx (Store String Word Indexed, PPC32 p529)
+vassert(0);
+
       DIP("stswx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
       return False;
 #if 0
@@ -2458,6 +2620,7 @@ static Bool dis_cond_logic ( UInt theInstr )
       if (((crbD_addr & 0x3) != 0) ||
           ((crbA_addr & 0x3) != 0) || (crbB_addr != 0))
          return False;
+
       DIP("mcrf crf%d,crf%d\n", crfD_addr, crfS_addr);
       assign( tmp,  getReg_field( PPC32_SPR_CR, (7-crfS_addr) ) );
       putReg_field( PPC32_SPR_CR, mkexpr(tmp),  (7-crfD_addr) );
@@ -2565,6 +2728,8 @@ static Bool dis_memsync ( UInt theInstr )
    switch (opc1) {
     /* XL-Form */
    case 0x13:   // isync (Instruction Synchronize, PPC32 p432)
+vassert(1);
+
       if (opc2 != 0x096) {
          vex_printf("dis_int_memsync(PPC32)(0x13,opc2)\n");
          return False;
@@ -2582,6 +2747,8 @@ static Bool dis_memsync ( UInt theInstr )
    case 0x1F:
       switch (opc2) {
       case 0x356: // eieio (Enforce In-Order Execution of I/O, PPC32 p394)
+vassert(0);
+
          if (b11to25 != 0 || b0 != 0) {
             vex_printf("dis_int_memsync(PPC32)(eiei0,b11to25|b0)\n");
             return False;
@@ -2590,6 +2757,8 @@ static Bool dis_memsync ( UInt theInstr )
          return False;
 
       case 0x014: // lwarx (Load Word and Reserve Indexed, PPC32 p458)
+vassert(1); ////XXXXXXXXXXXX JRS(1)
+
          /* Note: RESERVE, RESERVE_ADDR not implemented.
             stwcx. is assumed to be always successful
          */
@@ -2609,6 +2778,8 @@ static Bool dis_memsync ( UInt theInstr )
          break;
          
       case 0x096: // stwcx. (Store Word Conditional Indexed, PPC32 p532)
+vassert(1); ////XXXXXXXXXXXX JRS(2)
+
          /* Note: RESERVE, RESERVE_ADDR not implemented.
             stwcx. is assumed to be always successful
          */
@@ -2635,6 +2806,8 @@ static Bool dis_memsync ( UInt theInstr )
          break;
          
       case 0x256: // sync (Synchronize, PPC32 p543)
+vassert(1);
+
          if (b11to25 != 0 || b0 != 0) {
             vex_printf("dis_int_memsync(PPC32)(sync,b11to25|b0)\n");
             return False;
@@ -2807,7 +2980,7 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
    IRTemp byte3 = newTemp(Ity_I32);
    IRTemp tmp16 = newTemp(Ity_I16);
    IRTemp tmp32 = newTemp(Ity_I32);
-   
+
    if (opc1 != 0x1F || b0 != 0) {
       vex_printf("dis_int_ldst_rev(PPC32)(opc1|b0)\n");
       return False;
@@ -2821,6 +2994,8 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
    
    switch (opc2) {
    case 0x316: // lhbrx (Load Half Word Byte-Reverse Indexed, PPC32 p449)
+vassert(0);
+
       DIP("lhbrx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
       assign( byte0, loadBE(Ity_I8, mkexpr(EA)) );
       assign( byte1, loadBE(Ity_I8, binop(Iop_Add32, mkexpr(EA),mkU32(1))) );
@@ -2831,6 +3006,8 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
       break;
        
    case 0x216: // lwbrx (Load Word Byte-Reverse Indexed, PPC32 p459)
+vassert(0);
+
       DIP("lwbrx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
       assign( byte0, loadBE(Ity_I8, mkexpr(EA)) );
       assign( byte1, loadBE(Ity_I8, binop(Iop_Add32, mkexpr(EA),mkU32(1))) );
@@ -2847,6 +3024,8 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
       break;
       
    case 0x396: // sthbrx (Store Half Word Byte-Reverse Indexed, PPC32 p523)
+vassert(0);
+
       DIP("sthbrx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
       assign( Rs, getIReg(Rs_addr) );
       assign( byte0, binop(Iop_And32, mkexpr(Rs), mkU32(0x00FF)) );
@@ -2861,6 +3040,8 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
       break;
       
    case 0x296: // stwbrx (Store Word Byte-Reverse Indexed, PPC32 p531)
+vassert(0);
+
       DIP("stwbrx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
       assign( Rs, getIReg(Rs_addr) );
       assign( byte0, binop(Iop_And32, mkexpr(Rs), mkU32(0x000000FF)) );
@@ -2979,6 +3160,8 @@ static Bool dis_proc_ctl ( UInt theInstr )
       break;
       
    case 0x173: // mftb (Move from Time Base, PPC32 p475)
+vassert(0);
+
       DIP("mftb r%d,0x%x\n", Rd_addr, TBR);
       return False;
       
@@ -3045,7 +3228,7 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
    UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
    UInt  opc2    =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar b0      = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
-   
+
    if (opc1 != 0x1F || b21to25 != 0 || b0 != 0) {
       vex_printf("dis_cache_manage(PPC32)(opc1|b21to25|b0)\n");
       return False;
@@ -3053,36 +3236,75 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
    
    switch (opc2) {
    case 0x2F6: // dcba (Data Cache Block Allocate, PPC32 p380)
+vassert(0);
+
       DIP("dcba r%d,r%d\n", Ra_addr, Rb_addr);
       if (1) vex_printf("vex ppc32->IR: kludged dcba\n");
       break;
       
    case 0x056: // dcbf (Data Cache Block Flush, PPC32 p382)
+vassert(0);
+
       DIP("dcbf r%d,r%d\n", Ra_addr, Rb_addr);
-      if (0) vex_printf("vex ppc32->IR: kludged dcbf\n");
+      if (0+1) vex_printf("vex ppc32->IR: kludged dcbf\n");
       break;
       
    case 0x036: // dcbst (Data Cache Block Store, PPC32 p384)
+vassert(1);
+
       DIP("dcbst r%d,r%d\n", Ra_addr, Rb_addr);
       if (1) vex_printf("vex ppc32->IR: kludged dcbst\n");
       break;
 
    case 0x116: // dcbt (Data Cache Block Touch, PPC32 p385)
+vassert(1);
+
       DIP("dcbt r%d,r%d\n", Ra_addr, Rb_addr);
       if (1) vex_printf("vex ppc32->IR: kludged dcbt\n");
       break;
       
    case 0x0F6: // dcbtst (Data Cache Block Touch for Store, PPC32 p386)
+vassert(1);
+
       DIP("dcbtst r%d,r%d\n", Ra_addr, Rb_addr);
       if (1) vex_printf("vex ppc32->IR: kludged dcbtst\n");
       break;
       
-   case 0x3F6: // dcbz (Data Cache Block Clear to Zero, PPC32 p387)
+   case 0x3F6: { // dcbz (Data Cache Block Clear to Zero, PPC32 p387)
+vassert(0);
+
+      /* Clear all bytes in cache block at (rA|0) + rB.
+         Since we don't know the cache line size, let's assume 256
+          - safe, as no I1 cache would have a line size that large. */
+      IRTemp  EA   = newTemp(Ity_I32);
+      IRTemp  addr = newTemp(Ity_I32);
+      IRExpr* irx_addr;
+      UInt    assumed_line_size = 32;
+      UInt    i;
       DIP("dcbz r%d,r%d\n", Ra_addr, Rb_addr);
-      if (1) vex_printf("vex ppc32->IR: kludged dcbz\n");
+ if (1) vex_printf("vex ppc32->IR: kludged dcbz %d\n", assumed_line_size);
+
+      assign( EA,
+	      binop( Iop_Add32,
+		     getIReg(Rb_addr), 
+		     Ra_addr==0 ? mkU32(0) : getIReg(Ra_addr)) );
+
+      /* Round EA down to the start of the containing block. */
+      assign( addr,
+	      binop( Iop_And32,
+		     mkexpr(EA),
+		     mkU32( ~(assumed_line_size-1) )) );
+
+      for (i = 0; i < (assumed_line_size / 4); i++) {
+	irx_addr = binop( Iop_Add32, mkexpr(addr), mkU32(i*4) );
+	storeBE( irx_addr, mkU32(0) );
+      }
       break;
+   }
 
    case 0x3D6: { 
+vassert(1);
+
       // icbi (Instruction Cache Block Invalidate, PPC32 p431)
       /* Invalidate all translations containing code from the cache
          block at (rA|0) + rB.  Since we don't know what the cache
@@ -3128,6 +3350,52 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
 
 
 
+
+
+
+/*------------------------------------------------------------*/
+/*--- Floating Point Helpers                               ---*/
+/*------------------------------------------------------------*/
+
+/* --- Set the emulation-warning pseudo-register. --- */
+
+static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ )
+{
+   stmt( IRStmt_Put( OFFB_EMWARN, e ) );
+}
+
+/* --------- Synthesise a 2-bit FPU rounding mode. --------- */
+/* Produces a value in 0 .. 3, which is encoded as per the type
+   IRRoundingMode.  PPC32RoundingMode encoding is different to
+   IRRoundingMode, so need to map it.
+*/
+static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
+{
+/* 
+   rounding mode | PPC | IR
+   ------------------------
+   to nearest    | 00  | 00
+   to zero       | 01  | 11
+   to +infinity  | 10  | 10
+   to -infinity  | 11  | 01
+*/
+   IRTemp rm_PPC32 = newTemp(Ity_I32);
+   assign( rm_PPC32, getReg_masked( PPC32_SPR_FPSCR, MASK_FPSCR_RN ) );
+
+   // rm_IR = XOR( rm_PPC32, (rm_PPC32 << 1) & 2)
+   return binop(Iop_Xor32, mkexpr(rm_PPC32),
+                binop(Iop_And32, mkU32(2),
+                      binop(Iop_Shl32, mkexpr(rm_PPC32), mkU8(1))));
+}
+
+/* Round float to single precision
+ - returns type Ity_F64 */
+static IRExpr* roundToSgl ( IRExpr* src )
+{
+   return unop(Iop_F32toF64, binop(Iop_F64toF32, get_roundingmode(), src));
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Floating Point Instruction Translation               ---*/
 /*------------------------------------------------------------*/
@@ -3138,74 +3406,102 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
 static Bool dis_fp_load ( UInt theInstr )
 {
    /* X-Form */
-   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-   UChar frD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-   UChar rA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-   UChar rB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
-   UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+   UChar opc1      = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+   UChar frD_addr  = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+   UChar rA_addr   = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
+   UChar rB_addr   = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
+   UInt  opc2      =         (theInstr >>  1) & 0x3FF;  /* theInstr[1:10]  */
+   UChar b0        = toUChar((theInstr >>  0) & 1);     /* theInstr[0]     */
 
    /* D-Form */
-   UInt  d_imm   =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
+   UInt  d_imm     =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
+
+   UInt exts_d_imm = extend_s_16to32(d_imm);
+
+   IRTemp EA       = newTemp(Ity_I32);
+   IRTemp rA       = newTemp(Ity_I32);
+   IRTemp rB       = newTemp(Ity_I32);
+   IRTemp rA_or_0  = newTemp(Ity_I32);
+
+   assign( rA, getIReg(rA_addr) );
+   assign( rB, getIReg(rB_addr) );
+   assign( rA_or_0, (rA_addr == 0) ? mkU32(0) : mkexpr(rA) );
 
    switch(opc1) {
-   case 0x30: // lfsx (Load Float Single Indexed, PPC32 p444)
-      if (b0 != 0) {
-         vex_printf("dis_fp_load(PPC32)(instr,lfsx)\n");
-         return False;
-      }
-      DIP("lfsx fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+   case 0x30: // lfs (Load Float Single, PPC32 p441)
+      DIP("lfs fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+      assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA_or_0)) );
+      putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
+      break;
 
-   case 0x31: // lfsux (Load Float Single with Update Indexed, PPC32 p443)
-      if (b0 != 0) {
-         vex_printf("dis_fp_load(PPC32)(instr,lfsux)\n");
+   case 0x31: // lfsu (Load Float Single with Update, PPC32 p442)
+      if (rA_addr == 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,lfsu)\n");
          return False;
       }
-      DIP("lfsux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      DIP("lfsu fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+      assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
+      putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
+      putIReg( rA_addr, mkexpr(EA) );
+      break;
+      
+   case 0x32: // lfd (Load Float Double, PPC32 p437)
+      DIP("lfd fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+      assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA_or_0)) );
+      putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
+      break;
 
-   case 0x32: // lfdx (Load Float Double Indexed, PPC32 p439)
-      if (b0 != 0) {
-         vex_printf("dis_fp_load(PPC32)(instr,lfdx)\n");
+   case 0x33: // lfdu (Load Float Double with Update, PPC32 p438)
+      if (rA_addr == 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,lfdu)\n");
          return False;
       }
-      DIP("lfdx fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-   case 0x33: // lfdux (Load Float Double with Update Indexed, PPC32 p439)
-      if (b0 != 0) {
-         vex_printf("dis_fp_load(PPC32)(instr,lfdux)\n");
-         return False;
-      }
-      DIP("lfdux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      DIP("lfdu fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+      assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
+      putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
+      putIReg( rA_addr, mkexpr(EA) );
+      break;
 
    case 0x1F:
+      if (b0 != 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,b0)\n");
+         return False;
+      }
+
       switch(opc2) {
-      case 0x217: // lfs (Load Float Single, PPC32 p441)
-         DIP("lfs fr%d,%u(r%d)\n", frD_addr, d_imm, rA_addr);
-         DIP(" => not implemented\n");
-         return False;
+      case 0x217: // lfsx (Load Float Single Indexed, PPC32 p444)
+         DIP("lfsx fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+         assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA_or_0)) );
+         putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
+         break;
 
-      case 0x237: // lfsu (Load Float Single with Update, PPC32 p442)
-         DIP("lfsu fr%d,%u(r%d)\n", frD_addr, d_imm, rA_addr);
-         DIP(" => not implemented\n");
-         return False;
+      case 0x237: // lfsux (Load Float Single with Update Indexed, PPC32 p443)
+         if (rA_addr == 0) {
+            vex_printf("dis_fp_load(PPC32)(instr,lfsux)\n");
+            return False;
+         }
+         DIP("lfsux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+         assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
+         putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
+         putIReg( rA_addr, mkexpr(EA) );
+         break;
 
-      case 0x257: // lfd (Load Float Double, PPC32 p437)
-         DIP("lfd fr%d,%u(r%d)\n", frD_addr, d_imm, rA_addr);
-         DIP(" => not implemented\n");
-         return False;
+      case 0x257: // lfdx (Load Float Double Indexed, PPC32 p440)
+         DIP("lfdx fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+         assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA_or_0)) );
+         putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
+         break;
 
-      case 0x277: // lfdu (Load Float Double with Update, PPC32 p438)
-         DIP("lfdu fr%d,%u(r%d)\n", frD_addr, d_imm, rA_addr);
-         DIP(" => not implemented\n");
-         return False;
+      case 0x277: // lfdux (Load Float Double with Update Indexed, PPC32 p439)
+         if (rA_addr == 0) {
+            vex_printf("dis_fp_load(PPC32)(instr,lfdux)\n");
+            return False;
+         }
+         DIP("lfdux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+         assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
+         putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
+         putIReg( rA_addr, mkexpr(EA) );
+         break;
 
       default:
          vex_printf("dis_fp_load(PPC32)(opc2)\n");
@@ -3228,83 +3524,115 @@ static Bool dis_fp_load ( UInt theInstr )
 static Bool dis_fp_store ( UInt theInstr )
 {
    /* X-Form */
-   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-   UChar frS_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-   UChar rA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-   UChar rB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
-   UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+   UChar opc1      = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+   UChar frS_addr  = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+   UChar rA_addr   = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
+   UChar rB_addr   = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
+   UInt  opc2      =         (theInstr >>  1) & 0x3FF;  /* theInstr[1:10]  */
+   UChar b0        = toUChar((theInstr >>  0) & 1);     /* theInstr[0]     */
 
    /* D-Form */
-   UInt  d_imm   =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
+   UInt  d_imm     =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
+
+   UInt exts_d_imm = extend_s_16to32(d_imm);
+
+   IRTemp EA       = newTemp(Ity_I32);
+   IRTemp frS      = newTemp(Ity_F64);
+   IRTemp rA       = newTemp(Ity_I32);
+   IRTemp rB       = newTemp(Ity_I32);
+   IRTemp rA_or_0  = newTemp(Ity_I32);
+
+   assign( frS, getFReg(frS_addr) );
+   assign( rA, getIReg(rA_addr) );
+   assign( rB, getIReg(rB_addr) );
+   assign( rA_or_0, (rA_addr == 0) ? mkU32(0) : mkexpr(rA) );
 
    switch(opc1) {
-   case 0x34: // stfsx (Store Float Single Indexed, PPC32 p521)
-      if (b0 != 0) {
-         vex_printf("dis_fp_load(PPC32)(instr,stfsx)\n");
-         return False;
-      }
-      DIP("stfsx fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+   case 0x34: // stfs (Store Float Single, PPC32 p518)
+      DIP("stfs fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+      assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA_or_0)) );
+      storeBE( mkexpr(EA),
+               binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
+      break;
 
-   case 0x35: // stfsux (Store Float Single with Update Indexed, PPC32 p520)
-      if (b0 != 0) {
-         vex_printf("dis_fp_load(PPC32)(instr,stfsux)\n");
+   case 0x35: // stfsu (Store Float Single with Update, PPC32 p519)
+      if (rA_addr == 0) {
+         vex_printf("dis_fp_store(PPC32)(instr,stfsu)\n");
          return False;
       }
-      DIP("stfsux fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      DIP("stfsu fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+      assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
+      storeBE( mkexpr(EA),
+               binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
+      putIReg( rA_addr, mkexpr(EA) );
+      break;
 
-   case 0x36: // stfdx (Store Float Double Indexed, PPC32 p516)
-      if (b0 != 0) {
-         vex_printf("dis_fp_load(PPC32)(instr,stfdx)\n");
-         return False;
-      }
-      DIP("stfdx fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+   case 0x36: // stfd (Store Float Double, PPC32 p513)
+      DIP("stfd fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+      assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA_or_0)) );
+      storeBE( mkexpr(EA), mkexpr(frS) );
+      break;
 
-   case 0x37: // stfdux (Store Float Double with Update Indexed, PPC32 p515)
-      if (b0 != 0) {
-         vex_printf("dis_fp_load(PPC32)(instr,stfdux)\n");
+   case 0x37: // stfdu (Store Float Double with Update, PPC32 p514)
+      if (rA_addr == 0) {
+         vex_printf("dis_fp_store(PPC32)(instr,stfdu)\n");
          return False;
       }
-      DIP("stfdux fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      DIP("stfdu fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+      assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
+      storeBE( mkexpr(EA), mkexpr(frS) );
+      putIReg( rA_addr, mkexpr(EA) );
+      break;
 
    case 0x1F:
+      if (b0 != 0) {
+         vex_printf("dis_fp_store(PPC32)(instr,b0)\n");
+         return False;
+      }
+
       switch(opc2) {
-      case 0x297: // stfs (Store Float Single, PPC32 p518)
-         DIP("stfs fr%d,%u(r%d)\n", frS_addr, d_imm, rA_addr);
-         DIP(" => not implemented\n");
-         return False;
+      case 0x297: // stfsx (Store Float Single Indexed, PPC32 p521)
+         DIP("stfsx fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+         assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA_or_0)) );
+         storeBE( mkexpr(EA),
+                  binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
+         break;
 
-      case 0x2B7: // stfsu (Store Float Single with Update, PPC32 p519)
-         DIP("stfsu fr%d,%u(r%d)\n", frS_addr, d_imm, rA_addr);
-         DIP(" => not implemented\n");
-         return False;
-
-      case 0x2D7: // stfd (Store Float Double, PPC32 p513)
-         DIP("stfd fr%d,%u(r%d)\n", frS_addr, d_imm, rA_addr);
-         DIP(" => not implemented\n");
-         return False;
-
-      case 0x2F7: // stfdu (Store Float Double with Update, PPC32 p514)
-         DIP("stfdu fr%d,%u(r%d)\n", frS_addr, d_imm, rA_addr);
-         DIP(" => not implemented\n");
-         return False;
-
-      case 0x3D7: // stfiwx (Store Float as Int, Indexed, PPC32 p517)
-         if (b0 != 0) {
-            vex_printf("dis_fp_load(PPC32)(instr,stfiwx)\n");
+      case 0x2B7: // stfsux (Store Float Single with Update Indexed, PPC32 p520)
+         if (rA_addr == 0) {
+            vex_printf("dis_fp_store(PPC32)(instr,stfsux)\n");
             return False;
          }
+         DIP("stfsux fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+         assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
+         storeBE( mkexpr(EA),
+                  binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
+         putIReg( rA_addr, mkexpr(EA) );
+         break;
+
+      case 0x2D7: // stfdx (Store Float Double Indexed, PPC32 p516)
+         DIP("stfdx fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+         assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA_or_0)) );
+         storeBE( mkexpr(EA), mkexpr(frS) );
+         break;
+         
+      case 0x2F7: // stfdux (Store Float Double with Update Indexed, PPC32 p515)
+         if (rA_addr == 0) {
+            vex_printf("dis_fp_store(PPC32)(instr,stfdux)\n");
+            return False;
+         }
+         DIP("stfdux fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+         assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
+         storeBE( mkexpr(EA), mkexpr(frS) );
+         putIReg( rA_addr, mkexpr(EA) );
+         break;
+
+      case 0x3D7: // stfiwx (Store Float as Int, Indexed, PPC32 p517)
          DIP("stfiwx fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA_or_0)) );
+         storeBE( mkexpr(EA),
+                  unop(Iop_64to32, unop(Iop_ReinterpF64asI64, mkexpr(frS))) );
+         break;
 
       default:
          vex_printf("dis_fp_store(PPC32)(opc2)\n");
@@ -3334,150 +3662,185 @@ static Bool dis_fp_arith ( UInt theInstr )
    UChar frC_addr = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
    UChar opc2     = toUChar((theInstr >>  1) & 0x1F); /* theInstr[1:5]   */
    UChar flag_Rc  = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+   // Note: flag_Rc ignored as fp exceptions not supported.
+
+   IRTemp frD = newTemp(Ity_F64);
+   IRTemp frA = newTemp(Ity_F64);
+   IRTemp frB = newTemp(Ity_F64);
+   IRTemp frC = newTemp(Ity_F64);
+
+   assign( frA, getFReg(frA_addr));
+   assign( frB, getFReg(frB_addr));
+   assign( frC, getFReg(frC_addr));
 
    switch (opc1) {
    case 0x3B:
       switch (opc2) {
       case 0x12: // fdivs (Floating Divide Single, PPC32 p407)
          if (frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fdivs)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fdivs)\n");
             return False;
          }
          DIP("fdivs%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, roundToSgl( binop(Iop_DivF64, mkexpr(frA), mkexpr(frB)) ));
+         break;
 
       case 0x14: // fsubs (Floating Subtract Single, PPC32 p430)
          if (frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fsubs)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fsubs)\n");
             return False;
          }
          DIP("fsubs%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, roundToSgl( binop(Iop_SubF64, mkexpr(frA), mkexpr(frB)) ));
+         break;
 
       case 0x15: // fadds (Floating Add Single, PPC32 p401)
          if (frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fadds)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fadds)\n");
             return False;
          }
          DIP("fadds%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, roundToSgl( binop(Iop_AddF64, mkexpr(frA), mkexpr(frB)) ));
+         break;
 
       case 0x16: // fsqrts (Floating SqRt (Single-Precision), PPC32 p428)
          if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fsqrts)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fsqrts)\n");
             return False;
          }
          DIP("fsqrts%s fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, roundToSgl( unop(Iop_SqrtF64, mkexpr(frB)) ));
+         break;
 
       case 0x18: // fres (Floating Reciprocal Estimate Single, PPC32 p421)
          if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fres)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fres)\n");
             return False;
          }
          DIP("fres%s fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frB_addr);
-         DIP(" => not implemented\n");
+         DIP(" => not implemented\n");        
+         // CAB: Can we use one of the 128 bit SIMD Iop_Recip32F ops?
          return False;
 
       case 0x19: // fmuls (Floating Multiply Single, PPC32 p414)
          if (frB_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fmuls)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fmuls)\n");
             return False;
          }
          DIP("fmuls%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, roundToSgl( binop(Iop_MulF64, mkexpr(frA), mkexpr(frC)) ));
+         break;
 
       default:
          vex_printf("dis_fp_arith(PPC32)(3B: opc2)\n");
          return False;
       }
+      break;
+
    case 0x3F:
       switch (opc2) {           
       case 0x12: // fdiv (Floating Divide (Double-Precision), PPC32 p406)
          if (frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fdiv)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fdiv)\n");
             return False;
          }
          DIP("fdiv%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, binop( Iop_DivF64, mkexpr(frA), mkexpr(frB) ) );
+         break;
 
       case 0x14: // fsub (Floating Subtract (Double-Precision), PPC32 p429)
          if (frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fsub)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fsub)\n");
             return False;
          }
          DIP("fsub%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, binop( Iop_SubF64, mkexpr(frA), mkexpr(frB) ) );
+         break;
 
       case 0x15: // fadd (Floating Add (Double-Precision), PPC32 p400)
          if (frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fadd)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fadd)\n");
             return False;
          }
          DIP("fadd%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, binop( Iop_AddF64, mkexpr(frA), mkexpr(frB) ) );
+         break;
 
       case 0x16: // fsqrt (Floating SqRt (Double-Precision), PPC32 p427)
          if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fsqrt)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fsqrt)\n");
             return False;
          }
          DIP("fsqrt%s fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, unop( Iop_SqrtF64, mkexpr(frB) ) );
+         break;
 
-      case 0x17: // fsel (Floating Select, PPC32 p426)
+      case 0x17: { // fsel (Floating Select, PPC32 p426)
+         IRTemp cc    = newTemp(Ity_I32);
+         IRTemp cc_b0 = newTemp(Ity_I32);
+
          DIP("fsel%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+
+         // cc: UN == 0x41, LT == 0x01, GT == 0x00, EQ == 0x40
+         // => GT|EQ == (cc & 0x1 == 0)
+         assign( cc, binop(Iop_CmpF64, mkexpr(frA), IRExpr_Const(IRConst_F64(0))) );
+         assign( cc_b0, binop(Iop_And32, mkexpr(cc), mkU32(1)) );
+
+         // frD = (frA >= 0.0) ? frC : frB
+         //     = (cc_b0 == 0) ? frC : frB
+         assign( frD,
+                 IRExpr_Mux0X(
+                    unop(Iop_1Uto8,
+                         binop(Iop_CmpEQ32, mkexpr(cc_b0), mkU32(0))),
+                    mkexpr(frB),
+                    mkexpr(frC) ));
+         break;
+      }
 
       case 0x19: // fmul (Floating Multiply (Double Precision), PPC32 p413)
          if (frB_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,fmul)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,fmul)\n");
             return False;
          }
          DIP("fmul%s fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ) );
+         break;
 
       case 0x1A: // frsqrte (Floating Reciprocal SqRt Estimate, PPC32 p424)
          if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_cmp(PPC32)(instr,frsqrte)\n");
+            vex_printf("dis_fp_arith(PPC32)(instr,frsqrte)\n");
             return False;
          }
          DIP("frsqrte%s fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frB_addr);
          DIP(" => not implemented\n");
+         // CAB: Iop_SqrtF64, then one of the 128 bit SIMD Iop_Recip32F ops?
          return False;
 
       default:
          vex_printf("dis_fp_arith(PPC32)(3F: opc2)\n");
          return False;
       }
+      break;
+
    default:
       vex_printf("dis_fp_arith(PPC32)(opc1)\n");
       return False;
    }
+
+   putFReg( frD_addr, mkexpr(frD) );
    return True;
 }
 
@@ -3497,71 +3860,108 @@ static Bool dis_fp_multadd ( UInt theInstr )
    UChar opc2     = toUChar((theInstr >>  1) & 0x1F); /* theInstr[1:5]   */
    UChar flag_Rc  = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
+   IRTemp frD = newTemp(Ity_F64);
+   IRTemp frA = newTemp(Ity_F64);
+   IRTemp frB = newTemp(Ity_F64);
+   IRTemp frC = newTemp(Ity_F64);
+
+   assign( frA, getFReg(frA_addr));
+   assign( frB, getFReg(frB_addr));
+   assign( frC, getFReg(frC_addr));
+
    switch (opc1) {
    case 0x3B:
       switch (opc2) {
-      case 0x1C: // fmsubs (Floating Mult-Subtr Single, PPC32 p409)
+      case 0x1C: // fmsubs (Floating Mult-Subtr Single, PPC32 p412)
          DIP("fmsubs%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, roundToSgl( binop(Iop_SubF64,
+                                        binop(Iop_MulF64, mkexpr(frA), mkexpr(frC)),
+                                        mkexpr(frB)) ));
+         break;
 
       case 0x1D: // fmadds (Floating Mult-Add Single, PPC32 p409)
          DIP("fmadds%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, roundToSgl( binop(Iop_AddF64,
+                                        binop(Iop_MulF64, mkexpr(frA), mkexpr(frC)),
+                                        mkexpr(frB)) ));
+         break;
 
       case 0x1E: // fnmsubs (Float Neg Mult-Subtr Single, PPC32 p420)
          DIP("fnmsubs%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, roundToSgl(
+                    unop(Iop_NegF64,
+                         binop(Iop_SubF64,
+                               binop(Iop_MulF64, mkexpr(frA), mkexpr(frC)),
+                               mkexpr(frB))) ));
+         break;
 
       case 0x1F: // fnmadds (Floating Negative Multiply-Add Single, PPC32 p418)
          DIP("fnmadds%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, roundToSgl(
+                    unop(Iop_NegF64,
+                         binop(Iop_AddF64,
+                               binop(Iop_MulF64, mkexpr(frA), mkexpr(frC)),
+                               mkexpr(frB))) ));
+         break;
 
       default:
          vex_printf("dis_fp_multadd(PPC32)(3B: opc2)\n");
          return False;
       }
+      break;
+
    case 0x3F:
       switch (opc2) {           
       case 0x1C: // fmsub (Float Mult-Subtr (Double Precision), PPC32 p411)
          DIP("fmsub%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, binop( Iop_SubF64,
+                             binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ),
+                             mkexpr(frB) ));
+         break;
 
       case 0x1D: // fmadd (Float Mult-Add (Double Precision), PPC32 p408)
          DIP("fmadd%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, binop( Iop_AddF64,
+                             binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ),
+                             mkexpr(frB) ));
+         break;
 
       case 0x1E: // fnmsub (Float Neg Mult-Subtr (Double Precision), PPC32 p419)
          DIP("fnmsub%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, unop( Iop_NegF64,
+                            binop( Iop_SubF64,
+                                   binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ),
+                                   mkexpr(frB) )));
+         break;
 
       case 0x1F: // fnmadd (Float Neg Mult-Add (Double Precision), PPC32 p417)
          DIP("fnmadd%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         DIP(" => not implemented\n");
-         return False;
+         assign( frD, unop( Iop_NegF64,
+                            binop( Iop_AddF64,
+                                   binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ),
+                                   mkexpr(frB) )));
+         break;
 
       default:
          vex_printf("dis_fp_multadd(PPC32)(3F: opc2)\n");
          return False;
       }
+      break;
+
    default:
       vex_printf("dis_fp_multadd(PPC32)(opc1)\n");
       return False;
    }
+
+   putFReg( frD_addr, mkexpr(frD) );
    return True;
 }
 
@@ -3581,22 +3981,68 @@ static Bool dis_fp_cmp ( UInt theInstr )
    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
+   IRTemp ccIR    = newTemp(Ity_I32);
+   IRTemp ccPPC32 = newTemp(Ity_I32);
+
+#if 0
+   IRTemp cc_lt   = newTemp(Ity_I32);
+   IRTemp cc_gt   = newTemp(Ity_I32);
+   IRTemp cc_eq   = newTemp(Ity_I32);
+   IRTemp cc_un   = newTemp(Ity_I32);
+#endif
+
+   IRTemp frA     = newTemp(Ity_F64);
+   IRTemp frB     = newTemp(Ity_F64);
+//   IRExpr* irx;
+
    if (opc1 != 0x3F || b21to22 != 0 || b0 != 0) {
       vex_printf("dis_fp_cmp(PPC32)(instr)\n");
       return False;
    }
 
+   assign( frA, getFReg(frA_addr));
+   assign( frB, getFReg(frB_addr));
+
+   assign( ccIR, binop(Iop_CmpF64, mkexpr(frA), mkexpr(frB)) );
+   
+   /* Map compare result from IR to PPC32 */
+   /*
+     FP cmp result | PPC | IR
+     --------------------------
+     UN            | 0x1 | 0x45
+     EQ            | 0x2 | 0x40
+     GT            | 0x4 | 0x00
+     LT            | 0x8 | 0x01
+   */
+
+   // ccPPC32 = Shl(1, (0x2 & ~(ccIR>>5)) || (0x1 & (XOR(ccIR, ccIR>>6))))
+   assign( ccPPC32,
+           binop(Iop_Shl32, mkU32(1),
+                 unop(Iop_32to8, 
+                      binop(Iop_Or32,
+                            binop(Iop_And32, mkU32(2),
+                                  unop(Iop_Not32,
+                                       binop(Iop_Shr32, mkexpr(ccIR), mkU8(5)))),
+                            binop(Iop_And32, mkU32(1),
+                                  binop(Iop_Xor32, mkexpr(ccIR),
+                                        binop(Iop_Shr32, mkexpr(ccIR), mkU8(6))))))) );
+
+   putReg_field( PPC32_SPR_CR, mkexpr(ccPPC32), 7-crfD );
+
+   // CAB: Useful to support writing cc to FPSCR->FPCC ?
+   // putReg_field( PPC32_SPR_FPSCR, mkexpr(ccPPC32), 3 );
+
+   // Note: Differences between fcmpu and fcmpo are only
+   // in exception flag settings, which aren't supported anyway...
    opc2 = (theInstr >> 1) & 0x3FF;    /* theInstr[1:10] */
    switch (opc2) {
    case 0x000: // fcmpu (Floating Compare Unordered, PPC32 p403)
       DIP("fcmpu crf%d,fr%d,fr%d\n", crfD, frA_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      break;
 
    case 0x020: // fcmpo (Floating Compare Ordered, PPC32 p402)
       DIP("fcmpo crf%d,fr%d,fr%d\n", crfD, frA_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      break;
 
    default:
       vex_printf("dis_fp_cmp(PPC32)(opc2)\n");
@@ -3620,32 +4066,44 @@ static Bool dis_fp_round ( UInt theInstr )
    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar flag_Rc  = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
+   IRTemp frD = newTemp(Ity_F64);
+   IRTemp frB = newTemp(Ity_F64);
+   IRTemp r_tmp = newTemp(Ity_I32);
+
    if (opc1 != 0x3F || b16to20 != 0) {
       vex_printf("dis_fp_round(PPC32)(instr)\n");
       return False;
    }
 
+   assign( frB, getFReg(frB_addr));
+
    opc2 = (theInstr >> 1) & 0x3FF;    /* theInstr[1:10] */
    switch (opc2) {
    case 0x00C: // frsp (Floating Round to Single, PPC32 p423)
       DIP("frsp%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( frD, roundToSgl( mkexpr(frB) ));
+      break;
 
    case 0x00E: // fctiw (Floating Conv to Int, PPC32 p404)
       DIP("fctiw%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( r_tmp, binop(Iop_F64toI32, get_roundingmode(), mkexpr(frB)) );
+      assign( frD, unop( Iop_ReinterpI64asF64,
+                         unop( Iop_32Uto64, mkexpr(r_tmp))));
+      break;
 
    case 0x00F: // fctiwz (Floating Conv to Int, Round to Zero, PPC32 p405)
       DIP("fctiwz%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( r_tmp, binop(Iop_F64toI32, mkU32(0x3), mkexpr(frB)) );
+      assign( frD, unop( Iop_ReinterpI64asF64,
+                         unop( Iop_32Uto64, mkexpr(r_tmp))));
+      break;
 
    default:
       vex_printf("dis_fp_round(PPC32)(opc2)\n");
       return False;
    }
+
+   putFReg( frD_addr, mkexpr(frD) );
    return True;
 }
 
@@ -3664,37 +4122,44 @@ static Bool dis_fp_move ( UInt theInstr )
    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar flag_Rc  = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
+   IRTemp frD = newTemp(Ity_F64);
+   IRTemp frB = newTemp(Ity_F64);
+
    if (opc1 != 0x3F || b16to20 != 0) {
       vex_printf("dis_fp_move(PPC32)(instr)\n");
       return False;
    }
 
+   assign( frB, getFReg(frB_addr));
+
    opc2 = (theInstr >> 1) & 0x3FF;    /* theInstr[1:10] */
    switch (opc2) {
    case 0x028: // fneg (Floating Negate, PPC32 p416)
       DIP("fneg%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( frD, unop( Iop_NegF64, mkexpr(frB) ));
+      break;
 
    case 0x048: // fmr (Floating Move Register, PPC32 p410)
       DIP("fmr%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( frD, mkexpr(frB) );
+      break;
 
    case 0x088: // fnabs (Floating Negative Absolute Value, PPC32 p415)
       DIP("fnabs%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( frD, unop( Iop_NegF64, unop( Iop_AbsF64, mkexpr(frB) )));
+      break;
 
    case 0x108: // fabs (Floating Absolute Value, PPC32 p399)
       DIP("fabs%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( frD, unop( Iop_AbsF64, mkexpr(frB) ));
+      break;
 
    default:
       vex_printf("dis_fp_move(PPC32)(opc2)\n");
       return False;
    }
+
+   putFReg( frD_addr, mkexpr(frD) );
    return True;
 }
 
@@ -3718,6 +4183,7 @@ static Bool dis_fp_scr ( UInt theInstr )
 
    switch (opc2) {
    case 0x026: { // mtfsb1 (Move to FPSCR Bit 1, PPC32 p479)
+      // Bit crbD of the FPSCR is set.
       UChar crbD    = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
       UInt  b11to20 =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
 
@@ -3726,8 +4192,8 @@ static Bool dis_fp_scr ( UInt theInstr )
          return False;
       }
       DIP("mtfsb1%s crb%d \n", flag_Rc ? "." : "", crbD);
-      DIP(" => not implemented\n");
-      return False;
+      putReg_bit( PPC32_SPR_FPSCR, mkU32(1), 31-crbD );
+      break;
    }
 
    case 0x040: { // mcrfs (Move to Condition Register from FPSCR, PPC32 p465)
@@ -3736,26 +4202,30 @@ static Bool dis_fp_scr ( UInt theInstr )
       UChar crfS    = toUChar((theInstr >> 18) & 0x7);  /* theInstr[18:20] */
       UChar b11to17 = toUChar((theInstr >> 11) & 0x7F); /* theInstr[11:17] */
 
+      IRTemp tmp = newTemp(Ity_I32);
+
       if (b21to22 != 0 || b11to17 != 0 || flag_Rc != 0) {
          vex_printf("dis_fp_scr(PPC32)(instr,mcrfs)\n");
          return False;
       }
       DIP("mcrfs crf%d,crf%d\n", crfD, crfS);
-      DIP(" => not implemented\n");
-      return False;
+      assign( tmp, getReg_field( PPC32_SPR_FPSCR, 7-crfS ) );
+      putReg_field( PPC32_SPR_CR, mkexpr(tmp), 7-crfD );
+      break;
    }
 
    case 0x046: { // mtfsb0 (Move to FPSCR Bit 0, PPC32 p478)
+      // Bit crbD of the FPSCR is cleared.
       UChar crbD    = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-      UInt  b11to20 =         (theInstr >> 16) & 0x3FF; /* theInstr[11:20] */
+      UInt  b11to20 =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
 
       if (b11to20 != 0) {
          vex_printf("dis_fp_scr(PPC32)(instr,mtfsb0)\n");
          return False;
       }      
       DIP("mtfsb0%s crb%d\n", flag_Rc ? "." : "", crbD);
-      DIP(" => not implemented\n");
-      return False;
+      putReg_bit( PPC32_SPR_FPSCR, mkU32(0), 31-crbD );
+      break;
    }
 
    case 0x086: { // mtfsfi (Move to FPSCR Field Immediate, PPC32 p481)
@@ -3769,21 +4239,22 @@ static Bool dis_fp_scr ( UInt theInstr )
          return False;
       }      
       DIP("mtfsfi%s crf%d,%d\n", flag_Rc ? "." : "", crfD, IMM);
-      DIP(" => not implemented\n");
-      return False;
+      putReg_field( PPC32_SPR_FPSCR, mkU32(IMM), 7-crfD );
+      break;
    }
 
-   case 0x247: { // mffs (Move from FPSCR, PPC32 p481)
+   case 0x247: { // mffs (Move from FPSCR, PPC32 p468)
       UChar frD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
       UInt  b11to20  =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
 
       if (b11to20 != 0) {
          vex_printf("dis_fp_scr(PPC32)(instr,mffs)\n");
          return False;
-      }      
+      }
       DIP("mffs%s fr%d\n", flag_Rc ? "." : "", frD_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putFReg( frD_addr, unop( Iop_ReinterpI64asF64,
+                               unop( Iop_32Uto64, getReg( PPC32_SPR_FPSCR ) )));
+      break;
    }
 
    case 0x2C7: { // mtfsf (Move to FPSCR Fields, PPC32 p480)
@@ -3791,14 +4262,27 @@ static Bool dis_fp_scr ( UInt theInstr )
       UChar FM       = toUChar((theInstr >> 17) & 0xFF); /* theInstr[17:24] */
       UChar b16      = toUChar((theInstr >> 16) & 0x1);  /* theInstr[16]    */
       UChar frB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+      IRTemp frB = newTemp(Ity_F64);
+      IRTemp rB_32 = newTemp(Ity_I32);
+      int mask=0;
+      int i=0;
 
       if (b25 != 0 || b16 != 0) {
          vex_printf("dis_fp_scr(PPC32)(instr,mtfsf)\n");
          return False;
       }      
       DIP("mtfsf%s %d,fr%d\n", flag_Rc ? "." : "", FM, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( frB, getFReg(frB_addr));
+      assign( rB_32, unop( Iop_64to32,
+                           unop( Iop_ReinterpF64asI64, mkexpr(frB) )));
+      // Build 32bit mask from FM:
+      for (i=0; i<8; i++) {
+         if ((FM & (1<<(7-i))) == 1) {
+            mask |= 0xF << (7-i);
+         }
+      }
+      putReg_masked( PPC32_SPR_FPSCR, mkexpr(rB_32), mask );
+      break;
    }
 
    default:
@@ -3960,8 +4444,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       goto decode_failure;
 
    /* Floating Point Load Instructions */
-   case 0x30: case 0x31: case 0x32: // lfsx, lfsux, lfdx
-   case 0x33:                       // lfdux
+   case 0x30: case 0x31: case 0x32: // lfs, lfsu, lfd
+   case 0x33:                       // lfdu
       if (dis_fp_load( theInstr )) goto decode_success;
       goto decode_failure;
 
@@ -4176,8 +4660,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          goto decode_failure;
 
       /* Floating Point Load Instructions */
-      case 0x217: case 0x237: case 0x257: // lfs, lfsu, lfd
-      case 0x277:                         // lfdu
+      case 0x217: case 0x237: case 0x257: // lfsx, lfsux, lfdx
+      case 0x277:                         // lfdux
          if (dis_fp_load( theInstr )) goto decode_success;
          goto decode_failure;
 

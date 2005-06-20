@@ -585,6 +585,8 @@ HChar* LibVEX_EmWarn_string ( VexEmWarn ew )
         return "Setting %mxcsr.fz (SSE flush-underflows-to-zero mode)";
      case EmWarn_X86_daz:
         return "Setting %mxcsr.daz (SSE treat-denormals-as-zero mode)";
+     case EmWarn_PPC32exns:
+        return "Unmasking PPC32 FP exceptions";
      default: 
         vpanic("LibVEX_EmWarn_string: unknown warning");
    }

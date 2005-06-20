@@ -278,20 +278,19 @@ typedef
 extern HChar* showPPC32CmpOp ( PPC32CmpOp );
 
 
-//.. /* --------- */
-//.. typedef
-//..    enum {
-//..       Xfp_INVALID,
-//..       /* Binary */
-//..       Xfp_ADD, Xfp_SUB, Xfp_MUL, Xfp_DIV, 
-//..       Xfp_SCALE, Xfp_ATAN, Xfp_YL2X, Xfp_YL2XP1, Xfp_PREM, Xfp_PREM1,
-//..       /* Unary */
-//..       Xfp_SQRT, Xfp_ABS, Xfp_NEG, Xfp_MOV, Xfp_SIN, Xfp_COS, Xfp_TAN,
-//..       Xfp_ROUND, Xfp_2XM1
-//..    }
-//..    X86FpOp;
-//.. 
-//.. extern HChar* showX86FpOp ( X86FpOp );
+/* --------- */
+typedef
+   enum {
+      Pfp_INVALID,
+      /* Binary */
+      Pfp_ADD, Pfp_SUB, Pfp_MUL, Pfp_DIV, 
+
+      /* Unary */
+      Pfp_SQRT, Pfp_ABS, Pfp_NEG, Pfp_MOV
+   }
+   PPC32FpOp;
+
+extern HChar* showPPC32FpOp ( PPC32FpOp );
 
 
 /* --------- */
@@ -311,17 +310,14 @@ typedef
       Pin_Store,      /* store a 8|16|32 bit value to mem */
       Pin_Set32,      /* convert condition code to 32-bit value */
       Pin_MFence,     /* mem fence (not just sse2, but sse0 and 1 too) */
-
-//..       Xin_FpUnary,   /* FP fake unary op */
-//..       Xin_FpBinary,  /* FP fake binary op */
-//..       Xin_FpLdSt,    /* FP fake load/store */
-//..       Xin_FpLdStI,   /* FP fake load/store, converting to/from Int */
-//..       Xin_Fp64to32,  /* FP round IEEE754 double to IEEE754 single */
-//..       Xin_FpCMov,    /* FP fake floating point conditional move */
-//..       Xin_FpLdStCW,  /* fldcw / fstcw */
-//..       Xin_FpStSW_AX, /* fstsw %ax */
-//..       Xin_FpCmp,     /* FP compare, generating a C320 value into int reg */
-
+      Pin_FpUnary,    /* FP unary op */
+      Pin_FpBinary,   /* FP binary op */
+      Pin_FpLdSt,     /* FP load/store */
+      Pin_FpF64toF32, /* FP round IEEE754 double to IEEE754 single */
+      Pin_FpF64toI32, /* FP round IEEE754 double to 32-bit integer */
+      Pin_FpCMov,     /* FP floating point conditional move */
+      Pin_FpLdFPSCR,  /* mtfsf */
+      Pin_FpCmp,      /* FP compare, generating value into int reg */
       Pin_RdWrLR      /* Read/Write Link Register */
    }
    PPC32InstrTag;
@@ -423,64 +419,54 @@ typedef
          struct {
          } MFence;
 
-//..          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
-//..          struct {
-//..             X86FpOp op;
-//..             HReg    src;
-//..             HReg    dst;
-//..          } FpUnary;
-//..          struct {
-//..             X86FpOp op;
-//..             HReg    srcL;
-//..             HReg    srcR;
-//..             HReg    dst;
-//..          } FpBinary;
-//..          struct {
-//..             Bool      isLoad;
-//..             UChar     sz; /* only 4 (IEEE single) or 8 (IEEE double) */
-//..             HReg      reg;
-//..             X86AMode* addr;
-//..          } FpLdSt;
-//..          /* Move 64-bit float to/from memory, converting to/from
-//..             signed int on the way.  Note the conversions will observe
-//..             the host FPU rounding mode currently in force. */
-//..          struct {
-//..             Bool      isLoad;
-//..             UChar     sz; /* only 2, 4 or 8 */
-//..             HReg      reg;
-//..             X86AMode* addr;
-//..          } FpLdStI;
-//..          /* By observing the current FPU rounding mode, round (etc)
-//..             src into dst given that dst should be interpreted as an
-//..             IEEE754 32-bit (float) type. */
-//..          struct {
-//..             HReg src;
-//..             HReg dst;
-//..          } Fp64to32;
-//..          /* Mov src to dst on the given condition, which may not
-//..             be the bogus Xcc_ALWAYS. */
-//..          struct {
-//..             X86CondCode cond;
-//..             HReg        src;
-//..             HReg        dst;
-//..          } FpCMov;
-//..          /* Load/store the FPU's 16-bit control word (fldcw/fstcw) */
-//..          struct {
-//..             Bool      isLoad;
-//..             X86AMode* addr;
-//..          }
-//..          FpLdStCW;
-//..          /* fstsw %ax */
-//..          struct {
-//..             /* no fields */
-//..          }
-//..          FpStSW_AX;
-//..          /* Do a compare, generating the C320 bits into the dst. */
-//..          struct {
-//..             HReg    srcL;
-//..             HReg    srcR;
-//..             HReg    dst;
-//..          } FpCmp;
+         /* PPC32 Floating point */
+         struct {
+            PPC32FpOp op;
+            HReg      dst;
+            HReg      src;
+         } FpUnary;
+         struct {
+            PPC32FpOp op;
+            HReg      dst;
+            HReg      srcL;
+            HReg      srcR;
+         } FpBinary;
+         struct {
+            Bool        isLoad;
+            UChar       sz; /* only 4 (IEEE single) or 8 (IEEE double) */
+            HReg        reg;
+            PPC32AMode* addr;
+         } FpLdSt;
+         /* By observing the current FPU rounding mode, round src into dst,
+            re-interpreting dst to an IEEE754 32-bit (float) type. */
+         struct {
+            HReg src;
+            HReg dst;
+         } FpF64toF32;
+         /* By observing the current FPU rounding mode, round src into dst,
+            re-interpreting dst to an 32-bit integer type. */
+         struct {
+            HReg src;
+            HReg dst;
+         } FpF64toI32;
+         /* Mov src to dst on the given condition, which may not
+            be the bogus Xcc_ALWAYS. */
+         struct {
+            PPC32CondCode cond;
+            HReg          dst;
+            HReg          src;
+         } FpCMov;
+         /* Load FP Status & Control Register */
+         struct {
+            HReg src;
+         } FpLdFPSCR;
+         /* Do a compare, generating result into CR field crfD. */
+         struct {
+            UChar crfD;
+            HReg  dst;
+            HReg  srcL;
+            HReg  srcR;
+         } FpCmp;
 
          /* Read/Write Link Register */
          struct {
@@ -508,15 +494,14 @@ extern PPC32Instr* PPC32Instr_Store      ( UChar sz, PPC32AMode* dst, HReg src )
 extern PPC32Instr* PPC32Instr_Set32      ( PPC32CondCode cond, HReg dst );
 extern PPC32Instr* PPC32Instr_MFence     ( void );
 
-//.. extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );
-//.. extern X86Instr* X86Instr_FpLdSt    ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
-//.. extern X86Instr* X86Instr_FpLdStI   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
-//.. extern X86Instr* X86Instr_Fp64to32  ( HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_FpCMov    ( X86CondCode, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_FpLdStCW  ( Bool isLoad, X86AMode* );
-//.. extern X86Instr* X86Instr_FpStSW_AX ( void );
-//.. extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
+extern PPC32Instr* PPC32Instr_FpUnary    ( PPC32FpOp op, HReg dst, HReg src );
+extern PPC32Instr* PPC32Instr_FpBinary   ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_FpLdSt     ( Bool isLoad, UChar sz, HReg, PPC32AMode* );
+extern PPC32Instr* PPC32Instr_FpF64toF32 ( HReg dst, HReg src );
+extern PPC32Instr* PPC32Instr_FpF64toI32 ( HReg dst, HReg src );
+extern PPC32Instr* PPC32Instr_FpCMov     ( PPC32CondCode, HReg dst, HReg src );
+extern PPC32Instr* PPC32Instr_FpLdFPSCR  ( HReg src );
+extern PPC32Instr* PPC32Instr_FpCmp      ( HReg dst, HReg srcL, HReg srcR );
 
 extern PPC32Instr* PPC32Instr_RdWrLR     ( Bool wrLR, HReg gpr );
 

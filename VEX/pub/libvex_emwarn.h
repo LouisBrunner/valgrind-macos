@@ -73,6 +73,9 @@ typedef
       /* setting mxcsr.daz is not supported */
       EmWarn_X86_daz,
       
+      /* unmasking PPC32 FP exceptions is not supported */
+      EmWarn_PPC32exns,
+
       EmWarn_NUMBER
    }
    VexEmWarn;

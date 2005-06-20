@@ -126,7 +126,8 @@ typedef
       // CR[0:6]: Used for 'compare' ops
       /* 408 */ UInt guest_CR0to6;
 
-      /* 412 */ UInt guest_FPSCR;  // FP Status & Control Reg
+      /* FP Status & Control Register fields */
+      /* 412 */ UInt guest_FPROUND; // FP Rounding Mode
 
       /* 416 */ UInt guest_XER;    // XER Register
 

@@ -227,7 +227,7 @@ HChar* showPPC32CondCode ( PPC32CondCode cond )
    }
 }
 
-/* constructor */
+/* construct condition code */
 PPC32CondCode mk_PPCCondCode ( PPC32CondTest test, PPC32CondFlag flag )
 {
    PPC32CondCode cc;
@@ -531,22 +531,6 @@ PPC32Instr* PPC32Instr_Div ( Bool syned, HReg dst, HReg srcL, HReg srcR ) {
    i->Pin.Div.srcR    = srcR;
    return i;
 }
-//.. X86Instr* X86Instr_Sh3232  ( X86ShiftOp op, UInt amt, HReg src, HReg dst ) {
-//..    X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag            = Xin_Sh3232;
-//..    i->Xin.Sh3232.op  = op;
-//..    i->Xin.Sh3232.amt = amt;
-//..    i->Xin.Sh3232.src = src;
-//..    i->Xin.Sh3232.dst = dst;
-//..    vassert(op == Xsh_SHL || op == Xsh_SHR);
-//..    return i;
-//.. }
-//.. X86Instr* X86Instr_Push( X86RMI* src ) {
-//..    X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag          = Xin_Push;
-//..    i->Xin.Push.src = src;
-//..    return i;
-//.. }
 PPC32Instr* PPC32Instr_Call ( PPC32CondCode cond, Addr32 target, Int regparms ) {
    PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag               = Pin_Call;
@@ -600,14 +584,6 @@ PPC32Instr* PPC32Instr_Set32 ( PPC32CondCode cond, HReg dst ) {
    i->Pin.Set32.dst  = dst;
    return i;
 }
-//.. X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
-//..    X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag               = Xin_Bsfr32;
-//..    i->Xin.Bsfr32.isFwds = isFwds;
-//..    i->Xin.Bsfr32.src    = src;
-//..    i->Xin.Bsfr32.dst    = dst;
-//..    return i;
-//.. }
 PPC32Instr* PPC32Instr_MFence ( void )
 {
    PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
@@ -822,20 +798,6 @@ void ppPPC32Instr ( PPC32Instr* i )
       vex_printf(",");
       ppHRegPPC32(i->Pin.Div.srcR);
       return;
-//..       case Xin_Sh3232:
-//..          vex_printf("%sdl ", showX86ShiftOp(i->Xin.Sh3232.op));
-//..          if (i->Xin.Sh3232.amt == 0)
-//..            vex_printf(" %%cl,"); 
-//..          else 
-//..             vex_printf(" $%d,", i->Xin.Sh3232.amt);
-//..          ppHRegX86(i->Xin.Sh3232.src);
-//..          vex_printf(",");
-//..          ppHRegX86(i->Xin.Sh3232.dst);
-//..          return;
-//..       case Xin_Push:
-//..          vex_printf("pushl ");
-//..          ppX86RMI(i->Xin.Push.src);
-//..          return;
    case Pin_Call:
       vex_printf("call: ");
       if (i->Pin.Call.cond.test != Pct_ALWAYS) {
@@ -927,12 +889,6 @@ void ppPPC32Instr ( PPC32Instr* i )
       }
       return;
    }
-//..       case Xin_Bsfr32:
-//..          vex_printf("bs%cl ", i->Xin.Bsfr32.isFwds ? 'f' : 'r');
-//..          ppHRegX86(i->Xin.Bsfr32.src);
-//..          vex_printf(",");
-//..          ppHRegX86(i->Xin.Bsfr32.dst);
-//..          return;
    case Pin_MFence:
       vex_printf("mfence (=sync)");
       return;
@@ -1125,16 +1081,6 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       addHRegUse(u, HRmRead, i->Pin.Div.srcL);
       addHRegUse(u, HRmRead, i->Pin.Div.srcR);
       return;
-//..       case Xin_Sh3232:
-//..          addHRegUse(u, HRmRead, i->Xin.Sh3232.src);
-//..          addHRegUse(u, HRmModify, i->Xin.Sh3232.dst);
-//..          if (i->Xin.Sh3232.amt == 0)
-//..             addHRegUse(u, HRmRead, hregX86_ECX());
-//..          return;
-//..       case Xin_Push:
-//..          addRegUsage_X86RMI(u, i->Xin.Push.src);
-//..          addHRegUse(u, HRmModify, hregX86_ESP());
-//..          return;
    case Pin_Call:
       /* This is a bit subtle. */
       /* First off, claim it trashes all the caller-saved regs
@@ -1183,7 +1129,7 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       return;
    case Pin_CMov32:
       addRegUsage_PPC32RI(u, i->Pin.CMov32.src);
-      addHRegUse(u, HRmModify, i->Pin.CMov32.dst);
+      addHRegUse(u, HRmWrite, i->Pin.CMov32.dst);
       return;
    case Pin_Load:
       addRegUsage_PPC32AMode(u, i->Pin.Load.src);
@@ -1196,10 +1142,6 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
    case Pin_Set32:
       addHRegUse(u, HRmWrite, i->Pin.Set32.dst);
       return;
-//..       case Xin_Bsfr32:
-//..          addHRegUse(u, HRmRead, i->Xin.Bsfr32.src);
-//..          addHRegUse(u, HRmWrite, i->Xin.Bsfr32.dst);
-//..          return;
    case Pin_MFence:
       return;
 //..       case Xin_FpUnary:
@@ -1364,13 +1306,6 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapReg(m, &i->Pin.Div.srcL);
       mapReg(m, &i->Pin.Div.srcR);
       return;
-//..       case Xin_Sh3232:
-//..          mapReg(m, &i->Xin.Sh3232.src);
-//..          mapReg(m, &i->Xin.Sh3232.dst);
-//..          return;
-//..       case Xin_Push:
-//..          mapRegs_X86RMI(m, i->Xin.Push.src);
-//..          return;
    case Pin_Call:
       return;
    case Pin_Goto:
@@ -1391,10 +1326,6 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
    case Pin_Set32:
       mapReg(m, &i->Pin.Set32.dst);
       return;
-//..       case Xin_Bsfr32:
-//..          mapReg(m, &i->Xin.Bsfr32.src);
-//..          mapReg(m, &i->Xin.Bsfr32.dst);
-//..          return;
    case Pin_MFence:
       return;
 //..       case Xin_FpUnary:
@@ -1808,6 +1739,10 @@ static UChar* emit32 ( UChar* p, UInt w32 )
 //..    return p;
 //.. }
 
+/*
+   mkForm[...] refer to PPC32 instruction forms as per PPC32 p576
+*/
+
 static UChar* mkFormD ( UChar* p, UInt opc1, UInt r1, UInt r2, UInt imm )
 {
    UInt theInstr;
@@ -1932,13 +1867,12 @@ static UChar* mkFormM ( UChar* p, UInt opc1, UInt r1, UInt r2,
    return emit32(p, theInstr);
 }
 
-static UChar* doAMode_IR ( UChar* p, UInt opc1, HReg hrSD, PPC32AMode* am )
+static UChar* doAMode_IR ( UChar* p, UInt opc1, UInt rSD, PPC32AMode* am )
 {
-   UInt rSD, rA, idx;
+   UInt rA, idx;
    vassert(am->tag == Pam_IR);
    vassert(am->Pam.IR.index < 0x10000);
 
-   rSD = iregNo(hrSD);
    rA  = iregNo(am->Pam.IR.base);
    idx = am->Pam.IR.index;
 
@@ -1948,13 +1882,11 @@ static UChar* doAMode_IR ( UChar* p, UInt opc1, HReg hrSD, PPC32AMode* am )
 
 
 static UChar* doAMode_RR ( UChar* p, UInt opc1, UInt opc2,
-                           HReg hrSD, PPC32AMode* am )
+                           UInt rSD, PPC32AMode* am )
 {
-   UInt rSD, rA, rB;
-//   vassert(hregClass(hrSD) == HRcInt32); // CAB: etc. worth doing this?
+   UInt rA, rB;
    vassert(am->tag == Pam_RR);
 
-   rSD = iregNo(hrSD);
    rA  = iregNo(am->Pam.RR.base);
    rB  = iregNo(am->Pam.RR.index);
    
@@ -2001,16 +1933,10 @@ static UChar* mkMoveReg ( UChar* p, UInt r_dst, UInt r_src )
 Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 {
 //..    UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
-//.. 
-//..    UInt   xtra;
+
    UChar* p = &buf[0];
    UChar* ptmp = p;
    vassert(nbuf >= 32);
-//.. 
-//..    /* Wrap an integer as a int register, for use assembling
-//..       GrpN insns, in which the greg field is used as a sub-opcode
-//..       and does not really contain a register. */
-//.. #  define fake(_n) mkHReg((_n), HRcInt32, False)
 
 //   vex_printf("asm  ");ppPPC32Instr(i); vex_printf("\n");
 
@@ -2039,7 +1965,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          } else {
             p = mkFormX(p, opc1, r_srcL, r_dst, r_srcR, opc2, 0);
          }
-      } else { // Pri_Imm:
+      } else { // tag == Pri_Imm:
          imm_srcR = i->Pin.Alu32.srcR->Pri.Imm.imm32;
          switch (i->Pin.Alu32.op) {
          case Palu_ADD: opc1 = 14; break;
@@ -2215,50 +2141,18 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       goto done;
    }
 
-//..    case Xin_Sh3232:
-//..       vassert(i->Xin.Sh3232.op == Xsh_SHL || i->Xin.Sh3232.op == Xsh_SHR);
-//..       if (i->Xin.Sh3232.amt == 0) {
-//..          /* shldl/shrdl by %cl */
-//..          *p++ = 0x0F;
-//..          if (i->Xin.Sh3232.op == Xsh_SHL) {
-//..             *p++ = 0xA5;
-//..          } else {
-//..             *p++ = 0xAD;
-//..          }
-//..          p = doAMode_R(p, i->Xin.Sh3232.src, i->Xin.Sh3232.dst);
-//..          goto done;
-//..       }
-//..       break;
-
-//..    case Xin_Push:
-//..       switch (i->Xin.Push.src->tag) {
-//..          case Xrmi_Mem: 
-//..             *p++ = 0xFF;
-//..             p = doAMode_M(p, fake(6), i->Xin.Push.src->Xrmi.Mem.am);
-//..             goto done;
-//..          case Xrmi_Imm:
-//..             *p++ = 0x68;
-//..             p = emit32(p, i->Xin.Push.src->Xrmi.Imm.imm32);
-//..             goto done;
-//..          case Xrmi_Reg:
-//..             *p++ = 0x50 + iregNo(i->Xin.Push.src->Xrmi.Reg.reg);
-//..             goto done;
-//..         default: 
-//..             goto bad;
-//..       }
-
    case Pin_Call: {
       PPC32CondCode cond = i->Pin.Call.cond;
       UInt r_dst = 12;
       /* As per detailed comment for Pin_Call in
          getRegUsage_PPC32Instr above, %r12 is used as an address temp */
 
-      /* jump over the following two insns if condition does not hold */
+      /* jump over the following insns if condition does not hold */
       if (cond.test != Pct_ALWAYS) {
-         /* don't know how many bytes to jump over yet...
-            make space for a jump instruction and fill in later. */
-         ptmp = p; /* fill in this bit later */
-         p += 4;
+         UInt delta = 4*4;  /* jump 4 instrs */
+
+         /* bca !ct,cf,dst */
+         p = mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 1, 0);
       }
 
       /* load target to r_dst */
@@ -2269,15 +2163,6 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       
       /* bctrl => branch to count register (and save to lr) */
       p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);
-
-      /* Fix up the conditional jump, if there was one. */
-      if (cond.test != Pct_ALWAYS) {
-         Int delta = p - ptmp;
-         vassert(delta >= 8 && delta <= 16);
-
-         /* bca !ct,cf,jump */
-         mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 1, 0);
-      }
       goto done;
    }
 
@@ -2319,26 +2204,26 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       if (magic_num !=0) {
          vassert(magic_num < 0x10000);
          /* addi r31,0,magic_num */
-         p = mkFormD(p, 14, 31, 0, magic_num);
+         p = mkFormD(p, 14, 31, 0, magic_num);         // p += 4
       }
 
       /* Get the destination address into %r_return */
       if (i->Pin.Goto.dst->tag == Pri_Imm) {
          imm_dst = i->Pin.Goto.dst->Pri.Imm.imm32;
-         p = mkLoadImm(p, r_return, imm_dst);
+         p = mkLoadImm(p, r_return, imm_dst);          // p += 4|8
       } else {
          vassert(i->Pin.Goto.dst->tag == Pri_Reg);
          r_dst = iregNo(i->Pin.Goto.dst->Pri.Reg.reg);
-         p = mkMoveReg(p, r_return, r_dst);
+         p = mkMoveReg(p, r_return, r_dst);            // p += 4
       }
       
       /* blr */
-      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 16, 0);
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 16, 0);    // p += 4
 
       /* Fix up the conditional jump, if there was one. */
       if (cond.test != Pct_ALWAYS) {
          Int delta = p - ptmp;
-         vassert(delta >= 8 && delta <= 16);
+         vassert(delta >= 12 && delta <= 20);
          /* bc !ct,cf,delta */
          mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 0, 0);
       }
@@ -2385,6 +2270,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    }
 
    case Pin_Load: {
+      PPC32AMode* am_addr = i->Pin.Load.src;
+      UInt r_dst = iregNo(i->Pin.Load.dst);
       Bool syned = i->Pin.Load.syned;
       UInt opc1, opc2, sz = i->Pin.Load.sz;
       switch (i->Pin.Load.src->tag) {
@@ -2395,17 +2282,16 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
             vassert(syned == False);
             opc1 = (sz == 1) ? 34 : 32;   // 1:4
          }
-         p = doAMode_IR(p, opc1, i->Pin.Load.dst, i->Pin.Load.src);
+         p = doAMode_IR(p, opc1, r_dst, am_addr);
          goto done;
       case Pam_RR:
-         opc1 = 31;
          if (sz == 2) {  // the only signed load
             opc2 = (syned) ? 343: 279;
          } else {
             vassert(syned == False);
             opc2 = (sz == 1) ? 87 : 23;   // 1:4
          }
-         p = doAMode_RR(p, opc1, opc2, i->Pin.Load.dst, i->Pin.Load.src);
+         p = doAMode_RR(p, 31, opc2, r_dst, am_addr);
          goto done;
       default:
          goto bad;
@@ -2442,37 +2328,25 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       goto done;
    }
 
-//..    case Xin_Bsfr32:
-//..       *p++ = 0x0F;
-//..       if (i->Xin.Bsfr32.isFwds) {
-//..          *p++ = 0xBC;
-//..       } else {
-//..          *p++ = 0xBD;
-//..       }
-//..       p = doAMode_R(p, i->Xin.Bsfr32.dst, i->Xin.Bsfr32.src);
-//..       goto done;
-
    case Pin_MFence: {
-// CAB: choose...
-#if 1  // sync (Synchronise, p616)
-      p = mkFormX(p, 31, 0, 0, 0, 598, 0);
-#else  // isync (instruction synchronise, p467)
-      p = mkFormXL(p, 19, 0, 0, 0, 150, 0);
-#endif
+      p = mkFormX(p, 31, 0, 0, 0, 598, 0);   // sync, PPC32 p616
+// CAB: Should this be isync?
+//    p = mkFormXL(p, 19, 0, 0, 0, 150, 0);  // isync, PPC32 p467
       goto done;
    }
 
    case Pin_Store: {
+      PPC32AMode* am_addr = i->Pin.Store.dst;
+      UInt r_src = iregNo(i->Pin.Store.src);
       UInt opc1, opc2, sz = i->Pin.Store.sz;
       switch (i->Pin.Store.dst->tag) {
       case Pam_IR:
          opc1 = (sz == 1) ? 38 : ((sz == 2) ? 44 : 36);      // 1:2:4
-         p = doAMode_IR(p, opc1, i->Pin.Store.src, i->Pin.Store.dst);
+         p = doAMode_IR(p, opc1, r_src, am_addr);
          goto done;
       case Pam_RR:
-         opc1 = 31;
          opc2 = (sz == 1) ? 215 : ((sz == 2) ? 407 : 151);   // 1:2:4
-         p = doAMode_RR(p, opc1, opc2, i->Pin.Store.src, i->Pin.Store.dst);
+         p = doAMode_RR(p, 31, opc2, r_src, am_addr);
          goto done;
       default:
          goto bad;
@@ -2916,8 +2790,6 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
   done:
    vassert(p - &buf[0] <= 32);
    return p - &buf[0];
-
-#  undef fake
 }
 
 /*---------------------------------------------------------------*/

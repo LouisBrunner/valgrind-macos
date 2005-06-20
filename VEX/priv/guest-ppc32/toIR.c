@@ -69,6 +69,10 @@
    change during translation of a bb. 
 */
 
+/* We need to know this to do sub-register accesses correctly. */
+/* CONST */
+static Bool host_is_bigendian;
+
 /* Pointer to the guest code area. */
 /* CONST */
 static UChar* guest_code;
@@ -302,13 +306,14 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
    vge->len[0]  = 0;
 
    /* Set up globals. */
+   host_is_bigendian = host_bigendian;
    guest_code        = ppc32code;
    guest_pc_bbstart  = (Addr32)guest_pc_start;
    irbb              = emptyIRBB();
 
    vassert((guest_pc_start >> 32) == 0);
 
-   /* Delta keeps track of how far along the x86code array we
+   /* Delta keeps track of how far along the ppc32code array we
       have so far gone. */
    delta             = 0;
    n_instrs          = 0;
@@ -380,7 +385,7 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
          vassert(irbb->next == NULL);
          /* figure out a new delta to continue at. */
          vassert(chase_into_ok(guest_next));
-         delta = toUInt(guest_next - guest_pc_start);
+         delta = (UInt)(guest_next - guest_pc_start);
          n_resteers++;
          d_resteers++;
          if (0 && (n_resteers & 0xFF) == 0)
@@ -555,10 +560,12 @@ static IRExpr* mkU8 ( UChar i )
    return IRExpr_Const(IRConst_U8(i));
 }
 
+#if 0
 static IRExpr* mkU16 ( UShort i )
 {
    return IRExpr_Const(IRConst_U16(i));
 }
+#endif
 
 static IRExpr* mkU32 ( UInt i )
 {
@@ -602,7 +609,7 @@ static IRExpr* ROTL32 ( IRExpr* src, IRExpr* rot_amt )
 /* -------------- Evaluating the flags-thunk. -------------- */
 
 /* Calculate CR7 (IBM CR0) conditional flags */
-static IRExpr* mk_ppc32g_calculate_cr7_all ( void )
+static IRExpr* mk_ppc32g_calculate_cr7 ( void )
 {
    IRExpr** args =
       mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
@@ -612,7 +619,7 @@ static IRExpr* mk_ppc32g_calculate_cr7_all ( void )
       = mkIRExprCCall(
            Ity_I32,
            0/*regparm*/, 
-           "ppc32g_calculate_cr7_all", &ppc32g_calculate_cr7_all,
+           "ppc32g_calculate_cr7", &ppc32g_calculate_cr7,
            args
         );
 
@@ -682,7 +689,7 @@ static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, IRExpr* res,
    flag-setting operation.  Hence the various setFlags_* functions.
 */
 
-/* Set the flags thunk OP=0, DEP1, DEP2 fields. */
+/* Set the flags thunk OP=0, DEP1, DEP2 fields.  PPC32 p60 */
 static void setFlags_CR7 ( IRExpr* result )
 {
    IRExpr* xer_so;
@@ -769,7 +776,8 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
    case PPC32_SPR_CR:
       if (mask & 0xF0000000) {
          // Call helper function to calculate latest CR7 from thunk:
-         assign( val, binop(Iop_Or32, mk_ppc32g_calculate_cr7_all(),
+         // ... and OR it with CR0to6
+         assign( val, binop(Iop_Or32, mk_ppc32g_calculate_cr7(),
                             IRExpr_Get(OFFB_CR0to6, Ity_I32)) );
       } else {
          assign( val, IRExpr_Get(OFFB_CR0to6, Ity_I32) );
@@ -810,7 +818,7 @@ static IRExpr* getReg_field ( PPC32SPR reg, UInt field_idx )
    fld = getReg_masked( reg, (0xF << (field_idx*4)) );
    
    if (field_idx != 0) {
-      fld = binop(Iop_Shr32, fld, mkU8(toUChar(field_idx * 4)));
+      fld = binop(Iop_Shr32, fld, mkU8(field_idx * 4));
    }
    return fld;
 }
@@ -826,7 +834,7 @@ static IRExpr* getReg_bit ( PPC32SPR reg, UInt bit_idx )
    val = getReg_masked( reg, 1<<bit_idx );
 
    if (bit_idx != 0) {
-      val = binop(Iop_Shr32, val, mkU8(toUChar(bit_idx)));
+      val = binop(Iop_Shr32, val, mkU8(bit_idx));
    }
    return val;
 }
@@ -917,7 +925,7 @@ static void putReg_field ( PPC32SPR reg, IRExpr* src, UInt field_idx )
    vassert( reg < PPC32_SPR_MAX );
    
    if (field_idx != 0) {
-      src = binop(Iop_Shl32, src, mkU8(toUChar(field_idx * 4)));
+      src = binop(Iop_Shl32, src, mkU8(field_idx * 4));
    }   
    putReg_masked( reg, src, (0xF << (field_idx*4)) );
 }
@@ -930,7 +938,7 @@ static void putReg_bit ( PPC32SPR reg, IRExpr* src, UInt bit_idx )
    vassert( reg < PPC32_SPR_MAX );
    
    if (bit_idx != 0) {
-      src = binop(Iop_Shl32, src, mkU8(toUChar(bit_idx)));
+      src = binop(Iop_Shl32, src, mkU8(bit_idx));
    }   
    putReg_masked( reg, src, (1<<bit_idx) );
 }
@@ -1332,13 +1340,13 @@ static Bool dis_int_cmp ( UInt theInstr )
    switch (opc1) {
    case 0x0B: // cmpi (Compare Immediate, PPC32 p368)
       EXTS_SIMM = extend_s_16to32(SIMM_16);
-      DIP("cmpi crf%d,%d,r%d,0x%x\n", crfD, flag_L, Ra_addr, EXTS_SIMM);
+      DIP("cmpi crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, EXTS_SIMM);
       irx_cmp_lt = binop(Iop_CmpLT32S, mkexpr(Ra), mkU32(EXTS_SIMM));
       irx_cmp_eq = binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(EXTS_SIMM));
       break;
           
    case 0x0A: // cmpli (Compare Logical Immediate, PPC32 p370)
-      DIP("cmpli crf%d,%d,r%d,0x%x\n", crfD, flag_L, Ra_addr, UIMM_16);
+      DIP("cmpli crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, UIMM_16);
       irx_cmp_lt = binop(Iop_CmpLT32U, mkexpr(Ra), mkU32(UIMM_16));
       irx_cmp_eq = binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(UIMM_16));
       break;
@@ -1354,13 +1362,13 @@ static Bool dis_int_cmp ( UInt theInstr )
 
       switch (opc2) {
       case 0x000: // cmp (Compare, PPC32 p367)
-         DIP("cmp crf%d,%d,r%d,r%d\n", crfD, flag_L,
+         DIP("cmp crf%d,%u,r%d,r%d\n", crfD, flag_L,
              Ra_addr, Rb_addr);
          irx_cmp_lt = binop(Iop_CmpLT32S, mkexpr(Ra), mkexpr(Rb));
          break;
          
        case 0x020: // cmpl (Compare Logical, PPC32 p369)
-          DIP("cmpl crf%d,%d,r%d,r%d\n", crfD, flag_L,
+          DIP("cmpl crf%d,%u,r%d,r%d\n", crfD, flag_L,
               Ra_addr, Rb_addr);
           irx_cmp_lt = binop(Iop_CmpLT32U, mkexpr(Ra), mkexpr(Rb));
           break;
@@ -1604,7 +1612,7 @@ static Bool dis_int_rot ( UInt theInstr )
       
    switch (opc1) {
    case 0x14: // rlwimi (Rotate Left Word Immediate then Mask Insert, PPC32 p500)
-      DIP("rlwimi%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
+      DIP("rlwimi%s r%d,r%d,%d,%u,%u\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
       // Ra = (ROTL(Rs, Imm) & mask) | (Ra & ~mask);
       assign( Ra, binop(Iop_Or32,
@@ -1614,7 +1622,7 @@ static Bool dis_int_rot ( UInt theInstr )
       break;
 
    case 0x15: // rlwinm (Rotate Left Word Immediate then AND with Mask, PPC32 p501)
-      DIP("rlwinm%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
+      DIP("rlwinm%s r%d,r%d,%d,%u,%u\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
       // Ra = ROTL(Rs, Imm) & mask
       assign( Ra, binop(Iop_And32, ROTL32(mkexpr(Rs),
@@ -1622,7 +1630,7 @@ static Bool dis_int_rot ( UInt theInstr )
       break;
 
    case 0x17: // rlwnm (Rotate Left Word then AND with Mask, PPC32 p503
-      DIP("rlwnm%s r%d,r%d,r%d,%d,%d\n", flag_Rc ? "." : "",
+      DIP("rlwnm%s r%d,r%d,r%d,%u,%u\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, Rb_addr, MaskBegin, MaskEnd);
       // Ra = ROTL(Rs, Rb[0-4]) & mask
       assign( rot_amt,
@@ -1886,8 +1894,8 @@ static Bool dis_int_store ( UInt theInstr )
          return False;
       }
       DIP("stbu r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
-      storeBE( mkexpr(EA_imm), mkexpr(Rs_8) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
+      storeBE( mkexpr(EA_imm), mkexpr(Rs_8) );
       break;
 
    case 0x2C: // sth (Store HW, PPC32 p522)
@@ -1901,9 +1909,8 @@ static Bool dis_int_store ( UInt theInstr )
          return False;
       }
       DIP("sthu r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
-      assign( Rs_16, binop(Iop_And16, mkexpr(Rs), mkU16(0xFFFF)) );
-      storeBE( mkexpr(EA_imm), mkexpr(Rs_16) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
+      storeBE( mkexpr(EA_imm), mkexpr(Rs_16) );
       break;
 
    case 0x24: // stw (Store W, PPC32 p530)
@@ -1917,8 +1924,8 @@ static Bool dis_int_store ( UInt theInstr )
          return False;
       }
       DIP("stwu r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
-      storeBE( mkexpr(EA_imm), mkexpr(Rs) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
+      storeBE( mkexpr(EA_imm), mkexpr(Rs) );
       break;
       
    /* X Form */
@@ -1936,8 +1943,8 @@ static Bool dis_int_store ( UInt theInstr )
             return False;
          }
          DIP("stbux r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
-         storeBE( mkexpr(EA_reg), mkexpr(Rs_8) );
          putIReg( Ra_addr, mkexpr(EA_reg) );
+         storeBE( mkexpr(EA_reg), mkexpr(Rs_8) );
          break;
          
       case 0x0D7: // stbx (Store B Indexed, PPC32 p512)
@@ -1951,8 +1958,8 @@ static Bool dis_int_store ( UInt theInstr )
             return False;
          }
          DIP("sthux r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
-         storeBE( mkexpr(EA_reg), mkexpr(Rs_16) );
          putIReg( Ra_addr, mkexpr(EA_reg) );
+         storeBE( mkexpr(EA_reg), mkexpr(Rs_16) );
          break;
          
       case 0x197: // sthx (Store HW Indexed, PPC32 p526)
@@ -1966,8 +1973,8 @@ static Bool dis_int_store ( UInt theInstr )
             return False;
          }
          DIP("stwux r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
-         storeBE( mkexpr(EA_reg), mkexpr(Rs) );
          putIReg( Ra_addr, mkexpr(EA_reg) );
+         storeBE( mkexpr(EA_reg), mkexpr(Rs) );
          break;
 
       case 0x097: // stwx (Store W Indexed, PPC32 p536)
@@ -2104,7 +2111,7 @@ static Bool dis_int_ldst_str ( UInt theInstr )
             return False;
          }
       }
-      DIP("lswi r%d,r%d,%d\n", Rd_addr, Ra_addr, NumBytes);
+      DIP("lswi r%d,r%d,%u\n", Rd_addr, Ra_addr, NumBytes);
       
       assign( EA, mkexpr(b_EA) );
       
@@ -2135,7 +2142,7 @@ static Bool dis_int_ldst_str ( UInt theInstr )
       return False;
 
    case 0x2D5: // stswi (Store String Word Immediate, PPC32 p528)
-      DIP("stswi r%d,r%d,%d\n", Rs_addr, Ra_addr, NumBytes);
+      DIP("stswi r%d,r%d,%u\n", Rs_addr, Ra_addr, NumBytes);
       if (Ra_addr == 0) {
          assign( EA, mkU32(0) );
       } else {
@@ -2217,17 +2224,14 @@ static Bool dis_int_ldst_str ( UInt theInstr )
 static IRExpr* branch_ctr_ok( UInt BO )
 {
    IRTemp ok = newTemp(Ity_I1);
-   IRTemp ctr_0 = newTemp(Ity_I1);
-   
+
    if ((BO >> 2) & 1) {
       assign( ok, mkU1(1) );
    } else {
-      assign( ctr_0, unop(Iop_32to1, getReg_bit( PPC32_SPR_CTR, 0 )) );
-
       if ((BO >> 1) & 1) {
-         assign( ok, unop(Iop_Not1, mkexpr(ctr_0)) );
+         assign( ok, binop(Iop_CmpEQ32, getReg( PPC32_SPR_CTR ), mkU32(0)) );
       } else {
-         assign( ok, mkexpr(ctr_0) );
+         assign( ok, binop(Iop_CmpNE32, getReg( PPC32_SPR_CTR ), mkU32(0)) );
       }
    }
    return mkexpr(ok);
@@ -2452,7 +2456,7 @@ static Bool dis_cond_logic ( UInt theInstr )
 
    if (opc2 == 0) {  // mcrf    (Move Cond Reg Field, PPC32 p464)
       if (((crbD_addr & 0x3) != 0) ||
-          ((crbA_addr & 0x3) != 0) || (crbB != 0))
+          ((crbA_addr & 0x3) != 0) || (crbB_addr != 0))
          return False;
       DIP("mcrf crf%d,crf%d\n", crfD_addr, crfS_addr);
       assign( tmp,  getReg_field( PPC32_SPR_CR, (7-crfS_addr) ) );
@@ -2987,7 +2991,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
       DIP("mtcrf 0x%x,r%d\n", CRM, Rs_addr);
       for (i=0; i<8; i++) {
          if (CRM & (1<<i)) {
-            mask = mask | (0xF << (7-i)*4);
+            mask |= (0xF << (i)*4);
          }
       }
       putReg_masked( PPC32_SPR_CR, mkexpr(Rs), mask );
@@ -3856,6 +3860,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       UInt* code = (UInt*)(guest_code + delta);
 
       /* Spot this:                                       
+         0x7C03D808   tw 0,3,27            => trap word if(0) => nothing
          0x60000000   ori 0,0,0            => r0 = r0 | 0
          0x5400E800   rlwinm 0,0,29,0,0    => r0 = rotl(r0,29)
          0x54001800   rlwinm 0,0,3,0,0     => r0 = rotl(r0,3)
@@ -3863,7 +3868,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          0x54009800   rlwinm 0,0,19,0,0    => r0 = rotl(r0,19)
          0x60000000   ori 0,0,0            => r0 = r0 | 0
       */
-      if (code[0] == 0x60000000 &&
+      if (code[0] == 0x7C03D808 &&
           code[1] == 0x5400E800 &&
           code[2] == 0x54001800 &&
           code[3] == 0x54006800 &&
@@ -3874,7 +3879,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          DIP("? = client_request ( ? )\n");
 
          *size = 24;
-         
+         delta += 24;
+
          irbb->next     = mkU32(guest_pc_bbstart+delta);
          irbb->jumpkind = Ijk_ClientReq;
          
@@ -3894,14 +3900,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    vex_printf("\n");
 #endif
 
-
-   if (theInstr == 0x7C0042A6) {
-      // CAB: what's this?
-      DIP("Invalid instruction! Would be 'mfspr 0,256', which doesn't exist!.\n");
-      goto decode_failure;
-//      DIP("Passing through for now...\n");
-//      goto decode_success;
-   }
 
    // Note: all 'reserved' bits must be cleared, else invalid
    switch (opc1) {

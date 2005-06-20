@@ -48,7 +48,7 @@
 
 extern void ppHRegPPC32 ( HReg );
 
-extern HReg hregPPC32_GPR0  ( void );   // reserved
+extern HReg hregPPC32_GPR0  ( void );   // scratch reg / zero reg
 extern HReg hregPPC32_GPR1  ( void );   // Stack Frame Pointer
 extern HReg hregPPC32_GPR2  ( void );   // TOC pointer - not used
 extern HReg hregPPC32_GPR3  ( void );
@@ -297,23 +297,20 @@ extern HChar* showPPC32CmpOp ( PPC32CmpOp );
 /* --------- */
 typedef
    enum {
-      Pin_Alu32,     /* 32-bit mov/arith/logical */
-      Pin_Sub32,     /* 32-bit mov/arith/logical */
-      Pin_Sh32,      /* 32-bit shift/rotate */
-      Pin_Cmp32,     /* 32-bit compare */
-      Pin_Unary32,   /* 32-bit not, neg, clz */
-      Pin_MulL,      /* widening multiply */
-      Pin_Div,       /* div */
-//..       Xin_Sh3232,    /* shldl or shrdl */
-//..       Xin_Push,      /* push (32-bit?) value on stack */
-      Pin_Call,      /* call to address in register */
-      Pin_Goto,      /* conditional/unconditional jmp to dst */
-      Pin_CMov32,    /* conditional move */
-      Pin_Load,      /* load a 8|16|32 bit value from mem */
-      Pin_Store,     /* store a 8|16|32 bit value to mem */
-      Pin_Set32,     /* convert condition code to 32-bit value */
-//..       Xin_Bsfr32,    /* 32-bit bsf/bsr */
-      Pin_MFence,    /* mem fence (not just sse2, but sse0 and 1 too) */
+      Pin_Alu32,      /* 32-bit mov/arith/logical */
+      Pin_Sub32,      /* 32-bit mov/arith/logical */
+      Pin_Sh32,       /* 32-bit shift/rotate */
+      Pin_Cmp32,      /* 32-bit compare */
+      Pin_Unary32,    /* 32-bit not, neg, clz */
+      Pin_MulL,       /* widening multiply */
+      Pin_Div,        /* div */
+      Pin_Call,       /* call to address in register */
+      Pin_Goto,       /* conditional/unconditional jmp to dst */
+      Pin_CMov32,     /* conditional move */
+      Pin_Load,       /* load a 8|16|32 bit value from mem */
+      Pin_Store,      /* store a 8|16|32 bit value to mem */
+      Pin_Set32,      /* convert condition code to 32-bit value */
+      Pin_MFence,     /* mem fence (not just sse2, but sse0 and 1 too) */
 
 //..       Xin_FpUnary,   /* FP fake unary op */
 //..       Xin_FpBinary,  /* FP fake binary op */
@@ -325,7 +322,7 @@ typedef
 //..       Xin_FpStSW_AX, /* fstsw %ax */
 //..       Xin_FpCmp,     /* FP compare, generating a C320 value into int reg */
 
-      Pin_RdWrLR     /* Read/Write Link Register */
+      Pin_RdWrLR      /* Read/Write Link Register */
    }
    PPC32InstrTag;
 
@@ -378,16 +375,6 @@ typedef
             HReg srcL;
             HReg srcR;
          } Div;
-//..          /* shld/shrd.  op may only be Xsh_SHL or Xsh_SHR */
-//..          struct {
-//..             X86ShiftOp op;
-//..             UInt       amt;   /* shift amount, or 0 means %cl */
-//..             HReg       src;
-//..             HReg       dst;
-//..          } Sh3232;
-//..          struct {
-//..             X86RMI* src;
-//..          } Push;
          /* Pseudo-insn.  Call target (an absolute address), on given
             condition (which could be Pct_ALWAYS). */
          struct {
@@ -430,12 +417,6 @@ typedef
             PPC32CondCode cond;
             HReg          dst;
          } Set32;
-//..          /* 32-bit bsf or bsr. */
-//..          struct {
-//..             Bool isFwds;
-//..             HReg src;
-//..             HReg dst;
-//..          } Bsfr32;
          /* Mem fence.  In short, an insn which flushes all preceding
             loads and stores as much as possible before continuing.
             On PPC32 we emit a "sync". */
@@ -511,25 +492,22 @@ typedef
    PPC32Instr;
 
 
-extern PPC32Instr* PPC32Instr_Alu32     ( PPC32AluOp, HReg, HReg, PPC32RI* );
-extern PPC32Instr* PPC32Instr_Sub32     ( HReg, PPC32RI*, HReg );
-extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
-extern PPC32Instr* PPC32Instr_Cmp32     ( PPC32CmpOp, UInt, HReg, PPC32RI* );
-extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_MulL      ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
-extern PPC32Instr* PPC32Instr_Div       ( Bool syned, HReg dst, HReg srcL, HReg srcR );
-//.. extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_Push      ( X86RMI* );
-extern PPC32Instr* PPC32Instr_Call      ( PPC32CondCode, Addr32, Int );
-extern PPC32Instr* PPC32Instr_Goto      ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
-extern PPC32Instr* PPC32Instr_CMov32    ( PPC32CondCode, HReg dst, PPC32RI* src );
-extern PPC32Instr* PPC32Instr_Load      ( UChar sz, Bool syned,
-                                          HReg dst, PPC32AMode* src );
-extern PPC32Instr* PPC32Instr_Store     ( UChar sz, PPC32AMode* dst, HReg src );
-extern PPC32Instr* PPC32Instr_Set32     ( PPC32CondCode cond, HReg dst );
-//.. extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
-extern PPC32Instr* PPC32Instr_MFence    ( void );
-//.. 
+extern PPC32Instr* PPC32Instr_Alu32      ( PPC32AluOp, HReg, HReg, PPC32RI* );
+extern PPC32Instr* PPC32Instr_Sub32      ( HReg, PPC32RI*, HReg );
+extern PPC32Instr* PPC32Instr_Sh32       ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
+extern PPC32Instr* PPC32Instr_Cmp32      ( PPC32CmpOp, UInt, HReg, PPC32RI* );
+extern PPC32Instr* PPC32Instr_Unary32    ( PPC32UnaryOp op, HReg dst, HReg src );
+extern PPC32Instr* PPC32Instr_MulL       ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
+extern PPC32Instr* PPC32Instr_Div        ( Bool syned, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_Call       ( PPC32CondCode, Addr32, Int );
+extern PPC32Instr* PPC32Instr_Goto       ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
+extern PPC32Instr* PPC32Instr_CMov32     ( PPC32CondCode, HReg dst, PPC32RI* src );
+extern PPC32Instr* PPC32Instr_Load       ( UChar sz, Bool syned,
+                                           HReg dst, PPC32AMode* src );
+extern PPC32Instr* PPC32Instr_Store      ( UChar sz, PPC32AMode* dst, HReg src );
+extern PPC32Instr* PPC32Instr_Set32      ( PPC32CondCode cond, HReg dst );
+extern PPC32Instr* PPC32Instr_MFence     ( void );
+
 //.. extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );
 //.. extern X86Instr* X86Instr_FpLdSt    ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
@@ -540,7 +518,7 @@ extern PPC32Instr* PPC32Instr_MFence    ( void );
 //.. extern X86Instr* X86Instr_FpStSW_AX ( void );
 //.. extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
 
-extern PPC32Instr* PPC32Instr_RdWrLR ( Bool wrLR, HReg gpr );
+extern PPC32Instr* PPC32Instr_RdWrLR     ( Bool wrLR, HReg gpr );
 
 
 extern void ppPPC32Instr ( PPC32Instr* );

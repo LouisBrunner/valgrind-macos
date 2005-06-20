@@ -154,10 +154,11 @@ typedef
 extern
 void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state );
 
-/* Calculate the PPC32 flag state from the saved data. */
+/* Extract from the supplied VexGuestPPC32State structure the
+   corresponding native %cr7 value. */
 
 extern
-UInt LibVEX_GuestPPC32_get_flags ( /*IN*/VexGuestPPC32State* vex_state );
+UInt LibVEX_GuestPPC32_get_cr7 ( /*IN*/VexGuestPPC32State* vex_state );
 
 
 #endif /* ndef __LIBVEX_PUB_GUEST_PPC32_H */

@@ -302,7 +302,7 @@ void switchback ( void )
    }
 
    sb_helper1 = (HWord)&gst;
-   sb_helper2 = LibVEX_GuestPPC32_get_flags(&gst);
+   sb_helper2 = LibVEX_GuestPPC32_get_cr7(&gst);
 
    /* stay sane ... */
    assert(p[0] == 24<<26); /* nop */
@@ -629,6 +629,7 @@ static
 void log_bytes ( HChar* bytes, Int nbytes )
 {
    fwrite ( bytes, 1, nbytes, stdout );
+   fflush ( stdout );
 }
 
 

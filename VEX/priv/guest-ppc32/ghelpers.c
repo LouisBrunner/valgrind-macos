@@ -64,7 +64,7 @@
    thunk parameters.
    Returns values in high field (correct wrt actual CR)
  */
-UInt ppc32g_calculate_cr7_all ( UInt op, UInt val, UInt xer_so )
+UInt ppc32g_calculate_cr7 ( UInt op, UInt val, UInt xer_so )
 {
    if (op) {   // val contains cr7 flags to be returned
       return (val & 0xF0000000);
@@ -98,7 +98,7 @@ UInt ppc32g_calculate_xer_ov ( UInt op, UInt res, UInt argL, UInt argR )
       /* OV true if result can't be represented in 32 bits
          i.e sHi != sign extension of sLo */
       Long l_res = (Long)((Int)argL) * (Long)((Int)argR);
-      Int sHi = (Int)toUInt(l_res >> 32);
+      Int sHi = (Int)(l_res >> 32);
       Int sLo = (Int)l_res;
       return (sHi != (sLo >> /*s*/ 31)) ? 1:0;
    }
@@ -190,7 +190,7 @@ IRExpr* guest_ppc32_spechelper ( HChar* function_name,
 
 /* VISIBLE TO LIBVEX CLIENT */
 #if 0
-void LibVEX_GuestPPC32_put_flags ( UInt flags_native,
+void LibVEX_GuestPPC32_put_cr7 ( UInt flags_native,
                                  /*OUT*/VexGuestPPC32State* vex_state )
 {
    vassert(0); // FIXME
@@ -198,9 +198,9 @@ void LibVEX_GuestPPC32_put_flags ( UInt flags_native,
 #endif
 
 /* VISIBLE TO LIBVEX CLIENT */
-UInt LibVEX_GuestPPC32_get_flags ( /*IN*/VexGuestPPC32State* vex_state )
+UInt LibVEX_GuestPPC32_get_cr7 ( /*IN*/VexGuestPPC32State* vex_state )
 {
-   UInt flags = ppc32g_calculate_cr7_all(
+   UInt flags = ppc32g_calculate_cr7(
       vex_state->guest_CC_OP,
       vex_state->guest_CC_DEP1,
       vex_state->guest_CC_DEP2
@@ -304,6 +304,8 @@ VexGuestLayout
 
           .alwaysDefd 
              = { /*  0 */ ALWAYSDEFD(guest_CC_OP)
+
+                 // FIXME
                }
         };
 

@@ -41,7 +41,7 @@
 
 
 /*---------------------------------------------------------*/
-/*--- ppc32 to IR conversion                              ---*/
+/*--- ppc32 to IR conversion                            ---*/
 /*---------------------------------------------------------*/
 
 extern
@@ -75,7 +75,7 @@ VexGuestLayout ppc32Guest_layout;
 /* --- CLEAN HELPERS --- */
 
 // Calculate CR7 flags
-extern UInt ppc32g_calculate_cr7_all ( UInt op, UInt val, UInt xer_so );
+extern UInt ppc32g_calculate_cr7 ( UInt op, UInt val, UInt xer_so );
 
 // Calculate XER flags
 extern UInt ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt argL, UInt argR );
@@ -89,8 +89,9 @@ extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt argL, UInt argR, 
 
    The three words are:
 
-      CC_OP, which describes whether to return the DEP1 value as the flags,
-         or to calculate the flags based on that value.
+      CC_OP, which describes whether to:
+         0: Calculate the flags based on DEP1, DEP2.
+         1: Return DEP1 as the flags.
 
       CC_DEP1: This holds either an immediate value to be returned as the flags,
          or a value with which to calculate the flags.
@@ -103,11 +104,11 @@ extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt argL, UInt argR, 
 
    A summary of the field usages is:
 
-   Operation          DEP1               DEP2
+   Operation        DEP1                  DEP2
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   0                  flags value        unused
+   0                calculation result    xer_so
 
-   1                  result             xer_so
+   1                flags value           unused
    
 */
 

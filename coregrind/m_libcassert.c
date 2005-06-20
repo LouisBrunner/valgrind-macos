@@ -34,7 +34,6 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"      // For VG_(gettid)()
-#include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"     // For VG_(details)
@@ -60,6 +59,8 @@
 #  error Unknown platform
 #endif
 
+#define BACKTRACE_DEPTH    100         // nice and deep!
+
 /* Pull down the entire world */
 void VG_(exit)( Int status )
 {
@@ -81,7 +82,7 @@ static void pp_sched_status ( void )
       if (VG_(threads)[i].status == VgTs_Empty) continue;
       VG_(printf)( "\nThread %d: status = %s\n", i, 
                    VG_(name_of_ThreadStatus)(VG_(threads)[i].status) );
-      VG_(get_and_pp_StackTrace)( i, VG_(clo_backtrace_size) );
+      VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
    }
    VG_(printf)("\n");
 }
@@ -89,7 +90,6 @@ static void pp_sched_status ( void )
 __attribute__ ((noreturn))
 static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )
 {
-   #define BACKTRACE_DEPTH    100         // nice and deep!
    Addr stacktop, ips[BACKTRACE_DEPTH];
    ThreadState *tst;
 
@@ -123,8 +123,6 @@ static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )
    VG_(printf)("In the bug report, send all the above text, the valgrind\n");
    VG_(printf)("version, and what Linux distro you are using.  Thanks.\n\n");
    VG_(exit)(1);
-
-   #undef BACKTRACE_DEPTH
 }
 
 void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file, 

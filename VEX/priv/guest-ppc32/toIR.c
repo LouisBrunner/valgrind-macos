@@ -4345,12 +4345,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
       /* Spot this:                                       
          0x7C03D808   tw 0,3,27            => trap word if(0) => nothing
-         0x60000000   ori 0,0,0            => r0 = r0 | 0
          0x5400E800   rlwinm 0,0,29,0,0    => r0 = rotl(r0,29)
          0x54001800   rlwinm 0,0,3,0,0     => r0 = rotl(r0,3)
          0x54006800   rlwinm 0,0,13,0,0    => r0 = rotl(r0,13)
          0x54009800   rlwinm 0,0,19,0,0    => r0 = rotl(r0,19)
-         0x60000000   ori 0,0,0            => r0 = r0 | 0
+         0x60000000   nop
       */
       if (code[0] == 0x7C03D808 &&
           code[1] == 0x5400E800 &&

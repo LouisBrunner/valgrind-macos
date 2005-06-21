@@ -970,7 +970,7 @@ static Addr setup_client_stack(void* init_sp,
 
       default:
 	 /* stomp out anything we don't know about */
-	 if (1)
+	 if (0)
 	    printf("stomping auxv entry %lld\n", (ULong)auxv->a_type);
 	 auxv->a_type = AT_IGNORE;
 	 break;

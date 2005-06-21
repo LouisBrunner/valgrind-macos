@@ -183,13 +183,23 @@ vg_preload_core_so_LDFLAGS = \
 	-Wl,-z,initfirst
 
 # Extract ld's default linker script and hack it to our needs.
-# This relies on finding "executable_start" and replacing the address on
-# that line with kickstart_base.
+# First we cut everything above and below the "=====..." lines at the top
+# and bottom.
+# Then we have to replace the load address with "kickstart_base".
+# The line to replace in has one of the following two forms:
+#
+#   . = 0x08048000 + SIZEOF_HEADERS;
+#
+# or
+#   PROVIDE (__executable_start = 0x08048000); . = 0x08048000 + SIZEOF_HEADERS;
+#
+# So we search for the line with a hex value "+ SIZEOF_HEADERS", and replace
+# all the hex values in that line with "kickstart_base".
 stage2.lds: Makefile
 	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \
 		-e '1,/^=====\+$$/d' \
 		-e '/^=====\+$$/d' \
-		-e '/executable_start/s/0x[0-9A-Fa-f]\+/kickstart_base/g' > $@ \
+		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/kickstart_base/g' > $@ \
 	|| rm -f $@
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)

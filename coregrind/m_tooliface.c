@@ -30,6 +30,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
 #include "pub_core_aspacemgr.h"     // For VG_(get_shadow_size)()
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"

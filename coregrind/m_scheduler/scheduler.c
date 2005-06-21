@@ -62,6 +62,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
+#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
 #include "pub_core_aspacemgr.h"
 #include "pub_core_dispatch.h"
 #include "pub_core_errormgr.h"      // For VG_(get_n_errs_found)()

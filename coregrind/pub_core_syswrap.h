@@ -32,8 +32,8 @@
 #define __PUB_CORE_SYSWRAP_H
 
 //--------------------------------------------------------------------
-// PURPOSE: This module contains all the syscall junk:  mostly wrappers,
-// but also the code that executes them, and related stuff.
+// PURPOSE: This module contains all the syscall junk:  mostly PRE/POST
+// wrappers, but also the main syscall jacketing code.
 //--------------------------------------------------------------------
 
 // Return how many bytes of a thread's Valgrind stack are unused

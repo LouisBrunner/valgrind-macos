@@ -216,19 +216,15 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
    if (si->seg->flags & SF_VALGRIND)
       return False;
 
-   resolved = VG_(is_resolved)(redir);
-
+   resolved = from_resolved(redir);
    vg_assert(!resolved);
+   vg_assert(redir->from_sym != NULL);
 
-   if (!from_resolved(redir)) {
-      vg_assert(redir->from_sym != NULL);
-
-      if (match_lib(redir->from_lib, si)) {
-	 redir->from_addr = VG_(reverse_search_one_symtab)(si, redir->from_sym);
-	 if (VG_(clo_trace_redir) && redir->from_addr != 0)
-	    VG_(printf)("   bind FROM: %p = %s:%s\n", 
-                        redir->from_addr,redir->from_lib, redir->from_sym );
-      }
+   if (match_lib(redir->from_lib, si)) {
+      redir->from_addr = VG_(reverse_search_one_symtab)(si, redir->from_sym);
+      if (VG_(clo_trace_redir) && redir->from_addr != 0)
+         VG_(printf)("   bind FROM: %p = %s:%s\n", 
+                     redir->from_addr,redir->from_lib, redir->from_sym );
    }
 
    resolved = from_resolved(redir);

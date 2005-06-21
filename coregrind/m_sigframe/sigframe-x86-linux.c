@@ -484,8 +484,7 @@ static Addr build_sigframe(ThreadState *tst,
    if (flags & VKI_SA_RESTORER)
       frame->retaddr = (Addr)restorer;
    else
-      frame->retaddr
-         = VG_(client_trampoline_code)+VG_(tramp_sigreturn_offset);
+      frame->retaddr = (Addr)&VG_(x86_linux_SUBST_FOR_sigreturn);
 
    synth_ucontext(tst->tid, siginfo, mask, &uc, &frame->fpstate);
 
@@ -531,8 +530,7 @@ static Addr build_rt_sigframe(ThreadState *tst,
    if (flags & VKI_SA_RESTORER)
       frame->retaddr = (Addr)restorer;
    else
-      frame->retaddr 
-         = VG_(client_trampoline_code)+VG_(tramp_rt_sigreturn_offset);
+      frame->retaddr = (Addr)&VG_(x86_linux_SUBST_FOR_rt_sigreturn);
 
    frame->psigInfo = (Addr)&frame->sigInfo;
    frame->puContext = (Addr)&frame->uContext;

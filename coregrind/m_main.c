@@ -824,14 +824,12 @@ static Addr setup_client_stack(void* init_sp,
    // decide where stack goes!
    VG_(clstk_end) = VG_(client_end);
 
-   VG_(client_trampoline_code) = VG_(clstk_end) - VKI_PAGE_SIZE;
-
    /* cl_esp is the client's stack pointer */
    cl_esp = VG_(clstk_end) - stacksize;
    cl_esp = VG_ROUNDDN(cl_esp, 16); /* make stack 16 byte aligned */
 
    /* base of the string table (aligned) */
-   stringbase = strtab = (char *)(VG_(client_trampoline_code) 
+   stringbase = strtab = (char *)(VG_(clstk_end) 
                          - VG_ROUNDUP(stringsize, sizeof(int)));
 
    VG_(clstk_base) = VG_PGROUNDDN(cl_esp);
@@ -979,14 +977,6 @@ static Addr setup_client_stack(void* init_sp,
    }
    *auxv = *orig_auxv;
    vg_assert(auxv->a_type == AT_NULL);
-
-// XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
-// Perhaps a per-arch VGA_NEEDS_TRAMPOLINE constant is necessary?
-#if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
-   /* --- trampoline page --- */
-   VG_(memcpy)( (void *)VG_(client_trampoline_code),
-                &VG_(trampoline_code_start), VG_(trampoline_code_length) );
-#endif
 
    vg_assert((strtab-stringbase) == stringsize);
 
@@ -1479,20 +1469,6 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    if (VG_LIBDIR[0] != '/') 
      config_error("Please use absolute paths in "
                   "./configure --prefix=... or --libdir=...");
-
-// XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
-#if defined(VGP_x86_linux)
-   {
-      UInt* auxp;
-      for (auxp = client_auxv; auxp[0] != AT_NULL; auxp += 2) {
-         switch(auxp[0]) {
-         case AT_SYSINFO:
-            auxp[1] = (Int)(VG_(client_trampoline_code) + VG_(tramp_syscall_offset));
-            break;
-         }
-      } 
-   }
-#endif
 
    for (i = 1; i < vg_argc; i++) {
 
@@ -2577,23 +2553,6 @@ int main(int argc, char **argv, char **envp)
    sp_at_startup___global_arg = sp_at_startup;
    VG_(parse_procselfmaps) ( build_segment_map_callback );  /* everything */
    sp_at_startup___global_arg = 0;
-   
-#if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
-   //--------------------------------------------------------------
-   // Protect client trampoline page (which is also sysinfo stuff)
-   //   p: segment stuff   [otherwise get seg faults...]
-   //--------------------------------------------------------------
-   {
-      Segment *seg;
-      VG_(mprotect)( (void *)VG_(client_trampoline_code),
-		     VG_(trampoline_code_length), VKI_PROT_READ|VKI_PROT_EXEC );
-
-      /* Make sure this segment isn't treated as stack */
-      seg = VG_(find_segment)(VG_(client_trampoline_code));
-      if (seg)
-	 seg->flags &= ~(SF_STACK | SF_GROWDOWN);
-   }
-#endif
 
    //==============================================================
    // Can use VG_(map)() after segments set up
@@ -2693,12 +2652,25 @@ int main(int argc, char **argv, char **envp)
    VG_(init_tt_tc)();
 
    //--------------------------------------------------------------
-   // Read debug info to find glibc entry points to intercept
+   // Initialise the redirect table.
    //   p: parse_procselfmaps? [XXX for debug info?]
    //   p: init_tt_tc [so it can call VG_(search_transtab) safely]
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise redirects\n");
    VG_(setup_code_redirect_table)();
+
+   //--------------------------------------------------------------
+   // Tell the tool about permissions in our handwritten assembly
+   // helpers.
+   //   p: init tool             [for 'new_mem_startup']
+   //--------------------------------------------------------------
+   VG_(debugLog)(1, "main", "Tell tool about permissions for asm helpers\n");
+   VG_TRACK( new_mem_startup,
+             (Addr)&VG_(trampoline_stuff_start),
+             &VG_(trampoline_stuff_end) - &VG_(trampoline_stuff_start),
+             False, /* readable? */
+             False, /* writable? */
+             True   /* executable? */ );
 
    //--------------------------------------------------------------
    // Verbosity message

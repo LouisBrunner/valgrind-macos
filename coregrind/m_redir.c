@@ -295,7 +295,8 @@ static void add_redirect_X_to_addr(
    else          redir->from_lib  = NULL;
    if (from_sym) redir->from_sym  = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
    else          redir->from_sym  = NULL;
-                 redir->from_addr = from_addr;
+   
+   redir->from_addr = from_addr;
 
    vg_assert(0 != to_addr);
    redir->to_addr = to_addr;
@@ -379,18 +380,30 @@ void VG_(setup_code_redirect_table) ( void )
 {
 #if defined(VGP_x86_linux)
    /* Redirect _dl_sysinfo_int80, which is glibc's default system call
-      routine, to the routine in our trampoline page so that the
-      special sysinfo unwind hack in m_stacktrace.c will kick in.  */
-   add_redirect_sym_to_addr("soname:ld-linux.so.2", "_dl_sysinfo_int80",
-                            VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
+      routine, to our copy so that the special sysinfo unwind hack in
+      m_stacktrace.c will kick in.  */
+   add_redirect_sym_to_addr(
+      "soname:ld-linux.so.2", "_dl_sysinfo_int80",
+      (Addr)&VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80)
+   );
+
 #elif defined(VGP_amd64_linux)
+
    /* Redirect vsyscalls to local versions */
-   add_redirect_addr_to_addr(0xFFFFFFFFFF600000ULL,
-                             VG_(client_trampoline_code)+VG_(tramp_gettimeofday_offset));
-   add_redirect_addr_to_addr(0xFFFFFFFFFF600400ULL,
-                             VG_(client_trampoline_code)+VG_(tramp_time_offset));
+   add_redirect_addr_to_addr(
+      0xFFFFFFFFFF600000ULL,
+      (Addr)&VG_(amd64_linux_REDIR_FOR_vgettimeofday) 
+   );
+
+   add_redirect_addr_to_addr( 
+      0xFFFFFFFFFF600000ULL,
+      (Addr)&VG_(amd64_linux_REDIR_FOR_vtime) 
+   );
+
 #elif defined(VGP_ppc32_linux)
-//CAB: TODO
+
+   //CAB: TODO
+
 #else
 #  error Unknown platform
 #endif

@@ -175,7 +175,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
    Addr sp                 = VG_(get_SP)(tid);
    Addr stack_highest_word = VG_(threads)[tid].client_stack_highest_word;
 
-#if defined(VGP_x86_linux)
+#  if defined(VGP_x86_linux)
    /* Nasty little hack to deal with sysinfo syscalls - if libc is
       using the sysinfo page for syscalls (the TLS version does), then
       ip will always appear to be in that page when doing a syscall,
@@ -184,13 +184,14 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
       off the stack so that ip is placed within the library function
       calling the syscall.  This makes stack backtraces much more
       useful.  */
-   if (ip >= VG_(client_trampoline_code)+VG_(tramp_syscall_offset) &&
-       ip < VG_(client_trampoline_code)+VG_(trampoline_code_length) &&
-       VG_(is_addressable)(sp, sizeof(Addr), VKI_PROT_READ)) {
+   if (ip >= (Addr)&VG_(trampoline_stuff_start) 
+       && ip < (Addr)&VG_(trampoline_stuff_end)
+       &&  VG_(is_addressable)(sp, sizeof(Addr), VKI_PROT_READ)) {
       ip = *(Addr *)sp;
       sp += sizeof(Addr);
    }
-#endif
+#  endif
+
    if (0)
       VG_(printf)("tid %d: stack_highest=%p ip=%p sp=%p fp=%p\n",
 		  tid, stack_highest_word, ip, sp, fp);

@@ -32,24 +32,32 @@
 #define __PUB_CORE_TRAMPOLINE_H
 
 //--------------------------------------------------------------------
-// PURPOSE: This module defines our trampoline code page, which we copy
-// over the client's, for arcane signal return and syscall purposes...
+// PURPOSE: This module defines a few replacement functions for Linux
+// vsyscalls, which we can't implement directly.  It also contains
+// stubs for signal returns.  Note, all the code within runs on the
+// simulated CPU.  The vsyscall stubs are gotten to by use of the 
+// redirect mechanism.
 //--------------------------------------------------------------------
 
-extern Addr VG_(client_trampoline_code);
+/* These two delimit our handwritten assembly code, so we can tell
+   tools which track memory that this area should be regarded as
+   readable, at least.  Otherwise Memcheck complains we're jumping to
+   invalid addresses. */
 
-// Platform-specifics aren't neatly factored out here, since some of the
-// constants are not used on all platforms.  But it's non-obvious how
-// to do it better.
+extern void VG_(trampoline_stuff_start);
+extern void VG_(trampoline_stuff_end);
 
-extern const Char VG_(trampoline_code_start);      // x86 + amd64
-extern const Int  VG_(trampoline_code_length);     // x86 + amd64
+#if defined(VGP_x86_linux)
+extern void VG_(x86_linux_SUBST_FOR_sigreturn);
+extern void VG_(x86_linux_SUBST_FOR_rt_sigreturn);
+extern void VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80);
+#endif
 
-extern const Int  VG_(tramp_sigreturn_offset);     // x86
-extern const Int  VG_(tramp_rt_sigreturn_offset);  // x86 + amd64
-extern const Int  VG_(tramp_syscall_offset);       // x86
-extern const Int  VG_(tramp_gettimeofday_offset);  // amd64
-extern const Int  VG_(tramp_time_offset);          // amd64
+#if defined(VGP_amd64_linux)
+extern void VG_(amd64_linux_SUBST_FOR_rt_sigreturn);
+extern void VG_(amd64_linux_REDIR_FOR_vgettimeofday);
+extern void VG_(amd64_linux_REDIR_FOR_vtime);
+#endif
  
 #endif   // __PUB_CORE_TRAMPOLINE_H
 

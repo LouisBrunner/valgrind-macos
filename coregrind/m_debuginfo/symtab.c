@@ -1796,32 +1796,25 @@ Addr VG_(reverse_search_one_symtab) ( const SegInfo* si, const Char* name )
 /* Search all symtabs that we know about to locate ptr.  If found, set
    *psi to the relevant SegInfo, and *symno to the symtab entry number
    within that.  If not found, *psi is set to NULL.  */
-
 static void search_all_symtabs ( Addr ptr, /*OUT*/SegInfo** psi, 
                                            /*OUT*/Int* symno,
                                  Bool match_anywhere_in_fun )
 {
    Int      sno;
    SegInfo* si;
-   Segment *s;
 
    VGP_PUSHCC(VgpSearchSyms);
 
-   s = VG_(find_segment)(ptr);
-
-   if (s == NULL || s->seginfo == NULL)
-      goto not_found;
-   
-   si = s->seginfo;
-
-   sno = search_one_symtab ( si, ptr, match_anywhere_in_fun );
-   if (sno == -1) goto not_found;
-   
-   *symno = sno;
-   *psi = si;
-   VGP_POPCC(VgpSearchSyms);
-   return;
-
+   for (si = segInfo_list; si != NULL; si = si->next) {
+      if (si->start <= ptr && ptr < si->start+si->size) {
+         sno = search_one_symtab ( si, ptr, match_anywhere_in_fun );
+         if (sno == -1) goto not_found;
+         *symno = sno;
+         *psi = si;
+         VGP_POPCC(VgpSearchSyms);
+         return;
+      }
+   }
   not_found:
    *psi = NULL;
    VGP_POPCC(VgpSearchSyms);

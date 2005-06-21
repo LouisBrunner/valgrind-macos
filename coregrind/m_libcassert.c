@@ -136,7 +136,6 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
 {
    va_list vargs;
    Char buf[256];
-   Char* bufptr = buf;
    Char* component;
    Char* bugs_to;
 
@@ -146,7 +145,7 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
    entered = True;
 
    va_start(vargs, format);
-   VG_(vsprintf) ( bufptr, format, vargs );
+   VG_(vsprintf) ( buf, format, vargs );
    va_end(vargs);
 
    if (isCore) {

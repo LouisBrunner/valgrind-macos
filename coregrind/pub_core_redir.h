@@ -61,6 +61,8 @@ void VG_(maybe_redir_or_notify) ( Char* symbol, Addr addr );
 
 // See include/pub_tool_redir.h for details on how to do code replacement.
 
+typedef struct _CodeRedirect CodeRedirect;
+
 // This is the crucial redirection function.  It answers the question: 
 // should this code address be redirected somewhere else?  It's used just
 // before translating a basic block.

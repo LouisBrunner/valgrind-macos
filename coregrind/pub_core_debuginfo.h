@@ -42,7 +42,6 @@
 #include "pub_tool_debuginfo.h"
 
 typedef struct _Segment Segment;
-typedef struct _CodeRedirect CodeRedirect;
 
 extern Bool VG_(is_object_file)   ( const void *hdr );
 extern SegInfo * VG_(read_seg_symbols) ( Segment *seg );

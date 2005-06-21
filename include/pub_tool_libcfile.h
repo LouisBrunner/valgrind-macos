@@ -48,7 +48,8 @@ extern Int  VG_(dup2)   ( Int oldfd, Int newfd );
 extern Int  VG_(rename) ( Char* old_name, Char* new_name );
 extern Int  VG_(unlink) ( Char* file_name );
 
-extern Char* VG_(getcwd) ( Char* buf, SizeT size );
+// Returns False on failure (eg. if the buffer isn't big enough).
+extern Bool VG_(getcwd) ( Char* buf, SizeT size );
 
 /* Easier to use than VG_(getcwd)() -- does the buffer fiddling itself.
    String put into 'cwd' is VG_(malloc)'d, and should be VG_(free)'d.

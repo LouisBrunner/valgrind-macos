@@ -174,31 +174,12 @@ Int VG_(unlink) ( Char* file_name )
 
 /* Nb: we do not allow the Linux extension which malloc()s memory for the
    buffer if buf==NULL, because we don't want Linux calling malloc() */
-Char* VG_(getcwd) ( Char* buf, SizeT size )
+Bool VG_(getcwd) ( Char* buf, SizeT size )
 {
    SysRes res;
    vg_assert(buf != NULL);
    res = VG_(do_syscall2)(__NR_getcwd, (UWord)buf, size);
-   return res.isError ? ((Char*)NULL) : (Char*)res.val;
-}
-
-/* Alternative version that does allocate the memory.  Easier to use. */
-Bool VG_(getcwd_alloc) ( Char** out )
-{
-   SizeT size = 4;
-
-   *out = NULL;
-   while (True) {
-      *out = VG_(malloc)(size);
-      if (NULL == VG_(getcwd)(*out, size)) {
-         VG_(free)(*out);
-         if (size > 65535)
-            return False;
-         size *= 2;
-      } else {
-         return True;
-      }
-   }
+   return res.isError ? False : True;
 }
 
 Int VG_(readlink) (Char* path, Char* buf, UInt bufsiz)

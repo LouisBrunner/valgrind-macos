@@ -1146,10 +1146,10 @@ static void cg_post_clo_init(void)
    VG_(register_profile_event)(VgpCacheResults,  "cache-results");
 }
 
+static Char base_dir[VKI_PATH_MAX];
+
 static void cg_pre_clo_init(void)
 {
-   Char* base_dir = NULL;
-
    VG_(details_name)            ("Cachegrind");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("an I1/D1/L2 cache profiler");
@@ -1168,13 +1168,12 @@ static void cg_pre_clo_init(void)
                                    cg_print_debug_usage);
 
    /* Get working directory */
-   tl_assert( VG_(getcwd_alloc)(&base_dir) );
+   tl_assert( VG_(getcwd)(base_dir, VKI_PATH_MAX) );
 
    /* Block is big enough for dir name + cachegrind.out.<pid> */
    cachegrind_out_file = VG_(malloc)((VG_(strlen)(base_dir) + 32)*sizeof(Char));
    VG_(sprintf)(cachegrind_out_file, "%s/cachegrind.out.%d",
                 base_dir, VG_(getpid)());
-   VG_(free)(base_dir);
 
    instr_info_table = VG_(HT_construct)();
 }

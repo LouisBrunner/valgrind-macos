@@ -265,7 +265,7 @@ static VgHashTable malloc_list  = NULL;   // HP_Chunks
 static UInt n_heap_blocks = 0;
 
 // Current directory at startup.
-static Char* base_dir;
+static Char base_dir[VKI_PATH_MAX];
 
 #define MAX_ALLOC_FNS      32      // includes the builtin ones
 
@@ -1835,7 +1835,7 @@ static void ms_pre_clo_init()
    // Dummy node at top of the context structure.
    alloc_xpt = new_XPt(0, NULL, /*is_bottom*/False);
 
-   tl_assert( VG_(getcwd_alloc)(&base_dir) );
+   tl_assert( VG_(getcwd)(base_dir, VKI_PATH_MAX) );
 }
 
 VG_DETERMINE_INTERFACE_VERSION(ms_pre_clo_init, 0)

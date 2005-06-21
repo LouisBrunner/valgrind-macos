@@ -74,6 +74,12 @@ extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
 // doing leak checking.
 extern void VG_(apply_to_GP_regs)(void (*f)(UWord val));
 
+// Searches through all thread stacks to see if any match.  Returns
+// VG_INVALID_THREADID if none match.
+extern ThreadId VG_(first_matching_thread_stack)
+                        ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
+                          void* d );
+
 #endif   // __PUB_TOOL_MACHINE_H
 
 /*--------------------------------------------------------------------*/

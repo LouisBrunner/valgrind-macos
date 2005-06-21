@@ -43,12 +43,12 @@
 #include "pub_tool_libcmman.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_libcproc.h"
+#include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
 #include "pub_tool_profile.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_stacktrace.h"
-#include "pub_tool_threadstate.h"
 #include "pub_tool_tooliface.h"
 
 #include "valgrind.h"           // For {MALLOC,FREE}LIKE_BLOCK

@@ -178,7 +178,23 @@ void VG_(apply_to_GP_regs)(void (*f)(UWord))
    }
 }
 
+// Try and identify a thread whose stack satisfies the predicate p, or
+// return VG_INVALID_THREADID if none do.
+ThreadId VG_(first_matching_thread_stack)
+              ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
+                void* d )
+{
+   ThreadId tid;
 
+   for (tid = 1; tid < VG_N_THREADS; tid++) {
+      if (VG_(threads)[tid].status == VgTs_Empty) continue;
+
+      if ( p ( VG_(get_SP)(tid),
+               VG_(threads)[tid].client_stack_highest_word, d ) )
+         return tid;
+   }
+   return VG_INVALID_THREADID;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

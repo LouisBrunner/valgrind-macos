@@ -392,7 +392,7 @@ void VG_(setup_code_redirect_table) ( void )
    );
 
    add_redirect_addr_to_addr( 
-      0xFFFFFFFFFF600000ULL,
+      0xFFFFFFFFFF600400ULL,
       (Addr)&VG_(amd64_linux_REDIR_FOR_vtime) 
    );
 

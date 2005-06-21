@@ -37,6 +37,7 @@
    This code runs on the simulated CPU.
 */
 
+/*---------------- x86-linux ----------------*/
 #if defined(VGP_x86_linux)
 
 .global VG_(trampoline_stuff_start)
@@ -68,9 +69,9 @@ VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80):
 VG_(trampoline_stuff_end):
 
 	
+/*---------------- amd64-linux ----------------*/
 #else
 #if defined(VGP_amd64_linux)
-
 
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
@@ -99,18 +100,19 @@ VG_(amd64_linux_REDIR_FOR_vtime):
 VG_(trampoline_stuff_end):
 
 
+/*---------------- ppc32-linux ----------------*/
 #else
 #if defined(VGP_ppc32_linux)
 
-	
-// CAB: TODO
-// Not yet used, just keeping the compiler quiet
-sigreturn_start:
-rt_sigreturn_start:
-syscall_start:
-gettimeofday_start:
-time_start:
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
 
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+
+
+/*---------------- unknown ----------------*/
 #else
 #  error Unknown platform
 

@@ -770,16 +770,6 @@ void VG_(clear_out_queued_signals)( ThreadId tid, vki_sigset_t* saved_mask )
    restore_all_host_signals(saved_mask);
 }
 
-Bool VG_(client_signal_OK)(Int sigNo)
-{
-   /* signal 0 is OK for kill */
-   Bool ret = sigNo >= 0 && sigNo <= VKI_SIGVGRTUSERMAX;
-
-   //VG_(printf)("client_signal_OK(%d) -> %d\n", sigNo, ret);
-
-   return ret;
-}
-
 /* ---------------------------------------------------------------------
    The signal simulation proper.  A simplified version of what the 
    Linux kernel does.

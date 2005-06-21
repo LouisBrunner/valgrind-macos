@@ -42,13 +42,13 @@
 #include "pub_core_libcsignal.h"
 #include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
-#include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
-#include "pub_core_tooliface.h"
 #include "pub_core_options.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
+#include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
+#include "pub_core_tooliface.h"
 
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"
@@ -89,6 +89,16 @@ Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
          VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
       }
    }
+
+   return ret;
+}
+
+Bool VG_(client_signal_OK)(Int sigNo)
+{
+   /* signal 0 is OK for kill */
+   Bool ret = sigNo >= 0 && sigNo <= VKI_SIGVGRTUSERMAX;
+
+   //VG_(printf)("client_signal_OK(%d) -> %d\n", sigNo, ret);
 
    return ret;
 }

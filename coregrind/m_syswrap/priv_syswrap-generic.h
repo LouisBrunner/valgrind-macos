@@ -40,6 +40,9 @@ extern
 Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
                             const Char *syscallname);
 
+// Returns True if the signal is OK for the client to use.
+extern Bool VG_(client_signal_OK)(Int sigNo);
+
 // Return true if we're allowed to use or create this fd.
 extern
 Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);

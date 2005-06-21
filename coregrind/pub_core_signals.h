@@ -72,9 +72,6 @@ extern void VG_(synth_sigill)       (ThreadId tid, Addr addr);
 /* Extend the stack to cover addr, if possible */
 extern Bool VG_(extend_stack)(Addr addr, UInt maxsize);
 
-/* Returns True if the signal is OK for the client to use */
-extern Bool VG_(client_signal_OK)(Int sigNo);
-
 /* Forces the client's signal handler to SIG_DFL - generally just
    before using that signal to kill the process. */
 extern void VG_(set_default_handler)(Int sig);

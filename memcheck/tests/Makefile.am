@@ -202,5 +202,5 @@ endif
 
 vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH) -DVGO_$(VG_OS)
 vgtest_ume_SOURCES	= vgtest_ume.c
-vgtest_ume_LDADD	= ../../coregrind/ume.o
+vgtest_ume_LDADD	= ../../coregrind/m_ume.o
 

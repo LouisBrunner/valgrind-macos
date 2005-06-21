@@ -6,14 +6,14 @@
 #include <assert.h>
 #include <elf.h>
 #include "../../include/pub_tool_basics.h"
-#include "../../coregrind/ume.h"
+#include "../../coregrind/pub_core_ume.h"
 
 #define STKSZ   (64*1024)
 
 static void* init_sp;
 
 //-------------------------------------------------------------------
-// Test foreach_map()
+// Test VG_(foreach_map)()
 //-------------------------------------------------------------------
 
 static int x[8];
@@ -36,12 +36,12 @@ static int f(char *start, char *end, const char *perm, off_t off,
 
 static void test__foreach_map(void)
 {
-   fprintf(stderr, "Calling foreach_map()\n");
-   foreach_map(f, /*dummy*/NULL);
+   fprintf(stderr, "Calling VG_(foreach_map)()\n");
+   VG_(foreach_map)(f, /*dummy*/NULL);
 }
 
 //-------------------------------------------------------------------
-// Test find_auxv()
+// Test VG_(find_auxv)()
 //-------------------------------------------------------------------
 
 static void test__find_auxv(void)
@@ -50,8 +50,8 @@ static void test__find_auxv(void)
 
    assert(init_sp != NULL);
    
-   fprintf(stderr, "Calling find_auxv()\n");
-   auxv = find_auxv((UWord*)init_sp);
+   fprintf(stderr, "Calling VG_(find_auxv)()\n");
+   auxv = VG_(find_auxv)((UWord*)init_sp);
 
    // Check the auxv value looks sane
    assert((void*)auxv > (void*)init_sp);
@@ -72,7 +72,7 @@ static void test__find_auxv(void)
 }
 
 //-------------------------------------------------------------------
-// Test do_exec()
+// Test VG_(do_exec)()
 //-------------------------------------------------------------------
 
 static void push_auxv(unsigned char **espp, int type, void *val)
@@ -103,8 +103,8 @@ static void test__do_exec(void)
    info.exe_end  = 0x50ffffff;
    info.map_base = 0x51000000;
    
-   fprintf(stderr, "Calling do_exec(\"hello\")\n");
-   err = do_exec("hello", &info);
+   fprintf(stderr, "Calling VG_(do_exec)(\"hello\")\n");
+   err = VG_(do_exec)("hello", &info);
    assert(0 == err);
 
 //   printf("info.exe_base=%p exe_end=%p\n", 
@@ -134,7 +134,7 @@ static void test__do_exec(void)
 
 //   fprintf(stderr, "ume_go: %p %p\n", (void*)info.init_eip, (void*)esp);
 
-   jump_and_switch_stacks((Addr)esp, info.init_eip);
+   VG_(jump_and_switch_stacks)((Addr)esp, info.init_eip);
 
    assert(0);  // UNREACHABLE
 }

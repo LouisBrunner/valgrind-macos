@@ -45,10 +45,10 @@
 
 /* This is only here so it can be shared between stage1 and stage2 */
 extern
-void foreach_map(int (*fn)(char *start, char *end,
-			   const char *perm, off_t offset,
-			   int maj, int min, int ino, void* extra),
-                 void* extra);
+void VG_(foreach_map)(int (*fn)(char *start, char *end,
+			        const char *perm, off_t offset,
+			        int maj, int min, int ino, void* extra),
+                      void* extra);
 
 /* Jump to 'dst', but first set the stack pointer to 'stack'.  Also,
    clear all the integer registers before entering 'dst'.  It's
@@ -62,7 +62,7 @@ void foreach_map(int (*fn)(char *start, char *end,
 */
 extern
 __attribute__((noreturn))
-void jump_and_switch_stacks ( Addr stack, Addr dst );
+void VG_(jump_and_switch_stacks) ( Addr stack, Addr dst );
 
 
 /*------------------------------------------------------------*/
@@ -95,7 +95,7 @@ struct exeinfo
 // checks execute permissions, sets up interpreter if program is a script, 
 // reads headers, maps file into memory, and returns important info about
 // the program.
-extern int do_exec(const char *exe, struct exeinfo *info);
+extern int VG_(do_exec)(const char *exe, struct exeinfo *info);
 
 /*------------------------------------------------------------*/
 /*--- Finding and dealing with auxv                        ---*/
@@ -110,7 +110,7 @@ struct ume_auxv
    } u;
 };
 
-extern struct ume_auxv *find_auxv(UWord* orig_esp);
+extern struct ume_auxv *VG_(find_auxv)(UWord* orig_esp);
 
 /* Our private auxv entries */
 #define AT_UME_PADFD	0xff01	/* padding file fd */

@@ -176,7 +176,7 @@ static int find_vdso(char *start, char *end, const char *perm,
 /* Look for our AUXV table */
 static int scan_auxv(void* init_sp)
 {
-    struct ume_auxv *auxv = find_auxv((UWord*)init_sp);
+   struct ume_auxv *auxv = VG_(find_auxv)((UWord*)init_sp);
    int padfile = -1, found = 0;
 
    for (; auxv->a_type != AT_NULL; auxv++)
@@ -215,7 +215,7 @@ static int scan_auxv(void* init_sp)
 #if defined(VGP_ppc32_linux)
       case AT_SYSINFO_EHDR:
          VG_(vdso_base) = auxv->u.a_val;
-         foreach_map(find_vdso, NULL);
+         VG_(foreach_map)(find_vdso, NULL);
          break;
 #endif
       }
@@ -764,7 +764,7 @@ static Addr setup_client_stack(void* init_sp,
    Addr cl_esp;	                /* client stack base (initial esp) */
 
    /* use our own auxv as a prototype */
-   orig_auxv = find_auxv(init_sp);
+   orig_auxv = VG_(find_auxv)(init_sp);
 
    /* ==================== compute sizes ==================== */
 
@@ -1211,7 +1211,7 @@ static void load_client(char* cl_argv[], const char* exec, Int need_help,
    } else {
       Int ret;
       VG_(clexecfd) = VG_(open)(exec, VKI_O_RDONLY, VKI_S_IRUSR);
-      ret = do_exec(exec, info);
+      ret = VG_(do_exec)(exec, info);
       if (ret != 0) {
          fprintf(stderr, "valgrind: do_exec(%s) failed: %s\n",
                          exec, strerror(ret));
@@ -1280,7 +1280,7 @@ static void as_unpad(void *start, void *end, int padfile)
    extra.killpad_padstat = &padstat;
    extra.killpad_start   = start;
    extra.killpad_end     = end;
-   foreach_map(killpad, &extra);
+   VG_(foreach_map)(killpad, &extra);
 }
 
 static void as_closepadfile(int padfile)

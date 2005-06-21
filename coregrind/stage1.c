@@ -85,7 +85,7 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info,
    assert(&delta >= stack && &delta < &stack[sizeof(stack)/sizeof(*stack)]);
    
    /* find the beginning of the AUXV table */
-   auxv = find_auxv(v_init_esp);
+   auxv = VG_(find_auxv)(v_init_esp);
 
    /* Work out how we should move things to make space for the new
       auxv entry. It seems that ld.so wants a 16-byte aligned stack on
@@ -236,7 +236,7 @@ void as_pad(void *start, void *end, int padfile)
    extra.fillgap_end     = end;
    extra.fillgap_padfile = padfile;
 
-   foreach_map(fillgap, &extra);
+   VG_(foreach_map)(fillgap, &extra);
 	
    if (extra.fillgap_start < extra.fillgap_end) {
       void* res = mmap(extra.fillgap_start, 
@@ -283,7 +283,7 @@ static void main2(void)
 
    snprintf(buf, sizeof(buf), "%s/%s", valgrind_lib, stage2);
 
-   err = do_exec(buf, &info);
+   err = VG_(do_exec)(buf, &info);
 
    if (err != 0) {
       fprintf(stderr, "valgrind: failed to load %s: %s\n",
@@ -301,11 +301,11 @@ static void main2(void)
    if (0) {
       printf("---------- launch stage 2 ----------\n");
       printf("eip=%p esp=%p\n", (void *)info.init_eip, esp);
-      foreach_map(prmap, /*dummy*/NULL);
+      VG_(foreach_map)(prmap, /*dummy*/NULL);
    }
 
    VG_(debugLog)(1, "stage1", "main2(): starting stage2\n");
-   jump_and_switch_stacks(
+   VG_(jump_and_switch_stacks)(
       (Addr) esp,           /* stack */
       (Addr) info.init_eip  /* where to */
    );
@@ -358,7 +358,7 @@ int main(int argc, char** argv)
 
    /* move onto another stack so we can play with the main one */
    VG_(debugLog)(1, "stage1", "main(): running main2() on new stack\n");
-   jump_and_switch_stacks(
+   VG_(jump_and_switch_stacks)(
       (Addr) stack + sizeof(stack),  /* stack */
       (Addr) main2                   /* where to */
    );

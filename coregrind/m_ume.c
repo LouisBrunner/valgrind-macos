@@ -76,10 +76,10 @@ static void check_mmap(void* res, void* base, int len)
 
 // 'extra' allows the caller to pass in extra args to 'fn', like free
 // variables to a closure.
-void foreach_map(int (*fn)(char *start, char *end,
-			   const char *perm, off_t offset,
-			   int maj, int min, int ino, void* extra),
-                 void* extra)
+void VG_(foreach_map)(int (*fn)(char *start, char *end,
+                                const char *perm, off_t offset,
+                                int maj, int min, int ino, void* extra),
+                      void* extra)
 {
    static char buf[10240];
    char *bufptr = buf;
@@ -129,13 +129,13 @@ void foreach_map(int (*fn)(char *start, char *end,
 /*------------------------------------------------------------*/
 
 // __attribute__((noreturn))
-// void jump_and_switch_stacks ( Addr stack, Addr dst );
+// void VG_(jump_and_switch_stacks) ( Addr stack, Addr dst );
 #if defined(VGA_x86)
 // 4(%esp) == stack
 // 8(%esp) == dst
 asm(
-".global jump_and_switch_stacks\n"
-"jump_and_switch_stacks:\n"
+".global vgPlain_jump_and_switch_stacks\n"
+"vgPlain_jump_and_switch_stacks:\n"
 "   movl   %esp, %esi\n"      // remember old stack pointer
 "   movl   4(%esi), %esp\n"   // set stack
 "   pushl  8(%esi)\n"         // dst to stack
@@ -153,8 +153,8 @@ asm(
 // %rdi == stack
 // %rsi == dst
 asm(
-".global jump_and_switch_stacks\n"
-"jump_and_switch_stacks:\n"
+".global vgPlain_jump_and_switch_stacks\n"
+"vgPlain_jump_and_switch_stacks:\n"
 "   movq   %rdi, %rsp\n"   // set stack
 "   pushq  %rsi\n"         // dst to stack
 "   movq $0, %rax\n"       // zero all GP regs
@@ -188,8 +188,8 @@ asm(
 // %r3 == stack
 // %r4 == dst
 asm(
-".global jump_and_switch_stacks\n"
-"jump_and_switch_stacks:\n"
+".global vgPlain_jump_and_switch_stacks\n"
+"vgPlain_jump_and_switch_stacks:\n"
 "   mtctr %r4\n\t"         // dst to %ctr
 "   mr %r1,%r3\n\t"        // stack to %sp
 "   li 0,0\n\t"            // zero all GP regs
@@ -237,7 +237,7 @@ asm(
 /*--- Finding auxv on the stack                            ---*/
 /*------------------------------------------------------------*/
 
-struct ume_auxv *find_auxv(UWord* sp)
+struct ume_auxv *VG_(find_auxv)(UWord* sp)
 {
    sp++;                // skip argc (Nb: is word-sized, not int-sized!)
 
@@ -734,7 +734,7 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
 
 // See ume.h for an indication of which entries of 'info' are inputs, which
 // are outputs, and which are both.
-int do_exec(const char *exe, struct exeinfo *info)
+int VG_(do_exec)(const char *exe, struct exeinfo *info)
 {
    info->interp_name = NULL;
    info->interp_args = NULL;

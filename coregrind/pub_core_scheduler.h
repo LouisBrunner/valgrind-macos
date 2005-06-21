@@ -80,9 +80,6 @@ extern void VG_(scheduler_init) ( void );
 /* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );
 
-// Longjmp back to the scheduler and thus enter the sighandler immediately.
-extern void VG_(resume_scheduler) ( ThreadId tid );
-
 /* If true, a fault is Valgrind-internal (ie, a bug) */
 extern Bool VG_(my_fault);
 

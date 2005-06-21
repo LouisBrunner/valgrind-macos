@@ -299,20 +299,6 @@ void VG_(vg_yield)(void)
 }
 
 
-void VG_(resume_scheduler)(ThreadId tid)
-{
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-
-   vg_assert(tst->os_state.lwpid == VG_(gettid)());
-
-   if (tst->sched_jmpbuf_valid) {
-      /* Can't continue; must longjmp back to the scheduler and thus
-         enter the sighandler immediately. */
-   
-      longjmp(tst->sched_jmpbuf, True);
-   }
-}
-
 /* Set the standard set of blocked signals, used wheneever we're not
    running a client syscall. */
 static void block_signals(ThreadId tid)

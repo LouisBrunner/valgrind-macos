@@ -1500,6 +1500,19 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info )
    /* Thread state is ready to go - just add Runnable */
 }
 
+static void resume_scheduler(ThreadId tid)
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+
+   vg_assert(tst->os_state.lwpid == VG_(gettid)());
+
+   if (tst->sched_jmpbuf_valid) {
+      /* Can't continue; must longjmp back to the scheduler and thus
+         enter the sighandler immediately. */
+      longjmp(tst->sched_jmpbuf, True);
+   }
+}
+
 static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
 {
    vki_siginfo_t info;
@@ -1547,7 +1560,7 @@ void VG_(synth_sigill)(ThreadId tid, Addr addr)
    info.si_code = 1; /* jrs: no idea what this should be */
    info._sifields._sigfault._addr = (void*)addr;
 
-   VG_(resume_scheduler)(tid);
+   resume_scheduler(tid);
    deliver_signal(tid, &info);
 }
 
@@ -1671,7 +1684,7 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
 
    /* longjmp back to the thread's main loop to start executing the
       handler. */
-   VG_(resume_scheduler)(tid);
+   resume_scheduler(tid);
 
    VG_(core_panic)("async_signalhandler: got unexpected signal while outside of scheduler");
 }
@@ -1805,7 +1818,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 /* It's a fatal signal, so we force the default handler. */
 	 VG_(set_default_handler)(sigNo);
 	 deliver_signal(tid, info);
-	 VG_(resume_scheduler)(tid);
+	 resume_scheduler(tid);
 	 VG_(exit)(99);		/* If we can't resume, then just exit */
       }
 
@@ -1911,7 +1924,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 /* Can't continue; must longjmp back to the scheduler and thus
 	    enter the sighandler immediately. */
 	 deliver_signal(tid, info);
-	 VG_(resume_scheduler)(tid);
+	 resume_scheduler(tid);
       }
 
       /* Check to see if someone is interested in faults. */
@@ -1970,7 +1983,7 @@ static void sigvgkill_handler(int signo, vki_siginfo_t *si, struct vki_ucontext 
    VG_(set_running)(tid);
    VG_(post_syscall)(tid);
 
-   VG_(resume_scheduler)(tid);
+   resume_scheduler(tid);
 
    VG_(core_panic)("sigvgkill_handler couldn't return to the scheduler\n");
 }

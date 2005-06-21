@@ -37,6 +37,7 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
+#include "pub_core_tooliface.h"
 #include "valgrind.h"
 
 //zz#include "memcheck/memcheck.h"
@@ -386,31 +387,6 @@ void VG_(print_all_arena_stats) ( void )
    }
 }
 
-static Bool init_done = False;
-static SizeT client_malloc_redzone_szB = 8;   // default: be paranoid
-
-// Nb: this must be called before the client arena is initialised, ie.
-// before any memory is allocated.
-void VG_(set_client_malloc_redzone_szB)(SizeT rz_szB)
-{
-   if (init_done) {
-      VG_(printf)(
-         "\nTool error:\n"
-         "%s cannot be called after the first allocation.\n",
-         __PRETTY_FUNCTION__);
-      VG_(exit)(1);
-   }
-   // This limit is no special figure, just something not too big
-   if (rz_szB > 128) {
-      VG_(printf)(
-         "\nTool error:\n"
-         "  %s passed a too-big value (%llu)", 
-         __PRETTY_FUNCTION__, (ULong)rz_szB);
-      VG_(exit)(1);
-   }
-   client_malloc_redzone_szB = rz_szB;
-}
-
 /* This library is self-initialising, as it makes this more self-contained,
    less coupled with the outside world.  Hence VG_(arena_malloc)() and
    VG_(arena_free)() below always call ensure_mm_init() to ensure things are
@@ -418,8 +394,27 @@ void VG_(set_client_malloc_redzone_szB)(SizeT rz_szB)
 static
 void ensure_mm_init ( void )
 {
+   static Bool  init_done = False;
+   static SizeT client_redzone_szB = 8;   // default: be paranoid
+
    if (init_done) {
+      // This assertion ensures that a tool cannot try to change the client
+      // redzone size with VG_(needs_malloc_replacement)() after this module
+      // has done its first allocation.
+      if (VG_(needs).malloc_replacement)
+         vg_assert(client_redzone_szB == VG_(tdict).tool_client_redzone_szB);
       return;
+   }
+
+   if (VG_(needs).malloc_replacement) {
+      client_redzone_szB = VG_(tdict).tool_client_redzone_szB;
+      // 128 is no special figure, just something not too big
+      if (client_redzone_szB > 128) {
+         VG_(printf)( "\nTool error:\n"
+                      "  specified redzone size is too big (%llu)\n", 
+                      (ULong)client_redzone_szB);
+         VG_(exit)(1);
+      }
    }
 
    /* Use checked red zones (of various sizes) for our internal stuff,
@@ -437,7 +432,7 @@ void ensure_mm_init ( void )
    arena_init ( VG_AR_CORE,      "core",     4, CORE_ARENA_MIN_SZB );
    arena_init ( VG_AR_TOOL,      "tool",     4,            1048576 );
    arena_init ( VG_AR_SYMTAB,    "symtab",   4,            1048576 );
-   arena_init ( VG_AR_CLIENT,    "client", client_malloc_redzone_szB, 1048576 );
+   arena_init ( VG_AR_CLIENT,    "client", client_redzone_szB, 1048576 );
    arena_init ( VG_AR_DEMANGLE,  "demangle", 12/*paranoid*/, 65536 );
    arena_init ( VG_AR_EXECTXT,   "exectxt",  4,              65536 );
    arena_init ( VG_AR_ERRORS,    "errors",   4,              65536 );

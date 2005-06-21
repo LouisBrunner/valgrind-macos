@@ -1802,9 +1802,7 @@ static void ms_pre_clo_init()
                                    ms_print_usage,
                                    ms_print_debug_usage);
    VG_(needs_client_requests)     (ms_handle_client_request);
-
-   // Malloc replacement
-   VG_(malloc_funcs)              (ms_malloc,
+   VG_(needs_malloc_replacement)  (ms_malloc,
                                    ms___builtin_new,
                                    ms___builtin_vec_new,
                                    ms_memalign,

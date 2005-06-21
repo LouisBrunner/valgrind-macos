@@ -84,14 +84,13 @@ typedef
       Bool core_errors;
       Bool tool_errors;
       Bool basic_block_discards;
-      Bool no_longer_used_1;     // for backwards compatibility
       Bool command_line_options;
       Bool client_requests;
-      Bool no_longer_used_0;     // for backwards compatibility
       Bool syscall_wrapper;
       Bool sanity_checks;
       Bool data_syms;
       Bool shadow_memory;
+      Bool malloc_replacement;
    } 
    VgNeeds;
 
@@ -140,6 +139,18 @@ typedef struct {
    // VG_(needs).sanity_checks
    Bool (*tool_cheap_sanity_check)(void);
    Bool (*tool_expensive_sanity_check)(void);
+
+   // VG_(needs).malloc_replacement
+   void* (*tool_malloc)              (ThreadId, SizeT);
+   void* (*tool___builtin_new)       (ThreadId, SizeT);
+   void* (*tool___builtin_vec_new)   (ThreadId, SizeT);
+   void* (*tool_memalign)            (ThreadId, SizeT, SizeT);
+   void* (*tool_calloc)              (ThreadId, SizeT, SizeT);
+   void  (*tool_free)                (ThreadId, void*);
+   void  (*tool___builtin_delete)    (ThreadId, void*);
+   void  (*tool___builtin_vec_delete)(ThreadId, void*);
+   void* (*tool_realloc)             (ThreadId, void*, SizeT);
+   SizeT tool_client_redzone_szB;
 
    // -- Event tracking functions ------------------------------------
    void (*track_new_mem_startup)     (Addr, SizeT, Bool, Bool, Bool);
@@ -191,17 +202,6 @@ typedef struct {
    void (*track_post_deliver_signal)(ThreadId, Int sigNo);
 
    void (*track_init_shadow_page)(Addr);
-
-   // -- malloc/free replacements -----------------------------------
-   void* (*malloc_malloc)              (ThreadId, SizeT);
-   void* (*malloc___builtin_new)       (ThreadId, SizeT);
-   void* (*malloc___builtin_vec_new)   (ThreadId, SizeT);
-   void* (*malloc_memalign)            (ThreadId, SizeT, SizeT);
-   void* (*malloc_calloc)              (ThreadId, SizeT, SizeT);
-   void  (*malloc_free)                (ThreadId, void*);
-   void  (*malloc___builtin_delete)    (ThreadId, void*);
-   void  (*malloc___builtin_vec_delete)(ThreadId, void*);
-   void* (*malloc_realloc)             (ThreadId, void*, SizeT);
 
 } VgToolInterface;
 

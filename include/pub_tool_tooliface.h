@@ -253,11 +253,9 @@ extern void VG_(needs_data_syms) ( void );
 /* Does the tool need shadow memory allocated? */
 extern void VG_(needs_shadow_memory)( void );
 
-/* ------------------------------------------------------------------ */
-/* Malloc replacement */
-
+/* Does the tool replace malloc() and friends with its own versions? */
 // The 'p' prefix avoids GCC complaints about overshadowing global names.
-extern void VG_(malloc_funcs)(
+extern void VG_(needs_malloc_replacement)(
    void* (*pmalloc)               ( ThreadId tid, SizeT n ),
    void* (*p__builtin_new)        ( ThreadId tid, SizeT n ),
    void* (*p__builtin_vec_new)    ( ThreadId tid, SizeT n ),

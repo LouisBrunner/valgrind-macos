@@ -2554,7 +2554,7 @@ static void mc_pre_clo_init(void)
                                    mc_expensive_sanity_check);
    VG_(needs_shadow_memory)       ();
 
-   VG_(malloc_funcs)              (MAC_(malloc),
+   VG_(needs_malloc_replacement)  (MAC_(malloc),
                                    MAC_(__builtin_new),
                                    MAC_(__builtin_vec_new),
                                    MAC_(memalign),

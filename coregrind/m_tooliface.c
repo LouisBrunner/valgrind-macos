@@ -30,7 +30,6 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_mallocfree.h"    // For VG_(set_client_malloc_redzone_szB)()
 #include "pub_core_tooliface.h"
 
 // The core/tool dictionary of functions (initially zeroed, as we want it)
@@ -87,14 +86,13 @@ VgNeeds VG_(needs) = {
    .tool_errors          = False,
    .libc_freeres         = False,
    .basic_block_discards = False,
-   .no_longer_used_1     = False,
    .command_line_options = False,
    .client_requests      = False,
-   .no_longer_used_0     = False,
    .syscall_wrapper      = False,
    .sanity_checks        = False,
    .data_syms	         = False,
    .shadow_memory        = False,
+   .malloc_replacement   = False,
 };
 
 /* static */
@@ -233,11 +231,7 @@ void VG_(needs_sanity_checks)(
    VG_(tdict).tool_expensive_sanity_check = expen;
 }
 
-
-/*--------------------------------------------------------------------*/
-/* Replacing malloc() */
-
-extern void VG_(malloc_funcs)(
+void VG_(needs_malloc_replacement)(
    void* (*malloc)               ( ThreadId, SizeT ),
    void* (*__builtin_new)        ( ThreadId, SizeT ),
    void* (*__builtin_vec_new)    ( ThreadId, SizeT ),
@@ -250,17 +244,17 @@ extern void VG_(malloc_funcs)(
    SizeT client_malloc_redzone_szB
 )
 {
-   VG_(tdict).malloc_malloc               = malloc;
-   VG_(tdict).malloc___builtin_new        = __builtin_new;
-   VG_(tdict).malloc___builtin_vec_new    = __builtin_vec_new;
-   VG_(tdict).malloc_memalign             = memalign;
-   VG_(tdict).malloc_calloc               = calloc;
-   VG_(tdict).malloc_free                 = free;
-   VG_(tdict).malloc___builtin_delete     = __builtin_delete;
-   VG_(tdict).malloc___builtin_vec_delete = __builtin_vec_delete;
-   VG_(tdict).malloc_realloc              = realloc;
-
-   VG_(set_client_malloc_redzone_szB)( client_malloc_redzone_szB );
+   VG_(needs).malloc_replacement        = True;
+   VG_(tdict).tool_malloc               = malloc;
+   VG_(tdict).tool___builtin_new        = __builtin_new;
+   VG_(tdict).tool___builtin_vec_new    = __builtin_vec_new;
+   VG_(tdict).tool_memalign             = memalign;
+   VG_(tdict).tool_calloc               = calloc;
+   VG_(tdict).tool_free                 = free;
+   VG_(tdict).tool___builtin_delete     = __builtin_delete;
+   VG_(tdict).tool___builtin_vec_delete = __builtin_vec_delete;
+   VG_(tdict).tool_realloc              = realloc;
+   VG_(tdict).tool_client_redzone_szB   = client_malloc_redzone_szB;
 }
 
 

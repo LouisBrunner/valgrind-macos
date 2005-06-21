@@ -3392,7 +3392,7 @@ static void hg_pre_clo_init(void)
                                    hg_print_debug_usage);
    VG_(needs_shadow_memory)       ();
 
-   VG_(malloc_funcs)              (hg_malloc,
+   VG_(needs_malloc_replacement)  (hg_malloc,
                                    hg___builtin_new,
                                    hg___builtin_vec_new,
                                    hg_memalign,

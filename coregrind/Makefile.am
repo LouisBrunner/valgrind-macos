@@ -72,7 +72,7 @@ noinst_HEADERS = \
 	pub_core_translate.h	\
 	pub_core_transtab.h	\
 	pub_core_transtab_asm.h	\
-	ume.h			\
+	pub_core_ume.h		\
 	vki_unistd.h		\
 	vki_unistd-amd64-linux.h\
 	vki_unistd-arm-linux.h	\
@@ -87,10 +87,9 @@ BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds
 	
 valgrind_SOURCES = \
-	ume.c \
-	\
 	stage1.c \
-	m_debuglog.c
+	m_debuglog.c \
+	m_ume.c
 valgrind_DEPENDENCIES =
 valgrind_LDFLAGS=-static -g
 valgrind_LDADD=
@@ -126,8 +125,7 @@ stage2_SOURCES = \
 	m_trampoline.S \
 	m_translate.c \
 	m_transtab.c \
-	\
-	ume.c
+	m_ume.c
 
 ## Nb: libscheduler.a must precede libdispatch.a in this list.
 stage2_extra= \

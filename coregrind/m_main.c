@@ -56,7 +56,7 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
-#include "ume.h"
+#include "pub_core_ume.h"
 
 #include <dirent.h>
 #include <dlfcn.h>

@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- A header file used by both stage1 and stage2.                ---*/
-/*---                                                        ume.h ---*/
+/*--- User-mode execve.                             pub_core_ume.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,8 +28,13 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef _COREGRIND_UME_H
-#define _COREGRIND_UME_H
+#ifndef __PUB_CORE_UME_H
+#define __PUB_CORE_UME_H
+
+//--------------------------------------------------------------------
+// PURPOSE: This module implements user-mode execve, ie. program loading
+// and exec'ing.  It is shared between stage1 and stage2.
+//--------------------------------------------------------------------
 
 #include <elf.h>
 #include <sys/types.h>
@@ -39,6 +43,7 @@
 /*--- General stuff                                        ---*/
 /*------------------------------------------------------------*/
 
+/* This is only here so it can be shared between stage1 and stage2 */
 extern
 void foreach_map(int (*fn)(char *start, char *end,
 			   const char *perm, off_t offset,
@@ -111,8 +116,8 @@ extern struct ume_auxv *find_auxv(UWord* orig_esp);
 #define AT_UME_PADFD	0xff01	/* padding file fd */
 #define AT_UME_EXECFD	0xff02	/* stage1 executable fd */
 
-#endif /* _COREGRIND_UME_H */
+#endif /* __PUB_CORE_UME_H */
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                    ume.h ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

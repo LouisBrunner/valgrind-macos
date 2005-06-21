@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- User-mode execve(), and other stuff shared between stage1    ---*/
-/*--- and stage2.                                            ume.c ---*/
+/*--- and stage2.                                          m_ume.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -40,7 +40,7 @@
 #include "pub_core_basics.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
-#include "ume.h"
+#include "pub_core_ume.h"
 
 #include <sys/mman.h>
 #include <fcntl.h>
@@ -743,5 +743,5 @@ int do_exec(const char *exe, struct exeinfo *info)
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                    ume.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -42,7 +42,7 @@ static Bool go(char* cpu)
 }
 #endif // __arm__
 
-#ifdef __ppc__
+#ifdef __powerpc__
 static Bool go(char* cpu)
 {
    if ( strcmp( cpu, "ppc" ) == 0 )
@@ -50,7 +50,7 @@ static Bool go(char* cpu)
    else 
       return False;
 }
-#endif // __ppc__
+#endif // __powerpc__
 
 #ifdef __x86__
 static void cpuid ( unsigned int n,

@@ -762,13 +762,12 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
 
       case VEX_TRC_JMP_TINVAL:
-#if defined(VGA_ppc32)
          VG_(discard_translations)(
             (Addr64)VG_(threads)[tid].arch.vex.guest_TISTART,
-            VG_(threads)[tid].arch.vex.guest_TISTART );
+            VG_(threads)[tid].arch.vex.guest_TILEN
+         );
          if (0)
             VG_(printf)("dump translations done.\n");
-#endif
          break;
 
       default: 

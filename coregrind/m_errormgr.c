@@ -41,6 +41,7 @@
 #include "pub_core_libcproc.h"         // For VG_(getpid)()
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
+#include "pub_core_stacktrace.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"        // for VG_(translate)()
 

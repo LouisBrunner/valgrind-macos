@@ -35,6 +35,7 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
+#include "pub_core_stacktrace.h"
 
 /*------------------------------------------------------------*/
 /*--- Low-level ExeContext storage.                        ---*/

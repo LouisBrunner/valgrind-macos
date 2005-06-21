@@ -40,8 +40,6 @@
 
 #include "pub_tool_execontext.h"
 
-#include "pub_core_stacktrace.h"
-
 /* The maximum number of calls we're prepared to save in an ExeContext. */
 #define VG_DEEPEST_BACKTRACE 50
 
@@ -49,7 +47,10 @@
 extern void VG_(print_ExeContext_stats) ( void );
 
 // Extract the StackTrace from an ExeContext.
-extern StackTrace VG_(extract_StackTrace) ( ExeContext* e );
+// (Minor hack: we use Addr* as the return type instead of StackTrace so
+// that modules #including this file don't also have to #include
+// pub_core_stacktrace.h also.)
+extern /*StackTrace*/Addr* VG_(extract_StackTrace) ( ExeContext* e );
 
 #endif   // __PUB_CORE_EXECONTEXT_H
 

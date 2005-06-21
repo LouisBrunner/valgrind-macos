@@ -1328,7 +1328,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return rLo; /* and abandon rHi */
          }
          case Iop_8Uto16:
-//         case Iop_8Uto32:
+         case Iop_8Uto32:
          case Iop_8Uto64:
          case Iop_16Uto64:
          case Iop_16Uto32: {

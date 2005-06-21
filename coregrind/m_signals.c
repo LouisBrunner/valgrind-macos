@@ -333,7 +333,7 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
       default:
          // VKI_SIGVG* are runtime variables, so we can't make them            
          // cases in the switch, so we handle them in the 'default' case.
-	 if (sig == VKI_SIGVGKILL)
+	 if (sig == VG_SIGVGKILL)
 	    skss_handler = sigvgkill_handler;
 	 else {
 	    if (scss_handler == VKI_SIG_IGN)
@@ -577,7 +577,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    if (signo < 1 || signo > VG_(max_signal)) goto bad_signo;
 
    /* don't let them use our signals */
-   if ( (signo > VKI_SIGVGRTUSERMAX)
+   if ( (signo > VG_SIGVGRTUSERMAX)
 	&& new_act
 	&& !(new_act->ksa_handler == VKI_SIG_DFL 
              || new_act->ksa_handler == VKI_SIG_IGN) )
@@ -1436,7 +1436,7 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info )
       VG_(message)(Vg_DebugMsg,"delivering signal %d (%s):%d to thread %d", 
 		   sigNo, signame(sigNo), info->si_code, tid );
 
-   if (sigNo == VKI_SIGVGKILL) {
+   if (sigNo == VG_SIGVGKILL) {
       /* If this is a SIGVGKILL, we're expecting it to interrupt any
 	 blocked syscall.  It doesn't matter whether the VCPU state is
 	 set to restart or not, because we don't expect it will
@@ -1963,7 +1963,7 @@ static void sigvgkill_handler(int signo, vki_siginfo_t *si, struct vki_ucontext 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "sigvgkill for lwp %d tid %d", VG_(gettid)(), tid);
 
-   vg_assert(signo == VKI_SIGVGKILL);
+   vg_assert(signo == VG_SIGVGKILL);
    vg_assert(si->si_signo == signo);
    vg_assert(VG_(threads)[tid].status == VgTs_WaitSys);
 
@@ -2114,9 +2114,9 @@ void VG_(sigstartup_actions) ( void )
       VG_(message)(Vg_DebugMsg, "Max kernel-supported signal is %d", VG_(max_signal));
 
    /* Our private internal signals are treated as ignored */
-   scss.scss_per_sig[VKI_SIGVGKILL].scss_handler = VKI_SIG_IGN;
-   scss.scss_per_sig[VKI_SIGVGKILL].scss_flags   = VKI_SA_SIGINFO;
-   VG_(sigfillset)(&scss.scss_per_sig[VKI_SIGVGKILL].scss_mask);
+   scss.scss_per_sig[VG_SIGVGKILL].scss_handler = VKI_SIG_IGN;
+   scss.scss_per_sig[VG_SIGVGKILL].scss_flags   = VKI_SA_SIGINFO;
+   VG_(sigfillset)(&scss.scss_per_sig[VG_SIGVGKILL].scss_mask);
 
    /* Copy the process' signal mask into the root thread. */
    vg_assert(VG_(threads)[1].status == VgTs_Init);

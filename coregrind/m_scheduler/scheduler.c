@@ -268,7 +268,7 @@ void VG_(kill_thread)(ThreadId tid)
       if (VG_(clo_trace_signals))
 	 VG_(message)(Vg_DebugMsg, "kill_thread zaps tid %d lwp %d",
 		      tid, VG_(threads)[tid].os_state.lwpid);
-      VG_(tkill)(VG_(threads)[tid].os_state.lwpid, VKI_SIGVGKILL);
+      VG_(tkill)(VG_(threads)[tid].os_state.lwpid, VG_SIGVGKILL);
    }
 }
 

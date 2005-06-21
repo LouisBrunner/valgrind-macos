@@ -96,7 +96,7 @@ Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
 Bool VG_(client_signal_OK)(Int sigNo)
 {
    /* signal 0 is OK for kill */
-   Bool ret = sigNo >= 0 && sigNo <= VKI_SIGVGRTUSERMAX;
+   Bool ret = sigNo >= 0 && sigNo <= VG_SIGVGRTUSERMAX;
 
    //VG_(printf)("client_signal_OK(%d) -> %d\n", sigNo, ret);
 

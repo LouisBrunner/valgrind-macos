@@ -40,6 +40,10 @@
 /* Highest signal the kernel will let us use */
 extern Int VG_(max_signal);
 
+/* Use high signals because native pthreads wants to use low */
+#define VG_SIGVGKILL       (VG_(max_signal)-0)
+#define VG_SIGVGRTUSERMAX  (VG_(max_signal)-1)
+
 extern void VG_(sigstartup_actions) ( void );
 
 /* Poll a thread's set of pending signals, and update the Thread's

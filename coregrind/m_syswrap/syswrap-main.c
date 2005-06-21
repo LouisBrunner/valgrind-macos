@@ -41,7 +41,7 @@
 #include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
 #include "pub_core_tooliface.h"
 #include "pub_core_options.h"
-#include "pub_core_signals.h"       // For VG_(max_signal), VG_(poll_signals)
+#include "pub_core_signals.h"       // For VG_SIGVGKILL, VG_(poll_signals)
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 
@@ -506,7 +506,7 @@ static void sanitize_client_sigmask(ThreadId tid, vki_sigset_t *mask)
 {
    VG_(sigdelset)(mask, VKI_SIGKILL);
    VG_(sigdelset)(mask, VKI_SIGSTOP);
-   VG_(sigdelset)(mask, VKI_SIGVGKILL); /* never block */
+   VG_(sigdelset)(mask, VG_SIGVGKILL); /* never block */
 }
 
 typedef

@@ -350,14 +350,6 @@ struct vki_sched_param {
 };
 
 //----------------------------------------------------------------------
-// From nowhere: constants internal to Valgrind
-//----------------------------------------------------------------------
-
-/* Use high signals because native pthreads wants to use low */
-#define VKI_SIGVGKILL       (VG_(max_signal)-0) // [[internal: kill]]
-#define VKI_SIGVGRTUSERMAX  (VG_(max_signal)-1) // [[internal: last user-usable RT signal]]
-
-//----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-generic/siginfo.h
 //----------------------------------------------------------------------
 

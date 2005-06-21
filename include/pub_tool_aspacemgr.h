@@ -34,7 +34,6 @@
 extern Bool VG_(is_client_addr) (Addr a);
 
 extern Bool VG_(is_shadow_addr) (Addr a);
-extern Addr VG_(get_shadow_size)(void);
 
 extern void *VG_(shadow_alloc)(UInt size);
 

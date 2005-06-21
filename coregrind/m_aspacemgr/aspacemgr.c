@@ -1415,11 +1415,6 @@ Bool VG_(is_shadow_addr)(Addr a)
    return a >= VG_(shadow_base) && a < VG_(shadow_end);
 }
 
-Addr VG_(get_shadow_size)(void)
-{
-   return VG_(shadow_end)-VG_(shadow_base);
-}
-
 
 /*--------------------------------------------------------------------*/
 /*--- Handling shadow memory                                       ---*/

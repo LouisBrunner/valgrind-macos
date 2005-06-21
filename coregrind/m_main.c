@@ -2530,9 +2530,16 @@ int main(int argc, char **argv, char **envp)
    //   p: parse_procselfmaps        [so VG segments are setup so tool can
    //                                 call VG_(malloc)]
    //--------------------------------------------------------------
-   VG_(debugLog)(1, "main", "Initialise the tool\n");
-   (*toolinfo->tl_pre_clo_init)();
-   VG_(sanity_check_needs)();
+   {
+      Char* s;
+      Bool  ok;
+      VG_(debugLog)(1, "main", "Initialise the tool\n");
+      (*toolinfo->tl_pre_clo_init)();
+      ok = VG_(sanity_check_needs)( VG_(shadow_base) != VG_(shadow_end), &s );
+      if (!ok) {
+         VG_(tool_panic)(s);
+      }
+   }
 
    // If --tool and --help/--help-debug was given, now give the core+tool
    // help message

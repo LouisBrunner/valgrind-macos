@@ -30,10 +30,6 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
-#include "pub_core_aspacemgr.h"     // For VG_(get_shadow_size)()
-#include "pub_core_libcassert.h"
-#include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"    // For VG_(set_client_malloc_redzone_szB)()
 #include "pub_core_tooliface.h"
 
@@ -102,12 +98,12 @@ VgNeeds VG_(needs) = {
 };
 
 /* static */
-void VG_(sanity_check_needs) ( void)
+Bool VG_(sanity_check_needs)(Bool non_zero_shadow_memory, Char** failmsg)
 {
-#define CHECK_NOT(var, value)                                   \
-   if ((var)==(value)) {                                        \
-      VG_(printf)("\nTool error: '%s' not initialised\n", #var);\
-      VG_(tool_panic)("Uninitialised details field\n");         \
+#define CHECK_NOT(var, value)                                  \
+   if ((var)==(value)) {                                       \
+      *failmsg = "Tool error: '" #var "' not initialised\n"; \
+      return False;                                            \
    }
    
    /* Ones that must be set */
@@ -124,9 +120,10 @@ void VG_(sanity_check_needs) ( void)
          VG_(tdict).track_new_mem_stack_32 ) &&
        ! VG_(tdict).track_new_mem_stack) 
    {
-      VG_(printf)("\nTool error: one of the specialised 'new_mem_stack_n'\n"
-                  "events tracked, but not the generic 'new_mem_stack' one.\n");
-      VG_(tool_panic)("'new_mem_stack' should be defined\n");
+      *failmsg = "Tool error: one of the specialised 'new_mem_stack_n'\n"
+                 "   events tracked, but not the generic 'new_mem_stack' one.\n"
+                 "   'new_mem_stack' should be defined\n";
+      return False;
    }
 
    if ( (VG_(tdict).track_die_mem_stack_4  ||
@@ -136,20 +133,19 @@ void VG_(sanity_check_needs) ( void)
          VG_(tdict).track_die_mem_stack_32 ) &&
        ! VG_(tdict).track_die_mem_stack) 
    {
-      VG_(printf)("\nTool error: one of the specialised 'die_mem_stack_n'\n"
-                  "events tracked, but not the generic 'die_mem_stack' one.\n");
-      VG_(tool_panic)("'die_mem_stack' should be defined\n");
+      *failmsg = "Tool error: one of the specialised 'die_mem_stack_n'\n"
+                 "   events tracked, but not the generic 'die_mem_stack' one.\n"
+                 "   'die_mem_stack' should be defined\n";
+      return False;
    }
 
-   if (VG_(needs).shadow_memory != (VG_(get_shadow_size)() != 0)) {
-      if (VG_(get_shadow_size)() != 0)
-	 VG_(printf)("\nTool error: tool allocated shadow memory, but apparently doesn't "
-		     "need it.\n");
-      else
-	 VG_(printf)("\nTool error: tool didn't allocate shadow memory, but apparently "
-		     "needs it.\n");
-      VG_(tool_panic)("VG_(needs).shadow_memory need should be set to match 'shadow_ratio'\n");
+   if (VG_(needs).shadow_memory != non_zero_shadow_memory) {
+      *failmsg = "Tool error: VG_(needs).shadow_memory doesn't match\n"
+                 "   the 'shadow_ratio' set in VG_DETERMINE_INTERFACE_VERSION\n";
+      return False;
    }
+
+   return True;
 
 #undef CHECK_NOT
 }
@@ -337,6 +333,3 @@ DEF(track_init_shadow_page,      Addr)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-
-
-

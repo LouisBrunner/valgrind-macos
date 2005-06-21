@@ -211,7 +211,7 @@ extern VgToolInterface VG_(tdict);
    Miscellaneous functions
    ------------------------------------------------------------------ */
 
-void VG_(sanity_check_needs)(void);
+Bool VG_(sanity_check_needs) ( Bool non_zero_shadow_memory, Char** failmsg );
 
 #endif   // __PUB_CORE_TOOLIFACE_H
 

@@ -395,7 +395,7 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
 
 // We need two levels of macro-expansion here to convert __NR_rt_sigreturn
 // to a number before converting it to a string... sigh.
-extern void my_sigreturn(void);
+static void my_sigreturn(void);
 
 #if defined(VGP_x86_linux)
 #  define _MYSIG(name) \

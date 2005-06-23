@@ -195,12 +195,13 @@ static int scan_auxv(void* init_sp)
       case AT_DCACHEBSIZE:
       case AT_ICACHEBSIZE:
       case AT_UCACHEBSIZE:
-	VG_(debugLog)(0, "main", "PPC32 cache line size %lu (type %lu)\n", 
-             auxv->u.a_val, auxv->a_type );
+         VG_(debugLog)(1, "main", "PPC32 cache line size %u (type %u)\n", 
+                          (UInt)auxv->u.a_val, (UInt)auxv->a_type );
          if (auxv->u.a_val)
             VG_(cache_line_size) = auxv->u.a_val;
- // XXX: Nasty hack to stop use of badly implemented cache-control instns in vex
- auxv->u.a_val = 0;
+         // XXX: Nasty hack to stop use of badly implemented
+         // cache-control instns in vex (dcbz)
+         auxv->u.a_val = 0;
          break;
 
       case AT_HWCAP:

@@ -434,23 +434,25 @@ static HReg mk_LoadRRtoFPR ( ISelEnv* env, HReg r_srcHi, HReg r_srcLo )
 }
 
 
-//.. /* Given an amode, return one which references 4 bytes further
-//..    along. */
-//.. 
-//.. static X86AMode* advance4 ( X86AMode* am )
-//.. {
-//..    X86AMode* am4 = dopyX86AMode(am);
-//..    switch (am4->tag) {
-//..       case Xam_IRRS:
-//..          am4->Xam.IRRS.imm += 4; break;
-//..       case Xam_IR:
-//..          am4->Xam.IR.imm += 4; break;
-//..       default:
-//..          vpanic("advance4(x86,host)");
-//..    }
-//..    return am4;
-//.. }
+/* Given an amode, return one which references 4 bytes further
+   along. */
 
+static PPC32AMode* advance4 ( ISelEnv* env, PPC32AMode* am )
+{
+   PPC32AMode* am4 = dopyPPC32AMode(am);
+   switch (am4->tag) {
+      case Pam_IR:
+         am4->Pam.RR.index += 4; break;
+     case Pam_RR: {
+         HReg r_index = am4->Pam.IR.index;
+         addInstr(env, PPC32Instr_Alu32(Palu_ADD, r_index, r_index, PPC32RI_Imm(4)));
+         break;
+      }
+      default:
+         vpanic("advance4(ppc32,host)");
+   }
+   return am4;
+}
 
 //.. /* Push an arg onto the host stack, in preparation for a call to a
 //..    helper function of some kind.  Returns the number of 32-bit words
@@ -1598,12 +1600,24 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 //..       return iselCondCode(env, expr1);
 //..    }
 
-   /* pattern: 32to1(expr32) */
+   /* 32to1(expr32) */
    DEFINE_PATTERN(p_32to1, unop(Iop_32to1,bind(0)));
    if (matchIRExpr(&mi,p_32to1,e)) {
       HReg r_dst = iselIntExpr_R(env, mi.bindee[0]);
       addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, r_dst, PPC32RI_Imm(1)));
       return mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
+   }
+
+   /* --- patterns rooted at: CmpNEZ8 --- */
+
+   /* CmpNEZ8(x) */
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.op == Iop_CmpNEZ8) {
+      HReg r_32 = iselIntExpr_R(env, e->Iex.Unop.arg);
+      HReg r_l  = newVRegI(env);
+      addInstr(env, PPC32Instr_Alu32(Palu_AND, r_l, r_32, PPC32RI_Imm(0xFF)));
+      addInstr(env, PPC32Instr_Cmp32(Pcmp_S, 7, r_l, PPC32RI_Imm(0)));
+      return mk_PPCCondCode( Pct_FALSE, Pcf_EQ );
    }
 
    /* --- patterns rooted at: CmpNEZ32 --- */
@@ -3296,15 +3310,15 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, PPC32Instr_Store( sizeofIRType(ty), am_addr, r_src ));
          return;
       }
-//..       if (ty == Ity_I64) {
-//..          HReg vHi, vLo;
-//..          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
-//..          X86AMode* am4 = advance4(am);
-//..          iselInt64Expr(&vHi, &vLo, env, stmt->Ist.Put.data);
-//..          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(vLo), am ));
-//..          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(vHi), am4 ));
-//..          return;
-//..       }
+      if (ty == Ity_I64) {
+         HReg rHi, rLo;
+         PPC32AMode* am_addr  = PPC32AMode_IR(stmt->Ist.Put.offset, GuestStatePtr);
+         PPC32AMode* am_addr4 = advance4(env, am_addr);
+         iselInt64Expr(&rHi,&rLo, env, stmt->Ist.Put.data);
+         addInstr(env, PPC32Instr_Store( 4, am_addr,  rLo ));
+         addInstr(env, PPC32Instr_Store( 4, am_addr4, rHi ));
+         return;
+     }
 //..       if (ty == Ity_F32) {
 //..          HReg f32 = iselFltExpr(env, stmt->Ist.Put.data);
 //..          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());

@@ -136,7 +136,7 @@ extern UWord VG_(handle_stack_register)(Addr start, Addr end);
 extern void VG_(handle_stack_deregister)(UWord id);
 extern void VG_(handle_stack_change)(UWord id, Addr start, Addr end);
 
-extern VGA_REGPARM(2)
+extern VG_REGPARM(2)
        void VG_(unknown_SP_update) ( Addr old_SP, Addr new_SP );
 
 ///* Search /proc/self/maps for changes which aren't reflected in the
@@ -154,10 +154,10 @@ void VG_(parse_procselfmaps) (
                            const UChar *filename ) );
 
 // Pointercheck
-extern Bool VGA_(setup_pointercheck) ( Addr client_base, Addr client_end );
+extern Bool VG_(setup_pointercheck) ( Addr client_base, Addr client_end );
 
 #endif   // __PUB_CORE_ASPACEMGR_H
 
 /*--------------------------------------------------------------------*/
-/*--- end                                     pub_core_aspacemgr.h ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

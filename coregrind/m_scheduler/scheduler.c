@@ -443,7 +443,7 @@ void mostly_clear_thread_record ( ThreadId tid )
    vki_sigset_t savedmask;
 
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
-   VGP_(cleanup_thread)(&VG_(threads)[tid].arch);
+   VG_(cleanup_thread)(&VG_(threads)[tid].arch);
    VG_(threads)[tid].tid = tid;
 
    /* Leave the thread in Zombie, so that it doesn't get reallocated
@@ -782,7 +782,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 /* 
    This causes all threads to forceably exit.  They aren't actually
    dead by the time this returns; you need to call
-   VGA_(reap_threads)() to wait for them.
+   VG_(reap_threads)() to wait for them.
  */
 void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 {
@@ -811,24 +811,24 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
    ------------------------------------------------------------------ */
 
 #if defined(VGA_x86)
-#  define VGA_CLREQ_ARGS      guest_EAX
-#  define VGA_CLREQ_RET       guest_EDX
+#  define VG_CLREQ_ARGS       guest_EAX
+#  define VG_CLREQ_RET        guest_EDX
 #elif defined(VGA_amd64)
-#  define VGA_CLREQ_ARGS      guest_RAX
-#  define VGA_CLREQ_RET       guest_RDX
+#  define VG_CLREQ_ARGS       guest_RAX
+#  define VG_CLREQ_RET        guest_RDX
 #elif defined(VGA_arm)
-#  define VGA_CLREQ_ARGS      guest_R0
-#  define VGA_CLREQ_RET       guest_R0
+#  define VG_CLREQ_ARGS       guest_R0
+#  define VG_CLREQ_RET        guest_R0
 #elif defined(VGA_ppc32)
-#  define VGA_CLREQ_ARGS      guest_GPR4
-#  define VGA_CLREQ_RET       guest_GPR3
+#  define VG_CLREQ_ARGS       guest_GPR4
+#  define VG_CLREQ_RET        guest_GPR3
 #else
 #  error Unknown arch
 #endif
 
-#define CLREQ_ARGS(regs)   ((regs).vex.VGA_CLREQ_ARGS)
-#define CLREQ_RET(regs)    ((regs).vex.VGA_CLREQ_RET)
-#define O_CLREQ_RET        (offsetof(VexGuestArchState, VGA_CLREQ_RET))
+#define CLREQ_ARGS(regs)   ((regs).vex.VG_CLREQ_ARGS)
+#define CLREQ_RET(regs)    ((regs).vex.VG_CLREQ_RET)
+#define O_CLREQ_RET        (offsetof(VexGuestArchState, VG_CLREQ_RET))
 
 // These macros write a value to a client's thread register, and tell the
 // tool that it's happened (if necessary).
@@ -1115,7 +1115,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 	     VG_(threads)[tid].status == VgTs_Zombie)
 	    continue;
 
-	 remains = VGA_(stack_unused)(tid);
+	 remains = VG_(stack_unused)(tid);
 	 if (remains < VKI_PAGE_SIZE)
 	    VG_(message)(Vg_DebugMsg, 
                          "WARNING: Thread %d is within %d bytes "

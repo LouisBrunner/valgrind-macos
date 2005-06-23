@@ -117,11 +117,9 @@ SysRes;
 #define VG_WORDSIZE VEX_HOST_WORDSIZE
 
 #if defined(VGA_x86)
-#  define VGA_REGPARM(n)            __attribute__((regparm(n)))
-#elif defined(VGA_amd64) || defined(VGA_arm)
-#  define VGA_REGPARM(n)            /* */
-#elif defined(VGA_ppc32)
-#  define VGA_REGPARM(n)            /* */
+#  define VG_REGPARM(n)            __attribute__((regparm(n)))
+#elif defined(VGA_amd64) || defined(VGA_arm) || defined(VGA_ppc32)
+#  define VG_REGPARM(n)            /* */
 #else
 #  error Unknown arch
 #endif

@@ -190,11 +190,11 @@
    VG_(fixup_guest_state_after_syscall_interrupted) below for details.
 */
 extern
-void VGA_(do_syscall_for_client_WRK)( Int syscallno, 
-                                      void* guest_state,
-                                      const vki_sigset_t *syscall_mask,
-                                      const vki_sigset_t *restore_mask,
-                                      Int nsigwords );
+void VG_(do_syscall_for_client_WRK)( Int syscallno, 
+                                     void* guest_state,
+                                     const vki_sigset_t *syscall_mask,
+                                     const vki_sigset_t *restore_mask,
+                                     Int nsigwords );
 
 static
 void do_syscall_for_client ( Int syscallno,
@@ -202,7 +202,7 @@ void do_syscall_for_client ( Int syscallno,
                              const vki_sigset_t* syscall_mask )
 {
    vki_sigset_t saved;
-   VGA_(do_syscall_for_client_WRK)(
+   VG_(do_syscall_for_client_WRK)(
       syscallno, &tst->arch.vex, 
       syscall_mask, &saved, _VKI_NSIG_WORDS * sizeof(UWord)
    );
@@ -491,9 +491,9 @@ static const SyscallTableEntry* get_syscall_entry ( UInt syscallno )
 {
    const SyscallTableEntry* sys = &bad_sys;
 
-   if (syscallno < VGP_(syscall_table_size) &&
-       VGP_(syscall_table)[syscallno].before != NULL)
-      sys = &VGP_(syscall_table)[syscallno];
+   if (syscallno < ML_(syscall_table_size) &&
+       ML_(syscall_table)[syscallno].before != NULL)
+      sys = &ML_(syscall_table)[syscallno];
 
    return sys;
 }
@@ -901,13 +901,13 @@ void VG_(post_syscall) (ThreadId tid)
 */
 
 
-/* These are addresses within VGA_(_do_syscall_for_client).  See syscall.S for
+/* These are addresses within VG_(_do_syscall_for_client).  See syscall.S for
    details. */
-extern const Addr VGA_(blksys_setup);
-extern const Addr VGA_(blksys_restart);
-extern const Addr VGA_(blksys_complete);
-extern const Addr VGA_(blksys_committed);
-extern const Addr VGA_(blksys_finished);
+extern const Addr VG_(blksys_setup);
+extern const Addr VG_(blksys_restart);
+extern const Addr VG_(blksys_complete);
+extern const Addr VG_(blksys_committed);
+extern const Addr VG_(blksys_finished);
 
 
 /* Back up guest state to restart a system call. */
@@ -1046,9 +1046,9 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    /* Figure out what the state of the syscall was by examining the
       (real) IP at the time of the signal, and act accordingly. */
 
-   if (ip < VGA_(blksys_setup) || ip >= VGA_(blksys_finished)) {
+   if (ip < VG_(blksys_setup) || ip >= VG_(blksys_finished)) {
       VG_(printf)("  not in syscall (%p - %p)\n", 
-                  VGA_(blksys_setup), VGA_(blksys_finished));
+                  VG_(blksys_setup), VG_(blksys_finished));
       /* Looks like we weren't in a syscall at all.  Hmm. */
       vg_assert(sci->status.what != SsIdle);
       return;
@@ -1059,7 +1059,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       Hence: */
    vg_assert(sci->status.what != SsIdle);
 
-   if (ip >= VGA_(blksys_setup) && ip < VGA_(blksys_restart)) {
+   if (ip >= VG_(blksys_setup) && ip < VG_(blksys_restart)) {
       /* syscall hasn't even started; go around again */
       if (debug)
          VG_(printf)("  not started: restart\n");
@@ -1068,7 +1068,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    } 
 
    else 
-   if (ip == VGA_(blksys_restart)) {
+   if (ip == VG_(blksys_restart)) {
       /* We're either about to run the syscall, or it was interrupted
          and the kernel restarted it.  Restart if asked, otherwise
          EINTR it. */
@@ -1085,7 +1085,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    }
 
    else 
-   if (ip >= VGA_(blksys_complete) && ip < VGA_(blksys_committed)) {
+   if (ip >= VG_(blksys_complete) && ip < VG_(blksys_committed)) {
       /* Syscall complete, but result hasn't been written back yet.
          Write the SysRes we were supplied with back to the guest
          state. */
@@ -1098,7 +1098,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    } 
 
    else 
-   if (ip >= VGA_(blksys_committed) && ip < VGA_(blksys_finished)) {
+   if (ip >= VG_(blksys_committed) && ip < VG_(blksys_finished)) {
       /* Result committed, but the signal mask has not been restored;
          we expect our caller (the signal handler) will have fixed
          this up. */

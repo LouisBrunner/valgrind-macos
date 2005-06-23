@@ -298,7 +298,7 @@ static lineCC* get_lineCC(Addr origAddr)
 /*--- Cache simulation functions                           ---*/
 /*------------------------------------------------------------*/
 
-static VGA_REGPARM(1)
+static VG_REGPARM(1)
 void log_1I_0D_cache_access(instr_info* n)
 {
    //VG_(printf)("1I_0D : CCaddr=0x%x, iaddr=0x%x, isize=%u\n",
@@ -310,7 +310,7 @@ void log_1I_0D_cache_access(instr_info* n)
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static VGA_REGPARM(2)
+static VG_REGPARM(2)
 void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr)
 {
    //VG_(printf)("1I_1Dr: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
@@ -326,7 +326,7 @@ void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr)
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static VGA_REGPARM(2)
+static VG_REGPARM(2)
 void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr)
 {
    //VG_(printf)("1I_1Dw: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
@@ -342,7 +342,7 @@ void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr)
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static VGA_REGPARM(3)
+static VG_REGPARM(3)
 void log_1I_2D_cache_access(instr_info* n, Addr data_addr1, Addr data_addr2)
 {
    //VG_(printf)("1I_2D: CCaddr=%p, iaddr=%p, isize=%u, daddr1=%p, daddr2=%p, dsize=%u\n",
@@ -554,8 +554,8 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
 
    // Nb: instrLen will be zero if Vex failed to decode it.
    tl_assert( 0 == instrLen ||
-              (instrLen >= VGA_MIN_INSTR_SZB && 
-               instrLen <= VGA_MAX_INSTR_SZB) );
+              (instrLen >= VG_MIN_INSTR_SZB && 
+               instrLen <= VG_MAX_INSTR_SZB) );
 
    // Large (eg. 28B, 108B, 512B on x86) data-sized instructions will be
    // done inaccurately, but they're very rare and this avoids errors from
@@ -762,7 +762,7 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
    // Set the cache config (using auto-detection, if supported by the
    // architecture)
-   VGA_(configure_caches)( I1c, D1c, L2c, (3 == n_clos) );
+   VG_(configure_caches)( I1c, D1c, L2c, (3 == n_clos) );
 
    // Then replace with any defined on the command line.
    if (DEFINED(clo_I1_cache)) { *I1c = clo_I1_cache; }

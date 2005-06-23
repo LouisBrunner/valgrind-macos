@@ -124,9 +124,9 @@ typedef
 /* These are defined in the relevant platform-specific files --
    syswrap-arch-os.c */
 
-extern const SyscallTableEntry VGP_(syscall_table)[];
+extern const SyscallTableEntry ML_(syscall_table)[];
 
-extern const UInt VGP_(syscall_table_size);
+extern const UInt ML_(syscall_table_size);
    
 
 /* ---------------------------------------------------------------------

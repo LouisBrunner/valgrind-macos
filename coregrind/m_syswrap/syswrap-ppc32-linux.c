@@ -109,7 +109,7 @@ static UWord* allocstack(ThreadId tid)
 
 /* NB: this is identical the the amd64 version. */
 /* Return how many bytes of this stack have not been used */
-SSizeT VGA_(stack_unused)(ThreadId tid)
+SSizeT VG_(stack_unused)(ThreadId tid)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
    UWord* p;
@@ -259,10 +259,10 @@ asm(
    Allocate a stack for the main thread, and run it all the way to the
    end.  
  */
-void VGP_(main_thread_wrapper_NORETURN)(ThreadId tid)
+void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
 {
    VG_(debugLog)(1, "syscalls-ppc32-linux", 
-                    "entering VGP_(main_thread_wrapper_NORETURN)\n");
+                    "entering VG_(main_thread_wrapper_NORETURN)\n");
 
    UWord* sp = allocstack(tid);
 
@@ -453,7 +453,7 @@ asm(
 //..       If the clone call specifies a NULL esp for the new thread, then
 //..       it actually gets a copy of the parent's esp.
 //..    */
-//..    VGA_(setup_child)( &ctst->arch, &ptst->arch );
+//..    VG_(setup_child)( &ctst->arch, &ptst->arch );
 //.. 
 //..   /* Make sys_clone appear to have returned Success(0) in the
 //..      child. */
@@ -519,7 +519,7 @@ asm(
 //..   out:
 //..    if (ret < 0) {
 //..       /* clone failed */
-//..       VGA_(cleanup_thread)(&ctst->arch);
+//..       VG_(cleanup_thread)(&ctst->arch);
 //..       ctst->status = VgTs_Empty;
 //..    }
 //.. 
@@ -902,7 +902,7 @@ asm(
    More thread stuff
    ------------------------------------------------------------------ */
 
-void VGP_(cleanup_thread) ( ThreadArchState* arch )
+void VG_(cleanup_thread) ( ThreadArchState* arch )
 {
 //..    /* Release arch-specific resources held by this thread. */
 //..    /* On x86, we have to dump the LDT and GDT. */
@@ -910,7 +910,7 @@ void VGP_(cleanup_thread) ( ThreadArchState* arch )
 }  
 
 
-//.. void VGA_(setup_child) ( /*OUT*/ ThreadArchState *child,
+//.. void VG_(setup_child) ( /*OUT*/ ThreadArchState *child,
 //..                          /*IN*/  ThreadArchState *parent )
 //.. {
 //..    /* We inherit our parent's guest state. */
@@ -1107,7 +1107,7 @@ POST(sys_fstat64)
 //.. 
 //..    /* This is only so that the EIP is (might be) useful to report if
 //..       something goes wrong in the sigreturn */
-//..    VGA_(restart_syscall)(&tst->arch);
+//..    VG_(restart_syscall)(&tst->arch);
 //.. 
 //..    VG_(sigframe_destroy)(tid, False);
 //.. 
@@ -1128,7 +1128,7 @@ POST(sys_fstat64)
 //.. 
 //..    /* This is only so that the EIP is (might be) useful to report if
 //..       something goes wrong in the sigreturn */
-//..    VGA_(restart_syscall)(&tst->arch);
+//..    VG_(restart_syscall)(&tst->arch);
 //.. 
 //..    VG_(sigframe_destroy)(tid, False);
 //.. 
@@ -1497,7 +1497,7 @@ POST(sys_fstat64)
 // arch/OS combination, eg. */* (generic), */Linux (Linux only), ?/?
 // (unknown).
 
-const SyscallTableEntry VGP_(syscall_table)[] = {
+const SyscallTableEntry ML_(syscall_table)[] = {
 //..   (restart_syscall)                                      // 0
    GENX_(__NR_exit,              sys_exit),                   // 1
 //..    GENX_(__NR_fork,              sys_fork),              // 2
@@ -1828,8 +1828,8 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
 // __NR_kexec_load                                            // 268
 };
 
-const UInt VGP_(syscall_table_size) = 
-            sizeof(VGP_(syscall_table)) / sizeof(VGP_(syscall_table)[0]);
+const UInt ML_(syscall_table_size) = 
+            sizeof(ML_(syscall_table)) / sizeof(ML_(syscall_table)[0]);
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

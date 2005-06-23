@@ -40,33 +40,33 @@
 #include "pub_tool_machine.h"
 
 #if defined(VGA_x86)
-#  define VGA_ELF_ENDIANNESS  ELFDATA2LSB
-#  define VGA_ELF_MACHINE     EM_386
-#  define VGA_ELF_CLASS       ELFCLASS32
+#  define VG_ELF_ENDIANNESS   ELFDATA2LSB
+#  define VG_ELF_MACHINE      EM_386
+#  define VG_ELF_CLASS        ELFCLASS32
 #elif defined(VGA_amd64)
-#  define VGA_ELF_ENDIANNESS  ELFDATA2LSB
-#  define VGA_ELF_MACHINE     EM_X86_64
-#  define VGA_ELF_CLASS       ELFCLASS64
+#  define VG_ELF_ENDIANNESS   ELFDATA2LSB
+#  define VG_ELF_MACHINE      EM_X86_64
+#  define VG_ELF_CLASS        ELFCLASS64
 #elif defined(VGA_arm)
-#  define VGA_ELF_ENDIANNESS  ELFDATA2LSB
-#  define VGA_ELF_MACHINE     EM_ARM
-#  define VGA_ELF_CLASS       ELFCLASS32
+#  define VG_ELF_ENDIANNESS   ELFDATA2LSB
+#  define VG_ELF_MACHINE      EM_ARM
+#  define VG_ELF_CLASS        ELFCLASS32
 #elif defined(VGA_ppc32)
-#  define VGA_ELF_ENDIANNESS  ELFDATA2MSB
-#  define VGA_ELF_MACHINE     EM_PPC
-#  define VGA_ELF_CLASS       ELFCLASS32
+#  define VG_ELF_ENDIANNESS   ELFDATA2MSB
+#  define VG_ELF_MACHINE      EM_PPC
+#  define VG_ELF_CLASS        ELFCLASS32
 #else
 #  error Unknown arch
 #endif
 
 #if defined(VGA_x86)
-#  define VGA_INSTR_PTR       guest_EIP
-#  define VGA_STACK_PTR       guest_ESP
-#  define VGA_FRAME_PTR       guest_EBP
+#  define VG_INSTR_PTR        guest_EIP
+#  define VG_STACK_PTR        guest_ESP
+#  define VG_FRAME_PTR        guest_EBP
 #elif defined(VGA_amd64)
-#  define VGA_INSTR_PTR       guest_RIP
-#  define VGA_STACK_PTR       guest_RSP
-#  define VGA_FRAME_PTR       guest_RBP
+#  define VG_INSTR_PTR        guest_RIP
+#  define VG_STACK_PTR        guest_RSP
+#  define VG_FRAME_PTR        guest_RBP
 #elif defined(VGA_arm)
    // XXX: Not sure, but I think:
    //   r11 = frame pointer
@@ -74,19 +74,19 @@
    //   r13 = stack pointer
    //   r14 = link register
    //   r15 = program counter
-#  define VGA_INSTR_PTR       guest_R15
-#  define VGA_STACK_PTR       guest_R13
-#  define VGA_FRAME_PTR       guest_R11
+#  define VG_INSTR_PTR        guest_R15
+#  define VG_STACK_PTR        guest_R13
+#  define VG_FRAME_PTR        guest_R11
 #elif defined(VGA_ppc32)
-#  define VGA_INSTR_PTR       guest_CIA
-#  define VGA_STACK_PTR       guest_GPR1
-#  define VGA_FRAME_PTR       guest_GPR1   // No frame ptr for PPC
+#  define VG_INSTR_PTR        guest_CIA
+#  define VG_STACK_PTR        guest_GPR1
+#  define VG_FRAME_PTR        guest_GPR1   // No frame ptr for PPC
 #else
 #  error Unknown arch
 #endif
 
 // Offsets for the Vex state
-#define O_STACK_PTR        (offsetof(VexGuestArchState, VGA_STACK_PTR))
+#define VG_O_STACK_PTR        (offsetof(VexGuestArchState, VG_STACK_PTR))
 
 #endif   // __PUB_CORE_MACHINE_H
 

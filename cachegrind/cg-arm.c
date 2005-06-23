@@ -30,8 +30,8 @@
 
 #include "cg_arch.h"
 
-void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
-                            Bool all_caches_clo_defined)
+void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
+                           Bool all_caches_clo_defined)
 {
    // XXX: I1 and D1 are vaguely plausible, although they could really be
    // anything.  However, most (all?) ARMs don't have an L2 cache.  But

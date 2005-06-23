@@ -250,7 +250,7 @@ void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
    do {
       Addr ip = ips[i];
       if (i > 0) 
-         ip -= VGA_MIN_INSTR_SZB;   // point to calling line
+         ip -= VG_MIN_INSTR_SZB;   // point to calling line
 
       // Stop after "main";  if main() is recursive, stop after last main().
       if ( ! VG_(clo_show_below_main)) {

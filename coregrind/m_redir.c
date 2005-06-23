@@ -648,14 +648,14 @@ void VG_(maybe_redir_or_notify) ( Char* symbol, Addr addr )
 //:: /* Called from generated code via helper */
 //:: void VG_(wrap_before)(ThreadState *tst, const FuncWrapper *wrapper)
 //:: {
-//::    Addr retaddr = VGA_RETADDR(tst->arch);
-//::    Addr argp = (Addr)&VGA_FUNC_ARG(tst->arch, 0);
+//::    Addr retaddr = VG_RETADDR(tst->arch);
+//::    Addr argp = (Addr)&VG_FUNC_ARG(tst->arch, 0);
 //::    void *nonce = NULL;
 //::    Bool mf = VG_(my_fault);
 //::    VG_(my_fault) = True;
 //:: 
 //::    if (wrapper->before) {
-//::       va_list args = VGA_VA_LIST(tst->arch);
+//::       va_list args = VG_VA_LIST(tst->arch);
 //::       nonce = (*wrapper->before)(args);
 //::    }
 //:: 
@@ -693,9 +693,9 @@ void VG_(maybe_redir_or_notify) ( Char* symbol, Addr addr )
 //:: /* Called from generated code via helper */
 //:: void VG_(wrap_after)(ThreadState *tst)
 //:: {
-//::    Addr EIP = VGA_INSTR_PTR(tst->arch);	/* instruction after call */
-//::    Addr ESP = VGA_STACK_PTR(tst->arch);	/* pointer to args */
-//::    Word ret = VGA_RETVAL(tst->arch);		/* return value */
+//::    Addr EIP = VG_INSTR_PTR(tst->arch);	/* instruction after call */
+//::    Addr ESP = VG_STACK_PTR(tst->arch);	/* pointer to args */
+//::    Word ret = VG_RETVAL(tst->arch);		/* return value */
 //::    struct call_instance *call;
 //::    Bool mf = VG_(my_fault);
 //:: 

@@ -49,10 +49,6 @@
 #define VG_(str)    VGAPPEND(vgPlain_,          str)
 #define ML_(str)    VGAPPEND(vgModuleLocal_,    str)
 
-#define VGA_(str)   VGAPPEND(vgArch_,     str)
-#define VGO_(str)   VGAPPEND(vgOS_,       str)
-#define VGP_(str)   VGAPPEND(vgPlatform_, str)
-
 #endif /* __PUB_TOOL_BASICS_ASM_H */
 
 /*--------------------------------------------------------------------*/

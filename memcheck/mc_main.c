@@ -1472,7 +1472,7 @@ static Bool mc_recognised_suppression ( Char* name, Supp* su )
 
 /* ------------------------ Size = 8 ------------------------ */
 
-VGA_REGPARM(1)
+VG_REGPARM(1)
 ULong MC_(helperc_LOADV8) ( Addr aA )
 {
    PROF_EVENT(200, "helperc_LOADV8");
@@ -1516,7 +1516,7 @@ ULong MC_(helperc_LOADV8) ( Addr aA )
 #  endif
 }
 
-VGA_REGPARM(1)
+VG_REGPARM(1)
 void MC_(helperc_STOREV8) ( Addr aA, ULong vbytes )
 {
    PROF_EVENT(210, "helperc_STOREV8");
@@ -1563,7 +1563,7 @@ void MC_(helperc_STOREV8) ( Addr aA, ULong vbytes )
 
 /* ------------------------ Size = 4 ------------------------ */
 
-VGA_REGPARM(1)
+VG_REGPARM(1)
 UWord MC_(helperc_LOADV4) ( Addr aA )
 {
    PROF_EVENT(220, "helperc_LOADV4");
@@ -1614,7 +1614,7 @@ UWord MC_(helperc_LOADV4) ( Addr aA )
 #  endif
 }
 
-VGA_REGPARM(2)
+VG_REGPARM(2)
 void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
 {
    PROF_EVENT(230, "helperc_STOREV4");
@@ -1662,7 +1662,7 @@ void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
 
 /* ------------------------ Size = 2 ------------------------ */
 
-VGA_REGPARM(1)
+VG_REGPARM(1)
 UWord MC_(helperc_LOADV2) ( Addr aA )
 {
    PROF_EVENT(240, "helperc_LOADV2");
@@ -1710,7 +1710,7 @@ UWord MC_(helperc_LOADV2) ( Addr aA )
 #  endif
 }
 
-VGA_REGPARM(2)
+VG_REGPARM(2)
 void MC_(helperc_STOREV2) ( Addr aA, UWord vbytes )
 {
    PROF_EVENT(250, "helperc_STOREV2");
@@ -1755,7 +1755,7 @@ void MC_(helperc_STOREV2) ( Addr aA, UWord vbytes )
 
 /* ------------------------ Size = 1 ------------------------ */
 
-VGA_REGPARM(1)
+VG_REGPARM(1)
 UWord MC_(helperc_LOADV1) ( Addr aA )
 {
    PROF_EVENT(260, "helperc_LOADV1");
@@ -1803,7 +1803,7 @@ UWord MC_(helperc_LOADV1) ( Addr aA )
 }
 
 
-VGA_REGPARM(2)
+VG_REGPARM(2)
 void MC_(helperc_STOREV1) ( Addr aA, UWord vbyte )
 {
    PROF_EVENT(270, "helperc_STOREV1");
@@ -1872,7 +1872,7 @@ void MC_(helperc_value_check8_fail) ( void )
    mc_record_value_error ( VG_(get_running_tid)(), 8 );
 }
 
-VGA_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
+VG_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
 {
    mc_record_value_error ( VG_(get_running_tid)(), (Int)sz );
 }

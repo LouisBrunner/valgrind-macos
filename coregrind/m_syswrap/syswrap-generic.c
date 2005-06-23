@@ -1615,7 +1615,7 @@ ML_(generic_POST_sys_shmctl) ( ThreadId tid,
 /* Note: the PRE() and POST() wrappers are for the actual functions
    implementing the system calls in the OS kernel.  These mostly have
    names like sys_write();  a few have names like old_mmap().  See the
-   comment for VGA_(syscall_table)[] for important info about the __NR_foo
+   comment for ML_(syscall_table)[] for important info about the __NR_foo
    constants and their relationship to the sys_foo() functions.
 
    Some notes about names used for syscalls and args:

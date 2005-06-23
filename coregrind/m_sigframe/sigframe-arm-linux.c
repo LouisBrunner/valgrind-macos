@@ -150,7 +150,7 @@ static void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
 }
 #endif
 
-void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
+void VG_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
                              const vki_siginfo_t *siginfo,
                              void *handler, UInt flags,
                              const vki_sigset_t *mask)
@@ -244,7 +244,7 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
    /* Set the thread so it will next run the handler. */
    /* tst->m_esp  = esp;  also notify the tool we've updated ESP */
    STACK_PTR(VG_(threads)[tid].arch) = esp;
-   VG_TRACK( post_reg_write, Vg_CoreSignal, tid, O_STACK_PTR, sizeof(Addr));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid, VG_O_STACK_PTR, sizeof(Addr));
 
    tst->arch.vex.guest_EIP = (Addr) handler;
    /* This thread needs to be marked runnable, but we leave that the
@@ -256,7 +256,7 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
 #endif
 }
 
-Int VGA_(pop_signal_frame)(ThreadId tid)
+Int VG_(pop_signal_frame)(ThreadId tid)
 {
    I_die_here;
 #if 0

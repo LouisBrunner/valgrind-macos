@@ -34,9 +34,9 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
 
-#define INSTR_PTR(regs)    ((regs).vex.VGA_INSTR_PTR)
-#define STACK_PTR(regs)    ((regs).vex.VGA_STACK_PTR)
-#define FRAME_PTR(regs)    ((regs).vex.VGA_FRAME_PTR)
+#define INSTR_PTR(regs)    ((regs).vex.VG_INSTR_PTR)
+#define STACK_PTR(regs)    ((regs).vex.VG_STACK_PTR)
+#define FRAME_PTR(regs)    ((regs).vex.VG_FRAME_PTR)
 
 Addr VG_(get_SP) ( ThreadId tid )
 {

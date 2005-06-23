@@ -2695,7 +2695,7 @@ int main(int argc, char **argv, char **envp)
    //--------------------------------------------------------------
    if (VG_(clo_pointercheck))
       VG_(clo_pointercheck) =
-         VGA_(setup_pointercheck)( VG_(client_base), VG_(client_end));
+         VG_(setup_pointercheck)( VG_(client_base), VG_(client_end));
 
    //--------------------------------------------------------------
    // register client stack
@@ -2716,7 +2716,7 @@ int main(int argc, char **argv, char **envp)
    /* As a result of the following call, the last thread standing
       eventually winds up running VG_(shutdown_actions_NORETURN) just
       below. */
-   VGP_(main_thread_wrapper_NORETURN)(1);
+   VG_(main_thread_wrapper_NORETURN)(1);
 
    /*NOTREACHED*/
    vg_assert(0);

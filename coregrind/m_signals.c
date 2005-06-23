@@ -129,36 +129,36 @@ typedef struct SigQueue {
 } SigQueue;
 
 #if defined(VGP_x86_linux)
-#  define VGP_UCONTEXT_INSTR_PTR(uc)      ((uc)->uc_mcontext.eip)
-#  define VGP_UCONTEXT_STACK_PTR(uc)      ((uc)->uc_mcontext.esp)
-#  define VGP_UCONTEXT_FRAME_PTR(uc)      ((uc)->uc_mcontext.ebp)
-#  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.eax)
-#  define VGP_UCONTEXT_SYSCALL_SYSRES(uc)                       \
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.eip)
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.esp)
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.ebp)
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.eax)
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                       \
       /* Convert the value in uc_mcontext.eax into a SysRes. */ \
       VG_(mk_SysRes_x86_linux)( (uc)->uc_mcontext.eax )
 
 #elif defined(VGP_amd64_linux)
-#  define VGP_UCONTEXT_INSTR_PTR(uc)      ((uc)->uc_mcontext.rip)
-#  define VGP_UCONTEXT_STACK_PTR(uc)      ((uc)->uc_mcontext.rsp)
-#  define VGP_UCONTEXT_FRAME_PTR(uc)      ((uc)->uc_mcontext.rbp)
-#  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.rax)
-#  define VGP_UCONTEXT_SYSCALL_SYSRES(uc)                       \
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.rip)
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.rsp)
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.rbp)
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.rax)
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                       \
       /* Convert the value in uc_mcontext.rax into a SysRes. */ \
       VG_(mk_SysRes_amd64_linux)( (uc)->uc_mcontext.rax )
 
 #elif defined(VGP_arm_linux)
-#  define VGP_UCONTEXT_INSTR_PTR(uc)     ((uc)->uc_mcontext.arm_pc)
-#  define VGP_UCONTEXT_STACK_PTR(uc)     ((uc)->uc_mcontext.arm_sp)
-#  define VGP_UCONTEXT_FRAME_PTR(uc)     ((uc)->uc_mcontext.arm_fp)
-#  define VGP_UCONTEXT_SYSCALL_NUM(uc)   ((uc)->uc_mcontext.arm_r0)
-#  error VGP_UCONTEXT_SYSCALL_RET undefined for ARM/Linux
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.arm_pc)
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.arm_sp)
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.arm_fp)
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.arm_r0)
+#  error VG_UCONTEXT_SYSCALL_RET undefined for ARM/Linux
 
 #elif defined(VGP_ppc32_linux)
-#  define VGP_UCONTEXT_INSTR_PTR(uc)      ((uc)->uc_mcontext.mc_gregs[VKI_PT_NIP])
-#  define VGP_UCONTEXT_STACK_PTR(uc)      ((uc)->uc_mcontext.mc_gregs[1])
-#  define VGP_UCONTEXT_FRAME_PTR(uc)      ((uc)->uc_mcontext.mc_gregs[1])
-#  define VGP_UCONTEXT_SYSCALL_NUM(uc)    ((uc)->uc_mcontext.mc_gregs[0])
-#  define VGP_UCONTEXT_SYSCALL_SYSRES(uc)                                \
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[VKI_PT_NIP])
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[1])
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[1])
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.mc_gregs[0])
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                                \
       /* Convert the values in uc_mcontext r3,cr into a SysRes. */       \
       VG_(mk_SysRes_ppc32_linux)( (uc)->uc_mcontext.mc_gregs[3],         \
 				  (uc)->uc_mcontext.mc_gregs[VKI_PT_CCR] )
@@ -813,7 +813,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
       
    } else {
-      esp_top_of_frame = VG_(get_SP)(tid) - VGA_STACK_REDZONE_SZB;
+      esp_top_of_frame = VG_(get_SP)(tid) - VG_STACK_REDZONE_SZB;
 
       /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
@@ -939,12 +939,12 @@ static void fill_ehdr(Elf32_Ehdr *ehdr, Int num_phdrs)
    VG_(memset)(ehdr, 0, sizeof(*ehdr));
 
    VG_(memcpy)(ehdr->e_ident, ELFMAG, SELFMAG);
-   ehdr->e_ident[EI_CLASS]   = VGA_ELF_CLASS;
-   ehdr->e_ident[EI_DATA]    = VGA_ELF_ENDIANNESS;
+   ehdr->e_ident[EI_CLASS]   = VG_ELF_CLASS;
+   ehdr->e_ident[EI_DATA]    = VG_ELF_ENDIANNESS;
    ehdr->e_ident[EI_VERSION] = EV_CURRENT;
 
    ehdr->e_type = ET_CORE;
-   ehdr->e_machine = VGA_ELF_MACHINE;
+   ehdr->e_machine = VG_ELF_MACHINE;
    ehdr->e_version = EV_CURRENT;
    ehdr->e_entry = 0;
    ehdr->e_phoff = sizeof(Elf32_Ehdr);
@@ -1085,17 +1085,17 @@ static void fill_prstatus(const ThreadState *tst,
 
    vg_assert(sizeof(*regs) == sizeof(prs->pr_reg));
 
-   VGA_(fill_elfregs_from_tst)(regs, &tst->arch);
+   VG_(fill_elfregs_from_tst)(regs, &tst->arch);
 }
 
 static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 {
-   VGA_(fill_elffpregs_from_tst)(fpu, &tst->arch);
+   VG_(fill_elffpregs_from_tst)(fpu, &tst->arch);
 }
 
 static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 {
-   VGA_(fill_elffpxregs_from_tst)(xfpu, &tst->arch);
+   VG_(fill_elffpxregs_from_tst)(xfpu, &tst->arch);
 }
 
 static void make_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
@@ -1671,9 +1671,9 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
    /* Update thread state properly */
    VG_(fixup_guest_state_after_syscall_interrupted)(
       tid, 
-      VGP_UCONTEXT_INSTR_PTR(uc), 
-      VGP_UCONTEXT_SYSCALL_NUM(uc), 
-      VGP_UCONTEXT_SYSCALL_SYSRES(uc),  
+      VG_UCONTEXT_INSTR_PTR(uc), 
+      VG_UCONTEXT_SYSCALL_NUM(uc), 
+      VG_UCONTEXT_SYSCALL_SYSRES(uc),  
       !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART)
    );
 
@@ -1839,7 +1839,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
    if (VG_(clo_trace_signals)) {
       VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d, EIP=%p, eip=%p",
                    sigNo, info->si_code, VG_(get_IP)(tid), 
-		   VGP_UCONTEXT_INSTR_PTR(uc) );
+		   VG_UCONTEXT_INSTR_PTR(uc) );
    }
    vg_assert(sigNo >= 1 && sigNo <= VG_(max_signal));
 
@@ -1868,14 +1868,14 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 			 VG_(shadow_base), VG_(shadow_end));
       }
       if (info->si_code == 1 /* SEGV_MAPERR */
-	  && fault >= (esp - VGA_STACK_REDZONE_SZB)
+	  && fault >= (esp - VG_STACK_REDZONE_SZB)
           && fault < VG_(client_end)) {
 	 /* If the fault address is above esp but below the current known
 	    stack segment base, and it was a fault because there was
 	    nothing mapped there (as opposed to a permissions fault),
 	    then extend the stack segment. 
 	 */
-         Addr base = VG_PGROUNDDN(esp - VGA_STACK_REDZONE_SZB);
+         Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
 	 if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
 	    if (VG_(clo_trace_signals))
 	       VG_(message)(Vg_DebugMsg, 
@@ -1946,7 +1946,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       VG_(message)(Vg_DebugMsg, 
 		   "si_code=%x;  Faulting address: %p;  sp: %p",
 		   info->si_code, info->_sifields._sigfault._addr,
-                   VGP_UCONTEXT_STACK_PTR(uc));
+                   VG_UCONTEXT_STACK_PTR(uc));
 
       if (0)
 	 VG_(kill_self)(sigNo);		/* generate a core dump */
@@ -1956,9 +1956,9 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       vg_assert(tid != 0);
 
       VG_(core_panic_at)("Killed by fatal signal",
-                         VGP_UCONTEXT_INSTR_PTR(uc),
-                         VGP_UCONTEXT_STACK_PTR(uc),
-                         VGP_UCONTEXT_FRAME_PTR(uc));
+                         VG_UCONTEXT_INSTR_PTR(uc),
+                         VG_UCONTEXT_STACK_PTR(uc),
+                         VG_UCONTEXT_FRAME_PTR(uc));
    }
 }
 

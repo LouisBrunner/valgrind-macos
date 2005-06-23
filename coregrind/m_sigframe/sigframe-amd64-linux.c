@@ -407,8 +407,8 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 
    /* For tracking memory events, indicate the entire frame has been
       allocated. */
-   VG_TRACK( new_mem_stack_signal, addr - VGA_STACK_REDZONE_SZB,
-             size + VGA_STACK_REDZONE_SZB );
+   VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB,
+             size + VG_STACK_REDZONE_SZB );
 
    return True;
 }
@@ -498,7 +498,7 @@ void VG_(sigframe_create)( ThreadId tid,
    /* Set the thread so it will next run the handler. */
    /* tst->m_rsp  = rsp;  also notify the tool we've updated RSP */
    VG_(set_SP)(tid, rsp);
-   VG_TRACK( post_reg_write, Vg_CoreSignal, tid, O_STACK_PTR, sizeof(Addr));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid, VG_O_STACK_PTR, sizeof(Addr));
 
    //VG_(printf)("handler = %p\n", handler);
    tst->arch.vex.guest_RIP = (Addr) handler;
@@ -604,13 +604,13 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    size = restore_rt_sigframe(tst, (struct rt_sigframe *)rsp, &sigNo);
 
-   VG_TRACK( die_mem_stack_signal, rsp - VGA_STACK_REDZONE_SZB,
-             size + VGA_STACK_REDZONE_SZB );
+   VG_TRACK( die_mem_stack_signal, rsp - VG_STACK_REDZONE_SZB,
+             size + VG_STACK_REDZONE_SZB );
 
    if (VG_(clo_trace_signals))
       VG_(message)(
          Vg_DebugMsg, 
-         "VGA_(signal_return) (thread %d): isRT=%d valid magic; RIP=%p", 
+         "VG_(signal_return) (thread %d): isRT=%d valid magic; RIP=%p", 
          tid, isRT, tst->arch.vex.guest_RIP);
 
    /* tell the tools */
@@ -621,7 +621,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 //:: /*--- Making coredumps                                     ---*/
 //:: /*------------------------------------------------------------*/
 //:: 
-//:: void VGA_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
+//:: void VG_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
 //::                                  const arch_thread_t* arch)
 //:: {
 //::    regs->rflags = arch->m_rflags;
@@ -667,13 +667,13 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 //::       VG_(memcpy)(fpu, from, sizeof(*fpu));
 //:: }
 //:: 
-//:: void VGA_(fill_elffpregs_from_tst)( vki_elf_fpregset_t* fpu,
+//:: void VG_(fill_elffpregs_from_tst)( vki_elf_fpregset_t* fpu,
 //::                                     const arch_thread_t* arch)
 //:: {
 //::    fill_fpu(fpu, (const Char *)&arch->m_sse);
 //:: }
 //:: 
-//:: void VGA_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
+//:: void VG_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
 //::                                       const arch_thread_t* arch )
 //:: {
 //::    VG_(memcpy)(xfpu, arch->m_sse.state, sizeof(*xfpu));

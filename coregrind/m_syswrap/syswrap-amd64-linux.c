@@ -108,7 +108,7 @@ static UWord* allocstack(ThreadId tid)
 
 /* NB: this is identical the the x86 version. */
 /* Return how many bytes of this stack have not been used */
-SSizeT VGA_(stack_unused)(ThreadId tid)
+SSizeT VG_(stack_unused)(ThreadId tid)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
    UWord* p;
@@ -242,10 +242,10 @@ asm(
    Allocate a stack for the main thread, and run it all the way to the
    end.  
 */
-void VGP_(main_thread_wrapper_NORETURN)(ThreadId tid)
+void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
 {
    VG_(debugLog)(1, "syswrap-amd64-linux", 
-                    "entering VGP_(main_thread_wrapper_NORETURN)\n");
+                    "entering VG_(main_thread_wrapper_NORETURN)\n");
 
    UWord* rsp = allocstack(tid);
 
@@ -468,7 +468,7 @@ static SysRes do_clone ( ThreadId ptid,
 
    if (res.isError) {
       /* clone failed */
-      VGP_(cleanup_thread)(&ctst->arch);
+      VG_(cleanup_thread)(&ctst->arch);
       ctst->status = VgTs_Empty;
    }
 
@@ -530,7 +530,7 @@ static SysRes do_fork_clone ( ThreadId tid,
    More thread stuff
    ------------------------------------------------------------------ */
 
-void VGP_(cleanup_thread) ( ThreadArchState *arch )
+void VG_(cleanup_thread) ( ThreadArchState *arch )
 {  
 }  
 
@@ -1073,7 +1073,7 @@ POST(sys_shmctl)
 // When implementing these wrappers, you need to work out if the wrapper is
 // generic, Linux-only (but arch-independent), or AMD64/Linux only.
 
-const SyscallTableEntry VGP_(syscall_table)[] = {
+const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_read,              sys_read),           // 0 
    GENX_(__NR_write,             sys_write),          // 1 
    GENXY(__NR_open,              sys_open),           // 2 
@@ -1374,8 +1374,8 @@ const SyscallTableEntry VGP_(syscall_table)[] = {
    //   (__NR_waitid,            sys_waitid),         // 247 
 };
 
-const UInt VGP_(syscall_table_size) = 
-            sizeof(VGP_(syscall_table)) / sizeof(VGP_(syscall_table)[0]);
+const UInt ML_(syscall_table_size) = 
+            sizeof(ML_(syscall_table)) / sizeof(ML_(syscall_table)[0]);
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

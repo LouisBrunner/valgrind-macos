@@ -746,34 +746,34 @@ static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
 #  endif
 }
 
-VGA_REGPARM(1)
+VG_REGPARM(1)
 static void ach_LOAD4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/False );
 }
-VGA_REGPARM(1)
+VG_REGPARM(1)
 static void ach_STORE4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/True );
 }
 
-VGA_REGPARM(1)
+VG_REGPARM(1)
 static void ach_LOAD2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/False );
 }
-VGA_REGPARM(1)
+VG_REGPARM(1)
 static void ach_STORE2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/True );
 }
 
-VGA_REGPARM(1)
+VG_REGPARM(1)
 static void ach_LOAD1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/False );
 }
-VGA_REGPARM(1)
+VG_REGPARM(1)
 static void ach_STORE1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/True );
@@ -943,13 +943,13 @@ void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
 #  endif
 }
 
-VGA_REGPARM(2)
+VG_REGPARM(2)
 static void ach_LOADN ( Addr addr, SizeT size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/False );
 }
 
-VGA_REGPARM(2)
+VG_REGPARM(2)
 static void ach_STOREN ( Addr addr, SizeT size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/True );

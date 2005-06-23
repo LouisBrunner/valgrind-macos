@@ -305,8 +305,8 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 }
 
 
-void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
-                            Bool all_caches_clo_defined)
+void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
+                           Bool all_caches_clo_defined)
 {
    Int res;
    

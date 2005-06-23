@@ -30,13 +30,13 @@
 
 // XXX: this function and these variables should be assembly code!  See the
 // x86 version.
-const Addr VGA_(sys_before), VGA_(sys_restarted),
-           VGA_(sys_after),  VGA_(sys_done);
-void VGA_(do_thread_syscall)(UWord sys,
-                             UWord arg1, UWord arg2, UWord arg3,
-                             UWord arg4, UWord arg5, UWord arg6,
-                             UWord *result, /*enum PXState*/Int *statep,
-                             /*enum PXState*/Int poststate)
+const Addr VG_(sys_before), VG_(sys_restarted),
+           VG_(sys_after),  VG_(sys_done);
+void VG_(do_thread_syscall)(UWord sys,
+                            UWord arg1, UWord arg2, UWord arg3,
+                            UWord arg4, UWord arg5, UWord arg6,
+                            UWord *result, /*enum PXState*/Int *statep,
+                            /*enum PXState*/Int poststate)
 {
    I_die_here;
 }
@@ -104,9 +104,9 @@ PRE(sys_clone, Special)
        (ARG1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
      || ARG1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
    {
-      VGA_(gen_sys_fork_before)(tid, tst);
+      VG_(gen_sys_fork_before)(tid, tst);
       SET_RESULT( VG_(do_syscall5)(SYSNO, ARG1, ARG2, ARG3, ARG4, ARG5) );
-      VGA_(gen_sys_fork_after) (tid, tst);
+      VG_(gen_sys_fork_after) (tid, tst);
    } else {
       VG_(unimplemented)
          ("clone(): not supported by Valgrind.\n   "
@@ -151,7 +151,7 @@ POST(sys_ipc)
 //
 // XXX: look at the x86-linux one to see how to do it.
 
-const struct SyscallTableEntry VGA_(syscall_table)[] = {
+const struct SyscallTableEntry ML_(syscall_table)[] = {
    //   (restart_syscall)                             // 0
    GENX_(__NR_exit,              sys_exit),           // 1
    LINX_(__NR_mount,             sys_mount),          // 21
@@ -160,8 +160,8 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    PLAX_(__NR_clone,             sys_clone),          // 120
 };
 
-const UInt VGA_(syscall_table_size) = 
-            sizeof(VGA_(syscall_table)) / sizeof(VGA_(syscall_table)[0]);
+const UInt ML_(syscall_table_size) = 
+            sizeof(ML_(syscall_table)) / sizeof(ML_(syscall_table)[0]);
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

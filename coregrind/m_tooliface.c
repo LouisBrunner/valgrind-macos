@@ -268,7 +268,7 @@ void VG_(fn)(void(*f)(args)) \
 }
 
 #define DEF2(fn, args...) \
-void VG_(fn)(VGA_REGPARM(1) void(*f)(args)) \
+void VG_(fn)(VG_REGPARM(1) void(*f)(args)) \
 { \
    VG_(tdict).fn = f; \
 }

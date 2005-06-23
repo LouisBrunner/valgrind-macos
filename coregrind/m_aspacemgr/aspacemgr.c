@@ -1081,7 +1081,7 @@ Segment *VG_(find_segment_above_mapped)(Addr a)
    the kernel as the stack pointer moves down.  Initially, a 1-page
    (4k) stack is allocated.  When SP moves below that for the first
    time, presumably a page fault occurs.  The kernel detects that the
-   faulting address is in the range from SP - VGA_STACK_REDZONE_SZB
+   faulting address is in the range from SP - VG_STACK_REDZONE_SZB
    upwards to the current valid stack.  It then extends the stack
    segment downwards for enough to cover the faulting address, and
    resumes the process (invisibly).  The process is unaware of any of
@@ -1102,11 +1102,11 @@ Segment *VG_(find_segment_above_mapped)(Addr a)
    unwritable.
 
    Just to record the SP boundary conditions somewhere convenient: 
-   SP - VGA_STACK_REDZONE_SZB always points to the lowest live byte in
-   the stack.  All addresses below SP - VGA_STACK_REDZONE_SZB are not
+   SP - VG_STACK_REDZONE_SZB always points to the lowest live byte in
+   the stack.  All addresses below SP - VG_STACK_REDZONE_SZB are not
    live; those at and above it are.
 
-   We do not concern ourselves here with the VGA_STACK_REDZONE_SZB
+   We do not concern ourselves here with the VG_STACK_REDZONE_SZB
    bias; that is handled by new_mem_stack/die_mem_stack.
 */
 
@@ -1283,7 +1283,7 @@ void VG_(handle_stack_change)(UWord id, Addr start, Addr end)
    tracked by the tool, and one of the specialised cases
    (eg. new_mem_stack_4) isn't used in preference.  
 */
-VGA_REGPARM(2)
+VG_REGPARM(2)
 void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
 {
    static Int moans = 3;
@@ -1503,7 +1503,7 @@ void *VG_(shadow_alloc)(UInt size)
 /*--- pointercheck                                         ---*/
 /*------------------------------------------------------------*/
 
-Bool VGA_(setup_pointercheck)(Addr client_base, Addr client_end)
+Bool VG_(setup_pointercheck)(Addr client_base, Addr client_end)
 {
    vg_assert(0 != client_end);
 #if defined(VGP_x86_linux)

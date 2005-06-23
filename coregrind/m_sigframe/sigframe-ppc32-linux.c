@@ -391,7 +391,7 @@ struct rt_sigframe
 /*
 //.. #define SET_SIGNAL_ESP(zztid, zzval) \
 //..    SET_THREAD_REG(zztid, zzval, STACK_PTR, post_reg_write, \
-//..                   Vg_CoreSignal, zztid, O_STACK_PTR, sizeof(Addr))
+//..                   Vg_CoreSignal, zztid, VG_O_STACK_PTR, sizeof(Addr))
 */
 //.. /* Extend the stack segment downwards if needed so as to ensure the
 //..    new signal frames are mapped to something.  Return a Bool
@@ -692,7 +692,7 @@ void VG_(sigframe_create)( ThreadId tid,
 //..    if (VG_(clo_trace_signals))
 //..       VG_(message)(
 //..          Vg_DebugMsg, 
-//..          "VGA_(signal_return) (thread %d): isRT=%d valid magic; EIP=%p", 
+//..          "VG_(signal_return) (thread %d): isRT=%d valid magic; EIP=%p", 
 //..          tid, isRT, tst->arch.vex.guest_EIP);
 //.. 
 //..    /* tell the tools */
@@ -703,7 +703,7 @@ void VG_(sigframe_create)( ThreadId tid,
 //:: /*--- Making coredumps                                     ---*/
 //:: /*------------------------------------------------------------*/
 //:: 
-//:: void VGA_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
+//:: void VG_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
 //::                                  const arch_thread_t* arch)
 //:: {
 //::    regs->eflags = arch->m_eflags;
@@ -744,13 +744,13 @@ void VG_(sigframe_create)( ThreadId tid,
 //::       VG_(memcpy)(fpu, from, sizeof(*fpu));
 //:: }
 //:: 
-//:: void VGA_(fill_elffpregs_from_tst)( vki_elf_fpregset_t* fpu,
+//:: void VG_(fill_elffpregs_from_tst)( vki_elf_fpregset_t* fpu,
 //::                                     const arch_thread_t* arch)
 //:: {
 //::    fill_fpu(fpu, (const Char *)&arch->m_sse);
 //:: }
 //:: 
-//:: void VGA_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
+//:: void VG_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
 //::                                       const arch_thread_t* arch )
 //:: {
 //::    VG_(memcpy)(xfpu, arch->m_sse.state, sizeof(*xfpu));

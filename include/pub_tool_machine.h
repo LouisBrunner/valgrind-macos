@@ -31,24 +31,24 @@
 #ifndef __PUB_TOOL_MACHINE_H
 #define __PUB_TOOL_MACHINE_H
 
-/* VGA_STACK_REDZONE_SZB: how many bytes below the stack pointer are validly
+/* VG_STACK_REDZONE_SZB: how many bytes below the stack pointer are validly
  * addressible? */
 #if defined(VGA_x86)
-#  define VGA_MIN_INSTR_SZB         1
-#  define VGA_MAX_INSTR_SZB        16
-#  define VGA_STACK_REDZONE_SZB     0
+#  define VG_MIN_INSTR_SZB          1
+#  define VG_MAX_INSTR_SZB         16
+#  define VG_STACK_REDZONE_SZB      0
 #elif defined(VGA_amd64)
-#  define VGA_MIN_INSTR_SZB         1
-#  define VGA_MAX_INSTR_SZB        16
-#  define VGA_STACK_REDZONE_SZB   128
+#  define VG_MIN_INSTR_SZB          1
+#  define VG_MAX_INSTR_SZB         16
+#  define VG_STACK_REDZONE_SZB    128
 #elif defined(VGA_arm)
-#  define VGA_MIN_INSTR_SZB         4
-#  define VGA_MAX_INSTR_SZB         4 
-#  define VGA_STACK_REDZONE_SZB     0
+#  define VG_MIN_INSTR_SZB          4
+#  define VG_MAX_INSTR_SZB          4 
+#  define VG_STACK_REDZONE_SZB      0
 #elif defined(VGA_ppc32)
-#  define VGA_MIN_INSTR_SZB         4
-#  define VGA_MAX_INSTR_SZB         4 
-#  define VGA_STACK_REDZONE_SZB     0
+#  define VG_MIN_INSTR_SZB          4
+#  define VG_MAX_INSTR_SZB          4 
+#  define VG_STACK_REDZONE_SZB      0
 #else
 #  error Unknown arch
 #endif

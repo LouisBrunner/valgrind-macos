@@ -40,8 +40,8 @@ typedef struct {
 
 // Gives the configuration of I1, D1 and L2 caches.  They get overridden
 // by any cache configurations specified on the command line.
-void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
-                            Bool all_caches_clo_defined);
+void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
+                           Bool all_caches_clo_defined);
 
 #endif   // __CG_ARCH_H
 

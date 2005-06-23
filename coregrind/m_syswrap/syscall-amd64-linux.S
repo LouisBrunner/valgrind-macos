@@ -55,12 +55,12 @@
 	sigprocmasks failed (there's no way to determine which one
 	failed).
 
-	VGA_(interrupted_syscall)() does the thread state fixup in the
+	VG_(interrupted_syscall)() does the thread state fixup in the
 	case where we were interrupted by a signal.
 	
 	Prototype:
 
-	Int VGA_(do_syscall_for_client_WRK(
+	Int VG_(do_syscall_for_client_WRK(
 	                          Int syscallno,		// rdi
 				  void* guest_state,		// rsi
 				  const vki_sigset_t *sysmask,	// rdx
@@ -72,8 +72,8 @@
 /* from vki_arch.h */	
 #define VKI_SIG_SETMASK	2
 	
-.globl VGA_(do_syscall_for_client_WRK)
-VGA_(do_syscall_for_client_WRK):
+.globl VG_(do_syscall_for_client_WRK)
+VG_(do_syscall_for_client_WRK):
 	/* save callee-saved regs */
 	pushq	%rbx
 	pushq	%rbp
@@ -170,19 +170,19 @@ VGA_(do_syscall_for_client_WRK):
 	ret
 
 .section .rodata
-/* export the ranges so that VGA_(interrupted_syscall) can do the
+/* export the ranges so that VG_(interrupted_syscall) can do the
 	right thing */
 	
-.globl VGA_(blksys_setup)
-.globl VGA_(blksys_restart)
-.globl VGA_(blksys_complete)
-.globl VGA_(blksys_committed)
-.globl VGA_(blksys_finished)
-VGA_(blksys_setup):	.quad 1b
-VGA_(blksys_restart):	.quad 2b
-VGA_(blksys_complete):	.quad 3b
-VGA_(blksys_committed):	.quad 4b
-VGA_(blksys_finished):	.quad 5b
+.globl VG_(blksys_setup)
+.globl VG_(blksys_restart)
+.globl VG_(blksys_complete)
+.globl VG_(blksys_committed)
+.globl VG_(blksys_finished)
+VG_(blksys_setup):	.quad 1b
+VG_(blksys_restart):	.quad 2b
+VG_(blksys_complete):	.quad 3b
+VG_(blksys_committed):	.quad 4b
+VG_(blksys_finished):	.quad 5b
 .previous
 
 /* Let the linker know we don't need an executable stack */

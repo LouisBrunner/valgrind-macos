@@ -4357,17 +4357,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
           code[3] == 0x54006800 &&
           code[4] == 0x54009800 &&
           code[5] == 0x60000000) {
-
-         // TODO: possibly r0 = client_request(r0)
-         DIP("? = client_request ( ? )\n");
-
+         DIP("%%r3 = client_request ( %%r31 )\n");
          *size = 24;
          delta += 24;
 
          irbb->next     = mkU32(guest_pc_bbstart+delta);
          irbb->jumpkind = Ijk_ClientReq;
-         
-         whatNext = Dis_StopHere;
+         whatNext       = Dis_StopHere;
          goto decode_success;
       }
    }

@@ -621,9 +621,20 @@ void doHelperCall ( ISelEnv* env,
 
       for (i = 0; i < n_args; i++) {
          vassert(argreg < PPC32_N_REGPARMS);
-         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32);
-         addInstr(env, mk_iMOVds_RR( argregs[argreg],
-                                     iselIntExpr_R(env, args[i]) ));
+         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32 ||
+                 typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
+         if (typeOfIRExpr(env->type_env, args[i]) == Ity_I32) { 
+            addInstr(env, mk_iMOVds_RR( argregs[argreg],
+                                        iselIntExpr_R(env, args[i]) ));
+         } else { // Ity_I64
+            HReg rHi, rLo;
+            if (i%2 == 1)    // ppc32 abi spec for LONG_LONG
+               argreg++;
+            vassert(argreg < PPC32_N_REGPARMS-1);
+            iselInt64Expr(&rHi,&rLo, env, args[i]);
+            addInstr(env, mk_iMOVds_RR( argregs[argreg++], rHi ));
+            addInstr(env, mk_iMOVds_RR( argregs[argreg], rLo));
+         }
          argreg++;
       }
 
@@ -645,8 +656,19 @@ void doHelperCall ( ISelEnv* env,
 
       for (i = 0; i < n_args; i++) {
          vassert(argreg < PPC32_N_REGPARMS);
-         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32);
-         tmpregs[argreg] = iselIntExpr_R(env, args[i]);
+         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32 ||
+                 typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
+         if (typeOfIRExpr(env->type_env, args[i]) == Ity_I32) { 
+            tmpregs[argreg] = iselIntExpr_R(env, args[i]);
+         } else { // Ity_I64
+            HReg rHi, rLo;
+            if (i%2 == 1)    // ppc32 abi spec for LONG_LONG
+               argreg++;
+            vassert(argreg < PPC32_N_REGPARMS-1);
+            iselInt64Expr(&rHi,&rLo, env, args[i]);
+            tmpregs[argreg++] = rHi;
+            tmpregs[argreg]   = rLo;
+         }
          argreg++;
       }
 
@@ -1837,18 +1859,18 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 //..       return;
 //..    }
 
-//..    /* 64-bit GET */
-//..    if (e->tag == Iex_Get) {
-//..       X86AMode* am  = X86AMode_IR(e->Iex.Get.offset, hregX86_EBP());
-//..       X86AMode* am4 = advance4(am);
-//..       HReg tLo = newVRegI(env);
-//..       HReg tHi = newVRegI(env);
-//..       addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(am), tLo ));
-//..       addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(am4), tHi ));
-//..       *rHi = tHi;
-//..       *rLo = tLo;
-//..       return;
-//..    }
+   /* 64-bit GET */
+   if (e->tag == Iex_Get) {
+      PPC32AMode* am_addr = PPC32AMode_IR(e->Iex.Get.offset, GuestStatePtr );
+      PPC32AMode* am_addr4 = advance4(env, am_addr);
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+      addInstr(env, PPC32Instr_Load( 4, False, tHi, am_addr ));
+      addInstr(env, PPC32Instr_Load( 4, False, tLo, am_addr4 ));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
 
 //..    /* 64-bit GETI */
 //..    if (e->tag == Iex_GetI) {
@@ -3374,14 +3396,14 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, mk_iMOVds_RR( r_dst, r_src ));
          return;
       }
-//..       if (ty == Ity_I64) {
-//..          HReg rHi, rLo, dstHi, dstLo;
-//..          iselInt64Expr(&rHi,&rLo, env, stmt->Ist.Tmp.data);
-//..          lookupIRTemp64( &dstHi, &dstLo, env, tmp);
-//..          addInstr(env, mk_iMOVsd_RR(rHi,dstHi) );
-//..          addInstr(env, mk_iMOVsd_RR(rLo,dstLo) );
-//..          return;
-//..       }
+      if (ty == Ity_I64) {
+         HReg r_srcHi, r_srcLo, r_dstHi, r_dstLo;
+         iselInt64Expr(&r_srcHi,&r_srcLo, env, stmt->Ist.Tmp.data);
+         lookupIRTemp64( &r_dstHi, &r_dstLo, env, tmp);
+         addInstr(env, mk_iMOVds_RR(r_dstHi, r_srcHi) );
+         addInstr(env, mk_iMOVds_RR(r_dstLo, r_srcLo) );
+         return;
+      }
       if (ty == Ity_I1) {
          PPC32CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
          HReg r_dst = lookupIRTemp(env, tmp);

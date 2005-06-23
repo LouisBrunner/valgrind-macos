@@ -2572,6 +2572,7 @@ int main(int argc, char **argv, char **envp)
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
    if (VG_(clo_wait_for_gdb)) {
+      Long q, iters;
       VG_(debugLog)(1, "main", "Wait for GDB\n");
       VG_(printf)("pid=%d, entering delay loop\n", VG_(getpid)());
       /* jrs 20050206: I don't understand why this works on x86.  On
@@ -2579,7 +2580,20 @@ int main(int argc, char **argv, char **envp)
          work. */
       /* do "jump *$eip" to skip this in gdb (x86) */
       //VG_(do_syscall0)(__NR_pause);
-      { Long q; for (q = 0; q < 10ULL *1000*1000*1000; q++) ; }
+
+#     if defined(VGP_x86_linux)
+      iters = 5;
+#     elif defined(VGP_amd64_linux)
+      iters = 10;
+#     elif defined(VGP_ppc32_linux)
+      iters = 1;
+#     else
+#     error "Unknown plat"
+#     endif
+
+      iters *= 1000*1000*1000;
+      for (q = 0; q < iters; q++) 
+         ;
    }
 
    //--------------------------------------------------------------

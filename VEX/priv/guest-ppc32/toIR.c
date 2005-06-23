@@ -3236,43 +3236,33 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
    
    switch (opc2) {
    case 0x2F6: // dcba (Data Cache Block Allocate, PPC32 p380)
-vassert(0);
-
+      vassert(0); /* AWAITING TEST CASE */
       DIP("dcba r%d,r%d\n", Ra_addr, Rb_addr);
-      if (1) vex_printf("vex ppc32->IR: kludged dcba\n");
+      if (0) vex_printf("vex ppc32->IR: kludged dcba\n");
       break;
       
    case 0x056: // dcbf (Data Cache Block Flush, PPC32 p382)
-vassert(0);
-
+      vassert(0); /* AWAITING TEST CASE */
       DIP("dcbf r%d,r%d\n", Ra_addr, Rb_addr);
-      if (0+1) vex_printf("vex ppc32->IR: kludged dcbf\n");
+      if (0) vex_printf("vex ppc32->IR: kludged dcbf\n");
       break;
       
    case 0x036: // dcbst (Data Cache Block Store, PPC32 p384)
-vassert(1);
-
       DIP("dcbst r%d,r%d\n", Ra_addr, Rb_addr);
-      if (1) vex_printf("vex ppc32->IR: kludged dcbst\n");
       break;
 
    case 0x116: // dcbt (Data Cache Block Touch, PPC32 p385)
-vassert(1);
-
       DIP("dcbt r%d,r%d\n", Ra_addr, Rb_addr);
-      if (1) vex_printf("vex ppc32->IR: kludged dcbt\n");
       break;
       
    case 0x0F6: // dcbtst (Data Cache Block Touch for Store, PPC32 p386)
-vassert(1);
-
       DIP("dcbtst r%d,r%d\n", Ra_addr, Rb_addr);
-      if (1) vex_printf("vex ppc32->IR: kludged dcbtst\n");
       break;
       
    case 0x3F6: { // dcbz (Data Cache Block Clear to Zero, PPC32 p387)
-vassert(0);
-
+      /* This needs to be fixed.  We absolutely have to know the 
+         correct cache line size to implement it right. */
+      vassert(0);
       /* Clear all bytes in cache block at (rA|0) + rB.
          Since we don't know the cache line size, let's assume 256
           - safe, as no I1 cache would have a line size that large. */
@@ -3282,8 +3272,6 @@ vassert(0);
       UInt    assumed_line_size = 32;
       UInt    i;
       DIP("dcbz r%d,r%d\n", Ra_addr, Rb_addr);
- if (1) vex_printf("vex ppc32->IR: kludged dcbz %d\n", assumed_line_size);
-
       assign( EA,
 	      binop( Iop_Add32,
 		     getIReg(Rb_addr), 
@@ -3303,8 +3291,6 @@ vassert(0);
    }
 
    case 0x3D6: { 
-vassert(1);
-
       // icbi (Instruction Cache Block Invalidate, PPC32 p431)
       /* Invalidate all translations containing code from the cache
          block at (rA|0) + rB.  Since we don't know what the cache

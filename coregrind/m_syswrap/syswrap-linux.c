@@ -50,7 +50,7 @@
 
 // Run a thread from beginning to end and return the thread's
 // scheduler-return-code.
-VgSchedReturnCode VG_(thread_wrapper)(Word /*ThreadId*/ tidW)
+VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
 {
    VG_(debugLog)(1, "core_os", 
                     "VG_(thread_wrapper)(tid=%lld): entry\n", 
@@ -530,12 +530,12 @@ POST(sys_futex)
    vg_assert(SUCCESS);
    POST_MEM_WRITE( ARG1, sizeof(int) );
    if (ARG2 == VKI_FUTEX_FD) {
-      if (!VG_(fd_allowed)(RES, "futex", tid, True)) {
+      if (!ML_(fd_allowed)(RES, "futex", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure( VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+            ML_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
       }
    }
 }
@@ -548,12 +548,12 @@ PRE(sys_epoll_create)
 POST(sys_epoll_create)
 {
    vg_assert(SUCCESS);
-   if (!VG_(fd_allowed)(RES, "epoll_create", tid, True)) {
+   if (!ML_(fd_allowed)(RES, "epoll_create", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         VG_(record_fd_open) (tid, RES, NULL);
+         ML_(record_fd_open) (tid, RES, NULL);
    }
 }
 
@@ -622,14 +622,14 @@ PRE(sys_tgkill)
    /* int tgkill(pid_t tgid, pid_t tid, int sig); */
    PRINT("sys_tgkill ( %d, %d, %d )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "tgkill", int, tgid, int, tid, int, sig);
-   if (!VG_(client_signal_OK)(ARG3)) {
+   if (!ML_(client_signal_OK)(ARG3)) {
       SET_STATUS_Failure( VKI_EINVAL );
       return;
    }
    
    /* If we're sending SIGKILL, check to see if the target is one of
       our threads and handle it specially. */
-   if (ARG3 == VKI_SIGKILL && VG_(do_sigkill)(ARG2, ARG1))
+   if (ARG3 == VKI_SIGKILL && ML_(do_sigkill)(ARG2, ARG1))
       SET_STATUS_Success(0);
    else
       SET_STATUS_from_SysRes(VG_(do_syscall3)(SYSNO, ARG1, ARG2, ARG3));
@@ -694,7 +694,7 @@ PRE(sys_io_setup)
       struct vki_aio_ring *r = *(struct vki_aio_ring **)ARG2;
         
       vg_assert(addr == (Addr)r);
-      vg_assert(VG_(valid_client_addr)(addr, size, tid, "io_setup"));
+      vg_assert(ML_(valid_client_addr)(addr, size, tid, "io_setup"));
                 
       VG_TRACK( new_mem_mmap, addr, size, True, True, False );
       POST_MEM_WRITE( ARG2, sizeof(vki_aio_context_t) );

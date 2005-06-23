@@ -58,7 +58,7 @@
 
 /* return true if address range entirely contained within client
    address space */
-Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
+Bool ML_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
                                    const Char *syscallname)
 {
    Addr end = start+size;
@@ -93,7 +93,7 @@ Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
    return ret;
 }
 
-Bool VG_(client_signal_OK)(Int sigNo)
+Bool ML_(client_signal_OK)(Int sigNo)
 {
    /* signal 0 is OK for kill */
    Bool ret = sigNo >= 0 && sigNo <= VG_SIGVGRTUSERMAX;
@@ -130,7 +130,7 @@ void mash_addr_and_len( Addr* a, SizeT* len)
    *a = ra;
 }
 
-void VG_(mmap_segment) ( Addr a, SizeT len, UInt prot, 
+void ML_(mmap_segment) ( Addr a, SizeT len, UInt prot, 
                          UInt mm_flags, Int fd, ULong offset )
 {
    Bool rr, ww, xx;
@@ -169,7 +169,7 @@ SysRes mremap_segment ( Addr old_addr, SizeT old_size,
    if (VG_PGROUNDDN(old_addr) != old_addr)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
-   if (!VG_(valid_client_addr)(old_addr, old_size, tid, "mremap(old_addr)"))
+   if (!ML_(valid_client_addr)(old_addr, old_size, tid, "mremap(old_addr)"))
       return VG_(mk_SysRes_Error)( VKI_EFAULT );
 
    /* fixed at the current address means we don't move it */
@@ -180,7 +180,7 @@ SysRes mremap_segment ( Addr old_addr, SizeT old_size,
       if (VG_PGROUNDDN(new_addr) != new_addr)
 	 return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
-      if (!VG_(valid_client_addr)(new_addr, new_size, tid, "mremap(new_addr)"))
+      if (!ML_(valid_client_addr)(new_addr, new_size, tid, "mremap(new_addr)"))
 	 return VG_(mk_SysRes_Error)( VKI_ENOMEM );
 
       /* check for overlaps */
@@ -345,7 +345,7 @@ void record_fd_close(ThreadId tid, Int fd)
    some such thing) or that we don't know the filename.  If the fd is
    already open, then we're probably doing a dup2() to an existing fd,
    so just overwrite the existing one. */
-void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname)
+void ML_(record_fd_open)(ThreadId tid, Int fd, char *pathname)
 {
    OpenFd *i;
 
@@ -521,7 +521,7 @@ void do_hacky_preopened()
 
    for (i = 0; i < count; i++)
       if(VG_(fcntl)(i, VKI_F_GETFL, 0) != -1)
-         VG_(record_fd_open)(-1, i, NULL);
+         ML_(record_fd_open)(-1, i, NULL);
 }
 
 /* Initialize the list of open file descriptors with the file descriptors
@@ -547,7 +547,7 @@ void VG_(init_preopened_fds)()
 
          if(fno != f)
             if(VG_(clo_track_fds))
-               VG_(record_fd_open)(-1, fno, VG_(resolve_filename)(fno));
+               ML_(record_fd_open)(-1, fno, VG_(resolve_filename)(fno));
       }
 
       VG_(lseek)(f, d.d_off, VKI_SEEK_SET);
@@ -646,7 +646,7 @@ static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
             if(VG_(clo_track_fds))
                // XXX: must we check the range on these fds with
                //      VG_(fd_allowed)()?
-               VG_(record_fd_open) (tid, fds[i], VG_(resolve_filename)(fds[i]));
+               ML_(record_fd_open) (tid, fds[i], VG_(resolve_filename)(fds[i]));
       }
 
       cm = VKI_CMSG_NXTHDR(msg, cm);
@@ -838,7 +838,7 @@ static Addr do_brk(Addr newbrk)
    ------------------------------------------------------------------ */
 
 /* Return true if we're allowed to use or create this fd */
-Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
+Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 {
    if (fd < 0 || fd >= VG_(fd_hard_limit) || fd == VG_(clo_log_fd)) {
       VG_(message)(Vg_UserMsg, 
@@ -873,7 +873,7 @@ Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_socketpair) ( ThreadId tid,
+ML_(generic_PRE_sys_socketpair) ( ThreadId tid,
                                   UWord arg0, UWord arg1, 
                                   UWord arg2, UWord arg3 )
 {
@@ -883,7 +883,7 @@ VG_(generic_PRE_sys_socketpair) ( ThreadId tid,
 }
 
 SysRes
-VG_(generic_POST_sys_socketpair) ( ThreadId tid,
+ML_(generic_POST_sys_socketpair) ( ThreadId tid,
                                    SysRes res,
                                    UWord arg0, UWord arg1, 
                                    UWord arg2, UWord arg3 )
@@ -893,16 +893,16 @@ VG_(generic_POST_sys_socketpair) ( ThreadId tid,
    Int fd1 = ((Int*)arg3)[0];
    Int fd2 = ((Int*)arg3)[1];
    POST_MEM_WRITE( arg3, 2*sizeof(int) );
-   if (!VG_(fd_allowed)(fd1, "socketcall.socketpair", tid, True) ||
-       !VG_(fd_allowed)(fd2, "socketcall.socketpair", tid, True)) {
+   if (!ML_(fd_allowed)(fd1, "socketcall.socketpair", tid, True) ||
+       !ML_(fd_allowed)(fd2, "socketcall.socketpair", tid, True)) {
       VG_(close)(fd1);
       VG_(close)(fd2);
       r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       POST_MEM_WRITE( arg3, 2*sizeof(int) );
       if (VG_(clo_track_fds)) {
-         VG_(record_fd_open)(tid, fd1, NULL);
-         VG_(record_fd_open)(tid, fd2, NULL);
+         ML_(record_fd_open)(tid, fd1, NULL);
+         ML_(record_fd_open)(tid, fd2, NULL);
       }
    }
    return r;
@@ -911,16 +911,16 @@ VG_(generic_POST_sys_socketpair) ( ThreadId tid,
 /* ------ */
 
 SysRes 
-VG_(generic_POST_sys_socket) ( ThreadId tid, SysRes res )
+ML_(generic_POST_sys_socket) ( ThreadId tid, SysRes res )
 {
    SysRes r = res;
    vg_assert(!res.isError); /* guaranteed by caller */
-   if (!VG_(fd_allowed)(res.val, "socket", tid, True)) {
+   if (!ML_(fd_allowed)(res.val, "socket", tid, True)) {
       VG_(close)(res.val);
       r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         VG_(record_fd_open)(tid, res.val, NULL);
+         ML_(record_fd_open)(tid, res.val, NULL);
    }
    return r;
 }
@@ -928,7 +928,7 @@ VG_(generic_POST_sys_socket) ( ThreadId tid, SysRes res )
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_bind) ( ThreadId tid,
+ML_(generic_PRE_sys_bind) ( ThreadId tid,
                             UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int bind(int sockfd, struct sockaddr *my_addr, 
@@ -942,7 +942,7 @@ VG_(generic_PRE_sys_bind) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_accept) ( ThreadId tid,
+ML_(generic_PRE_sys_accept) ( ThreadId tid,
                               UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int accept(int s, struct sockaddr *addr, int *addrlen); */
@@ -955,13 +955,13 @@ VG_(generic_PRE_sys_accept) ( ThreadId tid,
 }
 
 SysRes 
-VG_(generic_POST_sys_accept) ( ThreadId tid,
+ML_(generic_POST_sys_accept) ( ThreadId tid,
                                SysRes res,
                                UWord arg0, UWord arg1, UWord arg2 )
 {
    SysRes r = res;
    vg_assert(!res.isError); /* guaranteed by caller */
-   if (!VG_(fd_allowed)(res.val, "accept", tid, True)) {
+   if (!ML_(fd_allowed)(res.val, "accept", tid, True)) {
       VG_(close)(res.val);
       r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
@@ -971,7 +971,7 @@ VG_(generic_POST_sys_accept) ( ThreadId tid,
          buf_and_len_post_check ( tid, res, addr_p, addrlen_p,
                                   "socketcall.accept(addrlen_out)" );
       if (VG_(clo_track_fds))
-          VG_(record_fd_open)(tid, res.val, NULL);
+          ML_(record_fd_open)(tid, res.val, NULL);
    }
    return r;
 }
@@ -979,7 +979,7 @@ VG_(generic_POST_sys_accept) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_sendto) ( ThreadId tid, 
+ML_(generic_PRE_sys_sendto) ( ThreadId tid, 
                               UWord arg0, UWord arg1, UWord arg2,
                               UWord arg3, UWord arg4, UWord arg5 )
 {
@@ -998,7 +998,7 @@ VG_(generic_PRE_sys_sendto) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_send) ( ThreadId tid,
+ML_(generic_PRE_sys_send) ( ThreadId tid,
                             UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int send(int s, const void *msg, size_t len, int flags); */
@@ -1011,7 +1011,7 @@ VG_(generic_PRE_sys_send) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_recvfrom) ( ThreadId tid, 
+ML_(generic_PRE_sys_recvfrom) ( ThreadId tid, 
                                 UWord arg0, UWord arg1, UWord arg2,
                                 UWord arg3, UWord arg4, UWord arg5 )
 {
@@ -1029,7 +1029,7 @@ VG_(generic_PRE_sys_recvfrom) ( ThreadId tid,
 }
 
 void 
-VG_(generic_POST_sys_recvfrom) ( ThreadId tid,
+ML_(generic_POST_sys_recvfrom) ( ThreadId tid,
                                  SysRes res,
                                  UWord arg0, UWord arg1, UWord arg2,
                                  UWord arg3, UWord arg4, UWord arg5 )
@@ -1049,7 +1049,7 @@ VG_(generic_POST_sys_recvfrom) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_recv) ( ThreadId tid,
+ML_(generic_PRE_sys_recv) ( ThreadId tid,
                             UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int recv(int s, void *buf, int len, unsigned int flags); */
@@ -1064,7 +1064,7 @@ VG_(generic_PRE_sys_recv) ( ThreadId tid,
 }
 
 void 
-VG_(generic_POST_sys_recv) ( ThreadId tid, 
+ML_(generic_POST_sys_recv) ( ThreadId tid, 
                              UWord res,
                              UWord arg0, UWord arg1, UWord arg2 )
 {
@@ -1077,7 +1077,7 @@ VG_(generic_POST_sys_recv) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_connect) ( ThreadId tid,
+ML_(generic_PRE_sys_connect) ( ThreadId tid,
                                UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int connect(int sockfd, 
@@ -1093,7 +1093,7 @@ VG_(generic_PRE_sys_connect) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_setsockopt) ( ThreadId tid, 
+ML_(generic_PRE_sys_setsockopt) ( ThreadId tid, 
                                   UWord arg0, UWord arg1, UWord arg2,
                                   UWord arg3, UWord arg4 )
 {
@@ -1107,7 +1107,7 @@ VG_(generic_PRE_sys_setsockopt) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_getsockopt) ( ThreadId tid, 
+ML_(generic_PRE_sys_getsockopt) ( ThreadId tid, 
                                   UWord arg0, UWord arg1, UWord arg2,
                                   UWord arg3, UWord arg4 )
 {
@@ -1123,7 +1123,7 @@ VG_(generic_PRE_sys_getsockopt) ( ThreadId tid,
 }
 
 void 
-VG_(generic_POST_sys_getsockopt) ( ThreadId tid,
+ML_(generic_POST_sys_getsockopt) ( ThreadId tid,
                                    SysRes res,
                                    UWord arg0, UWord arg1, UWord arg2,
                                    UWord arg3, UWord arg4 )
@@ -1139,7 +1139,7 @@ VG_(generic_POST_sys_getsockopt) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_getsockname) ( ThreadId tid,
+ML_(generic_PRE_sys_getsockname) ( ThreadId tid,
                                    UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int getsockname(int s, struct sockaddr* name, int* namelen) */
@@ -1152,7 +1152,7 @@ VG_(generic_PRE_sys_getsockname) ( ThreadId tid,
 }
 
 void 
-VG_(generic_POST_sys_getsockname) ( ThreadId tid,
+ML_(generic_POST_sys_getsockname) ( ThreadId tid,
                                     SysRes res,
                                     UWord arg0, UWord arg1, UWord arg2 )
 {
@@ -1166,7 +1166,7 @@ VG_(generic_POST_sys_getsockname) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_getpeername) ( ThreadId tid,
+ML_(generic_PRE_sys_getpeername) ( ThreadId tid,
                                    UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int getpeername(int s, struct sockaddr* name, int* namelen) */
@@ -1179,7 +1179,7 @@ VG_(generic_PRE_sys_getpeername) ( ThreadId tid,
 }
 
 void 
-VG_(generic_POST_sys_getpeername) ( ThreadId tid,
+ML_(generic_POST_sys_getpeername) ( ThreadId tid,
                                     SysRes res,
                                     UWord arg0, UWord arg1, UWord arg2 )
 {
@@ -1193,7 +1193,7 @@ VG_(generic_POST_sys_getpeername) ( ThreadId tid,
 /* ------ */
 
 void 
-VG_(generic_PRE_sys_sendmsg) ( ThreadId tid,
+ML_(generic_PRE_sys_sendmsg) ( ThreadId tid,
                                UWord arg0, UWord arg1 )
 {
    /* int sendmsg(int s, const struct msghdr *msg, int flags); */
@@ -1204,7 +1204,7 @@ VG_(generic_PRE_sys_sendmsg) ( ThreadId tid,
 /* ------ */
 
 void
-VG_(generic_PRE_sys_recvmsg) ( ThreadId tid,
+ML_(generic_PRE_sys_recvmsg) ( ThreadId tid,
                                UWord arg0, UWord arg1 )
 {
    /* int recvmsg(int s, struct msghdr *msg, int flags); */
@@ -1213,7 +1213,7 @@ VG_(generic_PRE_sys_recvmsg) ( ThreadId tid,
 }
 
 void 
-VG_(generic_POST_sys_recvmsg) ( ThreadId tid,
+ML_(generic_POST_sys_recvmsg) ( ThreadId tid,
                                 UWord arg0, UWord arg1 )
 {
    struct vki_msghdr *msg = (struct vki_msghdr *)arg1;
@@ -1229,7 +1229,7 @@ VG_(generic_POST_sys_recvmsg) ( ThreadId tid,
 /* ------ */
 
 void
-VG_(generic_PRE_sys_semop) ( ThreadId tid,
+ML_(generic_PRE_sys_semop) ( ThreadId tid,
                              UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int semop(int semid, struct sembuf *sops, unsigned nsops); */
@@ -1239,7 +1239,7 @@ VG_(generic_PRE_sys_semop) ( ThreadId tid,
 /* ------ */
 
 void
-VG_(generic_PRE_sys_semtimedop) ( ThreadId tid,
+ML_(generic_PRE_sys_semtimedop) ( ThreadId tid,
                                   UWord arg0, UWord arg1,
                                   UWord arg2, UWord arg3 )
 {
@@ -1274,7 +1274,7 @@ UInt get_sem_count( Int semid )
 }
 
 void
-VG_(generic_PRE_sys_semctl) ( ThreadId tid,
+ML_(generic_PRE_sys_semctl) ( ThreadId tid,
                               UWord arg0, UWord arg1,
                               UWord arg2, UWord arg3 )
 {
@@ -1323,7 +1323,7 @@ VG_(generic_PRE_sys_semctl) ( ThreadId tid,
 }
 
 void
-VG_(generic_POST_sys_semctl) ( ThreadId tid,
+ML_(generic_POST_sys_semctl) ( ThreadId tid,
                                UWord res,
                                UWord arg0, UWord arg1,
                                UWord arg2, UWord arg3 )
@@ -1356,7 +1356,7 @@ VG_(generic_POST_sys_semctl) ( ThreadId tid,
 /* ------ */
 
 void
-VG_(generic_PRE_sys_msgsnd) ( ThreadId tid,
+ML_(generic_PRE_sys_msgsnd) ( ThreadId tid,
                               UWord arg0, UWord arg1,
                               UWord arg2, UWord arg3 )
 {
@@ -1369,7 +1369,7 @@ VG_(generic_PRE_sys_msgsnd) ( ThreadId tid,
 /* ------ */
 
 void
-VG_(generic_PRE_sys_msgrcv) ( ThreadId tid,
+ML_(generic_PRE_sys_msgrcv) ( ThreadId tid,
                               UWord arg0, UWord arg1, UWord arg2,
                               UWord arg3, UWord arg4 )
 {
@@ -1381,7 +1381,7 @@ VG_(generic_PRE_sys_msgrcv) ( ThreadId tid,
 }
 
 void
-VG_(generic_POST_sys_msgrcv) ( ThreadId tid,
+ML_(generic_POST_sys_msgrcv) ( ThreadId tid,
                                UWord res,
                                UWord arg0, UWord arg1, UWord arg2,
                                UWord arg3, UWord arg4 )
@@ -1394,7 +1394,7 @@ VG_(generic_POST_sys_msgrcv) ( ThreadId tid,
 /* ------ */
 
 void
-VG_(generic_PRE_sys_msgctl) ( ThreadId tid,
+ML_(generic_PRE_sys_msgctl) ( ThreadId tid,
                               UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int msgctl(int msqid, int cmd, struct msqid_ds *buf); */
@@ -1428,7 +1428,7 @@ VG_(generic_PRE_sys_msgctl) ( ThreadId tid,
 }
 
 void
-VG_(generic_POST_sys_msgctl) ( ThreadId tid,
+ML_(generic_POST_sys_msgctl) ( ThreadId tid,
                                UWord res,
                                UWord arg0, UWord arg1, UWord arg2 )
 {
@@ -1470,20 +1470,20 @@ UInt get_shm_size ( Int shmid )
 }
 
 UWord
-VG_(generic_PRE_sys_shmat) ( ThreadId tid,
+ML_(generic_PRE_sys_shmat) ( ThreadId tid,
                              UWord arg0, UWord arg1, UWord arg2 )
 {
    /* void *shmat(int shmid, const void *shmaddr, int shmflg); */
    UInt segmentSize = get_shm_size ( arg0 );
    if (arg1 == 0)
       arg1 = VG_(find_map_space)(0, segmentSize, True);
-   else if (!VG_(valid_client_addr)(arg1, segmentSize, tid, "shmat"))
+   else if (!ML_(valid_client_addr)(arg1, segmentSize, tid, "shmat"))
       arg1 = 0;
    return arg1;
 }
 
 void
-VG_(generic_POST_sys_shmat) ( ThreadId tid,
+ML_(generic_POST_sys_shmat) ( ThreadId tid,
                               UWord res,
                               UWord arg0, UWord arg1, UWord arg2 )
 {
@@ -1503,14 +1503,14 @@ VG_(generic_POST_sys_shmat) ( ThreadId tid,
 /* ------ */
 
 Bool
-VG_(generic_PRE_sys_shmdt) ( ThreadId tid, UWord arg0 )
+ML_(generic_PRE_sys_shmdt) ( ThreadId tid, UWord arg0 )
 {
    /* int shmdt(const void *shmaddr); */
-   return VG_(valid_client_addr)(arg0, 1, tid, "shmdt");
+   return ML_(valid_client_addr)(arg0, 1, tid, "shmdt");
 }
 
 void
-VG_(generic_POST_sys_shmdt) ( ThreadId tid, UWord res, UWord arg0 )
+ML_(generic_POST_sys_shmdt) ( ThreadId tid, UWord res, UWord arg0 )
 {
    Segment *s = VG_(find_segment)(arg0);
 
@@ -1522,7 +1522,7 @@ VG_(generic_POST_sys_shmdt) ( ThreadId tid, UWord res, UWord arg0 )
 /* ------ */
 
 void
-VG_(generic_PRE_sys_shmctl) ( ThreadId tid,
+ML_(generic_PRE_sys_shmctl) ( ThreadId tid,
                               UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int shmctl(int shmid, int cmd, struct shmid_ds *buf); */
@@ -1562,7 +1562,7 @@ VG_(generic_PRE_sys_shmctl) ( ThreadId tid,
 }
 
 void
-VG_(generic_POST_sys_shmctl) ( ThreadId tid,
+ML_(generic_POST_sys_shmctl) ( ThreadId tid,
                                UWord res,
                                UWord arg0, UWord arg1, UWord arg2 )
 {
@@ -2488,7 +2488,7 @@ PRE(sys_close)
    PRE_REG_READ1(long, "close", unsigned int, fd);
 
    /* Detect and negate attempts by the client to close Valgrind's log fd */
-   if (!VG_(fd_allowed)(ARG1, "close", tid, False))
+   if (!ML_(fd_allowed)(ARG1, "close", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
 }
 
@@ -2506,12 +2506,12 @@ PRE(sys_dup)
 POST(sys_dup)
 {
    vg_assert(SUCCESS);
-   if (!VG_(fd_allowed)(RES, "dup", tid, True)) {
+   if (!ML_(fd_allowed)(RES, "dup", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         VG_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
+         ML_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
    }
 }
 
@@ -2519,7 +2519,7 @@ PRE(sys_dup2)
 {
    PRINT("sys_dup2 ( %d, %d )", ARG1,ARG2);
    PRE_REG_READ2(long, "dup2", unsigned int, oldfd, unsigned int, newfd);
-   if (!VG_(fd_allowed)(ARG2, "dup2", tid, True))
+   if (!ML_(fd_allowed)(ARG2, "dup2", tid, True))
       SET_STATUS_Failure( VKI_EBADF );
 }
 
@@ -2527,7 +2527,7 @@ POST(sys_dup2)
 {
    vg_assert(SUCCESS);
    if (VG_(clo_track_fds))
-      VG_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
+      ML_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
 }
 
 PRE(sys_fchdir)
@@ -2607,12 +2607,12 @@ POST(sys_fcntl)
 {
    vg_assert(SUCCESS);
    if (ARG2 == VKI_F_DUPFD) {
-      if (!VG_(fd_allowed)(RES, "fcntl(DUPFD)", tid, True)) {
+      if (!ML_(fd_allowed)(RES, "fcntl(DUPFD)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure( VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            VG_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
+            ML_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
       }
    }
 }
@@ -2673,12 +2673,12 @@ POST(sys_fcntl64)
 {
    vg_assert(SUCCESS);
    if (ARG2 == VKI_F_DUPFD) {
-      if (!VG_(fd_allowed)(RES, "fcntl64(DUPFD)", tid, True)) {
+      if (!ML_(fd_allowed)(RES, "fcntl64(DUPFD)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure( VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            VG_(record_fd_open)(tid, RES, 
+            ML_(record_fd_open)(tid, RES, 
                                 VG_(resolve_filename)(RES));
       }
    }
@@ -4311,7 +4311,7 @@ POST(sys_ioctl)
    "tgid" is a thread group id.  If it is not -1, then the target
    thread must be in that thread group.
  */
-Bool VG_(do_sigkill)(Int pid, Int tgid)
+Bool ML_(do_sigkill)(Int pid, Int tgid)
 {
    ThreadState *tst;
    ThreadId tid;
@@ -4351,14 +4351,14 @@ PRE(sys_kill)
    /* int kill(pid_t pid, int sig); */
    PRINT("sys_kill ( %d, %d )", ARG1,ARG2);
    PRE_REG_READ2(long, "kill", int, pid, int, sig);
-   if (!VG_(client_signal_OK)(ARG2)) {
+   if (!ML_(client_signal_OK)(ARG2)) {
       SET_STATUS_Failure( VKI_EINVAL );
       return;
    }
 
    /* If we're sending SIGKILL, check to see if the target is one of
       our threads and handle it specially. */
-   if (ARG2 == VKI_SIGKILL && VG_(do_sigkill)(ARG1, -1))
+   if (ARG2 == VKI_SIGKILL && ML_(do_sigkill)(ARG1, -1))
       SET_STATUS_Success(0);
    else
       SET_STATUS_from_SysRes( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );
@@ -4441,7 +4441,7 @@ PRE(sys_mmap2)
    }
 
    if (ARG4 & VKI_MAP_FIXED) {
-      if (!VG_(valid_client_addr)(ARG1, ARG2, tid, "mmap2"))
+      if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mmap2"))
 	 SET_STATUS_Failure( VKI_ENOMEM );
    } else {
       Addr a = VG_(find_map_space)(ARG1, ARG2, True);
@@ -4459,8 +4459,8 @@ PRE(sys_mmap2)
 POST(sys_mmap2)
 {
    vg_assert(SUCCESS);
-   vg_assert(VG_(valid_client_addr)(RES, ARG2, tid, "mmap2"));
-   VG_(mmap_segment)( (Addr)RES, ARG2, ARG3, ARG4, ARG5,
+   vg_assert(ML_(valid_client_addr)(RES, ARG2, tid, "mmap2"));
+   ML_(mmap_segment)( (Addr)RES, ARG2, ARG3, ARG4, ARG5,
                       ARG6 * (ULong)VKI_PAGE_SIZE );
 }
 
@@ -4470,7 +4470,7 @@ PRE(sys_mprotect)
    PRE_REG_READ3(long, "mprotect",
                  unsigned long, addr, vki_size_t, len, unsigned long, prot);
 
-   if (!VG_(valid_client_addr)(ARG1, ARG2, tid, "mprotect"))
+   if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mprotect"))
       SET_STATUS_Failure( VKI_ENOMEM );
 }
 
@@ -4494,7 +4494,7 @@ PRE(sys_munmap)
    PRINT("sys_munmap ( %p, %llu )", ARG1,(ULong)ARG2);
    PRE_REG_READ2(long, "munmap", unsigned long, start, vki_size_t, length);
 
-   if (!VG_(valid_client_addr)(ARG1, ARG2, tid, "munmap"))
+   if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "munmap"))
       SET_STATUS_Failure( VKI_EINVAL );
 }
 
@@ -4559,12 +4559,12 @@ PRE(sys_open)
 POST(sys_open)
 {
    vg_assert(SUCCESS);
-   if (!VG_(fd_allowed)(RES, "open", tid, True)) {
+   if (!ML_(fd_allowed)(RES, "open", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         VG_(record_fd_open)(tid, RES, 
+         ML_(record_fd_open)(tid, RES, 
                                   VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
    }
 }
@@ -4576,7 +4576,7 @@ PRE(sys_read)
    PRE_REG_READ3(ssize_t, "read",
                  unsigned int, fd, char *, buf, vki_size_t, count);
 
-   if (!VG_(fd_allowed)(ARG1, "read", tid, False))
+   if (!ML_(fd_allowed)(ARG1, "read", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
    else
       PRE_MEM_WRITE( "read(buf)", ARG2, ARG3 );
@@ -4594,7 +4594,7 @@ PRE(sys_write)
    PRINT("sys_write ( %d, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
    PRE_REG_READ3(ssize_t, "write",
                  unsigned int, fd, const char *, buf, vki_size_t, count);
-   if (!VG_(fd_allowed)(ARG1, "write", tid, False))
+   if (!ML_(fd_allowed)(ARG1, "write", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
    else
       PRE_MEM_READ( "write(buf)", ARG2, ARG3 );
@@ -4611,12 +4611,12 @@ PRE(sys_creat)
 POST(sys_creat)
 {
    vg_assert(SUCCESS);
-   if (!VG_(fd_allowed)(RES, "creat", tid, True)) {
+   if (!ML_(fd_allowed)(RES, "creat", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+         ML_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
    }
 }
 
@@ -4632,16 +4632,16 @@ POST(sys_pipe)
 {
    Int *p = (Int *)ARG1;
 
-   if (!VG_(fd_allowed)(p[0], "pipe", tid, True) ||
-       !VG_(fd_allowed)(p[1], "pipe", tid, True)) {
+   if (!ML_(fd_allowed)(p[0], "pipe", tid, True) ||
+       !ML_(fd_allowed)(p[1], "pipe", tid, True)) {
       VG_(close)(p[0]);
       VG_(close)(p[1]);
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       POST_MEM_WRITE( ARG1, 2*sizeof(int) );
       if (VG_(clo_track_fds)) {
-         VG_(record_fd_open)(tid, p[0], NULL);
-         VG_(record_fd_open)(tid, p[1], NULL);
+         ML_(record_fd_open)(tid, p[0], NULL);
+         ML_(record_fd_open)(tid, p[1], NULL);
       }
    }
 }
@@ -4726,7 +4726,7 @@ PRE(sys_readv)
    PRE_REG_READ3(ssize_t, "readv",
                  unsigned long, fd, const struct iovec *, vector,
                  unsigned long, count);
-   if (!VG_(fd_allowed)(ARG1, "readv", tid, False)) {
+   if (!ML_(fd_allowed)(ARG1, "readv", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
       PRE_MEM_READ( "readv(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
@@ -5096,7 +5096,7 @@ PRE(sys_writev)
    PRE_REG_READ3(ssize_t, "writev",
                  unsigned long, fd, const struct iovec *, vector,
                  unsigned long, count);
-   if (!VG_(fd_allowed)(ARG1, "writev", tid, False)) {
+   if (!ML_(fd_allowed)(ARG1, "writev", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
       PRE_MEM_READ( "writev(vector)", 
@@ -5221,7 +5221,7 @@ PRE(sys_rt_sigqueueinfo)
 }
 POST(sys_rt_sigqueueinfo)
 {
-   if (!VG_(client_signal_OK)(ARG2))
+   if (!ML_(client_signal_OK)(ARG2))
       SET_STATUS_Failure( VKI_EINVAL );
 }
 
@@ -5407,12 +5407,12 @@ PRE(sys_mq_open)
 POST(sys_mq_open)
 {
    vg_assert(SUCCESS);
-   if (!VG_(fd_allowed)(RES, "mq_open", tid, True)) {
+   if (!ML_(fd_allowed)(RES, "mq_open", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+         ML_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
    }
 }
 
@@ -5431,7 +5431,7 @@ PRE(sys_mq_timedsend)
    PRE_REG_READ5(long, "mq_timedsend",
                  vki_mqd_t, mqdes, const char *, msg_ptr, vki_size_t, msg_len,
                  unsigned int, msg_prio, const struct timespec *, abs_timeout);
-   if (!VG_(fd_allowed)(ARG1, "mq_timedsend", tid, False)) {
+   if (!ML_(fd_allowed)(ARG1, "mq_timedsend", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
       PRE_MEM_READ( "mq_timedsend(msg_ptr)", ARG2, ARG3 );
@@ -5450,7 +5450,7 @@ PRE(sys_mq_timedreceive)
                  vki_mqd_t, mqdes, char *, msg_ptr, vki_size_t, msg_len,
                  unsigned int *, msg_prio,
                  const struct timespec *, abs_timeout);
-   if (!VG_(fd_allowed)(ARG1, "mq_timedreceive", tid, False)) {
+   if (!ML_(fd_allowed)(ARG1, "mq_timedreceive", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
       PRE_MEM_WRITE( "mq_timedreceive(msg_ptr)", ARG2, ARG3 );
@@ -5475,7 +5475,7 @@ PRE(sys_mq_notify)
    PRINT("sys_mq_notify( %d, %p )", ARG1,ARG2 );
    PRE_REG_READ2(long, "mq_notify",
                  vki_mqd_t, mqdes, const struct sigevent *, notification);
-   if (!VG_(fd_allowed)(ARG1, "mq_notify", tid, False))
+   if (!ML_(fd_allowed)(ARG1, "mq_notify", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
    else if (ARG2 != 0)
       PRE_MEM_READ( "mq_notify(notification)",
@@ -5488,7 +5488,7 @@ PRE(sys_mq_getsetattr)
    PRE_REG_READ3(long, "mq_getsetattr",
                  vki_mqd_t, mqdes, const struct mq_attr *, mqstat,
                  struct mq_attr *, omqstat);
-   if (!VG_(fd_allowed)(ARG1, "mq_getsetattr", tid, False)) {
+   if (!ML_(fd_allowed)(ARG1, "mq_getsetattr", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
       if (ARG2 != 0) {

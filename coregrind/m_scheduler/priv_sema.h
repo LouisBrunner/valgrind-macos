@@ -40,10 +40,10 @@ typedef struct {
 
 // Nb: this may be OS-specific, but let's not factor it out until we
 // implement an OS port for which this isn't ok.
-void VG_(sema_init)   ( vg_sema_t *sema );
-void VG_(sema_deinit) ( vg_sema_t *sema );
-void VG_(sema_down)   ( vg_sema_t *sema );
-void VG_(sema_up)     ( vg_sema_t *sema );
+void ML_(sema_init)   ( vg_sema_t *sema );
+void ML_(sema_deinit) ( vg_sema_t *sema );
+void ML_(sema_down)   ( vg_sema_t *sema );
+void ML_(sema_up)     ( vg_sema_t *sema );
 
 #endif   // __PRIV_SEMA_H
 

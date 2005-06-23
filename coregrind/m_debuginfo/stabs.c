@@ -153,11 +153,11 @@ static SymType *structRef(StabTypeTab *tab, SymType *def, Bool isstruct, Char *n
 
    sl = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(*sl));
    if (isstruct)
-      ty = VG_(st_mkstruct)(def, 0, 0);
+      ty = ML_(st_mkstruct)(def, 0, 0);
    else
-      ty = VG_(st_mkunion)(def, 0, 0);
+      ty = ML_(st_mkunion)(def, 0, 0);
 
-   VG_(st_setname)(ty, name);
+   ML_(st_setname)(ty, name);
    sl->isstruct = isstruct;
    sl->type = ty;
    sl->name = name;
@@ -190,9 +190,9 @@ static SymType *structDef(StabTypeTab *tab, SymType *def, Bool isstruct, Char *n
          VG_(printf)("defining %s ref for %s %p -> %p\n",
 		     isstruct ? "struct" : "union", name, ref, def);
 
-      def = VG_(st_mktypedef)(ref, name, VG_(st_basetype)(def, False));
+      def = ML_(st_mktypedef)(ref, name, ML_(st_basetype)(def, False));
    }
-   VG_(st_setname)(def, name);
+   ML_(st_setname)(def, name);
    return def;
 }
 
@@ -484,7 +484,7 @@ static void stab_resolve(SymType *st, void *data)
 {
    static const Bool debug = False || stabs_debug;
    Char *str = (Char *)data;
-   vg_assert(!VG_(st_isresolved)(st));
+   vg_assert(!ML_(st_isresolved)(st));
 
    if (debug)
       VG_(printf)("stab_resolve: failing to do anything useful with symtype %p=%s\n", 
@@ -555,7 +555,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 }
 
 	 if (stabtype->type == NULL) {
-	    stabtype->type = VG_(st_mkunresolved)(def, stab_resolve, NULL);
+	    stabtype->type = ML_(st_mkunresolved)(def, stab_resolve, NULL);
 	    if (debug)
 	       VG_(printf)("making (%d,%d) %p unresolved\n", file, sym, stabtype->type);
 	 }
@@ -567,16 +567,16 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 /* a type definition */
 	 p++;
 
-	 if (VG_(st_isresolved)(symtype)) {
+	 if (ML_(st_isresolved)(symtype)) {
 	    /* a redefinition; clear the old type out */
 	    StabType *stabtype = getStabType(tab, file, sym);
 
-	    symtype = stabtype->type = VG_(st_mkunresolved)(NULL, stab_resolve, NULL);
+	    symtype = stabtype->type = ML_(st_mkunresolved)(NULL, stab_resolve, NULL);
 	    if (debug)
 	       VG_(printf)("creating new type %p for definition (%d,%d)\n",
 			   symtype, file, sym);
 	 } else
-	    VG_(st_unresolved_setdata)(symtype, stab_resolve, p);
+	    ML_(st_unresolved_setdata)(symtype, stab_resolve, p);
 
 	 if (debug)
 	    VG_(printf)("defining type %p (%d,%d) = %s\n", symtype, file, sym, p);
@@ -600,23 +600,23 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	    vg_assert(stabtype->type != NULL);
 	    if (0) {
 	       /* XXX bogus */
-	       vg_assert(!VG_(st_isresolved)(stabtype->type));
+	       vg_assert(!ML_(st_isresolved)(stabtype->type));
 	       VG_(arena_free)(VG_AR_SYMTAB, stabtype->type); /* XXX proper free method? */
 	    }
 	    stabtype->type = type;
-	 } else if (!VG_(st_isresolved)(type)) {
+	 } else if (!ML_(st_isresolved)(type)) {
 	    /* If type is defined in terms of itself, and is
 	       therefore not resolved, it is void */
 	    if (debug)
 	       VG_(printf)("type %p is defined in terms of self - making void\n", type);
-	    type = VG_(st_mkvoid)(type);
+	    type = ML_(st_mkvoid)(type);
 	 }
       } else {
 	 /* just a type reference */
 	 type = symtype;
-	 if ((0 || debug) && !VG_(st_isresolved)(type))
+	 if ((0 || debug) && !ML_(st_isresolved)(type))
 	    VG_(printf)("type %p (%d,%d) is unresolved\n", type, file, sym);
-	 if ((0 || debug) && VG_(st_isresolved)(type))
+	 if ((0 || debug) && ML_(st_isresolved)(type))
 	    VG_(printf)("reference (%d,%d) -> %p\n", file, sym, type);
       }
       break;
@@ -627,35 +627,35 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       p--;
       n = atoi(&p, 0);
       switch(n) {
-      case -1:	type = VG_(st_mkint)(def, 4, True); break;
-      case -2:	type = VG_(st_mkint)(def, 1, True); break;
-      case -3:	type = VG_(st_mkint)(def, 2, True); break;
-      case -4:	type = VG_(st_mkint)(def, 4, True); break;
-      case -5:	type = VG_(st_mkint)(def, 1, False); break;
-      case -6:	type = VG_(st_mkint)(def, 1, True); break;
-      case -7:	type = VG_(st_mkint)(def, 2, False); break;
-      case -8:	type = VG_(st_mkint)(def, 4, False); break;
-      case -9:	type = VG_(st_mkint)(def, 4, False); break;
-      case -10:	type = VG_(st_mkint)(def, 4, False); break;
-      case -11:	type = VG_(st_mkvoid)(def); break;
-      case -12:	type = VG_(st_mkfloat)(def, 4); break;
-      case -13:	type = VG_(st_mkfloat)(def, 8); break;
-      case -15:	type = VG_(st_mkint)(def, 4, True); break;
-      case -16:	type = VG_(st_mkbool)(def, 4); break;
-      case -17:	type = VG_(st_mkfloat)(def, 4); break;
-      case -18:	type = VG_(st_mkfloat)(def, 8); break;
-      case -20:	type = VG_(st_mkint)(def, 1, False); break;
-      case -21:	type = VG_(st_mkint)(def, 1, False); break;
-      case -22:	type = VG_(st_mkint)(def, 2, False); break;
-      case -23:	type = VG_(st_mkint)(def, 4, False); break;
-      case -24:	type = VG_(st_mkint)(def, 4, False); break;
-      case -27:	type = VG_(st_mkint)(def, 1, True); break;
-      case -28:	type = VG_(st_mkint)(def, 2, True); break;
-      case -29:	type = VG_(st_mkint)(def, 4, True); break;
-      case -31:	type = VG_(st_mkint)(def, 8, True); break;
-      case -32:	type = VG_(st_mkint)(def, 8, False); break;
-      case -33:	type = VG_(st_mkint)(def, 8, False); break;
-      case -34:	type = VG_(st_mkint)(def, 8, True); break;
+      case -1:	type = ML_(st_mkint)(def, 4, True); break;
+      case -2:	type = ML_(st_mkint)(def, 1, True); break;
+      case -3:	type = ML_(st_mkint)(def, 2, True); break;
+      case -4:	type = ML_(st_mkint)(def, 4, True); break;
+      case -5:	type = ML_(st_mkint)(def, 1, False); break;
+      case -6:	type = ML_(st_mkint)(def, 1, True); break;
+      case -7:	type = ML_(st_mkint)(def, 2, False); break;
+      case -8:	type = ML_(st_mkint)(def, 4, False); break;
+      case -9:	type = ML_(st_mkint)(def, 4, False); break;
+      case -10:	type = ML_(st_mkint)(def, 4, False); break;
+      case -11:	type = ML_(st_mkvoid)(def); break;
+      case -12:	type = ML_(st_mkfloat)(def, 4); break;
+      case -13:	type = ML_(st_mkfloat)(def, 8); break;
+      case -15:	type = ML_(st_mkint)(def, 4, True); break;
+      case -16:	type = ML_(st_mkbool)(def, 4); break;
+      case -17:	type = ML_(st_mkfloat)(def, 4); break;
+      case -18:	type = ML_(st_mkfloat)(def, 8); break;
+      case -20:	type = ML_(st_mkint)(def, 1, False); break;
+      case -21:	type = ML_(st_mkint)(def, 1, False); break;
+      case -22:	type = ML_(st_mkint)(def, 2, False); break;
+      case -23:	type = ML_(st_mkint)(def, 4, False); break;
+      case -24:	type = ML_(st_mkint)(def, 4, False); break;
+      case -27:	type = ML_(st_mkint)(def, 1, True); break;
+      case -28:	type = ML_(st_mkint)(def, 2, True); break;
+      case -29:	type = ML_(st_mkint)(def, 4, True); break;
+      case -31:	type = ML_(st_mkint)(def, 8, True); break;
+      case -32:	type = ML_(st_mkint)(def, 8, False); break;
+      case -33:	type = ML_(st_mkint)(def, 8, False); break;
+      case -34:	type = ML_(st_mkint)(def, 8, True); break;
 
       default:
 	 VG_(printf)(" @@ unrecognized negative type %d\n", n);
@@ -673,7 +673,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
    case 't': {			/* typedef: 't' TYPE */
       SymType *td = stabtype_parser(si, NULL, &p);
-      type = VG_(st_mktypedef)(def, NULL, td);
+      type = ML_(st_mktypedef)(def, NULL, td);
       break;
    }
 
@@ -685,7 +685,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       bytes = atoi(&p, 0);
       EXPECT(';', "FP-TYPE bytes");
       
-      type = VG_(st_mkfloat)(def, bytes);
+      type = ML_(st_mkfloat)(def, bytes);
       break;
    }
 
@@ -710,16 +710,16 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       if (rtype == def) {
 	 if (debug)
 	    VG_(printf)("type %p is subrange of self - making int\n", def);
-	 type = VG_(st_mkint)(def, sizeof(int), False);
+	 type = ML_(st_mkint)(def, sizeof(int), False);
       } else if (min > max && max == 0) {
 	 if (debug)
 	    VG_(printf)("type %p has backwards range %d - %d: making float\n", 
 			def, min, max);
-	 type = VG_(st_mkfloat)(def, min);
+	 type = ML_(st_mkfloat)(def, min);
       } else
-	 type = VG_(st_mkrange)(def, rtype, min, max);
+	 type = ML_(st_mkrange)(def, rtype, min, max);
 
-      vg_assert(VG_(st_isresolved)(type));
+      vg_assert(ML_(st_isresolved)(type));
       break;
    }
 
@@ -727,7 +727,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
    case '*': {			/* pointer */
       /* ('*' | '&') TYPE */
       type = stabtype_parser(si, NULL, &p);
-      type = VG_(st_mkpointer)(def, type);
+      type = ML_(st_mkpointer)(def, type);
       break;
    }
 
@@ -746,7 +746,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       p = templ_name(name);
       EXPECT(':', "struct/union/enum ref");
 
-      name = VG_(addStr)(si, name, p-1-name);
+      name = ML_(addStr)(si, name, p-1-name);
 
       switch (kind) {
       case 's':			/* struct */
@@ -755,7 +755,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 break;
 
       case 'e':			/* enum */
-	 type = VG_(st_mkenum)(def, 0);
+	 type = ML_(st_mkenum)(def, 0);
 	 break;
 
       default:
@@ -772,7 +772,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
       typeinfo = stabtype_parser(si, NULL, &p);
 
-      type = VG_(st_mkarray)(def, typeinfo, VG_(st_mkint)(NULL, 1, True));
+      type = ML_(st_mkarray)(def, typeinfo, ML_(st_mkint)(NULL, 1, True));
       break;
    }
 
@@ -785,7 +785,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       idxtype = stabtype_parser(si, NULL, &p);
       artype = stabtype_parser(si, NULL, &p);
       
-      type = VG_(st_mkarray)(def, idxtype, artype);
+      type = ML_(st_mkarray)(def, idxtype, artype);
 
       break;
    }
@@ -793,7 +793,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
    case 'e': {			/* enum */
       /* 'e' ( NAME ':' N ',' )* ';' */
 
-      type = VG_(st_mkenum)(def, 0);
+      type = ML_(st_mkenum)(def, 0);
 
       /* don't really care about tags; just skip them */
       while(*p != ';') {
@@ -826,7 +826,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       Bool method = False;
 
       size = atou(&p, 0);
-      type = (t == 's' ? VG_(st_mkstruct) : VG_(st_mkunion))(def, size, 0);
+      type = (t == 's' ? ML_(st_mkstruct) : ML_(st_mkunion))(def, size, 0);
 
       if (*p == '!') {
 	 /* base classes */
@@ -866,10 +866,10 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 		  appear as "operator==::" */
 	       end = SKIPPAST(end, '.', "op$ name");
 	    }
-	    name = VG_(addStr)(si, p, end-p);
+	    name = ML_(addStr)(si, p, end-p);
 	    p = end+2;
 	 } else {
-	    name = VG_(addStr)(si, p, end-p);
+	    name = ML_(addStr)(si, p, end-p);
 	    p = end+1;
 	 }
 
@@ -941,7 +941,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 }
 
 	 if (fieldty != NULL)
-	    VG_(st_addfield)(type, name, fieldty, off, sz);
+	    ML_(st_addfield)(type, name, fieldty, off, sz);
 
 	 EXPECT(';', "struct field end");
       }
@@ -961,7 +961,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
    case 'f':			/* function */
       /* 'f' TYPE */
-      type = VG_(st_mkvoid)(def); /* approximate functions as void */
+      type = ML_(st_mkvoid)(def); /* approximate functions as void */
       stabtype_parser(si, NULL, &p);
       break;
 
@@ -970,7 +970,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	       CLASS-TYPE ',' RET-TYPE ',' ( ARG-TYPE ( ',' ARG-TYPE )* )? )
 	  ';'
       */
-      type = VG_(st_mkvoid)(def);	/* methods are really void */
+      type = ML_(st_mkvoid)(def);	/* methods are really void */
 
       if (*p == '#') {
 	 p++;			/* skip '#' */
@@ -996,7 +996,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
    case '@':			/* pointer to member */
       /* '@' CLASS-TYPE ',' MEMBER-TYPE */
-      type = VG_(st_mkint)(def, sizeof(int), False); /* make it an int for our use */
+      type = ML_(st_mkint)(def, sizeof(int), False); /* make it an int for our use */
       
       stabtype_parser(si, NULL, &p); /* CLASS-TYPE */
       EXPECT(',', "member-pointer CLASS-TYPE");
@@ -1057,7 +1057,7 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
 
    if (*ty != ':') {
       /* no type info */
-      sym->type = VG_(st_mkvoid)(NULL);
+      sym->type = ML_(st_mkvoid)(NULL);
    } else {
       ty++;			/* skip ':' */
 
@@ -1090,19 +1090,19 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
 
      out:
       sym->type = stabtype_parser(si, NULL, &ty);
-      base = VG_(st_basetype)(sym->type, False);
-      if (isStruct && (VG_(st_isstruct)(base) || VG_(st_isunion)(base))) {
-	 Char *sname = VG_(addStr)(si, name, len);
-	 structDef(si->stab_typetab, base, VG_(st_isstruct)(base), sname);
+      base = ML_(st_basetype)(sym->type, False);
+      if (isStruct && (ML_(st_isstruct)(base) || ML_(st_isunion)(base))) {
+	 Char *sname = ML_(addStr)(si, name, len);
+	 structDef(si->stab_typetab, base, ML_(st_isstruct)(base), sname);
       }
 
       if (isTypedef) {
-	 Char *tname = VG_(addStr)(si, name, len);
+	 Char *tname = ML_(addStr)(si, name, len);
 	 vg_assert(sym->type != base);
 	 if (debug)
 	    VG_(printf)(" typedef %p \"%s\"\n", sym->type, tname);
-	 VG_(st_setname)(sym->type, tname);
-	 VG_(st_setname)(base, tname);
+	 ML_(st_setname)(sym->type, tname);
+	 ML_(st_setname)(base, tname);
       }
    }
    *namep = ty;
@@ -1147,7 +1147,7 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
    if (isStruct || isTypedef) {
       return True;		/* skip */
    } else {
-      sym->name = VG_(addStr)(si, name, len);
+      sym->name = ML_(addStr)(si, name, len);
       return False;		/* don't skip */
    }
 }
@@ -1205,7 +1205,7 @@ static Scope *addSymsToScope(Scope *sc, struct symlist *list, Int nsyms, Scope *
 /* Read stabs-format debug info.  This is all rather horrible because
    stabs is a underspecified, kludgy hack.
 */
-void VG_(read_debuginfo_stabs) ( SegInfo* si,
+void ML_(read_debuginfo_stabs) ( SegInfo* si,
 				 UChar* stabC,   Int stab_sz, 
 				 UChar* stabstr, Int stabstr_sz )
 {
@@ -1264,7 +1264,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
       Finding the instruction address range covered by an N_SLINE is
       complicated;  see the N_SLINE case below.
    */
-   file.name     = VG_(addStr)(si,"???", -1);
+   file.name     = ML_(addStr)(si,"???", -1);
 
    n_stab_entries = stab_sz/(int)sizeof(struct nlist);
 
@@ -1354,7 +1354,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 
 	 if (buf != NULL) {
 	    i--;			/* overstepped */
-	    string = VG_(addStr)(si, buf, idx);
+	    string = ML_(addStr)(si, buf, idx);
 	    VG_(arena_free)(VG_AR_SYMTAB, buf);
 	    if (contdebug)
 	       VG_(printf)("made composite: \"%s\"\n", string);
@@ -1415,7 +1415,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 
 	    if (line.addr != 0) {
 	       /* finish off previous line */
-	       VG_(addLineInfo)(si, file.name, NULL, line.addr,
+	       ML_(addLineInfo)(si, file.name, NULL, line.addr,
 				addr, line.no + line.ovf * LINENO_OVERFLOW, i);
 	    }
 
@@ -1427,7 +1427,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 	    line.jump = True;
 
 	    if (len > 0 && nm[len-1] != '/') {
-	       file.name = VG_(addStr)(si, nm, -1);
+	       file.name = ML_(addStr)(si, nm, -1);
 	       if (debug)
 		  VG_(printf)("new source: %s\n", file.name);
 	       if (st->n_type == N_SO) {
@@ -1435,7 +1435,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 		  clearStabFiles(tab);
 	       }
 	    } else if (len == 0)
-	       file.name = VG_(addStr)(si, "?1\0", -1);
+	       file.name = ML_(addStr)(si, "?1\0", -1);
 
 	    if (func.start != 0)
 	       line.jump = True;
@@ -1447,7 +1447,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 
 	    if (line.addr != 0) {
 	       /* there was a previous */
-	       VG_(addLineInfo)(si, file.name, NULL, line.addr,
+	       ML_(addLineInfo)(si, file.name, NULL, line.addr,
 				addr, line.no + line.ovf * LINENO_OVERFLOW, i);
 	    }
 
@@ -1521,7 +1521,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 
 	       if (scope.addr != 0) {
 		  /* finish any previous scope range */
-		  VG_(addScopeInfo)(si, scope.addr, addr, scope.scope);
+		  ML_(addScopeInfo)(si, scope.addr, addr, scope.scope);
 	       }
 
 	       /* tidy up arg scope */
@@ -1556,14 +1556,14 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 	    }
 
 	    if (line.addr) {
-	       VG_(addLineInfo)(si, file.name, NULL, line.addr,
+	       ML_(addLineInfo)(si, file.name, NULL, line.addr,
 				addr, line.no + line.ovf * LINENO_OVERFLOW, i);
 	       line.addr = 0;
 	    }
 
 	    if (scope.addr) {
 	       /* finish any previous scope range */
-	       VG_(addScopeInfo)(si, scope.addr, addr, scope.scope);
+	       ML_(addScopeInfo)(si, scope.addr, addr, scope.scope);
 	    }
 
 	    if (newfunc) {
@@ -1571,7 +1571,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 	       Scope *sc;
 	       if (scope.addr) {
 		  /* finish any previous scope range */
-		  VG_(addScopeInfo)(si, scope.addr, addr, scope.scope);
+		  ML_(addScopeInfo)(si, scope.addr, addr, scope.scope);
 	       }
 
 	       sc = addSymsToScope(NULL, scope.symlist, scope.nsyms, scope.scope);
@@ -1590,7 +1590,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 
 	    if (scope.addr) {
 	       /* end previous range */
-	       VG_(addScopeInfo)(si, scope.addr, addr, scope.scope);
+	       ML_(addScopeInfo)(si, scope.addr, addr, scope.scope);
 	    }
 
 	    scope.addr = addr;
@@ -1626,7 +1626,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 	 }
 
 	 vg_assert(scope.addr != 0);
-	 VG_(addScopeInfo)(si, scope.addr, addr, scope.scope);
+	 ML_(addScopeInfo)(si, scope.addr, addr, scope.scope);
 	 
 	 /* XXX LEAK: free scope if it or any of its inner scopes was
 	    never added to a scope range  */

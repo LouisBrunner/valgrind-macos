@@ -130,7 +130,7 @@ static void freeSegInfo ( SegInfo* si )
    pointers are stable.
 */
 
-Char *VG_(addStr) ( SegInfo* si, Char* str, Int len )
+Char* ML_(addStr) ( SegInfo* si, Char* str, Int len )
 {
    struct strchunk *chunk;
    Int    space_needed;
@@ -219,7 +219,7 @@ void addLoc ( SegInfo* si, RiLoc* loc )
 
 /* Top-level place to call to add a source-location mapping entry. */
 
-void VG_(addLineInfo) ( SegInfo* si,
+void ML_(addLineInfo) ( SegInfo* si,
 			Char*    filename,
 			Char*    dirname, /* NULL == directory is unknown */
 			Addr     this,
@@ -329,7 +329,7 @@ void addScopeRange ( SegInfo* si, ScopeRange *range )
 
 /* Top-level place to call to add a source-location mapping entry. */
 
-void VG_(addScopeInfo) ( SegInfo* si,
+void ML_(addScopeInfo) ( SegInfo* si,
 			 Addr     this,
 			 Addr     next,
 			 Scope    *scope)
@@ -359,13 +359,13 @@ void VG_(addScopeInfo) ( SegInfo* si,
 
 /* Top-level place to call to add a CFI summary record.  The supplied
    CfiSI is copied. */
-void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
+void ML_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
 {
    static const Bool debug = False;
 
    if (debug) {
       VG_(printf)("adding CfiSI: ");
-      VG_(ppCfiSI)(cfisi);
+      ML_(ppCfiSI)(cfisi);
    }
 
    vg_assert(cfisi->len > 0 && cfisi->len < 2000000);
@@ -392,7 +392,7 @@ void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
             );
          }
          if (VG_(clo_trace_cfi)) 
-            VG_(ppCfiSI)(cfisi);
+            ML_(ppCfiSI)(cfisi);
       }
       return;
    }
@@ -421,7 +421,7 @@ void VG_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
 /*------------------------------------------------------------*/
 
 /* Non-fatal -- use vg_panic if terminal. */
-void VG_(symerr) ( Char* msg )
+void ML_(symerr) ( Char* msg )
 {
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_DebugMsg,"%s", msg );
@@ -996,7 +996,7 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
       Char buf[80];
       vg_assert(VG_(strlen)(tab_name) < 40);
       VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
-      VG_(symerr)(buf);
+      ML_(symerr)(buf);
       return;
    }
 
@@ -1040,7 +1040,7 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
       if ( is_interesting_symbol(si, sym, sym_name, sym_addr) ) {
          vg_assert(sym->st_name != 0);
          vg_assert(sym_name[0]  != 0);
-         name = VG_(addStr) ( si, sym_name, -1 );
+         name = ML_(addStr) ( si, sym_name, -1 );
          vg_assert(name != NULL);
 
          /*
@@ -1239,14 +1239,14 @@ Bool read_lib_symbols ( SegInfo* si )
 
    i = VG_(stat)(si->filename, &stat_buf);
    if (i != 0) {
-      VG_(symerr)("Can't stat .so/.exe (to determine its size)?!");
+      ML_(symerr)("Can't stat .so/.exe (to determine its size)?!");
       return False;
    }
    n_oimage = stat_buf.st_size;
 
    fd = VG_(open)(si->filename, VKI_O_RDONLY, 0);
    if (fd < 0) {
-      VG_(symerr)("Can't open .so/.exe to read symbols?!");
+      ML_(symerr)("Can't open .so/.exe to read symbols?!");
       return False;
    }
 
@@ -1273,7 +1273,7 @@ Bool read_lib_symbols ( SegInfo* si )
       ok &= VG_(is_object_file)(ehdr);
 
    if (!ok) {
-      VG_(symerr)("Invalid ELF header, or missing stringtab/sectiontab.");
+      ML_(symerr)("Invalid ELF header, or missing stringtab/sectiontab.");
       goto out;
    }
 
@@ -1282,7 +1282,7 @@ Bool read_lib_symbols ( SegInfo* si )
       bss memory.  Also computes correct symbol offset value for this
       ELF file. */
    if (ehdr->e_phoff + ehdr->e_phnum*sizeof(ElfXX_Phdr) > n_oimage) {
-      VG_(symerr)("ELF program header is beyond image end?!");
+      ML_(symerr)("ELF program header is beyond image end?!");
       goto out;
    }
    {
@@ -1332,7 +1332,7 @@ Bool read_lib_symbols ( SegInfo* si )
 	 }
 
 	 if (o_phdr->p_vaddr < prev_addr) {
-	    VG_(symerr)("ELF Phdrs are out of order!?");
+	    ML_(symerr)("ELF Phdrs are out of order!?");
             goto out;
 	 }
 	 prev_addr = o_phdr->p_vaddr;
@@ -1400,7 +1400,7 @@ Bool read_lib_symbols ( SegInfo* si )
                 ehdr->e_shoff, ehdr->e_shnum, sizeof(ElfXX_Shdr), n_oimage );
 
    if (ehdr->e_shoff + ehdr->e_shnum*sizeof(ElfXX_Shdr) > n_oimage) {
-      VG_(symerr)("ELF section header is beyond image end?!");
+      ML_(symerr)("ELF section header is beyond image end?!");
       goto out;
    }
 
@@ -1463,7 +1463,7 @@ Bool read_lib_symbols ( SegInfo* si )
             TRACE_SYMTAB( "%18s: %p .. %p\n", \
                           sec_name, sec_data, sec_data + sec_size - 1); \
             if ( shdr[i].sh_offset + sec_size > n_oimage ) { \
-               VG_(symerr)("   section beyond image end?!"); \
+               ML_(symerr)("   section beyond image end?!"); \
                goto out; \
             } \
          }
@@ -1529,7 +1529,7 @@ Bool read_lib_symbols ( SegInfo* si )
                      TRACE_SYMTAB( "%18s: %p .. %p\n", \
                                    sec_name, sec_data, sec_data + sec_size - 1); \
                      if ( shdr[i].sh_offset + sec_size > n_dimage ) { \
-                        VG_(symerr)("   section beyond image end?!"); \
+                        ML_(symerr)("   section beyond image end?!"); \
                         goto out; \
                      } \
                   }
@@ -1562,7 +1562,7 @@ Bool read_lib_symbols ( SegInfo* si )
 
       /* Read .eh_frame (call-frame-info) if any */
       if (ehframe) {
-         VG_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz, ehframe_addr );
+         ML_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz, ehframe_addr );
       }
 
       /* Read the stabs and/or dwarf2 debug information, if any.  It
@@ -1571,13 +1571,13 @@ Bool read_lib_symbols ( SegInfo* si )
 #     if !defined(VGP_amd64_linux)
       if (stab != NULL && stabstr != NULL) {
          has_debuginfo = True;
-         VG_(read_debuginfo_stabs) ( si, stab, stab_sz, 
+         ML_(read_debuginfo_stabs) ( si, stab, stab_sz, 
                                          stabstr, stabstr_sz );
       }
 #     endif
       if (debug_line) {
          has_debuginfo = True;
-         VG_(read_debuginfo_dwarf2) ( si, 
+         ML_(read_debuginfo_dwarf2) ( si, 
                                       debug_info,   debug_info_sz,
                                       debug_abbv,
                                       debug_line,   debug_line_sz,
@@ -1585,11 +1585,11 @@ Bool read_lib_symbols ( SegInfo* si )
       }
       if (dwarf1d && dwarf1l) {
          has_debuginfo = True;
-         VG_(read_debuginfo_dwarf1) ( si, dwarf1d, dwarf1d_sz, 
+         ML_(read_debuginfo_dwarf1) ( si, dwarf1d, dwarf1d_sz, 
                                           dwarf1l, dwarf1l_sz );
       } 
       if (!has_debuginfo) {
-         VG_(symerr)("   object doesn't have any line number info");
+         ML_(symerr)("   object doesn't have any line number info");
          goto out;
       }
    }
@@ -2233,7 +2233,7 @@ static Addr regaddr(ThreadId tid, Int regno)
 
 /* Get a list of all variables in scope, working out from the directly
    current one */
-Variable *VG_(get_scope_variables)(ThreadId tid)
+Variable* ML_(get_scope_variables)(ThreadId tid)
 {
    static const Bool debug = False;
    Variable *list, *end;
@@ -2291,10 +2291,10 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 
 	 v->next = NULL;
 	 v->distance = distance;
-	 v->type = VG_(st_basetype)(sym->type, False);
+	 v->type = ML_(st_basetype)(sym->type, False);
 	 v->name = VG_(arena_strdup)(VG_AR_SYMTAB, sym->name);
 	 v->container = NULL;
-	 v->size = VG_(st_sizeof)(sym->type);
+	 v->size = ML_(st_sizeof)(sym->type);
 
 	 if (debug && 0)
 	    VG_(printf)("sym->name=%s sym->kind=%d offset=%d\n", sym->name, sym->kind, sym->u.offset);
@@ -2516,7 +2516,7 @@ Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
 
    if (0) {
       VG_(printf)("found cfisi: "); 
-      VG_(ppCfiSI)(cfisi);
+      ML_(ppCfiSI)(cfisi);
    }
 
    ipPrev = spPrev = fpPrev = 0;

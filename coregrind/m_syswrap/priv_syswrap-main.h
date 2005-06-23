@@ -33,7 +33,7 @@
 
 /* Back up a thread so as to restart a system call. */
 extern
-void VG_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch );
+void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch );
 
 #endif   // __PRIV_SYSWRAP_MAIN_H
 

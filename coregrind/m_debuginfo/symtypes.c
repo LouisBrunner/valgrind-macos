@@ -166,17 +166,17 @@ struct _SymType {
 };
 
 
-Bool VG_(st_isstruct)(SymType *ty)
+Bool ML_(st_isstruct)(SymType *ty)
 {
    return ty->kind == TyStruct;
 }
 
-Bool VG_(st_isunion)(SymType *ty)
+Bool ML_(st_isunion)(SymType *ty)
 {
    return ty->kind == TyUnion;
 }
 
-Bool VG_(st_isenum)(SymType *ty)
+Bool ML_(st_isenum)(SymType *ty)
 {
    return ty->kind == TyEnum;
 }
@@ -203,7 +203,7 @@ static void resolve(SymType *st)
       st->kind = TyError;
 }
 
-SymType *VG_(st_mkunresolved)(SymType *st, SymResolver *resolver, void *data)
+SymType *ML_(st_mkunresolved)(SymType *st, SymResolver *resolver, void *data)
 {
    st = alloc(st);
    
@@ -217,7 +217,7 @@ SymType *VG_(st_mkunresolved)(SymType *st, SymResolver *resolver, void *data)
    return st;
 }
 
-void VG_(st_unresolved_setdata)(SymType *st, SymResolver *resolver, void *data)
+void ML_(st_unresolved_setdata)(SymType *st, SymResolver *resolver, void *data)
 {
    if (st->kind != TyUnresolved)
       return;
@@ -226,18 +226,18 @@ void VG_(st_unresolved_setdata)(SymType *st, SymResolver *resolver, void *data)
    st->u.t_unresolved.data = data;
 }
 
-Bool VG_(st_isresolved)(SymType *st)
+Bool ML_(st_isresolved)(SymType *st)
 {
    return st->kind != TyUnresolved;
 }
 
-void VG_(st_setname)(SymType *st, Char *name)
+void ML_(st_setname)(SymType *st, Char *name)
 {
    if (st->name != NULL)
       st->name = name;
 }
 
-SymType *VG_(st_mkvoid)(SymType *st)
+SymType *ML_(st_mkvoid)(SymType *st)
 {
    st = alloc(st);
 
@@ -249,7 +249,7 @@ SymType *VG_(st_mkvoid)(SymType *st)
    return st;
 }
 
-SymType *VG_(st_mkint)(SymType *st, UInt size, Bool isSigned)
+SymType *ML_(st_mkint)(SymType *st, UInt size, Bool isSigned)
 {
    st = alloc(st);
 
@@ -262,7 +262,7 @@ SymType *VG_(st_mkint)(SymType *st, UInt size, Bool isSigned)
    return st;
 }
 
-SymType *VG_(st_mkfloat)(SymType *st, UInt size)
+SymType *ML_(st_mkfloat)(SymType *st, UInt size)
 {
    st = alloc(st);
 
@@ -275,7 +275,7 @@ SymType *VG_(st_mkfloat)(SymType *st, UInt size)
    return st;
 }
 
-SymType *VG_(st_mkbool)(SymType *st, UInt size)
+SymType *ML_(st_mkbool)(SymType *st, UInt size)
 {
    st = alloc(st);
 
@@ -288,7 +288,7 @@ SymType *VG_(st_mkbool)(SymType *st, UInt size)
 }
 
 
-SymType *VG_(st_mkpointer)(SymType *st, SymType *ptr)
+SymType *ML_(st_mkpointer)(SymType *st, SymType *ptr)
 {
    st = alloc(st);
 
@@ -301,7 +301,7 @@ SymType *VG_(st_mkpointer)(SymType *st, SymType *ptr)
    return st;
 }
 
-SymType *VG_(st_mkrange)(SymType *st, SymType *ty, Int min, Int max)
+SymType *ML_(st_mkrange)(SymType *st, SymType *ty, Int min, Int max)
 {
    st = alloc(st);
 
@@ -316,7 +316,7 @@ SymType *VG_(st_mkrange)(SymType *st, SymType *ty, Int min, Int max)
    return st;
 }
 
-SymType *VG_(st_mkstruct)(SymType *st, UInt size, UInt nfields)
+SymType *ML_(st_mkstruct)(SymType *st, UInt size, UInt nfields)
 {
    st = alloc(st);
 
@@ -336,7 +336,7 @@ SymType *VG_(st_mkstruct)(SymType *st, UInt size, UInt nfields)
    return st;
 }
 
-SymType *VG_(st_mkunion)(SymType *st, UInt size, UInt nfields)
+SymType *ML_(st_mkunion)(SymType *st, UInt size, UInt nfields)
 {
    st = alloc(st);
 
@@ -356,7 +356,7 @@ SymType *VG_(st_mkunion)(SymType *st, UInt size, UInt nfields)
    return st;
 }
 
-void VG_(st_addfield)(SymType *st, Char *name, SymType *type, UInt off, UInt size)
+void ML_(st_addfield)(SymType *st, Char *name, SymType *type, UInt off, UInt size)
 {
    StField *f;
 
@@ -380,7 +380,7 @@ void VG_(st_addfield)(SymType *st, Char *name, SymType *type, UInt off, UInt siz
 }
 
 
-SymType *VG_(st_mkenum)(SymType *st, UInt ntags)
+SymType *ML_(st_mkenum)(SymType *st, UInt ntags)
 {
    st = alloc(st);
 
@@ -393,7 +393,7 @@ SymType *VG_(st_mkenum)(SymType *st, UInt ntags)
    return st;
 }
 
-SymType *VG_(st_mkarray)(SymType *st, SymType *idxtype, SymType *type)
+SymType *ML_(st_mkarray)(SymType *st, SymType *idxtype, SymType *type)
 {
    st = alloc(st);
 
@@ -406,7 +406,7 @@ SymType *VG_(st_mkarray)(SymType *st, SymType *idxtype, SymType *type)
    return st;
 }
 
-SymType *VG_(st_mktypedef)(SymType *st, Char *name, SymType *type)
+SymType *ML_(st_mktypedef)(SymType *st, Char *name, SymType *type)
 {
    st = alloc(st);
 
@@ -423,7 +423,7 @@ SymType *VG_(st_mktypedef)(SymType *st, Char *name, SymType *type)
 }
 
 
-SymType *VG_(st_basetype)(SymType *type, Bool do_resolve)
+SymType *ML_(st_basetype)(SymType *type, Bool do_resolve)
 {
    while (type->kind == TyTypedef || (do_resolve && type->kind == TyUnresolved)) {
       if (do_resolve)
@@ -436,7 +436,7 @@ SymType *VG_(st_basetype)(SymType *type, Bool do_resolve)
    return type;
 }
 
-UInt VG_(st_sizeof)(SymType *ty)
+UInt ML_(st_sizeof)(SymType *ty)
 {
    return ty->size;
 }
@@ -725,7 +725,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
    keeplist = NULL;
 
    eip = VG_(get_IP)(tid);
-   list = VG_(get_scope_variables)(tid);
+   list = ML_(get_scope_variables)(tid);
 
    if (memaccount) {
       Variable *v;
@@ -785,7 +785,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	       v->name = VG_(arena_strdup)(VG_AR_SYMTAB, name);
 	    else
 	       v->name = NULL;
-	    v->type = VG_(st_basetype)(ty, False);
+	    v->type = ML_(st_basetype)(ty, False);
 	    v->valuep = valuep;
 	    v->size = size == -1 ? ty->size : size;
 	    v->container = var;
@@ -835,7 +835,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	    break;
 	 }
 
-	 type = VG_(st_basetype)(type, True);
+	 type = ML_(st_basetype)(type, True);
 	 
 	 switch(type->kind) {
 	 case TyUnion:

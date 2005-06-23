@@ -34,7 +34,7 @@
 /* requires #include "priv_types_n_macros.h" */
 
 // Run a thread from beginning to end. 
-extern VgSchedReturnCode VG_(thread_wrapper)(Word /*ThreadId*/ tid);
+extern VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tid);
 
 DECL_TEMPLATE(linux, sys_exit_group);
 

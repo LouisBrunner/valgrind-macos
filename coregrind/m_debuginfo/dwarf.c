@@ -317,7 +317,7 @@ Int process_extended_line_op( SegInfo*   si,
 
          if (state_machine_regs.is_stmt) {
             if (state_machine_regs.last_address)
-               VG_(addLineInfo) (
+               ML_(addLineInfo) (
                   si, 
                   (Char*)index_WordArray(filenames, 
                                          state_machine_regs.last_file), 
@@ -339,7 +339,7 @@ Int process_extended_line_op( SegInfo*   si,
 
       case DW_LNE_define_file:
          name = data;
-         addto_WordArray( filenames, (Word)VG_(addStr)(si,name,-1) );
+         addto_WordArray( filenames, (Word)ML_(addStr)(si,name,-1) );
          data += VG_(strlen) ((char *) data) + 1;
          read_leb128 (data, & bytes_read, 0);
          data += bytes_read;
@@ -420,9 +420,9 @@ void read_dwarf2_lineblock ( SegInfo*  si,
    addto_WordArray( &filenames, (Word)NULL );
 
    if (ui->compdir)
-      addto_WordArray( &dirnames, (Word)VG_(addStr)(si, ui->compdir, -1) );
+      addto_WordArray( &dirnames, (Word)ML_(addStr)(si, ui->compdir, -1) );
    else
-      addto_WordArray( &dirnames, (Word)VG_(addStr)(si, ".", -1) );
+      addto_WordArray( &dirnames, (Word)ML_(addStr)(si, ".", -1) );
 
    addto_WordArray( &fnidx2dir, (Word)0 );  /* compilation dir */
 
@@ -433,12 +433,12 @@ void read_dwarf2_lineblock ( SegInfo*  si,
    info.li_length = * ((UInt *)(external->li_length));
 
    if (info.li_length == 0xffffffff) {
-      VG_(symerr)("64-bit DWARF line info is not supported yet.");
+      ML_(symerr)("64-bit DWARF line info is not supported yet.");
       goto out;
    }
 
    if (info.li_length + sizeof (external->li_length) > noLargerThan) {
-      VG_(symerr)("DWARF line info appears to be corrupt "
+      ML_(symerr)("DWARF line info appears to be corrupt "
                   "- the section is too small");
       goto out;
    }
@@ -446,7 +446,7 @@ void read_dwarf2_lineblock ( SegInfo*  si,
    /* Check its version number.  */
    info.li_version = * ((UShort *) (external->li_version));
    if (info.li_version != 2) {
-      VG_(symerr)("Only DWARF version 2 line info "
+      ML_(symerr)("Only DWARF version 2 line info "
                   "is currently supported.");
       goto out;
    }
@@ -519,11 +519,11 @@ void read_dwarf2_lineblock ( SegInfo*  si,
          VG_(strcat)(buf, "/");
          VG_(strcat)(buf, data);
          vg_assert(VG_(strlen)(buf) < NBUF);
-         addto_WordArray( &dirnames, (Word)VG_(addStr)(si,buf,-1) );
+         addto_WordArray( &dirnames, (Word)ML_(addStr)(si,buf,-1) );
          if (0) VG_(printf)("rel path  %s\n", buf);
       } else {
          /* just use 'data'. */
-         addto_WordArray( &dirnames, (Word)VG_(addStr)(si,data,-1) );
+         addto_WordArray( &dirnames, (Word)ML_(addStr)(si,data,-1) );
          if (0) VG_(printf)("abs path  %s\n", data);
       }
 
@@ -532,7 +532,7 @@ void read_dwarf2_lineblock ( SegInfo*  si,
 #     undef NBUF
    }
    if (*data != 0) {
-      VG_(symerr)("can't find NUL at end of DWARF2 directory table");
+      ML_(symerr)("can't find NUL at end of DWARF2 directory table");
       goto out;
    }
    data ++;
@@ -553,12 +553,12 @@ void read_dwarf2_lineblock ( SegInfo*  si,
       read_leb128 (data, & bytes_read, 0);
       data += bytes_read;
 
-      addto_WordArray( &filenames, (Word)VG_(addStr)(si,name,-1) );
+      addto_WordArray( &filenames, (Word)ML_(addStr)(si,name,-1) );
       addto_WordArray( &fnidx2dir, (Word)diridx );
       if (0) VG_(printf)("file %s diridx %d\n", name, diridx );
    }
    if (*data != 0) {
-      VG_(symerr)("can't find NUL at end of DWARF2 file name table");
+      ML_(symerr)("can't find NUL at end of DWARF2 file name table");
       goto out;
    }
    data ++;
@@ -592,7 +592,7 @@ void read_dwarf2_lineblock ( SegInfo*  si,
          if (state_machine_regs.is_stmt) {
             /* only add a statement if there was a previous boundary */
             if (state_machine_regs.last_address) 
-               VG_(addLineInfo)(
+               ML_(addLineInfo)(
                   si, 
                   (Char*)index_WordArray( &filenames,
                                           state_machine_regs.last_file ),
@@ -624,7 +624,7 @@ void read_dwarf2_lineblock ( SegInfo*  si,
             if (state_machine_regs.is_stmt) {
                /* only add a statement if there was a previous boundary */
                if (state_machine_regs.last_address) 
-                  VG_(addLineInfo)(
+                  ML_(addLineInfo)(
                      si, 
                      (Char*)index_WordArray( &filenames,
                                              state_machine_regs.last_file ),
@@ -901,7 +901,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
  * Inputs: given .debug_xxx sections
  * Output: update si to contain all the dwarf2 debug infos
  */
-void VG_(read_debuginfo_dwarf2) 
+void ML_(read_debuginfo_dwarf2) 
         ( SegInfo* si,
           UChar* debuginfo,   Int debug_info_sz,  /* .debug_info */
           UChar* debugabbrev,                     /* .debug_abbrev */
@@ -922,13 +922,13 @@ void VG_(read_debuginfo_dwarf2)
       blklen = *((UInt*)block);         /* This block length */
 
       if ( block + blklen + 4 > end ) {
-         VG_(symerr)( "Last block truncated in .debug_info; ignoring" );
+         ML_(symerr)( "Last block truncated in .debug_info; ignoring" );
          return;
       }
       ver = *((UShort*)(block + 4));    /* version should be 2 */
       
       if ( ver != 2 ) {
-         VG_(symerr)( "Ignoring non-dwarf2 block in .debug_info" );
+         ML_(symerr)( "Ignoring non-dwarf2 block in .debug_info" );
          continue;
       }
       
@@ -1109,7 +1109,7 @@ enum dwarf_attribute {
 
 /* end of enums taken from gdb-6.0 sources */
 
-void VG_(read_debuginfo_dwarf1) ( 
+void ML_(read_debuginfo_dwarf1) ( 
         SegInfo* si, 
         UChar* dwarf1d, Int dwarf1d_sz, 
         UChar* dwarf1l, Int dwarf1l_sz )
@@ -1215,7 +1215,7 @@ void VG_(read_debuginfo_dwarf1) (
          UChar* ptr;
          UInt   prev_line, prev_delta;
 
-         curr_filenm = VG_(addStr) ( si, src_filename, -1 );
+         curr_filenm = ML_(addStr) ( si, src_filename, -1 );
          prev_line = prev_delta = 0;
 
          ptr = dwarf1l + stmt_list;
@@ -1236,7 +1236,7 @@ void VG_(read_debuginfo_dwarf1) (
 	    if (delta > 0 && prev_line > 0) {
 	       if (0) VG_(printf) ("     %d  %d-%d\n",
                                    prev_line, prev_delta, delta-1);
-	       VG_(addLineInfo) ( si, curr_filenm, NULL,
+	       ML_(addLineInfo) ( si, curr_filenm, NULL,
 		 	          base + prev_delta, base + delta,
 			          prev_line, 0 );
 	    }
@@ -1457,7 +1457,7 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
 
 /* ------------ Deal with summary-info records ------------ */
 
-void VG_(ppCfiSI) ( CfiSI* si )
+void ML_(ppCfiSI) ( CfiSI* si )
 {
 #  define SHOW_HOW(_how, _off)                   \
       do {                                       \
@@ -2125,9 +2125,9 @@ Bool run_CF_instructions ( SegInfo* si,
       if (loc_prev != ctx->loc && si) {
          summ_ok = summarise_context ( &cfisi, loc_prev, ctx );
          if (summ_ok) {
-            VG_(addCfiSI)(si, &cfisi);
+            ML_(addCfiSI)(si, &cfisi);
             if (VG_(clo_trace_cfi))
-               VG_(ppCfiSI)(&cfisi);
+               ML_(ppCfiSI)(&cfisi);
          }
       }
    }
@@ -2137,9 +2137,9 @@ Bool run_CF_instructions ( SegInfo* si,
       if (si) {
          summ_ok = summarise_context ( &cfisi, loc_prev, ctx );
          if (summ_ok) {
-            VG_(addCfiSI)(si, &cfisi);
+            ML_(addCfiSI)(si, &cfisi);
             if (VG_(clo_trace_cfi))
-               VG_(ppCfiSI)(&cfisi);
+               ML_(ppCfiSI)(&cfisi);
          }
       }
    }
@@ -2184,7 +2184,7 @@ static void init_CIE ( CIE* cie )
 static CIE the_CIEs[N_CIEs];
 
 
-void VG_(read_callframe_info_dwarf2) 
+void ML_(read_callframe_info_dwarf2) 
         ( /*OUT*/SegInfo* si, 
           UChar* ehframe, Int ehframe_sz, Addr ehframe_addr )
 {

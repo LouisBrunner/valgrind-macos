@@ -37,27 +37,27 @@
 // Return true if address range entirely contained within client
 // address space.
 extern
-Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
+Bool ML_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
                             const Char *syscallname);
 
 // Returns True if the signal is OK for the client to use.
-extern Bool VG_(client_signal_OK)(Int sigNo);
+extern Bool ML_(client_signal_OK)(Int sigNo);
 
 // Return true if we're allowed to use or create this fd.
 extern
-Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);
+Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);
 
 extern
-void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname);
+void ML_(record_fd_open)(ThreadId tid, Int fd, char *pathname);
 
 // Used when killing threads -- we must not kill a thread if it's the thread
 // that would do Valgrind's final cleanup and output.
 extern
-Bool VG_(do_sigkill)(Int pid, Int tgid);
+Bool ML_(do_sigkill)(Int pid, Int tgid);
 
 /* So that it can be seen from syswrap-x86-linux.c. */
 extern 
-void VG_(mmap_segment) ( Addr a, SizeT len, UInt prot, 
+void ML_(mmap_segment) ( Addr a, SizeT len, UInt prot, 
                          UInt mm_flags, Int fd, ULong offset );
 
 
@@ -269,45 +269,45 @@ DECL_TEMPLATE(generic, sys_mq_getsetattr);         // * P?
 #define UW  UWord
 #define SR  SysRes
 
-extern void   VG_(generic_PRE_sys_socketpair)   ( TId, UW, UW, UW, UW );
-extern SysRes VG_(generic_POST_sys_socketpair)  ( TId, SR, UW, UW, UW, UW );
-extern SysRes VG_(generic_POST_sys_socket)      ( TId, SR );
-extern void   VG_(generic_PRE_sys_bind)         ( TId, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_accept)       ( TId, UW, UW, UW );
-extern SysRes VG_(generic_POST_sys_accept)      ( TId, SR, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_sendto)       ( TId, UW, UW, UW, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_send)         ( TId, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_recvfrom)     ( TId, UW, UW, UW, UW, UW, UW );
-extern void   VG_(generic_POST_sys_recvfrom)    ( TId, SR, UW, UW, UW, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_recv)         ( TId, UW, UW, UW );
-extern void   VG_(generic_POST_sys_recv)        ( TId, UW, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_connect)      ( TId, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_setsockopt)   ( TId, UW, UW, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_getsockopt)   ( TId, UW, UW, UW, UW, UW );
-extern void   VG_(generic_POST_sys_getsockopt)  ( TId, SR, UW, UW, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_getsockname)  ( TId, UW, UW, UW );
-extern void   VG_(generic_POST_sys_getsockname) ( TId, SR, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_getpeername)  ( TId, UW, UW, UW );
-extern void   VG_(generic_POST_sys_getpeername) ( TId, SR, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_sendmsg)      ( TId, UW, UW );
-extern void   VG_(generic_PRE_sys_recvmsg)      ( TId, UW, UW );
-extern void   VG_(generic_POST_sys_recvmsg)     ( TId, UW, UW );
+extern void   ML_(generic_PRE_sys_socketpair)   ( TId, UW, UW, UW, UW );
+extern SysRes ML_(generic_POST_sys_socketpair)  ( TId, SR, UW, UW, UW, UW );
+extern SysRes ML_(generic_POST_sys_socket)      ( TId, SR );
+extern void   ML_(generic_PRE_sys_bind)         ( TId, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_accept)       ( TId, UW, UW, UW );
+extern SysRes ML_(generic_POST_sys_accept)      ( TId, SR, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_sendto)       ( TId, UW, UW, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_send)         ( TId, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_recvfrom)     ( TId, UW, UW, UW, UW, UW, UW );
+extern void   ML_(generic_POST_sys_recvfrom)    ( TId, SR, UW, UW, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_recv)         ( TId, UW, UW, UW );
+extern void   ML_(generic_POST_sys_recv)        ( TId, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_connect)      ( TId, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_setsockopt)   ( TId, UW, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_getsockopt)   ( TId, UW, UW, UW, UW, UW );
+extern void   ML_(generic_POST_sys_getsockopt)  ( TId, SR, UW, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_getsockname)  ( TId, UW, UW, UW );
+extern void   ML_(generic_POST_sys_getsockname) ( TId, SR, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_getpeername)  ( TId, UW, UW, UW );
+extern void   ML_(generic_POST_sys_getpeername) ( TId, SR, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_sendmsg)      ( TId, UW, UW );
+extern void   ML_(generic_PRE_sys_recvmsg)      ( TId, UW, UW );
+extern void   ML_(generic_POST_sys_recvmsg)     ( TId, UW, UW );
 
-extern void   VG_(generic_PRE_sys_semop)        ( TId, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_semtimedop)   ( TId, UW, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_semctl)       ( TId, UW, UW, UW, UW );
-extern void   VG_(generic_POST_sys_semctl)      ( TId, UW, UW, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_msgsnd)       ( TId, UW, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_msgrcv)       ( TId, UW, UW, UW, UW, UW );
-extern void   VG_(generic_POST_sys_msgrcv)      ( TId, UW, UW, UW, UW, UW, UW );
-extern void   VG_(generic_PRE_sys_msgctl)       ( TId, UW, UW, UW );
-extern void   VG_(generic_POST_sys_msgctl)      ( TId, UW, UW, UW, UW );
-extern UWord  VG_(generic_PRE_sys_shmat)        ( TId, UW, UW, UW );
-extern void   VG_(generic_POST_sys_shmat)       ( TId, UW, UW, UW, UW );
-extern Bool   VG_(generic_PRE_sys_shmdt)        ( TId, UW );
-extern void   VG_(generic_POST_sys_shmdt)       ( TId, UW, UW );
-extern void   VG_(generic_PRE_sys_shmctl)       ( TId, UW, UW, UW );
-extern void   VG_(generic_POST_sys_shmctl)      ( TId, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_semop)        ( TId, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_semtimedop)   ( TId, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_semctl)       ( TId, UW, UW, UW, UW );
+extern void   ML_(generic_POST_sys_semctl)      ( TId, UW, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_msgsnd)       ( TId, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_msgrcv)       ( TId, UW, UW, UW, UW, UW );
+extern void   ML_(generic_POST_sys_msgrcv)      ( TId, UW, UW, UW, UW, UW, UW );
+extern void   ML_(generic_PRE_sys_msgctl)       ( TId, UW, UW, UW );
+extern void   ML_(generic_POST_sys_msgctl)      ( TId, UW, UW, UW, UW );
+extern UWord  ML_(generic_PRE_sys_shmat)        ( TId, UW, UW, UW );
+extern void   ML_(generic_POST_sys_shmat)       ( TId, UW, UW, UW, UW );
+extern Bool   ML_(generic_PRE_sys_shmdt)        ( TId, UW );
+extern void   ML_(generic_POST_sys_shmdt)       ( TId, UW, UW );
+extern void   ML_(generic_PRE_sys_shmctl)       ( TId, UW, UW, UW );
+extern void   ML_(generic_POST_sys_shmctl)      ( TId, UW, UW, UW, UW );
 
 #undef TId
 #undef UW

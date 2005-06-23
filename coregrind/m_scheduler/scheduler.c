@@ -194,7 +194,7 @@ void VG_(set_running)(ThreadId tid)
    
    tst->status = VgTs_Runnable;
    
-   VG_(sema_down)(&run_sema);
+   ML_(sema_down)(&run_sema);
    if (VG_(running_tid) != VG_INVALID_THREADID)
       VG_(printf)("tid %d found %d running\n", tid, VG_(running_tid));
    vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
@@ -227,7 +227,7 @@ void VG_(set_sleeping)(ThreadId tid, ThreadStatus sleepstate)
 
    /* Release the run_sema; this will reschedule any runnable
       thread. */
-   VG_(sema_up)(&run_sema);
+   ML_(sema_up)(&run_sema);
 
    if (VG_(clo_trace_sched)) {
       Char buf[50];
@@ -252,7 +252,7 @@ void VG_(exit_thread)(ThreadId tid)
    /* There should still be a valid exitreason for this thread */
    vg_assert(VG_(threads)[tid].exitreason != VgSrc_None);
 
-   VG_(sema_up)(&run_sema);
+   ML_(sema_up)(&run_sema);
 }
 
 /* Kill a thread.  This interrupts whatever a thread is doing, and
@@ -500,9 +500,9 @@ static void sched_fork_cleanup(ThreadId me)
    }
 
    /* re-init and take the sema */
-   VG_(sema_deinit)(&run_sema);
-   VG_(sema_init)(&run_sema);
-   VG_(sema_down)(&run_sema);
+   ML_(sema_deinit)(&run_sema);
+   ML_(sema_init)(&run_sema);
+   ML_(sema_down)(&run_sema);
 }
 
 
@@ -516,7 +516,7 @@ void VG_(scheduler_init) ( void )
    Int i;
    ThreadId tid_main;
 
-   VG_(sema_init)(&run_sema);
+   ML_(sema_init)(&run_sema);
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
 

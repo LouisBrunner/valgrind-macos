@@ -147,7 +147,7 @@ static void run_a_thread_NORETURN ( Word tidW )
                        (ULong)tidW);
 
    /* Run the thread all the way through. */
-   VgSchedReturnCode src = VG_(thread_wrapper)(tid);  
+   VgSchedReturnCode src = ML_(thread_wrapper)(tid);  
 
    VG_(debugLog)(1, "syswrap-x86-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
@@ -1067,7 +1067,7 @@ PRE(sys_clone)
 
    cloneflags = ARG1;
 
-   if (!VG_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
+   if (!ML_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
       SET_STATUS_Failure( VKI_EINVAL );
       return;
    }
@@ -1168,7 +1168,7 @@ PRE(sys_sigreturn)
 
    /* This is only so that the EIP is (might be) useful to report if
       something goes wrong in the sigreturn */
-   VG_(fixup_guest_state_to_restart_syscall)(&tst->arch);
+   ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
 
    VG_(sigframe_destroy)(tid, False);
 
@@ -1199,7 +1199,7 @@ PRE(sys_rt_sigreturn)
 
    /* This is only so that the EIP is (might be) useful to report if
       something goes wrong in the sigreturn */
-   VG_(fixup_guest_state_to_restart_syscall)(&tst->arch);
+   ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
 
    VG_(sigframe_destroy)(tid, True);
 
@@ -1343,7 +1343,7 @@ PRE(sys_ipc)
 
    switch (ARG1 /* call */) {
    case VKI_SEMOP:
-      VG_(generic_PRE_sys_semop)( tid, ARG2, ARG5, ARG3 );
+      ML_(generic_PRE_sys_semop)( tid, ARG2, ARG5, ARG3 );
       *flags |= SfMayBlock;
       break;
    case VKI_SEMGET:
@@ -1351,15 +1351,15 @@ PRE(sys_ipc)
    case VKI_SEMCTL:
    {
       UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
-      VG_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
+      ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
       break;
    }
    case VKI_SEMTIMEDOP:
-      VG_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
+      ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
       *flags |= SfMayBlock;
       break;
    case VKI_MSGSND:
-      VG_(generic_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
+      ML_(generic_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
       if ((ARG4 & VKI_IPC_NOWAIT) == 0)
          *flags |= SfMayBlock;
       break;
@@ -1375,7 +1375,7 @@ PRE(sys_ipc)
 			   (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
 			   "msgrcv(msgp)" );
 
-      VG_(generic_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
+      ML_(generic_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
 
       if ((ARG4 & VKI_IPC_NOWAIT) == 0)
          *flags |= SfMayBlock;
@@ -1384,13 +1384,13 @@ PRE(sys_ipc)
    case VKI_MSGGET:
       break;
    case VKI_MSGCTL:
-      VG_(generic_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
+      ML_(generic_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
       break;
    case VKI_SHMAT:
    {
       UWord w;
       PRE_MEM_WRITE( "shmat(raddr)", ARG4, sizeof(Addr) );
-      w = VG_(generic_PRE_sys_shmat)( tid, ARG2, ARG5, ARG3 );
+      w = ML_(generic_PRE_sys_shmat)( tid, ARG2, ARG5, ARG3 );
       if (w == 0)
          SET_STATUS_Failure( VKI_EINVAL );
       else
@@ -1398,13 +1398,13 @@ PRE(sys_ipc)
       break;
    }
    case VKI_SHMDT:
-      if (!VG_(generic_PRE_sys_shmdt)(tid, ARG5))
+      if (!ML_(generic_PRE_sys_shmdt)(tid, ARG5))
 	 SET_STATUS_Failure( VKI_EINVAL );
       break;
    case VKI_SHMGET:
       break;
    case VKI_SHMCTL: /* IPCOP_shmctl */
-      VG_(generic_PRE_sys_shmctl)( tid, ARG2, ARG3, ARG5 );
+      ML_(generic_PRE_sys_shmctl)( tid, ARG2, ARG3, ARG5 );
       break;
    default:
       VG_(message)(Vg_DebugMsg, "FATAL: unhandled syscall(ipc) %d", ARG1 );
@@ -1423,7 +1423,7 @@ POST(sys_ipc)
    case VKI_SEMCTL:
    {
       UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
-      VG_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
+      ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
       break;
    }
    case VKI_SEMTIMEDOP:
@@ -1441,13 +1441,13 @@ POST(sys_ipc)
 			   (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
 			   "msgrcv(msgp)" );
 
-      VG_(generic_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
+      ML_(generic_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
       break;
    }
    case VKI_MSGGET:
       break;
    case VKI_MSGCTL:
-      VG_(generic_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
+      ML_(generic_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
       break;
    case VKI_SHMAT:
    {
@@ -1460,17 +1460,17 @@ POST(sys_ipc)
 
       addr = deref_Addr ( tid, ARG4, "shmat(addr)" );
       if ( addr > 0 ) { 
-         VG_(generic_POST_sys_shmat)( tid, addr, ARG2, ARG5, ARG3 );
+         ML_(generic_POST_sys_shmat)( tid, addr, ARG2, ARG5, ARG3 );
       }
       break;
    }
    case VKI_SHMDT:
-      VG_(generic_POST_sys_shmdt)( tid, RES, ARG5 );
+      ML_(generic_POST_sys_shmdt)( tid, RES, ARG5 );
       break;
    case VKI_SHMGET:
       break;
    case VKI_SHMCTL:
-      VG_(generic_POST_sys_shmctl)( tid, RES, ARG2, ARG3, ARG5 );
+      ML_(generic_POST_sys_shmctl)( tid, RES, ARG2, ARG3, ARG5 );
       break;
    default:
       VG_(message)(Vg_DebugMsg,
@@ -1521,7 +1521,7 @@ PRE(old_mmap)
    }
 
    if (a4 & VKI_MAP_FIXED) {
-      if (!VG_(valid_client_addr)(a1, a2, tid, "old_mmap")) {
+      if (!ML_(valid_client_addr)(a1, a2, tid, "old_mmap")) {
          PRINT("old_mmap failing: %p-%p\n", a1, a1+a2);
          SET_STATUS_Failure( VKI_ENOMEM );
       }
@@ -1543,8 +1543,8 @@ PRE(old_mmap)
       SysRes res = VG_(mmap_native)((void*)a1, a2, a3, a4, a5, a6);
       SET_STATUS_from_SysRes(res);
       if (!res.isError) {
-         vg_assert(VG_(valid_client_addr)(res.val, a2, tid, "old_mmap"));
-         VG_(mmap_segment)( (Addr)res.val, a2, a3, a4, a5, a6 );
+         vg_assert(ML_(valid_client_addr)(res.val, a2, tid, "old_mmap"));
+         ML_(mmap_segment)( (Addr)res.val, a2, a3, a4, a5, a6 );
       }
    }
 
@@ -1622,7 +1622,7 @@ PRE(sys_socketcall)
    case VKI_SYS_SOCKETPAIR:
       /* int socketpair(int d, int type, int protocol, int sv[2]); */
       PRE_MEM_READ( "socketcall.socketpair(args)", ARG2, 4*sizeof(Addr) );
-      VG_(generic_PRE_sys_socketpair)( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
+      ML_(generic_PRE_sys_socketpair)( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
       break;
 
    case VKI_SYS_SOCKET:
@@ -1634,7 +1634,7 @@ PRE(sys_socketcall)
       /* int bind(int sockfd, struct sockaddr *my_addr, 
                   int addrlen); */
       PRE_MEM_READ( "socketcall.bind(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_bind)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      ML_(generic_PRE_sys_bind)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
                
    case VKI_SYS_LISTEN:
@@ -1645,7 +1645,7 @@ PRE(sys_socketcall)
    case VKI_SYS_ACCEPT: {
       /* int accept(int s, struct sockaddr *addr, int *addrlen); */
       PRE_MEM_READ( "socketcall.accept(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      ML_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
    }
 
@@ -1654,21 +1654,21 @@ PRE(sys_socketcall)
                     unsigned int flags, 
                     const struct sockaddr *to, int tolen); */
       PRE_MEM_READ( "socketcall.sendto(args)", ARG2, 6*sizeof(Addr) );
-      VG_(generic_PRE_sys_sendto)( tid, ARG2_0, ARG2_1, ARG2_2, 
+      ML_(generic_PRE_sys_sendto)( tid, ARG2_0, ARG2_1, ARG2_2, 
                                    ARG2_3, ARG2_4, ARG2_5 );
       break;
 
    case VKI_SYS_SEND:
       /* int send(int s, const void *msg, size_t len, int flags); */
       PRE_MEM_READ( "socketcall.send(args)", ARG2, 4*sizeof(Addr) );
-      VG_(generic_PRE_sys_send)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      ML_(generic_PRE_sys_send)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_RECVFROM:
       /* int recvfrom(int s, void *buf, int len, unsigned int flags,
          struct sockaddr *from, int *fromlen); */
       PRE_MEM_READ( "socketcall.recvfrom(args)", ARG2, 6*sizeof(Addr) );
-      VG_(generic_PRE_sys_recvfrom)( tid, ARG2_0, ARG2_1, ARG2_2, 
+      ML_(generic_PRE_sys_recvfrom)( tid, ARG2_0, ARG2_1, ARG2_2, 
                                      ARG2_3, ARG2_4, ARG2_5 );
       break;
    
@@ -1680,21 +1680,21 @@ PRE(sys_socketcall)
          from parameter.
       */
       PRE_MEM_READ( "socketcall.recv(args)", ARG2, 4*sizeof(Addr) );
-      VG_(generic_PRE_sys_recv)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      ML_(generic_PRE_sys_recv)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_CONNECT:
       /* int connect(int sockfd, 
                      struct sockaddr *serv_addr, int addrlen ); */
       PRE_MEM_READ( "socketcall.connect(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_connect)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      ML_(generic_PRE_sys_connect)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_SETSOCKOPT:
       /* int setsockopt(int s, int level, int optname, 
                         const void *optval, int optlen); */
       PRE_MEM_READ( "socketcall.setsockopt(args)", ARG2, 5*sizeof(Addr) );
-      VG_(generic_PRE_sys_setsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
+      ML_(generic_PRE_sys_setsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
                                        ARG2_3, ARG2_4 );
       break;
 
@@ -1702,20 +1702,20 @@ PRE(sys_socketcall)
       /* int getsockopt(int s, int level, int optname, 
                         void *optval, socklen_t *optlen); */
       PRE_MEM_READ( "socketcall.getsockopt(args)", ARG2, 5*sizeof(Addr) );
-      VG_(generic_PRE_sys_getsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
+      ML_(generic_PRE_sys_getsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
                                        ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKNAME:
       /* int getsockname(int s, struct sockaddr* name, int* namelen) */
       PRE_MEM_READ( "socketcall.getsockname(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_getsockname)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      ML_(generic_PRE_sys_getsockname)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_GETPEERNAME:
       /* int getpeername(int s, struct sockaddr* name, int* namelen) */
       PRE_MEM_READ( "socketcall.getpeername(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_getpeername)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      ML_(generic_PRE_sys_getpeername)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_SHUTDOWN:
@@ -1730,7 +1730,7 @@ PRE(sys_socketcall)
        * (after all it's glibc providing the arguments array)
        PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
       */
-      VG_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
+      ML_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
       break;
    }
       
@@ -1741,7 +1741,7 @@ PRE(sys_socketcall)
        * (after all it's glibc providing the arguments array)
        PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
       */
-      VG_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+      ML_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
       break;
    }
 
@@ -1772,7 +1772,7 @@ POST(sys_socketcall)
    switch (ARG1 /* request */) {
 
    case VKI_SYS_SOCKETPAIR:
-      r = VG_(generic_POST_sys_socketpair)( 
+      r = ML_(generic_POST_sys_socketpair)( 
              tid, VG_(mk_SysRes_Success)(RES), 
              ARG2_0, ARG2_1, ARG2_2, ARG2_3 
           );
@@ -1780,7 +1780,7 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_SOCKET:
-      r = VG_(generic_POST_sys_socket)( tid, VG_(mk_SysRes_Success)(RES) );
+      r = ML_(generic_POST_sys_socket)( tid, VG_(mk_SysRes_Success)(RES) );
       SET_STATUS_from_SysRes(r);
       break;
 
@@ -1795,7 +1795,7 @@ POST(sys_socketcall)
 
    case VKI_SYS_ACCEPT:
       /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-     r = VG_(generic_POST_sys_accept)( tid, VG_(mk_SysRes_Success)(RES), 
+     r = ML_(generic_POST_sys_accept)( tid, VG_(mk_SysRes_Success)(RES), 
                                             ARG2_0, ARG2_1, ARG2_2 );
      SET_STATUS_from_SysRes(r);
      break;
@@ -1807,13 +1807,13 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_RECVFROM:
-      VG_(generic_POST_sys_recvfrom)( tid, VG_(mk_SysRes_Success)(RES),
+      ML_(generic_POST_sys_recvfrom)( tid, VG_(mk_SysRes_Success)(RES),
                                            ARG2_0, ARG2_1, ARG2_2,
                                            ARG2_3, ARG2_4, ARG2_5 );
       break;
 
    case VKI_SYS_RECV:
-      VG_(generic_POST_sys_recv)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
+      ML_(generic_POST_sys_recv)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_CONNECT:
@@ -1823,18 +1823,18 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_GETSOCKOPT:
-      VG_(generic_POST_sys_getsockopt)( tid, VG_(mk_SysRes_Success)(RES),
+      ML_(generic_POST_sys_getsockopt)( tid, VG_(mk_SysRes_Success)(RES),
                                              ARG2_0, ARG2_1, 
                                              ARG2_2, ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKNAME:
-      VG_(generic_POST_sys_getsockname)( tid, VG_(mk_SysRes_Success)(RES),
+      ML_(generic_POST_sys_getsockname)( tid, VG_(mk_SysRes_Success)(RES),
                                               ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_GETPEERNAME:
-      VG_(generic_POST_sys_getpeername)( tid, VG_(mk_SysRes_Success)(RES), 
+      ML_(generic_POST_sys_getpeername)( tid, VG_(mk_SysRes_Success)(RES), 
                                               ARG2_0, ARG2_1, ARG2_2 );
       break;
 
@@ -1845,7 +1845,7 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_RECVMSG:
-     VG_(generic_POST_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_POST_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
      break;
 
    default:

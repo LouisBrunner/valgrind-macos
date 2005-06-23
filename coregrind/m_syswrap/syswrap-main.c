@@ -912,7 +912,7 @@ extern const Addr VGA_(blksys_finished);
 
 /* Back up guest state to restart a system call. */
 
-void VG_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
+void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
 {
 #if defined(VGP_x86_linux)
    arch->vex.guest_EIP -= 2;             // sizeof(int $0x80)
@@ -1064,7 +1064,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       if (debug)
          VG_(printf)("  not started: restart\n");
       vg_assert(sci->status.what == SsHandToKernel);
-      VG_(fixup_guest_state_to_restart_syscall)(th_regs);
+      ML_(fixup_guest_state_to_restart_syscall)(th_regs);
    } 
 
    else 
@@ -1073,7 +1073,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
          and the kernel restarted it.  Restart if asked, otherwise
          EINTR it. */
       if (restart)
-         VG_(fixup_guest_state_to_restart_syscall)(th_regs);
+         ML_(fixup_guest_state_to_restart_syscall)(th_regs);
       else {
          canonical = convert_SysRes_to_SyscallStatus( 
                         VG_(mk_SysRes_Error)( VKI_EINTR ) 

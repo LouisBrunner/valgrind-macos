@@ -894,7 +894,7 @@ Addrcheck), the following options apply.</para>
 
   <itemizedlist>
 
-   <listitem>
+   <listitem id="alignment">
     <para><computeroutput>--alignment=&lt;number&gt;</computeroutput>
     [default: 8]</para>
     <para>By default Valgrind's

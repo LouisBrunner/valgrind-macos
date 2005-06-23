@@ -400,7 +400,7 @@ please let us know.</para>
 
 <itemizedlist>
 
-  <listitem>
+  <listitem id="heap">
     <para><computeroutput>--heap=no</computeroutput></para>
     <para><computeroutput>--heap=yes</computeroutput> [default]</para>
     <para>When enabled, profile heap usage in detail.  Without
@@ -409,7 +409,7 @@ please let us know.</para>
     short.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="heap-admin">
     <para><computeroutput>--heap-admin=n</computeroutput>
     [default: 8]</para>
     <para>The number of admin bytes per block to use.  This can
@@ -420,14 +420,14 @@ please let us know.</para>
     blocks, although Massif does not count this.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="stacks">
     <para><computeroutput>--stacks=no</computeroutput></para>
     <para><computeroutput>--stacks=yes</computeroutput> [default]</para>
     <para>When enabled, include stack(s) in the profile.
     Threaded programs can have multiple stacks.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="depth">
     <para><computeroutput>--depth=n</computeroutput>
     [default: 3]</para>
     <para>Depth of call chains to present in the detailed heap
@@ -437,7 +437,7 @@ please let us know.</para>
     <computeroutput>.hp</computeroutput> file.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="alloc-fn">
     <para><computeroutput>--alloc-fn=name</computeroutput></para>
     <para>Specify a function that allocates memory.  This is
     useful for functions that are wrappers to
@@ -450,7 +450,7 @@ please let us know.</para>
     multiple functions.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="format">
     <para><computeroutput>--format=text</computeroutput> [default]</para>
     <para><computeroutput>--format=html</computeroutput></para>
     <para>Produce the detailed heap information in text or HTML

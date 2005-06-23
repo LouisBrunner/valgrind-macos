@@ -3315,8 +3315,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          PPC32AMode* am_addr  = PPC32AMode_IR(stmt->Ist.Put.offset, GuestStatePtr);
          PPC32AMode* am_addr4 = advance4(env, am_addr);
          iselInt64Expr(&rHi,&rLo, env, stmt->Ist.Put.data);
-         addInstr(env, PPC32Instr_Store( 4, am_addr,  rLo ));
-         addInstr(env, PPC32Instr_Store( 4, am_addr4, rHi ));
+         addInstr(env, PPC32Instr_Store( 4, am_addr,  rHi ));
+         addInstr(env, PPC32Instr_Store( 4, am_addr4, rLo ));
          return;
      }
 //..       if (ty == Ity_F32) {

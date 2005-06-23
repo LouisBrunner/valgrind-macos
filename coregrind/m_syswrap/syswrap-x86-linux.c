@@ -143,7 +143,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    VG_(debugLog)(1, "syswrap-x86-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
-                       "VG_(thread_wrapper) called\n",
+                       "ML_(thread_wrapper) called\n",
                        (ULong)tidW);
 
    /* Run the thread all the way through. */
@@ -151,7 +151,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    VG_(debugLog)(1, "syswrap-x86-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
-                       "VG_(thread_wrapper) done\n",
+                       "ML_(thread_wrapper) done\n",
                        (ULong)tidW);
 
    Int c = VG_(count_living_threads)();

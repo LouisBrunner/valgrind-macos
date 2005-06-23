@@ -137,15 +137,15 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    VG_(debugLog)(1, "syswrap-amd64-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
-                       "VG_(thread_wrapper) called\n",
+                       "ML_(thread_wrapper) called\n",
                        (ULong)tidW);
 
    /* Run the thread all the way through. */
-   VgSchedReturnCode src = VG_(thread_wrapper)(tid);  
+   VgSchedReturnCode src = ML_(thread_wrapper)(tid);  
 
    VG_(debugLog)(1, "syswrap-amd64-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
-                       "VG_(thread_wrapper) done\n",
+                       "ML_(thread_wrapper) done\n",
                        (ULong)tidW);
 
    Int c = VG_(count_living_threads)();
@@ -617,7 +617,7 @@ PRE(sys_clone)
 
    cloneflags = ARG1;
 
-   if (!VG_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
+   if (!ML_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
       SET_STATUS_Failure( VKI_EINVAL );
       return;
    }
@@ -688,7 +688,7 @@ PRE(sys_rt_sigreturn)
 
    /* This is only so that the RIP is (might be) useful to report if
       something goes wrong in the sigreturn */
-   VG_(fixup_guest_state_to_restart_syscall)(&tst->arch);
+   ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
 
    VG_(sigframe_destroy)(tid, True);
 
@@ -738,7 +738,7 @@ POST(sys_socket)
 {
    SysRes r;
    vg_assert(SUCCESS);
-   r = VG_(generic_POST_sys_socket)(tid, VG_(mk_SysRes_Success)(RES));
+   r = ML_(generic_POST_sys_socket)(tid, VG_(mk_SysRes_Success)(RES));
    SET_STATUS_from_SysRes(r);
 }
 
@@ -748,7 +748,7 @@ PRE(sys_setsockopt)
    PRE_REG_READ5(long, "setsockopt",
                  int, s, int, level, int, optname,
                  const void *, optval, int, optlen);
-   VG_(generic_PRE_sys_setsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+   ML_(generic_PRE_sys_setsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
 PRE(sys_getsockopt)
@@ -757,12 +757,12 @@ PRE(sys_getsockopt)
    PRE_REG_READ5(long, "getsockopt",
                  int, s, int, level, int, optname,
                  void *, optval, int, *optlen);
-   VG_(generic_PRE_sys_getsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+   ML_(generic_PRE_sys_getsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 POST(sys_getsockopt)
 {
    vg_assert(SUCCESS);
-   VG_(generic_POST_sys_getsockopt)(tid, VG_(mk_SysRes_Success)(RES),
+   ML_(generic_POST_sys_getsockopt)(tid, VG_(mk_SysRes_Success)(RES),
                                          ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
@@ -772,7 +772,7 @@ PRE(sys_connect)
    PRINT("sys_connect ( %d, %p, %d )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "connect",
                  int, sockfd, struct sockaddr *, serv_addr, int, addrlen);
-   VG_(generic_PRE_sys_connect)(tid, ARG1,ARG2,ARG3);
+   ML_(generic_PRE_sys_connect)(tid, ARG1,ARG2,ARG3);
 }
 
 PRE(sys_accept)
@@ -781,13 +781,13 @@ PRE(sys_accept)
    PRINT("sys_accept ( %d, %p, %d )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "accept",
                  int, s, struct sockaddr *, addr, int, *addrlen);
-   VG_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
+   ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_accept)
 {
    SysRes r;
    vg_assert(SUCCESS);
-   r = VG_(generic_POST_sys_accept)(tid, VG_(mk_SysRes_Success)(RES),
+   r = ML_(generic_POST_sys_accept)(tid, VG_(mk_SysRes_Success)(RES),
                                          ARG1,ARG2,ARG3);
    SET_STATUS_from_SysRes(r);
 }
@@ -800,7 +800,7 @@ PRE(sys_sendto)
                  int, s, const void *, msg, int, len, 
                  unsigned int, flags, 
                  const struct sockaddr *, to, int, tolen);
-   VG_(generic_PRE_sys_sendto)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   ML_(generic_PRE_sys_sendto)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
 }
 
 PRE(sys_recvfrom)
@@ -810,12 +810,12 @@ PRE(sys_recvfrom)
    PRE_REG_READ6(long, "recvfrom",
                  int, s, void *, buf, int, len, unsigned int, flags,
                  struct sockaddr *, from, int *, fromlen);
-   VG_(generic_PRE_sys_recvfrom)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   ML_(generic_PRE_sys_recvfrom)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
 }
 POST(sys_recvfrom)
 {
    vg_assert(SUCCESS);
-   VG_(generic_POST_sys_recvfrom)(tid, VG_(mk_SysRes_Success)(RES),
+   ML_(generic_POST_sys_recvfrom)(tid, VG_(mk_SysRes_Success)(RES),
                                        ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
 }
 
@@ -825,7 +825,7 @@ PRE(sys_sendmsg)
    PRINT("sys_sendmsg ( %d, %p, %d )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "sendmsg",
                  int, s, const struct msghdr *, msg, int, flags);
-   VG_(generic_PRE_sys_sendmsg)(tid, ARG1,ARG2);
+   ML_(generic_PRE_sys_sendmsg)(tid, ARG1,ARG2);
 }
 
 PRE(sys_recvmsg)
@@ -833,11 +833,11 @@ PRE(sys_recvmsg)
    *flags |= SfMayBlock;
    PRINT("sys_recvmsg ( %d, %p, %d )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "recvmsg", int, s, struct msghdr *, msg, int, flags);
-   VG_(generic_PRE_sys_recvmsg)(tid, ARG1,ARG2);
+   ML_(generic_PRE_sys_recvmsg)(tid, ARG1,ARG2);
 }
 POST(sys_recvmsg)
 {
-   VG_(generic_POST_sys_recvmsg)(tid, ARG1,ARG2);
+   ML_(generic_POST_sys_recvmsg)(tid, ARG1,ARG2);
 }
 
 PRE(sys_shutdown)
@@ -852,7 +852,7 @@ PRE(sys_bind)
    PRINT("sys_bind ( %d, %p, %d )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "bind",
                  int, sockfd, struct sockaddr *, my_addr, int, addrlen);
-   VG_(generic_PRE_sys_bind)(tid, ARG1,ARG2,ARG3);
+   ML_(generic_PRE_sys_bind)(tid, ARG1,ARG2,ARG3);
 }
 
 PRE(sys_listen)
@@ -866,12 +866,12 @@ PRE(sys_getsockname)
    PRINT("sys_getsockname ( %d, %p, %p )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getsockname",
                  int, s, struct sockaddr *, name, int *, namelen);
-   VG_(generic_PRE_sys_getsockname)(tid, ARG1,ARG2,ARG3);
+   ML_(generic_PRE_sys_getsockname)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_getsockname)
 {
    vg_assert(SUCCESS);
-   VG_(generic_POST_sys_getsockname)(tid, VG_(mk_SysRes_Success)(RES),
+   ML_(generic_POST_sys_getsockname)(tid, VG_(mk_SysRes_Success)(RES),
                                           ARG1,ARG2,ARG3);
 }
 
@@ -880,12 +880,12 @@ PRE(sys_getpeername)
    PRINT("sys_getpeername ( %d, %p, %p )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getpeername",
                  int, s, struct sockaddr *, name, int *, namelen);
-   VG_(generic_PRE_sys_getpeername)(tid, ARG1,ARG2,ARG3);
+   ML_(generic_PRE_sys_getpeername)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_getpeername)
 {
    vg_assert(SUCCESS);
-   VG_(generic_POST_sys_getpeername)(tid, VG_(mk_SysRes_Success)(RES),
+   ML_(generic_POST_sys_getpeername)(tid, VG_(mk_SysRes_Success)(RES),
                                           ARG1,ARG2,ARG3);
 }
 
@@ -894,12 +894,12 @@ PRE(sys_socketpair)
    PRINT("sys_socketpair ( %d, %d, %d, %p )",ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "socketpair",
                  int, d, int, type, int, protocol, int [2], sv);
-   VG_(generic_PRE_sys_socketpair)(tid, ARG1,ARG2,ARG3,ARG4);
+   ML_(generic_PRE_sys_socketpair)(tid, ARG1,ARG2,ARG3,ARG4);
 }
 POST(sys_socketpair)
 {
    vg_assert(SUCCESS);
-   VG_(generic_POST_sys_socketpair)(tid, VG_(mk_SysRes_Success)(RES),
+   ML_(generic_POST_sys_socketpair)(tid, VG_(mk_SysRes_Success)(RES),
                                          ARG1,ARG2,ARG3,ARG4);
 }
 
@@ -915,7 +915,7 @@ PRE(sys_semop)
    PRINT("sys_semop ( %d, %p, %u )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "semop",
                  int, semid, struct sembuf *, sops, unsigned, nsoops);
-   VG_(generic_PRE_sys_semop)(tid, ARG1,ARG2,ARG3);
+   ML_(generic_PRE_sys_semop)(tid, ARG1,ARG2,ARG3);
 }
 
 PRE(sys_semtimedop)
@@ -925,7 +925,7 @@ PRE(sys_semtimedop)
    PRE_REG_READ4(long, "semtimedop",
                  int, semid, struct sembuf *, sops, unsigned, nsoops,
                  struct timespec *, timeout);
-   VG_(generic_PRE_sys_semtimedop)(tid, ARG1,ARG2,ARG3,ARG4);
+   ML_(generic_PRE_sys_semtimedop)(tid, ARG1,ARG2,ARG3,ARG4);
 }
 
 PRE(sys_semctl)
@@ -956,11 +956,11 @@ PRE(sys_semctl)
                     int, semid, int, semnum, int, cmd);
       break;
    }
-   VG_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
+   ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
 }
 POST(sys_semctl)
 {
-   VG_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3,ARG4);
+   ML_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3,ARG4);
 }
 
 PRE(sys_msgget)
@@ -974,7 +974,7 @@ PRE(sys_msgsnd)
    PRINT("sys_msgsnd ( %d, %p, %d, %d )",ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "msgsnd",
                  int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz, int, msgflg);
-   VG_(generic_PRE_sys_msgsnd)(tid, ARG1,ARG2,ARG3,ARG4);
+   ML_(generic_PRE_sys_msgsnd)(tid, ARG1,ARG2,ARG3,ARG4);
    if ((ARG4 & VKI_IPC_NOWAIT) == 0)
       *flags |= SfMayBlock;
 }
@@ -985,13 +985,13 @@ PRE(sys_msgrcv)
    PRE_REG_READ5(long, "msgrcv",
                  int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz,
                  long, msgytp, int, msgflg);
-   VG_(generic_PRE_sys_msgrcv)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+   ML_(generic_PRE_sys_msgrcv)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
    if ((ARG4 & VKI_IPC_NOWAIT) == 0)
       *flags |= SfMayBlock;
 }
 POST(sys_msgrcv)
 {
-   VG_(generic_POST_sys_msgrcv)(tid, RES,ARG1,ARG2,ARG3,ARG4,ARG5);
+   ML_(generic_POST_sys_msgrcv)(tid, RES,ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
 PRE(sys_msgctl)
@@ -999,11 +999,11 @@ PRE(sys_msgctl)
    PRINT("sys_msgctl ( %d, %d, %p )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "msgctl",
                  int, msqid, int, cmd, struct msqid_ds *, buf);
-   VG_(generic_PRE_sys_msgctl)(tid, ARG1,ARG2,ARG3);
+   ML_(generic_PRE_sys_msgctl)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_msgctl)
 {
-   VG_(generic_POST_sys_msgctl)(tid, RES,ARG1,ARG2,ARG3);
+   ML_(generic_POST_sys_msgctl)(tid, RES,ARG1,ARG2,ARG3);
 }
 
 PRE(sys_shmget)
@@ -1018,7 +1018,7 @@ PRE(wrap_sys_shmat)
    PRINT("wrap_sys_shmat ( %d, %p, %d )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "shmat",
                  int, shmid, const void *, shmaddr, int, shmflg);
-   arg2tmp = VG_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
+   arg2tmp = ML_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
    if (arg2tmp == 0)
       SET_STATUS_Failure( VKI_EINVAL );
    else
@@ -1026,19 +1026,19 @@ PRE(wrap_sys_shmat)
 }
 POST(wrap_sys_shmat)
 {
-   VG_(generic_POST_sys_shmat)(tid, RES,ARG1,ARG2,ARG3);
+   ML_(generic_POST_sys_shmat)(tid, RES,ARG1,ARG2,ARG3);
 }
 
 PRE(sys_shmdt)
 {
    PRINT("sys_shmdt ( %p )",ARG1);
    PRE_REG_READ1(long, "shmdt", const void *, shmaddr);
-   if (!VG_(generic_PRE_sys_shmdt)(tid, ARG1))
+   if (!ML_(generic_PRE_sys_shmdt)(tid, ARG1))
       SET_STATUS_Failure( VKI_EINVAL );
 }
 POST(sys_shmdt)
 {
-   VG_(generic_POST_sys_shmdt)(tid, RES,ARG1);
+   ML_(generic_POST_sys_shmdt)(tid, RES,ARG1);
 }
 
 PRE(sys_shmctl)
@@ -1046,11 +1046,11 @@ PRE(sys_shmctl)
    PRINT("sys_shmctl ( %d, %d, %p )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "shmctl",
                  int, shmid, int, cmd, struct shmid_ds *, buf);
-   VG_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
+   ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_shmctl)
 {
-   VG_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
+   ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
 }
 
 #undef PRE

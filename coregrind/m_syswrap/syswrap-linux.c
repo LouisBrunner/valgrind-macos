@@ -53,7 +53,7 @@
 VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
 {
    VG_(debugLog)(1, "core_os", 
-                    "VG_(thread_wrapper)(tid=%lld): entry\n", 
+                    "ML_(thread_wrapper)(tid=%lld): entry\n", 
                     (ULong)tidW);
 
    VgSchedReturnCode ret;
@@ -85,7 +85,7 @@ VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
    vg_assert(VG_(is_running_thread)(tid));
 
    VG_(debugLog)(1, "core_os", 
-                    "VG_(thread_wrapper)(tid=%lld): done\n", 
+                    "ML_(thread_wrapper)(tid=%lld): done\n", 
                     (ULong)tidW);
 
    /* Return to caller, still holding the lock. */
@@ -598,14 +598,14 @@ PRE(sys_gettid)
 //zz    /* int tkill(pid_t tid, int sig); */
 //zz    PRINT("sys_tkill ( %d, %d )", ARG1,ARG2);
 //zz    PRE_REG_READ2(long, "tkill", int, tid, int, sig);
-//zz    if (!VG_(client_signal_OK)(ARG2)) {
+//zz    if (!ML_(client_signal_OK)(ARG2)) {
 //zz       SET_STATUS_( -VKI_EINVAL );
 //zz       return;
 //zz    }
 //zz 
 //zz    /* If we're sending SIGKILL, check to see if the target is one of
 //zz       our threads and handle it specially. */
-//zz    if (ARG2 == VKI_SIGKILL && VG_(do_sigkill)(ARG1, -1))
+//zz    if (ARG2 == VKI_SIGKILL && ML_(do_sigkill)(ARG1, -1))
 //zz       SET_STATUS_(0);
 //zz    else
 //zz       SET_STATUS_(VG_(do_syscall2)(SYSNO, ARG1, ARG2));

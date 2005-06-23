@@ -664,7 +664,7 @@ static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
          for (i = 0; i < fdc; i++)
             if(VG_(clo_track_fds))
                // XXX: must we check the range on these fds with
-               //      VG_(fd_allowed)()?
+               //      ML_(fd_allowed)()?
                record_fd_open_named(tid, fds[i]);
       }
 

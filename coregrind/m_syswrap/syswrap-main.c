@@ -972,7 +972,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
    }
 
 #else
-#  error "VG_(fixup_guest_state_to_restart_syscall): unknown plat"
+#  error "ML_(fixup_guest_state_to_restart_syscall): unknown plat"
 #endif
 }
 
@@ -1111,7 +1111,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       VG_(core_panic)("?? strange syscall interrupt state?");
 
    /* In all cases, the syscall is now finished (even if we called
-      VG_(fixup_guest_state_to_restart_syscall), since that just
+      ML_(fixup_guest_state_to_restart_syscall), since that just
       re-positions the guest's IP for another go at it).  So we need
       to record that fact. */
    sci->status.what = SsIdle;

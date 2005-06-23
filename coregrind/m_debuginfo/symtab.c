@@ -870,8 +870,8 @@ void canonicaliseCfiSI ( SegInfo* si )
          /*
          if (!(si->cfisi[i].base < si->cfisi[i+1].base)) {
             VG_(printf)("\nOOO cfisis:\n");
-            VG_(ppCfiSI)(&si->cfisi[i]);
-            VG_(ppCfiSI)(&si->cfisi[i+1]);
+            ML_(ppCfiSI)(&si->cfisi[i]);
+            ML_(ppCfiSI)(&si->cfisi[i+1]);
          }
          */
          /* In order. */

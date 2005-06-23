@@ -138,15 +138,15 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    VG_(debugLog)(1, "syscalls-ppc32-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
-                       "VG_(thread_wrapper) called\n",
+                       "ML_(thread_wrapper) called\n",
                        (ULong)tidW);
 
    /* Run the thread all the way through. */
-   VgSchedReturnCode src = VG_(thread_wrapper)(tid);  
+   VgSchedReturnCode src = ML_(thread_wrapper)(tid);  
 
    VG_(debugLog)(1, "syscalls-ppc32-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
-                       "VG_(thread_wrapper) done\n",
+                       "ML_(thread_wrapper) done\n",
                        (ULong)tidW);
 
    Int c = VG_(count_living_threads)();
@@ -1048,7 +1048,7 @@ POST(sys_fstat64)
 //.. 
 //..    cloneflags = ARG1;
 //.. 
-//..    if (!VG_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
+//..    if (!ML_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
 //..       SET_RESULT( -VKI_EINVAL );
 //..       return;
 //..    }
@@ -1269,7 +1269,7 @@ POST(sys_fstat64)
 //.. 
 //..    switch (ARG1 /* call */) {
 //..    case VKI_SEMOP:
-//..       VG_(generic_PRE_sys_semop)( tid, ARG2, ARG5, ARG3 );
+//..       ML_(generic_PRE_sys_semop)( tid, ARG2, ARG5, ARG3 );
 //..       /* tst->sys_flags |= MayBlock; */
 //..       break;
 //..    case VKI_SEMGET:
@@ -1277,15 +1277,15 @@ POST(sys_fstat64)
 //..    case VKI_SEMCTL:
 //..    {
 //..       UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
-//..       VG_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
+//..       ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
 //..       break;
 //..    }
 //..    case VKI_SEMTIMEDOP:
-//..       VG_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
+//..       ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
 //..       /* tst->sys_flags |= MayBlock; */
 //..       break;
 //..    case VKI_MSGSND:
-//..       VG_(generic_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
+//..       ML_(generic_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
 //..       /* if ((ARG4 & VKI_IPC_NOWAIT) == 0)
 //..             tst->sys_flags |= MayBlock;
 //..       */
@@ -1302,7 +1302,7 @@ POST(sys_fstat64)
 //.. 			   (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
 //.. 			   "msgrcv(msgp)" );
 //.. 
-//..       VG_(generic_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
+//..       ML_(generic_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
 //.. 
 //..       /* if ((ARG4 & VKI_IPC_NOWAIT) == 0)
 //..             tst->sys_flags |= MayBlock;
@@ -1312,22 +1312,22 @@ POST(sys_fstat64)
 //..    case VKI_MSGGET:
 //..       break;
 //..    case VKI_MSGCTL:
-//..       VG_(generic_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
+//..       ML_(generic_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
 //..       break;
 //..    case VKI_SHMAT:
 //..       PRE_MEM_WRITE( "shmat(raddr)", ARG4, sizeof(Addr) );
-//..       ARG5 = VG_(generic_PRE_sys_shmat)( tid, ARG2, ARG5, ARG3 );
+//..       ARG5 = ML_(generic_PRE_sys_shmat)( tid, ARG2, ARG5, ARG3 );
 //..       if (ARG5 == 0)
 //..          SET_RESULT( -VKI_EINVAL );
 //..       break;
 //..    case VKI_SHMDT:
-//..       if (!VG_(generic_PRE_sys_shmdt)(tid, ARG5))
+//..       if (!ML_(generic_PRE_sys_shmdt)(tid, ARG5))
 //.. 	 SET_RESULT( -VKI_EINVAL );
 //..       break;
 //..    case VKI_SHMGET:
 //..       break;
 //..    case VKI_SHMCTL: /* IPCOP_shmctl */
-//..       VG_(generic_PRE_sys_shmctl)( tid, ARG2, ARG3, ARG5 );
+//..       ML_(generic_PRE_sys_shmctl)( tid, ARG2, ARG3, ARG5 );
 //..       break;
 //..    default:
 //..       VG_(message)(Vg_DebugMsg, "FATAL: unhandled syscall(ipc) %d", ARG1 );
@@ -1345,7 +1345,7 @@ POST(sys_fstat64)
 //..    case VKI_SEMCTL:
 //..    {
 //..       UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
-//..       VG_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
+//..       ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
 //..       break;
 //..    }
 //..    case VKI_SEMTIMEDOP:
@@ -1363,13 +1363,13 @@ POST(sys_fstat64)
 //.. 			   (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
 //.. 			   "msgrcv(msgp)" );
 //.. 
-//..       VG_(generic_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
+//..       ML_(generic_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
 //..       break;
 //..    }
 //..    case VKI_MSGGET:
 //..       break;
 //..    case VKI_MSGCTL:
-//..       VG_(generic_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
+//..       ML_(generic_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
 //..       break;
 //..    case VKI_SHMAT:
 //..    {
@@ -1382,17 +1382,17 @@ POST(sys_fstat64)
 //.. 
 //..       addr = deref_Addr ( tid, ARG4, "shmat(addr)" );
 //..       if ( addr > 0 ) { 
-//..          VG_(generic_POST_sys_shmat)( tid, addr, ARG2, ARG5, ARG3 );
+//..          ML_(generic_POST_sys_shmat)( tid, addr, ARG2, ARG5, ARG3 );
 //..       }
 //..       break;
 //..    }
 //..    case VKI_SHMDT:
-//..       VG_(generic_POST_sys_shmdt)( tid, RES, ARG5 );
+//..       ML_(generic_POST_sys_shmdt)( tid, RES, ARG5 );
 //..       break;
 //..    case VKI_SHMGET:
 //..       break;
 //..    case VKI_SHMCTL:
-//..       VG_(generic_POST_sys_shmctl)( tid, RES, ARG2, ARG3, ARG5 );
+//..       ML_(generic_POST_sys_shmctl)( tid, RES, ARG2, ARG3, ARG5 );
 //..       break;
 //..    default:
 //..       VG_(message)(Vg_DebugMsg,

@@ -443,11 +443,16 @@ static PPC32AMode* advance4 ( ISelEnv* env, PPC32AMode* am )
    switch (am4->tag) {
       case Pam_IR:
          am4->Pam.RR.index += 4; break;
-     case Pam_RR: {
-         HReg r_index = am4->Pam.IR.index;
-         addInstr(env, PPC32Instr_Alu32(Palu_ADD, r_index, r_index, PPC32RI_Imm(4)));
-         break;
-      }
+      case Pam_RR:
+      // This trashes r_index, which might be used by others later.
+      // Disable for the moment.  If needs to be reinstated, construct
+      // (r_index+4) in a new register and use that instead.
+      //{
+      //  HReg r_index = am4->Pam.IR.index;
+      //   addInstr(env, PPC32Instr_Alu32(Palu_ADD, r_index, r_index, 
+      //                                            PPC32RI_Imm(4)));
+      //   break;
+      // }
       default:
          vpanic("advance4(ppc32,host)");
    }

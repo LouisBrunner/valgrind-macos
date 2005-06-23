@@ -47,8 +47,7 @@ extern Int VG_(safe_fd) ( Int oldfd );
 extern Int VG_(fcntl)   ( Int fd, Int cmd, Int arg );
 
 /* Convert an fd into a filename */
-extern HChar* VG_(resolve_filename_nodup) ( Int fd );
-extern HChar* VG_(resolve_filename)       ( Int fd );
+extern Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf );
 
 /* Default destination port to be used in logging over a network, if
    none specified. */

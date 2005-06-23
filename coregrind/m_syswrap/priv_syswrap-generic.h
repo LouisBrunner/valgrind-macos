@@ -48,7 +48,7 @@ extern
 Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);
 
 extern
-void ML_(record_fd_open)(ThreadId tid, Int fd, char *pathname);
+void ML_(record_fd_open_nameless)(ThreadId tid, Int fd);
 
 // Used when killing threads -- we must not kill a thread if it's the thread
 // that would do Valgrind's final cleanup and output.

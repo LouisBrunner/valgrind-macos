@@ -345,7 +345,7 @@ void record_fd_close(ThreadId tid, Int fd)
    some such thing) or that we don't know the filename.  If the fd is
    already open, then we're probably doing a dup2() to an existing fd,
    so just overwrite the existing one. */
-void ML_(record_fd_open)(ThreadId tid, Int fd, char *pathname)
+static void record_fd_open_with_given_name(ThreadId tid, Int fd, char *pathname)
 {
    OpenFd *i;
 
@@ -374,8 +374,27 @@ void ML_(record_fd_open)(ThreadId tid, Int fd, char *pathname)
    }
 
    i->fd = fd;
-   i->pathname = pathname;
+   i->pathname = VG_(arena_strdup)(VG_AR_CORE, pathname);
    i->where = (tid == -1) ? NULL : VG_(record_ExeContext)(tid);
+}
+
+// Record opening of an fd, and find its name.
+static void record_fd_open_named(ThreadId tid, Int fd)
+{
+   static HChar buf[VKI_PATH_MAX];
+   Char* name;
+   if (VG_(resolve_filename)(fd, buf, VKI_PATH_MAX))
+      name = buf;
+   else
+      name = NULL;
+   
+   record_fd_open_with_given_name(tid, fd, name);
+}
+
+// Record opening of a nameless fd.
+void ML_(record_fd_open_nameless)(ThreadId tid, Int fd)
+{
+   record_fd_open_with_given_name(tid, fd, NULL);
 }
 
 static
@@ -521,7 +540,7 @@ void do_hacky_preopened()
 
    for (i = 0; i < count; i++)
       if(VG_(fcntl)(i, VKI_F_GETFL, 0) != -1)
-         ML_(record_fd_open)(-1, i, NULL);
+         ML_(record_fd_open_nameless)(-1, i);
 }
 
 /* Initialize the list of open file descriptors with the file descriptors
@@ -539,15 +558,15 @@ void VG_(init_preopened_fds)()
    }
 
    while((ret = VG_(getdents)(f, &d, sizeof(d))) != 0) {
-      if(ret == -1)
+      if (ret == -1)
          goto out;
 
-      if(VG_(strcmp)(d.d_name, ".") && VG_(strcmp)(d.d_name, "..")) {
+      if (VG_(strcmp)(d.d_name, ".") && VG_(strcmp)(d.d_name, "..")) {
          int fno = VG_(atoll)(d.d_name);
 
-         if(fno != f)
-            if(VG_(clo_track_fds))
-               ML_(record_fd_open)(-1, fno, VG_(resolve_filename)(fno));
+         if (fno != f)
+            if (VG_(clo_track_fds))
+               record_fd_open_named(-1, fno);
       }
 
       VG_(lseek)(f, d.d_off, VKI_SEEK_SET);
@@ -646,7 +665,7 @@ static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
             if(VG_(clo_track_fds))
                // XXX: must we check the range on these fds with
                //      VG_(fd_allowed)()?
-               ML_(record_fd_open) (tid, fds[i], VG_(resolve_filename)(fds[i]));
+               record_fd_open_named(tid, fds[i]);
       }
 
       cm = VKI_CMSG_NXTHDR(msg, cm);
@@ -901,8 +920,8 @@ ML_(generic_POST_sys_socketpair) ( ThreadId tid,
    } else {
       POST_MEM_WRITE( arg3, 2*sizeof(int) );
       if (VG_(clo_track_fds)) {
-         ML_(record_fd_open)(tid, fd1, NULL);
-         ML_(record_fd_open)(tid, fd2, NULL);
+         ML_(record_fd_open_nameless)(tid, fd1);
+         ML_(record_fd_open_nameless)(tid, fd2);
       }
    }
    return r;
@@ -920,7 +939,7 @@ ML_(generic_POST_sys_socket) ( ThreadId tid, SysRes res )
       r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open)(tid, res.val, NULL);
+         ML_(record_fd_open_nameless)(tid, res.val);
    }
    return r;
 }
@@ -971,7 +990,7 @@ ML_(generic_POST_sys_accept) ( ThreadId tid,
          buf_and_len_post_check ( tid, res, addr_p, addrlen_p,
                                   "socketcall.accept(addrlen_out)" );
       if (VG_(clo_track_fds))
-          ML_(record_fd_open)(tid, res.val, NULL);
+          ML_(record_fd_open_nameless)(tid, res.val);
    }
    return r;
 }
@@ -2511,7 +2530,7 @@ POST(sys_dup)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
+         record_fd_open_named(tid, RES);
    }
 }
 
@@ -2527,7 +2546,7 @@ POST(sys_dup2)
 {
    vg_assert(SUCCESS);
    if (VG_(clo_track_fds))
-      ML_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
+      record_fd_open_named(tid, RES);
 }
 
 PRE(sys_fchdir)
@@ -2612,7 +2631,7 @@ POST(sys_fcntl)
          SET_STATUS_Failure( VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            ML_(record_fd_open)(tid, RES, VG_(resolve_filename)(RES));
+            record_fd_open_named(tid, RES);
       }
    }
 }
@@ -2678,8 +2697,7 @@ POST(sys_fcntl64)
          SET_STATUS_Failure( VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            ML_(record_fd_open)(tid, RES, 
-                                VG_(resolve_filename)(RES));
+            record_fd_open_named(tid, RES);
       }
    }
 }
@@ -4564,8 +4582,7 @@ POST(sys_open)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open)(tid, RES, 
-                                  VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+         record_fd_open_with_given_name(tid, RES, (Char*)ARG1);
    }
 }
 
@@ -4616,7 +4633,7 @@ POST(sys_creat)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+         record_fd_open_with_given_name(tid, RES, (Char*)ARG1);
    }
 }
 
@@ -4640,8 +4657,8 @@ POST(sys_pipe)
    } else {
       POST_MEM_WRITE( ARG1, 2*sizeof(int) );
       if (VG_(clo_track_fds)) {
-         ML_(record_fd_open)(tid, p[0], NULL);
-         ML_(record_fd_open)(tid, p[1], NULL);
+         ML_(record_fd_open_nameless)(tid, p[0]);
+         ML_(record_fd_open_nameless)(tid, p[1]);
       }
    }
 }
@@ -5412,7 +5429,7 @@ POST(sys_mq_open)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+         record_fd_open_with_given_name(tid, RES, (Char*)ARG1);
    }
 }
 

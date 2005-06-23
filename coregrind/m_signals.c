@@ -1022,7 +1022,8 @@ static void write_note(Int fd, const struct note *n)
 
 static void fill_prpsinfo(const ThreadState *tst, struct vki_elf_prpsinfo *prpsinfo)
 {
-   Char *name;
+   static Char name[VKI_PATH_MAX];
+   Bool res;
 
    VG_(memset)(prpsinfo, 0, sizeof(*prpsinfo));
 
@@ -1049,12 +1050,10 @@ static void fill_prpsinfo(const ThreadState *tst, struct vki_elf_prpsinfo *prpsi
    prpsinfo->pr_uid = 0;
    prpsinfo->pr_gid = 0;
    
-   name = VG_(resolve_filename)(VG_(clexecfd));
-
-   if (name != NULL) {
+   if (VG_(resolve_filename)(VG_(clexecfd), name, VKI_PATH_MAX)) {
       Char *n = name+VG_(strlen)(name)-1;
 
-      while(n > name && *n != '/')
+      while (n > name && *n != '/')
 	 n--;
       if (n != name)
 	 n++;

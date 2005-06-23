@@ -33,7 +33,6 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"     // For VG_(sprintf)()
-#include "pub_core_mallocfree.h"
 #include "pub_core_syscall.h"
 #include "vki_unistd.h"
 
@@ -71,32 +70,18 @@ Int VG_(safe_fd)(Int oldfd)
 
 /* Given a file descriptor, attempt to deduce its filename.  To do
    this, we use /proc/self/fd/<FD>.  If this doesn't point to a file,
-   or if it doesn't exist, we just return NULL.  The caller is
-   responsible for copying the contents of buf out immediately. */
-static HChar resolve_filename_buf[VKI_PATH_MAX];
-HChar* VG_(resolve_filename_nodup) ( Int fd )
+   or if it doesn't exist, we return False. */
+Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf )
 {
    HChar tmp[64];
 
    VG_(sprintf)(tmp, "/proc/self/fd/%d", fd);
-   VG_(memset)(resolve_filename_buf, 0, VKI_PATH_MAX);
+   VG_(memset)(buf, 0, n_buf);
 
-   if (VG_(readlink)(tmp, resolve_filename_buf, VKI_PATH_MAX) == -1)
-      return NULL;
-
-   return (resolve_filename_buf[0] == '/') 
-             ? resolve_filename_buf 
-             : NULL;
-}
-
-/* Same as resolve_filename_nodup, except that the result is copied 
-   into new memory which the caller is responsible for freeing. */
-HChar* VG_(resolve_filename) ( Int fd )
-{
-   HChar* transient = VG_(resolve_filename_nodup)(fd);
-   return transient
-             ? VG_(arena_strdup)(VG_AR_CORE, transient)
-             : NULL;
+   if (VG_(readlink)(tmp, buf, VKI_PATH_MAX) > 0 && buf[0] == '/')
+      return True;
+   else
+      return False;
 }
 
 /* Returns -1 on failure. */

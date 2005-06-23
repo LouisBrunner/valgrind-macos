@@ -535,7 +535,7 @@ POST(sys_futex)
          SET_STATUS_Failure( VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            ML_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
+            ML_(record_fd_open_nameless)(tid, RES);
       }
    }
 }
@@ -553,7 +553,7 @@ POST(sys_epoll_create)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open) (tid, RES, NULL);
+         ML_(record_fd_open_nameless) (tid, RES);
    }
 }
 

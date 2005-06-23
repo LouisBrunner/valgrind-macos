@@ -785,8 +785,8 @@ VG_(map_file_segment)( Addr addr, SizeT len,
 void VG_(map_fd_segment)(Addr addr, SizeT len, UInt prot, UInt flags, 
 			 Int fd, ULong off, const Char *filename)
 {
+   Char buf[VKI_PATH_MAX];
    struct vki_stat st;
-   Char *name = NULL;
 
    st.st_dev = 0;
    st.st_ino = 0;
@@ -799,10 +799,8 @@ void VG_(map_fd_segment)(Addr addr, SizeT len, UInt prot, UInt flags,
    }
 
    if ((flags & SF_FILE) && filename == NULL && fd != -1)
-      name = VG_(resolve_filename_nodup)(fd);
-
-   if (filename == NULL)
-      filename = name;
+      if (VG_(resolve_filename)(fd, buf, VKI_PATH_MAX))
+         filename = buf;
 
    VG_(map_file_segment)(addr, len, prot, flags, 
                          st.st_dev, st.st_ino, off, filename);

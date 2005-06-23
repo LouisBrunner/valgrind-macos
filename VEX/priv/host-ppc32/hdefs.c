@@ -784,7 +784,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       }
       vex_printf("{ ");
       ppLoadImm(hregPPC32_GPR12(), i->Pin.Call.target);
-      vex_printf(" ; mtctr r12 ; bctrl[%d] }",i->Pin.Call.regparms);
+      vex_printf(" ; mtctr r12 ; bctrl [regparms=%d] }",i->Pin.Call.regparms);
       break;
    case Pin_Goto:
       vex_printf("goto: ");
@@ -1771,20 +1771,29 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
       /* jump over the following insns if condition does not hold */
       if (cond.test != Pct_ALWAYS) {
-         UInt delta = 4*4;  /* jump 4 instrs */
-
-         /* bca !ct,cf,dst */
-         p = mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 1, 0);
+         /* jmp fwds if !condition */
+         /* don't know how many bytes to jump over yet...
+            make space for a jump instruction and fill in later. */
+         ptmp = p; /* fill in this bit later */
+         p += 4;                                               // p += 4
       }
 
       /* load target to r_dst */
-      p = mkLoadImm(p, r_dst, i->Pin.Call.target);
+      p = mkLoadImm(p, r_dst, i->Pin.Call.target);             // p += 4|8
 
       /* mtspr 9,r_dst => move r_dst to count register */
-      p = mkFormXFX(p, r_dst, 9, 467);
+      p = mkFormXFX(p, r_dst, 9, 467);                         // p += 4
       
       /* bctrl => branch to count register (and save to lr) */
-      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);           // p += 4
+
+      /* Fix up the conditional jump, if there was one. */
+      if (cond.test != Pct_ALWAYS) {
+         Int delta = p - ptmp;
+         vassert(delta >= 16 && delta <= 20);
+         /* bc !ct,cf,delta */
+         mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 0, 0);
+      }
       goto done;
    }
 

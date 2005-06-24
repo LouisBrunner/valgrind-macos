@@ -477,9 +477,9 @@ static UInt extend_s_16to32 ( UInt x )
    return (UInt)((((Int)x) << 16) >> 16);
 }
 
-static UInt extend_s_24to32 ( UInt x )
+static UInt extend_s_26to32 ( UInt x )
 {
-   return (UInt)((((Int)x) << 8) >> 8);
+   return (UInt)((((Int)x) << 6) >> 6);
 }
 
 /* Do a big-endian load of a 32-bit word, regardless of the endianness
@@ -2441,7 +2441,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
    UChar flag_LK  = toUChar((theInstr >>  0) & 1);       /* theInstr[0]     */
    
    Int exts_BD = (Int)extend_s_16to32(BD << 2);
-   Int exts_LI = (Int)extend_s_24to32(LI_24 << 2);
+   Int exts_LI = (Int)extend_s_26to32(LI_24 << 2);
    
    Addr32 nia = 0;
    

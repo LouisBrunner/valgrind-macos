@@ -24,6 +24,23 @@ AC_ARG_WITH(vex,
 ])
 AC_SUBST(VEX_DIR)
 
+# "make distcheck" first builds a tarball, then extracts it.
+# Then it creates a build directory different from the extracted sources
+# (called _build), and issues
+#
+#   ../configure $(DISTCHECK_CONFIGURE_FLAGS)
+#
+# and then builds, runs "make check", installs using DESTDIR, runs make
+# installcheck, uninstalls, checks whether the installed base is empty
+# again, then does yet another "make dist" and compares the resulting
+# tarball with the one it started off with for identical content.  Then it
+# tests "make distclean" for no leftover files.  
+#
+# So this line means:  when doing "make dist", use the same --with-vex value
+# that you used when running configure to configure this tree in the first
+# place.
+AC_SUBST([DISTCHECK_CONFIGURE_FLAGS], [--with-vex=$VEX_DIR])
+
 # Checks for programs.
 CFLAGS="-Wno-long-long"
 

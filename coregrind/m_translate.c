@@ -40,6 +40,7 @@
 #include "pub_core_profile.h"
 #include "pub_core_redir.h"         // For VG_(code_redirect)()
 #include "pub_core_signals.h"       // For VG_(synth_fault_{perms,mapping})()
+#include "pub_core_stacks.h"        // For VG_(unknown_SP_update)()
 #include "pub_core_tooliface.h"     // For VG_(tdict)
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"

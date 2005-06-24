@@ -52,6 +52,7 @@
 #include "pub_core_redir.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
+#include "pub_core_stacks.h"        // Needed for VG_(register_stack)
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
@@ -2715,7 +2716,7 @@ int main(int argc, char **argv, char **envp)
    //--------------------------------------------------------------
    // register client stack
    //--------------------------------------------------------------
-   VG_(clstk_id) = VG_(handle_stack_register)(VG_(clstk_base), VG_(clstk_end));
+   VG_(clstk_id) = VG_(register_stack)(VG_(clstk_base), VG_(clstk_end));
 
    //--------------------------------------------------------------
    // Run!

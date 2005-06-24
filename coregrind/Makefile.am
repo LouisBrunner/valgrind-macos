@@ -63,6 +63,7 @@ noinst_HEADERS = \
 	pub_core_sigframe.h	\
 	pub_core_signals.h	\
 	pub_core_skiplist.h	\
+	pub_core_stacks.h	\
 	pub_core_stacktrace.h	\
 	pub_core_syswrap.h	\
 	pub_core_threadmodel.h	\
@@ -117,6 +118,7 @@ stage2_SOURCES = \
 	m_redir.c \
 	m_signals.c \
 	m_skiplist.c \
+	m_stacks.c \
 	m_stacktrace.c \
 	m_syscall.c \
 	m_threadmodel.c \

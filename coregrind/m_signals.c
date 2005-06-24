@@ -97,6 +97,7 @@
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
 #include "pub_core_sigframe.h"      // For VG_(sigframe_create)()
+#include "pub_core_stacks.h"        // For VG_(change_stack)()
 #include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
@@ -1737,7 +1738,7 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
 
    /* When we change the main stack, we have to let the stack handling
       code know about it. */
-   VG_(handle_stack_change)(VG_(clstk_id), base, VG_(clstk_end));
+   VG_(change_stack)(VG_(clstk_id), base, VG_(clstk_end));
 
    if (0)
       VG_(printf)("extended stack: %p %d\n",

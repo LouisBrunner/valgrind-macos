@@ -789,27 +789,27 @@ struct vki_msqid64_ds {
    unsigned long		__unused5;
 };
 
-//.. //----------------------------------------------------------------------
-//.. // From linux-2.6.8.1/include/asm-i386/ipc.h
-//.. //----------------------------------------------------------------------
-//.. 
-//.. struct vki_ipc_kludge {
-//.. 	struct vki_msgbuf __user *msgp;
-//.. 	long msgtyp;
-//.. };
-//.. 
-//.. #define VKI_SEMOP		 1
-//.. #define VKI_SEMGET		 2
-//.. #define VKI_SEMCTL		 3
-//.. #define VKI_SEMTIMEDOP 4
-//.. #define VKI_MSGSND		11
-//.. #define VKI_MSGRCV		12
-//.. #define VKI_MSGGET		13
-//.. #define VKI_MSGCTL		14
-//.. #define VKI_SHMAT		21
-//.. #define VKI_SHMDT		22
-//.. #define VKI_SHMGET		23
-//.. #define VKI_SHMCTL		24
+//----------------------------------------------------------------------
+// From linux-2.6.8.1/include/asm-ppc/ipc.h
+//----------------------------------------------------------------------
+
+struct vki_ipc_kludge {
+        struct vki_msgbuf __user *msgp;
+        long msgtyp;
+};
+
+#define VKI_SEMOP            1
+#define VKI_SEMGET           2
+#define VKI_SEMCTL           3
+#define VKI_SEMTIMEDOP       4
+#define VKI_MSGSND          11
+#define VKI_MSGRCV          12
+#define VKI_MSGGET          13
+#define VKI_MSGCTL          14
+#define VKI_SHMAT           21
+#define VKI_SHMDT           22
+#define VKI_SHMGET          23
+#define VKI_SHMCTL          24
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-ppc/shmbuf.h

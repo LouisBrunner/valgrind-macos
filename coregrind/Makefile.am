@@ -65,6 +65,7 @@ noinst_HEADERS = \
 	pub_core_skiplist.h	\
 	pub_core_stacks.h	\
 	pub_core_stacktrace.h	\
+	pub_core_syscall.h	\
 	pub_core_syswrap.h	\
 	pub_core_threadmodel.h	\
 	pub_core_threadstate.h	\

@@ -54,7 +54,7 @@ check_PROGRAMS = \
 	stack_changes vgprintf
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 vgprintf_SOURCES	= vgprintf.c

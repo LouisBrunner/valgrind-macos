@@ -845,8 +845,13 @@ struct vki_elf_prpsinfo
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/eventpoll.h
+// From linux-2.6.12.1/include/linux/eventpoll.h
 //----------------------------------------------------------------------
+
+/* Valid opcodes to issue to sys_epoll_ctl() */
+#define VKI_EPOLL_CTL_ADD 1
+#define VKI_EPOLL_CTL_DEL 2
+#define VKI_EPOLL_CTL_MOD 3
 
 #ifdef __x86_64__
 #define VKI_EPOLL_PACKED __attribute__((packed))
@@ -854,7 +859,7 @@ struct vki_elf_prpsinfo
 #define VKI_EPOLL_PACKED
 #endif
 
-struct epoll_event {
+struct vki_epoll_event {
 	__vki_u32 events;
 	__vki_u64 data;
 } VKI_EPOLL_PACKED;

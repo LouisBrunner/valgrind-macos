@@ -567,8 +567,9 @@ PRE(sys_epoll_ctl)
    PRINT("sys_epoll_ctl ( %d, %s, %d, %p )", 
          ARG1, ( ARG2<3 ? epoll_ctl_s[ARG2] : "?" ), ARG3, ARG4);
    PRE_REG_READ4(long, "epoll_ctl",
-                 int, epfd, int, op, int, fd, struct epoll_event *, event);
-   PRE_MEM_READ( "epoll_ctl(event)", ARG4, sizeof(struct epoll_event) );
+                 int, epfd, int, op, int, fd, struct vki_epoll_event *, event);
+   if (ARG2 != VKI_EPOLL_CTL_DEL)
+      PRE_MEM_READ( "epoll_ctl(event)", ARG4, sizeof(struct vki_epoll_event) );
 }
 
 PRE(sys_epoll_wait)
@@ -576,15 +577,15 @@ PRE(sys_epoll_wait)
    *flags |= SfMayBlock;
    PRINT("sys_epoll_wait ( %d, %p, %d, %d )", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "epoll_wait",
-                 int, epfd, struct epoll_event *, events,
+                 int, epfd, struct vki_epoll_event *, events,
                  int, maxevents, int, timeout);
-   PRE_MEM_WRITE( "epoll_wait(events)", ARG2, sizeof(struct epoll_event)*ARG3);
+   PRE_MEM_WRITE( "epoll_wait(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
 }
 POST(sys_epoll_wait)
 {
    vg_assert(SUCCESS);
    if (RES > 0)
-      POST_MEM_WRITE( ARG2, sizeof(struct epoll_event)*RES ) ;
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_epoll_event)*RES ) ;
 }
 
 PRE(sys_gettid)

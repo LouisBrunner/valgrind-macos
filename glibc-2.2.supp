@@ -418,10 +418,15 @@
 
 #-------- glibc 2.2.5/ Debian 3.0
 {
-   _dl_start/ld-2.2.5.so(Cond)
+   _dl_start(Cond)
    Memcheck:Cond
    fun:_dl_start
-   obj:/lib/ld-2.2.5.so
+}
+
+{
+   _dl_start(Cond)
+   Memcheck:Cond
+   fun:_dl_relocate_object
 }
 
 #-------------------

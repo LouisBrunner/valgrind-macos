@@ -1332,7 +1332,6 @@ static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
    return *a_p;
 }
  
-// XXX: should use the constants here (eg. SHMAT), not the numbers directly!
 PRE(sys_ipc)
 {
    PRINT("sys_ipc ( %d, %d, %d, %d, %p, %d )", ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);

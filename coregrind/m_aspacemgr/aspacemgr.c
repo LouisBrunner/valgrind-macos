@@ -36,7 +36,6 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"   // For VG_(fstat), VG_(resolve_filename_nodup)
-#include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"
@@ -72,6 +71,47 @@ Addr VG_(valgrind_base);	 /* valgrind's address range */
 // Note that VG_(valgrind_last) names the last byte of the section, whereas
 // the VG_(*_end) vars name the byte one past the end of the section.
 Addr VG_(valgrind_last);
+
+/*--------------------------------------------------------------*/
+/*--- The raw mman syscalls                                  ---*/
+/*--------------------------------------------------------------*/
+
+SysRes VG_(mmap_native)(void *start, SizeT length, UInt prot, UInt flags,
+                        UInt fd, OffT offset)
+{
+   SysRes res;
+#if defined(VGP_x86_linux)
+   { 
+      UWord args[6];
+      args[0] = (UWord)start;
+      args[1] = length;
+      args[2] = prot;
+      args[3] = flags;
+      args[4] = fd;
+      args[5] = offset;
+      res = VG_(do_syscall1)(__NR_mmap, (UWord)args );
+   }
+#elif defined(VGP_amd64_linux)
+   res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
+                         prot, flags, fd, offset);
+#elif defined(VGP_ppc32_linux)
+   res = VG_(do_syscall6)(__NR_mmap, (UWord)(start), (length),
+			  prot, flags, fd, offset);
+#else
+#  error Unknown platform
+#endif
+   return res;
+}
+
+SysRes VG_(munmap_native)(void *start, SizeT length)
+{
+   return VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
+}
+
+SysRes VG_(mprotect_native)( void *start, SizeT length, UInt prot )
+{
+   return VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
+}
 
 /*--------------------------------------------------------------*/
 /*--- A simple, self-contained ordered array of segments.    ---*/
@@ -1021,6 +1061,7 @@ void VG_(unpad_address_space)(Addr start)
 
    while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
+         //ret = VG_(do_syscall2)(__NR_munmap, addr, s->addr - addr);
          ret = VG_(do_syscall2)(__NR_munmap, addr, s->addr - addr);
       }
       addr = s->addr + s->len;
@@ -1153,30 +1194,6 @@ Bool VG_(is_shadow_addr)(Addr a)
 /*--- Handling shadow memory                                       ---*/
 /*--------------------------------------------------------------------*/
 
-void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init)
-{
-vg_assert(0);
-   if (0)
-      VG_(printf)("init_shadow_range(%p, %d)\n", p, sz);
-
-   vg_assert(VG_(needs).shadow_memory);
-   vg_assert(VG_(tdict).track_init_shadow_page);
-
-   sz = VG_PGROUNDUP(p+sz) - VG_PGROUNDDN(p);
-   p  = VG_PGROUNDDN(p);
-
-   VG_(mprotect)((void *)p, sz, VKI_PROT_READ|VKI_PROT_WRITE);
-   
-   if (call_init) 
-      while(sz) {
-	 /* ask the tool to initialize each page */
-	 VG_TRACK( init_shadow_page, VG_PGROUNDDN(p) );
-	 
-	 p  += VKI_PAGE_SIZE;
-	 sz -= VKI_PAGE_SIZE;
-      }
-}
-
 void *VG_(shadow_alloc)(UInt size)
 {
    static Addr shadow_alloc = 0;
@@ -1186,7 +1203,6 @@ void *VG_(shadow_alloc)(UInt size)
    if (0) show_segments("shadow_alloc(before)");
 
    vg_assert(VG_(needs).shadow_memory);
-   vg_assert(!VG_(tdict).track_init_shadow_page);
 
    size = VG_PGROUNDUP(size);
 

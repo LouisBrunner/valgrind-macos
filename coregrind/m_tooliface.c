@@ -322,8 +322,6 @@ DEF(track_post_mutex_unlock,     ThreadId, void*)
 DEF(track_pre_deliver_signal,    ThreadId, Int sigNo, Bool)
 DEF(track_post_deliver_signal,   ThreadId, Int sigNo)
 
-DEF(track_init_shadow_page,      Addr)
-
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

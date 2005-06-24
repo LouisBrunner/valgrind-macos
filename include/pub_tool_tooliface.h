@@ -398,9 +398,7 @@ void VG_(track_post_deliver_signal)(void(*f)(ThreadId tid, Int sigNo));
 
 /* Others... condition variables...
    ...
-   Shadow memory management
  */
-void VG_(track_init_shadow_page)(void(*f)(Addr p));
 
 #endif   // __PUB_TOOL_TOOLIFACE_H
 

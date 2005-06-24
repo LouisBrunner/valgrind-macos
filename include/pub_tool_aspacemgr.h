@@ -39,12 +39,6 @@ extern void *VG_(shadow_alloc)(UInt size);
 
 extern Bool VG_(is_addressable)(Addr p, SizeT sz, UInt prot);
 
-/* initialize shadow pages in the range [p, p+sz) This calls
-   init_shadow_page for each one.  It should be a lot more efficient
-   for bulk-initializing shadow pages than faulting on each one. 
-*/
-extern void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init);
-
 /* Calls into the core used by leak-checking */
 
 /* Calls "add_rootrange" with each range of memory which looks like a

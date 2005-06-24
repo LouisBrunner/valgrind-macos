@@ -201,8 +201,6 @@ typedef struct {
    void (*track_pre_deliver_signal) (ThreadId, Int sigNo, Bool);
    void (*track_post_deliver_signal)(ThreadId, Int sigNo);
 
-   void (*track_init_shadow_page)(Addr);
-
 } VgToolInterface;
 
 extern VgToolInterface VG_(tdict);

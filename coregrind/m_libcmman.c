@@ -38,33 +38,6 @@
 #include "pub_core_syscall.h"
 #include "vki_unistd.h"
 
-SysRes VG_(mmap_native)(void *start, SizeT length, UInt prot, UInt flags,
-                        UInt fd, OffT offset)
-{
-   SysRes res;
-#if defined(VGP_x86_linux)
-   { 
-      UWord args[6];
-      args[0] = (UWord)start;
-      args[1] = length;
-      args[2] = prot;
-      args[3] = flags;
-      args[4] = fd;
-      args[5] = offset;
-      res = VG_(do_syscall1)(__NR_mmap, (UWord)args );
-   }
-#elif defined(VGP_amd64_linux)
-   res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
-                         prot, flags, fd, offset);
-#elif defined(VGP_ppc32_linux)
-   res = VG_(do_syscall6)(__NR_mmap, (UWord)(start), (length),
-			  prot, flags, fd, offset);
-#else
-#  error Unknown platform
-#endif
-   return res;
-}
-
 /* Returns -1 on failure. */
 void* VG_(mmap)( void* start, SizeT length,
                  UInt prot, UInt flags, UInt sf_flags, UInt fd, OffT offset)
@@ -106,11 +79,6 @@ void* VG_(mmap)( void* start, SizeT length,
    return res.isError ? (void*)-1 : (void*)res.val;
 }
 
-SysRes VG_(munmap_native)(void *start, SizeT length)
-{
-   return VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
-}
-
 /* Returns -1 on failure. */
 Int VG_(munmap)( void* start, SizeT length )
 {
@@ -121,11 +89,6 @@ Int VG_(munmap)( void* start, SizeT length )
    } else {
       return -1;
    }
-}
-
-SysRes VG_(mprotect_native)( void *start, SizeT length, UInt prot )
-{
-   return VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
 }
 
 Int VG_(mprotect)( void *start, SizeT length, UInt prot )

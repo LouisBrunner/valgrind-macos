@@ -1885,28 +1885,8 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 } else
 	    VG_(message)(Vg_UserMsg, "Stack overflow in thread %d: can't grow stack to %p", 
 			 tid, fault);
-
-	 /* Fall into normal signal handling for all other cases */
-      } else if (info->si_code == 2 && /* SEGV_ACCERR */
-		 VG_(needs).shadow_memory &&
-		 VG_(is_shadow_addr)(fault)) {
-	 /* If there's a fault within the shadow memory range, and it
-	    is a permissions fault, then it means that the client is
-	    using some memory which had not previously been used.
-	    This catches those faults, makes the memory accessible,
-	    and calls the tool to initialize that page.
-	 */
-	 static Int recursion = 0;
-
-	 if (recursion++ == 0) {
-	    VG_(init_shadow_range)(VG_PGROUNDDN(fault), VKI_PAGE_SIZE, True);
-	    recursion--;
-	    return;
-	 } else {
-	    /* otherwise fall into normal SEGV handling */	    
-	    recursion--;
-	 }
       }
+      /* Fall into normal signal handling for all other cases */
    }
 
    /* OK, this is a signal we really have to deal with.  If it came

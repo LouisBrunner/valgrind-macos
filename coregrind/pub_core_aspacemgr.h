@@ -59,6 +59,12 @@ extern Addr VG_(shadow_end);
 extern Addr VG_(valgrind_base);	 // valgrind's address range
 extern Addr VG_(valgrind_last);  // Nb: last byte, rather than one past the end
 
+// Direct access to these system calls.
+extern SysRes VG_(mmap_native)     ( void* start, SizeT length, UInt prot,
+                                     UInt flags, UInt fd, OffT offset );
+extern SysRes VG_(munmap_native)   ( void* start, SizeT length );
+extern SysRes VG_(mprotect_native) ( void *start, SizeT length, UInt prot );
+
 /* A Segment is mapped piece of client memory.  This covers all kinds
    of mapped memory (exe, brk, mmap, .so, shm, stack, etc)
 

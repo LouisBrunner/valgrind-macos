@@ -1648,8 +1648,6 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
    si->cfisi_size = si->cfisi_used = 0;
    si->cfisi_minaddr = si->cfisi_maxaddr = 0;
 
-   si->seg = seg;
-
    si->stab_typetab = NULL;
 
    si->plt_start  = si->plt_size  = 0;

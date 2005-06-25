@@ -210,11 +210,6 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
    Bool resolved;
 
    vg_assert(si != NULL);
-   vg_assert(si->seg != NULL);
-
-   /* no redirection from Valgrind segments */
-   if (si->seg->flags & SF_VALGRIND)
-      return False;
 
    resolved = from_resolved(redir);
    vg_assert(!resolved);

@@ -738,8 +738,12 @@ VG_(map_file_segment)( Addr addr, SizeT len,
    static const Bool debug = False || mem_debug;
    Segment* s;
    Int      idx;
-   HChar*   stage2_suffix = "lib/valgrind/stage2";
-   Bool     is_stage2 = VG_(strstr)(filename, stage2_suffix) != NULL;
+   HChar*   stage2_suffix1 = "lib/valgrind/stage2";
+   HChar*   stage2_suffix2 = "coregrind/stage2";
+   Bool     is_stage2 = False;
+   
+   is_stage2 = is_stage2 || ( VG_(strstr)(filename, stage2_suffix1) != NULL );
+   is_stage2 = is_stage2 || ( VG_(strstr)(filename, stage2_suffix2) != NULL );
 
    if (debug)
       VG_(printf)(

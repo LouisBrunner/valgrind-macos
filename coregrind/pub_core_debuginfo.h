@@ -41,10 +41,9 @@
 
 #include "pub_tool_debuginfo.h"
 
-typedef struct _Segment Segment;
-
 extern Bool VG_(is_object_file)   ( const void *hdr );
-extern SegInfo * VG_(read_seg_symbols) ( Segment *seg );
+extern SegInfo *VG_(read_seg_symbols) ( Addr addr, SizeT len,
+                                        OffT offset, const Char* filename);
 extern void VG_(seginfo_incref)   ( SegInfo * );
 extern void VG_(seginfo_decref)   ( SegInfo *, Addr a );
 

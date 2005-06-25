@@ -31,8 +31,6 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
-#include "pub_core_aspacemgr.h"     // For Segment type
 #include "pub_core_debuginfo.h"
 #include "pub_core_demangle.h"
 #include "pub_core_libcbase.h"
@@ -1618,11 +1616,10 @@ Bool read_lib_symbols ( SegInfo* si )
    address ranges, and as a result the SegInfos in this list describe
    disjoint address ranges. 
 */
-SegInfo *VG_(read_seg_symbols) ( Segment *seg )
+SegInfo *VG_(read_seg_symbols) ( Addr seg_addr, SizeT seg_len,
+                                 OffT seg_offset, const Char* seg_filename)
 {
    SegInfo* si;
-
-   vg_assert(seg->seginfo == NULL);
 
    VGP_PUSHCC(VgpReadSyms);
 
@@ -1630,10 +1627,10 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
    si = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(SegInfo));
 
    VG_(memset)(si, 0, sizeof(*si));
-   si->start    = seg->addr;
-   si->size     = seg->len;
-   si->foffset  = seg->offset;
-   si->filename = VG_(arena_strdup)(VG_AR_SYMTAB, seg->filename);
+   si->start    = seg_addr;
+   si->size     = seg_len;
+   si->foffset  = seg_offset;
+   si->filename = VG_(arena_strdup)(VG_AR_SYMTAB, seg_filename);
 
    si->ref = 1;
 

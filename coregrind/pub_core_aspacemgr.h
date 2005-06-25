@@ -87,6 +87,8 @@ extern SysRes VG_(mprotect_native) ( void *start, SizeT length, UInt prot );
 #define SF_CODE     (1 << 14) // segment contains cached code
 #define SF_DEVICE   (1 << 15) // device mapping; avoid careless touching
 
+typedef struct _Segment Segment;
+
 struct _Segment {
    UInt         prot;         // VKI_PROT_*
    UInt         flags;        // SF_*

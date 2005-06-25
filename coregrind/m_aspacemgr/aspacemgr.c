@@ -792,13 +792,16 @@ VG_(map_file_segment)( Addr addr, SizeT len,
        && ( (addr+len < VG_(valgrind_base) || addr > VG_(valgrind_last))
             || is_stage2
           )
-       && (flags & (SF_MMAP|SF_NOSYMS)) == SF_MMAP) {
+       && (flags & (SF_MMAP|SF_NOSYMS)) == SF_MMAP
+   ) {
       if (off == 0
 	  && s->fnIdx != -1
 	  && (prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == (VKI_PROT_READ|VKI_PROT_EXEC)
 	  && len >= VKI_PAGE_SIZE
-          && VG_(is_object_file)((void *)addr)) {
-         s->seginfo = VG_(read_seg_symbols)(s);
+          && VG_(is_object_file)((void *)addr)
+      ) {
+         s->seginfo = VG_(read_seg_symbols)(s->addr, s->len, s->offset,
+                                            s->filename);
          if (s->seginfo != NULL) {
             s->flags |= SF_DYNLIB;
          }

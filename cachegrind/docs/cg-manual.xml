@@ -100,7 +100,7 @@ sections.</para>
 </sect2>
 
 
-<sect2>
+<sect2 id="cache-sim" xreflabel="Cache simulation specifics">
 <title>Cache simulation specifics</title>
 
 <para>Cachegrind uses a simulation for a machine with a split L1
@@ -689,7 +689,7 @@ way as for C/C++ programs.</para>
 
 <itemizedlist>
 
-  <listitem>
+  <listitem id="pid">
     <para><computeroutput>--pid</computeroutput></para>
     <para>Indicates which
     <computeroutput>cachegrind.out.pid</computeroutput> file to
@@ -702,7 +702,7 @@ way as for C/C++ programs.</para>
     <para>Help and version, as usual.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="sort">
     <para><computeroutput>--sort=A,B,C</computeroutput> [default:
     order in
     <computeroutput>cachegrind.out.pid</computeroutput>]</para>
@@ -716,7 +716,7 @@ way as for C/C++ programs.</para>
     (<computeroutput>--sort=D2mr,I2mr</computeroutput>).</para>
   </listitem>
 
-  <listitem>
+  <listitem id="show">
     <para><computeroutput>--show=A,B,C</computeroutput> [default:
     all, using order in
     <computeroutput>cachegrind.out.pid</computeroutput>]</para>
@@ -726,7 +726,7 @@ way as for C/C++ programs.</para>
     use the order in the file).</para>
   </listitem>
 
-  <listitem>
+  <listitem id="threshold">
     <para><computeroutput>--threshold=X</computeroutput>
     [default: 99%]</para>
     <para>Sets the threshold for the function-by-function
@@ -743,7 +743,7 @@ way as for C/C++ programs.</para>
     <para><computeroutput>--sort=D2mr:99,D2mw:99</computeroutput></para>
   </listitem>
 
-  <listitem>
+  <listitem id="auto">
     <para><computeroutput>--auto=no</computeroutput> [default]</para>
     <para><computeroutput>--auto=yes</computeroutput></para>
     <para>When enabled, automatically annotates every file that
@@ -751,7 +751,7 @@ way as for C/C++ programs.</para>
     found.  Also gives a list of those that couldn't be found.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="context">
     <para><computeroutput>--context=N</computeroutput> [default:
     8]</para>
     <para>Print N lines of context before and after each
@@ -760,7 +760,7 @@ way as for C/C++ programs.</para>
     (eg. 10,000) to show all source lines.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="include">
     <para><computeroutput>-I=&lt;dir&gt;,
       --include=&lt;dir&gt;</computeroutput> [default: empty
       string]</para>

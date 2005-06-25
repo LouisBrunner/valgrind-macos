@@ -59,7 +59,7 @@ memcheck can detect the following problems:</para>
        xreflabel="Command-line flags specific to memcheck">
 <title>Command-line flags specific to memcheck</title>
 
-<itemizedlist>
+<itemizedlist id="leakcheck">
   <listitem>
     <para><computeroutput>--leak-check=no</computeroutput>
     [default]</para>
@@ -73,7 +73,7 @@ memcheck can detect the following problems:</para>
     messages.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="showreach">
     <para><computeroutput>--show-reachable=no</computeroutput>
     [default]</para>
     <para><computeroutput>--show-reachable=yes</computeroutput></para>
@@ -91,7 +91,7 @@ memcheck can detect the following problems:</para>
     you wanted to.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="leakres">
     <para><computeroutput>--leak-resolution=low</computeroutput>
     [default]</para>
     <para><computeroutput>--leak-resolution=med</computeroutput></para>
@@ -116,7 +116,7 @@ memcheck can detect the following problems:</para>
     changes how the results are presented.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="freelist">
     <para><computeroutput>--freelist-vol=&lt;number></computeroutput>
     [default: 1000000]</para>
     <para>When the client program releases memory using free (in
@@ -135,7 +135,7 @@ memcheck can detect the following problems:</para>
     which would otherwise go undetected.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="gcc296">
     <para><computeroutput>--workaround-gcc296-bugs=no</computeroutput>
     [default]</para>
     <para><computeroutput>--workaround-gcc296-bugs=yes</computeroutput></para>
@@ -156,9 +156,9 @@ memcheck can detect the following problems:</para>
     scheduling bug in g++-3.0.4.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="partial">
     <para><computeroutput>--partial-loads-ok=yes</computeroutput>
-    [the default]</para>
+    [default]</para>
     <para><computeroutput>--partial-loads-ok=no</computeroutput></para>
     <para>Controls how Memcheck handles word (4-byte) loads from
     addresses for which some bytes are addressible and others are
@@ -173,7 +173,16 @@ memcheck can detect the following problems:</para>
     is issued, and the resulting V bytes indicate valid data.</para>
   </listitem>
 
-  <listitem>
+  <listitem id="strlen">
+    <para><computeroutput>--avoid-strlen-errors=no</computeroutput></para>
+    <para><computeroutput>--avoid-strlen-errors=yes</computeroutput> [default]</para>
+    <para>Enable or disable a heuristic for dealing with highly-optimized 
+    versions of strlen.  These versions of strlen can cause spurious errors 
+    to be reported by memcheck, so it's usually a good idea to leave this
+    enabled.</para>
+  </listitem>
+
+  <listitem id="cleanup">
     <para><computeroutput>--cleanup=no</computeroutput></para>
     <para><computeroutput>--cleanup=yes</computeroutput> [default]</para>
     <para><command>This is a flag to help debug valgrind itself.

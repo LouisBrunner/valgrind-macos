@@ -65,6 +65,7 @@
 /* Take a snapshot of the client's stack, putting the up to 'n_ips' IPs 
    into 'ips'.  In order to be thread-safe, we pass in the thread's IP
    and FP.  Returns number of IPs put in 'ips'.  */
+static
 UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips, 
                             Addr ip, Addr sp, Addr fp,
                             Addr fp_min, Addr fp_max_orig )

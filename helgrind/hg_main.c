@@ -2425,9 +2425,9 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 	   si != NULL; 
 	   si = VG_(next_seginfo)(si)) 
       {
-	 Addr base = VG_(seg_start)(si);
-	 SizeT size = VG_(seg_size)(si);
-	 const UChar *filename = VG_(seg_filename)(si);
+	 Addr base = VG_(seginfo_start)(si);
+	 SizeT size = VG_(seginfo_size)(si);
+	 const UChar *filename = VG_(seginfo_filename)(si);
 
 	 if (a >= base && a < base+size) {
 	    ai->akind = Segment;
@@ -2435,7 +2435,7 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 	    ai->rwoffset = a - base;
 	    ai->filename = filename;
 
-	    switch(VG_(seg_sect_kind)(a)) {
+	    switch(VG_(seginfo_sect_kind)(a)) {
 	    case Vg_SectText:	ai->section = "text"; break;
 	    case Vg_SectData:	ai->section = "data"; break;
 	    case Vg_SectBSS:	ai->section = "BSS"; break;

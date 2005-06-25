@@ -2570,27 +2570,27 @@ const SegInfo* VG_(next_seginfo)(const SegInfo* si)
    return si->next;
 }
 
-Addr VG_(seg_start)(const SegInfo* si)
+Addr VG_(seginfo_start)(const SegInfo* si)
 {
    return si->start;
 }
 
-SizeT VG_(seg_size)(const SegInfo* si)
+SizeT VG_(seginfo_size)(const SegInfo* si)
 {
    return si->size;
 }
 
-const UChar* VG_(seg_filename)(const SegInfo* si)
+const UChar* VG_(seginfo_filename)(const SegInfo* si)
 {
    return si->filename;
 }
 
-ULong VG_(seg_sym_offset)(const SegInfo* si)
+ULong VG_(seginfo_sym_offset)(const SegInfo* si)
 {
    return si->offset;
 }
 
-VgSectKind VG_(seg_sect_kind)(Addr a)
+VgSectKind VG_(seginfo_sect_kind)(Addr a)
 {
    SegInfo* si;
    VgSectKind ret = Vg_SectUnknown;

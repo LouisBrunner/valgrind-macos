@@ -91,37 +91,22 @@ static Char *straddr(void *p)
    return buf;
 }
 
-static SkipList sk_resolved_redir = VG_SKIPLIST_INIT(CodeRedirect, from_addr, 
-						  VG_(cmp_Addr), straddr, VG_AR_SYMTAB);
+static SkipList sk_resolved_redir = 
+   VG_SKIPLIST_INIT(CodeRedirect, from_addr, VG_(cmp_Addr), 
+                    straddr, VG_AR_SYMTAB);
+
 static CodeRedirect *unresolved_redir = NULL;
 
 static Bool match_lib(const Char *pattern, const SegInfo *si)
 {
-   /* pattern == NULL matches everything, otherwise use globbing
+   // pattern must start with "soname:"
+   vg_assert(NULL != pattern);
+   vg_assert(0 == VG_(strncmp)(pattern, "soname:", 7));
 
-      If the pattern starts with:
-	file:, then match filename
-	soname:, then match soname
-	something else, match filename
-   */
-   const Char *name = si->filename;
-
-   if (pattern == NULL)
-      return True;
-
-   if (VG_(strncmp)(pattern, "file:", 5) == 0) {
-      pattern += 5;
-      name = si->filename;
-   }
-   if (VG_(strncmp)(pattern, "soname:", 7) == 0) {
-      pattern += 7;
-      name = si->soname;
-   }
-
-   if (name == NULL)
+   if (si->soname == NULL)
       return False;
    
-   return VG_(string_match)(pattern, name);
+   return VG_(string_match)(pattern + 7, si->soname);
 }
 
 static inline Bool from_resolved(const CodeRedirect *redir)

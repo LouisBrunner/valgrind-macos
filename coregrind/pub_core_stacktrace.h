@@ -38,10 +38,10 @@
 
 #include "pub_tool_stacktrace.h"
 
-// Variant that gives a little more control over the stack-walking.
-extern UInt VG_(get_StackTrace2) ( StackTrace ips, UInt n_ips, 
-                                   Addr ip, Addr sp, Addr fp, 
-                                   Addr fp_min, Addr fp_max );
+//zz // Variant that gives a little more control over the stack-walking.
+//zz extern UInt VG_(get_StackTrace2) ( StackTrace ips, UInt n_ips, 
+//zz                                    Addr ip, Addr sp, Addr fp, 
+//zz                                    Addr fp_min, Addr fp_max );
 
 #endif   // __PUB_CORE_STACKTRACE_H
 

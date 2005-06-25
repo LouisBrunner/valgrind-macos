@@ -42,7 +42,6 @@
 #include "pub_core_skiplist.h"
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
-#include "m_debuginfo/priv_symtab.h"  // XXX: bad!  For SegInfo internals
 
 /*------------------------------------------------------------*/
 /*--- General purpose redirection.                         ---*/
@@ -97,16 +96,16 @@ static SkipList sk_resolved_redir =
 
 static CodeRedirect *unresolved_redir = NULL;
 
-static Bool match_lib(const Char *pattern, const SegInfo *si)
+static Bool soname_matches(const Char *pattern, const Char* soname)
 {
    // pattern must start with "soname:"
    vg_assert(NULL != pattern);
    vg_assert(0 == VG_(strncmp)(pattern, "soname:", 7));
 
-   if (si->soname == NULL)
+   if (NULL == soname)
       return False;
    
-   return VG_(string_match)(pattern + 7, si->soname);
+   return VG_(string_match)(pattern + 7, soname);
 }
 
 static inline Bool from_resolved(const CodeRedirect *redir)
@@ -200,7 +199,7 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
    vg_assert(!resolved);
    vg_assert(redir->from_sym != NULL);
 
-   if (match_lib(redir->from_lib, si)) {
+   if (soname_matches(redir->from_lib, VG_(seginfo_soname)(si))) {
       redir->from_addr = VG_(reverse_search_one_symtab)(si, redir->from_sym);
       if (VG_(clo_trace_redir) && redir->from_addr != 0)
          VG_(printf)("   bind FROM: %p = %s:%s\n", 
@@ -244,7 +243,7 @@ void VG_(resolve_seg_redirs)(SegInfo *si)
 
    if (VG_(clo_trace_redir))
       VG_(printf)("Considering redirs to/from %s(soname=%s)\n",
-                  si->filename, si->soname);
+                  VG_(seginfo_filename)(si), VG_(seginfo_soname)(si));
 
    /* visit each unresolved redir - if it becomes resolved, then
       remove it from the unresolved list */

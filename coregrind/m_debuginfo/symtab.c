@@ -2580,6 +2580,11 @@ SizeT VG_(seginfo_size)(const SegInfo* si)
    return si->size;
 }
 
+const UChar* VG_(seginfo_soname)(const SegInfo* si)
+{
+   return si->soname;
+}
+
 const UChar* VG_(seginfo_filename)(const SegInfo* si)
 {
    return si->filename;

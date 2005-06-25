@@ -105,6 +105,7 @@ extern SegInfo* VG_(get_obj)  ( Addr a );
 extern const SegInfo* VG_(next_seginfo)      ( const SegInfo *si );
 extern       Addr     VG_(seginfo_start)     ( const SegInfo *si );
 extern       SizeT    VG_(seginfo_size)      ( const SegInfo *si );
+extern const UChar*   VG_(seginfo_soname)    ( const SegInfo *si );
 extern const UChar*   VG_(seginfo_filename)  ( const SegInfo *si );
 extern       ULong    VG_(seginfo_sym_offset)( const SegInfo *si );
 

@@ -171,7 +171,7 @@ extern void ML_(ppCfiSI)   ( CfiSI* );
 struct _SegInfo {
    struct _SegInfo* next;	/* list of SegInfos */
 
-   Int		ref;
+   Int	  ref;
 
    /* Description of the mapped segment. */
    Addr   start;

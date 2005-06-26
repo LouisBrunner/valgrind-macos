@@ -48,6 +48,12 @@
 
 #include <elf.h>          /* ELF defns */
 
+/* The root structure for the entire symbol table system.  It is a
+   linked list of SegInfos.  Note that this entire mechanism assumes
+   that what we read from /proc/self/maps doesn't contain overlapping
+   address ranges, and as a result the SegInfos in this list describe
+   disjoint address ranges. 
+*/
 static SegInfo* segInfo_list = NULL;
 
 /*------------------------------------------------------------*/
@@ -1290,12 +1296,15 @@ Bool read_lib_symbols ( SegInfo* si )
 
       si->offset = 0;
 
+      vg_assert(si->soname == NULL);
+
       for (i = 0; i < ehdr->e_phnum; i++) {
 	 ElfXX_Phdr *o_phdr;
 	 ElfXX_Addr mapped, mapped_end;
 
 	 o_phdr = &((ElfXX_Phdr *)(oimage + ehdr->e_phoff))[i];
 
+         // Try to get the soname.
 	 if (o_phdr->p_type == PT_DYNAMIC && si->soname == NULL) {
 	    const ElfXX_Dyn *dyn = (const ElfXX_Dyn *)(oimage + o_phdr->p_offset);
 	    Int stroff = -1;
@@ -1329,15 +1338,16 @@ Bool read_lib_symbols ( SegInfo* si )
 	    baseaddr = o_phdr->p_vaddr;
 	 }
 
+         // Make sure the Phdrs are in order
 	 if (o_phdr->p_vaddr < prev_addr) {
 	    ML_(symerr)("ELF Phdrs are out of order!?");
             goto out;
 	 }
 	 prev_addr = o_phdr->p_vaddr;
 
+         // Get the data and bss start/size if appropriate
 	 mapped = o_phdr->p_vaddr + si->offset;
 	 mapped_end = mapped + o_phdr->p_memsz;
-
 	 if (si->data_start == 0 &&
 	     (o_phdr->p_flags & (PF_R|PF_W|PF_X)) == (PF_R|PF_W)) {
 	    si->data_start = mapped;
@@ -1348,14 +1358,13 @@ Bool read_lib_symbols ( SegInfo* si )
 	    else
 	       si->bss_size = 0;
 	 }
-
-	 mapped = mapped & ~(VKI_PAGE_SIZE-1);
-	 mapped_end = (mapped_end + VKI_PAGE_SIZE - 1) & ~(VKI_PAGE_SIZE-1);
-
 #if 0
 	 /* 20050228: disabled this until VG_(next_segment) can be
 	    reinstated in some clean incarnation of the low level
 	    memory manager. */
+	 mapped = mapped & ~(VKI_PAGE_SIZE-1);
+	 mapped_end = (mapped_end + VKI_PAGE_SIZE - 1) & ~(VKI_PAGE_SIZE-1);
+
 	 if (VG_(needs).data_syms &&
 	     (mapped >= si->start && mapped <= (si->start+si->size)) &&
 	     (mapped_end > (si->start+si->size))) {
@@ -1443,8 +1452,6 @@ Bool read_lib_symbols ( SegInfo* si )
       /* Section virtual addresses */
       Addr       dummy_addr      = 0;
       Addr       ehframe_addr    = 0;
-
-      Bool       has_debuginfo = False;
 
       /* Find all interesting sections */
       for (i = 0; i < ehdr->e_shnum; i++) {
@@ -1567,14 +1574,12 @@ Bool read_lib_symbols ( SegInfo* si )
          appears reading stabs stuff on amd64-linux doesn't work, so
          we ignore it. */
 #     if !defined(VGP_amd64_linux)
-      if (stab != NULL && stabstr != NULL) {
-         has_debuginfo = True;
+      if (stab && stabstr) {
          ML_(read_debuginfo_stabs) ( si, stab, stab_sz, 
                                          stabstr, stabstr_sz );
       }
 #     endif
       if (debug_line) {
-         has_debuginfo = True;
          ML_(read_debuginfo_dwarf2) ( si, 
                                       debug_info,   debug_info_sz,
                                       debug_abbv,
@@ -1582,13 +1587,8 @@ Bool read_lib_symbols ( SegInfo* si )
                                       debug_str );
       }
       if (dwarf1d && dwarf1l) {
-         has_debuginfo = True;
          ML_(read_debuginfo_dwarf1) ( si, dwarf1d, dwarf1d_sz, 
                                           dwarf1l, dwarf1l_sz );
-      } 
-      if (!has_debuginfo) {
-         ML_(symerr)("   object doesn't have any line number info");
-         goto out;
       }
    }
    res = True;
@@ -1610,61 +1610,35 @@ Bool read_lib_symbols ( SegInfo* si )
 /*--- Main entry point for symbols table reading.          ---*/
 /*------------------------------------------------------------*/
 
-/* The root structure for the entire symbol table system.  It is a
-   linked list of SegInfos.  Note that this entire mechanism assumes
-   that what we read from /proc/self/maps doesn't contain overlapping
-   address ranges, and as a result the SegInfos in this list describe
-   disjoint address ranges. 
-*/
-SegInfo *VG_(read_seg_symbols) ( Addr seg_addr, SizeT seg_len,
-                                 OffT seg_offset, const Char* seg_filename)
+static SegInfo*
+alloc_SegInfo(Addr start, SizeT size, OffT foffset, const Char* filename)
 {
-   SegInfo* si;
+   SegInfo* si = VG_(arena_calloc)(VG_AR_SYMTAB, 1, sizeof(SegInfo));
 
-   VGP_PUSHCC(VgpReadSyms);
-
-   /* Get the record initialised right. */
-   si = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(SegInfo));
-
-   VG_(memset)(si, 0, sizeof(*si));
-   si->start    = seg_addr;
-   si->size     = seg_len;
-   si->foffset  = seg_offset;
-   si->filename = VG_(arena_strdup)(VG_AR_SYMTAB, seg_filename);
+   si->start    = start;
+   si->size     = size;
+   si->foffset  = foffset;
+   si->filename = VG_(arena_strdup)(VG_AR_SYMTAB, filename);
 
    si->ref = 1;
 
-   si->symtab = NULL;
-   si->symtab_size = si->symtab_used = 0;
-   si->loctab = NULL;
-   si->loctab_size = si->loctab_used = 0;
-   si->strchunks = NULL;
-   si->scopetab = NULL;
-   si->scopetab_size = si->scopetab_used = 0;
-   si->cfisi = NULL;
-   si->cfisi_size = si->cfisi_used = 0;
-   si->cfisi_minaddr = si->cfisi_maxaddr = 0;
+   // Everything else -- pointers, sizes, arrays -- is zeroed by calloc.
 
-   si->stab_typetab = NULL;
+   return si;
+}
 
-   si->plt_start  = si->plt_size  = 0;
-   si->got_start  = si->got_size  = 0;
-   si->data_start = si->data_size = 0;
-   si->bss_start  = si->bss_size  = 0;
+SegInfo *VG_(read_seg_symbols) ( Addr seg_addr, SizeT seg_len,
+                                 OffT seg_offset, const Char* seg_filename)
+{
+   SegInfo* si = alloc_SegInfo(seg_addr, seg_len, seg_offset, seg_filename);
 
-   /* And actually fill it up. */
-   if (!read_lib_symbols ( si ) && 0) {
-      /* XXX this interacts badly with the prevN optimization in
-         addStr().  Since this frees the si, the si pointer value can
-         be recycled, which confuses the curr_si == si test.  For now,
-         this code is disabled, and everything is included in the
-         segment list, even if it is a bad ELF file.  Ironically,
-         running this under valgrind itself hides the problem, because
-         it doesn't recycle pointers... */
-      // [Nb: the prevN optimization has now been removed from addStr().
-      //  However, when I try reactivating this path of the branch I get
-      //  seg faults...  --njn 13-Jun-2005]
+   VGP_PUSHCC(VgpReadSyms);
+
+   if (!read_lib_symbols ( si )) {
+      // Something went wrong (eg. bad ELF file).
       freeSegInfo( si );
+      si = NULL;
+
    } else {
       // Prepend si to segInfo_list
       si->next = segInfo_list;

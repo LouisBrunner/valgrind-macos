@@ -29,7 +29,7 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_threadstate.h"
+//zz hash include "pub_core_threadstate.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -43,29 +43,31 @@
    Assertery.
    ------------------------------------------------------------------ */
 
-//zz #if defined(VGP_x86_linux)
-//zz #  define GET_REAL_SP_AND_FP(sp, fp) \
-//zz       asm("movl %%esp, %0;" \
-//zz           "movl %%ebp, %1;" \
-//zz           : "=r" (sp),\
-//zz             "=r" (fp));
-//zz #elif defined(VGP_amd64_linux)
-//zz #  define GET_REAL_SP_AND_FP(sp, fp) \
-//zz       asm("movq %%rsp, %0;" \
-//zz           "movq %%rbp, %1;" \
-//zz           : "=r" (sp),\
-//zz             "=r" (fp));
-//zz #elif defined(VGP_ppc32_linux)
-//zz #  define GET_REAL_SP_AND_FP(sp, fp) \
-//zz       asm("mr %0,1;" \
-//zz           "mr %1,1;" \
-//zz           : "=r" (sp),\
-//zz             "=r" (fp));
-//zz #else
-//zz #  error Unknown platform
-//zz #endif
-//zz 
-//zz #define BACKTRACE_DEPTH    100         // nice and deep!
+#if 0 //zz
+#if defined(VGP_x86_linux)
+#  define GET_REAL_SP_AND_FP(sp, fp) \
+      asm("movl %%esp, %0;" \
+          "movl %%ebp, %1;" \
+          : "=r" (sp),\
+            "=r" (fp));
+#elif defined(VGP_amd64_linux)
+#  define GET_REAL_SP_AND_FP(sp, fp) \
+      asm("movq %%rsp, %0;" \
+          "movq %%rbp, %1;" \
+          : "=r" (sp),\
+            "=r" (fp));
+#elif defined(VGP_ppc32_linux)
+#  define GET_REAL_SP_AND_FP(sp, fp) \
+      asm("mr %0,1;" \
+          "mr %1,1;" \
+          : "=r" (sp),\
+            "=r" (fp));
+#else
+#  error Unknown platform
+#endif
+
+#define BACKTRACE_DEPTH    100         // nice and deep!
+#endif //zz
 
 /* Pull down the entire world */
 void VG_(exit)( Int status )
@@ -79,19 +81,19 @@ void VG_(exit)( Int status )
 }
 
 // Print the scheduler status.
-static void pp_sched_status ( void )
-{
-   Int i; 
-   VG_(printf)("\nsched status:\n"); 
-   VG_(printf)("  running_tid=%d\n", VG_(get_running_tid)());
-   for (i = 1; i < VG_N_THREADS; i++) {
-      if (VG_(threads)[i].status == VgTs_Empty) continue;
-      VG_(printf)( "\nThread %d: status = %s\n", i, 
-                   VG_(name_of_ThreadStatus)(VG_(threads)[i].status) );
+//zz static void pp_sched_status ( void )
+//zz {
+//zz    Int i; 
+//zz    VG_(printf)("\nsched status:\n"); 
+//zz    VG_(printf)("  running_tid=%d\n", VG_(get_running_tid)());
+//zz    for (i = 1; i < VG_N_THREADS; i++) {
+//zz       if (VG_(threads)[i].status == VgTs_Empty) continue;
+//zz       VG_(printf)( "\nThread %d: status = %s\n", i, 
+//zz                    VG_(name_of_ThreadStatus)(VG_(threads)[i].status) );
 //zz       VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
-   }
-   VG_(printf)("\n");
-}
+//zz    }
+//zz    VG_(printf)("\n");
+//zz }
 
 __attribute__ ((noreturn))
 static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )
@@ -115,12 +117,12 @@ static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )
 //zz 
 //zz    VG_(get_StackTrace2)(ips, BACKTRACE_DEPTH, ip, sp, fp, sp, stacktop);
 //zz    VG_(pp_StackTrace)  (ips, BACKTRACE_DEPTH);
-
-   // Don't print this, as it's not terribly interesting and avoids a
-   // dependence on m_scheduler/, which would be crazy.
-   //VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
-
-   pp_sched_status();
+//zz 
+//zz    // Don't print this, as it's not terribly interesting and avoids a
+//zz    // dependence on m_scheduler/, which would be crazy.
+//zz    //VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
+//zz 
+//zz    pp_sched_status();
    VG_(printf)("\n");
    VG_(printf)("Note: see also the FAQ.txt in the source distribution.\n");
    VG_(printf)("It contains workarounds to several common problems.\n");
@@ -218,7 +220,7 @@ void VG_(unimplemented) ( Char* msg )
       "Valgrind has to exit now.  Sorry.  Bye!");
    VG_(message)(Vg_UserMsg,
       "");
-   pp_sched_status();
+//zz    pp_sched_status();
    VG_(exit)(1);
 }
 

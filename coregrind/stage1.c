@@ -343,7 +343,7 @@ int main(int argc, char** argv)
 
    /* The Linux libc startup sequence leaves this in an apparently
       undefined state, but it really is defined, so mark it so. */
-   VALGRIND_MAKE_READABLE(init_sp, sizeof(int));
+   VALGRIND_MAKE_READABLE(init_sp, sizeof(Word));
 
    cp = getenv(VALGRINDLIB);
 

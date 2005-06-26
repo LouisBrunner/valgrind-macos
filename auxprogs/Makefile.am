@@ -3,5 +3,7 @@ include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
 bin_PROGRAMS = valgrind-listener
 
+noinst_SCRIPTS = gen-mdg DotToScc.hs
+
 valgrind_listener_SOURCES = valgrind-listener.c
 

@@ -62,7 +62,6 @@ usage: gen-mdg [options]
 
   options:
     --headers=no|yes    show headers, ie. show module-to-module deps only
-    --libc=no|yes       show m_libc* modules
     --hide=<a>,<b>,...  hide module(s) named <a>, <b>, ...
 END
 ;
@@ -79,11 +78,6 @@ sub process_cmd_line()
         if ($arg =~ /^--headers=(yes|no)$/) {
             $show_headers = 1 if ($1 eq "yes");
             $show_headers = 0 if ($1 eq "no");
-
-        # --libc=yes|no
-        } elsif ($arg =~ /^--libc=(yes|no)$/) {
-            $show_libc = 1 if ($1 eq "yes");
-            $show_libc = 0 if ($1 eq "no");
 
         # --hide=<a>,<b>,...
         } elsif ($arg =~ /^--hide=(.*)$/) {
@@ -124,8 +118,8 @@ sub clean_nodelabel($)
     return $s;
 }
 
-# $module is the module to which the C file $f belongs.
-sub scan_C_file($$)
+# $module is the module to which the C/asm file $f belongs.
+sub scan_C_or_asm_file($$)
 {
     my ($module, $f) = @_;
 
@@ -134,18 +128,13 @@ sub scan_C_file($$)
         return;
     }
     
-    # Skip if this is a m_libc*.c file and we aren't showing them.
-    if (not $show_libc and $f =~ /^m_libc\w+.c/) {
-        return;
-    }
-
     # Get any existing dependencies for this module, initialise if none
     my $module_deps = $deps->{$module};
     if (not defined $module_deps) {
         $module_deps = {};
     }
     
-    # Scan the C file
+    # Scan the C/asm file
     open(CFILE, "< $f") || die "File $f not openable\n";
     while (my $line = <CFILE>) {
         if ($line =~ /#include\s+(("|<)[^">]+("|>))/) {
@@ -153,24 +142,24 @@ sub scan_C_file($$)
             my $include_string = $1;
             my $target;
             my $realname;
-            if ($include_string =~ /"pub_(core|tool)_([\w]+).h"/) {
+            if ($include_string =~ /"pub_(core|tool)_([A-Za-z]+).h"/) {
                 # If #include string is "pub_core_foo.h" or "pub_tool_foo.h", 
-                # the target module is m_foo.
-                $target = "m_$2";
-                $realname        = "";
+                # the target module is "m_foo".
+                #
+                # Nb: assuming the "foo" part does not contains underscores!
+                $target   = "m_$2";
+                $realname = "";
 
-                # But don't show m_libc* dst modules if asked not to.
-                if (not $show_libc and $target =~ /m_libc/) {
-                    $target = "";
-                }
-
-                # And don't show hidden modules
+                # But don't show hidden modules
                 if ($hide{$target}) {
                     $target = "";
                 }
 
             } elsif ($show_headers) {
                 # Otherwise use the #include string as-is for the target.
+                # Note that "#include pub_core_foo_asm.h" falls into this
+                # category.  We don't consider that part of the m_foo module
+                # because the *_asm.h only define some constants.
                 $target   = clean_nodename($include_string);
                 $realname = clean_nodelabel($include_string);
 
@@ -209,8 +198,8 @@ sub process_dir($)
             }
 
         } elsif (-f $f) {
-            if ($f =~ /\w+\.c$/) {
-                # If this is a .c file in coregrind/, it's a module in its
+            if ($f =~ /\w+\.[cS]$/) {
+                # If this is a .c/.S file in coregrind/, it's a module in its
                 # own right, eg. coregrind/m_redir.c --> module name of
                 # "m_redir".
                 #
@@ -220,14 +209,14 @@ sub process_dir($)
                 my $module;
                 if ($parentd eq "coregrind") {
                     $module = $f;
-                    $module =~ s/(\w+).c/$1/;     # foo.c --> foo
+                    $module =~ s/(\w+).[cS]$/$1/;     # foo.c --> foo
                 } else {
                     $module = $parentd;
                 }
                 # Now the module/f pair is either:
                 #   -    like this:  (m_redir, m_redir.c)
                 #   - or like this:  (m_debuginfo, symtab.c)
-                scan_C_file($module, $f);
+                scan_C_or_asm_file($module, $f);
             }
 
         } else {

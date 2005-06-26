@@ -44,6 +44,8 @@
 #include "pub_core_profile.h"
 #include "pub_core_redir.h"
 #include "pub_core_tooliface.h"     // For VG_(needs).data_syms
+
+#include "priv_symtypes.h"
 #include "priv_symtab.h"
 
 #include <elf.h>          /* ELF defns */

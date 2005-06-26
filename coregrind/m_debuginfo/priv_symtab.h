@@ -31,9 +31,6 @@
 #ifndef __PRIV_SYMTAB_H
 #define __PRIV_SYMTAB_H
 
-#include "pub_core_debuginfo.h"
-#include "priv_symtypes.h"
-
 /* A structure to hold an ELF symbol (very crudely). */
 typedef 
    struct { 

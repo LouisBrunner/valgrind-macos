@@ -30,15 +30,12 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_debuginfo.h"     // For VG_(get_fnname_w_offset)()
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcmman.h"      // For VG_(get_memory_from_mmap)()
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 #include "pub_core_tooliface.h"     // For VG_(details).avg_translation_sizeB
-// XXX: this module should not depend on m_translate!
-#include "pub_core_translate.h"     // For VG_(translate)()
 #include "pub_core_transtab.h"
 
 /* #define DEBUG_TRANSTAB */
@@ -670,34 +667,23 @@ void VG_(print_tt_tc_stats) ( void )
 /*--- Printing out of profiling results.                   ---*/
 /*------------------------------------------------------------*/
 
-/* Only the top N_MAX bbs will be displayed. */
-#define N_MAX 200
-
-static TTEntry* tops[N_MAX];
-
 static ULong score ( TTEntry* tte )
 {
    return ((ULong)tte->weight) * ((ULong)tte->count);
 }
 
-static Bool heavier ( TTEntry* t1, TTEntry* t2 )
+ULong VG_(get_BB_profile) ( BBProfEntry tops[], UInt n_tops )
 {
-   return score(t1) > score(t2);
-}
-
-void VG_(show_BB_profile) ( void )
-{
-   Char  name[64];
    Int   sno, i, r, s;
-   ULong score_total, score_cumul, score_here;
-   Char  buf_cumul[10];
-   Char  buf_here[10];
+   ULong score_total;
 
    /* First, compute the total weighted count, and find the top N
-      ttes.  tops contains pointers to the most-used N_MAX blocks, in
+      ttes.  tops contains pointers to the most-used n_tops blocks, in
       descending order (viz, tops[0] is the highest scorer). */
-   for (i = 0; i < N_MAX; i++)
-      tops[i] = NULL;
+   for (i = 0; i < n_tops; i++) {
+      tops[i].addr  = 0;
+      tops[i].score = 0;
+   }
 
    score_total = 0;
 
@@ -709,94 +695,35 @@ void VG_(show_BB_profile) ( void )
             continue;
          score_total += score(&sectors[sno].tt[i]);
          /* Find the rank for sectors[sno].tt[i]. */
-         r = N_MAX-1;
+         r = n_tops-1;
          while (True) {
             if (r == -1)
                break;
-             if (tops[r] == NULL) {
+             if (tops[r].addr == 0) {
                r--; 
                continue;
              }
-             if (heavier(&sectors[sno].tt[i], tops[r])) {
+             if ( score(&sectors[sno].tt[i]) > tops[r].score ) {
                 r--;
                 continue;
              }
              break;
          }
          r++;
-         vg_assert(r >= 0 && r <= N_MAX);
+         vg_assert(r >= 0 && r <= n_tops);
          /* This bb should be placed at r, and bbs above it shifted
             upwards one slot. */
-         if (r < N_MAX) {
-            for (s = N_MAX-1; s > r; s--)
+         if (r < n_tops) {
+            for (s = n_tops-1; s > r; s--)
                tops[s] = tops[s-1];
-            tops[r] = &sectors[sno].tt[i];
+            tops[r].addr  = sectors[sno].tt[i].entry;
+            tops[r].score = score( &sectors[sno].tt[i] );
          }
       }
    }
 
-   VG_(printf)("\n");
-   VG_(printf)("------------------------------------------------------------\n");
-   VG_(printf)("--- BEGIN BB Profile (summary of scores)                 ---\n");
-   VG_(printf)("------------------------------------------------------------\n");
-   VG_(printf)("\n");
-
-   VG_(printf)("Total score = %lld\n\n", score_total);
-
-   score_cumul = 0;
-   for (r = 0; r < N_MAX; r++) {
-      if (tops[r] == NULL)
-         continue;
-      name[0] = 0;
-      VG_(get_fnname_w_offset)(tops[r]->entry, name, 64);
-      name[63] = 0;
-      score_here = score(tops[r]);
-      score_cumul += score_here;
-      VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
-      VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
-      VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
-                  r,
-                  score_cumul, buf_cumul,
-                  score_here,  buf_here, tops[r]->entry, name );
-   }
-
-   VG_(printf)("\n");
-   VG_(printf)("------------------------------------------------------------\n");
-   VG_(printf)("--- BB Profile (BB details)                              ---\n");
-   VG_(printf)("------------------------------------------------------------\n");
-   VG_(printf)("\n");
-
-   score_cumul = 0;
-   for (r = 0; r < N_MAX; r++) {
-      if (tops[r] == NULL)
-         continue;
-      name[0] = 0;
-      VG_(get_fnname_w_offset)(tops[r]->entry, name, 64);
-      name[63] = 0;
-      score_here = score(tops[r]);
-      score_cumul += score_here;
-      VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
-      VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
-      VG_(printf)("\n");
-      VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-= begin BB rank %d "
-                  "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
-      VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
-                  r,
-                  score_cumul, buf_cumul,
-                  score_here,  buf_here, tops[r]->entry, name );
-      VG_(printf)("\n");
-      VG_(translate)(0, tops[r]->entry, True, VG_(clo_profile_flags), 0);
-      VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-=  end BB rank %d  "
-                  "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
-   }
-
-   VG_(printf)("\n");
-   VG_(printf)("------------------------------------------------------------\n");
-   VG_(printf)("--- END BB Profile                                       ---\n");
-   VG_(printf)("------------------------------------------------------------\n");
-   VG_(printf)("\n");
+   return score_total;
 }
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

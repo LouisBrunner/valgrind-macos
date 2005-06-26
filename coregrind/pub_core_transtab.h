@@ -61,8 +61,14 @@ extern void VG_(print_tt_tc_stats) ( void );
 
 extern UInt VG_(get_bbs_translated) ( void );
 
-extern void VG_(show_BB_profile) ( void );
+// BB profiling stuff
 
+typedef struct _BBProfEntry {
+   Addr64 addr;
+   ULong  score;
+} BBProfEntry;
+
+extern ULong VG_(get_BB_profile) ( BBProfEntry tops[], UInt n_tops );
 
 #endif   // __PUB_CORE_TRANSTAB_H
 

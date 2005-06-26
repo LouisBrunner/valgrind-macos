@@ -52,8 +52,9 @@
 #include "pub_core_redir.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
-#include "pub_core_stacks.h"        // Needed for VG_(register_stack)
+#include "pub_core_stacks.h"        // For VG_(register_stack)
 #include "pub_core_syswrap.h"
+#include "pub_core_translate.h"     // For VG_(get_BB_profile)
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
@@ -2260,6 +2261,81 @@ static void init_thread1state ( Addr client_ip,
 
 
 /*====================================================================*/
+/*=== BB profiling                                                 ===*/
+/*====================================================================*/
+
+static 
+void show_BB_profile ( BBProfEntry tops[], UInt n_tops, ULong score_total )
+{
+   ULong score_cumul,   score_here;
+   Char  buf_cumul[10], buf_here[10];
+   Char  name[64];
+   Int   r;
+
+   VG_(printf)("\n");
+   VG_(printf)("-----------------------------------------------------------\n");
+   VG_(printf)("--- BEGIN BB Profile (summary of scores)                ---\n");
+   VG_(printf)("-----------------------------------------------------------\n");
+   VG_(printf)("\n");
+
+   VG_(printf)("Total score = %lld\n\n", score_total);
+
+   score_cumul = 0;
+   for (r = 0; r < n_tops; r++) {
+      if (tops[r].addr == 0)
+         continue;
+      name[0] = 0;
+      VG_(get_fnname_w_offset)(tops[r].addr, name, 64);
+      name[63] = 0;
+      score_here = tops[r].score;
+      score_cumul += score_here;
+      VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
+      VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
+      VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
+                  r,
+                  score_cumul, buf_cumul,
+                  score_here,  buf_here, tops[r].addr, name );
+   }
+
+   VG_(printf)("\n");
+   VG_(printf)("-----------------------------------------------------------\n");
+   VG_(printf)("--- BB Profile (BB details)                             ---\n");
+   VG_(printf)("-----------------------------------------------------------\n");
+   VG_(printf)("\n");
+
+   score_cumul = 0;
+   for (r = 0; r < n_tops; r++) {
+      if (tops[r].addr == 0)
+         continue;
+      name[0] = 0;
+      VG_(get_fnname_w_offset)(tops[r].addr, name, 64);
+      name[63] = 0;
+      score_here = tops[r].score;
+      score_cumul += score_here;
+      VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
+      VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
+      VG_(printf)("\n");
+      VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-= begin BB rank %d "
+                  "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
+      VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
+                  r,
+                  score_cumul, buf_cumul,
+                  score_here,  buf_here, tops[r].addr, name );
+      VG_(printf)("\n");
+      VG_(translate)(0, tops[r].addr, True, VG_(clo_profile_flags), 0);
+      VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-=  end BB rank %d  "
+                  "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);
+   }
+
+   VG_(printf)("\n");
+   VG_(printf)("-----------------------------------------------------------\n");
+   VG_(printf)("--- END BB Profile                                      ---\n");
+   VG_(printf)("-----------------------------------------------------------\n");
+   VG_(printf)("\n");
+}
+
+
+/*====================================================================*/
 /*=== main()                                                       ===*/
 /*====================================================================*/
 
@@ -2849,8 +2925,13 @@ void VG_(shutdown_actions_NORETURN) ( ThreadId tid,
 
    if (VG_(clo_profile))
       VG_(done_profiling)();
-   if (VG_(clo_profile_flags) > 0)
-      VG_(show_BB_profile)();
+
+   if (VG_(clo_profile_flags) > 0) {
+      #define N_MAX 100
+      BBProfEntry tops[N_MAX];
+      ULong score_total = VG_(get_BB_profile) (tops, N_MAX);
+      show_BB_profile(tops, N_MAX, score_total);
+   }
 
    /* Print Vex storage stats */
    if (0)

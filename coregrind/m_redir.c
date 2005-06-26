@@ -203,7 +203,9 @@ static Bool resolve_redir_with_seginfo(CodeRedirect *redir, const SegInfo *si)
    return ok;   
 }
 
-// Resolve a redir using any SegInfo if possible.
+// Resolve a redir using any SegInfo if possible.  This is called whenever
+// a new sym-to-addr redir is created.  It covers the case where a
+// replacement function is loaded after its replacee.
 static Bool resolve_redir_with_existing_seginfos(CodeRedirect *redir)
 {
    const SegInfo *si;
@@ -219,7 +221,8 @@ static Bool resolve_redir_with_existing_seginfos(CodeRedirect *redir)
 }
 
 // Resolve as many unresolved redirs as possible with this SegInfo.  This
-// should be called when a new SegInfo symtab is loaded.
+// should be called when a new SegInfo symtab is loaded.  It covers the case
+// where a replacee function is loaded after its replacement function.
 void VG_(resolve_existing_redirs_with_seginfo)(SegInfo *si)
 {
    CodeRedirect **prevp = &unresolved_redirs;
@@ -287,7 +290,9 @@ static void add_redirect_sym_to_addr(
    TRACE_REDIR("REDIR sym to addr: %s:%s to %p", from_lib, from_sym, to_addr);
 
    // Check against all existing segments to see if this redirection
-   // can be resolved immediately.  Then add it to the appropriate list.
+   // can be resolved immediately (as will be the case when the replacement
+   // function is loaded after the replacee).  Then add it to the
+   // appropriate list.
    if (resolve_redir_with_existing_seginfos(redir)) {
       add_redir_to_resolved_list(redir);
    } else {

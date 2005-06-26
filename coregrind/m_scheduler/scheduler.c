@@ -1092,24 +1092,14 @@ void VG_(sanity_check_general) ( Bool force_expensive )
       VGP_PUSHCC(VgpCoreExpensiveSanity);
       sanity_slow_count++;
 
-#     if 0
-      { void zzzmemscan(void); zzzmemscan(); }
-#     endif
-
-      if ((sanity_fast_count % 250) == 0)
-         VG_(sanity_check_tt_tc)("VG_(sanity_check_general)");
-
       if (VG_(needs).sanity_checks) {
           VGP_PUSHCC(VgpToolExpensiveSanity);
           vg_assert(VG_TDICT_CALL(tool_expensive_sanity_check));
           VGP_POPCC(VgpToolExpensiveSanity);
       }
 
-      /* Check that Segments and /proc/self/maps match up */
-      //vg_assert(VG_(sanity_check_memory)());
-
       /* Look for stack overruns.  Visit all threads. */
-      for(tid = 1; tid < VG_N_THREADS; tid++) {
+      for (tid = 1; tid < VG_N_THREADS; tid++) {
 	 SSizeT remains;
 
 	 if (VG_(threads)[tid].status == VgTs_Empty ||
@@ -1124,9 +1114,6 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 		         tid, remains);
       }
 
-      /* 
-      if ((sanity_fast_count % 500) == 0) VG_(mallocSanityCheckAll)(); 
-      */
       VGP_POPCC(VgpCoreExpensiveSanity);
    }
 

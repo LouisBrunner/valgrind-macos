@@ -57,8 +57,6 @@ extern Bool VG_(search_transtab) ( /*OUT*/AddrH* result,
 
 extern void VG_(discard_translations) ( Addr64 start, UInt range );
 
-extern void VG_(sanity_check_tt_tc) ( Char* caller );
-
 extern void VG_(print_tt_tc_stats) ( void );
 
 extern UInt VG_(get_bbs_translated) ( void );

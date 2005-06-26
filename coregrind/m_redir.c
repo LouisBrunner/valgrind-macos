@@ -46,6 +46,9 @@
 /*--- General purpose redirection.                         ---*/
 /*------------------------------------------------------------*/
 
+#define TRACE_REDIR(format, args...) \
+   if (VG_(clo_trace_redir)) { VG_(message)(Vg_DebugMsg, format, ## args); }
+
 /*
   wraps and redirections, indexed by from_addr
 
@@ -71,29 +74,24 @@ struct _CodeRedirect {
    const Char	*from_sym;	/* symbol */
    Addr		from_addr;	/* old addr */
 
-   /* used for redirection */
-   Addr		to_addr;	/* new addr */
+   Addr		to_addr;	/* used for redirection -- new addr */
+   const FuncWrapper *wrapper;  /* used for wrapping */
 
-   /* used for wrapping */
-   const FuncWrapper *wrapper;
-
-   CodeRedirect *next;	/* next pointer on unresolved list */
+   CodeRedirect *next;	        /* next pointer on unresolved list */
 };
 
 static Char *straddr(void *p)
 {
    static Char buf[16];
-
    VG_(sprintf)(buf, "%p", *(Addr *)p);
-
    return buf;
 }
 
-static SkipList sk_resolved_redir = 
+static SkipList sk_resolved_redirs = 
    VG_SKIPLIST_INIT(CodeRedirect, from_addr, VG_(cmp_Addr), 
                     straddr, VG_AR_SYMTAB);
 
-static CodeRedirect *unresolved_redir = NULL;
+static CodeRedirect *unresolved_redirs = NULL;
 
 static Bool soname_matches(const Char *pattern, const Char* soname)
 {
@@ -107,25 +105,31 @@ static Bool soname_matches(const Char *pattern, const Char* soname)
    return VG_(string_match)(pattern + 7, soname);
 }
 
-static inline Bool from_resolved(const CodeRedirect *redir)
+Bool VG_(is_resolved)(const CodeRedirect *redir)
 {
    return redir->from_addr != 0;
 }
 
-Bool VG_(is_resolved)(const CodeRedirect *redir)
+// Prepends redir to the unresolved list.
+static void add_redir_to_unresolved_list(CodeRedirect *redir)
 {
-   return from_resolved(redir);
+   redir->next = unresolved_redirs;
+   unresolved_redirs = redir;
 }
 
-static void add_resolved(CodeRedirect *redir)
+static void add_redir_to_resolved_list(CodeRedirect *redir)
 {
-   switch(redir->type) {
-   case R_REDIRECT:
-      if (VG_(clo_trace_redir)) {
-         VG_(message)(Vg_DebugMsg, "  redir resolved (%s:%s=%p -> ",
-                      redir->from_lib, redir->from_sym, redir->from_addr);
-         VG_(message)(Vg_DebugMsg, "                  %p)", redir->to_addr);
-      }
+   vg_assert(redir->from_addr);
+
+   switch (redir->type) {
+   case R_REDIRECT: {
+      CodeRedirect* r;
+   
+      TRACE_REDIR("  redir resolved (%s:%s=%p -> %p)", 
+                  redir->from_lib, redir->from_sym, redir->from_addr,
+                  redir->to_addr);
+
+      vg_assert(redir->to_addr != 0);
 
       if (VG_(search_transtab)(NULL, (Addr64)redir->from_addr, False)) {
          /* For some given (from, to) redir, the "from" function got
@@ -145,191 +149,173 @@ static void add_resolved(CodeRedirect *redir)
             Note, this is potentially expensive -- discarding
             translations causes complete unchaining.  
          */
-         if (VG_(clo_verbosity) > 2 && VG_(clo_trace_redir)) {
-            VG_(message)(Vg_UserMsg,   
-                         "Discarding translation due to redirect of already called function" );
-            VG_(message)(Vg_UserMsg,
-                         "   %s (%p -> %p)",
-                         redir->from_sym, redir->from_addr, redir->to_addr );
-         }
+         TRACE_REDIR("Discarding translation due to redirect of already called function" );
+         TRACE_REDIR("   %s:%s(%p) -> %p)", redir->from_lib, redir->from_sym,
+                                            redir->from_addr, redir->to_addr );
          VG_(discard_translations)((Addr64)redir->from_addr, 1);
       }
 
-      {
-         CodeRedirect *r = VG_(SkipList_Find_Exact)(&sk_resolved_redir, &redir->from_addr);
+      r = VG_(SkipList_Find_Exact)(&sk_resolved_redirs, &redir->from_addr);
 
-         if (r == NULL)
-            VG_(SkipList_Insert)(&sk_resolved_redir, redir);
-         else {
-            /* XXX leak redir */
-            if (VG_(clo_trace_redir))
-               VG_(message)(Vg_DebugMsg, "  redir %s:%s:%p->%p duplicated\n",
-                            redir->from_lib, redir->from_sym, redir->from_addr,
-                            redir->to_addr);
-         }
+      if (r == NULL) {
+         VG_(SkipList_Insert)(&sk_resolved_redirs, redir);
+      } else {
+         /* XXX leak redir */
+         TRACE_REDIR("  redir %s:%s:%p->%p duplicated\n",
+                     redir->from_lib, redir->from_sym, redir->from_addr,
+                     redir->to_addr);
       }
       break;
+   }
 
    case R_WRAPPER:
-      if (VG_(clo_trace_redir)) {
-         VG_(message)(Vg_DebugMsg, "  wrapper resolved (%s:%s=%p -> wrapper)",
-                      redir->from_lib, redir->from_sym, redir->from_addr);
-      }
+      TRACE_REDIR("  wrapper resolved (%s:%s=%p -> wrapper)",
+                  redir->from_lib, redir->from_sym, redir->from_addr);
+
+      vg_assert(redir->wrapper);
 
       /* XXX redir leaked */
       //VG_(wrap_function)(redir->from_addr, redir->wrapper);
       break;
 
    case R_CLIENT_WRAPPER:
+      vg_assert(redir->wrapper);
       VG_(core_panic)("not implemented");
       break;
    }
 }
 
-/* Resolve a redir using si if possible, and add it to the resolved
-   list */
-static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
+// Resolve a redir using si if possible.  Returns True if it succeeded.
+static Bool resolve_redir_with_seginfo(CodeRedirect *redir, const SegInfo *si)
 {
-   Bool resolved;
+   Bool ok;
 
    vg_assert(si != NULL);
+   vg_assert(redir->from_addr == 0 );
+   vg_assert(redir->from_sym  != NULL);
 
-   resolved = from_resolved(redir);
-   vg_assert(!resolved);
-   vg_assert(redir->from_sym != NULL);
-
-   if (soname_matches(redir->from_lib, VG_(seginfo_soname)(si))) {
+   // Resolved if the soname matches and we find the symbol.
+   ok = soname_matches(redir->from_lib, VG_(seginfo_soname)(si));
+   if (ok) {
       redir->from_addr = VG_(reverse_search_one_symtab)(si, redir->from_sym);
-      if (VG_(clo_trace_redir) && redir->from_addr != 0)
-         VG_(printf)("   bind FROM: %p = %s:%s\n", 
-                     redir->from_addr,redir->from_lib, redir->from_sym );
+      ok = ( redir->from_addr == 0 ? False : True );
    }
-
-   resolved = from_resolved(redir);
-
-   if (0 && VG_(clo_trace_redir))
-      VG_(printf)("resolve_redir: %s:%s from=%p to=%p\n",
-		  redir->from_lib, redir->from_sym, redir->from_addr, 
-		  redir->to_addr);
-
-   if (resolved) add_resolved(redir);
-
-   return resolved;
+   return ok;   
 }
 
-static Bool resolve_redir_allsegs(CodeRedirect *redir)
+// Resolve a redir using any SegInfo if possible.
+static Bool resolve_redir_with_existing_seginfos(CodeRedirect *redir)
 {
    const SegInfo *si;
 
-   for(si = VG_(next_seginfo)(NULL); 
-       si != NULL; 
-       si = VG_(next_seginfo)(si))
+   for (si = VG_(next_seginfo)(NULL); 
+        si != NULL; 
+        si = VG_(next_seginfo)(si))
    {
-      if (resolve_redir(redir, si))
+      if (resolve_redir_with_seginfo(redir, si))
 	 return True;
    }
    return False;
 }
 
-/* Go through the complete redir list, resolving as much as possible with this SegInfo.
-
-    This should be called when a new SegInfo symtab is loaded.
- */
-void VG_(resolve_seg_redirs)(SegInfo *si)
+// Resolve as many unresolved redirs as possible with this SegInfo.  This
+// should be called when a new SegInfo symtab is loaded.
+void VG_(resolve_existing_redirs_with_seginfo)(SegInfo *si)
 {
-   CodeRedirect **prevp = &unresolved_redir;
+   CodeRedirect **prevp = &unresolved_redirs;
    CodeRedirect *redir, *next;
 
-   if (VG_(clo_trace_redir))
-      VG_(printf)("Considering redirs to/from %s(soname=%s)\n",
-                  VG_(seginfo_filename)(si), VG_(seginfo_soname)(si));
+   TRACE_REDIR("Just loaded %s (soname=%s),",
+               VG_(seginfo_filename)(si), VG_(seginfo_soname)(si));
+   TRACE_REDIR(" resolving any unresolved redirs with it");
 
-   /* visit each unresolved redir - if it becomes resolved, then
-      remove it from the unresolved list */
-   for(redir = unresolved_redir; redir != NULL; redir = next) {
+   // Visit each unresolved redir - if it becomes resolved, then
+   // move it from the unresolved list to the resolved list.
+   for (redir = unresolved_redirs; redir != NULL; redir = next) {
       next = redir->next;
 
-      if (resolve_redir(redir, si)) {
+      if (resolve_redir_with_seginfo(redir, si)) {
 	 *prevp = next;
 	 redir->next = NULL;
+         add_redir_to_resolved_list(redir);
       } else
 	 prevp = &redir->next;
    }
-}
 
-static void add_redirect_X_to_addr(
-   const Char *from_lib, const Char *from_sym, Addr from_addr, Addr to_addr
-)
-{
-   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
-
-   redir->type = R_REDIRECT;
-
-   if (from_lib) redir->from_lib  = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
-   else          redir->from_lib  = NULL;
-   if (from_sym) redir->from_sym  = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
-   else          redir->from_sym  = NULL;
-   
-   redir->from_addr = from_addr;
-
-   vg_assert(0 != to_addr);
-   redir->to_addr = to_addr;
-   redir->wrapper = 0;
-
-   if (VG_(clo_verbosity) >= 2 && VG_(clo_trace_redir))
-      VG_(message)(Vg_UserMsg, 
-                   "REDIRECT %s:%s(%p) to %p",
-                   from_lib, from_sym, from_addr, to_addr);
-
-   /* Check against all existing segments to see if this redirection
-      can be resolved immediately */
-   if (VG_(is_resolved)(redir)) {
-      add_resolved(redir);
-   }
-   else if (!resolve_redir_allsegs(redir)) {
-      /* nope, add to list */
-      redir->next = unresolved_redir;
-      unresolved_redir = redir;
-   }
-}
-
-/* Redirect a lib/symbol reference to a function at addr */
-static void add_redirect_sym_to_addr(const Char *from_lib, const Char *from_sym,
-				     Addr to_addr)
-{
-   add_redirect_X_to_addr(from_lib, from_sym, 0, to_addr);
+   TRACE_REDIR(" Finished resolving");
 }
 
 /* Redirect a function at from_addr to a function at to_addr */
 __attribute__((unused))    // It is used, but not on all platforms...
-static void add_redirect_addr_to_addr(Addr from_addr, Addr to_addr)
+static void add_redirect_addr_to_addr( Addr from_addr, Addr to_addr )
 {
-   add_redirect_X_to_addr(NULL, NULL, from_addr, to_addr);
+   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redirs);
+
+   vg_assert(0 != from_addr && 0 != to_addr);
+
+   redir->type      = R_REDIRECT;
+
+   redir->from_lib  = NULL;
+   redir->from_sym  = NULL;
+   redir->from_addr = from_addr;
+
+   redir->to_addr   = to_addr;
+   redir->wrapper   = 0;
+
+   TRACE_REDIR("REDIRECT addr to addr: %p to %p", from_addr, to_addr);
+
+   // This redirection is already resolved, put it straight in the list.
+   add_redir_to_resolved_list(redir);
+}
+
+/* Redirect a lib/symbol reference to a function at addr */
+static void add_redirect_sym_to_addr(
+   const Char *from_lib, const Char *from_sym, Addr to_addr
+)
+{
+   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redirs);
+
+   vg_assert(from_lib && from_sym && 0 != to_addr);
+
+   redir->type      = R_REDIRECT;
+   redir->from_lib  = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
+   redir->from_sym  = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
+   redir->from_addr = 0;
+   redir->to_addr   = to_addr;
+   redir->wrapper   = 0;
+
+   TRACE_REDIR("REDIR sym to addr: %s:%s to %p", from_lib, from_sym, to_addr);
+
+   // Check against all existing segments to see if this redirection
+   // can be resolved immediately.  Then add it to the appropriate list.
+   if (resolve_redir_with_existing_seginfos(redir)) {
+      add_redir_to_resolved_list(redir);
+   } else {
+      add_redir_to_unresolved_list(redir);
+   }
 }
 
 CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
 			       const FuncWrapper *wrapper)
 {
-   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
+   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redirs);
 
-   if (0)
-      VG_(printf)("adding wrapper for %s:%s -> (%p,%p)\n",
-		  from_lib, from_sym, wrapper->before, wrapper->after);
-
-   redir->type = R_WRAPPER;
-
+   redir->type      = R_WRAPPER;
    redir->from_lib  = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
    redir->from_sym  = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
    redir->from_addr = 0;
    redir->to_addr   = 0;
    redir->wrapper   = wrapper;
    
-   /* Check against all existing segments to see if this redirection
-      can be resolved immediately */
-   if (!resolve_redir_allsegs(redir)) {
-      /* nope, add to list */
-      redir->next = unresolved_redir;
-      unresolved_redir = redir;
+   TRACE_REDIR("REDIR sym to wrapper: %s:%s to (%p,%p)",
+               from_lib, from_sym, wrapper->before, wrapper->after);
+
+   // Check against all existing segments to see if this redirection
+   // can be resolved immediately.  Then add it to the appropriate list.
+   if (resolve_redir_with_existing_seginfos(redir)) {
+      add_redir_to_resolved_list(redir);
+   } else {
+      add_redir_to_unresolved_list(redir);
    }
 
    return redir;
@@ -341,7 +327,7 @@ Addr VG_(code_redirect)(Addr a)
 {
    CodeRedirect* r;
 
-   r = VG_(SkipList_Find_Exact)(&sk_resolved_redir, &a);
+   r = VG_(SkipList_Find_Exact)(&sk_resolved_redirs, &a);
    if (r == NULL)
       return a;
 

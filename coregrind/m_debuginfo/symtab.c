@@ -1650,7 +1650,7 @@ SegInfo *VG_(read_seg_symbols) ( Addr seg_addr, SizeT seg_len,
       canonicaliseCfiSI    ( si );
 
       /* do redirects */
-      VG_(resolve_seg_redirs)( si );
+      VG_(resolve_existing_redirs_with_seginfo)( si );
    }
    VGP_POPCC(VgpReadSyms);
 

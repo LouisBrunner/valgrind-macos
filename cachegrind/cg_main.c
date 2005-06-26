@@ -907,22 +907,6 @@ static UInt ULong_width(ULong n)
    return w + (w-1)/3;   // add space for commas
 }
 
-static
-void percentify(Int n, Int ex, Int field_width, char buf[]) 
-{
-   int i, len, space;
-    
-   VG_(sprintf)(buf, "%d.%d%%", n / ex, n % ex);
-   len = VG_(strlen)(buf);
-   space = field_width - len;
-   if (space < 0) space = 0;     /* Allow for v. small field_width */
-   i = len;
-
-   /* Right justify in field */
-   for (     ; i >= 0;    i--)  buf[i + space] = buf[i];
-   for (i = 0; i < space; i++)  buf[i] = ' ';
-}
-
 static void cg_fini(Int exitcode)
 {
    static char buf1[128], buf2[128], buf3[128], fmt [128];
@@ -954,10 +938,10 @@ static void cg_fini(Int exitcode)
    p = 100;
 
    if (0 == Ir_total.a) Ir_total.a = 1;
-   percentify(Ir_total.m1 * 100 * p / Ir_total.a, p, l1+1, buf1);
+   VG_(percentify)(Ir_total.m1, Ir_total.a, 2, l1+1, buf1);
    VG_(message)(Vg_UserMsg, "I1  miss rate: %s", buf1);
                 
-   percentify(Ir_total.m2 * 100 * p / Ir_total.a, p, l1+1, buf1);
+   VG_(percentify)(Ir_total.m2, Ir_total.a, 2, l1+1, buf1);
    VG_(message)(Vg_UserMsg, "L2i miss rate: %s", buf1);
    VG_(message)(Vg_UserMsg, "");
 
@@ -982,14 +966,14 @@ static void cg_fini(Int exitcode)
    if (0 == D_total.a)   D_total.a = 1;
    if (0 == Dr_total.a) Dr_total.a = 1;
    if (0 == Dw_total.a) Dw_total.a = 1;
-   percentify( D_total.m1 * 100 * p / D_total.a,  p, l1+1, buf1);
-   percentify(Dr_total.m1 * 100 * p / Dr_total.a, p, l2+1, buf2);
-   percentify(Dw_total.m1 * 100 * p / Dw_total.a, p, l3+1, buf3);
+   VG_(percentify)( D_total.m1,  D_total.a, 1, l1+1, buf1);
+   VG_(percentify)(Dr_total.m1, Dr_total.a, 1, l2+1, buf2);
+   VG_(percentify)(Dw_total.m1, Dw_total.a, 1, l3+1, buf3);
    VG_(message)(Vg_UserMsg, "D1  miss rate: %s (%s   + %s  )", buf1, buf2,buf3);
 
-   percentify( D_total.m2 * 100 * p / D_total.a,  p, l1+1, buf1);
-   percentify(Dr_total.m2 * 100 * p / Dr_total.a, p, l2+1, buf2);
-   percentify(Dw_total.m2 * 100 * p / Dw_total.a, p, l3+1, buf3);
+   VG_(percentify)( D_total.m2,  D_total.a, 1, l1+1, buf1);
+   VG_(percentify)(Dr_total.m2, Dr_total.a, 1, l2+1, buf2);
+   VG_(percentify)(Dw_total.m2, Dw_total.a, 1, l3+1, buf3);
    VG_(message)(Vg_UserMsg, "L2d miss rate: %s (%s   + %s  )", buf1, buf2,buf3);
    VG_(message)(Vg_UserMsg, "");
 
@@ -1007,9 +991,9 @@ static void cg_fini(Int exitcode)
    VG_(message)(Vg_UserMsg, fmt, "L2 misses:    ",
                             L2_total_m, L2_total_mr, L2_total_mw);
 
-   percentify(L2_total_m  * 100 * p / (Ir_total.a + D_total.a),  p, l1+1, buf1);
-   percentify(L2_total_mr * 100 * p / (Ir_total.a + Dr_total.a), p, l2+1, buf2);
-   percentify(L2_total_mw * 100 * p / Dw_total.a, p, l3+1, buf3);
+   VG_(percentify)(L2_total_m,  (Ir_total.a + D_total.a),  1, l1+1, buf1);
+   VG_(percentify)(L2_total_mr, (Ir_total.a + Dr_total.a), 1, l2+1, buf2);
+   VG_(percentify)(L2_total_mw, Dw_total.a,                1, l3+1, buf3);
    VG_(message)(Vg_UserMsg, "L2 miss rate:  %s (%s   + %s  )", buf1, buf2,buf3);
             
 

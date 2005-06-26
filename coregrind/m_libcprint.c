@@ -151,6 +151,47 @@ UInt VG_(sprintf) ( Char* buf, const HChar *format, ... )
 }
 
 /* ---------------------------------------------------------------------
+   percentify()
+   ------------------------------------------------------------------ */
+
+// Percentify n/m with p decimal places.  Includes the '%' symbol at the end.
+void VG_(percentify)(UInt n, UInt m, UInt d, Int n_buf, char buf[]) 
+{
+   Int i, len, space;
+
+   ULong p1 = (100*n) / m;
+    
+   if (d == 0) {
+      VG_(sprintf)(buf, "%lld%%", p1);
+   } else {
+      ULong p2;
+      UInt  ex;
+      Char fmt[32];
+      switch (d) {
+      case 1: ex = 10;    break;
+      case 2: ex = 100;   break;
+      case 3: ex = 1000;  break;
+      default: VG_(tool_panic)("Currently can only handle 3 decimal places");
+      }
+      p2 = ((100*n*ex) / m) % ex;
+      // Have to generate the format string in order to be flexible about
+      // the width of the post-decimal-point part.
+      VG_(sprintf)(fmt, "%%lld.%%0%dlld%%%%", d);
+      // fmt is now "%lld.%0<d>lld%%" where <d> is 1,2,3...
+      VG_(sprintf)(buf, fmt, p1, p2);
+   }
+
+   len = VG_(strlen)(buf);
+   space = n_buf - len;
+   if (space < 0) space = 0;     /* Allow for v. small field_width */
+   i = len;
+
+   /* Right justify in field */
+   for (     ; i >= 0;    i--)  buf[i + space] = buf[i];
+   for (i = 0; i < space; i++)  buf[i] = ' ';
+}
+
+/* ---------------------------------------------------------------------
    message()
    ------------------------------------------------------------------ */
 

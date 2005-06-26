@@ -685,32 +685,6 @@ static Bool heavier ( TTEntry* t1, TTEntry* t2 )
    return score(t1) > score(t2);
 }
 
-/* Print n/m in form xx.yy% */
-static
-void percentify ( ULong n, ULong m, Int field_width, Char* buf)
-{
-   Int i, len, space;
-   ULong lo, hi;
-   if (m == 0) m = 1; /* stay sane */
-   hi = (n * 100) / m;
-   lo = (((n * 100) - hi * m) * 100) / m;
-   vg_assert(lo < 100);
-   if (lo < 10)
-      VG_(sprintf)(buf, "%lld.0%lld%%", hi, lo);
-   else
-      VG_(sprintf)(buf, "%lld.%lld%%", hi, lo);
-
-   len = VG_(strlen)(buf);
-   space = field_width - len;
-   if (space < 0) space = 0;     /* Allow for v. small field_width */
-   i = len;
-
-   /* Right justify in field */
-   for (     ; i >= 0;    i--)  buf[i + space] = buf[i];
-   for (i = 0; i < space; i++)  buf[i] = ' ';
-}
-
-
 void VG_(show_BB_profile) ( void )
 {
    Char  name[64];
@@ -778,8 +752,8 @@ void VG_(show_BB_profile) ( void )
       name[63] = 0;
       score_here = score(tops[r]);
       score_cumul += score_here;
-      percentify(score_cumul, score_total, 6, buf_cumul);
-      percentify(score_here,  score_total, 6, buf_here);
+      VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
+      VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
       VG_(printf)("%3d: (%9lld %s)   %9lld %s      0x%llx %s\n",
                   r,
                   score_cumul, buf_cumul,
@@ -801,8 +775,8 @@ void VG_(show_BB_profile) ( void )
       name[63] = 0;
       score_here = score(tops[r]);
       score_cumul += score_here;
-      percentify(score_cumul, score_total, 6, buf_cumul);
-      percentify(score_here,  score_total, 6, buf_here);
+      VG_(percentify)(score_cumul, score_total, 2, 6, buf_cumul);
+      VG_(percentify)(score_here,  score_total, 2, 6, buf_here);
       VG_(printf)("\n");
       VG_(printf)("=-=-=-=-=-=-=-=-=-=-=-=-=-= begin BB rank %d "
                   "=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n", r);

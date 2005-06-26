@@ -2730,8 +2730,6 @@ PRE(sys_fork)
    VG_(sigfillset)(&mask);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
 
-   VG_(do_atfork_pre)(tid);
-
    SET_STATUS_from_SysRes( VG_(do_syscall0)(__NR_fork) );
 
    if (SUCCESS && RES == 0) {
@@ -2743,8 +2741,6 @@ PRE(sys_fork)
    else 
    if (SUCCESS && RES > 0) {
       PRINT("   fork: process %d created child %d\n", VG_(getpid)(), RES);
-
-      VG_(do_atfork_parent)(tid);
 
       /* restore signal mask */
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);

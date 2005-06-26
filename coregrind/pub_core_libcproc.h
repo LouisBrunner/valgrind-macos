@@ -77,10 +77,8 @@ extern void VG_(nanosleep) ( struct vki_timespec * );
 
 // atfork
 typedef void (*vg_atfork_t)(ThreadId);
-extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child);
-extern void VG_(do_atfork_pre)    ( ThreadId tid );
-extern void VG_(do_atfork_parent) ( ThreadId tid );
-extern void VG_(do_atfork_child)  ( ThreadId tid );
+extern void VG_(atfork_child)    ( vg_atfork_t child_action );
+extern void VG_(do_atfork_child) ( ThreadId tid );
 
 #endif   // __PUB_CORE_LIBCPROC_H
 

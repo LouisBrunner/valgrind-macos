@@ -545,8 +545,6 @@ asm(
 //..    VG_(sigfillset)(&mask);
 //..    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
 //.. 
-//..    VG_(do_atfork_pre)(tid);
-//.. 
 //..    /* Since this is the fork() form of clone, we don't need all that
 //..       VG_(clone) stuff */
 //..    ret = VG_(do_syscall5)(__NR_clone, flags, (UWord)NULL, (UWord)parent_tidptr, 
@@ -562,8 +560,6 @@ asm(
 //..       /* parent */
 //..       if (VG_(clo_trace_syscalls))
 //.. 	  VG_(printf)("   clone(fork): process %d created child %d\n", VG_(getpid)(), ret);
-//.. 
-//..       VG_(do_atfork_parent)(tid);
 //.. 
 //..       /* restore signal mask */
 //..       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);

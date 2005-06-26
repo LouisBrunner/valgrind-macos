@@ -422,67 +422,26 @@ void VG_(nanosleep)(struct vki_timespec *ts)
 }
 
 /* ---------------------------------------------------------------------
-   A simple atfork() facility for Valgrind's internal use
+   A trivial atfork() facility for Valgrind's internal use
    ------------------------------------------------------------------ */
 
-struct atfork {
-   vg_atfork_t	pre;
-   vg_atfork_t	parent;
-   vg_atfork_t	child;
-};
+// Trivial because it only supports a single post-fork child action, which
+// is all we need.
 
-#define VG_MAX_ATFORK	10
+static vg_atfork_t atfork_child = NULL;
 
-static struct atfork atforks[VG_MAX_ATFORK];
-static Int n_atfork;
-
-void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child)
+void VG_(atfork_child)(vg_atfork_t child)
 {
-   Int i;
+   if (NULL != atfork_child)
+      VG_(core_panic)("More than one atfork_child handler requested");
 
-   for(i = 0; i < n_atfork; i++) {
-      if (atforks[i].pre == pre &&
-          atforks[i].parent == parent &&
-          atforks[i].child == child)
-         return;
-   }
-
-   if (n_atfork >= VG_MAX_ATFORK)
-      VG_(core_panic)("Too many VG_(atfork) handlers requested: "
-                      "raise VG_MAX_ATFORK");
-
-   atforks[n_atfork].pre    = pre;
-   atforks[n_atfork].parent = parent;
-   atforks[n_atfork].child  = child;
-
-   n_atfork++;
-}
-
-void VG_(do_atfork_pre)(ThreadId tid)
-{
-   Int i;
-
-   for(i = 0; i < n_atfork; i++)
-      if (atforks[i].pre != NULL)
-	 (*atforks[i].pre)(tid);
-}
-
-void VG_(do_atfork_parent)(ThreadId tid)
-{
-   Int i;
-
-   for(i = 0; i < n_atfork; i++)
-      if (atforks[i].parent != NULL)
-	 (*atforks[i].parent)(tid);
+   atfork_child = child;
 }
 
 void VG_(do_atfork_child)(ThreadId tid)
 {
-   Int i;
-
-   for(i = 0; i < n_atfork; i++)
-      if (atforks[i].child != NULL)
-	 (*atforks[i].child)(tid);
+   if (NULL != atfork_child)
+      (*atfork_child)(tid);
 }
 
 /*--------------------------------------------------------------------*/

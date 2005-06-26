@@ -541,7 +541,7 @@ void VG_(scheduler_init) ( void )
                                             = VG_(clstk_end) - sizeof(UWord);
    VG_(threads)[tid_main].client_stack_szB  = VG_(client_rlimit_stack).rlim_cur;
 
-   VG_(atfork)(NULL, NULL, sched_fork_cleanup);
+   VG_(atfork_child)(sched_fork_cleanup);
 }
 
 

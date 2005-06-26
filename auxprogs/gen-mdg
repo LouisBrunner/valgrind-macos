@@ -63,7 +63,7 @@ usage: gen-mdg [options]
   options:
     --headers=no|yes    show headers, ie. show module-to-module deps only
     --libc=no|yes       show m_libc* modules
-    --hide=<module>     hide module named <module>
+    --hide=<a>,<b>,...  hide module(s) named <a>, <b>, ...
 END
 ;
 
@@ -85,9 +85,12 @@ sub process_cmd_line()
             $show_libc = 1 if ($1 eq "yes");
             $show_libc = 0 if ($1 eq "no");
 
-        # --hide=<module>
+        # --hide=<a>,<b>,...
         } elsif ($arg =~ /^--hide=(.*)$/) {
-            $hide{$1} = 1;
+            my @hiders = split(/,/, $1);
+            foreach my $h (@hiders) {
+                $hide{$h} = 1;
+            }
 
         } else {
             die $usage;

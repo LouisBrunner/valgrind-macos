@@ -1010,6 +1010,14 @@ IRAtom* expensiveAddSub ( MCEnv*  mce,
          opADD = Iop_Add32;
          opSUB = Iop_Sub32;
          break;
+      case Ity_I64:
+         opAND = Iop_And64;
+         opOR  = Iop_Or64;
+         opXOR = Iop_Xor64;
+         opNOT = Iop_Not64;
+         opADD = Iop_Add64;
+         opSUB = Iop_Sub64;
+         break;
       default:
          VG_(tool_panic)("expensiveAddSub");
    }
@@ -1678,9 +1686,21 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
 
       /* could do better: Add64, Sub64 */
-      case Iop_Mul64:
       case Iop_Add64:
+         if (mce->bogusLiterals)
+            return expensiveAddSub(mce,True,Ity_I64, 
+                                   vatom1,vatom2, atom1,atom2);
+         else
+            goto cheap_AddSub64;
       case Iop_Sub64:
+         if (mce->bogusLiterals)
+            return expensiveAddSub(mce,False,Ity_I64, 
+                                   vatom1,vatom2, atom1,atom2);
+         else
+            goto cheap_AddSub64;
+
+      cheap_AddSub64:
+      case Iop_Mul64:
          return mkLeft64(mce, mkUifU64(mce, vatom1,vatom2));
 
       case Iop_Mul16:
@@ -2464,7 +2484,9 @@ static Bool isBogusAtom ( IRAtom* at )
    /* VG_(printf)("%llx\n", n); */
    return (/*32*/    n == 0xFEFEFEFFULL
            /*32*/ || n == 0x80808080ULL
+           /*64*/ || n == 0xFFFFFFFFFEFEFEFFULL
            /*64*/ || n == 0xFEFEFEFEFEFEFEFFULL
+           /*64*/ || n == 0x0000000000008080ULL
            /*64*/ || n == 0x8080808080808080ULL
 	   /*64*/ || n == 0x0101010101010101ULL
           );

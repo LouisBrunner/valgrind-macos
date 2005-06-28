@@ -4,6 +4,7 @@ DIST_SUBDIRS = ${VG_ARCH_ALL} .
 noinst_SCRIPTS = filter_none_discards filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
+	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
 	async-sigs.stderr.exp async-sigs.stdout.exp async-sigs.vgtest \
 	bitfield1.stderr.exp bitfield1.vgtest \
@@ -65,7 +66,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	yield.stderr.exp yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
-	args async-sigs bitfield1 blockfault closeall coolo_strlen \
+	ansi args async-sigs bitfield1 blockfault closeall coolo_strlen \
 	discard exec-sigmask execve faultstatus fcntl_setown floored fork \
 	fucomip \
 	manythreads \
@@ -84,6 +85,8 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
+ansi_SOURCES		= ansi.c
+ansi_CFLAGS		= -ansi
 args_SOURCES 		= args.c
 async_sigs_SOURCES	= async-sigs.c
 bitfield1_SOURCES 	= bitfield1.c

@@ -41,7 +41,7 @@
 /*--- Low-level ExeContext storage.                        ---*/
 /*------------------------------------------------------------*/
 
-/* The first 4 IP values are used in comparisons do remove duplicate errors,
+/* The first 4 IP values are used in comparisons to remove duplicate errors,
    and for comparing against suppression specifications.  The rest are
    purely informational (but often important). */
 

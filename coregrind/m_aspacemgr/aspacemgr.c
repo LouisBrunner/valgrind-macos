@@ -1163,15 +1163,14 @@ void VG_(find_root_memory)(void (*add_rootrange)(Addr a, SizeT sz))
 
    for (i = 0; i < segments_used; i++) {
       s = &segments[i];
-      flags = s->flags & (SF_SHARED|SF_MMAP|SF_VALGRIND
-                          |SF_CORE|SF_STACK);
+      flags = s->flags & (SF_SHARED|SF_MMAP|SF_VALGRIND|SF_CORE|SF_STACK);
       if (flags != SF_MMAP && flags != SF_STACK)
          continue;
       if ((s->prot & (VKI_PROT_READ|VKI_PROT_WRITE)) 
           != (VKI_PROT_READ|VKI_PROT_WRITE))
          continue;
       if (!VG_(is_client_addr)(s->addr) ||
-          !VG_(is_client_addr)(s->addr+s->len))
+          !VG_(is_client_addr)(s->addr+s->len-1))
          continue;
 
       (*add_rootrange)(s->addr, s->len);

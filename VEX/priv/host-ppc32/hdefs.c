@@ -69,6 +69,11 @@ void ppHRegPPC32 ( HReg reg )
       vassert(r >= 0 && r < 32);
       vex_printf("%%fr%d", r);
       return;
+   case HRcVec128:
+      r = hregNumber(reg);
+      vassert(r >= 0 && r < 32);
+      vex_printf("%%v%d", r);
+      return;
    default:
       vpanic("ppHRegPPC32");
    }
@@ -140,75 +145,142 @@ HReg hregPPC32_FPR29 ( void ) { return mkHReg(29, HRcFlt64, False); }
 HReg hregPPC32_FPR30 ( void ) { return mkHReg(30, HRcFlt64, False); }
 HReg hregPPC32_FPR31 ( void ) { return mkHReg(31, HRcFlt64, False); }
 
+HReg hregPPC32_VR0  ( void ) { return mkHReg( 0, HRcVec128, False); }
+HReg hregPPC32_VR1  ( void ) { return mkHReg( 1, HRcVec128, False); }
+HReg hregPPC32_VR2  ( void ) { return mkHReg( 2, HRcVec128, False); }
+HReg hregPPC32_VR3  ( void ) { return mkHReg( 3, HRcVec128, False); }
+HReg hregPPC32_VR4  ( void ) { return mkHReg( 4, HRcVec128, False); }
+HReg hregPPC32_VR5  ( void ) { return mkHReg( 5, HRcVec128, False); }
+HReg hregPPC32_VR6  ( void ) { return mkHReg( 6, HRcVec128, False); }
+HReg hregPPC32_VR7  ( void ) { return mkHReg( 7, HRcVec128, False); }
+HReg hregPPC32_VR8  ( void ) { return mkHReg( 8, HRcVec128, False); }
+HReg hregPPC32_VR9  ( void ) { return mkHReg( 9, HRcVec128, False); }
+HReg hregPPC32_VR10 ( void ) { return mkHReg(10, HRcVec128, False); }
+HReg hregPPC32_VR11 ( void ) { return mkHReg(11, HRcVec128, False); }
+HReg hregPPC32_VR12 ( void ) { return mkHReg(12, HRcVec128, False); }
+HReg hregPPC32_VR13 ( void ) { return mkHReg(13, HRcVec128, False); }
+HReg hregPPC32_VR14 ( void ) { return mkHReg(14, HRcVec128, False); }
+HReg hregPPC32_VR15 ( void ) { return mkHReg(15, HRcVec128, False); }
+HReg hregPPC32_VR16 ( void ) { return mkHReg(16, HRcVec128, False); }
+HReg hregPPC32_VR17 ( void ) { return mkHReg(17, HRcVec128, False); }
+HReg hregPPC32_VR18 ( void ) { return mkHReg(18, HRcVec128, False); }
+HReg hregPPC32_VR19 ( void ) { return mkHReg(19, HRcVec128, False); }
+HReg hregPPC32_VR20 ( void ) { return mkHReg(20, HRcVec128, False); }
+HReg hregPPC32_VR21 ( void ) { return mkHReg(21, HRcVec128, False); }
+HReg hregPPC32_VR22 ( void ) { return mkHReg(22, HRcVec128, False); }
+HReg hregPPC32_VR23 ( void ) { return mkHReg(23, HRcVec128, False); }
+HReg hregPPC32_VR24 ( void ) { return mkHReg(24, HRcVec128, False); }
+HReg hregPPC32_VR25 ( void ) { return mkHReg(25, HRcVec128, False); }
+HReg hregPPC32_VR26 ( void ) { return mkHReg(26, HRcVec128, False); }
+HReg hregPPC32_VR27 ( void ) { return mkHReg(27, HRcVec128, False); }
+HReg hregPPC32_VR28 ( void ) { return mkHReg(28, HRcVec128, False); }
+HReg hregPPC32_VR29 ( void ) { return mkHReg(29, HRcVec128, False); }
+HReg hregPPC32_VR30 ( void ) { return mkHReg(30, HRcVec128, False); }
+HReg hregPPC32_VR31 ( void ) { return mkHReg(31, HRcVec128, False); }
+
 void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
 {
+   UInt i=0;
    *nregs = 59;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    // GPR0 = scratch reg where possible - some ops interpret as value zero
    // GPR1 = stack pointer
    // GPR2 = TOC pointer
-   (*arr)[ 0] = hregPPC32_GPR3();
-   (*arr)[ 1] = hregPPC32_GPR4();
-   (*arr)[ 2] = hregPPC32_GPR5();
-   (*arr)[ 3] = hregPPC32_GPR6();
-   (*arr)[ 4] = hregPPC32_GPR7();
-   (*arr)[ 5] = hregPPC32_GPR8();
-   (*arr)[ 6] = hregPPC32_GPR9();
-   (*arr)[ 7] = hregPPC32_GPR10();
-   (*arr)[ 8] = hregPPC32_GPR11();
-   (*arr)[ 9] = hregPPC32_GPR12();
+   (*arr)[i++] = hregPPC32_GPR3();
+   (*arr)[i++] = hregPPC32_GPR4();
+   (*arr)[i++] = hregPPC32_GPR5();
+   (*arr)[i++] = hregPPC32_GPR6();
+   (*arr)[i++] = hregPPC32_GPR7();
+   (*arr)[i++] = hregPPC32_GPR8();
+   (*arr)[i++] = hregPPC32_GPR9();
+   (*arr)[i++] = hregPPC32_GPR10();
+   (*arr)[i++] = hregPPC32_GPR11();
+   (*arr)[i++] = hregPPC32_GPR12();
    // GPR13 = thread specific pointer
-   (*arr)[10] = hregPPC32_GPR14();
-   (*arr)[11] = hregPPC32_GPR15();
-   (*arr)[12] = hregPPC32_GPR16();
-   (*arr)[13] = hregPPC32_GPR17();
-   (*arr)[14] = hregPPC32_GPR18();
-   (*arr)[15] = hregPPC32_GPR19();
-   (*arr)[16] = hregPPC32_GPR20();
-   (*arr)[17] = hregPPC32_GPR21();
-   (*arr)[18] = hregPPC32_GPR22();
-   (*arr)[19] = hregPPC32_GPR23();
-   (*arr)[20] = hregPPC32_GPR24();
-   (*arr)[21] = hregPPC32_GPR25();
-   (*arr)[22] = hregPPC32_GPR26();
-   (*arr)[23] = hregPPC32_GPR27();
-   (*arr)[24] = hregPPC32_GPR28();
-   (*arr)[25] = hregPPC32_GPR29();
-   (*arr)[26] = hregPPC32_GPR30();
+   (*arr)[i++] = hregPPC32_GPR14();
+   (*arr)[i++] = hregPPC32_GPR15();
+   (*arr)[i++] = hregPPC32_GPR16();
+   (*arr)[i++] = hregPPC32_GPR17();
+   (*arr)[i++] = hregPPC32_GPR18();
+   (*arr)[i++] = hregPPC32_GPR19();
+   (*arr)[i++] = hregPPC32_GPR20();
+   (*arr)[i++] = hregPPC32_GPR21();
+   (*arr)[i++] = hregPPC32_GPR22();
+   (*arr)[i++] = hregPPC32_GPR23();
+   (*arr)[i++] = hregPPC32_GPR24();
+   (*arr)[i++] = hregPPC32_GPR25();
+   (*arr)[i++] = hregPPC32_GPR26();
+   (*arr)[i++] = hregPPC32_GPR27();
+   (*arr)[i++] = hregPPC32_GPR28();
+   (*arr)[i++] = hregPPC32_GPR29();
+   // GPR30 AltiVec spill reg temporary
    // GPR31 = GuestStatePtr
 
-   (*arr)[27] = hregPPC32_FPR0();
-   (*arr)[28] = hregPPC32_FPR1();
-   (*arr)[29] = hregPPC32_FPR2();
-   (*arr)[30] = hregPPC32_FPR3();
-   (*arr)[31] = hregPPC32_FPR4();
-   (*arr)[32] = hregPPC32_FPR5();
-   (*arr)[33] = hregPPC32_FPR6();
-   (*arr)[34] = hregPPC32_FPR7();
-   (*arr)[35] = hregPPC32_FPR8();
-   (*arr)[36] = hregPPC32_FPR9();
-   (*arr)[37] = hregPPC32_FPR10();
-   (*arr)[38] = hregPPC32_FPR11();
-   (*arr)[39] = hregPPC32_FPR12();
-   (*arr)[40] = hregPPC32_FPR13();
-   (*arr)[41] = hregPPC32_FPR14();
-   (*arr)[42] = hregPPC32_FPR15();
-   (*arr)[43] = hregPPC32_FPR16();
-   (*arr)[44] = hregPPC32_FPR17();
-   (*arr)[45] = hregPPC32_FPR18();
-   (*arr)[46] = hregPPC32_FPR19();
-   (*arr)[47] = hregPPC32_FPR20();
-   (*arr)[48] = hregPPC32_FPR21();
-   (*arr)[49] = hregPPC32_FPR22();
-   (*arr)[50] = hregPPC32_FPR23();
-   (*arr)[51] = hregPPC32_FPR24();
-   (*arr)[52] = hregPPC32_FPR25();
-   (*arr)[53] = hregPPC32_FPR26();
-   (*arr)[54] = hregPPC32_FPR27();
-   (*arr)[55] = hregPPC32_FPR28();
-   (*arr)[56] = hregPPC32_FPR29();
-   (*arr)[57] = hregPPC32_FPR30();
-   (*arr)[58] = hregPPC32_FPR31();
+   (*arr)[i++] = hregPPC32_FPR0();
+   (*arr)[i++] = hregPPC32_FPR1();
+   (*arr)[i++] = hregPPC32_FPR2();
+   (*arr)[i++] = hregPPC32_FPR3();
+   (*arr)[i++] = hregPPC32_FPR4();
+   (*arr)[i++] = hregPPC32_FPR5();
+   (*arr)[i++] = hregPPC32_FPR6();
+   (*arr)[i++] = hregPPC32_FPR7();
+   (*arr)[i++] = hregPPC32_FPR8();
+   (*arr)[i++] = hregPPC32_FPR9();
+   (*arr)[i++] = hregPPC32_FPR10();
+   (*arr)[i++] = hregPPC32_FPR11();
+   (*arr)[i++] = hregPPC32_FPR12();
+   (*arr)[i++] = hregPPC32_FPR13();
+   (*arr)[i++] = hregPPC32_FPR14();
+   (*arr)[i++] = hregPPC32_FPR15();
+   (*arr)[i++] = hregPPC32_FPR16();
+   (*arr)[i++] = hregPPC32_FPR17();
+   (*arr)[i++] = hregPPC32_FPR18();
+   (*arr)[i++] = hregPPC32_FPR19();
+   (*arr)[i++] = hregPPC32_FPR20();
+   (*arr)[i++] = hregPPC32_FPR21();
+   (*arr)[i++] = hregPPC32_FPR22();
+   (*arr)[i++] = hregPPC32_FPR23();
+   (*arr)[i++] = hregPPC32_FPR24();
+   (*arr)[i++] = hregPPC32_FPR25();
+   (*arr)[i++] = hregPPC32_FPR26();
+   (*arr)[i++] = hregPPC32_FPR27();
+   (*arr)[i++] = hregPPC32_FPR28();
+   (*arr)[i++] = hregPPC32_FPR29();
+   (*arr)[i++] = hregPPC32_FPR30();
+   (*arr)[i++] = hregPPC32_FPR31();
+
+   (*arr)[i++] = hregPPC32_VR0();
+   (*arr)[i++] = hregPPC32_VR1();
+   (*arr)[i++] = hregPPC32_VR2();
+   (*arr)[i++] = hregPPC32_VR3();
+   (*arr)[i++] = hregPPC32_VR4();
+   (*arr)[i++] = hregPPC32_VR5();
+   (*arr)[i++] = hregPPC32_VR6();
+   (*arr)[i++] = hregPPC32_VR7();
+   (*arr)[i++] = hregPPC32_VR8();
+   (*arr)[i++] = hregPPC32_VR9();
+   (*arr)[i++] = hregPPC32_VR10();
+   (*arr)[i++] = hregPPC32_VR11();
+   (*arr)[i++] = hregPPC32_VR12();
+   (*arr)[i++] = hregPPC32_VR13();
+   (*arr)[i++] = hregPPC32_VR14();
+   (*arr)[i++] = hregPPC32_VR15();
+   (*arr)[i++] = hregPPC32_VR16();
+   (*arr)[i++] = hregPPC32_VR17();
+   (*arr)[i++] = hregPPC32_VR18();
+   (*arr)[i++] = hregPPC32_VR19();
+   (*arr)[i++] = hregPPC32_VR20();
+   (*arr)[i++] = hregPPC32_VR21();
+   (*arr)[i++] = hregPPC32_VR22();
+   (*arr)[i++] = hregPPC32_VR23();
+   (*arr)[i++] = hregPPC32_VR24();
+   (*arr)[i++] = hregPPC32_VR25();
+   (*arr)[i++] = hregPPC32_VR26();
+   (*arr)[i++] = hregPPC32_VR27();
+   (*arr)[i++] = hregPPC32_VR28();
+   (*arr)[i++] = hregPPC32_VR29();
+   (*arr)[i++] = hregPPC32_VR30();
+   (*arr)[i++] = hregPPC32_VR31();
 }
 
 
@@ -439,6 +511,126 @@ HChar* showPPC32FpOp ( PPC32FpOp op ) {
    }
 }
 
+HChar* showPPC32AvOp ( PPC32AvOp op ) {
+   switch (op) {
+   /* mov */
+   case Pav_MOV:       return "vmr";
+     
+   /* Bitwise */
+   case Pav_AND:       return "vand";
+   case Pav_OR:        return "vor";
+   case Pav_XOR:       return "vxor";
+   case Pav_NOT:       return "vnot";
+
+   /* Integer binary */
+   case Pav_ADD8UM:    return "vaddubm";
+   case Pav_ADD16UM:   return "vadduhm";
+   case Pav_ADD32UM:   return "vadduwm";
+   case Pav_ADD8US:    return "vaddubs";
+   case Pav_ADD16US:   return "vadduhs";
+   case Pav_ADD32US:   return "vadduws";
+   case Pav_ADD8SS:    return "vaddsbs";
+   case Pav_ADD16SS:   return "vaddshs";
+   case Pav_ADD32SS:   return "vaddsws";
+     
+   case Pav_SUB8UM:    return "vsububm";
+   case Pav_SUB16UM:   return "vsubuhm";
+   case Pav_SUB32UM:   return "vsubuwm";
+   case Pav_SUB8US:    return "vsububs";
+   case Pav_SUB16US:   return "vsubuhs";
+   case Pav_SUB32US:   return "vsubuws";
+   case Pav_SUB8SS:    return "vsubsbs";
+   case Pav_SUB16SS:   return "vsubshs";
+   case Pav_SUB32SS:   return "vsubsws";
+     
+   case Pav_OMUL8U:    return "vmuloub";
+   case Pav_OMUL16U:   return "vmulouh";
+   case Pav_OMUL8S:    return "vmulosb";
+   case Pav_OMUL16S:   return "vmulosh";
+   case Pav_EMUL8U:    return "vmuleub";
+   case Pav_EMUL16U:   return "vmuleuh";
+   case Pav_EMUL8S:    return "vmulesb";
+   case Pav_EMUL16S:   return "vmulesh";
+  
+   case Pav_AVG8U:     return "vavgub";
+   case Pav_AVG16U:    return "vavguh";
+   case Pav_AVG32U:    return "vavguw";
+   case Pav_AVG8S:     return "vavgsb";
+   case Pav_AVG16S:    return "vavgsh";
+   case Pav_AVG32S:    return "vavgsw";
+     
+   case Pav_MAX8U:     return "vmaxub";
+   case Pav_MAX16U:    return "vmaxuh";
+   case Pav_MAX32U:    return "vmaxuw";
+   case Pav_MAX8S:     return "vmaxsb";
+   case Pav_MAX16S:    return "vmaxsh";
+   case Pav_MAX32S:    return "vmaxsw";
+     
+   case Pav_MIN8U:     return "vminub";
+   case Pav_MIN16U:    return "vminuh";
+   case Pav_MIN32U:    return "vminuw";
+   case Pav_MIN8S:     return "vminsb";
+   case Pav_MIN16S:    return "vminsh";
+   case Pav_MIN32S:    return "vminsw";
+     
+   /* Compare (always affects CR field 6) */
+   case Pav_CMPEQ8U:   return "vcmpequb";
+   case Pav_CMPEQ16U:  return "vcmpequh";
+   case Pav_CMPEQ32U:  return "vcmpequw";
+   case Pav_CMPGT8U:   return "vcmpgtub";
+   case Pav_CMPGT16U:  return "vcmpgtuh";
+   case Pav_CMPGT32U:  return "vcmpgtuw";
+   case Pav_CMPGT8S:   return "vcmpgtsb";
+   case Pav_CMPGT16S:  return "vcmpgtsh";
+   case Pav_CMPGT32S:  return "vcmpgtsw";
+
+   /* Shift */
+   case Pav_SHL8:      return "vslb";
+   case Pav_SHL16:     return "vslh";
+   case Pav_SHL32:     return "vslw";
+   case Pav_SHL128:    return "vsl";
+   case Pav_SHR8:      return "vsrb";
+   case Pav_SHR16:     return "vsrh";
+   case Pav_SHR32:     return "vsrw";
+   case Pav_SHR128:    return "vsr";
+   case Pav_SAR8:      return "vsrab";
+   case Pav_SAR16:     return "vsrah";
+   case Pav_SAR32:     return "vsraw";
+   case Pav_ROTL8:     return "vrlb";
+   case Pav_ROTL16:    return "vrlh";
+   case Pav_ROTL32:    return "vrlw";
+     
+   /* Pack */
+   case Pav_PACKU16UM: return "vpkuhum";
+   case Pav_PACKU32UM: return "vpkuwum";
+   case Pav_PACKU16US: return "vpkuhus";
+   case Pav_PACKU32US: return "vpkuwus";
+   case Pav_PACKS16US: return "vpkshus";
+   case Pav_PACKS32US: return "vpkswus";
+   case Pav_PACKS16SS: return "vpkshss";
+   case Pav_PACKS32SS: return "vpkswss";
+   case Pav_PACKPXL:   return "vpkpx";
+
+   /* Unpack (srcL ignored) */
+   case Pav_UNPCKH8S:  return "vupkhsb";
+   case Pav_UNPCKH16S: return "vupkhsh";
+   case Pav_UNPCKL8S:  return "vupklsb";
+   case Pav_UNPCKL16S: return "vupklsh";
+   case Pav_UNPCKHPIX: return "vupkhpx";
+   case Pav_UNPCKLPIX: return "vupklpx";
+     
+   /* Merge */
+   case Pav_MRG8HI:    return "vmrghb";
+   case Pav_MRG16HI:   return "vmrghh";
+   case Pav_MRG32HI:   return "vmrghw";
+   case Pav_MRG8LO:    return "vmrglb";
+   case Pav_MRG16LO:   return "vmrglh";
+   case Pav_MRG32LO:   return "vmrglw";
+     
+   default: vpanic("showPPC32AvOp");
+   }
+}
+
 PPC32Instr* PPC32Instr_Alu32 ( PPC32AluOp op, HReg dst, HReg srcL, PPC32RI* srcR ) {
    PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
    if (srcR->tag == Pri_Imm)
@@ -646,12 +838,80 @@ PPC32Instr* PPC32Instr_FpCmp ( HReg dst, HReg srcL, HReg srcR ) {
 }
 
 /* Read/Write Link Register */
-PPC32Instr* PPC32Instr_RdWrLR ( Bool wrLR, HReg gpr )
-{
+PPC32Instr* PPC32Instr_RdWrLR ( Bool wrLR, HReg gpr ) {
    PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag             = Pin_RdWrLR;
    i->Pin.RdWrLR.wrLR = wrLR;
    i->Pin.RdWrLR.gpr  = gpr;
+   return i;
+}
+
+/* AltiVec */
+PPC32Instr* PPC32Instr_AvLdSt ( Bool isLoad, UChar sz, HReg reg, PPC32AMode* addr ) {
+   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag               = Pin_AvLdSt;
+   i->Pin.AvLdSt.isLoad = isLoad;
+   i->Pin.AvLdSt.sz     = sz;
+   i->Pin.AvLdSt.reg    = reg;
+   i->Pin.AvLdSt.addr   = addr;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvUnary ( PPC32AvOp op, HReg dst, HReg src ) {
+   PPC32Instr* i       = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag              = Pin_AvUnary;
+   i->Pin.AvUnary.op  = op;
+   i->Pin.AvUnary.dst = dst;
+   i->Pin.AvUnary.src = src;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvBinary ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
+   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag               = Pin_AvBinary;
+   i->Pin.AvBinary.op   = op;
+   i->Pin.AvBinary.dst  = dst;
+   i->Pin.AvBinary.srcL = srcL;
+   i->Pin.AvBinary.srcR = srcR;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvPerm ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
+   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag             = Pin_AvPerm;
+   i->Pin.AvPerm.ctl  = ctl;
+   i->Pin.AvPerm.dst  = dst;
+   i->Pin.AvPerm.srcL = srcL;
+   i->Pin.AvPerm.srcR = srcR;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
+   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag            = Pin_AvSel;
+   i->Pin.AvSel.ctl  = ctl;
+   i->Pin.AvSel.dst  = dst;
+   i->Pin.AvSel.srcL = srcL;
+   i->Pin.AvSel.srcR = srcR;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvShlDbl ( UChar shift, HReg dst, HReg srcL, HReg srcR ) {
+   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag                = Pin_AvShlDbl;
+   i->Pin.AvShlDbl.shift = shift;
+   i->Pin.AvShlDbl.dst   = dst;
+   i->Pin.AvShlDbl.srcL  = srcL;
+   i->Pin.AvShlDbl.srcR  = srcR;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvSplat ( UChar sz, HReg dst, PPC32RI* src ) {
+   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag             = Pin_AvSplat;
+   i->Pin.AvSplat.sz  = sz;
+   i->Pin.AvSplat.dst = dst;
+   i->Pin.AvSplat.src = src;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvLdVSCR ( HReg src ) {
+   PPC32Instr* i       = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag              = Pin_AvLdVSCR;
+   i->Pin.AvLdVSCR.src = src;
    return i;
 }
 
@@ -961,6 +1221,96 @@ void ppPPC32Instr ( PPC32Instr* i )
       ppHRegPPC32(i->Pin.RdWrLR.gpr);
       return;
 
+   case Pin_AvLdSt: {
+      UChar sz = i->Pin.AvLdSt.sz;
+      UChar* str_sz = (sz == 8) ? "eb" :
+                      (sz == 16) ? "eh" :
+                      (sz == 32) ? "ew" : "";
+      if (i->Pin.AvLdSt.addr->tag == Pam_IR) {
+         vex_printf("{ ");
+         ppLoadImm(hregPPC32_GPR30(), i->Pin.AvLdSt.addr->Pam.RR.index);
+         vex_printf(" }");
+      }
+      if (i->Pin.AvLdSt.isLoad) {
+         vex_printf("lv%sx ", str_sz);
+         ppHRegPPC32(i->Pin.AvLdSt.reg);
+         vex_printf(",");
+         ppPPC32AMode(i->Pin.AvLdSt.addr);
+      } else {
+         vex_printf("stv%sx ", str_sz);
+         ppHRegPPC32(i->Pin.AvLdSt.reg);
+         vex_printf(",");
+         ppPPC32AMode(i->Pin.AvLdSt.addr);
+      }
+      return;
+   }
+   case Pin_AvUnary:
+      vex_printf("%s ", showPPC32AvOp(i->Pin.AvUnary.op));
+      ppHRegPPC32(i->Pin.AvUnary.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvUnary.src);
+      return;
+   case Pin_AvBinary:
+      vex_printf("%s ", showPPC32AvOp(i->Pin.AvBinary.op));
+      ppHRegPPC32(i->Pin.AvBinary.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBinary.srcL);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBinary.srcR);
+      return;
+   case Pin_AvPerm:
+      vex_printf("vperm ");
+      ppHRegPPC32(i->Pin.AvPerm.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvPerm.srcL);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvPerm.srcR);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvPerm.ctl);
+      return;
+
+   case Pin_AvSel:
+      vex_printf("vsel ");
+      ppHRegPPC32(i->Pin.AvSel.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvSel.srcL);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvSel.srcR);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvSel.ctl);
+      return;
+
+   case Pin_AvShlDbl:
+      vex_printf("vsldoi ");
+      ppHRegPPC32(i->Pin.AvShlDbl.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvShlDbl.srcL);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvShlDbl.srcR);
+      vex_printf(",%u", i->Pin.AvShlDbl.shift);
+      return;
+
+   case Pin_AvSplat: {
+      UChar ch_sz = (i->Pin.AvSplat.sz == 8) ? 'b' :
+                    (i->Pin.AvSplat.sz == 16) ? 'h' : 'w';
+      vex_printf("vsplt%s%c ",
+                 i->Pin.AvSplat.src->tag == Pri_Imm ? "is" : "", ch_sz);
+      ppHRegPPC32(i->Pin.AvSplat.dst);
+      vex_printf(",");
+      if (i->Pin.AvSplat.src->tag == Pri_Imm) {
+         vex_printf("%d", (Char)(i->Pin.AvSplat.src->Pri.Imm.imm32));
+      } else {
+         ppHRegPPC32(i->Pin.AvSplat.src->Pri.Reg.reg);
+         vex_printf(", 0");
+      }
+      return;
+   }
+
+   case Pin_AvLdVSCR:
+      vex_printf("mtvscr ");
+      ppHRegPPC32(i->Pin.AvLdVSCR.src);
+      return;
+
    default:
       vex_printf("\nppPPC32Instr(ppc32): No such tag(%d)\n", (Int)i->tag);
       vpanic("ppPPC32Instr(ppc32)");
@@ -1116,6 +1466,47 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
                  i->Pin.RdWrLR.gpr);
       return;
 
+   case Pin_AvLdSt:
+      addHRegUse(u, (i->Pin.AvLdSt.isLoad ? HRmWrite : HRmRead),
+                 i->Pin.AvLdSt.reg);
+      if (i->Pin.AvLdSt.addr->tag == Pam_IR)
+         addHRegUse(u, HRmWrite, hregPPC32_GPR30());
+      addRegUsage_PPC32AMode(u, i->Pin.AvLdSt.addr);
+      return;
+   case Pin_AvUnary:
+      addHRegUse(u, HRmWrite, i->Pin.AvUnary.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvUnary.src);
+      return;
+   case Pin_AvBinary:
+      addHRegUse(u, HRmWrite, i->Pin.AvBinary.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcR);
+      return;
+   case Pin_AvPerm:
+      addHRegUse(u, HRmWrite, i->Pin.AvPerm.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvPerm.ctl);
+      addHRegUse(u, HRmRead,  i->Pin.AvPerm.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvPerm.srcR);
+      return;
+   case Pin_AvSel:
+      addHRegUse(u, HRmWrite, i->Pin.AvSel.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvSel.ctl);
+      addHRegUse(u, HRmRead,  i->Pin.AvSel.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvSel.srcR);
+      return;
+   case Pin_AvShlDbl:
+      addHRegUse(u, HRmWrite, i->Pin.AvShlDbl.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvShlDbl.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvShlDbl.srcR);
+      return;
+   case Pin_AvSplat:
+      addHRegUse(u, HRmWrite, i->Pin.AvSplat.dst);
+      addRegUsage_PPC32RI(u, i->Pin.AvSplat.src);
+      return;
+   case Pin_AvLdVSCR:
+      addHRegUse(u, HRmRead, i->Pin.AvLdVSCR.src);
+      return;
+
    default:
       ppPPC32Instr(i);
       vpanic("getRegUsage_PPC32Instr");
@@ -1225,6 +1616,44 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapReg(m, &i->Pin.RdWrLR.gpr);
       return;
 
+   case Pin_AvLdSt:
+      mapReg(m, &i->Pin.AvLdSt.reg);
+      mapRegs_PPC32AMode(m, i->Pin.AvLdSt.addr);
+      return;
+   case Pin_AvUnary:
+      mapReg(m, &i->Pin.AvUnary.dst);
+      mapReg(m, &i->Pin.AvUnary.src);
+      return;
+   case Pin_AvBinary:
+      mapReg(m, &i->Pin.AvBinary.dst);
+      mapReg(m, &i->Pin.AvBinary.srcL);
+      mapReg(m, &i->Pin.AvBinary.srcR);
+      return;
+   case Pin_AvPerm:
+      mapReg(m, &i->Pin.AvPerm.dst);
+      mapReg(m, &i->Pin.AvPerm.srcL);
+      mapReg(m, &i->Pin.AvPerm.srcR);
+      mapReg(m, &i->Pin.AvPerm.ctl);
+      return;
+   case Pin_AvSel:
+      mapReg(m, &i->Pin.AvSel.dst);
+      mapReg(m, &i->Pin.AvSel.srcL);
+      mapReg(m, &i->Pin.AvSel.srcR);
+      mapReg(m, &i->Pin.AvSel.ctl);
+      return;
+   case Pin_AvShlDbl:
+      mapReg(m, &i->Pin.AvShlDbl.dst);
+      mapReg(m, &i->Pin.AvShlDbl.srcL);
+      mapReg(m, &i->Pin.AvShlDbl.srcR);
+      return;
+   case Pin_AvSplat:
+      mapReg(m, &i->Pin.AvSplat.dst);
+      mapRegs_PPC32RI(m, i->Pin.AvSplat.src);
+      return;
+   case Pin_AvLdVSCR:
+      mapReg(m, &i->Pin.AvLdVSCR.src);
+      return;
+
    default:
       ppPPC32Instr(i);
       vpanic("mapRegs_PPC32Instr");
@@ -1265,11 +1694,9 @@ Bool isMove_PPC32Instr ( PPC32Instr* i, HReg* src, HReg* dst )
 /* Generate ppc32 spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the
    condition codes. */
-
-PPC32Instr* genSpill_PPC32 ( HReg rreg, Int offsetB )
+PPC32Instr* genSpill_PPC32 ( HReg rreg, UShort offsetB )
 {
    PPC32AMode* am;
-   vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
    am = PPC32AMode_IR(offsetB, GuestStatePtr);
    
@@ -1278,16 +1705,18 @@ PPC32Instr* genSpill_PPC32 ( HReg rreg, Int offsetB )
       return PPC32Instr_Store( 4, am, rreg);
    case HRcFlt64:
       return PPC32Instr_FpLdSt ( False/*store*/, 8, rreg, am );
+   case HRcVec128:
+      // XXX: GPR30 used as spill register to kludge AltiVec AMode_IR
+      return PPC32Instr_AvLdSt ( False/*store*/, 16, rreg, am );
    default: 
       ppHRegClass(hregClass(rreg));
       vpanic("genSpill_PPC32: unimplemented regclass");
    }
 }
 
-PPC32Instr* genReload_PPC32 ( HReg rreg, Int offsetB )
+PPC32Instr* genReload_PPC32 ( HReg rreg, UShort offsetB )
 {
    PPC32AMode* am;
-   vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
    am = PPC32AMode_IR(offsetB, GuestStatePtr);
 
@@ -1296,6 +1725,9 @@ PPC32Instr* genReload_PPC32 ( HReg rreg, Int offsetB )
       return PPC32Instr_Load( 4, False, rreg, am );
    case HRcFlt64:
       return PPC32Instr_FpLdSt ( True/*load*/, 8, rreg, am );
+   case HRcVec128:
+      // XXX: GPR30 used as spill register to kludge AltiVec AMode_IR
+      return PPC32Instr_AvLdSt ( True/*load*/, 16, rreg, am );
    default: 
       ppHRegClass(hregClass(rreg));
       vpanic("genReload_PPC32: unimplemented regclass");
@@ -1321,6 +1753,16 @@ static UInt fregNo ( HReg fr )
    vassert(hregClass(fr) == HRcFlt64);
    vassert(!hregIsVirtual(fr));
    n = hregNumber(fr);
+   vassert(n <= 32);
+   return n;
+}
+
+static UInt vregNo ( HReg v )
+{
+   UInt n;
+   vassert(hregClass(v) == HRcVec128);
+   vassert(!hregIsVirtual(v));
+   n = hregNumber(v);
    vassert(n <= 32);
    return n;
 }
@@ -1533,7 +1975,6 @@ static UChar* mkLoadImm ( UChar* p, UInt r_dst, UInt imm )
    return p;
 }
 
-
 /* Move r_dst to r_src */
 static UChar* mkMoveReg ( UChar* p, UInt r_dst, UInt r_src )
 {
@@ -1546,6 +1987,34 @@ static UChar* mkMoveReg ( UChar* p, UInt r_dst, UInt r_src )
    }
    return p;
 }
+
+static UChar* mkFormVX ( UChar* p, UInt opc1, UInt r1, UInt r2,
+                         UInt r3, UInt opc2 )
+{
+   UInt theInstr;
+   vassert(opc1 < 0x40);
+   vassert(r1   < 0x20);
+   vassert(r2   < 0x20);
+   vassert(r3   < 0x20);
+   vassert(opc2 < 0x800);
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | (opc2<<1));
+   return emit32(p, theInstr);
+}
+
+static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
+                         UInt r3, UInt r4, UInt opc2 )
+{
+   UInt theInstr;
+   vassert(opc1 < 0x40);
+   vassert(r1   < 0x20);
+   vassert(r2   < 0x20);
+   vassert(r3   < 0x20);
+   vassert(r4   < 0x20);
+   vassert(opc2 < 0x40);
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | (r4<<6) | opc2);
+   return emit32(p, theInstr);
+}
+
 
 
 /* Emit an instruction into buf and return the number of bytes used.
@@ -2129,6 +2598,236 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt reg = iregNo(i->Pin.RdWrLR.gpr);
       /* wrLR==True ? mtlr r4 : mflr r4 */
       p = mkFormXFX(p, reg, 8, (i->Pin.RdWrLR.wrLR==True) ? 467 : 339);
+      goto done;
+   }
+
+
+   /* AltiVec */
+   case Pin_AvLdSt: {
+      UInt opc2, v_reg, r_idx, r_base;
+      UChar sz   = i->Pin.AvLdSt.sz;
+      Bool  idxd = toBool(i->Pin.AvLdSt.addr->tag == Pam_RR);
+      vassert(sz == 8 || sz == 16 || sz == 32 || sz == 128);
+
+      v_reg  = vregNo(i->Pin.AvLdSt.reg);
+      r_base = iregNo(i->Pin.AvLdSt.addr->Pam.RR.base);
+
+      // Only have AltiVec AMode_RR: kludge AMode_IR
+      if (!idxd) {
+         r_idx = 30;                       // XXX: Using r30 as temp
+         p = mkLoadImm(p, r_idx, i->Pin.AvLdSt.addr->Pam.IR.index);
+      } else {
+         r_idx  = iregNo(i->Pin.AvLdSt.addr->Pam.RR.index);
+      }
+
+      if (i->Pin.FpLdSt.isLoad) {  // Load from memory (8,16,32,128)
+         opc2 = (sz == 8) ? 7 : (sz == 16) ? 39 : (sz == 32) ? 71 : 103;
+         p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0);
+      } else {                      // Store to memory (8,16,32,128)
+         opc2 = (sz == 8) ? 135 : (sz == 16) ? 167 : (sz == 32) ? 199 : 231;
+         p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0);
+      }
+      goto done;
+   }
+
+   case Pin_AvUnary: {
+      UInt v_dst = vregNo(i->Pin.AvUnary.dst);
+      UInt v_src = vregNo(i->Pin.AvUnary.src);
+      UInt opc2;
+      switch (i->Pin.AvUnary.op) {
+      case Pav_MOV:       opc2 = 1156; break; // vor vD,vS,vS
+      case Pav_NOT:       opc2 = 1284; break; // vnor vD,vS,vS
+      case Pav_UNPCKH8S:  opc2 =  526; break; // vupkhsb
+      case Pav_UNPCKH16S: opc2 =  590; break; // vupkhsh
+      case Pav_UNPCKL8S:  opc2 =  654; break; // vupklsb
+      case Pav_UNPCKL16S: opc2 =  718; break; // vupklsh
+      case Pav_UNPCKHPIX: opc2 =  846; break; // vupkhpx
+      case Pav_UNPCKLPIX: opc2 =  974; break; // vupklpx
+      default:
+         goto bad;
+      }
+      switch (i->Pin.AvUnary.op) {
+      case Pav_MOV:
+      case Pav_NOT:
+         p = mkFormVX( p, 4, v_dst, v_src, v_src, opc2 );
+         break;
+      default:
+	p = mkFormVX( p, 4, v_dst, 0, v_src, opc2 );
+	break;
+      }
+      goto done;
+   }
+
+   case Pin_AvBinary: {
+      UInt v_dst  = vregNo(i->Pin.AvBinary.dst);
+      UInt v_srcL = vregNo(i->Pin.AvBinary.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvBinary.srcR);
+      UInt opc2;
+      switch (i->Pin.AvBinary.op) {
+      /* Bitwise */
+      case Pav_AND:       opc2 = 1026; break; // vand
+      case Pav_OR:        opc2 = 1156; break; // vor
+      case Pav_XOR:       opc2 = 1120; break; // vxor
+
+      /* Add */
+      case Pav_ADD8UM:    opc2 =    0; break; // vaddubm
+      case Pav_ADD16UM:   opc2 =   64; break; // vadduhm
+      case Pav_ADD32UM:   opc2 =  128; break; // vadduwm
+      case Pav_ADD8US:    opc2 =  512; break; // vaddubs
+      case Pav_ADD16US:   opc2 =  576; break; // vadduhs
+      case Pav_ADD32US:   opc2 =  640; break; // vadduws
+      case Pav_ADD8SS:    opc2 =  768; break; // vaddsbs
+      case Pav_ADD16SS:   opc2 =  832; break; // vaddshs
+      case Pav_ADD32SS:   opc2 =  896; break; // vaddsws
+
+      /* Subtract */
+      case Pav_SUB8UM:    opc2 = 1024; break; // vsububm
+      case Pav_SUB16UM:   opc2 = 1088; break; // vsubuhm
+      case Pav_SUB32UM:   opc2 = 1152; break; // vsubuwm
+      case Pav_SUB8US:    opc2 = 1536; break; // vsububs
+      case Pav_SUB16US:   opc2 = 1600; break; // vsubuhs
+      case Pav_SUB32US:   opc2 = 1664; break; // vsubuws
+      case Pav_SUB8SS:    opc2 = 1792; break; // vsubsbs
+      case Pav_SUB16SS:   opc2 = 1856; break; // vsubshs
+      case Pav_SUB32SS:   opc2 = 1920; break; // vsubsws
+
+      /* Multiply odd/even */
+      case Pav_OMUL8U:    opc2 =    8; break; // vmuloub
+      case Pav_OMUL16U:   opc2 =   72; break; // vmulouh
+      case Pav_OMUL8S:    opc2 =  264; break; // vmulosb
+      case Pav_OMUL16S:   opc2 =  328; break; // vmulosh
+      case Pav_EMUL8U:    opc2 =  520; break; // vmuleub
+      case Pav_EMUL16U:   opc2 =  584; break; // vmuleuh
+      case Pav_EMUL8S:    opc2 =  776; break; // vmulesb
+      case Pav_EMUL16S:   opc2 =  840; break; // vmulesh
+
+      /* Average */
+      case Pav_AVG8U:     opc2 = 1026; break; // vavgub
+      case Pav_AVG16U:    opc2 = 1090; break; // vavguh
+      case Pav_AVG32U:    opc2 = 1154; break; // vavguw
+      case Pav_AVG8S:     opc2 = 1282; break; // vavgsb
+      case Pav_AVG16S:    opc2 = 1346; break; // vavgsh
+      case Pav_AVG32S:    opc2 = 1410; break; // vavgsw
+
+      /* Maximum */
+      case Pav_MAX8U:     opc2 =    2; break; // vmaxub
+      case Pav_MAX16U:    opc2 =   66; break; // vmaxuh
+      case Pav_MAX32U:    opc2 =  130; break; // vmaxuw
+      case Pav_MAX8S:     opc2 =  258; break; // vmaxsb
+      case Pav_MAX16S:    opc2 =  322; break; // vmaxsh
+      case Pav_MAX32S:    opc2 =  386; break; // vmaxsw
+
+      /* Minimum */
+      case Pav_MIN8U:     opc2 =  514; break; // vminub
+      case Pav_MIN16U:    opc2 =  578; break; // vminuh
+      case Pav_MIN32U:    opc2 =  642; break; // vminuw
+      case Pav_MIN8S:     opc2 =  770; break; // vminsb
+      case Pav_MIN16S:    opc2 =  834; break; // vminsh
+      case Pav_MIN32S:    opc2 =  898; break; // vminsw
+
+      /* Compare (always affects CR field 6) */
+      /* XXX: Actually VXR-Form, but Rc always 0, so keep life easy... */
+      case Pav_CMPEQ8U:   opc2 =    6; break; // vcmpequb
+      case Pav_CMPEQ16U:  opc2 =   70; break; // vcmpequh
+      case Pav_CMPEQ32U:  opc2 =  134; break; // vcmpequw
+      case Pav_CMPGT8U:   opc2 =  518; break; // vcmpgtub
+      case Pav_CMPGT16U:  opc2 =  582; break; // vcmpgtuh
+      case Pav_CMPGT32U:  opc2 =  646; break; // vcmpgtuw
+      case Pav_CMPGT8S:   opc2 =  774; break; // vcmpgtsb
+      case Pav_CMPGT16S:  opc2 =  838; break; // vcmpgtsh
+      case Pav_CMPGT32S:  opc2 =  902; break; // vcmpgtsw
+
+      /* Shift */
+      case Pav_SHL8:      opc2 =  260; break; // vslb
+      case Pav_SHL16:     opc2 =  324; break; // vslh
+      case Pav_SHL32:     opc2 =  388; break; // vslw
+      case Pav_SHL128:    opc2 =  452; break; // vsl
+      case Pav_SHR8:      opc2 =  516; break; // vsrb
+      case Pav_SHR16:     opc2 =  580; break; // vsrh
+      case Pav_SHR32:     opc2 =  644; break; // vsrw
+      case Pav_SHR128:    opc2 =  708; break; // vsr
+      case Pav_SAR8:      opc2 =  772; break; // vsrab
+      case Pav_SAR16:     opc2 =  836; break; // vsrah
+      case Pav_SAR32:     opc2 =  900; break; // vsraw
+      case Pav_ROTL8:     opc2 =    4; break; // vrlb
+      case Pav_ROTL16:    opc2 =   68; break; // vrlh
+      case Pav_ROTL32:    opc2 =  132; break; // vrlw
+
+      /* Pack */
+      case Pav_PACKU16UM: opc2 =   14; break; // vpkuhum
+      case Pav_PACKU32UM: opc2 =   78; break; // vpkuwum
+      case Pav_PACKU16US: opc2 =  142; break; // vpkuhus
+      case Pav_PACKU32US: opc2 =  206; break; // vpkuwus
+      case Pav_PACKS16US: opc2 =  270; break; // vpkshus
+      case Pav_PACKS32US: opc2 =  334; break; // vpkswus
+      case Pav_PACKS16SS: opc2 =  398; break; // vpkshss
+      case Pav_PACKS32SS: opc2 =  462; break; // vpkswss
+      case Pav_PACKPXL:   opc2 =  782; break; // vpkpx
+
+      /* Merge */
+      case Pav_MRG8HI:    opc2 =   12; break; // vmrghb
+      case Pav_MRG16HI:   opc2 =   76; break; // vmrghh
+      case Pav_MRG32HI:   opc2 =  140; break; // vmrghw
+      case Pav_MRG8LO:    opc2 =  268; break; // vmrglb
+      case Pav_MRG16LO:   opc2 =  332; break; // vmrglh
+      case Pav_MRG32LO:   opc2 =  396; break; // vmrglw
+
+      default:
+         goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      goto done;
+   }
+
+   case Pin_AvPerm: {  // vperm
+      UInt v_ctl  = vregNo(i->Pin.AvPerm.ctl);
+      UInt v_dst  = vregNo(i->Pin.AvPerm.dst);
+      UInt v_srcL = vregNo(i->Pin.AvPerm.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvPerm.srcR);
+      p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, v_ctl, 43 );
+      goto done;
+   }
+
+   case Pin_AvSel: {  // vsel
+      UInt v_ctl  = vregNo(i->Pin.AvSel.ctl);
+      UInt v_dst  = vregNo(i->Pin.AvSel.dst);
+      UInt v_srcL = vregNo(i->Pin.AvSel.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvSel.srcR);
+      p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, v_ctl, 42 );
+      goto done;
+   }
+
+   case Pin_AvShlDbl: {  // vsldoi
+      UInt shift  = i->Pin.AvShlDbl.shift;
+      UInt v_dst  = vregNo(i->Pin.AvShlDbl.dst);
+      UInt v_srcL = vregNo(i->Pin.AvShlDbl.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvShlDbl.srcR);
+      vassert(shift <= 0xF);
+      p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, shift, 44 );
+      goto done;
+   }
+
+   case Pin_AvSplat: { // vsplt(is)(b,h,w)
+      UInt v_dst = vregNo(i->Pin.AvShlDbl.dst);
+      UChar sz   = i->Pin.AvSplat.sz;
+      UInt v_src, simm_src, opc2;
+      vassert(sz == 8 || sz == 16 || sz == 32);
+
+      if (i->Pin.AvSplat.src->tag == Pri_Imm) {
+	opc2 = (sz == 8) ? 780 : (sz == 16) ? 844 : 908;   // 8,16,32
+         simm_src = i->Pin.AvSplat.src->Pri.Imm.imm32;
+         p = mkFormVX( p, 4, v_dst, simm_src, 0, opc2 );
+      } else {  // Pri_Reg
+         opc2 = (sz == 8) ? 524 : (sz == 16) ? 588 : 652;  // 8,16,32
+         v_src = iregNo(i->Pin.AvSplat.src->Pri.Reg.reg);
+         p = mkFormVX( p, 4, v_dst, 0, v_src, opc2 );
+      }
+      goto done;
+   }
+
+   case Pin_AvLdVSCR: {  // mtvscr
+      UInt v_src = vregNo(i->Pin.AvLdVSCR.src);
+      p = mkFormVX( p, 4, 0, 0, v_src, 1604 );
       goto done;
    }
 

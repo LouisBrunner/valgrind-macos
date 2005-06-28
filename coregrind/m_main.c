@@ -1966,8 +1966,8 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
    if (VG_(clo_n_suppressions) < VG_CLO_MAX_SFILES-1 &&
        (VG_(needs).core_errors || VG_(needs).tool_errors)) {
-      /* If there are no suppression files specified and the tool
-	 needs one, load the default */
+      /* If we haven't reached the max number of suppressions, load
+         the default one. */
       static const Char default_supp[] = "default.supp";
       Int len = VG_(strlen)(VG_(libdir)) + 1 + sizeof(default_supp);
       Char *buf = VG_(arena_malloc)(VG_AR_CORE, len);

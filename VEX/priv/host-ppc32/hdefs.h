@@ -340,52 +340,34 @@ typedef
       /* Integer Binary */
       Pav_AND, Pav_OR, Pav_XOR,   /* Bitwise */
 
-      Pav_ADD8UM,  Pav_ADD16UM,  Pav_ADD32UM,
-      Pav_ADD8US,  Pav_ADD16US,  Pav_ADD32US,
-      Pav_ADD8SS,  Pav_ADD16SS,  Pav_ADD32SS,
+      Pav_ADDUM, Pav_ADDUS,Pav_ADDSS,
 
-      Pav_SUB8UM,  Pav_SUB16UM,  Pav_SUB32UM,
-      Pav_SUB8US,  Pav_SUB16US,  Pav_SUB32US,
-      Pav_SUB8SS,  Pav_SUB16SS,  Pav_SUB32SS,
+      Pav_SUBUM, Pav_SUBUS, Pav_SUBSS,
 
-      Pav_OMUL8U,  Pav_OMUL16U,
-      Pav_OMUL8S,  Pav_OMUL16S,
-      Pav_EMUL8U,  Pav_EMUL16U,
-      Pav_EMUL8S,  Pav_EMUL16S,
+      Pav_OMULU, Pav_OMULS, Pav_EMULU, Pav_EMULS,
 
-      Pav_AVG8U,   Pav_AVG16U,   Pav_AVG32U,
-      Pav_AVG8S,   Pav_AVG16S,   Pav_AVG32S,
-      Pav_MAX8U,   Pav_MAX16U,   Pav_MAX32U,
-      Pav_MAX8S,   Pav_MAX16S,   Pav_MAX32S,
-      Pav_MIN8U,   Pav_MIN16U,   Pav_MIN32U,
-      Pav_MIN8S,   Pav_MIN16S,   Pav_MIN32S,
+      Pav_AVGU, Pav_AVGS,
+      Pav_MAXU, Pav_MAXS,
+      Pav_MINU, Pav_MINS,
 
       /* Compare (always affects CR field 6) */
-      Pav_CMPEQ8U, Pav_CMPEQ16U, Pav_CMPEQ32U,
-      Pav_CMPGT8U, Pav_CMPGT16U, Pav_CMPGT32U,
-      Pav_CMPGT8S, Pav_CMPGT16S, Pav_CMPGT32S,
+      Pav_CMPEQU, Pav_CMPGTU, Pav_CMPGTS,
 
       /* Shift */
-      Pav_SHL8,    Pav_SHL16,    Pav_SHL32,    Pav_SHL128,
-      Pav_SHR8,    Pav_SHR16,    Pav_SHR32,    Pav_SHR128,
-      Pav_SAR8,    Pav_SAR16,    Pav_SAR32,
-      Pav_ROTL8,   Pav_ROTL16,   Pav_ROTL32,
+      Pav_SHL, Pav_SHR, Pav_SAR, Pav_ROTL,
 
       /* Pack */
-      Pav_PACKU16UM, Pav_PACKU32UM,
-      Pav_PACKU16US, Pav_PACKU32US,
-      Pav_PACKS16US, Pav_PACKS32US,
-      Pav_PACKS16SS, Pav_PACKS32SS, Pav_PACKPXL,
+      Pav_PACKUUM, Pav_PACKUUS, Pav_PACKSUS, Pav_PACKSSS,
+      Pav_PACKPXL,
 
       /* Merge */
-      Pav_MRG8HI,  Pav_MRG16HI,  Pav_MRG32HI,
-      Pav_MRG8LO,  Pav_MRG16LO,  Pav_MRG32LO,
+      Pav_MRGHI, Pav_MRGLO,
 
-//..       /* Floating point binary */
-//..       Xsse_ADDF, Xsse_SUBF, Xsse_MULF, Xsse_DIVF,
-//..       Xsse_MAXF, Xsse_MINF,
-//..       Xsse_CMPEQF, Xsse_CMPLTF, Xsse_CMPLEF, Xsse_CMPUNF,
-//.. 
+      /* Floating point binary */
+      Pav_ADDF, Pav_SUBF, Pav_MULF,
+      Pav_MAXF, Pav_MINF,
+      Pav_CMPEQF, Pav_CMPGTF, Pav_CMPGEF,
+
 //..       /* Floating point unary */
 //..       Xsse_RCPF, Xsse_RSQRTF, Xsse_SQRTF,
    }
@@ -425,20 +407,20 @@ typedef
 //    Pin_AvConst,    /* Generate restricted AV literal */
       Pin_AvLdSt,     /* AV load/store (kludging for AMode_IR) */
       Pin_AvUnary,    /* AV unary general reg=>reg */
+
       Pin_AvBinary,   /* AV binary general reg,reg=>reg */
+      Pin_AvBin8x16,  /* AV binary, 8x4 */
+      Pin_AvBin16x8,  /* AV binary, 16x4 */
+      Pin_AvBin32x4,  /* AV binary, 32x4 */
+
+      Pin_AvBin32Fx4, /* AV FP binary, 32Fx4 */
 
       Pin_AvPerm,     /* AV permute (shuffle) */
       Pin_AvSel,      /* AV select */
       Pin_AvShlDbl,   /* AV shift-left double by imm */
       Pin_AvSplat,    /* One elem repeated throughout dst */
-      Pin_AvLdVSCR    /* mtvscr */
-
-//..       Xin_SseLdzLO,  /* SSE load low 32/64 bits, zero remainder of reg */
-//..       Xin_Sse32Fx4,  /* SSE binary, 32Fx4 */
-//..       Xin_Sse32FLo,  /* SSE binary, 32F in lowest lane only */
-//..       Xin_Sse64Fx2,  /* SSE binary, 64Fx2 */
-//..       Xin_Sse64FLo,  /* SSE binary, 64F in lowest lane only */
-//..       Xin_SseCMov,   /* SSE conditional move */
+      Pin_AvLdVSCR,   /* mtvscr */
+      Pin_AvCMov      /* AV conditional move */
    }
    PPC32InstrTag;
 
@@ -612,6 +594,30 @@ typedef
             HReg      srcL;
             HReg      srcR;
          } AvBinary;
+         struct {
+            PPC32AvOp op;
+            HReg      dst;
+            HReg      srcL;
+            HReg      srcR;
+         } AvBin8x16;
+         struct {
+            PPC32AvOp op;
+            HReg      dst;
+            HReg      srcL;
+            HReg      srcR;
+         } AvBin16x8;
+         struct {
+            PPC32AvOp op;
+            HReg      dst;
+            HReg      srcL;
+            HReg      srcR;
+         } AvBin32x4;
+         struct {
+            PPC32AvOp op;
+            HReg      dst;
+            HReg      srcL;
+            HReg      srcR;
+         } AvBin32Fx4;
          /* Perm,Sel,SlDbl,Splat are all weird AV permutations */
          struct {
             HReg ctl;
@@ -636,6 +642,13 @@ typedef
             HReg     dst;
             PPC32RI* src;
          } AvSplat;
+         /* Mov src to dst on the given condition, which may not
+            be the bogus Xcc_ALWAYS. */
+         struct {
+            PPC32CondCode cond;
+            HReg          dst;
+            HReg          src;
+         } AvCMov;
          /* Load AlitVec Status & Control Register */
          struct {
             HReg src;
@@ -675,10 +688,15 @@ extern PPC32Instr* PPC32Instr_RdWrLR     ( Bool wrLR, HReg gpr );
 extern PPC32Instr* PPC32Instr_AvLdSt     ( Bool isLoad, UChar sz, HReg, PPC32AMode* );
 extern PPC32Instr* PPC32Instr_AvUnary    ( PPC32FpOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_AvBinary   ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvBin8x16  ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvBin16x8  ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvBin32x4  ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvPerm     ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvSel      ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvSplat    ( UChar sz, HReg dst, PPC32RI* src );
+extern PPC32Instr* PPC32Instr_AvCMov     ( PPC32CondCode, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_AvLdVSCR   ( HReg src );
 
 extern void ppPPC32Instr ( PPC32Instr* );

@@ -513,119 +513,77 @@ HChar* showPPC32FpOp ( PPC32FpOp op ) {
 
 HChar* showPPC32AvOp ( PPC32AvOp op ) {
    switch (op) {
-   /* mov */
-   case Pav_MOV:       return "vmr";
+
+   /* Unary */
+   case Pav_MOV:       return "vmr";      /* Mov */
      
-   /* Bitwise */
-   case Pav_AND:       return "vand";
+   case Pav_AND:       return "vand";     /* Bitwise */
    case Pav_OR:        return "vor";
    case Pav_XOR:       return "vxor";
    case Pav_NOT:       return "vnot";
 
-   /* Integer binary */
-   case Pav_ADD8UM:    return "vaddubm";
-   case Pav_ADD16UM:   return "vadduhm";
-   case Pav_ADD32UM:   return "vadduwm";
-   case Pav_ADD8US:    return "vaddubs";
-   case Pav_ADD16US:   return "vadduhs";
-   case Pav_ADD32US:   return "vadduws";
-   case Pav_ADD8SS:    return "vaddsbs";
-   case Pav_ADD16SS:   return "vaddshs";
-   case Pav_ADD32SS:   return "vaddsws";
-     
-   case Pav_SUB8UM:    return "vsububm";
-   case Pav_SUB16UM:   return "vsubuhm";
-   case Pav_SUB32UM:   return "vsubuwm";
-   case Pav_SUB8US:    return "vsububs";
-   case Pav_SUB16US:   return "vsubuhs";
-   case Pav_SUB32US:   return "vsubuws";
-   case Pav_SUB8SS:    return "vsubsbs";
-   case Pav_SUB16SS:   return "vsubshs";
-   case Pav_SUB32SS:   return "vsubsws";
-     
-   case Pav_OMUL8U:    return "vmuloub";
-   case Pav_OMUL16U:   return "vmulouh";
-   case Pav_OMUL8S:    return "vmulosb";
-   case Pav_OMUL16S:   return "vmulosh";
-   case Pav_EMUL8U:    return "vmuleub";
-   case Pav_EMUL16U:   return "vmuleuh";
-   case Pav_EMUL8S:    return "vmulesb";
-   case Pav_EMUL16S:   return "vmulesh";
-  
-   case Pav_AVG8U:     return "vavgub";
-   case Pav_AVG16U:    return "vavguh";
-   case Pav_AVG32U:    return "vavguw";
-   case Pav_AVG8S:     return "vavgsb";
-   case Pav_AVG16S:    return "vavgsh";
-   case Pav_AVG32S:    return "vavgsw";
-     
-   case Pav_MAX8U:     return "vmaxub";
-   case Pav_MAX16U:    return "vmaxuh";
-   case Pav_MAX32U:    return "vmaxuw";
-   case Pav_MAX8S:     return "vmaxsb";
-   case Pav_MAX16S:    return "vmaxsh";
-   case Pav_MAX32S:    return "vmaxsw";
-     
-   case Pav_MIN8U:     return "vminub";
-   case Pav_MIN16U:    return "vminuh";
-   case Pav_MIN32U:    return "vminuw";
-   case Pav_MIN8S:     return "vminsb";
-   case Pav_MIN16S:    return "vminsh";
-   case Pav_MIN32S:    return "vminsw";
-     
-   /* Compare (always affects CR field 6) */
-   case Pav_CMPEQ8U:   return "vcmpequb";
-   case Pav_CMPEQ16U:  return "vcmpequh";
-   case Pav_CMPEQ32U:  return "vcmpequw";
-   case Pav_CMPGT8U:   return "vcmpgtub";
-   case Pav_CMPGT16U:  return "vcmpgtuh";
-   case Pav_CMPGT32U:  return "vcmpgtuw";
-   case Pav_CMPGT8S:   return "vcmpgtsb";
-   case Pav_CMPGT16S:  return "vcmpgtsh";
-   case Pav_CMPGT32S:  return "vcmpgtsw";
-
-   /* Shift */
-   case Pav_SHL8:      return "vslb";
-   case Pav_SHL16:     return "vslh";
-   case Pav_SHL32:     return "vslw";
-   case Pav_SHL128:    return "vsl";
-   case Pav_SHR8:      return "vsrb";
-   case Pav_SHR16:     return "vsrh";
-   case Pav_SHR32:     return "vsrw";
-   case Pav_SHR128:    return "vsr";
-   case Pav_SAR8:      return "vsrab";
-   case Pav_SAR16:     return "vsrah";
-   case Pav_SAR32:     return "vsraw";
-   case Pav_ROTL8:     return "vrlb";
-   case Pav_ROTL16:    return "vrlh";
-   case Pav_ROTL32:    return "vrlw";
-     
-   /* Pack */
-   case Pav_PACKU16UM: return "vpkuhum";
-   case Pav_PACKU32UM: return "vpkuwum";
-   case Pav_PACKU16US: return "vpkuhus";
-   case Pav_PACKU32US: return "vpkuwus";
-   case Pav_PACKS16US: return "vpkshus";
-   case Pav_PACKS32US: return "vpkswus";
-   case Pav_PACKS16SS: return "vpkshss";
-   case Pav_PACKS32SS: return "vpkswss";
-   case Pav_PACKPXL:   return "vpkpx";
-
-   /* Unpack (srcL ignored) */
-   case Pav_UNPCKH8S:  return "vupkhsb";
+   case Pav_UNPCKH8S:  return "vupkhsb";  /* Unpack */
    case Pav_UNPCKH16S: return "vupkhsh";
    case Pav_UNPCKL8S:  return "vupklsb";
    case Pav_UNPCKL16S: return "vupklsh";
    case Pav_UNPCKHPIX: return "vupkhpx";
    case Pav_UNPCKLPIX: return "vupklpx";
+
+   /* Integer binary */
+   case Pav_ADDUM:     return "vaddu_m";  // b,h,w
+   case Pav_ADDUS:     return "vaddu_s";  // b,h,w
+   case Pav_ADDSS:     return "vadds_s";  // b,h,w
      
+   case Pav_SUBUM:     return "vsubu_m";  // b,h,w
+   case Pav_SUBUS:     return "vsubu_s";  // b,h,w
+   case Pav_SUBSS:     return "vsubs_s";  // b,h,w
+     
+   case Pav_OMULU:     return "vmulou";   // b,h
+   case Pav_OMULS:     return "vmulos";   // b,h
+   case Pav_EMULU:     return "vmuleu";   // b,h
+   case Pav_EMULS:     return "vmules";   // b,h
+  
+   case Pav_AVGU:      return "vavgu";    // b,h,w
+   case Pav_AVGS:      return "vavgs";    // b,h,w
+     
+   case Pav_MAXU:      return "vmaxu";    // b,h,w
+   case Pav_MAXS:      return "vmaxs";    // b,h,w
+     
+   case Pav_MINU:      return "vminu";    // b,h,w
+   case Pav_MINS:      return "vmins";    // b,h,w
+     
+   /* Compare (always affects CR field 6) */
+   case Pav_CMPEQU:    return "vcmpequ";  // b,h,w
+   case Pav_CMPGTU:    return "vcmpgtu";  // b,h,w
+   case Pav_CMPGTS:    return "vcmpgts";  // b,h,w
+
+   /* Shift */
+   case Pav_SHL:       return "vsl";      // ' ',b,h,w
+   case Pav_SHR:       return "vsr";      // ' ',b,h,w
+   case Pav_SAR:       return "vsra";     // b,h,w
+   case Pav_ROTL:      return "vrl";      // b,h,w
+
+   /* Pack */
+   case Pav_PACKUUM:   return "vpku_um";  // h,w
+   case Pav_PACKUUS:   return "vpku_us";  // h,w
+   case Pav_PACKSUS:   return "vpks_us";  // h,w
+   case Pav_PACKSSS:   return "vpks_ss";  // h,w
+   case Pav_PACKPXL:   return "vpkpx";
+
    /* Merge */
-   case Pav_MRG8HI:    return "vmrghb";
-   case Pav_MRG16HI:   return "vmrghh";
-   case Pav_MRG32HI:   return "vmrghw";
-   case Pav_MRG8LO:    return "vmrglb";
-   case Pav_MRG16LO:   return "vmrglh";
-   case Pav_MRG32LO:   return "vmrglw";
+   case Pav_MRGHI:     return "vmrgh";    // b,h,w
+   case Pav_MRGLO:     return "vmrgl";    // b,h,w
+
+
+   /* Floating Point Binary */
+   case Pav_ADDF:      return "vaddfp";
+   case Pav_SUBF:      return "vsubfp";
+   case Pav_MULF:      return "vmaddfp";
+   case Pav_MAXF:      return "vmaxfp";
+   case Pav_MINF:      return "vminfp";
+   case Pav_CMPEQF:    return "vcmpeqfp";
+   case Pav_CMPGTF:    return "vcmpgtfp";
+   case Pav_CMPGEF:    return "vcmpgefp";
      
    default: vpanic("showPPC32AvOp");
    }
@@ -873,6 +831,42 @@ PPC32Instr* PPC32Instr_AvBinary ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR )
    i->Pin.AvBinary.srcR = srcR;
    return i;
 }
+PPC32Instr* PPC32Instr_AvBin8x16 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
+   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag                 = Pin_AvBin8x16;
+   i->Pin.AvBin8x16.op   = op;
+   i->Pin.AvBin8x16.dst  = dst;
+   i->Pin.AvBin8x16.srcL = srcL;
+   i->Pin.AvBin8x16.srcR = srcR;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvBin16x8 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
+   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag                 = Pin_AvBin16x8;
+   i->Pin.AvBin16x8.op   = op;
+   i->Pin.AvBin16x8.dst  = dst;
+   i->Pin.AvBin16x8.srcL = srcL;
+   i->Pin.AvBin16x8.srcR = srcR;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvBin32x4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
+   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag                 = Pin_AvBin32x4;
+   i->Pin.AvBin32x4.op   = op;
+   i->Pin.AvBin32x4.dst  = dst;
+   i->Pin.AvBin32x4.srcL = srcL;
+   i->Pin.AvBin32x4.srcR = srcR;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
+   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag                 = Pin_AvBin32Fx4;
+   i->Pin.AvBin32Fx4.op   = op;
+   i->Pin.AvBin32Fx4.dst  = dst;
+   i->Pin.AvBin32Fx4.srcL = srcL;
+   i->Pin.AvBin32Fx4.srcR = srcR;
+   return i;
+}
 PPC32Instr* PPC32Instr_AvPerm ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
    PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag             = Pin_AvPerm;
@@ -906,6 +900,15 @@ PPC32Instr* PPC32Instr_AvSplat ( UChar sz, HReg dst, PPC32RI* src ) {
    i->Pin.AvSplat.sz  = sz;
    i->Pin.AvSplat.dst = dst;
    i->Pin.AvSplat.src = src;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvCMov ( PPC32CondCode cond, HReg dst, HReg src ) {
+   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag             = Pin_AvCMov;
+   i->Pin.AvCMov.cond = cond;
+   i->Pin.AvCMov.dst  = dst;
+   i->Pin.AvCMov.src  = src;
+   vassert(cond.test != Pct_ALWAYS);
    return i;
 }
 PPC32Instr* PPC32Instr_AvLdVSCR ( HReg src ) {
@@ -1258,6 +1261,38 @@ void ppPPC32Instr ( PPC32Instr* i )
       vex_printf(",");
       ppHRegPPC32(i->Pin.AvBinary.srcR);
       return;
+   case Pin_AvBin8x16:
+      vex_printf("%s(b) ", showPPC32AvOp(i->Pin.AvBin8x16.op));
+      ppHRegPPC32(i->Pin.AvBin8x16.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBin8x16.srcL);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBin8x16.srcR);
+      return;
+   case Pin_AvBin16x8:
+      vex_printf("%s(h) ", showPPC32AvOp(i->Pin.AvBin16x8.op));
+      ppHRegPPC32(i->Pin.AvBin16x8.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBin16x8.srcL);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBin16x8.srcR);
+      return;
+   case Pin_AvBin32x4:
+      vex_printf("%s(w) ", showPPC32AvOp(i->Pin.AvBin32x4.op));
+      ppHRegPPC32(i->Pin.AvBin32x4.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBin32x4.srcL);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBin32x4.srcR);
+      return;
+   case Pin_AvBin32Fx4:
+      vex_printf("%s ", showPPC32AvOp(i->Pin.AvBin32Fx4.op));
+      ppHRegPPC32(i->Pin.AvBin32Fx4.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBin32Fx4.srcL);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvBin32Fx4.srcR);
+      return;
    case Pin_AvPerm:
       vex_printf("vperm ");
       ppHRegPPC32(i->Pin.AvPerm.dst);
@@ -1305,6 +1340,25 @@ void ppPPC32Instr ( PPC32Instr* i )
       }
       return;
    }
+
+   case Pin_AvCMov:
+      vex_printf("avcmov (%s) ", showPPC32CondCode(i->Pin.AvCMov.cond));
+      ppHRegPPC32(i->Pin.AvCMov.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvCMov.src);
+      vex_printf(": ");
+      vex_printf("if (v_dst != v_src) { ");
+      if (i->Pin.AvCMov.cond.test != Pct_ALWAYS) {
+         vex_printf("if (%%crf0.%s) { ", showPPC32CondCode(i->Pin.AvCMov.cond));
+      }
+      vex_printf("vmr ");
+      ppHRegPPC32(i->Pin.AvCMov.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvCMov.src);
+      if (i->Pin.FpCMov.cond.test != Pct_ALWAYS)
+         vex_printf(" }");
+      vex_printf(" }");
+      return;
 
    case Pin_AvLdVSCR:
       vex_printf("mtvscr ");
@@ -1482,6 +1536,28 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcL);
       addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcR);
       return;
+   case Pin_AvBin8x16:
+      addHRegUse(u, HRmWrite, i->Pin.AvBin8x16.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin8x16.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin8x16.srcR);
+      return;
+   case Pin_AvBin16x8:
+      addHRegUse(u, HRmWrite, i->Pin.AvBin16x8.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin16x8.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin16x8.srcR);
+      return;
+   case Pin_AvBin32x4:
+      addHRegUse(u, HRmWrite, i->Pin.AvBin32x4.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin32x4.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin32x4.srcR);
+      if (i->Pin.AvBin32x4.op == Pav_MULF)
+         addHRegUse(u, HRmWrite, hregPPC32_GPR29());
+      return;
+   case Pin_AvBin32Fx4:
+      addHRegUse(u, HRmWrite, i->Pin.AvBin32Fx4.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcR);
+      return;
    case Pin_AvPerm:
       addHRegUse(u, HRmWrite, i->Pin.AvPerm.dst);
       addHRegUse(u, HRmRead,  i->Pin.AvPerm.ctl);
@@ -1502,6 +1578,10 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
    case Pin_AvSplat:
       addHRegUse(u, HRmWrite, i->Pin.AvSplat.dst);
       addRegUsage_PPC32RI(u, i->Pin.AvSplat.src);
+      return;
+   case Pin_AvCMov:
+      addHRegUse(u, HRmModify, i->Pin.AvCMov.dst);
+      addHRegUse(u, HRmRead, i->Pin.AvCMov.src);
       return;
    case Pin_AvLdVSCR:
       addHRegUse(u, HRmRead, i->Pin.AvLdVSCR.src);
@@ -1629,6 +1709,26 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapReg(m, &i->Pin.AvBinary.srcL);
       mapReg(m, &i->Pin.AvBinary.srcR);
       return;
+   case Pin_AvBin8x16:
+      mapReg(m, &i->Pin.AvBin8x16.dst);
+      mapReg(m, &i->Pin.AvBin8x16.srcL);
+      mapReg(m, &i->Pin.AvBin8x16.srcR);
+      return;
+   case Pin_AvBin16x8:
+      mapReg(m, &i->Pin.AvBin16x8.dst);
+      mapReg(m, &i->Pin.AvBin16x8.srcL);
+      mapReg(m, &i->Pin.AvBin16x8.srcR);
+      return;
+   case Pin_AvBin32x4:
+      mapReg(m, &i->Pin.AvBin32x4.dst);
+      mapReg(m, &i->Pin.AvBin32x4.srcL);
+      mapReg(m, &i->Pin.AvBin32x4.srcR);
+      return;
+   case Pin_AvBin32Fx4:
+      mapReg(m, &i->Pin.AvBin32Fx4.dst);
+      mapReg(m, &i->Pin.AvBin32Fx4.srcL);
+      mapReg(m, &i->Pin.AvBin32Fx4.srcR);
+      return;
    case Pin_AvPerm:
       mapReg(m, &i->Pin.AvPerm.dst);
       mapReg(m, &i->Pin.AvPerm.srcL);
@@ -1650,6 +1750,10 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapReg(m, &i->Pin.AvSplat.dst);
       mapRegs_PPC32RI(m, i->Pin.AvSplat.src);
       return;
+   case Pin_AvCMov:
+     mapReg(m, &i->Pin.AvCMov.dst);
+     mapReg(m, &i->Pin.AvCMov.src);
+     return;
    case Pin_AvLdVSCR:
       mapReg(m, &i->Pin.AvLdVSCR.src);
       return;
@@ -1997,7 +2101,21 @@ static UChar* mkFormVX ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(r2   < 0x20);
    vassert(r3   < 0x20);
    vassert(opc2 < 0x800);
-   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | (opc2<<1));
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | opc2);
+   return emit32(p, theInstr);
+}
+
+static UChar* mkFormVXR ( UChar* p, UInt opc1, UInt r1, UInt r2, UInt Rc,
+                          UInt r3, UInt opc2 )
+{
+   UInt theInstr;
+   vassert(opc1 < 0x40);
+   vassert(r1   < 0x20);
+   vassert(r2   < 0x20);
+   vassert(r3   < 0x20);
+   vassert(Rc   < 0x2);
+   vassert(opc2 < 0x400);
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | (Rc<<10) | opc2);
    return emit32(p, theInstr);
 }
 
@@ -2669,113 +2787,214 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       case Pav_OR:        opc2 = 1156; break; // vor
       case Pav_XOR:       opc2 = 1120; break; // vxor
 
-      /* Add */
-      case Pav_ADD8UM:    opc2 =    0; break; // vaddubm
-      case Pav_ADD16UM:   opc2 =   64; break; // vadduhm
-      case Pav_ADD32UM:   opc2 =  128; break; // vadduwm
-      case Pav_ADD8US:    opc2 =  512; break; // vaddubs
-      case Pav_ADD16US:   opc2 =  576; break; // vadduhs
-      case Pav_ADD32US:   opc2 =  640; break; // vadduws
-      case Pav_ADD8SS:    opc2 =  768; break; // vaddsbs
-      case Pav_ADD16SS:   opc2 =  832; break; // vaddshs
-      case Pav_ADD32SS:   opc2 =  896; break; // vaddsws
-
-      /* Subtract */
-      case Pav_SUB8UM:    opc2 = 1024; break; // vsububm
-      case Pav_SUB16UM:   opc2 = 1088; break; // vsubuhm
-      case Pav_SUB32UM:   opc2 = 1152; break; // vsubuwm
-      case Pav_SUB8US:    opc2 = 1536; break; // vsububs
-      case Pav_SUB16US:   opc2 = 1600; break; // vsubuhs
-      case Pav_SUB32US:   opc2 = 1664; break; // vsubuws
-      case Pav_SUB8SS:    opc2 = 1792; break; // vsubsbs
-      case Pav_SUB16SS:   opc2 = 1856; break; // vsubshs
-      case Pav_SUB32SS:   opc2 = 1920; break; // vsubsws
-
-      /* Multiply odd/even */
-      case Pav_OMUL8U:    opc2 =    8; break; // vmuloub
-      case Pav_OMUL16U:   opc2 =   72; break; // vmulouh
-      case Pav_OMUL8S:    opc2 =  264; break; // vmulosb
-      case Pav_OMUL16S:   opc2 =  328; break; // vmulosh
-      case Pav_EMUL8U:    opc2 =  520; break; // vmuleub
-      case Pav_EMUL16U:   opc2 =  584; break; // vmuleuh
-      case Pav_EMUL8S:    opc2 =  776; break; // vmulesb
-      case Pav_EMUL16S:   opc2 =  840; break; // vmulesh
-
-      /* Average */
-      case Pav_AVG8U:     opc2 = 1026; break; // vavgub
-      case Pav_AVG16U:    opc2 = 1090; break; // vavguh
-      case Pav_AVG32U:    opc2 = 1154; break; // vavguw
-      case Pav_AVG8S:     opc2 = 1282; break; // vavgsb
-      case Pav_AVG16S:    opc2 = 1346; break; // vavgsh
-      case Pav_AVG32S:    opc2 = 1410; break; // vavgsw
-
-      /* Maximum */
-      case Pav_MAX8U:     opc2 =    2; break; // vmaxub
-      case Pav_MAX16U:    opc2 =   66; break; // vmaxuh
-      case Pav_MAX32U:    opc2 =  130; break; // vmaxuw
-      case Pav_MAX8S:     opc2 =  258; break; // vmaxsb
-      case Pav_MAX16S:    opc2 =  322; break; // vmaxsh
-      case Pav_MAX32S:    opc2 =  386; break; // vmaxsw
-
-      /* Minimum */
-      case Pav_MIN8U:     opc2 =  514; break; // vminub
-      case Pav_MIN16U:    opc2 =  578; break; // vminuh
-      case Pav_MIN32U:    opc2 =  642; break; // vminuw
-      case Pav_MIN8S:     opc2 =  770; break; // vminsb
-      case Pav_MIN16S:    opc2 =  834; break; // vminsh
-      case Pav_MIN32S:    opc2 =  898; break; // vminsw
-
-      /* Compare (always affects CR field 6) */
-      /* XXX: Actually VXR-Form, but Rc always 0, so keep life easy... */
-      case Pav_CMPEQ8U:   opc2 =    6; break; // vcmpequb
-      case Pav_CMPEQ16U:  opc2 =   70; break; // vcmpequh
-      case Pav_CMPEQ32U:  opc2 =  134; break; // vcmpequw
-      case Pav_CMPGT8U:   opc2 =  518; break; // vcmpgtub
-      case Pav_CMPGT16U:  opc2 =  582; break; // vcmpgtuh
-      case Pav_CMPGT32U:  opc2 =  646; break; // vcmpgtuw
-      case Pav_CMPGT8S:   opc2 =  774; break; // vcmpgtsb
-      case Pav_CMPGT16S:  opc2 =  838; break; // vcmpgtsh
-      case Pav_CMPGT32S:  opc2 =  902; break; // vcmpgtsw
-
       /* Shift */
-      case Pav_SHL8:      opc2 =  260; break; // vslb
-      case Pav_SHL16:     opc2 =  324; break; // vslh
-      case Pav_SHL32:     opc2 =  388; break; // vslw
-      case Pav_SHL128:    opc2 =  452; break; // vsl
-      case Pav_SHR8:      opc2 =  516; break; // vsrb
-      case Pav_SHR16:     opc2 =  580; break; // vsrh
-      case Pav_SHR32:     opc2 =  644; break; // vsrw
-      case Pav_SHR128:    opc2 =  708; break; // vsr
-      case Pav_SAR8:      opc2 =  772; break; // vsrab
-      case Pav_SAR16:     opc2 =  836; break; // vsrah
-      case Pav_SAR32:     opc2 =  900; break; // vsraw
-      case Pav_ROTL8:     opc2 =    4; break; // vrlb
-      case Pav_ROTL16:    opc2 =   68; break; // vrlh
-      case Pav_ROTL32:    opc2 =  132; break; // vrlw
-
-      /* Pack */
-      case Pav_PACKU16UM: opc2 =   14; break; // vpkuhum
-      case Pav_PACKU32UM: opc2 =   78; break; // vpkuwum
-      case Pav_PACKU16US: opc2 =  142; break; // vpkuhus
-      case Pav_PACKU32US: opc2 =  206; break; // vpkuwus
-      case Pav_PACKS16US: opc2 =  270; break; // vpkshus
-      case Pav_PACKS32US: opc2 =  334; break; // vpkswus
-      case Pav_PACKS16SS: opc2 =  398; break; // vpkshss
-      case Pav_PACKS32SS: opc2 =  462; break; // vpkswss
-      case Pav_PACKPXL:   opc2 =  782; break; // vpkpx
-
-      /* Merge */
-      case Pav_MRG8HI:    opc2 =   12; break; // vmrghb
-      case Pav_MRG16HI:   opc2 =   76; break; // vmrghh
-      case Pav_MRG32HI:   opc2 =  140; break; // vmrghw
-      case Pav_MRG8LO:    opc2 =  268; break; // vmrglb
-      case Pav_MRG16LO:   opc2 =  332; break; // vmrglh
-      case Pav_MRG32LO:   opc2 =  396; break; // vmrglw
+      case Pav_SHL:       opc2 =  452; break; // vsl
+      case Pav_SHR:       opc2 =  708; break; // vsr
 
       default:
          goto bad;
       }
       p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      goto done;
+   }
+
+   case Pin_AvBin8x16: {
+      UInt v_dst  = vregNo(i->Pin.AvBin8x16.dst);
+      UInt v_srcL = vregNo(i->Pin.AvBin8x16.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvBin8x16.srcR);
+      UInt opc2;
+      switch (i->Pin.AvBin8x16.op) {
+
+      case Pav_ADDUM:    opc2 =    0; break; // vaddubm
+      case Pav_ADDUS:    opc2 =  512; break; // vaddubs
+      case Pav_ADDSS:    opc2 =  768; break; // vaddsbs
+
+      case Pav_SUBUM:    opc2 = 1024; break; // vsububm
+      case Pav_SUBUS:    opc2 = 1536; break; // vsububs
+      case Pav_SUBSS:    opc2 = 1792; break; // vsubsbs
+
+      case Pav_OMULU:    opc2 =    8; break; // vmuloub
+      case Pav_OMULS:    opc2 =  264; break; // vmulosb
+      case Pav_EMULU:    opc2 =  520; break; // vmuleub
+      case Pav_EMULS:    opc2 =  776; break; // vmulesb
+
+      case Pav_AVGU:     opc2 = 1026; break; // vavgub
+      case Pav_AVGS:     opc2 = 1282; break; // vavgsb
+      case Pav_MAXU:     opc2 =    2; break; // vmaxub
+      case Pav_MAXS:     opc2 =  258; break; // vmaxsb
+      case Pav_MINU:     opc2 =  514; break; // vminub
+      case Pav_MINS:     opc2 =  770; break; // vminsb
+
+      case Pav_CMPEQU:   opc2 =    6; break; // vcmpequb
+      case Pav_CMPGTU:   opc2 =  518; break; // vcmpgtub
+      case Pav_CMPGTS:   opc2 =  774; break; // vcmpgtsb
+
+      case Pav_SHL:      opc2 =  260; break; // vslb
+      case Pav_SHR:      opc2 =  516; break; // vsrb
+      case Pav_SAR:      opc2 =  772; break; // vsrab
+      case Pav_ROTL:     opc2 =    4; break; // vrlb
+
+      case Pav_MRGHI:    opc2 =   12; break; // vmrghb
+      case Pav_MRGLO:    opc2 =  268; break; // vmrglb
+
+      default:
+         goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      goto done;
+   }
+
+   case Pin_AvBin16x8: {
+      UInt v_dst  = vregNo(i->Pin.AvBin16x8.dst);
+      UInt v_srcL = vregNo(i->Pin.AvBin16x8.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvBin16x8.srcR);
+      UInt opc2;
+      switch (i->Pin.AvBin16x8.op) {
+
+      case Pav_ADDUM:   opc2 =   64; break; // vadduhm
+      case Pav_ADDUS:   opc2 =  576; break; // vadduhs
+      case Pav_ADDSS:   opc2 =  832; break; // vaddshs
+
+      case Pav_SUBUM:   opc2 = 1088; break; // vsubuhm
+      case Pav_SUBUS:   opc2 = 1600; break; // vsubuhs
+      case Pav_SUBSS:   opc2 = 1856; break; // vsubshs
+
+      case Pav_OMULU:   opc2 =   72; break; // vmulouh
+      case Pav_OMULS:   opc2 =  328; break; // vmulosh
+      case Pav_EMULU:   opc2 =  584; break; // vmuleuh
+      case Pav_EMULS:   opc2 =  840; break; // vmulesh
+
+      case Pav_AVGU:    opc2 = 1090; break; // vavguh
+      case Pav_AVGS:    opc2 = 1346; break; // vavgsh
+      case Pav_MAXU:    opc2 =   66; break; // vmaxuh
+      case Pav_MAXS:    opc2 =  322; break; // vmaxsh
+      case Pav_MINS:    opc2 =  834; break; // vminsh
+      case Pav_MINU:    opc2 =  578; break; // vminuh
+
+      case Pav_CMPEQU:  opc2 =   70; break; // vcmpequh
+      case Pav_CMPGTU:  opc2 =  582; break; // vcmpgtuh
+      case Pav_CMPGTS:  opc2 =  838; break; // vcmpgtsh
+
+      case Pav_SHL:     opc2 =  324; break; // vslh
+      case Pav_SHR:     opc2 =  580; break; // vsrh
+      case Pav_SAR:     opc2 =  836; break; // vsrah
+      case Pav_ROTL:    opc2 =   68; break; // vrlh
+
+      case Pav_PACKUUM: opc2 =   14; break; // vpkuhum
+      case Pav_PACKUUS: opc2 =  142; break; // vpkuhus
+      case Pav_PACKSUS: opc2 =  270; break; // vpkshus
+      case Pav_PACKSSS: opc2 =  398; break; // vpkshss
+      case Pav_PACKPXL:   opc2 =  782; break; // vpkpx
+
+      case Pav_MRGHI:   opc2 =   76; break; // vmrghh
+      case Pav_MRGLO:   opc2 =  332; break; // vmrglh
+
+      default:
+         goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      goto done;
+   }
+
+   case Pin_AvBin32x4: {
+      UInt v_dst  = vregNo(i->Pin.AvBin32x4.dst);
+      UInt v_srcL = vregNo(i->Pin.AvBin32x4.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvBin32x4.srcR);
+      UInt opc2;
+      switch (i->Pin.AvBin32x4.op) {
+
+      case Pav_ADDUM:   opc2 =  128; break; // vadduwm
+      case Pav_ADDUS:   opc2 =  640; break; // vadduws
+      case Pav_ADDSS:   opc2 =  896; break; // vaddsws
+
+      case Pav_SUBUM:   opc2 = 1152; break; // vsubuwm
+      case Pav_SUBUS:   opc2 = 1664; break; // vsubuws
+      case Pav_SUBSS:   opc2 = 1920; break; // vsubsws
+
+      case Pav_AVGU:    opc2 = 1154; break; // vavguw
+      case Pav_AVGS:    opc2 = 1410; break; // vavgsw
+
+      case Pav_MAXU:    opc2 =  130; break; // vmaxuw
+      case Pav_MAXS:    opc2 =  386; break; // vmaxsw
+
+      case Pav_MINS:    opc2 =  898; break; // vminsw
+      case Pav_MINU:    opc2 =  642; break; // vminuw
+
+      case Pav_CMPEQU:  opc2 =  134; break; // vcmpequw
+      case Pav_CMPGTS:  opc2 =  902; break; // vcmpgtsw
+      case Pav_CMPGTU:  opc2 =  646; break; // vcmpgtuw
+
+      case Pav_SHL:     opc2 =  388; break; // vslw
+      case Pav_SHR:     opc2 =  644; break; // vsrw
+      case Pav_SAR:     opc2 =  900; break; // vsraw
+      case Pav_ROTL:    opc2 =  132; break; // vrlw
+
+      case Pav_PACKUUM: opc2 =   78; break; // vpkuwum
+      case Pav_PACKUUS: opc2 =  206; break; // vpkuwus
+      case Pav_PACKSUS: opc2 =  334; break; // vpkswus
+      case Pav_PACKSSS: opc2 =  462; break; // vpkswss
+
+      case Pav_MRGHI:   opc2 =  140; break; // vmrghw
+      case Pav_MRGLO:   opc2 =  396; break; // vmrglw
+
+      default:
+         goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      goto done;
+   }
+
+   case Pin_AvBin32Fx4: {
+      UInt v_dst  = vregNo(i->Pin.AvBin32Fx4.dst);
+      UInt v_srcL = vregNo(i->Pin.AvBin32Fx4.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvBin32Fx4.srcR);
+      switch (i->Pin.AvBin32Fx4.op) {
+
+      case Pav_ADDF:
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 10 );   // vaddfp
+         break;
+      case Pav_SUBF:
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 74 );   // vsubfp
+         break;
+      case Pav_MAXF:
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1034 ); // vmaxfp
+         break;
+      case Pav_MINF:
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1098 ); // vminfp
+         break;
+
+      case Pav_MULF: {
+         /* Make a vmulfp from a vmaddfp:
+            load -0.0 (0x8000_0000) to each 32-bit word of vB
+            this makes the add a noop.
+         */
+         UInt vB = 29;                    // XXX: Using r29 for temp
+         UInt zero_simm = 0x80000000;
+
+         // Better way to load zero_imm?
+         // vspltisw vB,0x1F   (0x1F => each word of vB)
+         p = mkFormVX( p, 4, vB, zero_simm, 0, 908 );
+
+         // vslw vB,vB,vB  (each word of vB = (0x1F << 0x1F) = 0x80000000
+         p = mkFormVX( p, 4, vB, vB, vB, 388 );
+
+         // Finally, do the multiply:
+         p = mkFormVA( p, 4, v_dst, v_srcL, vB, v_srcR, 46 );
+	 break;
+      }
+      case Pav_CMPEQF:
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 198 ); // vcmpeqfp
+	 break;
+      case Pav_CMPGTF:
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 1, 710 ); // vcmpgtfp
+	 break;
+      case Pav_CMPGEF:
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 1, 454 ); // vcmpgefp
+	 break;
+
+      default:
+         goto bad;
+      }
       goto done;
    }
 
@@ -2814,7 +3033,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       vassert(sz == 8 || sz == 16 || sz == 32);
 
       if (i->Pin.AvSplat.src->tag == Pri_Imm) {
-	opc2 = (sz == 8) ? 780 : (sz == 16) ? 844 : 908;   // 8,16,32
+         opc2 = (sz == 8) ? 780 : (sz == 16) ? 844 : 908;   // 8,16,32
          simm_src = i->Pin.AvSplat.src->Pri.Imm.imm32;
          p = mkFormVX( p, 4, v_dst, simm_src, 0, opc2 );
       } else {  // Pri_Reg
@@ -2822,6 +3041,25 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          v_src = iregNo(i->Pin.AvSplat.src->Pri.Reg.reg);
          p = mkFormVX( p, 4, v_dst, 0, v_src, opc2 );
       }
+      goto done;
+   }
+
+   case Pin_AvCMov: {
+      UInt v_dst      = vregNo(i->Pin.AvCMov.dst);
+      UInt v_src      = vregNo(i->Pin.AvCMov.src);
+      PPC32CondCode cc = i->Pin.AvCMov.cond;
+
+      if (v_dst == v_src) goto done;
+      
+      vassert(cc.test != Pct_ALWAYS);
+
+      /* jmp fwds 2 insns if !condition */
+      if (cc.test != Pct_ALWAYS) {
+         /* bc !ct,cf,n_bytes>>2 */
+         p = mkFormB(p, invertCondTest(cc.test), cc.flag, 8>>2, 0, 0);
+      }
+      /* vmr */
+      p = mkFormVX( p, 4, v_dst, v_src, v_src, 1156 );
       goto done;
    }
 

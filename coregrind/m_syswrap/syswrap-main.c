@@ -185,12 +185,13 @@
    VG_(fixup_guest_state_after_syscall_interrupted) to adjust the
    thread's context to do the right thing.
 
-   The _WRK function is handwritten assembly.  It has some very magic
+   The _WRK function is handwritten assembly, implemented per-platform
+   in coregrind/m_syswrap/syscall-$PLAT.S.  It has some very magic
    properties.  See comments at the top of
    VG_(fixup_guest_state_after_syscall_interrupted) below for details.
 */
 extern
-void VG_(do_syscall_for_client_WRK)( Int syscallno, 
+void ML_(do_syscall_for_client_WRK)( Int syscallno, 
                                      void* guest_state,
                                      const vki_sigset_t *syscall_mask,
                                      const vki_sigset_t *restore_mask,
@@ -202,7 +203,7 @@ void do_syscall_for_client ( Int syscallno,
                              const vki_sigset_t* syscall_mask )
 {
    vki_sigset_t saved;
-   VG_(do_syscall_for_client_WRK)(
+   ML_(do_syscall_for_client_WRK)(
       syscallno, &tst->arch.vex, 
       syscall_mask, &saved, _VKI_NSIG_WORDS * sizeof(UWord)
    );
@@ -901,13 +902,14 @@ void VG_(post_syscall) (ThreadId tid)
 */
 
 
-/* These are addresses within VG_(_do_syscall_for_client).  See syscall.S for
-   details. */
-extern const Addr VG_(blksys_setup);
-extern const Addr VG_(blksys_restart);
-extern const Addr VG_(blksys_complete);
-extern const Addr VG_(blksys_committed);
-extern const Addr VG_(blksys_finished);
+/* These are addresses within ML_(do_syscall_for_client_WRK).  See
+   syscall-$PLAT.S for details. 
+*/
+extern const Addr ML_(blksys_setup);
+extern const Addr ML_(blksys_restart);
+extern const Addr ML_(blksys_complete);
+extern const Addr ML_(blksys_committed);
+extern const Addr ML_(blksys_finished);
 
 
 /* Back up guest state to restart a system call. */
@@ -1046,9 +1048,9 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    /* Figure out what the state of the syscall was by examining the
       (real) IP at the time of the signal, and act accordingly. */
 
-   if (ip < VG_(blksys_setup) || ip >= VG_(blksys_finished)) {
+   if (ip < ML_(blksys_setup) || ip >= ML_(blksys_finished)) {
       VG_(printf)("  not in syscall (%p - %p)\n", 
-                  VG_(blksys_setup), VG_(blksys_finished));
+                  ML_(blksys_setup), ML_(blksys_finished));
       /* Looks like we weren't in a syscall at all.  Hmm. */
       vg_assert(sci->status.what != SsIdle);
       return;
@@ -1059,7 +1061,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       Hence: */
    vg_assert(sci->status.what != SsIdle);
 
-   if (ip >= VG_(blksys_setup) && ip < VG_(blksys_restart)) {
+   if (ip >= ML_(blksys_setup) && ip < ML_(blksys_restart)) {
       /* syscall hasn't even started; go around again */
       if (debug)
          VG_(printf)("  not started: restart\n");
@@ -1068,7 +1070,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    } 
 
    else 
-   if (ip == VG_(blksys_restart)) {
+   if (ip == ML_(blksys_restart)) {
       /* We're either about to run the syscall, or it was interrupted
          and the kernel restarted it.  Restart if asked, otherwise
          EINTR it. */
@@ -1085,7 +1087,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    }
 
    else 
-   if (ip >= VG_(blksys_complete) && ip < VG_(blksys_committed)) {
+   if (ip >= ML_(blksys_complete) && ip < ML_(blksys_committed)) {
       /* Syscall complete, but result hasn't been written back yet.
          Write the SysRes we were supplied with back to the guest
          state. */
@@ -1098,7 +1100,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    } 
 
    else 
-   if (ip >= VG_(blksys_committed) && ip < VG_(blksys_finished)) {
+   if (ip >= ML_(blksys_committed) && ip < ML_(blksys_finished)) {
       /* Result committed, but the signal mask has not been restored;
          we expect our caller (the signal handler) will have fixed
          this up. */

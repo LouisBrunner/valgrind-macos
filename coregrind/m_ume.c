@@ -275,37 +275,37 @@ struct elfinfo *readelf(int fd, const char *filename)
    if (pread(fd, &e->e, sizeof(e->e), 0) != sizeof(e->e)) {
       fprintf(stderr, "valgrind: %s: can't read ELF header: %s\n", 
 	      filename, strerror(errno));
-      return NULL;
+      goto bad;
    }
 
    if (memcmp(&e->e.e_ident[0], ELFMAG, SELFMAG) != 0) {
       fprintf(stderr, "valgrind: %s: bad ELF magic number\n", filename);
-      return NULL;
+      goto bad;
    }
    if (e->e.e_ident[EI_CLASS] != VG_ELF_CLASS) {
       fprintf(stderr, 
               "valgrind: wrong ELF executable class "
               "(eg. 32-bit instead of 64-bit)\n");
-      return NULL;
+      goto bad;
    }
    if (e->e.e_ident[EI_DATA] != VG_ELF_ENDIANNESS) {
       fprintf(stderr, "valgrind: executable has wrong endian-ness\n");
-      return NULL;
+      goto bad;
    }
    if (!(e->e.e_type == ET_EXEC || e->e.e_type == ET_DYN)) {
       fprintf(stderr, "valgrind: this is not an executable\n");
-      return NULL;
+      goto bad;
    }
 
    if (e->e.e_machine != VG_ELF_MACHINE) {
       fprintf(stderr, "valgrind: executable is not for "
                       "this architecture\n");
-      return NULL;
+      goto bad;
    }
 
    if (e->e.e_phentsize != sizeof(ESZ(Phdr))) {
       fprintf(stderr, "valgrind: sizeof ELF Phdr wrong\n");
-      return NULL;
+      goto bad;
    }
 
    phsz = sizeof(ESZ(Phdr)) * e->e.e_phnum;
@@ -314,10 +314,15 @@ struct elfinfo *readelf(int fd, const char *filename)
 
    if (pread(fd, e->p, phsz, e->e.e_phoff) != phsz) {
       fprintf(stderr, "valgrind: can't read phdr: %s\n", strerror(errno));
-      return NULL;
+      free(e->p);
+      goto bad;
    }
 
    return e;
+
+  bad:
+   free(e);
+   return NULL;
 }
 
 /* Map an ELF file.  Returns the brk address. */

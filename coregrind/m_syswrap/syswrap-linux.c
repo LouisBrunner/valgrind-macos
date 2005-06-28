@@ -685,7 +685,7 @@ PRE(sys_io_setup)
       return;
    }
 
-   VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_WRITE, SF_FIXED);
+   VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_WRITE, 0);
    
    VG_(pad_address_space)(0);
    SET_STATUS_from_SysRes( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );

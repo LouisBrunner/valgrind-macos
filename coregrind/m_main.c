@@ -2138,7 +2138,7 @@ static void build_segment_map_callback ( Addr start, SizeT size, UInt prot,
    if (is_stack_segment)
       flags = SF_STACK | SF_GROWDOWN;
    else
-      flags = SF_EXEC|SF_MMAP;
+      flags = SF_MMAP;
 
    if (filename != NULL)
       flags |= SF_FILE;

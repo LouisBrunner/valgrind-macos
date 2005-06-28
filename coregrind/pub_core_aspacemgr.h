@@ -68,24 +68,18 @@ extern SysRes VG_(mprotect_native) ( void *start, SizeT length, UInt prot );
 /* A Segment is mapped piece of client memory.  This covers all kinds
    of mapped memory (exe, brk, mmap, .so, shm, stack, etc)
 
-   We try to encode everything we know about a particular segment here.
+   We encode relevant info about each segment with these constants.
 */
-#define SF_FIXED    (1 <<  0) // client asked for MAP_FIXED
-#define SF_SHARED   (1 <<  1) // shared
-#define SF_SHM      (1 <<  2) // SYSV SHM (also SF_SHARED)
-#define SF_MMAP     (1 <<  3) // mmap memory
-#define SF_FILE     (1 <<  4) // mapping is backed by a file
-#define SF_STACK    (1 <<  5) // is a stack
-#define SF_GROWDOWN (1 <<  6) // segment grows down
-#define SF_GROWUP   (1 <<  7) // segment grows up
-#define SF_EXEC     (1 <<  8) // segment created by exec
-#define SF_DYNLIB   (1 <<  9) // mapped from dynamic library
-#define SF_NOSYMS   (1 << 10) // don't load syms, even if present
-#define SF_BRK      (1 << 11) // brk segment
-#define SF_CORE     (1 << 12) // allocated by core on behalf of the client
-#define SF_VALGRIND (1 << 13) // a valgrind-internal mapping - not in client
-#define SF_CODE     (1 << 14) // segment contains cached code
-#define SF_DEVICE   (1 << 15) // device mapping; avoid careless touching
+#define SF_SHARED   (1 <<  0) // shared
+#define SF_SHM      (1 <<  1) // SYSV SHM (also SF_SHARED)
+#define SF_MMAP     (1 <<  2) // mmap memory
+#define SF_FILE     (1 <<  3) // mapping is backed by a file
+#define SF_STACK    (1 <<  4) // is a stack
+#define SF_GROWDOWN (1 <<  5) // segment grows down
+#define SF_NOSYMS   (1 <<  6) // don't load syms, even if present
+#define SF_CORE     (1 <<  7) // allocated by core on behalf of the client
+#define SF_VALGRIND (1 <<  8) // a valgrind-internal mapping - not in client
+#define SF_CODE     (1 <<  9) // segment contains cached code
 
 typedef struct _Segment Segment;
 

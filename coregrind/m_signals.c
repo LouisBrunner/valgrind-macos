@@ -926,7 +926,7 @@ void VG_(kill_self)(Int sigNo)
 /* If true, then this Segment may be mentioned in the core */
 static Bool may_dump(const Segment *seg)
 {
-   return (seg->flags & (SF_DEVICE|SF_VALGRIND)) == 0 && VG_(is_client_addr)(seg->addr);
+   return (seg->flags & SF_VALGRIND) == 0 && VG_(is_client_addr)(seg->addr);
 }
 
 /* If true, then this Segment's contents will be in the core */

@@ -65,7 +65,6 @@ void* VG_(mmap)( void* start, SizeT length,
       }
 
       sf_flags |= SF_MMAP;
-      if (  flags & VKI_MAP_FIXED)      sf_flags |= SF_FIXED;
       if (  flags & VKI_MAP_SHARED)     sf_flags |= SF_SHARED;
       if (!(flags & VKI_MAP_ANONYMOUS)) sf_flags |= SF_FILE;
       if (!(flags & VKI_MAP_CLIENT))    sf_flags |= SF_VALGRIND;
@@ -106,7 +105,7 @@ void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who )
    void* p;
    p = VG_(mmap)(0, nBytes,
                  VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
-                 VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, 0, -1, 0);
+                 VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, SF_VALGRIND, -1, 0);
 
    if (p != ((void*)(-1))) {
       vg_assert((void*)VG_(valgrind_base) <= p && p <= (void*)VG_(valgrind_last));
@@ -131,17 +130,16 @@ void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who )
 }
 
 // Returns 0 on failure.
-Addr VG_(get_memory_from_mmap_for_client)
-        (Addr addr, SizeT len, UInt prot, UInt sf_flags)
+Addr VG_(get_memory_from_mmap_for_client) (SizeT len)
 {
+   Addr addr;
+
    len = VG_PGROUNDUP(len);
 
-   tl_assert(!(sf_flags & SF_FIXED));
-   tl_assert(0 == addr);
-
-   addr = (Addr)VG_(mmap)((void *)addr, len, prot, 
-                          VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
-                          sf_flags | SF_CORE, -1, 0);
+   addr = (Addr)VG_(mmap)(NULL, len, 
+                          VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
+                          VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS|VKI_MAP_CLIENT,
+                          SF_CORE, -1, 0);
    if ((Addr)-1 != addr)
       return addr;
    else

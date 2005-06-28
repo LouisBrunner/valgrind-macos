@@ -138,8 +138,6 @@ void ML_(mmap_segment) ( Addr a, SizeT len, UInt prot,
 
    flags = SF_MMAP;
    
-   if (mm_flags & VKI_MAP_FIXED)
-      flags |= SF_FIXED;
    if (!(mm_flags & VKI_MAP_PRIVATE))
       flags |= SF_SHARED;
 
@@ -826,7 +824,7 @@ static Addr do_brk(Addr newbrk)
          } else if ((void*)-1 != VG_(mmap)((void*)current, newaddr-current,
                VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
                VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS|VKI_MAP_FIXED|VKI_MAP_CLIENT,
-               SF_FIXED|SF_BRK, -1, 0)) 
+               0, -1, 0)) 
          {
 	    ret = newbrk;
 	 }

@@ -802,9 +802,6 @@ VG_(map_file_segment)( Addr addr, SizeT len,
       ) {
          s->seginfo = VG_(read_seg_symbols)(s->addr, s->len, s->offset,
                                             s->filename);
-         if (s->seginfo != NULL) {
-            s->flags |= SF_DYNLIB;
-         }
       } else if (flags & SF_MMAP) {
 #if 0
 	 const SegInfo *info;
@@ -1167,7 +1164,7 @@ void VG_(find_root_memory)(void (*add_rootrange)(Addr a, SizeT sz))
    for (i = 0; i < segments_used; i++) {
       s = &segments[i];
       flags = s->flags & (SF_SHARED|SF_MMAP|SF_VALGRIND
-                          |SF_CORE|SF_STACK|SF_DEVICE);
+                          |SF_CORE|SF_STACK);
       if (flags != SF_MMAP && flags != SF_STACK)
          continue;
       if ((s->prot & (VKI_PROT_READ|VKI_PROT_WRITE)) 

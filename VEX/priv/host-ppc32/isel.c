@@ -54,12 +54,13 @@
   GPR2       TOC pointer - not used
   GPR3:12    Allocateable
   GPR13      Thread-specific pointer - not used
-  GPR14:30   Allocateable
+  GPR14:29   Allocateable
+  GPR30      AltiVec temp spill register
   GPR31      GuestStatePointer
 
   Of Allocateable regs:
   GPR3:12    Caller-saved regs
-  GPR14:30   Callee-saved regs
+  GPR14:29   Callee-saved regs
 
   GPR3       [Return | Parameter] - carrying reg
   GPR4:10    Parameter-carrying regs
@@ -218,12 +219,12 @@ static HReg newVRegF ( ISelEnv* env )
    return reg;
 }
 
-//.. static HReg newVRegV ( ISelEnv* env )
-//.. {
-//..    HReg reg = mkHReg(env->vreg_ctr, HRcVec128, True/*virtual reg*/);
-//..    env->vreg_ctr++;
-//..    return reg;
-//.. }
+static HReg newVRegV ( ISelEnv* env )
+{
+   HReg reg = mkHReg(env->vreg_ctr, HRcVec128, True/*virtual reg*/);
+   env->vreg_ctr++;
+   return reg;
+}
 
 
 /*---------------------------------------------------------*/
@@ -259,8 +260,8 @@ static HReg          iselDblExpr     ( ISelEnv* env, IRExpr* e );
 static HReg          iselFltExpr_wrk ( ISelEnv* env, IRExpr* e );
 static HReg          iselFltExpr     ( ISelEnv* env, IRExpr* e );
 
-//.. static HReg        iselVecExpr_wrk ( ISelEnv* env, IRExpr* e );
-//.. static HReg        iselVecExpr     ( ISelEnv* env, IRExpr* e );
+static HReg          iselVecExpr_wrk ( ISelEnv* env, IRExpr* e );
+static HReg          iselVecExpr     ( ISelEnv* env, IRExpr* e );
 
 
 /*---------------------------------------------------------*/
@@ -2768,61 +2769,42 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 }
 
 
-//.. /*---------------------------------------------------------*/
-//.. /*--- ISEL: SIMD (Vector) expressions, 128 bit.         ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
-//.. static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    HReg r = iselVecExpr_wrk( env, e );
-//.. #  if 0
-//..    vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
-//.. #  endif
-//..    vassert(hregClass(r) == HRcVec128);
-//..    vassert(hregIsVirtual(r));
-//..    return r;
-//.. }
-//.. 
-//.. 
-//.. /* DO NOT CALL THIS DIRECTLY */
-//.. static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
-//.. {
-//.. 
-/*
-//.. #  define REQUIRE_SSE1                                  \
-//..       do { if (env->subarch == VexSubArchX86_sse0)      \
-//..               goto vec_fail;                            \
-//..       } while (0)
-//.. 
-//.. #  define REQUIRE_SSE2                                  \
-//..       do { if (env->subarch == VexSubArchX86_sse0       \
-//..                || env->subarch == VexSubArchX86_sse1)   \
-//..               goto vec_fail;                            \
-//..       } while (0)
-*/
+/*---------------------------------------------------------*/
+/*--- ISEL: SIMD (Vector) expressions, 128 bit.         ---*/
+/*---------------------------------------------------------*/
+
+static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
+{
+   HReg r = iselVecExpr_wrk( env, e );
+#  if 0
+   vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
+#  endif
+   vassert(hregClass(r) == HRcVec128);
+   vassert(hregIsVirtual(r));
+   return r;
+}
+
+/* DO NOT CALL THIS DIRECTLY */
+static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
+{
 //..    Bool     arg1isEReg = False;
-//..    X86SseOp op = Xsse_INVALID;
-//..    IRType   ty = typeOfIRExpr(env->type_env,e);
-//..    vassert(e);
-//..    vassert(ty == Ity_V128);
-//.. 
-//..    REQUIRE_SSE1;
-//.. 
-//..    if (e->tag == Iex_Tmp) {
-//..       return lookupIRTemp(env, e->Iex.Tmp.tmp);
-//..    }
-//.. 
-//..    if (e->tag == Iex_Get) {
-//..       HReg dst = newVRegV(env);
-//..       addInstr(env, X86Instr_SseLdSt(
-//..                        True/*load*/, 
-//..                        dst,
-//..                        X86AMode_IR(e->Iex.Get.offset, hregX86_EBP())
-//..                     )
-//..               );
-//..       return dst;
-//..    }
-//.. 
+   PPC32AvOp op = Pav_INVALID;
+   IRType   ty = typeOfIRExpr(env->type_env,e);
+   vassert(e);
+   vassert(ty == Ity_V128);
+
+   if (e->tag == Iex_Tmp) {
+      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   }
+
+   if (e->tag == Iex_Get) {
+      HReg dst = newVRegV(env);
+      addInstr(env,
+               PPC32Instr_AvLdSt( True/*load*/, 16, dst,
+                                  PPC32AMode_IR(e->Iex.Get.offset, GuestStatePtr)));
+      return dst;
+   }
+
 //..    if (e->tag == Iex_LDle) {
 //..       HReg      dst = newVRegV(env);
 //..       X86AMode* am  = iselIntExpr_AMode(env, e->Iex.LDle.addr);
@@ -3261,16 +3243,13 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       addInstr(env, X86Instr_SseCMov(Xcc_Z,r0,dst));
 //..       return dst;
 //..    }
-//.. 
-//..    vec_fail:
-//..    vex_printf("iselVecExpr (subarch = %s): can't reduce\n",
-//..               LibVEX_ppVexSubArch(env->subarch));
-//..    ppIRExpr(e);
-//..    vpanic("iselVecExpr_wrk");
-//.. 
-//.. #  undef REQUIRE_SSE1
-//.. #  undef REQUIRE_SSE2
-//.. }
+
+   vec_fail:
+   vex_printf("iselVecExpr(ppc32) (subarch = %s): can't reduce\n",
+              LibVEX_ppVexSubArch(env->subarch));
+   ppIRExpr(e);
+   vpanic("iselVecExpr_wrk(ppc32)");
+}
 
 
 /*---------------------------------------------------------*/
@@ -3320,11 +3299,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..                           Xalu_MOV, X86RI_Reg(vHi), X86AMode_IR(4, rA)));
 //..          return;
 //..       }
-//..       if (tyd == Ity_V128) {
-//..          HReg r = iselVecExpr(env, stmt->Ist.STle.data);
-//..          addInstr(env, X86Instr_SseLdSt(False/*store*/, r, am));
-//..          return;
-//..       }
+      if (tyd == Ity_V128) {
+         HReg v_src = iselVecExpr(env, stmt->Ist.STle.data);
+         addInstr(env, PPC32Instr_AvLdSt(False/*store*/, 16, v_src, am_addr));
+         return;
+      }
       break;
    }
 

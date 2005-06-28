@@ -46,14 +46,12 @@ void* VG_(mmap)( void* start, SizeT length,
 
    if (!(flags & VKI_MAP_FIXED)) {
       start = (void *)VG_(find_map_space)((Addr)start, length, !!(flags & VKI_MAP_CLIENT));
-
-      flags |= VKI_MAP_FIXED;
    }
    if (start == 0)
       return (void *)-1;
 
    res = VG_(mmap_native)(start, length, prot, 
-                          flags & ~(VKI_MAP_NOSYMS | VKI_MAP_CLIENT),
+                          (flags | VKI_MAP_FIXED) & ~(VKI_MAP_NOSYMS | VKI_MAP_CLIENT),
                           fd, offset);
 
    // Check it ended up in the right place.

@@ -114,29 +114,69 @@ typedef
       /* 368 */ ULong guest_FPR30;
       /* 376 */ ULong guest_FPR31;
 
-      /* 384 */ UInt guest_CIA;    // IP (no arch visible register)
-      /* 388 */ UInt guest_LR;     // Link Register
-      /* 392 */ UInt guest_CTR;    // Count Register
+      // Vector Registers
+      /* 392 */ U128 guest_VR0;
+      /* 408 */ U128 guest_VR1;
+      /* 424 */ U128 guest_VR2;
+      /* 440 */ U128 guest_VR3;
+      /* 456 */ U128 guest_VR4;
+      /* 472 */ U128 guest_VR5;
+      /* 488 */ U128 guest_VR6;
+      /* 504 */ U128 guest_VR7;
+      /* 520 */ U128 guest_VR8;
+      /* 536 */ U128 guest_VR9;
+      /* 552 */ U128 guest_VR10;
+      /* 568 */ U128 guest_VR11;
+      /* 584 */ U128 guest_VR12;
+      /* 600 */ U128 guest_VR13;
+      /* 616 */ U128 guest_VR14;
+      /* 632 */ U128 guest_VR15;
+      /* 648 */ U128 guest_VR16;
+      /* 664 */ U128 guest_VR17;
+      /* 680 */ U128 guest_VR18;
+      /* 696 */ U128 guest_VR19;
+      /* 712 */ U128 guest_VR20;
+      /* 728 */ U128 guest_VR21;
+      /* 744 */ U128 guest_VR22;
+      /* 760 */ U128 guest_VR23;
+      /* 776 */ U128 guest_VR24;
+      /* 792 */ U128 guest_VR25;
+      /* 808 */ U128 guest_VR26;
+      /* 824 */ U128 guest_VR27;
+      /* 840 */ U128 guest_VR28;
+      /* 856 */ U128 guest_VR29;
+      /* 872 */ U128 guest_VR30;
+      /* 888 */ U128 guest_VR31;
+
+      /* 904 */ UInt guest_CIA;    // IP (no arch visible register)
+      /* 908 */ UInt guest_LR;     // Link Register
+      /* 912 */ UInt guest_CTR;    // Count Register
 
       /* CR[7]: thunk used to calculate these flags. */
-      /* 396 */ UInt guest_CC_OP;
-      /* 400 */ UInt guest_CC_DEP1;
-      /* 404 */ UInt guest_CC_DEP2;
+      /* 916 */ UInt guest_CC_OP;
+      /* 920 */ UInt guest_CC_DEP1;
+      /* 924 */ UInt guest_CC_DEP2;
 
       // CR[0:6]: Used for 'compare' ops
-      /* 408 */ UInt guest_CR0to6;
+      /* 928 */ UInt guest_CR0to6;
 
       /* FP Status & Control Register fields */
-      /* 412 */ UInt guest_FPROUND; // FP Rounding Mode
+      /* 932 */ UInt guest_FPROUND; // FP Rounding Mode
 
-      /* 416 */ UInt guest_XER;    // XER Register
+      /* 936 */ UInt guest_XER;     // XER Register
+
+      /* Vector Save/Restore Register */
+      /* 940 */ UInt guest_VRSAVE;
+
+      /* Vector Status and Control Register */
+      /* 944 */ UInt guest_VSCR;
 
       /* Emulation warnings */
-      /* 420 */ UInt guest_EMWARN;
+      /* 948 */ UInt guest_EMWARN;
 
       /* For icbi: record start and length of area to invalidate */
-      /* 424 */ UInt guest_TISTART;
-      /* 428 */ UInt guest_TILEN;
+      /* 952 */ UInt guest_TISTART;
+      /* 956 */ UInt guest_TILEN;
 
       /* Padding to make it have an 8-aligned size */
       /* UInt  padding; */

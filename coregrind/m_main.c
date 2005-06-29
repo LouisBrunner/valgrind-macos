@@ -1855,7 +1855,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(message)(Vg_UserMsg, "</preamble>");
    }
 
-   if (VG_(clo_verbosity) > 0 && log_to != VgLogTo_Fd) {
+   if (!VG_(clo_xml) && VG_(clo_verbosity) > 0 && log_to != VgLogTo_Fd) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, 
          "My PID = %d, parent PID = %d.  Prog and args are:",

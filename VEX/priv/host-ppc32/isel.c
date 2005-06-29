@@ -1353,7 +1353,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return r_dst;
       }
 
-//..          case Iop_128to32: {
+//..          case Iop_V128to32: {
 //..             HReg      dst  = newVRegI(env);
 //..             HReg      vec  = iselVecExpr(env, e->Iex.Unop.arg);
 //..             X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
@@ -2325,28 +2325,33 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             return;
          }
 
-//..          /* 128{HI}to64 */
-//..          case Iop_128HIto64:
-//..          case Iop_128to64: {
-//..             Int  off = e->Iex.Unop.op==Iop_128HIto64 ? 8 : 0;
-//..             HReg tLo = newVRegI(env);
-//..             HReg tHi = newVRegI(env);
-//..             HReg vec = iselVecExpr(env, e->Iex.Unop.arg);
-//..             X86AMode* esp0  = X86AMode_IR(0,     hregX86_ESP());
-//..             X86AMode* espLO = X86AMode_IR(off,   hregX86_ESP());
-//..             X86AMode* espHI = X86AMode_IR(off+4, hregX86_ESP());
-//..             sub_from_esp(env, 16);
-//..             addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, esp0));
-//..             addInstr(env, X86Instr_Alu32R( Xalu_MOV, 
-//..                                            X86RMI_Mem(espLO), tLo ));
-//..             addInstr(env, X86Instr_Alu32R( Xalu_MOV, 
-//..                                            X86RMI_Mem(espHI), tHi ));
-//..             add_to_esp(env, 16);
-//..             *rHi = tHi;
-//..             *rLo = tLo;
-//..             return;
-//..          }
-//.. 
+         /* V128{HI}to64 */
+         case Iop_V128HIto64:
+         case Iop_V128to64: {
+            Int  off = e->Iex.Unop.op==Iop_V128HIto64 ? 0 : 8;
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            HReg vec = iselVecExpr(env, e->Iex.Unop.arg);
+            PPC32AMode *sp0, *spLO, *spHI;
+
+            sub_from_sp( env, 32 );     // Move SP down 32 bytes
+            sp0  = PPC32AMode_IR(0,     StackFramePtr);
+            spHI = PPC32AMode_IR(off,   StackFramePtr);
+            spLO = PPC32AMode_IR(off+4, StackFramePtr);
+
+            // store as Vec128
+            addInstr(env, PPC32Instr_AvLdSt( False/*store*/, 16, vec, sp0 ));
+
+            // load hi,lo words (of hi/lo half of vec) as Ity_I32's
+            addInstr(env, PPC32Instr_Load( 4, False, tHi, spHI ));
+            addInstr(env, PPC32Instr_Load( 4, False, tLo, spLO ));
+
+            add_to_sp( env, 32 );       // Reset SP
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
 //..          /* could do better than this, but for now ... */
 //..          case Iop_1Sto64: {
 //..             HReg tLo = newVRegI(env);
@@ -2971,7 +2976,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return dst;
 //..       }
 //.. 
-//..       case Iop_32Uto128: {
+//..       case Iop_32UtoV128: {
 //..          HReg      dst  = newVRegV(env);
 //..          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
 //..          X86RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Unop.arg);
@@ -2981,7 +2986,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return dst;
 //..       }
 //.. 
-//..       case Iop_64Uto128: {
+//..       case Iop_64UtoV128: {
 //..          HReg      rHi, rLo;
 //..          HReg      dst  = newVRegV(env);
 //..          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
@@ -3001,7 +3006,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..    if (e->tag == Iex_Binop) {
 //..    switch (e->Iex.Binop.op) {
 //.. 
-//..       case Iop_Set128lo32: {
+//..       case Iop_SetV128lo32: {
 //..          HReg dst = newVRegV(env);
 //..          HReg srcV = iselVecExpr(env, e->Iex.Binop.arg1);
 //..          HReg srcI = iselIntExpr_R(env, e->Iex.Binop.arg2);
@@ -3014,7 +3019,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return dst;
 //..       }
 //.. 
-//..       case Iop_Set128lo64: {
+//..       case Iop_SetV128lo64: {
 //..          HReg dst = newVRegV(env);
 //..          HReg srcV = iselVecExpr(env, e->Iex.Binop.arg1);
 //..          HReg srcIhi, srcIlo;
@@ -3030,7 +3035,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return dst;
 //..       }
 //.. 
-//..       case Iop_64HLto128: {
+//..       case Iop_64HLtoV128: {
 //..          HReg r3, r2, r1, r0;
 //..          X86AMode* esp0  = X86AMode_IR(0, hregX86_ESP());
 //..          X86AMode* esp4  = advance4(esp0);
@@ -3154,9 +3159,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_InterleaveLO64x2: 
 //..          op = Xsse_UNPCKLQ; arg1isEReg = True; goto do_SseReRg;
 //.. 
-//..       case Iop_And128:     op = Xsse_AND;      goto do_SseReRg;
-//..       case Iop_Or128:      op = Xsse_OR;       goto do_SseReRg;
-//..       case Iop_Xor128:     op = Xsse_XOR;      goto do_SseReRg;
+//..       case Iop_AndV128:    op = Xsse_AND;      goto do_SseReRg;
+//..       case Iop_OrV128:     op = Xsse_OR;       goto do_SseReRg;
+//..       case Iop_XorV128:    op = Xsse_XOR;      goto do_SseReRg;
 //..       case Iop_Add8x16:    op = Xsse_ADD8;     goto do_SseReRg;
 //..       case Iop_Add16x8:    op = Xsse_ADD16;    goto do_SseReRg;
 //..       case Iop_Add32x4:    op = Xsse_ADD32;    goto do_SseReRg;
@@ -3327,6 +3332,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, PPC32Instr_Store( 4, am_addr4, rLo ));
          return;
      }
+//..       if (ty == Ity_V128) {
+//..          HReg      vec = iselVecExpr(env, stmt->Ist.Put.data);
+//..          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
+//..          addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, am));
+//..          return;
+//..       }
 //..       if (ty == Ity_F32) {
 //..          HReg f32 = iselFltExpr(env, stmt->Ist.Put.data);
 //..          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
@@ -3402,18 +3413,18 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, PPC32Instr_FpUnary(Pfp_MOV, fr_dst, fr_src));
          return;
       }
-//..       if (ty == Ity_F32) {
-//..          HReg dst = lookupIRTemp(env, tmp);
-//..          HReg src = iselFltExpr(env, stmt->Ist.Tmp.data);
-//..          addInstr(env, X86Instr_FpUnary(Xfp_MOV,src,dst));
-//..          return;
-//..       }
-//..       if (ty == Ity_V128) {
-//..          HReg dst = lookupIRTemp(env, tmp);
-//..          HReg src = iselVecExpr(env, stmt->Ist.Tmp.data);
-//..          addInstr(env, mk_vMOVsd_RR(src,dst));
-//..          return;
-//..       }
+      if (ty == Ity_F32) {
+         HReg fr_dst = lookupIRTemp(env, tmp);
+         HReg fr_src = iselFltExpr(env, stmt->Ist.Tmp.data);
+         addInstr(env, PPC32Instr_FpUnary(Pfp_MOV, fr_dst, fr_src));
+         return;
+      }
+      if (ty == Ity_V128) {
+         HReg v_dst = lookupIRTemp(env, tmp);
+         HReg v_src = iselVecExpr(env, stmt->Ist.Tmp.data);
+         addInstr(env, PPC32Instr_AvUnary(Pav_MOV, v_dst, v_src));
+         return;
+      }
       break;
    }
 

@@ -126,8 +126,6 @@ static Char **vg_argv;
 /* From the aux vector */
 Int  VG_(cache_line_size);
 UInt VG_(hardware_capabilities);
-Addr VG_(vdso_base);
-Addr VG_(vdso_end);
 #endif
 
 
@@ -151,24 +149,6 @@ static void print_all_stats ( void )
       VG_(message)(Vg_DebugMsg, "");
    }
 }
-
-
-/*====================================================================*/
-/*=== Miscellaneous global functions                               ===*/
-/*====================================================================*/
-
-#if defined(VGP_ppc32_linux)
-/* Used in scanning /proc/pid/maps for the VDSO */
-static int find_vdso(char *start, char *end, const char *perm,
-                   off_t offset, int maj, int min, int ino, void *extra)
-{
-   if ((Addr)start != VG_(vdso_base))
-      return 1;               /* keep looking */
-   /* found it */
-   VG_(vdso_end) = (Addr)end;
-   return 0;
-}
-#endif
 
 
 /*====================================================================*/
@@ -215,12 +195,6 @@ static int scan_auxv(void* init_sp)
          VG_(valgrind_base) = VG_PGROUNDDN(auxv->u.a_val);
          break;
 
-#if defined(VGP_ppc32_linux)
-      case AT_SYSINFO_EHDR:
-         VG_(vdso_base) = auxv->u.a_val;
-         VG_(foreach_map)(find_vdso, NULL);
-         break;
-#endif
       }
 
    if ( found != (1|2) ) {
@@ -294,27 +268,8 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    vg_assert(!res.isError);
 
    // Make client hole
-//zz #if defined(VGP_ppc32_linux)
-//zz  {
-//zz    Int   ires;
-//zz    if (VG_(vdso_end) > VG_(client_base) && VG_(vdso_base) < VG_(client_end)) {
-//zz      if (VG_(client_base) < VG_(vdso_base)) {
-//zz        ires = munmap((void *)VG_(client_base), VG_(vdso_base) - VG_(client_base));
-//zz        vg_assert(ires == 0);
-//zz      }
-//zz      if (VG_(vdso_end) < VG_(client_end)) {
-//zz        ires = munmap((void *)VG_(vdso_end), VG_(client_end) - VG_(vdso_end));
-//zz        vg_assert(ires == 0);
-//zz      }
-//zz    } else {
-//zz      ires = munmap((void*)VG_(client_base), client_size);
-//zz      vg_assert(ires == 0);
-//zz    }
-//zz  }
-//zz #else
    res = VG_(munmap_native)((void*)VG_(client_base), client_size);
    vg_assert(!res.isError);
-//zz #endif
 
    // Map shadow memory.
    // Initially all inaccessible, incrementally initialized as it is used

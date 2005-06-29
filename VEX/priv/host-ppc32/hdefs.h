@@ -686,12 +686,12 @@ extern PPC32Instr* PPC32Instr_FpCmp      ( HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_RdWrLR     ( Bool wrLR, HReg gpr );
 
 extern PPC32Instr* PPC32Instr_AvLdSt     ( Bool isLoad, UChar sz, HReg, PPC32AMode* );
-extern PPC32Instr* PPC32Instr_AvUnary    ( PPC32FpOp op, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_AvBinary   ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvBin8x16  ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvBin16x8  ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvBin32x4  ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvUnary    ( PPC32AvOp op, HReg dst, HReg src );
+extern PPC32Instr* PPC32Instr_AvBinary   ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvBin8x16  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvBin16x8  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvBin32x4  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvPerm     ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvSel      ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg srcR );

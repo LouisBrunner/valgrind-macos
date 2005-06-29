@@ -1226,21 +1226,18 @@ void ppPPC32Instr ( PPC32Instr* i )
 
    case Pin_AvLdSt: {
       UChar sz = i->Pin.AvLdSt.sz;
-      UChar* str_sz = (sz == 8) ? "eb" :
-                      (sz == 16) ? "eh" :
-                      (sz == 32) ? "ew" : "";
       if (i->Pin.AvLdSt.addr->tag == Pam_IR) {
          vex_printf("{ ");
          ppLoadImm(hregPPC32_GPR30(), i->Pin.AvLdSt.addr->Pam.RR.index);
          vex_printf(" }");
       }
       if (i->Pin.AvLdSt.isLoad) {
-         vex_printf("lv%sx ", str_sz);
+         vex_printf("lv%sx ", sz==8 ? "eb" : sz==16 ? "eh" : sz==32 ? "ew" : "");
          ppHRegPPC32(i->Pin.AvLdSt.reg);
          vex_printf(",");
          ppPPC32AMode(i->Pin.AvLdSt.addr);
       } else {
-         vex_printf("stv%sx ", str_sz);
+         vex_printf("stv%sx ", sz==8 ? "eb" : sz==16 ? "eh" : sz==32 ? "ew" : "");
          ppHRegPPC32(i->Pin.AvLdSt.reg);
          vex_printf(",");
          ppPPC32AMode(i->Pin.AvLdSt.addr);

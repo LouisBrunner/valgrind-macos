@@ -181,7 +181,7 @@ HReg hregPPC32_VR31 ( void ) { return mkHReg(31, HRcVec128, False); }
 void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
 {
    UInt i=0;
-   *nregs = 59;
+   *nregs = 90;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    // GPR0 = scratch reg where possible - some ops interpret as value zero
    // GPR1 = stack pointer
@@ -281,6 +281,8 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregPPC32_VR29();
    (*arr)[i++] = hregPPC32_VR30();
    (*arr)[i++] = hregPPC32_VR31();
+
+   vassert(i == *nregs);
 }
 
 
@@ -1227,21 +1229,21 @@ void ppPPC32Instr ( PPC32Instr* i )
    case Pin_AvLdSt: {
       UChar sz = i->Pin.AvLdSt.sz;
       if (i->Pin.AvLdSt.addr->tag == Pam_IR) {
-         vex_printf("{ ");
          ppLoadImm(hregPPC32_GPR30(), i->Pin.AvLdSt.addr->Pam.RR.index);
-         vex_printf(" }");
+         vex_printf(" ; ");
       }
-      if (i->Pin.AvLdSt.isLoad) {
+      if (i->Pin.AvLdSt.isLoad)
          vex_printf("lv%sx ", sz==8 ? "eb" : sz==16 ? "eh" : sz==32 ? "ew" : "");
-         ppHRegPPC32(i->Pin.AvLdSt.reg);
-         vex_printf(",");
-         ppPPC32AMode(i->Pin.AvLdSt.addr);
-      } else {
+      else
          vex_printf("stv%sx ", sz==8 ? "eb" : sz==16 ? "eh" : sz==32 ? "ew" : "");
-         ppHRegPPC32(i->Pin.AvLdSt.reg);
-         vex_printf(",");
-         ppPPC32AMode(i->Pin.AvLdSt.addr);
-      }
+      ppHRegPPC32(i->Pin.AvLdSt.reg);
+      vex_printf(",");
+      if (i->Pin.AvLdSt.addr->tag == Pam_IR)
+         vex_printf("%%r30");
+      else 
+         ppHRegPPC32(i->Pin.AvLdSt.addr->Pam.RR.index);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvLdSt.addr->Pam.RR.base);
       return;
    }
    case Pin_AvUnary:

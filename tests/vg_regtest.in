@@ -55,15 +55,15 @@
 # Note that filters are necessary for stderr results to filter out things that
 # always change, eg. process id numbers.
 #
-# Expected stdout (filtered) is kept in <test>.stdout.exp[0-9]? (can be more
+# Expected stdout (filtered) is kept in <test>.stdout.exp[0-9]* (can be more
 # than one expected output).  It can be missing if it would be empty.  Expected
-# stderr (filtered) is kept in <test>.stderr.exp[0-9]?. 
+# stderr (filtered) is kept in <test>.stderr.exp[0-9]*. 
 #
 # The prerequisite command, if present, must return 0 otherwise the test is
 # skipped.
 #
 # If results don't match, the output can be found in <test>.std<strm>.out,
-# and the diff between expected and actual in <test>.std<strm>.diff[0-9]?.
+# and the diff between expected and actual in <test>.std<strm>.diff[0-9]*.
 #
 # Notes on adding regression tests for a new tool are in
 # coregrind/docs/coregrind_tools.html.
@@ -236,7 +236,7 @@ sub do_diffs($$$$)
         (-r $f_exp) or die "Could not read `$f_exp'\n";
 
         my $n = "";
-        if ($f_exp =~ /.*\.exp(\d?)/) {
+        if ($f_exp =~ /.*\.exp(\d*)/) {
             $n = $1;
         } else {
             $n = "";

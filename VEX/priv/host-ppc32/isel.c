@@ -634,8 +634,8 @@ void doHelperCall ( ISelEnv* env,
                                         iselIntExpr_R(env, args[i]) ));
          } else { // Ity_I64
             HReg rHi, rLo;
-            if (i%2 == 1)    // ppc32 abi spec for LONG_LONG
-               argreg++;
+            if (argreg%2 == 1) // ppc32 abi spec for passing a LONG_LONG
+               argreg++;       // XXX: odd argreg => even rN
             vassert(argreg < PPC32_N_REGPARMS-1);
             iselInt64Expr(&rHi,&rLo, env, args[i]);
             addInstr(env, mk_iMOVds_RR( argregs[argreg++], rHi ));
@@ -668,8 +668,8 @@ void doHelperCall ( ISelEnv* env,
             tmpregs[argreg] = iselIntExpr_R(env, args[i]);
          } else { // Ity_I64
             HReg rHi, rLo;
-            if (i%2 == 1)    // ppc32 abi spec for LONG_LONG
-               argreg++;
+            if (argreg%2 == 1) // ppc32 abi spec for passing a LONG_LONG
+               argreg++;       // XXX: odd argreg => even rN
             vassert(argreg < PPC32_N_REGPARMS-1);
             iselInt64Expr(&rHi,&rLo, env, args[i]);
             tmpregs[argreg++] = rHi;
@@ -695,6 +695,8 @@ void doHelperCall ( ISelEnv* env,
 
       /* Move the args to their final destinations. */
       for (i = 0; i < argreg; i++) {
+         if (tmpregs[i] == INVALID_HREG)  // Skip invalid regs
+            continue;
          /* None of these insns, including any spill code that might
             be generated, may alter the condition codes. */
          addInstr( env, mk_iMOVds_RR( argregs[i], tmpregs[i] ) );

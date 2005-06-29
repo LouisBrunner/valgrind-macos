@@ -2,4 +2,3 @@
 Warning: client syscall shmat tried to modify addresses 0x........-0x........
 shmat @ top: Invalid argument
 
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

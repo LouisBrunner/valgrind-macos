@@ -9,4 +9,3 @@ mmap @ top
 Warning: client syscall old_mmap tried to modify addresses 0x........-0x........
 mmap @ top+.5G
 
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

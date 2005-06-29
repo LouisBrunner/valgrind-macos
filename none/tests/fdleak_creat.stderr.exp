@@ -4,7 +4,8 @@ FILE DESCRIPTORS: 4 open at exit.
 Open file descriptor .: /tmp/file
 
    at 0x........: creat (in /...libc...)
-   by 0x........: main (fdleak_creat.c:18)
+   by 0x........: __libc_start_main (in /...libc...)
+   by 0x........: ...
 
 Open file descriptor .: .
    <inherited from parent>
@@ -16,4 +17,3 @@ Open file descriptor .: /dev/null
    <inherited from parent>
 
 
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

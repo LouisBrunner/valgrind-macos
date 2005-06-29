@@ -4,28 +4,10 @@
 ## blocking syscalls, etc.
 ##---------------------------------------------------------------------------
 
-noinst_SCRIPTS = filter_stderr filter_as_mmap filter_fdleak
+noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
-	as_mmap.stderr.exp as_mmap.stderr.exp2 as_mmap.vgtest \
-	as_shm.stderr.exp as_shm.stdout.exp as_shm.vgtest \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
-	fdleak_cmsg.stderr.exp fdleak_cmsg.stderr.exp2 fdleak_cmsg.vgtest \
-	fdleak_creat.stderr.exp fdleak_creat.stderr.exp2 \
-	fdleak_creat.stderr.exp3 fdleak_creat.vgtest \
-	fdleak_dup.stderr.exp fdleak_dup.stderr.exp2 \
-	fdleak_dup.stderr.exp3 fdleak_dup.vgtest \
-	fdleak_dup2.stderr.exp fdleak_dup2.stderr.exp2 \
-	fdleak_dup2.stderr.exp3 fdleak_dup2.vgtest \
-	fdleak_fcntl.stderr.exp fdleak_fcntl.stderr.exp2 \
-	fdleak_fcntl.stderr.exp3 fdleak_fcntl.stderr.exp4 \
-	fdleak_fcntl.vgtest \
-	fdleak_ipv4.stderr.exp fdleak_ipv4.stderr.exp2 \
-	fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
-	fdleak_open.stderr.exp fdleak_open.stderr.exp2 fdleak_open.vgtest \
-	fdleak_pipe.stderr.exp fdleak_pipe.stderr.exp2 fdleak_pipe.vgtest \
-	fdleak_socketpair.stderr.exp fdleak_socketpair.stderr.exp2 \
-	fdleak_socketpair.vgtest \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_cancel1.stderr.exp pth_cancel1.stdout.exp pth_cancel1.vgtest \
 	pth_cancel2.stderr.exp pth_cancel2.vgtest \
@@ -41,38 +23,20 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	stack_changes.vgtest \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
-	threadederrno.vgtest \
-	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest
+	threadederrno.vgtest
 
 check_PROGRAMS = \
-	erringfds fdleak_cmsg fdleak_creat fdleak_dup fdleak_dup2 \
-	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
-	fdleak_socketpair sigkill res_search \
+	erringfds \
+	sigkill res_search \
 	pth_atfork1 pth_cancel1 pth_cancel2 pth_cvsimple pth_empty \
 	pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
-	as_mmap as_shm threadederrno \
-	stack_changes vgprintf
+	threadederrno \
+	stack_changes
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
-vgprintf_SOURCES	= vgprintf.c
-
-# Client address space checks
-as_mmap_SOURCES		= as_mmap.c
-as_shm_SOURCES		= as_shm.c
-
-# Leak tests
-fdleak_cmsg_SOURCES	= fdleak_cmsg.c
-fdleak_creat_SOURCES	= fdleak_creat.c
-fdleak_dup_SOURCES	= fdleak_dup.c
-fdleak_dup2_SOURCES	= fdleak_dup2.c
-fdleak_fcntl_SOURCES	= fdleak_fcntl.c
-fdleak_ipv4_SOURCES	= fdleak_ipv4.c
-fdleak_open_SOURCES	= fdleak_open.c
-fdleak_pipe_SOURCES	= fdleak_pipe.c
-fdleak_socketpair_SOURCES = fdleak_socketpair.c
 sigkill_SOURCES		= sigkill.c
 
 # Pthread ones

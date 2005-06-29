@@ -19,7 +19,6 @@ Open file descriptor .: /dev/null
    <inherited from parent>
 
 
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
 FILE DESCRIPTORS: 4 open at exit.
 Open AF_INET socket 3: 127.0.0.1:... <-> 127.0.0.1:...
@@ -36,4 +35,3 @@ Open file descriptor .: /dev/null
    <inherited from parent>
 
 
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

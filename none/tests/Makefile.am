@@ -1,11 +1,14 @@
 SUBDIRS      = ${VG_ARCH}     .
 DIST_SUBDIRS = ${VG_ARCH_ALL} .
 
-noinst_SCRIPTS = filter_none_discards filter_stderr
+noinst_SCRIPTS = 
+	filter_as_mmap filter_fdleak filter_none_discards filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
+	as_mmap.stderr.exp as_mmap.stderr.exp2 as_mmap.vgtest \
+	as_shm.stderr.exp as_shm.stdout.exp as_shm.vgtest \
 	async-sigs.stderr.exp async-sigs.stdout.exp async-sigs.vgtest \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	blockfault.vgtest blockfault.stderr.exp blockfault.stdout.exp \
@@ -26,6 +29,23 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	execve.vgtest execve.stdout.exp execve.stderr.exp \
 	faultstatus.vgtest faultstatus.stderr.exp \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
+	fdleak_cmsg.stderr.exp fdleak_cmsg.stderr.exp2 fdleak_cmsg.exp3 \
+	fdleak_cmsg.vgtest \
+	fdleak_creat.stderr.exp fdleak_creat.stderr.exp2 \
+	fdleak_creat.stderr.exp3 fdleak_creat.vgtest \
+	fdleak_dup.stderr.exp fdleak_dup.stderr.exp2 \
+	fdleak_dup.stderr.exp3 fdleak_dup.vgtest \
+	fdleak_dup2.stderr.exp fdleak_dup2.stderr.exp2 \
+	fdleak_dup2.stderr.exp3 fdleak_dup2.vgtest \
+	fdleak_fcntl.stderr.exp fdleak_fcntl.stderr.exp2 \
+	fdleak_fcntl.stderr.exp3 fdleak_fcntl.stderr.exp4 \
+	fdleak_fcntl.vgtest \
+	fdleak_ipv4.stderr.exp fdleak_ipv4.stderr.exp2 \
+	fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
+	fdleak_open.stderr.exp fdleak_open.stderr.exp2 fdleak_open.vgtest \
+	fdleak_pipe.stderr.exp fdleak_pipe.stderr.exp2 fdleak_pipe.vgtest \
+	fdleak_socketpair.stderr.exp fdleak_socketpair.stderr.exp2 \
+	fdleak_socketpair.vgtest \
 	floored.stderr.exp floored.stdout.exp \
 	floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
@@ -63,13 +83,17 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	thread-exits.stderr.exp thread-exits.stdout.exp thread-exits.vgtest \
 	threaded-fork.stderr.exp threaded-fork.stdout.exp threaded-fork.vgtest \
 	tls.stderr.exp tls.stdout.exp  \
+	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest \
 	yield.stderr.exp yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
-	ansi args async-sigs bitfield1 blockfault closeall coolo_strlen \
-	discard exec-sigmask execve faultstatus fcntl_setown floored fork \
-	fucomip \
-	manythreads \
+	ansi args as_mmap as_shm \
+	async-sigs bitfield1 blockfault closeall coolo_strlen \
+	discard exec-sigmask execve faultstatus fcntl_setown \
+	fdleak_cmsg fdleak_creat fdleak_dup fdleak_dup2 \
+	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
+	fdleak_socketpair \
+	floored fork fucomip manythreads \
 	munmap_exe map_unaligned map_unmap mq mremap rcrl readline1 \
 	resolv rlimit_nofile selfrun sem semlimit sha1_test \
 	shortpush shorts \
@@ -77,8 +101,8 @@ check_PROGRAMS = \
 	smc1 susphello pending pth_blockedsig pth_stackalign \
 	syscall-restart1 syscall-restart2 system \
 	thread-exits threaded-fork \
-	tls tls.so tls2.so \
-	coolo_sigaction gxx304 yield
+	tls tls.so tls2.so yield vgprintf \
+	coolo_sigaction gxx304
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
@@ -88,6 +112,8 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 ansi_SOURCES		= ansi.c
 ansi_CFLAGS		= -ansi
 args_SOURCES 		= args.c
+as_mmap_SOURCES		= as_mmap.c
+as_shm_SOURCES		= as_shm.c
 async_sigs_SOURCES	= async-sigs.c
 bitfield1_SOURCES 	= bitfield1.c
 blockfault_SOURCES	= blockfault.c
@@ -98,6 +124,15 @@ exec_sigmask_SOURCES	= exec-sigmask.c
 execve_SOURCES		= execve.c
 faultstatus_SOURCES	= faultstatus.c
 fcntl_setown_SOURCES	= fcntl_setown.c
+fdleak_cmsg_SOURCES	= fdleak_cmsg.c
+fdleak_creat_SOURCES	= fdleak_creat.c
+fdleak_dup_SOURCES	= fdleak_dup.c
+fdleak_dup2_SOURCES	= fdleak_dup2.c
+fdleak_fcntl_SOURCES	= fdleak_fcntl.c
+fdleak_ipv4_SOURCES	= fdleak_ipv4.c
+fdleak_open_SOURCES	= fdleak_open.c
+fdleak_pipe_SOURCES	= fdleak_pipe.c
+fdleak_socketpair_SOURCES = fdleak_socketpair.c
 fork_SOURCES 		= fork.c
 floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm
@@ -149,6 +184,7 @@ tls_so_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
 tls_so_CFLAGS		= -fPIC
 tls2_so_SOURCES		= tls2_so.c
 tls2_so_LDFLAGS		= -shared
+vgprintf_SOURCES	= vgprintf.c
 yield_SOURCES		= yield.c
 yield_CFLAGS		= $(AM_CFLAGS) -D__$(VG_ARCH)__
 yield_LDADD		= -lpthread

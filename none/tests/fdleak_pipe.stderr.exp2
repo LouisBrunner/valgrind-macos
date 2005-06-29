@@ -1,0 +1,21 @@
+
+
+FILE DESCRIPTORS: 5 open at exit.
+Open file descriptor .:
+   at 0x........: pipe (in /...libc...)
+   by 0x........: main (fdleak_pipe.c:15)
+
+Open file descriptor .:
+   at 0x........: pipe (in /...libc...)
+   by 0x........: main (fdleak_pipe.c:15)
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: /dev/null
+   <inherited from parent>
+
+

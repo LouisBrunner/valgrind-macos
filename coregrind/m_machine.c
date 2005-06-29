@@ -196,6 +196,16 @@ ThreadId VG_(first_matching_thread_stack)
    return VG_INVALID_THREADID;
 }
 
+//////////////////////////////////////////////////////////////////
+// Architecture specifics
+
+// PPC: what is the cache line size (for dcbz etc) ?
+// This info is harvested on Linux at startup from the AT_SYSINFO
+// entries.  0 means not-yet-set.
+#if defined(VGA_ppc32)
+Int VG_(cache_line_size_ppc32) = 0;
+#endif
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

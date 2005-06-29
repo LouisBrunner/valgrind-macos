@@ -30,12 +30,13 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_machine.h"    // ppc32: VG_(cache_line_size_ppc32)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcmman.h"      // For VG_(get_memory_from_mmap)()
+#include "pub_core_libcmman.h"   // For VG_(get_memory_from_mmap)()
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
-#include "pub_core_tooliface.h"     // For VG_(details).avg_translation_sizeB
+#include "pub_core_tooliface.h"  // For VG_(details).avg_translation_sizeB
 #include "pub_core_transtab.h"
 
 /* #define DEBUG_TRANSTAB */
@@ -324,13 +325,16 @@ static void initialiseSector ( Int sno )
    invalidateFastCache();
 }
 
-#if defined(VGA_ppc32)
-static void invalidate_icache(void *ptr, int nbytes)
+static void invalidate_icache ( void *ptr, Int nbytes )
 {
-   unsigned long startaddr = (unsigned long) ptr;
-   unsigned long endaddr = startaddr + nbytes;
-   unsigned long addr;
-   unsigned long cls = 16; //VG_(cache_line_size);
+#  if defined(VGA_ppc32)
+   Addr startaddr = (Addr) ptr;
+   Addr endaddr   = startaddr + nbytes;
+   Addr cls       = VG_(cache_line_size_ppc32);
+   Addr addr;
+
+   /* Surely no real cache would have a different line size? */
+   vg_assert(cls == 16 || cls == 32 || cls == 64);
 
    startaddr &= ~(cls - 1);
    for (addr = startaddr; addr < endaddr; addr += cls)
@@ -339,8 +343,17 @@ static void invalidate_icache(void *ptr, int nbytes)
    for (addr = startaddr; addr < endaddr; addr += cls)
       asm volatile("icbi 0,%0" : : "r" (addr));
    asm volatile("sync; isync");
+
+#  elif defined(VGA_x86)
+   /* no need to do anything, hardware provides coherence */
+
+#  elif defined(VGA_amd64)
+   /* no need to do anything, hardware provides coherence */
+
+#  else
+#    error "Unknown ARCH"
+#  endif
 }
-#endif
 
 
 /* Add a translation of vge to TT/TC.  The translation is temporarily
@@ -421,9 +434,7 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
    sectors[y].tc_next += reqdQ;
    sectors[y].tt_n_inuse++;
 
-#if defined(VGA_ppc32)
    invalidate_icache( dstP, code_len );
-#endif
 
    /* more paranoia */
    tce2 = sectors[y].tc_next;

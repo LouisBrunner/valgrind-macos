@@ -88,6 +88,15 @@
 // Offsets for the Vex state
 #define VG_O_STACK_PTR        (offsetof(VexGuestArchState, VG_STACK_PTR))
 
+// Architecture specifics
+
+// PPC: what is the cache line size (for dcbz etc) ?
+// This info is harvested on Linux at startup from the AT_SYSINFO
+// entries.
+#if defined(VGA_ppc32)
+extern Int VG_(cache_line_size_ppc32);
+#endif
+
 #endif   // __PUB_CORE_MACHINE_H
 
 /*--------------------------------------------------------------------*/

@@ -122,12 +122,6 @@ static Int vgexecfd = -1;
 static Int  vg_argc;
 static Char **vg_argv;
 
-#if defined(VGP_ppc32_linux)
-/* From the aux vector */
-Int  VG_(cache_line_size);
-UInt VG_(hardware_capabilities);
-#endif
-
 
 /*====================================================================*/
 /*=== Counters, for profiling purposes only                        ===*/
@@ -173,28 +167,28 @@ static int scan_auxv(void* init_sp)
 	 found |= 2;
 	 break;
 
-#if defined(VGP_ppc32_linux)
+#     if defined(VGP_ppc32_linux)
       case AT_DCACHEBSIZE:
       case AT_ICACHEBSIZE:
       case AT_UCACHEBSIZE:
-         VG_(debugLog)(1, "main", "PPC32 cache line size %u (type %u)\n", 
-                          (UInt)auxv->u.a_val, (UInt)auxv->a_type );
-         if (auxv->u.a_val)
-            VG_(cache_line_size) = auxv->u.a_val;
-         // XXX: Nasty hack to stop use of badly implemented
-         // cache-control instns in vex (dcbz)
-         auxv->u.a_val = 0;
+         if (auxv->u.a_val > 0) {
+            VG_(cache_line_size_ppc32) = auxv->u.a_val;
+            VG_(debugLog)(1, "main", 
+                             "PPC32 cache line size %u (type %u)\n", 
+                             (UInt)auxv->u.a_val, (UInt)auxv->a_type );
+         }
+         /* HACK: Tell glibc we don't know what the line size is.
+            This stops it using dcbz. */
+	 auxv->u.a_val = 0;
          break;
-
-      case AT_HWCAP:
-         VG_(hardware_capabilities) = auxv->u.a_val;
-         break;
-#endif
+#     endif
 
       case AT_PHDR:
          VG_(valgrind_base) = VG_PGROUNDDN(auxv->u.a_val);
          break;
 
+      default:
+         break;
       }
 
    if ( found != (1|2) ) {

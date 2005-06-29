@@ -334,7 +334,7 @@ static void invalidate_icache ( void *ptr, Int nbytes )
    Addr addr;
 
    /* Surely no real cache would have a different line size? */
-   vg_assert(cls == 16 || cls == 32 || cls == 64);
+   vg_assert(cls == 16 || cls == 32 || cls == 64 || cls == 128);
 
    startaddr &= ~(cls - 1);
    for (addr = startaddr; addr < endaddr; addr += cls)

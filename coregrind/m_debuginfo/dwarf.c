@@ -2486,7 +2486,8 @@ void ML_(read_callframe_info_dwarf2)
    return;
 
    bad:
-    VG_(message)(Vg_UserMsg, "Warning: %s in DWARF2 CFI reading", how);
+    if (!VG_(clo_xml))
+       VG_(message)(Vg_UserMsg, "Warning: %s in DWARF2 CFI reading", how);
     return;
 }
 

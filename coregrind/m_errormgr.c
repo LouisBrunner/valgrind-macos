@@ -465,7 +465,8 @@ void VG_(maybe_record_error) ( ThreadId tid,
       pointless to continue the Valgrind run after this point. */
    if (VG_(clo_error_limit) 
        && (n_errs_shown >= M_COLLECT_NO_ERRORS_AFTER_SHOWN
-           || n_errs_found >= M_COLLECT_NO_ERRORS_AFTER_FOUND)) {
+           || n_errs_found >= M_COLLECT_NO_ERRORS_AFTER_FOUND)
+       && !VG_(clo_xml)) {
       if (!stopping_message) {
          VG_(message)(Vg_UserMsg, "");
 
@@ -498,7 +499,8 @@ void VG_(maybe_record_error) ( ThreadId tid,
    /* After M_COLLECT_ERRORS_SLOWLY_AFTER different errors have
       been found, be much more conservative about collecting new
       ones. */
-   if (n_errs_shown >= M_COLLECT_ERRORS_SLOWLY_AFTER) {
+   if (n_errs_shown >= M_COLLECT_ERRORS_SLOWLY_AFTER
+       && !VG_(clo_xml)) {
       exe_res = Vg_LowRes;
       if (!slowdown_message) {
          VG_(message)(Vg_UserMsg, "");

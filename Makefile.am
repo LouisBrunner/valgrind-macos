@@ -21,7 +21,7 @@ SUBDIRS = 	include coregrind . tests auxprogs $(TOOLS) helgrind docs
 DIST_SUBDIRS =	$(SUBDIRS) addrcheck
 
 SUPP_FILES = \
-	glibc-2.1.supp glibc-2.2.supp glibc-2.3.supp \
+	glibc-2.1.supp glibc-2.2.supp glibc-2.3.supp glibc-2.4.supp \
 	xfree-3.supp xfree-4.supp
 
 dist_val_DATA = $(SUPP_FILES) default.supp

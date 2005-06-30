@@ -369,10 +369,7 @@
 <status>FINISHED</status>
 
 <suppcounts>
-  <pair>
-    <count>16</count>
-    <name>Ugly strchr error in /lib/ld-2.3.3.so</name>
-  </pair>
+  <pair> <count>18</count> <name>Ugly strchr error in /lib/ld-2.3.3.so</name> </pair>
 </suppcounts>
 
 <error>

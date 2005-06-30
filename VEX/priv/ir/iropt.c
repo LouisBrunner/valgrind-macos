@@ -2827,6 +2827,7 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
    switch (st->tag) {
       case Ist_NoOp:
       case Ist_IMark:
+      case Ist_MFence:
          break;
       case Ist_AbiHint:
          deltaIRExpr(st->Ist.AbiHint.base, delta);

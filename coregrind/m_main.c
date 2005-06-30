@@ -177,9 +177,6 @@ static int scan_auxv(void* init_sp)
                              "PPC32 cache line size %u (type %u)\n", 
                              (UInt)auxv->u.a_val, (UInt)auxv->a_type );
          }
-         /* HACK: Tell glibc we don't know what the line size is.
-            This stops it using dcbz. */
-	 auxv->u.a_val = 0;
          break;
 #     endif
 

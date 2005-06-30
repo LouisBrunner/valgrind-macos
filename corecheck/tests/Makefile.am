@@ -9,27 +9,16 @@ noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	sigkill.stderr.exp sigkill.stderr.exp2 sigkill.vgtest \
-	stack_changes.vgtest \
-	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
-	threadederrno.stderr.exp threadederrno.stdout.exp \
-	threadederrno.vgtest
+	stack_changes.vgtest
 
 check_PROGRAMS = \
-	erringfds \
-	sigkill res_search \
-	threadederrno \
-	stack_changes
+	erringfds sigkill stack_changes
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 sigkill_SOURCES		= sigkill.c
-
-res_search_SOURCES      = res_search.c
-res_search_LDADD        = -lresolv -lpthread
-threadederrno_SOURCES	= threadederrno.c
-threadederrno_LDADD	= -lpthread
 
 # Stack tests
 stack_changes_SOURCES   = stack_changes.c

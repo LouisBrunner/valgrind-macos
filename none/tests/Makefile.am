@@ -76,6 +76,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
 	readline1.stderr.exp readline1.stdout.exp \
 	readline1.vgtest \
+	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
 	rlimit_nofile.stderr.exp rlimit_nofile.stdout.exp rlimit_nofile.vgtest \
 	selfrun.stderr.exp selfrun.stdout.exp selfrun.vgtest \
@@ -93,6 +94,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	system.stderr.exp system.vgtest \
 	thread-exits.stderr.exp thread-exits.stdout.exp thread-exits.vgtest \
 	threaded-fork.stderr.exp threaded-fork.stdout.exp threaded-fork.vgtest \
+	threadederrno.stderr.exp threadederrno.stdout.exp \
+	threadederrno.vgtest \
 	tls.stderr.exp tls.stdout.exp  \
 	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest \
 	yield.stderr.exp yield.stdout.exp yield.vgtest
@@ -110,10 +113,11 @@ check_PROGRAMS = \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
 	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
 	pth_stackalign \
-	rcrl readline1 resolv rlimit_nofile selfrun sem semlimit sha1_test \
+	rcrl readline1 res_search resolv \
+	rlimit_nofile selfrun sem semlimit sha1_test \
 	shortpush shorts stackgrowth sigstackgrowth smc1 susphello \
 	syscall-restart1 syscall-restart2 system \
-	thread-exits threaded-fork \
+	thread-exits threaded-fork threadederrno \
 	tls tls.so tls2.so yield vgprintf \
 	coolo_sigaction gxx304
 
@@ -185,6 +189,8 @@ pth_stackalign_SOURCES	= pth_stackalign.c
 pth_stackalign_LDADD	= -lpthread
 rcrl_SOURCES 		= rcrl.c
 readline1_SOURCES 	= readline1.c
+res_search_SOURCES      = res_search.c
+res_search_LDADD        = -lresolv -lpthread
 resolv_SOURCES 		= resolv.c
 rlimit_nofile_SOURCES	= rlimit_nofile.c
 selfrun_SOURCES		= selfrun.c
@@ -206,6 +212,8 @@ thread_exits_SOURCES	= thread-exits.c
 thread_exits_LDADD	= -lpthread
 threaded_fork_SOURCES	= threaded-fork.c
 threaded_fork_LDADD	= -lpthread
+threadederrno_SOURCES	= threadederrno.c
+threadederrno_LDADD	= -lpthread
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so
 tls_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests

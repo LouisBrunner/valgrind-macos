@@ -29,6 +29,7 @@
 */
 
 #include "pub_tool_basics.h"
+#include "pub_tool_cpuid.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"

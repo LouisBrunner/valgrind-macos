@@ -4526,11 +4526,11 @@ PRE(sys_mincore)
    PRE_REG_READ3(long, "mincore",
                  unsigned long, start, vki_size_t, length,
                  unsigned char *, vec);
-   PRE_MEM_WRITE( "mincore(vec)", ARG3, (ARG2 + 4096 - 1) / 4096);
+   PRE_MEM_WRITE( "mincore(vec)", ARG3, VG_PGROUNDUP(ARG2) / VKI_PAGE_SIZE );
 }
 POST(sys_mincore)
 {
-   POST_MEM_WRITE( ARG3, (ARG2 + 4096 - 1) / 4096 );  
+   POST_MEM_WRITE( ARG3, VG_PGROUNDUP(ARG2) / VKI_PAGE_SIZE );  
 }
 
 PRE(sys_nanosleep)

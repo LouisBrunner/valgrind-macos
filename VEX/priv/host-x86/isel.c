@@ -3550,11 +3550,12 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire BB to x86 code. */
 
-HInstrArray* iselBB_X86 ( IRBB* bb, VexSubArch subarch_host )
+HInstrArray* iselBB_X86 ( IRBB* bb, VexArchInfo* archinfo_host )
 {
-   Int      i, j;
-   HReg     hreg, hregHI;
-   ISelEnv* env;
+   Int        i, j;
+   HReg       hreg, hregHI;
+   ISelEnv*   env;
+   VexSubArch subarch_host = archinfo_host->subarch;
 
    /* sanity ... */
    vassert(subarch_host == VexSubArchX86_sse0

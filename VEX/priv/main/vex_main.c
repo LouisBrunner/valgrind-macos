@@ -168,10 +168,10 @@ void LibVEX_Init (
 
 VexTranslateResult LibVEX_Translate (
    /* The instruction sets we are translating from and to. */
-   VexArch    arch_guest,
-   VexSubArch subarch_guest,
-   VexArch    arch_host,
-   VexSubArch subarch_host,
+   VexArch      arch_guest,
+   VexArchInfo* archinfo_guest,
+   VexArch      arch_host,
+   VexArchInfo* archinfo_host,
    /* IN: the block to translate, and its guest address. */
    UChar*  guest_bytes,
    Addr64  guest_bytes_addr,
@@ -207,12 +207,12 @@ VexTranslateResult LibVEX_Translate (
    HInstr*      (*genReload)   ( HReg, Int );
    void         (*ppInstr)     ( HInstr* );
    void         (*ppReg)       ( HReg );
-   HInstrArray* (*iselBB)      ( IRBB*, VexSubArch );
+   HInstrArray* (*iselBB)      ( IRBB*, VexArchInfo* );
    IRBB*        (*bbToIR)      ( UChar*, Addr64, 
                                  VexGuestExtents*, 
                                  Bool(*)(Addr64), 
                                  Bool(*)(Addr64), 
-                                 Bool, VexSubArch );
+                                 Bool, VexArchInfo* );
    Int          (*emit)        ( UChar*, Int, HInstr* );
    IRExpr*      (*specHelper)  ( HChar*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
@@ -270,9 +270,9 @@ VexTranslateResult LibVEX_Translate (
          emit        = (Int(*)(UChar*,Int,HInstr*)) emit_X86Instr;
          host_is_bigendian = False;
          host_word_type    = Ity_I32;
-         vassert(subarch_host == VexSubArchX86_sse0
-                 || subarch_host == VexSubArchX86_sse1
-                 || subarch_host == VexSubArchX86_sse2);
+         vassert(archinfo_host->subarch == VexSubArchX86_sse0
+                 || archinfo_host->subarch == VexSubArchX86_sse1
+                 || archinfo_host->subarch == VexSubArchX86_sse2);
          break;
 
       case VexArchAMD64:
@@ -289,7 +289,7 @@ VexTranslateResult LibVEX_Translate (
          emit        = (Int(*)(UChar*,Int,HInstr*)) emit_AMD64Instr;
          host_is_bigendian = False;
          host_word_type    = Ity_I64;
-         vassert(subarch_host == VexSubArch_NONE);
+         vassert(archinfo_host->subarch == VexSubArch_NONE);
          break;
 
       case VexArchPPC32:
@@ -306,8 +306,8 @@ VexTranslateResult LibVEX_Translate (
          emit        = (Int(*)(UChar*,Int,HInstr*)) emit_PPC32Instr;
          host_is_bigendian = True;
          host_word_type    = Ity_I32;
-         vassert(subarch_guest == VexSubArchPPC32_noAV
-                 || subarch_guest == VexSubArchPPC32_AV);
+         vassert(archinfo_guest->subarch == VexSubArchPPC32_noAV
+                 || archinfo_guest->subarch == VexSubArchPPC32_AV);
          break;
 
       default:
@@ -324,9 +324,9 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestX86State);
          guest_word_type  = Ity_I32;
          guest_layout     = &x86guest_layout;
-         vassert(subarch_guest == VexSubArchX86_sse0
-                 || subarch_guest == VexSubArchX86_sse1
-                 || subarch_guest == VexSubArchX86_sse2);
+         vassert(archinfo_guest->subarch == VexSubArchX86_sse0
+                 || archinfo_guest->subarch == VexSubArchX86_sse1
+                 || archinfo_guest->subarch == VexSubArchX86_sse2);
          break;
 
       case VexArchAMD64:
@@ -336,7 +336,7 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestAMD64State);
          guest_word_type  = Ity_I64;
          guest_layout     = &amd64guest_layout;
-         vassert(subarch_guest == VexSubArch_NONE);
+         vassert(archinfo_guest->subarch == VexSubArch_NONE);
          break;
 
       case VexArchARM:
@@ -346,7 +346,7 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestARMState);
          guest_word_type  = Ity_I32;
          guest_layout     = &armGuest_layout;
-         vassert(subarch_guest == VexSubArchARM_v4);
+         vassert(archinfo_guest->subarch == VexSubArchARM_v4);
          break;
 
       case VexArchPPC32:
@@ -356,8 +356,8 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestPPC32State);
          guest_word_type  = Ity_I32;
          guest_layout     = &ppc32Guest_layout;
-         vassert(subarch_guest == VexSubArchPPC32_noAV
-                 || subarch_guest == VexSubArchPPC32_AV);
+         vassert(archinfo_guest->subarch == VexSubArchPPC32_noAV
+                 || archinfo_guest->subarch == VexSubArchPPC32_AV);
          break;
 
       default:
@@ -369,7 +369,7 @@ VexTranslateResult LibVEX_Translate (
       /* doesn't necessarily have to be true, but if it isn't it means
          we are simulating one flavour of an architecture a different
          flavour of the same architecture, which is pretty strange. */
-      vassert(subarch_guest == subarch_host);
+      vassert(archinfo_guest->subarch == archinfo_host->subarch);
    }
 
    if (vex_traceflags & VEX_TRACE_FE)
@@ -383,7 +383,7 @@ VexTranslateResult LibVEX_Translate (
                    byte_accessible,
                    chase_into_ok,
                    host_is_bigendian,
-                   subarch_guest );
+                   archinfo_guest );
 
    if (irbb == NULL) {
       /* Access failure. */
@@ -489,7 +489,7 @@ VexTranslateResult LibVEX_Translate (
                    " Instruction selection "
                    "------------------------\n");
 
-   vcode = iselBB ( irbb, subarch_host );
+   vcode = iselBB ( irbb, archinfo_host );
 
    if (vex_traceflags & VEX_TRACE_VCODE)
       vex_printf("\n");
@@ -592,7 +592,7 @@ HChar* LibVEX_EmWarn_string ( VexEmWarn ew )
    }
 }
 
-/* --------- Arch/Subarch names. --------- */
+/* --------- Arch/Subarch stuff. --------- */
 
 const HChar* LibVEX_ppVexArch ( VexArch arch )
 {
@@ -620,6 +620,14 @@ const HChar* LibVEX_ppVexSubArch ( VexSubArch subarch )
       default:                   return "VexSubArch???";
    }
 }
+
+/* Write default settings info *vai. */
+void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
+{
+   vai->subarch              = VexSubArch_INVALID;
+   vai->ppc32_cache_line_szB = 0;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- end                                     main/vex_main.c ---*/

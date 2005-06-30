@@ -3529,11 +3529,12 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire BB to ppc32 code. */
 
-HInstrArray* iselBB_PPC32 ( IRBB* bb, VexSubArch subarch_host )
+HInstrArray* iselBB_PPC32 ( IRBB* bb, VexArchInfo* archinfo_host )
 {
-   Int      i, j;
-   HReg     hreg, hregHI;
-   ISelEnv* env;
+   Int        i, j;
+   HReg       hreg, hregHI;
+   ISelEnv*   env;
+   VexSubArch subarch_host = archinfo_host->subarch;
 
    /* sanity ... */
    vassert(subarch_host == VexSubArchPPC32_noAV

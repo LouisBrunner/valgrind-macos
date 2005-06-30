@@ -708,7 +708,7 @@ extern Int          emit_AMD64Instr        ( UChar* buf, Int nbuf, AMD64Instr* )
 extern AMD64Instr*  genSpill_AMD64         ( HReg rreg, Int offset );
 extern AMD64Instr*  genReload_AMD64        ( HReg rreg, Int offset );
 extern void         getAllocableRegs_AMD64 ( Int*, HReg** );
-extern HInstrArray* iselBB_AMD64           ( IRBB*, VexSubArch );
+extern HInstrArray* iselBB_AMD64           ( IRBB*, VexArchInfo* );
 
 #endif /* ndef __LIBVEX_HOST_AMD64_HDEFS_H */
 

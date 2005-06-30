@@ -710,7 +710,7 @@ extern Int          emit_PPC32Instr        ( UChar* buf, Int nbuf, PPC32Instr* )
 extern PPC32Instr*  genSpill_PPC32         ( HReg rreg, UShort offsetB );
 extern PPC32Instr*  genReload_PPC32        ( HReg rreg, UShort offsetB );
 extern void         getAllocableRegs_PPC32 ( Int*, HReg** );
-extern HInstrArray* iselBB_PPC32           ( IRBB*, VexSubArch );
+extern HInstrArray* iselBB_PPC32           ( IRBB*, VexArchInfo* );
 
 #endif /* ndef __LIBVEX_HOST_PPC32_HDEFS_H */
 

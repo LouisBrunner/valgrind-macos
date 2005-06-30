@@ -50,7 +50,7 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
                      Bool             (*byte_accessible)(Addr64),
                      Bool             (*resteerOkFn)(Addr64),
                      Bool             host_bigendian,
-                     VexSubArch       subarch_guest );
+                     VexArchInfo*     archinfo_guest );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern

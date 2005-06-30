@@ -298,7 +298,7 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
                      Bool             (*byte_accessible)(Addr64),
                      Bool             (*chase_into_ok)(Addr64),
                      Bool             host_bigendian,
-                     VexSubArch       subarch_guest )
+                     VexArchInfo*     archinfo_guest )
 {
    UInt       delta;
    Int        i, n_instrs, size, first_stmt_idx;
@@ -314,8 +314,8 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
-   vassert(subarch_guest == VexSubArchPPC32_noAV
-           || subarch_guest == VexSubArchPPC32_AV);
+   vassert(archinfo_guest->subarch == VexSubArchPPC32_noAV
+           || archinfo_guest->subarch == VexSubArchPPC32_AV);
 
    /* Start a new, empty extent. */
    vge->n_used  = 1;

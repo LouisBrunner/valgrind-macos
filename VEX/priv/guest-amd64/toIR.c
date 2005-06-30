@@ -398,12 +398,12 @@ typedef
    resteer into, returns False.  */
    
 static 
-DisResult disInstr ( /*IN*/  Bool       resteerOK,
-                     /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
-                     /*IN*/  ULong      delta, 
-                     /*IN*/  VexSubArch subarch,
-                     /*OUT*/ Long*      size,
-                     /*OUT*/ Addr64*    whereNext );
+DisResult disInstr ( /*IN*/  Bool         resteerOK,
+                     /*IN*/  Bool         (*resteerOkFn) ( Addr64 ),
+                     /*IN*/  ULong        delta, 
+                     /*IN*/  VexArchInfo* archinfo,
+                     /*OUT*/ Long*        size,
+                     /*OUT*/ Addr64*      whereNext );
 
 
 /* This is the main (only, in fact) entry point for this module. */
@@ -417,7 +417,7 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
                      Bool             (*byte_accessible)(Addr64),
                      Bool             (*chase_into_ok)(Addr64),
                      Bool             host_bigendian,
-                     VexSubArch       subarch_guest )
+                     VexArchInfo*     archinfo_guest )
 {
    Long       delta, size;
    Int        i, n_instrs, first_stmt_idx;
@@ -434,7 +434,7 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
-   vassert(subarch_guest == VexSubArch_NONE);
+   vassert(archinfo_guest->subarch == VexSubArch_NONE);
 
    /* Start a new, empty extent. */
    vge->n_used  = 1;
@@ -491,7 +491,7 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
       guest_rip_next_assumed = 0;
       guest_rip_next_mustcheck = False;
       dres = disInstr( resteerOK, chase_into_ok, 
-                       delta, subarch_guest, &size, &guest_next );
+                       delta, archinfo_guest, &size, &guest_next );
       insn_verbose = False;
 
       /* stay sane ... */
@@ -7927,12 +7927,12 @@ static IRExpr* mk64from16s ( IRTemp t3, IRTemp t2,
    is False, disInstr may not return Dis_Resteer. */
    
 static 
-DisResult disInstr ( /*IN*/  Bool       resteerOK,
-                     /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
-                     /*IN*/  ULong      delta, 
-                     /*IN*/  VexSubArch subarch,
-                     /*OUT*/ Long*      size,
-                     /*OUT*/ Addr64*    whereNext )
+DisResult disInstr ( /*IN*/  Bool         resteerOK,
+                     /*IN*/  Bool         (*resteerOkFn) ( Addr64 ),
+                     /*IN*/  ULong        delta, 
+                     /*IN*/  VexArchInfo* archinfo,
+                     /*OUT*/ Long*        size,
+                     /*OUT*/ Addr64*      whereNext )
 {
    IRType    ty;
    IRTemp    addr, t0, t1, t2, t3, t4, t5, t6;
@@ -13115,7 +13115,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          HChar*   fName = NULL;
          void*    fAddr = NULL;
          if (haveF2orF3(pfx)) goto decode_failure;
-         switch (subarch) {
+         switch (archinfo->subarch) {
             case VexSubArch_NONE:
                fName = "amd64g_dirtyhelper_CPUID";
                fAddr = &amd64g_dirtyhelper_CPUID; 

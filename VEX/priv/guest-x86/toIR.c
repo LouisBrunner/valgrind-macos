@@ -233,12 +233,12 @@ static void stmt ( IRStmt* st );
    resteer into, returns False.  */
    
 static 
-DisResult disInstr ( /*IN*/  Bool       resteerOK,
-                     /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
-                     /*IN*/  UInt       delta, 
-                     /*IN*/  VexSubArch subarch,
-                     /*OUT*/ Int*       size,
-                     /*OUT*/ Addr64*    whereNext );
+DisResult disInstr ( /*IN*/  Bool         resteerOK,
+                     /*IN*/  Bool         (*resteerOkFn) ( Addr64 ),
+                     /*IN*/  UInt         delta, 
+                     /*IN*/  VexArchInfo* archinfo,
+                     /*OUT*/ Int*         size,
+                     /*OUT*/ Addr64*      whereNext );
 
 
 /* This is the main (only, in fact) entry point for this module. */
@@ -252,7 +252,7 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
                    Bool             (*byte_accessible)(Addr64),
                    Bool             (*chase_into_ok)(Addr64),
                    Bool             host_bigendian,
-                   VexSubArch       subarch_guest )
+                   VexArchInfo*     archinfo_guest )
 {
    UInt       delta;
    Int        i, n_instrs, size, first_stmt_idx;
@@ -269,9 +269,9 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
-   vassert(subarch_guest == VexSubArchX86_sse0
-           || subarch_guest == VexSubArchX86_sse1
-           || subarch_guest == VexSubArchX86_sse2);
+   vassert(archinfo_guest->subarch == VexSubArchX86_sse0
+           || archinfo_guest->subarch == VexSubArchX86_sse1
+           || archinfo_guest->subarch == VexSubArchX86_sse2);
 
    vassert((guest_eip_start >> 32) == 0);
 
@@ -328,7 +328,7 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
          needs to be annulled. */
       size = 0; /* just in case disInstr doesn't set it */
       dres = disInstr( resteerOK, chase_into_ok, 
-                       delta, subarch_guest, &size, &guest_next );
+                       delta, archinfo_guest, &size, &guest_next );
       insn_verbose = False;
 
       /* stay sane ... */
@@ -6997,12 +6997,12 @@ static IRExpr* mk64from16s ( IRTemp t3, IRTemp t2,
    is False, disInstr may not return Dis_Resteer. */
    
 static 
-DisResult disInstr ( /*IN*/  Bool       resteerOK,
-                     /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
-                     /*IN*/  UInt       delta, 
-                     /*IN*/  VexSubArch subarch,
-                     /*OUT*/ Int*       size,
-                     /*OUT*/ Addr64*    whereNext )
+DisResult disInstr ( /*IN*/  Bool         resteerOK,
+                     /*IN*/  Bool         (*resteerOkFn) ( Addr64 ),
+                     /*IN*/  UInt         delta, 
+                     /*IN*/  VexArchInfo* archinfo,
+                     /*OUT*/ Int*         size,
+                     /*OUT*/ Addr64*      whereNext )
 {
    IRType    ty;
    IRTemp    addr, t0, t1, t2, t3, t4, t5, t6;
@@ -7222,7 +7222,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* Skip parts of the decoder which don't apply given the stated
       guest subarchitecture. */
-   if (subarch == VexSubArchX86_sse0)
+   if (archinfo->subarch == VexSubArchX86_sse0)
       goto after_sse_decoders;
    
    /* Otherwise we must be doing sse1 or sse2, so we can at least try
@@ -8242,7 +8242,8 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* Skip parts of the decoder which don't apply given the stated
       guest subarchitecture. */
-   if (subarch == VexSubArchX86_sse0 || subarch == VexSubArchX86_sse1)
+   if (archinfo->subarch == VexSubArchX86_sse0 
+       || archinfo->subarch == VexSubArchX86_sse1)
       goto after_sse_decoders;
 
    insn = (UChar*)&guest_code[delta];
@@ -11766,7 +11767,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          IRDirty* d     = NULL;
          HChar*   fName = NULL;
          void*    fAddr = NULL;
-         switch (subarch) {
+         switch (archinfo->subarch) {
             case VexSubArchX86_sse0:
                fName = "x86g_dirtyhelper_CPUID_sse0";
                fAddr = &x86g_dirtyhelper_CPUID_sse0; 

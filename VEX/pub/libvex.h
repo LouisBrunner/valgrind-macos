@@ -46,7 +46,7 @@
 /*---------------------------------------------------------------*/
 
 /*-------------------------------------------------------*/
-/*--- Architectures and architecture variants         ---*/
+/*--- Architectures, variants, and other arch info    ---*/
 /*-------------------------------------------------------*/
 
 typedef 
@@ -76,6 +76,24 @@ typedef
 
 extern const HChar* LibVEX_ppVexArch    ( VexArch );
 extern const HChar* LibVEX_ppVexSubArch ( VexSubArch );
+
+
+/* This struct is a bit of a hack, but is needed to carry misc
+   important bits of info about an arch.  Fields which are optional or
+   ignored on some arch should be set to zero. */
+
+typedef
+   struct {
+      /* This is the only mandatory field. */
+      VexSubArch subarch;
+      /* PPC32 only: size of cache line */
+      Int ppc32_cache_line_szB;
+   }
+   VexArchInfo;
+
+/* Write default settings info *vai. */
+extern 
+void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai );
 
 
 /*-------------------------------------------------------*/
@@ -247,10 +265,10 @@ typedef
 extern 
 VexTranslateResult LibVEX_Translate (
    /* The instruction sets we are translating from and to. */
-   VexArch    arch_guest,
-   VexSubArch subarch_guest,
-   VexArch    arch_host,
-   VexSubArch subarch_host,
+   VexArch      arch_guest,
+   VexArchInfo* archinfo_guest,
+   VexArch      arch_host,
+   VexArchInfo* archinfo_host,
    /* IN: the block to translate, and its guest address. */
    UChar*  guest_bytes,
    Addr64  guest_bytes_addr,

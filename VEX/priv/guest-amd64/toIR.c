@@ -221,12 +221,12 @@ static IRExpr* mkU ( IRType ty, ULong i )
 
 static void storeLE ( IRExpr* addr, IRExpr* data )
 {
-   stmt( IRStmt_STle(addr,data) );
+   stmt( IRStmt_Store(Iend_LE,addr,data) );
 }
 
 static IRExpr* loadLE ( IRType ty, IRExpr* data )
 {
-   return IRExpr_LDle(ty,data);
+   return IRExpr_Load(Iend_LE,ty,data);
 }
 
 static IROp mkSizedOp ( IRType ty, IROp op8 )
@@ -5420,7 +5420,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
             case 0: /* FLD double-real */
                DIP("fldl %s\n", dis_buf);
                fp_push();
-               put_ST(0, IRExpr_LDle(Ity_F64, mkexpr(addr)));
+               put_ST(0, loadLE(Ity_F64, mkexpr(addr)));
                break;
 
             case 2: /* FST double-real */

@@ -484,7 +484,7 @@ static void assign ( IRTemp dst, IRExpr* e )
 
 static void storeLE ( IRExpr* addr, IRExpr* data )
 {
-   stmt( IRStmt_STle(addr,data) );
+   stmt( IRStmt_Store(Iend_LE,addr,data) );
 }
 
 static IRExpr* unop ( IROp op, IRExpr* a )
@@ -534,7 +534,7 @@ static IRExpr* mkU ( IRType ty, UInt i )
 
 static IRExpr* loadLE ( IRType ty, IRExpr* data )
 {
-   return IRExpr_LDle(ty,data);
+   return IRExpr_Load(Iend_LE,ty,data);
 }
 
 #if 0

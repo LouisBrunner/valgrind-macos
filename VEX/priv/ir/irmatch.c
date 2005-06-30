@@ -86,10 +86,11 @@ Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
          if (!matchWrk(mi, p->Iex.Binop.arg2, e->Iex.Binop.arg2))
             return False;
          return True;
-      case Iex_LDle:
-         if (e->tag != Iex_LDle) return False;
-         if (p->Iex.LDle.ty != e->Iex.LDle.ty) return False;
-         if (!matchWrk(mi, p->Iex.LDle.addr, e->Iex.LDle.addr))
+      case Iex_Load:
+         if (e->tag != Iex_Load) return False;
+         if (p->Iex.Load.end != e->Iex.Load.end) return False;
+         if (p->Iex.Load.ty != e->Iex.Load.ty) return False;
+         if (!matchWrk(mi, p->Iex.Load.addr, e->Iex.Load.addr))
             return False;
          return True;
       case Iex_Const:

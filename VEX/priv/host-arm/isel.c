@@ -738,25 +738,29 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- STORE --------- */
    /* little-endian write to memory */
-   case Ist_STle: {
+   case Ist_Store: {
        HReg   reg;
-       IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.STle.addr);
-       IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.STle.data);
-       vassert(tya == Ity_I32);
-       reg = iselIntExpr_R(env, stmt->Ist.STle.data);
+       IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);
+       IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
+       IREndness end = stmt->Ist.Store.end;
+
+       if (tya != Ity_I32 || end != Iend_LE) 
+          goto stmt_fail;
+
+       reg = iselIntExpr_R(env, stmt->Ist.Store.data);
 
        if (tyd == Ity_I8) {
-	   ARMAMode2* am2 = iselIntExpr_AMode2(env, stmt->Ist.STle.addr);
+	   ARMAMode2* am2 = iselIntExpr_AMode2(env, stmt->Ist.Store.addr);
 	   addInstr(env, ARMInstr_StoreB(reg,am2));
 	   return;
        }
        if (tyd == Ity_I16) {
-	   ARMAMode3* am3 = iselIntExpr_AMode3(env, stmt->Ist.STle.addr);
+	   ARMAMode3* am3 = iselIntExpr_AMode3(env, stmt->Ist.Store.addr);
 	   addInstr(env, ARMInstr_StoreH(reg,am3));
 	   return;
        }
        if (tyd == Ity_I32) {
-	   ARMAMode2* am2 = iselIntExpr_AMode2(env, stmt->Ist.STle.addr);
+	   ARMAMode2* am2 = iselIntExpr_AMode2(env, stmt->Ist.Store.addr);
 	   addInstr(env, ARMInstr_StoreW(reg,am2));
 	   return;
        }       
@@ -880,6 +884,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    default: break;
    }
+  stmt_fail:
    ppIRStmt(stmt);
    vpanic("iselStmt");
 }

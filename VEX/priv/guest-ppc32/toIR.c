@@ -653,14 +653,16 @@ static IRExpr* getVReg ( UInt archreg )
    return IRExpr_Get( vectorGuestRegOffset(archreg), Ity_V128 );
 }
 
+#if 0
 /* Ditto, but write to a reg instead. */
+/* apparently unused, jrs 2005-06-30 */
 static void putVReg ( UInt archreg, IRExpr* e )
 {
    vassert(archreg < 32);
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_V128);
    stmt( IRStmt_Put(vectorGuestRegOffset(archreg), e) );
 }
-
+#endif
 
 static void assign ( IRTemp dst, IRExpr* e )
 {
@@ -669,7 +671,7 @@ static void assign ( IRTemp dst, IRExpr* e )
 
 static void storeBE ( IRExpr* addr, IRExpr* data )
 {
-   stmt( IRStmt_STle(addr,data) );
+   stmt( IRStmt_Store(Iend_BE,addr,data) );
 }
 
 static IRExpr* unop ( IROp op, IRExpr* a )
@@ -712,7 +714,7 @@ static IRExpr* mkU32 ( UInt i )
 
 static IRExpr* loadBE ( IRType ty, IRExpr* data )
 {
-   return IRExpr_LDle(ty,data);
+   return IRExpr_Load(Iend_BE,ty,data);
 }
 
 // ROTL(src32, rot_amt5)

@@ -282,6 +282,7 @@ static void stmt ( IRStmt* st );
 static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
                             /*IN*/  UInt    delta, 
+                            /*IN*/  VexArchInfo* archinfo,
                             /*OUT*/ Int*    size,
                             /*OUT*/ Addr64* whereNext );
 
@@ -351,7 +352,7 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
       }
 
       dres = disInstr( resteerOK, chase_into_ok, 
-                       delta, &size, &guest_next );
+                       delta, archinfo_guest, &size, &guest_next );
 
       /* Print the resulting IR, if needed. */
       if (vex_traceflags & VEX_TRACE_FE) {
@@ -3290,7 +3291,9 @@ vassert(0);
 /*
   Cache Management Instructions
 */
-static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
+static Bool dis_cache_manage ( UInt         theInstr, 
+                               DisResult*   whatNext,
+                               VexArchInfo* guest_archinfo )
 {
    /* X-Form */
    UChar opc1    = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
@@ -3299,11 +3302,15 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
    UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
    UInt  opc2    =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar b0      = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+   Int   lineszB = guest_archinfo-> ppc32_cache_line_szB;
 
    if (opc1 != 0x1F || b21to25 != 0 || b0 != 0) {
       vex_printf("dis_cache_manage(PPC32)(opc1|b21to25|b0)\n");
       return False;
    }
+
+   /* stay sane .. */
+   vassert(lineszB == 32 || lineszB == 128);
    
    switch (opc2) {
    case 0x2F6: // dcba (Data Cache Block Allocate, PPC32 p380)
@@ -3333,14 +3340,10 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
    case 0x3F6: { // dcbz (Data Cache Block Clear to Zero, PPC32 p387)
       /* This needs to be fixed.  We absolutely have to know the 
          correct cache line size to implement it right. */
-      vassert(0);
-      /* Clear all bytes in cache block at (rA|0) + rB.
-         Since we don't know the cache line size, let's assume 256
-          - safe, as no I1 cache would have a line size that large. */
+      /* Clear all bytes in cache block at (rA|0) + rB. */
       IRTemp  EA   = newTemp(Ity_I32);
       IRTemp  addr = newTemp(Ity_I32);
       IRExpr* irx_addr;
-      UInt    assumed_line_size = 32;
       UInt    i;
       DIP("dcbz r%d,r%d\n", Ra_addr, Rb_addr);
       assign( EA,
@@ -3352,11 +3355,11 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
       assign( addr,
 	      binop( Iop_And32,
 		     mkexpr(EA),
-		     mkU32( ~(assumed_line_size-1) )) );
+		     mkU32( ~(lineszB-1) )) );
 
-      for (i = 0; i < (assumed_line_size / 4); i++) {
-	irx_addr = binop( Iop_Add32, mkexpr(addr), mkU32(i*4) );
-	storeBE( irx_addr, mkU32(0) );
+      for (i = 0; i < lineszB / 4; i++) {
+         irx_addr = binop( Iop_Add32, mkexpr(addr), mkU32(i*4) );
+         storeBE( irx_addr, mkU32(0) );
       }
       break;
    }
@@ -3364,11 +3367,8 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
    case 0x3D6: { 
       // icbi (Instruction Cache Block Invalidate, PPC32 p431)
       /* Invalidate all translations containing code from the cache
-         block at (rA|0) + rB.  Since we don't know what the cache
-         line size is, let's assume 256 -- no real I1 cache would ever
-         have a line size that large, so that's safe. */
+         block at (rA|0) + rB. */
       IRTemp addr = newTemp(Ity_I32);
-      UInt   assumed_line_size = 256;
       DIP("icbi r%d,r%d\n", Ra_addr, Rb_addr);
 
       assign( addr,
@@ -3381,9 +3381,9 @@ static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
                OFFB_TISTART,
                binop( Iop_And32, 
                       mkexpr(addr), 
-                      mkU32( ~(assumed_line_size-1) ))) );
+                      mkU32( ~(lineszB-1) ))) );
 
-      stmt( IRStmt_Put(OFFB_TILEN, mkU32(assumed_line_size) ) );
+      stmt( IRStmt_Put(OFFB_TILEN, mkU32(lineszB) ) );
 
       /* be paranoid ... */
       stmt( IRStmt_MFence() );
@@ -5649,6 +5649,7 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
                             /*IN*/  UInt    delta, 
+                            /*IN*/  VexArchInfo* archinfo,
                             /*OUT*/ Int*    size,
                             /*OUT*/ Addr64* whereNext )
 {
@@ -5976,7 +5977,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0x2F6: case 0x056: case 0x036: // dcba, dcbf,   dcbst
       case 0x116: case 0x0F6: case 0x3F6: // dcbt, dcbtst, dcbz
       case 0x3D6:                         // icbi
-         if (dis_cache_manage( theInstr, &whatNext )) goto decode_success;
+         if (dis_cache_manage( theInstr, &whatNext, archinfo )) 
+            goto decode_success;
          goto decode_failure;
 
       /* External Control Instructions */

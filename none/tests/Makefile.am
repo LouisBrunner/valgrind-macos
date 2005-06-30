@@ -58,8 +58,19 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	mremap.stderr.exp mremap.stdout.exp mremap.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \
+	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
+	pth_cancel1.stderr.exp pth_cancel1.stdout.exp pth_cancel1.vgtest \
+	pth_cancel2.stderr.exp pth_cancel2.vgtest \
+	pth_cvsimple.stderr.exp pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
+	pth_empty.stderr.exp pth_empty.vgtest \
+	pth_exit.stderr.exp pth_exit.vgtest \
+	pth_exit2.stderr.exp pth_exit2.vgtest \
+	pth_mutexspeed.stderr.exp \
+	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
+	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
+	pth_rwlock.stderr.exp pth_rwlock.vgtest \
 	pth_stackalign.stderr.exp \
 	pth_stackalign.stdout.exp pth_stackalign.vgtest \
 	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
@@ -94,11 +105,13 @@ check_PROGRAMS = \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair \
 	floored fork fucomip manythreads \
-	munmap_exe map_unaligned map_unmap mq mremap rcrl readline1 \
-	resolv rlimit_nofile selfrun sem semlimit sha1_test \
-	shortpush shorts \
-	stackgrowth sigstackgrowth \
-	smc1 susphello pending pth_blockedsig pth_stackalign \
+	munmap_exe map_unaligned map_unmap mq mremap \
+	pending \
+	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
+	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
+	pth_stackalign \
+	rcrl readline1 resolv rlimit_nofile selfrun sem semlimit sha1_test \
+	shortpush shorts stackgrowth sigstackgrowth smc1 susphello \
 	syscall-restart1 syscall-restart2 system \
 	thread-exits threaded-fork \
 	tls tls.so tls2.so yield vgprintf \
@@ -146,8 +159,28 @@ mq_SOURCES		= mq.c
 mq_LDADD		= -lrt
 mremap_SOURCES		= mremap.c
 munmap_exe_SOURCES 	= munmap_exe.c
+pth_atfork1_SOURCES	= pth_atfork1.c
+pth_atfork1_LDADD	= -lpthread
 pth_blockedsig_SOURCES	= pth_blockedsig.c
 pth_blockedsig_LDADD	= -lpthread
+pth_cancel1_SOURCES	= pth_cancel1.c
+pth_cancel1_LDADD	= -lpthread
+pth_cancel2_SOURCES	= pth_cancel2.c
+pth_cancel2_LDADD	= -lpthread
+pth_cvsimple_SOURCES	= pth_cvsimple.c
+pth_cvsimple_LDADD	= -lpthread
+pth_empty_SOURCES 	= pth_empty.c
+pth_empty_LDADD 	= -lpthread
+pth_exit_SOURCES 	= pth_exit.c
+pth_exit_LDADD	 	= -lpthread
+pth_exit2_SOURCES 	= pth_exit2.c
+pth_exit2_LDADD	 	= -lpthread
+pth_mutexspeed_SOURCES	= pth_mutexspeed.c
+pth_mutexspeed_LDADD	= -lpthread
+pth_once_SOURCES	= pth_once.c
+pth_once_LDADD		= -lpthread
+pth_rwlock_SOURCES	= pth_rwlock.c
+pth_rwlock_LDADD	= -lpthread
 pth_stackalign_SOURCES	= pth_stackalign.c
 pth_stackalign_LDADD	= -lpthread
 rcrl_SOURCES 		= rcrl.c

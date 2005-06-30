@@ -33,6 +33,7 @@
 #include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
 #include "pub_core_aspacemgr.h"
 #include "pub_core_cpuid.h"
+#include "pub_core_machine.h"       // For VG_(cache_line_size_ppc32)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -49,12 +50,17 @@
 /*--- Determining arch/subarch.                            ---*/
 /*------------------------------------------------------------*/
 
-// Returns the architecture and subarchitecture, or indicates
-// that this subarchitecture is unable to run Valgrind
-// Returns False to indicate we cannot proceed further.
-static Bool getArchAndSubArch( /*OUT*/VexArch*    vex_arch, 
-                               /*OUT*/VexSubArch* vex_subarch )
+// Returns the architecture and auxiliary information, or indicates
+// that this subarchitecture is unable to run Valgrind Returns False
+// to indicate we cannot proceed further.
+
+static Bool getArchAndArchInfo( /*OUT*/VexArch*     vex_arch, 
+                                /*OUT*/VexArchInfo* vai )
 {
+   // Whack default settings into vai, so that we only need to fill in
+   // any interesting bits.
+   LibVEX_default_VexArchInfo(vai);
+
 #if defined(VGA_x86)
    Bool have_sse0, have_sse1, have_sse2;
    UInt eax, ebx, ecx, edx;
@@ -77,19 +83,19 @@ static Bool getArchAndSubArch( /*OUT*/VexArch*    vex_arch,
 
    if (have_sse2 && have_sse1 && have_sse0) {
       *vex_arch    = VexArchX86;
-      *vex_subarch = VexSubArchX86_sse2;
+      vai->subarch = VexSubArchX86_sse2;
       return True;
    }
 
    if (have_sse1 && have_sse0) {
       *vex_arch    = VexArchX86;
-      *vex_subarch = VexSubArchX86_sse1;
+      vai->subarch = VexSubArchX86_sse1;
       return True;
    }
 
    if (have_sse0) {
       *vex_arch    = VexArchX86;
-      *vex_subarch = VexSubArchX86_sse0;
+      vai->subarch = VexSubArchX86_sse0;
       return True;
    }
 
@@ -98,13 +104,14 @@ static Bool getArchAndSubArch( /*OUT*/VexArch*    vex_arch,
 
 #elif defined(VGA_amd64)
    vg_assert(VG_(has_cpuid)());
-   *vex_arch = VexArchAMD64;
-   *vex_subarch = VexSubArch_NONE;
+   *vex_arch    = VexArchAMD64;
+   vai->subarch = VexSubArch_NONE;
    return True;
 
 #elif defined(VGA_ppc32)
    *vex_arch    = VexArchPPC32;
-   *vex_subarch = VexSubArchPPC32_noAV;
+   vai->subarch = VexSubArchPPC32_noAV;
+   vai->ppc32_cache_line_szB = VG_(cache_line_size_ppc32);
    return True;
 
 #else
@@ -434,16 +441,17 @@ Bool VG_(translate) ( ThreadId tid,
    Segment*  seg;
    VexGuestExtents vge;
 
-   /* Indicates what arch and subarch we are running on. */
-   static VexArch    vex_arch    = VexArch_INVALID;
-   static VexSubArch vex_subarch = VexSubArch_INVALID;
+   /* Indicates what arch we are running on, and other important info
+      (subarch variant, cache line size). */
+   static VexArchInfo vex_archinfo;
+   static VexArch     vex_arch    = VexArch_INVALID;
 
    /* Make sure Vex is initialised right. */
    VexTranslateResult tres;
    static Bool vex_init_done = False;
 
    if (!vex_init_done) {
-      Bool ok = getArchAndSubArch( &vex_arch, &vex_subarch );
+      Bool ok = getArchAndArchInfo( &vex_arch, &vex_archinfo );
       if (!ok) {
          VG_(printf)("\n");
          VG_(printf)("valgrind: fatal error: unsupported CPU.\n");
@@ -457,7 +465,7 @@ Bool VG_(translate) ( ThreadId tid,
          VG_(message)(Vg_DebugMsg, 
                       "Host CPU: arch = %s, subarch = %s",
                       LibVEX_ppVexArch   ( vex_arch ),
-                      LibVEX_ppVexSubArch( vex_subarch ) );
+                      LibVEX_ppVexSubArch( vex_archinfo.subarch ) );
       }
 
       LibVEX_Init ( &failure_exit, &log_bytes, 
@@ -548,8 +556,8 @@ Bool VG_(translate) ( ThreadId tid,
    tl_assert2(VG_(tdict).tool_instrument,
               "you forgot to set VgToolInterface function 'tool_instrument'");
    tres = LibVEX_Translate ( 
-             vex_arch, vex_subarch,
-             vex_arch, vex_subarch,
+             vex_arch, &vex_archinfo,
+             vex_arch, &vex_archinfo,
              (UChar*)ULong_to_Ptr(orig_addr), 
              (Addr64)orig_addr, 
              chase_into_ok,

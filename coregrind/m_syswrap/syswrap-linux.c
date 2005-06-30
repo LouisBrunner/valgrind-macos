@@ -194,10 +194,12 @@ POST(sys_llseek)
 //zz    PRE_REG_READ1(long, "adjtimex", struct timex *, buf);
 //zz    PRE_MEM_READ( "adjtimex(timex->modes)", ARG1, sizeof(tx->modes));
 //zz 
-//zz #define ADJX(bit,field) 				\
-//zz    if (tx->modes & bit)					\
-//zz       PRE_MEM_READ( "adjtimex(timex->"#field")",	\
-//zz 		    (Addr)&tx->field, sizeof(tx->field))
+#if 0 //zz  (avoiding warnings about multi-line comments)
+zz #define ADJX(bit,field) 				\
+zz    if (tx->modes & bit)					\
+zz       PRE_MEM_READ( "adjtimex(timex->"#field")",	\
+zz 		    (Addr)&tx->field, sizeof(tx->field))
+#endif
 //zz    ADJX(ADJ_FREQUENCY, freq);
 //zz    ADJX(ADJ_MAXERROR, maxerror);
 //zz    ADJX(ADJ_ESTERROR, esterror);

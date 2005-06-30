@@ -118,7 +118,7 @@ typedef  unsigned long HWord;
 
 /* We need to know the host word size in order to write Ptr_to_ULong
    and ULong_to_Ptr in a way that doesn't cause compilers to complain.
-   These functions allow us to case pointers to and from 64-bit
+   These functions allow us to cast pointers to and from 64-bit
    integers without complaints from compilers, regardless of the host
    word size. */
 

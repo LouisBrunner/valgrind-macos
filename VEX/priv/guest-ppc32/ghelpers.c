@@ -274,16 +274,46 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
    True (but this is generates significantly slower code).  
+
+   By default we enforce precise exns for guest R1 (stack pointer),
+   CIA (current insn address) and LR (link register).  These are the
+   minimum needed to extract correct stack backtraces from ppc32
+   code. [[NB: not sure if keeping LR up to date is actually
+   necessary.]]
 */
 Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff, 
-                                                 Int maxoff)
+                                                   Int maxoff )
 {
-   return True; // FIXME (also comment above)
+   Int lr_min  = offsetof(VexGuestPPC32State, guest_LR);
+   Int lr_max  = lr_min + 4 - 1;
+   Int r1_min  = offsetof(VexGuestPPC32State, guest_GPR1);
+   Int r1_max  = r1_min + 4 - 1;
+   Int cia_min = offsetof(VexGuestPPC32State, guest_CIA);
+   Int cia_max = cia_min + 4 - 1;
+
+   if (maxoff < lr_min || minoff > lr_max) {
+      /* no overlap with LR */
+   } else {
+      return True;
+   }
+
+   if (maxoff < r1_min || minoff > r1_max) {
+      /* no overlap with R1 */
+   } else {
+      return True;
+   }
+
+   if (maxoff < cia_min || minoff > cia_max) {
+      /* no overlap with CIA */
+   } else {
+      return True;
+   }
+
+   return False;
 }
 
 
-
-#define ALWAYSDEFD(field)                           \
+#define ALWAYSDEFD(field)                             \
     { offsetof(VexGuestPPC32State, field),            \
       (sizeof ((VexGuestPPC32State*)0)->field) }
 

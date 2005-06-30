@@ -51,7 +51,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
                    Bool             (*byte_accessible)(Addr64),
                    Bool             (*resteerOkFn)(Addr64),
                    Bool             host_bigendian,
-                   VexSubArch       subarch_guest );
+                   VexArchInfo*     archinfo_guest );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern

@@ -66,6 +66,7 @@ int main ( int argc, char** argv )
    VexTranslateResult tres;
    VexControl vcon;
    VexGuestExtents vge;
+   VexArchInfo vai;
 
    if (argc != 2) {
       fprintf(stderr, "usage: vex file.org\n");
@@ -122,6 +123,9 @@ int main ( int argc, char** argv )
          origbuf[i] = (UChar)u;
       }
 
+      LibVEX_default_VexArchInfo(&vai);
+      vai.subarch = VexSubArchX86_sse1;
+
       for (i = 0; i < TEST_N_ITERS; i++)
          tres
             = LibVEX_Translate ( 
@@ -138,8 +142,8 @@ int main ( int argc, char** argv )
                  VexArchAMD64, VexSubArch_NONE, 
 #endif
 #if 1 /* x86 -> x86 */
-                 VexArchX86, VexSubArchX86_sse1, 
-                 VexArchX86, VexSubArchX86_sse1, 
+                 VexArchX86, &vai, 
+                 VexArchX86, &vai, 
 #endif
 
                  origbuf, (Addr64)orig_addr, chase_into_not_ok,

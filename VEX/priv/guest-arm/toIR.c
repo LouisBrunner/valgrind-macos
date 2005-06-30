@@ -167,7 +167,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
                    Bool             (*byte_accessible)(Addr64),
                    Bool             (*chase_into_ok)(Addr64),
                    Bool             host_bigendian,
-                   VexSubArch       subarch_guest )
+                   VexArchInfo*     archinfo_guest )
 {
    Long       delta;
    Int        i, n_instrs, size, first_stmt_idx;
@@ -183,7 +183,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
-   vassert(subarch_guest == VexSubArchARM_v4);
+   vassert(archinfo_guest->subarch == VexSubArchARM_v4);
 
    /* Start a new, empty extent. */
    vge->n_used  = 1;

@@ -1,9 +1,0 @@
-
-Attempting too-big malloc()...
-Attempting too-big mmap()...
-
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 2 allocs, 1 frees, 2145386520 bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v

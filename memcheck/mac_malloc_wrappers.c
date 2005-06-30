@@ -198,7 +198,6 @@ void* MAC_(new_block) ( ThreadId tid,
 {
    VGP_PUSHCC(VgpCliMalloc);
    cmalloc_n_mallocs ++;
-   cmalloc_bs_mallocd += size;
 
    // Allocate and zero if necessary
    if (p) {
@@ -212,6 +211,9 @@ void* MAC_(new_block) ( ThreadId tid,
       }
       if (is_zeroed) VG_(memset)((void*)p, 0, size);
    }
+
+   // Only update this stat if allocation succeeded.
+   cmalloc_bs_mallocd += size;
 
    add_MAC_Chunk( tid, p, size, kind, table );
 

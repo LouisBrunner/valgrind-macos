@@ -6,7 +6,11 @@ int main(void)
 {
    void *p;
 
-   unsigned long size = 2ul * 1023ul * 1024ul * 1024ul;     // just under 2^31 (4GB)
+   // This is the biggest word-sized signed number.  We use a signed number,
+   // even though malloc takes an unsigned SizeT, because the "silly malloc
+   // arg" checking done by memcheck treats the arg like a signed int in
+   // order to detect the passing of a silly size arg like -1.
+   unsigned long size = (~(0UL)) >> 1;
  
    fprintf(stderr, "Attempting too-big malloc()...\n");
    p = malloc(size);          // way too big!

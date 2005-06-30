@@ -1,1 +1,2 @@
 prog: ../../tests/toobig-allocs
+vgopts: -q

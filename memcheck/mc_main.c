@@ -1473,9 +1473,9 @@ static Bool mc_recognised_suppression ( Char* name, Supp* su )
 /* ------------------------ Size = 8 ------------------------ */
 
 VG_REGPARM(1)
-ULong MC_(helperc_LOADV8) ( Addr aA )
+ULong MC_(helperc_LOADV8le) ( Addr aA )
 {
-   PROF_EVENT(200, "helperc_LOADV8");
+   PROF_EVENT(200, "helperc_LOADV8le");
 
 #  if VG_DEBUG_MEMORY >= 2
    return mc_LOADVn_slow( aA, 8, False/*littleendian*/ );
@@ -1488,7 +1488,7 @@ ULong MC_(helperc_LOADV8) ( Addr aA )
       naturally aligned, or 'a' exceeds the range covered by the
       primary map.  Either way we defer to the slow-path case. */
    if (EXPECTED_NOT_TAKEN(a & mask)) {
-      PROF_EVENT(201, "helperc_LOADV8-slow1");
+      PROF_EVENT(201, "helperc_LOADV8le-slow1");
       return (UWord)mc_LOADVn_slow( aA, 8, False/*littleendian*/ );
    }
 
@@ -1509,7 +1509,7 @@ ULong MC_(helperc_LOADV8) ( Addr aA )
       return ((ULong*)(sm->vbyte))[ v_off >> 3 ];
    } else {
       /* Slow but general case. */
-      PROF_EVENT(202, "helperc_LOADV8-slow2");
+      PROF_EVENT(202, "helperc_LOADV8le-slow2");
       return mc_LOADVn_slow( a, 8, False/*littleendian*/ );
    }
 
@@ -1517,9 +1517,9 @@ ULong MC_(helperc_LOADV8) ( Addr aA )
 }
 
 VG_REGPARM(1)
-void MC_(helperc_STOREV8) ( Addr aA, ULong vbytes )
+void MC_(helperc_STOREV8le) ( Addr aA, ULong vbytes )
 {
-   PROF_EVENT(210, "helperc_STOREV8");
+   PROF_EVENT(210, "helperc_STOREV8le");
 
 #  if VG_DEBUG_MEMORY >= 2
    mc_STOREVn_slow( aA, 8, vbytes, False/*littleendian*/ );
@@ -1532,7 +1532,7 @@ void MC_(helperc_STOREV8) ( Addr aA, ULong vbytes )
       naturally aligned, or 'a' exceeds the range covered by the
       primary map.  Either way we defer to the slow-path case. */
    if (EXPECTED_NOT_TAKEN(a & mask)) {
-      PROF_EVENT(211, "helperc_STOREV8-slow1");
+      PROF_EVENT(211, "helperc_STOREV8le-slow1");
       mc_STOREVn_slow( aA, 8, vbytes, False/*littleendian*/ );
       return;
    }
@@ -1555,7 +1555,7 @@ void MC_(helperc_STOREV8) ( Addr aA, ULong vbytes )
       ((ULong*)(sm->vbyte))[ v_off >> 3 ] = vbytes;
    } else {
       /* Slow but general case. */
-      PROF_EVENT(212, "helperc_STOREV8-slow2");
+      PROF_EVENT(212, "helperc_STOREV8le-slow2");
       mc_STOREVn_slow( aA, 8, vbytes, False/*littleendian*/ );
    }
 #  endif
@@ -1564,9 +1564,9 @@ void MC_(helperc_STOREV8) ( Addr aA, ULong vbytes )
 /* ------------------------ Size = 4 ------------------------ */
 
 VG_REGPARM(1)
-UWord MC_(helperc_LOADV4) ( Addr aA )
+UWord MC_(helperc_LOADV4le) ( Addr aA )
 {
-   PROF_EVENT(220, "helperc_LOADV4");
+   PROF_EVENT(220, "helperc_LOADV4le");
 
 #  if VG_DEBUG_MEMORY >= 2
    return (UWord)mc_LOADVn_slow( aA, 4, False/*littleendian*/ );
@@ -1579,7 +1579,7 @@ UWord MC_(helperc_LOADV4) ( Addr aA )
       naturally aligned, or 'a' exceeds the range covered by the
       primary map.  Either way we defer to the slow-path case. */
    if (EXPECTED_NOT_TAKEN(a & mask)) {
-      PROF_EVENT(221, "helperc_LOADV4-slow1");
+      PROF_EVENT(221, "helperc_LOADV4le-slow1");
       return (UWord)mc_LOADVn_slow( aA, 4, False/*littleendian*/ );
    }
 
@@ -1607,7 +1607,7 @@ UWord MC_(helperc_LOADV4) ( Addr aA )
       return ret;
    } else {
       /* Slow but general case. */
-      PROF_EVENT(222, "helperc_LOADV4-slow2");
+      PROF_EVENT(222, "helperc_LOADV4le-slow2");
       return (UWord)mc_LOADVn_slow( a, 4, False/*littleendian*/ );
    }
 
@@ -1615,9 +1615,9 @@ UWord MC_(helperc_LOADV4) ( Addr aA )
 }
 
 VG_REGPARM(2)
-void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
+void MC_(helperc_STOREV4le) ( Addr aA, UWord vbytes )
 {
-   PROF_EVENT(230, "helperc_STOREV4");
+   PROF_EVENT(230, "helperc_STOREV4le");
 
 #  if VG_DEBUG_MEMORY >= 2
    mc_STOREVn_slow( aA, 4, (ULong)vbytes, False/*littleendian*/ );
@@ -1630,7 +1630,7 @@ void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
       naturally aligned, or 'a' exceeds the range covered by the
       primary map.  Either way we defer to the slow-path case. */
    if (EXPECTED_NOT_TAKEN(a & mask)) {
-      PROF_EVENT(231, "helperc_STOREV4-slow1");
+      PROF_EVENT(231, "helperc_STOREV4le-slow1");
       mc_STOREVn_slow( aA, 4, (ULong)vbytes, False/*littleendian*/ );
       return;
    }
@@ -1654,7 +1654,7 @@ void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
       ((UInt*)(sm->vbyte))[ v_off >> 2 ] = (UInt)vbytes;
    } else {
       /* Slow but general case. */
-      PROF_EVENT(232, "helperc_STOREV4-slow2");
+      PROF_EVENT(232, "helperc_STOREV4le-slow2");
       mc_STOREVn_slow( aA, 4, (ULong)vbytes, False/*littleendian*/ );
    }
 #  endif
@@ -1663,9 +1663,9 @@ void MC_(helperc_STOREV4) ( Addr aA, UWord vbytes )
 /* ------------------------ Size = 2 ------------------------ */
 
 VG_REGPARM(1)
-UWord MC_(helperc_LOADV2) ( Addr aA )
+UWord MC_(helperc_LOADV2le) ( Addr aA )
 {
-   PROF_EVENT(240, "helperc_LOADV2");
+   PROF_EVENT(240, "helperc_LOADV2le");
 
 #  if VG_DEBUG_MEMORY >= 2
    return (UWord)mc_LOADVn_slow( aA, 2, False/*littleendian*/ );
@@ -1678,7 +1678,7 @@ UWord MC_(helperc_LOADV2) ( Addr aA )
       naturally aligned, or 'a' exceeds the range covered by the
       primary map.  Either way we defer to the slow-path case. */
    if (EXPECTED_NOT_TAKEN(a & mask)) {
-      PROF_EVENT(241, "helperc_LOADV2-slow1");
+      PROF_EVENT(241, "helperc_LOADV2le-slow1");
       return (UWord)mc_LOADVn_slow( aA, 2, False/*littleendian*/ );
    }
 
@@ -1703,7 +1703,7 @@ UWord MC_(helperc_LOADV2) ( Addr aA )
              (UWord)( ((UShort*)(sm->vbyte))[ v_off >> 1 ] );
    } else {
       /* Slow but general case. */
-      PROF_EVENT(242, "helperc_LOADV2-slow2");
+      PROF_EVENT(242, "helperc_LOADV2le-slow2");
       return (UWord)mc_LOADVn_slow( aA, 2, False/*littleendian*/ );
    }
 
@@ -1711,9 +1711,9 @@ UWord MC_(helperc_LOADV2) ( Addr aA )
 }
 
 VG_REGPARM(2)
-void MC_(helperc_STOREV2) ( Addr aA, UWord vbytes )
+void MC_(helperc_STOREV2le) ( Addr aA, UWord vbytes )
 {
-   PROF_EVENT(250, "helperc_STOREV2");
+   PROF_EVENT(250, "helperc_STOREV2le");
 
 #  if VG_DEBUG_MEMORY >= 2
    mc_STOREVn_slow( aA, 2, (ULong)vbytes, False/*littleendian*/ );
@@ -1726,7 +1726,7 @@ void MC_(helperc_STOREV2) ( Addr aA, UWord vbytes )
       naturally aligned, or 'a' exceeds the range covered by the
       primary map.  Either way we defer to the slow-path case. */
    if (EXPECTED_NOT_TAKEN(a & mask)) {
-      PROF_EVENT(251, "helperc_STOREV2-slow1");
+      PROF_EVENT(251, "helperc_STOREV2le-slow1");
       mc_STOREVn_slow( aA, 2, (ULong)vbytes, False/*littleendian*/ );
       return;
    }
@@ -1747,7 +1747,7 @@ void MC_(helperc_STOREV2) ( Addr aA, UWord vbytes )
       ((UShort*)(sm->vbyte))[ v_off >> 1 ] = (UShort)vbytes;
    } else {
       /* Slow but general case. */
-      PROF_EVENT(252, "helperc_STOREV2-slow2");
+      PROF_EVENT(252, "helperc_STOREV2le-slow2");
       mc_STOREVn_slow( aA, 2, (ULong)vbytes, False/*littleendian*/ );
    }
 #  endif
@@ -1756,9 +1756,9 @@ void MC_(helperc_STOREV2) ( Addr aA, UWord vbytes )
 /* ------------------------ Size = 1 ------------------------ */
 
 VG_REGPARM(1)
-UWord MC_(helperc_LOADV1) ( Addr aA )
+UWord MC_(helperc_LOADV1le) ( Addr aA )
 {
-   PROF_EVENT(260, "helperc_LOADV1");
+   PROF_EVENT(260, "helperc_LOADV1le");
 
 #  if VG_DEBUG_MEMORY >= 2
    return (UWord)mc_LOADVn_slow( aA, 1, False/*littleendian*/ );
@@ -1771,7 +1771,7 @@ UWord MC_(helperc_LOADV1) ( Addr aA )
       exceeds the range covered by the primary map.  In which case we
       defer to the slow-path case. */
    if (EXPECTED_NOT_TAKEN(a & mask)) {
-      PROF_EVENT(261, "helperc_LOADV1-slow1");
+      PROF_EVENT(261, "helperc_LOADV1le-slow1");
       return (UWord)mc_LOADVn_slow( aA, 1, False/*littleendian*/ );
    }
 
@@ -1796,7 +1796,7 @@ UWord MC_(helperc_LOADV1) ( Addr aA )
              (UWord)( ((UChar*)(sm->vbyte))[ v_off ] );
    } else {
       /* Slow but general case. */
-      PROF_EVENT(262, "helperc_LOADV1-slow2");
+      PROF_EVENT(262, "helperc_LOADV1le-slow2");
       return (UWord)mc_LOADVn_slow( aA, 1, False/*littleendian*/ );
    }
 #  endif
@@ -1804,9 +1804,9 @@ UWord MC_(helperc_LOADV1) ( Addr aA )
 
 
 VG_REGPARM(2)
-void MC_(helperc_STOREV1) ( Addr aA, UWord vbyte )
+void MC_(helperc_STOREV1le) ( Addr aA, UWord vbyte )
 {
-   PROF_EVENT(270, "helperc_STOREV1");
+   PROF_EVENT(270, "helperc_STOREV1le");
 
 #  if VG_DEBUG_MEMORY >= 2
    mc_STOREVn_slow( aA, 1, (ULong)vbyte, False/*littleendian*/ );
@@ -1818,7 +1818,7 @@ void MC_(helperc_STOREV1) ( Addr aA, UWord vbyte )
       exceeds the range covered by the primary map.  In which case we
       defer to the slow-path case. */
    if (EXPECTED_NOT_TAKEN(a & mask)) {
-      PROF_EVENT(271, "helperc_STOREV1-slow1");
+      PROF_EVENT(271, "helperc_STOREV1le-slow1");
       mc_STOREVn_slow( aA, 1, (ULong)vbyte, False/*littleendian*/ );
       return;
    }
@@ -1839,7 +1839,7 @@ void MC_(helperc_STOREV1) ( Addr aA, UWord vbyte )
          lives in is addressible. */
       ((UChar*)(sm->vbyte))[ v_off ] = (UChar)vbyte;
    } else {
-      PROF_EVENT(272, "helperc_STOREV1-slow2");
+      PROF_EVENT(272, "helperc_STOREV1le-slow2");
       mc_STOREVn_slow( aA, 1, (ULong)vbyte, False/*littleendian*/ );
    }
 

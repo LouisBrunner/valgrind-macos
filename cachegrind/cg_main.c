@@ -433,22 +433,23 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
 
    case Ist_Tmp: {
       IRExpr* data = st->Ist.Tmp.data;
-      if (data->tag == Iex_LDle) {
-         IRExpr* aexpr = data->Iex.LDle.addr;
+      if (data->tag == Iex_Load) {
+         IRExpr* aexpr = data->Iex.Load.addr;
          tl_assert( isIRAtom(aexpr) );
-
+         // Note also, endianness info is ignored.  I guess that's not
+         // interesting.
          // XXX: repe cmpsb does two loads... the first one is ignored here!
          //tl_assert( NULL == *loadAddrExpr );          // XXX: ???
          *loadAddrExpr = aexpr;
-         *dataSize = sizeofIRType(data->Iex.LDle.ty);
+         *dataSize = sizeofIRType(data->Iex.Load.ty);
       }
       addStmtToIRBB( bbOut, st );
       break;
    }
       
-   case Ist_STle: {
-      IRExpr* data  = st->Ist.STle.data;
-      IRExpr* aexpr = st->Ist.STle.addr;
+   case Ist_Store: {
+      IRExpr* data  = st->Ist.Store.data;
+      IRExpr* aexpr = st->Ist.Store.addr;
       tl_assert( isIRAtom(aexpr) );
       tl_assert( NULL == *storeAddrExpr );          // XXX: ???
       *storeAddrExpr = aexpr;

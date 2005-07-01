@@ -115,68 +115,68 @@ typedef
       /* 376 */ ULong guest_FPR31;
 
       // Vector Registers
-      /* 392 */ U128 guest_VR0;
-      /* 408 */ U128 guest_VR1;
-      /* 424 */ U128 guest_VR2;
-      /* 440 */ U128 guest_VR3;
-      /* 456 */ U128 guest_VR4;
-      /* 472 */ U128 guest_VR5;
-      /* 488 */ U128 guest_VR6;
-      /* 504 */ U128 guest_VR7;
-      /* 520 */ U128 guest_VR8;
-      /* 536 */ U128 guest_VR9;
-      /* 552 */ U128 guest_VR10;
-      /* 568 */ U128 guest_VR11;
-      /* 584 */ U128 guest_VR12;
-      /* 600 */ U128 guest_VR13;
-      /* 616 */ U128 guest_VR14;
-      /* 632 */ U128 guest_VR15;
-      /* 648 */ U128 guest_VR16;
-      /* 664 */ U128 guest_VR17;
-      /* 680 */ U128 guest_VR18;
-      /* 696 */ U128 guest_VR19;
-      /* 712 */ U128 guest_VR20;
-      /* 728 */ U128 guest_VR21;
-      /* 744 */ U128 guest_VR22;
-      /* 760 */ U128 guest_VR23;
-      /* 776 */ U128 guest_VR24;
-      /* 792 */ U128 guest_VR25;
-      /* 808 */ U128 guest_VR26;
-      /* 824 */ U128 guest_VR27;
-      /* 840 */ U128 guest_VR28;
-      /* 856 */ U128 guest_VR29;
-      /* 872 */ U128 guest_VR30;
-      /* 888 */ U128 guest_VR31;
+      /* 384 */ U128 guest_VR0;
+      /* 400 */ U128 guest_VR1;
+      /* 416 */ U128 guest_VR2;
+      /* 432 */ U128 guest_VR3;
+      /* 448 */ U128 guest_VR4;
+      /* 464 */ U128 guest_VR5;
+      /* 480 */ U128 guest_VR6;
+      /* 496 */ U128 guest_VR7;
+      /* 512 */ U128 guest_VR8;
+      /* 528 */ U128 guest_VR9;
+      /* 544 */ U128 guest_VR10;
+      /* 560 */ U128 guest_VR11;
+      /* 576 */ U128 guest_VR12;
+      /* 592 */ U128 guest_VR13;
+      /* 608 */ U128 guest_VR14;
+      /* 624 */ U128 guest_VR15;
+      /* 640 */ U128 guest_VR16;
+      /* 656 */ U128 guest_VR17;
+      /* 672 */ U128 guest_VR18;
+      /* 688 */ U128 guest_VR19;
+      /* 704 */ U128 guest_VR20;
+      /* 720 */ U128 guest_VR21;
+      /* 736 */ U128 guest_VR22;
+      /* 752 */ U128 guest_VR23;
+      /* 768 */ U128 guest_VR24;
+      /* 784 */ U128 guest_VR25;
+      /* 800 */ U128 guest_VR26;
+      /* 816 */ U128 guest_VR27;
+      /* 832 */ U128 guest_VR28;
+      /* 848 */ U128 guest_VR29;
+      /* 864 */ U128 guest_VR30;
+      /* 880 */ U128 guest_VR31;
 
-      /* 904 */ UInt guest_CIA;    // IP (no arch visible register)
-      /* 908 */ UInt guest_LR;     // Link Register
-      /* 912 */ UInt guest_CTR;    // Count Register
+      /* 896 */ UInt guest_CIA;    // IP (no arch visible register)
+      /* 900 */ UInt guest_LR;     // Link Register
+      /* 904 */ UInt guest_CTR;    // Count Register
 
       /* CR[7]: thunk used to calculate these flags. */
-      /* 916 */ UInt guest_CC_OP;
-      /* 920 */ UInt guest_CC_DEP1;
-      /* 924 */ UInt guest_CC_DEP2;
+      /* 908 */ UInt guest_CC_OP;
+      /* 912 */ UInt guest_CC_DEP1;
+      /* 916 */ UInt guest_CC_DEP2;
 
       // CR[0:6]: Used for 'compare' ops
-      /* 928 */ UInt guest_CR0to6;
+      /* 920 */ UInt guest_CR0to6;
 
       /* FP Status & Control Register fields */
-      /* 932 */ UInt guest_FPROUND; // FP Rounding Mode
+      /* 924 */ UInt guest_FPROUND; // FP Rounding Mode
 
-      /* 936 */ UInt guest_XER;     // XER Register
+      /* 928 */ UInt guest_XER;     // XER Register
 
       /* Vector Save/Restore Register */
-      /* 940 */ UInt guest_VRSAVE;
+      /* 932 */ UInt guest_VRSAVE;
 
       /* Vector Status and Control Register */
-      /* 944 */ UInt guest_VSCR;
+      /* 936 */ UInt guest_VSCR;
 
       /* Emulation warnings */
-      /* 948 */ UInt guest_EMWARN;
+      /* 940 */ UInt guest_EMWARN;
 
       /* For icbi: record start and length of area to invalidate */
-      /* 952 */ UInt guest_TISTART;
-      /* 956 */ UInt guest_TILEN;
+      /* 944 */ UInt guest_TISTART;
+      /* 948 */ UInt guest_TILEN;
 
       /* Padding to make it have an 8-aligned size */
       /* UInt  padding; */

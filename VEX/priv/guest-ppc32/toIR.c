@@ -838,7 +838,7 @@ static void setFlags_CR7 ( IRExpr* result )
    xer_so = getReg_bit( PPC32_SPR_XER, SHIFT_XER_SO );
 
    // => Delaying calculating result until needed...
-   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(0)/*calc from DEP1,DEP2*/ ));
    stmt( IRStmt_Put( OFFB_CC_DEP1, result   ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, xer_so   ));
 }
@@ -914,13 +914,16 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
       break;
 
    case PPC32_SPR_CR:
-      if (mask & 0xF0000000) {
+      if ((mask & 0xF0000000) == mask) {      // CR7 only
          // Call helper function to calculate latest CR7 from thunk:
-         // ... and OR it with CR0to6
+         assign( val, mk_ppc32g_calculate_cr7() );
+      }
+      else if ((mask & 0x0FFFFFFF) == mask) { // CR0to6 only
+         assign( val, IRExpr_Get(OFFB_CR0to6, Ity_I32) );
+      }
+      else {                                  // Both
          assign( val, binop(Iop_Or32, mk_ppc32g_calculate_cr7(),
                             IRExpr_Get(OFFB_CR0to6, Ity_I32)) );
-      } else {
-         assign( val, IRExpr_Get(OFFB_CR0to6, Ity_I32) );
       }
       break;
 
@@ -1048,21 +1051,21 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
       break;
 
    case PPC32_SPR_CR: {
-      if (mask & 0xF0000000) { // CR 7:
-         /* Write exactly the given flags to field CR7
-            Set the flags thunk OP=1, DEP1=flags, DEP2=0(unused). */
-
-         // => Delaying calculation until needed...
-         stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(1) ) );
-         stmt( IRStmt_Put( OFFB_CC_DEP1, src      ) );  // masked in helper.
-         stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ) );
+      if (mask & 0xF0000000) { // CR field 7:
+         /* Set the CR7 flags thunk */
+         stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(1)/*set imm value DEP1*/ ) );
+         stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)/*=unused*/ ) );
+         stmt( IRStmt_Put( OFFB_CC_DEP1,
+                  binop(Iop_Or32,
+                        binop(Iop_And32, src, mkU32(mask & 0xF0000000)),
+                        getReg_masked( PPC32_SPR_CR, (~mask & 0xF0000000) ))));
       }
-      // CR 0 to 6:
-      assign( src_mskd, binop(Iop_And32, src, mkU32(mask & 0x0FFFFFFF)) );
-      assign( reg_old, getReg_masked( PPC32_SPR_CR, (~mask & 0x0FFFFFFF) ) );
-
-      stmt( IRStmt_Put( OFFB_CR0to6,
-                        binop(Iop_Or32, mkexpr(src_mskd), mkexpr(reg_old)) ));
+      if (mask & 0xFFFFFFF) { // CR fields 0 t o6:
+         stmt( IRStmt_Put( OFFB_CR0to6,
+                  binop(Iop_Or32,
+                        binop(Iop_And32, src, mkU32(mask & 0x0FFFFFFF)),
+                        getReg_masked( PPC32_SPR_CR, (~mask & 0x0FFFFFFF) ))));
+      }
       break;
    }
 
@@ -1097,6 +1100,7 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
                )
             );
       }
+      break;
 
    case PPC32_SPR_VRSAVE:
       stmt( IRStmt_Put( OFFB_VRSAVE, src ) );
@@ -2744,7 +2748,7 @@ static Bool dis_cond_logic ( UInt theInstr )
          return False;
       }
 
-      putReg_masked( PPC32_SPR_CR, mkexpr(crbD), 1<<(31-crbD_addr) );
+      putReg_bit( PPC32_SPR_CR, mkexpr(crbD), (31-crbD_addr) );
    }
    return True;
 }

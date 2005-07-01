@@ -907,9 +907,9 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
       break;
 
    case PPC32_SPR_XER:
-      vassert((mask & 0xF000007F) == mask); // Only valid bits of xer
-      // actually, bit28 not valid, but sometimes asked for anyway - always 0:
-      mask = mask & ~(1<<28);
+      // Bits 7-28 are 'Reserved'.  Always return zero for these bits.
+      // (They may be written to, but reading them gives zero or undefined)
+      mask = mask & 0xE000007F;
       assign( val, IRExpr_Get(OFFB_XER, Ity_I32) );
       break;
 
@@ -955,7 +955,6 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
       mask = mask & 0x00010001;
       assign( val, IRExpr_Get(OFFB_VSCR, Ity_I32) );
       break;
-     break;
 
    default:
       vpanic("getReg(ppc32)");
@@ -972,12 +971,7 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
 static IRExpr* getReg ( PPC32SPR reg )
 {
    vassert( reg < PPC32_SPR_MAX );
-   switch (reg) {
-   case PPC32_SPR_XER:
-      return getReg_masked( reg, 0xE000007F ); // Only valid bits of xer
-   default:
-      return getReg_masked( reg, 0xFFFFFFFF );
-   }
+   return getReg_masked( reg, 0xFFFFFFFF );
 }
 
 /* Get a right-shifted nibble from given reg[field_idx]
@@ -1040,12 +1034,10 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
       break;
 
    case PPC32_SPR_XER:
-      vassert((mask & 0xF000007F) == mask); // Only valid bits of xer
-      // actually, bit28 not valid, but sometimes asked for anyway - always 0:
-      mask = mask & ~(1<<28);
-      assign( src_mskd, binop(Iop_And32, src, mkU32(mask)) );
+      // Bits 7-28 are 'Reserved'.  Ignoring writes these bits.
+      // (They may be written to, but reading them gives zero or undefined)
+      assign( src_mskd, binop(Iop_And32, src, mkU32(mask & 0xE000007F)) );
       assign( reg_old, getReg_masked( PPC32_SPR_XER, (~mask & 0xE000007F) ) );
-
       stmt( IRStmt_Put( OFFB_XER,
                         binop(Iop_Or32, mkexpr(src_mskd), mkexpr(reg_old)) ));
       break;
@@ -1100,6 +1092,10 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
                )
             );
       }
+
+      /*
+        Ignore all other writes
+      */
       break;
 
    case PPC32_SPR_VRSAVE:
@@ -1111,14 +1107,9 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
 
       // All other bits are 'Reserved'. Ignoring writes to these bits.
       assign( src_mskd, binop(Iop_And32, src, mkU32(mask & 0x00010001)) );
-      assign( reg_old, getReg_masked( PPC32_SPR_XER, (~mask & 0x00010001) ) );
+      assign( reg_old, getReg_masked( PPC32_SPR_VSCR, (~mask & 0x00010001) ) );
       stmt( IRStmt_Put( OFFB_VSCR,
                         binop(Iop_Or32, mkexpr(src_mskd), mkexpr(reg_old)) ));
-      break;
-
-      /*
-        Ignore all other writes
-      */
       break;
    }
 
@@ -1132,15 +1123,7 @@ static void putReg ( PPC32SPR reg, IRExpr* src )
 {
    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
    vassert( reg < PPC32_SPR_MAX );
-
-   switch (reg) {
-   case PPC32_SPR_XER:
-      putReg_masked( reg, src, 0xE000007F ); // Only valid bits of xer
-      break;
-   default:
-      putReg_masked( reg, src, 0xFFFFFFFF );
-      break;
-   }
+   putReg_masked( reg, src, 0xFFFFFFFF );
 }
 
 /* Write least-significant nibble of src to reg[field_idx] */

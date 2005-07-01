@@ -8,6 +8,11 @@ take a single argument which is a function pointer (to "serviceFn").
 
 Test file may not reference any other symbols.
 
+NOTE: POWERPC: it is critical, when using this on ppc, to set
+CacheLineSize to the right value.  Values we currently know of:
+
+   imac (G3):   32
+   G5 (ppc970): 128
 */
 
 #include <stdio.h>
@@ -35,18 +40,21 @@ static Int   n_translations_made = 0;
 #  define VexArch                   VexArchX86
 #  define VexSubArch                VexSubArchX86_sse1
 #  define GuestPC                   guest_EIP
+#  define CacheLineSize             0/*irrelevant*/
 #elif defined(__x86_64__)
 #  define VexGuestState             VexGuestAMD64State
 #  define LibVEX_Guest_initialise   LibVEX_GuestAMD64_initialise
 #  define VexArch                   VexArchAMD64
 #  define VexSubArch                VexSubArch_NONE
 #  define GuestPC                   guest_RIP
+#  define CacheLineSize             0/*irrelevant*/
 #elif defined(__powerpc__)
 #  define VexGuestState             VexGuestPPC32State
 #  define LibVEX_Guest_initialise   LibVEX_GuestPPC32_initialise
 #  define VexArch                   VexArchPPC32
 #  define VexSubArch                VexSubArchPPC32_noAV
 #  define GuestPC                   guest_CIA
+#  define CacheLineSize             128
 #else
 #   error "Unknown arch"
 #endif
@@ -187,7 +195,7 @@ static void invalidate_icache(void *ptr, int nbytes)
    unsigned long startaddr = (unsigned long) ptr;
    unsigned long endaddr = startaddr + nbytes;
    unsigned long addr;
-   unsigned long cls = 16; //VG_(cache_line_size);
+   unsigned long cls = CacheLineSize;
 
    startaddr &= ~(cls - 1);
    for (addr = startaddr; addr < endaddr; addr += cls)
@@ -529,6 +537,7 @@ static UChar transbuf[N_TRANSBUF];
 void make_translation ( Addr64 guest_addr, Bool verbose )
 {
    VexTranslateResult tres;
+   VexArchInfo vai;
    Int trans_used, i, ws_needed;
 
    if (trans_table_used >= N_TRANS_TABLE
@@ -542,10 +551,15 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    assert(trans_table_used < N_TRANS_TABLE);
    if (0)
       printf("make translation %p\n", ULong_to_Ptr(guest_addr));
+
+   LibVEX_default_VexArchInfo(&vai);
+   vai.subarch = VexSubArch;
+   vai.ppc32_cache_line_szB = CacheLineSize;
+
    tres
       = LibVEX_Translate ( 
-           VexArch, VexSubArch,
-           VexArch, VexSubArch,
+           VexArch, &vai,
+           VexArch, &vai,
            ULong_to_Ptr(guest_addr), guest_addr,
            chase_into_not_ok,
            &trans_table[trans_table_used],

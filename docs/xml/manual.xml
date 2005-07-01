@@ -24,8 +24,6 @@
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../none/docs/nl-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="../../corecheck/docs/cc-manual.xml" parse="xml"  
-      xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../lackey/docs/lk-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
 

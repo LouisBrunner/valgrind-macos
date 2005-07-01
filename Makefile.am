@@ -6,7 +6,6 @@ include $(top_srcdir)/Makefile.all.am
 ## addrcheck must come after memcheck, for mac_*.o
 TOOLS =		memcheck \
 		cachegrind \
-		corecheck \
 		massif \
 		lackey \
 		none

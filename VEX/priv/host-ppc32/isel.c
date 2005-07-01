@@ -2816,13 +2816,15 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-//..    if (e->tag == Iex_LDle) {
-//..       HReg      dst = newVRegV(env);
-//..       X86AMode* am  = iselIntExpr_AMode(env, e->Iex.LDle.addr);
-//..       addInstr(env, X86Instr_SseLdSt( True/*load*/, dst, am ));
-//..       return dst;
-//..    }
-//.. 
+   if (e->tag == Iex_Load) {
+      PPC32AMode* am_addr;
+      HReg v_dst = newVRegV(env);
+      vassert(e->Iex.Load.ty == Ity_V128);
+      am_addr = iselIntExpr_AMode(env, e->Iex.Load.addr);
+      addInstr(env, PPC32Instr_AvLdSt( True/*load*/, 16, v_dst, am_addr));
+      return v_dst;
+   }
+
 //..    if (e->tag == Iex_Const) {
 //..       HReg dst = newVRegV(env);
 //..       vassert(e->Iex.Const.con->tag == Ico_V128);
@@ -3274,7 +3276,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       ppIRStmt(stmt);
       vex_printf("\n");
    }
-   
+
    switch (stmt->tag) {
 
    /* --------- STORE --------- */
@@ -3339,12 +3341,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, PPC32Instr_Store( 4, am_addr4, rLo ));
          return;
      }
-//..       if (ty == Ity_V128) {
-//..          HReg      vec = iselVecExpr(env, stmt->Ist.Put.data);
-//..          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
-//..          addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, am));
-//..          return;
-//..       }
+     if (ty == Ity_V128) {
+         HReg v_src = iselVecExpr(env, stmt->Ist.Put.data);
+         PPC32AMode* am_addr  = PPC32AMode_IR(stmt->Ist.Put.offset, GuestStatePtr);
+         addInstr(env, PPC32Instr_AvLdSt(False/*store*/, 16, v_src, am_addr));
+         return;
+      }
 //..       if (ty == Ity_F32) {
 //..          HReg f32 = iselFltExpr(env, stmt->Ist.Put.data);
 //..          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());

@@ -653,16 +653,13 @@ static IRExpr* getVReg ( UInt archreg )
    return IRExpr_Get( vectorGuestRegOffset(archreg), Ity_V128 );
 }
 
-#if 0
 /* Ditto, but write to a reg instead. */
-/* apparently unused, jrs 2005-06-30 */
 static void putVReg ( UInt archreg, IRExpr* e )
 {
    vassert(archreg < 32);
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_V128);
    stmt( IRStmt_Put(vectorGuestRegOffset(archreg), e) );
 }
-#endif
 
 static void assign ( IRTemp dst, IRExpr* e )
 {
@@ -903,6 +900,7 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
       break;
 
    case PPC32_SPR_CTR:
+      vassert(mask == 0xFFFFFFFF);    // Only ever need whole reg
       assign( val, IRExpr_Get(OFFB_CTR, Ity_I32) );
       break;
 
@@ -1011,9 +1009,6 @@ static IRExpr* getReg_bit ( PPC32SPR reg, UInt bit_idx )
 /* Write masked src to the given reg */
 static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
 {
-   IRTemp src_mskd = newTemp(Ity_I32);
-   IRTemp reg_old  = newTemp(Ity_I32);
-
    vassert( reg < PPC32_SPR_MAX );
    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
    
@@ -1036,10 +1031,10 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
    case PPC32_SPR_XER:
       // Bits 7-28 are 'Reserved'.  Ignoring writes these bits.
       // (They may be written to, but reading them gives zero or undefined)
-      assign( src_mskd, binop(Iop_And32, src, mkU32(mask & 0xE000007F)) );
-      assign( reg_old, getReg_masked( PPC32_SPR_XER, (~mask & 0xE000007F) ) );
       stmt( IRStmt_Put( OFFB_XER,
-                        binop(Iop_Or32, mkexpr(src_mskd), mkexpr(reg_old)) ));
+               binop(Iop_Or32,
+                     binop(Iop_And32, src, mkU32(mask & 0xE000007F)),
+                     getReg_masked( PPC32_SPR_XER, (~mask & 0xE000007F) ))));
       break;
 
    case PPC32_SPR_CR: {
@@ -1052,7 +1047,7 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
                         binop(Iop_And32, src, mkU32(mask & 0xF0000000)),
                         getReg_masked( PPC32_SPR_CR, (~mask & 0xF0000000) ))));
       }
-      if (mask & 0xFFFFFFF) { // CR fields 0 t o6:
+      if (mask & 0x0FFFFFFF) { // CR fields 0 to 6:
          stmt( IRStmt_Put( OFFB_CR0to6,
                   binop(Iop_Or32,
                         binop(Iop_And32, src, mkU32(mask & 0x0FFFFFFF)),
@@ -1099,6 +1094,7 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
       break;
 
    case PPC32_SPR_VRSAVE:
+      vassert(mask == 0xFFFFFFFF);    // Only ever need whole reg
       stmt( IRStmt_Put( OFFB_VRSAVE, src ) );
       break;
 
@@ -1106,10 +1102,10 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
 //CAB: There are only 2 valid bits in VSCR - maybe split into two vars...
 
       // All other bits are 'Reserved'. Ignoring writes to these bits.
-      assign( src_mskd, binop(Iop_And32, src, mkU32(mask & 0x00010001)) );
-      assign( reg_old, getReg_masked( PPC32_SPR_VSCR, (~mask & 0x00010001) ) );
       stmt( IRStmt_Put( OFFB_VSCR,
-                        binop(Iop_Or32, mkexpr(src_mskd), mkexpr(reg_old)) ));
+               binop(Iop_Or32,
+                     binop(Iop_And32, src, mkU32(mask & 0x00010001)),
+                     getReg_masked( PPC32_SPR_VSCR, (~mask & 0x00010001) ))));
       break;
    }
 
@@ -2685,7 +2681,10 @@ static Bool dis_cond_logic ( UInt theInstr )
       putReg_field( PPC32_SPR_CR, mkexpr(tmp),  (7-crfD_addr) );
    } else {
       assign( crbA, getReg_bit( PPC32_SPR_CR, (31-crbA_addr) ) );
-      assign( crbB, getReg_bit( PPC32_SPR_CR, (31-crbB_addr) ) );
+      if (crbA_addr == crbB_addr)
+         assign( crbB, mkexpr(crbA) );
+      else
+         assign( crbB, getReg_bit( PPC32_SPR_CR, (31-crbB_addr) ) );
 
       switch (opc2) {
       case 0x101: // crand   (Cond Reg AND, PPC32 p372)
@@ -4450,10 +4449,17 @@ static Bool dis_av_load ( UInt theInstr )
    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
+   IRTemp EA          = newTemp(Ity_I32);
+   IRTemp EA_aligned  = newTemp(Ity_I32);
+
    if (opc1 != 0x1F || b0 != 0) {
       vex_printf("dis_av_load(PPC32)(instr)\n");
       return False;
    }
+
+   assign( EA, binop(Iop_Add32,
+                     ((rA_addr == 0) ? mkU32(0) : getIReg(rA_addr)),
+                     getIReg(rB_addr) ));
 
    switch (opc2) {
 
@@ -4484,8 +4490,9 @@ static Bool dis_av_load ( UInt theInstr )
 
    case 0x067: // lvx (Load Vector Indexed, AV p127)
       DIP("lvx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( EA_aligned, binop( Iop_And32, mkexpr(EA), mkU32(0xFFFFFFF0) ));
+      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_aligned)) );
+      break;
 
    case 0x167: // lvxl (Load Vector Indexed LRU, AV p128)
      // XXX: lvxl gives explicit control over cache block replacement

@@ -42,7 +42,7 @@
 #define __NR_unlink			 10
 #define __NR_execve			 11
 //#define __NR_chdir			 12
-//#define __NR_time			 13
+#define __NR_time			 13
 //#define __NR_mknod			 14
 #define __NR_chmod			 15
 #define __NR_lchown			 16
@@ -75,8 +75,8 @@
 //#define __NR_times			 43
 //#define __NR_prof			 44
 #define __NR_brk			 45
-//#define __NR_setgid			 46
-//#define __NR_getgid			 47
+#define __NR_setgid			 46
+#define __NR_getgid			 47
 //#define __NR_signal			 48
 #define __NR_geteuid			 49
 #define __NR_getegid			 50

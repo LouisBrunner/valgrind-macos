@@ -1942,7 +1942,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_unlink,            sys_unlink),                 // 10
 //..    GENX_(__NR_execve,            sys_execve),            // 11
 //..    GENX_(__NR_chdir,             sys_chdir),             // 12
-//..    GENXY(__NR_time,              sys_time),              // 13
+   GENXY(__NR_time,              sys_time),                   // 13
 //..    GENX_(__NR_mknod,             sys_mknod),             // 14
 //.. 
    GENX_(__NR_chmod,             sys_chmod),                  // 15
@@ -1982,8 +1982,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_prof,              sys_ni_syscall),        // 44
 //.. 
    GENX_(__NR_brk,               sys_brk),                    // 45
-//..    GENX_(__NR_setgid,            sys_setgid16),          // 46
-//..    GENX_(__NR_getgid,            sys_getgid16),          // 47
+   GENX_(__NR_setgid,            sys_setgid16),               // 46
+   GENX_(__NR_getgid,            sys_getgid16),               // 47
 //..    //   (__NR_signal,            sys_signal),            // 48 */* (ANSI C)
    GENX_(__NR_geteuid,           sys_geteuid16),              // 49
 

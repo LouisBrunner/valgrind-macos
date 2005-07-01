@@ -23,6 +23,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
 	describe-block.stderr.exp describe-block.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
+	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	error_counts.stderr.exp error_counts.stdout.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
@@ -65,8 +66,10 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
+	sigkill.stderr.exp sigkill.stderr.exp2 sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.vgtest \
+	stack_changes.stderr.exp stack_changes.stdout.exp stack_changes.vgtest \
 	strchr.stderr.exp strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
 	supp1.stderr.exp supp1.vgtest \
@@ -88,7 +91,7 @@ check_PROGRAMS = \
 	badloop badpoll badrw brk brk2 buflen_check \
 	clientperm custom_alloc \
 	describe-block \
-	doublefree error_counts errs1 exitprog execve execve2 \
+	doublefree error_counts errs1 exitprog execve execve2 erringfds \
 	fprw fwrite hello inits inline \
 	leak-0 leak-cycle leak-tree leak-regroot leakotron \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
@@ -99,8 +102,8 @@ check_PROGRAMS = \
 	pointer-trace \
 	post-syscall \
 	realloc1 realloc2 realloc3 \
-	sigaltstack signal2 sigprocmask \
-	strchr str_tester supp1 supp2 suppfree \
+	sigaltstack signal2 sigprocmask sigkill \
+	stack_changes strchr str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata \
 	vgtest_ume xml1 \
@@ -112,18 +115,18 @@ AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # C ones
-addressable_SOURCES	= addressable.c
-badaddrvalue_SOURCES 	= badaddrvalue.c
-badfree_SOURCES 	= badfree.c
-badjump_SOURCES 	= badjump.c
-badjump2_SOURCES 	= badjump2.c
-badloop_SOURCES 	= badloop.c
-badpoll_SOURCES		= badpoll.c
-badrw_SOURCES		= badrw.c
-brk_SOURCES 		= brk.c
-brk2_SOURCES 		= brk2.c
-buflen_check_SOURCES	= buflen_check.c
-clientperm_SOURCES 	= clientperm.c
+#addressable_SOURCES	= addressable.c
+#badaddrvalue_SOURCES 	= badaddrvalue.c
+#badfree_SOURCES 	= badfree.c
+#badjump_SOURCES 	= badjump.c
+#badjump2_SOURCES 	= badjump2.c
+#badloop_SOURCES 	= badloop.c
+#badpoll_SOURCES		= badpoll.c
+#badrw_SOURCES		= badrw.c
+#brk_SOURCES 		= brk.c
+#brk2_SOURCES 		= brk2.c
+#buflen_check_SOURCES	= buflen_check.c
+#clientperm_SOURCES 	= clientperm.c
 custom_alloc_SOURCES 	= custom_alloc.c
 describe_block_SOURCES	= describe-block.c
 doublefree_SOURCES 	= doublefree.c
@@ -159,13 +162,15 @@ null_socket_SOURCES 	= null_socket.c
 overlap_SOURCES 	= overlap.c
 # Don't allow GCC to inline memcpy(), because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
-pointer_trace_SOURCES	= pointer-trace.c
+#pointer_trace_SOURCES	= pointer-trace.c
 post_syscall_SOURCES	= post-syscall.c
 realloc1_SOURCES 	= realloc1.c
 realloc2_SOURCES 	= realloc2.c
 realloc3_SOURCES 	= realloc3.c
+sigkill_SOURCES		= sigkill.c
 signal2_SOURCES 	= signal2.c
 sigprocmask_SOURCES 	= sigprocmask.c
+stack_changes_SOURCES   = stack_changes.c
 supp1_SOURCES 		= supp.c
 supp2_SOURCES 		= supp.c
 suppfree_SOURCES 	= suppfree.c

@@ -130,8 +130,9 @@ extern void VG_(details_bug_reports_to)   ( Char* bug_reports_to );
 extern void VG_(needs_libc_freeres) ( void );
 
 /* Want to have errors detected by Valgrind's core reported?  Includes:
-   - pthread API errors (many;  eg. unlocking a non-locked mutex)
-   - invalid file descriptors to blocking syscalls read() and write()
+   - pthread API errors (many;  eg. unlocking a non-locked mutex) 
+     [currently disabled]
+   - invalid file descriptors to syscalls like read() and write()
    - bad signal numbers passed to sigaction()
    - attempt to install signal handler for SIGKILL or SIGSTOP */
 extern void VG_(needs_core_errors) ( void );

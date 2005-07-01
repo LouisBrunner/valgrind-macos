@@ -231,6 +231,13 @@ void VG_(set_supp_extra)  ( Supp* su, void* extra )
 /*--- Helper fns                                           ---*/
 /*------------------------------------------------------------*/
 
+// Only show core errors if the tool wants to, we're not running with -q,
+// and were not outputting XML.
+Bool VG_(showing_core_errors)(void)
+{
+   return VG_(needs).core_errors && VG_(clo_verbosity) >= 1 && !VG_(clo_xml);
+}
+
 /* Compare error contexts, to detect duplicates.  Note that if they
    are otherwise the same, the faulting addrs and associated rwoffsets
    are allowed to be different.  */

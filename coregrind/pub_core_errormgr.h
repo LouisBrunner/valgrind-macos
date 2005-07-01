@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------*/
 /*--- ErrorMgr: management of errors and suppressions.             ---*/
 /*---                                          pub_core_errormgr.h ---*/
@@ -54,6 +55,8 @@ extern void VG_(show_all_errors)          ( void );
 extern void VG_(show_error_counts_as_XML) ( void );
 
 extern Bool VG_(is_action_requested)      ( Char* action, Bool* clo );
+
+extern Bool VG_(showing_core_errors)      ( void );
 
 extern UInt VG_(get_n_errs_found)         ( void );
 

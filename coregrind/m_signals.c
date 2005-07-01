@@ -617,8 +617,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    return VG_(mk_SysRes_Success)( 0 );
 
   bad_signo:
-   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1
-                              && !VG_(clo_xml)) {
+   if (VG_(showing_core_errors)()) {
       VG_(message)(Vg_UserMsg,
                    "Warning: bad signal number %d in sigaction()", 
                    signo);
@@ -626,8 +625,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_signo_reserved:
-   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1
-                              && !VG_(clo_xml)) {
+   if (VG_(showing_core_errors)()) {
       VG_(message)(Vg_UserMsg,
 		   "Warning: ignored attempt to set %s handler in sigaction();",
 		   signame(signo));
@@ -638,8 +636,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_sigkill_or_sigstop:
-   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1
-                              && !VG_(clo_xml)) {
+   if (VG_(showing_core_errors)()) {
       VG_(message)(Vg_UserMsg,
 		   "Warning: ignored attempt to set %s handler in sigaction();",
 		   signame(signo));

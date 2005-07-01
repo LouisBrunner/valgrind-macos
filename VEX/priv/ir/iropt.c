@@ -1360,6 +1360,13 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = e->Iex.Binop.arg1;
          } else
 
+         /* And32(x,0) ==> 0 */
+         if (e->Iex.Binop.op == Iop_And32
+             && e->Iex.Binop.arg2->tag == Iex_Const
+             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0) {
+            e2 = IRExpr_Const(IRConst_U32(0));
+         } else
+
          /* Or32(0,x) ==> x */
          if (e->Iex.Binop.op == Iop_Or32
              && e->Iex.Binop.arg1->tag == Iex_Const

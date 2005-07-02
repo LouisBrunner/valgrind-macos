@@ -32,6 +32,7 @@
 #include "pub_core_threadstate.h"
 #include "pub_core_debugger.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_libcassert.h"    // For I_die_here
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"

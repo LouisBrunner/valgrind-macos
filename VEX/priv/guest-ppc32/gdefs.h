@@ -39,6 +39,38 @@
 #ifndef __LIBVEX_GUEST_PPC32_DEFS_H
 #define __LIBVEX_GUEST_PPC32_DEFS_H
 
+
+/*---------------------------------------------------------*/
+/*--- ppc32 to IR conversion                            ---*/
+/*---------------------------------------------------------*/
+
+/* Convert one ppc32 insn to IR.  See the type DisOneInstrFn in
+   bb_to_IR.h. */
+extern
+DisResult disInstr_PPC32 ( IRBB*        irbb,
+                           Bool         put_IP,
+                           Bool         (*resteerOkFn) ( Addr64 ),
+                           UChar*       guest_code,
+                           Long         delta,
+                           Addr64       guest_IP,
+                           VexArchInfo* archinfo,
+                           Bool         host_bigendian );
+
+/* Used by the optimiser to specialise calls to helpers. */
+extern
+IRExpr* guest_ppc32_spechelper ( HChar* function_name,
+                                 IRExpr** args );
+
+/* Describes to the optimser which part of the guest state require
+   precise memory exceptions.  This is logically part of the guest
+   state description. */
+extern 
+Bool guest_ppc32_state_requires_precise_mem_exns ( Int, Int );
+
+extern
+VexGuestLayout ppc32Guest_layout;
+
+
 /* FP Rounding mode - different encoding to IR */
 typedef
    enum {
@@ -57,33 +89,6 @@ typedef
       PPC32cr_UN = 0x1
    }
    PPC32CmpF64Result;
-
-/*---------------------------------------------------------*/
-/*--- ppc32 to IR conversion                            ---*/
-/*---------------------------------------------------------*/
-
-extern
-IRBB* bbToIR_PPC32 ( UChar*           ppc32code, 
-                     Addr64           eip, 
-                     VexGuestExtents* vge,
-                     Bool             (*byte_accessible)(Addr64),
-                     Bool             (*resteerOkFn)(Addr64),
-                     Bool             host_bigendian,
-                     VexArchInfo*     archinfo_guest );
-
-/* Used by the optimiser to specialise calls to helpers. */
-extern
-IRExpr* guest_ppc32_spechelper ( HChar* function_name,
-                                 IRExpr** args );
-
-/* Describes to the optimser which part of the guest state require
-   precise memory exceptions.  This is logically part of the guest
-   state description. */
-extern 
-Bool guest_ppc32_state_requires_precise_mem_exns ( Int, Int );
-
-extern
-VexGuestLayout ppc32Guest_layout;
 
 
 /*---------------------------------------------------------*/

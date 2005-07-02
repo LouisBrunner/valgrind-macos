@@ -49,6 +49,7 @@
 #include "host-amd64/hdefs.h"
 #include "host-ppc32/hdefs.h"
 
+#include "guest-generic/bb_to_IR.h"
 #include "guest-x86/gdefs.h"
 #include "guest-amd64/gdefs.h"
 #include "guest-arm/gdefs.h"
@@ -208,14 +209,11 @@ VexTranslateResult LibVEX_Translate (
    void         (*ppInstr)     ( HInstr* );
    void         (*ppReg)       ( HReg );
    HInstrArray* (*iselBB)      ( IRBB*, VexArchInfo* );
-   IRBB*        (*bbToIR)      ( UChar*, Addr64, 
-                                 VexGuestExtents*, 
-                                 Bool(*)(Addr64), 
-                                 Bool(*)(Addr64), 
-                                 Bool, VexArchInfo* );
    Int          (*emit)        ( UChar*, Int, HInstr* );
    IRExpr*      (*specHelper)  ( HChar*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
+
+   DisOneInstrFn disInstrFn;
 
    VexGuestLayout* guest_layout;
    Bool            host_is_bigendian = False;
@@ -238,10 +236,10 @@ VexTranslateResult LibVEX_Translate (
    ppInstr                = NULL;
    ppReg                  = NULL;
    iselBB                 = NULL;
-   bbToIR                 = NULL;
    emit                   = NULL;
    specHelper             = NULL;
    preciseMemExnsFn       = NULL;
+   disInstrFn             = NULL;
    guest_word_type        = Ity_INVALID;
    host_word_type         = Ity_INVALID;
 
@@ -319,7 +317,7 @@ VexTranslateResult LibVEX_Translate (
 
       case VexArchX86:
          preciseMemExnsFn = guest_x86_state_requires_precise_mem_exns;
-         bbToIR           = bbToIR_X86;
+         disInstrFn       = disInstr_X86;
          specHelper       = guest_x86_spechelper;
          guest_sizeB      = sizeof(VexGuestX86State);
          guest_word_type  = Ity_I32;
@@ -331,7 +329,7 @@ VexTranslateResult LibVEX_Translate (
 
       case VexArchAMD64:
          preciseMemExnsFn = guest_amd64_state_requires_precise_mem_exns;
-         bbToIR           = bbToIR_AMD64;
+         disInstrFn       = disInstr_AMD64;
          specHelper       = guest_amd64_spechelper;
          guest_sizeB      = sizeof(VexGuestAMD64State);
          guest_word_type  = Ity_I64;
@@ -341,7 +339,7 @@ VexTranslateResult LibVEX_Translate (
 
       case VexArchARM:
          preciseMemExnsFn = guest_arm_state_requires_precise_mem_exns;
-         bbToIR           = bbToIR_ARM;
+         disInstrFn       = NULL; /* HACK */
          specHelper       = guest_arm_spechelper;
          guest_sizeB      = sizeof(VexGuestARMState);
          guest_word_type  = Ity_I32;
@@ -351,7 +349,7 @@ VexTranslateResult LibVEX_Translate (
 
       case VexArchPPC32:
          preciseMemExnsFn = guest_ppc32_state_requires_precise_mem_exns;
-         bbToIR           = bbToIR_PPC32;
+         disInstrFn       = disInstr_PPC32;
          specHelper       = guest_ppc32_spechelper;
          guest_sizeB      = sizeof(VexGuestPPC32State);
          guest_word_type  = Ity_I32;
@@ -377,13 +375,14 @@ VexTranslateResult LibVEX_Translate (
                    " Front end "
                    "------------------------\n\n");
 
-   irbb = bbToIR ( guest_bytes, 
-                   guest_bytes_addr,
-                   guest_extents,
-                   byte_accessible,
-                   chase_into_ok,
-                   host_is_bigendian,
-                   archinfo_guest );
+   irbb = bb_to_IR ( guest_extents,
+                     disInstrFn,
+                     guest_bytes, 
+                     guest_bytes_addr,
+                     chase_into_ok,
+                     host_is_bigendian,
+                     archinfo_guest,
+                     guest_word_type );
 
    if (irbb == NULL) {
       /* Access failure. */

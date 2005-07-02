@@ -64,6 +64,7 @@
 
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
+#include "guest-generic/bb_to_IR.h"
 #include "guest-ppc32/gdefs.h"
 
 
@@ -71,27 +72,23 @@
 /*--- Globals                                              ---*/
 /*------------------------------------------------------------*/
 
-/* These are set at the start of the translation of a BB, so that we
-   don't have to pass them around endlessly.  CONST means does not
-   change during translation of a bb. 
-*/
+/* These are set at the start of the translation of an insn, right
+   down in disInstr_PPC32, so that we don't have to pass them around
+   endlessly.  They are all constant during the translation of any
+   given insn. */
 
 /* We need to know this to do sub-register accesses correctly. */
-/* CONST */
 static Bool host_is_bigendian;
 
 /* Pointer to the guest code area. */
-/* CONST */
 static UChar* guest_code;
 
 /* The guest address corresponding to guest_code[0]. */
-/* CONST */
-static Addr32 guest_pc_bbstart;
+static Addr32 guest_CIA_bbstart;
 
 /* The guest address for the instruction currently being
    translated. */
-/* CONST for any specific insn, not for the entire BB */
-static Addr32 guest_cia_curr_instr;
+static Addr32 guest_CIA_curr_instr;
 
 /* The IRBB* into which we're generating code. */
 static IRBB* irbb;
@@ -245,179 +242,6 @@ static void vex_printf_binary( UInt x, UInt len, Bool spaces )
 #endif
 
 
-
-/*------------------------------------------------------------*/
-/*--- Disassemble an entire basic block                    ---*/
-/*------------------------------------------------------------*/
-
-/* The results of disassembling an instruction.  There are three
-   possible outcomes.  For Dis_Resteer, the disassembler _must_
-   continue at the specified address.  For Dis_StopHere, the
-   disassembler _must_ terminate the BB.  For Dis_Continue, we may at
-   our option either disassemble the next insn, or terminate the BB;
-   but in the latter case we must set the bb's ->next field to point
-   to the next instruction.  */
-
-typedef
-   enum { 
-      Dis_StopHere, /* this insn terminates the BB; we must stop. */
-      Dis_Continue, /* we can optionally continue into the next insn */
-      Dis_Resteer   /* followed a branch; continue at the spec'd addr */
-   }
-   DisResult;
-
-
-/* forward decls .. */
-static IRExpr* mkU32 ( UInt i );
-static void stmt ( IRStmt* st );
-
-
-/* disInstr disassembles an instruction located at &guest_code[delta],
-   and sets *size to its size.  If the returned value is Dis_Resteer,
-   the next guest address is assigned to *whereNext.  disInstr is not
-   permitted to return Dis_Resteer if either (1) resteerOK is False,
-   or (2) resteerOkFn, when applied to the address which it wishes to
-   resteer into, returns False.  */
-   
-static DisResult disInstr ( /*IN*/  Bool    resteerOK,
-                            /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
-                            /*IN*/  UInt    delta, 
-                            /*IN*/  VexArchInfo* archinfo,
-                            /*OUT*/ Int*    size,
-                            /*OUT*/ Addr64* whereNext );
-
-
-/* This is the main (only, in fact) entry point for this module. */
-
-/* Disassemble a complete basic block, starting at guest_pc_start, and
-   dumping the IR into global irbb.  Returns the size, in bytes, of
-   the basic block.  
-*/
-IRBB* bbToIR_PPC32 ( UChar*           ppc32code, 
-                     Addr64           guest_pc_start, 
-                     VexGuestExtents* vge, 
-                     Bool             (*byte_accessible)(Addr64),
-                     Bool             (*chase_into_ok)(Addr64),
-                     Bool             host_bigendian,
-                     VexArchInfo*     archinfo_guest )
-{
-   UInt       delta;
-   Int        i, n_instrs, size, first_stmt_idx;
-   Addr64     guest_next;
-   Bool       resteerOK;
-   DisResult  dres;
-   static Int n_resteers = 0;
-   Int        d_resteers = 0;
-
-   /* check sanity .. */
-   vassert(vex_control.guest_max_insns >= 1);
-   vassert(vex_control.guest_max_insns < 1000);
-   vassert(vex_control.guest_chase_thresh >= 0);
-   vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
-
-   vassert(archinfo_guest->subarch == VexSubArchPPC32_noAV
-           || archinfo_guest->subarch == VexSubArchPPC32_AV);
-
-   /* Start a new, empty extent. */
-   vge->n_used  = 1;
-   vge->base[0] = guest_pc_start;
-   vge->len[0]  = 0;
-
-   /* Set up globals. */
-   host_is_bigendian = host_bigendian;
-   guest_code        = ppc32code;
-   guest_pc_bbstart  = (Addr32)guest_pc_start;
-   irbb              = emptyIRBB();
-
-   vassert((guest_pc_start >> 32) == 0);
-
-   /* Delta keeps track of how far along the ppc32code array we
-      have so far gone. */
-   delta             = 0;
-   n_instrs          = 0;
-
-   while (True) {
-      vassert(n_instrs < vex_control.guest_max_insns);
-
-      guest_next = 0;
-      resteerOK = toBool(n_instrs < vex_control.guest_chase_thresh);
-      first_stmt_idx = irbb->stmts_used;
-
-      guest_cia_curr_instr = guest_pc_bbstart + delta;
-
-      if (n_instrs > 0) {
-         /* for the first insn, the dispatch loop will have set
-            CIA, but for all the others we have to do it ourselves. */
-         putReg( PPC32_SPR_CIA, mkU32(guest_cia_curr_instr) );
-      }
-
-      dres = disInstr( resteerOK, chase_into_ok, 
-                       delta, archinfo_guest, &size, &guest_next );
-
-      /* Print the resulting IR, if needed. */
-      if (vex_traceflags & VEX_TRACE_FE) {
-         for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
-            vex_printf("              ");
-            ppIRStmt(irbb->stmts[i]);
-            vex_printf("\n");
-         }
-      }
-   
-      if (dres == Dis_StopHere) {
-         vassert(irbb->next != NULL);
-         if (vex_traceflags & VEX_TRACE_FE) {
-            vex_printf("              ");
-            vex_printf( "goto {");
-            ppIRJumpKind(irbb->jumpkind);
-            vex_printf( "} ");
-            ppIRExpr( irbb->next );
-            vex_printf( "\n");
-         }
-      }
-
-      delta += size;
-      vge->len[vge->n_used-1] += size;
-      n_instrs++;
-      DIP("\n");
-
-      vassert(size == 0 || size == 4);
-      if (!resteerOK) 
-         vassert(dres != Dis_Resteer);
-      if (dres != Dis_Resteer) 
-         vassert(guest_next == 0);
-
-      switch (dres) {
-      case Dis_Continue:
-         vassert(irbb->next == NULL);
-         if (n_instrs < vex_control.guest_max_insns) {
-            /* keep going */
-         } else {
-            irbb->next = mkU32(((Addr32)guest_pc_start)+delta);
-            return irbb;
-         }
-         break;
-      case Dis_StopHere:
-         vassert(irbb->next != NULL);
-         return irbb;
-      case Dis_Resteer:
-         vassert(irbb->next == NULL);
-         /* figure out a new delta to continue at. */
-         vassert(chase_into_ok(guest_next));
-         delta = (UInt)(guest_next - guest_pc_start);
-         n_resteers++;
-         d_resteers++;
-         if (0 && (n_resteers & 0xFF) == 0)
-            vex_printf("resteer[%d,%d] to %p (delta = %d)\n",
-                       n_resteers, d_resteers,
-                       ULong_to_Ptr(guest_next), (Int)delta);
-         break;
-
-      default: vpanic("bbToIR_PPC32(ppc32)");
-      }
-   }
-}
-
-
 /*------------------------------------------------------------*/
 /*--- Helper bits and pieces for deconstructing the        ---*/
 /*--- ppc32 insn stream.                                   ---*/
@@ -491,9 +315,10 @@ static Int integerGuestRegOffset ( UInt archreg )
 {
    vassert(archreg < 32);
    
-//   vassert(!host_is_bigendian);
    // jrs: probably not necessary; only matters if we reference sub-parts
    // of the ppc32 registers, but that isn't the case
+   // later: this might affect Altivec though?
+   vassert(host_is_bigendian);
 
    switch (archreg) {
    case  0: return offsetof(VexGuestPPC32State, guest_GPR0);
@@ -1083,7 +908,7 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
             IRStmt_Exit(
                binop(Iop_CmpNE32, mkU32(ew), mkU32(EmWarn_NONE)),
                Ijk_EmWarn,
-               IRConst_U32(guest_cia_curr_instr + 4)
+               IRConst_U32(guest_CIA_curr_instr + 4)
                )
             );
       }
@@ -2483,7 +2308,7 @@ static IRExpr* branch_cond_ok( UInt BO, UInt BI )
 /*
   Integer Branch Instructions
 */
-static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
+static Bool dis_branch ( UInt theInstr, DisResult* dres )
 {
    UChar opc1     = toUChar((theInstr >> 26) & 0x3F);    /* theInstr[26:31] */
    UChar BO       = toUChar((theInstr >> 21) & 0x1F);    /* theInstr[21:25] */
@@ -2512,7 +2337,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
    /* Hack to pass through code that just wants to read the PC */
    if (theInstr == 0x429F0005) {
       DIP("bcl 0x%x, 0x%x,\n", BO, BI);
-      putReg( PPC32_SPR_LR, mkU32(guest_cia_curr_instr + 4) );
+      putReg( PPC32_SPR_LR, mkU32(guest_CIA_curr_instr + 4) );
       return True;
     }
     
@@ -2521,12 +2346,12 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
       if (flag_AA) {
          nia = (UInt)exts_LI;
       } else {
-         nia = (UInt)((Int)guest_cia_curr_instr + exts_LI);
+         nia = (UInt)((Int)guest_CIA_curr_instr + exts_LI);
       }
       DIP("b%s%s 0x%x\n", flag_LK ? "l" : "", flag_AA ? "a" : "", nia);
 
       if (flag_LK) {
-         putReg( PPC32_SPR_LR, mkU32(guest_cia_curr_instr+4) );
+         putReg( PPC32_SPR_LR, mkU32(guest_CIA_curr_instr+4) );
       }      
       irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
       irbb->next     = mkU32(nia);
@@ -2548,12 +2373,12 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
       if (flag_AA) {
          nia = (UInt)exts_BD;
       } else {
-         nia = (UInt)((Int)guest_cia_curr_instr + exts_BD);
+         nia = (UInt)((Int)guest_CIA_curr_instr + exts_BD);
       }
       if (flag_LK) {
          assign( lr, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(do_branch)),
                                    getReg( PPC32_SPR_LR ),
-                                   mkU32(guest_cia_curr_instr + 4)));
+                                   mkU32(guest_CIA_curr_instr + 4)));
          putReg( PPC32_SPR_LR, mkexpr(lr) );
       }
       
@@ -2562,7 +2387,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
                          IRConst_U32(nia) ));
       
       irbb->jumpkind = Ijk_Boring;
-      irbb->next     = mkU32(guest_cia_curr_instr + 4);
+      irbb->next     = mkU32(guest_CIA_curr_instr + 4);
       break;
       
    case 0x13:
@@ -2586,13 +2411,13 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
          if (flag_LK) {
             assign( lr, IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(cond_ok)),
                                       getReg( PPC32_SPR_LR ),
-                                      mkU32(guest_cia_curr_instr + 4)));
+                                      mkU32(guest_CIA_curr_instr + 4)));
             putReg( PPC32_SPR_LR, mkexpr(lr) );
          }
          
          stmt( IRStmt_Exit( unop(Iop_Not1, mkexpr(cond_ok)),
                             Ijk_Boring,
-                            IRConst_U32(guest_cia_curr_instr + 4) ));
+                            IRConst_U32(guest_CIA_curr_instr + 4) ));
          
          irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
          irbb->next     = mkexpr(ir_nia);
@@ -2618,13 +2443,13 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
          if (flag_LK) {
             assign( lr, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(do_branch)),
                                       getReg( PPC32_SPR_LR ),
-                                      mkU32(guest_cia_curr_instr + 4)) );
+                                      mkU32(guest_CIA_curr_instr + 4)) );
             putReg( PPC32_SPR_LR, mkexpr(lr) );
          }
          
          stmt( IRStmt_Exit( unop(Iop_Not1, unop(Iop_32to1, mkexpr(do_branch))),
                             Ijk_Boring,
-                            IRConst_U32(guest_cia_curr_instr + 4) ));
+                            IRConst_U32(guest_CIA_curr_instr + 4) ));
          
          irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
          irbb->next     = mkexpr(ir_nia);
@@ -2640,7 +2465,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
       return False;
    }
     
-   *whatNext = Dis_StopHere;
+   dres->whatNext = Dis_StopHere;
    return True;
 }
 
@@ -2740,7 +2565,7 @@ static Bool dis_cond_logic ( UInt theInstr )
 /*
   System Linkage Instructions
 */
-static Bool dis_syslink ( UInt theInstr, DisResult *whatNext )
+static Bool dis_syslink ( UInt theInstr, DisResult* dres )
 {
    if (theInstr != 0x44000002) {
       vex_printf("dis_int_syslink(PPC32)(theInstr)\n");
@@ -2753,10 +2578,10 @@ static Bool dis_syslink ( UInt theInstr, DisResult *whatNext )
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
       forces any TempRegs caching ArchRegs to be flushed. */
-   irbb->next     = mkU32( guest_cia_curr_instr + 4 );
+   irbb->next     = mkU32( guest_CIA_curr_instr + 4 );
    irbb->jumpkind = Ijk_Syscall;
    
-   *whatNext = Dis_StopHere;
+   dres->whatNext = Dis_StopHere;
    return True;
 }
 
@@ -3280,7 +3105,7 @@ vassert(0);
   Cache Management Instructions
 */
 static Bool dis_cache_manage ( UInt         theInstr, 
-                               DisResult*   whatNext,
+                               DisResult*   dres,
                                VexArchInfo* guest_archinfo )
 {
    /* X-Form */
@@ -3377,8 +3202,8 @@ static Bool dis_cache_manage ( UInt         theInstr,
       stmt( IRStmt_MFence() );
 
       irbb->jumpkind = Ijk_TInval;
-      irbb->next     = mkU32(guest_cia_curr_instr + 4);
-      *whatNext      = Dis_StopHere;
+      irbb->next     = mkU32(guest_CIA_curr_instr + 4);
+      dres->whatNext = Dis_StopHere;
       break;
    }
 
@@ -5636,38 +5461,35 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 /*------------------------------------------------------------*/
 
 /* Disassemble a single instruction into IR.  The instruction
-   is located in host memory at &guest_code[delta].
-   Set *size to be the size of the instruction.
-   If the returned value is Dis_Resteer,
-   the next guest address is assigned to *whereNext.  If resteerOK
-   is False, disInstr may not return Dis_Resteer. */
-   
-static DisResult disInstr ( /*IN*/  Bool    resteerOK,
-                            /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
-                            /*IN*/  UInt    delta, 
-                            /*IN*/  VexArchInfo* archinfo,
-                            /*OUT*/ Int*    size,
-                            /*OUT*/ Addr64* whereNext )
+   is located in host memory at &guest_code[delta]. */
+
+static   
+DisResult disInstr_PPC32_WRK ( 
+             Bool         put_IP,
+             Bool         (*resteerOkFn) ( Addr64 ),
+             Long         delta64,
+             VexArchInfo* archinfo 
+          )
 {
-   UChar opc1;
-   UInt  opc2;
-   DisResult whatNext = Dis_Continue;
+   UChar     opc1;
+   UInt      opc2;
+   DisResult dres;
    UInt      theInstr;
 
+   /* The running delta */
+   Int delta = (Int)delta64;
+
+   /* Set result defaults. */
+   dres.whatNext   = Dis_Continue;
+   dres.len        = 0;
+   dres.continueAt = 0;
 
    /* At least this is simple on PPC32: insns are all 4 bytes long, and
       4-aligned.  So just fish the whole thing out of memory right now
       and have done. */
-
-   /* We will set *size to 4 if the insn is successfully decoded.
-      Setting it to 0 by default makes bbToIR_PPC32 abort if we fail the
-      decode. */
-   *size = 0;
-
    theInstr = getUIntBigendianly( (UChar*)(&guest_code[delta]) );
 
-   DIP("\t0x%x:  ", guest_pc_bbstart+delta);
-
+   DIP("\t0x%x:  ", guest_CIA_bbstart+delta);
 
    /* Spot the client-request magic sequence. */
    // Essentially a v. unlikely sequence of noops that we can catch
@@ -5689,12 +5511,12 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
           code[4] == 0x54009800 &&
           code[5] == 0x60000000) {
          DIP("%%r3 = client_request ( %%r31 )\n");
-         *size = 24;
+         dres.len = 24;
          delta += 24;
 
-         irbb->next     = mkU32(guest_pc_bbstart+delta);
+         irbb->next     = mkU32(guest_CIA_bbstart+delta);
          irbb->jumpkind = Ijk_ClientReq;
-         whatNext       = Dis_StopHere;
+         dres.whatNext  = Dis_StopHere;
          goto decode_success;
       }
    }
@@ -5756,12 +5578,12 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* Branch Instructions */
    case 0x12: case 0x10: // b, bc
-      if (dis_branch(theInstr, &whatNext)) goto decode_success;
+      if (dis_branch(theInstr, &dres)) goto decode_success;
       goto decode_failure;
 
    /* System Linkage Instructions */
    case 0x11: // sc
-      if (dis_syslink(theInstr, &whatNext)) goto decode_success;
+      if (dis_syslink(theInstr, &dres)) goto decode_success;
       goto decode_failure;
 
    /* Trap Instructions */
@@ -5874,7 +5696,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
       /* Branch Instructions */
       case 0x210: case 0x010: // bcctr, bclr
-         if (dis_branch(theInstr, &whatNext)) goto decode_success;
+         if (dis_branch(theInstr, &dres)) goto decode_success;
          goto decode_failure;
 
       /* Memory Synchronization Instructions */
@@ -5973,7 +5795,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0x2F6: case 0x056: case 0x036: // dcba, dcbf,   dcbst
       case 0x116: case 0x0F6: case 0x3F6: // dcbt, dcbtst, dcbz
       case 0x3D6:                         // icbi
-         if (dis_cache_manage( theInstr, &whatNext, archinfo )) 
+         if (dis_cache_manage( theInstr, &dres, archinfo )) 
             goto decode_success;
          goto decode_failure;
 
@@ -6191,26 +6013,58 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       CIA should be up-to-date since it made so at the start of each
       insn, but nevertheless be paranoid and update it again right
       now. */
-   putReg( PPC32_SPR_CIA, mkU32(guest_cia_curr_instr) );
-   irbb->next = mkU32(guest_cia_curr_instr);
+   putReg( PPC32_SPR_CIA, mkU32(guest_CIA_curr_instr) );
+   irbb->next = mkU32(guest_CIA_curr_instr);
    irbb->jumpkind = Ijk_NoDecode;
-   whatNext = Dis_StopHere;
-   *size = 0;
-   return whatNext;
+   dres.whatNext = Dis_StopHere;
+   dres.len = 0;
+   return dres;
 
    } /* switch (opc) for the main (primary) opcode switch. */
 
   decode_success:
    /* All decode successes end up here. */
-//   vex_printf("disInstr(ppc32): success");
    DIP("\n");
 
-   *size = 4;
-   return whatNext;
+   dres.len = 4;
+   return dres;
 }
 
 #undef DIP
 #undef DIS
+
+
+/*------------------------------------------------------------*/
+/*--- Top-level fn                                         ---*/
+/*------------------------------------------------------------*/
+
+/* Disassemble a single instruction into IR.  The instruction
+   is located in host memory at &guest_code[delta]. */
+
+DisResult disInstr_PPC32 ( IRBB*        irbb_IN,
+                           Bool         put_IP,
+                           Bool         (*resteerOkFn) ( Addr64 ),
+                           UChar*       guest_code_IN,
+                           Long         delta,
+                           Addr64       guest_IP,
+                           VexArchInfo* archinfo,
+                           Bool         host_bigendian_IN )
+{
+   DisResult dres;
+
+   /* Set globals (see top of this file) */
+   guest_code           = guest_code_IN;
+   irbb                 = irbb_IN;
+   host_is_bigendian    = host_bigendian_IN;
+   guest_CIA_curr_instr = (Addr32)guest_IP;
+   guest_CIA_bbstart    = (Addr32)toUInt(guest_IP - delta);
+
+   dres = disInstr_PPC32_WRK ( put_IP, resteerOkFn,
+                               delta, archinfo );
+
+   return dres;
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                       guest-ppc32/toIR.c ---*/

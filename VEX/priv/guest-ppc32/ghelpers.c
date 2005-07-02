@@ -40,6 +40,7 @@
 #include "libvex.h"
 
 #include "main/vex_util.h"
+#include "guest-generic/bb_to_IR.h"
 #include "guest-ppc32/gdefs.h"
 
 

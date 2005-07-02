@@ -43,14 +43,17 @@
 /*--- amd64 to IR conversion                            ---*/
 /*---------------------------------------------------------*/
 
+/* Convert one amd64 insn to IR.  See the type DisOneInstrFn in
+   bb_to_IR.h. */
 extern
-IRBB* bbToIR_AMD64 ( UChar*           amd64code, 
-                     Addr64           guest_rip_start, 
-                     VexGuestExtents* vge,
-                     Bool             (*byte_accessible)(Addr64),
-                     Bool             (*resteerOkFn)(Addr64),
-                     Bool             host_bigendian,
-                     VexArchInfo*     archinfo_guest );
+DisResult disInstr_AMD64 ( IRBB*        irbb,
+                           Bool         put_IP,
+                           Bool         (*resteerOkFn) ( Addr64 ),
+                           UChar*       guest_code,
+                           Long         delta,
+                           Addr64       guest_IP,
+                           VexArchInfo* archinfo,
+                           Bool         host_bigendian );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern

@@ -2,7 +2,7 @@
 /* Copy this file (test_main.h.in) to test_main.h, and edit */
 
 /* DEBUG RUN, ON V */
-#if 1
+#if 0
 #define TEST_VSUPPORT  True
 #define TEST_N_ITERS   1
 #define TEST_N_BBS     1
@@ -10,7 +10,7 @@
 #endif
 
 /* CHECKING RUN, ON V */
-#if 0
+#if 1
 #define TEST_VSUPPORT  True
 #define TEST_N_ITERS   1
 #define TEST_N_BBS     100000

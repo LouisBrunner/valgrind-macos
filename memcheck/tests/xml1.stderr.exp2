@@ -152,7 +152,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>UninitValue</kind>
-  <what>Use of uninitialised value of size 8</what>
+  <what>Use of uninitialised value of size 4</what>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -335,7 +335,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>SyscallParam</kind>
-  <what>Syscall param exit_group(exit_code) contains uninitialised byte(s)</what>
+  <what>Syscall param exit(exitcode) contains uninitialised byte(s)</what>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -345,19 +345,11 @@
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
-      <fn>exit</fn>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
       <fn>__libc_start_main</fn>
     </frame>
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
-      <dir>...</dir>
-      <file>start.S</file>
-      <line>...</line>
     </frame>
   </stack>
 </error>

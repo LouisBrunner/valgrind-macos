@@ -82,7 +82,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest-HIDING \
 	vgtest_ume.stderr.exp vgtest_ume.vgtest \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
-	xml1.stderr.exp xml1.stderr.exp64 xml1.stdout.exp xml1.vgtest \
+	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp64 xml1.stdout.exp \
+	xml1.vgtest \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.stdout.exp \
 	zeropage.vgtest
 

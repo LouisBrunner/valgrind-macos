@@ -46,13 +46,13 @@ int main()
 	int ret;
 	int v2, v3, v4;
 
-	sa.sa_handler = handler1;
+	sa.sa_handler = (void*)handler1;
 	sa.sa_flags = SA_SIGINFO;
 	sigfillset(&sa.sa_mask);
 
 	sigaction(SIGUSR1, &sa, NULL);
 
-	sa.sa_handler = handler2;
+	sa.sa_handler = (void*)handler2;
 	sa.sa_flags = 0;
 	sigfillset(&sa.sa_mask);
 

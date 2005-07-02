@@ -2,7 +2,10 @@ include $(top_srcdir)/Makefile.tool.am
 
 bin_SCRIPTS = cg_annotate
 
-EXTRA_DIST = cg_sim.c 
+# Remember to include all the arch-specific files in the distribution.
+EXTRA_DIST = \
+	cg_sim.c \
+	$(addsuffix .c,$(addprefix cg-,$(VG_ARCH_ALL)))
 
 noinst_HEADERS = cg_arch.h
 

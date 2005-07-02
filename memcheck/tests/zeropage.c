@@ -6,8 +6,8 @@
 
 /* The quick sanity check of Memcheck (and other tools with shadow memory)
    relies on the first 64KB of memory never being used.  So our mmap()
-   refuses to touch this area.  This program tests for that. */
-
+   refuses to touch this area.  This program tests for that.
+   [actually, no longer true, these all now succeed.] */
 int main(void)
 {
    /* mmap(0x0, ... FIXED) should fail */

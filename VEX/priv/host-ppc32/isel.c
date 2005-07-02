@@ -1471,13 +1471,22 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    result.  The expression may only be a 32-bit one.
 */
 
+static Bool fits16bits ( UInt u ) 
+{
+   /* Is u the same as the sign-extend of its lower 16 bits? */
+   Int i = u & 0xFFFF;
+   i <<= 16;
+   i >>= 16;
+   return u == (UInt)i;
+}
+
 static Bool sane_AMode ( PPC32AMode* am )
 {
    switch (am->tag) {
    case Pam_IR:
       return (hregClass(am->Pam.IR.base) == HRcInt32
               && hregIsVirtual(am->Pam.IR.base)
-              && (am->Pam.IR.index < 0x10000));
+              && fits16bits(am->Pam.IR.index));
    case Pam_RR:
       return (hregClass(am->Pam.RR.base) == HRcInt32
               && hregIsVirtual(am->Pam.IR.base)
@@ -1501,14 +1510,14 @@ static PPC32AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32);
    
-   /* Add32(expr,i), where i<0x10000 */
+   /* Add32(expr,i), where i == sign-extend of (i & 0xFFFF) */
    if (e->tag == Iex_Binop 
        && e->Iex.Binop.op == Iop_Add32
        && e->Iex.Binop.arg2->tag == Iex_Const
        && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U32
-       && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 < 0x10000) {
+       && fits16bits(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)) {
       return PPC32AMode_IR(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32,
-                           iselIntExpr_R(env,  e->Iex.Binop.arg1));
+                           iselIntExpr_R(env, e->Iex.Binop.arg1));
    }
       
    /* Add32(expr,expr) */

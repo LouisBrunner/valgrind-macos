@@ -202,7 +202,7 @@ extern PPC32CondTest invertCondTest ( PPC32CondTest );
 
 typedef
    enum {
-     Pam_IR,        /* Immediate + Reg */
+     Pam_IR,        /* Immediate (signed 16-bit) + Reg */
      Pam_RR         /* Reg1 + Reg2     */
    }
    PPC32AModeTag;
@@ -213,7 +213,7 @@ typedef
       union {
          struct {
             HReg base;
-            UInt index;
+            Int  index;
          } IR;
          struct {
             HReg base;
@@ -223,7 +223,7 @@ typedef
    }
    PPC32AMode;
 
-extern PPC32AMode* PPC32AMode_IR ( UInt, HReg );
+extern PPC32AMode* PPC32AMode_IR ( Int,  HReg );
 extern PPC32AMode* PPC32AMode_RR ( HReg, HReg );
 
 extern PPC32AMode* dopyPPC32AMode ( PPC32AMode* );

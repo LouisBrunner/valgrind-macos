@@ -320,9 +320,9 @@ PPC32CondTest invertCondTest ( PPC32CondTest ct )
 
 /* --------- PPCAMode: memory address expressions. --------- */
 
-PPC32AMode* PPC32AMode_IR ( UInt idx, HReg base ) {
+PPC32AMode* PPC32AMode_IR ( Int idx, HReg base ) {
    PPC32AMode* am = LibVEX_Alloc(sizeof(PPC32AMode));
-   vassert(idx < 0x10000);
+   vassert(idx >= -0x8000 && idx < 0x8000);
    am->tag = Pam_IR;
    am->Pam.IR.base = base;
    am->Pam.IR.index = idx;
@@ -353,7 +353,7 @@ void ppPPC32AMode ( PPC32AMode* am ) {
       if (am->Pam.IR.index == 0)
          vex_printf("0(");
       else
-         vex_printf("0x%x(", am->Pam.IR.index);
+         vex_printf("%d(", (Int)am->Pam.IR.index);
       ppHRegPPC32(am->Pam.IR.base);
       vex_printf(")");
       return;

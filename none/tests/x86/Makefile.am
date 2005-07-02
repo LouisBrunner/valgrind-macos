@@ -28,12 +28,9 @@ AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
-badseg_SOURCES		= badseg.c
-bt_everything_SOURCES 	= bt_everything.c
-bt_literal_SOURCES 	= bt_literal.c
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.s
-fpu_lazy_eflags_SOURCES	= fpu_lazy_eflags.c
-getseg_SOURCES 		= getseg.c
+# fpu_lazy_eflags must use these flags -- the bug only occurred with them
+fpu_lazy_eflags_CFLAGS	= -O2 -march=pentiumpro
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm
 insn_fpu_SOURCES	= insn_fpu.def
@@ -48,10 +45,6 @@ insn_sse_SOURCES	= insn_sse.def
 insn_sse_LDADD		= -lm
 insn_sse2_SOURCES	= insn_sse2.def
 insn_sse2_LDADD		= -lm
-int_SOURCES		= int.c
-pushpopseg_SOURCES	= pushpopseg.c
-seg_override_SOURCES 	= seg_override.c
-sigcontext_SOURCES	= sigcontext.c
 
 .def.c: $(srcdir)/gen_insn_test.pl
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

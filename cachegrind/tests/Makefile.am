@@ -13,8 +13,6 @@ check_PROGRAMS = \
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
 
 # C ones
-chdir_SOURCES		= chdir.c
-dlclose_SOURCES		= dlclose.c
 dlclose_LDADD		= -ldl
 myprint_so_SOURCES	= myprint.c
 myprint_so_LDFLAGS	= -shared -fPIC

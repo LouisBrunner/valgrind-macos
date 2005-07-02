@@ -115,84 +115,20 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
 AM_CXXFLAGS = $(AM_CFLAGS)
 
-# C ones
-#addressable_SOURCES	= addressable.c
-#badaddrvalue_SOURCES 	= badaddrvalue.c
-#badfree_SOURCES 	= badfree.c
-#badjump_SOURCES 	= badjump.c
-#badjump2_SOURCES 	= badjump2.c
-#badloop_SOURCES 	= badloop.c
-#badpoll_SOURCES		= badpoll.c
-#badrw_SOURCES		= badrw.c
-#brk_SOURCES 		= brk.c
-#brk2_SOURCES 		= brk2.c
-#buflen_check_SOURCES	= buflen_check.c
-#clientperm_SOURCES 	= clientperm.c
-custom_alloc_SOURCES 	= custom_alloc.c
-describe_block_SOURCES	= describe-block.c
-doublefree_SOURCES 	= doublefree.c
-error_counts_SOURCES 	= error_counts.c
-errs1_SOURCES 		= errs1.c
-execve_SOURCES 		= execve.c
-execve2_SOURCES 	= execve2.c
-exitprog_SOURCES 	= exitprog.c
-fprw_SOURCES 		= fprw.c
-fwrite_SOURCES 		= fwrite.c
-inits_SOURCES		= inits.c
-inline_SOURCES 	        = inline.c
-leak_0_SOURCES		= leak-0.c
-leak_cycle_SOURCES	= leak-cycle.c
-leak_tree_SOURCES	= leak-tree.c
-leak_regroot_SOURCES	= leak-regroot.c
-leakotron_SOURCES	= leakotron.c
-malloc1_SOURCES 	= malloc1.c
-malloc2_SOURCES 	= malloc2.c
-malloc3_SOURCES 	= malloc3.c
-manuel1_SOURCES 	= manuel1.c
-manuel2_SOURCES 	= manuel2.c
-manuel3_SOURCES 	= manuel3.c
-match_overrun_SOURCES 	= match-overrun.c
-mmaptest_SOURCES 	= mmaptest.c
-memalign_test_SOURCES 	= memalign_test.c
-memalign2_SOURCES 	= memalign2.c
-memcmptest_SOURCES 	= memcmptest.c
+# Extra stuff for C tests
 memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
-mempool_SOURCES 	= mempool.c
-nanoleak_SOURCES 	= nanoleak.c
-null_socket_SOURCES 	= null_socket.c
-overlap_SOURCES 	= overlap.c
 # Don't allow GCC to inline memcpy(), because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
-#pointer_trace_SOURCES	= pointer-trace.c
-post_syscall_SOURCES	= post-syscall.c
-realloc1_SOURCES 	= realloc1.c
-realloc2_SOURCES 	= realloc2.c
-realloc3_SOURCES 	= realloc3.c
-sigkill_SOURCES		= sigkill.c
-signal2_SOURCES 	= signal2.c
-sigprocmask_SOURCES 	= sigprocmask.c
-stack_changes_SOURCES   = stack_changes.c
-supp1_SOURCES 		= supp.c
-supp2_SOURCES 		= supp.c
-suppfree_SOURCES 	= suppfree.c
-sigaltstack_SOURCES 	= sigaltstack.c
-trivialleak_SOURCES 	= trivialleak.c
-weirdioctl_SOURCES 	= weirdioctl.c
-metadata_SOURCES	= metadata.c
-strchr_SOURCES		= strchr.c
-str_tester_SOURCES	= str_tester.c
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
-writev_SOURCES		= writev.c
-xml1_SOURCES		= xml1.c
-zeropage_SOURCES	= zeropage.c
+supp1_SOURCES		= supp.c
+supp2_SOURCES		= supp.c
 
-# C++ ones
+# C++ tests
 mismatches_SOURCES	= mismatches.cpp
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
 
 # Valgrind unit self-tests
-hello_SOURCES		= hello.c
 ## If we support PIE, build hello as a PIE, otherwise vgtest_ume cannot load
 ## (I'm not completely sure why, since stage2 can load both PIEs and non-PIEs,
 ## maybe it's because stage2 is loaded up high;  anyway, it doesn't really
@@ -207,6 +143,5 @@ hello_DEPENDENCIES 	= ../../coregrind/stage2.lds
 endif
 
 vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH) -DVGO_$(VG_OS)
-vgtest_ume_SOURCES	= vgtest_ume.c
 vgtest_ume_LDADD	= ../../coregrind/m_ume.o
 

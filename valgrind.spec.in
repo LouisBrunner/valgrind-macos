@@ -63,12 +63,10 @@ make install DESTDIR=$RPM_BUILD_ROOT
 /usr/include/valgrind/pub_tool_threadstate.h
 /usr/include/valgrind/pub_tool_tooliface.h
 /usr/include/valgrind/vki-amd64-linux.h
-/usr/include/valgrind/vki-arm-linux.h
 /usr/include/valgrind/vki-linux.h
 /usr/include/valgrind/vki-ppc32-linux.h
 /usr/include/valgrind/vki-x86-linux.h
 /usr/include/valgrind/vki_posixtypes-amd64-linux.h
-/usr/include/valgrind/vki_posixtypes-arm-linux.h
 /usr/include/valgrind/vki_posixtypes-ppc32-linux.h
 /usr/include/valgrind/vki_posixtypes-x86-linux.h
 /usr/bin/valgrind

@@ -41,10 +41,6 @@
 #  define VG_MIN_INSTR_SZB          1
 #  define VG_MAX_INSTR_SZB         16
 #  define VG_STACK_REDZONE_SZB    128
-#elif defined(VGA_arm)
-#  define VG_MIN_INSTR_SZB          4
-#  define VG_MAX_INSTR_SZB          4 
-#  define VG_STACK_REDZONE_SZB      0
 #elif defined(VGA_ppc32)
 #  define VG_MIN_INSTR_SZB          4
 #  define VG_MAX_INSTR_SZB          4 

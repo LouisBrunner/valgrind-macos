@@ -47,10 +47,6 @@
 #  define VG_ELF_ENDIANNESS   ELFDATA2LSB
 #  define VG_ELF_MACHINE      EM_X86_64
 #  define VG_ELF_CLASS        ELFCLASS64
-#elif defined(VGA_arm)
-#  define VG_ELF_ENDIANNESS   ELFDATA2LSB
-#  define VG_ELF_MACHINE      EM_ARM
-#  define VG_ELF_CLASS        ELFCLASS32
 #elif defined(VGA_ppc32)
 #  define VG_ELF_ENDIANNESS   ELFDATA2MSB
 #  define VG_ELF_MACHINE      EM_PPC
@@ -67,16 +63,6 @@
 #  define VG_INSTR_PTR        guest_RIP
 #  define VG_STACK_PTR        guest_RSP
 #  define VG_FRAME_PTR        guest_RBP
-#elif defined(VGA_arm)
-   // XXX: Not sure, but I think:
-   //   r11 = frame pointer
-   //   r12 = "implicit parameter" (neither caller-save, nor callee-save)
-   //   r13 = stack pointer
-   //   r14 = link register
-   //   r15 = program counter
-#  define VG_INSTR_PTR        guest_R15
-#  define VG_STACK_PTR        guest_R13
-#  define VG_FRAME_PTR        guest_R11
 #elif defined(VGA_ppc32)
 #  define VG_INSTR_PTR        guest_CIA
 #  define VG_STACK_PTR        guest_GPR1

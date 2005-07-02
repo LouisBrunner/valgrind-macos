@@ -1,0 +1,1183 @@
+=============================================================================
+Purpose of this file
+=============================================================================
+In late 2004 Nick and Julian spent a little time working on the beginnings of
+an ARM port.  IIRC it was compiling, but we never got it running at all, or if
+we did, it didn't get very far.  Most of the required
+arch/platform-specific functions were still empty stubs.
+
+Since then, the code structure has changed a lot.  In particular, the $ARCH and
+$PLATFORM directories have gone, and everything has been broken into much
+more well-defined modules.  The ARM code wasn't being kept up with these
+changes, so it has bit-rotted badly.  So now I'm pulling it all out.  But
+there is some useful knowledge in the ARM code, and the vki*.h files are
+fully done.  So I'm putting all the useful stuff in this file in case anyone
+tries porting to ARM again in the future.
+
+-- njn, Jul 2, 2005
+
+=============================================================================
+General
+=============================================================================
+You'll need to :
+- Update Makefile.am files when you add back in the vki*.h files in include/
+  and coregrind/.
+- Also the valgrind.spec.in file
+- Add lots of missing cases in lots of places requiring
+  arch-/platform-specific code.  Compile errors should tell you where.
+
+=============================================================================
+configure.in
+=============================================================================
+You'll need to:
+- Add appropriate arm/ test subdirs to memcheck/tests/, none/tests/,
+  cachegrind/tests/.
+- Add arm to VG_ARCH_ALL and arm-linux to VG_PLATFORM_ALL
+- Add it to the $VG_ARCH/$VG_PLATFORM case statements in configure.in
+- Here's the case for the ${host_cpu} case statement:
+
+     arm*) 
+	AC_MSG_RESULT([ok (${host_cpu})])
+        VG_ARCH="arm"
+        KICKSTART_BASE="0xb0000000"
+        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
+        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
+        ARCH_CORE_AM_CCASFLAGS=""
+        ;;
+
+=============================================================================
+From cachegrind/cg-arm.c
+=============================================================================
+void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
+                           Bool all_caches_clo_defined)
+{
+   // XXX: I1 and D1 are vaguely plausible, although they could really be
+   // anything.  However, most (all?) ARMs don't have an L2 cache.  But
+   // Cachegrind assumes the presence of an L2 cache... so we just copy the
+   // x86 defaults.  Urk.
+   *I1c = (cache_t) {   4096, 2, 32 };
+   *D1c = (cache_t) {   4096, 2, 32 };
+   *L2c = (cache_t) { 262144, 8, 64 };
+}
+
+=============================================================================
+From m_syswrap/syswrap-arm-linux.c
+=============================================================================
+
+/* ---------------------------------------------------------------------
+   The ARM/Linux syscall table
+   ------------------------------------------------------------------ */
+
+// Macros for adding ARM/Linux-specific wrappers to the syscall table.  Note
+// that ARM syscall numbers start at __NR_SYSCALL_BASE.
+#define PLAX_(const, name) \
+   SYS_WRAPPER_ENTRY_X_(arm_linux, const - __NR_SYSCALL_BASE, name) 
+#define PLAXY(const, name) \
+   SYS_WRAPPER_ENTRY_XY(arm_linux, const - __NR_SYSCALL_BASE, name) 
+
+// This table maps from __NR_xxx syscall numbers (from
+// linux/include/asm-arm/unistd.h) to the appropriate PRE/POST sys_foo()
+// wrappers on ARM (as per sys_call_table in linux/arch/arm/kernel/entry.S).
+//
+// XXX: look at the x86-linux one to see how to do it.
+
+const struct SyscallTableEntry ML_(syscall_table)[] = {
+   //   (restart_syscall)                             // 0
+   GENX_(__NR_exit,              sys_exit),           // 1
+   LINX_(__NR_mount,             sys_mount),          // 21
+   PLAX_(__NR_syscall,           sys_syscall),        // 113
+   PLAXY(__NR_ipc,               sys_ipc),            // 117
+   PLAX_(__NR_clone,             sys_clone),          // 120
+};
+
+const UInt ML_(syscall_table_size) = 
+            sizeof(ML_(syscall_table)) / sizeof(ML_(syscall_table)[0]);
+
+=============================================================================
+From m_scheduler/scheduler.c
+=============================================================================
+#elif defined(VGA_arm)
+#  define VG_CLREQ_ARGS       guest_R0
+#  define VG_CLREQ_RET        guest_R0
+
+=============================================================================
+From include/pub_tool_machine.h
+=============================================================================
+#elif defined(VGA_arm)
+#  define VG_MIN_INSTR_SZB          4
+#  define VG_MAX_INSTR_SZB          4 
+#  define VG_STACK_REDZONE_SZB      0
+
+=============================================================================
+From include/pub_tool_basics.h
+=============================================================================
+#elif defined(VGA_arm)
+#  define VG_REGPARM(n)            /* */
+
+=============================================================================
+From coregrind/pub_core_machine.h
+=============================================================================
+#elif defined(VGA_arm)
+#  define VG_ELF_ENDIANNESS   ELFDATA2LSB
+#  define VG_ELF_MACHINE      EM_ARM
+#  define VG_ELF_CLASS        ELFCLASS32
+
+#elif defined(VGA_arm)
+   // XXX: Not sure, but I think:
+   //   r11 = frame pointer
+   //   r12 = "implicit parameter" (neither caller-save, nor callee-save)
+   //   r13 = stack pointer
+   //   r14 = link register
+   //   r15 = program counter
+#  define VG_INSTR_PTR        guest_R15
+#  define VG_STACK_PTR        guest_R13
+#  define VG_FRAME_PTR        guest_R11
+
+=============================================================================
+From coregrind/pub_core_threadstate.h
+=============================================================================
+#elif defined(VGA_arm)
+   typedef VexGuestARMState   VexGuestArchState;
+
+=============================================================================
+From coregrind/vki_unistd.h
+=============================================================================
+#elif defined(VGP_arm_linux)
+#  include "vki_unistd-arm-linux.h" 
+
+=============================================================================
+From coregrind/m_signals.c
+=============================================================================
+#elif defined(VGP_arm_linux)
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.arm_pc)
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.arm_sp)
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.arm_fp)
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.arm_r0)
+#  error VG_UCONTEXT_SYSCALL_RET undefined for ARM/Linux
+
+=============================================================================
+From tests/cputest.c
+=============================================================================
+- You'll need to add "arm" to all_archs[].
+
+#ifdef __arm__
+static Bool go(char* cpu)
+{
+   if ( strcmp( cpu, "arm" ) == 0 )
+      return True;
+   else 
+      return False;
+}
+#endif // __arm__
+
+=============================================================================
+All of include/vki_posixtypes-arm-linux.h
+=============================================================================
+
+/*--------------------------------------------------------------------*/
+/*--- ARM/Linux-specific kernel interface: posix types.            ---*/
+/*---                                   vki_posixtypes-arm-linux.h ---*/
+/*--------------------------------------------------------------------*/
+
+/*
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
+
+   Copyright (C) 2000-2005 Julian Seward 
+      jseward@acm.org
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
+#ifndef __VKI_POSIXTYPES_ARM_LINUX_H
+#define __VKI_POSIXTYPES_ARM_LINUX_H
+
+//----------------------------------------------------------------------
+// From linux-2.6.8.1/include/asm-i386/posix_types.h
+//----------------------------------------------------------------------
+
+typedef unsigned short		__vki_kernel_mode_t;
+typedef long			__vki_kernel_off_t;
+typedef int			__vki_kernel_pid_t;
+typedef unsigned short		__vki_kernel_ipc_pid_t;
+typedef unsigned short		__vki_kernel_uid_t;
+typedef unsigned short		__vki_kernel_gid_t;
+typedef unsigned int		__vki_kernel_size_t;
+typedef long			__vki_kernel_time_t;
+typedef long			__vki_kernel_suseconds_t;
+typedef long			__vki_kernel_clock_t;
+typedef int			__vki_kernel_timer_t;
+typedef int			__vki_kernel_clockid_t;
+typedef char *			__vki_kernel_caddr_t;
+typedef unsigned int		__vki_kernel_uid32_t;
+typedef unsigned int		__vki_kernel_gid32_t;
+
+typedef unsigned short		__vki_kernel_old_uid_t;
+typedef unsigned short		__vki_kernel_old_gid_t;
+
+typedef long long	        __vki_kernel_loff_t;
+
+typedef struct {
+	int	val[2];
+} __vki_kernel_fsid_t;
+
+#endif // __VKI_POSIXTYPES_ARM_LINUX_H
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/
+
+=============================================================================
+All of include/vki-arm-linux.h
+=============================================================================
+
+/*--------------------------------------------------------------------*/
+/*--- ARM/Linux-specific kernel interface.         vki-arm-linux.h ---*/
+/*--------------------------------------------------------------------*/
+
+/*
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
+
+   Copyright (C) 2000-2005 Julian Seward 
+      jseward@acm.org
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
+#ifndef __VKI_ARM_LINUX_H
+#define __VKI_ARM_LINUX_H
+
+// ARM can be big or little endian;  we're only supporting little endian.  
+#define VKI_LITTLE_ENDIAN  1
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/types.h
+//----------------------------------------------------------------------
+
+typedef unsigned char __vki_u8;
+
+typedef __signed__ short __vki_s16;
+typedef unsigned short __vki_u16;
+
+typedef unsigned int __vki_u32;
+
+typedef __signed__ long long __vki_s64;
+typedef unsigned long long __vki_u64;
+
+typedef unsigned short vki_u16;
+
+typedef unsigned int vki_u32;
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/page.h
+//----------------------------------------------------------------------
+
+#define VKI_PAGE_SHIFT		12
+#define VKI_PAGE_SIZE		(1UL << VKI_PAGE_SHIFT)
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/signal.h
+//----------------------------------------------------------------------
+
+#define _VKI_NSIG	64
+#define _VKI_NSIG_BPW	32
+#define _VKI_NSIG_WORDS	(_VKI_NSIG / _VKI_NSIG_BPW)
+
+typedef unsigned long vki_old_sigset_t;		/* at least 32 bits */
+
+typedef struct {
+	unsigned long sig[_VKI_NSIG_WORDS];
+} vki_sigset_t;
+
+#define VKI_SIGHUP		 1
+#define VKI_SIGINT		 2
+#define VKI_SIGQUIT		 3
+#define VKI_SIGILL		 4
+#define VKI_SIGTRAP		 5
+#define VKI_SIGABRT		 6
+//#define VKI_SIGIOT		 6
+#define VKI_SIGBUS		 7
+#define VKI_SIGFPE		 8
+#define VKI_SIGKILL		 9
+#define VKI_SIGUSR1		10
+#define VKI_SIGSEGV		11
+#define VKI_SIGUSR2		12
+#define VKI_SIGPIPE		13
+#define VKI_SIGALRM		14
+#define VKI_SIGTERM		15
+#define VKI_SIGSTKFLT	16
+#define VKI_SIGCHLD		17
+#define VKI_SIGCONT		18
+#define VKI_SIGSTOP		19
+#define VKI_SIGTSTP		20
+#define VKI_SIGTTIN		21
+#define VKI_SIGTTOU		22
+#define VKI_SIGURG		23
+#define VKI_SIGXCPU		24
+#define VKI_SIGXFSZ		25
+#define VKI_SIGVTALRM	26
+#define VKI_SIGPROF		27
+#define VKI_SIGWINCH	28
+#define VKI_SIGIO		29
+#define VKI_SIGPWR		30
+#define VKI_SIGSYS		31
+#define	VKI_SIGUNUSED	31
+
+/* These should not be considered constants from userland.  */
+#define VKI_SIGRTMIN	32
+#define VKI_SIGRTMAX	_VKI_NSIG
+
+#define VKI_SIGSWI		32
+
+#define VKI_SA_NOCLDSTOP	0x00000001
+#define VKI_SA_NOCLDWAIT	0x00000002
+#define VKI_SA_SIGINFO	0x00000004
+//#define VKI_SA_THIRTYTWO	0x02000000
+#define VKI_SA_RESTORER	0x04000000
+#define VKI_SA_ONSTACK	0x08000000
+#define VKI_SA_RESTART	0x10000000
+#define VKI_SA_NODEFER	0x40000000
+#define VKI_SA_RESETHAND	0x80000000
+
+#define VKI_SA_NOMASK	VKI_SA_NODEFER
+#define VKI_SA_ONESHOT	VKI_SA_RESETHAND
+//#define VKI_SA_INTERRUPT	0x20000000 /* dummy -- ignored */
+
+
+#define VKI_SS_ONSTACK	1
+#define VKI_SS_DISABLE	2
+
+#define VKI_MINSIGSTKSZ	2048
+
+#define VKI_SIG_BLOCK          0	/* for blocking signals */
+#define VKI_SIG_UNBLOCK        1	/* for unblocking signals */
+#define VKI_SIG_SETMASK        2	/* for setting the signal mask */
+
+/* Type of a signal handler.  */
+typedef void __vki_signalfn_t(int);
+typedef __vki_signalfn_t __user *__vki_sighandler_t;
+
+typedef void __vki_restorefn_t(void);
+typedef __vki_restorefn_t __user *__vki_sigrestore_t;
+
+#define VKI_SIG_DFL	((__vki_sighandler_t)0)	/* default signal handling */
+#define VKI_SIG_IGN	((__vki_sighandler_t)1)	/* ignore signal */
+
+struct vki_old_sigaction {
+        // [[Nb: a 'k' prefix is added to "sa_handler" because
+        // bits/sigaction.h (which gets dragged in somehow via signal.h)
+        // #defines it as something else.  Since that is done for glibc's
+        // purposes, which we don't care about here, we use our own name.]]
+	__vki_sighandler_t ksa_handler;
+	vki_old_sigset_t sa_mask;
+	unsigned long sa_flags;
+	__vki_sigrestore_t sa_restorer;
+};
+
+struct vki_sigaction {
+        // [[See comment about extra 'k' above]]
+	__vki_sighandler_t ksa_handler;
+	unsigned long sa_flags;
+	__vki_sigrestore_t sa_restorer;
+	vki_sigset_t sa_mask;		/* mask last for extensibility */
+};
+
+typedef struct vki_sigaltstack {
+	void __user *ss_sp;
+	int ss_flags;
+	vki_size_t ss_size;
+} vki_stack_t;
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/sigcontext.h
+//----------------------------------------------------------------------
+
+struct vki_sigcontext {
+	unsigned long trap_no;
+	unsigned long error_code;
+	unsigned long oldmask;
+	unsigned long arm_r0;
+	unsigned long arm_r1;
+	unsigned long arm_r2;
+	unsigned long arm_r3;
+	unsigned long arm_r4;
+	unsigned long arm_r5;
+	unsigned long arm_r6;
+	unsigned long arm_r7;
+	unsigned long arm_r8;
+	unsigned long arm_r9;
+	unsigned long arm_r10;
+	unsigned long arm_fp;
+	unsigned long arm_ip;
+	unsigned long arm_sp;
+	unsigned long arm_lr;
+	unsigned long arm_pc;
+	unsigned long arm_cpsr;
+	unsigned long fault_address;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/mman.h
+//----------------------------------------------------------------------
+
+#define VKI_PROT_READ	0x1		/* page can be read */
+#define VKI_PROT_WRITE	0x2		/* page can be written */
+#define VKI_PROT_EXEC	0x4		/* page can be executed */
+//#define VKI_PROT_SEM	0x8		/* page may be used for atomic ops */
+//#define VKI_PROT_NONE	0x0		/* page can not be accessed */
+
+#define VKI_MAP_SHARED	0x01		/* Share changes */
+#define VKI_MAP_PRIVATE	0x02		/* Changes are private */
+#define VKI_MAP_TYPE	0x0f		/* Mask for type of mapping */
+#define VKI_MAP_FIXED	0x10		/* Interpret addr exactly */
+#define VKI_MAP_ANONYMOUS	0x20	/* don't use a file */
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/fcntl.h
+//----------------------------------------------------------------------
+
+#define VKI_O_RDONLY	     00
+#define VKI_O_WRONLY	     01
+#define VKI_O_CREAT	   0100	/* not fcntl */
+#define VKI_O_EXCL	   0200	/* not fcntl */
+#define VKI_O_TRUNC	  01000	/* not fcntl */
+#define VKI_O_NONBLOCK	  04000
+
+#define VKI_F_DUPFD	0	/* dup */
+#define VKI_F_GETFD	1	/* get close_on_exec */
+#define VKI_F_SETFD	2	/* set/clear close_on_exec */
+#define VKI_F_GETFL	3	/* get file->f_flags */
+#define VKI_F_SETFL	4	/* set file->f_flags */
+#define VKI_F_GETLK	5
+#define VKI_F_SETLK	6
+#define VKI_F_SETLKW	7
+
+#define VKI_F_SETOWN	8	/*  for sockets. */
+#define VKI_F_GETOWN	9	/*  for sockets. */
+#define VKI_F_SETSIG	10	/*  for sockets. */
+#define VKI_F_GETSIG	11	/*  for sockets. */
+
+#define VKI_F_GETLK64	12	/*  using 'struct flock64' */
+#define VKI_F_SETLK64	13
+#define VKI_F_SETLKW64	14
+
+/* for F_[GET|SET]FL */
+#define VKI_FD_CLOEXEC	1	/* actually anything with low bit set goes */
+
+#define VKI_F_LINUX_SPECIFIC_BASE	1024
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/resource.h
+//----------------------------------------------------------------------
+
+#define VKI_RLIMIT_DATA		2	/* max data size */
+#define VKI_RLIMIT_STACK	3	/* max stack size */
+#define VKI_RLIMIT_CORE		4	/* max core file size */
+#define VKI_RLIMIT_NOFILE	7	/* max number of open files */
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/socket.h
+//----------------------------------------------------------------------
+
+#define VKI_SOL_SOCKET	1
+
+#define VKI_SO_TYPE	3
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/sockios.h
+//----------------------------------------------------------------------
+
+#define VKI_SIOCSPGRP	0x8902
+#define VKI_SIOCGPGRP	0x8904
+#define VKI_SIOCGSTAMP	0x8906		/* Get stamp */
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/stat.h
+//----------------------------------------------------------------------
+
+// [[Nb: resolved some #ifdefs by assuming __ARMEB__ is false, ie. that
+// we're not big-endian.]]
+struct vki_stat {
+	unsigned long  st_dev;
+	unsigned long  st_ino;
+	unsigned short st_mode;
+	unsigned short st_nlink;
+	unsigned short st_uid;
+	unsigned short st_gid;
+	unsigned long  st_rdev;
+	unsigned long  st_size;
+	unsigned long  st_blksize;
+	unsigned long  st_blocks;
+	unsigned long  st_atime;
+	unsigned long  st_atime_nsec;
+	unsigned long  st_mtime;
+	unsigned long  st_mtime_nsec;
+	unsigned long  st_ctime;
+	unsigned long  st_ctime_nsec;
+	unsigned long  __unused4;
+	unsigned long  __unused5;
+};
+
+struct vki_stat64 {
+	unsigned long long	st_dev;
+	unsigned char   __pad0[4];
+
+#define STAT64_HAS_BROKEN_ST_INO	1
+	unsigned long	__st_ino;
+	unsigned int	st_mode;
+	unsigned int	st_nlink;
+
+	unsigned long	st_uid;
+	unsigned long	st_gid;
+
+	unsigned long long	st_rdev;
+	unsigned char   __pad3[4];
+
+	long long	st_size;
+	unsigned long	st_blksize;
+
+	unsigned long   st_blocks;	/* Number 512-byte blocks allocated. */
+	unsigned long   __pad4;		/* Future possible st_blocks hi bits */
+
+	unsigned long	st_atime;
+	unsigned long	st_atime_nsec;
+
+	unsigned long	st_mtime;
+	unsigned long	st_mtime_nsec;
+
+	unsigned long	st_ctime;
+	unsigned long	st_ctime_nsec;
+
+	unsigned long long	st_ino;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/statfs.h
+//----------------------------------------------------------------------
+
+// [[Nb: asm-arm/statfs.h just #include asm-generic/statfs.h directly]]
+struct vki_statfs {
+	__vki_u32 f_type;
+	__vki_u32 f_bsize;
+	__vki_u32 f_blocks;
+	__vki_u32 f_bfree;
+	__vki_u32 f_bavail;
+	__vki_u32 f_files;
+	__vki_u32 f_ffree;
+	__vki_kernel_fsid_t f_fsid;
+	__vki_u32 f_namelen;
+	__vki_u32 f_frsize;
+	__vki_u32 f_spare[5];
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/termios.h
+//----------------------------------------------------------------------
+
+struct vki_winsize {
+	unsigned short ws_row;
+	unsigned short ws_col;
+	unsigned short ws_xpixel;
+	unsigned short ws_ypixel;
+};
+
+#define VKI_NCC 8
+struct vki_termio {
+	unsigned short c_iflag;		/* input mode flags */
+	unsigned short c_oflag;		/* output mode flags */
+	unsigned short c_cflag;		/* control mode flags */
+	unsigned short c_lflag;		/* local mode flags */
+	unsigned char c_line;		/* line discipline */
+	unsigned char c_cc[VKI_NCC];	/* control characters */
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/termbits.h
+//----------------------------------------------------------------------
+
+typedef unsigned char   vki_cc_t;
+typedef unsigned int    vki_tcflag_t;
+
+#define VKI_NCCS 19
+struct vki_termios {
+	vki_tcflag_t c_iflag;		/* input mode flags */
+	vki_tcflag_t c_oflag;		/* output mode flags */
+	vki_tcflag_t c_cflag;		/* control mode flags */
+	vki_tcflag_t c_lflag;		/* local mode flags */
+	vki_cc_t c_line;		/* line discipline */
+	vki_cc_t c_cc[VKI_NCCS];	/* control characters */
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/ioctl.h
+//----------------------------------------------------------------------
+
+#define _VKI_IOC_NRBITS		8
+#define _VKI_IOC_TYPEBITS	8
+#define _VKI_IOC_SIZEBITS	14
+#define _VKI_IOC_DIRBITS	2
+
+#define _VKI_IOC_SIZEMASK	((1 << _VKI_IOC_SIZEBITS)-1)
+#define _VKI_IOC_DIRMASK	((1 << _VKI_IOC_DIRBITS)-1)
+
+#define _VKI_IOC_NRSHIFT	0
+#define _VKI_IOC_TYPESHIFT	(_VKI_IOC_NRSHIFT+_VKI_IOC_NRBITS)
+#define _VKI_IOC_SIZESHIFT	(_VKI_IOC_TYPESHIFT+_VKI_IOC_TYPEBITS)
+#define _VKI_IOC_DIRSHIFT	(_VKI_IOC_SIZESHIFT+_VKI_IOC_SIZEBITS)
+
+#define _VKI_IOC_NONE	0U
+#define _VKI_IOC_WRITE	1U
+#define _VKI_IOC_READ	2U
+
+#define _VKI_IOC(dir,type,nr,size) \
+	(((dir)  << _VKI_IOC_DIRSHIFT) | \
+	 ((type) << _VKI_IOC_TYPESHIFT) | \
+	 ((nr)   << _VKI_IOC_NRSHIFT) | \
+	 ((size) << _VKI_IOC_SIZESHIFT))
+
+/* used to create numbers */
+#define _VKI_IO(type,nr)	_VKI_IOC(_VKI_IOC_NONE,(type),(nr),0)
+#define _VKI_IOR(type,nr,size)	_VKI_IOC(_VKI_IOC_READ,(type),(nr),sizeof(size))
+#define _VKI_IOW(type,nr,size)	_VKI_IOC(_VKI_IOC_WRITE,(type),(nr),sizeof(size))
+#define _VKI_IOWR(type,nr,size)	_VKI_IOC(_VKI_IOC_READ|_VKI_IOC_WRITE,(type),(nr),sizeof(size))
+
+/* used to decode ioctl numbers.. */
+#define _VKI_IOC_DIR(nr)	(((nr) >> _VKI_IOC_DIRSHIFT) & _VKI_IOC_DIRMASK)
+#define _VKI_IOC_SIZE(nr)	(((nr) >> _VKI_IOC_SIZESHIFT) & _VKI_IOC_SIZEMASK)
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/ioctls.h
+//----------------------------------------------------------------------
+
+#define VKI_TCGETS	0x5401
+#define VKI_TCSETS	0x5402
+#define VKI_TCSETSW	0x5403
+#define VKI_TCSETSF	0x5404
+#define VKI_TCGETA	0x5405
+#define VKI_TCSETA	0x5406
+#define VKI_TCSETAW	0x5407
+#define VKI_TCSETAF	0x5408
+#define VKI_TCSBRK	0x5409
+#define VKI_TCXONC	0x540A
+#define VKI_TCFLSH	0x540B
+#define VKI_TIOCSCTTY	0x540E
+#define VKI_TIOCGPGRP	0x540F
+#define VKI_TIOCSPGRP	0x5410
+#define VKI_TIOCOUTQ	0x5411
+#define VKI_TIOCGWINSZ	0x5413
+#define VKI_TIOCSWINSZ	0x5414
+#define VKI_TIOCMBIS	0x5416
+#define VKI_TIOCMBIC	0x5417
+#define VKI_TIOCMSET	0x5418
+#define VKI_FIONREAD	0x541B
+#define VKI_TIOCLINUX	0x541C
+#define VKI_FIONBIO	0x5421
+#define VKI_TCSBRKP	0x5425	/* Needed for POSIX tcsendbreak() */
+#define VKI_TIOCGPTN	_VKI_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
+#define VKI_TIOCSPTLCK	_VKI_IOW('T',0x31, int)  /* Lock/unlock Pty */
+
+#define VKI_FIOASYNC	0x5452
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/poll.h
+//----------------------------------------------------------------------
+
+#define VKI_POLLIN	0x0001
+
+struct vki_pollfd {
+	int fd;
+	short events;
+	short revents;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/user.h
+//----------------------------------------------------------------------
+
+// XXX: For x86, had here:
+//   struct vki_user_i387_struct
+//   struct vki_user_fxsr_struct
+//   struct vki_user_regs_struct
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/ptrace.h
+//----------------------------------------------------------------------
+
+struct vki_pt_regs {
+	long uregs[18];
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/elf.h
+//----------------------------------------------------------------------
+
+typedef unsigned long vki_elf_greg_t;
+
+#define VKI_ELF_NGREG (sizeof (struct vki_pt_regs) / sizeof(vki_elf_greg_t))
+typedef vki_elf_greg_t vki_elf_gregset_t[VKI_ELF_NGREG];
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/ucontext.h
+//----------------------------------------------------------------------
+
+struct vki_ucontext {
+	unsigned long		uc_flags;
+	struct vki_ucontext    *uc_link;
+	vki_stack_t		uc_stack;
+	struct vki_sigcontext	uc_mcontext;
+	vki_sigset_t		uc_sigmask;	/* mask last for extensibility */
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/ipcbuf.h
+//----------------------------------------------------------------------
+
+struct vki_ipc64_perm
+{
+	__vki_kernel_key_t	key;
+	__vki_kernel_uid32_t	uid;
+	__vki_kernel_gid32_t	gid;
+	__vki_kernel_uid32_t	cuid;
+	__vki_kernel_gid32_t	cgid;
+	__vki_kernel_mode_t	mode;
+	unsigned short		__pad1;
+	unsigned short		seq;
+	unsigned short		__pad2;
+	unsigned long		__unused1;
+	unsigned long		__unused2;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/sembuf.h
+//----------------------------------------------------------------------
+
+struct vki_semid64_ds {
+	struct vki_ipc64_perm sem_perm;		/* permissions .. see ipc.h */
+	__vki_kernel_time_t	sem_otime;		/* last semop time */
+	unsigned long	__unused1;
+	__vki_kernel_time_t	sem_ctime;		/* last change time */
+	unsigned long	__unused2;
+	unsigned long	sem_nsems;		/* no. of semaphores in array */
+	unsigned long	__unused3;
+	unsigned long	__unused4;
+};
+
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/msgbuf.h
+//----------------------------------------------------------------------
+
+struct vki_msqid64_ds {
+	struct vki_ipc64_perm msg_perm;
+	__vki_kernel_time_t msg_stime;	/* last msgsnd time */
+	unsigned long	__unused1;
+	__vki_kernel_time_t msg_rtime;	/* last msgrcv time */
+	unsigned long	__unused2;
+	__vki_kernel_time_t msg_ctime;	/* last change time */
+	unsigned long	__unused3;
+	unsigned long  msg_cbytes;	/* current number of bytes on queue */
+	unsigned long  msg_qnum;	/* number of messages in queue */
+	unsigned long  msg_qbytes;	/* max number of bytes on queue */
+	__vki_kernel_pid_t msg_lspid;	/* pid of last msgsnd */
+	__vki_kernel_pid_t msg_lrpid;	/* last receive pid */
+	unsigned long  __unused4;
+	unsigned long  __unused5;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/ipc.h
+//----------------------------------------------------------------------
+
+struct vki_ipc_kludge {
+	struct vki_msgbuf __user *msgp;
+	long msgtyp;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/asm-arm/shmbuf.h
+//----------------------------------------------------------------------
+
+struct vki_shmid64_ds {
+	struct vki_ipc64_perm	shm_perm;	/* operation perms */
+	vki_size_t		shm_segsz;	/* size of segment (bytes) */
+	__vki_kernel_time_t	shm_atime;	/* last attach time */
+	unsigned long		__unused1;
+	__vki_kernel_time_t	shm_dtime;	/* last detach time */
+	unsigned long		__unused2;
+	__vki_kernel_time_t	shm_ctime;	/* last change time */
+	unsigned long		__unused3;
+	__vki_kernel_pid_t	shm_cpid;	/* pid of creator */
+	__vki_kernel_pid_t	shm_lpid;	/* pid of last operator */
+	unsigned long		shm_nattch;	/* no. of current attaches */
+	unsigned long		__unused4;
+	unsigned long		__unused5;
+};
+
+struct vki_shminfo64 {
+	unsigned long	shmmax;
+	unsigned long	shmmin;
+	unsigned long	shmmni;
+	unsigned long	shmseg;
+	unsigned long	shmall;
+	unsigned long	__unused1;
+	unsigned long	__unused2;
+	unsigned long	__unused3;
+	unsigned long	__unused4;
+};
+
+//----------------------------------------------------------------------
+// And that's it!
+//----------------------------------------------------------------------
+
+#endif // __VKI_ARM_LINUX_H
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/
+
+=============================================================================
+All of coregrind/vki_unistd-arm-linux.h
+=============================================================================
+
+/*
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
+
+   Copyright (C) 2000-2005 Julian Seward 
+      jseward@acm.org
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
+#ifndef __VKI_UNISTD_ARM_LINUX_H
+#define __VKI_UNISTD_ARM_LINUX_H
+
+// From linux-2.6.8.1/include/asm-arm/unistd.h
+
+// Nb: ARM Thumb has a different __NR_SYSCALL_BASE, but we don't care about
+//     that architecture.
+#define __NR_SYSCALL_BASE	0x900000
+
+#define __NR_restart_syscall		(__NR_SYSCALL_BASE+  0)
+#define __NR_exit			(__NR_SYSCALL_BASE+  1)
+#define __NR_fork			(__NR_SYSCALL_BASE+  2)
+#define __NR_read			(__NR_SYSCALL_BASE+  3)
+#define __NR_write			(__NR_SYSCALL_BASE+  4)
+#define __NR_open			(__NR_SYSCALL_BASE+  5)
+#define __NR_close			(__NR_SYSCALL_BASE+  6)
+					/* 7 was sys_waitpid */
+#define __NR_creat			(__NR_SYSCALL_BASE+  8)
+#define __NR_link			(__NR_SYSCALL_BASE+  9)
+#define __NR_unlink			(__NR_SYSCALL_BASE+ 10)
+#define __NR_execve			(__NR_SYSCALL_BASE+ 11)
+#define __NR_chdir			(__NR_SYSCALL_BASE+ 12)
+#define __NR_time			(__NR_SYSCALL_BASE+ 13)
+#define __NR_mknod			(__NR_SYSCALL_BASE+ 14)
+#define __NR_chmod			(__NR_SYSCALL_BASE+ 15)
+#define __NR_lchown			(__NR_SYSCALL_BASE+ 16)
+					/* 17 was sys_break */
+					/* 18 was sys_stat */
+#define __NR_lseek			(__NR_SYSCALL_BASE+ 19)
+#define __NR_getpid			(__NR_SYSCALL_BASE+ 20)
+#define __NR_mount			(__NR_SYSCALL_BASE+ 21)
+#define __NR_umount			(__NR_SYSCALL_BASE+ 22)
+#define __NR_setuid			(__NR_SYSCALL_BASE+ 23)
+#define __NR_getuid			(__NR_SYSCALL_BASE+ 24)
+#define __NR_stime			(__NR_SYSCALL_BASE+ 25)
+#define __NR_ptrace			(__NR_SYSCALL_BASE+ 26)
+#define __NR_alarm			(__NR_SYSCALL_BASE+ 27)
+					/* 28 was sys_fstat */
+#define __NR_pause			(__NR_SYSCALL_BASE+ 29)
+#define __NR_utime			(__NR_SYSCALL_BASE+ 30)
+					/* 31 was sys_stty */
+					/* 32 was sys_gtty */
+#define __NR_access			(__NR_SYSCALL_BASE+ 33)
+#define __NR_nice			(__NR_SYSCALL_BASE+ 34)
+					/* 35 was sys_ftime */
+#define __NR_sync			(__NR_SYSCALL_BASE+ 36)
+#define __NR_kill			(__NR_SYSCALL_BASE+ 37)
+#define __NR_rename			(__NR_SYSCALL_BASE+ 38)
+#define __NR_mkdir			(__NR_SYSCALL_BASE+ 39)
+#define __NR_rmdir			(__NR_SYSCALL_BASE+ 40)
+#define __NR_dup			(__NR_SYSCALL_BASE+ 41)
+#define __NR_pipe			(__NR_SYSCALL_BASE+ 42)
+#define __NR_times			(__NR_SYSCALL_BASE+ 43)
+					/* 44 was sys_prof */
+#define __NR_brk			(__NR_SYSCALL_BASE+ 45)
+#define __NR_setgid			(__NR_SYSCALL_BASE+ 46)
+#define __NR_getgid			(__NR_SYSCALL_BASE+ 47)
+					/* 48 was sys_signal */
+#define __NR_geteuid			(__NR_SYSCALL_BASE+ 49)
+#define __NR_getegid			(__NR_SYSCALL_BASE+ 50)
+#define __NR_acct			(__NR_SYSCALL_BASE+ 51)
+#define __NR_umount2			(__NR_SYSCALL_BASE+ 52)
+					/* 53 was sys_lock */
+#define __NR_ioctl			(__NR_SYSCALL_BASE+ 54)
+#define __NR_fcntl			(__NR_SYSCALL_BASE+ 55)
+					/* 56 was sys_mpx */
+#define __NR_setpgid			(__NR_SYSCALL_BASE+ 57)
+					/* 58 was sys_ulimit */
+					/* 59 was sys_olduname */
+#define __NR_umask			(__NR_SYSCALL_BASE+ 60)
+#define __NR_chroot			(__NR_SYSCALL_BASE+ 61)
+#define __NR_ustat			(__NR_SYSCALL_BASE+ 62)
+#define __NR_dup2			(__NR_SYSCALL_BASE+ 63)
+#define __NR_getppid			(__NR_SYSCALL_BASE+ 64)
+#define __NR_getpgrp			(__NR_SYSCALL_BASE+ 65)
+#define __NR_setsid			(__NR_SYSCALL_BASE+ 66)
+#define __NR_sigaction			(__NR_SYSCALL_BASE+ 67)
+					/* 68 was sys_sgetmask */
+					/* 69 was sys_ssetmask */
+#define __NR_setreuid			(__NR_SYSCALL_BASE+ 70)
+#define __NR_setregid			(__NR_SYSCALL_BASE+ 71)
+#define __NR_sigsuspend			(__NR_SYSCALL_BASE+ 72)
+#define __NR_sigpending			(__NR_SYSCALL_BASE+ 73)
+#define __NR_sethostname		(__NR_SYSCALL_BASE+ 74)
+#define __NR_setrlimit			(__NR_SYSCALL_BASE+ 75)
+#define __NR_getrlimit			(__NR_SYSCALL_BASE+ 76)	/* Back compat 2GB limited rlimit */
+#define __NR_getrusage			(__NR_SYSCALL_BASE+ 77)
+#define __NR_gettimeofday		(__NR_SYSCALL_BASE+ 78)
+#define __NR_settimeofday		(__NR_SYSCALL_BASE+ 79)
+#define __NR_getgroups			(__NR_SYSCALL_BASE+ 80)
+#define __NR_setgroups			(__NR_SYSCALL_BASE+ 81)
+#define __NR_select			(__NR_SYSCALL_BASE+ 82)
+#define __NR_symlink			(__NR_SYSCALL_BASE+ 83)
+					/* 84 was sys_lstat */
+#define __NR_readlink			(__NR_SYSCALL_BASE+ 85)
+#define __NR_uselib			(__NR_SYSCALL_BASE+ 86)
+#define __NR_swapon			(__NR_SYSCALL_BASE+ 87)
+#define __NR_reboot			(__NR_SYSCALL_BASE+ 88)
+#define __NR_readdir			(__NR_SYSCALL_BASE+ 89)
+#define __NR_mmap			(__NR_SYSCALL_BASE+ 90)
+#define __NR_munmap			(__NR_SYSCALL_BASE+ 91)
+#define __NR_truncate			(__NR_SYSCALL_BASE+ 92)
+#define __NR_ftruncate			(__NR_SYSCALL_BASE+ 93)
+#define __NR_fchmod			(__NR_SYSCALL_BASE+ 94)
+#define __NR_fchown			(__NR_SYSCALL_BASE+ 95)
+#define __NR_getpriority		(__NR_SYSCALL_BASE+ 96)
+#define __NR_setpriority		(__NR_SYSCALL_BASE+ 97)
+					/* 98 was sys_profil */
+#define __NR_statfs			(__NR_SYSCALL_BASE+ 99)
+#define __NR_fstatfs			(__NR_SYSCALL_BASE+100)
+					/* 101 was sys_ioperm */
+#define __NR_socketcall			(__NR_SYSCALL_BASE+102)
+#define __NR_syslog			(__NR_SYSCALL_BASE+103)
+#define __NR_setitimer			(__NR_SYSCALL_BASE+104)
+#define __NR_getitimer			(__NR_SYSCALL_BASE+105)
+#define __NR_stat			(__NR_SYSCALL_BASE+106)
+#define __NR_lstat			(__NR_SYSCALL_BASE+107)
+#define __NR_fstat			(__NR_SYSCALL_BASE+108)
+					/* 109 was sys_uname */
+					/* 110 was sys_iopl */
+#define __NR_vhangup			(__NR_SYSCALL_BASE+111)
+					/* 112 was sys_idle */
+#define __NR_syscall			(__NR_SYSCALL_BASE+113) /* syscall to call a syscall! */
+#define __NR_wait4			(__NR_SYSCALL_BASE+114)
+#define __NR_swapoff			(__NR_SYSCALL_BASE+115)
+#define __NR_sysinfo			(__NR_SYSCALL_BASE+116)
+#define __NR_ipc			(__NR_SYSCALL_BASE+117)
+#define __NR_fsync			(__NR_SYSCALL_BASE+118)
+#define __NR_sigreturn			(__NR_SYSCALL_BASE+119)
+#define __NR_clone			(__NR_SYSCALL_BASE+120)
+#define __NR_setdomainname		(__NR_SYSCALL_BASE+121)
+#define __NR_uname			(__NR_SYSCALL_BASE+122)
+					/* 123 was sys_modify_ldt */
+#define __NR_adjtimex			(__NR_SYSCALL_BASE+124)
+#define __NR_mprotect			(__NR_SYSCALL_BASE+125)
+#define __NR_sigprocmask		(__NR_SYSCALL_BASE+126)
+					/* 127 was sys_create_module */
+#define __NR_init_module		(__NR_SYSCALL_BASE+128)
+#define __NR_delete_module		(__NR_SYSCALL_BASE+129)
+					/* 130 was sys_get_kernel_syms */
+#define __NR_quotactl			(__NR_SYSCALL_BASE+131)
+#define __NR_getpgid			(__NR_SYSCALL_BASE+132)
+#define __NR_fchdir			(__NR_SYSCALL_BASE+133)
+#define __NR_bdflush			(__NR_SYSCALL_BASE+134)
+#define __NR_sysfs			(__NR_SYSCALL_BASE+135)
+#define __NR_personality		(__NR_SYSCALL_BASE+136)
+					/* 137 was sys_afs_syscall */
+#define __NR_setfsuid			(__NR_SYSCALL_BASE+138)
+#define __NR_setfsgid			(__NR_SYSCALL_BASE+139)
+#define __NR__llseek			(__NR_SYSCALL_BASE+140)
+#define __NR_getdents			(__NR_SYSCALL_BASE+141)
+#define __NR__newselect			(__NR_SYSCALL_BASE+142)
+#define __NR_flock			(__NR_SYSCALL_BASE+143)
+#define __NR_msync			(__NR_SYSCALL_BASE+144)
+#define __NR_readv			(__NR_SYSCALL_BASE+145)
+#define __NR_writev			(__NR_SYSCALL_BASE+146)
+#define __NR_getsid			(__NR_SYSCALL_BASE+147)
+#define __NR_fdatasync			(__NR_SYSCALL_BASE+148)
+#define __NR__sysctl			(__NR_SYSCALL_BASE+149)
+#define __NR_mlock			(__NR_SYSCALL_BASE+150)
+#define __NR_munlock			(__NR_SYSCALL_BASE+151)
+#define __NR_mlockall			(__NR_SYSCALL_BASE+152)
+#define __NR_munlockall			(__NR_SYSCALL_BASE+153)
+#define __NR_sched_setparam		(__NR_SYSCALL_BASE+154)
+#define __NR_sched_getparam		(__NR_SYSCALL_BASE+155)
+#define __NR_sched_setscheduler		(__NR_SYSCALL_BASE+156)
+#define __NR_sched_getscheduler		(__NR_SYSCALL_BASE+157)
+#define __NR_sched_yield		(__NR_SYSCALL_BASE+158)
+#define __NR_sched_get_priority_max	(__NR_SYSCALL_BASE+159)
+#define __NR_sched_get_priority_min	(__NR_SYSCALL_BASE+160)
+#define __NR_sched_rr_get_interval	(__NR_SYSCALL_BASE+161)
+#define __NR_nanosleep			(__NR_SYSCALL_BASE+162)
+#define __NR_mremap			(__NR_SYSCALL_BASE+163)
+#define __NR_setresuid			(__NR_SYSCALL_BASE+164)
+#define __NR_getresuid			(__NR_SYSCALL_BASE+165)
+					/* 166 was sys_vm86 */
+					/* 167 was sys_query_module */
+#define __NR_poll			(__NR_SYSCALL_BASE+168)
+#define __NR_nfsservctl			(__NR_SYSCALL_BASE+169)
+#define __NR_setresgid			(__NR_SYSCALL_BASE+170)
+#define __NR_getresgid			(__NR_SYSCALL_BASE+171)
+#define __NR_prctl			(__NR_SYSCALL_BASE+172)
+#define __NR_rt_sigreturn		(__NR_SYSCALL_BASE+173)
+#define __NR_rt_sigaction		(__NR_SYSCALL_BASE+174)
+#define __NR_rt_sigprocmask		(__NR_SYSCALL_BASE+175)
+#define __NR_rt_sigpending		(__NR_SYSCALL_BASE+176)
+#define __NR_rt_sigtimedwait		(__NR_SYSCALL_BASE+177)
+#define __NR_rt_sigqueueinfo		(__NR_SYSCALL_BASE+178)
+#define __NR_rt_sigsuspend		(__NR_SYSCALL_BASE+179)
+#define __NR_pread64			(__NR_SYSCALL_BASE+180)
+#define __NR_pwrite64			(__NR_SYSCALL_BASE+181)
+#define __NR_chown			(__NR_SYSCALL_BASE+182)
+#define __NR_getcwd			(__NR_SYSCALL_BASE+183)
+#define __NR_capget			(__NR_SYSCALL_BASE+184)
+#define __NR_capset			(__NR_SYSCALL_BASE+185)
+#define __NR_sigaltstack		(__NR_SYSCALL_BASE+186)
+#define __NR_sendfile			(__NR_SYSCALL_BASE+187)
+					/* 188 reserved */
+					/* 189 reserved */
+#define __NR_vfork			(__NR_SYSCALL_BASE+190)
+#define __NR_ugetrlimit			(__NR_SYSCALL_BASE+191)	/* SuS compliant getrlimit */
+#define __NR_mmap2			(__NR_SYSCALL_BASE+192)
+#define __NR_truncate64			(__NR_SYSCALL_BASE+193)
+#define __NR_ftruncate64		(__NR_SYSCALL_BASE+194)
+#define __NR_stat64			(__NR_SYSCALL_BASE+195)
+#define __NR_lstat64			(__NR_SYSCALL_BASE+196)
+#define __NR_fstat64			(__NR_SYSCALL_BASE+197)
+#define __NR_lchown32			(__NR_SYSCALL_BASE+198)
+#define __NR_getuid32			(__NR_SYSCALL_BASE+199)
+#define __NR_getgid32			(__NR_SYSCALL_BASE+200)
+#define __NR_geteuid32			(__NR_SYSCALL_BASE+201)
+#define __NR_getegid32			(__NR_SYSCALL_BASE+202)
+#define __NR_setreuid32			(__NR_SYSCALL_BASE+203)
+#define __NR_setregid32			(__NR_SYSCALL_BASE+204)
+#define __NR_getgroups32		(__NR_SYSCALL_BASE+205)
+#define __NR_setgroups32		(__NR_SYSCALL_BASE+206)
+#define __NR_fchown32			(__NR_SYSCALL_BASE+207)
+#define __NR_setresuid32		(__NR_SYSCALL_BASE+208)
+#define __NR_getresuid32		(__NR_SYSCALL_BASE+209)
+#define __NR_setresgid32		(__NR_SYSCALL_BASE+210)
+#define __NR_getresgid32		(__NR_SYSCALL_BASE+211)
+#define __NR_chown32			(__NR_SYSCALL_BASE+212)
+#define __NR_setuid32			(__NR_SYSCALL_BASE+213)
+#define __NR_setgid32			(__NR_SYSCALL_BASE+214)
+#define __NR_setfsuid32			(__NR_SYSCALL_BASE+215)
+#define __NR_setfsgid32			(__NR_SYSCALL_BASE+216)
+#define __NR_getdents64			(__NR_SYSCALL_BASE+217)
+#define __NR_pivot_root			(__NR_SYSCALL_BASE+218)
+#define __NR_mincore			(__NR_SYSCALL_BASE+219)
+#define __NR_madvise			(__NR_SYSCALL_BASE+220)
+#define __NR_fcntl64			(__NR_SYSCALL_BASE+221)
+					/* 222 for tux */
+					/* 223 is unused */
+#define __NR_gettid			(__NR_SYSCALL_BASE+224)
+#define __NR_readahead			(__NR_SYSCALL_BASE+225)
+#define __NR_setxattr			(__NR_SYSCALL_BASE+226)
+#define __NR_lsetxattr			(__NR_SYSCALL_BASE+227)
+#define __NR_fsetxattr			(__NR_SYSCALL_BASE+228)
+#define __NR_getxattr			(__NR_SYSCALL_BASE+229)
+#define __NR_lgetxattr			(__NR_SYSCALL_BASE+230)
+#define __NR_fgetxattr			(__NR_SYSCALL_BASE+231)
+#define __NR_listxattr			(__NR_SYSCALL_BASE+232)
+#define __NR_llistxattr			(__NR_SYSCALL_BASE+233)
+#define __NR_flistxattr			(__NR_SYSCALL_BASE+234)
+#define __NR_removexattr		(__NR_SYSCALL_BASE+235)
+#define __NR_lremovexattr		(__NR_SYSCALL_BASE+236)
+#define __NR_fremovexattr		(__NR_SYSCALL_BASE+237)
+#define __NR_tkill			(__NR_SYSCALL_BASE+238)
+#define __NR_sendfile64			(__NR_SYSCALL_BASE+239)
+#define __NR_futex			(__NR_SYSCALL_BASE+240)
+#define __NR_sched_setaffinity		(__NR_SYSCALL_BASE+241)
+#define __NR_sched_getaffinity		(__NR_SYSCALL_BASE+242)
+#define __NR_io_setup			(__NR_SYSCALL_BASE+243)
+#define __NR_io_destroy			(__NR_SYSCALL_BASE+244)
+#define __NR_io_getevents		(__NR_SYSCALL_BASE+245)
+#define __NR_io_submit			(__NR_SYSCALL_BASE+246)
+#define __NR_io_cancel			(__NR_SYSCALL_BASE+247)
+#define __NR_exit_group			(__NR_SYSCALL_BASE+248)
+#define __NR_lookup_dcookie		(__NR_SYSCALL_BASE+249)
+#define __NR_epoll_create		(__NR_SYSCALL_BASE+250)
+#define __NR_epoll_ctl			(__NR_SYSCALL_BASE+251)
+#define __NR_epoll_wait			(__NR_SYSCALL_BASE+252)
+#define __NR_remap_file_pages		(__NR_SYSCALL_BASE+253)
+					/* 254 for set_thread_area */
+					/* 255 for get_thread_area */
+					/* 256 for set_tid_address */
+#define __NR_timer_create		(__NR_SYSCALL_BASE+257)
+#define __NR_timer_settime		(__NR_SYSCALL_BASE+258)
+#define __NR_timer_gettime		(__NR_SYSCALL_BASE+259)
+#define __NR_timer_getoverrun		(__NR_SYSCALL_BASE+260)
+#define __NR_timer_delete		(__NR_SYSCALL_BASE+261)
+#define __NR_clock_settime		(__NR_SYSCALL_BASE+262)
+#define __NR_clock_gettime		(__NR_SYSCALL_BASE+263)
+#define __NR_clock_getres		(__NR_SYSCALL_BASE+264)
+#define __NR_clock_nanosleep		(__NR_SYSCALL_BASE+265)
+#define __NR_statfs64			(__NR_SYSCALL_BASE+266)
+#define __NR_fstatfs64			(__NR_SYSCALL_BASE+267)
+#define __NR_tgkill			(__NR_SYSCALL_BASE+268)
+#define __NR_utimes			(__NR_SYSCALL_BASE+269)
+#define __NR_fadvise64_64		(__NR_SYSCALL_BASE+270)
+#define __NR_pciconfig_iobase		(__NR_SYSCALL_BASE+271)
+#define __NR_pciconfig_read		(__NR_SYSCALL_BASE+272)
+#define __NR_pciconfig_write		(__NR_SYSCALL_BASE+273)
+
+#endif /* __VKI_UNISTD_ARM_LINUX_H */
+

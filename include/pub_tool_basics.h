@@ -118,7 +118,7 @@ SysRes;
 
 #if defined(VGA_x86)
 #  define VG_REGPARM(n)            __attribute__((regparm(n)))
-#elif defined(VGA_amd64) || defined(VGA_arm) || defined(VGA_ppc32)
+#elif defined(VGA_amd64) || defined(VGA_ppc32)
 #  define VG_REGPARM(n)            /* */
 #else
 #  error Unknown arch

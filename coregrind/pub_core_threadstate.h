@@ -79,8 +79,6 @@ typedef
    typedef VexGuestX86State   VexGuestArchState;
 #elif defined(VGA_amd64)
    typedef VexGuestAMD64State VexGuestArchState;
-#elif defined(VGA_arm)
-   typedef VexGuestARMState   VexGuestArchState;
 #elif defined(VGA_ppc32)
    typedef VexGuestPPC32State VexGuestArchState;
 #else

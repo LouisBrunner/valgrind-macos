@@ -36,8 +36,6 @@
 #  include "vki_unistd-x86-linux.h"   
 #elif defined(VGP_amd64_linux)
 #  include "vki_unistd-amd64-linux.h" 
-#elif defined(VGP_arm_linux)
-#  include "vki_unistd-arm-linux.h" 
 #elif defined(VGP_ppc32_linux)
 #  include "vki_unistd-ppc32-linux.h" 
 #else

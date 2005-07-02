@@ -110,7 +110,7 @@ AC_CANONICAL_HOST
 AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH)
 AC_SUBST(VG_ARCH_ALL)
-VG_ARCH_ALL="amd64 arm ppc32 x86"
+VG_ARCH_ALL="amd64 ppc32 x86"
 AC_SUBST(KICKSTART_BASE)
 AC_SUBST(ARCH_CORE_AM_CFLAGS)
 AC_SUBST(ARCH_TOOL_AM_CFLAGS)
@@ -142,15 +142,6 @@ case "${host_cpu}" in
         # I don't understand...  --njn
         ARCH_TOOL_AM_CFLAGS="-m64 -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -fpic"
         ARCH_CORE_AM_CCASFLAGS="-m64"
-        ;;
-
-     arm*) 
-	AC_MSG_RESULT([ok (${host_cpu})])
-        VG_ARCH="arm"
-        KICKSTART_BASE="0xb0000000"
-        ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
-        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
-        ARCH_CORE_AM_CCASFLAGS=""
         ;;
 
      powerpc*)
@@ -216,12 +207,12 @@ esac
 AC_MSG_CHECKING([for a supported CPU/OS combination])
 AC_SUBST(VG_PLATFORM)
 AC_SUBST(VG_PLATFORM_ALL)
-VG_PLATFORM_ALL="amd64-linux arm-linux ppc32-linux x86-linux"
+VG_PLATFORM_ALL="amd64-linux ppc32-linux x86-linux"
 
 VG_PLATFORM="$VG_ARCH-$VG_OS"
 
 case $VG_PLATFORM in
-    x86-linux|amd64-linux|arm-linux|ppc32-linux)
+    x86-linux|amd64-linux|ppc32-linux)
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
         ;;
 
@@ -468,14 +459,12 @@ AC_OUTPUT(
    memcheck/Makefile
    memcheck/tests/Makefile
    memcheck/tests/amd64/Makefile
-   memcheck/tests/arm/Makefile
    memcheck/tests/ppc32/Makefile
    memcheck/tests/x86/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/amd64/Makefile
-   cachegrind/tests/arm/Makefile
    cachegrind/tests/ppc32/Makefile
    cachegrind/tests/x86/Makefile
    cachegrind/docs/Makefile
@@ -493,7 +482,6 @@ AC_OUTPUT(
    none/Makefile
    none/tests/Makefile
    none/tests/amd64/Makefile
-   none/tests/arm/Makefile
    none/tests/ppc32/Makefile
    none/tests/x86/Makefile
    none/docs/Makefile

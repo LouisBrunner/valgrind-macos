@@ -147,13 +147,6 @@ typedef struct SigQueue {
       /* Convert the value in uc_mcontext.rax into a SysRes. */ \
       VG_(mk_SysRes_amd64_linux)( (uc)->uc_mcontext.rax )
 
-#elif defined(VGP_arm_linux)
-#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.arm_pc)
-#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.arm_sp)
-#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.arm_fp)
-#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.arm_r0)
-#  error VG_UCONTEXT_SYSCALL_RET undefined for ARM/Linux
-
 #elif defined(VGP_ppc32_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[VKI_PT_NIP])
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[1])

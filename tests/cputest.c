@@ -16,7 +16,6 @@ typedef int    Bool;
 
 char* all_archs[] = {
    "amd64",
-   "arm",
    "ppc",
    "x86",
    NULL
@@ -31,16 +30,6 @@ static Bool go(char* cpu)
       return False;
 }
 #endif // __amd64
-
-#ifdef __arm__
-static Bool go(char* cpu)
-{
-   if ( strcmp( cpu, "arm" ) == 0 )
-      return True;
-   else 
-      return False;
-}
-#endif // __arm__
 
 #ifdef __powerpc__
 static Bool go(char* cpu)

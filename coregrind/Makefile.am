@@ -77,7 +77,6 @@ noinst_HEADERS = \
 	pub_core_ume.h		\
 	vki_unistd.h		\
 	vki_unistd-amd64-linux.h\
-	vki_unistd-arm-linux.h	\
 	vki_unistd-ppc32-linux.h\
 	vki_unistd-x86-linux.h
 

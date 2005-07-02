@@ -1,8 +1,13 @@
 SUBDIRS = xml lib images
 
-EXTRA_DIST = README porting-HOWTO
+EXTRA_DIST = \
+	64-bit-cleanness \
+	directory-structure \
+	README \
+	porting-HOWTO porting-to-ARM \
+	tm-mutexstates.dot tm-threadstates.dot \
 
-dist_man_MANS = valgrind.1	# Unsure about this --njn
+dist_man_MANS = valgrind.1
 
 ##-------------------------------------------------------------------
 ## Below here is more ordinary make stuff...

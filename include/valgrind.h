@@ -167,28 +167,6 @@ extern void exit (int __status);
   }
 #endif  /* __i386__ */
 
-#ifdef __arm__
-/* XXX: temporary, until MAGIC_SEQUENCE is written properly */
-extern int printf (__const char *__restrict __format, ...);
-extern void exit (int __status);
-#define VALGRIND_MAGIC_SEQUENCE(                                        \
-        _zzq_rlval, _zzq_default, _zzq_request,                         \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
-                                                                        \
-  { volatile unsigned int _zzq_args[5];                                 \
-    _zzq_args[0] = (volatile unsigned int)(_zzq_request);               \
-    _zzq_args[1] = (volatile unsigned int)(_zzq_arg1);                  \
-    _zzq_args[2] = (volatile unsigned int)(_zzq_arg2);                  \
-    _zzq_args[3] = (volatile unsigned int)(_zzq_arg3);                  \
-    _zzq_args[4] = (volatile unsigned int)(_zzq_arg4);                  \
-    (_zzq_rlval) = (_zzq_default);/* temporary only */  \
-    printf("argh: MAGIC_SEQUENCE"); exit(1); \
-    __asm__ volatile("");                                                   \
-  }
-/* XXX: make sure that the register holding the args and the register taking
- * the return value match what the scheduler is expecting. */
-#endif  /* __arm__ */
-
 #ifdef __powerpc__
 #define VALGRIND_MAGIC_SEQUENCE(                                        \
         _zzq_rlval, _zzq_default, _zzq_request,                         \

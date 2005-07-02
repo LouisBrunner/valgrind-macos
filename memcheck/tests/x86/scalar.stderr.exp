@@ -94,7 +94,6 @@ Syscall param close(fd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
-Warning: invalid file descriptor -1 in syscall close()
 -----------------------------------------------------
   7:        __NR_waitpid 3s 1m
 -----------------------------------------------------

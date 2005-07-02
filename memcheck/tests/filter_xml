@@ -6,4 +6,20 @@ sed "s/<pid>[0-9]*<\/pid>/<pid>...<\/pid>/" |
 sed "s/<ppid>[0-9]*<\/ppid>/<ppid>...<\/ppid>/" |
 sed "s/<obj>.*<\/obj>/<obj>...<\/obj>/" |
 sed "s/<line>.*<\/line>/<line>...<\/line>/" |
-sed "s/<dir>.*<\/dir>/<dir>...<\/dir>/"
+sed "s/<dir>.*<\/dir>/<dir>...<\/dir>/" |
+sed "s/<count>.*<\/count>/<count>...<\/count>/" |
+perl -0 -p -e "s/<suppcounts>.*<\/suppcounts>/<suppcounts>...<\/suppcounts>/s"
+
+# Collected wisdom re Perl magic incantation:
+#
+# From: Tom Hughes
+#
+# Two problems - one is that you need -p to force perl to loop over 
+# the input lines and apply your expression to each one and then print
+# the results.
+# 
+# The other is that as somebody else said you need to change the input
+# record separator so that it reads in the whole file as a single line
+# which you can do with the -0 switch.
+#
+# Hence -0 -p.

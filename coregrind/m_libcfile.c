@@ -324,7 +324,7 @@ Int my_socket ( Int domain, Int type, Int protocol )
    I_die_here;
 
 #elif defined(VGP_ppc32_linux)
-//CAB: TODO
+   //CAB: TODO
    I_die_here;
 
 #else
@@ -351,7 +351,7 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
    I_die_here;
 
 #elif defined(VGP_ppc32_linux)
-//CAB: TODO
+   //CAB: TODO
    I_die_here;
 
 #else
@@ -383,7 +383,7 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    I_die_here;
 
 #elif defined(VGP_ppc32_linux)
-//CAB: TODO
+   //CAB: TODO
    I_die_here;
    flags = 0; // stop compiler complaints
 
@@ -396,7 +396,7 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
    SysRes res;
 
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
@@ -409,10 +409,6 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
                            (UWord)sd, (UWord)name, (UWord)namelen );
    return res.isError ? -1 : res.val;
 
-#elif defined(VGP_ppc32_linux)
-//CAB: TODO
-   I_die_here;
-   return res.isError ? -1 : res.val;
 #else
 #  error Unknown arch
 #endif
@@ -422,7 +418,7 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
    SysRes res;
 
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
@@ -435,13 +431,8 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
                            (UWord)sd, (UWord)name, (UWord)namelen );
    return res.isError ? -1 : res.val;
 
-#elif defined(VGP_ppc32_linux)
-//CAB: TODO
-   I_die_here;
-   return res.isError ? -1 : res.val;
-
 #else
-#  error Unknown arch
+#  error Unknown archx
 #endif
 }
 
@@ -450,7 +441,7 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
 {
    SysRes res;
 
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    UWord  args[5];
    args[0] = sd;
    args[1] = level;
@@ -464,11 +455,6 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
    res = VG_(do_syscall5)( __NR_getsockopt,
                            (UWord)sd, (UWord)level, (UWord)optname, 
                            (UWord)optval, (UWord)optlen );
-   return res.isError ? -1 : res.val;
-
-#elif defined(VGP_ppc32_linux)
-//CAB: TODO
-   I_die_here;
    return res.isError ? -1 : res.val;
 
 #else

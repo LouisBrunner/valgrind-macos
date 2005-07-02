@@ -32,7 +32,10 @@ int main(int argc, char **argv)
       exit(1);
    }
 
-#ifdef HAVE_SEMTIMEDOP
+   /* The next call to semtimedop causes the program to hang on
+      ppc32-linux (Yellow Dog 4.0).  I don't know why.  Hence the
+      extended ifdef. */
+#if defined(HAVE_SEMTIMEDOP) && !defined(__powerpc__)
    sop.sem_num = 0;
    sop.sem_op = 0;
    sop.sem_flg = 0;

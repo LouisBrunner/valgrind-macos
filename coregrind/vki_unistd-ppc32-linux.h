@@ -37,7 +37,7 @@
 #define __NR_open			  5
 #define __NR_close			  6
 //#define __NR_waitpid			  7
-//#define __NR_creat			  8
+#define __NR_creat			  8
 //#define __NR_link			  9
 #define __NR_unlink			 10
 #define __NR_execve			 11
@@ -70,7 +70,7 @@
 #define __NR_rename			 38
 //#define __NR_mkdir			 39
 //#define __NR_rmdir			 40
-//#define __NR_dup			 41
+#define __NR_dup			 41
 #define __NR_pipe			 42
 //#define __NR_times			 43
 //#define __NR_prof			 44
@@ -241,7 +241,7 @@
 //#define __NR_setxattr			209
 //#define __NR_lsetxattr		210
 //#define __NR_fsetxattr		211
-//#define __NR_getxattr			212
+#define __NR_getxattr			212
 //#define __NR_lgetxattr		213
 //#define __NR_fgetxattr		214
 //#define __NR_listxattr		215

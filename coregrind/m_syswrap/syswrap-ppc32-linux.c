@@ -1936,11 +1936,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_open,              sys_open),                   // 5
    GENXY(__NR_close,             sys_close),                  // 6
 //..    GENXY(__NR_waitpid,           sys_waitpid),           // 7
-//..    GENXY(__NR_creat,             sys_creat),             // 8
+   GENXY(__NR_creat,             sys_creat),                  // 8
 //..    GENX_(__NR_link,              sys_link),              // 9
 //.. 
    GENX_(__NR_unlink,            sys_unlink),                 // 10
-//..    GENX_(__NR_execve,            sys_execve),            // 11
+   GENX_(__NR_execve,            sys_execve),                 // 11
 //..    GENX_(__NR_chdir,             sys_chdir),             // 12
    GENXY(__NR_time,              sys_time),                   // 13
 //..    GENX_(__NR_mknod,             sys_mknod),             // 14
@@ -1976,8 +1976,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_mkdir,             sys_mkdir),             // 39
 //.. 
 //..    GENX_(__NR_rmdir,             sys_rmdir),             // 40
-//..    GENXY(__NR_dup,               sys_dup),               // 41
-//..    GENXY(__NR_pipe,              sys_pipe),              // 42
+   GENXY(__NR_dup,               sys_dup),                    // 41
+   GENXY(__NR_pipe,              sys_pipe),                   // 42
 //..    GENXY(__NR_times,             sys_times),             // 43
 //..    GENX_(__NR_prof,              sys_ni_syscall),        // 44
 //.. 
@@ -2002,7 +2002,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_umask,             sys_umask),             // 60
 //..    GENX_(__NR_chroot,            sys_chroot),            // 61
 //..    //   (__NR_ustat,             sys_ustat)              // 62 SVr4 -- deprecated
-//..    GENXY(__NR_dup2,              sys_dup2),              // 63
+   GENXY(__NR_dup2,              sys_dup2),                   // 63
 //..    GENXY(__NR_getppid,           sys_getppid),           // 64
 //.. 
 //..    GENX_(__NR_getpgrp,           sys_getpgrp),           // 65
@@ -2185,7 +2185,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_setxattr,          sys_setxattr),          // 209
 //..    GENX_(__NR_lsetxattr,         sys_lsetxattr),         // 210
 //..    GENX_(__NR_fsetxattr,         sys_fsetxattr),         // 211
-//..    GENXY(__NR_getxattr,          sys_getxattr),          // 212
+   GENXY(__NR_getxattr,          sys_getxattr),          // 212
 //..    GENXY(__NR_lgetxattr,         sys_lgetxattr),         // 213
 //..    GENXY(__NR_fgetxattr,         sys_fgetxattr),         // 214
 //..    GENXY(__NR_listxattr,         sys_listxattr),         // 215

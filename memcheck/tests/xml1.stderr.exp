@@ -358,19 +358,17 @@
 </error>
 
 <errorcounts>
-  <pair> <count>1</count> <unique>0x........</unique> </pair>
-  <pair> <count>1</count> <unique>0x........</unique> </pair>
-  <pair> <count>1</count> <unique>0x........</unique> </pair>
-  <pair> <count>1</count> <unique>0x........</unique> </pair>
-  <pair> <count>1</count> <unique>0x........</unique> </pair>
-  <pair> <count>1</count> <unique>0x........</unique> </pair>
+  <pair> <count>...</count> <unique>0x........</unique> </pair>
+  <pair> <count>...</count> <unique>0x........</unique> </pair>
+  <pair> <count>...</count> <unique>0x........</unique> </pair>
+  <pair> <count>...</count> <unique>0x........</unique> </pair>
+  <pair> <count>...</count> <unique>0x........</unique> </pair>
+  <pair> <count>...</count> <unique>0x........</unique> </pair>
 </errorcounts>
 
 <status>FINISHED</status>
 
-<suppcounts>
-  <pair> <count>18</count> <name>Ugly strchr error in /lib/ld-2.3.3.so</name> </pair>
-</suppcounts>
+<suppcounts>...</suppcounts>
 
 <error>
   <unique>0x........</unique>

@@ -99,6 +99,10 @@ static ThreadId last_tid_printed = 1;
 */
 struct _Error {
    struct _Error* next;
+   // Unique tag.  This gives the error a unique identity (handle) by
+   // which it can be referred to afterwords.  Currently only used for
+   // XML printing.
+   UInt unique;
    // NULL if unsuppressed; or ptr to suppression record.
    Supp* supp;
    Int count;
@@ -269,8 +273,8 @@ static void pp_Error ( Error* err, Bool printCount )
 {
    if (VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "<error>");
-      VG_(message)(Vg_UserMsg, "  <unique>0x%llx</unique>",
-                                  Ptr_to_ULong(err));
+      VG_(message)(Vg_UserMsg, "  <unique>0x%x</unique>",
+                                  err->unique);
       VG_(message)(Vg_UserMsg, "  <tid>%d</tid>", err->tid);
    }
 
@@ -352,9 +356,13 @@ static __inline__
 void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
                        Char* s, void* extra, ExeContext* where )
 {
+   /* DO NOT MAKE unique_counter NON-STATIC */
+   static UInt unique_counter = 0;
+
    tl_assert(tid < VG_N_THREADS);
 
    /* Core-only parts */
+   err->unique   = unique_counter++;
    err->next     = NULL;
    err->supp     = NULL;
    err->count    = 1;

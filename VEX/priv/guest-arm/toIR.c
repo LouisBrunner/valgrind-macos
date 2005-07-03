@@ -241,7 +241,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
       }
 
       delta += size;
-      vge->len[vge->n_used-1] += size;
+      vge->len[vge->n_used-1] = toUShort(vge->len[vge->n_used-1] + size);
       n_instrs++;
       DIP("\n");
 

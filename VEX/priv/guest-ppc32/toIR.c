@@ -274,7 +274,7 @@ static void unimplemented ( Char* str )
 
 static UChar extend_s_5to8 ( UChar x )
 {
-   return (UChar)((((Int)x) << 27) >> 27);
+   return toUChar((((Int)x) << 27) >> 27);
 }
 
 #if 0
@@ -808,7 +808,7 @@ static IRExpr* getReg_field ( PPC32SPR reg, UInt field_idx )
    fld = getReg_masked( reg, (0xF << (field_idx*4)) );
    
    if (field_idx != 0) {
-      fld = binop(Iop_Shr32, fld, mkU8(field_idx * 4));
+      fld = binop(Iop_Shr32, fld, mkU8(toUChar(field_idx * 4)));
    }
    return fld;
 }
@@ -818,13 +818,13 @@ static IRExpr* getReg_field ( PPC32SPR reg, UInt field_idx )
 static IRExpr* getReg_bit ( PPC32SPR reg, UInt bit_idx )
 {
    IRExpr* val;
-   vassert( bit_idx <= 32 );
+   vassert( bit_idx < 32 );
    vassert( reg < PPC32_SPR_MAX );
    
    val = getReg_masked( reg, 1<<bit_idx );
 
    if (bit_idx != 0) {
-      val = binop(Iop_Shr32, val, mkU8(bit_idx));
+      val = binop(Iop_Shr32, val, mkU8(toUChar(bit_idx)));
    }
    return val;
 }
@@ -955,7 +955,7 @@ static void putReg_field ( PPC32SPR reg, IRExpr* src, UInt field_idx )
    vassert( reg < PPC32_SPR_MAX );
    
    if (field_idx != 0) {
-      src = binop(Iop_Shl32, src, mkU8(field_idx * 4));
+      src = binop(Iop_Shl32, src, mkU8(toUChar(field_idx * 4)));
    }   
    putReg_masked( reg, src, (0xF << (field_idx*4)) );
 }
@@ -968,16 +968,10 @@ static void putReg_bit ( PPC32SPR reg, IRExpr* src, UInt bit_idx )
    vassert( reg < PPC32_SPR_MAX );
    
    if (bit_idx != 0) {
-      src = binop(Iop_Shl32, src, mkU8(bit_idx));
+      src = binop(Iop_Shl32, src, mkU8(toUChar(bit_idx)));
    }   
    putReg_masked( reg, src, (1<<bit_idx) );
 }
-
-
-
-
-
-
 
 
 /*------------------------------------------------------------*/
@@ -1370,13 +1364,13 @@ static Bool dis_int_cmp ( UInt theInstr )
    switch (opc1) {
    case 0x0B: // cmpi (Compare Immediate, PPC32 p368)
       EXTS_SIMM = extend_s_16to32(SIMM_16);
-      DIP("cmpi crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, EXTS_SIMM);
+      DIP("cmpi crf%d,%d,r%d,0x%x\n", crfD, flag_L, Ra_addr, EXTS_SIMM);
       irx_cmp_lt = binop(Iop_CmpLT32S, mkexpr(Ra), mkU32(EXTS_SIMM));
       irx_cmp_eq = binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(EXTS_SIMM));
       break;
           
    case 0x0A: // cmpli (Compare Logical Immediate, PPC32 p370)
-      DIP("cmpli crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, UIMM_16);
+      DIP("cmpli crf%d,%d,r%d,0x%x\n", crfD, flag_L, Ra_addr, UIMM_16);
       irx_cmp_lt = binop(Iop_CmpLT32U, mkexpr(Ra), mkU32(UIMM_16));
       irx_cmp_eq = binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(UIMM_16));
       break;
@@ -1392,13 +1386,13 @@ static Bool dis_int_cmp ( UInt theInstr )
 
       switch (opc2) {
       case 0x000: // cmp (Compare, PPC32 p367)
-         DIP("cmp crf%d,%u,r%d,r%d\n", crfD, flag_L,
+         DIP("cmp crf%d,%d,r%d,r%d\n", crfD, flag_L,
              Ra_addr, Rb_addr);
          irx_cmp_lt = binop(Iop_CmpLT32S, mkexpr(Ra), mkexpr(Rb));
          break;
          
        case 0x020: // cmpl (Compare Logical, PPC32 p369)
-          DIP("cmpl crf%d,%u,r%d,r%d\n", crfD, flag_L,
+          DIP("cmpl crf%d,%d,r%d,r%d\n", crfD, flag_L,
               Ra_addr, Rb_addr);
           irx_cmp_lt = binop(Iop_CmpLT32U, mkexpr(Ra), mkexpr(Rb));
           break;
@@ -1642,7 +1636,7 @@ static Bool dis_int_rot ( UInt theInstr )
       
    switch (opc1) {
    case 0x14: // rlwimi (Rotate Left Word Immediate then Mask Insert, PPC32 p500)
-      DIP("rlwimi%s r%d,r%d,%d,%u,%u\n", flag_Rc ? "." : "",
+      DIP("rlwimi%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
       // Ra = (ROTL(Rs, Imm) & mask) | (Ra & ~mask);
       assign( Ra, binop(Iop_Or32,
@@ -1652,7 +1646,7 @@ static Bool dis_int_rot ( UInt theInstr )
       break;
 
    case 0x15: // rlwinm (Rotate Left Word Immediate then AND with Mask, PPC32 p501)
-      DIP("rlwinm%s r%d,r%d,%d,%u,%u\n", flag_Rc ? "." : "",
+      DIP("rlwinm%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
       // Ra = ROTL(Rs, Imm) & mask
       assign( Ra, binop(Iop_And32, ROTL32(mkexpr(Rs),
@@ -1660,7 +1654,7 @@ static Bool dis_int_rot ( UInt theInstr )
       break;
 
    case 0x17: // rlwnm (Rotate Left Word then AND with Mask, PPC32 p503
-      DIP("rlwnm%s r%d,r%d,r%d,%u,%u\n", flag_Rc ? "." : "",
+      DIP("rlwnm%s r%d,r%d,r%d,%d,%d\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, Rb_addr, MaskBegin, MaskEnd);
       // Ra = ROTL(Rs, Rb[0-4]) & mask
       assign( rot_amt,
@@ -2147,7 +2141,7 @@ vassert(0);
             return False;
          }
       }
-      DIP("lswi r%d,r%d,%u\n", Rd_addr, Ra_addr, NumBytes);
+      DIP("lswi r%d,r%d,%d\n", Rd_addr, Ra_addr, NumBytes);
       
       assign( EA, mkexpr(b_EA) );
       
@@ -2182,7 +2176,7 @@ vassert(0);
    case 0x2D5: // stswi (Store String Word Immediate, PPC32 p528)
 vassert(0);
 
-      DIP("stswi r%d,r%d,%u\n", Rs_addr, Ra_addr, NumBytes);
+      DIP("stswi r%d,r%d,%d\n", Rs_addr, Ra_addr, NumBytes);
       if (Ra_addr == 0) {
          assign( EA, mkU32(0) );
       } else {
@@ -3286,7 +3280,7 @@ static Bool dis_fp_load ( UInt theInstr )
    /* D-Form */
    UInt  d_imm     =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
 
-   UInt exts_d_imm = extend_s_16to32(d_imm);
+   Int exts_d_imm  = extend_s_16to32(d_imm);
 
    IRTemp EA       = newTemp(Ity_I32);
    IRTemp rA       = newTemp(Ity_I32);
@@ -3299,7 +3293,7 @@ static Bool dis_fp_load ( UInt theInstr )
 
    switch(opc1) {
    case 0x30: // lfs (Load Float Single, PPC32 p441)
-      DIP("lfs fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+      DIP("lfs fr%d,%d(r%d)\n", frD_addr, exts_d_imm, rA_addr);
       assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA_or_0)) );
       putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
       break;
@@ -3309,14 +3303,14 @@ static Bool dis_fp_load ( UInt theInstr )
          vex_printf("dis_fp_load(PPC32)(instr,lfsu)\n");
          return False;
       }
-      DIP("lfsu fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+      DIP("lfsu fr%d,%d(r%d)\n", frD_addr, exts_d_imm, rA_addr);
       assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
       putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
       putIReg( rA_addr, mkexpr(EA) );
       break;
       
    case 0x32: // lfd (Load Float Double, PPC32 p437)
-      DIP("lfd fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+      DIP("lfd fr%d,%d(r%d)\n", frD_addr, exts_d_imm, rA_addr);
       assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA_or_0)) );
       putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
       break;
@@ -3326,7 +3320,7 @@ static Bool dis_fp_load ( UInt theInstr )
          vex_printf("dis_fp_load(PPC32)(instr,lfdu)\n");
          return False;
       }
-      DIP("lfdu fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+      DIP("lfdu fr%d,%d(r%d)\n", frD_addr, exts_d_imm, rA_addr);
       assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
       putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
       putIReg( rA_addr, mkexpr(EA) );
@@ -3404,7 +3398,7 @@ static Bool dis_fp_store ( UInt theInstr )
    /* D-Form */
    UInt  d_imm     =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
 
-   UInt exts_d_imm = extend_s_16to32(d_imm);
+   Int exts_d_imm  = extend_s_16to32(d_imm);
 
    IRTemp EA       = newTemp(Ity_I32);
    IRTemp frS      = newTemp(Ity_F64);
@@ -3419,7 +3413,7 @@ static Bool dis_fp_store ( UInt theInstr )
 
    switch(opc1) {
    case 0x34: // stfs (Store Float Single, PPC32 p518)
-      DIP("stfs fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+      DIP("stfs fr%d,%d(r%d)\n", frS_addr, exts_d_imm, rA_addr);
       assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA_or_0)) );
       storeBE( mkexpr(EA),
                binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
@@ -3430,7 +3424,7 @@ static Bool dis_fp_store ( UInt theInstr )
          vex_printf("dis_fp_store(PPC32)(instr,stfsu)\n");
          return False;
       }
-      DIP("stfsu fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+      DIP("stfsu fr%d,%d(r%d)\n", frS_addr, exts_d_imm, rA_addr);
       assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
       storeBE( mkexpr(EA),
                binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
@@ -3438,7 +3432,7 @@ static Bool dis_fp_store ( UInt theInstr )
       break;
 
    case 0x36: // stfd (Store Float Double, PPC32 p513)
-      DIP("stfd fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+      DIP("stfd fr%d,%d(r%d)\n", frS_addr, exts_d_imm, rA_addr);
       assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA_or_0)) );
       storeBE( mkexpr(EA), mkexpr(frS) );
       break;
@@ -3448,7 +3442,7 @@ static Bool dis_fp_store ( UInt theInstr )
          vex_printf("dis_fp_store(PPC32)(instr,stfdu)\n");
          return False;
       }
-      DIP("stfdu fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+      DIP("stfdu fr%d,%d(r%d)\n", frS_addr, exts_d_imm, rA_addr);
       assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
       storeBE( mkexpr(EA), mkexpr(frS) );
       putIReg( rA_addr, mkexpr(EA) );
@@ -5046,7 +5040,7 @@ static Bool dis_av_permute ( UInt theInstr )
          vex_printf("dis_av_permute(PPC32)(vsldoi)\n");
          return False;
       }
-      DIP("vsldoi v%d,v%d,v%d,%u\n", vD_addr, vA_addr, vB_addr, SHB_uimm4);
+      DIP("vsldoi v%d,v%d,v%d,%d\n", vD_addr, vA_addr, vB_addr, SHB_uimm4);
       DIP(" => not implemented\n");
       return False;
 
@@ -5090,17 +5084,17 @@ static Bool dis_av_permute ( UInt theInstr )
 
    /* Splat */
    case 0x20C: // vspltb (Splat Byte, AV p245)
-      DIP("vspltb v%d,v%d,%u\n", vD_addr, vB_addr, UIMM_5);
+      DIP("vspltb v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       DIP(" => not implemented\n");
       return False;
 
    case 0x24C: // vsplth (Splat Half Word, AV p246)
-      DIP("vsplth v%d,v%d,%u\n", vD_addr, vB_addr, UIMM_5);
+      DIP("vsplth v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       DIP(" => not implemented\n");
       return False;
 
    case 0x28C: // vspltw (Splat Word, AV p250)
-      DIP("vspltw v%d,v%d,%u\n", vD_addr, vB_addr, UIMM_5);
+      DIP("vspltw v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       DIP(" => not implemented\n");
       return False;
 
@@ -5395,22 +5389,22 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 
    switch (opc2) {
    case 0x30A: // vcfux (Convert from Unsigned Fixed-Point W, AV p156)
-      DIP("vcfux v%d,v%d,%u\n", vD_addr, vB_addr, UIMM_5);
+      DIP("vcfux v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       DIP(" => not implemented\n");
       return False;
 
    case 0x34A: // vcfsx (Convert from Signed Fixed-Point W, AV p155)
-      DIP("vcfsx v%d,v%d,%u\n", vD_addr, vB_addr, UIMM_5);
+      DIP("vcfsx v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       DIP(" => not implemented\n");
       return False;
 
    case 0x38A: // vctuxs (Convert to Unsigned Fixed-Point W Saturate, AV p172)
-      DIP("vctuxs v%d,v%d,%u\n", vD_addr, vB_addr, UIMM_5);
+      DIP("vctuxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       DIP(" => not implemented\n");
       return False;
 
    case 0x3CA: // vctsxs (Convert to Signed Fixed-Point W Saturate, AV p171)
-      DIP("vctsxs v%d,v%d,%u\n", vD_addr, vB_addr, UIMM_5);
+      DIP("vctsxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       DIP(" => not implemented\n");
       return False;
 

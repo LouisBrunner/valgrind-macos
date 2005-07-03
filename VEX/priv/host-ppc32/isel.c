@@ -706,7 +706,7 @@ void doHelperCall ( ISelEnv* env,
 
    /* Finally, the call itself. */
    addInstr(env, PPC32Instr_Call( cc,
-                                  Ptr_to_ULong(cee->addr),
+                                  (Addr32)toUInt(Ptr_to_ULong(cee->addr)),
                                   n_args + (passBBP ? 1 : 0) ));
 }
 
@@ -915,8 +915,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (e->Iex.Load.end != Iend_BE)
          goto irreducible;
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
-         addInstr(env, PPC32Instr_Load( 
-                          sizeofIRType(ty), False, r_dst, am_addr ));
+         addInstr(env, PPC32Instr_Load( toUChar(sizeofIRType(ty)), 
+                                        False, r_dst, am_addr ));
          return r_dst;
       }
       break;
@@ -1385,7 +1385,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
          HReg r_dst = newVRegI(env);
          PPC32AMode* am_addr = PPC32AMode_IR(e->Iex.Get.offset, GuestStatePtr );
-         addInstr(env, PPC32Instr_Load( sizeofIRType(ty), False, r_dst, am_addr ));
+         addInstr(env, PPC32Instr_Load( toUChar(sizeofIRType(ty)), 
+                                        False, r_dst, am_addr ));
          return r_dst;
       }
       break;
@@ -1477,21 +1478,25 @@ static Bool fits16bits ( UInt u )
    Int i = u & 0xFFFF;
    i <<= 16;
    i >>= 16;
-   return u == (UInt)i;
+   return toBool(u == (UInt)i);
 }
 
 static Bool sane_AMode ( PPC32AMode* am )
 {
    switch (am->tag) {
    case Pam_IR:
-      return (hregClass(am->Pam.IR.base) == HRcInt32
-              && hregIsVirtual(am->Pam.IR.base)
-              && fits16bits(am->Pam.IR.index));
+      return toBool(
+                hregClass(am->Pam.IR.base) == HRcInt32
+                && hregIsVirtual(am->Pam.IR.base)
+                && fits16bits(am->Pam.IR.index)
+             );
    case Pam_RR:
-      return (hregClass(am->Pam.RR.base) == HRcInt32
-              && hregIsVirtual(am->Pam.IR.base)
-              && hregClass(am->Pam.RR.base) == HRcInt32
-              && hregIsVirtual(am->Pam.IR.base));
+      return toBool(
+                hregClass(am->Pam.RR.base) == HRcInt32
+                && hregIsVirtual(am->Pam.IR.base)
+                && hregClass(am->Pam.RR.base) == HRcInt32
+                && hregIsVirtual(am->Pam.IR.base)
+             );
    default:
       vpanic("sane_AMode: unknown ppc32 amode tag");
    }
@@ -1939,7 +1944,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             which. */
          HReg     tLo     = newVRegI(env);
          HReg     tHi     = newVRegI(env);
-         Bool     syned   = e->Iex.Binop.op == Iop_MullS32;
+         Bool     syned   = toBool(e->Iex.Binop.op == Iop_MullS32);
          HReg     r_srcL  = iselIntExpr_R(env, e->Iex.Binop.arg1);
 
 // CAB: could do better than this...
@@ -2468,7 +2473,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 //..       return;
 //..    }
 
-   vex_printf("iselInt64Expr(ppc32): No such tag(%d)\n", e->tag);
+   vex_printf("iselInt64Expr(ppc32): No such tag(%u)\n", e->tag);
    ppIRExpr(e);
    vpanic("iselInt64Expr(ppc32)");
 }
@@ -2546,7 +2551,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       return dst;
 //..    }
 
-   vex_printf("iselFltExpr(ppc32): No such tag(%d)\n", e->tag);
+   vex_printf("iselFltExpr(ppc32): No such tag(%u)\n", e->tag);
    ppIRExpr(e);
    vpanic("iselFltExpr_wrk(ppc32)");
 }
@@ -2783,7 +2788,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
-   vex_printf("iselDblExpr(ppc32): No such tag(%d)\n", e->tag);
+   vex_printf("iselDblExpr(ppc32): No such tag(%u)\n", e->tag);
    ppIRExpr(e);
    vpanic("iselDblExpr_wrk(ppc32)");
 }
@@ -3301,7 +3306,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       am_addr = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
       if (tyd == Ity_I8 || tyd == Ity_I16 || tyd == Ity_I32) {
          HReg r_src = iselIntExpr_R(env, stmt->Ist.Store.data);
-         addInstr(env, PPC32Instr_Store(sizeofIRType(tyd), am_addr, r_src));
+         addInstr(env, PPC32Instr_Store( toUChar(sizeofIRType(tyd)), 
+                                         am_addr, r_src));
          return;
       }
       if (tyd == Ity_F64) {
@@ -3338,7 +3344,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
          HReg r_src = iselIntExpr_R(env, stmt->Ist.Put.data);
          PPC32AMode* am_addr = PPC32AMode_IR(stmt->Ist.Put.offset, GuestStatePtr);
-         addInstr(env, PPC32Instr_Store( sizeofIRType(ty), am_addr, r_src ));
+         addInstr(env, PPC32Instr_Store( toUChar(sizeofIRType(ty)), 
+                                         am_addr, r_src ));
          return;
       }
       if (ty == Ity_I64) {
@@ -3454,7 +3461,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       if (d->nFxState == 0)
          vassert(!d->needsBBP);
-      passBBP = d->nFxState > 0 && d->needsBBP;
+      passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
       /* Marshal args, do the call, clear stack. */
       doHelperCall( env, passBBP, d->guard, d->cee, d->args );

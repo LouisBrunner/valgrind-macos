@@ -1321,12 +1321,14 @@ void ppPPC32Instr ( PPC32Instr* i )
       ppHRegPPC32(i->Pin.AvShlDbl.srcL);
       vex_printf(",");
       ppHRegPPC32(i->Pin.AvShlDbl.srcR);
-      vex_printf(",%u", i->Pin.AvShlDbl.shift);
+      vex_printf(",%d", i->Pin.AvShlDbl.shift);
       return;
 
    case Pin_AvSplat: {
-      UChar ch_sz = (i->Pin.AvSplat.sz == 8) ? 'b' :
-                    (i->Pin.AvSplat.sz == 16) ? 'h' : 'w';
+      UChar ch_sz = toUChar(
+                       (i->Pin.AvSplat.sz == 8) ? 'b' :
+                       (i->Pin.AvSplat.sz == 16) ? 'h' : 'w'
+                    );
       vex_printf("vsplt%s%c ",
                  i->Pin.AvSplat.src->tag == Pri_Imm ? "is" : "", ch_sz);
       ppHRegPPC32(i->Pin.AvSplat.dst);

@@ -99,8 +99,8 @@ UInt ppc32g_calculate_xer_ov ( UInt op, UInt res, UInt argL, UInt argR )
    case PPC32G_FLAG_OP_MULLW: { // mullwo
       /* OV true if result can't be represented in 32 bits
          i.e sHi != sign extension of sLo */
-      Long l_res = (Long)((Int)argL) * (Long)((Int)argR);
-      Int sHi = (Int)(l_res >> 32);
+      Long l_res = ((Long)((Int)argL)) * ((Long)((Int)argR));
+      Int sHi = (Int)toUInt(l_res >> 32);
       Int sLo = (Int)l_res;
       return (sHi != (sLo >> /*s*/ 31)) ? 1:0;
    }

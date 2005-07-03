@@ -53,11 +53,13 @@ struct _SkipList {
          SkipNode  *head;              // list head
 };
 
-/* Use this macro to initialize your skiplist head.  The arguments are pretty self explanitory:
+/* Use this macro to initialize your skiplist head:
    _type is the type of your element structure
    _key is the field within that type which you want to use as the key
-   _cmp is the comparison function for keys - it gets two typeof(_key) pointers as args
-   _strkey is a function which can return a string of your key - it's only used for debugging
+   _cmp is the comparison function for keys - it gets two typeof(_key) 
+      pointers as args
+   _strkey is a function which can return a string of your key - it's only
+      used for debugging
    _arena is the arena to use for allocation - -1 is the default
  */
 #define VG_SKIPLIST_INIT(_type, _key, _cmp, _strkey, _arena)   \
@@ -76,7 +78,7 @@ struct _SkipList {
       Exact:  returns a node which is == key, or NULL if none
       After:  returns a node which is >= key, or NULL if none
    SkipList_Insert inserts a new element into the list.  Duplicates are
-      forbidden.  The element must have been created with SkipList_Alloc!
+      forbidden.  The element must have been created with SkipNode_Alloc!
    SkipList_Remove removes an element from the list and returns it.  It
       doesn't free the memory.
 */
@@ -103,9 +105,9 @@ extern Int  VG_(cmp_string)(const void *a, const void *b);
 
    You can iterate through a SkipList like this:
 
-      for(x = VG_(SkipNode_First)(&list);    // or SkipList_Find
-          x != NULL;
-          x = VG_(SkipNode_Next)(&list, x)) { ... }
+      for (x = VG_(SkipNode_First)(&list);
+           x != NULL;
+           x = VG_(SkipNode_Next)(&list, x)) { ... }
 */
 extern void *VG_(SkipNode_Alloc) (const SkipList *l);
 extern void  VG_(SkipNode_Free)  (const SkipList *l, void *p);

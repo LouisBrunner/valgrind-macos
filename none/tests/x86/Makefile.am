@@ -24,7 +24,10 @@ check_PROGRAMS = \
 	getseg $(INSN_TESTS) \
 	int pushpopseg seg_override sigcontext
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow \
+		-g -I$(top_srcdir)/include \
+		$(FLAG_MMMX) $(FLAG_MSSE)
+
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones

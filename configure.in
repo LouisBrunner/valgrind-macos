@@ -316,6 +316,48 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_M32)
 
 
+# does this compiler support -mmmx ?
+AC_MSG_CHECKING([if gcc accepts -mmmx])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-mmmx"
+
+AC_TRY_COMPILE(, [
+int main () { return 0 ; }
+],
+[
+FLAG_MMMX="-mmmx"
+AC_MSG_RESULT([yes])
+], [
+FLAG_MMMX=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_MMMX)
+
+
+# does this compiler support -msse ?
+AC_MSG_CHECKING([if gcc accepts -msse])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-msse"
+
+AC_TRY_COMPILE(, [
+int main () { return 0 ; }
+],
+[
+FLAG_MSSE="-msse"
+AC_MSG_RESULT([yes])
+], [
+FLAG_MSSE=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_MSSE)
+
+
 # does this compiler support -mpreferred-stack-boundary=2 ?
 AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary])
 

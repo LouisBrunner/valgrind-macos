@@ -257,7 +257,7 @@ static UInt extend_s_16to32 ( UInt x )
 }
 
 /* Fetch a byte from the guest insn stream. */
-static UChar getIByte ( UInt delta )
+static UChar getIByte ( Int delta )
 {
    return guest_code[delta];
 }
@@ -284,20 +284,20 @@ static Int eregOfRM ( UChar mod_reg_rm )
 
 /* Get a 8/16/32-bit unsigned value out of the insn stream. */
 
-static UChar getUChar ( UInt delta )
+static UChar getUChar ( Int delta )
 {
    UChar v = guest_code[delta+0];
    return toUChar(v);
 }
 
-static UInt getUDisp16 ( UInt delta )
+static UInt getUDisp16 ( Int delta )
 {
    UInt v = guest_code[delta+1]; v <<= 8;
    v |= guest_code[delta+0];
    return v & 0xFFFF;
 }
 
-static UInt getUDisp32 ( UInt delta )
+static UInt getUDisp32 ( Int delta )
 {
    UInt v = guest_code[delta+3]; v <<= 8;
    v |= guest_code[delta+2]; v <<= 8;
@@ -306,7 +306,7 @@ static UInt getUDisp32 ( UInt delta )
    return v;
 }
 
-static UInt getUDisp ( Int size, UInt delta )
+static UInt getUDisp ( Int size, Int delta )
 {
    switch (size) {
       case 4: return getUDisp32(delta);
@@ -320,12 +320,12 @@ static UInt getUDisp ( Int size, UInt delta )
 
 /* Get a byte value out of the insn stream and sign-extend to 32
    bits. */
-static UInt getSDisp8 ( UInt delta )
+static UInt getSDisp8 ( Int delta )
 {
    return extend_s_8to32( (UInt) (guest_code[delta]) );
 }
 
-static UInt getSDisp16 ( UInt delta0 )
+static UInt getSDisp16 ( Int delta0 )
 {
    UChar* eip = (UChar*)(&guest_code[delta0]);
    UInt d = *eip++;
@@ -333,7 +333,7 @@ static UInt getSDisp16 ( UInt delta0 )
    return extend_s_16to32(d);
 }
 
-static UInt getSDisp ( Int size, UInt delta )
+static UInt getSDisp ( Int size, Int delta )
 {
    switch (size) {
       case 4: return getUDisp32(delta);
@@ -1297,7 +1297,7 @@ static IRTemp disAMode_copy2tmp ( IRExpr* addr32 )
 }
 
 static 
-IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
+IRTemp disAMode ( Int* len, UChar sorb, Int delta, HChar* buf )
 {
    UChar mod_reg_rm = getIByte(delta);
    delta++;
@@ -1533,7 +1533,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
    beginning at delta.  Is useful for getting hold of literals beyond
    the end of the amode before it has been disassembled.  */
 
-static UInt lengthAMode ( UInt delta )
+static UInt lengthAMode ( Int delta )
 {
    UChar mod_reg_rm = getIByte(delta); delta++;
 
@@ -1624,7 +1624,7 @@ UInt dis_op2_E_G ( UChar       sorb,
                    IROp        op8, 
                    Bool        keep,
                    Int         size, 
-                   UInt        delta0,
+                   Int         delta0,
                    HChar*      t_x86opc )
 {
    HChar   dis_buf[50];
@@ -1732,7 +1732,7 @@ UInt dis_op2_G_E ( UChar       sorb,
                    IROp        op8, 
                    Bool        keep,
                    Int         size, 
-                   UInt        delta0,
+                   Int         delta0,
                    HChar*      t_x86opc )
 {
    HChar   dis_buf[50];
@@ -1835,7 +1835,7 @@ UInt dis_op2_G_E ( UChar       sorb,
 static
 UInt dis_mov_E_G ( UChar       sorb,
                    Int         size, 
-                   UInt        delta0 )
+                   Int         delta0 )
 {
    Int len;
    UChar rm = getIByte(delta0);
@@ -1879,7 +1879,7 @@ UInt dis_mov_E_G ( UChar       sorb,
 static
 UInt dis_mov_G_E ( UChar       sorb,
                    Int         size, 
-                   UInt        delta0 )
+                   Int         delta0 )
 {
    Int len;
    UChar rm = getIByte(delta0);
@@ -1910,7 +1910,7 @@ UInt dis_op_imm_A ( Int    size,
                     Bool   carrying,
                     IROp   op8,
                     Bool   keep,
-                    UInt   delta,
+                    Int    delta,
                     HChar* t_x86opc )
 {
    IRType ty   = szToITy(size);
@@ -1949,8 +1949,8 @@ UInt dis_op_imm_A ( Int    size,
 
 /* Sign- and Zero-extending moves. */
 static
-UInt dis_movx_E_G ( UChar       sorb,
-                    UInt delta, Int szs, Int szd, Bool sign_extend )
+UInt dis_movx_E_G ( UChar      sorb,
+                    Int delta, Int szs, Int szd, Bool sign_extend )
 {
    UChar rm = getIByte(delta);
    if (epartIsReg(rm)) {
@@ -2029,7 +2029,7 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
 
 static 
 UInt dis_Grp1 ( UChar sorb,
-                UInt delta, UChar modrm, 
+                Int delta, UChar modrm, 
                 Int am_sz, Int d_sz, Int sz, UInt d32 )
 {
    Int     len;
@@ -2110,8 +2110,8 @@ UInt dis_Grp1 ( UChar sorb,
    expression. */
 
 static
-UInt dis_Grp2 ( UChar  sorb,
-                UInt delta, UChar modrm,
+UInt dis_Grp2 ( UChar sorb,
+                Int delta, UChar modrm,
                 Int am_sz, Int d_sz, Int sz, IRExpr* shift_expr,
                 HChar* shift_expr_txt )
 {
@@ -2337,8 +2337,8 @@ UInt dis_Grp2 ( UChar  sorb,
 
 /* Group 8 extended opcodes (but BT/BTS/BTC/BTR only). */
 static
-UInt dis_Grp8_Imm ( UChar       sorb,
-                    UInt delta, UChar modrm,
+UInt dis_Grp8_Imm ( UChar sorb,
+                    Int delta, UChar modrm,
                     Int am_sz, Int sz, UInt src_val,
                     Bool* decode_OK )
 {
@@ -2502,7 +2502,7 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
 
 /* Group 3 extended opcodes. */
 static 
-UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
+UInt dis_Grp3 ( UChar sorb, Int sz, Int delta )
 {
    UInt    d32;
    UChar   modrm;
@@ -2631,7 +2631,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 
 /* Group 4 extended opcodes. */
 static
-UInt dis_Grp4 ( UChar sorb, UInt delta )
+UInt dis_Grp4 ( UChar sorb, Int delta )
 {
    Int   alen;
    UChar modrm;
@@ -2690,7 +2690,7 @@ UInt dis_Grp4 ( UChar sorb, UInt delta )
 
 /* Group 5 extended opcodes. */
 static
-UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* dres )
+UInt dis_Grp5 ( UChar sorb, Int sz, Int delta, DisResult* dres )
 {
    Int     len;
    UChar   modrm;
@@ -2942,7 +2942,7 @@ void dis_REP_op ( X86Condcode cond,
 static
 UInt dis_mul_E_G ( UChar       sorb,
                    Int         size, 
-                   UInt        delta0 )
+                   Int         delta0 )
 {
    Int    alen;
    HChar  dis_buf[50];
@@ -2983,7 +2983,7 @@ UInt dis_mul_E_G ( UChar       sorb,
 static
 UInt dis_imul_I_E_G ( UChar       sorb,
                       Int         size, 
-                      UInt        delta,
+                      Int         delta,
                       Int         litsize )
 {
    Int    d32, alen;
@@ -3334,7 +3334,7 @@ static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
 
 
 static
-UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
+UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 {
    Int    len;
    UInt   r_src, r_dst;
@@ -4799,7 +4799,7 @@ static void putMMXReg ( UInt archreg, IRExpr* e )
 
 static 
 UInt dis_MMXop_regmem_to_reg ( UChar  sorb,
-                               UInt   delta,
+                               Int    delta,
                                UChar  opc,
                                HChar* name,
                                Bool   show_granularity )
@@ -4947,7 +4947,7 @@ UInt dis_MMXop_regmem_to_reg ( UChar  sorb,
 /* Vector by scalar shift of G by the amount specified at the bottom
    of E.  This is a straight copy of dis_SSE_shiftG_byE. */
 
-static UInt dis_MMX_shiftG_byE ( UChar sorb, UInt delta, 
+static UInt dis_MMX_shiftG_byE ( UChar sorb, Int delta, 
                                  HChar* opname, IROp op )
 {
    HChar   dis_buf[50];
@@ -5024,7 +5024,7 @@ static UInt dis_MMX_shiftG_byE ( UChar sorb, UInt delta,
    straight copy of dis_SSE_shiftE_imm. */
 
 static 
-UInt dis_MMX_shiftE_imm ( UInt delta, HChar* opname, IROp op )
+UInt dis_MMX_shiftE_imm ( Int delta, HChar* opname, IROp op )
 {
    Bool    shl, shr, sar;
    UChar   rm   = getIByte(delta);
@@ -5080,7 +5080,7 @@ UInt dis_MMX_shiftE_imm ( UInt delta, HChar* opname, IROp op )
 /* Completely handle all MMX instructions except emms. */
 
 static
-UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
+UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, Int delta )
 {
    Int   len;
    UChar modrm;
@@ -5390,7 +5390,7 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
    v-size (no b- variant). */
 static
 UInt dis_SHLRD_Gv_Ev ( UChar sorb,
-                       UInt delta, UChar modrm,
+                       Int delta, UChar modrm,
                        Int sz,
                        IRExpr* shift_amt,
                        Bool amt_is_literal,
@@ -5524,7 +5524,7 @@ static HChar* nameBtOp ( BtOp op )
 
 
 static
-UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
+UInt dis_bt_G_E ( UChar sorb, Int sz, Int delta, BtOp op )
 {
    HChar  dis_buf[50];
    UChar  modrm;
@@ -5656,7 +5656,7 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
 
 /* Handle BSF/BSR.  Only v-size seems necessary. */
 static
-UInt dis_bs_E_G ( UChar sorb, Int sz, UInt delta, Bool fwds )
+UInt dis_bs_E_G ( UChar sorb, Int sz, Int delta, Bool fwds )
 {
    Bool   isReg;
    UChar  modrm;
@@ -5830,7 +5830,7 @@ void codegen_SAHF ( void )
 static
 UInt dis_cmpxchg_G_E ( UChar       sorb,
                        Int         size, 
-                       UInt        delta0 )
+                       Int         delta0 )
 {
    HChar dis_buf[50];
    Int   len;
@@ -5968,7 +5968,7 @@ static
 UInt dis_cmov_E_G ( UChar       sorb,
                     Int         sz, 
                     X86Condcode cond,
-                    UInt        delta0 )
+                    Int         delta0 )
 {
    UChar rm  = getIByte(delta0);
    HChar dis_buf[50];
@@ -6018,7 +6018,7 @@ UInt dis_cmov_E_G ( UChar       sorb,
 
 
 static
-UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
+UInt dis_xadd_G_E ( UChar sorb, Int sz, Int delta0 )
 {
    Int   len;
    UChar rm = getIByte(delta0);
@@ -6062,7 +6062,7 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
 /* Move 16 bits from Ew (ireg or mem) to G (a segment register). */
 
 static
-UInt dis_mov_Ew_Sw ( UChar sorb, UInt delta0 )
+UInt dis_mov_Ew_Sw ( UChar sorb, Int delta0 )
 {
    Int    len;
    IRTemp addr;
@@ -6087,7 +6087,7 @@ UInt dis_mov_Ew_Sw ( UChar sorb, UInt delta0 )
 static
 UInt dis_mov_Sw_Ew ( UChar sorb,
                      Int   sz,
-                     UInt  delta0 )
+                     Int   delta0 )
 {
    Int    len;
    IRTemp addr;
@@ -6162,7 +6162,7 @@ void dis_ret ( UInt d32 )
 */
 
 static UInt dis_SSE_E_to_G_all_wrk ( 
-               UChar sorb, UInt delta, 
+               UChar sorb, Int delta, 
                HChar* opname, IROp op,
                Bool   invertG
             )
@@ -6198,7 +6198,7 @@ static UInt dis_SSE_E_to_G_all_wrk (
 /* All lanes SSE binary operation, G = G `op` E. */
 
 static
-UInt dis_SSE_E_to_G_all ( UChar sorb, UInt delta, HChar* opname, IROp op )
+UInt dis_SSE_E_to_G_all ( UChar sorb, Int delta, HChar* opname, IROp op )
 {
    return dis_SSE_E_to_G_all_wrk( sorb, delta, opname, op, False );
 }
@@ -6206,7 +6206,7 @@ UInt dis_SSE_E_to_G_all ( UChar sorb, UInt delta, HChar* opname, IROp op )
 /* All lanes SSE binary operation, G = (not G) `op` E. */
 
 static
-UInt dis_SSE_E_to_G_all_invG ( UChar sorb, UInt delta, 
+UInt dis_SSE_E_to_G_all_invG ( UChar sorb, Int delta, 
                                HChar* opname, IROp op )
 {
    return dis_SSE_E_to_G_all_wrk( sorb, delta, opname, op, True );
@@ -6215,7 +6215,7 @@ UInt dis_SSE_E_to_G_all_invG ( UChar sorb, UInt delta,
 
 /* Lowest 32-bit lane only SSE binary operation, G = G `op` E. */
 
-static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, UInt delta, 
+static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, Int delta, 
                                   HChar* opname, IROp op )
 {
    HChar   dis_buf[50];
@@ -6250,7 +6250,7 @@ static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, UInt delta,
 
 /* Lower 64-bit lane only SSE binary operation, G = G `op` E. */
 
-static UInt dis_SSE_E_to_G_lo64 ( UChar sorb, UInt delta, 
+static UInt dis_SSE_E_to_G_lo64 ( UChar sorb, Int delta, 
                                   HChar* opname, IROp op )
 {
    HChar   dis_buf[50];
@@ -6286,7 +6286,7 @@ static UInt dis_SSE_E_to_G_lo64 ( UChar sorb, UInt delta,
 /* All lanes unary SSE operation, G = op(E). */
 
 static UInt dis_SSE_E_to_G_unary_all ( 
-               UChar sorb, UInt delta, 
+               UChar sorb, Int delta, 
                HChar* opname, IROp op
             )
 {
@@ -6316,7 +6316,7 @@ static UInt dis_SSE_E_to_G_unary_all (
 /* Lowest 32-bit lane only unary SSE operation, G = op(E). */
 
 static UInt dis_SSE_E_to_G_unary_lo32 ( 
-               UChar sorb, UInt delta, 
+               UChar sorb, Int delta, 
                HChar* opname, IROp op
             )
 {
@@ -6359,7 +6359,7 @@ static UInt dis_SSE_E_to_G_unary_lo32 (
 /* Lowest 64-bit lane only unary SSE operation, G = op(E). */
 
 static UInt dis_SSE_E_to_G_unary_lo64 ( 
-               UChar sorb, UInt delta, 
+               UChar sorb, Int delta, 
                HChar* opname, IROp op
             )
 {
@@ -6404,7 +6404,7 @@ static UInt dis_SSE_E_to_G_unary_lo64 (
       G = E `op` G   (eLeft == True)
 */
 static UInt dis_SSEint_E_to_G( 
-               UChar sorb, UInt delta, 
+               UChar sorb, Int delta, 
                HChar* opname, IROp op,
                Bool   eLeft
             )
@@ -6490,7 +6490,7 @@ static void findSSECmpOp ( Bool* needNot, IROp* op,
 
 /* Handles SSE 32F comparisons. */
 
-static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta, 
+static UInt dis_SSEcmp_E_to_G ( UChar sorb, Int delta, 
 				HChar* opname, Bool all_lanes, Int sz )
 {
    HChar   dis_buf[50];
@@ -6546,7 +6546,7 @@ static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta,
 /* Vector by scalar shift of G by the amount specified at the bottom
    of E. */
 
-static UInt dis_SSE_shiftG_byE ( UChar sorb, UInt delta, 
+static UInt dis_SSE_shiftG_byE ( UChar sorb, Int delta, 
                                  HChar* opname, IROp op )
 {
    HChar   dis_buf[50];
@@ -6621,7 +6621,7 @@ static UInt dis_SSE_shiftG_byE ( UChar sorb, UInt delta,
 /* Vector by scalar shift of E by an immediate byte. */
 
 static 
-UInt dis_SSE_shiftE_imm ( UInt delta, HChar* opname, IROp op )
+UInt dis_SSE_shiftE_imm ( Int delta, HChar* opname, IROp op )
 {
    Bool    shl, shr, sar;
    UChar   rm   = getIByte(delta);
@@ -10302,7 +10302,7 @@ DisResult disInstr_X86_WRK (
    case 0xDD:
    case 0xDE:
    case 0xDF: {
-      UInt delta0    = delta;
+      Int  delta0    = delta;
       Bool decode_OK = False;
       delta = dis_FPU ( &decode_OK, sorb, delta );
       if (!decode_OK) {
@@ -11896,7 +11896,7 @@ DisResult disInstr_X86_WRK (
       case 0xE1: /* PSRAgg (src)mmxreg-or-mem, (dst)mmxreg */
       case 0xE2: 
       {
-         UInt delta0    = delta-1;
+         Int  delta0    = delta-1;
          Bool decode_OK = False;
 
          /* If sz==2 this is SSE, and we assume sse idec has

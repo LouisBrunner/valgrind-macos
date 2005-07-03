@@ -228,16 +228,6 @@ lineCC* new_lineCC(Int line, lineCC* next)
    return cc;
 }
 
-static __inline__ 
-instr_info* new_instr_info(Addr instr_addr, lineCC* parent, instr_info* next)
-{
-   // Using calloc() zeroes instr_len and data_size
-   instr_info* ii = VG_(calloc)(1, sizeof(instr_info));
-   ii->instr_addr = instr_addr;
-   ii->parent     = parent; 
-   return ii;
-}
-
 // Do a three step traversal: by file, then fn, then line.
 // In all cases prepends new nodes to their chain.  Returns a pointer to the
 // line node, creates a new one if necessary.

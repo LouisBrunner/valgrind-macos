@@ -436,20 +436,20 @@ static Int eregLO3ofRM ( UChar mod_reg_rm )
 
 /* Get a 8/16/32-bit unsigned value out of the insn stream. */
 
-static UChar getUChar ( ULong delta )
+static UChar getUChar ( Long delta )
 {
    UChar v = guest_code[delta+0];
    return v;
 }
 
-//.. static UInt getUDisp16 ( ULong delta )
+//.. static UInt getUDisp16 ( Long delta )
 //.. {
 //..    UInt v = guest_code[delta+1]; v <<= 8;
 //..    v |= guest_code[delta+0];
 //..    return v & 0xFFFF;
 //.. }
 //.. 
-//.. static UInt getUDisp ( Int size, ULong delta )
+//.. static UInt getUDisp ( Int size, Long delta )
 //.. {
 //..    switch (size) {
 //..       case 4: return getUDisp32(delta);
@@ -463,14 +463,14 @@ static UChar getUChar ( ULong delta )
 
 /* Get a byte value out of the insn stream and sign-extend to 64
    bits. */
-static Long getSDisp8 ( ULong delta )
+static Long getSDisp8 ( Long delta )
 {
    return extend_s_8to64( guest_code[delta] );
 }
 
 /* Get a 16-bit value out of the insn stream and sign-extend to 64
    bits. */
-static Long getSDisp16 ( ULong delta )
+static Long getSDisp16 ( Long delta )
 {
    UInt v = guest_code[delta+1]; v <<= 8;
    v |= guest_code[delta+0];
@@ -479,7 +479,7 @@ static Long getSDisp16 ( ULong delta )
 
 /* Get a 32-bit value out of the insn stream and sign-extend to 64
    bits. */
-static Long getSDisp32 ( ULong delta )
+static Long getSDisp32 ( Long delta )
 {
    UInt v = guest_code[delta+3]; v <<= 8;
    v |= guest_code[delta+2]; v <<= 8;
@@ -489,7 +489,7 @@ static Long getSDisp32 ( ULong delta )
 }
 
 /* Get a 64-bit value out of the insn stream. */
-static Long getDisp64 ( ULong delta )
+static Long getDisp64 ( Long delta )
 {
    ULong v = 0;
    v |= guest_code[delta+7]; v <<= 8;
@@ -505,7 +505,7 @@ static Long getDisp64 ( ULong delta )
 
 /* Note: because AMD64 doesn't allow 64-bit literals, it is an error
    if this is called with size==8.  Should not happen. */
-static Long getSDisp ( Int size, ULong delta )
+static Long getSDisp ( Int size, Long delta )
 {
    switch (size) {
       case 4: return getSDisp32(delta);
@@ -1977,7 +1977,7 @@ static IRTemp disAMode_copy2tmp ( IRExpr* addr64 )
 }
 
 static 
-IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, 
+IRTemp disAMode ( Int* len, Prefix pfx, Long delta, 
                   HChar* buf, Int extra_bytes )
 {
    UChar mod_reg_rm = getUChar(delta);
@@ -2248,7 +2248,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta,
    beginning at delta.  Is useful for getting hold of literals beyond
    the end of the amode before it has been disassembled.  */
 
-static UInt lengthAMode ( Prefix pfx, ULong delta )
+static UInt lengthAMode ( Prefix pfx, Long delta )
 {
    UChar mod_reg_rm = getUChar(delta);
    delta++;
@@ -2360,7 +2360,7 @@ ULong dis_op2_E_G ( Prefix      pfx,
                     IROp        op8, 
                     Bool        keep,
                     Int         size, 
-                    ULong       delta0,
+                    Long        delta0,
                     HChar*      t_amd64opc )
 {
    HChar   dis_buf[50];
@@ -2476,7 +2476,7 @@ ULong dis_op2_G_E ( Prefix      pfx,
                     IROp        op8, 
                     Bool        keep,
                     Int         size, 
-                    ULong       delta0,
+                    Long        delta0,
                     HChar*      t_amd64opc )
 {
    HChar   dis_buf[50];
@@ -2582,7 +2582,7 @@ ULong dis_op2_G_E ( Prefix      pfx,
 static
 ULong dis_mov_E_G ( Prefix      pfx,
                     Int         size, 
-                    ULong       delta0 )
+                    Long        delta0 )
 {
    Int len;
    UChar rm = getUChar(delta0);
@@ -2627,7 +2627,7 @@ ULong dis_mov_E_G ( Prefix      pfx,
 static
 ULong dis_mov_G_E ( Prefix      pfx,
                     Int         size, 
-                    ULong       delta0 )
+                    Long        delta0 )
 {
    Int len;
    UChar rm = getUChar(delta0);
@@ -2658,7 +2658,7 @@ static
 ULong dis_op_imm_A ( Int    size,
                      IROp   op8,
                      Bool   keep,
-                     ULong  delta,
+                     Long   delta,
                      HChar* t_amd64opc )
 {
    Int    size4 = imin(size,4);
@@ -2690,7 +2690,7 @@ ULong dis_op_imm_A ( Int    size,
 /* Sign- and Zero-extending moves. */
 static
 ULong dis_movx_E_G ( Prefix pfx,
-                     ULong delta, Int szs, Int szd, Bool sign_extend )
+                     Long delta, Int szs, Int szd, Bool sign_extend )
 {
    UChar rm = getUChar(delta);
    if (epartIsReg(rm)) {
@@ -2793,7 +2793,7 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
 
 static 
 ULong dis_Grp1 ( Prefix pfx,
-                 ULong delta, UChar modrm, 
+                 Long delta, UChar modrm, 
                  Int am_sz, Int d_sz, Int sz, Long d64 )
 {
    Int     len;
@@ -2877,7 +2877,7 @@ ULong dis_Grp1 ( Prefix pfx,
 
 static
 ULong dis_Grp2 ( Prefix pfx,
-                 ULong delta, UChar modrm,
+                 Long delta, UChar modrm,
                  Int am_sz, Int d_sz, Int sz, IRExpr* shift_expr,
                  HChar* shift_expr_txt )
 {
@@ -3109,7 +3109,7 @@ ULong dis_Grp2 ( Prefix pfx,
 /* Group 8 extended opcodes (but BT/BTS/BTC/BTR only). */
 static
 ULong dis_Grp8_Imm ( Prefix pfx,
-                     ULong delta, UChar modrm,
+                     Long delta, UChar modrm,
                      Int am_sz, Int sz, ULong src_val,
                      Bool* decode_OK )
 {
@@ -3287,7 +3287,7 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
 
 /* Group 3 extended opcodes. */
 static 
-ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
+ULong dis_Grp3 ( Prefix pfx, Int sz, Long delta )
 {
    Long    d64;
    UChar   modrm;
@@ -3432,7 +3432,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 
 /* Group 4 extended opcodes. */
 static
-ULong dis_Grp4 ( Prefix pfx, ULong delta )
+ULong dis_Grp4 ( Prefix pfx, Long delta )
 {
    Int   alen;
    UChar modrm;
@@ -3491,7 +3491,7 @@ ULong dis_Grp4 ( Prefix pfx, ULong delta )
 
 /* Group 5 extended opcodes. */
 static
-ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* dres )
+ULong dis_Grp5 ( Prefix pfx, Int sz, Long delta, DisResult* dres )
 {
    Int     len;
    UChar   modrm;
@@ -3803,7 +3803,7 @@ void dis_REP_op ( AMD64Condcode cond,
 static
 ULong dis_mul_E_G ( Prefix      pfx,
                     Int         size, 
-                    ULong       delta0 )
+                    Long        delta0 )
 {
    Int    alen;
    HChar  dis_buf[50];
@@ -3845,7 +3845,7 @@ ULong dis_mul_E_G ( Prefix      pfx,
 static
 ULong dis_imul_I_E_G ( Prefix      pfx,
                        Int         size, 
-                       ULong       delta,
+                       Long        delta,
                        Int         litsize )
 {
    Long   d64;
@@ -4182,7 +4182,7 @@ static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
 
 static
 ULong dis_FPU ( /*OUT*/Bool* decode_ok, 
-                Prefix pfx, ULong delta )
+                Prefix pfx, Long delta )
 {
    Int    len;
    UInt   r_src, r_dst;
@@ -5661,7 +5661,7 @@ static void putMMXReg ( UInt archreg, IRExpr* e )
 
 static 
 ULong dis_MMXop_regmem_to_reg ( Prefix pfx,
-                                ULong  delta,
+                                Long   delta,
                                 UChar  opc,
                                 HChar* name,
                                 Bool   show_granularity )
@@ -5809,7 +5809,7 @@ ULong dis_MMXop_regmem_to_reg ( Prefix pfx,
 /* Vector by scalar shift of G by the amount specified at the bottom
    of E.  This is a straight copy of dis_SSE_shiftG_byE. */
 
-static ULong dis_MMX_shiftG_byE ( Prefix pfx, ULong delta, 
+static ULong dis_MMX_shiftG_byE ( Prefix pfx, Long delta, 
                                   HChar* opname, IROp op )
 {
    HChar   dis_buf[50];
@@ -5885,7 +5885,7 @@ static ULong dis_MMX_shiftG_byE ( Prefix pfx, ULong delta,
    straight copy of dis_SSE_shiftE_imm. */
 
 static 
-ULong dis_MMX_shiftE_imm ( ULong delta, HChar* opname, IROp op )
+ULong dis_MMX_shiftE_imm ( Long delta, HChar* opname, IROp op )
 {
    Bool    shl, shr, sar;
    UChar   rm   = getUChar(delta);
@@ -5940,7 +5940,7 @@ ULong dis_MMX_shiftE_imm ( ULong delta, HChar* opname, IROp op )
 /* Completely handle all MMX instructions except emms. */
 
 static
-ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, ULong delta )
+ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, Long delta )
 {
    Int   len;
    UChar modrm;
@@ -6297,7 +6297,7 @@ ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, ULong delta )
 //..    v-size (no b- variant). */
 //.. static
 //.. UInt dis_SHLRD_Gv_Ev ( UChar sorb,
-//..                        ULong delta, UChar modrm,
+//..                        Long delta, UChar modrm,
 //..                        Int sz,
 //..                        IRExpr* shift_amt,
 //..                        Bool amt_is_literal,
@@ -6431,7 +6431,7 @@ ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, ULong delta )
 //.. 
 //.. 
 //.. static
-//.. UInt dis_bt_G_E ( UChar sorb, Int sz, ULong delta, BtOp op )
+//.. UInt dis_bt_G_E ( UChar sorb, Int sz, Long delta, BtOp op )
 //.. {
 //..    HChar  dis_buf[50];
 //..    UChar  modrm;
@@ -6560,7 +6560,7 @@ ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, ULong delta )
 
 /* Handle BSF/BSR.  Only v-size seems necessary. */
 static
-ULong dis_bs_E_G ( Prefix pfx, Int sz, ULong delta, Bool fwds )
+ULong dis_bs_E_G ( Prefix pfx, Int sz, Long delta, Bool fwds )
 {
    Bool   isReg;
    UChar  modrm;
@@ -6749,7 +6749,7 @@ void codegen_xchg_rAX_Reg ( Prefix pfx, Int sz, UInt regLo3 )
 static
 ULong dis_cmpxchg_G_E ( Prefix      pfx,
                         Int         size, 
-                        ULong       delta0 )
+                        Long        delta0 )
 {
    HChar dis_buf[50];
    Int   len;
@@ -6886,7 +6886,7 @@ static
 ULong dis_cmov_E_G ( Prefix        pfx,
                      Int           sz, 
                      AMD64Condcode cond,
-                     ULong         delta0 )
+                     Long          delta0 )
 {
    UChar rm  = getUChar(delta0);
    HChar dis_buf[50];
@@ -6935,7 +6935,7 @@ ULong dis_cmov_E_G ( Prefix        pfx,
 
 static
 ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
-                     Prefix pfx, Int sz, ULong delta0 )
+                     Prefix pfx, Int sz, Long delta0 )
 {
    Int   len;
    UChar rm = getUChar(delta0);
@@ -6967,7 +6967,7 @@ ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
 //.. /* Move 16 bits from Ew (ireg or mem) to G (a segment register). */
 //.. 
 //.. static
-//.. UInt dis_mov_Ew_Sw ( UChar sorb, ULong delta0 )
+//.. UInt dis_mov_Ew_Sw ( UChar sorb, Long delta0 )
 //.. {
 //..    Int    len;
 //..    IRTemp addr;
@@ -7072,7 +7072,7 @@ void dis_ret ( ULong d64 )
 */
 
 static ULong dis_SSE_E_to_G_all_wrk ( 
-                Prefix pfx, ULong delta, 
+                Prefix pfx, Long delta, 
                 HChar* opname, IROp op,
                 Bool   invertG
              )
@@ -7108,7 +7108,7 @@ static ULong dis_SSE_E_to_G_all_wrk (
 /* All lanes SSE binary operation, G = G `op` E. */
 
 static
-ULong dis_SSE_E_to_G_all ( Prefix pfx, ULong delta, 
+ULong dis_SSE_E_to_G_all ( Prefix pfx, Long delta, 
                            HChar* opname, IROp op )
 {
    return dis_SSE_E_to_G_all_wrk( pfx, delta, opname, op, False );
@@ -7117,7 +7117,7 @@ ULong dis_SSE_E_to_G_all ( Prefix pfx, ULong delta,
 /* All lanes SSE binary operation, G = (not G) `op` E. */
 
 static
-ULong dis_SSE_E_to_G_all_invG ( Prefix pfx, ULong delta, 
+ULong dis_SSE_E_to_G_all_invG ( Prefix pfx, Long delta, 
                                 HChar* opname, IROp op )
 {
    return dis_SSE_E_to_G_all_wrk( pfx, delta, opname, op, True );
@@ -7126,7 +7126,7 @@ ULong dis_SSE_E_to_G_all_invG ( Prefix pfx, ULong delta,
 
 /* Lowest 32-bit lane only SSE binary operation, G = G `op` E. */
 
-static ULong dis_SSE_E_to_G_lo32 ( Prefix pfx, ULong delta, 
+static ULong dis_SSE_E_to_G_lo32 ( Prefix pfx, Long delta, 
                                    HChar* opname, IROp op )
 {
    HChar   dis_buf[50];
@@ -7161,7 +7161,7 @@ static ULong dis_SSE_E_to_G_lo32 ( Prefix pfx, ULong delta,
 
 /* Lower 64-bit lane only SSE binary operation, G = G `op` E. */
 
-static ULong dis_SSE_E_to_G_lo64 ( Prefix pfx, ULong delta, 
+static ULong dis_SSE_E_to_G_lo64 ( Prefix pfx, Long delta, 
                                    HChar* opname, IROp op )
 {
    HChar   dis_buf[50];
@@ -7197,7 +7197,7 @@ static ULong dis_SSE_E_to_G_lo64 ( Prefix pfx, ULong delta,
 /* All lanes unary SSE operation, G = op(E). */
 
 static ULong dis_SSE_E_to_G_unary_all ( 
-                Prefix pfx, ULong delta, 
+                Prefix pfx, Long delta, 
                 HChar* opname, IROp op
              )
 {
@@ -7227,7 +7227,7 @@ static ULong dis_SSE_E_to_G_unary_all (
 /* Lowest 32-bit lane only unary SSE operation, G = op(E). */
 
 static ULong dis_SSE_E_to_G_unary_lo32 ( 
-                Prefix pfx, ULong delta, 
+                Prefix pfx, Long delta, 
                 HChar* opname, IROp op
              )
 {
@@ -7270,7 +7270,7 @@ static ULong dis_SSE_E_to_G_unary_lo32 (
 /* Lowest 64-bit lane only unary SSE operation, G = op(E). */
 
 static ULong dis_SSE_E_to_G_unary_lo64 ( 
-                Prefix pfx, ULong delta, 
+                Prefix pfx, Long delta, 
                 HChar* opname, IROp op
              )
 {
@@ -7315,7 +7315,7 @@ static ULong dis_SSE_E_to_G_unary_lo64 (
       G = E `op` G   (eLeft == True)
 */
 static ULong dis_SSEint_E_to_G( 
-                Prefix pfx, ULong delta, 
+                Prefix pfx, Long delta, 
                 HChar* opname, IROp op,
                 Bool   eLeft
              )
@@ -7401,7 +7401,7 @@ static void findSSECmpOp ( Bool* needNot, IROp* op,
 
 /* Handles SSE 32F comparisons. */
 
-static ULong dis_SSEcmp_E_to_G ( Prefix pfx, ULong delta, 
+static ULong dis_SSEcmp_E_to_G ( Prefix pfx, Long delta, 
                                  HChar* opname, Bool all_lanes, Int sz )
 {
    HChar   dis_buf[50];
@@ -7457,7 +7457,7 @@ static ULong dis_SSEcmp_E_to_G ( Prefix pfx, ULong delta,
 /* Vector by scalar shift of G by the amount specified at the bottom
    of E. */
 
-static ULong dis_SSE_shiftG_byE ( Prefix pfx, ULong delta, 
+static ULong dis_SSE_shiftG_byE ( Prefix pfx, Long delta, 
                                   HChar* opname, IROp op )
 {
    HChar   dis_buf[50];
@@ -7534,7 +7534,7 @@ static ULong dis_SSE_shiftG_byE ( Prefix pfx, ULong delta,
 
 static 
 ULong dis_SSE_shiftE_imm ( Prefix pfx, 
-                           ULong delta, HChar* opname, IROp op )
+                           Long delta, HChar* opname, IROp op )
 {
    Bool    shl, shr, sar;
    UChar   rm   = getUChar(delta);
@@ -7712,7 +7712,7 @@ DisResult disInstr_AMD64_WRK (
 
    /* Holds eip at the start of the insn, so that we can print
       consistent error messages for unimplemented insns. */
-   ULong delta_start = delta;
+   Long delta_start = delta;
 
    /* sz denotes the nominal data-op size of the insn; we change it to
       2 if an 0x66 prefix is seen and 8 if REX.W is 1.  In case of
@@ -11429,8 +11429,8 @@ DisResult disInstr_AMD64_WRK (
    case 0xDF:
       if (haveF2orF3(pfx)) goto decode_failure;
       if (sz == 4 && haveNo66noF2noF3(pfx)) {
-         ULong delta0    = delta;
-         Bool  decode_OK = False;
+         Long delta0    = delta;
+         Bool decode_OK = False;
          delta = dis_FPU ( &decode_OK, pfx, delta );
          if (!decode_OK) {
             delta = delta0;
@@ -13209,7 +13209,7 @@ DisResult disInstr_AMD64_WRK (
       case 0xE1: /* PSRAgg (src)mmxreg-or-mem, (dst)mmxreg */
       case 0xE2: 
       {
-         ULong delta0    = delta-1;
+         Long delta0    = delta-1;
          Bool decode_OK = False;
 
          /* If sz==2 this is SSE, and we assume sse idec has

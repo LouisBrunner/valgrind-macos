@@ -3446,7 +3446,7 @@ static void hg_pre_clo_init(void)
    }
 
    init_shadow_memory();
-   hg_malloc_list = VG_(HT_construct)();
+   hg_malloc_list = VG_(HT_construct)( 80021 );    // prime, big
 }
 
 /* Uses a 1:1 mapping */

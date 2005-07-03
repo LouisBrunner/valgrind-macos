@@ -118,7 +118,7 @@ struct _fileCC {
 static fileCC *CC_table[N_FILE_ENTRIES];
 
 //------------------------------------------------------------
-// Primary data structre #2: Instr-info table
+// Primary data structure #2: Instr-info table
 // - Holds the cached info about each instr that is used for simulation.
 // - table(BB_start_addr, list(instr_info))
 // - For each BB, each instr_info in the list holds info about the
@@ -1160,11 +1160,11 @@ static void cg_pre_clo_init(void)
    VG_(sprintf)(cachegrind_out_file, "%s/cachegrind.out.%d",
                 base_dir, VG_(getpid)());
 
-   instr_info_table = VG_(HT_construct)();
+   instr_info_table = VG_(HT_construct)( 4999 );   // prime, biggish
 }
 
 VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init, 0)
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                cg_main.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

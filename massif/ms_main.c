@@ -1830,7 +1830,7 @@ static void ms_pre_clo_init()
    VG_(register_profile_event)(VgpPrintXPts,      "print-XPts");
 
    // HP_Chunks
-   malloc_list  = VG_(HT_construct)();
+   malloc_list  = VG_(HT_construct)( 80021 );   // prime, big
 
    // Dummy node at top of the context structure.
    alloc_xpt = new_XPt(0, NULL, /*is_bottom*/False);

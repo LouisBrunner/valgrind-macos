@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- A separately chained hash table.               m_hashtable.c ---*/
+/*--- A separately-chained hash table.               m_hashtable.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -37,19 +37,12 @@
 /*--- Declarations                                                 ---*/
 /*--------------------------------------------------------------------*/
 
-/* Holds malloc'd but not freed blocks.  Static, so zero-inited by default. */
-
-//#define VG_N_CHAINS 80021 /*4999*/ /* a prime number */
-
 #define CHAIN_NO(key,tbl) (((UWord)(key)) % tbl->n_chains)
 
-struct {
+struct _VgHashTable {
    UInt        n_chains;     // should be prime
    VgHashNode* chains[0];
-}
-_VgHashTable;
-
-typedef (struct _VgHashTable *) VgHashTable;
+};
 
 /*--------------------------------------------------------------------*/
 /*--- Functions                                                    ---*/
@@ -58,9 +51,10 @@ typedef (struct _VgHashTable *) VgHashTable;
 VgHashTable VG_(HT_construct)(UInt n_chains)
 {
    /* Initialises to zero, ie. all entries NULL */
-   VgHashTable* table = 
-      VG_(calloc)(sizeof(struct _VgHashTable) + n_chains*sizeof(VgHashNode*));
+   SizeT sz = sizeof(struct _VgHashTable) + n_chains*sizeof(VgHashNode*);
+   VgHashTable table = VG_(calloc)(1, sz);
    table->n_chains = n_chains;
+   return table;
 }
 
 Int VG_(HT_count_nodes) ( VgHashTable table )
@@ -75,12 +69,13 @@ Int VG_(HT_count_nodes) ( VgHashTable table )
    return n;
 }
 
-/* Puts a new, heap allocated VgHashNode, into the malloclist. */
+/* Puts a new, heap allocated VgHashNode, into the VgHashTable.  Prepends
+   the node to the appropriate chain. */
 void VG_(HT_add_node) ( VgHashTable table, VgHashNode* node )
 {
-   UInt chain   = CHAIN_NO(node->key);
-   node->next   = table->chains[chain];
-   table[chain] = node;
+   UInt chain           = CHAIN_NO(node->key, table);
+   node->next           = table->chains[chain];
+   table->chains[chain] = node;
 }
 
 /* Looks up a VgHashNode in the table.  Also returns the address of
@@ -92,7 +87,7 @@ VgHashNode* VG_(HT_get_node) ( VgHashTable table, UWord key,
    VgHashNode *prev, *curr;
    Int       chain;
 
-   chain = CHAIN_NO(key);
+   chain = CHAIN_NO(key, table);
 
    prev = NULL;
    curr = table->chains[chain];
@@ -106,7 +101,7 @@ VgHashNode* VG_(HT_get_node) ( VgHashTable table, UWord key,
    }
 
    if (NULL == prev)
-      *next_ptr = & (table->chain[chain]);
+      *next_ptr = & (table->chains[chain]);
    else
       *next_ptr = & (prev->next);
 

@@ -899,8 +899,8 @@ static void done_prof_mem ( void ) { }
 
 void MAC_(common_pre_clo_init)(void)
 {
-   MAC_(malloc_list) = VG_(HT_construct)();
-   MAC_(mempool_list) = VG_(HT_construct)();
+   MAC_(malloc_list)  = VG_(HT_construct)( 80021 );   // prime, big
+   MAC_(mempool_list) = VG_(HT_construct)( 1009  );   // prime, not so big
    init_prof_mem();
 }
 

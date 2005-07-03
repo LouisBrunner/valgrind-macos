@@ -36,8 +36,7 @@
    as the first two fields match the sizes of these two fields.  Requires
    a bit of casting by the tool. */
 
-// Problems with this type:
-// - Table is fixed-size.  
+// Problems with this data structure:
 // - Separate chaining gives bad cache behaviour.  Hash tables with linear
 //   probing give better cache behaviour.
 // - It's not very abstract, eg. deleting nodes exposes more internals than
@@ -50,13 +49,11 @@ typedef
    }
    VgHashNode;
 
-typedef
-   VgHashNode**
-   VgHashTable;
+typedef struct _VgHashTable * VgHashTable;
 
 /* Make a new table.  Allocates the memory with VG_(calloc)(), so can be freed
- * with VG_(free)(). */
-extern VgHashTable VG_(HT_construct) ( void );
+   with VG_(free)().  n_chains should be prime. */
+extern VgHashTable VG_(HT_construct) ( UInt n_chains );
 
 /* Count the number of nodes in a table. */
 extern Int VG_(HT_count_nodes) ( VgHashTable table );

@@ -5488,22 +5488,22 @@ DisResult disInstr_PPC32_WRK (
    /* Spot the client-request magic sequence. */
    // Essentially a v. unlikely sequence of noops that we can catch
    {
-      UInt* code = (UInt*)(guest_code + delta);
+      UChar* code = (UChar*)(&guest_code[delta]);
 
       /* Spot this:                                       
-         0x7C03D808   tw 0,3,27            => trap word if(0) => nothing
+         0x7C03D808   tw 0,3,27            => trap word if (0) => nop
          0x5400E800   rlwinm 0,0,29,0,0    => r0 = rotl(r0,29)
          0x54001800   rlwinm 0,0,3,0,0     => r0 = rotl(r0,3)
          0x54006800   rlwinm 0,0,13,0,0    => r0 = rotl(r0,13)
          0x54009800   rlwinm 0,0,19,0,0    => r0 = rotl(r0,19)
          0x60000000   nop
       */
-      if (code[0] == 0x7C03D808 &&
-          code[1] == 0x5400E800 &&
-          code[2] == 0x54001800 &&
-          code[3] == 0x54006800 &&
-          code[4] == 0x54009800 &&
-          code[5] == 0x60000000) {
+      if (getUIntBigendianly(code+ 0) == 0x7C03D808 &&
+          getUIntBigendianly(code+ 4) == 0x5400E800 &&
+          getUIntBigendianly(code+ 8) == 0x54001800 &&
+          getUIntBigendianly(code+12) == 0x54006800 &&
+          getUIntBigendianly(code+16) == 0x54009800 &&
+          getUIntBigendianly(code+20) == 0x60000000) {
          DIP("%%r3 = client_request ( %%r31 )\n");
          dres.len = 24;
          delta += 24;

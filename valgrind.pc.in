@@ -11,5 +11,5 @@ Description: A dynamic binary instrumentation framework
 Version: @VERSION@
 Requires:
 Libs:
-Cflags: -I${includedir} -I${includedir}/${arch} -I${includedir}/${os} -I${includedir}/${platform} @ARCH_TOOL_AM_CFLAGS@
+Cflags: -I${includedir} @ARCH_TOOL_AM_CFLAGS@
 

@@ -5,7 +5,7 @@ EXTRA_DIST = \
 	directory-structure \
 	README \
 	porting-HOWTO porting-to-ARM \
-	tm-mutexstates.dot tm-threadstates.dot \
+	tm-mutexstates.dot tm-threadstates.dot
 
 dist_man_MANS = valgrind.1
 

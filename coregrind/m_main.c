@@ -139,6 +139,7 @@ static void print_all_stats ( void )
       VG_(message)(Vg_DebugMsg, 
          "------ Valgrind's internal memory use stats follow ------" );
       VG_(sanity_check_malloc_all)();
+      VG_(message)(Vg_DebugMsg, "------" );
       VG_(print_all_arena_stats)();
       VG_(message)(Vg_DebugMsg, "");
    }

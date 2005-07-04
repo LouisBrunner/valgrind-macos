@@ -63,11 +63,9 @@
    Note further that since the class field is never 1111b, no valid
    register can have the value INVALID_HREG.
 
-   There are currently 3 register classes:
+   There are currently 5 register classes:
 
-     int
-     floating
-     vector 
+     int32 int64 float64 simd64 simd128
 */
 
 typedef UInt HReg;

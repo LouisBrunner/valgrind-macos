@@ -21,6 +21,17 @@
 #     args for Valgrind
 
 
+if [ $# != 5 ]
+then 
+   echo "usage: gsl15test /absolute/name/of/gsl-1.6.tar.gz"
+   echo "                 C-compiler-command"      
+   echo "                 flags-for-C-compiler"     
+   echo "                 Valgrind-command"
+   echo "                 flags-for-Valgrind"
+   exit 1
+fi
+
+
 runcmd () {
    echo -n "   $1  ... "
    shift

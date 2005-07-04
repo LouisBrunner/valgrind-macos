@@ -10,7 +10,7 @@
    This file is part of LibVEX, a library for dynamic binary
    instrumentation and translation.
 
-   Copyright (C) 2004 OpenWorks, LLP.
+   Copyright (C) 2004-2005 OpenWorks, LLP.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -92,10 +92,10 @@ typedef
    RRegLR;
 
 
-/* An array of the following structs comprises the running state of
-   the allocator.  It indicates what the current disposition of each
-   allocatable real register is.  The array gets updated as the
-   allocator processes instructions. */
+/* An array of the following structs (rreg_state) comprises the
+   running state of the allocator.  It indicates what the current
+   disposition of each allocatable real register is.  The array gets
+   updated as the allocator processes instructions. */
 typedef
    struct {
       /* FIELDS WHICH DO NOT CHANGE */
@@ -117,6 +117,28 @@ typedef
       Bool is_spill_cand;
    }
    RRegState;
+
+/* The allocator also maintains a redundant array of indexes
+   (vreg_state) from vreg numbers back to entries in rreg_state.  It
+   is redundant because iff vreg_state[i] == j then
+   hregNumber(rreg_state[j].vreg) == i -- that is, the two entries
+   point at each other.  The purpose of this is to speed up activities
+   which involve looking for a particular vreg: there is no need to
+   scan the rreg_state looking for it, just index directly into
+   vreg_state.  The FAQ "does this vreg already have an associated
+   rreg" is the main beneficiary.  
+
+   To indicate, in vreg_state[i], that a given vreg is not currently
+   associated with any rreg, that entry can be set to INVALID_RREG_NO.
+
+   Because the vreg_state entries are signed Shorts, the max number
+   of vregs that can be handed by regalloc is 32767.
+*/
+
+#define INVALID_RREG_NO ((Short)(-1))
+
+#define IS_VALID_VREGNO(_zz) ((_zz) >= 0 && (_zz) < n_vregs)
+#define IS_VALID_RREGNO(_zz) ((_zz) >= 0 && (_zz) < n_rregs)
 
 
 
@@ -253,8 +275,8 @@ HInstrArray* doRegisterAllocation (
 
    /* Info on vregs and rregs.  Computed once and remains
       unchanged. */
-   Int     n_vreg_lrs;
-   VRegLR* vreg_lrs; /* [0 .. n_vreg_lrs-1] */
+   Int     n_vregs;
+   VRegLR* vreg_lrs; /* [0 .. n_vregs-1] */
 
    RRegLR* rreg_lrs;
    Int     rreg_lrs_size;
@@ -269,8 +291,13 @@ HInstrArray* doRegisterAllocation (
    Int* rreg_dead_before;
 
    /* Running state of the core allocation algorithm. */
-   RRegState* state;
-   Int        n_state;
+   RRegState* rreg_state;  /* [0 .. n_rregs-1] */
+   Int        n_rregs;
+
+   /* .. and the redundant backward map */
+   /* Each value is 0 .. n_rregs-1 or is INVALID_RREG_NO.
+      This inplies n_rregs must be <= 32768. */
+   Short*     vreg_state;  /* [0 .. n_vregs-1] */
 
    /* The vreg -> rreg map constructed and then applied to each
       instr. */
@@ -278,6 +305,10 @@ HInstrArray* doRegisterAllocation (
 
    /* The output array of instructions. */
    HInstrArray* instrs_out;
+
+   /* Sanity checks are expensive.  They are only done periodically,
+      not at each insn processed. */
+   Bool do_sanity_check;
 
    vassert(0 == LibVEX_N_SPILL_BYTES % 16);
    vassert(0 == guest_sizeB % 8);
@@ -300,39 +331,62 @@ HInstrArray* doRegisterAllocation (
         addHInstr ( instrs_out, _tmp );       \
       } while (0)
 
-#   define PRINT_STATE						\
-      do {							\
-         Int z;							\
-         for (z = 0; z < n_state; z++) {			\
-            vex_printf("   ");					\
-            (*ppReg)(state[z].rreg);				\
-            vex_printf("\t  ");					\
-            switch (state[z].disp) {				\
-               case Free:    vex_printf("Free\n"); break;	\
-               case Unavail: vex_printf("Unavail\n"); break;	\
-               case Bound:   vex_printf("BoundTo "); 		\
-                             (*ppReg)(state[z].vreg);		\
-                             vex_printf("\n"); break;		\
-            }							\
-         }							\
+#   define PRINT_STATE						   \
+      do {							   \
+         Int z, q;						   \
+         for (z = 0; z < n_rregs; z++) {			   \
+            vex_printf("  rreg_state[%2d] = ", z);		   \
+            (*ppReg)(rreg_state[z].rreg);	       		   \
+            vex_printf("  \t");					   \
+            switch (rreg_state[z].disp) {			   \
+               case Free:    vex_printf("Free\n"); break;	   \
+               case Unavail: vex_printf("Unavail\n"); break;	   \
+               case Bound:   vex_printf("BoundTo "); 		   \
+                             (*ppReg)(rreg_state[z].vreg);	   \
+                             vex_printf("\n"); break;		   \
+            }							   \
+         }							   \
+         vex_printf("\n  vreg_state[0 .. %d]:\n    ", n_vregs-1);  \
+         q = 0;                                                    \
+         for (z = 0; z < n_vregs; z++) {                           \
+            if (vreg_state[z] == INVALID_RREG_NO)                  \
+               continue;                                           \
+            vex_printf("[%d] -> %d   ", z, vreg_state[z]);         \
+            q++;                                                   \
+            if (q > 0 && (q % 6) == 0)                             \
+               vex_printf("\n    ");                               \
+         }                                                         \
+         vex_printf("\n");                                         \
       } while (0)
 
 
-   /* --------- Stage 0: set up output array. --------- */
+   /* --------- Stage 0: set up output array --------- */
+   /* --------- and allocate/initialise running state. --------- */
+
    instrs_out = newHInstrArray();
 
    /* ... and initialise running state. */
-   /* n_state is no more than a short name for n_available_real_regs. */
-   n_state = n_available_real_regs;
-   state = LibVEX_Alloc(n_available_real_regs * sizeof(RRegState));
+   /* n_rregs is no more than a short name for n_available_real_regs. */
+   n_rregs = n_available_real_regs;
+   n_vregs = instrs_in->n_vregs;
 
-   for (j = 0; j < n_state; j++) {
-      state[j].rreg          = available_real_regs[j];
-      state[j].has_hlrs      = False;
-      state[j].disp          = Free;
-      state[j].vreg          = INVALID_HREG;
-      state[j].is_spill_cand = False;
+   /* If this is not so, vreg_state entries will overflow. */
+   vassert(n_vregs < 32767);
+
+   rreg_state = LibVEX_Alloc(n_rregs * sizeof(RRegState));
+   vreg_state = LibVEX_Alloc(n_vregs * sizeof(Short));
+
+   for (j = 0; j < n_rregs; j++) {
+      rreg_state[j].rreg          = available_real_regs[j];
+      rreg_state[j].has_hlrs      = False;
+      rreg_state[j].disp          = Free;
+      rreg_state[j].vreg          = INVALID_HREG;
+      rreg_state[j].is_spill_cand = False;
    }
+
+   for (j = 0; j < n_vregs; j++)
+      vreg_state[j] = INVALID_RREG_NO;
+
 
    /* --------- Stage 1: compute vreg live ranges. --------- */
    /* --------- Stage 2: compute rreg live ranges. --------- */
@@ -342,15 +396,14 @@ HInstrArray* doRegisterAllocation (
    /* This is relatively simple, because (1) we only seek the complete
       end-to-end live range of each vreg, and are not interested in
       any holes in it, and (2) the vregs are conveniently numbered 0
-      .. n_vreg_lrs-1, so we can just dump the results in a
+      .. n_vregs-1, so we can just dump the results in a
       pre-allocated array. */
 
-   n_vreg_lrs = instrs_in->n_vregs;
    vreg_lrs = NULL;
-   if (n_vreg_lrs > 0)
-      vreg_lrs = LibVEX_Alloc(sizeof(VRegLR) * n_vreg_lrs);
+   if (n_vregs > 0)
+      vreg_lrs = LibVEX_Alloc(sizeof(VRegLR) * n_vregs);
 
-   for (j = 0; j < n_vreg_lrs; j++) {
+   for (j = 0; j < n_vregs; j++) {
       vreg_lrs[j].live_after     = INVALID_INSTRNO;
       vreg_lrs[j].dead_before    = INVALID_INSTRNO;
       vreg_lrs[j].spill_offset   = 0;
@@ -406,11 +459,11 @@ HInstrArray* doRegisterAllocation (
          if (!hregIsVirtual(vreg))
             continue;
          k = hregNumber(vreg);
-         if (k < 0 || k >= n_vreg_lrs) {
+         if (k < 0 || k >= n_vregs) {
             vex_printf("\n");
             (*ppInstr)(instrs_in->arr[ii]);
             vex_printf("\n");
-            vex_printf("vreg %d, n_vreg_lrs %d\n", k, n_vreg_lrs);
+            vex_printf("vreg %d, n_vregs %d\n", k, n_vregs);
             vpanic("doRegisterAllocation: out-of-range vreg");
          }
 
@@ -572,28 +625,28 @@ HInstrArray* doRegisterAllocation (
 
    /* Compute summary hints for choosing real regs.  If a real reg is
       involved in a hard live range, record that fact in the fixed
-      part of the running state.  Later, when offered a choice between
+      part of the running rreg_state.  Later, when offered a choice between
       rregs, it's better to choose one which is not marked as having
       any HLRs, since ones with HLRs may need to be spilled around
       their HLRs.  Correctness of final assignment is unaffected by
-      this mechanism -- it is an optimisation only. */
+      this mechanism -- it is only an optimisation. */
 
    for (j = 0; j < rreg_lrs_used; j++) {
       rreg = rreg_lrs[j].rreg;
       vassert(!hregIsVirtual(rreg));
       /* rreg is involved in a HLR.  Record this info in the array, if
          there is space. */
-      for (k = 0; k < n_state; k++)
-         if (state[k].rreg == rreg)
+      for (k = 0; k < n_rregs; k++)
+         if (rreg_state[k].rreg == rreg)
             break;
-      vassert(k < n_state); /* else rreg was not found in state?! */
-      state[k].has_hlrs = True;
+      vassert(k < n_rregs); /* else rreg was not found in rreg_state?! */
+      rreg_state[k].has_hlrs = True;
    }
    if (0) {
-      for (j = 0; j < n_state; j++) {
-         if (!state[j].has_hlrs)
+      for (j = 0; j < n_rregs; j++) {
+         if (!rreg_state[j].has_hlrs)
             continue;
-         ppReg(state[j].rreg);
+         ppReg(rreg_state[j].rreg);
          vex_printf(" hinted\n");
       }
    }
@@ -601,7 +654,7 @@ HInstrArray* doRegisterAllocation (
    /* ------ end of FINALISE RREG LIVE RANGES ------ */
 
 #  if DEBUG_REGALLOC
-   for (j = 0; j < n_vreg_lrs; j++) {
+   for (j = 0; j < n_vregs; j++) {
       vex_printf("vreg %d:  la = %d,  db = %d\n", 
                  j, vreg_lrs[j].live_after, vreg_lrs[j].dead_before );
    }
@@ -629,7 +682,7 @@ HInstrArray* doRegisterAllocation (
    for (j = 0; j < N_SPILL64S; j++)
       ss_busy_until_before[j] = 0;
 
-   for (j = 0; j < n_vreg_lrs; j++) {
+   for (j = 0; j < n_vregs; j++) {
 
       /* True iff this vreg is unused.  In which case we also expect
          that the reg_class field for it has not been set.  */
@@ -689,7 +742,7 @@ HInstrArray* doRegisterAllocation (
 
 #  if 0
    vex_printf("\n\n");
-   for (j = 0; j < n_vreg_lrs; j++)
+   for (j = 0; j < n_vregs; j++)
       vex_printf("vreg %d    --> spill offset %d\n",
                  j, vreg_lrs[j].spill_offset);
 #  endif
@@ -730,70 +783,99 @@ HInstrArray* doRegisterAllocation (
 
       /* ------------ Sanity checks ------------ */
 
-      /* Sanity check 1: all rregs with a hard live range crossing
-         this insn must be marked as unavailable in the running
-         state. */
-      for (j = 0; j < rreg_lrs_used; j++) {
-         if (rreg_lrs[j].live_after < ii 
-             && ii < rreg_lrs[j].dead_before) {
-            /* ii is the middle of a hard live range for some real reg.
-               Check it's marked as such in the running state. */
+      /* Sanity checks are expensive.  So they are done only once
+         every 7 instructions, and just before the last
+         instruction. */
+      do_sanity_check
+         = toBool(
+              False  /* Set to True for sanity checking of all insns. */
+              || ii == instrs_in->arr_used-1
+              || (ii > 0 && (ii % 7) == 0)
+           );
 
-#           if 0
-            vex_printf("considering la %d .. db %d   reg = ", 
-                       rreg_lrs[j].live_after, 
-                       rreg_lrs[j].dead_before);
-            (*ppReg)(rreg_lrs[j].rreg);
-            vex_printf("\n");
-#           endif
+      if (do_sanity_check) {
 
-            /* find the state entry for this rreg */
-            for (k = 0; k < n_state; k++)
-               if (state[k].rreg == rreg_lrs[j].rreg)
-                  break;
+         /* Sanity check 1: all rregs with a hard live range crossing
+            this insn must be marked as unavailable in the running
+            state. */
+         for (j = 0; j < rreg_lrs_used; j++) {
+            if (rreg_lrs[j].live_after < ii 
+                && ii < rreg_lrs[j].dead_before) {
+               /* ii is the middle of a hard live range for some real
+                  reg.  Check it's marked as such in the running
+                  state. */
 
-            /* and assert that this rreg is marked as unavailable */
-            vassert(state[k].disp == Unavail);
+#              if 0
+               vex_printf("considering la %d .. db %d   reg = ", 
+                          rreg_lrs[j].live_after, 
+                          rreg_lrs[j].dead_before);
+               (*ppReg)(rreg_lrs[j].rreg);
+               vex_printf("\n");
+#              endif
+
+               /* find the state entry for this rreg */
+               for (k = 0; k < n_rregs; k++)
+                  if (rreg_state[k].rreg == rreg_lrs[j].rreg)
+                     break;
+
+               /* and assert that this rreg is marked as unavailable */
+               vassert(rreg_state[k].disp == Unavail);
+            }
          }
-      }
 
-      /* Sanity check 2: conversely, all rregs marked as unavailable in
-         the running state must have a corresponding hard live range
-         entry in the rreg_lrs array. */
-      for (j = 0; j < n_available_real_regs; j++) {
-         vassert(state[j].disp == Bound
-                 || state[j].disp == Free
-                 || state[j].disp == Unavail);
-         if (state[j].disp != Unavail)
-            continue;
-         for (k = 0; k < rreg_lrs_used; k++) 
-            if (rreg_lrs[k].rreg == state[j].rreg
-                && rreg_lrs[k].live_after < ii 
-                && ii < rreg_lrs[k].dead_before) 
-               break;
-         /* If this vassertion fails, we couldn't find a corresponding
-            HLR. */
-         vassert(k < rreg_lrs_used);
-      }
+         /* Sanity check 2: conversely, all rregs marked as
+            unavailable in the running rreg_state must have a
+            corresponding hard live range entry in the rreg_lrs
+            array. */
+         for (j = 0; j < n_available_real_regs; j++) {
+            vassert(rreg_state[j].disp == Bound
+                    || rreg_state[j].disp == Free
+                    || rreg_state[j].disp == Unavail);
+            if (rreg_state[j].disp != Unavail)
+               continue;
+            for (k = 0; k < rreg_lrs_used; k++) 
+               if (rreg_lrs[k].rreg == rreg_state[j].rreg
+                   && rreg_lrs[k].live_after < ii 
+                   && ii < rreg_lrs[k].dead_before) 
+                  break;
+            /* If this vassertion fails, we couldn't find a
+               corresponding HLR. */
+            vassert(k < rreg_lrs_used);
+         }
 
-      /* Sanity check 3: No vreg is bound to more than one rreg. */
-      for (j = 0; j < n_state; j++) {
-         if (state[j].disp != Bound)
-            continue;
-         for (k = j+1; k < n_state; k++)
-            if (state[k].disp == Bound)
-               vassert(state[k].vreg != state[j].vreg);
-      }
+         /* Sanity check 3: all vreg-rreg bindings must bind registers
+            of the same class. */
+         for (j = 0; j < n_rregs; j++) {
+            if (rreg_state[j].disp != Bound)
+               continue;
+            vassert(hregClass(rreg_state[j].rreg) 
+                    == hregClass(rreg_state[j].vreg));
+            vassert( hregIsVirtual(rreg_state[j].vreg));
+            vassert(!hregIsVirtual(rreg_state[j].rreg));
+         }
 
-      /* Sanity check 4: all vreg-rreg bindings must bind registers of
-         the same class. */
-      for (j = 0; j < n_state; j++) {
-         if (state[j].disp != Bound)
-            continue;
-         vassert(hregClass(state[j].rreg) == hregClass(state[j].vreg));
-         vassert( hregIsVirtual(state[j].vreg));
-         vassert(!hregIsVirtual(state[j].rreg));
-      }
+         /* Sanity check 4: the vreg_state and rreg_state
+            mutually-redundant mappings are consistent.  If
+            rreg_state[j].vreg points at some vreg_state entry then
+            that vreg_state entry should point back at
+            rreg_state[j]. */
+         for (j = 0; j < n_rregs; j++) {
+            if (rreg_state[j].disp != Bound)
+               continue;
+            k = hregNumber(rreg_state[j].vreg);
+            vassert(IS_VALID_VREGNO(k));
+            vassert(vreg_state[k] == j);
+         }
+         for (j = 0; j < n_vregs; j++) {
+            k = vreg_state[j];
+            if (k == INVALID_RREG_NO)
+               continue;
+            vassert(IS_VALID_RREGNO(k));
+            vassert(rreg_state[k].disp == Bound);
+            vassert(hregNumber(rreg_state[k].vreg) == j);
+         }
+
+      } /* if (do_sanity_check) */
 
       /* ------------ end of Sanity checks ------------ */
 
@@ -812,8 +894,8 @@ HInstrArray* doRegisterAllocation (
          vassert(hregClass(vregS) == hregClass(vregD));
          k = hregNumber(vregS);
          m = hregNumber(vregD);
-         vassert(k >= 0 && k < n_vreg_lrs);
-         vassert(m >= 0 && m < n_vreg_lrs);
+         vassert(IS_VALID_VREGNO(k));
+         vassert(IS_VALID_VREGNO(m));
          if (vreg_lrs[k].dead_before != ii + 1) goto cannot_coalesce;
          if (vreg_lrs[m].live_after != ii) goto cannot_coalesce;
 #        if DEBUG_REGALLOC
@@ -824,10 +906,10 @@ HInstrArray* doRegisterAllocation (
          vex_printf("\n\n");
 #        endif
          /* Find the state entry for vregS. */
-         for (m = 0; m < n_state; m++)
-            if (state[m].disp == Bound && state[m].vreg == vregS)
+         for (m = 0; m < n_rregs; m++)
+            if (rreg_state[m].disp == Bound && rreg_state[m].vreg == vregS)
                break;
-         if (m == n_state)
+         if (m == n_rregs)
             /* We failed to find a binding for vregS, which means it's
                currently not in a register.  So we can't do the
                coalescing.  Give up. */
@@ -835,7 +917,11 @@ HInstrArray* doRegisterAllocation (
 
          /* Finally, we can do the coalescing.  It's trivial -- merely
             claim vregS's register for vregD. */
-         state[m].vreg = vregD;
+         rreg_state[m].vreg = vregD;
+         vassert(IS_VALID_VREGNO(hregNumber(vregD)));
+         vassert(IS_VALID_VREGNO(hregNumber(vregS)));
+         vreg_state[hregNumber(vregD)] = m;
+         vreg_state[hregNumber(vregS)] = INVALID_RREG_NO;
 
          /* Move on to the next insn.  We skip the post-insn stuff for
             fixed registers, since this move should not interact with
@@ -849,16 +935,19 @@ HInstrArray* doRegisterAllocation (
       /* Look for vregs whose live range has just ended, and 
 	 mark the associated rreg as free. */
 
-      for (j = 0; j < n_state; j++) {
-         if (state[j].disp != Bound)
+      for (j = 0; j < n_rregs; j++) {
+         if (rreg_state[j].disp != Bound)
             continue;
-         vreg = hregNumber(state[j].vreg);
-         vassert(vreg >= 0 && vreg < n_vreg_lrs);
+         vreg = hregNumber(rreg_state[j].vreg);
+         vassert(IS_VALID_VREGNO(vreg));
          if (vreg_lrs[vreg].dead_before <= ii) {
-            state[j].disp = Free;
+            rreg_state[j].disp = Free;
+            m = hregNumber(rreg_state[j].vreg);
+            vassert(IS_VALID_VREGNO(m));
+            vreg_state[m] = INVALID_RREG_NO;
             if (DEBUG_REGALLOC) {
                vex_printf("free up "); 
-               (*ppReg)(state[j].rreg); 
+               (*ppReg)(rreg_state[j].rreg); 
                vex_printf("\n");
             }
          }
@@ -881,7 +970,7 @@ HInstrArray* doRegisterAllocation (
       for (j = 0; j < rreg_lrs_used; j++) {
          if (rreg_lrs[j].live_after == ii) {
             /* rreg_lrs[j].rreg needs to be freed up.  Find 
-               the associated state entry. */
+               the associated rreg_state entry. */
             /* Note, re rreg_lrs[j].live_after == ii.  Real register
                live ranges are guaranteed to be well-formed in that
                they start with a write to the register -- Stage 2
@@ -894,25 +983,26 @@ HInstrArray* doRegisterAllocation (
             (*ppReg)(rreg_lrs[j].rreg);
             vex_printf("\n\n");
 #           endif
-            for (k = 0; k < n_state; k++)
-               if (state[k].rreg == rreg_lrs[j].rreg)
+            for (k = 0; k < n_rregs; k++)
+               if (rreg_state[k].rreg == rreg_lrs[j].rreg)
                   break;
             /* If this fails, we don't have an entry for this rreg.
                Which we should. */
-            vassert(k < n_state);
-            if (state[k].disp == Bound) {
+            vassert(IS_VALID_RREGNO(k));
+            m = hregNumber(rreg_state[k].vreg);
+            if (rreg_state[k].disp == Bound) {
                /* Yes, there is an associated vreg.  Spill it if it's
                   still live. */
-               m = hregNumber(state[k].vreg);
-               vassert(m >= 0 && m < n_vreg_lrs);
+               vassert(IS_VALID_VREGNO(m));
+               vreg_state[m] = INVALID_RREG_NO;
                if (vreg_lrs[m].dead_before > ii) {
                   vassert(vreg_lrs[m].reg_class != HRcINVALID);
-                  EMIT_INSTR( (*genSpill)( state[k].rreg,
+                  EMIT_INSTR( (*genSpill)( rreg_state[k].rreg,
                                            vreg_lrs[m].spill_offset ) );
                }
             }
-            state[k].disp = Unavail;
-            state[k].vreg = INVALID_HREG;
+            rreg_state[k].disp = Unavail;
+            rreg_state[k].vreg = INVALID_HREG;
          }
       }
 
@@ -952,12 +1042,15 @@ HInstrArray* doRegisterAllocation (
          /* Now we're trying to find a rreg for "vreg".  First of all,
             if it already has an rreg assigned, we don't need to do
             anything more.  Search the current state to find out. */
-         for (k = 0; k < n_state; k++)
-            if (state[k].vreg == vreg && state[k].disp == Bound)
-               break;
-         if (k < n_state) {
-            addToHRegRemap(&remap, vreg, state[k].rreg);
+         m = hregNumber(vreg);
+         vassert(IS_VALID_VREGNO(m));
+         k = vreg_state[m];
+         if (IS_VALID_RREGNO(k)) {
+            vassert(rreg_state[k].disp == Bound);
+            addToHRegRemap(&remap, vreg, rreg_state[k].rreg);
             continue;
+         } else {
+            vassert(k == INVALID_RREG_NO);
          }
 
          /* No luck.  The next thing to do is see if there is a
@@ -966,11 +1059,11 @@ HInstrArray* doRegisterAllocation (
             rreg for which the next live-range event is as far ahead
             as possible. */
          k_suboptimal = -1;
-         for (k = 0; k < n_state; k++) {
-            if (state[k].disp != Free
-                || hregClass(state[k].rreg) != hregClass(vreg))
+         for (k = 0; k < n_rregs; k++) {
+            if (rreg_state[k].disp != Free
+                || hregClass(rreg_state[k].rreg) != hregClass(vreg))
                continue;
-            if (state[k].has_hlrs) {
+            if (rreg_state[k].has_hlrs) {
                /* Well, at least we can use k_suboptimal if we really
                   have to.  Keep on looking for a better candidate. */
                k_suboptimal = k;
@@ -983,16 +1076,17 @@ HInstrArray* doRegisterAllocation (
          if (k_suboptimal >= 0)
             k = k_suboptimal;
 
-         if (k < n_state) {
-            state[k].disp = Bound;
-            state[k].vreg = vreg;
-            addToHRegRemap(&remap, vreg, state[k].rreg);
+         if (k < n_rregs) {
+            rreg_state[k].disp = Bound;
+            rreg_state[k].vreg = vreg;
+            m = hregNumber(vreg);
+            vassert(IS_VALID_VREGNO(m));
+            vreg_state[m] = k;
+            addToHRegRemap(&remap, vreg, rreg_state[k].rreg);
             /* Generate a reload if needed. */
             if (reg_usage.mode[j] != HRmWrite) {
-               m = hregNumber(vreg);
-               vassert(m >= 0 && m < n_vreg_lrs);
                vassert(vreg_lrs[m].reg_class != HRcINVALID);
-               EMIT_INSTR( (*genReload)( state[k].rreg,
+               EMIT_INSTR( (*genReload)( rreg_state[k].rreg,
                                          vreg_lrs[m].spill_offset ) );
             }
             continue;
@@ -1003,32 +1097,32 @@ HInstrArray* doRegisterAllocation (
             course we need to be careful not to spill a vreg which is
             needed by this insn. */
 
-         /* First, mark in the state, those rregs which are not spill
+         /* First, mark in the rreg_state, those rregs which are not spill
             candidates, due to holding a vreg mentioned by this
             instruction.  Or being of the wrong class. */
-         for (k = 0; k < n_state; k++) {
-            state[k].is_spill_cand = False;
-            if (state[k].disp != Bound)
+         for (k = 0; k < n_rregs; k++) {
+            rreg_state[k].is_spill_cand = False;
+            if (rreg_state[k].disp != Bound)
                continue;
-            if (hregClass(state[k].rreg) != hregClass(vreg))
+            if (hregClass(rreg_state[k].rreg) != hregClass(vreg))
                continue;
-            state[k].is_spill_cand = True;
+            rreg_state[k].is_spill_cand = True;
             for (m = 0; m < reg_usage.n_used; m++) {
-               if (state[k].vreg == reg_usage.hreg[m]) {
-                  state[k].is_spill_cand = False;
+               if (rreg_state[k].vreg == reg_usage.hreg[m]) {
+                  rreg_state[k].is_spill_cand = False;
                   break;
                }
             }
          }
 
          /* We can choose to spill any rreg satisfying
-            state[r].is_spill_cand (so to speak).  Choose r so that
+            rreg_state[r].is_spill_cand (so to speak).  Choose r so that
             the next use of its associated vreg is as far ahead as
             possible, in the hope that this will minimise the number
             of consequent reloads required. */
          spillee
             = findMostDistantlyMentionedVReg ( 
-                 getRegUsage, instrs_in, ii+1, state, n_state );
+                 getRegUsage, instrs_in, ii+1, rreg_state, n_rregs );
 
          if (spillee == -1) {
             /* Hmmmmm.  There don't appear to be any spill candidates.
@@ -1039,48 +1133,51 @@ HInstrArray* doRegisterAllocation (
             vpanic("reg_alloc: can't create a free register.");
          }
 
-         /* Right.  So we're going to spill state[spillee]. */
-         vassert(spillee >= 0 && spillee < n_state);
-         vassert(state[spillee].disp == Bound);
+         /* Right.  So we're going to spill rreg_state[spillee]. */
+         vassert(IS_VALID_RREGNO(spillee));
+         vassert(rreg_state[spillee].disp == Bound);
          /* check it's the right class */
-         vassert(hregClass(state[spillee].rreg) == hregClass(vreg));
+         vassert(hregClass(rreg_state[spillee].rreg) == hregClass(vreg));
          /* check we're not ejecting the vreg for which we are trying
             to free up a register. */
-         vassert(state[spillee].vreg != vreg);
+         vassert(rreg_state[spillee].vreg != vreg);
 
-         m = hregNumber(state[spillee].vreg);
-         vassert(m >= 0 && m < n_vreg_lrs);
+         m = hregNumber(rreg_state[spillee].vreg);
+         vassert(IS_VALID_VREGNO(m));
 
          /* So here's the spill store.  Assert that we're spilling a
             live vreg. */
          vassert(vreg_lrs[m].dead_before > ii);
          vassert(vreg_lrs[m].reg_class != HRcINVALID);
-         EMIT_INSTR( (*genSpill)( state[spillee].rreg,
+         EMIT_INSTR( (*genSpill)( rreg_state[spillee].rreg,
                                   vreg_lrs[m].spill_offset ) );
 
-         /* Update the state to reflect the new assignment for this
+         /* Update the rreg_state to reflect the new assignment for this
             rreg. */
-         state[spillee].vreg = vreg;
+         rreg_state[spillee].vreg = vreg;
+         vreg_state[m] = INVALID_RREG_NO;
+
+         m = hregNumber(vreg);
+         vassert(IS_VALID_VREGNO(m));
+         vreg_state[m] = spillee;
 
          /* Now, if this vreg is being read or modified (as opposed to
             written), we have to generate a reload for it. */
          if (reg_usage.mode[j] != HRmWrite) {
-            m = hregNumber(vreg);
-            vassert(m >= 0 && m < n_vreg_lrs);
             vassert(vreg_lrs[m].reg_class != HRcINVALID);
-            EMIT_INSTR( (*genReload)( state[spillee].rreg,
+            EMIT_INSTR( (*genReload)( rreg_state[spillee].rreg,
                                       vreg_lrs[m].spill_offset ) );
          }
 
          /* So after much twisting and turning, we have vreg mapped to
-            state[furthest_k].rreg.  Note that in the map. */
-         addToHRegRemap(&remap, vreg, state[spillee].rreg);
+            rreg_state[furthest_k].rreg.  Note that in the map. */
+         addToHRegRemap(&remap, vreg, rreg_state[spillee].rreg);
 
       } /* iterate over registers in this instruction. */
 
       /* We've finished clowning around with registers in this instruction.
          Three results:
-         - the running state[] has been updated
+         - the running rreg_state[] has been updated
          - a suitable vreg->rreg mapping for this instruction has been 
            constructed
          - spill and reload instructions may have been emitted.
@@ -1106,16 +1203,16 @@ HInstrArray* doRegisterAllocation (
       for (j = 0; j < rreg_lrs_used; j++) {
          if (rreg_lrs[j].dead_before == ii+1) {
             /* rreg_lrs[j].rreg is exiting a hard live range.  Mark
-               it as such in the main state array. */
-            for (k = 0; k < n_state; k++)
-               if (state[k].rreg == rreg_lrs[j].rreg)
+               it as such in the main rreg_state array. */
+            for (k = 0; k < n_rregs; k++)
+               if (rreg_state[k].rreg == rreg_lrs[j].rreg)
                   break;
             /* If this vassertion fails, we don't have an entry for
                this rreg.  Which we should. */
-            vassert(k < n_state);
-            vassert(state[k].disp == Unavail);
-            state[k].disp = Free;
-            state[k].vreg = INVALID_HREG;
+            vassert(k < n_rregs);
+            vassert(rreg_state[k].disp == Unavail);
+            rreg_state[k].disp = Free;
+            rreg_state[k].vreg = INVALID_HREG;
          }
       }
 
@@ -1129,13 +1226,13 @@ HInstrArray* doRegisterAllocation (
 
    /* ------ END: Process each insn in turn. ------ */
 
-   /* free(state); */
+   /* free(rreg_state); */
    /* free(rreg_lrs); */
    /* if (vreg_lrs) free(vreg_lrs); */
 
    /* Paranoia */
-   for (j = 0; j < n_state; j++)
-      vassert(state[j].rreg == available_real_regs[j]);
+   for (j = 0; j < n_rregs; j++)
+      vassert(rreg_state[j].rreg == available_real_regs[j]);
 
    return instrs_out;
 

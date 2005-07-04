@@ -2052,7 +2052,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
    case 0x2E: // lmw (Load Multiple Word, PPC32 p454)
 vassert(1);
 
-      if (Ra_addr >= Rd_addr || Ra_addr == 0) {
+      if (Ra_addr >= Rd_addr) {
          vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)\n");
          return False;
       }

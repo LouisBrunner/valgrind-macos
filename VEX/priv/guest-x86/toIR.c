@@ -4006,6 +4006,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                     get_ST(0), get_ST(r_src)) );
                break;
 
+            case 0xD8 ... 0xDF: /* FCMOVU ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xD8;
+               DIP("fcmovnu %%st(%d), %%st(0)\n", (Int)r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_x86g_calculate_condition(X86CondP)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
+
             case 0xE9: /* FUCOMPP %st(0),%st(1) */
                DIP("fucompp %%st(0),%%st(1)\n");
                /* This forces C1 to zero, which isn't right. */
@@ -4149,6 +4159,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
                                          mk_x86g_calculate_condition(X86CondNBE)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
+
+            case 0xD8 ... 0xDF: /* FCMOVNU ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xD8;
+               DIP("fcmovnu %%st(%d), %%st(0)\n", (Int)r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_x86g_calculate_condition(X86CondNP)), 
                                     get_ST(0), get_ST(r_src)) );
                break;
 

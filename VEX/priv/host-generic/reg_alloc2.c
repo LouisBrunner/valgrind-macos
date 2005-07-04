@@ -920,7 +920,7 @@ HInstrArray* doRegisterAllocation (
          rreg_state[m].vreg = vregD;
          vassert(IS_VALID_VREGNO(hregNumber(vregD)));
          vassert(IS_VALID_VREGNO(hregNumber(vregS)));
-         vreg_state[hregNumber(vregD)] = m;
+         vreg_state[hregNumber(vregD)] = toShort(m);
          vreg_state[hregNumber(vregS)] = INVALID_RREG_NO;
 
          /* Move on to the next insn.  We skip the post-insn stuff for
@@ -1081,7 +1081,7 @@ HInstrArray* doRegisterAllocation (
             rreg_state[k].vreg = vreg;
             m = hregNumber(vreg);
             vassert(IS_VALID_VREGNO(m));
-            vreg_state[m] = k;
+            vreg_state[m] = toShort(k);
             addToHRegRemap(&remap, vreg, rreg_state[k].rreg);
             /* Generate a reload if needed. */
             if (reg_usage.mode[j] != HRmWrite) {
@@ -1159,7 +1159,7 @@ HInstrArray* doRegisterAllocation (
 
          m = hregNumber(vreg);
          vassert(IS_VALID_VREGNO(m));
-         vreg_state[m] = spillee;
+         vreg_state[m] = toShort(spillee);
 
          /* Now, if this vreg is being read or modified (as opposed to
             written), we have to generate a reload for it. */

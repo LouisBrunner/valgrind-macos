@@ -181,7 +181,7 @@ HReg hregPPC32_VR31 ( void ) { return mkHReg(31, HRcVec128, False); }
 void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
 {
    UInt i=0;
-   *nregs = 90;
+   *nregs = 90 - 24 - 24;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    // GPR0 = scratch reg where possible - some ops interpret as value zero
    // GPR1 = stack pointer
@@ -224,6 +224,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregPPC32_FPR5();
    (*arr)[i++] = hregPPC32_FPR6();
    (*arr)[i++] = hregPPC32_FPR7();
+/*
    (*arr)[i++] = hregPPC32_FPR8();
    (*arr)[i++] = hregPPC32_FPR9();
    (*arr)[i++] = hregPPC32_FPR10();
@@ -248,7 +249,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregPPC32_FPR29();
    (*arr)[i++] = hregPPC32_FPR30();
    (*arr)[i++] = hregPPC32_FPR31();
-
+*/
    (*arr)[i++] = hregPPC32_VR0();
    (*arr)[i++] = hregPPC32_VR1();
    (*arr)[i++] = hregPPC32_VR2();
@@ -257,6 +258,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregPPC32_VR5();
    (*arr)[i++] = hregPPC32_VR6();
    (*arr)[i++] = hregPPC32_VR7();
+/*
    (*arr)[i++] = hregPPC32_VR8();
    (*arr)[i++] = hregPPC32_VR9();
    (*arr)[i++] = hregPPC32_VR10();
@@ -281,7 +283,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregPPC32_VR29();
    (*arr)[i++] = hregPPC32_VR30();
    (*arr)[i++] = hregPPC32_VR31();
-
+*/
    vassert(i == *nregs);
 }
 

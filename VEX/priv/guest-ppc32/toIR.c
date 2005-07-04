@@ -2042,10 +2042,10 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
    IRExpr* irx_addr;
    
    if (Ra_addr == 0) {
-      assign( EA, binop(Iop_And32, mkU32(0), mkU32(exts_d_imm)) );
+      assign( EA, binop(Iop_Add32, mkU32(0), mkU32(exts_d_imm)) );
    } else {
       assign( Ra, getIReg(Ra_addr) );
-      assign( EA, binop(Iop_And32, mkexpr(Ra), mkU32(exts_d_imm)) );
+      assign( EA, binop(Iop_Add32, mkexpr(Ra), mkU32(exts_d_imm)) );
    }
    
    switch (opc1) {
@@ -2649,7 +2649,7 @@ vassert(1); ////XXXXXXXXXXXX JRS(1)
             assign( EA, mkexpr(Rb) );
          } else {
             assign( Ra, getIReg(Ra_addr) );
-            assign( EA, binop(Iop_And32, mkexpr(Ra), mkexpr(Rb)) );
+            assign( EA, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
          }
          putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA)) );
          break;
@@ -2672,7 +2672,7 @@ vassert(1); ////XXXXXXXXXXXX JRS(2)
             assign( EA, mkexpr(Rb) );
          } else {
             assign( Ra, getIReg(Ra_addr) );
-            assign( EA, binop(Iop_And32, mkexpr(Ra), mkexpr(Rb)) );
+            assign( EA, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
          }
          storeBE( mkexpr(EA), mkexpr(Rs) );
          

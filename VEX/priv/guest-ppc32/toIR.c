@@ -2050,7 +2050,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
    
    switch (opc1) {
    case 0x2E: // lmw (Load Multiple Word, PPC32 p454)
-vassert(0);
+vassert(1);
 
       if (Ra_addr >= reg_idx) {
          vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)\n");
@@ -2065,7 +2065,7 @@ vassert(0);
       break;
       
    case 0x2F: // stmw (Store Multiple Word, PPC32 p527)
-vassert(0);
+vassert(1);
 
       DIP("stmw r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
       for (reg_idx = Rs_addr; reg_idx<=31; reg_idx++) {

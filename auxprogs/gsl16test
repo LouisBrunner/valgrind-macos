@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# Do an automated test which involves building and regtesting version
+# 1.6 of the GNU Scientific Library (gsl).  This has proven to be a 
+# very thorough test of Vex's CPU simulations and has exposed bugs 
+# which had not been previously discovered.  Gsl contains more
+# than 100,000 tests as part of its regression suite, and so this
+# script's purpose is to runs those tests using valgrind and compare 
+# against the same tests run natively.
+# 
+# You can download gsl and get more info about it at 
+# http://www.gnu.org/software/gsl
+
+
+
+# Args:
+#     absolute name of gsl-1.6.tar.gz file
+#     name of C compiler
+#     args for C compiler
+#     name of Valgrind
+#     args for Valgrind
+
+
+runcmd () {
+   echo -n "   $1  ... "
+   shift
+
+   (eval "$*") >> log.verbose 2>&1
+
+   if [ $? == 0 ]
+   then
+      echo "done"
+      return 0
+   else
+      echo "failed"
+      return 1
+   fi
+}
+
+GSL_FILE=$1
+GSL_CC=$2
+GSL_CFLAGS=$3
+GSL_VV=$4
+GSL_VFLAGS=$5
+
+TESTS1="block/test cblas/test cdf/test cheb/test combination/test"
+TESTS2="complex/test const/test deriv/test dht/test diff/test"
+TESTS3="eigen/test err/test fft/test fit/test histogram/test"
+TESTS4="ieee-utils/test integration/test interpolation/test linalg/test"
+TESTS5="matrix/test min/test monte/test multifit/test multimin/test"
+TESTS6="multiroots/test ntuple/test ode-initval/test permutation/test"
+TESTS7="poly/test qrng/test randist/test rng/test roots/test siman/test"
+TESTS8="sort/test specfunc/test statistics/test sum/test sys/test"
+TESTS9="vector/test wavelet/test"
+
+ALL_TESTS="$TESTS1 $TESTS2 $TESTS3 $TESTS4 $TESTS5 $TESTS6 $TESTS7 $TESTS8 $TESTS9"
+
+echo "gsl16test: src:      " $GSL_FILE
+echo "gsl16test: cc:       " $GSL_CC
+echo "gsl16test: cflags:   " $GSL_CFLAGS
+echo "gsl16test: valgrind: " $GSL_VV
+echo "gsl16test: vflags:   " $GSL_VFLAGS
+
+rm -rf log.verbose gsl-1.6
+
+echo > log.verbose
+
+runcmd "Untarring                     " \
+       "rm -rf gsl-1.6 && tar xzf $GSL_FILE" && \
+\
+runcmd "Configuring                   " \
+       "(cd gsl-1.6 && CC=$GSL_CC CFLAGS=$GSL_CFLAGS ./configure)" && \
+\
+runcmd "Building                      " \
+       "(cd gsl-1.6 && make && make -k check)"
+
+echo -n "   Collecting reference results  "
+rm -f out-REF
+(cd gsl-1.6 && for f in $ALL_TESTS ; do ./$f ; done) &> out-REF
+echo "  ... done"
+
+echo -n "   Collecting valgrinded results "
+rm -f out-V
+(cd gsl-1.6 && for f in $ALL_TESTS ; do $GSL_VV -v --trace-children=yes $GSL_VFLAGS ./$f ; done) &> out-V
+echo "  ... done"
+
+echo -n "   Native fails:    " && (grep FAIL: out-REF | wc -l)
+echo -n "   Native passes:   " && (grep PASS: out-REF | wc -l)
+echo -n "   Valgrind fails:  " && (grep FAIL: out-V | wc -l)
+echo -n "   Valgrind passes: " && (grep PASS: out-V | wc -l)
+
+echo

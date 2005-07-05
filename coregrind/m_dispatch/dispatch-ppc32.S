@@ -84,14 +84,19 @@ VG_(run_innerloop):
         /* fetch %CIA into r30 */
         lwz     30,OFFSET_ppc32_CIA(31)
 
+	/* set host FPU control word to the default mode expected 
+           by VEX-generated code.  See comments in libvex.h for
+           more info. */
+        fsub    3,3,3   /* generate zero */
+        mtfsf   0xFF,3
+
+	/* set host AltiVec control word to the default mode expected 
+	   by VEX-generated code. */
+        vsubuwm 3,3,3   /* generate zero */
+        mtvscr  3
+
         /* make a stack frame for the code we are calling */
         stwu    1,-16(1)
-
-/* CAB TODO:
-	Store any other regs?
-	Set any other regs to known state?
-	 - FPU, XER, CR
-*/
 
         /* fall into main loop */
 

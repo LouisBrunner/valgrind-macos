@@ -421,16 +421,7 @@ AC_SUBST(PIE_AM_CFLAGS)
 AC_CACHE_CHECK([for PIE support], vg_cv_pie,
 	       [AC_ARG_ENABLE(pie, [  --enable-pie            platform supports PIE linking],
 		[vg_cv_pie=$enableval],
-               	[safe_CFLAGS=$CFLAGS
-                 CFLAGS="$CFLAGS -fpie"
-                 safe_LDFLAGS=$LDFLAGS
-                 LDFLAGS="$LDFLAGS -pie"
-                 AC_TRY_LINK([int foo;],
-                             [],
-                             [vg_cv_pie=yes],
-                             [vg_cv_pie=no])
-                 CFLAGS=$safe_CFLAGS
-                 LDFLAGS=$safe_LDFLAGS])])
+               	[vg_cv_pie=no] )])
 if test "$vg_cv_pie" = yes; then
 AC_DEFINE([HAVE_PIE], 1, [can create position-independent executables])
 PIE_AM_CFLAGS="-fpie"

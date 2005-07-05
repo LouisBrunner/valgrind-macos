@@ -582,6 +582,8 @@ DECL_TEMPLATE(amd64_linux, sys_shmdt);
 DECL_TEMPLATE(amd64_linux, sys_shmdt);
 DECL_TEMPLATE(amd64_linux, sys_shmctl);
 DECL_TEMPLATE(amd64_linux, sys_arch_prctl);
+DECL_TEMPLATE(amd64_linux, sys_pread64);
+DECL_TEMPLATE(amd64_linux, sys_pwrite64);
 
 
 PRE(sys_clone)
@@ -1049,6 +1051,35 @@ POST(sys_shmctl)
    ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
 }
 
+PRE(sys_pread64)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_pread64 ( %d, %p, %llu, %lld )",
+         ARG1, ARG2, (ULong)ARG3, ARG4);
+   PRE_REG_READ4(ssize_t, "pread64",
+                 unsigned int, fd, char *, buf,
+                 vki_size_t, count, vki_loff_t, offset);
+   PRE_MEM_WRITE( "pread64(buf)", ARG2, ARG3 );
+}
+POST(sys_pread64)
+{
+   vg_assert(SUCCESS);
+   if (RES > 0) {
+      POST_MEM_WRITE( ARG2, RES );
+   }
+}
+
+PRE(sys_pwrite64)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_pwrite64 ( %d, %p, %llu, %lld )",
+         ARG1, ARG2, (ULong)ARG3, ARG4);
+   PRE_REG_READ4(ssize_t, "pwrite64",
+                 unsigned int, fd, const char *, buf,
+                 vki_size_t, count, vki_loff_t, offset);
+   PRE_MEM_READ( "pwrite64(buf)", ARG2, ARG3 );
+}
+
 #undef PRE
 #undef POST
 
@@ -1090,8 +1121,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 15 
    GENXY(__NR_ioctl,             sys_ioctl),          // 16 
-   GENXY(__NR_pread64,           sys_pread64),        // 17 
-   //   (__NR_pwrite64,          sys_pwrite64),       // 18 
+   PLAXY(__NR_pread64,           sys_pread64),        // 17 
+   PLAX_(__NR_pwrite64,          sys_pwrite64),       // 18 
    GENXY(__NR_readv,             sys_readv),          // 19 
 
    GENX_(__NR_writev,            sys_writev),         // 20 

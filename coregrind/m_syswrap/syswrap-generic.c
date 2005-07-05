@@ -2102,8 +2102,11 @@ PRE(sys_setregid16)
    PRE_REG_READ2(long, "setregid16", vki_old_gid_t, rgid, vki_old_gid_t, egid);
 }
 
-// XXX: only for 32-bit archs
-#if defined(VGP_x86_linux)
+// The actual kernel definition of this routine takes a
+// single 64 bit offset argument. This version is for 32 bit
+// platforms only and treats the offset as two values - the
+// kernel relies on stack based argument passing conventions
+// to merge the two together.
 PRE(sys_pwrite64)
 {
    *flags |= SfMayBlock;
@@ -2114,7 +2117,6 @@ PRE(sys_pwrite64)
                  vki_u32, offset_low32, vki_u32, offset_high32);
    PRE_MEM_READ( "pwrite64(buf)", ARG2, ARG3 );
 }
-#endif
 
 PRE(sys_sync)
 {
@@ -2154,9 +2156,11 @@ PRE(sys_getsid)
    PRE_REG_READ1(long, "getsid", vki_pid_t, pid);
 }
 
-// XXX: only for 32-bit archs
-// XXX even more: this in fact gets used by amd64-linux.  Someone
-// should look into this properly.
+// The actual kernel definition of this routine takes a
+// single 64 bit offset argument. This version is for 32 bit
+// platforms only and treats the offset as two values - the
+// kernel relies on stack based argument passing conventions
+// to merge the two together.
 PRE(sys_pread64)
 {
    *flags |= SfMayBlock;

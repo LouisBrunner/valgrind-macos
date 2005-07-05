@@ -2608,6 +2608,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- LITERAL --------- */
    if (e->tag == Iex_Const) {
+      HReg r_srcHi, r_srcLo;
       union { UInt u32x2[2]; ULong u64; Double f64; } u;
       vassert(sizeof(u) == 8);
       vassert(sizeof(u.u64) == 8);
@@ -2623,8 +2624,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       else
          vpanic("iselDblExpr(ppc32): const");
 
-      HReg r_srcHi = newVRegI(env);
-      HReg r_srcLo = newVRegI(env);
+      r_srcHi = newVRegI(env);
+      r_srcLo = newVRegI(env);
       addInstr(env, mk_iMOVds_RRI(env, r_srcHi, PPC32RI_Imm(u.u32x2[1])));
       addInstr(env, mk_iMOVds_RRI(env, r_srcLo, PPC32RI_Imm(u.u32x2[0])));
       return mk_LoadRRtoFPR( env, r_srcHi, r_srcLo );

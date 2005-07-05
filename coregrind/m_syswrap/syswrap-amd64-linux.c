@@ -1211,9 +1211,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENX_(__NR_chmod,             sys_chmod),          // 90 
    GENX_(__NR_fchmod,            sys_fchmod),         // 91 
-//zz    GENX_(__NR_chown,             sys_chown),          // 92 
-//zz    GENX_(__NR_fchown,            sys_fchown),         // 93 
-   //   (__NR_lchown,            sys_lchown),         // 94 
+   GENX_(__NR_chown,             sys_chown),          // 92 
+   GENX_(__NR_fchown,            sys_fchown),         // 93 
+   GENX_(__NR_lchown,            sys_lchown),         // 94 
 
    GENX_(__NR_umask,             sys_umask),          // 95 
    GENXY(__NR_gettimeofday,      sys_gettimeofday),   // 96 
@@ -1348,12 +1348,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_sched_getaffinity, sys_sched_getaffinity), // 204 
 
    //   (__NR_set_thread_area,   sys_ni_syscall),     // 205 
-//zz    LINX_(__NR_io_setup,          sys_io_setup),       // 206 
-//zz    LINX_(__NR_io_destroy,        sys_io_destroy),     // 207 
-//zz    LINXY(__NR_io_getevents,      sys_io_getevents),   // 208 
-//zz    LINX_(__NR_io_submit,         sys_io_submit),      // 209 
+   LINX_(__NR_io_setup,          sys_io_setup),       // 206 
+   LINX_(__NR_io_destroy,        sys_io_destroy),     // 207 
+   LINXY(__NR_io_getevents,      sys_io_getevents),   // 208 
+   LINX_(__NR_io_submit,         sys_io_submit),      // 209 
 
-//zz    LINXY(__NR_io_cancel,         sys_io_cancel),      // 210 
+   LINXY(__NR_io_cancel,         sys_io_cancel),      // 210 
    //   (__NR_get_thread_area,   sys_ni_syscall),     // 211 
    //   (__NR_lookup_dcookie,    sys_lookup_dcookie), // 212 
    LINXY(__NR_epoll_create,      sys_epoll_create),   // 213 

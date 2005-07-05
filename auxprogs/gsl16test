@@ -80,7 +80,7 @@ runcmd "Untarring                     " \
        "rm -rf gsl-1.6 && tar xzf $GSL_FILE" && \
 \
 runcmd "Configuring                   " \
-       "(cd gsl-1.6 && CC=$GSL_CC CFLAGS=$GSL_CFLAGS ./configure)" && \
+       "(cd gsl-1.6 && CC=$GSL_CC CFLAGS=\"$GSL_CFLAGS\" ./configure)" && \
 \
 runcmd "Building                      " \
        "(cd gsl-1.6 && make && make -k check)"
@@ -92,7 +92,7 @@ echo "  ... done"
 
 echo -n "   Collecting valgrinded results "
 rm -f out-V
-(cd gsl-1.6 && for f in $ALL_TESTS ; do $GSL_VV -v --trace-children=yes $GSL_VFLAGS ./$f ; done) &> out-V
+(cd gsl-1.6 && for f in $ALL_TESTS ; do $GSL_VV -v --trace-children=yes \"$GSL_VFLAGS\" ./$f ; done) &> out-V
 echo "  ... done"
 
 echo -n "   Native fails:    " && (grep FAIL: out-REF | wc -l)

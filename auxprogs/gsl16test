@@ -92,7 +92,7 @@ echo "  ... done"
 
 echo -n "   Collecting valgrinded results "
 rm -f out-V
-(cd gsl-1.6 && for f in $ALL_TESTS ; do $GSL_VV -v --trace-children=yes \"$GSL_VFLAGS\" ./$f ; done) &> out-V
+(cd gsl-1.6 && for f in $ALL_TESTS ; do $GSL_VV -v --trace-children=yes "$GSL_VFLAGS" ./$f ; done) &> out-V
 echo "  ... done"
 
 echo -n "   Native fails:    " && (grep FAIL: out-REF | wc -l)

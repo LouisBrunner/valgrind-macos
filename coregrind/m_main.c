@@ -1657,6 +1657,8 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(clo_wait_for_gdb) = False;
       /* No file-descriptor leak checking yet */
       VG_(clo_track_fds) = False;
+      /* Disable timestamped output */
+      VG_(clo_time_stamp) = False;
       /* Also, we want to set options for the leak checker, but that
          will have to be done in Memcheck's flag-handling code, not
          here. */

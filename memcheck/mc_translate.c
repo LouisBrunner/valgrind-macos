@@ -2636,8 +2636,8 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 IRBB* MC_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, 
                         IRType gWordTy, IRType hWordTy )
 {
-   Bool verboze = False; //True; 
-
+   Bool    verboze = False; //True; 
+   Bool    bogus;
    Int     i, j, first_stmt;
    IRStmt* st;
    MCEnv   mce;
@@ -2673,23 +2673,38 @@ IRBB* MC_(instrument) ( IRBB* bb_in, VexGuestLayout* layout,
    for (i = 0; i < mce.n_originalTmps; i++)
       mce.tmpMap[i] = IRTemp_INVALID;
 
-   /* Iterate over the stmts. */
+   /* Make a preliminary inspection of the statements, to see if there
+      are any dodgy-looking literals.  If there are, we generate
+      extra-detailed (hence extra-expensive) instrumentation in
+      places.  Scan the whole bb even if dodgyness is found earlier,
+      so that the flatness assertion is applied to all stmts. */
+
+   bogus = False;
 
    for (i = 0; i <  bb_in->stmts_used; i++) {
+
       st = bb_in->stmts[i];
       tl_assert(st);
-
       tl_assert(isFlatIRStmt(st));
 
-      if (!mce.bogusLiterals) {
-         mce.bogusLiterals = checkForBogusLiterals(st);
-         if (0&& mce.bogusLiterals) {
+      if (!bogus) {
+         bogus = checkForBogusLiterals(st);
+         if (0 && bogus) {
             VG_(printf)("bogus: ");
             ppIRStmt(st);
             VG_(printf)("\n");
          }
       }
 
+   }
+
+   mce.bogusLiterals = bogus;
+
+   /* Iterate over the stmts to generate instrumentation. */
+
+   for (i = 0; i <  bb_in->stmts_used; i++) {
+
+      st = bb_in->stmts[i];
       first_stmt = bb->stmts_used;
 
       if (verboze) {

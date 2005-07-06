@@ -18,12 +18,13 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	seg_override.stderr.exp seg_override.stdout.exp seg_override.vgtest \
 	sigcontext.stdout.exp sigcontext.stderr.exp sigcontext.vgtest \
-	smc1.stderr.exp smc1.stdout.exp smc1.vgtest
+	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
+	yield.stderr.exp yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
 	badseg bt_everything bt_literal cpuid fpu_lazy_eflags \
 	getseg $(INSN_TESTS) \
-	int pushpopseg seg_override sigcontext smc1
+	int pushpopseg seg_override sigcontext smc1 yield
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow \
 		-g -I$(top_srcdir)/include \
@@ -49,6 +50,8 @@ insn_sse_SOURCES	= insn_sse.def
 insn_sse_LDADD		= -lm
 insn_sse2_SOURCES	= insn_sse2.def
 insn_sse2_LDADD		= -lm
+yield_CFLAGS		= $(AM_CFLAGS) -D__$(VG_ARCH)__
+yield_LDADD		= -lpthread
 
 .def.c: $(srcdir)/gen_insn_test.pl
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

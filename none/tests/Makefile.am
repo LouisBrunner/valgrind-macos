@@ -96,8 +96,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
 	threadederrno.vgtest \
 	tls.stderr.exp tls.stdout.exp  \
-	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest \
-	yield.stderr.exp yield.stdout.exp yield.vgtest
+	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest
 
 check_PROGRAMS = \
 	ansi args as_mmap as_shm \
@@ -117,7 +116,7 @@ check_PROGRAMS = \
 	shortpush shorts stackgrowth sigstackgrowth susphello \
 	syscall-restart1 syscall-restart2 system \
 	thread-exits threaded-fork threadederrno \
-	tls tls.so tls2.so yield vgprintf \
+	tls tls.so tls2.so vgprintf \
 	coolo_sigaction gxx304
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
@@ -158,8 +157,6 @@ tls_so_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
 tls_so_CFLAGS		= -fPIC
 tls2_so_SOURCES		= tls2_so.c
 tls2_so_LDFLAGS		= -shared
-yield_CFLAGS		= $(AM_CFLAGS) -D__$(VG_ARCH)__
-yield_LDADD		= -lpthread
 
 # C++ tests
 coolo_sigaction_SOURCES	= coolo_sigaction.cpp

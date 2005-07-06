@@ -2020,7 +2020,7 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 
 /* Map a code address to its SegInfo.  Returns NULL if not found.  Doesn't
    require debug info. */
-SegInfo* VG_(get_obj) ( Addr a )
+SegInfo* VG_(find_seginfo) ( Addr a )
 {
    SegInfo* si;
 

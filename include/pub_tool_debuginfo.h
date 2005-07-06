@@ -100,7 +100,7 @@ typedef struct _SegInfo SegInfo;
 
 /* Returns NULL if the SegInfo isn't found.  It doesn't matter if debug info
    is present or not. */
-extern SegInfo* VG_(get_obj)  ( Addr a );
+extern       SegInfo* VG_(find_seginfo)      ( Addr a );
 
 extern const SegInfo* VG_(next_seginfo)      ( const SegInfo *si );
 extern       Addr     VG_(seginfo_start)     ( const SegInfo *si );

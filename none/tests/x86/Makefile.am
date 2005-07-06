@@ -17,12 +17,13 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	seg_override.stderr.exp seg_override.stdout.exp seg_override.vgtest \
-	sigcontext.stdout.exp sigcontext.stderr.exp sigcontext.vgtest
+	sigcontext.stdout.exp sigcontext.stderr.exp sigcontext.vgtest \
+	smc1.stderr.exp smc1.stdout.exp smc1.vgtest
 
 check_PROGRAMS = \
 	badseg bt_everything bt_literal cpuid fpu_lazy_eflags \
 	getseg $(INSN_TESTS) \
-	int pushpopseg seg_override sigcontext
+	int pushpopseg seg_override sigcontext smc1
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow \
 		-g -I$(top_srcdir)/include \

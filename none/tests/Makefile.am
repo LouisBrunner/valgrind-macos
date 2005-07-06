@@ -87,7 +87,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
 	sigstackgrowth.stdout.exp sigstackgrowth.stderr.exp sigstackgrowth.vgtest \
-	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	stackgrowth.stdout.exp stackgrowth.stderr.exp stackgrowth.vgtest \
 	syscall-restart1.vgtest syscall-restart1.stdout.exp syscall-restart1.stderr.exp \
 	syscall-restart2.vgtest syscall-restart2.stdout.exp syscall-restart2.stderr.exp \
@@ -115,7 +114,7 @@ check_PROGRAMS = \
 	pth_stackalign \
 	rcrl readline1 res_search resolv \
 	rlimit_nofile selfrun sem semlimit sha1_test \
-	shortpush shorts stackgrowth sigstackgrowth smc1 susphello \
+	shortpush shorts stackgrowth sigstackgrowth susphello \
 	syscall-restart1 syscall-restart2 system \
 	thread-exits threaded-fork threadederrno \
 	tls tls.so tls2.so yield vgprintf \

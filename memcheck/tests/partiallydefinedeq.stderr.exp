@@ -1,0 +1,14 @@
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: foo (partiallydefinedeq.c:15)
+   by 0x........: main (partiallydefinedeq.c:37)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: foo (partiallydefinedeq.c:15)
+   by 0x........: main (partiallydefinedeq.c:52)
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 8 bytes in 2 blocks.
+malloc/free: 2 allocs, 0 frees, 8 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

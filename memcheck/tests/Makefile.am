@@ -59,6 +59,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	new_override.stderr.exp new_override.stdout.exp new_override.vgtest \
 	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
+	partiallydefinedeq.vgtest partiallydefinedeq.stderr.exp \
+	partiallydefinedeq.stdout.exp \
 	pointer-trace.vgtest \
 	pointer-trace.stderr.exp pointer-trace.stderr.exp64 \
 	post-syscall.stderr.exp post-syscall.stdout.exp post-syscall.vgtest \
@@ -101,6 +103,7 @@ check_PROGRAMS = \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
 	null_socket overlap \
+	partiallydefinedeq \
 	pointer-trace \
 	post-syscall \
 	realloc1 realloc2 realloc3 \

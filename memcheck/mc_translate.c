@@ -563,23 +563,44 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
    The result is:
 
    PCastTo<1> (
-      PCastTo<sz>( UifU<sz>(vxx, vyy) )  -- naive version
+      -- naive version
+      PCastTo<sz>( UifU<sz>(vxx, vyy) )
+
       `DifD<sz>`
-      PCastTo<sz>( CmpEQ<sz>( vec, 1....1 ) ) -- improvement term
+
+      -- improvement term
+      PCastTo<sz>( PCast<sz>( CmpEQ<sz> ( vec, 1...1 ) ) )
    )
+
    where
      vec contains 0 (defined) bits where the corresponding arg bits 
-     are defined but different, and 1 bits otherwise:
+     are defined but different, and 1 bits otherwise.
 
-     vec = UifU<sz>( vxx, vyy, Not<sz>(Xor<sz>( xx, yy )) )
+     vec = Or<sz>( vxx,   // 0 iff bit defined
+                   vyy,   // 0 iff bit defined
+                   Not<sz>(Xor<sz>( xx, yy )) // 0 iff bits different
+                 )
+                    
+     If any bit of vec is 0, the result is defined and so the 
+     improvement term should produce 0...0, else it should produce
+     1...1.
+
+     Hence require for the improvement term:
+
+        if vec == 1...1 then 1...1 else 0...0
+     ->
+        PCast<sz>( CmpEQ<sz> ( vec, 1...1 ) )
+
+   This was extensively re-analysed and checked on 6 July 05.
 */
 static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
                                     IRType  ty,
                                     IRAtom* vxx, IRAtom* vyy, 
                                     IRAtom* xx,  IRAtom* yy )
 {
-   IRAtom *naive, *vec, *vec_cmpd, *improved, *final_cast, *top;
-   IROp   opDIFD, opUIFU, opXOR, opNOT, opCMP;
+   IRAtom *naive, *vec, *improvement_term;
+   IRAtom *improved, *final_cast, *top;
+   IROp   opDIFD, opUIFU, opXOR, opNOT, opCMP, opOR;
 
    tl_assert(isShadowAtom(mce,vxx));
    tl_assert(isShadowAtom(mce,vyy));
@@ -590,6 +611,7 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
  
    switch (ty) {
       case Ity_I32:
+         opOR   = Iop_Or32;
          opDIFD = Iop_And32;
          opUIFU = Iop_Or32;
          opNOT  = Iop_Not32;
@@ -598,6 +620,7 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
          top    = mkU32(0xFFFFFFFF);
          break;
       case Ity_I64:
+         opOR   = Iop_Or64;
          opDIFD = Iop_And64;
          opUIFU = Iop_Or64;
          opNOT  = Iop_Not64;
@@ -615,18 +638,18 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
    vec 
       = assignNew(
            mce,ty, 
-           binop( opUIFU,
-                  assignNew(mce,ty, binop(opUIFU, vxx, vyy)),
+           binop( opOR,
+                  assignNew(mce,ty, binop(opOR, vxx, vyy)),
                   assignNew(
                      mce,ty, 
                      unop( opNOT,
                            assignNew(mce,ty, binop(opXOR, xx, yy))))));
 
-   vec_cmpd
+   improvement_term
       = mkPCastTo( mce,ty, assignNew(mce,Ity_I1, binop(opCMP, vec, top)));
 
    improved
-      = assignNew( mce,ty, binop(opDIFD, naive, vec_cmpd) );
+      = assignNew( mce,ty, binop(opDIFD, naive, improvement_term) );
 
    final_cast
       = mkPCastTo( mce, Ity_I1, improved );
@@ -1685,7 +1708,6 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Mul32:
          return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
 
-      /* could do better: Add64, Sub64 */
       case Iop_Add64:
          if (mce->bogusLiterals)
             return expensiveAddSub(mce,True,Ity_I64, 
@@ -1713,6 +1735,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkLeft8(mce, mkUifU8(mce, vatom1,vatom2));
 
       case Iop_CmpEQ64: 
+      case Iop_CmpNE64:
          if (mce->bogusLiterals)
             return expensiveCmpEQorNE(mce,Ity_I64, vatom1,vatom2, atom1,atom2 );
          else
@@ -1720,10 +1743,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       cheap_cmp64:
       case Iop_CmpLE64S: case Iop_CmpLE64U: 
       case Iop_CmpLT64U: case Iop_CmpLT64S:
-      case Iop_CmpNE64:
          return mkPCastTo(mce, Ity_I1, mkUifU64(mce, vatom1,vatom2));
 
       case Iop_CmpEQ32: 
+      case Iop_CmpNE32:
          if (mce->bogusLiterals)
             return expensiveCmpEQorNE(mce,Ity_I32, vatom1,vatom2, atom1,atom2 );
          else
@@ -1731,7 +1754,6 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       cheap_cmp32:
       case Iop_CmpLE32S: case Iop_CmpLE32U: 
       case Iop_CmpLT32U: case Iop_CmpLT32S:
-      case Iop_CmpNE32:
          return mkPCastTo(mce, Ity_I1, mkUifU32(mce, vatom1,vatom2));
 
       case Iop_CmpEQ16: case Iop_CmpNE16:

@@ -294,6 +294,18 @@ VexTranslateResult LibVEX_Translate (
    Int     traceflags
 );
 
+/* A subtlety re interaction between self-checking translations and
+   bb-chasing.  The supplied chase_into_ok function should say NO
+   (False) when presented with any address for which you might want to
+   make a self-checking translation.
+
+   If it doesn't do that, you may end up with Vex chasing from BB #1
+   to BB #2 (fine); but if you wanted checking for #2 and not #1, that
+   would not be the result.  Therefore chase_into_ok should disallow
+   following into #2.  That will force the caller to eventually
+   request a new translation starting at #2, at which point Vex will
+   correctly observe the make-a-self-check flag.  */
+
 
 /*-------------------------------------------------------*/
 /*--- Show accumulated statistics                     ---*/

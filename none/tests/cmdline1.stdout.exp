@@ -18,6 +18,8 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --pointercheck=no|yes     enforce client address space limits [yes]
     --support-elan3=no|yes    hacks for Quadrics Elan3 support [no]
     --show-emwarns=no|yes     show warnings about emulation limits? [no]
+    --smc-support=none|stack|all   support for self-modifying code:
+                              none, for code found in stacks, or all [stack]
 
   user options for Valgrind tools that report errors:
     --log-fd=<number>         log messages to file descriptor [2=stderr]

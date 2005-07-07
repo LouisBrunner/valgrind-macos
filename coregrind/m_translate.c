@@ -339,42 +339,6 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout,
 }
 
 
-
-#if 0
-   for (i = 0; i <  bb_in->stmts_used; i++) {
-      st = bb_in->stmts[i];
-      if (!st)
-         continue;
-      if (st->tag != Ist_Put) 
-         goto boring;
-      offP = st->Ist.Put.offset;
-      if (offP != layout->offset_SP) 
-         goto boring;
-      szP = sizeofIRType(typeOfIRExpr(bb_in->tyenv, st->Ist.Put.data));
-      if (szP != layout->sizeof_SP)
-         goto boring;
-      vg_assert(isAtom(st->Ist.Put.data));
-
-      /* I don't know if it's really necessary to say that the call reads
-         the stack pointer.  But anyway, we do. */      
-      dcall = unsafeIRDirty_0_N( 
-                 mkIRCallee(1, "VG_(unknown_esp_update)", 
-                            (HWord)&VG_(unknown_esp_update)),
-                 mkIRExprVec_1(st->Ist.Put.data) 
-              );
-      dcall->nFxState = 1;
-      dcall->fxState[0].fx     = Ifx_Read;
-      dcall->fxState[0].offset = layout->offset_SP;
-      dcall->fxState[0].size   = layout->sizeof_SP;
-
-      addStmtToIRBB( bb, IRStmt_Dirty(dcall) );
-
-     boring:
-      addStmtToIRBB( bb, st );
-   }
-#endif
-
-
 /*------------------------------------------------------------*/
 /*--- Main entry point for the JITter.                     ---*/
 /*------------------------------------------------------------*/

@@ -7,10 +7,11 @@ INSN_TESTS=insn_mmx insn_sse insn_sse2 insn_fpu
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
-	$(addsuffix .vgtest,$(INSN_TESTS))
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
+        smc1.stderr.exp smc1.stdout.exp smc1.vgtest
 
 check_PROGRAMS = \
-	$(INSN_TESTS)
+	$(INSN_TESTS) smc1
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)

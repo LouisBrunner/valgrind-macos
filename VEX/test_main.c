@@ -166,6 +166,7 @@ int main ( int argc, char** argv )
                  NULL,          /* instrument2 */
 		 True,          /* cleanup after instrument */
 #endif
+                 False, /* do_self_check ? */
                  NULL, /* access checker */
                  TEST_FLAGS 
               );

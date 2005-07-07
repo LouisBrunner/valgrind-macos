@@ -190,6 +190,8 @@ VexTranslateResult LibVEX_Translate (
    IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, 
                             IRType gWordTy, IRType hWordTy ),
    Bool    cleanup_after_instrumentation,
+   /* IN: should this translation be self-checking? */
+   Bool    do_self_check,
    /* IN: optionally, an access check function for guest code. */
    Bool    (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */
@@ -400,7 +402,7 @@ VexTranslateResult LibVEX_Translate (
                      host_is_bigendian,
                      archinfo_guest,
                      guest_word_type,
-                     False/*selfcheck*/,
+                     do_self_check,
                      offB_TISTART,
                      offB_TILEN );
 

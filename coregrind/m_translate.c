@@ -380,17 +380,45 @@ void log_bytes ( HChar* bytes, Int nbytes )
 /* This stops Vex from chasing into function entry points that we wish
    to redirect.  Chasing across them obviously defeats the redirect
    mechanism, with bad effects for Memcheck, Addrcheck, and possibly
-   others. */
+   others.
+
+   Also, we must stop Vex chasing into blocks for which we might want
+   to self checking.
+*/
 static Bool chase_into_ok ( Addr64 addr64 )
 {
-  Addr addr = (Addr)addr64;
-  if (addr != VG_(code_redirect)(addr)) {
-     if (0) VG_(printf)("not chasing into 0x%x\n", addr);
-     return False;
-  } else {
-     return True; /* ok to chase into 'addr' */
-  }
+   /* Work through a list of possibilities why we might not want to
+      allow a chase. */
+   Addr addr = (Addr)addr64;
+
+   /* All chasing disallowed if all bbs require self-checks. */
+   if (VG_(clo_smc_support) == Vg_SmcAll)
+      goto dontchase;
+
+   /* AAABBBCCC: if default self-checks are in force, reject if we
+      would choose to have a self-check for the dest.  Note, this must
+      match the logic at XXXYYYZZZ below. */
+   if (VG_(clo_smc_support) == Vg_SmcStack) {
+      Segment* seg = VG_(find_segment)(addr);
+      if (seg && (seg->flags & SF_GROWDOWN))
+         goto dontchase;
+   }
+
+   /* Destination is redirected? */
+   if (addr != VG_(code_redirect)(addr))
+      goto dontchase;
+
+   /* well, ok then.  go on and chase. */
+   return True;
+
+   vg_assert(0);
+   /*NOTREACHED*/
+
+  dontchase:
+   if (0) VG_(printf)("not chasing into 0x%x\n", addr);
+   return False;
 }
+
 
 Bool VG_(translate) ( ThreadId tid, 
                       Addr64   orig_addr,
@@ -509,6 +537,7 @@ Bool VG_(translate) ( ThreadId tid,
       case Vg_SmcNone:  do_self_check = False; break;
       case Vg_SmcAll:   do_self_check = True;  break;
       case Vg_SmcStack: 
+         /* XXXYYYZZZ: must match the logic at AAABBBCCC above */
          do_self_check = seg ? toBool(seg->flags & SF_GROWDOWN) : False;
          break;
       default: vg_assert2(0, "unknown VG_(clo_smc_support) value");

@@ -222,7 +222,7 @@ static Int allocate_segname ( const HChar* name )
    an address after it, and 0 if it denotes an address covered by
    seg. 
 */
-static Int compare_addr_with_seg ( Addr a, Segment* seg )
+static inline Int compare_addr_with_seg ( Addr a, Segment* seg )
 {
    if (a < seg->addr) 
       return -1;

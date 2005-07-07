@@ -43,7 +43,7 @@
 
 /* Forwards .. */
 __attribute((regparm(2)))
-static UInt genericg_compute_adler32 ( HWord addr, UInt len );
+static UInt genericg_compute_adler32 ( HWord addr, HWord len );
 
 
 /* Disassemble a complete basic block, starting at guest_IP_start, 
@@ -336,7 +336,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                    &genericg_compute_adler32,
                    mkIRExprVec_2( 
                       mkIRExpr_HWord( (HWord)guest_code ), 
-                      IRExpr_Const(IRConst_U32(len2check))
+                      mkIRExpr_HWord( (HWord)len2check )
                    )
                 ),
                 IRExpr_Const(IRConst_U32(adler32))
@@ -365,7 +365,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    once for every use of a self-checking translation, so it needs to
    be as fast as possible. */
 __attribute((regparm(2)))
-static UInt genericg_compute_adler32 ( HWord addr, UInt len )
+static UInt genericg_compute_adler32 ( HWord addr, HWord len )
 {
    UInt   s1 = 1;
    UInt   s2 = 0;

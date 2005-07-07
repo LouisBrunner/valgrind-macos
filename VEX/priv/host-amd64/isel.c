@@ -1576,14 +1576,20 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       vassert(ty == e->Iex.CCall.retty);
 
       /* be very restrictive for now.  Only 64-bit ints allowed
-         for args, and 64 bits for return type. */
-      if (e->Iex.CCall.retty != Ity_I64)
+         for args, and 64 or 32 bits for return type. */
+      if (e->Iex.CCall.retty != Ity_I64 && e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
 
       /* Marshal args, do the call. */
       doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
 
-      addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
+      /* Move to dst, and zero out the top 32 bits if the result type is
+         Ity_I32.  Probably overkill, but still .. */
+      if (e->Iex.CCall.retty == Ity_I64)
+         addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
+      else
+         addInstr(env, AMD64Instr_MovZLQ(hregAMD64_RAX(), dst));
+
       return dst;
    }
 

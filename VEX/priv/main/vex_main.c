@@ -221,6 +221,7 @@ VexTranslateResult LibVEX_Translate (
    HInstrArray*    vcode;
    HInstrArray*    rcode;
    Int             i, j, k, out_used, guest_sizeB;
+   Int             offB_TISTART, offB_TILEN;
    UChar           insn_bytes[32];
    IRType          guest_word_type;
    IRType          host_word_type;
@@ -242,6 +243,8 @@ VexTranslateResult LibVEX_Translate (
    disInstrFn             = NULL;
    guest_word_type        = Ity_INVALID;
    host_word_type         = Ity_INVALID;
+   offB_TISTART           = 0;
+   offB_TILEN             = 0;
 
    vex_traceflags = traceflags;
 
@@ -322,9 +325,13 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestX86State);
          guest_word_type  = Ity_I32;
          guest_layout     = &x86guest_layout;
+         offB_TISTART     = offsetof(VexGuestX86State,guest_TISTART);
+         offB_TILEN       = offsetof(VexGuestX86State,guest_TILEN);
          vassert(archinfo_guest->subarch == VexSubArchX86_sse0
                  || archinfo_guest->subarch == VexSubArchX86_sse1
                  || archinfo_guest->subarch == VexSubArchX86_sse2);
+         vassert(sizeof( ((VexGuestX86State*)0)->guest_TISTART ) == 4);
+         vassert(sizeof( ((VexGuestX86State*)0)->guest_TILEN ) == 4);
          break;
 
       case VexArchAMD64:
@@ -334,7 +341,11 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestAMD64State);
          guest_word_type  = Ity_I64;
          guest_layout     = &amd64guest_layout;
+         offB_TISTART     = offsetof(VexGuestAMD64State,guest_TISTART);
+         offB_TILEN       = offsetof(VexGuestAMD64State,guest_TILEN);
          vassert(archinfo_guest->subarch == VexSubArch_NONE);
+         vassert(sizeof( ((VexGuestAMD64State*)0)->guest_TISTART ) == 8);
+         vassert(sizeof( ((VexGuestAMD64State*)0)->guest_TILEN ) == 8);
          break;
 
       case VexArchARM:
@@ -344,6 +355,8 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestARMState);
          guest_word_type  = Ity_I32;
          guest_layout     = &armGuest_layout;
+         offB_TISTART     = 0; /* hack ... arm has bitrot */
+         offB_TILEN       = 0; /* hack ... arm has bitrot */
          vassert(archinfo_guest->subarch == VexSubArchARM_v4);
          break;
 
@@ -354,8 +367,12 @@ VexTranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestPPC32State);
          guest_word_type  = Ity_I32;
          guest_layout     = &ppc32Guest_layout;
+         offB_TISTART     = offsetof(VexGuestPPC32State,guest_TISTART);
+         offB_TILEN       = offsetof(VexGuestPPC32State,guest_TILEN);
          vassert(archinfo_guest->subarch == VexSubArchPPC32_noAV
                  || archinfo_guest->subarch == VexSubArchPPC32_AV);
+         vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TISTART ) == 4);
+         vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TILEN ) == 4);
          break;
 
       default:
@@ -382,7 +399,10 @@ VexTranslateResult LibVEX_Translate (
                      chase_into_ok,
                      host_is_bigendian,
                      archinfo_guest,
-                     guest_word_type );
+                     guest_word_type,
+                     False/*selfcheck*/,
+                     offB_TISTART,
+                     offB_TILEN );
 
    if (irbb == NULL) {
       /* Access failure. */

@@ -41,6 +41,10 @@
 #include "guest-generic/bb_to_IR.h"
 
 
+/* Forwards .. */
+static UInt genericg_compute_adler32 ( HWord addr, UInt len );
+
+
 /* Disassemble a complete basic block, starting at guest_IP_start, 
    returning a new IRBB.  The disassembler may chase across basic
    block boundaries if it wishes and if chase_into_ok allows it.
@@ -51,6 +55,13 @@
 
    dis_instr_fn is the arch-specific fn to disassemble on function; it
    is this that does the real work.
+
+   do_self_check indicates that the caller needs a self-checking
+   translation.
+
+   offB_TIADDR and offB_TILEN are the offsets of guest_TIADDR and
+   guest_TILEN.  Since this routine has to work for any guest state,
+   without knowing what it is, those offsets have to passed in.
 */
 
 static Bool const_False ( Addr64 a ) { return False; }
@@ -62,7 +73,10 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                  /*IN*/ Bool             (*chase_into_ok)(Addr64),
                  /*IN*/ Bool             host_bigendian,
                  /*IN*/ VexArchInfo*     archinfo_guest,
-                 /*IN*/ IRType           guest_word_type )
+                 /*IN*/ IRType           guest_word_type,
+                 /*IN*/ Bool             do_self_check,
+                 /*IN*/ Int              offB_TISTART,
+                 /*IN*/ Int              offB_TILEN )
 {
    Long       delta;
    Int        i, n_instrs, first_stmt_idx;
@@ -71,6 +85,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    IRStmt*    imark;
    static Int n_resteers = 0;
    Int        d_resteers = 0;
+   Int        selfcheck_idx = 0;
    IRBB*      irbb;
    Addr64     guest_IP_curr_instr;
 
@@ -78,9 +93,15 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
 
    debug_print = toBool(vex_traceflags & VEX_TRACE_FE);
 
+   /* Note: for adler32 to work without % operation for the self
+      check, need to limit length of stuff it scans to 5552 bytes.
+      Therefore limiting the max bb len to 100 insns seems generously
+      conservative. */
+
    /* check sanity .. */
+   vassert(sizeof(HWord) == sizeof(void*));
    vassert(vex_control.guest_max_insns >= 1);
-   vassert(vex_control.guest_max_insns < 500);
+   vassert(vex_control.guest_max_insns < 100);
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
    vassert(guest_word_type == Ity_I32 || guest_word_type == Ity_I64);
@@ -98,6 +119,17 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    delta    = 0;
    n_instrs = 0;
 
+   /* If asked to make a self-checking translation, leave a 3 spaces
+      in which to put the check statements.  We'll fill them in later
+      when we know the length and adler32 of the area to check. */
+   if (do_self_check) {
+      selfcheck_idx = irbb->stmts_used;
+      addStmtToIRBB( irbb, IRStmt_NoOp() );
+      addStmtToIRBB( irbb, IRStmt_NoOp() );
+      addStmtToIRBB( irbb, IRStmt_NoOp() );
+   }
+
+   /* Process instructions. */
    while (True) {
       vassert(n_instrs < vex_control.guest_max_insns);
 
@@ -106,6 +138,11 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       resteerOK 
          = toBool(
               n_instrs < vex_control.guest_chase_thresh
+              /* If making self-checking translations, don't chase
+                 .. it makes the checks too complicated.  We only want
+                 to scan just one sequence of bytes in the check, not
+                 a whole bunch. */
+              && !do_self_check
               /* we can't afford to have a resteer once we're on the
                  last extent slot. */
               && vge->n_used < 3
@@ -182,11 +219,11 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       }
 
       /* Update the VexGuestExtents we are constructing. */
-      /* If vex_control.guest_max_insns is required to be < 500 and
-	 each insn is at max 15 bytes long, this limit of 10000 then
+      /* If vex_control.guest_max_insns is required to be < 100 and
+	 each insn is at max 20 bytes long, this limit of 5000 then
 	 seems reasonable since the max possible extent length will be
-	 500 * 15 == 7500. */
-      vassert(vge->len[vge->n_used-1] < 10000);
+	 100 * 20 == 2000. */
+      vassert(vge->len[vge->n_used-1] < 5000);
       vge->len[vge->n_used-1] 
          = toUShort(toUInt( vge->len[vge->n_used-1] + dres.len ));
       n_instrs++;
@@ -209,12 +246,12 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                           ? IRConst_U32(toUInt(guest_IP_bbstart+delta))
                           : IRConst_U64(guest_IP_bbstart+delta)
                     );
-               return irbb;
+               goto done;
             }
             break;
          case Dis_StopHere:
             vassert(irbb->next != NULL);
-            return irbb;
+            goto done;
          case Dis_Resteer:
             /* Check that we actually allowed a resteer .. */
             vassert(resteerOK);
@@ -238,8 +275,113 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
             vpanic("bb_to_IR");
       }
    }
+   /*NOTREACHED*/
+   vassert(0);
+
+  done:
+   /* We're done.  The only thing that might need attending to is that
+      a self-checking preamble may need to be created. */
+   if (do_self_check) {
+
+      UInt     len2check, adler32;
+      IRConst* guest_IP_bbstart_IRConst;
+
+      vassert(vge->n_used == 1);
+      len2check = vge->len[0];
+      if (len2check == 0) 
+         len2check = 1;
+
+     adler32 = genericg_compute_adler32( (HWord)guest_code, len2check );
+
+     guest_IP_bbstart_IRConst
+        = guest_word_type==Ity_I32 
+             ? IRConst_U32(guest_IP_bbstart)
+             : IRConst_U64(guest_IP_bbstart);
+
+     /* Set TISTART and TILEN.  These will describe to the despatcher
+        the area of guest code to invalidate should we exit with a
+        self-check failure. */
+
+     irbb->stmts[selfcheck_idx+0]
+        = IRStmt_Put( offB_TILEN, 
+                      guest_word_type==Ity_I32 
+                         ? IRExpr_Const(IRConst_U32(len2check)) 
+                         : IRExpr_Const(IRConst_U64(len2check)) );
+
+     irbb->stmts[selfcheck_idx+1]
+        = IRStmt_Put( offB_TISTART, IRExpr_Const(guest_IP_bbstart_IRConst) );
+
+     irbb->stmts[selfcheck_idx+2]
+        = IRStmt_Exit( 
+             IRExpr_Binop( 
+                Iop_CmpNE32, 
+                mkIRExprCCall( 
+                   Ity_I32, 
+                   0/*regparms*/, 
+                   "genericg_compute_adler32",
+                   &genericg_compute_adler32,
+                   mkIRExprVec_2( 
+                      mkIRExpr_HWord( (HWord)guest_code ), 
+                      IRExpr_Const(IRConst_U32(len2check))
+                   )
+                ),
+                IRExpr_Const(IRConst_U32(adler32))
+             ),
+             Ijk_TInval,
+             guest_IP_bbstart_IRConst
+          );
+   }
+
+   return irbb;
 }
 
+
+/*-------------------------------------------------------------
+  A support routine for doing self-checking translations. 
+  -------------------------------------------------------------*/
+
+/* CLEAN HELPER */
+/* CALLED FROM GENERATED CODE */
+
+/* Compute the Adler32 checksum of host memory at [addr
+   .. addr+len-1].  This presumably holds guest code.  Note this is
+   not a proper implementation of Adler32 in that it fails to mod the
+   counts with 65521 every 5552 bytes, but we really never expect to
+   get anywhere near that many bytes to deal with.  This fn is called
+   once for every use of a self-checking translation, so it needs to
+   be as fast as possible. */
+static UInt genericg_compute_adler32 ( HWord addr, UInt len )
+{
+   UInt   i;
+   UInt   s1 = 1;
+   UInt   s2 = 0;
+   UChar* buf = (UChar*)addr;
+   for (i = 0; i < len; i++) {
+      s1 += (UInt)buf[i];
+      s2 += s1;
+   }
+#if 0
+   while (len >= 4) {
+      s1 += buf[0];
+      s2 += s1;
+      s1 += buf[1];
+      s2 += s1;
+      s1 += buf[2];
+      s2 += s1;
+      s1 += buf[3];
+      s2 += s1;
+      buf += 4;
+      len -= 4;
+   }
+   while (len > 0) {
+      s1 += buf[0];
+      s2 += s1;
+      len--;
+      buf++;
+   }
+#endif
+   return (s2 << 16) + s1;
+}
 
 
 /*--------------------------------------------------------------------*/

@@ -331,9 +331,15 @@ extern void LibVEX_ShowStats ( void );
    stack tags will not be as expected, and (2) after returning to
    generated code, the generated code is likely to go wrong.  This
    really should be fixed.
+
+   ALL GUEST ARCHITECTURES
+   ~~~~~~~~~~~~~~~~~~~~~~~
+   The architecture must contain two pseudo-registers, guest_TISTART
+   and guest_TILEN.  These are used to pass the address of areas of
+   guest code, translations of which are to be invalidated, back to
+   the despatcher.  Both pseudo-regs must have size equal to the guest
+   word size.
 */
-
-
 #endif /* ndef __LIBVEX_H */
 
 /*---------------------------------------------------------------*/

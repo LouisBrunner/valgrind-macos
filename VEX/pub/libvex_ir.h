@@ -778,12 +778,12 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
 /* This describes hints which can be passed to the dispatcher at guest
    control-flow transfer points.
 
-   Re Ijk_Invalidate: typically the guest state will have two
-   pseudo-registers, guest_TISTART and guest_TILEN, which
-   specify the start and length of the region to be invalidated.
-   It is the responsibility of the relevant toIR.c to ensure that
-   these are filled in with suitable values before issuing a jump
-   of kind Ijk_TInval.
+   Re Ijk_Invalidate: the guest state _must_ have two
+   pseudo-registers, guest_TISTART and guest_TILEN, which specify the
+   start and length of the region to be invalidated.  These are both
+   the size of a guest word. It is the responsibility of the relevant
+   toIR.c to ensure that these are filled in with suitable values
+   before issuing a jump of kind Ijk_TInval.  
 */
 typedef
    enum { 

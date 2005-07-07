@@ -146,7 +146,10 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                  /*IN*/ Bool             (*chase_into_ok)(Addr64),
                  /*IN*/ Bool             host_bigendian,
                  /*IN*/ VexArchInfo*     archinfo_guest,
-                 /*IN*/ IRType           guest_word_type );
+                 /*IN*/ IRType           guest_word_type,
+                 /*IN*/ Bool             do_self_check,
+                 /*IN*/ Int              offB_TISTART,
+                 /*IN*/ Int              offB_TILEN );
 
 
 #endif /* ndef GENERIC_BB_TO_IR_H */

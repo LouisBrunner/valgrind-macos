@@ -225,10 +225,12 @@ ULong n_fast_updates = 0;
 ULong n_full_lookups = 0;
 ULong n_lookup_probes = 0;
 
-/* Number/osize/tsize of translations entered. */
-ULong n_in_count = 0;
-ULong n_in_osize = 0;
-ULong n_in_tsize = 0;
+/* Number/osize/tsize of translations entered; also the number of
+   those for which self-checking was requested. */
+ULong n_in_count    = 0;
+ULong n_in_osize    = 0;
+ULong n_in_tsize    = 0;
+ULong n_in_sc_count = 0;
 
 /* Number/osize of translations discarded due to lack of space. */
 ULong n_dump_count = 0;
@@ -365,7 +367,8 @@ static void invalidate_icache ( void *ptr, Int nbytes )
 void VG_(add_to_transtab)( VexGuestExtents* vge,
                            Addr64           entry,
                            AddrH            code,
-                           UInt             code_len )
+                           UInt             code_len,
+                           Bool             is_self_checking )
 {
    Int    tcAvailQ, reqdQ, y, i;
    ULong  *tce, *tce2;
@@ -383,6 +386,8 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
    n_in_count++;
    n_in_tsize += code_len;
    n_in_osize += vge_osize(vge);
+   if (is_self_checking)
+      n_in_sc_count++;
 
    y = youngest_sector;
    vg_assert(isValidSector(y));
@@ -663,9 +668,11 @@ void VG_(print_tt_tc_stats) ( void )
       n_fast_updates, n_fast_flushes );
 
    VG_(message)(Vg_DebugMsg,
-                "translate: new        %lld (%lld -> %lld; ratio %lld:10)",
+                "translate: new        %lld "
+                "(%lld -> %lld; ratio %lld:10) [%lld scs]",
                 n_in_count, n_in_osize, n_in_tsize,
-                safe_idiv(10*n_in_tsize, n_in_osize));
+                safe_idiv(10*n_in_tsize, n_in_osize),
+                n_in_sc_count);
    VG_(message)(Vg_DebugMsg,
                 "translate: dumped     %lld (%lld -> ?" "?)",
                 n_dump_count, n_dump_osize );

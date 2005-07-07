@@ -400,7 +400,7 @@ Bool VG_(translate) ( ThreadId tid,
 {
    Addr64    redir, orig_addr0 = orig_addr;
    Int       tmpbuf_used, verbosity;
-   Bool      notrace_until_done;
+   Bool      notrace_until_done, do_self_check;
    UInt      notrace_until_limit = 0;
    Segment*  seg;
    VexGuestExtents vge;
@@ -503,6 +503,17 @@ Bool VG_(translate) ( ThreadId tid,
    } else
       seg->flags |= SF_CODE;        /* contains cached code */
 
+   /* Do we want a self-checking translation? */
+   do_self_check = False;
+   switch (VG_(clo_smc_support)) {
+      case Vg_SmcNone:  do_self_check = False; break;
+      case Vg_SmcAll:   do_self_check = True;  break;
+      case Vg_SmcStack: 
+         do_self_check = seg ? toBool(seg->flags & SF_GROWDOWN) : False;
+         break;
+      default: vg_assert2(0, "unknown VG_(clo_smc_support) value");
+   }
+
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
    verbosity = 0;
    if (debugging_translation) {
@@ -532,6 +543,7 @@ Bool VG_(translate) ( ThreadId tid,
                 ? vg_SP_update_pass
                 : NULL,
              True, /* cleanup after instrumentation */
+             do_self_check,
              NULL,
              verbosity
           );
@@ -555,7 +567,8 @@ Bool VG_(translate) ( ThreadId tid,
       VG_(add_to_transtab)( &vge,
                             orig_addr0,
                             (Addr)(&tmpbuf[0]), 
-                            tmpbuf_used );
+                            tmpbuf_used,
+                            do_self_check );
    }
 
    VGP_POPCC(VgpTranslate);

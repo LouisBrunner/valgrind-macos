@@ -151,6 +151,22 @@ extern Int VG_(clo_max_stackframe);
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);
 
+/* To what extent should self-checking translations be made?  These
+   are needed to deal with self-modifying code on uncooperative
+   platforms. */
+typedef 
+   enum { 
+      Vg_SmcNone,  // never generate self-checking translations
+      Vg_SmcStack, // generate s-c-t's for code found in stacks
+                   // (segments with SF_GROWDOWN, to be precise)
+                   // (this is the default)
+      Vg_SmcAll    // make all translations self-checking.
+   } 
+   VgSmc;
+
+extern VgSmc VG_(clo_smc_support);
+
+
 #endif   // __PUB_CORE_OPTIONS_H
 
 /*--------------------------------------------------------------------*/

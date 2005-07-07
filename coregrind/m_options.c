@@ -76,8 +76,9 @@ Bool   VG_(clo_model_pthreads) = False;
 Bool   VG_(clo_show_emwarns)   = False;
 Int    VG_(clo_max_stackframe) = 2000000;
 Bool   VG_(clo_wait_for_gdb)   = False;
+VgSmc  VG_(clo_smc_support)    = Vg_SmcStack;
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              m_options.c ---*/
 /*--------------------------------------------------------------------*/
-

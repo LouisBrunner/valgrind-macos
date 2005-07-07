@@ -1,5 +1,5 @@
 
-/* Test Heimdall's ability to spot writes to code which has been
+/* Test Valgrind's ability to spot writes to code which has been
    translated, and discard the out-of-date translations.
 
    CORRECT output is
@@ -30,7 +30,6 @@
 */
 
 #include <stdio.h>
-#include "valgrind.h"
 
 typedef unsigned int Addr;
 typedef unsigned char UChar;
@@ -45,33 +44,52 @@ void p ( int n )
    printf("in p %d\n", n);
 }
 
-UChar code[10];
+static UChar code[10];
 
-/* Make `code' be JMP-32 dest */
+/* Make `code' be PUSHL $dest ; ret */
+// This forces the branch onwards to be indirect, so vex can't chase it
 void set_dest ( Addr dest )
 {
-   unsigned int delta;
-   delta = dest - ((Addr)(&code[0]));
-   delta -= 5;
-   
-   code[0] = 0xE9;   /* JMP d32 */
-   code[1] = (delta & 0xFF);
-   code[2] = ((delta >> 8) & 0xFF);
-   code[3] = ((delta >> 16) & 0xFF);
-   code[4] = ((delta >> 24) & 0xFF);
-
-   /* XXX this should be automatic */
-   VALGRIND_DISCARD_TRANSLATIONS(code, sizeof(code));
+   code[0] = 0x68; /* PUSH imm32 */
+   code[1] = (dest & 0xFF);
+   code[2] = ((dest >> 8) & 0xFF);
+   code[3] = ((dest >> 16) & 0xFF);
+   code[4] = ((dest >> 24) & 0xFF);
+   code[5] = 0xC3;
 }
+
+/* Calling aa gets eventually to the function residing in code[0..].
+   This indirection is necessary to defeat Vex's basic-block chasing
+   optimisation.  That will merge up to three basic blocks into the
+   same IR superblock, which causes the test to succeed when it
+   shouldn't if main calls code[] directly.  */
+
+// force an indirect branch to code[0], so vex can't chase it
+__attribute__((noinline))
+void dd ( int x, void (*f)(int) ) { f(x); }
+
+__attribute__((noinline))
+void cc ( int x ) { dd(x, (void(*)(int)) &code[0]); }
+
+__attribute__((noinline))
+void bb ( int x ) { cc(x); }
+
+__attribute__((noinline))
+void aa ( int x ) { bb(x); }
+
+__attribute__((noinline))
+void diversion ( void ) { }
 
 int main ( void )
 {
    int i;
    for (i = 0; i < 10; i += 2) {
       set_dest ( (Addr)&p );
-      (  (void (*)(int)) (&code[0])  ) (i);
+      //      diversion();
+      aa(i);
       set_dest ( (Addr)&q );
-      (  (void (*)(int)) (&code[0])  ) (i+1);
+      //      diversion();
+      aa(i+1);
    }
    return 0;
 }

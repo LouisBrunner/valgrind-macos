@@ -42,6 +42,7 @@
 
 
 /* Forwards .. */
+__attribute((regparm(2)))
 static UInt genericg_compute_adler32 ( HWord addr, UInt len );
 
 
@@ -119,11 +120,13 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    delta    = 0;
    n_instrs = 0;
 
-   /* If asked to make a self-checking translation, leave a 3 spaces
+   /* If asked to make a self-checking translation, leave a 5 spaces
       in which to put the check statements.  We'll fill them in later
       when we know the length and adler32 of the area to check. */
    if (do_self_check) {
       selfcheck_idx = irbb->stmts_used;
+      addStmtToIRBB( irbb, IRStmt_NoOp() );
+      addStmtToIRBB( irbb, IRStmt_NoOp() );
       addStmtToIRBB( irbb, IRStmt_NoOp() );
       addStmtToIRBB( irbb, IRStmt_NoOp() );
       addStmtToIRBB( irbb, IRStmt_NoOp() );
@@ -285,6 +288,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
 
       UInt     len2check, adler32;
       IRConst* guest_IP_bbstart_IRConst;
+      IRTemp   tistart_tmp, tilen_tmp;
 
       vassert(vge->n_used == 1);
       len2check = vge->len[0];
@@ -295,29 +299,39 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
 
      guest_IP_bbstart_IRConst
         = guest_word_type==Ity_I32 
-             ? IRConst_U32(guest_IP_bbstart)
+             ? IRConst_U32(toUInt(guest_IP_bbstart))
              : IRConst_U64(guest_IP_bbstart);
 
      /* Set TISTART and TILEN.  These will describe to the despatcher
         the area of guest code to invalidate should we exit with a
         self-check failure. */
 
+     tistart_tmp = newIRTemp(irbb->tyenv, guest_word_type);
+     tilen_tmp   = newIRTemp(irbb->tyenv, guest_word_type);
+
      irbb->stmts[selfcheck_idx+0]
-        = IRStmt_Put( offB_TILEN, 
-                      guest_word_type==Ity_I32 
-                         ? IRExpr_Const(IRConst_U32(len2check)) 
-                         : IRExpr_Const(IRConst_U64(len2check)) );
+        = IRStmt_Tmp(tistart_tmp, IRExpr_Const(guest_IP_bbstart_IRConst) );
 
      irbb->stmts[selfcheck_idx+1]
-        = IRStmt_Put( offB_TISTART, IRExpr_Const(guest_IP_bbstart_IRConst) );
+        = IRStmt_Tmp(tilen_tmp,
+                     guest_word_type==Ity_I32 
+                        ? IRExpr_Const(IRConst_U32(len2check)) 
+                        : IRExpr_Const(IRConst_U64(len2check))
+          );
 
      irbb->stmts[selfcheck_idx+2]
+        = IRStmt_Put( offB_TISTART, IRExpr_Tmp(tistart_tmp) );
+
+     irbb->stmts[selfcheck_idx+3]
+        = IRStmt_Put( offB_TILEN, IRExpr_Tmp(tilen_tmp) );
+
+     irbb->stmts[selfcheck_idx+4]
         = IRStmt_Exit( 
              IRExpr_Binop( 
                 Iop_CmpNE32, 
                 mkIRExprCCall( 
                    Ity_I32, 
-                   0/*regparms*/, 
+                   2/*regparms*/, 
                    "genericg_compute_adler32",
                    &genericg_compute_adler32,
                    mkIRExprVec_2( 
@@ -350,17 +364,12 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    get anywhere near that many bytes to deal with.  This fn is called
    once for every use of a self-checking translation, so it needs to
    be as fast as possible. */
+__attribute((regparm(2)))
 static UInt genericg_compute_adler32 ( HWord addr, UInt len )
 {
-   UInt   i;
    UInt   s1 = 1;
    UInt   s2 = 0;
    UChar* buf = (UChar*)addr;
-   for (i = 0; i < len; i++) {
-      s1 += (UInt)buf[i];
-      s2 += s1;
-   }
-#if 0
    while (len >= 4) {
       s1 += buf[0];
       s2 += s1;
@@ -379,7 +388,6 @@ static UInt genericg_compute_adler32 ( HWord addr, UInt len )
       len--;
       buf++;
    }
-#endif
    return (s2 << 16) + s1;
 }
 

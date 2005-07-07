@@ -1729,7 +1729,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 12,
+          .n_alwaysDefd = 14,
 
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
@@ -1754,7 +1754,9 @@ VexGuestLayout
                  // /* */ ALWAYSDEFD(guest_LDT),
                  // /* */ ALWAYSDEFD(guest_GDT),
                  /* 10 */ ALWAYSDEFD(guest_EMWARN),
-                 /* 11 */ ALWAYSDEFD(guest_SSEROUND)
+                 /* 11 */ ALWAYSDEFD(guest_SSEROUND),
+                 /* 12 */ ALWAYSDEFD(guest_TISTART),
+                 /* 13 */ ALWAYSDEFD(guest_TILEN)
                }
         };
 

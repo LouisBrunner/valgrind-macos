@@ -57,6 +57,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	mq.stderr.exp mq.vgtest \
 	mremap.stderr.exp mremap.stdout.exp mremap.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
+	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_blockedsig.stderr.exp \
@@ -107,6 +108,7 @@ check_PROGRAMS = \
 	fdleak_socketpair \
 	floored fork fucomip manythreads \
 	munmap_exe map_unaligned map_unmap mq mremap \
+	nestedfns \
 	pending \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
 	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \

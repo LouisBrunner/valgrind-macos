@@ -307,24 +307,22 @@
 void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
                            Bool all_caches_clo_defined)
 {
-   tl_assert(0);
+   Int res;
+   
+   // Set caches to default.
+   *I1c = (cache_t) {  65536, 2, 64 };
+   *D1c = (cache_t) {  65536, 2, 64 };
+   *L2c = (cache_t) { 262144, 8, 64 };
 
-//..    Int res;
-//..    
-//..    // Set caches to default.
-//..    *I1c = (cache_t) {  65536, 2, 64 };
-//..    *D1c = (cache_t) {  65536, 2, 64 };
-//..    *L2c = (cache_t) { 262144, 8, 64 };
-//.. 
-//..    // Then replace with any info we can get from CPUID.
-//..    res = get_caches_from_CPUID(I1c, D1c, L2c);
-//.. 
-//..    // Warn if CPUID failed and config not completely specified from cmd line.
-//..    if (res != 0 && !all_caches_clo_defined) {
-//..       VG_(message)(Vg_DebugMsg, 
-//..                    "Warning: Couldn't auto-detect cache config, using one "
-//..                    "or more defaults ");
-//..    }
+   // Then replace with any info we can get from CPUID.
+   res = 1; /*get_caches_from_CPUID(I1c, D1c, L2c);*/
+
+   // Warn if CPUID failed and config not completely specified from cmd line.
+   if (res != 0 && !all_caches_clo_defined) {
+      VG_(message)(Vg_DebugMsg, 
+                   "Warning: Couldn't auto-detect cache config, using one "
+                   "or more defaults ");
+   }
 }
 
 /*--------------------------------------------------------------------*/

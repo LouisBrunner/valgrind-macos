@@ -1990,14 +1990,29 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
          case Ity_I16: helper = &MC_(helperc_LOADV2le);
                        hname = "MC_(helperc_LOADV2le)";
                        break;
-         case Ity_I8:  helper = &MC_(helperc_LOADV1le);
-                       hname = "MC_(helperc_LOADV1le)";
+         case Ity_I8:  helper = &MC_(helperc_LOADV1);
+                       hname = "MC_(helperc_LOADV1)";
                        break;
          default:      ppIRType(ty);
                        VG_(tool_panic)("memcheck:do_shadow_Load(LE)");
       }
    } else {
-      VG_(tool_panic)("memcheck:do_shadow_Load(BE):bigendian not implemented");
+      switch (ty) {
+         case Ity_I64: helper = &MC_(helperc_LOADV8be);
+                       hname = "MC_(helperc_LOADV8be)";
+                       break;
+         case Ity_I32: helper = &MC_(helperc_LOADV4be);
+                       hname = "MC_(helperc_LOADV4be)";
+                       break;
+         case Ity_I16: helper = &MC_(helperc_LOADV2be);
+                       hname = "MC_(helperc_LOADV2be)";
+                       break;
+         case Ity_I8:  helper = &MC_(helperc_LOADV1);
+                       hname = "MC_(helperc_LOADV1)";
+                       break;
+         default:      ppIRType(ty);
+                       VG_(tool_panic)("memcheck:do_shadow_Load(BE)");
+      }
    }
 
    /* Generate the actual address into addrAct. */
@@ -2238,13 +2253,28 @@ void do_shadow_Store ( MCEnv* mce,
          case Ity_I16: helper = &MC_(helperc_STOREV2le);
                        hname = "MC_(helperc_STOREV2le)";
                        break;
-         case Ity_I8:  helper = &MC_(helperc_STOREV1le);
-                       hname = "MC_(helperc_STOREV1le)";
+         case Ity_I8:  helper = &MC_(helperc_STOREV1);
+                       hname = "MC_(helperc_STOREV1)";
                        break;
          default:      VG_(tool_panic)("memcheck:do_shadow_Store(LE)");
       }
    } else {
-      VG_(tool_panic)("memcheck:do_shadow_Store(BE):bigendian not implemented");
+      switch (ty) {
+         case Ity_V128: /* we'll use the helper twice */
+         case Ity_I64: helper = &MC_(helperc_STOREV8be);
+                       hname = "MC_(helperc_STOREV8be)";
+                       break;
+         case Ity_I32: helper = &MC_(helperc_STOREV4be);
+                       hname = "MC_(helperc_STOREV4be)";
+                       break;
+         case Ity_I16: helper = &MC_(helperc_STOREV2be);
+                       hname = "MC_(helperc_STOREV2be)";
+                       break;
+         case Ity_I8:  helper = &MC_(helperc_STOREV1);
+                       hname = "MC_(helperc_STOREV1)";
+                       break;
+         default:      VG_(tool_panic)("memcheck:do_shadow_Store(BE)");
+      }
    }
 
    if (ty == Ity_V128) {
@@ -2258,7 +2288,6 @@ void do_shadow_Store ( MCEnv* mce,
          offLo64 = 0;
          offHi64 = 8;
       } else {
-         tl_assert(0 /* awaiting test case */);
          offLo64 = 8;
          offHi64 = 0;
       }

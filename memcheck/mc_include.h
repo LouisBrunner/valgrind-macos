@@ -60,15 +60,21 @@ extern void MC_(helperc_value_check4_fail) ( void );
 extern void MC_(helperc_value_check1_fail) ( void );
 extern void MC_(helperc_value_check0_fail) ( void );
 
+extern VG_REGPARM(1) void MC_(helperc_STOREV8be) ( Addr, ULong );
 extern VG_REGPARM(1) void MC_(helperc_STOREV8le) ( Addr, ULong );
+extern VG_REGPARM(2) void MC_(helperc_STOREV4be) ( Addr, UWord );
 extern VG_REGPARM(2) void MC_(helperc_STOREV4le) ( Addr, UWord );
+extern VG_REGPARM(2) void MC_(helperc_STOREV2be) ( Addr, UWord );
 extern VG_REGPARM(2) void MC_(helperc_STOREV2le) ( Addr, UWord );
-extern VG_REGPARM(2) void MC_(helperc_STOREV1le) ( Addr, UWord );
+extern VG_REGPARM(2) void MC_(helperc_STOREV1)   ( Addr, UWord );
 
-extern VG_REGPARM(1) UWord MC_(helperc_LOADV1le)  ( Addr );
-extern VG_REGPARM(1) UWord MC_(helperc_LOADV2le)  ( Addr );
-extern VG_REGPARM(1) UWord MC_(helperc_LOADV4le)  ( Addr );
-extern VG_REGPARM(1) ULong MC_(helperc_LOADV8le)  ( Addr );
+extern VG_REGPARM(1) ULong MC_(helperc_LOADV8be) ( Addr );
+extern VG_REGPARM(1) ULong MC_(helperc_LOADV8le) ( Addr );
+extern VG_REGPARM(1) UWord MC_(helperc_LOADV4be) ( Addr );
+extern VG_REGPARM(1) UWord MC_(helperc_LOADV4le) ( Addr );
+extern VG_REGPARM(1) UWord MC_(helperc_LOADV2be) ( Addr );
+extern VG_REGPARM(1) UWord MC_(helperc_LOADV2le) ( Addr );
+extern VG_REGPARM(1) UWord MC_(helperc_LOADV1)   ( Addr );
 
 extern void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len );
 

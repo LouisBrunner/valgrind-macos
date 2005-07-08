@@ -471,6 +471,21 @@ void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
    #undef SORT
 }
 
+static UInt seed = 0;
+
+void VG_(srandom)(UInt s)
+{
+   seed = s;
+}
+
+// This random number generator is based on the one suggested in Kernighan
+// and Ritchie's "The C Programming Language".
+UInt VG_(random)(void)
+{
+   seed = (1103515245*seed + 12345);
+   return seed;
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

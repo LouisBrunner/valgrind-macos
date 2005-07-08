@@ -93,8 +93,6 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_skiplist.h"
 
-#include <stdlib.h>
-
 #define SKIPLIST_DEBUG	0
 
 #define SK_MAXHEIGHT	20	/* 2^20 elements */
@@ -121,7 +119,7 @@ static inline Int get_height(void)
 {
    UInt ret = 0;
 
-   while((ret < SK_MAXHEIGHT - 1) && (random() & 1))
+   while((ret < SK_MAXHEIGHT - 1) && (VG_(random)() & 1))
       ret++;
 
    return ret;

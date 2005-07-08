@@ -114,6 +114,11 @@ extern void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
 /* Returns the base-2 logarithm of x. */
 extern Int VG_(log2) ( Int x );
 
+// A pseudo-random number generator returning a random UInt,  and its
+// seed function.
+extern void VG_(srandom) ( UInt seed );
+extern UInt VG_(random)  ( void );
+
 #endif   // __PUB_TOOL_LIBCBASE_H
 
 /*--------------------------------------------------------------------*/

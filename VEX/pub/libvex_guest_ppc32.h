@@ -195,6 +195,17 @@ typedef
 extern
 void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state );
 
+/* Write the given native %cr7 value to the supplied
+   VexGuestPPC32State structure */
+extern
+void LibVEX_GuestPPC32_put_cr7 ( UInt cr7_native,
+                                 /*OUT*/VexGuestPPC32State* vex_state );
+
+/* Ditto, but for entire %cr */
+extern
+void LibVEX_GuestPPC32_put_cr ( UInt cr_native,
+                                /*OUT*/VexGuestPPC32State* vex_state );
+
 /* Extract from the supplied VexGuestPPC32State structure the
    corresponding native %cr7 value. */
 extern

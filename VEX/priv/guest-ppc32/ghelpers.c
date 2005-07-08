@@ -191,13 +191,21 @@ IRExpr* guest_ppc32_spechelper ( HChar* function_name,
 /*----------------------------------------------*/
 
 /* VISIBLE TO LIBVEX CLIENT */
-#if 0
-void LibVEX_GuestPPC32_put_cr7 ( UInt flags_native,
+void LibVEX_GuestPPC32_put_cr7 ( UInt cr7_native,
                                  /*OUT*/VexGuestPPC32State* vex_state )
 {
-   vassert(0); // FIXME
+  vex_state->guest_CC_OP   = 1;   /* => use immediate value DEP1 */
+  vex_state->guest_CC_DEP1 = (cr7_native & 0xF0000000);
+  vex_state->guest_CC_DEP2 = 0;   /* =unused */
 }
-#endif
+
+/* VISIBLE TO LIBVEX CLIENT */
+void LibVEX_GuestPPC32_put_cr ( UInt cr_native,
+                                /*OUT*/VexGuestPPC32State* vex_state )
+{
+  LibVEX_GuestPPC32_put_cr7( cr_native, vex_state );
+  vex_state->guest_CR0to6 = (cr_native & 0x0FFFFFFF);
+}
 
 /* VISIBLE TO LIBVEX CLIENT */
 UInt LibVEX_GuestPPC32_get_cr7 ( /*IN*/VexGuestPPC32State* vex_state )

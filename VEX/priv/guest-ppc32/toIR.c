@@ -2124,6 +2124,21 @@ static Bool dis_int_ldst_str ( UInt theInstr )
 
    switch (opc2) {
    case 0x255: // lswi (Load String Word Immediate, PPC32 p455)
+
+      if (NumBytes == 8) {
+         /* Special case hack */
+         /* Rd = Mem[EA]; (Rd+1)%32 = Mem[EA+4] */
+         DIP("lswi r%d,r%d,%d\n", Rd_addr, Ra_addr, NumBytes);
+         putIReg( Rd_addr,          
+                  loadBE(Ity_I32, mkexpr(b_EA)) );
+
+         putIReg( (Rd_addr+1) % 32, 
+                  loadBE(Ity_I32, binop(Iop_Add32, mkexpr(b_EA), mkU32(4))) );
+         return True;
+      }
+
+      /* else too difficult */
+      return False;
 vassert(0);
 
       n_regs = (NumBytes / 4) + (NumBytes%4 == 0 ? 0:1); // ceil(nb/4)
@@ -2166,7 +2181,8 @@ vassert(0);
          if (bit_idx == 32) { bit_idx = 0; }
          EA_offset++;
       }
-      
+      break;      
+
    case 0x215: // lswx (Load String Word Indexed, PPC32 p456)
 vassert(0);
 
@@ -2174,6 +2190,21 @@ vassert(0);
       return False;
 
    case 0x2D5: // stswi (Store String Word Immediate, PPC32 p528)
+
+      if (NumBytes == 8) {
+         /* Special case hack */
+         /* Mem[EA] = Rd; Mem[EA+4] = (Rd+1)%32 */
+         DIP("stswi r%d,r%d,%d\n", Rs_addr, Ra_addr, NumBytes);
+	 storeBE( mkexpr(b_EA), 
+                  getIReg(Rd_addr) );
+	 storeBE( binop(Iop_Add32, mkexpr(b_EA), mkU32(4)), 
+                  getIReg((Rd_addr+1) % 32) );
+         return True;
+      }
+
+      /* else too difficult */
+      return False;
+
 vassert(0);
 
       DIP("stswi r%d,r%d,%d\n", Rs_addr, Ra_addr, NumBytes);

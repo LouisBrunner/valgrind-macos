@@ -926,6 +926,7 @@ DECL_TEMPLATE(ppc32_linux, sys_lstat64);
 DECL_TEMPLATE(ppc32_linux, sys_fstat64);
 DECL_TEMPLATE(ppc32_linux, sys_ipc);
 DECL_TEMPLATE(ppc32_linux, sys_clone);
+DECL_TEMPLATE(ppc32_linux, sys_sigreturn);
 
 PRE(sys_socketcall)
 {
@@ -1513,6 +1514,43 @@ PRE(sys_clone)
    }
 }
 
+PRE(sys_sigreturn)
+{
+   ThreadState* tst;
+   PRINT("sigreturn ( )");
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(tid >= 1 && tid < VG_N_THREADS);
+   vg_assert(VG_(is_running_thread)(tid));
+
+   ///* Adjust esp to point to start of frame; skip back up over
+   //   sigreturn sequence's "popl %eax" and handler ret addr */
+   tst = VG_(get_ThreadState)(tid);
+   //tst->arch.vex.guest_ESP -= sizeof(Addr)+sizeof(Word);
+
+   ///* This is only so that the EIP is (might be) useful to report if
+   //   something goes wrong in the sigreturn */
+   //ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
+
+   VG_(sigframe_destroy)(tid, False);
+
+   /* For unclear reasons, it appears we need the syscall to return
+      without changing %EAX.  Since %EAX is the return value, and can
+      denote either success or failure, we must set up so that the
+      driver logic copies it back unchanged.  Also, note %EAX is of
+      the guest registers written by VG_(sigframe_destroy). */
+   //SET_STATUS_from_SysRes( VG_(mk_SysRes_x86_linux)( tst->arch.vex.guest_EAX ) );
+   SET_STATUS_from_SysRes(
+      VG_(mk_SysRes_ppc32_linux)( 
+         tst->arch.vex.guest_GPR3,
+         (LibVEX_GuestPPC32_get_cr7( &tst->arch.vex ) >> 28) & 1
+      )
+   );
+
+   /* Check to see if some any signals arose as a result of this. */
+   *flags |= SfPollAfter;
+}
+
 //.. PRE(sys_sigreturn, Special)
 //.. {
 //..    PRINT("sigreturn ( )");
@@ -1924,11 +1962,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_close,             sys_close),             // 6
    GENXY(__NR_waitpid,           sys_waitpid),           // 7
    GENXY(__NR_creat,             sys_creat),             // 8
-//..    GENX_(__NR_link,              sys_link),              // 9
-//.. 
+   GENX_(__NR_link,              sys_link),              // 9
+
    GENX_(__NR_unlink,            sys_unlink),            // 10
    GENX_(__NR_execve,            sys_execve),            // 11
-//..    GENX_(__NR_chdir,             sys_chdir),             // 12
+   GENX_(__NR_chdir,             sys_chdir),             // 12
    GENXY(__NR_time,              sys_time),              // 13
 //..    GENX_(__NR_mknod,             sys_mknod),             // 14
 //.. 
@@ -1958,10 +1996,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //.. 
 //..    GENX_(__NR_ftime,             sys_ni_syscall),        // 35
 //..    GENX_(__NR_sync,              sys_sync),              // 36
-//..    GENX_(__NR_kill,              sys_kill),              // 37
-//..    GENX_(__NR_rename,            sys_rename),            // 38
-//..    GENX_(__NR_mkdir,             sys_mkdir),             // 39
-//.. 
+   GENX_(__NR_kill,              sys_kill),              // 37
+   GENX_(__NR_rename,            sys_rename),            // 38
+   GENX_(__NR_mkdir,             sys_mkdir),             // 39
+
 //..    GENX_(__NR_rmdir,             sys_rmdir),             // 40
    GENXY(__NR_dup,               sys_dup),               // 41
    GENXY(__NR_pipe,              sys_pipe),              // 42
@@ -1985,15 +2023,15 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_setpgid,           sys_setpgid),           // 57
 //..    GENX_(__NR_ulimit,            sys_ni_syscall),        // 58
 //..    //   (__NR_oldolduname,       sys_olduname),          // 59 Linux -- obsolete
-//.. 
-//..    GENX_(__NR_umask,             sys_umask),             // 60
+
+   GENX_(__NR_umask,             sys_umask),             // 60
 //..    GENX_(__NR_chroot,            sys_chroot),            // 61
 //..    //   (__NR_ustat,             sys_ustat)              // 62 SVr4 -- deprecated
    GENXY(__NR_dup2,              sys_dup2),              // 63
-//..    GENXY(__NR_getppid,           sys_getppid),           // 64
-//.. 
-//..    GENX_(__NR_getpgrp,           sys_getpgrp),           // 65
-//..    GENX_(__NR_setsid,            sys_setsid),            // 66
+   GENX_(__NR_getppid,           sys_getppid),           // 64
+
+   GENX_(__NR_getpgrp,           sys_getpgrp),           // 65
+   GENX_(__NR_setsid,            sys_setsid),            // 66
 //..    PLAXY(__NR_sigaction,         sys_sigaction),         // 67
 //..    //   (__NR_sgetmask,          sys_sgetmask),          // 68 */* (ANSI C)
 //..    //   (__NR_ssetmask,          sys_ssetmask),          // 69 */* (ANSI C)
@@ -2010,10 +2048,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_gettimeofday,      sys_gettimeofday),           // 78
 //..    GENX_(__NR_settimeofday,      sys_settimeofday),      // 79
 //.. 
-//..    GENXY(__NR_getgroups,         sys_getgroups16),       // 80
+   GENXY(__NR_getgroups,         sys_getgroups16),       // 80
 //..    GENX_(__NR_setgroups,         sys_setgroups16),       // 81
 //..    PLAX_(__NR_select,            old_select),            // 82
-//..    GENX_(__NR_symlink,           sys_symlink),           // 83
+   GENX_(__NR_symlink,           sys_symlink),           // 83
 //..    //   (__NR_oldlstat,          sys_lstat),             // 84 -- obsolete
 //.. 
    GENX_(__NR_readlink,          sys_readlink),          // 85
@@ -2056,7 +2094,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    LINXY(__NR_sysinfo,           sys_sysinfo),           // 116
    PLAXY(__NR_ipc,               sys_ipc),               // 117
 //..    GENX_(__NR_fsync,             sys_fsync),             // 118
-//..    PLAX_(__NR_sigreturn,         sys_sigreturn),         // 119 ?/Linux
+   PLAX_(__NR_sigreturn,         sys_sigreturn),         // 119 ?/Linux
 //.. 
    PLAX_(__NR_clone,             sys_clone),             // 120
 //..    //   (__NR_setdomainname,     sys_setdomainname),     // 121 */*(?)
@@ -2122,7 +2160,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //.. 
 //..    LINX_(__NR_setresgid,         sys_setresgid16),       // 169
 //..    LINXY(__NR_getresgid,         sys_getresgid16),       // 170
-//..    LINX_(__NR_prctl,             sys_prctl),             // 171
+   LINX_(__NR_prctl,             sys_prctl),             // 171
 //..    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),      // 172
    GENXY(__NR_rt_sigaction,      sys_rt_sigaction),      // 173
 
@@ -2135,7 +2173,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_pread64,           sys_pread64),           // 179
    GENX_(__NR_pwrite64,          sys_pwrite64),          // 180
    GENX_(__NR_chown,             sys_chown16),           // 181
-//..    GENXY(__NR_getcwd,            sys_getcwd),            // 182
+   GENXY(__NR_getcwd,            sys_getcwd),            // 182
 //..    GENXY(__NR_capget,            sys_capget),            // 183
 //.. 
 //..    GENX_(__NR_capset,            sys_capset),            // 184

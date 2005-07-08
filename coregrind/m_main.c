@@ -2622,7 +2622,7 @@ int main(int argc, char **argv, char **envp)
 #     elif defined(VGP_amd64_linux)
       iters = 10;
 #     elif defined(VGP_ppc32_linux)
-      iters = 1;
+      iters = 5;
 #     else
 #     error "Unknown plat"
 #     endif

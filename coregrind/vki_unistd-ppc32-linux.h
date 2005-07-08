@@ -58,7 +58,7 @@
 //#define __NR_ptrace			 26
 //#define __NR_alarm			 27
 //#define __NR_oldfstat			 28
-//#define __NR_pause			 29
+#define __NR_pause			 29
 #define __NR_utime			 30
 //#define __NR_stty			 31
 //#define __NR_gtty			 32
@@ -218,7 +218,7 @@
 //#define __NR_sendfile			186
 //#define __NR_getpmsg			187   /* some people actually want streams */
 //#define __NR_putpmsg			188   /* some people actually want streams */
-//#define __NR_vfork			189
+#define __NR_vfork			189
 #define __NR_ugetrlimit			190   /* SuS compliant getrlimit */
 //#define __NR_readahead		191
 #define __NR_mmap2			192

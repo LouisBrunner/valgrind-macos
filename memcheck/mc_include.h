@@ -82,7 +82,8 @@ extern void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len );
 extern IRBB* MC_(instrument) ( IRBB* bb_in, VexGuestLayout* layout,
                                IRType gWordTy, IRType hWordTy );
 
-#endif
+
+#endif /* ndef __MC_INCLUDE_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

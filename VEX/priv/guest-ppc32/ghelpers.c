@@ -211,6 +211,14 @@ UInt LibVEX_GuestPPC32_get_cr7 ( /*IN*/VexGuestPPC32State* vex_state )
 }
 
 /* VISIBLE TO LIBVEX CLIENT */
+UInt LibVEX_GuestPPC32_get_cr ( /*IN*/VexGuestPPC32State* vex_state )
+{
+  UInt cr7 = LibVEX_GuestPPC32_get_cr7( vex_state );
+  UInt cr0to6 = vex_state->guest_CR0to6;
+  return (cr7 & 0xF0000000) | (cr0to6 & 0x0FFFFFFF);
+}
+
+/* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 {
    vex_state->guest_GPR0  = 0;
@@ -246,6 +254,75 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_GPR30 = 0;
    vex_state->guest_GPR31 = 0;
 
+   vex_state->guest_FPR0  = 0;
+   vex_state->guest_FPR1  = 0;
+   vex_state->guest_FPR2  = 0;
+   vex_state->guest_FPR3  = 0;
+   vex_state->guest_FPR4  = 0;
+   vex_state->guest_FPR5  = 0;
+   vex_state->guest_FPR6  = 0;
+   vex_state->guest_FPR7  = 0;
+   vex_state->guest_FPR8  = 0;
+   vex_state->guest_FPR9  = 0;
+   vex_state->guest_FPR10 = 0;
+   vex_state->guest_FPR11 = 0;
+   vex_state->guest_FPR12 = 0;
+   vex_state->guest_FPR13 = 0;
+   vex_state->guest_FPR14 = 0;
+   vex_state->guest_FPR15 = 0;
+   vex_state->guest_FPR16 = 0;
+   vex_state->guest_FPR17 = 0;
+   vex_state->guest_FPR18 = 0;
+   vex_state->guest_FPR19 = 0;
+   vex_state->guest_FPR20 = 0;
+   vex_state->guest_FPR21 = 0;
+   vex_state->guest_FPR22 = 0;
+   vex_state->guest_FPR23 = 0;
+   vex_state->guest_FPR24 = 0;
+   vex_state->guest_FPR25 = 0;
+   vex_state->guest_FPR26 = 0;
+   vex_state->guest_FPR27 = 0;
+   vex_state->guest_FPR28 = 0;
+   vex_state->guest_FPR29 = 0;
+   vex_state->guest_FPR30 = 0;
+   vex_state->guest_FPR31 = 0;
+
+   /* Initialise the vector state. */
+#  define SSEZERO(_vr) _vr[0]=_vr[1]=_vr[2]=_vr[3] = 0;
+
+   SSEZERO(vex_state->guest_VR0 );
+   SSEZERO(vex_state->guest_VR1 );
+   SSEZERO(vex_state->guest_VR2 );
+   SSEZERO(vex_state->guest_VR3 );
+   SSEZERO(vex_state->guest_VR4 );
+   SSEZERO(vex_state->guest_VR5 );
+   SSEZERO(vex_state->guest_VR6 );
+   SSEZERO(vex_state->guest_VR7 );
+   SSEZERO(vex_state->guest_VR8 );
+   SSEZERO(vex_state->guest_VR9 );
+   SSEZERO(vex_state->guest_VR10);
+   SSEZERO(vex_state->guest_VR11);
+   SSEZERO(vex_state->guest_VR12);
+   SSEZERO(vex_state->guest_VR13);
+   SSEZERO(vex_state->guest_VR14);
+   SSEZERO(vex_state->guest_VR15);
+   SSEZERO(vex_state->guest_VR16);
+   SSEZERO(vex_state->guest_VR17);
+   SSEZERO(vex_state->guest_VR18);
+   SSEZERO(vex_state->guest_VR19);
+   SSEZERO(vex_state->guest_VR20);
+   SSEZERO(vex_state->guest_VR21);
+   SSEZERO(vex_state->guest_VR22);
+   SSEZERO(vex_state->guest_VR23);
+   SSEZERO(vex_state->guest_VR24);
+   SSEZERO(vex_state->guest_VR25);
+   SSEZERO(vex_state->guest_VR26);
+   SSEZERO(vex_state->guest_VR27);
+   SSEZERO(vex_state->guest_VR28);
+   SSEZERO(vex_state->guest_VR29);
+   SSEZERO(vex_state->guest_VR30);
+   SSEZERO(vex_state->guest_VR31);
+
    vex_state->guest_CIA  = 0;
    vex_state->guest_LR   = 0;
    vex_state->guest_CTR  = 0;
@@ -259,6 +336,10 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_FPROUND = (UInt)PPC32rm_NEAREST;
 
    vex_state->guest_XER = 0;
+
+   vex_state->guest_VRSAVE = 0;
+
+   vex_state->guest_VSCR = 0;
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 

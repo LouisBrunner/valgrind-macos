@@ -197,10 +197,12 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state );
 
 /* Extract from the supplied VexGuestPPC32State structure the
    corresponding native %cr7 value. */
-
 extern
 UInt LibVEX_GuestPPC32_get_cr7 ( /*IN*/VexGuestPPC32State* vex_state );
 
+/* Ditto, but for entire %cr */
+extern
+UInt LibVEX_GuestPPC32_get_cr ( /*IN*/VexGuestPPC32State* vex_state );
 
 #endif /* ndef __LIBVEX_PUB_GUEST_PPC32_H */
 

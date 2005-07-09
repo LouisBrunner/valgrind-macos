@@ -787,37 +787,58 @@ VG_(map_file_segment)( Addr addr, SizeT len,
    /* If this mapping is of the beginning of a file, isn't part of
       Valgrind, is at least readable and seems to contain an object
       file, then try reading symbols from it.
+
+      Getting this heuristic right is critical.  On x86-linux,
+      objects are typically mapped twice:
+
+      1b8fb000-1b8ff000 r-xp 00000000 08:02 4471477 vgpreload_memcheck.so
+      1b8ff000-1b900000 rw-p 00004000 08:02 4471477 vgpreload_memcheck.so
+
+      whereas ppc32-linux mysteriously does this:
+
+      118a6000-118ad000 r-xp 00000000 08:05 14209428 vgpreload_memcheck.so
+      118ad000-118b6000 ---p 00007000 08:05 14209428 vgpreload_memcheck.so
+      118b6000-118bd000 rwxp 00000000 08:05 14209428 vgpreload_memcheck.so
+
+      The third mapping should not be considered to have executable code in.
+      Therefore a test which works for both is: r and x and NOT w.  Reading
+      symbols from the rwx segment -- which overlaps the r-x segment in the
+      file -- causes the redirection mechanism to redirect to addresses in
+      that third segment, which is wrong and causes crashes.
    */
    if (s->seginfo == NULL
        && ( (addr+len < VG_(valgrind_base) || addr > VG_(valgrind_last))
             || is_stage2
           )
        && (flags & (SF_MMAP|SF_NOSYMS)) == SF_MMAP
-   ) {
-      if (off == 0
-	  && s->fnIdx != -1
-	  && (prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == (VKI_PROT_READ|VKI_PROT_EXEC)
-	  && len >= VKI_PAGE_SIZE
-          && VG_(is_object_file)((void *)addr)
       ) {
+      if (off == 0
+         && s->fnIdx != -1
+         /* r, x are set */
+         && (prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == (VKI_PROT_READ|VKI_PROT_EXEC)
+         /* w is clear */
+         && (prot & VKI_PROT_WRITE) == 0
+         /* other checks .. */
+         && len >= VKI_PAGE_SIZE
+         && VG_(is_object_file)((void *)addr) ) {
          s->seginfo = VG_(read_seg_symbols)(s->addr, s->len, s->offset,
                                             s->filename);
-      } else if (flags & SF_MMAP) {
-#if 0
-	 const SegInfo *info;
-
-	 /* Otherwise see if an existing SegInfo applies to this Segment */
-	 for(info = VG_(next_seginfo)(NULL);
-	     info != NULL;
-	     info = VG_(next_seginfo)(info)) {
-	    if (VG_(seg_overlaps)(s, VG_(seg_start)(info), VG_(seg_size)(info)))
-            {
-	       s->seginfo = (SegInfo *)info;
-	       VG_(seginfo_incref)((SegInfo *)info);
-	    }
-	 }
-#endif
       }
+      //else 
+      //if (flags & SF_MMAP) {
+      //   const SegInfo *info;
+      //
+      //   /* Otherwise see if an existing SegInfo applies to this Segment */
+      //   for(info = VG_(next_seginfo)(NULL);
+      //      info != NULL;
+      //      info = VG_(next_seginfo)(info)) {
+      //      if (VG_(seg_overlaps)(s, VG_(seg_start)(info), VG_(seg_size)(info)))
+      //      {
+      //         s->seginfo = (SegInfo *)info;
+      //         VG_(seginfo_incref)((SegInfo *)info);
+      //      }
+      //   }
+      //}
    }
 
    /* clean up */

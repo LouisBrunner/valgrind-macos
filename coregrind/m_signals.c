@@ -449,6 +449,11 @@ static void handle_SCSS_change ( Bool force_update )
 #     if !defined(VGP_ppc32_linux)
       ksa.sa_restorer = my_sigreturn;
 #     endif
+      /* Re above ifdef (also the assertion below), PaulM says:
+         The sa_restorer field is not used at all on ppc.  Glibc
+         converts the sigaction you give it into a kernel sigaction,
+         but it doesn't put anything in the sa_restorer field.
+      */
 
       /* block all signals in handler */
       VG_(sigfillset)( &ksa.sa_mask );

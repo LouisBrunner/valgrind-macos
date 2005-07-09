@@ -46,18 +46,18 @@
 /*------------------------------------------------------------*/
 
 // Stack frame layout and linkage
-#if defined(VGA_x86)
+#if defined(VGP_x86_linux)
 #  define FIRST_STACK_FRAME(ebp)    (ebp)
 #  define STACK_FRAME_RET(ebp)      (((UWord*)ebp)[1])
 #  define STACK_FRAME_NEXT(ebp)     (((UWord*)ebp)[0])
-#elif defined(VGA_amd64)
+#elif defined(VGP_amd64_linux)
 #  define FIRST_STACK_FRAME(rbp)    (rbp)
 #  define STACK_FRAME_RET(rbp)      (((UWord*)rbp)[1])
 #  define STACK_FRAME_NEXT(rbp)     (((UWord*)rbp)[0])
-#elif defined(VGA_ppc32)
-#  define FIRST_STACK_FRAME(sp)     (sp)
-#  define STACK_FRAME_RET(sp)       (((UWord*)sp)[1])
-#  define STACK_FRAME_NEXT(sp)      (((UWord*)sp)[0])
+#elif defined(VGP_ppc32_linux)
+#  define FIRST_STACK_FRAME(sp)     (((UWord*)(sp))[0])
+#  define STACK_FRAME_RET(sp)       (((UWord*)(sp))[1])
+#  define STACK_FRAME_NEXT(sp)      (((UWord*)(sp))[0])
 #else
 #  error Unknown platform
 #endif
@@ -110,9 +110,10 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
          user-space threads package work. JRS 20021001 */
    } else {
 
-      // XXX: I think this line is needed for PPC to work, but I'm not
-      // certain, so I'm commenting it out for the moment.
-      //fp = FIRST_STACK_FRAME(fp)
+#     if defined(VGP_ppc32_linux)
+      // I think this line is needed for PPC to work
+      fp = FIRST_STACK_FRAME(fp);
+#     endif
 
       while (True) {
 

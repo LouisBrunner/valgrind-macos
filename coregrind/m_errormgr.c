@@ -269,7 +269,7 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
    }
 }
 
-static void pp_Error ( Error* err, Bool printCount )
+static void pp_Error ( Error* err )
 {
    if (VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "<error>");
@@ -279,8 +279,6 @@ static void pp_Error ( Error* err, Bool printCount )
    }
 
    if (!VG_(clo_xml)) {
-      if (printCount)
-         VG_(message)(Vg_UserMsg, "Observed %d times:", err->count );
       if (err->tid > 0 && err->tid != last_tid_printed) {
          VG_(message)(Vg_UserMsg, "Thread %d:", err->tid );
          last_tid_printed = err->tid;
@@ -609,7 +607,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
       n_errs_found++;
       if (!is_first_shown_context)
          VG_(message)(Vg_UserMsg, "");
-      pp_Error(p, False);
+      pp_Error(p);
       is_first_shown_context = False;
       n_errs_shown++;
       do_actions_on_error(p, /*allow_db_attach*/True);
@@ -651,7 +649,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
       if (print_error) {
          if (!is_first_shown_context)
             VG_(message)(Vg_UserMsg, "");
-         pp_Error(&err, False);
+         pp_Error(&err);
          is_first_shown_context = False;
       }
       do_actions_on_error(&err, allow_db_attach);
@@ -760,7 +758,7 @@ void VG_(show_all_errors) ( void )
       VG_(message)(Vg_UserMsg, "%d errors in context %d of %d:",
                    p_min->count,
                    i+1, n_err_contexts);
-      pp_Error( p_min, False );
+      pp_Error( p_min );
 
       if ((i+1 == VG_(clo_dump_error))) {
          StackTrace ips = VG_(extract_StackTrace)(p_min->where);

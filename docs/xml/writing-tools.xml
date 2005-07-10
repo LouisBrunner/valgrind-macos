@@ -312,30 +312,11 @@ memory checker.</para>
 <sect2 id="writing-tools.gettingcode" xreflabel="Getting the code">
 <title>Getting the code</title>
 
-<para>To write your own tool, you'll need to check out a copy of
-Valgrind from the CVS repository, rather than using a packaged
-distribution.  This is because it contains several extra files
-needed for writing tools.</para>
-
-<para>To check out the code from the CVS repository, first login:</para>
-<programlisting><![CDATA[
-cvs -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind
-login]]></programlisting>
-
-<para>Then checkout the code.  To get a copy of the current
-development version (recommended for the brave only):</para>
-<programlisting><![CDATA[
-cvs -z3 -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind 
-co valgrind]]></programlisting>
-
-<para>To get a copy of the stable released branch:</para>
-<programlisting><![CDATA[
-cvs -z3 -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind
-co -r <TAG> valgrind]]></programlisting>
-
-<para>where &lt;<computeroutput>TAG</computeroutput>&gt; has the
-form <computeroutput>VALGRIND_X_Y_Z</computeroutput> for version
-X.Y.Z.</para>
+<para>To write your own tool, you'll need the Valgrind source code.
+A normal source distribution should do, although you might want to
+check out the latest code from the Subversion repository.  See the
+information about how to do so at <ulink url="http://www.valgrind.org/">the
+Valgrind website</ulink>.</para>
 
 </sect2>
 

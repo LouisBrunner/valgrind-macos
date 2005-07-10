@@ -288,7 +288,7 @@ struct elfinfo *readelf(int fd, const char *filename)
               "(eg. 32-bit instead of 64-bit)\n");
       goto bad;
    }
-   if (e->e.e_ident[EI_DATA] != VG_ELF_ENDIANNESS) {
+   if (e->e.e_ident[EI_DATA] != VG_ELF_DATA2XXX) {
       fprintf(stderr, "valgrind: executable has wrong endian-ness\n");
       goto bad;
    }

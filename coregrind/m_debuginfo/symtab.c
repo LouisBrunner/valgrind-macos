@@ -906,7 +906,7 @@ Bool VG_(is_object_file)(const void *buf)
              && ehdr->e_ident[EI_MAG2] == 'L'
              && ehdr->e_ident[EI_MAG3] == 'F');
       ok &= (ehdr->e_ident[EI_CLASS] == VG_ELF_CLASS
-             && ehdr->e_ident[EI_DATA] == VG_ELF_ENDIANNESS
+             && ehdr->e_ident[EI_DATA] == VG_ELF_DATA2XXX
              && ehdr->e_ident[EI_VERSION] == EV_CURRENT);
       ok &= (ehdr->e_type == ET_EXEC || ehdr->e_type == ET_DYN);
       ok &= (ehdr->e_machine == VG_ELF_MACHINE);

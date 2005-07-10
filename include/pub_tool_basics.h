@@ -109,13 +109,24 @@ typedef struct {
 SysRes;
 
 /* ---------------------------------------------------------------------
-   Miscellaneous
+   Miscellaneous (word size, endianness, regparmness)
    ------------------------------------------------------------------ */
 
-/* This is going to be either 4 or 8. */
+/* Word size: this is going to be either 4 or 8. */
 // It should probably be in m_machine.
 #define VG_WORDSIZE VEX_HOST_WORDSIZE
 
+/* Endianness */
+#undef VG_BIGENDIAN
+#undef VG_LITTLEENDIAN
+
+#if defined(VGA_x86) || defined(VGA_amd64)
+#  define VG_LITTLEENDIAN 1
+#elif defined(VGA_ppc32)
+#  define VG_BIGENDIAN 1
+#endif
+
+/* Regparmness */
 #if defined(VGA_x86)
 #  define VG_REGPARM(n)            __attribute__((regparm(n)))
 #elif defined(VGA_amd64) || defined(VGA_ppc32)

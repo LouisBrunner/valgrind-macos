@@ -40,15 +40,15 @@
 #include "pub_tool_machine.h"
 
 #if defined(VGA_x86)
-#  define VG_ELF_ENDIANNESS   ELFDATA2LSB
+#  define VG_ELF_DATA2XXX     ELFDATA2LSB
 #  define VG_ELF_MACHINE      EM_386
 #  define VG_ELF_CLASS        ELFCLASS32
 #elif defined(VGA_amd64)
-#  define VG_ELF_ENDIANNESS   ELFDATA2LSB
+#  define VG_ELF_DATA2XXX     ELFDATA2LSB
 #  define VG_ELF_MACHINE      EM_X86_64
 #  define VG_ELF_CLASS        ELFCLASS64
 #elif defined(VGA_ppc32)
-#  define VG_ELF_ENDIANNESS   ELFDATA2MSB
+#  define VG_ELF_DATA2XXX     ELFDATA2MSB
 #  define VG_ELF_MACHINE      EM_PPC
 #  define VG_ELF_CLASS        ELFCLASS32
 #else

@@ -2367,9 +2367,9 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
    IREndness end;
 
    /* What's the native endianness?  We need to know this. */
-#  if defined(VKI_BIG_ENDIAN)
+#  if defined(VG_BIGENDIAN)
    end = Iend_BE;
-#  elif defined(VKI_LITTLE_ENDIAN)
+#  elif defined(VG_LITTLEENDIAN)
    end = Iend_LE;
 #  else
 #    error "Unknown endianness"

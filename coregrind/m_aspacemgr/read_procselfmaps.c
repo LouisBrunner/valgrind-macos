@@ -229,12 +229,17 @@ void VG_(parse_procselfmaps) (
     read_line_ok:
 
       /* Try and find the name of the file mapped to this segment, if
-         it exists. */
-      while (procmap_buf[i] != '\n' && i < buf_n_tot-1) i++;
+         it exists.  Note that files can contains spaces. */
+
+      // Move i to the next non-space char, which should be either a '/' or
+      // a newline.
+      while (procmap_buf[i] == ' ' && i < buf_n_tot-1) i++;
+      
+      // Move i_eol to the end of the line.
       i_eol = i;
-      i--;
-      while (!VG_(isspace)(procmap_buf[i]) && i >= 0) i--;
-      i++;
+      while (procmap_buf[i_eol] != '\n' && i_eol < buf_n_tot-1) i_eol++;
+
+      // If there's a filename...
       if (i < i_eol-1 && procmap_buf[i] == '/') {
          /* Minor hack: put a '\0' at the filename end for the call to
             'record_mapping', then restore the old char with 'tmp'. */

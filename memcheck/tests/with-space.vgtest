@@ -1,0 +1,6 @@
+# Use the "prereq" command to copy manuel1 to a filename containing a space.
+# This used to not work properly, because the debug info would not be read
+# correctly for filenames containing spaces (bug #88678).
+prereq: cp manuel1 'with space'
+prog: 'with space'
+vgopts: -q

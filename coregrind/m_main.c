@@ -1791,10 +1791,11 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
 
    /* Check that the requested tool actually supports XML output. */
-   if (VG_(clo_xml) && 0 != VG_(strcmp)(toolname, "memcheck")) {
+   if (VG_(clo_xml) && 0 != VG_(strcmp)(toolname, "memcheck")
+                    && 0 != VG_(strcmp)(toolname, "none")) {
       VG_(clo_xml) = False;
       VG_(message)(Vg_UserMsg, 
-         "Currently only Memcheck supports XML output."); 
+         "Currently only Memcheck|None supports XML output."); 
       VG_(bad_option)("--xml=yes");
       /*NOTREACHED*/
    }

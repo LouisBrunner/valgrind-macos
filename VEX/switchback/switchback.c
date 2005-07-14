@@ -567,6 +567,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
            NULL,          /* instrument1 */
            NULL,          /* instrument2 */
            False,         /* cleanup after instrument */
+           False,         /* self-checking translation? */
            NULL, /* access checker */
            verbose ? TEST_FLAGS : DEBUG_TRACE_FLAGS
         );

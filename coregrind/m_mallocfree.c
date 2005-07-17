@@ -999,15 +999,15 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    vg_assert(blockSane(a, b));
 #  endif
 
-   a->bytes_on_loan -= bszB_to_pszB(a, get_bszB(b));
-
+   b_bszB   = get_bszB(b);
+   b_pszB   = bszB_to_pszB(a, b_bszB);
    sb       = findSb( a, b );
    sb_start = &sb->payload_bytes[0];
    sb_end   = &sb->payload_bytes[sb->n_payload_bytes - 1];
 
+   a->bytes_on_loan -= b_pszB;
+
    // Put this chunk back on a list somewhere.
-   b_bszB   = get_bszB(b);
-   b_pszB   = bszB_to_pszB(a, b_bszB);
    b_listno = pszB_to_listNo(b_pszB);
    mkFreeBlock( a, b, b_bszB, b_listno );
 
@@ -1175,8 +1175,7 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
              bszB_to_pszB(a, get_bszB(get_payload_block(a, align_p)))
             );
 
-   a->bytes_on_loan 
-      += bszB_to_pszB(a, get_bszB(get_payload_block(a, align_p)));
+   a->bytes_on_loan += bszB_to_pszB(a, get_bszB(get_payload_block(a, align_p)));
    if (a->bytes_on_loan > a->bytes_on_loan_max)
       a->bytes_on_loan_max = a->bytes_on_loan;
 

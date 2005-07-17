@@ -194,6 +194,45 @@ UByte* last_byte ( Block* b )
    return &b2[mk_plain_bszB(get_bszB_lo(b)) - 1];
 }
 
+// Return the lower, upper and total overhead in bytes for a block.
+// These are determined purely by which arena the block lives in.
+static __inline__
+SizeT overhead_szB_lo ( Arena* a )
+{
+   return sizeof(SizeT) + sizeof(void*) + a->rz_szB;
+}
+static __inline__
+SizeT overhead_szB_hi ( Arena* a )
+{
+   return a->rz_szB + sizeof(void*) + sizeof(SizeT);
+}
+static __inline__
+SizeT overhead_szB ( Arena* a )
+{
+   return overhead_szB_lo(a) + overhead_szB_hi(a);
+}
+
+// Return the minimum bszB for a block in this arena.  Can have zero-length
+// payloads, so it's the size of the admin bytes.
+static __inline__
+SizeT min_useful_bszB ( Arena* a )
+{
+   return overhead_szB(a);
+}
+
+// Convert payload size <--> block size (both in bytes).
+static __inline__
+SizeT pszB_to_bszB ( Arena* a, SizeT pszB )
+{
+   return pszB + overhead_szB(a);
+}
+static __inline__
+SizeT bszB_to_pszB ( Arena* a, SizeT bszB )
+{
+   vg_assert(bszB >= overhead_szB(a));
+   return bszB - overhead_szB(a);
+}
+
 // Set and get the upper size field of a block.
 static __inline__
 void set_bszB_hi ( Block* b, SizeT bszB )
@@ -227,22 +266,11 @@ SizeT get_bszB ( Block* b )
    return mk_plain_bszB(get_bszB_as_is(b));
 }
 
-// Return the lower, upper and total overhead in bytes for a block.
-// These are determined purely by which arena the block lives in.
+// Get a block's payload size.
 static __inline__
-SizeT overhead_szB_lo ( Arena* a )
+SizeT get_pszB ( Arena* a, Block* b )
 {
-   return sizeof(SizeT) + sizeof(void*) + a->rz_szB;
-}
-static __inline__
-SizeT overhead_szB_hi ( Arena* a )
-{
-   return a->rz_szB + sizeof(void*) + sizeof(SizeT);
-}
-static __inline__
-SizeT overhead_szB ( Arena* a )
-{
-   return overhead_szB_lo(a) + overhead_szB_hi(a);
+   return bszB_to_pszB(a, get_bszB(b));
 }
 
 // Given the addr of a block, return the addr of its payload.
@@ -320,28 +348,6 @@ UByte get_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno )
 {
    UByte* lb = last_byte(b);
    return lb[-sizeof(SizeT) - sizeof(void*) - rz_byteno];
-}
-
-
-// Return the minimum bszB for a block in this arena.  Can have zero-length
-// payloads, so it's the size of the admin bytes.
-static __inline__
-SizeT min_useful_bszB ( Arena* a )
-{
-   return overhead_szB(a);
-}
-
-// Convert payload size <--> block size (both in bytes).
-static __inline__
-SizeT pszB_to_bszB ( Arena* a, SizeT pszB )
-{
-   return pszB + overhead_szB(a);
-}
-static __inline__
-SizeT bszB_to_pszB ( Arena* a, SizeT bszB )
-{
-   vg_assert(bszB >= overhead_szB(a));
-   return bszB - overhead_szB(a);
 }
 
 
@@ -746,7 +752,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
                          listno, b );
             BOMB;
          }
-         b_pszB = bszB_to_pszB(a, get_bszB(b));
+         b_pszB = get_pszB(a, b);
          if (b_pszB < list_min_pszB || b_pszB > list_max_pszB) {
             VG_(printf)( 
                "sanity_check_malloc_arena: list %d at %p: "
@@ -1156,7 +1162,7 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
    vg_assert(frag_bszB >= min_useful_bszB(a));
 
    /* The actual payload size of the block we are going to split. */
-   base_pszB_act = bszB_to_pszB(a, get_bszB(base_b));
+   base_pszB_act = get_pszB(a, base_b);
 
    /* Create the fragment block, and put it back on the relevant free list. */
    mkFreeBlock ( a, base_b, frag_bszB,
@@ -1170,12 +1176,9 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
    /* Final sanity checks. */
    vg_assert( is_inuse_block(get_payload_block(a, align_p)) );
 
-   vg_assert(req_pszB
-             <= 
-             bszB_to_pszB(a, get_bszB(get_payload_block(a, align_p)))
-            );
+   vg_assert(req_pszB <= get_pszB(a, get_payload_block(a, align_p)));
 
-   a->bytes_on_loan += bszB_to_pszB(a, get_bszB(get_payload_block(a, align_p)));
+   a->bytes_on_loan += get_pszB(a, get_payload_block(a, align_p));
    if (a->bytes_on_loan > a->bytes_on_loan_max)
       a->bytes_on_loan_max = a->bytes_on_loan;
 
@@ -1197,7 +1200,7 @@ SizeT VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
 {
    Arena* a = arenaId_to_ArenaP(aid);
    Block* b = get_payload_block(a, ptr);
-   return bszB_to_pszB(a, get_bszB(b));
+   return get_pszB(a, b);
 }
 
 
@@ -1230,7 +1233,7 @@ void* VG_(arena_calloc) ( ArenaId aid, SizeT nmemb, SizeT bytes_per_memb )
 void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
 {
    Arena* a;
-   SizeT  old_bszB, old_pszB;
+   SizeT  old_pszB;
    UChar  *p_new;
    Block* b;
 
@@ -1245,8 +1248,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
    vg_assert(blockSane(a, b));
 
    vg_assert(is_inuse_block(b));
-   old_bszB = get_bszB(b);
-   old_pszB = bszB_to_pszB(a, old_bszB);
+   old_pszB = get_pszB(a, b);
 
    if (req_pszB <= old_pszB) {
       VGP_POPCC(VgpMalloc);

@@ -551,15 +551,15 @@ static
 UInt pszB_to_listNo ( SizeT pszB )
 {
    vg_assert(0 == pszB % VG_MIN_MALLOC_SZB);
-   pszB /= VG_MIN_MALLOC_SZB;
+   SizeT n = pszB / VG_MIN_MALLOC_SZB;
 
    // The first 13 lists hold blocks of size VG_MIN_MALLOC_SZB * list_num.
-   // The final 4 hold bigger blocks.
-   if (pszB <= 12)  return pszB;
-   if (pszB <= 16)  return 13;
-   if (pszB <= 32)  return 14;
-   if (pszB <= 64)  return 15;
-   if (pszB <= 128) return 16;
+   // The final 5 hold bigger blocks.
+   if (n <= 12)  return (UInt)n;
+   if (n <= 16)  return 13;
+   if (n <= 32)  return 14;
+   if (n <= 64)  return 15;
+   if (n <= 128) return 16;
    return 17;
 }
 

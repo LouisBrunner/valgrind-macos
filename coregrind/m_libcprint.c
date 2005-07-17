@@ -154,7 +154,7 @@ UInt VG_(sprintf) ( Char* buf, const HChar *format, ... )
    percentify()
    ------------------------------------------------------------------ */
 
-// Percentify n/m with p decimal places.  Includes the '%' symbol at the end.
+// Percentify n/m with d decimal places.  Includes the '%' symbol at the end.
 void VG_(percentify)(UInt n, UInt m, UInt d, Int n_buf, char buf[]) 
 {
    Int i, len, space;

@@ -210,6 +210,22 @@ SizeT get_bszB_hi ( Block* b )
    return *(SizeT*)&lb[-sizeof(SizeT) + 1];
 }
 
+// Get a block's size as stored, ie with the in-use/free attribute.
+static __inline__
+SizeT get_bszB_as_is ( Block* b )
+{
+   SizeT bszB_lo = get_bszB_lo(b);
+   SizeT bszB_hi = get_bszB_hi(b);
+   vg_assert(bszB_lo == bszB_hi);
+   return bszB_lo;
+}
+
+// Get a block's plain size, ie. remove the in-use/free attribute.
+static __inline__
+SizeT get_bszB ( Block* b )
+{
+   return mk_plain_bszB(get_bszB_as_is(b));
+}
 
 // Return the lower, upper and total overhead in bytes for a block.
 // These are determined purely by which arena the block lives in.
@@ -628,20 +644,18 @@ Bool blockSane ( Arena* a, Block* b )
 static 
 void ppSuperblocks ( Arena* a )
 {
-   UInt i, blockno;
-   SizeT b_bszB;
-   Block* b;
+   UInt i, blockno = 1;
    Superblock* sb = a->sblocks;
-   blockno = 1;
+   SizeT b_bszB;
 
    while (sb) {
       VG_(printf)( "\n" );
       VG_(printf)( "superblock %d at %p, sb->n_pl_bs = %d, next = %p\n", 
                    blockno++, sb, sb->n_payload_bytes, sb->next );
-      for (i = 0; i < sb->n_payload_bytes; i += mk_plain_bszB(b_bszB)) {
-         b      = (Block*)&sb->payload_bytes[i];
-         b_bszB = get_bszB_lo(b);
-         VG_(printf)( "   block at %d, bszB %d: ", i, mk_plain_bszB(b_bszB) );
+      for (i = 0; i < sb->n_payload_bytes; i += b_bszB) {
+         Block* b = (Block*)&sb->payload_bytes[i];
+         b_bszB   = get_bszB(b);
+         VG_(printf)( "   block at %d, bszB %d: ", i, b_bszB );
          VG_(printf)( "%s, ", is_inuse_block(b) ? "inuse" : "free");
          VG_(printf)( "%s\n", blockSane(a, b) ? "ok" : "BAD" );
       }
@@ -678,7 +692,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
       for (i = 0; i < sb->n_payload_bytes; i += mk_plain_bszB(b_bszB)) {
          blockctr_sb++;
          b     = (Block*)&sb->payload_bytes[i];
-         b_bszB = get_bszB_lo(b);
+         b_bszB = get_bszB_as_is(b);
          if (!blockSane(a, b)) {
             VG_(printf)("sanity_check_malloc_arena: sb %p, block %d (bszB %d): "
                         " BAD\n", sb, i, b_bszB );
@@ -732,7 +746,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
                          listno, b );
             BOMB;
          }
-         b_pszB = bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(b)));
+         b_pszB = bszB_to_pszB(a, get_bszB(b));
          if (b_pszB < list_min_pszB || b_pszB > list_max_pszB) {
             VG_(printf)( 
                "sanity_check_malloc_arena: list %d at %p: "
@@ -890,7 +904,7 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
       b = a->freelist[lno];
       if (NULL == b) continue;   // If this list is empty, try the next one.
       while (True) {
-         b_bszB = mk_plain_bszB(get_bszB_lo(b));
+         b_bszB = get_bszB(b);
          if (b_bszB >= req_bszB) goto obtained_block;    // success!
          b = get_next_b(b);
          if (b == a->freelist[lno]) break;   // traversed entire freelist
@@ -918,7 +932,7 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
    vg_assert(b != NULL);
    vg_assert(lno < N_MALLOC_LISTS);
    vg_assert(a->freelist[lno] != NULL);
-   b_bszB = mk_plain_bszB(get_bszB_lo(b));
+   b_bszB = get_bszB(b);
    // req_bszB is the size of the block we are after.  b_bszB is the
    // size of what we've actually got. */
    vg_assert(b_bszB >= req_bszB);
@@ -933,7 +947,7 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
       mkInuseBlock(a, b, req_bszB);
       mkFreeBlock(a, &b[req_bszB], frag_bszB, 
                      pszB_to_listNo(bszB_to_pszB(a, frag_bszB)));
-      b_bszB = mk_plain_bszB(get_bszB_lo(b));
+      b_bszB = get_bszB(b);
    } else {
       // No, mark as in use and use as-is.
       unlinkBlock(a, b, lno);
@@ -985,14 +999,14 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    vg_assert(blockSane(a, b));
 #  endif
 
-   a->bytes_on_loan -= bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(b)));
+   a->bytes_on_loan -= bszB_to_pszB(a, get_bszB(b));
 
    sb       = findSb( a, b );
    sb_start = &sb->payload_bytes[0];
    sb_end   = &sb->payload_bytes[sb->n_payload_bytes - 1];
 
    // Put this chunk back on a list somewhere.
-   b_bszB   = get_bszB_lo(b);
+   b_bszB   = get_bszB(b);
    b_pszB   = bszB_to_pszB(a, b_bszB);
    b_listno = pszB_to_listNo(b_pszB);
    mkFreeBlock( a, b, b_bszB, b_listno );
@@ -1003,10 +1017,9 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    other_b = b + b_bszB;
    if (other_b+min_useful_bszB(a)-1 <= (Block*)sb_end) {
       // Ok, we have a successor, merge if it's not in use.
-      other_bszB = get_bszB_lo(other_b);
+      other_bszB = get_bszB(other_b);
       if (!is_inuse_block(other_b)) {
          // VG_(printf)( "merge-successor\n");
-         other_bszB = mk_plain_bszB(other_bszB);
 #        ifdef DEBUG_MALLOC
          vg_assert(blockSane(a, other_b));
 #        endif
@@ -1028,10 +1041,9 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    if (b >= (Block*)sb_start + min_useful_bszB(a)) {
       // Ok, we have a predecessor, merge if it's not in use.
       other_b = get_predecessor_block( b );
-      other_bszB = get_bszB_lo(other_b);
+      other_bszB = get_bszB(other_b);
       if (!is_inuse_block(other_b)) {
          // VG_(printf)( "merge-predecessor\n");
-         other_bszB = mk_plain_bszB(other_bszB);
          unlinkBlock( a, b, b_listno );
          unlinkBlock( a, other_b, pszB_to_listNo(bszB_to_pszB(a, other_bszB)) );
          b = other_b;
@@ -1144,7 +1156,7 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
    vg_assert(frag_bszB >= min_useful_bszB(a));
 
    /* The actual payload size of the block we are going to split. */
-   base_pszB_act = bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(base_b)));
+   base_pszB_act = bszB_to_pszB(a, get_bszB(base_b));
 
    /* Create the fragment block, and put it back on the relevant free list. */
    mkFreeBlock ( a, base_b, frag_bszB,
@@ -1160,13 +1172,11 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
 
    vg_assert(req_pszB
              <= 
-             bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(
-                                             get_payload_block(a, align_p))))
+             bszB_to_pszB(a, get_bszB(get_payload_block(a, align_p)))
             );
 
    a->bytes_on_loan 
-      += bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(
-                                          get_payload_block(a, align_p))));
+      += bszB_to_pszB(a, get_bszB(get_payload_block(a, align_p)));
    if (a->bytes_on_loan > a->bytes_on_loan_max)
       a->bytes_on_loan_max = a->bytes_on_loan;
 
@@ -1188,7 +1198,7 @@ SizeT VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
 {
    Arena* a = arenaId_to_ArenaP(aid);
    Block* b = get_payload_block(a, ptr);
-   return bszB_to_pszB(a, get_bszB_lo(b));
+   return bszB_to_pszB(a, get_bszB(b));
 }
 
 
@@ -1236,7 +1246,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
    vg_assert(blockSane(a, b));
 
    vg_assert(is_inuse_block(b));
-   old_bszB = mk_plain_bszB(get_bszB_lo(b));
+   old_bszB = get_bszB(b);
    old_pszB = bszB_to_pszB(a, old_bszB);
 
    if (req_pszB <= old_pszB) {

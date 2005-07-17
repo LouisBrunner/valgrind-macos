@@ -963,7 +963,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    Superblock* sb;
    UByte*      sb_start;
    UByte*      sb_end;
-   Block*      other;
+   Block*      other_b;
    Block*      b;
    SizeT       b_bszB, b_pszB, other_bszB;
    UInt        b_listno;
@@ -1000,18 +1000,18 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    // See if this block can be merged with its successor.
    // First test if we're far enough before the superblock's end to possibly
    // have a successor.
-   other = b + b_bszB;
-   if (other+min_useful_bszB(a)-1 <= (Block*)sb_end) {
+   other_b = b + b_bszB;
+   if (other_b+min_useful_bszB(a)-1 <= (Block*)sb_end) {
       // Ok, we have a successor, merge if it's not in use.
-      other_bszB = get_bszB_lo(other);
+      other_bszB = get_bszB_lo(other_b);
       if (!is_inuse_bszB(other_bszB)) {
          // VG_(printf)( "merge-successor\n");
          other_bszB = mk_plain_bszB(other_bszB);
 #        ifdef DEBUG_MALLOC
-         vg_assert(blockSane(a, other));
+         vg_assert(blockSane(a, other_b));
 #        endif
          unlinkBlock( a, b, b_listno );
-         unlinkBlock( a, other, pszB_to_listNo(bszB_to_pszB(a,other_bszB)) );
+         unlinkBlock( a, other_b, pszB_to_listNo(bszB_to_pszB(a,other_bszB)) );
          b_bszB += other_bszB;
          b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
          mkFreeBlock( a, b, b_bszB, b_listno );
@@ -1019,7 +1019,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    } else {
       // Not enough space for successor: check that b is the last block
       // ie. there are no unused bytes at the end of the Superblock.
-      vg_assert(other-1 == (Block*)sb_end);
+      vg_assert(other_b-1 == (Block*)sb_end);
    }
 
    // Then see if this block can be merged with its predecessor.
@@ -1027,14 +1027,14 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    // have a predecessor.
    if (b >= (Block*)sb_start + min_useful_bszB(a)) {
       // Ok, we have a predecessor, merge if it's not in use.
-      other = get_predecessor_block( b );
-      other_bszB = get_bszB_lo(other);
+      other_b = get_predecessor_block( b );
+      other_bszB = get_bszB_lo(other_b);
       if (!is_inuse_bszB(other_bszB)) {
          // VG_(printf)( "merge-predecessor\n");
          other_bszB = mk_plain_bszB(other_bszB);
          unlinkBlock( a, b, b_listno );
-         unlinkBlock( a, other, pszB_to_listNo(bszB_to_pszB(a, other_bszB)) );
-         b = other;
+         unlinkBlock( a, other_b, pszB_to_listNo(bszB_to_pszB(a, other_bszB)) );
+         b = other_b;
          b_bszB += other_bszB;
          b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
          mkFreeBlock( a, b, b_bszB, b_listno );

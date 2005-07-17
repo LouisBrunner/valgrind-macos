@@ -165,15 +165,6 @@ SizeT mk_plain_bszB ( SizeT bszB )
    return bszB & (~SIZE_T_0x1);
 }
 
-// Does this bszB have the in-use attribute?
-static __inline__
-Bool is_inuse_bszB ( SizeT bszB )
-{
-   vg_assert(bszB != 0);
-   return (0 != (bszB & SIZE_T_0x1)) ? False : True;
-}
-
-
 // Set and get the lower size field of a block.
 static __inline__
 void set_bszB_lo ( Block* b, SizeT bszB )
@@ -184,6 +175,15 @@ static __inline__
 SizeT get_bszB_lo ( Block* b )
 {
    return *(SizeT*)&b[0];
+}
+
+// Does this block have the in-use attribute?
+static __inline__
+Bool is_inuse_block ( Block* b )
+{
+   SizeT bszB = get_bszB_lo(b);
+   vg_assert(bszB != 0);
+   return (0 != (bszB & SIZE_T_0x1)) ? False : True;
 }
 
 // Get the address of the last byte in a block
@@ -610,7 +610,7 @@ Bool blockSane ( Arena* a, Block* b )
    UInt i;
    if (get_bszB_lo(b) != get_bszB_hi(b))
       {BLEAT("sizes");return False;}
-   if (!a->clientmem && is_inuse_bszB(get_bszB_lo(b))) {
+   if (!a->clientmem && is_inuse_block(b)) {
       for (i = 0; i < a->rz_szB; i++) {
          if (get_rz_lo_byte(a, b, i) != 
             (UByte)(((Addr)b&0xff) ^ REDZONE_LO_MASK))
@@ -642,7 +642,7 @@ void ppSuperblocks ( Arena* a )
          b      = (Block*)&sb->payload_bytes[i];
          b_bszB = get_bszB_lo(b);
          VG_(printf)( "   block at %d, bszB %d: ", i, mk_plain_bszB(b_bszB) );
-         VG_(printf)( "%s, ", is_inuse_bszB(b_bszB) ? "inuse" : "free");
+         VG_(printf)( "%s, ", is_inuse_block(b) ? "inuse" : "free");
          VG_(printf)( "%s\n", blockSane(a, b) ? "ok" : "BAD" );
       }
       vg_assert(i == sb->n_payload_bytes);   // no overshoot at end of Sb
@@ -684,7 +684,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
                         " BAD\n", sb, i, b_bszB );
             BOMB;
          }
-         thisFree = !is_inuse_bszB(b_bszB);
+         thisFree = !is_inuse_block(b);
          if (thisFree && lastWasFree) {
             VG_(printf)("sanity_check_malloc_arena: sb %p, block %d (bszB %d): "
                         "UNMERGED FREES\n",
@@ -1004,7 +1004,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    if (other_b+min_useful_bszB(a)-1 <= (Block*)sb_end) {
       // Ok, we have a successor, merge if it's not in use.
       other_bszB = get_bszB_lo(other_b);
-      if (!is_inuse_bszB(other_bszB)) {
+      if (!is_inuse_block(other_b)) {
          // VG_(printf)( "merge-successor\n");
          other_bszB = mk_plain_bszB(other_bszB);
 #        ifdef DEBUG_MALLOC
@@ -1029,7 +1029,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
       // Ok, we have a predecessor, merge if it's not in use.
       other_b = get_predecessor_block( b );
       other_bszB = get_bszB_lo(other_b);
-      if (!is_inuse_bszB(other_bszB)) {
+      if (!is_inuse_block(other_b)) {
          // VG_(printf)( "merge-predecessor\n");
          other_bszB = mk_plain_bszB(other_bszB);
          unlinkBlock( a, b, b_listno );
@@ -1156,7 +1156,7 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
                          + overhead_szB_hi(a) - (UByte*)align_b );
 
    /* Final sanity checks. */
-   vg_assert( is_inuse_bszB(get_bszB_lo(get_payload_block(a, align_p))) );
+   vg_assert( is_inuse_block(get_payload_block(a, align_p)) );
 
    vg_assert(req_pszB
              <= 
@@ -1235,9 +1235,8 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
    b = get_payload_block(a, ptr);
    vg_assert(blockSane(a, b));
 
-   old_bszB = get_bszB_lo(b);
-   vg_assert(is_inuse_bszB(old_bszB));
-   old_bszB = mk_plain_bszB(old_bszB);
+   vg_assert(is_inuse_block(b));
+   old_bszB = mk_plain_bszB(get_bszB_lo(b));
    old_pszB = bszB_to_pszB(a, old_bszB);
 
    if (req_pszB <= old_pszB) {

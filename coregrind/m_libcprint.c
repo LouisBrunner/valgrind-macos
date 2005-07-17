@@ -158,8 +158,14 @@ UInt VG_(sprintf) ( Char* buf, const HChar *format, ... )
 void VG_(percentify)(UInt n, UInt m, UInt d, Int n_buf, char buf[]) 
 {
    Int i, len, space;
+   ULong p1;
 
-   ULong p1 = (100*n) / m;
+   if (m == 0) {
+      VG_(sprintf)(buf, "--%%");
+      return;
+   }
+   
+   p1 = (100*n) / m;
     
    if (d == 0) {
       VG_(sprintf)(buf, "%lld%%", p1);

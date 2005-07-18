@@ -91,11 +91,8 @@ Int main ( void )
   printf("#define OFFSET_ppc32_CIA       %3d\n",
          offsetof(VexGuestPPC32State,guest_CIA));
 
-  printf("#define OFFSET_ppc32_CC_OP     %3d\n",
-         offsetof(VexGuestPPC32State,guest_CC_OP));
-
-  printf("#define OFFSET_ppc32_CC_DEP1   %3d\n",
-         offsetof(VexGuestPPC32State,guest_CC_DEP1));
+  printf("#define OFFSET_ppc32_CR0_0     %3d\n",
+         offsetof(VexGuestPPC32State,guest_CR0_0));
 
   printf("\n");
 

@@ -1424,6 +1424,7 @@ struct vki_ppdev_frob_struct {
 //----------------------------------------------------------------------
 
 #define VKI_BLKGETSIZE _VKI_IO(0x12,96) /* return device size /512 (long *arg) */
+#define VKI_BLKGETSIZE64 _VKI_IOR(0x12,114, vki_size_t) /* return device size in bytes (u64 *arg) */
 
 #define VKI_FIBMAP	_VKI_IO(0x00,1)	/* bmap access */
 #define VKI_FIGETBSZ    _VKI_IO(0x00,2)	/* get the block size used for bmap */

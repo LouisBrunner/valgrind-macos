@@ -306,7 +306,7 @@ static Int start_thread_NORETURN ( void* arg )
  */
 #define STRINGIFZ(__str) #__str
 #define STRINGIFY(__str)  STRINGIFZ(__str)
-#define FSZ               "4+4+4" /* frame size = retaddr+ebx+edi */
+#define FSZ               "4+4+4+4" /* frame size = retaddr+ebx+edi+esi */
 #define __NR_CLONE        STRINGIFY(__NR_clone)
 #define __NR_EXIT         STRINGIFY(__NR_exit)
 
@@ -323,6 +323,7 @@ asm(
 "do_syscall_clone_x86_linux:\n"
 "        push    %ebx\n"
 "        push    %edi\n"
+"        push    %esi\n"
 
          /* set up child stack with function and arg */
 "        movl     4+"FSZ"(%esp), %ecx\n"    /* syscall arg2: child stack */
@@ -355,6 +356,7 @@ asm(
 "        ud2\n"
 
 "1:\n"   /* PARENT or ERROR */
+"        pop     %esi\n"
 "        pop     %edi\n"
 "        pop     %ebx\n"
 "        ret\n"

@@ -239,7 +239,7 @@ Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
 }
 
 /* clone the environment */
-static Char **env_clone ( Char **oldenv )
+Char **VG_(env_clone) ( Char **oldenv )
 {
    Char **oldenvp;
    Char **newenvp;
@@ -284,7 +284,7 @@ Int VG_(system) ( Char* cmd )
       /* restore the DATA rlimit for the child */
       VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
 
-      envp = env_clone(VG_(client_envp));
+      envp = VG_(env_clone)(VG_(client_envp));
       VG_(env_remove_valgrind_env_stuff)( envp ); 
 
       argv[0] = "/bin/sh";

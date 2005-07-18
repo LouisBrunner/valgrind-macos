@@ -70,6 +70,7 @@ extern Char **VG_(env_setenv)   ( Char ***envp, const Char* varname,
                                   const Char *val );
 extern void   VG_(env_unsetenv) ( Char **env, const Char *varname );
 extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env ); 
+extern Char **VG_(env_clone)    ( Char **env_clone );
 
 // misc
 extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);

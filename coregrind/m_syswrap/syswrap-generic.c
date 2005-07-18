@@ -2271,6 +2271,7 @@ void VG_(reap_threads)(ThreadId self)
 PRE(sys_execve)
 {
    Char*        path;          /* path to executable */
+   Char**       envp;
    ThreadState* tst;
 
    PRINT("sys_execve ( %p(%s), %p, %p )", ARG1, ARG1, ARG2, ARG3);
@@ -2317,14 +2318,13 @@ PRE(sys_execve)
    VG_(nuke_all_threads_except)( tid, VgSrc_ExitSyscall );
    VG_(reap_threads)(tid);
 
-   { // Remove the valgrind-specific stuff from the environment so the
-     // child doesn't get vg_preload_core.so, vg_preload_TOOL.so, etc.  
-     // This is done unconditionally, since if we are tracing the child,
-     // stage1/2 will set up the appropriate client environment.
-     Char** envp = (Char**)ARG3;
-     if (envp != NULL) {
-        VG_(env_remove_valgrind_env_stuff)( envp );
-     }
+   // Remove the valgrind-specific stuff from the environment so the
+   // child doesn't get vg_preload_core.so, vg_preload_TOOL.so, etc.  
+   // This is done unconditionally, since if we are tracing the child,
+   // stage1/2 will set up the appropriate client environment.
+   envp = VG_(env_clone)( (Char**)ARG3 );
+   if (envp != NULL) {
+      VG_(env_remove_valgrind_env_stuff)( envp );
    }
 
    if (VG_(clo_trace_children)) {

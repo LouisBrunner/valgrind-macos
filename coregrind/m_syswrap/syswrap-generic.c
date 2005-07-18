@@ -2322,6 +2322,8 @@ PRE(sys_execve)
    // child doesn't get vg_preload_core.so, vg_preload_TOOL.so, etc.  
    // This is done unconditionally, since if we are tracing the child,
    // stage1/2 will set up the appropriate client environment.
+   // Nb: we make a copy of the environment before trying to mangle it
+   // as it might be in read-only memory (this was bug #101881).
    envp = VG_(env_clone)( (Char**)ARG3 );
    if (envp != NULL) {
       VG_(env_remove_valgrind_env_stuff)( envp );

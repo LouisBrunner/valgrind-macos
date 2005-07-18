@@ -441,6 +441,12 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
    if (e == NULL)
       return ENOEXEC;
 
+   /* The kernel maps position-independent executables at TASK_SIZE*2/3;
+      duplicate this behavior as close as we can. */
+   if (e->e.e_type == ET_DYN && ebase == 0) {
+      ebase = VG_PGROUNDDN(info->exe_base + (info->exe_end - info->exe_base) * 2 / 3);
+   }
+
    info->phnum = e->e.e_phnum;
    info->entry = e->e.e_entry + ebase;
    info->phdr = 0;
@@ -513,7 +519,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
    }
 
    if (info->phdr == 0)
-      info->phdr = minaddr + e->e.e_phoff;
+      info->phdr = minaddr + ebase + e->e.e_phoff;
 
    if (info->exe_base != info->exe_end) {
       if (minaddr >= maxaddr ||
@@ -560,7 +566,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       free(interp->p);
       free(interp);
    } else
-      entry = (void *)e->e.e_entry;
+      entry = (void *)(ebase + e->e.e_entry);
 
    info->exe_base = minaddr + ebase;
    info->exe_end  = maxaddr + ebase;

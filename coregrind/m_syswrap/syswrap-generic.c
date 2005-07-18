@@ -3257,7 +3257,12 @@ PRE(sys_ioctl)
 	 if (!VG_(is_kerror)(RES) && RES == 0)
 	 POST_MEM_WRITE(ARG3, sizeof(struct ifconf));
       */
-      PRE_MEM_READ( "ioctl(SIOCGIFCONF)", ARG3, sizeof(struct vki_ifconf));
+      PRE_MEM_READ( "ioctl(SIOCGIFCONF)",
+                    (Addr)&((struct vki_ifconf *)ARG3)->ifc_len,
+                    sizeof(((struct vki_ifconf *)ARG3)->ifc_len));
+      PRE_MEM_READ( "ioctl(SIOCGIFCONF)",
+                    (Addr)&((struct vki_ifconf *)ARG3)->vki_ifc_buf,
+                    sizeof(((struct vki_ifconf *)ARG3)->vki_ifc_buf));
       if ( ARG3 ) {
 	 // TODO len must be readable and writable
 	 // buf pointer only needs to be readable

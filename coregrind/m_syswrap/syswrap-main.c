@@ -360,8 +360,8 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
 
 #elif defined(VGP_ppc32_linux)
    VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
-   UInt                cr  = LibVEX_GuestPPC32_get_cr7( gst );
-   UInt                err = (cr >> 28) & 1;                   // CR7.SO
+   UInt                cr  = LibVEX_GuestPPC32_get_CR( gst );
+   UInt                err = (cr >> 28) & 1;  // CR0.SO
    canonical->what = (err == 1)  ? SsFailure  : SsSuccess;
    canonical->val  = (UWord)gst->guest_GPR3;
 
@@ -399,15 +399,17 @@ void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
 
 #elif defined(VGP_ppc32_linux)
    VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
+   UInt old_cr = LibVEX_GuestPPC32_get_CR(gst);
+
    gst->guest_GPR3 = canonical->val;
-   gst->guest_CC_OP = 1;
-   /* XXX: Setting all of CR0, not just SO flag */
-   if (canonical->what == SsFailure)   /* set cr0.SO */
-      gst->guest_CC_DEP1 = 0x30000000;
-   else                                /* clear cr0.SO */
-      gst->guest_CC_DEP1 = 0x20000000;
-// CAB: Need to set gpr0?
-   gst->guest_GPR0 = 0;
+
+   if (canonical->what == SsFailure) {
+      /* set CR0.SO */
+      LibVEX_GuestPPC32_put_CR( old_cr | (1<<28), gst );
+   } else {
+      /* clear CR0.SO */
+      LibVEX_GuestPPC32_put_CR( old_cr & ~(1<<28), gst );
+   }
 
 #else
 #  error "putSyscallStatusIntoGuestState: unknown arch"

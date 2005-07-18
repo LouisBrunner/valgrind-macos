@@ -1706,6 +1706,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       cheap_AddSub32:
       case Iop_Mul32:
+      case Iop_CmpORD32S:
+      case Iop_CmpORD32U:
          return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
 
       case Iop_Add64:
@@ -1902,6 +1904,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_64to32:
       case Iop_64HIto32:
       case Iop_1Uto32:
+      case Iop_1Sto32:
       case Iop_8Uto32:
       case Iop_16Uto32:
       case Iop_16Sto32:
@@ -2059,7 +2062,6 @@ IRAtom* expr2vbits_Load ( MCEnv* mce,
             v64lo = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias);
             v64hi = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8);
          } else {
-            tl_assert(0 /* awaiting test case */);
             v64hi = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias);
             v64lo = expr2vbits_Load_WRK(mce, end, Ity_I64, addr, bias+8);
          }

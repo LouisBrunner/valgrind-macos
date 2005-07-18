@@ -1543,7 +1543,8 @@ PRE(sys_sigreturn)
    SET_STATUS_from_SysRes(
       VG_(mk_SysRes_ppc32_linux)( 
          tst->arch.vex.guest_GPR3,
-         (LibVEX_GuestPPC32_get_cr7( &tst->arch.vex ) >> 28) & 1
+         /* get CR0.SO */
+         (LibVEX_GuestPPC32_get_CR( &tst->arch.vex ) >> 28) & 1
       )
    );
 

@@ -103,14 +103,11 @@ ML_(do_syscall_for_client_WRK):
 2:      sc                      /* do the syscall */
 
         /* put the result back in the threadstate  */
-        /* HACK: killing all of CR0 for simplicity (should get from gst) */
 3:	stw     3,OFFSET_ppc32_GPR3(30)     /* gst->GPR3 = sc result */
-	li      4,1
-        stw     4,OFFSET_ppc32_CC_OP(30)    /* gst->CC_OP = 1        */
+	/* copy cr0.so back to simulated state */
 	mfcr    5                           /* r5 = CR               */
-	andis.  5,5,0x1000                  /* mask to only CR7.SO   */
-	oris    5,5,0x2000                  /* set CR7.EQ            */
-        stw     5,OFFSET_ppc32_CC_DEP1(30)  /* gst->CR7 = CR7        */
+	rlwinm	5,5,4,31,31                 /* r5 = (CR >> 28) & 1   */
+        stb     5,OFFSET_ppc32_CR0_0(30)    /* gst->CR0.SO = cr0.so  */
 
         /* block signals again */
 	/* set up for sigprocmask(SIG_SETMASK, postmask, NULL) */

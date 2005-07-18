@@ -151,8 +151,8 @@ void stack_mcontext ( struct vki_mcontext *mc,
    mc->mc_gregs[VKI_PT_ORIG_R3] = tst->arch.vex.guest_GPR3;
    mc->mc_gregs[VKI_PT_CTR]     = tst->arch.vex.guest_CTR;
    mc->mc_gregs[VKI_PT_LNK]     = tst->arch.vex.guest_LR;
-   mc->mc_gregs[VKI_PT_XER]     = tst->arch.vex.guest_XER;
-   mc->mc_gregs[VKI_PT_CCR]     = LibVEX_GuestPPC32_get_cr(&tst->arch.vex);
+   mc->mc_gregs[VKI_PT_XER]     = LibVEX_GuestPPC32_get_XER(&tst->arch.vex);
+   mc->mc_gregs[VKI_PT_CCR]     = LibVEX_GuestPPC32_get_CR(&tst->arch.vex);
    mc->mc_gregs[VKI_PT_MQ]      = 0;
    mc->mc_gregs[VKI_PT_TRAP]    = 0;
    mc->mc_gregs[VKI_PT_DAR]     = fault_addr;
@@ -908,12 +908,11 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    // Umm ... ? (jrs 2005 July 8)
    // tst->arch.m_orig_gpr3 = mc->mc_gregs[VKI_PT_ORIG_R3];
 
-   //tst->arch.m_cr = mc->mc_gregs[VKI_PT_CCR];
-   LibVEX_GuestPPC32_put_cr( mc->mc_gregs[VKI_PT_CCR], &tst->arch.vex );
+   LibVEX_GuestPPC32_put_CR( mc->mc_gregs[VKI_PT_CCR], &tst->arch.vex );
 
    tst->arch.vex.guest_LR  = mc->mc_gregs[VKI_PT_LNK];
    tst->arch.vex.guest_CTR = mc->mc_gregs[VKI_PT_CTR];
-   tst->arch.vex.guest_XER = mc->mc_gregs[VKI_PT_XER];
+   LibVEX_GuestPPC32_put_XER( mc->mc_gregs[VKI_PT_XER], &tst->arch.vex );
 
    tst->arch.vex_shadow = priv->shadow;
 

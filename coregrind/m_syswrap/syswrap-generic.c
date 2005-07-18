@@ -5018,7 +5018,9 @@ PRE(sys_times)
 {
    PRINT("sys_times ( %p )", ARG1);
    PRE_REG_READ1(long, "times", struct tms *, buf);
-   PRE_MEM_WRITE( "times(buf)", ARG1, sizeof(struct vki_tms) );
+   if (ARG1 != 0) {
+      PRE_MEM_WRITE( "times(buf)", ARG1, sizeof(struct vki_tms) );
+   }
 }
 
 POST(sys_times)

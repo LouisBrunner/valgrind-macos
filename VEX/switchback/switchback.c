@@ -67,8 +67,8 @@ static Int   n_translations_made = 0;
 /* 2: show selected insns */
 /* 1: show after reg-alloc */
 /* 0: show final assembly */
-#define TEST_FLAGS (1<<7)|(1<<3)|(1<<2)|(1<<1) //|(1<<0)
-#define DEBUG_TRACE_FLAGS 0//(1<<7)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(1<<2)|(1<<1)|(1<<0)
+#define TEST_FLAGS (1<<7)|(1<<3)|(1<<2)|(1<<1)|(0<<0)
+#define DEBUG_TRACE_FLAGS 0 //(1<<7)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(1<<2)|(1<<1)|(0<<0)
 
 
 /* guest state */
@@ -79,8 +79,10 @@ VexControl vcon;
 /* only used for the switchback transition */
 /* i386:  helper1 = &gst, helper2 = %EFLAGS */
 /* amd64: helper1 = &gst, helper2 = %EFLAGS */
+/* ppc32: helper1 = &gst, helper2 = %CR, helper3 = %XER */
 HWord sb_helper1 = 0;
 HWord sb_helper2 = 0;
+HWord sb_helper3 = 0;
 
 /* translation cache */
 #define N_TRANS_CACHE 1000000
@@ -214,23 +216,23 @@ asm(
 "   lwz  %r31,sb_helper1@l(%r31)\n" // load word of guest_state_ptr to r31
 
 // LR
-"   lwz  %r3,388(%r31)\n"           // guest_LR
+"   lwz  %r3,900(%r31)\n"           // guest_LR
 "   mtlr %r3\n"                     // move to LR
 
 // CR
 "   lis  %r3,sb_helper2@ha\n"       // get hi-wd of flags addr
 "   lwz  %r3,sb_helper2@l(%r3)\n"   // load flags word to r3
 "   mtcr %r3\n"                     // move r3 to CR
-"   lwz  %r3,408(%r31)\n"           // guest_CR0to6
-"   mtcrf 0x3F,%r3\n"               // set remaining fields of CR
 
 // CTR
-"   lwz %r3,392(%r31)\n"       // guest_CTR
+"   lwz %r3,904(%r31)\n"       // guest_CTR
 "   mtctr %r3\n"               // move r3 to CTR
 
 // XER
-"   lwz %r3,416(%r31)\n"       // guest_XER
-"   mtxer %r3\n"               // move r3 to XER
+"   lis  %r3,sb_helper3@ha\n"       // get hi-wd of xer addr
+"   lwz  %r3,sb_helper3@l(%r3)\n"   // load xer word to r3
+"   mtxer %r3\n"                     // move r3 to XER
+
 
 // GPR's
 "   lwz %r0,    0(%r31)\n"
@@ -292,7 +294,7 @@ void switchback ( void )
       printf("nbytes = %d, nopstart = %d\n", nbytes, off_nopstart);
 
    /* copy it into mallocville */
-   UChar* copy = malloc(nbytes);
+   UChar* copy = mymalloc(nbytes);
    assert(copy);
    for (i = 0; i < nbytes; i++)
       copy[i] = sa_start[i];
@@ -303,6 +305,12 @@ void switchback ( void )
    Addr32 where_to_go = gst.guest_CIA;
    Int    diff = ((Int)where_to_go) - ((Int)addr_of_nop);
 
+#if 0
+   printf("addr of first nop = 0x%x\n", addr_of_nop);
+   printf("where to go       = 0x%x\n", where_to_go);
+   printf("diff = 0x%x\n", diff);
+#endif
+
    if (diff < -0x2000000 || diff >= 0x2000000) {
      // we're hosed.  Give up
      printf("hosed -- offset too large\n");
@@ -310,16 +318,12 @@ void switchback ( void )
    }
 
    sb_helper1 = (HWord)&gst;
-   sb_helper2 = LibVEX_GuestPPC32_get_cr7(&gst);
+   sb_helper2 = LibVEX_GuestPPC32_get_CR(&gst);
+   sb_helper3 = LibVEX_GuestPPC32_get_XER(&gst);
 
    /* stay sane ... */
    assert(p[0] == 24<<26); /* nop */
 
-#if 0
-   printf("addr of first nop = 0x%x\n", addr_of_nop);
-   printf("where to go       = 0x%x\n", where_to_go);
-   printf("diff = %d\n", diff);
-#endif
    /* branch to diff */
    p[0] = ((18<<26) | (((diff >> 2) & 0xFFFFFF) << 2) | (0<<1) | (0<<0));
 
@@ -489,7 +493,7 @@ asm(
 */
 Bool run_translation ( HWord translation )
 {
-   if (DEBUG_TRACE_FLAGS) {
+   if (0 && DEBUG_TRACE_FLAGS) {
       printf(" run translation %p\n", (void*)translation );
       printf(" simulated bb: %llu\n", n_bbs_done);
    }
@@ -776,7 +780,7 @@ int main ( Int argc, HChar** argv )
    LibVEX_default_VexControl(&vcon);
    vcon.guest_max_insns=50;
    vcon.guest_chase_thresh=0;
-//   vcon.iropt_level=2;
+   vcon.iropt_level=2;
 
    LibVEX_Init( failure_exit, log_bytes, 1, False, &vcon );
    LibVEX_Guest_initialise(&gst);

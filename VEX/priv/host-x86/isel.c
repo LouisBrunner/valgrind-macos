@@ -1492,13 +1492,15 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* Constant 1:Bit */
-   if (e->tag == Iex_Const && e->Iex.Const.con->Ico.U1 == True) {
+   if (e->tag == Iex_Const) {
       HReg r;
       vassert(e->Iex.Const.con->tag == Ico_U1);
+      vassert(e->Iex.Const.con->Ico.U1 == True 
+              || e->Iex.Const.con->Ico.U1 == False);
       r = newVRegI(env);
       addInstr(env, X86Instr_Alu32R(Xalu_MOV,X86RMI_Imm(0),r));
       addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(r),r));
-      return Xcc_Z;
+      return e->Iex.Const.con->Ico.U1 ? Xcc_Z : Xcc_NZ;
    }
 
    /* Not1(e) */

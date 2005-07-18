@@ -132,9 +132,9 @@ Int find_shadow_for_OLD ( Addr        ptr,
 {
    Int  i;
    Addr a_lo, a_hi;
-   PROF_EVENT(70);
+   PROF_EVENT(70, "find_shadow_for_OLD");
    for (i = 0; i < n_shadows; i++) {
-      PROF_EVENT(71);
+      PROF_EVENT(71, "find_shadow_for_OLD(loop)");
       a_lo = shadows[i]->data;
       a_hi = ((Addr)shadows[i]->data) + shadows[i]->size;
       if (a_lo <= ptr && ptr <= a_hi)
@@ -387,7 +387,7 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
    vki_sigset_t sigmask;
 
    if (VG_DEBUG_LEAKCHECK)
-      VG_(printf)("scan %p-%p\n", start, len);
+      VG_(printf)("scan %p-%p\n", start, start+len);
    VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &sigmask);
    VG_(set_fault_catcher)(scan_all_valid_memory_catcher);
 

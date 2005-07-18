@@ -1185,7 +1185,7 @@ void VG_(find_root_memory)(void (*add_rootrange)(Addr a, SizeT sz))
    for (i = 0; i < segments_used; i++) {
       s = &segments[i];
       flags = s->flags & (SF_SHARED|SF_MMAP|SF_VALGRIND|SF_CORE|SF_STACK);
-      if (flags != SF_MMAP && flags != SF_STACK)
+      if (flags != SF_MMAP && flags != SF_STACK && flags != (SF_MMAP|SF_STACK))
          continue;
       if ((s->prot & (VKI_PROT_READ|VKI_PROT_WRITE)) 
           != (VKI_PROT_READ|VKI_PROT_WRITE))

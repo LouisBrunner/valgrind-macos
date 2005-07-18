@@ -81,7 +81,6 @@ noinst_HEADERS = \
 	vki_unistd-x86-linux.h
 
 EXTRA_DIST = \
-	valgrind.vs \
 	README_MODULES.txt
 
 BUILT_SOURCES = stage2.lds
@@ -149,13 +148,11 @@ stage2_extra2 = \
 ## Nb: older versions of automake don't seem to like having += within an
 ## if-then-else, so we have to use these variables for the common parts.
 st2_DEPS_common = \
-	$(srcdir)/valgrind.vs \
 	$(stage2_extra) \
 	$(stage2_extra2)
 
 st2_LDFLAGS_common = \
-	-Wl,--export-dynamic -g \
-	-Wl,-version-script $(srcdir)/valgrind.vs
+	-Wl,--export-dynamic -g
 
 if USE_PIE
 stage2_DEPENDENCIES = $(st2_DEPS_common)

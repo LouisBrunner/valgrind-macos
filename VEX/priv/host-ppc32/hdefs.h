@@ -152,23 +152,17 @@ extern HReg hregPPC32_VR31 ( void );
 
 
 
-/* --------- Condition codes, Intel encoding. --------- */
+/* --------- Condition codes --------- */
 
-
+/* This gives names from bitfields in CR; hence it names BI numbers */
+/* Using IBM/hardware indexing convention */
 typedef
-   enum {   /* Maps Condition Register (bc bitfield BI) */
-      // Note: IBM bit codes read left to right (@%!*?!)
-      // field 7 (integer only)
-      Pcf_LT  = 0,   /* neg  | lt          */
-      Pcf_GT  = 1,   /* pos  | gt          */
-      Pcf_EQ  = 2,   /* zero | equal       */
-      Pcf_SO  = 3,   /* summary overflow   */
-
-      // field 6 (floating point only)
-      Pcf_FX  = 4,   /* neg  | lt          */
-      Pcf_FEX = 5,   /* pos  | gt          */
-      Pcf_VX  = 6,   /* zero | equal       */
-      Pcf_OX  = 7    /* summary overflow   */
+   enum {
+      // CR7, which we use for integer compares
+      Pcf_7LT  = 28,  /* neg  | lt          */
+      Pcf_7GT  = 29,  /* pos  | gt          */
+      Pcf_7EQ  = 30,  /* zero | equal       */
+      Pcf_7SO  = 31   /* summary overflow   */
    }
    PPC32CondFlag;
 
@@ -231,25 +225,52 @@ extern PPC32AMode* dopyPPC32AMode ( PPC32AMode* );
 extern void ppPPC32AMode ( PPC32AMode* );
 
 
-/* --------- Operand, which can be reg or immediate only. --------- */
-
+/* --------- Operand, which can be a reg or a u16/s16. --------- */
+/* ("RH" == "Register or Halfword immediate") */
 typedef 
    enum {
-      Pri_Imm,
-      Pri_Reg
+      Prh_Imm=1,
+      Prh_Reg=2
    }
+   PPC32RHTag;
+
+typedef
+   struct {
+      PPC32RHTag tag;
+      union {
+         struct {
+            Bool   syned;
+            UShort imm16;
+         } Imm;
+         struct {
+            HReg reg;
+         } Reg;
+      }
+      Prh;
+   }
+   PPC32RH;
+
+extern PPC32RH* PPC32RH_Imm ( Bool, UShort );
+extern PPC32RH* PPC32RH_Reg ( HReg );
+
+extern void ppPPC32RH ( PPC32RH* );
+
+
+/* --------- Operand, which can be a reg or a u32. --------- */
+
+typedef
+   enum {
+      Pri_Imm=3,
+      Pri_Reg=4
+   } 
    PPC32RITag;
 
 typedef
    struct {
       PPC32RITag tag;
       union {
-         struct {
-            UInt imm32;
-         } Imm;
-         struct {
-            HReg reg;
-         } Reg;
+         UInt Imm;
+         HReg Reg;
       }
       Pri;
    }
@@ -279,35 +300,15 @@ extern HChar* showPPC32UnaryOp ( PPC32UnaryOp );
 typedef 
    enum {
       Palu_INVALID,
-      Palu_ADD,
-      Palu_AND, Palu_OR, Palu_XOR
+      Palu_ADD, Palu_SUB,
+      Palu_AND, Palu_OR, Palu_XOR,
+      Palu_SHL, Palu_SHR, Palu_SAR, 
    }
    PPC32AluOp;
 
-extern HChar* showPPC32AluOp ( PPC32AluOp );
-
-
-/* --------- */
-typedef
-   enum {
-      Psh_INVALID,
-      Psh_SHL, Psh_SHR, Psh_SAR, 
-      Psh_ROL
-   }
-   PPC32ShiftOp;
-
-extern HChar* showPPC32ShiftOp ( PPC32ShiftOp );
-
-
-/* --------- */
-typedef
-   enum {
-      Pcmp_U,  // unsigned
-      Pcmp_S   // signed
-   }
-   PPC32CmpOp;
-
-extern HChar* showPPC32CmpOp ( PPC32CmpOp );
+extern 
+HChar* showPPC32AluOp ( PPC32AluOp, 
+                        Bool /* is the 2nd operand an immediate? */ );
 
 
 /* --------- */
@@ -379,9 +380,8 @@ extern HChar* showPPC32AvOp ( PPC32AvOp );
 /* --------- */
 typedef
    enum {
-      Pin_Alu32,      /* 32-bit mov/arith/logical */
-      Pin_Sub32,      /* 32-bit mov/arith/logical */
-      Pin_Sh32,       /* 32-bit shift/rotate */
+      Pin_LI32,       /* load 32-bit immediate (fake insn) */
+      Pin_Alu32,      /* 32-bit add/sub/and/or/xor/shl/shr/sar */
       Pin_Cmp32,      /* 32-bit compare */
       Pin_Unary32,    /* 32-bit not, neg, clz */
       Pin_MulL,       /* widening multiply */
@@ -392,7 +392,8 @@ typedef
       Pin_Load,       /* load a 8|16|32 bit value from mem */
       Pin_Store,      /* store a 8|16|32 bit value to mem */
       Pin_Set32,      /* convert condition code to 32-bit value */
-      Pin_MFence,     /* mem fence (not just sse2, but sse0 and 1 too) */
+      Pin_MfCR,       /* move from condition register to GPR */
+      Pin_MFence,     /* mem fence */
 
       Pin_FpUnary,    /* FP unary op */
       Pin_FpBinary,   /* FP binary op */
@@ -430,28 +431,36 @@ typedef
    struct {
       PPC32InstrTag tag;
       union {
+         /* Get a 32-bit literal into a register.  May turn into one or
+	    two real insns. */
+         struct {
+            HReg dst;
+            UInt imm32;
+         } LI32;
+         /* Integer add/sub/and/or/xor/shl/shr/sar.  Limitations:
+            - For add, the immediate, if it exists, is a signed 16.
+            - For sub, the immediate, if it exists, is a signed 16
+              which may not be -32768, since no such instruction 
+              exists, and so we have to emit addi with +32768, but 
+              that is not possible.
+            - For and/or/xor,  the immediate, if it exists, 
+              is an unsigned 16.
+            - For shr/shr/sar, the immediate, if it exists,
+              is a signed 5-bit value between 1 and 31 inclusive.
+         */
          struct {
             PPC32AluOp op;
             HReg       dst;
             HReg       srcL;
-            PPC32RI*   srcR;
+            PPC32RH*   srcR;
          } Alu32;
+         /* If signed, the immediate, if it exists, is a signed 16,
+            else it is an unsigned 16. */
          struct {
-            HReg       dst;    // PPC32 sub args are switched:
-            PPC32RI*   srcL;   // argL => RI
-            HReg       srcR;   // argR => R
-         } Sub32;
-         struct {
-            PPC32ShiftOp op;
-            HReg         dst;
-            HReg         src;
-            PPC32RI*     shft;
-         } Sh32;
-         struct {
-            PPC32CmpOp op;
+            Bool     syned;
             UInt     crfD;
             HReg     srcL;
-            PPC32RI* srcR;
+            PPC32RH* srcR;
          } Cmp32;
          /* Not and Neg */
          struct {
@@ -460,11 +469,11 @@ typedef
             HReg         src;
          } Unary32;
          struct {
-            Bool     syned;
-            Bool     word;   /* low=0, high=1 */
-            HReg     dst;
-            HReg     srcL;
-            PPC32RI* srcR;
+            Bool syned;  /* meaningless if hi32==False */
+            Bool hi32;   /* False=>low, True=>high */
+            HReg dst;
+            HReg srcL;
+            HReg srcR;
          } MulL;
          /* ppc32 div/divu instruction. */
          struct {
@@ -481,10 +490,7 @@ typedef
             Int           regparms; /* 0 .. 9 */
          } Call;
          /* Pseudo-insn.  Goto dst, on given condition (which could be
-            Pct_ALWAYS).  Note importantly that if the jump is 
-            conditional (not Pct_ALWAYS) the jump kind *must* be
-            Ijk_Boring.  Ie non-Boring conditional jumps are
-            not allowed. */
+            Pct_ALWAYS). */
          struct {
             IRJumpKind    jk;
             PPC32CondCode cond;
@@ -504,7 +510,7 @@ typedef
             HReg        dst;
             PPC32AMode* src;
          } Load;
-         /* 16/8 bit stores */
+         /* 32/16/8 bit stores */
          struct {
             UChar       sz; /* 1|2|4 */
             PPC32AMode* dst;
@@ -515,6 +521,10 @@ typedef
             PPC32CondCode cond;
             HReg          dst;
          } Set32;
+         /* Move the entire CR to a GPR */
+         struct {
+            HReg dst;
+         } MfCR;
          /* Mem fence.  In short, an insn which flushes all preceding
             loads and stores as much as possible before continuing.
             On PPC32 we emit a "sync". */
@@ -562,7 +572,7 @@ typedef
          struct {
             HReg src;
          } FpLdFPSCR;
-         /* Do a compare, generating result into CR field crfD. */
+         /* Do a compare, generating result into an int register. */
          struct {
             UChar crfD;
             HReg  dst;
@@ -649,7 +659,7 @@ typedef
             HReg          dst;
             HReg          src;
          } AvCMov;
-         /* Load AlitVec Status & Control Register */
+         /* Load AltiVec Status & Control Register */
          struct {
             HReg src;
          } AvLdVSCR;
@@ -658,12 +668,11 @@ typedef
    PPC32Instr;
 
 
-extern PPC32Instr* PPC32Instr_Alu32      ( PPC32AluOp, HReg, HReg, PPC32RI* );
-extern PPC32Instr* PPC32Instr_Sub32      ( HReg, PPC32RI*, HReg );
-extern PPC32Instr* PPC32Instr_Sh32       ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
-extern PPC32Instr* PPC32Instr_Cmp32      ( PPC32CmpOp, UInt, HReg, PPC32RI* );
+extern PPC32Instr* PPC32Instr_LI32       ( HReg, UInt );
+extern PPC32Instr* PPC32Instr_Alu32      ( PPC32AluOp, HReg, HReg, PPC32RH* );
+extern PPC32Instr* PPC32Instr_Cmp32      ( Bool,       UInt, HReg, PPC32RH* );
 extern PPC32Instr* PPC32Instr_Unary32    ( PPC32UnaryOp op, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_MulL       ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
+extern PPC32Instr* PPC32Instr_MulL       ( Bool syned, Bool hi32, HReg, HReg, HReg );
 extern PPC32Instr* PPC32Instr_Div        ( Bool syned, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_Call       ( PPC32CondCode, Addr32, Int );
 extern PPC32Instr* PPC32Instr_Goto       ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
@@ -672,6 +681,7 @@ extern PPC32Instr* PPC32Instr_Load       ( UChar sz, Bool syned,
                                            HReg dst, PPC32AMode* src );
 extern PPC32Instr* PPC32Instr_Store      ( UChar sz, PPC32AMode* dst, HReg src );
 extern PPC32Instr* PPC32Instr_Set32      ( PPC32CondCode cond, HReg dst );
+extern PPC32Instr* PPC32Instr_MfCR       ( HReg dst );
 extern PPC32Instr* PPC32Instr_MFence     ( void );
 
 extern PPC32Instr* PPC32Instr_FpUnary    ( PPC32FpOp op, HReg dst, HReg src );

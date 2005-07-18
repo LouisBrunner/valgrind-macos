@@ -59,28 +59,6 @@
 
 #define INT32_MIN               (-2147483647-1)
 
-
-
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
-/* Calculates CR7[LT,GT,EQ,SO] flags from the supplied
-   thunk parameters.
-   Returns values in high field (correct wrt actual CR)
- */
-UInt ppc32g_calculate_cr7 ( UInt op, UInt val, UInt xer_so )
-{
-   if (op) {   // val contains cr7 flags to be returned
-      return (val & 0xF0000000);
-   } else {    // val contains result to be tested
-      Int sval = (Int)val;
-      xer_so = xer_so & 1;
-      return ( ((xer_so == 1) ? (1<<28) : 0)
-               | ((sval == 0) ? (1<<29) : 0)
-               | ((sval >  0) ? (1<<30) : 0)
-               | ((sval <  0) ? (1<<31) : 0) );
-   }
-}
-
-
 // Calculate XER_OV
 UInt ppc32g_calculate_xer_ov ( UInt op, UInt res, UInt argL, UInt argR )
 {
@@ -123,21 +101,21 @@ UInt ppc32g_calculate_xer_ov ( UInt op, UInt res, UInt argL, UInt argR )
 
 // Calculate XER_CA
 UInt ppc32g_calculate_xer_ca ( UInt op, UInt res,
-                               UInt argL, UInt argR, UInt ca )
+                               UInt argL, UInt argR, UInt old_ca )
 {
   switch (op) {
    case PPC32G_FLAG_OP_ADD:     // addc[o], addic
       return (res < argL) ? 1:0;
 
    case PPC32G_FLAG_OP_ADDE:    // adde[o], addze[o], addme[o]
-      return (res < argL || (ca==1 && res==argL)) ? 1:0;
+      return (res < argL || (old_ca==1 && res==argL)) ? 1:0;
 
    case PPC32G_FLAG_OP_SUBFC:   // subfc[o]
    case PPC32G_FLAG_OP_SUBFI:   // subfic
       return (res <= argR) ? 1:0;
 
    case PPC32G_FLAG_OP_SUBFE:   // subfe[o], subfze[o], subfme[o]
-      return ((res < argR) || (ca == 1 && res == argR)) ? 1:0;
+      return ((res < argR) || (old_ca == 1 && res == argR)) ? 1:0;
 
    case PPC32G_FLAG_OP_SRAW:    // sraw
       if ((argR & 0x20) == 0) {  // shift <= 31
@@ -162,23 +140,6 @@ UInt ppc32g_calculate_xer_ca ( UInt op, UInt res,
 }
 
 
-
-
-
-
-
-/* Used by the optimiser to try specialisations.  Returns an
-   equivalent expression, or NULL if none. */
-
-#if 0
-/* temporarily unused */
-static Bool isU32 ( IRExpr* e, UInt n )
-{
-   return (e->tag == Iex_Const
-           && e->Iex.Const.con->tag == Ico_U32
-           && e->Iex.Const.con->Ico.U32 == n);
-}
-#endif
 IRExpr* guest_ppc32_spechelper ( HChar* function_name,
                                  IRExpr** args )
 {
@@ -191,40 +152,73 @@ IRExpr* guest_ppc32_spechelper ( HChar* function_name,
 /*----------------------------------------------*/
 
 /* VISIBLE TO LIBVEX CLIENT */
-void LibVEX_GuestPPC32_put_cr7 ( UInt cr7_native,
-                                 /*OUT*/VexGuestPPC32State* vex_state )
+UInt LibVEX_GuestPPC32_get_CR ( /*IN*/VexGuestPPC32State* vex_state )
 {
-  vex_state->guest_CC_OP   = 1;   /* => use immediate value DEP1 */
-  vex_state->guest_CC_DEP1 = (cr7_native & 0xF0000000);
-  vex_state->guest_CC_DEP2 = 0;   /* =unused */
+#  define FIELD(_n)                                    \
+      ( ( (UInt)                                       \
+           ( (vex_state->guest_CR##_n##_321 & (7<<1))  \
+             | (vex_state->guest_CR##_n##_0 & 1)       \
+           )                                           \
+        )                                              \
+        << (4 * (7-(_n)))                              \
+      )
+
+   return 
+      FIELD(0) | FIELD(1) | FIELD(2) | FIELD(3)
+      | FIELD(4) | FIELD(5) | FIELD(6) | FIELD(7);
+
+#  undef FIELD
 }
 
+
 /* VISIBLE TO LIBVEX CLIENT */
-void LibVEX_GuestPPC32_put_cr ( UInt cr_native,
+void LibVEX_GuestPPC32_put_CR ( UInt cr_native,
                                 /*OUT*/VexGuestPPC32State* vex_state )
 {
-  LibVEX_GuestPPC32_put_cr7( cr_native, vex_state );
-  vex_state->guest_CR0to6 = (cr_native & 0x0FFFFFFF);
+   UInt t;
+
+#  define FIELD(_n)                                           \
+      do {                                                    \
+         t = cr_native >> (4*(7-(_n)));                       \
+         vex_state->guest_CR##_n##_0 = (UChar)(t & 1);        \
+         vex_state->guest_CR##_n##_321 = (UChar)(t & (7<<1)); \
+      } while (0)
+
+   FIELD(0);
+   FIELD(1);
+   FIELD(2);
+   FIELD(3);
+   FIELD(4);
+   FIELD(5);
+   FIELD(6);
+   FIELD(7);
+
+#  undef FIELD
 }
 
-/* VISIBLE TO LIBVEX CLIENT */
-UInt LibVEX_GuestPPC32_get_cr7 ( /*IN*/VexGuestPPC32State* vex_state )
-{
-   UInt flags = ppc32g_calculate_cr7(
-      vex_state->guest_CC_OP,
-      vex_state->guest_CC_DEP1,
-      vex_state->guest_CC_DEP2
-      );
-   return flags;
-}
 
 /* VISIBLE TO LIBVEX CLIENT */
-UInt LibVEX_GuestPPC32_get_cr ( /*IN*/VexGuestPPC32State* vex_state )
+UInt LibVEX_GuestPPC32_get_XER ( /*IN*/VexGuestPPC32State* vex_state )
 {
-  UInt cr7 = LibVEX_GuestPPC32_get_cr7( vex_state );
-  UInt cr0to6 = vex_state->guest_CR0to6;
-  return (cr7 & 0xF0000000) | (cr0to6 & 0x0FFFFFFF);
+   UInt w = 0;
+   w |= ( ((UInt)vex_state->guest_XER_BC) & 0xFF );
+   w |= ( (((UInt)vex_state->guest_XER_SO) & 0x1) << 31 );
+   w |= ( (((UInt)vex_state->guest_XER_OV) & 0x1) << 30 );
+   w |= ( (((UInt)vex_state->guest_XER_CA) & 0x1) << 29 );
+   return w;
 }
+
+
+/* VISIBLE TO LIBVEX CLIENT */
+void LibVEX_GuestPPC32_put_XER ( UInt xer_native,
+                                 /*OUT*/VexGuestPPC32State* vex_state )
+{
+   vex_state->guest_XER_BC = (UChar)(xer_native & 0xFF);
+   vex_state->guest_XER_SO = (UChar)((xer_native >> 31) & 0x1);
+   vex_state->guest_XER_OV = (UChar)((xer_native >> 30) & 0x1);
+   vex_state->guest_XER_CA = (UChar)((xer_native >> 29) & 0x1);
+}
+
 
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
@@ -296,54 +290,70 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_FPR31 = 0;
 
    /* Initialise the vector state. */
-#  define SSEZERO(_vr) _vr[0]=_vr[1]=_vr[2]=_vr[3] = 0;
+#  define VECZERO(_vr) _vr[0]=_vr[1]=_vr[2]=_vr[3] = 0;
 
-   SSEZERO(vex_state->guest_VR0 );
-   SSEZERO(vex_state->guest_VR1 );
-   SSEZERO(vex_state->guest_VR2 );
-   SSEZERO(vex_state->guest_VR3 );
-   SSEZERO(vex_state->guest_VR4 );
-   SSEZERO(vex_state->guest_VR5 );
-   SSEZERO(vex_state->guest_VR6 );
-   SSEZERO(vex_state->guest_VR7 );
-   SSEZERO(vex_state->guest_VR8 );
-   SSEZERO(vex_state->guest_VR9 );
-   SSEZERO(vex_state->guest_VR10);
-   SSEZERO(vex_state->guest_VR11);
-   SSEZERO(vex_state->guest_VR12);
-   SSEZERO(vex_state->guest_VR13);
-   SSEZERO(vex_state->guest_VR14);
-   SSEZERO(vex_state->guest_VR15);
-   SSEZERO(vex_state->guest_VR16);
-   SSEZERO(vex_state->guest_VR17);
-   SSEZERO(vex_state->guest_VR18);
-   SSEZERO(vex_state->guest_VR19);
-   SSEZERO(vex_state->guest_VR20);
-   SSEZERO(vex_state->guest_VR21);
-   SSEZERO(vex_state->guest_VR22);
-   SSEZERO(vex_state->guest_VR23);
-   SSEZERO(vex_state->guest_VR24);
-   SSEZERO(vex_state->guest_VR25);
-   SSEZERO(vex_state->guest_VR26);
-   SSEZERO(vex_state->guest_VR27);
-   SSEZERO(vex_state->guest_VR28);
-   SSEZERO(vex_state->guest_VR29);
-   SSEZERO(vex_state->guest_VR30);
-   SSEZERO(vex_state->guest_VR31);
+   VECZERO(vex_state->guest_VR0 );
+   VECZERO(vex_state->guest_VR1 );
+   VECZERO(vex_state->guest_VR2 );
+   VECZERO(vex_state->guest_VR3 );
+   VECZERO(vex_state->guest_VR4 );
+   VECZERO(vex_state->guest_VR5 );
+   VECZERO(vex_state->guest_VR6 );
+   VECZERO(vex_state->guest_VR7 );
+   VECZERO(vex_state->guest_VR8 );
+   VECZERO(vex_state->guest_VR9 );
+   VECZERO(vex_state->guest_VR10);
+   VECZERO(vex_state->guest_VR11);
+   VECZERO(vex_state->guest_VR12);
+   VECZERO(vex_state->guest_VR13);
+   VECZERO(vex_state->guest_VR14);
+   VECZERO(vex_state->guest_VR15);
+   VECZERO(vex_state->guest_VR16);
+   VECZERO(vex_state->guest_VR17);
+   VECZERO(vex_state->guest_VR18);
+   VECZERO(vex_state->guest_VR19);
+   VECZERO(vex_state->guest_VR20);
+   VECZERO(vex_state->guest_VR21);
+   VECZERO(vex_state->guest_VR22);
+   VECZERO(vex_state->guest_VR23);
+   VECZERO(vex_state->guest_VR24);
+   VECZERO(vex_state->guest_VR25);
+   VECZERO(vex_state->guest_VR26);
+   VECZERO(vex_state->guest_VR27);
+   VECZERO(vex_state->guest_VR28);
+   VECZERO(vex_state->guest_VR29);
+   VECZERO(vex_state->guest_VR30);
+   VECZERO(vex_state->guest_VR31);
+
+#  undef VECZERO
 
    vex_state->guest_CIA  = 0;
    vex_state->guest_LR   = 0;
    vex_state->guest_CTR  = 0;
 
-   vex_state->guest_CC_OP   = 0;
-   vex_state->guest_CC_DEP1 = 0;
-   vex_state->guest_CC_DEP2 = 0;
+   vex_state->guest_XER_SO = 0;
+   vex_state->guest_XER_OV = 0;
+   vex_state->guest_XER_CA = 0;
+   vex_state->guest_XER_BC = 0;
 
-   vex_state->guest_CR0to6 = 0;
+   vex_state->guest_CR0_321 = 0;
+   vex_state->guest_CR0_0   = 0;
+   vex_state->guest_CR1_321 = 0;
+   vex_state->guest_CR1_0   = 0;
+   vex_state->guest_CR2_321 = 0;
+   vex_state->guest_CR2_0   = 0;
+   vex_state->guest_CR3_321 = 0;
+   vex_state->guest_CR3_0   = 0;
+   vex_state->guest_CR4_321 = 0;
+   vex_state->guest_CR4_0   = 0;
+   vex_state->guest_CR5_321 = 0;
+   vex_state->guest_CR5_0   = 0;
+   vex_state->guest_CR6_321 = 0;
+   vex_state->guest_CR6_0   = 0;
+   vex_state->guest_CR7_321 = 0;
+   vex_state->guest_CR7_0   = 0;
 
    vex_state->guest_FPROUND = (UInt)PPC32rm_NEAREST;
-
-   vex_state->guest_XER = 0;
 
    vex_state->guest_VRSAVE = 0;
 
@@ -357,7 +367,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
 
 /*-----------------------------------------------------------*/
-/*--- Describing the ppc32 guest state, for the benefit     ---*/
+/*--- Describing the ppc32 guest state, for the benefit   ---*/
 /*--- of iropt and instrumenters.                         ---*/
 /*-----------------------------------------------------------*/
 
@@ -427,7 +437,7 @@ VexGuestLayout
           /* flags thunk: only using last_result, which is always defd. */
 
           .alwaysDefd 
-             = { /*  0 */ ALWAYSDEFD(guest_CC_OP)
+             = { /*  0 */ ALWAYSDEFD(guest_CIA)
 
                  // FIXME
                }

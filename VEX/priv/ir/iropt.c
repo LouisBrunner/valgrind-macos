@@ -1289,6 +1289,24 @@ static IRExpr* fold_Expr ( IRExpr* e )
                         < (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)))));
                break;
 
+            /* -- CmpORD -- */
+            case Iop_CmpORD32S: {
+               /* very paranoid */
+               UInt  u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt  u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               Int   s32a = (Int)u32a;
+               Int   s32b = (Int)u32b;
+               Int   r = 0x2; /* EQ */
+               if (s32a < s32b) {
+                  r = 0x8; /* LT */
+               } 
+               else if (s32a > s32b) {
+                  r = 0x4; /* GT */
+               }
+               e2 = IRExpr_Const(IRConst_U32(r));
+               break;
+            }
+
             /* -- nHLto2n -- */
             case Iop_32HLto64:
                e2 = IRExpr_Const(IRConst_U64(

@@ -97,44 +97,15 @@ typedef
 
 /* --- CLEAN HELPERS --- */
 
-// Calculate CR7 flags
-extern UInt ppc32g_calculate_cr7 ( UInt op, UInt val, UInt xer_so );
-
 // Calculate XER flags
-extern UInt ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt argL, UInt argR );
-extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt argL, UInt argR, UInt ca );
+extern 
+UInt ppc32g_calculate_xer_ov  ( UInt op, 
+                                UInt res, UInt argL, UInt argR );
 
-
-
-/* %CR7 thunk descriptors.  A three-word thunk is used to record
-   details of the most recent flag-setting operation, so the flags can
-   be computed later if needed.
-
-   The three words are:
-
-      CC_OP, which describes whether to:
-         0: Calculate the flags based on DEP1, DEP2.
-         1: Return DEP1 as the flags.
-
-      CC_DEP1: This holds either an immediate value to be returned as the flags,
-         or a value with which to calculate the flags.
-
-      CC_DEP2: In the case where the flags are being calulated, this holds
-         the 'summary overflow' flag, which is OR'd with the other flags.
-         In the case where the flags are given by the DEP1 value, DEP2 is
-         undefined.
-
-
-   A summary of the field usages is:
-
-   Operation        DEP1                  DEP2
-   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   0                calculation result    xer_so
-
-   1                flags value           unused
-   
-*/
-
+extern 
+UInt ppc32g_calculate_xer_ca  ( UInt op, 
+                                UInt res, UInt argL, UInt argR, 
+                                UInt old_ca );
 
 /*
   Enumeration for xer_ca/ov calculation helper functions

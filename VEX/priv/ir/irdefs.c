@@ -189,6 +189,9 @@ void ppIROp ( IROp op )
       case Iop_CmpNEZ32: vex_printf("CmpNEZ32"); return;
       case Iop_CmpNEZ64: vex_printf("CmpNEZ64"); return;
 
+      case Iop_CmpORD32U: vex_printf("CmpORD32U"); return;
+      case Iop_CmpORD32S: vex_printf("CmpORD32S"); return;
+
       case Iop_Neg8:  vex_printf("Neg8"); return;
       case Iop_Neg16: vex_printf("Neg16"); return;
       case Iop_Neg32: vex_printf("Neg32"); return;
@@ -1260,6 +1263,8 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_Or16:  case Iop_And16: case Iop_Xor16:
          BINARY(Ity_I16, Ity_I16,Ity_I16);
 
+      case Iop_CmpORD32U:
+      case Iop_CmpORD32S:
       case Iop_Add32: case Iop_Sub32: case Iop_Mul32:
       case Iop_Or32:  case Iop_And32: case Iop_Xor32:
          BINARY(Ity_I32, Ity_I32,Ity_I32);

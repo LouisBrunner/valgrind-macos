@@ -152,18 +152,32 @@ typedef
       /* 900 */ UInt guest_LR;     // Link Register
       /* 904 */ UInt guest_CTR;    // Count Register
 
-      /* CR[7]: thunk used to calculate these flags. */
-      /* 908 */ UInt guest_CC_OP;
-      /* 912 */ UInt guest_CC_DEP1;
-      /* 916 */ UInt guest_CC_DEP2;
+      /* XER pieces */
+      /* 908 */ UChar guest_XER_SO; /* in lsb */
+      /* 909 */ UChar guest_XER_OV; /* in lsb */
+      /* 910 */ UChar guest_XER_CA; /* in lsb */
+      /* 911 */ UChar guest_XER_BC; /* all bits */
 
-      // CR[0:6]: Used for 'compare' ops
-      /* 920 */ UInt guest_CR0to6;
+      /* CR pieces */
+      /* 912 */ UChar guest_CR0_321; /* in [3:1] */
+      /* 913 */ UChar guest_CR0_0;   /* in lsb */
+      /* 914 */ UChar guest_CR1_321; /* in [3:1] */
+      /* 915 */ UChar guest_CR1_0;   /* in lsb */
+      /* 916 */ UChar guest_CR2_321; /* in [3:1] */
+      /* 917 */ UChar guest_CR2_0;   /* in lsb */
+      /* 918 */ UChar guest_CR3_321; /* in [3:1] */
+      /* 919 */ UChar guest_CR3_0;   /* in lsb */
+      /* 920 */ UChar guest_CR4_321; /* in [3:1] */
+      /* 921 */ UChar guest_CR4_0;   /* in lsb */
+      /* 922 */ UChar guest_CR5_321; /* in [3:1] */
+      /* 923 */ UChar guest_CR5_0;   /* in lsb */
+      /* 924 */ UChar guest_CR6_321; /* in [3:1] */
+      /* 925 */ UChar guest_CR6_0;   /* in lsb */
+      /* 926 */ UChar guest_CR7_321; /* in [3:1] */
+      /* 927 */ UChar guest_CR7_0;   /* in lsb */
 
       /* FP Status & Control Register fields */
-      /* 924 */ UInt guest_FPROUND; // FP Rounding Mode
-
-      /* 928 */ UInt guest_XER;     // XER Register
+      /* 928 */ UInt guest_FPROUND; // FP Rounding Mode
 
       /* Vector Save/Restore Register */
       /* 932 */ UInt guest_VRSAVE;
@@ -195,25 +209,29 @@ typedef
 extern
 void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state );
 
-/* Write the given native %cr7 value to the supplied
-   VexGuestPPC32State structure */
-extern
-void LibVEX_GuestPPC32_put_cr7 ( UInt cr7_native,
-                                 /*OUT*/VexGuestPPC32State* vex_state );
 
-/* Ditto, but for entire %cr */
+/* Write the given native %CR value to the supplied VexGuestPPC32State
+   structure. */
 extern
-void LibVEX_GuestPPC32_put_cr ( UInt cr_native,
+void LibVEX_GuestPPC32_put_CR ( UInt cr_native,
                                 /*OUT*/VexGuestPPC32State* vex_state );
 
 /* Extract from the supplied VexGuestPPC32State structure the
-   corresponding native %cr7 value. */
+   corresponding native %CR value. */
 extern
-UInt LibVEX_GuestPPC32_get_cr7 ( /*IN*/VexGuestPPC32State* vex_state );
+UInt LibVEX_GuestPPC32_get_CR ( /*IN*/VexGuestPPC32State* vex_state );
 
-/* Ditto, but for entire %cr */
+
+/* Write the given native %XER value to the supplied VexGuestPPC32State
+   structure. */
 extern
-UInt LibVEX_GuestPPC32_get_cr ( /*IN*/VexGuestPPC32State* vex_state );
+void LibVEX_GuestPPC32_put_XER ( UInt xer_native,
+                                 /*OUT*/VexGuestPPC32State* vex_state );
+
+/* Extract from the supplied VexGuestPPC32State structure the
+   corresponding native %XER value. */
+extern
+UInt LibVEX_GuestPPC32_get_XER ( /*IN*/VexGuestPPC32State* vex_state );
 
 #endif /* ndef __LIBVEX_PUB_GUEST_PPC32_H */
 

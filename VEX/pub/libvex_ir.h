@@ -244,6 +244,7 @@ typedef
          zero.  You must ensure they are never given a zero argument.
       */
 
+      /* Standard integer comparisons */
       Iop_CmpLT32S, Iop_CmpLT64S,
       Iop_CmpLE32S, Iop_CmpLE64S,
       Iop_CmpLT32U, Iop_CmpLT64U,
@@ -251,6 +252,14 @@ typedef
 
       /* As a sop to Valgrind-Memcheck, the following are useful. */
       Iop_CmpNEZ8, Iop_CmpNEZ16,  Iop_CmpNEZ32,  Iop_CmpNEZ64,
+
+      /* PowerPC-style 3-way integer comparisons.  Without them it is difficult
+         to simulate PPC efficiently.
+         op(x,y) | x < y  = 0x8 else 
+                 | x > y  = 0x4 else
+                 | x == y = 0x2
+      */
+      Iop_CmpORD32U, Iop_CmpORD32S,
 
       /* Division */
       /* TODO: clarify semantics wrt rounding, negative values, whatever */

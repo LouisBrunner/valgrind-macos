@@ -1061,6 +1061,7 @@ void VG_(pad_address_space)(Addr start)
          ret = VG_(mmap_native)((void*)addr, s->addr - addr, 0,
                      VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
                      -1, 0);
+         vg_assert(!ret.isError);
       }
       addr = s->addr + s->len;
       i++;
@@ -1071,6 +1072,7 @@ void VG_(pad_address_space)(Addr start)
       ret = VG_(mmap_native)((void*)addr, VG_(valgrind_last) - addr + 1, 0,
                   VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
                   -1, 0);
+      vg_assert(!ret.isError);
    }
 }
 

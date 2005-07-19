@@ -3,7 +3,7 @@ The structure of this module is worth noting.
 The main part is in vg_replace_malloc.c.  It gets compiled into the tool's
 'preload' shared object, which goes into the client's area of memory, and
 runs on the simulated CPU just like client code.  As a result, it cannot
-use any functions in the core directly;  it can only communicated with the
+use any functions in the core directly;  it can only communicate with the
 core using client requests, just like any other client code.
 
 And yet it must call the tool's malloc wrappers.  How does it know where

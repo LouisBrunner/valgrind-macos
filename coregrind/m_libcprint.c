@@ -41,6 +41,7 @@
 #include <time.h>
 #include <sys/time.h>
 
+
 /* ---------------------------------------------------------------------
    Writing to file or a socket
    ------------------------------------------------------------------ */
@@ -197,6 +198,29 @@ void VG_(percentify)(UInt n, UInt m, UInt d, Int n_buf, char buf[])
    for (i = 0; i < space; i++)  buf[i] = ' ';
 }
 
+
+/* ---------------------------------------------------------------------
+   ctime()
+   ------------------------------------------------------------------ */
+
+/* BUF must be at least 25 characters long.  This is unchecked. */
+
+void VG_(ctime) ( /*OUT*/HChar* buf )
+{
+   struct timeval tv;
+   struct tm tm;
+   buf[0] = 0;     
+   if ( gettimeofday( &tv, NULL ) == 0
+        && localtime_r( &tv.tv_sec, &tm ) == &tm )
+   {
+      VG_(sprintf)( buf,
+                    "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000 );
+   }
+}
+
+
 /* ---------------------------------------------------------------------
    message()
    ------------------------------------------------------------------ */
@@ -228,17 +252,9 @@ UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
       count += VG_(printf) ("%s%c%c", pfx_s, c,c);
 
    if (VG_(clo_time_stamp)) {
-      struct timeval tv;
-      struct tm tm;
-     
-      if ( gettimeofday( &tv, NULL ) == 0 &&
-           localtime_r( &tv.tv_sec, &tm ) == &tm )
-      {
-         count +=
-            VG_(printf)( "%04d-%02d-%02d %02d:%02d:%02d.%03d ",
-                         tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-                         tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000 );
-      }
+      HChar buf[50];
+      VG_(ctime)(buf);
+      count += VG_(printf)( "%s ", buf);
    }
 
    if (!VG_(clo_xml))

@@ -42,6 +42,10 @@
    descriptor or a socket descriptor. */
 extern Bool VG_(logging_to_socket);
 
+/* Get a human-readable representation of the local time into BUF,
+   which must be at least 25 characters long.  This is unchecked. */
+extern void VG_(ctime) ( /*OUT*/HChar* buf );
+
 #endif   // __PUB_CORE_LIBCPRINT_H
 
 /*--------------------------------------------------------------------*/

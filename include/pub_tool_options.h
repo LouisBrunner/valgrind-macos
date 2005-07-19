@@ -71,6 +71,10 @@ extern Bool VG_(clo_profile);
    way.  See vg_main.c and mc_main.c. */
 extern Bool VG_(clo_xml);
 
+/* An arbitrary user-supplied string which is copied into the
+   XML output, in between <usercomment> tags. */
+extern HChar* VG_(clo_xml_user_comment);
+
 /* Call this if a recognised option was bad for some reason.
    Note: don't use it just because an option was unrecognised -- return 'False'
    from VG_(tdict).tool_process_cmd_line_option) to indicate that. */

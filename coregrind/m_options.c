@@ -44,6 +44,7 @@ Int    VG_(clo_gen_suppressions) = 0;
 Int    VG_(clo_sanity_level)   = 1;
 Int    VG_(clo_verbosity)      = 1;
 Bool   VG_(clo_xml)            = False;
+HChar* VG_(clo_xml_user_comment) = NULL;
 Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_trace_children) = False;
 Int    VG_(clo_log_fd)         = 2;

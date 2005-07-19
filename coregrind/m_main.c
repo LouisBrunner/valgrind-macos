@@ -1270,6 +1270,7 @@ static void usage ( Bool debug_help )
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --smc-support=none|stack|all   support for self-modifying code:\n"
 "                              none, for code found in stacks, or all [stack]\n"
+"    --xml-user-comment=STR    copy STR verbatim to XML output\n"
 "\n"
 "  user options for Valgrind tools that report errors:\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
@@ -1552,6 +1553,10 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else if (VG_CLO_STREQN(13, arg, "--log-socket=")) {
          log_to            = VgLogTo_Socket;
          VG_(clo_log_name) = &arg[13];
+      }
+
+      else if (VG_CLO_STREQN(19, arg, "--xml-user-comment=")) {
+         VG_(clo_xml_user_comment) = &arg[19];
       }
 
       else if (VG_CLO_STREQN(15, arg, "--suppressions=")) {
@@ -1905,12 +1910,19 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
                                   VG_(clo_log_file_qualifier),
                                   val ? val : "");
       }
+      if (VG_(clo_xml_user_comment)) {
+         /* Note: the user comment itself is XML and is therefore to
+            be passed through verbatim (%s) rather than escaped
+            (%t). */
+         VG_(message)(Vg_UserMsg, "<usercomment>%s</usercomment>",
+                                  VG_(clo_xml_user_comment));
+      }
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<args>");
       VG_(message)(Vg_UserMsg, "  <vargv>");
       for (i = 0; i < vg_argc; i++) {
          HChar* tag = i==0 ? "exe" : "arg";
-         VG_(message)(Vg_UserMsg, "    <%s>%s</%s>", 
+         VG_(message)(Vg_UserMsg, "    <%s>%t</%s>", 
                                   tag, vg_argv[i], tag);
       }
       VG_(message)(Vg_UserMsg, "  </vargv>");

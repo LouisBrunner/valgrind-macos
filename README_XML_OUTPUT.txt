@@ -142,6 +142,13 @@ following in sequence:
   That is, both the name of the environment variable and its value
   are given.
 
+* OPTIONALLY, if --xml-user-comment=STRING was given:
+
+     <usercomment>STRING</usercomment>
+
+  STRING is not escaped in any way, so that it itself may be a piece
+  of XML with arbitrary tags etc.
+
 * The program and args: first those pertaining to Valgrind itself, and
   then those pertaining to the program to be run under Valgrind (the
   client):

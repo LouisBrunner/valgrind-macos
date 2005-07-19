@@ -1227,8 +1227,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_syslog,            sys_syslog),         // 103 
    GENX_(__NR_getgid,            sys_getgid),         // 104 
 
-//zz    GENX_(__NR_setuid,            sys_setuid),         // 105 
-//zz    GENX_(__NR_setgid,            sys_setgid),         // 106 
+   GENX_(__NR_setuid,            sys_setuid),         // 105 
+   GENX_(__NR_setgid,            sys_setgid),         // 106 
    GENX_(__NR_geteuid,           sys_geteuid),        // 107 
    GENX_(__NR_getegid,           sys_getegid),        // 108 
    GENX_(__NR_setpgid,           sys_setpgid),        // 109 

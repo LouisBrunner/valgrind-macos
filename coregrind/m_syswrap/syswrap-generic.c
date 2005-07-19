@@ -4487,13 +4487,13 @@ PRE(sys_mmap2)
    } else {
       Addr a = VG_(find_map_space)(ARG1, ARG2, True);
       if (a == 0 && ARG1 != 0)
-         ARG1 = VG_(find_map_space)(0, ARG2, True);
-      else
-         ARG1 = a;
-      if (ARG1 == 0)
+         a = VG_(find_map_space)(0, ARG2, True);
+      if (a == 0) {
 	 SET_STATUS_Failure( VKI_ENOMEM );
-      else 
+      } else {
+         ARG1 = a;
          ARG4 |= VKI_MAP_FIXED;
+      }
    }
 }
 

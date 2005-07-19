@@ -48,6 +48,7 @@ Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_trace_children) = False;
 Int    VG_(clo_log_fd)         = 2;
 Char*  VG_(clo_log_name)       = NULL;
+Char*  VG_(clo_log_file_qualifier) = NULL;
 Bool   VG_(clo_time_stamp)     = False;
 Int    VG_(clo_input_fd)       = 0; /* stdin */
 Int    VG_(clo_n_suppressions) = 0;

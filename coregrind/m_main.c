@@ -1275,6 +1275,7 @@ static void usage ( Bool debug_help )
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
 "    --log-file=<file>         log messages to <file>.pid<pid>\n"
 "    --log-file-exactly=<file> log messages to <file>\n"
+"    --log-file-qualifier=<VAR> incorporate $VAR in logfile name [none]\n"
 "    --log-socket=ipaddr:port  log messages to socket ipaddr:port\n"
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <num> callers in stack traces [12]\n"
@@ -1534,6 +1535,15 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(clo_log_name) = &arg[11];
       }
 
+      else if (VG_CLO_STREQN(11, arg, "--log-file=")) {
+         log_to            = VgLogTo_File;
+         VG_(clo_log_name) = &arg[11];
+      }
+
+      else if (VG_CLO_STREQN(21, arg, "--log-file-qualifier=")) {
+         VG_(clo_log_file_qualifier) = &arg[21];
+      }
+
       else if (VG_CLO_STREQN(19, arg, "--log-file-exactly=")) {
          log_to            = VgLogTo_FileExactly;
          VG_(clo_log_name) = &arg[19];
@@ -1696,20 +1706,29 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          break;
 
       case VgLogTo_File: {
-         Char logfilename[1000];
-	 Int seq = 0;
-	 Int pid = VG_(getpid)();
+         HChar  logfilename[1000];
+	 Int    seq  = 0;
+	 Int    pid  = VG_(getpid)();
+         HChar* qual = NULL;
 
          vg_assert(VG_(clo_log_name) != NULL);
          vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
 
+	 if (VG_(clo_log_file_qualifier)) {
+            qual = VG_(getenv)(VG_(clo_log_file_qualifier));
+	 }
+
 	 for (;;) {
 	    if (seq == 0)
-	       VG_(sprintf)(logfilename, "%s.pid%d",
-			    VG_(clo_log_name), pid );
+	       VG_(sprintf)( logfilename, "%s%s%s.pid%d",
+                             VG_(clo_log_name), 
+                             qual ? "." : "", qual ? qual : "",
+                             pid );
 	    else
-	       VG_(sprintf)(logfilename, "%s.pid%d.%d",
-			    VG_(clo_log_name), pid, seq );
+	       VG_(sprintf)( logfilename, "%s%s%s.pid%d.%d",
+			     VG_(clo_log_name), 
+                             qual ? "." : "", qual ? qual : "",
+                             pid, seq );
 	    seq++;
 
             // EXCL: it will fail with EEXIST if the file already exists.
@@ -1879,6 +1898,13 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(message)(Vg_UserMsg, "<pid>%d</pid>", VG_(getpid)());
       VG_(message)(Vg_UserMsg, "<ppid>%d</ppid>", VG_(getppid)());
       VG_(message)(Vg_UserMsg, "<tool>%s</tool>", toolname);
+      if (VG_(clo_log_file_qualifier)) {
+         HChar* val = VG_(getenv)(VG_(clo_log_file_qualifier));
+         VG_(message)(Vg_UserMsg, "<logfilequalifier> <var>%s</var> "
+                                  "<value>%s</value> </logfilequalifier>",
+                                  VG_(clo_log_file_qualifier),
+                                  val ? val : "");
+      }
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<argv>");   
       for (i = 0; i < VG_(client_argc); i++) {

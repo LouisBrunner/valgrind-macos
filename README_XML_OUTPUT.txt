@@ -134,6 +134,14 @@ following in sequence:
 
      <tool>TEXT</tool>
 
+* OPTIONALLY, if --log-file-qualifier=VAR flag was given:
+
+     <logfilequalifier> <var>VAR</var> <value>$VAR</value>
+     </logfilequalifier>
+
+  That is, both the name of the environment variable and its value
+  are given.
+
 * The program and args being run.
 
      <argv>

@@ -142,12 +142,20 @@ following in sequence:
   That is, both the name of the environment variable and its value
   are given.
 
-* The program and args being run.
+* The program and args: first those pertaining to Valgrind itself, and
+  then those pertaining to the program to be run under Valgrind (the
+  client):
 
-     <argv>
-       <exe>TEXT</exe>
-       <arg>TEXT</arg> (zero or more of)
-     </argv>
+     <args>
+       <vargv>
+         <exe>TEXT</exe>
+         <arg>TEXT</arg> (zero or more of)
+       </vargv>
+       <argv>
+         <exe>TEXT</exe>
+         <arg>TEXT</arg> (zero or more of)
+       </argv>
+     </args>
 
 * The following, indicating that the program has now started:
 

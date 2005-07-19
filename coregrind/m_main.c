@@ -1906,13 +1906,22 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
                                   val ? val : "");
       }
       VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "<argv>");   
+      VG_(message)(Vg_UserMsg, "<args>");
+      VG_(message)(Vg_UserMsg, "  <vargv>");
+      for (i = 0; i < vg_argc; i++) {
+         HChar* tag = i==0 ? "exe" : "arg";
+         VG_(message)(Vg_UserMsg, "    <%s>%s</%s>", 
+                                  tag, vg_argv[i], tag);
+      }
+      VG_(message)(Vg_UserMsg, "  </vargv>");
+      VG_(message)(Vg_UserMsg, "  <argv>");
       for (i = 0; i < VG_(client_argc); i++) {
          HChar* tag = i==0 ? "exe" : "arg";
-         VG_(message)(Vg_UserMsg, "  <%s>%s</%s>", 
+         VG_(message)(Vg_UserMsg, "    <%s>%s</%s>", 
                                   tag, VG_(client_argv)[i], tag);
       }
-      VG_(message)(Vg_UserMsg, "</argv>");   
+      VG_(message)(Vg_UserMsg, "  </argv>");
+      VG_(message)(Vg_UserMsg, "</args>");
    }
 
    if (VG_(clo_verbosity) > 1) {

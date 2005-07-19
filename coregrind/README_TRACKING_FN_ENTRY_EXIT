@@ -1,0 +1,205 @@
+
+This file describes in detail how Calltree accurately tracks function
+entry/exit, one of those harder-than-you'd-think things.
+
+-----------------------------------------------------------------------------
+Josef's description
+-----------------------------------------------------------------------------
+From: Josef Weidendorfer <Josef.Weidendorfer@gmx.de>
+To: Nicholas Nethercote <njn25@cam.ac.uk>
+Cc: valgrind-developers@lists.sourceforge.net
+Subject: [Valgrind-developers] Re: Tracking function entry/exit
+
+On Sunday 25 January 2004 16:53, Nicholas Nethercote wrote:
+> Josef,
+>
+> The topic of tracking function entry/exit has come up a few times on the
+> mailing lists recently.  My usual answer is that it's difficult to do
+> correctly.  However, you seem to do it with Calltree.  I looked at the
+> source code a bit, and it looks like you are doing some reasonably
+> complicated things to get it right, eg. unwinding the stack.  How robust
+> is your approach?  Can you briefly explain how it works?
+
+A note before describing the mechanism: I need to have a helper call at start
+of every BB anyway, so I use this helper to do the tracking. This of course 
+has some overhead, and perhaps can be avoided, but it seems to add to the 
+robustness. I have a bug fix here for reentrent entering of a signal handler 
+(2 bug reports). Otherwise I have no bug reports, so I assume that the 
+mechanism to be quite robust.
+
+I have a shadow call stack for every thread. For signal handlers of a thread, 
+I first PUSH a separation marker on the shadow stack, and use the stack as 
+normal. The marker is used for unwinding when leaving the signal handler. 
+This is fine as there is no scheduling among signal handlers of one thread.
+
+Instrumentation of calltree:
+* Store at the end of each basic block the jmpkind into a tool-global, static 
+variable.
+* At the start of every BB, jump to a helper function.
+
+The helper function does the following regarding function call tracking:
+- for a control transfer to another ELF object/ELF section, override jmpkind 
+  with a CALL (*1)
+- for a control transfer to the 1st basic block of a function, override 
+  jmpkind with a CALL (*2)
+- do unwinding if needed (i.e, POPs of the shadow call stack)
+- if jmpkind is RET and there was no unwinding/POP:
+        - if our call stack is empty, simulate a CALL lasting from beginning
+          (with Valgrind 2.1.x, this is not needed any more, as we run on
+          simulated CPU from first client instruction)
+        - otherwise this is a JMP using a RET instruction (typically used in
+          the runtime linker). Do a POP, setting previous BB address to call
+          site and override jmpkind with a CALL. By this, you get 2 function
+          calls from a calling site.
+- when jmpkind is a CALL, push new function call from previous BB to current
+  BB on shadow call stack.
+- Save current BB address to be available for call to handler in next BB.
+
+Special care is needed at thread switches and enter/leave of signal handlers, 
+as we need separate shadow call stacks.
+
+Known bug: We should check for the need of unwinding when ESP is explicitly 
+written to. I hope this doesn't create too much overhead.
+
+Remarks:
+(*1) Jumps between ELF objects are function calls to a shared library. This is 
+     mainly done to catch the JMP from PLT code.
+(*2) This is what your function tracking skin/tool does. It is needed here
+     mainly to catch tail recursion. In general, for functions doing a
+     "return otherfunction()", GCC produces JMPs with -O2. 
+
+Additional points:
+- If I need a name for a function, but there is no debug info, I use the 
+  instruction address minus the load offset of the corresponding ELF object
+  (if there is one) to get a relative address for that ELF object. This
+  offset can be used with objdump later in postprocessing tools (e.g.
+  objdump). I would suggest this change even for cachegrind instead of a
+  "???".
+- I introduced the ability to specify functions to be "skipped". This means 
+  that execution of these functions is attributed to the calling function.
+  The default is to skip all functions located in PLT sections. Thus, in
+  effect, costs of PLT functions are attributed to callers, and the call to
+  a shared library function starts directly with code in the other ELF
+  object.
+- As Vg 2.1.x does pointerchecking, the instrumentation can't write to
+  memory space of Valgrind any longer. Currently, my tool needs
+  "--pointercheck=no" to be able to run. Jeremy and me already agreed on
+  replacing current LD/ST with a CLD/CST (Client Load/Store) with pointer
+  check and keep original LD/ST for tool usage without pointerchecking.
+
+Looking at these things, it seems possible to do function tracking at end of a 
+basic block instead of the beginning of the next BB. This way, we can perhaps 
+avoid calls to helpers at every BB.
+
+From my point of view, it would be great to integrate optional function 
+tracking into Valgrind core with some hooks.
+
+Josef
+
+
+-----------------------------------------------------------------------------
+Josef's clarification of Nick's summary of Josef's description
+-----------------------------------------------------------------------------
+On Monday 21 June 2004 12:15, Nicholas Nethercote wrote:
+
+> I've paraphrased your description to help me understand it better, but I'm
+> still not quite clear on some points.  I looked at the code, but found it
+> hard to understand.  Could you help me?  I've written my questions in
+> square brackets.  Here's the description.
+>
+> --------
+>
+> Data structures:
+>
+> - have a shadow call stack for every thread
+> [not sure exactly what goes on this]
+
+That's the resizable array of struct _call_entry's.
+Probably most important for call tracking is the %ESP value
+directly after a CALL, and a pointer to some struct storing information
+about the call arc or the called function.
+
+The esp value is needed to be able to robustly unwind correctly at %esp 
+changes with %esp > stored esp on shadow stack.
+
+> Action at BB start -- depends on jmp_kind from previous BB:
+>
+> - If jmp_kind is neither JmpCall nor JmpRet (ie. is JmpNone, JmpBoring,
+> JmpCond or JmpSyscall) and we transferred from one ELF object/section to
+> another, it must be a function call to a shared library -- treat as a
+> call.  This catches jmps from PLT code.
+>
+> - If this is the first BB of a function, treat as a call.  This catches
+> tail calls (which gcc uses for "return f()" with -O2).
+> [What if a function had a 'goto' back to its beginning?  Would that be
+> interpreted as a call?]
+
+Yes. IMHO, there is no way to distinguish between optimized tail recursion 
+using a jump and regular jumping. But as most functions need parameters on 
+the stack, a normal jump will rarely jump to the first BB of a function, 
+wouldn't it?
+
+> - Unwind the shadow call stack if necessary.
+> [when is "necessary"?  If the real %esp > the shadow stack %esp?]
+
+Yes. Currently I do this at every BB boundary, but perhaps it should be 
+checked at every %esp change. Then, OTOH, it would look strange to attribute 
+instructions of one BB to different functions?
+
+> - If this is a function return and there was no shadow stack unwinding,
+> this must be a RET control transfer (typically used in the runtime
+> linker).  Pop the shadow call stack, setting the previous BB address to
+> call site and override jmpkind with a CALL. By this, you get 2 function
+> calls from a calling site.
+> [I don't understand this...  What is a "RET control transfer"?  Why do
+> you end up with 2 function calls -- is that a bad thing?]
+
+If there is a RET instruction, this usually should unwind (i.e. leave a 
+function) at least one entry of the shadow call stack. But this doesn't need 
+to be the case, i.e. even after a RET, %esp could be lower or equal to the 
+one on the shadow stack. E.g. suppose
+
+	PUSH addr
+	RET
+
+This is only another way of saying "JMP addr", and doesn't add/remove any 
+stack frame at all.
+Now, if addr is (according to debug information) inside of another function, 
+this is a JMP between functions, let's say from B to C. Suppose B was called 
+from A, I generate a RETURN event to A and a CALL event from A to C in this 
+case.
+
+> - If we're treating the control transfer as a call, push new function call
+> from previous BB to current BB on shadow call stack.
+> [when is this information used?]
+
+I meant: Append a struct call_entry to the shadow stack (together with the 
+current %esp value). As I said before, the shadow stack is used for robust 
+unwinding.
+
+> - Save current BB address to be available for call to handler in next BB.
+>
+>
+> Other actions:
+>
+> When entering a signal handler, first push a separation marker on the
+> thread's shadow stack, then use it as normal.  The marker is used for
+> unwinding when leaving the signal handler.  This is fine as there is no
+> scheduling among signal handlers of one thread.
+>
+> Special care is needed at thread switches and enter/leave of signal
+> handlers, as we need separate shadow call stacks.
+> [Do you mean "separate shadow call stacks for each thread"?]
+
+Yes.
+
+> What about stack switching -- does it cope with that?  (Not that Valgrind
+> in general does...)
+
+No.
+If you could give me a hint how to do it, I would be pleased. The problem here 
+IMHO is: How to distinguish among a stack switch and allocating a huge array 
+on the stack?
+
+Josef
+

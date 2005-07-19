@@ -717,9 +717,19 @@ PRE(sys_arch_prctl)
    // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
 
    /* "do" the syscall ourselves; the kernel never sees it */
-   vg_assert(ARG1 == VKI_ARCH_SET_FS);
-   tst = VG_(get_ThreadState)(tid);
-   tst->arch.vex.guest_FS_ZERO = ARG2;
+   if (ARG1 == VKI_ARCH_SET_FS) {
+      tst = VG_(get_ThreadState)(tid);
+      tst->arch.vex.guest_FS_ZERO = ARG2;
+   }
+   else if (ARG1 == VKI_ARCH_GET_FS) {
+      PRE_MEM_WRITE("arch_prctl(addr)", ARG2, sizeof(unsigned long));
+      tst = VG_(get_ThreadState)(tid);
+      *(unsigned long *)ARG2 = tst->arch.vex.guest_FS_ZERO;
+      POST_MEM_WRITE(ARG2, sizeof(unsigned long));
+   }
+   else {
+      VG_(core_panic)("Unsupported arch_prtctl option");
+   }
 
    /* Note; the Status writeback to guest state that happens after
       this wrapper returns does not change guest_FS_ZERO; hence that

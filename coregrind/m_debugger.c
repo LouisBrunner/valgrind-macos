@@ -67,7 +67,26 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 
    return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
 #elif defined(VGA_amd64)
-   I_die_here;
+   regs.rax    = vex->guest_RAX;
+   regs.rbx    = vex->guest_RBX;
+   regs.rcx    = vex->guest_RCX;
+   regs.rdx    = vex->guest_RDX;
+   regs.rsi    = vex->guest_RSI;
+   regs.rdi    = vex->guest_RDI;
+   regs.rbp    = vex->guest_RBP;
+   regs.rsp    = vex->guest_RSP;
+   regs.r8     = vex->guest_R8;
+   regs.r9     = vex->guest_R9;
+   regs.r10    = vex->guest_R10;
+   regs.r11    = vex->guest_R11;
+   regs.r12    = vex->guest_R12;
+   regs.r13    = vex->guest_R13;
+   regs.r14    = vex->guest_R14;
+   regs.r15    = vex->guest_R15;
+   regs.eflags = LibVEX_GuestAMD64_get_rflags(vex);
+   regs.rip    = vex->guest_RIP;
+
+   return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
 #elif defined(VGA_ppc32)
    I_die_here;
    regs.gpr[0] = 0; // stop compiler complaints

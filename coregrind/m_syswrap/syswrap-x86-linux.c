@@ -921,7 +921,7 @@ static SysRes sys_get_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
    info->useable = gdt[idx].LdtEnt.Bits.Sys;
    info->reserved = 0;
 
-   return VG_(mk_SysRes_Error)( 0 );
+   return VG_(mk_SysRes_Success)( 0 );
 }
 
 /* ---------------------------------------------------------------------

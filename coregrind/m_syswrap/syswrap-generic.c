@@ -2333,7 +2333,7 @@ PRE(sys_execve)
    // stage1/2 will set up the appropriate client environment.
    // Nb: we make a copy of the environment before trying to mangle it
    // as it might be in read-only memory (this was bug #101881).
-   if (ARG3 != NULL) {
+   if (ARG3 != 0) {
       envp = VG_(env_clone)( (Char**)ARG3 );
       VG_(env_remove_valgrind_env_stuff)( envp );
    }

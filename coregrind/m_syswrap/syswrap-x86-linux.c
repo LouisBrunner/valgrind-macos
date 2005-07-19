@@ -336,8 +336,8 @@ asm(
          /* get other args to clone */
 "        movl     8+"FSZ"(%esp), %ebx\n"    /* syscall arg1: flags */
 "        movl    20+"FSZ"(%esp), %edx\n"    /* syscall arg3: parent tid * */
-"        movl    16+"FSZ"(%esp), %edi\n"    /* syscall arg4: child tid * */
-"        movl    24+"FSZ"(%esp), %esi\n"    /* syscall arg5: tls_ptr * */
+"        movl    16+"FSZ"(%esp), %edi\n"    /* syscall arg5: child tid * */
+"        movl    24+"FSZ"(%esp), %esi\n"    /* syscall arg4: tls_ptr * */
 "        movl    $"__NR_CLONE", %eax\n"
 "        int     $0x80\n"                   /* clone() */
 "        testl   %eax, %eax\n"              /* child if retval == 0 */

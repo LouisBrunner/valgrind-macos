@@ -1902,11 +1902,11 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<pid>%d</pid>", VG_(getpid)());
       VG_(message)(Vg_UserMsg, "<ppid>%d</ppid>", VG_(getppid)());
-      VG_(message)(Vg_UserMsg, "<tool>%s</tool>", toolname);
+      VG_(message)(Vg_UserMsg, "<tool>%t</tool>", toolname);
       if (VG_(clo_log_file_qualifier)) {
          HChar* val = VG_(getenv)(VG_(clo_log_file_qualifier));
-         VG_(message)(Vg_UserMsg, "<logfilequalifier> <var>%s</var> "
-                                  "<value>%s</value> </logfilequalifier>",
+         VG_(message)(Vg_UserMsg, "<logfilequalifier> <var>%t</var> "
+                                  "<value>%t</value> </logfilequalifier>",
                                   VG_(clo_log_file_qualifier),
                                   val ? val : "");
       }
@@ -1929,7 +1929,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(message)(Vg_UserMsg, "  <argv>");
       for (i = 0; i < VG_(client_argc); i++) {
          HChar* tag = i==0 ? "exe" : "arg";
-         VG_(message)(Vg_UserMsg, "    <%s>%s</%s>", 
+         VG_(message)(Vg_UserMsg, "    <%s>%t</%s>", 
                                   tag, VG_(client_argv)[i], tag);
       }
       VG_(message)(Vg_UserMsg, "  </argv>");
@@ -2809,7 +2809,7 @@ int main(int argc, char **argv, char **envp)
       HChar buf[50];
       VG_(ctime)(buf);
       VG_(message)(Vg_UserMsg, "<status> <what>RUNNING</what> "
-                               "<when>%s</when> </status>", buf);
+                               "<when>%t</when> </status>", buf);
       VG_(message)(Vg_UserMsg, "");
    }
 
@@ -2911,7 +2911,7 @@ void VG_(shutdown_actions_NORETURN) ( ThreadId tid,
       }
       VG_(ctime)(buf);
       VG_(message)(Vg_UserMsg, "<status> <what>FINISHED</what> "
-                               "<when>%s</when> </status>", buf);
+                               "<when>%t</when> </status>", buf);
       VG_(message)(Vg_UserMsg, "");
    }
 

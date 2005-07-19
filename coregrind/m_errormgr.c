@@ -685,7 +685,7 @@ static Bool show_used_suppressions ( void )
       if (VG_(clo_xml)) {
          VG_(message)(Vg_DebugMsg, 
                       "  <pair> <count>%d</count> "
-                      "<name>%s</name> </pair>", 
+                      "<name>%t</name> </pair>", 
                       su->count, su->sname);
       } else {
          VG_(message)(Vg_DebugMsg, "supp: %4d %s", su->count, su->sname);

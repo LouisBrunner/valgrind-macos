@@ -233,7 +233,7 @@ void MAC_(pp_LeakError)(void* vextra)
    const Char *loss = str_lossmode(l->loss_mode);
 
    if (VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, "  <kind>%s</kind>", xml_kind(l->loss_mode));
+      VG_(message)(Vg_UserMsg, "  <kind>%t</kind>", xml_kind(l->loss_mode));
    } else {
       VG_(message)(Vg_UserMsg, "");
    }

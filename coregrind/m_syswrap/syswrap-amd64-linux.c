@@ -1139,7 +1139,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_access,            sys_access),         // 21 
    GENXY(__NR_pipe,              sys_pipe),           // 22 
    GENX_(__NR_select,            sys_select),         // 23 
-   //   (__NR_sched_yield,       sys_sched_yield),    // 24 
+   GENX_(__NR_sched_yield,       sys_sched_yield),    // 24 
 
    GENX_(__NR_mremap,            sys_mremap),         // 25 
    //   (__NR_msync,             sys_msync),          // 26 

@@ -261,6 +261,41 @@ UInt myvprintf_str ( void(*send)(HChar,void*),
 }
 
 
+/* Copy a string into the buffer, escaping bad XML chars. */
+static 
+UInt myvprintf_str_XML_simplistic ( void(*send)(HChar,void*),
+                                    void* send_arg2,
+                                    HChar* str )
+{
+   UInt   ret = 0;
+   Int    i;
+   Int    len = local_strlen(str);
+   HChar* alt;
+
+   for (i = 0; i < len; i++) {
+      switch (str[i]) {
+         case '&': alt = "&amp;"; break;
+         case '<': alt = "&lt;"; break;
+         case '>': alt = "&gt;"; break;
+         default:  alt = NULL;
+      }
+
+      if (alt) {
+         while (*alt) {
+            send(*alt, send_arg2);
+            ret++;
+            alt++;
+         }
+      } else {
+         send(str[i], send_arg2);
+         ret++;
+      }
+   }
+
+   return ret;
+}
+
+
 /* Write P into the buffer according to these args:
  *  If SIGN is true, p is a signed.
  *  BASE is the base.
@@ -448,6 +483,14 @@ VG_(debugLog_vprintf) (
                                  flags, width, str, format[i]=='S');
             break;
          }
+         case 't': { /* %t, like %s but escaping chars for XML safety */
+            /* Note: simplistic; ignores field width and flags */
+            char *str = va_arg (vargs, char *);
+            if (str == (char*) 0) str = "(null)";
+            ret += myvprintf_str_XML_simplistic(send, send_arg2, str);
+            break;
+         }
+
 //         case 'y': { /* %y - print symbol */
 //            Char buf[100];
 //            Char *cp = buf;

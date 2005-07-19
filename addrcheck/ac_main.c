@@ -30,6 +30,15 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#include "pub_tool_basics.h"
+#include "pub_tool_hashtable.h"     // For mac_shared.h
+#include "pub_tool_libcbase.h"
+#include "pub_tool_libcassert.h"
+#include "pub_tool_libcprint.h"
+#include "pub_tool_profile.h"       // For mac_shared.h
+#include "pub_tool_tooliface.h"
+#include "pub_tool_threadstate.h"
+
 #include "mac_shared.h"
 #include "memcheck.h"
 
@@ -195,7 +204,7 @@ static AcSecMap* alloc_secondary_map ( __attribute__ ((unused))
 				       const AcSecMap *prototype)
 {
    AcSecMap* map;
-   PROF_EVENT(10);
+   PROF_EVENT(10, "");
 
    map = (AcSecMap *)VG_(shadow_alloc)(sizeof(AcSecMap));
    VG_(memcpy)(map, prototype, sizeof(*map));
@@ -211,7 +220,7 @@ static __inline__ UChar get_abit ( Addr a )
 {
    AcSecMap* sm     = primary_map[PM_IDX(a)];
    UInt    sm_off = SM_OFF(a);
-   PROF_EVENT(20);
+   PROF_EVENT(20, "");
 #  if 0
       if (IS_DISTINGUISHED_SM(sm))
          VG_(message)(Vg_DebugMsg, 
@@ -225,7 +234,7 @@ static /* __inline__ */ void set_abit ( Addr a, UChar abit )
 {
    AcSecMap* sm;
    UInt    sm_off;
-   PROF_EVENT(22);
+   PROF_EVENT(22, "");
    ENSURE_MAPPABLE(a, "set_abit");
    sm     = primary_map[PM_IDX(a)];
    sm_off = SM_OFF(a);
@@ -243,7 +252,7 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
    AcSecMap* sm;
    UInt    sm_off;
    UChar   abits8;
-   PROF_EVENT(24);
+   PROF_EVENT(24, "");
 #  ifdef VG_DEBUG_MEMORY
    tl_assert(VG_IS_4_ALIGNED(a));
 #  endif
@@ -268,7 +277,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
    UInt      sm_off;
    AcSecMap* sm;
 
-   PROF_EVENT(30);
+   PROF_EVENT(30, "");
 
    if (len == 0)
       return;
@@ -299,7 +308,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
 #  ifdef VG_DEBUG_MEMORY
    /* Do it ... */
    while (True) {
-      PROF_EVENT(31);
+      PROF_EVENT(31, "");
       if (len == 0) break;
       set_abit ( a, example_a_bit );
       set_vbyte ( a, vbyte );
@@ -310,7 +319,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
 #  else
    /* Slowly do parts preceding 8-byte alignment. */
    while (True) {
-      PROF_EVENT(31);
+      PROF_EVENT(31, "");
       if (len == 0) break;
       if ((a % 8) == 0) break;
       set_abit ( a, example_a_bit );
@@ -326,7 +335,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
 
    /* Once aligned, go fast up to primary boundary. */
    for (; (a & SECONDARY_MASK) && len >= 8; a += 8, len -= 8) {
-      PROF_EVENT(32);
+      PROF_EVENT(32, "");
 
       /* If the primary is already pointing to a distinguished map
 	 with the same properties as we're trying to set, then leave
@@ -356,7 +365,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
 
    /* Now finished the remains. */
    for (; len >= 8; a += 8, len -= 8) {
-      PROF_EVENT(32);
+      PROF_EVENT(32, "");
 
       /* If the primary is already pointing to a distinguished map
 	 with the same properties as we're trying to set, then leave
@@ -372,7 +381,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
 
    /* Finish the upper fragment. */
    while (True) {
-      PROF_EVENT(33);
+      PROF_EVENT(33, "");
       if (len == 0) break;
       set_abit ( a, example_a_bit );
       a++;
@@ -387,14 +396,14 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
 
 static void ac_make_noaccess ( Addr a, SizeT len )
 {
-   PROF_EVENT(35);
+   PROF_EVENT(35, "");
    DEBUG("ac_make_noaccess(%p, %x)\n", a, len);
    set_address_range_perms ( a, len, VGM_BIT_INVALID );
 }
 
 static void ac_make_accessible ( Addr a, SizeT len )
 {
-   PROF_EVENT(38);
+   PROF_EVENT(38, "");
    DEBUG("ac_make_accessible(%p, %x)\n", a, len);
    set_address_range_perms ( a, len, VGM_BIT_VALID );
 }
@@ -483,10 +492,10 @@ static void ac_copy_address_range_state ( Addr src, Addr dst, SizeT len )
 
    DEBUG("ac_copy_address_range_state\n");
 
-   PROF_EVENT(40);
+   PROF_EVENT(40, "");
    for (i = 0; i < len; i++) {
       UChar abit  = get_abit ( src+i );
-      PROF_EVENT(41);
+      PROF_EVENT(41, "");
       set_abit ( dst+i, abit );
    }
 }
@@ -501,9 +510,9 @@ Bool ac_check_accessible ( Addr a, SizeT len, Addr* bad_addr )
 {
    UInt  i;
    UChar abit;
-   PROF_EVENT(48);
+   PROF_EVENT(48, "");
    for (i = 0; i < len; i++) {
-      PROF_EVENT(49);
+      PROF_EVENT(49, "");
       abit = get_abit(a);
       if (abit == VGM_BIT_INVALID) {
          if (bad_addr != NULL) *bad_addr = a;
@@ -520,9 +529,9 @@ Bool ac_check_noaccess ( Addr a, SizeT len, Addr* bad_addr )
 {
    UInt  i;
    UChar abit;
-   PROF_EVENT(48);
+   PROF_EVENT(48, "");
    for (i = 0; i < len; i++) {
-      PROF_EVENT(49);
+      PROF_EVENT(49, "");
       abit = get_abit(a);
       if (abit == VGM_BIT_VALID) {
          if (bad_addr != NULL) *bad_addr = a;
@@ -541,10 +550,10 @@ static __inline__
 Bool ac_check_readable_asciiz ( Addr a, Addr* bad_addr )
 {
    UChar abit;
-   PROF_EVENT(46);
+   PROF_EVENT(46, "");
    DEBUG("ac_check_readable_asciiz\n");
    while (True) {
-      PROF_EVENT(47);
+      PROF_EVENT(47, "");
       abit  = get_abit(a);
       if (abit != VGM_BIT_VALID) {
          if (bad_addr != NULL) *bad_addr = a;
@@ -696,7 +705,7 @@ static __inline__ void ac_helperc_ACCESS4 ( Addr a, Bool isWrite )
    UChar   abits  = sm->abits[a_off];
    abits >>= (a & 4);
    abits &= 15;
-   PROF_EVENT(66);
+   PROF_EVENT(66, "");
    if (abits == VGM_NIBBLE_VALID) {
       /* Handle common case quickly: a is suitably aligned, is mapped,
          and is addressible.  So just return. */
@@ -716,7 +725,7 @@ static __inline__ void ac_helperc_ACCESS2 ( Addr a, Bool isWrite )
    UInt    sec_no = rotateRight16(a) & 0x1FFFF;
    AcSecMap* sm     = primary_map[sec_no];
    UInt    a_off  = (SM_OFF(a)) >> 3;
-   PROF_EVENT(67);
+   PROF_EVENT(67, "");
    if (sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
       return;
@@ -735,7 +744,7 @@ static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
    UInt    sec_no = shiftRight16(a);
    AcSecMap* sm   = primary_map[sec_no];
    UInt    a_off  = (SM_OFF(a)) >> 3;
-   PROF_EVENT(68);
+   PROF_EVENT(68, "");
    if (sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
       return;
@@ -789,7 +798,7 @@ static void ac_ACCESS4_SLOWLY ( Addr a, Bool isWrite )
 {
    Bool a0ok, a1ok, a2ok, a3ok;
 
-   PROF_EVENT(76);
+   PROF_EVENT(76, "");
 
    /* First establish independently the addressibility of the 4 bytes
       involved. */
@@ -834,7 +843,7 @@ static void ac_ACCESS2_SLOWLY ( Addr a, Bool isWrite )
 {
    /* Check the address for validity. */
    Bool aerr = False;
-   PROF_EVENT(77);
+   PROF_EVENT(77, "");
 
    if (get_abit(a+0) != VGM_BIT_VALID) aerr = True;
    if (get_abit(a+1) != VGM_BIT_VALID) aerr = True;
@@ -849,7 +858,7 @@ static void ac_ACCESS1_SLOWLY ( Addr a, Bool isWrite)
 {
    /* Check the address for validity. */
    Bool aerr = False;
-   PROF_EVENT(78);
+   PROF_EVENT(78, "");
 
    if (get_abit(a+0) != VGM_BIT_VALID) aerr = True;
 
@@ -879,7 +888,7 @@ void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
    UInt    sm_off, a_off;
    Addr    addr4;
 
-   PROF_EVENT(90);
+   PROF_EVENT(90, "");
 
 #  ifdef VG_DEBUG_MEMORY
    ac_fpu_ACCESS_check_SLOWLY ( addr, size, isWrite );
@@ -887,7 +896,7 @@ void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
 
    if (size == 4) {
       if (!VG_IS_4_ALIGNED(addr)) goto slow4;
-      PROF_EVENT(91);
+      PROF_EVENT(91, "");
       /* Properly aligned. */
       sm     = primary_map[PM_IDX(addr)];
       sm_off = SM_OFF(addr);
@@ -902,7 +911,7 @@ void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
 
    if (size == 8) {
       if (!VG_IS_4_ALIGNED(addr)) goto slow8;
-      PROF_EVENT(92);
+      PROF_EVENT(92, "");
       /* Properly aligned.  Do it in two halves. */
       addr4 = addr + 4;
       /* First half. */
@@ -927,13 +936,13 @@ void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
    /* Can't be bothered to huff'n'puff to make these (allegedly) rare
       cases go quickly.  */
    if (size == 2) {
-      PROF_EVENT(93);
+      PROF_EVENT(93, "");
       ac_fpu_ACCESS_check_SLOWLY ( addr, 2, isWrite );
       return;
    }
 
    if (size == 16 || size == 10 || size == 28 || size == 108 || size == 512) {
-      PROF_EVENT(94);
+      PROF_EVENT(94, "");
       ac_fpu_ACCESS_check_SLOWLY ( addr, size, isWrite );
       return;
    }
@@ -964,9 +973,9 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, SizeT size, Bool isWrite )
 {
    Int  i;
    Bool aerr = False;
-   PROF_EVENT(100);
+   PROF_EVENT(100, "");
    for (i = 0; i < size; i++) {
-      PROF_EVENT(101);
+      PROF_EVENT(101, "");
       if (get_abit(addr+i) != VGM_BIT_VALID)
          aerr = True;
    }

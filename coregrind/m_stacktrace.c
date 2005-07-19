@@ -110,10 +110,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
          user-space threads package work. JRS 20021001 */
    } else {
 
-#     if defined(VGP_ppc32_linux)
-      // I think this line is needed for PPC to work
       fp = FIRST_STACK_FRAME(fp);
-#     endif
 
       while (True) {
 

@@ -455,6 +455,7 @@ AC_OUTPUT(
    docs/Makefile 
    docs/lib/Makefile
    docs/images/Makefile
+   docs/internals/Makefile
    docs/xml/Makefile
    tests/Makefile 
    tests/vg_regtest 

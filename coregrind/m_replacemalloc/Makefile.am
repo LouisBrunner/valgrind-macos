@@ -1,9 +1,6 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
-EXTRA_DIST = \
-	README_REPLACEMALLOC.txt
-
 noinst_LIBRARIES = \
 	libreplacemalloc_core.a \
 	libreplacemalloc_toolpreload.a

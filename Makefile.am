@@ -43,9 +43,8 @@ EXTRA_DIST = \
 	ACKNOWLEDGEMENTS \
 	README_DEVELOPERS \
 	README_PACKAGERS \
-	README_XML_OUTPUT.txt \
 	THREADS_SYSCALLS_SIGNALS.txt \
-	README_MISSING_SYSCALL_OR_IOCTL TODO NOTES.txt \
+	README_MISSING_SYSCALL_OR_IOCTL \
 	valgrind.spec valgrind.spec.in valgrind.pc.in \
 	Makefile.all.am Makefile.tool.am Makefile.core-AM_CPPFLAGS.am \
 	Makefile.tool-inplace.am

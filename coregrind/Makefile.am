@@ -80,10 +80,6 @@ noinst_HEADERS = \
 	vki_unistd-ppc32-linux.h\
 	vki_unistd-x86-linux.h
 
-EXTRA_DIST = \
-	README_MODULES.txt \
-	README_TRACKING_FN_ENTRY_EXIT
-
 BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds
 	

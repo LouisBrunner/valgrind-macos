@@ -1,6 +1,12 @@
 -----------------------------------------------------------------------------
 64-bit cleanness
 -----------------------------------------------------------------------------
+
+[19-Jul-2005:  I assume most of these are gone, now that AMD64 is working
+pretty well.  The Addrcheck and Helgrind ones are probably still true,
+though.  --njn]
+
+
 The following are places I know or suspect contain code that is not 64-bit
 clean.  Please mark them off this list as they are fixed, and add any new ones
 you know of.

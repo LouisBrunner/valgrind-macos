@@ -26,6 +26,8 @@ Some files of note:
   docs/xml/vg-entities.xml: Various strings, dates etc. used all over
   docs/xml/xml_help.txt:    Basic guide to common XML tags.
 
+The docs/internals directory contains some useful high-level stuff about
+Valgrind's internals.  It's not relevant for the rest of this discussion.
 
 Overview
 ---------

@@ -1255,7 +1255,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_capset,            sys_capset),         // 126 
 //zz    GENXY(__NR_rt_sigpending,     sys_rt_sigpending),  // 127 
    GENXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),// 128 
-//zz    GENXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),// 129 
+   GENXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),// 129 
 
    GENX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),  // 130 
    GENXY(__NR_sigaltstack,       sys_sigaltstack),    // 131 

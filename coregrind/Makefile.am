@@ -140,7 +140,7 @@ stage2_extra= \
 	@VEX_DIR@/libvex.a
 
 ## These ones must be linked in with the --whole-archive flag, because they
-## wouldn't get pulled into stage otherwise (because they contain symbols
+## wouldn't get pulled into stage2 otherwise (because they contain symbols
 ## only referred to by tool shared objects).
 stage2_extra2 = \
 	m_replacemalloc/libreplacemalloc_core.a
@@ -152,19 +152,18 @@ st2_DEPS_common = \
 	$(stage2_extra2)
 
 st2_LDFLAGS_common = \
-	-Wl,--export-dynamic -g
+	-Wl,--export-dynamic -g \
+	-Wl,--whole-archive $(stage2_extra2) -Wl,--no-whole-archive
 
 if USE_PIE
 stage2_DEPENDENCIES = $(st2_DEPS_common)
 stage2_LDFLAGS = \
 	$(st2_LDFLAGS_common) \
-	-Wl,--whole-archive $(stage2_extra2) -Wl,--no-whole-archive \
 	-pie
 else
 stage2_DEPENDENCIES = $(st2_DEPS_common) stage2.lds
 stage2_LDFLAGS = \
 	$(st2_LDFLAGS_common) \
-	-Wl,--whole-archive $(stage2_extra2) -Wl,--no-whole-archive \
 	-Wl,-defsym,kickstart_base=@KICKSTART_BASE@ -Wl,-T,stage2.lds
 endif
 

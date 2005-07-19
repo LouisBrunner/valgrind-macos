@@ -499,7 +499,7 @@ static SysRes do_fork_clone ( ThreadId tid,
       VG_(clone) stuff */
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
-                           (UWord)NULL, (UWord)child_tidptr );
+                           (UWord)child_tidptr, (UWord)NULL );
 
    if (!res.isError && res.val == 0) {
       /* child */

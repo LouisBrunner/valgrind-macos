@@ -151,14 +151,18 @@ following in sequence:
 
 * The following, indicating that the program has now started:
 
-     <status>RUNNING</status>
+     <status> <what>RUNNING</what> 
+              <when>human-readable-time-string</when> 
+     </status>
 
 * Zero or more of (either ERROR or ERRORCOUNTS).
 
 * The following, indicating that the program has now finished, and
   that the wrapup (leak checking) is happening.
 
-     <status>FINISHED</status>
+     <status> <what>FINISHED</what> 
+              <when>human-readable-time-string</when> 
+     </status>
 
 * SUPPCOUNTS, indicating how many times each suppression was used.
 

@@ -2785,7 +2785,10 @@ int main(int argc, char **argv, char **envp)
    VGP_POPCC(VgpStartup);
 
    if (VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, "<status>RUNNING</status>");
+      HChar buf[50];
+      VG_(ctime)(buf);
+      VG_(message)(Vg_UserMsg, "<status> <what>RUNNING</what> "
+                               "<when>%s</when> </status>", buf);
       VG_(message)(Vg_UserMsg, "");
    }
 
@@ -2880,11 +2883,14 @@ void VG_(shutdown_actions_NORETURN) ( ThreadId tid,
       VG_(message)(Vg_UserMsg, "");
 
    if (VG_(clo_xml)) {
+      HChar buf[50];
       if (VG_(needs).core_errors || VG_(needs).tool_errors) {
          VG_(show_error_counts_as_XML)();
          VG_(message)(Vg_UserMsg, "");
       }
-      VG_(message)(Vg_UserMsg, "<status>FINISHED</status>");
+      VG_(ctime)(buf);
+      VG_(message)(Vg_UserMsg, "<status> <what>FINISHED</what> "
+                               "<when>%s</when> </status>", buf);
       VG_(message)(Vg_UserMsg, "");
    }
 

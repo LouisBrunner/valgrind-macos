@@ -2425,7 +2425,6 @@ ULong dis_op2_E_G ( Prefix      pfx,
       assign( src,  loadLE(szToITy(size), mkexpr(addr)) );
 
       if (addSubCarry && op8 == Iop_Add8) {
-         vassert(0); /* awaiting test case */
          helper_ADC( size, dst1, dst0, src );
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else
@@ -11838,10 +11837,10 @@ DisResult disInstr_AMD64_WRK (
 //.. //--    case 0x12: /* ADC Eb,Gb */
 //.. //--       delta = dis_op2_E_G ( sorb, True, ADC, True, 1, delta, "adc" );
 //.. //--       break;
-//..    case 0x13: /* ADC Ev,Gv */
-//..       delta = dis_op2_E_G ( sorb, True, Iop_Add8, True, sz, delta, "adc" );
-//..       break;
-//.. 
+   case 0x13: /* ADC Ev,Gv */
+      delta = dis_op2_E_G ( pfx, True, Iop_Add8, True, sz, delta, "adc" );
+      break;
+
 //.. //--    case 0x1A: /* SBB Eb,Gb */
 //.. //--       delta = dis_op2_E_G ( sorb, True, SBB, True, 1, delta, "sbb" );
 //.. //--       break;

@@ -1219,7 +1219,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_gettimeofday,      sys_gettimeofday),   // 96 
    GENXY(__NR_getrlimit,         sys_getrlimit),      // 97 
    GENXY(__NR_getrusage,         sys_getrusage),      // 98 
-   //   (__NR_sysinfo,           sys_sysinfo),        // 99 
+   LINXY(__NR_sysinfo,           sys_sysinfo),        // 99 
 
    GENXY(__NR_times,             sys_times),          // 100 
    //   (__NR_ptrace,            sys_ptrace),         // 101 
@@ -1236,14 +1236,14 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_getppid,           sys_getppid),        // 110 
    GENX_(__NR_getpgrp,           sys_getpgrp),        // 111 
    GENX_(__NR_setsid,            sys_setsid),         // 112 
-   //   (__NR_setreuid,          sys_setreuid),       // 113 
-   //   (__NR_setregid,          sys_setregid),       // 114 
+   GENX_(__NR_setreuid,          sys_setreuid),       // 113 
+   GENX_(__NR_setregid,          sys_setregid),       // 114 
 
    GENXY(__NR_getgroups,         sys_getgroups),      // 115 
-//zz    GENX_(__NR_setgroups,         sys_setgroups),      // 116 
-//zz    LINX_(__NR_setresuid,         sys_setresuid),      // 117 
+   GENX_(__NR_setgroups,         sys_setgroups),      // 116 
+   LINX_(__NR_setresuid,         sys_setresuid),      // 117 
    LINXY(__NR_getresuid,         sys_getresuid),      // 118 
-//zz    LINX_(__NR_setresgid,         sys_setresgid),      // 119 
+   LINX_(__NR_setresgid,         sys_setresgid),      // 119 
 
    LINXY(__NR_getresgid,         sys_getresgid),      // 120 
    GENX_(__NR_getpgid,           sys_getpgid),        // 121 

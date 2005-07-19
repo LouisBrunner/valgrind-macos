@@ -497,6 +497,19 @@ overlap.  Memcheck checks for this.</para>
 <para>You don't want the two blocks to overlap because one of
 them could get partially trashed by the copying.</para>
 
+<para>You might think that Memcheck is being overly pedantic reporting
+this in the case where <computeroutput>dst</computeroutput> is less
+than <computeroutput>src</computeroutput>.  For example, the obvious way
+to implement <computeroutput>memcpy()</computeroutput> is by copying
+from the first byte to the last.  However, the optimisation guides of
+some architectures recommend copying from the last byte down to the first.
+Also, some implementations of <computeroutput>memcpy()</computeroutput>
+zero <computeroutput>dst</computeroutput> before copying, because zeroing
+the destination's cache line(s) can improve performance.</para>
+
+<para>The moral of the story is:  if you want to write truly portable code,
+don't make any assumptions about the language implementation.</para>
+
 </sect2>
 
 

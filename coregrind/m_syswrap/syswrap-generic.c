@@ -5646,6 +5646,23 @@ POST(sys_clock_getres)
    POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
+PRE(sys_clock_nanosleep)
+{
+   *flags |= SfMayBlock|SfPostOnFail;
+   PRINT("sys_clock_nanosleep( %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(int32_t, "clock_nanosleep",
+                 vki_clockid_t, clkid, int, flags,
+                 const struct timespec *, rqtp, struct timespec *, rmtp);
+   PRE_MEM_READ( "clock_nanosleep(rqtp)", ARG3, sizeof(struct vki_timespec) );
+   if (ARG4 != 0)
+      PRE_MEM_WRITE( "clock_nanosleep(rmtp)", ARG4, sizeof(struct vki_timespec) );
+}
+POST(sys_clock_nanosleep)
+{
+   if (ARG4 != 0 && FAILURE && RES_unchecked == VKI_EINTR)
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec) );
+}
+
 #undef PRE
 #undef POST
 

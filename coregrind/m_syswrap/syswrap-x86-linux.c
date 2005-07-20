@@ -2263,7 +2263,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENXY(__NR_clock_gettime,     sys_clock_gettime),  // (timer_create+6)
    GENXY(__NR_clock_getres,      sys_clock_getres),   // (timer_create+7)
-//zz    //   (__NR_clock_nanosleep,   sys_clock_nanosleep),// (timer_create+8) */*
+   GENXY(__NR_clock_nanosleep,   sys_clock_nanosleep),// (timer_create+8) */*
    GENXY(__NR_statfs64,          sys_statfs64),       // 268
    GENXY(__NR_fstatfs64,         sys_fstatfs64),      // 269
 

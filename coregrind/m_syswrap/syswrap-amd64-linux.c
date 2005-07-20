@@ -1307,7 +1307,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_chroot,            sys_chroot),         // 161 
    GENX_(__NR_sync,              sys_sync),           // 162 
    //   (__NR_acct,              sys_acct),           // 163 
-   //   (__NR_settimeofday,      sys_settimeofday),   // 164 
+   GENX_(__NR_settimeofday,      sys_settimeofday),   // 164 
 
    LINX_(__NR_mount,             sys_mount),          // 165
    //   (__NR_umount2,           sys_umount),         // 166 
@@ -1377,17 +1377,17 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    PLAX_(__NR_semtimedop,        sys_semtimedop),     // 220 
    LINX_(__NR_fadvise64,         sys_fadvise64),      // 221 
-   //   (__NR_timer_create,      sys_timer_create),   // 222 
-   //   (__NR_timer_settime,     sys_timer_settime),  // 223 
-   //   (__NR_timer_gettime,     sys_timer_gettime),  // 224 
+   GENXY(__NR_timer_create,      sys_timer_create),   // 222 
+   GENXY(__NR_timer_settime,     sys_timer_settime),  // 223 
+   GENXY(__NR_timer_gettime,     sys_timer_gettime),  // 224 
 
-   //   (__NR_timer_getoverrun,  sys_timer_getoverrun)// 225 
-   //   (__NR_timer_delete,      sys_timer_delete),   // 226 
-   //   (__NR_clock_settime,     sys_clock_settime),  // 227 
+   GENX_(__NR_timer_getoverrun,  sys_timer_getoverrun), // 225 
+   GENX_(__NR_timer_delete,      sys_timer_delete),   // 226 
+   GENX_(__NR_clock_settime,     sys_clock_settime),  // 227 
    GENXY(__NR_clock_gettime,     sys_clock_gettime),  // 228 
-   //   (__NR_clock_getres,      sys_clock_getres),   // 229 
+   GENXY(__NR_clock_getres,      sys_clock_getres),   // 229 
 
-   //   (__NR_clock_nanosleep,   sys_clock_nanosleep),// 230 
+   GENXY(__NR_clock_nanosleep,   sys_clock_nanosleep),// 230 
    LINX_(__NR_exit_group,        sys_exit_group),     // 231 
    LINXY(__NR_epoll_wait,        sys_epoll_wait),     // 232 
    LINX_(__NR_epoll_ctl,         sys_epoll_ctl),      // 233 

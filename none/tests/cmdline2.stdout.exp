@@ -7,7 +7,6 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --version                 show version
     -q --quiet                run silently; only print error msgs
     -v --verbose              be more verbose, incl counts of errors
-    --xml=yes                 all output is in XML (Memcheck only)
     --trace-children=no|yes   Valgrind-ise child processes? [no]
     --track-fds=no|yes        track open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]
@@ -22,9 +21,12 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
                               none, for code found in stacks, or all [stack]
 
   user options for Valgrind tools that report errors:
+    --xml=yes                 all output is in XML (Memcheck only)
+    --xml-user-comment=STR    copy STR verbatim to XML output
     --log-fd=<number>         log messages to file descriptor [2=stderr]
     --log-file=<file>         log messages to <file>.pid<pid>
     --log-file-exactly=<file> log messages to <file>
+    --log-file-qualifier=<VAR> incorporate $VAR in logfile name [none]
     --log-socket=ipaddr:port  log messages to socket ipaddr:port
     --demangle=no|yes         automatically demangle C++ names? [yes]
     --num-callers=<number>    show <num> callers in stack traces [12]

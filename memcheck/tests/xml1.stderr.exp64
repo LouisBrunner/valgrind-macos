@@ -17,11 +17,14 @@
 <ppid>...</ppid>
 <tool>memcheck</tool>
 
-<argv>
-  <exe>./xml1</exe>
-</argv>
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./xml1</exe>
+  </argv>
+</args>
 
-<status>RUNNING</status>
+<status> <what>RUNNING</what> <when>...</when> </status>
 
 <error>
   <unique>0x........</unique>
@@ -371,7 +374,7 @@
   <pair> <count>...</count> <unique>0x........</unique> </pair>
 </errorcounts>
 
-<status>FINISHED</status>
+<status> <what>FINISHED</what> <when>...</when> </status>
 
 <suppcounts>...</suppcounts>
 

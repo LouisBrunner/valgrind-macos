@@ -158,6 +158,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x7a: *L2c = (cache_t) {  256, 8,  64 }; L2_found = True;  break;
       case 0x7b: *L2c = (cache_t) {  512, 8,  64 }; L2_found = True;  break;
       case 0x7c: *L2c = (cache_t) { 1024, 8,  64 }; L2_found = True;  break;
+      case 0x7d: *L2c = (cache_t) { 2048, 8,  64 }; L2_found = True;  break;
       case 0x7e: *L2c = (cache_t) {  256, 8, 128 }; L2_found = True;  break;
 
       case 0x81: *L2c = (cache_t) {  128, 8, 32 };  L2_found = True;  break;

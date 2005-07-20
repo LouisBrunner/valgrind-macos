@@ -2436,7 +2436,6 @@ ULong dis_op2_E_G ( Prefix      pfx,
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
-         vassert(0); /* awaiting test case */
          helper_SBB( size, dst1, dst0, src );
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else {
@@ -11868,9 +11867,9 @@ DisResult disInstr_AMD64_WRK (
 //.. //--    case 0x1A: /* SBB Eb,Gb */
 //.. //--       delta = dis_op2_E_G ( sorb, True, SBB, True, 1, delta, "sbb" );
 //.. //--       break;
-//..    case 0x1B: /* SBB Ev,Gv */
-//..       delta = dis_op2_E_G ( sorb, True, Iop_Sub8, True, sz, delta, "sbb" );
-//..       break;
+   case 0x1B: /* SBB Ev,Gv */
+      delta = dis_op2_E_G ( pfx, True, Iop_Sub8, True, sz, delta, "sbb" );
+      break;
 
    case 0x22: /* AND Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;

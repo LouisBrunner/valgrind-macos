@@ -899,7 +899,7 @@ void VG_(kill_self)(Int sigNo)
    VG_(sigaddset)(&mask, sigNo);
    VG_(sigprocmask)(VKI_SIG_UNBLOCK, &mask, &origmask);
 
-   VG_(tkill)(VG_(getpid)(), sigNo);
+   VG_(kill)(VG_(getpid)(), sigNo);
 
    VG_(sigaction)(sigNo, &origsa, NULL);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &origmask, NULL);

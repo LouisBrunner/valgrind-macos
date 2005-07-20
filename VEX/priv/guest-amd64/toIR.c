@@ -619,8 +619,12 @@ static Bool haveF2 ( Prefix pfx ) {
 static Bool haveF3 ( Prefix pfx ) {
    return toBool((pfx & PFX_F3) > 0);
 }
+
 static Bool have66 ( Prefix pfx ) {
    return toBool((pfx & PFX_66) > 0);
+}
+static Bool haveASO ( Prefix pfx ) {
+   return toBool((pfx & PFX_ASO) > 0);
 }
 
 /* Return True iff pfx has 66 set and F2 and F3 clear */
@@ -11523,11 +11527,28 @@ DisResult disInstr_AMD64_WRK (
 //.. 
 //.. //--    case 0xE0: /* LOOPNE disp8 */
 //.. //--    case 0xE1: /* LOOPE  disp8 */
-//.. //--    case 0xE2: /* LOOP   disp8 */
-//.. //--       /* Again, the docs say this uses ECX/CX as a count depending on
-//.. //--          the address size override, not the operand one.  Since we
-//.. //--          don't handle address size overrides, I guess that means
-//.. //--          ECX. */
+   case 0xE2: /* LOOP   disp8 */
+      /* The docs say this uses RCX/ECX as a count depending on
+         the address size override, not the operand one.  Since we
+         don't handle address size overrides, I guess that means
+         RCX. */
+      if (!haveF3(pfx) && !haveF2(pfx) && !have66(pfx) && !haveASO(pfx)) {
+         /* RCX--; if (RCX != 0) goto d64; */
+         d64 = guest_RIP_curr_instr + getSDisp8(delta) + 2; delta++;
+         DIP("loop 0x%llx\n", (ULong)d64);
+         putIReg64(R_RCX, binop(Iop_Sub64, getIReg64(R_RCX), mkU64(1)) );
+         stmt( IRStmt_Exit( 
+                  binop(Iop_CmpNE64,getIReg64(R_RCX),mkU64(0)), 
+                  Ijk_Boring, 
+                  IRConst_U64(d64) 
+             ));
+         dres.whatNext = Dis_StopHere;
+         irbb->next     = mkU64(guest_RIP_curr_instr + 2);
+         irbb->jumpkind = Ijk_Boring;
+         break;
+      }
+      goto decode_failure;
+
 //.. //--       d32 = (eip+1) + getSDisp8(eip); eip++;
 //.. //--       t1 = newTemp(cb);
 //.. //--       uInstr2(cb, GET,  4, ArchReg, R_ECX, TempReg, t1);

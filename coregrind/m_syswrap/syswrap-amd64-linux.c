@@ -1142,7 +1142,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_sched_yield,       sys_sched_yield),    // 24 
 
    GENX_(__NR_mremap,            sys_mremap),         // 25 
-   //   (__NR_msync,             sys_msync),          // 26 
+   GENX_(__NR_msync,             sys_msync),          // 26 
    //   (__NR_mincore,           sys_mincore),        // 27 
    GENX_(__NR_madvise,           sys_madvise),        // 28 
    PLAX_(__NR_shmget,            sys_shmget),         // 29 
@@ -1202,7 +1202,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_fsync,             sys_fsync),          // 74 
 
    GENX_(__NR_fdatasync,         sys_fdatasync),      // 75 
-   //   (__NR_truncate,          sys_truncate),       // 76 
+   GENX_(__NR_truncate,          sys_truncate),       // 76 
    GENX_(__NR_ftruncate,         sys_ftruncate),      // 77 
    GENXY(__NR_getdents,          sys_getdents),       // 78 
    GENXY(__NR_getcwd,            sys_getcwd),         // 79 
@@ -1257,8 +1257,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    LINXY(__NR_getresgid,         sys_getresgid),      // 120 
    GENX_(__NR_getpgid,           sys_getpgid),        // 121 
-   //   (__NR_setfsuid,          sys_setfsuid),       // 122 
-   //   (__NR_setfsgid,          sys_setfsgid),       // 123 
+   LINX_(__NR_setfsuid,          sys_setfsuid),       // 122 
+   LINX_(__NR_setfsgid,          sys_setfsgid),       // 123 
    //   (__NR_getsid,            sys_getsid),         // 124 
 
    //   (__NR_capget,            sys_capget),         // 125 

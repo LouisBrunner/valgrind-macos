@@ -29,12 +29,12 @@
 */
 
 #include "pub_core_basics.h"
-//zz hash include "pub_core_threadstate.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
-//zz hash inklood "pub_cor_libcproc.h"      // For VG_(gettid)()
-//zz hash inklood "pub_cor_stacktrace.h"
+#include "pub_core_libcproc.h"      // For VG_(gettid)()
+#include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"     // For VG_(details).{name,bug_reports_to}
 #include "vki_unistd.h"
@@ -43,7 +43,6 @@
    Assertery.
    ------------------------------------------------------------------ */
 
-#if 0 //zz
 #if defined(VGP_x86_linux)
 #  define GET_REAL_SP_AND_FP(sp, fp) \
       asm("movl %%esp, %0;" \
@@ -67,7 +66,6 @@
 #endif
 
 #define BACKTRACE_DEPTH    100         // nice and deep!
-#endif //zz
 
 /* Pull down the entire world */
 void VG_(exit)( Int status )
@@ -81,48 +79,46 @@ void VG_(exit)( Int status )
 }
 
 // Print the scheduler status.
-//zz static void pp_sched_status ( void )
-//zz {
-//zz    Int i; 
-//zz    VG_(printf)("\nsched status:\n"); 
-//zz    VG_(printf)("  running_tid=%d\n", VG_(get_running_tid)());
-//zz    for (i = 1; i < VG_N_THREADS; i++) {
-//zz       if (VG_(threads)[i].status == VgTs_Empty) continue;
-//zz       VG_(printf)( "\nThread %d: status = %s\n", i, 
-//zz                    VG_(name_of_ThreadStatus)(VG_(threads)[i].status) );
-//zz       VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
-//zz    }
-//zz    VG_(printf)("\n");
-//zz }
+static void pp_sched_status ( void )
+{
+   Int i; 
+   VG_(printf)("\nsched status:\n"); 
+   VG_(printf)("  running_tid=%d\n", VG_(get_running_tid)());
+   for (i = 1; i < VG_N_THREADS; i++) {
+      if (VG_(threads)[i].status == VgTs_Empty) continue;
+      VG_(printf)( "\nThread %d: status = %s\n", i, 
+                   VG_(name_of_ThreadStatus)(VG_(threads)[i].status) );
+      VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
+   }
+   VG_(printf)("\n");
+}
 
 __attribute__ ((noreturn))
 static void report_and_quit ( const Char* report, Addr ip, Addr sp, Addr fp )
 {
-//zz    Addr stacktop;
-//zz    Addr ips[BACKTRACE_DEPTH];
-//zz    ThreadState *tst;
-//zz 
-//zz    tst = VG_(get_ThreadState)( VG_(get_lwp_tid)(VG_(gettid)()) );
-//zz 
-//zz    // If necessary, fake up an ExeContext which is of our actual real CPU
-//zz    // state.  Could cause problems if we got the panic/exception within the
-//zz    // execontext/stack dump/symtab code.  But it's better than nothing.
-//zz    if (0 == ip && 0 == sp && 0 == fp) {
-//zz        ip = (Addr)__builtin_return_address(0);
-//zz        GET_REAL_SP_AND_FP(sp, fp);
-//zz    }
-//zz 
-//zz    stacktop = tst->os_state.valgrind_stack_base + 
-//zz               tst->os_state.valgrind_stack_szB;
-//zz 
-//zz    VG_(get_StackTrace2)(ips, BACKTRACE_DEPTH, ip, sp, fp, sp, stacktop);
-//zz    VG_(pp_StackTrace)  (ips, BACKTRACE_DEPTH);
-//zz 
-//zz    // Don't print this, as it's not terribly interesting and avoids a
-//zz    // dependence on m_scheduler/, which would be crazy.
-//zz    //VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
-//zz 
-//zz    pp_sched_status();
+   Addr stacktop;
+   Addr ips[BACKTRACE_DEPTH];
+   ThreadState *tst = VG_(get_ThreadState)( VG_(get_lwp_tid)(VG_(gettid)()) );
+ 
+   // If necessary, fake up an ExeContext which is of our actual real CPU
+   // state.  Could cause problems if we got the panic/exception within the
+   // execontext/stack dump/symtab code.  But it's better than nothing.
+   if (0 == ip && 0 == sp && 0 == fp) {
+       ip = (Addr)__builtin_return_address(0);
+       GET_REAL_SP_AND_FP(sp, fp);
+   }
+ 
+   stacktop = tst->os_state.valgrind_stack_base + 
+              tst->os_state.valgrind_stack_szB;
+ 
+   VG_(get_StackTrace2)(ips, BACKTRACE_DEPTH, ip, sp, fp, sp, stacktop);
+   VG_(pp_StackTrace)  (ips, BACKTRACE_DEPTH);
+ 
+   // Don't print this, as it's not terribly interesting and avoids a
+   // dependence on m_scheduler/, which would be crazy.
+   //VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
+ 
+   pp_sched_status();
    VG_(printf)("\n");
    VG_(printf)("Note: see also the FAQ.txt in the source distribution.\n");
    VG_(printf)("It contains workarounds to several common problems.\n");
@@ -196,8 +192,7 @@ void VG_(tool_panic) ( Char* str )
    panic(VG_(details).name, VG_(details).bug_reports_to, str, 0,0,0);
 }
 
-/* Print some helpful-ish text about unimplemented things, and give
-   up. */
+/* Print some helpful-ish text about unimplemented things, and give up. */
 void VG_(unimplemented) ( Char* msg )
 {
    VG_(message)(Vg_UserMsg, "");
@@ -220,11 +215,9 @@ void VG_(unimplemented) ( Char* msg )
       "Valgrind has to exit now.  Sorry.  Bye!");
    VG_(message)(Vg_UserMsg,
       "");
-//zz    pp_sched_status();
+   pp_sched_status();
    VG_(exit)(1);
 }
-
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

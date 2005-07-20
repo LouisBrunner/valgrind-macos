@@ -619,6 +619,9 @@ static Bool haveF2 ( Prefix pfx ) {
 static Bool haveF3 ( Prefix pfx ) {
    return toBool((pfx & PFX_F3) > 0);
 }
+static Bool have66 ( Prefix pfx ) {
+   return toBool((pfx & PFX_66) > 0);
+}
 
 /* Return True iff pfx has 66 set and F2 and F3 clear */
 static Bool have66noF2noF3 ( Prefix pfx )
@@ -12430,65 +12433,6 @@ DisResult disInstr_AMD64_WRK (
       }
       goto decode_failure;
 
-//..    case 0xA5: 
-//..       dis_string_op( dis_MOVS, ( opc == 0xA4 ? 1 : sz ), "movs", sorb );
-//..       break;
-
-//..    case 0xA4: /* MOVS, no REP prefix */
-//..    case 0xA5: 
-//..       dis_string_op( dis_MOVS, ( opc == 0xA4 ? 1 : sz ), "movs", sorb );
-//..       break;
-
-//..   case 0xF3: { 
-//..       Addr32 eip_orig = guest_eip_bbstart + delta - 1;
-//..       vassert(sorb == 0);
-//..       abyte = getUChar(delta); delta++;
-//.. 
-//..       if (abyte == 0x66) { sz = 2; abyte = getUChar(delta); delta++; }
-//..       whatNext = Dis_StopHere;
-//.. 
-//..       switch (abyte) {
-//..       case 0xA4: sz = 1;   /* REP MOVS<sz> */
-//..       case 0xA5:
-//..          dis_REP_op ( X86CondAlways, dis_MOVS, sz, eip_orig, 
-//..                                      guest_eip_bbstart+delta, "rep movs" );
-//..          break;
-//.. 
-//..       case 0xA6: sz = 1;   /* REPE CMP<sz> */
-//..       case 0xA7:
-//..          dis_REP_op ( X86CondZ, dis_CMPS, sz, eip_orig, 
-//..                                 guest_eip_bbstart+delta, "repe cmps" );
-//..          break;
-//.. 
-//..       case 0xAA: sz = 1;   /* REP STOS<sz> */
-//..       case 0xAB:
-//..          dis_REP_op ( X86CondAlways, dis_STOS, sz, eip_orig, 
-//..                                      guest_eip_bbstart+delta, "rep stos" );
-//..          break;
-//.. //-- 
-//.. //--       case 0xAE: sz = 1;   /* REPE SCAS<sz> */
-//.. //--       case 0xAF: 
-//.. //--          dis_REP_op ( cb, CondZ, dis_SCAS, sz, eip_orig, eip, "repe scas" );
-//.. //--          break;
-//..       
-//..       case 0x90:           /* REP NOP (PAUSE) */
-//..          /* a hint to the P4 re spin-wait loop */
-//..          DIP("rep nop (P4 pause)\n");
-//..          jmp_lit(Ijk_Yield, ((Addr32)guest_eip_bbstart)+delta);
-//..          whatNext = Dis_StopHere;
-//..          break;
-//.. 
-//.. //--       case 0xC3:           /* REP RET */
-//.. //--          /* AMD K7/K8-specific optimisation; faster than vanilla RET */
-//.. //--          dis_ret(cb, 0);
-//.. //--          DIP("rep ret\n");
-//.. //--          break;
-//.. 
-//..       default:
-//..          goto decode_failure;
-//..       }
-//..       break;
-//..    }
 
    /* ------------------------ XCHG ----------------------- */
 
@@ -12522,6 +12466,15 @@ DisResult disInstr_AMD64_WRK (
       break;
 
    case 0x90: /* XCHG eAX,eAX */
+      /* detect and handle F3 90 (rep nop) specially */
+      if (!have66(pfx) && !haveF2(pfx) && haveF3(pfx)) {
+         DIP("rep nop (P4 pause)\n");
+         /* "observe" the hint.  The Vex client needs to be careful not
+            to cause very long delays as a result, though. */
+         jmp_lit(Ijk_Yield, guest_RIP_bbstart+delta);
+         dres.whatNext = Dis_StopHere;
+         break;
+      }
       /* detect and handle NOPs specially */
       if (/* F2/F3 probably change meaning completely */
           !haveF2orF3(pfx)

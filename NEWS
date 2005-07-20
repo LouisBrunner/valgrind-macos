@@ -3,28 +3,36 @@
 
 Release 3.0.0 ([[TODO: add release date]])
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-3.0.0 is a major overhaul of Valgrind.  The most significant user-visible
-change is that Valgrind now supports architectures other than x86.
-The new architectures it supports are AMD64 and PPC32, and the
-infrastructure is present for other architectures to be added later.
+3.0.0 is a major overhaul of Valgrind.  The most significant
+user-visible change is that Valgrind now supports architectures other
+than x86.  The new architectures it supports are AMD64 and PPC32, and
+the infrastructure is present for other architectures to be added later.
 
 The AMD64 support works well, but has some shortcomings:
 
-  - It generally won't be as solid as the x86 version.  For example, support
-    for more obscure instructions and system calls may be missing.  We will
-    fix these as they arise.
+- It generally won't be as solid as the x86 version.  For example,
+  support for more obscure instructions and system calls may be missing.
+  We will fix these as they arise.
 
-  - Address space may be limited;  see the point about position-independent
-    executables below.
+- Address space may be limited;  see the point about
+  position-independent executables below.
 
-The PPC32 support is very basic.  It may not work reliably even for small
-programs, but it's a start.  Many thanks to Paul Mackerras for his great
-work that enabled this support.
+- If Valgrind is built on an AMD64 machine, it will only run 64-bit
+  executables.  If you want to run 32-bit x86 executables under Valgrind
+  on an AMD64, you will need to build Valgrind on an x86 machine and
+  copy it to the AMD64 machine.  And it probably won't work if you do
+  something tricky like exec'ing a 32-bit program from a 64-bit program
+  while using --trace-children=yes.  We hope to improve this situation
+  in the future.
+
+The PPC32 support is very basic.  It may not work reliably even for
+small programs, but it's a start.  Many thanks to Paul Mackerras for his
+great work that enabled this support.
 
 Other user-visible changes:
 
-- No longer building Valgrind as a position-indendependent executable (PIE)
-  by default, as it caused too many problems.
+- No longer building Valgrind as a position-indendependent executable
+  (PIE) by default, as it caused too many problems.
 
   Without PIE enabled, AMD64 programs will only be able to access 2GB of
   address space.  We will fix this eventually, but not for the moment.
@@ -36,31 +44,32 @@ Other user-visible changes:
   VALGRIND_STACK_REGISTER, VALGRIND_STACK_DEREGISTER and
   VALGRIND_STACK_CHANGE client requests for trickier cases.
 
-- Support for programs that use self-modifying code has been improved, in
-  particular programs that put temporary code fragments on the stack.
-  This helps for C programs compiled with GCC that use nested functions, and
-  also Ada programs.  This is controlled with the --smc-support flag,
-  although the default setting should work in most cases.
+- Support for programs that use self-modifying code has been improved,
+  in particular programs that put temporary code fragments on the stack.
+  This helps for C programs compiled with GCC that use nested functions,
+  and also Ada programs.  This is controlled with the --smc-support
+  flag, although the default setting should work in most cases.
 
-- Output can now be printed in XML format.  This should make it easier for
-  other tools (such as GUI front-ends) to use Valgrind output as input.
-  The --xml flag controls this.  
-  [[TODO: describe the related CLOs added (eg. --log-file-qualifier)]]
+- Output can now be printed in XML format.  This should make it easier
+  for other tools (such as GUI front-ends) to use Valgrind output as
+  input.  The --xml flag controls this.  [[TODO: describe the related
+  CLOs added (eg. --log-file-qualifier)]]
 
 - Programs that allocate many heap blocks may run faster, due to
   improvements in certain data structures.
 
-- Addrcheck is currently not working.  We hope to get it working again soon.
-  Helgrind is still not working, as was the case for the 2.4.0 release.
+- Addrcheck is currently not working.  We hope to get it working again
+  soon.  Helgrind is still not working, as was the case for the 2.4.0
+  release.
 
 - [[TODO: add more here]]
 
 Changes that are not user-visible:
 
 - The JITter has been completely rewritten, and is now in a separate
-  library, called Vex.  This enabled a lot of the user-visible changes, such
-  as new architecture support.  It may run slower than the old JITter;
-  feedback about this would be useful.
+  library, called Vex.  This enabled a lot of the user-visible changes,
+  such as new architecture support.  It may run slower than the old
+  JITter; feedback about this would be useful.
 
 - The code has been modularized significantly, and should be easier to
   navigate and understand.

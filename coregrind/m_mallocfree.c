@@ -56,34 +56,42 @@
 
 typedef UChar UByte;
 
-/* Block layout:
+/* Layout of an in-use block:
 
-     this block total szB     (sizeof(SizeT) bytes)
-     freelist previous ptr    (sizeof(void*) bytes)
-     red zone bytes           (depends on .rz_szB field of Arena)
-     (payload bytes)
-     red zone bytes           (depends on .rz_szB field of Arena)
-     freelist next ptr        (sizeof(void*) bytes)
-     this block total szB     (sizeof(SizeT) bytes)
+      this block total szB     (sizeof(SizeT) bytes)
+      red zone bytes           (depends on Arena.rz_szB, but > sizeof(void*))
+      (payload bytes)
+      red zone bytes           (depends on Arena.rz_szB, but > sizeof(void*))
+      this block total szB     (sizeof(SizeT) bytes)
 
-     Total size in bytes (bszB) and payload size in bytes (pszB)
-     are related by:
+   Layout of a block on the free list:
 
-        bszB == pszB + 2*sizeof(SizeT) + 2*sizeof(void*) + 2*a->rz_szB
+      this block total szB     (sizeof(SizeT) bytes)
+      freelist previous ptr    (sizeof(void*) bytes)
+      excess red zone bytes    (if Arena.rz_szB > sizeof(void*))
+      (payload bytes)
+      excess red zone bytes    (if Arena.rz_szB > sizeof(void*))
+      freelist next ptr        (sizeof(void*) bytes)         
+      this block total szB     (sizeof(SizeT) bytes)         
 
-     Furthermore, both size fields in the block have their least-significant
-     bit set if the block is not in use, and unset if it is in use.
-     (The bottom 3 or so bits are always free for this because of alignment.)
-     A block size of zero is not possible, because a block always has at
-     least two SizeTs and two pointers of overhead.  
+   Total size in bytes (bszB) and payload size in bytes (pszB)
+   are related by:
 
-     Nb: All Block payloads must be VG_MIN_MALLOC_SZB-aligned.  This is
-     achieved by ensuring that Superblocks are VG_MIN_MALLOC_SZB-aligned
-     (see newSuperblock() for how), and that the lengths of the following
-     things are a multiple of VG_MIN_MALLOC_SZB:
-     - Superblock admin section lengths (due to elastic padding)
-     - Block admin section (low and high) lengths (due to elastic redzones)
-     - Block payload lengths (due to req_pszB rounding up)
+      bszB == pszB + 2*sizeof(SizeT) + 2*a->rz_szB
+
+   Furthermore, both size fields in the block have their least-significant
+   bit set if the block is not in use, and unset if it is in use.
+   (The bottom 3 or so bits are always free for this because of alignment.)
+   A block size of zero is not possible, because a block always has at
+   least two SizeTs and two pointers of overhead.  
+
+   Nb: All Block payloads must be VG_MIN_MALLOC_SZB-aligned.  This is
+   achieved by ensuring that Superblocks are VG_MIN_MALLOC_SZB-aligned
+   (see newSuperblock() for how), and that the lengths of the following
+   things are a multiple of VG_MIN_MALLOC_SZB:
+   - Superblock admin section lengths (due to elastic padding)
+   - Block admin section (low and high) lengths (due to elastic redzones)
+   - Block payload lengths (due to req_pszB rounding up)
 */
 typedef
    struct {
@@ -142,7 +150,7 @@ typedef
 
 #define SIZE_T_0x1      ((SizeT)0x1)
 
-// Mark a bszB as in-use, and not in-use.
+// Mark a bszB as in-use, and not in-use, and remove the in-use attribute.
 static __inline__
 SizeT mk_inuse_bszB ( SizeT bszB )
 {
@@ -155,9 +163,6 @@ SizeT mk_free_bszB ( SizeT bszB )
    vg_assert(bszB != 0);
    return bszB | SIZE_T_0x1;
 }
-
-// Remove the in-use/not-in-use attribute from a bszB, leaving just
-// the size.
 static __inline__
 SizeT mk_plain_bszB ( SizeT bszB )
 {
@@ -165,12 +170,7 @@ SizeT mk_plain_bszB ( SizeT bszB )
    return bszB & (~SIZE_T_0x1);
 }
 
-// Set and get the lower size field of a block.
-static __inline__
-void set_bszB_lo ( Block* b, SizeT bszB )
-{ 
-   *(SizeT*)&b[0] = bszB;
-}
+// Set get the lower size field of a block.
 static __inline__
 SizeT get_bszB_lo ( Block* b )
 {
@@ -194,17 +194,35 @@ UByte* last_byte ( Block* b )
    return &b2[mk_plain_bszB(get_bszB_lo(b)) - 1];
 }
 
+// Get the upper size field of a block.
+static __inline__
+SizeT get_bszB_hi ( Block* b )
+{
+   UByte* lb = last_byte(b);
+   return *(SizeT*)&lb[-sizeof(SizeT) + 1];
+}
+
+// Set the size fields of a block.
+static __inline__
+void set_bszB ( Block* b, SizeT bszB )
+{
+   UByte* lb;
+   *(SizeT*)&b[0] = bszB;     // Set lo bszB;  must precede last_byte() call
+   lb = last_byte(b);
+   *(SizeT*)&lb[-sizeof(SizeT) + 1] = bszB;  // Set hi bszB
+}
+
 // Return the lower, upper and total overhead in bytes for a block.
 // These are determined purely by which arena the block lives in.
 static __inline__
 SizeT overhead_szB_lo ( Arena* a )
 {
-   return sizeof(SizeT) + sizeof(void*) + a->rz_szB;
+   return sizeof(SizeT) + a->rz_szB;
 }
 static __inline__
 SizeT overhead_szB_hi ( Arena* a )
 {
-   return a->rz_szB + sizeof(void*) + sizeof(SizeT);
+   return a->rz_szB + sizeof(SizeT);
 }
 static __inline__
 SizeT overhead_szB ( Arena* a )
@@ -231,22 +249,6 @@ SizeT bszB_to_pszB ( Arena* a, SizeT bszB )
 {
    vg_assert(bszB >= overhead_szB(a));
    return bszB - overhead_szB(a);
-}
-
-// Set and get the upper size field of a block.
-static __inline__
-void set_bszB_hi ( Block* b, SizeT bszB )
-{
-   UByte* b2 = (UByte*)b;
-   UByte* lb = last_byte(b);
-   vg_assert(lb == &b2[mk_plain_bszB(bszB) - 1]);
-   *(SizeT*)&lb[-sizeof(SizeT) + 1] = bszB;
-}
-static __inline__
-SizeT get_bszB_hi ( Block* b )
-{
-   UByte* lb = last_byte(b);
-   return *(SizeT*)&lb[-sizeof(SizeT) + 1];
 }
 
 // Get a block's size as stored, ie with the in-use/free attribute.
@@ -329,25 +331,25 @@ static __inline__
 void set_rz_lo_byte ( Arena* a, Block* b, UInt rz_byteno, UByte v )
 {
    UByte* b2 = (UByte*)b;
-   b2[sizeof(SizeT) + sizeof(void*) + rz_byteno] = v;
+   b2[sizeof(SizeT) + rz_byteno] = v;
 }
 static __inline__
 void set_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno, UByte v )
 {
    UByte* lb = last_byte(b);
-   lb[-sizeof(SizeT) - sizeof(void*) - rz_byteno] = v;
+   lb[-sizeof(SizeT) - rz_byteno] = v;
 }
 static __inline__
 UByte get_rz_lo_byte ( Arena* a, Block* b, UInt rz_byteno )
 {
    UByte* b2 = (UByte*)b;
-   return b2[sizeof(SizeT) + sizeof(void*) + rz_byteno];
+   return b2[sizeof(SizeT) + rz_byteno];
 }
 static __inline__
 UByte get_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno )
 {
    UByte* lb = last_byte(b);
-   return lb[-sizeof(SizeT) - sizeof(void*) - rz_byteno];
+   return lb[-sizeof(SizeT) - rz_byteno];
 }
 
 
@@ -447,17 +449,18 @@ void ensure_mm_init ( void )
       zone bytes are unchanged.
 
       Nb: redzone sizes are *minimums*;  they could be made bigger to ensure
-      alignment.  Eg. on 32-bit machines, 4 becomes 8, and 12 becomes 16;
-      but on 64-bit machines 4 stays as 4, and 12 stays as 12 --- the extra
-      4 bytes in both are accounted for by the larger prev/next ptr.
+      alignment.  Eg. with 8 byte alignment, on 32-bit machines 4 stays as
+      4, but 16 becomes 20;  but on 64-bit machines 4 becomes 8, and 16
+      stays as 16 --- the extra 4 bytes in both are accounted for by the
+      larger prev/next ptr.
    */
-   arena_init ( VG_AR_CORE,      "core",     4, CORE_ARENA_MIN_SZB );
-   arena_init ( VG_AR_TOOL,      "tool",     4,            1048576 );
-   arena_init ( VG_AR_SYMTAB,    "symtab",   4,            1048576 );
-   arena_init ( VG_AR_CLIENT,    "client", client_redzone_szB, 1048576 );
-   arena_init ( VG_AR_DEMANGLE,  "demangle", 12/*paranoid*/, 65536 );
-   arena_init ( VG_AR_EXECTXT,   "exectxt",  4,              65536 );
-   arena_init ( VG_AR_ERRORS,    "errors",   4,              65536 );
+   arena_init ( VG_AR_CORE,      "core",     4,       CORE_ARENA_MIN_SZB );
+   arena_init ( VG_AR_TOOL,      "tool",     4,                  1048576 );
+   arena_init ( VG_AR_SYMTAB,    "symtab",   4,                  1048576 );
+   arena_init ( VG_AR_CLIENT,    "client",   client_redzone_szB, 1048576 );
+   arena_init ( VG_AR_DEMANGLE,  "demangle", 4,                    65536 );
+   arena_init ( VG_AR_EXECTXT,   "exectxt",  4,                    65536 );
+   arena_init ( VG_AR_ERRORS,    "errors",   4,                    65536 );
 
    init_done = True;
 #  ifdef DEBUG_MALLOC
@@ -809,8 +812,7 @@ void mkFreeBlock ( Arena* a, Block* b, SizeT bszB, UInt b_lno )
    vg_assert(b_lno == pszB_to_listNo(pszB));
    //zzVALGRIND_MAKE_WRITABLE(b, bszB);
    // Set the size fields and indicate not-in-use.
-   set_bszB_lo(b, mk_free_bszB(bszB));
-   set_bszB_hi(b, mk_free_bszB(bszB));
+   set_bszB(b, mk_free_bszB(bszB));
 
    // Add to the relevant list.
    if (a->freelist[b_lno] == NULL) {
@@ -838,8 +840,7 @@ void mkInuseBlock ( Arena* a, Block* b, SizeT bszB )
    UInt i;
    vg_assert(bszB >= min_useful_bszB(a));
    //zzVALGRIND_MAKE_WRITABLE(b, bszB);
-   set_bszB_lo(b, mk_inuse_bszB(bszB));
-   set_bszB_hi(b, mk_inuse_bszB(bszB));
+   set_bszB(b, mk_inuse_bszB(bszB));
    set_prev_b(b, NULL);    // Take off freelist
    set_next_b(b, NULL);    // ditto
    if (!a->clientmem) {

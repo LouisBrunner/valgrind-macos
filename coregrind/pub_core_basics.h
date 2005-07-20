@@ -58,7 +58,11 @@
 #  error Unknown arch
 #endif
 
+// For jmp_buf
 #include <setjmp.h>
+
+// Autoconf-generated settings
+#include "config.h"
 
 #endif   // __PUB_CORE_BASICS_H
 

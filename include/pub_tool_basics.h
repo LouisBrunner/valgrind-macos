@@ -52,9 +52,6 @@
 // For varargs types
 #include <stdarg.h>
 
-// Autoconf-generated settings
-#include "config.h"
-
 // Kernel types.  Might as well have them here, they're used so broadly
 // (eg. in pub_core_threadstate.h).
 #if defined(VGO_linux)

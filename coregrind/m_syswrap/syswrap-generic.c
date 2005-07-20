@@ -5243,8 +5243,9 @@ PRE(sys_rt_sigtimedwait)
       PRE_MEM_READ(  "rt_sigtimedwait(set)",  ARG1, sizeof(vki_sigset_t));
    if (ARG2 != 0)
       PRE_MEM_WRITE( "rt_sigtimedwait(info)", ARG2, sizeof(vki_siginfo_t) );
-   PRE_MEM_READ( "rt_sigtimedwait(timeout)",
-                 ARG4, sizeof(struct vki_timespec) );
+   if (ARG3 != 0)
+      PRE_MEM_READ( "rt_sigtimedwait(timeout)",
+                    ARG3, sizeof(struct vki_timespec) );
 }
 
 POST(sys_rt_sigtimedwait)

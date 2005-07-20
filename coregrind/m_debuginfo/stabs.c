@@ -654,6 +654,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       case -27:	type = ML_(st_mkint)(def, 1, True); break;
       case -28:	type = ML_(st_mkint)(def, 2, True); break;
       case -29:	type = ML_(st_mkint)(def, 4, True); break;
+      case -30:	type = ML_(st_mkint)(def, 2, False); break;
       case -31:	type = ML_(st_mkint)(def, 8, True); break;
       case -32:	type = ML_(st_mkint)(def, 8, False); break;
       case -33:	type = ML_(st_mkint)(def, 8, False); break;

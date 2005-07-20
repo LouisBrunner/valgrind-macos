@@ -735,8 +735,9 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
    }
 
    case 'k':                    /* const */
-   case 'B': {                  /* volatile */
-      /* ('k' | 'B') TYPE */
+   case 'B':                    /* volatile */
+   case 'd': {                  /* file (pascal only) */
+      /* ('k' | 'B' | 'd') TYPE */
       type = stabtype_parser(si, NULL, &p);
       break;
    }

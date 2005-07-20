@@ -496,7 +496,9 @@ static SysRes do_fork_clone ( ThreadId tid,
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
 
    /* Since this is the fork() form of clone, we don't need all that
-      VG_(clone) stuff */
+      VG_(clone) stuff - note that the last two arguments are the
+      opposite way round to x86 and ppc32 as the amd64 kernel expects
+      the arguments in a different order */
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)child_tidptr, (UWord)NULL );

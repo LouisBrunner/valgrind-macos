@@ -440,13 +440,17 @@ typedef struct vki_siginfo {
 #define VKI_SI_USER	0		/* sent by kill, sigsend, raise */
 #define VKI_SI_TKILL	-6		/* sent by tkill system call */
 
-#define VKI_SIGEV_MAX_SIZE	64
-#ifndef VKI_SIGEV_PAD_SIZE
-#define VKI_SIGEV_PAD_SIZE	((VKI_SIGEV_MAX_SIZE/sizeof(int)) - 3)
+/*
+ * This works because the alignment is ok on all current architectures
+ * but we leave open this being overridden in the future
+ */
+#ifndef VKI___ARCH_SIGEV_PREAMBLE_SIZE
+#define VKI___ARCH_SIGEV_PREAMBLE_SIZE	(sizeof(int) * 2 + sizeof(vki_sigval_t))
 #endif
 
-// [[Nb: in 2.6.8.1, this constant is never defined...]]
-#ifndef HAVE_ARCH_SIGEVENT_T
+#define VKI_SIGEV_MAX_SIZE	64
+#define VKI_SIGEV_PAD_SIZE	((VKI_SIGEV_MAX_SIZE - VKI___ARCH_SIGEV_PREAMBLE_SIZE) \
+		/ sizeof(int))
 
 typedef struct vki_sigevent {
 	vki_sigval_t sigev_value;
@@ -462,8 +466,6 @@ typedef struct vki_sigevent {
 		} _sigev_thread;
 	} _sigev_un;
 } vki_sigevent_t;
-
-#endif
 
 //----------------------------------------------------------------------
 // From elsewhere...

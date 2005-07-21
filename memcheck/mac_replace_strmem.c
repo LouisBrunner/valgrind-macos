@@ -161,6 +161,7 @@ STRRCHR(m_ld_linux_so_2, rindex)
 // Apparently index() is the same thing as strchr()
 STRCHR(m_libc_so_6,            strchr)
 STRCHR(m_ld_linux_so_2,        strchr)
+STRCHR(m_ld_linux_x86_64_so_2, strchr)
 STRCHR(m_libc_so_6,            index)
 STRCHR(m_ld_linux_so_2,        index)
 STRCHR(m_ld_linux_x86_64_so_2, index)
@@ -441,8 +442,9 @@ MEMCMP(m_libc_so_6, bcmp)
       return dst; \
    }
 
-STPCPY(m_libc_so_6,     stpcpy)
-STPCPY(m_ld_linux_so_2, stpcpy)
+STPCPY(m_libc_so_6,            stpcpy)
+STPCPY(m_ld_linux_so_2,        stpcpy)
+STPCPY(m_ld_linux_x86_64_so_2, stpcpy)
    
 
 #define MEMSET(soname, fnname) \

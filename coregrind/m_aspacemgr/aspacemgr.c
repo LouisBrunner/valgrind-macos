@@ -31,7 +31,7 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_debuginfo.h"  // Needed for pub_core_aspacemgr :(
+#include "pub_core_debuginfo.h"  // Needed for pub_core_aspacemgr.h :(
 #include "pub_core_aspacemgr.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -168,7 +168,7 @@ static Int allocate_segname ( const HChar* name )
 
    vg_assert(name);
 
-   if (0) VG_(printf)("alloc_segname %s\n", name);
+   if (0) VG_(printf)("allocate_segname %s\n", name);
 
    len = VG_(strlen)(name);
    if (len >= VG_MAX_SEGNAMELEN-1) {
@@ -320,6 +320,8 @@ static void make_space_at ( Int i )
    segments_used++;
 }
 
+// Forward declaration
+static void dealloc_seg_memory(Segment *s);
 
 /* Shift segments [i+1 .. segments_used-1] down by one, and decrement
    segments_used. 
@@ -328,8 +330,10 @@ static void delete_segment_at ( Int i )
 {
    Int j;
    vg_assert(i >= 0 && i < segments_used);
-   for (j = i+1; j < segments_used; j++)
-     segments[j-1] = segments[j];
+   dealloc_seg_memory(&segments[i]);
+   for (j = i+1; j < segments_used; j++) {
+      segments[j-1] = segments[j];
+   }
    segments_used--;
    vg_assert(segments_used >= 0 && segments_used < VG_N_SEGMENTS);
 }
@@ -434,8 +438,12 @@ static Int split_segment ( Addr a )
    vg_assert(a > segments[r].addr);
    delta = a - segments[r].addr;
    make_space_at(r);
+   
    segments[r] = segments[r+1];
    segments[r].len = delta;
+   if (segments[r].seginfo)
+      VG_(seginfo_incref)(segments[r].seginfo);
+   
    segments[r+1].len -= delta;
    segments[r+1].addr += delta;
    segments[r+1].offset += delta;
@@ -527,6 +535,10 @@ static void preen_segments ( void )
                         s->addr, s->addr+s->len,
                         s1->addr, s1->addr+s1->len);
          s->len += s1->len;
+
+         vg_assert(s->seginfo == s1->seginfo);
+         dealloc_seg_memory(s1);
+         
          continue;
       }
       if (wr < rd)
@@ -570,35 +582,15 @@ Bool VG_(seg_overlaps)(const Segment *s, Addr p, SizeT len)
    return (p < se && pe > s->addr);
 }
 
-#if 0
-/* 20050228: apparently unused */
-/* Prepare a Segment structure for recycling by freeing everything
-   hanging off it. */
-static void recycleseg(Segment *s)
-{
-   if (s->flags & SF_CODE)
-      VG_(discard_translations)(s->addr, s->len);
-
-   if (s->filename != NULL)
-      VG_(arena_free)(VG_AR_CORE, (Char *)s->filename);
-
-   /* keep the SegInfo, if any - it probably still applies */
-}
-
 /* When freeing a Segment, also clean up every one else's ideas of
    what was going on in that range of memory */
-static void freeseg(Segment *s)
+static void dealloc_seg_memory(Segment *s)
 {
-   recycleseg(s);
    if (s->seginfo != NULL) {
       VG_(seginfo_decref)(s->seginfo, s->addr);
       s->seginfo = NULL;
    }
-
-   VG_(SkipNode_Free)(&sk_segments, s);
 }
-#endif
-
 
 /* Get rid of any translations arising from s. */
 /* Note, this is not really the job of the low level memory manager.
@@ -784,7 +776,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
    preen_segments();
    if (0) show_segments("after map_file_segment");
 
-   /* If this mapping is of the beginning of a file, isn't part of
+   /* If this mapping is at the beginning of a file, isn't part of
       Valgrind, is at least readable and seems to contain an object
       file, then try reading symbols from it.
 
@@ -824,21 +816,23 @@ VG_(map_file_segment)( Addr addr, SizeT len,
          s->seginfo = VG_(read_seg_symbols)(s->addr, s->len, s->offset,
                                             s->filename);
       }
-      //else 
-      //if (flags & SF_MMAP) {
-      //   const SegInfo *info;
-      //
-      //   /* Otherwise see if an existing SegInfo applies to this Segment */
-      //   for(info = VG_(next_seginfo)(NULL);
-      //      info != NULL;
-      //      info = VG_(next_seginfo)(info)) {
-      //      if (VG_(seg_overlaps)(s, VG_(seg_start)(info), VG_(seg_size)(info)))
-      //      {
-      //         s->seginfo = (SegInfo *)info;
-      //         VG_(seginfo_incref)((SegInfo *)info);
-      //      }
-      //   }
-      //}
+      else if (flags & SF_MMAP) 
+      {
+         const SegInfo *si;
+      
+         /* Otherwise see if an existing SegInfo applies to this Segment */
+         for (si = VG_(next_seginfo)(NULL);
+              si != NULL;
+              si = VG_(next_seginfo)(si)) 
+         {
+            if (VG_(seg_overlaps)(s, VG_(seginfo_start)(si), 
+                                     VG_(seginfo_size)(si)))
+            {
+               s->seginfo = (SegInfo *)si;
+               VG_(seginfo_incref)((SegInfo *)si);
+            }
+         }
+      }
    }
 
    /* clean up */

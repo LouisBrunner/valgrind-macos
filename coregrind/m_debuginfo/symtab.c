@@ -1388,7 +1388,7 @@ Bool read_lib_symbols ( SegInfo* si )
 		  if (seg->symtab != NULL)
 		     VG_(seginfo_decref)(seg->symtab, seg->addr);
 
-		  VG_(symtab_incref)(si);
+		  VG_(seginfo_incref)(si);
 		  seg->symtab = si;
 		  
 		  if (0)
@@ -1702,6 +1702,7 @@ static void unload_symbols ( Addr start, SizeT length )
 
 void VG_(seginfo_decref)(SegInfo *si, Addr start)
 {
+   vg_assert(si);
    vg_assert(si->ref >= 1);
    if (--si->ref == 0)
       unload_symbols(si->start, si->size);
@@ -1709,6 +1710,7 @@ void VG_(seginfo_decref)(SegInfo *si, Addr start)
 
 void VG_(seginfo_incref)(SegInfo *si)
 {
+   vg_assert(si);
    vg_assert(si->ref > 0);
    si->ref++;
 }

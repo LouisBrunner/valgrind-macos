@@ -1537,7 +1537,8 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       // Make a compare that will always be true:
       HReg r_zero = newVRegI(env);
       addInstr(env, PPC32Instr_LI32(r_zero, 0));
-      addInstr(env, PPC32Instr_Cmp32(False/*unsigned*/, /*cr*/7, r_zero, PPC32RH_Reg(r_zero)));
+      addInstr(env, PPC32Instr_Cmp32(False/*unsigned*/, /*cr*/7, 
+                                     r_zero, PPC32RH_Reg(r_zero)));
       return mk_PPCCondCode( Pct_TRUE, Pcf_7EQ );
    }
 
@@ -1567,6 +1568,19 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 //..       return iselCondCode(env, expr1);
 //..    }
 
+   /* 32to1 */
+   if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_32to1) {
+      HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+      HReg tmp = newVRegI(env);
+      /* could do better, probably -- andi. */
+      addInstr(env, PPC32Instr_Alu32(
+                       Palu_AND, tmp, src, PPC32RH_Imm(False,1)));
+      addInstr(env, PPC32Instr_Cmp32(
+                       False/*unsigned*/, 7/*cr*/, 
+                       tmp, PPC32RH_Imm(False,1)));
+      return mk_PPCCondCode( Pct_TRUE, Pcf_7EQ );
+   }
+
    /* --- patterns rooted at: CmpNEZ8 --- */
 
    /* CmpNEZ8(x) */
@@ -1576,7 +1590,8 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       HReg r_32 = iselIntExpr_R(env, e->Iex.Unop.arg);
       HReg r_l  = newVRegI(env);
       addInstr(env, PPC32Instr_Alu32(Palu_AND, r_l, r_32, PPC32RH_Imm(False,0xFF)));
-      addInstr(env, PPC32Instr_Cmp32(False/*unsigned*/, 7, r_l, PPC32RH_Imm(False,0)));
+      addInstr(env, PPC32Instr_Cmp32(False/*unsigned*/, 7/*cr*/, 
+r_l, PPC32RH_Imm(False,0)));
       return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
    }
 
@@ -1661,9 +1676,9 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpEQ32:  return mk_PPCCondCode( Pct_TRUE,  Pcf_7EQ );
          case Iop_CmpNE32:  return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
 //      case Iop_CmpLT32S: return mk_PPCCondCode( Pct_TRUE,  Pcf_LT );
-//      case Iop_CmpLT32U: return mk_PPCCondCode( Pct_TRUE,  Pcf_LT );
+         case Iop_CmpLT32U: return mk_PPCCondCode( Pct_TRUE,  Pcf_7LT );
 //      case Iop_CmpLE32S: return mk_PPCCondCode( Pct_FALSE, Pcf_GT );
-//      case Iop_CmpLE32U: return mk_PPCCondCode( Pct_FALSE, Pcf_GT );
+         case Iop_CmpLE32U: return mk_PPCCondCode( Pct_FALSE, Pcf_7GT );
       default: vpanic("iselCondCode(ppc32): CmpXX32");
       }
    }

@@ -111,19 +111,18 @@ UInt ppc32g_calculate_xer_ca  ( UInt op,
   Enumeration for xer_ca/ov calculation helper functions
 */
 enum {
-   PPC32G_FLAG_OP_ADD=0,   // addc[o], addic
-   PPC32G_FLAG_OP_ADDE,    // adde[o], addme[o], addze[o]
-   PPC32G_FLAG_OP_DIVW,    // divwo
-   PPC32G_FLAG_OP_DIVWU,   // divwuo
-   PPC32G_FLAG_OP_MULLW,   // mullwo
-   PPC32G_FLAG_OP_NEG,     // nego
-   PPC32G_FLAG_OP_SUBF,    // subfo
-   PPC32G_FLAG_OP_SUBFC,   // subfc[o]
-   PPC32G_FLAG_OP_SUBFE,   // subfe[o], subfme[o], subfze[o]
-   PPC32G_FLAG_OP_SUBFI,   // subfic
-   PPC32G_FLAG_OP_SRAW,    // sraw
-   PPC32G_FLAG_OP_SRAWI,   // srawi
-   
+   /* 0  */ PPC32G_FLAG_OP_ADD=0,   // addc[o], addic
+   /* 1  */ PPC32G_FLAG_OP_ADDE,    // adde[o], addme[o], addze[o]
+   /* 2  */ PPC32G_FLAG_OP_DIVW,    // divwo
+   /* 3  */ PPC32G_FLAG_OP_DIVWU,   // divwuo
+   /* 4  */ PPC32G_FLAG_OP_MULLW,   // mullwo
+   /* 5  */ PPC32G_FLAG_OP_NEG,     // nego
+   /* 6  */ PPC32G_FLAG_OP_SUBF,    // subfo
+   /* 7  */ PPC32G_FLAG_OP_SUBFC,   // subfc[o]
+   /* 8  */ PPC32G_FLAG_OP_SUBFE,   // subfe[o], subfme[o], subfze[o]
+   /* 9  */ PPC32G_FLAG_OP_SUBFI,   // subfic
+   /* 10 */ PPC32G_FLAG_OP_SRAW,    // sraw
+   /* 11 */ PPC32G_FLAG_OP_SRAWI,   // srawi
    PPC32G_FLAG_OP_NUMBER
 };
 

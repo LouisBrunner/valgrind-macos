@@ -649,22 +649,32 @@ static IRExpr* /* :: Ity_I8 */ getXER_SO ( void )
 }
 
 // ROTL(src32, rot_amt5)
-static IRExpr* ROTL32 ( IRExpr* src, Int rot_amt )
+static IRExpr* ROTL32 ( IRExpr* src, IRExpr* rot_amt )
 {
+   IRExpr* masked;
    vassert(typeOfIRExpr(irbb->tyenv,src) == Ity_I32);
-   vassert(rot_amt >= 0 && rot_amt < 32);   
+   vassert(typeOfIRExpr(irbb->tyenv,rot_amt) == Ity_I32);
 
-   if (rot_amt == 0)
-      return src;
-
-   vassert(rot_amt > 0 && rot_amt < 32);   
+   masked 
+      = unop(Iop_32to8, binop(Iop_And32, rot_amt, mkU32(31)));
 
    // (src << rot_amt) | (src >> (32-rot_amt))
-   return binop(Iop_Or32,
-                binop(Iop_Shl32, src, mkU8(rot_amt)),
-                binop(Iop_Shr32, src, mkU8(32-rot_amt)));
+   /* Note: the MuxOX is not merely an optimisation; it's needed
+      because otherwise the Shr32 is a shift by the word size when
+      masked denotes zero.  For rotates by immediates, a lot of
+      this junk gets folded out. */
+   return 
+      IRExpr_Mux0X( 
+         masked,
+         /* zero rotate. */
+         src,
+         /* non-zero rotate */
+         binop( Iop_Or32,
+                binop(Iop_Shl32, src, masked),
+                binop(Iop_Shr32, src, binop(Iop_Sub8, mkU8(32), masked))
+         )
+      );
 }
-
 
 
 /*------------------------------------------------------------*/
@@ -2181,7 +2191,6 @@ static Bool dis_int_rot ( UInt theInstr )
    UChar flag_Rc   = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
    
    UInt mask = MASK(31-MaskEnd, 31-MaskBegin);
-   IRTemp rot_amt = newTemp(Ity_I8);
    IRTemp Rs = newTemp(Ity_I32);
    IRTemp Ra = newTemp(Ity_I32);
    IRTemp Rb = newTemp(Ity_I32);
@@ -2190,33 +2199,35 @@ static Bool dis_int_rot ( UInt theInstr )
    assign( Rb, getIReg(Rb_addr) );
       
    switch (opc1) {
-   case 0x14: // rlwimi (Rotate Left Word Immediate then Mask Insert, PPC32 p500)
+   case 0x14: 
+      // rlwimi (Rotate Left Word Immediate then Mask Insert, PPC32 p500)
       DIP("rlwimi%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
       // Ra = (ROTL(Rs, Imm) & mask) | (Ra & ~mask);
       assign( Ra, binop(Iop_Or32,
                         binop(Iop_And32, mkU32(mask),
-                              ROTL32(mkexpr(Rs), sh_imm)),
+                              ROTL32(mkexpr(Rs), mkU32(sh_imm))),
                         binop(Iop_And32, getIReg(Ra_addr), mkU32(~mask))) );
       break;
 
-   case 0x15: // rlwinm (Rotate Left Word Immediate then AND with Mask, PPC32 p501)
+   case 0x15: 
+      // rlwinm (Rotate Left Word Immediate then AND with Mask, PPC32 p501)
       DIP("rlwinm%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
       // Ra = ROTL(Rs, Imm) & mask
-      assign( Ra, binop(Iop_And32, ROTL32(mkexpr(Rs), sh_imm), 
+      assign( Ra, binop(Iop_And32, ROTL32(mkexpr(Rs), mkU32(sh_imm)), 
                                    mkU32(mask)) );
       break;
 
-//zz    case 0x17: // rlwnm (Rotate Left Word then AND with Mask, PPC32 p503
-//zz       DIP("rlwnm%s r%d,r%d,r%d,%d,%d\n", flag_Rc ? "." : "",
-//zz           Ra_addr, Rs_addr, Rb_addr, MaskBegin, MaskEnd);
-//zz       // Ra = ROTL(Rs, Rb[0-4]) & mask
-//zz       assign( rot_amt,
-//zz               unop(Iop_32to8, binop(Iop_And32, mkexpr(Rb), mkU32(0x1F))) );
-//zz       assign( Ra, binop(Iop_And32,
-//zz                         ROTL32(mkexpr(Rs), mkexpr(rot_amt)), mkU32(mask)) );
-//zz       break;
+   case 0x17: 
+      // rlwnm (Rotate Left Word then AND with Mask, PPC32 p503
+      DIP("rlwnm%s r%d,r%d,r%d,%d,%d\n", flag_Rc ? "." : "",
+          Ra_addr, Rs_addr, Rb_addr, MaskBegin, MaskEnd);
+      // Ra = ROTL(Rs, Rb[0-4]) & mask
+      // note, ROTL32 does the masking, so we don't do it here
+      assign( Ra, binop(Iop_And32, ROTL32(mkexpr(Rs), mkexpr(Rb)), 
+                                   mkU32(mask)) );
+      break;
 
    default:
       vex_printf("dis_int_rot(PPC32)(opc1)\n");

@@ -1,74 +1,159 @@
 #!/bin/sh
 
-# Automated build and test for Valgrind.  
+#----------------------------------------------------------------------------
+# Automated build and test for Valgrind.  Compares Valgrind from 24 hours
+# ago with the current one.
+#
 #   Use: two args, first is path to top of ValgrindABT tree
 #        second is name of machine
+#----------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------
+# Helper function
+#----------------------------------------------------------------------------
 
 runcmd () {
-   echo -n "   $1  ... " >> log.short
-   shift
+   logfile=$1
+   str=$2
+   shift 2
 
-   (eval "$*") >> log.verbose 2>&1
+   # Header in short logfile
+   echo -n "   $str  ... " >> $logfile.short
 
-   if [ $? == 0 ]
+   # Header and command in verbose logfile
+   echo -n "   $str  ... " >> $logfile.verbose
+   echo "$*" >> $logfile.verbose
+
+   # Run the command
+   (eval "$*") >> $logfile.verbose 2>&1
+   res=$?
+
+   # Write result to the short logfile
+   if [ $res == 0 ]
    then
-      echo "done" >> log.short
-      return 0
+      echo "done"   >> $logfile.short
    else
-      echo "failed" >> log.short
-      return 1
+      echo "failed" >> $logfile.short
    fi
+
+   return $res
 }
 
+#----------------------------------------------------------------------------
+# Startup
+#----------------------------------------------------------------------------
+# Get args from command line
 ABT_TOP=$1
 ABT_MACHINE=$2
 
+# Get times and date
 ABT_START=`date "+%F %H:%M:%S %Z"`
+
+svn_old_date=`date --date=yesterday +%Y-%m-%dT%H:%M:%S`
+svn_new_date=`date --date=today     +%Y-%m-%dT%H:%M:%S`
 
 cd $ABT_TOP
 
 source $ABT_TOP/conf/$ABT_MACHINE.conf
 
-rm -rf log.verbose log.short valgrind
 
-echo > log.short
-echo > log.verbose
+#----------------------------------------------------------------------------
+# Check out, build, test
+#----------------------------------------------------------------------------
 
-echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ") started at" $ABT_START >> log.short
-echo >> log.short
+# Do everything twice -- once for the 24 hours old Valgrind, and once 
+# for the current one.
+for logfile in old new ; do
 
-echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ") started at" $ABT_START >> log.verbose
-echo >> log.verbose
+   # Remove the old valgrind/ and vex/ directories
+   rm -rf valgrind vex
 
-runcmd "Checking out vex source tree     " \
-       "svn co svn://svn.valgrind.org/vex/trunk vex" && \
-\
-runcmd "Building vex                     " \
-       "cd vex && pwd && make clean version all" && \
-\
-runcmd "Checking out valgrind source tree" \
-       "svn co svn://svn.valgrind.org/valgrind/trunk valgrind" && \
-\
-runcmd "Configuring valgrind             " \
-       "cd valgrind && ./autogen.sh  && ./configure --prefix=$ABT_TOP/Inst --with-vex=$ABT_TOP/vex" && \
-\
-runcmd "Building valgrind                " \
-       "cd valgrind && make && make install" && \
-\
-runcmd "Running regression tests         " \
-       "cd valgrind && make regtest"
+   # Remove old short and verbose log files, and start the new ones
+   for ext in short verbose ; do
+      echo > $logfile.$ext
+   done
 
-egrep -q '^== [0-9]+ tests' log.verbose && (
-   echo >> log.short
-   echo "Regression test results follow" >> log.short
-   echo >> log.short
-   awk '/^== [0-9]+ tests/, /^$/ { print }' log.verbose >> log.short
-) || (
-   echo >> log.short
-   echo "Last 20 lines of log.verbose follow" >> log.short
-   echo >> log.short
-   tail -20 log.verbose >> log.short
-)
+   # Choose the current Valgrind, or one from 24 hours ago
+   if [ $logfile = "old" ] ; then
+      svn_date=$svn_old_date
+   else
+      svn_date=$svn_new_date
+   fi
 
-$ABT_TOP/conf/$ABT_MACHINE.sendmail "$ABT_START nightly build ($ABT_MACHINE, $ABT_DETAILS)" \
-	$ABT_TOP/log.short
+   # Get dates for the old and new versions
+
+   # Check out, build, run tests
+   runcmd $logfile \
+          "Checking out vex source tree     " \
+          "svn co svn://svn.valgrind.org/vex/trunk -r {$svn_date} vex" && \
+   \
+   runcmd $logfile \
+          "Building vex                     " \
+          "cd vex && pwd && make clean version all" && \
+   \
+   runcmd $logfile \
+          "Checking out valgrind source tree" \
+          "svn co svn://svn.valgrind.org/valgrind/trunk -r {$svn_date} valgrind" && \
+   \
+   runcmd $logfile \
+          "Configuring valgrind             " \
+          "cd valgrind && ./autogen.sh  && ./configure --prefix=$ABT_TOP/Inst --with-vex=$ABT_TOP/vex" && \
+   \
+   runcmd $logfile \
+          "Building valgrind                " \
+          "cd valgrind && make && make install" && \
+   \
+   runcmd $logfile \
+          "Running regression tests         " \
+          "cd valgrind && make regtest"
+
+   # Grab some indicative text for the short log file -- if the regtests
+   # succeeded, show their results.  If we didn't make it that far, show the
+   # last 20 lines.
+   egrep -q '^== [0-9]+ tests' $logfile.verbose && (
+      echo >> $logfile.short
+      echo "Regression test results follow" >> $logfile.short
+      echo >> $logfile.short
+      awk '/^== [0-9]+ tests/, /^$/ { print }' $logfile.verbose >> $logfile.short
+   ) || (
+      echo >> $logfile.short
+      echo "Last 20 lines of verbose log follow" >> $logfile.short \
+      echo >> $logfile.short
+      tail -20 $logfile.verbose >> $logfile.short
+   )
+done
+
+#----------------------------------------------------------------------------
+# Prepare results and send
+#----------------------------------------------------------------------------
+
+# 'final' shows the difference between the old and new results
+echo                                                     >  final
+echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ")" \
+     "started at" $ABT_START                             >> final
+
+# Always show the current results.
+cat new.short >> final
+
+# If the results differ from 24 hours ago, print extra stuff.
+diff -C1 old.short new.short > diff.short
+
+if [ $? != 0 ] ; then
+   echo "=================================================" >> final
+   echo "== Results from 24 hours ago                   ==" >> final
+   echo "=================================================" >> final
+   cat old.short                                            >> final
+
+   echo                                                     >> final
+   echo "=================================================" >> final
+   echo "== Difference between 24 hours ago and now     ==" >> final
+   echo "=================================================" >> final
+   echo                                                     >> final
+   cat diff.short                                           >> final
+   echo                                                     >> final
+fi
+
+# Email the results
+$ABT_TOP/conf/$ABT_MACHINE.sendmail \
+   "$ABT_START nightly build ($ABT_MACHINE, $ABT_DETAILS)" \
+   $ABT_TOP/final

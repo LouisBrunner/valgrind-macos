@@ -992,7 +992,7 @@ static void set_XER_OV( UInt op, IRExpr* res,
          /* OV true if result can't be represented in 32 bits
             i.e sHi != sign extension of sLo */
          t64 = newTemp(Ity_I64);
-         assign( t64, binop(Iop_MullU32, argL, argR) );
+         assign( t64, binop(Iop_MullS32, argL, argR) );
          xer_ov 
             = binop( Iop_CmpNE32,
                      unop(Iop_64HIto32, mkexpr(t64)),

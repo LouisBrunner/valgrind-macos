@@ -3691,32 +3691,32 @@ static Bool dis_proc_ctl ( UInt theInstr )
       switch (SPR_flipped) {  // Choose a register...
          case 0x1:
             DIP("mtxer r%d\n", Rs_addr);
-            IRStmt_Put( 
+            stmt(IRStmt_Put( 
                OFFB_XER_SO, 
                unop( Iop_32to8, 
                      binop( Iop_And32, 
-                            binop(Iop_Shr32, mkexpr(Rs_addr), mkU8(31)), 
+                            binop(Iop_Shr32, mkexpr(Rs), mkU8(31)), 
                             mkU32(1)) ) 
-            );
-            IRStmt_Put( 
+            ));
+            stmt(IRStmt_Put( 
                OFFB_XER_OV, 
                unop( Iop_32to8, 
                      binop( Iop_And32, 
-                            binop(Iop_Shr32, mkexpr(Rs_addr), mkU8(30)), 
+                            binop(Iop_Shr32, mkexpr(Rs), mkU8(30)), 
                             mkU32(1)) ) 
-            );
-            IRStmt_Put( 
+            ));
+            stmt(IRStmt_Put( 
                OFFB_XER_CA, 
                unop( Iop_32to8, 
                      binop( Iop_And32, 
-                            binop(Iop_Shr32, mkexpr(Rs_addr), mkU8(29)), 
+                            binop(Iop_Shr32, mkexpr(Rs), mkU8(29)), 
                             mkU32(1)) ) 
-            );
-            IRStmt_Put( 
+            ));
+            stmt(IRStmt_Put( 
                OFFB_XER_BC, 
                unop( Iop_32to8, 
-                     binop( Iop_And32, mkexpr(Rs_addr), mkU32(0xFF)) )
-            );
+                     binop( Iop_And32, mkexpr(Rs), mkU32(0xFF)) )
+            ));
             break;
          case 0x8:
             DIP("mtlr r%d\n", Rs_addr);

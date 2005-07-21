@@ -935,7 +935,11 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
 	       if (*p == ',') {
 		  EXPECT(',', "struct OFFSET");
-		  sz = atou(&p, 0);
+
+                  /* as with the offset, it seems that GNAT likes to
+                     generate negative sizes so we use atoi here in
+                     order to allow them - see bug 109385 for details */
+		  sz = atoi(&p, 0);
 	       } else {
 		  /* sometimes the size is missing and assumed to be a
 		     pointer (in bits) */

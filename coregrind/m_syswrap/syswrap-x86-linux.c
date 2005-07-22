@@ -2273,8 +2273,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_vserver,           sys_ni_syscall),     // 273
 //zz    //   (__NR_mbind,             sys_mbind),          // 274 ?/?
 //zz 
-//zz    //   (__NR_get_mempolicy,     sys_get_mempolicy),  // 275 ?/?
-//zz    //   (__NR_set_mempolicy,     sys_set_mempolicy),  // 276 ?/?
+   LINXY(__NR_get_mempolicy,     sys_get_mempolicy),  // 275 ?/?
+   LINX_(__NR_set_mempolicy,     sys_set_mempolicy),  // 276 ?/?
    GENXY(__NR_mq_open,           sys_mq_open),        // 277
    GENX_(__NR_mq_unlink,         sys_mq_unlink),      // (mq_open+1)
    GENX_(__NR_mq_timedsend,      sys_mq_timedsend),   // (mq_open+2)

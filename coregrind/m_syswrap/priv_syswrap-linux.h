@@ -89,6 +89,9 @@ DECL_TEMPLATE(linux, sys_io_getevents);
 DECL_TEMPLATE(linux, sys_io_submit);
 DECL_TEMPLATE(linux, sys_io_cancel);
 
+DECL_TEMPLATE(linux, sys_set_mempolicy);
+DECL_TEMPLATE(linux, sys_get_mempolicy);
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

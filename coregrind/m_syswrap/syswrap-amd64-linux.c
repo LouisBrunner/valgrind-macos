@@ -584,6 +584,7 @@ DECL_TEMPLATE(amd64_linux, sys_shmdt);
 DECL_TEMPLATE(amd64_linux, sys_shmdt);
 DECL_TEMPLATE(amd64_linux, sys_shmctl);
 DECL_TEMPLATE(amd64_linux, sys_arch_prctl);
+DECL_TEMPLATE(amd64_linux, sys_ptrace);
 DECL_TEMPLATE(amd64_linux, sys_pread64);
 DECL_TEMPLATE(amd64_linux, sys_pwrite64);
 
@@ -737,6 +738,60 @@ PRE(sys_arch_prctl)
       this wrapper returns does not change guest_FS_ZERO; hence that
       direct assignment to the guest state is safe here. */
    SET_STATUS_Success( 0 );
+}
+
+// Parts of this are amd64-specific, but the *PEEK* cases are generic.
+// XXX: Why is the memory pointed to by ARG3 never checked?
+PRE(sys_ptrace)
+{
+   PRINT("sys_ptrace ( %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(int, "ptrace", 
+                 long, request, long, pid, long, addr, long, data);
+   switch (ARG1) {
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      PRE_MEM_WRITE( "ptrace(peek)", ARG4, 
+		     sizeof (long));
+      break;
+   case VKI_PTRACE_GETREGS:
+      PRE_MEM_WRITE( "ptrace(getregs)", ARG4, 
+		     sizeof (struct vki_user_regs_struct));
+      break;
+   case VKI_PTRACE_GETFPREGS:
+      PRE_MEM_WRITE( "ptrace(getfpregs)", ARG4, 
+		     sizeof (struct vki_user_i387_struct));
+      break;
+   case VKI_PTRACE_SETREGS:
+      PRE_MEM_READ( "ptrace(setregs)", ARG4, 
+		     sizeof (struct vki_user_regs_struct));
+      break;
+   case VKI_PTRACE_SETFPREGS:
+      PRE_MEM_READ( "ptrace(setfpregs)", ARG4, 
+		     sizeof (struct vki_user_i387_struct));
+      break;
+   default:
+      break;
+   }
+}
+
+POST(sys_ptrace)
+{
+   switch (ARG1) {
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      POST_MEM_WRITE( ARG4, sizeof (long));
+      break;
+   case VKI_PTRACE_GETREGS:
+      POST_MEM_WRITE( ARG4, sizeof (struct vki_user_regs_struct));
+      break;
+   case VKI_PTRACE_GETFPREGS:
+      POST_MEM_WRITE( ARG4, sizeof (struct vki_user_i387_struct));
+      break;
+   default:
+      break;
+   }
 }
 
 PRE(sys_socket)
@@ -1234,7 +1289,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_sysinfo,           sys_sysinfo),        // 99 
 
    GENXY(__NR_times,             sys_times),          // 100 
-   //   (__NR_ptrace,            sys_ptrace),         // 101 
+   PLAXY(__NR_ptrace,            sys_ptrace),         // 101 
    GENX_(__NR_getuid,            sys_getuid),         // 102 
    //   (__NR_syslog,            sys_syslog),         // 103 
    GENX_(__NR_getgid,            sys_getgid),         // 104 
@@ -1261,7 +1316,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_getpgid,           sys_getpgid),        // 121 
    LINX_(__NR_setfsuid,          sys_setfsuid),       // 122 
    LINX_(__NR_setfsgid,          sys_setfsgid),       // 123 
-   //   (__NR_getsid,            sys_getsid),         // 124 
+   GENX_(__NR_getsid,            sys_getsid),         // 124 
 
    //   (__NR_capget,            sys_capget),         // 125 
    //   (__NR_capset,            sys_capset),         // 126 
@@ -1275,7 +1330,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_mknod,             sys_mknod),          // 133 
    //   (__NR_uselib,            sys_uselib),         // 134 
 
-   //   (__NR_personality,       sys_personality),    // 135 
+   LINX_(__NR_personality,       sys_personality),    // 135 
    //   (__NR_ustat,             sys_ustat),          // 136 
    GENXY(__NR_statfs,            sys_statfs),         // 137 
    //   (__NR_fstatfs,           sys_fstatfs),        // 138 
@@ -1320,7 +1375,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_sethostname,       sys_sethostname),    // 170 
    //   (__NR_setdomainname,     sys_setdomainname),  // 171 
    //   (__NR_iopl,              stub_iopl),          // 172 
-   //   (__NR_ioperm,            sys_ioperm),         // 173 
+   LINX_(__NR_ioperm,            sys_ioperm),         // 173 
    //   (__NR_create_module,     sys_ni_syscall),     // 174 
 
    //   (__NR_init_module,       sys_init_module),    // 175 
@@ -1356,8 +1411,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_tkill,             sys_tkill),             // 200 
    GENXY(__NR_time,              sys_time), /*was sys_time64*/ // 201 
    LINXY(__NR_futex,             sys_futex),             // 202 
-   //   (__NR_sched_setaffinity, sys_sched_setaffinity), // 203 
-   //   (__NR_sched_getaffinity, sys_sched_getaffinity), // 204 
+   GENX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 203 
+   GENXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 204 
 
    //   (__NR_set_thread_area,   sys_ni_syscall),     // 205 
    LINX_(__NR_io_setup,          sys_io_setup),       // 206 
@@ -1399,9 +1454,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_vserver,           sys_ni_syscall),     // 236 
    //   (__NR_vserver,           sys_ni_syscall),     // 236 
    //   (__NR_mbind,             sys_mbind),          // 237 
-   //   (__NR_set_mempolicy,     sys_set_mempolicy),  // 238 
+   LINX_(__NR_set_mempolicy,     sys_set_mempolicy),  // 238 
 
-   //   (__NR_get_mempolicy,     sys_get_mempolicy),  // 239 
+   LINXY(__NR_get_mempolicy,     sys_get_mempolicy),  // 239 
    GENXY(__NR_mq_open,           sys_mq_open),        // 240 
    GENX_(__NR_mq_unlink,         sys_mq_unlink),      // 241 
    GENX_(__NR_mq_timedsend,      sys_mq_timedsend),   // 242 

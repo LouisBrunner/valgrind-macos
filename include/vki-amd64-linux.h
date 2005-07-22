@@ -445,6 +445,20 @@ struct vki_pollfd {
 // From linux-2.6.9/include/asm-x86_64/user.h
 //----------------------------------------------------------------------
 
+struct vki_user_i387_struct {
+	unsigned short	cwd;
+	unsigned short	swd;
+	unsigned short	twd; /* Note this is not the same as the 32bit/x87/FSAVE twd */
+	unsigned short	fop;
+	__vki_u64	rip;
+	__vki_u64	rdp;
+	__vki_u32	mxcsr;
+	__vki_u32	mxcsr_mask;
+	__vki_u32	st_space[32];	/* 8*16 bytes for each FP-reg = 128 bytes */
+	__vki_u32	xmm_space[64];	/* 16*16 bytes for each XMM-reg = 256 bytes */
+	__vki_u32	padding[24];
+};
+
 struct vki_user_regs_struct {
 	unsigned long r15,r14,r13,r12,rbp,rbx,r11,r10;
 	unsigned long r9,r8,rax,rcx,rdx,rsi,rdi,orig_rax;
@@ -609,6 +623,15 @@ struct vki_shminfo64 {
 	unsigned long	__unused3;
 	unsigned long	__unused4;
 };
+
+//----------------------------------------------------------------------
+// From linux-2.6.12.2/include/asm-x86_64/ptrace.h
+//----------------------------------------------------------------------
+
+#define VKI_PTRACE_GETREGS            12
+#define VKI_PTRACE_SETREGS            13
+#define VKI_PTRACE_GETFPREGS          14
+#define VKI_PTRACE_SETFPREGS          15
 
 //----------------------------------------------------------------------
 // And that's it!

@@ -829,6 +829,37 @@ POST(sys_io_cancel)
    POST_MEM_WRITE( ARG3, sizeof(struct vki_io_event) );
 }
 
+PRE(sys_set_mempolicy)
+{
+   PRINT("sys_set_mempolicy( %d, %p, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "set_mempolicy",
+                 int, policy, unsigned long *, nodemask,
+                 unsigned long, maxnode);
+   PRE_MEM_READ( "set_mempolicy(nodemask)", ARG2,
+                 VG_ROUNDUP( ARG3, sizeof(UWord) ) / sizeof(UWord) );
+}
+
+PRE(sys_get_mempolicy)
+{
+   PRINT("sys_get_mempolicy( %p, %p, %d, %p, %x )", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "get_mempolicy",
+                 int *, policy, unsigned long *, nodemask,
+                 unsigned long, maxnode, unsigned long, addr,
+                 unsigned long, flags);
+   if (ARG1 != 0)
+      PRE_MEM_WRITE( "get_mempolicy(policy)", ARG1, sizeof(Int) );
+   if (ARG2 != 0)
+      PRE_MEM_WRITE( "get_mempolicy(nodemask)", ARG2,
+                     VG_ROUNDUP( ARG3, sizeof(UWord) * 8 ) / sizeof(UWord) );
+}
+POST(sys_get_mempolicy)
+{
+   if (ARG1 != 0)
+      POST_MEM_WRITE( ARG1, sizeof(Int) );
+   if (ARG2 != 0)
+      POST_MEM_WRITE( ARG2, VG_ROUNDUP( ARG3, sizeof(UWord) * 8 ) / sizeof(UWord) );
+}
+
 #undef PRE
 #undef POST
 

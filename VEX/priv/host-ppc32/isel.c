@@ -633,7 +633,7 @@ static HReg roundModeIRtoPPC32 ( ISelEnv* env, HReg r_rmIR )
 
    // AND r_rmRI,3   -- shouldn't be needed; paranoia
    addInstr(env, 
-      PPC32Instr_Alu32(Palu_AND, r_rmIR, r_rmIR, PPC32RH_Imm(True,3)));
+      PPC32Instr_Alu32(Palu_AND, r_rmIR, r_rmIR, PPC32RH_Imm(False,3)));
 
    // r_rmPPC32 = XOR( r_rmIR, (r_rmIR << 1) & 2)
    addInstr(env, 

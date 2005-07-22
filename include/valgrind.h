@@ -124,8 +124,6 @@
 */
 
 #ifdef __x86_64__
-extern int printf (__const char *__restrict __format, ...);
-extern void exit (int __status);
 #define VALGRIND_MAGIC_SEQUENCE(                                \
         _zzq_rlval, _zzq_default, _zzq_request,                 \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)             \

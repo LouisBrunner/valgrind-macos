@@ -807,6 +807,7 @@ static void fprint_lineCC(Int fd, lineCC* n)
 static void fprint_CC_table_and_calc_totals(void)
 {
    Int     fd;
+   SysRes  sres;
    Char    buf[512];
    fileCC *curr_fileCC;
    fnCC   *curr_fnCC;
@@ -815,9 +816,9 @@ static void fprint_CC_table_and_calc_totals(void)
 
    VGP_PUSHCC(VgpCacheResults);
 
-   fd = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
-                                       VKI_S_IRUSR|VKI_S_IWUSR);
-   if (fd < 0) {
+   sres = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
+                                         VKI_S_IRUSR|VKI_S_IWUSR);
+   if (sres.isError) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
       VG_(message)(Vg_UserMsg,
@@ -826,6 +827,8 @@ static void fprint_CC_table_and_calc_totals(void)
       VG_(message)(Vg_UserMsg,
          "       ... so simulation results will be missing.");
       return;
+   } else {
+      fd = sres.val;
    }
 
    // "desc:" lines (giving I1/D1/L2 cache configuration).  The spaces after

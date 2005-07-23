@@ -98,21 +98,22 @@ static Int readdec ( const Char* buf, UInt* val )
 
 static void read_procselfmaps ( void )
 {
-   Int n_chunk, fd;
+   Int    n_chunk;
+   SysRes fd;
    
    /* Read the initial memory mapping from the /proc filesystem. */
    fd = VG_(open) ( "/proc/self/maps", VKI_O_RDONLY, 0 );
-   if (fd < 0) {
+   if (fd.isError) {
       VG_(message)(Vg_UserMsg, "FATAL: can't open /proc/self/maps");
       VG_(exit)(1);
    }
    buf_n_tot = 0;
    do {
-      n_chunk = VG_(read) ( fd, &procmap_buf[buf_n_tot],
+      n_chunk = VG_(read) ( fd.val, &procmap_buf[buf_n_tot],
                             M_PROCMAP_BUF - buf_n_tot );
       buf_n_tot += n_chunk;
    } while ( n_chunk > 0 && buf_n_tot < M_PROCMAP_BUF );
-   VG_(close)(fd);
+   VG_(close)(fd.val);
    if (buf_n_tot >= M_PROCMAP_BUF-5) {
       VG_(message)(Vg_UserMsg, "FATAL: M_PROCMAP_BUF is too small; "
                                "increase it and recompile");

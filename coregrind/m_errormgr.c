@@ -895,22 +895,25 @@ Bool tool_name_present(Char *name, Char *names)
 static void load_one_suppressions_file ( Char* filename )
 {
 #  define N_BUF 200
-   Int   fd, i;
-   Bool  eof;
-   Char  buf[N_BUF+1];
-   Char* tool_names;
-   Char* supp_name;
-   Char* err_str = NULL;
+   SysRes sres;
+   Int    fd, i;
+   Bool   eof;
+   Char   buf[N_BUF+1];
+   Char*  tool_names;
+   Char*  supp_name;
+   Char*  err_str = NULL;
    SuppLoc tmp_callers[VG_MAX_SUPP_CALLERS];
 
-   fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
-   if (fd < 0) {
+   fd   = -1;
+   sres = VG_(open)( filename, VKI_O_RDONLY, 0 );
+   if (sres.isError) {
       VG_(message)(Vg_UserMsg, "FATAL: can't open suppressions file '%s'", 
                    filename );
       VG_(exit)(1);
    }
+   fd = sres.val;
 
-#define BOMB(S)  { err_str = S;  goto syntax_error; }
+#  define BOMB(S)  { err_str = S;  goto syntax_error; }
 
    while (True) {
       /* Assign and initialise the two suppression halves (core and tool) */

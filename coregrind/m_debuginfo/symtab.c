@@ -1145,16 +1145,17 @@ calc_gnu_debuglink_crc32(UInt crc, const UChar *buf, Int len)
 static
 Addr open_debug_file( Char* name, UInt crc, UInt* size )
 {
-   Int fd;
+   SysRes fd;
    struct vki_stat stat_buf;
    Addr addr;
    UInt calccrc;
 
-   if ((fd = VG_(open)(name, VKI_O_RDONLY, 0)) < 0)
+   fd = VG_(open)(name, VKI_O_RDONLY, 0);
+   if (fd.isError)
       return 0;
 
-   if (VG_(fstat)(fd, &stat_buf) != 0) {
-      VG_(close)(fd);
+   if (VG_(fstat)(fd.val, &stat_buf) != 0) {
+      VG_(close)(fd.val);
       return 0;
    }
 
@@ -1165,13 +1166,13 @@ Addr open_debug_file( Char* name, UInt crc, UInt* size )
    
    if ((addr = (Addr)VG_(mmap)(NULL, *size, VKI_PROT_READ,
                                VKI_MAP_PRIVATE|VKI_MAP_NOSYMS, 
-                               0, fd, 0)) == (Addr)-1) 
+                               0, fd.val, 0)) == (Addr)-1) 
    {
-      VG_(close)(fd);
+      VG_(close)(fd.val);
       return 0;
    }
 
-   VG_(close)(fd);
+   VG_(close)(fd.val);
    
    calccrc = calc_gnu_debuglink_crc32(0, (UChar*)addr, *size);
    if (calccrc != crc) {
@@ -1226,7 +1227,7 @@ Bool read_lib_symbols ( SegInfo* si )
    ElfXX_Ehdr*   ehdr;       /* The ELF header                          */
    ElfXX_Shdr*   shdr;       /* The section table                       */
    UChar*        sh_strtab;  /* The section table's string table        */
-   Int           fd;
+   SysRes        fd;
    Int           i;
    Bool          ok;
    Addr          oimage;
@@ -1251,16 +1252,16 @@ Bool read_lib_symbols ( SegInfo* si )
    n_oimage = stat_buf.st_size;
 
    fd = VG_(open)(si->filename, VKI_O_RDONLY, 0);
-   if (fd < 0) {
+   if (fd.isError) {
       ML_(symerr)("Can't open .so/.exe to read symbols?!");
       return False;
    }
 
    oimage = (Addr)VG_(mmap)( NULL, n_oimage, 
                              VKI_PROT_READ, VKI_MAP_PRIVATE|VKI_MAP_NOSYMS, 
-                             0, fd, 0 );
+                             0, fd.val, 0 );
 
-   VG_(close)(fd);
+   VG_(close)(fd.val);
 
    if (oimage == ((Addr)(-1))) {
       VG_(message)(Vg_UserMsg, "warning: mmap failed on %s", si->filename );

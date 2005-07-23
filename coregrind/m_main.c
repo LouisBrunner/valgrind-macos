@@ -297,22 +297,23 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
 static char* get_file_clo(char* dir)
 {
 #  define FLEN 512
-   Int fd, n;
+   Int    n;
+   SysRes fd;
    struct vki_stat s1;
-   char* f_clo = NULL;
-   char filename[FLEN];
+   Char* f_clo = NULL;
+   Char  filename[FLEN];
 
    snprintf(filename, FLEN, "%s/.valgrindrc", ( NULL == dir ? "" : dir ) );
    fd = VG_(open)(filename, 0, VKI_S_IRUSR);
-   if ( fd > 0 ) {
-      if ( 0 == VG_(fstat)(fd, &s1) ) {
+   if ( !fd.isError ) {
+      if ( 0 == VG_(fstat)(fd.val, &s1) ) {
          f_clo = malloc(s1.st_size+1);
          vg_assert(f_clo);
-         n = VG_(read)(fd, f_clo, s1.st_size);
+         n = VG_(read)(fd.val, f_clo, s1.st_size);
          if (n == -1) n = 0;
          f_clo[n] = '\0';
       }
-      VG_(close)(fd);
+      VG_(close)(fd.val);
    }
    return f_clo;
 #  undef FLEN
@@ -1160,7 +1161,9 @@ static void load_client(char* cl_argv[], const char* exec, Int need_help,
       VG_(memset)(info, 0, sizeof(*info));
    } else {
       Int ret;
-      VG_(clexecfd) = VG_(open)(exec, VKI_O_RDONLY, VKI_S_IRUSR);
+      /* HACK: assumes VG_(open) always succeeds */
+      VG_(clexecfd) = VG_(open)(exec, VKI_O_RDONLY, VKI_S_IRUSR)
+                      .val;
       ret = VG_(do_exec)(exec, info);
       if (ret != 0) {
          fprintf(stderr, "valgrind: do_exec(%s) failed: %s\n",
@@ -1407,8 +1410,9 @@ static void pre_process_cmd_line_options
 
 static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 {
-   Int  i, eventually_log_fd;
-   Int  toolname_len = VG_(strlen)(toolname);
+   SysRes sres;
+   Int    i, eventually_log_fd;
+   Int    toolname_len = VG_(strlen)(toolname);
    enum {
       VgLogTo_Fd,
       VgLogTo_File,
@@ -1724,30 +1728,40 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 	 }
 
 	 for (;;) {
-	    if (seq == 0)
-	       VG_(sprintf)( logfilename, "%s%s%s.pid%d",
-                             VG_(clo_log_name), 
-                             qual ? "." : "", qual ? qual : "",
-                             pid );
-	    else
-	       VG_(sprintf)( logfilename, "%s%s%s.pid%d.%d",
-			     VG_(clo_log_name), 
-                             qual ? "." : "", qual ? qual : "",
-                             pid, seq );
+            HChar pidtxt[20], seqtxt[20];
+
+            VG_(sprintf)(pidtxt, "%d", pid);
+
+            if (seq == 0)
+               seqtxt[0] = 0;
+            else
+               VG_(sprintf)(seqtxt, ".%d", seq);
+
 	    seq++;
 
+            /* Result:
+                  if (qual)      base_name ++ "." ++ qual ++ seqtxt
+                  if (not qual)  base_name ++ "." ++ pid  ++ seqtxt
+            */
+            VG_(sprintf)( logfilename, 
+                          "%s.%s%s",
+                          VG_(clo_log_name), 
+                          qual ? qual : pidtxt,
+                          seqtxt );
+
             // EXCL: it will fail with EEXIST if the file already exists.
-	    eventually_log_fd 
+            sres
 	       = VG_(open)(logfilename, 
 			   VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
 			   VKI_S_IRUSR|VKI_S_IWUSR);
-	    if (eventually_log_fd >= 0) {
+	    if (!sres.isError) {
+               eventually_log_fd = sres.val;
 	       VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
 	       break; /* for (;;) */
 	    } else {
                // If the file already existed, we try the next name.  If it
                // was some other file error, we give up.
-	       if (eventually_log_fd != -VKI_EEXIST) {
+	       if (sres.val != VKI_EEXIST) {
 		  VG_(message)(Vg_UserMsg, 
 			       "Can't create/open log file '%s.pid%d'; giving up!", 
 			       VG_(clo_log_name), pid);
@@ -1764,11 +1778,12 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          vg_assert(VG_(clo_log_name) != NULL);
          vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
 
-         eventually_log_fd 
+         sres
             = VG_(open)(VG_(clo_log_name),
                         VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
                         VKI_S_IRUSR|VKI_S_IWUSR);
-         if (eventually_log_fd >= 0) {
+         if (!sres.isError) {
+            eventually_log_fd = sres.val;
             VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
          } else {
             VG_(message)(Vg_UserMsg, 
@@ -1937,7 +1952,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    }
 
    if (VG_(clo_verbosity) > 1) {
-      Int fd;
+      SysRes fd;
       if (log_to != VgLogTo_Fd)
          VG_(message)(Vg_DebugMsg, "");
       VG_(message)(Vg_DebugMsg, "Valgrind library directory: %s", VG_(libdir));
@@ -1952,12 +1967,12 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
       VG_(message)(Vg_DebugMsg, "Contents of /proc/version:");
       fd = VG_(open) ( "/proc/version", VKI_O_RDONLY, 0 );
-      if (fd < 0) {
+      if (fd.isError) {
          VG_(message)(Vg_DebugMsg, "  can't open /proc/version");
       } else {
 #        define BUF_LEN    256
          Char version_buf[BUF_LEN];
-         Int n = VG_(read) ( fd, version_buf, BUF_LEN );
+         Int n = VG_(read) ( fd.val, version_buf, BUF_LEN );
          vg_assert(n <= BUF_LEN);
          if (n > 0) {
             version_buf[n-1] = '\0';
@@ -1965,7 +1980,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          } else {
             VG_(message)(Vg_DebugMsg, "  (empty?)");
          }
-         VG_(close)(fd);
+         VG_(close)(fd.val);
 #        undef BUF_LEN
       }
    }

@@ -547,32 +547,33 @@ void do_hacky_preopened()
 
 void VG_(init_preopened_fds)()
 {
-   int f, ret;
+   int ret;
    struct vki_dirent d;
+   SysRes f;
 
    f = VG_(open)("/proc/self/fd", VKI_O_RDONLY, 0);
-   if(f == -1) {
+   if (f.isError) {
       do_hacky_preopened();
       return;
    }
 
-   while((ret = VG_(getdents)(f, &d, sizeof(d))) != 0) {
+   while ((ret = VG_(getdents)(f.val, &d, sizeof(d))) != 0) {
       if (ret == -1)
          goto out;
 
       if (VG_(strcmp)(d.d_name, ".") && VG_(strcmp)(d.d_name, "..")) {
          int fno = VG_(atoll)(d.d_name);
 
-         if (fno != f)
+         if (fno != f.val)
             if (VG_(clo_track_fds))
                record_fd_open_named(-1, fno);
       }
 
-      VG_(lseek)(f, d.d_off, VKI_SEEK_SET);
+      VG_(lseek)(f.val, d.d_off, VKI_SEEK_SET);
    }
 
-out:
-   VG_(close)(f);
+  out:
+   VG_(close)(f.val);
 }
 
 static

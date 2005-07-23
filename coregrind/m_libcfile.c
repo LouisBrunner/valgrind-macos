@@ -84,11 +84,10 @@ Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf )
       return False;
 }
 
-/* Returns -1 on failure. */
-Int VG_(open) ( const Char* pathname, Int flags, Int mode )
+SysRes VG_(open) ( const Char* pathname, Int flags, Int mode )
 {  
    SysRes res = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
-   return res.isError ? -1 : res.val;
+   return res;
 }
 
 void VG_(close) ( Int fd )

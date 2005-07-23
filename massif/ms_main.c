@@ -1345,12 +1345,13 @@ static void file_err ( Char* file )
  */
 static void write_hp_file(void)
 {
-   Int   i, j;
-   Int   fd, res;
-   Char *hp_file, *ps_file, *aux_file;
-   Char* cmdfmt;
-   Char* cmdbuf;
-   Int   cmdlen;
+   Int    i, j;
+   Int    fd, res;
+   SysRes sres;
+   Char  *hp_file, *ps_file, *aux_file;
+   Char*  cmdfmt;
+   Char*  cmdbuf;
+   Int    cmdlen;
 
    VGP_PUSHCC(VgpPrintHp);
    
@@ -1358,12 +1359,14 @@ static void write_hp_file(void)
    hp_file  = make_filename( base_dir, ".hp" );
    ps_file  = make_filename( base_dir, ".ps" );
    aux_file = make_filename( base_dir, ".aux" );
-   fd = VG_(open)(hp_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
-                           VKI_S_IRUSR|VKI_S_IWUSR);
-   if (fd < 0) {
+   sres = VG_(open)(hp_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
+                             VKI_S_IRUSR|VKI_S_IWUSR);
+   if (sres.isError) {
       file_err( hp_file );
       VGP_POPCC(VgpPrintHp);
       return;
+   } else {
+      fd = sres.val;
    }
 
    // File header, including command line
@@ -1658,9 +1661,10 @@ static void pp_all_XPts(Int fd, XPt* xpt, ULong heap_spacetime,
 static void
 write_text_file(ULong total_ST, ULong heap_ST)
 {
-   Int   fd, i;
-   Char* text_file;
-   Char* maybe_p = ( XHTML == clo_format ? "<p>" : "" );
+   SysRes sres;
+   Int    fd, i;
+   Char*  text_file;
+   Char*  maybe_p = ( XHTML == clo_format ? "<p>" : "" );
 
    VGP_PUSHCC(VgpPrintXPts);
 
@@ -1668,12 +1672,14 @@ write_text_file(ULong total_ST, ULong heap_ST)
    text_file = make_filename( base_dir, 
                               ( XText == clo_format ? ".txt" : ".html" ) );
 
-   fd = VG_(open)(text_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
+   sres = VG_(open)(text_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
                              VKI_S_IRUSR|VKI_S_IWUSR);
-   if (fd < 0) {
+   if (sres.isError) {
       file_err( text_file );
       VGP_POPCC(VgpPrintXPts);
       return;
+   } else {
+      fd = sres.val;
    }
 
    // Header

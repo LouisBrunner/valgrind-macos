@@ -2662,6 +2662,7 @@ ULong dis_mov_G_E ( Prefix      pfx,
 /* op $immediate, AL/AX/EAX/RAX. */
 static
 ULong dis_op_imm_A ( Int    size,
+                     Bool   carrying,
                      IROp   op8,
                      Bool   keep,
                      Long   delta,
@@ -2675,14 +2676,23 @@ ULong dis_op_imm_A ( Int    size,
    Long  lit    = getSDisp(size4,delta);
    assign(dst0, getIRegRAX(size));
    assign(src,  mkU(ty,lit & mkSizeMask(size)));
-   assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-   if (isAddSub(op8))
+
+   if (isAddSub(op8) && !carrying) {
+      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
       setFlags_DEP1_DEP2(op8, dst0, src, ty);
+   }
    else
-   if (isLogic(op8))
+   if (isLogic(op8)) {
+      vassert(!carrying);
+      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
       setFlags_DEP1(op8, dst1, ty);
+   }
    else
-      vpanic("dis_op_imm_A(amd64)");
+   if (op8 == Iop_Add8 && carrying) {
+      helper_ADC( size, dst1, dst0, src );
+   }
+   else
+      vpanic("dis_op_imm_A(amd64,guest)");
 
    if (keep)
       putIRegRAX(size, mkexpr(dst1));
@@ -11792,25 +11802,25 @@ DisResult disInstr_AMD64_WRK (
 
    case 0x04: /* ADD Ib, AL */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( 1, Iop_Add8, True, delta, "add" );
+      delta = dis_op_imm_A( 1, False, Iop_Add8, True, delta, "add" );
       break;
    case 0x05: /* ADD Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A(sz, Iop_Add8, True, delta, "add" );
+      delta = dis_op_imm_A(sz, False, Iop_Add8, True, delta, "add" );
       break;
 
    case 0x0C: /* OR Ib, AL */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( 1, Iop_Or8, True, delta, "or" );
+      delta = dis_op_imm_A( 1, False, Iop_Or8, True, delta, "or" );
       break;
    case 0x0D: /* OR Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( sz, Iop_Or8, True, delta, "or" );
+      delta = dis_op_imm_A( sz, False, Iop_Or8, True, delta, "or" );
       break;
 
-//.. //--    case 0x14: /* ADC Ib, AL */
-//.. //--       delta = dis_op_imm_A( 1, ADC, True, delta, "adc" );
-//.. //--       break;
+   case 0x14: /* ADC Ib, AL */
+      delta = dis_op_imm_A( 1, True, Iop_Add8, True, delta, "adc" );
+      break;
 //.. //--    case 0x15: /* ADC Iv, eAX */
 //.. //--       delta = dis_op_imm_A( sz, ADC, True, delta, "adc" );
 //.. //--       break;
@@ -11824,47 +11834,47 @@ DisResult disInstr_AMD64_WRK (
 //.. //-- 
    case 0x24: /* AND Ib, AL */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( 1, Iop_And8, True, delta, "and" );
+      delta = dis_op_imm_A( 1, False, Iop_And8, True, delta, "and" );
       break;
    case 0x25: /* AND Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( sz, Iop_And8, True, delta, "and" );
+      delta = dis_op_imm_A( sz, False, Iop_And8, True, delta, "and" );
       break;
 
    case 0x2C: /* SUB Ib, AL */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A(1, Iop_Sub8, True, delta, "sub" );
+      delta = dis_op_imm_A(1, False, Iop_Sub8, True, delta, "sub" );
       break;
    case 0x2D: /* SUB Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( sz, Iop_Sub8, True, delta, "sub" );
+      delta = dis_op_imm_A( sz, False, Iop_Sub8, True, delta, "sub" );
       break;
 
    case 0x34: /* XOR Ib, AL */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( 1, Iop_Xor8, True, delta, "xor" );
+      delta = dis_op_imm_A( 1, False, Iop_Xor8, True, delta, "xor" );
       break;
    case 0x35: /* XOR Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( sz, Iop_Xor8, True, delta, "xor" );
+      delta = dis_op_imm_A( sz, False, Iop_Xor8, True, delta, "xor" );
       break;
 
    case 0x3C: /* CMP Ib, AL */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( 1, Iop_Sub8, False, delta, "cmp" );
+      delta = dis_op_imm_A( 1, False, Iop_Sub8, False, delta, "cmp" );
       break;
    case 0x3D: /* CMP Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( sz, Iop_Sub8, False, delta, "cmp" );
+      delta = dis_op_imm_A( sz, False, Iop_Sub8, False, delta, "cmp" );
       break;
 
    case 0xA8: /* TEST Ib, AL */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( 1, Iop_And8, False, delta, "test" );
+      delta = dis_op_imm_A( 1, False, Iop_And8, False, delta, "test" );
       break;
    case 0xA9: /* TEST Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op_imm_A( sz, Iop_And8, False, delta, "test" );
+      delta = dis_op_imm_A( sz, False, Iop_And8, False, delta, "test" );
       break;
 
    /* ------------------------ opl Ev, Gv ----------------- */

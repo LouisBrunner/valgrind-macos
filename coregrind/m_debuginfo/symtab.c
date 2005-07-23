@@ -711,7 +711,8 @@ void canonicaliseScopetab ( SegInfo* si )
    j = 0;
    for (i = 0; i < si->scopetab_used; i++) {
       if (si->scopetab[i].size > 0) {
-         si->scopetab[j] = si->scopetab[i];
+         if (j != i)
+            si->scopetab[j] = si->scopetab[i];
          j++;
       }
    }
@@ -790,7 +791,8 @@ void canonicaliseLoctab ( SegInfo* si )
    j = 0;
    for (i = 0; i < (Int)si->loctab_used; i++) {
       if (si->loctab[i].size > 0) {
-         si->loctab[j] = si->loctab[i];
+         if (j != i)
+            si->loctab[j] = si->loctab[i];
          j++;
       }
    }
@@ -887,7 +889,8 @@ void canonicaliseCfiSI ( SegInfo* si )
    j = 0;
    for (i = 0; i < (Int)si->cfisi_used; i++) {
       if (si->cfisi[i].len > 0) {
-         si->cfisi[j] = si->cfisi[i];
+         if (j != i)
+            si->cfisi[j] = si->cfisi[i];
          j++;
       }
    }

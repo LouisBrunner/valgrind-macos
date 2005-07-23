@@ -1,3 +1,13 @@
+
+/* To build: 
+
+     gcc -O -g -o test-amd64 test-amd64.c -lm
+
+ */
+
+/* Contrary to what the next comment says, this is now an amd64 CPU
+   test. */
+
 /*
  *  x86 CPU test
  * 
@@ -120,11 +130,9 @@ static void *call_start __init_call = NULL;
 #define OP ror
 #include "test-amd64-shift.h"
 
-#if 0
 #define OP rcr
 #define OP_CC
 #include "test-amd64-shift.h"
-#endif
 
 #if 0
 #define OP rcl

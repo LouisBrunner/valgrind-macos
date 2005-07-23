@@ -583,8 +583,6 @@ Bool VG_(translate) ( ThreadId tid,
 
    VGP_POPCC(VgpVexTime);
 
-#undef DECIDE_IF_PRINTING_CODEGEN
-
    /* Copy data at trans_addr into the translation cache. */
    vg_assert(tmpbuf_used > 0 && tmpbuf_used < 65536);
 

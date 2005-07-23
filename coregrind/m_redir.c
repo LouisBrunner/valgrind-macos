@@ -117,7 +117,7 @@ static void add_redir_to_unresolved_list(CodeRedirect *redir)
    unresolved_redirs = redir;
 }
 
-static void add_redir_to_resolved_list(CodeRedirect *redir)
+static void add_redir_to_resolved_list(CodeRedirect *redir, Bool need_discard)
 {
    vg_assert(redir->from_addr);
 
@@ -131,13 +131,11 @@ static void add_redir_to_resolved_list(CodeRedirect *redir)
 
       vg_assert(redir->to_addr != 0);
 
-      if (VG_(search_transtab)(NULL, (Addr64)redir->from_addr, False)) {
+      if (need_discard) {
          /* For some given (from, to) redir, the "from" function got
-            called before the .so containing "to" became available.  We
-            know this because there is already a translation for the
-            entry point of the original "from".  So the redirect will
-            never actually take effect unless that translation is
-            discarded.  
+            loaded before the .so containing "to" became available so
+            we need to discard any existing translations involving
+            the "from" function.
 
             Note, we only really need to discard the first bb of the
             old entry point, and so we avoid the problem of having to
@@ -149,7 +147,7 @@ static void add_redir_to_resolved_list(CodeRedirect *redir)
             Note, this is potentially expensive -- discarding
             translations causes complete unchaining.  
          */
-         TRACE_REDIR("Discarding translation due to redirect of already called function" );
+         TRACE_REDIR("Discarding translation due to redirect of already loaded function" );
          TRACE_REDIR("   %s:%s(%p) -> %p)", redir->from_lib, redir->from_sym,
                                             redir->from_addr, redir->to_addr );
          VG_(discard_translations)((Addr64)redir->from_addr, 1);
@@ -240,7 +238,7 @@ void VG_(resolve_existing_redirs_with_seginfo)(SegInfo *si)
       if (resolve_redir_with_seginfo(redir, si)) {
 	 *prevp = next;
 	 redir->next = NULL;
-         add_redir_to_resolved_list(redir);
+         add_redir_to_resolved_list(redir, False);
       } else
 	 prevp = &redir->next;
    }
@@ -268,7 +266,7 @@ static void add_redirect_addr_to_addr( Addr from_addr, Addr to_addr )
    TRACE_REDIR("REDIRECT addr to addr: %p to %p", from_addr, to_addr);
 
    // This redirection is already resolved, put it straight in the list.
-   add_redir_to_resolved_list(redir);
+   add_redir_to_resolved_list(redir, True);
 }
 
 /* Redirect a lib/symbol reference to a function at addr */
@@ -294,7 +292,7 @@ static void add_redirect_sym_to_addr(
    // function is loaded after the replacee).  Then add it to the
    // appropriate list.
    if (resolve_redir_with_existing_seginfos(redir)) {
-      add_redir_to_resolved_list(redir);
+      add_redir_to_resolved_list(redir, True);
    } else {
       add_redir_to_unresolved_list(redir);
    }
@@ -318,7 +316,7 @@ CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
    // Check against all existing segments to see if this redirection
    // can be resolved immediately.  Then add it to the appropriate list.
    if (resolve_redir_with_existing_seginfos(redir)) {
-      add_redir_to_resolved_list(redir);
+      add_redir_to_resolved_list(redir, True);
    } else {
       add_redir_to_unresolved_list(redir);
    }

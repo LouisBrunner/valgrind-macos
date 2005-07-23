@@ -2544,7 +2544,6 @@ ULong dis_op2_G_E ( Prefix      pfx,
       assign(src,  getIRegG(size,pfx,rm));
 
       if (addSubCarry && op8 == Iop_Add8) {
-         vassert(0); /* awaiting test case */
          helper_ADC( size, dst1, dst0, src );
          storeLE(mkexpr(addr), mkexpr(dst1));
       } else

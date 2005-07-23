@@ -145,7 +145,8 @@ static void add_redir_to_resolved_list(CodeRedirect *redir, Bool need_discard)
             rid of the translation. 
 
             Note, this is potentially expensive -- discarding
-            translations causes complete unchaining.  
+            translations requires a complete search through all of
+            them.
          */
          TRACE_REDIR("Discarding translation due to redirect of already loaded function" );
          TRACE_REDIR("   %s:%s(%p) -> %p)", redir->from_lib, redir->from_sym,

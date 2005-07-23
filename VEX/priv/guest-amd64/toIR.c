@@ -1026,6 +1026,7 @@ static void putIRegRexB ( Int sz, Prefix pfx, UInt lo3bits, IRExpr* e )
 {
    vassert(lo3bits < 8);
    vassert(IS_VALID_PFX(pfx));
+   vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    vassert(typeOfIRExpr(irbb->tyenv, e) == szToITy(sz));
    stmt( IRStmt_Put( 
             offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
@@ -12792,6 +12793,39 @@ DisResult disInstr_AMD64_WRK (
             );
             putIRegRexB(4, pfx, opc-0xC8, mkexpr(t2));
             DIP("bswapl %s\n", nameIRegRexB(4, pfx, opc-0xC8));
+            break;
+         }
+	 else if (sz == 8) {
+            t1 = newTemp(Ity_I64);
+            t2 = newTemp(Ity_I64);
+            assign( t1, getIRegRexB(8, pfx, opc-0xC8) );
+
+#           define LANE(_nn)                                          \
+               binop( Iop_Shl64,                                      \
+                      binop( Iop_And64,                               \
+                             binop(Iop_Shr64, mkexpr(t1),             \
+                                              mkU8(8 * (7 - (_nn)))), \
+                             mkU64(0xFF)),                            \
+                      mkU8(8 * (_nn)))
+
+            assign( 
+               t2,
+               binop(Iop_Or64,
+                     binop(Iop_Or64,
+                           binop(Iop_Or64,LANE(0),LANE(1)),
+                           binop(Iop_Or64,LANE(2),LANE(3))
+                     ),
+                     binop(Iop_Or64,
+                           binop(Iop_Or64,LANE(4),LANE(5)),
+                           binop(Iop_Or64,LANE(6),LANE(7))
+                     )
+               )
+            );
+
+#           undef LANE
+
+            putIRegRexB(8, pfx, opc-0xC8, mkexpr(t2));
+            DIP("bswapq %s\n", nameIRegRexB(8, pfx, opc-0xC8));
             break;
          } else {
             goto decode_failure;

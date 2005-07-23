@@ -2922,30 +2922,59 @@ ULong dis_Grp2 ( Prefix pfx,
    }
 
    if (isRotateRC) {
-      vpanic("dis_Grp2(Reg,amd64): unhandled case(RotateRC)");
-      vassert(0);
-//..       /* call a helper; this insn is so ridiculous it does not deserve
-//..          better */
-//..       IRTemp   r64  = newTemp(Ity_I64);
-//..       IRExpr** args 
-//..          = mkIRExprVec_4( widenUto32(mkexpr(dst0)), /* thing to rotate */
-//..                           widenUto32(shift_expr),   /* rotate amount */
-//..                           widenUto32(mk_x86g_calculate_eflags_all()),
-//..                           mkU32(sz) );
-//..       assign( r64, mkIRExprCCall(
-//..                       Ity_I64, 
-//..                       0/*regparm*/, 
-//..                       "x86g_calculate_RCR", &x86g_calculate_RCR,
-//..                       args
-//..                    )
-//..             );
-//..       /* new eflags in hi half r64; new value in lo half r64 */
-//..       assign( dst1, narrowTo(ty, unop(Iop_64to32, mkexpr(r64))) );
-//..       stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-//..       stmt( IRStmt_Put( OFFB_CC_DEP1, unop(Iop_64HIto32, mkexpr(r64)) ));
-//..       stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+      /* Call a helper; this insn is so ridiculous it does not deserve
+         better.  One problem is, the helper has to calculate both the
+         new value and the new flags.  This is more than 64 bits, and
+         there is no way to return more than 64 bits from the helper.
+         Hence the crude and obvious solution is to call it twice,
+         using the sign of the sz field to indicate whether it is the
+         value or rflags result we want.
+      */
+      IRExpr** argsVALUE;
+      IRExpr** argsRFLAGS;
+
+      IRTemp new_value  = newTemp(Ity_I64);
+      IRTemp new_rflags = newTemp(Ity_I64);
+      IRTemp old_rflags = newTemp(Ity_I64);
+
+      assign( old_rflags, widenUto64(mk_amd64g_calculate_rflags_all()) );
+
+      argsVALUE
+         = mkIRExprVec_4( widenUto64(mkexpr(dst0)), /* thing to rotate */
+                          widenUto64(shift_expr),   /* rotate amount */
+                          mkexpr(old_rflags),
+                          mkU64(sz) );
+      assign( new_value, 
+                 mkIRExprCCall(
+                    Ity_I64, 
+                    0/*regparm*/, 
+                    "amd64g_calculate_RCR", &amd64g_calculate_RCR,
+                    argsVALUE
+                 )
+            );
+      
+      argsRFLAGS
+         = mkIRExprVec_4( widenUto64(mkexpr(dst0)), /* thing to rotate */
+                          widenUto64(shift_expr),   /* rotate amount */
+                          mkexpr(old_rflags),
+                          mkU64(-sz) );
+      assign( new_rflags, 
+                 mkIRExprCCall(
+                    Ity_I64, 
+                    0/*regparm*/, 
+                    "amd64g_calculate_RCR", &amd64g_calculate_RCR,
+                    argsRFLAGS
+                 )
+            );
+
+      assign( dst1, narrowTo(ty, mkexpr(new_value)) );
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(new_rflags) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
    }
 
+   else
    if (isShift) {
 
       IRTemp pre64     = newTemp(Ity_I64);

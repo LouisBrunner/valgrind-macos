@@ -1507,6 +1507,75 @@ void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st )
 }
 
 
+ULong amd64g_calculate_RCR ( ULong arg, 
+                             ULong rot_amt, 
+                             ULong rflags_in, 
+                             Long  szIN )
+{
+   Bool  wantRflags = toBool(szIN < 0);
+   ULong sz         = wantRflags ? (-szIN) : szIN;
+   ULong tempCOUNT  = rot_amt & (sz == 8 ? 0x3F : 0x1F);
+   ULong cf=0, of=0, tempcf;
+
+   switch (sz) {
+      case 8:
+         cf        = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
+         of        = ((arg >> 63) ^ cf) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = arg & 1;
+            arg    = (arg >> 1) | (cf << 63);
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         break;
+      case 4:
+         while (tempCOUNT >= 33) tempCOUNT -= 33;
+         cf        = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
+         of        = ((arg >> 31) ^ cf) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = arg & 1;
+            arg    = ((arg >> 1) & 0x7FFFFFFFULL) | (cf << 31);
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         break;
+      case 2:
+         while (tempCOUNT >= 17) tempCOUNT -= 17;
+         cf        = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
+         of        = ((arg >> 15) ^ cf) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = arg & 1;
+            arg    = ((arg >> 1) & 0x7FFFULL) | (cf << 15);
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         break;
+      case 1:
+         while (tempCOUNT >= 9) tempCOUNT -= 9;
+         cf        = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
+         of        = ((arg >> 7) ^ cf) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = arg & 1;
+            arg    = ((arg >> 1) & 0x7FULL) | (cf << 7);
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         break;
+      default:
+         vpanic("calculate_RCR(amd64g): invalid size");
+   }
+
+   cf &= 1;
+   of &= 1;
+   rflags_in &= ~(AMD64G_CC_MASK_C | AMD64G_CC_MASK_O);
+   rflags_in |= (cf << AMD64G_CC_SHIFT_C) | (of << AMD64G_CC_SHIFT_O);
+
+   /* caller can ask to have back either the resulting flags or
+      resulting value, but not both */
+   return wantRflags ? rflags_in : arg;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Helpers for MMX/SSE/SSE2.                               ---*/
 /*---------------------------------------------------------------*/

@@ -94,11 +94,9 @@ extern ULong amd64g_calculate_condition (
 
 //extern ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl );
 
-// Hmm.  This is going to be a problem as it needs to return
-// 64bits and rflags.
-//extern ULong amd64g_calculate_RCR  ( 
-//                UInt arg, UInt rot_amt, UInt eflags_in, UInt sz 
-//             );
+extern ULong amd64g_calculate_RCR  ( 
+                ULong arg, ULong rot_amt, ULong rflags_in, Long sz 
+             );
 
 extern ULong amd64g_check_fldcw ( ULong fpucw );
 

@@ -308,7 +308,7 @@ typedef struct OpenFd
 static OpenFd *allocated_fds;
 
 /* Count of open file descriptors. */
-static int fd_count = 0;
+static Int fd_count = 0;
 
 
 /* Note the fact that a file descriptor was just closed. */
@@ -433,7 +433,7 @@ Char *inet2name(struct vki_sockaddr_in *sa, UInt len, Char *name)
  * Try get some details about a socket.
  */
 static void
-getsockdetails(int fd)
+getsockdetails(Int fd)
 {
    union u {
       struct vki_sockaddr a;
@@ -492,7 +492,7 @@ void VG_(show_open_fds) ()
          VG_(message)(Vg_UserMsg, "Open file descriptor %d: %s", i->fd,
                       i->pathname);
       } else {
-         int val;
+         Int val;
          UInt len = sizeof(val);
 
          if (VG_(getsockopt)(i->fd, VKI_SOL_SOCKET, VKI_SO_TYPE, &val, &len) == -1) {
@@ -525,8 +525,8 @@ static
 void do_hacky_preopened()
 {
    struct vki_rlimit lim;
-   unsigned int count;
-   int i;
+   UInt count;
+   Int i;
 
    if (VG_(getrlimit) (VKI_RLIMIT_NOFILE, &lim) == -1) {
       /* Hmm.  getrlimit() failed.  Now we're screwed, so just choose
@@ -547,7 +547,7 @@ void do_hacky_preopened()
 
 void VG_(init_preopened_fds)()
 {
-   int ret;
+   Int ret;
    struct vki_dirent d;
    SysRes f;
 
@@ -562,7 +562,7 @@ void VG_(init_preopened_fds)()
          goto out;
 
       if (VG_(strcmp)(d.d_name, ".") && VG_(strcmp)(d.d_name, "..")) {
-         int fno = VG_(atoll)(d.d_name);
+         Int fno = VG_(atoll)(d.d_name);
 
          if (fno != f.val)
             if (VG_(clo_track_fds))
@@ -665,10 +665,10 @@ static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
    while (cm) {
       if (cm->cmsg_level == VKI_SOL_SOCKET &&
           cm->cmsg_type == VKI_SCM_RIGHTS ) {
-         int *fds = (int *) VKI_CMSG_DATA(cm);
-         int fdc = (cm->cmsg_len - VKI_CMSG_ALIGN(sizeof(struct vki_cmsghdr)))
+         Int *fds = (Int *) VKI_CMSG_DATA(cm);
+         Int fdc = (cm->cmsg_len - VKI_CMSG_ALIGN(sizeof(struct vki_cmsghdr)))
                          / sizeof(int);
-         int i;
+         Int i;
 
          for (i = 0; i < fdc; i++)
             if(VG_(clo_track_fds))
@@ -847,7 +847,7 @@ static Addr do_brk(Addr newbrk)
 			current, newaddr, current-newaddr);
 
 	 if (newaddr != current) {
-	    int res = VG_(munmap)((void *)newaddr, current - newaddr);
+	    Int res = VG_(munmap)((void *)newaddr, current - newaddr);
             vg_assert(0 == res);
 	 }
 	 ret = newbrk;

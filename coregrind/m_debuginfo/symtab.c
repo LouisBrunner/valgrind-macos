@@ -838,15 +838,22 @@ static Int compare_CfiSI(void *va, void *vb) {
 static
 void canonicaliseCfiSI ( SegInfo* si )
 {
-   Int   i;
+   Int   i, j;
    const Addr minAddr = 0;
    const Addr maxAddr = ~minAddr;
+
+   /* Note: take care in here.  si->cfisi can be NULL, in which
+      case _used and _size fields will be zero. */
+   if (si->cfisi == NULL) {
+      vg_assert(si->cfisi_used == 0);
+      vg_assert(si->cfisi_size == 0);
+   }
 
    /* Set cfisi_minaddr and cfisi_maxaddr to summarise the entire
       address range contained in cfisi[0 .. cfisi_used-1]. */
    si->cfisi_minaddr = maxAddr; 
    si->cfisi_maxaddr = minAddr;
-   for (i = 0; i < si->cfisi_used; i++) {
+   for (i = 0; i < (Int)si->cfisi_used; i++) {
       Addr here_min = si->cfisi[i].base;
       Addr here_max = si->cfisi[i].base + si->cfisi[i].len - 1;
       if (here_min < si->cfisi_minaddr)
@@ -863,8 +870,32 @@ void canonicaliseCfiSI ( SegInfo* si )
    /* Sort the cfisi array by base address. */
    VG_(ssort)(si->cfisi, si->cfisi_used, sizeof(*si->cfisi), compare_CfiSI);
 
+   /* If two adjacent entries overlap, truncate the first. */
+   for (i = 0; i < (Int)si->cfisi_used-1; i++) {
+      if (si->cfisi[i].base + si->cfisi[i].len > si->cfisi[i+1].base) {
+         Int new_len = si->cfisi[i+1].base - si->cfisi[i].base;
+         /* how could it be otherwise?  The entries are sorted by the
+            .base field. */         
+         vg_assert(new_len >= 0);
+	 vg_assert(new_len <= si->cfisi[i].len);
+         si->cfisi[i].len = new_len;
+      }
+   }
+
+   /* Zap any zero-sized entries resulting from the truncation
+      process. */
+   j = 0;
+   for (i = 0; i < (Int)si->cfisi_used; i++) {
+      if (si->cfisi[i].len > 0) {
+         si->cfisi[j] = si->cfisi[i];
+         j++;
+      }
+   }
+   /* VG_(printf)("XXXXXXXXXXXXX %d %d\n", si->cfisi_used, j); */
+   si->cfisi_used = j;
+
    /* Ensure relevant postconditions hold. */
-   for (i = 0; i < si->cfisi_used; i++) {
+   for (i = 0; i < (Int)si->cfisi_used; i++) {
       /* No zero-length ranges. */
       vg_assert(si->cfisi[i].len > 0);
       /* Makes sense w.r.t. summary address range */

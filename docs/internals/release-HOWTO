@@ -1,0 +1,77 @@
+-----------------------------------------------------------------------------
+TODO list when doing a Valgrind release (with release number "X.Y.Z")
+-----------------------------------------------------------------------------
+
+First of all:
+
+- Tell valgrind-developers you want to do a release.  Give a timeframe for
+  everyone to check in any final features/bug-fixes they want in the
+  release.
+
+- Go over the docs, make sure they're up to date.
+
+- Update version number and date in docs/xml/vg-entities.xml.  (Exact
+  release date probably won't be known yet, updating it is in the list below
+  of tasks for the official release.)
+
+- Write release notes, add to NEWS.  Include a list of fixed bugs from
+  Bugzilla.  [[We should decide a defined way of obtaining this list so it's
+  consistent and so we don't have to work it out anew each time.]]
+
+- Add X.Y.Z and X.Y.Z.SVN versions to Bugzilla (ask Dirk to do it)
+
+
+For each release candidate (should do release candidates for big releases,
+bug-fix-only releases might not need one):
+
+- Do pre-release testing:
+  - Make sure regtests run ok on all platforms of interest.
+  - Make sure Mozilla and OpenOffice run ok on all platforms of interest.
+
+- Change release number in AC_INIT() in configure.in to "X.Y.Z-rcN", where
+  'N' is the release candidate number.
+
+- Make the tarball ("make dist") and put it on the web somewhere (it doesn't
+  have to be on valgrind.org if another site is easier).
+
+- Announce the release:
+  - Email valgrind-users and valgrind-developers (but not valgrind-announce).  
+  - Make clear it's a release candidate.  
+  - Make sure you tell everyone where to download from.
+  - Include the release notes in the email (maybe not necessary for release
+    candidates 2+).
+
+- Wait 2--3 days for feedback.  If bugs appear:
+  - Fix them.
+  - Update the bug-fix list in NEWS if necessary.
+  - Do another release candidate.
+
+
+For the official release:
+
+- Again, update date in docs/xml/vg-entities.xml for the official release
+  date.
+
+- Do pre-release testing:
+  - Make sure regtests run ok on all platforms of interest.
+  - Make sure Mozilla and OpenOffice run ok on all platforms of interest.
+
+- Change release number in AC_INIT() in configure.in to "X.Y.Z".
+
+- Tag the repository ("VALGRIND_X_Y_Z").
+
+- Make the tarball ("make dist").
+  
+- Update website: 
+  - Put the tarball up.
+  - Update www.valgrind.org/downloads/source_code.html.  
+  - Add a news item to the front page and also to valgrind.org/info/news.html.
+
+- Change release number in AC_INIT() in configure.in to "X.Y.Z.SVN", where
+  X.Y.Z is one more than the release just done.
+
+- Announce the release:
+  - Email valgrind-users, valgrind-developers, and valgrind-announce.  
+  - Include the release notes in the email.
+
+

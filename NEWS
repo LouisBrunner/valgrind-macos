@@ -47,7 +47,7 @@ Other user-visible changes:
 - Support for programs that use self-modifying code has been improved,
   in particular programs that put temporary code fragments on the stack.
   This helps for C programs compiled with GCC that use nested functions,
-  and also Ada programs.  This is controlled with the --smc-support
+  and also Ada programs.  This is controlled with the --smc-check
   flag, although the default setting should work in most cases.
 
 - Output can now be printed in XML format.  This should make it easier

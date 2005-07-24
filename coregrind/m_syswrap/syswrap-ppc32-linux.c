@@ -2156,7 +2156,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    LINXY(__NR_getresuid,         sys_getresuid16),       // 165
 
 //..    GENX_(__NR_query_module,      sys_ni_syscall),        // 166
-//..    GENXY(__NR_poll,              sys_poll),              // 167
+   GENXY(__NR_poll,              sys_poll),              // 167
 //..    //   (__NR_nfsservctl,        sys_nfsservctl),        // 168 */Linux
 //.. 
 //..    LINX_(__NR_setresgid,         sys_setresgid16),       // 169

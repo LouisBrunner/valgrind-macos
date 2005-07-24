@@ -1270,8 +1270,8 @@ static void usage ( Bool debug_help )
 "    --pointercheck=no|yes     enforce client address space limits [yes]\n"
 "    --support-elan3=no|yes    hacks for Quadrics Elan3 support [no]\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
-"    --smc-support=none|stack|all   support for self-modifying code:\n"
-"                              none, for code found in stacks, or all [stack]\n"
+"    --smc-check=none|stack|all  checks for self-modifying code: none,\n"
+"                              only for code found in stacks, or all [stack]\n"
 "\n"
 "  user options for Valgrind tools that report errors:\n"
 "    --xml=yes                 all output is in XML (Memcheck only)\n"
@@ -1509,12 +1509,12 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BNUM_CLO(arg, "--num-callers",      VG_(clo_backtrace_size), 1,
                                                   VG_DEEPEST_BACKTRACE)
 
-      else if (VG_CLO_STREQ(arg, "--smc-support=none"))
-         VG_(clo_smc_support) = Vg_SmcNone;
-      else if (VG_CLO_STREQ(arg, "--smc-support=stack"))
-         VG_(clo_smc_support) = Vg_SmcStack;
-      else if (VG_CLO_STREQ(arg, "--smc-support=all"))
-         VG_(clo_smc_support) = Vg_SmcAll;
+      else if (VG_CLO_STREQ(arg, "--smc-check=none"))
+         VG_(clo_smc_check) = Vg_SmcNone;
+      else if (VG_CLO_STREQ(arg, "--smc-check=stack"))
+         VG_(clo_smc_check) = Vg_SmcStack;
+      else if (VG_CLO_STREQ(arg, "--smc-check=all"))
+         VG_(clo_smc_check) = Vg_SmcAll;
 
       else VG_BNUM_CLO(arg, "--vex-iropt-verbosity",
                        VG_(clo_vex_control).iropt_verbosity, 0, 10)

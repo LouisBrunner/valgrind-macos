@@ -171,7 +171,7 @@ typedef
    } 
    VgSmc;
 
-extern VgSmc VG_(clo_smc_support);
+extern VgSmc VG_(clo_smc_check);
 
 
 #endif   // __PUB_CORE_OPTIONS_H

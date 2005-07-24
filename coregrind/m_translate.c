@@ -392,13 +392,13 @@ static Bool chase_into_ok ( Addr64 addr64 )
    Addr addr = (Addr)addr64;
 
    /* All chasing disallowed if all bbs require self-checks. */
-   if (VG_(clo_smc_support) == Vg_SmcAll)
+   if (VG_(clo_smc_check) == Vg_SmcAll)
       goto dontchase;
 
    /* AAABBBCCC: if default self-checks are in force, reject if we
       would choose to have a self-check for the dest.  Note, this must
       match the logic at XXXYYYZZZ below. */
-   if (VG_(clo_smc_support) == Vg_SmcStack) {
+   if (VG_(clo_smc_check) == Vg_SmcStack) {
       Segment* seg = VG_(find_segment)(addr);
       if (seg && (seg->flags & SF_GROWDOWN))
          goto dontchase;
@@ -533,14 +533,14 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* Do we want a self-checking translation? */
    do_self_check = False;
-   switch (VG_(clo_smc_support)) {
+   switch (VG_(clo_smc_check)) {
       case Vg_SmcNone:  do_self_check = False; break;
       case Vg_SmcAll:   do_self_check = True;  break;
       case Vg_SmcStack: 
          /* XXXYYYZZZ: must match the logic at AAABBBCCC above */
          do_self_check = seg ? toBool(seg->flags & SF_GROWDOWN) : False;
          break;
-      default: vg_assert2(0, "unknown VG_(clo_smc_support) value");
+      default: vg_assert2(0, "unknown VG_(clo_smc_check) value");
    }
 
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */

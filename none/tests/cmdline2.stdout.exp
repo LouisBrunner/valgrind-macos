@@ -15,7 +15,6 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --run-libc-freeres=no|yes free up glibc memory at exit? [yes]
     --weird-hacks=hack1,hack2,...  recognised hacks: lax-ioctls,ioctl-mmap [none]
     --pointercheck=no|yes     enforce client address space limits [yes]
-    --support-elan3=no|yes    hacks for Quadrics Elan3 support [no]
     --show-emwarns=no|yes     show warnings about emulation limits? [no]
     --smc-check=none|stack|all  checks for self-modifying code: none,
                               only for code found in stacks, or all [stack]

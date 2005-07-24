@@ -145,9 +145,6 @@ extern Bool VG_(clo_pointercheck);
 /* Model the pthread library */
 extern Bool VG_(clo_model_pthreads);
 
-/* HACK: Use hacked version of clone for Quadrics Elan3 drivers */
-extern Bool VG_(clo_support_elan3);
-
 /* Should we show VEX emulation warnings?  Default: NO */
 extern Bool VG_(clo_show_emwarns);
 

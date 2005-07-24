@@ -419,11 +419,11 @@ static SysRes do_clone ( ThreadId ptid,
       If the clone call specifies a NULL esp for the new thread, then
       it actually gets a copy of the parent's esp.
    */
-   /* HACK: The clone call done by the Quadrics Elan3 driver specifies
+   /* Note: the clone call done by the Quadrics Elan3 driver specifies
       clone flags of 0xF00, and it seems to rely on the assumption
-      that the child inherits a copy of the parent's GDT. Hence that
-      is passed as an arg to setup_child. */
-   setup_child( &ctst->arch, &ptst->arch, True /*VG_(clo_support_elan3)*/ );
+      that the child inherits a copy of the parent's GDT.  
+      setup_child takes care of setting that up. */
+   setup_child( &ctst->arch, &ptst->arch, True );
 
    /* Make sys_clone appear to have returned Success(0) in the
       child. */
@@ -1123,12 +1123,6 @@ PRE(sys_clone)
       /* should we just ENOSYS? */
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%x", ARG1);
-      VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "NOTE: if this happened when attempting "
-                               "to run code using");
-      VG_(message)(Vg_UserMsg, "      Quadrics Elan3 user-space drivers,"
-                               " you should re-run ");
-      VG_(message)(Vg_UserMsg, "      with --support-elan3=yes.");
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "The only supported clone() uses are:");
       VG_(message)(Vg_UserMsg, " - via a threads library (LinuxThreads or NPTL)");

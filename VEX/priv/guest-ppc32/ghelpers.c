@@ -433,14 +433,16 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 1,
-          /* flags thunk: only using last_result, which is always defd. */
+          .n_alwaysDefd = 6,
 
           .alwaysDefd 
-             = { /*  0 */ ALWAYSDEFD(guest_CIA)
-
-                 // FIXME
-               }
+	  = { /*  0 */ ALWAYSDEFD(guest_CIA),
+	      /*  1 */ ALWAYSDEFD(guest_EMWARN),
+	      /*  2 */ ALWAYSDEFD(guest_TISTART),
+	      /*  3 */ ALWAYSDEFD(guest_TILEN),
+	      /*  4 */ ALWAYSDEFD(guest_VSCR),
+	      /*  5 */ ALWAYSDEFD(guest_FPROUND)
+            }
         };
 
 

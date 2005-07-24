@@ -9,7 +9,7 @@ sed "s/<line>.*<\/line>/<line>...<\/line>/" |
 sed "s/<dir>.*<\/dir>/<dir>...<\/dir>/" |
 sed "s/<count>.*<\/count>/<count>...<\/count>/" |
 perl -0 -p -e "s/<suppcounts>.*<\/suppcounts>/<suppcounts>...<\/suppcounts>/s" |
-perl    -p -e "s/<when>.*<\/when>/<when>...<\/when>/s" |
+perl    -p -e "s/<time>.*<\/time>/<time>...<\/time>/s" |
 perl -0 -p -e "s/<vargv>.*<\/vargv>/<vargv>...<\/vargv>/s"
 
 # Collected wisdom re Perl magic incantation:

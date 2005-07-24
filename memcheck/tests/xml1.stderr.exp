@@ -24,7 +24,7 @@
   </argv>
 </args>
 
-<status> <what>RUNNING</what> <when>...</when> </status>
+<status> <state>RUNNING</state> <time>...</time> </status>
 
 <error>
   <unique>0x........</unique>
@@ -369,7 +369,7 @@
   <pair> <count>...</count> <unique>0x........</unique> </pair>
 </errorcounts>
 
-<status> <what>FINISHED</what> <when>...</when> </status>
+<status> <state>FINISHED</state> <time>...</time> </status>
 
 <suppcounts>...</suppcounts>
 

@@ -166,8 +166,8 @@ following in sequence:
 
 * The following, indicating that the program has now started:
 
-     <status> <what>RUNNING</what> 
-              <when>human-readable-time-string</when> 
+     <status> <state>RUNNING</state> 
+              <time>human-readable-time-string</time> 
      </status>
 
 * Zero or more of (either ERROR or ERRORCOUNTS).
@@ -175,8 +175,8 @@ following in sequence:
 * The following, indicating that the program has now finished, and
   that the wrapup (leak checking) is happening.
 
-     <status> <what>FINISHED</what> 
-              <when>human-readable-time-string</when> 
+     <status> <state>FINISHED</state> 
+              <time>human-readable-time-string</time> 
      </status>
 
 * SUPPCOUNTS, indicating how many times each suppression was used.

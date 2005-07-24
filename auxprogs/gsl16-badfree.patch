@@ -1,0 +1,32 @@
+Index: test_complex_source.c
+===================================================================
+RCS file: /home/gsl-cvs/gsl/vector/test_complex_source.c,v
+retrieving revision 1.23
+diff -u -r1.23 test_complex_source.c
+--- test_complex_source.c       24 Jun 2005 11:33:25 -0000      1.23
++++ test_complex_source.c       6 Jul 2005 11:18:33 -0000
+@@ -75,7 +75,7 @@
+   if (stride == 1)
+     {
+       v0 = FUNCTION (gsl_vector, alloc) (N);
+-      view = FUNCTION (gsl_vector, subvector) (v, 0, N);
++      view = FUNCTION (gsl_vector, subvector) (v0, 0, N);
+       v = &view.vector;
+     }
+   else
+Index: test_source.c
+===================================================================
+RCS file: /home/gsl-cvs/gsl/vector/test_source.c,v
+retrieving revision 1.26
+diff -u -r1.26 test_source.c
+--- test_source.c       24 Jun 2005 11:33:26 -0000      1.26
++++ test_source.c       6 Jul 2005 11:14:18 -0000
+@@ -75,7 +75,7 @@
+   if (stride == 1)
+     {
+       v0 = FUNCTION (gsl_vector, alloc) (N);
+-      view = FUNCTION (gsl_vector, subvector) (v, 0, N);
++      view = FUNCTION (gsl_vector, subvector) (v0, 0, N);
+       v = &view.vector;
+     }
+   else

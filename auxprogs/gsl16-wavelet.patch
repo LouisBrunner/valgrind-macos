@@ -1,0 +1,11 @@
+--- wavelet/dwt.c~      2004-12-24 14:57:34.000000000 +0100
++++ wavelet/dwt.c       2005-07-08 23:31:32.000000000 +0200
+@@ -30,7 +30,7 @@
+
+ static int binary_logn (const size_t n);
+ static void dwt_step (const gsl_wavelet * w, double *a, size_t stride,
+-                      size_t n, int isign, gsl_wavelet_workspace * work);
++                      size_t n, gsl_wavelet_direction dir, gsl_wavelet_workspace * work);
+
+ static int
+ binary_logn (const size_t n)

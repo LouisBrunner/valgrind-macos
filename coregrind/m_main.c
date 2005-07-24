@@ -1297,8 +1297,6 @@ static void usage ( Bool debug_help )
 "\n"
 "  debugging options for all Valgrind tools:\n"
 "    --sanity-level=<number>   level of sanity checking to do [1]\n"
-"    --single-step=no|yes      translate each instr separately? [no]\n"
-"    --optimise=no|yes         improve intermediate code? [yes]\n"
 "    --profile=no|yes          profile? (tool must be built for it) [no]\n"
 "    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]\n"

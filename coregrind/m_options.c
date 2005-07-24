@@ -72,7 +72,6 @@ Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_track_fds)      = False;
 Bool   VG_(clo_show_below_main)= False;
 Bool   VG_(clo_pointercheck)   = True;
-Bool   VG_(clo_branchpred)     = False;
 Bool   VG_(clo_model_pthreads) = False;
 Bool   VG_(clo_show_emwarns)   = False;
 Int    VG_(clo_max_stackframe) = 2000000;

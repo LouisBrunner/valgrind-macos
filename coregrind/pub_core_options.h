@@ -135,8 +135,6 @@ extern Bool  VG_(clo_track_fds);
    is ignored.  Ie if a tool says no, I don't want this to run, that
    cannot be overridden from the command line. */
 extern Bool  VG_(clo_run_libc_freeres);
-/* Generate branch-prediction hints? */
-extern Bool VG_(clo_branchpred);
 /* Continue stack traces below main()?  Default: NO */
 extern Bool VG_(clo_show_below_main);
 /* Test each client pointer dereference to check it's within the

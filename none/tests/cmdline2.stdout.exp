@@ -47,7 +47,6 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --single-step=no|yes      translate each instr separately? [no]
     --optimise=no|yes         improve intermediate code? [yes]
     --profile=no|yes          profile? (tool must be built for it) [no]
-    --branchpred=yes|no       generate branch prediction hints [no]
     --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]
     --trace-notbelow=<number>    only show BBs above <number> [0]

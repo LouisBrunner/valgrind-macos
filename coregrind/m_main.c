@@ -1300,7 +1300,6 @@ static void usage ( Bool debug_help )
 "    --single-step=no|yes      translate each instr separately? [no]\n"
 "    --optimise=no|yes         improve intermediate code? [yes]\n"
 "    --profile=no|yes          profile? (tool must be built for it) [no]\n"
-"    --branchpred=yes|no       generate branch prediction hints [no]\n"
 "    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]\n"
 "    --trace-notbelow=<number>    only show BBs above <number> [0]\n"
@@ -1475,7 +1474,6 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       }
 
       else VG_BOOL_CLO(arg, "--xml",              VG_(clo_xml))
-      else VG_BOOL_CLO(arg, "--branchpred",       VG_(clo_branchpred))
       else VG_BOOL_CLO(arg, "--db-attach",        VG_(clo_db_attach))
       else VG_BOOL_CLO(arg, "--demangle",         VG_(clo_demangle))
       else VG_BOOL_CLO(arg, "--error-limit",      VG_(clo_error_limit))

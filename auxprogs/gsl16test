@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Do an automated test which involves building and regtesting version
 # 1.6 of the GNU Scientific Library (gsl).  This has proven to be a 
@@ -23,7 +23,7 @@
 
 if [ $# != 5 ]
 then 
-   echo "usage: gsl15test /absolute/name/of/gsl-1.6.tar.gz"
+   echo "usage: gsl15test /absolute/name/of/gsl-1.6-patched.tar.gz"
    echo "                 C-compiler-command"      
    echo "                 flags-for-C-compiler"     
    echo "                 Valgrind-command"
@@ -72,32 +72,42 @@ echo "gsl16test: cflags:   " $GSL_CFLAGS
 echo "gsl16test: valgrind: " $GSL_VV
 echo "gsl16test: vflags:   " $GSL_VFLAGS
 
-rm -rf log.verbose gsl-1.6
+rm -rf log.verbose gsl-1.6-patched summary.txt
 
 echo > log.verbose
 
+echo > summary.txt
+echo $0  $1  \"$2\"  \"$3\"  \"$4\"  \"$5\" >> summary.txt
+echo >> summary.txt
+
 runcmd "Untarring                     " \
-       "rm -rf gsl-1.6 && tar xzf $GSL_FILE" && \
+       "rm -rf gsl-1.6-patched && tar xzf $GSL_FILE" && \
 \
 runcmd "Configuring                   " \
-       "(cd gsl-1.6 && CC=$GSL_CC CFLAGS=\"$GSL_CFLAGS\" ./configure)" && \
+       "(cd gsl-1.6-patched && CC=$GSL_CC CFLAGS=\"$GSL_CFLAGS\" ./configure)" && \
 \
 runcmd "Building                      " \
-       "(cd gsl-1.6 && make && make -k check)"
+       "(cd gsl-1.6-patched && make && make -k check)"
 
 echo -n "   Collecting reference results  "
 rm -f out-REF
-(cd gsl-1.6 && for f in $ALL_TESTS ; do ./$f ; done) &> out-REF
+(cd gsl-1.6-patched && for f in $ALL_TESTS ; do ./$f ; done) &> out-REF
 echo "  ... done"
 
 echo -n "   Collecting valgrinded results "
 rm -f out-V
-(cd gsl-1.6 && for f in $ALL_TESTS ; do $GSL_VV -v --trace-children=yes "$GSL_VFLAGS" ./$f ; done) &> out-V
+(cd gsl-1.6-patched && for f in $ALL_TESTS ; do eval $GSL_VV -v --trace-children=yes "$GSL_VFLAGS" ./$f ; done) &> out-V
 echo "  ... done"
 
 echo -n "   Native fails:    " && (grep FAIL: out-REF | wc -l)
 echo -n "   Native passes:   " && (grep PASS: out-REF | wc -l)
 echo -n "   Valgrind fails:  " && (grep FAIL: out-V | wc -l)
 echo -n "   Valgrind passes: " && (grep PASS: out-V | wc -l)
+
+(echo -n "   Native fails:    " && (grep FAIL: out-REF | wc -l)) >> summary.txt
+(echo -n "   Native passes:   " && (grep PASS: out-REF | wc -l)) >> summary.txt
+(echo -n "   Valgrind fails:  " && (grep FAIL: out-V | wc -l)) >> summary.txt
+(echo -n "   Valgrind passes: " && (grep PASS: out-V | wc -l)) >> summary.txt
+echo >> summary.txt
 
 echo

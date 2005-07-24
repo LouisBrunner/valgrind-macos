@@ -1730,6 +1730,19 @@ r_l, PPC32RH_Imm(False,0)));
 //..       }
 //..    }
 
+
+   /* CmpNEZ64 */
+   if (e->tag == Iex_Unop 
+       && e->Iex.Unop.op == Iop_CmpNEZ64) {
+      HReg hi, lo;
+      HReg tmp = newVRegI(env);
+      iselInt64Expr( &hi, &lo, env, e->Iex.Unop.arg );
+      addInstr(env, mk_iMOVds_RR(tmp, lo));
+      addInstr(env, PPC32Instr_Alu32(Palu_OR, tmp, tmp, PPC32RH_Reg(hi)));
+      addInstr(env, PPC32Instr_Cmp32(False/*sign*/,7/*cr*/,tmp,PPC32RH_Imm(False,0)));
+      return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
+   }
+
    /* var */
    if (e->tag == Iex_Tmp) {
       HReg r_src      = lookupIRTemp(env, e->Iex.Tmp.tmp);
@@ -1897,28 +1910,28 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 //..             *rLo = tLo;
 //..             return;
 //..          }
-//.. 
-//..          /* Or64/And64/Xor64 */
-//..          case Iop_Or64:
-//..          case Iop_And64:
-//..          case Iop_Xor64: {
-//..             HReg xLo, xHi, yLo, yHi;
-//..             HReg tLo = newVRegI(env);
-//..             HReg tHi = newVRegI(env);
-//..             X86AluOp op = e->Iex.Binop.op==Iop_Or64 ? Xalu_OR
-//..                           : e->Iex.Binop.op==Iop_And64 ? Xalu_AND
-//..                           : Xalu_XOR;
-//..             iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
-//..             addInstr(env, mk_iMOVsd_RR(xHi, tHi));
-//..             addInstr(env, mk_iMOVsd_RR(xLo, tLo));
-//..             iselInt64Expr(&yHi, &yLo, env, e->Iex.Binop.arg2);
-//..             addInstr(env, X86Instr_Alu32R(op, X86RMI_Reg(yHi), tHi));
-//..             addInstr(env, X86Instr_Alu32R(op, X86RMI_Reg(yLo), tLo));
-//..             *rHi = tHi;
-//..             *rLo = tLo;
-//..             return;
-//..          }
-//.. 
+
+         /* Or64/And64/Xor64 */
+         case Iop_Or64:
+         case Iop_And64:
+         case Iop_Xor64: {
+            HReg xLo, xHi, yLo, yHi;
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            PPC32AluOp op = e->Iex.Binop.op==Iop_Or64 ? Palu_OR
+                            : e->Iex.Binop.op==Iop_And64 ? Palu_AND
+                            : Palu_XOR;
+            iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
+            addInstr(env, mk_iMOVds_RR(tHi, xHi));
+            addInstr(env, mk_iMOVds_RR(tLo, xLo));
+            iselInt64Expr(&yHi, &yLo, env, e->Iex.Binop.arg2);
+            addInstr(env, PPC32Instr_Alu32(op, tHi, tHi, PPC32RH_Reg(yHi)));
+            addInstr(env, PPC32Instr_Alu32(op, tLo, tHi, PPC32RH_Reg(yLo)));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
 //..          /* Add64/Sub64 */
 //..          case Iop_Add64:
 //..          case Iop_Sub64: {
@@ -2290,20 +2303,20 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             return;
          }
 
-//..          /* could do better than this, but for now ... */
-//..          case Iop_1Sto64: {
-//..             HReg tLo = newVRegI(env);
-//..             HReg tHi = newVRegI(env);
-//..             X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
-//..             addInstr(env, X86Instr_Set32(cond,tLo));
-//..             addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, X86RM_Reg(tLo)));
-//..             addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tLo)));
-//..             addInstr(env, mk_iMOVsd_RR(tLo, tHi));
-//..             *rHi = tHi;
-//..             *rLo = tLo;
-//..             return;
-//..          }
-//.. 
+         /* could do better than this, but for now ... */
+         case Iop_1Sto64: {
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            PPC32CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
+            addInstr(env, PPC32Instr_Set32(cond,tLo));
+            addInstr(env, PPC32Instr_Alu32(Palu_SHL, tLo, tLo, PPC32RH_Imm(False,31)));
+            addInstr(env, PPC32Instr_Alu32(Palu_SAR, tLo, tLo, PPC32RH_Imm(False,31)));
+            addInstr(env, mk_iMOVds_RR(tHi, tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
 //..          /* Not64(e) */
 //..          case Iop_Not64: {
 //..             HReg tLo = newVRegI(env);

@@ -101,11 +101,11 @@ install-data-hook:
  ifeq ($(BUILD_ALL_DOCS),yes)
 	if test -r index.pdf ; then \
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind/; \
-		cp index.pdf $(DESTDIR)$(datadir)/doc/valgrind/; \
+		cp index.pdf $(DESTDIR)$(datadir)/doc/valgrind/valgrind_manual.pdf; \
 	fi
 	if test -r index.ps ; then \
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind/; \
-		cp index.ps $(DESTDIR)$(datadir)/doc/valgrind/; \
+		cp index.ps $(DESTDIR)$(datadir)/doc/valgrind/valgrind_manual.ps; \
 	fi
  endif
 

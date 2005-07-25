@@ -17,6 +17,29 @@ Tool specific XML docs:
 All images used in the docs:
   valgrind/docs/images/
 
+New notes, JRS 20050727
+~~~~~~~~~~~~~~~~~~~~~~~
+* I had to install zillions of packages on SuSE 9.2 in order to
+  build the print docs (make print-docs), including
+
+    passivetex
+    xpdf (for pdftops)
+
+  It's possible to use pdf2ps instead, but that seems to generate
+  huge and almost-unreadable .ps.  pdftops does a much nicer job.
+
+
+* Even then, pdfxmltex eventually dies with "TeX capacity exceeded,
+  sorry [pool size = 67555]" or some such.  To fix this, I edited
+  /etc/texmf/texmf.cnf and changed
+
+     pool_size.pdfxmltex = 500000
+
+  to 1500000 and that fixed it.
+
+
+Old notes
+~~~~~~~~~
 Stylesheets, catalogs, parsing/formatting scripts:
   valgrind/docs/lib/
 
@@ -56,9 +79,9 @@ overview:
   automake target, but does nothing.)  Likewise for PDF/PS with 'make
   print-docs'.
 
-- 'make dist' puts the XML files into the tarball.  It also builds the
-  HTML docs and puts them in too, in valgrind/docs/html/ (including
-  style sheets, images, etc).
+- 'make dist' (nb: at the top level, not in docs/) puts the XML files
+  into the tarball.  It also builds the HTML docs and puts them in too, 
+  in valgrind/docs/html/ (including style sheets, images, etc).
 
 - 'make install' installs the HTML docs in
   $(install)/share/doc/valgrind/html/, if they are present.  (They will

@@ -1,21 +1,3 @@
-Valgrind Documentation
-----------------------
-This text assumes the following directory structure:
-
-Distribution text files (eg. README):
-  valgrind/
-
-Main /docs/ dir:
-  valgrind/docs/
-
-Top-level XML files: 
-  valgrind/docs/xml/
-
-Tool specific XML docs:
-  valgrind/<toolname>/docs/
-
-All images used in the docs:
-  valgrind/docs/images/
 
 New notes, JRS 20050727
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,6 +22,25 @@ New notes, JRS 20050727
 
 Old notes
 ~~~~~~~~~
+Valgrind Documentation
+----------------------
+This text assumes the following directory structure:
+
+Distribution text files (eg. README):
+  valgrind/
+
+Main /docs/ dir:
+  valgrind/docs/
+
+Top-level XML files: 
+  valgrind/docs/xml/
+
+Tool specific XML docs:
+  valgrind/<toolname>/docs/
+
+All images used in the docs:
+  valgrind/docs/images/
+
 Stylesheets, catalogs, parsing/formatting scripts:
   valgrind/docs/lib/
 

@@ -20,6 +20,9 @@ First of all:
 
 - Add X.Y.Z and X.Y.Z.SVN versions to Bugzilla (ask Dirk to do it)
 
+- If there are any binary incompatible tool API changes against the last
+  stable release, ensure that VG_CORE_INTERFACE_VERSION in
+  include/pub_tool_tooliface.h has been increased since the last release.
 
 For each release candidate (should do release candidates for big releases,
 bug-fix-only releases might not need one):

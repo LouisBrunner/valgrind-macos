@@ -1,8 +1,25 @@
+
+##-------------------------------------------------------------
+## HACK: stuff to avoid making the print docs if installing the
+## tools to do so is impractical / too difficult
+##-------------------------------------------------------------
+
+# Comment out the next line to skip building print docs.  The default
+# is not to skip building print docs.  Note, after changing it
+# you of course need to re-run configure to make it take effect.
+BUILD_ALL_DOCS=yes
+
+##-------------------------------------------------------------
+## END OF HACK
+##-------------------------------------------------------------
+
+
 SUBDIRS = xml lib images internals
 
 EXTRA_DIST = README
 
 dist_man_MANS = valgrind.1
+
 
 ##-------------------------------------------------------------------
 ## Below here is more ordinary make stuff...
@@ -70,14 +87,40 @@ print-docs:
 # If the docs have been built, install them.  But don't worry if they have 
 # not -- developers do 'make install' not from a 'make dist'-ified distro all
 # the time.
+#
+# Note: this is done at 'make install' time.
+# Note 2: the ifeq/else/endif have to be indented one space 
+# because otherwise it seems that automake thinks it should
+# be the one to handle the else/endif parts, not GNU make
+# as we intend.
 install-data-hook:
 	if test -r html ; then \
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind/; \
 		cp -r html $(DESTDIR)$(datadir)/doc/valgrind/; \
 	fi
+ ifeq ($(BUILD_ALL_DOCS),yes)
+	if test -r index.pdf ; then \
+		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind/; \
+		cp index.pdf $(DESTDIR)$(datadir)/doc/valgrind/; \
+	fi
+	if test -r index.ps ; then \
+		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind/; \
+		cp index.ps $(DESTDIR)$(datadir)/doc/valgrind/; \
+	fi
+ endif
 
+
+# This is done at 'make dist' time.  It builds the html and print docs
+# and copies them into the docs/ directory in the tarball.
+ ifeq ($(BUILD_ALL_DOCS),yes)
+dist-hook: html-docs print-docs
+	cp -r html $(distdir)
+	cp print/index.pdf $(distdir)
+	cp print/index.ps $(distdir)
+ else
 dist-hook: html-docs
-	cp -r html $(distdir)	
+	cp -r html $(distdir)
+ endif
 
 distclean-local:
 	rm -rf html print

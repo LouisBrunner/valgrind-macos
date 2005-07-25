@@ -30,13 +30,16 @@ command:</para>
 <programlisting><![CDATA[
 valgrind --tool=memcheck ls -l]]></programlisting>
 
+<para>(Memcheck is the default, so if you want to use it you can
+actually omit the <computeroutput>--tool</computeroutput> flag.</para>
+
 <para>Regardless of which tool is in use, Valgrind takes control
 of your program before it starts.  Debugging information is read
 from the executable and associated libraries, so that error
 messages and other outputs can be phrased in terms of source code
 locations (if that is appropriate).</para>
 
-<para>Your program is then run on a synthetic x86 CPU provided by
+<para>Your program is then run on a synthetic CPU provided by
 the Valgrind core.  As new code is executed for the first time,
 the core hands the code to the selected tool.  The tool adds its
 own instrumentation code to this and hands the result back to the
@@ -203,6 +206,13 @@ places:</para>
    without the trailing
    <computeroutput>.pid12345</computeroutput>part, you can instead use
    <computeroutput>--log-file-exactly=filename</computeroutput>.
+   </para>
+
+   <para>You can also use the
+   <computeroutput>--log-file-qualifier=&lt;VAR&gt;</computeroutput> option
+   to specify the filename via the environment variable
+   <computeroutput>$VAR</computeroutput>.  This is rarely needed, but
+   very useful in certain circumstances (eg. when running MPI programs).
    </para>
   </listitem>
 
@@ -644,6 +654,24 @@ categories.</para>
    </listitem>
 
    <listitem>
+    <para><computeroutput>--log-file-exactly=&lt;filename&gt;</computeroutput></para>
+    <para>Just like <computeroutput>--log-file</computeroutput>, but
+    the ".pid" suffix is not added.  If you trace multiple processes
+    with Valgrind when using this option the log file may get all messed
+    up.
+    </para>
+   </listitem>
+
+   <listitem>
+    <para><computeroutput>--log-file-qualifer=&lt;VAR&gt;</computeroutput></para>
+    <para>Specifies that Valgrind should send all of its messages
+    to the file named by the environment variable
+    <computeroutput>$VAR</computeroutput>.  This is useful when running
+    MPI programs.
+    </para>
+   </listitem>
+
+   <listitem>
     <para><computeroutput>--log-socket=&lt;ip-address:port-number&gt;</computeroutput></para>
     <para>Specifies that Valgrind should send all of its messages
     to the specified port at the specified IP address.  The port
@@ -901,7 +929,7 @@ Addrcheck), the following options apply.</para>
     <computeroutput>malloc</computeroutput>,
     <computeroutput>realloc</computeroutput>, etc, return 8-byte
     aligned addresses.  This is standard for
-    x86 processors.  Some programs might however assume that
+    most processors.  Some programs might however assume that
     <computeroutput>malloc</computeroutput> et al return 16- or
     more aligned memory.  The supplied value must be between 4
     and 4096 inclusive, and must be a power of two.</para>
@@ -994,7 +1022,9 @@ Addrcheck), the following options apply.</para>
     address space.  This prevents stray writes from damaging
     Valgrind itself.  On x86, this uses the CPU's segmentation
     machinery, and has almost no performance cost; there's almost
-    never a reason to turn it off.</para>
+    never a reason to turn it off.  On the other architectures this 
+    option is currently ignored as they don't have a cheap way of achieving
+    the same functionality.</para>
    </listitem>
 
   </itemizedlist>
@@ -1014,7 +1044,7 @@ Nevertheless:</para>
     <para><computeroutput>--single-step=no</computeroutput>
     [default]</para>
     <para><computeroutput>--single-step=yes</computeroutput></para>
-    <para>When enabled, each x86 insn is translated separately
+    <para>When enabled, each instruction is translated separately
     into instrumented code.  When disabled, translation is done
     on a per-basic-block basis, giving much better
     translations.  This option is very useful if your program expects
@@ -1116,7 +1146,7 @@ Nevertheless:</para>
     translation of the basic block containing the &lt;number>'th
     error context.  When used with
     <computeroutput>--single-step=yes</computeroutput>, can show
-    the exact x86 instruction causing an error.  This is all
+    the exact instruction causing an error.  This is all
     fairly dodgy and doesn't work at all if threads are
     involved.</para>
    </listitem>
@@ -1431,6 +1461,23 @@ in your client if you include a tool-specific header.</para>
 Getting this to work was technically challenging but it all works
 well enough for significant threaded applications to work.</para>
 
+<para>The main thing to point out is that although Valgrind works
+with the built-in threads system (eg. NPTL or LinuxThreads), it
+serialises execution so that only one thread is running at a time.  This
+approach avoids the horrible implementation problems of implementing a
+truly multiprocessor version of Valgrind, but it does mean that threaded
+apps run only on one CPU, even if you have a multiprocessor
+machine.</para>
+
+<para>Valgrind schedules your program's threads in a round-robin fashion,
+with all threads having equal priority.  It switches threads
+every 50000 basic blocks (on x86, typically around 300000
+instructions), which means you'll get a much finer interleaving
+of thread executions than when run natively.  This in itself may
+cause your program to behave differently if you have some kind of
+concurrency, critical race, locking, or similar, bugs.</para>
+
+<!--
 <para>It works as follows: threaded apps are (dynamically) linked
 against <literal>libpthread.so</literal>.  Usually this is the
 one installed with your Linux distribution.  Valgrind, however,
@@ -1464,7 +1511,7 @@ memory between processes will not work.
 
 <para>Valgrind schedules your threads in a round-robin fashion,
 with all threads having equal priority.  It switches threads
-every 50000 basic blocks (typically around 300000 x86
+every 50000 basic blocks (on x86, typically around 300000
 instructions), which means you'll get a much finer interleaving
 of thread executions than when run natively.  This in itself may
 cause your program to behave differently if you have some kind of
@@ -1498,7 +1545,7 @@ support was as follows:</para>
    <literal>pthread_kill</literal>, <literal>sigwait</literal>
    and <literal>raise</literal> are now implemented.  Each thread
    has its own signal mask, as POSIX requires.  It's a bit
-   kludgey -- there's a system-wide pending signal set, rather
+   kludgey - there's a system-wide pending signal set, rather
    than one for each thread.  But hey.</para>
   </listitem>
 
@@ -1512,6 +1559,7 @@ Mozilla-0.9.2.1 and Galeon-0.11.3, both as supplied with RedHat
 7.2.  Also Mozilla 1.0RC2.  OpenOffice 1.0.  MySQL 3.something
 (the current stable release).</para>
 </formalpara>
+-->
 
 </sect1>
 
@@ -1546,20 +1594,22 @@ similar.  (Note: it will not generate a core if your core dump size limit is
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to
 ensure that it works on machines with kernel 2.4 or 2.6 and glibc
-2.2.X or 2.3.X.</para>
+2.2.X, 2.3.X, 2.4.X.</para>
 
 <para>There are two options (in addition to the usual
 <computeroutput>--prefix=</computeroutput> which affect how Valgrind is built:
 <itemizedlist>
  <listitem>
   <para><computeroutput>--enable-pie</computeroutput></para>
-  <para>>PIE stands for "position-independent executable".  This is
-  enabled by default if your toolchain supports it.  PIE allows Valgrind
-  to place itself as high as possible in memory, giving your program as
-  much address space as possible.  It also allows Valgrind to run under
-  itself.  If PIE is disabled, Valgrind loads at a default address which
-  is suitable for most systems.  This is also useful for debugging
-  Valgrind itself.</para>
+  <para>PIE stands for "position-independent executable".
+  PIE allows Valgrind to place itself as high as possible in memory,
+  giving your program as much address space as possible.  It also allows
+  Valgrind to run under itself.  If PIE is disabled, Valgrind loads at a
+  default address which is suitable for most systems.  This is also
+  useful for debugging Valgrind itself.  It's not on by default because
+  it caused problems for some people.  Note that not all toolchaines
+  support PIEs, you need fairly recent version of the compiler, linker,
+  etc.</para>
  </listitem>
 
  <listitem>
@@ -1606,11 +1656,11 @@ They are permanently enabled, and I have no plans to disable
 them.  If one of these breaks, please mail us!</para>
 
 <para>If you get an assertion failure on the expression
-<computeroutput>chunkSane(ch)</computeroutput> in
-<computeroutput>vg_free()</computeroutput> in
-<filename>vg_malloc.c</filename>, this may have happened because
+<computeroutput>blockSane(ch)</computeroutput> in
+<computeroutput>VG_(free)()</computeroutput> in
+<filename>m_mallocfree.c</filename>, this may have happened because
 your program wrote off the end of a malloc'd block, or before its
-beginning.  Valgrind should have emitted a proper message to that
+beginning.  Valgrind hopefully will have emitted a proper message to that
 effect before dying in this way.  This is a known problem which
 we should fix.</para>
 
@@ -1628,15 +1678,14 @@ more advice about common problems, crashes, etc.</para>
 <para>The following list of limitations seems depressingly long.
 However, most programs actually work fine.</para>
 
-<para>Valgrind will run x86-GNU/Linux ELF dynamically linked
+<para>Valgrind will run x86/Linux ELF dynamically linked
 binaries, on a kernel 2.4.X or 2.6.X system, subject to
 the following constraints:</para>
 
  <itemizedlist>
-
   <listitem>
-   <para>No support for 3DNow instructions.  If the translator
-   encounters these, Valgrind will generate a SIGILL when the
+   <para>On x86 and AMD64, there is no support for 3DNow! instructions.  If
+   the translator encounters these, Valgrind will generate a SIGILL when the
    instruction is executed.</para>
   </listitem>
 
@@ -1644,15 +1693,6 @@ the following constraints:</para>
    <para>Atomic instruction sequences are not supported, which will affect
    any use of synchronization objects being shared between processes.  They
    will appear to work, but fail sporadically.</para>
-  </listitem>
-
-  <listitem>
-   <para>Memcheck assumes that the floating point registers are
-   not used as intermediaries in memory-to-memory copies, so it
-   immediately checks definedness of values loaded from memory by
-   floating-point loads.  If you want to write code which copies
-   around possibly-uninitialised values, you must ensure these
-   travel through the integer registers, not the FPU.</para>
   </listitem>
 
   <listitem>
@@ -1676,27 +1716,11 @@ the following constraints:</para>
   </listitem>
 
   <listitem>
-   <para>Programs which switch stacks are not well handled.
-   Valgrind does have support for this, but I don't have great
-   faith in it.  It's difficult -- there's no cast-iron way to
-   decide whether a large change in %esp is as a result of the
-   program switching stacks, or merely allocating a large object
-   temporarily on the current stack -- yet Valgrind needs to
-   handle the two situations differently.</para>
-  </listitem>
-
-  <listitem>
-   <para>x86 instructions, and system calls, have been
+   <para>Machine instructions, and system calls, have been
    implemented on demand.  So it's possible, although unlikely,
    that a program will fall over with a message to that effect.
    If this happens, please report ALL the details printed out, so
    we can try and implement the missing feature.</para>
-  </listitem>
-
-  <listitem>
-   <para>x86 floating point works correctly, but floating-point
-   code may run even more slowly than integer code, due to my
-   simplistic approach to FPU emulation.</para>
   </listitem>
 
   <listitem>
@@ -1712,16 +1736,86 @@ the following constraints:</para>
 
   <listitem>
    <para>Valgrind can handle dynamically-generated code just
-   fine. However, if you regenerate code over the top of old code
-   (ie. at the same memory addresses) Valgrind will not realise
-   the code has changed, and will run its old translations, which
-   will be out-of-date.  You need to use the
-   VALGRIND_DISCARD_TRANSLATIONS client request in that case. For
-   the same reason gcc's <ulink
-   url="http://gcc.gnu.org/onlinedocs/gcc/Nested-Functions.html">trampolines
-   for nested functions</ulink> are currently unsupported, see
-   <ulink url="http://bugs.kde.org/show_bug.cgi?id=69511">bug
-   69511</ulink>.</para>
+   fine.  If you regenerate code over the top of old code
+   (ie. at the same memory addresses), if the code is on the stack Valgrind
+   will realise the code has changed, and work correctly.  This is necessary
+   to handle the trampolines GCC uses to implemented nested functions.
+   If you regenerate code somewhere other than the stack, you will need to
+   use the <computeroutput>--smc-check=all</computeroutput> flag, and
+   Valgrind will run more slowly than normal.</para>
+  </listitem>
+
+  <listitem>
+   <para>As of version 3.0.0, Valgrind has the following limitations
+   in its implementation of floating point relative to the IEEE754 standard.
+   </para>
+
+   <para>Precision: There is no support for 80 bit arithmetic.
+   Internally, Valgrind represents all FP numbers in 64 bits, and so
+   there may be some differences in results.  Whether or not this is
+   critical remains to be seen.  Note, the x86/amd64 fldt/fstpt
+   instructions (read/write 80-bit numbers) are correctly simulated,
+   using conversions to/from 64 bits, so that in-memory images of
+   80-bit numbers look correct if anyone wants to see.</para>
+
+   <para>The impression observed from many FP regression tests is that
+   the accuracy differences aren't significant.  Generally speaking, if
+   a program relies on 80-bit precision, there may be difficulties
+   porting it to non x86/amd64 platforms which only support 64-bit FP
+   precision.  Even on x86/amd64, the program may get different results
+   depending on whether it is compiled to use SSE2 instructions
+   (64-bits only), or x87 instructions (80-bit).  The net effect is to
+   make FP programs behave as if they had been run on a machine with
+   64-bit IEEE floats, for example PowerPC.  On amd64 FP arithmetic is
+   done by default on SSE2, so amd64 looks more like PowerPC than x86
+   from an FP perspective, and there are far fewer noticable accuracy
+   differences than with x86.</para>
+
+   <para>Rounding: Valgrind does observe the 4 IEEE-mandated rounding
+   modes (to nearest, to +infinity, to -infinity, to zero) for the
+   following conversions: float to integer, integer to float where
+   there is a possibility of loss of precision, and float-to-float
+   rounding.  For all other FP operations, only the IEEE default mode
+   (round to nearest) is supported.</para>
+
+   <para>Numeric exceptions in FP code: IEEE754 defines five types of
+   numeric exception that can happen: invalid operation (sqrt of
+   negative number, etc), division by zero, overflow, underflow,
+   inexact (loss of precision).</para>
+
+   <para>For each exception, two courses of action are defined by 754:
+   either (1) a user-defined exception handler may be called, or (2) a
+   default action is defined, which "fixes things up" and allows the
+   computation to proceed without throwing an exception.</para>
+
+   <para>Currently Valgrind only supports the default fixup actions.
+   Again, feedback on the importance of exception support would be
+   appreciated.</para>
+
+   <para>When Valgrind detects that the program is trying to exceed any
+   of these limitations (setting exception handlers, rounding mode, or
+   precision control), it can print a message giving a traceback of
+   where this has happened, and continue execution.  This behaviour
+   used to be the default, but the messages are annoying and so showing
+   them is now optional.  Use
+   <computeroutput>--show-emwarns=yes</computeroutput> to see
+   them.</para>
+
+   <para>The above limitations define precisely the IEEE754 'default'
+   behaviour: default fixup on all exceptions, round-to-nearest
+   operations, and 64-bit precision.</para>
+  </listitem>
+   
+  <listitem>
+   <para>As of version 3.0.0, Valgrind has the following limitations
+   in its implementation of x86/AMD64 SSE2 FP arithmetic.</para>
+
+   <para>Essentially the same: no exceptions, and limited observance
+   of rounding mode.  Also, SSE2 has control bits which make it treat
+   denormalised numbers as zero (DAZ) and a related action, flush
+   denormals to zero (FTZ).  Both of these cause SSE2 arithmetic to be
+   less accurate than IEEE requires.  Valgrind detects, ignores, and
+   can warn about, attempts to enable either mode.</para>
   </listitem>
 
  </itemizedlist>
@@ -1756,7 +1850,9 @@ the following constraints:</para>
 <para>Some gory details, for those with a passion for gory
 details.  You don't need to read this section if all you want to
 do is use Valgrind.  What follows is an outline of the machinery.
-A more detailed (and somewhat out of date) description is to be
+It is out of date, as the JITter has been completey rewritten in
+version 3.0, and so it works quite differently.
+A more detailed (and even more out of date) description is to be
 found <xref linkend="mc-tech-docs"/>.</para>
 
 <sect2 id="manual-core.startb" xreflabel="Getting Started">

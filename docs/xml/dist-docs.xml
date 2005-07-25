@@ -61,21 +61,22 @@
     </literallayout>
     </chapter>
 
+  <chapter id="dist.readme-developers" 
+             xreflabel="Readme Developer">
+    <title>README_DEVELOPERS</title>
+    <literallayout>
+      <xi:include href="../../README_DEVELOPERS" 
+          parse="text" 
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
+
   <chapter id="dist.readme-packagers" 
              xreflabel="Readme Packagers">
     <title>README_PACKAGERS</title>
     <literallayout>
       <xi:include href="../../README_PACKAGERS" 
           parse="text" 
-          xmlns:xi="http://www.w3.org/2001/XInclude" />
-    </literallayout>
-    </chapter>
-
-  <chapter id="dist.todo" xreflabel="Todo">
-    <title>TODO</title>
-    <literallayout>
-      <xi:include href="../../TODO" 
-          parse="text"  
           xmlns:xi="http://www.w3.org/2001/XInclude" />
     </literallayout>
     </chapter>

@@ -12,8 +12,9 @@
 
 <title>Valgrind Quick Start Guide</title>
 
-<para>The Valgrind distribution has multiple tools.  The memory checking
-tool (called Memcheck) can detect many common memory errors such as:
+<para>The Valgrind distribution has multiple tools.  The most popular is the
+memory checking tool (called Memcheck) which can detect many common memory
+errors such as:
 </para>
 
 <itemizedlist>
@@ -31,8 +32,8 @@ tool (called Memcheck) can detect many common memory errors such as:
 
 <para>What follows is the minimum information you need to start detecting
 memory errors in your program with Memcheck.  Note that this guide applies
-to Valgrind version 2.4.0;  some of the information is not quite right for
-earlier versions.</para>
+to Valgrind version 2.4.0 and later;  some of the information is not quite
+right for earlier versions.</para>
 
 <sect1 id="quick-start.prepare" 
        xreflabel="Preparing your program">
@@ -58,8 +59,8 @@ Use this command line:
 </programlisting>
 
 Memcheck is the default tool.  The
-<computeroutput>--leak-check</computeroutput> option turns on the memory
-leak detector.</para>
+<computeroutput>--leak-check</computeroutput> option turns on the detailed
+memory leak detector.</para>
 
 <para>Your program will run much slower (eg. 20 to 30 times) than normal,
 and use a lot more memory.  Memcheck will issue messages about memory errors
@@ -169,7 +170,7 @@ Memcheck cannot tell you why the memory leaked, unfortunately.  (Ignore the
 </itemizedlist>
 
 If you don't understand an error message, please consult
-<xref linkend="mc-manual.flags"/> in the <xref linkend="manual"/> which has
+<xref linkend="mc-manual.errormsgs"/> in the <xref linkend="manual"/> which has
 examples of all the error messages Memcheck produces.</para>
 </sect1>
 

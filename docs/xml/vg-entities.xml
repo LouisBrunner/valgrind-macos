@@ -6,7 +6,7 @@
 <!ENTITY vg-users-list "http://lists.sourceforge.net/lists/listinfo/valgrind-users">
 
 <!-- valgrind release + version stuff -->
-<!ENTITY rel-type    "Development release">
+<!ENTITY rel-type    "Release">
 <!ENTITY rel-version "3.0.0">
-<!ENTITY rel-date    "June 01 2005">
+<!ENTITY rel-date    "July 24 2005">
 

@@ -17,7 +17,7 @@ command line.</para>
 <para>Memcheck is Valgrind-1.0.X's checking mechanism bundled up
 into a tool.  All reads and writes of memory are checked, and
 calls to malloc/new/free/delete are intercepted. As a result,
-memcheck can detect the following problems:</para>
+Memcheck can detect the following problems:</para>
 
 <itemizedlist>
   <listitem>
@@ -56,8 +56,8 @@ memcheck can detect the following problems:</para>
 
 
 <sect1 id="mc-manual.flags" 
-       xreflabel="Command-line flags specific to memcheck">
-<title>Command-line flags specific to memcheck</title>
+       xreflabel="Command-line flags specific to Memcheck">
+<title>Command-line flags specific to Memcheck</title>
 
 <itemizedlist id="leakcheck">
   <listitem>
@@ -178,7 +178,7 @@ memcheck can detect the following problems:</para>
     <para><computeroutput>--avoid-strlen-errors=yes</computeroutput> [default]</para>
     <para>Enable or disable a heuristic for dealing with highly-optimized 
     versions of strlen.  These versions of strlen can cause spurious errors 
-    to be reported by memcheck, so it's usually a good idea to leave this
+    to be reported by Memcheck, so it's usually a good idea to leave this
     enabled.</para>
   </listitem>
 

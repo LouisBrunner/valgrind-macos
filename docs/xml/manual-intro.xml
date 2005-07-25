@@ -9,8 +9,8 @@
 <title>An Overview of Valgrind</title>
 
 <para>Valgrind is a flexible system for debugging and profiling
-Linux-x86 executables.  The system consists of a core, which
-provides a synthetic x86 CPU in software, and a series of tools,
+Linux executables.  The system consists of a core, which
+provides a synthetic CPU in software, and a series of tools,
 each of which performs some kind of debugging, profiling, or
 similar task.  The architecture is modular, so that new tools can
 be created easily and without disturbing the existing
@@ -101,10 +101,10 @@ summary, these are:</para>
     of cache misses, memory references and instructions accruing
     to each line of source code, with per-function, per-module
     and whole-program summaries.  If you ask really nicely it
-    will even show counts for each individual x86
+    will even show counts for each individual machine
     instruction.</para>
 
-    <para>Cachegrind auto-detects your machine's cache
+    <para>On x86 and AMD64, Cachegrind auto-detects your machine's cache
     configuration using the
     <computeroutput>CPUID</computeroutput> instruction, and so
     needs no further configuration info, in most cases.</para>
@@ -146,19 +146,22 @@ also supplied.  These aren't particularly useful -- they exist to
 illustrate how to create simple tools and to help the valgrind
 developers in various ways.</para>
 
-<para>Valgrind is closely tied to details of the CPU, operating
-system and to a less extent, compiler and basic C libraries. This
-makes it difficult to make it portable, so we have chosen at the
-outset to concentrate on what we believe to be a widely used
-platform: Linux on x86s.  Valgrind uses the standard Unix
+<para>Valgrind is closely tied to details of the CPU and operating
+system, and to a lesser extent, the compiler and basic C libraries.
+Nonetheless, as of version 3.0.0 it supports several platforms:  x86/Linux
+(mature), AMD64/Linux (immature but works well), and PPC32/Linux (very
+preliminary).  Valgrind uses the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to
 ensure that it works on machines with kernel 2.4 or 2.6 and glibc
-2.1.X--2.3.X.</para>
+2.2.X--2.4.X.</para>
 
 <para>Valgrind is licensed under the <xref linkend="license.gpl"/>,
-version 2.  The <computeroutput>valgrind/*.h</computeroutput> headers are
+version 2.  The <computeroutput>valgrind/*.h</computeroutput> headers that
+you may wish to include in your code (eg.
+<computeroutput>valgrind.h</computeroutput>,
+<computeroutput>memcheck.h</computeroutput>) are
 distributed under a BSD-style license, so you may include them in your code
 without worrying about license conflicts.  Some of the PThreads test cases,
 <computeroutput>pth_*.c</computeroutput>, are taken from

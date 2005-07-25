@@ -62,15 +62,18 @@ Memcheck can detect the following problems:</para>
 <itemizedlist id="leakcheck">
   <listitem>
     <para><computeroutput>--leak-check=no</computeroutput>
+    <para><computeroutput>--leak-check=summary</computeroutput>
     [default]</para>
-    <para><computeroutput>--leak-check=yes</computeroutput></para>
+    <para><computeroutput>--leak-check=full</computeroutput></para>
     <para>When enabled, search for memory leaks when the client
     program finishes.  A memory leak means a malloc'd block,
     which has not yet been free'd, but to which no pointer can be
     found.  Such a block can never be free'd by the program,
-    since no pointer to it exists.  Leak checking is disabled by
-    default because it tends to generate dozens of error
-    messages.</para>
+    since no pointer to it exists.  If set to
+    <computeroutput>summary</computeroutput>, it says how many leaks occurred.
+    If set to <computeroutput>all</computeroutput>, it gives details of each
+    individual leak.</para>
+
   </listitem>
 
   <listitem id="showreach">
@@ -180,15 +183,6 @@ Memcheck can detect the following problems:</para>
     versions of strlen.  These versions of strlen can cause spurious errors 
     to be reported by Memcheck, so it's usually a good idea to leave this
     enabled.</para>
-  </listitem>
-
-  <listitem id="cleanup">
-    <para><computeroutput>--cleanup=no</computeroutput></para>
-    <para><computeroutput>--cleanup=yes</computeroutput> [default]</para>
-    <para><command>This is a flag to help debug valgrind itself.
-    It is of no use to end-users.</command> When enabled, various
-    improvments are applied to the post-instrumented intermediate
-    code, aimed at removing redundant value checks.</para>
   </listitem>
 
 </itemizedlist>

@@ -610,6 +610,13 @@ categories.</para>
    </listitem>
 
    <listitem>
+    <para><computeroutput>-q --quiet</computeroutput></para>
+    <para>Run silently, and only print error messages.  Useful if
+    you are running regression tests or have some other automated
+    test machinery.</para>
+   </listitem>
+
+   <listitem>
     <para><computeroutput>-v --verbose</computeroutput></para>
     <para>Be more verbose.  Gives extra information on various
     aspects of your program, such as: the shared objects loaded,
@@ -619,19 +626,29 @@ categories.</para>
    </listitem>
 
    <listitem>
-    <para><computeroutput>-q --quiet</computeroutput></para>
-    <para>Run silently, and only print error messages.  Useful if
-    you are running regression tests or have some other automated
-    test machinery.</para>
-   </listitem>
-
-   <listitem>
     <para><computeroutput>--trace-children=no</computeroutput>
     [default]</para>
     <para><computeroutput>--trace-children=yes</computeroutput></para>
     <para>When enabled, Valgrind will trace into child processes.
     This is confusing and usually not what you want, so is
     disabled by default.</para>
+   </listitem>
+
+   <listitem>
+    <para><computeroutput>--track-fds=no</computeroutput> [default]</para>
+    <para><computeroutput>--track-fds=yes</computeroutput></para>
+    <para>When enabled, Valgrind will print out a list of open
+    file descriptors on exit.  Along with each file descriptor,
+    Valgrind prints out a stack backtrace of where the file was
+    opened and any details relating to the file descriptor such
+    as the file name or socket details.</para>
+   </listitem>
+
+   <listitem>
+    <para><computeroutput>--time-stamp=no</computeroutput> [default]</para>
+    <para><computeroutput>--time-stamp=yes</computeroutput></para>
+    <para>When enabled, Valgrind will precede each message with the
+    current time and date.</para>
    </listitem>
 
    <listitem>
@@ -695,6 +712,23 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
 
   <itemizedlist>
 
+   <listitem>
+    <para><computeroutput>--xml=no</computeroutput> [default]</para>
+    <para><computeroutput>--xml=yes</computeroutput></para>
+    <para>When enabled, output will be in XML format.  This is aimed at
+    making life easier for tools that consume Valgrind's output as input,
+    such as GUI front ends.  Currently this option only works with Memcheck
+    and Nulgrind.
+    </para>
+   </listitem>
+    
+   <listitem>
+    <para><computeroutput>--xml-user-comment=&lt;string&gt;</computeroutput> [default=""]</para>
+    <para>Embeds an extra user comment string in the XML output.  Only works
+    with <computeroutput>--xml=yes</computeroutput> is specified;  ignored
+    otherwise.</para>
+   </listitem>
+    
    <listitem>
     <para><computeroutput>--demangle=no</computeroutput></para>
     <para><computeroutput>--demangle=yes</computeroutput> [default]</para>
@@ -802,48 +836,6 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
    </listitem>
 
    <listitem>
-    <para><computeroutput>--track-fds=no</computeroutput> [default]</para>
-    <para><computeroutput>--track-fds=yes</computeroutput></para>
-    <para>When enabled, Valgrind will print out a list of open
-    file descriptors on exit.  Along with each file descriptor,
-    Valgrind prints out a stack backtrace of where the file was
-    opened and any details relating to the file descriptor such
-    as the file name or socket details.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--max-stackframe=&lt;number&gt;</computeroutput>
-                          [default=2000000]
-    </para>
-    <para>You may need to use this option if your program has large
-    stack-allocated arrays.  Valgrind keeps track of your program's
-    stack pointer.  If it changes by more than the threshold amount,
-    Valgrind assumes your program is switching to a different stack,
-    and Memcheck behaves differently than it would for a stack pointer
-    change smaller than the threshold.  Usually this heuristic works
-    well.  However, if your program allocates large structures on the
-    stack, this heuristic will be fooled, and Memcheck will
-    subsequently report large numbers of invalid stack accesses.  This
-    option allows you to change the threshold to a different value.
-    </para>
-    <para>
-    You should only consider use of this flag if Valgrind's debug output
-    directs you to do so.  In that case it will tell you the new
-    threshold you should specify.
-    </para>
-    <para>
-    In general, allocating large structures on the stack is a bad
-    idea, because (1) you can easily run out of stack space,
-    especially on systems with limited memory or which expect to
-    support large numbers of threads each with a small stack, and (2)
-    because the error checking performed by Memcheck is more effective
-    for heap-allocated data than for stack-allocated data.  If you
-    have to use this flag, you may wish to consider rewriting your
-    code to allocate on the heap rather than on the stack.
-   </para>
-   </listitem>
-
-   <listitem>
     <para><computeroutput>--db-attach=no</computeroutput> [default]</para>
     <para><computeroutput>--db-attach=yes</computeroutput></para>
     <para>When enabled, Valgrind will pause after every error
@@ -910,6 +902,38 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     alternative file descriptor from which to read input.</para>
    </listitem>
 
+   <listitem>
+    <para><computeroutput>--max-stackframe=&lt;number&gt;</computeroutput>
+                          [default=2000000]
+    </para>
+    <para>You may need to use this option if your program has large
+    stack-allocated arrays.  Valgrind keeps track of your program's
+    stack pointer.  If it changes by more than the threshold amount,
+    Valgrind assumes your program is switching to a different stack,
+    and Memcheck behaves differently than it would for a stack pointer
+    change smaller than the threshold.  Usually this heuristic works
+    well.  However, if your program allocates large structures on the
+    stack, this heuristic will be fooled, and Memcheck will
+    subsequently report large numbers of invalid stack accesses.  This
+    option allows you to change the threshold to a different value.
+    </para>
+    <para>
+    You should only consider use of this flag if Valgrind's debug output
+    directs you to do so.  In that case it will tell you the new
+    threshold you should specify.
+    </para>
+    <para>
+    In general, allocating large structures on the stack is a bad
+    idea, because (1) you can easily run out of stack space,
+    especially on systems with limited memory or which expect to
+    support large numbers of threads each with a small stack, and (2)
+    because the error checking performed by Memcheck is more effective
+    for heap-allocated data than for stack-allocated data.  If you
+    have to use this flag, you may wish to consider rewriting your
+    code to allocate on the heap rather than on the stack.
+   </para>
+   </listitem>
+
   </itemizedlist>
 </sect2>
 
@@ -940,8 +964,8 @@ Addrcheck), the following options apply.</para>
  </sect2>
 
 
- <sect2 id="manual-core.rareopts" xreflabel="Rare Options">
-  <title>Rare Options</title>
+ <sect2 id="manual-core.rareopts" xreflabel="Uncommon Options">
+  <title>Uncommon Options</title>
 
   <para>These options apply to all tools, as they affect certain
   obscure workings of the Valgrind core.  Most people won't need
@@ -1027,6 +1051,27 @@ Addrcheck), the following options apply.</para>
     the same functionality.</para>
    </listitem>
 
+   <listitem>
+    <para><computeroutput>--show-emwarns=no</computeroutput> [default]</para>
+    <para><computeroutput>--show-emwarns=yes</computeroutput></para>
+    <para>When enabled, Valgrind will emit warnings about its CPU emulation
+    in certain cases.  These are usually not interesting.</para>
+   </listitem>
+
+   <listitem>
+    <para><computeroutput>--smc-check=none</computeroutput></para>
+    <para><computeroutput>--smc-check=stack</computeroutput> [default]</para>
+    <para><computeroutput>--smc-check=all</computeroutput></para>
+    <para>This option controls Valgrind's detection of self-modifying code.
+    Valgrind can do no detection, detect self-modifying code on the stack,
+    or detect self-modifying code anywhere.  Note that the default option
+    will catch the vast majority of cases, as far as we know.  Running with
+    <computeroutput>all</computeroutput> will slow Valgrind down greatly
+    (but running with <computeroutput>none</computeroutput> will rarely
+    speed things up, since very little code gets put on the stack for most
+    programs). </para>
+    </listitem>
+
   </itemizedlist>
 </sect2>
 
@@ -1035,123 +1080,10 @@ Addrcheck), the following options apply.</para>
 <title>Debugging Valgrind Options</title>
 
 <para>There are also some options for debugging Valgrind itself.
-You shouldn't need to use them in the normal run of things.
-Nevertheless:</para>
+You shouldn't need to use them in the normal run of things.  If you
+wish to see the list, use the <computeroutput>--help-debug</computeroutput>
+option.</para>
 
- <itemizedlist>
-
-   <listitem>
-    <para><computeroutput>--single-step=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--single-step=yes</computeroutput></para>
-    <para>When enabled, each instruction is translated separately
-    into instrumented code.  When disabled, translation is done
-    on a per-basic-block basis, giving much better
-    translations.  This option is very useful if your program expects
-    precise exceptions (if it, for example, inspects or modifies register
-    state from within a signal handler).
-    </para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--optimise=no</computeroutput></para>
-    <para><computeroutput>--optimise=yes</computeroutput> [default]</para>
-    <para>When enabled, various improvements are applied to the
-    intermediate code, mainly aimed at allowing the simulated
-    CPU's registers to be cached in the real CPU's registers over
-    several simulated instructions.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--profile=no</computeroutput></para>
-    <para><computeroutput>--profile=yes</computeroutput> [default]</para>
-    <para>When enabled, does crude internal profiling of Valgrind
-    itself.  This is not for profiling your programs.  Rather it
-    is to allow the developers to assess where Valgrind is
-    spending its time.  The tools must be built for profiling for
-    this to work.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--trace-syscalls=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--trace-syscalls=yes</computeroutput></para>
-    <para>Enable/disable tracing of system call intercepts.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--trace-signals=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--trace-signals=yes</computeroutput></para>
-    <para>Enable/disable tracing of signal handling.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--trace-sched=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--trace-sched=yes</computeroutput></para>
-    <para>Enable/disable tracing of thread scheduling events.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--trace-pthread=none</computeroutput>
-    [default]</para>
-    <para><computeroutput>--trace-pthread=some</computeroutput></para>
-    <para><computeroutput>--trace-pthread=all</computeroutput></para>
-    <para>Specifies amount of trace detail for pthread-related
-    events.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--trace-symtab=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--trace-symtab=yes</computeroutput></para>
-    <para>Enable/disable tracing of symbol table reading and line
-    number info reading.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--trace-cfi=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--trace-cfi=yes</computeroutput></para>
-    <para>Enable/disable tracing of call-frame-info reading.
-    Call-frame-info (CFI) is information inserted by compilers 
-    which describes the relationship between adjacent call frames.
-    On architectures which by default do not use a frame pointer, 
-    such as AMD64, this information is essential for creating stack 
-    snapshots.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--trace-malloc=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--trace-malloc=yes</computeroutput></para>
-    <para>Enable/disable tracing of malloc/free (et al)
-    intercepts.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--trace-codegen=XXXXX</computeroutput>
-    [default: 00000]</para>
-    <para>Enable/disable tracing of code generation.  Code can be
-    printed at five different stages of translation; each
-    <computeroutput>X</computeroutput> element must be 0 or
-    1.</para>
-   </listitem>
-
-   <listitem>
-    <para><computeroutput>--dump-error=&lt;number></computeroutput>
-    [default: inactive]</para>
-    <para>After the program has exited, show gory details of the
-    translation of the basic block containing the &lt;number>'th
-    error context.  When used with
-    <computeroutput>--single-step=yes</computeroutput>, can show
-    the exact instruction causing an error.  This is all
-    fairly dodgy and doesn't work at all if threads are
-    involved.</para>
-   </listitem>
-
-  </itemizedlist>
 </sect2>
 
 

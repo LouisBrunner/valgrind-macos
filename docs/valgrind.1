@@ -1,7 +1,7 @@
 .TH VALGRIND  "1" "" ""
 
 .SH NAME
-\fBvalgrind \fP- a memory debugger for x86-linux
+\fBvalgrind \fP- a suite of tools for debugging and profiling programs
 
 .SH SYNOPSIS
 .nf
@@ -11,8 +11,8 @@
 .fi
 
 .SH DESCRIPTION
-\fBvalgrind\fP is a flexible program for debugging and profiling Linux-x86
-executables. It consists of a core, which provides a synthetic x86 CPU
+\fBvalgrind\fP is a flexible program for debugging and profiling Linux
+executables. It consists of a core, which provides a synthetic CPU
 in software, and a series of "tools", each of which is a debugging or
 profiling tool. The architecture is modular, so that new tools can be
 created easily and without disturbing the existing structure.
@@ -125,17 +125,25 @@ Specify the debugger to use with the --db-attach command. The
 default debugger is gdb. This option is a template that is expanded by
 \fBvalgrind\fP at runtime.  \fB%f\fP is replaced with the executable's
 file name and \fB%p\fP is replaced by the process ID of the executable.
+
 .TP
 .B
+--demangle=<yes|no> [default: yes]
+Enable or disable automatic demangling (decoding) of C++ names. Enabled by
+default. When enabled, \fBvalgrind\fP will attempt to translate encoded
+C++ procedure names back to something approaching the original. The
+demangler handles symbols mangled by g++ versions 2.X and 3.X.
 
+.TP
+.B
 --error-limit=<yes|no> [default: yes]
 When enabled, \fBvalgrind\fP stops reporting errors after 30000 in total,
 or 300 different ones, have been seen. This is to stop the error tracking
 machinery from becoming a huge performance overhead in programs with
 many errors.
+
 .TP
 .B
-
 --gen-suppressions=<yes|no> [default: no]
 When enabled, \fBvalgrind\fP will pause after every error shown and
 print the line:
@@ -174,11 +182,50 @@ including options for debugging \fBvalgrind\fP.
 
 .TP
 .B
+--input-fd=<number> [default: 0, stdin]
+Specify the file descriptor to use for reading input from the user. This
+is used whenever \fBvalgrind\fP needs to prompt the user for a decision.
+
+.TP
+.B
 --log-file=<filename>
 Specifies that \fBvalgrind\fP should send all of its messages to the
 specified file. In fact, the file name used is created by concatenating
 the text filename, ".pid" and the process ID, so as to create a file
 per process.  The specified file name may not be the empty string.
+
+.TP
+.B
+--log-file-exactly=<filename>
+Just like \fB--log-file\fB, but the ".pid" suffix is not added.  If you
+trace multiple processes with Valgrind when using this option the log
+file may get all messed up.
+
+.TP
+.B
+--log-fd=<number> [default: 2, stderr]
+Specifies that \fBvalgrind\fP should send all of its messages to
+the specified file descriptor. The default, 2, is the standard error
+channel (stderr).  Note that this may interfere with the client's own
+use of stderr.
+
+.TP
+.B
+--log-file-qualifier=<VAR>
+Specifies that \fBvalgrind\fB should send all of its messages to the
+file named by the environment variable \fB$VAR\fB.  This is useful when
+running MPI programs.
+
+.TP
+.B
+--log-socket=<ip-address:port-number>
+Specifies that \fBvalgrind\fP should send all of its messages to the
+specified port at the specified IP address. The port may be omitted,
+in which case port 1500 is used. If a connection cannot be made to
+the specified socket, \fBvalgrind\fP falls back to writing output to
+the standard error (stderr).  This option is intended to be used in
+conjunction with the \fBvalgrind-listener\fP program. For further details,
+see section 2.3 of the user manual.
 
 .TP
 .B
@@ -206,9 +253,22 @@ regression tests or have some other automated test machinery.
 
 .TP
 .B
+--show-below-main=<yes|no> [default: no]
+When enabled, this option causes full stack backtraces to be emited,
+including the part before \fBmain\fP in your program (subject to the
+\fB--num-callers\fP option.)  When disabled, only the part of the stack
+backtrace up to and including main is printed.
+
+.TP
+.B
 --suppressions=<filename> [default: $PREFIX/lib/\fBvalgrind\fP/default.supp]
 Specifies an extra file from which to read descriptions of errors to
 suppress. You may specify up to 10 additional suppression files.
+
+.TP
+.B
+--time-stamp=<yes|no> [default: no]
+When enabled, a time-stamp is added to all log messages.
 
 .TP
 .B
@@ -328,14 +388,6 @@ of \fBstrlen\fP.  These versions of \fBstrlen\fP can cause spurious
 errors to be reported by \fBmemcheck\fP, so it's usually a good idea to
 leave this enabled.
 
-.TP
-.B
---cleanup=<yes|no> [default: yes]
-\fBThis is a flag to help debug valgrind itself.  It is of no use to
-end-users\fP. When enabled, various improvments are applied to the
-post-instrumented intermediate code, aimed at removing redundant value
-checks.
-
 .SH CACHEGRIND OPTIONS
 
 .TP
@@ -425,106 +477,12 @@ have multiple stacks.
 .B
 --alignment=<number> [default: 8]
 By default \fBvalgrind\fP's malloc, realloc, etc, return 8-byte aligned
-addresses. These are suitable for any accesses on x86 processors. Some
+addresses. These are suitable for any accesses on most processors. Some
 programs might however assume that malloc et al return 16- or more
 aligned memory. These programs are broken and should be fixed, but if
 this is impossible for whatever reason the alignment can be increased
 using this parameter. The supplied value must be between 8 and 4096
 inclusive, and must be a power of two.
-
-.TP
-.B
---branchpred=<yes|no> [default: no]
-This option enables the generation of static branch prediction hints.
-In theory this allows the real CPU to do a better job of running the
-generated code, but in practice it makes almost no measurable difference.
-It may have a large effect on some x86 implementations.
-
-.TP
-.B
---chain-bb=<yes|no> [default: yes]
-Enables basic-block chaining.  If basic-block chaining is disabled,
-the synthetic CPU returns to the scheduler after interpreting each basic
-block.  With basic block chaining enabled, it can immediately proceed to
-the next basic block.  This almost always results in a performance gain,
-so it is enabled by default.
-
-.TP
-.B
---command-line-only=<yes|no> [default: no]
-Normally, \fBvalgrind\fP will look for command-line options in the
-following locations:
-.RS
-.TP
-- The \fBvalgrind\fP command line
-.TP
-- The \fB\.valgrindrc\fP file in the invocation directory
-.TP
-- The \fB\.valgrindrc\fP file in users home directory
-.TP
-- The \fB$VALGRIND_OPTS\fP environment variable
-.P
-
-When this option is enabled, \fBvalgrind\fP will only look at the command
-line for options.
-.RE
-
-.TP
-.B
---demangle=<yes|no> [default: yes]
-Enable or disable automatic demangling (decoding) of C++ names. Enabled by
-default. When enabled, \fBvalgrind\fP will attempt to translate encoded
-C++ procedure names back to something approaching the original. The
-demangler handles symbols mangled by g++ versions 2.X and 3.X.
-
-.TP
-.B
---dump-error=<number>
-After the program has exited, show gory details of the translation of
-the basic block containing the \fB<number>\fP'th error context. When
-used with --single-step=yes, can show the exact x86 instruction causing
-an error. This is all fairly dodgy and doesn't work at all if threads
-are involved.
-
-.TP
-.B
---exec=<filename>
-Specify the executable to run. If this is specified, it takes precedence
-over the \fByour-program\fP executable from the command-line.  If this is
-not specified, \fBvalgrind\fP searches the path for the \fByour-program\fP
-executable, just like a regular shell would.
-
-.TP
-.B
---input-fd=<number> [default: 0, stdin]
-Specify the file descriptor to use for reading input from the user. This
-is used whenever \fBvalgrind\fP needs to prompt the user for a decision.
-
-.TP
-.B
---log-fd=<number> [default: 2, stderr]
-Specifies that \fBvalgrind\fP should send all of its messages to
-the specified file descriptor. The default, 2, is the standard error
-channel (stderr).  Note that this may interfere with the client's own
-use of stderr.
-
-.TP
-.B
---log-socket=<ip-address:port-number>
-Specifies that \fBvalgrind\fP should send all of its messages to the
-specified port at the specified IP address. The port may be omitted,
-in which case port 1500 is used. If a connection cannot be made to
-the specified socket, \fBvalgrind\fP falls back to writing output to
-the standard error (stderr).  This option is intended to be used in
-conjunction with the \fBvalgrind-listener\fP program. For further details,
-see section 2.3 of the user manual.
-
-.TP
-.B
---optimise=<yes|no> [default: yes]
-When enabled, various improvements are applied to the intermediate code,
-mainly aimed at allowing the simulated CPU's registers to be cached in
-the real CPU's registers over several simulated instructions.
 
 .TP
 .B
@@ -563,27 +521,6 @@ although at the cost of possibly falsely reporting space leaks in libc.so.
 
 .TP
 .B
---show-below-main=<yes|no> [default: no]
-When enabled, this option causes full stack backtraces to be emited,
-including the part before \fBmain\fP in your program (subject to the
-\fB--num-callers\fP option.)  When disabled, only the part of the stack
-backtrace up to and including main is printed.
-
-.TP
-.B
---single-step=<yes|no> [default: no]
-When enabled, each x86 insn is translated separately into instrumented
-code.  When disabled, translation is done on a per-basic-block basis,
-giving much better translations. This is needed when running
-\fBvalgrind\fP under \fBvalgrind\fP.
-
-.TP
-.B
---time-stamp=<yes|no> [default: no]
-When enabled, a time-stamp is added to all log messages.
-
-.TP
-.B
 --weird-hacks=hack1,hack2,\.\.\.
 Pass miscellaneous hints to \fBvalgrind\fP which slightly modify the
 simulated behaviour in nonstandard or dangerous ways, possibly to help
@@ -609,71 +546,7 @@ Tell \fBvalgrind\fP to search for new memory mappings after an unknown
 
 .TP
 .B
---profile=<yes|no> [default: no]
-When enabled, does crude internal profiling of \fBvalgrind\fP itself. This
-is not for profiling your programs. Rather it is to allow the developers
-to assess where \fBvalgrind\fP is spending its time. The tools must be
-built for profiling for this to work.
-
-.TP
-.B
---sanity-level=<number> [default: 1]
-Set the level of sanity checking to perform. This is used for debugging
-\fBvalgrind\fP. Setting this to 2 or higher can cause more internal
-sanity checks to be performed, but can slow your program down
-appreciably. Setting this to 0 disables sanity checks.
-
-.TP
-.B
---trace-codegen=<bitmask>
-Produce lots of output showing exactly how \fBvalgrind\fP is translating
-each basic block.  The argument to this option is a 5-bit wide bitmask.
-Each bit refers to a specific feature to trace.  If the bit is 1, the
-feature is traced.  If it is 0, the feature is not traced.
-
-.RS
-The traced features are:
-.TP
-Bit 1: basic-block disassembly
-.TP
-Bit 2: optimization phase
-.TP
-Bit 3: tool instrumentation
-.TP
-Bit 4: register allocation
-.TP
-Bit 5: final code generation
-.RE
-
-.TP
-.B
---trace-malloc=<yes|no> [default: no]
-Enable or disable tracing of malloc, free and other memory-manager calls.
-
-.TP
-.B
---trace-redir=<yes|no> [default: no]
-Enable or disable tracing of function redirection.
-
-.TP
-.B
---trace-sched=<yes|no> [default: no]
-Enable or disable tracing of thread scheduling events.
-
-.TP
-.B
---trace-signals=<yes|no> [default: no]
-Enable or disable tracing of signal handling.
-
-.TP
-.B
---trace-syscalls=<yes|no> [default: no]
-Enable or disable tracing of system call intercepts.
-
-.TP
-.B
---trace-symtab=<yes|no> [default: no]
-Enable or disable tracing of symbol table reading.
+Valgrind has several debugging options that are mostly of use to developers.  Use \fB--help-debug\fB to show them.
 
 .SH SEE ALSO
 /usr/share/doc/\fBvalgrind\fP/html/manual.html

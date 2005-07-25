@@ -59,12 +59,12 @@ print-docs:
 	mkdir -p $(printdir)/images;
 	cp $(imgdir)/massif-graph-sm.png $(printdir)/images;
 	$(XSLTPROC) $(XSLTPROC_FLAGS) -o $(printdir)/index.fo $(XSL_FO_STYLE) $(xmldir)/index.xml;
-	(cd $(printdir); \
-	 pdfxmltex index.fo &> $(LOGFILE); \
-	 pdfxmltex index.fo &> $(LOGFILE); \
-	 pdfxmltex index.fo &> $(LOGFILE); \
-	 echo "Generating PS file: $(printdir)/index.ps ..."; \
-	 pdftops index.pdf; \
+	(cd $(printdir) && \
+	 pdfxmltex index.fo &> $(LOGFILE) && \
+	 pdfxmltex index.fo &> $(LOGFILE) && \
+	 pdfxmltex index.fo &> $(LOGFILE) && \
+	 echo "Generating PS file: $(printdir)/index.ps ..." && \
+	 pdftops index.pdf && \
 	 rm *.log *.aux *.fo *.out)
 
 # If the docs have been built, install them.  But don't worry if they have 

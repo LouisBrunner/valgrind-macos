@@ -2394,8 +2394,7 @@ ULong dis_op2_E_G ( Prefix      pfx,
          dependency. */
       if ((op8 == Iop_Xor8 || (op8 == Iop_Sub8 && addSubCarry))
           && offsetIRegG(size,pfx,rm) == offsetIRegE(size,pfx,rm)) {
-         vassert(0); /* awaiting test case */
-         if (op8 == Iop_Sub8)
+         if (False && op8 == Iop_Sub8)
             vex_printf("vex amd64->IR: sbb %%r,%%r optimisation(1)\n");
 	 putIRegG(size,pfx,rm, mkU(ty,0));
       }
@@ -4602,25 +4601,25 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                put_ST_UNCHECKED(0, unop(Iop_AbsF64, get_ST(0)));
                break;
 
-//..             case 0xE5: { /* FXAM */
-//..                /* This is an interesting one.  It examines %st(0),
-//..                   regardless of whether the tag says it's empty or not.
-//..                   Here, just pass both the tag (in our format) and the
-//..                   value (as a double, actually a ULong) to a helper
-//..                   function. */
-//..                IRExpr** args
-//..                   = mkIRExprVec_2( unop(Iop_8Uto32, get_ST_TAG(0)),
-//..                                    unop(Iop_ReinterpF64asI64, 
-//..                                         get_ST_UNCHECKED(0)) );
-//..                put_C3210(mkIRExprCCall(
-//..                             Ity_I32, 
-//..                             0/*regparm*/, 
-//..                             "x86g_calculate_FXAM", &x86g_calculate_FXAM,
-//..                             args
-//..                         ));
-//..                DIP("fxam\n");
-//..                break;
-//..             }
+            case 0xE5: { /* FXAM */
+               /* This is an interesting one.  It examines %st(0),
+                  regardless of whether the tag says it's empty or not.
+                  Here, just pass both the tag (in our format) and the
+                  value (as a double, actually a ULong) to a helper
+                  function. */
+               IRExpr** args
+                  = mkIRExprVec_2( unop(Iop_8Uto64, get_ST_TAG(0)),
+                                   unop(Iop_ReinterpF64asI64, 
+                                        get_ST_UNCHECKED(0)) );
+               put_C3210(mkIRExprCCall(
+                            Ity_I64, 
+                            0/*regparm*/, 
+                            "amd64g_calculate_FXAM", &amd64g_calculate_FXAM,
+                            args
+                        ));
+               DIP("fxam\n");
+               break;
+            }
 
             case 0xE8: /* FLD1 */
                DIP("fld1\n");
@@ -5599,21 +5598,24 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_pop();
                break;
 
-//..             case 0xE0: /* FNSTSW %ax */
-//..                DIP("fnstsw %%ax\n");
-//..                /* Invent a plausible-looking FPU status word value and
-//..                   dump it in %AX:
-//..                      ((ftop & 7) << 11) | (c3210 & 0x4700)
-//..                */
-//..                putIReg(2, R_EAX,
-//..                   unop(Iop_32to16,
-//..                        binop(Iop_Or32,
-//..                              binop(Iop_Shl32, 
-//..                                    binop(Iop_And32, get_ftop(), mkU32(7)), 
-//..                                    mkU8(11)),
-//..                              binop(Iop_And32, get_C3210(), mkU32(0x4700))
-//..                )));
-//..                break;
+            case 0xE0: /* FNSTSW %ax */
+               DIP("fnstsw %%ax\n");
+               /* Invent a plausible-looking FPU status word value and
+                  dump it in %AX:
+                     ((ftop & 7) << 11) | (c3210 & 0x4700)
+               */
+               putIRegRAX(
+                  2,
+                  unop(Iop_32to16,
+                       binop(Iop_Or32,
+                             binop(Iop_Shl32, 
+                                   binop(Iop_And32, get_ftop(), mkU32(7)), 
+                                   mkU8(11)),
+                             binop(Iop_And32, 
+                                   unop(Iop_64to32, get_C3210()), 
+                                   mkU32(0x4700))
+               )));
+               break;
 
             case 0xE8 ... 0xEF: /* FUCOMIP %st(0),%st(?) */
                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, True );

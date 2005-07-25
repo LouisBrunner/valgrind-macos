@@ -92,7 +92,7 @@ extern ULong amd64g_calculate_condition (
                 ULong cc_dep1, ULong cc_dep2, ULong cc_ndep 
              );
 
-//extern ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl );
+extern ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl );
 
 extern ULong amd64g_calculate_RCR  ( 
                 ULong arg, ULong rot_amt, ULong rflags_in, Long sz 
@@ -173,10 +173,16 @@ extern void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st );
 #define AMD64G_CC_MASK_P    (1 << AMD64G_CC_SHIFT_P)
 
 /* FPU flag masks */
-#define AMD64G_FC_MASK_C3   (1 << 14)
-#define AMD64G_FC_MASK_C2   (1 << 10)
-#define AMD64G_FC_MASK_C1   (1 << 9)
-#define AMD64G_FC_MASK_C0   (1 << 8)
+#define AMD64G_FC_SHIFT_C3   14
+#define AMD64G_FC_SHIFT_C2   10
+#define AMD64G_FC_SHIFT_C1   9
+#define AMD64G_FC_SHIFT_C0   8
+
+#define AMD64G_FC_MASK_C3    (1 << AMD64G_FC_SHIFT_C3)
+#define AMD64G_FC_MASK_C2    (1 << AMD64G_FC_SHIFT_C2)
+#define AMD64G_FC_MASK_C1    (1 << AMD64G_FC_SHIFT_C1)
+#define AMD64G_FC_MASK_C0    (1 << AMD64G_FC_SHIFT_C0)
+
 
 /* %RFLAGS thunk descriptors.  A four-word thunk is used to record
    details of the most recent flag-setting operation, so the flags can

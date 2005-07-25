@@ -1221,6 +1221,85 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 /*--- Supporting functions for x87 FPU activities.            ---*/
 /*---------------------------------------------------------------*/
 
+static inline Bool host_is_little_endian ( void )
+{
+   UInt x = 0x76543210;
+   UChar* p = (UChar*)(&x);
+   return toBool(*p == 0x10);
+}
+
+/* Inspect a value and its tag, as per the x87 'FXAM' instruction. */
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl ) 
+{
+   Bool   mantissaIsZero;
+   Int    bexp;
+   UChar  sign;
+   UChar* f64;
+
+   vassert(host_is_little_endian());
+
+   /* vex_printf("calculate_FXAM ( %d, %llx ) .. ", tag, dbl ); */
+
+   f64  = (UChar*)(&dbl);
+   sign = toUChar( (f64[7] >> 7) & 1 );
+
+   /* First off, if the tag indicates the register was empty,
+      return 1,0,sign,1 */
+   if (tag == 0) {
+      /* vex_printf("Empty\n"); */
+      return AMD64G_FC_MASK_C3 | 0 | (sign << AMD64G_FC_SHIFT_C1) 
+                                   | AMD64G_FC_MASK_C0;
+   }
+
+   bexp = (f64[7] << 4) | ((f64[6] >> 4) & 0x0F);
+   bexp &= 0x7FF;
+
+   mantissaIsZero
+      = toBool(
+           (f64[6] & 0x0F) == 0 
+           && (f64[5] | f64[4] | f64[3] | f64[2] | f64[1] | f64[0]) == 0
+        );
+
+   /* If both exponent and mantissa are zero, the value is zero.
+      Return 1,0,sign,0. */
+   if (bexp == 0 && mantissaIsZero) {
+      /* vex_printf("Zero\n"); */
+      return AMD64G_FC_MASK_C3 | 0 
+                               | (sign << AMD64G_FC_SHIFT_C1) | 0;
+   }
+   
+   /* If exponent is zero but mantissa isn't, it's a denormal.
+      Return 1,1,sign,0. */
+   if (bexp == 0 && !mantissaIsZero) {
+      /* vex_printf("Denormal\n"); */
+      return AMD64G_FC_MASK_C3 | AMD64G_FC_MASK_C2 
+                               | (sign << AMD64G_FC_SHIFT_C1) | 0;
+   }
+
+   /* If the exponent is 7FF and the mantissa is zero, this is an infinity.
+      Return 0,1,sign,1. */
+   if (bexp == 0x7FF && mantissaIsZero) {
+      /* vex_printf("Inf\n"); */
+      return 0 | AMD64G_FC_MASK_C2 | (sign << AMD64G_FC_SHIFT_C1) 
+                                   | AMD64G_FC_MASK_C0;
+   }
+
+   /* If the exponent is 7FF and the mantissa isn't zero, this is a NaN.
+      Return 0,0,sign,1. */
+   if (bexp == 0x7FF && !mantissaIsZero) {
+      /* vex_printf("NaN\n"); */
+      return 0 | 0 | (sign << AMD64G_FC_SHIFT_C1) | AMD64G_FC_MASK_C0;
+   }
+
+   /* Uh, ok, we give up.  It must be a normal finite number.
+      Return 0,1,sign,0.
+   */
+   /* vex_printf("normal\n"); */
+   return 0 | AMD64G_FC_MASK_C2 | (sign << AMD64G_FC_SHIFT_C1) | 0;
+}
+
+
 // MAYBE NOT TRUE: /* CALLED FROM GENERATED CODE */
 // MAYBE NOT TRUE: /* DIRTY HELPER (writes guest state) */
 /* Initialise the x87 FPU state as per 'finit'. */

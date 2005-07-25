@@ -24,6 +24,7 @@ First of all:
   stable release, ensure that VG_CORE_INTERFACE_VERSION in
   include/pub_tool_tooliface.h has been increased since the last release.
 
+
 For each release candidate (should do release candidates for big releases,
 bug-fix-only releases might not need one):
 
@@ -67,6 +68,7 @@ For the official release:
   
 - Update website: 
   - Put the tarball up.
+  - Update the docs at www.valgrind.org/ (?)
   - Update www.valgrind.org/downloads/source_code.html.  
   - Add a news item to the front page and also to valgrind.org/info/news.html.
 

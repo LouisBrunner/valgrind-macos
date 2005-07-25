@@ -38,6 +38,11 @@ bug-fix-only releases might not need one):
 - Make the tarball ("make dist") and put it on the web somewhere (it doesn't
   have to be on valgrind.org if another site is easier).
 
+- Ensure the tarball builds, runs, regtests on the platforms of interest.
+  However redundant this seems, sometimes it can be that a from-the-repo
+  build works whereas a from-the-tarball one doesn't, usually due to some
+  trivial installation problem.
+
 - Announce the release:
   - Email valgrind-users and valgrind-developers (but not valgrind-announce).  
   - Make clear it's a release candidate.  
@@ -62,9 +67,12 @@ For the official release:
 
 - Change release number in AC_INIT() in configure.in to "X.Y.Z".
 
-- Tag the repository ("VALGRIND_X_Y_Z").
-
 - Make the tarball ("make dist").
+
+- Check tarball builds, installs, regtests on platforms of interest.
+  If not, fix and repeat until success.
+
+- Tag the repository ("VALGRIND_X_Y_Z").
   
 - Update website: 
   - Put the tarball up.
@@ -76,7 +84,8 @@ For the official release:
   X.Y.Z is one more than the release just done.
 
 - Announce the release:
-  - Email valgrind-users, valgrind-developers, and valgrind-announce.  
+  - Email valgrind-users, valgrind-developers, and valgrind-announce.
+  - Email Linux Weekly News.
   - Include the release notes in the email.
 
-
+- Go on holiday.

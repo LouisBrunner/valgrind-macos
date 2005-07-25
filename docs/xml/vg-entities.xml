@@ -1,6 +1,6 @@
 <!-- misc. strings -->
 <!ENTITY vg-url      "http://www.valgrind.org">
-<!ENTITY vg-jemail   "jseward@valgrind.org">
+<!ENTITY vg-jemail   "julian@valgrind.org">
 <!ENTITY vg-vemail   "valgrind@valgrind.org">
 <!ENTITY vg-lifespan "2000-2005">
 <!ENTITY vg-users-list "http://lists.sourceforge.net/lists/listinfo/valgrind-users">

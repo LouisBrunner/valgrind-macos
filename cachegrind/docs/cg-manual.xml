@@ -35,7 +35,7 @@ misses.  In particular, it records:</para>
   </listitem>
 </itemizedlist>
 
-<para>On a modern x86 machine, an L1 miss will typically cost
+<para>On a modern machine, an L1 miss will typically cost
 around 10 cycles, and an L2 miss can cost as much as 200
 cycles. Detailed cache profiling can be very useful for improving
 the performance of your program.</para>

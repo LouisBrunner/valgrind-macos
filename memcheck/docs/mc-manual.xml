@@ -61,9 +61,8 @@ Memcheck can detect the following problems:</para>
 
 <itemizedlist id="leakcheck">
   <listitem>
-    <para><computeroutput>--leak-check=no</computeroutput>
-    <para><computeroutput>--leak-check=summary</computeroutput>
-    [default]</para>
+    <para><computeroutput>--leak-check=no</computeroutput></para>
+    <para><computeroutput>--leak-check=summary</computeroutput> [default]</para>
     <para><computeroutput>--leak-check=full</computeroutput></para>
     <para>When enabled, search for memory leaks when the client
     program finishes.  A memory leak means a malloc'd block,

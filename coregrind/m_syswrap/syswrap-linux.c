@@ -787,7 +787,7 @@ PRE(sys_io_submit)
 {
    Int i;
 
-   PRINT("sys_io_submit( %llu, %lld, %p )", (ULong)ARG1,(Long)ARG2,ARG3);
+   PRINT("sys_io_submit ( %llu, %lld, %p )", (ULong)ARG1,(Long)ARG2,ARG3);
    PRE_REG_READ3(long, "io_submit",
                  vki_aio_context_t, ctx_id, long, nr,
                  struct iocb **, iocbpp);
@@ -816,7 +816,7 @@ PRE(sys_io_submit)
 
 PRE(sys_io_cancel)
 {
-   PRINT("sys_io_cancel( %llu, %p, %p )", (ULong)ARG1,ARG2,ARG3);
+   PRINT("sys_io_cancel ( %llu, %p, %p )", (ULong)ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "io_cancel",
                  vki_aio_context_t, ctx_id, struct iocb *, iocb,
                  struct io_event *, result);
@@ -831,7 +831,7 @@ POST(sys_io_cancel)
 
 PRE(sys_set_mempolicy)
 {
-   PRINT("sys_set_mempolicy( %d, %p, %d )", ARG1,ARG2,ARG3);
+   PRINT("sys_set_mempolicy ( %d, %p, %d )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "set_mempolicy",
                  int, policy, unsigned long *, nodemask,
                  unsigned long, maxnode);
@@ -841,7 +841,7 @@ PRE(sys_set_mempolicy)
 
 PRE(sys_get_mempolicy)
 {
-   PRINT("sys_get_mempolicy( %p, %p, %d, %p, %x )", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRINT("sys_get_mempolicy ( %p, %p, %d, %p, %x )", ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "get_mempolicy",
                  int *, policy, unsigned long *, nodemask,
                  unsigned long, maxnode, unsigned long, addr,
@@ -879,14 +879,14 @@ POST(sys_inotify_init)
 
 PRE(sys_inotify_add_watch)
 {
-   PRINT( "sys_inotify_add_watch( %d, %p, %x )", ARG1,ARG2,ARG3);
+   PRINT( "sys_inotify_add_watch ( %d, %p, %x )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "inotify_add_watch", int, fd, char *, path, int, mask);
    PRE_MEM_RASCIIZ( "inotify_add_watch(path)", ARG2 );
 }
 
 PRE(sys_inotify_rm_watch)
 {
-   PRINT( "sys_inotify_rm_watch( %d, %x )", ARG1,ARG2);
+   PRINT( "sys_inotify_rm_watch ( %d, %x )", ARG1,ARG2);
    PRE_REG_READ2(long, "inotify_rm_watch", int, fd, int, wd);
 }
 

@@ -324,6 +324,10 @@
 #define __NR_mq_getsetattr 	245
 #define __NR_kexec_load 	246
 #define __NR_waitid		247
-
+#define __NR_add_key		248
+#define __NR_request_key	249
+#define __NR_keyctl		250
+#define __NR_ioprio_set		251
+#define __NR_ioprio_get		252
 
 #endif /* __VKI_UNISTD_AMD64_LINUX_H */

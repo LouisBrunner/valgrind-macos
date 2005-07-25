@@ -2277,6 +2277,18 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_mq_notify,         sys_mq_notify),      // (mq_open+4)
    GENXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // (mq_open+5)
    GENX_(__NR_sys_kexec_load,    sys_ni_syscall),     // 283
+//   GENXY(__NR_waitid,            sys_waitid),         // 284
+
+   GENX_(285,                    sys_ni_syscall),     // 285
+//   LINX_(__NR_add_key,           sys_add_key),        // 286
+//   LINX_(__NR_request_key,       sys_request_key),    // 287
+//   LINXY(__NR_keyctl,            sys_keyctl),         // 288
+//   LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 289
+
+//   LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 290
+   LINX_(__NR_inotify_init,	 sys_inotify_init),   // 291
+   LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 292
+   LINX_(__NR_inotify_rm_watch,	 sys_inotify_rm_watch), // 293
 };
 
 const UInt ML_(syscall_table_size) = 

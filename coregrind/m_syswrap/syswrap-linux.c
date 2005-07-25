@@ -860,6 +860,36 @@ POST(sys_get_mempolicy)
       POST_MEM_WRITE( ARG2, VG_ROUNDUP( ARG3, sizeof(UWord) * 8 ) / sizeof(UWord) );
 }
 
+PRE(sys_inotify_init)
+{
+   PRINT("sys_inotify_init ( )");
+   PRE_REG_READ0(long, "inotify_init");
+}
+POST(sys_inotify_init)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "inotify_init", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
+PRE(sys_inotify_add_watch)
+{
+   PRINT( "sys_inotify_add_watch( %d, %p, %x )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "inotify_add_watch", int, fd, char *, path, int, mask);
+   PRE_MEM_RASCIIZ( "inotify_add_watch(path)", ARG2 );
+}
+
+PRE(sys_inotify_rm_watch)
+{
+   PRINT( "sys_inotify_rm_watch( %d, %x )", ARG1,ARG2);
+   PRE_REG_READ2(long, "inotify_rm_watch", int, fd, int, wd);
+}
+
 #undef PRE
 #undef POST
 

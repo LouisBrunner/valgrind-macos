@@ -92,6 +92,10 @@ DECL_TEMPLATE(linux, sys_io_cancel);
 DECL_TEMPLATE(linux, sys_set_mempolicy);
 DECL_TEMPLATE(linux, sys_get_mempolicy);
 
+DECL_TEMPLATE(linux, sys_inotify_init);
+DECL_TEMPLATE(linux, sys_inotify_add_watch);
+DECL_TEMPLATE(linux, sys_inotify_rm_watch);
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

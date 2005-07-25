@@ -42,30 +42,30 @@ valid:
 # chunked html
 html-docs:
 	@echo "Generating html files..."
-	export XML_CATALOG_FILES=$(XML_CATALOG_FILES)
-	mkdir -p $(htmldir)
-	/bin/rm -fr $(htmldir)/
-	mkdir -p $(htmldir)/
-	mkdir -p $(htmldir)/images
-	cp $(libdir)/vg_basic.css $(htmldir)/
-	cp $(imgdir)/*.png $(htmldir)/images
+	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
+	mkdir -p $(htmldir) && \
+	/bin/rm -fr $(htmldir)/ && \
+	mkdir -p $(htmldir)/ && \
+	mkdir -p $(htmldir)/images && \
+	cp $(libdir)/vg_basic.css $(htmldir)/ && \
+	cp $(imgdir)/*.png $(htmldir)/images && \
 	$(XSLTPROC) $(XSLTPROC_FLAGS) -o $(htmldir)/ $(XSL_HTML_CHUNK_STYLE) $(xmldir)/index.xml
 
 # pdf and postscript
 print-docs:
 	@echo "Generating PDF file: $(printdir)/index.pdf (please be patient)...";
-	export XML_CATALOG_FILES=$(XML_CATALOG_FILES);
-	mkdir -p $(printdir);
-	mkdir -p $(printdir)/images;
-	cp $(imgdir)/massif-graph-sm.png $(printdir)/images;
-	$(XSLTPROC) $(XSLTPROC_FLAGS) -o $(printdir)/index.fo $(XSL_FO_STYLE) $(xmldir)/index.xml;
+	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
+	mkdir -p $(printdir) && \
+	mkdir -p $(printdir)/images && \
+	cp $(imgdir)/massif-graph-sm.png $(printdir)/images && \
+	$(XSLTPROC) $(XSLTPROC_FLAGS) -o $(printdir)/index.fo $(XSL_FO_STYLE) $(xmldir)/index.xml && \
 	(cd $(printdir) && \
-	 pdfxmltex index.fo &> $(LOGFILE) && \
-	 pdfxmltex index.fo &> $(LOGFILE) && \
-	 pdfxmltex index.fo &> $(LOGFILE) && \
+         ( pdfxmltex index.fo && \
+	   pdfxmltex index.fo && \
+	   pdfxmltex index.fo ) &> $(LOGFILE) && \
 	 echo "Generating PS file: $(printdir)/index.ps ..." && \
 	 pdftops index.pdf && \
-	 rm *.log *.aux *.fo *.out)
+	 rm -f *.log *.aux *.fo *.out)
 
 # If the docs have been built, install them.  But don't worry if they have 
 # not -- developers do 'make install' not from a 'make dist'-ified distro all

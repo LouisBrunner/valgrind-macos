@@ -92,12 +92,13 @@ libvex.a: $(LIB_OBJS)
 	rm -f libvex.a
 	ar clq libvex.a $(LIB_OBJS)
 
+# This doesn't get rid of priv/main/vex_svnversion.h, because
+# that can't be regenerated in the final Valgrind tarball, and
+# so if 'make clean' did get rid of it, then in the tarball,
+# doing 'make ; make clean ; make' (or distclean) would fail.
 clean:
 	rm -f $(LIB_OBJS) libvex.a vex test_main.o \
 		pub/libvex_guest_offsets.h
-
-distclean: clean
-	rm -f priv/main/vex_svnversion.h
 
 version:
 	rm -f priv/main/vex_svnversion.h

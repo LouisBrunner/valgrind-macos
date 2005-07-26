@@ -42,8 +42,6 @@
 /* The max number of suppression files. */
 #define VG_CLO_MAX_SFILES 10
 
-/* Vex iropt control */
-extern VexControl VG_(clo_vex_control);
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
 /* Enquire about whether to attach to a debugger at errors?   default: NO */

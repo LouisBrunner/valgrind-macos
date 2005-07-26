@@ -31,6 +31,9 @@
 #ifndef __PUB_TOOL_OPTIONS_H
 #define __PUB_TOOL_OPTIONS_H
 
+#include "libvex.h"              // for VexControl
+
+
 /* Use these for recognising tool command line options -- stops comparing
    once whitespace is reached. */
 #define VG_CLO_STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
@@ -79,6 +82,10 @@ extern HChar* VG_(clo_xml_user_comment);
    Note: don't use it just because an option was unrecognised -- return 'False'
    from VG_(tdict).tool_process_cmd_line_option) to indicate that. */
 extern void VG_(bad_option) ( Char* opt );
+
+/* Vex iropt control.  Tool-visible so tools can make Vex optimise
+   less aggressively if that is needed (callgrind needs this). */
+extern VexControl VG_(clo_vex_control);
 
 #endif   // __PUB_TOOL_OPTIONS_H
 

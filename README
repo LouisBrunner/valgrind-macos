@@ -47,8 +47,8 @@ on.
 
 Valgrind is closely tied to details of the CPU, operating system and
 to a less extent, compiler and basic C libraries. This makes it
-difficult to make it portable, so I have chosen at the outset to
-concentrate on what I believe to be a widely used platform: x86/Linux.
+difficult to make it portable.  Nonetheless, it is available for
+the following platforms: x86/Linux, AMD64/Linux and PPC32/Linux.
 
 Valgrind is licensed under the GNU General Public License, version 2. 
 Read the file COPYING in the source distribution for details.
@@ -63,31 +63,32 @@ specified with --prefix= when building.
 
 Building and installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-To install from CVS :
+To install from the Subversion repository :
 
-  0. Check out the code from CVS, following the instructions at
-     http://developer.kde.org/source/anoncvs.html. The 'modulename' is
-     "valgrind".
+  0. Check out the code from SVN, following the instructions at
+     http://valgrind.org/devel/cvs_svn.html.
 
   1. cd into the source directory.
 
   2. Run ./autogen.sh to setup the environment (you need the standard
      autoconf tools to do so).
 
+  3. Continue with the following instructions...
+
 To install from a tar.bz2 distribution:
 
-  3. Run ./configure, with some options if you wish. The standard
+  4. Run ./configure, with some options if you wish. The standard
      options are documented in the INSTALL file.  The only interesting
      one is the usual --prefix=/where/you/want/it/installed.
 
-  4. Do "make".
+  5. Do "make".
 
-  5. Do "make install", possibly as root if the destination permissions
+  6. Do "make install", possibly as root if the destination permissions
      require that.
 
-  6. See if it works.  Try "valgrind --tool=memcheck ls -l".  Either
-     this works, or it bombs out with some complaint.  In that case,
-     please let us know (see www.valgrind.org).
+  7. See if it works.  Try "valgrind ls -l".  Either this works, or it
+     bombs out with some complaint.  In that case, please let us know
+     (see www.valgrind.org).
 
 Important!  Do not move the valgrind installation into a place
 different from that specified by --prefix at build time.  This will

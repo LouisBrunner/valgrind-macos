@@ -56,7 +56,7 @@ extern Bool VG_(search_transtab) ( /*OUT*/AddrH* result,
                                    Addr64        guest_addr, 
                                    Bool          upd_cache );
 
-extern void VG_(discard_translations) ( Addr64 start, UInt range );
+extern void VG_(discard_translations) ( Addr64 start, ULong range );
 
 extern void VG_(print_tt_tc_stats) ( void );
 

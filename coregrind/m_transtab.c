@@ -537,17 +537,17 @@ Bool VG_(search_transtab) ( /*OUT*/AddrH* result,
 */
 
 static inline
-Bool overlap1 ( Addr64 s1, UInt r1, Addr64 s2, UInt r2 )
+Bool overlap1 ( Addr64 s1, ULong r1, Addr64 s2, ULong r2 )
 {
-   Addr64 e1 = s1 + (ULong)r1 - 1ULL;
-   Addr64 e2 = s2 + (ULong)r2 - 1ULL;
+   Addr64 e1 = s1 + r1 - 1ULL;
+   Addr64 e2 = s2 + r2 - 1ULL;
    if (e1 < s2 || e2 < s1) 
       return False;
    return True;
 }
 
 static inline
-Bool overlaps ( Addr64 start, UInt range, VexGuestExtents* vge )
+Bool overlaps ( Addr64 start, ULong range, VexGuestExtents* vge )
 {
    if (overlap1(start, range, vge->base[0], (UInt)vge->len[0]))
       return True;
@@ -563,7 +563,7 @@ Bool overlaps ( Addr64 start, UInt range, VexGuestExtents* vge )
 }
 
 
-void VG_(discard_translations) ( Addr64 guest_start, UInt range )
+void VG_(discard_translations) ( Addr64 guest_start, ULong range )
 {
    Int sno, i;
    Bool anyDeleted = False;

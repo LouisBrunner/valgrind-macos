@@ -82,7 +82,7 @@ noinst_HEADERS = \
 
 BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds
-	
+
 valgrind_SOURCES = \
 	stage1.c \
 	m_debuglog.c \
@@ -194,6 +194,15 @@ stage2.lds: Makefile
 		-e '/^=====\+$$/d' \
 		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/kickstart_base/g' > $@ \
 	|| rm -f $@
+
+@VEX_DIR@/libvex.a: @VEX_DIR@/priv/main/vex_svnversion.h
+	$(MAKE) -C @VEX_DIR@ libvex.a EXTRA_CFLAGS="@PIE_AM_CFLAGS@"
+
+@VEX_DIR@/priv/main/vex_svnversion.h:
+	$(MAKE) -C @VEX_DIR@ version
+
+clean-local:
+	$(MAKE) -C @VEX_DIR@ clean
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 

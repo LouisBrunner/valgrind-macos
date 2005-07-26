@@ -21,3 +21,9 @@ libsyswrap_a_SOURCES = \
 	syswrap-@VG_OS@.c \
 	syswrap-@VG_PLATFORM@.c \
 	syswrap-main.c
+
+syscall-@VG_PLATFORM@.S: libvex_guest_offsets.h
+syswrap-main.c: libvex_guest_offsets.h
+
+libvex_guest_offsets.h:
+	$(MAKE) -C @VEX_DIR@ pub/libvex_guest_offsets.h

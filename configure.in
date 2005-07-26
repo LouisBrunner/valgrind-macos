@@ -10,17 +10,17 @@ AM_MAINTAINER_MODE
 # Nb: For the 2nd arg, the help string, AS_HELP_STRING is the proper way, but
 #     older autoconfs don't support it... here's what it would say:
 #
-#    AS_HELP_STRING([--with-vex], [Vex directory (must be specified!)]),
+#    AS_HELP_STRING([--with-vex], [Vex directory]),
 #
 AC_ARG_WITH(vex, 
-    [  --with-vex=/path/to/vex/dir    Vex directory (must be specified!)],
+    [  --with-vex=/path/to/vex/dir    Vex directory],
 [
     AC_CHECK_FILE($withval/pub/libvex.h,
         [VEX_DIR=$withval],
         [AC_MSG_ERROR([Directory '$withval' does not exist, or does not contain Vex])])
 ],
 [
-    AC_MSG_ERROR([You must specify --with-vex=/path/to/vex/dir])
+    VEX_DIR=`pwd`/VEX
 ])
 AC_SUBST(VEX_DIR)
 

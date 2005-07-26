@@ -9,3 +9,8 @@ EXTRA_DIST = \
 
 libdispatch_a_SOURCES = \
 	dispatch-@VG_ARCH@.S
+
+dispatch-@VG_ARCH@.S: libvex_guest_offsets.h
+
+libvex_guest_offsets.h:
+	$(MAKE) -C @VEX_DIR@ pub/libvex_guest_offsets.h

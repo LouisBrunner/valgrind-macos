@@ -13,15 +13,15 @@ Buildroot: %{_tmppath}/%{name}-root
 
 %description 
 
-Valgrind is a GPL'd system for debugging and profiling x86-Linux programs.
-With the tools that come with Valgrind, you can automatically detect
-many memory management and threading bugs, avoiding hours of frustrating
-bug-hunting, making your programs more stable. You can also perform
-detailed profiling to help speed up your programs.
+Valgrind is an award-winning suite of tools for debugging and profiling
+Linux programs. With the tools that come with Valgrind, you can
+automatically detect many memory management and threading bugs, avoiding
+hours of frustrating bug-hunting, making your programs more stable. You can
+also perform detailed profiling, to speed up and reduce memory use of your
+programs.
 
-The Valgrind distribution includes five tools: two memory error
+The Valgrind distribution currently includes five tools: two memory error
 detectors, a thread error detector, a cache profiler and a heap profiler.
-Several other tools have been built with Valgrind.
 
 %prep
 %setup -n @PACKAGE@-@VERSION@

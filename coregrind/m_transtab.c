@@ -540,7 +540,7 @@ static inline
 Bool overlap1 ( Addr64 s1, UInt r1, Addr64 s2, UInt r2 )
 {
    Addr64 e1 = s1 + (ULong)r1 - 1ULL;
-   Addr64 e2 = s2 + (ULong)r1 - 1ULL;
+   Addr64 e2 = s2 + (ULong)r2 - 1ULL;
    if (e1 < s2 || e2 < s1) 
       return False;
    return True;

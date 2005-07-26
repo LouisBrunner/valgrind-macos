@@ -572,7 +572,7 @@ categories.</para>
 
 <para>The single most important option.</para>
   <itemizedlist>
-   <listitem>
+   <listitem id="tool_name">
     <para><computeroutput>--tool=name</computeroutput></para>
     <para>Run the Valgrind tool called <emphasis>name</emphasis>,
     e.g. Memcheck, Addrcheck, Cachegrind, etc.</para>
@@ -616,7 +616,7 @@ categories.</para>
     test machinery.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="verbosity">
     <para><computeroutput>-v --verbose</computeroutput></para>
     <para>Be more verbose.  Gives extra information on various
     aspects of your program, such as: the shared objects loaded,
@@ -625,7 +625,7 @@ categories.</para>
     Repeating the flag increases the verbosity level.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="trace_children">
     <para><computeroutput>--trace-children=no</computeroutput>
     [default]</para>
     <para><computeroutput>--trace-children=yes</computeroutput></para>
@@ -634,7 +634,7 @@ categories.</para>
     disabled by default.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="track_fds">
     <para><computeroutput>--track-fds=no</computeroutput> [default]</para>
     <para><computeroutput>--track-fds=yes</computeroutput></para>
     <para>When enabled, Valgrind will print out a list of open
@@ -644,14 +644,14 @@ categories.</para>
     as the file name or socket details.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="time_stamp">
     <para><computeroutput>--time-stamp=no</computeroutput> [default]</para>
     <para><computeroutput>--time-stamp=yes</computeroutput></para>
     <para>When enabled, Valgrind will precede each message with the
     current time and date.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="log2fd">
     <para><computeroutput>--log-fd=&lt;number&gt;</computeroutput>
     [default: 2, stderr]</para>
     <para>Specifies that Valgrind should send all of its messages
@@ -660,7 +660,7 @@ categories.</para>
     interfere with the client's own use of stderr.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="log2file_pid">
     <para><computeroutput>--log-file=&lt;filename&gt;</computeroutput></para>
     <para>Specifies that Valgrind should send all of its messages
     to the specified file.  In fact, the file name used is
@@ -670,7 +670,7 @@ categories.</para>
     specified file name may not be the empty string.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="log2file">
     <para><computeroutput>--log-file-exactly=&lt;filename&gt;</computeroutput></para>
     <para>Just like <computeroutput>--log-file</computeroutput>, but
     the ".pid" suffix is not added.  If you trace multiple processes
@@ -679,7 +679,7 @@ categories.</para>
     </para>
    </listitem>
 
-   <listitem>
+   <listitem id="log2file_qualifier">
     <para><computeroutput>--log-file-qualifer=&lt;VAR&gt;</computeroutput></para>
     <para>Specifies that Valgrind should send all of its messages
     to the file named by the environment variable
@@ -688,7 +688,7 @@ categories.</para>
     </para>
    </listitem>
 
-   <listitem>
+   <listitem id="log2socket">
     <para><computeroutput>--log-socket=&lt;ip-address:port-number&gt;</computeroutput></para>
     <para>Specifies that Valgrind should send all of its messages
     to the specified port at the specified IP address.  The port
@@ -712,7 +712,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
 
   <itemizedlist>
 
-   <listitem>
+   <listitem id="xml_output">
     <para><computeroutput>--xml=no</computeroutput> [default]</para>
     <para><computeroutput>--xml=yes</computeroutput></para>
     <para>When enabled, output will be in XML format.  This is aimed at
@@ -722,14 +722,14 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     </para>
    </listitem>
     
-   <listitem>
+   <listitem id="xml_user_comment">
     <para><computeroutput>--xml-user-comment=&lt;string&gt;</computeroutput> [default=""]</para>
     <para>Embeds an extra user comment string in the XML output.  Only works
     with <computeroutput>--xml=yes</computeroutput> is specified;  ignored
     otherwise.</para>
    </listitem>
     
-   <listitem>
+   <listitem id="auto_demangle">
     <para><computeroutput>--demangle=no</computeroutput></para>
     <para><computeroutput>--demangle=yes</computeroutput> [default]</para>
     <para>Disable/enable automatic demangling (decoding) of C++
@@ -747,7 +747,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     be slow and pointless.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="num_callers">
     <para><computeroutput>--num-callers=&lt;number&gt;</computeroutput> [default=4]</para>
     <para>By default, Valgrind shows four levels of function call
     names to help you identify program locations.  You can change
@@ -764,7 +764,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     with deeply-nested call chains.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="error_limit">
     <para><computeroutput>--error-limit=yes</computeroutput>
     [default]</para>
     <para><computeroutput>--error-limit=no</computeroutput></para>
@@ -774,7 +774,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     performance overhead in programs with many errors.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="stack_traces">
     <para><computeroutput>--show-below-main=yes</computeroutput></para>
     <para><computeroutput>--show-below-main=no</computeroutput>
     [default]</para>
@@ -786,7 +786,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     <computeroutput>main()</computeroutput> will be shown.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="supps_files">
     <para><computeroutput>--suppressions=&lt;filename&gt;</computeroutput>
     [default: $PREFIX/lib/valgrind/default.supp]</para>
     <para>Specifies an extra file from which to read descriptions
@@ -794,7 +794,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     suppressions files as you like.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="gen_supps">
     <para><computeroutput>--gen-suppressions=no</computeroutput>
     [default]</para>
     <para><computeroutput>--gen-suppressions=yes</computeroutput></para>
@@ -835,7 +835,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     all used suppression records.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="attach_debugger">
     <para><computeroutput>--db-attach=no</computeroutput> [default]</para>
     <para><computeroutput>--db-attach=yes</computeroutput></para>
     <para>When enabled, Valgrind will pause after every error
@@ -871,7 +871,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     this option doesn't make any sense.  Caveat emptor.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="which_debugger">
     <para><computeroutput>--db-command=&lt;command&gt;</computeroutput>
     [default: gdb -nw %f %p]</para>
     <para>This specifies how Valgrind will invoke the debugger.
@@ -889,7 +889,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     for the process to be debugged.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="input_fd">
     <para><computeroutput>--input-fd=&lt;number&gt;</computeroutput>
     [default=0, stdin]</para>
     <para>When using
@@ -902,7 +902,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     alternative file descriptor from which to read input.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="max_frames">
     <para><computeroutput>--max-stackframe=&lt;number&gt;</computeroutput>
                           [default=2000000]
     </para>
@@ -973,7 +973,7 @@ Addrcheck), the following options apply.</para>
 
   <itemizedlist>
 
-   <listitem>
+   <listitem id="free_glibc">
     <para><computeroutput>--run-libc-freeres=yes</computeroutput>
      [default]</para>
     <para><computeroutput>--run-libc-freeres=no</computeroutput></para>
@@ -1009,7 +1009,7 @@ Addrcheck), the following options apply.</para>
     <computeroutput>libc.so</computeroutput>.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="weird_hacks">
     <para><computeroutput>--weird-hacks=hack1,hack2,...</computeroutput></para>
     <para>Pass miscellaneous hints to Valgrind which slightly
     modify the simulated behaviour in nonstandard or dangerous
@@ -1038,7 +1038,7 @@ Addrcheck), the following options apply.</para>
     </itemizedlist>
    </listitem>
 
-   <listitem>
+   <listitem id="pointer_check">
     <para><computeroutput>--pointercheck=yes</computeroutput> [default]</para>
     <para><computeroutput>--pointercheck=no</computeroutput></para>
     <para>This option make Valgrind generate a check on every memory
@@ -1051,14 +1051,14 @@ Addrcheck), the following options apply.</para>
     the same functionality.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="show_emwarns">
     <para><computeroutput>--show-emwarns=no</computeroutput> [default]</para>
     <para><computeroutput>--show-emwarns=yes</computeroutput></para>
     <para>When enabled, Valgrind will emit warnings about its CPU emulation
     in certain cases.  These are usually not interesting.</para>
    </listitem>
 
-   <listitem>
+   <listitem id="smc_support">
     <para><computeroutput>--smc-check=none</computeroutput></para>
     <para><computeroutput>--smc-check=stack</computeroutput> [default]</para>
     <para><computeroutput>--smc-check=all</computeroutput></para>

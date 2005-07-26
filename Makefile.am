@@ -28,6 +28,9 @@ dist_val_DATA = $(SUPP_FILES) default.supp
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = valgrind.pc
 
+incincdir = $(includedir)/valgrind
+incinc_HEADERS = $(VEX_PUBLIC_HDRS)
+
 BUILT_SOURCES = default.supp valgrind.pc
 
 DISTCLEANFILES = default.supp
@@ -47,7 +50,8 @@ EXTRA_DIST = \
 	valgrind.spec.in valgrind.pc.in \
 	Makefile.all.am Makefile.tool.am Makefile.core-AM_CPPFLAGS.am \
 	Makefile.tool-inplace.am \
-	$(VEX_PRIMARY_SOURCES)
+	$(VEX_PRIMARY_SOURCES) \
+	$(VEX_PUBLIC_HDRS)
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)
@@ -61,14 +65,9 @@ all-local:
 distclean-local:
 	rm -rf $(inplacedir)
 
+# These list the bits of vex we need to copy into the tarball
 
-# This lists the bits of vex we need to copy into the tarball
-
-VEX_PRIMARY_SOURCES = \
-	VEX/README \
-	VEX/COPYING \
-	VEX/Makefile \
-	VEX/auxprogs/genoffsets.c \
+VEX_PUBLIC_HDRS = \
 	VEX/pub/libvex_guest_amd64.h \
 	VEX/pub/libvex_ir.h \
 	VEX/pub/libvex_guest_ppc32.h \
@@ -78,7 +77,13 @@ VEX_PRIMARY_SOURCES = \
 	VEX/pub/libvex.h \
 	VEX/pub/libvex_trc_values.h \
 	VEX/pub/libvex_guest_arm.h \
-	VEX/pub/libvex_guest_x86.h \
+	VEX/pub/libvex_guest_x86.h
+
+VEX_PRIMARY_SOURCES = \
+	VEX/README \
+	VEX/COPYING \
+	VEX/Makefile \
+	VEX/auxprogs/genoffsets.c \
 	VEX/priv/ir/irmatch.c \
 	VEX/priv/ir/irmatch.h \
 	VEX/priv/ir/irdefs.c \

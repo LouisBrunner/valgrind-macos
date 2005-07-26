@@ -1905,6 +1905,13 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(getpid)(), VG_(getppid)() );
       for (i = 0; i < VG_(client_argc); i++) 
          VG_(message)(Vg_UserMsg, "   %s", VG_(client_argv)[i]);
+      if (VG_(clo_log_file_qualifier)) {
+         HChar* val = VG_(getenv)(VG_(clo_log_file_qualifier));
+         VG_(message)(Vg_UserMsg, "");
+         VG_(message)(Vg_UserMsg, "Log file qualifier: var %s, value %s.",
+                                  VG_(clo_log_file_qualifier),
+                                  val ? val : "");
+      }
    }
    else
    if (VG_(clo_xml)) {

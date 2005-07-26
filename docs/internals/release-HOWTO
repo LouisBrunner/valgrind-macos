@@ -18,6 +18,9 @@ First of all:
   Bugzilla.  [[We should decide a defined way of obtaining this list so it's
   consistent and so we don't have to work it out anew each time.]]
 
+- Other files that might need updating:  README, README_DEVELOPERS,
+  README_PACKAGERS.
+
 - Add X.Y.Z and X.Y.Z.SVN versions to Bugzilla (ask Dirk to do it)
 
 - If there are any binary incompatible tool API changes against the last
@@ -76,9 +79,11 @@ For the official release:
   
 - Update website: 
   - Put the tarball up.
-  - Update the docs at www.valgrind.org/ (?)
+  - Update the docs -- both the tarball'd docs, and the online-readable docs.
   - Update www.valgrind.org/downloads/source_code.html.  
+  - Update www.valgrind.org/downloads/archive.html.  
   - Add a news item to the front page and also to valgrind.org/info/news.html.
+  - Other pages that might need updating:  devel/cvs_svn.html.
 
 - Change release number in AC_INIT() in configure.in to "X.Y.Z.SVN", where
   X.Y.Z is one more than the release just done.

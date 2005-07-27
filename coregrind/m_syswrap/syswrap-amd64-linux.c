@@ -587,6 +587,7 @@ DECL_TEMPLATE(amd64_linux, sys_arch_prctl);
 DECL_TEMPLATE(amd64_linux, sys_ptrace);
 DECL_TEMPLATE(amd64_linux, sys_pread64);
 DECL_TEMPLATE(amd64_linux, sys_pwrite64);
+DECL_TEMPLATE(amd64_linux, sys_fadvise64);
 
 
 PRE(sys_clone)
@@ -1147,6 +1148,13 @@ PRE(sys_pwrite64)
    PRE_MEM_READ( "pwrite64(buf)", ARG2, ARG3 );
 }
 
+PRE(sys_fadvise64)
+{
+   PRINT("sys_fadvise64 ( %d, %lld, %llu, %d )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "fadvise64",
+                 int, fd, vki_loff_t, offset, vki_size_t, len, int, advice);
+}
+
 #undef PRE
 #undef POST
 
@@ -1433,7 +1441,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_restart_syscall,   sys_restart_syscall),// 219 
 
    PLAX_(__NR_semtimedop,        sys_semtimedop),     // 220 
-   LINX_(__NR_fadvise64,         sys_fadvise64),      // 221 
+   PLAX_(__NR_fadvise64,         sys_fadvise64),      // 221 
    GENXY(__NR_timer_create,      sys_timer_create),   // 222 
    GENXY(__NR_timer_settime,     sys_timer_settime),  // 223 
    GENXY(__NR_timer_gettime,     sys_timer_gettime),  // 224 

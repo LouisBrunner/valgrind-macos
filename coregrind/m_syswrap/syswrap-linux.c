@@ -103,6 +103,9 @@ VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
 #define PRE(name)       DEFN_PRE_TEMPLATE(linux, name)
 #define POST(name)      DEFN_POST_TEMPLATE(linux, name)
 
+// Combine two 32-bit values into a 64-bit value
+#define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
+
 PRE(sys_set_tid_address)
 {
    PRINT("sys_set_tid_address ( %p )", ARG1);
@@ -653,16 +656,20 @@ POST(sys_tgkill)
 
 PRE(sys_fadvise64)
 {
-   PRINT("sys_fadvise64 ( %d, %lld, %lu, %d )", ARG1,ARG2,ARG3);
-   PRE_REG_READ4(long, "fadvise64",
-                 int, fd, vki_loff_t, offset, vki_size_t, len, int, advice)
+   PRINT("sys_fadvise64 ( %d, %lld, %lu, %d )",
+         ARG1, LOHI64(ARG2,ARG3), ARG4, ARG5);
+   PRE_REG_READ5(long, "fadvise64",
+                 int, fd, vki_u32, offset_low, vki_u32, offset_high,
+                 vki_size_t, len, int, advice);
 }
 
 PRE(sys_fadvise64_64)
 {
-   PRINT("sys_fadvise64_64 ( %d, %lld, %lld, %d )", ARG1,ARG2,ARG3);
-   PRE_REG_READ4(long, "fadvise64_64",
-                 int, fd, vki_loff_t, offset, vki_loff_t, len, int, advice)
+   PRINT("sys_fadvise64_64 ( %d, %lld, %lld, %d )",
+         ARG1, LOHI64(ARG2,ARG3), LOHI64(ARG4,ARG5), ARG6);
+   PRE_REG_READ6(long, "fadvise64_64",
+                 int, fd, vki_u32, offset_low, vki_u32, offset_high,
+                 vki_u32, len_low, vki_u32, len_high, int, advice);
 }
 
 // Nb: this wrapper has to pad/unpad memory around the syscall itself,

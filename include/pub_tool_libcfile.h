@@ -51,11 +51,6 @@ extern Int    VG_(unlink) ( Char* file_name );
 // Returns False on failure (eg. if the buffer isn't big enough).
 extern Bool VG_(getcwd) ( Char* buf, SizeT size );
 
-/* Easier to use than VG_(getcwd)() -- does the buffer fiddling itself.
-   String put into 'cwd' is VG_(malloc)'d, and should be VG_(free)'d.
-   Returns False if it fails.  Will fail if the pathname is > 65535 bytes. */
-extern Bool VG_(getcwd_alloc) ( Char** cwd );
-
 extern Int  VG_(readlink)( Char* path, Char* buf, UInt bufsize );
 extern Int  VG_(getdents)( UInt fd, struct vki_dirent *dirp, UInt count );
 

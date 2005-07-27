@@ -113,6 +113,10 @@ BUGS FIXED
 [[TODO: add the full list here (once the RCs are out of the way?)]]
 
 
+(3.0RC1: 27 July 05, vex r1303, valgrind r4283).
+
+
+
 Stable release 2.4.0 (March 2005) -- CHANGES RELATIVE TO 2.2.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 2.4.0 brings many significant changes and bug fixes.  The most

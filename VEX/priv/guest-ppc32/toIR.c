@@ -375,11 +375,11 @@ static IRExpr* mkexpr ( IRTemp tmp )
    return IRExpr_Tmp(tmp);
 }
 
-static IRExpr* mkU1 ( UInt i )
-{
-   vassert(i < 2);
-   return IRExpr_Const(IRConst_U1( toBool(i) ));
-}
+//uu static IRExpr* mkU1 ( UInt i )
+//uu {
+//uu    vassert(i < 2);
+//uu    return IRExpr_Const(IRConst_U1( toBool(i) ));
+//uu }
 
 static IRExpr* mkU8 ( UChar i )
 {
@@ -895,35 +895,35 @@ static void putCRfields ( IRExpr* w32, UInt mask )
 //zz    return binop(Iop_And32, mkU32(1), call);
 //zz }
 
-/* Calculate XER_CA flag.  RES is the result of applying OP to ARGL
-   and ARGR, and OLDCA is the old carry flag.  The latter may be zero
-   if it is known that OP does not need to consult it. */
-
-static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, 
-                                            IRExpr* res,
-                                            IRExpr* argL, 
-                                            IRExpr* argR,
-                                            IRExpr* oldca )
-{
-   IRExpr** args;
-   IRExpr*  call;
-   vassert(op < PPC32G_FLAG_OP_NUMBER);
-   vassert(typeOfIRExpr(irbb->tyenv,res)   == Ity_I32);
-   vassert(typeOfIRExpr(irbb->tyenv,argL)  == Ity_I32);
-   vassert(typeOfIRExpr(irbb->tyenv,argR)  == Ity_I32);
-   vassert(typeOfIRExpr(irbb->tyenv,oldca) == Ity_I32);
-
-   args = mkIRExprVec_5( mkU32(op), res, argL, argR, oldca );
-
-   call
-      = mkIRExprCCall(
-           Ity_I32,
-           0/*regparm*/,
-           "ppc32g_calculate_xer_ca", &ppc32g_calculate_xer_ca,
-           args
-        );
-   return binop(Iop_And32, mkU32(1), call);
-}
+//uu /* Calculate XER_CA flag.  RES is the result of applying OP to ARGL
+//uu    and ARGR, and OLDCA is the old carry flag.  The latter may be zero
+//uu    if it is known that OP does not need to consult it. */
+//uu 
+//uu static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, 
+//uu                                             IRExpr* res,
+//uu                                             IRExpr* argL, 
+//uu                                             IRExpr* argR,
+//uu                                             IRExpr* oldca )
+//uu {
+//uu    IRExpr** args;
+//uu    IRExpr*  call;
+//uu    vassert(op < PPC32G_FLAG_OP_NUMBER);
+//uu    vassert(typeOfIRExpr(irbb->tyenv,res)   == Ity_I32);
+//uu    vassert(typeOfIRExpr(irbb->tyenv,argL)  == Ity_I32);
+//uu    vassert(typeOfIRExpr(irbb->tyenv,argR)  == Ity_I32);
+//uu    vassert(typeOfIRExpr(irbb->tyenv,oldca) == Ity_I32);
+//uu 
+//uu    args = mkIRExprVec_5( mkU32(op), res, argL, argR, oldca );
+//uu 
+//uu    call
+//uu       = mkIRExprCCall(
+//uu            Ity_I32,
+//uu            0/*regparm*/,
+//uu            "ppc32g_calculate_xer_ca", &ppc32g_calculate_xer_ca,
+//uu            args
+//uu         );
+//uu    return binop(Iop_And32, mkU32(1), call);
+//uu }
 
 
 /* Set the CR0 flags following an arithmetic operation.
@@ -1831,12 +1831,12 @@ static Bool dis_int_cmp ( UInt theInstr )
    UInt EXTS_SIMM = 0;
    IRTemp Ra      = newTemp(Ity_I32);
    IRTemp Rb      = newTemp(Ity_I32);
-   IRTemp xer_so  = newTemp(Ity_I32);
-   IRTemp cr7     = newTemp(Ity_I32);
-   IRTemp mux1    = newTemp(Ity_I32);
-   IRTemp mux2    = newTemp(Ity_I32);
-   IRExpr* irx_cmp_lt;
-   IRExpr* irx_cmp_eq;
+//uu   IRTemp xer_so  = newTemp(Ity_I32);
+//uu   IRTemp cr7     = newTemp(Ity_I32);
+//uu   IRTemp mux1    = newTemp(Ity_I32);
+//uu   IRTemp mux2    = newTemp(Ity_I32);
+//uu   IRExpr* irx_cmp_lt;
+//uu   IRExpr* irx_cmp_eq;
 
    assign( Ra, getIReg(Ra_addr) );
    
@@ -1942,7 +1942,7 @@ static Bool dis_int_logic ( UInt theInstr )
    IRTemp Rs = newTemp(Ity_I32);
    IRTemp Ra = newTemp(Ity_I32);
    IRTemp Rb = newTemp(Ity_I32);
-   IRTemp Sign = newTemp(Ity_I32);
+//uu   IRTemp Sign = newTemp(Ity_I32);
    IRExpr* irx;
    
    assign( Rs, getIReg(Rs_addr) );
@@ -3030,7 +3030,7 @@ static Bool dis_cond_logic ( UInt theInstr )
    IRTemp crbD = newTemp(Ity_I32);
    IRTemp crbA = newTemp(Ity_I32);
    IRTemp crbB = newTemp(Ity_I32);
-   IRTemp tmp  = newTemp(Ity_I32);
+//uu   IRTemp tmp  = newTemp(Ity_I32);
 
    if (opc1 != 19 || b0 != 0) {
       vex_printf("dis_cond_logic(PPC32)(opc1)\n");
@@ -3144,8 +3144,8 @@ static Bool dis_memsync ( UInt theInstr )
    IRTemp Ra = newTemp(Ity_I32);
    IRTemp Rb = newTemp(Ity_I32);
    IRTemp Rs = newTemp(Ity_I32);
-   IRTemp xer_so = newTemp(Ity_I32);
-   IRTemp cr_f7  = newTemp(Ity_I32);
+//uu   IRTemp xer_so = newTemp(Ity_I32);
+//uu   IRTemp cr_f7  = newTemp(Ity_I32);
    
    switch (opc1) {
     /* XL-Form */
@@ -3259,18 +3259,18 @@ static Bool dis_int_shift ( UInt theInstr )
    UInt  opc2    =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar flag_Rc = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
    
-   UInt flag_op  = PPC32G_FLAG_OP_NUMBER;
+//uu   UInt flag_op  = PPC32G_FLAG_OP_NUMBER;
    
    IRTemp sh_amt = newTemp(Ity_I8);
-   IRTemp sign   = newTemp(Ity_I32);
+//uu   IRTemp sign   = newTemp(Ity_I32);
    IRTemp rb_b5  = newTemp(Ity_I32);
-   IRTemp sext   = newTemp(Ity_I32);
+//uu   IRTemp sext   = newTemp(Ity_I32);
    IRTemp Rs     = newTemp(Ity_I32);
    IRTemp Rs_sh  = newTemp(Ity_I32);
-   IRTemp Rs_msk = newTemp(Ity_I32);
+//uu   IRTemp Rs_msk = newTemp(Ity_I32);
    IRTemp Ra     = newTemp(Ity_I32);
    IRTemp Rb     = newTemp(Ity_I32);
-   IRTemp mask   = newTemp(Ity_I32);
+//uu   IRTemp mask   = newTemp(Ity_I32);
    IRTemp sh_amt32   = newTemp(Ity_I32);
    IRTemp outofrange = newTemp(Ity_I8);
    
@@ -3477,15 +3477,15 @@ static Bool dis_proc_ctl ( UInt theInstr )
    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
    
    /* X-Form */
-   UChar crfD     = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
-   UChar b21to22  = toUChar((theInstr >> 21) & 0x3);  /* theInstr[21:22] */
+//uu   UChar crfD     = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
+//uu   UChar b21to22  = toUChar((theInstr >> 21) & 0x3);  /* theInstr[21:22] */
    UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
    UInt  b11to20  =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
    
    /* XFX-Form */
    UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
    UInt  SPR      =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
-   UInt  TBR      =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
+//uu   UInt  TBR      =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
    UChar b20      = toUChar((theInstr >> 11) & 0x1);  /* theInstr[11]    */
    UInt  CRM      =         (theInstr >> 12) & 0xFF;  /* theInstr[12:19] */
    UChar b11      = toUChar((theInstr >> 11) & 0x1);  /* theInstr[20]    */
@@ -3496,7 +3496,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
    UInt  SPR_flipped = ((SPR & 0x1F) << 5) | ((SPR >> 5) & 0x1F);
 
    IRTemp Rs  = newTemp(Ity_I32);
-   IRTemp tmp = newTemp(Ity_I32);
+//uu   IRTemp tmp = newTemp(Ity_I32);
 
    assign( Rs, getIReg(Rs_addr) );
    

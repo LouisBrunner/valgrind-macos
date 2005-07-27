@@ -84,20 +84,12 @@ for logfile in old new ; do
 
    # Check out, build, run tests
    runcmd $logfile \
-          "Checking out vex source tree     " \
-          "svn co svn://svn.valgrind.org/vex/trunk -r {$svn_date} vex" && \
-   \
-   runcmd $logfile \
-          "Building vex                     " \
-          "cd vex && pwd && make clean version all" && \
-   \
-   runcmd $logfile \
           "Checking out valgrind source tree" \
           "svn co svn://svn.valgrind.org/valgrind/trunk -r {$svn_date} valgrind" && \
    \
    runcmd $logfile \
           "Configuring valgrind             " \
-          "cd valgrind && ./autogen.sh  && ./configure --prefix=$ABT_TOP/Inst --with-vex=$ABT_TOP/vex" && \
+          "cd valgrind && ./autogen.sh  && ./configure --prefix=$ABT_TOP/Inst" && \
    \
    runcmd $logfile \
           "Building valgrind                " \

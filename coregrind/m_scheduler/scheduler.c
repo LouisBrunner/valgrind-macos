@@ -203,6 +203,10 @@ void VG_(set_running)(ThreadId tid)
 
    if (VG_(clo_trace_sched))
       print_sched_event(tid, "now running");
+
+   // While thre modeling is disable, issue thread_run events here
+   // VG_(tm_thread_switchto)(tid);
+   VG_TRACK( thread_run, tid );
 }
 
 /* 
@@ -626,7 +630,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 VG_(set_sleeping)(tid, VgTs_Yielding);
 	 /* nothing */
 	 VG_(set_running)(tid);
-	 //VG_(tm_thread_switchto)(tid);
 
 	 /* OK, do some relatively expensive housekeeping stuff */
 	 scheduler_sanity(tid);

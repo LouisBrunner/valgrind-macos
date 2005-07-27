@@ -1,10 +1,6 @@
 
-Julian Seward was the original founder, designer and author, created the
-dynamic translation framework, wrote Memcheck and Addrcheck, and did
-lots of other things.
-
-Nicholas Nethercote did the core/tool generalisation, wrote
-Cachegrind and Massif, and tons of other stuff.
+Cerion Armour-Brown worked on PowerPC instruction set support using
+the Vex dynamic-translation framework.
 
 Jeremy Fitzhardinge wrote Helgrind and totally overhauled low-level
 syscall/signal and address space layout stuff, among many other things.
@@ -12,14 +8,24 @@ syscall/signal and address space layout stuff, among many other things.
 Tom Hughes did a vast number of bug fixes, and helped out with support
 for more recent Linux/glibc versions.
 
-Robert Walsh added file descriptor leakage checking, new library
-interception machinery, support for client allocation pools, and minor
-other tweakage.
+Nicholas Nethercote did the core/tool generalisation, wrote
+Cachegrind and Massif, and tons of other stuff.
+
+Paul Mackerras did a lot of the initial per-architecture factoring
+that forms the basis of the 3.0 line and is also to be seen in 2.4.0.
+He also did UCode-based dynamic translation support for PowerPC, and
+created a set of ppc-linux derivatives of the 2.X release line.
 
 Dirk Mueller contributed the malloc-free mismatch checking stuff
 and other bits and pieces, and acted as our KDE liaison.
 
-Cerion Armour-Brown helped with porting efforts to PowerPC.
+Julian Seward was the original founder, designer and author, created
+the dynamic translation frameworks, wrote Memcheck and Addrcheck, and
+did lots of other things.
+
+Robert Walsh added file descriptor leakage checking, new library
+interception machinery, support for client allocation pools, and minor
+other tweakage.
 
 Frederic Gobry helped with autoconf and automake.
 
@@ -31,4 +37,3 @@ demangler(s) for use in Valgrind.
 
 And lots and lots of other people sent bug reports, patches, and very 
 helpful feedback.  Thank you all.
-

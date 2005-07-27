@@ -169,6 +169,10 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x86: *L2c = (cache_t) {  512, 4, 64 };  L2_found = True;  break;
       case 0x87: *L2c = (cache_t) { 1024, 8, 64 };  L2_found = True;  break;
 
+      /* Ignore prefetch information */
+      case 0xf0: case 0xf1:
+          break;
+
       default:
           VG_(message)(Vg_DebugMsg, 
              "warning: Unknown Intel cache config value "

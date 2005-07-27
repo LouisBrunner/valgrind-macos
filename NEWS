@@ -6,7 +6,8 @@ Release 3.0.0 ([[TODO: add release date]])
 3.0.0 is a major overhaul of Valgrind.  The most significant
 user-visible change is that Valgrind now supports architectures other
 than x86.  The new architectures it supports are AMD64 and PPC32, and
-the infrastructure is present for other architectures to be added later.
+the infrastructure is present for other architectures to be added
+later.
 
 The AMD64 support works well, but has some shortcomings:
 
@@ -14,7 +15,7 @@ The AMD64 support works well, but has some shortcomings:
   support for more obscure instructions and system calls may be missing.
   We will fix these as they arise.
 
-- Address space may be limited;  see the point about
+- Address space may be limited; see the point about
   position-independent executables below.
 
 - If Valgrind is built on an AMD64 machine, it will only run 64-bit
@@ -26,12 +27,13 @@ The AMD64 support works well, but has some shortcomings:
   in the future.
 
 The PPC32 support is very basic.  It may not work reliably even for
-small programs, but it's a start.  Many thanks to Paul Mackerras for his
-great work that enabled this support.
+small programs, but it's a start.  Many thanks to Paul Mackerras for
+his great work that enabled this support.  We are working to make
+PPC32 usable as soon as possible.
 
 Other user-visible changes:
 
-- No longer building Valgrind as a position-indendependent executable
+- No longer building Valgrind as a position-independent executable
   (PIE) by default, as it caused too many problems.
 
   Without PIE enabled, AMD64 programs will only be able to access 2GB of
@@ -51,9 +53,11 @@ Other user-visible changes:
   flag, although the default setting should work in most cases.
 
 - Output can now be printed in XML format.  This should make it easier
-  for other tools (such as GUI front-ends) to use Valgrind output as
-  input.  The --xml flag controls this.  [[TODO: describe the related
-  CLOs added (eg. --log-file-qualifier)]]
+  for tools such as GUI front-ends and automated error-processing
+  schemes to use Valgrind output as input.  The --xml flag controls this.
+  As part of this change, ELF directory information is read from executables,
+  so absolute source file paths are available if needed.
+  [[TODO: describe the related CLOs added (eg. --log-file-qualifier)]]
 
 - Programs that allocate many heap blocks may run faster, due to
   improvements in certain data structures.
@@ -62,17 +66,44 @@ Other user-visible changes:
   soon.  Helgrind is still not working, as was the case for the 2.4.0
   release.
 
+- The JITter has been completely rewritten, and is now in a separate
+  library, called Vex.  This enabled a lot of the user-visible changes,
+  such as new architecture support.  The new JIT unfortunately translates
+  more slowly than the old one, so programs may take longer to start.
+  We believe the code quality is produces is about the same, so once
+  started, programs should run at about the same speed.  Feedback about
+  this would be useful.
+
+  On the plus side, Vex and hence Memcheck tracks value flow properly
+  through floating point and vector registers, something the 2.X line
+  could not do.  That means that Memcheck is much more likely to be
+  usably accurate on vectorised code.
+
+- There is a subtle change to the way exiting of threaded programs 
+  is handled.  In 3.0, Valgrind's final diagnostic output (leak check,
+  etc) is not printed until the last thread exits.  If the last thread
+  to exit was not the original thread which started the program, any
+  other process wait()-ing on this one to exit may conclude it has
+  finished before the diagnostic output is printed.  This may not be
+  what you expect.  2.X had a different scheme which avoided this
+  problem, but caused deadlocks under obscure circumstances, so we
+  are trying something different for 3.0.
+
+- Small changes in control log file naming which make it easier to
+  use valgrind for debugging MPI-based programs.
+
+- As part of adding AMD64 support, DWARF2 CFI-based stack unwinding
+  support was added.  In principle this means Valgrind can produce
+  meaningful backtraces on x86 code compiled with -fomit-frame-pointer
+  providing you also compile your code with [[TODO: Tom: what's the
+  name of the magic flag?]]
+
 - [[TODO: add more here]]
 
 Changes that are not user-visible:
 
-- The JITter has been completely rewritten, and is now in a separate
-  library, called Vex.  This enabled a lot of the user-visible changes,
-  such as new architecture support.  It may run slower than the old
-  JITter; feedback about this would be useful.
-
-- The code has been modularized significantly, and should be easier to
-  navigate and understand.
+- The code has been massively overhauled in order to modularise it.
+  As a result we hope it is easier to navigate and understand.
 
 - Lots of code has been rewritten.
 

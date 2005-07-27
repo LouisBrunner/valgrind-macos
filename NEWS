@@ -95,8 +95,7 @@ Other user-visible changes:
 - As part of adding AMD64 support, DWARF2 CFI-based stack unwinding
   support was added.  In principle this means Valgrind can produce
   meaningful backtraces on x86 code compiled with -fomit-frame-pointer
-  providing you also compile your code with [[TODO: Tom: what's the
-  name of the magic flag?]]
+  providing you also compile your code with -fasynchronous-unwind-tables.
 
 - [[TODO: add more here]]
 

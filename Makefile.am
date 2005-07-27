@@ -29,7 +29,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = valgrind.pc
 
 incincdir = $(includedir)/valgrind
-incinc_HEADERS = $(VEX_PUBLIC_HDRS)
+nodist_incinc_HEADERS = $(VEX_PUBLIC_HDRS)
 
 BUILT_SOURCES = default.supp valgrind.pc
 

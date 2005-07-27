@@ -894,9 +894,9 @@ static IRExpr* fold_Expr ( IRExpr* e )
             break;
 
          case Iop_1Sto16:
-            e2 = IRExpr_Const(IRConst_U16(
+            e2 = IRExpr_Const(IRConst_U16(toUShort(
                     e->Iex.Unop.arg->Iex.Const.con->Ico.U1
-                    ? 0xFFFF : 0));
+                    ? 0xFFFF : 0)));
             break;
          case Iop_1Sto32:
             e2 = IRExpr_Const(IRConst_U32(

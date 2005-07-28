@@ -3096,6 +3096,9 @@ PRE(sys_ioctl)
    case VKI_TIOCMSET:
       PRE_MEM_READ( "ioctl(TIOCMSET)",    ARG3, sizeof(unsigned int) );
       break;
+   case VKI_TIOCMGET:
+      PRE_MEM_WRITE( "ioctl(TIOCMGET)",   ARG3, sizeof(unsigned int) );
+      break;
    case VKI_TIOCLINUX:
       PRE_MEM_READ( "ioctl(TIOCLINUX)",   ARG3, sizeof(char *) );
       if (*(char *)ARG3 == 11) {
@@ -3887,6 +3890,9 @@ POST(sys_ioctl)
    case VKI_TIOCMBIS:
    case VKI_TIOCMBIC:
    case VKI_TIOCMSET:
+      break;
+   case VKI_TIOCMGET:
+      POST_MEM_WRITE( ARG3, sizeof(unsigned int) );
       break;
    case VKI_TIOCLINUX:
       POST_MEM_WRITE( ARG3, sizeof(char *) );

@@ -524,7 +524,7 @@ extern unsigned int __VKI_invalid_size_argument_for_IOC;
 #define VKI_TIOCSCTTY		0x540E
 
 //#define VKI_TIOCSTI		0x5412
-//#define VKI_TIOCMGET		0x5415
+#define VKI_TIOCMGET		0x5415
 #define VKI_TIOCMBIS		0x5416
 #define VKI_TIOCMBIC		0x5417
 #define VKI_TIOCMSET		0x5418

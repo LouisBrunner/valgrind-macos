@@ -3458,8 +3458,37 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(RTC_IRQP_READ)", ARG3, sizeof(unsigned long));
       break;
 
+      /* Block devices */
+   case VKI_BLKROSET:
+      PRE_MEM_READ( "ioctl(BLKROSET)", ARG3, sizeof(int));
+      break;
+   case VKI_BLKROGET:
+      PRE_MEM_WRITE( "ioctl(BLKROGET)", ARG3, sizeof(int));
+      break;
    case VKI_BLKGETSIZE:
       PRE_MEM_WRITE( "ioctl(BLKGETSIZE)", ARG3, sizeof(unsigned long));
+      break;
+   case VKI_BLKRASET:
+      break;
+   case VKI_BLKRAGET:
+      PRE_MEM_WRITE( "ioctl(BLKRAGET)", ARG3, sizeof(long));
+      break;
+   case VKI_BLKFRASET:
+      break;
+   case VKI_BLKFRAGET:
+      PRE_MEM_WRITE( "ioctl(BLKFRAGET)", ARG3, sizeof(long));
+      break;
+   case VKI_BLKSECTGET:
+      PRE_MEM_WRITE( "ioctl(BLKSECTGET)", ARG3, sizeof(unsigned short));
+      break;
+   case VKI_BLKSSZGET:
+      PRE_MEM_WRITE( "ioctl(BLKSSZGET)", ARG3, sizeof(int));
+      break;
+   case VKI_BLKBSZGET:
+      PRE_MEM_WRITE( "ioctl(BLKBSZGET)", ARG3, sizeof(int));
+      break;
+   case VKI_BLKBSZSET:
+      PRE_MEM_READ( "ioctl(BLKBSZSET)", ARG3, sizeof(int));
       break;
    case VKI_BLKGETSIZE64:
       PRE_MEM_WRITE( "ioctl(BLKGETSIZE64)", ARG3, sizeof(unsigned long long));
@@ -4103,8 +4132,35 @@ POST(sys_ioctl)
       POST_MEM_WRITE(ARG3, sizeof(unsigned long));
       break;
 
+      /* Block devices */
+   case VKI_BLKROSET:
+      break;
+   case VKI_BLKROGET:
+      POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
    case VKI_BLKGETSIZE:
       POST_MEM_WRITE(ARG3, sizeof(unsigned long));
+      break;
+   case VKI_BLKRASET:
+      break;
+   case VKI_BLKRAGET:
+      POST_MEM_WRITE(ARG3, sizeof(long));
+      break;
+   case VKI_BLKFRASET:
+      break;
+   case VKI_BLKFRAGET:
+      POST_MEM_WRITE(ARG3, sizeof(long));
+      break;
+   case VKI_BLKSECTGET:
+      POST_MEM_WRITE(ARG3, sizeof(unsigned short));
+      break;
+   case VKI_BLKSSZGET:
+      POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
+   case VKI_BLKBSZGET:
+      POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
+   case VKI_BLKBSZSET:
       break;
    case VKI_BLKGETSIZE64:
       POST_MEM_WRITE(ARG3, sizeof(unsigned long long));

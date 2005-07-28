@@ -1425,8 +1425,18 @@ struct vki_ppdev_frob_struct {
 // From linux-2.6.8.1/include/linux/fs.h
 //----------------------------------------------------------------------
 
+#define VKI_BLKROSET   _VKI_IO(0x12,93)	/* set device read-only (0 = read-write) */
+#define VKI_BLKROGET   _VKI_IO(0x12,94)	/* get read-only status (0 = read_write) */
 #define VKI_BLKGETSIZE _VKI_IO(0x12,96) /* return device size /512 (long *arg) */
-#define VKI_BLKGETSIZE64 _VKI_IOR(0x12,114, vki_size_t) /* return device size in bytes (u64 *arg) */
+#define VKI_BLKRASET   _VKI_IO(0x12,98)	/* set read ahead for block device */
+#define VKI_BLKRAGET   _VKI_IO(0x12,99)	/* get current read ahead setting */
+#define VKI_BLKFRASET  _VKI_IO(0x12,100)/* set filesystem (mm/filemap.c) read-ahead */
+#define VKI_BLKFRAGET  _VKI_IO(0x12,101)/* get filesystem (mm/filemap.c) read-ahead */
+#define VKI_BLKSECTGET _VKI_IO(0x12,103)/* get max sectors per request (ll_rw_blk.c) */
+#define VKI_BLKSSZGET  _VKI_IO(0x12,104)/* get block device sector size */
+#define VKI_BLKBSZGET  _VKI_IOR(0x12,112,vki_size_t)
+#define VKI_BLKBSZSET  _VKI_IOW(0x12,113,vki_size_t)
+#define VKI_BLKGETSIZE64 _VKI_IOR(0x12,114,vki_size_t) /* return device size in bytes (u64 *arg) */
 
 #define VKI_FIBMAP	_VKI_IO(0x00,1)	/* bmap access */
 #define VKI_FIGETBSZ    _VKI_IO(0x00,2)	/* get the block size used for bmap */

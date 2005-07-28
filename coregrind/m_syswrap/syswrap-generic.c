@@ -3495,6 +3495,9 @@ PRE(sys_ioctl)
       break;
 
       /* Hard disks */
+   case VKI_HDIO_GETGEO: /* 0x0301 */
+      PRE_MEM_WRITE( "ioctl(HDIO_GETGEO)", ARG3, sizeof(struct vki_hd_geometry));
+      break;
    case VKI_HDIO_GET_IDENTITY: /* 0x030d */
       PRE_MEM_WRITE( "ioctl(HDIO_GET_IDENTITY)", ARG3,
                      VKI_SIZEOF_STRUCT_HD_DRIVEID );
@@ -4167,6 +4170,9 @@ POST(sys_ioctl)
       break;
 
       /* Hard disks */
+   case VKI_HDIO_GETGEO: /* 0x0301 */
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_hd_geometry));
+      break;
    case VKI_HDIO_GET_IDENTITY: /* 0x030d */
       POST_MEM_WRITE(ARG3, VKI_SIZEOF_STRUCT_HD_DRIVEID );
       break;

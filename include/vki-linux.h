@@ -1721,6 +1721,14 @@ typedef struct vki_audio_buf_info {
 // From linux-2.6.8.1/include/linux/hdreg.h
 //----------------------------------------------------------------------
 
+struct vki_hd_geometry {
+      unsigned char heads;
+      unsigned char sectors;
+      unsigned short cylinders;
+      unsigned long start;
+};
+
+#define VKI_HDIO_GETGEO		0x0301	/* get device geometry */
 #define VKI_HDIO_GET_IDENTITY	0x030d	/* get IDE identification info */
 
 // [[Nb: done like this because the original type is a huge struct that will

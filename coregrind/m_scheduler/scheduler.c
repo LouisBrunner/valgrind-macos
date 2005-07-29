@@ -760,6 +760,18 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             VG_(printf)("dump translations done.\n");
          break;
 
+      case VG_TRC_INVARIANT_FAILED:
+         /* This typically happens if, after running generated code,
+            it is detected that host CPU settings (eg, FPU/Vector
+            control words) are not as they should be.  Vex's code
+            generation specifies the state such control words should
+            be in on entry to Vex-generated code, and they should be
+            unchanged on exit from it.  Failure of this assertion
+            usually means a bug in Vex's code generation. */
+         vg_assert2(0, "VG_(scheduler), phase 3: "
+                       "run_innerloop detected host "
+                       "state invariant failure", trc);
+
       default: 
 	 vg_assert2(0, "VG_(scheduler), phase 3: "
                        "unexpected thread return code (%u)", trc);

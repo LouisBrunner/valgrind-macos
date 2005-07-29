@@ -610,7 +610,7 @@ static void dump_translations_from ( Segment* s )
    partial mappings at the ends are truncated. */
 void VG_(unmap_range)(Addr addr, SizeT len)
 {
-   static const Bool debug = False || mem_debug;
+   const Bool debug = False || mem_debug;
    Segment* s;
    Addr     end, s_end;
    Int      i;
@@ -727,7 +727,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
                        UInt dev, UInt ino, ULong off, 
                        const Char *filename)
 {
-   static const Bool debug = False || mem_debug;
+   const Bool debug = False || mem_debug;
    Segment* s;
    Int      idx;
    HChar*   stage2_suffix1 = "lib/valgrind/stage2";
@@ -874,7 +874,7 @@ void VG_(map_segment)(Addr addr, SizeT len, UInt prot, UInt flags)
 void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
 {
    Int r;
-   static const Bool debug = False || mem_debug;
+   const Bool debug = False || mem_debug;
 
    if (debug)
       VG_(printf)("\nmprotect_range(%p, %lu, %x)\n", a, len, prot);
@@ -905,7 +905,7 @@ void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
 */
 Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 {
-   static const Bool debug = False || mem_debug;
+   const Bool debug = False || mem_debug;
    Addr ret;
    Addr addrOrig = addr;
    Addr limit = (for_client ? VG_(client_end)-1   : VG_(valgrind_last));

@@ -4787,6 +4787,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
          delta++;
          switch (modrm) {
 
+            case 0xC0: /* FFREEP %st(0) */
+               DIP("ffreep %%st(%d)\n", 0);
+               put_ST_TAG ( 0, mkU8(0) );
+               fp_pop();
+               break;
+
             case 0xE0: /* FNSTSW %ax */
                DIP("fnstsw %%ax\n");
                /* Get the FPU status word value and dump it in %AX. */

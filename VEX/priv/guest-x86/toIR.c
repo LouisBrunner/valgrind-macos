@@ -3929,6 +3929,37 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                fop = Iop_MulF64;
                goto do_fop_m32;
 
+            case 2: /* FICOM m32int */
+               DIP("ficoml %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, 
+                                      get_ST(0),
+                                      unop(Iop_I32toF64, 
+                                           loadLE(Ity_I32,mkexpr(addr)))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               break;
+
+            case 3: /* FICOMP m32int */
+               DIP("ficompl %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, 
+                                      get_ST(0),
+                                      unop(Iop_I32toF64, 
+                                           loadLE(Ity_I32,mkexpr(addr)))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               fp_pop();
+               break;
+
             case 4: /* FISUB m32int */ /* ST(0) -= m32int */
                DIP("fisubl %s\n", dis_buf);
                fop = Iop_SubF64;
@@ -4568,6 +4599,39 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                DIP("fimulw %s\n", dis_buf);
                fop = Iop_MulF64;
                goto do_fop_m16;
+
+            case 2: /* FICOM m16int */
+               DIP("ficomw %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, 
+                                      get_ST(0),
+                                      unop(Iop_I32toF64, 
+                                         unop(Iop_16Sto32,
+                                           loadLE(Ity_I16,mkexpr(addr))))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               break;
+
+            case 3: /* FICOMP m16int */
+               DIP("ficompw %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, 
+                                      get_ST(0),
+                                      unop(Iop_I32toF64, 
+                                         unop(Iop_16Sto32,
+                                           loadLE(Ity_I16,mkexpr(addr))))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               fp_pop();
+               break;
 
             case 4: /* FISUB m16int */ /* ST(0) -= m16int */
                DIP("fisubw %s\n", dis_buf);

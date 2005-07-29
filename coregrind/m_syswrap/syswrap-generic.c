@@ -3233,7 +3233,7 @@ PRE(sys_ioctl)
       break;
    case VKI_SIOCGIFNAME:         /* get iface name               */
       PRE_MEM_READ( "ioctl(SIOCGIFNAME)",
-                     (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_ifindex,
+                     (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_ifindex,
                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_ifindex) );
       PRE_MEM_WRITE( "ioctl(SIOCGIFNAME)", ARG3, sizeof(struct vki_ifreq));
       break;

@@ -1398,32 +1398,32 @@ static IRExpr* /* :: Ity_I32 */ getSPR ( PPC32SPR reg )
    }
 }
 
-//zz 
-//zz /* Write least-significant nibble of src to reg[field_idx] */
-//zz static void putReg_field ( PPC32SPR reg, IRExpr* src, UInt field_idx )
-//zz {
-//zz    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
-//zz    vassert( field_idx < 8 );
-//zz    vassert( reg < PPC32_SPR_MAX );
-//zz    
-//zz    if (field_idx != 0) {
-//zz       src = binop(Iop_Shl32, src, mkU8(toUChar(field_idx * 4)));
-//zz    }   
-//zz    putReg_masked( reg, src, (0xF << (field_idx*4)) );
-//zz }
-//zz 
-//zz /* Write least-significant bit of src to reg[bit_idx] */
-//zz static void putReg_bit ( PPC32SPR reg, IRExpr* src, UInt bit_idx )
-//zz {
-//zz    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
-//zz    vassert( bit_idx < 32 );
-//zz    vassert( reg < PPC32_SPR_MAX );
-//zz    
-//zz    if (bit_idx != 0) {
-//zz       src = binop(Iop_Shl32, src, mkU8(toUChar(bit_idx)));
-//zz    }   
-//zz    putReg_masked( reg, src, (1<<bit_idx) );
-//zz }
+
+/* Write least-significant nibble of src to reg[field_idx] */
+static void putReg_field ( PPC32SPR reg, IRExpr* src, UInt field_idx )
+{
+   vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
+   vassert( field_idx < 8 );
+   vassert( reg < PPC32_SPR_MAX );
+   
+   if (field_idx != 0) {
+      src = binop(Iop_Shl32, src, mkU8(toUChar(field_idx * 4)));
+   }   
+   putReg_masked( reg, src, (0xF << (field_idx*4)) );
+}
+
+/* Write least-significant bit of src to reg[bit_idx] */
+static void putReg_bit ( PPC32SPR reg, IRExpr* src, UInt bit_idx )
+{
+   vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
+   vassert( bit_idx < 32 );
+   vassert( reg < PPC32_SPR_MAX );
+   
+   if (bit_idx != 0) {
+      src = binop(Iop_Shl32, src, mkU8(toUChar(bit_idx)));
+   }   
+   putReg_masked( reg, src, (1<<bit_idx) );
+}
 
 
 /*------------------------------------------------------------*/
@@ -2242,16 +2242,16 @@ static Bool dis_int_load ( UInt theInstr )
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       break;
       
-//zz    case 0x29: // lhzu (Load HW & and Zero with Update, PPC32 p451)
-//zz       if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-//zz          vex_printf("dis_int_load(PPC32)(lhzu,Ra_addr|Rd_addr)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("lhzu r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
-//zz       putIReg( Rd_addr, unop(Iop_16Uto32,
-//zz                              loadBE(Ity_I16, mkexpr(EA_imm))) );
-//zz       putIReg( Ra_addr, mkexpr(EA_imm) );
-//zz       break;
+   case 0x29: // lhzu (Load HW & and Zero with Update, PPC32 p451)
+      if (Ra_addr == 0 || Ra_addr == Rd_addr) {
+         vex_printf("dis_int_load(PPC32)(lhzu,Ra_addr|Rd_addr)\n");
+         return False;
+      }
+      DIP("lhzu r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
+      putIReg( Rd_addr, unop(Iop_16Uto32,
+                             loadBE(Ity_I16, mkexpr(EA_imm))) );
+      putIReg( Ra_addr, mkexpr(EA_imm) );
+      break;
 
    case 0x20: // lwz (Load W & Zero, PPC32 p460)
       DIP("lwz r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
@@ -3910,16 +3910,16 @@ static Bool dis_fp_load ( UInt theInstr )
       putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
       break;
 
-//zz    case 0x33: // lfdu (Load Float Double with Update, PPC32 p438)
-//zz       if (rA_addr == 0) {
-//zz          vex_printf("dis_fp_load(PPC32)(instr,lfdu)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("lfdu fr%d,%d(r%d)\n", frD_addr, exts_d_imm, rA_addr);
-//zz       assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
-//zz       putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
-//zz       putIReg( rA_addr, mkexpr(EA) );
-//zz       break;
+   case 0x33: // lfdu (Load Float Double with Update, PPC32 p438)
+      if (rA_addr == 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,lfdu)\n");
+         return False;
+      }
+      DIP("lfdu fr%d,%d(r%d)\n", frD_addr, exts_d_imm, rA_addr);
+      assign( EA, binop(Iop_Add32, mkU32(exts_d_imm), mkexpr(rA)) );
+      putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
+      putIReg( rA_addr, mkexpr(EA) );
+      break;
 
    case 0x1F:
       if (b0 != 0) {
@@ -3935,16 +3935,16 @@ static Bool dis_fp_load ( UInt theInstr )
                                      loadBE(Ity_F32, mkexpr(EA))) );
             break;
 
-//zz       case 0x237: // lfsux (Load Float Single with Update Indexed, PPC32 p443)
-//zz          if (rA_addr == 0) {
-//zz             vex_printf("dis_fp_load(PPC32)(instr,lfsux)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("lfsux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
-//zz          assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
-//zz          putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
-//zz          putIReg( rA_addr, mkexpr(EA) );
-//zz          break;
+         case 0x237: // lfsux (Load Float Single with Update Indexed, PPC32 p443)
+            if (rA_addr == 0) {
+               vex_printf("dis_fp_load(PPC32)(instr,lfsux)\n");
+               return False;
+            }
+            DIP("lfsux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+            assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
+            putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
+            putIReg( rA_addr, mkexpr(EA) );
+            break;
 
          case 0x257: // lfdx (Load Float Double Indexed, PPC32 p440)
             DIP("lfdx fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
@@ -3952,16 +3952,16 @@ static Bool dis_fp_load ( UInt theInstr )
             putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
             break;
 
-//zz       case 0x277: // lfdux (Load Float Double with Update Indexed, PPC32 p439)
-//zz          if (rA_addr == 0) {
-//zz             vex_printf("dis_fp_load(PPC32)(instr,lfdux)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("lfdux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
-//zz          assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
-//zz          putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
-//zz          putIReg( rA_addr, mkexpr(EA) );
-//zz          break;
+         case 0x277: // lfdux (Load Float Double with Update Indexed, PPC32 p439)
+            if (rA_addr == 0) {
+               vex_printf("dis_fp_load(PPC32)(instr,lfdux)\n");
+               return False;
+            }
+            DIP("lfdux fr%d,r%d,r%d\n", frD_addr, rA_addr, rB_addr);
+            assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
+            putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
+            putIReg( rA_addr, mkexpr(EA) );
+            break;
 
         default:
             vex_printf("dis_fp_load(PPC32)(opc2)\n");
@@ -4397,23 +4397,23 @@ static Bool dis_fp_multadd ( UInt theInstr )
                              mkexpr(frB) ));
          break;
 
-//zz       case 0x1E: // fnmsub (Float Neg Mult-Subtr (Double Precision), PPC32 p419)
-//zz          DIP("fnmsub%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
-//zz              frD_addr, frA_addr, frC_addr, frB_addr);
-//zz          assign( frD, unop( Iop_NegF64,
-//zz                             binop( Iop_SubF64,
-//zz                                    binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ),
-//zz                                    mkexpr(frB) )));
-//zz          break;
-//zz 
-//zz       case 0x1F: // fnmadd (Float Neg Mult-Add (Double Precision), PPC32 p417)
-//zz          DIP("fnmadd%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
-//zz              frD_addr, frA_addr, frC_addr, frB_addr);
-//zz          assign( frD, unop( Iop_NegF64,
-//zz                             binop( Iop_AddF64,
-//zz                                    binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ),
-//zz                                    mkexpr(frB) )));
-//zz          break;
+      case 0x1E: // fnmsub (Float Neg Mult-Subtr (Double Precision), PPC32 p419)
+         DIP("fnmsub%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         assign( frD, unop( Iop_NegF64,
+                            binop( Iop_SubF64,
+                                   binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ),
+                                   mkexpr(frB) )));
+         break;
+
+      case 0x1F: // fnmadd (Float Neg Mult-Add (Double Precision), PPC32 p417)
+         DIP("fnmadd%s fr%d,fr%d,fr%d,fr%d\n", flag_Rc ? "." : "",
+             frD_addr, frA_addr, frC_addr, frB_addr);
+         assign( frD, unop( Iop_NegF64,
+                            binop( Iop_AddF64,
+                                   binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ),
+                                   mkexpr(frB) )));
+         break;
 
       default:
          vex_printf("dis_fp_multadd(PPC32)(3F: opc2)\n");
@@ -4617,10 +4617,10 @@ static Bool dis_fp_move ( UInt theInstr )
          assign( frD, mkexpr(frB) );
          break;
 
-//zz    case 0x088: // fnabs (Floating Negative Absolute Value, PPC32 p415)
-//zz       DIP("fnabs%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
-//zz       assign( frD, unop( Iop_NegF64, unop( Iop_AbsF64, mkexpr(frB) )));
-//zz       break;
+      case 0x088: // fnabs (Floating Negative Absolute Value, PPC32 p415)
+         DIP("fnabs%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
+         assign( frD, unop( Iop_NegF64, unop( Iop_AbsF64, mkexpr(frB) )));
+         break;
 
       case 0x108: // fabs (Floating Absolute Value, PPC32 p399)
          DIP("fabs%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
@@ -4686,35 +4686,35 @@ static Bool dis_fp_scr ( UInt theInstr )
 //zz       putReg_field( PPC32_SPR_CR, mkexpr(tmp), 7-crfD );
 //zz       break;
 //zz    }
-//zz 
-//zz    case 0x046: { // mtfsb0 (Move to FPSCR Bit 0, PPC32 p478)
-//zz       // Bit crbD of the FPSCR is cleared.
-//zz       UChar crbD    = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz       UInt  b11to20 =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
-//zz 
-//zz       if (b11to20 != 0) {
-//zz          vex_printf("dis_fp_scr(PPC32)(instr,mtfsb0)\n");
-//zz          return False;
-//zz       }      
-//zz       DIP("mtfsb0%s crb%d\n", flag_Rc ? "." : "", crbD);
-//zz       putReg_bit( PPC32_SPR_FPSCR, mkU32(0), 31-crbD );
-//zz       break;
-//zz    }
-//zz 
-//zz    case 0x086: { // mtfsfi (Move to FPSCR Field Immediate, PPC32 p481)
-//zz       UChar crfD    = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
-//zz       UChar b16to22 = toUChar((theInstr >> 16) & 0x7F); /* theInstr[16:22] */
-//zz       UChar IMM     = toUChar((theInstr >> 12) & 0xF);  /* theInstr[11:15] */
-//zz       UChar b11     = toUChar((theInstr >> 11) & 0x1);  /* theInstr[11]    */
-//zz 
-//zz       if (b16to22 != 0 || b11 != 0) {
-//zz          vex_printf("dis_fp_scr(PPC32)(instr,mtfsfi)\n");
-//zz          return False;
-//zz       }      
-//zz       DIP("mtfsfi%s crf%d,%d\n", flag_Rc ? "." : "", crfD, IMM);
-//zz       putReg_field( PPC32_SPR_FPSCR, mkU32(IMM), 7-crfD );
-//zz       break;
-//zz    }
+
+   case 0x046: { // mtfsb0 (Move to FPSCR Bit 0, PPC32 p478)
+      // Bit crbD of the FPSCR is cleared.
+      UChar crbD    = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+      UInt  b11to20 =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
+
+      if (b11to20 != 0) {
+         vex_printf("dis_fp_scr(PPC32)(instr,mtfsb0)\n");
+         return False;
+      }      
+      DIP("mtfsb0%s crb%d\n", flag_Rc ? "." : "", crbD);
+      putReg_bit( PPC32_SPR_FPSCR, mkU32(0), 31-crbD );
+      break;
+   }
+
+   case 0x086: { // mtfsfi (Move to FPSCR Field Immediate, PPC32 p481)
+      UChar crfD    = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
+      UChar b16to22 = toUChar((theInstr >> 16) & 0x7F); /* theInstr[16:22] */
+      UChar IMM     = toUChar((theInstr >> 12) & 0xF);  /* theInstr[11:15] */
+      UChar b11     = toUChar((theInstr >> 11) & 0x1);  /* theInstr[11]    */
+
+      if (b16to22 != 0 || b11 != 0) {
+         vex_printf("dis_fp_scr(PPC32)(instr,mtfsfi)\n");
+         return False;
+      }      
+      DIP("mtfsfi%s crf%d,%d\n", flag_Rc ? "." : "", crfD, IMM);
+      putReg_field( PPC32_SPR_FPSCR, mkU32(IMM), 7-crfD );
+      break;
+   }
 
    case 0x247: { // mffs (Move from FPSCR, PPC32 p468)
       UChar frD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
@@ -6625,7 +6625,6 @@ DisResult disInstr_PPC32_WRK (
    irbb->jumpkind = Ijk_NoDecode;
    dres.whatNext = Dis_StopHere;
    dres.len = 0;
-vassert(0);
    return dres;
 
    } /* switch (opc) for the main (primary) opcode switch. */

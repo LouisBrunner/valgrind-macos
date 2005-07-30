@@ -21,7 +21,7 @@ char* all_archs[] = {
    NULL
 };
 
-#ifdef __amd64
+#ifdef __x86_64__
 static Bool go(char* cpu)
 {
    if ( strcmp( cpu, "amd64" ) == 0 )
@@ -29,7 +29,7 @@ static Bool go(char* cpu)
    else 
       return False;
 }
-#endif // __amd64
+#endif // __x86_64__
 
 #ifdef __powerpc__
 static Bool go(char* cpu)
@@ -41,7 +41,7 @@ static Bool go(char* cpu)
 }
 #endif // __powerpc__
 
-#ifdef __x86__
+#ifdef __i386__
 static void cpuid ( unsigned int n,
                     unsigned int* a, unsigned int* b,
                     unsigned int* c, unsigned int* d )
@@ -90,7 +90,7 @@ static Bool go(char* cpu)
    }
    return False;
 }
-#endif // __x86__
+#endif // __i386__
 
 
 int main(int argc, char **argv)

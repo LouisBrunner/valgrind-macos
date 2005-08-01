@@ -83,6 +83,7 @@ For the official release:
   - Update www.valgrind.org/downloads/source_code.html.  
   - Update www.valgrind.org/downloads/archive.html.  
   - Add a news item to the front page and also to valgrind.org/info/news.html.
+  - Update the "release-date" and "release-version" in php/.htconfx.
   - Other pages that might need updating:  devel/cvs_svn.html.
 
 - Change release number in AC_INIT() in configure.in to "X.Y.Z.SVN", where

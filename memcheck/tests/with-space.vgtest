@@ -4,3 +4,4 @@
 prereq: cp manuel1 'with space'
 prog: 'with space'
 vgopts: -q
+cleanup: rm 'with space'

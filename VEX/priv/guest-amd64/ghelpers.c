@@ -1060,6 +1060,16 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            mkU64(0)));
       }
 
+      /*---------------- DECW ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_DECW) && isU64(cond, AMD64CondNZ)) {
+         /* 16-bit dec, then NZ --> test dst != 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE64, 
+                           binop(Iop_Shl64,cc_dep1,mkU8(48)), 
+                           mkU64(0)));
+      }
+
 //..       /*---------------- DECL ----------------*/
 //.. 
 //..       if (isU32(cc_op, AMD64G_CC_OP_DECL) && isU32(cond, X86CondZ)) {

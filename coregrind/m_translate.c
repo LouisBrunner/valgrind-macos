@@ -459,8 +459,10 @@ Bool VG_(translate) ( ThreadId tid,
          VG_(printf)("\n");
          VG_(printf)("valgrind: fatal error: unsupported CPU.\n");
          VG_(printf)("   Supported CPUs are:\n");
-         VG_(printf)("   * x86 with SSE state (Pentium II or above, "
+         VG_(printf)("   * x86 with SSE (Pentium III or above, "
                      "AMD Athlon or above)\n");
+         VG_(printf)("   * AMD Athlon64/Opteron\n");
+         VG_(printf)("   * PowerPC with Altivec\n");
          VG_(printf)("\n");
          VG_(exit)(1);
       }

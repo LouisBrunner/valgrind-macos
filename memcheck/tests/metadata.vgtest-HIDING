@@ -1,2 +1,5 @@
+# This file is named "metadata.vgtest-HIDING" so that the regtest script
+# will ignore it.  This is because the client request that metadata.c uses
+# is no longer supported.
 prog: metadata
 vgopts: -q

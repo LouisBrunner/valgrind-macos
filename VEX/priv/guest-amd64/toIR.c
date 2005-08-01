@@ -11671,28 +11671,33 @@ DisResult disInstr_AMD64_WRK (
 //..    case 0xA0: /* MOV Ob,AL */
 //..       sz = 1;
 //..       /* Fall through ... */
-//..    case 0xA1: /* MOV Ov,eAX */
-//..       d32 = getUDisp32(delta); delta += 4;
-//..       ty = szToITy(sz);
-//..       addr = newTemp(Ity_I32);
-//..       assign( addr, handleSegOverride(sorb, mkU32(d32)) );
-//..       putIReg(sz, R_EAX, loadLE(ty, mkexpr(addr)));
-//..       DIP("mov%c %s0x%x, %s\n", nameISize(sz), sorbTxt(sorb),
-//..                                 d32, nameIReg(sz,R_EAX));
-//..       break;
-//.. 
-//..    case 0xA2: /* MOV Ob,AL */
+   case 0xA1: /* MOV Ov,eAX */
+      if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
+      d64 = getDisp64(delta); 
+      delta += 8;
+      ty = szToITy(sz);
+      addr = newTemp(Ity_I64);
+      assign( addr, handleSegOverride(pfx, mkU64(d64)) );
+      putIRegRAX(sz, loadLE( ty, mkexpr(addr) ));
+      DIP("mov%c %s0x%llx, %s\n", nameISize(sz), 
+                                  sorbTxt(pfx), d64,
+                                  nameIRegRAX(sz));
+      break;
+
+//..    case 0xA2: /* MOV AL,Ob */
 //..       sz = 1;
 //..       /* Fall through ... */
-//..    case 0xA3: /* MOV eAX,Ov */
-//..       d32 = getUDisp32(delta); delta += 4;
-//..       ty = szToITy(sz);
-//..       addr = newTemp(Ity_I32);
-//..       assign( addr, handleSegOverride(sorb, mkU32(d32)) );
-//..       storeLE( mkexpr(addr), getIReg(sz,R_EAX) );
-//..       DIP("mov%c %s, %s0x%x\n", nameISize(sz), nameIReg(sz,R_EAX),
-//..                                 sorbTxt(sorb), d32);
-//..       break;
+   case 0xA3: /* MOV eAX,Ov */
+      if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
+      d64 = getDisp64(delta); 
+      delta += 8;
+      ty = szToITy(sz);
+      addr = newTemp(Ity_I64);
+      assign( addr, handleSegOverride(pfx, mkU64(d64)) );
+      storeLE( mkexpr(addr), getIRegRAX(sz) );
+      DIP("mov%c %s, %s0x%llx\n", nameISize(sz), nameIRegRAX(sz),
+                                  sorbTxt(pfx), d64);
+      break;
 
    /* XXXX be careful here with moves to AH/BH/CH/DH */
    case 0xB0: /* MOV imm,AL */

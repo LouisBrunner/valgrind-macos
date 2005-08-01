@@ -96,7 +96,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	threaded-fork.stderr.exp threaded-fork.stdout.exp threaded-fork.vgtest \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
 	threadederrno.vgtest \
-	tls.stderr.exp tls.stdout.exp  \
+	tls.vgtest tls.stderr.exp tls.stdout.exp  \
 	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest
 
 check_PROGRAMS = \

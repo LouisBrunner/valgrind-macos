@@ -34,6 +34,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_cpuid.h"
 #include "pub_core_machine.h"       // For VG_(cache_line_size_ppc32)
+                                    // and VG_(get_SP)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -45,6 +46,7 @@
 #include "pub_core_tooliface.h"     // For VG_(tdict)
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"
+
 
 /*------------------------------------------------------------*/
 /*--- Determining arch/subarch.                            ---*/
@@ -384,8 +386,14 @@ void log_bytes ( HChar* bytes, Int nbytes )
 
    Also, we must stop Vex chasing into blocks for which we might want
    to self checking.
+
+   This fn needs to know also the tid of the requesting thread, but
+   it can't be passed in as a parameter since this fn is passed to
+   Vex and that has no notion of tids.  So we clumsily pass it as
+   a global, chase_into_ok__CLOSURE_tid.
 */
-static Bool chase_into_ok ( Addr64 addr64 )
+static ThreadId chase_into_ok__CLOSURE_tid;
+static Bool     chase_into_ok ( Addr64 addr64 )
 {
    /* Work through a list of possibilities why we might not want to
       allow a chase. */
@@ -399,8 +407,11 @@ static Bool chase_into_ok ( Addr64 addr64 )
       would choose to have a self-check for the dest.  Note, this must
       match the logic at XXXYYYZZZ below. */
    if (VG_(clo_smc_check) == Vg_SmcStack) {
+      ThreadId tid = chase_into_ok__CLOSURE_tid;
       Segment* seg = VG_(find_segment)(addr);
-      if (seg && (seg->flags & SF_GROWDOWN))
+      if (seg 
+          && seg->addr <= VG_(get_SP)(tid)
+          && VG_(get_SP)(tid) < seg->addr+seg->len)
          goto dontchase;
    }
 
@@ -538,9 +549,15 @@ Bool VG_(translate) ( ThreadId tid,
       case Vg_SmcAll:   do_self_check = True;  break;
       case Vg_SmcStack: 
          /* XXXYYYZZZ: must match the logic at AAABBBCCC above */
-         do_self_check = seg ? toBool(seg->flags & SF_GROWDOWN) : False;
+         do_self_check
+            /* = seg ? toBool(seg->flags & SF_GROWDOWN) : False; */
+            = seg 
+              ? (seg->addr <= VG_(get_SP)(tid)
+                 && VG_(get_SP)(tid) < seg->addr+seg->len)
+              : False;
          break;
-      default: vg_assert2(0, "unknown VG_(clo_smc_check) value");
+      default: 
+         vg_assert2(0, "unknown VG_(clo_smc_check) value");
    }
 
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
@@ -559,6 +576,10 @@ Bool VG_(translate) ( ThreadId tid,
    /* Actually do the translation. */
    tl_assert2(VG_(tdict).tool_instrument,
               "you forgot to set VgToolInterface function 'tool_instrument'");
+
+   /* Set up closure arg for "chase_into_ok" */
+   chase_into_ok__CLOSURE_tid = tid;
+
    tres = LibVEX_Translate ( 
              vex_arch, &vex_archinfo,
              vex_arch, &vex_archinfo,

@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*---                                                              ---*/
 /*--- This file (guest-generic/bb_to_IR.h) is                      ---*/
-/*--- Copyright (c) OpenWorks LLP.  All rights reserved.           ---*/
+/*--- Copyright (C) OpenWorks LLP.  All rights reserved.           ---*/
 /*---                                                              ---*/
 /*--------------------------------------------------------------------*/
 

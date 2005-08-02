@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*---                                                              ---*/
 /*--- This file (guest-arm/toIR.c) is                              ---*/
-/*--- Copyright (c) OpenWorks LLP.  All rights reserved.           ---*/
+/*--- Copyright (C) OpenWorks LLP.  All rights reserved.           ---*/
 /*---                                                              ---*/
 /*--------------------------------------------------------------------*/
 

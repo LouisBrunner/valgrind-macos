@@ -1,13 +1,12 @@
 
 Release 3.0.0 (3 August 2005)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-3.0.0 is a major overhaul of Valgrind.  The most significant
-user-visible change is that Valgrind now supports architectures other
-than x86.  The new architectures it supports are AMD64 and PPC32, and
-the infrastructure is present for other architectures to be added
-later.
+3.0.0 is a major overhaul of Valgrind.  The most significant user
+visible change is that Valgrind now supports architectures other than
+x86.  The new architectures it supports are AMD64 and PPC32, and the
+infrastructure is present for other architectures to be added later.
 
-The AMD64 support works well, but has some shortcomings:
+AMD64 support works well, but has some shortcomings:
 
 - It generally won't be as solid as the x86 version.  For example,
   support for more obscure instructions and system calls may be missing.
@@ -109,10 +108,45 @@ Changes that are not user-visible:
 
 - Lots of code has been rewritten.
 
-BUGS FIXED
+BUGS FIXED:
 
-[[TODO: add the full list here (once the RCs are out of the way?)]]
-
+199810  vex amd64->IR: unhandled instruction bytes: 0xA3 0x4C 0x70 0xD7
+109802  Add a plausible_stack_size command-line parameter ?
+109783  unhandled ioctl TIOCMGET (running hw detection tool discover) 
+109780  unhandled ioctl BLKSSZGET (running fdisk -l /dev/hda)
+109718  vex x86->IR: unhandled instruction: ffreep 
+109429  AMD64 unhandled syscall: 127 (sigpending)
+109401  false positive uninit in strchr from ld-linux.so.2
+109385  "stabs" parse failure 
+109378  amd64: unhandled instruction REP NOP
+109376  amd64: unhandled instruction LOOP Jb 
+109363  AMD64 unhandled instruction bytes 
+109362  AMD64 unhandled syscall: 24 (sched_yield)
+109358  fork() won't work with valgrind-3.0 SVN
+109332  amd64 unhandled instruction: ADC Ev, Gv
+109314  Bogus memcheck report on amd64
+108883  Crash; vg_memory.c:905 (vgPlain_init_shadow_range):
+        Assertion `vgPlain_defined_init_shadow_page()' failed.
+108349  mincore syscall parameter checked incorrectly 
+108059  build infrastructure: small update
+107524  epoll_ctl event parameter checked on EPOLL_CTL_DEL
+107123  Vex dies with unhandled instructions: 0xD9 0x31 0xF 0xAE
+106841  auxmap & openGL problems
+106713  SDL_Init causes valgrind to exit
+106352  setcontext and makecontext not handled correctly 
+106293  addresses beyond initial client stack allocation 
+        not checked in VALGRIND_DO_LEAK_CHECK
+106283  PIE client programs are loaded at address 0
+105831  Assertion `vgPlain_defined_init_shadow_page()' failed.
+105039  long run-times probably due to memory manager 
+104797  valgrind needs to be aware of BLKGETSIZE64
+103594  unhandled instruction: FICOM
+103320  Valgrind 2.4.0 fails to compile with gcc 3.4.3 and -O0
+103168  potentially memory leak in coregrind/ume.c 
+102039  bad permissions for mapped region at address 0xB7C73680
+101881  weird assertion problem
+101543  Support fadvise64 syscalls
+75247   x86_64/amd64 support (the biggest "bug" we have ever fixed)
 
 (3.0RC1: 27 July 05, vex r1303, valgrind r4283).
 

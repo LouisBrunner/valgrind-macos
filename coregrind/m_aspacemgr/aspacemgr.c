@@ -118,10 +118,10 @@ SysRes VG_(mprotect_native)( void *start, SizeT length, UInt prot )
 /*--------------------------------------------------------------*/
 
 /* Max number of segments we can track. */
-#define VG_N_SEGMENTS 1000
+#define VG_N_SEGMENTS 2000
 
 /* Max number of segment file names we can track. */
-#define VG_N_SEGNAMES 200
+#define VG_N_SEGNAMES 400
 
 /* Max length of a segment file name. */
 #define VG_MAX_SEGNAMELEN 1000

@@ -11667,12 +11667,14 @@ DisResult disInstr_AMD64_WRK (
 //..    case 0x8E: /* MOV Ew,Sw -- MOV to a SEGMENT REGISTER */
 //..       delta = dis_mov_Ew_Sw(sorb, delta);
 //..       break;
-//..  
-//..    case 0xA0: /* MOV Ob,AL */
-//..       sz = 1;
-//..       /* Fall through ... */
+ 
+   case 0xA0: /* MOV Ob,AL */
+      if (have66orF2orF3(pfx)) goto decode_failure;
+      sz = 1;
+      /* Fall through ... */
    case 0xA1: /* MOV Ov,eAX */
-      if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
+      if (sz != 8 && sz != 4 && sz != 2 && sz != 1) 
+         goto decode_failure;
       d64 = getDisp64(delta); 
       delta += 8;
       ty = szToITy(sz);
@@ -11684,11 +11686,13 @@ DisResult disInstr_AMD64_WRK (
                                   nameIRegRAX(sz));
       break;
 
-//..    case 0xA2: /* MOV AL,Ob */
-//..       sz = 1;
-//..       /* Fall through ... */
+   case 0xA2: /* MOV AL,Ob */
+      if (have66orF2orF3(pfx)) goto decode_failure;
+      sz = 1;
+      /* Fall through ... */
    case 0xA3: /* MOV eAX,Ov */
-      if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
+      if (sz != 8 && sz != 4 && sz != 2 && sz != 1) 
+         goto decode_failure;
       d64 = getDisp64(delta); 
       delta += 8;
       ty = szToITy(sz);

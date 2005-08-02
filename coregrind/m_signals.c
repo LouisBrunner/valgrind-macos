@@ -1728,6 +1728,24 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
    if (seg->len + newsize >= maxsize)
       return False;
 
+   /* Nasty Hack.  The new segment will have SF_MMAP set because
+      that's what VG_(mmap) does.  But the existing stack segment
+      won't necessarily have it set, because the initial segment list
+      entry for the main thread's stack doesn't have it set.  That
+      means that the segment list preener won't merge the segments
+      together (because they have different flags).  That means the
+      segment list will in fact list two adjacent segments for the
+      main stack, which is wrong.  This means that the tests which
+      check if a translation is from a stack-like area and therefore
+      in need of a self-check will not work right.  Sigh.
+
+      So .. in lieu of fixing this properly (viz, rationalising all
+      the SF_ flags), just mark the original stack segment as having
+      SF_MMAP.  Then the preener will merge it into the new area.
+      This is a hack.  */
+   seg->flags |= SF_MMAP;
+   /* end of Nasty Hack */
+
    if (VG_(mmap)((Char *)base, newsize,
 		 seg->prot,
 		 VKI_MAP_PRIVATE | VKI_MAP_FIXED | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,

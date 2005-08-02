@@ -3566,7 +3566,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, Long delta, DisResult* dres )
             break;
          case 2: /* call Ev */
             /* Ignore any sz value and operate as if sz==8. */
-            vassert(sz == 4);
+            vassert(sz == 4 || sz == 8);
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, getIRegE(sz,pfx,modrm));

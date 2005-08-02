@@ -1,8 +1,6 @@
 
-[[TODO: fix all the TODO items!]]
-
-Release 3.0.0 ([[TODO: add release date]])
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Release 3.0.0 (3 August 2005)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.0.0 is a major overhaul of Valgrind.  The most significant
 user-visible change is that Valgrind now supports architectures other
 than x86.  The new architectures it supports are AMD64 and PPC32, and
@@ -33,8 +31,8 @@ PPC32 usable as soon as possible.
 
 Other user-visible changes:
 
-- No longer building Valgrind as a position-independent executable
-  (PIE) by default, as it caused too many problems.
+- Valgrind is no longer built by default as a position-independent
+  executable (PIE), as this caused too many problems.
 
   Without PIE enabled, AMD64 programs will only be able to access 2GB of
   address space.  We will fix this eventually, but not for the moment.
@@ -57,7 +55,6 @@ Other user-visible changes:
   schemes to use Valgrind output as input.  The --xml flag controls this.
   As part of this change, ELF directory information is read from executables,
   so absolute source file paths are available if needed.
-  [[TODO: describe the related CLOs added (eg. --log-file-qualifier)]]
 
 - Programs that allocate many heap blocks may run faster, due to
   improvements in certain data structures.
@@ -79,7 +76,7 @@ Other user-visible changes:
   could not do.  That means that Memcheck is much more likely to be
   usably accurate on vectorised code.
 
-- There is a subtle change to the way exiting of threaded programs 
+- There is a subtle change to the way exiting of threaded programs
   is handled.  In 3.0, Valgrind's final diagnostic output (leak check,
   etc) is not printed until the last thread exits.  If the last thread
   to exit was not the original thread which started the program, any
@@ -90,14 +87,20 @@ Other user-visible changes:
   are trying something different for 3.0.
 
 - Small changes in control log file naming which make it easier to
-  use valgrind for debugging MPI-based programs.
+  use valgrind for debugging MPI-based programs.  The relevant
+  new flags are --log-file-exactly= and --log-file-qualifier=.
 
 - As part of adding AMD64 support, DWARF2 CFI-based stack unwinding
   support was added.  In principle this means Valgrind can produce
   meaningful backtraces on x86 code compiled with -fomit-frame-pointer
   providing you also compile your code with -fasynchronous-unwind-tables.
 
-- [[TODO: add more here]]
+- The documentation build system has been completely redone.
+  The documentation masters are now in XML format, and from that
+  HTML, PostScript and PDF documentation is generated.  As a result
+  the manual is now available in book form.  Note that the
+  documentation in the source tarballs is pre-built, so you don't need
+  any XML processing tools to build Valgrind from a tarball.
 
 Changes that are not user-visible:
 
@@ -105,8 +108,6 @@ Changes that are not user-visible:
   As a result we hope it is easier to navigate and understand.
 
 - Lots of code has been rewritten.
-
-- [[TODO: add more here]]
 
 BUGS FIXED
 

@@ -390,7 +390,7 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr, Bool* bbSeenBefore)
 }
 
 static 
-void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
+Bool handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st, IRStmt* st2,
                         Addr* instrAddr, UInt* instrLen,
                         IRExpr** loadAddrExpr, IRExpr** storeAddrExpr,
                         UInt* dataSize)
@@ -399,11 +399,55 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
 
    switch (st->tag) {
    case Ist_NoOp:
+   case Ist_AbiHint:
+   case Ist_Put:
+   case Ist_PutI:
+   case Ist_MFence:
       break;
 
-   case Ist_AbiHint:
-      /* ABI hints aren't interesting to cachegrind.  Ignore. */
-      break;
+   case Ist_Exit: {
+      // This is a conditional jump.  Most of the time, we want to add the
+      // instrumentation before it, to ensure it gets executed.  Eg, (1) if
+      // this conditional jump is just before an IMark:
+      //
+      //   t108 = Not1(t107)
+      //   [add instrumentation here]
+      //   if (t108) goto {Boring} 0x3A96637D:I32
+      //   ------ IMark(0x3A966370, 7) ------
+      //
+      // or (2) if this conditional jump is the last thing before the
+      // block-ending unconditional jump:
+      //
+      //   t111 = Not1(t110)
+      //   [add instrumentation here]
+      //   if (t111) goto {Boring} 0x3A96637D:I32
+      //   goto {Boring} 0x3A966370:I32
+      //
+      // One case (3) where we want the instrumentation after the conditional
+      // jump is when the conditional jump is for an x86 REP instruction:
+      //
+      //   ------ IMark(0x3A967F13, 2) ------
+      //   t1 = GET:I32(4)
+      //   t6 = CmpEQ32(t1,0x0:I32) 
+      //   if (t6) goto {Boring} 0x3A967F15:I32    # ignore this cond jmp
+      //   t7 = Sub32(t1,0x1:I32)
+      //   PUT(4) = t7
+      //   ...
+      //   t56 = Not1(t55)
+      //   [add instrumentation here]
+      //   if (t56) goto {Boring} 0x3A967F15:I32
+      //
+      // Therefore, we return true if the next statement is an IMark, or if
+      // there is no next statement (which matches case (2), as the final
+      // unconditional jump is not represented in the IRStmt list).
+      //
+      // Note that this approach won't do in the long run for supporting
+      // PPC, but it's good enough for x86/AMD64 for the 3.0.X series.
+      if (NULL == st2 || Ist_IMark == st2->tag)
+         return True;
+      else
+         return False;
+   }
 
    case Ist_IMark:
       /* st->Ist.IMark.addr is a 64-bit int.  ULong_to_Ptr casts this
@@ -418,7 +462,6 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
          machines. */
       *instrAddr = (Addr)ULong_to_Ptr(st->Ist.IMark.addr);
       *instrLen =        st->Ist.IMark.len;
-      addStmtToIRBB( bbOut, st );
       break;
 
    case Ist_Tmp: {
@@ -433,7 +476,6 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
          *loadAddrExpr = aexpr;
          *dataSize = sizeofIRType(data->Iex.Load.ty);
       }
-      addStmtToIRBB( bbOut, st );
       break;
    }
       
@@ -444,7 +486,6 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
       tl_assert( NULL == *storeAddrExpr );          // XXX: ???
       *storeAddrExpr = aexpr;
       *dataSize = sizeofIRType(typeOfIRExpr(tyenv, data));
-      addStmtToIRBB( bbOut, st );
       break;
    }
    
@@ -464,16 +505,8 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
          tl_assert(d->mAddr == NULL);
          tl_assert(d->mSize == 0);
       }
-      addStmtToIRBB( bbOut, st );
       break;
    }
-
-   case Ist_Put:
-   case Ist_PutI:
-   case Ist_Exit:
-   case Ist_MFence:
-      addStmtToIRBB( bbOut, st );
-      break;
 
    default:
       VG_(printf)("\n");
@@ -481,6 +514,8 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
       VG_(printf)("\n");
       VG_(tool_panic)("Cachegrind: unhandled IRStmt");
    }
+
+   return False;
 }
 
 static
@@ -515,9 +550,9 @@ static Bool loadStoreAddrsMatch(IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
 
 // Instrumentation for the end of each original instruction.
 static
-void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
-                UInt instrAddr, UInt instrLen, UInt dataSize,
-                IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
+void instrumentInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
+                     UInt instrAddr, UInt instrLen, UInt dataSize,
+                     IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
 {
    IRDirty* di;
    IRExpr  *arg1, *arg2, *arg3, **argv;
@@ -534,7 +569,7 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
    if (sizeof(HWord) == 8) {
       wordTy = Ity_I64;
    } else {
-      VG_(tool_panic)("endOfInstr: strange word size");
+      VG_(tool_panic)("instrumentInstr: strange word size");
    }
 
    if (loadAddrExpr) 
@@ -620,7 +655,7 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
    IRBB*    bbOut;
    IRStmt*  st;
    BB_info* bbInfo;
-   Bool     bbSeenBefore = False;
+   Bool     bbSeenBefore = False, addedInstrumentation, addInstNow;
    Addr     instrAddr, origAddr;
    UInt     instrLen;
    IRExpr  *loadAddrExpr, *storeAddrExpr;
@@ -655,23 +690,40 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
       // Reset stuff for this original instruction
       loadAddrExpr = storeAddrExpr = NULL;
       dataSize = 0;
+      addedInstrumentation = False;
 
       // Process all the statements for this original instruction (ie. until
       // the next IMark statement, or the end of the block)
       do {
-         handleOneStatement(bbIn->tyenv, bbOut, st, &instrAddr, &instrLen,
-                            &loadAddrExpr, &storeAddrExpr, &dataSize);
+         IRStmt* st2 = ( i+1 < bbIn->stmts_used ? bbIn->stmts[i+1] : NULL );
+
+         addInstNow = handleOneStatement(bbIn->tyenv, bbOut, st, st2,
+                                         &instrAddr, &instrLen, &loadAddrExpr,
+                                         &storeAddrExpr, &dataSize);
+         if (addInstNow) {
+            tl_assert(!addedInstrumentation);
+            addedInstrumentation = True;
+            
+            // Add instrumentation before this statement.
+            instrumentInstr(bbOut, &bbInfo->instrs[ bbInfo_i ], bbSeenBefore,
+                      instrAddr, instrLen, dataSize, loadAddrExpr, storeAddrExpr);
+         }
+
+         addStmtToIRBB( bbOut, st );
+
          i++;
-         st = ( i < bbIn->stmts_used ? bbIn->stmts[i] : NULL );
+         st = st2;
       } 
       while (st && Ist_IMark != st->tag);
 
-      // Add instrumentation for this original instruction.
-      endOfInstr(bbOut, &bbInfo->instrs[ bbInfo_i ], bbSeenBefore,
-                 instrAddr, instrLen, dataSize, loadAddrExpr, storeAddrExpr);
+      if (!addedInstrumentation) {
+         // Add instrumentation now, after all the instruction's statements.
+         instrumentInstr(bbOut, &bbInfo->instrs[ bbInfo_i ], bbSeenBefore,
+                         instrAddr, instrLen, dataSize, loadAddrExpr, storeAddrExpr);
+      }
 
       bbInfo_i++;
-   } 
+   }
    while (st);
 
    return bbOut;

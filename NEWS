@@ -110,7 +110,8 @@ Changes that are not user-visible:
 
 BUGS FIXED:
 
-199810  vex amd64->IR: unhandled instruction bytes: 0xA3 0x4C 0x70 0xD7
+110046  sz == 4 assertion failed 
+109810  vex amd64->IR: unhandled instruction bytes: 0xA3 0x4C 0x70 0xD7
 109802  Add a plausible_stack_size command-line parameter ?
 109783  unhandled ioctl TIOCMGET (running hw detection tool discover) 
 109780  unhandled ioctl BLKSSZGET (running fdisk -l /dev/hda)

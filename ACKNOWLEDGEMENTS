@@ -1,4 +1,9 @@
 
+Cerion Armour-Brown, cerion@open-works.co.uk
+
+Cerion worked on PowerPC instruction set support using the Vex
+dynamic-translation framework.
+
 Jeremy Fitzhardinge, jeremy@valgrind.org
 
 Jeremy wrote Helgrind and totally overhauled low-level syscall/signal

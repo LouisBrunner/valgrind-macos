@@ -15,6 +15,8 @@
 <xsl:param name="chunker.output.indent" select="'yes'"/>
 <!-- use our custom html stylesheet -->
 <xsl:param name="html.stylesheet" select="'vg_basic.css'"/>
+<!-- set chunking at the chapter level only -->
+<xsl:param name="chunk.section.depth" select="'0'"/> 
 
 <!-- use our custom header -->
 <xsl:template name="header.navigation">
@@ -104,7 +106,7 @@
         <xsl:apply-templates select="$up" mode="object.title.markup"/>
        </xsl:when>
        <xsl:otherwise>
-        <xsl:text>Valgrind User's Manual</xsl:text>
+        <xsl:text>Valgrind User`s Manual</xsl:text>
        </xsl:otherwise>
       </xsl:choose>
 -->
@@ -151,11 +153,9 @@
                                     or count($next) &gt; 0"/>
 
   <xsl:variable name="row2" select="($prev != 0)
-                                    or (generate-id($home) != generate-id(.)
-                                        or $nav.context = 'toc')
-                                    or ($chunk.tocs.and.lots != 0
-                                        and $nav.context != 'toc')
-                                    or ($next != 0)"/>
+             or (generate-id($home) != generate-id(.) or $nav.context = 'toc')
+             or ($chunk.tocs.and.lots != 0 and $nav.context != 'toc')
+             or ($next != 0)"/>
   <div>
   <xsl:if test="$row1 or $row2">
    <br />
@@ -251,7 +251,7 @@
  </div>
 </xsl:template>
 
-<!-- We don't like tables with borders -->
+<!-- We don`t like tables with borders -->
 <xsl:template match="revhistory" mode="titlepage.mode">
   <xsl:variable name="numcols">
     <xsl:choose>
@@ -271,7 +271,7 @@
   </table>
 </xsl:template>
 
-<!-- don't put an expanded set-level TOC, only book titles -->
+<!-- don`t put an expanded set-level TOC, only book titles -->
 <xsl:template match="book" mode="toc">
   <xsl:param name="toc-context" select="."/>
   <xsl:choose>

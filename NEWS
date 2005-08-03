@@ -149,7 +149,8 @@ BUGS FIXED:
 101543  Support fadvise64 syscalls
 75247   x86_64/amd64 support (the biggest "bug" we have ever fixed)
 
-(3.0RC1: 27 July 05, vex r1303, valgrind r4283).
+(3.0RC1: 27 July   05, vex r1303, valgrind r4283).
+(3.0.0:   3 August 05, vex r1313, valgrind r4313).
 
 
 

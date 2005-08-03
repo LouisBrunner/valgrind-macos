@@ -15,8 +15,20 @@ First of all:
   of tasks for the official release.)
 
 - Write release notes, add to NEWS.  Include a list of fixed bugs from
-  Bugzilla.  [[We should decide a defined way of obtaining this list so it's
-  consistent and so we don't have to work it out anew each time.]]
+  Bugzilla.  It's unclear how to do this consistently.  The approach
+  taken for 3.0.0 was to go to this page in KDE's bugzilla:
+     http://bugs.kde.org/query.cgi
+  and to create a search where
+     "Status and severity" / Status field is set to RESOLVED
+  and
+     "Involved People" / Email, bug-owner contains "jseward"
+  since I believe jseward@acm.org is the owner of all bugs.
+  This creates a long list of bugs which does not conveniently stop 
+  at the previous release.  Work backwards through this list until
+  either (1) you run out of patience, or (2) most of the bugs seem
+  to pertain to previous releases and are now irrelevant.  In short
+  this is not a very scientific or robust way to collect up all
+  bugs fixed since last time.
 
 - Other files that might need updating:  README, README_DEVELOPERS,
   README_PACKAGERS.

@@ -81,8 +81,9 @@ VEX_PUBLIC_HDRS = \
 # These list the bits of vex we need to copy into the tarball
 
 VEX_PRIMARY_SOURCES = \
-	VEX/README \
-	VEX/COPYING \
+	VEX/HACKING.README \
+	VEX/LICENSE.README \
+	VEX/LICENSE.GPL \
 	VEX/Makefile \
 	VEX/auxprogs/genoffsets.c \
 	VEX/pub/libvex_guest_amd64.h \

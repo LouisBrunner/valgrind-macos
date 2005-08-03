@@ -16,7 +16,7 @@
   </l:l10n>
 </l:i18n>
 
-<!-- don't generate sub-tocs for qanda sets -->
+<!-- do not generate sub-tocs for qanda sets -->
 <xsl:param name="generate.toc">
 set       toc,title
 book      toc,title,figure,table,example,equation

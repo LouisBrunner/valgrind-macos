@@ -30,7 +30,7 @@ Design goals
 How to use
 ~~~~~~~~~~
 
-Run with flag --xml=yes.  That's all.  Note however several 
+Run with flag --xml=yes.  That`s all.  Note however several 
 caveats.
 
 * At the present time only Memcheck is supported.  The scheme extends
@@ -98,7 +98,7 @@ All remaining output is contained within the tag-pair
 Inside that, the first entity is an indication of the protocol
 version.  This is provided so that existing parsers can identify XML
 created by future versions of Valgrind merely by observing that the
-protocol version is one they don't understand.  Hence TOPLEVEL is:
+protocol version is one they don`t understand.  Hence TOPLEVEL is:
 
   <?xml version="1.0"?>
   <valgrindoutput>
@@ -184,7 +184,7 @@ following in sequence:
 * Zero or more ERRORs, each of which is a complaint from the
   leak checker.
 
-That's it.
+That`s it.
 
 
 ERROR

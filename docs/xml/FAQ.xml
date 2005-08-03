@@ -4,13 +4,21 @@
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 <book id="FAQ" xreflabel="Valgrind FAQ">
+<title>Valgrind FAQ</title>
+<bookinfo>
+  <subtitle>Valgrind Frequently Asked Questions</subtitle>
+  <releaseinfo>August 2005</releaseinfo>
+  <author>
+    <surname>
+      <ulink url="http://www.valgrind.org/www/developers.html">Valgrind Developers</ulink>
+    </surname>
+    <affiliation><orgname>
+      <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink>
+    </orgname></affiliation>
+  </author>
+</bookinfo>
 
-  <bookinfo>
-    <title>Valgrind FAQ</title>
-  </bookinfo>
-
-
-<chapter id="faq.background" xreflabel="Background">
+<sect1 id="faq.background" xreflabel="Background">
 <title>Background</title>
 
 <qandaset id="qset.background">
@@ -53,10 +61,10 @@
 
 </qandaset>
 
-</chapter>
+</sect1>
 
 
-<chapter id="faq.installing" 
+<sect1 id="faq.installing" 
        xreflabel="Compiling, installing and configuring">
 <title>Compiling, installing and configuring</title>
 <qandaset id="qset.installing">
@@ -82,11 +90,11 @@
 </qandaentry>
 
 </qandaset>
-</chapter>
+</sect1>
 
 
 
-<chapter id="faq.abort" 
+<sect1 id="faq.abort" 
        xreflabel="Valgrind aborts unexpectedly">
 <title>Valgrind aborts unexpectedly</title>
 <qandaset id="qset.abort">
@@ -174,10 +182,10 @@
 </qandaentry>
 
 </qandaset>
-</chapter>
+</sect1>
 
 
-<chapter id="faq.unexpected" 
+<sect1 id="faq.unexpected" 
        xreflabel="Valgrind behaves unexpectedly">
 <title>Valgrind behaves unexpectedly</title>
 <qandaset id="qset.unexpected">
@@ -359,10 +367,10 @@ Invalid write of size 1
 </qandaentry>
 
 </qandaset>
-</chapter>
+</sect1>
 
 
-<chapter id="faq.notfound" xreflabel="Memcheck doesn't find my bug">
+<sect1 id="faq.notfound" xreflabel="Memcheck doesn't find my bug">
 <title>Memcheck doesn't find my bug</title>
 <qandaset id="qset.notfound">
 
@@ -438,10 +446,10 @@ int main(void)
 
 
 </qandaset>
-</chapter>
+</sect1>
 
 
-<chapter id="faq.misc" 
+<sect1 id="faq.misc" 
        xreflabel="Miscellaneous">
 <title>Miscellaneous</title>
 <qandaset id="qset.misc">
@@ -505,11 +513,11 @@ int main(void)
 
 
 </qandaset>
-</chapter>
+</sect1>
 
 
 <!-- template 
-<chapter id="faq." 
+<sect1 id="faq." 
        xreflabel="xx">
 <title>xx</title>
 <qandaset id="qset.">
@@ -524,12 +532,12 @@ int main(void)
 </qandaentry>
 
 </qandaset>
-</chapter>
+</sect1>
 -->
 
 
 
-<chapter id="faq.help" xreflabel="How To Get Further Assistance">
+<sect1 id="faq.help" xreflabel="How To Get Further Assistance">
 <title>How To Get Further Assistance</title>
 
 
@@ -572,6 +580,7 @@ community are very helpful and responsive to emailed questions,
 you are probably requesting help from unpaid volunteers, so you
 have no guarantee of receiving an answer.</para>
 
-</chapter>
+</sect1>
+
 
 </book>

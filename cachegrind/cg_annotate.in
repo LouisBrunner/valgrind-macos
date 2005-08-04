@@ -160,7 +160,7 @@ usage: cg_annotate [options] --<pid> [source-files]
 
   Cachegrind is Copyright (C) 2002-2005 Nicholas Nethercote.
   Both are licensed under the GNU General Public License, version 2.
-  Bug reports, feedback, admiration, abuse, etc, to: njn25\@cam.ac.uk.
+  Bug reports, feedback, admiration, abuse, etc, to: njn\@valgrind.org.
                                                 
 END
 ;

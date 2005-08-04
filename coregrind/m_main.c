@@ -179,6 +179,12 @@ static int scan_auxv(void* init_sp)
                              (UInt)auxv->u.a_val, (UInt)auxv->a_type );
          }
          break;
+
+      case AT_HWCAP:
+         VG_(debugLog)(1, "main", "PPC32 hwcaps(1): 0x%x\n", (UInt)auxv->u.a_val);
+         auxv->u.a_val &= ~0x10000000; /* claim there is no Altivec support */
+         VG_(debugLog)(1, "main", "PPC32 hwcaps(2): 0x%x\n", (UInt)auxv->u.a_val);
+         break;
 #     endif
 
       case AT_PHDR:

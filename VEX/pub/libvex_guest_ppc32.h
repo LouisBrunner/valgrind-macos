@@ -203,6 +203,10 @@ typedef
       /* 944 */ UInt guest_TISTART;
       /* 948 */ UInt guest_TILEN;
 
+      /* For lwarx/stwcx.: 0 == no reservation exists, non-0 == a
+         reservation exists. */
+      /* 952 */ UInt guest_RESVN;
+
       /* Padding to make it have an 8-aligned size */
       /* UInt  padding; */
    }

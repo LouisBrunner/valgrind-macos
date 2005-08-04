@@ -374,6 +374,8 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
+
+   vex_state->guest_RESVN   = 0;
 }
 
 
@@ -444,7 +446,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 6,
+          .n_alwaysDefd = 7,
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD(guest_CIA),
@@ -452,7 +454,8 @@ VexGuestLayout
 	      /*  2 */ ALWAYSDEFD(guest_TISTART),
 	      /*  3 */ ALWAYSDEFD(guest_TILEN),
 	      /*  4 */ ALWAYSDEFD(guest_VSCR),
-	      /*  5 */ ALWAYSDEFD(guest_FPROUND)
+	      /*  5 */ ALWAYSDEFD(guest_FPROUND),
+	      /*  6 */ ALWAYSDEFD(guest_RESVN)
             }
         };
 

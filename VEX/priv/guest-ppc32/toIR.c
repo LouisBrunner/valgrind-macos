@@ -154,6 +154,8 @@ static IRBB* irbb;
 #define OFFB_TISTART    offsetof(VexGuestPPC32State,guest_TISTART)
 #define OFFB_TILEN      offsetof(VexGuestPPC32State,guest_TILEN)
 
+#define OFFB_RESVN      offsetof(VexGuestPPC32State,guest_RESVN)
+
 
 /*------------------------------------------------------------*/
 /*--- Extract instruction fields                          --- */
@@ -368,6 +370,7 @@ static void assign ( IRTemp dst, IRExpr* e )
 
 static void storeBE ( IRExpr* addr, IRExpr* data )
 {
+   vassert(typeOfIRExpr(irbb->tyenv, addr) == Ity_I32);
    stmt( IRStmt_Store(Iend_BE,addr,data) );
 }
 
@@ -2339,15 +2342,15 @@ static Bool dis_int_load ( UInt theInstr )
                                 loadBE(Ity_I16, mkexpr(EA_reg))) );
          break;
 
-//zz       case 0x037: // lwzux (Load W & Zero with Update Indexed, PPC32 p462)
-//zz          if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-//zz             vex_printf("dis_int_load(PPC32)(lwzux,Ra_addr|Rd_addr)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("lwzux r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
-//zz          putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA_reg)) );
-//zz          putIReg( Ra_addr, mkexpr(EA_reg) );
-//zz          break;
+      case 0x037: // lwzux (Load W & Zero with Update Indexed, PPC32 p462)
+         if (Ra_addr == 0 || Ra_addr == Rd_addr) {
+            vex_printf("dis_int_load(PPC32)(lwzux,Ra_addr|Rd_addr)\n");
+            return False;
+         }
+         DIP("lwzux r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
+         putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA_reg)) );
+         putIReg( Ra_addr, mkexpr(EA_reg) );
+         break;
          
       case 0x017: // lwzx (Load W & Zero Indexed, PPC32 p463)
          DIP("lwzx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
@@ -2521,70 +2524,66 @@ static Bool dis_int_store ( UInt theInstr )
 
 
 
-//zz /*
-//zz   Integer Load/Store Multiple Instructions
-//zz */
-//zz static Bool dis_int_ldst_mult ( UInt theInstr )
-//zz {
-//zz    /* D-Form */
-//zz    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
-//zz    UChar Rd_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
-//zz    UChar Rs_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
-//zz    UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
-//zz    UInt  d_imm   =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
-//zz    
-//zz    UInt exts_d_imm = extend_s_16to32(d_imm);
-//zz    UInt reg_idx    = 0;
-//zz    UInt offset     = 0;
-//zz    
-//zz    IRTemp Ra = newTemp(Ity_I32);
-//zz    IRTemp EA = newTemp(Ity_I32);
-//zz    
-//zz    IRExpr* irx_addr;
-//zz    
-//zz    if (Ra_addr == 0) {
-//zz       assign( EA, binop(Iop_Add32, mkU32(0), mkU32(exts_d_imm)) );
-//zz    } else {
-//zz       assign( Ra, getIReg(Ra_addr) );
-//zz       assign( EA, binop(Iop_Add32, mkexpr(Ra), mkU32(exts_d_imm)) );
-//zz    }
-//zz    
-//zz    switch (opc1) {
-//zz    case 0x2E: // lmw (Load Multiple Word, PPC32 p454)
-//zz vassert(1);
-//zz 
-//zz       if (Ra_addr >= Rd_addr) {
-//zz          vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("lmw r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
-//zz       for (reg_idx = Rd_addr; reg_idx<=31; reg_idx++) {
-//zz          irx_addr = binop(Iop_Add32, mkexpr(EA), mkU32(offset));
-//zz          putIReg( reg_idx, loadBE(Ity_I32, irx_addr ) );
-//zz          offset +=4;
-//zz       }
-//zz       break;
-//zz       
-//zz    case 0x2F: // stmw (Store Multiple Word, PPC32 p527)
-//zz vassert(1);
-//zz 
-//zz       DIP("stmw r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
-//zz       for (reg_idx = Rs_addr; reg_idx<=31; reg_idx++) {
-//zz          irx_addr = binop(Iop_Add32, mkexpr(EA), mkU32(offset));
-//zz          storeBE( irx_addr, getIReg(reg_idx) );
-//zz          offset +=4;
-//zz       }
-//zz       break;
-//zz       
-//zz    default:
-//zz       vex_printf("dis_int_ldst_mult(PPC32)(opc1)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz 
-//zz 
+/*
+  Integer Load/Store Multiple Instructions
+*/
+static Bool dis_int_ldst_mult ( UInt theInstr )
+{
+   /* D-Form */
+   UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+   UChar Rd_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+   UChar Rs_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+   UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
+   UInt  d_imm   =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
+   
+   UInt exts_d_imm = extend_s_16to32(d_imm);
+   UInt reg_idx    = 0;
+   UInt offset     = 0;
+   
+   IRTemp Ra = newTemp(Ity_I32);
+   IRTemp EA = newTemp(Ity_I32);
+   
+   IRExpr* irx_addr;
+   
+   if (Ra_addr == 0) {
+      assign( EA, binop(Iop_Add32, mkU32(0), mkU32(exts_d_imm)) );
+   } else {
+      assign( Ra, getIReg(Ra_addr) );
+      assign( EA, binop(Iop_Add32, mkexpr(Ra), mkU32(exts_d_imm)) );
+   }
+   
+   switch (opc1) {
+      case 0x2E: // lmw (Load Multiple Word, PPC32 p454)
+         if (Ra_addr >= Rd_addr) {
+            vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)\n");
+            return False;
+         }
+         DIP("lmw r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
+         for (reg_idx = Rd_addr; reg_idx <= 31; reg_idx++) {
+            irx_addr = binop(Iop_Add32, mkexpr(EA), mkU32(offset));
+            putIReg( reg_idx, loadBE(Ity_I32, irx_addr ) );
+            offset += 4;
+         }
+         break;
+      
+      case 0x2F: // stmw (Store Multiple Word, PPC32 p527)
+         DIP("stmw r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
+         for (reg_idx = Rs_addr; reg_idx <= 31; reg_idx++) {
+            irx_addr = binop(Iop_Add32, mkexpr(EA), mkU32(offset));
+            storeBE( irx_addr, getIReg(reg_idx) );
+            offset += 4;
+         }
+         break;
+      
+      default:
+         vex_printf("dis_int_ldst_mult(PPC32)(opc1)\n");
+         return False;
+   }
+   return True;
+}
+
+
+
 //zz /*
 //zz   Integer Load/Store String Instructions
 //zz */
@@ -3067,11 +3066,12 @@ static Bool dis_cond_logic ( UInt theInstr )
 //zz          DIP("crand crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
 //zz          assign( crbD, binop(Iop_And32, mkexpr(crbA), mkexpr(crbB)) );
 //zz          break;
-//zz       case 0x081: // crandc  (Cond Reg AND w. Complement, PPC32 p373)
-//zz          DIP("crandc crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
-//zz          assign( crbD, binop(Iop_And32, mkexpr(crbA),
-//zz                              unop(Iop_Not32, mkexpr(crbB))) );
-//zz          break;
+      case 0x081: // crandc  (Cond Reg AND w. Complement, PPC32 p373)
+         DIP("crandc crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
+         assign( crbD, binop(Iop_And32, 
+                             mkexpr(crbA),
+                             unop(Iop_Not32, mkexpr(crbB))) );
+         break;
       case 0x121: // creqv   (Cond Reg Equivalent, PPC32 p374)
          DIP("creqv crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
          assign( crbD, unop(Iop_Not32,
@@ -3176,15 +3176,15 @@ static Bool dis_memsync ( UInt theInstr )
    /* X-Form */
    case 0x1F:
       switch (opc2) {
-//zz       case 0x356: // eieio (Enforce In-Order Execution of I/O, PPC32 p394)
-//zz vassert(0);
-//zz 
-//zz          if (b11to25 != 0 || b0 != 0) {
-//zz             vex_printf("dis_int_memsync(PPC32)(eiei0,b11to25|b0)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("eieio\n");
-//zz          return False;
+      case 0x356: // eieio (Enforce In-Order Execution of I/O, PPC32 p394)
+         if (b11to25 != 0 || b0 != 0) {
+            vex_printf("dis_int_memsync(PPC32)(eiei0,b11to25|b0)\n");
+            return False;
+         }
+         DIP("eieio\n");
+         /* Insert a memory fence, just to be on the safe side. */
+         stmt( IRStmt_MFence() );
+         break;
 
       case 0x014: // lwarx (Load Word and Reserve Indexed, PPC32 p458)
          /* Note: RESERVE, RESERVE_ADDR not implemented.
@@ -3203,12 +3203,17 @@ static Bool dis_memsync ( UInt theInstr )
             assign( EA, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
          }
          putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA)) );
+	 /* Take a reservation */
+         stmt( IRStmt_Put( OFFB_RESVN, mkexpr(EA) ));
+//         stmt( IRStmt_Put( OFFB_RESVN, mkU32(1) ));
          break;
          
-      case 0x096: // stwcx. (Store Word Conditional Indexed, PPC32 p532)
+      case 0x096: { 
+         // stwcx. (Store Word Conditional Indexed, PPC32 p532)
          /* Note: RESERVE, RESERVE_ADDR not implemented.
             stwcx. is assumed to be always successful
          */
+         IRTemp resaddr = newTemp(Ity_I32);
          if (b0 != 1) {
             vex_printf("dis_int_memsync(PPC32)(stwcx.,b0)\n");
             return False;
@@ -3223,13 +3228,35 @@ static Bool dis_memsync ( UInt theInstr )
             assign( Ra, getIReg(Ra_addr) );
             assign( EA, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
          }
+	 /* First set up as if the reservation failed */
+         // Set CR0[LT GT EQ S0] = 0b000 || XER[SO]
+         putCR321(0, mkU8(0<<1));
+         putCR0(0, getXER_SO());
+
+	 /* Get the reservation address into a temporary, then
+	    clear it. */
+	 assign( resaddr, IRExpr_Get(OFFB_RESVN, Ity_I32) );
+         stmt( IRStmt_Put( OFFB_RESVN, mkU32(0) ));
+
+	 /* Skip the rest if the reservation really did fail. */
+         stmt( IRStmt_Exit(
+                  binop(Iop_CmpNE32, mkexpr(resaddr),
+                                     mkexpr(EA)),
+ //                  binop(Iop_CmpEQ32, IRExpr_Get(OFFB_RESVN, Ity_I32),
+ //                                     mkU32(0)),
+                  Ijk_Boring,
+                  IRConst_U32(guest_CIA_curr_instr + 4)
+               )
+         );
+
+	 /* Success?  Do the store */
          storeBE( mkexpr(EA), mkexpr(Rs) );
          
          // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]
          putCR321(0, mkU8(1<<1));
-	 putCR0(0, getXER_SO());
          break;
-         
+      }
+
       case 0x256: // sync (Synchronize, PPC32 p543)
          if (b11to25 != 0 || b0 != 0) {
             vex_printf("dis_int_memsync(PPC32)(sync,b11to25|b0)\n");
@@ -6190,10 +6217,10 @@ DisResult disInstr_PPC32_WRK (
       if (dis_int_store( theInstr )) goto decode_success;
       goto decode_failure;
 
-//zz    /* Integer Load and Store Multiple Instructions */
-//zz    case 0x2E: case 0x2F: // lmw, stmw
-//zz       if (dis_int_ldst_mult( theInstr )) goto decode_success;
-//zz       goto decode_failure;
+   /* Integer Load and Store Multiple Instructions */
+   case 0x2E: case 0x2F: // lmw, stmw
+      if (dis_int_ldst_mult( theInstr )) goto decode_success;
+      goto decode_failure;
 
    /* Branch Instructions */
    case 0x12: case 0x10: // b, bc

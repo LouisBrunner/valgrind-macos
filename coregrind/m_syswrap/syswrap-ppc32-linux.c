@@ -415,9 +415,9 @@ static SysRes do_clone ( ThreadId ptid,
                          UInt flags, Addr sp, 
                          Int *parent_tidptr, 
                          Int *child_tidptr, 
-                         vki_modify_ldt_t *tlsinfo)
+                         Addr child_tls)
 {
-   static const Bool debug = False;
+   const Bool debug = False;
 
    ThreadId     ctid = VG_(alloc_ThreadState)();
    ThreadState* ptst = VG_(get_ThreadState)(ptid);
@@ -451,13 +451,20 @@ static SysRes do_clone ( ThreadId ptid,
 
       If the clone call specifies a NULL SP for the new thread, then
       it actually gets a copy of the parent's SP.
+
+      The child's TLS register (r2) gets set to the tlsaddr argument
+      if the CLONE_SETTLS flag is set.
    */
    setup_child( &ctst->arch, &ptst->arch );
 
    /* Make sys_clone appear to have returned Success(0) in the
       child. */
-   ctst->arch.vex.guest_GPR3 = 0;
-#warning "fixme: need to clear simulated CR0.SO"
+   { UInt old_cr = LibVEX_GuestPPC32_get_CR( &ctst->arch.vex );
+     /* %r3 = 0 */
+     ctst->arch.vex.guest_GPR3 = 0;
+     /* %cr0.so = 0 */
+     LibVEX_GuestPPC32_put_CR( old_cr & ~(1<<28), &ctst->arch.vex );
+   }
 
    if (sp != 0)
       ctst->arch.vex.guest_GPR1 = sp;
@@ -489,11 +496,8 @@ static SysRes do_clone ( ThreadId ptid,
 
    if (flags & VKI_CLONE_SETTLS) {
       if (debug)
-         VG_(printf)("clone child has SETTLS: tls at %p\n", tlsinfo);
-      vg_assert(0);
-      //     ret = VG_(sys_set_thread_area)(ctid, tlsinfo);
-      //      if (ret != 0)
-      //       goto out;
+         VG_(printf)("clone child has SETTLS: tls at %p\n", child_tls);
+      ctst->arch.vex.guest_GPR2 = child_tls;
    }
 
    flags &= ~VKI_CLONE_SETTLS;
@@ -506,7 +510,13 @@ static SysRes do_clone ( ThreadId ptid,
                start_thread_NORETURN, stack, flags, &VG_(threads)[ctid],
                child_tidptr, parent_tidptr, NULL
             );
-   res = VG_(mk_SysRes_ppc32_linux)( (UInt)(word64 >> 32), (UInt)word64 );
+   /* High half word64 is syscall return value.  Low half is
+      the entire CR, from which we need to extract CR0.SO. */
+   /* VG_(printf)("word64 = 0x%llx\n", word64); */
+   res = VG_(mk_SysRes_ppc32_linux)( 
+            /*val*/(UInt)(word64 >> 32), 
+            /*errflag*/ (((UInt)word64) >> 28) & 1 
+         );
 
    VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
 
@@ -1430,7 +1440,7 @@ PRE(sys_clone)
                  unsigned long, flags,
                  void *, child_stack,
                  int *, parent_tidptr,
-                 vki_modify_ldt_t *, tlsinfo,
+                 void *, child_tls,
                  int *, child_tidptr);
 
    if (ARG1 & VKI_CLONE_PARENT_SETTID) {
@@ -1443,15 +1453,6 @@ PRE(sys_clone)
    if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
       PRE_MEM_WRITE("clone(child_tidptr)", ARG5, sizeof(Int));
       if (!VG_(is_addressable)(ARG5, sizeof(Int), VKI_PROT_WRITE)) {
-         SET_STATUS_Failure( VKI_EFAULT );
-         return;
-      }
-   }
-
-#warning "Is this next check relevant/needed?"
-   if (ARG1 & VKI_CLONE_SETTLS) {
-      PRE_MEM_READ("clone(tls_user_desc)", ARG4, sizeof(vki_modify_ldt_t));
-      if (!VG_(is_addressable)(ARG4, sizeof(vki_modify_ldt_t), VKI_PROT_READ)) {
          SET_STATUS_Failure( VKI_EFAULT );
          return;
       }
@@ -1475,7 +1476,7 @@ PRE(sys_clone)
                   (Addr)ARG2,   /* child SP */
                   (Int *)ARG3,  /* parent_tidptr */
                   (Int *)ARG5,  /* child_tidptr */
-                  (vki_modify_ldt_t *)ARG4)); /* set_tls */
+                  (Addr)ARG4)); /* child_tls */
       break;
 
    case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
@@ -1975,7 +1976,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    //   (__NR_lchown,            sys_lchown16),          // 16 ## P
 //..    GENX_(__NR_break,             sys_ni_syscall),        // 17
 //..    //   (__NR_oldstat,           sys_stat),              // 18 (obsolete)
-//..    GENX_(__NR_lseek,             sys_lseek),             // 19
+   GENX_(__NR_lseek,             sys_lseek),             // 19
 //.. 
    GENX_(__NR_getpid,            sys_getpid),            // 20
 //..    LINX_(__NR_mount,             sys_mount),             // 21
@@ -2001,10 +2002,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_rename,            sys_rename),            // 38
    GENX_(__NR_mkdir,             sys_mkdir),             // 39
 
-//..    GENX_(__NR_rmdir,             sys_rmdir),             // 40
+   GENX_(__NR_rmdir,             sys_rmdir),             // 40
    GENXY(__NR_dup,               sys_dup),               // 41
    GENXY(__NR_pipe,              sys_pipe),              // 42
-//..    GENXY(__NR_times,             sys_times),             // 43
+   GENXY(__NR_times,             sys_times),             // 43
 //..    GENX_(__NR_prof,              sys_ni_syscall),        // 44
 //.. 
    GENX_(__NR_brk,               sys_brk),               // 45
@@ -2064,7 +2065,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_mmap,              sys_mmap2),                  // 90
    GENXY(__NR_munmap,            sys_munmap),                 // 91
 //..    GENX_(__NR_truncate,          sys_truncate),          // 92
-//..    GENX_(__NR_ftruncate,         sys_ftruncate),         // 93
+   GENX_(__NR_ftruncate,         sys_ftruncate),         // 93
    GENX_(__NR_fchmod,            sys_fchmod),            // 94
 
    GENX_(__NR_fchown,            sys_fchown16),          // 95
@@ -2126,7 +2127,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR__llseek,           sys_llseek),            // 140
 //..    GENXY(__NR_getdents,          sys_getdents),          // 141
    GENX_(__NR__newselect,        sys_select),            // 142
-//..    GENX_(__NR_flock,             sys_flock),             // 143
+   GENX_(__NR_flock,             sys_flock),             // 143
 //..    GENX_(__NR_msync,             sys_msync),             // 144
 //.. 
    GENXY(__NR_readv,             sys_readv),             // 145
@@ -2141,9 +2142,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_munlockall,        sys_munlockall),        // 153
 //..    GENXY(__NR_sched_setparam,    sys_sched_setparam),    // 154
 //.. 
-//..    GENXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
+   GENXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
 //..    GENX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
-//..    GENX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
+   GENX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
 //..    GENX_(__NR_sched_yield,            sys_sched_yield),           // 158
 //..    GENX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
 //.. 
@@ -2153,14 +2154,14 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_mremap,            sys_mremap),            // 163
 //..    LINX_(__NR_setresuid,         sys_setresuid16),       // 164
 //.. 
-//..    LINXY(__NR_getresuid,         sys_getresuid16),       // 165
+   LINXY(__NR_getresuid,         sys_getresuid16),       // 165
 
 //..    GENX_(__NR_query_module,      sys_ni_syscall),        // 166
    GENXY(__NR_poll,              sys_poll),              // 167
 //..    //   (__NR_nfsservctl,        sys_nfsservctl),        // 168 */Linux
 //.. 
 //..    LINX_(__NR_setresgid,         sys_setresgid16),       // 169
-//..    LINXY(__NR_getresgid,         sys_getresgid16),       // 170
+   LINXY(__NR_getresgid,         sys_getresgid16),       // 170
    LINX_(__NR_prctl,             sys_prctl),             // 171
 //..    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),      // 172
    GENXY(__NR_rt_sigaction,      sys_rt_sigaction),      // 173

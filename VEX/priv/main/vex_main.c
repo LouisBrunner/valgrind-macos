@@ -131,12 +131,6 @@ void LibVEX_Init (
    vassert(vcon->guest_chase_thresh >= 0);
    vassert(vcon->guest_chase_thresh < vcon->guest_max_insns);
 
-   /* All the guest state structs must have an 8-aligned size. */
-   vassert(0 == sizeof(VexGuestX86State)   % 8);
-   vassert(0 == sizeof(VexGuestAMD64State) % 8);
-   vassert(0 == sizeof(VexGuestPPC32State) % 8);
-   vassert(0 == sizeof(VexGuestARMState)   % 8);
-
    /* Check that Vex has been built with sizes of basic types as
       stated in priv/libvex_basictypes.h.  Failure of any of these is
       a serious configuration error and should be corrected
@@ -343,6 +337,7 @@ VexTranslateResult LibVEX_Translate (
          vassert(archinfo_guest->subarch == VexSubArchX86_sse0
                  || archinfo_guest->subarch == VexSubArchX86_sse1
                  || archinfo_guest->subarch == VexSubArchX86_sse2);
+         vassert(0 == sizeof(VexGuestX86State) % 8);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_TISTART ) == 4);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_TILEN ) == 4);
          break;
@@ -357,6 +352,7 @@ VexTranslateResult LibVEX_Translate (
          offB_TISTART     = offsetof(VexGuestAMD64State,guest_TISTART);
          offB_TILEN       = offsetof(VexGuestAMD64State,guest_TILEN);
          vassert(archinfo_guest->subarch == VexSubArch_NONE);
+         vassert(0 == sizeof(VexGuestAMD64State) % 8);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_TISTART ) == 8);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_TILEN ) == 8);
          break;
@@ -384,6 +380,7 @@ VexTranslateResult LibVEX_Translate (
          offB_TILEN       = offsetof(VexGuestPPC32State,guest_TILEN);
          vassert(archinfo_guest->subarch == VexSubArchPPC32_noAV
                  || archinfo_guest->subarch == VexSubArchPPC32_AV);
+         vassert(0 == sizeof(VexGuestPPC32State) % 8);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TISTART ) == 4);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TILEN ) == 4);
          break;

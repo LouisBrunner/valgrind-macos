@@ -1278,8 +1278,8 @@ Bool read_lib_symbols ( SegInfo* si )
       line number info out of it.  It will be munmapped immediately
       thereafter; it is only aboard transiently. */
 
-   i = VG_(stat)(si->filename, &stat_buf);
-   if (i != 0) {
+   fd = VG_(stat)(si->filename, &stat_buf);
+   if (fd.isError) {
       ML_(symerr)("Can't stat .so/.exe (to determine its size)?!");
       return False;
    }

@@ -2306,11 +2306,11 @@ PRE(sys_execve)
       exec. */
    {
       struct vki_stat st;
-      Int i = VG_(stat)((Char *)ARG1, &st);
+      SysRes r = VG_(stat)((Char *)ARG1, &st);
 
-      if (i == -1) {
+      if (r.isError) {
          /* stat failed */
-         SET_STATUS_Failure( VKI_EACCES/*really, we should copy stat's result*/ );
+         SET_STATUS_from_SysRes( r );
 	 return;
       }
       /* just look for regular file with any X bit set

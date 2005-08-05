@@ -5735,6 +5735,24 @@ POST(sys_clock_nanosleep)
       POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec) );
 }
 
+PRE(sys_waitid)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_waitid( %d, %d, %p, %d, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(int32_t, "sys_waitid",
+                 int, which, vki_pid_t, pid, struct vki_siginfo *, infop,
+                 int, options, struct vki_rusage *, ru);
+   PRE_MEM_WRITE( "waitid(infop)", ARG3, sizeof(struct vki_siginfo) );
+   if (ARG5 != 0)
+      PRE_MEM_WRITE( "waitid(ru)", ARG5, sizeof(struct vki_rusage) );
+}
+POST(sys_waitid)
+{
+   POST_MEM_WRITE( ARG3, sizeof(struct vki_siginfo) );
+   if (ARG5 != 0)
+      POST_MEM_WRITE( ARG5, sizeof(struct vki_rusage) );
+}
+
 #undef PRE
 #undef POST
 

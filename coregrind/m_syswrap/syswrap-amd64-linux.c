@@ -1473,7 +1473,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_mq_notify,         sys_mq_notify),      // 244 
    GENXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // 245 
    //   (__NR_kexec_load,        sys_ni_syscall),     // 246 
-   //   (__NR_waitid,            sys_waitid),         // 247 
+   GENXY(__NR_waitid,            sys_waitid),         // 247 
 };
 
 const UInt ML_(syscall_table_size) = 

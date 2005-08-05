@@ -2277,7 +2277,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_mq_notify,         sys_mq_notify),      // (mq_open+4)
    GENXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // (mq_open+5)
    GENX_(__NR_sys_kexec_load,    sys_ni_syscall),     // 283
-//   GENXY(__NR_waitid,            sys_waitid),         // 284
+   GENXY(__NR_waitid,            sys_waitid),         // 284
 
    GENX_(285,                    sys_ni_syscall),     // 285
 //   LINX_(__NR_add_key,           sys_add_key),        // 286

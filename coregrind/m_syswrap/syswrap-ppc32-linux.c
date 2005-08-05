@@ -312,7 +312,7 @@ static Int start_thread_NORETURN ( void* arg )
             void* arg           in r6
             pid_t* child_tid    in r7
             pid_t* parent_tid   in r8
-            void* tls_ptr       in r9
+            void* ???           in r9
 
         System call requires:
 
@@ -320,8 +320,9 @@ static Int start_thread_NORETURN ( void* arg )
             int    flags        in r3  (sc arg1)
             void*  child_stack  in r4  (sc arg2)
             pid_t* parent_tid   in r5  (sc arg3)
-            pid_t* child_tid    in r6  (sc arg4)
-            void*  tls_ptr      in r7  (sc arg5)
+            ??     child_tls    in r6  (sc arg4)
+            pid_t* child_tid    in r7  (sc arg5)
+            void*  ???          in r8  (sc arg6)
 
         Returns an Int encoded in the linux-ppc32 way, not a SysRes.
  */
@@ -359,8 +360,10 @@ asm(
 "       mr      3,5\n"               // syscall arg1: flags
         // r4 already setup          // syscall arg2: child_stack
 "       mr      5,8\n"               // syscall arg3: parent_tid
-"       mr      6,7\n"               // syscall arg4: child_tid
-"       mr      7,9\n"               // syscall arg5: tls_ptr
+"       mr      6,2\n"               // syscall arg4: REAL THREAD tls
+"       mr      7,7\n"               // syscall arg5: child_tid
+"       mr      8,8\n"               // syscall arg6: ????
+"       mr      9,9\n"               // syscall arg7: ????
 
 "       sc\n"                        // clone()
 
@@ -486,7 +489,7 @@ static SysRes do_clone ( ThreadId ptid,
       ctst->client_stack_szB  = ctst->client_stack_highest_word - seg->addr;
 
       if (debug)
-	 VG_(printf)("tid %d: guessed client stack range %p-%p\n",
+	 VG_(printf)("\ntid %d: guessed client stack range %p-%p\n",
 		     ctid, seg->addr, VG_PGROUNDUP(sp));
    } else {
       VG_(message)(Vg_UserMsg, "!? New thread %d starts with R1(%p) unmapped\n",
@@ -1438,10 +1441,10 @@ PRE(sys_clone)
    PRINT("sys_clone ( %x, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(int, "clone",
                  unsigned long, flags,
-                 void *, child_stack,
-                 int *, parent_tidptr,
-                 void *, child_tls,
-                 int *, child_tidptr);
+                 void *,        child_stack,
+                 int *,         parent_tidptr,
+                 void *,        child_tls,
+                 int *,         child_tidptr);
 
    if (ARG1 & VKI_CLONE_PARENT_SETTID) {
       PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));

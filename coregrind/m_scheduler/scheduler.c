@@ -392,6 +392,26 @@ UInt run_thread_for_a_while ( ThreadId tid )
 
    VGP_PUSHCC(VgpRun);
 
+#  if defined(VGA_ppc32)
+   /* This is necessary due to the hacky way vex models reservations
+      on ppc.  It's really quite incorrect for each thread to have its
+      own reservation flag/address, since it's really something that
+      all threads share (that's the whole point).  But having shared
+      guest state is something we can't model with Vex.  However, as
+      per PaulM's 2.4.0ppc, the reservation is modelled using a
+      reservation flag which is cleared at each context switch.  So it
+      is indeed possible to get away with a per thread-reservation if
+      the thread's reservation is cleared before running it.
+
+      This should be abstractified and lifted out.
+   */
+   { Int i;
+     /* Clear any existing reservation.  Be paranoid and clear them all. */
+     for (i = 0; i < VG_N_THREADS; i++)
+        VG_(threads)[i].arch.vex.guest_RESVN = 0;
+   }
+#  endif   
+
    /* there should be no undealt-with signals */
    //vg_assert(VG_(threads)[tid].siginfo.si_signo == 0);
 

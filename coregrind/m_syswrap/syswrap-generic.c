@@ -5709,11 +5709,13 @@ PRE(sys_clock_getres)
    // defined above!
    PRE_REG_READ2(long, "clock_getres", 
                  vki_clockid_t, clk_id, struct timespec *, res);
-   PRE_MEM_WRITE( "clock_getres(res)", ARG2, sizeof(struct vki_timespec) );
+   if (ARG2 != 0)
+      PRE_MEM_WRITE( "clock_getres(res)", ARG2, sizeof(struct vki_timespec) );
 }
 POST(sys_clock_getres)
 {
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
+   if (ARG2 != 0)
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
 PRE(sys_clock_nanosleep)

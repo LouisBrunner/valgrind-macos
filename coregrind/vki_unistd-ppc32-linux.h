@@ -69,10 +69,10 @@
 #define __NR_kill			 37
 #define __NR_rename			 38
 #define __NR_mkdir			 39
-//#define __NR_rmdir			 40
+#define __NR_rmdir			 40
 #define __NR_dup			 41
 #define __NR_pipe			 42
-//#define __NR_times			 43
+#define __NR_times			 43
 //#define __NR_prof			 44
 #define __NR_brk			 45
 #define __NR_setgid			 46
@@ -109,7 +109,7 @@
 //#define __NR_getrusage		 77
 #define __NR_gettimeofday		 78
 //#define __NR_settimeofday		 79
-#define __NR_getgroups		 80
+#define __NR_getgroups			 80
 //#define __NR_setgroups		 81
 //#define __NR_select			 82
 #define __NR_symlink			 83
@@ -122,7 +122,7 @@
 #define __NR_mmap			 90
 #define __NR_munmap			 91
 //#define __NR_truncate			 92
-//#define __NR_ftruncate		 93
+#define __NR_ftruncate			 93
 #define __NR_fchmod			 94
 #define __NR_fchown			 95
 //#define __NR_getpriority		 96
@@ -172,7 +172,7 @@
 #define __NR__llseek			140
 #define __NR_getdents			141
 #define __NR__newselect			142
-//#define __NR_flock			143
+#define __NR_flock			143
 //#define __NR_msync			144
 #define __NR_readv			145
 #define __NR_writev			146
@@ -184,9 +184,9 @@
 //#define __NR_mlockall			152
 //#define __NR_munlockall		153
 //#define __NR_sched_setparam		154
-//#define __NR_sched_getparam		155
+#define __NR_sched_getparam		155
 //#define __NR_sched_setscheduler	156
-//#define __NR_sched_getscheduler	157
+#define __NR_sched_getscheduler		157
 #define __NR_sched_yield		158
 //#define __NR_sched_get_priority_max	159
 //#define __NR_sched_get_priority_min	160
@@ -194,12 +194,12 @@
 #define __NR_nanosleep			162
 #define __NR_mremap			163
 //#define __NR_setresuid		164
-//#define __NR_getresuid		165
+#define __NR_getresuid			165
 //#define __NR_query_module		166
 #define __NR_poll			167
 //#define __NR_nfsservctl		168
 //#define __NR_setresgid		169
-//#define __NR_getresgid		170
+#define __NR_getresgid			170
 #define __NR_prctl			171
 #define __NR_rt_sigreturn		172
 #define __NR_rt_sigaction		173

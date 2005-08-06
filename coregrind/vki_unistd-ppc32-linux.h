@@ -304,5 +304,8 @@
 //#define __NR_waitid		272
 //#define __NR_ioprio_set		273
 //#define __NR_ioprio_get		274
+//#define __NR_inotify_init	275
+//#define __NR_inotify_add_watch	276
+//#define __NR_inotify_rm_watch	277
 
 #endif /* __VKI_UNISTD_PPC32_LINUX_H */

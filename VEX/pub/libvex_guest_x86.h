@@ -160,6 +160,7 @@ typedef
       UInt  guest_EBP;
       UInt  guest_ESI;
       UInt  guest_EDI;         /* 28 */
+
       /* 4-word thunk used to calculate O S Z A C P flags. */
       UInt  guest_CC_OP;       /* 32 */
       UInt  guest_CC_DEP1;
@@ -169,17 +170,22 @@ typedef
       UInt  guest_DFLAG;       /* 48 */
       /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */
       UInt  guest_IDFLAG;      /* 52 */
+      /* Bit 18 (AC) of eflags stored here, as either 0 or 1. */
+      UInt  guest_ACFLAG;      /* 56 */
+
       /* EIP */
-      UInt  guest_EIP;         /* 56 */
+      UInt  guest_EIP;         /* 60 */
+
       /* FPU */
-      UInt  guest_FTOP;        /* 60 */
       ULong guest_FPREG[8];    /* 64 */
       UChar guest_FPTAG[8];   /* 128 */
       UInt  guest_FPROUND;    /* 136 */
       UInt  guest_FC3210;     /* 140 */
+      UInt  guest_FTOP;       /* 144 */
+
       /* SSE */
-      UInt  guest_SSEROUND;   /* 144 */
-      U128  guest_XMM0;       /* 148 */
+      UInt  guest_SSEROUND;   /* 148 */
+      U128  guest_XMM0;       /* 152 */
       U128  guest_XMM1;
       U128  guest_XMM2;
       U128  guest_XMM3;
@@ -187,6 +193,7 @@ typedef
       U128  guest_XMM5;
       U128  guest_XMM6;
       U128  guest_XMM7;
+
       /* Segment registers. */
       UShort guest_CS;
       UShort guest_DS;
@@ -212,7 +219,7 @@ typedef
       UInt guest_TILEN;
 
       /* Padding to make it have an 8-aligned size */
-      UInt   padding;
+      /* UInt   padding; */
    }
    VexGuestX86State;
 

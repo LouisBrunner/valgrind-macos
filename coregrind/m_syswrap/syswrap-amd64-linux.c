@@ -1460,20 +1460,29 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    //   (__NR_utimes,            sys_utimes),         // 235 
    //   (__NR_vserver,           sys_ni_syscall),     // 236 
-   //   (__NR_vserver,           sys_ni_syscall),     // 236 
    //   (__NR_mbind,             sys_mbind),          // 237 
    LINX_(__NR_set_mempolicy,     sys_set_mempolicy),  // 238 
+   LINXY(__NR_get_mempolicy,     sys_get_mempolicy),  // 239
 
-   LINXY(__NR_get_mempolicy,     sys_get_mempolicy),  // 239 
    GENXY(__NR_mq_open,           sys_mq_open),        // 240 
    GENX_(__NR_mq_unlink,         sys_mq_unlink),      // 241 
    GENX_(__NR_mq_timedsend,      sys_mq_timedsend),   // 242 
    GENX_(__NR_mq_timedreceive,   sys_mq_timedreceive),// 243 
+   GENX_(__NR_mq_notify,         sys_mq_notify),      // 244
 
-   GENX_(__NR_mq_notify,         sys_mq_notify),      // 244 
    GENXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // 245 
    //   (__NR_kexec_load,        sys_ni_syscall),     // 246 
    GENXY(__NR_waitid,            sys_waitid),         // 247 
+//   LINX_(__NR_add_key,           sys_add_key),        // 248
+//   LINX_(__NR_request_key,       sys_request_key),    // 249
+
+//   LINXY(__NR_keyctl,            sys_keyctl),         // 250
+//   LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 251
+//   LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 252
+   LINX_(__NR_inotify_init,	 sys_inotify_init),   // 253
+   LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 254
+
+   LINX_(__NR_inotify_rm_watch,	 sys_inotify_rm_watch), // 255
 };
 
 const UInt ML_(syscall_table_size) = 

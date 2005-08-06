@@ -21,7 +21,7 @@ x86 INT/INT3
 109345 ppc32 ptrace patch available    should be applied
 
 CrispinF %eflags.ac problem            yes             fixed-r1319       TODO:merge
-
+                                                       & r4334
 
 
 

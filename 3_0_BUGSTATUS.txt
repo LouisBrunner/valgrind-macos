@@ -1,0 +1,58 @@
+
+Bugs known prior to 3.0.0
+~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                        Trunk            3_0_BRANCH
+Description                            Serious?        status                status
+-----------                            --------        ------            ----------
+
+x86 INT/INT3
+
+87263 x86 segment stuff
+
+88116 x86 enter variants assert
+
+96542 x86 16-bit pop insns
+
+109313 x86 cmpxchg8b
+
+109323 ppc32: dispatch.S uses Altivec insn, which doesn't work on POWER. 
+                                       Any fix would be similar to that for 110274
+
+109345 ppc32 ptrace patch available    should be applied
+
+CrispinF %eflags.ac problem            yes             fixed-r1319       TODO:merge
+
+
+
+
+Bugs reported after 3.0.0 shipped
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                        Trunk            3_0_BRANCH
+Description                            Serious?        status                status
+-----------                            --------        ------            ----------
+
+110102 dis_op2_E_G(amd64)              yes             fixed-r1318       TODO:merge
+
+110183 tail of page with _end          no
+
+110201 x86 FXTRACT                     dunno
+
+110202 x86 sys_waitpid(#286)           yes             fixed                  fixed
+
+110203 clock_getres(,0)                dunno           fixed                  fixed
+
+110204 fmemopen false +ve              no
+
+110205 sigcancel unwind fails          yes
+
+110207 mpn accuracy                    can't be easily fixed; + not convinced it's a
+                                       big problem
+
+110208 execve fail wrong retval        yes             fixed                  fixed
+
+110209 --show-emwarns misses some      dunno -- would like a test case
+
+110240 x86 FP differences              really is the same as 110207
+
+110274 SSE1 now mandatory for x86      will fix if more complaints appear
+

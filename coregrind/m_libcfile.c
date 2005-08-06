@@ -119,10 +119,10 @@ OffT VG_(lseek) ( Int fd, OffT offset, Int whence)
    return res.isError ? (-1) : 0;
 }
 
-Int VG_(stat) ( Char* file_name, struct vki_stat* buf )
+SysRes VG_(stat) ( Char* file_name, struct vki_stat* buf )
 {
    SysRes res = VG_(do_syscall2)(__NR_stat, (UWord)file_name, (UWord)buf);
-   return res.isError ? (-1) : 0;
+   return res;
 }
 
 Int VG_(fstat) ( Int fd, struct vki_stat* buf )

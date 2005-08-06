@@ -2306,11 +2306,11 @@ PRE(sys_execve)
       exec. */
    {
       struct vki_stat st;
-      Int i = VG_(stat)((Char *)ARG1, &st);
+      SysRes r = VG_(stat)((Char *)ARG1, &st);
 
-      if (i == -1) {
+      if (r.isError) {
          /* stat failed */
-         SET_STATUS_Failure( VKI_EACCES/*really, we should copy stat's result*/ );
+         SET_STATUS_from_SysRes( r );
 	 return;
       }
       /* just look for regular file with any X bit set
@@ -5709,11 +5709,13 @@ PRE(sys_clock_getres)
    // defined above!
    PRE_REG_READ2(long, "clock_getres", 
                  vki_clockid_t, clk_id, struct timespec *, res);
-   PRE_MEM_WRITE( "clock_getres(res)", ARG2, sizeof(struct vki_timespec) );
+   if (ARG2 != 0)
+      PRE_MEM_WRITE( "clock_getres(res)", ARG2, sizeof(struct vki_timespec) );
 }
 POST(sys_clock_getres)
 {
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
+   if (ARG2 != 0)
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
 PRE(sys_clock_nanosleep)
@@ -5731,6 +5733,24 @@ POST(sys_clock_nanosleep)
 {
    if (ARG4 != 0 && FAILURE && RES_unchecked == VKI_EINTR)
       POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec) );
+}
+
+PRE(sys_waitid)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_waitid( %d, %d, %p, %d, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(int32_t, "sys_waitid",
+                 int, which, vki_pid_t, pid, struct vki_siginfo *, infop,
+                 int, options, struct vki_rusage *, ru);
+   PRE_MEM_WRITE( "waitid(infop)", ARG3, sizeof(struct vki_siginfo) );
+   if (ARG5 != 0)
+      PRE_MEM_WRITE( "waitid(ru)", ARG5, sizeof(struct vki_rusage) );
+}
+POST(sys_waitid)
+{
+   POST_MEM_WRITE( ARG3, sizeof(struct vki_siginfo) );
+   if (ARG5 != 0)
+      POST_MEM_WRITE( ARG5, sizeof(struct vki_rusage) );
 }
 
 #undef PRE

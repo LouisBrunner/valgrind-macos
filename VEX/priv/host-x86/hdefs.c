@@ -2165,6 +2165,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Ijk_TInval:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_TINVAL); break;
+         case Ijk_SysenterX86:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_SYSENTER_X86); break;
          case Ijk_Ret:
 	 case Ijk_Call:
          case Ijk_Boring:

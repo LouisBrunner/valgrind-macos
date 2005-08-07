@@ -599,17 +599,18 @@ void ppIRDirty ( IRDirty* d )
 void ppIRJumpKind ( IRJumpKind kind )
 {
    switch (kind) {
-      case Ijk_Boring:    vex_printf("Boring"); break;
-      case Ijk_Call:      vex_printf("Call"); break;
-      case Ijk_Ret:       vex_printf("Return"); break;
-      case Ijk_ClientReq: vex_printf("ClientReq"); break;
-      case Ijk_Syscall:   vex_printf("Syscall"); break;
-      case Ijk_Yield:     vex_printf("Yield"); break;
-      case Ijk_EmWarn:    vex_printf("EmWarn"); break;
-      case Ijk_NoDecode:  vex_printf("NoDecode"); break;
-      case Ijk_MapFail:   vex_printf("MapFail"); break;
-      case Ijk_TInval:    vex_printf("Invalidate"); break;
-      default:            vpanic("ppIRJumpKind");
+      case Ijk_Boring:      vex_printf("Boring"); break;
+      case Ijk_Call:        vex_printf("Call"); break;
+      case Ijk_Ret:         vex_printf("Return"); break;
+      case Ijk_ClientReq:   vex_printf("ClientReq"); break;
+      case Ijk_Syscall:     vex_printf("Syscall"); break;
+      case Ijk_Yield:       vex_printf("Yield"); break;
+      case Ijk_EmWarn:      vex_printf("EmWarn"); break;
+      case Ijk_NoDecode:    vex_printf("NoDecode"); break;
+      case Ijk_MapFail:     vex_printf("MapFail"); break;
+      case Ijk_TInval:      vex_printf("Invalidate"); break;
+      case Ijk_SysenterX86: vex_printf("SysenterX86"); break;
+      default:              vpanic("ppIRJumpKind");
    }
 }
 

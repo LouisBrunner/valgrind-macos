@@ -816,7 +816,9 @@ typedef
       Ijk_EmWarn,         /* report emulation warning before continuing */
       Ijk_NoDecode,       /* next instruction cannot be decoded */
       Ijk_MapFail,        /* Vex-provided address translation failed */
-      Ijk_TInval          /* Invalidate translations before continuing. */
+      Ijk_TInval,         /* Invalidate translations before continuing. */
+      Ijk_SysenterX86     /* X86 sysenter.  guest_EIP becomes invalid
+                             at the point this happens. */
    }
    IRJumpKind;
 

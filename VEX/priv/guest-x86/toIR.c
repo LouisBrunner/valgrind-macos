@@ -88,6 +88,15 @@
    happen.  Programs that set it to 1 and then rely on the resulting
    SIGBUSs to inform them of misaligned accesses will not work.
 
+   Implementation sysenter is necessarily partial.  sysenter is a kind
+   of system call entry.  When doing a sysenter, the return address is
+   not known -- that is something that is beyond Vex's knowledge.  So
+   the generated IR forces a return to the scheduler, which can do
+   what it likes to simulate the systemter, but it MUST set this
+   thread's guest_EIP field with the continuation address before
+   resuming execution.  If that doesn't happen, the thread will jump
+   to address zero, which is probably fatal.
+
    This module uses global variables and so is not MT-safe (if that
    should ever become relevant).
 
@@ -11972,6 +11981,26 @@ DisResult disInstr_X86_WRK (
                     sorb, delta, modrm, sz, 
                     getIReg(1,R_ECX), False, /* not literal */
                     "%cl", False );
+         break;
+
+      /* =-=-=-=-=-=-=-=-=- SYSENTER -=-=-=-=-=-=-=-=-=-= */
+
+      case 0x34:
+         /* Simple implementation needing a long explaination.
+
+            sysenter is a kind of syscall entry.  The key thing here
+            is that the return address is not known -- that is
+            something that is beyond Vex's knowledge.  So this IR
+            forces a return to the scheduler, which can do what it
+            likes to simulate the systemter, but it MUST set this
+            thread's guest_EIP field with the continuation address
+            before resuming execution.  If that doesn't happen, the
+            thread will jump to address zero, which is probably
+            fatal. 
+         */ 
+         jmp_lit(Ijk_SysenterX86, 0/*bogus next EIP value*/);
+         dres.whatNext = Dis_StopHere;
+         DIP("sysenter");
          break;
 
       /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */

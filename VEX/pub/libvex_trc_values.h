@@ -67,6 +67,9 @@
 #define VEX_TRC_JMP_NODECODE   29  /* next instruction in not decodable */
 #define VEX_TRC_JMP_MAPFAIL    31  /* address translation failed */
 
+#define VEX_TRC_JMP_SYSENTER_X86 9  /* simulate X86 sysenter before
+                                       continuing */
+
 
 #endif /* ndef __LIBVEX_TRC_VALUES_H */
 

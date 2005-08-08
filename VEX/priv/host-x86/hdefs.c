@@ -2204,7 +2204,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
    case Xin_CMov32:
       vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);
+
       /* This generates cmov, which is illegal on P54/P55. */
+      /*
       *p++ = 0x0F;
       *p++ = toUChar(0x40 + (0xF & i->Xin.CMov32.cond));
       if (i->Xin.CMov32.src->tag == Xrm_Reg) {
@@ -2215,6 +2217,37 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          p = doAMode_M(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Mem.am);
          goto done;
       }
+      */
+
+      /* Alternative version which works on any x86 variant. */
+      /* jmp fwds if !condition */
+      *p++ = 0x70 + (i->Xin.CMov32.cond ^ 1);
+      *p++ = 0; /* # of bytes in the next bit, which we don't know yet */
+      ptmp = p;
+
+      switch (i->Xin.CMov32.src->tag) {
+         case Xrm_Reg:
+            /* Big sigh.  This is movl E -> G ... */
+            *p++ = 0x89;
+            p = doAMode_R(p, i->Xin.CMov32.src->Xrm.Reg.reg,
+                             i->Xin.CMov32.dst);
+
+            break;
+         case Xrm_Mem:
+            /* ... whereas this is movl G -> E.  That's why the args
+               to doAMode_R appear to be the wrong way round in the
+               Xrm_Reg case. */
+            *p++ = 0x8B;
+            p = doAMode_M(p, i->Xin.CMov32.dst,
+                             i->Xin.CMov32.src->Xrm.Mem.am);
+            break;
+         default:
+            goto bad;
+      }
+      /* Fill in the jump offset. */
+      *(ptmp-1) = p - ptmp;
+      goto done;
+
       break;
 
    case Xin_LoadEX:

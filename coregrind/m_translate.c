@@ -35,6 +35,7 @@
 #include "pub_core_cpuid.h"
 #include "pub_core_machine.h"       // For VG_(cache_line_size_ppc32)
                                     // and VG_(get_SP)
+                                    // and VG_(have_mxcsr_x86)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -53,7 +54,7 @@
 /*------------------------------------------------------------*/
 
 // Returns the architecture and auxiliary information, or indicates
-// that this subarchitecture is unable to run Valgrind Returns False
+// that this subarchitecture is unable to run Valgrind.  Returns False
 // to indicate we cannot proceed further.
 
 static Bool getArchAndArchInfo( /*OUT*/VexArch*     vex_arch, 
@@ -64,7 +65,7 @@ static Bool getArchAndArchInfo( /*OUT*/VexArch*     vex_arch,
    LibVEX_default_VexArchInfo(vai);
 
 #if defined(VGA_x86)
-   Bool have_sse0, have_sse1, have_sse2;
+   Bool have_sse1, have_sse2;
    UInt eax, ebx, ecx, edx;
 
    if (!VG_(has_cpuid)())
@@ -79,30 +80,29 @@ static Bool getArchAndArchInfo( /*OUT*/VexArch*     vex_arch,
    /* get capabilities bits into edx */
    VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
 
-   have_sse0 = (edx & (1<<24)) != 0; /* True => have fxsave/fxrstor */
    have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
    have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
 
-   if (have_sse2 && have_sse1 && have_sse0) {
+   VG_(have_mxcsr_x86) = 1;
+
+   if (have_sse2 && have_sse1) {
       *vex_arch    = VexArchX86;
       vai->subarch = VexSubArchX86_sse2;
       return True;
    }
 
-   if (have_sse1 && have_sse0) {
+   if (have_sse1) {
       *vex_arch    = VexArchX86;
       vai->subarch = VexSubArchX86_sse1;
       return True;
    }
 
-   if (have_sse0) {
+   {
       *vex_arch    = VexArchX86;
       vai->subarch = VexSubArchX86_sse0;
+      VG_(have_mxcsr_x86) = 0;
       return True;
    }
-
-   /* we need at least SSE state to operate. */
-   return False;
 
 #elif defined(VGA_amd64)
    vg_assert(VG_(has_cpuid)());
@@ -459,7 +459,7 @@ Bool VG_(translate) ( ThreadId tid,
          VG_(printf)("\n");
          VG_(printf)("valgrind: fatal error: unsupported CPU.\n");
          VG_(printf)("   Supported CPUs are:\n");
-         VG_(printf)("   * x86 with SSE (Pentium III or above, "
+         VG_(printf)("   * x86 (practically any; Pentium-I or above), "
                      "AMD Athlon or above)\n");
          VG_(printf)("   * AMD Athlon64/Opteron\n");
          VG_(printf)("   * PowerPC with Altivec\n");

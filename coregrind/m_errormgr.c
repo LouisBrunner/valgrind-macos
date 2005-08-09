@@ -802,7 +802,7 @@ void VG_(show_error_counts_as_XML) ( void )
       VG_(message)(
          Vg_UserMsg, "  <pair>\n"
                      "    <count>%d</count>\n"
-                     "    <unique>0x%llx</unique>\n"
+                     "    <unique>0x%x</unique>\n"
                      "  </pair>",
          err->count, err->unique
       );

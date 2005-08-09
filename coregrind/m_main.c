@@ -2830,8 +2830,11 @@ int main(int argc, char **argv, char **envp)
    if (VG_(clo_xml)) {
       HChar buf[50];
       VG_(ctime)(buf);
-      VG_(message)(Vg_UserMsg, "<status> <state>RUNNING</state> "
-                               "<time>%t</time> </status>", buf);
+      VG_(message)(Vg_UserMsg, "<status>\n"
+                               "  <state>RUNNING</state>\n"
+                               "  <time>%t</time>\n"
+                               "</status>", 
+                               buf);
       VG_(message)(Vg_UserMsg, "");
    }
 
@@ -2932,8 +2935,11 @@ void VG_(shutdown_actions_NORETURN) ( ThreadId tid,
          VG_(message)(Vg_UserMsg, "");
       }
       VG_(ctime)(buf);
-      VG_(message)(Vg_UserMsg, "<status> <state>FINISHED</state> "
-                               "<time>%t</time> </status>", buf);
+      VG_(message)(Vg_UserMsg, "<status>\n"
+                               "  <state>FINISHED</state>\n"
+                               "  <time>%t</time>\n"
+                               "</status>", 
+                               buf);
       VG_(message)(Vg_UserMsg, "");
    }
 

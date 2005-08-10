@@ -62,9 +62,9 @@ Description                            Serious?        status                sta
 
 110388 amd64 0xDD 0xD1                 yes             fixed(1322)       TODO:merge
 
-110464 amd64 0xDC 0x1D FCOMP           yes
+110464 amd64 0xDC 0x1D FCOMP           yes             fixed(1323)       TODO:merge
 
-110478 amd64 0xF 0xD 0x8 0xF           yes
+110478 amd64 0xF 0xD PREFETCH          yes             fixed(1324)       TODO:merge
 
 XML <unique> printing wrong            ez2fix          fixed:
                                                        4355,4357,4358    TODO:merge

@@ -13064,6 +13064,25 @@ DisResult disInstr_AMD64_WRK (
          DIP("j%s-32 0x%llx\n", name_AMD64Condcode(opc - 0x80), d64);
          break;
 
+      /* =-=-=-=-=-=-=-=-=- PREFETCH =-=-=-=-=-=-=-=-=-= */
+      case 0x0D: /* 0F 0D /0 -- prefetch mem8 */
+                 /* 0F 0D /1 -- prefetchw mem8 */
+         if (have66orF2orF3(pfx)) goto decode_failure;
+         modrm = getUChar(delta);
+         if (epartIsReg(modrm)) goto decode_failure;
+         if (gregLO3ofRM(modrm) != 0 && gregLO3ofRM(modrm) != 1)
+            goto decode_failure;
+
+         addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
+         delta += alen;
+
+         switch (gregLO3ofRM(modrm)) {
+            case 0: DIP("prefetch %s\n", dis_buf); break;
+            case 1: DIP("prefetchw %s\n", dis_buf); break;
+            default: vassert(0); /*NOTREACHED*/
+         }
+         break;
+
       /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
 
       case 0x31: /* RDTSC */

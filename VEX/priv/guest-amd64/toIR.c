@@ -2419,7 +2419,6 @@ ULong dis_op2_E_G ( Prefix      pfx,
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
-         vassert(0); /* awaiting test case */
          helper_SBB( size, dst1, dst0, src );
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else {

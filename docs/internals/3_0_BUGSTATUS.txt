@@ -81,8 +81,7 @@ FIXED-30BRANCH: won't (3.1 fix only)
 CrispinF x86 %eflags.ac problem
 
 FIXED-TRUNK:    yes (1319/4334)
-FIXED-30BRANCH: 4334 was copied across as part of 4364
-                1319 yet to do
+FIXED-30BRANCH: yes (1326, and 4334 was copied across as part of 4364)
 
 
 ------------------------------------------------------------------------
@@ -92,7 +91,7 @@ FIXED-30BRANCH: 4334 was copied across as part of 4364
 110102 dis_op2_E_G(amd64)
 
 FIXED-TRUNK:    yes (1318)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: yes (1325)
 
 ----------------------------------------------------------------
 
@@ -187,28 +186,28 @@ FIXED-30BRANCH: no
 110274 SSE1 now mandatory for x86
 
 FIXED-TRUNK:    yes(1321/4339)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: yes(1327/4374)
 
 ----------------------------------------------------------------
 
 110388 amd64 0xDD 0xD1
 
 FIXED-TRUNK:    yes(1322)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: yes(1328)
 
 ----------------------------------------------------------------
 
 110464 amd64 0xDC 0x1D FCOMP
 
 FIXED-TRUNK:    yes(1323)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: yes(1329)
 
 ----------------------------------------------------------------
 
 110478 amd64 0xF 0xD PREFETCH
 
 FIXED-TRUNK:    yes(1324)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: yes(1330)
 
 ----------------------------------------------------------------
 

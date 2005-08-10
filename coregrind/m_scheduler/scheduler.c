@@ -772,24 +772,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
                        "run_innerloop detected host "
                        "state invariant failure", trc);
 
-      case VEX_TRC_JMP_SYSENTER_X86:
-         /* Do whatever simulation is appropriate for an x86 sysenter
-            instruction.  Note that it is critical to set this thread's
-            guest_EIP to point at the code to execute after the
-            sysenter, since Vex-generated code will not have set it --
-            vex does not know what it should be.  Vex sets the next
-            address to zero, so if you don't guest_EIP, the thread will
-            jump to zero afterwards and probably die as a result. */
-#        if defined(VGA_x86)
-         //FIXME: VG_(threads)[tid].arch.vex.guest_EIP = ....
-         //handle_sysenter_x86(tid);
-         vg_assert2(0, "VG_(scheduler), phase 3: "
-                       "sysenter_x86 on not yet implemented");
-#        else
-         vg_assert2(0, "VG_(scheduler), phase 3: "
-                       "sysenter_x86 on non-x86 platform?!?!");
-#        endif
-
       default: 
 	 vg_assert2(0, "VG_(scheduler), phase 3: "
                        "unexpected thread return code (%u)", trc);

@@ -22,9 +22,12 @@ fooble:
 	popfl
 	# resulting flag definedness depends on outcome of sub above
 	# should override that created by 0 + 0 above
+	# because Vex does an emulation-warning check on the popfl,
+	# an error should be reported for the popfl
 	
 	# now use the condition codes to generate a value
 	# in a way which will cause undefinedness to get reported
+	# (a second time)
 	jz	labelz
 	movl	$22, %eax
 	jmp	theend

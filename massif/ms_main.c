@@ -798,7 +798,6 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
 {
    HP_Chunk*    hc;
    HP_Chunk**   remove_handle;
-   Int          i;
    void*        p_new;
    SizeT        old_size;
    XPt         *old_where, *new_where;
@@ -822,10 +821,7 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
    } else {
       // new size is bigger;  make new block, copy shared contents, free old
       p_new = VG_(cli_malloc)(VG_(clo_alignment), new_size);
-
-      for (i = 0; i < old_size; i++)
-         ((UChar*)p_new)[i] = ((UChar*)p_old)[i];
-
+      VG_(memcpy)(p_new, p_old, old_size);
       VG_(cli_free)(p_old);
    }
    

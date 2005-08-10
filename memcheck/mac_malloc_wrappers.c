@@ -356,7 +356,6 @@ void* MAC_(realloc) ( ThreadId tid, void* p, SizeT new_size )
 {
    MAC_Chunk  *mc;
    MAC_Chunk **prev_chunks_next_ptr;
-   UInt        i;
 
    VGP_PUSHCC(VgpCliMalloc);
 
@@ -414,8 +413,7 @@ void* MAC_(realloc) ( ThreadId tid, void* p, SizeT new_size )
       MAC_(ban_mem_heap) ( p_new+new_size, MAC_MALLOC_REDZONE_SZB );
 
       /* Copy from old to new */
-      for (i = 0; i < mc->size; i++)
-         ((UChar*)p_new)[i] = ((UChar*)p)[i];
+      VG_(memcpy)((void*)p_new, p, mc->size);
 
       /* Free old memory */
       die_and_free_mem ( tid, mc, prev_chunks_next_ptr, MAC_MALLOC_REDZONE_SZB );

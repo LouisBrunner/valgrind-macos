@@ -81,6 +81,13 @@
    only way to observe eflags[1], a proper fix would be to make that
    bit be set by PUSHF.
 
+   The state of %eflags.AC (alignment check, bit 18) is recorded by
+   the simulation (viz, if you set it with popf then a pushf produces
+   the value you set it to), but it is otherwise ignored.  In
+   particular, setting it to 1 does NOT cause alignment checking to
+   happen.  Programs that set it to 1 and then rely on the resulting
+   SIGBUSs to inform them of misaligned accesses will not work.
+
    This module uses global variables and so is not MT-safe (if that
    should ever become relevant).
 
@@ -181,6 +188,7 @@ static IRBB* irbb;
 #define OFFB_FPTAGS    offsetof(VexGuestX86State,guest_FPTAG[0])
 #define OFFB_DFLAG     offsetof(VexGuestX86State,guest_DFLAG)
 #define OFFB_IDFLAG    offsetof(VexGuestX86State,guest_IDFLAG)
+#define OFFB_ACFLAG    offsetof(VexGuestX86State,guest_ACFLAG)
 #define OFFB_FTOP      offsetof(VexGuestX86State,guest_FTOP)
 #define OFFB_FC3210    offsetof(VexGuestX86State,guest_FC3210)
 #define OFFB_FPROUND   offsetof(VexGuestX86State,guest_FPROUND)
@@ -10944,7 +10952,7 @@ DisResult disInstr_X86_WRK (
                   mkU32(0xFFFFFFFF))) 
           );
 
-      /* And set the ID flag */
+      /* Set the ID flag */
       stmt( IRStmt_Put( 
                OFFB_IDFLAG,
                IRExpr_Mux0X( 
@@ -10955,6 +10963,30 @@ DisResult disInstr_X86_WRK (
                   mkU32(0), 
                   mkU32(1))) 
           );
+
+      /* And set the AC flag.  If setting it 1 to, emit an emulation
+         warning. */
+      stmt( IRStmt_Put( 
+               OFFB_ACFLAG,
+               IRExpr_Mux0X( 
+                  unop(Iop_32to8,
+                       binop(Iop_And32, 
+                             binop(Iop_Shr32, mkexpr(t1), mkU8(18)), 
+                             mkU32(1))),
+                  mkU32(0), 
+                  mkU32(1))) 
+          );
+
+      put_emwarn( mkU32(EmWarn_X86_acFlag) );
+      stmt( 
+         IRStmt_Exit(
+            binop( Iop_CmpNE32, 
+                   binop(Iop_And32, mkexpr(t1), mkU32(1<<18)), 
+                   mkU32(0) ),
+            Ijk_EmWarn,
+            IRConst_U32( ((Addr32)guest_EIP_bbstart)+delta)
+         )
+      );
 
       DIP("popf%c\n", nameISize(sz));
       break;
@@ -11100,11 +11132,21 @@ DisResult disInstr_X86_WRK (
                               mkU32(1<<21)))
             );
 
+      /* And patch in the AC flag. */
+      t5 = newTemp(Ity_I32);
+      assign( t5, binop(Iop_Or32,
+                        mkexpr(t4),
+                        binop(Iop_And32,
+                              binop(Iop_Shl32, IRExpr_Get(OFFB_ACFLAG,Ity_I32), 
+                                               mkU8(18)),
+                              mkU32(1<<18)))
+            );
+
       /* if sz==2, the stored value needs to be narrowed. */
       if (sz == 2)
-        storeLE( mkexpr(t1), unop(Iop_32to16,mkexpr(t4)) );
+        storeLE( mkexpr(t1), unop(Iop_32to16,mkexpr(t5)) );
       else 
-        storeLE( mkexpr(t1), mkexpr(t4) );
+        storeLE( mkexpr(t1), mkexpr(t5) );
 
       DIP("pushf%c\n", nameISize(sz));
       break;

@@ -737,6 +737,8 @@ UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state )
       eflags |= (1<<10);
    if (vex_state->guest_IDFLAG == 1)
       eflags |= (1<<21);
+   if (vex_state->guest_ACFLAG == 1)
+      eflags |= (1<<18);
 					     
    return eflags;
 }
@@ -1973,6 +1975,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_CC_NDEP = 0;
    vex_state->guest_DFLAG   = 1; /* forwards */
    vex_state->guest_IDFLAG  = 0;
+   vex_state->guest_ACFLAG  = 0;
 
    vex_state->guest_EIP = 0;
 
@@ -2072,7 +2075,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 21,
+          .n_alwaysDefd = 22,
 
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
@@ -2082,23 +2085,24 @@ VexGuestLayout
                  /*  1 */ ALWAYSDEFD(guest_CC_NDEP),
                  /*  2 */ ALWAYSDEFD(guest_DFLAG),
                  /*  3 */ ALWAYSDEFD(guest_IDFLAG),
-                 /*  4 */ ALWAYSDEFD(guest_EIP),
-                 /*  5 */ ALWAYSDEFD(guest_FTOP),
-                 /*  6 */ ALWAYSDEFD(guest_FPTAG),
-                 /*  7 */ ALWAYSDEFD(guest_FPROUND),
-                 /*  8 */ ALWAYSDEFD(guest_FC3210),
-                 /*  9 */ ALWAYSDEFD(guest_CS),
-                 /* 10 */ ALWAYSDEFD(guest_DS),
-                 /* 11 */ ALWAYSDEFD(guest_ES),
-                 /* 12 */ ALWAYSDEFD(guest_FS),
-                 /* 13 */ ALWAYSDEFD(guest_GS),
-                 /* 14 */ ALWAYSDEFD(guest_SS),
-                 /* 15 */ ALWAYSDEFD(guest_LDT),
-                 /* 16 */ ALWAYSDEFD(guest_GDT),
-                 /* 17 */ ALWAYSDEFD(guest_EMWARN),
-                 /* 18 */ ALWAYSDEFD(guest_SSEROUND),
-                 /* 19 */ ALWAYSDEFD(guest_TISTART),
-                 /* 20 */ ALWAYSDEFD(guest_TILEN)
+                 /*  4 */ ALWAYSDEFD(guest_ACFLAG),
+                 /*  5 */ ALWAYSDEFD(guest_EIP),
+                 /*  6 */ ALWAYSDEFD(guest_FTOP),
+                 /*  7 */ ALWAYSDEFD(guest_FPTAG),
+                 /*  8 */ ALWAYSDEFD(guest_FPROUND),
+                 /*  9 */ ALWAYSDEFD(guest_FC3210),
+                 /* 10 */ ALWAYSDEFD(guest_CS),
+                 /* 11 */ ALWAYSDEFD(guest_DS),
+                 /* 12 */ ALWAYSDEFD(guest_ES),
+                 /* 13 */ ALWAYSDEFD(guest_FS),
+                 /* 14 */ ALWAYSDEFD(guest_GS),
+                 /* 15 */ ALWAYSDEFD(guest_SS),
+                 /* 16 */ ALWAYSDEFD(guest_LDT),
+                 /* 17 */ ALWAYSDEFD(guest_GDT),
+                 /* 18 */ ALWAYSDEFD(guest_EMWARN),
+                 /* 19 */ ALWAYSDEFD(guest_SSEROUND),
+                 /* 20 */ ALWAYSDEFD(guest_TISTART),
+                 /* 21 */ ALWAYSDEFD(guest_TILEN)
                }
         };
 

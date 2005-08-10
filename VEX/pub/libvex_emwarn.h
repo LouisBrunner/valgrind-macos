@@ -83,6 +83,9 @@ typedef
       
       /* setting mxcsr.daz is not supported */
       EmWarn_X86_daz,
+
+      /* settings to %eflags.ac (alignment check) are noted but ignored */
+      EmWarn_X86_acFlag,
       
       /* unmasking PPC32 FP exceptions is not supported */
       EmWarn_PPC32exns,

@@ -718,10 +718,24 @@ Syscall param sigaction(oldact) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: main (scalar.c:320)
 
-Syscall param sigaction(act) points to unaddressable byte(s)
+Syscall param sigaction(act->sa_handler) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: main (scalar.c:320)
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (scalar.c:24)
+
+Syscall param sigaction(act->sa_mask) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar.c:320)
+ Address 0x........ is 4 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (scalar.c:24)
+
+Syscall param sigaction(act->sa_flags) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar.c:320)
+ Address 0x........ is 8 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (scalar.c:24)
 
@@ -2081,15 +2095,31 @@ Syscall param rt_sigaction(sigsetsize) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: main (scalar.c:766)
 
-Syscall param rt_sigaction(act) points to unaddressable byte(s)
+Syscall param rt_sigaction(act->sa_handler) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar.c:766)
+ Address 0x........ is 4 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (scalar.c:24)
+
+Syscall param rt_sigaction(act->sa_mask) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: main (scalar.c:766)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+Syscall param rt_sigaction(act->sa_flags) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: main (scalar.c:766)
+ Address 0x........ is 8 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (scalar.c:24)
+
 Syscall param rt_sigaction(oldact) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: main (scalar.c:766)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+ Address 0x........ is 4 bytes after a block of size 4 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (scalar.c:24)
 -----------------------------------------------------
 175: __NR_rt_sigprocmask 4s 2m
 -----------------------------------------------------

@@ -763,7 +763,7 @@ int main(void)
 
    // __NR_rt_sigaction 174
    GO(__NR_rt_sigaction, "4s 2m");
-   SY(__NR_rt_sigaction, x0, x0+1, x0+1, x0); FAIL;
+   SY(__NR_rt_sigaction, x0, x0+&px[2], x0+&px[2], x0); FAIL;
 
    // __NR_rt_sigprocmask 175
    GO(__NR_rt_sigprocmask, "4s 2m");

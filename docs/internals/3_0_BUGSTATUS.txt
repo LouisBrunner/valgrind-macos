@@ -116,15 +116,15 @@ FIXED-30BRANCH: no
 
 110202 x86 sys_waitpid(#286)
 
-FIXED-TRUNK:    fixed(r???)
-FIXED-30BRANCH: fixed(r???)
+FIXED-TRUNK:    fixed(r4329)
+FIXED-30BRANCH: fixed(r4332)
 
 ----------------------------------------------------------------
 
 110203 clock_getres(,0)
 
-FIXED-TRUNK:    fixed(r???)
-FIXED-30BRANCH: fixed(r???)
+FIXED-TRUNK:    fixed(r4328)
+FIXED-30BRANCH: fixed(r4332)
 
 ----------------------------------------------------------------
 
@@ -160,8 +160,8 @@ FIXED-30BRANCH: no
 
 110208 execve fail wrong retval
 
-FIXED-TRUNK:    yes (r???)
-FIXED-30BRANCH: yes (r???)
+FIXED-TRUNK:    yes (r4330)
+FIXED-30BRANCH: yes (r4332)
 
 ----------------------------------------------------------------
 

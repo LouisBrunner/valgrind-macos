@@ -1,74 +1,234 @@
 
-Bugs known prior to 3.0.0
-~~~~~~~~~~~~~~~~~~~~~~~~~
-                                                        Trunk            3_0_BRANCH
-Description                            Serious?        status                status
------------                            --------        ------            ----------
+------------------------------------------------------------------------
+--- Bugs known prior to 3.0.0                                        ---
+------------------------------------------------------------------------
 
 x86 INT/INT3
 
+Not started.  Seems low priority.
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
 87263 x86 segment stuff
+
+Not started.  Seems low priority.
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
 
 88116 x86 enter variants assert
 
+Not started.  Seems low priority.
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
 96542 x86 16-bit pop insns
 
-109861 amd64 hangs at startup          yes, but have to wait for 3.1. Long delay
-                                       seems to be caused by amd64-Gentoo kernel
-                                       not liking large mmap/munmap requests.
+Not started.  Seems low priority.
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+109861 amd64 hangs at startup
+110301 ditto
+
+Will fix in 3.1.  Long delay seems to be caused by amd64-Gentoo kernel
+not liking large mmap/munmap requests.
+
+FIXED-TRUNK:    no (background hacking is in progress)
+FIXED-30BRANCH: won't (3.1 fix only)
+
+----------------------------------------------------------------
 
 109313 x86 cmpxchg8b
+110505 ditto
+
+This ought to be fixed for 3.0.1.
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
 
 109323 ppc32: dispatch.S uses Altivec insn, which doesn't work on POWER. 
-                                       Any fix would be similar to that for 110274
+
+Should fix for 3.1.  Any fix would be similar to that for 110274.
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: won't (3.1 fix only)
+
+----------------------------------------------------------------
 
 109345 ppc32 ptrace patch available    should be applied
 
-CrispinF %eflags.ac problem            yes             fixed-r1319       TODO:merge
-                                                       & r4334
+Should fix for 3.1.  Any fix would be similar to that for 110274.
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: won't (3.1 fix only)
+
+----------------------------------------------------------------
+
+CrispinF x86 %eflags.ac problem
+
+FIXED-TRUNK:    yes (1319/4334)
+FIXED-30BRANCH: 4334 was copied across as part of 4364
+                1319 yet to do
 
 
+------------------------------------------------------------------------
+--- Bugs reported after 3.0.0 shipped                                ---
+------------------------------------------------------------------------
 
-Bugs reported after 3.0.0 shipped
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                                                        Trunk            3_0_BRANCH
-Description                            Serious?        status                status
------------                            --------        ------            ----------
+110102 dis_op2_E_G(amd64)
 
-110102 dis_op2_E_G(amd64)              yes             fixed-r1318       TODO:merge
+FIXED-TRUNK:    yes (1318)
+FIXED-30BRANCH: TODO
 
-110183 tail of page with _end          no
+----------------------------------------------------------------
 
-110201 x86 FXTRACT                     dunno
+110183 tail of page with _end
 
-110202 x86 sys_waitpid(#286)           yes             fixed                  fixed
+Seems low priority.
 
-110203 clock_getres(,0)                dunno           fixed                  fixed
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
 
-110204 fmemopen false +ve              no
+----------------------------------------------------------------
 
-110205 sigcancel unwind fails          yes             Tom considering?
+110201 x86 FXTRACT
 
-110207 mpn accuracy                    can't be easily fixed; + not convinced it's a
-                                       big problem
+Could fix if important.
 
-110208 execve fail wrong retval        yes             fixed                  fixed
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
 
-110209 --show-emwarns misses some      dunno -- would like a test case
+----------------------------------------------------------------
 
-110240 x86 FP differences              really is the same as 110207
+110202 x86 sys_waitpid(#286)
 
-110274 SSE1 now mandatory for x86      yes             fixed(1321/4339)  TODO:merge
+FIXED-TRUNK:    fixed(r???)
+FIXED-30BRANCH: fixed(r???)
 
-110388 amd64 0xDD 0xD1                 yes             fixed(1322)       TODO:merge
+----------------------------------------------------------------
 
-110464 amd64 0xDC 0x1D FCOMP           yes             fixed(1323)       TODO:merge
+110203 clock_getres(,0)
 
-110478 amd64 0xF 0xD PREFETCH          yes             fixed(1324)       TODO:merge
+FIXED-TRUNK:    fixed(r???)
+FIXED-30BRANCH: fixed(r???)
 
-XML <unique> printing wrong            ez2fix          fixed:
-                                                       4355,4357,4358    TODO:merge
+----------------------------------------------------------------
 
-Dirk r4359 (amd64 syscalls from trunk)                                   done(4359)
+110204 fmemopen false +ve
 
-Dirk r4360 (upd email addrs from trunk)                                  done(4360)
+Seems low priority.
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+110205 sigcancel unwind fails
+
+Tom is considering this.  It would be nice to fix it for 3.1 but
+status currently unclear.
+
+FIXED-TRUNK:    1320 - vex impl of sysenter
+                4337 - minimal Valgrind-side; does not do anything
+FIXED-30BRANCH: 
+
+----------------------------------------------------------------
+
+110207 mpn accuracy
+
+Can't be easily fixed (x86 rounding/precision problem)
++ not convinced it's a big problem
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+110208 execve fail wrong retval
+
+FIXED-TRUNK:    yes (r???)
+FIXED-30BRANCH: yes (r???)
+
+----------------------------------------------------------------
+
+110209 --show-emwarns misses some
+
+Tom says: The math/test-fenv.c file in the glibc source is the code in
+question and I can reproduce it with that code.
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+110240 x86 FP differences
+
+really is the same as 110207; same comments apply
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+110274 SSE1 now mandatory for x86
+
+FIXED-TRUNK:    yes(1321/4339)
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+110388 amd64 0xDD 0xD1
+
+FIXED-TRUNK:    yes(1322)
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+110464 amd64 0xDC 0x1D FCOMP
+
+FIXED-TRUNK:    yes(1323)
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+110478 amd64 0xF 0xD PREFETCH
+
+FIXED-TRUNK:    yes(1324)
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+XML <unique> printing wrong
+
+FIXED-TRUNK:    4355,4357,4358
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+Dirk r4359 (amd64 syscalls from trunk)
+
+FIXED-TRUNK:    
+FIXED-30BRANCH: done(4359)
+
+----------------------------------------------------------------
+
+Dirk r4360 (upd email addrs from trunk)
+
+FIXED-TRUNK:    
+FIXED-30BRANCH: done(4360)
+
+----------------------------------------------------------------

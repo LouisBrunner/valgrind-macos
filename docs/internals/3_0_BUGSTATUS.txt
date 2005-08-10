@@ -13,6 +13,10 @@ x86 INT/INT3
 
 96542 x86 16-bit pop insns
 
+109861 amd64 hangs at startup          yes, but have to wait for 3.1. Long delay
+                                       seems to be caused by amd64-Gentoo kernel
+                                       not liking large mmap/munmap requests.
+
 109313 x86 cmpxchg8b
 
 109323 ppc32: dispatch.S uses Altivec insn, which doesn't work on POWER. 
@@ -55,10 +59,6 @@ Description                            Serious?        status                sta
 110240 x86 FP differences              really is the same as 110207
 
 110274 SSE1 now mandatory for x86      yes             fixed(1321/4339)  TODO:merge
-
-110301 amd64 hangs at startup          yes, but have to wait for 3.1.  This is the
-                                       same as previously reported amd64-Gentoo
-                                       hang (long delay, really).
 
 110388 amd64 0xDD 0xD1                 yes             fixed(1322)       TODO:merge
 

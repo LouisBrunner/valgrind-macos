@@ -71,8 +71,10 @@
 #  error Unknown arch
 #endif
 
+
 // Offsets for the Vex state
 #define VG_O_STACK_PTR        (offsetof(VexGuestArchState, VG_STACK_PTR))
+
 
 // Architecture specifics
 
@@ -82,6 +84,13 @@
 #if defined(VGA_ppc32)
 extern Int VG_(cache_line_size_ppc32);
 #endif
+
+// X86: set to 1 if the host is able to do {ld,st}mxcsr (load/store
+// the SSE control/status register. 
+#if defined(VGA_x86)
+extern Int VG_(have_mxcsr_x86);
+#endif
+
 
 #endif   // __PUB_CORE_MACHINE_H
 

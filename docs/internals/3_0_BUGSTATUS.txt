@@ -59,3 +59,16 @@ Description                            Serious?        status                sta
 110301 amd64 hangs at startup          yes, but have to wait for 3.1.  This is the
                                        same as previously reported amd64-Gentoo
                                        hang (long delay, really).
+
+110388 amd64 0xDD 0xD1                 yes             fixed(1322)       TODO:merge
+
+110464 amd64 0xDC 0x1D FCOMP           yes
+
+110478 amd64 0xF 0xD 0x8 0xF           yes
+
+XML <unique> printing wrong            ez2fix          fixed:
+                                                       4355,4357,4358    TODO:merge
+
+Dirk r4359 (amd64 syscalls from trunk)                                   done(4359)
+
+Dirk r4360 (upd email addrs from trunk)                                  done(4360)

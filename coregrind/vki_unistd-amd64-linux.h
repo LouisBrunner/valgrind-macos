@@ -329,5 +329,8 @@
 #define __NR_keyctl		250
 #define __NR_ioprio_set		251
 #define __NR_ioprio_get		252
+#define __NR_inotify_init	253
+#define __NR_inotify_add_watch	254
+#define __NR_inotify_rm_watch	255
 
 #endif /* __VKI_UNISTD_AMD64_LINUX_H */

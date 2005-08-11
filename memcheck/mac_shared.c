@@ -475,19 +475,6 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    return;
 }
 
-/* Describe an address as best you can, for FreeMismatch error messages.
-   By the time this is called 'ai' is already setup with all the relevant
-   info.  So the only thing this can do is change that to UserG if 'a' is in
-   a user block, otherwise change it from 'Mallocd' to 'Freed'.
-*/
-static void describe_addr_FreeMismatch ( Addr a, AddrInfo* ai )
-{
-   /* Perhaps it's a user-def'd block ?  (only check if requested, though) */
-   if (NULL != MAC_(describe_addr_supp)) {
-      (void)MAC_(describe_addr_supp)( a, ai );
-   }
-}
-
 /* Is this address within some small distance below %ESP?  Used only
    for the --workaround-gcc296-bugs kludge. */
 static Bool is_just_below_ESP( Addr esp, Addr aa )
@@ -611,31 +598,56 @@ void MAC_(record_overlap_error) ( ThreadId tid,
 UInt MAC_(update_extra)( Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
-   case ValueErr:
+   // These two don't have addresses associated with them, and so don't
+   // need any updating.
    case CoreMemErr:
+   case ValueErr: {
+      MAC_Error* extra = VG_(get_error_extra)(err);
+      tl_assert(Unknown == extra->addrinfo.akind);
+      return sizeof(MAC_Error);
+   }
+
+   // ParamErrs sometimes involve a memory address; call describe_addr() in
+   // this case.
+   case ParamErr: {
+      MAC_Error* extra = VG_(get_error_extra)(err);
+      tl_assert(Undescribed == extra->addrinfo.akind ||
+                Register    == extra->addrinfo.akind);
+      if (Undescribed == extra->addrinfo.akind)
+         describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
+      return sizeof(MAC_Error);
+   }
+
+   // These four always involve a memory address.
    case AddrErr: 
-   case ParamErr:
    case UserErr:
    case FreeErr:
    case IllegalMempoolErr: {
       MAC_Error* extra = VG_(get_error_extra)(err);
-      if (extra != NULL && Undescribed == extra->addrinfo.akind) {
-         describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
-      }
+      tl_assert(Undescribed == extra->addrinfo.akind);
+      describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
       return sizeof(MAC_Error);
    }
 
+   // FreeMismatchErrs have already had their address described;  this is
+   // possible because we have the MAC_Chunk on hand when the error is
+   // detected.  However, the address may be part of a user block, and if so
+   // we override the pre-determined description with a user block one.
    case FreeMismatchErr: {
       MAC_Error* extra = VG_(get_error_extra)(err);
       tl_assert(extra && Mallocd == extra->addrinfo.akind);
-      describe_addr_FreeMismatch ( VG_(get_error_address)(err), &(extra->addrinfo) );
+      if (NULL != MAC_(describe_addr_supp))
+         (void)MAC_(describe_addr_supp)( VG_(get_error_address)(err), 
+                                         &(extra->addrinfo) );
       return sizeof(MAC_Error);
    }
 
-   /* Don't need to return the correct size -- LeakErrs are always shown with
-      VG_(unique_error)() so they're not copied anyway. */
+   // No memory address involved with these ones.  Nb:  for LeakErrs the
+   // returned size does not matter -- LeakErrs are always shown with
+   // VG_(unique_error)() so they're not copied.
    case LeakErr:     return 0;
    case OverlapErr:  return sizeof(OverlapExtra);
+
    default: VG_(tool_panic)("update_extra: bad errkind");
    }
 }

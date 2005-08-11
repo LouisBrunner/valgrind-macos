@@ -653,28 +653,6 @@ static void* dequeue(Queue* q)
 /*--- malloc() et al replacement wrappers                  ---*/
 /*------------------------------------------------------------*/
 
-static __inline__ 
-void add_HP_Chunk(HP_Chunk* hc)
-{
-   n_heap_blocks++;
-   VG_(HT_add_node) ( malloc_list, (VgHashNode*)hc );
-}
-
-static __inline__ 
-HP_Chunk* get_HP_Chunk(void* p, HP_Chunk*** prev_chunks_next_ptr)
-{
-   return (HP_Chunk*)VG_(HT_get_node) ( malloc_list, (UWord)p,
-                                        (VgHashNode***)prev_chunks_next_ptr );
-}
-
-static __inline__
-void remove_HP_Chunk(HP_Chunk* hc, HP_Chunk** prev_chunks_next_ptr)
-{
-   tl_assert(n_heap_blocks > 0);
-   n_heap_blocks--;
-   *prev_chunks_next_ptr = hc->next;
-}
-
 // Forward declaration
 static void hp_census(void);
 
@@ -702,7 +680,7 @@ void* new_block ( ThreadId tid, void* p, SizeT size, SizeT align,
       if (is_zeroed) VG_(memset)(p, 0, size);
    }
 
-   // Make new HP_Chunk node, add to malloclist
+   // Make new HP_Chunk node, add to malloc_list
    hc       = VG_(malloc)(sizeof(HP_Chunk));
    hc->size = size;
    hc->data = (Addr)p;
@@ -712,7 +690,8 @@ void* new_block ( ThreadId tid, void* p, SizeT size, SizeT align,
       if (0 != size) 
          update_XCon(hc->where, size);
    }
-   add_HP_Chunk( hc );
+   VG_(HT_add_node)(malloc_list, (VgHashNode*)hc);
+   n_heap_blocks++;
 
    // do a census!
    hp_census();      
@@ -724,14 +703,14 @@ void* new_block ( ThreadId tid, void* p, SizeT size, SizeT align,
 static __inline__
 void die_block ( void* p, Bool custom_free )
 {
-   HP_Chunk *hc;
+   HP_Chunk* hc;
    
    VGP_PUSHCC(VgpCliMalloc);
 
    // Update statistics
    n_frees++;
 
-   // Remove HP_Chunk from malloclist
+   // Remove HP_Chunk from malloc_list
    hc = (HP_Chunk*)VG_(HT_remove)(malloc_list, (UWord)p);
    if (NULL == hc)
       return;   // must have been a bogus free()
@@ -1841,6 +1820,6 @@ static void ms_pre_clo_init()
 VG_DETERMINE_INTERFACE_VERSION(ms_pre_clo_init, 0)
 
 /*--------------------------------------------------------------------*/
-/*--- end                                                ms_main.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
 

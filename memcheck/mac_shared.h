@@ -394,7 +394,8 @@ extern void MAC_(record_param_error)       ( ThreadId tid, Addr a, Bool isReg,
                                              Bool isUnaddr, Char* msg );
 extern void MAC_(record_jump_error)        ( ThreadId tid, Addr a );
 extern void MAC_(record_free_error)        ( ThreadId tid, Addr a );
-extern void MAC_(record_freemismatch_error)( ThreadId tid, Addr a );
+extern void MAC_(record_freemismatch_error)( ThreadId tid, Addr a,
+                                             MAC_Chunk* mc);
 extern void MAC_(record_overlap_error)     ( ThreadId tid, 
                                              Char* function, OverlapExtra* oe );
 extern void MAC_(record_illegal_mempool_error) ( ThreadId tid, Addr pool );

@@ -475,6 +475,19 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    return;
 }
 
+/* Describe an address as best you can, for FreeMismatch error messages.
+   By the time this is called 'ai' is already setup with all the relevant
+   info.  So the only thing this can do is change that to UserG if 'a' is in
+   a user block, otherwise change it from 'Mallocd' to 'Freed'.
+*/
+static void describe_addr_FreeMismatch ( Addr a, AddrInfo* ai )
+{
+   /* Perhaps it's a user-def'd block ?  (only check if requested, though) */
+   if (NULL != MAC_(describe_addr_supp)) {
+      (void)MAC_(describe_addr_supp)( a, ai );
+   }
+}
+
 /* Is this address within some small distance below %ESP?  Used only
    for the --workaround-gcc296-bugs kludge. */
 static Bool is_just_below_ESP( Addr esp, Addr aa )
@@ -571,13 +584,18 @@ void MAC_(record_illegal_mempool_error) ( ThreadId tid, Addr a )
    VG_(maybe_record_error)( tid, IllegalMempoolErr, a, /*s*/NULL, &err_extra );
 }
 
-void MAC_(record_freemismatch_error) ( ThreadId tid, Addr a )
+void MAC_(record_freemismatch_error) ( ThreadId tid, Addr a, MAC_Chunk* mc )
 {
    MAC_Error err_extra;
+   AddrInfo* ai;
 
    tl_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
-   err_extra.addrinfo.akind = Undescribed;
+   ai = &err_extra.addrinfo;
+   ai->akind      = Mallocd;     // Nb: not 'Freed'
+   ai->blksize    = mc->size;
+   ai->rwoffset   = (Int)a - (Int)mc->data;
+   ai->lastchange = mc->where;
    VG_(maybe_record_error)( tid, FreeMismatchErr, a, /*s*/NULL, &err_extra );
 }
 
@@ -599,14 +617,21 @@ UInt MAC_(update_extra)( Error* err )
    case ParamErr:
    case UserErr:
    case FreeErr:
-   case IllegalMempoolErr:
-   case FreeMismatchErr: {
+   case IllegalMempoolErr: {
       MAC_Error* extra = VG_(get_error_extra)(err);
       if (extra != NULL && Undescribed == extra->addrinfo.akind) {
          describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
       }
       return sizeof(MAC_Error);
    }
+
+   case FreeMismatchErr: {
+      MAC_Error* extra = VG_(get_error_extra)(err);
+      tl_assert(extra && Mallocd == extra->addrinfo.akind);
+      describe_addr_FreeMismatch ( VG_(get_error_address)(err), &(extra->addrinfo) );
+      return sizeof(MAC_Error);
+   }
+
    /* Don't need to return the correct size -- LeakErrs are always shown with
       VG_(unique_error)() so they're not copied anyway. */
    case LeakErr:     return 0;

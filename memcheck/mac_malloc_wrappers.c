@@ -295,22 +295,21 @@ void die_and_free_mem ( ThreadId tid, MAC_Chunk* mc, SizeT rzB )
       /* Record where freed */
       mc->where = VG_(record_ExeContext) ( tid );
       add_to_freed_queue ( mc );
-   } else
+   } else {
       VG_(free) ( mc );
+   }
 }
 
 __inline__
 void MAC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MAC_AllocKind kind )
 {
    MAC_Chunk*  mc;
-   MAC_Chunk** prev_chunks_next_ptr;
 
    VGP_PUSHCC(VgpCliMalloc);
 
    cmalloc_n_frees++;
 
-   mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UWord)p,
-                                       (void*)&prev_chunks_next_ptr );
+   mc = (MAC_Chunk*)VG_(HT_remove) ( MAC_(malloc_list), (UWord)p );
    if (mc == NULL) {
       MAC_(record_free_error) ( tid, p );
       VGP_POPCC(VgpCliMalloc);
@@ -319,14 +318,9 @@ void MAC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MAC_AllocKind kind )
 
    /* check if its a matching free() / delete / delete [] */
    if (kind != mc->allockind) {
-      MAC_(record_freemismatch_error) ( tid, p );
+      MAC_(record_freemismatch_error) ( tid, p, mc );
    }
 
-   /* Remove mc from the malloclist using prev_chunks_next_ptr to
-      avoid repeating the hash table lookup.  Can't remove until at least
-      after free_mismatch errors are done because they use
-      describe_addr() which looks for it in malloclist. */
-   *prev_chunks_next_ptr = mc->next;
    die_and_free_mem ( tid, mc, rzB );
 
    VGP_POPCC(VgpCliMalloc);
@@ -378,7 +372,7 @@ void* MAC_(realloc) ( ThreadId tid, void* p, SizeT new_size )
    /* check if its a matching free() / delete / delete [] */
    if (MAC_AllocMalloc != mc->allockind) {
       /* can not realloc a range that was allocated with new or new [] */
-      MAC_(record_freemismatch_error) ( tid, (Addr)p );
+      MAC_(record_freemismatch_error) ( tid, (Addr)p, mc );
       /* but keep going anyway */
    }
 
@@ -472,20 +466,15 @@ static void destroy_mempool_nuke_chunk(VgHashNode *node, void *d)
 void MAC_(destroy_mempool)(Addr pool)
 {
    MAC_Mempool* mp;
-   MAC_Mempool** prev_next;
 
-   mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list),
-                                         (UWord)pool,
-                                         (void*)&prev_next );
+   mp = (MAC_Mempool*)VG_(HT_remove) ( MAC_(mempool_list), (UWord)pool );
 
    if (mp == NULL) {
       ThreadId tid = VG_(get_running_tid)();
-
       MAC_(record_illegal_mempool_error) ( tid, pool );
       return;
    }
 
-   *prev_next = mp->next;
    VG_(HT_apply_to_all_nodes)(mp->chunks, destroy_mempool_nuke_chunk, mp);
    VG_(HT_destruct)(mp->chunks);
 

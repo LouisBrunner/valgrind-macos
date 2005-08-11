@@ -24,7 +24,10 @@
   </argv>
 </args>
 
-<status> <state>RUNNING</state> <time>...</time> </status>
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
 
 <error>
   <unique>0x........</unique>
@@ -358,15 +361,36 @@
 </error>
 
 <errorcounts>
-  <pair> <count>...</count> <unique>0x........</unique> </pair>
-  <pair> <count>...</count> <unique>0x........</unique> </pair>
-  <pair> <count>...</count> <unique>0x........</unique> </pair>
-  <pair> <count>...</count> <unique>0x........</unique> </pair>
-  <pair> <count>...</count> <unique>0x........</unique> </pair>
-  <pair> <count>...</count> <unique>0x........</unique> </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
 </errorcounts>
 
-<status> <state>FINISHED</state> <time>...</time> </status>
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
 
 <suppcounts>...</suppcounts>
 

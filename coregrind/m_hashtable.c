@@ -108,6 +108,38 @@ VgHashNode* VG_(HT_get_node) ( VgHashTable table, UWord key,
    return curr;
 }
 
+/* Looks up a VgHashNode in the table.  Returns NULL if not found. */
+VgHashNode* VG_(HT_lookup) ( VgHashTable table, UWord key )
+{
+   VgHashNode* curr = table->chains[ CHAIN_NO(key, table) ];
+
+   while (curr) {
+      if (key == curr->key) {
+         return curr;
+      }
+      curr = curr->next;
+   }
+   return NULL;
+}
+
+/* Removes a VgHashNode from the table.  Returns NULL if not found. */
+VgHashNode* VG_(HT_remove) ( VgHashTable table, UWord key )
+{
+   Int          chain         = CHAIN_NO(key, table);
+   VgHashNode*  curr          =   table->chains[chain];
+   VgHashNode** prev_next_ptr = &(table->chains[chain]);
+
+   while (curr) {
+      if (key == curr->key) {
+         *prev_next_ptr = curr->next;
+         return curr;
+      }
+      prev_next_ptr = &(curr->next);
+      curr = curr->next;
+   }
+   return NULL;
+}
+
 /* Allocates a suitably-sized array, copies all the malloc'd block
    shadows into it, then returns both the array and the size of it.  This is
    used by the memory-leak detector.

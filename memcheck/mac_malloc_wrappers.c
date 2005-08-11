@@ -282,21 +282,13 @@ void* MAC_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size1 )
 }
 
 static
-void die_and_free_mem ( ThreadId tid,
-                        MAC_Chunk* mc,
-                        MAC_Chunk** prev_chunks_next_ptr, SizeT rzB )
+void die_and_free_mem ( ThreadId tid, MAC_Chunk* mc, SizeT rzB )
 {
    /* Note: ban redzones again -- just in case user de-banned them
       with a client request... */
    MAC_(ban_mem_heap)( mc->data-rzB, rzB );
    MAC_(die_mem_heap)( mc->data, mc->size );
    MAC_(ban_mem_heap)( mc->data+mc->size, rzB );
-
-   /* Remove mc from the malloclist using prev_chunks_next_ptr to
-      avoid repeating the hash table lookup.  Can't remove until at least
-      after free and free_mismatch errors are done because they use
-      describe_addr() which looks for it in malloclist. */
-   *prev_chunks_next_ptr = mc->next;
 
    /* Put it out of harm's way for a while, if not from a client request */
    if (MAC_AllocCustom != mc->allockind) {
@@ -330,7 +322,13 @@ void MAC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MAC_AllocKind kind )
       MAC_(record_freemismatch_error) ( tid, p );
    }
 
-   die_and_free_mem ( tid, mc, prev_chunks_next_ptr, rzB );
+   /* Remove mc from the malloclist using prev_chunks_next_ptr to
+      avoid repeating the hash table lookup.  Can't remove until at least
+      after free_mismatch errors are done because they use
+      describe_addr() which looks for it in malloclist. */
+   *prev_chunks_next_ptr = mc->next;
+   die_and_free_mem ( tid, mc, rzB );
+
    VGP_POPCC(VgpCliMalloc);
 }
 
@@ -354,8 +352,8 @@ void MAC_(__builtin_vec_delete) ( ThreadId tid, void* p )
 
 void* MAC_(realloc) ( ThreadId tid, void* p, SizeT new_size )
 {
-   MAC_Chunk  *mc;
-   MAC_Chunk **prev_chunks_next_ptr;
+   MAC_Chunk*  mc;
+   MAC_Chunk** prev_chunks_next_ptr;
 
    VGP_PUSHCC(VgpCliMalloc);
 
@@ -416,7 +414,12 @@ void* MAC_(realloc) ( ThreadId tid, void* p, SizeT new_size )
       VG_(memcpy)((void*)p_new, p, mc->size);
 
       /* Free old memory */
-      die_and_free_mem ( tid, mc, prev_chunks_next_ptr, MAC_MALLOC_REDZONE_SZB );
+      /* Remove mc from the malloclist using prev_chunks_next_ptr to
+         avoid repeating the hash table lookup.  Can't remove until at least
+         after free_mismatch errors are done because they use
+         describe_addr() which looks for it in malloclist. */
+      *prev_chunks_next_ptr = mc->next;
+      die_and_free_mem ( tid, mc, MAC_MALLOC_REDZONE_SZB );
 
       /* this has to be after die_and_free_mem, otherwise the
          former succeeds in shorting out the new block, not the
@@ -492,10 +495,8 @@ void MAC_(destroy_mempool)(Addr pool)
 void MAC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT size)
 {
    MAC_Mempool*  mp;
-   MAC_Mempool** prev_next;
 
-   mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list), (UWord)pool,
-                                        (void*)&prev_next );
+   mp = (MAC_Mempool*)VG_(HT_lookup) ( MAC_(mempool_list), (UWord)pool );
 
    if (mp == NULL) {
       MAC_(record_illegal_mempool_error) ( tid, pool );
@@ -509,28 +510,22 @@ void MAC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT size)
 void MAC_(mempool_free)(Addr pool, Addr addr)
 {
    MAC_Mempool*  mp;
-   MAC_Mempool** prev_pool;
    MAC_Chunk*    mc;
-   MAC_Chunk**   prev_chunk;
    ThreadId      tid = VG_(get_running_tid)();
 
-   mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list), (UWord)pool,
-                                       (void*)&prev_pool);
-
+   mp = (MAC_Mempool*)VG_(HT_lookup)(MAC_(mempool_list), (UWord)pool);
    if (mp == NULL) {
       MAC_(record_illegal_mempool_error)(tid, pool);
       return;
    }
 
-   mc = (MAC_Chunk*)VG_(HT_get_node)(mp->chunks, (UWord)addr,
-                                     (void*)&prev_chunk);
-
+   mc = (MAC_Chunk*)VG_(HT_remove)(mp->chunks, (UWord)addr);
    if (mc == NULL) {
       MAC_(record_free_error)(tid, (Addr)addr);
       return;
    }
 
-   die_and_free_mem ( tid, mc, prev_chunk, mp->rzB );
+   die_and_free_mem ( tid, mc, mp->rzB );
 }
 
 /*------------------------------------------------------------*/

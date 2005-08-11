@@ -437,7 +437,7 @@ static Bool addr_is_in_HashNode(VgHashNode* sh_ch, void *ap)
    putting the result in ai. */
 static void describe_addr ( Addr a, AddrInfo* ai )
 {
-   MAC_Chunk* sc;
+   MAC_Chunk* mc;
    ThreadId   tid;
 
    /* Perhaps it's a user-def'd block ?  (only check if requested, though) */
@@ -453,21 +453,21 @@ static void describe_addr ( Addr a, AddrInfo* ai )
       return;
    }
    /* Search for a recently freed block which might bracket it. */
-   sc = MAC_(first_matching_freed_MAC_Chunk)(addr_is_in_MAC_Chunk, &a);
-   if (NULL != sc) {
+   mc = MAC_(first_matching_freed_MAC_Chunk)(addr_is_in_MAC_Chunk, &a);
+   if (NULL != mc) {
       ai->akind      = Freed;
-      ai->blksize    = sc->size;
-      ai->rwoffset   = (Int)a - (Int)sc->data;
-      ai->lastchange = sc->where;
+      ai->blksize    = mc->size;
+      ai->rwoffset   = (Int)a - (Int)mc->data;
+      ai->lastchange = mc->where;
       return;
    }
    /* Search for a currently malloc'd block which might bracket it. */
-   sc = (MAC_Chunk*)VG_(HT_first_match)(MAC_(malloc_list), addr_is_in_HashNode, &a);
-   if (NULL != sc) {
+   mc = (MAC_Chunk*)VG_(HT_first_match)(MAC_(malloc_list), addr_is_in_HashNode, &a);
+   if (NULL != mc) {
       ai->akind      = Mallocd;
-      ai->blksize    = sc->size;
-      ai->rwoffset   = (Int)(a) - (Int)sc->data;
-      ai->lastchange = sc->where;
+      ai->blksize    = mc->size;
+      ai->rwoffset   = (Int)(a) - (Int)mc->data;
+      ai->lastchange = mc->where;
       return;
    }
    /* Clueless ... */

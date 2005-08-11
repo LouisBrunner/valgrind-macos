@@ -67,6 +67,12 @@ extern void VG_(HT_add_node) ( VgHashTable t, VgHashNode* node );
 extern VgHashNode* VG_(HT_get_node) ( VgHashTable t, UWord key,
                                     /*OUT*/VgHashNode*** next_ptr );
 
+/* Looks up a VgHashNode in the table.  Returns NULL if not found. */
+extern VgHashNode* VG_(HT_lookup) ( VgHashTable table, UWord key );
+
+/* Removes a VgHashNode from the table.  Returns NULL if not found. */
+extern VgHashNode* VG_(HT_remove) ( VgHashTable table, UWord key );
+
 /* Allocates an array of pointers to all the shadow chunks of malloc'd
    blocks.  Must be freed with VG_(free)(). */
 extern VgHashNode** VG_(HT_to_array) ( VgHashTable t, /*OUT*/ UInt* n_shadows );

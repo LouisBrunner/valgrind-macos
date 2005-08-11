@@ -84,7 +84,7 @@ static Int        freed_list_volume = 0;
    some of the oldest blocks in the queue at the same time. */
 static void add_to_freed_queue ( MAC_Chunk* mc )
 {
-   MAC_Chunk* sc1;
+   MAC_Chunk* mc1;
 
    /* Put it at the end of the freed list */
    if (freed_list_end == NULL) {
@@ -106,21 +106,21 @@ static void add_to_freed_queue ( MAC_Chunk* mc )
       tl_assert(freed_list_start != NULL);
       tl_assert(freed_list_end != NULL);
 
-      sc1 = freed_list_start;
-      freed_list_volume -= sc1->size;
+      mc1 = freed_list_start;
+      freed_list_volume -= mc1->size;
       /* VG_(printf)("volume now %d\n", freed_list_volume); */
       tl_assert(freed_list_volume >= 0);
 
       if (freed_list_start == freed_list_end) {
          freed_list_start = freed_list_end = NULL;
       } else {
-         freed_list_start = sc1->next;
+         freed_list_start = mc1->next;
       }
-      sc1->next = NULL; /* just paranoia */
+      mc1->next = NULL; /* just paranoia */
 
       /* free MAC_Chunk */
-      VG_(cli_free) ( (void*)(sc1->data) );
-      VG_(free) ( sc1 );
+      VG_(cli_free) ( (void*)(mc1->data) );
+      VG_(free) ( mc1 );
    }
 }
 
@@ -141,12 +141,10 @@ MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk) ( Bool (*p)(MAC_Chunk*, void*),
 
 /* Allocate its shadow chunk, put it on the appropriate list. */
 static
-void add_MAC_Chunk ( ThreadId tid,
-                     Addr p, SizeT size, MAC_AllocKind kind, VgHashTable table)
+MAC_Chunk* create_MAC_Chunk ( ThreadId tid, Addr p, SizeT size,
+                              MAC_AllocKind kind)
 {
-   MAC_Chunk* mc;
-
-   mc            = VG_(malloc)(sizeof(MAC_Chunk));
+   MAC_Chunk* mc = VG_(malloc)(sizeof(MAC_Chunk));
    mc->data      = p;
    mc->size      = size;
    mc->allockind = kind;
@@ -158,10 +156,9 @@ void add_MAC_Chunk ( ThreadId tid,
       VG_(malloc) should be noaccess as far as the client is
       concerned. */
    if (!MAC_(check_noaccess)( (Addr)mc, sizeof(MAC_Chunk), NULL )) {
-      VG_(tool_panic)("add_MAC_Chunk: shadow area is accessible");
+      VG_(tool_panic)("create_MAC_Chunk: shadow area is accessible");
    } 
-
-   VG_(HT_add_node)( table, (VgHashNode*)mc );
+   return mc;
 }
 
 /*------------------------------------------------------------*/
@@ -215,7 +212,8 @@ void* MAC_(new_block) ( ThreadId tid,
    // Only update this stat if allocation succeeded.
    cmalloc_bs_mallocd += size;
 
-   add_MAC_Chunk( tid, p, size, kind, table );
+   VG_(HT_add_node)( table, 
+                     (VgHashNode*)create_MAC_Chunk(tid, p, size, kind) );
 
    MAC_(ban_mem_heap)( p-rzB, rzB );
    MAC_(new_mem_heap)( p, size, is_zeroed );
@@ -303,7 +301,7 @@ void die_and_free_mem ( ThreadId tid, MAC_Chunk* mc, SizeT rzB )
 __inline__
 void MAC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MAC_AllocKind kind )
 {
-   MAC_Chunk*  mc;
+   MAC_Chunk* mc;
 
    VGP_PUSHCC(VgpCliMalloc);
 
@@ -344,10 +342,11 @@ void MAC_(__builtin_vec_delete) ( ThreadId tid, void* p )
       tid, (Addr)p, MAC_MALLOC_REDZONE_SZB, MAC_AllocNewVec);
 }
 
-void* MAC_(realloc) ( ThreadId tid, void* p, SizeT new_size )
+void* MAC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
 {
-   MAC_Chunk*  mc;
-   MAC_Chunk** prev_chunks_next_ptr;
+   MAC_Chunk* mc;
+   void*      p_new;
+   SizeT      old_size;
 
    VGP_PUSHCC(VgpCliMalloc);
 
@@ -358,72 +357,70 @@ void* MAC_(realloc) ( ThreadId tid, void* p, SizeT new_size )
    if (complain_about_silly_args(new_size, "realloc")) 
       return NULL;
 
-   /* First try and find the block. */
-   mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UWord)p,
-                                       (void*)&prev_chunks_next_ptr );
-
+   /* Remove the old block */
+   mc = (MAC_Chunk*)VG_(HT_remove) ( MAC_(malloc_list), (UWord)p_old );
    if (mc == NULL) {
-      MAC_(record_free_error) ( tid, (Addr)p );
+      MAC_(record_free_error) ( tid, (Addr)p_old );
       /* Perhaps we should return to the program regardless. */
       VGP_POPCC(VgpCliMalloc);
       return NULL;
    }
-  
+
    /* check if its a matching free() / delete / delete [] */
    if (MAC_AllocMalloc != mc->allockind) {
       /* can not realloc a range that was allocated with new or new [] */
-      MAC_(record_freemismatch_error) ( tid, (Addr)p, mc );
+      MAC_(record_freemismatch_error) ( tid, (Addr)p_old, mc );
       /* but keep going anyway */
    }
 
-   if (mc->size == new_size) {
+   old_size = mc->size;
+
+   if (old_size == new_size) {
       /* size unchanged */
       mc->where = VG_(record_ExeContext)(tid);
-      VGP_POPCC(VgpCliMalloc);
-      return p;
+      p_new = p_old;
       
-   } else if (mc->size > new_size) {
+   } else if (old_size > new_size) {
       /* new size is smaller */
       MAC_(die_mem_heap)( mc->data+new_size, mc->size-new_size );
       mc->size = new_size;
       mc->where = VG_(record_ExeContext)(tid);
-      VGP_POPCC(VgpCliMalloc);
-      return p;
+      p_new = p_old;
 
    } else {
       /* new size is bigger */
-      Addr p_new;
-
       /* Get new memory */
-      p_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
+      Addr a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
 
-      /* First half kept and copied, second half new, 
-         red zones as normal */
-      MAC_(ban_mem_heap) ( p_new-MAC_MALLOC_REDZONE_SZB, MAC_MALLOC_REDZONE_SZB );
-      MAC_(copy_mem_heap)( (Addr)p, p_new, mc->size );
-      MAC_(new_mem_heap) ( p_new+mc->size, new_size-mc->size, /*inited*/False );
-      MAC_(ban_mem_heap) ( p_new+new_size, MAC_MALLOC_REDZONE_SZB );
+      /* First half kept and copied, second half new, red zones as normal */
+      MAC_(ban_mem_heap) ( a_new-MAC_MALLOC_REDZONE_SZB, MAC_MALLOC_REDZONE_SZB );
+      MAC_(copy_mem_heap)( (Addr)p_old, a_new, mc->size );
+      MAC_(new_mem_heap) ( a_new+mc->size, new_size-mc->size, /*init'd*/False );
+      MAC_(ban_mem_heap) ( a_new+new_size, MAC_MALLOC_REDZONE_SZB );
 
       /* Copy from old to new */
-      VG_(memcpy)((void*)p_new, p, mc->size);
+      VG_(memcpy)((void*)a_new, p_old, mc->size);
 
       /* Free old memory */
-      /* Remove mc from the malloclist using prev_chunks_next_ptr to
-         avoid repeating the hash table lookup.  Can't remove until at least
-         after free_mismatch errors are done because they use
-         describe_addr() which looks for it in malloclist. */
-      *prev_chunks_next_ptr = mc->next;
+      /* Nb: we have to allocate a new MAC_Chunk for the new memory rather
+         than recycling the old one, so that any erroneous accesses to the
+         old memory are reported. */
       die_and_free_mem ( tid, mc, MAC_MALLOC_REDZONE_SZB );
 
-      /* this has to be after die_and_free_mem, otherwise the
-         former succeeds in shorting out the new block, not the
-         old, in the case when both are on the same list.  */
-      add_MAC_Chunk ( tid, p_new, new_size, 
-                           MAC_AllocMalloc, MAC_(malloc_list) );
-
-      VGP_POPCC(VgpCliMalloc);
-      return (void*)p_new;
+      // Allocate a new chunk.
+      mc = create_MAC_Chunk( tid, a_new, new_size, MAC_AllocMalloc );
+      p_new = (void*)a_new;
    }  
+
+   // Now insert the new mc (with a possibly new 'data' field) into
+   // malloc_list.  If this realloc() did not increase the memory size, we
+   // will have removed and then re-added mc unnecessarily.  But that's ok
+   // because shrinking a block with realloc() is (presumably) much rarer
+   // than growing it, and this way simplifies the growing case.
+   VG_(HT_add_node)( MAC_(malloc_list), (VgHashNode*)mc );
+
+   VGP_POPCC(VgpCliMalloc);
+   return p_new;
 }
 
 /* Memory pool stuff. */

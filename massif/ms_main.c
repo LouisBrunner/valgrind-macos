@@ -724,7 +724,7 @@ void* new_block ( ThreadId tid, void* p, SizeT size, SizeT align,
 static __inline__
 void die_block ( void* p, Bool custom_free )
 {
-   HP_Chunk *hc, **remove_handle;
+   HP_Chunk *hc;
    
    VGP_PUSHCC(VgpCliMalloc);
 
@@ -732,11 +732,11 @@ void die_block ( void* p, Bool custom_free )
    n_frees++;
 
    // Remove HP_Chunk from malloclist
-   hc = get_HP_Chunk( p, &remove_handle );
-   if (hc == NULL)
-      return;   // must have been a bogus free(), or p==NULL
-   tl_assert(hc->data == (Addr)p);
-   remove_HP_Chunk(hc, remove_handle);
+   hc = (HP_Chunk*)VG_(HT_remove)(malloc_list, (UWord)p);
+   if (NULL == hc)
+      return;   // must have been a bogus free()
+   tl_assert(n_heap_blocks > 0);
+   n_heap_blocks--;
 
    if (clo_heap && hc->size != 0)
       update_XCon(hc->where, -hc->size);
@@ -796,22 +796,20 @@ static void ms___builtin_vec_delete ( ThreadId tid, void* p )
 
 static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
 {
-   HP_Chunk*    hc;
-   HP_Chunk**   remove_handle;
-   void*        p_new;
-   SizeT        old_size;
-   XPt         *old_where, *new_where;
+   HP_Chunk* hc;
+   void*     p_new;
+   SizeT     old_size;
+   XPt      *old_where, *new_where;
    
    VGP_PUSHCC(VgpCliMalloc);
 
    // First try and find the block.
-   hc = get_HP_Chunk ( p_old, &remove_handle );
+   hc = (HP_Chunk*)VG_(HT_remove)(malloc_list, (UWord)p_old);
    if (hc == NULL) {
       VGP_POPCC(VgpCliMalloc);
-      return NULL;   // must have been a bogus free()
+      return NULL;   // must have been a bogus realloc()
    }
 
-   tl_assert(hc->data == (Addr)p_old);
    old_size = hc->size;
   
    if (new_size <= old_size) {
@@ -839,12 +837,12 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
       if (0 != new_size) update_XCon(new_where,  new_size);
    }
 
-   // If block has moved, have to remove and reinsert in the malloclist
-   // (since the updated 'data' field is the hash lookup key).
-   if (p_new != p_old) {
-      remove_HP_Chunk(hc, remove_handle);
-      add_HP_Chunk(hc);
-   }
+   // Now insert the new hc (with a possibly new 'data' field) into
+   // malloc_list.  If this realloc() did not increase the memory size, we
+   // will have removed and then re-added mc unnecessarily.  But that's ok
+   // because shrinking a block with realloc() is (presumably) much rarer
+   // than growing it, and this way simplifies the growing case.
+   VG_(HT_add_node)(malloc_list, (VgHashNode*)hc);
 
    VGP_POPCC(VgpCliMalloc);
    return p_new;

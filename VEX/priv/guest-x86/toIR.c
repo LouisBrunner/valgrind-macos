@@ -11353,11 +11353,11 @@ DisResult disInstr_X86_WRK (
          dres.whatNext = Dis_StopHere;
          break;
 
-//--       case 0xC3:           /* REP RET */
-//--          /* AMD K7/K8-specific optimisation; faster than vanilla RET */
-//--          dis_ret(cb, 0);
-//--          DIP("rep ret\n");
-//--          break;
+      case 0xC3:           /* REP RET -- same as normal ret? */
+         dis_ret(0);
+         dres.whatNext = Dis_StopHere;
+         DIP("rep ret\n");
+         break;
 
       default:
          goto decode_failure;

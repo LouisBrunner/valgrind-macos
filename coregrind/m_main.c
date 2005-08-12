@@ -952,7 +952,7 @@ static Addr setup_client_stack(void* init_sp,
 static const char* executable_name;
 
 static Bool match_executable(const char *entry) {
-   char buf[strlen(entry) + strlen(executable_name) + 2];
+   char buf[strlen(entry) + strlen(executable_name) + 3];
 
    /* empty PATH element means . */
    if (*entry == '\0')

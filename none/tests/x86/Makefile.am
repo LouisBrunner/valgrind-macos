@@ -8,6 +8,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bt_everything.stderr.exp bt_everything.stdout.exp bt_everything.vgtest \
 	bt_literal.stderr.exp bt_literal.stdout.exp bt_literal.vgtest \
 	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
+	cmpxchg8b.stderr.exp cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
@@ -22,7 +23,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	yield.stderr.exp yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
-	badseg bt_everything bt_literal cpuid fpu_lazy_eflags \
+	badseg bt_everything bt_literal cmpxchg8b cpuid fpu_lazy_eflags \
 	getseg $(INSN_TESTS) \
 	int pushpopseg seg_override sigcontext smc1 yield
 

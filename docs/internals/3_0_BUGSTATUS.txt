@@ -55,7 +55,7 @@ FIXED-30BRANCH: won't (3.1 fix only)
 
 This ought to be fixed for 3.0.1.
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    done(1331,)
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
@@ -243,7 +243,7 @@ FIXED-30BRANCH: no
 
 110591 amd64: rdtsc not implemented properly
 
-(Also afflicts x86)
+Under consideration. (Also afflicts x86)
 
 FIXED-TRUNK:    no
 FIXED-30BRANCH: no
@@ -276,3 +276,18 @@ FIXED-30BRANCH: TODO
 FIXED-TRUNK:    done(4386)
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+
+110669  valgrind attach to gdb and quitting gdb hangs valgrind
+
+Not clear if this is really a Valgrind bug.
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+110671  vex x86->IR: unhandled instruction bytes: 0xF3 0xC3 (rep ret)
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO

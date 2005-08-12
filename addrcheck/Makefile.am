@@ -10,7 +10,7 @@ vgtool_addrcheck_so_LDFLAGS = -shared
 vgtool_addrcheck_so_LDADD = \
 	../memcheck/mac_leakcheck.o \
 	../memcheck/mac_malloc_wrappers.o \
-	../memcheck/mac_needs.o
+	../memcheck/mac_shared.o
 
 vgpreload_addrcheck_so_SOURCES = 
 vgpreload_addrcheck_so_LDADD = \

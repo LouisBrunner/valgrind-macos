@@ -211,6 +211,34 @@ FIXED-30BRANCH: yes(1330)
 
 ----------------------------------------------------------------
 
+110591 rdtsc is kludged
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+110652 amd64 assertion: cwtd
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+110653 amd64 assertion: sarb $0x4,foo(%rip)
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+110656 wrong file stated when ./foobar run
+
+FIXED-TRUNK:    yes(4386)
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
 XML <unique> printing wrong
 
 FIXED-TRUNK:    4355,4357,4358

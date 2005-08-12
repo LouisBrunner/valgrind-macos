@@ -97,7 +97,7 @@ FIXED-30BRANCH: yes (1325)
 
 110183 tail of page with _end
 
-Seems low priority.
+Could be a problem for glibc developers.  Consider fixing.
 
 FIXED-TRUNK:    no
 FIXED-30BRANCH: no
@@ -242,7 +242,7 @@ FIXED-30BRANCH: no
 XML <unique> printing wrong
 
 FIXED-TRUNK:    4355,4357,4358
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4585
 
 ----------------------------------------------------------------
 
@@ -259,3 +259,47 @@ FIXED-TRUNK:
 FIXED-30BRANCH: done(4360)
 
 ----------------------------------------------------------------
+
+110536/7/8/9/40 Valgrind crashes when tring to realloc memory
+
+Uninvestigated.
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+110591 amd64: rdtsc not implemented properly
+
+(Also afflicts x86)
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
+Nick r4384 (stub implementations of Addrcheck and Helgrind)
+
+FIXED-TRUNK:    yes(4384)
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+110652  AMD64 valgrind crashes on cwtd instruction
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+110653  AMD64 valgrind crashes on sarb $0x4,foo(%rip) instruction
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+110656  PATH=/usr/bin::/bin valgrind foobar stats ./fooba
+
+FIXED-TRUNK:    done(4386)
+FIXED-30BRANCH: TODO

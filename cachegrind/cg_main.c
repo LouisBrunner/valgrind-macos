@@ -576,12 +576,6 @@ void instrumentInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
    if (storeAddrExpr) 
       tl_assert(wordTy == typeOfIRExpr(bbOut->tyenv, storeAddrExpr));
 
-
-   // Nb: instrLen will be zero if Vex failed to decode it.
-   tl_assert( 0 == instrLen ||
-              (instrLen >= VG_MIN_INSTR_SZB && 
-               instrLen <= VG_MAX_INSTR_SZB) );
-
    // Large (eg. 28B, 108B, 512B on x86) data-sized instructions will be
    // done inaccurately, but they're very rare and this avoids errors from
    // hitting more than two cache lines in the simulation.
@@ -703,6 +697,14 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
             tl_assert(!addedInstrumentation);
             addedInstrumentation = True;
             
+            // Nb: instrLen will be zero if Vex failed to decode it.
+            // Also Client requests can appear to be very large (eg. 18
+            // bytes on x86) because they are really multiple instructions.
+            tl_assert( 0 == instrLen ||
+                       bbIn->jumpkind == Ijk_ClientReq ||
+                       (instrLen >= VG_MIN_INSTR_SZB && 
+                        instrLen <= VG_MAX_INSTR_SZB) );
+
             // Add instrumentation before this statement.
             instrumentInstr(bbOut, &bbInfo->instrs[ bbInfo_i ], bbSeenBefore,
                       instrAddr, instrLen, dataSize, loadAddrExpr, storeAddrExpr);

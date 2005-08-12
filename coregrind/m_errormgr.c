@@ -799,7 +799,7 @@ void VG_(show_error_counts_as_XML) ( void )
          continue;
       VG_(message)(
          Vg_UserMsg, "  <pair> <count>%d</count> "
-                     "<unique>0x%llx</unique> </pair>",
+                     "<unique>0x%x</unique> </pair>",
          err->count, err->unique
       );
    }

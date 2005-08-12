@@ -11709,10 +11709,72 @@ DisResult disInstr_X86_WRK (
       case 0xB1: /* CMPXCHG Gv,Ev */
          delta = dis_cmpxchg_G_E ( sorb, sz, delta );
          break;
-//--       case 0xC7: /* CMPXCHG8B Gv */
-//--          eip = dis_cmpxchg8b ( cb, sorb, eip );
-//--          break;
-//-- 
+
+      case 0xC7: { /* CMPXCHG8B Gv (0F C7 /1) */
+         IRTemp   m64_old = newTemp(Ity_I64);
+         IRTemp   m64_new = newTemp(Ity_I64);
+         IRTemp    da_old = newTemp(Ity_I64);
+         IRTemp    da_new = newTemp(Ity_I64);
+         IRTemp    cb_old = newTemp(Ity_I64);
+         IRTemp flags_old = newTemp(Ity_I32);
+         IRTemp flags_new = newTemp(Ity_I32);
+         IRTemp      cond = newTemp(Ity_I8);
+
+	 /* Decode, and generate address. */
+         modrm = getIByte(delta);
+         if (epartIsReg(modrm)) goto decode_failure;
+         if (gregOfRM(modrm) != 1) goto decode_failure;
+         addr = disAMode ( &alen, sorb, delta, dis_buf );
+         delta += alen;
+
+	 /* Fetch the old 64-bit values and compute the guard. */
+         assign( m64_old, loadLE(Ity_I64, mkexpr(addr) ));
+         assign( da_old,  binop(Iop_32HLto64, 
+                                getIReg(4,R_EDX), getIReg(4,R_EAX)) );
+         assign( cb_old,  binop(Iop_32HLto64, 
+                                getIReg(4,R_ECX), getIReg(4,R_EBX)) );
+
+	 assign( cond, 
+                 unop(Iop_1Uto8, 
+                      binop(Iop_CmpEQ64, mkexpr(da_old), mkexpr(m64_old))) );
+
+         /* Compute new %edx:%eax and m64 values, and put in place */
+         assign( da_new, 
+                 IRExpr_Mux0X(mkexpr(cond), mkexpr(m64_old), mkexpr(da_old)));
+         assign( m64_new,
+                 IRExpr_Mux0X(mkexpr(cond), mkexpr(m64_old), mkexpr(cb_old)));
+
+         putIReg(4, R_EDX, unop(Iop_64HIto32, mkexpr(da_new)) );
+         putIReg(4, R_EAX, unop(Iop_64to32, mkexpr(da_new)) );
+         storeLE( mkexpr(addr), mkexpr(m64_new) );
+
+         /* Copy the guard into the Z flag and leave the others unchanged */
+         assign( flags_old, widenUto32(mk_x86g_calculate_eflags_all()));
+         assign( 
+            flags_new,
+            binop(Iop_Or32,
+                  binop(Iop_And32, mkexpr(flags_old), 
+                                   mkU32(~X86G_CC_MASK_Z)),
+                  binop(Iop_Shl32, 
+                        binop(Iop_And32, 
+                              unop(Iop_8Uto32, mkexpr(cond)), mkU32(1)), 
+                        mkU8(X86G_CC_SHIFT_Z)) ));
+
+         stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+         stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(flags_new) ));
+         stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+         /* Set NDEP even though it isn't used.  This makes
+            redundant-PUT elimination of previous stores to this field
+            work better. */
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
+
+         /* Sheesh.  Aren't you glad it was me and not you that had to
+	    write and validate all this grunge? */
+
+	 DIP("cmpxchg8b %s\n", dis_buf);
+	 break;
+      }
+
       /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */
 
       case 0xA2: { /* CPUID */

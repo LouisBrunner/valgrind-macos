@@ -299,5 +299,5 @@ Nick (Cachegrind should not assert when it encounters a client
 request.)
 
 FIXED-TRUNK:    done(4391)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: done(4393)
 

@@ -301,3 +301,11 @@ request.)
 FIXED-TRUNK:    done(4391)
 FIXED-30BRANCH: done(4393)
 
+----------------------------------------------------------------
+
+addrcheck/helgrind tools should print an error message while not
+being ported.
+
+FIXED-TRUNK:    done(4384)
+FIXED-30BRANCH: done(4397)
+

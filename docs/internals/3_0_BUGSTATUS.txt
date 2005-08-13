@@ -253,8 +253,8 @@ FIXED-30BRANCH: no
 
 Nick r4384 (stub implementations of Addrcheck and Helgrind)
 
-FIXED-TRUNK:    yes(4384)
-FIXED-30BRANCH: TODO
+FIXED-TRUNK:    done(4384)
+FIXED-30BRANCH: done(4397)
 
 ----------------------------------------------------------------
 
@@ -303,9 +303,8 @@ FIXED-30BRANCH: done(4393)
 
 ----------------------------------------------------------------
 
-addrcheck/helgrind tools should print an error message while not
-being ported.
+110685  amd64->IR: unhandled instruction bytes: 0xE1 0x56 (loope Jb)
 
-FIXED-TRUNK:    done(4384)
-FIXED-30BRANCH: done(4397)
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
 

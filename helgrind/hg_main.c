@@ -2287,8 +2287,7 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 static IRBB* hg_instrument ( IRBB* bb_in, VexGuestLayout* layout, 
                              IRType gWordTy, IRType hWordTy )
 {
-   VG_(message)(Vg_DebugMsg, "Helgrind is not yet ready to handle Vex IR");
-   VG_(exit)(1);
+   tl_assert(0);  // Need to convert to Vex
 }
 
 /*--------------------------------------------------------------------*/
@@ -3373,6 +3372,17 @@ static void hg_pre_clo_init(void)
    VG_(basic_tool_funcs)          (hg_post_clo_init,
                                    hg_instrument,
                                    hg_fini);
+
+   VG_(printf)(
+"\n"
+"Helgrind is currently not working, because:\n"
+" (a) it is not yet ready to handle the Vex IR and the use with 64-bit\n"
+"     platforms introduced in Valgrind 3.0.0\n"
+" (b) we need to get thread operation tracking working again after\n"
+"     the changes added in Valgrind 2.4.0\n"
+"\n"
+"Sorry for the inconvenience.  Let us know if this is a problem for you.\n");
+   VG_(exit)(1);
 
    VG_(needs_core_errors)         ();
    VG_(needs_tool_errors)         (hg_eq_Error,

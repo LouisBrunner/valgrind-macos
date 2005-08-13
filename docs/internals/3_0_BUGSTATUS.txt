@@ -275,7 +275,7 @@ FIXED-30BRANCH: TODO
 110656  PATH=/usr/bin::/bin valgrind foobar stats ./fooba
 
 FIXED-TRUNK:    done(4386)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: done(4395)
 
 ----------------------------------------------------------------
 

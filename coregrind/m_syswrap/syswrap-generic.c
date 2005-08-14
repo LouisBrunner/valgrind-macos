@@ -2871,8 +2871,12 @@ POST(sys_getgroups)
 
 PRE(sys_getcwd)
 {
-   // Note that the kernel version of getcwd() behaves quite differently to
-   // the glibc one.
+   // Comment from linux/fs/dcache.c:
+   //   NOTE! The user-level library version returns a character pointer.
+   //   The kernel system call just returns the length of the buffer filled
+   //   (which includes the ending '\0' character), or a negative error
+   //   value.
+   // Is this Linux-specific?  If so it should be moved to syswrap-linux.c.
    PRINT("sys_getcwd ( %p, %llu )", ARG1,(ULong)ARG2);
    PRE_REG_READ2(long, "getcwd", char *, buf, unsigned long, size);
    PRE_MEM_WRITE( "getcwd(buf)", ARG1, ARG2 );

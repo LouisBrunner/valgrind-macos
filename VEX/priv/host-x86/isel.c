@@ -1721,7 +1721,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 
    /* CmpNE64 */
    if (e->tag == Iex_Binop 
-       && e->Iex.Binop.op == Iop_CmpNE64) {
+       && (e->Iex.Binop.op == Iop_CmpNE64
+           || e->Iex.Binop.op == Iop_CmpEQ64)) {
       HReg hi1, hi2, lo1, lo2;
       HReg tHi = newVRegI(env);
       HReg tLo = newVRegI(env);
@@ -1734,6 +1735,7 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, X86Instr_Alu32R(Xalu_OR,X86RMI_Reg(tHi), tLo));
       switch (e->Iex.Binop.op) {
          case Iop_CmpNE64:  return Xcc_NZ;
+         case Iop_CmpEQ64:  return Xcc_Z;
          default: vpanic("iselCondCode(x86): CmpXX64");
       }
    }

@@ -90,6 +90,14 @@ extern void VG_(HT_apply_to_all_nodes)( VgHashTable t,
                                         void (*f)(VgHashNode*, void*),
                                         void* d );
 
+/* Reset the table's iterator to point to the first element. */
+extern void VG_(HT_ResetIter) ( VgHashTable table );
+
+/* Return the element pointed to by the iterator and move on to the next
+   one.  Returns NULL if the last one has been passed, or if HT_ResetIter()
+   has not been called previously. */
+extern void* VG_(HT_Next) ( VgHashTable table );
+
 /* Destroy a table. */
 extern void VG_(HT_destruct) ( VgHashTable t );
 

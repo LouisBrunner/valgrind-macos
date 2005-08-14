@@ -41,7 +41,9 @@
 
 struct _VgHashTable {
    UInt        n_chains;      // should be prime
-   VgHashNode* chains[0];
+   VgHashNode* iterNode;      // current iterator node
+   UInt        iterChain;     // next chain to be traversed by the iterator
+   VgHashNode* chains[0];     // must be last field in the struct!
 };
 
 /*--------------------------------------------------------------------*/
@@ -201,6 +203,33 @@ void VG_(HT_apply_to_all_nodes)( VgHashTable table,
          f(node, d);
       }
    }
+}
+
+void VG_(HT_ResetIter)(VgHashTable table)
+{
+   vg_assert(table);
+   table->iterNode  = NULL;
+   table->iterChain = 0;
+}
+
+void* VG_(HT_Next)(VgHashTable table)
+{
+   Int i;
+   vg_assert(table);
+   
+   if (table->iterNode && table->iterNode->next) {
+      table->iterNode = table->iterNode->next;
+      return table->iterNode;
+   }
+
+   for (i = table->iterChain; i < table->n_chains; i++) {
+      if (table->chains[i]) {
+         table->iterNode  = table->chains[i];
+         table->iterChain = i + 1;  // Next chain to be traversed
+         return table->iterNode;
+      }
+   }
+   return NULL;
 }
 
 void VG_(HT_destruct)(VgHashTable table)

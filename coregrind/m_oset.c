@@ -601,8 +601,6 @@ static Bool avl_removeroot(AvlTree* t)
    Int ch;
    AvlNode* n;
 
-   vg_assert(t && t->root);
-
    if (!t->root->left) {
       if (!t->root->right) {
          t->root = NULL;

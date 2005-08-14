@@ -965,13 +965,6 @@ void MAC_(common_fini)(void (*leak_check)(ThreadId tid, LeakCheckMode mode))
 
 Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
 {
-   Char* err  = 
-         "The client requests VALGRIND_MALLOCLIKE_BLOCK and\n"
-      "   VALGRIND_FREELIKE_BLOCK have moved.  Please recompile your\n"
-      "   program to incorporate the updates in the Valgrind header files.\n"
-      "   You shouldn't need to change the text of your program at all.\n"
-      "   Everything should then work as before.  Sorry for the bother.\n";
-   
    switch (arg[0]) {
    case VG_USERREQ__COUNT_LEAKS: { /* count leaked bytes */
       UWord** argp = (UWord**)arg;
@@ -987,10 +980,6 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
       *ret = 0;
       return True;
    }
-   case VG_USERREQ__MALLOCLIKE_BLOCK__OLD_DO_NOT_USE:
-   case VG_USERREQ__FREELIKE_BLOCK__OLD_DO_NOT_USE:
-      VG_(tool_panic)(err);
-
    case VG_USERREQ__MALLOCLIKE_BLOCK: {
       Addr p         = (Addr)arg[1];
       SizeT sizeB    =       arg[2];

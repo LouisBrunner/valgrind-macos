@@ -81,13 +81,6 @@ typedef
       VG_USERREQ__DO_LEAK_CHECK,
       VG_USERREQ__COUNT_LEAKS,
 
-      /* These two have been moved into core, because they are useful for
-         any tool that tracks heap blocks.  Hence the suffix.  But they're
-         still here for backwards compatibility, although Valgrind will
-         abort with an explanatory message if you use them. */
-      VG_USERREQ__MALLOCLIKE_BLOCK__OLD_DO_NOT_USE,
-      VG_USERREQ__FREELIKE_BLOCK__OLD_DO_NOT_USE,
-
       VG_USERREQ__GET_VBITS,
       VG_USERREQ__SET_VBITS,
 
@@ -215,22 +208,6 @@ typedef
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                                \
                             VG_USERREQ__COUNT_LEAKS,                    \
                             &leaked, &dubious, &reachable, &suppressed);\
-   }
-
-
-/* These two have been moved to valgrind.h;  still here so that a warning can
-   be printed out for any programs using the old ones. */
-#define VALGRIND_MALLOCLIKE_BLOCK__OLD_DO_NOT_USE(addr, sizeB, rzB, is_zeroed)\
-   {unsigned int _qzz_res;                                         \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
-                            VG_USERREQ__MALLOCLIKE_BLOCK,          \
-                            addr, sizeB, rzB, is_zeroed);          \
-   }
-#define VALGRIND_FREELIKE_BLOCK__OLD_DO_NOT_USE(addr, rzB)         \
-   {unsigned int _qzz_res;                                         \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
-                            VG_USERREQ__FREELIKE_BLOCK,            \
-                            addr, rzB, 0, 0);                      \
    }
 
 

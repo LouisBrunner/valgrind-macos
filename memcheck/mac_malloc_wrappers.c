@@ -463,7 +463,7 @@ void MAC_(destroy_mempool)(Addr pool)
 {
    MAC_Mempool* mp;
 
-   mp = (MAC_Mempool*)VG_(HT_remove) ( MAC_(mempool_list), (UWord)pool );
+   mp = VG_(HT_remove) ( MAC_(mempool_list), (UWord)pool );
 
    if (mp == NULL) {
       ThreadId tid = VG_(get_running_tid)();
@@ -481,7 +481,7 @@ void MAC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT size)
 {
    MAC_Mempool*  mp;
 
-   mp = (MAC_Mempool*)VG_(HT_lookup) ( MAC_(mempool_list), (UWord)pool );
+   mp = VG_(HT_lookup) ( MAC_(mempool_list), (UWord)pool );
 
    if (mp == NULL) {
       MAC_(record_illegal_mempool_error) ( tid, pool );
@@ -498,7 +498,7 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
    MAC_Chunk*    mc;
    ThreadId      tid = VG_(get_running_tid)();
 
-   mp = (MAC_Mempool*)VG_(HT_lookup)(MAC_(mempool_list), (UWord)pool);
+   mp = VG_(HT_lookup)(MAC_(mempool_list), (UWord)pool);
    if (mp == NULL) {
       MAC_(record_illegal_mempool_error)(tid, pool);
       return;

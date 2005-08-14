@@ -2328,8 +2328,8 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
       // Use zero as the redzone for client blocks.
       if (VG_(addr_is_in_block)(a, cgbs[i].start, cgbs[i].size, 0)) {
          /* OK - maybe it's a mempool, too? */
-         MAC_Mempool* mp = (MAC_Mempool*)VG_(HT_lookup)(MAC_(mempool_list),
-                                                        (UWord)cgbs[i].start);
+         MAC_Mempool* mp = VG_(HT_lookup)(MAC_(mempool_list),
+                                          (UWord)cgbs[i].start);
          if(mp != NULL) {
             if(mp->chunks != NULL) {
                MAC_Chunk *mc;

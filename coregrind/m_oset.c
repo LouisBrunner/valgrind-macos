@@ -358,9 +358,7 @@ static inline Int cmp_key_root(AvlTree* t, AvlNode* n)
 // Returns True if the depth of the tree has grown.
 static Bool avl_insert(AvlTree* t, AvlNode* n)
 {
-   Int cmpres;
-
-   cmpres = cmp_key_root(t, n);
+   Int cmpres = cmp_key_root(t, n);
 
    if (cmpres < 0) {
       // Insert into the left subtree.
@@ -517,11 +515,7 @@ static Bool avl_removeroot(AvlTree* t);
 static Bool avl_remove(AvlTree* t, AvlNode* n)
 {
    Bool ch;
-   Int  cmpres;
-
-   vg_assert(t && t->root);
-   
-   cmpres = cmp_key_root(t, n);
+   Int  cmpres = cmp_key_root(t, n);
 
    if (cmpres < 0) {
       // Remove from the left subtree

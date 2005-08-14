@@ -1,3 +1,3 @@
 prog: ../../coregrind/valgrind --tool=none --command-line-only=yes ./selfrun
-vgopts: --single-step=yes
+vgopts: --vex-guest-max-insns=1
 prereq: grep '^#define HAVE_PIE 1' ../../config.h > /dev/null

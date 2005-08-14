@@ -57,7 +57,7 @@ This ought to be fixed for 3.0.1.
 
 FIXED-TRUNK:    done(1331, 4390 contains regtest 
                            + mistaken commit of this file)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: done(1337)
 
 ----------------------------------------------------------------
 
@@ -279,6 +279,18 @@ FIXED-30BRANCH: done(4395)
 
 ----------------------------------------------------------------
 
+110657  Small test fixes
+
+(1) Filter out L3 cache warning messages causing problems
+(2) Stop tests/mq failing on 2.4 kernels
+
+I suppose it would be good to apply these.  They seem low risk.
+
+FIXED-TRUNK:    no
+FIXED-30BRANCH: no
+
+----------------------------------------------------------------
+
 110669  valgrind attach to gdb and quitting gdb hangs valgrind
 
 Not clear if this is really a Valgrind bug.
@@ -291,7 +303,7 @@ FIXED-30BRANCH: no
 110671  vex x86->IR: unhandled instruction bytes: 0xF3 0xC3 (rep ret)
 
 FIXED-TRUNK:    done(1332)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: done(1338)
 
 ----------------------------------------------------------------
 

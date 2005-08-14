@@ -690,7 +690,7 @@ void* new_block ( ThreadId tid, void* p, SizeT size, SizeT align,
       if (0 != size) 
          update_XCon(hc->where, size);
    }
-   VG_(HT_add_node)(malloc_list, (VgHashNode*)hc);
+   VG_(HT_add_node)(malloc_list, hc);
    n_heap_blocks++;
 
    // do a census!
@@ -821,7 +821,7 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
    // will have removed and then re-added mc unnecessarily.  But that's ok
    // because shrinking a block with realloc() is (presumably) much rarer
    // than growing it, and this way simplifies the growing case.
-   VG_(HT_add_node)(malloc_list, (VgHashNode*)hc);
+   VG_(HT_add_node)(malloc_list, hc);
 
    VGP_POPCC(VgpCliMalloc);
    return p_new;

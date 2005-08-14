@@ -40,7 +40,7 @@
 #define CHAIN_NO(key,tbl) (((UWord)(key)) % tbl->n_chains)
 
 struct _VgHashTable {
-   UInt        n_chains;     // should be prime
+   UInt        n_chains;      // should be prime
    VgHashNode* chains[0];
 };
 
@@ -71,8 +71,9 @@ Int VG_(HT_count_nodes) ( VgHashTable table )
 
 /* Puts a new, heap allocated VgHashNode, into the VgHashTable.  Prepends
    the node to the appropriate chain. */
-void VG_(HT_add_node) ( VgHashTable table, VgHashNode* node )
+void VG_(HT_add_node) ( VgHashTable table, void* vnode )
 {
+   VgHashNode* node     = (VgHashNode*)vnode;
    UInt chain           = CHAIN_NO(node->key, table);
    node->next           = table->chains[chain];
    table->chains[chain] = node;
@@ -81,8 +82,8 @@ void VG_(HT_add_node) ( VgHashTable table, VgHashNode* node )
 /* Looks up a VgHashNode in the table.  Also returns the address of
    the previous node's 'next' pointer which allows it to be removed from the
    list later without having to look it up again.  */
-VgHashNode* VG_(HT_get_node) ( VgHashTable table, UWord key,
-                               /*OUT*/VgHashNode*** next_ptr )
+void* VG_(HT_get_node) ( VgHashTable table, UWord key,
+                         /*OUT*/VgHashNode*** next_ptr )
 {
    VgHashNode *prev, *curr;
    Int       chain;
@@ -109,7 +110,7 @@ VgHashNode* VG_(HT_get_node) ( VgHashTable table, UWord key,
 }
 
 /* Looks up a VgHashNode in the table.  Returns NULL if not found. */
-VgHashNode* VG_(HT_lookup) ( VgHashTable table, UWord key )
+void* VG_(HT_lookup) ( VgHashTable table, UWord key )
 {
    VgHashNode* curr = table->chains[ CHAIN_NO(key, table) ];
 
@@ -123,7 +124,7 @@ VgHashNode* VG_(HT_lookup) ( VgHashTable table, UWord key )
 }
 
 /* Removes a VgHashNode from the table.  Returns NULL if not found. */
-VgHashNode* VG_(HT_remove) ( VgHashTable table, UWord key )
+void* VG_(HT_remove) ( VgHashTable table, UWord key )
 {
    Int          chain         = CHAIN_NO(key, table);
    VgHashNode*  curr          =   table->chains[chain];
@@ -173,9 +174,9 @@ VgHashNode** VG_(HT_to_array) ( VgHashTable table, /*OUT*/ UInt* n_shadows )
 }
 
 /* Return the first VgHashNode satisfying the predicate p. */
-VgHashNode* VG_(HT_first_match) ( VgHashTable table,
-                                  Bool (*p) ( VgHashNode*, void* ),
-                                  void* d )
+void* VG_(HT_first_match) ( VgHashTable table,
+                             Bool (*p) ( VgHashNode*, void* ),
+                             void* d )
 {
    UInt      i;
    VgHashNode* node;

@@ -212,8 +212,7 @@ void* MAC_(new_block) ( ThreadId tid,
    // Only update this stat if allocation succeeded.
    cmalloc_bs_mallocd += size;
 
-   VG_(HT_add_node)( table, 
-                     (VgHashNode*)create_MAC_Chunk(tid, p, size, kind) );
+   VG_(HT_add_node)( table, create_MAC_Chunk(tid, p, size, kind) );
 
    MAC_(ban_mem_heap)( p-rzB, rzB );
    MAC_(new_mem_heap)( p, size, is_zeroed );
@@ -417,7 +416,7 @@ void* MAC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
    // will have removed and then re-added mc unnecessarily.  But that's ok
    // because shrinking a block with realloc() is (presumably) much rarer
    // than growing it, and this way simplifies the growing case.
-   VG_(HT_add_node)( MAC_(malloc_list), (VgHashNode*)mc );
+   VG_(HT_add_node)( MAC_(malloc_list), mc );
 
    VGP_POPCC(VgpCliMalloc);
    return p_new;
@@ -444,7 +443,7 @@ void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
       VG_(tool_panic)("MAC_(create_mempool): shadow area is accessible");
    } 
 
-   VG_(HT_add_node)( MAC_(mempool_list), (VgHashNode*)mp );
+   VG_(HT_add_node)( MAC_(mempool_list), mp );
    
 }
 
@@ -525,7 +524,8 @@ typedef
    }
    MallocStats;
 
-static void malloc_stats_count_chunk(VgHashNode* node, void* d) {
+static void malloc_stats_count_chunk(VgHashNode* node, void* d) 
+{
    MAC_Chunk* mc = (MAC_Chunk*)node;
    MallocStats *ms = (MallocStats *)d;
 

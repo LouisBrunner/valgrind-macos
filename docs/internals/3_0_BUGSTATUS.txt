@@ -260,15 +260,15 @@ FIXED-30BRANCH: done(4397)
 
 110652  AMD64 valgrind crashes on cwtd instruction
 
-FIXED-TRUNK:    TODO
-FIXED-30BRANCH: TODO
+FIXED-TRUNK:    done(1333)
+FIXED-30BRANCH: done(1335)
 
 ----------------------------------------------------------------
 
 110653  AMD64 valgrind crashes on sarb $0x4,foo(%rip) instruction
 
-FIXED-TRUNK:    TODO
-FIXED-30BRANCH: TODO
+FIXED-TRUNK:    done(1334)
+FIXED-30BRANCH: done(1336)
 
 ----------------------------------------------------------------
 

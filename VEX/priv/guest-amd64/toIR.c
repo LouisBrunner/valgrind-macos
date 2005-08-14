@@ -2921,7 +2921,7 @@ ULong dis_Grp2 ( Prefix pfx,
       assign(dst0, getIRegE(sz, pfx, modrm));
       delta += (am_sz + d_sz);
    } else {
-      addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
+      addr = disAMode ( &len, pfx, delta, dis_buf, /*xtra*/d_sz );
       assign(dst0, loadLE(ty,mkexpr(addr)));
       delta += len + d_sz;
    }

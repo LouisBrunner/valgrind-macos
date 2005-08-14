@@ -913,14 +913,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             case Iop_Shr32:
                addInstr(env, AMD64Instr_MovZLQ(dst,dst));
                break;
-//..             case Iop_Sar8:
-//..                addInstr(env, X86Instr_Sh32(Xsh_SHL, 24, X86RM_Reg(dst)));
-//..                addInstr(env, X86Instr_Sh32(Xsh_SAR, 24, X86RM_Reg(dst)));
-//..                break;
-//..             case Iop_Sar16:
-//..                addInstr(env, X86Instr_Sh32(Xsh_SHL, 16, X86RM_Reg(dst)));
-//..                addInstr(env, X86Instr_Sh32(Xsh_SAR, 16, X86RM_Reg(dst)));
-//..                break;
+            case Iop_Sar8:
+               addInstr(env, AMD64Instr_Sh64(Ash_SHL, 56, dst));
+               addInstr(env, AMD64Instr_Sh64(Ash_SAR, 56, dst));
+               break;
+            case Iop_Sar16:
+               addInstr(env, AMD64Instr_Sh64(Ash_SHL, 48, dst));
+               addInstr(env, AMD64Instr_Sh64(Ash_SAR, 48, dst));
+               break;
             case Iop_Sar32:
                addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, dst));
                addInstr(env, AMD64Instr_Sh64(Ash_SAR, 32, dst));

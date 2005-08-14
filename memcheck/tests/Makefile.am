@@ -59,6 +59,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	new_override.stderr.exp new_override.stdout.exp new_override.vgtest \
 	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
+	oset_test.stderr.exp oset_test.stdout.exp oset_test.vgtest \
 	partiallydefinedeq.vgtest partiallydefinedeq.stderr.exp \
 	partiallydefinedeq.stdout.exp \
 	pointer-trace.vgtest \
@@ -102,7 +103,7 @@ check_PROGRAMS = \
 	match-overrun \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
-	null_socket overlap \
+	null_socket oset_test overlap \
 	partiallydefinedeq \
 	pointer-trace \
 	post-syscall \
@@ -115,12 +116,13 @@ check_PROGRAMS = \
 	writev zeropage
 
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include -I@VEX_DIR@/pub
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/coregrind -I$(top_builddir)/include -I@VEX_DIR@/pub
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # Extra stuff for C tests
 memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
+oset_test_CFLAGS	= -DVGA_$(VG_ARCH) -DVGO_$(VG_OS) -DVGP_$(VG_PLATFORM)
 # Don't allow GCC to inline memcpy(), because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow

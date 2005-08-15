@@ -26,7 +26,7 @@ errors such as:
  <listitem><para>incorrect freeing of memory, such as double-freeing heap
   blocks;</para>
  </listitem>
- <listitem><para>memory leaks;</para>
+ <listitem><para>memory leaks.</para>
  </listitem>
 </itemizedlist>
 

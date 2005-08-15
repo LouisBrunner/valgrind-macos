@@ -40,7 +40,10 @@ right for earlier versions.</para>
 <title>Preparing your program</title>
 <para>Compile your program with <computeroutput>-g</computeroutput> to include
 debugging information so that Memcheck's error messages include exact line
-numbers.</para>
+numbers.  Using <computeroutput>-O0</computeroutput> is also a good idea;
+with <computeroutput>-O1</computeroutput> line numbers in error messages can
+be inaccurate, and with <computeroutput>-O2</computeroutput> Memcheck
+occasionally reports undefined error messages incorrectly.</para>
 </sect1>
 
 <sect1 id="quick-start.mcrun" 

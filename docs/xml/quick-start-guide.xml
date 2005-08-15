@@ -188,7 +188,8 @@ messages produced by a compiler, right?</para>
 
 <para>Memcheck also cannot detect every memory error your program has.  For
 example, it can't detect if you overrun the bounds of an array that is
-allocated statically or on the stack.</para>
+allocated statically or on the stack.  But it should detect every error that
+could crash your program (eg. cause a segmentation fault).</para>
 </sect1>
 
 <sect1 id="quick-start.info" xreflabel="More Information">

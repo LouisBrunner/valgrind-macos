@@ -124,19 +124,9 @@ static void add_to_freed_queue ( MAC_Chunk* mc )
    }
 }
 
-/* Return the first shadow chunk satisfying the predicate p. */
-MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk) ( Bool (*p)(MAC_Chunk*, void*),
-                                                  void* d )
+MAC_Chunk* MAC_(get_freed_list_head)(void)
 {
-   MAC_Chunk* mc;
-
-   /* No point looking through freed blocks if we're not keeping
-      them around for a while... */
-   for (mc = freed_list_start; mc != NULL; mc = mc->next)
-      if (p(mc, d))
-         return mc;
-
-   return NULL;
+   return freed_list_start;
 }
 
 /* Allocate its shadow chunk, put it on the appropriate list. */
@@ -447,20 +437,9 @@ void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
    
 }
 
-static void destroy_mempool_nuke_chunk(VgHashNode *node, void *d)
-{
-   MAC_Chunk *mc = (MAC_Chunk *)node;
-   MAC_Mempool *mp = (MAC_Mempool *)d;
-  
-   /* Note: ban redzones again -- just in case user de-banned them
-      with a client request... */
-   MAC_(ban_mem_heap)(mc->data-mp->rzB, mp->rzB );
-   MAC_(die_mem_heap)(mc->data, mc->size );
-   MAC_(ban_mem_heap)(mc->data+mc->size, mp->rzB );
-}
-
 void MAC_(destroy_mempool)(Addr pool)
 {
+   MAC_Chunk*   mc;
    MAC_Mempool* mp;
 
    mp = VG_(HT_remove) ( MAC_(mempool_list), (UWord)pool );
@@ -471,7 +450,16 @@ void MAC_(destroy_mempool)(Addr pool)
       return;
    }
 
-   VG_(HT_apply_to_all_nodes)(mp->chunks, destroy_mempool_nuke_chunk, mp);
+   // Clean up the chunks, one by one
+   VG_(HT_ResetIter)(mp->chunks);
+   while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
+      /* Note: ban redzones again -- just in case user de-banned them
+         with a client request... */
+      MAC_(ban_mem_heap)(mc->data-mp->rzB, mp->rzB );
+      MAC_(die_mem_heap)(mc->data, mc->size );
+      MAC_(ban_mem_heap)(mc->data+mc->size, mp->rzB );
+   }
+   // Destroy the chunk table
    VG_(HT_destruct)(mp->chunks);
 
    VG_(free)(mp);
@@ -517,28 +505,11 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
 /*--- Statistics printing                                  ---*/
 /*------------------------------------------------------------*/
 
-typedef
-   struct {
-      UInt  nblocks;
-      SizeT nbytes;
-   }
-   MallocStats;
-
-static void malloc_stats_count_chunk(VgHashNode* node, void* d) 
-{
-   MAC_Chunk* mc = (MAC_Chunk*)node;
-   MallocStats *ms = (MallocStats *)d;
-
-   ms->nblocks ++;
-   ms->nbytes  += mc->size;
-}
-
 void MAC_(print_malloc_stats) ( void )
 {
-   MallocStats ms;
-  
-   ms.nblocks = 0;
-   ms.nbytes = 0;
+   MAC_Chunk* mc;
+   UInt       nblocks = 0;
+   SizeT      nbytes  = 0;
    
    if (VG_(clo_verbosity) == 0)
       return;
@@ -546,11 +517,15 @@ void MAC_(print_malloc_stats) ( void )
       return;
 
    /* Count memory still in use. */
-   VG_(HT_apply_to_all_nodes)(MAC_(malloc_list), malloc_stats_count_chunk, &ms);
+   VG_(HT_ResetIter)(MAC_(malloc_list));
+   while ( (mc = VG_(HT_Next)(MAC_(malloc_list))) ) {
+      nblocks++;
+      nbytes += mc->size;
+   }
 
    VG_(message)(Vg_UserMsg, 
                 "malloc/free: in use at exit: %d bytes in %d blocks.",
-                ms.nbytes, ms.nblocks);
+                nbytes, nblocks);
    VG_(message)(Vg_UserMsg, 
                 "malloc/free: %d allocs, %d frees, %u bytes allocated.",
                 cmalloc_n_mallocs,

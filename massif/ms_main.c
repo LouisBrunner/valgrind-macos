@@ -835,13 +835,6 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
 static Census censi[MAX_N_CENSI];
 static UInt   curr_census = 0;
 
-// Must return False so that all stacks are traversed
-static Bool count_stack_size( Addr stack_min, Addr stack_max, void *cp )
-{
-   *(UInt *)cp  += (stack_max - stack_min);
-   return False;
-}
-
 static UInt get_xtree_size(XPt* xpt, UInt ix)
 {
    UInt i;
@@ -1065,9 +1058,13 @@ static void hp_census(void)
 
    // Stack(s) ---------------------------------------------------------
    if (clo_stacks) {
+      ThreadId tid;
+      Addr     stack_min, stack_max;
       census->stacks_space = sigstacks_space;
-      // slightly abusing this function
-      VG_(first_matching_thread_stack)( count_stack_size, &census->stacks_space );
+      VG_(thread_stack_reset_iter)();
+      while ( VG_(thread_stack_next)(&tid, &stack_min, &stack_max) ) {
+         census->stacks_space += (stack_max - stack_min);
+      }
    }
 
    // Finish, update interval if necessary -----------------------------

@@ -2308,14 +2308,6 @@ static void show_client_block_stats ( void )
    );
 }
 
-static Bool find_addr(VgHashNode* sh_ch, void* ap)
-{
-  MAC_Chunk *m = (MAC_Chunk*)sh_ch;
-  Addr a = *(Addr*)ap;
-
-  return VG_(addr_is_in_block)(a, m->data, m->size, MAC_MALLOC_REDZONE_SZB);
-}
-
 static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
 {
    UInt i;
@@ -2330,30 +2322,32 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
          /* OK - maybe it's a mempool, too? */
          MAC_Mempool* mp = VG_(HT_lookup)(MAC_(mempool_list),
                                           (UWord)cgbs[i].start);
-         if(mp != NULL) {
-            if(mp->chunks != NULL) {
-               MAC_Chunk *mc;
-
-               mc = (MAC_Chunk*)VG_(HT_first_match)(mp->chunks, find_addr, &a);
-               if(mc != NULL) {
-                  ai->akind = UserG;
-                  ai->blksize = mc->size;
-                  ai->rwoffset = (Int)(a) - (Int)mc->data;
-                  ai->lastchange = mc->where;
-                  return True;
+         if (mp != NULL) {
+            if (mp->chunks != NULL) {
+               MAC_Chunk* mc;
+               VG_(OSet_ResetIter)(mp->chunks);
+               while ( (mc = VG_(OSet_Next)(mp->chunks)) ) {
+                  if (VG_(addr_is_in_block)(a, mc->data, mc->size,
+                                            MAC_MALLOC_REDZONE_SZB)) {
+                     ai->akind      = UserG;
+                     ai->blksize    = mc->size;
+                     ai->rwoffset   = (Int)(a) - (Int)mc->data;
+                     ai->lastchange = mc->where;
+                     return True;
+                  }
                }
             }
-            ai->akind = Mempool;
-            ai->blksize = cgbs[i].size;
-            ai->rwoffset  = (Int)(a) - (Int)(cgbs[i].start);
+            ai->akind      = Mempool;
+            ai->blksize    = cgbs[i].size;
+            ai->rwoffset   = (Int)(a) - (Int)(cgbs[i].start);
             ai->lastchange = cgbs[i].where;
             return True;
          }
-         ai->akind = UserG;
-         ai->blksize = cgbs[i].size;
-         ai->rwoffset  = (Int)(a) - (Int)(cgbs[i].start);
+         ai->akind      = UserG;
+         ai->blksize    = cgbs[i].size;
+         ai->rwoffset   = (Int)(a) - (Int)(cgbs[i].start);
          ai->lastchange = cgbs[i].where;
-         ai->desc = cgbs[i].desc;
+         ai->desc       = cgbs[i].desc;
          return True;
       }
    }

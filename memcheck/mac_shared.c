@@ -410,27 +410,11 @@ void MAC_(pp_shared_Error) ( Error* err )
    MemCheck for user blocks, which Addrcheck doesn't support. */
 Bool (*MAC_(describe_addr_supp)) ( Addr a, AddrInfo* ai ) = NULL;
 
-/* Callback for searching thread stacks */
-static Bool addr_is_in_bounds(Addr stack_min, Addr stack_max, void *ap)
+/* Function used when searching MAC_Chunk lists */
+static Bool addr_is_in_MAC_Chunk(MAC_Chunk* mc, Addr a)
 {
-   Addr a = *(Addr *)ap;
-  
-   return (stack_min <= a && a <= stack_max);
-}
-
-/* Callback for searching free'd list */
-static Bool addr_is_in_MAC_Chunk(MAC_Chunk* mc, void *ap)
-{
-   Addr a = *(Addr *)ap;
-  
    return VG_(addr_is_in_block)( a, mc->data, mc->size,
                                  MAC_MALLOC_REDZONE_SZB );
-}
-
-/* Callback for searching malloc'd lists */
-static Bool addr_is_in_HashNode(VgHashNode* sh_ch, void *ap)
-{
-   return addr_is_in_MAC_Chunk( (MAC_Chunk*)sh_ch, ap );
 }
 
 /* Describe an address as best you can, for error messages,
@@ -439,6 +423,7 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 {
    MAC_Chunk* mc;
    ThreadId   tid;
+   Addr       stack_min, stack_max;
 
    /* Perhaps it's a user-def'd block ?  (only check if requested, though) */
    if (NULL != MAC_(describe_addr_supp)) {
@@ -446,29 +431,36 @@ static void describe_addr ( Addr a, AddrInfo* ai )
          return;
    }
    /* Perhaps it's on a thread's stack? */
-   tid = VG_(first_matching_thread_stack)(addr_is_in_bounds, &a);
-   if (tid != VG_INVALID_THREADID) {
-      ai->akind     = Stack;
-      ai->stack_tid = tid;
-      return;
+   VG_(thread_stack_reset_iter)();
+   while ( VG_(thread_stack_next)(&tid, &stack_min, &stack_max) ) {
+      if (stack_min <= a && a <= stack_max) {
+         ai->akind     = Stack;
+         ai->stack_tid = tid;
+         return;
+      }
    }
    /* Search for a recently freed block which might bracket it. */
-   mc = MAC_(first_matching_freed_MAC_Chunk)(addr_is_in_MAC_Chunk, &a);
-   if (NULL != mc) {
-      ai->akind      = Freed;
-      ai->blksize    = mc->size;
-      ai->rwoffset   = (Int)a - (Int)mc->data;
-      ai->lastchange = mc->where;
-      return;
+   mc = MAC_(get_freed_list_head)();
+   while (mc) {
+      if (addr_is_in_MAC_Chunk(mc, a)) {
+         ai->akind      = Freed;
+         ai->blksize    = mc->size;
+         ai->rwoffset   = (Int)a - (Int)mc->data;
+         ai->lastchange = mc->where;
+         return;
+      }
+      mc = mc->next; 
    }
    /* Search for a currently malloc'd block which might bracket it. */
-   mc = (MAC_Chunk*)VG_(HT_first_match)(MAC_(malloc_list), addr_is_in_HashNode, &a);
-   if (NULL != mc) {
-      ai->akind      = Mallocd;
-      ai->blksize    = mc->size;
-      ai->rwoffset   = (Int)(a) - (Int)mc->data;
-      ai->lastchange = mc->where;
-      return;
+   VG_(HT_ResetIter)(MAC_(malloc_list));
+   while ( (mc = VG_(HT_Next)(MAC_(malloc_list))) ) {
+      if (addr_is_in_MAC_Chunk(mc, a)) {
+         ai->akind      = Mallocd;
+         ai->blksize    = mc->size;
+         ai->rwoffset   = (Int)(a) - (Int)mc->data;
+         ai->lastchange = mc->where;
+         return;
+      }
    }
    /* Clueless ... */
    ai->akind = Unknown;

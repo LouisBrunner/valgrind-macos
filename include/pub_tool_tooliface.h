@@ -40,7 +40,7 @@
 /* The version number indicates binary-incompatible changes to the
    interface;  if the core and tool versions don't match, Valgrind
    will abort.  */
-#define VG_CORE_INTERFACE_VERSION   8
+#define VG_CORE_INTERFACE_VERSION   9
 
 typedef struct _ToolInfo {
    Int	sizeof_ToolInfo;

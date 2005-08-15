@@ -1,0 +1,2 @@
+prog: oset_test
+vgopts: -q

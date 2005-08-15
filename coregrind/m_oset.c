@@ -461,10 +461,7 @@ void VG_(OSet_Insert)(AvlTree* t, void* e)
 static AvlNode* avl_lookup(AvlTree* t, void* k)
 {
    Int      cmpres;
-   AvlNode* curr;
-
-   vg_assert(t);
-   curr = t->root;
+   AvlNode* curr = t->root;
 
    if (t->cmp) {
       // General case
@@ -494,7 +491,9 @@ static AvlNode* avl_lookup(AvlTree* t, void* k)
 // Find the *element* in t matching k, or NULL if not found.
 void* VG_(OSet_Lookup)(AvlTree* t, void* k)
 {
-   AvlNode* n = avl_lookup(t, k);
+   AvlNode* n;
+   vg_assert(t);
+   n = avl_lookup(t, k);
    return ( n ? elem_of_node(n) : NULL );
 }
 

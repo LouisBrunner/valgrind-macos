@@ -2325,8 +2325,8 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
          if (mp != NULL) {
             if (mp->chunks != NULL) {
                MAC_Chunk* mc;
-               VG_(OSet_ResetIter)(mp->chunks);
-               while ( (mc = VG_(OSet_Next)(mp->chunks)) ) {
+               VG_(HT_ResetIter)(mp->chunks);
+               while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
                   if (VG_(addr_is_in_block)(a, mc->data, mc->size,
                                             MAC_MALLOC_REDZONE_SZB)) {
                      ai->akind      = UserG;

@@ -151,8 +151,8 @@ errors can be caused by earlier errors.</para>
 <programlisting>
   ==19182== 40 bytes in 1 blocks are definitely lost in loss record 1 of 1
   ==19182==    at 0x1B8FF5CD: malloc (vg_replace_malloc.c:130)
-  ==19182==    by 0x8048385: f (a.c:7)
-  ==19182==    by 0x80483AB: main (a.c:14)
+  ==19182==    by 0x8048385: f (a.c:5)
+  ==19182==    by 0x80483AB: main (a.c:11)
 </programlisting>
 
 The stack trace tells you where the leaked memory was allocated.

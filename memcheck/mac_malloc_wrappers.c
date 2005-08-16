@@ -297,7 +297,7 @@ void MAC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MAC_AllocKind kind )
    if (mc == NULL) {
       MAC_(record_free_error) ( tid, p );
    } else {
-      /* check if its a matching free() / delete / delete [] */
+      /* check if it is a matching free() / delete / delete [] */
       if (kind != mc->allockind) {
          MAC_(record_freemismatch_error) ( tid, p, mc );
       }

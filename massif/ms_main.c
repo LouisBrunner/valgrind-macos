@@ -782,7 +782,7 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
    
    VGP_PUSHCC(VgpCliMalloc);
 
-   // First try and find the block.
+   // Remove the old block
    hc = VG_(HT_remove)(malloc_list, (UWord)p_old);
    if (hc == NULL) {
       VGP_POPCC(VgpCliMalloc);

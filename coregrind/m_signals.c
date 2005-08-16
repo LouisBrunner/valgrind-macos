@@ -1831,6 +1831,16 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 		      sigNo, signame(sigNo));
 	 VG_(message)(Vg_UserMsg, "  This may be because one of your programs has consumed your");
 	 VG_(message)(Vg_UserMsg, "  ration of siginfo structures.");
+         VG_(printf)(
+"  For more information, see:\n"
+"    http://kerneltrap.org/mailarchive/1/message/25599/thread\n"
+"  Basically, some program on your system is building up a large queue of\n"
+"  pending signals, and this causes the siginfo data for other signals to\n"
+"  be dropped because it's exceeding a system limit.  However, Valgrind\n"
+"  absolutely needs siginfo for SIGSEGV.  A workaround is to track down the\n"
+"  offending program and avoid running it while using Valgrind, but there\n"
+"  is no easy way to do this.  Apparently the problem was fixed in kernel\n"
+"  2.6.12.\n");
 
 	 /* It's a fatal signal, so we force the default handler. */
 	 VG_(set_default_handler)(sigNo);

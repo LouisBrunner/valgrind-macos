@@ -506,6 +506,85 @@ don't make any assumptions about the language implementation.</para>
 </sect2>
 
 
+<sect2 id="mc-manual.leaks" xreflabel="Memory leak detection">
+<title>Memory leak detection</title>
+
+<para>Memcheck keeps track of all memory blocks issued in
+response to calls to malloc/calloc/realloc/new.  So when the
+program exits, it knows which blocks have not been freed.
+</para>
+
+<para>If <computeroutput>--leak-check</computeroutput> is set
+appropriately, for each remaining block, Memcheck scans the entire
+address space of the process, looking for pointers to the block.
+Each block fits into one of the three following categories.</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>Still reachable: A pointer to the start
+    of the block is found.  This usually indicates programming
+    sloppiness; since the block is still pointed at, the
+    programmer could, at least in principle, free'd it before
+    program exit.  Because these are very common and arguably
+    not a problem, Memcheck won't report such blocks unless
+    <computeroutput>--show-reachable=yes</computeroutput> is
+    specified.</para>
+  </listitem>
+
+  <listitem>
+    <para>Possibly lost, or "dubious": A pointer to the
+    interior of the block is found.  The pointer might originally
+    have pointed to the start and have been moved along, or it
+    might be entirely unrelated.  Memcheck deems such a block as
+    "dubious", because it's unclear whether or not a pointer to it
+    still exists.</para>
+  </listitem>
+
+  <listitem>
+    <para>Definitely lost, or "leaked": The worst
+    outcome is that no pointer to the block can be found.  The
+    block is classified as "leaked", because the programmer could
+    not possibly have freed it at program exit, since no pointer
+    to it exists.  This is likely a symptom of having lost the
+    pointer at some earlier point in the program.</para>
+    </listitem>
+
+</itemizedlist>
+
+<para>For each block mentioned, Memcheck will also tell you where
+the block was allocated.  It cannot tell you how or why the
+pointer to a leaked block has been lost;  you have to work that
+out for yourself.  In general, you should attempt to ensure your
+programs do not have any leaked or dubious blocks at exit.</para>
+
+<para>For example:</para>
+<programlisting><![CDATA[
+8 bytes in 1 blocks are definitely lost in loss record 1 of 14
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:11)
+   by 0x........: main (leak-tree.c:39)
+
+88 (8 direct, 80 indirect) bytes in 1 blocks are definitely lost in loss record 13 of 14
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:11)
+   by 0x........: main (leak-tree.c:25)
+]]></programlisting>
+
+<para>The first message describes a simple case of a single 8 byte
+block that has been definitely lost.  The second case
+mentions both "direct" and "indirect" leaks.  The distinction is
+that a direct leak is a block which has no pointers to it.  An
+indirect leak is a block which is only pointed to by other leaked
+blocks.  Both kinds of leak are bad.</para>
+
+<para>The precise area of memory in which Memcheck searches for
+pointers is: all naturally-aligned 4-byte words for which all A
+bits indicate addressibility and all V bits indicated that the
+stored value is actually valid.</para>
+
+</sect2>
+
 </sect1>
 
 
@@ -929,63 +1008,6 @@ is:</para>
 </sect2>
 </sect1>
 
-
-
-<sect1 id="mc-manual.leaks" xreflabel="Memory leak detection">
-<title>Memory leak detection</title>
-
-<para>Memcheck keeps track of all memory blocks issued in
-response to calls to malloc/calloc/realloc/new.  So when the
-program exits, it knows which blocks are still outstanding --
-have not been returned, in other words.  Ideally, you want your
-program to have no blocks still in use at exit.  But many
-programs do.</para>
-
-<para>For each such block, Memcheck scans the entire address
-space of the process, looking for pointers to the block.  One of
-three situations may result:</para>
-
-<itemizedlist>
-
-  <listitem>
-    <para>A pointer to the start of the block is found.  This
-    usually indicates programming sloppiness; since the block is
-    still pointed at, the programmer could, at least in
-    principle, free'd it before program exit.</para>
-  </listitem>
-
-  <listitem>
-    <para>A pointer to the interior of the block is found.  The
-    pointer might originally have pointed to the start and have
-    been moved along, or it might be entirely unrelated.
-    Memcheck deems such a block as "dubious", that is, possibly
-    leaked, because it's unclear whether or not a pointer to it
-    still exists.</para>
-  </listitem>
-
-  <listitem>
-    <para>The worst outcome is that no pointer to the block can
-    be found.  The block is classified as "leaked", because the
-    programmer could not possibly have free'd it at program exit,
-    since no pointer to it exists.  This might be a symptom of
-    having lost the pointer at some earlier point in the
-    program.</para>
-  </listitem>
-
-</itemizedlist>
-
-<para>Memcheck reports summaries about leaked and dubious blocks.
-For each such block, it will also tell you where the block was
-allocated.  This should help you figure out why the pointer to it
-has been lost.  In general, you should attempt to ensure your
-programs do not have any leaked or dubious blocks at exit.</para>
-
-<para>The precise area of memory in which Memcheck searches for
-pointers is: all naturally-aligned 4-byte words for which all A
-bits indicate addressibility and all V bits indicated that the
-stored value is actually valid.</para>
-
-</sect1>
 
 
 <sect1 id="mc-manual.clientreqs" xreflabel="Client requests">

@@ -326,3 +326,10 @@ FIXED-30BRANCH: done(4393)
 FIXED-TRUNK:    TODO
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+
+Description of leak errors in manual.
+
+FIXED-TRUNK:    4427
+FIXED-30BRANCH: TODO
+

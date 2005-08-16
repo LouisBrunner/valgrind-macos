@@ -333,3 +333,11 @@ Description of leak errors in manual.
 FIXED-TRUNK:    4427
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+
+110685  Small test fixes
+
+FIXED-TRUNK:    4429
+FIXED-30BRANCH: TODO
+
+

@@ -711,7 +711,7 @@ void die_block ( void* p, Bool custom_free )
    n_frees++;
 
    // Remove HP_Chunk from malloc_list
-   hc = (HP_Chunk*)VG_(HT_remove)(malloc_list, (UWord)p);
+   hc = VG_(HT_remove)(malloc_list, (UWord)p);
    if (NULL == hc)
       return;   // must have been a bogus free()
    tl_assert(n_heap_blocks > 0);
@@ -783,7 +783,7 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
    VGP_PUSHCC(VgpCliMalloc);
 
    // First try and find the block.
-   hc = (HP_Chunk*)VG_(HT_remove)(malloc_list, (UWord)p_old);
+   hc = VG_(HT_remove)(malloc_list, (UWord)p_old);
    if (hc == NULL) {
       VGP_POPCC(VgpCliMalloc);
       return NULL;   // must have been a bogus realloc()

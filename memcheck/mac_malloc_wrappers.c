@@ -67,12 +67,10 @@ Bool (*MAC_(check_noaccess))( Addr a, SizeT len, Addr* bad_addr ) = NULL;
 /*--- Tracking malloc'd and free'd blocks                  ---*/
 /*------------------------------------------------------------*/
 
-/* Record malloc'd blocks.  Nb: Addrcheck and Memcheck construct this
-   separately in their respective initialisation functions. */
+/* Record malloc'd blocks. */
 VgHashTable MAC_(malloc_list) = NULL;
 
-/* Memory pools.  Nb: Addrcheck and Memcheck construct this separately
-   in their respective initialisation functions. */
+/* Memory pools. */
 VgHashTable MAC_(mempool_list) = NULL;
    
 /* Records blocks after freeing. */
@@ -84,8 +82,6 @@ static Int        freed_list_volume = 0;
    some of the oldest blocks in the queue at the same time. */
 static void add_to_freed_queue ( MAC_Chunk* mc )
 {
-   MAC_Chunk* mc1;
-
    /* Put it at the end of the freed list */
    if (freed_list_end == NULL) {
       tl_assert(freed_list_start == NULL);
@@ -103,6 +99,8 @@ static void add_to_freed_queue ( MAC_Chunk* mc )
       volume below vg_clo_freelist_vol. */
 
    while (freed_list_volume > MAC_(clo_freelist_vol)) {
+      MAC_Chunk* mc1;
+
       tl_assert(freed_list_start != NULL);
       tl_assert(freed_list_end != NULL);
 
@@ -140,11 +138,10 @@ MAC_Chunk* create_MAC_Chunk ( ThreadId tid, Addr p, SizeT size,
    mc->allockind = kind;
    mc->where     = VG_(record_ExeContext)(tid);
 
-   /* Paranoia ... ensure this area is off-limits to the client, so
+   /* Paranoia ... ensure the MAC_Chunk is off-limits to the client, so
       the mc->data field isn't visible to the leak checker.  If memory
-      management is working correctly, anything pointer returned by
-      VG_(malloc) should be noaccess as far as the client is
-      concerned. */
+      management is working correctly, any pointer returned by VG_(malloc)
+      should be noaccess as far as the client is concerned. */
    if (!MAC_(check_noaccess)( (Addr)mc, sizeof(MAC_Chunk), NULL )) {
       VG_(tool_panic)("create_MAC_Chunk: shadow area is accessible");
    } 
@@ -296,19 +293,16 @@ void MAC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MAC_AllocKind kind )
 
    cmalloc_n_frees++;
 
-   mc = (MAC_Chunk*)VG_(HT_remove) ( MAC_(malloc_list), (UWord)p );
+   mc = VG_(HT_remove) ( MAC_(malloc_list), (UWord)p );
    if (mc == NULL) {
       MAC_(record_free_error) ( tid, p );
-      VGP_POPCC(VgpCliMalloc);
-      return;
+   } else {
+      /* check if its a matching free() / delete / delete [] */
+      if (kind != mc->allockind) {
+         MAC_(record_freemismatch_error) ( tid, p, mc );
+      }
+      die_and_free_mem ( tid, mc, rzB );
    }
-
-   /* check if its a matching free() / delete / delete [] */
-   if (kind != mc->allockind) {
-      MAC_(record_freemismatch_error) ( tid, p, mc );
-   }
-
-   die_and_free_mem ( tid, mc, rzB );
 
    VGP_POPCC(VgpCliMalloc);
 }
@@ -347,10 +341,10 @@ void* MAC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
       return NULL;
 
    /* Remove the old block */
-   mc = (MAC_Chunk*)VG_(HT_remove) ( MAC_(malloc_list), (UWord)p_old );
+   mc = VG_(HT_remove) ( MAC_(malloc_list), (UWord)p_old );
    if (mc == NULL) {
       MAC_(record_free_error) ( tid, (Addr)p_old );
-      /* Perhaps we should return to the program regardless. */
+      /* We return to the program regardless. */
       VGP_POPCC(VgpCliMalloc);
       return NULL;
    }
@@ -416,13 +410,11 @@ void* MAC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
 
 void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
 {
-   MAC_Mempool* mp;
-
-   mp            = VG_(malloc)(sizeof(MAC_Mempool));
-   mp->pool      = pool;
-   mp->rzB       = rzB;
-   mp->is_zeroed = is_zeroed;
-   mp->chunks    = VG_(HT_construct)( 3001 );  // prime, not so big
+   MAC_Mempool* mp = VG_(malloc)(sizeof(MAC_Mempool));
+   mp->pool        = pool;
+   mp->rzB         = rzB;
+   mp->is_zeroed   = is_zeroed;
+   mp->chunks      = VG_(HT_construct)( 3001 );  // prime, not so big
 
    /* Paranoia ... ensure this area is off-limits to the client, so
       the mp->data field isn't visible to the leak checker.  If memory
@@ -434,7 +426,6 @@ void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
    } 
 
    VG_(HT_add_node)( MAC_(mempool_list), mp );
-   
 }
 
 void MAC_(destroy_mempool)(Addr pool)
@@ -467,17 +458,14 @@ void MAC_(destroy_mempool)(Addr pool)
 
 void MAC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT size)
 {
-   MAC_Mempool*  mp;
-
-   mp = VG_(HT_lookup) ( MAC_(mempool_list), (UWord)pool );
+   MAC_Mempool* mp = VG_(HT_lookup) ( MAC_(mempool_list), (UWord)pool );
 
    if (mp == NULL) {
       MAC_(record_illegal_mempool_error) ( tid, pool );
-      return;
+   } else {
+      MAC_(new_block)(tid, addr, size, /*ignored*/0, mp->rzB, mp->is_zeroed,
+                      MAC_AllocCustom, mp->chunks);
    }
-
-   MAC_(new_block)(tid, addr, size, /*ignored*/0, mp->rzB, mp->is_zeroed,
-                   MAC_AllocCustom, mp->chunks);
 }
 
 void MAC_(mempool_free)(Addr pool, Addr addr)
@@ -492,7 +480,7 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
       return;
    }
 
-   mc = (MAC_Chunk*)VG_(HT_remove)(mp->chunks, (UWord)addr);
+   mc = VG_(HT_remove)(mp->chunks, (UWord)addr);
    if (mc == NULL) {
       MAC_(record_free_error)(tid, (Addr)addr);
       return;

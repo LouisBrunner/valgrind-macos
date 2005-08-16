@@ -292,7 +292,7 @@ FIXED-30BRANCH: done(4395)
 
 I suppose it would be good to apply these.  They seem low risk.
 
-FIXED-TRUNK:    no
+FIXED-TRUNK:    4429
 FIXED-30BRANCH: no
 
 ----------------------------------------------------------------
@@ -335,9 +335,7 @@ FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
 
-110685  Small test fixes
+110875  Assertion when execve fails
 
-FIXED-TRUNK:    4429
+FIXED-TRUNK:    4435
 FIXED-30BRANCH: TODO
-
-

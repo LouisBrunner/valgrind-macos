@@ -84,6 +84,12 @@ CrispinF x86 %eflags.ac problem
 FIXED-TRUNK:    yes (1319/4334)
 FIXED-30BRANCH: yes (1326, and 4334 was copied across as part of 4364)
 
+----------------------------------------------------------------
+
+Give more info about seginfo dropping.
+
+FIXED-TRUNK:    yes (4425)
+FIXED-30BRANCH: no
 
 ------------------------------------------------------------------------
 --- Bugs reported after 3.0.0 shipped                                ---

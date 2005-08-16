@@ -124,13 +124,20 @@ echo                                                     >  final
 echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ")" \
      "started at" $ABT_START                             >> final
 
+# If the results differ from 24 hours ago, print extra stuff.
+diff -C1 old.short new.short > diff.short
+changed=$?
+
+if [ $changed != 0 ] ; then
+   echo "Results differ from 24 hours ago"      >> final
+else
+   echo "Results unchanged from 24 hours ago"   >> final
+fi
+
 # Always show the current results.
 cat new.short >> final
 
-# If the results differ from 24 hours ago, print extra stuff.
-diff -C1 old.short new.short > diff.short
-
-if [ $? != 0 ] ; then
+if [ $changed != 0 ] ; then
    echo "=================================================" >> final
    echo "== Results from 24 hours ago                   ==" >> final
    echo "=================================================" >> final

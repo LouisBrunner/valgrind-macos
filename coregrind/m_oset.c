@@ -497,6 +497,21 @@ void* VG_(OSet_Lookup)(AvlTree* t, void* k)
    return ( n ? elem_of_node(n) : NULL );
 }
 
+// Find the *element* in t matching k, or NULL if not found;  use the given
+// comparison function rather than the standard one.
+void* VG_(OSet_LookupWithCmp)(AvlTree* t, void* k, OSetCmp_t cmp)
+{
+   // Save the normal one to the side, then restore once we're done.
+   void* e;
+   OSetCmp_t tmpcmp;
+   vg_assert(t);
+   tmpcmp = t->cmp;
+   t->cmp = cmp;
+   e = VG_(OSet_Lookup)(t, k);
+   t->cmp = tmpcmp;
+   return e;
+}
+
 // Is there an element matching k?
 Bool VG_(OSet_Contains)(AvlTree* t, void* k)
 {

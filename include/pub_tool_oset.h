@@ -117,6 +117,9 @@ extern void  VG_(OSet_FreeNode)  ( OSet* os, void* elem );
 // * Lookup: Returns a pointer to the element matching the key, if there is
 //   one, otherwise returns NULL.
 //
+// * LookupWithCmp: Like Lookup, but you specify the comparison function,
+//   which overrides the OSet's normal one.
+//
 // * Insert: Inserts a new element into the list.  Note that 'elem' must
 //   have been allocated using VG_(OSet_AllocNode)(), otherwise you will get
 //   assertion failures about "bad magic".  Duplicates are forbidden, and
@@ -145,13 +148,14 @@ extern void  VG_(OSet_FreeNode)  ( OSet* os, void* elem );
 //   they will return NULL if VG_(OSet_Next)() is called without an
 //   intervening call to VG_(OSet_ResetIter)().
 
-extern Int   VG_(OSet_Size)      ( OSet* os );
-extern void  VG_(OSet_Insert)    ( OSet* os, void* elem );
-extern Bool  VG_(OSet_Contains)  ( OSet* os, void* key  );
-extern void* VG_(OSet_Lookup)    ( OSet* os, void* key  );
-extern void* VG_(OSet_Remove)    ( OSet* os, void* key  );
-extern void  VG_(OSet_ResetIter) ( OSet* os );
-extern void* VG_(OSet_Next)      ( OSet* os );
+extern Int   VG_(OSet_Size)         ( OSet* os );
+extern void  VG_(OSet_Insert)       ( OSet* os, void* elem );
+extern Bool  VG_(OSet_Contains)     ( OSet* os, void* key  );
+extern void* VG_(OSet_Lookup)       ( OSet* os, void* key  );
+extern void* VG_(OSet_LookupWithCmp)( OSet* os, void* key, OSetCmp_t cmp );
+extern void* VG_(OSet_Remove)       ( OSet* os, void* key  );
+extern void  VG_(OSet_ResetIter)    ( OSet* os );
+extern void* VG_(OSet_Next)         ( OSet* os );
 
 #endif   // __PUB_TOOL_OSET_H
 

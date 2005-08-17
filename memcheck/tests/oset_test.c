@@ -139,7 +139,7 @@ void example1(void)
 
    // Check we can find the remaining elements (with the right values).
    for (i = 1; i < NN; i += 2) {
-      assert( pv = VG_(OSet_Lookup)(oset1, vs[i]) );
+      assert( pv = VG_(OSet_LookupWithCmp)(oset1, vs[i], NULL) );
       assert( pv == vs[i] );
    }
 
@@ -286,6 +286,7 @@ void example2(void)
       a = vs[i]->first + 0;    assert( vs[i] == VG_(OSet_Lookup)(oset2, &a) );
       a = vs[i]->first + 1;    assert( vs[i] == VG_(OSet_Lookup)(oset2, &a) );
       a = vs[i]->first + 2;    assert( vs[i] == VG_(OSet_Lookup)(oset2, &a) );
+      assert( vs[i] == VG_(OSet_LookupWithCmp)(oset2, &a, blockCmp) );
    }
 
    // Check that we can iterate over the OSet elements in sorted order, and

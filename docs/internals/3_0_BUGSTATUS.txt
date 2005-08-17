@@ -339,3 +339,11 @@ FIXED-30BRANCH: TODO
 
 FIXED-TRUNK:    4435
 FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+Updates to Memcheck manual
+
+FIXED-TRUNK:    4419, 4427, 4434
+FIXED-30BRANCH: TODO
+

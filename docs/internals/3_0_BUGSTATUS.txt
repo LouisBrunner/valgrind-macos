@@ -347,3 +347,10 @@ Updates to Memcheck manual
 FIXED-TRUNK:    4419, 4427, 4434
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+
+Fixed broken malloc_usable_size()
+
+FIXED-TRUNK:    4439
+FIXED-30BRANCH: TODO
+

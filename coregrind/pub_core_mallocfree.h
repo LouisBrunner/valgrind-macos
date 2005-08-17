@@ -68,6 +68,21 @@ typedef Int ArenaId;
 // greater than 8.
 #define VG_MIN_MALLOC_SZB        8
 
+/* This struct definition MUST match the system one. */
+/* SVID2/XPG mallinfo structure */
+struct vg_mallinfo {
+   int arena;    /* total space allocated from system */
+   int ordblks;  /* number of non-inuse chunks */
+   int smblks;   /* unused -- always zero */
+   int hblks;    /* number of mmapped regions */
+   int hblkhd;   /* total space in mmapped regions */
+   int usmblks;  /* unused -- always zero */
+   int fsmblks;  /* unused -- always zero */
+   int uordblks; /* total allocated space */
+   int fordblks; /* total non-inuse space */
+   int keepcost; /* top-most, releasable (via malloc_trim) space */
+};
+
 extern void* VG_(arena_malloc)  ( ArenaId arena, SizeT nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
 extern void* VG_(arena_calloc)  ( ArenaId arena, 
@@ -82,6 +97,8 @@ extern Char* VG_(arena_strdup)  ( ArenaId aid, const Char* s);
 extern void  VG_(set_client_malloc_redzone_szB) ( SizeT rz_szB );
 
 extern SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* p );
+
+extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
 
 extern void  VG_(sanity_check_malloc_all) ( void );
 

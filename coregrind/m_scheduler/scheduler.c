@@ -1027,6 +1027,7 @@ void do_client_request ( ThreadId tid )
 	 info->tl___builtin_vec_delete = VG_(tdict).tool___builtin_vec_delete;
 
 	 info->arena_payload_szB       = VG_(arena_payload_szB);
+	 info->mallinfo                = VG_(mallinfo);
 	 info->clo_trace_malloc        = VG_(clo_trace_malloc);
 
          SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */

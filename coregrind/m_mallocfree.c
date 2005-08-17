@@ -1204,6 +1204,14 @@ SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* ptr )
    return get_pszB(a, b);
 }
 
+// We cannot return the whole struct as the library function does,
+// because this is called by a client request.  So instead we use
+// a pointer to do call by reference.
+void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
+{
+   // Should do better than this...
+   VG_(memset)(mi, 0x0, sizeof(struct vg_mallinfo));
+}
 
 /*------------------------------------------------------------*/
 /*--- Services layered on top of malloc/free.              ---*/

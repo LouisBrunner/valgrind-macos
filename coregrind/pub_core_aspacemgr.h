@@ -131,6 +131,8 @@ extern Bool VG_(seg_overlaps)(const Segment *s, Addr ptr, SizeT size);
 
 extern Segment *VG_(split_segment)(Addr a);
 
+extern void VG_(show_segments)(HChar* who);
+
 extern void VG_(pad_address_space)  (Addr start);
 extern void VG_(unpad_address_space)(Addr start);
 

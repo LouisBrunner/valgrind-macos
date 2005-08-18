@@ -2028,6 +2028,7 @@ static Bool dis_int_logic ( UInt theInstr )
             assign(Ra, IRExpr_Mux0X( unop(Iop_1Uto8, irx),
                                      mkU32(32),
                                      unop(Iop_Clz32, mkexpr(Rs)) ));
+            // alternatively: assign(Ra, verbose_Clz32(Rs));
             break;
 
       case 0x11C: // eqv (Equivalent, PPC32 p396)
@@ -6710,6 +6711,93 @@ DisResult disInstr_PPC32 ( IRBB*        irbb_IN,
    return dres;
 }
 
+
+/*------------------------------------------------------------*/
+/*--- Unused stuff                                         ---*/
+/*------------------------------------------------------------*/
+
+///* A potentially more memcheck-friendly implementation of Clz32, with
+//   the boundary case Clz32(0) = 32, which is what ppc requires. */
+//
+//static IRExpr* /* :: Ity_I32 */ verbose_Clz32 ( IRTemp arg )
+//{
+//   /* Welcome ... to SSA R Us. */
+//   IRTemp n1  = newTemp(Ity_I32);
+//   IRTemp n2  = newTemp(Ity_I32);
+//   IRTemp n3  = newTemp(Ity_I32);
+//   IRTemp n4  = newTemp(Ity_I32);
+//   IRTemp n5  = newTemp(Ity_I32);
+//   IRTemp n6  = newTemp(Ity_I32);
+//   IRTemp n7  = newTemp(Ity_I32);
+//   IRTemp n8  = newTemp(Ity_I32);
+//   IRTemp n9  = newTemp(Ity_I32);
+//   IRTemp n10 = newTemp(Ity_I32);
+//   IRTemp n11 = newTemp(Ity_I32);
+//   IRTemp n12 = newTemp(Ity_I32);
+//
+//   /* First, propagate the most significant 1-bit into all lower
+//      positions in the word. */
+//   /* unsigned int clz ( unsigned int n )
+//      {
+//         n |= (n >> 1);
+//         n |= (n >> 2);
+//         n |= (n >> 4);
+//         n |= (n >> 8);
+//         n |= (n >> 16);
+//         return bitcount(~n);
+//      }
+//   */
+//   assign(n1, mkexpr(arg));
+//   assign(n2, binop(Iop_Or32, mkexpr(n1), binop(Iop_Shr32, mkexpr(n1), mkU8(1))));
+//   assign(n3, binop(Iop_Or32, mkexpr(n2), binop(Iop_Shr32, mkexpr(n2), mkU8(2))));
+//   assign(n4, binop(Iop_Or32, mkexpr(n3), binop(Iop_Shr32, mkexpr(n3), mkU8(4))));
+//   assign(n5, binop(Iop_Or32, mkexpr(n4), binop(Iop_Shr32, mkexpr(n4), mkU8(8))));
+//   assign(n6, binop(Iop_Or32, mkexpr(n5), binop(Iop_Shr32, mkexpr(n5), mkU8(16))));
+//   /* This gives a word of the form 0---01---1.  Now invert it, giving
+//      a word of the form 1---10---0, then do a population-count idiom
+//      (to count the 1s, which is the number of leading zeroes, or 32
+//      if the original word was 0. */
+//   assign(n7, unop(Iop_Not32, mkexpr(n6)));
+//
+//   /* unsigned int bitcount ( unsigned int n )
+//      {
+//         n = n - ((n >> 1) & 0x55555555);
+//         n = (n & 0x33333333) + ((n >> 2) & 0x33333333);
+//         n = (n + (n >> 4)) & 0x0F0F0F0F;
+//         n = n + (n >> 8);
+//         n = (n + (n >> 16)) & 0x3F;
+//         return n;
+//      }
+//   */
+//   assign(n8, 
+//          binop(Iop_Sub32, 
+//                mkexpr(n7),  
+//                binop(Iop_And32, 
+//                      binop(Iop_Shr32, mkexpr(n7), mkU8(1)),
+//                      mkU32(0x55555555))));
+//   assign(n9,
+//          binop(Iop_Add32,
+//                binop(Iop_And32, mkexpr(n8), mkU32(0x33333333)),
+//                binop(Iop_And32,
+//                      binop(Iop_Shr32, mkexpr(n8), mkU8(2)),
+//                      mkU32(0x33333333))));
+//   assign(n10,
+//          binop(Iop_And32,
+//                binop(Iop_Add32, 
+//                      mkexpr(n9), 
+//                      binop(Iop_Shr32, mkexpr(n9), mkU8(4))),
+//                mkU32(0x0F0F0F0F)));
+//   assign(n11,
+//          binop(Iop_Add32,
+//                mkexpr(n10),
+//                binop(Iop_Shr32, mkexpr(n10), mkU8(8))));
+//   assign(n12,
+//          binop(Iop_Add32,
+//                mkexpr(n11),
+//                binop(Iop_Shr32, mkexpr(n11), mkU8(16))));
+//   return
+//      binop(Iop_And32, mkexpr(n12), mkU32(0x3F));
+//}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                       guest-ppc32/toIR.c ---*/

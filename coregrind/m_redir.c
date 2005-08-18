@@ -366,7 +366,10 @@ void VG_(setup_code_redirect_table) ( void )
 
 #elif defined(VGP_ppc32_linux)
 
-   //CAB: TODO
+   add_redirect_sym_to_addr(
+      "soname:ld.so.1", "strlen",
+      (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen)
+   );   
 
 #else
 #  error Unknown platform

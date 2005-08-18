@@ -58,6 +58,10 @@ extern void VG_(amd64_linux_SUBST_FOR_rt_sigreturn);
 extern void VG_(amd64_linux_REDIR_FOR_vgettimeofday);
 extern void VG_(amd64_linux_REDIR_FOR_vtime);
 #endif
+
+#if defined(VGP_ppc32_linux)
+extern UInt VG_(ppc32_linux_REDIR_FOR_strlen)( void* );
+#endif
  
 #endif   // __PUB_CORE_TRAMPOLINE_H
 

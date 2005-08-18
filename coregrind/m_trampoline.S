@@ -107,9 +107,27 @@ VG_(trampoline_stuff_end):
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
 
+/* There's no particular reason that this needs to be handwritten
+   assembly, but since that's what this file contains, here's a
+   simple strlen implementation (written in C and compiled by gcc.)
+*/
+.global VG_(ppc32_linux_REDIR_FOR_strlen)
+VG_(ppc32_linux_REDIR_FOR_strlen):
+        lbz 4,0(3)
+        li 9,0
+        cmpwi 0,4,0
+        beq- 0,.L8
+.L9:
+        lbzu 5,1(3)
+        addi 9,9,1
+        cmpwi 0,5,0
+        bne+ 0,.L9
+.L8:
+        mr 3,9
+        blr
+
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
-
 
 
 /*---------------- unknown ----------------*/
@@ -119,8 +137,6 @@ VG_(trampoline_stuff_end):
 #endif
 #endif
 #endif
-
-tramp_code_end:
 
 
 /* Let the linker know we don't need an executable stack */

@@ -301,7 +301,7 @@ struct vki_sigcontext {
 #define VKI_SIOCGSTAMP	0x8906          /* Get stamp */
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-ppc/stat.h
+// From linux-2.6.10/include/asm-ppc/stat.h
 //----------------------------------------------------------------------
 
 //.. #define VKI_S_IFMT		00170000
@@ -346,27 +346,28 @@ struct vki_stat {
 };
 
 struct vki_stat64 {
-   unsigned long	st_dev;
-   unsigned long	st_ino;
-   unsigned long	st_rdev;
-   long			st_size;
-   unsigned long	st_blocks;
+   unsigned long long   st_dev;
+   unsigned long long   st_ino;
+   unsigned int         st_mode;
+   unsigned int         st_nlink;
+   unsigned int         st_uid;
+   unsigned int         st_gid;
+   unsigned long long   st_rdev;
+   unsigned short int   __pad2;
+   long long            st_size;
+   long                 st_blksize;
 
-   unsigned int		st_mode;
-   unsigned int		st_uid;
-   unsigned int		st_gid;
-   unsigned int		st_blksize;
-   unsigned int		st_nlink;
-   unsigned int		__pad0;
-
-   unsigned long	st_atime;
-   unsigned long	st_atime_nsec;
-   unsigned long	st_mtime;
-   unsigned long	st_mtime_nsec;
-   unsigned long	st_ctime;
-   unsigned long	st_ctime_nsec;
-   long				__unused[3];
+   long long            st_blocks;
+   long                 st_atime;
+   unsigned long        st_atime_nsec;
+   long                 st_mtime;
+   unsigned long int    st_mtime_nsec;
+   long                 st_ctime;
+   unsigned long int    st_ctime_nsec;
+   unsigned long int    __unused4;
+   unsigned long int    __unused5;
 };
+
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-ppc/statfs.h

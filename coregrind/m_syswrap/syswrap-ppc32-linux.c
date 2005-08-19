@@ -184,14 +184,15 @@ static void run_a_thread_NORETURN ( Word tidW )
          reallocation.  We need to make sure we don't touch the stack
          between marking it Empty and exiting.  Hence the
          assembler. */
-
-     asm volatile (
-        "stw %1,%0\n\t"          /* set tst->status = VgTs_Empty */
-        "li  0,%2\n\t"           /* set r0 = __NR_exit */
-        "lwz 3,%3\n\t"           /* set r3 = tst->os_state.exitcode */
-        "sc\n\t"                 /* exit(tst->os_state.exitcode) */
-        : "=m" (tst->status)
-        : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
+      { UInt vgts_empty = (UInt)VgTs_Empty;
+        asm volatile (
+          "stw %1,%0\n\t"          /* set tst->status = VgTs_Empty */
+          "li  0,%2\n\t"           /* set r0 = __NR_exit */
+          "lwz 3,%3\n\t"           /* set r3 = tst->os_state.exitcode */
+          "sc\n\t"                 /* exit(tst->os_state.exitcode) */
+          : "=m" (tst->status)
+          : "r" (vgts_empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
+      }
 
       VG_(core_panic)("Thread exit failed?\n");
    }
@@ -2171,7 +2172,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask),    // 174
 //..    GENXY(__NR_rt_sigpending,     sys_rt_sigpending),     // 175
-//..    GENXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),   // 176
+   GENXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),   // 176
 //..    GENXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),   // 177
 //..    GENX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),     // 178
 //.. 

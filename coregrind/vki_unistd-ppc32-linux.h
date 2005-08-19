@@ -56,7 +56,7 @@
 #define __NR_getuid			 24
 //#define __NR_stime			 25
 //#define __NR_ptrace			 26
-//#define __NR_alarm			 27
+#define __NR_alarm			 27
 //#define __NR_oldfstat			 28
 #define __NR_pause			 29
 #define __NR_utime			 30

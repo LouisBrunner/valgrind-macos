@@ -1990,7 +1990,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //.. 
 //..    //   (__NR_stime,             sys_stime),             // 25 * (SVr4,SVID,X/OPEN)
 //..    PLAXY(__NR_ptrace,            sys_ptrace),            // 26
-//..    GENX_(__NR_alarm,             sys_alarm),             // 27
+   GENX_(__NR_alarm,             sys_alarm),             // 27
 //..    //   (__NR_oldfstat,          sys_fstat),             // 28 * L -- obsolete
    GENX_(__NR_pause,             sys_pause),             // 29
 //.. 
@@ -2109,7 +2109,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    LINXY(__NR_adjtimex,          sys_adjtimex),          // 124
 //.. 
    GENXY(__NR_mprotect,          sys_mprotect),          // 125
-//..    GENXY(__NR_sigprocmask,       sys_sigprocmask),       // 126
+   GENXY(__NR_sigprocmask,       sys_sigprocmask),       // 126
 //..    // Nb: create_module() was removed 2.4-->2.6
 //..    GENX_(__NR_create_module,     sys_ni_syscall),        // 127
 //..    GENX_(__NR_init_module,       sys_init_module),       // 128
@@ -2183,7 +2183,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENXY(__NR_capget,            sys_capget),            // 183
 //.. 
 //..    GENX_(__NR_capset,            sys_capset),            // 184
-//..    GENXY(__NR_sigaltstack,       sys_sigaltstack),       // 185
+   GENXY(__NR_sigaltstack,       sys_sigaltstack),       // 185
 //..    LINXY(__NR_sendfile,          sys_sendfile),          // 186
 //..    GENXY(__NR_getpmsg,           sys_getpmsg),           // 187
 //..    GENX_(__NR_putpmsg,           sys_putpmsg),           // 188
@@ -2211,7 +2211,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_fcntl64,           sys_fcntl64),           // 204
 //..    GENX_(__NR_madvise,           sys_madvise),           // 205
 //..    GENXY(__NR_mincore,           sys_mincore),           // 206
-//..    LINX_(__NR_gettid,            sys_gettid),            // 207
+   LINX_(__NR_gettid,            sys_gettid),            // 207
 //..    LINX_(__NR_tkill,             sys_tkill),             // 208 */Linux
 //..    GENX_(__NR_setxattr,          sys_setxattr),          // 209
 //..    GENX_(__NR_lsetxattr,         sys_lsetxattr),         // 210

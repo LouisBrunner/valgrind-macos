@@ -5409,7 +5409,7 @@ POST(sys_rt_sigaction)
 // XXX: This syscall is not used on amd64 -- it only provides
 //      sys_rt_sigprocmask, which uses sigset_t rather than old_sigset_t.
 // This wrapper is only suitable for 32-bit architectures.
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
 PRE(sys_sigprocmask)
 {
    vki_old_sigset_t* set;

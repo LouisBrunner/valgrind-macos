@@ -189,14 +189,14 @@ vg_preload_core_so_LDFLAGS = \
 # So we search for the line with a hex value "+ SIZEOF_HEADERS", and replace
 # all the hex values in that line with "kickstart_base".
 stage2.lds: Makefile
-	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \
+	$(CC) $(AM_CFLAGS) -Wl,--verbose -nostdlib 2>&1 | sed \
 		-e '1,/^=====\+$$/d' \
 		-e '/^=====\+$$/d' \
 		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/kickstart_base/g' > $@ \
 	|| rm -f $@
 
 @VEX_DIR@/libvex.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ libvex.a EXTRA_CFLAGS="@PIE_AM_CFLAGS@"
+	$(MAKE) -C @VEX_DIR@ libvex.a EXTRA_CFLAGS="@ARCH_CORE_AM_CFLAGS@ @PIE_AM_CFLAGS@"
 
 @VEX_DIR@/priv/main/vex_svnversion.h:
 	$(MAKE) -C @VEX_DIR@ version

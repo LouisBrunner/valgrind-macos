@@ -2412,8 +2412,9 @@ PRE(sys_execve)
 
    /* If we got here, then the execve failed.  We've already made too
       much of a mess of ourselves to continue, so we have to abort. */
+   vg_assert(FAILURE);
    VG_(message)(Vg_UserMsg, "execve(%p(%s), %p, %p) failed, errno %d",
-                ARG1, ARG1, ARG2, ARG3, -RES);
+                ARG1, ARG1, ARG2, ARG3, RES_unchecked);
    VG_(message)(Vg_UserMsg, "EXEC FAILED: I can't recover from "
                             "execve() failing, so I'm dying.");
    VG_(message)(Vg_UserMsg, "Add more stringent tests in PRE(sys_execve), "

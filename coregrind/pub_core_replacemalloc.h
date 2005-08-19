@@ -50,7 +50,7 @@ struct vg_mallocfunc_info {
    void  (*tl___builtin_vec_delete)(ThreadId tid, void* p);
    void* (*tl_realloc)             (ThreadId tid, void* p, SizeT size);
 
-   SizeT (*arena_payload_szB)      (ArenaId aid, void* payload);
+   SizeT (*arena_payload_szB)      (ThreadId tid, ArenaId aid, void* payload);
    Bool	clo_trace_malloc;
 };
 

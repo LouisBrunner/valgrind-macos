@@ -1197,7 +1197,7 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
 }
 
 
-SizeT VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
+SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* ptr )
 {
    Arena* a = arenaId_to_ArenaP(aid);
    Block* b = get_payload_block(a, ptr);

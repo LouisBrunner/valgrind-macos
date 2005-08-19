@@ -359,7 +359,7 @@ FIXED-30BRANCH: TODO
 Fixed broken malloc_usable_size()
 
 FIXED-TRUNK:    4439
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4453
 
 ----------------------------------------------------------------
 

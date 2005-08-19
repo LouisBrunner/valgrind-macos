@@ -45,23 +45,6 @@
 /*--- Exported functions.                                  ---*/
 /*------------------------------------------------------------*/
 
-// Stack frame layout and linkage
-#if defined(VGP_x86_linux)
-#  define FIRST_STACK_FRAME(ebp)    (ebp)
-#  define STACK_FRAME_RET(ebp)      (((UWord*)ebp)[1])
-#  define STACK_FRAME_NEXT(ebp)     (((UWord*)ebp)[0])
-#elif defined(VGP_amd64_linux)
-#  define FIRST_STACK_FRAME(rbp)    (rbp)
-#  define STACK_FRAME_RET(rbp)      (((UWord*)rbp)[1])
-#  define STACK_FRAME_NEXT(rbp)     (((UWord*)rbp)[0])
-#elif defined(VGP_ppc32_linux)
-#  define FIRST_STACK_FRAME(sp)     (((UWord*)(sp))[0])
-#  define STACK_FRAME_RET(sp)       (((UWord*)(sp))[1])
-#  define STACK_FRAME_NEXT(sp)      (((UWord*)(sp))[0])
-#else
-#  error Unknown platform
-#endif
-
 /* Take a snapshot of the client's stack, putting the up to 'n_ips'
    IPs into 'ips'.  In order to be thread-safe, we pass in the
    thread's IP SP, FP if that's meaningful, and LR if that's

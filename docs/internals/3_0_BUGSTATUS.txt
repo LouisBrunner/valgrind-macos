@@ -293,7 +293,7 @@ FIXED-30BRANCH: done(4395)
 I suppose it would be good to apply these.  They seem low risk.
 
 FIXED-TRUNK:    4429
-FIXED-30BRANCH: no
+FIXED-30BRANCH: 4458
 
 ----------------------------------------------------------------
 
@@ -328,24 +328,17 @@ FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
 
-Description of leak errors in manual.
-
-FIXED-TRUNK:    4427
-FIXED-30BRANCH: TODO
-
-----------------------------------------------------------------
-
 110830  configuring with --host fails to build 32 bit on 64 bit target
 
 FIXED-TRUNK:    4442
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4459
 
 ----------------------------------------------------------------
 
 110875  Assertion when execve fails
 
 FIXED-TRUNK:    4435
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4457
 
 ----------------------------------------------------------------
 

@@ -10,7 +10,13 @@
 #include "pub_core_libcprint.h"
 
 // I need this to avoid some signedness warnings, not sure why
-#define Char char
+// #define Char char
+// jrs 19 Aug 2005: m_oset.c relies on Char being a signed char.
+// It appears that plain 'char' on ppc32 is unsigned and so the
+// above #define screws up the AVL tree balancing logic and
+// leads to segfaults.  Commenting it out and using the standard
+// definition of Char from pub_core_basics.h seems a good solution
+// as that has the same signedness on all platforms.
 
 // Crudely redirect various VG_(foo)() functions to their libc equivalents.
 #undef vg_assert

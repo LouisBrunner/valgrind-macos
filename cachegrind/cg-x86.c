@@ -108,8 +108,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
          VG_(tool_panic)("IA-64 cache detected?!");
 
       case 0x22: case 0x23: case 0x25: case 0x29: 
-          VG_(message)(Vg_DebugMsg, 
-             "warning: L3 cache detected but ignored\n");
+          VG_(message)(Vg_DebugMsg, "warning: L3 cache detected but ignored");
           break;
 
       /* These are sectored, whatever that means */

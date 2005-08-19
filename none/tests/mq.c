@@ -24,6 +24,8 @@ int main(int argc, char **argv)
   
   if ((mqdw = mq_open("/valgrind-mqueue", O_CREAT|O_EXCL|O_WRONLY, 0600, &mqa)) < 0)
     {
+      if (errno == ENOSYS)
+        exit(0);
       perror("mq_open");
       exit(1);
     }

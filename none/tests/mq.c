@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <errno.h>
+
 #ifdef HAVE_MQUEUE_H
 
 #include <mqueue.h>

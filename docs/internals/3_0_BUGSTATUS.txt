@@ -374,3 +374,12 @@ FIXED-30BRANCH: TODO
 
 FIXED-TRUNK:    TODO
 FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+Make suppressions work for "???" lines in stacktraces.
+
+FIXED-TRUNK:    4447
+FIXED-30BRANCH: TODO
+
+

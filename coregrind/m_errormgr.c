@@ -391,8 +391,7 @@ static void printSuppForIp(UInt n, Addr ip)
    } else if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
       VG_(printf)("   obj:%s\n", buf);
    } else {
-      VG_(printf)("   ???:???       "
-                  "# unknown, suppression will not work, sorry\n");
+      VG_(printf)("   obj:*\n");
    }
 }
 
@@ -1089,16 +1088,20 @@ Bool supp_matches_callers(Error* err, Supp* su)
    for (i = 0; i < su->n_callers; i++) {
       Addr a = ips[i];
       vg_assert(su->callers[i].name != NULL);
+      // The string to be used in the unknown case ("???") can be anything
+      // that couldn't be a valid function or objname.  --gen-suppressions
+      // prints 'obj:*' for such an entry, which will match any string we
+      // use.
       switch (su->callers[i].ty) {
          case ObjName: 
             if (!VG_(get_objname)(a, caller_name, ERRTXT_LEN))
-               return False;
+               VG_(strcpy)(caller_name, "???");
             break; 
 
          case FunName: 
             // Nb: mangled names used in suppressions
             if (!VG_(get_fnname_nodemangle)(a, caller_name, ERRTXT_LEN))
-               return False;
+               VG_(strcpy)(caller_name, "???");
             break;
          default: VG_(tool_panic)("supp_matches_callers");
       }

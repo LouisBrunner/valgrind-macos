@@ -14,8 +14,8 @@ command line.</para>
        xreflabel="Kinds of bugs that Memcheck can find">
 <title>Kinds of bugs that Memcheck can find</title>
 
-<para>Memcheck is Valgrind-1.0.X's checking mechanism bundled up
-into a tool.  All reads and writes of memory are checked, and
+<para>Memcheck is Valgrind's heavyweight memory checking
+tool.  All reads and writes of memory are checked, and
 calls to malloc/new/free/delete are intercepted. As a result,
 Memcheck can detect the following problems:</para>
 
@@ -142,8 +142,7 @@ Memcheck can detect the following problems:</para>
     [default]</para>
     <para><computeroutput>--workaround-gcc296-bugs=yes</computeroutput></para>
     <para>When enabled, assume that reads and writes some small
-    distance below the stack pointer
-    <computeroutput>%esp</computeroutput> are due to bugs in gcc
+    distance below the stack pointer are due to bugs in gcc
     2.96, and does not report them.  The "small distance" is 256
     bytes by default.  Note that gcc 2.96 is the default compiler
     on some popular Linux distributions (RedHat 7.X, Mandrake)
@@ -234,10 +233,10 @@ malloc'd.</para>
 
 <para>In this example, Memcheck can't identify the address.
 Actually the address is on the stack, but, for some reason, this
-is not a valid stack address -- it is below the stack pointer,
-<literal>%esp</literal>, and that isn't allowed.  In this
+is not a valid stack address -- it is below the stack pointer
+and that isn't allowed.  In this
 particular case it's probably caused by gcc generating invalid
-code, a known bug in various flavours of gcc.</para>
+code, a known bug in various versions of gcc.</para>
 
 <para>Note that Memcheck only tells you that your program is
 about to access memory at an illegal address.  It can't stop the
@@ -427,8 +426,8 @@ precisely reflect any changes in memory permissions caused by the system call.
 
 <para>Here's an example of two system calls with invalid parameters:</para>
 <programlisting><![CDATA[
-  #include &lt;stdlib.h>
-  #include &lt;unistd.h>
+  #include <stdlib.h>
+  #include <unistd.h>
   int main( void )
   {
     char* arr  = malloc(10);
@@ -506,12 +505,91 @@ don't make any assumptions about the language implementation.</para>
 </sect2>
 
 
+<sect2 id="mc-manual.leaks" xreflabel="Memory leak detection">
+<title>Memory leak detection</title>
+
+<para>Memcheck keeps track of all memory blocks issued in
+response to calls to malloc/calloc/realloc/new.  So when the
+program exits, it knows which blocks have not been freed.
+</para>
+
+<para>If <computeroutput>--leak-check</computeroutput> is set
+appropriately, for each remaining block, Memcheck scans the entire
+address space of the process, looking for pointers to the block.
+Each block fits into one of the three following categories.</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>Still reachable: A pointer to the start
+    of the block is found.  This usually indicates programming
+    sloppiness; since the block is still pointed at, the
+    programmer could, at least in principle, free'd it before
+    program exit.  Because these are very common and arguably
+    not a problem, Memcheck won't report such blocks unless
+    <computeroutput>--show-reachable=yes</computeroutput> is
+    specified.</para>
+  </listitem>
+
+  <listitem>
+    <para>Possibly lost, or "dubious": A pointer to the
+    interior of the block is found.  The pointer might originally
+    have pointed to the start and have been moved along, or it
+    might be entirely unrelated.  Memcheck deems such a block as
+    "dubious", because it's unclear whether or not a pointer to it
+    still exists.</para>
+  </listitem>
+
+  <listitem>
+    <para>Definitely lost, or "leaked": The worst
+    outcome is that no pointer to the block can be found.  The
+    block is classified as "leaked", because the programmer could
+    not possibly have freed it at program exit, since no pointer
+    to it exists.  This is likely a symptom of having lost the
+    pointer at some earlier point in the program.</para>
+    </listitem>
+
+</itemizedlist>
+
+<para>For each block mentioned, Memcheck will also tell you where
+the block was allocated.  It cannot tell you how or why the
+pointer to a leaked block has been lost;  you have to work that
+out for yourself.  In general, you should attempt to ensure your
+programs do not have any leaked or dubious blocks at exit.</para>
+
+<para>For example:</para>
+<programlisting><![CDATA[
+8 bytes in 1 blocks are definitely lost in loss record 1 of 14
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:11)
+   by 0x........: main (leak-tree.c:39)
+
+88 (8 direct, 80 indirect) bytes in 1 blocks are definitely lost in loss record 13 of 14
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: mk (leak-tree.c:11)
+   by 0x........: main (leak-tree.c:25)
+]]></programlisting>
+
+<para>The first message describes a simple case of a single 8 byte
+block that has been definitely lost.  The second case
+mentions both "direct" and "indirect" leaks.  The distinction is
+that a direct leak is a block which has no pointers to it.  An
+indirect leak is a block which is only pointed to by other leaked
+blocks.  Both kinds of leak are bad.</para>
+
+<para>The precise area of memory in which Memcheck searches for
+pointers is: all naturally-aligned 4-byte words for which all A
+bits indicate addressibility and all V bits indicated that the
+stored value is actually valid.</para>
+
+</sect2>
+
 </sect1>
 
 
 
-<sect1 id="mc-manual.suppfiles" xreflabel="Writing suppressions files">
-<title>Writing suppressions files</title>
+<sect1 id="mc-manual.suppfiles" xreflabel="Writing suppression files">
+<title>Writing suppression files</title>
 
 <para>The basic suppression format is described in 
 <xref linkend="manual-core.suppress"/>.</para>
@@ -564,7 +642,7 @@ Memcheck,Addrcheck:suppression_type]]></programlisting>
   </listitem>
 
   <listitem>
-    <para><computeroutput>Overlap</computeroutput>, meaning a
+    <para>Or: <computeroutput>Overlap</computeroutput>, meaning a
     <computeroutput>src</computeroutput> /
     <computeroutput>dst</computeroutput> overlap in
     <computeroutput>memcpy() or a similar
@@ -572,9 +650,8 @@ Memcheck,Addrcheck:suppression_type]]></programlisting>
   </listitem>
 
   <listitem>
-    <para>Last but not least, you can suppress leak reports with
-    <computeroutput>Leak</computeroutput>.  Leak suppression was
-    added in valgrind-1.9.3, I believe.</para>
+    <para>Or: <computeroutput>Leak</computeroutput>, meaning
+    a memory leak.</para>
   </listitem>
 
 </itemizedlist>
@@ -612,7 +689,7 @@ what and how Memcheck is checking.</para>
 <title>Valid-value (V) bits</title>
 
 <para>It is simplest to think of Memcheck implementing a
-synthetic Intel x86 CPU which is identical to a real CPU, except
+synthetic CPU which is identical to a real CPU, except
 for one crucial detail.  Every bit (literally) of data processed,
 stored and handled by the real CPU has, in the synthetic CPU, an
 associated "valid-value" bit, which says whether or not the
@@ -631,8 +708,8 @@ bitmap.</para>
 
 <para>In short, each bit in the system has an associated V bit,
 which follows it around everywhere, even inside the CPU.  Yes,
-the CPU's (integer and <computeroutput>%eflags</computeroutput>)
-registers have their own V bit vectors.</para>
+all the CPU's registers (integer, floating point, and condition 
+registers) have their own V bit vectors.</para>
 
 <para>Copying values around does not cause Memcheck to check for,
 or report on, errors.  However, when a value is used in a way
@@ -673,14 +750,14 @@ the <computeroutput>printf</computeroutput> -- an observable
 action of your program -- that Memcheck complains.</para>
 
 <para>Most low level operations, such as adds, cause Memcheck to
-use the <literal>V bits</literal> for the operands to calculate
-the V bits for the result.  Even if the result is partially or
-wholly undefined, it does not complain.</para>
+use the V bits for the operands to calculate the V bits for the result.
+Even if the result is partially or wholly undefined, it does not
+complain.</para>
 
-<para>Checks on definedness only occur in two places: when a
-value is used to generate a memory address, and where control
-flow decision needs to be made.  Also, when a system call is
-detected, valgrind checks definedness of parameters as
+<para>Checks on definedness only occur in three places: when a
+value is used to generate a memory address, when control
+flow decision needs to be made, and when a system call is
+detected, Valgrind checks definedness of parameters as
 required.</para>
 
 <para>If a check should detect undefinedness, an error message is
@@ -729,20 +806,6 @@ necessary.  This allows <literal>gcc</literal> to copy
 warning will only be emitted if the uninitialised values are
 later used.</para>
 
-<para>One final twist to this story.  The above scheme allows
-garbage to pass through the CPU's integer registers without
-complaint.  It does this by giving the integer registers
-<literal>V</literal> tags, passing these around in the expected
-way.  This complicated and computationally expensive to do, but
-is necessary.  Memcheck is more simplistic about floating-point
-loads and stores.  In particular, <literal>V</literal> bits for
-data read as a result of floating-point loads are checked at the
-load instruction.  So if your program uses the floating-point
-registers to do memory-to-memory copies, you will get complaints
-about uninitialised values.  Fortunately, I have not yet
-encountered a program which (ab)uses the floating-point registers
-in this way.</para>
-
 </sect2>
 
 
@@ -756,23 +819,22 @@ access any particular memory location.  We now consider the
 latter issue.</para>
 
 <para>As described above, every bit in memory or in the CPU has
-an associated valid-value (<literal>V</literal>) bit.  In
+an associated valid-value (V) bit.  In
 addition, all bytes in memory, but not in the CPU, have an
-associated valid-address (<literal>A</literal>) bit.  This
+associated valid-address (A) bit.  This
 indicates whether or not the program can legitimately read or
 write that location.  It does not give any indication of the
 validity or the data at that location -- that's the job of the
-<literal>V</literal> bits -- only whether or not the location may
+V bits -- only whether or not the location may
 be accessed.</para>
 
 <para>Every time your program reads or writes memory, Memcheck
-checks the <literal>A</literal> bits associated with the address.
+checks the A bits associated with the address.
 If any of them indicate an invalid address, an error is emitted.
 Note that the reads and writes themselves do not change the A
 bits, only consult them.</para>
 
-<para>So how do the <literal>A</literal> bits get set/cleared?
-Like this:</para>
+<para>So how do the A bits get set/cleared?  Like this:</para>
 
 <itemizedlist>
   <listitem>
@@ -788,15 +850,14 @@ Like this:</para>
   </listitem>
 
   <listitem>
-
     <para>When the stack pointer register
-    (<literal>%esp</literal>) moves up or down,
-    <literal>A</literal> bits are set.  The rule is that the area
-    from <literal>%esp</literal> up to the base of the stack is
-    marked as accessible, and below <literal>%esp</literal> is
+    (<literal>SP</literal>) moves up or down,
+    A bits are set.  The rule is that the area
+    from <literal>SP</literal> up to the base of the stack is
+    marked as accessible, and below <literal>SP</literal> is
     inaccessible.  (If that sounds illogical, bear in mind that
     the stack grows down, not up, on almost all Unix systems,
-    including GNU/Linux.)  Tracking <literal>%esp</literal> like
+    including GNU/Linux.)  Tracking <literal>SP</literal> like
     this has the useful side-effect that the section of stack
     used by a function for local variables etc is automatically
     marked accessible on function entry and inaccessible on
@@ -830,66 +891,49 @@ follows:</para>
 <itemizedlist>
   <listitem>
     <para>Each byte in memory has 8 associated
-    <literal>V</literal> (valid-value) bits, saying whether or
+    V (valid-value) bits, saying whether or
     not the byte has a defined value, and a single
-    <literal>A</literal> (valid-address) bit, saying whether or
+    A (valid-address) bit, saying whether or
     not the program currently has the right to read/write that
     address.</para>
   </listitem>
 
   <listitem>
     <para>When memory is read or written, the relevant
-    <literal>A</literal> bits are consulted.  If they indicate an
+    A bits are consulted.  If they indicate an
     invalid address, Valgrind emits an Invalid read or Invalid
     write error.</para>
   </listitem>
 
   <listitem>
-    <para>When memory is read into the CPU's integer registers,
-    the relevant <literal>V</literal> bits are fetched from
+    <para>When memory is read into the CPU's registers,
+    the relevant V bits are fetched from
     memory and stored in the simulated CPU.  They are not
     consulted.</para>
   </listitem>
 
   <listitem>
-    <para>When an integer register is written out to memory, the
-    <literal>V</literal> bits for that register are written back
+    <para>When a register is written out to memory, the
+    V bits for that register are written back
     to memory too.</para>
   </listitem>
 
   <listitem>
-    <para>When memory is read into the CPU's floating point
-    registers, the relevant <literal>V</literal> bits are read
-    from memory and they are immediately checked.  If any are
-    invalid, an uninitialised value error is emitted.  This
-    precludes using the floating-point registers to copy
-    possibly-uninitialised memory, but simplifies Valgrind in
-    that it does not have to track the validity status of the
-    floating-point registers.</para>
-  </listitem>
-
-  <listitem>
-    <para>As a result, when a floating-point register is written
-    to memory, the associated V bits are set to indicate a valid
-    value.</para>
-  </listitem>
-
-  <listitem>
-    <para>When values in integer CPU registers are used to
+    <para>When values in CPU registers are used to
     generate a memory address, or to determine the outcome of a
-    conditional branch, the <literal>V</literal> bits for those
+    conditional branch, the V bits for those
     values are checked, and an error emitted if any of them are
     undefined.</para>
   </listitem>
 
   <listitem>
-    <para>When values in integer CPU registers are used for any
+    <para>When values in CPU registers are used for any
     other purpose, Valgrind computes the V bits for the result,
     but does not check them.</para>
   </listitem>
 
   <listitem>
-    <para>One the <literal>V</literal> bits for a value in the
+    <para>One the V bits for a value in the
     CPU have been checked, they are then set to indicate
     validity.  This avoids long chains of errors.</para>
   </listitem>
@@ -963,63 +1007,6 @@ is:</para>
 </sect2>
 </sect1>
 
-
-
-<sect1 id="mc-manual.leaks" xreflabel="Memory leak detection">
-<title>Memory leak detection</title>
-
-<para>Memcheck keeps track of all memory blocks issued in
-response to calls to malloc/calloc/realloc/new.  So when the
-program exits, it knows which blocks are still outstanding --
-have not been returned, in other words.  Ideally, you want your
-program to have no blocks still in use at exit.  But many
-programs do.</para>
-
-<para>For each such block, Memcheck scans the entire address
-space of the process, looking for pointers to the block.  One of
-three situations may result:</para>
-
-<itemizedlist>
-
-  <listitem>
-    <para>A pointer to the start of the block is found.  This
-    usually indicates programming sloppiness; since the block is
-    still pointed at, the programmer could, at least in
-    principle, free'd it before program exit.</para>
-  </listitem>
-
-  <listitem>
-    <para>A pointer to the interior of the block is found.  The
-    pointer might originally have pointed to the start and have
-    been moved along, or it might be entirely unrelated.
-    Memcheck deems such a block as "dubious", that is, possibly
-    leaked, because it's unclear whether or not a pointer to it
-    still exists.</para>
-  </listitem>
-
-  <listitem>
-    <para>The worst outcome is that no pointer to the block can
-    be found.  The block is classified as "leaked", because the
-    programmer could not possibly have free'd it at program exit,
-    since no pointer to it exists.  This might be a symptom of
-    having lost the pointer at some earlier point in the
-    program.</para>
-  </listitem>
-
-</itemizedlist>
-
-<para>Memcheck reports summaries about leaked and dubious blocks.
-For each such block, it will also tell you where the block was
-allocated.  This should help you figure out why the pointer to it
-has been lost.  In general, you should attempt to ensure your
-programs do not have any leaked or dubious blocks at exit.</para>
-
-<para>The precise area of memory in which Memcheck searches for
-pointers is: all naturally-aligned 4-byte words for which all A
-bits indicate addressibility and all V bits indicated that the
-stored value is actually valid.</para>
-
-</sect1>
 
 
 <sect1 id="mc-manual.clientreqs" xreflabel="Client requests">

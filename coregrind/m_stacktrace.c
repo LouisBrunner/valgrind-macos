@@ -62,29 +62,32 @@
 #  error Unknown platform
 #endif
 
-/* Take a snapshot of the client's stack, putting the up to 'n_ips' IPs 
-   into 'ips'.  In order to be thread-safe, we pass in the thread's IP
-   and FP.  Returns number of IPs put in 'ips'.  */
+/* Take a snapshot of the client's stack, putting the up to 'n_ips'
+   IPs into 'ips'.  In order to be thread-safe, we pass in the
+   thread's IP SP, FP if that's meaningful, and LR if that's
+   meaningful.  Returns number of IPs put in 'ips'.
+*/
 UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips, 
-                            Addr ip, Addr sp, Addr fp,
+                            Addr ip, Addr sp, Addr fp, Addr lr,
                             Addr fp_min, Addr fp_max_orig )
 {
-   static const Bool debug = False;
-   Int         i;
-   Addr        fp_max;
-   UInt        n_found = 0;
+   Bool  lr_is_first_RA = False; /* ppc only */
+   Bool  debug = False;
+   Int   i;
+   Addr  fp_max;
+   UInt  n_found = 0;
 
    VGP_PUSHCC(VgpExeContext);
 
-   /* First snaffle IPs from the client's stack into ips[0 .. n_ips-1], 
-      putting zeroes in when the trail goes cold, which we guess to be when
-      FP is not a reasonable stack location.  We also assert that FP
-      increases down the chain. */
+   vg_assert(sizeof(Addr) == sizeof(UWord));
+   vg_assert(sizeof(Addr) == sizeof(void*));
 
-   // Gives shorter stack trace for tests/badjump.c
-   // JRS 2002-aug-16: I don't think this is a big deal; looks ok for
-   // most "normal" backtraces.
-   // NJN 2002-sep-05: traces for pthreaded programs are particularly bad.
+   /* Snaffle IPs from the client's stack into ips[0 .. n_ips-1],
+      putting zeroes in when the trail goes cold, which we guess to be
+      when FP is not a reasonable stack location. */
+
+   for (i = 0; i < n_ips; i++)
+      ips[i] = 0;
 
    // JRS 2002-sep-17: hack, to round up fp_max to the end of the
    // current page, at least.  Dunno if it helps.
@@ -100,68 +103,124 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
    /* vg_assert(fp_min <= fp_max);*/
 
-   ips[0] = ip;
-   i = 1;
-
    if (fp_min + VG_(clo_max_stackframe) <= fp_max) {
       /* If the stack is ridiculously big, don't poke around ... but
          don't bomb out either.  Needed to make John Regehr's
          user-space threads package work. JRS 20021001 */
-   } else {
+      ips[0] = ip;
+      VGP_POPCC(VgpExeContext);
+      return 1;
+   } 
 
-      fp = FIRST_STACK_FRAME(fp);
+   /* Otherwise unwind the stack in a platform-specific way.  Trying
+      to merge the x86, amd64 and ppc32 logic into a single piece of
+      code is just too confusing. */
 
-      while (True) {
+   /*--------------------- x86 and amd64 ---------------------*/
 
-         if (i >= n_ips)
-            break;
+#  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
 
-         /* Try to derive a new (ip,sp,fp) triple from the current
-            set. */
+   /* fp is %ebp/%rbp.  sp is %esp/%rsp.  ip is %eip/%rip. */
 
-         /* First off, see if there is any CFI info to hand which can
-            be used. */
-         if ( VG_(use_CFI_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
-            ips[i++] = ip;
-            if (debug)
-               VG_(printf)("     ipsC[%d]=%08p\n", i-1, ips[i-1]);
-            continue;
-	 }
+   ips[0] = ip;
+   i = 1;
 
- 	 /* If VG_(use_CFI_info) fails, it won't modify ip/sp/fp, so
-            we can safely try the old-fashioned method. */
-	 /* This bit is supposed to deal with frames resulting from
-            functions which begin "pushl% ebp ; movl %esp, %ebp" (x86)
-            or "pushq %rbp ; movq %rsp, %rbp" (amd64).  Unfortunately,
-            since we can't (easily) look at the insns at the start of
-            the fn, like GDB does, there's no reliable way to tell.
-            Hence the hack of first trying out CFI, and if that fails,
-            then use this as a fallback. */
-         if (fp_min <= fp && fp <= fp_max) {
-            /* fp looks sane, so use it. */
-            ip = STACK_FRAME_RET(fp);
-            sp = fp + sizeof(Addr) /*saved %ebp/%rbp*/ 
-                    + sizeof(Addr) /*ra*/;
-            fp = STACK_FRAME_NEXT(fp);
-            ips[i++] = ip;
-            if (debug)
-               VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
-            continue;
-	 }
+   while (True) {
 
-         /* No luck there.  We have to give up. */
+      if (i >= n_ips)
          break;
+
+      /* Try to derive a new (ip,sp,fp) triple from the current
+         set. */
+
+      /* First off, see if there is any CFI info to hand which can
+         be used. */
+      if ( VG_(use_CFI_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+         ips[i++] = ip;
+         if (debug)
+            VG_(printf)("     ipsC[%d]=%08p\n", i-1, ips[i-1]);
+         continue;
       }
 
+      /* If VG_(use_CFI_info) fails, it won't modify ip/sp/fp, so
+         we can safely try the old-fashioned method. */
+      /* This bit is supposed to deal with frames resulting from
+         functions which begin "pushl% ebp ; movl %esp, %ebp" (x86)
+         or "pushq %rbp ; movq %rsp, %rbp" (amd64).  Unfortunately,
+         since we can't (easily) look at the insns at the start of
+         the fn, like GDB does, there's no reliable way to tell.
+         Hence the hack of first trying out CFI, and if that fails,
+         then use this as a fallback. */
+      if (fp_min <= fp && fp <= fp_max) {
+         /* fp looks sane, so use it. */
+         ip = (((UWord*)fp)[1]);
+         sp = fp + sizeof(Addr) /*saved %ebp/%rbp*/ 
+                 + sizeof(Addr) /*ra*/;
+         fp = (((UWord*)fp)[0]);
+         ips[i++] = ip;
+         if (debug)
+            VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
+         continue;
+      }
+
+      /* No luck there.  We have to give up. */
+      break;
    }
+
+   /*--------------------- ppc32 ---------------------*/
+
+#  elif defined(VGP_ppc32_linux)
+
+   /* fp is %r1.  ip is %cia.  Note, ppc uses r1 as both the stack and
+      frame pointers. */
+
+   lr_is_first_RA = False;
+   {
+#     define M_VG_ERRTXT 1000
+      UChar buf_lr[M_VG_ERRTXT], buf_ip[M_VG_ERRTXT];
+      if (VG_(get_fnname_nodemangle) (lr, buf_lr, M_VG_ERRTXT))
+         if (VG_(get_fnname_nodemangle) (ip, buf_ip, M_VG_ERRTXT))
+            if (VG_(strncmp)(buf_lr, buf_ip, M_VG_ERRTXT))
+               lr_is_first_RA = True;
+#     undef M_VG_ERRTXT
+   }
+
+   ips[0] = ip;
+   i = 1;
+   fp = (((UWord*)fp)[0]);
+
+   while (True) {
+
+      if (i >= n_ips)
+         break;
+
+      /* Try to derive a new (ip,fp) pair from the current set. */
+
+      if (fp_min <= fp && fp <= fp_max) {
+         /* fp looks sane, so use it. */
+
+         if (i == 1 && lr_is_first_RA)
+            ip = lr;
+         else
+            ip = (((UWord*)fp)[1]);
+
+         fp = (((UWord*)fp)[0]);
+         ips[i++] = ip;
+         if (debug)
+            VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
+         continue;
+      }
+
+      /* No luck there.  We have to give up. */
+      break;
+   }
+
+#  else
+#    error "Unknown platform"
+#  endif
+
    n_found = i;
-
-   /* Put zeroes in the rest. */
-   for (;  i < n_ips; i++) {
-      ips[i] = 0;
-   }
    VGP_POPCC(VgpExeContext);
-
    return n_found;
 }
 
@@ -171,6 +230,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
    Addr ip                 = VG_(get_IP)(tid);
    Addr fp                 = VG_(get_FP)(tid);
    Addr sp                 = VG_(get_SP)(tid);
+   Addr lr                 = VG_(get_LR)(tid);
    Addr stack_highest_word = VG_(threads)[tid].client_stack_highest_word;
 
 #  if defined(VGP_x86_linux)
@@ -194,7 +254,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
       VG_(printf)("tid %d: stack_highest=%p ip=%p sp=%p fp=%p\n",
 		  tid, stack_highest_word, ip, sp, fp);
 
-   return VG_(get_StackTrace2)(ips, n_ips, ip, sp, fp, sp, stack_highest_word);
+   return VG_(get_StackTrace2)(ips, n_ips, ip, sp, fp, lr, sp, stack_highest_word);
 }
 
 static void printIpDesc(UInt n, Addr ip)

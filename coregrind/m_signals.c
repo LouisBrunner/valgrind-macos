@@ -134,28 +134,31 @@ typedef struct SigQueue {
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.esp)
 #  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.ebp)
 #  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.eax)
-#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                       \
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                        \
       /* Convert the value in uc_mcontext.eax into a SysRes. */ \
       VG_(mk_SysRes_x86_linux)( (uc)->uc_mcontext.eax )
+#  define VG_UCONTEXT_LINK_REG(uc)        0 /* Dude, where's my LR? */
 
 #elif defined(VGP_amd64_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.rip)
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.rsp)
 #  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.rbp)
 #  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.rax)
-#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                       \
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                        \
       /* Convert the value in uc_mcontext.rax into a SysRes. */ \
       VG_(mk_SysRes_amd64_linux)( (uc)->uc_mcontext.rax )
+#  define VG_UCONTEXT_LINK_REG(uc)        0 /* No LR on amd64 either */
 
 #elif defined(VGP_ppc32_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[VKI_PT_NIP])
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[1])
 #  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[1])
 #  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.mc_gregs[0])
-#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                                \
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                                 \
       /* Convert the values in uc_mcontext r3,cr into a SysRes. */       \
       VG_(mk_SysRes_ppc32_linux)( (uc)->uc_mcontext.mc_gregs[3],         \
 				  (uc)->uc_mcontext.mc_gregs[VKI_PT_CCR] )
+#  define VG_UCONTEXT_LINK_REG(uc)        ((uc)->uc_mcontext.mc_gregs[VKI_PT_LNK]) 
 
 #else
 #  error Unknown platform
@@ -1966,7 +1969,8 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       VG_(core_panic_at)("Killed by fatal signal",
                          VG_UCONTEXT_INSTR_PTR(uc),
                          VG_UCONTEXT_STACK_PTR(uc),
-                         VG_UCONTEXT_FRAME_PTR(uc));
+                         VG_UCONTEXT_FRAME_PTR(uc),
+                         VG_UCONTEXT_LINK_REG(uc));
    }
 }
 

@@ -53,6 +53,17 @@ Addr VG_(get_FP) ( ThreadId tid )
    return FRAME_PTR( VG_(threads)[tid].arch );
 }
 
+Addr VG_(get_LR) ( ThreadId tid )
+{
+#  if defined(VGA_ppc32)
+   return VG_(threads)[tid].arch.vex.guest_LR;
+#  elif defined(VGA_x86) || defined(VGA_amd64)
+   return 0;
+#  else
+#    error "Unknown arch"
+#  endif
+}
+
 void VG_(set_SP) ( ThreadId tid, Addr sp )
 {
    STACK_PTR( VG_(threads)[tid].arch ) = sp;

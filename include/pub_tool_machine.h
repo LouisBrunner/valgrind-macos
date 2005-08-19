@@ -53,6 +53,7 @@
 extern Addr VG_(get_SP) ( ThreadId tid );
 extern Addr VG_(get_IP) ( ThreadId tid );
 extern Addr VG_(get_FP) ( ThreadId tid );
+extern Addr VG_(get_LR) ( ThreadId tid );
 
 extern void VG_(set_SP) ( ThreadId tid, Addr sp );
 extern void VG_(set_IP) ( ThreadId tid, Addr ip );

@@ -449,7 +449,7 @@
    index-not-intercepted-early-enough-HACK-1
    Memcheck:Cond
    fun:index
-   fun:expand_dynamic_string_token
+   obj:*
    fun:_dl_map_object
 }
 {
@@ -457,7 +457,7 @@
    Memcheck:Cond
    fun:index
    fun:_dl_map_object
-   fun:map_doit
+   obj:*
    fun:_dl_catch_error
 }
 {
@@ -465,6 +465,6 @@
    Memcheck:Cond
    fun:index
    fun:_dl_map_object
-   fun:dl_main
+   obj:*
    fun:_dl_sysdep_start
 }

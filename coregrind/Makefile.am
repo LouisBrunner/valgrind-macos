@@ -1,6 +1,8 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
+.PHONY: @VEX_DIR@/libvex.a
+
 MODULES = \
 	m_aspacemgr \
 	m_debuginfo \
@@ -200,7 +202,7 @@ stage2.lds: Makefile
 @VEX_DIR@/libvex.a: @VEX_DIR@/priv/main/vex_svnversion.h
 	$(MAKE) -C @VEX_DIR@ libvex.a EXTRA_CFLAGS="@ARCH_CORE_AM_CFLAGS@ @PIE_AM_CFLAGS@"
 
-@VEX_DIR@/priv/main/vex_svnversion.h:
+@VEX_DIR@/priv/main/vex_svnversion.h: $(wildcard @VEX_DIR@/.svn/entries)
 	$(MAKE) -C @VEX_DIR@ version
 
 clean-local:

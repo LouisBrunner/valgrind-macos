@@ -375,4 +375,23 @@ Make suppressions work for "???" lines in stacktraces.
 FIXED-TRUNK:    4447
 FIXED-30BRANCH: 4451
 
+----------------------------------------------------------------
 
+111006  bogus warnings from linuxthreads
+
+FIXED-TRUNK:    4469, 4470
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+111090  segmentation fault in massif
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+111092  x86: dis_Grp2(Reg): unhandled case(x86) 
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO

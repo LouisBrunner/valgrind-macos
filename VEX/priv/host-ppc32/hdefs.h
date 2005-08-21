@@ -494,11 +494,14 @@ typedef
             HReg srcR;
          } Div;
          /* Pseudo-insn.  Call target (an absolute address), on given
-            condition (which could be Pct_ALWAYS). */
+            condition (which could be Pct_ALWAYS).  argiregs indicates
+            which of r3 .. r10 carries argument values for this call,
+            using a bit mask (1<<N is set if rN holds an arg, for N in
+            3 .. 10 inclusive). */
          struct {
             PPC32CondCode cond;
             Addr32        target;
-            Int           regparms; /* 0 .. 9 */
+            UInt          argiregs;
          } Call;
          /* Pseudo-insn.  Goto dst, on given condition (which could be
             Pct_ALWAYS). */
@@ -685,7 +688,7 @@ extern PPC32Instr* PPC32Instr_Cmp32      ( Bool,       UInt, HReg, PPC32RH* );
 extern PPC32Instr* PPC32Instr_Unary32    ( PPC32UnaryOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_MulL       ( Bool syned, Bool hi32, HReg, HReg, HReg );
 extern PPC32Instr* PPC32Instr_Div        ( Bool syned, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_Call       ( PPC32CondCode, Addr32, Int );
+extern PPC32Instr* PPC32Instr_Call       ( PPC32CondCode, Addr32, UInt );
 extern PPC32Instr* PPC32Instr_Goto       ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
 extern PPC32Instr* PPC32Instr_CMov32     ( PPC32CondCode, HReg dst, PPC32RI* src );
 extern PPC32Instr* PPC32Instr_Load       ( UChar sz, Bool syned,

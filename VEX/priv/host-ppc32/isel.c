@@ -411,6 +411,7 @@ void doHelperCall ( ISelEnv* env,
    HReg          tmpregs[PPC32_N_REGPARMS];
    Bool          go_fast;
    Int           n_args, i, argreg;
+   UInt          argiregs;
 
    /* Marshal args for a call and do the call.
 
@@ -479,6 +480,7 @@ void doHelperCall ( ISelEnv* env,
    argregs[5] = hregPPC32_GPR8();
    argregs[6] = hregPPC32_GPR9();
    argregs[7] = hregPPC32_GPR10();
+   argiregs = 0;
 
    tmpregs[0] = tmpregs[1] = tmpregs[2] =
    tmpregs[3] = tmpregs[4] = tmpregs[5] =
@@ -518,6 +520,7 @@ void doHelperCall ( ISelEnv* env,
       /* FAST SCHEME */
       argreg = 0;
       if (passBBP) {
+         argiregs |= (1 << (argreg+3));
          addInstr(env, mk_iMOVds_RR( argregs[argreg], GuestStatePtr ));
          argreg++;
       }
@@ -527,6 +530,7 @@ void doHelperCall ( ISelEnv* env,
          vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32 ||
                  typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
          if (typeOfIRExpr(env->type_env, args[i]) == Ity_I32) { 
+            argiregs |= (1 << (argreg+3));
             addInstr(env, mk_iMOVds_RR( argregs[argreg],
                                         iselIntExpr_R(env, args[i]) ));
          } else { // Ity_I64
@@ -535,7 +539,9 @@ void doHelperCall ( ISelEnv* env,
                argreg++;       // XXX: odd argreg => even rN
             vassert(argreg < PPC32_N_REGPARMS-1);
             iselInt64Expr(&rHi,&rLo, env, args[i]);
+            argiregs |= (1 << (argreg+3));
             addInstr(env, mk_iMOVds_RR( argregs[argreg++], rHi ));
+            argiregs |= (1 << (argreg+3));
             addInstr(env, mk_iMOVds_RR( argregs[argreg], rLo));
          }
          argreg++;
@@ -596,6 +602,7 @@ void doHelperCall ( ISelEnv* env,
             continue;
          /* None of these insns, including any spill code that might
             be generated, may alter the condition codes. */
+         argiregs |= (1 << (i+3));
          addInstr( env, mk_iMOVds_RR( argregs[i], tmpregs[i] ) );
       }
 
@@ -604,7 +611,7 @@ void doHelperCall ( ISelEnv* env,
    /* Finally, the call itself. */
    addInstr(env, PPC32Instr_Call( cc,
                                   (Addr32)toUInt(Ptr_to_ULong(cee->addr)),
-                                  n_args + (passBBP ? 1 : 0) ));
+                                  argiregs ));
 }
 
 

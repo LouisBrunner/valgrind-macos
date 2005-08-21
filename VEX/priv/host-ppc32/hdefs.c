@@ -706,13 +706,16 @@ PPC32Instr* PPC32Instr_Div ( Bool syned, HReg dst, HReg srcL, HReg srcR ) {
    return i;
 }
 PPC32Instr* PPC32Instr_Call ( PPC32CondCode cond, 
-                              Addr32 target, Int regparms ) {
+                              Addr32 target, UInt argiregs ) {
+   UInt mask;
    PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag               = Pin_Call;
    i->Pin.Call.cond     = cond;
    i->Pin.Call.target   = target;
-   i->Pin.Call.regparms = regparms;
-   vassert(regparms >= 0 && regparms < PPC32_N_REGPARMS);
+   i->Pin.Call.argiregs = argiregs;
+   /* Only r3 .. r10 inclusive may be used as arg regs. Hence: */
+   mask = (1<<3)|(1<<4)|(1<<5)|(1<<6)|(1<<7)|(1<<8)|(1<<9)|(1<<10);
+   vassert(0 == (argiregs & ~mask));
    return i;
 }
 PPC32Instr* PPC32Instr_Goto ( IRJumpKind jk, 
@@ -1054,15 +1057,25 @@ void ppPPC32Instr ( PPC32Instr* i )
       vex_printf(",");
       ppHRegPPC32(i->Pin.Div.srcR);
       return;
-   case Pin_Call:
+   case Pin_Call: {
+      Int n;
       vex_printf("call: ");
       if (i->Pin.Call.cond.test != Pct_ALWAYS) {
          vex_printf("if (%s) ", showPPC32CondCode(i->Pin.Call.cond));
       }
       vex_printf("{ ");
       ppLoadImm(hregPPC32_GPR12(), i->Pin.Call.target);
-      vex_printf(" ; mtctr r12 ; bctrl [regparms=%d] }",i->Pin.Call.regparms);
+      vex_printf(" ; mtctr r12 ; bctrl [");
+      for (n = 0; n < 32; n++) {
+         if (i->Pin.Call.argiregs & (1<<n)) {
+            vex_printf("r%d", n);
+            if ((i->Pin.Call.argiregs >> n) > 1)
+               vex_printf(",");
+         }
+      }
+      vex_printf("] }");
       break;
+   }
    case Pin_Goto:
       vex_printf("goto: ");
       if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
@@ -1438,19 +1451,20 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       addHRegUse(u, HRmWrite, hregPPC32_GPR12());
       
       /* Now we have to state any parameter-carrying registers
-         which might be read.  This depends on the regparmness. */
-      switch (i->Pin.Call.regparms) {
-      case  8: addHRegUse(u, HRmRead, hregPPC32_GPR10()); /*fallthru*/
-      case  7: addHRegUse(u, HRmRead, hregPPC32_GPR9() ); /*fallthru*/
-      case  6: addHRegUse(u, HRmRead, hregPPC32_GPR8() ); /*fallthru*/
-      case  5: addHRegUse(u, HRmRead, hregPPC32_GPR7() ); /*fallthru*/
-      case  4: addHRegUse(u, HRmRead, hregPPC32_GPR6() ); /*fallthru*/
-      case  3: addHRegUse(u, HRmRead, hregPPC32_GPR5() ); /*fallthru*/
-      case  2: addHRegUse(u, HRmRead, hregPPC32_GPR4() ); /*fallthru*/
-      case  1: addHRegUse(u, HRmRead, hregPPC32_GPR3() ); /*fallthru*/
-      case  0: break;
-      default: vpanic("getRegUsage_PPC32Instr:Call:regparms");
-      }
+         which might be read.  This depends on the argiregs field. */
+      if (i->Pin.Call.argiregs & (1<<10)) addHRegUse(u, HRmRead, hregPPC32_GPR10());
+      if (i->Pin.Call.argiregs & (1<<9)) addHRegUse(u, HRmRead, hregPPC32_GPR9());
+      if (i->Pin.Call.argiregs & (1<<8)) addHRegUse(u, HRmRead, hregPPC32_GPR8());
+      if (i->Pin.Call.argiregs & (1<<7)) addHRegUse(u, HRmRead, hregPPC32_GPR7());
+      if (i->Pin.Call.argiregs & (1<<6)) addHRegUse(u, HRmRead, hregPPC32_GPR6());
+      if (i->Pin.Call.argiregs & (1<<5)) addHRegUse(u, HRmRead, hregPPC32_GPR5());
+      if (i->Pin.Call.argiregs & (1<<4)) addHRegUse(u, HRmRead, hregPPC32_GPR4());
+      if (i->Pin.Call.argiregs & (1<<3)) addHRegUse(u, HRmRead, hregPPC32_GPR3());
+
+      vassert(0 == (i->Pin.Call.argiregs
+                    & ~((1<<3)|(1<<4)|(1<<5)|(1<<6)
+                        |(1<<7)|(1<<8)|(1<<9)|(1<<10))));
+
       /* Finally, there is the issue that the insn trashes a
          register because the literal target address has to be
          loaded into a register.  %r12 seems a suitable victim.

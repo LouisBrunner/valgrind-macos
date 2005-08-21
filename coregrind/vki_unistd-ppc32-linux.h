@@ -106,7 +106,7 @@
 //#define __NR_sethostname		 74
 #define __NR_setrlimit			 75
 #define __NR_getrlimit			 76
-//#define __NR_getrusage		 77
+#define __NR_getrusage			 77
 #define __NR_gettimeofday		 78
 //#define __NR_settimeofday		 79
 #define __NR_getgroups			 80
@@ -193,7 +193,7 @@
 //#define __NR_sched_rr_get_interval	161
 #define __NR_nanosleep			162
 #define __NR_mremap			163
-//#define __NR_setresuid		164
+#define __NR_setresuid			164
 #define __NR_getresuid			165
 //#define __NR_query_module		166
 #define __NR_poll			167

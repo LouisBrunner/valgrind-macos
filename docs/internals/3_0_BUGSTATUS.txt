@@ -393,5 +393,14 @@ FIXED-30BRANCH: TODO
 
 111092  x86: dis_Grp2(Reg): unhandled case(x86) 
 
+FIXED-TRUNK:    1341
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+111231  sctp_getladdrs() and sctp_getpaddrs() returns uninitialized
+        memory
+
 FIXED-TRUNK:    TODO
 FIXED-30BRANCH: TODO
+

@@ -137,9 +137,9 @@ extern UInt  x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
 
 /* --- DIRTY HELPERS --- */
 
-extern ULong x86g_loadF80le  ( UInt );
+extern ULong x86g_dirtyhelper_loadF80le  ( UInt );
 
-extern void  x86g_storeF80le ( UInt, ULong );
+extern void  x86g_dirtyhelper_storeF80le ( UInt, ULong );
 
 extern void  x86g_dirtyhelper_CPUID_sse0 ( VexGuestX86State* );
 extern void  x86g_dirtyhelper_CPUID_sse1 ( VexGuestX86State* );

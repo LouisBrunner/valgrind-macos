@@ -4152,7 +4152,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                IRDirty* d = unsafeIRDirty_1_N ( 
                                val, 
                                0/*regparms*/, 
-                               "x86g_loadF80le", &x86g_loadF80le, 
+                               "x86g_dirtyhelper_loadF80le", 
+                               &x86g_dirtyhelper_loadF80le, 
                                args 
                             );
                /* declare that we're reading memory */
@@ -4177,7 +4178,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                IRDirty* d = unsafeIRDirty_0_N ( 
                                0/*regparms*/, 
-                               "x86g_storeF80le", &x86g_storeF80le,
+                               "x86g_dirtyhelper_storeF80le", 
+                               &x86g_dirtyhelper_storeF80le,
                                args 
                             );
                /* declare we're writing memory */

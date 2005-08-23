@@ -1302,9 +1302,19 @@ static IRExpr* mkV128 ( UShort mask )
    return IRExpr_Const(IRConst_V128(mask));
 }
 
+static IRExpr* mkAnd1 ( IRExpr* x, IRExpr* y )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,x) == Ity_I1);
+   vassert(typeOfIRExpr(irbb->tyenv,y) == Ity_I1);
+   return unop(Iop_64to1, 
+               binop(Iop_And64, 
+                     unop(Iop_1Uto64,x), 
+                     unop(Iop_1Uto64,y)));
+}
+
 
 /*------------------------------------------------------------*/
-/*--- Helpers for %eflags.                                 ---*/
+/*--- Helpers for %rflags.                                 ---*/
 /*------------------------------------------------------------*/
 
 /* -------------- Evaluating the flags-thunk. -------------- */
@@ -11577,45 +11587,47 @@ DisResult disInstr_AMD64_WRK (
 //.. 
 //..       DIP("j%sz 0x%x\n", nameIReg(sz, R_ECX), d32);
 //..       break;
-//.. 
-//.. //--    case 0xE0: /* LOOPNE disp8 */
-//.. //--    case 0xE1: /* LOOPE  disp8 */
-   case 0xE2: /* LOOP   disp8 */
-      /* The docs say this uses RCX/ECX as a count depending on
-         the address size override, not the operand one.  Since we
-         don't handle address size overrides, I guess that means
-         RCX. */
-      if (!haveF3(pfx) && !haveF2(pfx) && !have66(pfx) && !haveASO(pfx)) {
-         /* RCX--; if (RCX != 0) goto d64; */
-         d64 = guest_RIP_curr_instr + getSDisp8(delta) + 2; delta++;
-         DIP("loop 0x%llx\n", (ULong)d64);
-         putIReg64(R_RCX, binop(Iop_Sub64, getIReg64(R_RCX), mkU64(1)) );
-         stmt( IRStmt_Exit( 
-                  binop(Iop_CmpNE64,getIReg64(R_RCX),mkU64(0)), 
-                  Ijk_Boring, 
-                  IRConst_U64(d64) 
-             ));
-         dres.whatNext = Dis_StopHere;
-         irbb->next     = mkU64(guest_RIP_curr_instr + 2);
-         irbb->jumpkind = Ijk_Boring;
-         break;
-      }
-      goto decode_failure;
 
-//.. //--       d32 = (eip+1) + getSDisp8(eip); eip++;
-//.. //--       t1 = newTemp(cb);
-//.. //--       uInstr2(cb, GET,  4, ArchReg, R_ECX, TempReg, t1);
-//.. //--       uInstr1(cb, DEC,  4, TempReg, t1);
-//.. //--       uInstr2(cb, PUT,  4, TempReg, t1,    ArchReg, R_ECX);
-//.. //--       uInstr2(cb, JIFZ, 4, TempReg, t1,    Literal, 0);
-//.. //--       uLiteral(cb, eip);
-//.. //--       if (opc == 0xE0 || opc == 0xE1) {   /* LOOPE/LOOPNE */
-//.. //--          jcc_lit(cb, eip, (opc == 0xE1 ? CondNZ : CondZ));
-//.. //--       }
-//.. //--       jmp_lit(cb, d32);
-//.. //--       whatNext = Dis_StopHere;
-//.. //--       DIP("loop 0x%x\n", d32);
-//.. //--       break;
+   case 0xE0: /* LOOPNE disp8: decrement count, jump if count != 0 && ZF==0 */
+   case 0xE1: /* LOOPE  disp8: decrement count, jump if count != 0 && ZF==1 */
+   case 0xE2: /* LOOP   disp8: decrement count, jump if count != 0 */
+    { /* The docs say this uses rCX as a count depending on the
+         address size override, not the operand one.  Since we don't
+         handle address size overrides, I guess that means RCX. */
+      IRExpr* zbit  = NULL;
+      IRExpr* count = NULL;
+      IRExpr* cond  = NULL;
+      HChar*  xtra  = NULL;
+
+      if (have66orF2orF3(pfx) || haveASO(pfx)) goto decode_failure;
+      d64 = guest_RIP_bbstart+delta+1 + getSDisp8(delta);
+      delta++;
+      putIReg64(R_RCX, binop(Iop_Sub64, getIReg64(R_RCX), mkU64(1)));
+
+      count = getIReg64(R_RCX);
+      cond = binop(Iop_CmpNE64, count, mkU64(0));
+      switch (opc) {
+         case 0xE2: 
+            xtra = ""; 
+            break;
+         case 0xE1: 
+            xtra = "e"; 
+            zbit = mk_amd64g_calculate_condition( AMD64CondZ );
+	    cond = mkAnd1(cond, zbit);
+            break;
+         case 0xE0: 
+            xtra = "ne";
+            zbit = mk_amd64g_calculate_condition( AMD64CondNZ );
+	    cond = mkAnd1(cond, zbit);
+            break;
+         default:
+	    vassert(0);
+      }
+      stmt( IRStmt_Exit(cond, Ijk_Boring, IRConst_U64(d64)) );
+
+      DIP("loop%s 0x%llx\n", xtra, d64);
+      break;
+    }
 
    /* ------------------------ IMUL ----------------------- */
 

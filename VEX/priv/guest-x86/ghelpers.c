@@ -1694,6 +1694,21 @@ ULong x86g_calculate_RCL ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
 
 
 /* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-x86 platforms, return 1. */
+ULong x86g_dirtyhelper_RDTSC ( void )
+{
+#  if defined(__i386__)
+   ULong res;
+   __asm__ __volatile__("rdtsc" : "=A" (res));
+   return res;
+#  else
+   return 1ULL;
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (modifies guest state) */
 /* Claim to be a P55C (Intel Pentium/MMX) */
 void x86g_dirtyhelper_CPUID_sse0 ( VexGuestX86State* st )

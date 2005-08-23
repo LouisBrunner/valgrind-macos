@@ -11967,34 +11967,23 @@ DisResult disInstr_X86_WRK (
          break;
 
       /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
-
-      case 0x31: /* RDTSC */
-         if (0) vex_printf("vex x86->IR: kludged rdtsc\n");
-         putIReg(4, R_EAX, mkU32(1));
-         putIReg(4, R_EDX, mkU32(0));
-
-//--          t1 = newTemp(cb);
-//--          t2 = newTemp(cb);
-//--          t3 = newTemp(cb);
-//--          uInstr0(cb, CALLM_S, 0);
-//--          // Nb: even though these args aren't used by RDTSC_helper, need
-//--          // them to be defined (for Memcheck).  The TempRegs pushed must
-//--          // also be distinct.
-//--          uInstr2(cb, MOV,   4, Literal, 0, TempReg, t1);
-//--          uLiteral(cb, 0);
-//--          uInstr1(cb, PUSH,  4, TempReg, t1);
-//--          uInstr2(cb, MOV,   4, Literal, 0, TempReg, t2);
-//--          uLiteral(cb, 0);
-//--          uInstr1(cb, PUSH,  4, TempReg, t2);
-//--          uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_RDTSC));
-//--          uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
-//--          uInstr1(cb, POP,   4, TempReg, t3);
-//--          uInstr2(cb, PUT,   4, TempReg, t3, ArchReg, R_EDX);
-//--          uInstr1(cb, POP,   4, TempReg, t3);
-//--          uInstr2(cb, PUT,   4, TempReg, t3, ArchReg, R_EAX);
-//--          uInstr0(cb, CALLM_E, 0);
-         DIP("rdtsc\n");
-         break;
+      case 0x31: { /* RDTSC */
+         IRTemp   val  = newTemp(Ity_I64);
+         IRExpr** args = mkIRExprVec_0();
+         IRDirty* d    = unsafeIRDirty_1_N ( 
+                            val, 
+                            0/*regparms*/, 
+                            "x86g_dirtyhelper_RDTSC", 
+                            &x86g_dirtyhelper_RDTSC, 
+                            args 
+                         );
+          /* execute the dirty call, dumping the result in val. */
+          stmt( IRStmt_Dirty(d) );
+          putIReg(4, R_EDX, unop(Iop_64HIto32, mkexpr(val)));
+          putIReg(4, R_EAX, unop(Iop_64to32, mkexpr(val)));
+          DIP("rdtsc\n");
+          break;
+      }
 
       /* =-=-=-=-=-=-=-=-=- PUSH/POP Sreg =-=-=-=-=-=-=-=-=-= */
 

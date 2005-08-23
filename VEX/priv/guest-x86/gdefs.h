@@ -151,6 +151,8 @@ extern void  x86g_dirtyhelper_FXSAVE ( VexGuestX86State*, HWord );
 extern void  x86g_dirtyhelper_FSAVE  ( VexGuestX86State*, HWord );
 extern void  x86g_dirtyhelper_FSTENV ( VexGuestX86State*, HWord );
 
+extern ULong x86g_dirtyhelper_RDTSC ( void );
+
 extern VexEmWarn
             x86g_dirtyhelper_FRSTOR ( VexGuestX86State*, HWord );
 

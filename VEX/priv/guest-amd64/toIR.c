@@ -4967,7 +4967,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                IRDirty* d = unsafeIRDirty_1_N ( 
                                val, 
                                0/*regparms*/, 
-                               "amd64g_loadF80le", &amd64g_loadF80le, 
+                               "amd64g_dirtyhelper_loadF80le", 
+                               &amd64g_dirtyhelper_loadF80le, 
                                args 
                             );
                /* declare that we're reading memory */
@@ -4994,7 +4995,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
                IRDirty* d = unsafeIRDirty_0_N ( 
                                0/*regparms*/, 
-                               "amd64g_storeF80le", &amd64g_storeF80le,
+                               "amd64g_dirtyhelper_storeF80le", 
+                               &amd64g_dirtyhelper_storeF80le,
                                args 
                             );
                /* declare we're writing memory */

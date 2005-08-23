@@ -145,6 +145,8 @@ extern void  amd64g_storeF80le ( ULong/*addr*/, ULong/*data*/ );
 
 extern void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st );
 
+extern ULong amd64g_dirtyhelper_RDTSC ( void );
+
 //extern void  amd64g_dirtyhelper_CPUID_sse0 ( VexGuestAMD64State* );
 //extern void  amd64g_dirtyhelper_CPUID_sse1 ( VexGuestAMD64State* );
 //extern void  amd64g_dirtyhelper_CPUID_sse2 ( VexGuestAMD64State* );

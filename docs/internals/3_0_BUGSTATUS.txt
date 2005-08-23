@@ -252,7 +252,7 @@ FIXED-30BRANCH: no
 
 Under consideration. (Also afflicts x86)
 
-FIXED-TRUNK:    no
+FIXED-TRUNK:    1344 (x86), 1346 (amd64).
 FIXED-30BRANCH: no
 
 ----------------------------------------------------------------

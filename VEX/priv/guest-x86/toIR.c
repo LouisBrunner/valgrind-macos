@@ -11979,12 +11979,12 @@ DisResult disInstr_X86_WRK (
                             &x86g_dirtyhelper_RDTSC, 
                             args 
                          );
-          /* execute the dirty call, dumping the result in val. */
-          stmt( IRStmt_Dirty(d) );
-          putIReg(4, R_EDX, unop(Iop_64HIto32, mkexpr(val)));
-          putIReg(4, R_EAX, unop(Iop_64to32, mkexpr(val)));
-          DIP("rdtsc\n");
-          break;
+         /* execute the dirty call, dumping the result in val. */
+         stmt( IRStmt_Dirty(d) );
+         putIReg(4, R_EDX, unop(Iop_64HIto32, mkexpr(val)));
+         putIReg(4, R_EAX, unop(Iop_64to32, mkexpr(val)));
+         DIP("rdtsc\n");
+         break;
       }
 
       /* =-=-=-=-=-=-=-=-=- PUSH/POP Sreg =-=-=-=-=-=-=-=-=-= */

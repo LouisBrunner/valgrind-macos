@@ -323,7 +323,7 @@ FIXED-30BRANCH: done(4393)
 
 110685  amd64->IR: unhandled instruction bytes: 0xE1 0x56 (loope Jb)
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    1349
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------

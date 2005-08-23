@@ -1638,6 +1638,61 @@ ULong x86g_calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
 }
 
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+/* Calculate both flags and value result for rotate left
+   through the carry bit.  Result in low 32 bits, 
+   new flags (OSZACP) in high 32 bits.
+*/
+ULong x86g_calculate_RCL ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
+{
+   UInt tempCOUNT = rot_amt & 0x1F, cf=0, of=0, tempcf;
+
+   switch (sz) {
+      case 4:
+         cf = (eflags_in >> X86G_CC_SHIFT_C) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = (arg >> 31) & 1;
+            arg    = (arg << 1) | (cf & 1);
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         of = ((arg >> 31) ^ cf) & 1;
+         break;
+      case 2:
+         while (tempCOUNT >= 17) tempCOUNT -= 17;
+         cf = (eflags_in >> X86G_CC_SHIFT_C) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = (arg >> 15) & 1;
+            arg    = 0xFFFF & ((arg << 1) | (cf & 1));
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         of = ((arg >> 15) ^ cf) & 1;
+         break;
+      case 1:
+         while (tempCOUNT >= 9) tempCOUNT -= 9;
+         cf = (eflags_in >> X86G_CC_SHIFT_C) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = (arg >> 7) & 1;
+            arg    = 0xFF & ((arg << 1) | (cf & 1));
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         of = ((arg >> 7) ^ cf) & 1;
+         break;
+      default: 
+         vpanic("calculate_RCL: invalid size");
+   }
+
+   cf &= 1;
+   of &= 1;
+   eflags_in &= ~(X86G_CC_MASK_C | X86G_CC_MASK_O);
+   eflags_in |= (cf << X86G_CC_SHIFT_C) | (of << X86G_CC_SHIFT_O);
+
+   return (((ULong)eflags_in) << 32) | ((ULong)arg);
+}
+
+
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (modifies guest state) */
 /* Claim to be a P55C (Intel Pentium/MMX) */

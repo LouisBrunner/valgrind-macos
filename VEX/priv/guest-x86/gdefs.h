@@ -104,7 +104,10 @@ extern UInt  x86g_calculate_condition (
 
 extern UInt  x86g_calculate_FXAM ( UInt tag, ULong dbl );
 
-extern ULong x86g_calculate_RCR  ( 
+extern ULong x86g_calculate_RCR ( 
+                UInt arg, UInt rot_amt, UInt eflags_in, UInt sz 
+             );
+extern ULong x86g_calculate_RCL ( 
                 UInt arg, UInt rot_amt, UInt eflags_in, UInt sz 
              );
 

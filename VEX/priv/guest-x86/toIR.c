@@ -2146,7 +2146,7 @@ UInt dis_Grp2 ( UChar sorb,
    /* delta on entry points at the modrm byte. */
    HChar  dis_buf[50];
    Int    len;
-   Bool   isShift, isRotate, isRotateRC;
+   Bool   isShift, isRotate, isRotateC;
    IRType ty    = szToITy(sz);
    IRTemp dst0  = newTemp(ty);
    IRTemp dst1  = newTemp(ty);
@@ -2170,16 +2170,18 @@ UInt dis_Grp2 ( UChar sorb,
    isRotate = False;
    switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
 
-   isRotateRC = toBool(gregOfRM(modrm) == 3);
+   isRotateC = False;
+   switch (gregOfRM(modrm)) { case 2: case 3: isRotateC = True; }
 
-   if (!isShift && !isRotate && !isRotateRC) {
+   if (!isShift && !isRotate && !isRotateC) {
       vex_printf("\ncase %d\n", gregOfRM(modrm));
       vpanic("dis_Grp2(Reg): unhandled case(x86)");
    }
 
-   if (isRotateRC) {
-      /* call a helper; this insn is so ridiculous it does not deserve
-         better */
+   if (isRotateC) {
+      /* call a helper; these insns are so ridiculous they do not
+         deserve better */
+      Bool     left = toBool(gregOfRM(modrm) == 2);
       IRTemp   r64  = newTemp(Ity_I64);
       IRExpr** args 
          = mkIRExprVec_4( widenUto32(mkexpr(dst0)), /* thing to rotate */
@@ -2189,7 +2191,8 @@ UInt dis_Grp2 ( UChar sorb,
       assign( r64, mkIRExprCCall(
                       Ity_I64, 
                       0/*regparm*/, 
-                      "x86g_calculate_RCR", &x86g_calculate_RCR,
+                      left ? "x86g_calculate_RCL" : "x86g_calculate_RCR", 
+                      left ? &x86g_calculate_RCL  : &x86g_calculate_RCR,
                       args
                    )
             );

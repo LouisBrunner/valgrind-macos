@@ -675,6 +675,16 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
    vpanic("mkWidenOp(x86,guest)");
 }
 
+static IRExpr* mkAnd1 ( IRExpr* x, IRExpr* y )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,x) == Ity_I1);
+   vassert(typeOfIRExpr(irbb->tyenv,y) == Ity_I1);
+   return unop(Iop_32to1, 
+               binop(Iop_And32, 
+                     unop(Iop_1Uto32,x), 
+                     unop(Iop_1Uto32,y)));
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Helpers for %eflags.                                 ---*/
@@ -10555,9 +10565,8 @@ DisResult disInstr_X86_WRK (
       break;
 
    case 0xE3: /* JECXZ or perhaps JCXZ, depending on OSO ?  Intel
-                 manual says it depends on address size override,
-                 which doesn't sound right to me. */
-      vassert(sz==4); /* possibly also OK for sz==2 */
+                 manual says it depends on address size override. */
+      if (sz != 4) goto decode_failure;
       d32 = (((Addr32)guest_EIP_bbstart)+delta+1) + getSDisp8(delta);
       delta++;
       ty = szToITy(sz);
@@ -10572,27 +10581,47 @@ DisResult disInstr_X86_WRK (
       DIP("j%sz 0x%x\n", nameIReg(sz, R_ECX), d32);
       break;
 
-//--    case 0xE0: /* LOOPNE disp8 */
-//--    case 0xE1: /* LOOPE  disp8 */
-//--    case 0xE2: /* LOOP   disp8 */
-//--       /* Again, the docs say this uses ECX/CX as a count depending on
-//--          the address size override, not the operand one.  Since we
-//--          don't handle address size overrides, I guess that means
-//--          ECX. */
-//--       d32 = (eip+1) + getSDisp8(eip); eip++;
-//--       t1 = newTemp(cb);
-//--       uInstr2(cb, GET,  4, ArchReg, R_ECX, TempReg, t1);
-//--       uInstr1(cb, DEC,  4, TempReg, t1);
-//--       uInstr2(cb, PUT,  4, TempReg, t1,    ArchReg, R_ECX);
-//--       uInstr2(cb, JIFZ, 4, TempReg, t1,    Literal, 0);
-//--       uLiteral(cb, eip);
-//--       if (opc == 0xE0 || opc == 0xE1) {   /* LOOPE/LOOPNE */
-//--          jcc_lit(cb, eip, (opc == 0xE1 ? CondNZ : CondZ));
-//--       }
-//--       jmp_lit(cb, d32);
-//--       whatNext = Dis_StopHere;
-//--       DIP("loop 0x%x\n", d32);
-//--       break;
+   case 0xE0: /* LOOPNE disp8: decrement count, jump if count != 0 && ZF==0 */
+   case 0xE1: /* LOOPE  disp8: decrement count, jump if count != 0 && ZF==1 */
+   case 0xE2: /* LOOP   disp8: decrement count, jump if count != 0 */
+    { /* Again, the docs say this uses ECX/CX as a count depending on
+         the address size override, not the operand one.  Since we
+         don't handle address size overrides, I guess that means
+         ECX. */
+      IRExpr* zbit  = NULL;
+      IRExpr* count = NULL;
+      IRExpr* cond  = NULL;
+      HChar*  xtra  = NULL;
+
+      if (sz != 4) goto decode_failure;
+      d32 = (((Addr32)guest_EIP_bbstart)+delta+1) + getSDisp8(delta);
+      delta++;
+      putIReg(4, R_ECX, binop(Iop_Sub32, getIReg(4,R_ECX), mkU32(1)));
+
+      count = getIReg(4,R_ECX);
+      cond = binop(Iop_CmpNE32, count, mkU32(0));
+      switch (opc) {
+         case 0xE2: 
+            xtra = ""; 
+            break;
+         case 0xE1: 
+            xtra = "e"; 
+            zbit = mk_x86g_calculate_condition( X86CondZ );
+	    cond = mkAnd1(cond, zbit);
+            break;
+         case 0xE0: 
+            xtra = "ne";
+            zbit = mk_x86g_calculate_condition( X86CondNZ );
+	    cond = mkAnd1(cond, zbit);
+            break;
+         default:
+	    vassert(0);
+      }
+      stmt( IRStmt_Exit(cond, Ijk_Boring, IRConst_U32(d32)) );
+
+      DIP("loop%s 0x%x\n", xtra, d32);
+      break;
+    }
 
    /* ------------------------ IMUL ----------------------- */
 

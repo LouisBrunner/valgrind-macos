@@ -365,7 +365,7 @@ FIXED-30BRANCH: TODO
 
 110954  x86->IR: unhandled instruction bytes: 0xE2 0xF6 (loop Jb)
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    1343
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------

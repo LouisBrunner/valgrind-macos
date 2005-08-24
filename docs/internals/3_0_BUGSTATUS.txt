@@ -432,5 +432,5 @@ FIXED-30BRANCH: TODO
 111285  massif segfaults in the malloc replacement code on amd64
 
 FIXED-TRUNK:    4492
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4509
 

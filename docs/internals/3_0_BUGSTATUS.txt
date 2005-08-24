@@ -419,3 +419,10 @@ FIXED-TRUNK:    1350 (basic fix), 1351 (x86 adc/sbb flags thunk fix),
                                   1353 (amd64 adc/sbb flags thunk fix)
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+
+not-in-bugzilla  minor umount/fcntl wrapper fixes
+
+FIXED-TRUNK:    4487
+FIXED-30BRANCH: TODO
+

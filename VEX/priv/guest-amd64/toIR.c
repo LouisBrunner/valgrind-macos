@@ -53,12 +53,11 @@
    disInstr for details.
 */
 
-//.. /* TODO:
-//.. 
-//..    check flag settings for cmpxchg
-//..    FUCOMI(P): what happens to A and S flags?  Currently are forced
-//..       to zero.
-//.. 
+/* TODO:
+
+   All Puts to CC_OP/CC_DEP1/CC_DEP2/CC_NDEP should really be checked
+   to ensure a 64-bit value is being written.
+
 //..    x87 FP Limitations:
 //.. 
 //..    * all arithmetic done at 64 bits
@@ -91,7 +90,8 @@
 //..    bit be set by PUSHF.
 //.. 
 //..    This module uses global variables and so is not MT-safe (if that
-//..    should ever become relevant).  */
+//..    should ever become relevant).
+*/
 
 /* Translates AMD64 code to IR. */
 
@@ -1685,9 +1685,9 @@ static void helper_ADC ( Int sz,
                        mkexpr(oldcn)) );
 
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(thunkOp) ) );
-   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
-   stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), 
-                                              mkexpr(oldcn)) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(ta1))  ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(binop(xor, mkexpr(ta2), 
+                                                         mkexpr(oldcn)) )) );
    stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
 }
 
@@ -1725,9 +1725,9 @@ static void helper_SBB ( Int sz,
                        mkexpr(oldcn)) );
 
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(thunkOp) ) );
-   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
-   stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), 
-                                              mkexpr(oldcn)) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(ta1) )) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(binop(xor, mkexpr(ta2), 
+                                                         mkexpr(oldcn)) )) );
    stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
 }
 

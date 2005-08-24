@@ -10767,11 +10767,11 @@ DisResult disInstr_X86_WRK (
       delta = dis_op_imm_A( sz, False, Iop_Or8, True, delta, "or" );
       break;
 
-//--    case 0x14: /* ADC Ib, AL */
-//--       delta = dis_op_imm_A( 1, ADC, True, delta, "adc" );
-//--       break;
+   case 0x14: /* ADC Ib, AL */
+      delta = dis_op_imm_A(  1, True, Iop_Add8, True, delta, "adc" );
+      break;
    case 0x15: /* ADC Iv, eAX */
-      delta = dis_op_imm_A( sz, True,  Iop_Add8, True, delta, "adc" );
+      delta = dis_op_imm_A( sz, True, Iop_Add8, True, delta, "adc" );
       break;
 
 //--    case 0x1C: /* SBB Ib, AL */

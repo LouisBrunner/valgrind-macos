@@ -2136,7 +2136,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_readv,             sys_readv),             // 145
    GENX_(__NR_writev,            sys_writev),            // 146
 //..    GENX_(__NR_getsid,            sys_getsid),            // 147
-//..    GENX_(__NR_fdatasync,         sys_fdatasync),         // 148
+   GENX_(__NR_fdatasync,         sys_fdatasync),         // 148
    LINXY(__NR__sysctl,           sys_sysctl),            // 149
 //.. 
 //..    GENX_(__NR_mlock,             sys_mlock),             // 150
@@ -2149,9 +2149,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
    GENX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
 //..    GENX_(__NR_sched_yield,            sys_sched_yield),           // 158
-//..    GENX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
-//.. 
-//..    GENX_(__NR_sched_get_priority_min, sys_sched_get_priority_min),// 160
+   GENX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
+
+   GENX_(__NR_sched_get_priority_min, sys_sched_get_priority_min),// 160
 //..    //   (__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161 */*
    GENXY(__NR_nanosleep,         sys_nanosleep),         // 162
    GENX_(__NR_mremap,            sys_mremap),            // 163
@@ -2262,7 +2262,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // __NR_swapcontext                                           // 249
 
-//..    LINX_(__NR_tgkill,            sys_tgkill),            // 250 */Linux
+   LINX_(__NR_tgkill,            sys_tgkill),            // 250 */Linux
 //..    GENX_(__NR_utimes,            sys_utimes),            // 251
 //..    GENXY(__NR_statfs64,          sys_statfs64),          // 252
 //..    GENXY(__NR_fstatfs64,         sys_fstatfs64),         // 253

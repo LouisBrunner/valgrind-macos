@@ -177,7 +177,7 @@
 #define __NR_readv			145
 #define __NR_writev			146
 //#define __NR_getsid			147
-//#define __NR_fdatasync		148
+#define __NR_fdatasync			148
 #define __NR__sysctl			149
 //#define __NR_mlock			150
 //#define __NR_munlock			151
@@ -188,8 +188,8 @@
 //#define __NR_sched_setscheduler	156
 #define __NR_sched_getscheduler		157
 #define __NR_sched_yield		158
-//#define __NR_sched_get_priority_max	159
-//#define __NR_sched_get_priority_min	160
+#define __NR_sched_get_priority_max	159
+#define __NR_sched_get_priority_min	160
 //#define __NR_sched_rr_get_interval	161
 #define __NR_nanosleep			162
 #define __NR_mremap			163
@@ -279,7 +279,7 @@
 //#define __NR_clock_getres		247
 //#define __NR_clock_nanosleep		248
 //#define __NR_swapcontext		249
-//#define __NR_tgkill			250
+#define __NR_tgkill			250
 //#define __NR_utimes			251
 //#define __NR_statfs64			252
 //#define __NR_fstatfs64		253

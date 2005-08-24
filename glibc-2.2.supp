@@ -496,7 +496,17 @@
    obj:/usr/X11R6/lib/libXt.so.6.0
 }
 
-# LinuxThreads suppressesion
+## Bug in PRE(sys_clone), really.  Some args are not used.
+{
+   LinuxThread clone use (child_tidptr)
+   Memcheck:Param
+   clone(child_tidptr)
+   fun:clone
+   fun:__pthread_initialize_manager
+   fun:pthread_create@@GLIBC_2.2.5
+}
+
+## LinuxThreads manager writes messages containing undefined bytes
 {
    LinuxThreads: write/pthread_create
    Memcheck:Param
@@ -509,4 +519,34 @@
    write(buf)
    fun:write
    fun:pthread_create@@GLIBC_2.1
+}
+{
+   LinuxThreads: write/pthread_onexit_process
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:pthread_onexit_process
+   fun:exit
+}
+{
+   LinuxThreads: write/pthread_join
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:pthread_join
+}
+{
+   LinuxThreads: write/pthread_create
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:pthread_create@@GLIBC_2.2.5
+}
+{
+   LinuxThreads: write/__pthread_initialize_manager/pthread_create
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:__pthread_initialize_manager
+   fun:pthread_create@@GLIBC_2.2.5
 }

@@ -239,7 +239,7 @@ FIXED-30BRANCH: done(4360)
 
 ----------------------------------------------------------------
 
-110536/7/8/9/40 Valgrind crashes when tring to realloc memory
+110536/7/8/9/40 Valgrind crashes when trying to realloc memory
 
 Uninvestigated.
 
@@ -253,7 +253,7 @@ FIXED-30BRANCH: no
 Under consideration. (Also afflicts x86)
 
 FIXED-TRUNK:    1344 (x86), 1346 (amd64).
-FIXED-30BRANCH: no
+FIXED-30BRANCH: 1354 (x86), 1355 (amd64).
 
 ----------------------------------------------------------------
 
@@ -324,7 +324,7 @@ FIXED-30BRANCH: done(4393)
 110685  amd64->IR: unhandled instruction bytes: 0xE1 0x56 (loope Jb)
 
 FIXED-TRUNK:    1349
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 1356
 
 ----------------------------------------------------------------
 
@@ -359,14 +359,14 @@ FIXED-30BRANCH: 4453
 110898  opteron instructions missing: btq sbbq btsq btrq bsfq
 
 FIXED-TRUNK:    1352
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 1357
 
 ----------------------------------------------------------------
 
 110954  x86->IR: unhandled instruction bytes: 0xE2 0xF6 (loop Jb)
 
 FIXED-TRUNK:    1343
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 1358
 
 ----------------------------------------------------------------
 
@@ -394,7 +394,7 @@ FIXED-30BRANCH: TODO
 111092  x86: dis_Grp2(Reg): unhandled case(x86) 
 
 FIXED-TRUNK:    1341
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 1359
 
 ----------------------------------------------------------------
 
@@ -417,7 +417,7 @@ not-in-bugzilla  vex x86->IR: unhandled instruction bytes: 0x14 0x0
 
 FIXED-TRUNK:    1350 (basic fix), 1351 (x86 adc/sbb flags thunk fix),
                                   1353 (amd64 adc/sbb flags thunk fix)
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 1360
 
 ----------------------------------------------------------------
 

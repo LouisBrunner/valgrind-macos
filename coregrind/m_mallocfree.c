@@ -59,9 +59,9 @@ typedef UChar UByte;
 /* Layout of an in-use block:
 
       this block total szB     (sizeof(SizeT) bytes)
-      red zone bytes           (depends on Arena.rz_szB, but > sizeof(void*))
+      red zone bytes           (depends on Arena.rz_szB, but >= sizeof(void*))
       (payload bytes)
-      red zone bytes           (depends on Arena.rz_szB, but > sizeof(void*))
+      red zone bytes           (depends on Arena.rz_szB, but >= sizeof(void*))
       this block total szB     (sizeof(SizeT) bytes)
 
    Layout of a block on the free list:
@@ -378,7 +378,12 @@ void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
    SizeT i;
    Arena* a = arenaId_to_ArenaP(aid);
    
-   vg_assert(rz_szB < 128);      // ensure reasonable size
+   // Ensure redzones are a reasonable size.  They must always be at least
+   // the size of a pointer, for holding the prev/next pointer (see the layout
+   // details at the top of this file).
+   vg_assert(rz_szB < 128);
+   if (rz_szB < sizeof(void*)) rz_szB = sizeof(void*);
+   
    vg_assert((min_sblock_szB % VKI_PAGE_SIZE) == 0);
    a->name      = name;
    a->clientmem = ( VG_AR_CLIENT == aid ? True : False );

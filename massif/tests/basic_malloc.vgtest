@@ -1,0 +1,2 @@
+prog: basic_malloc
+cleanup: rm massif.*.*

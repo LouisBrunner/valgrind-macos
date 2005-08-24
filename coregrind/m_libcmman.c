@@ -124,6 +124,11 @@ void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who )
    VG_(printf)("Sorry.  You could try using a tool that uses less memory;\n");
    VG_(printf)("eg. addrcheck instead of memcheck.\n");
    VG_(printf)("\n");
+   VG_(printf)("---- Debugging information follows --------\n");
+   VG_(printf)("Valgrind's range is: %p .. %p\n",
+               (void*)VG_(valgrind_base), (void*)VG_(valgrind_last));
+   VG_(show_segments)("VG_(get_memory_from_mmap) failure");
+
    VG_(exit)(1);
 }
 

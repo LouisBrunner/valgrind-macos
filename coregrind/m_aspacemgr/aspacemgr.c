@@ -386,7 +386,7 @@ static Int create_segment ( Addr a )
    VG_(printf), and I'm not 100% clear that that wouldn't require
    dynamic memory allocation and hence more segments to be allocated.
 */
-static void show_segments ( HChar* who )
+void VG_(show_segments) ( HChar* who )
 {
    Int i;
    VG_(printf)("<<< SHOW_SEGMENTS: %s (%d segments, %d segnames)\n", 
@@ -496,7 +496,7 @@ static void preen_segments ( void )
    vg_assert(segments_used >= 0 && segments_used < VG_N_SEGMENTS);
    vg_assert(segnames_used >= 0 && segnames_used < VG_N_SEGNAMES);
 
-   if (0) show_segments("before preen");
+   if (0) VG_(show_segments)("before preen");
 
    /* clear string table mark bits */
    for (i = 0; i < segnames_used; i++)
@@ -556,7 +556,7 @@ static void preen_segments ( void )
       }
    }
 
-   if (0) show_segments("after preen");
+   if (0) VG_(show_segments)("after preen");
 }
 
 
@@ -623,7 +623,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 
    if (debug)
       VG_(printf)("unmap_range(%p, %llu)\n", addr, (ULong)len);
-   if (0) show_segments("unmap_range(BEFORE)");
+   if (0) VG_(show_segments)("unmap_range(BEFORE)");
    end = addr+len;
 
    /* Everything must be page-aligned */
@@ -713,7 +713,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
          i--;
    }
    preen_segments();
-   if (0) show_segments("unmap_range(AFTER)");
+   if (0) VG_(show_segments)("unmap_range(AFTER)");
 }
 
 
@@ -745,7 +745,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
          "                 filename='%s')\n",
          addr, (ULong)len, prot, flags, dev, ino, off, filename);
 
-   if (0) show_segments("before map_file_segment");
+   if (0) VG_(show_segments)("before map_file_segment");
 
    /* Everything must be page-aligned */
    vg_assert(VG_IS_PAGE_ALIGNED(addr));
@@ -774,7 +774,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
 
    /* Clean up right now */
    preen_segments();
-   if (0) show_segments("after map_file_segment");
+   if (0) VG_(show_segments)("after map_file_segment");
 
    /* If this mapping is at the beginning of a file, isn't part of
       Valgrind, is at least readable and seems to contain an object
@@ -879,7 +879,7 @@ void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
    if (debug)
       VG_(printf)("\nmprotect_range(%p, %lu, %x)\n", a, len, prot);
 
-   if (0) show_segments( "mprotect_range(before)" );
+   if (0) VG_(show_segments)( "mprotect_range(before)" );
 
    /* Everything must be page-aligned */
    vg_assert(VG_IS_PAGE_ALIGNED(a));
@@ -894,7 +894,7 @@ void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
 
    preen_segments();
 
-   if (0) show_segments( "mprotect_range(after)");
+   if (0) VG_(show_segments)( "mprotect_range(after)");
 }
 
 
@@ -922,7 +922,7 @@ Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
                   addr, (ULong)len, for_client);
    }
 
-   if (0) show_segments("find_map_space: start");
+   if (0) VG_(show_segments)("find_map_space: start");
 
    if (addr == 0) {
       fixed = False;
@@ -1100,7 +1100,7 @@ void VG_(unpad_address_space)(Addr start)
 Segment *VG_(find_segment)(Addr a)
 {
   Int r = find_segment(a);
-  if (0) show_segments("find_segment");
+  if (0) VG_(show_segments)("find_segment");
   if (r == -1) return NULL;
   return &segments[r];
 }
@@ -1112,7 +1112,7 @@ Segment *VG_(find_segment)(Addr a)
 Segment *VG_(find_segment_above_unmapped)(Addr a)
 {
   Int r = find_segment_above_unmapped(a);
-  if (0) show_segments("find_segment_above_unmapped");
+  if (0) VG_(show_segments)("find_segment_above_unmapped");
   if (r == -1) return NULL;
   return &segments[r];
 }
@@ -1124,7 +1124,7 @@ Segment *VG_(find_segment_above_unmapped)(Addr a)
 Segment *VG_(find_segment_above_mapped)(Addr a)
 {
   Int r = find_segment_above_mapped(a);
-  if (0) show_segments("find_segment_above_mapped");
+  if (0) VG_(show_segments)("find_segment_above_mapped");
   if (r == -1) return NULL;
   return &segments[r];
 }
@@ -1220,7 +1220,7 @@ void *VG_(shadow_alloc)(UInt size)
    Addr try_here;
    SysRes r;
 
-   if (0) show_segments("shadow_alloc(before)");
+   if (0) VG_(show_segments)("shadow_alloc(before)");
 
    vg_assert(VG_(needs).shadow_memory);
 

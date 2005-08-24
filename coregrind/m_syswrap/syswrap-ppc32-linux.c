@@ -2050,7 +2050,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //.. 
    GENX_(__NR_setrlimit,         sys_setrlimit),              // 75
 //..    GENXY(__NR_getrlimit,         sys_old_getrlimit),     // 76
-//..    GENXY(__NR_getrusage,         sys_getrusage),         // 77
+   GENXY(__NR_getrusage,         sys_getrusage),         // 77
    GENXY(__NR_gettimeofday,      sys_gettimeofday),           // 78
 //..    GENX_(__NR_settimeofday,      sys_settimeofday),      // 79
 //.. 
@@ -2156,8 +2156,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    //   (__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161 */*
    GENXY(__NR_nanosleep,         sys_nanosleep),         // 162
    GENX_(__NR_mremap,            sys_mremap),            // 163
-//..    LINX_(__NR_setresuid,         sys_setresuid16),       // 164
-//.. 
+   LINX_(__NR_setresuid,         sys_setresuid16),       // 164
+
    LINXY(__NR_getresuid,         sys_getresuid16),       // 165
 
 //..    GENX_(__NR_query_module,      sys_ni_syscall),        // 166

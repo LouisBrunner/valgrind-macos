@@ -15,6 +15,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	looper.stderr.exp looper.stdout.exp looper.vgtest \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	seg_override.stderr.exp seg_override.stdout.exp seg_override.vgtest \
 	sigcontext.stdout.exp sigcontext.stderr.exp sigcontext.vgtest \
@@ -24,7 +25,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	badseg bt_everything bt_literal cpuid fpu_lazy_eflags \
 	getseg $(INSN_TESTS) \
-	int pushpopseg seg_override sigcontext smc1 yield
+	looper int pushpopseg seg_override sigcontext smc1 yield
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow \
 		-g -I$(top_srcdir)/include \

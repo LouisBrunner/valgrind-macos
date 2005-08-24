@@ -411,3 +411,10 @@ FIXED-30BRANCH: TODO
 FIXED-TRUNK:    4476
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+
+not-in-bugzilla  vex x86->IR: unhandled instruction bytes: 0x14 0x0
+
+FIXED-TRUNK:    1350 (basic fix), 1351 (x86 adc/sbb flags thunk fix)
+FIXED-30BRANCH: TODO
+

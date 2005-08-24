@@ -409,7 +409,7 @@ FIXED-30BRANCH: TODO
 111102 (comment #4)   Fixed 64-bit unclean "silly arg" message
 
 FIXED-TRUNK:    4476
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4502
 
 ----------------------------------------------------------------
 

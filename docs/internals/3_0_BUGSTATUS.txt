@@ -380,7 +380,7 @@ FIXED-30BRANCH: 4451
 111006  bogus warnings from linuxthreads
 
 FIXED-TRUNK:    4469, 4470
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4497, 4498
 
 ----------------------------------------------------------------
 

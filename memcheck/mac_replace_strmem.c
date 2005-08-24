@@ -227,6 +227,10 @@ STRNCAT(m_libc_so_6, strncat)
 STRNLEN(m_libc_so_6, strnlen)
    
 
+// Note that this replacement often doesn't get used because gcc inlines
+// calls to strlen() with its own built-in version.  This can be very
+// confusing if you aren't expecting it.  Other small functions in this file
+// may also be inline by gcc.
 #define STRLEN(soname, fnname) \
    SizeT VG_REPLACE_FUNCTION(soname,fnname)( const char* str ); \
    SizeT VG_REPLACE_FUNCTION(soname,fnname)( const char* str ) \

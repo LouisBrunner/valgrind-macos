@@ -363,6 +363,29 @@
    fun:pthread_create
 }
 
+## LinuxThreads leaks the stack and TLS data for the manager thread
+{
+   LinuxThreads: leaks stack of manager thread
+   Memcheck:Leak
+   fun:malloc
+   fun:__pthread_initialize_manager
+   fun:pthread_create@@GLIBC_2.1
+}
+{
+   LinuxThreads: leaks TLS data for manager thread
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:__pthread_initialize_minimal
+}
+{
+   LinuxThreads: leaks TLS data for manager thread
+   Memcheck:Leak
+   fun:memalign
+   fun:_dl_allocate_tls
+   fun:__pthread_initialize_minimal
+}
+
 ##----------------------------------------------------------------------##
 ## glibc-2.3.4 on FC3
 ## Assumes that sysctl returns \0-terminated strings in is_smp_system

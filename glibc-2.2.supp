@@ -550,3 +550,50 @@
    fun:__pthread_initialize_manager
    fun:pthread_create@@GLIBC_2.2.5
 }
+
+## LinuxThreads leaks the stack and TLS data for the manager thread
+{
+   LinuxThreads: leaks stack of manager thread
+   Memcheck:Leak
+   fun:malloc
+   fun:__pthread_initialize_manager
+   fun:pthread_create@@GLIBC_2.1
+}
+{
+   LinuxThreads: leaks TLS data for manager thread
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:__pthread_initialize_minimal
+}
+{
+   LinuxThreads: leaks TLS data for manager thread
+   Memcheck:Leak
+   fun:memalign
+   fun:_dl_allocate_tls
+   fun:__pthread_initialize_minimal
+}
+{
+   LinuxThreads: leaks stack of manager thread
+   Memcheck:Leak
+   fun:malloc
+   fun:__pthread_initialize_manager
+   fun:pthread_create@@GLIBC_2.2.5
+}
+{
+   LinuxThreads: leaks TLS data for manager thread
+   Memcheck:Leak
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls_storage
+   fun:_dl_allocate_tls
+   fun:__pthread_initialize_minimal
+}
+{
+   LinuxThreads: leaks TLS data for manager thread
+   Memcheck:Leak
+   fun:memalign
+   fun:_dl_allocate_tls_storage
+   fun:_dl_allocate_tls
+   fun:__pthread_initialize_minimal
+}

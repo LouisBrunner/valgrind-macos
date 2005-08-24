@@ -31,8 +31,6 @@
 */
 
 #include "pub_tool_basics.h"
-#include "pub_tool_errormgr.h"
-#include "pub_tool_execontext.h"
 #include "pub_tool_hashtable.h"
 #include "pub_tool_profile.h"
 #include "pub_tool_redir.h"

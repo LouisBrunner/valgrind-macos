@@ -5679,7 +5679,7 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, Int delta, BtOp op )
    t_addr1   = newTemp(Ity_I32);
    modrm     = getIByte(delta);
 
-   assign( t_bitno0, widenUto32(getIReg(sz, gregOfRM(modrm))) );
+   assign( t_bitno0, widenSto32(getIReg(sz, gregOfRM(modrm))) );
    
    if (epartIsReg(modrm)) {
       delta++;

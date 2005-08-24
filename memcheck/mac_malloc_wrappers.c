@@ -174,7 +174,15 @@ static Bool complain_about_silly_args(SizeT sizeB, Char* fn)
    // assuming here that the size asked for is not greater than 2^31 bytes
    // (for 32-bit platforms) or 2^63 bytes (for 64-bit platforms).
    if ((SSizeT)sizeB < 0) {
-      VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to %s()", sizeB, fn );
+#if VG_WORDSIZE == 4
+      VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to %s()",
+                   (Int)sizeB, fn );
+#elif VG_WORDSIZE == 8
+      VG_(message)(Vg_UserMsg, "Warning: silly arg (%lld) to %s()",
+                   (Long)sizeB, fn );
+#else
+#  error Unexpected word size
+#endif
       return True;
    }
    return False;
@@ -183,8 +191,15 @@ static Bool complain_about_silly_args(SizeT sizeB, Char* fn)
 static Bool complain_about_silly_args2(SizeT n, SizeT sizeB)
 {
    if ((SSizeT)n < 0 || (SSizeT)sizeB < 0) {
+#if VG_WORDSIZE == 4
       VG_(message)(Vg_UserMsg, "Warning: silly args (%d,%d) to calloc()",
-                   n, sizeB);
+                   (Int)n, (Int)sizeB);
+#elif VG_WORDSIZE == 8
+      VG_(message)(Vg_UserMsg, "Warning: silly args (%lld,%lld) to calloc()",
+                   (Long)n, (Long)sizeB);
+#else
+#  error Unexpected word size
+#endif
       return True;
    }
    return False;

@@ -46,7 +46,9 @@
 
 /* TODO:
 
-   check flag settings for cmpxchg
+   All Puts to CC_OP/CC_DEP1/CC_DEP2/CC_NDEP should really be checked
+   to ensure a 32-bit value is being written.
+
    FUCOMI(P): what happens to A and S flags?  Currently are forced
       to zero.
 
@@ -1027,9 +1029,9 @@ static void helper_ADC ( Int sz,
                        mkexpr(oldcn)) );
 
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
-   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
-   stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), 
-                                              mkexpr(oldcn)) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(ta1)) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(binop(xor, mkexpr(ta2), 
+                                                         mkexpr(oldcn)) )) );
    stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
 }
 
@@ -1063,9 +1065,9 @@ static void helper_SBB ( Int sz,
                        mkexpr(oldcn)) );
 
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
-   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
-   stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), 
-                                              mkexpr(oldcn)) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(ta1) )) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(binop(xor, mkexpr(ta2), 
+                                                         mkexpr(oldcn)) )) );
    stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
 }
 
@@ -10756,11 +10758,11 @@ DisResult disInstr_X86_WRK (
       delta = dis_op_imm_A( sz, False, Iop_Or8, True, delta, "or" );
       break;
 
-//--    case 0x14: /* ADC Ib, AL */
-//--       delta = dis_op_imm_A( 1, ADC, True, delta, "adc" );
-//--       break;
+   case 0x14: /* ADC Ib, AL */
+      delta = dis_op_imm_A(  1, True, Iop_Add8, True, delta, "adc" );
+      break;
    case 0x15: /* ADC Iv, eAX */
-      delta = dis_op_imm_A( sz, True,  Iop_Add8, True, delta, "adc" );
+      delta = dis_op_imm_A( sz, True, Iop_Add8, True, delta, "adc" );
       break;
 
 //--    case 0x1C: /* SBB Ib, AL */

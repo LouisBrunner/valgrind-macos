@@ -168,7 +168,7 @@ PRE(sys_oldumount)
 
 PRE(sys_umount)
 {
-   PRINT("sys_umount( %p )", ARG1);
+   PRINT("sys_umount( %p, %d )", ARG1, ARG2);
    PRE_REG_READ2(long, "umount2", char *, path, int, flags);
    PRE_MEM_RASCIIZ( "umount2(path)", ARG1);
 }

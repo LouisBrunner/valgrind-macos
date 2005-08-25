@@ -7501,15 +7501,17 @@ DisResult disInstr_X86_WRK (
    }
 
    /* 0F 29 = MOVAPS -- move from G (xmm) to E (mem or xmm). */
-   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x29) {
+   /* 0F 11 = MOVUPS -- move from G (xmm) to E (mem or xmm). */
+   if (sz == 4 && insn[0] == 0x0F 
+       && (insn[1] == 0x29 || insn[1] == 0x11)) {
       modrm = getIByte(delta+2);
       if (epartIsReg(modrm)) {
          /* fall through; awaiting test case */
       } else {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
-         DIP("movaps %s,%s\n", nameXMMReg(gregOfRM(modrm)),
-                               dis_buf );
+         DIP("mov[ua]ps %s,%s\n", nameXMMReg(gregOfRM(modrm)),
+                                  dis_buf );
          delta += 2+alen;
          goto decode_success;
       }

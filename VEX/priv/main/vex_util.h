@@ -75,10 +75,10 @@ extern void vpanic ( HChar* str );
 /* Printing */
 
 __attribute__ ((format (printf, 1, 2)))
-extern UInt vex_printf ( const HChar *format, ... );
+extern UInt vex_printf ( HChar *format, ... );
 
 __attribute__ ((format (printf, 2, 3)))
-extern UInt vex_sprintf ( HChar* buf, const HChar *format, ... );
+extern UInt vex_sprintf ( HChar* buf, HChar *format, ... );
 
 
 /* String ops */

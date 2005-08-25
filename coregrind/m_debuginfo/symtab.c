@@ -273,23 +273,29 @@ void ML_(addLineInfo) ( SegInfo* si,
    /* vg_assert(this < si->start + si->size && next-1 >= si->start); */
    if (this >= si->start + si->size || next-1 < si->start) {
        if (0)
-       VG_(message)(Vg_DebugMsg, 
-                    "warning: ignoring line info entry falling "
-                    "outside current SegInfo: %p %p %p %p",
-                    si->start, si->start + si->size, 
-                    this, next-1);
+          VG_(message)(Vg_DebugMsg, 
+                       "warning: ignoring line info entry falling "
+                       "outside current SegInfo: %p %p %p %p",
+                       si->start, si->start + si->size, 
+                       this, next-1);
        return;
    }
 
    vg_assert(lineno >= 0);
    if (lineno > MAX_LINENO) {
-       VG_(message)(Vg_UserMsg, 
-                    "warning: ignoring line info entry with "
-                    "huge line number (%d)", lineno);
-       VG_(message)(Vg_UserMsg, 
-                    "         Can't handle line numbers "
-                    "greater than %d, sorry", MAX_LINENO);
-       return;
+      static Bool complained = False;
+      if (!complained) {
+         complained = True;
+         VG_(message)(Vg_UserMsg, 
+                      "warning: ignoring line info entry with "
+                      "huge line number (%d)", lineno);
+         VG_(message)(Vg_UserMsg, 
+                      "         Can't handle line numbers "
+                      "greater than %d, sorry", MAX_LINENO);
+         VG_(message)(Vg_UserMsg, 
+                      "(Nb: this message is only shown once)");
+      }
+      return;
    }
 
    loc.addr      = this;

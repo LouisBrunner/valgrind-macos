@@ -434,3 +434,10 @@ FIXED-30BRANCH: TODO
 FIXED-TRUNK:    4492
 FIXED-30BRANCH: 4509
 
+----------------------------------------------------------------
+
+101204: noisy warning
+
+FIXED-TRUNK:    4511
+FIXED-30BRANCH: TODO
+

@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Code redirections.                          pub_core_redir.h ---*/
+/*--- Function replacement and wrapping.          pub_core_redir.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -39,8 +39,6 @@
 //   functions are when they get loaded.
 // - function wrapping: add calls to code before and after client
 //   functions execute, for inspection and/or modification.
-//
-// It's possible that this should be two or three modules.
 //--------------------------------------------------------------------
 
 #include "pub_tool_redir.h"

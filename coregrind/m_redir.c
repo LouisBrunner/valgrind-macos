@@ -1,11 +1,11 @@
+
 /*--------------------------------------------------------------------*/
-/*--- Management of function redirection and wrapping.             ---*/
-/*---                                                   vg_redir.c ---*/
+/*--- Function replacement and wrapping.                 m_redir.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Valgrind, an extensible x86 protected-mode
-   emulator for monitoring program execution on x86-Unixes.
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
 
    Copyright (C) 2000-2005 Julian Seward 
       jseward@acm.org
@@ -757,3 +757,7 @@ void VG_(maybe_redir_or_notify) ( Char* symbol, Addr addr )
 //:: 
 //::    VG_(SkipList_Insert)(&wrapper_returns, ret);
 //:: }
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

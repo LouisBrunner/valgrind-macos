@@ -206,7 +206,7 @@ void VG_(env_remove_valgrind_env_stuff)(Char** envp)
    buf = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(VG_(libdir)) + 20);
 
    // Remove Valgrind-specific entries from LD_*.
-   VG_(sprintf)(buf, "%s*/vg_preload_core.so", VG_(libdir));
+   VG_(sprintf)(buf, "%s*/vgpreload_core.so", VG_(libdir));
    mash_colon_env(ld_preload_str, buf);
    VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
    mash_colon_env(ld_preload_str, buf);

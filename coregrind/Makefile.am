@@ -30,7 +30,7 @@ bin_PROGRAMS = \
 
 val_PROGRAMS = \
 	stage2 \
-	vg_preload_core.so
+	vgpreload_core.so
 
 noinst_HEADERS = \
 	coregrind.h		\
@@ -171,12 +171,12 @@ endif
 stage2_LDADD= $(stage2_extra) \
 	-ldl
 
-vg_preload_core_so_SOURCES = vg_preloaded.c
-vg_preload_core_so_CFLAGS = $(AM_CFLAGS) -fpic
-vg_preload_core_so_LDADD = -ldl
-vg_preload_core_so_LDFLAGS = \
+vgpreload_core_so_SOURCES = vg_preloaded.c
+vgpreload_core_so_CFLAGS = $(AM_CFLAGS) -fpic
+vgpreload_core_so_LDADD = -ldl
+vgpreload_core_so_LDFLAGS = \
 	-shared \
-	-Wl,--soname,vg_preload_core.so \
+	-Wl,--soname,vgpreload_core.so \
 	-Wl,-z,initfirst
 
 # Extract ld's default linker script and hack it to our needs.

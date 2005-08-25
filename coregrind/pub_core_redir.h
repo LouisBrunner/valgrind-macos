@@ -85,7 +85,7 @@ extern void VG_(resolve_existing_redirs_with_seginfo)(SegInfo *si);
    replacement.
 
    Functions named with this macro should be in client space, ie. in
-   vg_preload_<tool>.h or vg_preload_core.h. */
+   vgpreload_<tool>.h or vgpreload_core.h. */
 
 #define VG_NOTIFY_ON_LOAD(name)           _vgw_##name
 #define VG_NOTIFY_ON_LOAD_PREFIX          "_vgw_"

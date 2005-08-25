@@ -64,7 +64,8 @@
 
    Note also that the replacement function should probably (must be?) in
    client space, so it runs on the simulated CPU.  So it must be in
-   either vg_preload_<tool>.so or vg_preload_core.so.
+   either vgpreload_<tool>.so or vgpreload_core.so.  It also only works
+   with functions in shared objects, I think.
    
    It is important that the Z-encoded soname contains no unencoded 
    underscores, since the intercept-handlers in vg_symtab2.c detect

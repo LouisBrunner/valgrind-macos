@@ -561,7 +561,7 @@ static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
 
 /* Prepare the client's environment.  This is basically a copy of our
    environment, except:
-     LD_PRELOAD=$VALGRINDLIB/vg_preload_core.so:($VALGRINDLIB/vgpreload_TOOL.so:)?$LD_PRELOAD
+     LD_PRELOAD=$VALGRINDLIB/vgpreload_core.so:($VALGRINDLIB/vgpreload_TOOL.so:)?$LD_PRELOAD
 
    If this is missing, then it is added.
 
@@ -572,7 +572,7 @@ static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
  */
 static char **fix_environment(char **origenv, const char *preload)
 {
-   static const char preload_core_so[]    = "vg_preload_core.so";
+   static const char preload_core_so[]    = "vgpreload_core.so";
    static const char ld_preload[]         = "LD_PRELOAD=";
    static const char valgrind_clo[]       = VALGRINDCLO "=";
    static const int  ld_preload_len       = sizeof(ld_preload)-1;
@@ -586,8 +586,7 @@ static char **fix_environment(char **origenv, const char *preload)
    int envc;
    const int preloadlen = (preload == NULL) ? 0 : strlen(preload);
 
-   /* Find the vg_preload_core.so; also make room for the tool preload
-      library */
+   // Find the vgpreload_core.so; also make room for the tool preload library
    preload_core_path_len = sizeof(preload_core_so) + vgliblen + preloadlen + 16;
    preload_core_path = malloc(preload_core_path_len);
    vg_assert(preload_core_path);

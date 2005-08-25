@@ -2329,7 +2329,7 @@ PRE(sys_execve)
    VG_(reap_threads)(tid);
 
    // Remove the valgrind-specific stuff from the environment so the
-   // child doesn't get vg_preload_core.so, vg_preload_TOOL.so, etc.  
+   // child doesn't get vgpreload_core.so, vgpreload_<tool>.so, etc.  
    // This is done unconditionally, since if we are tracing the child,
    // stage1/2 will set up the appropriate client environment.
    // Nb: we make a copy of the environment before trying to mangle it

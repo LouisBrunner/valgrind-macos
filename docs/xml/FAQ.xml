@@ -102,9 +102,7 @@
 <qandaentry id="faq.exit_errors">
  <question>
   <para>Programs run OK on Valgrind, but at exit produce a bunch
-  of errors a bit like this:</para>
- </question>
- <answer><para>
+  of errors a bit like this:
 <programlisting>
 ==20755== Invalid read of size 4
 ==20755==    at 0x40281C8A: _nl_unload_locale (loadlocale.c:238)
@@ -119,6 +117,8 @@
 </programlisting>
 
  and then die with a segmentation fault.</para>
+ </question>
+ <answer>
  <para>When the program exits, Valgrind runs the procedure
  <literal>__libc_freeres()</literal> in glibc.  This is a hook
  for memory debuggers, so they can ask glibc to free up any
@@ -138,12 +138,12 @@
 <qandaentry id="faq.bugdeath">
  <question>
   <para>My (buggy) program dies like this:</para>
- </question>
- <answer>
   <screen>
 % valgrind: vg_malloc2.c:442 (bszW_to_pszW): Assertion 'pszW >= 0' failed.
 </screen>
 
+ </question>
+ <answer>
   <para>If Memcheck (the memory checker) shows any invalid reads,
   invalid writes and invalid frees in your program, the above may
   happen.  Reason is that your program may trash Valgrind's
@@ -158,12 +158,12 @@
  <question>
   <para>My program dies, printing a message like this along the
     way:</para>
- </question>
- <answer>
 <screen>
 % disInstr: unhandled instruction bytes: 0x66 0xF 0x2E 0x5
 </screen>
 
+ </question>
+ <answer>
   <para>Older versions did not support some x86 instructions,
   particularly SSE/SSE2 instructions.  Try a newer Valgrind; we
   now support almost all instructions.  If it still happens with
@@ -422,8 +422,6 @@ statically linking your program.</para>
 <qandaentry id="faq.overruns">
  <question>
   <para>Why doesn't Memcheck find the array overruns in this program?</para>
- </question>
- <answer>
 <programlisting>
 int static[5];
 
@@ -437,6 +435,8 @@ int main(void)
   return 0;
 }
 </programlisting>
+ </question>
+ <answer>
   <para>Unfortunately, Memcheck doesn't do bounds checking on
   static or stack arrays.  We'd like to, but it's just not
   possible to do in a reasonable way that fits with how Memcheck

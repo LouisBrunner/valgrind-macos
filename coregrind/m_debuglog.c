@@ -384,6 +384,7 @@ VG_(debugLog_vprintf) (
    Int  i;
    Int  flags;
    Int  width;
+   Int  n_ls = 0;
    Bool is_long;
 
    /* We assume that vargs has already been initialised by the 
@@ -408,7 +409,7 @@ VG_(debugLog_vprintf) (
          continue;
       }
       flags = 0;
-      is_long = False;
+      n_ls  = 0;
       width = 0; /* length of the field. */
       if (format[i] == '(') {
          flags |= VG_MSG_PAREN;
@@ -436,8 +437,15 @@ VG_(debugLog_vprintf) (
       }
       while (format[i] == 'l') {
          i++;
-         is_long = True;
+         n_ls++;
       }
+
+      //   %d means print a 32-bit integer.
+      //  %ld means print a word-size integer.
+      // %lld means print a 64-bit integer.
+      if      (0 == n_ls) { is_long = False; }
+      else if (1 == n_ls) { is_long = ( sizeof(void*) == sizeof(Long) ); }
+      else                { is_long = True; }
 
       switch (format[i]) {
          case 'd': /* %d */

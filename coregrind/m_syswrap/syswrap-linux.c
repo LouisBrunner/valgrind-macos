@@ -456,7 +456,7 @@ PRE(sys_prctl)
 PRE(sys_sendfile)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_sendfile ( %d, %d, %p, %llu )", ARG1,ARG2,ARG3,(ULong)ARG4);
+   PRINT("sys_sendfile ( %d, %d, %p, %lu )", ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(ssize_t, "sendfile",
                  int, out_fd, int, in_fd, vki_off_t *, offset,
                  vki_size_t, count);
@@ -473,7 +473,7 @@ POST(sys_sendfile)
 PRE(sys_sendfile64)
 {
    *flags |= SfMayBlock;
-   PRINT("sendfile64 ( %d, %d, %p, %llu )",ARG1,ARG2,ARG3,(ULong)ARG4);
+   PRINT("sendfile64 ( %d, %d, %p, %lu )",ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(ssize_t, "sendfile64",
                  int, out_fd, int, in_fd, vki_loff_t *, offset,
                  vki_size_t, count);
@@ -794,7 +794,7 @@ PRE(sys_io_submit)
 {
    Int i;
 
-   PRINT("sys_io_submit ( %llu, %lld, %p )", (ULong)ARG1,(Long)ARG2,ARG3);
+   PRINT("sys_io_submit ( %llu, %ld, %p )", (ULong)ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "io_submit",
                  vki_aio_context_t, ctx_id, long, nr,
                  struct iocb **, iocbpp);

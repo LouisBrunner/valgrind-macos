@@ -2718,7 +2718,7 @@ PRE(sys_fork)
 PRE(sys_ftruncate)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_ftruncate ( %d, %lld )", ARG1,(ULong)ARG2);
+   PRINT("sys_ftruncate ( %d, %ld )", ARG1,ARG2);
    PRE_REG_READ2(long, "ftruncate", unsigned int, fd, unsigned long, length);
 }
 

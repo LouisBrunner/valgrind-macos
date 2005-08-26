@@ -1531,7 +1531,7 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
 //         tl_assert(sum <= xpt->exact_ST_dbld);
 //         tl_assert(sum * 1.05 > xpt->exact_ST_dbld );
 //         if (sum != xpt->exact_ST_dbld) {
-//            VG_(printf)("%ld, %ld\n", sum, xpt->exact_ST_dbld);
+//            VG_(printf)("%lld, %lld\n", sum, xpt->exact_ST_dbld);
 //         }
       }
 

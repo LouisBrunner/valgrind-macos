@@ -741,9 +741,9 @@ VG_(map_file_segment)( Addr addr, SizeT len,
       VG_(printf)(
          "\n"
          "map_file_segment(addr=%p len=%lu prot=0x%x flags=0x%x\n"
-         "                 dev=0x%4x ino=%d off=%ld\n"
+         "                 dev=0x%4x ino=%d off=%lld\n"
          "                 filename='%s')\n",
-         addr, (ULong)len, prot, flags, dev, ino, off, filename);
+         addr, len, prot, flags, dev, ino, off, filename);
 
    if (0) VG_(show_segments)("before map_file_segment");
 

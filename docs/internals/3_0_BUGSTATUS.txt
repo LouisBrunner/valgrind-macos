@@ -422,15 +422,21 @@ FIXED-30BRANCH: TODO
 ----------------------------------------------------------------
 
 111090  Internal Error running Massif
-111285  massif segfaults in the malloc replacement code on amd64
 
 FIXED-TRUNK:    4492
 FIXED-30BRANCH: 4509
 
 ----------------------------------------------------------------
 
-101204: noisy warning
+101204  noisy warning
 
 FIXED-TRUNK:    4511
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
+111555  VEX/Makefile: CC is set to gcc
+
+FIXED-TRUNK:    TODO
 FIXED-30BRANCH: TODO
 

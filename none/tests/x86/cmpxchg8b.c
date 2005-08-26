@@ -37,7 +37,7 @@ asm("\n"
 
     "\tpopl %edx\n"
     "\tpopl %ecx\n"
-    "\tpopl %edx\n"
+    "\tpopl %ebx\n"
     "\tpopl %eax\n"
     "\tret\n"
     );

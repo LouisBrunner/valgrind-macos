@@ -129,15 +129,6 @@ DECL_TEMPLATE(generic, sys_fsync);
 DECL_TEMPLATE(generic, sys_wait4);
 DECL_TEMPLATE(generic, sys_mprotect);
 DECL_TEMPLATE(generic, sys_sigprocmask);
-DECL_TEMPLATE(generic, sys_timer_create);    // Linux: varies across archs?
-DECL_TEMPLATE(generic, sys_timer_settime);
-DECL_TEMPLATE(generic, sys_timer_gettime);
-DECL_TEMPLATE(generic, sys_timer_getoverrun);
-DECL_TEMPLATE(generic, sys_timer_delete);
-DECL_TEMPLATE(generic, sys_clock_settime);
-DECL_TEMPLATE(generic, sys_clock_gettime);
-DECL_TEMPLATE(generic, sys_clock_getres);
-DECL_TEMPLATE(generic, sys_clock_nanosleep);
 DECL_TEMPLATE(generic, sys_getcwd);
 DECL_TEMPLATE(generic, sys_symlink);
 DECL_TEMPLATE(generic, sys_getgroups);
@@ -223,8 +214,6 @@ DECL_TEMPLATE(generic, sys_rt_sigqueueinfo);       // * ?
 DECL_TEMPLATE(generic, sys_rt_sigsuspend);         // () ()
 DECL_TEMPLATE(generic, sys_pread64);               // * (Unix98?)
 DECL_TEMPLATE(generic, sys_pwrite64);              // * (Unix98?)
-DECL_TEMPLATE(generic, sys_capget);                // * L?
-DECL_TEMPLATE(generic, sys_capset);                // * L?
 DECL_TEMPLATE(generic, sys_sigaltstack);           // (x86) (XPG4-UNIX)
 DECL_TEMPLATE(generic, sys_getpmsg);               // (?) (?)
 DECL_TEMPLATE(generic, sys_putpmsg);               // (?) (?)

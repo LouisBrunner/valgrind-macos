@@ -2162,9 +2162,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_pwrite64,          sys_pwrite64),       // 181
    GENX_(__NR_chown,             sys_chown16),        // 182
    GENXY(__NR_getcwd,            sys_getcwd),         // 183
-   GENXY(__NR_capget,            sys_capget),         // 184
+   LINXY(__NR_capget,            sys_capget),         // 184
 
-   GENX_(__NR_capset,            sys_capset),         // 185
+   LINX_(__NR_capset,            sys_capset),         // 185
    GENXY(__NR_sigaltstack,       sys_sigaltstack),    // 186
    LINXY(__NR_sendfile,          sys_sendfile),       // 187
    GENXY(__NR_getpmsg,           sys_getpmsg),        // 188

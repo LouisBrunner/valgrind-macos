@@ -2215,34 +2215,6 @@ PRE(sys_init_module)
    PRE_MEM_RASCIIZ( "init_module(uargs)", ARG3 );
 }
 
-PRE(sys_capget)
-{
-   PRINT("sys_capget ( %p, %p )", ARG1, ARG2 );
-   PRE_REG_READ2(long, "capget", 
-                 vki_cap_user_header_t, header, vki_cap_user_data_t, data);
-   PRE_MEM_READ( "capget(header)", ARG1, 
-                  sizeof(struct __vki_user_cap_header_struct) );
-   PRE_MEM_WRITE( "capget(data)", ARG2, 
-                  sizeof(struct __vki_user_cap_data_struct) );
-}
-POST(sys_capget)
-{
-   if (ARG2 != (Addr)NULL)
-      POST_MEM_WRITE( ARG2, sizeof(struct __vki_user_cap_data_struct) );
-}
-
-PRE(sys_capset)
-{
-   PRINT("sys_capset ( %p, %p )", ARG1, ARG2 );
-   PRE_REG_READ2(long, "capset", 
-                 vki_cap_user_header_t, header,
-                 const vki_cap_user_data_t, data);
-   PRE_MEM_READ( "capset(header)", 
-                  ARG1, sizeof(struct __vki_user_cap_header_struct) );
-   PRE_MEM_READ( "capset(data)", 
-                  ARG2, sizeof(struct __vki_user_cap_data_struct) );
-}
-
 // Pre_read a char** argument.
 static void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
 {

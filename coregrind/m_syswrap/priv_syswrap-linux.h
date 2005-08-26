@@ -114,6 +114,9 @@ DECL_TEMPLATE(linux, sys_timer_gettime);
 DECL_TEMPLATE(linux, sys_timer_getoverrun);
 DECL_TEMPLATE(linux, sys_timer_delete);
 
+DECL_TEMPLATE(linux, sys_capget);
+DECL_TEMPLATE(linux, sys_capset);
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

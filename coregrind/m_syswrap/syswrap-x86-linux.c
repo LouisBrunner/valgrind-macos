@@ -2253,12 +2253,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_epoll_wait,        sys_epoll_wait),        // 256
 //zz    //   (__NR_remap_file_pages,  sys_remap_file_pages),  // 257 */Linux
    LINX_(__NR_set_tid_address,   sys_set_tid_address),   // 258
-   GENXY(__NR_timer_create,      sys_timer_create),      // 259
+   LINXY(__NR_timer_create,      sys_timer_create),      // 259
 
-   GENXY(__NR_timer_settime,     sys_timer_settime),  // (timer_create+1)
-   GENXY(__NR_timer_gettime,     sys_timer_gettime),  // (timer_create+2)
-   GENX_(__NR_timer_getoverrun,  sys_timer_getoverrun),//(timer_create+3)
-   GENX_(__NR_timer_delete,      sys_timer_delete),   // (timer_create+4)
+   LINXY(__NR_timer_settime,     sys_timer_settime),  // (timer_create+1)
+   LINXY(__NR_timer_gettime,     sys_timer_gettime),  // (timer_create+2)
+   LINX_(__NR_timer_getoverrun,  sys_timer_getoverrun),//(timer_create+3)
+   LINX_(__NR_timer_delete,      sys_timer_delete),   // (timer_create+4)
    LINX_(__NR_clock_settime,     sys_clock_settime),  // (timer_create+5)
 
    LINXY(__NR_clock_gettime,     sys_clock_gettime),  // (timer_create+6)

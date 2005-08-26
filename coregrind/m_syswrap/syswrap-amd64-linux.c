@@ -1442,12 +1442,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    PLAX_(__NR_semtimedop,        sys_semtimedop),     // 220 
    PLAX_(__NR_fadvise64,         sys_fadvise64),      // 221 
-   GENXY(__NR_timer_create,      sys_timer_create),   // 222 
-   GENXY(__NR_timer_settime,     sys_timer_settime),  // 223 
-   GENXY(__NR_timer_gettime,     sys_timer_gettime),  // 224 
+   LINXY(__NR_timer_create,      sys_timer_create),   // 222 
+   LINXY(__NR_timer_settime,     sys_timer_settime),  // 223 
+   LINXY(__NR_timer_gettime,     sys_timer_gettime),  // 224 
 
-   GENX_(__NR_timer_getoverrun,  sys_timer_getoverrun), // 225 
-   GENX_(__NR_timer_delete,      sys_timer_delete),   // 226 
+   LINX_(__NR_timer_getoverrun,  sys_timer_getoverrun), // 225 
+   LINX_(__NR_timer_delete,      sys_timer_delete),   // 226 
    LINX_(__NR_clock_settime,     sys_clock_settime),  // 227 
    LINXY(__NR_clock_gettime,     sys_clock_gettime),  // 228 
    LINXY(__NR_clock_getres,      sys_clock_getres),   // 229 

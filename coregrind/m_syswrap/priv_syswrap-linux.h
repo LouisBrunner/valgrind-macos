@@ -108,6 +108,12 @@ DECL_TEMPLATE(linux, sys_clock_gettime);
 DECL_TEMPLATE(linux, sys_clock_getres);
 DECL_TEMPLATE(linux, sys_clock_nanosleep);
 
+DECL_TEMPLATE(linux, sys_timer_create);      // Linux: varies across archs?
+DECL_TEMPLATE(linux, sys_timer_settime);
+DECL_TEMPLATE(linux, sys_timer_gettime);
+DECL_TEMPLATE(linux, sys_timer_getoverrun);
+DECL_TEMPLATE(linux, sys_timer_delete);
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

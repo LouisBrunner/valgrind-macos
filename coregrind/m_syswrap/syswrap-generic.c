@@ -5513,65 +5513,6 @@ POST(sys_rt_sigpending)
    POST_MEM_WRITE( ARG1, sizeof(vki_sigset_t) ) ;
 }
 
-PRE(sys_timer_create)
-{
-   PRINT("sys_timer_create( %d, %p, %p )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "timer_create",
-                 vki_clockid_t, clockid, struct sigevent *, evp,
-                 vki_timer_t *, timerid);
-   if (ARG2 != 0)
-      PRE_MEM_READ( "timer_create(evp)", ARG2, sizeof(struct vki_sigevent) );
-   PRE_MEM_WRITE( "timer_create(timerid)", ARG3, sizeof(vki_timer_t) );
-}
-POST(sys_timer_create)
-{
-   POST_MEM_WRITE( ARG3, sizeof(vki_timer_t) );
-}
-
-PRE(sys_timer_settime)
-{
-   PRINT("sys_timer_settime( %lld, %d, %p, %p )", (ULong)ARG1,ARG2,ARG3,ARG4);
-   PRE_REG_READ4(long, "timer_settime", 
-                 vki_timer_t, timerid, int, flags,
-                 const struct itimerspec *, value,
-                 struct itimerspec *, ovalue);
-   PRE_MEM_READ( "timer_settime(value)", ARG3,
-                  sizeof(struct vki_itimerspec) );
-   if (ARG4 != 0)
-       PRE_MEM_WRITE( "timer_settime(ovalue)", ARG4,
-                      sizeof(struct vki_itimerspec) );
-}
-POST(sys_timer_settime)
-{
-   if (ARG4 != 0)
-      POST_MEM_WRITE( ARG4, sizeof(struct vki_itimerspec) );
-}
-
-PRE(sys_timer_gettime)
-{
-   PRINT("sys_timer_gettime( %lld, %p )", (ULong)ARG1,ARG2);
-   PRE_REG_READ2(long, "timer_gettime", 
-                 vki_timer_t, timerid, struct itimerspec *, value);
-   PRE_MEM_WRITE( "timer_gettime(value)", ARG2,
-                  sizeof(struct vki_itimerspec));
-}
-POST(sys_timer_gettime)
-{
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_itimerspec) );
-}
-
-PRE(sys_timer_getoverrun)
-{
-   PRINT("sys_timer_getoverrun( %p )", ARG1);
-   PRE_REG_READ1(long, "timer_getoverrun", vki_timer_t, timerid);
-}
-
-PRE(sys_timer_delete)
-{
-   PRINT("sys_timer_delete( %p )", ARG1);
-   PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
-}
-
 PRE(sys_waitid)
 {
    *flags |= SfMayBlock;

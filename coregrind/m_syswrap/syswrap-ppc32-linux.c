@@ -2278,12 +2278,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 /* Number 260 is reserved for new sys_get_mempolicy */
 /* Number 261 is reserved for new sys_set_mempolicy */
 
-//..    GENXY(__NR_mq_open,           sys_mq_open),           // 262
-//..    GENX_(__NR_mq_unlink,         sys_mq_unlink),         // 263
-//..    GENX_(__NR_mq_timedsend,      sys_mq_timedsend),      // 264
-//..    GENXY(__NR_mq_timedreceive,   sys_mq_timedreceive),   // 265
-//..    GENX_(__NR_mq_notify,         sys_mq_notify),         // 266
-//..    GENXY(__NR_mq_getsetattr,     sys_mq_getsetattr),     // 267
+//..    LINXY(__NR_mq_open,           sys_mq_open),           // 262
+//..    LINX_(__NR_mq_unlink,         sys_mq_unlink),         // 263
+//..    LINX_(__NR_mq_timedsend,      sys_mq_timedsend),      // 264
+//..    LINXY(__NR_mq_timedreceive,   sys_mq_timedreceive),   // 265
+//..    LINX_(__NR_mq_notify,         sys_mq_notify),         // 266
+//..    LINXY(__NR_mq_getsetattr,     sys_mq_getsetattr),     // 267
 
 // __NR_kexec_load                                            // 268
 };

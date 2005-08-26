@@ -96,6 +96,13 @@ DECL_TEMPLATE(linux, sys_inotify_init);
 DECL_TEMPLATE(linux, sys_inotify_add_watch);
 DECL_TEMPLATE(linux, sys_inotify_rm_watch);
 
+DECL_TEMPLATE(linux, sys_mq_open);
+DECL_TEMPLATE(linux, sys_mq_unlink);
+DECL_TEMPLATE(linux, sys_mq_timedsend);
+DECL_TEMPLATE(linux, sys_mq_timedreceive);
+DECL_TEMPLATE(linux, sys_mq_notify);
+DECL_TEMPLATE(linux, sys_mq_getsetattr);
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

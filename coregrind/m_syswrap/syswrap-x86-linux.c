@@ -2275,13 +2275,13 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //zz 
    LINXY(__NR_get_mempolicy,     sys_get_mempolicy),  // 275 ?/?
    LINX_(__NR_set_mempolicy,     sys_set_mempolicy),  // 276 ?/?
-   GENXY(__NR_mq_open,           sys_mq_open),        // 277
-   GENX_(__NR_mq_unlink,         sys_mq_unlink),      // (mq_open+1)
-   GENX_(__NR_mq_timedsend,      sys_mq_timedsend),   // (mq_open+2)
+   LINXY(__NR_mq_open,           sys_mq_open),        // 277
+   LINX_(__NR_mq_unlink,         sys_mq_unlink),      // (mq_open+1)
+   LINX_(__NR_mq_timedsend,      sys_mq_timedsend),   // (mq_open+2)
 
-   GENXY(__NR_mq_timedreceive,   sys_mq_timedreceive),// (mq_open+3)
-   GENX_(__NR_mq_notify,         sys_mq_notify),      // (mq_open+4)
-   GENXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // (mq_open+5)
+   LINXY(__NR_mq_timedreceive,   sys_mq_timedreceive),// (mq_open+3)
+   LINX_(__NR_mq_notify,         sys_mq_notify),      // (mq_open+4)
+   LINXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // (mq_open+5)
    GENX_(__NR_sys_kexec_load,    sys_ni_syscall),     // 283
    GENXY(__NR_waitid,            sys_waitid),         // 284
 

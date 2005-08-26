@@ -897,6 +897,127 @@ PRE(sys_inotify_rm_watch)
    PRE_REG_READ2(long, "inotify_rm_watch", int, fd, int, wd);
 }
 
+PRE(sys_mq_open)
+{
+   PRINT("sys_mq_open( %p(%s), %d, %lld, %p )",
+         ARG1,ARG1,ARG2,(ULong)ARG3,ARG4);
+   PRE_REG_READ4(long, "mq_open",
+                 const char *, name, int, oflag, vki_mode_t, mode,
+                 struct mq_attr *, attr);
+   PRE_MEM_RASCIIZ( "mq_open(name)", ARG1 );
+   if ((ARG2 & VKI_O_CREAT) != 0 && ARG4 != 0) {
+      const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG4;
+      PRE_MEM_READ( "mq_open(attr->mq_maxmsg)",
+                     (Addr)&attr->mq_maxmsg, sizeof(attr->mq_maxmsg) );
+      PRE_MEM_READ( "mq_open(attr->mq_msgsize)",
+                     (Addr)&attr->mq_msgsize, sizeof(attr->mq_msgsize) );
+   }
+}
+
+POST(sys_mq_open)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "mq_open", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (Char*)ARG1);
+   }
+}
+
+PRE(sys_mq_unlink)
+{
+   PRINT("sys_mq_unlink ( %p(%s) )", ARG1,ARG1);
+   PRE_REG_READ1(long, "mq_unlink", const char *, name);
+   PRE_MEM_RASCIIZ( "mq_unlink(name)", ARG1 );
+}
+
+PRE(sys_mq_timedsend)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mq_timedsend ( %d, %p, %llu, %d, %p )",
+         ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "mq_timedsend",
+                 vki_mqd_t, mqdes, const char *, msg_ptr, vki_size_t, msg_len,
+                 unsigned int, msg_prio, const struct timespec *, abs_timeout);
+   if (!ML_(fd_allowed)(ARG1, "mq_timedsend", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      PRE_MEM_READ( "mq_timedsend(msg_ptr)", ARG2, ARG3 );
+      if (ARG5 != 0)
+         PRE_MEM_READ( "mq_timedsend(abs_timeout)", ARG5,
+                        sizeof(struct vki_timespec) );
+   }
+}
+
+PRE(sys_mq_timedreceive)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mq_timedreceive( %d, %p, %llu, %p, %p )",
+         ARG1,ARG2,(ULong)ARG3,ARG4,ARG5);
+   PRE_REG_READ5(ssize_t, "mq_timedreceive",
+                 vki_mqd_t, mqdes, char *, msg_ptr, vki_size_t, msg_len,
+                 unsigned int *, msg_prio,
+                 const struct timespec *, abs_timeout);
+   if (!ML_(fd_allowed)(ARG1, "mq_timedreceive", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      PRE_MEM_WRITE( "mq_timedreceive(msg_ptr)", ARG2, ARG3 );
+      if (ARG4 != 0)
+         PRE_MEM_WRITE( "mq_timedreceive(msg_prio)",
+                        ARG4, sizeof(unsigned int) );
+      if (ARG5 != 0)
+         PRE_MEM_READ( "mq_timedreceive(abs_timeout)",
+                        ARG5, sizeof(struct vki_timespec) );
+   }
+}
+
+POST(sys_mq_timedreceive)
+{
+   POST_MEM_WRITE( ARG2, ARG3 );
+   if (ARG4 != 0)
+      POST_MEM_WRITE( ARG4, sizeof(unsigned int) );
+}
+
+PRE(sys_mq_notify)
+{
+   PRINT("sys_mq_notify( %d, %p )", ARG1,ARG2 );
+   PRE_REG_READ2(long, "mq_notify",
+                 vki_mqd_t, mqdes, const struct sigevent *, notification);
+   if (!ML_(fd_allowed)(ARG1, "mq_notify", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+   else if (ARG2 != 0)
+      PRE_MEM_READ( "mq_notify(notification)",
+                    ARG2, sizeof(struct vki_sigevent) );
+}
+
+PRE(sys_mq_getsetattr)
+{
+   PRINT("sys_mq_getsetattr( %d, %p, %p )", ARG1,ARG2,ARG3 );
+   PRE_REG_READ3(long, "mq_getsetattr",
+                 vki_mqd_t, mqdes, const struct mq_attr *, mqstat,
+                 struct mq_attr *, omqstat);
+   if (!ML_(fd_allowed)(ARG1, "mq_getsetattr", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      if (ARG2 != 0) {
+         const struct vki_mq_attr *attr = (struct vki_mq_attr *)ARG2;
+         PRE_MEM_READ( "mq_getsetattr(mqstat->mq_flags)",
+                        (Addr)&attr->mq_flags, sizeof(attr->mq_flags) );
+      }
+      if (ARG3 != 0)
+         PRE_MEM_WRITE( "mq_getsetattr(omqstat)", ARG3,
+                        sizeof(struct vki_mq_attr) );
+   }   
+}
+
+POST(sys_mq_getsetattr)
+{
+   if (ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_mq_attr) );
+}
+
 #undef PRE
 #undef POST
 

@@ -47,8 +47,9 @@ extern Bool ML_(client_signal_OK)(Int sigNo);
 extern
 Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);
 
-extern
-void ML_(record_fd_open_nameless)(ThreadId tid, Int fd);
+extern void ML_(record_fd_open_nameless)       (ThreadId tid, Int fd);
+extern void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd,
+                                                char *pathname);
 
 // Used when killing threads -- we must not kill a thread if it's the thread
 // that would do Valgrind's final cleanup and output.
@@ -252,12 +253,6 @@ DECL_TEMPLATE(generic, sys_sched_getaffinity);     // * L?
 DECL_TEMPLATE(generic, sys_lookup_dcookie);        // (*/32/64) L
 DECL_TEMPLATE(generic, sys_statfs64);              // * (?)
 DECL_TEMPLATE(generic, sys_fstatfs64);             // * (?)
-DECL_TEMPLATE(generic, sys_mq_open);               // * P?
-DECL_TEMPLATE(generic, sys_mq_unlink);             // * P?
-DECL_TEMPLATE(generic, sys_mq_timedsend);          // * P?
-DECL_TEMPLATE(generic, sys_mq_timedreceive);       // * P?
-DECL_TEMPLATE(generic, sys_mq_notify);             // * P?
-DECL_TEMPLATE(generic, sys_mq_getsetattr);         // * P?
 
 
 /* ---------------------------------------------------------------------

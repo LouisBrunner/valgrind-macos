@@ -2806,13 +2806,6 @@ POST(sys_getdents64)
       POST_MEM_WRITE( ARG2, RES );
 }
 
-POST(sys_getgroups16)
-{
-   vg_assert(SUCCESS);
-   if (ARG1 > 0 && RES > 0)
-      POST_MEM_WRITE( ARG2, RES * sizeof(vki_old_gid_t) );
-}
-
 PRE(sys_getgroups)
 {
    PRINT("sys_getgroups ( %d, %p )", ARG1, ARG2);

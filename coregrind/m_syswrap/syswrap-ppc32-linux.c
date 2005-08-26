@@ -1977,7 +1977,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_mknod,             sys_mknod),             // 14
 //.. 
    GENX_(__NR_chmod,             sys_chmod),             // 15
-//..    //   (__NR_lchown,            sys_lchown16),          // 16 ## P
+//..    LINX_(__NR_lchown,            sys_lchown16),          // 16 ## P
 //..    GENX_(__NR_break,             sys_ni_syscall),        // 17
 //..    //   (__NR_oldstat,           sys_stat),              // 18 (obsolete)
    GENX_(__NR_lseek,             sys_lseek),             // 19
@@ -2072,7 +2072,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_ftruncate,         sys_ftruncate),         // 93
    GENX_(__NR_fchmod,            sys_fchmod),            // 94
 
-   GENX_(__NR_fchown,            sys_fchown16),          // 95
+   LINX_(__NR_fchown,            sys_fchown16),          // 95
 //..    GENX_(__NR_getpriority,       sys_getpriority),       // 96
 //..    GENX_(__NR_setpriority,       sys_setpriority),       // 97
 //..    GENX_(__NR_profil,            sys_ni_syscall),        // 98
@@ -2178,7 +2178,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //.. 
    GENXY(__NR_pread64,           sys_pread64),           // 179
    GENX_(__NR_pwrite64,          sys_pwrite64),          // 180
-   GENX_(__NR_chown,             sys_chown16),           // 181
+   LINX_(__NR_chown,             sys_chown16),           // 181
    GENXY(__NR_getcwd,            sys_getcwd),            // 182
 //..    LINXY(__NR_capget,            sys_capget),            // 183
 //.. 

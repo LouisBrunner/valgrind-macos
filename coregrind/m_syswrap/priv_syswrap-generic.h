@@ -166,12 +166,6 @@ DECL_TEMPLATE(generic, sys_fchown);       // SVr4,4.3BSD
 DECL_TEMPLATE(generic, sys_setgid);       // SVr4,SVID
 DECL_TEMPLATE(generic, sys_utimes);       // 4.3BSD
 
-// These ones may be Linux specific... not sure.  They use 16-bit gid_t and
-// uid_t types.  The similarly named (minus the "16" suffix) ones below use
-// 32-bit versions of these types.
-DECL_TEMPLATE(generic, sys_fchown16);              // ## SVr4,BSD4.3
-DECL_TEMPLATE(generic, sys_chown16);               // ## P
-
 // Some archs on Linux do not match the generic wrapper for sys_pipe().
 DECL_TEMPLATE(generic, sys_pipe);
 

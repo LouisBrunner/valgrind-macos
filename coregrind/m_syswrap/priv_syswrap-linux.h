@@ -130,6 +130,12 @@ DECL_TEMPLATE(linux, sys_setregid16);
 DECL_TEMPLATE(linux, sys_getgroups16);
 DECL_TEMPLATE(linux, sys_setgroups16);
 
+// Again, these 16-bit versions are Linux-specific, the 32-bit versions are
+// generic.
+DECL_TEMPLATE(linux, sys_chown16);
+DECL_TEMPLATE(linux, sys_fchown16);
+//DECL_TEMPLATE(linux, sys_lchown16);      // not yet encountered
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

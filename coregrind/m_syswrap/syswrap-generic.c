@@ -2459,15 +2459,6 @@ PRE(sys_chmod)
    PRE_MEM_RASCIIZ( "chmod(path)", ARG1 );
 }
 
-PRE(sys_chown16)
-{
-   PRINT("sys_chown16 ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "chown16",
-                 const char *, path,
-                 vki_old_uid_t, owner, vki_old_gid_t, group);
-   PRE_MEM_RASCIIZ( "chown16(path)", ARG1 );
-}
-
 PRE(sys_chown)
 {
    /* int chown(const char *path, uid_t owner, gid_t group); */
@@ -2537,13 +2528,6 @@ PRE(sys_fchdir)
 {
    PRINT("sys_fchdir ( %d )", ARG1);
    PRE_REG_READ1(long, "fchdir", unsigned int, fd);
-}
-
-PRE(sys_fchown16)
-{
-   PRINT("sys_fchown16 ( %d, %d, %d )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "fchown16",
-                 unsigned int, fd, vki_old_uid_t, owner, vki_old_gid_t, group);
 }
 
 PRE(sys_fchown)

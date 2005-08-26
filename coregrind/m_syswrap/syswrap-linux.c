@@ -1225,6 +1225,22 @@ PRE(sys_setgroups16)
       PRE_MEM_READ( "setgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
 }
 
+PRE(sys_chown16)
+{
+   PRINT("sys_chown16 ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "chown16",
+                 const char *, path,
+                 vki_old_uid_t, owner, vki_old_gid_t, group);
+   PRE_MEM_RASCIIZ( "chown16(path)", ARG1 );
+}
+
+PRE(sys_fchown16)
+{
+   PRINT("sys_fchown16 ( %d, %d, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "fchown16",
+                 unsigned int, fd, vki_old_uid_t, owner, vki_old_gid_t, group);
+}
+
 #undef PRE
 #undef POST
 

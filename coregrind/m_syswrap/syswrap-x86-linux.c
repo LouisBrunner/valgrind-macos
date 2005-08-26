@@ -2259,11 +2259,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_timer_gettime,     sys_timer_gettime),  // (timer_create+2)
    GENX_(__NR_timer_getoverrun,  sys_timer_getoverrun),//(timer_create+3)
    GENX_(__NR_timer_delete,      sys_timer_delete),   // (timer_create+4)
-   GENX_(__NR_clock_settime,     sys_clock_settime),  // (timer_create+5)
+   LINX_(__NR_clock_settime,     sys_clock_settime),  // (timer_create+5)
 
-   GENXY(__NR_clock_gettime,     sys_clock_gettime),  // (timer_create+6)
-   GENXY(__NR_clock_getres,      sys_clock_getres),   // (timer_create+7)
-   GENXY(__NR_clock_nanosleep,   sys_clock_nanosleep),// (timer_create+8) */*
+   LINXY(__NR_clock_gettime,     sys_clock_gettime),  // (timer_create+6)
+   LINXY(__NR_clock_getres,      sys_clock_getres),   // (timer_create+7)
+   LINXY(__NR_clock_nanosleep,   sys_clock_nanosleep),// (timer_create+8) */*
    GENXY(__NR_statfs64,          sys_statfs64),       // 268
    GENXY(__NR_fstatfs64,         sys_fstatfs64),      // 269
 

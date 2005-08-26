@@ -913,7 +913,6 @@ PRE(sys_mq_open)
                      (Addr)&attr->mq_msgsize, sizeof(attr->mq_msgsize) );
    }
 }
-
 POST(sys_mq_open)
 {
    vg_assert(SUCCESS);
@@ -972,7 +971,6 @@ PRE(sys_mq_timedreceive)
                         ARG5, sizeof(struct vki_timespec) );
    }
 }
-
 POST(sys_mq_timedreceive)
 {
    POST_MEM_WRITE( ARG2, ARG3 );
@@ -1011,11 +1009,63 @@ PRE(sys_mq_getsetattr)
                         sizeof(struct vki_mq_attr) );
    }   
 }
-
 POST(sys_mq_getsetattr)
 {
    if (ARG3 != 0)
       POST_MEM_WRITE( ARG3, sizeof(struct vki_mq_attr) );
+}
+
+PRE(sys_clock_settime)
+{
+   PRINT("sys_clock_settime( %d, %p )", ARG1,ARG2);
+   PRE_REG_READ2(long, "clock_settime", 
+                 vki_clockid_t, clk_id, const struct timespec *, tp);
+   PRE_MEM_READ( "clock_settime(tp)", ARG2, sizeof(struct vki_timespec) );
+}
+
+PRE(sys_clock_gettime)
+{
+   PRINT("sys_clock_gettime( %d, %p )" , ARG1,ARG2);
+   PRE_REG_READ2(long, "clock_gettime", 
+                 vki_clockid_t, clk_id, struct timespec *, tp);
+   PRE_MEM_WRITE( "clock_gettime(tp)", ARG2, sizeof(struct vki_timespec) );
+}
+POST(sys_clock_gettime)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
+}
+
+PRE(sys_clock_getres)
+{
+   PRINT("sys_clock_getres( %d, %p )" , ARG1,ARG2);
+   // Nb: we can't use "RES" as the param name because that's a macro
+   // defined above!
+   PRE_REG_READ2(long, "clock_getres", 
+                 vki_clockid_t, clk_id, struct timespec *, res);
+   if (ARG2 != 0)
+      PRE_MEM_WRITE( "clock_getres(res)", ARG2, sizeof(struct vki_timespec) );
+}
+POST(sys_clock_getres)
+{
+   if (ARG2 != 0)
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
+}
+
+PRE(sys_clock_nanosleep)
+{
+   *flags |= SfMayBlock|SfPostOnFail;
+   PRINT("sys_clock_nanosleep( %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(int32_t, "clock_nanosleep",
+                 vki_clockid_t, clkid, int, flags,
+                 const struct timespec *, rqtp, struct timespec *, rmtp);
+   PRE_MEM_READ( "clock_nanosleep(rqtp)", ARG3, sizeof(struct vki_timespec) );
+   if (ARG4 != 0)
+      PRE_MEM_WRITE( "clock_nanosleep(rmtp)", ARG4, sizeof(struct vki_timespec) );
+}
+POST(sys_clock_nanosleep)
+{
+   if (ARG4 != 0 && FAILURE && RES_unchecked == VKI_EINTR)
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec) );
 }
 
 #undef PRE

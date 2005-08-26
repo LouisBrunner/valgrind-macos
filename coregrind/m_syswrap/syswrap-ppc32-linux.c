@@ -2256,10 +2256,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENXY(__NR_timer_gettime,     sys_timer_gettime),     // 242
 //..    GENX_(__NR_timer_getoverrun,  sys_timer_getoverrun),  // 243
 //..    GENX_(__NR_timer_delete,      sys_timer_delete),      // 244
-//..    GENX_(__NR_clock_settime,     sys_clock_settime),     // 245
-   GENXY(__NR_clock_gettime,     sys_clock_gettime),     // 246
-//..    GENXY(__NR_clock_getres,      sys_clock_getres),      // 247
-//..    //   (__NR_clock_nanosleep,   sys_clock_nanosleep),   // 248
+//..    LINX_(__NR_clock_settime,     sys_clock_settime),     // 245
+   LINXY(__NR_clock_gettime,     sys_clock_gettime),     // 246
+//..    LINXY(__NR_clock_getres,      sys_clock_getres),      // 247
+//..    LINXY(__NR_clock_nanosleep,   sys_clock_nanosleep),   // 248
 
 // __NR_swapcontext                                           // 249
 

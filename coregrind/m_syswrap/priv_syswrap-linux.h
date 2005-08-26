@@ -103,6 +103,11 @@ DECL_TEMPLATE(linux, sys_mq_timedreceive);
 DECL_TEMPLATE(linux, sys_mq_notify);
 DECL_TEMPLATE(linux, sys_mq_getsetattr);
 
+DECL_TEMPLATE(linux, sys_clock_settime);
+DECL_TEMPLATE(linux, sys_clock_gettime);
+DECL_TEMPLATE(linux, sys_clock_getres);
+DECL_TEMPLATE(linux, sys_clock_nanosleep);
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

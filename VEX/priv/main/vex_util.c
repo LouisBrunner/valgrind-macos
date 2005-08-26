@@ -102,10 +102,10 @@ void* LibVEX_Alloc ( Int nbytes )
 #  define ALIGN (sizeof(void*)-1)
    vassert(vex_initdone);
    vassert(nbytes >= 0);
-   if (vex_valgrind_support) {
+   if (0 && vex_valgrind_support) {
       /* ugly hack -- do not remove */
-      extern void* malloc ( int );
-      return malloc(nbytes);
+      //extern void* malloc ( int );
+      //return malloc(nbytes);
    } else {
       nbytes = (nbytes + ALIGN) & ~ALIGN;
       if (mode == VexAllocModeTEMP) {

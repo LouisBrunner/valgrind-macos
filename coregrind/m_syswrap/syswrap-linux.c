@@ -1155,6 +1155,76 @@ PRE(sys_capset)
                   ARG2, sizeof(struct __vki_user_cap_data_struct) );
 }
 
+PRE(sys_getuid16)
+{
+   PRINT("sys_getuid16 ( )");
+   PRE_REG_READ0(long, "getuid16");
+}
+
+PRE(sys_setuid16)
+{
+   PRINT("sys_setuid16 ( %d )", ARG1);
+   PRE_REG_READ1(long, "setuid16", vki_old_uid_t, uid);
+}
+
+PRE(sys_getgid16)
+{
+   PRINT("sys_getgid16 ( )");
+   PRE_REG_READ0(long, "getgid16");
+}
+
+PRE(sys_setgid16)
+{
+   PRINT("sys_setgid16 ( %d )", ARG1);
+   PRE_REG_READ1(long, "setgid16", vki_old_gid_t, gid);
+}
+
+PRE(sys_geteuid16)
+{
+   PRINT("sys_geteuid16 ( )");
+   PRE_REG_READ0(long, "geteuid16");
+}
+
+PRE(sys_getegid16)
+{
+   PRINT("sys_getegid16 ( )");
+   PRE_REG_READ0(long, "getegid16");
+}
+
+PRE(sys_setreuid16)
+{
+   PRINT("setreuid16 ( 0x%x, 0x%x )", ARG1, ARG2);
+   PRE_REG_READ2(long, "setreuid16", vki_old_uid_t, ruid, vki_old_uid_t, euid);
+}
+
+PRE(sys_setregid16)
+{
+   PRINT("sys_setregid16 ( %d, %d )", ARG1, ARG2);
+   PRE_REG_READ2(long, "setregid16", vki_old_gid_t, rgid, vki_old_gid_t, egid);
+}
+
+PRE(sys_getgroups16)
+{
+   PRINT("sys_getgroups16 ( %d, %p )", ARG1, ARG2);
+   PRE_REG_READ2(long, "getgroups16", int, size, vki_old_gid_t *, list);
+   if (ARG1 > 0)
+      PRE_MEM_WRITE( "getgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
+}
+POST(sys_getgroups16)
+{
+   vg_assert(SUCCESS);
+   if (ARG1 > 0 && RES > 0)
+      POST_MEM_WRITE( ARG2, RES * sizeof(vki_old_gid_t) );
+}
+
+PRE(sys_setgroups16)
+{
+   PRINT("sys_setgroups16 ( %llu, %p )", (ULong)ARG1, ARG2);
+   PRE_REG_READ2(long, "setgroups16", int, size, vki_old_gid_t *, list);
+   if (ARG1 > 0)
+      PRE_MEM_READ( "setgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
+}
+
 #undef PRE
 #undef POST
 

@@ -2106,12 +2106,6 @@ PRE(sys_getpriority)
    PRE_REG_READ2(long, "getpriority", int, which, int, who);
 }
 
-PRE(sys_setregid16)
-{
-   PRINT("sys_setregid16 ( %d, %d )", ARG1, ARG2);
-   PRE_REG_READ2(long, "setregid16", vki_old_gid_t, rgid, vki_old_gid_t, egid);
-}
-
 // The actual kernel definition of this routine takes a
 // single 64 bit offset argument. This version is for 32 bit
 // platforms only and treats the offset as two values - the
@@ -2812,14 +2806,6 @@ POST(sys_getdents64)
       POST_MEM_WRITE( ARG2, RES );
 }
 
-PRE(sys_getgroups16)
-{
-   PRINT("sys_getgroups16 ( %d, %p )", ARG1, ARG2);
-   PRE_REG_READ2(long, "getgroups16", int, size, vki_old_gid_t *, list);
-   if (ARG1 > 0)
-      PRE_MEM_WRITE( "getgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
-}
-
 POST(sys_getgroups16)
 {
    vg_assert(SUCCESS);
@@ -2862,34 +2848,16 @@ POST(sys_getcwd)
       POST_MEM_WRITE( ARG1, RES );
 }
 
-PRE(sys_geteuid16)
-{
-   PRINT("sys_geteuid16 ( )");
-   PRE_REG_READ0(long, "geteuid16");
-}
-
 PRE(sys_geteuid)
 {
    PRINT("sys_geteuid ( )");
    PRE_REG_READ0(long, "geteuid");
 }
 
-PRE(sys_getegid16)
-{
-   PRINT("sys_getegid16 ( )");
-   PRE_REG_READ0(long, "getegid16");
-}
-
 PRE(sys_getegid)
 {
    PRINT("sys_getegid ( )");
    PRE_REG_READ0(long, "getegid");
-}
-
-PRE(sys_getgid16)
-{
-   PRINT("sys_getgid16 ( )");
-   PRE_REG_READ0(long, "getgid16");
 }
 
 PRE(sys_getgid)
@@ -3013,12 +2981,6 @@ PRE(sys_settimeofday)
       PRE_MEM_READ( "settimeofday(tz)", ARG2, sizeof(struct vki_timezone) );
       /* maybe should warn if tz->tz_dsttime is non-zero? */
    }
-}
-
-PRE(sys_getuid16)
-{
-   PRINT("sys_getuid16 ( )");
-   PRE_REG_READ0(long, "getuid16");
 }
 
 PRE(sys_getuid)
@@ -4908,12 +4870,6 @@ PRE(sys_select)
       PRE_MEM_READ( "select(timeout)", ARG5, sizeof(struct vki_timeval) );
 }
 
-PRE(sys_setgid16)
-{
-   PRINT("sys_setgid16 ( %d )", ARG1);
-   PRE_REG_READ1(long, "setgid16", vki_old_gid_t, gid);
-}
-
 PRE(sys_setgid)
 {
    PRINT("sys_setgid ( %d )", ARG1);
@@ -4924,14 +4880,6 @@ PRE(sys_setsid)
 {
    PRINT("sys_setsid ( )");
    PRE_REG_READ0(long, "setsid");
-}
-
-PRE(sys_setgroups16)
-{
-   PRINT("sys_setgroups16 ( %llu, %p )", (ULong)ARG1, ARG2);
-   PRE_REG_READ2(long, "setgroups16", int, size, vki_old_gid_t *, list);
-   if (ARG1 > 0)
-      PRE_MEM_READ( "setgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
 }
 
 PRE(sys_setgroups)
@@ -4952,12 +4900,6 @@ PRE(sys_setregid)
 {
    PRINT("sys_setregid ( %d, %d )", ARG1, ARG2);
    PRE_REG_READ2(long, "setregid", vki_gid_t, rgid, vki_gid_t, egid);
-}
-
-PRE(sys_setreuid16)
-{
-   PRINT("setreuid16 ( 0x%x, 0x%x )", ARG1, ARG2);
-   PRE_REG_READ2(long, "setreuid16", vki_old_uid_t, ruid, vki_old_uid_t, euid);
 }
 
 PRE(sys_setreuid)
@@ -5004,12 +4946,6 @@ PRE(sys_setrlimit)
          SET_STATUS_Success( 0 );
       }
    }
-}
-
-PRE(sys_setuid16)
-{
-   PRINT("sys_setuid16 ( %d )", ARG1);
-   PRE_REG_READ1(long, "setuid16", vki_old_uid_t, uid);
 }
 
 PRE(sys_setuid)

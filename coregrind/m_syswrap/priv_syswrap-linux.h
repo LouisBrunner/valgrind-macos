@@ -117,6 +117,19 @@ DECL_TEMPLATE(linux, sys_timer_delete);
 DECL_TEMPLATE(linux, sys_capget);
 DECL_TEMPLATE(linux, sys_capset);
 
+// These ones have 32-bit generic equivalents, but the 16-bit versions (they
+// use 16-bit gid_t and uid_t types) seem to be Linux-specific.
+DECL_TEMPLATE(linux, sys_getuid16);
+DECL_TEMPLATE(linux, sys_setuid16);
+DECL_TEMPLATE(linux, sys_getgid16);
+DECL_TEMPLATE(linux, sys_setgid16);
+DECL_TEMPLATE(linux, sys_geteuid16);
+DECL_TEMPLATE(linux, sys_getegid16);
+DECL_TEMPLATE(linux, sys_setreuid16);
+DECL_TEMPLATE(linux, sys_setregid16);
+DECL_TEMPLATE(linux, sys_getgroups16);
+DECL_TEMPLATE(linux, sys_setgroups16);
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

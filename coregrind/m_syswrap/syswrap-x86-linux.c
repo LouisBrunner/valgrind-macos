@@ -1967,8 +1967,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_getpid,            sys_getpid),         // 20
    LINX_(__NR_mount,             sys_mount),          // 21
    LINX_(__NR_umount,            sys_oldumount),      // 22
-   GENX_(__NR_setuid,            sys_setuid16),       // 23 ## P
-   GENX_(__NR_getuid,            sys_getuid16),       // 24 ## P
+   LINX_(__NR_setuid,            sys_setuid16),       // 23 ## P
+   LINX_(__NR_getuid,            sys_getuid16),       // 24 ## P
 //zz 
 //zz    //   (__NR_stime,             sys_stime),          // 25 * (SVr4,SVID,X/OPEN)
    PLAXY(__NR_ptrace,            sys_ptrace),         // 26
@@ -1995,12 +1995,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_prof,              sys_ni_syscall),     // 44
 //zz 
    GENX_(__NR_brk,               sys_brk),            // 45
-   GENX_(__NR_setgid,            sys_setgid16),       // 46
-   GENX_(__NR_getgid,            sys_getgid16),       // 47
+   LINX_(__NR_setgid,            sys_setgid16),       // 46
+   LINX_(__NR_getgid,            sys_getgid16),       // 47
 //zz    //   (__NR_signal,            sys_signal),         // 48 */* (ANSI C)
-   GENX_(__NR_geteuid,           sys_geteuid16),      // 49
+   LINX_(__NR_geteuid,           sys_geteuid16),      // 49
 
-   GENX_(__NR_getegid,           sys_getegid16),      // 50
+   LINX_(__NR_getegid,           sys_getegid16),      // 50
    GENX_(__NR_acct,              sys_acct),           // 51
    LINX_(__NR_umount2,           sys_umount),         // 52
    GENX_(__NR_lock,              sys_ni_syscall),     // 53
@@ -2024,8 +2024,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //zz    //   (__NR_sgetmask,          sys_sgetmask),       // 68 */* (ANSI C)
 //zz    //   (__NR_ssetmask,          sys_ssetmask),       // 69 */* (ANSI C)
 //zz 
-   GENX_(__NR_setreuid,          sys_setreuid16),     // 70
-   GENX_(__NR_setregid,          sys_setregid16),     // 71
+   LINX_(__NR_setreuid,          sys_setreuid16),     // 70
+   LINX_(__NR_setregid,          sys_setregid16),     // 71
 //zz    GENX_(__NR_sigsuspend,        sys_sigsuspend),     // 72
    GENXY(__NR_sigpending,        sys_sigpending),     // 73
 //zz    //   (__NR_sethostname,       sys_sethostname),    // 74 */*
@@ -2036,8 +2036,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_gettimeofday,      sys_gettimeofday),   // 78
    GENX_(__NR_settimeofday,      sys_settimeofday),   // 79
 
-   GENXY(__NR_getgroups,         sys_getgroups16),    // 80
-   GENX_(__NR_setgroups,         sys_setgroups16),    // 81
+   LINXY(__NR_getgroups,         sys_getgroups16),    // 80
+   LINX_(__NR_setgroups,         sys_setgroups16),    // 81
    PLAX_(__NR_select,            old_select),         // 82
    GENX_(__NR_symlink,           sys_symlink),        // 83
 //zz    //   (__NR_oldlstat,          sys_lstat),          // 84 -- obsolete

@@ -440,3 +440,10 @@ FIXED-30BRANCH: TODO
 FIXED-TRUNK:    TODO
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+
+not-in-bugzilla  Fix XML bugs in FAQ  
+
+FIXED-TRUNK:    4528
+FIXED-30BRANCH: TODO
+

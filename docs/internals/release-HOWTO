@@ -94,7 +94,9 @@ For the official release:
   - Update the docs -- both the tarball'd docs, and the online-readable docs.
   - Update www.valgrind.org/downloads/source_code.html.  
   - Update www.valgrind.org/downloads/archive.html.  
+  - Put the release notes at www.valgrind.org/info/release-notes-X.Y.Z.txt.
   - Add a news item to the front page and also to valgrind.org/info/news.html.
+    Include a link to the release notes.
   - Update the "release-date" and "release-version" in php/.htconfx.
   - Other pages that might need updating:  devel/cvs_svn.html.
 

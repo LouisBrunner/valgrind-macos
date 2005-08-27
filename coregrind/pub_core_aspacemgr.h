@@ -80,6 +80,7 @@ extern SysRes VG_(mprotect_native) ( void *start, SizeT length, UInt prot );
 #define SF_CORE     (1 <<  7) // allocated by core on behalf of the client
 #define SF_VALGRIND (1 <<  8) // a valgrind-internal mapping - not in client
 #define SF_CODE     (1 <<  9) // segment contains cached code
+#define SF_DEVICE   (1 << 10) // device mapping;  avoid careless touching
 
 typedef struct _Segment Segment;
 

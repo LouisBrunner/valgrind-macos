@@ -318,26 +318,6 @@ struct vki_sigcontext {
 // From linux-2.6.8.1/include/asm-i386/stat.h
 //----------------------------------------------------------------------
 
-#define VKI_S_IFMT  00170000
-#define VKI_S_IFSOCK 0140000
-#define VKI_S_IFLNK	 0120000
-#define VKI_S_IFREG  0100000
-#define VKI_S_IFBLK  0060000
-#define VKI_S_IFDIR  0040000
-#define VKI_S_IFCHR  0020000
-#define VKI_S_IFIFO  0010000
-#define VKI_S_ISUID  0004000
-#define VKI_S_ISGID  0002000
-#define VKI_S_ISVTX  0001000
-
-#define VKI_S_ISLNK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFLNK)
-#define VKI_S_ISREG(m)	(((m) & VKI_S_IFMT) == VKI_S_IFREG)
-#define VKI_S_ISDIR(m)	(((m) & VKI_S_IFMT) == VKI_S_IFDIR)
-#define VKI_S_ISCHR(m)	(((m) & VKI_S_IFMT) == VKI_S_IFCHR)
-#define VKI_S_ISBLK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFBLK)
-#define VKI_S_ISFIFO(m)	(((m) & VKI_S_IFMT) == VKI_S_IFIFO)
-#define VKI_S_ISSOCK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFSOCK)
-
 struct vki_stat {
 	unsigned long  st_dev;
 	unsigned long  st_ino;

@@ -3,7 +3,7 @@ EXTRA_DIST = \
 	m_replacemalloc.txt \
 	m_syswrap.txt module-structure.txt notes.txt porting-HOWTO.txt \
 	porting-to-ARM.txt \
-	release-HOWTO roadmap \
+	release-HOWTO.txt roadmap.txt \
 	segments-seginfos.txt threads-syscalls-signals.txt \
 	tm-mutexstates.dot tm-threadstates.dot tracking-fn-entry-exit.txt \
 	xml-output.txt

@@ -1,0 +1,31 @@
+-----------------------------------------------------------------------------
+Valgrind roadmap
+-----------------------------------------------------------------------------
+
+This file serves as a rough roadmap for Valgrind development.  It shows a
+minimal set of features we hope to implement for each version.  It's in
+reverse chronological order.
+
+3.1.0
+-----
+Scheduled for around November 2005.
+
+* Get 32-bit and 64-bit programs working smoothly on AMD64 (Tom?).  Several
+  levels of smoothness here, we should aim for at least level 3.
+
+  1. Be able to build a 32-bit valgrind on a 64-bit machine, so you can
+     build and install both, and manually choose between bin/valgrind and
+     bin64/valgrind.
+  2. Build both automatically when installing.
+  3. Choose the appropriate executable automatically at startup just from
+     "valgrind".
+  4. With --trace-children=yes, allow 32-bit programs to exec 64-bit
+     programs and vice versa, and invoke the appropriate Valgrind
+     automatically.
+
+* Get PPC32 working usably with Memcheck (Julian).  Has already improved a
+  lot since.  Get Cachegrind working with it (Nick).
+
+* Rewrite address space manager;  statically link the core with
+  each tool;  remove all glibc dependencies (Julian).
+

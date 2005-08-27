@@ -72,8 +72,6 @@ FIXED-30BRANCH: won't (3.1 fix only)
 
 109345 ppc32 ptrace patch available    should be applied
 
-Should fix for 3.1.  Any fix would be similar to that for 110274.
-
 FIXED-TRUNK:    TODO
 FIXED-30BRANCH: won't (3.1 fix only)
 

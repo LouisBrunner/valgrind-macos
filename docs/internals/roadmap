@@ -1,15 +1,18 @@
------------------------------------------------------------------------------
-Valgrind roadmap
------------------------------------------------------------------------------
+=============================================================================
+Valgrind Roadmap
+=============================================================================
 
 This file serves as a rough roadmap for Valgrind development.  It shows a
 minimal set of features we hope to implement for each version.  It's in
 reverse chronological order.
 
+-----------------------------------------------------------------------------
 3.1.0
------
+-----------------------------------------------------------------------------
 Scheduled for around November 2005.
 
+Definite
+--------
 * Get 32-bit and 64-bit programs working smoothly on AMD64 (Tom?).  Several
   levels of smoothness here, we should aim for at least level 3.
 
@@ -28,4 +31,12 @@ Scheduled for around November 2005.
 
 * Rewrite address space manager;  statically link the core with
   each tool;  remove all glibc dependencies (Julian).
+
+Maybe
+-----
+* Get pthread modelling and Helgrind working again.  Requires function
+  wrapping (Nick).
+
+* Reinstate Addrcheck and/or implement V-bit compression in Memcheck (?).
+
 

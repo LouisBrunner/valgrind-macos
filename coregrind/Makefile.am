@@ -36,6 +36,7 @@ noinst_HEADERS = \
 	coregrind.h		\
 	pub_core_aspacemgr.h	\
 	pub_core_basics.h	\
+	pub_core_coredump.h	\
 	pub_core_cpuid.h	\
 	pub_core_debuginfo.h	\
 	pub_core_debugger.h	\
@@ -95,6 +96,7 @@ valgrind_LDFLAGS=-static -g
 valgrind_LDADD=
 
 stage2_SOURCES = \
+	m_coredump.c \
 	m_cpuid.S \
 	m_debugger.c \
 	m_debuglog.c \

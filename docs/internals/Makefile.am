@@ -1,5 +1,7 @@
 EXTRA_DIST = \
-	3_0_BUGSTATUS 64-bit-cleanness.txt directory-structure.txt \
+	3_0_BUGSTATUS 64-bit-cleanness.txt \
+	darwin-notes.txt darwin-syscalls.txt \
+	directory-structure.txt \
 	m_replacemalloc.txt \
 	m_syswrap.txt module-structure.txt notes.txt porting-HOWTO.txt \
 	porting-to-ARM.txt \

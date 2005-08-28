@@ -1,0 +1,78 @@
+[Julian replying to Greg Parker's notes about darwin/ppc32]
+
+
+> Some notes about porting Valgrind 3.x to Mac OS X / PowerPC:
+>
+> * Darwin always uses a 64-bit off_t, even on 32-bit architectures.
+>   (FreeBSD may also do this.)  Valgrind currently allows off_t to
+>   be pointer sized only, but it doesn't look like there is any
+>   strong dependence on this anywhere.
+
+Ok.  This sounds fairly harmless.
+
+> * dispatch.S should be platform-specific instead of arch-specific.
+>   In particular, Darwin's assembler is not GNU as, so the file's
+>   syntax would be wrong even if everything else were the same.
+>   It should be reasonable to change dispatch-$VG_ARCH.S to
+>   dispatch-$VG_OS-$VG_ARCH.S .
+
+True.
+
+> * Some Darwin syscalls take 7 arguments (in particular, mmap()
+>   with 64-bit off_t offset). Valgrind currently provides
+>   arg1..arg6. I don't see any obvious 8-argument syscalls.
+>   Do other architectures define a 7th syscall argument and
+>   just never use it, or do they have a 6 argument max?
+
+6 args is as many as Linux uses, it seems, and that's why the
+m_syswrap abstractions stop at 6.  But clearly that could be
+extended to 7 with minimal effort.
+
+> * Darwin syscalls return a full 64-bit result, even on 32-bit
+>   architectures. In particular, the lseek() syscall returns
+>   a 64-bit off_t in registers r3 and r4. For syscalls that
+>   return a 32-bit int, the kernel sets the other return
+>   register to zero (or the appropriate sign extension for
+>   signed return types). I don't know how much of an effect
+>   changing this would have.
+
+I think the m_syswrap abstractions should be able to hide that OK.
+
+> * Darwin/PPC syscalls indicate success and failure in an unusual
+>   way: successful calls and failed calls return to different
+>   points. A syscall call usually looks like this:
+>
+>       // ...set up parameters here...
+>       sc     // make the syscall
+>       b BAD  // failed calls return here
+>   GOOD:
+>       nop    // successful calls return here
+>       // ...handle success case here...
+>       blr
+>   BAD:
+>       // ...handle failure case here...
+>       blr
+
+So you're saying that after sc, execution continues either at
+CIA+4 or CIA+8 depending on outcome.  Right?
+
+>   Handling this in VG_(do_syscall_for_client) isn't too bad.
+>   One option is to store the PC of the last simulated `sc`
+>   in the thread state, updating it before each call. Another
+>   is to store a "sc failed" bit in each thread state, updating
+>   it after each call. In either case, the simulated PC after
+>   completion of the simulated `sc` would be adjusted based on
+>   the result of the real `sc` or the syscall wrapper. The
+>   syscall restarter would use the extra thread state to decide
+>   whether to back up on instruction or two.
+>
+>   Handling this in VEX might be more difficult, because VEX
+>   might need to know that `sc` looks like a conditional branch
+>   in basic block analysis.
+
+Probably pretty harmless.  There's all sorts of tricks that can
+be played.  I think it's a non-problem.
+
+>   (Of course, Mach traps use `sc` but don't use the PC-modifying
+>   calling convention. However, Mach traps are an entirely different
+>   ball of wax, and much will be said about them later.)

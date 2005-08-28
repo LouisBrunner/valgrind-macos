@@ -47,7 +47,7 @@ EXTRA_DIST = \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL \
 	valgrind.spec.in valgrind.pc.in \
-	Makefile.all.am Makefile.tool.am Makefile.core-AM_CPPFLAGS.am \
+	Makefile.all.am Makefile.tool.am Makefile.core.am \
 	Makefile.tool-inplace.am \
 	$(VEX_PRIMARY_SOURCES)
 

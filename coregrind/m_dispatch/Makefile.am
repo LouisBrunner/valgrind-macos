@@ -1,5 +1,5 @@
 include $(top_srcdir)/Makefile.all.am
-include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
+include $(top_srcdir)/Makefile.core.am
 
 noinst_LIBRARIES = libdispatch.a
 

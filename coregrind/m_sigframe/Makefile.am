@@ -1,5 +1,5 @@
 include $(top_srcdir)/Makefile.all.am
-include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
+include $(top_srcdir)/Makefile.core.am
 
 # Remember to include all the platform-specific files in the distribution.
 EXTRA_DIST = \

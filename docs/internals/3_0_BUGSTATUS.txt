@@ -326,6 +326,13 @@ FIXED-30BRANCH: 1356
 
 ----------------------------------------------------------------
 
+110770  VEX: Generated files not always updated when making valgrind
+
+FIXED-TRUNK:    partial(4473)
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+
 110830  configuring with --host fails to build 32 bit on 64 bit target
 
 FIXED-TRUNK:    4442
@@ -392,7 +399,7 @@ FIXED-30BRANCH: 1359
 111231  sctp_getladdrs() and sctp_getpaddrs() returns uninitialized
         memory
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    4549
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------

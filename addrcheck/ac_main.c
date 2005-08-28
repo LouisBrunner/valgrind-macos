@@ -707,6 +707,7 @@ static __inline__ void ac_helperc_ACCESS4 ( Addr a, Bool isWrite )
    abits >>= (a & 4);
    abits &= 15;
    PROF_EVENT(66, "");
+   // XXX: Should this be "if (!is_distinguished_sm(sm) && abits == VGM_NIBBLE_VALID)"?
    if (abits == VGM_NIBBLE_VALID) {
       /* Handle common case quickly: a is suitably aligned, is mapped,
          and is addressible.  So just return. */
@@ -727,6 +728,7 @@ static __inline__ void ac_helperc_ACCESS2 ( Addr a, Bool isWrite )
    AcSecMap* sm     = primary_map[sec_no];
    UInt    a_off  = (SM_OFF(a)) >> 3;
    PROF_EVENT(67, "");
+   // XXX: Should this be "if (!is_distinguished_sm(sm) && sm->abits[a_off] == VGM_BYTE_VALID)"?
    if (sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
       return;
@@ -746,6 +748,7 @@ static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
    AcSecMap* sm   = primary_map[sec_no];
    UInt    a_off  = (SM_OFF(a)) >> 3;
    PROF_EVENT(68, "");
+   // XXX: Should this be "if (!is_distinguished_sm(sm) && sm->abits[a_off] == VGM_BYTE_VALID)"?
    if (sm->abits[a_off] == VGM_BYTE_VALID) {
       /* Handle common case quickly. */
       return;

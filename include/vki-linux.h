@@ -587,6 +587,8 @@ __KINLINE struct vki_cmsghdr * vki_cmsg_nxthdr (struct vki_msghdr *__msg, struct
 
 #define VKI_MSG_NOSIGNAL	0x4000	/* Do not generate SIGPIPE */
 
+#define VKI_SOL_SCTP	132
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/in.h
 //----------------------------------------------------------------------
@@ -769,6 +771,73 @@ struct vki_rtentry
 //#endif
 	unsigned long	rt_window;	/* Window clamping 		*/
 	unsigned short	rt_irtt;	/* Initial RTT			*/
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.13-rc5/include/net/sctp/user.h
+//----------------------------------------------------------------------
+
+typedef __vki_s32 vki_sctp_assoc_t;
+
+enum vki_sctp_optname {
+	VKI_SCTP_RTOINFO,
+#define VKI_SCTP_RTOINFO VKI_SCTP_RTOINFO
+	VKI_SCTP_ASSOCINFO,
+#define VKI_SCTP_ASSOCINFO VKI_SCTP_ASSOCINFO
+	VKI_SCTP_INITMSG,
+#define VKI_SCTP_INITMSG VKI_SCTP_INITMSG
+	VKI_SCTP_NODELAY, 	/* Get/set nodelay option. */
+#define VKI_SCTP_NODELAY	VKI_SCTP_NODELAY
+	VKI_SCTP_AUTOCLOSE,
+#define VKI_SCTP_AUTOCLOSE VKI_SCTP_AUTOCLOSE
+	VKI_SCTP_SET_PEER_PRIMARY_ADDR, 
+#define VKI_SCTP_SET_PEER_PRIMARY_ADDR VKI_SCTP_SET_PEER_PRIMARY_ADDR
+	VKI_SCTP_PRIMARY_ADDR,
+#define VKI_SCTP_PRIMARY_ADDR VKI_SCTP_PRIMARY_ADDR
+	VKI_SCTP_ADAPTION_LAYER,      
+#define VKI_SCTP_ADAPTION_LAYER VKI_SCTP_ADAPTION_LAYER
+	VKI_SCTP_DISABLE_FRAGMENTS,
+#define VKI_SCTP_DISABLE_FRAGMENTS VKI_SCTP_DISABLE_FRAGMENTS
+	VKI_SCTP_PEER_ADDR_PARAMS,
+#define VKI_SCTP_PEER_ADDR_PARAMS VKI_SCTP_PEER_ADDR_PARAMS
+	VKI_SCTP_DEFAULT_SEND_PARAM,
+#define VKI_SCTP_DEFAULT_SEND_PARAM VKI_SCTP_DEFAULT_SEND_PARAM
+	VKI_SCTP_EVENTS,
+#define VKI_SCTP_EVENTS VKI_SCTP_EVENTS
+	VKI_SCTP_I_WANT_MAPPED_V4_ADDR,  /* Turn on/off mapped v4 addresses  */
+#define VKI_SCTP_I_WANT_MAPPED_V4_ADDR VKI_SCTP_I_WANT_MAPPED_V4_ADDR
+	VKI_SCTP_MAXSEG, 	/* Get/set maximum fragment. */
+#define VKI_SCTP_MAXSEG 	VKI_SCTP_MAXSEG
+	VKI_SCTP_STATUS,
+#define VKI_SCTP_STATUS VKI_SCTP_STATUS
+	VKI_SCTP_GET_PEER_ADDR_INFO,
+#define VKI_SCTP_GET_PEER_ADDR_INFO VKI_SCTP_GET_PEER_ADDR_INFO
+
+	/* Internal Socket Options. Some of the sctp library functions are 
+	 * implemented using these socket options.
+	 */
+	VKI_SCTP_SOCKOPT_BINDX_ADD = 100,/* BINDX requests for adding addresses. */
+#define VKI_SCTP_SOCKOPT_BINDX_ADD	VKI_SCTP_SOCKOPT_BINDX_ADD
+	VKI_SCTP_SOCKOPT_BINDX_REM, /* BINDX requests for removing addresses. */
+#define VKI_SCTP_SOCKOPT_BINDX_REM	VKI_SCTP_SOCKOPT_BINDX_REM
+	VKI_SCTP_SOCKOPT_PEELOFF, 	/* peel off association. */
+#define VKI_SCTP_SOCKOPT_PEELOFF	VKI_SCTP_SOCKOPT_PEELOFF
+	VKI_SCTP_GET_PEER_ADDRS_NUM, 	/* Get number of peer addresss. */
+#define VKI_SCTP_GET_PEER_ADDRS_NUM	VKI_SCTP_GET_PEER_ADDRS_NUM
+	VKI_SCTP_GET_PEER_ADDRS, 	/* Get all peer addresss. */
+#define VKI_SCTP_GET_PEER_ADDRS	VKI_SCTP_GET_PEER_ADDRS
+	VKI_SCTP_GET_LOCAL_ADDRS_NUM, 	/* Get number of local addresss. */
+#define VKI_SCTP_GET_LOCAL_ADDRS_NUM	VKI_SCTP_GET_LOCAL_ADDRS_NUM
+	VKI_SCTP_GET_LOCAL_ADDRS, 	/* Get all local addresss. */
+#define VKI_SCTP_GET_LOCAL_ADDRS	VKI_SCTP_GET_LOCAL_ADDRS
+	VKI_SCTP_SOCKOPT_CONNECTX, /* CONNECTX requests. */
+#define VKI_SCTP_SOCKOPT_CONNECTX	VKI_SCTP_SOCKOPT_CONNECTX
+};
+
+struct vki_sctp_getaddrs {
+	vki_sctp_assoc_t        assoc_id;
+	int			addr_num;
+	struct vki_sockaddr	*addrs;
 };
 
 //----------------------------------------------------------------------

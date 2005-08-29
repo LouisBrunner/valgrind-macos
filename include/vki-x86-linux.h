@@ -43,6 +43,7 @@ typedef unsigned char __vki_u8;
 typedef __signed__ short __vki_s16;
 typedef unsigned short __vki_u16;
 
+typedef __signed__ int __vki_s32;
 typedef unsigned int __vki_u32;
 
 typedef __signed__ long long __vki_s64;

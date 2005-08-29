@@ -1146,10 +1146,17 @@ ML_(generic_PRE_sys_getsockopt) ( ThreadId tid,
    Addr optval_p  = arg3;
    Addr optlen_p  = arg4;
    /* vg_assert(sizeof(socklen_t) == sizeof(UInt)); */
-   if (optval_p != (Addr)NULL) 
+   if (optval_p != (Addr)NULL) {
       buf_and_len_pre_check ( tid, optval_p, optlen_p,
                               "socketcall.getsockopt(optval)",
                               "socketcall.getsockopt(optlen)" );
+      if (arg1 == VKI_SOL_SCTP &&
+          (arg2 == VKI_SCTP_GET_PEER_ADDRS || arg2 == VKI_SCTP_GET_LOCAL_ADDRS)) {
+         struct vki_sctp_getaddrs *ga = (struct vki_sctp_getaddrs*)arg3;
+         int address_bytes = sizeof(struct vki_sockaddr_in6) * ga->addr_num;
+         PRE_MEM_WRITE( "socketcall.getsockopt(optval.addrs)", (Addr)ga->addrs, address_bytes );
+      }
+   }
 }
 
 void 
@@ -1161,9 +1168,28 @@ ML_(generic_POST_sys_getsockopt) ( ThreadId tid,
    Addr optval_p  = arg3;
    Addr optlen_p  = arg4;
    vg_assert(!res.isError); /* guaranteed by caller */
-   if (optval_p != (Addr)NULL) 
+   if (optval_p != (Addr)NULL) {
       buf_and_len_post_check ( tid, res, optval_p, optlen_p,
                                "socketcall.getsockopt(optlen_out)" );
+      if (arg1 == VKI_SOL_SCTP &&
+          (arg2 == VKI_SCTP_GET_PEER_ADDRS || arg2 == VKI_SCTP_GET_LOCAL_ADDRS)) {
+         struct vki_sctp_getaddrs *ga = (struct vki_sctp_getaddrs*)arg3;
+         struct vki_sockaddr *a = ga->addrs;
+         int i;
+         for (i = 0; i < ga->addr_num; i++) {
+            int sl = 0;
+            if (a->sa_family == VKI_AF_INET)
+               sl = sizeof(struct vki_sockaddr_in);
+            else if (a->sa_family == VKI_AF_INET6)
+               sl = sizeof(struct vki_sockaddr_in6);
+            else {
+               VG_(message)(Vg_UserMsg, "Warning: getsockopt: unhandled address type %d", a->sa_family);
+            }
+            a = (struct vki_sockaddr*)((char*)a + sl);
+         }
+         POST_MEM_WRITE( (Addr)ga->addrs, (char*)a - (char*)ga->addrs );
+      }
+   }
 }
 
 /* ------ */

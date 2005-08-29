@@ -1,288 +1,156 @@
+nb: "n-i-bz" == "not in Bugzilla"
 
-------------------------------------------------------------------------
---- Bugs known prior to 3.0.0                                        ---
-------------------------------------------------------------------------
-
-x86 INT/INT3
-
-Not started.  Seems low priority.
-
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
-
+========================================================================
+=== Bugs targeted for 3.1.0 only                                     ===
+========================================================================
 ----------------------------------------------------------------
-
-87263 x86 segment stuff
-
-Not started.  Seems low priority.
-
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
-
-----------------------------------------------------------------
-
-88116 x86 enter variants assert
-
-Not started.  Seems low priority.
-
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
-
-----------------------------------------------------------------
-
-96542 x86 16-bit pop insns
-
-Not started.  Seems low priority.
-
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
-
-----------------------------------------------------------------
-
-109861 amd64 hangs at startup
-110301 ditto
+109861  amd64 hangs at startup
+110301  ditto
 
 Will fix in 3.1.  Long delay seems to be caused by amd64-Gentoo kernel
 not liking large mmap/munmap requests.
 
-FIXED-TRUNK:    no (background hacking is in progress)
-FIXED-30BRANCH: won't (3.1 fix only)
+FIXED-TRUNK:    TODO (background hacking is in progress)
 
 ----------------------------------------------------------------
-
-109313 x86 cmpxchg8b
-110505 ditto
-
-This ought to be fixed for 3.0.1.
-
-FIXED-TRUNK:    done(1331, 4390 contains regtest 
-                           + mistaken commit of this file)
-FIXED-30BRANCH: done(1337)
-
-----------------------------------------------------------------
-
-109323 ppc32: dispatch.S uses Altivec insn, which doesn't work on POWER. 
+109323  ppc32: dispatch.S uses Altivec insn, which doesn't work on POWER. 
 
 Should fix for 3.1.  Any fix would be similar to that for 110274.
 
 FIXED-TRUNK:    TODO
-FIXED-30BRANCH: won't (3.1 fix only)
 
 ----------------------------------------------------------------
-
 109345 ppc32 ptrace patch available    should be applied
 
 FIXED-TRUNK:    TODO
-FIXED-30BRANCH: won't (3.1 fix only)
 
 ----------------------------------------------------------------
-
-CrispinF x86 %eflags.ac problem
-
-FIXED-TRUNK:    yes (1319/4334)
-FIXED-30BRANCH: yes (1326, and 4334 was copied across as part of 4364)
-
-----------------------------------------------------------------
-
-Give more info about seginfo dropping.
-
-FIXED-TRUNK:    yes (4425)
-FIXED-30BRANCH: no
-
-------------------------------------------------------------------------
---- Bugs reported after 3.0.0 shipped                                ---
-------------------------------------------------------------------------
-
-110102 dis_op2_E_G(amd64)
-
-FIXED-TRUNK:    yes (1318)
-FIXED-30BRANCH: yes (1325)
-
-----------------------------------------------------------------
-
-110183 tail of page with _end
+110183  tail of page with _end
 
 Could be a problem for glibc developers.  Consider fixing.
 
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
+FIXED-TRUNK:    TODO?
 
 ----------------------------------------------------------------
-
-110201 x86 FXTRACT
-
-Could fix if important.
-
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
-
-----------------------------------------------------------------
-
-110202 x86 sys_waitpid(#286)
-
-FIXED-TRUNK:    fixed(r4329)
-FIXED-30BRANCH: fixed(r4332)
-
-----------------------------------------------------------------
-
-110203 clock_getres(,0)
-
-FIXED-TRUNK:    fixed(r4328)
-FIXED-30BRANCH: fixed(r4332)
-
-----------------------------------------------------------------
-
 110204 fmemopen false +ve
 
 Seems low priority.
 
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
+FIXED-TRUNK:    TODO?
 
 ----------------------------------------------------------------
-
 110205 sigcancel unwind fails
 
 Tom is considering this.  It would be nice to fix it for 3.1 but
 status currently unclear.
 
-FIXED-TRUNK:    1320 - vex impl of sysenter
-                4337 - minimal Valgrind-side; does not do anything
-FIXED-30BRANCH: 
+FIXED-TRUNK:    vex:1320 - vex impl of sysenter
+                vg:4337 - minimal Valgrind-side; does not do anything
 
 ----------------------------------------------------------------
-
-110207 mpn accuracy
-
-Can't be easily fixed (x86 rounding/precision problem)
-+ not convinced it's a big problem
-
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
-
-----------------------------------------------------------------
-
-110208 execve fail wrong retval
-
-FIXED-TRUNK:    yes (r4330)
-FIXED-30BRANCH: yes (r4332)
-
-----------------------------------------------------------------
-
-110209 --show-emwarns misses some
-
-Tom says: The math/test-fenv.c file in the glibc source is the code in
-question and I can reproduce it with that code.
-
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
-
-----------------------------------------------------------------
-
-110240 x86 FP differences
-
-really is the same as 110207; same comments apply
-
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
-
-----------------------------------------------------------------
-
-110274 SSE1 now mandatory for x86
-
-FIXED-TRUNK:    yes(1321/4339)
-FIXED-30BRANCH: yes(1327/4374)
-
-----------------------------------------------------------------
-
-110388 amd64 0xDD 0xD1
-
-FIXED-TRUNK:    yes(1322)
-FIXED-30BRANCH: yes(1328)
-
-----------------------------------------------------------------
-
-110464 amd64 0xDC 0x1D FCOMP
-
-FIXED-TRUNK:    yes(1323)
-FIXED-30BRANCH: yes(1329)
-
-----------------------------------------------------------------
-
-110478 amd64 0xF 0xD PREFETCH
-
-FIXED-TRUNK:    yes(1324)
-FIXED-30BRANCH: yes(1330)
-
-----------------------------------------------------------------
-
-XML <unique> printing wrong
-
-FIXED-TRUNK:    4355,4357,4358
-FIXED-30BRANCH: 4585
-
-----------------------------------------------------------------
-
-Dirk r4359 (amd64 syscalls from trunk)
-
-FIXED-TRUNK:    
-FIXED-30BRANCH: done(4359)
-
-----------------------------------------------------------------
-
-Dirk r4360 (upd email addrs from trunk)
-
-FIXED-TRUNK:    
-FIXED-30BRANCH: done(4360)
-
-----------------------------------------------------------------
-
-110536/7/8/9/40 Valgrind crashes when trying to realloc memory
+110536  Valgrind crashes when trying to realloc memory
 
 Uninvestigated.
 
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
+FIXED-TRUNK:    TODO
 
 ----------------------------------------------------------------
+n-i-bz  Give more info about seginfo dropping.
 
+FIXED-TRUNK:    vg:4425
+
+
+========================================================================
+=== Bugs targeted for 3.1.0 and 3.0.1                                ===
+========================================================================
+----------------------------------------------------------------
+101204  noisy warning
+
+FIXED-TRUNK:    vg:4511
+FIXED-30BRANCH: vg:4561
+
+----------------------------------------------------------------
+109313 x86 cmpxchg8b
+
+FIXED-TRUNK:    vex:1331, vg:4390 contains regtest 
+                      + mistaken commit of this file)
+FIXED-30BRANCH: vex:1337
+
+----------------------------------------------------------------
+110102 dis_op2_E_G(amd64)
+
+FIXED-TRUNK:    vex:1318
+FIXED-30BRANCH: vex:1325
+
+----------------------------------------------------------------
+110202 x86 sys_waitpid(#286)
+
+FIXED-TRUNK:    vg:4329
+FIXED-30BRANCH: vg:4332
+
+----------------------------------------------------------------
+110203 clock_getres(,0)
+
+FIXED-TRUNK:    vg:4328
+FIXED-30BRANCH: vg:4332
+
+----------------------------------------------------------------
+110208 execve fail wrong retval
+
+FIXED-TRUNK:    vg:4330
+FIXED-30BRANCH: vg:4332
+
+----------------------------------------------------------------
+110274 SSE1 now mandatory for x86
+
+FIXED-TRUNK:    vex:1321, vg:4339
+FIXED-30BRANCH: vex:1327, vg:4374
+
+----------------------------------------------------------------
+110388  amd64 0xDD 0xD1
+
+FIXED-TRUNK:    vex:1322
+FIXED-30BRANCH: vex:1328
+
+----------------------------------------------------------------
+110464 amd64 0xDC 0x1D FCOMP
+
+FIXED-TRUNK:    vex:1323
+FIXED-30BRANCH: vex:1329
+
+----------------------------------------------------------------
+110478 amd64 0xF 0xD PREFETCH
+
+FIXED-TRUNK:    vex:1324
+FIXED-30BRANCH: vex:1330
+
+----------------------------------------------------------------
 110591 amd64: rdtsc not implemented properly
 
-Under consideration. (Also afflicts x86)
+(Also afflicts x86)
 
-FIXED-TRUNK:    1344 (x86), 1346 (amd64).
-FIXED-30BRANCH: 1354 (x86), 1355 (amd64).
-
-----------------------------------------------------------------
-
-Nick r4384 (stub implementations of Addrcheck and Helgrind)
-
-FIXED-TRUNK:    done(4384)
-FIXED-30BRANCH: done(4397)
+FIXED-TRUNK:    vex:1344 (x86), vex:1346 (amd64).
+FIXED-30BRANCH: vex:1354 (x86), vex:1355 (amd64).
 
 ----------------------------------------------------------------
-
 110652  AMD64 valgrind crashes on cwtd instruction
 
-FIXED-TRUNK:    done(1333)
-FIXED-30BRANCH: done(1335)
+FIXED-TRUNK:    vex:1333
+FIXED-30BRANCH: vex:1335
 
 ----------------------------------------------------------------
-
 110653  AMD64 valgrind crashes on sarb $0x4,foo(%rip) instruction
 
-FIXED-TRUNK:    done(1334)
-FIXED-30BRANCH: done(1336)
+FIXED-TRUNK:    vex:1334
+FIXED-30BRANCH: vex:1336
 
 ----------------------------------------------------------------
-
 110656  PATH=/usr/bin::/bin valgrind foobar stats ./fooba
 
-FIXED-TRUNK:    done(4386)
-FIXED-30BRANCH: done(4395)
+FIXED-TRUNK:    vg:4386
+FIXED-30BRANCH: vg:4395
 
 ----------------------------------------------------------------
-
 110657  Small test fixes
 
 (1) Filter out L3 cache warning messages causing problems
@@ -290,173 +158,235 @@ FIXED-30BRANCH: done(4395)
 
 I suppose it would be good to apply these.  They seem low risk.
 
-FIXED-TRUNK:    4429
-FIXED-30BRANCH: 4458
+FIXED-TRUNK:    vg:4429
+FIXED-30BRANCH: vg:4458
 
 ----------------------------------------------------------------
+110671  vex x86->IR: unhandled instruction bytes: 0xF3 0xC3 (rep ret)
 
+FIXED-TRUNK:    vex:1332
+FIXED-30BRANCH: vex:1338
+
+----------------------------------------------------------------
+110685  amd64->IR: unhandled instruction bytes: 0xE1 0x56 (loope Jb)
+
+FIXED-TRUNK:    vex:1349
+FIXED-30BRANCH: vex:1356
+
+----------------------------------------------------------------
+110830  configuring with --host fails to build 32 bit on 64 bit target
+
+FIXED-TRUNK:    vg:4442
+FIXED-30BRANCH: vg:4459
+
+----------------------------------------------------------------
+110875  Assertion when execve fails
+
+FIXED-TRUNK:    vg:4435
+FIXED-30BRANCH: vg:4457
+
+----------------------------------------------------------------
+110898  opteron instructions missing: btq sbbq btsq btrq bsfq
+
+FIXED-TRUNK:    vex:1352
+FIXED-30BRANCH: vex:1357
+
+----------------------------------------------------------------
+110954  x86->IR: unhandled instruction bytes: 0xE2 0xF6 (loop Jb)
+
+FIXED-TRUNK:    vex:1343
+FIXED-30BRANCH: vex:1358
+
+----------------------------------------------------------------
+111006  bogus warnings from linuxthreads
+
+FIXED-TRUNK:    vg:4469, vg:4470
+FIXED-30BRANCH: vg:4497, vg:4498
+
+----------------------------------------------------------------
+111090  Internal Error running Massif
+
+FIXED-TRUNK:    vg:4492
+FIXED-30BRANCH: vg:4509
+
+----------------------------------------------------------------
+111092  x86: dis_Grp2(Reg): unhandled case(x86) 
+
+FIXED-TRUNK:    vex:1341
+FIXED-30BRANCH: vex:1359
+
+----------------------------------------------------------------
+111102 (comment #4)   Fixed 64-bit unclean "silly arg" message
+
+FIXED-TRUNK:    vg:4476
+FIXED-30BRANCH: vg:4502
+
+----------------------------------------------------------------
+111231  sctp_getladdrs() and sctp_getpaddrs() returns uninitialized
+        memory
+
+FIXED-TRUNK:    vg:4549
+FIXED-30BRANCH: vg:4563
+
+----------------------------------------------------------------
+111513  Illegal opcode for SSE instruction (x86 movups)
+NB.  Bug reporter did not yet verify that the fix works.
+
+FIXED-TRUNK:    vex:1362
+FIXED-30BRANCH: vex:1367
+
+----------------------------------------------------------------
+111555  VEX/Makefile: CC is set to gcc
+
+FIXED-TRUNK:    vex:1364, vg:4559
+FIXED-30BRANCH: vex:1365, vg:4560
+
+----------------------------------------------------------------
+CrispinF x86 %eflags.ac problem
+
+FIXED-TRUNK:    vex:1319/vg:4334
+FIXED-30BRANCH: vex:1326, and vg:4334 was copied across as part of vg:4364
+
+----------------------------------------------------------------
+n-i-bz  XML <unique> printing wrong
+
+FIXED-TRUNK:    vg:4355,vg:4357,vg:4358
+FIXED-30BRANCH: vg:4585
+
+----------------------------------------------------------------
+n-i-bz  Dirk r4359 (amd64 syscalls from trunk)
+
+FIXED-TRUNK:    
+FIXED-30BRANCH: vg:4359
+
+----------------------------------------------------------------
+n-i-bz  Dirk r4360 (upd email addrs from trunk)
+
+FIXED-TRUNK:    
+FIXED-30BRANCH: vg:4360
+
+----------------------------------------------------------------
+n-i-bz  Nick r4384 (stub implementations of Addrcheck and Helgrind)
+
+FIXED-TRUNK:    vg:4384
+FIXED-30BRANCH: vg:4397
+
+----------------------------------------------------------------
+n-i-bz  Nick (Cachegrind should not assert when it encounters a client
+request.)
+
+FIXED-TRUNK:    vg:4391
+FIXED-30BRANCH: vg:4393
+
+----------------------------------------------------------------
+Updates to Memcheck manual
+
+FIXED-TRUNK:    vg:4419, vg:4427, vg:4434
+FIXED-30BRANCH: vg:4455
+
+----------------------------------------------------------------
+Fixed broken malloc_usable_size()
+
+FIXED-TRUNK:    vg:4439
+FIXED-30BRANCH: vg:4453
+
+----------------------------------------------------------------
+Make suppressions work for "???" lines in stacktraces.
+
+FIXED-TRUNK:    vg:4447
+FIXED-30BRANCH: vg:4451
+
+----------------------------------------------------------------
+n-i-bz  vex x86->IR: unhandled instruction bytes: 0x14 0x0
+
+FIXED-TRUNK:    vex:1350 (basic fix), vex:1351 (x86 adc/sbb flags thunk fix),
+                                  vex:1353 (amd64 adc/sbb flags thunk fix)
+FIXED-30BRANCH: vex:1360
+
+----------------------------------------------------------------
+n-i-bz  minor umount/fcntl wrapper fixes
+
+FIXED-TRUNK:    vg:4487
+FIXED-30BRANCH: vg:4562
+
+----------------------------------------------------------------
+n-i-bz  Fix XML bugs in FAQ  
+
+FIXED-TRUNK:    vg:4528
+FIXED-30BRANCH: vg:4564
+
+
+========================================================================
+=== Bugs targeted for 3.1.0 and 3.0.2                                ===
+========================================================================
+----------------------------------------------------------------
+110209 --show-emwarns misses some
+
+Tom says: The math/test-fenv.c file in the glibc source is the code in
+question and I can reproduce it with that code.
+
+FIXED-TRUNK:    TODO?
+FIXED-30BRANCH: TODO?
+
+----------------------------------------------------------------
+110770  VEX: Generated files not always updated when making valgrind
+
+FIXED-TRUNK:    TODO... partial(vg:4473)
+FIXED-30BRANCH: TODO
+
+
+
+========================================================================
+=== Bugs of note not targeted for any particular release
+========================================================================
+----------------------------------------------------------------
+n-i-bz  x86 INT/INT3
+
+Not started.  Seems low priority.
+
+FIXED-TRUNK:    TODO?
+
+----------------------------------------------------------------
+87263  x86 segment stuff
+
+Not started.  Seems low priority.
+
+FIXED-TRUNK:    TODO?
+
+----------------------------------------------------------------
+88116 x86 enter variants assert
+
+Not started.  Seems low priority.
+
+FIXED-TRUNK:    TODO?
+
+----------------------------------------------------------------
+96542 x86 16-bit pop insns
+
+Not started.  Seems low priority.
+
+FIXED-TRUNK:    TODO?
+
+----------------------------------------------------------------
+110201 x86 FXTRACT
+
+Could fix if important.
+
+FIXED-TRUNK:    TODO?
+
+----------------------------------------------------------------
+110207 mpn accuracy +
+110240 x86 FP differences
+
+Can't be easily fixed (x86 rounding/precision problem)
++ not convinced it's a big problem
+
+FIXED-TRUNK:    TODO?
+
+----------------------------------------------------------------
 110669  valgrind attach to gdb and quitting gdb hangs valgrind
 
 Not clear if this is really a Valgrind bug.
 
-FIXED-TRUNK:    no
-FIXED-30BRANCH: no
-
-----------------------------------------------------------------
-
-110671  vex x86->IR: unhandled instruction bytes: 0xF3 0xC3 (rep ret)
-
-FIXED-TRUNK:    done(1332)
-FIXED-30BRANCH: done(1338)
-
-----------------------------------------------------------------
-
-Nick (Cachegrind should not assert when it encounters a client
-request.)
-
-FIXED-TRUNK:    done(4391)
-FIXED-30BRANCH: done(4393)
-
-----------------------------------------------------------------
-
-110685  amd64->IR: unhandled instruction bytes: 0xE1 0x56 (loope Jb)
-
-FIXED-TRUNK:    1349
-FIXED-30BRANCH: 1356
-
-----------------------------------------------------------------
-
-110770  VEX: Generated files not always updated when making valgrind
-
-FIXED-TRUNK:    partial(4473)
-FIXED-30BRANCH: TODO
-
-----------------------------------------------------------------
-
-110830  configuring with --host fails to build 32 bit on 64 bit target
-
-FIXED-TRUNK:    4442
-FIXED-30BRANCH: 4459
-
-----------------------------------------------------------------
-
-110875  Assertion when execve fails
-
-FIXED-TRUNK:    4435
-FIXED-30BRANCH: 4457
-
-----------------------------------------------------------------
-
-Updates to Memcheck manual
-
-FIXED-TRUNK:    4419, 4427, 4434
-FIXED-30BRANCH: 4455
-
-----------------------------------------------------------------
-
-Fixed broken malloc_usable_size()
-
-FIXED-TRUNK:    4439
-FIXED-30BRANCH: 4453
-
-----------------------------------------------------------------
-
-110898  opteron instructions missing: btq sbbq btsq btrq bsfq
-
-FIXED-TRUNK:    1352
-FIXED-30BRANCH: 1357
-
-----------------------------------------------------------------
-
-110954  x86->IR: unhandled instruction bytes: 0xE2 0xF6 (loop Jb)
-
-FIXED-TRUNK:    1343
-FIXED-30BRANCH: 1358
-
-----------------------------------------------------------------
-
-Make suppressions work for "???" lines in stacktraces.
-
-FIXED-TRUNK:    4447
-FIXED-30BRANCH: 4451
-
-----------------------------------------------------------------
-
-111006  bogus warnings from linuxthreads
-
-FIXED-TRUNK:    4469, 4470
-FIXED-30BRANCH: 4497, 4498
-
-----------------------------------------------------------------
-
-111092  x86: dis_Grp2(Reg): unhandled case(x86) 
-
-FIXED-TRUNK:    1341
-FIXED-30BRANCH: 1359
-
-----------------------------------------------------------------
-
-111231  sctp_getladdrs() and sctp_getpaddrs() returns uninitialized
-        memory
-
-FIXED-TRUNK:    4549
-FIXED-30BRANCH: 4563
-
-----------------------------------------------------------------
-
-111102 (comment #4)   Fixed 64-bit unclean "silly arg" message
-
-FIXED-TRUNK:    4476
-FIXED-30BRANCH: 4502
-
-----------------------------------------------------------------
-
-not-in-bugzilla  vex x86->IR: unhandled instruction bytes: 0x14 0x0
-
-FIXED-TRUNK:    1350 (basic fix), 1351 (x86 adc/sbb flags thunk fix),
-                                  1353 (amd64 adc/sbb flags thunk fix)
-FIXED-30BRANCH: 1360
-
-----------------------------------------------------------------
-
-not-in-bugzilla  minor umount/fcntl wrapper fixes
-
-FIXED-TRUNK:    4487
-FIXED-30BRANCH: 4562
-
-----------------------------------------------------------------
-
-111090  Internal Error running Massif
-
-FIXED-TRUNK:    4492
-FIXED-30BRANCH: 4509
-
-----------------------------------------------------------------
-
-101204  noisy warning
-
-FIXED-TRUNK:    4511
-FIXED-30BRANCH: 4561
-
-----------------------------------------------------------------
-
-111513  Illegal opcode for SSE instruction (x86 movups)
-NB.  Bug reporter did not yet verify that the fix works.
-
-FIXED-TRUNK:    1362
-FIXED-30BRANCH: 1367
-
-----------------------------------------------------------------
-
-111555  VEX/Makefile: CC is set to gcc
-
-FIXED-TRUNK:    1364, 4559
-FIXED-30BRANCH: 1365, 4560
-
-----------------------------------------------------------------
-
-not-in-bugzilla  Fix XML bugs in FAQ  
-
-FIXED-TRUNK:    4528
-FIXED-30BRANCH: 4564
+FIXED-TRUNK:    TODO?
 

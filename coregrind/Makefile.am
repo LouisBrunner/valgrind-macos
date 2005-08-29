@@ -202,13 +202,13 @@ stage2.lds: Makefile
 	|| rm -f $@
 
 @VEX_DIR@/libvex.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ libvex.a EXTRA_CFLAGS="@ARCH_CORE_AM_CFLAGS@ @PIE_AM_CFLAGS@"
+	$(MAKE) -C @VEX_DIR@ CC=$(CC) libvex.a EXTRA_CFLAGS="@ARCH_CORE_AM_CFLAGS@ @PIE_AM_CFLAGS@"
 
 @VEX_DIR@/priv/main/vex_svnversion.h: $(wildcard @VEX_DIR@/.svn/entries)
-	$(MAKE) -C @VEX_DIR@ version
+	$(MAKE) -C @VEX_DIR@ CC=$(CC) version
 
 clean-local:
-	$(MAKE) -C @VEX_DIR@ clean
+	$(MAKE) -C @VEX_DIR@ CC=$(CC) clean
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 

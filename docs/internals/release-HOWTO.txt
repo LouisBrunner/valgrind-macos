@@ -103,6 +103,8 @@ For the official release:
 - Change release number in AC_INIT() in configure.in to "X.Y.Z.SVN", where
   X.Y.Z is one more than the release just done.
 
+- Add a new section to docs/internals/X_Y_BUGSTATUS.txt.
+
 - Announce the release:
   - Email valgrind-users, valgrind-developers, and valgrind-announce.
   - Email Linux Weekly News.

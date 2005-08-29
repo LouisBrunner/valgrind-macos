@@ -179,26 +179,6 @@ void vpanic ( HChar* str )
    New code for vex_util.c should go above this point. */
 #include <stdarg.h>
 
-/* ---------------------------------------------------------------------
-   printf implementation.  The key function, vg_vprintf(), emits chars 
-   into a caller-supplied function.  Distantly derived from:
-
-      vprintf replacement for Checker.
-      Copyright 1993, 1994, 1995 Tristan Gingold
-      Written September 1993 Tristan Gingold
-      Tristan Gingold, 8 rue Parmentier, F-91120 PALAISEAU, FRANCE
-
-   (Checker itself was GPL'd.)
-   ------------------------------------------------------------------ */
-
-static HChar vex_toupper ( HChar c )
-{
-   if (c >= 'a' && c <= 'z')
-      return toHChar(c + ('A' - 'a'));
-   else
-      return c;
-}
-
 static Int vex_strlen ( const HChar* str )
 {
    Int i = 0;
@@ -218,252 +198,211 @@ Bool vex_streq ( const HChar* s1, const HChar* s2 )
    }
 }
 
-/* Some flags.  */
-#define VG_MSG_SIGNED    1 /* The value is signed. */
-#define VG_MSG_ZJUSTIFY  2 /* Must justify with '0'. */
-#define VG_MSG_LJUSTIFY  4 /* Must justify on the left. */
-#define VG_MSG_PAREN     8 /* Parenthesize if present (for %y) */
-#define VG_MSG_COMMA    16 /* Add commas to numbers (for %d, %u) */
 
-/* Copy a string into the buffer. */
-static UInt
-myvprintf_str ( void(*send)(HChar), Int flags, Int width, HChar* str, 
-                Bool capitalise )
+/* Convert N0 into ascii in BUF, which is assumed to be big enough (at
+   least 67 bytes long).  Observe BASE, SYNED and HEXCAPS. */
+static
+void convert_int ( /*OUT*/HChar* buf, Long n0, 
+                   Int base, Bool syned, Bool hexcaps )
 {
-#  define MAYBE_TOUPPER(ch) toHChar(capitalise ? vex_toupper(ch) : (ch))
-   UInt ret = 0;
-   Int i, extra;
-   Int len = vex_strlen(str);
+   ULong u0;
+   HChar c;
+   Bool minus = False;
+   Int i, j, bufi = 0;
+   buf[bufi] = 0;
 
-   if (width == 0) {
-      ret += len;
-      for (i = 0; i < len; i++)
-         send(MAYBE_TOUPPER(str[i]));
-      return ret;
-   }
-
-   if (len > width) {
-      ret += width;
-      for (i = 0; i < width; i++)
-         send(MAYBE_TOUPPER(str[i]));
-      return ret;
-   }
-
-   extra = width - len;
-   if (flags & VG_MSG_LJUSTIFY) {
-      ret += extra;
-      for (i = 0; i < extra; i++)
-         send(' ');
-   }
-   ret += len;
-   for (i = 0; i < len; i++)
-      send(MAYBE_TOUPPER(str[i]));
-   if (!(flags & VG_MSG_LJUSTIFY)) {
-      ret += extra;
-      for (i = 0; i < extra; i++)
-         send(' ');
-   }
-
-#  undef MAYBE_TOUPPER
-
-   return ret;
-}
-
-/* Write P into the buffer according to these args:
- *  If SIGN is true, p is a signed.
- *  BASE is the base.
- *  If WITH_ZERO is true, '0' must be added.
- *  WIDTH is the width of the field.
- */
-static UInt
-myvprintf_int64 ( void(*send)(HChar), Int flags, Int base, Int width, ULong p)
-{
-   HChar buf[40];
-   Int   ind = 0;
-   Int   i, nc = 0;
-   Bool  neg = False;
-   HChar *digits = "0123456789ABCDEF";
-   UInt  ret = 0;
-
-   if (base < 2 || base > 16)
-      return ret;
- 
-   if ((flags & VG_MSG_SIGNED) && (Long)p < 0) {
-      p   = - (Long)p;
-      neg = True;
-   }
-
-   if (p == 0)
-      buf[ind++] = '0';
-   else {
-      while (p > 0) {
-         if ((flags & VG_MSG_COMMA) && 10 == base &&
-             0 == (ind-nc) % 3 && 0 != ind) 
-         {
-            buf[ind++] = ',';
-            nc++;
-         }
-         buf[ind++] = digits[p % base];
-         p /= base;
+   if (syned) {
+      if (n0 < 0) {
+         minus = True;
+         u0 = (ULong)(-n0);
+      } else {
+         u0 = (ULong)(n0);
       }
+   } else {
+      u0 = (ULong)n0;
    }
 
-   if (neg)
-      buf[ind++] = '-';
-
-   if (width > 0 && !(flags & VG_MSG_LJUSTIFY)) {
-      for(; ind < width; ind++) {
-         vassert(ind < 39);
-         buf[ind] = toHChar((flags & VG_MSG_ZJUSTIFY) ? '0': ' ');
-      }
+   while (1) {
+     buf[bufi++] = '0' + (HChar)(u0 % base);
+     u0 /= base;
+     if (u0 == 0) break;
    }
+   if (minus)
+      buf[bufi++] = '-';
 
-   /* Reverse copy to buffer.  */
-   ret += ind;
-   for (i = ind -1; i >= 0; i--) {
-      send(buf[i]);
-   }
-   if (width > 0 && (flags & VG_MSG_LJUSTIFY)) {
-      for(; ind < width; ind++) {
-         ret++;
-         send(' ');  // Never pad with zeroes on RHS -- changes the value!
-      }
-   }
-   return ret;
-}
+   buf[bufi] = 0;
+   for (i = 0; i < bufi; i++)
+      if (buf[i] > '9') 
+         buf[i] += ((hexcaps ? 'A' : 'a') - '9' - 1);
 
-
-/* A simple vprintf().  */
-static 
-UInt vprintf_wrk ( void(*send)(HChar), const HChar *format, va_list vargs )
-{
-   UInt ret = 0;
-   int i;
-   int flags;
-   int width;
-   Bool is_long;
-
-   /* We assume that vargs has already been initialised by the 
-      caller, using va_start, and that the caller will similarly
-      clean up with va_end.
-   */
-
-   for (i = 0; format[i] != 0; i++) {
-      if (format[i] != '%') {
-         send(format[i]);
-         ret++;
-         continue;
-      }
+   i = 0;
+   j = bufi-1;
+   while (i <= j) {
+      c = buf[i];
+      buf[i] = buf[j];
+      buf[j] = c;
       i++;
-      /* A '%' has been found.  Ignore a trailing %. */
-      if (format[i] == 0)
+      j--;
+   }
+}
+
+
+/* A half-arsed and buggy, but good-enough, implementation of
+   printf. */
+static
+UInt vprintf_wrk ( void(*sink)(HChar),
+                   HChar* format,
+                   va_list ap )
+{
+#  define PUT(_ch)  \
+      do { sink(_ch); nout++; } \
+      while (0)
+
+#  define PAD(_n) \
+      do { Int _qq = (_n); for (; _qq > 0; _qq--) PUT(padchar); } \
+      while (0)
+
+#  define PUTSTR(_str) \
+      do { HChar* _qq = _str; for (; *_qq; _qq++) PUT(*_qq); } \
+      while (0)
+
+   HChar* saved_format;
+   Bool   longlong, ljustify;
+   HChar  padchar;
+   Int    fwidth, nout, len1, len2, len3;
+   HChar  intbuf[100];  /* big enough for a 64-bit # in base 2 */
+
+   nout = 0;
+   while (1) {
+
+      if (!format)
          break;
-      if (format[i] == '%') {
-         /* `%%' is replaced by `%'. */
-         send('%');
-         ret++;
+      if (*format == 0) 
+         break;
+
+      if (*format != '%') {
+         PUT(*format); 
+         format++;
          continue;
       }
-      flags = 0;
-      is_long = False;
-      width = 0; /* length of the field. */
-      if (format[i] == '(') {
-         flags |= VG_MSG_PAREN;
-         i++;
+
+      saved_format = format;
+      longlong = False;
+      ljustify = False;
+      padchar = ' ';
+      fwidth = 0;
+      format++;
+
+      if (*format == '-') {
+         format++;
+         ljustify = True;
       }
-      /* If ',' follows '%', commas will be inserted. */
-      if (format[i] == ',') {
-         flags |= VG_MSG_COMMA;
-         i++;
+      if (*format == '0') {
+         format++;
+         padchar = '0';
       }
-      /* If '-' follows '%', justify on the left. */
-      if (format[i] == '-') {
-         flags |= VG_MSG_LJUSTIFY;
-         i++;
+      while (*format >= '0' && *format <= '9') {
+         fwidth = fwidth * 10 + (*format - '0');
+         format++;
       }
-      /* If '0' follows '%', pads will be inserted. */
-      if (format[i] == '0') {
-         flags |= VG_MSG_ZJUSTIFY;
-         i++;
-      }
-      /* Compute the field length. */
-      while (format[i] >= '0' && format[i] <= '9') {
-         width *= 10;
-         width += format[i++] - '0';
-      }
-      while (format[i] == 'l') {
-         i++;
-         is_long = True;
+      if (*format == 'l') {
+         format++;
+         if (*format == 'l') {
+            format++;
+           longlong = True;
+         }
       }
 
-      switch (format[i]) {
-         case 'd': /* %d */
-            flags |= VG_MSG_SIGNED;
-            if (is_long)
-               ret += myvprintf_int64(send, flags, 10, width, 
-                                      (ULong)(va_arg (vargs, Long)));
-            else
-               ret += myvprintf_int64(send, flags, 10, width, 
-                                      (ULong)(va_arg (vargs, Int)));
-            break;
-         case 'u': /* %u */
-            if (is_long)
-               ret += myvprintf_int64(send, flags, 10, width, 
-                                      (ULong)(va_arg (vargs, ULong)));
-            else
-               ret += myvprintf_int64(send, flags, 10, width, 
-                                      (ULong)(va_arg (vargs, UInt)));
-            break;
-         case 'p': /* %p */
-            ret += 2;
-            send('0');
-            send('x');
-            ret += myvprintf_int64(send, flags, 16, width, 
-                                   (ULong)((HWord)va_arg (vargs, void *)));
-            break;
-         case 'x': /* %x */
-            if (is_long)
-               ret += myvprintf_int64(send, flags, 16, width, 
-                                      (ULong)(va_arg (vargs, ULong)));
-            else
-               ret += myvprintf_int64(send, flags, 16, width, 
-                                      (ULong)(va_arg (vargs, UInt)));
-            break;
-         case 'c': /* %c */
-            ret++;
-            send(toHChar(va_arg (vargs, int)));
-            break;
-         case 's': case 'S': { /* %s */
-            char *str = va_arg (vargs, char *);
-            if (str == (char*) 0) str = "(null)";
-            ret += myvprintf_str(send, flags, width, str, 
-                                 toBool(format[i]=='S'));
+      switch (*format) {
+         case 's': {
+            HChar* str = va_arg(ap, HChar*);
+            if (str == NULL)
+               str = "(null)";
+            len1 = len3 = 0;
+            len2 = vex_strlen(str);
+            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
+                                 len3 = ljustify ? 0 : fwidth-len2; }
+            PAD(len1); PUTSTR(str); PAD(len3);
             break;
          }
-#        if 0
-         case 'y': { /* %y - print symbol */
-            Char buf[100];
-            Char *cp = buf;
-            Addr a = va_arg(vargs, Addr);
-
-            if (flags & VG_MSG_PAREN)
-               *cp++ = '(';
-            if (VG_(get_fnname_w_offset)(a, cp, sizeof(buf)-4)) {
-               if (flags & VG_MSG_PAREN) {
-                  cp += VG_(strlen)(cp);
-                  *cp++ = ')';
-                  *cp = '\0';
-               }
-               ret += myvprintf_str(send, flags, width, buf, 0);
+         case 'c': {
+            HChar c = (HChar)va_arg(ap, int);
+            HChar str[2];
+            str[0] = c;
+            str[1] = 0;
+            len1 = len3 = 0;
+            len2 = vex_strlen(str);
+            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
+                                 len3 = ljustify ? 0 : fwidth-len2; }
+            PAD(len1); PUTSTR(str); PAD(len3);
+            break;
+         }
+         case 'd': {
+            Long l;
+            if (longlong) {
+               l = va_arg(ap, Long);
+            } else {
+               l = (Long)va_arg(ap, Int);
+            }
+            convert_int(intbuf, l, 10/*base*/, True/*signed*/,
+                                False/*irrelevant*/);
+            len1 = len3 = 0;
+            len2 = vex_strlen(intbuf);
+            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
+                                 len3 = ljustify ? 0 : fwidth-len2; }
+            PAD(len1); PUTSTR(intbuf); PAD(len3);
+            break;
+         }
+         case 'u': 
+         case 'x': 
+         case 'X': {
+            Int   base = *format == 'u' ? 10 : 16;
+            Bool  hexcaps = True; /* *format == 'X'; */
+            ULong l;
+            if (longlong) {
+               l = va_arg(ap, ULong);
+            } else {
+               l = (ULong)va_arg(ap, UInt);
+            }
+            convert_int(intbuf, l, base, False/*unsigned*/, hexcaps);
+            len1 = len3 = 0;
+            len2 = vex_strlen(intbuf);
+            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
+                                 len3 = ljustify ? 0 : fwidth-len2; }
+            PAD(len1); PUTSTR(intbuf); PAD(len3);
+            break;
+         }
+         case 'p': 
+         case 'P': {
+            Bool hexcaps = *format == 'P';
+            ULong l = Ptr_to_ULong( va_arg(ap, void*) );
+            convert_int(intbuf, l, 16/*base*/, False/*unsigned*/, hexcaps);
+            len1 = len3 = 0;
+            len2 = vex_strlen(intbuf)+2;
+            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
+                                 len3 = ljustify ? 0 : fwidth-len2; }
+            PAD(len1); PUT('0'); PUT('x'); PUTSTR(intbuf); PAD(len3);
+            break;
+         }
+         default:
+            /* no idea what it is.  Print the format literally and
+               move on. */
+            while (saved_format <= format) {
+               PUT(*saved_format);
+               saved_format++;
             }
             break;
-         }
-#        endif
-         default:
-            break;
       }
+
+      format++;
+
    }
-   return ret;
+
+   return nout;
+
+#  undef PUT
+#  undef PAD
+#  undef PUTSTR
 }
 
 
@@ -476,16 +415,17 @@ static Int   n_myprintf_buf;
 
 static void add_to_myprintf_buf ( HChar c )
 {
-   if (c == '\n' || n_myprintf_buf >= 1000-10 /*paranoia*/ ) {
-      (*vex_log_bytes)( myprintf_buf, vex_strlen(myprintf_buf) );
-      n_myprintf_buf = 0;
-      myprintf_buf[n_myprintf_buf] = 0;      
-   }
+   Bool emit = c == '\n' || n_myprintf_buf >= 1000-10 /*paranoia*/;
    myprintf_buf[n_myprintf_buf++] = c;
    myprintf_buf[n_myprintf_buf] = 0;
+   if (emit) {
+      (*vex_log_bytes)( myprintf_buf, vex_strlen(myprintf_buf) );
+      n_myprintf_buf = 0;
+      myprintf_buf[n_myprintf_buf] = 0;
+   }
 }
 
-UInt vex_printf ( const char *format, ... )
+UInt vex_printf ( HChar* format, ... )
 {
    UInt ret;
    va_list vargs;
@@ -514,7 +454,7 @@ static void add_to_vg_sprintf_buf ( HChar c )
    *vg_sprintf_ptr++ = c;
 }
 
-UInt vex_sprintf ( HChar* buf, const HChar *format, ... )
+UInt vex_sprintf ( HChar* buf, HChar *format, ... )
 {
    Int ret;
    va_list vargs;

@@ -1,4 +1,57 @@
 
+Release 3.0.1 (29 August 2005)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.0.1 fixes a bunch of bugs reported in 3.0.0.  There is no new
+functionality.  Some of the fixed bugs are critical, so if you
+use/distribute 3.0.0, and upgrade to 3.0.1 is recommended.  The fixed
+bugs are:
+
+(note: "n-i-bz" means "not in bugzilla" -- this bug does not have
+ a bugzilla entry).
+
+109313  (== 110505) x86 cmpxchg8b
+n-i-bz  x86: track but ignore changes to %eflags.AC (alignment check)
+110102  dis_op2_E_G(amd64)
+110202  x86 sys_waitpid(#286)
+110203  clock_getres(,0)
+110208  execve fail wrong retval
+110274  SSE1 now mandatory for x86
+110388  amd64 0xDD 0xD1
+110464  amd64 0xDC 0x1D FCOMP
+110478  amd64 0xF 0xD PREFETCH
+n-i-bz  XML <unique> printing wrong
+n-i-bz  Dirk r4359 (amd64 syscalls from trunk)
+110591  amd64 and x86: rdtsc not implemented properly
+n-i-bz  Nick r4384 (stub implementations of Addrcheck and Helgrind)
+110652  AMD64 valgrind crashes on cwtd instruction
+110653  AMD64 valgrind crashes on sarb $0x4,foo(%rip) instruction
+110656  PATH=/usr/bin::/bin valgrind foobar stats ./fooba
+110657  Small test fixes
+110671  vex x86->IR: unhandled instruction bytes: 0xF3 0xC3 (rep ret)
+n-i-bz  Nick (Cachegrind should not assert when it encounters a client
+        request.)
+110685  amd64->IR: unhandled instruction bytes: 0xE1 0x56 (loope Jb)
+110830  configuring with --host fails to build 32 bit on 64 bit target
+110875  Assertion when execve fails
+n-i-bz  Updates to Memcheck manual
+n-i-bz  Fixed broken malloc_usable_size()
+110898  opteron instructions missing: btq btsq btrq bsfq
+110954  x86->IR: unhandled instruction bytes: 0xE2 0xF6 (loop Jb)
+n-i-bz  Make suppressions work for "???" lines in stacktraces.
+111006  bogus warnings from linuxthreads
+111092  x86: dis_Grp2(Reg): unhandled case(x86) 
+111231  sctp_getladdrs() and sctp_getpaddrs() returns uninitialized
+        memory
+111102  (comment #4)   Fixed 64-bit unclean "silly arg" message
+n-i-bz  vex x86->IR: unhandled instruction bytes: 0x14 0x0
+n-i-bz  minor umount/fcntl wrapper fixes
+111090  Internal Error running Massif
+101204  noisy warning
+111513  Illegal opcode for SSE instruction (x86 movups)
+111555  VEX/Makefile: CC is set to gcc
+n-i-bz  Fix XML bugs in FAQ  
+
+
 Release 3.0.0 (3 August 2005)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.0.0 is a major overhaul of Valgrind.  The most significant user

@@ -51,6 +51,11 @@ n-i-bz  minor umount/fcntl wrapper fixes
 111555  VEX/Makefile: CC is set to gcc
 n-i-bz  Fix XML bugs in FAQ  
 
+(3.0.1RC1: 29 August 05, 
+           vex/branches/VEX_3_0_BRANCH r1367, 
+           valgrind/branches/VALGRIND_3_0_BRANCH r4570).
+
+
 
 Release 3.0.0 (3 August 2005)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

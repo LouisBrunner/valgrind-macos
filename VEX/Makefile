@@ -63,7 +63,9 @@ PUB_INCLUDES = -Ipub
 PRIV_INCLUDES = -Ipriv
 
 
-CC = gcc
+ifeq ($(CC),) 
+   CC = gcc 
+endif 
 CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline \
 		-Wpointer-arith -Wbad-function-cast -Wcast-qual \
 		-Wcast-align -Wmissing-declarations \
@@ -120,7 +122,7 @@ minidist: version
 	@echo
 
 pub/libvex_guest_offsets.h:
-	gcc -Wall -g -o auxprogs/genoffsets auxprogs/genoffsets.c
+	$(CC) -Wall -g -o auxprogs/genoffsets auxprogs/genoffsets.c
 	./auxprogs/genoffsets > pub/libvex_guest_offsets.h
 
 

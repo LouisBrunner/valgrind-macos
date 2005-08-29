@@ -400,7 +400,7 @@ FIXED-30BRANCH: 1359
         memory
 
 FIXED-TRUNK:    4549
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4563
 
 ----------------------------------------------------------------
 
@@ -422,7 +422,7 @@ FIXED-30BRANCH: 1360
 not-in-bugzilla  minor umount/fcntl wrapper fixes
 
 FIXED-TRUNK:    4487
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4562
 
 ----------------------------------------------------------------
 
@@ -436,19 +436,27 @@ FIXED-30BRANCH: 4509
 101204  noisy warning
 
 FIXED-TRUNK:    4511
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4561
+
+----------------------------------------------------------------
+
+111513  Illegal opcode for SSE instruction (x86 movups)
+NB.  Bug reporter did not yet verify that the fix works.
+
+FIXED-TRUNK:    1362
+FIXED-30BRANCH: 1367
 
 ----------------------------------------------------------------
 
 111555  VEX/Makefile: CC is set to gcc
 
-FIXED-TRUNK:    TODO
-FIXED-30BRANCH: TODO
+FIXED-TRUNK:    1364, 4559
+FIXED-30BRANCH: 1365, 4560
 
 ----------------------------------------------------------------
 
 not-in-bugzilla  Fix XML bugs in FAQ  
 
 FIXED-TRUNK:    4528
-FIXED-30BRANCH: TODO
+FIXED-30BRANCH: 4564
 

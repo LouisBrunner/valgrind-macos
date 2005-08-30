@@ -3,7 +3,7 @@ Release 3.0.1 (29 August 2005)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.0.1 fixes a bunch of bugs reported in 3.0.0.  There is no new
 functionality.  Some of the fixed bugs are critical, so if you
-use/distribute 3.0.0, and upgrade to 3.0.1 is recommended.  The fixed
+use/distribute 3.0.0, an upgrade to 3.0.1 is recommended.  The fixed
 bugs are:
 
 (note: "n-i-bz" means "not in bugzilla" -- this bug does not have
@@ -51,9 +51,9 @@ n-i-bz  minor umount/fcntl wrapper fixes
 111555  VEX/Makefile: CC is set to gcc
 n-i-bz  Fix XML bugs in FAQ  
 
-(3.0.1RC1: 29 August 05, 
-           vex/branches/VEX_3_0_BRANCH r1367, 
-           valgrind/branches/VALGRIND_3_0_BRANCH r4570).
+(3.0.1: 29 August 05, 
+        vex/branches/VEX_3_0_BRANCH r1367, 
+        valgrind/branches/VALGRIND_3_0_BRANCH r4574).
 
 
 

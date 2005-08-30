@@ -26,4 +26,4 @@ syscall-@VG_PLATFORM@.S: libvex_guest_offsets.h
 syswrap-main.c: libvex_guest_offsets.h
 
 libvex_guest_offsets.h:
-	$(MAKE) -C @VEX_DIR@ CC=$(CC) pub/libvex_guest_offsets.h
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" pub/libvex_guest_offsets.h

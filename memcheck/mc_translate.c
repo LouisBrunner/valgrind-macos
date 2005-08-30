@@ -174,9 +174,9 @@ static Bool isShadowAtom ( MCEnv* mce, IRAtom* a1 )
    are identically-kinded. */
 static Bool sameKindedAtoms ( IRAtom* a1, IRAtom* a2 )
 {
-   if (a1->tag == Iex_Tmp && a1->tag == Iex_Tmp)
+   if (a1->tag == Iex_Tmp && a2->tag == Iex_Tmp)
       return True;
-   if (a1->tag == Iex_Const && a1->tag == Iex_Const)
+   if (a1->tag == Iex_Const && a2->tag == Iex_Const)
       return True;
    return False;
 }

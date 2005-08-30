@@ -351,6 +351,13 @@ FIXED-30BRANCH: TODO
 FIXED-TRUNK:    TODO
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+n-i-bz  Print a more user-friendly message when vex bombs out
+        with unhandled instruction bytes
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
 
 ========================================================================
 === Bugs of note not targeted for any particular release

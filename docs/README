@@ -180,7 +180,6 @@ some useful xls stylesheets in cvs:
 
 TODO CRUCIAL:
 -------------
-- PS/PDF doesn't work because Latex runs out of memory
 - Need to generate text FAQ from the valgrind/docs/xml/FAQ.xml (done at 'make
   dist' time along with the HTML docs using the "dist-hook"), and remove the
   old text FAQ which is in valgrind/.
@@ -195,7 +194,6 @@ TODO LESS CRUCIAL:
 - generate an index for the user manual (??)
 - run through and check for not-linked hrefs: grep on 'http'
 - run through and check for bad email addresses: grep on '@' etc.
-- when we move to svn, change all refs to sourceforge.cvs
 - go through and wrap refs+addresses in '<address>' tags
 
 

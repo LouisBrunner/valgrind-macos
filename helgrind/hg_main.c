@@ -29,6 +29,16 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+// For anyone wanting to understand race conditions better, this paper might
+// be instructive:
+//
+//   S. Carr, J. Mayo and C.-K. Shene. Race Conditions: A Case Study, The
+//   Journal of Computing in Small Colleges 17(1), September 2001.
+//   http://www.cs.mtu.edu/~carr/papers/jcsc02.pdf
+//
+// It nicely describes several example race conditions, emphasising the
+// fundamentals in each case.
+
 #include "pub_tool_basics.h"
 #include "pub_tool_threadstate.h"
 #include "pub_tool_aspacemgr.h"

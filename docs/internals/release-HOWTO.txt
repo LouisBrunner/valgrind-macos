@@ -87,7 +87,9 @@ For the official release:
 - Check tarball builds, installs, regtests on platforms of interest.
   If not, fix and repeat until success.
 
-- Tag the repository ("VALGRIND_X_Y_Z").
+- Tag the repositories ("VALGRIND_X_Y_Z" and "VEX_X_Y_Z").
+  If it's a X.Y.0 release, make "VALGRIND_X_Y_BRANCH" and "VEX_X_Y_BRANCH"
+  branches too.
   
 - Update website: 
   - Put the tarball up.

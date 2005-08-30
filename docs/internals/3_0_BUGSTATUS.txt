@@ -63,6 +63,52 @@ FIXED-TRUNK:    vg:4425
 
 
 ========================================================================
+=== Bugs targeted for 3.1.0 and 3.0.2                                ===
+========================================================================
+
+----------------------------------------------------------------
+110209 --show-emwarns misses some
+
+Tom says: The math/test-fenv.c file in the glibc source is the code in
+question and I can reproduce it with that code.
+
+FIXED-TRUNK:    TODO?
+FIXED-30BRANCH: TODO?
+
+----------------------------------------------------------------
+110770  VEX: Generated files not always updated when making valgrind
+
+FIXED-TRUNK:    TODO... partial(vg:4473)
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+n-i-bz  Jeroen's XML-to-text FAQ.xml translator
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+111724  vex amd64->IR: unhandled instruction bytes: 0x41 0xF 0xAB
+(more BT{,S,R,C} fun n games)
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+n-i-bz  Print a more user-friendly message when vex bombs out
+        with unhandled instruction bytes
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+111748  vex amd64->IR: unhandled instruction bytes: fucom         
+        (0xDD 0xE2 0xDF 0xE0)
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+========================================================================
 === Bugs targeted for 3.1.0 and 3.0.1                                ===
 ========================================================================
 
@@ -317,46 +363,6 @@ n-i-bz  Fix XML bugs in FAQ
 
 FIXED-TRUNK:    vg:4528
 FIXED-30BRANCH: vg:4564
-
-
-========================================================================
-=== Bugs targeted for 3.1.0 and 3.0.2                                ===
-========================================================================
-
-----------------------------------------------------------------
-110209 --show-emwarns misses some
-
-Tom says: The math/test-fenv.c file in the glibc source is the code in
-question and I can reproduce it with that code.
-
-FIXED-TRUNK:    TODO?
-FIXED-30BRANCH: TODO?
-
-----------------------------------------------------------------
-110770  VEX: Generated files not always updated when making valgrind
-
-FIXED-TRUNK:    TODO... partial(vg:4473)
-FIXED-30BRANCH: TODO
-
-----------------------------------------------------------------
-n-i-bz  Jeroen's XML-to-text FAQ.xml translator
-
-FIXED-TRUNK:    TODO
-FIXED-30BRANCH: TODO
-
-----------------------------------------------------------------
-111724  vex amd64->IR: unhandled instruction bytes: 0x41 0xF 0xAB
-(more BT{,S,R,C} fun n games)
-
-FIXED-TRUNK:    TODO
-FIXED-30BRANCH: TODO
-
-----------------------------------------------------------------
-n-i-bz  Print a more user-friendly message when vex bombs out
-        with unhandled instruction bytes
-
-FIXED-TRUNK:    TODO
-FIXED-30BRANCH: TODO
 
 
 ========================================================================

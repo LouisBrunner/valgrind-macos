@@ -2216,7 +2216,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    LINX_(__NR_setxattr,          sys_setxattr),          // 209
 //..    LINX_(__NR_lsetxattr,         sys_lsetxattr),         // 210
 //..    LINX_(__NR_fsetxattr,         sys_fsetxattr),         // 211
-   GENXY(__NR_getxattr,          sys_getxattr),          // 212
+   LINXY(__NR_getxattr,          sys_getxattr),          // 212
 //..    LINXY(__NR_lgetxattr,         sys_lgetxattr),         // 213
 //..    LINXY(__NR_fgetxattr,         sys_fgetxattr),         // 214
 //..    LINXY(__NR_listxattr,         sys_listxattr),         // 215

@@ -149,6 +149,18 @@ DECL_TEMPLATE(linux, sys_flistxattr);
 DECL_TEMPLATE(linux, sys_removexattr);
 DECL_TEMPLATE(linux, sys_lremovexattr);
 DECL_TEMPLATE(linux, sys_fremovexattr);
+
+DECL_TEMPLATE(linux, sys_sched_setparam);
+DECL_TEMPLATE(linux, sys_sched_getparam);
+DECL_TEMPLATE(linux, sys_sched_setscheduler);
+DECL_TEMPLATE(linux, sys_sched_getscheduler);
+DECL_TEMPLATE(linux, sys_sched_yield);
+DECL_TEMPLATE(linux, sys_sched_get_priority_max);
+DECL_TEMPLATE(linux, sys_sched_get_priority_min);
+//DECL_TEMPLATE(linux, sys_sched_rr_get_interval);    // not yet encountered
+DECL_TEMPLATE(linux, sys_sched_setaffinity);
+DECL_TEMPLATE(linux, sys_sched_getaffinity);
+
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

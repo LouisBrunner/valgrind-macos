@@ -110,14 +110,6 @@ DECL_TEMPLATE(generic, sys_mlock);
 DECL_TEMPLATE(generic, sys_munlock);
 DECL_TEMPLATE(generic, sys_mlockall);
 DECL_TEMPLATE(generic, sys_munlockall);
-DECL_TEMPLATE(generic, sys_sched_setparam);
-DECL_TEMPLATE(generic, sys_sched_getparam);
-DECL_TEMPLATE(generic, sys_sched_rr_get_interval);
-DECL_TEMPLATE(generic, sys_sched_setscheduler);
-DECL_TEMPLATE(generic, sys_sched_getscheduler);
-DECL_TEMPLATE(generic, sys_sched_yield);
-DECL_TEMPLATE(generic, sys_sched_get_priority_max);
-DECL_TEMPLATE(generic, sys_sched_get_priority_min);
 DECL_TEMPLATE(generic, sys_nanosleep);
 DECL_TEMPLATE(generic, sys_mremap);    // POSIX, but Linux arg order may be odd
 DECL_TEMPLATE(generic, sys_getuid);
@@ -209,8 +201,6 @@ DECL_TEMPLATE(generic, sys_lchown);                // * (L?)
 DECL_TEMPLATE(generic, sys_mincore);               // * L?
 DECL_TEMPLATE(generic, sys_getdents64);            // * (SVr4,SVID?)
 DECL_TEMPLATE(generic, sys_fcntl64);               // * P?
-DECL_TEMPLATE(generic, sys_sched_setaffinity);     // * L?
-DECL_TEMPLATE(generic, sys_sched_getaffinity);     // * L?
 DECL_TEMPLATE(generic, sys_lookup_dcookie);        // (*/32/64) L
 DECL_TEMPLATE(generic, sys_statfs64);              // * (?)
 DECL_TEMPLATE(generic, sys_fstatfs64);             // * (?)

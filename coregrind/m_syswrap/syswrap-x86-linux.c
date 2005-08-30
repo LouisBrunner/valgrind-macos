@@ -2126,16 +2126,16 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_munlock,           sys_munlock),        // 151
    GENX_(__NR_mlockall,          sys_mlockall),       // 152
    GENX_(__NR_munlockall,        sys_munlockall),     // 153
-   GENXY(__NR_sched_setparam,    sys_sched_setparam), // 154
+   LINXY(__NR_sched_setparam,    sys_sched_setparam), // 154
 
-   GENXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
-   GENX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
-   GENX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
-   GENX_(__NR_sched_yield,            sys_sched_yield),           // 158
-   GENX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
+   LINXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
+   LINX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
+   LINX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
+   LINX_(__NR_sched_yield,            sys_sched_yield),           // 158
+   LINX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
 
-   GENX_(__NR_sched_get_priority_min, sys_sched_get_priority_min),// 160
-//zz    //   (__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161 */*
+   LINX_(__NR_sched_get_priority_min, sys_sched_get_priority_min),// 160
+//zz    //LINX?(__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161 */*
    GENXY(__NR_nanosleep,         sys_nanosleep),      // 162
    GENX_(__NR_mremap,            sys_mremap),         // 163
    LINX_(__NR_setresuid,         sys_setresuid16),    // 164
@@ -2232,8 +2232,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_sendfile64,        sys_sendfile64),     // 239
 
    LINXY(__NR_futex,             sys_futex),             // 240
-   GENX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 241
-   GENXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 242
+   LINX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 241
+   LINXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 242
    PLAX_(__NR_set_thread_area,   sys_set_thread_area),   // 243
    PLAX_(__NR_get_thread_area,   sys_get_thread_area),   // 244
 

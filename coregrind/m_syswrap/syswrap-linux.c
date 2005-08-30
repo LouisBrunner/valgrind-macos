@@ -1400,6 +1400,85 @@ PRE(sys_fremovexattr)
    PRE_MEM_RASCIIZ( "fremovexattr(name)", ARG2 );
 }
 
+PRE(sys_sched_setparam)
+{
+   PRINT("sched_setparam ( %d, %p )", ARG1, ARG2 );
+   PRE_REG_READ2(long, "sched_setparam", 
+                 vki_pid_t, pid, struct sched_param *, p);
+   PRE_MEM_READ( "sched_setparam(p)", ARG2, sizeof(struct vki_sched_param) );
+}
+POST(sys_sched_setparam)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_sched_param) );
+}
+
+PRE(sys_sched_getparam)
+{
+   PRINT("sched_getparam ( %d, %p )", ARG1, ARG2 );
+   PRE_REG_READ2(long, "sched_getparam", 
+                 vki_pid_t, pid, struct sched_param *, p);
+   PRE_MEM_WRITE( "sched_getparam(p)", ARG2, sizeof(struct vki_sched_param) );
+}
+POST(sys_sched_getparam)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_sched_param) );
+}
+
+PRE(sys_sched_getscheduler)
+{
+   PRINT("sys_sched_getscheduler ( %d )", ARG1);
+   PRE_REG_READ1(long, "sched_getscheduler", vki_pid_t, pid);
+}
+
+PRE(sys_sched_setscheduler)
+{
+   PRINT("sys_sched_setscheduler ( %d, %d, %p )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "sched_setscheduler", 
+                 vki_pid_t, pid, int, policy, struct sched_param *, p);
+   if (ARG3 != 0)
+      PRE_MEM_READ( "sched_setscheduler(p)", 
+		    ARG3, sizeof(struct vki_sched_param));
+}
+
+PRE(sys_sched_yield)
+{
+   *flags |= SfMayBlock;
+   PRINT("sched_yield()");
+   PRE_REG_READ0(long, "sys_sched_yield");
+}
+
+PRE(sys_sched_get_priority_max)
+{
+   PRINT("sched_get_priority_max ( %d )", ARG1);
+   PRE_REG_READ1(long, "sched_get_priority_max", int, policy);
+}
+
+PRE(sys_sched_get_priority_min)
+{
+   PRINT("sched_get_priority_min ( %d )", ARG1);
+   PRE_REG_READ1(long, "sched_get_priority_min", int, policy);
+}
+
+PRE(sys_sched_setaffinity)
+{
+   PRINT("sched_setaffinity ( %d, %d, %p )", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "sched_setaffinity", 
+                 vki_pid_t, pid, unsigned int, len, unsigned long *, mask);
+   PRE_MEM_READ( "sched_setaffinity(mask)", ARG3, ARG2);
+}
+
+PRE(sys_sched_getaffinity)
+{
+   PRINT("sched_getaffinity ( %d, %d, %p )", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "sched_getaffinity", 
+                 vki_pid_t, pid, unsigned int, len, unsigned long *, mask);
+   PRE_MEM_WRITE( "sched_getaffinity(mask)", ARG3, ARG2);
+}
+POST(sys_sched_getaffinity)
+{
+   POST_MEM_WRITE(ARG3, ARG2);
+}
+
 #undef PRE
 #undef POST
 

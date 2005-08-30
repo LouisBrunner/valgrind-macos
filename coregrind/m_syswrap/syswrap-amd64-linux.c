@@ -1204,7 +1204,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_access,            sys_access),         // 21 
    GENXY(__NR_pipe,              sys_pipe),           // 22 
    GENX_(__NR_select,            sys_select),         // 23 
-   GENX_(__NR_sched_yield,       sys_sched_yield),    // 24 
+   LINX_(__NR_sched_yield,       sys_sched_yield),    // 24 
 
    GENX_(__NR_mremap,            sys_mremap),         // 25 
    GENX_(__NR_msync,             sys_msync),          // 26 
@@ -1346,14 +1346,14 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    //   (__NR_getpriority,             sys_getpriority),             // 140 
    //   (__NR_setpriority,             sys_setpriority),             // 141 
-//zz    GENXY(__NR_sched_setparam,          sys_sched_setparam),          // 142 
-   GENXY(__NR_sched_getparam,          sys_sched_getparam),          // 143 
-   GENX_(__NR_sched_setscheduler,      sys_sched_setscheduler),      // 144 
+//zz    LINXY(__NR_sched_setparam,          sys_sched_setparam),          // 142 
+   LINXY(__NR_sched_getparam,          sys_sched_getparam),          // 143 
+   LINX_(__NR_sched_setscheduler,      sys_sched_setscheduler),      // 144 
 
-   GENX_(__NR_sched_getscheduler,      sys_sched_getscheduler),      // 145 
-   GENX_(__NR_sched_get_priority_max,  sys_sched_get_priority_max),  // 146 
-   GENX_(__NR_sched_get_priority_min,  sys_sched_get_priority_min),  // 147 
-   //   (__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),   // 148 
+   LINX_(__NR_sched_getscheduler,      sys_sched_getscheduler),      // 145 
+   LINX_(__NR_sched_get_priority_max,  sys_sched_get_priority_max),  // 146 
+   LINX_(__NR_sched_get_priority_min,  sys_sched_get_priority_min),  // 147 
+   //LINX?(__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),   // 148 
    GENX_(__NR_mlock,                   sys_mlock),                   // 149 
 
    GENX_(__NR_munlock,           sys_munlock),        // 150 
@@ -1419,8 +1419,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_tkill,             sys_tkill),             // 200 
    GENXY(__NR_time,              sys_time), /*was sys_time64*/ // 201 
    LINXY(__NR_futex,             sys_futex),             // 202 
-   GENX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 203 
-   GENXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 204 
+   LINX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 203 
+   LINXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 204 
 
    //   (__NR_set_thread_area,   sys_ni_syscall),     // 205 
    LINX_(__NR_io_setup,          sys_io_setup),       // 206 

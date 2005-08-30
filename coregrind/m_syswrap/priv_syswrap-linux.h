@@ -36,29 +36,26 @@
 // Run a thread from beginning to end. 
 extern VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tid);
 
-DECL_TEMPLATE(linux, sys_exit_group);
-
 DECL_TEMPLATE(linux, sys_mount);
 DECL_TEMPLATE(linux, sys_oldumount);
 DECL_TEMPLATE(linux, sys_umount);
 
-DECL_TEMPLATE(linux, sys_llseek);
-DECL_TEMPLATE(linux, sys_adjtimex);
-
 DECL_TEMPLATE(linux, sys_setfsuid16);
-DECL_TEMPLATE(linux, sys_setfsgid16);
-DECL_TEMPLATE(linux, sys_setresuid16);  // man page says "non-standard";
-DECL_TEMPLATE(linux, sys_getresuid16);
-DECL_TEMPLATE(linux, sys_setresgid16);  // man page says "non-standard"
-DECL_TEMPLATE(linux, sys_getresgid16);
-
 DECL_TEMPLATE(linux, sys_setfsuid);
+DECL_TEMPLATE(linux, sys_setfsgid16);
 DECL_TEMPLATE(linux, sys_setfsgid);
+DECL_TEMPLATE(linux, sys_setresuid16);  // man page says "non-standard";
 DECL_TEMPLATE(linux, sys_setresuid);    // man page says "non-standard"
+DECL_TEMPLATE(linux, sys_getresuid16);
 DECL_TEMPLATE(linux, sys_getresuid);
+DECL_TEMPLATE(linux, sys_setresgid16);  // man page says "non-standard"
 DECL_TEMPLATE(linux, sys_setresgid);    // man page says "non-standard"
+DECL_TEMPLATE(linux, sys_getresgid16);
 DECL_TEMPLATE(linux, sys_getresgid);
 
+DECL_TEMPLATE(linux, sys_exit_group);
+DECL_TEMPLATE(linux, sys_llseek);
+DECL_TEMPLATE(linux, sys_adjtimex);
 DECL_TEMPLATE(linux, sys_ioperm);
 DECL_TEMPLATE(linux, sys_syslog);
 DECL_TEMPLATE(linux, sys_vhangup);
@@ -66,7 +63,6 @@ DECL_TEMPLATE(linux, sys_sysinfo);
 DECL_TEMPLATE(linux, sys_personality);
 DECL_TEMPLATE(linux, sys_sysctl);
 DECL_TEMPLATE(linux, sys_prctl);
-
 DECL_TEMPLATE(linux, sys_sendfile);
 DECL_TEMPLATE(linux, sys_sendfile64);
 DECL_TEMPLATE(linux, sys_futex);
@@ -136,7 +132,8 @@ DECL_TEMPLATE(linux, sys_chown16);
 DECL_TEMPLATE(linux, sys_fchown16);
 //DECL_TEMPLATE(linux, sys_lchown16);      // not yet encountered
 
-// Are these POSIX?  In Darwin they have an extra parameter 'position'.
+// Are these POSIX?  In Darwin they have an extra parameter 'position',
+// so put them here.
 DECL_TEMPLATE(linux, sys_setxattr);
 DECL_TEMPLATE(linux, sys_lsetxattr);
 DECL_TEMPLATE(linux, sys_fsetxattr);
@@ -150,6 +147,7 @@ DECL_TEMPLATE(linux, sys_removexattr);
 DECL_TEMPLATE(linux, sys_lremovexattr);
 DECL_TEMPLATE(linux, sys_fremovexattr);
 
+// Are these Posix?  Darwin doesn't have them, so put them here for now.
 DECL_TEMPLATE(linux, sys_sched_setparam);
 DECL_TEMPLATE(linux, sys_sched_getparam);
 DECL_TEMPLATE(linux, sys_sched_setscheduler);

@@ -106,43 +106,9 @@ VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
 // Combine two 32-bit values into a 64-bit value
 #define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
 
-PRE(sys_set_tid_address)
-{
-   PRINT("sys_set_tid_address ( %p )", ARG1);
-   PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
-}
-
-PRE(sys_exit_group)
-{
-   ThreadId     t;
-   ThreadState* tst;
-
-   PRINT("exit_group( %d )", ARG1);
-   PRE_REG_READ1(void, "exit_group", int, exit_code);
-
-   tst = VG_(get_ThreadState)(tid);
-
-   /* A little complex; find all the threads with the same threadgroup
-      as this one (including this one), and mark them to exit */
-   for (t = 1; t < VG_N_THREADS; t++) {
-      if ( /* not alive */
-           VG_(threads)[t].status == VgTs_Empty 
-           ||
-	   /* not our group */
-           VG_(threads)[t].os_state.threadgroup != tst->os_state.threadgroup
-         )
-         continue;
-
-      VG_(threads)[t].exitreason = VgSrc_ExitSyscall;
-      VG_(threads)[t].os_state.exitcode = ARG1;
-
-      if (t != tid)
-	 VG_(kill_thread)(t);	/* unblock it, if blocked */
-   }
-
-   /* We have to claim the syscall already succeeded. */
-   SET_STATUS_Success(0);
-}
+/* ---------------------------------------------------------------------
+   *mount wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_mount)
 {
@@ -173,51 +139,9 @@ PRE(sys_umount)
    PRE_MEM_RASCIIZ( "umount2(path)", ARG1);
 }
 
-PRE(sys_llseek)
-{
-   PRINT("sys_llseek ( %d, 0x%x, 0x%x, %p, %d )", ARG1,ARG2,ARG3,ARG4,ARG5);
-   PRE_REG_READ5(long, "llseek",
-                 unsigned int, fd, unsigned long, offset_high,
-                 unsigned long, offset_low, vki_loff_t *, result,
-                 unsigned int, whence);
-   PRE_MEM_WRITE( "llseek(result)", ARG4, sizeof(vki_loff_t));
-}
-
-POST(sys_llseek)
-{
-   vg_assert(SUCCESS);
-   if (RES == 0)
-      POST_MEM_WRITE( ARG4, sizeof(vki_loff_t) );
-}
-
-//zz PRE(sys_adjtimex, 0)
-//zz {
-//zz    struct vki_timex *tx = (struct vki_timex *)ARG1;
-//zz    PRINT("sys_adjtimex ( %p )", ARG1);
-//zz    PRE_REG_READ1(long, "adjtimex", struct timex *, buf);
-//zz    PRE_MEM_READ( "adjtimex(timex->modes)", ARG1, sizeof(tx->modes));
-//zz 
-#if 0 //zz  (avoiding warnings about multi-line comments)
-zz #define ADJX(bit,field) 				\
-zz    if (tx->modes & bit)					\
-zz       PRE_MEM_READ( "adjtimex(timex->"#field")",	\
-zz 		    (Addr)&tx->field, sizeof(tx->field))
-#endif
-//zz    ADJX(ADJ_FREQUENCY, freq);
-//zz    ADJX(ADJ_MAXERROR, maxerror);
-//zz    ADJX(ADJ_ESTERROR, esterror);
-//zz    ADJX(ADJ_STATUS, status);
-//zz    ADJX(ADJ_TIMECONST, constant);
-//zz    ADJX(ADJ_TICK, tick);
-//zz #undef ADJX
-//zz    
-//zz    PRE_MEM_WRITE( "adjtimex(timex)", ARG1, sizeof(struct vki_timex));
-//zz }
-//zz 
-//zz POST(sys_adjtimex)
-//zz {
-//zz    POST_MEM_WRITE( ARG1, sizeof(struct vki_timex) );
-//zz }
+/* ---------------------------------------------------------------------
+   16- and 32-bit uid/gid wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_setfsuid16)
 {
@@ -340,7 +264,6 @@ PRE(sys_getresgid)
    PRE_MEM_WRITE( "getresgid(egid)", ARG2, sizeof(vki_gid_t) );
    PRE_MEM_WRITE( "getresgid(sgid)", ARG3, sizeof(vki_gid_t) );
 }
-
 POST(sys_getresgid)
 {
    vg_assert(SUCCESS);
@@ -350,6 +273,87 @@ POST(sys_getresgid)
       POST_MEM_WRITE( ARG3, sizeof(vki_gid_t) );
    }
 }
+
+/* ---------------------------------------------------------------------
+   miscellaneous wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_exit_group)
+{
+   ThreadId     t;
+   ThreadState* tst;
+
+   PRINT("exit_group( %d )", ARG1);
+   PRE_REG_READ1(void, "exit_group", int, exit_code);
+
+   tst = VG_(get_ThreadState)(tid);
+
+   /* A little complex; find all the threads with the same threadgroup
+      as this one (including this one), and mark them to exit */
+   for (t = 1; t < VG_N_THREADS; t++) {
+      if ( /* not alive */
+           VG_(threads)[t].status == VgTs_Empty 
+           ||
+	   /* not our group */
+           VG_(threads)[t].os_state.threadgroup != tst->os_state.threadgroup
+         )
+         continue;
+
+      VG_(threads)[t].exitreason = VgSrc_ExitSyscall;
+      VG_(threads)[t].os_state.exitcode = ARG1;
+
+      if (t != tid)
+	 VG_(kill_thread)(t);	/* unblock it, if blocked */
+   }
+
+   /* We have to claim the syscall already succeeded. */
+   SET_STATUS_Success(0);
+}
+
+PRE(sys_llseek)
+{
+   PRINT("sys_llseek ( %d, 0x%x, 0x%x, %p, %d )", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "llseek",
+                 unsigned int, fd, unsigned long, offset_high,
+                 unsigned long, offset_low, vki_loff_t *, result,
+                 unsigned int, whence);
+   PRE_MEM_WRITE( "llseek(result)", ARG4, sizeof(vki_loff_t));
+}
+POST(sys_llseek)
+{
+   vg_assert(SUCCESS);
+   if (RES == 0)
+      POST_MEM_WRITE( ARG4, sizeof(vki_loff_t) );
+}
+
+//zz PRE(sys_adjtimex, 0)
+//zz {
+//zz    struct vki_timex *tx = (struct vki_timex *)ARG1;
+//zz    PRINT("sys_adjtimex ( %p )", ARG1);
+//zz    PRE_REG_READ1(long, "adjtimex", struct timex *, buf);
+//zz    PRE_MEM_READ( "adjtimex(timex->modes)", ARG1, sizeof(tx->modes));
+//zz 
+#if 0 //zz  (avoiding warnings about multi-line comments)
+zz #define ADJX(bit,field) 				\
+zz    if (tx->modes & bit)					\
+zz       PRE_MEM_READ( "adjtimex(timex->"#field")",	\
+zz 		    (Addr)&tx->field, sizeof(tx->field))
+#endif
+//zz    ADJX(ADJ_FREQUENCY, freq);
+//zz    ADJX(ADJ_MAXERROR, maxerror);
+//zz    ADJX(ADJ_ESTERROR, esterror);
+//zz    ADJX(ADJ_STATUS, status);
+//zz    ADJX(ADJ_TIMECONST, constant);
+//zz    ADJX(ADJ_TICK, tick);
+//zz #undef ADJX
+//zz    
+//zz    PRE_MEM_WRITE( "adjtimex(timex)", ARG1, sizeof(struct vki_timex));
+//zz }
+//zz 
+//zz POST(sys_adjtimex)
+//zz {
+//zz    POST_MEM_WRITE( ARG1, sizeof(struct vki_timex) );
+//zz }
 
 PRE(sys_ioperm)
 {
@@ -373,7 +377,6 @@ PRE(sys_syslog)
       break;
    }
 }
-
 POST(sys_syslog)
 {
    switch (ARG1) {
@@ -397,7 +400,6 @@ PRE(sys_sysinfo)
    PRE_REG_READ1(long, "sysinfo", struct sysinfo *, info);
    PRE_MEM_WRITE( "sysinfo(info)", ARG1, sizeof(struct vki_sysinfo) );
 }
-
 POST(sys_sysinfo)
 {
    POST_MEM_WRITE( ARG1, sizeof(struct vki_sysinfo) );
@@ -429,7 +431,6 @@ PRE(sys_sysctl)
       PRE_MEM_WRITE("sysctl(oldval)", (Addr)args->oldval, *args->oldlenp);
    }
 }
-
 POST(sys_sysctl)
 {
    struct __vki_sysctl_args *args;
@@ -529,7 +530,6 @@ PRE(sys_futex)
       break;
    }
 }
-
 POST(sys_futex)
 {
    vg_assert(SUCCESS);
@@ -544,6 +544,10 @@ POST(sys_futex)
       }
    }
 }
+
+/* ---------------------------------------------------------------------
+   epoll_* wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_epoll_create)
 {
@@ -593,10 +597,20 @@ POST(sys_epoll_wait)
       POST_MEM_WRITE( ARG2, sizeof(struct vki_epoll_event)*RES ) ;
 }
 
+/* ---------------------------------------------------------------------
+   tid-related wrappers
+   ------------------------------------------------------------------ */
+
 PRE(sys_gettid)
 {
    PRINT("sys_gettid ()");
    PRE_REG_READ0(long, "gettid");
+}
+
+PRE(sys_set_tid_address)
+{
+   PRINT("sys_set_tid_address ( %p )", ARG1);
+   PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
 }
 
 //zz PRE(sys_tkill, Special)
@@ -646,13 +660,16 @@ PRE(sys_tgkill)
    /* Check to see if this kill gave us a pending signal */
    *flags |= SfPollAfter;
 }
-
 POST(sys_tgkill)
 {
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "tgkill: sent signal %d to pid %d/%d",
                    ARG3, ARG1, ARG2);
 }
+
+/* ---------------------------------------------------------------------
+   fadvise64* wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_fadvise64)
 {
@@ -671,6 +688,10 @@ PRE(sys_fadvise64_64)
                  int, fd, vki_u32, offset_low, vki_u32, offset_high,
                  vki_u32, len_low, vki_u32, len_high, int, advice);
 }
+
+/* ---------------------------------------------------------------------
+   io_* wrappers
+   ------------------------------------------------------------------ */
 
 // Nb: this wrapper has to pad/unpad memory around the syscall itself,
 // and this allows us to control exactly the code that gets run while
@@ -830,11 +851,14 @@ PRE(sys_io_cancel)
    PRE_MEM_READ( "io_cancel(iocb)", ARG2, sizeof(struct vki_iocb) );
    PRE_MEM_WRITE( "io_cancel(result)", ARG3, sizeof(struct vki_io_event) );
 }
-
 POST(sys_io_cancel)
 {
    POST_MEM_WRITE( ARG3, sizeof(struct vki_io_event) );
 }
+
+/* ---------------------------------------------------------------------
+   *_mempolicy wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_set_mempolicy)
 {
@@ -867,6 +891,10 @@ POST(sys_get_mempolicy)
       POST_MEM_WRITE( ARG2, VG_ROUNDUP( ARG3, sizeof(UWord) * 8 ) / sizeof(UWord) );
 }
 
+/* ---------------------------------------------------------------------
+   inotify_* wrappers
+   ------------------------------------------------------------------ */
+
 PRE(sys_inotify_init)
 {
    PRINT("sys_inotify_init ( )");
@@ -896,6 +924,10 @@ PRE(sys_inotify_rm_watch)
    PRINT( "sys_inotify_rm_watch ( %d, %x )", ARG1,ARG2);
    PRE_REG_READ2(long, "inotify_rm_watch", int, fd, int, wd);
 }
+
+/* ---------------------------------------------------------------------
+   mq_* wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_mq_open)
 {
@@ -1015,6 +1047,10 @@ POST(sys_mq_getsetattr)
       POST_MEM_WRITE( ARG3, sizeof(struct vki_mq_attr) );
 }
 
+/* ---------------------------------------------------------------------
+   clock_* wrappers
+   ------------------------------------------------------------------ */
+
 PRE(sys_clock_settime)
 {
    PRINT("sys_clock_settime( %d, %p )", ARG1,ARG2);
@@ -1067,6 +1103,10 @@ POST(sys_clock_nanosleep)
    if (ARG4 != 0 && FAILURE && RES_unchecked == VKI_EINTR)
       POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec) );
 }
+
+/* ---------------------------------------------------------------------
+   timer_* wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_timer_create)
 {
@@ -1127,6 +1167,10 @@ PRE(sys_timer_delete)
    PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
 }
 
+/* ---------------------------------------------------------------------
+   capabilities wrappers
+   ------------------------------------------------------------------ */
+
 PRE(sys_capget)
 {
    PRINT("sys_capget ( %p, %p )", ARG1, ARG2 );
@@ -1154,6 +1198,10 @@ PRE(sys_capset)
    PRE_MEM_READ( "capset(data)", 
                   ARG2, sizeof(struct __vki_user_cap_data_struct) );
 }
+
+/* ---------------------------------------------------------------------
+   16-bit uid/gid/groups wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_getuid16)
 {
@@ -1225,6 +1273,10 @@ PRE(sys_setgroups16)
       PRE_MEM_READ( "setgroups16(list)", ARG2, ARG1 * sizeof(vki_old_gid_t) );
 }
 
+/* ---------------------------------------------------------------------
+   *chown16 wrappers
+   ------------------------------------------------------------------ */
+
 PRE(sys_chown16)
 {
    PRINT("sys_chown16 ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
@@ -1240,6 +1292,10 @@ PRE(sys_fchown16)
    PRE_REG_READ3(long, "fchown16",
                  unsigned int, fd, vki_old_uid_t, owner, vki_old_gid_t, group);
 }
+
+/* ---------------------------------------------------------------------
+   *xattr wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_setxattr)
 {
@@ -1399,6 +1455,10 @@ PRE(sys_fremovexattr)
    PRE_REG_READ2(long, "fremovexattr", int, fd, char *, name);
    PRE_MEM_RASCIIZ( "fremovexattr(name)", ARG2 );
 }
+
+/* ---------------------------------------------------------------------
+   sched_* wrappers
+   ------------------------------------------------------------------ */
 
 PRE(sys_sched_setparam)
 {

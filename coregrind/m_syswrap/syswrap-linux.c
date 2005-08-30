@@ -1241,6 +1241,165 @@ PRE(sys_fchown16)
                  unsigned int, fd, vki_old_uid_t, owner, vki_old_gid_t, group);
 }
 
+PRE(sys_setxattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_setxattr ( %p, %p, %p, %llu, %d )",
+         ARG1, ARG2, ARG3, (ULong)ARG4, ARG5);
+   PRE_REG_READ5(long, "setxattr",
+                 char *, path, char *, name,
+                 void *, value, vki_size_t, size, int, flags);
+   PRE_MEM_RASCIIZ( "setxattr(path)", ARG1 );
+   PRE_MEM_RASCIIZ( "setxattr(name)", ARG2 );
+   PRE_MEM_READ( "setxattr(value)", ARG3, ARG4 );
+}
+
+PRE(sys_lsetxattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_lsetxattr ( %p, %p, %p, %llu, %d )",
+         ARG1, ARG2, ARG3, (ULong)ARG4, ARG5);
+   PRE_REG_READ5(long, "lsetxattr",
+                 char *, path, char *, name,
+                 void *, value, vki_size_t, size, int, flags);
+   PRE_MEM_RASCIIZ( "lsetxattr(path)", ARG1 );
+   PRE_MEM_RASCIIZ( "lsetxattr(name)", ARG2 );
+   PRE_MEM_READ( "lsetxattr(value)", ARG3, ARG4 );
+}
+
+PRE(sys_fsetxattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_fsetxattr ( %d, %p, %p, %llu, %d )",
+         ARG1, ARG2, ARG3, (ULong)ARG4, ARG5);
+   PRE_REG_READ5(long, "fsetxattr",
+                 int, fd, char *, name, void *, value,
+                 vki_size_t, size, int, flags);
+   PRE_MEM_RASCIIZ( "fsetxattr(name)", ARG2 );
+   PRE_MEM_READ( "fsetxattr(value)", ARG3, ARG4 );
+}
+
+PRE(sys_getxattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_getxattr ( %p, %p, %p, %llu )", ARG1,ARG2,ARG3, (ULong)ARG4);
+   PRE_REG_READ4(ssize_t, "getxattr",
+                 char *, path, char *, name, void *, value, vki_size_t, size);
+   PRE_MEM_RASCIIZ( "getxattr(path)", ARG1 );
+   PRE_MEM_RASCIIZ( "getxattr(name)", ARG2 );
+   PRE_MEM_WRITE( "getxattr(value)", ARG3, ARG4 );
+}
+POST(sys_getxattr)
+{
+   vg_assert(SUCCESS);
+   if (RES > 0 && ARG3 != (Addr)NULL) {
+      POST_MEM_WRITE( ARG3, RES );
+   }
+}
+
+PRE(sys_lgetxattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_lgetxattr ( %p, %p, %p, %llu )", ARG1,ARG2,ARG3, (ULong)ARG4);
+   PRE_REG_READ4(ssize_t, "lgetxattr",
+                 char *, path, char *, name, void *, value, vki_size_t, size);
+   PRE_MEM_RASCIIZ( "lgetxattr(path)", ARG1 );
+   PRE_MEM_RASCIIZ( "lgetxattr(name)", ARG2 );
+   PRE_MEM_WRITE( "lgetxattr(value)", ARG3, ARG4 );
+}
+POST(sys_lgetxattr)
+{
+   vg_assert(SUCCESS);
+   if (RES > 0 && ARG3 != (Addr)NULL) {
+      POST_MEM_WRITE( ARG3, RES );
+   }
+}
+
+PRE(sys_fgetxattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_fgetxattr ( %d, %p, %p, %llu )", ARG1, ARG2, ARG3, (ULong)ARG4);
+   PRE_REG_READ4(ssize_t, "fgetxattr",
+                 int, fd, char *, name, void *, value, vki_size_t, size);
+   PRE_MEM_RASCIIZ( "fgetxattr(name)", ARG2 );
+   PRE_MEM_WRITE( "fgetxattr(value)", ARG3, ARG4 );
+}
+POST(sys_fgetxattr)
+{
+   if (RES > 0 && ARG3 != (Addr)NULL)
+      POST_MEM_WRITE( ARG3, RES );
+}
+
+PRE(sys_listxattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_listxattr ( %p, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
+   PRE_REG_READ3(ssize_t, "listxattr",
+                 char *, path, char *, list, vki_size_t, size);
+   PRE_MEM_RASCIIZ( "listxattr(path)", ARG1 );
+   PRE_MEM_WRITE( "listxattr(list)", ARG2, ARG3 );
+}
+POST(sys_listxattr)
+{
+   if (RES > 0 && ARG2 != (Addr)NULL)
+      POST_MEM_WRITE( ARG2, RES );
+}
+
+PRE(sys_llistxattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_llistxattr ( %p, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
+   PRE_REG_READ3(ssize_t, "llistxattr",
+                 char *, path, char *, list, vki_size_t, size);
+   PRE_MEM_RASCIIZ( "llistxattr(path)", ARG1 );
+   PRE_MEM_WRITE( "llistxattr(list)", ARG2, ARG3 );
+}
+POST(sys_llistxattr)
+{
+   if (RES > 0 && ARG2 != (Addr)NULL)
+      POST_MEM_WRITE( ARG2, RES );
+}
+
+PRE(sys_flistxattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_flistxattr ( %d, %p, %llu )", ARG1, ARG2, (ULong)ARG3);
+   PRE_REG_READ3(ssize_t, "flistxattr",
+                 int, fd, char *, list, vki_size_t, size);
+   PRE_MEM_WRITE( "flistxattr(list)", ARG2, ARG3 );
+}
+POST(sys_flistxattr)
+{
+   if (RES > 0 && ARG2 != (Addr)NULL)
+      POST_MEM_WRITE( ARG2, RES );
+}
+
+PRE(sys_removexattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_removexattr ( %p, %p )", ARG1, ARG2);
+   PRE_REG_READ2(long, "removexattr", char *, path, char *, name);
+   PRE_MEM_RASCIIZ( "removexattr(path)", ARG1 );
+   PRE_MEM_RASCIIZ( "removexattr(name)", ARG2 );
+}
+
+PRE(sys_lremovexattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_lremovexattr ( %p, %p )", ARG1, ARG2);
+   PRE_REG_READ2(long, "lremovexattr", char *, path, char *, name);
+   PRE_MEM_RASCIIZ( "lremovexattr(path)", ARG1 );
+   PRE_MEM_RASCIIZ( "lremovexattr(name)", ARG2 );
+}
+
+PRE(sys_fremovexattr)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_fremovexattr ( %d, %p )", ARG1, ARG2);
+   PRE_REG_READ2(long, "fremovexattr", int, fd, char *, name);
+   PRE_MEM_RASCIIZ( "fremovexattr(name)", ARG2 );
+}
+
 #undef PRE
 #undef POST
 

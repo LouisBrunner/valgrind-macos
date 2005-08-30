@@ -2213,18 +2213,18 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENXY(__NR_mincore,           sys_mincore),           // 206
    LINX_(__NR_gettid,            sys_gettid),            // 207
 //..    LINX_(__NR_tkill,             sys_tkill),             // 208 */Linux
-//..    GENX_(__NR_setxattr,          sys_setxattr),          // 209
-//..    GENX_(__NR_lsetxattr,         sys_lsetxattr),         // 210
-//..    GENX_(__NR_fsetxattr,         sys_fsetxattr),         // 211
+//..    LINX_(__NR_setxattr,          sys_setxattr),          // 209
+//..    LINX_(__NR_lsetxattr,         sys_lsetxattr),         // 210
+//..    LINX_(__NR_fsetxattr,         sys_fsetxattr),         // 211
    GENXY(__NR_getxattr,          sys_getxattr),          // 212
-//..    GENXY(__NR_lgetxattr,         sys_lgetxattr),         // 213
-//..    GENXY(__NR_fgetxattr,         sys_fgetxattr),         // 214
-//..    GENXY(__NR_listxattr,         sys_listxattr),         // 215
-//..    GENXY(__NR_llistxattr,        sys_llistxattr),        // 216
-//..    GENXY(__NR_flistxattr,        sys_flistxattr),        // 217
-//..    GENX_(__NR_removexattr,       sys_removexattr),       // 218
-//..    GENX_(__NR_lremovexattr,      sys_lremovexattr),      // 219
-//..    GENX_(__NR_fremovexattr,      sys_fremovexattr),      // 220
+//..    LINXY(__NR_lgetxattr,         sys_lgetxattr),         // 213
+//..    LINXY(__NR_fgetxattr,         sys_fgetxattr),         // 214
+//..    LINXY(__NR_listxattr,         sys_listxattr),         // 215
+//..    LINXY(__NR_llistxattr,        sys_llistxattr),        // 216
+//..    LINXY(__NR_flistxattr,        sys_flistxattr),        // 217
+//..    LINX_(__NR_removexattr,       sys_removexattr),       // 218
+//..    LINX_(__NR_lremovexattr,      sys_lremovexattr),      // 219
+//..    LINX_(__NR_fremovexattr,      sys_fremovexattr),      // 220
 
    LINXY(__NR_futex,             sys_futex),                  // 221
 //..    GENX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 222

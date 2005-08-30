@@ -1401,20 +1401,20 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_security,          sys_ni_syscall),     // 185 
    LINX_(__NR_gettid,            sys_gettid),         // 186 
    //   (__NR_readahead,         sys_readahead),      // 187 
-   //   (__NR_setxattr,          sys_setxattr),       // 188 
-   //   (__NR_lsetxattr,         sys_lsetxattr),      // 189 
+   //LINX_(__NR_setxattr,          sys_setxattr),       // 188 
+   //LINX_(__NR_lsetxattr,         sys_lsetxattr),      // 189 
 
-   //   (__NR_fsetxattr,         sys_fsetxattr),      // 190 
-   GENXY(__NR_getxattr,          sys_getxattr),       // 191 
-   //   (__NR_lgetxattr,         sys_lgetxattr),      // 192 
-   //   (__NR_fgetxattr,         sys_fgetxattr),      // 193 
-   //   (__NR_listxattr,         sys_listxattr),      // 194 
+   //LINX_(__NR_fsetxattr,         sys_fsetxattr),      // 190 
+   LINXY(__NR_getxattr,          sys_getxattr),       // 191 
+   //LINXY(__NR_lgetxattr,         sys_lgetxattr),      // 192 
+   //LINXY(__NR_fgetxattr,         sys_fgetxattr),      // 193 
+   //LINXY(__NR_listxattr,         sys_listxattr),      // 194 
 
-   //   (__NR_llistxattr,        sys_llistxattr),     // 195 
-   //   (__NR_flistxattr,        sys_flistxattr),     // 196 
-   //   (__NR_removexattr,       sys_removexattr),    // 197 
-   //   (__NR_lremovexattr,      sys_lremovexattr),   // 198 
-   //   (__NR_fremovexattr,      sys_fremovexattr),   // 199 
+   //LINXY(__NR_llistxattr,        sys_llistxattr),     // 195 
+   //LINXY(__NR_flistxattr,        sys_flistxattr),     // 196 
+   //LINX_(__NR_removexattr,       sys_removexattr),    // 197 
+   //LINX_(__NR_lremovexattr,      sys_lremovexattr),   // 198 
+   //LINX_(__NR_fremovexattr,      sys_fremovexattr),   // 199 
 
    //   (__NR_tkill,             sys_tkill),             // 200 
    GENXY(__NR_time,              sys_time), /*was sys_time64*/ // 201 

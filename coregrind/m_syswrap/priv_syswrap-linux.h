@@ -136,6 +136,19 @@ DECL_TEMPLATE(linux, sys_chown16);
 DECL_TEMPLATE(linux, sys_fchown16);
 //DECL_TEMPLATE(linux, sys_lchown16);      // not yet encountered
 
+// Are these POSIX?  In Darwin they have an extra parameter 'position'.
+DECL_TEMPLATE(linux, sys_setxattr);
+DECL_TEMPLATE(linux, sys_lsetxattr);
+DECL_TEMPLATE(linux, sys_fsetxattr);
+DECL_TEMPLATE(linux, sys_getxattr);
+DECL_TEMPLATE(linux, sys_lgetxattr);
+DECL_TEMPLATE(linux, sys_fgetxattr);
+DECL_TEMPLATE(linux, sys_listxattr);
+DECL_TEMPLATE(linux, sys_llistxattr);
+DECL_TEMPLATE(linux, sys_flistxattr);
+DECL_TEMPLATE(linux, sys_removexattr);
+DECL_TEMPLATE(linux, sys_lremovexattr);
+DECL_TEMPLATE(linux, sys_fremovexattr);
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

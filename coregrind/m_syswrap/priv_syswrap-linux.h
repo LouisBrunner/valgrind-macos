@@ -147,7 +147,9 @@ DECL_TEMPLATE(linux, sys_removexattr);
 DECL_TEMPLATE(linux, sys_lremovexattr);
 DECL_TEMPLATE(linux, sys_fremovexattr);
 
-// Are these Posix?  Darwin doesn't have them, so put them here for now.
+// These are Posix, but not necessarily syscalls.  Darwin only supports
+// sched_get_priority_{min,max} and sched_yield, but as libc functions, not
+// syscalls.
 DECL_TEMPLATE(linux, sys_sched_setparam);
 DECL_TEMPLATE(linux, sys_sched_getparam);
 DECL_TEMPLATE(linux, sys_sched_setscheduler);
@@ -158,6 +160,51 @@ DECL_TEMPLATE(linux, sys_sched_get_priority_min);
 //DECL_TEMPLATE(linux, sys_sched_rr_get_interval);    // not yet encountered
 DECL_TEMPLATE(linux, sys_sched_setaffinity);
 DECL_TEMPLATE(linux, sys_sched_getaffinity);
+
+// These ones have different parameters and/or return values on Darwin.
+// Also, some archs on Linux do not match the generic wrapper for sys_pipe.
+DECL_TEMPLATE(linux, sys_munlockall);
+DECL_TEMPLATE(linux, sys_pipe);
+DECL_TEMPLATE(linux, sys_quotactl);
+DECL_TEMPLATE(linux, sys_waitid);
+
+// Posix, but in Darwin utime is a libc function that calls syscall utimes.
+DECL_TEMPLATE(linux, sys_utime);
+
+// On Darwin, off_t is 64-bits even on 32-bit platforms.
+DECL_TEMPLATE(linux, sys_lseek);
+
+// Darwin (and probably other OSes) don't have the old_sigset_t type.
+DECL_TEMPLATE(linux, sys_sigpending);
+DECL_TEMPLATE(linux, sys_sigprocmask);
+
+// I think these are Linux-specific?
+DECL_TEMPLATE(linux, sys_rt_sigaction);
+DECL_TEMPLATE(linux, sys_rt_sigprocmask);
+DECL_TEMPLATE(linux, sys_rt_sigpending);
+DECL_TEMPLATE(linux, sys_rt_sigtimedwait);
+DECL_TEMPLATE(linux, sys_rt_sigqueueinfo);
+DECL_TEMPLATE(linux, sys_rt_sigsuspend);
+
+/* ---------------------------------------------------------------------
+   Wrappers for sockets and ipc-ery.  These are split into standalone
+   procedures because x86-linux hides them inside multiplexors
+   (sys_socketcall and sys_ipc).
+   ------------------------------------------------------------------ */
+
+#define TId ThreadId
+#define UW  UWord
+#define SR  SysRes
+
+extern void   ML_(linux_PRE_sys_msgsnd)  ( TId, UW, UW, UW, UW );
+extern void   ML_(linux_PRE_sys_msgrcv)  ( TId, UW, UW, UW, UW, UW );
+extern void   ML_(linux_POST_sys_msgrcv) ( TId, UW, UW, UW, UW, UW, UW );
+extern void   ML_(linux_PRE_sys_msgctl)  ( TId, UW, UW, UW );
+extern void   ML_(linux_POST_sys_msgctl) ( TId, UW, UW, UW, UW );
+
+#undef TId
+#undef UW
+#undef SR
 
 #endif   // __PRIV_SYSWRAP_LINUX_H
 

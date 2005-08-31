@@ -1185,14 +1185,14 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_fstat,             sys_newfstat),       // 5 
    GENXY(__NR_lstat,             sys_newlstat),       // 6 
    GENXY(__NR_poll,              sys_poll),           // 7 
-   GENX_(__NR_lseek,             sys_lseek),          // 8 
+   LINX_(__NR_lseek,             sys_lseek),          // 8 
    GENXY(__NR_mmap,              sys_mmap2),          // 9 
 
    GENXY(__NR_mprotect,          sys_mprotect),       // 10 
    GENXY(__NR_munmap,            sys_munmap),         // 11 
    GENX_(__NR_brk,               sys_brk),            // 12 
-   GENXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 13 
-   GENXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 14 
+   LINXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 13 
+   LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 14 
 
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 15 
    GENXY(__NR_ioctl,             sys_ioctl),          // 16 
@@ -1202,7 +1202,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENX_(__NR_writev,            sys_writev),         // 20 
    GENX_(__NR_access,            sys_access),         // 21 
-   GENXY(__NR_pipe,              sys_pipe),           // 22 
+   LINXY(__NR_pipe,              sys_pipe),           // 22 
    GENX_(__NR_select,            sys_select),         // 23 
    LINX_(__NR_sched_yield,       sys_sched_yield),    // 24 
 
@@ -1328,13 +1328,13 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    // LINXY(__NR_capget,            sys_capget),         // 125 
    // LINX_(__NR_capset,            sys_capset),         // 126 
-   GENXY(__NR_rt_sigpending,     sys_rt_sigpending),  // 127 
-   GENXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),// 128 
-   GENXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),// 129 
+   LINXY(__NR_rt_sigpending,     sys_rt_sigpending),  // 127 
+   LINXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),// 128 
+   LINXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),// 129 
 
-   GENX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),  // 130 
+   LINX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),  // 130 
    GENXY(__NR_sigaltstack,       sys_sigaltstack),    // 131 
-   GENX_(__NR_utime,             sys_utime),          // 132 
+   LINX_(__NR_utime,             sys_utime),          // 132 
    GENX_(__NR_mknod,             sys_mknod),          // 133 
    //   (__NR_uselib,            sys_uselib),         // 134 
 
@@ -1358,7 +1358,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENX_(__NR_munlock,           sys_munlock),        // 150 
    GENX_(__NR_mlockall,          sys_mlockall),       // 151 
-   GENX_(__NR_munlockall,        sys_munlockall),     // 152 
+   LINX_(__NR_munlockall,        sys_munlockall),     // 152 
    //   (__NR_vhangup,           sys_vhangup),        // 153 
    //   (__NR_modify_ldt,        sys_modify_ldt),     // 154 
 
@@ -1390,7 +1390,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_delete_module,     sys_delete_module),  // 176 
    //   (__NR_get_kernel_syms,   sys_ni_syscall),     // 177 
    //   (__NR_query_module,      sys_ni_syscall),     // 178 
-   //   (__NR_quotactl,          sys_quotactl),       // 179 
+   //LINX_(__NR_quotactl,          sys_quotactl),       // 179 
 
    //   (__NR_nfsservctl,        sys_nfsservctl),     // 180 
    //   (__NR_getpmsg,           sys_ni_syscall),     // 181
@@ -1472,7 +1472,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    LINXY(__NR_mq_getsetattr,     sys_mq_getsetattr),  // 245 
    //   (__NR_kexec_load,        sys_ni_syscall),     // 246 
-   GENXY(__NR_waitid,            sys_waitid),         // 247 
+   LINXY(__NR_waitid,            sys_waitid),         // 247 
 //   LINX_(__NR_add_key,           sys_add_key),        // 248
 //   LINX_(__NR_request_key,       sys_request_key),    // 249
 

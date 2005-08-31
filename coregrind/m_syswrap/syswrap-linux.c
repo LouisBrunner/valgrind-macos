@@ -42,6 +42,7 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_options.h"
 #include "pub_core_scheduler.h"
+#include "pub_core_signals.h"
 #include "pub_core_syscall.h"
 
 #include "priv_types_n_macros.h"
@@ -639,7 +640,6 @@ PRE(sys_set_tid_address)
 
 PRE(sys_tgkill)
 {
-   /* int tgkill(pid_t tgid, pid_t tid, int sig); */
    PRINT("sys_tgkill ( %d, %d, %d )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "tgkill", int, tgid, int, tid, int, sig);
    if (!ML_(client_signal_OK)(ARG3)) {
@@ -1537,6 +1537,388 @@ PRE(sys_sched_getaffinity)
 POST(sys_sched_getaffinity)
 {
    POST_MEM_WRITE(ARG3, ARG2);
+}
+
+/* ---------------------------------------------------------------------
+   miscellaneous wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_munlockall)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_munlockall ( )");
+   PRE_REG_READ0(long, "munlockall");
+}
+
+// XXX: sort of x86/Linux-specific
+PRE(sys_pipe)
+{
+   PRINT("sys_pipe ( %p )", ARG1);
+   PRE_REG_READ1(int, "pipe", unsigned long *, filedes);
+   PRE_MEM_WRITE( "pipe(filedes)", ARG1, 2*sizeof(long) );
+}
+POST(sys_pipe)
+{
+   Int *p = (Int *)ARG1;
+
+   if (!ML_(fd_allowed)(p[0], "pipe", tid, True) ||
+       !ML_(fd_allowed)(p[1], "pipe", tid, True)) {
+      VG_(close)(p[0]);
+      VG_(close)(p[1]);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      POST_MEM_WRITE( ARG1, 2*sizeof(int) );
+      if (VG_(clo_track_fds)) {
+         ML_(record_fd_open_nameless)(tid, p[0]);
+         ML_(record_fd_open_nameless)(tid, p[1]);
+      }
+   }
+}
+
+PRE(sys_quotactl)
+{
+   PRINT("sys_quotactl (0x%x, %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3, ARG4);
+   PRE_REG_READ4(long, "quotactl",
+                 unsigned int, cmd, const char *, special, vki_qid_t, id,
+                 void *, addr);
+   PRE_MEM_RASCIIZ( "quotactl(special)", ARG2 );
+}
+
+PRE(sys_waitid)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_waitid( %d, %d, %p, %d, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(int32_t, "sys_waitid",
+                 int, which, vki_pid_t, pid, struct vki_siginfo *, infop,
+                 int, options, struct vki_rusage *, ru);
+   PRE_MEM_WRITE( "waitid(infop)", ARG3, sizeof(struct vki_siginfo) );
+   if (ARG5 != 0)
+      PRE_MEM_WRITE( "waitid(ru)", ARG5, sizeof(struct vki_rusage) );
+}
+POST(sys_waitid)
+{
+   POST_MEM_WRITE( ARG3, sizeof(struct vki_siginfo) );
+   if (ARG5 != 0)
+      POST_MEM_WRITE( ARG5, sizeof(struct vki_rusage) );
+}
+
+/* ---------------------------------------------------------------------
+   utime wrapper
+   ------------------------------------------------------------------ */
+
+PRE(sys_utime)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_utime ( %p, %p )", ARG1,ARG2);
+   PRE_REG_READ2(long, "utime", char *, filename, struct utimbuf *, buf);
+   PRE_MEM_RASCIIZ( "utime(filename)", ARG1 );
+   if (ARG2 != 0)
+      PRE_MEM_READ( "utime(buf)", ARG2, sizeof(struct vki_utimbuf) );
+}
+
+/* ---------------------------------------------------------------------
+   lseek wrapper
+   ------------------------------------------------------------------ */
+
+PRE(sys_lseek)
+{
+   PRINT("sys_lseek ( %d, %d, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(vki_off_t, "lseek",
+                 unsigned int, fd, vki_off_t, offset, unsigned int, whence);
+}
+
+/* ---------------------------------------------------------------------
+   sig* wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_sigpending)
+{
+   PRINT( "sys_sigpending ( %p )", ARG1 );
+   PRE_REG_READ1(long, "sigpending", vki_old_sigset_t *, set);
+   PRE_MEM_WRITE( "sigpending(set)", ARG1, sizeof(vki_old_sigset_t));
+}
+POST(sys_sigpending)
+{
+   POST_MEM_WRITE( ARG1, sizeof(vki_old_sigset_t) ) ;
+}
+
+// This syscall is not used on amd64/Linux -- it only provides
+// sys_rt_sigprocmask, which uses sigset_t rather than old_sigset_t.
+// This wrapper is only suitable for 32-bit architectures.
+// (XXX: so how is it that PRE(sys_sigpending) above doesn't need
+// conditional compilation like this?)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+PRE(sys_sigprocmask)
+{
+   vki_old_sigset_t* set;
+   vki_old_sigset_t* oldset;
+   vki_sigset_t bigger_set;
+   vki_sigset_t bigger_oldset;
+
+   PRINT("sys_sigprocmask ( %d, %p, %p )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "sigprocmask", 
+                 int, how, vki_old_sigset_t *, set, vki_old_sigset_t *, oldset);
+   if (ARG2 != 0)
+      PRE_MEM_READ( "sigprocmask(set)", ARG2, sizeof(vki_old_sigset_t));
+   if (ARG3 != 0)
+      PRE_MEM_WRITE( "sigprocmask(oldset)", ARG3, sizeof(vki_old_sigset_t));
+
+   // Nb: We must convert the smaller vki_old_sigset_t params into bigger
+   // vki_sigset_t params.
+   set    = (vki_old_sigset_t*)ARG2;
+   oldset = (vki_old_sigset_t*)ARG3;
+
+   VG_(memset)(&bigger_set,    0, sizeof(vki_sigset_t));
+   VG_(memset)(&bigger_oldset, 0, sizeof(vki_sigset_t));
+   if (set)
+      bigger_set.sig[0] = *(vki_old_sigset_t*)set;
+
+   SET_STATUS_from_SysRes(
+      VG_(do_sys_sigprocmask) ( tid, ARG1 /*how*/, 
+                                set ? &bigger_set    : NULL,
+                             oldset ? &bigger_oldset : NULL)
+   );
+
+   if (oldset)
+      *oldset = bigger_oldset.sig[0];
+
+   if (SUCCESS)
+      *flags |= SfPollAfter;
+}
+POST(sys_sigprocmask)
+{
+   vg_assert(SUCCESS);
+   if (RES == 0 && ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(vki_old_sigset_t));
+}
+#endif
+
+/* ---------------------------------------------------------------------
+   rt_sig* wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_rt_sigaction)
+{
+   PRINT("sys_rt_sigaction ( %d, %p, %p, %d )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "rt_sigaction",
+                 int, signum, const struct sigaction *, act,
+                 struct sigaction *, oldact, vki_size_t, sigsetsize);
+
+   if (ARG2 != 0) {
+      struct vki_sigaction *sa = (struct vki_sigaction *)ARG2;
+      PRE_MEM_READ( "rt_sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
+      PRE_MEM_READ( "rt_sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
+      PRE_MEM_READ( "rt_sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
+      if (sa->sa_flags & VKI_SA_RESTORER)
+         PRE_MEM_READ( "rt_sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
+   }
+   if (ARG3 != 0)
+      PRE_MEM_WRITE( "rt_sigaction(oldact)", ARG3, sizeof(struct vki_sigaction));
+
+   // XXX: doesn't seem right to be calling do_sys_sigaction for
+   // sys_rt_sigaction... perhaps this function should be renamed
+   // VG_(do_sys_rt_sigaction)()  --njn
+
+   SET_STATUS_from_SysRes(
+      VG_(do_sys_sigaction)(ARG1, (const struct vki_sigaction *)ARG2,
+                            (struct vki_sigaction *)ARG3)
+   );
+}
+POST(sys_rt_sigaction)
+{
+   vg_assert(SUCCESS);
+   if (RES == 0 && ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_sigaction));
+}
+
+PRE(sys_rt_sigprocmask)
+{
+   PRINT("sys_rt_sigprocmask ( %d, %p, %p, %llu )",ARG1,ARG2,ARG3,(ULong)ARG4);
+   PRE_REG_READ4(long, "rt_sigprocmask", 
+                 int, how, vki_sigset_t *, set, vki_sigset_t *, oldset,
+                 vki_size_t, sigsetsize);
+   if (ARG2 != 0)
+      PRE_MEM_READ( "rt_sigprocmask(set)", ARG2, sizeof(vki_sigset_t));
+   if (ARG3 != 0)
+      PRE_MEM_WRITE( "rt_sigprocmask(oldset)", ARG3, sizeof(vki_sigset_t));
+
+   // Like the kernel, we fail if the sigsetsize is not exactly what we expect.
+   if (sizeof(vki_sigset_t) != ARG4)
+      SET_STATUS_Failure( VKI_EMFILE );
+   else {
+      SET_STATUS_from_SysRes( 
+                  VG_(do_sys_sigprocmask) ( tid, ARG1 /*how*/, 
+                                            (vki_sigset_t*) ARG2,
+                                            (vki_sigset_t*) ARG3 )
+      );
+   }
+
+   if (SUCCESS)
+      *flags |= SfPollAfter;
+}
+POST(sys_rt_sigprocmask)
+{
+   vg_assert(SUCCESS);
+   if (RES == 0 && ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(vki_sigset_t));
+}
+
+PRE(sys_rt_sigpending)
+{
+   PRINT( "sys_rt_sigpending ( %p )", ARG1 );
+   PRE_REG_READ2(long, "rt_sigpending", 
+                 vki_sigset_t *, set, vki_size_t, sigsetsize);
+   PRE_MEM_WRITE( "rt_sigpending(set)", ARG1, sizeof(vki_sigset_t));
+}
+POST(sys_rt_sigpending)
+{
+   POST_MEM_WRITE( ARG1, sizeof(vki_sigset_t) ) ;
+}
+
+PRE(sys_rt_sigtimedwait)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_rt_sigtimedwait ( %p, %p, %p, %lld )",
+         ARG1,ARG2,ARG3,(ULong)ARG4);
+   PRE_REG_READ4(long, "rt_sigtimedwait", 
+                 const vki_sigset_t *, set, vki_siginfo_t *, info,
+                 const struct timespec *, timeout, vki_size_t, sigsetsize);
+   if (ARG1 != 0) 
+      PRE_MEM_READ(  "rt_sigtimedwait(set)",  ARG1, sizeof(vki_sigset_t));
+   if (ARG2 != 0)
+      PRE_MEM_WRITE( "rt_sigtimedwait(info)", ARG2, sizeof(vki_siginfo_t) );
+   if (ARG3 != 0)
+      PRE_MEM_READ( "rt_sigtimedwait(timeout)",
+                    ARG3, sizeof(struct vki_timespec) );
+}
+POST(sys_rt_sigtimedwait)
+{
+   if (ARG2 != 0)
+      POST_MEM_WRITE( ARG2, sizeof(vki_siginfo_t) );
+}
+
+PRE(sys_rt_sigqueueinfo)
+{
+   PRINT("sys_rt_sigqueueinfo(%d, %d, %p)", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "rt_sigqueueinfo", 
+                 int, pid, int, sig, vki_siginfo_t *, uinfo);
+   if (ARG2 != 0)
+      PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", ARG3, sizeof(vki_siginfo_t) );
+}
+POST(sys_rt_sigqueueinfo)
+{
+   if (!ML_(client_signal_OK)(ARG2))
+      SET_STATUS_Failure( VKI_EINVAL );
+}
+
+// XXX: x86-specific?  The kernel prototypes for the different archs are
+//      hard to decipher.
+PRE(sys_rt_sigsuspend)
+{
+   /* The C library interface to sigsuspend just takes a pointer to
+      a signal mask but this system call has two arguments - a pointer
+      to the mask and the number of bytes used by it. The kernel insists
+      on the size being equal to sizeof(sigset_t) however and will just
+      return EINVAL if it isn't.
+    */
+   *flags |= SfMayBlock;
+   PRINT("sys_rt_sigsuspend ( %p, %d )", ARG1,ARG2 );
+   PRE_REG_READ2(int, "rt_sigsuspend", vki_sigset_t *, mask, vki_size_t, size)
+   if (ARG1 != (Addr)NULL) {
+      PRE_MEM_READ( "rt_sigsuspend(mask)", ARG1, sizeof(vki_sigset_t) );
+   }
+}
+
+/* ---------------------------------------------------------------------
+   linux msg* wrapper helpers
+   ------------------------------------------------------------------ */
+
+void
+ML_(linux_PRE_sys_msgsnd) ( ThreadId tid,
+                            UWord arg0, UWord arg1, UWord arg2, UWord arg3 )
+{
+   /* int msgsnd(int msqid, struct msgbuf *msgp, size_t msgsz, int msgflg); */
+   struct vki_msgbuf *msgp = (struct vki_msgbuf *)arg1;
+   PRE_MEM_READ( "msgsnd(msgp->mtype)", (Addr)&msgp->mtype, sizeof(msgp->mtype) );
+   PRE_MEM_READ( "msgsnd(msgp->mtext)", (Addr)&msgp->mtext, arg2 );
+}
+
+void
+ML_(linux_PRE_sys_msgrcv) ( ThreadId tid,
+                            UWord arg0, UWord arg1, UWord arg2,
+                            UWord arg3, UWord arg4 )
+{
+   /* ssize_t msgrcv(int msqid, struct msgbuf *msgp, size_t msgsz,
+                     long msgtyp, int msgflg); */
+   struct vki_msgbuf *msgp = (struct vki_msgbuf *)arg1;
+   PRE_MEM_WRITE( "msgrcv(msgp->mtype)", (Addr)&msgp->mtype, sizeof(msgp->mtype) );
+   PRE_MEM_WRITE( "msgrcv(msgp->mtext)", (Addr)&msgp->mtext, arg2 );
+}
+void
+ML_(linux_POST_sys_msgrcv) ( ThreadId tid,
+                             UWord res,
+                             UWord arg0, UWord arg1, UWord arg2,
+                             UWord arg3, UWord arg4 )
+{
+   struct vki_msgbuf *msgp = (struct vki_msgbuf *)arg1;
+   POST_MEM_WRITE( (Addr)&msgp->mtype, sizeof(msgp->mtype) );
+   POST_MEM_WRITE( (Addr)&msgp->mtext, res );
+}
+
+void
+ML_(linux_PRE_sys_msgctl) ( ThreadId tid,
+                            UWord arg0, UWord arg1, UWord arg2 )
+{
+   /* int msgctl(int msqid, int cmd, struct msqid_ds *buf); */
+   switch (arg1 /* cmd */) {
+   case VKI_IPC_INFO:
+   case VKI_MSG_INFO:
+   case VKI_IPC_INFO|VKI_IPC_64:
+   case VKI_MSG_INFO|VKI_IPC_64:
+      PRE_MEM_WRITE( "msgctl(IPC_INFO, buf)",
+                     arg2, sizeof(struct vki_msginfo) );
+      break;
+   case VKI_IPC_STAT:
+   case VKI_MSG_STAT:
+      PRE_MEM_WRITE( "msgctl(IPC_STAT, buf)",
+                     arg2, sizeof(struct vki_msqid_ds) );
+      break;
+   case VKI_IPC_STAT|VKI_IPC_64:
+   case VKI_MSG_STAT|VKI_IPC_64:
+      PRE_MEM_WRITE( "msgctl(IPC_STAT, arg.buf)",
+                     arg2, sizeof(struct vki_msqid64_ds) );
+      break;
+   case VKI_IPC_SET:
+      PRE_MEM_READ( "msgctl(IPC_SET, arg.buf)",
+                    arg2, sizeof(struct vki_msqid_ds) );
+      break;
+   case VKI_IPC_SET|VKI_IPC_64:
+      PRE_MEM_READ( "msgctl(IPC_SET, arg.buf)",
+                    arg2, sizeof(struct vki_msqid64_ds) );
+      break;
+   }
+}
+void
+ML_(linux_POST_sys_msgctl) ( ThreadId tid,
+                             UWord res,
+                             UWord arg0, UWord arg1, UWord arg2 )
+{
+   switch (arg1 /* cmd */) {
+   case VKI_IPC_INFO:
+   case VKI_MSG_INFO:
+   case VKI_IPC_INFO|VKI_IPC_64:
+   case VKI_MSG_INFO|VKI_IPC_64:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_msginfo) );
+      break;
+   case VKI_IPC_STAT:
+   case VKI_MSG_STAT:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_msqid_ds) );
+      break;
+   case VKI_IPC_STAT|VKI_IPC_64:
+   case VKI_MSG_STAT|VKI_IPC_64:
+      POST_MEM_WRITE( arg2, sizeof(struct vki_msqid64_ds) );
+      break;
+   }
 }
 
 #undef PRE

@@ -2192,7 +2192,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_vfork,             sys_fork),              // 189
    GENXY(__NR_ugetrlimit,        sys_getrlimit),         // 190
 //__NR_readahead      // 191 ppc/Linux only?
-   GENXY(__NR_mmap2,             sys_mmap2),             // 192
+   LINXY(__NR_mmap2,             sys_mmap2),             // 192
 //..    GENX_(__NR_truncate64,        sys_truncate64),        // 193
 //..    GENX_(__NR_ftruncate64,       sys_ftruncate64),       // 194
 //..    

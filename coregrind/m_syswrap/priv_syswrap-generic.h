@@ -178,7 +178,6 @@ DECL_TEMPLATE(generic, sys_sigaltstack);           // (x86) (XPG4-UNIX)
 DECL_TEMPLATE(generic, sys_getpmsg);               // (?) (?)
 DECL_TEMPLATE(generic, sys_putpmsg);               // (?) (?)
 DECL_TEMPLATE(generic, sys_getrlimit);             // * (?)
-DECL_TEMPLATE(generic, sys_mmap2);                 // (x86?) P?
 DECL_TEMPLATE(generic, sys_truncate64);            // %% (P?)
 DECL_TEMPLATE(generic, sys_ftruncate64);           // %% (P?)
 DECL_TEMPLATE(generic, sys_lchown);                // * (L?)

@@ -66,6 +66,7 @@ DECL_TEMPLATE(linux, sys_prctl);
 DECL_TEMPLATE(linux, sys_sendfile);
 DECL_TEMPLATE(linux, sys_sendfile64);
 DECL_TEMPLATE(linux, sys_futex);
+DECL_TEMPLATE(linux, sys_mmap2);
 
 DECL_TEMPLATE(linux, sys_epoll_create);
 DECL_TEMPLATE(linux, sys_epoll_ctl);

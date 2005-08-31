@@ -546,6 +546,57 @@ POST(sys_futex)
    }
 }
 
+PRE(sys_mmap2)
+{
+   // Exactly like old_mmap() in x86-linux except:
+   //  - all 6 args are passed in regs, rather than in a memory-block.
+   //  - the file offset is specified in pagesize units rather than bytes,
+   //    so that it can be used for files bigger than 2^32 bytes.
+   PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
+         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRE_REG_READ6(long, "mmap2",
+                 unsigned long, start, unsigned long, length,
+                 unsigned long, prot,  unsigned long, flags,
+                 unsigned long, fd,    unsigned long, offset);
+
+   if (ARG2 == 0) {
+      /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
+         shall be established. */
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
+   }
+
+   if (/*(ARG4 & VKI_MAP_FIXED) && */ (0 != (ARG1 & (VKI_PAGE_SIZE-1)))) {
+      /* zap any misaligned addresses. */
+      /* SuSV3 says misaligned addresses only cause the MAP_FIXED case
+         to fail.   Here, we catch them all. */
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
+   }
+
+   if (ARG4 & VKI_MAP_FIXED) {
+      if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mmap2"))
+	 SET_STATUS_Failure( VKI_ENOMEM );
+   } else {
+      Addr a = VG_(find_map_space)(ARG1, ARG2, True);
+      if (a == 0 && ARG1 != 0)
+         a = VG_(find_map_space)(0, ARG2, True);
+      if (a == 0) {
+	 SET_STATUS_Failure( VKI_ENOMEM );
+      } else {
+         ARG1 = a;
+         ARG4 |= VKI_MAP_FIXED;
+      }
+   }
+}
+POST(sys_mmap2)
+{
+   vg_assert(SUCCESS);
+   vg_assert(ML_(valid_client_addr)(RES, ARG2, tid, "mmap2"));
+   ML_(mmap_segment)( (Addr)RES, ARG2, ARG3, ARG4, ARG5,
+                      ARG6 * (ULong)VKI_PAGE_SIZE );
+}
+
 /* ---------------------------------------------------------------------
    epoll_* wrappers
    ------------------------------------------------------------------ */

@@ -112,7 +112,7 @@ FIXED-30BRANCH: TODO
 111785  make fails if CC contains spaces
 
 FIXED-TRUNK:    4589, 4592
-FIXED-30BRANCH: 4597, 4598
+FIXED-30BRANCH: 4597, 4601
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.1                                ===

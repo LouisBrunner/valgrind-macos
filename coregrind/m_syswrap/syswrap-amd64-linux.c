@@ -1057,7 +1057,7 @@ PRE(sys_msgrcv)
 }
 POST(sys_msgrcv)
 {
-   ML_(generic_POST_sys_msgrcv)(tid, RES,ARG1,ARG2,ARG3,ARG4,ARG5);
+   ML_(linux_POST_sys_msgrcv)(tid, RES,ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
 PRE(sys_msgctl)
@@ -1069,7 +1069,7 @@ PRE(sys_msgctl)
 }
 POST(sys_msgctl)
 {
-   ML_(generic_POST_sys_msgctl)(tid, RES,ARG1,ARG2,ARG3);
+   ML_(linux_POST_sys_msgctl)(tid, RES,ARG1,ARG2,ARG3);
 }
 
 PRE(sys_shmget)

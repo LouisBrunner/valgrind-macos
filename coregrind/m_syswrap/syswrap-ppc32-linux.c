@@ -1359,13 +1359,13 @@ POST(sys_ipc)
                            (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
                            "msgrcv(msgp)" );
 
-      ML_(generic_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
+      ML_(linux_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
       break;
     }
   case VKI_MSGGET:
     break;
   case VKI_MSGCTL:
-    ML_(generic_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
+    ML_(linux_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
     break;
   case VKI_SHMAT:
     {
@@ -1823,13 +1823,13 @@ PRE(sys_sigreturn)
 //.. 			   (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
 //.. 			   "msgrcv(msgp)" );
 //.. 
-//..       ML_(generic_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
+//..       ML_(linux_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
 //..       break;
 //..    }
 //..    case VKI_MSGGET:
 //..       break;
 //..    case VKI_MSGCTL:
-//..       ML_(generic_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
+//..       ML_(linux_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
 //..       break;
 //..    case VKI_SHMAT:
 //..    {

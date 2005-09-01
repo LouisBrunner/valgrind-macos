@@ -1277,7 +1277,7 @@ PRE(sys_ipc)
       *flags |= SfMayBlock;
       break;
     case VKI_MSGSND:
-      ML_(generic_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
+      ML_(linux_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
       if ((ARG4 & VKI_IPC_NOWAIT) == 0)
 	*flags |= SfMayBlock;
       break;
@@ -1293,7 +1293,7 @@ PRE(sys_ipc)
 			     (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
 			     "msgrcv(msgp)" );
 
-	ML_(generic_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
+	ML_(linux_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
 
 	if ((ARG4 & VKI_IPC_NOWAIT) == 0)
 	  *flags |= SfMayBlock;
@@ -1302,7 +1302,7 @@ PRE(sys_ipc)
     case VKI_MSGGET:
       break;
     case VKI_MSGCTL:
-      ML_(generic_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
+      ML_(linux_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
       break;
     case VKI_SHMAT:
       {
@@ -1745,7 +1745,7 @@ PRE(sys_sigreturn)
 //..       /* tst->sys_flags |= MayBlock; */
 //..       break;
 //..    case VKI_MSGSND:
-//..       ML_(generic_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
+//..       ML_(linux_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
 //..       /* if ((ARG4 & VKI_IPC_NOWAIT) == 0)
 //..             tst->sys_flags |= MayBlock;
 //..       */
@@ -1762,7 +1762,7 @@ PRE(sys_sigreturn)
 //.. 			   (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
 //.. 			   "msgrcv(msgp)" );
 //.. 
-//..       ML_(generic_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
+//..       ML_(linux_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
 //.. 
 //..       /* if ((ARG4 & VKI_IPC_NOWAIT) == 0)
 //..             tst->sys_flags |= MayBlock;
@@ -1772,7 +1772,7 @@ PRE(sys_sigreturn)
 //..    case VKI_MSGGET:
 //..       break;
 //..    case VKI_MSGCTL:
-//..       ML_(generic_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
+//..       ML_(linux_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
 //..       break;
 //..    case VKI_SHMAT:
 //..       PRE_MEM_WRITE( "shmat(raddr)", ARG4, sizeof(Addr) );

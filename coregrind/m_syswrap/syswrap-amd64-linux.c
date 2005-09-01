@@ -1040,7 +1040,7 @@ PRE(sys_msgsnd)
    PRINT("sys_msgsnd ( %d, %p, %d, %d )",ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(long, "msgsnd",
                  int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz, int, msgflg);
-   ML_(generic_PRE_sys_msgsnd)(tid, ARG1,ARG2,ARG3,ARG4);
+   ML_(linux_PRE_sys_msgsnd)(tid, ARG1,ARG2,ARG3,ARG4);
    if ((ARG4 & VKI_IPC_NOWAIT) == 0)
       *flags |= SfMayBlock;
 }
@@ -1051,7 +1051,7 @@ PRE(sys_msgrcv)
    PRE_REG_READ5(long, "msgrcv",
                  int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz,
                  long, msgytp, int, msgflg);
-   ML_(generic_PRE_sys_msgrcv)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+   ML_(linux_PRE_sys_msgrcv)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
    if ((ARG4 & VKI_IPC_NOWAIT) == 0)
       *flags |= SfMayBlock;
 }
@@ -1065,7 +1065,7 @@ PRE(sys_msgctl)
    PRINT("sys_msgctl ( %d, %d, %p )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "msgctl",
                  int, msqid, int, cmd, struct msqid_ds *, buf);
-   ML_(generic_PRE_sys_msgctl)(tid, ARG1,ARG2,ARG3);
+   ML_(linux_PRE_sys_msgctl)(tid, ARG1,ARG2,ARG3);
 }
 POST(sys_msgctl)
 {

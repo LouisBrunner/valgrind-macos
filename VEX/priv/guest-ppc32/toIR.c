@@ -3396,42 +3396,44 @@ static Bool dis_int_shift ( UInt theInstr )
 
 
 
-//zz /*
-//zz   Integer Load/Store Reverse Instructions
-//zz */
-//zz static Bool dis_int_ldst_rev ( UInt theInstr )
-//zz {
-//zz    /* X-Form */
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar Ra_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar Rb_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
-//zz    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
-//zz    
-//zz    IRTemp EA    = newTemp(Ity_I32);
-//zz    IRTemp Rd    = newTemp(Ity_I32);
-//zz    IRTemp Rs    = newTemp(Ity_I32);
-//zz    IRTemp byte0 = newTemp(Ity_I32);
-//zz    IRTemp byte1 = newTemp(Ity_I32);
-//zz    IRTemp byte2 = newTemp(Ity_I32);
-//zz    IRTemp byte3 = newTemp(Ity_I32);
-//zz    IRTemp tmp16 = newTemp(Ity_I16);
-//zz    IRTemp tmp32 = newTemp(Ity_I32);
-//zz 
-//zz    if (opc1 != 0x1F || b0 != 0) {
-//zz       vex_printf("dis_int_ldst_rev(PPC32)(opc1|b0)\n");
-//zz       return False;
-//zz    }
-//zz    
-//zz    if (Ra_addr == 0) {
-//zz       assign( EA, getIReg(Rb_addr));
-//zz    } else {
-//zz       assign( EA, binop(Iop_Add32, getIReg(Ra_addr), getIReg(Rb_addr)) );
-//zz    }
-//zz    
-//zz    switch (opc2) {
+/*
+  Integer Load/Store Reverse Instructions
+*/
+static Bool dis_int_ldst_rev ( UInt theInstr )
+{
+   /* X-Form */
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+//   UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar Ra_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar Rb_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+   UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+   
+   IRTemp EA    = newTemp(Ity_I32);
+//   IRTemp Rd    = newTemp(Ity_I32);
+//   IRTemp Rs    = newTemp(Ity_I32);
+//   IRTemp byte0 = newTemp(Ity_I32);
+//   IRTemp byte1 = newTemp(Ity_I32);
+//   IRTemp byte2 = newTemp(Ity_I32);
+//   IRTemp byte3 = newTemp(Ity_I32);
+//   IRTemp tmp16 = newTemp(Ity_I16);
+//   IRTemp tmp32 = newTemp(Ity_I32);
+   IRTemp w1    = newTemp(Ity_I32);
+   IRTemp w2    = newTemp(Ity_I32);
+
+   if (opc1 != 0x1F || b0 != 0) {
+      vex_printf("dis_int_ldst_rev(PPC32)(opc1|b0)\n");
+      return False;
+   }
+   
+   if (Ra_addr == 0) {
+      assign( EA, getIReg(Rb_addr));
+   } else {
+      assign( EA, binop(Iop_Add32, getIReg(Ra_addr), getIReg(Rb_addr)) );
+   }
+   
+   switch (opc2) {
 //zz    case 0x316: // lhbrx (Load Half Word Byte-Reverse Indexed, PPC32 p449)
 //zz vassert(0);
 //zz 
@@ -3443,25 +3445,26 @@ static Bool dis_int_shift ( UInt theInstr )
 //zz                         mkexpr(byte0)) );
 //zz       putIReg( Rd_addr, mkexpr(Rd));
 //zz       break;
-//zz        
-//zz    case 0x216: // lwbrx (Load Word Byte-Reverse Indexed, PPC32 p459)
-//zz vassert(0);
-//zz 
-//zz       DIP("lwbrx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
-//zz       assign( byte0, loadBE(Ity_I8, mkexpr(EA)) );
-//zz       assign( byte1, loadBE(Ity_I8, binop(Iop_Add32, mkexpr(EA),mkU32(1))) );
-//zz       assign( byte2, loadBE(Ity_I8, binop(Iop_Add32, mkexpr(EA),mkU32(2))) );
-//zz       assign( byte3, loadBE(Ity_I8, binop(Iop_Add32, mkexpr(EA),mkU32(3))) );
-//zz       assign( Rd, binop(Iop_Or32,
-//zz                         binop(Iop_Or32,
-//zz                               binop(Iop_Shl32, mkexpr(byte3), mkU8(24)),
-//zz                               binop(Iop_Shl32, mkexpr(byte2), mkU8(16))),
-//zz                         binop(Iop_Or32,
-//zz                               binop(Iop_Shl32, mkexpr(byte1), mkU8(8)),
-//zz                               mkexpr(byte0))) );
-//zz       putIReg( Rd_addr, mkexpr(Rd));
-//zz       break;
-//zz       
+       
+   case 0x216: // lwbrx (Load Word Byte-Reverse Indexed, PPC32 p459)
+      DIP("lwbrx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
+      assign( w1, loadBE(Ity_I32, mkexpr(EA)) );
+      assign( w2,
+         binop(Iop_Or32,
+            binop(Iop_Shl32, mkexpr(w1), mkU8(24)),
+         binop(Iop_Or32,
+            binop(Iop_And32, binop(Iop_Shl32, mkexpr(w1), mkU8(8)), 
+                             mkU32(0x00FF0000)),
+         binop(Iop_Or32,
+            binop(Iop_And32, binop(Iop_Shr32, mkexpr(w1), mkU8(8)),
+                             mkU32(0x0000FF00)),
+            binop(Iop_And32, binop(Iop_Shr32, mkexpr(w1), mkU8(24)),
+                             mkU32(0x000000FF) )
+         )))
+      );
+      putIReg( Rd_addr, mkexpr(w2));
+      break;
+      
 //zz    case 0x396: // sthbrx (Store Half Word Byte-Reverse Indexed, PPC32 p523)
 //zz vassert(0);
 //zz 
@@ -3498,13 +3501,13 @@ static Bool dis_int_shift ( UInt theInstr )
 //zz                           binop(Iop_Shr32, mkexpr(byte3), mkU8(24)))) );
 //zz       storeBE( mkexpr(EA), mkexpr(tmp32) );
 //zz       break;
-//zz       
-//zz    default:
-//zz       vex_printf("dis_int_ldst_rev(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
+      
+   default:
+      vex_printf("dis_int_ldst_rev(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
 
 
 
@@ -6411,12 +6414,12 @@ DisResult disInstr_PPC32_WRK (
          if (dis_int_store( theInstr )) goto decode_success;
          goto decode_failure;
 
-//zz       /* Integer Load and Store with Byte Reverse Instructions */
-//zz       case 0x316: case 0x216: case 0x396: // lhbrx, lwbrx, sthbrx
-//zz       case 0x296:                         // stwbrx
-//zz          if (dis_int_ldst_rev( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz          
+      /* Integer Load and Store with Byte Reverse Instructions */
+      case 0x316: case 0x216: case 0x396: // lhbrx, lwbrx, sthbrx
+      case 0x296:                         // stwbrx
+         if (dis_int_ldst_rev( theInstr )) goto decode_success;
+         goto decode_failure;
+         
 //zz       /* Integer Load and Store String Instructions */
 //zz       case 0x255: case 0x215: case 0x2D5: // lswi, lswx, stswi
 //zz       case 0x295:                         // stswx

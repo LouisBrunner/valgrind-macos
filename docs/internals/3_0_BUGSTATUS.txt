@@ -61,6 +61,15 @@ n-i-bz  Give more info about seginfo dropping.
 
 FIXED-TRUNK:    vg:4425
 
+----------------------------------------------------------------
+111855  default suppression file is read 1 byte at a time
+
+Perhaps worth a look.
+
+FIXED-TRUNK:    TODO
+
+
+
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.2                                ===
@@ -113,6 +122,20 @@ FIXED-30BRANCH: TODO
 
 FIXED-TRUNK:    4589, 4592
 FIXED-30BRANCH: 4597, 4601
+
+----------------------------------------------------------------
+111851  vex x86->IR: unhandled instruction bytes: 0x9F 0x89
+        (lahf/sahf)
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+112031  iopl on AMD64 and README_MISSING_SYSCALL_OR_IOCTL update
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.1                                ===

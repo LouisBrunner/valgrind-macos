@@ -2066,7 +2066,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    //   (__NR_reboot,            sys_reboot),            // 88 */Linux
 //..    //   (__NR_readdir,           old_readdir),           // 89 -- superseded
 
-   GENXY(__NR_mmap,              sys_mmap2),                  // 90
+   LINXY(__NR_mmap,              sys_mmap2),                  // 90
    GENXY(__NR_munmap,            sys_munmap),                 // 91
 //..    GENX_(__NR_truncate,          sys_truncate),          // 92
    GENX_(__NR_ftruncate,         sys_ftruncate),         // 93

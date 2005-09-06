@@ -108,15 +108,6 @@ typedef
 
 /* --- CLEAN HELPERS --- */
 
-// Calculate XER flags
-extern 
-UInt ppc32g_calculate_xer_ov  ( UInt op, 
-                                UInt res, UInt argL, UInt argR );
-
-extern 
-UInt ppc32g_calculate_xer_ca  ( UInt op, 
-                                UInt res, UInt argL, UInt argR, 
-                                UInt old_ca );
 
 /*
   Enumeration for xer_ca/ov calculation helper functions

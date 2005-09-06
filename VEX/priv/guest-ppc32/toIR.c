@@ -3446,7 +3446,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
    /* XFX-Form */
    UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
    UInt  SPR      =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
-//uu   UInt  TBR      =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
+   UInt  TBR      =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
    UChar b20      = toUChar((theInstr >> 11) & 0x1);  /* theInstr[11]    */
    UInt  CRM      =         (theInstr >> 12) & 0xFF;  /* theInstr[12:19] */
    UChar b11      = toUChar((theInstr >> 11) & 0x1);  /* theInstr[20]    */
@@ -3458,6 +3458,9 @@ static Bool dis_proc_ctl ( UInt theInstr )
 
    IRTemp Rs  = newTemp(Ity_I32);
 //uu   IRTemp tmp = newTemp(Ity_I32);
+
+   /* Reorder TBR field as per PPC32 p475 */
+   TBR = ((TBR & 31) << 5) | ((TBR >> 5) & 31);
 
    assign( Rs, getIReg(Rs_addr) );
    
@@ -3569,12 +3572,34 @@ static Bool dis_proc_ctl ( UInt theInstr )
       }
       break;
       
-//zz    case 0x173: // mftb (Move from Time Base, PPC32 p475)
-//zz vassert(0);
-//zz 
-//zz       DIP("mftb r%d,0x%x\n", Rd_addr, TBR);
-//zz       return False;
-      
+   case 0x173: { // mftb (Move from Time Base, PPC32 p475)
+      IRTemp   val  = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N ( 
+                         val, 
+                         0/*regparms*/, 
+                         "ppc32g_dirtyhelper_MFTB", 
+                         &ppc32g_dirtyhelper_MFTB, 
+                         args 
+                      );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+
+      switch (TBR) {
+         case 269: 
+            putIReg( Rd_addr, unop(Iop_64HIto32, mkexpr(val)) );
+            DIP("mftbu r%d", Rd_addr);
+            break;
+         case 268: 
+            putIReg( Rd_addr, unop(Iop_64to32, mkexpr(val)) );
+            DIP("mftb r%d", Rd_addr);
+            break;
+         default:
+            return False; /* illegal instruction */
+      }
+      break;
+   }
+
    case 0x090: // mtcrf (Move to Condition Register Fields, PPC32 p477)
       if (b11 != 0 || b20 != 0) {
          vex_printf("dis_proc_ctl(PPC32)(mtcrf,b11|b20)\n");

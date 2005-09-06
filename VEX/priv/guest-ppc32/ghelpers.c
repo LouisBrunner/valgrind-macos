@@ -68,6 +68,38 @@
 */
 
 
+/*---------------------------------------------------------------*/
+/*--- Misc integer helpers.                                   ---*/
+/*---------------------------------------------------------------*/
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-ppc32 platforms, return 1. */
+/* Reads a complete, consistent 64-bit TB value. */
+ULong ppc32g_dirtyhelper_MFTB ( void )
+{
+#  if defined(__powerpc__)
+   ULong res;
+   UInt  lo, hi1, hi2;
+   while (1) {
+      __asm__ __volatile__ ("\n"
+         "\tmftbu %0\n"
+         "\tmftb %1\n"
+         "\tmftbu %2\n"
+         : "=r" (hi1), "=r" (lo), "=r" (hi2)
+      );
+      if (hi1 == hi2) break;
+   }
+   res = ((ULong)hi1) << 32;
+   res |= (ULong)lo;
+   return res;
+#  else
+   return 1ULL;
+#  endif
+}
+
+
+/* Helper-function specialiser. */
 
 IRExpr* guest_ppc32_spechelper ( HChar* function_name,
                                  IRExpr** args )

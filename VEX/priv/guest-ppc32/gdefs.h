@@ -101,14 +101,6 @@ typedef
    }
    PPC32CmpF64Result;
 
-
-/*---------------------------------------------------------*/
-/*--- ppc32 guest helpers                                 ---*/
-/*---------------------------------------------------------*/
-
-/* --- CLEAN HELPERS --- */
-
-
 /*
   Enumeration for xer_ca/ov calculation helper functions
 */
@@ -127,6 +119,19 @@ enum {
    /* 11 */ PPC32G_FLAG_OP_SRAWI,   // srawi
    PPC32G_FLAG_OP_NUMBER
 };
+
+
+/*---------------------------------------------------------*/
+/*--- ppc32 guest helpers                                 ---*/
+/*---------------------------------------------------------*/
+
+/* --- CLEAN HELPERS --- */
+
+/* none, right now */
+
+/* --- DIRTY HELPERS --- */
+
+extern ULong ppc32g_dirtyhelper_MFTB ( void );
 
 
 #endif /* ndef __LIBVEX_GUEST_PPC32_DEFS_H */

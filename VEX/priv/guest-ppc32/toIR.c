@@ -2960,7 +2960,6 @@ static Bool dis_cond_logic ( UInt theInstr )
    IRTemp crbD = newTemp(Ity_I32);
    IRTemp crbA = newTemp(Ity_I32);
    IRTemp crbB = newTemp(Ity_I32);
-//uu   IRTemp tmp  = newTemp(Ity_I32);
 
    if (opc1 != 19 || b0 != 0) {
       vex_printf("dis_cond_logic(PPC32)(opc1)\n");
@@ -2982,10 +2981,10 @@ static Bool dis_cond_logic ( UInt theInstr )
          assign( crbB, getCRbit(crbB_addr) );
 
       switch (opc2) {
-//zz       case 0x101: // crand   (Cond Reg AND, PPC32 p372)
-//zz          DIP("crand crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
-//zz          assign( crbD, binop(Iop_And32, mkexpr(crbA), mkexpr(crbB)) );
-//zz          break;
+      case 0x101: // crand   (Cond Reg AND, PPC32 p372)
+         DIP("crand crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
+         assign( crbD, binop(Iop_And32, mkexpr(crbA), mkexpr(crbB)) );
+         break;
       case 0x081: // crandc  (Cond Reg AND w. Complement, PPC32 p373)
          DIP("crandc crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
          assign( crbD, binop(Iop_And32, 
@@ -2997,11 +2996,11 @@ static Bool dis_cond_logic ( UInt theInstr )
          assign( crbD, unop(Iop_Not32,
                             binop(Iop_Xor32, mkexpr(crbA), mkexpr(crbB))) );
          break;
-//zz       case 0x0E1: // crnand  (Cond Reg NAND, PPC32 p375)
-//zz          DIP("crnand crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
-//zz          assign( crbD, unop(Iop_Not32,
-//zz                             binop(Iop_And32, mkexpr(crbA), mkexpr(crbB))) );
-//zz          break;
+      case 0x0E1: // crnand  (Cond Reg NAND, PPC32 p375)
+         DIP("crnand crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
+         assign( crbD, unop(Iop_Not32,
+                            binop(Iop_And32, mkexpr(crbA), mkexpr(crbB))) );
+         break;
       case 0x021: // crnor   (Cond Reg NOR, PPC32 p376)
          DIP("crnor crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
          assign( crbD, unop(Iop_Not32,
@@ -3011,16 +3010,16 @@ static Bool dis_cond_logic ( UInt theInstr )
          DIP("cror crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
          assign( crbD, binop(Iop_Or32, mkexpr(crbA), mkexpr(crbB)) );
          break;
-//zz       case 0x1A1: // crorc   (Cond Reg OR w. Complement, PPC32 p378)
-//zz          DIP("crorc crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
-//zz          assign( crbD, binop(Iop_Or32, mkexpr(crbA),
-//zz                              unop(Iop_Not32, mkexpr(crbB))) );
-//zz          break;
+      case 0x1A1: // crorc   (Cond Reg OR w. Complement, PPC32 p378)
+         DIP("crorc crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
+         assign( crbD, binop(Iop_Or32, 
+                             mkexpr(crbA),
+                             unop(Iop_Not32, mkexpr(crbB))) );
+         break;
       case 0x0C1: // crxor   (Cond Reg XOR, PPC32 p379)
          DIP("crxor crb%d,crb%d,crb%d\n", crbD_addr, crbA_addr, crbB_addr);
          assign( crbD, binop(Iop_Xor32, mkexpr(crbA), mkexpr(crbB)) );
          break;
-
       default:
          vex_printf("dis_cond_logic(PPC32)(opc2)\n");
          return False;

@@ -46,12 +46,18 @@
 
 /* TODO 2005 07 15:
 
-   Get rid of all vestiges of flag helper fns.
-
    Spot rlwini cases which are simply left/right shifts and
    emit Shl32/Shr32 accordingly.
 
    Move mtxer/mfxer code into its own function.
+
+   LIMITATIONS:
+
+   Various, including:
+
+   - Some invalid forms of lswi and lswx are accepted when they should
+     not be.
+
 */
 
 
@@ -690,6 +696,29 @@ static IRExpr* ROTL32 ( IRExpr* src, IRExpr* rot_amt )
                 binop(Iop_Shr32, src, binop(Iop_Sub8, mkU8(32), masked))
          )
       );
+}
+
+/* Do the standard effective address calculation: (rA|0) + rB. */
+static IRExpr* /* :: Ity_I32 */ ea_standard ( Int rA, Int rB )
+{
+   vassert(rA >= 0 && rA < 32);
+   vassert(rB >= 0 && rB < 32);
+   if (rA == 0) {
+      return getIReg(rB);
+   } else {
+      return binop(Iop_Add32, getIReg(rA), getIReg(rB));
+   }
+}
+
+/* Do the effective address calculation: (rA|0). */
+static IRExpr* /* :: Ity_I32 */ ea_rA_or_zero ( Int rA )
+{
+   vassert(rA >= 0 && rA < 32);
+   if (rA == 0) {
+      return mkU32(0);
+   } else {
+      return getIReg(rA);
+   }
 }
 
 
@@ -2504,111 +2533,124 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
 
 
 
-//zz /*
-//zz   Integer Load/Store String Instructions
-//zz */
-//zz static Bool dis_int_ldst_str ( UInt theInstr )
-//zz {
-//zz    /* X-Form */
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar Ra_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar NumBytes = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UChar Rb_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
-//zz    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
-//zz    
-//zz    UInt reg_idx, bit_idx, n_byte;
-//zz    UInt EA_offset = 0;
-//zz    UInt n_regs, reg_first, reg_last;
-//zz    
-//zz    IRTemp Ra = newTemp(Ity_I32);
-//zz //    IRTemp Rb = newTemp(Ity_I32);
-//zz    IRTemp EA = newTemp(Ity_I32);
-//zz    IRTemp b_EA = newTemp(Ity_I32);
-//zz    IRExpr* irx_byte;
-//zz    IRExpr* irx_shl;
-//zz    
-//zz    if (Ra_addr == 0) {
-//zz       assign( b_EA, mkU32(0) );
-//zz    } else {
-//zz       assign( Ra, getIReg(Ra_addr) );
-//zz       assign( b_EA, mkexpr(Ra) );
-//zz    }    
-//zz    
-//zz    if (opc1 != 0x1F || b0 != 0) {
-//zz       vex_printf("dis_int_ldst_str(PPC32)(opc1)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x255: // lswi (Load String Word Immediate, PPC32 p455)
-//zz 
-//zz       if (NumBytes == 8) {
-//zz          /* Special case hack */
-//zz          /* Rd = Mem[EA]; (Rd+1)%32 = Mem[EA+4] */
-//zz          DIP("lswi r%d,r%d,%d\n", Rd_addr, Ra_addr, NumBytes);
-//zz          putIReg( Rd_addr,          
-//zz                   loadBE(Ity_I32, mkexpr(b_EA)) );
-//zz 
-//zz          putIReg( (Rd_addr+1) % 32, 
-//zz                   loadBE(Ity_I32, binop(Iop_Add32, mkexpr(b_EA), mkU32(4))) );
-//zz          return True;
-//zz       }
-//zz 
-//zz       /* else too difficult */
-//zz       return False;
-//zz vassert(0);
-//zz 
-//zz       n_regs = (NumBytes / 4) + (NumBytes%4 == 0 ? 0:1); // ceil(nb/4)
-//zz       reg_first = Rd_addr;
-//zz       reg_last = Rd_addr + n_regs - 1;
-//zz       
-//zz       if (reg_last < reg_first) {
-//zz          if (Ra_addr >= reg_first || Ra_addr <= reg_last) {
-//zz             vex_printf("dis_int_ldst_str(PPC32)(lswi,Ra_addr,1)\n");
-//zz             return False;
-//zz          }
-//zz       } else {
-//zz          if (Ra_addr >= reg_first && Ra_addr <= reg_last) {
-//zz             vex_printf("dis_int_ldst_str(PPC32)(lswi,Ra_addr,2)\n");
-//zz             return False;
-//zz          }
-//zz       }
-//zz       DIP("lswi r%d,r%d,%d\n", Rd_addr, Ra_addr, NumBytes);
-//zz       
-//zz       assign( EA, mkexpr(b_EA) );
-//zz       
-//zz       bit_idx = 0;
-//zz       reg_idx = Rd_addr - 1;
-//zz       n_byte = NumBytes;
-//zz       if (n_byte == 0) { n_byte = 32; }
-//zz       
-//zz       for (; n_byte>0; n_byte--) {
-//zz          if (bit_idx == 0) {
-//zz             reg_idx++;
-//zz             if (reg_idx == 32) reg_idx = 0;
-//zz             putIReg( reg_idx, mkU32(0) );
-//zz          }
-//zz          irx_byte = loadBE(Ity_I8, binop(Iop_Add32,
-//zz                                          mkexpr(EA),
-//zz                                          mkU32(EA_offset)));
-//zz          irx_shl = binop(Iop_Shl32, irx_byte, 
-//zz                          mkU8(toUChar(24 - bit_idx)));
-//zz          putIReg( reg_idx, binop(Iop_Or32, getIReg(reg_idx), irx_shl) );
-//zz          bit_idx += 8;
-//zz          if (bit_idx == 32) { bit_idx = 0; }
-//zz          EA_offset++;
-//zz       }
-//zz       break;      
-//zz 
-//zz    case 0x215: // lswx (Load String Word Indexed, PPC32 p456)
-//zz vassert(0);
-//zz 
-//zz       DIP("lswx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
-//zz       return False;
-//zz 
+/*
+  Integer Load/Store String Instructions
+*/
+static 
+void generate_lsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
+                             IRTemp EA,        // EA
+                             Int    rD,        // first dst register
+                             Int    maxBytes,  // 32 or 128
+                             Addr32 NIA )      // where next?
+{
+   Int     i, shift = 24;
+   IRExpr* e_nbytes = mkexpr(tNBytes);
+   IRExpr* e_EA = mkexpr(EA);
+
+   rD--; if (rD < 0) rD = 31;
+
+   for (i = 0; i < maxBytes; i++) {
+
+      /* if (nBytes < (i+1)) goto NIA; */
+      stmt( IRStmt_Exit( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
+                         Ijk_Boring, 
+                         IRConst_U32(NIA)) );
+      /* when crossing into a new dest register, set it to zero. */
+      if ((i % 4) == 0) {
+         rD++; if (rD == 32) rD = 0;
+         putIReg(rD, mkU32(0));
+         shift = 24;
+      }
+      /* rD |=  (8Uto32(*(EA+i))) << shift */
+      vassert(shift == 0 || shift == 8 || shift == 16 || shift == 24);
+      putIReg(
+         rD, 
+         binop(Iop_Or32, 
+               getIReg(rD),
+               binop(Iop_Shl32, 
+                     unop(Iop_8Uto32, 
+                          loadBE(Ity_I8, 
+                                 binop(Iop_Add32, e_EA, mkU32(i)))), 
+                     mkU8(shift)) 
+      ));
+      shift -= 8;
+   }
+}
+
+
+static Bool dis_int_ldst_str ( UInt theInstr, /*OUT*/Bool* stopHere )
+{
+   /* X-Form */
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar Ra_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar NumBytes = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UChar Rb_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+   UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+   
+   UInt reg_idx, bit_idx, n_byte;
+   UInt EA_offset = 0;
+   UInt n_regs, reg_first, reg_last;
+   
+   IRTemp Ra = newTemp(Ity_I32);
+//    IRTemp Rb = newTemp(Ity_I32);
+   IRTemp EA = newTemp(Ity_I32);
+   IRTemp t_EA = newTemp(Ity_I32);
+   IRTemp t_nbytes = IRTemp_INVALID;
+   IRExpr* irx_byte;
+   IRExpr* irx_shl;
+   
+   *stopHere = False;
+   
+   if (opc1 != 0x1F || b0 != 0) {
+      vex_printf("dis_int_ldst_str(PPC32)(opc1)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x255: // lswi (Load String Word Immediate, PPC32 p455)
+      /* NB: does not reject the case where RA is in the range of
+         registers to be loaded.  It should. */
+      DIP("lswi r%d,r%d,%d\n", Rd_addr, Ra_addr, NumBytes);
+      assign( t_EA, ea_rA_or_zero(Ra_addr) );
+      if (NumBytes == 8) {
+         /* Special case hack */
+         /* Rd = Mem[EA]; (Rd+1)%32 = Mem[EA+4] */
+         putIReg( Rd_addr,          
+                  loadBE(Ity_I32, mkexpr(t_EA)) );
+
+         putIReg( (Rd_addr+1) % 32, 
+                  loadBE(Ity_I32, binop(Iop_Add32, mkexpr(t_EA), mkU32(4))) );
+      } else {
+         t_nbytes = newTemp(Ity_I32);
+	 assign( t_nbytes, mkU32(NumBytes==0 ? 32 : NumBytes) );
+         generate_lsw_sequence( t_nbytes, t_EA, Rd_addr, 
+                                32, guest_CIA_curr_instr+4 );
+         *stopHere = True;
+      }
+      return True;
+
+   case 0x215: // lswx (Load String Word Indexed, PPC32 p456)
+      /* NB: does not reject the case where RA is in the range of
+         registers to be loaded.  It should.  Although considering
+         that that can only be detected at run time, it's not easy to
+         do so. */
+      if (Rd_addr == Ra_addr || Rd_addr == Rb_addr)
+         return False;
+      if (Rd_addr == 0 && Ra_addr == 0)
+         return False;
+      DIP("lswx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
+      t_nbytes = newTemp(Ity_I32);
+      assign( t_EA, ea_standard(Ra_addr,Rb_addr) );
+      assign( t_nbytes, unop( Iop_8Uto32, 
+                              IRExpr_Get( OFFB_XER_BC, Ity_I8 )));
+      generate_lsw_sequence( t_nbytes, t_EA, Rd_addr, 
+                             128, guest_CIA_curr_instr+4 );
+      *stopHere = True;
+      return True;
+
 //zz    case 0x2D5: // stswi (Store String Word Immediate, PPC32 p528)
 //zz 
 //zz       if (NumBytes == 8) {
@@ -2694,15 +2736,14 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
 //zz    }
 //zz    break;
 //zz #endif
-//zz 
-//zz    default:
-//zz       vex_printf("dis_int_ldst_str(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz 
+
+   default:
+      vex_printf("dis_int_ldst_str(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
 
 /* ------------------------------------------------------------------
    Integer Branch Instructions
@@ -6353,11 +6394,19 @@ DisResult disInstr_PPC32_WRK (
          if (dis_int_ldst_rev( theInstr )) goto decode_success;
          goto decode_failure;
          
-//zz       /* Integer Load and Store String Instructions */
-//zz       case 0x255: case 0x215: case 0x2D5: // lswi, lswx, stswi
-//zz       case 0x295:                         // stswx
-//zz          if (dis_int_ldst_str( theInstr )) goto decode_success;
-//zz          goto decode_failure;
+      /* Integer Load and Store String Instructions */
+      case 0x255: case 0x215: case 0x2D5: // lswi, lswx, stswi
+      case 0x295: {                       // stswx
+         Bool stopHere = False;
+         Bool ok = dis_int_ldst_str( theInstr, &stopHere );
+         if (!ok) goto decode_failure;
+         if (stopHere) {
+            irbb->next = mkU32(guest_CIA_curr_instr+4);
+            irbb->jumpkind = Ijk_Boring;
+            dres.whatNext = Dis_StopHere;
+         }
+         goto decode_success;
+      }
 
       /* Memory Synchronization Instructions */
       case 0x356: case 0x014: case 0x096: // eieio, lwarx, stwcx.

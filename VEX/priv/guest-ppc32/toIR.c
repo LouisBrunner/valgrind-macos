@@ -3418,45 +3418,55 @@ static Bool dis_proc_ctl ( UInt theInstr )
    
    switch (opc2) {
    /* X-Form */
-   case 0x200: // mcrxr (Move to Condition Register from XER, PPC32 p466)
+   case 0x200: { // mcrxr (Move to Condition Register from XER, PPC32 p466)
+      IRTemp xer_0to3 = newTemp(Ity_I8);
       if (b21to22 != 0 || b11to20 != 0) {
          vex_printf("dis_proc_ctl(PPC32)(mcrxr,b21to22|b11to20)\n");
          return False;
       }
       DIP("mcrxr crf%d\n", crfD);
-      
-      // CR[7-crfD] = XER[28-31]
-      putCR321( crfD, unop( Iop_32to8, 
-               binop(
-                  Iop_Or32,
-                  binop(
-                     Iop_Or32,
-                     binop( Iop_Shl32, 
-                            binop( Iop_And32, 
-                                   unop( Iop_8Uto32, 
-                                         IRExpr_Get( OFFB_XER_SO, Ity_I8 )), 
-                                   mkU32(1)), 
-                            mkU8(31)),
-                     binop( Iop_Shl32, 
-                            binop( Iop_And32, 
-                                   unop( Iop_8Uto32, 
-                                         IRExpr_Get( OFFB_XER_OV, Ity_I8 )), 
-                                   mkU32(1)), 
-                            mkU8(30))
-                  ),
-                  binop( Iop_Shl32, 
-                         binop( Iop_And32, 
-                                unop( Iop_8Uto32, 
-                                      IRExpr_Get( OFFB_XER_CA, Ity_I8 )), 
-                                mkU32(1)), 
-                         mkU8(29))
-                  ) ) );
 
-      // Clear XER[28 - 31]
+      /* Compute XER[0-3] (the top 4 bits of XER) into the bottom
+	 4 bits of xer_0to3. */
+      assign( 
+         xer_0to3,
+         unop(Iop_32to8,
+              binop(
+                 Iop_Or32,
+                 binop(
+                    Iop_Or32,
+                    binop( Iop_Shl32, 
+                           binop( Iop_And32, 
+                                  unop( Iop_8Uto32, 
+                                        IRExpr_Get( OFFB_XER_SO, Ity_I8 )), 
+                                  mkU32(1)), 
+                           mkU8(31 -28)),
+                    binop( Iop_Shl32, 
+                           binop( Iop_And32, 
+                                  unop( Iop_8Uto32, 
+                                        IRExpr_Get( OFFB_XER_OV, Ity_I8 )), 
+                                  mkU32(1)), 
+                           mkU8(30 -28))
+                 ),
+                 binop( Iop_Shl32, 
+                        binop( Iop_And32, 
+                               unop( Iop_8Uto32, 
+                                     IRExpr_Get( OFFB_XER_CA, Ity_I8 )), 
+                               mkU32(1)), 
+                        mkU8(29 -28))
+              )
+         )
+      );
+
+      putCR321( crfD, binop(Iop_And8, mkexpr(xer_0to3), mkU8(7<<1)) );
+      putCR0  ( crfD, binop(Iop_And8, mkexpr(xer_0to3), mkU8(1)) );
+
+      // Clear XER[0-3]
       stmt( IRStmt_Put( OFFB_XER_SO, mkU8(0) ) );
       stmt( IRStmt_Put( OFFB_XER_OV, mkU8(0) ) );
       stmt( IRStmt_Put( OFFB_XER_CA, mkU8(0) ) );
       break;
+   }
       
    case 0x013: // mfcr (Move from Condition Register, PPC32 p467)
       if (b11to20 != 0) {

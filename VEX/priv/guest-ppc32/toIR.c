@@ -4010,17 +4010,17 @@ static Bool dis_fp_store ( UInt theInstr )
             storeBE( mkexpr(EA), mkexpr(frS) );
             break;
          
-//zz       case 0x2F7: // stfdux (Store Float Double with Update Indexed, PPC32 p515)
-//zz          if (rA_addr == 0) {
-//zz             vex_printf("dis_fp_store(PPC32)(instr,stfdux)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("stfdux fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
-//zz          assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
-//zz          storeBE( mkexpr(EA), mkexpr(frS) );
-//zz          putIReg( rA_addr, mkexpr(EA) );
-//zz          break;
-//zz 
+         case 0x2F7: // stfdux (Store Float Double with Update Indexed, PPC32 p515)
+            if (rA_addr == 0) {
+               vex_printf("dis_fp_store(PPC32)(instr,stfdux)\n");
+               return False;
+            }
+            DIP("stfdux fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
+            assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA)) );
+            storeBE( mkexpr(EA), mkexpr(frS) );
+            putIReg( rA_addr, mkexpr(EA) );
+            break;
+
 //zz       case 0x3D7: // stfiwx (Store Float as Int, Indexed, PPC32 p517)
 //zz          DIP("stfiwx fr%d,r%d,r%d\n", frS_addr, rA_addr, rB_addr);
 //zz          assign( EA, binop(Iop_Add32, mkexpr(rB), mkexpr(rA_or_0)) );
@@ -4488,12 +4488,12 @@ static Bool dis_fp_round ( UInt theInstr )
          assign( frD, roundToSgl( mkexpr(frB) ));
          break;
 
-//zz    case 0x00E: // fctiw (Floating Conv to Int, PPC32 p404)
-//zz       DIP("fctiw%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
-//zz       assign( r_tmp, binop(Iop_F64toI32, get_roundingmode(), mkexpr(frB)) );
-//zz       assign( frD, unop( Iop_ReinterpI64asF64,
-//zz                          unop( Iop_32Uto64, mkexpr(r_tmp))));
-//zz       break;
+      case 0x00E: // fctiw (Floating Conv to Int, PPC32 p404)
+         DIP("fctiw%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);
+         assign( r_tmp, binop(Iop_F64toI32, get_roundingmode(), mkexpr(frB)) );
+         assign( frD, unop( Iop_ReinterpI64asF64,
+                            unop( Iop_32Uto64, mkexpr(r_tmp))));
+         break;
 
       case 0x00F: // fctiwz (Floating Conv to Int, Round to Zero, PPC32 p405)
          DIP("fctiwz%s fr%d,fr%d\n", flag_Rc ? "." : "", frD_addr, frB_addr);

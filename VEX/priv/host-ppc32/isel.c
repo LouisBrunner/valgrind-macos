@@ -2798,10 +2798,10 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       addInstr(env, X86Instr_SseConst(e->Iex.Const.con->Ico.V128, dst));
 //..       return dst;
 //..    }
-//.. 
-//..    if (e->tag == Iex_Unop) {
-//..    switch (e->Iex.Unop.op) {
-//.. 
+
+   if (e->tag == Iex_Unop) {
+      switch (e->Iex.Unop.op) {
+
 //..       case Iop_Not128: {
 //..          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
 //..          return do_sse_Not128(env, arg);
@@ -2970,15 +2970,15 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          add_to_esp(env, 8);
 //..          return dst;
 //..       }
-//.. 
-//..       default:
-//..          break;
-//..       } /* switch (e->Iex.Unop.op) */
-//..    } /* if (e->tag == Iex_Unop) */
-//.. 
-//..    if (e->tag == Iex_Binop) {
-//..    switch (e->Iex.Binop.op) {
-//.. 
+
+      default:
+         break;
+      } /* switch (e->Iex.Unop.op) */
+   } /* if (e->tag == Iex_Unop) */
+
+   if (e->tag == Iex_Binop) {
+      switch (e->Iex.Binop.op) {
+
 //..       case Iop_SetV128lo32: {
 //..          HReg dst = newVRegV(env);
 //..          HReg srcV = iselVecExpr(env, e->Iex.Binop.arg1);
@@ -3008,29 +3008,29 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return dst;
 //..       }
 //.. 
-//..       case Iop_64HLtoV128: {
-//..          HReg r3, r2, r1, r0;
-//..          X86AMode* esp0  = X86AMode_IR(0, hregX86_ESP());
-//..          X86AMode* esp4  = advance4(esp0);
-//..          X86AMode* esp8  = advance4(esp4);
-//..          X86AMode* esp12 = advance4(esp8);
-//..          HReg dst = newVRegV(env);
-//..          /* do this via the stack (easy, convenient, etc) */
-//..          sub_from_esp(env, 16);
-//..          /* Do the less significant 64 bits */
-//..          iselInt64Expr(&r1, &r0, env, e->Iex.Binop.arg2);
-//..          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r0), esp0));
-//..          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r1), esp4));
-//..          /* Do the more significant 64 bits */
-//..          iselInt64Expr(&r3, &r2, env, e->Iex.Binop.arg1);
-//..          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r2), esp8));
-//..          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r3), esp12));
-//..          /* Fetch result back from stack. */
-//..          addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
-//..          add_to_esp(env, 16);
-//..          return dst;
-//..       }
-//.. 
+      case Iop_64HLtoV128: {
+         HReg r3, r2, r1, r0;
+         PPC32AMode *sp0  = PPC32AMode_IR(0,  StackFramePtr);
+         PPC32AMode *sp4  = PPC32AMode_IR(4,  StackFramePtr);
+         PPC32AMode *sp8  = PPC32AMode_IR(8,  StackFramePtr);
+         PPC32AMode *sp12 = PPC32AMode_IR(12, StackFramePtr);
+         HReg        dst = newVRegV(env);
+         /* do this via the stack (easy, convenient, etc) */
+         sub_from_sp( env, 16 );        // Move SP down 16 bytes
+         /* Do the less significant 64 bits */
+         iselInt64Expr(&r1, &r0, env, e->Iex.Binop.arg2);
+         addInstr(env, PPC32Instr_Store( 4, sp12, r0 ));
+         addInstr(env, PPC32Instr_Store( 4, sp8,  r1 ));
+         /* Do the more significant 64 bits */
+         iselInt64Expr(&r3, &r2, env, e->Iex.Binop.arg1);
+         addInstr(env, PPC32Instr_Store( 4, sp4, r2 ));
+         addInstr(env, PPC32Instr_Store( 4, sp0, r3 ));
+         /* Fetch result back from stack. */
+         addInstr(env, PPC32Instr_AvLdSt(True/*load*/, 16, dst, sp0));
+         add_to_sp( env, 16 );          // Reset SP
+         return dst;
+      }
+
 //..       case Iop_CmpEQ32Fx4: op = Xsse_CMPEQF; goto do_32Fx4;
 //..       case Iop_CmpLT32Fx4: op = Xsse_CMPLTF; goto do_32Fx4;
 //..       case Iop_CmpLE32Fx4: op = Xsse_CMPLEF; goto do_32Fx4;
@@ -3207,12 +3207,12 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          add_to_esp(env, 16);
 //..          return dst;
 //..       }
-//.. 
-//..       default:
-//..          break;
-//..    } /* switch (e->Iex.Binop.op) */
-//..    } /* if (e->tag == Iex_Binop) */
-//.. 
+
+      default:
+         break;
+      } /* switch (e->Iex.Binop.op) */
+   } /* if (e->tag == Iex_Binop) */
+
 //..    if (e->tag == Iex_Mux0X) {
 //..       HReg r8  = iselIntExpr_R(env, e->Iex.Mux0X.cond);
 //..       HReg rX  = iselVecExpr(env, e->Iex.Mux0X.exprX);

@@ -2626,17 +2626,8 @@ static Bool dis_int_ldst_str ( UInt theInstr, /*OUT*/Bool* stopHere )
    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
    
-   UInt reg_idx, bit_idx, n_byte;
-   UInt EA_offset = 0;
-   UInt n_regs, reg_first, reg_last;
-   
-   IRTemp Ra = newTemp(Ity_I32);
-//    IRTemp Rb = newTemp(Ity_I32);
-   IRTemp EA = newTemp(Ity_I32);
-   IRTemp t_EA = newTemp(Ity_I32);
+   IRTemp t_EA     = newTemp(Ity_I32);
    IRTemp t_nbytes = IRTemp_INVALID;
-   IRExpr* irx_byte;
-   IRExpr* irx_shl;
    
    *stopHere = False;
    

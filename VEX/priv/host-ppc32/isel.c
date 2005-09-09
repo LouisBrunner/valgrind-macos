@@ -332,14 +332,16 @@ static void add_to_sp ( ISelEnv* env, Int n )
 {
    HReg sp = StackFramePtr;
    vassert(n > 0 && n < 256 && (n%16) == 0);
-   addInstr(env, PPC32Instr_Alu32(Palu_ADD, sp, sp, PPC32RH_Imm(True,n)));
+   addInstr(env, PPC32Instr_Alu32(
+                    Palu_ADD, sp, sp, PPC32RH_Imm(True,toUShort(n))));
 }
 
 static void sub_from_sp ( ISelEnv* env, Int n )
 {
    HReg sp = StackFramePtr;
    vassert(n > 0 && n < 256 && (n%16) == 0);
-   addInstr(env, PPC32Instr_Alu32(Palu_SUB, sp, sp, PPC32RH_Imm(True,n)));
+   addInstr(env, PPC32Instr_Alu32(
+                    Palu_SUB, sp, sp, PPC32RH_Imm(True,toUShort(n))));
 }
 
 
@@ -850,8 +852,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 	 /* widen the left arg if needed */
          if ((aluOp == Palu_SHR || aluOp == Palu_SAR)
              && (ty == Ity_I8 || ty == Ity_I16)) {
-            PPC32RH* amt = PPC32RH_Imm(False, ty == Ity_I8 ? 24 : 16);
-            HReg tmp = newVRegI(env);
+            PPC32RH* amt = PPC32RH_Imm(False, toUShort(ty == Ity_I8 ? 24 : 16));
+            HReg     tmp = newVRegI(env);
             addInstr(env, PPC32Instr_Alu32(Palu_SHL, tmp, r_srcL, amt));
             addInstr(env, PPC32Instr_Alu32(aluOp,    tmp, tmp, amt));
             r_srcL = tmp;
@@ -887,7 +889,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       /* El-mutanto 3-way compare? */
       if (e->Iex.Binop.op == Iop_CmpORD32S
           || e->Iex.Binop.op == Iop_CmpORD32U) {
-         Bool     syned = e->Iex.Binop.op == Iop_CmpORD32S;
+         Bool     syned = toBool(e->Iex.Binop.op == Iop_CmpORD32S);
          HReg     dst   = newVRegI(env);
          HReg     srcL  = iselIntExpr_R(env, e->Iex.Binop.arg1);
          PPC32RH* srcR  = iselIntExpr_RH(env, syned, e->Iex.Binop.arg2);
@@ -1062,20 +1064,23 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_8Uto16:
       case Iop_8Uto32:
       case Iop_16Uto32: {
-         HReg r_dst = newVRegI(env);
-         HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         UInt mask  = e->Iex.Unop.op==Iop_16Uto32 ? 0xFFFF : 0xFF;
-         addInstr(env, PPC32Instr_Alu32(Palu_AND,r_dst,r_src,PPC32RH_Imm(False,mask)));
+         HReg   r_dst = newVRegI(env);
+         HReg   r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         UShort mask  = toUShort(e->Iex.Unop.op==Iop_16Uto32 ? 0xFFFF : 0xFF);
+         addInstr(env, PPC32Instr_Alu32(Palu_AND,r_dst,r_src,
+                                                 PPC32RH_Imm(False,mask)));
          return r_dst;
       }
       case Iop_8Sto16:
       case Iop_8Sto32:
       case Iop_16Sto32: {
-         HReg r_dst = newVRegI(env);
-         HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         UInt amt   = e->Iex.Unop.op==Iop_16Sto32 ? 16 : 24;
-         addInstr(env, PPC32Instr_Alu32(Palu_SHL, r_dst, r_src, PPC32RH_Imm(False,amt)));
-         addInstr(env, PPC32Instr_Alu32(Palu_SAR, r_dst, r_dst, PPC32RH_Imm(False,amt)));
+         HReg   r_dst = newVRegI(env);
+         HReg   r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         UShort amt   = toUShort(e->Iex.Unop.op==Iop_16Sto32 ? 16 : 24);
+         addInstr(env, PPC32Instr_Alu32(Palu_SHL, r_dst, r_src, 
+                                                  PPC32RH_Imm(False,amt)));
+         addInstr(env, PPC32Instr_Alu32(Palu_SAR, r_dst, r_dst, 
+                                                  PPC32RH_Imm(False,amt)));
          return r_dst;
       }
       case Iop_Not8:
@@ -1132,10 +1137,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
       case Iop_16HIto8:
       case Iop_32HIto16: {
-         HReg r_dst = newVRegI(env);
-         HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         UInt shift = e->Iex.Unop.op == Iop_16HIto8 ? 8 : 16;
-         addInstr(env, PPC32Instr_Alu32(Palu_SHR, r_dst, r_src, PPC32RH_Imm(False,shift)));
+         HReg   r_dst = newVRegI(env);
+         HReg   r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         UShort shift = toUShort(e->Iex.Unop.op == Iop_16HIto8 ? 8 : 16);
+         addInstr(env, PPC32Instr_Alu32(Palu_SHR, r_dst, r_src, 
+                                                  PPC32RH_Imm(False,shift)));
          return r_dst;
       }
       case Iop_1Uto32:
@@ -1152,8 +1158,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg          r_dst = newVRegI(env);
          PPC32CondCode cond  = iselCondCode(env, e->Iex.Unop.arg);
          addInstr(env, PPC32Instr_Set32(cond,r_dst));
-         addInstr(env, PPC32Instr_Alu32(Palu_SHL, r_dst, r_dst, PPC32RH_Imm(False,31)));
-         addInstr(env, PPC32Instr_Alu32(Palu_SAR, r_dst, r_dst, PPC32RH_Imm(False,31)));
+         addInstr(env, PPC32Instr_Alu32(Palu_SHL, r_dst, r_dst, 
+                                                  PPC32RH_Imm(False,31)));
+         addInstr(env, PPC32Instr_Alu32(Palu_SAR, r_dst, r_dst, 
+                                                  PPC32RH_Imm(False,31)));
          return r_dst;
       }
 
@@ -1420,10 +1428,10 @@ static PPC32RH* iselIntExpr_RH_wrk ( ISelEnv* env, Bool syned, IRExpr* e )
       i = (Int)u;
       /* Now figure out if it's representable. */
       if (!syned && u <= 65535) {
-         return PPC32RH_Imm(False/*unsigned*/, u & 0xFFFF);
+         return PPC32RH_Imm(False/*unsigned*/, toUShort(u & 0xFFFF));
       }
       if (syned && i >= -32767 && i <= 32767) {
-         return PPC32RH_Imm(True/*signed*/, u & 0xFFFF);
+         return PPC32RH_Imm(True/*signed*/, toUShort(u & 0xFFFF));
       }
       /* no luck; use the Slow Way. */
    }

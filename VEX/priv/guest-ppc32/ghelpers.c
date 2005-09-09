@@ -141,8 +141,8 @@ void LibVEX_GuestPPC32_put_CR ( UInt cr_native,
 #  define FIELD(_n)                                           \
       do {                                                    \
          t = cr_native >> (4*(7-(_n)));                       \
-         vex_state->guest_CR##_n##_0 = (UChar)(t & 1);        \
-         vex_state->guest_CR##_n##_321 = (UChar)(t & (7<<1)); \
+         vex_state->guest_CR##_n##_0 = toUChar(t & 1);        \
+         vex_state->guest_CR##_n##_321 = toUChar(t & (7<<1)); \
       } while (0)
 
    FIELD(0);
@@ -174,10 +174,10 @@ UInt LibVEX_GuestPPC32_get_XER ( /*IN*/VexGuestPPC32State* vex_state )
 void LibVEX_GuestPPC32_put_XER ( UInt xer_native,
                                  /*OUT*/VexGuestPPC32State* vex_state )
 {
-   vex_state->guest_XER_BC = (UChar)(xer_native & 0xFF);
-   vex_state->guest_XER_SO = (UChar)((xer_native >> 31) & 0x1);
-   vex_state->guest_XER_OV = (UChar)((xer_native >> 30) & 0x1);
-   vex_state->guest_XER_CA = (UChar)((xer_native >> 29) & 0x1);
+   vex_state->guest_XER_BC = toUChar(xer_native & 0xFF);
+   vex_state->guest_XER_SO = toUChar((xer_native >> 31) & 0x1);
+   vex_state->guest_XER_OV = toUChar((xer_native >> 30) & 0x1);
+   vex_state->guest_XER_CA = toUChar((xer_native >> 29) & 0x1);
 }
 
 

@@ -776,7 +776,7 @@ static IRExpr* /* :: Ity_I32 */ getCRbit ( UInt bi )
       return binop( Iop_And32, 
                     binop( Iop_Shr32, 
                            unop(Iop_8Uto32, getCR321(n)),
-                           mkU8(3-off) ),
+                           mkU8(toUChar(3-off)) ),
                     mkU32(1) );
    }
 }
@@ -805,7 +805,7 @@ static void putCRbit ( UInt bi, IRExpr* bit )
                       binop(Iop_And32, unop(Iop_8Uto32, getCR321(n)),
                                        mkU32(~(1 << off))),
                       /* new value in the right place */
-                      binop(Iop_Shl32, safe, mkU8(off))
+                      binop(Iop_Shl32, safe, mkU8(toUChar(off)))
                )
          )
       );
@@ -879,7 +879,7 @@ static void putCRfields ( IRExpr* w32, UInt mask )
       if ((mask & (1 << (7-cr))) == 0)
          continue;
       t = newTemp(Ity_I32);
-      assign( t, binop(Iop_Shr32, w32, mkU8(4*(7-cr))) );
+      assign( t, binop(Iop_Shr32, w32, mkU8(toUChar(4*(7-cr)))) );
       putCR0( cr, unop(Iop_32to8, 
                        binop(Iop_And32, mkexpr(t), mkU32(1))) );
       putCR321( cr, unop(Iop_32to8,
@@ -999,7 +999,7 @@ static void set_XER_OV( UInt op, IRExpr* res,
          break;
 
       default: 
-         vex_printf("set_XER_OV: op = %d\n", op);
+         vex_printf("set_XER_OV: op = %u\n", op);
          vpanic("set_XER_OV(ppc32)");
    }
  
@@ -1136,7 +1136,7 @@ static void set_XER_CA( UInt op,
          break;
 
       default: 
-         vex_printf("set_XER_CA: op = %d\n", op);
+         vex_printf("set_XER_CA: op = %u\n", op);
          vpanic("set_XER_CA(ppc32)");
    }
 
@@ -1450,10 +1450,10 @@ static Bool dis_int_arith ( UInt theInstr )
       // li rD,val   == addi rD,0,val
       // la disp(rA) == addi rD,rA,disp
       if ( Ra_addr == 0 ) {
-         DIP("li r%d,%d\n", Rd_addr, EXTS_SIMM);
+         DIP("li r%d,%d\n", Rd_addr, (Int)EXTS_SIMM);
          assign( Rd, mkU32(EXTS_SIMM) );
       } else {
-         DIP("addi r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
+         DIP("addi r%d,r%d,0x%x\n", Rd_addr, Ra_addr, (Int)SIMM_16);
          assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
       }
       break;
@@ -1461,7 +1461,7 @@ static Bool dis_int_arith ( UInt theInstr )
    case 0x0F: // addis  (Add Immediate Shifted, PPC32 p353)
       // lis rD,val == addis rD,0,val
       if ( Ra_addr == 0 ) {
-         DIP("lis r%d,%d\n", Rd_addr, SIMM_16);
+         DIP("lis r%d,%d\n", Rd_addr, (Int)SIMM_16);
          assign( Rd, mkU32(SIMM_16 << 16) );
       } else {
          DIP("addis r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
@@ -1815,7 +1815,7 @@ static Bool dis_int_cmp ( UInt theInstr )
    switch (opc1) {
       case 0x0B: // cmpi (Compare Immediate, PPC32 p368)
          EXTS_SIMM = extend_s_16to32(UIMM_16);
-         DIP("cmp cr%d,r%d,%d\n", crfD, Ra_addr, EXTS_SIMM);
+         DIP("cmp cr%d,r%d,%d\n", crfD, Ra_addr, (Int)EXTS_SIMM);
          putCR321( crfD, unop(Iop_32to8,
                               binop(Iop_CmpORD32S, mkexpr(Ra), 
                                                    mkU32(EXTS_SIMM))) );
@@ -2166,7 +2166,7 @@ static Bool dis_int_load ( UInt theInstr )
    
    switch (opc1) {
    case 0x22: // lbz (Load B & Zero, PPC32 p433)
-      DIP("lbz r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
+      DIP("lbz r%d,%d(r%d)\n", Rd_addr, (Int)exts_d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_8Uto32,
                              loadBE(Ity_I8, mkexpr(EA_imm))) );
       break;
@@ -2176,14 +2176,14 @@ static Bool dis_int_load ( UInt theInstr )
          vex_printf("dis_int_load(PPC32)(lbzu,Ra_addr|Rd_addr)\n");
          return False;
       }
-      DIP("lbzu r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
+      DIP("lbzu r%d,%d(r%d)\n", Rd_addr, (Int)exts_d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_8Uto32,
                              loadBE(Ity_I8, mkexpr(EA_imm))) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
       
    case 0x2A: // lha (Load HW Algebraic, PPC32 p445)
-      DIP("lha r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
+      DIP("lha r%d,%d(r%d)\n", Rd_addr, (Int)exts_d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_16Sto32,
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       break;
@@ -2193,14 +2193,14 @@ static Bool dis_int_load ( UInt theInstr )
          vex_printf("dis_int_load(PPC32)(lhau,Ra_addr|Rd_addr)\n");
          return False;
       }
-      DIP("lhau r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
+      DIP("lhau r%d,%d(r%d)\n", Rd_addr, (Int)exts_d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_16Sto32,
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
       
    case 0x28: // lhz (Load HW & Zero, PPC32 p450)
-      DIP("lhz r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
+      DIP("lhz r%d,%d(r%d)\n", Rd_addr, (Int)exts_d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_16Uto32,
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       break;
@@ -2210,14 +2210,14 @@ static Bool dis_int_load ( UInt theInstr )
          vex_printf("dis_int_load(PPC32)(lhzu,Ra_addr|Rd_addr)\n");
          return False;
       }
-      DIP("lhzu r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
+      DIP("lhzu r%d,%d(r%d)\n", Rd_addr, (Int)exts_d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_16Uto32,
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
 
    case 0x20: // lwz (Load W & Zero, PPC32 p460)
-      DIP("lwz r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
+      DIP("lwz r%d,%d(r%d)\n", Rd_addr, (Int)exts_d_imm, Ra_addr);
       putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA_imm)) );
       break;
       
@@ -2226,7 +2226,7 @@ static Bool dis_int_load ( UInt theInstr )
          vex_printf("dis_int_load(PPC32)(lwzu,Ra_addr|Rd_addr)\n");
          return False;
       }
-      DIP("lwzu r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
+      DIP("lwzu r%d,%d(r%d)\n", Rd_addr, (Int)exts_d_imm, Ra_addr);
       putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA_imm)) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
@@ -2351,7 +2351,7 @@ static Bool dis_int_store ( UInt theInstr )
    
    switch (opc1) {
    case 0x26: // stb (Store B, PPC32 p509)
-      DIP("stb r%d,%d(r%d)\n", Rs_addr, simm16, Ra_addr);
+      DIP("stb r%u,%d(r%u)\n", Rs_addr, simm16, Ra_addr);
       storeBE( mkexpr(EA_imm), unop(Iop_32to8, mkexpr(Rs)) );
       break;
        
@@ -2360,13 +2360,13 @@ static Bool dis_int_store ( UInt theInstr )
          vex_printf("dis_int_store(PPC32)(stbu,Ra_addr)\n");
          return False;
       }
-      DIP("stbu r%d,%d(r%d)\n", Rs_addr, simm16, Ra_addr);
+      DIP("stbu r%u,%d(r%u)\n", Rs_addr, simm16, Ra_addr);
       putIReg( Ra_addr, mkexpr(EA_imm) );
       storeBE( mkexpr(EA_imm), unop(Iop_32to8, mkexpr(Rs)) );
       break;
 
    case 0x2C: // sth (Store HW, PPC32 p522)
-      DIP("sth r%d,%d(r%d)\n", Rs_addr, simm16, Ra_addr);
+      DIP("sth r%u,%d(r%u)\n", Rs_addr, simm16, Ra_addr);
       storeBE( mkexpr(EA_imm), unop(Iop_32to16, mkexpr(Rs)) );
       break;
       
@@ -2375,13 +2375,13 @@ static Bool dis_int_store ( UInt theInstr )
          vex_printf("dis_int_store(PPC32)(sthu,Ra_addr)\n");
          return False;
       }
-      DIP("sthu r%d,%d(r%d)\n", Rs_addr, simm16, Ra_addr);
+      DIP("sthu r%u,%d(r%u)\n", Rs_addr, simm16, Ra_addr);
       putIReg( Ra_addr, mkexpr(EA_imm) );
       storeBE( mkexpr(EA_imm), unop(Iop_32to16, mkexpr(Rs)) );
       break;
 
    case 0x24: // stw (Store W, PPC32 p530)
-      DIP("stw r%d,%d(r%d)\n", Rs_addr, simm16, Ra_addr);
+      DIP("stw r%u,%d(r%u)\n", Rs_addr, simm16, Ra_addr);
       storeBE( mkexpr(EA_imm), mkexpr(Rs) );
       break;
 
@@ -2390,7 +2390,7 @@ static Bool dis_int_store ( UInt theInstr )
          vex_printf("dis_int_store(PPC32)(stwu,Ra_addr)\n");
          return False;
       }
-      DIP("stwu r%d,%d(r%d)\n", Rs_addr, simm16, Ra_addr);
+      DIP("stwu r%u,%d(r%u)\n", Rs_addr, simm16, Ra_addr);
       putIReg( Ra_addr, mkexpr(EA_imm) );
       storeBE( mkexpr(EA_imm), mkexpr(Rs) );
       break;
@@ -2409,13 +2409,13 @@ static Bool dis_int_store ( UInt theInstr )
             vex_printf("dis_int_store(PPC32)(stbux,Ra_addr)\n");
             return False;
          }
-         DIP("stbux r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
+         DIP("stbux r%u,r%u,r%u\n", Rs_addr, Ra_addr, Rb_addr);
          putIReg( Ra_addr, mkexpr(EA_reg) );
          storeBE( mkexpr(EA_reg), unop(Iop_32to8, mkexpr(Rs)) );
          break;
          
       case 0x0D7: // stbx (Store B Indexed, PPC32 p512)
-         DIP("stbx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
+         DIP("stbx r%u,r%u,r%u\n", Rs_addr, Ra_addr, Rb_addr);
          storeBE( mkexpr(EA_reg), unop(Iop_32to8, mkexpr(Rs)) );
          break;
          
@@ -2424,13 +2424,13 @@ static Bool dis_int_store ( UInt theInstr )
             vex_printf("dis_int_store(PPC32)(sthux,Ra_addr)\n");
             return False;
          }
-         DIP("sthux r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
+         DIP("sthux r%u,r%u,r%u\n", Rs_addr, Ra_addr, Rb_addr);
          putIReg( Ra_addr, mkexpr(EA_reg) );
          storeBE( mkexpr(EA_reg), unop(Iop_32to16, mkexpr(Rs)) );
          break;
          
       case 0x197: // sthx (Store HW Indexed, PPC32 p526)
-         DIP("sthx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
+         DIP("sthx r%u,r%u,r%u\n", Rs_addr, Ra_addr, Rb_addr);
          storeBE( mkexpr(EA_reg), unop(Iop_32to16, mkexpr(Rs)) );
          break;
          
@@ -2439,13 +2439,13 @@ static Bool dis_int_store ( UInt theInstr )
             vex_printf("dis_int_store(PPC32)(stwux,Ra_addr)\n");
             return False;
          }
-         DIP("stwux r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
+         DIP("stwux r%u,r%u,r%u\n", Rs_addr, Ra_addr, Rb_addr);
          putIReg( Ra_addr, mkexpr(EA_reg) );
          storeBE( mkexpr(EA_reg), mkexpr(Rs) );
          break;
 
       case 0x097: // stwx (Store W Indexed, PPC32 p536)
-         DIP("stwx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
+         DIP("stwx r%u,r%u,r%u\n", Rs_addr, Ra_addr, Rb_addr);
          storeBE( mkexpr(EA_reg), mkexpr(Rs) );
          break;
          
@@ -2562,7 +2562,7 @@ void generate_lsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
                      unop(Iop_8Uto32, 
                           loadBE(Ity_I8, 
                                  binop(Iop_Add32, e_EA, mkU32(i)))), 
-                     mkU8(shift)) 
+                     mkU8(toUChar(shift))) 
       ));
       shift -= 8;
    }
@@ -2597,7 +2597,7 @@ void generate_stsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
       storeBE(
          binop(Iop_Add32, e_EA, mkU32(i)),
          unop(Iop_32to8,
-              binop(Iop_Shr32, getIReg(rS), mkU8(shift)))
+              binop(Iop_Shr32, getIReg(rS), mkU8(toUChar(shift))))
       );
       shift -= 8;
    }
@@ -3650,7 +3650,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 //zz          return False;
 
          default:
-            vex_printf("dis_proc_ctl(PPC32)(mtspr,SPR_flipped)(%d)\n",
+            vex_printf("dis_proc_ctl(PPC32)(mtspr,SPR_flipped)(%u)\n",
                        SPR_flipped);
             return False;
       }
@@ -6092,7 +6092,7 @@ DisResult disInstr_PPC32_WRK (
    }
 
 
-   opc1 = ifieldOPC(theInstr);
+   opc1 = toUChar(ifieldOPC(theInstr));
    opc2 = ifieldOPClo10(theInstr);
 
 #if PPC32_TOIR_DEBUG
@@ -6567,7 +6567,7 @@ DisResult disInstr_PPC32_WRK (
    /* All decode failures end up here. */
    vex_printf("disInstr(ppc32): unhandled instruction: "
               "0x%x\n", theInstr);
-   vex_printf("                 primary %d(0x%x), secondary %d(0x%x)\n", 
+   vex_printf("                 primary %d(0x%x), secondary %u(0x%x)\n", 
               opc1, opc1, opc2, opc2);
    
 #if PPC32_TOIR_DEBUG

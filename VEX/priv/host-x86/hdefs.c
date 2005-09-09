@@ -2221,7 +2221,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
       /* Alternative version which works on any x86 variant. */
       /* jmp fwds if !condition */
-      *p++ = 0x70 + (i->Xin.CMov32.cond ^ 1);
+      *p++ = toUChar(0x70 + (i->Xin.CMov32.cond ^ 1));
       *p++ = 0; /* # of bytes in the next bit, which we don't know yet */
       ptmp = p;
 
@@ -2245,7 +2245,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             goto bad;
       }
       /* Fill in the jump offset. */
-      *(ptmp-1) = p - ptmp;
+      *(ptmp-1) = toUChar(p - ptmp);
       goto done;
 
       break;

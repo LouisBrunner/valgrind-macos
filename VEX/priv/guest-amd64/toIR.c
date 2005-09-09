@@ -5387,7 +5387,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 0xD0 ... 0xD7: /* FST %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD0;
-               DIP("fst %%st(0),%%st(%d)\n", r_dst);
+               DIP("fst %%st(0),%%st(%u)\n", r_dst);
                /* P4 manual says: "If the destination operand is a
                   non-empty register, the invalid-operation exception
                   is not generated.  Hence put_ST_UNCHECKED. */

@@ -106,6 +106,7 @@ void* LibVEX_Alloc ( Int nbytes )
       /* ugly hack -- do not remove */
       //extern void* malloc ( int );
       //return malloc(nbytes);
+      return NULL;
    } else {
       nbytes = (nbytes + ALIGN) & ~ALIGN;
       if (mode == VexAllocModeTEMP) {
@@ -223,7 +224,7 @@ void convert_int ( /*OUT*/HChar* buf, Long n0,
    }
 
    while (1) {
-     buf[bufi++] = '0' + (HChar)(u0 % base);
+     buf[bufi++] = toHChar('0' + toUInt(u0 % base));
      u0 /= base;
      if (u0 == 0) break;
    }
@@ -233,7 +234,7 @@ void convert_int ( /*OUT*/HChar* buf, Long n0,
    buf[bufi] = 0;
    for (i = 0; i < bufi; i++)
       if (buf[i] > '9') 
-         buf[i] += ((hexcaps ? 'A' : 'a') - '9' - 1);
+         buf[i] = toHChar(buf[i] + (hexcaps ? 'A' : 'a') - '9' - 1);
 
    i = 0;
    j = bufi-1;
@@ -374,7 +375,7 @@ UInt vprintf_wrk ( void(*sink)(HChar),
          }
          case 'p': 
          case 'P': {
-            Bool hexcaps = *format == 'P';
+            Bool hexcaps = toBool(*format == 'P');
             ULong l = Ptr_to_ULong( va_arg(ap, void*) );
             convert_int(intbuf, l, 16/*base*/, False/*unsigned*/, hexcaps);
             len1 = len3 = 0;
@@ -415,7 +416,7 @@ static Int   n_myprintf_buf;
 
 static void add_to_myprintf_buf ( HChar c )
 {
-   Bool emit = c == '\n' || n_myprintf_buf >= 1000-10 /*paranoia*/;
+   Bool emit = toBool(c == '\n' || n_myprintf_buf >= 1000-10 /*paranoia*/);
    myprintf_buf[n_myprintf_buf++] = c;
    myprintf_buf[n_myprintf_buf] = 0;
    if (emit) {

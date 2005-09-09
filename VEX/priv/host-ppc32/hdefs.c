@@ -435,7 +435,7 @@ void ppPPC32RH ( PPC32RH* op ) {
       if (op->Prh.Imm.syned)
          vex_printf("%d", (Int)(Short)op->Prh.Imm.imm16);
       else
-         vex_printf("%d", (UInt)(UShort)op->Prh.Imm.imm16);
+         vex_printf("%u", (UInt)(UShort)op->Prh.Imm.imm16);
       return;
    case Prh_Reg: 
       ppHRegPPC32(op->Prh.Reg.reg);
@@ -1015,7 +1015,7 @@ void ppPPC32Instr ( PPC32Instr* i )
          /* generic */
          vex_printf("%s ", 
                     showPPC32AluOp(i->Pin.Alu32.op,
-                                   i->Pin.Alu32.srcR->tag == Prh_Imm));
+                                   toBool(i->Pin.Alu32.srcR->tag == Prh_Imm)));
          ppHRegPPC32(i->Pin.Alu32.dst);
          vex_printf(",");
          ppHRegPPC32(i->Pin.Alu32.srcL);
@@ -2169,7 +2169,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
    case Pin_Alu32: {
       PPC32RH* srcR   = i->Pin.Alu32.srcR;
-      Bool     immR   = srcR->tag == Prh_Imm;
+      Bool     immR   = toBool(srcR->tag == Prh_Imm);
       UInt     r_dst  = iregNo(i->Pin.Alu32.dst);
       UInt     r_srcL = iregNo(i->Pin.Alu32.srcL);
       UInt     r_srcR = immR ? (-1)/*bogus*/ : iregNo(srcR->Prh.Reg.reg);

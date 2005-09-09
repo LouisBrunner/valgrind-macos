@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Apparently the "b" register constraint is like "r" except that it
+   disallows the use of r0, which means it is safe to use in places
+   where the appearance of r0 would cause a problem due to it being
+   read as zero. */
+
 static void announce ( char* str )
 {
    printf("------ %s ------\n", str);
@@ -21,7 +26,7 @@ int main ( void )
                "stw 3,0(%1)\n\t"
                "stw 4,4(%1)\n\t"
                "stw 5,8(%1)\n\t"
-               : : "r"(a1), "r"(a2) : "r3", "r4", "r5", 
+               : : "b"(a1), "b"(a2) : "r3", "r4", "r5", 
                                       "cc", "memory" );
   printf("%s\n", a2);
   for (i = 0; i < 12; i++)
@@ -34,7 +39,7 @@ int main ( void )
                "stw 3,0(%1)\n\t"
                "stw 4,4(%1)\n\t"
                "stw 5,8(%1)\n\t"
-               : : "r"(a1), "r"(a2) : "r3", "r4", "r5", 
+               : : "b"(a1), "b"(a2) : "r3", "r4", "r5", 
                                       "cc", "memory" );
   printf("%s\n", a2);
   for (i = 0; i < 12; i++)
@@ -51,7 +56,7 @@ int main ( void )
                "stw 3,0(%1)\n\t"
                "stw 4,4(%1)\n\t"
                "stw 5,8(%1)\n\t"
-               : : "r"(a1), "r"(a2), "r"(16) : "r3", "r4", "r5", "r8", 
+               : : "b"(a1), "b"(a2), "b"(16) : "r3", "r4", "r5", "r8", 
                                                "cc", "memory" );
   printf("%s\n", a2);
   for (i = 0; i < 12; i++)
@@ -64,7 +69,7 @@ int main ( void )
   a2 = calloc(100,1);
   asm volatile("lswi 3,%0, 19\n\t"
                "stswi 3,%1, 8\n"
-	       : : "r"(a1), "r"(a2) : "r3","r4","r5","r6","r7",
+	       : : "b"(a1), "b"(a2) : "r3","r4","r5","r6","r7",
                                       "cc", "memory" );
   printf("%s\n", a2);
   printf("\n");
@@ -75,7 +80,7 @@ int main ( void )
   a2 = calloc(100,1);
   asm volatile("lswi 3,%0, 19\n\t"
                "stswi 3,%1, 17\n"
-	       : : "r"(a1), "r"(a2) : "r3","r4","r5","r6","r7",
+	       : : "b"(a1), "b"(a2) : "r3","r4","r5","r6","r7",
                                       "cc", "memory" );
   printf("%s\n", a2);
   printf("\n");
@@ -88,7 +93,7 @@ int main ( void )
                "mtxer 8\n\t"
                "lswx  3,%0,%2\n\t" 
                "stswx 3,%1,%2\n\t" 
-               : : "r"(a1), "r"(a2), "r"(16) : "r3", "r4", "r5", "r8", 
+               : : "b"(a1), "b"(a2), "b"(16) : "r3", "r4", "r5", "r8", 
                                                "cc", "memory" );
   printf("%s\n", a2+16);
   printf("\n");

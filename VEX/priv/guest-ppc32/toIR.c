@@ -2547,6 +2547,7 @@ void generate_lsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
    IRExpr* e_nbytes = mkexpr(tNBytes);
    IRExpr* e_EA = mkexpr(EA);
 
+   vassert(rD >= 0 && rD < 32);
    rD--; if (rD < 0) rD = 31;
 
    for (i = 0; i < maxBytes; i++) {
@@ -2573,6 +2574,41 @@ void generate_lsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
                                  binop(Iop_Add32, e_EA, mkU32(i)))), 
                      mkU8(shift)) 
       ));
+      shift -= 8;
+   }
+}
+
+static 
+void generate_stsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
+                              IRTemp EA,        // EA
+                              Int    rS,        // first src register
+                              Int    maxBytes,  // 32 or 128
+                              Addr32 NIA )      // where next?
+{
+   Int     i, shift = 24;
+   IRExpr* e_nbytes = mkexpr(tNBytes);
+   IRExpr* e_EA = mkexpr(EA);
+
+   vassert(rS >= 0 && rS < 32);
+   rS--; if (rS < 0) rS = 31;
+
+   for (i = 0; i < maxBytes; i++) {
+      /* if (nBytes < (i+1)) goto NIA; */
+      stmt( IRStmt_Exit( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
+                         Ijk_Boring, 
+                         IRConst_U32(NIA)) );
+      /* check for crossing into a new src register. */
+      if ((i % 4) == 0) {
+         rS++; if (rS == 32) rS = 0;
+         shift = 24;
+      }
+      /* *(EA+i) = 32to8(rS >> shift) */
+      vassert(shift == 0 || shift == 8 || shift == 16 || shift == 24);
+      storeBE(
+         binop(Iop_Add32, e_EA, mkU32(i)),
+         unop(Iop_32to8,
+              binop(Iop_Shr32, getIReg(rS), mkU8(shift)))
+      );
       shift -= 8;
    }
 }
@@ -2620,7 +2656,6 @@ static Bool dis_int_ldst_str ( UInt theInstr, /*OUT*/Bool* stopHere )
          /* Rd = Mem[EA]; (Rd+1)%32 = Mem[EA+4] */
          putIReg( Rd_addr,          
                   loadBE(Ity_I32, mkexpr(t_EA)) );
-
          putIReg( (Rd_addr+1) % 32, 
                   loadBE(Ity_I32, binop(Iop_Add32, mkexpr(t_EA), mkU32(4))) );
       } else {
@@ -2651,91 +2686,36 @@ static Bool dis_int_ldst_str ( UInt theInstr, /*OUT*/Bool* stopHere )
       *stopHere = True;
       return True;
 
-//zz    case 0x2D5: // stswi (Store String Word Immediate, PPC32 p528)
-//zz 
-//zz       if (NumBytes == 8) {
-//zz          /* Special case hack */
-//zz          /* Mem[EA] = Rd; Mem[EA+4] = (Rd+1)%32 */
-//zz          DIP("stswi r%d,r%d,%d\n", Rs_addr, Ra_addr, NumBytes);
-//zz 	 storeBE( mkexpr(b_EA), 
-//zz                   getIReg(Rd_addr) );
-//zz 	 storeBE( binop(Iop_Add32, mkexpr(b_EA), mkU32(4)), 
-//zz                   getIReg((Rd_addr+1) % 32) );
-//zz          return True;
-//zz       }
-//zz 
-//zz       /* else too difficult */
-//zz       return False;
-//zz 
-//zz vassert(0);
-//zz 
-//zz       DIP("stswi r%d,r%d,%d\n", Rs_addr, Ra_addr, NumBytes);
-//zz       if (Ra_addr == 0) {
-//zz          assign( EA, mkU32(0) );
-//zz       } else {
-//zz          assign( EA, mkexpr(b_EA) );
-//zz       }
-//zz       
-//zz       n_byte = NumBytes;
-//zz       if (n_byte == 0) { n_byte = 32; }
-//zz       reg_idx = Rs_addr - 1;
-//zz       bit_idx = 0;
-//zz       
-//zz       for (; n_byte>0; n_byte--) {
-//zz          if (bit_idx == 0) {
-//zz             reg_idx++;
-//zz             if (reg_idx==32) reg_idx = 0;
-//zz          }
-//zz          irx_byte = unop(Iop_32to8,
-//zz                          binop(Iop_Shr32,
-//zz                                getIReg(reg_idx), 
-//zz                                mkU8(toUChar(24 - bit_idx))));
-//zz          storeBE( binop(Iop_Add32, mkexpr(EA), mkU32(EA_offset)),
-//zz                   irx_byte );
-//zz          
-//zz          bit_idx += 8;
-//zz          if (bit_idx == 32) { bit_idx = 0; }
-//zz          EA_offset++;
-//zz       }
-//zz       break;
-//zz 
-//zz    case 0x295: // stswx (Store String Word Indexed, PPC32 p529)
-//zz vassert(0);
-//zz 
-//zz       DIP("stswx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
-//zz       return False;
-//zz #if 0
-//zz // CAB: Might something like this work ?
-//zz // won't produce very nice code (ir_ctr will get _rather_ long...), but hey.
-//zz // or perhaps arrays of IRTemp...
-//zz    assign( NumBytes, AND(get(xer_bc), 0x1F) );
-//zz    IRExpr* irx_ea;
-//zz    IRExpr* irx_orig_byte;
-//zz    IRExpr* irx_tostore;
-//zz    IRExpr* ir_ctr = mkU8(0);
-//zz    Uint EA_offset = 0;
-//zz    UInt start = Rs_addr;
-//zz    UInt reg_idx;
-//zz    UInt i;
-//zz    for (i=0; i<128; i++) {
-//zz       bit_idx = (i % 4) * 8;
-//zz       reg_idx = (i / 4) + start;
-//zz       reg_idx = reg_idx % 32;
-//zz       word = getIReg(reg_idx);
-//zz       byte = get_byte(word, bit_idx);
-//zz       
-//zz       irx_ea = (EA + EA_offset);
-//zz       irx_orig_byte = loadBE(Ity_I8, irx_ea);
-//zz       irx_tostore = IRExpr_Mux0X( (ir_ctr <= NumBytes),
-//zz                                   irx_orig_byte,
-//zz                                   mkexpr(byte0) );
-//zz       storeBE( irx_ea, irx_tostore );
-//zz       
-//zz       ir_ctr = binop(Iop_And8, ir_ctr, mkU8(1));
-//zz       EA_offset++;
-//zz    }
-//zz    break;
-//zz #endif
+   case 0x2D5: // stswi (Store String Word Immediate, PPC32 p528)
+      DIP("stswi r%d,r%d,%d\n", Rs_addr, Ra_addr, NumBytes);
+      assign( t_EA, ea_rA_or_zero(Ra_addr) );
+      if (NumBytes == 8) {
+         /* Special case hack */
+         /* Mem[EA] = Rd; Mem[EA+4] = (Rd+1)%32 */
+	 storeBE( mkexpr(t_EA), 
+                  getIReg(Rd_addr) );
+	 storeBE( binop(Iop_Add32, mkexpr(t_EA), mkU32(4)), 
+                  getIReg((Rd_addr+1) % 32) );
+      } else {
+         t_nbytes = newTemp(Ity_I32);
+	 assign( t_nbytes, mkU32(NumBytes==0 ? 32 : NumBytes) );
+         generate_stsw_sequence( t_nbytes, t_EA, Rd_addr, 
+                                 32, guest_CIA_curr_instr+4 );
+         *stopHere = True;
+      }
+      return True;
+
+
+   case 0x295: // stswx (Store String Word Indexed, PPC32 p529)
+      DIP("stswx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
+      t_nbytes = newTemp(Ity_I32);
+      assign( t_EA, ea_standard(Ra_addr,Rb_addr) );
+      assign( t_nbytes, unop( Iop_8Uto32, 
+                              IRExpr_Get( OFFB_XER_BC, Ity_I8 )));
+      generate_stsw_sequence( t_nbytes, t_EA, Rs_addr, 
+                              128, guest_CIA_curr_instr+4 );
+      *stopHere = True;
+      return True;
 
    default:
       vex_printf("dis_int_ldst_str(PPC32)(opc2)\n");

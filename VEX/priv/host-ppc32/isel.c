@@ -1868,25 +1868,32 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 //..       return;
 //..    }
 
-//..    /* 64-bit Mux0X */
-//..    if (e->tag == Iex_Mux0X) {
-//..       HReg e0Lo, e0Hi, eXLo, eXHi, r8;
-//..       HReg tLo = newVRegI(env);
-//..       HReg tHi = newVRegI(env);
-//..       iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.Mux0X.expr0);
-//..       iselInt64Expr(&eXHi, &eXLo, env, e->Iex.Mux0X.exprX);
-//..       addInstr(env, mk_iMOVsd_RR(eXHi, tHi));
-//..       addInstr(env, mk_iMOVsd_RR(eXLo, tLo));
-//..       r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-//..       addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
-//..       /* This assumes the first cmov32 doesn't trash the condition
-//..          codes, so they are still available for the second cmov32 */
-//..       addInstr(env, X86Instr_CMov32(Xcc_Z,X86RM_Reg(e0Hi),tHi));
-//..       addInstr(env, X86Instr_CMov32(Xcc_Z,X86RM_Reg(e0Lo),tLo));
-//..       *rHi = tHi;
-//..       *rLo = tLo;
-//..       return;
-//..    }
+   /* 64-bit Mux0X */
+   if (e->tag == Iex_Mux0X) {
+      HReg e0Lo, e0Hi, eXLo, eXHi;
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+
+      PPC32CondCode cc = mk_PPCCondCode( Pct_TRUE, Pcf_7EQ );
+      HReg r_cond = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+      HReg r_tmp  = newVRegI(env);
+
+      iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.Mux0X.expr0);
+      iselInt64Expr(&eXHi, &eXLo, env, e->Iex.Mux0X.exprX);
+      addInstr(env, mk_iMOVds_RR(tHi,eXHi));
+      addInstr(env, mk_iMOVds_RR(tLo,eXLo));
+
+      addInstr(env, PPC32Instr_Alu32(Palu_AND, 
+                                     r_tmp, r_cond, PPC32RH_Imm(False,0xFF)));
+      addInstr(env, PPC32Instr_Cmp32(False/*unsigned*/, 
+                                     7/*cr*/, r_tmp, PPC32RH_Imm(False,0)));
+
+      addInstr(env, PPC32Instr_CMov32(cc,tHi,PPC32RI_Reg(e0Hi)));
+      addInstr(env, PPC32Instr_CMov32(cc,tLo,PPC32RI_Reg(e0Lo)));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
 
    /* --------- BINARY ops --------- */
    if (e->tag == Iex_Binop) {

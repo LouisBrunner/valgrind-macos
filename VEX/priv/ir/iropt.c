@@ -1648,9 +1648,10 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                return IRStmt_NoOp();
             } else {
                vassert(fcond->Iex.Const.con->Ico.U1 == True);
-               /* Hmmm.  The exit has become unconditional.  Leave it as
-                  it is for now, since we'd have to truncate the BB at
-                  this point, which is tricky. */
+               /* Hmmm.  The exit has become unconditional.  Leave it
+                  as it is for now, since we'd have to truncate the BB
+                  at this point, which is tricky.  Such truncation is
+                  done later by the dead-code elimination pass. */
                /* fall out into the reconstruct-the-exit code. */
                if (vex_control.iropt_verbosity > 0) 
                   /* really a misuse of vex_control.iropt_verbosity */
@@ -1737,10 +1738,12 @@ IRBB* cprop_BB ( IRBB* in )
 }
 
 
-
 /*---------------------------------------------------------------*/
 /*--- Dead code (t = E) removal                               ---*/
 /*---------------------------------------------------------------*/
+
+/* As a side effect, also removes all code following an unconditional
+   side exit. */
 
 /* The type of the HashHW map is: a map from IRTemp to nothing
    -- really just operating a set or IRTemps.
@@ -1844,17 +1847,32 @@ static Bool isZeroU1 ( IRExpr* e )
                   && e->Iex.Const.con->Ico.U1 == False );
 }
 
+/* Is this literally IRExpr_Const(IRConst_U1(True)) ? */
+static Bool isOneU1 ( IRExpr* e )
+{
+   return toBool( e->tag == Iex_Const
+                  && e->Iex.Const.con->tag == Ico_U1
+                  && e->Iex.Const.con->Ico.U1 == True );
+}
+
 
 /* Note, this destructively modifies the given IRBB. */
 
 /* Scan backwards through statements, carrying a set of IRTemps which
    are known to be used after the current point.  On encountering 't =
    E', delete the binding if it is not used.  Otherwise, add any temp
-   uses to the set and keep on moving backwards. */
+   uses to the set and keep on moving backwards.
+
+   As an enhancement, the first (backwards) pass searches for IR exits
+   with always-taken conditions and notes the location of the earliest
+   one in the block.  If any such are found, a second pass copies the
+   exit destination and jump kind to the bb-end.  Then, the exit and
+   all statements following it are turned into no-ops.
+*/
 
 /* notstatic */ void do_deadcode_BB ( IRBB* bb )
 {
-   Int     i;
+   Int     i, i_unconditional_exit;
    Int     n_tmps = bb->tyenv->types_used;
    Bool*   set = LibVEX_Alloc(n_tmps * sizeof(Bool));
    IRStmt* st;
@@ -1865,11 +1883,18 @@ static Bool isZeroU1 ( IRExpr* e )
    /* start off by recording IRTemp uses in the next field. */
    addUses_Expr(set, bb->next);
 
+   /* First pass */
+
    /* Work backwards through the stmts */
+   i_unconditional_exit = -1;
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
       if (st->tag == Ist_NoOp)
          continue;
+      /* take note of any unconditional exits */
+      if (st->tag == Ist_Exit
+          && isOneU1(st->Ist.Exit.guard))
+         i_unconditional_exit = i;
       if (st->tag == Ist_Tmp
           && set[(Int)(st->Ist.Tmp.tmp)] == False) {
           /* it's an IRTemp which never got used.  Delete it. */
@@ -1893,7 +1918,24 @@ static Bool isZeroU1 ( IRExpr* e )
          addUses_Stmt(set, st);
       }
    }
+
+   /* Optional second pass: if any unconditional exits were found, 
+      delete them and all following statements. */
+
+   if (i_unconditional_exit != -1) {
+      if (0) vex_printf("ZAPPING ALL FORWARDS from %d\n", 
+                        i_unconditional_exit);
+      vassert(i_unconditional_exit >= 0 
+              && i_unconditional_exit < bb->stmts_used);
+      bb->next 
+         = IRExpr_Const( bb->stmts[i_unconditional_exit]->Ist.Exit.dst );
+      bb->jumpkind
+         = bb->stmts[i_unconditional_exit]->Ist.Exit.jk;
+      for (i = i_unconditional_exit; i < bb->stmts_used; i++)
+         bb->stmts[i] = IRStmt_NoOp();
+   }
 }
+
 
 /*---------------------------------------------------------------*/
 /*--- Specialisation of helper function calls, in             ---*/

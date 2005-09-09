@@ -2188,16 +2188,16 @@ static Bool dis_int_load ( UInt theInstr )
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       break;
 
-//zz    case 0x2B: // lhau (Load HW Algebraic with Update, PPC32 p446)
-//zz       if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-//zz          vex_printf("dis_int_load(PPC32)(lhau,Ra_addr|Rd_addr)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("lhau r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
-//zz       putIReg( Rd_addr, unop(Iop_16Sto32,
-//zz                              loadBE(Ity_I16, mkexpr(EA_imm))) );
-//zz       putIReg( Ra_addr, mkexpr(EA_imm) );
-//zz       break;
+   case 0x2B: // lhau (Load HW Algebraic with Update, PPC32 p446)
+      if (Ra_addr == 0 || Ra_addr == Rd_addr) {
+         vex_printf("dis_int_load(PPC32)(lhau,Ra_addr|Rd_addr)\n");
+         return False;
+      }
+      DIP("lhau r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
+      putIReg( Rd_addr, unop(Iop_16Sto32,
+                             loadBE(Ity_I16, mkexpr(EA_imm))) );
+      putIReg( Ra_addr, mkexpr(EA_imm) );
+      break;
       
    case 0x28: // lhz (Load HW & Zero, PPC32 p450)
       DIP("lhz r%d,%d(r%d)\n", Rd_addr, exts_d_imm, Ra_addr);
@@ -2257,16 +2257,16 @@ static Bool dis_int_load ( UInt theInstr )
                                 loadBE(Ity_I8, mkexpr(EA_reg))) );
          break;
          
-//zz       case 0x177: // lhaux (Load HW Algebraic with Update Indexed, PPC32 p447)
-//zz          if (Ra_addr == 0 || Ra_addr == Rd_addr) {
-//zz             vex_printf("dis_int_load(PPC32)(lhaux,Ra_addr|Rd_addr)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("lhaux r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
-//zz          putIReg( Rd_addr, unop(Iop_16Sto32,
-//zz                                 loadBE(Ity_I16, mkexpr(EA_reg))) );
-//zz          putIReg( Ra_addr, mkexpr(EA_reg) );
-//zz          break;
+      case 0x177: // lhaux (Load HW Algebraic with Update Indexed, PPC32 p447)
+         if (Ra_addr == 0 || Ra_addr == Rd_addr) {
+            vex_printf("dis_int_load(PPC32)(lhaux,Ra_addr|Rd_addr)\n");
+            return False;
+         }
+         DIP("lhaux r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
+         putIReg( Rd_addr, unop(Iop_16Sto32,
+                                loadBE(Ity_I16, mkexpr(EA_reg))) );
+         putIReg( Ra_addr, mkexpr(EA_reg) );
+         break;
          
       case 0x157: // lhax (Load HW Algebraic Indexed, PPC32 p448)
          DIP("lhax r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
@@ -2419,15 +2419,15 @@ static Bool dis_int_store ( UInt theInstr )
          storeBE( mkexpr(EA_reg), unop(Iop_32to8, mkexpr(Rs)) );
          break;
          
-//zz       case 0x1B7: // sthux (Store HW with Update Indexed, PPC32 p525)
-//zz          if (Ra_addr == 0) {
-//zz             vex_printf("dis_int_store(PPC32)(sthux,Ra_addr)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("sthux r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
-//zz          putIReg( Ra_addr, mkexpr(EA_reg) );
-//zz          storeBE( mkexpr(EA_reg), mkexpr(Rs_16) );
-//zz          break;
+      case 0x1B7: // sthux (Store HW with Update Indexed, PPC32 p525)
+         if (Ra_addr == 0) {
+            vex_printf("dis_int_store(PPC32)(sthux,Ra_addr)\n");
+            return False;
+         }
+         DIP("sthux r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
+         putIReg( Ra_addr, mkexpr(EA_reg) );
+         storeBE( mkexpr(EA_reg), unop(Iop_32to16, mkexpr(Rs)) );
+         break;
          
       case 0x197: // sthx (Store HW Indexed, PPC32 p526)
          DIP("sthx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
@@ -3385,8 +3385,8 @@ static Bool dis_proc_ctl ( UInt theInstr )
    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
    
    /* X-Form */
-//uu   UChar crfD     = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
-//uu   UChar b21to22  = toUChar((theInstr >> 21) & 0x3);  /* theInstr[21:22] */
+   UChar crfD     = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
+   UChar b21to22  = toUChar((theInstr >> 21) & 0x3);  /* theInstr[21:22] */
    UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
    UInt  b11to20  =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
    
@@ -3417,21 +3417,46 @@ static Bool dis_proc_ctl ( UInt theInstr )
    }
    
    switch (opc2) {
-//zz    /* X-Form */
-//zz    case 0x200: // mcrxr (Move to Condition Register from XER, PPC32 p466)
-//zz       if (b21to22 != 0 || b11to20 != 0) {
-//zz          vex_printf("dis_proc_ctl(PPC32)(mcrxr,b21to22|b11to20)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("mcrxr crf%d\n", crfD);
-//zz       
-//zz       // CR[7-crfD] = XER[28-31]
-//zz       assign( tmp, getReg_field( PPC32_SPR_XER, 7 ) );
-//zz       putReg_field( PPC32_SPR_CR, mkexpr(tmp), 7-crfD );
-//zz       
-//zz       // Clear XER[28 - 31]
-//zz       putReg_field( PPC32_SPR_XER, mkU32(0), 7 );
-//zz       break;
+   /* X-Form */
+   case 0x200: // mcrxr (Move to Condition Register from XER, PPC32 p466)
+      if (b21to22 != 0 || b11to20 != 0) {
+         vex_printf("dis_proc_ctl(PPC32)(mcrxr,b21to22|b11to20)\n");
+         return False;
+      }
+      DIP("mcrxr crf%d\n", crfD);
+      
+      // CR[7-crfD] = XER[28-31]
+      putCR321( crfD, unop( Iop_32to8, 
+               binop(
+                  Iop_Or32,
+                  binop(
+                     Iop_Or32,
+                     binop( Iop_Shl32, 
+                            binop( Iop_And32, 
+                                   unop( Iop_8Uto32, 
+                                         IRExpr_Get( OFFB_XER_SO, Ity_I8 )), 
+                                   mkU32(1)), 
+                            mkU8(31)),
+                     binop( Iop_Shl32, 
+                            binop( Iop_And32, 
+                                   unop( Iop_8Uto32, 
+                                         IRExpr_Get( OFFB_XER_OV, Ity_I8 )), 
+                                   mkU32(1)), 
+                            mkU8(30))
+                  ),
+                  binop( Iop_Shl32, 
+                         binop( Iop_And32, 
+                                unop( Iop_8Uto32, 
+                                      IRExpr_Get( OFFB_XER_CA, Ity_I8 )), 
+                                mkU32(1)), 
+                         mkU8(29))
+                  ) ) );
+
+      // Clear XER[28 - 31]
+      stmt( IRStmt_Put( OFFB_XER_SO, mkU8(0) ) );
+      stmt( IRStmt_Put( OFFB_XER_OV, mkU8(0) ) );
+      stmt( IRStmt_Put( OFFB_XER_CA, mkU8(0) ) );
+      break;
       
    case 0x013: // mfcr (Move from Condition Register, PPC32 p467)
       if (b11to20 != 0) {

@@ -2160,7 +2160,7 @@ static Bool dis_int_load ( UInt theInstr )
    assign( Ra, getIReg(Ra_addr) );
    assign( Rb, getIReg(Rb_addr) );
    
-   assign( Ra_or_0, ((Ra_addr == 0) ? mkU32(0) : mkexpr(Ra)) );
+   assign( Ra_or_0, ea_rA_or_zero(Ra_addr));
 
    assign( EA_imm, binop(Iop_Add32, mkexpr(Ra_or_0), mkU32(exts_d_imm)) );
    
@@ -2337,33 +2337,23 @@ static Bool dis_int_store ( UInt theInstr )
    UInt opc2    = ifieldOPClo10(theInstr); /* theInstr[1:10]  */
    UInt b0      = ifieldBIT0(theInstr);    /* theInstr[0]     */
       
-   IRTemp Ra      = newTemp(Ity_I32);
    IRTemp Ra_or_0 = newTemp(Ity_I32);
    IRTemp Rb      = newTemp(Ity_I32);
    IRTemp Rs      = newTemp(Ity_I32);
-//   IRTemp Rs_8    = newTemp(Ity_I8);
-//IRTemp Rs_16   = newTemp(Ity_I16);
    IRTemp EA_imm  = newTemp(Ity_I32);
    IRTemp EA_reg  = newTemp(Ity_I32);
    
-   assign( Ra, getIReg(Ra_addr) );
    assign( Rb, getIReg(Rb_addr) );
    assign( Rs, getIReg(Rs_addr) );
-   //assign( Rs_8, unop(Iop_32to8, mkexpr(Rs)) );
-   //assign( Rs_16, unop(Iop_32to16, mkexpr(Rs)) );
    
-   if (Ra_addr == 0) {
-      assign( Ra_or_0, mkU32(0) );
-   } else {
-      assign( Ra_or_0, mkexpr(Ra) );
-   }
+   assign( Ra_or_0, ea_rA_or_zero(Ra_addr) );
    assign( EA_imm, binop(Iop_Add32, mkexpr(Ra_or_0), mkU32(simm16)) );
    
    switch (opc1) {
-      case 0x26: // stb (Store B, PPC32 p509)
-         DIP("stb r%d,%d(r%d)\n", Rs_addr, simm16, Ra_addr);
-         storeBE( mkexpr(EA_imm), unop(Iop_32to8, mkexpr(Rs)) );
-         break;
+   case 0x26: // stb (Store B, PPC32 p509)
+      DIP("stb r%d,%d(r%d)\n", Rs_addr, simm16, Ra_addr);
+      storeBE( mkexpr(EA_imm), unop(Iop_32to8, mkexpr(Rs)) );
+      break;
        
    case 0x27: // stbu (Store B with Update, PPC32 p510)
       if (Ra_addr == 0 ) {
@@ -2695,7 +2685,6 @@ static Bool dis_int_ldst_str ( UInt theInstr, /*OUT*/Bool* stopHere )
          *stopHere = True;
       }
       return True;
-
 
    case 0x295: // stswx (Store String Word Indexed, PPC32 p529)
       DIP("stswx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
@@ -3083,14 +3072,10 @@ static Bool dis_memsync ( UInt theInstr )
    UChar b0       = toUChar((theInstr >>  0) & 1);      /* theInstr[0]     */
    
    IRTemp EA = newTemp(Ity_I32);
-   IRTemp Ra = newTemp(Ity_I32);
-   IRTemp Rb = newTemp(Ity_I32);
    IRTemp Rs = newTemp(Ity_I32);
-//uu   IRTemp xer_so = newTemp(Ity_I32);
-//uu   IRTemp cr_f7  = newTemp(Ity_I32);
    
    switch (opc1) {
-    /* XL-Form */
+   /* XL-Form */
    case 0x13:   // isync (Instruction Synchronize, PPC32 p432)
       if (opc2 != 0x096) {
          vex_printf("dis_int_memsync(PPC32)(0x13,opc2)\n");
@@ -3118,47 +3103,28 @@ static Bool dis_memsync ( UInt theInstr )
          break;
 
       case 0x014: // lwarx (Load Word and Reserve Indexed, PPC32 p458)
-         /* Note: RESERVE, RESERVE_ADDR not implemented.
-            stwcx. is assumed to be always successful
-         */
          if (b0 != 0) {
             vex_printf("dis_int_memsync(PPC32)(lwarx,b0)\n");
             return False;
          }
          DIP("lwarx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
-         assign( Rb, getIReg(Rb_addr) );
-         if (Ra_addr == 0) {
-            assign( EA, mkexpr(Rb) );
-         } else {
-            assign( Ra, getIReg(Ra_addr) );
-            assign( EA, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
-         }
+	 assign( EA, ea_standard(Ra_addr, Rb_addr) );
          putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA)) );
 	 /* Take a reservation */
          stmt( IRStmt_Put( OFFB_RESVN, mkexpr(EA) ));
-//         stmt( IRStmt_Put( OFFB_RESVN, mkU32(1) ));
          break;
          
       case 0x096: { 
          // stwcx. (Store Word Conditional Indexed, PPC32 p532)
-         /* Note: RESERVE, RESERVE_ADDR not implemented.
-            stwcx. is assumed to be always successful
-         */
          IRTemp resaddr = newTemp(Ity_I32);
          if (b0 != 1) {
             vex_printf("dis_int_memsync(PPC32)(stwcx.,b0)\n");
             return False;
          }
          DIP("stwcx. r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
-         
-         assign( Rb, getIReg(Rb_addr) );
          assign( Rs, getIReg(Rs_addr) );
-         if (Ra_addr == 0) {
-            assign( EA, mkexpr(Rb) );
-         } else {
-            assign( Ra, getIReg(Ra_addr) );
-            assign( EA, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
-         }
+	 assign( EA, ea_standard(Ra_addr, Rb_addr) );
+
 	 /* First set up as if the reservation failed */
          // Set CR0[LT GT EQ S0] = 0b000 || XER[SO]
          putCR321(0, mkU8(0<<1));
@@ -3173,8 +3139,6 @@ static Bool dis_memsync ( UInt theInstr )
          stmt( IRStmt_Exit(
                   binop(Iop_CmpNE32, mkexpr(resaddr),
                                      mkexpr(EA)),
- //                  binop(Iop_CmpEQ32, IRExpr_Get(OFFB_RESVN, Ity_I32),
- //                                     mkU32(0)),
                   Ijk_Boring,
                   IRConst_U32(guest_CIA_curr_instr + 4)
                )
@@ -3228,18 +3192,12 @@ static Bool dis_int_shift ( UInt theInstr )
    UInt  opc2    =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar flag_Rc = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
    
-//uu   UInt flag_op  = PPC32G_FLAG_OP_NUMBER;
-   
    IRTemp sh_amt = newTemp(Ity_I8);
-//uu   IRTemp sign   = newTemp(Ity_I32);
    IRTemp rb_b5  = newTemp(Ity_I32);
-//uu   IRTemp sext   = newTemp(Ity_I32);
    IRTemp Rs     = newTemp(Ity_I32);
    IRTemp Rs_sh  = newTemp(Ity_I32);
-//uu   IRTemp Rs_msk = newTemp(Ity_I32);
    IRTemp Ra     = newTemp(Ity_I32);
    IRTemp Rb     = newTemp(Ity_I32);
-//uu   IRTemp mask   = newTemp(Ity_I32);
    IRTemp sh_amt32   = newTemp(Ity_I32);
    IRTemp outofrange = newTemp(Ity_I8);
    
@@ -3351,21 +3309,13 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
    /* X-Form */
    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
    UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//   UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
    UChar Ra_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
    UChar Rb_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
    
    IRTemp EA    = newTemp(Ity_I32);
-//   IRTemp Rd    = newTemp(Ity_I32);
-//   IRTemp Rs    = newTemp(Ity_I32);
-//   IRTemp byte0 = newTemp(Ity_I32);
-//   IRTemp byte1 = newTemp(Ity_I32);
-//   IRTemp byte2 = newTemp(Ity_I32);
-//   IRTemp byte3 = newTemp(Ity_I32);
-//   IRTemp tmp16 = newTemp(Ity_I16);
-//   IRTemp tmp32 = newTemp(Ity_I32);
    IRTemp w1    = newTemp(Ity_I32);
    IRTemp w2    = newTemp(Ity_I32);
 
@@ -3373,12 +3323,8 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
       vex_printf("dis_int_ldst_rev(PPC32)(opc1|b0)\n");
       return False;
    }
-   
-   if (Ra_addr == 0) {
-      assign( EA, getIReg(Rb_addr));
-   } else {
-      assign( EA, binop(Iop_Add32, getIReg(Ra_addr), getIReg(Rb_addr)) );
-   }
+
+   assign( EA, ea_standard(Ra_addr, Rb_addr) );
    
    switch (opc2) {
 //zz    case 0x316: // lhbrx (Load Half Word Byte-Reverse Indexed, PPC32 p449)
@@ -3417,8 +3363,8 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 //zz       break;
       
       case 0x296: // stwbrx (Store Word Byte-Reverse Indexed, PPC32 p531)
-         DIP("stwbrx r%d,r%d,r%d\n", Rd_addr, Ra_addr, Rb_addr);
-	 assign( w1, getIReg(Rd_addr) );
+         DIP("stwbrx r%d,r%d,r%d\n", Rs_addr, Ra_addr, Rb_addr);
+	 assign( w1, getIReg(Rs_addr) );
          storeBE( mkexpr(EA), gen_byterev32(w1) );
          break;
       
@@ -3871,7 +3817,7 @@ static Bool dis_fp_load ( UInt theInstr )
 
    assign( rA, getIReg(rA_addr) );
    assign( rB, getIReg(rB_addr) );
-   assign( rA_or_0, (rA_addr == 0) ? mkU32(0) : mkexpr(rA) );
+   assign( rA_or_0, ea_rA_or_zero(rA_addr) );
 
    switch(opc1) {
    case 0x30: // lfs (Load Float Single, PPC32 p441)
@@ -3992,7 +3938,7 @@ static Bool dis_fp_store ( UInt theInstr )
    assign( frS, getFReg(frS_addr) );
    assign( rA, getIReg(rA_addr) );
    assign( rB, getIReg(rB_addr) );
-   assign( rA_or_0, (rA_addr == 0) ? mkU32(0) : mkexpr(rA) );
+   assign( rA_or_0, ea_rA_or_zero(rA_addr) );
 
    switch(opc1) {
 
@@ -4873,9 +4819,7 @@ static Bool dis_av_load ( UInt theInstr )
       return False;
    }
 
-   assign( EA, binop(Iop_Add32,
-                     ((rA_addr == 0) ? mkU32(0) : getIReg(rA_addr)),
-                     getIReg(rB_addr) ));
+   assign( EA, ea_standard(rA_addr, rB_addr) );
 
    switch (opc2) {
 
@@ -4945,11 +4889,7 @@ static Bool dis_av_store ( UInt theInstr )
    assign( rB, getIReg(rB_addr));
    assign( vS, getVReg(vS_addr));
 
-   if (rA_addr == 0) {
-      assign( EA, mkexpr(rB) );
-   } else {
-      assign( EA, binop(Iop_Add32, mkexpr(rA), mkexpr(rB)) );
-   }
+   assign( EA, ea_standard(rA_addr, rB_addr) );
 
    if (opc1 != 0x1F || b0 != 0) {
       vex_printf("dis_av_store(PPC32)(instr)\n");

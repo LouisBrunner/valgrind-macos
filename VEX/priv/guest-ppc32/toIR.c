@@ -293,21 +293,21 @@ static UInt MASK( UInt begin, UInt end )
    return mask;
 }
 
-//zz #if PPC32_TOIR_DEBUG
-//zz static void vex_printf_binary( UInt x, UInt len, Bool spaces )
-//zz {
-//zz    UInt i;
-//zz    vassert(len > 0 && len <= 32);
-//zz    
-//zz    for (i=len; i>0; i--) {
-//zz       vex_printf("%d", ((x & (1<<(len-1))) != 0) );
-//zz       x = x << 1;
-//zz       if (((i-1)%4)==0 && (i > 1) && spaces) {
-//zz          vex_printf(" ");
-//zz       }
-//zz    }
-//zz }
-//zz #endif
+#if PPC32_TOIR_DEBUG
+static void vex_printf_binary( UInt x, UInt len, Bool spaces )
+{
+   UInt i;
+   vassert(len > 0 && len <= 32);
+   
+   for (i=len; i>0; i--) {
+      vex_printf("%d", ((x & (1<<(len-1))) != 0) );
+      x = x << 1;
+      if (((i-1)%4)==0 && (i > 1) && spaces) {
+         vex_printf(" ");
+      }
+   }
+}
+#endif
 
 
 /*------------------------------------------------------------*/
@@ -328,13 +328,13 @@ static IRTemp newTemp ( IRType ty )
    return newIRTemp( irbb->tyenv, ty );
 }
 
-//zz /* Various simple conversions */
-//zz 
-//zz static UChar extend_s_5to8 ( UChar x )
-//zz {
-//zz    return toUChar((((Int)x) << 27) >> 27);
-//zz }
-//zz 
+/* Various simple conversions */
+
+static UChar extend_s_5to8 ( UChar x )
+{
+   return toUChar((((Int)x) << 27) >> 27);
+}
+
 //zz #if 0
 //zz static UInt extend_s_8to32( UInt x )
 //zz {
@@ -4736,103 +4736,103 @@ static Bool dis_fp_scr ( UInt theInstr )
 
 
 
-//zz /*------------------------------------------------------------*/
-//zz /*--- AltiVec Instruction Translation                      ---*/
-//zz /*------------------------------------------------------------*/
-//zz 
-//zz /*
-//zz   Altivec Cache Control Instructions (Data Streams)
-//zz */
-//zz static Bool dis_av_datastream ( UInt theInstr )
-//zz {
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar flag_T   = toUChar((theInstr >> 25) & 0x1);  /* theInstr[25]    */
-//zz    UChar flag_A   = toUChar((theInstr >> 25) & 0x1);  /* theInstr[25]    */
-//zz    UChar b23to24  = toUChar((theInstr >> 23) & 0x3);  /* theInstr[23:24] */
-//zz    UChar STRM     = toUChar((theInstr >> 21) & 0x3);  /* theInstr[21:22] */
-//zz    UChar rA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar rB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
-//zz    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
-//zz 
-//zz    if (opc1 != 0x1F || b23to24 != 0 || b0 != 0) {
-//zz       vex_printf("dis_av_datastream(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x156: // dst (Data Stream Touch, AV p115)
-//zz       DIP("dst%s r%d,r%d,%d\n", flag_T ? "t" : "", rA_addr, rB_addr, STRM);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x176: // dstst (Data Stream Touch for Store, AV p117)
-//zz       DIP("dstst%s r%d,r%d,%d\n", flag_T ? "t" : "", rA_addr, rB_addr, STRM);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x336: // dss (Data Stream Stop, AV p114)
-//zz       if (rA_addr != 0 || rB_addr != 0) {
-//zz          vex_printf("dis_av_datastream(PPC32)(opc2,dst)\n");
-//zz          return False;
-//zz       }
-//zz       if (flag_A == 0) {
-//zz 	DIP("dss %d\n", STRM);
-//zz 	DIP(" => not implemented\n");
-//zz       } else {
-//zz 	DIP("dssall\n");
-//zz 	DIP(" => not implemented\n");
-//zz       }
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_datastream(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz /*
-//zz   AltiVec Processor Control Instructions
-//zz */
-//zz static Bool dis_av_procctl ( UInt theInstr )
-//zz {
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar vA_addr = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_procctl(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x604: // mfvscr (Move from VSCR, AV p129)
-//zz       if (vA_addr != 0 || vB_addr != 0) {
-//zz          vex_printf("dis_av_procctl(PPC32)(opc2,dst)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("mfvscr v%d\n", vD_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x644: // mtvscr (Move to VSCR, AV p130)
-//zz       if (vD_addr != 0 || vA_addr != 0) {
-//zz          vex_printf("dis_av_procctl(PPC32)(opc2,dst)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("mtvscr v%d\n", vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_procctl(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
+/*------------------------------------------------------------*/
+/*--- AltiVec Instruction Translation                      ---*/
+/*------------------------------------------------------------*/
+
+/*
+  Altivec Cache Control Instructions (Data Streams)
+*/
+static Bool dis_av_datastream ( UInt theInstr )
+{
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar flag_T   = toUChar((theInstr >> 25) & 0x1);  /* theInstr[25]    */
+   UChar flag_A   = toUChar((theInstr >> 25) & 0x1);  /* theInstr[25]    */
+   UChar b23to24  = toUChar((theInstr >> 23) & 0x3);  /* theInstr[23:24] */
+   UChar STRM     = toUChar((theInstr >> 21) & 0x3);  /* theInstr[21:22] */
+   UChar rA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar rB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+   UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
+
+   if (opc1 != 0x1F || b23to24 != 0 || b0 != 0) {
+      vex_printf("dis_av_datastream(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x156: // dst (Data Stream Touch, AV p115)
+      DIP("dst%s r%d,r%d,%d\n", flag_T ? "t" : "", rA_addr, rB_addr, STRM);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x176: // dstst (Data Stream Touch for Store, AV p117)
+      DIP("dstst%s r%d,r%d,%d\n", flag_T ? "t" : "", rA_addr, rB_addr, STRM);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x336: // dss (Data Stream Stop, AV p114)
+      if (rA_addr != 0 || rB_addr != 0) {
+         vex_printf("dis_av_datastream(PPC32)(opc2,dst)\n");
+         return False;
+      }
+      if (flag_A == 0) {
+         DIP("dss %d\n", STRM);
+         DIP(" => not implemented\n");
+      } else {
+         DIP("dssall\n");
+         DIP(" => not implemented\n");
+      }
+      return False;
+
+   default:
+      vex_printf("dis_av_datastream(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Processor Control Instructions
+*/
+static Bool dis_av_procctl ( UInt theInstr )
+{
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar vA_addr = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_procctl(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x604: // mfvscr (Move from VSCR, AV p129)
+      if (vA_addr != 0 || vB_addr != 0) {
+         vex_printf("dis_av_procctl(PPC32)(opc2,dst)\n");
+         return False;
+      }
+      DIP("mfvscr v%d\n", vD_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x644: // mtvscr (Move to VSCR, AV p130)
+      if (vD_addr != 0 || vA_addr != 0) {
+         vex_printf("dis_av_procctl(PPC32)(opc2,dst)\n");
+         return False;
+      }
+      DIP("mtvscr v%d\n", vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_procctl(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
 
 /*
   AltiVec Load Instructions
@@ -4858,30 +4858,30 @@ static Bool dis_av_load ( UInt theInstr )
 
    switch (opc2) {
 
-//zz    case 0x006: // lvsl (Load Vector for Shift Left, AV p123)
-//zz       DIP("lvsl v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x026: // lvsr (Load Vector for Shift Right, AV p125)
-//zz       DIP("lvsr v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x007: // lvebx (Load Vector Element Byte Indexed, AV p119)
-//zz       DIP("lvebx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x027: // lvehx (Load Vector Element Half Word Indexed, AV p121)
-//zz       DIP("lvehx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x047: // lvewx (Load Vector Element Word Indexed, AV p122)
-//zz       DIP("lvewx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
+   case 0x006: // lvsl (Load Vector for Shift Left, AV p123)
+      DIP("lvsl v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x026: // lvsr (Load Vector for Shift Right, AV p125)
+      DIP("lvsr v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x007: // lvebx (Load Vector Element Byte Indexed, AV p119)
+      DIP("lvebx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x027: // lvehx (Load Vector Element Half Word Indexed, AV p121)
+      DIP("lvehx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x047: // lvewx (Load Vector Element Word Indexed, AV p122)
+      DIP("lvewx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
 
    case 0x067: // lvx (Load Vector Indexed, AV p127)
       DIP("lvx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
@@ -4889,11 +4889,11 @@ static Bool dis_av_load ( UInt theInstr )
       putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_aligned)) );
       break;
 
-//zz    case 0x167: // lvxl (Load Vector Indexed LRU, AV p128)
-//zz      // XXX: lvxl gives explicit control over cache block replacement
-//zz       DIP("lvxl v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
+   case 0x167: // lvxl (Load Vector Indexed LRU, AV p128)
+     // XXX: lvxl gives explicit control over cache block replacement
+      DIP("lvxl v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
 
    default:
       vex_printf("dis_av_load(PPC32)(opc2)\n");
@@ -4932,32 +4932,32 @@ static Bool dis_av_store ( UInt theInstr )
    }
 
    switch (opc2) {
-//zz    case 0x087: // stvebx (Store Vector Byte Indexed, AV p131)
-//zz       DIP("stvebx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz //      eb = EA & 0xF;
-//zz //      STORE(vS[eb*8:eb*8+7], 1, EA);
-//zz //      storeBE( mkexpr(EA), mkexpr(vS) );
-//zz 
-//zz    case 0x0A7: // stvehx (Store Vector Half Word Indexed, AV p132)
-//zz       DIP("stvehx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz //      EA_aligned = EA & 0xFFFF_FFFE
-//zz //      eb = EA_aligned & 0xF;
-//zz //      STORE(vS[eb*8:eb*8+15], 2, EA_aligned);
-//zz 
-//zz    case 0x0C7: // stvewx (Store Vector Word Indexed, AV p133)
-//zz       DIP("stvewx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz //      EA_aligned = EA & 0xFFFF_FFFC
-//zz //      eb = EA_aligned & 0xF;
-//zz //      STORE(vS[eb*8:eb*8+31], 4, EA_aligned);
+   case 0x087: // stvebx (Store Vector Byte Indexed, AV p131)
+      DIP("stvebx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+//      eb = EA & 0xF;
+//      STORE(vS[eb*8:eb*8+7], 1, EA);
+//      storeBE( mkexpr(EA), mkexpr(vS) );
+
+   case 0x0A7: // stvehx (Store Vector Half Word Indexed, AV p132)
+      DIP("stvehx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+//      EA_aligned = EA & 0xFFFF_FFFE
+//      eb = EA_aligned & 0xF;
+//      STORE(vS[eb*8:eb*8+15], 2, EA_aligned);
+
+   case 0x0C7: // stvewx (Store Vector Word Indexed, AV p133)
+      DIP("stvewx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+//      EA_aligned = EA & 0xFFFF_FFFC
+//      eb = EA_aligned & 0xF;
+//      STORE(vS[eb*8:eb*8+31], 4, EA_aligned);
 
    case 0x0E7: // stvx (Store Vector Indexed, AV p134)
       DIP("stvx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
@@ -4965,14 +4965,14 @@ static Bool dis_av_store ( UInt theInstr )
       storeBE( mkexpr(EA_aligned), mkexpr(vS) );
       break;
 
-//zz    case 0x1E7: // stvxl (Store Vector Indexed LRU, AV p135)
-//zz      // XXX: stvxl can give explicit control over cache block replacement
-//zz       DIP("stvxl v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz    
-//zz //      EA_aligned = EA & 0xFFFF_FFF0;
-//zz //      STORE(vS, 16, EA);
+   case 0x1E7: // stvxl (Store Vector Indexed LRU, AV p135)
+     // XXX: stvxl can give explicit control over cache block replacement
+      DIP("stvxl v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
+      DIP(" => not implemented\n");
+      return False;
+   
+//      EA_aligned = EA & 0xFFFF_FFF0;
+//      STORE(vS, 16, EA);
 
    default:
       vex_printf("dis_av_store(PPC32)(opc2)\n");
@@ -4981,1041 +4981,1041 @@ static Bool dis_av_store ( UInt theInstr )
    return True;
 }
 
-//zz /*
-//zz   AltiVec Arithmetic Instructions
-//zz */
-//zz static Bool dis_av_arith ( UInt theInstr )
-//zz {
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_arith(PPC32)(opc1 != 0x4)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    /* Add */
-//zz    case 0x180: // vaddcuw (Add Carryout Unsigned Word, AV p136)
-//zz       DIP("vaddcuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x000: // vaddubm (Add Unsigned Byte Modulo, AV p141)
-//zz       DIP("vaddubm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x040: // vadduhm (Add Unsigned Half Word Modulo, AV p143)
-//zz       DIP("vadduhm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x080: // vadduwm (Add Unsigned Word Modulo, AV p145)
-//zz       DIP("vadduwm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x200: // vaddubs (Add Unsigned Byte Saturate, AV p142)
-//zz       DIP("vaddubs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x240: // vadduhs (Add Unsigned Half Word Saturate, AV p144)
-//zz       DIP("vadduhs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x280: // vadduws (Add Unsigned Word Saturate, AV p146)
-//zz       DIP("vadduws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x300: // vaddsbs (Add Signed Byte Saturate, AV p138)
-//zz       DIP("vaddsbs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x340: // vaddshs (Add Signed Half Word Saturate, AV p139)
-//zz       DIP("vaddshs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x380: // vaddsws (Add Signed Word Saturate, AV p140)
-//zz       DIP("vaddsws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    /* Subtract */
-//zz    case 0x580: // vsubcuw (Subtract Carryout Unsigned Word, AV p260)
-//zz       DIP("vsubcuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x400: // vsububm (Subtract Unsigned Byte Modulo, AV p265)
-//zz       DIP("vsububm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x440: // vsubuhm (Subtract Unsigned Half Word Modulo, AV p267)
-//zz       DIP("vsubuhm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x480: // vsubuwm (Subtract Unsigned Word Modulo, AV p269)
-//zz       DIP("vsubuwm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x600: // vsububs (Subtract Unsigned Byte Saturate, AV p266)
-//zz       DIP("vsububs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x640: // vsubuhs (Subtract Unsigned Half Word Saturate, AV p268)
-//zz       DIP("vsubuhs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x680: // vsubuws (Subtract Unsigned Word Saturate, AV p270)
-//zz       DIP("vsubuws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x700: // vsubsbs (Subtract Signed Byte Saturate, AV p262)
-//zz       DIP("vsubsbs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x740: // vsubshs (Subtract Signed Half Word Saturate, AV p263)
-//zz       DIP("vsubshs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x780: // vsubsws (Subtract Signed Word Saturate, AV p264)
-//zz       DIP("vsubsws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz 
-//zz    /* Maximum */
-//zz    case 0x002: // vmaxub (Maximum Unsigned Byte, AV p182)
-//zz       DIP("vmaxub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x042: // vmaxuh (Maximum Unsigned Half Word, AV p183)
-//zz       DIP("vmaxuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x082: // vmaxuw (Maximum Unsigned Word, AV p184)
-//zz       DIP("vmaxuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x102: // vmaxsb (Maximum Signed Byte, AV p179)
-//zz       DIP("vmaxsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x142: // vmaxsh (Maximum Signed Half Word, AV p180)
-//zz       DIP("vmaxsh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x182: // vmaxsw (Maximum Signed Word, AV p181)
-//zz       DIP("vmaxsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz 
-//zz    /* Minimum */
-//zz    case 0x202: // vminub (Minimum Unsigned Byte, AV p191)
-//zz       DIP("vminub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x242: // vminuh (Minimum Unsigned Half Word, AV p192)
-//zz       DIP("vminuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x282: // vminuw (Minimum Unsigned Word, AV p193)
-//zz       DIP("vminuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x302: // vminsb (Minimum Signed Byte, AV p188)
-//zz       DIP("vminsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x342: // vminsh (Minimum Signed Half Word, AV p189)
-//zz       DIP("vminsh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x382: // vminsw (Minimum Signed Word, AV p190)
-//zz       DIP("vminsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz 
-//zz    /* Average */
-//zz    case 0x402: // vavgub (Average Unsigned Byte, AV p152)
-//zz       DIP("vavgub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x442: // vavguh (Average Unsigned Half Word, AV p153)
-//zz       DIP("vavguh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x482: // vavguw (Average Unsigned Word, AV p154)
-//zz       DIP("vavguw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x502: // vavgsb (Average Signed Byte, AV p149)
-//zz       DIP("vavgsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x542: // vavgsh (Average Signed Half Word, AV p150)
-//zz       DIP("vavgsh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x582: // vavgsw (Average Signed Word, AV p151)
-//zz       DIP("vavgsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz 
-//zz    /* Multiply */
-//zz    case 0x008: // vmuloub (Multiply Odd Unsigned Byte, AV p213)
-//zz       DIP("vmuloub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x048: // vmulouh (Multiply Odd Unsigned Half Word, AV p214)
-//zz       DIP("vmulouh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x108: // vmulosb (Multiply Odd Signed Byte, AV p211)
-//zz       DIP("vmulosb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x148: // vmulosh (Multiply Odd Signed Half Word, AV p212)
-//zz       DIP("vmulosh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x208: // vmuleub (Multiply Even Unsigned Byte, AV p209)
-//zz       DIP("vmuleub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x248: // vmuleuh (Multiply Even Unsigned Half Word, AV p210)
-//zz       DIP("vmuleuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x308: // vmulesb (Multiply Even Signed Byte, AV p207)
-//zz       DIP("vmulesb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x348: // vmulesh (Multiply Even Signed Half Word, AV p208)
-//zz       DIP("vmulesh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz 
-//zz    /* Sum Across Partial */
-//zz    case 0x608: // vsum4ubs (Sum Partial (1/4) UB Saturate, AV p275)
-//zz       DIP("vsum4ubs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x708: // vsum4sbs (Sum Partial (1/4) SB Saturate, AV p273)
-//zz       DIP("vsum4sbs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x648: // vsum4shs (Sum Partial (1/4) SHW Saturate, AV p274)
-//zz       DIP("vsum4shs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x688: // vsum2sws (Sum Partial (1/2) SW Saturate, AV p272)
-//zz       DIP("vsum2sws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x788: // vsumsws  (Sum SW Saturate, AV p271)
-//zz       DIP("vsumsws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_arith(PPC32)(opc2=0x%x)\n", opc2);
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz /*
-//zz   AltiVec Logic Instructions
-//zz */
-//zz static Bool dis_av_logic ( UInt theInstr )
-//zz {
-//zz    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
-//zz    UChar vD_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
-//zz    UChar vA_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
-//zz    UChar vB_addr = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
-//zz    UInt  opc2    =         (theInstr >>  0) & 0x7FF;  /* theInstr[0:10]  */
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_logic(PPC32)(opc1 != 0x4)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x404: // vand (And, AV p147)
-//zz       DIP("vand v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x444: // vandc (And, AV p148)
-//zz       DIP("vandc v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x484: // vor (Or, AV p217)
-//zz       DIP("vor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x4C4: // vxor (Xor, AV p282)
-//zz       DIP("vxor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x504: // vnor (Nor, AV p216)
-//zz       DIP("vnor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_logic(PPC32)(opc2=0x%x)\n", opc2);
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz /*
-//zz   AltiVec Compare Instructions
-//zz */
-//zz static Bool dis_av_cmp ( UInt theInstr )
-//zz {
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UChar flag_Rc  = toUChar((theInstr >> 10) & 0x1);  /* theInstr[10]    */
-//zz    UInt  opc2     =         (theInstr >>  0) & 0x3FF; /* theInstr[0:9]   */
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_cmp(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x006: // vcmpequb (Compare Equal-to Unsigned B, AV p160)
-//zz       DIP("vcmpequb%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x046: // vcmpequh (Compare Equal-to Unsigned HW, AV p161)
-//zz       DIP("vcmpequh%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x086: // vcmpequw (Compare Equal-to Unsigned W, AV p162)
-//zz       DIP("vcmpequw%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x206: // vcmpgtub (Compare Greater-than Unsigned B, AV p168)
-//zz       DIP("vcmpgtub%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x246: // vcmpgtuh (Compare Greater-than Unsigned HW, AV p169)
-//zz       DIP("vcmpgtuh%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x286: // vcmpgtuw (Compare Greater-than Unsigned W, AV p170)
-//zz       DIP("vcmpgtuw%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x306: // vcmpgtsb (Compare Greater-than Signed B, AV p165)
-//zz       DIP("vcmpgtsb%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x346: // vcmpgtsh (Compare Greater-than Signed HW, AV p166)
-//zz       DIP("vcmpgtsh%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x386: // vcmpgtsw (Compare Greater-than Signed W, AV p167)
-//zz       DIP("vcmpgtsw%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_cmp(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz /*
-//zz   AltiVec Multiply-Sum Instructions
-//zz */
-//zz static Bool dis_av_multarith ( UInt theInstr )
-//zz {
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UChar vC_addr  = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
-//zz    UChar opc2     = toUChar((theInstr >>  0) & 0x3F); /* theInstr[0:5]   */
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_multarith(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz 
-//zz    /* Multiply-Add */
-//zz    case 0x20: // vmhaddshs (Multiply High, Add Signed HW Saturate, AV p185)
-//zz       DIP("vmhaddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x21: // vmhraddshs (Multiply High Round, Add Signed HW Saturate, AV p186)
-//zz       DIP("vmhraddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x22: // vmladduhm (Multiply Low, Add Unsigned HW Modulo, AV p194)
-//zz       DIP("vmladduhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz 
-//zz    /* Multiply-Sum */
-//zz    case 0x24: // vmsumubm (Multiply Sum Unsigned B Modulo, AV p204)
-//zz       DIP("vmsumubm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x25: // vmsummbm (Multiply Sum Mixed-Sign B Modulo, AV p201)
-//zz       DIP("vmsummbm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x26: // vmsumuhm (Multiply Sum Unsigned HW Modulo, AV p205)
-//zz       DIP("vmsumuhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x27: // vmsumuhs (Multiply Sum Unsigned HW Saturate, AV p206)
-//zz       DIP("vmsumuhs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x28: // vmsumshm (Multiply Sum Signed HW Modulo, AV p202)
-//zz       DIP("vmsumshm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x29: // vmsumshs (Multiply Sum Signed HW Saturate, AV p203)
-//zz       DIP("vmsumshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_multarith(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz /*
-//zz   AltiVec Shift/Rotate Instructions
-//zz */
-//zz static Bool dis_av_shift ( UInt theInstr )
-//zz {
-//zz    UChar opc1    = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar vA_addr = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UInt  opc2    =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
-//zz 
-//zz    if (opc1 != 0x4){
-//zz       vex_printf("dis_av_shift(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    /* Rotate */
-//zz    case 0x004: // vrlb (Rotate Left Integer B, AV p234)
-//zz       DIP("vrlb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x044: // vrlh (Rotate Left Integer HW, AV p235)
-//zz       DIP("vrlh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x084: // vrlw (Rotate Left Integer W, AV p236)
-//zz       DIP("vrlw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz 
-//zz    /* Shift Left */
-//zz    case 0x104: // vslb (Shift Left Integer B, AV p240)
-//zz       DIP("vslb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x144: // vslh (Shift Left Integer HW, AV p242)
-//zz       DIP("vslh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x184: // vslw (Shift Left Integer W, AV p244)
-//zz       DIP("vslw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x1C4: // vsl (Shift Left, AV p239)
-//zz       DIP("vsl v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x40C: // vslo (Shift Left by Octet, AV p243)
-//zz       DIP("vslo v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    /* Shift Right */
-//zz    case 0x204: // vsrb (Shift Right B, AV p256)
-//zz       DIP("vsrb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x244: // vsrh (Shift Right HW, AV p257)
-//zz       DIP("vsrh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x284: // vsrw (Shift Right W, AV p259)
-//zz       DIP("vsrw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x2C4: // vsr (Shift Right, AV p252)
-//zz       DIP("vsr v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x304: // vsrab (Shift Right Algebraic B, AV p253)
-//zz       DIP("vsrab v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x344: // vsrah (Shift Right Algebraic HW, AV p254)
-//zz       DIP("vsrah v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x384: // vsraw (Shift Right Algebraic W, AV p255)
-//zz       DIP("vsraw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x44C: // vsro (Shift Right by Octet, AV p258)
-//zz       DIP("vsro v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_shift(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz /*
-//zz   AltiVec Permute Instructions
-//zz */
-//zz static Bool dis_av_permute ( UInt theInstr )
-//zz {
-//zz    UChar opc1      = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr   = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar vA_addr   = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar UIMM_5    = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar SIMM_5    = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr   = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UChar vC_addr   = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
-//zz    UChar b10       = toUChar((theInstr >> 10) & 0x1);  /* theInstr[10]    */
-//zz    UChar SHB_uimm4 = toUChar((theInstr >>  6) & 0xF);  /* theInstr[6:9]   */
-//zz    UInt  opc2      =         (theInstr >>  0) & 0x3F;  /* theInstr[0:5]   */
-//zz 
-//zz    UChar SIMM_8 = extend_s_5to8(SIMM_5);
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_permute(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x2A: // vsel (Conditional Select, AV p238)
-//zz       DIP("vsel v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz      
-//zz    case 0x2B: // vperm (Permute, AV p218)
-//zz       DIP("vperm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x2C: // vsldoi (Shift Left Double by Octet Imm, AV p241)
-//zz       if (b10 != 0) {
-//zz          vex_printf("dis_av_permute(PPC32)(vsldoi)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("vsldoi v%d,v%d,v%d,%d\n", vD_addr, vA_addr, vB_addr, SHB_uimm4);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz      break; // Fall through...
-//zz    }
-//zz 
-//zz    opc2 = (theInstr) & 0x7FF; /* theInstr[0:10]  */
-//zz    switch (opc2) {
-//zz 
-//zz    /* Merge */
-//zz    case 0x00C: // vmrghb (Merge High B, AV p195)
-//zz       DIP("vmrghb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x04C: // vmrghh (Merge High HW, AV p196)
-//zz       DIP("vmrghh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x08C: // vmrghw (Merge High W, AV p197)
-//zz       DIP("vmrghw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x10C: // vmrglb (Merge Low B, AV p198)
-//zz       DIP("vmrglb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x14C: // vmrglh (Merge Low HW, AV p199)
-//zz       DIP("vmrglh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x18C: // vmrglw (Merge Low W, AV p200)
-//zz       DIP("vmrglw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    /* Splat */
-//zz    case 0x20C: // vspltb (Splat Byte, AV p245)
-//zz       DIP("vspltb v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x24C: // vsplth (Splat Half Word, AV p246)
-//zz       DIP("vsplth v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x28C: // vspltw (Splat Word, AV p250)
-//zz       DIP("vspltw v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x30C: // vspltisb (Splat Immediate Signed B, AV p247)
-//zz       DIP("vspltisb v%d,%d\n", vD_addr, (Char)SIMM_8);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x34C: // vspltish (Splat Immediate Signed HW, AV p248)
-//zz       DIP("vspltish v%d,%d\n", vD_addr, (Char)SIMM_8);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x38C: // vspltisw (Splat Immediate Signed W, AV p249)
-//zz       DIP("vspltisw v%d,%d\n", vD_addr, (Char)SIMM_8);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_permute(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz /*
-//zz   AltiVec Pack/Unpack Instructions
-//zz */
-//zz static Bool dis_av_pack ( UInt theInstr )
-//zz {
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_pack(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    /* Packing */
-//zz    case 0x00E: // vpkuhum (Pack Unsigned HW Unsigned Modulo, AV p224)
-//zz       DIP("vpkuhum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x04E: // vpkuwum (Pack Unsigned W Unsigned Modulo, AV p226)
-//zz       DIP("vpkuwum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x08E: // vpkuhus (Pack Unsigned HW Unsigned Saturate, AV p225)
-//zz       DIP("vpkuhus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x0CE: // vpkuwus (Pack Unsigned W Unsigned Saturate, AV p227)
-//zz       DIP("vpkuwus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x10E: // vpkshus (Pack Signed HW Unsigned Saturate, AV p221)
-//zz       DIP("vpkshus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x14E: // vpkswus (Pack Signed W Unsigned Saturate, AV p223)
-//zz       DIP("vpkswus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x18E: // vpkshss (Pack Signed HW Signed Saturate, AV p220)
-//zz       DIP("vpkshss v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x1CE: // vpkswss (Pack Signed W Signed Saturate, AV p222)
-//zz       DIP("vpkswss v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x30E: // vpkpx (Pack Pixel, AV p219)
-//zz       DIP("vpkpx v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       break; // Fall through...
-//zz    }
-//zz 
-//zz 
-//zz    if (vA_addr != 0) {
-//zz       vex_printf("dis_av_pack(PPC32)(vA_addr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    /* Unpacking */
-//zz    case 0x20E: // vupkhsb (Unpack High Signed B, AV p277)
-//zz       DIP("vupkhsb v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x24E: // vupkhsh (Unpack High Signed HW, AV p278)
-//zz       DIP("vupkhsh v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x28E: // vupklsb (Unpack Low Signed B, AV p280)
-//zz       DIP("vupklsb v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x2CE: // vupklsh (Unpack Low Signed HW, AV p281)
-//zz       DIP("vupklsh v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x34E: // vupkhpx (Unpack High Pixel16, AV p276)
-//zz       DIP("vupkhpx v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x3CE: // vupklpx (Unpack Low Pixel16, AV p279)
-//zz       DIP("vupklpx v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_pack(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz 
-//zz /*
-//zz   AltiVec Floating Point Arithmetic Instructions
-//zz */
-//zz static Bool dis_av_fp_arith ( UInt theInstr )
-//zz {
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UChar vC_addr  = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10] */
-//zz    UInt  opc2=0;
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_fp_arith(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    opc2 = (theInstr) & 0x3F;  /* theInstr[0:5]   */
-//zz    switch (opc2) {
-//zz    case 0x2E: // vmaddfp (Multiply Add FP, AV p177)
-//zz       DIP("vmaddfp v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vC_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x2F: // vnmsubfp (Negative Multiply-Subtract FP, AV p215)
-//zz       DIP("vnmsubfp v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vC_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz      break; // Fall through...
-//zz    }
-//zz 
-//zz    opc2 = (theInstr) & 0x7FF; /* theInstr[0:10]  */
-//zz    switch (opc2) {
-//zz    case 0x00A: // vaddfp (Add FP, AV p137)
-//zz       DIP("vaddfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz   case 0x04A: // vsubfp (Subtract FP, AV p261)
-//zz       DIP("vsubfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x40A: // vmaxfp (Maximum FP, AV p178)
-//zz       DIP("vmaxfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x44A: // vminfp (Minimum FP, AV p187)
-//zz       DIP("vminfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       break; // Fall through...
-//zz    }
-//zz 
-//zz 
-//zz    if (vA_addr != 0) {
-//zz       vex_printf("dis_av_fp_arith(PPC32)(vA_addr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x10A: // vrefp (Reciprocal Esimate FP, AV p228)
-//zz       DIP("vrefp v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x14A: // vrsqrtefp (Reciprocal Square Root Estimate FP, AV p237)
-//zz       DIP("vrsqrtefp v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x18A: // vexptefp (2 Raised to the Exp Est FP, AV p173)
-//zz       DIP("vexptefp v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x1CA: // vlogefp (Log2 Estimate FP, AV p175)
-//zz       DIP("vlogefp v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_fp_arith(PPC32)(opc2=0x%x)\n",opc2);
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz /*
-//zz   AltiVec Floating Point Compare Instructions
-//zz */
-//zz static Bool dis_av_fp_cmp ( UInt theInstr )
-//zz {
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UChar flag_Rc  = toUChar((theInstr >> 10) & 0x1);  /* theInstr[10]    */
-//zz    UInt  opc2     =         (theInstr >>  0) & 0x3FF; /* theInstr[0:9]   */
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_fp_cmp(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x0C6: // vcmpeqfp (Compare Equal-to FP, AV p159)
-//zz       DIP("vcmpeqfp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x1C6: // vcmpgefp (Compare Greater-than-or-Equal-to FP, AV p163)
-//zz       DIP("vcmpgefp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x2C6: // vcmpgtfp (Compare Greater-than FP, AV p164)
-//zz       DIP("vcmpgtfp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x3C6: // vcmpbfp (Compare Bounds FP, AV p157)
-//zz       DIP("vcmpbfp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_fp_cmp(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
-//zz 
-//zz /*
-//zz   AltiVec Floating Point Convert/Round Instructions
-//zz */
-//zz static Bool dis_av_fp_convert ( UInt theInstr )
-//zz {
-//zz    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
-//zz    UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
-//zz    UChar UIMM_5   = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
-//zz    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
-//zz    UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
-//zz 
-//zz    if (opc1 != 0x4) {
-//zz       vex_printf("dis_av_fp_convert(PPC32)(instr)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x30A: // vcfux (Convert from Unsigned Fixed-Point W, AV p156)
-//zz       DIP("vcfux v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x34A: // vcfsx (Convert from Signed Fixed-Point W, AV p155)
-//zz       DIP("vcfsx v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x38A: // vctuxs (Convert to Unsigned Fixed-Point W Saturate, AV p172)
-//zz       DIP("vctuxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x3CA: // vctsxs (Convert to Signed Fixed-Point W Saturate, AV p171)
-//zz       DIP("vctsxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz      break;    // Fall through...
-//zz    }
-//zz 
-//zz    if (UIMM_5 != 0) {
-//zz       vex_printf("dis_av_fp_convert(PPC32)(UIMM_5)\n");
-//zz       return False;
-//zz    }
-//zz 
-//zz    switch (opc2) {
-//zz    case 0x20A: // vrfin (Round to FP Integer Nearest, AV p231)
-//zz       DIP("vrfin v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x24A: // vrfiz (Round to FP Integer toward zero, AV p233)
-//zz       DIP("vrfiz v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x28A: // vrfip (Round to FP Integer toward +inf, AV p232)
-//zz       DIP("vrfip v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    case 0x2CA: // vrfim (Round to FP Integer toward -inf, AV p230)
-//zz       DIP("vrfim v%d,v%d\n", vD_addr, vB_addr);
-//zz       DIP(" => not implemented\n");
-//zz       return False;
-//zz 
-//zz    default:
-//zz       vex_printf("dis_av_fp_convert(PPC32)(opc2)\n");
-//zz       return False;
-//zz    }
-//zz    return True;
-//zz }
+/*
+  AltiVec Arithmetic Instructions
+*/
+static Bool dis_av_arith ( UInt theInstr )
+{
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_arith(PPC32)(opc1 != 0x4)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   /* Add */
+   case 0x180: // vaddcuw (Add Carryout Unsigned Word, AV p136)
+      DIP("vaddcuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x000: // vaddubm (Add Unsigned Byte Modulo, AV p141)
+      DIP("vaddubm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x040: // vadduhm (Add Unsigned Half Word Modulo, AV p143)
+      DIP("vadduhm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x080: // vadduwm (Add Unsigned Word Modulo, AV p145)
+      DIP("vadduwm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x200: // vaddubs (Add Unsigned Byte Saturate, AV p142)
+      DIP("vaddubs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x240: // vadduhs (Add Unsigned Half Word Saturate, AV p144)
+      DIP("vadduhs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x280: // vadduws (Add Unsigned Word Saturate, AV p146)
+      DIP("vadduws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x300: // vaddsbs (Add Signed Byte Saturate, AV p138)
+      DIP("vaddsbs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x340: // vaddshs (Add Signed Half Word Saturate, AV p139)
+      DIP("vaddshs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x380: // vaddsws (Add Signed Word Saturate, AV p140)
+      DIP("vaddsws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   /* Subtract */
+   case 0x580: // vsubcuw (Subtract Carryout Unsigned Word, AV p260)
+      DIP("vsubcuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x400: // vsububm (Subtract Unsigned Byte Modulo, AV p265)
+      DIP("vsububm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x440: // vsubuhm (Subtract Unsigned Half Word Modulo, AV p267)
+      DIP("vsubuhm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x480: // vsubuwm (Subtract Unsigned Word Modulo, AV p269)
+      DIP("vsubuwm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x600: // vsububs (Subtract Unsigned Byte Saturate, AV p266)
+      DIP("vsububs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x640: // vsubuhs (Subtract Unsigned Half Word Saturate, AV p268)
+      DIP("vsubuhs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x680: // vsubuws (Subtract Unsigned Word Saturate, AV p270)
+      DIP("vsubuws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x700: // vsubsbs (Subtract Signed Byte Saturate, AV p262)
+      DIP("vsubsbs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x740: // vsubshs (Subtract Signed Half Word Saturate, AV p263)
+      DIP("vsubshs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x780: // vsubsws (Subtract Signed Word Saturate, AV p264)
+      DIP("vsubsws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+
+   /* Maximum */
+   case 0x002: // vmaxub (Maximum Unsigned Byte, AV p182)
+      DIP("vmaxub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x042: // vmaxuh (Maximum Unsigned Half Word, AV p183)
+      DIP("vmaxuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x082: // vmaxuw (Maximum Unsigned Word, AV p184)
+      DIP("vmaxuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x102: // vmaxsb (Maximum Signed Byte, AV p179)
+      DIP("vmaxsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x142: // vmaxsh (Maximum Signed Half Word, AV p180)
+      DIP("vmaxsh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x182: // vmaxsw (Maximum Signed Word, AV p181)
+      DIP("vmaxsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+
+   /* Minimum */
+   case 0x202: // vminub (Minimum Unsigned Byte, AV p191)
+      DIP("vminub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x242: // vminuh (Minimum Unsigned Half Word, AV p192)
+      DIP("vminuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x282: // vminuw (Minimum Unsigned Word, AV p193)
+      DIP("vminuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x302: // vminsb (Minimum Signed Byte, AV p188)
+      DIP("vminsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x342: // vminsh (Minimum Signed Half Word, AV p189)
+      DIP("vminsh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x382: // vminsw (Minimum Signed Word, AV p190)
+      DIP("vminsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+
+   /* Average */
+   case 0x402: // vavgub (Average Unsigned Byte, AV p152)
+      DIP("vavgub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x442: // vavguh (Average Unsigned Half Word, AV p153)
+      DIP("vavguh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x482: // vavguw (Average Unsigned Word, AV p154)
+      DIP("vavguw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x502: // vavgsb (Average Signed Byte, AV p149)
+      DIP("vavgsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x542: // vavgsh (Average Signed Half Word, AV p150)
+      DIP("vavgsh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x582: // vavgsw (Average Signed Word, AV p151)
+      DIP("vavgsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+
+   /* Multiply */
+   case 0x008: // vmuloub (Multiply Odd Unsigned Byte, AV p213)
+      DIP("vmuloub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x048: // vmulouh (Multiply Odd Unsigned Half Word, AV p214)
+      DIP("vmulouh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x108: // vmulosb (Multiply Odd Signed Byte, AV p211)
+      DIP("vmulosb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x148: // vmulosh (Multiply Odd Signed Half Word, AV p212)
+      DIP("vmulosh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x208: // vmuleub (Multiply Even Unsigned Byte, AV p209)
+      DIP("vmuleub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x248: // vmuleuh (Multiply Even Unsigned Half Word, AV p210)
+      DIP("vmuleuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x308: // vmulesb (Multiply Even Signed Byte, AV p207)
+      DIP("vmulesb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x348: // vmulesh (Multiply Even Signed Half Word, AV p208)
+      DIP("vmulesh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+
+   /* Sum Across Partial */
+   case 0x608: // vsum4ubs (Sum Partial (1/4) UB Saturate, AV p275)
+      DIP("vsum4ubs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x708: // vsum4sbs (Sum Partial (1/4) SB Saturate, AV p273)
+      DIP("vsum4sbs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x648: // vsum4shs (Sum Partial (1/4) SHW Saturate, AV p274)
+      DIP("vsum4shs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x688: // vsum2sws (Sum Partial (1/2) SW Saturate, AV p272)
+      DIP("vsum2sws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x788: // vsumsws  (Sum SW Saturate, AV p271)
+      DIP("vsumsws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_arith(PPC32)(opc2=0x%x)\n", opc2);
+      return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Logic Instructions
+*/
+static Bool dis_av_logic ( UInt theInstr )
+{
+   UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+   UChar vD_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+   UChar vA_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
+   UChar vB_addr = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
+   UInt  opc2    =         (theInstr >>  0) & 0x7FF;  /* theInstr[0:10]  */
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_logic(PPC32)(opc1 != 0x4)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x404: // vand (And, AV p147)
+      DIP("vand v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x444: // vandc (And, AV p148)
+      DIP("vandc v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x484: // vor (Or, AV p217)
+      DIP("vor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x4C4: // vxor (Xor, AV p282)
+      DIP("vxor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x504: // vnor (Nor, AV p216)
+      DIP("vnor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_logic(PPC32)(opc2=0x%x)\n", opc2);
+      return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Compare Instructions
+*/
+static Bool dis_av_cmp ( UInt theInstr )
+{
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UChar flag_Rc  = toUChar((theInstr >> 10) & 0x1);  /* theInstr[10]    */
+   UInt  opc2     =         (theInstr >>  0) & 0x3FF; /* theInstr[0:9]   */
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_cmp(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x006: // vcmpequb (Compare Equal-to Unsigned B, AV p160)
+      DIP("vcmpequb%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x046: // vcmpequh (Compare Equal-to Unsigned HW, AV p161)
+      DIP("vcmpequh%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x086: // vcmpequw (Compare Equal-to Unsigned W, AV p162)
+      DIP("vcmpequw%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x206: // vcmpgtub (Compare Greater-than Unsigned B, AV p168)
+      DIP("vcmpgtub%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x246: // vcmpgtuh (Compare Greater-than Unsigned HW, AV p169)
+      DIP("vcmpgtuh%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x286: // vcmpgtuw (Compare Greater-than Unsigned W, AV p170)
+      DIP("vcmpgtuw%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x306: // vcmpgtsb (Compare Greater-than Signed B, AV p165)
+      DIP("vcmpgtsb%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x346: // vcmpgtsh (Compare Greater-than Signed HW, AV p166)
+      DIP("vcmpgtsh%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x386: // vcmpgtsw (Compare Greater-than Signed W, AV p167)
+      DIP("vcmpgtsw%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_cmp(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Multiply-Sum Instructions
+*/
+static Bool dis_av_multarith ( UInt theInstr )
+{
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UChar vC_addr  = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
+   UChar opc2     = toUChar((theInstr >>  0) & 0x3F); /* theInstr[0:5]   */
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_multarith(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+
+   /* Multiply-Add */
+   case 0x20: // vmhaddshs (Multiply High, Add Signed HW Saturate, AV p185)
+      DIP("vmhaddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x21: // vmhraddshs (Multiply High Round, Add Signed HW Saturate, AV p186)
+      DIP("vmhraddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x22: // vmladduhm (Multiply Low, Add Unsigned HW Modulo, AV p194)
+      DIP("vmladduhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+
+   /* Multiply-Sum */
+   case 0x24: // vmsumubm (Multiply Sum Unsigned B Modulo, AV p204)
+      DIP("vmsumubm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x25: // vmsummbm (Multiply Sum Mixed-Sign B Modulo, AV p201)
+      DIP("vmsummbm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x26: // vmsumuhm (Multiply Sum Unsigned HW Modulo, AV p205)
+      DIP("vmsumuhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x27: // vmsumuhs (Multiply Sum Unsigned HW Saturate, AV p206)
+      DIP("vmsumuhs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x28: // vmsumshm (Multiply Sum Signed HW Modulo, AV p202)
+      DIP("vmsumshm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x29: // vmsumshs (Multiply Sum Signed HW Saturate, AV p203)
+      DIP("vmsumshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_multarith(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Shift/Rotate Instructions
+*/
+static Bool dis_av_shift ( UInt theInstr )
+{
+   UChar opc1    = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar vA_addr = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2    =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
+
+   if (opc1 != 0x4){
+      vex_printf("dis_av_shift(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   /* Rotate */
+   case 0x004: // vrlb (Rotate Left Integer B, AV p234)
+      DIP("vrlb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x044: // vrlh (Rotate Left Integer HW, AV p235)
+      DIP("vrlh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x084: // vrlw (Rotate Left Integer W, AV p236)
+      DIP("vrlw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+
+   /* Shift Left */
+   case 0x104: // vslb (Shift Left Integer B, AV p240)
+      DIP("vslb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x144: // vslh (Shift Left Integer HW, AV p242)
+      DIP("vslh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x184: // vslw (Shift Left Integer W, AV p244)
+      DIP("vslw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x1C4: // vsl (Shift Left, AV p239)
+      DIP("vsl v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x40C: // vslo (Shift Left by Octet, AV p243)
+      DIP("vslo v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   /* Shift Right */
+   case 0x204: // vsrb (Shift Right B, AV p256)
+      DIP("vsrb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x244: // vsrh (Shift Right HW, AV p257)
+      DIP("vsrh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x284: // vsrw (Shift Right W, AV p259)
+      DIP("vsrw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x2C4: // vsr (Shift Right, AV p252)
+      DIP("vsr v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x304: // vsrab (Shift Right Algebraic B, AV p253)
+      DIP("vsrab v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x344: // vsrah (Shift Right Algebraic HW, AV p254)
+      DIP("vsrah v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x384: // vsraw (Shift Right Algebraic W, AV p255)
+      DIP("vsraw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x44C: // vsro (Shift Right by Octet, AV p258)
+      DIP("vsro v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_shift(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Permute Instructions
+*/
+static Bool dis_av_permute ( UInt theInstr )
+{
+   UChar opc1      = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr   = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar vA_addr   = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar UIMM_5    = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar SIMM_5    = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr   = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UChar vC_addr   = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
+   UChar b10       = toUChar((theInstr >> 10) & 0x1);  /* theInstr[10]    */
+   UChar SHB_uimm4 = toUChar((theInstr >>  6) & 0xF);  /* theInstr[6:9]   */
+   UInt  opc2      =         (theInstr >>  0) & 0x3F;  /* theInstr[0:5]   */
+
+   UChar SIMM_8 = extend_s_5to8(SIMM_5);
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_permute(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x2A: // vsel (Conditional Select, AV p238)
+      DIP("vsel v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+     
+   case 0x2B: // vperm (Permute, AV p218)
+      DIP("vperm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x2C: // vsldoi (Shift Left Double by Octet Imm, AV p241)
+      if (b10 != 0) {
+         vex_printf("dis_av_permute(PPC32)(vsldoi)\n");
+         return False;
+      }
+      DIP("vsldoi v%d,v%d,v%d,%d\n", vD_addr, vA_addr, vB_addr, SHB_uimm4);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+     break; // Fall through...
+   }
+
+   opc2 = (theInstr) & 0x7FF; /* theInstr[0:10]  */
+   switch (opc2) {
+
+   /* Merge */
+   case 0x00C: // vmrghb (Merge High B, AV p195)
+      DIP("vmrghb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x04C: // vmrghh (Merge High HW, AV p196)
+      DIP("vmrghh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x08C: // vmrghw (Merge High W, AV p197)
+      DIP("vmrghw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x10C: // vmrglb (Merge Low B, AV p198)
+      DIP("vmrglb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x14C: // vmrglh (Merge Low HW, AV p199)
+      DIP("vmrglh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x18C: // vmrglw (Merge Low W, AV p200)
+      DIP("vmrglw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   /* Splat */
+   case 0x20C: // vspltb (Splat Byte, AV p245)
+      DIP("vspltb v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x24C: // vsplth (Splat Half Word, AV p246)
+      DIP("vsplth v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x28C: // vspltw (Splat Word, AV p250)
+      DIP("vspltw v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x30C: // vspltisb (Splat Immediate Signed B, AV p247)
+      DIP("vspltisb v%d,%d\n", vD_addr, (Char)SIMM_8);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x34C: // vspltish (Splat Immediate Signed HW, AV p248)
+      DIP("vspltish v%d,%d\n", vD_addr, (Char)SIMM_8);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x38C: // vspltisw (Splat Immediate Signed W, AV p249)
+      DIP("vspltisw v%d,%d\n", vD_addr, (Char)SIMM_8);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_permute(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Pack/Unpack Instructions
+*/
+static Bool dis_av_pack ( UInt theInstr )
+{
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_pack(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   /* Packing */
+   case 0x00E: // vpkuhum (Pack Unsigned HW Unsigned Modulo, AV p224)
+      DIP("vpkuhum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x04E: // vpkuwum (Pack Unsigned W Unsigned Modulo, AV p226)
+      DIP("vpkuwum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x08E: // vpkuhus (Pack Unsigned HW Unsigned Saturate, AV p225)
+      DIP("vpkuhus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x0CE: // vpkuwus (Pack Unsigned W Unsigned Saturate, AV p227)
+      DIP("vpkuwus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x10E: // vpkshus (Pack Signed HW Unsigned Saturate, AV p221)
+      DIP("vpkshus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x14E: // vpkswus (Pack Signed W Unsigned Saturate, AV p223)
+      DIP("vpkswus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x18E: // vpkshss (Pack Signed HW Signed Saturate, AV p220)
+      DIP("vpkshss v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x1CE: // vpkswss (Pack Signed W Signed Saturate, AV p222)
+      DIP("vpkswss v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x30E: // vpkpx (Pack Pixel, AV p219)
+      DIP("vpkpx v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      break; // Fall through...
+   }
+
+
+   if (vA_addr != 0) {
+      vex_printf("dis_av_pack(PPC32)(vA_addr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   /* Unpacking */
+   case 0x20E: // vupkhsb (Unpack High Signed B, AV p277)
+      DIP("vupkhsb v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x24E: // vupkhsh (Unpack High Signed HW, AV p278)
+      DIP("vupkhsh v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x28E: // vupklsb (Unpack Low Signed B, AV p280)
+      DIP("vupklsb v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x2CE: // vupklsh (Unpack Low Signed HW, AV p281)
+      DIP("vupklsh v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x34E: // vupkhpx (Unpack High Pixel16, AV p276)
+      DIP("vupkhpx v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x3CE: // vupklpx (Unpack Low Pixel16, AV p279)
+      DIP("vupklpx v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_pack(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+
+/*
+  AltiVec Floating Point Arithmetic Instructions
+*/
+static Bool dis_av_fp_arith ( UInt theInstr )
+{
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UChar vC_addr  = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10] */
+   UInt  opc2=0;
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_fp_arith(PPC32)(instr)\n");
+      return False;
+   }
+
+   opc2 = (theInstr) & 0x3F;  /* theInstr[0:5]   */
+   switch (opc2) {
+   case 0x2E: // vmaddfp (Multiply Add FP, AV p177)
+      DIP("vmaddfp v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vC_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x2F: // vnmsubfp (Negative Multiply-Subtract FP, AV p215)
+      DIP("vnmsubfp v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vC_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+     break; // Fall through...
+   }
+
+   opc2 = (theInstr) & 0x7FF; /* theInstr[0:10]  */
+   switch (opc2) {
+   case 0x00A: // vaddfp (Add FP, AV p137)
+      DIP("vaddfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+  case 0x04A: // vsubfp (Subtract FP, AV p261)
+      DIP("vsubfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x40A: // vmaxfp (Maximum FP, AV p178)
+      DIP("vmaxfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x44A: // vminfp (Minimum FP, AV p187)
+      DIP("vminfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      break; // Fall through...
+   }
+
+
+   if (vA_addr != 0) {
+      vex_printf("dis_av_fp_arith(PPC32)(vA_addr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x10A: // vrefp (Reciprocal Esimate FP, AV p228)
+      DIP("vrefp v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x14A: // vrsqrtefp (Reciprocal Square Root Estimate FP, AV p237)
+      DIP("vrsqrtefp v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x18A: // vexptefp (2 Raised to the Exp Est FP, AV p173)
+      DIP("vexptefp v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x1CA: // vlogefp (Log2 Estimate FP, AV p175)
+      DIP("vlogefp v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_fp_arith(PPC32)(opc2=0x%x)\n",opc2);
+      return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Floating Point Compare Instructions
+*/
+static Bool dis_av_fp_cmp ( UInt theInstr )
+{
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar vA_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UChar flag_Rc  = toUChar((theInstr >> 10) & 0x1);  /* theInstr[10]    */
+   UInt  opc2     =         (theInstr >>  0) & 0x3FF; /* theInstr[0:9]   */
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_fp_cmp(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x0C6: // vcmpeqfp (Compare Equal-to FP, AV p159)
+      DIP("vcmpeqfp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x1C6: // vcmpgefp (Compare Greater-than-or-Equal-to FP, AV p163)
+      DIP("vcmpgefp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x2C6: // vcmpgtfp (Compare Greater-than FP, AV p164)
+      DIP("vcmpgtfp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x3C6: // vcmpbfp (Compare Bounds FP, AV p157)
+      DIP("vcmpbfp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_fp_cmp(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+/*
+  AltiVec Floating Point Convert/Round Instructions
+*/
+static Bool dis_av_fp_convert ( UInt theInstr )
+{
+   UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+   UChar vD_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+   UChar UIMM_5   = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+   UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+   UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_fp_convert(PPC32)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x30A: // vcfux (Convert from Unsigned Fixed-Point W, AV p156)
+      DIP("vcfux v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x34A: // vcfsx (Convert from Signed Fixed-Point W, AV p155)
+      DIP("vcfsx v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x38A: // vctuxs (Convert to Unsigned Fixed-Point W Saturate, AV p172)
+      DIP("vctuxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x3CA: // vctsxs (Convert to Signed Fixed-Point W Saturate, AV p171)
+      DIP("vctsxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+     break;    // Fall through...
+   }
+
+   if (UIMM_5 != 0) {
+      vex_printf("dis_av_fp_convert(PPC32)(UIMM_5)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x20A: // vrfin (Round to FP Integer Nearest, AV p231)
+      DIP("vrfin v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x24A: // vrfiz (Round to FP Integer toward zero, AV p233)
+      DIP("vrfiz v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x28A: // vrfip (Round to FP Integer toward +inf, AV p232)
+      DIP("vrfip v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   case 0x2CA: // vrfim (Round to FP Integer toward -inf, AV p230)
+      DIP("vrfim v%d,v%d\n", vD_addr, vB_addr);
+      DIP(" => not implemented\n");
+      return False;
+
+   default:
+      vex_printf("dis_av_fp_convert(PPC32)(opc2)\n");
+      return False;
+   }
+   return True;
+}
 
 
 
@@ -6397,12 +6397,12 @@ DisResult disInstr_PPC32_WRK (
          goto decode_failure;
 
 
-//zz       /* AltiVec instructions */
-//zz 
-//zz       /* AV Cache Control - Data streams */
-//zz       case 0x156: case 0x176: case 0x336: // dst, dstst, dss
-//zz          if (dis_av_datastream( theInstr )) goto decode_success;
-//zz          goto decode_failure;
+      /* AltiVec instructions */
+
+      /* AV Cache Control - Data streams */
+      case 0x156: case 0x176: case 0x336: // dst, dstst, dss
+         if (dis_av_datastream( theInstr )) goto decode_success;
+         goto decode_failure;
 
       /* AV Load */
       case 0x006: case 0x026:             // lvsl, lvsr
@@ -6423,144 +6423,144 @@ DisResult disInstr_PPC32_WRK (
       break;
 
 
-//zz    case 0x04:
-//zz       /* AltiVec instructions */
-//zz 
-//zz       opc2 = (theInstr) & 0x3F;    /* theInstr[0:5] */
-//zz       switch (opc2) {
-//zz       /* AV Mult-Add, Mult-Sum */
-//zz       case 0x20: case 0x21: case 0x22: // vmhaddshs, vmhraddshs, vmladduhm
-//zz       case 0x24: case 0x25: case 0x26: // vmsumubm, vmsummbm, vmsumuhm
-//zz       case 0x27: case 0x28: case 0x29: // vmsumuhs, vmsumshm, vmsumshs
-//zz          if (dis_av_multarith( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Permutations */
-//zz       case 0x2A:                       // vsel
-//zz       case 0x2B:                       // vperm
-//zz          if (dis_av_permute( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Shift */
-//zz       case 0x2C:                       // vsldoi
-//zz          if (dis_av_shift( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Floating Point Mult-Add/Sub */
-//zz       case 0x2E: case 0x2F:            // vmaddfp, vnmsubfp
-//zz          if (dis_av_fp_arith( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       default:
-//zz          break;  // Fall through...
-//zz       }
-//zz 
-//zz       opc2 = (theInstr) & 0x7FF;    /* theInstr[0:10] */
-//zz       switch (opc2) {
-//zz       /* AV Arithmetic */
-//zz       case 0x180:                         // vaddcuw
-//zz       case 0x000: case 0x040: case 0x080: // vaddubm, vadduhm, vadduwm
-//zz       case 0x200: case 0x240: case 0x280: // vaddubs, vadduhs, vadduws
-//zz       case 0x300: case 0x340: case 0x380: // vaddsbs, vaddshs, vaddsws
-//zz       case 0x580:                         // vsubcuw
-//zz       case 0x400: case 0x440: case 0x480: // vsububm, vsubuhm, vsubuwm
-//zz       case 0x600: case 0x640: case 0x680: // vsububs, vsubuhs, vsubuws
-//zz       case 0x700: case 0x740: case 0x780: // vsubsbs, vsubshs, vsubsws
-//zz       case 0x402: case 0x442: case 0x482: // vavgub, vavguh, vavguw
-//zz       case 0x502: case 0x542: case 0x582: // vavgsb, vavgsh, vavgsw
-//zz       case 0x002: case 0x042: case 0x082: // vmaxub, vmaxuh, vmaxuw
-//zz       case 0x102: case 0x142: case 0x182: // vmaxsb, vmaxsh, vmaxsw
-//zz       case 0x202: case 0x242: case 0x282: // vminub, vminuh, vminuw
-//zz       case 0x302: case 0x342: case 0x382: // vminsb, vminsh, vminsw
-//zz       case 0x008: case 0x048:             // vmuloub, vmulouh
-//zz       case 0x108: case 0x148:             // vmulosb, vmulosh
-//zz       case 0x208: case 0x248:             // vmuleub, vmuleuh
-//zz       case 0x308: case 0x348:             // vmulesb, vmulesh
-//zz       case 0x608: case 0x708: case 0x648: // vsum4ubs, vsum4sbs, vsum4shs
-//zz       case 0x688: case 0x788:             // vsum2sws, vsumsws
-//zz          if (dis_av_arith( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Rotate, Shift */
-//zz       case 0x004: case 0x044: case 0x084: // vrlb, vrlh, vrlw
-//zz       case 0x104: case 0x144: case 0x184: // vslb, vslh, vslw
-//zz       case 0x204: case 0x244: case 0x284: // vsrb, vsrh, vsrw
-//zz       case 0x304: case 0x344: case 0x384: // vsrab, vsrah, vsraw
-//zz       case 0x1C4: case 0x2C4:             // vsl, vsr
-//zz       case 0x40C: case 0x44C:             // vslo, vsro
-//zz          if (dis_av_shift( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Logic */
-//zz       case 0x404: case 0x444: case 0x484: // vand, vandc, vor
-//zz       case 0x4C4: case 0x504:             // vxor, vnor
-//zz          if (dis_av_logic( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Processor Control */
-//zz       case 0x604: case 0x644:             // mfvscr, mtvscr
-//zz          if (dis_av_procctl( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Floating Point Arithmetic */
-//zz       case 0x00A: case 0x04A:             // vaddfp, vsubfp
-//zz       case 0x10A: case 0x14A: case 0x18A: // vrefp, vrsqrtefp, vexptefp
-//zz       case 0x1CA:                         // vlogefp
-//zz       case 0x40A: case 0x44A:             // vmaxfp, vminfp
-//zz          if (dis_av_fp_arith( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Floating Point Round/Convert */
-//zz       case 0x20A: case 0x24A: case 0x28A: // vrfin, vrfiz, vrfip
-//zz       case 0x2CA:                         // vrfim
-//zz       case 0x30A: case 0x34A: case 0x38A: // vcfux, vcfsx, vctuxs
-//zz       case 0x3CA:                         // vctsxs
-//zz          if (dis_av_fp_convert( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Merge, Splat */
-//zz       case 0x00C: case 0x04C: case 0x08C: // vmrghb, vmrghh, vmrghw
-//zz       case 0x10C: case 0x14C: case 0x18C: // vmrglb, vmrglh, vmrglw
-//zz       case 0x20C: case 0x24C: case 0x28C: // vspltb, vsplth, vspltw
-//zz       case 0x30C: case 0x34C: case 0x38C: // vspltisb, vspltish, vspltisw
-//zz          if (dis_av_permute( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Pack, Unpack */
-//zz       case 0x00E: case 0x04E: case 0x08E: // vpkuhum, vpkuwum, vpkuhus
-//zz       case 0x0CE:                         // vpkuwus
-//zz       case 0x10E: case 0x14E: case 0x18E: // vpkshus, vpkswus, vpkshss
-//zz       case 0x1CE:                         // vpkswss
-//zz       case 0x20E: case 0x24E: case 0x28E: // vupkhsb, vupkhsh, vupklsb
-//zz       case 0x2CE:                         // vupklsh
-//zz       case 0x30E: case 0x34E: case 0x3CE: // vpkpx, vupkhpx, vupklpx
-//zz          if (dis_av_pack( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       default:
-//zz          break;  // Fall through...
-//zz       }
-//zz 
-//zz       opc2 = (theInstr) & 0x3FF;    /* theInstr[0:9] (Bit 10 = Rc)*/
-//zz       switch (opc2) {
-//zz 
-//zz       /* AV Compare */
-//zz       case 0x006: case 0x046: case 0x086: // vcmpequb, vcmpequh, vcmpequw
-//zz       case 0x206: case 0x246: case 0x286: // vcmpgtub, vcmpgtuh, vcmpgtuw
-//zz       case 0x306: case 0x346: case 0x386: // vcmpgtsb, vcmpgtsh, vcmpgtsw
-//zz          if (dis_av_cmp( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       /* AV Floating Point Compare */
-//zz       case 0x0C6: case 0x1C6: case 0x2C6: // vcmpeqfp, vcmpgefp, vcmpgtfp
-//zz       case 0x3C6:                         // vcmpbfp
-//zz          if (dis_av_fp_cmp( theInstr )) goto decode_success;
-//zz          goto decode_failure;
-//zz 
-//zz       default:
-//zz          goto decode_failure;
-//zz       }
-//zz       break;
+   case 0x04:
+      /* AltiVec instructions */
+
+      opc2 = (theInstr) & 0x3F;    /* theInstr[0:5] */
+      switch (opc2) {
+      /* AV Mult-Add, Mult-Sum */
+      case 0x20: case 0x21: case 0x22: // vmhaddshs, vmhraddshs, vmladduhm
+      case 0x24: case 0x25: case 0x26: // vmsumubm, vmsummbm, vmsumuhm
+      case 0x27: case 0x28: case 0x29: // vmsumuhs, vmsumshm, vmsumshs
+         if (dis_av_multarith( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Permutations */
+      case 0x2A:                       // vsel
+      case 0x2B:                       // vperm
+         if (dis_av_permute( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Shift */
+      case 0x2C:                       // vsldoi
+         if (dis_av_shift( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Floating Point Mult-Add/Sub */
+      case 0x2E: case 0x2F:            // vmaddfp, vnmsubfp
+         if (dis_av_fp_arith( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      default:
+         break;  // Fall through...
+      }
+
+      opc2 = (theInstr) & 0x7FF;    /* theInstr[0:10] */
+      switch (opc2) {
+      /* AV Arithmetic */
+      case 0x180:                         // vaddcuw
+      case 0x000: case 0x040: case 0x080: // vaddubm, vadduhm, vadduwm
+      case 0x200: case 0x240: case 0x280: // vaddubs, vadduhs, vadduws
+      case 0x300: case 0x340: case 0x380: // vaddsbs, vaddshs, vaddsws
+      case 0x580:                         // vsubcuw
+      case 0x400: case 0x440: case 0x480: // vsububm, vsubuhm, vsubuwm
+      case 0x600: case 0x640: case 0x680: // vsububs, vsubuhs, vsubuws
+      case 0x700: case 0x740: case 0x780: // vsubsbs, vsubshs, vsubsws
+      case 0x402: case 0x442: case 0x482: // vavgub, vavguh, vavguw
+      case 0x502: case 0x542: case 0x582: // vavgsb, vavgsh, vavgsw
+      case 0x002: case 0x042: case 0x082: // vmaxub, vmaxuh, vmaxuw
+      case 0x102: case 0x142: case 0x182: // vmaxsb, vmaxsh, vmaxsw
+      case 0x202: case 0x242: case 0x282: // vminub, vminuh, vminuw
+      case 0x302: case 0x342: case 0x382: // vminsb, vminsh, vminsw
+      case 0x008: case 0x048:             // vmuloub, vmulouh
+      case 0x108: case 0x148:             // vmulosb, vmulosh
+      case 0x208: case 0x248:             // vmuleub, vmuleuh
+      case 0x308: case 0x348:             // vmulesb, vmulesh
+      case 0x608: case 0x708: case 0x648: // vsum4ubs, vsum4sbs, vsum4shs
+      case 0x688: case 0x788:             // vsum2sws, vsumsws
+         if (dis_av_arith( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Rotate, Shift */
+      case 0x004: case 0x044: case 0x084: // vrlb, vrlh, vrlw
+      case 0x104: case 0x144: case 0x184: // vslb, vslh, vslw
+      case 0x204: case 0x244: case 0x284: // vsrb, vsrh, vsrw
+      case 0x304: case 0x344: case 0x384: // vsrab, vsrah, vsraw
+      case 0x1C4: case 0x2C4:             // vsl, vsr
+      case 0x40C: case 0x44C:             // vslo, vsro
+         if (dis_av_shift( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Logic */
+      case 0x404: case 0x444: case 0x484: // vand, vandc, vor
+      case 0x4C4: case 0x504:             // vxor, vnor
+         if (dis_av_logic( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Processor Control */
+      case 0x604: case 0x644:             // mfvscr, mtvscr
+         if (dis_av_procctl( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Floating Point Arithmetic */
+      case 0x00A: case 0x04A:             // vaddfp, vsubfp
+      case 0x10A: case 0x14A: case 0x18A: // vrefp, vrsqrtefp, vexptefp
+      case 0x1CA:                         // vlogefp
+      case 0x40A: case 0x44A:             // vmaxfp, vminfp
+         if (dis_av_fp_arith( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Floating Point Round/Convert */
+      case 0x20A: case 0x24A: case 0x28A: // vrfin, vrfiz, vrfip
+      case 0x2CA:                         // vrfim
+      case 0x30A: case 0x34A: case 0x38A: // vcfux, vcfsx, vctuxs
+      case 0x3CA:                         // vctsxs
+         if (dis_av_fp_convert( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Merge, Splat */
+      case 0x00C: case 0x04C: case 0x08C: // vmrghb, vmrghh, vmrghw
+      case 0x10C: case 0x14C: case 0x18C: // vmrglb, vmrglh, vmrglw
+      case 0x20C: case 0x24C: case 0x28C: // vspltb, vsplth, vspltw
+      case 0x30C: case 0x34C: case 0x38C: // vspltisb, vspltish, vspltisw
+         if (dis_av_permute( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Pack, Unpack */
+      case 0x00E: case 0x04E: case 0x08E: // vpkuhum, vpkuwum, vpkuhus
+      case 0x0CE:                         // vpkuwus
+      case 0x10E: case 0x14E: case 0x18E: // vpkshus, vpkswus, vpkshss
+      case 0x1CE:                         // vpkswss
+      case 0x20E: case 0x24E: case 0x28E: // vupkhsb, vupkhsh, vupklsb
+      case 0x2CE:                         // vupklsh
+      case 0x30E: case 0x34E: case 0x3CE: // vpkpx, vupkhpx, vupklpx
+         if (dis_av_pack( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      default:
+         break;  // Fall through...
+      }
+
+      opc2 = (theInstr) & 0x3FF;    /* theInstr[0:9] (Bit 10 = Rc)*/
+      switch (opc2) {
+
+      /* AV Compare */
+      case 0x006: case 0x046: case 0x086: // vcmpequb, vcmpequh, vcmpequw
+      case 0x206: case 0x246: case 0x286: // vcmpgtub, vcmpgtuh, vcmpgtuw
+      case 0x306: case 0x346: case 0x386: // vcmpgtsb, vcmpgtsh, vcmpgtsw
+         if (dis_av_cmp( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      /* AV Floating Point Compare */
+      case 0x0C6: case 0x1C6: case 0x2C6: // vcmpeqfp, vcmpgefp, vcmpgtfp
+      case 0x3C6:                         // vcmpbfp
+         if (dis_av_fp_cmp( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      default:
+         goto decode_failure;
+      }
+      break;
 
    default:
    decode_failure:

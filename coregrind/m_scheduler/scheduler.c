@@ -410,6 +410,10 @@ UInt run_thread_for_a_while ( ThreadId tid )
      for (i = 0; i < VG_N_THREADS; i++)
         VG_(threads)[i].arch.vex.guest_RESVN = 0;
    }
+
+   /* ppc guest_state vector regs must be 16byte aligned for loads/stores */
+   vg_assert(VG_IS_16_ALIGNED(VG_(threads)[tid].arch.vex.guest_VR0));
+   vg_assert(VG_IS_16_ALIGNED(VG_(threads)[tid].arch.vex_shadow.guest_VR0));
 #  endif   
 
    /* there should be no undealt-with signals */

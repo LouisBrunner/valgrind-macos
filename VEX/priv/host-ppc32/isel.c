@@ -344,6 +344,27 @@ static void sub_from_sp ( ISelEnv* env, Int n )
                     Palu_SUB, sp, sp, PPC32RH_Imm(True,toUShort(n))));
 }
 
+/*
+  returns a quadword aligned address on the stack
+   - copies SP, adds 16bytes, aligns to quadword.
+  use sub_from_sp(32) before calling this,
+  as expects to have 32 bytes to play with.
+*/
+static HReg get_sp_aligned16 ( ISelEnv* env )
+{
+   HReg       r = newVRegI(env);
+   HReg align16 = newVRegI(env);
+   addInstr(env, mk_iMOVds_RR(r, StackFramePtr));
+   // add 16
+   addInstr(env, PPC32Instr_Alu32(
+                    Palu_ADD, r, r, PPC32RH_Imm(True,toUShort(16))));
+   // mask to quadword
+   addInstr(env, PPC32Instr_LI32(align16, (UInt)0xFFFFFFF0));
+   addInstr(env, PPC32Instr_Alu32(Palu_AND, r,r, PPC32RH_Reg(align16)));
+   return r;
+}
+
+
 
 /* Load 2*I32 regs to fp reg */
 static HReg mk_LoadRRtoFPR ( ISelEnv* env, HReg r_srcHi, HReg r_srcLo )
@@ -1188,16 +1209,24 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return r_dst;
       }
 
-//..          case Iop_V128to32: {
-//..             HReg      dst  = newVRegI(env);
-//..             HReg      vec  = iselVecExpr(env, e->Iex.Unop.arg);
-//..             X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
-//..             sub_from_esp(env, 16);
-//..             addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, esp0));
-//..             addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(esp0), dst ));
-//..             add_to_esp(env, 16);
-//..             return dst;
-//..          }
+      case Iop_V128to32: {
+         HReg        dst  = newVRegI(env);
+         HReg        vec  = iselVecExpr(env, e->Iex.Unop.arg);
+         PPC32AMode *am_off0, *am_off12;
+         sub_from_sp( env, 32 );     // Move SP down 32 bytes
+
+         // get a quadword aligned address within our stack space
+         HReg r_aligned16 = get_sp_aligned16( env );
+         am_off0  = PPC32AMode_IR( 0, r_aligned16 );
+         am_off12 = PPC32AMode_IR( 12,r_aligned16 );
+
+         // store vec, load low word to dst
+         addInstr(env, PPC32Instr_AvLdSt( False/*store*/, 16, vec, am_off0 ));
+         addInstr(env, PPC32Instr_Load( 4, False, dst, am_off12 ));
+
+         add_to_sp( env, 32 );       // Reset SP
+         return dst;
+      }
 
       case Iop_16to8:
       case Iop_32to8:
@@ -2316,19 +2345,21 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             HReg tLo = newVRegI(env);
             HReg tHi = newVRegI(env);
             HReg vec = iselVecExpr(env, e->Iex.Unop.arg);
-            PPC32AMode *sp0, *spLO, *spHI;
-
+            PPC32AMode *am_off0, *am_offLO, *am_offHI;
             sub_from_sp( env, 32 );     // Move SP down 32 bytes
-            sp0  = PPC32AMode_IR(0,     StackFramePtr);
-            spHI = PPC32AMode_IR(off,   StackFramePtr);
-            spLO = PPC32AMode_IR(off+4, StackFramePtr);
+
+            // get a quadword aligned address within our stack space
+            HReg r_aligned16 = get_sp_aligned16( env );
+            am_off0  = PPC32AMode_IR( 0,     r_aligned16 );
+            am_offHI = PPC32AMode_IR( off,   r_aligned16 );
+            am_offLO = PPC32AMode_IR( off+4, r_aligned16 );
 
             // store as Vec128
-            addInstr(env, PPC32Instr_AvLdSt( False/*store*/, 16, vec, sp0 ));
+            addInstr(env, PPC32Instr_AvLdSt( False/*store*/, 16, vec, am_off0 ));
 
             // load hi,lo words (of hi/lo half of vec) as Ity_I32's
-            addInstr(env, PPC32Instr_Load( 4, False, tHi, spHI ));
-            addInstr(env, PPC32Instr_Load( 4, False, tLo, spLO ));
+            addInstr(env, PPC32Instr_Load( 4, False, tHi, am_offHI ));
+            addInstr(env, PPC32Instr_Load( 4, False, tLo, am_offLO ));
 
             add_to_sp( env, 32 );       // Reset SP
             *rHi = tHi;
@@ -2781,7 +2812,7 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
 static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
 //..    Bool     arg1isEReg = False;
-  // unused:   PPC32AvOp op = Pav_INVALID;
+   PPC32AvOp op = Pav_INVALID;
    IRType   ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
    vassert(ty == Ity_V128);
@@ -2817,11 +2848,13 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
       switch (e->Iex.Unop.op) {
 
-//..       case Iop_Not128: {
-//..          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
-//..          return do_sse_Not128(env, arg);
-//..       }
-//.. 
+      case Iop_NotV128: {
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, PPC32Instr_AvUnary(Pav_NOT, dst, arg));
+         return dst;
+      }
+
 //..       case Iop_CmpNEZ64x2: {
 //..          /* We can use SSE2 instructions for this. */
 //..          /* Ideally, we want to do a 64Ix2 comparison against zero of
@@ -2963,17 +2996,37 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_Sse64FLo(op, arg, dst));
 //..          return dst;
 //..       }
-//.. 
-//..       case Iop_32UtoV128: {
-//..          HReg      dst  = newVRegV(env);
-//..          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
-//..          X86RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Unop.arg);
-//..          addInstr(env, X86Instr_Push(rmi));
-//..          addInstr(env, X86Instr_SseLdzLO(4, dst, esp0));
-//..          add_to_esp(env, 4);
-//..          return dst;
-//..       }
-//.. 
+
+      case Iop_32UtoV128: {
+         HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         HReg   dst = newVRegV(env);
+         PPC32AMode *am_off0, *am_off4, *am_off8, *am_off12;
+         sub_from_sp( env, 32 );     // Move SP down
+
+         /* Get a quadword aligned address within our stack space */
+         HReg r_aligned16 = get_sp_aligned16( env );
+         am_off0  = PPC32AMode_IR( 0,  r_aligned16);
+         am_off4  = PPC32AMode_IR( 4,  r_aligned16);
+         am_off8  = PPC32AMode_IR( 8,  r_aligned16);
+         am_off12 = PPC32AMode_IR( 12, r_aligned16);
+
+         /* Store zero's */
+         HReg r_zeros = newVRegI(env);
+         addInstr(env, PPC32Instr_LI32(r_zeros, 0x0));
+         addInstr(env, PPC32Instr_Store( 4, am_off0, r_zeros ));
+         addInstr(env, PPC32Instr_Store( 4, am_off4, r_zeros ));
+         addInstr(env, PPC32Instr_Store( 4, am_off8, r_zeros ));
+
+         /* Store r_src in low word of quadword-aligned mem */
+         addInstr(env, PPC32Instr_Store( 4, am_off12, r_src ));
+
+         /* Load word into low word of quadword vector reg */
+         addInstr(env, PPC32Instr_AvLdSt( True/*load*/, 4, dst, am_off12 ));
+
+         add_to_sp( env, 32 );       // Reset SP
+         return dst;
+      }
+
 //..       case Iop_64UtoV128: {
 //..          HReg      rHi, rLo;
 //..          HReg      dst  = newVRegV(env);
@@ -3025,24 +3078,31 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //.. 
       case Iop_64HLtoV128: {
          HReg r3, r2, r1, r0;
-         PPC32AMode *sp0  = PPC32AMode_IR(0,  StackFramePtr);
-         PPC32AMode *sp4  = PPC32AMode_IR(4,  StackFramePtr);
-         PPC32AMode *sp8  = PPC32AMode_IR(8,  StackFramePtr);
-         PPC32AMode *sp12 = PPC32AMode_IR(12, StackFramePtr);
+         PPC32AMode *am_off0, *am_off4, *am_off8, *am_off12;
          HReg        dst = newVRegV(env);
          /* do this via the stack (easy, convenient, etc) */
-         sub_from_sp( env, 16 );        // Move SP down 16 bytes
+         sub_from_sp( env, 32 );        // Move SP down
+
+         // get a quadword aligned address within our stack space
+         HReg r_aligned16 = get_sp_aligned16( env );
+         am_off0  = PPC32AMode_IR( 0,  r_aligned16);
+         am_off4  = PPC32AMode_IR( 4,  r_aligned16);
+         am_off8  = PPC32AMode_IR( 8,  r_aligned16);
+         am_off12 = PPC32AMode_IR( 12, r_aligned16);
+
          /* Do the less significant 64 bits */
          iselInt64Expr(&r1, &r0, env, e->Iex.Binop.arg2);
-         addInstr(env, PPC32Instr_Store( 4, sp12, r0 ));
-         addInstr(env, PPC32Instr_Store( 4, sp8,  r1 ));
+         addInstr(env, PPC32Instr_Store( 4, am_off12, r0 ));
+         addInstr(env, PPC32Instr_Store( 4, am_off8,  r1 ));
          /* Do the more significant 64 bits */
          iselInt64Expr(&r3, &r2, env, e->Iex.Binop.arg1);
-         addInstr(env, PPC32Instr_Store( 4, sp4, r2 ));
-         addInstr(env, PPC32Instr_Store( 4, sp0, r3 ));
+         addInstr(env, PPC32Instr_Store( 4, am_off4, r2 ));
+         addInstr(env, PPC32Instr_Store( 4, am_off0, r3 ));
+
          /* Fetch result back from stack. */
-         addInstr(env, PPC32Instr_AvLdSt(True/*load*/, 16, dst, sp0));
-         add_to_sp( env, 16 );          // Reset SP
+         addInstr(env, PPC32Instr_AvLdSt(True/*load*/, 16, dst, am_off0));
+
+         add_to_sp( env, 32 );          // Reset SP
          return dst;
       }
 
@@ -3146,10 +3206,10 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          op = Xsse_UNPCKLD; arg1isEReg = True; goto do_SseReRg;
 //..       case Iop_InterleaveLO64x2: 
 //..          op = Xsse_UNPCKLQ; arg1isEReg = True; goto do_SseReRg;
-//.. 
-//..       case Iop_AndV128:    op = Xsse_AND;      goto do_SseReRg;
-//..       case Iop_OrV128:     op = Xsse_OR;       goto do_SseReRg;
-//..       case Iop_XorV128:    op = Xsse_XOR;      goto do_SseReRg;
+
+      case Iop_AndV128:    op = Pav_AND;      goto do_AvBin;
+      case Iop_OrV128:     op = Pav_OR;       goto do_AvBin;
+      case Iop_XorV128:    op = Pav_XOR;      goto do_AvBin;
 //..       case Iop_Add8x16:    op = Xsse_ADD8;     goto do_SseReRg;
 //..       case Iop_Add16x8:    op = Xsse_ADD16;    goto do_SseReRg;
 //..       case Iop_Add32x4:    op = Xsse_ADD32;    goto do_SseReRg;
@@ -3181,6 +3241,13 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_QSub16Sx8:  op = Xsse_QSUB16S;  goto do_SseReRg;
 //..       case Iop_QSub8Ux16:  op = Xsse_QSUB8U;   goto do_SseReRg;
 //..       case Iop_QSub16Ux8:  op = Xsse_QSUB16U;  goto do_SseReRg;
+      do_AvBin: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         addInstr(env, PPC32Instr_AvBinary(op, dst, arg1, arg2));
+         return dst;
+      }
 //..       do_SseReRg: {
 //..          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
 //..          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);

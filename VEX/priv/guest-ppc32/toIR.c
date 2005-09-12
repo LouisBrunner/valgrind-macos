@@ -235,7 +235,7 @@ typedef enum {
 //zz     PPC32_SPR_CR,     // Condition Register
     PPC32_SPR_FPSCR,  // Floating Point Status/Control Register
     PPC32_SPR_VRSAVE, // Vector Save/Restore Register
-//zz     PPC32_SPR_VSCR,   // Vector Status and Control Register
+    PPC32_SPR_VSCR,   // Vector Status and Control Register
     PPC32_SPR_MAX
 } PPC32SPR;
 
@@ -1188,12 +1188,12 @@ static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
 //zz    case PPC32_SPR_VRSAVE:
 //zz       assign( val, IRExpr_Get(OFFB_VRSAVE, Ity_I32) );
 //zz       break;
-//zz 
-//zz    case PPC32_SPR_VSCR:
-//zz       // All other bits are 'Reserved'. Returning zero for these bits.
-//zz       mask = mask & 0x00010001;
-//zz       assign( val, IRExpr_Get(OFFB_VSCR, Ity_I32) );
-//zz       break;
+
+   case PPC32_SPR_VSCR:
+      // All other bits are zero.
+      mask = mask & 0x00010001;
+      assign( val, IRExpr_Get(OFFB_VSCR, Ity_I32) );
+      break;
 
    default:
       vpanic("getReg(ppc32)");
@@ -1300,17 +1300,17 @@ static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
 //zz       vassert(mask == 0xFFFFFFFF);    // Only ever need whole reg
 //zz       stmt( IRStmt_Put( OFFB_VRSAVE, src ) );
 //zz       break;
-//zz 
-//zz    case PPC32_SPR_VSCR:
-//zz //CAB: There are only 2 valid bits in VSCR - maybe split into two vars...
-//zz 
-//zz       // All other bits are 'Reserved'. Ignoring writes to these bits.
-//zz       stmt( IRStmt_Put( OFFB_VSCR,
-//zz                binop(Iop_Or32,
-//zz                      binop(Iop_And32, src, mkU32(mask & 0x00010001)),
-//zz                      getReg_masked( PPC32_SPR_VSCR, (~mask & 0x00010001) ))));
-//zz       break;
-//zz    }
+
+   case PPC32_SPR_VSCR:
+      // CAB: There are only 2 valid bits in VSCR - maybe split into two vars...
+      // ... or perhaps only 1 bit... is non-java mode bit ever set to zero?
+
+      // All other bits are 'Reserved'. Ignoring writes to these bits.
+      stmt( IRStmt_Put( OFFB_VSCR,
+         binop(Iop_Or32,
+               binop(Iop_And32, src, mkU32(mask & 0x00010001)),
+               getReg_masked( PPC32_SPR_VSCR, (~mask & 0x00010001) ))));
+      break;
 
    default:
       vpanic("putReg(ppc32)");
@@ -1341,6 +1341,9 @@ static void putSPR ( PPC32SPR reg, IRExpr* src )
       case PPC32_SPR_VRSAVE: 
          stmt( IRStmt_Put( OFFB_VRSAVE, src ) );
          break;
+      case PPC32_SPR_VSCR:
+         putReg_masked( reg, src, 0xFFFFFFFF );
+         break;
       default:
          vpanic("putSPR(ppc32)");
    }
@@ -1355,6 +1358,8 @@ static IRExpr* /* :: Ity_I32 */ getSPR ( PPC32SPR reg )
          return IRExpr_Get( OFFB_CTR, Ity_I32 );
       case PPC32_SPR_VRSAVE: 
          return IRExpr_Get( OFFB_VRSAVE, Ity_I32 );
+      case PPC32_SPR_VSCR: 
+         return getReg_masked( reg, 0xFFFFFFFF );
       default:
          vpanic("getSPR(ppc32)");
    }
@@ -2894,7 +2899,7 @@ static Bool dis_branch ( UInt theInstr, DisResult* dres )
       case 0x010: // bclr (Branch Cond. to Link Register, PPC32 p365) 
 
          if ((BO & 0x14 /* 1z1zz */) == 0x14 && flag_LK == 0) {
-            DIP("blr");
+            DIP("blr\n");
          } else {
             DIP("bclr%s 0x%x, 0x%x\n", flag_LK ? "l" : "", BO, BI);
          }
@@ -3427,7 +3432,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
       DIP("mcrxr crf%d\n", crfD);
 
       /* Compute XER[0-3] (the top 4 bits of XER) into the bottom
-	 4 bits of xer_0to3. */
+         4 bits of xer_0to3. */
       assign( 
          xer_0to3,
          unop(Iop_32to8,
@@ -4815,18 +4820,20 @@ static Bool dis_av_procctl ( UInt theInstr )
          return False;
       }
       DIP("mfvscr v%d\n", vD_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_32UtoV128, getSPR( PPC32_SPR_VSCR )) ); 
+      break;
 
-   case 0x644: // mtvscr (Move to VSCR, AV p130)
+   case 0x644: { // mtvscr (Move to VSCR, AV p130)
       if (vD_addr != 0 || vA_addr != 0) {
          vex_printf("dis_av_procctl(PPC32)(opc2,dst)\n");
          return False;
       }
       DIP("mtvscr v%d\n", vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
+      IRTemp vB = newTemp(Ity_V128);
+      assign( vB, getVReg(vB_addr));
+      putSPR( PPC32_SPR_VSCR, unop(Iop_V128to32, mkexpr(vB)) ); 
+      break;
+   }
    default:
       vex_printf("dis_av_procctl(PPC32)(opc2)\n");
       return False;
@@ -4914,14 +4921,14 @@ static Bool dis_av_store ( UInt theInstr )
    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
-   IRTemp rA = newTemp(Ity_I32);
-   IRTemp rB = newTemp(Ity_I32);
+   //   IRTemp rA = newTemp(Ity_I32);
+   //   IRTemp rB = newTemp(Ity_I32);
    IRTemp vS = newTemp(Ity_V128);
    IRTemp EA = newTemp(Ity_I32);
    IRTemp EA_aligned = newTemp(Ity_I32);
 
-   assign( rA, getIReg(rA_addr));
-   assign( rB, getIReg(rB_addr));
+   //   assign( rA, getIReg(rA_addr));
+   //   assign( rB, getIReg(rB_addr));
    assign( vS, getVReg(vS_addr));
 
    assign( EA, ea_standard(rA_addr, rB_addr) );
@@ -5283,6 +5290,11 @@ static Bool dis_av_logic ( UInt theInstr )
    UChar vB_addr = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
    UInt  opc2    =         (theInstr >>  0) & 0x7FF;  /* theInstr[0:10]  */
 
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+
    if (opc1 != 0x4) {
       vex_printf("dis_av_logic(PPC32)(opc1 != 0x4)\n");
       return False;
@@ -5291,8 +5303,8 @@ static Bool dis_av_logic ( UInt theInstr )
    switch (opc2) {
    case 0x404: // vand (And, AV p147)
       DIP("vand v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_AndV128, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x444: // vandc (And, AV p148)
       DIP("vandc v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
@@ -5301,13 +5313,13 @@ static Bool dis_av_logic ( UInt theInstr )
 
    case 0x484: // vor (Or, AV p217)
       DIP("vor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_OrV128, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x4C4: // vxor (Xor, AV p282)
       DIP("vxor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_XorV128, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x504: // vnor (Nor, AV p216)
       DIP("vnor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
@@ -6095,7 +6107,7 @@ DisResult disInstr_PPC32_WRK (
    opc1 = toUChar(ifieldOPC(theInstr));
    opc2 = ifieldOPClo10(theInstr);
 
-#if PPC32_TOIR_DEBUG
+#if 0 //PPC32_TOIR_DEBUG
    vex_printf("\ndisInstr(ppc32): instr:   0x%x\n", theInstr);
    vex_printf("disInstr(ppc32): instr:   ");
    vex_printf_binary( theInstr, 32, True );
@@ -6565,6 +6577,7 @@ DisResult disInstr_PPC32_WRK (
    default:
    decode_failure:
    /* All decode failures end up here. */
+   opc2 = (theInstr) & 0x7FF;
    vex_printf("disInstr(ppc32): unhandled instruction: "
               "0x%x\n", theInstr);
    vex_printf("                 primary %d(0x%x), secondary %u(0x%x)\n", 

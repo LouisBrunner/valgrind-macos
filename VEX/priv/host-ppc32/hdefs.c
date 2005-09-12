@@ -1261,10 +1261,11 @@ void ppPPC32Instr ( PPC32Instr* i )
          ppLoadImm(hregPPC32_GPR30(), i->Pin.AvLdSt.addr->Pam.RR.index);
          vex_printf(" ; ");
       }
+      char* str_size = sz==1 ? "eb" : sz==2 ? "eh" : sz==4 ? "ew" : "";
       if (i->Pin.AvLdSt.isLoad)
-         vex_printf("lv%sx ", sz==8 ? "eb" : sz==16 ? "eh" : sz==32 ? "ew" : "");
+         vex_printf("lv%sx ", str_size);
       else
-         vex_printf("stv%sx ", sz==8 ? "eb" : sz==16 ? "eh" : sz==32 ? "ew" : "");
+         vex_printf("stv%sx ", str_size);
       ppHRegPPC32(i->Pin.AvLdSt.reg);
       vex_printf(",");
       if (i->Pin.AvLdSt.addr->tag == Pam_IR)
@@ -2755,7 +2756,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt opc2, v_reg, r_idx, r_base;
       UChar sz   = i->Pin.AvLdSt.sz;
       Bool  idxd = toBool(i->Pin.AvLdSt.addr->tag == Pam_RR);
-      vassert(sz == 8 || sz == 16 || sz == 32 || sz == 128);
+      vassert(sz == 1 || sz == 2 || sz == 4 || sz == 16);
 
       v_reg  = vregNo(i->Pin.AvLdSt.reg);
       r_base = iregNo(i->Pin.AvLdSt.addr->Pam.RR.base);
@@ -2768,11 +2769,11 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          r_idx  = iregNo(i->Pin.AvLdSt.addr->Pam.RR.index);
       }
 
-      if (i->Pin.FpLdSt.isLoad) {  // Load from memory (8,16,32,128)
-         opc2 = (sz == 8) ? 7 : (sz == 16) ? 39 : (sz == 32) ? 71 : 103;
+      if (i->Pin.FpLdSt.isLoad) {  // Load from memory (1,2,4,16)
+         opc2 = (sz == 1) ? 7 : (sz == 2) ? 39 : (sz == 4) ? 71 : 103;
          p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0);
-      } else {                      // Store to memory (8,16,32,128)
-         opc2 = (sz == 8) ? 135 : (sz == 16) ? 167 : (sz == 32) ? 199 : 231;
+      } else {                      // Store to memory (1,2,4,16)
+         opc2 = (sz == 1) ? 135 : (sz == 2) ? 167 : (sz == 4) ? 199 : 231;
          p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0);
       }
       goto done;
@@ -2813,9 +2814,9 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt opc2;
       switch (i->Pin.AvBinary.op) {
       /* Bitwise */
-      case Pav_AND:       opc2 = 1026; break; // vand
+      case Pav_AND:       opc2 = 1028; break; // vand
       case Pav_OR:        opc2 = 1156; break; // vor
-      case Pav_XOR:       opc2 = 1120; break; // vxor
+      case Pav_XOR:       opc2 = 1220; break; // vxor
 
       /* Shift */
       case Pav_SHL:       opc2 =  452; break; // vsl

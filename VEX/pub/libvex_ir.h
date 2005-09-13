@@ -581,9 +581,8 @@ typedef
       Iop_Rot8x16, Iop_Rot16x8, Iop_Rot32x4,
 
       /* NARROWING -- narrow 2xV128 into 1xV128, hi half from left arg */
-      Iop_QNarrow16Ux8,
-      Iop_QNarrow16Sx8,
-      Iop_QNarrow32Sx4,
+      Iop_QNarrow16Ux8, Iop_QNarrow32Ux4,
+      Iop_QNarrow16Sx8, Iop_QNarrow32Sx4,
       Iop_Narrow16Ux8, Iop_Narrow32Ux4,
 
       /* INTERLEAVING -- interleave lanes from low or high halves of

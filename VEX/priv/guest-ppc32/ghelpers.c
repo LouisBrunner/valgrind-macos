@@ -99,6 +99,32 @@ ULong ppc32g_dirtyhelper_MFTB ( void )
 }
 
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (reads guest state, writes guest mem) */
+void ppc32g_dirtyhelper_LVS ( VexGuestPPC32State* gst,
+                              UInt vD_idx, UInt sh, UInt dirn )
+{
+  vassert( vD_idx <= 31 );
+  vassert( sh     <= 15 );
+  vassert( dirn   <=  1 );
+  UChar ref[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+  if (dirn == 1) /* shift right */
+    sh = 16-sh;
+  /* else shift left  */
+
+  U128* pU128_src = (U128*)&ref[sh];
+  U128* pU128_dst = &gst->guest_VR0 + (vD_idx*sizeof(gst->guest_VR0));
+
+  (*pU128_dst)[0] = (*pU128_src)[0];
+  (*pU128_dst)[1] = (*pU128_src)[1];
+  (*pU128_dst)[2] = (*pU128_src)[2];
+  (*pU128_dst)[3] = (*pU128_src)[3];
+}
+
+
 /* Helper-function specialiser. */
 
 IRExpr* guest_ppc32_spechelper ( HChar* function_name,

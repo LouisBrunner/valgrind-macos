@@ -4865,16 +4865,44 @@ static Bool dis_av_load ( UInt theInstr )
 
    switch (opc2) {
 
-   case 0x006: // lvsl (Load Vector for Shift Left, AV p123)
+   case 0x006: { // lvsl (Load Vector for Shift Left, AV p123)
       DIP("lvsl v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      IRExpr** args = mkIRExprVec_3(mkU32(vD_addr), mkexpr(EA), mkU32(0));
+      IRDirty* d = unsafeIRDirty_0_N (
+                      0/*regparms*/, 
+                      "ppc32g_dirtyhelper_LVS",
+                      &ppc32g_dirtyhelper_LVS,
+                      args );
+      /* declare guest state effects */
+      d->needsBBP = True;
+      d->nFxState = 1;
+      d->fxState[0].fx     = Ifx_Write;
+      d->fxState[0].offset = vectorGuestRegOffset(vD_addr);
+      d->fxState[0].size   = sizeof(U128);
 
-   case 0x026: // lvsr (Load Vector for Shift Right, AV p125)
+      /* execute the dirty call, side-effecting guest state */
+      stmt( IRStmt_Dirty(d) );
+      break;
+   }
+   case 0x026: { // lvsr (Load Vector for Shift Right, AV p125)
       DIP("lvsr v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      IRExpr** args = mkIRExprVec_3(mkU32(vD_addr), mkexpr(EA), mkU32(1));
+      IRDirty*    d = unsafeIRDirty_0_N (
+                         0/*regparms*/, 
+                         "ppc32g_dirtyhelper_LVS",
+                         &ppc32g_dirtyhelper_LVS,
+                         args );
+      /* declare guest state effects */
+      d->needsBBP = True;
+      d->nFxState = 1;
+      d->fxState[0].fx     = Ifx_Write;
+      d->fxState[0].offset = vectorGuestRegOffset(vD_addr);
+      d->fxState[0].size   = sizeof(U128);
 
+      /* execute the dirty call, side-effecting guest state */
+      stmt( IRStmt_Dirty(d) );
+      break;
+   }
    case 0x007: // lvebx (Load Vector Element Byte Indexed, AV p119)
       DIP("lvebx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
       DIP(" => not implemented\n");

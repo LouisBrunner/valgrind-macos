@@ -133,6 +133,9 @@ enum {
 
 extern ULong ppc32g_dirtyhelper_MFTB ( void );
 
+extern void ppc32g_dirtyhelper_LVS ( VexGuestPPC32State* gst,
+                                     UInt vD_idx, UInt sh,
+                                     UInt dirn );
 
 #endif /* ndef __LIBVEX_GUEST_PPC32_DEFS_H */
 

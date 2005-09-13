@@ -531,47 +531,60 @@ typedef
       Iop_NotV128,
       Iop_AndV128, Iop_OrV128, Iop_XorV128, 
 
+      /* VECTOR SHIFT (shift amt :: Ity_I8) */
+      Iop_ShlV128, Iop_ShrV128,
+
       /* MISC (vector integer cmp != 0) */
       Iop_CmpNEZ8x16, Iop_CmpNEZ16x8, Iop_CmpNEZ32x4, Iop_CmpNEZ64x2,
 
       /* ADDITION (normal / unsigned sat / signed sat) */
       Iop_Add8x16,   Iop_Add16x8,   Iop_Add32x4,  Iop_Add64x2,
-      Iop_QAdd8Ux16, Iop_QAdd16Ux8,
-      Iop_QAdd8Sx16, Iop_QAdd16Sx8,
+      Iop_QAdd8Ux16, Iop_QAdd16Ux8, Iop_QAdd32Ux4,
+      Iop_QAdd8Sx16, Iop_QAdd16Sx8, Iop_QAdd32Sx4,
 
       /* SUBTRACTION (normal / unsigned sat / signed sat) */
       Iop_Sub8x16,   Iop_Sub16x8,   Iop_Sub32x4,  Iop_Sub64x2,
-      Iop_QSub8Ux16, Iop_QSub16Ux8,
-      Iop_QSub8Sx16, Iop_QSub16Sx8,
+      Iop_QSub8Ux16, Iop_QSub16Ux8, Iop_QSub32Ux4,
+      Iop_QSub8Sx16, Iop_QSub16Sx8, Iop_QSub32Sx4,
 
       /* MULTIPLICATION (normal / high half of signed/unsigned) */
       Iop_Mul16x8,
-      Iop_MulHi16Ux8,
-      Iop_MulHi16Sx8,
+      Iop_MulLo16Ux8, Iop_MulLo32Ux4,
+      Iop_MulLo16Sx8, Iop_MulLo32Sx4,
+      Iop_MulHi16Ux8, Iop_MulHi32Ux4,
+      Iop_MulHi16Sx8, Iop_MulHi32Sx4,
 
       /* AVERAGING: note: (arg1 + arg2 + 1) >>u 1 */
-      Iop_Avg8Ux16,
-      Iop_Avg16Ux8,
+      Iop_Avg8Ux16, Iop_Avg16Ux8, Iop_Avg32Ux4,
+      Iop_Avg8Sx16, Iop_Avg16Sx8, Iop_Avg32Sx4,
 
       /* MIN/MAX */
-      Iop_Max16Sx8,
-      Iop_Max8Ux16,
-      Iop_Min16Sx8,
-      Iop_Min8Ux16,
+      Iop_Max8Sx16, Iop_Max16Sx8, Iop_Max32Sx4,
+      Iop_Max8Ux16, Iop_Max16Ux8, Iop_Max32Ux4,
+      Iop_Min8Sx16, Iop_Min16Sx8, Iop_Min32Sx4,
+      Iop_Min8Ux16, Iop_Min16Ux8, Iop_Min32Ux4,
 
       /* COMPARISON */
       Iop_CmpEQ8x16,  Iop_CmpEQ16x8,  Iop_CmpEQ32x4,
       Iop_CmpGT8Sx16, Iop_CmpGT16Sx8, Iop_CmpGT32Sx4,
+      Iop_CmpGT8Ux16, Iop_CmpGT16Ux8, Iop_CmpGT32Ux4,
 
       /* VECTOR x SCALAR SHIFT (shift amt :: Ity_I8) */
       Iop_ShlN16x8, Iop_ShlN32x4, Iop_ShlN64x2,
       Iop_ShrN16x8, Iop_ShrN32x4, Iop_ShrN64x2,
       Iop_SarN16x8, Iop_SarN32x4,
 
+      /* VECTOR x VECTOR SHIFT / ROTATE */
+      Iop_Shl8x16, Iop_Shl16x8, Iop_Shl32x4,
+      Iop_Shr8x16, Iop_Shr16x8, Iop_Shr32x4,
+      Iop_Sar8x16, Iop_Sar16x8, Iop_Sar32x4,
+      Iop_Rot8x16, Iop_Rot16x8, Iop_Rot32x4,
+
       /* NARROWING -- narrow 2xV128 into 1xV128, hi half from left arg */
       Iop_QNarrow16Ux8,
       Iop_QNarrow16Sx8,
       Iop_QNarrow32Sx4,
+      Iop_Narrow16Ux8, Iop_Narrow32Ux4,
 
       /* INTERLEAVING -- interleave lanes from low or high halves of
          operands.  Most-significant result lane is from the left
@@ -579,7 +592,14 @@ typedef
       Iop_InterleaveHI8x16, Iop_InterleaveHI16x8,
       Iop_InterleaveHI32x4, Iop_InterleaveHI64x2,
       Iop_InterleaveLO8x16, Iop_InterleaveLO16x8, 
-      Iop_InterleaveLO32x4, Iop_InterleaveLO64x2
+      Iop_InterleaveLO32x4, Iop_InterleaveLO64x2,
+
+      /* DUPLICATING -- copy value to all lanes */
+      Iop_Dup8x16, Iop_Dup16x8, Iop_Dup32x4,
+
+      /* PERMUTING -- copy src bytes to dst,
+         as indexed by control vector bytes: dst[i] = src[ ctl[i] ] */
+      Iop_Perm
    }
    IROp;
 

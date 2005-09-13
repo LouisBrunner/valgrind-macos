@@ -2822,6 +2822,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Get) {
+      /* Guest state vectors are 16byte aligned, so don't need to worry here */
       HReg dst = newVRegV(env);
       addInstr(env,
                PPC32Instr_AvLdSt( True/*load*/, 16, dst,
@@ -3393,6 +3394,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
      }
      if (ty == Ity_V128) {
+         /* Guest state vectors are 16byte aligned, so don't need to worry here */
          HReg v_src = iselVecExpr(env, stmt->Ist.Put.data);
          PPC32AMode* am_addr  = PPC32AMode_IR(stmt->Ist.Put.offset, GuestStatePtr);
          addInstr(env, PPC32Instr_AvLdSt(False/*store*/, 16, v_src, am_addr));

@@ -5308,8 +5308,9 @@ static Bool dis_av_logic ( UInt theInstr )
 
    case 0x444: // vandc (And, AV p148)
       DIP("vandc v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_AndV128, mkexpr(vA),
+			      unop(Iop_NotV128, mkexpr(vB))) );
+      break;
 
    case 0x484: // vor (Or, AV p217)
       DIP("vor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
@@ -5323,8 +5324,9 @@ static Bool dis_av_logic ( UInt theInstr )
 
    case 0x504: // vnor (Nor, AV p216)
       DIP("vnor v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr,
+         unop(Iop_NotV128, binop(Iop_OrV128, mkexpr(vA), mkexpr(vB))) );
+      break;
 
    default:
       vex_printf("dis_av_logic(PPC32)(opc2=0x%x)\n", opc2);
@@ -5603,6 +5605,13 @@ static Bool dis_av_permute ( UInt theInstr )
 
    UChar SIMM_8 = extend_s_5to8(SIMM_5);
 
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+   IRTemp vC = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+   assign( vC, getVReg(vC_addr));
+
    if (opc1 != 0x4) {
       vex_printf("dis_av_permute(PPC32)(instr)\n");
       return False;
@@ -5611,8 +5620,11 @@ static Bool dis_av_permute ( UInt theInstr )
    switch (opc2) {
    case 0x2A: // vsel (Conditional Select, AV p238)
       DIP("vsel v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      DIP(" => not implemented\n");
-      return False;
+      /* vD = (vA & ~vC) | (vB & vC) */
+      putVReg( vD_addr, binop(Iop_OrV128,
+         binop(Iop_AndV128, mkexpr(vA), unop(Iop_NotV128, mkexpr(vC))),
+         binop(Iop_AndV128, mkexpr(vB), mkexpr(vC))) );
+      return True;
      
    case 0x2B: // vperm (Permute, AV p218)
       DIP("vperm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);

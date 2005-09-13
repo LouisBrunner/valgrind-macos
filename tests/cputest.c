@@ -16,7 +16,7 @@ typedef int    Bool;
 
 char* all_archs[] = {
    "amd64",
-   "ppc",
+   "ppc32",
    "x86",
    NULL
 };

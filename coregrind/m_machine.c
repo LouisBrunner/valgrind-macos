@@ -220,7 +220,7 @@ Bool VG_(thread_stack_next)(ThreadId* tid, Addr* stack_min, Addr* stack_max)
 // not-yet-set.
 Int VG_(cache_line_size_ppc32) = 0;
 // Altivec enabled?  Harvested on startup from the AT_HWCAP entry
-Int VG_(have_altivec) = 0;
+Int VG_(have_altivec_ppc) = 0;
 #endif
 
 // X86: set to 1 if the host is able to do {ld,st}mxcsr (load/store

@@ -34,7 +34,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_cpuid.h"
 #include "pub_core_machine.h"       // For VG_(cache_line_size_ppc32)
-                                    // and VG_(have_altivec)
+                                    // and VG_(have_altivec_ppc)
                                     // and VG_(get_SP)
                                     // and VG_(have_mxcsr_x86)
 #include "pub_core_libcbase.h"
@@ -113,8 +113,8 @@ static Bool getArchAndArchInfo( /*OUT*/VexArch*     vex_arch,
 
 #elif defined(VGA_ppc32)
    *vex_arch    = VexArchPPC32;
-   vai->subarch = VG_(have_altivec) ? VexSubArchPPC32_AV
-                                    : VexSubArchPPC32_noAV;
+   vai->subarch = VG_(have_altivec_ppc) ? VexSubArchPPC32_AV
+                                        : VexSubArchPPC32_noAV;
    vai->ppc32_cache_line_szB = VG_(cache_line_size_ppc32);
    return True;
 

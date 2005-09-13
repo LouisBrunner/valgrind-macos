@@ -84,7 +84,7 @@
 // entries.
 extern Int VG_(cache_line_size_ppc32);
 // Altivec enabled?  Harvested on startup from the AT_HWCAP entry
-extern Int VG_(have_altivec);
+extern Int VG_(have_altivec_ppc);
 #endif
 
 // X86: set to 1 if the host is able to do {ld,st}mxcsr (load/store

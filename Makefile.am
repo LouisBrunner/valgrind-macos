@@ -11,12 +11,15 @@ TOOLS =		memcheck \
 		none
 
 ##		addrcheck \
+##		helgrind \
 
-# Temporary: we want to compile Helgrind and Addrcheck, but not regtest it.
-# And we want to include Addrcheck in the distro, but not compile/test it.
+# Temporary: we want to compile Helgrind and Addrcheck and include them in
+# the distro, but not regtest them.  So they are in $TOOLS but not in
+# $SUBDIRS.
+#
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.
-SUBDIRS = 	include coregrind . tests auxprogs $(TOOLS) helgrind addrcheck docs
+SUBDIRS = include coregrind . tests auxprogs $(TOOLS) helgrind addrcheck docs
 
 SUPP_FILES = \
 	glibc-2.2.supp glibc-2.3.supp glibc-2.4.supp \

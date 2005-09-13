@@ -896,10 +896,10 @@ static void fprint_CC_table_and_calc_totals(void)
    VG_(strcpy)(buf, "cmd:");
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
    for (i = 0; i < VG_(client_argc); i++) {
-       if (VG_(client_argv)[i] == NULL)
-          continue;
-       VG_(write)(fd, " ", 1);
-       VG_(write)(fd, VG_(client_argv)[i], VG_(strlen)(VG_(client_argv)[i]));
+       if (VG_(client_argv)[i]) {
+          VG_(write)(fd, " ", 1);
+          VG_(write)(fd, VG_(client_argv)[i], VG_(strlen)(VG_(client_argv)[i]));
+       }
    }
    // "events:" line
    VG_(sprintf)(buf, "\nevents: Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw\n");

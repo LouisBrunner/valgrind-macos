@@ -35,7 +35,9 @@
    Command-line and environment stuff
    ------------------------------------------------------------------ */
 
-/* Client args and environment (which can be inspected with VG_(getenv)(). */
+/* Client args and environment.  Note that VG_(client_argv)[] can be written
+   to by the client, so you should check each entry is non-NULL before
+   printing.  VG_(client_envp) can be inspected with VG_(getenv)(). */
 extern Int    VG_(client_argc);
 extern Char** VG_(client_argv);
 extern Char** VG_(client_envp);

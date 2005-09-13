@@ -1341,8 +1341,10 @@ static void write_hp_file(void)
 
    // File header, including command line
    SPRINTF(buf, "JOB         \"");
-   for (i = 0; i < VG_(client_argc); i++)
-      SPRINTF(buf, "%s ", VG_(client_argv)[i]);
+   for (i = 0; i < VG_(client_argc); i++) {
+      if (VG_(client_argv)[i])
+         SPRINTF(buf, "%s ", VG_(client_argv)[i]);
+   }
    SPRINTF(buf, /*" (%d ms/sample)\"\n"*/ "\"\n"
                 "DATE        \"\"\n"
                 "SAMPLE_UNIT \"ms\"\n"
@@ -1664,8 +1666,10 @@ write_text_file(ULong total_ST, ULong heap_ST)
 
    // Command line
    SPRINTF(buf, "Command: ");
-   for (i = 0; i < VG_(client_argc); i++)
-      SPRINTF(buf, "%s ", VG_(client_argv)[i]);
+   for (i = 0; i < VG_(client_argc); i++) {
+      if (VG_(client_argv)[i])
+         SPRINTF(buf, "%s ", VG_(client_argv)[i]);
+   }
    SPRINTF(buf, "\n%s\n", maybe_p);
 
    if (clo_heap)

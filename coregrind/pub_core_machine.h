@@ -78,11 +78,13 @@
 
 // Architecture specifics
 
+#if defined(VGA_ppc32)
 // PPC: what is the cache line size (for dcbz etc) ?
 // This info is harvested on Linux at startup from the AT_SYSINFO
 // entries.
-#if defined(VGA_ppc32)
 extern Int VG_(cache_line_size_ppc32);
+// Altivec enabled?  Harvested on startup from the AT_HWCAP entry
+extern Int VG_(have_altivec);
 #endif
 
 // X86: set to 1 if the host is able to do {ld,st}mxcsr (load/store

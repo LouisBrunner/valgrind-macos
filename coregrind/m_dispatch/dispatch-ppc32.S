@@ -92,9 +92,16 @@ VG_(run_innerloop):
 
 	/* set host AltiVec control word to the default mode expected 
 	   by VEX-generated code. */
-        vsubuwm 3,3,3   /* generate zero */
+        lis     3,VG_(have_altivec)@ha
+        lwz     3,VG_(have_altivec)@l(3)
+        cmplwi  3,0
+        beq     L1
+        /* generate vector {0x0,0x0,0x0,0x00010000} */
+        vspltisw 3,0x1      /* 4x 0x00000001 */
+        vspltisw 4,0x0      /* generate zero */
+        vsldoi  3,4,3,0x6   /* v3 = v3 >> 10 bytes */
         mtvscr  3
-
+L1:
         /* make a stack frame for the code we are calling */
         stwu    1,-16(1)
 

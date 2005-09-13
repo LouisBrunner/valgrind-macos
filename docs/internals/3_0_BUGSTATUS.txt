@@ -124,6 +124,12 @@ FIXED-TRUNK:    4589, 4592
 FIXED-30BRANCH: 4597, 4601
 
 ----------------------------------------------------------------
+111829  vex x86->IR: unhandled instruction bytes: sbb Al, Ib
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
 111851  vex x86->IR: unhandled instruction bytes: 0x9F 0x89
         (lahf/sahf)
 
@@ -132,6 +138,19 @@ FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
 112031  iopl on AMD64 and README_MISSING_SYSCALL_OR_IOCTL update
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+112152  code generation for Xin_MFence on x86 with SSE0 subarch
+112167  ditto
+
+FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+112501  vex x86->IR: movq (0xF 0x7F 0xC1 0xF)
 
 FIXED-TRUNK:    TODO
 FIXED-30BRANCH: TODO

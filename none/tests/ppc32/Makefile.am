@@ -1,7 +1,5 @@
 
-noinst_SCRIPTS = filter_cpuid filter_stderr filter_int
-
-CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
+noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest

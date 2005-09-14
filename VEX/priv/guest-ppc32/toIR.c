@@ -4905,18 +4905,26 @@ static Bool dis_av_load ( UInt theInstr )
    }
    case 0x007: // lvebx (Load Vector Element Byte Indexed, AV p119)
       DIP("lvebx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      /* loads addressed byte into vector[EA[0:3]
+         since all other destination bytes are undefined,
+         can simply load entire vector from 16-aligned EA */
+      assign( EA_aligned, binop( Iop_And32, mkexpr(EA), mkU32(0xFFFFFFF0) ));
+      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_aligned)) );
+      break;
 
    case 0x027: // lvehx (Load Vector Element Half Word Indexed, AV p121)
       DIP("lvehx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      /* see note for lvebx */
+      assign( EA_aligned, binop( Iop_And32, mkexpr(EA), mkU32(0xFFFFFFF0) ));
+      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_aligned)) );
+      break;
 
    case 0x047: // lvewx (Load Vector Element Word Indexed, AV p122)
       DIP("lvewx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      /* see note for lvebx */
+      assign( EA_aligned, binop( Iop_And32, mkexpr(EA), mkU32(0xFFFFFFF0) ));
+      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_aligned)) );
+      break;
 
    case 0x067: // lvx (Load Vector Indexed, AV p127)
       DIP("lvx v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
@@ -4967,28 +4975,47 @@ static Bool dis_av_store ( UInt theInstr )
    }
 
    switch (opc2) {
-   case 0x087: // stvebx (Store Vector Byte Indexed, AV p131)
+   case 0x087: { // stvebx (Store Vector Byte Indexed, AV p131)
       DIP("stvebx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-//      eb = EA & 0xF;
-//      STORE(vS[eb*8:eb*8+7], 1, EA);
-//      storeBE( mkexpr(EA), mkexpr(vS) );
-
-   case 0x0A7: // stvehx (Store Vector Half Word Indexed, AV p132)
+      IRTemp eb  = newTemp(Ity_I8);
+      IRTemp idx = newTemp(Ity_I8);
+      assign( eb, binop(Iop_And8, mkU8(0xF),
+                        unop(Iop_32to8, mkexpr(EA) )) );
+      assign( idx, binop(Iop_Shl8, binop(Iop_Sub8, mkU8(15), mkexpr(eb)),
+                         mkU8(3)) );
+      storeBE( mkexpr(EA),
+               unop(Iop_32to8, unop(Iop_V128to32,
+                    binop(Iop_ShrV128, mkexpr(vS), mkexpr(idx)))) );
+      break;
+   }
+   case 0x0A7: { // stvehx (Store Vector Half Word Indexed, AV p132)
+      IRTemp eb  = newTemp(Ity_I8);
+      IRTemp idx = newTemp(Ity_I8);
       DIP("stvehx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-//      EA_aligned = EA & 0xFFFF_FFFE
-//      eb = EA_aligned & 0xF;
-//      STORE(vS[eb*8:eb*8+15], 2, EA_aligned);
-
-   case 0x0C7: // stvewx (Store Vector Word Indexed, AV p133)
+      assign( EA_aligned, binop( Iop_And32, mkexpr(EA), mkU32(0xFFFFFFFE) ));
+      assign( eb, binop(Iop_And8, mkU8(0xF),
+                        unop(Iop_32to8, mkexpr(EA_aligned) )) );
+      assign( idx, binop(Iop_Shl8, binop(Iop_Sub8, mkU8(14), mkexpr(eb)),
+                         mkU8(3)) );
+      storeBE( mkexpr(EA_aligned),
+               unop(Iop_32to16, unop(Iop_V128to32,
+                    binop(Iop_ShrV128, mkexpr(vS), mkexpr(idx)))) );
+      break;
+   }
+   case 0x0C7: { // stvewx (Store Vector Word Indexed, AV p133)
       DIP("stvewx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      IRTemp eb  = newTemp(Ity_I8);
+      IRTemp idx = newTemp(Ity_I8);
+      assign( EA_aligned, binop( Iop_And32, mkexpr(EA), mkU32(0xFFFFFFFC) ));
+      assign( eb, binop(Iop_And8, mkU8(0xF),
+                        unop(Iop_32to8, mkexpr(EA_aligned) )) );
+      assign( idx, binop(Iop_Shl8, binop(Iop_Sub8, mkU8(12), mkexpr(eb)),
+                         mkU8(3)) );
+      storeBE( mkexpr(EA_aligned),
+               unop(Iop_V128to32,
+                    binop(Iop_ShrV128, mkexpr(vS), mkexpr(idx))) );
+      break;
+   }
 
 //      EA_aligned = EA & 0xFFFF_FFFC
 //      eb = EA_aligned & 0xF;

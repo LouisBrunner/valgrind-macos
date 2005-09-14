@@ -3126,6 +3126,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          /* expects 5-bit-signed-imm */
          Char simm5 = i->Pin.AvSplat.src->Pvi.Imm5s;
          vassert(simm5 >= -16 && simm5 <= 15);
+         simm5 = simm5 & 0x1F;
          p = mkFormVX( p, 4, v_dst, (UInt)simm5, 0, opc2 );
       }
       else {  // Pri_Reg

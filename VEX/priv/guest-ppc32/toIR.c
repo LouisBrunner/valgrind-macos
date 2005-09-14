@@ -5027,6 +5027,11 @@ static Bool dis_av_arith ( UInt theInstr )
    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
    UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
 
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+
    if (opc1 != 0x4) {
       vex_printf("dis_av_arith(PPC32)(opc1 != 0x4)\n");
       return False;
@@ -5034,11 +5039,16 @@ static Bool dis_av_arith ( UInt theInstr )
 
    switch (opc2) {
    /* Add */
-   case 0x180: // vaddcuw (Add Carryout Unsigned Word, AV p136)
+   case 0x180: { // vaddcuw (Add Carryout Unsigned Word, AV p136)
       DIP("vaddcuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      /* ov = x >u (x+y) */
+      IRTemp sum = newTemp(Ity_V128);
+      assign( sum, binop(Iop_Add32x4, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_ShrN32x4,
+                              binop(Iop_CmpGT32Ux4, mkexpr(vA), mkexpr(sum)),
+                              mkU8(31)) );
+      break;
+   }
    case 0x000: // vaddubm (Add Unsigned Byte Modulo, AV p141)
       DIP("vaddubm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       DIP(" => not implemented\n");

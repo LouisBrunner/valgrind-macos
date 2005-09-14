@@ -293,6 +293,32 @@ extern PPC32RI* PPC32RI_Reg ( HReg );
 extern void ppPPC32RI ( PPC32RI* );
 
 
+/* --------- Operand, which can be a vector reg or a s6. --------- */
+/* ("VI" == "Vector Register or Immediate") */
+typedef
+   enum {
+      Pvi_Imm=5,
+      Pvi_Reg=6
+   } 
+   PPC32VI5sTag;
+
+typedef
+   struct {
+      PPC32VI5sTag tag;
+      union {
+         Char Imm5s;
+         HReg Reg;
+      }
+      Pvi;
+   }
+   PPC32VI5s;
+
+extern PPC32VI5s* PPC32VI5s_Imm ( Char );
+extern PPC32VI5s* PPC32VI5s_Reg ( HReg );
+
+extern void ppPPC32VI5s ( PPC32VI5s* );
+
+
 /* --------- Instructions. --------- */
 
 /* --------- */
@@ -664,7 +690,7 @@ typedef
          struct {
             UChar    sz;   /* 8,16,32 */
             HReg     dst;
-            PPC32RI* src;
+            PPC32VI5s* src; 
          } AvSplat;
          /* Mov src to dst on the given condition, which may not
             be the bogus Xcc_ALWAYS. */
@@ -719,7 +745,7 @@ extern PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HR
 extern PPC32Instr* PPC32Instr_AvPerm     ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvSel      ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvSplat    ( UChar sz, HReg dst, PPC32RI* src );
+extern PPC32Instr* PPC32Instr_AvSplat    ( UChar sz, HReg dst, PPC32VI5s* src );
 extern PPC32Instr* PPC32Instr_AvCMov     ( PPC32CondCode, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_AvLdVSCR   ( HReg src );
 

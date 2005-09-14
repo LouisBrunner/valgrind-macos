@@ -752,6 +752,85 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
 //..    add_to_esp(env, 8);
 //.. }
 
+/*
+  Generates code for AvSplat
+  - takes in IRExpr* of type 8|16|32
+    returns vector reg of duplicated lanes of input
+  - uses AvSplat(imm) for imms up to simm6.
+    otherwise must use store reg & load vector
+*/
+static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e )
+{
+   HReg     dst = newVRegV(env);
+   PPC32RI* ri  = iselIntExpr_RI(env, e);
+   IRType   ty  = typeOfIRExpr(env->type_env,e);
+   UInt     sz  = (ty == Ity_I8) ? 8 : (ty == Ity_I16) ? 16 : 32;
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+
+   HReg r_src;
+   /* special case: immediate */
+   if (ri->tag == Pri_Imm) {
+      Int simm32 = (Int)ri->Pri.Imm;
+
+      /* figure out if it's do-able with imm splats. */
+      if (simm32 >= -32 && simm32 <= 31) {
+         Char simm6 = (Char)simm32;
+         if (simm6 > 15) {           /* 16:31 inclusive */
+            HReg v1 = newVRegV(env);
+            HReg v2 = newVRegV(env);
+            addInstr(env, PPC32Instr_AvSplat(sz, v1, PPC32VI5s_Imm(-16)));
+            addInstr(env, PPC32Instr_AvSplat(sz, v2, PPC32VI5s_Imm(simm6-16)));
+            addInstr(env, PPC32Instr_AvBinary(Pav_SUBUM, dst, v2, v1));
+            return dst;
+         }
+         if (simm6 < -16) {          /* -32:-17 inclusive */
+            HReg v1 = newVRegV(env);
+            HReg v2 = newVRegV(env);
+            addInstr(env, PPC32Instr_AvSplat(sz, v1, PPC32VI5s_Imm(-16)));
+            addInstr(env, PPC32Instr_AvSplat(sz, v2, PPC32VI5s_Imm(simm6+16)));
+            addInstr(env, PPC32Instr_AvBinary(Pav_ADDUM, dst, v2, v1));
+            return dst;
+         }
+         /* simplest form:              -16:15 inclusive */
+         addInstr(env, PPC32Instr_AvSplat(sz, dst, PPC32VI5s_Imm(simm6)));
+         return dst;
+      }
+
+      /* no luck; use the Slow way. */
+      r_src = newVRegI(env);
+      addInstr(env, PPC32Instr_LI32(r_src, (UInt)simm32));
+   }
+   else {
+      r_src = ri->Pri.Reg;
+   }
+
+   /* default case: store r_src in lowest lane of 16-aligned mem,
+      load vector, splat lowest lane to dst */
+   {
+      /* CAB: Perhaps faster to store r_src multiple times (sz dependent),
+              and simply load the vector? */
+
+      HReg v_src = newVRegV(env);
+      PPC32AMode *am_off12;
+
+      sub_from_sp( env, 32 );     // Move SP down
+      /* Get a 16-aligned address within our stack space */
+      HReg r_aligned16 = get_sp_aligned16( env );
+      am_off12 = PPC32AMode_IR( 12, r_aligned16);
+
+      /* Store r_src in low word of 16-aligned mem */
+      addInstr(env, PPC32Instr_Store( 4, am_off12, r_src ));
+
+      /* Load src to vector[low lane] */
+      addInstr(env, PPC32Instr_AvLdSt( True/*load*/, 4, v_src, am_off12 ));
+      add_to_sp( env, 32 );       // Reset SP
+
+      /* Finally, splat v_src[low_lane] to dst */
+      addInstr(env, PPC32Instr_AvSplat(sz, dst, PPC32VI5s_Reg(v_src)));
+      return dst;
+   }
+}
+
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Integer expressions (32/16/8 bit)           ---*/
@@ -1498,13 +1577,15 @@ static PPC32RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 static PPC32RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
-   vassert(ty == Ity_I32);
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
 
    /* special case: immediate */
    if (e->tag == Iex_Const) {
       UInt u;
       switch (e->Iex.Const.con->tag) {
-         case Ico_U32: u = e->Iex.Const.con->Ico.U32; break;
+         case Ico_U32: u =          e->Iex.Const.con->Ico.U32; break;
+         case Ico_U16: u = 0xFFFF & e->Iex.Const.con->Ico.U16; break;
+         case Ico_U8:  u = 0xFF   & e->Iex.Const.con->Ico.U8;  break;
          default:      vpanic("iselIntExpr_RI.Iex_Const(ppc32h)");
       }
       return PPC32RI_Imm(u);
@@ -3040,6 +3121,11 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return dst;
 //..       }
 
+      case Iop_Dup32x4: {
+         HReg dst = mk_AvDuplicateRI(env, e->Iex.Binop.arg1);
+         return dst;
+      }
+
       default:
          break;
       } /* switch (e->Iex.Unop.op) */
@@ -3245,7 +3331,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       do_AvBin: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
-         HReg dst = newVRegV(env);
+         HReg dst  = newVRegV(env);
          addInstr(env, PPC32Instr_AvBinary(op, dst, arg1, arg2));
          return dst;
       }
@@ -3273,6 +3359,16 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_ShrN16x8: op = Xsse_SHR16; goto do_SseShift;
 //..       case Iop_ShrN32x4: op = Xsse_SHR32; goto do_SseShift;
 //..       case Iop_ShrN64x2: op = Xsse_SHR64; goto do_SseShift;
+
+      case Iop_ShrV128: op = Pav_SHR; goto do_AvShiftV128;
+      do_AvShiftV128: {
+         HReg dst    = newVRegV(env);
+         HReg r_src  = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg v_shft = mk_AvDuplicateRI(env, e->Iex.Binop.arg2);
+         addInstr(env, PPC32Instr_AvBinary(op, dst, r_src, v_shft));
+         return dst;
+      }
+
 //..       do_SseShift: {
 //..          HReg      greg = iselVecExpr(env, e->Iex.Binop.arg1);
 //..          X86RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Binop.arg2);

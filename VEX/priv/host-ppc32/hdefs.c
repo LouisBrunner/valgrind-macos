@@ -529,6 +529,64 @@ static void mapRegs_PPC32RI ( HRegRemap* m, PPC32RI* dst ) {
 }
 
 
+/* --------- Operand, which can be a vector reg or a simm5. --------- */
+
+PPC32VI5s* PPC32VI5s_Imm ( Char simm5 ) {
+   PPC32VI5s* op = LibVEX_Alloc(sizeof(PPC32VI5s));
+   op->tag       = Pvi_Imm;
+   op->Pvi.Imm5s = simm5;
+   vassert(simm5 >= -16 && simm5 <= 15);
+   return op;
+}
+PPC32VI5s* PPC32VI5s_Reg ( HReg reg ) {
+   PPC32VI5s* op = LibVEX_Alloc(sizeof(PPC32VI5s));
+   op->tag       = Pvi_Reg;
+   op->Pvi.Reg   = reg;
+   vassert(hregClass(reg) == HRcVec128);
+   return op;
+}
+
+void ppPPC32VI5s ( PPC32VI5s* src ) {
+   switch (src->tag) {
+      case Pvi_Imm: 
+         vex_printf("%d", (Int)src->Pvi.Imm5s);
+         break;
+      case Pvi_Reg: 
+         ppHRegPPC32(src->Pvi.Reg);
+         break;
+      default: 
+         vpanic("ppPPC32VI5s");
+   }
+}
+
+/* An PPC32VI5s can only be used in a "read" context (what would it
+   mean to write or modify a literal?) and so we enumerate its
+   registers accordingly. */
+static void addRegUsage_PPC32VI5s ( HRegUsage* u, PPC32VI5s* dst ) {
+   switch (dst->tag) {
+      case Pvi_Imm: 
+         return;
+      case Pvi_Reg: 
+         addHRegUse(u, HRmRead, dst->Pvi.Reg);
+         return;
+      default: 
+         vpanic("addRegUsage_PPC32VI5s");
+   }
+}
+
+static void mapRegs_PPC32VI5s ( HRegRemap* m, PPC32VI5s* dst ) {
+   switch (dst->tag) {
+      case Pvi_Imm: 
+         return;
+      case Pvi_Reg: 
+         dst->Pvi.Reg = lookupHRegRemap(m, dst->Pvi.Reg);
+         return;
+      default: 
+         vpanic("mapRegs_PPC32VI5s");
+   }
+}
+
+
 /* --------- Instructions. --------- */
 
 HChar* showPPC32UnaryOp ( PPC32UnaryOp op ) {
@@ -942,7 +1000,7 @@ PPC32Instr* PPC32Instr_AvShlDbl ( UChar shift, HReg dst, HReg srcL, HReg srcR ) 
    i->Pin.AvShlDbl.srcR  = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AvSplat ( UChar sz, HReg dst, PPC32RI* src ) {
+PPC32Instr* PPC32Instr_AvSplat ( UChar sz, HReg dst, PPC32VI5s* src ) {
    PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag             = Pin_AvSplat;
    i->Pin.AvSplat.sz  = sz;
@@ -1355,20 +1413,15 @@ void ppPPC32Instr ( PPC32Instr* i )
       return;
 
    case Pin_AvSplat: {
-      UChar ch_sz = toUChar(
-                       (i->Pin.AvSplat.sz == 8) ? 'b' :
-                       (i->Pin.AvSplat.sz == 16) ? 'h' : 'w'
-                    );
+      UChar sz = i->Pin.AvSplat.sz;
+      UChar ch_sz = toUChar( (sz == 8) ? 'b' : (sz == 16) ? 'h' : 'w' );
       vex_printf("vsplt%s%c ",
-                 i->Pin.AvSplat.src->tag == Pri_Imm ? "is" : "", ch_sz);
+                 i->Pin.AvSplat.src->tag == Pvi_Imm ? "is" : "", ch_sz);
       ppHRegPPC32(i->Pin.AvSplat.dst);
       vex_printf(",");
-      if (i->Pin.AvSplat.src->tag == Pri_Imm) {
-         vex_printf("%d", (Char)(i->Pin.AvSplat.src->Pri.Imm));
-      } else {
-         ppHRegPPC32(i->Pin.AvSplat.src->Pri.Reg);
-         vex_printf(", 0");
-      }
+      ppPPC32VI5s(i->Pin.AvSplat.src);
+      if (i->Pin.AvSplat.src->tag == Pvi_Reg)
+         vex_printf(", %u", (128/sz)-1);   /* louis lane */
       return;
    }
 
@@ -1599,8 +1652,8 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       addHRegUse(u, HRmRead,  i->Pin.AvShlDbl.srcR);
       return;
    case Pin_AvSplat:
-      addHRegUse(u, HRmWrite, i->Pin.AvSplat.dst);
-      addRegUsage_PPC32RI(u, i->Pin.AvSplat.src);
+      addHRegUse(u, HRmWrite,  i->Pin.AvSplat.dst);
+      addRegUsage_PPC32VI5s(u, i->Pin.AvSplat.src);
       return;
    case Pin_AvCMov:
       addHRegUse(u, HRmModify, i->Pin.AvCMov.dst);
@@ -1764,7 +1817,7 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       return;
    case Pin_AvSplat:
       mapReg(m, &i->Pin.AvSplat.dst);
-      mapRegs_PPC32RI(m, i->Pin.AvSplat.src);
+      mapRegs_PPC32VI5s(m, i->Pin.AvSplat.src);
       return;
    case Pin_AvCMov:
      mapReg(m, &i->Pin.AvCMov.dst);
@@ -2812,16 +2865,21 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt v_srcL = vregNo(i->Pin.AvBinary.srcL);
       UInt v_srcR = vregNo(i->Pin.AvBinary.srcR);
       UInt opc2;
+      if (i->Pin.AvBinary.op == Pav_SHL) {
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1036 ); // vslo
+         p = mkFormVX( p, 4, v_dst, v_dst,  v_srcR, 452 );  // vsl
+         goto done;
+      }
+      if (i->Pin.AvBinary.op == Pav_SHR) {
+         p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1100 ); // vsro
+         p = mkFormVX( p, 4, v_dst, v_dst,  v_srcR, 708 );  // vsr
+         goto done;
+      }
       switch (i->Pin.AvBinary.op) {
       /* Bitwise */
       case Pav_AND:       opc2 = 1028; break; // vand
       case Pav_OR:        opc2 = 1156; break; // vor
       case Pav_XOR:       opc2 = 1220; break; // vxor
-
-      /* Shift */
-      case Pav_SHL:       opc2 =  452; break; // vsl
-      case Pav_SHR:       opc2 =  708; break; // vsr
-
       default:
          goto bad;
       }
@@ -3060,17 +3118,22 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    case Pin_AvSplat: { // vsplt(is)(b,h,w)
       UInt v_dst = vregNo(i->Pin.AvShlDbl.dst);
       UChar sz   = i->Pin.AvSplat.sz;
-      UInt v_src, simm_src, opc2;
+      UInt v_src, opc2;
       vassert(sz == 8 || sz == 16 || sz == 32);
 
-      if (i->Pin.AvSplat.src->tag == Pri_Imm) {
+      if (i->Pin.AvSplat.src->tag == Pvi_Imm) {
          opc2 = (sz == 8) ? 780 : (sz == 16) ? 844 : 908;   // 8,16,32
-         simm_src = i->Pin.AvSplat.src->Pri.Imm;
-         p = mkFormVX( p, 4, v_dst, simm_src, 0, opc2 );
-      } else {  // Pri_Reg
+         /* expects 5-bit-signed-imm */
+         Char simm5 = i->Pin.AvSplat.src->Pvi.Imm5s;
+         vassert(simm5 >= -16 && simm5 <= 15);
+         p = mkFormVX( p, 4, v_dst, (UInt)simm5, 0, opc2 );
+      }
+      else {  // Pri_Reg
          opc2 = (sz == 8) ? 524 : (sz == 16) ? 588 : 652;  // 8,16,32
-         v_src = iregNo(i->Pin.AvSplat.src->Pri.Reg);
-         p = mkFormVX( p, 4, v_dst, 0, v_src, opc2 );
+         vassert(hregClass(i->Pin.AvSplat.src->Pvi.Reg) == HRcVec128);
+         v_src = vregNo(i->Pin.AvSplat.src->Pvi.Reg);
+         UInt lowest_lane = (128/sz)-1;
+         p = mkFormVX( p, 4, v_dst, lowest_lane, v_src, opc2 );
       }
       goto done;
    }

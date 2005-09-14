@@ -5518,6 +5518,11 @@ static Bool dis_av_shift ( UInt theInstr )
    UChar vB_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
    UInt  opc2    =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
 
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+
    if (opc1 != 0x4){
       vex_printf("dis_av_shift(PPC32)(instr)\n");
       return False;
@@ -5583,11 +5588,16 @@ static Bool dis_av_shift ( UInt theInstr )
       DIP(" => not implemented\n");
       return False;
 
-   case 0x2C4: // vsr (Shift Right, AV p252)
+   case 0x2C4: { // vsr (Shift Right, AV p251)
       DIP("vsr v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
+      IRTemp sh = newTemp(Ity_I8);
+      assign( sh, binop(Iop_And8, mkU8(0x7),
+                        unop(Iop_32to8,
+                             unop(Iop_V128to32, mkexpr(vB)))) );
+      putVReg( vD_addr,
+               binop(Iop_ShrV128, mkexpr(vA), mkexpr(sh)) );
+      break;
+   }
    case 0x304: // vsrab (Shift Right Algebraic B, AV p253)
       DIP("vsrab v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       DIP(" => not implemented\n");
@@ -5717,11 +5727,15 @@ static Bool dis_av_permute ( UInt theInstr )
       DIP(" => not implemented\n");
       return False;
 
-   case 0x28C: // vspltw (Splat Word, AV p250)
+   case 0x28C: { // vspltw (Splat Word, AV p250)
       DIP("vspltw v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-      DIP(" => not implemented\n");
-      return False;
-
+      /* vD = Dup32x4( vB[UIMM_5] ) */
+      unsigned int sh_uimm = (3-UIMM_5)*32;
+      putVReg( vD_addr, unop(Iop_Dup32x4,
+         unop(Iop_V128to32,
+              binop(Iop_ShrV128, mkexpr(vB), mkU8(sh_uimm)))) );
+      break;
+   }
    case 0x30C: // vspltisb (Splat Immediate Signed B, AV p247)
       DIP("vspltisb v%d,%d\n", vD_addr, (Char)SIMM_8);
       DIP(" => not implemented\n");

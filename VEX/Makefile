@@ -63,9 +63,13 @@ PUB_INCLUDES = -Ipub
 PRIV_INCLUDES = -Ipriv
 
 
-ifeq ($(CC),) 
+ifndef $(CC)
    CC = gcc 
 endif 
+ifndef $(AR)
+   AR = ar 
+endif
+
 CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline \
 		-Wpointer-arith -Wbad-function-cast -Wcast-qual \
 		-Wcast-align -Wmissing-declarations \
@@ -85,6 +89,9 @@ CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline \
 
 all: vex
 
+# Empty, needed for Valgrind
+install:
+
 scratch: clean version all
 
 vex: libvex.a test_main.o
@@ -92,7 +99,7 @@ vex: libvex.a test_main.o
 
 libvex.a: $(LIB_OBJS)
 	rm -f libvex.a
-	ar clq libvex.a $(LIB_OBJS)
+	$(AR) clq libvex.a $(LIB_OBJS)
 
 # This doesn't get rid of priv/main/vex_svnversion.h, because
 # that can't be regenerated in the final Valgrind tarball, and

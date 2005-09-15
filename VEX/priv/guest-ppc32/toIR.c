@@ -5068,247 +5068,264 @@ static Bool dis_av_arith ( UInt theInstr )
    /* Add */
    case 0x180: { // vaddcuw (Add Carryout Unsigned Word, AV p136)
       DIP("vaddcuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      /* ov = x >u (x+y) */
-      IRTemp sum = newTemp(Ity_V128);
-      assign( sum, binop(Iop_Add32x4, mkexpr(vA), mkexpr(vB)) );
+      /* unsigned_ov(x+y) = (y >u not(x)) */
       putVReg( vD_addr, binop(Iop_ShrN32x4,
-                              binop(Iop_CmpGT32Ux4, mkexpr(vA), mkexpr(sum)),
+                              binop(Iop_CmpGT32Ux4, mkexpr(vB),
+                                    unop(Iop_NotV128, mkexpr(vA))),
                               mkU8(31)) );
       break;
    }
    case 0x000: // vaddubm (Add Unsigned Byte Modulo, AV p141)
       DIP("vaddubm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_Add8x16, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x040: // vadduhm (Add Unsigned Half Word Modulo, AV p143)
       DIP("vadduhm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_Add16x8, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x080: // vadduwm (Add Unsigned Word Modulo, AV p145)
       DIP("vadduwm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_Add32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x200: // vaddubs (Add Unsigned Byte Saturate, AV p142)
       DIP("vaddubs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QAdd8Ux16, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT], perhaps via new primop: Iop_SatOfQAdd8Ux16
+      break;
+
    case 0x240: // vadduhs (Add Unsigned Half Word Saturate, AV p144)
       DIP("vadduhs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QAdd16Ux8, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
    case 0x280: // vadduws (Add Unsigned Word Saturate, AV p146)
       DIP("vadduws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QAdd32Ux4, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
    case 0x300: // vaddsbs (Add Signed Byte Saturate, AV p138)
       DIP("vaddsbs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QAdd8Sx16, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
    case 0x340: // vaddshs (Add Signed Half Word Saturate, AV p139)
       DIP("vaddshs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QAdd16Sx8, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
    case 0x380: // vaddsws (Add Signed Word Saturate, AV p140)
       DIP("vaddsws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QAdd32Sx4, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
+
    /* Subtract */
-   case 0x580: // vsubcuw (Subtract Carryout Unsigned Word, AV p260)
+   case 0x580: { // vsubcuw (Subtract Carryout Unsigned Word, AV p260)
       DIP("vsubcuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      /* unsigned_ov(x-y) = (y >u x) */
+      putVReg( vD_addr, binop(Iop_ShrN32x4,
+                              unop(Iop_NotV128,
+                                   binop(Iop_CmpGT32Ux4, mkexpr(vB),
+                                         mkexpr(vA))),
+                              mkU8(31)) );
+      break;
+   }     
    case 0x400: // vsububm (Subtract Unsigned Byte Modulo, AV p265)
       DIP("vsububm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_Sub8x16, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x440: // vsubuhm (Subtract Unsigned Half Word Modulo, AV p267)
       DIP("vsubuhm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_Sub16x8, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x480: // vsubuwm (Subtract Unsigned Word Modulo, AV p269)
       DIP("vsubuwm v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_Sub32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
+
    case 0x600: // vsububs (Subtract Unsigned Byte Saturate, AV p266)
       DIP("vsububs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QSub8Ux16, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
    case 0x640: // vsubuhs (Subtract Unsigned Half Word Saturate, AV p268)
       DIP("vsubuhs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QSub16Ux8, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
    case 0x680: // vsubuws (Subtract Unsigned Word Saturate, AV p270)
       DIP("vsubuws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QSub32Ux4, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
    case 0x700: // vsubsbs (Subtract Signed Byte Saturate, AV p262)
       DIP("vsubsbs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QSub8Sx16, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
    case 0x740: // vsubshs (Subtract Signed Half Word Saturate, AV p263)
       DIP("vsubshs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_QSub16Sx8, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
+
    case 0x780: // vsubsws (Subtract Signed Word Saturate, AV p264)
       DIP("vsubsws v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_QSub32Sx4, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      break;
 
 
    /* Maximum */
    case 0x002: // vmaxub (Maximum Unsigned Byte, AV p182)
       DIP("vmaxub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Max8Ux16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x042: // vmaxuh (Maximum Unsigned Half Word, AV p183)
       DIP("vmaxuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Max16Ux8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x082: // vmaxuw (Maximum Unsigned Word, AV p184)
       DIP("vmaxuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Max32Ux4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x102: // vmaxsb (Maximum Signed Byte, AV p179)
       DIP("vmaxsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Max8Sx16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x142: // vmaxsh (Maximum Signed Half Word, AV p180)
       DIP("vmaxsh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Max16Sx8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x182: // vmaxsw (Maximum Signed Word, AV p181)
       DIP("vmaxsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Max32Sx4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
 
    /* Minimum */
    case 0x202: // vminub (Minimum Unsigned Byte, AV p191)
       DIP("vminub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Min8Ux16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x242: // vminuh (Minimum Unsigned Half Word, AV p192)
       DIP("vminuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Min16Ux8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x282: // vminuw (Minimum Unsigned Word, AV p193)
       DIP("vminuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Min32Ux4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x302: // vminsb (Minimum Signed Byte, AV p188)
       DIP("vminsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Min8Sx16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x342: // vminsh (Minimum Signed Half Word, AV p189)
       DIP("vminsh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Min16Sx8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x382: // vminsw (Minimum Signed Word, AV p190)
       DIP("vminsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-     
+      putVReg( vD_addr, binop(Iop_Min32Sx4, mkexpr(vA), mkexpr(vB)) );
+      break;
+
 
    /* Average */
    case 0x402: // vavgub (Average Unsigned Byte, AV p152)
       DIP("vavgub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Avg8Ux16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x442: // vavguh (Average Unsigned Half Word, AV p153)
       DIP("vavguh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Avg16Ux8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x482: // vavguw (Average Unsigned Word, AV p154)
       DIP("vavguw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Avg32Ux4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x502: // vavgsb (Average Signed Byte, AV p149)
       DIP("vavgsb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Avg8Sx16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x542: // vavgsh (Average Signed Half Word, AV p150)
       DIP("vavgsh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Avg16Sx8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x582: // vavgsw (Average Signed Word, AV p151)
       DIP("vavgsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Avg32Sx4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
 
    /* Multiply */
    case 0x008: // vmuloub (Multiply Odd Unsigned Byte, AV p213)
       DIP("vmuloub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_MulLo16Ux8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x048: // vmulouh (Multiply Odd Unsigned Half Word, AV p214)
       DIP("vmulouh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_MulLo32Ux4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x108: // vmulosb (Multiply Odd Signed Byte, AV p211)
       DIP("vmulosb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_MulLo16Sx8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x148: // vmulosh (Multiply Odd Signed Half Word, AV p212)
       DIP("vmulosh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_MulLo32Sx4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x208: // vmuleub (Multiply Even Unsigned Byte, AV p209)
       DIP("vmuleub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_MulHi16Ux8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x248: // vmuleuh (Multiply Even Unsigned Half Word, AV p210)
       DIP("vmuleuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_MulHi32Ux4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x308: // vmulesb (Multiply Even Signed Byte, AV p207)
       DIP("vmulesb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_MulHi16Sx8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x348: // vmulesh (Multiply Even Signed Half Word, AV p208)
       DIP("vmulesh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_MulHi32Sx4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
 
    /* Sum Across Partial */

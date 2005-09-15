@@ -3217,7 +3217,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_Sse32Fx4(op, argR, dst));
 //..          return dst;
 //..       }
-//.. 
+
 //..       case Iop_CmpEQ64Fx2: op = Xsse_CMPEQF; goto do_64Fx2;
 //..       case Iop_CmpLT64Fx2: op = Xsse_CMPLTF; goto do_64Fx2;
 //..       case Iop_CmpLE64Fx2: op = Xsse_CMPLEF; goto do_64Fx2;
@@ -3237,7 +3237,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_Sse64Fx2(op, argR, dst));
 //..          return dst;
 //..       }
-//.. 
+
 //..       case Iop_CmpEQ32F0x4: op = Xsse_CMPEQF; goto do_32F0x4;
 //..       case Iop_CmpLT32F0x4: op = Xsse_CMPLTF; goto do_32F0x4;
 //..       case Iop_CmpLE32F0x4: op = Xsse_CMPLEF; goto do_32F0x4;
@@ -3255,7 +3255,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_Sse32FLo(op, argR, dst));
 //..          return dst;
 //..       }
-//.. 
+
 //..       case Iop_CmpEQ64F0x2: op = Xsse_CMPEQF; goto do_64F0x2;
 //..       case Iop_CmpLT64F0x2: op = Xsse_CMPLTF; goto do_64F0x2;
 //..       case Iop_CmpLE64F0x2: op = Xsse_CMPLEF; goto do_64F0x2;
@@ -3274,14 +3274,14 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_Sse64FLo(op, argR, dst));
 //..          return dst;
 //..       }
-//.. 
+
 //..       case Iop_QNarrow32Sx4: 
 //..          op = Xsse_PACKSSD; arg1isEReg = True; goto do_SseReRg;
 //..       case Iop_QNarrow16Sx8: 
 //..          op = Xsse_PACKSSW; arg1isEReg = True; goto do_SseReRg;
 //..       case Iop_QNarrow16Ux8: 
 //..          op = Xsse_PACKUSW; arg1isEReg = True; goto do_SseReRg;
-//.. 
+
 //..       case Iop_InterleaveHI8x16: 
 //..          op = Xsse_UNPCKHB; arg1isEReg = True; goto do_SseReRg;
 //..       case Iop_InterleaveHI16x8: 
@@ -3290,7 +3290,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          op = Xsse_UNPCKHD; arg1isEReg = True; goto do_SseReRg;
 //..       case Iop_InterleaveHI64x2: 
 //..          op = Xsse_UNPCKHQ; arg1isEReg = True; goto do_SseReRg;
-//.. 
+
 //..       case Iop_InterleaveLO8x16: 
 //..          op = Xsse_UNPCKLB; arg1isEReg = True; goto do_SseReRg;
 //..       case Iop_InterleaveLO16x8: 
@@ -3303,9 +3303,15 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_AndV128:    op = Pav_AND;      goto do_AvBin;
       case Iop_OrV128:     op = Pav_OR;       goto do_AvBin;
       case Iop_XorV128:    op = Pav_XOR;      goto do_AvBin;
+      do_AvBin: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPC32Instr_AvBinary(op, dst, arg1, arg2));
+         return dst;
+      }
+
 //..       case Iop_Add8x16:    op = Xsse_ADD8;     goto do_SseReRg;
-//..       case Iop_Add16x8:    op = Xsse_ADD16;    goto do_SseReRg;
-//..       case Iop_Add32x4:    op = Xsse_ADD32;    goto do_SseReRg;
 //..       case Iop_Add64x2:    op = Xsse_ADD64;    goto do_SseReRg;
 //..       case Iop_QAdd8Sx16:  op = Xsse_QADD8S;   goto do_SseReRg;
 //..       case Iop_QAdd16Sx8:  op = Xsse_QADD16S;  goto do_SseReRg;
@@ -3319,31 +3325,74 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_CmpGT8Sx16: op = Xsse_CMPGT8S;  goto do_SseReRg;
 //..       case Iop_CmpGT16Sx8: op = Xsse_CMPGT16S; goto do_SseReRg;
 //..       case Iop_CmpGT32Sx4: op = Xsse_CMPGT32S; goto do_SseReRg;
-//..       case Iop_Max16Sx8:   op = Xsse_MAX16S;   goto do_SseReRg;
-//..       case Iop_Max8Ux16:   op = Xsse_MAX8U;    goto do_SseReRg;
-//..       case Iop_Min16Sx8:   op = Xsse_MIN16S;   goto do_SseReRg;
-//..       case Iop_Min8Ux16:   op = Xsse_MIN8U;    goto do_SseReRg;
-//..       case Iop_MulHi16Ux8: op = Xsse_MULHI16U; goto do_SseReRg;
-//..       case Iop_MulHi16Sx8: op = Xsse_MULHI16S; goto do_SseReRg;
 //..       case Iop_Mul16x8:    op = Xsse_MUL16;    goto do_SseReRg;
-//..       case Iop_Sub8x16:    op = Xsse_SUB8;     goto do_SseReRg;
-//..       case Iop_Sub16x8:    op = Xsse_SUB16;    goto do_SseReRg;
-//..       case Iop_Sub32x4:    op = Xsse_SUB32;    goto do_SseReRg;
 //..       case Iop_Sub64x2:    op = Xsse_SUB64;    goto do_SseReRg;
 //..       case Iop_QSub8Sx16:  op = Xsse_QSUB8S;   goto do_SseReRg;
 //..       case Iop_QSub16Sx8:  op = Xsse_QSUB16S;  goto do_SseReRg;
 //..       case Iop_QSub8Ux16:  op = Xsse_QSUB8U;   goto do_SseReRg;
 //..       case Iop_QSub16Ux8:  op = Xsse_QSUB16U;  goto do_SseReRg;
-      do_AvBin: {
+
+      case Iop_Add8x16:    op = Pav_ADDUM;  goto do_AvBin8x16;
+      case Iop_QAdd8Ux16:  op = Pav_ADDUS;  goto do_AvBin8x16;
+      case Iop_QAdd8Sx16:  op = Pav_ADDSS;  goto do_AvBin8x16;
+      case Iop_Sub8x16:    op = Pav_SUBUM;  goto do_AvBin8x16;
+      case Iop_QSub8Ux16:  op = Pav_SUBUS;  goto do_AvBin8x16;
+      case Iop_QSub8Sx16:  op = Pav_SUBSS;  goto do_AvBin8x16;
+      case Iop_Avg8Ux16:   op = Pav_AVGU;   goto do_AvBin8x16;
+      case Iop_Avg8Sx16:   op = Pav_AVGS;   goto do_AvBin8x16;
+      case Iop_Max8Ux16:   op = Pav_MAXU;   goto do_AvBin8x16;
+      case Iop_Max8Sx16:   op = Pav_MAXS;   goto do_AvBin8x16;
+      case Iop_Min8Ux16:   op = Pav_MINU;   goto do_AvBin8x16;
+      case Iop_Min8Sx16:   op = Pav_MINS;   goto do_AvBin8x16;
+      do_AvBin8x16: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
          HReg dst  = newVRegV(env);
-         addInstr(env, PPC32Instr_AvBinary(op, dst, arg1, arg2));
+         addInstr(env, PPC32Instr_AvBin8x16(op, dst, arg1, arg2));
          return dst;
       }
 
-      case Iop_Add32x4:    op = Pav_ADDUM;   goto do_AvBin32x4;
+      case Iop_Add16x8:    op = Pav_ADDUM;  goto do_AvBin16x8;
+      case Iop_QAdd16Ux8:  op = Pav_ADDUS;  goto do_AvBin16x8;
+      case Iop_QAdd16Sx8:  op = Pav_ADDSS;  goto do_AvBin16x8;
+      case Iop_Sub16x8:    op = Pav_SUBUM;  goto do_AvBin16x8;
+      case Iop_QSub16Ux8:  op = Pav_SUBUS;  goto do_AvBin16x8;
+      case Iop_QSub16Sx8:  op = Pav_SUBSS;  goto do_AvBin16x8;
+      case Iop_Avg16Ux8:   op = Pav_AVGU;   goto do_AvBin16x8;
+      case Iop_Avg16Sx8:   op = Pav_AVGS;   goto do_AvBin16x8;
+      case Iop_Max16Ux8:   op = Pav_MAXU;   goto do_AvBin16x8;
+      case Iop_Max16Sx8:   op = Pav_MAXS;   goto do_AvBin16x8;
+      case Iop_Min16Ux8:   op = Pav_MINU;   goto do_AvBin16x8;
+      case Iop_Min16Sx8:   op = Pav_MINS;   goto do_AvBin16x8;
+      case Iop_MulLo16Ux8: op = Pav_OMULU;  goto do_AvBin16x8;
+      case Iop_MulLo16Sx8: op = Pav_OMULS;  goto do_AvBin16x8;
+      case Iop_MulHi16Ux8: op = Pav_EMULU;  goto do_AvBin16x8;
+      case Iop_MulHi16Sx8: op = Pav_EMULS;  goto do_AvBin16x8;
+      do_AvBin16x8: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPC32Instr_AvBin16x8(op, dst, arg1, arg2));
+         return dst;
+      }
+
+      case Iop_Add32x4:    op = Pav_ADDUM;  goto do_AvBin32x4;
+      case Iop_QAdd32Ux4:  op = Pav_ADDUS;  goto do_AvBin32x4;
+      case Iop_QAdd32Sx4:  op = Pav_ADDSS;  goto do_AvBin32x4;
+      case Iop_Sub32x4:    op = Pav_SUBUM;  goto do_AvBin32x4;
+      case Iop_QSub32Ux4:  op = Pav_SUBUS;  goto do_AvBin32x4;
+      case Iop_QSub32Sx4:  op = Pav_SUBSS;  goto do_AvBin32x4;
+      case Iop_Avg32Ux4:   op = Pav_AVGU;   goto do_AvBin32x4;
+      case Iop_Avg32Sx4:   op = Pav_AVGS;   goto do_AvBin32x4;
+      case Iop_Max32Ux4:   op = Pav_MAXU;   goto do_AvBin32x4;
+      case Iop_Max32Sx4:   op = Pav_MAXS;   goto do_AvBin32x4;
+      case Iop_Min32Ux4:   op = Pav_MINU;   goto do_AvBin32x4;
+      case Iop_Min32Sx4:   op = Pav_MINS;   goto do_AvBin32x4;
       case Iop_CmpGT32Ux4: op = Pav_CMPGTU; goto do_AvBin32x4;
+      case Iop_MulLo32Ux4: op = Pav_OMULU;  goto do_AvBin32x4;
+      case Iop_MulLo32Sx4: op = Pav_OMULS;  goto do_AvBin32x4;
+      case Iop_MulHi32Ux4: op = Pav_EMULU;  goto do_AvBin32x4;
+      case Iop_MulHi32Sx4: op = Pav_EMULS;  goto do_AvBin32x4;
       do_AvBin32x4: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
@@ -3393,24 +3442,6 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, PPC32Instr_AvBinary(op, dst, r_src, v_shft));
          return dst;
       }
-
-//..       do_SseShift: {
-//..          HReg      greg = iselVecExpr(env, e->Iex.Binop.arg1);
-//..          X86RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-//..          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
-//..          HReg      ereg = newVRegV(env);
-//..          HReg      dst  = newVRegV(env);
-//..          REQUIRE_SSE2;
-//..          addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
-//..          addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
-//..          addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
-//..          addInstr(env, X86Instr_Push(rmi));
-//..          addInstr(env, X86Instr_SseLdSt(True/*load*/, ereg, esp0));
-//..          addInstr(env, mk_vMOVsd_RR(greg, dst));
-//..          addInstr(env, X86Instr_SseReRg(op, ereg, dst));
-//..          add_to_esp(env, 16);
-//..          return dst;
-//..       }
 
       default:
          break;

@@ -3127,10 +3127,10 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return dst;
 //..       }
 
-      case Iop_Dup32x4: {
-         HReg dst = mk_AvDuplicateRI(env, e->Iex.Binop.arg1);
-         return dst;
-      }
+      case Iop_Dup8x16:
+      case Iop_Dup16x8:
+      case Iop_Dup32x4:
+         return mk_AvDuplicateRI(env, e->Iex.Binop.arg1);
 
       default:
          break;
@@ -3332,6 +3332,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_QSub8Ux16:  op = Xsse_QSUB8U;   goto do_SseReRg;
 //..       case Iop_QSub16Ux8:  op = Xsse_QSUB16U;  goto do_SseReRg;
 
+      case Iop_InterleaveHI8x16: op = Pav_MRGHI;  goto do_AvBin8x16;
+      case Iop_InterleaveLO8x16: op = Pav_MRGLO;  goto do_AvBin8x16;
       case Iop_Add8x16:    op = Pav_ADDUM;  goto do_AvBin8x16;
       case Iop_QAdd8Ux16:  op = Pav_ADDUS;  goto do_AvBin8x16;
       case Iop_QAdd8Sx16:  op = Pav_ADDSS;  goto do_AvBin8x16;
@@ -3355,6 +3357,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_InterleaveHI16x8: op = Pav_MRGHI;  goto do_AvBin16x8;
+      case Iop_InterleaveLO16x8: op = Pav_MRGLO;  goto do_AvBin16x8;
       case Iop_Add16x8:    op = Pav_ADDUM;  goto do_AvBin16x8;
       case Iop_QAdd16Ux8:  op = Pav_ADDUS;  goto do_AvBin16x8;
       case Iop_QAdd16Sx8:  op = Pav_ADDSS;  goto do_AvBin16x8;
@@ -3382,6 +3386,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_InterleaveHI32x4: op = Pav_MRGHI;  goto do_AvBin32x4;
+      case Iop_InterleaveLO32x4: op = Pav_MRGLO;  goto do_AvBin32x4;
       case Iop_Add32x4:    op = Pav_ADDUM;  goto do_AvBin32x4;
       case Iop_QAdd32Ux4:  op = Pav_ADDUS;  goto do_AvBin32x4;
       case Iop_QAdd32Sx4:  op = Pav_ADDSS;  goto do_AvBin32x4;
@@ -3433,9 +3439,19 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_ShrN16x8: op = Xsse_SHR16; goto do_SseShift;
 //..       case Iop_ShrN64x2: op = Xsse_SHR64; goto do_SseShift;
 
+      case Iop_ShlN8x16: op = Pav_SHL; goto do_AvShift8x16;
+      case Iop_SarN8x16: op = Pav_SAR; goto do_AvShift8x16;
+      do_AvShift8x16: {
+         HReg r_src  = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg dst    = newVRegV(env);
+         HReg v_shft = mk_AvDuplicateRI(env, e->Iex.Binop.arg2);
+         addInstr(env, PPC32Instr_AvBin8x16(op, dst, r_src, v_shft));
+         return dst;
+      }
+
       case Iop_ShrN32x4: op = Pav_SHR; goto do_AvShift32x4;
       do_AvShift32x4: {
-         HReg     r_src   = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg r_src  = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg dst    = newVRegV(env);
          HReg v_shft = mk_AvDuplicateRI(env, e->Iex.Binop.arg2);
          addInstr(env, PPC32Instr_AvBin32x4(op, dst, r_src, v_shft));
@@ -3443,11 +3459,21 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       case Iop_ShrV128: op = Pav_SHR; goto do_AvShiftV128;
+      case Iop_ShlV128: op = Pav_SHL; goto do_AvShiftV128;
       do_AvShiftV128: {
          HReg dst    = newVRegV(env);
          HReg r_src  = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg v_shft = mk_AvDuplicateRI(env, e->Iex.Binop.arg2);
+         /* Note: shift value gets masked by 127 */
          addInstr(env, PPC32Instr_AvBinary(op, dst, r_src, v_shft));
+         return dst;
+      }
+
+      case Iop_Perm: {
+         HReg dst   = newVRegV(env);
+         HReg v_src = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg v_ctl = iselVecExpr(env, e->Iex.Binop.arg2);
+         addInstr(env, PPC32Instr_AvPerm(dst, v_src, v_src, v_ctl));
          return dst;
       }
 

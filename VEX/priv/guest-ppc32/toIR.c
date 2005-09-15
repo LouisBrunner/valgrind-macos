@@ -335,12 +335,10 @@ static UChar extend_s_5to8 ( UChar x )
    return toUChar((((Int)x) << 27) >> 27);
 }
 
-//zz #if 0
-//zz static UInt extend_s_8to32( UInt x )
-//zz {
-//zz    return (UInt)((((Int)x) << 24) >> 24);
-//zz }
-//zz #endif
+static UInt extend_s_8to32( UChar x )
+{
+   return (UInt)((((Int)x) << 24) >> 24);
+}
 
 static UInt extend_s_16to32 ( UInt x )
 {
@@ -404,6 +402,11 @@ static IRExpr* mkexpr ( IRTemp tmp )
 static IRExpr* mkU8 ( UChar i )
 {
    return IRExpr_Const(IRConst_U8(i));
+}
+
+static IRExpr* mkU16 ( UInt i )
+{
+   return IRExpr_Const(IRConst_U16(i));
 }
 
 static IRExpr* mkU32 ( UInt i )
@@ -5774,19 +5777,40 @@ static Bool dis_av_permute ( UInt theInstr )
          binop(Iop_AndV128, mkexpr(vB), mkexpr(vC))) );
       return True;
      
-   case 0x2B: // vperm (Permute, AV p218)
-      DIP("vperm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      DIP(" => not implemented\n");
-      return False;
-
+   case 0x2B: { // vperm (Permute, AV p218)
+      DIP("vperma v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      /* limited to two args for IR, so have to play games... */
+      IRTemp a_perm = newTemp(Ity_V128);
+      IRTemp b_perm = newTemp(Ity_V128);
+      IRTemp mask = newTemp(Ity_V128);
+      assign( a_perm, binop(Iop_Perm, mkexpr(vA), mkexpr(vC)) );
+      assign( b_perm, binop(Iop_Perm, mkexpr(vB), mkexpr(vC)) );
+      // mask[i8] = (vC[i8]_4 == 1) ? 0xFF : 0x0
+      assign( mask, binop(Iop_SarN8x16,
+                          binop(Iop_ShlN8x16, mkexpr(vC), mkU8(3)),
+                          mkU8(7)) );
+      // dst = (a & ~mask) | (b & mask)
+      putVReg( vD_addr, binop(Iop_OrV128,
+                              binop(Iop_AndV128, mkexpr(a_perm),
+                                    unop(Iop_NotV128, mkexpr(mask))),
+                              binop(Iop_AndV128, mkexpr(b_perm),
+                                    mkexpr(mask))) );
+      return True;
+   }
    case 0x2C: // vsldoi (Shift Left Double by Octet Imm, AV p241)
       if (b10 != 0) {
          vex_printf("dis_av_permute(PPC32)(vsldoi)\n");
          return False;
       }
       DIP("vsldoi v%d,v%d,v%d,%d\n", vD_addr, vA_addr, vB_addr, SHB_uimm4);
-      DIP(" => not implemented\n");
-      return False;
+      if (SHB_uimm4 == 0)
+         putVReg( vD_addr, mkexpr(vA) );
+      else
+         putVReg( vD_addr,
+                  binop(Iop_OrV128,
+                        binop(Iop_ShlV128, mkexpr(vA), mkU8(SHB_uimm4*8)),
+                        binop(Iop_ShrV128, mkexpr(vB), mkU8((16-SHB_uimm4)*8))) );
+      return True;
 
    default:
      break; // Fall through...
@@ -5798,49 +5822,63 @@ static Bool dis_av_permute ( UInt theInstr )
    /* Merge */
    case 0x00C: // vmrghb (Merge High B, AV p195)
       DIP("vmrghb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr,
+               binop(Iop_InterleaveHI8x16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x04C: // vmrghh (Merge High HW, AV p196)
       DIP("vmrghh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr,
+               binop(Iop_InterleaveHI16x8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x08C: // vmrghw (Merge High W, AV p197)
       DIP("vmrghw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr,
+               binop(Iop_InterleaveHI32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x10C: // vmrglb (Merge Low B, AV p198)
       DIP("vmrglb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr,
+               binop(Iop_InterleaveLO8x16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x14C: // vmrglh (Merge Low HW, AV p199)
       DIP("vmrglh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr,
+               binop(Iop_InterleaveLO16x8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x18C: // vmrglw (Merge Low W, AV p200)
       DIP("vmrglw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr,
+               binop(Iop_InterleaveLO32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
+
 
    /* Splat */
-   case 0x20C: // vspltb (Splat Byte, AV p245)
+   case 0x20C: { // vspltb (Splat Byte, AV p245)
       DIP("vspltb v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-      DIP(" => not implemented\n");
-      return False;
-
-   case 0x24C: // vsplth (Splat Half Word, AV p246)
+      /* vD = Dup8x16( vB[UIMM_5] ) */
+      UChar sh_uimm = (15-UIMM_5)*8;
+      putVReg( vD_addr, unop(Iop_Dup8x16,
+           unop(Iop_32to8, unop(Iop_V128to32, 
+                binop(Iop_ShrV128, mkexpr(vB), mkU8(sh_uimm))))) );
+      break;
+   }
+   case 0x24C: { // vsplth (Splat Half Word, AV p246)
       DIP("vsplth v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-      DIP(" => not implemented\n");
-      return False;
-
+      UChar sh_uimm = (7-UIMM_5)*16;
+      putVReg( vD_addr, unop(Iop_Dup16x8,
+           unop(Iop_32to16, unop(Iop_V128to32, 
+                binop(Iop_ShrV128, mkexpr(vB), mkU8(sh_uimm))))) );
+      break;
+   }
    case 0x28C: { // vspltw (Splat Word, AV p250)
       DIP("vspltw v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       /* vD = Dup32x4( vB[UIMM_5] ) */
-      unsigned int sh_uimm = (3-UIMM_5)*32;
+      UChar sh_uimm = (3-UIMM_5)*32;
       putVReg( vD_addr, unop(Iop_Dup32x4,
          unop(Iop_V128to32,
               binop(Iop_ShrV128, mkexpr(vB), mkU8(sh_uimm)))) );
@@ -5848,18 +5886,18 @@ static Bool dis_av_permute ( UInt theInstr )
    }
    case 0x30C: // vspltisb (Splat Immediate Signed B, AV p247)
       DIP("vspltisb v%d,%d\n", vD_addr, (Char)SIMM_8);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_Dup8x16, mkU8(SIMM_8)) );
+      break;
 
    case 0x34C: // vspltish (Splat Immediate Signed HW, AV p248)
       DIP("vspltish v%d,%d\n", vD_addr, (Char)SIMM_8);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_Dup16x8, mkU16(extend_s_8to32(SIMM_8))) );
+      break;
 
    case 0x38C: // vspltisw (Splat Immediate Signed W, AV p249)
       DIP("vspltisw v%d,%d\n", vD_addr, (Char)SIMM_8);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_Dup32x4, mkU32(extend_s_8to32(SIMM_8))) );
+      break;
 
    default:
       vex_printf("dis_av_permute(PPC32)(opc2)\n");
@@ -6614,12 +6652,8 @@ DisResult disInstr_PPC32_WRK (
       /* AV Permutations */
       case 0x2A:                       // vsel
       case 0x2B:                       // vperm
-         if (dis_av_permute( theInstr )) goto decode_success;
-         goto decode_failure;
-
-      /* AV Shift */
       case 0x2C:                       // vsldoi
-         if (dis_av_shift( theInstr )) goto decode_success;
+         if (dis_av_permute( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Floating Point Mult-Add/Sub */

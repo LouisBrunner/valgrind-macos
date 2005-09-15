@@ -670,16 +670,16 @@ typedef
          } AvBin32Fx4;
          /* Perm,Sel,SlDbl,Splat are all weird AV permutations */
          struct {
-            HReg ctl;
             HReg dst;
             HReg srcL;
             HReg srcR;
+            HReg ctl;
          } AvPerm;
          struct {
-            HReg ctl;
             HReg dst;
             HReg srcL;
             HReg srcR;
+            HReg ctl;
          } AvSel;
          struct {
             UChar shift;
@@ -742,7 +742,7 @@ extern PPC32Instr* PPC32Instr_AvBin8x16  ( PPC32AvOp op, HReg dst, HReg srcL, HR
 extern PPC32Instr* PPC32Instr_AvBin16x8  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvBin32x4  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvPerm     ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvPerm     ( HReg dst, HReg srcL, HReg srcR, HReg ctl );
 extern PPC32Instr* PPC32Instr_AvSel      ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvSplat    ( UChar sz, HReg dst, PPC32VI5s* src );

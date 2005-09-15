@@ -973,13 +973,13 @@ PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR
    i->Pin.AvBin32Fx4.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AvPerm ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
+PPC32Instr* PPC32Instr_AvPerm ( HReg dst, HReg srcL, HReg srcR, HReg ctl ) {
    PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag             = Pin_AvPerm;
-   i->Pin.AvPerm.ctl  = ctl;
    i->Pin.AvPerm.dst  = dst;
    i->Pin.AvPerm.srcL = srcL;
    i->Pin.AvPerm.srcR = srcR;
+   i->Pin.AvPerm.ctl  = ctl;
    return i;
 }
 PPC32Instr* PPC32Instr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
@@ -1636,9 +1636,9 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       return;
    case Pin_AvPerm:
       addHRegUse(u, HRmWrite, i->Pin.AvPerm.dst);
-      addHRegUse(u, HRmRead,  i->Pin.AvPerm.ctl);
       addHRegUse(u, HRmRead,  i->Pin.AvPerm.srcL);
       addHRegUse(u, HRmRead,  i->Pin.AvPerm.srcR);
+      addHRegUse(u, HRmRead,  i->Pin.AvPerm.ctl);
       return;
    case Pin_AvSel:
       addHRegUse(u, HRmWrite, i->Pin.AvSel.dst);
@@ -3088,10 +3088,10 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    }
 
    case Pin_AvPerm: {  // vperm
-      UInt v_ctl  = vregNo(i->Pin.AvPerm.ctl);
       UInt v_dst  = vregNo(i->Pin.AvPerm.dst);
       UInt v_srcL = vregNo(i->Pin.AvPerm.srcL);
       UInt v_srcR = vregNo(i->Pin.AvPerm.srcR);
+      UInt v_ctl  = vregNo(i->Pin.AvPerm.ctl);
       p = mkFormVA( p, 4, v_dst, v_srcL, v_srcR, v_ctl, 43 );
       goto done;
    }

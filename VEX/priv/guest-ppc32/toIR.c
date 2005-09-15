@@ -1154,6 +1154,50 @@ static IRExpr* /* :: Ity_I32 */ get_XER_CA ( void )
 
 
 
+/* Set the CR6 flags following an AltiVec compare operation. */
+static void set_AV_CR6 ( IRExpr* result )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,result) == Ity_V128);
+
+   /* CR6[0:3] = {all_ones, 0, all_zeros, 0}
+      all_ones  = (v[0] && v[1] && v[2] && v[3])
+      all_zeros = ~(v[0] || v[1] || v[2] || v[3])
+   */
+   IRTemp v0 = newTemp(Ity_V128);
+   IRTemp v1 = newTemp(Ity_V128);
+   IRTemp v2 = newTemp(Ity_V128);
+   IRTemp v3 = newTemp(Ity_V128);
+   IRTemp rOnes  = newTemp(Ity_I8);
+   IRTemp rZeros = newTemp(Ity_I8);
+   assign( v0, result );
+   assign( v1, binop(Iop_ShrV128, result, mkU8(32)) );
+   assign( v2, binop(Iop_ShrV128, result, mkU8(64)) );
+   assign( v3, binop(Iop_ShrV128, result, mkU8(96)) );
+
+   assign( rOnes, unop(Iop_1Uto8,
+      binop(Iop_CmpEQ32, mkU32(0xFFFFFFFF),
+            unop(Iop_V128to32,
+                 binop(Iop_AndV128,
+                       binop(Iop_AndV128, mkexpr(v0), mkexpr(v1)),
+                       binop(Iop_AndV128, mkexpr(v2), mkexpr(v3)))))) );
+
+   assign( rZeros, unop(Iop_1Uto8,
+       binop(Iop_CmpEQ32, mkU32(0xFFFFFFFF),
+             unop(Iop_Not32,
+                  unop(Iop_V128to32,
+                       binop(Iop_OrV128,
+                             binop(Iop_OrV128, mkexpr(v0), mkexpr(v1)),
+                             binop(Iop_OrV128, mkexpr(v2), mkexpr(v3))))
+                  ))) );
+
+   putCR321( 6, binop(Iop_Or8,
+                      binop(Iop_Shl8, mkexpr(rOnes),  mkU8(3)),
+                      binop(Iop_Shl8, mkexpr(rZeros), mkU8(1))) );
+   putCR0( 6, mkU8(0) );
+} 
+
+
+
 /*------------------------------------------------------------*/
 /*--- Abstract register interface                         --- */
 /*------------------------------------------------------------*/
@@ -5429,6 +5473,12 @@ static Bool dis_av_cmp ( UInt theInstr )
    UChar flag_Rc  = toUChar((theInstr >> 10) & 0x1);  /* theInstr[10]    */
    UInt  opc2     =         (theInstr >>  0) & 0x3FF; /* theInstr[0:9]   */
 
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+   IRTemp vD = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+
    if (opc1 != 0x4) {
       vex_printf("dis_av_cmp(PPC32)(instr)\n");
       return False;
@@ -5437,52 +5487,58 @@ static Bool dis_av_cmp ( UInt theInstr )
    switch (opc2) {
    case 0x006: // vcmpequb (Compare Equal-to Unsigned B, AV p160)
       DIP("vcmpequb%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpEQ8x16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x046: // vcmpequh (Compare Equal-to Unsigned HW, AV p161)
       DIP("vcmpequh%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpEQ16x8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x086: // vcmpequw (Compare Equal-to Unsigned W, AV p162)
       DIP("vcmpequw%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpEQ32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x206: // vcmpgtub (Compare Greater-than Unsigned B, AV p168)
       DIP("vcmpgtub%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpGT8Ux16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x246: // vcmpgtuh (Compare Greater-than Unsigned HW, AV p169)
       DIP("vcmpgtuh%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpGT16Ux8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x286: // vcmpgtuw (Compare Greater-than Unsigned W, AV p170)
       DIP("vcmpgtuw%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpGT32Ux4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x306: // vcmpgtsb (Compare Greater-than Signed B, AV p165)
       DIP("vcmpgtsb%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpGT8Sx16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x346: // vcmpgtsh (Compare Greater-than Signed HW, AV p166)
       DIP("vcmpgtsh%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpGT16Sx8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x386: // vcmpgtsw (Compare Greater-than Signed W, AV p167)
       DIP("vcmpgtsw%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpGT32Sx4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    default:
       vex_printf("dis_av_cmp(PPC32)(opc2)\n");
       return False;
+   }
+
+   putVReg( vD_addr, mkexpr(vD) );
+
+   if (flag_Rc) {
+      set_AV_CR6( mkexpr(vD) );
    }
    return True;
 }

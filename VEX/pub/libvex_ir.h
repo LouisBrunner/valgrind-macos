@@ -570,9 +570,9 @@ typedef
       Iop_CmpGT8Ux16, Iop_CmpGT16Ux8, Iop_CmpGT32Ux4,
 
       /* VECTOR x SCALAR SHIFT (shift amt :: Ity_I8) */
-      Iop_ShlN16x8, Iop_ShlN32x4, Iop_ShlN64x2,
-      Iop_ShrN16x8, Iop_ShrN32x4, Iop_ShrN64x2,
-      Iop_SarN16x8, Iop_SarN32x4,
+      Iop_ShlN8x16, Iop_ShlN16x8, Iop_ShlN32x4, Iop_ShlN64x2,
+      Iop_ShrN8x16, Iop_ShrN16x8, Iop_ShrN32x4, Iop_ShrN64x2,
+      Iop_SarN8x16, Iop_SarN16x8, Iop_SarN32x4,
 
       /* VECTOR x VECTOR SHIFT / ROTATE */
       Iop_Shl8x16, Iop_Shl16x8, Iop_Shl32x4,

@@ -781,9 +781,9 @@ static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e )
             addInstr(env, PPC32Instr_AvSplat(sz, v1, PPC32VI5s_Imm(-16)));
             addInstr(env, PPC32Instr_AvSplat(sz, v2, PPC32VI5s_Imm(simm6-16)));
             addInstr(env,
-               (sz== 8) ? PPC32Instr_AvBin8x16(Pav_SUBUM, dst, v2, v1) :
-               (sz==16) ? PPC32Instr_AvBin16x8(Pav_SUBUM, dst, v2, v1)
-                        : PPC32Instr_AvBin32x4(Pav_SUBUM, dst, v2, v1) );
+               (sz== 8) ? PPC32Instr_AvBin8x16(Pav_SUBU, dst, v2, v1) :
+               (sz==16) ? PPC32Instr_AvBin16x8(Pav_SUBU, dst, v2, v1)
+                        : PPC32Instr_AvBin32x4(Pav_SUBU, dst, v2, v1) );
             return dst;
          }
          if (simm6 < -16) {          /* -32:-17 inclusive */
@@ -792,9 +792,9 @@ static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e )
             addInstr(env, PPC32Instr_AvSplat(sz, v1, PPC32VI5s_Imm(-16)));
             addInstr(env, PPC32Instr_AvSplat(sz, v2, PPC32VI5s_Imm(simm6+16)));
             addInstr(env,
-               (sz== 8) ? PPC32Instr_AvBin8x16(Pav_ADDUM, dst, v2, v1) :
-               (sz==16) ? PPC32Instr_AvBin16x8(Pav_ADDUM, dst, v2, v1)
-                        : PPC32Instr_AvBin32x4(Pav_ADDUM, dst, v2, v1) );
+               (sz== 8) ? PPC32Instr_AvBin8x16(Pav_ADDU, dst, v2, v1) :
+               (sz==16) ? PPC32Instr_AvBin16x8(Pav_ADDU, dst, v2, v1)
+                        : PPC32Instr_AvBin32x4(Pav_ADDU, dst, v2, v1) );
             return dst;
          }
          /* simplest form:              -16:15 inclusive */
@@ -3294,12 +3294,12 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Rotl8x16:   op = Pav_ROTL;   goto do_AvBin8x16;
       case Iop_InterleaveHI8x16: op = Pav_MRGHI;  goto do_AvBin8x16;
       case Iop_InterleaveLO8x16: op = Pav_MRGLO;  goto do_AvBin8x16;
-      case Iop_Add8x16:    op = Pav_ADDUM;  goto do_AvBin8x16;
-      case Iop_QAdd8Ux16:  op = Pav_ADDUS;  goto do_AvBin8x16;
-      case Iop_QAdd8Sx16:  op = Pav_ADDSS;  goto do_AvBin8x16;
-      case Iop_Sub8x16:    op = Pav_SUBUM;  goto do_AvBin8x16;
-      case Iop_QSub8Ux16:  op = Pav_SUBUS;  goto do_AvBin8x16;
-      case Iop_QSub8Sx16:  op = Pav_SUBSS;  goto do_AvBin8x16;
+      case Iop_Add8x16:    op = Pav_ADDU;   goto do_AvBin8x16;
+      case Iop_QAdd8Ux16:  op = Pav_QADDU;  goto do_AvBin8x16;
+      case Iop_QAdd8Sx16:  op = Pav_QADDS;  goto do_AvBin8x16;
+      case Iop_Sub8x16:    op = Pav_SUBU;   goto do_AvBin8x16;
+      case Iop_QSub8Ux16:  op = Pav_QSUBU;  goto do_AvBin8x16;
+      case Iop_QSub8Sx16:  op = Pav_QSUBS;  goto do_AvBin8x16;
       case Iop_Avg8Ux16:   op = Pav_AVGU;   goto do_AvBin8x16;
       case Iop_Avg8Sx16:   op = Pav_AVGS;   goto do_AvBin8x16;
       case Iop_Max8Ux16:   op = Pav_MAXU;   goto do_AvBin8x16;
@@ -3321,17 +3321,17 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Shr16x8:    op = Pav_SHR;    goto do_AvBin16x8;
       case Iop_Sar16x8:    op = Pav_SAR;    goto do_AvBin16x8;
       case Iop_Rotl16x8:   op = Pav_ROTL;   goto do_AvBin16x8;
-      case Iop_Narrow16Ux8:      op = Pav_PACKUUM; goto do_AvBin16x8;
-      case Iop_QNarrow16Ux8:     op = Pav_PACKUUS; goto do_AvBin16x8;
-      case Iop_QNarrow16Sx8:     op = Pav_PACKSSS; goto do_AvBin16x8;
+      case Iop_Narrow16Ux8:      op = Pav_PACKUU;  goto do_AvBin16x8;
+      case Iop_QNarrow16Ux8:     op = Pav_QPACKUU; goto do_AvBin16x8;
+      case Iop_QNarrow16Sx8:     op = Pav_QPACKSS; goto do_AvBin16x8;
       case Iop_InterleaveHI16x8: op = Pav_MRGHI;  goto do_AvBin16x8;
       case Iop_InterleaveLO16x8: op = Pav_MRGLO;  goto do_AvBin16x8;
-      case Iop_Add16x8:    op = Pav_ADDUM;  goto do_AvBin16x8;
-      case Iop_QAdd16Ux8:  op = Pav_ADDUS;  goto do_AvBin16x8;
-      case Iop_QAdd16Sx8:  op = Pav_ADDSS;  goto do_AvBin16x8;
-      case Iop_Sub16x8:    op = Pav_SUBUM;  goto do_AvBin16x8;
-      case Iop_QSub16Ux8:  op = Pav_SUBUS;  goto do_AvBin16x8;
-      case Iop_QSub16Sx8:  op = Pav_SUBSS;  goto do_AvBin16x8;
+      case Iop_Add16x8:    op = Pav_ADDU;   goto do_AvBin16x8;
+      case Iop_QAdd16Ux8:  op = Pav_QADDU;  goto do_AvBin16x8;
+      case Iop_QAdd16Sx8:  op = Pav_QADDS;  goto do_AvBin16x8;
+      case Iop_Sub16x8:    op = Pav_SUBU;   goto do_AvBin16x8;
+      case Iop_QSub16Ux8:  op = Pav_QSUBU;  goto do_AvBin16x8;
+      case Iop_QSub16Sx8:  op = Pav_QSUBS;  goto do_AvBin16x8;
       case Iop_Avg16Ux8:   op = Pav_AVGU;   goto do_AvBin16x8;
       case Iop_Avg16Sx8:   op = Pav_AVGS;   goto do_AvBin16x8;
       case Iop_Max16Ux8:   op = Pav_MAXU;   goto do_AvBin16x8;
@@ -3357,17 +3357,17 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Shr32x4:    op = Pav_SHR;    goto do_AvBin32x4;
       case Iop_Sar32x4:    op = Pav_SAR;    goto do_AvBin32x4;
       case Iop_Rotl32x4:   op = Pav_ROTL;   goto do_AvBin32x4;
-      case Iop_Narrow32Ux4:      op = Pav_PACKUUM; goto do_AvBin32x4;
-      case Iop_QNarrow32Ux4:     op = Pav_PACKUUS; goto do_AvBin32x4;
-      case Iop_QNarrow32Sx4:     op = Pav_PACKSSS; goto do_AvBin32x4;
+      case Iop_Narrow32Ux4:      op = Pav_PACKUU;  goto do_AvBin32x4;
+      case Iop_QNarrow32Ux4:     op = Pav_QPACKUU; goto do_AvBin32x4;
+      case Iop_QNarrow32Sx4:     op = Pav_QPACKSS; goto do_AvBin32x4;
       case Iop_InterleaveHI32x4: op = Pav_MRGHI;  goto do_AvBin32x4;
       case Iop_InterleaveLO32x4: op = Pav_MRGLO;  goto do_AvBin32x4;
-      case Iop_Add32x4:    op = Pav_ADDUM;  goto do_AvBin32x4;
-      case Iop_QAdd32Ux4:  op = Pav_ADDUS;  goto do_AvBin32x4;
-      case Iop_QAdd32Sx4:  op = Pav_ADDSS;  goto do_AvBin32x4;
-      case Iop_Sub32x4:    op = Pav_SUBUM;  goto do_AvBin32x4;
-      case Iop_QSub32Ux4:  op = Pav_SUBUS;  goto do_AvBin32x4;
-      case Iop_QSub32Sx4:  op = Pav_SUBSS;  goto do_AvBin32x4;
+      case Iop_Add32x4:    op = Pav_ADDU;   goto do_AvBin32x4;
+      case Iop_QAdd32Ux4:  op = Pav_QADDU;  goto do_AvBin32x4;
+      case Iop_QAdd32Sx4:  op = Pav_QADDS;  goto do_AvBin32x4;
+      case Iop_Sub32x4:    op = Pav_SUBU;   goto do_AvBin32x4;
+      case Iop_QSub32Ux4:  op = Pav_QSUBU;  goto do_AvBin32x4;
+      case Iop_QSub32Sx4:  op = Pav_QSUBS;  goto do_AvBin32x4;
       case Iop_Avg32Ux4:   op = Pav_AVGU;   goto do_AvBin32x4;
       case Iop_Avg32Sx4:   op = Pav_AVGS;   goto do_AvBin32x4;
       case Iop_Max32Ux4:   op = Pav_MAXU;   goto do_AvBin32x4;

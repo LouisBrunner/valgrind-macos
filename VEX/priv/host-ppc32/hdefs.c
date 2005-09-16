@@ -645,13 +645,13 @@ HChar* showPPC32AvOp ( PPC32AvOp op ) {
    case Pav_UNPCKLPIX: return "vupklpx";
 
    /* Integer binary */
-   case Pav_ADDUM:     return "vaddu_m";  // b,h,w
-   case Pav_ADDUS:     return "vaddu_s";  // b,h,w
-   case Pav_ADDSS:     return "vadds_s";  // b,h,w
+   case Pav_ADDU:      return "vaddu_m";  // b,h,w
+   case Pav_QADDU:     return "vaddu_s";  // b,h,w
+   case Pav_QADDS:     return "vadds_s";  // b,h,w
      
-   case Pav_SUBUM:     return "vsubu_m";  // b,h,w
-   case Pav_SUBUS:     return "vsubu_s";  // b,h,w
-   case Pav_SUBSS:     return "vsubs_s";  // b,h,w
+   case Pav_SUBU:      return "vsubu_m";  // b,h,w
+   case Pav_QSUBU:     return "vsubu_s";  // b,h,w
+   case Pav_QSUBS:     return "vsubs_s";  // b,h,w
      
    case Pav_OMULU:     return "vmulou";   // b,h
    case Pav_OMULS:     return "vmulos";   // b,h
@@ -679,16 +679,15 @@ HChar* showPPC32AvOp ( PPC32AvOp op ) {
    case Pav_ROTL:      return "vrl";      // b,h,w
 
    /* Pack */
-   case Pav_PACKUUM:   return "vpku_um";  // h,w
-   case Pav_PACKUUS:   return "vpku_us";  // h,w
-   case Pav_PACKSUS:   return "vpks_us";  // h,w
-   case Pav_PACKSSS:   return "vpks_ss";  // h,w
+   case Pav_PACKUU:    return "vpku_um";  // h,w
+   case Pav_QPACKUU:   return "vpku_us";  // h,w
+   case Pav_QPACKSU:   return "vpks_us";  // h,w
+   case Pav_QPACKSS:   return "vpks_ss";  // h,w
    case Pav_PACKPXL:   return "vpkpx";
 
    /* Merge */
    case Pav_MRGHI:     return "vmrgh";    // b,h,w
    case Pav_MRGLO:     return "vmrgl";    // b,h,w
-
 
    /* Floating Point Binary */
    case Pav_ADDF:      return "vaddfp";
@@ -2894,13 +2893,13 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt opc2;
       switch (i->Pin.AvBin8x16.op) {
 
-      case Pav_ADDUM:    opc2 =    0; break; // vaddubm
-      case Pav_ADDUS:    opc2 =  512; break; // vaddubs
-      case Pav_ADDSS:    opc2 =  768; break; // vaddsbs
+      case Pav_ADDU:     opc2 =    0; break; // vaddubm
+      case Pav_QADDU:    opc2 =  512; break; // vaddubs
+      case Pav_QADDS:    opc2 =  768; break; // vaddsbs
 
-      case Pav_SUBUM:    opc2 = 1024; break; // vsububm
-      case Pav_SUBUS:    opc2 = 1536; break; // vsububs
-      case Pav_SUBSS:    opc2 = 1792; break; // vsubsbs
+      case Pav_SUBU:     opc2 = 1024; break; // vsububm
+      case Pav_QSUBU:    opc2 = 1536; break; // vsububs
+      case Pav_QSUBS:    opc2 = 1792; break; // vsubsbs
 
       case Pav_AVGU:     opc2 = 1026; break; // vavgub
       case Pav_AVGS:     opc2 = 1282; break; // vavgsb
@@ -2935,18 +2934,18 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt opc2;
       switch (i->Pin.AvBin16x8.op) {
 
-      case Pav_ADDUM:   opc2 =   64; break; // vadduhm
-      case Pav_ADDUS:   opc2 =  576; break; // vadduhs
-      case Pav_ADDSS:   opc2 =  832; break; // vaddshs
+      case Pav_ADDU:    opc2 =   64; break; // vadduhm
+      case Pav_QADDU:   opc2 =  576; break; // vadduhs
+      case Pav_QADDS:   opc2 =  832; break; // vaddshs
 
-      case Pav_SUBUM:   opc2 = 1088; break; // vsubuhm
-      case Pav_SUBUS:   opc2 = 1600; break; // vsubuhs
-      case Pav_SUBSS:   opc2 = 1856; break; // vsubshs
+      case Pav_SUBU:    opc2 = 1088; break; // vsubuhm
+      case Pav_QSUBU:   opc2 = 1600; break; // vsubuhs
+      case Pav_QSUBS:   opc2 = 1856; break; // vsubshs
 
-      case Pav_OMULU:    opc2 =    8; break; // vmuloub
-      case Pav_OMULS:    opc2 =  264; break; // vmulosb
-      case Pav_EMULU:    opc2 =  520; break; // vmuleub
-      case Pav_EMULS:    opc2 =  776; break; // vmulesb
+      case Pav_OMULU:   opc2 =    8; break; // vmuloub
+      case Pav_OMULS:   opc2 =  264; break; // vmulosb
+      case Pav_EMULU:   opc2 =  520; break; // vmuleub
+      case Pav_EMULS:   opc2 =  776; break; // vmulesb
 
       case Pav_AVGU:    opc2 = 1090; break; // vavguh
       case Pav_AVGS:    opc2 = 1346; break; // vavgsh
@@ -2964,11 +2963,11 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       case Pav_SAR:     opc2 =  836; break; // vsrah
       case Pav_ROTL:    opc2 =   68; break; // vrlh
 
-      case Pav_PACKUUM: opc2 =   14; break; // vpkuhum
-      case Pav_PACKUUS: opc2 =  142; break; // vpkuhus
-      case Pav_PACKSUS: opc2 =  270; break; // vpkshus
-      case Pav_PACKSSS: opc2 =  398; break; // vpkshss
-      case Pav_PACKPXL:   opc2 =  782; break; // vpkpx
+      case Pav_PACKUU:  opc2 =   14; break; // vpkuhum
+      case Pav_QPACKUU: opc2 =  142; break; // vpkuhus
+      case Pav_QPACKSU: opc2 =  270; break; // vpkshus
+      case Pav_QPACKSS: opc2 =  398; break; // vpkshss
+      case Pav_PACKPXL: opc2 =  782; break; // vpkpx
 
       case Pav_MRGHI:   opc2 =   76; break; // vmrghh
       case Pav_MRGLO:   opc2 =  332; break; // vmrglh
@@ -2987,13 +2986,13 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt opc2;
       switch (i->Pin.AvBin32x4.op) {
 
-      case Pav_ADDUM:   opc2 =  128; break; // vadduwm
-      case Pav_ADDUS:   opc2 =  640; break; // vadduws
-      case Pav_ADDSS:   opc2 =  896; break; // vaddsws
+      case Pav_ADDU:    opc2 =  128; break; // vadduwm
+      case Pav_QADDU:   opc2 =  640; break; // vadduws
+      case Pav_QADDS:   opc2 =  896; break; // vaddsws
 
-      case Pav_SUBUM:   opc2 = 1152; break; // vsubuwm
-      case Pav_SUBUS:   opc2 = 1664; break; // vsubuws
-      case Pav_SUBSS:   opc2 = 1920; break; // vsubsws
+      case Pav_SUBU:    opc2 = 1152; break; // vsubuwm
+      case Pav_QSUBU:   opc2 = 1664; break; // vsubuws
+      case Pav_QSUBS:   opc2 = 1920; break; // vsubsws
 
       case Pav_OMULU:   opc2 =   72; break; // vmulouh
       case Pav_OMULS:   opc2 =  328; break; // vmulosh
@@ -3018,10 +3017,10 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       case Pav_SAR:     opc2 =  900; break; // vsraw
       case Pav_ROTL:    opc2 =  132; break; // vrlw
 
-      case Pav_PACKUUM: opc2 =   78; break; // vpkuwum
-      case Pav_PACKUUS: opc2 =  206; break; // vpkuwus
-      case Pav_PACKSUS: opc2 =  334; break; // vpkswus
-      case Pav_PACKSSS: opc2 =  462; break; // vpkswss
+      case Pav_PACKUU:  opc2 =   78; break; // vpkuwum
+      case Pav_QPACKUU: opc2 =  206; break; // vpkuwus
+      case Pav_QPACKSU: opc2 =  334; break; // vpkswus
+      case Pav_QPACKSS: opc2 =  462; break; // vpkswss
 
       case Pav_MRGHI:   opc2 =  140; break; // vmrghw
       case Pav_MRGLO:   opc2 =  396; break; // vmrglw

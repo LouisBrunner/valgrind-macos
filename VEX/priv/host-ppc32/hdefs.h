@@ -378,9 +378,9 @@ typedef
       /* Integer Binary */
       Pav_AND, Pav_OR, Pav_XOR,   /* Bitwise */
 
-      Pav_ADDUM, Pav_ADDUS,Pav_ADDSS,
+      Pav_ADDU, Pav_QADDU, Pav_QADDS,
 
-      Pav_SUBUM, Pav_SUBUS, Pav_SUBSS,
+      Pav_SUBU, Pav_QSUBU, Pav_QSUBS,
 
       Pav_OMULU, Pav_OMULS, Pav_EMULU, Pav_EMULS,
 
@@ -395,7 +395,7 @@ typedef
       Pav_SHL, Pav_SHR, Pav_SAR, Pav_ROTL,
 
       /* Pack */
-      Pav_PACKUUM, Pav_PACKUUS, Pav_PACKSUS, Pav_PACKSSS,
+      Pav_PACKUU, Pav_QPACKUU, Pav_QPACKSU, Pav_QPACKSS,
       Pav_PACKPXL,
 
       /* Merge */

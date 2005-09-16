@@ -5917,6 +5917,11 @@ static Bool dis_av_pack ( UInt theInstr )
    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
    UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
 
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+
    if (opc1 != 0x4) {
       vex_printf("dis_av_pack(PPC32)(instr)\n");
       return False;
@@ -5926,48 +5931,118 @@ static Bool dis_av_pack ( UInt theInstr )
    /* Packing */
    case 0x00E: // vpkuhum (Pack Unsigned HW Unsigned Modulo, AV p224)
       DIP("vpkuhum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Narrow16Ux8, mkexpr(vA), mkexpr(vB)) );
+      return True;
 
    case 0x04E: // vpkuwum (Pack Unsigned W Unsigned Modulo, AV p226)
       DIP("vpkuwum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Narrow32Ux4, mkexpr(vA), mkexpr(vB)) );
+      return True;
 
    case 0x08E: // vpkuhus (Pack Unsigned HW Unsigned Saturate, AV p225)
       DIP("vpkuhus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_QNarrow16Ux8, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      return True;
 
    case 0x0CE: // vpkuwus (Pack Unsigned W Unsigned Saturate, AV p227)
       DIP("vpkuwus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_QNarrow32Ux4, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      return True;
 
-   case 0x10E: // vpkshus (Pack Signed HW Unsigned Saturate, AV p221)
+   case 0x10E: { // vpkshus (Pack Signed HW Unsigned Saturate, AV p221)
       DIP("vpkshus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-   case 0x14E: // vpkswus (Pack Signed W Unsigned Saturate, AV p223)
+      // This insn does a signed->unsigned saturating conversion.
+      // Conversion done here, then uses unsigned->unsigned vpk insn:
+      //  => UnsignedSaturatingNarrow( x & ~ (x >>s 15) )
+      IRTemp vA_tmp = newTemp(Ity_V128);
+      IRTemp vB_tmp = newTemp(Ity_V128);
+      assign( vA_tmp, binop(Iop_AndV128, mkexpr(vA),
+                            unop(Iop_NotV128,
+                                 binop(Iop_SarN16x8,
+                                       mkexpr(vA), mkU8(15)))) );
+      assign( vB_tmp, binop(Iop_AndV128, mkexpr(vB),
+                            unop(Iop_NotV128,
+                                 binop(Iop_SarN16x8,
+                                       mkexpr(vB), mkU8(15)))) );
+      putVReg( vD_addr, binop(Iop_QNarrow16Ux8,
+                              mkexpr(vA_tmp), mkexpr(vB_tmp)) );
+      // TODO: set VSCR[SAT]
+      return True;
+   }
+   case 0x14E: { // vpkswus (Pack Signed W Unsigned Saturate, AV p223)
       DIP("vpkswus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
+      // This insn does a signed->unsigned saturating conversion.
+      // Conversion done here, then uses unsigned->unsigned vpk insn:
+      //  => UnsignedSaturatingNarrow( x & ~ (x >>s 31) )
+      IRTemp vA_tmp = newTemp(Ity_V128);
+      IRTemp vB_tmp = newTemp(Ity_V128);
+      assign( vA_tmp, binop(Iop_AndV128, mkexpr(vA),
+                            unop(Iop_NotV128,
+                                 binop(Iop_SarN32x4,
+                                       mkexpr(vA), mkU8(31)))) );
+      assign( vB_tmp, binop(Iop_AndV128, mkexpr(vB),
+                            unop(Iop_NotV128,
+                                 binop(Iop_SarN32x4,
+                                       mkexpr(vB), mkU8(31)))) );
+      putVReg( vD_addr, binop(Iop_QNarrow32Ux4,
+                              mkexpr(vA_tmp), mkexpr(vB_tmp)) );
+      // TODO: set VSCR[SAT]
+      return True;
+   }
    case 0x18E: // vpkshss (Pack Signed HW Signed Saturate, AV p220)
       DIP("vpkshss v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_QNarrow16Sx8, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      return True;
 
    case 0x1CE: // vpkswss (Pack Signed W Signed Saturate, AV p222)
       DIP("vpkswss v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_QNarrow32Sx4, mkexpr(vA), mkexpr(vB)) );
+      // TODO: set VSCR[SAT]
+      return True;
 
-   case 0x30E: // vpkpx (Pack Pixel, AV p219)
+   case 0x30E: { // vpkpx (Pack Pixel, AV p219)
       DIP("vpkpx v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      /* CAB: Worth a new primop? */
+      /* Using shifts to compact pixel elements, then packing them them */
+      IRTemp a1 = newTemp(Ity_V128);
+      IRTemp a2 = newTemp(Ity_V128);
+      IRTemp a3 = newTemp(Ity_V128);
+      IRTemp a_tmp = newTemp(Ity_V128);
+      IRTemp b1 = newTemp(Ity_V128);
+      IRTemp b2 = newTemp(Ity_V128);
+      IRTemp b3 = newTemp(Ity_V128);
+      IRTemp b_tmp = newTemp(Ity_V128);
+      assign( a1, binop(Iop_ShlN16x8,
+                        binop(Iop_ShrN32x4, mkexpr(vA), mkU8(19)),
+                        mkU8(10)) );
+      assign( a2, binop(Iop_ShlN16x8, 
+                        binop(Iop_ShrN16x8, mkexpr(vA), mkU8(11)),
+                        mkU8(5)) );
+      assign( a3,  binop(Iop_ShrN16x8, 
+                         binop(Iop_ShlN16x8, mkexpr(vA), mkU8(8)),
+                         mkU8(11)) );
+      assign( a_tmp, binop(Iop_OrV128, mkexpr(a1),
+                           binop(Iop_OrV128, mkexpr(a2), mkexpr(a3))) );
+
+      assign( b1, binop(Iop_ShlN16x8,
+                        binop(Iop_ShrN32x4, mkexpr(vB), mkU8(19)),
+                        mkU8(10)) );
+      assign( b2, binop(Iop_ShlN16x8, 
+                        binop(Iop_ShrN16x8, mkexpr(vB), mkU8(11)),
+                        mkU8(5)) );
+      assign( b3,  binop(Iop_ShrN16x8, 
+                         binop(Iop_ShlN16x8, mkexpr(vB), mkU8(8)),
+                         mkU8(11)) );
+      assign( b_tmp, binop(Iop_OrV128, mkexpr(b1),
+                           binop(Iop_OrV128, mkexpr(b2), mkexpr(b3))) );
+
+      putVReg( vD_addr, binop(Iop_Narrow32Ux4,
+                              mkexpr(a_tmp), mkexpr(b_tmp)) );
+      return True;
+   }
 
    default:
       break; // Fall through...
@@ -5979,38 +6054,102 @@ static Bool dis_av_pack ( UInt theInstr )
       return False;
    }
 
+
+   IRTemp signs = newTemp(Ity_V128);
+   IRTemp zeros = newTemp(Ity_V128);
+   assign( zeros, unop(Iop_Dup32x4, mkU32(0)) );
+
    switch (opc2) {
    /* Unpacking */
-   case 0x20E: // vupkhsb (Unpack High Signed B, AV p277)
+   case 0x20E: { // vupkhsb (Unpack High Signed B, AV p277)
       DIP("vupkhsb v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-   case 0x24E: // vupkhsh (Unpack High Signed HW, AV p278)
+      assign( signs, binop(Iop_CmpGT8Sx16, mkexpr(zeros), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_InterleaveHI8x16, mkexpr(signs), mkexpr(vB)) );
+      break;
+   }
+   case 0x24E: { // vupkhsh (Unpack High Signed HW, AV p278)
       DIP("vupkhsh v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-   case 0x28E: // vupklsb (Unpack Low Signed B, AV p280)
+      assign( signs, binop(Iop_CmpGT16Sx8, mkexpr(zeros), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_InterleaveHI16x8, mkexpr(signs), mkexpr(vB)) );
+      break;
+   }
+   case 0x28E: { // vupklsb (Unpack Low Signed B, AV p280)
       DIP("vupklsb v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-   case 0x2CE: // vupklsh (Unpack Low Signed HW, AV p281)
+      assign( signs, binop(Iop_CmpGT8Sx16, mkexpr(zeros), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_InterleaveLO8x16, mkexpr(signs), mkexpr(vB)) );
+      break;
+   }
+   case 0x2CE: { // vupklsh (Unpack Low Signed HW, AV p281)
       DIP("vupklsh v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-   case 0x34E: // vupkhpx (Unpack High Pixel16, AV p276)
+      assign( signs, binop(Iop_CmpGT16Sx8, mkexpr(zeros), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_InterleaveLO16x8, mkexpr(signs), mkexpr(vB)) );
+      break;
+   }
+   case 0x34E: { // vupkhpx (Unpack High Pixel16, AV p276)
       DIP("vupkhpx v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-   case 0x3CE: // vupklpx (Unpack Low Pixel16, AV p279)
+      /* CAB: Worth a new primop? */
+      /* Using shifts to isolate pixel elements, then expanding them */
+      IRTemp z0  = newTemp(Ity_V128);
+      IRTemp z1  = newTemp(Ity_V128);
+      IRTemp z01 = newTemp(Ity_V128);
+      IRTemp z2  = newTemp(Ity_V128);
+      IRTemp z3  = newTemp(Ity_V128);
+      IRTemp z23 = newTemp(Ity_V128);
+      assign( z0,  binop(Iop_ShlN16x8,
+                         binop(Iop_SarN16x8, mkexpr(vB), mkU8(15)),
+                         mkU8(8)) );
+      assign( z1,  binop(Iop_ShrN16x8, 
+                         binop(Iop_ShlN16x8, mkexpr(vB), mkU8(1)),
+                         mkU8(11)) );
+      assign( z01, binop(Iop_InterleaveHI16x8, mkexpr(zeros),
+                         binop(Iop_OrV128, mkexpr(z0), mkexpr(z1))) );
+      assign( z2,  binop(Iop_ShrN16x8,
+                         binop(Iop_ShlN16x8, 
+                               binop(Iop_ShrN16x8, mkexpr(vB), mkU8(5)),
+                               mkU8(11)),
+                         mkU8(3)) );
+      assign( z3,  binop(Iop_ShrN16x8, 
+                         binop(Iop_ShlN16x8, mkexpr(vB), mkU8(11)),
+                         mkU8(11)) );
+      assign( z23, binop(Iop_InterleaveHI16x8, mkexpr(zeros),
+                         binop(Iop_OrV128, mkexpr(z2), mkexpr(z3))) );
+      putVReg( vD_addr, binop(Iop_OrV128,
+                              binop(Iop_ShlN32x4, mkexpr(z01), mkU8(16)),
+                              mkexpr(z23)) );
+      break;
+   }
+   case 0x3CE: { // vupklpx (Unpack Low Pixel16, AV p279)
       DIP("vupklpx v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
+      /* identical to vupkhpx, except interleaving LO */
+      IRTemp z0  = newTemp(Ity_V128);
+      IRTemp z1  = newTemp(Ity_V128);
+      IRTemp z01 = newTemp(Ity_V128);
+      IRTemp z2  = newTemp(Ity_V128);
+      IRTemp z3  = newTemp(Ity_V128);
+      IRTemp z23 = newTemp(Ity_V128);
+      assign( z0,  binop(Iop_ShlN16x8,
+                         binop(Iop_SarN16x8, mkexpr(vB), mkU8(15)),
+                         mkU8(8)) );
+      assign( z1,  binop(Iop_ShrN16x8, 
+                         binop(Iop_ShlN16x8, mkexpr(vB), mkU8(1)),
+                         mkU8(11)) );
+      assign( z01, binop(Iop_InterleaveLO16x8, mkexpr(zeros),
+                         binop(Iop_OrV128, mkexpr(z0), mkexpr(z1))) );
+      assign( z2,  binop(Iop_ShrN16x8,
+                         binop(Iop_ShlN16x8, 
+                               binop(Iop_ShrN16x8, mkexpr(vB), mkU8(5)),
+                               mkU8(11)),
+                         mkU8(3)) );
+      assign( z3,  binop(Iop_ShrN16x8, 
+                         binop(Iop_ShlN16x8, mkexpr(vB), mkU8(11)),
+                         mkU8(11)) );
+      assign( z23, binop(Iop_InterleaveLO16x8, mkexpr(zeros),
+                         binop(Iop_OrV128, mkexpr(z2), mkexpr(z3))) );
+      putVReg( vD_addr, binop(Iop_OrV128,
+                              binop(Iop_ShlN32x4, mkexpr(z01), mkU8(16)),
+                              mkexpr(z23)) );
+      break;
+   }
    default:
       vex_printf("dis_av_pack(PPC32)(opc2)\n");
       return False;

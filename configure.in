@@ -20,7 +20,7 @@ AC_ARG_WITH(vex,
         [AC_MSG_ERROR([Directory '$withval' does not exist, or does not contain Vex])])
 ],
 [
-    VEX_DIR=`pwd`/VEX
+    VEX_DIR='$(top_srcdir)/VEX'
 ])
 AC_SUBST(VEX_DIR)
 

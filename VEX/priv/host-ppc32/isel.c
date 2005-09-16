@@ -3275,13 +3275,6 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return dst;
 //..       }
 
-//..       case Iop_QNarrow32Sx4: 
-//..          op = Xsse_PACKSSD; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_QNarrow16Sx8: 
-//..          op = Xsse_PACKSSW; arg1isEReg = True; goto do_SseReRg;
-//..       case Iop_QNarrow16Ux8: 
-//..          op = Xsse_PACKUSW; arg1isEReg = True; goto do_SseReRg;
-
       case Iop_AndV128:    op = Pav_AND;      goto do_AvBin;
       case Iop_OrV128:     op = Pav_OR;       goto do_AvBin;
       case Iop_XorV128:    op = Pav_XOR;      goto do_AvBin;
@@ -3293,27 +3286,12 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-//..       case Iop_Add8x16:    op = Xsse_ADD8;     goto do_SseReRg;
-//..       case Iop_Add64x2:    op = Xsse_ADD64;    goto do_SseReRg;
-//..       case Iop_QAdd8Sx16:  op = Xsse_QADD8S;   goto do_SseReRg;
-//..       case Iop_QAdd16Sx8:  op = Xsse_QADD16S;  goto do_SseReRg;
-//..       case Iop_QAdd8Ux16:  op = Xsse_QADD8U;   goto do_SseReRg;
-//..       case Iop_QAdd16Ux8:  op = Xsse_QADD16U;  goto do_SseReRg;
-//..       case Iop_Avg8Ux16:   op = Xsse_AVG8U;    goto do_SseReRg;
-//..       case Iop_Avg16Ux8:   op = Xsse_AVG16U;   goto do_SseReRg;
-//..       case Iop_CmpEQ8x16:  op = Xsse_CMPEQ8;   goto do_SseReRg;
-//..       case Iop_CmpEQ16x8:  op = Xsse_CMPEQ16;  goto do_SseReRg;
-//..       case Iop_CmpEQ32x4:  op = Xsse_CMPEQ32;  goto do_SseReRg;
-//..       case Iop_CmpGT8Sx16: op = Xsse_CMPGT8S;  goto do_SseReRg;
-//..       case Iop_CmpGT16Sx8: op = Xsse_CMPGT16S; goto do_SseReRg;
-//..       case Iop_CmpGT32Sx4: op = Xsse_CMPGT32S; goto do_SseReRg;
 //..       case Iop_Mul16x8:    op = Xsse_MUL16;    goto do_SseReRg;
-//..       case Iop_Sub64x2:    op = Xsse_SUB64;    goto do_SseReRg;
-//..       case Iop_QSub8Sx16:  op = Xsse_QSUB8S;   goto do_SseReRg;
-//..       case Iop_QSub16Sx8:  op = Xsse_QSUB16S;  goto do_SseReRg;
-//..       case Iop_QSub8Ux16:  op = Xsse_QSUB8U;   goto do_SseReRg;
-//..       case Iop_QSub16Ux8:  op = Xsse_QSUB16U;  goto do_SseReRg;
 
+      case Iop_Shl8x16:    op = Pav_SHL;    goto do_AvBin8x16;
+      case Iop_Shr8x16:    op = Pav_SHR;    goto do_AvBin8x16;
+      case Iop_Sar8x16:    op = Pav_SAR;    goto do_AvBin8x16;
+      case Iop_Rotl8x16:   op = Pav_ROTL;   goto do_AvBin8x16;
       case Iop_InterleaveHI8x16: op = Pav_MRGHI;  goto do_AvBin8x16;
       case Iop_InterleaveLO8x16: op = Pav_MRGLO;  goto do_AvBin8x16;
       case Iop_Add8x16:    op = Pav_ADDUM;  goto do_AvBin8x16;
@@ -3339,6 +3317,10 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_Shl16x8:    op = Pav_SHL;    goto do_AvBin16x8;
+      case Iop_Shr16x8:    op = Pav_SHR;    goto do_AvBin16x8;
+      case Iop_Sar16x8:    op = Pav_SAR;    goto do_AvBin16x8;
+      case Iop_Rotl16x8:   op = Pav_ROTL;   goto do_AvBin16x8;
       case Iop_Narrow16Ux8:      op = Pav_PACKUUM; goto do_AvBin16x8;
       case Iop_QNarrow16Ux8:     op = Pav_PACKUUS; goto do_AvBin16x8;
       case Iop_QNarrow16Sx8:     op = Pav_PACKSSS; goto do_AvBin16x8;
@@ -3371,6 +3353,10 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_Shl32x4:    op = Pav_SHL;    goto do_AvBin32x4;
+      case Iop_Shr32x4:    op = Pav_SHR;    goto do_AvBin32x4;
+      case Iop_Sar32x4:    op = Pav_SAR;    goto do_AvBin32x4;
+      case Iop_Rotl32x4:   op = Pav_ROTL;   goto do_AvBin32x4;
       case Iop_Narrow32Ux4:      op = Pav_PACKUUM; goto do_AvBin32x4;
       case Iop_QNarrow32Ux4:     op = Pav_PACKUUS; goto do_AvBin32x4;
       case Iop_QNarrow32Sx4:     op = Pav_PACKSSS; goto do_AvBin32x4;
@@ -3402,30 +3388,6 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, PPC32Instr_AvBin32x4(op, dst, arg1, arg2));
          return dst;
       }
-
-//..       do_SseReRg: {
-//..          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
-//..          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
-//..          HReg dst = newVRegV(env);
-//..          if (op != Xsse_OR && op != Xsse_AND && op != Xsse_XOR)
-//..             REQUIRE_SSE2;
-//..          if (arg1isEReg) {
-//..             addInstr(env, mk_vMOVsd_RR(arg2, dst));
-//..             addInstr(env, X86Instr_SseReRg(op, arg1, dst));
-//..          } else {
-//..             addInstr(env, mk_vMOVsd_RR(arg1, dst));
-//..             addInstr(env, X86Instr_SseReRg(op, arg2, dst));
-//..          }
-//..          return dst;
-//..       }
-//.. 
-//..       case Iop_ShlN16x8: op = Xsse_SHL16; goto do_SseShift;
-//..       case Iop_ShlN32x4: op = Xsse_SHL32; goto do_SseShift;
-//..       case Iop_ShlN64x2: op = Xsse_SHL64; goto do_SseShift;
-//..       case Iop_SarN16x8: op = Xsse_SAR16; goto do_SseShift;
-//..       case Iop_SarN32x4: op = Xsse_SAR32; goto do_SseShift;
-//..       case Iop_ShrN16x8: op = Xsse_SHR16; goto do_SseShift;
-//..       case Iop_ShrN64x2: op = Xsse_SHR64; goto do_SseShift;
 
       case Iop_ShlN8x16: op = Pav_SHL; goto do_AvShift8x16;
       case Iop_SarN8x16: op = Pav_SAR; goto do_AvShift8x16;

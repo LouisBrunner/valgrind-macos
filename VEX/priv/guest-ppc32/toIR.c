@@ -5645,61 +5645,73 @@ static Bool dis_av_shift ( UInt theInstr )
    /* Rotate */
    case 0x004: // vrlb (Rotate Left Integer B, AV p234)
       DIP("vrlb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Rotl8x16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x044: // vrlh (Rotate Left Integer HW, AV p235)
       DIP("vrlh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Rotl16x8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x084: // vrlw (Rotate Left Integer W, AV p236)
       DIP("vrlw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Rotl32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
 
    /* Shift Left */
    case 0x104: // vslb (Shift Left Integer B, AV p240)
       DIP("vslb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Shl8x16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x144: // vslh (Shift Left Integer HW, AV p242)
       DIP("vslh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Shl16x8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x184: // vslw (Shift Left Integer W, AV p244)
       DIP("vslw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Shl32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
-   case 0x1C4: // vsl (Shift Left, AV p239)
+   case 0x1C4: { // vsl (Shift Left, AV p239)
       DIP("vsl v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
-
-   case 0x40C: // vslo (Shift Left by Octet, AV p243)
+      IRTemp sh = newTemp(Ity_I8);
+      assign( sh, binop(Iop_And8, mkU8(0x7),
+                        unop(Iop_32to8,
+                             unop(Iop_V128to32, mkexpr(vB)))) );
+      putVReg( vD_addr,
+               binop(Iop_ShlV128, mkexpr(vA), mkexpr(sh)) );
+      break;
+   }
+   case 0x40C: { // vslo (Shift Left by Octet, AV p243)
       DIP("vslo v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      IRTemp sh = newTemp(Ity_I8);
+      assign( sh, binop(Iop_And8, mkU8(0x78),
+                        unop(Iop_32to8,
+                             unop(Iop_V128to32, mkexpr(vB)))) );
+      putVReg( vD_addr,
+               binop(Iop_ShlV128, mkexpr(vA), mkexpr(sh)) );
+      break;
+   }
+
 
    /* Shift Right */
    case 0x204: // vsrb (Shift Right B, AV p256)
       DIP("vsrb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Shr8x16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x244: // vsrh (Shift Right HW, AV p257)
       DIP("vsrh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Shr16x8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x284: // vsrw (Shift Right W, AV p259)
       DIP("vsrw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Shr32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x2C4: { // vsr (Shift Right, AV p251)
       DIP("vsr v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
@@ -5713,23 +5725,29 @@ static Bool dis_av_shift ( UInt theInstr )
    }
    case 0x304: // vsrab (Shift Right Algebraic B, AV p253)
       DIP("vsrab v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Sar8x16, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x344: // vsrah (Shift Right Algebraic HW, AV p254)
       DIP("vsrah v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Sar16x8, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x384: // vsraw (Shift Right Algebraic W, AV p255)
       DIP("vsraw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Sar32x4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
-   case 0x44C: // vsro (Shift Right by Octet, AV p258)
+   case 0x44C: { // vsro (Shift Right by Octet, AV p258)
       DIP("vsro v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      IRTemp sh = newTemp(Ity_I8);
+      assign( sh, binop(Iop_And8, mkU8(0x78),
+                        unop(Iop_32to8,
+                             unop(Iop_V128to32, mkexpr(vB)))) );
+      putVReg( vD_addr,
+               binop(Iop_ShrV128, mkexpr(vA), mkexpr(sh)) );
+      break;
+   }
 
    default:
       vex_printf("dis_av_shift(PPC32)(opc2)\n");
@@ -6053,7 +6071,6 @@ static Bool dis_av_pack ( UInt theInstr )
       vex_printf("dis_av_pack(PPC32)(vA_addr)\n");
       return False;
    }
-
 
    IRTemp signs = newTemp(Ity_V128);
    IRTemp zeros = newTemp(Ity_V128);

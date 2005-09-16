@@ -5004,16 +5004,11 @@ static Bool dis_av_store ( UInt theInstr )
    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
-   //   IRTemp rA = newTemp(Ity_I32);
-   //   IRTemp rB = newTemp(Ity_I32);
    IRTemp vS = newTemp(Ity_V128);
    IRTemp EA = newTemp(Ity_I32);
    IRTemp EA_aligned = newTemp(Ity_I32);
 
-   //   assign( rA, getIReg(rA_addr));
-   //   assign( rB, getIReg(rB_addr));
    assign( vS, getVReg(vS_addr));
-
    assign( EA, ea_standard(rA_addr, rB_addr) );
 
    if (opc1 != 0x1F || b0 != 0) {
@@ -5063,10 +5058,6 @@ static Bool dis_av_store ( UInt theInstr )
                     binop(Iop_ShrV128, mkexpr(vS), mkexpr(idx))) );
       break;
    }
-
-//      EA_aligned = EA & 0xFFFF_FFFC
-//      eb = EA_aligned & 0xF;
-//      STORE(vS[eb*8:eb*8+31], 4, EA_aligned);
 
    case 0x0E7: // stvx (Store Vector Indexed, AV p134)
       DIP("stvx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
@@ -5558,56 +5549,184 @@ static Bool dis_av_multarith ( UInt theInstr )
    UChar vC_addr  = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
    UChar opc2     = toUChar((theInstr >>  0) & 0x3F); /* theInstr[0:5]   */
 
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+   IRTemp vC = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+   assign( vC, getVReg(vC_addr));
+
    if (opc1 != 0x4) {
       vex_printf("dis_av_multarith(PPC32)(instr)\n");
       return False;
    }
 
+   IRTemp zeros = newTemp(Ity_V128);
+   assign( zeros, unop(Iop_Dup32x4, mkU32(0)) );
+
    switch (opc2) {
-
    /* Multiply-Add */
-   case 0x20: // vmhaddshs (Multiply High, Add Signed HW Saturate, AV p185)
+   case 0x20: { // vmhaddshs (Multiply High, Add Signed HW Saturate, AV p185)
       DIP("vmhaddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      DIP(" => not implemented\n");
-      return False;
+      IRTemp aLo = newTemp(Ity_V128);
+      IRTemp bLo = newTemp(Ity_V128);
+      IRTemp cLo = newTemp(Ity_V128);
+      IRTemp zLo = newTemp(Ity_V128);
+      IRTemp aHi = newTemp(Ity_V128);
+      IRTemp bHi = newTemp(Ity_V128);
+      IRTemp cHi = newTemp(Ity_V128);
+      IRTemp zHi = newTemp(Ity_V128);
+      IRTemp cSigns = newTemp(Ity_V128);
+      assign( cSigns, binop(Iop_CmpGT16Sx8, mkexpr(zeros), mkexpr(vC)) );
+      assign( aLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros),  mkexpr(vA)) );
+      assign( bLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros),  mkexpr(vB)) );
+      assign( cLo, binop(Iop_InterleaveLO16x8, mkexpr(cSigns), mkexpr(vC)) );
+      assign( aHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros),  mkexpr(vA)) );
+      assign( bHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros),  mkexpr(vB)) );
+      assign( cHi, binop(Iop_InterleaveHI16x8, mkexpr(cSigns), mkexpr(vC)) );
 
-   case 0x21: // vmhraddshs (Multiply High Round, Add Signed HW Saturate, AV p186)
+      assign( zLo, binop(Iop_Add32x4,
+                         binop(Iop_SarN32x4,
+                               binop(Iop_MulLo32Sx4, mkexpr(aLo), mkexpr(bLo)),
+                               mkU8(15)),
+                         mkexpr(cLo)) );
+
+      assign( zHi, binop(Iop_Add32x4,
+                         binop(Iop_SarN32x4,
+                               binop(Iop_MulLo32Sx4, mkexpr(aHi), mkexpr(bHi)),
+                               mkU8(15)),
+                         mkexpr(cHi)) );
+
+      putVReg( vD_addr, binop(Iop_QNarrow32Sx4, mkexpr(zHi), mkexpr(zLo)) );
+      break;
+   }
+   case 0x21: { // vmhraddshs (Multiply High Round, Add Signed HW Saturate, AV p186)
       DIP("vmhraddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      DIP(" => not implemented\n");
-      return False;
+      IRTemp zKonst = newTemp(Ity_V128);
+      IRTemp aLo = newTemp(Ity_V128);
+      IRTemp bLo = newTemp(Ity_V128);
+      IRTemp cLo = newTemp(Ity_V128);
+      IRTemp zLo = newTemp(Ity_V128);
+      IRTemp aHi = newTemp(Ity_V128);
+      IRTemp bHi = newTemp(Ity_V128);
+      IRTemp cHi = newTemp(Ity_V128);
+      IRTemp zHi = newTemp(Ity_V128);
+      IRTemp cSigns = newTemp(Ity_V128);
+      assign( cSigns, binop(Iop_CmpGT16Sx8, mkexpr(zeros), mkexpr(vC)) );
+      assign( aLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros),  mkexpr(vA)) );
+      assign( bLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros),  mkexpr(vB)) );
+      assign( cLo, binop(Iop_InterleaveLO16x8, mkexpr(cSigns), mkexpr(vC)) );
+      assign( aHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros),  mkexpr(vA)) );
+      assign( bHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros),  mkexpr(vB)) );
+      assign( cHi, binop(Iop_InterleaveHI16x8, mkexpr(cSigns), mkexpr(vC)) );
 
-   case 0x22: // vmladduhm (Multiply Low, Add Unsigned HW Modulo, AV p194)
+      /* shifting our const avoids store/load version of Dup */
+      assign( zKonst, binop(Iop_ShlN32x4, unop(Iop_Dup32x4,
+                                               mkU32(0x1)), mkU8(14)) );
+
+      assign( zLo, binop(Iop_Add32x4,
+                         binop(Iop_SarN32x4,
+                               binop(Iop_Add32x4, mkexpr(zKonst),
+                                     binop(Iop_MulLo32Sx4, mkexpr(aLo), mkexpr(bLo))),
+                               mkU8(15)),
+                         mkexpr(cLo)) );
+
+      assign( zHi, binop(Iop_Add32x4,
+                         binop(Iop_SarN32x4,
+                               binop(Iop_Add32x4, mkexpr(zKonst),
+                                     binop(Iop_MulLo32Sx4, mkexpr(aHi), mkexpr(bHi))),
+                               mkU8(15)),
+                         mkexpr(cHi)) );
+
+      putVReg( vD_addr, binop(Iop_QNarrow32Sx4, mkexpr(zHi), mkexpr(zLo)) );
+      break;
+   }
+   case 0x22: { // vmladduhm (Multiply Low, Add Unsigned HW Modulo, AV p194)
       DIP("vmladduhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      DIP(" => not implemented\n");
-      return False;
+      IRTemp aLo = newTemp(Ity_V128);
+      IRTemp bLo = newTemp(Ity_V128);
+      IRTemp cLo = newTemp(Ity_V128);
+      IRTemp zLo = newTemp(Ity_V128);
+      IRTemp aHi = newTemp(Ity_V128);
+      IRTemp bHi = newTemp(Ity_V128);
+      IRTemp cHi = newTemp(Ity_V128);
+      IRTemp zHi = newTemp(Ity_V128);
+      assign( aLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros), mkexpr(vA)) );
+      assign( bLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros), mkexpr(vB)) );
+      assign( cLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros), mkexpr(vC)) );
+      assign( aHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros), mkexpr(vA)) );
+      assign( bHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros), mkexpr(vB)) );
+      assign( cHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros), mkexpr(vC)) );
+      assign( zLo, binop(Iop_Add32x4,
+                         binop(Iop_MulLo32Ux4, mkexpr(aLo), mkexpr(bLo)),
+                         mkexpr(cLo)) );
+      assign( zHi, binop(Iop_Add32x4,
+                         binop(Iop_MulLo32Ux4, mkexpr(aHi), mkexpr(bHi)),
+                         mkexpr(cHi)) );
+      putVReg( vD_addr, binop(Iop_Narrow32Ux4, mkexpr(zHi), mkexpr(zLo)) );
+      break;
+   }
 
 
    /* Multiply-Sum */
-   case 0x24: // vmsumubm (Multiply Sum Unsigned B Modulo, AV p204)
+   case 0x24: { // vmsumubm (Multiply Sum Unsigned B Modulo, AV p204)
       DIP("vmsumubm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      DIP(" => not implemented\n");
-      return False;
+      IRTemp zKonst = newTemp(Ity_V128);
+      IRTemp odd = newTemp(Ity_V128);
+      IRTemp even = newTemp(Ity_V128);
+      IRTemp odd_odd = newTemp(Ity_V128);
+      IRTemp odd_even = newTemp(Ity_V128);
+      IRTemp even_odd = newTemp(Ity_V128);
+      IRTemp even_even = newTemp(Ity_V128);
+      assign( odd,  binop(Iop_MulLo16Ux8, mkexpr(vA), mkexpr(vB)) );
+      assign( even, binop(Iop_MulHi16Ux8, mkexpr(vA), mkexpr(vB)) );
+      /* zKonst just used to separate the lanes out */
+      assign( zKonst, unop(Iop_Dup16x8, mkU16(0x1)) );
 
+      assign( odd_odd,   binop(Iop_MulLo32Ux4, mkexpr(odd),  mkexpr(zKonst)) );
+      assign( odd_even,  binop(Iop_MulHi32Ux4, mkexpr(odd),  mkexpr(zKonst)) );
+      assign( even_odd,  binop(Iop_MulLo32Ux4, mkexpr(even), mkexpr(zKonst)) );
+      assign( even_even, binop(Iop_MulHi32Ux4, mkexpr(even), mkexpr(zKonst)) );
+
+      putVReg( vD_addr,
+               binop(Iop_Add32x4, mkexpr(vC),
+                     binop(Iop_Add32x4,
+                           binop(Iop_Add32x4, mkexpr(odd_even), mkexpr(odd_odd)),
+                           binop(Iop_Add32x4, mkexpr(even_even), mkexpr(even_odd)))) );
+      break;
+   }
    case 0x25: // vmsummbm (Multiply Sum Mixed-Sign B Modulo, AV p201)
       DIP("vmsummbm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       DIP(" => not implemented\n");
       return False;
 
-   case 0x26: // vmsumuhm (Multiply Sum Unsigned HW Modulo, AV p205)
+   case 0x26: { // vmsumuhm (Multiply Sum Unsigned HW Modulo, AV p205)
       DIP("vmsumuhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      DIP(" => not implemented\n");
-      return False;
-
+      IRTemp odd = newTemp(Ity_V128);
+      IRTemp even = newTemp(Ity_V128);
+      assign( odd,  binop(Iop_MulLo32Ux4, mkexpr(vA), mkexpr(vB)) );
+      assign( even, binop(Iop_MulHi32Ux4, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr,
+               binop(Iop_Add32x4, mkexpr(vC),
+                     binop(Iop_Add32x4, mkexpr(odd), mkexpr(even))) );
+      break;
+   }
    case 0x27: // vmsumuhs (Multiply Sum Unsigned HW Saturate, AV p206)
       DIP("vmsumuhs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       DIP(" => not implemented\n");
       return False;
 
-   case 0x28: // vmsumshm (Multiply Sum Signed HW Modulo, AV p202)
+   case 0x28: { // vmsumshm (Multiply Sum Signed HW Modulo, AV p202)
       DIP("vmsumshm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      DIP(" => not implemented\n");
-      return False;
-
+      IRTemp odd = newTemp(Ity_V128);
+      IRTemp even = newTemp(Ity_V128);
+      assign( odd,  binop(Iop_MulLo32Sx4, mkexpr(vA), mkexpr(vB)) );
+      assign( even, binop(Iop_MulHi32Sx4, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr,
+               binop(Iop_Add32x4, mkexpr(vC),
+                     binop(Iop_Add32x4, mkexpr(odd), mkexpr(even))) );
+      break;
+   }
    case 0x29: // vmsumshs (Multiply Sum Signed HW Saturate, AV p203)
       DIP("vmsumshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       DIP(" => not implemented\n");

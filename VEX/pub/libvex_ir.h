@@ -578,7 +578,7 @@ typedef
       Iop_Shl8x16, Iop_Shl16x8, Iop_Shl32x4,
       Iop_Shr8x16, Iop_Shr16x8, Iop_Shr32x4,
       Iop_Sar8x16, Iop_Sar16x8, Iop_Sar32x4,
-      Iop_Rot8x16, Iop_Rot16x8, Iop_Rot32x4,
+      Iop_Rotl8x16, Iop_Rotl16x8, Iop_Rotl32x4,
 
       /* NARROWING -- narrow 2xV128 into 1xV128, hi half from left arg */
       Iop_QNarrow16Ux8, Iop_QNarrow32Ux4,

@@ -32,6 +32,11 @@ Definite
 * Rewrite address space manager;  statically link the core with
   each tool;  remove all glibc dependencies (Julian).
 
+* Make it work with GCC 2.95 (bug #111781) -- don't put declarations after
+  statements in blocks.  Do it after merging ASPACEM with the trunk.
+  -Wdeclaration-after-statement is the GCC warning that detects this, but
+  it is only present in GCC after 3.4.0 (ie. not in 3.0.X--3.3.X)...
+
 Maybe
 -----
 * Get pthread modelling and Helgrind working again.  Requires function

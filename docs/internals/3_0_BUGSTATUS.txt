@@ -155,6 +155,13 @@ FIXED-30BRANCH: TODO
 FIXED-TRUNK:    TODO
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+113230  Valgrind sys_pipe on x86-64 wrongly thinks file descriptors
+        should be 64bit
+
+FIXED-TRUNK:    vg:4669
+FIXED-30BRANCH: TODO
+
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.1 (all done, 3.0.1 released)     ===

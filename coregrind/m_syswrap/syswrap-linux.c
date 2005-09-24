@@ -1601,12 +1601,23 @@ PRE(sys_munlockall)
    PRE_REG_READ0(long, "munlockall");
 }
 
-// XXX: sort of x86/Linux-specific
+// This has different signatures for different platforms.
+//
+//  x86:   int  sys_pipe(unsigned long __user *fildes);
+//  AMD64: long sys_pipe(int *fildes);
+//  ppc32: int  sys_pipe(int __user *fildes);
+//  ppc64: int  sys_pipe(int __user *fildes);
+//
+// The type of the argument is most important, and it is an array of 32 bit
+// values in all cases.  (The return type differs across platforms, but it
+// is not used.)  So we use 'int' as its type.  This fixed bug #113230 which
+// was caused by using an array of 'unsigned long's, which didn't work on
+// AMD64.
 PRE(sys_pipe)
 {
    PRINT("sys_pipe ( %p )", ARG1);
-   PRE_REG_READ1(int, "pipe", unsigned long *, filedes);
-   PRE_MEM_WRITE( "pipe(filedes)", ARG1, 2*sizeof(long) );
+   PRE_REG_READ1(int, "pipe", int *, filedes);
+   PRE_MEM_WRITE( "pipe(filedes)", ARG1, 2*sizeof(int) );
 }
 POST(sys_pipe)
 {

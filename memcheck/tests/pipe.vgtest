@@ -1,0 +1,2 @@
+prog: pipe
+vgopts: -q

@@ -156,13 +156,19 @@ UInt VG_(sprintf) ( Char* buf, const HChar *format, ... )
    ------------------------------------------------------------------ */
 
 // Percentify n/m with d decimal places.  Includes the '%' symbol at the end.
-void VG_(percentify)(UInt n, UInt m, UInt d, Int n_buf, char buf[]) 
+// Right justifies in 'buf'.
+void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, char buf[]) 
 {
    Int i, len, space;
    ULong p1;
+   Char fmt[32];
 
    if (m == 0) {
-      VG_(sprintf)(buf, "--%%");
+      // Have to generate the format string in order to be flexible about
+      // the width of the field.
+      VG_(sprintf)(fmt, "%%-%lds", n_buf);
+      // fmt is now "%<n_buf>s" where <d> is 1,2,3...
+      VG_(sprintf)(buf, fmt, "--%");
       return;
    }
    
@@ -173,7 +179,6 @@ void VG_(percentify)(UInt n, UInt m, UInt d, Int n_buf, char buf[])
    } else {
       ULong p2;
       UInt  ex;
-      Char fmt[32];
       switch (d) {
       case 1: ex = 10;    break;
       case 2: ex = 100;   break;

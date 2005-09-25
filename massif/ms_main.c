@@ -1689,7 +1689,7 @@ static void
 print_summary(ULong total_ST, ULong heap_ST, ULong heap_admin_ST,
               ULong stack_ST)
 {
-   VG_(message)(Vg_UserMsg, "Total spacetime:   %,ld ms.B", total_ST);
+   VG_(message)(Vg_UserMsg, "Total spacetime:   %,lld ms.B", total_ST);
 
    // Heap --------------------------------------------------------------
    if (clo_heap)

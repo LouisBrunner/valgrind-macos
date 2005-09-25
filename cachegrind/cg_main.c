@@ -976,7 +976,7 @@ static void cg_fini(Int exitcode)
    l3 = ULong_width(Dw_total.a);
 
    /* Make format string, getting width right for numbers */
-   VG_(sprintf)(fmt, "%%s %%,%dld", l1);
+   VG_(sprintf)(fmt, "%%s %%,%dlld", l1);
    
    VG_(message)(Vg_UserMsg, fmt, "I   refs:     ", Ir_total.a);
    VG_(message)(Vg_UserMsg, fmt, "I1  misses:   ", Ir_total.m1);
@@ -999,7 +999,7 @@ static void cg_fini(Int exitcode)
    D_total.m2 = Dr_total.m2 + Dw_total.m2;
        
    /* Make format string, getting width right for numbers */
-   VG_(sprintf)(fmt, "%%s %%,%dld  (%%,%dld rd + %%,%dld wr)", l1, l2, l3);
+   VG_(sprintf)(fmt, "%%s %%,%dlld  (%%,%dlld rd + %%,%dlld wr)", l1, l2, l3);
 
    VG_(message)(Vg_UserMsg, fmt, "D   refs:     ", 
                             D_total.a, Dr_total.a, Dw_total.a);

@@ -162,6 +162,13 @@ FIXED-30BRANCH: TODO
 FIXED-TRUNK:    vg:4669
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+n-i-bz  Cachegrind shows incorrect miss rates when counts are
+        greater than 32 bits
+
+FIXED-TRUNK:    vg:4769
+FIXED-30BRANCH: TODO
+
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.1 (all done, 3.0.1 released)     ===

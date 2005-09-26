@@ -57,3 +57,74 @@ more.
 That would be unusual, but possible.  You could imagine ld generating an
 ELF file via a mapping this way (which would probably upset Valgrind no
 end).
+
+-----------------------------------------------------------------------------
+More from John Reiser
+-----------------------------------------------------------------------------
+> Can a Segment get split (eg. by mprotect)?
+
+This happens when a debugger inserts a breakpoint, or when ld-linux
+relocates a module that has DT_TEXTREL, or when a co-resident monitor
+rewrites some instructions.  On x86, a shared lib with relocations to
+.text "works" just fine.  The modified pages are no longer sharable,
+but the instruction stream is functional.  It's even rather common,
+when a builder forgets to use -fpic for one or more files.  It
+can be done on purpose when the modularity is more important than
+the page sharing.  Non-pic code is faster, too: register %ebx is
+not dedicated to _GLOBAL_OFFSET_TABLE_ addressing, and global variables
+can be accessed by [relocated] inline 32-bit offset rather than by
+address fetched from the GOT.
+
+> Can a new mmap appear in the address range of an existing SegInfo?
+
+On x86_64 the static linker ld inserts a 1MB "hole" between .text
+and .data.  This is on advice from the hardware performance mavens,
+because various caching+prefetching hardware can look ahead that far.
+Currently ld-linux leaves this as PROT_NONE, but anybody else is
+free to override that assignment.
+
+> From peering at various /proc/*/maps files, the following scheme
+> sounds plausible:
+>
+> Load symbols following an mmap if:
+>
+>   map is to a file
+>   map has r-x permissions
+>   file has a valid ELF header
+>   possibly: mapping is > 1 page (catches the case of mapping first
+>      page just to examine the header)
+>
+> If the client wants to subsequently chop up the mapping, or change its
+> permissions, we ignore that.  I have never seen any evidence in
+> proc/*/maps that ld.so does such things.
+
+glibc-2.3.5 ld-linux does.  It finds the minimum interval of pages which
+covers the p_memsz of all PT_LOAD, mmap()s that much from the file [even if
+this maps beyond EOF of the file], then munmap()s [or mprotect(,,PROT_NONE)]
+everything that is not covered by the first PT_LOAD, then
+mmap(,,,MAP_FIXED,,) each remaining PT_LOAD.  This is done to overcome the
+possibility that a kernel which randomizes the placement of mmap(0, ...)
+might place the first PT_LOAD so that subsequent PT_LOAD [must maintain
+relative addressing to other PT_LOAD from the same file] would evict
+something else.  Needless to say, ld-linux assumes that it is the only actor
+(well, dlopen() does try for mutual exclusion) and that any "holes" between
+PT_LOAD from the same module are ignorable as far as allocation is
+concerned.  Also, there is nothing to stop a file from having PT_LOAD that
+overlap, or appear in non-ascending order, etc.  The results might depend on
+order of processing, but always it has been by order of appearance in the
+file.  [Probably this is a good way to trigger "bugs" in ld-linux and/or the
+kernel.]
+
+Some algorithms and data structures internal to glibc-2.3.5 assume that
+modules do not overlap.  In particular, ld-linux sometimes searches
+for __builtin_return_address_(0) in a set of intervals in order to determine
+which shared lib called ld-linux.  This matters for dlsym(), dlmopen(),
+etc., and assumes that the intervals are a disjoint cover of any
+"legal" callers.  ld-linux tries to hide all of this from the prying
+eyes of anyone else [the internal version of struct link_map contains
+much more than specified in <link.h>].  Some of this is good because
+it changes very frequently, but some parts are bad because in the past
+ld-linux has been slow to provide needed services [such as
+dl_iterate_phdr()] and even antagonistic towards anybody else
+trying for peaceful co-existence without the blessing of ld-linux.
+

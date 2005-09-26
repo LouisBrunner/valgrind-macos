@@ -169,6 +169,12 @@ n-i-bz  Cachegrind shows incorrect miss rates when counts are
 FIXED-TRUNK:    vg:4769
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+113190  Broken links in docs/html/
+
+FIXED-TRUNK:    vg:4778
+FIXED-30BRANCH: TODO
+
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.1 (all done, 3.0.1 released)     ===

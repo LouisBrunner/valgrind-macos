@@ -150,9 +150,21 @@ FIXED-TRUNK:    TODO
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
+112199  naked ar tool is used in vex makefile
+
+FIXED-TRUNK:    vex:1397
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
 112501  vex x86->IR: movq (0xF 0x7F 0xC1 0xF)
 
 FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+113190  Broken links in docs/html/
+
+FIXED-TRUNK:    vg:4778
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
@@ -167,12 +179,6 @@ n-i-bz  Cachegrind shows incorrect miss rates when counts are
         greater than 32 bits
 
 FIXED-TRUNK:    vg:4769
-FIXED-30BRANCH: TODO
-
-----------------------------------------------------------------
-113190  Broken links in docs/html/
-
-FIXED-TRUNK:    vg:4778
 FIXED-30BRANCH: TODO
 
 

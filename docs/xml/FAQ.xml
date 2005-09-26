@@ -10,7 +10,7 @@
   <releaseinfo>August 2005</releaseinfo>
   <author>
     <surname>
-      <ulink url="http://www.valgrind.org/www/developers.html">Valgrind Developers</ulink>
+      <ulink url="http://www.valgrind.org/info/developers.html">Valgrind Developers</ulink>
     </surname>
     <affiliation><orgname>
       <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink>
@@ -404,7 +404,7 @@ valgrind-listener 12345
 </programlisting>
 
   <para>Obviously you have to start the listener process first.
-  See the Manual: <ulink url="http://www.valgrind.org/docs/bookset/manual-core.out2file.html">Directing output to file</ulink> for more details.</para>
+  See the manual for more details.</para>
 
   <para>Second, if your program is statically linked, most Valgrind tools
   won't work as well, because they won't be able to replace certain
@@ -481,8 +481,7 @@ int main(void)
   "still reachable", and "suppressed"?</para>
  </question>
  <answer>
-  <para>The details are in the Manual: 
-   <ulink url="http://www.valgrind.org/docs/bookset/mc-manual.leaks.html">Memory leak detection</ulink>.</para>
+  <para>The details are in the Memcheck section of the user manual.</para>
 
   <para>In short:</para>
    <itemizedlist>

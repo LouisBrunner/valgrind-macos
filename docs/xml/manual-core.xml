@@ -1597,7 +1597,7 @@ effect before dying in this way.  This is a known problem which
 we should fix.</para>
 
 <para>Read the 
-<ulink url="http://www.valgrind.org/docs/faq/index.html">FAQ</ulink> for
+<ulink url="http://www.valgrind.org/docs/FAQ/">FAQ</ulink> for
 more advice about common problems, crashes, etc.</para>
 
 </sect1>

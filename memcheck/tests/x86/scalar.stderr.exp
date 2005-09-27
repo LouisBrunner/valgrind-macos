@@ -782,7 +782,7 @@ Syscall param dup2(newfd) contains uninitialised byte(s)
  66:         __NR_setsid 0s 0m
 -----------------------------------------------------
 -----------------------------------------------------
- 67:      __NR_sigaction 3s 2m
+ 67:      __NR_sigaction 3s 4m
 -----------------------------------------------------
 
 Syscall param sigaction(signum) contains uninitialised byte(s)
@@ -800,11 +800,7 @@ Syscall param sigaction(oldact) contains uninitialised byte(s)
    by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 
-<<<<<<< .working
 Syscall param sigaction(act->sa_handler) points to unaddressable byte(s)
-=======
-Syscall param rt_sigaction(act->sa_handler) points to unaddressable byte(s)
->>>>>>> .merge-right.r4787
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
@@ -812,7 +808,6 @@ Syscall param rt_sigaction(act->sa_handler) points to unaddressable byte(s)
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (scalar.c:24)
 
-<<<<<<< .working
 Syscall param sigaction(act->sa_mask) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
@@ -829,24 +824,6 @@ Syscall param sigaction(act->sa_flags) points to unaddressable byte(s)
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (scalar.c:24)
 
-=======
-Syscall param rt_sigaction(act->sa_mask) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (in /...libc...)
-   by 0x........: ...
- Address 0x........ is 4 bytes after a block of size 4 alloc'd
-   at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:24)
-
-Syscall param rt_sigaction(act->sa_flags) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (in /...libc...)
-   by 0x........: ...
- Address 0x........ is 8 bytes after a block of size 4 alloc'd
-   at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:24)
-
->>>>>>> .merge-right.r4787
 Syscall param sigaction(oldact) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
@@ -2416,7 +2393,7 @@ Syscall param prctl(arg5) contains uninitialised byte(s)
 173:   __NR_rt_sigreturn n/a
 -----------------------------------------------------
 -----------------------------------------------------
-174:   __NR_rt_sigaction 4s 2m
+174:   __NR_rt_sigaction 4s 4m
 -----------------------------------------------------
 
 Syscall param rt_sigaction(signum) contains uninitialised byte(s)
@@ -2439,7 +2416,6 @@ Syscall param rt_sigaction(sigsetsize) contains uninitialised byte(s)
    by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 
-<<<<<<< .working
 Syscall param rt_sigaction(act->sa_handler) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
@@ -2454,8 +2430,6 @@ Syscall param rt_sigaction(act->sa_mask) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-=======
->>>>>>> .merge-right.r4787
 Syscall param rt_sigaction(act->sa_flags) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)

@@ -316,7 +316,7 @@ int main(void)
    SY(__NR_setsid); SUCC_OR_FAIL;
 
    // __NR_sigaction 67
-   GO(__NR_sigaction, "3s 2m");
+   GO(__NR_sigaction, "3s 4m");
    SY(__NR_sigaction, x0, x0+&px[1], x0+&px[1]); FAIL;
 
    // __NR_sgetmask 68 sys_sgetmask()
@@ -762,7 +762,7 @@ int main(void)
  //SY(__NR_rt_sigreturn); // (Not yet handled by Valgrind) FAIL;
 
    // __NR_rt_sigaction 174
-   GO(__NR_rt_sigaction, "4s 2m");
+   GO(__NR_rt_sigaction, "4s 4m");
    SY(__NR_rt_sigaction, x0, x0+&px[2], x0+&px[2], x0); FAIL;
 
    // __NR_rt_sigprocmask 175

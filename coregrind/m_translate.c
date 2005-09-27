@@ -30,7 +30,6 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
 #include "pub_core_aspacemgr.h"
 #include "pub_core_cpuid.h"
 #include "pub_core_machine.h"       // For VG_(cache_line_size_ppc32)
@@ -42,7 +41,10 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
+
+#include "pub_core_debuginfo.h"     // Needed for pub_core_redir :(
 #include "pub_core_redir.h"         // For VG_(code_redirect)()
+
 #include "pub_core_signals.h"       // For VG_(synth_fault_{perms,mapping})()
 #include "pub_core_stacks.h"        // For VG_(unknown_SP_update)()
 #include "pub_core_tooliface.h"     // For VG_(tdict)
@@ -381,6 +383,24 @@ void log_bytes ( HChar* bytes, Int nbytes )
    'tid' is the identity of the thread needing this block.
 */
 
+/* Look for reasons to disallow making translations from the given
+   segment. */
+
+static Bool translations_allowable_from_seg ( NSegment* seg )
+{
+#  if defined(VGA_x86)
+   Bool allowR = True;
+#  else
+   Bool allowR = False;
+#  endif
+
+   return seg != NULL
+          && (seg->kind == SkAnonC || seg->kind == SkFileC)
+          && (seg->hasX || (seg->hasR && allowR));
+}
+
+
+
 /* This stops Vex from chasing into function entry points that we wish
    to redirect.  Chasing across them obviously defeats the redirect
    mechanism, with bad effects for Memcheck, Addrcheck, and possibly
@@ -397,6 +417,8 @@ void log_bytes ( HChar* bytes, Int nbytes )
 static ThreadId chase_into_ok__CLOSURE_tid;
 static Bool     chase_into_ok ( Addr64 addr64 )
 {
+   NSegment* seg;
+
    /* Work through a list of possibilities why we might not want to
       allow a chase. */
    Addr addr = (Addr)addr64;
@@ -405,15 +427,20 @@ static Bool     chase_into_ok ( Addr64 addr64 )
    if (VG_(clo_smc_check) == Vg_SmcAll)
       goto dontchase;
 
+   /* Check the segment permissions. */
+   seg = VG_(am_find_nsegment)(addr);
+   if (!translations_allowable_from_seg(seg))
+      goto dontchase;
+
    /* AAABBBCCC: if default self-checks are in force, reject if we
       would choose to have a self-check for the dest.  Note, this must
       match the logic at XXXYYYZZZ below. */
    if (VG_(clo_smc_check) == Vg_SmcStack) {
       ThreadId tid = chase_into_ok__CLOSURE_tid;
-      Segment* seg = VG_(find_segment)(addr);
-      if (seg 
-          && seg->addr <= VG_(get_SP)(tid)
-          && VG_(get_SP)(tid) < seg->addr+seg->len)
+      if (seg
+          && (seg->kind == SkAnonC || seg->kind == SkFileC)
+          && seg->start <= VG_(get_SP)(tid)
+          && VG_(get_SP)(tid)+sizeof(Word)-1 <= seg->end)
          goto dontchase;
    }
 
@@ -440,10 +467,10 @@ Bool VG_(translate) ( ThreadId tid,
                       ULong    bbs_done )
 {
    Addr64    redir, orig_addr0 = orig_addr;
-   Int       tmpbuf_used, verbosity;
+   Int       tmpbuf_used, verbosity, i;
    Bool      notrace_until_done, do_self_check;
    UInt      notrace_until_limit = 0;
-   Segment*  seg;
+   NSegment* seg;
    VexGuestExtents vge;
 
    /* Indicates what arch we are running on, and other important info
@@ -514,10 +541,9 @@ Bool VG_(translate) ( ThreadId tid,
    notrace_until_done
       = VG_(get_bbs_translated)() >= notrace_until_limit;
 
-   seg = VG_(find_segment)(orig_addr);
-
    if (!debugging_translation)
-      VG_TRACK( pre_mem_read, Vg_CoreTranslate, tid, "", orig_addr, 1 );
+      VG_TRACK( pre_mem_read, Vg_CoreTranslate, 
+                              tid, "(translator)", orig_addr, 1 );
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_flags) || debugging_translation) {
@@ -529,22 +555,25 @@ Bool VG_(translate) ( ThreadId tid,
               bbs_done);
    }
 
-   if (seg == NULL ||
-       !VG_(seg_contains)(seg, orig_addr, 1) || 
-       (seg->prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == 0) {
+   /* Are we allowed to translate here? */
+
+   seg = VG_(am_find_nsegment)(orig_addr);
+
+   if (!translations_allowable_from_seg(seg)) {
+      /* U R busted, sonny.  Place your hands on your head and step
+         away from the orig_addr. */
       /* Code address is bad - deliver a signal instead */
-      vg_assert(!VG_(is_addressable)(orig_addr, 1, 
-                                     VKI_PROT_READ|VKI_PROT_EXEC));
-
-      if (seg != NULL && VG_(seg_contains)(seg, orig_addr, 1)) {
-         vg_assert((seg->prot & VKI_PROT_EXEC) == 0);
+      if (seg != NULL) {
+         /* There's some kind of segment at the requested place, but we
+            aren't allowed to execute code here. */
          VG_(synth_fault_perms)(tid, orig_addr);
-      } else
+      } else {
+        /* There is no segment at all; we are attempting to execute in
+           the middle of nowhere. */
          VG_(synth_fault_mapping)(tid, orig_addr);
-
+      }
       return False;
-   } else
-      seg->flags |= SF_CODE;        /* contains cached code */
+   }
 
    /* Do we want a self-checking translation? */
    do_self_check = False;
@@ -556,8 +585,8 @@ Bool VG_(translate) ( ThreadId tid,
          do_self_check
             /* = seg ? toBool(seg->flags & SF_GROWDOWN) : False; */
             = seg 
-              ? (seg->addr <= VG_(get_SP)(tid)
-                 && VG_(get_SP)(tid) < seg->addr+seg->len)
+              ? (seg->start <= VG_(get_SP)(tid)
+                 && VG_(get_SP)(tid)+sizeof(Word)-1 <= seg->end)
               : False;
          break;
       default: 
@@ -607,6 +636,20 @@ Bool VG_(translate) ( ThreadId tid,
    vg_assert(tmpbuf_used > 0);
 
    VGP_POPCC(VgpVexTime);
+
+   /* Tell aspacem of all segments that have had translations taken
+      from them.  Optimisation: don't re-look up vge.base[0] since seg
+      should already point to it. */
+
+   vg_assert( vge.base[0] == (Addr64)orig_addr );
+   if (seg->kind == SkFileC || seg->kind == SkAnonC)
+      seg->hasT = True; /* has cached code */
+
+   for (i = 1; i < vge.n_used; i++) {
+      seg = VG_(am_find_nsegment)( vge.base[i] );
+      if (seg->kind == SkFileC || seg->kind == SkAnonC)
+         seg->hasT = True; /* has cached code */
+   }
 
    /* Copy data at trans_addr into the translation cache. */
    vg_assert(tmpbuf_used > 0 && tmpbuf_used < 65536);

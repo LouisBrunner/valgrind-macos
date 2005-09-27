@@ -72,6 +72,41 @@ void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
       __builtin_longjmp(memscan_jmpbuf, 1);
 }
 
+
+/* TODO: GIVE THIS A PROPER HOME
+   TODO: MERGE THIS WITH DUPLICATE IN m_main.c
+   Extract from aspacem a vector of the current segment start
+   addresses.  The vector is dynamically allocated and should be freed
+   by the caller when done.  REQUIRES m_mallocfree to be running.
+   Writes the number of addresses required into *n_acquired. */
+
+static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
+{
+   Addr* starts;
+   Int   n_starts, r;
+
+   n_starts = 1;
+   while (True) {
+      starts = VG_(malloc)( n_starts * sizeof(Addr) );
+      if (starts == NULL)
+         break;
+      r = VG_(am_get_segment_starts)( starts, n_starts );
+      if (r >= 0)
+         break;
+      VG_(free)(starts);
+      n_starts *= 2;
+   }
+
+   if (starts == NULL) {
+     *n_acquired = 0;
+     return NULL;
+   }
+
+   *n_acquired = r;
+   return starts;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Detecting leaked (unreachable) malloc'd blocks.      ---*/
 /*------------------------------------------------------------*/
@@ -82,19 +117,23 @@ void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
    -- Unreached; so far, no pointers to any part of it have been found. 
    -- IndirectLeak; leaked, but referred to by another leaked block
 */
-typedef enum { 
-   Unreached, 
-   IndirectLeak,
-   Interior, 
-   Proper
- } Reachedness;
+typedef 
+   enum { 
+      Unreached, 
+      IndirectLeak,
+      Interior, 
+      Proper
+  }
+  Reachedness;
 
 /* An entry in the mark stack */
-typedef struct {
-   Int	next:30;		/* Index of next in mark stack */
-   UInt	state:2;		/* Reachedness */
-   SizeT indirect;		/* if Unreached, how much is unreachable from here */
-} MarkStack;
+typedef 
+   struct {
+      Int   next:30;	/* Index of next in mark stack */
+      UInt  state:2;	/* Reachedness */
+      SizeT indirect;	/* if Unreached, how much is unreachable from here */
+   } 
+   MarkStack;
 
 /* A block record, used for generating err msgs. */
 typedef
@@ -112,11 +151,13 @@ typedef
    LossRecord;
 
 /* The 'extra' struct for leak errors. */
-typedef struct {
-   UInt        n_this_record;
-   UInt        n_total_records;
-   LossRecord* lossRecord;
-} LeakExtra;
+typedef 
+   struct {
+      UInt        n_this_record;
+      UInt        n_total_records;
+      LossRecord* lossRecord;
+   }
+   LeakExtra;
 
 /* Find the i such that ptr points at or inside the block described by
    shadows[i].  Return -1 if none found.  This assumes that shadows[]
@@ -289,11 +330,12 @@ static Int lc_compar(void* n1, void* n2)
 /* If ptr is pointing to a heap-allocated block which hasn't been seen
    before, push it onto the mark stack.  Clique is the index of the
    clique leader; -1 if none. */
-static void _lc_markstack_push(Addr ptr, Int clique)
+static void lc_markstack_push_WRK(Addr ptr, Int clique)
 {
    Int sh_no;
 
-   if (!VG_(is_client_addr)(ptr)) /* quick filter */
+   /* quick filter */
+   if (!VG_(am_is_valid_for_client)(ptr, 1, VKI_PROT_NONE))
       return;
 
    sh_no = find_shadow_for(ptr, lc_shadows, lc_n_shadows);
@@ -316,6 +358,8 @@ static void _lc_markstack_push(Addr ptr, Int clique)
       lc_markstack[sh_no].next = lc_markstack_top;
       lc_markstack_top = sh_no;
    }
+
+   tl_assert(clique >= -1 && clique < lc_n_shadows);
 
    if (clique != -1) {
       if (0)
@@ -358,7 +402,7 @@ static void _lc_markstack_push(Addr ptr, Int clique)
 
 static void lc_markstack_push(Addr ptr)
 {
-   _lc_markstack_push(ptr, -1);
+   lc_markstack_push_WRK(ptr, -1);
 }
 
 /* Return the top of the mark stack, if any. */
@@ -380,7 +424,7 @@ static Int lc_markstack_pop(void)
 
    If clique != -1, it means we're gathering leaked memory into
    cliques, and clique is the index of the current clique leader. */
-static void _lc_scan_memory(Addr start, SizeT len, Int clique)
+static void lc_scan_memory_WRK(Addr start, SizeT len, Int clique)
 {
    Addr ptr = VG_ROUNDUP(start, sizeof(Addr));
    Addr end = VG_ROUNDDN(start+len, sizeof(Addr));
@@ -391,10 +435,9 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
    VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &sigmask);
    VG_(set_fault_catcher)(scan_all_valid_memory_catcher);
 
-   lc_scanned += end-ptr;
+   //   lc_scanned += end-ptr;
 
-   if (!VG_(is_client_addr)(ptr) ||
-       !VG_(is_addressable)(ptr, sizeof(Addr), VKI_PROT_READ))
+   if (!VG_(am_is_valid_for_client)(ptr, sizeof(Addr), VKI_PROT_READ))
       ptr = VG_PGROUNDUP(ptr+1);	/* first page bad */
 
    while (ptr < end) {
@@ -408,15 +451,15 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
 
       /* Look to see if this page seems reasonble */
       if ((ptr % VKI_PAGE_SIZE) == 0) {
-	 if (!VG_(is_client_addr)(ptr) ||
-	     !VG_(is_addressable)(ptr, sizeof(Addr), VKI_PROT_READ))
+	 if (!VG_(am_is_valid_for_client)(ptr, sizeof(Addr), VKI_PROT_READ))
 	    ptr += VKI_PAGE_SIZE; /* bad page - skip it */
       }
 
       if (__builtin_setjmp(memscan_jmpbuf) == 0) {
 	 if ((*lc_is_valid_aligned_word)(ptr)) {
+            lc_scanned += sizeof(Addr);
 	    addr = *(Addr *)ptr;
-	    _lc_markstack_push(addr, clique);
+	    lc_markstack_push_WRK(addr, clique);
 	 } else if (0 && VG_DEBUG_LEAKCHECK)
 	    VG_(printf)("%p not valid\n", ptr);
 	 ptr += sizeof(Addr);
@@ -436,7 +479,7 @@ static void _lc_scan_memory(Addr start, SizeT len, Int clique)
 
 static void lc_scan_memory(Addr start, SizeT len)
 {
-   _lc_scan_memory(start, len, -1);
+   lc_scan_memory_WRK(start, len, -1);
 }
 
 /* Process the mark stack until empty.  If mopup is true, then we're
@@ -450,7 +493,7 @@ static void lc_do_leakcheck(Int clique)
       tl_assert(top >= 0 && top < lc_n_shadows);      
       tl_assert(lc_markstack[top].state != Unreached);
 
-      _lc_scan_memory(lc_shadows[top]->data, lc_shadows[top]->size, clique);
+      lc_scan_memory_WRK(lc_shadows[top]->data, lc_shadows[top]->size, clique);
    }
 }
 
@@ -487,7 +530,7 @@ static void full_report(ThreadId tid)
       if (VG_DEBUG_CLIQUE)
 	 VG_(printf)("%d: gathering clique %p\n", i, lc_shadows[i]->data);
       
-      _lc_markstack_push(lc_shadows[i]->data, i);
+      lc_markstack_push_WRK(lc_shadows[i]->data, i);
 
       lc_do_leakcheck(i);
 
@@ -692,8 +735,36 @@ void MAC_(do_detect_memory_leaks) (
 
    lc_scanned = 0;
 
-   /* Do the scan of memory, pushing any pointers onto the mark stack */
-   VG_(find_root_memory)(lc_scan_memory);
+   /* Push roots onto the mark stack.  Roots are:
+      - the integer registers of all threads
+      - all mappings belonging to the client, including stacks
+      - .. but excluding any client heap segments.
+      Client heap segments are excluded because we wish to differentiate
+      client heap blocks which are referenced only from inside the heap
+      from those outside.  This facilitates the indirect vs direct loss
+      categorisation, which [if the users ever manage to understand it]
+      is really useful for detecting lost cycles.
+   */
+   { NSegment* seg;
+     Addr*     seg_starts;
+     Int       n_seg_starts;
+     seg_starts = get_seg_starts( &n_seg_starts );
+     tl_assert(seg_starts && n_seg_starts > 0);
+     /* VG_(am_show_nsegments)( 0,"leakcheck"); */
+     for (i = 0; i < n_seg_starts; i++) {
+        seg = VG_(am_find_nsegment)( seg_starts[i] );
+        tl_assert(seg);
+        if (seg->kind != SkFileC && seg->kind != SkAnonC) 
+           continue;
+        if (!(seg->hasR && seg->hasW))
+           continue;
+        if (seg->isCH)
+           continue;
+        if (0)
+           VG_(printf)("ACCEPT %2d  %p %p\n", i, seg->start, seg->end);
+        lc_scan_memory(seg->start, seg->end+1 - seg->start);
+     }
+   }
 
    /* Push registers onto mark stack */
    VG_(apply_to_GP_regs)(lc_markstack_push);

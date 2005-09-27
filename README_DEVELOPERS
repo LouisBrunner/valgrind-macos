@@ -3,10 +3,10 @@ Building and not installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To run Valgrind without having to install it, run coregrind/valgrind
-with the VALGRINDLIB environment variable set, where <dir> is the root
+with the VALGRIND_LIB environment variable set, where <dir> is the root
 of the source tree (and must be an absolute path).  Eg:
 
-  VALGRINDLIB=~/grind/head4/.in_place ~/grind/head4/coregrind/valgrind 
+  VALGRIND_LIB=~/grind/head4/.in_place ~/grind/head4/coregrind/valgrind 
 
 This allows you to compile and run with "make" instead of "make install",
 saving you time.

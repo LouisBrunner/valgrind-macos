@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Header imported directly by every asm file, and indirectly   ---*/
-/*--- (via pub_tool_basics.h) by every C file.                     ---*/
+/*--- Header imported directly by every tool asm file, and         ---*/
+/*--- (via pub_tool_basics.h) by every tool C file.                ---*/
 /*---                                        pub_tool_basics_asm.h ---*/
 /*--------------------------------------------------------------------*/
 

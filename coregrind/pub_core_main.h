@@ -38,10 +38,6 @@
 // things.
 //--------------------------------------------------------------------
 
-// Help set up the child used when doing execve() with --trace-children=yes
-Char* VG_(build_child_VALGRINDCLO) ( Char* exename );
-Char* VG_(build_child_exename)     ( void );
-
 // Do everything which needs doing before the process finally ends,
 // like printing reports, etc
 extern void VG_(shutdown_actions_NORETURN) (

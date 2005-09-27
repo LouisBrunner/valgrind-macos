@@ -215,6 +215,37 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
 #endif
 }
 
+/* ---------------------------------------------------------------------
+   Names of errors.
+   ------------------------------------------------------------------ */
+
+/* Return a string which gives the name of an error value.  Note,
+   unlike the standard C syserror fn, the returned string is not
+   malloc-allocated or writable -- treat it as a constant. 
+   TODO: implement this properly. */
+
+const HChar* VG_(strerror) ( UWord errnum )
+{
+   switch (errnum) {
+      case VKI_EPERM:       return "Operation not permitted";
+      case VKI_ENOENT:      return "No such file or directory";
+      case VKI_ESRCH:       return "No such process";
+      case VKI_EINTR:       return "Interrupted system call";
+      case VKI_EBADF:       return "Bad file number";
+      case VKI_EAGAIN:      return "Try again";
+      case VKI_ENOMEM:      return "Out of memory";
+      case VKI_EACCES:      return "Permission denied";
+      case VKI_EFAULT:      return "Bad address";
+      case VKI_EEXIST:      return "File exists";
+      case VKI_EINVAL:      return "Invalid argument";
+      case VKI_EMFILE:      return "Too many open files";
+      case VKI_ENOSYS:      return "Function not implemented";
+      case VKI_ERESTARTSYS: return "ERESTARTSYS";
+      default:              return "VG_(strerror): unknown error";
+   }
+}
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                        ---*/
 /*--------------------------------------------------------------------*/

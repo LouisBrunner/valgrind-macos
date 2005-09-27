@@ -48,6 +48,7 @@
 
 #include "pub_core_basics.h"     /* basic types */
 #include "pub_core_debuglog.h"   /* our own iface */
+#include "valgrind.h"            /* for RUNNING_ON_VALGRIND */
 
 /*------------------------------------------------------------*/
 /*--- Stuff to make us completely independent.             ---*/
@@ -61,15 +62,14 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
    UInt __res;
    __asm__ volatile (
+      "pushl %%ebx\n"        // ebx is callee-save
       "movl  $4, %%eax\n"    /* %eax = __NR_write */
-      "movl  $2, %%edi\n"    /* %edi = stderr */
+      "movl  $1, %%ebx\n"    /* %ebx = stderr */
       "movl  %1, %%ecx\n"    /* %ecx = buf */
       "movl  %2, %%edx\n"    /* %edx = n */
-      "pushl %%ebx\n"
-      "movl  %%edi, %%ebx\n"
       "int   $0x80\n"        /* write(stderr, buf, n) */
-      "popl  %%ebx\n"
       "movl  %%eax, %0\n"    /* __res = eax */
+      "popl  %%ebx\n"        // restore ebx
       : "=mr" (__res)
       : "g" (buf), "g" (n)
       : "eax", "edi", "ecx", "edx"
@@ -586,11 +586,10 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
                                 const HChar* format, ... )
 {
    UInt ret, pid;
-   Int indent;
+   Int indent, depth, i;
    va_list vargs;
    printf_buf buf;
 
-   
    if (level > loglevel)
       return;
 
@@ -600,6 +599,14 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
    buf.n = 0;
    buf.buf[0] = 0;
    pid = local_sys_getpid();
+
+   // Print one '>' in front of the messages for each level of self-hosting
+   // being performed.
+   depth = RUNNING_ON_VALGRIND;
+   for (i = 0; i < depth; i++) {
+      (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ">", False );
+   }
+   
    (void)myvprintf_str ( add_to_buf, &buf, 0, 2, "--", False );
    (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 1, (ULong)pid );
    (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ":", False );

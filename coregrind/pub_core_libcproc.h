@@ -36,34 +36,37 @@
 // It's a bit of a mixed bag.
 //--------------------------------------------------------------------
 
+#include "config.h"           // Crucial: ensure we get ENABLE_INNER
 #include "pub_tool_libcproc.h"
 
 /* The directory we look for all our auxillary files in.  Useful for
-   running Valgrind out of a build tree without having to do "make install". */
-#define VALGRINDLIB	"VALGRINDLIB"
+   running Valgrind out of a build tree without having to do "make
+   install".  Inner valgrinds require a different lib variable, else
+   they end up picking up .so's etc intended for the outer
+   valgrind. */
+#ifdef ENABLE_INNER
+#  define VALGRIND_LIB     "VALGRIND_LIB_INNER"
+#else
+#  define VALGRIND_LIB     "VALGRIND_LIB"
+#endif
 
 /* Additional command-line arguments; they are overridden by actual
    command-line option.  Each argument is separated by spaces.  There
    is no quoting mechanism.  */
-#define VALGRINDOPTS	"VALGRIND_OPTS"
+#define VALGRIND_OPTS    "VALGRIND_OPTS"
 
-/* If this variable is present in the environment, then valgrind will
-   not parse the command line for options at all; all options come
-   from this variable.  Arguments are terminated by ^A (\001).  There
-   is no quoting mechanism.
+/* The full name of Valgrind's stage1 (launcher) executable.  This is
+   set by stage1 and read by stage2, and is used for recursive
+   invocations of Valgrind on child processes. 
+   
+   For self-hosting, the inner and outer Valgrinds must use different
+   names to avoid collisions.  */
+#ifdef ENABLE_INNER
+#  define VALGRIND_LAUNCHER  "VALGRIND_LAUNCHER_INNER"
+#else
+#  define VALGRIND_LAUNCHER  "VALGRIND_LAUNCHER"
+#endif
 
-   This variable is not expected to be set by anything other than
-   Valgrind itself, as part of its handling of execve with
-   --trace-children=yes.  This variable should not be present in the
-   client environment.  */
-#define VALGRINDCLO	"_VALGRIND_CLO"
-
-// Client's executable file descriptor.
-extern Int VG_(clexecfd);
-
-// Client's original rlimit data and rlimit stack
-extern struct vki_rlimit VG_(client_rlimit_data);
-extern struct vki_rlimit VG_(client_rlimit_stack);
 
 // Environment manipulations
 extern Char **VG_(env_setenv)   ( Char ***envp, const Char* varname,
@@ -73,8 +76,11 @@ extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env );
 extern Char **VG_(env_clone)    ( Char **env_clone );
 
 // misc
-extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
+extern Int  VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
 extern void VG_(nanosleep) ( struct vki_timespec * );
+extern Int  VG_(getgroups)( Int size, UInt* list );
+extern Int  VG_(ptrace)( Int request, Int pid, void *addr, void *data );
+extern Int  VG_(fork)( void );
 
 // atfork
 typedef void (*vg_atfork_t)(ThreadId);

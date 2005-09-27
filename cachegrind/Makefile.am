@@ -9,10 +9,9 @@ EXTRA_DIST = \
 
 noinst_HEADERS = cg_arch.h
 
-val_PROGRAMS = vgtool_cachegrind.so
+val_PROGRAMS = cachegrind
 
-vgtool_cachegrind_so_SOURCES = \
-	cg_main.c \
-	cg-@VG_ARCH@.c
-vgtool_cachegrind_so_LDFLAGS = -shared
-
+cachegrind_SOURCES      = cg_main.c cg-@VG_ARCH@.c
+cachegrind_DEPENDENCIES = $(COREGRIND_LIBS)
+cachegrind_LDADD        = $(TOOL_LINKADD)
+cachegrind_LDFLAGS      = $(TOOL_LINKFLAGS)

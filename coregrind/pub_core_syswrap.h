@@ -36,9 +36,6 @@
 // wrappers, but also the main syscall jacketing code.
 //--------------------------------------------------------------------
 
-// Return how many bytes of a thread's Valgrind stack are unused
-extern SSizeT VG_(stack_unused)(ThreadId tid);
-
 // Allocates a stack for the first thread, then runs it,
 // as if the thread had been set up by clone()
 extern void VG_(main_thread_wrapper_NORETURN)(ThreadId tid);

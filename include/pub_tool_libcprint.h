@@ -39,11 +39,17 @@
  * --log-fd/--log-file/--log-socket argument, which defaults to 2 (stderr).
  * Hence no need for VG_(fprintf)().
  */
-extern UInt VG_(printf)  ( const HChar *format, ... );
-extern UInt VG_(vprintf) ( const HChar *format, va_list vargs );
+extern UInt VG_(printf)   ( const HChar *format, ... );
+extern UInt VG_(vprintf)  ( const HChar *format, va_list vargs );
 /* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */
-extern UInt VG_(sprintf) ( Char* buf, const HChar* format, ... );
-extern UInt VG_(vsprintf)( Char* buf, const HChar* format, va_list vargs );
+
+extern UInt VG_(sprintf)  ( Char* buf, const HChar* format, ... );
+extern UInt VG_(vsprintf) ( Char* buf, const HChar* format, va_list vargs );
+
+extern UInt VG_(snprintf) ( Char* buf, Int size, 
+                                       const HChar *format, ... );
+extern UInt VG_(vsnprintf)( Char* buf, Int size, 
+                                       const HChar *format, va_list vargs );
 
 // Percentify n/m with d decimal places.  Includes the '%' symbol at the end.
 // Right justifies in 'buf'.

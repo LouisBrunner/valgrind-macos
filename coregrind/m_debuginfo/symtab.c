@@ -36,7 +36,6 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
-#include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_machine.h"
 #include "pub_core_mallocfree.h"
@@ -44,6 +43,8 @@
 #include "pub_core_profile.h"
 #include "pub_core_redir.h"
 #include "pub_core_tooliface.h"     // For VG_(needs).data_syms
+
+#include "pub_core_aspacemgr.h"
 
 #include "priv_symtypes.h"
 #include "priv_symtab.h"
@@ -92,6 +93,126 @@ static SegInfo* segInfo_list = NULL;
 #else
 # error "VG_WORDSIZE should be 4 or 8"
 #endif
+
+
+/*------------------------------------------------------------*/
+/*--- TOP LEVEL                                            ---*/
+/*------------------------------------------------------------*/
+
+/* If this mapping is at the beginning of a file, isn't part of
+   Valgrind, is at least readable and seems to contain an object
+   file, then try reading symbols from it.
+
+   Getting this heuristic right is critical.  On x86-linux,
+   objects are typically mapped twice:
+
+   1b8fb000-1b8ff000 r-xp 00000000 08:02 4471477 vgpreload_memcheck.so
+   1b8ff000-1b900000 rw-p 00004000 08:02 4471477 vgpreload_memcheck.so
+
+   whereas ppc32-linux mysteriously does this:
+
+   118a6000-118ad000 r-xp 00000000 08:05 14209428 vgpreload_memcheck.so
+   118ad000-118b6000 ---p 00007000 08:05 14209428 vgpreload_memcheck.so
+   118b6000-118bd000 rwxp 00000000 08:05 14209428 vgpreload_memcheck.so
+
+   The third mapping should not be considered to have executable code in.
+   Therefore a test which works for both is: r and x and NOT w.  Reading
+   symbols from the rwx segment -- which overlaps the r-x segment in the
+   file -- causes the redirection mechanism to redirect to addresses in
+   that third segment, which is wrong and causes crashes.
+*/
+
+static Bool is_self ( HChar* filename )
+{ 
+   return VG_(strstr)( filename, "/lib/valgrind/" ) != NULL;
+}
+
+////////////
+
+// fwds
+static void unload_symbols ( Addr start, SizeT length );
+
+static void nuke_syms_in_range ( Addr start, SizeT length )
+{
+   /* Repeatedly scan the segInfo list, looking for segInfos in this
+      range, and call unload_symbols on the segInfo's stated start
+      point.  This modifies the list, hence the multiple
+      iterations. */
+   Bool found;
+   SegInfo* curr;
+
+   while (True) {
+      found = False;
+
+      curr = segInfo_list;
+      while (True) {
+         if (curr == NULL) break;
+         if (start+length-1 < curr->start || curr->start+curr->size-1 < start) {
+	   /* no overlap */
+	 } else {
+	   found = True;
+	   break;
+	 }
+	 curr = curr->next;
+      }
+
+      if (!found) break;
+      unload_symbols( curr->start, curr->size );
+
+   }
+}
+
+void VG_(di_notify_mmap)( Addr a )
+{
+   NSegment* seg;
+   HChar*    filename;
+   Bool      ok;
+
+   seg = VG_(am_find_nsegment)(a);
+   vg_assert(seg);
+
+   filename = VG_(am_get_filename)( seg );
+   if (!filename)
+      return;
+
+   filename = VG_(arena_strdup)( VG_AR_SYMTAB, filename );
+
+   ok = (seg->kind == SkFileC || (seg->kind == SkFileV && is_self(filename)))
+         && seg->offset == 0
+         && seg->fnIdx != -1
+         && seg->hasR
+         && seg->hasX
+         && !seg->hasW
+         && VG_(is_object_file)( (const void*)seg->start );
+
+   if (!ok) {
+      VG_(arena_free)(VG_AR_SYMTAB, filename);
+      return;
+   }
+
+   nuke_syms_in_range( seg->start, seg->end + 1 - seg->start );
+   VG_(read_seg_symbols)( seg->start, seg->end + 1 - seg->start, 
+                          seg->offset, filename );
+
+   /* VG_(read_seg_symbols) makes its own copy of filename, so is safe
+      to free it. */
+   VG_(arena_free)(VG_AR_SYMTAB, filename);
+}
+
+void VG_(di_notify_munmap)( Addr a, SizeT len )
+{
+   nuke_syms_in_range(a, len);
+}
+
+void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
+{
+   Bool exe_ok = toBool(prot & VKI_PROT_EXEC);
+#  if defined(VGP_x86_linux)
+   exe_ok = exe_ok || toBool(prot & VKI_PROT_READ);
+#  endif
+   if (0 && !exe_ok)
+      nuke_syms_in_range(a, len);
+}
 
 
 /*------------------------------------------------------------*/
@@ -1185,9 +1306,8 @@ calc_gnu_debuglink_crc32(UInt crc, const UChar *buf, Int len)
 static
 Addr open_debug_file( Char* name, UInt crc, UInt* size )
 {
-   SysRes fd;
+   SysRes fd, sres;
    struct vki_stat stat_buf;
-   Addr addr;
    UInt calccrc;
 
    fd = VG_(open)(name, VKI_O_RDONLY, 0);
@@ -1204,26 +1324,24 @@ Addr open_debug_file( Char* name, UInt crc, UInt* size )
 
    *size = stat_buf.st_size;
    
-   if ((addr = (Addr)VG_(mmap)(NULL, *size, VKI_PROT_READ,
-                               VKI_MAP_PRIVATE|VKI_MAP_NOSYMS, 
-                               0, fd.val, 0)) == (Addr)-1) 
-   {
-      VG_(close)(fd.val);
-      return 0;
-   }
+   sres = VG_(am_mmap_file_float_valgrind)
+             ( *size, VKI_PROT_READ, fd.val, 0 );
 
    VG_(close)(fd.val);
    
-   calccrc = calc_gnu_debuglink_crc32(0, (UChar*)addr, *size);
+   if (sres.isError)
+      return 0;
+
+   calccrc = calc_gnu_debuglink_crc32(0, (UChar*)sres.val, *size);
    if (calccrc != crc) {
-      int res = VG_(munmap)((void*)addr, *size);
-      vg_assert(0 == res);
+      SysRes res = VG_(am_munmap_valgrind)(sres.val, *size);
+      vg_assert(!res.isError);
       if (VG_(clo_verbosity) > 1)
 	 VG_(message)(Vg_DebugMsg, "... CRC mismatch (computed %08x wanted %08x)", calccrc, crc);
       return 0;
    }
    
-   return addr;
+   return sres.val;
 }
 
 /*
@@ -1267,7 +1385,7 @@ Bool read_lib_symbols ( SegInfo* si )
    ElfXX_Ehdr*   ehdr;       /* The ELF header                          */
    ElfXX_Shdr*   shdr;       /* The section table                       */
    UChar*        sh_strtab;  /* The section table's string table        */
-   SysRes        fd;
+   SysRes        fd, sres;
    Int           i;
    Bool          ok;
    Addr          oimage;
@@ -1278,7 +1396,8 @@ Bool read_lib_symbols ( SegInfo* si )
 
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_DebugMsg, "Reading syms from %s (%p)", si->filename, si->start );
+      VG_(message)(Vg_DebugMsg, "Reading syms from %s (%p)", 
+                                si->filename, si->start );
 
    /* mmap the object image aboard, so that we can read symbols and
       line number info out of it.  It will be munmapped immediately
@@ -1297,17 +1416,18 @@ Bool read_lib_symbols ( SegInfo* si )
       return False;
    }
 
-   oimage = (Addr)VG_(mmap)( NULL, n_oimage, 
-                             VKI_PROT_READ, VKI_MAP_PRIVATE|VKI_MAP_NOSYMS, 
-                             0, fd.val, 0 );
+   sres = VG_(am_mmap_file_float_valgrind)
+             ( n_oimage, VKI_PROT_READ, fd.val, 0 );
 
    VG_(close)(fd.val);
 
-   if (oimage == ((Addr)(-1))) {
+   if (sres.isError) {
       VG_(message)(Vg_UserMsg, "warning: mmap failed on %s", si->filename );
       VG_(message)(Vg_UserMsg, "         no symbols or debug info loaded" );
       return False;
    }
+
+   oimage = sres.val;
 
    /* Ok, the object image is safely in oimage[0 .. n_oimage-1]. 
       Now verify that it is a valid ELF .so or executable image.
@@ -1637,14 +1757,14 @@ Bool read_lib_symbols ( SegInfo* si )
    res = True;
 
   out: {
-   Int m_res;
+   SysRes m_res;
    /* Last, but not least, heave the image(s) back overboard. */
    if (dimage) {
-      m_res = VG_(munmap) ( (void*)dimage, n_dimage );
-      vg_assert(0 == m_res);
+      m_res = VG_(am_munmap_valgrind) ( dimage, n_dimage );
+      vg_assert(!m_res.isError);
    }
-   m_res = VG_(munmap) ( (void*)oimage, n_oimage );
-   vg_assert(0 == m_res);
+   m_res = VG_(am_munmap_valgrind) ( oimage, n_oimage );
+   vg_assert(!m_res.isError);
    return res;
   } 
 }

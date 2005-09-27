@@ -96,7 +96,7 @@ VgNeeds VG_(needs) = {
 };
 
 /* static */
-Bool VG_(sanity_check_needs)(Bool non_zero_shadow_memory, Char** failmsg)
+Bool VG_(sanity_check_needs)(Char** failmsg)
 {
 #define CHECK_NOT(var, value)                                  \
    if ((var)==(value)) {                                       \
@@ -134,12 +134,6 @@ Bool VG_(sanity_check_needs)(Bool non_zero_shadow_memory, Char** failmsg)
       *failmsg = "Tool error: one of the specialised 'die_mem_stack_n'\n"
                  "   events tracked, but not the generic 'die_mem_stack' one.\n"
                  "   'die_mem_stack' should be defined\n";
-      return False;
-   }
-
-   if (VG_(needs).shadow_memory != non_zero_shadow_memory) {
-      *failmsg = "Tool error: VG_(needs).shadow_memory doesn't match\n"
-                 "   the 'shadow_ratio' set in VG_DETERMINE_INTERFACE_VERSION\n";
       return False;
    }
 

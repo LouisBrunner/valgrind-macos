@@ -67,9 +67,16 @@ extern SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt errflag );
 extern SysRes VG_(mk_SysRes_Error)       ( UWord val );
 extern SysRes VG_(mk_SysRes_Success)     ( UWord val );
 
+
+/* Return a string which gives the name of an error value.  Note,
+   unlike the standard C syserror fn, the returned string is not
+   malloc-allocated or writable -- treat it as a constant. */
+
+extern const HChar* VG_(strerror) ( UWord errnum );
+
+
 #endif   // __PUB_CORE_SYSCALL_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

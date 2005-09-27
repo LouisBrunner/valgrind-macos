@@ -8,6 +8,7 @@ sed "s/<obj>.*<\/obj>/<obj>...<\/obj>/" |
 sed "s/<line>.*<\/line>/<line>...<\/line>/" |
 sed "s/<dir>.*<\/dir>/<dir>...<\/dir>/" |
 sed "s/<count>.*<\/count>/<count>...<\/count>/" |
+sed "s/\(m_replacemalloc\/\)\?vg_replace_malloc.c/vg_replace_malloc.c/" |
 perl -0 -p -e "s/<suppcounts>.*<\/suppcounts>/<suppcounts>...<\/suppcounts>/s" |
 perl    -p -e "s/<time>.*<\/time>/<time>...<\/time>/s" |
 perl -0 -p -e "s/<vargv>.*<\/vargv>/<vargv>...<\/vargv>/s"

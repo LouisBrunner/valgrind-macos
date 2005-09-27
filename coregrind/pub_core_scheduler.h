@@ -75,7 +75,8 @@ extern void VG_(vg_yield)(void);
 // The scheduler.
 extern VgSchedReturnCode VG_(scheduler) ( ThreadId tid );
 
-extern void VG_(scheduler_init) ( void );
+// Initialise.  Is passed the extent of the root thread's client stack.
+extern void VG_(scheduler_init) ( Addr clstack_end, SizeT clstack_size );
 
 /* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );

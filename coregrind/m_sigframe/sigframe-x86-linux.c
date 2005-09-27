@@ -31,7 +31,6 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
 #include "pub_core_aspacemgr.h" /* find_segment */
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -396,17 +395,16 @@ void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
 static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 {
    ThreadId tid = tst->tid;
-   Segment *stackseg = NULL;
+   NSegment *stackseg = NULL;
 
    if (VG_(extend_stack)(addr, tst->client_stack_szB)) {
-      stackseg = VG_(find_segment)(addr);
+      stackseg = VG_(am_find_nsegment)(addr);
       if (0 && stackseg)
 	 VG_(printf)("frame=%p seg=%p-%p\n",
-		     addr, stackseg->addr, stackseg->addr+stackseg->len);
+		     addr, stackseg->start, stackseg->end);
    }
 
-   if (stackseg == NULL 
-       || (stackseg->prot & (VKI_PROT_READ|VKI_PROT_WRITE)) == 0) {
+   if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
       VG_(message)(
          Vg_UserMsg,
          "Can't extend stack to %p during signal delivery for thread %d:",

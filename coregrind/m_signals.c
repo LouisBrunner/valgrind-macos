@@ -80,15 +80,14 @@
  */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_coredump.h"
-#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
+#include "pub_core_clientstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debugger.h"      // For VG_(start_debugger)
 #include "pub_core_errormgr.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
@@ -982,7 +981,8 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 
    if (VG_(clo_verbosity) > 1 || (could_core && info->si_code > VKI_SI_USER)) {
       VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "Process terminating with default action of signal %d (%s)%s", 
+      VG_(message)(Vg_UserMsg, 
+                   "Process terminating with default action of signal %d (%s)%s", 
 		   sigNo, signame(sigNo), core ? ": dumping core" : "");
 
       /* Be helpful - decode some more details about this fault */
@@ -1008,6 +1008,14 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	       haveaddr = False;
 	       break;
 	    }
+#if 0
+            {
+              HChar buf[110];
+              VG_(am_show_nsegments)(0,"post segfault");
+              VG_(sprintf)(buf, "/bin/cat /proc/%d/maps", VG_(getpid)());
+              VG_(system)(buf);
+            }
+#endif
 	    break;
 
 	 case VKI_SIGILL:
@@ -1178,7 +1186,7 @@ static void resume_scheduler(ThreadId tid)
    if (tst->sched_jmpbuf_valid) {
       /* Can't continue; must longjmp back to the scheduler and thus
          enter the sighandler immediately. */
-      longjmp(tst->sched_jmpbuf, True);
+      __builtin_longjmp(tst->sched_jmpbuf, True);
    }
 }
 
@@ -1371,65 +1379,41 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
  */
 Bool VG_(extend_stack)(Addr addr, UInt maxsize)
 {
-   Segment *seg;
-   Addr base;
-   UInt newsize;
+   SizeT udelta;
 
    /* Find the next Segment above addr */
-   seg = VG_(find_segment)(addr);
-   if (seg)
+   NSegment* seg      = VG_(am_find_nsegment)(addr);
+   NSegment* seg_next = seg ? VG_(am_next_nsegment)( seg, True/*fwds*/ )
+                            : NULL;
+
+   if (seg && seg->kind == SkAnonC)
+      /* addr is already mapped.  Nothing to do. */
       return True;
 
-   /* now we know addr is definitely unmapped */
-   seg = VG_(find_segment_above_unmapped)(addr);
-
-   /* If there isn't one, or it isn't growable, fail */
-   if (seg == NULL || 
-       !(seg->flags & SF_GROWDOWN) ||
-       VG_(seg_contains)(seg, addr, sizeof(void *)))
-      return False;
-       
-   vg_assert(seg->addr > addr);
-
-   /* Create the mapping */
-   base = VG_PGROUNDDN(addr);
-   newsize = seg->addr - base;
-
-   if (seg->len + newsize >= maxsize)
+   /* Check that the requested new base is in a shrink-down
+      reservation section which abuts an anonymous mapping that
+      belongs to the client. */
+   if ( ! (seg
+           && seg->kind == SkResvn
+           && seg->smode == SmUpper
+           && seg_next
+           && seg_next->kind == SkAnonC
+           && seg->end+1 == seg_next->start))
       return False;
 
-   /* Nasty Hack.  The new segment will have SF_MMAP set because
-      that's what VG_(mmap) does.  But the existing stack segment
-      won't necessarily have it set, because the initial segment list
-      entry for the main thread's stack doesn't have it set.  That
-      means that the segment list preener won't merge the segments
-      together (because they have different flags).  That means the
-      segment list will in fact list two adjacent segments for the
-      main stack, which is wrong.  This means that the tests which
-      check if a translation is from a stack-like area and therefore
-      in need of a self-check will not work right.  Sigh.
-
-      So .. in lieu of fixing this properly (viz, rationalising all
-      the SF_ flags), just mark the original stack segment as having
-      SF_MMAP.  Then the preener will merge it into the new area.
-      This is a hack.  */
-   seg->flags |= SF_MMAP;
-   /* end of Nasty Hack */
-
-   if (VG_(mmap)((Char *)base, newsize,
-		 seg->prot,
-		 VKI_MAP_PRIVATE | VKI_MAP_FIXED | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
-		 seg->flags,
-		 -1, 0) == (void *)-1)
+   udelta = VG_PGROUNDUP(seg_next->start - addr);
+   VG_(debugLog)(1, "signals", 
+                    "extending a stack base 0x%llx down by %lld\n",
+                    (ULong)seg_next->start, (ULong)udelta);
+   if (! VG_(am_extend_into_adjacent_reservation_client)
+            ( seg_next, -(SSizeT)udelta )) {
+      VG_(debugLog)(1, "signals", "extending a stack base: FAILED\n");
       return False;
+   }
 
    /* When we change the main stack, we have to let the stack handling
       code know about it. */
-   VG_(change_stack)(VG_(clstk_id), base, VG_(clstk_end));
-
-   if (0)
-      VG_(printf)("extended stack: %p %d\n",
-		  base, newsize);
+   VG_(change_stack)(VG_(clstk_id), addr, VG_(clstk_end));
 
    if (VG_(clo_sanity_level) > 2)
       VG_(sanity_check_general)(False);
@@ -1535,7 +1519,8 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
    } 
 
    if (VG_(clo_trace_signals)) {
-      VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d, EIP=%p, eip=%p",
+      VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d, "
+                                "EIP=%p, eip=%p",
                    sigNo, info->si_code, VG_(get_IP)(tid), 
 		   VG_UCONTEXT_INSTR_PTR(uc) );
    }
@@ -1547,27 +1532,30 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
    if (info->si_signo == VKI_SIGSEGV) {
       Addr fault = (Addr)info->_sifields._sigfault._addr;
       Addr esp   =  VG_(get_SP)(tid);
-      Segment* seg;
-
-      seg = VG_(find_segment)(fault);
-      if (seg == NULL)
-         seg = VG_(find_segment_above_unmapped)(fault);
+      NSegment* seg      = VG_(am_find_nsegment)(fault);
+      NSegment* seg_next = seg ? VG_(am_next_nsegment)( seg, True/*fwds*/ )
+                               : NULL;
 
       if (VG_(clo_trace_signals)) {
 	 if (seg == NULL)
 	    VG_(message)(Vg_DebugMsg,
-			 "SIGSEGV: si_code=%d faultaddr=%p tid=%d ESP=%p seg=NULL shad=%p-%p",
-			 info->si_code, fault, tid, esp,
-			 VG_(shadow_base), VG_(shadow_end));
+			 "SIGSEGV: si_code=%d faultaddr=%p tid=%d ESP=%p "
+                         "seg=NULL",
+			 info->si_code, fault, tid, esp);
 	 else
 	    VG_(message)(Vg_DebugMsg,
-			 "SIGSEGV: si_code=%d faultaddr=%p tid=%d ESP=%p seg=%p-%p fl=%x shad=%p-%p",
-			 info->si_code, fault, tid, esp, seg->addr, seg->addr+seg->len, seg->flags,
-			 VG_(shadow_base), VG_(shadow_end));
+			 "SIGSEGV: si_code=%d faultaddr=%p tid=%d ESP=%p "
+                          "seg=%p-%p",
+			 info->si_code, fault, tid, esp, seg->start, seg->end);
       }
       if (info->si_code == 1 /* SEGV_MAPERR */
-	  && fault >= (esp - VG_STACK_REDZONE_SZB)
-          && fault < VG_(client_end)) {
+          && seg
+          && seg->kind == SkResvn
+          && seg->smode == SmUpper
+          && seg_next
+          && seg_next->kind == SkAnonC
+          && seg->end+1 == seg_next->start
+	  && fault >= (esp - VG_STACK_REDZONE_SZB)) {
 	 /* If the fault address is above esp but below the current known
 	    stack segment base, and it was a fault because there was
 	    nothing mapped there (as opposed to a permissions fault),
@@ -1577,10 +1565,12 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
 	    if (VG_(clo_trace_signals))
 	       VG_(message)(Vg_DebugMsg, 
-			    "       -> extended stack base to %p", VG_PGROUNDDN(fault));
-	    return;             // extension succeeded, restart instruction
+			    "       -> extended stack base to %p", 
+                            VG_PGROUNDDN(fault));
+	    return; // extension succeeded, restart instruction
 	 } else
-	    VG_(message)(Vg_UserMsg, "Stack overflow in thread %d: can't grow stack to %p", 
+	    VG_(message)(Vg_UserMsg, 
+                         "Stack overflow in thread %d: can't grow stack to %p", 
 			 tid, fault);
       }
       /* Fall into normal signal handling for all other cases */

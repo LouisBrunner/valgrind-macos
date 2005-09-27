@@ -170,6 +170,37 @@
    build signal frames).  Do not do this.  If you want a signal poll
    after the syscall goes through, do "*flags |= SfPollAfter" and the
    driver logic will do it for you.
+
+   -----------
+
+   Another critical requirement following introduction of new address
+   space manager (JRS, 20050923):
+
+   In a situation where the mappedness of memory has changed, aspacem
+   should be notified BEFORE the tool.  Hence the following is
+   correct:
+
+      Bool d = VG_(am_notify_munmap)(s->start, s->end+1 - s->start);
+      VG_TRACK( die_mem_munmap, s->start, s->end+1 - s->start );
+      if (d)
+         VG_(discard_translations)(s->start, s->end+1 - s->start);
+
+   whilst this is wrong:
+
+      VG_TRACK( die_mem_munmap, s->start, s->end+1 - s->start );
+      Bool d = VG_(am_notify_munmap)(s->start, s->end+1 - s->start);
+      if (d)
+         VG_(discard_translations)(s->start, s->end+1 - s->start);
+
+   The reason is that the tool may itself ask aspacem for more shadow
+   memory as a result of the VG_TRACK call.  In such a situation it is
+   critical that aspacem's segment array is up to date -- hence the
+   need to notify aspacem first.
+
+   -----------
+
+   Also .. take care to call VG_(discard_translations) whenever
+   memory with execute permissions is unmapped.
 */
 
 
@@ -642,7 +673,7 @@ void VG_(client_syscall) ( ThreadId tid )
          success. */
       PRINT(" --> [pre-success] Success(0x%llx)\n", (Long)sci->status.val );
                                        
-      /* In this case thes allowable flag are to ask for a signal-poll
+      /* In this case the allowable flags are to ask for a signal-poll
          and/or a yield after the call.  Changing the args isn't
          allowed. */
       vg_assert(0 == (sci->flags & ~(SfPollAfter | SfYieldAfter)));

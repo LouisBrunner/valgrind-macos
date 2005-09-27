@@ -106,7 +106,7 @@ typedef struct {
 SysRes;
 
 /* ---------------------------------------------------------------------
-   Miscellaneous (word size, endianness, regparmness)
+   Miscellaneous (word size, endianness, regparmness, stringification)
    ------------------------------------------------------------------ */
 
 /* Word size: this is going to be either 4 or 8. */
@@ -131,6 +131,10 @@ SysRes;
 #else
 #  error Unknown arch
 #endif
+
+/* Macro games */
+#define VG_STRINGIFZ(__str)  #__str
+#define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
 
 #endif /* __PUB_TOOL_BASICS_H */
 

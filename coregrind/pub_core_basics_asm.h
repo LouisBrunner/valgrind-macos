@@ -1,13 +1,15 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Memory management libc stuff.            pub_core_libcmman.h ---*/
+/*--- Header imported directly by every core asm file, and         ---*/
+/*--- (via pub_core_basics.h) by every core C file.                ---*/
+/*---                                        pub_core_basics_asm.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2005 Julian Seward
+   Copyright (C) 2000-2005 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -28,25 +30,23 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_CORE_LIBCMMAN_H
-#define __PUB_CORE_LIBCMMAN_H
+#ifndef __PUB_CORE_BASICS_ASM_H
+#define __PUB_CORE_BASICS_ASM_H
 
 //--------------------------------------------------------------------
-// PURPOSE: This module contains libc code related to low-level
-// memory management, ie. mmap and friends.
+// PURPOSE: This header should be imported by every single asm and 
+// (indirectly) by every C file in the core.  It contains really basic
+// things needed everywhere.
 //--------------------------------------------------------------------
 
-#include "pub_tool_libcmman.h"
+#include "pub_tool_basics_asm.h"
 
-extern void* VG_(mmap)   ( void* start, SizeT length, UInt prot, UInt flags,
-                           UInt sf_flags, UInt fd, OffT offset );
-extern Int VG_(munmap)   ( void* start, SizeT length );
-extern Int VG_(mprotect) ( void *start, SizeT length, UInt prot );
+// Autoconf-generated settings
+#include "config.h"
 
-extern Addr VG_(get_memory_from_mmap_for_client)(SizeT len);
-
-#endif   // __PUB_CORE_LIBCMMAN_H
+#endif /* __PUB_CORE_BASICS_ASM_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+

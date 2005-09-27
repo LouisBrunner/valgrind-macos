@@ -118,6 +118,9 @@ static Stack* find_stack_by_addr(Addr sp)
 UWord VG_(register_stack)(Addr start, Addr end)
 {
    Stack *i;
+
+   if (0) VG_(printf)("REGISTER STACK %p %p\n", start,end);
+
    if (start > end) {
       Addr t = end;
       end = start;

@@ -37,6 +37,7 @@
 // everywhere.
 //--------------------------------------------------------------------
 
+#include "pub_core_basics_asm.h"
 #include "pub_tool_basics.h"
 
 /* ---------------------------------------------------------------------
@@ -60,9 +61,6 @@
 
 // For jmp_buf
 #include <setjmp.h>
-
-// Autoconf-generated settings
-#include "config.h"
 
 #endif   // __PUB_CORE_BASICS_H
 

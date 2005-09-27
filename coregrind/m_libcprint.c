@@ -38,8 +38,6 @@
 #include "pub_core_options.h"
 #include "valgrind.h"            // For RUNNING_ON_VALGRIND
 
-#include <time.h>
-#include <sys/time.h>
 
 
 /* ---------------------------------------------------------------------
@@ -70,10 +68,12 @@ static void send_bytes_to_logging_sink ( Char* msg, Int nbytes )
    printf() and friends
    ------------------------------------------------------------------ */
 
-typedef struct {
-   char buf[100];
-   int n;
-} printf_buf;
+typedef 
+   struct {
+      HChar buf[100];
+      Int   n;
+   } 
+   printf_buf;
 
 // Adds a single char to the buffer.  When the buffer gets sufficiently
 // full, we write its contents to the logging sink.
@@ -151,6 +151,53 @@ UInt VG_(sprintf) ( Char* buf, const HChar *format, ... )
    return ret;
 }
 
+
+/* A replacement for snprintf. */
+typedef 
+   struct {
+      HChar* buf;
+      Int    buf_size;
+      Int    buf_used;
+   } 
+   snprintf_buf;
+
+static void add_to_vg_snprintf_buf ( HChar c, void* p )
+{
+   snprintf_buf* b = p;
+   if (b->buf_size > 0 && b->buf_used < b->buf_size) {
+      b->buf[b->buf_used++] = c;
+      if (b->buf_used < b->buf_size)
+         b->buf[b->buf_used] = 0;
+   } 
+}
+
+UInt VG_(vsnprintf) ( Char* buf, Int size, const HChar *format, va_list vargs )
+{
+   Int ret;
+   snprintf_buf b;
+   b.buf      = buf;
+   b.buf_size = size < 0 ? 0 : size;
+   b.buf_used = 0;
+
+   ret = VG_(debugLog_vprintf) 
+            ( add_to_vg_snprintf_buf, &b, format, vargs );
+
+   return b.buf_used;
+}
+
+UInt VG_(snprintf) ( Char* buf, Int size, const HChar *format, ... )
+{
+   UInt ret;
+   va_list vargs;
+
+   va_start(vargs,format);
+   ret = VG_(vsnprintf)(buf, size, format, vargs);
+   va_end(vargs);
+
+   return ret;
+}
+
+
 /* ---------------------------------------------------------------------
    percentify()
    ------------------------------------------------------------------ */
@@ -212,9 +259,10 @@ void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, char buf[])
 
 void VG_(ctime) ( /*OUT*/HChar* buf )
 {
+#if 0
    struct timeval tv;
    struct tm tm;
-   buf[0] = 0;     
+   buf[0] = 0;
    if ( gettimeofday( &tv, NULL ) == 0
         && localtime_r( &tv.tv_sec, &tm ) == &tm )
    {
@@ -223,6 +271,9 @@ void VG_(ctime) ( /*OUT*/HChar* buf )
                     tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
                     tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000 );
    }
+#else
+   VG_(strcpy)(buf, "VG_(ctime) HACK!");
+#endif
 }
 
 
@@ -232,10 +283,9 @@ void VG_(ctime) ( /*OUT*/HChar* buf )
 
 UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
 {
-   UInt  count = 0;
-   Char  c;
-   const Char* pfx_s;
-   static const Char pfx[] = ">>>>>>>>>>>>>>>>";
+   UInt count = 0;
+   Char c;
+   Int  i, depth;
 
    switch (kind) {
       case Vg_UserMsg:       c = '='; break;
@@ -245,16 +295,15 @@ UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
       default:               c = '?'; break;
    }
 
-   // The pfx trick prints one or more '>' characters in front of the
-   // messages when running Valgrind under Valgrind, one per level of
-   // self-hosting.
-   pfx_s = &pfx[sizeof(pfx)-1-RUNNING_ON_VALGRIND],
-
-   // Print the message
-   count = 0;
-
+   // Print one '>' in front of the messages for each level of self-hosting
+   // being performed.
+   depth = RUNNING_ON_VALGRIND;
+   for (i = 0; i < depth; i++) {
+      count += VG_(printf) (">");
+   }
+   
    if (!VG_(clo_xml))
-      count += VG_(printf) ("%s%c%c", pfx_s, c,c);
+      count += VG_(printf) ("%c%c", c,c);
 
    if (VG_(clo_time_stamp)) {
       HChar buf[50];

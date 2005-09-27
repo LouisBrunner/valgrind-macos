@@ -44,25 +44,28 @@
 /*------------------------------------------------------------*/
 
 /* This is only here so it can be shared between stage1 and stage2 */
-extern
-void VG_(foreach_map)(int (*fn)(char *start, char *end,
-			        const char *perm, off_t offset,
-			        int maj, int min, int ino, void* extra),
-                      void* extra);
 
-/* Jump to 'dst', but first set the stack pointer to 'stack'.  Also,
-   clear all the integer registers before entering 'dst'.  It's
-   important that the stack pointer is set to exactly 'stack' and not
-   (eg) stack - apparently_harmless_looking_small_offset.  Basically
-   because the code at 'dst' might be wanting to scan the area above
-   'stack' (viz, the auxv array), and putting spurious words on the
-   stack confuses it.
-
-   This is only exported so that vgtest_ume.c can use it.
-*/
-extern
-__attribute__((noreturn))
-void VG_(jump_and_switch_stacks) ( Addr stack, Addr dst );
+/* JRS 9 Aug 05: both of these are apparently unused, except by
+   memcheck/tests/vgtest_ume.c. */
+//zz extern
+//zz void VG_(foreach_map)(int (*fn)(char *start, char *end,
+//zz 			        const char *perm, off_t offset,
+//zz 			        int maj, int min, int ino, void* extra),
+//zz                       void* extra);
+//zz 
+//zz /* Jump to 'dst', but first set the stack pointer to 'stack'.  Also,
+//zz    clear all the integer registers before entering 'dst'.  It's
+//zz    important that the stack pointer is set to exactly 'stack' and not
+//zz    (eg) stack - apparently_harmless_looking_small_offset.  Basically
+//zz    because the code at 'dst' might be wanting to scan the area above
+//zz    'stack' (viz, the auxv array), and putting spurious words on the
+//zz    stack confuses it.
+//zz 
+//zz    This is only exported so that vgtest_ume.c can use it.
+//zz */
+//zz extern
+//zz __attribute__((noreturn))
+//zz void VG_(jump_and_switch_stacks) ( Addr stack, Addr dst );
 
 
 /*------------------------------------------------------------*/
@@ -73,7 +76,6 @@ void VG_(jump_and_switch_stacks) ( Addr stack, Addr dst );
 // inputs/outputs of do_exec().
 struct exeinfo
 {
-   Addr map_base;       // IN: if non-zero, base address of mappings
    char** argv;         // IN: the original argv
 
    Addr exe_base;       // INOUT: lowest (allowed) address of exe
@@ -111,10 +113,6 @@ struct ume_auxv
 };
 
 extern struct ume_auxv *VG_(find_auxv)(UWord* orig_esp);
-
-/* Our private auxv entries */
-#define AT_UME_PADFD	0xff01	/* padding file fd */
-#define AT_UME_EXECFD	0xff02	/* stage1 executable fd */
 
 #endif /* __PUB_CORE_UME_H */
 

@@ -58,19 +58,16 @@ typedef struct _ToolInfo {
       - any other tool-specific initialisation
    */
    void (*tl_pre_clo_init) ( void );
-
-   /* Specifies how big the shadow segment should be as a ratio to the
-      client address space.  0 for no shadow segment. */
-   float shadow_ratio;
 } ToolInfo;
 
+extern const ToolInfo VG_(tool_info);
+
 /* Every tool must include this macro somewhere, exactly once. */
-#define VG_DETERMINE_INTERFACE_VERSION(pre_clo_init, shadow)   \
+#define VG_DETERMINE_INTERFACE_VERSION(pre_clo_init)           \
    const ToolInfo VG_(tool_info) = {                           \
       .sizeof_ToolInfo   = sizeof(ToolInfo),                   \
       .interface_version = VG_CORE_INTERFACE_VERSION,          \
       .tl_pre_clo_init   = pre_clo_init,                       \
-      .shadow_ratio	 = shadow,                             \
    };
 
 /* ------------------------------------------------------------------ */

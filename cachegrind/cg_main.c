@@ -42,6 +42,7 @@
 #include "pub_tool_options.h"
 #include "pub_tool_profile.h"
 #include "pub_tool_tooliface.h"
+#include "pub_tool_clientstate.h"
 
 #include "cg_arch.h"
 #include "cg_sim.c"
@@ -895,11 +896,17 @@ static void fprint_CC_table_and_calc_totals(void)
    // "cmd:" line
    VG_(strcpy)(buf, "cmd:");
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-   for (i = 0; i < VG_(client_argc); i++) {
-       if (VG_(client_argv)[i]) {
-          VG_(write)(fd, " ", 1);
-          VG_(write)(fd, VG_(client_argv)[i], VG_(strlen)(VG_(client_argv)[i]));
-       }
+   if (VG_(args_the_exename)) {
+      VG_(write)(fd, " ", 1);
+      VG_(write)(fd, VG_(args_the_exename), 
+                     VG_(strlen)( VG_(args_the_exename) ));
+   }
+   for (i = 0; i < VG_(args_for_client).used; i++) {
+      if (VG_(args_for_client).strs[i]) {
+         VG_(write)(fd, " ", 1);
+         VG_(write)(fd, VG_(args_for_client).strs[i], 
+                        VG_(strlen)(VG_(args_for_client).strs[i]));
+      }
    }
    // "events:" line
    VG_(sprintf)(buf, "\nevents: Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw\n");
@@ -1207,7 +1214,7 @@ static void cg_pre_clo_init(void)
    instr_info_table = VG_(HT_construct)( 4999 );   // prime, biggish
 }
 
-VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init, 0)
+VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

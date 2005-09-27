@@ -66,7 +66,7 @@ typedef struct _CodeRedirect CodeRedirect;
 // before translating a basic block.
 extern Addr VG_(code_redirect) ( Addr orig );
 
-/* Set up some default redirects */
+/* Set up some default redirects. */
 extern void VG_(setup_code_redirect_table) ( void );
 
 extern void VG_(resolve_existing_redirs_with_seginfo)(SegInfo *si);

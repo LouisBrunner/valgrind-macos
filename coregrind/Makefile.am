@@ -1,42 +1,36 @@
 include $(top_srcdir)/Makefile.all.am
-include $(top_srcdir)/Makefile.core.am
-
-.PHONY: @VEX_DIR@/libvex.a
-
-MODULES = \
-	m_aspacemgr \
-	m_debuginfo \
-	m_demangle \
-	m_dispatch \
-	m_replacemalloc \
-	m_scheduler \
-	m_sigframe \
-	m_syswrap
-
-## When building, we are only interested in the current arch/OS/platform.
-## But when doing 'make dist', we are interested in every arch/OS/platform.
-## That's what DIST_SUBDIRS specifies.
-SUBDIRS = $(MODULES) .
-
-DIST_SUBDIRS = $(MODULES) .
+include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" \
 		-DKICKSTART_BASE=@KICKSTART_BASE@
 
 default.supp: $(SUPP_FILES)
 
+noinst_LIBRARIES = \
+    libcoregrind.a \
+    libreplacemalloc_toolpreload.a
+
 bin_PROGRAMS = \
 	valgrind
 
 val_PROGRAMS = \
-	stage2 \
-	vgpreload_core.so
+	vg_preload_core.so
+
+# Remember to include all the arch-specific files in the distribution.
+EXTRA_DIST = \
+        $(addsuffix .S,$(addprefix m_dispatch/dispatch-,$(VG_ARCH_ALL))) \
+        $(addsuffix .c,$(addprefix m_sigframe/sigframe-,$(VG_PLATFORM_ALL))) \
+        $(addsuffix .S,$(addprefix m_syswrap/syscall-,$(VG_PLATFORM_ALL))) \
+        $(addsuffix .c,$(addprefix m_syswrap/syswrap-,$(VG_OS_ALL))) \
+        $(addsuffix .c,$(addprefix m_syswrap/syswrap-,$(VG_PLATFORM_ALL)))
 
 noinst_HEADERS = \
 	coregrind.h		\
 	pub_core_aspacemgr.h	\
 	pub_core_basics.h	\
-	pub_core_coredump.h	\
+	pub_core_basics_asm.h	\
+	pub_core_clientstate.h	\
+	pub_core_commandline.h	\
 	pub_core_cpuid.h	\
 	pub_core_debuginfo.h	\
 	pub_core_debugger.h	\
@@ -50,7 +44,6 @@ noinst_HEADERS = \
 	pub_core_libcbase.h	\
 	pub_core_libcassert.h	\
 	pub_core_libcfile.h	\
-	pub_core_libcmman.h	\
 	pub_core_libcprint.h	\
 	pub_core_libcproc.h	\
 	pub_core_libcsignal.h	\
@@ -82,22 +75,31 @@ noinst_HEADERS = \
 	vki_unistd.h		\
 	vki_unistd-amd64-linux.h\
 	vki_unistd-ppc32-linux.h\
-	vki_unistd-x86-linux.h
+	vki_unistd-x86-linux.h	\
+	m_debuginfo/priv_symtab.h	\
+	m_debuginfo/priv_symtypes.h	\
+	m_demangle/ansidecl.h	\
+	m_demangle/dyn-string.h	\
+	m_demangle/demangle.h	\
+	m_demangle/safe-ctype.h \
+	m_scheduler/priv_sema.h \
+	m_syswrap/priv_types_n_macros.h \
+	m_syswrap/priv_syswrap-generic.h \
+	m_syswrap/priv_syswrap-linux.h \
+	m_syswrap/priv_syswrap-main.h
 
-BUILT_SOURCES = stage2.lds
-CLEANFILES = stage2.lds
+BUILT_SOURCES = 
+CLEANFILES = 
 
 valgrind_SOURCES = \
-	stage1.c \
-	m_debuglog.c \
-	m_ume.c
-valgrind_DEPENDENCIES =
-valgrind_LDFLAGS=-static -g
-valgrind_LDADD=
+	m_launcher.c \
+	m_debuglog.c
 
-stage2_SOURCES = \
+libcoregrind_a_SOURCES = \
+	m_commandline.c \
 	m_coredump.c \
 	m_cpuid.S \
+	m_clientstate.c \
 	m_debugger.c \
 	m_debuglog.c \
 	m_errormgr.c \
@@ -106,7 +108,6 @@ stage2_SOURCES = \
 	m_libcbase.c \
 	m_libcassert.c \
 	m_libcfile.c \
-	m_libcmman.c \
 	m_libcprint.c \
 	m_libcproc.c \
 	m_libcsignal.c \
@@ -129,83 +130,46 @@ stage2_SOURCES = \
 	m_trampoline.S \
 	m_translate.c \
 	m_transtab.c \
-	m_ume.c
+	m_ume.c \
+	m_aspacemgr/read_procselfmaps.c \
+	m_aspacemgr/aspacemgr.c \
+	m_debuginfo/dwarf.c \
+	m_debuginfo/stabs.c \
+	m_debuginfo/symtab.c \
+	m_debuginfo/symtypes.c \
+	m_demangle/cp-demangle.c \
+	m_demangle/cplus-dem.c \
+	m_demangle/demangle.c \
+	m_demangle/dyn-string.c \
+	m_demangle/safe-ctype.c \
+	m_dispatch/dispatch-@VG_ARCH@.S \
+	m_replacemalloc/replacemalloc_core.c \
+	m_scheduler/scheduler.c \
+	m_scheduler/sema.c \
+	m_sigframe/sigframe-@VG_PLATFORM@.c \
+	m_syswrap/syscall-@VG_PLATFORM@.S \
+	m_syswrap/syswrap-generic.c \
+	m_syswrap/syswrap-@VG_OS@.c \
+	m_syswrap/syswrap-@VG_PLATFORM@.c \
+	m_syswrap/syswrap-main.c
 
-## Nb: libscheduler.a must precede libdispatch.a in this list.
-stage2_extra= \
-	m_debuginfo/libdebuginfo.a \
-	m_demangle/libdemangle.a \
-	m_scheduler/libscheduler.a \
-	m_dispatch/libdispatch.a \
-	m_aspacemgr/libaspacemgr.a \
-	m_sigframe/libsigframe.a \
-	m_syswrap/libsyswrap.a \
-	@VEX_DIR@/libvex.a
+libreplacemalloc_toolpreload_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_a_CFLAGS = $(PIC_AM_CFLAGS)
 
-## These ones must be linked in with the --whole-archive flag, because they
-## wouldn't get pulled into stage2 otherwise (because they contain symbols
-## only referred to by tool shared objects).
-stage2_extra2 = \
-	m_replacemalloc/libreplacemalloc_core.a
+m_dispatch/dispatch-@VG_ARCH@.S:   libvex_guest_offsets.h
+m_syswrap/syscall-@VG_PLATFORM@.S: libvex_guest_offsets.h
+m_syswrap/syswrap-main.c: 	   libvex_guest_offsets.h
 
-## Nb: older versions of automake don't seem to like having += within an
-## if-then-else, so we have to use these variables for the common parts.
-st2_DEPS_common = \
-	$(stage2_extra) \
-	$(stage2_extra2)
+libvex_guest_offsets.h:
+	$(MAKE) -C @VEX_DIR@ pub/libvex_guest_offsets.h
 
-st2_LDFLAGS_common = \
-	-Wl,--export-dynamic -g \
-	-Wl,--whole-archive $(stage2_extra2) -Wl,--no-whole-archive
-
-if USE_PIE
-stage2_DEPENDENCIES = $(st2_DEPS_common)
-stage2_LDFLAGS = \
-	$(st2_LDFLAGS_common) \
-	-pie
-else
-stage2_DEPENDENCIES = $(st2_DEPS_common) stage2.lds
-stage2_LDFLAGS = \
-	$(st2_LDFLAGS_common) \
-	-Wl,-defsym,kickstart_base=@KICKSTART_BASE@ -Wl,-T,stage2.lds
-endif
-
-stage2_LDADD= $(stage2_extra) \
-	-ldl
-
-vgpreload_core_so_SOURCES = vg_preloaded.c
-vgpreload_core_so_CFLAGS = $(AM_CFLAGS) -fpic
-vgpreload_core_so_LDADD = -ldl
-vgpreload_core_so_LDFLAGS = \
+vg_preload_core_so_SOURCES = vg_preloaded.c
+vg_preload_core_so_CFLAGS = $(AM_CFLAGS) -fpic
+vg_preload_core_so_LDADD = -ldl
+vg_preload_core_so_LDFLAGS = \
 	-shared \
-	-Wl,--soname,vgpreload_core.so \
+	-Wl,--soname,vg_preload_core.so \
 	-Wl,-z,initfirst
-
-# Extract ld's default linker script and hack it to our needs.
-# First we cut everything above and below the "=====..." lines at the top
-# and bottom.
-# Then we have to replace the load address with "kickstart_base".
-# The line to replace in has one of the following two forms:
-#
-#   . = 0x08048000 + SIZEOF_HEADERS;
-#
-# or
-#   PROVIDE (__executable_start = 0x08048000); . = 0x08048000 + SIZEOF_HEADERS;
-#
-# So we search for the line with a hex value "+ SIZEOF_HEADERS", and replace
-# all the hex values in that line with "kickstart_base".
-stage2.lds: Makefile
-	$(CC) $(AM_CFLAGS) -Wl,--verbose -nostdlib 2>&1 | sed \
-		-e '1,/^=====\+$$/d' \
-		-e '/^=====\+$$/d' \
-		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/kickstart_base/g' > $@ \
-	|| rm -f $@
-
-@VEX_DIR@/libvex.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" libvex.a EXTRA_CFLAGS="@ARCH_CORE_AM_CFLAGS@ @PIE_AM_CFLAGS@"
-
-@VEX_DIR@/priv/main/vex_svnversion.h: $(wildcard @VEX_DIR@/.svn/entries)
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" version
 
 clean-local:
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" clean

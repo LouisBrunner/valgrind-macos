@@ -511,7 +511,10 @@ ESecMap* alloc_secondary_map ( __attribute__ ((unused)) Char* caller )
    //PROF_EVENT(10); PPP
 
    // Mark all words as virgin.
-   map = (ESecMap *)VG_(shadow_alloc)(sizeof(ESecMap));
+   map = (ESecMap *)VG_(am_shadow_alloc)(sizeof(ESecMap));
+   if (map == NULL)
+      VG_(out_of_memory_NORETURN)( "helgrind:allocate new ESecMap", 
+                                   sizeof(ESecMap) );
    for (i = 0; i < ESEC_MAP_WORDS; i++)
       map->swords[i] = virgin_sword;
 
@@ -3469,8 +3472,7 @@ static void hg_pre_clo_init(void)
    hg_malloc_list = VG_(HT_construct)( 80021 );    // prime, big
 }
 
-/* Uses a 1:1 mapping */
-VG_DETERMINE_INTERFACE_VERSION(hg_pre_clo_init, 1.0)
+VG_DETERMINE_INTERFACE_VERSION(hg_pre_clo_init)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                hg_main.c ---*/

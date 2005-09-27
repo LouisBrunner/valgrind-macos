@@ -33,7 +33,6 @@
 #include "pub_core_debuglog.h"    // For VG_(debugLog_vprintf)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_machine.h"

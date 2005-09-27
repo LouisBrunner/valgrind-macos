@@ -54,7 +54,7 @@ char * malloc ();
 char * realloc ();
 #endif*/
 
-#include <demangle.h>
+#include "demangle.h"
 #include "dyn-string.h"
 #undef CURRENT_DEMANGLING_STYLE
 #define CURRENT_DEMANGLING_STYLE work->options
@@ -3852,7 +3852,7 @@ demangle_fund_type (work, mangled, result)
   int done = 0;
   int success = 1;
   char buf[10];
-  unsigned int dec = 0;
+  //unsigned int dec = 0;     // unused
   string btype;
   type_kind_t tk = tk_integral;
 

@@ -77,7 +77,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
    // JRS 2002-sep-17: hack, to round up fp_max to the end of the
    // current page, at least.  Dunno if it helps.
    // NJN 2002-sep-17: seems to -- stack traces look like 1.0.X again
-   fp_max = (fp_max_orig + VKI_PAGE_SIZE - 1) & ~(VKI_PAGE_SIZE - 1);
+   fp_max = VG_PGROUNDUP(fp_max_orig);
    fp_max -= sizeof(Addr);
 
    if (debug)
@@ -229,7 +229,7 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
       useful.  */
    if (ip >= (Addr)&VG_(trampoline_stuff_start) 
        && ip < (Addr)&VG_(trampoline_stuff_end)
-       &&  VG_(is_addressable)(sp, sizeof(Addr), VKI_PROT_READ)) {
+       && VG_(am_is_valid_for_client)(sp, sizeof(Addr), VKI_PROT_READ)) {
       ip = *(Addr *)sp;
       sp += sizeof(Addr);
    }

@@ -31,6 +31,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -151,7 +152,8 @@ static void add_redir_to_resolved_list(CodeRedirect *redir, Bool need_discard)
          TRACE_REDIR("Discarding translation due to redirect of already loaded function" );
          TRACE_REDIR("   %s:%s(%p) -> %p)", redir->from_lib, redir->from_sym,
                                             redir->from_addr, redir->to_addr );
-         VG_(discard_translations)((Addr64)redir->from_addr, 1);
+         VG_(discard_translations)((Addr64)redir->from_addr, 1, 
+                                   "add_redir_to_resolved_list");
       }
 
       r = VG_(SkipList_Find_Exact)(&sk_resolved_redirs, &redir->from_addr);

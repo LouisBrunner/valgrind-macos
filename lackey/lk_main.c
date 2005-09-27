@@ -288,7 +288,7 @@ static void lk_pre_clo_init(void)
                                    lk_fini);
 }
 
-VG_DETERMINE_INTERFACE_VERSION(lk_pre_clo_init, 0)
+VG_DETERMINE_INTERFACE_VERSION(lk_pre_clo_init)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                lk_main.c ---*/

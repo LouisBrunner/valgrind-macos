@@ -1,7 +1,8 @@
 include $(top_srcdir)/Makefile.tool.am
 
-val_PROGRAMS = vgtool_none.so
+val_PROGRAMS = none
 
-vgtool_none_so_SOURCES 	 = nl_main.c
-vgtool_none_so_LDFLAGS   = -shared
-
+none_SOURCES      = nl_main.c
+none_DEPENDENCIES = $(COREGRIND_LIBS)
+none_LDADD        = $(TOOL_LINKADD)
+none_LDFLAGS      = $(TOOL_LINKFLAGS)

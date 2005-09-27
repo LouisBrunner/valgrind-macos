@@ -280,7 +280,7 @@ sub do_one_test($$)
     # Pass the appropriate --tool option for the directory (can be overridden
     # by an "args:" line, though).  
     my $tool=determine_tool();
-    mysystem("VALGRINDLIB=$tests_dir/.in_place $valgrind --command-line-only=yes --memcheck:leak-check=no --addrcheck:leak-check=no --tool=$tool $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
+    mysystem("VALGRIND_LIB=$tests_dir/.in_place $valgrind --command-line-only=yes --memcheck:leak-check=no --addrcheck:leak-check=no --tool=$tool $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
 
     if (defined $stdout_filter) {
         mysystem("$stdout_filter < $name.stdout.out > $tmp");

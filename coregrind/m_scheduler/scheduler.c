@@ -62,7 +62,6 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
 #include "pub_core_aspacemgr.h"
 #include "pub_core_dispatch.h"
 #include "pub_core_errormgr.h"      // For VG_(get_n_errs_found)()
@@ -332,7 +331,7 @@ static void block_signals(ThreadId tid)
    do {									\
       ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
 									\
-      (jumped) = setjmp(_qq_tst->sched_jmpbuf);                         \
+      (jumped) = __builtin_setjmp(_qq_tst->sched_jmpbuf);               \
       if ((jumped) == 0) {						\
 	 vg_assert(!_qq_tst->sched_jmpbuf_valid);			\
 	 _qq_tst->sched_jmpbuf_valid = True;				\
@@ -454,15 +453,14 @@ UInt run_thread_for_a_while ( ThreadId tid )
 
 static void os_state_clear(ThreadState *tst)
 {
-   tst->os_state.lwpid = 0;
+   tst->os_state.lwpid       = 0;
    tst->os_state.threadgroup = 0;
 }
 
 static void os_state_init(ThreadState *tst)
 {
-   tst->os_state.valgrind_stack_base = 0;
-   tst->os_state.valgrind_stack_szB  = 0;
-
+   tst->os_state.valgrind_stack_base    = 0;
+   tst->os_state.valgrind_stack_init_SP = 0;
    os_state_clear(tst);
 }
 
@@ -540,10 +538,13 @@ static void sched_fork_cleanup(ThreadId me)
    caller subsequently initialises the guest state components of this
    main thread, thread 1.  
 */
-void VG_(scheduler_init) ( void )
+void VG_(scheduler_init) ( Addr clstack_end, SizeT clstack_size )
 {
    Int i;
    ThreadId tid_main;
+
+   vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
+   vg_assert(VG_IS_PAGE_ALIGNED(clstack_size));
 
    ML_(sema_init)(&run_sema);
 
@@ -564,10 +565,10 @@ void VG_(scheduler_init) ( void )
 
    tid_main = VG_(alloc_ThreadState)();
 
-   /* Initial thread's stack is the original process stack */
    VG_(threads)[tid_main].client_stack_highest_word 
-                                            = VG_(clstk_end) - sizeof(UWord);
-   VG_(threads)[tid_main].client_stack_szB  = VG_(client_rlimit_stack).rlim_cur;
+      = clstack_end + 1 - sizeof(UWord);
+   VG_(threads)[tid_main].client_stack_szB 
+      = clstack_size;
 
    VG_(atfork_child)(sched_fork_cleanup);
 }
@@ -610,7 +611,14 @@ static void handle_syscall(ThreadId tid)
       complete by the time this call returns, and we'll be
       runnable again.  We could take a signal while the
       syscall runs. */
+
+   if (VG_(clo_sanity_level >= 3))
+      VG_(am_do_sync_check)("(BEFORE SYSCALL)",__FILE__,__LINE__);
+
    SCHEDSETJMP(tid, jumped, VG_(client_syscall)(tid));
+
+   if (VG_(clo_sanity_level >= 3))
+      VG_(am_do_sync_check)("(AFTER SYSCALL)",__FILE__,__LINE__);
 
    if (!VG_(is_running_thread)(tid))
       VG_(printf)("tid %d not running; VG_(running_tid)=%d, tid %d status %d\n",
@@ -778,7 +786,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       case VEX_TRC_JMP_TINVAL:
          VG_(discard_translations)(
             (Addr64)VG_(threads)[tid].arch.vex.guest_TISTART,
-            VG_(threads)[tid].arch.vex.guest_TILEN
+            VG_(threads)[tid].arch.vex.guest_TILEN,
+            "scheduler(VEX_TRC_JMP_TINVAL)"
          );
          if (0)
             VG_(printf)("dump translations done.\n");
@@ -1047,7 +1056,9 @@ void do_client_request ( ThreadId tid )
                          " addr %p,  len %d\n",
                          (void*)arg[1], arg[2] );
 
-         VG_(discard_translations)( arg[1], arg[2] );
+         VG_(discard_translations)( 
+            arg[1], arg[2], "scheduler(VG_USERREQ__DISCARD_TRANSLATIONS)" 
+         );
 
          SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
 	 break;
@@ -1080,7 +1091,7 @@ void do_client_request ( ThreadId tid )
                if (c2 == 0) c2 = '_';
 	       VG_(message)(Vg_UserMsg, "Warning:\n"
                    "  unhandled client request: 0x%x (%c%c+0x%x).  Perhaps\n" 
-		   "  VG_(needs).client_requests should be set?\n",
+		   "  VG_(needs).client_requests should be set?",
 			    arg[0], c1, c2, arg[0] & 0xffff);
 	       whined = True;
 	    }
@@ -1155,13 +1166,18 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 
       /* Look for stack overruns.  Visit all threads. */
       for (tid = 1; tid < VG_N_THREADS; tid++) {
-	 SSizeT remains;
+	 SizeT    remains;
+         VgStack* stack;
 
 	 if (VG_(threads)[tid].status == VgTs_Empty ||
 	     VG_(threads)[tid].status == VgTs_Zombie)
 	    continue;
 
-	 remains = VG_(stack_unused)(tid);
+         stack 
+            = (VgStack*)
+              VG_(get_ThreadState)(tid)->os_state.valgrind_stack_base;
+	 remains 
+            = VG_(am_get_VgStack_unused_szB)(stack);
 	 if (remains < VKI_PAGE_SIZE)
 	    VG_(message)(Vg_DebugMsg, 
                          "WARNING: Thread %d is within %d bytes "

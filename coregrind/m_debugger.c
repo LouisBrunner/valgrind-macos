@@ -30,19 +30,16 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
+#include "pub_core_clientstate.h"
 #include "pub_core_debugger.h"
 #include "pub_core_libcbase.h"
-#include "pub_core_libcassert.h"    // For I_die_here
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_options.h"
 
-// We can remove these easily by implementing our own VG_(ptrace)() and
-// VG_(fork)().
-#include <sys/ptrace.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#define WIFSTOPPED(status) (((status) & 0xff) == 0x7f)
+#define WSTOPSIG(status) (((status) & 0xff00) >> 8)
 
 static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 {
@@ -65,7 +62,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    regs.eflags = LibVEX_GuestX86_get_eflags(vex);
    regs.eip    = vex->guest_EIP;
 
-   return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
+   return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
 #elif defined(VGA_amd64)
    regs.rax    = vex->guest_RAX;
    regs.rbx    = vex->guest_RBX;
@@ -86,7 +83,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    regs.eflags = LibVEX_GuestAMD64_get_rflags(vex);
    regs.rip    = vex->guest_RIP;
 
-   return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
+   return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
 #elif defined(VGA_ppc32)
    I_die_here;
    regs.gpr[0] = 0; // stop compiler complaints
@@ -102,10 +99,10 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    continue, quit the debugger.  */
 void VG_(start_debugger) ( ThreadId tid )
 {
-   Int pid;
+  Int pid;
 
-   if ((pid = fork()) == 0) {
-      ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+  if ((pid = VG_(fork)()) == 0) {
+      VG_(ptrace)(VKI_PTRACE_TRACEME, 0, NULL, NULL);
       VG_(kill)(VG_(getpid)(), VKI_SIGSTOP);
 
    } else if (pid > 0) {
@@ -113,10 +110,10 @@ void VG_(start_debugger) ( ThreadId tid )
       Int res;
 
       if ((res = VG_(waitpid)(pid, &status, 0)) == pid &&
-          WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP &&
+          WIFSTOPPED(status) && WSTOPSIG(status) == VKI_SIGSTOP &&
           ptrace_setregs(pid, &(VG_(threads)[tid].arch.vex)) == 0 &&
-          VG_(kill)(pid, SIGSTOP) == 0 &&
-          ptrace(PTRACE_DETACH, pid, NULL, 0) == 0)
+          VG_(kill)(pid, VKI_SIGSTOP) == 0 &&
+          VG_(ptrace)(VKI_PTRACE_DETACH, pid, NULL, 0) == 0)
       {
          Char pidbuf[15];
          Char file[30];
@@ -125,7 +122,7 @@ void VG_(start_debugger) ( ThreadId tid )
          Char *cmdptr;
          
          VG_(sprintf)(pidbuf, "%d", pid);
-         VG_(sprintf)(file, "/proc/%d/fd/%d", pid, VG_(clexecfd));
+         VG_(sprintf)(file, "/proc/%d/fd/%d", pid, VG_(cl_exec_fd));
  
          bufptr = buf;
          cmdptr = VG_(clo_db_command);

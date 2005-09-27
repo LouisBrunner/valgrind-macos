@@ -101,7 +101,6 @@ static void test__do_exec(void)
    info.argv     = NULL;
    info.exe_base = 0x50000000;
    info.exe_end  = 0x50ffffff;
-   info.map_base = 0x51000000;
    
    fprintf(stderr, "Calling VG_(do_exec)(\"hello\")\n");
    err = VG_(do_exec)("hello", &info);

@@ -39,6 +39,10 @@ extern void* VG_(calloc)         ( SizeT n, SizeT bytes_per_elem );
 extern void* VG_(realloc)        ( void* p, SizeT size );
 extern Char* VG_(strdup)         ( const Char* s );
 
+// TODO: move somewhere else
+// Call here to bomb the system when out of memory (mmap anon fails)
+extern void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB );
+
 #endif   // __PUB_TOOL_MALLOCFREE_H
 
 /*--------------------------------------------------------------------*/

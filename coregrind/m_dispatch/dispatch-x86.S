@@ -29,7 +29,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#include "pub_tool_basics_asm.h"
+#include "pub_core_basics_asm.h"
 #include "pub_core_dispatch_asm.h"
 #include "pub_core_transtab_asm.h"
 #include "libvex_guest_offsets.h"	/* for OFFSET_x86_EIP */
@@ -133,6 +133,8 @@ run_innerloop_exit:
 	/* We're leaving.  Check that nobody messed with
            %mxcsr or %fpucw.  We can't mess with %eax here as it
 	   holds the tentative return value, but any other is OK. */
+/* This fails for self-hosting, so skip in that case */
+#ifndef ENABLE_INNER
 	pushl	$0
 	fstcw	(%esp)
 	cmpl	$0x027F, (%esp)
@@ -140,6 +142,7 @@ run_innerloop_exit:
 	jnz	invariant_violation
 	cmpl	$0, VG_(have_mxcsr_x86)
 	jz	L2
+#endif
 	pushl	$0
 	stmxcsr	(%esp)
 	andl	$0xFFFFFFC0, (%esp)  /* mask out status flags */

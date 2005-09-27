@@ -93,6 +93,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.stdout.exp \
 	zeropage.vgtest
 
+# vgtest_ume is not working
 check_PROGRAMS = \
 	addressable \
 	badaddrvalue badfree badjump badjump2 \
@@ -115,7 +116,7 @@ check_PROGRAMS = \
 	stack_changes strchr str_tester supp_unknown supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata \
-	vgtest_ume xml1 \
+	xml1 \
 	writev zeropage
 
 
@@ -139,19 +140,11 @@ new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
 
 # Valgrind unit self-tests
-## If we support PIE, build hello as a PIE, otherwise vgtest_ume cannot load
-## (I'm not completely sure why, since stage2 can load both PIEs and non-PIEs,
-## maybe it's because stage2 is loaded up high;  anyway, it doesn't really
-## matter so long as vgtest_ume can load hello ok.  --njn)
-if USE_PIE
-hello_CFLAGS		= $(AM_CFLAGS) -fpie
-hello_LDFLAGS		= -pie
-else
-hello_LDFLAGS		= -Wl,-defsym,kickstart_base=0x50000000 \
-			  -Wl,-T,../../coregrind/stage2.lds
-hello_DEPENDENCIES 	= ../../coregrind/stage2.lds
-endif
+hello_LDFLAGS		= -Wl,-defsym,valt_load_address=0x50000000 \
+			  -Wl,-T,$(top_builddir)/valt_load_address.lds
+hello_DEPENDENCIES 	= $(top_builddir)/valt_load_address.lds
 
-vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH) -DVGO_$(VG_OS)
-vgtest_ume_LDADD	= ../../coregrind/m_ume.o
+# vgtest_ume is not working
+#vgtest_ume_CFLAGS	= -DVGA_$(VG_ARCH) -DVGO_$(VG_OS)
+#vgtest_ume_LDADD	= ../../coregrind/m_ume.o
 

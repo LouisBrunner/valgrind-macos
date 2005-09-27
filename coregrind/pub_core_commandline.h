@@ -1,13 +1,13 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Memory management libc stuff.            pub_tool_libcmman.h ---*/
+/*--- Command line handling.                pub_core_commandline.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2005 Julian Seward
+   Copyright (C) 2000-2005 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -28,13 +28,19 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PUB_TOOL_LIBCMMAN_H
-#define __PUB_TOOL_LIBCMMAN_H
+#ifndef __PUB_CORE_COMMANDLINE_H
+#define __PUB_CORE_COMMANDLINE_H
 
-/* Get memory by anonymous mmap. */
-extern void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who );
 
-#endif   // __PUB_TOOL_LIBCMMAN_H
+/* Split up the args presented by the launcher to m_main.main(), and
+   park them in VG_(args_for_client), VG_(args_for_valgrind) and
+   VG_(args_for_valgrind_extras).  The latter are acquired from
+   $VALGRIND_OPTS, ./.valgrindrc and ~/.valgrindrc. */
+
+extern void VG_(split_up_argv)( Int argc, HChar** argv );
+
+
+#endif   // __PUB_CORE_COMMANDLINE_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

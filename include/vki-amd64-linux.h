@@ -229,6 +229,7 @@ struct vki_sigcontext {
 
 #define VKI_O_RDONLY	     00
 #define VKI_O_WRONLY	     01
+#define VKI_O_RDWR	     02
 #define VKI_O_CREAT	   0100	/* not fcntl */
 #define VKI_O_EXCL	   0200	/* not fcntl */
 #define VKI_O_TRUNC	  01000	/* not fcntl */

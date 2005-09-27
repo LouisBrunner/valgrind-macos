@@ -30,9 +30,10 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_aspacemgr.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -416,34 +417,20 @@ void VG_(print_all_arena_stats) ( void )
 /* This library is self-initialising, as it makes this more self-contained,
    less coupled with the outside world.  Hence VG_(arena_malloc)() and
    VG_(arena_free)() below always call ensure_mm_init() to ensure things are
-   correctly initialised.  */
+   correctly initialised.  
+
+   We initialise the client arena separately (and later) because the core
+   must do non-client allocation before the tool has a chance to set the
+   client arena's redzone size.
+*/
 static
-void ensure_mm_init ( void )
+void ensure_mm_init ( ArenaId aid )
 {
-   static Bool  init_done = False;
+   static Bool     client_inited = False;
+   static Bool  nonclient_inited = False;
    static SizeT client_redzone_szB = 8;   // default: be paranoid
 
-   if (init_done) {
-      // This assertion ensures that a tool cannot try to change the client
-      // redzone size with VG_(needs_malloc_replacement)() after this module
-      // has done its first allocation.
-      if (VG_(needs).malloc_replacement)
-         vg_assert(client_redzone_szB == VG_(tdict).tool_client_redzone_szB);
-      return;
-   }
-
-   if (VG_(needs).malloc_replacement) {
-      client_redzone_szB = VG_(tdict).tool_client_redzone_szB;
-      // 128 is no special figure, just something not too big
-      if (client_redzone_szB > 128) {
-         VG_(printf)( "\nTool error:\n"
-                      "  specified redzone size is too big (%llu)\n", 
-                      (ULong)client_redzone_szB);
-         VG_(exit)(1);
-      }
-   }
-
-   /* Use checked red zones (of various sizes) for our internal stuff,
+   /* We use checked red zones (of various sizes) for our internal stuff,
       and an unchecked zone of arbitrary size for the client.  Of
       course the client's red zone can be checked by the tool, eg. 
       by using addressibility maps, but not by the mechanism implemented
@@ -456,15 +443,45 @@ void ensure_mm_init ( void )
       stays as 16 --- the extra 4 bytes in both are accounted for by the
       larger prev/next ptr.
    */
-   arena_init ( VG_AR_CORE,      "core",     4,       CORE_ARENA_MIN_SZB );
-   arena_init ( VG_AR_TOOL,      "tool",     4,                  1048576 );
-   arena_init ( VG_AR_SYMTAB,    "symtab",   4,                  1048576 );
-   arena_init ( VG_AR_CLIENT,    "client",   client_redzone_szB, 1048576 );
-   arena_init ( VG_AR_DEMANGLE,  "demangle", 4,                    65536 );
-   arena_init ( VG_AR_EXECTXT,   "exectxt",  4,                    65536 );
-   arena_init ( VG_AR_ERRORS,    "errors",   4,                    65536 );
+   if (VG_AR_CLIENT == aid) {
+      if (client_inited) {
+         // This assertion ensures that a tool cannot try to change the client
+         // redzone size with VG_(needs_malloc_replacement)() after this module
+         // has done its first allocation from the client arena.
+         if (VG_(needs).malloc_replacement)
+            vg_assert(client_redzone_szB == VG_(tdict).tool_client_redzone_szB);
+         return;
+      }
 
-   init_done = True;
+      // Check and set the client arena redzone size
+      if (VG_(needs).malloc_replacement) {
+         client_redzone_szB = VG_(tdict).tool_client_redzone_szB;
+         // 128 is no special figure, just something not too big
+         if (client_redzone_szB > 128) {
+            VG_(printf)( "\nTool error:\n"
+                         "  specified redzone size is too big (%llu)\n", 
+                         (ULong)client_redzone_szB);
+            VG_(exit)(1);
+         }
+      }
+      // Initialise the client arena
+      arena_init ( VG_AR_CLIENT,    "client",   client_redzone_szB, 1048576 );
+      client_inited = True;
+
+   } else {
+      if (nonclient_inited) {
+         return;
+      }
+      // Initialise the non-client arenas
+      arena_init ( VG_AR_CORE,      "core",     4,       CORE_ARENA_MIN_SZB );
+      arena_init ( VG_AR_TOOL,      "tool",     4,                  1048576 );
+      arena_init ( VG_AR_SYMTAB,    "symtab",   4,                  1048576 );
+      arena_init ( VG_AR_DEMANGLE,  "demangle", 4,                    65536 );
+      arena_init ( VG_AR_EXECTXT,   "exectxt",  4,                   262144 );
+      arena_init ( VG_AR_ERRORS,    "errors",   4,                    65536 );
+      nonclient_inited = True;
+   }
+
 #  ifdef DEBUG_MALLOC
    VG_(sanity_check_malloc_all)();
 #  endif
@@ -474,6 +491,35 @@ void ensure_mm_init ( void )
 /*------------------------------------------------------------*/
 /*--- Superblock management                                ---*/
 /*------------------------------------------------------------*/
+
+void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB )
+{
+   static Bool alreadyCrashing = False;
+   ULong tot_alloc = VG_(am_get_anonsize_total)();
+   if (!alreadyCrashing) {
+      alreadyCrashing = True;
+      VG_(printf)("\n"
+                  "Valgrind's memory management: out of memory:\n");
+      VG_(printf)("   %s's request for %llu bytes failed.\n", 
+                  who, (ULong)szB );
+      VG_(printf)("   %llu bytes have already been allocated.\n", 
+                  tot_alloc);
+      VG_(printf)("Valgrind cannot continue.  Sorry.\n\n");
+   } else {
+      VG_(debugLog)(0,"mallocfree","\n");
+      VG_(debugLog)(0,"mallocfree",
+                      "Valgrind's memory management: out of memory:\n");
+      VG_(debugLog)(0,"mallocfree",
+                      "   %s's request for %llu bytes failed.\n", 
+                      who, (ULong)szB );
+      VG_(debugLog)(0,"mallocfree",
+                      "   %llu bytes have already been allocated.\n", 
+                      tot_alloc);
+      VG_(debugLog)(0,"mallocfree","Valgrind cannot continue.  Sorry.\n\n");
+   }
+   VG_(exit)(1);
+}
+
 
 // Align ptr p upwards to an align-sized boundary.
 static
@@ -489,10 +535,9 @@ void* align_upwards ( void* p, SizeT align )
 static
 Superblock* newSuperblock ( Arena* a, SizeT cszB )
 {
-   // The extra VG_MIN_MALLOC_SZB bytes are for possible alignment up.
-   static UByte bootstrap_superblock[CORE_ARENA_MIN_SZB+VG_MIN_MALLOC_SZB];
-   static Bool  called_before = True; //False;
    Superblock* sb;
+   SysRes      sres;
+   NSegment*   seg;
 
    // Take into account admin bytes in the Superblock.
    cszB += sizeof(Superblock);
@@ -500,32 +545,39 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
    if (cszB < a->min_sblock_szB) cszB = a->min_sblock_szB;
    while ((cszB % VKI_PAGE_SIZE) > 0) cszB++;
 
-   if (!called_before) {
-      // First time we're called -- use the special static bootstrap
-      // superblock (see comment at top of main() for details).
-      called_before = True;
-      vg_assert(a == arenaId_to_ArenaP(VG_AR_CORE));
-      vg_assert(CORE_ARENA_MIN_SZB >= cszB);
-      // Ensure sb is suitably aligned.
-      sb = (Superblock*)align_upwards( bootstrap_superblock, 
-                                       VG_MIN_MALLOC_SZB );
-   } else if (a->clientmem) {
+   if (a->clientmem) {
       // client allocation -- return 0 to client if it fails
-      sb = (Superblock*)VG_(get_memory_from_mmap_for_client)(cszB);
-      if (NULL == sb)
+      sres = VG_(am_mmap_anon_float_client)
+                ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
+      if (sres.isError)
          return 0;
+      sb = (Superblock*)sres.val;
+      // Mark this segment as containing client heap.  The leak
+      // checker needs to be able to identify such segments so as not
+      // to use them as sources of roots during leak checks.
+      seg = VG_(am_find_nsegment)( (Addr)sb );
+      vg_assert(seg && seg->kind == SkAnonC);
+      seg->isCH = True;
    } else {
-      // non-client allocation -- aborts if it fails
-      sb = VG_(get_memory_from_mmap) ( cszB, "newSuperblock" );
+      // non-client allocation -- abort if it fails
+      sres = VG_(am_mmap_anon_float_valgrind)( cszB );
+      if (sres.isError) {
+         VG_(out_of_memory_NORETURN)("newSuperblock", cszB);
+         /* NOTREACHED */
+         sb = NULL; /* keep gcc happy */
+      } else {
+         sb = (Superblock*)sres.val;
+      }
    }
    vg_assert(NULL != sb);
    //zzVALGRIND_MAKE_WRITABLE(sb, cszB);
    vg_assert(0 == (Addr)sb % VG_MIN_MALLOC_SZB);
    sb->n_payload_bytes = cszB - sizeof(Superblock);
    a->bytes_mmaped += cszB;
-   if (0)
-      VG_(message)(Vg_DebugMsg, "newSuperblock, %d payload bytes", 
-                                sb->n_payload_bytes);
+   VG_(debugLog)(1, "mallocfree",
+                    "newSuperblock at %p (pszB %7ld) owner %s/%s\n", 
+                    sb, sb->n_payload_bytes, 
+                    a->clientmem ? "CLIENT" : "VALGRIND", a->name );
    return sb;
 }
 
@@ -901,7 +953,7 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
 
    VGP_PUSHCC(VgpMalloc);
 
-   ensure_mm_init();
+   ensure_mm_init(aid);
    a = arenaId_to_ArenaP(aid);
 
    vg_assert(req_pszB < MAX_PSZB);
@@ -976,7 +1028,7 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
    v = get_block_payload(a, b);
    vg_assert( (((Addr)v) & (VG_MIN_MALLOC_SZB-1)) == 0 );
 
-   VALGRIND_MALLOCLIKE_BLOCK(v, req_pszB, 0, False);
+   //zzVALGRIND_MALLOCLIKE_BLOCK(v, req_pszB, 0, False);
    return v;
 }
 
@@ -994,7 +1046,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
 
    VGP_PUSHCC(VgpMalloc);
 
-   ensure_mm_init();
+   ensure_mm_init(aid);
    a = arenaId_to_ArenaP(aid);
 
    if (ptr == NULL) {
@@ -1070,7 +1122,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    sanity_check_malloc_arena(aid);
 #  endif
 
-   VALGRIND_FREELIKE_BLOCK(ptr, 0);
+   //zzVALGRIND_FREELIKE_BLOCK(ptr, 0);
 
    VGP_POPCC(VgpMalloc);
 }
@@ -1118,7 +1170,7 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
 
    VGP_PUSHCC(VgpMalloc);
 
-   ensure_mm_init();
+   ensure_mm_init(aid);
    a = arenaId_to_ArenaP(aid);
 
    vg_assert(req_pszB < MAX_PSZB);
@@ -1193,7 +1245,7 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
 
    vg_assert( (((Addr)align_p) % req_alignB) == 0 );
 
-   VALGRIND_MALLOCLIKE_BLOCK(align_p, req_pszB, 0, False);
+   //zzVALGRIND_MALLOCLIKE_BLOCK(align_p, req_pszB, 0, False);
 
    return align_p;
 }
@@ -1215,6 +1267,7 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
    VG_(memset)(mi, 0x0, sizeof(struct vg_mallinfo));
 }
 
+
 /*------------------------------------------------------------*/
 /*--- Services layered on top of malloc/free.              ---*/
 /*------------------------------------------------------------*/
@@ -1233,7 +1286,7 @@ void* VG_(arena_calloc) ( ArenaId aid, SizeT nmemb, SizeT bytes_per_memb )
 
    VG_(memset)(p, 0, size);
 
-   VALGRIND_MALLOCLIKE_BLOCK(p, size, 0, True);
+   //zzVALGRIND_MALLOCLIKE_BLOCK(p, size, 0, True);
 
    VGP_POPCC(VgpMalloc);
    
@@ -1250,7 +1303,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
 
    VGP_PUSHCC(VgpMalloc);
 
-   ensure_mm_init();
+   ensure_mm_init(aid);
    a = arenaId_to_ArenaP(aid);
 
    vg_assert(req_pszB < MAX_PSZB);

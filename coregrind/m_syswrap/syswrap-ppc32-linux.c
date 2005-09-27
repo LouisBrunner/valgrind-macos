@@ -30,12 +30,10 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
@@ -438,6 +436,10 @@ static SysRes do_clone ( ThreadId ptid,
    vg_assert(VG_(is_valid_tid)(ctid));
 
    stack = allocstack(ctid);
+   if (stack == NULL) {
+      res = VG_(mk_SysRes_Error)( VKI_ENOMEM );
+      goto out;
+   }
 
 //?   /* make a stack frame */
 //?   stack -= 16;
@@ -2066,7 +2068,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    //   (__NR_reboot,            sys_reboot),            // 88 */Linux
 //..    //   (__NR_readdir,           old_readdir),           // 89 -- superseded
 
+<<<<<<< .working
    LINXY(__NR_mmap,              sys_mmap2),                  // 90
+=======
+   GENX_(__NR_mmap,              sys_mmap2),                  // 90
+>>>>>>> .merge-right.r4787
    GENXY(__NR_munmap,            sys_munmap),                 // 91
 //..    GENX_(__NR_truncate,          sys_truncate),          // 92
    GENX_(__NR_ftruncate,         sys_ftruncate),         // 93
@@ -2192,7 +2198,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_vfork,             sys_fork),              // 189
    GENXY(__NR_ugetrlimit,        sys_getrlimit),         // 190
 //__NR_readahead      // 191 ppc/Linux only?
+<<<<<<< .working
    LINXY(__NR_mmap2,             sys_mmap2),             // 192
+=======
+   GENX_(__NR_mmap2,             sys_mmap2),             // 192
+>>>>>>> .merge-right.r4787
 //..    GENX_(__NR_truncate64,        sys_truncate64),        // 193
 //..    GENX_(__NR_ftruncate64,       sys_ftruncate64),       // 194
 //..    

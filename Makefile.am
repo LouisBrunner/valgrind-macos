@@ -11,15 +11,13 @@ TOOLS =		memcheck \
 		none
 
 ##		addrcheck \
-##		helgrind \
 
-# Temporary: we want to compile Helgrind and Addrcheck and include them in
-# the distro, but not regtest them.  So they are in $TOOLS but not in
-# $SUBDIRS.
-#
+# Temporary: we want to compile Helgrind, but not regtest it.
+# And we want to include Addrcheck in the distro, but not compile/test it.
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.
-SUBDIRS = include coregrind . tests auxprogs $(TOOLS) helgrind addrcheck docs
+SUBDIRS = include coregrind . tests auxprogs $(TOOLS) helgrind docs
+DIST_SUBDIRS  = $(SUBDIRS) addrcheck
 
 SUPP_FILES = \
 	glibc-2.2.supp glibc-2.3.supp glibc-2.4.supp \
@@ -33,8 +31,8 @@ pkgconfig_DATA = valgrind.pc
 incincdir = $(includedir)/valgrind
 nodist_incinc_HEADERS = $(VEX_PUBLIC_HDRS)
 
-BUILT_SOURCES = default.supp valgrind.pc
-
+BUILT_SOURCES  = default.supp valgrind.pc valt_load_address.lds
+CLEANFILES     = valt_load_address.lds
 DISTCLEANFILES = default.supp
 
 default.supp: $(SUPP_FILES)
@@ -142,3 +140,32 @@ VEX_PRIMARY_SOURCES = \
 	VEX/priv/host-amd64/isel.c \
 	VEX/priv/host-amd64/hdefs.c \
 	VEX/priv/host-amd64/hdefs.h
+
+
+# Generate a linker script for linking the binaries.  This is the
+# standard gcc linker script, except hacked so that an alternative
+# load address can be specified by (1) asking gcc to use this script
+# (-Wl,-T,valt_load_address.lds) and (2) setting the symbol
+# valt_load_address to the required value
+# (-Wl,-defsym,valt_load_address=0x70000000).
+#
+# Extract ld's default linker script and hack it to our needs.
+# First we cut everything above and below the "=====..." lines at the top
+# and bottom.
+# Then we have to replace the load address with "valt_load_address".
+# The line to replace in has one of the following two forms:
+#
+#   . = 0x08048000 + SIZEOF_HEADERS;
+#
+# or
+#   PROVIDE (__executable_start = 0x08048000); . = 0x08048000 + SIZEOF_HEADERS;
+#
+# So we search for the line with a hex value "+ SIZEOF_HEADERS", and replace
+# all the hex values in that line with "valt_load_address".
+valt_load_address.lds: Makefile
+	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/d' \
+		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
+	|| rm -f $@
+

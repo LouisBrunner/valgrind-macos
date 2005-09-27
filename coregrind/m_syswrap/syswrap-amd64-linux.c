@@ -30,13 +30,11 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_options.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcmman.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
@@ -61,70 +59,46 @@
    Note.  Why is this stuff here?
    ------------------------------------------------------------------ */
 
-/* 
-   Allocate a stack for this thread.
+/* Allocate a stack for this thread.  They're allocated lazily, and
+   never freed. */
 
-   They're allocated lazily, but never freed.
- */
-#define FILL	0xdeadbeefcabafeed
+/* Allocate a stack for this thread, if it doesn't already have one.
+   Returns the initial stack pointer value to use, or 0 if allocation
+   failed. */
 
-// Valgrind's stack size, in words.
-#define STACK_SIZE_W      16384
-
-static UWord* allocstack(ThreadId tid)
+static Addr allocstack(ThreadId tid)
 {
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-   UWord* rsp;
+   ThreadState* tst = VG_(get_ThreadState)(tid);
+   VgStack*     stack;
+   Addr         initial_SP;
+
+   /* Either the stack_base and stack_init_SP are both zero (in which
+      case a stack hasn't been allocated) or they are both non-zero,
+      in which case it has. */
+
+   if (tst->os_state.valgrind_stack_base == 0)
+      vg_assert(tst->os_state.valgrind_stack_init_SP == 0);
+
+   if (tst->os_state.valgrind_stack_base != 0)
+      vg_assert(tst->os_state.valgrind_stack_init_SP != 0);
+
+   /* If no stack is present, allocate one. */
 
    if (tst->os_state.valgrind_stack_base == 0) {
-      void *stk = VG_(mmap)(0, STACK_SIZE_W * sizeof(UWord) + VKI_PAGE_SIZE,
-			    VKI_PROT_READ|VKI_PROT_WRITE,
-			    VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS,
-			    SF_VALGRIND,
-			    -1, 0);
-
-      if (stk != (void *)-1) {
-	 VG_(mprotect)(stk, VKI_PAGE_SIZE, VKI_PROT_NONE); /* guard page */
-	 tst->os_state.valgrind_stack_base = ((Addr)stk) + VKI_PAGE_SIZE;
-	 tst->os_state.valgrind_stack_szB  = STACK_SIZE_W * sizeof(UWord);
-      } else 
-	 return (UWord*)-1;
+      stack = VG_(am_alloc_VgStack)( &initial_SP );
+      if (stack) {
+         tst->os_state.valgrind_stack_base    = (Addr)stack;
+         tst->os_state.valgrind_stack_init_SP = initial_SP;
+      }
    }
 
-   for (rsp = (UWord*) tst->os_state.valgrind_stack_base; 
-        rsp < (UWord*)(tst->os_state.valgrind_stack_base +
-                       tst->os_state.valgrind_stack_szB); 
-        rsp++)
-      *rsp = FILL;
-   /* rsp is left at top of stack */
-
    if (0)
-      VG_(printf)("stack for tid %d at %p (%llx); rsp=%p\n",
-		  tid, tst->os_state.valgrind_stack_base,
-                  *(UWord*)(tst->os_state.valgrind_stack_base), rsp);
-
-   return rsp;
-}
-
-/* NB: this is identical the the x86 version. */
-/* Return how many bytes of this stack have not been used */
-SSizeT VG_(stack_unused)(ThreadId tid)
-{
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-   UWord* p;
-
-   for (p = (UWord*)tst->os_state.valgrind_stack_base; 
-	p && (p < (UWord*)(tst->os_state.valgrind_stack_base +
-                           tst->os_state.valgrind_stack_szB)); 
-	p++)
-      if (*p != FILL)
-	 break;
-
-   if (0)
-      VG_(printf)("p=%p %llx tst->os_state.valgrind_stack_base=%p\n",
-                  p, *p, tst->os_state.valgrind_stack_base);
-
-   return ((Addr)p) - tst->os_state.valgrind_stack_base;
+      VG_(printf)( "stack for tid %d at %p; init_SP=%p\n",
+                   tid, 
+                   (void*)tst->os_state.valgrind_stack_base, 
+                   (void*)tst->os_state.valgrind_stack_init_SP );
+                  
+   return tst->os_state.valgrind_stack_init_SP;
 }
 
 
@@ -247,7 +221,11 @@ void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
    VG_(debugLog)(1, "syswrap-amd64-linux", 
                     "entering VG_(main_thread_wrapper_NORETURN)\n");
 
-   UWord* rsp = allocstack(tid);
+   Addr rsp = allocstack(tid);
+
+   /* If we can't even allocate the first thread's stack, we're hosed.
+      Give up. */
+   vg_assert2(rsp != 0, "Cannot allocate main thread's stack.");
 
    /* shouldn't be any other threads around yet */
    vg_assert( VG_(count_living_threads)() == 1 );
@@ -388,7 +366,7 @@ static SysRes do_clone ( ThreadId ptid,
    ThreadState* ptst = VG_(get_ThreadState)(ptid);
    ThreadState* ctst = VG_(get_ThreadState)(ctid);
    UWord*       stack;
-   Segment*     seg;
+   NSegment*    seg;
    SysRes       res;
    Long         rax;
    vki_sigset_t blockall, savedmask;
@@ -398,7 +376,11 @@ static SysRes do_clone ( ThreadId ptid,
    vg_assert(VG_(is_running_thread)(ptid));
    vg_assert(VG_(is_valid_tid)(ctid));
 
-   stack = allocstack(ctid);
+   stack = (UWord*)allocstack(ctid);
+   if (stack == NULL) {
+      res = VG_(mk_SysRes_Error)( VKI_ENOMEM );
+      goto out;
+   }
 
    /* Copy register state
 
@@ -432,14 +414,14 @@ static SysRes do_clone ( ThreadId ptid,
       memory mappings and try to derive some useful information.  We
       assume that esp starts near its highest possible value, and can
       only go down to the start of the mmaped segment. */
-   seg = VG_(find_segment)((Addr)rsp);
-   if (seg) {
+   seg = VG_(am_find_nsegment)((Addr)rsp);
+   if (seg && seg->kind != SkResvn) {
       ctst->client_stack_highest_word = (Addr)VG_PGROUNDUP(rsp);
-      ctst->client_stack_szB  = ctst->client_stack_highest_word - seg->addr;
+      ctst->client_stack_szB = ctst->client_stack_highest_word - seg->start;
 
       if (debug)
 	 VG_(printf)("tid %d: guessed client stack range %p-%p\n",
-		     ctid, seg->addr, VG_PGROUNDUP(rsp));
+		     ctid, seg->start, VG_PGROUNDUP(rsp));
    } else {
       VG_(message)(Vg_UserMsg, "!? New thread %d starts with RSP(%p) unmapped\n",
 		   ctid, rsp);
@@ -466,6 +448,7 @@ static SysRes do_clone ( ThreadId ptid,
 
    VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
 
+  out:
    if (res.isError) {
       /* clone failed */
       VG_(cleanup_thread)(&ctst->arch);
@@ -604,14 +587,14 @@ PRE(sys_clone)
 
    if (ARG1 & VKI_CLONE_PARENT_SETTID) {
       PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
-      if (!VG_(is_addressable)(ARG3, sizeof(Int), VKI_PROT_WRITE)) {
+      if (!VG_(am_is_valid_for_client)(ARG3, sizeof(Int), VKI_PROT_WRITE)) {
          SET_STATUS_Failure( VKI_EFAULT );
          return;
       }
    }
    if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
       PRE_MEM_WRITE("clone(child_tidptr)", ARG4, sizeof(Int));
-      if (!VG_(is_addressable)(ARG4, sizeof(Int), VKI_PROT_WRITE)) {
+      if (!VG_(am_is_valid_for_client)(ARG4, sizeof(Int), VKI_PROT_WRITE)) {
          SET_STATUS_Failure( VKI_EFAULT );
          return;
       }
@@ -1185,8 +1168,13 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_fstat,             sys_newfstat),       // 5 
    GENXY(__NR_lstat,             sys_newlstat),       // 6 
    GENXY(__NR_poll,              sys_poll),           // 7 
+<<<<<<< .working
    LINX_(__NR_lseek,             sys_lseek),          // 8 
    LINXY(__NR_mmap,              sys_mmap2),          // 9 
+=======
+   GENX_(__NR_lseek,             sys_lseek),          // 8 
+   GENX_(__NR_mmap,              sys_mmap2),          // 9 
+>>>>>>> .merge-right.r4787
 
    GENXY(__NR_mprotect,          sys_mprotect),       // 10 
    GENXY(__NR_munmap,            sys_munmap),         // 11 
@@ -1423,7 +1411,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_sched_getaffinity, sys_sched_getaffinity), // 204 
 
    //   (__NR_set_thread_area,   sys_ni_syscall),     // 205 
-   LINX_(__NR_io_setup,          sys_io_setup),       // 206 
+   LINXY(__NR_io_setup,          sys_io_setup),       // 206 
    LINX_(__NR_io_destroy,        sys_io_destroy),     // 207 
    LINXY(__NR_io_getevents,      sys_io_getevents),   // 208 
    LINX_(__NR_io_submit,         sys_io_submit),      // 209 

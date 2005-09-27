@@ -190,7 +190,10 @@ static SecMap* copy_for_writing ( SecMap* dist_sm )
              || dist_sm == &sm_distinguished[1]
 	     || dist_sm == &sm_distinguished[2]);
 
-   new_sm = VG_(shadow_alloc)(sizeof(SecMap));
+   new_sm = VG_(am_shadow_alloc)(sizeof(SecMap));
+   if (new_sm == NULL)
+      VG_(out_of_memory_NORETURN)( "memcheck:allocate new SecMap", 
+                                   sizeof(SecMap) );
    VG_(memcpy)(new_sm, dist_sm, sizeof(SecMap));
    n_secmaps_issued++;
    return new_sm;
@@ -738,20 +741,34 @@ static void mc_make_readable ( Addr a, SizeT len )
 }
 
 
-/* --- Block-copy permissions (needed for implementing realloc()). --- */
+/* --- Block-copy permissions (needed for implementing realloc() and
+       sys_mremap). --- */
 
 static void mc_copy_address_range_state ( Addr src, Addr dst, SizeT len )
 {
-   SizeT i;
+   SizeT i, j;
    UWord abit, vbyte;
 
    DEBUG("mc_copy_address_range_state\n");
-
    PROF_EVENT(50, "mc_copy_address_range_state");
-   for (i = 0; i < len; i++) {
-      PROF_EVENT(51, "mc_copy_address_range_state(loop)");
-      get_abit_and_vbyte( &abit, &vbyte, src+i );
-      set_abit_and_vbyte( dst+i, abit, vbyte );
+
+   if (len == 0)
+      return;
+
+   if (src < dst) {
+      for (i = 0, j = len-1; i < len; i++, j--) {
+         PROF_EVENT(51, "mc_copy_address_range_state(loop)");
+         get_abit_and_vbyte( &abit, &vbyte, src+j );
+         set_abit_and_vbyte( dst+j, abit, vbyte );
+      }
+   }
+
+   if (src > dst) {
+      for (i = 0; i < len; i++) {
+         PROF_EVENT(51, "mc_copy_address_range_state(loop)");
+         get_abit_and_vbyte( &abit, &vbyte, src+i );
+         set_abit_and_vbyte( dst+i, abit, vbyte );
+      }
    }
 }
 
@@ -1187,12 +1204,15 @@ void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
 
    VGP_PUSHCC(VgpCheckMem);
    
-   /* VG_(message)(Vg_DebugMsg,"check is readable: %x .. %x",
-                               base,base+size-1); */
    res = mc_check_readable ( base, size, &bad_addr );
+
+   if (0)
+      VG_(printf)("mc_check_is_readable(0x%x, %d, %s) -> %s\n",
+                  (UInt)base, (Int)size, s, res==MC_Ok ? "yes" : "no" );
+
    if (MC_Ok != res) {
       Bool isUnaddr = ( MC_AddrErr == res ? True : False );
-      
+
       switch (part) {
       case Vg_CoreSysCall:
          MAC_(record_param_error) ( tid, bad_addr, /*isReg*/False,
@@ -2636,7 +2656,7 @@ static void mc_pre_clo_init(void)
    tl_assert( mc_expensive_sanity_check() );
 }
 
-VG_DETERMINE_INTERFACE_VERSION(mc_pre_clo_init, 9./8)
+VG_DETERMINE_INTERFACE_VERSION(mc_pre_clo_init)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                mc_main.c ---*/

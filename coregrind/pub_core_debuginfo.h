@@ -41,6 +41,10 @@
 
 #include "pub_tool_debuginfo.h"
 
+extern void VG_(di_notify_mmap)( Addr a );
+extern void VG_(di_notify_munmap)( Addr a, SizeT len );
+extern void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot );
+
 extern Bool VG_(is_object_file)   ( const void *hdr );
 extern SegInfo *VG_(read_seg_symbols) ( Addr addr, SizeT len,
                                         OffT offset, const Char* filename);

@@ -3,9 +3,7 @@
 2
 3
 4
-Warning: client syscall mmap2 tried to modify addresses 0x........-0x........
 mmap @ top
 5
-Warning: client syscall mmap2 tried to modify addresses 0x........-0x........
 mmap @ top+.5G
 

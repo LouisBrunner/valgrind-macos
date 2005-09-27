@@ -38,8 +38,6 @@
 /* Client args and environment.  Note that VG_(client_argv)[] can be written
    to by the client, so you should check each entry is non-NULL before
    printing.  VG_(client_envp) can be inspected with VG_(getenv)(). */
-extern Int    VG_(client_argc);
-extern Char** VG_(client_argv);
 extern Char** VG_(client_envp);
 
 /* Looks up VG_(client_envp) */
@@ -66,11 +64,12 @@ extern Int VG_(setrlimit) ( Int resource, const struct vki_rlimit *rlim );
    pids, etc
    ------------------------------------------------------------------ */
 
-extern Int VG_(gettid)	 ( void );
+extern Int VG_(gettid)  ( void );
 extern Int VG_(getpid)  ( void );
 extern Int VG_(getppid) ( void );
 extern Int VG_(getpgrp) ( void );
-extern Int VG_(setpgid) ( Int pid, Int pgrp );
+extern Int VG_(geteuid) ( void );
+extern Int VG_(getegid) ( void );
 
 /* ---------------------------------------------------------------------
    Timing

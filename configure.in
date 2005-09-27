@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(Valgrind, 3.1.SVN, valgrind-users@lists.sourceforge.net)
+AC_INIT(Valgrind, 3.1.ASPACEM, valgrind-users@lists.sourceforge.net)
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE
@@ -111,7 +111,7 @@ AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH)
 AC_SUBST(VG_ARCH_ALL)
 VG_ARCH_ALL="amd64 ppc32 x86"
-AC_SUBST(KICKSTART_BASE)
+AC_SUBST(VALT_LOAD_ADDRESS)
 AC_SUBST(ARCH_CORE_AM_CFLAGS)
 AC_SUBST(ARCH_TOOL_AM_CFLAGS)
 AC_SUBST(ARCH_CORE_AM_CCASFLAGS)
@@ -120,7 +120,8 @@ case "${host_cpu}" in
      i?86) 
 	AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="x86"
-        KICKSTART_BASE="0xb0000000"
+        valt_load_address_normal="0xb0000000"
+        valt_load_address_inner="0xa0000000"
         ARCH_CORE_AM_CFLAGS="@FLAG_M32@ @PREFERRED_STACK_BOUNDARY@"
         ARCH_TOOL_AM_CFLAGS="@FLAG_M32@ @PREFERRED_STACK_BOUNDARY@"
         ARCH_CORE_AM_CCASFLAGS="@FLAG_M32@"
@@ -132,7 +133,8 @@ case "${host_cpu}" in
         # XXX: relocations under amd64's "small model" are 32-bit signed
         # quantities; therefore going above 0x7fffffff doesn't work... this is
         # a problem.
-        KICKSTART_BASE="0x70000000"
+        valt_load_address_normal="0x70000000"
+        valt_load_address_inner="0x60000000"
         ARCH_CORE_AM_CFLAGS="-m64 -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@" 
         # XXX: need to use -fpic, otherwise when linking tools I get this error
         # message:
@@ -147,7 +149,8 @@ case "${host_cpu}" in
      powerpc*)
         AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="ppc32"
-        KICKSTART_BASE="0x70000000"
+        valt_load_address_normal="0x70000000"
+        valt_load_address_inner="0x60000000"
         ARCH_CORE_AM_CFLAGS=""
         ARCH_TOOL_AM_CFLAGS="-fpic"
         ARCH_CORE_AM_CCASFLAGS="-Wa,-maltivec"
@@ -158,6 +161,19 @@ case "${host_cpu}" in
 	AC_MSG_ERROR([Unsupported host architecture. Sorry])
 	;;
 esac
+
+# Check if this should be built as an inner Valgrind, to be run within
+# another Valgrind.  Choose the load address accordingly.
+AC_CACHE_CHECK([enable use as an inner Valgrind], vg_cv_inner,
+	       [AC_ARG_ENABLE(inner, [  --enable-inner          enables self-hosting],
+		[vg_cv_inner=$enableval],
+               	[vg_cv_inner=no])])
+if test "$vg_cv_inner" = yes; then
+    AC_DEFINE([ENABLE_INNER], 1, [configured to run as an inner Valgrind])
+    VALT_LOAD_ADDRESS=$valt_load_address_inner
+else
+    VALT_LOAD_ADDRESS=$valt_load_address_normal
+fi
 
 AC_MSG_CHECKING([for a supported OS])
 AC_SUBST(VG_OS)
@@ -416,19 +432,6 @@ AC_DEFINE([HAVE_TLS], 1, [can use __thread to define thread-local variables])
 fi
 
 
-# Check for PIE support in the compiler and linker
-AC_SUBST(PIE_AM_CFLAGS)
-AC_CACHE_CHECK([for PIE support], vg_cv_pie,
-	       [AC_ARG_ENABLE(pie, [  --enable-pie            platform supports PIE linking],
-		[vg_cv_pie=$enableval],
-               	[vg_cv_pie=no] )])
-if test "$vg_cv_pie" = yes; then
-AC_DEFINE([HAVE_PIE], 1, [can create position-independent executables])
-PIE_AM_CFLAGS="-fpie"
-fi
-AM_CONDITIONAL(USE_PIE, test "$vg_cv_pie" = "yes")
-
-
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/endian.h endian.h mqueue.h])
@@ -463,14 +466,6 @@ AC_OUTPUT(
    include/Makefile 
    auxprogs/Makefile
    coregrind/Makefile 
-   coregrind/m_aspacemgr/Makefile 
-   coregrind/m_debuginfo/Makefile 
-   coregrind/m_demangle/Makefile 
-   coregrind/m_dispatch/Makefile 
-   coregrind/m_replacemalloc/Makefile 
-   coregrind/m_scheduler/Makefile 
-   coregrind/m_sigframe/Makefile 
-   coregrind/m_syswrap/Makefile 
    addrcheck/Makefile
    addrcheck/tests/Makefile
    addrcheck/docs/Makefile

@@ -49,6 +49,9 @@ extern Int VG_(fcntl)   ( Int fd, Int cmd, Int arg );
 /* Convert an fd into a filename */
 extern Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf );
 
+/* Return the size of a file */
+extern Int VG_(fsize) ( Int fd );
+
 /* Default destination port to be used in logging over a network, if
    none specified. */
 #define VG_CLO_DEFAULT_LOGPORT 1500
@@ -59,6 +62,16 @@ extern Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen );
 extern Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen );
 extern Int VG_(getsockopt)  ( Int sd, Int level, Int optname, void *optval,
                               Int *optlen );
+
+extern Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr );
+
+extern SysRes VG_(pread) ( Int fd, void* buf, Int count, Int offset );
+
+/* Create and open (-rw------) a tmp file name incorporating said arg.
+   Returns -1 on failure, else the fd of the file.  If fullname is
+   non-NULL, the file's name is written into it.  The number of bytes
+   written is guaranteed not to exceed 64+strlen(part_of_name). */
+extern Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname );
 
 #endif   // __PUB_CORE_LIBCFILE_H
 

@@ -19,8 +19,8 @@ sed "/^Using LibVEX rev .*, a library for dynamic binary translation/ , /./ d" |
 sed "/Estimated CPU clock rate is [0-9]* MHz/d"                       |
 sed "/For more details, rerun with: -v/d"                             |
 
-# Anonymise line numbers in vg_replace_malloc.c
-sed "s/vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../"           |
+# Anonymise line numbers in vg_replace_malloc.c, remove dirname if present
+sed "s/\(m_replacemalloc\/\)\?vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../"           |
 
 # Anonymise vg_intercept lines
 #sed "s/vg_intercept.c:[0-9]*/vg_intercept.c:.../"                     |

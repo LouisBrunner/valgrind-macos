@@ -31,21 +31,110 @@
 #ifndef __PUB_TOOL_ASPACEMGR_H
 #define __PUB_TOOL_ASPACEMGR_H
 
-extern Bool VG_(is_client_addr) (Addr a);
 
-extern Bool VG_(is_shadow_addr) (Addr a);
+//--------------------------------------------------------------
+// Definition of address-space segments
 
-extern void *VG_(shadow_alloc)(UInt size);
+/* Describes segment kinds. */
+typedef
+   enum {
+      SkFree,   // unmapped space
+      SkAnonC,  // anonymous mapping belonging to the client
+      SkAnonV,  // anonymous mapping belonging to valgrind
+      SkFileC,  // file mapping belonging to the client
+      SkFileV,  // file mapping belonging to valgrind
+      SkResvn   // reservation
+   }
+   SegKind;
 
-extern Bool VG_(is_addressable)(Addr p, SizeT sz, UInt prot);
+/* Describes how a reservation segment can be resized. */
+typedef
+   enum {
+      SmLower,  // lower end can move up
+      SmFixed,  // cannot be shrunk
+      SmUpper   // upper end can move down
+   }
+   ShrinkMode;
 
-/* Calls into the core used by leak-checking */
+/* Describes a segment.  Invariants:
 
-/* Calls "add_rootrange" with each range of memory which looks like a
-   plausible source of root pointers.  This is very Memcheck-specific --
-   it's used in leak detection.
+     kind == SkFree:
+        // the only meaningful fields are .start and .end
+
+     kind == SkAnon{C,V}:
+        // smode==SmFixed
+        // there's no associated file:
+        dev==ino==foff = 0, fnidx == -1
+        // segment may have permissions
+
+     kind == SkFile{C,V}:
+        // smode==SmFixed
+        moveLo == moveHi == NotMovable, maxlen == 0
+        // there is an associated file
+        // segment may have permissions
+
+     kind == SkResvn
+        // the segment may be resized if required
+        // there's no associated file:
+        dev==ino==foff = 0, fnidx == -1
+        // segment has no permissions
+        hasR==hasW==hasX==anyTranslated == False
+
+     Also: anyTranslated==True is only allowed in SkFileV and SkAnonV
+           (viz, not allowed to make translations from non-client areas)
 */
-extern void VG_(find_root_memory)(void (*add_rootrange)(Addr addr, SizeT sz));
+typedef
+   struct {
+      SegKind kind;
+      /* Extent (SkFree, SkAnon{C,V}, SkFile{C,V}, SkResvn) */
+      Addr    start;    // lowest address in range
+      Addr    end;      // highest address in range
+      /* Shrinkable? (SkResvn only) */
+      ShrinkMode smode;
+      /* Associated file (SkFile{C,V} only) */
+      UWord   dev;
+      UWord   ino;
+      ULong   offset;
+      Int     fnIdx;    // file name table index, if name is known
+      /* Permissions (SkAnon{C,V}, SkFile{C,V} only) */
+      Bool    hasR;
+      Bool    hasW;
+      Bool    hasX;
+      Bool    hasT;     // True --> translations have (or MAY have)
+                        // been taken from this segment
+      Bool    isCH;     // True --> is client heap (SkAnonC ONLY)
+      /* Admin */
+      Bool    mark;
+   }
+   NSegment;
+
+
+/* Collect up the start addresses of all non-free, non-resvn segments.
+   The interface is a bit strange in order to avoid potential
+   segment-creation races caused by dynamic allocation of the result
+   buffer *starts.
+
+   The function first computes how many entries in the result
+   buffer *starts will be needed.  If this number <= nStarts,
+   they are placed in starts[0..], and the number is returned.
+   If nStarts is not large enough, nothing is written to
+   starts[0..], and the negation of the size is returned.
+
+   Correct use of this function may mean calling it multiple times in
+   order to establish a suitably-sized buffer. */
+extern Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts );
+
+
+// See pub_core_aspacemgr.h for description.
+extern NSegment* VG_(am_find_nsegment) ( Addr a ); 
+
+// See pub_core_aspacemgr.h for description.
+extern Bool VG_(am_is_valid_for_client) ( Addr start, SizeT len, 
+                                          UInt prot );
+
+// See pub_core_aspacemgr.h for description.
+/* Really just a wrapper around VG_(am_mmap_anon_float_valgrind). */
+extern void* VG_(am_shadow_alloc)(SizeT size);
 
 #endif   // __PUB_TOOL_ASPACEMGR_H
 

@@ -1088,8 +1088,10 @@ struct  vki_seminfo {
 //----------------------------------------------------------------------
 
 #define	VKI_EPERM		 1	/* Operation not permitted */
+#define	VKI_ENOENT		 2	/* No such file or directory */
 #define	VKI_ESRCH		 3	/* No such process */
 #define	VKI_EINTR		 4	/* Interrupted system call */
+#define VKI_ENOEXEC              8      /* Exec format error */
 #define	VKI_EBADF		 9	/* Bad file number */
 #define VKI_EAGAIN		11	/* Try again */
 #define VKI_EWOULDBLOCK		VKI_EAGAIN
@@ -1162,8 +1164,20 @@ struct  vki_seminfo {
 #define VKI_S_ISFIFO(m)	(((m) & VKI_S_IFMT) == VKI_S_IFIFO)
 #define VKI_S_ISSOCK(m)	(((m) & VKI_S_IFMT) == VKI_S_IFSOCK)
 
+#define VKI_S_IRWXU 00700
 #define VKI_S_IRUSR 00400
 #define VKI_S_IWUSR 00200
+#define VKI_S_IXUSR 00100
+
+#define VKI_S_IRWXG 00070
+#define VKI_S_IRGRP 00040
+#define VKI_S_IWGRP 00020
+#define VKI_S_IXGRP 00010
+
+#define VKI_S_IRWXO 00007
+#define VKI_S_IROTH 00004
+#define VKI_S_IWOTH 00002
+#define VKI_S_IXOTH 00001
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/dirent.h
@@ -2008,9 +2022,12 @@ typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory 
 // From linux-2.6.9/include/linux/ptrace.h
 //----------------------------------------------------------------------
 
+#define VKI_PTRACE_TRACEME         0
 #define VKI_PTRACE_PEEKTEXT	   1
 #define VKI_PTRACE_PEEKDATA	   2
 #define VKI_PTRACE_PEEKUSR	   3
+
+#define VKI_PTRACE_DETACH       0x11
 
 #endif // __VKI_LINUX_H
 

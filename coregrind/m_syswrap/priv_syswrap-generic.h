@@ -40,6 +40,11 @@ extern
 Bool ML_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
                             const Char *syscallname);
 
+/* Handy small function to help stop wrappers from segfaulting when
+   presented with bogus client addresses.  Is not used for generating
+   user-visible errors. */
+extern Bool ML_(safe_to_deref) ( void* start, SizeT size );
+
 // Returns True if the signal is OK for the client to use.
 extern Bool ML_(client_signal_OK)(Int sigNo);
 
@@ -57,9 +62,12 @@ extern
 Bool ML_(do_sigkill)(Int pid, Int tgid);
 
 /* So that it can be seen from syswrap-x86-linux.c. */
+/* When a client mmap has been successfully done, both aspacem and the
+   tool need to be notified of the new mapping.  Hence this fn. */
 extern 
-void ML_(mmap_segment) ( Addr a, SizeT len, UInt prot, 
-                         UInt mm_flags, Int fd, ULong offset );
+void 
+ML_(notify_aspacem_and_tool_of_mmap) ( Addr a, SizeT len, UInt prot, 
+                                       UInt mm_flags, Int fd, ULong offset );
 
 
 DECL_TEMPLATE(generic, sys_ni_syscall);            // * P -- unimplemented

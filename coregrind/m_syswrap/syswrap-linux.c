@@ -30,8 +30,9 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
-#include "pub_core_debuginfo.h"     // Needed for pub_core_aspacemgr :(
 #include "pub_core_aspacemgr.h"
+#include "pub_core_debuginfo.h"    // VG_(di_notify_*)
+#include "pub_core_transtab.h"     // VG_(discard_translations)
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -419,7 +420,8 @@ PRE(sys_sysctl)
    args = (struct __vki_sysctl_args *)ARG1;
    PRE_REG_READ1(long, "sysctl", struct __sysctl_args *, args);
    PRE_MEM_WRITE( "sysctl(args)", ARG1, sizeof(struct __vki_sysctl_args) );
-   if (!VG_(is_addressable)(ARG1, sizeof(struct __vki_sysctl_args), VKI_PROT_READ)) {
+   if (!VG_(am_is_valid_for_client)(ARG1, sizeof(struct __vki_sysctl_args), 
+                                          VKI_PROT_READ)) {
       SET_STATUS_Failure( VKI_EFAULT );
       return;
    }
@@ -548,6 +550,9 @@ POST(sys_futex)
 
 PRE(sys_mmap2)
 {
+   Addr   advised;
+   SysRes sres;
+
    // Exactly like old_mmap() in x86-linux except:
    //  - all 6 args are passed in regs, rather than in a memory-block.
    //  - the file offset is specified in pagesize units rather than bytes,
@@ -574,28 +579,63 @@ PRE(sys_mmap2)
       return;
    }
 
+   /* Figure out what kind of allocation constraints there are
+      (fixed/hint/any), and ask aspacem what we should do. */
    if (ARG4 & VKI_MAP_FIXED) {
-      if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mmap2"))
-	 SET_STATUS_Failure( VKI_ENOMEM );
+      if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mmap2")) {
+         SET_STATUS_Failure( VKI_EINVAL );
+         return;
+      }
+
+      advised = ARG1;
    } else {
-      Addr a = VG_(find_map_space)(ARG1, ARG2, True);
-      if (a == 0 && ARG1 != 0)
-         a = VG_(find_map_space)(0, ARG2, True);
-      if (a == 0) {
-	 SET_STATUS_Failure( VKI_ENOMEM );
+      MapRequest mreq;
+      Bool       mreq_ok;
+
+      mreq.start = ARG1;
+      mreq.len   = ARG2;
+
+      if (ARG1 != 0) {
+         mreq.rkind = MHint;
       } else {
-         ARG1 = a;
-         ARG4 |= VKI_MAP_FIXED;
+         mreq.rkind = MAny;
+      }
+
+      /* Enquire ... */
+      advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
+      if (!mreq_ok) {
+         /* Our request was bounced, so we'd better fail. */
+         SET_STATUS_Failure( VKI_EINVAL );
+         return;
       }
    }
+
+   vg_assert(! FAILURE);
+
+   /* Otherwise we're OK (so far).  Install aspacem's choice of
+      address, and let the mmap go through.  */
+   sres = VG_(am_do_mmap_NO_NOTIFY)(advised, ARG2, ARG3,
+                                    ARG4 | VKI_MAP_FIXED,
+                                    ARG5, ARG6);
+   SET_STATUS_from_SysRes(sres);
+
+   if (!sres.isError) {
+      /* Notify aspacem and the tool. */
+      ML_(notify_aspacem_and_tool_of_mmap)( 
+         (Addr)sres.val, /* addr kernel actually assigned */
+         ARG2, ARG3, 
+         ARG4, /* the original flags value */
+         ARG5, ARG6 
+      );
+      /* Load symbols? */
+      VG_(di_notify_mmap)( (Addr)sres.val );
+   }
+
+   /* Stay sane */
+   if (SUCCESS && (ARG4 & VKI_MAP_FIXED))
+      vg_assert(RES == ARG1);
 }
-POST(sys_mmap2)
-{
-   vg_assert(SUCCESS);
-   vg_assert(ML_(valid_client_addr)(RES, ARG2, tid, "mmap2"));
-   ML_(mmap_segment)( (Addr)RES, ARG2, ARG3, ARG4, ARG5,
-                      ARG6 * (ULong)VKI_PAGE_SIZE );
-}
+
 
 /* ---------------------------------------------------------------------
    epoll_* wrappers
@@ -747,43 +787,30 @@ PRE(sys_fadvise64_64)
 // Nb: this wrapper has to pad/unpad memory around the syscall itself,
 // and this allows us to control exactly the code that gets run while
 // the padding is in place.
+
 PRE(sys_io_setup)
 {
-   SizeT size;
-   Addr addr;
-
    PRINT("sys_io_setup ( %u, %p )", ARG1,ARG2);
    PRE_REG_READ2(long, "io_setup",
                  unsigned, nr_events, vki_aio_context_t *, ctxp);
    PRE_MEM_WRITE( "io_setup(ctxp)", ARG2, sizeof(vki_aio_context_t) );
-   
+}
+
+POST(sys_io_setup)
+{
+   SizeT size;
+   struct vki_aio_ring *r;
+           
    size = VG_PGROUNDUP(sizeof(struct vki_aio_ring) +
                        ARG1*sizeof(struct vki_io_event));
-   addr = VG_(find_map_space)(0, size, True);
-   
-   if (addr == 0) {
-      SET_STATUS_Failure( VKI_ENOMEM );
-      return;
-   }
+   r = *(struct vki_aio_ring **)ARG2;
+   vg_assert(ML_(valid_client_addr)((Addr)r, size, tid, "io_setup"));
 
-   VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_WRITE, 0);
-   
-   VG_(pad_address_space)(0);
-   SET_STATUS_from_SysRes( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );
-   VG_(unpad_address_space)(0);
+   ML_(notify_aspacem_and_tool_of_mmap)( (Addr)r, size,
+                                         VKI_PROT_READ | VKI_PROT_WRITE,
+                                         VKI_MAP_ANONYMOUS, -1, 0 );
 
-   if (SUCCESS && RES == 0) {
-      struct vki_aio_ring *r = *(struct vki_aio_ring **)ARG2;
-        
-      vg_assert(addr == (Addr)r);
-      vg_assert(ML_(valid_client_addr)(addr, size, tid, "io_setup"));
-                
-      VG_TRACK( new_mem_mmap, addr, size, True, True, False );
-      POST_MEM_WRITE( ARG2, sizeof(vki_aio_context_t) );
-   }
-   else {
-      VG_(unmap_range)(addr, size);
-   }
+   POST_MEM_WRITE( ARG2, sizeof(vki_aio_context_t) );
 }
 
 // Nb: This wrapper is "Special" because we need 'size' to do the unmap
@@ -795,8 +822,7 @@ PRE(sys_io_setup)
 // XXX This segment can be implicitly unmapped when aio
 // file-descriptors are closed...
 PRE(sys_io_destroy)
-{     
-   Segment *s = VG_(find_segment)(ARG1);
+{
    struct vki_aio_ring *r;
    SizeT size;
       
@@ -805,15 +831,18 @@ PRE(sys_io_destroy)
 
    // If we are going to seg fault (due to a bogus ARG1) do it as late as
    // possible...
-   r = *(struct vki_aio_ring **)ARG1;
+   r = (struct vki_aio_ring *)ARG1;
    size = VG_PGROUNDUP(sizeof(struct vki_aio_ring) + 
                        r->nr*sizeof(struct vki_io_event));
 
    SET_STATUS_from_SysRes( VG_(do_syscall1)(SYSNO, ARG1) );
 
-   if (SUCCESS && RES == 0 && s != NULL) { 
+   if (SUCCESS && RES == 0) { 
+      Bool d = VG_(am_notify_munmap)( ARG1, size );
       VG_TRACK( die_mem_munmap, ARG1, size );
-      VG_(unmap_range)(ARG1, size);
+      if (d)
+         VG_(discard_translations)( (Addr64)ARG1, (ULong)size, 
+                                    "PRE(sys_io_destroy)" );
    }  
 }  
 

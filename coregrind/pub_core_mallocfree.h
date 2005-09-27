@@ -92,11 +92,7 @@ extern void* VG_(arena_memalign)( ArenaId aid, SizeT req_alignB,
                                                SizeT req_pszB );
 extern Char* VG_(arena_strdup)  ( ArenaId aid, const Char* s);
 
-/* Sets the size of the redzones at the start and end of heap blocks.  This
-   must be called before any of VG_(malloc) and friends are called. */
-extern void  VG_(set_client_malloc_redzone_szB) ( SizeT rz_szB );
-
-extern SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* p );
+extern SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* payload );
 
 extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
 

@@ -5,5 +5,26 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.tool-flags.am
 include $(top_srcdir)/Makefile.tool-inplace.am
 
-LIBREPLACEMALLOC = $(top_builddir)/coregrind/m_replacemalloc/libreplacemalloc_toolpreload.a
+LIBREPLACEMALLOC = $(top_builddir)/coregrind/libreplacemalloc_toolpreload.a
+
+COREGRIND_LIBS = \
+	$(top_builddir)/coregrind/libcoregrind.a \
+	@VEX_DIR@/libvex.a
+
+##.PHONY:  @VEX_DIR@/libvex.a
+
+@VEX_DIR@/libvex.a: @VEX_DIR@/priv/main/vex_svnversion.h
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" libvex.a EXTRA_CFLAGS="@ARCH_CORE_AM_CFLAGS@"
+
+@VEX_DIR@/priv/main/vex_svnversion.h:
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" version
+
+## Nb: do not call this variables "TOOL_LINKADD" and "TOOL_LDFLAGS" -- that
+## makes automake think we are building something called "TOOLS".
+TOOL_LINKADD = $(COREGRIND_LIBS) -lgcc
+TOOL_LINKFLAGS = \
+	-static \
+	-Wl,-defsym,valt_load_address=@VALT_LOAD_ADDRESS@ \
+	-Wl,-T,$(top_builddir)/valt_load_address.lds \
+	-nodefaultlibs -nostartfiles -u _start
 

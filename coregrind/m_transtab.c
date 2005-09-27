@@ -30,14 +30,16 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_machine.h"    // ppc32: VG_(cache_line_size_ppc32)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcmman.h"   // For VG_(get_memory_from_mmap)()
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 #include "pub_core_tooliface.h"  // For VG_(details).avg_translation_sizeB
 #include "pub_core_transtab.h"
+#include "pub_core_aspacemgr.h"
+#include "pub_core_mallocfree.h" // VG_(out_of_memory_NORETURN)
 
 /* #define DEBUG_TRANSTAB */
 
@@ -288,7 +290,8 @@ static void invalidateFastCache ( void )
 
 static void initialiseSector ( Int sno )
 {
-   Int i;
+   Int    i;
+   SysRes sres;
    vg_assert(isValidSector(sno));
 
    if (sectors[sno].tc == NULL) {
@@ -297,16 +300,31 @@ static void initialiseSector ( Int sno )
       vg_assert(sectors[sno].tt == NULL);
       vg_assert(sectors[sno].tc_next == NULL);
       vg_assert(sectors[sno].tt_n_inuse == 0);
-      sectors[sno].tc 
-         = VG_(get_memory_from_mmap)
-              ( 8 * tc_sector_szQ, "sectors[sno].tc" );
-      sectors[sno].tt 
-         = VG_(get_memory_from_mmap) 
-              ( N_TTES_PER_SECTOR * sizeof(TTEntry), "sectors[sno].tt" );
+
+      VG_(debugLog)(1,"transtab", "allocate sector %d\n", sno);
+
+      sres = VG_(am_mmap_anon_float_valgrind)( 8 * tc_sector_szQ );
+      if (sres.isError) {
+         VG_(out_of_memory_NORETURN)("initialiseSector(TC)", 
+                                     8 * tc_sector_szQ );
+	 /*NOTREACHED*/
+      }
+      sectors[sno].tc = (ULong*)sres.val;
+
+      sres = VG_(am_mmap_anon_float_valgrind)
+                ( N_TTES_PER_SECTOR * sizeof(TTEntry) );
+      if (sres.isError) {
+         VG_(out_of_memory_NORETURN)("initialiseSector(TT)", 
+                                     N_TTES_PER_SECTOR * sizeof(TTEntry) );
+	 /*NOTREACHED*/
+      }
+      sectors[sno].tt = (TTEntry*)sres.val;
+
       if (VG_(clo_verbosity) > 2)
          VG_(message)(Vg_DebugMsg, "TT/TC: initialise sector %d", sno);
    } else {
       /* Sector has been used before. */
+      VG_(debugLog)(1,"transtab", "recycle sector %d\n", sno);
       vg_assert(sectors[sno].tt != NULL);
       vg_assert(sectors[sno].tc_next != NULL);
       n_dump_count += sectors[sno].tt_n_inuse;
@@ -563,12 +581,17 @@ Bool overlaps ( Addr64 start, ULong range, VexGuestExtents* vge )
 }
 
 
-void VG_(discard_translations) ( Addr64 guest_start, ULong range )
+void VG_(discard_translations) ( Addr64 guest_start, ULong range,
+                                 HChar* who )
 {
    Int sno, i;
    Bool anyDeleted = False;
 
    vg_assert(init_done);
+
+   VG_(debugLog)(1, "transtab",
+                    "discard_translations(0x%llx, %lld) req by %s\n",
+                    guest_start, range, who );
 
    for (sno = 0; sno < N_SECTORS; sno++) {
       if (sectors[sno].tc == NULL)
@@ -641,6 +664,16 @@ void VG_(init_tt_tc) ( void )
          N_SECTORS * N_TTES_PER_SECTOR_USABLE, 
          SECTOR_TT_LIMIT_PERCENT );
    }
+
+   VG_(debugLog)(2, "transtab",
+      "cache: %d sectors of %d bytes each = %d total\n", 
+       N_SECTORS, 8 * tc_sector_szQ,
+       N_SECTORS * 8 * tc_sector_szQ );
+   VG_(debugLog)(2, "transtab",
+      "table: %d total entries, max occupancy %d (%d%%)\n",
+      N_SECTORS * N_TTES_PER_SECTOR,
+      N_SECTORS * N_TTES_PER_SECTOR_USABLE, 
+      SECTOR_TT_LIMIT_PERCENT );
 }
 
 

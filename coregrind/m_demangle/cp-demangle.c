@@ -710,14 +710,14 @@ template_arg_list_add_arg (arg_list, arg)
    argument list ARG_LIST.  */
 
 static string_list_t
-template_arg_list_get_arg (arg_list, index)
+template_arg_list_get_arg (arg_list, index2)
      template_arg_list_t arg_list;
-     int index;
+     int index2;
 {
   string_list_t arg = arg_list->first_argument;
   /* Scan down the list of arguments to find the one at position
      INDEX.  */
-  while (index--)
+  while (index2--)
     {
       arg = arg->next;
       if (arg == NULL)
@@ -966,7 +966,7 @@ demangle_char (dm, c)
      demangling_t dm;
      int c;
 {
-  static char *error_message = NULL;
+  //static char *error_message = NULL;    // unused
 
   if (peek_char (dm) == c)
     {
@@ -2988,7 +2988,7 @@ static status_t
 demangle_template_args (dm)
      demangling_t dm;
 {
-  int first = 1;
+  //int first = 1;      // unused
   dyn_string_t old_last_source_name;
   dyn_string_t new_name;
   template_arg_list_t arg_list = template_arg_list_new ();
@@ -3894,6 +3894,7 @@ VG_(java_demangle_v3) (mangled)
 /* Demangle NAME in the G++ V3 ABI demangling style, and return either
    zero, indicating that some error occurred, or a demangling_t
    holding the results.  */
+__attribute__((unused))
 static demangling_t
 demangle_v3_with_details (name)
      const char *name;

@@ -62,7 +62,7 @@ static void nl_pre_clo_init(void)
    /* No needs, no core events to track */
 }
 
-VG_DETERMINE_INTERFACE_VERSION(nl_pre_clo_init, 0)
+VG_DETERMINE_INTERFACE_VERSION(nl_pre_clo_init)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

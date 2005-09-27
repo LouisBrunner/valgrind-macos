@@ -155,7 +155,7 @@ usage: cg_annotate [options] --<pid> [source-files]
                           that helped reach the event count threshold [no]
     --context=N           print N lines of context before and after
                           annotated lines [8]
-    -I --include=<dir>    add <dir> to list of directories to search for 
+    -I<d> --include=<d>   add <d> to list of directories to search for 
                           source files
 
   Cachegrind is Copyright (C) 2002-2005 Nicholas Nethercote.
@@ -207,9 +207,10 @@ sub process_cmd_line()
                 ($1 >= 0 && $1 <= 100) or die($usage);
 
             # --auto=yes|no
-            } elsif ($arg =~ /^--auto=(yes|no)$/) {
-                $auto_annotate = 1 if ($1 eq "yes");
-                $auto_annotate = 0 if ($1 eq "no");
+            } elsif ($arg =~ /^--auto=yes$/) {
+                $auto_annotate = 1;
+            } elsif ($arg =~ /^--auto=no$/) {
+                $auto_annotate = 0;
 
             # --context=N
             } elsif ($arg =~ /^--context=([\d\.]+)$/) {
@@ -218,8 +219,12 @@ sub process_cmd_line()
                     die($usage);
                 }
 
-            # --include=A,B,C
-            } elsif ($arg =~ /^(-I|--include)=(.*)$/) {
+            # We don't handle "-I name" -- there can be no space.
+            } elsif ($arg =~ /^-I$/) {
+                die("Sorry, no space is allowed after a -I flag\n");
+            
+            # --include=A,B,C.  Allow -I=name for backwards compatibility.
+            } elsif ($arg =~ /^(-I=|-I|--include=)(.*)$/) {
                 my $inc = $2;
                 $inc =~ s|/$||;         # trim trailing '/'
                 push(@include_dirs, "$inc/");

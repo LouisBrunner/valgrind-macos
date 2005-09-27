@@ -35,12 +35,12 @@
 // structures below for more info on how things work.
 
 #include "pub_tool_basics.h"
+#include "pub_tool_aspacemgr.h"
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_hashtable.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcfile.h"
-#include "pub_tool_libcmman.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_libcproc.h"
 #include "pub_tool_machine.h"
@@ -50,6 +50,7 @@
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_stacktrace.h"
 #include "pub_tool_tooliface.h"
+#include "pub_tool_clientstate.h"
 
 #include "valgrind.h"           // For {MALLOC,FREE}LIKE_BLOCK
 
@@ -367,7 +368,10 @@ static void* perm_malloc(SizeT n_bytes)
    #define SUPERBLOCK_SIZE  (1 << 20)         // 1 MB
 
    if (hp + n_bytes > hp_lim) {
-      hp     = (Addr)VG_(get_memory_from_mmap)(SUPERBLOCK_SIZE, "perm_malloc");
+      hp = (Addr)VG_(am_shadow_alloc)(SUPERBLOCK_SIZE);
+      if (hp == 0)
+         VG_(out_of_memory_NORETURN)( "massif:perm_malloc", 
+                                      SUPERBLOCK_SIZE);
       hp_lim = hp + SUPERBLOCK_SIZE - 1;
    }
 
@@ -1341,9 +1345,12 @@ static void write_hp_file(void)
 
    // File header, including command line
    SPRINTF(buf, "JOB         \"");
-   for (i = 0; i < VG_(client_argc); i++) {
-      if (VG_(client_argv)[i])
-         SPRINTF(buf, "%s ", VG_(client_argv)[i]);
+   if (VG_(args_the_exename)) {
+      SPRINTF(buf, "%s", VG_(args_the_exename));
+   }
+   for (i = 0; i < VG_(args_for_client).used; i++) {
+      if (VG_(args_for_client).strs[i])
+         SPRINTF(buf, " %s", VG_(args_for_client).strs[i]);
    }
    SPRINTF(buf, /*" (%d ms/sample)\"\n"*/ "\"\n"
                 "DATE        \"\"\n"
@@ -1665,10 +1672,13 @@ write_text_file(ULong total_ST, ULong heap_ST)
    }
 
    // Command line
-   SPRINTF(buf, "Command: ");
-   for (i = 0; i < VG_(client_argc); i++) {
-      if (VG_(client_argv)[i])
-         SPRINTF(buf, "%s ", VG_(client_argv)[i]);
+   SPRINTF(buf, "Command:");
+   if (VG_(args_the_exename)) {
+      SPRINTF(buf, " %s", VG_(args_the_exename));
+   }
+   for (i = 0; i < VG_(args_for_client).used; i++) {
+      if (VG_(args_for_client).strs[i])
+         SPRINTF(buf, " %s", VG_(args_for_client).strs[i]);
    }
    SPRINTF(buf, "\n%s\n", maybe_p);
 
@@ -1818,7 +1828,7 @@ static void ms_pre_clo_init()
    tl_assert( VG_(getcwd)(base_dir, VKI_PATH_MAX) );
 }
 
-VG_DETERMINE_INTERFACE_VERSION(ms_pre_clo_init, 0)
+VG_DETERMINE_INTERFACE_VERSION(ms_pre_clo_init)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -363,8 +363,6 @@ static char *copy_str(char **tab, const char *str)
    The format of the stack is:
 
    higher address +-----------------+ <- clstack_end
-		  | Trampoline code |
-		  +-----------------+
                   |                 |
 		  : string table    :
 		  |                 |
@@ -477,8 +475,7 @@ Addr setup_client_stack( void*  init_sp,
       sizeof(char **)*envc +                  /* envp */
       sizeof(char **) +	                      /* terminal NULL */
       auxsize +                               /* auxv */
-      VG_ROUNDUP(stringsize, sizeof(Word)) +  /* strings (aligned) */
-      VKI_PAGE_SIZE;                   /* page for trampoline code */
+      VG_ROUNDUP(stringsize, sizeof(Word));   /* strings (aligned) */
 
    if (0) VG_(printf)("stacksize = %d\n", stacksize);
 

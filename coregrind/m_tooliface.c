@@ -91,7 +91,6 @@ VgNeeds VG_(needs) = {
    .syscall_wrapper      = False,
    .sanity_checks        = False,
    .data_syms	         = False,
-   .shadow_memory        = False,
    .malloc_replacement   = False,
 };
 
@@ -153,7 +152,6 @@ Bool VG_(sanity_check_needs)(Char** failmsg)
 NEEDS(libc_freeres)
 NEEDS(core_errors)
 NEEDS(data_syms)
-NEEDS(shadow_memory)
 
 void VG_(needs_basic_block_discards)(
    void (*discard)(Addr, SizeT)

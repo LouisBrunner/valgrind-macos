@@ -89,7 +89,6 @@ typedef
       Bool syscall_wrapper;
       Bool sanity_checks;
       Bool data_syms;
-      Bool shadow_memory;
       Bool malloc_replacement;
    } 
    VgNeeds;

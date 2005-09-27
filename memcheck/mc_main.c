@@ -2587,7 +2587,6 @@ static void mc_pre_clo_init(void)
    VG_(needs_client_requests)     (mc_handle_client_request);
    VG_(needs_sanity_checks)       (mc_cheap_sanity_check,
                                    mc_expensive_sanity_check);
-   VG_(needs_shadow_memory)       ();
 
    VG_(needs_malloc_replacement)  (MAC_(malloc),
                                    MAC_(__builtin_new),

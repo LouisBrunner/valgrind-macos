@@ -3413,7 +3413,6 @@ static void hg_pre_clo_init(void)
    VG_(needs_command_line_options)(hg_process_cmd_line_option,
                                    hg_print_usage,
                                    hg_print_debug_usage);
-   VG_(needs_shadow_memory)       ();
 
    VG_(needs_malloc_replacement)  (hg_malloc,
                                    hg___builtin_new,

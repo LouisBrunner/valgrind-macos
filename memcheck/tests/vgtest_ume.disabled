@@ -1,0 +1,3 @@
+# This one currently not used because it doesn't compile any more
+prog: vgtest_ume
+vgopts: -q

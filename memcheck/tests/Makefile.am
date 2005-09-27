@@ -86,7 +86,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	trivialleak.stderr.exp trivialleak.vgtest \
 	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest-HIDING \
-	vgtest_ume.stderr.exp vgtest_ume.vgtest \
+	vgtest_ume.stderr.exp vgtest_ume.disabled \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
 	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp64 xml1.stdout.exp \
 	xml1.vgtest \

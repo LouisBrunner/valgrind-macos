@@ -1,6 +1,4 @@
 
-SUBDIRS = . unused
-
 noinst_SCRIPTS = \
 	vg_regtest \
 	filter_addresses \

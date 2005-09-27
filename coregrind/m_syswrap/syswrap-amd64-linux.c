@@ -1168,13 +1168,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_fstat,             sys_newfstat),       // 5 
    GENXY(__NR_lstat,             sys_newlstat),       // 6 
    GENXY(__NR_poll,              sys_poll),           // 7 
-<<<<<<< .working
    LINX_(__NR_lseek,             sys_lseek),          // 8 
-   LINXY(__NR_mmap,              sys_mmap2),          // 9 
-=======
-   GENX_(__NR_lseek,             sys_lseek),          // 8 
-   GENX_(__NR_mmap,              sys_mmap2),          // 9 
->>>>>>> .merge-right.r4787
+   LINX_(__NR_mmap,              sys_mmap2),          // 9 
 
    GENXY(__NR_mprotect,          sys_mprotect),       // 10 
    GENXY(__NR_munmap,            sys_munmap),         // 11 

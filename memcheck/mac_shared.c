@@ -413,6 +413,12 @@ Bool (*MAC_(describe_addr_supp)) ( Addr a, AddrInfo* ai ) = NULL;
 /* Function used when searching MAC_Chunk lists */
 static Bool addr_is_in_MAC_Chunk(MAC_Chunk* mc, Addr a)
 {
+   // Nb: this is not quite right!  It assumes that the heap block has
+   // a redzone of size MAC_MALLOC_REDZONE_SZB.  That's true for malloc'd
+   // blocks, but not necessarily true for custom-alloc'd blocks.  So
+   // in some cases this could result in an incorrect description (eg.
+   // saying "12 bytes after block A" when really it's within block B.
+   // Fixing would require adding redzone size to MAC_Chunks, though.
    return VG_(addr_is_in_block)( a, mc->data, mc->size,
                                  MAC_MALLOC_REDZONE_SZB );
 }

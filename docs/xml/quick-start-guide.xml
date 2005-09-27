@@ -132,14 +132,14 @@ Things to notice:
  </listitem>
 
  <listitem>
- <para>The addresses (eg. 0x804838F) are usually unimportant, but occasionally
-   crucial for tracking down weirder bugs.</para>
+ <para>The code addresses (eg. 0x804838F) are usually unimportant, but
+ occasionally crucial for tracking down weirder bugs.</para>
  </listitem>
 
  <listitem>
  <para>Some error messages have a second component which describes the memory
    address involved.  This one shows that the written memory is just past
-   the end of a block allocated with malloc() on line 7 of example.c.</para>
+   the end of a block allocated with malloc() on line 5 of example.c.</para>
  </listitem>
 </itemizedlist>
 

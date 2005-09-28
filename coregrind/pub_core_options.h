@@ -158,7 +158,6 @@ typedef
    enum { 
       Vg_SmcNone,  // never generate self-checking translations
       Vg_SmcStack, // generate s-c-t's for code found in stacks
-                   // (segments with SF_GROWDOWN, to be precise)
                    // (this is the default)
       Vg_SmcAll    // make all translations self-checking.
    } 

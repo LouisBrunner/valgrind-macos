@@ -61,35 +61,6 @@
 #include "pub_core_ume.h"
 
 
-#ifndef AT_DCACHEBSIZE
-#define AT_DCACHEBSIZE		19
-#endif /* AT_DCACHEBSIZE */
-
-#ifndef AT_ICACHEBSIZE
-#define AT_ICACHEBSIZE		20
-#endif /* AT_ICACHEBSIZE */
-
-#ifndef AT_UCACHEBSIZE
-#define AT_UCACHEBSIZE		21
-#endif /* AT_UCACHEBSIZE */
-
-#ifndef AT_SYSINFO
-#define AT_SYSINFO		32
-#endif /* AT_SYSINFO */
-
-#ifndef AT_SYSINFO_EHDR
-#define AT_SYSINFO_EHDR		33
-#endif /* AT_SYSINFO_EHDR */
-
-#ifndef AT_SECURE
-#define AT_SECURE 23   /* secure mode boolean */
-#endif	/* AT_SECURE */
-
-/* Number of file descriptors that Valgrind tries to reserve for
-   it's own use - just a small constant. */
-#define N_RESERVED_FDS (10)
-
-
 /*====================================================================*/
 /*=== Counters, for profiling purposes only                        ===*/
 /*====================================================================*/
@@ -114,7 +85,7 @@ static void print_all_stats ( void )
 
 
 /*====================================================================*/
-/*=== Environment and stack setup                                  ===*/
+/*=== Setting up the client's environment                          ===*/
 /*====================================================================*/
 
 /* Prepare the client's environment.  This is basically a copy of our
@@ -236,6 +207,34 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 }
 
 
+/*====================================================================*/
+/*=== Setting up the client's stack                                ===*/
+/*====================================================================*/
+
+#ifndef AT_DCACHEBSIZE
+#define AT_DCACHEBSIZE		19
+#endif /* AT_DCACHEBSIZE */
+
+#ifndef AT_ICACHEBSIZE
+#define AT_ICACHEBSIZE		20
+#endif /* AT_ICACHEBSIZE */
+
+#ifndef AT_UCACHEBSIZE
+#define AT_UCACHEBSIZE		21
+#endif /* AT_UCACHEBSIZE */
+
+#ifndef AT_SYSINFO
+#define AT_SYSINFO		32
+#endif /* AT_SYSINFO */
+
+#ifndef AT_SYSINFO_EHDR
+#define AT_SYSINFO_EHDR		33
+#endif /* AT_SYSINFO_EHDR */
+
+#ifndef AT_SECURE
+#define AT_SECURE 23   /* secure mode boolean */
+#endif	/* AT_SECURE */
+
 /* Add a string onto the string table, and return its address */
 static char *copy_str(char **tab, const char *str)
 {
@@ -254,7 +253,9 @@ static char *copy_str(char **tab, const char *str)
    return orig;
 }
 
-/* 
+
+/* ----------------------------------------------------------------
+ 
    This sets up the client's initial stack, containing the args,
    environment and aux vector.
 
@@ -292,7 +293,8 @@ static char *copy_str(char **tab, const char *str)
 
       VG_(cache_line_size_ppc32) // ppc32 only -- cache line size
       VG_(have_altivec_ppc32)    // ppc32 only -- is Altivec supported?
-*/
+
+   ---------------------------------------------------------------- */
 
 static 
 Addr setup_client_stack( void*  init_sp,
@@ -1620,6 +1622,10 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
 /*====================================================================*/
 /*=== File descriptor setup                                        ===*/
 /*====================================================================*/
+
+/* Number of file descriptors that Valgrind tries to reserve for
+   it's own use - just a small constant. */
+#define N_RESERVED_FDS (10)
 
 static void setup_file_descriptors(void)
 {

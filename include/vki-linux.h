@@ -33,8 +33,6 @@
 
    All code is copied verbatim from kernel source files, except that:
    - VKI_/vki_ prefixes are added
-   - a few extra constants are defined (eg. VKI_MAP_NOSYMS);  these are
-     marked 'internal'
    - some extra explanatory comments are included;  they are all within
      "[[ ]]"
    - for some types, we only care about the size;  for a few of them (big
@@ -476,10 +474,6 @@ typedef struct vki_sigevent {
 #define VKI_SEEK_SET              0
 #define VKI_SEEK_CUR              1
 #define VKI_SEEK_END              2
-
-// [[Our own additional mmap flags]]
-#define VKI_MAP_NOSYMS  0x40000000      // internal: disable symbol loading
-#define VKI_MAP_CLIENT  0x80000000      // internal: distinguish client mappings
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/net.h

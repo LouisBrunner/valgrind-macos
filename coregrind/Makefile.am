@@ -92,7 +92,7 @@ BUILT_SOURCES =
 CLEANFILES = 
 
 valgrind_SOURCES = \
-	m_launcher.c \
+	launcher.c \
 	m_debuglog.c
 
 libcoregrind_a_SOURCES = \

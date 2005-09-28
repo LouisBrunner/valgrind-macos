@@ -124,9 +124,16 @@ static Addr aspacem_vStart = 0;
 
 /* ------ end of STATE for the address-space manager ------ */
 
-// Forwards decls
-static void aspacem_exit ( Int );
+/* ------ Forwards decls ------ */
+static void aspacem_exit      ( Int );
 static Int  find_nsegment_idx ( Addr a );
+
+static void parse_procselfmaps (
+      void (*record_mapping)( Addr addr, SizeT len, UInt prot,
+                              UInt dev, UInt ino, ULong offset, 
+                              const UChar* filename ),
+      void (*record_gap)( Addr addr, SizeT len )
+   );
 
 
 /*-----------------------------------------------------------------*/
@@ -306,6 +313,23 @@ static void aspacem_exit( Int status )
    /*NOTREACHED*/
    *(volatile Int *)0 = 'x';
    aspacem_assert(2+2 == 5);
+}
+
+static SysRes aspacem_open ( const Char* pathname, Int flags, Int mode )
+{  
+   SysRes res = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
+   return res;
+}
+
+static void aspacem_close ( Int fd )
+{
+   (void)VG_(do_syscall1)(__NR_close, fd);
+}
+
+static Int aspacem_read ( Int fd, void* buf, Int count)
+{
+   SysRes res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count);
+   return res.isError ? -1 : res.val;
 }
 
 
@@ -982,8 +1006,8 @@ Bool VG_(am_do_sync_check) ( const HChar* fn,
    sync_check_ok = True;
    if (0)
       VG_(debugLog)(0,"aspacem", "do_sync_check %s:%d\n", file,line);
-   VG_(parse_procselfmaps)( sync_check_mapping_callback,
-                            sync_check_gap_callback );
+   parse_procselfmaps( sync_check_mapping_callback,
+                       sync_check_gap_callback );
    if (!sync_check_ok) {
       VG_(debugLog)(0,"aspacem", 
                       "sync check at %s:%d (%s): FAILED\n",
@@ -1503,7 +1527,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    VG_(am_show_nsegments)(2, "Initial layout");
 
    VG_(debugLog)(2, "aspacem", "Reading /proc/self/maps\n");
-   VG_(parse_procselfmaps) ( read_maps_callback, NULL );
+   parse_procselfmaps( read_maps_callback, NULL );
 
    VG_(am_show_nsegments)(2, "With contents of /proc/self/maps");
 
@@ -2709,6 +2733,264 @@ Int VG_(am_get_VgStack_unused_szB)( VgStack* stack )
    return i * sizeof(UInt);
 }
 
+
+/*-----------------------------------------------------------------*/
+/*---                                                           ---*/
+/*--- A simple parser for /proc/self/maps on Linux 2.4.X/2.6.X. ---*/
+/*--- Almost completely independent of the stuff above.  The    ---*/
+/*--- only function it 'exports' to the code above this comment ---*/
+/*--- is parse_procselfmaps.                                    ---*/
+/*---                                                           ---*/
+/*-----------------------------------------------------------------*/
+
+/* Size of a smallish table used to read /proc/self/map entries. */
+#define M_PROCMAP_BUF 100000
+
+/* static ... to keep it out of the stack frame. */
+static Char procmap_buf[M_PROCMAP_BUF];
+
+/* Records length of /proc/self/maps read into procmap_buf. */
+static Int  buf_n_tot;
+
+/* Helper fns. */
+
+static Int hexdigit ( Char c )
+{
+   if (c >= '0' && c <= '9') return (Int)(c - '0');
+   if (c >= 'a' && c <= 'f') return 10 + (Int)(c - 'a');
+   if (c >= 'A' && c <= 'F') return 10 + (Int)(c - 'A');
+   return -1;
+}
+
+static Int decdigit ( Char c )
+{
+   if (c >= '0' && c <= '9') return (Int)(c - '0');
+   return -1;
+}
+
+static Int readchar ( const Char* buf, Char* ch )
+{
+   if (*buf == 0) return 0;
+   *ch = *buf;
+   return 1;
+}
+
+static Int readhex ( const Char* buf, UWord* val )
+{
+   Int n = 0;
+   *val = 0;
+   while (hexdigit(*buf) >= 0) {
+      *val = (*val << 4) + hexdigit(*buf);
+      n++; buf++;
+   }
+   return n;
+}
+
+static Int readdec ( const Char* buf, UInt* val )
+{
+   Int n = 0;
+   *val = 0;
+   while (hexdigit(*buf) >= 0) {
+      *val = (*val * 10) + decdigit(*buf);
+      n++; buf++;
+   }
+   return n;
+}
+
+
+/* Get the contents of /proc/self/maps into a static buffer.  If
+   there's a syntax error, it won't fit, or other failure, just
+   abort. */
+
+static void read_procselfmaps_into_buf ( void )
+{
+   Int    n_chunk;
+   SysRes fd;
+   
+   /* Read the initial memory mapping from the /proc filesystem. */
+   fd = aspacem_open( "/proc/self/maps", VKI_O_RDONLY, 0 );
+   if (fd.isError)
+      aspacem_barf("can't open /proc/self/maps");
+
+   buf_n_tot = 0;
+   do {
+      n_chunk = aspacem_read( fd.val, &procmap_buf[buf_n_tot],
+                              M_PROCMAP_BUF - buf_n_tot );
+      buf_n_tot += n_chunk;
+   } while ( n_chunk > 0 && buf_n_tot < M_PROCMAP_BUF );
+
+   aspacem_close(fd.val);
+
+   if (buf_n_tot >= M_PROCMAP_BUF-5)
+      aspacem_barf_toolow("M_PROCMAP_BUF");
+   if (buf_n_tot == 0)
+      aspacem_barf("I/O error on /proc/self/maps");
+
+   procmap_buf[buf_n_tot] = 0;
+}
+
+/* Parse /proc/self/maps.  For each map entry, call
+   record_mapping, passing it, in this order:
+
+      start address in memory
+      length
+      page protections (using the VKI_PROT_* flags)
+      mapped file device and inode
+      offset in file, or zero if no file
+      filename, zero terminated, or NULL if no file
+
+   So the sig of the called fn might be
+
+      void (*record_mapping)( Addr start, SizeT size, UInt prot,
+			      UInt dev, UInt info,
+                              ULong foffset, UChar* filename )
+
+   Note that the supplied filename is transiently stored; record_mapping 
+   should make a copy if it wants to keep it.
+
+   Nb: it is important that this function does not alter the contents of
+       procmap_buf!
+*/
+static void parse_procselfmaps (
+      void (*record_mapping)( Addr addr, SizeT len, UInt prot,
+                              UInt dev, UInt ino, ULong offset, 
+                              const UChar* filename ),
+      void (*record_gap)( Addr addr, SizeT len )
+   )
+{
+   Int    i, j, i_eol;
+   Addr   start, endPlusOne, gapStart;
+   UChar* filename;
+   UChar  rr, ww, xx, pp, ch, tmp;
+   UInt	  ino, prot;
+   UWord  foffset, maj, min;
+
+   read_procselfmaps_into_buf();
+
+   aspacem_assert('\0' != procmap_buf[0] && 0 != buf_n_tot);
+
+   if (0)
+      VG_(debugLog)(0, "procselfmaps", "raw:\n%s\n", procmap_buf);
+
+   /* Ok, it's safely aboard.  Parse the entries. */
+   i = 0;
+   gapStart = Addr_MIN;
+   while (True) {
+      if (i >= buf_n_tot) break;
+
+      /* Read (without fscanf :) the pattern %16x-%16x %c%c%c%c %16x %2x:%2x %d */
+      j = readhex(&procmap_buf[i], &start);
+      if (j > 0) i += j; else goto syntaxerror;
+      j = readchar(&procmap_buf[i], &ch);
+      if (j == 1 && ch == '-') i += j; else goto syntaxerror;
+      j = readhex(&procmap_buf[i], &endPlusOne);
+      if (j > 0) i += j; else goto syntaxerror;
+
+      j = readchar(&procmap_buf[i], &ch);
+      if (j == 1 && ch == ' ') i += j; else goto syntaxerror;
+
+      j = readchar(&procmap_buf[i], &rr);
+      if (j == 1 && (rr == 'r' || rr == '-')) i += j; else goto syntaxerror;
+      j = readchar(&procmap_buf[i], &ww);
+      if (j == 1 && (ww == 'w' || ww == '-')) i += j; else goto syntaxerror;
+      j = readchar(&procmap_buf[i], &xx);
+      if (j == 1 && (xx == 'x' || xx == '-')) i += j; else goto syntaxerror;
+      /* This field is the shared/private flag */
+      j = readchar(&procmap_buf[i], &pp);
+      if (j == 1 && (pp == 'p' || pp == '-' || pp == 's')) 
+                                              i += j; else goto syntaxerror;
+
+      j = readchar(&procmap_buf[i], &ch);
+      if (j == 1 && ch == ' ') i += j; else goto syntaxerror;
+
+      j = readhex(&procmap_buf[i], &foffset);
+      if (j > 0) i += j; else goto syntaxerror;
+
+      j = readchar(&procmap_buf[i], &ch);
+      if (j == 1 && ch == ' ') i += j; else goto syntaxerror;
+
+      j = readhex(&procmap_buf[i], &maj);
+      if (j > 0) i += j; else goto syntaxerror;
+      j = readchar(&procmap_buf[i], &ch);
+      if (j == 1 && ch == ':') i += j; else goto syntaxerror;
+      j = readhex(&procmap_buf[i], &min);
+      if (j > 0) i += j; else goto syntaxerror;
+
+      j = readchar(&procmap_buf[i], &ch);
+      if (j == 1 && ch == ' ') i += j; else goto syntaxerror;
+
+      j = readdec(&procmap_buf[i], &ino);
+      if (j > 0) i += j; else goto syntaxerror;
+ 
+      goto read_line_ok;
+
+    syntaxerror:
+      VG_(debugLog)(0, "Valgrind:", 
+                       "FATAL: syntax error reading /proc/self/maps\n");
+      { Int k, m;
+        HChar buf50[51];
+        m = 0;
+        buf50[m] = 0;
+        k = i - 50;
+        if (k < 0) k = 0;
+        for (; k <= i; k++) {
+           buf50[m] = procmap_buf[k];
+           buf50[m+1] = 0;
+           if (m < 50-1) m++;
+        }
+        VG_(debugLog)(0, "procselfmaps", "Last 50 chars: '%s'\n", buf50);
+      }
+      aspacem_exit(1);
+
+    read_line_ok:
+
+      /* Try and find the name of the file mapped to this segment, if
+         it exists.  Note that files can contains spaces. */
+
+      // Move i to the next non-space char, which should be either a '/' or
+      // a newline.
+      while (procmap_buf[i] == ' ' && i < buf_n_tot-1) i++;
+      
+      // Move i_eol to the end of the line.
+      i_eol = i;
+      while (procmap_buf[i_eol] != '\n' && i_eol < buf_n_tot-1) i_eol++;
+
+      // If there's a filename...
+      if (i < i_eol-1 && procmap_buf[i] == '/') {
+         /* Minor hack: put a '\0' at the filename end for the call to
+            'record_mapping', then restore the old char with 'tmp'. */
+         filename = &procmap_buf[i];
+         tmp = filename[i_eol - i];
+         filename[i_eol - i] = '\0';
+      } else {
+	 tmp = 0;
+         filename = NULL;
+         foffset = 0;
+      }
+
+      prot = 0;
+      if (rr == 'r') prot |= VKI_PROT_READ;
+      if (ww == 'w') prot |= VKI_PROT_WRITE;
+      if (xx == 'x') prot |= VKI_PROT_EXEC;
+
+      if (record_gap && gapStart < start)
+         (*record_gap) ( gapStart, start-gapStart );
+
+      (*record_mapping) ( start, endPlusOne-start, 
+                          prot, maj * 256 + min, ino,
+                          foffset, filename );
+
+      if ('\0' != tmp) {
+         filename[i_eol - i] = tmp;
+      }
+
+      i = i_eol + 1;
+      gapStart = endPlusOne;
+   }
+
+   if (record_gap && gapStart < Addr_MAX)
+      (*record_gap) ( gapStart, Addr_MAX - gapStart + 1 );
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

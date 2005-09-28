@@ -41,14 +41,6 @@
 
 #include "pub_tool_aspacemgr.h"
 
-/* Parses /proc/self/maps, calling `record_mapping' for each entry. */
-extern 
-void VG_(parse_procselfmaps) (
-   void (*record_mapping)( Addr addr, SizeT len, UInt prot,
-			   UInt dev, UInt ino, ULong foff,
-                           const UChar *filename ),
-   void (*record_gap)( Addr addr, SizeT len ) );
-
 //--------------------------------------------------------------
 // Definition of address-space segments
 

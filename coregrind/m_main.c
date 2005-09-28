@@ -1518,6 +1518,8 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       VG_(message)(Vg_UserMsg, 
          "My PID = %d, parent PID = %d.  Prog and args are:",
          VG_(getpid)(), VG_(getppid)() );
+      if (VG_(args_the_exename))
+         VG_(message)(Vg_UserMsg, "   %s", VG_(args_the_exename));
       for (i = 0; i < VG_(args_for_client).used; i++) 
          VG_(message)(Vg_UserMsg, "   %s", VG_(args_for_client).strs[i]);
       if (VG_(clo_log_file_qualifier)) {

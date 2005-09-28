@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(Valgrind, 3.1.ASPACEM, valgrind-users@lists.sourceforge.net)
+AC_INIT(Valgrind, 3.1.SVN, valgrind-users@lists.sourceforge.net)
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE

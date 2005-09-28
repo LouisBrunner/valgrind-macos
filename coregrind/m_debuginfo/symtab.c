@@ -96,6 +96,14 @@ static SegInfo* segInfo_list = NULL;
 
 
 /*------------------------------------------------------------*/
+/*--- Forwards decls                                       ---*/
+/*------------------------------------------------------------*/
+
+static Bool is_elf_object_file ( const void *buf );
+static void unload_symbols ( Addr start, SizeT length );
+
+
+/*------------------------------------------------------------*/
 /*--- TOP LEVEL                                            ---*/
 /*------------------------------------------------------------*/
 
@@ -126,11 +134,6 @@ static Bool is_self ( HChar* filename )
 { 
    return VG_(strstr)( filename, "/lib/valgrind/" ) != NULL;
 }
-
-////////////
-
-// fwds
-static void unload_symbols ( Addr start, SizeT length );
 
 static void nuke_syms_in_range ( Addr start, SizeT length )
 {
@@ -183,7 +186,7 @@ void VG_(di_notify_mmap)( Addr a )
          && seg->hasR
          && seg->hasX
          && !seg->hasW
-         && VG_(is_object_file)( (const void*)seg->start );
+         && is_elf_object_file( (const void*)seg->start );
 
    if (!ok) {
       VG_(arena_free)(VG_AR_SYMTAB, filename);
@@ -1056,7 +1059,7 @@ void canonicaliseCfiSI ( SegInfo* si )
 /*--- Read info from a .so/exe file.                       ---*/
 /*------------------------------------------------------------*/
 
-Bool VG_(is_object_file)(const void *buf)
+static Bool is_elf_object_file(const void *buf)
 {
    {
       ElfXX_Ehdr *ehdr = (ElfXX_Ehdr *)buf;
@@ -1437,7 +1440,7 @@ Bool read_lib_symbols ( SegInfo* si )
    ehdr = (ElfXX_Ehdr*)oimage;
 
    if (ok)
-      ok &= VG_(is_object_file)(ehdr);
+      ok &= is_elf_object_file(ehdr);
 
    if (!ok) {
       ML_(symerr)("Invalid ELF header, or missing stringtab/sectiontab.");
@@ -1681,7 +1684,7 @@ Bool read_lib_symbols ( SegInfo* si )
          if ((dimage = find_debug_file(si->filename, debuglink, crc, &n_dimage)) != 0) {
             ehdr = (ElfXX_Ehdr*)dimage;
 
-            if (n_dimage >= sizeof(ElfXX_Ehdr) && VG_(is_object_file)(ehdr))
+            if (n_dimage >= sizeof(ElfXX_Ehdr) && is_elf_object_file(ehdr))
             {
                shdr = (ElfXX_Shdr*)(dimage + ehdr->e_shoff);
                sh_strtab = (UChar*)(dimage + shdr[ehdr->e_shstrndx].sh_offset);
@@ -1853,20 +1856,20 @@ static void unload_symbols ( Addr start, SizeT length )
    VGP_POPCC(VgpReadSyms);
 }
 
-void VG_(seginfo_decref)(SegInfo *si, Addr start)
-{
-   vg_assert(si);
-   vg_assert(si->ref >= 1);
-   if (--si->ref == 0)
-      unload_symbols(si->start, si->size);
-}
-
-void VG_(seginfo_incref)(SegInfo *si)
-{
-   vg_assert(si);
-   vg_assert(si->ref > 0);
-   si->ref++;
-}
+//static void seginfo_decref(SegInfo *si, Addr start)
+//{
+//   vg_assert(si);
+//   vg_assert(si->ref >= 1);
+//   if (--si->ref == 0)
+//      unload_symbols(si->start, si->size);
+//}
+//
+//static void seginfo_incref(SegInfo *si)
+//{
+//   vg_assert(si);
+//   vg_assert(si->ref > 0);
+//   si->ref++;
+//}
 
 /*------------------------------------------------------------*/
 /*--- Use of symbol table & location info to create        ---*/

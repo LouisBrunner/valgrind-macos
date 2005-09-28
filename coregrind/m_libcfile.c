@@ -394,9 +394,9 @@ Int my_socket ( Int domain, Int type, Int protocol )
    return res.isError ? -1 : res.val;
 
 #elif defined(VGP_amd64_linux)
-   // AMD64/Linux doesn't define __NR_socketcall... see comment above
-   // VG_(sigpending)() for more details.
-   I_die_here;
+   SysRes res;
+   res = VG_(do_syscall3)(__NR_socket, domain, type, protocol );
+   return res.isError ? -1 : res.val;
 
 #elif defined(VGP_ppc32_linux)
    //CAB: TODO
@@ -421,9 +421,9 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
    return res.isError ? -1 : res.val;
 
 #elif defined(VGP_amd64_linux)
-   // AMD64/Linux doesn't define __NR_socketcall... see comment above
-   // VG_(sigpending)() for more details.
-   I_die_here;
+   SysRes res;
+   res = VG_(do_syscall3)(__NR_connect, sockfd, (UWord)serv_addr, addrlen);
+   return res.isError ? -1 : res.val;
 
 #elif defined(VGP_ppc32_linux)
    //CAB: TODO
@@ -453,9 +453,9 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    return res.isError ? -1 : res.val;
 
 #elif defined(VGP_amd64_linux)
-   // AMD64/Linux doesn't define __NR_socketcall... see comment above
-   // VG_(sigpending)() for more details.
-   I_die_here;
+   SysRes res;
+   res = VG_(do_syscall6)(__NR_sendto, sd, (UWord)msg, count, flags, 0,0);
+   return res.isError ? -1 : res.val;
 
 #elif defined(VGP_ppc32_linux)
    //CAB: TODO

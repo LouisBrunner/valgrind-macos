@@ -1465,13 +1465,13 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       accordingly. */
 
    VG_(debugLog)(2, "aspacem", 
-                    "        sp_at_startup = 0x%llx (supplied)\n", 
+                    "        sp_at_startup = 0x%010llx (supplied)\n", 
                     (ULong)sp_at_startup );
 
    aspacem_minAddr = (Addr) 0x04000000; // 64M
 
 #  if VG_WORDSIZE == 8
-   aspacem_maxAddr = (Addr)0x400000000 - 1; // 16G
+   aspacem_maxAddr = (Addr)0x800000000 - 1; // 32G
 #  else
    aspacem_maxAddr = VG_PGROUNDDN( sp_at_startup ) - 1;
 #  endif

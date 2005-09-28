@@ -134,9 +134,9 @@
 
 #else
 
-/* Just handle the first 16G fast and the rest via auxiliary
+/* Just handle the first 32G fast and the rest via auxiliary
    primaries. */
-#  define N_PRIMARY_BITS  18
+#  define N_PRIMARY_BITS  19
 
 #endif
 

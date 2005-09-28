@@ -57,12 +57,12 @@
 /* Number of TC entries in each sector.  This needs to be a prime
    number to work properly, and it is strongly recommended not to
    change this. */
-#define N_TTES_PER_SECTOR /*30011*/ 40009
+#define N_TTES_PER_SECTOR /*30011*/ /*40009*/ 80021
 
 /* Because each sector contains a hash table of TTEntries, we need to
    specify the maximum allowable loading, after which the sector is
    deemed full. */
-#define SECTOR_TT_LIMIT_PERCENT 60
+#define SECTOR_TT_LIMIT_PERCENT 66
 
 /* The sector is deemed full when this many entries are in it. */
 #define N_TTES_PER_SECTOR_USABLE \

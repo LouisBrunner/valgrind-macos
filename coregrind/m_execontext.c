@@ -55,7 +55,7 @@ struct _ExeContext {
 
 /* Number of lists in which we keep track of ExeContexts.  Should be
    prime. */
-#define N_EC_LISTS 4999 /* a prime number */
+#define N_EC_LISTS 30011 /*4999*/ /* a prime number */
 
 /* The idea is only to ever store any one context once, so as to save
    space and make exact comparisons faster. */

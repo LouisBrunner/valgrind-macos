@@ -575,7 +575,7 @@ static void set_address_range_perms ( Addr aA, SizeT len,
       if (len > 100 * 1000 * 1000) {
          VG_(message)(Vg_UserMsg, 
                       "Warning: set address range perms: "
-                      "large range %u, a %d, v %d",
+                      "large range %lu, a %d, v %d",
                       len, example_a_bit, example_v_bit );
       }
    }

@@ -2383,8 +2383,10 @@ Bool VG_(am_create_reservation) ( Addr start, SizeT length,
    extended forwards in the address space, and the reservation must be
    the next one along.  If DELTA is negative, the segment is extended
    backwards in the address space and the reservation must be the
-   previous one.  DELTA must be page aligned and must not exceed the
-   size of the reservation segment. */
+   previous one.  DELTA must be page aligned.  abs(DELTA) must not
+   exceed the size of the reservation segment minus one page, that is,
+   the reservation segment after the operation must be at least one
+   page long. */
 
 Bool VG_(am_extend_into_adjacent_reservation_client) ( NSegment* seg, 
                                                        SSizeT    delta )
@@ -2418,7 +2420,8 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( NSegment* seg,
           || nsegments[segR].kind != SkResvn
           || nsegments[segR].smode != SmLower
           || nsegments[segR].start != nsegments[segA].end + 1
-          || delta > (nsegments[segR].end - nsegments[segR].start + 1))
+          || delta + VKI_PAGE_SIZE 
+                > (nsegments[segR].end - nsegments[segR].start + 1))
         return False;
         
       /* Extend the kernel's mapping. */
@@ -2452,7 +2455,8 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( NSegment* seg,
           || nsegments[segR].kind != SkResvn
           || nsegments[segR].smode != SmUpper
           || nsegments[segR].end + 1 != nsegments[segA].start
-          || delta > (nsegments[segR].end - nsegments[segR].start + 1))
+          || delta + VKI_PAGE_SIZE 
+                > (nsegments[segR].end - nsegments[segR].start + 1))
         return False;
         
       /* Extend the kernel's mapping. */

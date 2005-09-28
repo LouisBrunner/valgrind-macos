@@ -262,8 +262,10 @@ extern Bool VG_(am_create_reservation)
    extended forwards in the address space, and the reservation must be
    the next one along.  If DELTA is negative, the segment is extended
    backwards in the address space and the reservation must be the
-   previous one.  DELTA must be page aligned and must not exceed the
-   size of the reservation segment. */
+   previous one.  DELTA must be page aligned.  abs(DELTA) must not
+   exceed the size of the reservation segment minus one page, that is,
+   the reservation segment after the operation must be at least one
+   page long. */
 extern Bool VG_(am_extend_into_adjacent_reservation_client) 
    ( NSegment* seg, SSizeT delta );
 

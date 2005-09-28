@@ -537,9 +537,9 @@ lax-ioctls hack tells \fBvalgrind\fP to be very lax about ioctl handling
 and assume that unknown ioctls just behave correctly.
 .TP
 .B
-- ioctl-mmap
-Tell \fBvalgrind\fP to search for new memory mappings after an unknown
-\fBioctl\fP call.
+- enable-inner
+Enable some special magic needed when the program being run is 
+itself \fBvalgrind\fP.
 .RE
 
 .SH CORE DEBUGGING OPTIONS

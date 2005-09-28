@@ -1024,17 +1024,13 @@ Addrcheck), the following options apply.</para>
       some device drivers with a large number of strange ioctl
       commands becomes very tiresome.</para>
      </listitem>
-     <listitem><para><computeroutput>ioctl-mmap</computeroutput></para> 
-      <para>Some ioctl requests can mmap new memory into your
-      process address space.  If Valgrind doesn't know about these mappings,
-      it could put new mappings over them, and/or complain bitterly when
-      your program uses them.  This option makes Valgrind scan the address
-      space for new mappings after each unknown ioctl has finished.  You may
-      also need to run with
-      <computeroutput>--pointercheck=no</computeroutput> if the ioctl
-      decides to place the mapping out of the client's usual address space.
+
+     <listitem><para><computeroutput>enable-inner</computeroutput></para> 
+      <para>Enable some special magic needed when the program being
+      run is itself Valgrind.
       </para>
      </listitem>
+
     </itemizedlist>
    </listitem>
 

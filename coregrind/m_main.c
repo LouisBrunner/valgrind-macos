@@ -854,7 +854,7 @@ static void usage_NORETURN ( Bool debug_help )
 "\n"
 "  uncommon user options for all Valgrind tools:\n"
 "    --run-libc-freeres=no|yes free up glibc memory at exit? [yes]\n"
-"    --weird-hacks=hack1,hack2,...  known hacks: lax-ioctls,ioctl-mmap\n"
+"    --weird-hacks=hack1,hack2,...  known hacks: lax-ioctls\n"
 "                                                enable-outer [none]\n"
 "    --pointercheck=no|yes     enforce client address space limits [yes]\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"

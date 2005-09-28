@@ -1627,14 +1627,15 @@ ML_(generic_POST_sys_shmdt) ( ThreadId tid, UWord res, UWord arg0 )
 {
    NSegment* s = VG_(am_find_nsegment)(arg0);
 
-   if (s != NULL /* && (s->flags & SF_SHM) */
-                 /* && Implied by defn of am_find_nsegment:
-                       VG_(seg_contains)(s, arg0, 1) */) {
-      Bool d = VG_(am_notify_munmap)(s->start, s->end+1 - s->start);
-      VG_TRACK( die_mem_munmap, s->start, s->end+1 - s->start );
+   if (s != NULL) {
+      Addr  s_start = s->start;
+      SizeT s_len   = s->end+1 - s->start;
+      Bool  d       = VG_(am_notify_munmap)(s_start, s_len);
+      s = NULL; /* s is now invalid */
+      VG_TRACK( die_mem_munmap, s_start, s_len );
       if (d)
-         VG_(discard_translations)( (Addr64)(s->start),
-                                    (ULong)(s->end+1 - s->start),
+         VG_(discard_translations)( (Addr64)s_start,
+                                    (ULong)s_len,
                                     "ML_(generic_POST_sys_shmdt)" );
    }
 }

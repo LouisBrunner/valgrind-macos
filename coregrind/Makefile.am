@@ -48,7 +48,6 @@ noinst_HEADERS = \
 	pub_core_libcproc.h	\
 	pub_core_libcsignal.h	\
 	pub_core_machine.h	\
-	pub_core_main.h		\
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
 	pub_core_oset.h		\

@@ -44,7 +44,6 @@
 #include "pub_core_libcsignal.h"
 #include "pub_core_syscall.h"       // VG_(strerror)
 #include "pub_core_machine.h"
-#include "pub_core_main.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
@@ -1823,6 +1822,16 @@ void show_BB_profile ( BBProfEntry tops[], UInt n_tops, ULong score_total )
 
 static Addr sp_at_startup = 0;
 
+/* --- Forwards decls to do with shutdown --- */
+
+static void final_tidyup(ThreadId tid); 
+
+/* Do everything which needs doing when the last thread exits */
+static 
+void shutdown_actions_NORETURN( ThreadId tid, 
+                                VgSchedReturnCode tids_schedretcode );
+
+/* --- end of Forwards decls to do with shutdown --- */
 
 
 /* TODO: GIVE THIS A PROPER HOME
@@ -1857,8 +1866,6 @@ static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
    *n_acquired = r;
    return starts;
 }
-
-
 
 
 
@@ -2480,67 +2487,33 @@ Int main(Int argc, HChar **argv, HChar **envp)
    }
 
    VG_(debugLog)(1, "main", "Running thread 1\n");
+
    /* As a result of the following call, the last thread standing
-      eventually winds up running VG_(shutdown_actions_NORETURN) just
-      below. */
+      eventually winds up running shutdown_actions_NORETURN
+      just below.  Unfortunately, simply exporting said function
+      causes m_main to be part of a module cycle, which is pretty
+      nonsensical.  So instead of doing that, the address of said
+      function is stored in a global variable 'owned' by m_syswrap,
+      and it uses that function pointer to get back here when it needs
+      to. */
+
+   /* Set continuation address. */
+   VG_(address_of_m_main_shutdown_actions_NORETURN)
+      = & shutdown_actions_NORETURN;
+
+   /* Run the first thread, eventually ending up at the continuation
+      address. */
    VG_(main_thread_wrapper_NORETURN)(1);
 
    /*NOTREACHED*/
    vg_assert(0);
 }
 
+/* Do everything which needs doing when the last thread exits. */
 
-/* Final clean-up before terminating the process.  
-   Clean up the client by calling __libc_freeres() (if requested) 
-   This is Linux-specific?
-*/
-static void final_tidyup(ThreadId tid)
-{
-   Addr __libc_freeres_wrapper;
-
-   vg_assert(VG_(is_running_thread)(tid));
-   
-   if ( !VG_(needs).libc_freeres ||
-        !VG_(clo_run_libc_freeres) ||
-        0 == (__libc_freeres_wrapper = VG_(get_libc_freeres_wrapper)()) )
-      return;			/* can't/won't do it */
-
-   if (VG_(clo_verbosity) > 2  ||
-       VG_(clo_trace_syscalls) ||
-       VG_(clo_trace_sched))
-      VG_(message)(Vg_DebugMsg, 
-		   "Caught __NR_exit; running __libc_freeres()");
-      
-   /* point thread context to point to libc_freeres_wrapper */
-   VG_(set_IP)(tid, __libc_freeres_wrapper);
-   // XXX should we use a special stack?
-
-   /* Block all blockable signals by copying the real block state into
-      the thread's block state*/
-   VG_(sigprocmask)(VKI_SIG_BLOCK, NULL, &VG_(threads)[tid].sig_mask);
-   VG_(threads)[tid].tmp_sig_mask = VG_(threads)[tid].sig_mask;
-
-   /* and restore handlers to default */
-   VG_(set_default_handler)(VKI_SIGSEGV);
-   VG_(set_default_handler)(VKI_SIGBUS);
-   VG_(set_default_handler)(VKI_SIGILL);
-   VG_(set_default_handler)(VKI_SIGFPE);
-
-   // We were exiting, so assert that...
-   vg_assert(VG_(is_exiting)(tid));
-   // ...but now we're not again
-   VG_(threads)[tid].exitreason = VgSrc_None;
-
-   // run until client thread exits - ideally with LIBC_FREERES_DONE,
-   // but exit/exitgroup/signal will do
-   VG_(scheduler)(tid);
-
-   vg_assert(VG_(is_exiting)(tid));
-}
-
-/* Do everything which needs doing when the last thread exits */
-void VG_(shutdown_actions_NORETURN) ( ThreadId tid, 
-                                      VgSchedReturnCode tids_schedretcode )
+static 
+void shutdown_actions_NORETURN( ThreadId tid, 
+                                VgSchedReturnCode tids_schedretcode )
 {
    VG_(debugLog)(1, "main", "entering VG_(shutdown_actions_NORETURN)\n");
 
@@ -2644,6 +2617,56 @@ void VG_(shutdown_actions_NORETURN) ( ThreadId tid,
    default:
       VG_(core_panic)("main(): unexpected scheduler return code");
    }
+}
+
+/* -------------------- */
+
+/* Final clean-up before terminating the process.  
+   Clean up the client by calling __libc_freeres() (if requested) 
+   This is Linux-specific?
+*/
+static void final_tidyup(ThreadId tid)
+{
+   Addr __libc_freeres_wrapper;
+
+   vg_assert(VG_(is_running_thread)(tid));
+   
+   if ( !VG_(needs).libc_freeres ||
+        !VG_(clo_run_libc_freeres) ||
+        0 == (__libc_freeres_wrapper = VG_(get_libc_freeres_wrapper)()) )
+      return;			/* can't/won't do it */
+
+   if (VG_(clo_verbosity) > 2  ||
+       VG_(clo_trace_syscalls) ||
+       VG_(clo_trace_sched))
+      VG_(message)(Vg_DebugMsg, 
+		   "Caught __NR_exit; running __libc_freeres()");
+      
+   /* point thread context to point to libc_freeres_wrapper */
+   VG_(set_IP)(tid, __libc_freeres_wrapper);
+   // XXX should we use a special stack?
+
+   /* Block all blockable signals by copying the real block state into
+      the thread's block state*/
+   VG_(sigprocmask)(VKI_SIG_BLOCK, NULL, &VG_(threads)[tid].sig_mask);
+   VG_(threads)[tid].tmp_sig_mask = VG_(threads)[tid].sig_mask;
+
+   /* and restore handlers to default */
+   VG_(set_default_handler)(VKI_SIGSEGV);
+   VG_(set_default_handler)(VKI_SIGBUS);
+   VG_(set_default_handler)(VKI_SIGILL);
+   VG_(set_default_handler)(VKI_SIGFPE);
+
+   // We were exiting, so assert that...
+   vg_assert(VG_(is_exiting)(tid));
+   // ...but now we're not again
+   VG_(threads)[tid].exitreason = VgSrc_None;
+
+   // run until client thread exits - ideally with LIBC_FREERES_DONE,
+   // but exit/exitgroup/signal will do
+   VG_(scheduler)(tid);
+
+   vg_assert(VG_(is_exiting)(tid));
 }
 
 

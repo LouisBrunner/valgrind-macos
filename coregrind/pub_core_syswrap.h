@@ -66,6 +66,15 @@ extern void VG_(cleanup_thread) ( ThreadArchState* );
 extern void VG_(init_preopened_fds) ( void );
 extern void VG_(show_open_fds) ( void );
 
+// When the final thread is done, where shall I call to shutdown the
+// system cleanly?  Is set once at startup (in m_main) and never
+// changes after that.  Is basically a pointer to the exit
+// continuation.  This is all just a nasty hack to avoid calling
+// directly from m_syswrap to m_main at exit, since that would cause
+// m_main to become part of a module cycle, which is silly.
+extern void (* VG_(address_of_m_main_shutdown_actions_NORETURN) )
+            (ThreadId,VgSchedReturnCode);
+
 #endif   // __PUB_CORE_SYSWRAP_H
 
 /*--------------------------------------------------------------------*/

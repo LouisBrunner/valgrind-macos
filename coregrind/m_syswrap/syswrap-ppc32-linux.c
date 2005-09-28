@@ -37,7 +37,6 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
-#include "pub_core_main.h"          // For VG_(shutdown_actions_NORETURN)()
 #include "pub_core_options.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_sigframe.h"      // For VG_(sigframe_destroy)()
@@ -158,8 +157,9 @@ static void run_a_thread_NORETURN ( Word tidW )
                           (ULong)tidW);
 
       /* We are the last one standing.  Keep hold of the lock and
-         carry on to show final tool results, then exit the entire system. */
-      VG_(shutdown_actions_NORETURN)(tid, src);
+         carry on to show final tool results, then exit the entire system. 
+         Use the continuation pointer set at startup in m_main. */
+      ( * VG_(address_of_m_main_shutdown_actions_NORETURN) ) (tid, src);
 
    } else {
       VG_(debugLog)(1, "syswrap-ppc32-linux", 

@@ -34,7 +34,8 @@
 //--------------------------------------------------------------------
 // PURPOSE: This module holds various bits of client state which don't
 // live comfortably anywhere else.  Note that the ThreadStates for the
-// client don't live here; they instead live in m_threadstate.h.
+// client don't live here; they instead live in m_threadstate.h.  Most
+// of these values are set once at startup and not changed later.
 //--------------------------------------------------------------------
 
 #include "pub_tool_clientstate.h"
@@ -72,6 +73,10 @@ extern struct vki_rlimit VG_(client_rlimit_stack);
 // Name of the launcher, as extracted from VALGRIND_LAUNCHER at
 // startup.
 extern HChar* VG_(name_of_launcher);
+
+/* Application-visible file descriptor limits */
+extern Int VG_(fd_soft_limit);
+extern Int VG_(fd_hard_limit);
 
 
 #endif   // __PUB_CORE_CLIENTSTATE_H

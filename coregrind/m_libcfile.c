@@ -32,18 +32,15 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
-#include "pub_core_libcprint.h"     // For VG_(sprintf)()
+#include "pub_core_libcprint.h"     // VG_(sprintf)
 #include "pub_core_libcproc.h"      // VG_(getpid), VG_(getppid)
+#include "pub_core_clientstate.h"   // VG_(fd_hard_limit)
 #include "pub_core_syscall.h"
 #include "vki_unistd.h"
 
 /* ---------------------------------------------------------------------
    File stuff
    ------------------------------------------------------------------ */
-
-/* Application-visible file descriptor limits */
-Int VG_(fd_soft_limit) = -1;
-Int VG_(fd_hard_limit) = -1;
 
 static inline Bool fd_exists(Int fd)
 {

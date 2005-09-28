@@ -83,6 +83,10 @@ struct vki_rlimit VG_(client_rlimit_stack);
 // startup.
 HChar* VG_(name_of_launcher) = NULL;
 
+/* Application-visible file descriptor limits */
+Int VG_(fd_soft_limit) = -1;
+Int VG_(fd_hard_limit) = -1;
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

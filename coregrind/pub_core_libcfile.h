@@ -38,10 +38,6 @@
 
 #include "pub_tool_libcfile.h"
 
-/* Application-visible file descriptor limits */
-extern Int VG_(fd_soft_limit);
-extern Int VG_(fd_hard_limit);
-
 /* Move an fd into the Valgrind-safe range */
 extern Int VG_(safe_fd) ( Int oldfd );
 extern Int VG_(fcntl)   ( Int fd, Int cmd, Int arg );

@@ -28,8 +28,6 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#define _FILE_OFFSET_BITS 64
-
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_clientstate.h"
@@ -50,21 +48,18 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
-
-#include "pub_core_debuginfo.h"     // Needed for pub_core_redir
+#include "pub_core_debuginfo.h"
 #include "pub_core_redir.h"
-
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
 #include "pub_core_stacks.h"        // For VG_(register_stack)
 #include "pub_core_syswrap.h"
-#include "pub_core_translate.h"     // For VG_(get_BB_profile)
+#include "pub_core_translate.h"     // For VG_(translate)
 #include "pub_core_tooliface.h"
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
 #include "pub_core_ume.h"
 
-#include "memcheck/memcheck.h"
 
 #ifndef AT_DCACHEBSIZE
 #define AT_DCACHEBSIZE		19
@@ -95,24 +90,6 @@
 #define N_RESERVED_FDS (10)
 
 
-
-/*====================================================================*/
-/*=== Global entities not referenced from generated code           ===*/
-/*====================================================================*/
-
-/* ---------------------------------------------------------------------
-   Startup stuff                            
-   ------------------------------------------------------------------ */
-
-/* This should get some address inside the stack on which we gained
-   control (eg, it could be the SP at startup).  It doesn't matter
-   exactly where in the stack it is.  This value is passed to the
-   address space manager at startup, which uses it to identify the
-   initial stack segment and hence the upper end of the usable address
-   space. */
-static Addr sp_at_startup_new = 0;
-
-
 /*====================================================================*/
 /*=== Counters, for profiling purposes only                        ===*/
 /*====================================================================*/
@@ -137,87 +114,8 @@ static void print_all_stats ( void )
 
 
 /*====================================================================*/
-/*=== Check we were launched by stage 1                            ===*/
-/*====================================================================*/
-
-/* Look for our AUXV table */
-static void scan_auxv(void* init_sp)
-{
-   struct ume_auxv *auxv = VG_(find_auxv)((UWord*)init_sp);
-
-   for (; auxv->a_type != AT_NULL; auxv++) {
-      switch(auxv->a_type) {
-#        if defined(VGP_ppc32_linux)
-         case AT_DCACHEBSIZE:
-         case AT_ICACHEBSIZE:
-         case AT_UCACHEBSIZE:
-            if (auxv->u.a_val > 0) {
-               VG_(cache_line_size_ppc32) = auxv->u.a_val;
-               VG_(debugLog)(1, "main", 
-                                "PPC32 cache line size %u (type %u)\n", 
-                                (UInt)auxv->u.a_val, (UInt)auxv->a_type );
-            }
-            break;
-         case AT_HWCAP:
-            VG_(debugLog)(1, "main", "PPC32 hwcaps: 0x%x\n", (UInt)auxv->u.a_val);
-            if (auxv->u.a_val & 0x10000000)
-               VG_(have_altivec_ppc) = 1;
-            VG_(debugLog)(1, "main", "PPC32 AltiVec support: %u\n", 
-                                     VG_(have_altivec_ppc));
-            break;
-#        endif
-         case AT_PHDR:
-            break;
-
-         default:
-            break;
-      }
-   }
-}
-
-
-/*====================================================================*/
 /*=== Environment and stack setup                                  ===*/
 /*====================================================================*/
-
-/* Scan a colon-separated list, and call a function on each element.
-   The string must be mutable, because we insert a temporary '\0', but
-   the string will end up unmodified.  (*func) should return True if it
-   doesn't need to see any more.
-
-   This routine will return True if (*func) returns True and False if
-   it reaches the end of the list without that happening.
-*/
-static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
-{
-   char *cp, *entry;
-   int end;
-
-   if (colsep == NULL ||
-       *colsep == '\0')
-      return False;
-
-   entry = cp = colsep;
-
-   do {
-      end = (*cp == '\0');
-
-      if (*cp == ':' || *cp == '\0') {
-	 char save = *cp;
-
-	 *cp = '\0';
-	 if ((*func)(entry)) {
-            *cp = save;
-	    return True;
-         }
-	 *cp = save;
-	 entry = cp+1;
-      }
-      cp++;
-   } while(!end);
-
-   return False;
-}
 
 /* Prepare the client's environment.  This is basically a copy of our
    environment, except:
@@ -371,11 +269,11 @@ static char *copy_str(char **tab, const char *str)
 		  -                 -
 		  | auxv            |
 		  +-----------------+
-		  |  NULL           |
+		  | NULL            |
 		  -                 -
 		  | envp            |
 		  +-----------------+
-		  |  NULL           |
+		  | NULL            |
 		  -                 -
 		  | argv            |
 		  +-----------------+
@@ -383,12 +281,19 @@ static char *copy_str(char **tab, const char *str)
    lower address  +-----------------+ <- sp
                   | undefined       |
 		  :                 :
- */
 
-/* Allocate and create the initial client stack.  It is allocated down
+   Allocate and create the initial client stack.  It is allocated down
    from clstack_end, which was previously determined by the address
-   space manager.  A modified version of our auxv is copied into the
-   new stack.  The returned value is the SP value for the client. */
+   space manager.  The returned value is the SP value for the client.
+
+   The client's auxv is created by copying and modifying our own one.
+   As a side effect of scanning our own auxv, some important bits of
+   info are collected:
+
+      VG_(cache_line_size_ppc32) // ppc32 only -- cache line size
+      VG_(have_altivec_ppc32)    // ppc32 only -- is Altivec supported?
+*/
+
 static 
 Addr setup_client_stack( void*  init_sp,
                          char** orig_envp, 
@@ -462,9 +367,9 @@ Addr setup_client_stack( void*  init_sp,
       auxsize += sizeof(*cauxv);
    }
 
-#if defined(VGP_ppc32_linux)
+#  if defined(VGP_ppc32_linux)
    auxsize += 2 * sizeof(*cauxv);
-#endif
+#  endif
 
    /* OK, now we know how big the client stack is */
    stacksize =
@@ -578,97 +483,120 @@ Addr setup_client_stack( void*  init_sp,
    auxv = (struct ume_auxv *)ptr;
    *client_auxv = (UInt *)auxv;
 
-#if defined(VGP_ppc32_linux)
+#  if defined(VGP_ppc32_linux)
    auxv[0].a_type  = AT_IGNOREPPC;
    auxv[0].u.a_val = AT_IGNOREPPC;
    auxv[1].a_type  = AT_IGNOREPPC;
    auxv[1].u.a_val = AT_IGNOREPPC;
    auxv += 2;
-#endif
+#  endif
 
    for (; orig_auxv->a_type != AT_NULL; auxv++, orig_auxv++) {
+
       /* copy the entry... */
       *auxv = *orig_auxv;
 
-      /* ...and fix up the copy */
+      /* ...and fix up / examine the copy */
       switch(auxv->a_type) {
-      case AT_PHDR:
-	 if (info->phdr == 0)
-	    auxv->a_type = AT_IGNORE;
-	 else
-	    auxv->u.a_val = info->phdr;
-	 break;
 
-      case AT_PHNUM:
-	 if (info->phdr == 0)
-	    auxv->a_type = AT_IGNORE;
-	 else
-	    auxv->u.a_val = info->phnum;
-	 break;
+         case AT_IGNORE:
+         case AT_PHENT:
+         case AT_PAGESZ:
+         case AT_FLAGS:
+         case AT_NOTELF:
+         case AT_UID:
+         case AT_EUID:
+         case AT_GID:
+         case AT_EGID:
+         case AT_CLKTCK:
+         case AT_FPUCW:
+         case AT_SYSINFO:
+            /* All these are pointerless, so we don't need to do
+               anything about them. */
+            break;
 
-      case AT_BASE:
-	 auxv->u.a_val = info->interp_base;
-	 break;
+         case AT_PHDR:
+            if (info->phdr == 0)
+               auxv->a_type = AT_IGNORE;
+            else
+               auxv->u.a_val = info->phdr;
+            break;
 
-      case AT_PLATFORM:		/* points to a platform description string */
-	 auxv->u.a_ptr = copy_str(&strtab, orig_auxv->u.a_ptr);
-	 break;
+         case AT_PHNUM:
+            if (info->phdr == 0)
+               auxv->a_type = AT_IGNORE;
+            else
+               auxv->u.a_val = info->phnum;
+            break;
 
-      case AT_ENTRY:
-	 auxv->u.a_val = info->entry;
-	 break;
+         case AT_BASE:
+            auxv->u.a_val = info->interp_base;
+            break;
 
-      case AT_IGNORE:
-      case AT_PHENT:
-      case AT_PAGESZ:
-      case AT_FLAGS:
-      case AT_NOTELF:
-      case AT_UID:
-      case AT_EUID:
-      case AT_GID:
-      case AT_EGID:
-      case AT_CLKTCK:
-      case AT_HWCAP:
-      case AT_FPUCW:
-      case AT_DCACHEBSIZE:
-      case AT_ICACHEBSIZE:
-      case AT_UCACHEBSIZE:
-#if defined(VGP_ppc32_linux)
-      case AT_IGNOREPPC:
-#endif
-	 /* All these are pointerless, so we don't need to do anything
-	    about them. */
-	 break;
+         case AT_PLATFORM:
+            /* points to a platform description string */
+            auxv->u.a_ptr = copy_str(&strtab, orig_auxv->u.a_ptr);
+            break;
 
-      case AT_SECURE:
-	 /* If this is 1, then it means that this program is running
-	    suid, and therefore the dynamic linker should be careful
-	    about LD_PRELOAD, etc.  However, since stage1 (the thing
-	    the kernel actually execve's) should never be SUID, and we
-	    need LD_PRELOAD to work for the client, we
-	    set AT_SECURE to 0. */
-	 auxv->u.a_val = 0;
-	 break;
+         case AT_ENTRY:
+            auxv->u.a_val = info->entry;
+            break;
 
-      case AT_SYSINFO:
-	 /* Leave this unmolested for now, but we'll update it later
-	    when we set up the client trampoline code page */
-	 break;
+         case AT_HWCAP:
+#           if defined(VGP_ppc32_linux)
+            /* Acquire altivecness info */
+            VG_(debugLog)(1, "main", "PPC32 hwcaps: 0x%x\n", 
+                                     (UInt)auxv->u.a_val);
+            if (auxv->u.a_val & 0x10000000)
+               VG_(have_altivec_ppc32) = 1;
+            VG_(debugLog)(1, "main", "PPC32 AltiVec support: %u\n", 
+                                     VG_(have_altivec_ppc32));
+#           endif
+            break;
 
-#if !defined(VGP_ppc32_linux)
-      case AT_SYSINFO_EHDR:
-	 /* Trash this, because we don't reproduce it */
-	 auxv->a_type = AT_IGNORE;
-	 break;
-#endif
+         case AT_DCACHEBSIZE:
+         case AT_ICACHEBSIZE:
+         case AT_UCACHEBSIZE:
+#           if defined(VGP_ppc32_linux)
+            /* acquire cache info */
+            if (auxv->u.a_val > 0) {
+               VG_(cache_line_size_ppc32) = auxv->u.a_val;
+               VG_(debugLog)(1, "main", 
+                                "PPC32 cache line size %u (type %u)\n", 
+                                (UInt)auxv->u.a_val, (UInt)auxv->a_type );
+            }
+#           endif
+            break;
 
-      default:
-	 /* stomp out anything we don't know about */
-	 if (0)
-	    VG_(printf)("stomping auxv entry %lld\n", (ULong)auxv->a_type);
-	 auxv->a_type = AT_IGNORE;
-	 break;
-	 
+#        if defined(VGP_ppc32_linux)
+         case AT_IGNOREPPC:
+            break;
+#        endif
+
+         case AT_SECURE:
+            /* If this is 1, then it means that this program is
+               running suid, and therefore the dynamic linker should
+               be careful about LD_PRELOAD, etc.  However, since
+               stage1 (the thing the kernel actually execve's) should
+               never be SUID, and we need LD_PRELOAD to work for the
+               client, we set AT_SECURE to 0. */
+            auxv->u.a_val = 0;
+            break;
+
+#        if !defined(VGP_ppc32_linux)
+         case AT_SYSINFO_EHDR:
+            /* Trash this, because we don't reproduce it */
+            auxv->a_type = AT_IGNORE;
+            break;
+#        endif
+
+         default:
+            /* stomp out anything we don't know about */
+            VG_(debugLog)(2, "main",
+                             "stomping auxv entry %lld\n", 
+                             (ULong)auxv->a_type);
+            auxv->a_type = AT_IGNORE;
+            break;
       }
    }
    *auxv = *orig_auxv;
@@ -745,10 +673,48 @@ static void setup_client_dataseg ( SizeT max_size )
 }
 
 
-
 /*====================================================================*/
 /*=== Find executable                                              ===*/
 /*====================================================================*/
+
+/* Scan a colon-separated list, and call a function on each element.
+   The string must be mutable, because we insert a temporary '\0', but
+   the string will end up unmodified.  (*func) should return True if it
+   doesn't need to see any more.
+
+   This routine will return True if (*func) returns True and False if
+   it reaches the end of the list without that happening.
+*/
+static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
+{
+   char *cp, *entry;
+   int end;
+
+   if (colsep == NULL ||
+       *colsep == '\0')
+      return False;
+
+   entry = cp = colsep;
+
+   do {
+      end = (*cp == '\0');
+
+      if (*cp == ':' || *cp == '\0') {
+	 char save = *cp;
+
+	 *cp = '\0';
+	 if ((*func)(entry)) {
+            *cp = save;
+	    return True;
+         }
+	 *cp = save;
+	 entry = cp+1;
+      }
+      cp++;
+   } while(!end);
+
+   return False;
+}
 
 /* Need a static copy because can't use dynamic mem allocation yet */
 static HChar executable_name[VKI_PATH_MAX];
@@ -1693,7 +1659,7 @@ static void setup_file_descriptors(void)
    starting values.
 */
 static void init_thread1state ( Addr client_ip, 
-                                Addr sp_at_startup,
+                                Addr client_sp,
                                 /*inout*/ ThreadArchState* arch )
 {
 #if defined(VGA_x86)
@@ -1707,7 +1673,7 @@ static void init_thread1state ( Addr client_ip,
    VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestX86State));
 
    /* Put essential stuff into the new state. */
-   arch->vex.guest_ESP = sp_at_startup;
+   arch->vex.guest_ESP = client_sp;
    arch->vex.guest_EIP = client_ip;
 
    /* initialise %cs, %ds and %ss to point at the operating systems
@@ -1727,7 +1693,7 @@ static void init_thread1state ( Addr client_ip,
    VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestAMD64State));
 
    /* Put essential stuff into the new state. */
-   arch->vex.guest_RSP = sp_at_startup;
+   arch->vex.guest_RSP = client_sp;
    arch->vex.guest_RIP = client_ip;
 
 #elif defined(VGA_ppc32)
@@ -1741,7 +1707,7 @@ static void init_thread1state ( Addr client_ip,
    VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestPPC32State));
 
    /* Put essential stuff into the new state. */
-   arch->vex.guest_GPR1 = sp_at_startup;
+   arch->vex.guest_GPR1 = client_sp;
    arch->vex.guest_CIA  = client_ip;
 
 #else
@@ -1832,6 +1798,27 @@ void show_BB_profile ( BBProfEntry tops[], UInt n_tops, ULong score_total )
 /*=== main()                                                       ===*/
 /*====================================================================*/
 
+/* When main() is entered, we should be on the following stack, not
+   the one the kernel gave us.  We will run on this stack until
+   simulation of the root thread is started, at which point a transfer
+   is made to a dynamically allocated stack.  This is for the sake of
+   uniform overflow detection for all Valgrind threads.  This is
+   marked global even though it isn't, because assembly code below
+   needs to reference the name. */
+
+/*static*/ VgStack VG_(interim_stack);
+
+/* This should get some address inside the stack on which we gained
+   control (eg, it could be the SP at startup).  It doesn't matter
+   exactly where in the stack it is.  This value is passed to the
+   address space manager at startup, which uses it to identify the
+   initial stack segment and hence the upper end of the usable address
+   space. */
+
+static Addr sp_at_startup = 0;
+
+
+
 /* TODO: GIVE THIS A PROPER HOME
    TODO: MERGE THIS WITH DUPLICATE IN mac_leakcheck.c
    Extract from aspacem a vector of the current segment start
@@ -1866,13 +1853,7 @@ static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
 }
 
 
-/* When main() is entered, we should be on the following stack, not
-   the one the kernel gave us.  We will run on this stack until
-   simulation of the root thread is started, at which point a transfer
-   is made to a dynamically allocated stack.  This is for the sake of
-   uniform overflow detection for all Valgrind threads. */
 
-VgStack VG_(the_root_stack);
 
 
 Int main(Int argc, HChar **argv, HChar **envp)
@@ -1931,8 +1912,8 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //   p: logging
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Checking current stack is plausible\n");
-   { HChar* limLo  = (HChar*)(&VG_(the_root_stack).bytes[0]);
-     HChar* limHi  = limLo + sizeof(VG_(the_root_stack));
+   { HChar* limLo  = (HChar*)(&VG_(interim_stack).bytes[0]);
+     HChar* limHi  = limLo + sizeof(VG_(interim_stack));
      HChar* aLocal = (HChar*)&zero; /* any auto local will do */
      if (aLocal < limLo || aLocal >= limHi) {
         /* something's wrong.  Stop. */
@@ -1951,7 +1932,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //   p: logging
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Checking initial stack was noted\n");
-   if (sp_at_startup_new == 0) {
+   if (sp_at_startup == 0) {
       VG_(debugLog)(0, "main", "Valgrind: FATAL: "
                                "Initial stack was not noted.\n");
       VG_(debugLog)(0, "main", "   Cannot continue.  Sorry.\n");
@@ -1964,7 +1945,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //   p: logging, plausible-stack
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Starting the address space manager\n");
-   clstack_top = VG_(am_startup)( sp_at_startup_new );
+   clstack_top = VG_(am_startup)( sp_at_startup );
    VG_(debugLog)(1, "main", "Address space manager is running\n");
 
    //--------------------------------------------------------------
@@ -2014,19 +1995,6 @@ Int main(Int argc, HChar **argv, HChar **envp)
 
    // Get the current process stack rlimit.
    VG_(getrlimit)(VKI_RLIMIT_STACK, &VG_(client_rlimit_stack));
-
-   //--------------------------------------------------------------
-   // Check we were launched by stage1
-   //   p: none
-   // TODO: this is pretty pointless now.  Plus, we shouldn't be
-   // screwing with our own auxv: instead, when our own auxv is
-   // used as the basis for the client's one, make modifications
-   // at that point.
-   //--------------------------------------------------------------
-   VG_(debugLog)(1, "main", "Doing scan_auxv()\n");
-   { void* init_sp = argv - 1;
-     scan_auxv(init_sp);
-   }
 
    //============================================================
    // Command line argument handling order:
@@ -2742,7 +2710,7 @@ asm("\n"
     "\t.type _start,@function\n"
     "_start:\n"
     /* set up the new stack in %eax */
-    "\tmovl  $vgPlain_the_root_stack, %eax\n"
+    "\tmovl  $vgPlain_interim_stack, %eax\n"
     "\taddl  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %eax\n"
     "\taddl  $"VG_STRINGIFY(VG_STACK_ACTIVE_SZB)", %eax\n"
     "\tsubl  $16, %eax\n"
@@ -2760,7 +2728,7 @@ asm("\n"
     "\t.type _start,@function\n"
     "_start:\n"
     /* set up the new stack in %rdi */
-    "\tmovq  $vgPlain_the_root_stack, %rdi\n"
+    "\tmovq  $vgPlain_interim_stack, %rdi\n"
     "\taddq  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %rdi\n"
     "\taddq  $"VG_STRINGIFY(VG_STACK_ACTIVE_SZB)", %rdi\n"
     "\tandq  $~15, %rdi\n"
@@ -2783,7 +2751,7 @@ void _start_in_C ( UWord* pArgc )
    Word    argc = pArgc[0];
    HChar** argv = (HChar**)&pArgc[1];
    HChar** envp = (HChar**)&pArgc[1+argc+1];
-   sp_at_startup_new = (Addr)pArgc;
+   sp_at_startup = (Addr)pArgc;
    r = main( (Int)argc, argv, envp );
    VG_(exit)(r);
 }

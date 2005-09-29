@@ -780,6 +780,15 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       }
 
       case VEX_TRC_JMP_NODECODE:
+#define M(a) VG_(message)(Vg_UserMsg, a);
+   M("Your program just tried to execute an instruction that Valgrind");
+   M("did not recognise.  This might be because your program has a bug");
+   M("and erroneously jumped to a non-code location.  If you are running");
+   M("Memcheck, you might have just seen a warning about a bad jump,");
+   M("which is a good indication that this is so.  Or it might be" );
+   M("because the instruction is unimplemented in Valgrind;  if you");
+   M("think this is the case, or you are not sure, please let us know.");
+#undef M
          VG_(synth_sigill)(tid, VG_(get_IP)(tid));
          break;
 

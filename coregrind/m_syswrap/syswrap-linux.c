@@ -552,6 +552,7 @@ PRE(sys_mmap2)
 {
    Addr   advised;
    SysRes sres;
+   OffT   offset;
 
    // Exactly like old_mmap() in x86-linux except:
    //  - all 6 args are passed in regs, rather than in a memory-block.
@@ -612,11 +613,17 @@ PRE(sys_mmap2)
 
    vg_assert(! FAILURE);
 
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+   offset = ARG6 * VKI_PAGE_SIZE;
+#else
+   offset = ARG6;
+#endif
+
    /* Otherwise we're OK (so far).  Install aspacem's choice of
       address, and let the mmap go through.  */
    sres = VG_(am_do_mmap_NO_NOTIFY)(advised, ARG2, ARG3,
                                     ARG4 | VKI_MAP_FIXED,
-                                    ARG5, ARG6);
+                                    ARG5, offset);
    SET_STATUS_from_SysRes(sres);
 
    if (!sres.isError) {
@@ -625,7 +632,7 @@ PRE(sys_mmap2)
          (Addr)sres.val, /* addr kernel actually assigned */
          ARG2, ARG3, 
          ARG4, /* the original flags value */
-         ARG5, ARG6 
+         ARG5, offset
       );
       /* Load symbols? */
       VG_(di_notify_mmap)( (Addr)sres.val );

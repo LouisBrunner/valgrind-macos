@@ -212,9 +212,11 @@ asm(
 "   ud2\n"                 // should never get here
 );
 
-/*
-   Allocate a stack for the main thread, and run it all the way to the
-   end.  
+
+/* Allocate a stack for the main thread, and run it all the way to the
+   end.  Although we already have a working VgStack
+   (VG_(interim_stack)) it's better to allocate a new one, so that
+   overflow detection works uniformly for all threads.
 */
 void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
 {

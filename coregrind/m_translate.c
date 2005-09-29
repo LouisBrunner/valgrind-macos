@@ -115,8 +115,8 @@ static Bool getArchAndArchInfo( /*OUT*/VexArch*     vex_arch,
 
 #elif defined(VGA_ppc32)
    *vex_arch    = VexArchPPC32;
-   vai->subarch = VG_(have_altivec_ppc) ? VexSubArchPPC32_AV
-                                        : VexSubArchPPC32_noAV;
+   vai->subarch = VG_(have_altivec_ppc32) ? VexSubArchPPC32_AV
+                                          : VexSubArchPPC32_noAV;
    vai->ppc32_cache_line_szB = VG_(cache_line_size_ppc32);
    return True;
 

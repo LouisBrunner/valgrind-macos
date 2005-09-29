@@ -171,7 +171,7 @@ void stack_mcontext ( struct vki_mcontext *mc,
              (Addr)&mc->mc_pad, sizeof(mc->mc_pad) );
    /* invalidate any translation of this area */
    VG_(discard_translations)( (Addr64)(Addr)&mc->mc_pad, 
-                              sizeof(mc->mc_pad) );   
+                              sizeof(mc->mc_pad), "stack_mcontext" );   
 
    /* set the signal handler to return to the trampoline */
    SET_SIGNAL_LR(tst, (Addr) &mc->mc_pad[0]);
@@ -493,17 +493,16 @@ void stack_mcontext ( struct vki_mcontext *mc,
 static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 {
    ThreadId tid = tst->tid;
-   Segment *stackseg = NULL;
+   NSegment *stackseg = NULL;
 
    if (VG_(extend_stack)(addr, tst->client_stack_szB)) {
-      stackseg = VG_(find_segment)(addr);
+      stackseg = VG_(am_find_nsegment)(addr);
       if (0 && stackseg)
 	 VG_(printf)("frame=%p seg=%p-%p\n",
-		     addr, stackseg->addr, stackseg->addr+stackseg->len);
+		     addr, stackseg->start, stackseg->end);
    }
 
-   if (stackseg == NULL 
-       || (stackseg->prot & (VKI_PROT_READ|VKI_PROT_WRITE)) == 0) {
+   if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
       VG_(message)(
          Vg_UserMsg,
          "Can't extend stack to %p during signal delivery for thread %d:",

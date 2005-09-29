@@ -397,7 +397,7 @@ Int VG_(getegid) ( void )
    platform. */
 Int VG_(getgroups)( Int size, UInt* list )
 {
-#  if defined(VGP_x86_linux)
+#  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    Int    i;
    SysRes sres;
    UShort list16[32];

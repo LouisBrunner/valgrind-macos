@@ -142,7 +142,8 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    }
    VG_(free)(preload_tool_path);
 
-   VG_(debugLog)(1, "main", "preload_string = %s\n", preload_string);
+   VG_(debugLog)(2, "main", "preload_string:\n");
+   VG_(debugLog)(2, "main", "  \"%s\"\n", preload_string);
 
    /* Count the original size of the env */
    envc = 0;
@@ -546,11 +547,11 @@ Addr setup_client_stack( void*  init_sp,
          case AT_HWCAP:
 #           if defined(VGP_ppc32_linux)
             /* Acquire altivecness info */
-            VG_(debugLog)(1, "main", "PPC32 hwcaps: 0x%x\n", 
+            VG_(debugLog)(2, "main", "PPC32 hwcaps: 0x%x\n", 
                                      (UInt)auxv->u.a_val);
             if (auxv->u.a_val & 0x10000000)
                VG_(have_altivec_ppc32) = 1;
-            VG_(debugLog)(1, "main", "PPC32 AltiVec support: %u\n", 
+            VG_(debugLog)(2, "main", "PPC32 AltiVec support: %u\n", 
                                      VG_(have_altivec_ppc32));
 #           endif
             break;
@@ -562,7 +563,7 @@ Addr setup_client_stack( void*  init_sp,
             /* acquire cache info */
             if (auxv->u.a_val > 0) {
                VG_(cache_line_size_ppc32) = auxv->u.a_val;
-               VG_(debugLog)(1, "main", 
+               VG_(debugLog)(2, "main", 
                                 "PPC32 cache line size %u (type %u)\n", 
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );
             }
@@ -1846,7 +1847,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
 {
    Addr* starts;
-   Int   n_starts, r;
+   Int   n_starts, r = 0;
 
    n_starts = 1;
    while (True) {
@@ -2094,7 +2095,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
 
       VG_(debugLog)(2, "main",
                        "Client info: "
-                       "entry=%p client_SP=%p brkbase=%p\n",
+                       "initial_IP=%p initial_SP=%p brk_base=%p\n",
                        (void*)initial_client_IP, 
                        (void*)initial_client_SP,
                        (void*)VG_(brk_base) );
@@ -2208,7 +2209,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //   p: setup_file_descriptors()  [for 'VG_(fd_xxx_limit)']
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Process Valgrind's command line options, "
-                            " setup logging\n");
+                            "setup logging\n");
    logging_to_fd = process_cmd_line_options(client_auxv, toolname);
 
    //--------------------------------------------------------------
@@ -2734,7 +2735,8 @@ void* memset(void *s, int c, size_t n) {
 */
 
 /* The kernel hands control to _start, which extracts the initial
-   stack pointer and calls onwards to _start_in_C.  This also switches the new stack.  */
+   stack pointer and calls onwards to _start_in_C.  This also switches
+   the new stack.  */
 #if defined(VGP_x86_linux)
 asm("\n"
     "\t.globl _start\n"
@@ -2768,6 +2770,30 @@ asm("\n"
     /* call _start_in_C, passing it the startup %rsp */
     "\tcall  _start_in_C\n"
     "\thlt\n"
+);
+#elif defined(VGP_ppc32_linux)
+asm("\n"
+    "\t.globl _start\n"
+    "\t.type _start,@function\n"
+    "_start:\n"
+    /* set up the new stack in r16 */
+    "\tlis 16,vgPlain_interim_stack@ha\n"
+    "\tla  16,vgPlain_interim_stack@l(16)\n"
+    "\tlis    17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" >> 16)\n"
+    "\tori 17,17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" & 0xFFFF)\n"
+    "\tlis    18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" >> 16)\n"
+    "\tori 18,18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" & 0xFFFF)\n"
+    "\tadd 16,17,16\n"
+    "\tadd 16,18,16\n"
+    "\trlwinm 16,16,0,0,27\n"
+    /* now r16 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
+       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       boundary.  And r1 is the original SP.  Set the SP to r16 and
+       call _start_in_C, passing it the initial SP. */
+    "\tmr 3,1\n"
+    "\tmr 1,16\n"
+    "\tbl _start_in_C\n"
+    "\ttrap\n"
 );
 #else
 #error "_start: needs implementation on this platform"

@@ -36,6 +36,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_libcassert.h"   // I_die_here
 #include "pub_core_options.h"
 
 #define WIFSTOPPED(status) (((status) & 0xff) == 0x7f)

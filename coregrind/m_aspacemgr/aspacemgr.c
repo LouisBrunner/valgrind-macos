@@ -1586,9 +1586,14 @@ Addr VG_(am_get_advisory) ( MapRequest*  req,
         other words we are prepared to let the client trash its own
         mappings if it wants to.
 
-        Similarly, a hinted client map will be granted at the
-        requested address providing the same conditions hold.
+      The Default Policy is overriden by Policy Exception #2:
 
+        If the request is for a hinted client map, we are prepared to
+        grant it providing all areas inside the request are either
+        free or reservations.  In other words we are prepared to let 
+        the client have a hinted mapping anywhere it likes provided
+        it does not trash either any of its own mappings or any of 
+        valgrind's mappings.
    */
    Int  i, j;
    Addr holeStart, holeEnd, holeLen;
@@ -1628,7 +1633,7 @@ Addr VG_(am_get_advisory) ( MapRequest*  req,
 
    /* ------ Implement Policy Exception #1 ------ */
 
-   if (forClient && (req->rkind == MFixed || req->rkind == MHint)) {
+   if (forClient && req->rkind == MFixed) {
       Int  iLo   = find_nsegment_idx(reqStart);
       Int  iHi   = find_nsegment_idx(reqEnd);
       Bool allow = True;
@@ -1648,12 +1653,32 @@ Addr VG_(am_get_advisory) ( MapRequest*  req,
          *ok = True;
          return reqStart;
       }
-      /* Not acceptable.  Fixed fails, Hint is now attempted by the
-         default policy. */
-      if (req->rkind == MFixed) {
-         *ok = False;
-         return 0;
+      /* Not acceptable.  Fail. */
+      *ok = False;
+      return 0;
+   }
+
+   /* ------ Implement Policy Exception #2 ------ */
+
+   if (forClient && req->rkind == MHint) {
+      Int  iLo   = find_nsegment_idx(reqStart);
+      Int  iHi   = find_nsegment_idx(reqEnd);
+      Bool allow = True;
+      for (i = iLo; i <= iHi; i++) {
+         if (nsegments[i].kind == SkFree
+             || nsegments[i].kind == SkResvn) {
+            /* ok */
+         } else {
+            allow = False;
+            break;
+         }
       }
+      if (allow) {
+         /* Acceptable.  Granted. */
+         *ok = True;
+         return reqStart;
+      }
+      /* Not acceptable.  Fall through to the default policy. */
    }
 
    /* ------ Implement the Default Policy ------ */

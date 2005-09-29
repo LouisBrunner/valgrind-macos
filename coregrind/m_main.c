@@ -90,7 +90,7 @@ static void print_all_stats ( void )
 /* Prepare the client's environment.  This is basically a copy of our
    environment, except:
 
-     LD_PRELOAD=$VALGRIND_LIB/vg_preload_core.so:
+     LD_PRELOAD=$VALGRIND_LIB/vgpreload_core.so:
                 ($VALGRIND_LIB/vgpreload_TOOL.so:)?
                 $LD_PRELOAD
 
@@ -104,7 +104,7 @@ static void print_all_stats ( void )
 */
 static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 {
-   HChar* preload_core_so = "vg_preload_core.so";
+   HChar* preload_core_so = "vgpreload_core.so";
    HChar* ld_preload      = "LD_PRELOAD=";
    HChar* v_launcher      = VALGRIND_LAUNCHER "=";
    Int    ld_preload_len  = VG_(strlen)( ld_preload );

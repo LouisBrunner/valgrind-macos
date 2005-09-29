@@ -14,7 +14,7 @@ bin_PROGRAMS = \
 	valgrind
 
 val_PROGRAMS = \
-	vg_preload_core.so
+	vgpreload_core.so
 
 # Remember to include all the arch-specific files in the distribution.
 EXTRA_DIST = \
@@ -162,12 +162,12 @@ m_syswrap/syswrap-main.c: 	   libvex_guest_offsets.h
 libvex_guest_offsets.h:
 	$(MAKE) -C @VEX_DIR@ pub/libvex_guest_offsets.h
 
-vg_preload_core_so_SOURCES = vg_preloaded.c
-vg_preload_core_so_CFLAGS = $(AM_CFLAGS) -fpic
-vg_preload_core_so_LDADD = -ldl
-vg_preload_core_so_LDFLAGS = \
+vgpreload_core_so_SOURCES = vg_preloaded.c
+vgpreload_core_so_CFLAGS = $(AM_CFLAGS) -fpic
+vgpreload_core_so_LDADD = -ldl
+vgpreload_core_so_LDFLAGS = \
 	-shared \
-	-Wl,--soname,vg_preload_core.so \
+	-Wl,--soname,vgpreload_core.so \
 	-Wl,-z,initfirst
 
 clean-local:

@@ -285,10 +285,8 @@ static Long start_thread_NORETURN ( void* arg )
 
 	Returns a Long encoded in the linux-amd64 way, not a SysRes.
  */
-#define STRINGIFZ(__str) #__str
-#define STRINGIFY(__str)  STRINGIFZ(__str)
-#define __NR_CLONE        STRINGIFY(__NR_clone)
-#define __NR_EXIT         STRINGIFY(__NR_exit)
+#define __NR_CLONE        VG_STRINGIFY(__NR_clone)
+#define __NR_EXIT         VG_STRINGIFY(__NR_exit)
 
 extern
 Long do_syscall_clone_amd64_linux ( Long (*fn)(void *), 
@@ -339,8 +337,6 @@ asm(
 
 #undef __NR_CLONE
 #undef __NR_EXIT
-#undef STRINGIFY
-#undef STRINGIFZ
 
 
 // forward declaration

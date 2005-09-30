@@ -307,10 +307,8 @@ static Int start_thread_NORETURN ( void* arg )
 
         Returns an Int encoded in the linux-ppc32 way, not a SysRes.
  */
-#define STRINGIFZ(__str) #__str
-#define STRINGIFY(__str)  STRINGIFZ(__str)
-#define __NR_CLONE        STRINGIFY(__NR_clone)
-#define __NR_EXIT         STRINGIFY(__NR_exit)
+#define __NR_CLONE        VG_STRINGIFY(__NR_clone)
+#define __NR_EXIT         VG_STRINGIFY(__NR_exit)
 
 extern
 ULong do_syscall_clone_ppc32_linux ( Int (*fn)(void *), 
@@ -379,8 +377,6 @@ asm(
 
 #undef __NR_CLONE
 #undef __NR_EXIT
-#undef STRINGIFY
-#undef STRINGIFZ
 
 // forward declarations
 static void setup_child ( ThreadArchState*, ThreadArchState* );

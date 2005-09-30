@@ -284,11 +284,9 @@ static Int start_thread_NORETURN ( void* arg )
 
 	Returns an Int encoded in the linux-x86 way, not a SysRes.
  */
-#define STRINGIFZ(__str) #__str
-#define STRINGIFY(__str)  STRINGIFZ(__str)
 #define FSZ               "4+4+4+4" /* frame size = retaddr+ebx+edi+esi */
-#define __NR_CLONE        STRINGIFY(__NR_clone)
-#define __NR_EXIT         STRINGIFY(__NR_exit)
+#define __NR_CLONE        VG_STRINGIFY(__NR_clone)
+#define __NR_EXIT         VG_STRINGIFY(__NR_exit)
 
 extern
 Int do_syscall_clone_x86_linux ( Int (*fn)(void *), 
@@ -345,8 +343,6 @@ asm(
 #undef FSZ
 #undef __NR_CLONE
 #undef __NR_EXIT
-#undef STRINGIFY
-#undef STRINGIFZ
 
 
 // forward declarations

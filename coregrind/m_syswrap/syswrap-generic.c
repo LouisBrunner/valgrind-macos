@@ -4712,7 +4712,7 @@ PRE(sys_readlink)
     * /proc/<pid>/exe.
     */
    VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
-   if (ML_(safe_to_deref)(ARG1, 1)
+   if (ML_(safe_to_deref)((void*)ARG1, 1)
        && (VG_(strcmp)((Char *)ARG1, name) == 0 
            || VG_(strcmp)((Char *)ARG1, "/proc/self/exe") == 0)) {
       VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_exec_fd));

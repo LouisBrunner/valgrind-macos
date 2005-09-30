@@ -1713,6 +1713,31 @@ ML_(generic_POST_sys_shmctl) ( ThreadId tid,
    Generic handler for mmap
    ------------------------------------------------------------------ */
 
+/*
+ * Although mmap is specified by POSIX and the argument are generally
+ * consistent across platforms the precise details of the low level
+ * argument passing conventions differ. For example:
+ *
+ * - On x86-linux there is mmap (aka old_mmap) which takes the
+ *   arguments in a memory block and the offset in bytes; and
+ *   mmap2 (aka sys_mmap2) which takes the arguments in the normal
+ *   way and the offset in pages.
+ *
+ * - On ppc32-linux there is mmap (aka sys_mmap) which takes the
+ *   arguments in the normal way and the offset in bytes; and
+ *   mmap2 (aka sys_mmap2) which takes the arguments in the normal
+ *   way and the offset in pages.
+ *
+ * - On amd64-linux everything is simple and there is just the one
+ *   call, mmap (aka sys_mmap)  which takes the arguments in the
+ *   normal way and the offset in bytes.
+ *
+ * To cope with all this we provide a generic handler function here
+ * and then each platform implements one or more system call handlers
+ * which call this generic routine after extracting and normalising
+ * the arguments.
+ */
+
 SysRes
 ML_(generic_PRE_sys_mmap) ( ThreadId tid,
                             UWord arg1, UWord arg2, UWord arg3,

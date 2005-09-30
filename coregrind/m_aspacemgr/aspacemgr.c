@@ -230,7 +230,7 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
    SysRes res;
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    res = VG_(do_syscall6)(__NR_mmap2, (UWord)start, length,
-                          prot, flags, fd, offset / VKI_PAGE_SIZE));
+                          prot, flags, fd, offset / VKI_PAGE_SIZE);
 #  elif defined(VGP_amd64_linux)
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
                          prot, flags, fd, offset);

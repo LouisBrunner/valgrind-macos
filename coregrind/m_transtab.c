@@ -428,6 +428,15 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
          used before, in which case it will get its tt/tc allocated
          now, or it has been used before, in which case it is set to be
          empty, hence throwing out the oldest sector. */
+      vg_assert(tc_sector_szQ > 0);
+      VG_(debugLog)(1,"transtab", 
+                      "declare sector %d full "
+                      "(TT loading %2d%%, TC loading %2d%%)\n",
+                      y,
+                      (100 * sectors[y].tt_n_inuse) 
+                         / N_TTES_PER_SECTOR,
+                      (100 * (tc_sector_szQ - tcAvailQ)) 
+                         / tc_sector_szQ);
       youngest_sector++;
       if (youngest_sector >= N_SECTORS)
          youngest_sector = 0;
@@ -589,7 +598,7 @@ void VG_(discard_translations) ( Addr64 guest_start, ULong range,
 
    vg_assert(init_done);
 
-   VG_(debugLog)(1, "transtab",
+   VG_(debugLog)(2, "transtab",
                     "discard_translations(0x%llx, %lld) req by %s\n",
                     guest_start, range, who );
 

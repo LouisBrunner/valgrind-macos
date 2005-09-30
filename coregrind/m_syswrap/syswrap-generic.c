@@ -1736,6 +1736,14 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
+   if (!VG_IS_PAGE_ALIGNED(arg6)) {
+      /* zap any misaligned offsets. */
+      /* SuSV3 says: The off argument is constrained to be aligned and
+         sized according to the value returned by sysconf() when
+         passed _SC_PAGESIZE or _SC_PAGE_SIZE. */
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+   }
+
    /* Figure out what kind of allocation constraints there are
       (fixed/hint/any), and ask aspacem what we should do. */
    mreq.start = arg1;

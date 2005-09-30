@@ -1472,6 +1472,8 @@ PRE(old_mmap)
    UWord a1, a2, a3, a4, a5, a6;
    Addr       advised;
    SysRes     sres;
+   Bool       mreq_ok;
+   SysRes     sres;
 
    UWord* args = (UWord*)ARG1;
    PRE_REG_READ1(long, "old_mmap", struct mmap_arg_struct *, args);
@@ -1494,7 +1496,7 @@ PRE(old_mmap)
       return;
    }
 
-   if (/*(a4 & VKI_MAP_FIXED) &&*/ !VG_IS_PAGE_ALIGNED(a1)) {
+   if (!VG_IS_PAGE_ALIGNED(a1)) {
       /* zap any misaligned addresses. */
       SET_STATUS_Failure( VKI_EINVAL );
       return;
@@ -1502,37 +1504,29 @@ PRE(old_mmap)
 
    /* Figure out what kind of allocation constraints there are
       (fixed/hint/any), and ask aspacem what we should do. */
+   mreq.start = a1;
+   mreq.len   = a2;
    if (a4 & VKI_MAP_FIXED) {
-      if (!ML_(valid_client_addr)(a1, a2, tid, "mmap2")) {
-         SET_STATUS_Failure( VKI_EINVAL );
-         return;
-      }
+      mreq.rkind = MFixed;
+   } else
+   if (a1 != 0) {
+      mreq.rkind = MHint;
    } else {
-      MapRequest mreq;
-      Bool       mreq_ok;
-
-      mreq.start = a1;
-      mreq.len   = a2;
-
-      if (a1 != 0) {
-         mreq.rkind = MHint;
-      } else {
-         mreq.rkind = MAny;
-      }
-
-      /* Enquire ... */
-      advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
-      if (!mreq_ok) {
-         /* Our request was bounced, so we'd better fail. */
-         SET_STATUS_Failure( VKI_EINVAL );
-         return;
-      }
-
-      /* Otherwise we're OK (so far).  Install aspacem's choice of
-         address, and let the mmap go through.  */
-      a1 = advised;
-      a4 |= VKI_MAP_FIXED;
+      mreq.rkind = MAny;
    }
+
+   /* Enquire ... */
+   advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
+   if (!mreq_ok) {
+      /* Our request was bounced, so we'd better fail. */
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
+   }
+
+   /* Otherwise we're OK (so far).  Install aspacem's choice of
+      address, and let the mmap go through.  */
+   a1 = advised;
+   a4 |= VKI_MAP_FIXED;
 
    vg_assert(! FAILURE);
 

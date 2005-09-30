@@ -42,7 +42,6 @@ regtest: check
 	@PERL@ tests/vg_regtest $(TOOLS)
 
 EXTRA_DIST = \
-	FAQ.txt \
 	ACKNOWLEDGEMENTS \
 	README_DEVELOPERS \
 	README_PACKAGERS \

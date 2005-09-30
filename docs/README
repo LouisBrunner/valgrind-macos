@@ -178,12 +178,6 @@ some useful xls stylesheets in cvs:
 - http://cvs.sourceforge.net/viewcvs.py/perl-xml/perl-xml-faq/
 
 
-TODO CRUCIAL:
--------------
-- Need to generate text FAQ from the valgrind/docs/xml/FAQ.xml (done at 'make
-  dist' time along with the HTML docs using the "dist-hook"), and remove the
-  old text FAQ which is in valgrind/.
-
 TODO LESS CRUCIAL:
 ------------------
 - add the HOWTO doc?

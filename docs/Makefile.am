@@ -7,7 +7,7 @@
 # Comment out the next line to skip building print docs.  The default
 # is not to skip building print docs.  Note, after changing it
 # you of course need to re-run configure to make it take effect.
-BUILD_ALL_DOCS=yes
+BUILD_ALL_DOCS=no
 
 ##-------------------------------------------------------------
 ## END OF HACK
@@ -44,17 +44,23 @@ XMLLINT_FLAGS = $(LINT_FLAGS) $(VALID_FLAGS)
 
 # stylesheet processor
 XSLTPROC       = xsltproc
-XSLTPROC_FLAGS = --nonet --xinclude 
+XSLTPROC_FLAGS = --xinclude 
 
 # stylesheets
 XSL_HTML_CHUNK_STYLE  = $(mylibdir)/vg-html-chunk.xsl
 XSL_HTML_SINGLE_STYLE = $(mylibdir)/vg-html-single.xsl
 XSL_FO_STYLE          = $(mylibdir)/vg-fo.xsl
 
-all-docs: html-docs print-docs
+all-docs: FAQ.txt html-docs print-docs
 
 valid:
 	$(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml
+
+# The text version of the FAQ.
+FAQ.txt: $(myxmldir)/FAQ.xml $(myxmldir)/vg-entities.xml $(mylibdir)/*.xslt
+	$(XSLTPROC) $(XSLTPROC_FLAGS) $(mylibdir)/untag-inline.xslt $(myxmldir)/FAQ.xml | \
+	$(XSLTPROC) $(XSLTPROC_FLAGS) $(mylibdir)/docbook2text.xslt - > FAQ.txt
+	
 
 # chunked html
 html-docs:
@@ -113,14 +119,17 @@ install-data-hook:
 # This is done at 'make dist' time.  It builds the html and print docs
 # and copies them into the docs/ directory in the tarball.
  ifeq ($(BUILD_ALL_DOCS),yes)
-dist-hook: html-docs print-docs
+dist-hook: FAQ.txt html-docs print-docs
 	cp -r html $(distdir)
+	cp FAQ.txt $(distdir)/..
 	cp print/index.pdf $(distdir)
 	cp print/index.ps $(distdir)
  else
-dist-hook: html-docs
+dist-hook: FAQ.txt html-docs
+	cp FAQ.txt $(distdir)/..
 	cp -r html $(distdir)
  endif
 
 distclean-local:
 	rm -rf html print
+	rm -f $(top_builddir)/FAQ.txt

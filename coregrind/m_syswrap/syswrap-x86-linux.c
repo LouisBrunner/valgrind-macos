@@ -1472,8 +1472,8 @@ PRE(old_mmap)
    UWord a1, a2, a3, a4, a5, a6;
    Addr       advised;
    SysRes     sres;
+   MapRequest mreq;
    Bool       mreq_ok;
-   SysRes     sres;
 
    UWord* args = (UWord*)ARG1;
    PRE_REG_READ1(long, "old_mmap", struct mmap_arg_struct *, args);

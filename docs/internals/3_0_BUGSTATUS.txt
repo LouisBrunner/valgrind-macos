@@ -69,8 +69,6 @@ Perhaps worth a look.
 FIXED-TRUNK:    TODO
 
 
-
-
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.2                                ===
 ========================================================================
@@ -180,6 +178,11 @@ n-i-bz  Cachegrind shows incorrect miss rates when counts are
 
 FIXED-TRUNK:    vg:4769
 FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+n-i-bz  enable sys_iopl on AMD64
+
+FIXED-TRUNK:    vg:4826
 
 
 ========================================================================

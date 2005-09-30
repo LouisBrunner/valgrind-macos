@@ -4625,7 +4625,9 @@ POST(sys_poll)
 
 PRE(sys_readlink)
 {
-   Word saved = SYSNO;
+   HChar name[25];
+   Word  saved = SYSNO;
+
    PRINT("sys_readlink ( %p, %p, %llu )", ARG1,ARG2,(ULong)ARG3);
    PRE_REG_READ3(long, "readlink",
                  const char *, path, char *, buf, int, bufsiz);
@@ -4636,20 +4638,15 @@ PRE(sys_readlink)
     * Handle the case where readlink is looking at /proc/self/exe or
     * /proc/<pid>/exe.
     */
-
-   SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
-
-   /* jrs 20050604: where does the magic value 2 come from?  It seems
-      like it should be a kernel error value, but we don't know of any
-      such. */
-   if (SWHAT == SsFailure && RES_unchecked == 2) {
-      HChar name[25];
-      VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
-      if (VG_(strcmp)((Char *)ARG1, name) == 0 ||
-          VG_(strcmp)((Char *)ARG1, "/proc/self/exe") == 0) {
-         VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_exec_fd));
-         SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name, ARG2, ARG3));
-      }
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   if (VG_(strcmp)((Char *)ARG1, name) == 0 
+       || VG_(strcmp)((Char *)ARG1, "/proc/self/exe") == 0) {
+      VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_exec_fd));
+      SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name, 
+                                                      ARG2, ARG3));
+   } else {
+      /* Normal case */
+      SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
    }
 
    if (SUCCESS && RES > 0)

@@ -1367,7 +1367,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    //   (__NR_sethostname,       sys_sethostname),    // 170 
    //   (__NR_setdomainname,     sys_setdomainname),  // 171 
-   //   (__NR_iopl,              stub_iopl),          // 172 
+   GENX_(__NR_iopl,              sys_iopl),           // 172 
    LINX_(__NR_ioperm,            sys_ioperm),         // 173 
    //   (__NR_create_module,     sys_ni_syscall),     // 174 
 

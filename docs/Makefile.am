@@ -7,7 +7,7 @@
 # Comment out the next line to skip building print docs.  The default
 # is not to skip building print docs.  Note, after changing it
 # you of course need to re-run configure to make it take effect.
-BUILD_ALL_DOCS=no
+BUILD_ALL_DOCS=yes
 
 ##-------------------------------------------------------------
 ## END OF HACK
@@ -44,7 +44,7 @@ XMLLINT_FLAGS = $(LINT_FLAGS) $(VALID_FLAGS)
 
 # stylesheet processor
 XSLTPROC       = xsltproc
-XSLTPROC_FLAGS = --xinclude 
+XSLTPROC_FLAGS = --nonet --xinclude 
 
 # stylesheets
 XSL_HTML_CHUNK_STYLE  = $(mylibdir)/vg-html-chunk.xsl

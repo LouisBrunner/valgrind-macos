@@ -615,8 +615,10 @@ PRE(sys_mmap2)
 
 #if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    offset = ARG6 * VKI_PAGE_SIZE;
-#else
+#elif defined(VGP_amd64_linux)
    offset = ARG6;
+#elif
+#  error Unknown platform
 #endif
 
    /* Otherwise we're OK (so far).  Install aspacem's choice of

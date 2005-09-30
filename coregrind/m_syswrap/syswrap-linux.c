@@ -550,14 +550,18 @@ POST(sys_futex)
 
 PRE(sys_mmap2)
 {
-   Addr   advised;
-   SysRes sres;
-   OffT   offset;
+   Addr       advised;
+   SysRes     sres;
+   OffT       offset;
+   MapRequest mreq;
+   Bool       mreq_ok;
 
    // Exactly like old_mmap() in x86-linux except:
    //  - all 6 args are passed in regs, rather than in a memory-block.
-   //  - the file offset is specified in pagesize units rather than bytes,
-   //    so that it can be used for files bigger than 2^32 bytes.
+   //  - on x86-linux, the file offset is specified in pagesize units
+   //    rather than bytes, so that it can be used for files bigger 
+   //    than 2^32 bytes.  On amd64-linux and ppc32-linux it appears
+   //    to be in bytes.
    PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
          ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(long, "mmap2",
@@ -572,7 +576,7 @@ PRE(sys_mmap2)
       return;
    }
 
-   if (/*(ARG4 & VKI_MAP_FIXED) && */ (0 != (ARG1 & (VKI_PAGE_SIZE-1)))) {
+   if (!VG_IS_PAGE_ALIGNED(ARG1)) {
       /* zap any misaligned addresses. */
       /* SuSV3 says misaligned addresses only cause the MAP_FIXED case
          to fail.   Here, we catch them all. */
@@ -582,44 +586,34 @@ PRE(sys_mmap2)
 
    /* Figure out what kind of allocation constraints there are
       (fixed/hint/any), and ask aspacem what we should do. */
+   mreq.start = ARG1;
+   mreq.len   = ARG2;
    if (ARG4 & VKI_MAP_FIXED) {
-      if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mmap2")) {
-         SET_STATUS_Failure( VKI_EINVAL );
-         return;
-      }
-
-      advised = ARG1;
+      mreq.rkind = MFixed;
+   } else
+   if (ARG1 != 0) {
+      mreq.rkind = MHint;
    } else {
-      MapRequest mreq;
-      Bool       mreq_ok;
+      mreq.rkind = MAny;
+   }
 
-      mreq.start = ARG1;
-      mreq.len   = ARG2;
-
-      if (ARG1 != 0) {
-         mreq.rkind = MHint;
-      } else {
-         mreq.rkind = MAny;
-      }
-
-      /* Enquire ... */
-      advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
-      if (!mreq_ok) {
-         /* Our request was bounced, so we'd better fail. */
-         SET_STATUS_Failure( VKI_EINVAL );
-         return;
-      }
+   /* Enquire ... */
+   advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
+   if (!mreq_ok) {
+      /* Our request was bounced, so we'd better fail. */
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
    }
 
    vg_assert(! FAILURE);
 
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#  if defined(VGP_x86_linux)
    offset = ARG6 * VKI_PAGE_SIZE;
-#elif defined(VGP_amd64_linux)
+#  elif defined(VGP_amd64_linux) || defined(VGP_ppc32_linux)
    offset = ARG6;
-#elif
-#  error Unknown platform
-#endif
+#  else
+#    error Unknown platform
+#  endif
 
    /* Otherwise we're OK (so far).  Install aspacem's choice of
       address, and let the mmap go through.  */

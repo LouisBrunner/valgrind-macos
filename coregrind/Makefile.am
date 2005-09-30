@@ -31,6 +31,7 @@ noinst_HEADERS = \
 	pub_core_basics_asm.h	\
 	pub_core_clientstate.h	\
 	pub_core_commandline.h	\
+	pub_core_coredump.h	\
 	pub_core_cpuid.h	\
 	pub_core_debuginfo.h	\
 	pub_core_debugger.h	\

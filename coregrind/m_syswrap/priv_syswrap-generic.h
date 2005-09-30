@@ -242,6 +242,8 @@ extern void   ML_(generic_POST_sys_shmdt)       ( TId, UW, UW );
 extern void   ML_(generic_PRE_sys_shmctl)       ( TId, UW, UW, UW );
 extern void   ML_(generic_POST_sys_shmctl)      ( TId, UW, UW, UW, UW );
 
+extern SysRes ML_(generic_PRE_sys_mmap)         ( TId, UW, UW, UW, UW, UW, UW );
+
 #undef TId
 #undef UW
 #undef SR

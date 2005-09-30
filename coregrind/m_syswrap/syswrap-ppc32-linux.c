@@ -592,6 +592,8 @@ void setup_child ( /*OUT*/ ThreadArchState *child,
    magic. */
 
 DECL_TEMPLATE(ppc32_linux, sys_socketcall);
+DECL_TEMPLATE(ppc32_linux, sys_mmap);
+DECL_TEMPLATE(ppc32_linux, sys_mmap2);
 DECL_TEMPLATE(ppc32_linux, sys_stat64);
 DECL_TEMPLATE(ppc32_linux, sys_lstat64);
 DECL_TEMPLATE(ppc32_linux, sys_fstat64);
@@ -854,6 +856,39 @@ POST(sys_socketcall)
 #  undef ARG2_3
 #  undef ARG2_4
 #  undef ARG2_5
+}
+
+PRE(sys_mmap)
+{
+   SysRes r;
+
+   PRINT("sys_mmap ( %p, %llu, %d, %d, %d, %d )",
+         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRE_REG_READ6(long, "mmap",
+                 unsigned long, start, unsigned long, length,
+                 unsigned long, prot,  unsigned long, flags,
+                 unsigned long, fd,    unsigned long, offset);
+
+   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
+   SET_STATUS_from_SysRes(r);
+}
+
+PRE(sys_mmap2)
+{
+   SysRes r;
+
+   // Exactly like old_mmap() except:
+   //  - the file offset is specified in pagesize units rather than bytes,
+   //    so that it can be used for files bigger than 2^32 bytes.
+   PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
+         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRE_REG_READ6(long, "mmap2",
+                 unsigned long, start, unsigned long, length,
+                 unsigned long, prot,  unsigned long, flags,
+                 unsigned long, fd,    unsigned long, offset);
+
+   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 * VKI_PAGE_SIZE );
+   SET_STATUS_from_SysRes(r);
 }
 
 // XXX: lstat64/fstat64/stat64 are generic, but not necessarily
@@ -1725,7 +1760,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    //   (__NR_reboot,            sys_reboot),            // 88 */Linux
 //..    //   (__NR_readdir,           old_readdir),           // 89 -- superseded
 
-   LINX_(__NR_mmap,              sys_mmap2),                  // 90
+   PLAX_(__NR_mmap,              sys_mmap),                   // 90
    GENXY(__NR_munmap,            sys_munmap),                 // 91
 //..    GENX_(__NR_truncate,          sys_truncate),          // 92
    GENX_(__NR_ftruncate,         sys_ftruncate),         // 93
@@ -1851,7 +1886,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_vfork,             sys_fork),              // 189
    GENXY(__NR_ugetrlimit,        sys_getrlimit),         // 190
 //__NR_readahead      // 191 ppc/Linux only?
-   LINX_(__NR_mmap2,             sys_mmap2),             // 192
+   PLAX_(__NR_mmap2,             sys_mmap2),             // 192
 //..    GENX_(__NR_truncate64,        sys_truncate64),        // 193
 //..    GENX_(__NR_ftruncate64,       sys_ftruncate64),       // 194
 //..    

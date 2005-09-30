@@ -1710,6 +1710,79 @@ ML_(generic_POST_sys_shmctl) ( ThreadId tid,
 
 
 /* ---------------------------------------------------------------------
+   Generic handler for mmap
+   ------------------------------------------------------------------ */
+
+SysRes
+ML_(generic_PRE_sys_mmap) ( ThreadId tid,
+                            UWord arg1, UWord arg2, UWord arg3,
+                            UWord arg4, UWord arg5, UWord arg6 )
+{
+   Addr       advised;
+   SysRes     sres;
+   MapRequest mreq;
+   Bool       mreq_ok;
+
+   if (arg2 == 0) {
+      /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
+         shall be established. */
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+   }
+
+   if (!VG_IS_PAGE_ALIGNED(arg1)) {
+      /* zap any misaligned addresses. */
+      /* SuSV3 says misaligned addresses only cause the MAP_FIXED case
+         to fail.   Here, we catch them all. */
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+   }
+
+   /* Figure out what kind of allocation constraints there are
+      (fixed/hint/any), and ask aspacem what we should do. */
+   mreq.start = arg1;
+   mreq.len   = arg2;
+   if (arg4 & VKI_MAP_FIXED) {
+      mreq.rkind = MFixed;
+   } else
+   if (arg1 != 0) {
+      mreq.rkind = MHint;
+   } else {
+      mreq.rkind = MAny;
+   }
+
+   /* Enquire ... */
+   advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
+   if (!mreq_ok) {
+      /* Our request was bounced, so we'd better fail. */
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+   }
+
+   /* Otherwise we're OK (so far).  Install aspacem's choice of
+      address, and let the mmap go through.  */
+   sres = VG_(am_do_mmap_NO_NOTIFY)(advised, arg2, arg3,
+                                    arg4 | VKI_MAP_FIXED,
+                                    arg5, arg6);
+
+   if (!sres.isError) {
+      /* Notify aspacem and the tool. */
+      ML_(notify_aspacem_and_tool_of_mmap)( 
+         (Addr)sres.val, /* addr kernel actually assigned */
+         arg2, arg3, 
+         arg4, /* the original flags value */
+         arg5, arg6 
+      );
+      /* Load symbols? */
+      VG_(di_notify_mmap)( (Addr)sres.val );
+   }
+
+   /* Stay sane */
+   if (!sres.isError && (arg4 & VKI_MAP_FIXED))
+      vg_assert(sres.val == arg1);
+
+   return sres;
+}
+
+
+/* ---------------------------------------------------------------------
    The Main Entertainment ... syscall wrappers
    ------------------------------------------------------------------ */
 

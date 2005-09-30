@@ -569,6 +569,7 @@ DECL_TEMPLATE(amd64_linux, sys_ptrace);
 DECL_TEMPLATE(amd64_linux, sys_pread64);
 DECL_TEMPLATE(amd64_linux, sys_pwrite64);
 DECL_TEMPLATE(amd64_linux, sys_fadvise64);
+DECL_TEMPLATE(amd64_linux, sys_mmap);
 
 
 PRE(sys_clone)
@@ -1136,6 +1137,21 @@ PRE(sys_fadvise64)
                  int, fd, vki_loff_t, offset, vki_size_t, len, int, advice);
 }
 
+PRE(sys_mmap)
+{
+   SysRes r;
+
+   PRINT("sys_mmap ( %p, %llu, %d, %d, %d, %d )",
+         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRE_REG_READ6(long, "mmap",
+                 unsigned long, start, unsigned long, length,
+                 unsigned long, prot,  unsigned long, flags,
+                 unsigned long, fd,    unsigned long, offset);
+
+   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
+   SET_STATUS_from_SysRes(r);
+}
+
 #undef PRE
 #undef POST
 
@@ -1167,7 +1183,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_lstat,             sys_newlstat),       // 6 
    GENXY(__NR_poll,              sys_poll),           // 7 
    LINX_(__NR_lseek,             sys_lseek),          // 8 
-   LINX_(__NR_mmap,              sys_mmap2),          // 9 
+   PLAX_(__NR_mmap,              sys_mmap),           // 9 
 
    GENXY(__NR_mprotect,          sys_mprotect),       // 10 
    GENXY(__NR_munmap,            sys_munmap),         // 11 

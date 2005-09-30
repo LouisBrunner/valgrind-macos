@@ -966,6 +966,7 @@ DECL_TEMPLATE(x86_linux, sys_fstat64);
 DECL_TEMPLATE(x86_linux, sys_lstat64);
 DECL_TEMPLATE(x86_linux, sys_clone);
 DECL_TEMPLATE(x86_linux, old_mmap);
+DECL_TEMPLATE(x86_linux, sys_mmap2);
 DECL_TEMPLATE(x86_linux, sys_sigreturn);
 DECL_TEMPLATE(x86_linux, sys_ipc);
 DECL_TEMPLATE(x86_linux, sys_rt_sigreturn);
@@ -1466,10 +1467,7 @@ PRE(old_mmap)
          unsigned long offset;
    }; */
    UWord a1, a2, a3, a4, a5, a6;
-   Addr       advised;
-   SysRes     sres;
-   MapRequest mreq;
-   Bool       mreq_ok;
+   SysRes r;
 
    UWord* args = (UWord*)ARG1;
    PRE_REG_READ1(long, "old_mmap", struct mmap_arg_struct *, args);
@@ -1485,65 +1483,27 @@ PRE(old_mmap)
    PRINT("old_mmap ( %p, %llu, %d, %d, %d, %d )",
          a1, (ULong)a2, a3, a4, a5, a6 );
 
-   if (a2 == 0) {
-      /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
-         shall be established. */
-      SET_STATUS_Failure( VKI_EINVAL );
-      return;
-   }
+   r = ML_(generic_PRE_sys_mmap)( tid, a1, a2, a3, a4, a5, a6 );
+   SET_STATUS_from_SysRes(r);
+}
 
-   if (!VG_IS_PAGE_ALIGNED(a1)) {
-      /* zap any misaligned addresses. */
-      SET_STATUS_Failure( VKI_EINVAL );
-      return;
-   }
+PRE(sys_mmap2)
+{
+   SysRes r;
 
-   /* Figure out what kind of allocation constraints there are
-      (fixed/hint/any), and ask aspacem what we should do. */
-   mreq.start = a1;
-   mreq.len   = a2;
-   if (a4 & VKI_MAP_FIXED) {
-      mreq.rkind = MFixed;
-   } else
-   if (a1 != 0) {
-      mreq.rkind = MHint;
-   } else {
-      mreq.rkind = MAny;
-   }
+   // Exactly like old_mmap() except:
+   //  - all 6 args are passed in regs, rather than in a memory-block.
+   //  - the file offset is specified in pagesize units rather than bytes,
+   //    so that it can be used for files bigger than 2^32 bytes.
+   PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
+         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRE_REG_READ6(long, "mmap2",
+                 unsigned long, start, unsigned long, length,
+                 unsigned long, prot,  unsigned long, flags,
+                 unsigned long, fd,    unsigned long, offset);
 
-   /* Enquire ... */
-   advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
-   if (!mreq_ok) {
-      /* Our request was bounced, so we'd better fail. */
-      SET_STATUS_Failure( VKI_EINVAL );
-      return;
-   }
-
-   /* Otherwise we're OK (so far).  Install aspacem's choice of
-      address, and let the mmap go through.  */
-   a1 = advised;
-   a4 |= VKI_MAP_FIXED;
-
-   vg_assert(! FAILURE);
-
-   sres = VG_(am_do_mmap_NO_NOTIFY)(a1, a2, a3, a4, a5, a6);
-   SET_STATUS_from_SysRes(sres);
-
-   if (!sres.isError) {
-      /* Notify aspacem and the tool. */
-      ML_(notify_aspacem_and_tool_of_mmap)( 
-         (Addr)sres.val, /* addr kernel actually assigned */
-         a2, a3, 
-         args[4-1], /* the original flags value */
-         a5, a6 
-      );
-      /* Load symbols? */
-      VG_(di_notify_mmap)( (Addr)sres.val );
-   }
-
-   /* Stay sane */
-   if (SUCCESS && (args[4-1] & VKI_MAP_FIXED))
-      vg_assert(RES == args[0]);
+   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 * VKI_PAGE_SIZE );
+   SET_STATUS_from_SysRes(r);
 }
 
 // XXX: lstat64/fstat64/stat64 are generic, but not necessarily
@@ -2170,7 +2130,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // Nb: we treat vfork as fork
    GENX_(__NR_vfork,             sys_fork),           // 190
    GENXY(__NR_ugetrlimit,        sys_getrlimit),      // 191
-   LINX_(__NR_mmap2,             sys_mmap2),          // 192
+   PLAX_(__NR_mmap2,             sys_mmap2),          // 192
    GENX_(__NR_truncate64,        sys_truncate64),     // 193
    GENX_(__NR_ftruncate64,       sys_ftruncate64),    // 194
    

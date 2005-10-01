@@ -360,7 +360,6 @@ void VG_(setup_code_redirect_table) ( void )
       0xFFFFFFFFFF600000ULL,
       (Addr)&VG_(amd64_linux_REDIR_FOR_vgettimeofday) 
    );
-
    add_redirect_addr_to_addr( 
       0xFFFFFFFFFF600400ULL,
       (Addr)&VG_(amd64_linux_REDIR_FOR_vtime) 
@@ -371,6 +370,10 @@ void VG_(setup_code_redirect_table) ( void )
    add_redirect_sym_to_addr(
       "soname:ld.so.1", "strlen",
       (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen)
+   );   
+   add_redirect_sym_to_addr(
+      "soname:ld.so.1", "strcmp",
+      (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp)
    );   
 
 #else

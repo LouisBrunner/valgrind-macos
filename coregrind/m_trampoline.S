@@ -159,15 +159,52 @@ VG_(ppc32_linux_REDIR_FOR_strlen):
         lbz 4,0(3)
         li 9,0
         cmpwi 0,4,0
-        beq- 0,.L8
-.L9:
+        beq- 0,.L18
+.L19:
         lbzu 5,1(3)
         addi 9,9,1
         cmpwi 0,5,0
-        bne+ 0,.L9
-.L8:
+        bne+ 0,.L19
+.L18:
         mr 3,9
         blr
+
+/* Ditto strcmp */
+.global VG_(ppc32_linux_REDIR_FOR_strcmp)
+VG_(ppc32_linux_REDIR_FOR_strcmp):
+.L20:
+        lbz 0,0(3)
+        cmpwi 7,0,0
+        bne- 7,.L21
+        lbz 0,0(4)
+        li 11,0
+        cmpwi 7,0,0
+        beq- 7,.L22
+.L21:
+        lbz 0,0(3)
+        li 11,-1
+        cmpwi 7,0,0
+        beq- 7,.L22
+        lbz 0,0(4)
+        li 11,1
+        cmpwi 7,0,0
+        beq- 7,.L22
+        lbz 9,0(3)
+        lbz 0,0(4)
+        li 11,-1
+        cmplw 7,9,0
+        blt- 7,.L22
+        lbz 9,0(3)
+        lbz 0,0(4)
+        li 11,1
+        addi 3,3,1
+        addi 4,4,1
+        cmplw 7,9,0
+        ble+ 7,.L20
+.L22:
+        mr 3,11
+        blr
+
 
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):

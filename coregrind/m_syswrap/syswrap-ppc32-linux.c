@@ -889,7 +889,7 @@ PRE(sys_mmap2)
                  unsigned long, fd,    unsigned long, offset);
 
    r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
-                                       VKI_PAGE_SIZE * (Of64T)ARG6 );
+                                       VKI_PAGE_SIZE * (Off64T)ARG6 );
    SET_STATUS_from_SysRes(r);
 }
 

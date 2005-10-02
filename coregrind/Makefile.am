@@ -18,7 +18,7 @@ val_PROGRAMS = \
 
 # Remember to include all the arch-specific files in the distribution.
 EXTRA_DIST = \
-        $(addsuffix .S,$(addprefix m_dispatch/dispatch-,$(VG_ARCH_ALL))) \
+        $(addsuffix .S,$(addprefix m_dispatch/dispatch-,$(VG_PLATFORM_ALL))) \
         $(addsuffix .c,$(addprefix m_sigframe/sigframe-,$(VG_PLATFORM_ALL))) \
         $(addsuffix .S,$(addprefix m_syswrap/syscall-,$(VG_PLATFORM_ALL))) \
         $(addsuffix .c,$(addprefix m_syswrap/syswrap-,$(VG_OS_ALL))) \
@@ -142,7 +142,7 @@ libcoregrind_a_SOURCES = \
 	m_demangle/demangle.c \
 	m_demangle/dyn-string.c \
 	m_demangle/safe-ctype.c \
-	m_dispatch/dispatch-@VG_ARCH@.S \
+	m_dispatch/dispatch-@VG_PLATFORM@.S \
 	m_replacemalloc/replacemalloc_core.c \
 	m_scheduler/scheduler.c \
 	m_scheduler/sema.c \
@@ -156,9 +156,9 @@ libcoregrind_a_SOURCES = \
 libreplacemalloc_toolpreload_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
 libreplacemalloc_toolpreload_a_CFLAGS = $(PIC_AM_CFLAGS)
 
-m_dispatch/dispatch-@VG_ARCH@.S:   libvex_guest_offsets.h
-m_syswrap/syscall-@VG_PLATFORM@.S: libvex_guest_offsets.h
-m_syswrap/syswrap-main.c: 	   libvex_guest_offsets.h
+m_dispatch/dispatch-@VG_PLATFORM@.S: libvex_guest_offsets.h
+m_syswrap/syscall-@VG_PLATFORM@.S:   libvex_guest_offsets.h
+m_syswrap/syswrap-main.c: 	     libvex_guest_offsets.h
 
 libvex_guest_offsets.h:
 	$(MAKE) -C @VEX_DIR@ pub/libvex_guest_offsets.h

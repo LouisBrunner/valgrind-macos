@@ -21,7 +21,7 @@
 #ifndef DEMANGLE_H
 #define DEMANGLE_H
 
-#include <ansidecl.h>
+#include "ansidecl.h"
 
 #define current_demangling_style VG_(current_demangling_style)
 

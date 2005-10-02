@@ -153,7 +153,7 @@ extern Addr VG_(am_get_advisory_client_simple)
    True, the caller should immediately discard translations from the
    specified address range. */
 extern Bool VG_(am_notify_client_mmap)
-   ( Addr a, SizeT len, UInt prot, UInt flags, Int fd, SizeT offset );
+   ( Addr a, SizeT len, UInt prot, UInt flags, Int fd, Off64T offset );
 
 /* Notifies aspacem that an mprotect was completed successfully.  The
    segment array is updated accordingly.  Note, as with
@@ -181,7 +181,7 @@ extern Bool VG_(am_notify_munmap)( Addr start, SizeT len );
    USE IT UNLESS YOU UNDERSTAND the request-notify model used by
    aspacem.  In short, DO NOT USE THIS FUNCTION. */
 extern SysRes VG_(am_do_mmap_NO_NOTIFY)
-   ( Addr start, SizeT length, UInt prot, UInt flags, UInt fd, OffT offset);
+   ( Addr start, SizeT length, UInt prot, UInt flags, UInt fd, Off64T offset);
 
 
 //--------------------------------------------------------------
@@ -195,7 +195,7 @@ extern SysRes VG_(am_do_mmap_NO_NOTIFY)
 /* Map a file at a fixed address for the client, and update the
    segment array accordingly. */
 extern SysRes VG_(am_mmap_file_fixed_client)
-   ( Addr start, SizeT length, UInt prot, Int fd, SizeT offset );
+   ( Addr start, SizeT length, UInt prot, Int fd, Off64T offset );
 
 /* Map anonymously at a fixed address for the client, and update
    the segment array accordingly. */
@@ -215,7 +215,7 @@ extern SysRes VG_(am_mmap_anon_float_valgrind)( SizeT cszB );
    segment array accordingly.  This is used by V for transiently
    mapping in object files to read their debug info.  */
 extern SysRes VG_(am_mmap_file_float_valgrind)
-   ( SizeT length, UInt prot, Int fd, SizeT offset );
+   ( SizeT length, UInt prot, Int fd, Off64T offset );
 
 /* Unmap the given address range and update the segment array
    accordingly.  This fails if the range isn't valid for the client.

@@ -869,7 +869,8 @@ PRE(sys_mmap)
                  unsigned long, prot,  unsigned long, flags,
                  unsigned long, fd,    unsigned long, offset);
 
-   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 );
+   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
+                                       (Off64T)ARG6 );
    SET_STATUS_from_SysRes(r);
 }
 
@@ -887,7 +888,8 @@ PRE(sys_mmap2)
                  unsigned long, prot,  unsigned long, flags,
                  unsigned long, fd,    unsigned long, offset);
 
-   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6 * VKI_PAGE_SIZE );
+   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
+                                       VKI_PAGE_SIZE * (Of64T)ARG6 );
    SET_STATUS_from_SysRes(r);
 }
 

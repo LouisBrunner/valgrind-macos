@@ -81,6 +81,8 @@ typedef  Word                 SSizeT;     // 32             64
 
 typedef  Word                   OffT;     // 32             64
 
+typedef ULong                 Off64T;     // 64             64
+
 #if !defined(NULL)
 #  define NULL ((void*)0)
 #endif

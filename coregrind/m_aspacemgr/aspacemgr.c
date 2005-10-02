@@ -225,9 +225,10 @@ UInt aspacem_sprintf ( HChar* buf, const HChar *format, ... )
 // UNLESS YOU KNOW WHAT YOU ARE DOING.
 
 SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot, 
-                                  UInt flags, UInt fd, OffT offset)
+                                  UInt flags, UInt fd, Off64T offset)
 {
    SysRes res;
+   aspacem_assert(VG_IS_PAGE_ALIGNED(offset));
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    res = VG_(do_syscall6)(__NR_mmap2, (UWord)start, length,
                           prot, flags, fd, offset / VKI_PAGE_SIZE);
@@ -1785,7 +1786,7 @@ Addr VG_(am_get_advisory_client_simple) ( Addr start, SizeT len,
 
 Bool
 VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
-                            Int fd, SizeT offset )
+                            Int fd, Off64T offset )
 {
    HChar    buf[VKI_PATH_MAX];
    UInt     dev, ino;
@@ -1795,6 +1796,7 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
    aspacem_assert(len > 0);
    aspacem_assert(VG_IS_PAGE_ALIGNED(a));
    aspacem_assert(VG_IS_PAGE_ALIGNED(len));
+   aspacem_assert(VG_IS_PAGE_ALIGNED(offset));
 
    /* Discard is needed if any of the just-trashed range had T. */
    needDiscard = any_Ts_in_range( a, len );
@@ -1921,7 +1923,7 @@ Bool VG_(am_notify_munmap)( Addr start, SizeT len )
    segment array accordingly. */
 
 SysRes VG_(am_mmap_file_fixed_client)
-     ( Addr start, SizeT length, UInt prot, Int fd, SizeT offset )
+     ( Addr start, SizeT length, UInt prot, Int fd, Off64T offset )
 {
    SysRes     sres;
    NSegment   seg;
@@ -1932,7 +1934,9 @@ SysRes VG_(am_mmap_file_fixed_client)
    HChar      buf[VKI_PATH_MAX];
 
    /* Not allowable. */
-   if (length == 0 || !VG_IS_PAGE_ALIGNED(start))
+   if (length == 0 
+       || !VG_IS_PAGE_ALIGNED(start)
+       || !VG_IS_PAGE_ALIGNED(offset))
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
    /* Ask for an advisory.  If it's negative, fail immediately. */
@@ -2172,7 +2176,7 @@ void* VG_(am_shadow_alloc)(SizeT size)
    mapping in object files to read their debug info.  */
 
 SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot, 
-                                          Int fd, SizeT offset )
+                                          Int fd, Off64T offset )
 {
    SysRes     sres;
    NSegment   seg;
@@ -2183,7 +2187,7 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
    HChar      buf[VKI_PATH_MAX];
  
    /* Not allowable. */
-   if (length == 0)
+   if (length == 0 || !VG_IS_PAGE_ALIGNED(offset))
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
    /* Ask for an advisory.  If it's negative, fail immediately. */
@@ -2791,6 +2795,19 @@ static Int readchar ( const Char* buf, Char* ch )
 
 static Int readhex ( const Char* buf, UWord* val )
 {
+   /* Read a word-sized hex number. */
+   Int n = 0;
+   *val = 0;
+   while (hexdigit(*buf) >= 0) {
+      *val = (*val << 4) + hexdigit(*buf);
+      n++; buf++;
+   }
+   return n;
+}
+
+static Int readhex64 ( const Char* buf, ULong* val )
+{
+   /* Read a potentially 64-bit hex number. */
    Int n = 0;
    *val = 0;
    while (hexdigit(*buf) >= 0) {
@@ -2877,7 +2894,8 @@ static void parse_procselfmaps (
    UChar* filename;
    UChar  rr, ww, xx, pp, ch, tmp;
    UInt	  ino, prot;
-   UWord  foffset, maj, min;
+   UWord  maj, min;
+   ULong  foffset;
 
    read_procselfmaps_into_buf();
 
@@ -2917,7 +2935,7 @@ static void parse_procselfmaps (
       j = readchar(&procmap_buf[i], &ch);
       if (j == 1 && ch == ' ') i += j; else goto syntaxerror;
 
-      j = readhex(&procmap_buf[i], &foffset);
+      j = readhex64(&procmap_buf[i], &foffset);
       if (j > 0) i += j; else goto syntaxerror;
 
       j = readchar(&procmap_buf[i], &ch);

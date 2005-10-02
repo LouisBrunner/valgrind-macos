@@ -143,7 +143,7 @@ void page_align_addr_and_len( Addr* a, SizeT* len)
 */
 void 
 ML_(notify_aspacem_and_tool_of_mmap) ( Addr a, SizeT len, UInt prot, 
-                                       UInt flags, Int fd, ULong offset )
+                                       UInt flags, Int fd, Off64T offset )
 {
    Bool rr, ww, xx, d;
 
@@ -1741,7 +1741,7 @@ ML_(generic_POST_sys_shmctl) ( ThreadId tid,
 SysRes
 ML_(generic_PRE_sys_mmap) ( ThreadId tid,
                             UWord arg1, UWord arg2, UWord arg3,
-                            UWord arg4, UWord arg5, UWord arg6 )
+                            UWord arg4, UWord arg5, Off64T arg6 )
 {
    Addr       advised;
    SysRes     sres;

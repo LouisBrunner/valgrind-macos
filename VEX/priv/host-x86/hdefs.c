@@ -2315,7 +2315,6 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       if (0) vex_printf("EMIT FENCE\n");
       switch (i->Xin.MFence.subarch) {
          case VexSubArchX86_sse0:
-            vassert(0); /* awaiting test case */
             /* lock addl $0,0(%esp) */
             *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
             *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;

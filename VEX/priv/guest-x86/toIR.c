@@ -5978,26 +5978,30 @@ void codegen_SAHF ( void )
 }
 
 
-//-- static 
-//-- void codegen_LAHF ( UCodeBlock* cb )
-//-- {
-//--    Int t = newTemp(cb);
-//-- 
-//--    /* Pushed arg is ignored, it just provides somewhere to put the
-//--       return value. */
-//--    uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, t);
-//--    uInstr0(cb, CALLM_S, 0);
-//--    uInstr1(cb, PUSH,  4, TempReg, t);
-//--    uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_LAHF));
-//--    uFlagsRWU(cb, FlagsSZACP, FlagsEmpty, FlagsEmpty);
-//--    uInstr1(cb, POP,   4, TempReg, t);
-//--    uInstr0(cb, CALLM_E, 0);
-//-- 
-//--    /* At this point, the %ah sub-register in %eax has been updated,
-//--       the rest is the same, so do a PUT of the whole thing. */
-//--    uInstr2(cb, PUT,   4,  TempReg, t,   ArchReg, R_EAX);
-//-- }
-//-- 
+static 
+void codegen_LAHF ( void  )
+{
+   /* AH <- EFLAGS(SF:ZF:0:AF:0:PF:1:CF) */
+   IRExpr* eax_with_hole;
+   IRExpr* new_byte;
+   IRExpr* new_eax;
+   UInt    mask_SZACP = X86G_CC_MASK_S|X86G_CC_MASK_Z|X86G_CC_MASK_A
+                        |X86G_CC_MASK_C|X86G_CC_MASK_P;
+
+   IRTemp  flags = newTemp(Ity_I32);
+   assign( flags, mk_x86g_calculate_eflags_all() );
+
+   eax_with_hole 
+      = binop(Iop_And32, getIReg(4, R_EAX), mkU32(0xFFFF00FF));
+   new_byte 
+      = binop(Iop_Or32, binop(Iop_And32, mkexpr(flags), mkU32(mask_SZACP)),
+                        mkU32(1<<1));
+   new_eax 
+      = binop(Iop_Or32, eax_with_hole,
+                        binop(Iop_Shl32, new_byte, mkU8(8)));
+   putIReg(4, R_EAX, new_eax);
+}
+
 
 static
 UInt dis_cmpxchg_G_E ( UChar       sorb,
@@ -10458,11 +10462,11 @@ DisResult disInstr_X86_WRK (
       DIP("sahf\n");
       break;
 
-//--    case 0x9F: /* LAHF */
-//--       codegen_LAHF ( cb );
-//--       DIP("lahf\n");
-//--       break;
-//-- 
+   case 0x9F: /* LAHF */
+      codegen_LAHF();
+      DIP("lahf\n");
+      break;
+
    case 0x9B: /* FWAIT */
       /* ignore? */
       DIP("fwait\n");

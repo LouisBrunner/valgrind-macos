@@ -1976,6 +1976,10 @@ UInt dis_op_imm_A ( Int    size,
       helper_ADC( size, dst1, dst0, src );
    }
    else
+   if (op8 == Iop_Sub8 && carrying) {
+      helper_SBB( size, dst1, dst0, src );
+   }
+   else
       vpanic("dis_op_imm_A(x86,guest)");
 
    if (keep)
@@ -10810,13 +10814,13 @@ DisResult disInstr_X86_WRK (
       delta = dis_op_imm_A( sz, True, Iop_Add8, True, delta, "adc" );
       break;
 
-//--    case 0x1C: /* SBB Ib, AL */
-//--       delta = dis_op_imm_A( 1, SBB, True, delta, "sbb" );
-//--       break;
-//--    case 0x1D: /* SBB Iv, eAX */
-//--       delta = dis_op_imm_A( sz, SBB, True, delta, "sbb" );
-//--       break;
-//-- 
+   case 0x1C: /* SBB Ib, AL */
+      delta = dis_op_imm_A( 1, True, Iop_Sub8, True, delta, "sbb" );
+      break;
+   case 0x1D: /* SBB Iv, eAX */
+      delta = dis_op_imm_A( sz, True, Iop_Sub8, True, delta, "sbb" );
+      break;
+
    case 0x24: /* AND Ib, AL */
       delta = dis_op_imm_A(  1, False, Iop_And8, True, delta, "and" );
       break;
@@ -10867,17 +10871,17 @@ DisResult disInstr_X86_WRK (
    case 0x0B: /* OR Ev,Gv */
       delta = dis_op2_E_G ( sorb, False, Iop_Or8, True, sz, delta, "or" );
       break;
-//-- 
-//--    case 0x12: /* ADC Eb,Gb */
-//--       delta = dis_op2_E_G ( sorb, True, ADC, True, 1, delta, "adc" );
-//--       break;
+
+   case 0x12: /* ADC Eb,Gb */
+      delta = dis_op2_E_G ( sorb, True, Iop_Add8, True, 1, delta, "adc" );
+      break;
    case 0x13: /* ADC Ev,Gv */
       delta = dis_op2_E_G ( sorb, True, Iop_Add8, True, sz, delta, "adc" );
       break;
 
-//--    case 0x1A: /* SBB Eb,Gb */
-//--       delta = dis_op2_E_G ( sorb, True, SBB, True, 1, delta, "sbb" );
-//--       break;
+   case 0x1A: /* SBB Eb,Gb */
+      delta = dis_op2_E_G ( sorb, True, Iop_Sub8, True, 1, delta, "sbb" );
+      break;
    case 0x1B: /* SBB Ev,Gv */
       delta = dis_op2_E_G ( sorb, True, Iop_Sub8, True, sz, delta, "sbb" );
       break;

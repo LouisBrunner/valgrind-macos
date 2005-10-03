@@ -11,6 +11,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	cmpxchg8b.stderr.exp cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \
+	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
 	int.stderr.exp int.stdout.exp int.vgtest \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
@@ -25,6 +26,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	badseg bt_everything bt_literal cmpxchg8b cpuid fpu_lazy_eflags \
+	fxtract \
 	getseg $(INSN_TESTS) \
 	looper int pushpopseg seg_override sigcontext smc1 yield
 
@@ -38,6 +40,7 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.s
 # fpu_lazy_eflags must use these flags -- the bug only occurred with them
 fpu_lazy_eflags_CFLAGS	= -O2 -march=pentiumpro
+fxtract_LDADD		= -lm
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm
 insn_fpu_SOURCES	= insn_fpu.def

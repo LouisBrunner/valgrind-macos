@@ -5334,9 +5334,10 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, Int delta )
             goto mmx_decode_failure;
          modrm = getIByte(delta);
          if (epartIsReg(modrm)) {
-            /* Fall through.  The assembler doesn't appear to generate
-               these. */
-            goto mmx_decode_failure;
+            delta++;
+            putMMXReg( eregOfRM(modrm), getMMXReg(gregOfRM(modrm)) );
+            DIP("movq %s, %s\n", 
+                nameMMXReg(gregOfRM(modrm)), nameMMXReg(eregOfRM(modrm)));
          } else {
             IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
             delta += len;

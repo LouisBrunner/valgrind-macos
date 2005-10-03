@@ -794,8 +794,12 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
       return err;
    }
 
-   sres = VG_(pread)(fd, buf, sizeof(buf), 0);
-   if (sres.isError || sres.val != sizeof(buf)) {
+   bufsz = VG_(fsize)(fd);
+   if (bufsz > sizeof(buf))
+      bufsz = sizeof(buf);
+
+   sres = VG_(pread)(fd, buf, bufsz, 0);
+   if (sres.isError || sres.val != bufsz) {
       VG_(printf)("Can't read executable header: %s\n",
                   VG_(strerror)(sres.val));
       VG_(close)(fd);

@@ -1745,7 +1745,7 @@ Bool read_lib_symbols ( SegInfo* si )
                                          stabstr, stabstr_sz );
       }
 #     endif
-      if (debug_line) {
+      if (debug_info && debug_abbv && debug_line && debug_str) {
          ML_(read_debuginfo_dwarf2) ( si, 
                                       debug_info,   debug_info_sz,
                                       debug_abbv,

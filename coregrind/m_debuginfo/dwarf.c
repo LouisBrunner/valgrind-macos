@@ -916,6 +916,12 @@ void ML_(read_debuginfo_dwarf2)
    UChar*   end = debuginfo + debug_info_sz;
    UInt     blklen;
 
+   /* Make sure we at least have a header for the first block */
+   if (debug_info_sz < 4) {
+     ML_(symerr)( "Last block truncated in .debug_info; ignoring" );
+      return;
+   }
+
    /* Iterate on all the blocks we find in .debug_info */
    for ( block = debuginfo; block < end - 4; block += blklen + 4 ) {
 

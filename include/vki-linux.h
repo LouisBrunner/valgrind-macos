@@ -1331,6 +1331,8 @@ struct vki_shmid_ds {
 	void			*shm_unused3;	/* unused */
 };
 
+#define VKI_SHM_RDONLY  010000  /* read-only access */
+
 #define VKI_SHM_STAT 	13
 #define VKI_SHM_INFO 	14
 

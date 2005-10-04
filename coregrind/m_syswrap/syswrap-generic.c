@@ -1588,7 +1588,7 @@ ML_(generic_POST_sys_shmat) ( ThreadId tid,
       UInt prot = VKI_PROT_READ|VKI_PROT_WRITE;
       Bool d;
 
-      if (!(arg2 & 010000)) /* = SHM_RDONLY */
+      if (arg2 & VKI_SHM_RDONLY)
          prot &= ~VKI_PROT_WRITE;
       /* It isn't exactly correct to pass 0 for the fd and offset
          here.  The kernel seems to think the corresponding section

@@ -7960,8 +7960,7 @@ DisResult disInstr_X86_WRK (
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F F6 = PSADBW -- sum of 8Ux8 absolute differences */
-   if (insn[0] == 0x0F && insn[1] == 0xF6) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xF6) {
       do_MMX_preamble();
       delta = dis_MMXop_regmem_to_reg ( 
                  sorb, delta+2, insn[1], "psadbw", False );
@@ -9743,6 +9742,53 @@ DisResult disInstr_X86_WRK (
    /* 66 0F EB = POR */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xEB) {
       delta = dis_SSE_E_to_G_all( sorb, delta+2, "por", Iop_OrV128 );
+      goto decode_success;
+   }
+
+   /* 66 0F F6 = PSADBW -- 2 x (8x8 -> 48 zeroes ++ u16) Sum Abs Diffs
+      from E(xmm or mem) to G(xmm) */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xF6) {
+      IRTemp s1V  = newTemp(Ity_V128);
+      IRTemp s2V  = newTemp(Ity_V128);
+      IRTemp dV   = newTemp(Ity_V128);
+      IRTemp s1Hi = newTemp(Ity_I64);
+      IRTemp s1Lo = newTemp(Ity_I64);
+      IRTemp s2Hi = newTemp(Ity_I64);
+      IRTemp s2Lo = newTemp(Ity_I64);
+      IRTemp dHi  = newTemp(Ity_I64);
+      IRTemp dLo  = newTemp(Ity_I64);
+      modrm = insn[2];
+      if (epartIsReg(modrm)) {
+         assign( s1V, getXMMReg(eregOfRM(modrm)) );
+         delta += 2+1;
+         DIP("psadbw %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                               nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         assign( s1V, loadLE(Ity_V128, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("psadbw %s,%s\n", dis_buf,
+                               nameXMMReg(gregOfRM(modrm)));
+      }
+      assign( s2V, getXMMReg(gregOfRM(modrm)) );
+      assign( s1Hi, unop(Iop_V128HIto64, mkexpr(s1V)) );
+      assign( s1Lo, unop(Iop_V128to64,   mkexpr(s1V)) );
+      assign( s2Hi, unop(Iop_V128HIto64, mkexpr(s2V)) );
+      assign( s2Lo, unop(Iop_V128to64,   mkexpr(s2V)) );
+      assign( dHi, mkIRExprCCall(
+                      Ity_I64, 0/*regparms*/,
+                      "x86g_calculate_mmx_psadbw", 
+                      &x86g_calculate_mmx_psadbw,
+                      mkIRExprVec_2( mkexpr(s1Hi), mkexpr(s2Hi))
+                   ));
+      assign( dLo, mkIRExprCCall(
+                      Ity_I64, 0/*regparms*/,
+                      "x86g_calculate_mmx_psadbw", 
+                      &x86g_calculate_mmx_psadbw,
+                      mkIRExprVec_2( mkexpr(s1Lo), mkexpr(s2Lo))
+                   ));
+      assign( dV, binop(Iop_64HLtoV128, mkexpr(dHi), mkexpr(dLo))) ;
+      putXMMReg(gregOfRM(modrm), mkexpr(dV));
       goto decode_success;
    }
 

@@ -995,12 +995,65 @@ static Addr do_brk ( Addr newbrk )
 /* ---------------------------------------------------------------------
    Vet file descriptors for sanity
    ------------------------------------------------------------------ */
+/* 
+> - what does the "Bool soft" parameter mean?
+
+(Tom Hughes, 3 Oct 05):
+
+Whether or not to consider a file descriptor invalid if it is above
+the current soft limit.
+
+Basically if we are testing whether a newly created file descriptor is
+valid (in a post handler) then we set soft to true, and if we are
+testing whether a file descriptor that is about to be used (in a pre
+handler) is valid [viz, an already-existing fd] then we set it to false.
+
+The point is that if the (virtual) soft limit is lowered then any
+existing descriptors can still be read/written/closed etc (so long as
+they are below the valgrind reserved descriptors) but no new
+descriptors can be created above the new soft limit.
+
+(jrs 4 Oct 05: in which case, I've renamed it "isNewFd")
+*/
 
 /* Return true if we're allowed to use or create this fd */
-Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
+Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool isNewFd)
 {
-   if ( (fd < 0 || fd >= VG_(fd_hard_limit) || fd == VG_(clo_log_fd)) 
-        && VG_(showing_core_errors)() ) {
+   Bool allowed = True;
+
+   /* hard limits always apply */
+   if (fd < 0 || fd >= VG_(fd_hard_limit))
+      allowed = False;
+
+   /* hijacking the logging fd is never allowed */
+   if (fd == VG_(clo_log_fd))
+      allowed = False;
+
+   /* if creating a new fd (rather than using an existing one), the
+      soft limit must also be observed */
+   if (isNewFd && fd >= VG_(fd_soft_limit))
+      allowed = False;
+
+   /* this looks like it ought to be included, but causes problems: */
+   /*
+   if (fd == 2 && VG_(debugLog_getLevel)() > 0)
+      allowed = False;
+   */
+   /* The difficulty is as follows: consider a program P which expects
+      to be able to mess with (redirect) its own stderr (fd 2).
+      Usually to deal with P we would issue command line flags to send
+      logging somewhere other than stderr, so as not to disrupt P.
+      The problem is that -d unilaterally hijacks stderr with no
+      consultation with P.  And so, if this check is enabled, P will
+      work OK normally but fail if -d is issued.
+
+      Basically -d is a hack and you take your chances when using it.
+      It's very useful for low level debugging -- particularly at
+      startup -- and having its presence change the behaviour of the
+      client is exactly what we don't want.  */
+
+   /* croak? */
+   if ((!allowed) && VG_(showing_core_errors)() ) {
       VG_(message)(Vg_UserMsg, 
          "Warning: invalid file descriptor %d in syscall %s()",
          fd, syscallname);
@@ -1010,19 +1063,9 @@ Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
       if (VG_(clo_verbosity) > 1) {
          VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
       }
-      return False;
    }
-   else 
-   if (soft && fd >= VG_(fd_soft_limit)) {
-      return False;
-   }
-   else 
-   if (fd == 2 && VG_(debugLog_getLevel)() > 0) {
-      return False;
-   } 
-   else {
-      return True;
-   }
+
+   return allowed;
 }
 
 

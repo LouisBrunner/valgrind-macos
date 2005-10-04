@@ -441,6 +441,7 @@ static HChar* show_SegKind ( SegKind sk )
       case SkAnonV: return "ANON";
       case SkFileC: return "file";
       case SkFileV: return "FILE";
+      case SkShmC:  return "shm ";
       case SkResvn: return "RSVN";
       default:      return "????";
    }
@@ -523,7 +524,7 @@ static void show_nsegment ( Int logLevel, Int segNo, NSegment* seg )
          );
          break;
 
-      case SkAnonC: case SkAnonV:
+      case SkAnonC: case SkAnonV: case SkShmC:
          VG_(debugLog)(
             logLevel, "aspacem",
             "%3d: %s %010llx-%010llx %s %c%c%c%c%c\n",
@@ -688,7 +689,7 @@ static Bool sane_NSegment ( NSegment* s )
             && !s->hasR && !s->hasW && !s->hasX && !s->hasT
             && !s->isCH;
 
-      case SkAnonC: case SkAnonV:
+      case SkAnonC: case SkAnonV: case SkShmC:
          return 
             s->smode == SmFixed 
             && s->dev == 0 && s->ino == 0 && s->offset == 0 && s->fnIdx == -1
@@ -753,6 +754,9 @@ static Bool maybe_merge_nsegments ( NSegment* s1, NSegment* s2 )
             return True;
          }
          break;
+
+      case SkShmC:
+         return False;
 
       default:
          break;
@@ -890,7 +894,8 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       same = nsegments[i].kind == SkAnonC
              || nsegments[i].kind == SkAnonV
              || nsegments[i].kind == SkFileC
-             || nsegments[i].kind == SkFileV;
+             || nsegments[i].kind == SkFileV
+             || nsegments[i].kind == SkShmC;
 
       seg_prot = 0;
       if (nsegments[i].hasR) seg_prot |= VKI_PROT_READ;
@@ -1106,7 +1111,7 @@ NSegment* VG_(am_next_nsegment) ( NSegment* here, Bool fwds )
          return NULL;
    }
    switch (nsegments[i].kind) {
-      case SkFileC: case SkFileV: 
+      case SkFileC: case SkFileV: case SkShmC:
       case SkAnonC: case SkAnonV: case SkResvn:
          return &nsegments[i];
       default:
@@ -1169,6 +1174,7 @@ Bool is_valid_for_client( Addr start, SizeT len, UInt prot, Bool freeOk )
    for (i = iLo; i <= iHi; i++) {
       if ( (nsegments[i].kind == SkFileC 
             || nsegments[i].kind == SkAnonC
+            || nsegments[i].kind == SkShmC
             || (nsegments[i].kind == SkFree  && freeOk)
             || (nsegments[i].kind == SkResvn && freeOk))
            && (needR ? nsegments[i].hasR : True)
@@ -1638,6 +1644,7 @@ Addr VG_(am_get_advisory) ( MapRequest*  req,
          if (nsegments[i].kind == SkFree
              || nsegments[i].kind == SkFileC
              || nsegments[i].kind == SkAnonC
+             || nsegments[i].kind == SkShmC
              || nsegments[i].kind == SkResvn) {
             /* ok */
          } else {
@@ -1830,6 +1837,37 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
    return needDiscard;
 }
 
+/* Notifies aspacem that the client completed a shmat successfully.
+   The segment array is updated accordingly.  If the returned Bool is
+   True, the caller should immediately discard translations from the
+   specified address range. */
+
+Bool
+VG_(am_notify_client_shmat)( Addr a, SizeT len, UInt prot )
+{
+   NSegment seg;
+   Bool     needDiscard;
+
+   aspacem_assert(len > 0);
+   aspacem_assert(VG_IS_PAGE_ALIGNED(a));
+   aspacem_assert(VG_IS_PAGE_ALIGNED(len));
+
+   /* Discard is needed if any of the just-trashed range had T. */
+   needDiscard = any_Ts_in_range( a, len );
+
+   init_nsegment( &seg );
+   seg.kind   = SkShmC;
+   seg.start  = a;
+   seg.end    = a + len - 1;
+   seg.offset = 0;
+   seg.hasR   = toBool(prot & VKI_PROT_READ);
+   seg.hasW   = toBool(prot & VKI_PROT_WRITE);
+   seg.hasX   = toBool(prot & VKI_PROT_EXEC);
+   add_segment( &seg );
+   AM_SANITY_CHECK;
+   return needDiscard;
+}
+
 /* Notifies aspacem that an mprotect was completed successfully.  The
    segment array is updated accordingly.  Note, as with
    VG_(am_notify_munmap), it is not the job of this function to reject
@@ -1866,7 +1904,7 @@ Bool VG_(am_notify_mprotect)( Addr start, SizeT len, UInt prot )
    for (i = iLo; i <= iHi; i++) {
       /* Apply the permissions to all relevant segments. */
       switch (nsegments[i].kind) {
-         case SkAnonC: case SkAnonV: case SkFileC: case SkFileV:
+         case SkAnonC: case SkAnonV: case SkFileC: case SkFileV: case SkShmC:
             nsegments[i].hasR = newR;
             nsegments[i].hasW = newW;
             nsegments[i].hasX = newX;

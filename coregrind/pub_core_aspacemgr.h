@@ -155,6 +155,12 @@ extern Addr VG_(am_get_advisory_client_simple)
 extern Bool VG_(am_notify_client_mmap)
    ( Addr a, SizeT len, UInt prot, UInt flags, Int fd, Off64T offset );
 
+/* Notifies aspacem that the client completed a shmat successfully.
+   The segment array is updated accordingly.  If the returned Bool is
+   True, the caller should immediately discard translations from the
+   specified address range. */
+extern Bool VG_(am_notify_client_shmat)( Addr a, SizeT len, UInt prot );
+
 /* Notifies aspacem that an mprotect was completed successfully.  The
    segment array is updated accordingly.  Note, as with
    VG_(am_notify_munmap), it is not the job of this function to reject

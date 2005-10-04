@@ -43,6 +43,7 @@ typedef
       SkAnonV,  // anonymous mapping belonging to valgrind
       SkFileC,  // file mapping belonging to the client
       SkFileV,  // file mapping belonging to valgrind
+      SkShmC,   // shared memory segment belonging to the client
       SkResvn   // reservation
    }
    SegKind;
@@ -71,6 +72,12 @@ typedef
         // smode==SmFixed
         moveLo == moveHi == NotMovable, maxlen == 0
         // there is an associated file
+        // segment may have permissions
+
+     kind == SkShmC:
+        // smode==SmFixed
+        // there's no associated file:
+        dev==ino==foff = 0, fnidx == -1
         // segment may have permissions
 
      kind == SkResvn

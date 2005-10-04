@@ -1600,8 +1600,7 @@ ML_(generic_POST_sys_shmat) ( ThreadId tid,
          cope with the discrepancy, aspacem's sync checker omits the
          dev/ino correspondence check in cases where V does not know
          the dev/ino. */
-      d = VG_(am_notify_client_mmap)( res, VG_PGROUNDUP(segmentSize), 
-                                      prot, VKI_MAP_ANONYMOUS, 0,0);
+      d = VG_(am_notify_client_shmat)( res, VG_PGROUNDUP(segmentSize), prot );
 
       /* we don't distinguish whether it's read-only or
        * read-write -- it doesn't matter really. */
@@ -1630,7 +1629,11 @@ ML_(generic_POST_sys_shmdt) ( ThreadId tid, UWord res, UWord arg0 )
    if (s != NULL) {
       Addr  s_start = s->start;
       SizeT s_len   = s->end+1 - s->start;
-      Bool  d       = VG_(am_notify_munmap)(s_start, s_len);
+      Bool  d;
+
+      vg_assert(s->kind == SkShmC && s->start == arg0);
+
+      d = VG_(am_notify_munmap)(s_start, s_len);
       s = NULL; /* s is now invalid */
       VG_TRACK( die_mem_munmap, s_start, s_len );
       if (d)

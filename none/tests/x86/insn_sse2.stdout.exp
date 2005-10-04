@@ -207,6 +207,8 @@ pmuludq_3 ... ok
 pmuludq_4 ... ok
 por_1 ... ok
 por_2 ... ok
+psadbw_1 ... ok
+psadbw_2 ... ok
 pshufd_1 ... ok
 pshufd_2 ... ok
 pshufhw_1 ... ok

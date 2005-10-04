@@ -884,6 +884,7 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
    for (i = iLo; i <= iHi; i++) {
 
       Bool same, cmp_offsets, cmp_devino;
+      UInt seg_prot;
    
       /* compare the kernel's offering against ours. */
       same = nsegments[i].kind == SkAnonC
@@ -891,12 +892,18 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
              || nsegments[i].kind == SkFileC
              || nsegments[i].kind == SkFileV;
 
+      seg_prot = 0;
+      if (nsegments[i].hasR) seg_prot |= VKI_PROT_READ;
+      if (nsegments[i].hasW) seg_prot |= VKI_PROT_WRITE;
+      if (nsegments[i].hasX) seg_prot |= VKI_PROT_EXEC;
+
       cmp_offsets
          = nsegments[i].kind == SkFileC || nsegments[i].kind == SkFileV;
       cmp_devino
          = nsegments[i].dev != 0 || nsegments[i].ino != 0;
 
       same = same
+             && seg_prot == prot
              && (cmp_devino
                    ? (nsegments[i].dev == dev && nsegments[i].ino == ino)
                    : True)
@@ -920,9 +927,9 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
    VG_(debugLog)(0,"aspacem",
                    "sync_check_mapping_callback: segment mismatch: kernel's seg:\n");
    VG_(debugLog)(0,"aspacem", 
-                   "start=0x%llx end=0x%llx dev=%u ino=%u offset=%lld\n",
+                   "start=0x%llx end=0x%llx prot=%u dev=%u ino=%u offset=%lld\n",
                    (ULong)addr, ((ULong)addr) + ((ULong)len) - 1,
-                   dev, ino, offset );
+                   prot, dev, ino, offset );
    return;
 }
 

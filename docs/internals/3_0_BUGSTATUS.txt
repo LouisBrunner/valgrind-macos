@@ -132,7 +132,7 @@ FIXED-TRUNK:    TODO
 ----------------------------------------------------------------
 113642  New: valgrind crashes when trying to read debug information
 
-FIXED-TRUNK:    unconfirmed (Bryan suspects bug is invalid)
+FIXED-TRUNK:    4856
 
 ----------------------------------------------------------------
 113796  read() and write() do not work if buffer is in shared memory

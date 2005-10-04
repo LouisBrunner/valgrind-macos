@@ -134,6 +134,14 @@ FIXED-TRUNK:    TODO
 
 FIXED-TRUNK:    unconfirmed (Bryan suspects bug is invalid)
 
+----------------------------------------------------------------
+113796  read() and write() do not work if buffer is in shared memory
+
+Although the underlying cause is still present in the 3.0 code
+this bug isonly user visible in the 2.4 code base.
+
+FIXED-TRUNK:    4852
+
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.2                                ===

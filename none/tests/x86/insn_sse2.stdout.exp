@@ -186,6 +186,8 @@ pinsrw_13 ... ok
 pinsrw_14 ... ok
 pinsrw_15 ... ok
 pinsrw_16 ... ok
+pmaddwd_1 ... ok
+pmaddwd_2 ... ok
 pmaxsw_1 ... ok
 pmaxsw_2 ... ok
 pmaxub_1 ... ok

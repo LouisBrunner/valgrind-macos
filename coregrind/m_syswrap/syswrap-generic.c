@@ -2329,6 +2329,16 @@ PRE(sys_execve)
       return;
    }
 
+   /* If we're tracing the child, and the launcher name looks bogus
+      (possibly because launcher.c couldn't figure it out, see
+      comments therein) then we have no option but to fail. */
+   if (VG_(clo_trace_children) 
+       && (VG_(name_of_launcher) == NULL
+           || VG_(name_of_launcher)[0] != '/')) {
+      SET_STATUS_Failure( VKI_ECHILD ); /* "No child processes" */
+      return;
+   }
+
    /* After this point, we can't recover if the execve fails. */
    VG_(debugLog)(1, "syswrap", "Exec of %s\n", (Char*)ARG1);
 

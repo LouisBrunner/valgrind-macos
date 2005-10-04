@@ -99,8 +99,16 @@ int main(int argc, char** argv, char** envp)
       invokations of valgrind on child processes. */
    memset(launcher_name, 0, PATH_MAX+1);
    r = readlink("/proc/self/exe", launcher_name, PATH_MAX);
-   if (r == -1)
-      barf("readlink(\"/proc/self/exe\") failed.");
+   if (r == -1) {
+      /* If /proc/self/exe can't be followed, don't give up.  Instead
+         continue with an empty string for VALGRIND_LAUNCHER.  In the
+         sys_execve wrapper, this is tested, and if found to be empty,
+         fail the execve. */
+      fprintf(stderr, "valgrind: warning (non-fatal): "
+                      "readlink(\"/proc/self/exe\") failed.\n");
+      fprintf(stderr, "valgrind: continuing, however --trace-children=yes "
+                      "will not work.\n");
+   }
 
    /* tediously augment the env: VALGRIND_LAUNCHER=launcher_name */
    new_line = malloc(strlen(VALGRIND_LAUNCHER) + 1 

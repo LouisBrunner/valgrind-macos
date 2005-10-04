@@ -1087,6 +1087,7 @@ struct  vki_seminfo {
 #define	VKI_EINTR		 4	/* Interrupted system call */
 #define VKI_ENOEXEC              8      /* Exec format error */
 #define	VKI_EBADF		 9	/* Bad file number */
+#define VKI_ECHILD              10      /* No child processes */
 #define VKI_EAGAIN		11	/* Try again */
 #define VKI_EWOULDBLOCK		VKI_EAGAIN
 #define	VKI_ENOMEM		12	/* Out of memory */

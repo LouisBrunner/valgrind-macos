@@ -12,7 +12,7 @@ Note that an "ioctl" is just a special kind of system call, really; so
 there's not a lot of need to distinguish them (at least conceptually)
 in the discussion that follows.
 
-All this machinery is in coregrind/vg_syscalls.c.
+All this machinery is in coregrind/m_syswrap.
 
 
 What are syscall/ioctl wrappers?  What do they do?
@@ -101,7 +101,7 @@ following:
        grep NNN /usr/include/asm/unistd.h
 
     This should tell you something like  __NR_mysyscallname.
-    Copy this entry to coregrind/$(VG_PLATFORM)/vki_unistd.h.
+    Copy this entry to coregrind/vki_unistd-$(VG_PLATFORM).h.
 
 
 2.  Do 'man 2 mysyscallname' to get some idea of what the syscall
@@ -115,8 +115,9 @@ following:
 
 
 3.  Add a case to the already-huge collection of wrappers in 
-    coregrind/vg_syscalls.c.  For each in-memory parameter which is 
-    read or written by the syscall, do one of
+    the coregrind/m_syswrap/syswrap-*.c files. 
+    For each in-memory parameter which is read or written by
+    the syscall, do one of
     
       PRE_MEM_READ( ... )
       PRE_MEM_RASCIIZ( ... ) 
@@ -126,8 +127,13 @@ following:
     succeeds, issue suitable POST_MEM_WRITE( ... ) calls.
     (There's no need for POST_MEM_READ calls.)
 
-    Also, add it to the sys_info[] array; use SYSBA if it requires a
-    PRE() and POST() function, and SYSB_ if it only requires a PRE()
+    Also, add it to the syscall_table[] array; use one of GENX_, GENXY
+    LINX_, LINXY, PLAX_, PLAXY.
+    GEN* for generic syscalls (in syswrap-generic.c), LIN* for linux
+    specific ones (in syswrap-linux.c) and PLA* for the platform
+    dependant ones (in syswrap-$(PLATFORM)-linux.c).
+    The *XY variant if it requires a PRE() and POST() function, and
+    the *X_ variant if it only requires a PRE()
     function.  The 2nd arg of these macros indicate if the syscall
     could possibly block.
     

@@ -12907,27 +12907,27 @@ DisResult disInstr_AMD64_WRK (
 
       /* =-=-=-=-=-=-=-=-=- BT/BTS/BTR/BTC =-=-=-=-=-=-= */
 
-      /* All of these are possible at sizes 2, 4 and 8, but until size
-         2 and 4 test cases show up, only handle size 8. */
+      /* All of these are possible at sizes 2, 4 and 8, but until a
+         size 2 test case shows up, only handle sizes 4 and 8. */
 
       case 0xA3: /* BT Gv,Ev */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (sz != 8) goto decode_failure;
+         if (sz != 8 && sz != 4) goto decode_failure;
          delta = dis_bt_G_E ( pfx, sz, delta, BtOpNone );
          break;
       case 0xB3: /* BTR Gv,Ev */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (sz != 8) goto decode_failure;
+         if (sz != 8 && sz != 4) goto decode_failure;
          delta = dis_bt_G_E ( pfx, sz, delta, BtOpReset );
          break;
       case 0xAB: /* BTS Gv,Ev */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (sz != 8) goto decode_failure;
+         if (sz != 8 && sz != 4) goto decode_failure;
          delta = dis_bt_G_E ( pfx, sz, delta, BtOpSet );
          break;
       case 0xBB: /* BTC Gv,Ev */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (sz != 8) goto decode_failure;
+         if (sz != 8 && sz != 4) goto decode_failure;
          delta = dis_bt_G_E ( pfx, sz, delta, BtOpComp );
          break;
 

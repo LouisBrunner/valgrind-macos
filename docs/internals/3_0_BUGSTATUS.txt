@@ -110,9 +110,9 @@ FIXED-TRUNK:    unconfirmed
 FIXED-TRUNK:    vex:1405
 
 ----------------------------------------------------------------
-113015  vex amd64->IR: 0xE3 0x14 0x48 0x83
+113015  vex amd64->IR: 0xE3 0x14 0x48 0x83 (jrcxz)
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    vex:1413
 
 ----------------------------------------------------------------
 113126  Crash with binaries built with -gstabs+/-ggdb
@@ -185,7 +185,7 @@ FIXED-30BRANCH: TODO
 (more BT{,S,R,C} fun n games)
 Also 0xF 0xBB 0x10 0x44
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    vex:1414
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
@@ -199,7 +199,7 @@ FIXED-30BRANCH: TODO
 111748  vex amd64->IR: unhandled instruction bytes: fucom         
         (0xDD 0xE2 0xDF 0xE0)
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    vex:1415
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------

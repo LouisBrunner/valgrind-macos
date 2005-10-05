@@ -127,7 +127,7 @@ FIXED-TRUNK:    TODO
 ----------------------------------------------------------------
 113541  vex: the `impossible' happened: Grp5(x86) (alt encoding inc/dec)
         case 1
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    vex:1412
 
 ----------------------------------------------------------------
 113642  New: valgrind crashes when trying to read debug information
@@ -152,6 +152,7 @@ FIXED-TRUNK:    4852
 113851  vex x86->IR: unhandled instruction bytes: 0x66 0xF 0xF5 0xC7
         (pmaddwd)
 
+FIXED-TRUNK:    vex:1411, test in valgrind:4859
 
 
 ========================================================================

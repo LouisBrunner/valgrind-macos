@@ -223,8 +223,8 @@ FIXED-30BRANCH: TODO
 ----------------------------------------------------------------
 112031  iopl on AMD64 and README_MISSING_SYSCALL_OR_IOCTL update
 
-FIXED-TRUNK:    4826
-FIXED-30BRANCH: 4862
+FIXED-TRUNK:    4826, 4864
+FIXED-30BRANCH: 4862, 4865
 
 ----------------------------------------------------------------
 112152  code generation for Xin_MFence on x86 with SSE0 subarch

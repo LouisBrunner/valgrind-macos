@@ -11573,23 +11573,20 @@ DisResult disInstr_AMD64_WRK (
       DIP("j%s-8 0x%llx\n", name_AMD64Condcode(opc - 0x70), d64);
       break;
 
-//..    case 0xE3: /* JECXZ or perhaps JCXZ, depending on OSO ?  Intel
-//..                  manual says it depends on address size override,
-//..                  which doesn't sound right to me. */
-//..       vassert(sz==4); /* possibly also OK for sz==2 */
-//..       d32 = (((Addr32)guest_eip_bbstart)+delta+1) + getSDisp8(delta);
-//..       delta++;
-//..       ty = szToITy(sz);
-//..       stmt( IRStmt_Exit(
-//..                binop(mkSizedOp(ty,Iop_CmpEQ8),
-//..                      getIReg(sz,R_ECX),
-//..                      mkU(ty,0)),
-//..             Ijk_Boring,
-//..             IRConst_U32(d32)) 
-//..           );
-//.. 
-//..       DIP("j%sz 0x%x\n", nameIReg(sz, R_ECX), d32);
-//..       break;
+   case 0xE3: /* JRCXZ or perhaps JECXZ, depending on OSO ?  Intel
+                 manual says it depends on address size override,
+                 which doesn't sound right to me.  But the amd manual
+                 alsay says that, so I guess it is.  In which case 8
+                 is the only valid size. */
+      if (have66orF2orF3(pfx) || haveASO(pfx)) goto decode_failure;
+      d64 = (guest_RIP_bbstart+delta+1) + getSDisp8(delta); 
+      delta++;
+      stmt( IRStmt_Exit( binop(Iop_CmpEQ64, getIReg64(R_RCX), mkU64(0)),
+            Ijk_Boring,
+            IRConst_U64(d64)) 
+          );
+      DIP("jrcxz 0x%llx\n", d64);
+      break;
 
    case 0xE0: /* LOOPNE disp8: decrement count, jump if count != 0 && ZF==0 */
    case 0xE1: /* LOOPE  disp8: decrement count, jump if count != 0 && ZF==1 */

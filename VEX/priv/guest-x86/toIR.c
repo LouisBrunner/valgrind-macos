@@ -2751,16 +2751,22 @@ UInt dis_Grp5 ( UChar sorb, Int sz, Int delta, DisResult* dres )
    if (epartIsReg(modrm)) {
       assign(t1, getIReg(sz,eregOfRM(modrm)));
       switch (gregOfRM(modrm)) {
-//--          case 0: /* INC */
-//--             uInstr1(cb, INC, sz, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, INC);
-//--             uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, eregOfRM(modrm));
-//--             break;
-//--          case 1: /* DEC */
-//--             uInstr1(cb, DEC, sz, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, DEC);
-//--             uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, eregOfRM(modrm));
-//--             break;
+         case 0: /* INC */ 
+            vassert(sz == 2 || sz == 4);
+            t2 = newTemp(ty);
+            assign(t2, binop(mkSizedOp(ty,Iop_Add8),
+                             mkexpr(t1), mkU(ty,1)));
+            setFlags_INC_DEC( True, t2, ty );
+            putIReg(sz,eregOfRM(modrm),mkexpr(t2));
+            break;
+         case 1: /* DEC */ 
+            vassert(sz == 2 || sz == 4);
+            t2 = newTemp(ty);
+            assign(t2, binop(mkSizedOp(ty,Iop_Sub8),
+                             mkexpr(t1), mkU(ty,1)));
+            setFlags_INC_DEC( False, t2, ty );
+            putIReg(sz,eregOfRM(modrm),mkexpr(t2));
+            break;
          case 2: /* call Ev */
             vassert(sz == 4);
             t2 = newTemp(Ity_I32);

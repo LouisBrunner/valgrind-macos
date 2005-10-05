@@ -13,10 +13,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fpu_lazy_eflags.vgtest \
 	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
+	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \
 	int.stderr.exp int.stdout.exp int.vgtest \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	lahf.stdout.exp lahf.stderr.exp lahf.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
@@ -28,8 +30,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	badseg bt_everything bt_literal cmpxchg8b cpuid fpu_lazy_eflags \
 	fxtract \
-	getseg $(INSN_TESTS) \
-	looper int pushpopseg sbbmisc \
+	getseg incdec_alt $(INSN_TESTS) \
+	lahf looper int pushpopseg sbbmisc \
 	seg_override sigcontext smc1 yield
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow \

@@ -156,6 +156,14 @@ FIXED-TRUNK:    vex:1411, test in valgrind:4859
 ========================================================================
 
 ----------------------------------------------------------------
+102202 valgrind crashes when realloc'ing until out of memory
+109487 ==
+110536 ==
+
+FIXED-TRUNK:    4875
+FIXED-30BRANCH: 4876
+
+----------------------------------------------------------------
 110209 --show-emwarns misses some
 
 Tom says: The math/test-fenv.c file in the glibc source is the code in

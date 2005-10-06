@@ -490,17 +490,24 @@ static void show_Addr_concisely ( /*OUT*/HChar* buf, Addr aA )
 static void __attribute__ ((unused))
             show_nsegment_full ( Int logLevel, NSegment* seg )
 {
+   HChar* name = "(none)";
+   if (seg->fnIdx >= 0 && seg->fnIdx < segnames_used
+                       && segnames[seg->fnIdx].inUse
+                       && segnames[seg->fnIdx].fname[0] != 0)
+      name = segnames[seg->fnIdx].fname;
+
    VG_(debugLog)(logLevel, "aspacem",
       "NSegment{%s, start=0x%llx, end=0x%llx, smode=%s, dev=%llu, "
       "ino=%llu, offset=%llu, fnIdx=%d, hasR=%d, hasW=%d, hasX=%d, "
-      "hasT=%d, mark=%d}\n",
+      "hasT=%d, mark=%d, name=\"%s\"}\n",
       show_SegKind(seg->kind),
       (ULong)seg->start,
       (ULong)seg->end,
       show_ShrinkMode(seg->smode),
       (ULong)seg->dev, (ULong)seg->ino, (ULong)seg->offset, seg->fnIdx,
       (Int)seg->hasR, (Int)seg->hasW, (Int)seg->hasX, (Int)seg->hasT,
-      (Int)seg->mark
+      (Int)seg->mark, 
+      name
    );
 }
 
@@ -904,8 +911,15 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
 
       cmp_offsets
          = nsegments[i].kind == SkFileC || nsegments[i].kind == SkFileV;
+
       cmp_devino
          = nsegments[i].dev != 0 || nsegments[i].ino != 0;
+
+      /* Consider other reasons to not compare dev/inode */
+      /* bproc does some godawful hack on /dev/zero at process
+         migration, which changes the name of it, and its dev & ino */
+      if (filename && 0==VG_(strcmp)(filename, "/dev/zero (deleted)"))
+         cmp_devino = False;
 
       same = same
              && seg_prot == prot
@@ -930,11 +944,14 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
 
   show_kern_seg:
    VG_(debugLog)(0,"aspacem",
-                   "sync_check_mapping_callback: segment mismatch: kernel's seg:\n");
+                   "sync_check_mapping_callback: "
+                   "segment mismatch: kernel's seg:\n");
    VG_(debugLog)(0,"aspacem", 
-                   "start=0x%llx end=0x%llx prot=%u dev=%u ino=%u offset=%lld\n",
+                   "start=0x%llx end=0x%llx prot=%u "
+                   "dev=%u ino=%u offset=%lld name=\"%s\"\n",
                    (ULong)addr, ((ULong)addr) + ((ULong)len) - 1,
-                   prot, dev, ino, offset );
+                   prot, dev, ino, offset, 
+                   filename ? (HChar*)filename : "(none)" );
    return;
 }
 

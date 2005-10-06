@@ -390,23 +390,26 @@ void* MAC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
       /* Get new memory */
       Addr a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
 
-      /* First half kept and copied, second half new, red zones as normal */
-      MAC_(ban_mem_heap) ( a_new-MAC_MALLOC_REDZONE_SZB, MAC_MALLOC_REDZONE_SZB );
-      MAC_(copy_mem_heap)( (Addr)p_old, a_new, mc->size );
-      MAC_(new_mem_heap) ( a_new+mc->size, new_size-mc->size, /*init'd*/False );
-      MAC_(ban_mem_heap) ( a_new+new_size, MAC_MALLOC_REDZONE_SZB );
+      if (a_new) {
+         /* First half kept and copied, second half new, red zones as normal */
+         MAC_(ban_mem_heap) ( a_new-MAC_MALLOC_REDZONE_SZB, MAC_MALLOC_REDZONE_SZB );
+         MAC_(copy_mem_heap)( (Addr)p_old, a_new, mc->size );
+         MAC_(new_mem_heap) ( a_new+mc->size, new_size-mc->size, /*init'd*/False );
+         MAC_(ban_mem_heap) ( a_new+new_size, MAC_MALLOC_REDZONE_SZB );
 
-      /* Copy from old to new */
-      VG_(memcpy)((void*)a_new, p_old, mc->size);
+         /* Copy from old to new */
+         VG_(memcpy)((void*)a_new, p_old, mc->size);
 
-      /* Free old memory */
-      /* Nb: we have to allocate a new MAC_Chunk for the new memory rather
-         than recycling the old one, so that any erroneous accesses to the
-         old memory are reported. */
-      die_and_free_mem ( tid, mc, MAC_MALLOC_REDZONE_SZB );
+         /* Free old memory */
+         /* Nb: we have to allocate a new MAC_Chunk for the new memory rather
+            than recycling the old one, so that any erroneous accesses to the
+            old memory are reported. */
+         die_and_free_mem ( tid, mc, MAC_MALLOC_REDZONE_SZB );
 
-      // Allocate a new chunk.
-      mc = create_MAC_Chunk( tid, a_new, new_size, MAC_AllocMalloc );
+         // Allocate a new chunk.
+         mc = create_MAC_Chunk( tid, a_new, new_size, MAC_AllocMalloc );
+      }
+
       p_new = (void*)a_new;
    }  
 

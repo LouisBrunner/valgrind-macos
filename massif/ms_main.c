@@ -802,22 +802,26 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
    } else {
       // new size is bigger;  make new block, copy shared contents, free old
       p_new = VG_(cli_malloc)(VG_(clo_alignment), new_size);
-      VG_(memcpy)(p_new, p_old, old_size);
-      VG_(cli_free)(p_old);
+      if (p_new) {
+         VG_(memcpy)(p_new, p_old, old_size);
+         VG_(cli_free)(p_old);
+      }
    }
-   
-   old_where = hc->where;
-   new_where = get_XCon( tid, /*custom_malloc*/False);
 
-   // Update HP_Chunk
-   hc->data  = (Addr)p_new;
-   hc->size  = new_size;
-   hc->where = new_where;
+   if (p_new) {
+      old_where = hc->where;
+      new_where = get_XCon( tid, /*custom_malloc*/False);
 
-   // Update XPt curr_space fields
-   if (clo_heap) {
-      if (0 != old_size) update_XCon(old_where, -old_size);
-      if (0 != new_size) update_XCon(new_where,  new_size);
+      // Update HP_Chunk
+      hc->data  = (Addr)p_new;
+      hc->size  = new_size;
+      hc->where = new_where;
+
+      // Update XPt curr_space fields
+      if (clo_heap) {
+         if (0 != old_size) update_XCon(old_where, -old_size);
+         if (0 != new_size) update_XCon(new_where,  new_size);
+      }
    }
 
    // Now insert the new hc (with a possibly new 'data' field) into

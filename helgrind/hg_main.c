@@ -1977,7 +1977,6 @@ static void* hg_realloc ( ThreadId tid, void* p, SizeT new_size )
 {
    HG_Chunk  *hc;
    HG_Chunk **prev_chunks_next_ptr;
-   Int        i;
 
    /* First try and find the block. */
    hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UWord)p,
@@ -2005,22 +2004,23 @@ static void* hg_realloc ( ThreadId tid, void* p, SizeT new_size )
       /* Get new memory */
       p_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
 
-      /* First half kept and copied, second half new */
-      copy_address_range_state( (Addr)p, p_new, hc->size );
-      hg_new_mem_heap ( p_new+hc->size, new_size-hc->size,
-                        /*inited*/False );
+      if (p_new) {
+         /* First half kept and copied, second half new */
+         copy_address_range_state( (Addr)p, p_new, hc->size );
+         hg_new_mem_heap ( p_new+hc->size, new_size-hc->size,
+                           /*inited*/False );
 
-      /* Copy from old to new */
-      for (i = 0; i < hc->size; i++)
-         ((UChar*)p_new)[i] = ((UChar*)p)[i];
+         /* Copy from old to new */
+         VG_(memcpy)((void *)p_new, p, hc->size);
 
-      /* Free old memory */
-      die_and_free_mem ( tid, hc, prev_chunks_next_ptr );
+         /* Free old memory */
+         die_and_free_mem ( tid, hc, prev_chunks_next_ptr );
 
-      /* this has to be after die_and_free_mem, otherwise the
-         former succeeds in shorting out the new block, not the
-         old, in the case when both are on the same list.  */
-      add_HG_Chunk ( tid, p_new, new_size );
+         /* this has to be after die_and_free_mem, otherwise the
+            former succeeds in shorting out the new block, not the
+            old, in the case when both are on the same list.  */
+         add_HG_Chunk ( tid, p_new, new_size );
+      }
 
       return (void*)p_new;
    }  

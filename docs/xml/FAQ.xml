@@ -183,19 +183,34 @@
 
 <qandaentry id="faq.java">
  <question>
-  <para>I tried running a Java program under Valgrind but Valgrind aborted.
-    Does Valgrind handle Java programs, dynamically generated code, etc?
+  <para>I tried running a Java program (or another program that uses a
+    just-in-time compiler) under Valgrind but something went wrong.
+    Does Valgrind handle such programs?
     </para>
  </question>
  <answer>
-  <para>Valgrind handles dynamically generated code without a problem.
-    In theory, Valgrind can run any Java program just fine, even those that
-    use JNI and are partially implemented in other languages like C and C++.
-    In practice, Java implementations tend to do nasty things that most
-    programs do not, and Valgrind sometimes falls over these corner
-    cases.</para>
-  <para>If your Java programs do not run under Valgrind, please file a
-    bug report and hopefully we'll be able to fix the problem.</para>
+  <para>Valgrind can handle dynamically generated code, so long as none
+    of the generated code is later overwritten by other generated code.
+    If this happens, though, things will go wrong as Valgrind will continue
+    running its translations of the old code (this is true on x86 and AMD64,
+    on PPC32 there are explicit cache flush instructions which Valgrind
+    detects).  You should try running with
+    <computeroutput>--smc-check=all</computeroutput> in this case;  Valgrind
+    will run much more slowly, but should detect the use of the out-of-date
+    code.</para>
+  <para>Alternativaly, if you have the source code to the JIT compiler you
+    can insert calls to the
+    <computeroutput>VALGRIND_DISCARD_TRANSLATIONS</computeroutput> client
+    request to mark out-of-date code, saving you from using
+    <computeroutput>--smc-check=all</computeroutput>.</para>
+  <para>Apart from this, in theory Valgrind can run any Java program just
+    fine, even those that use JNI and are partially implemented in other
+    languages like C and C++.  In practice, Java implementations tend to do
+    nasty things that most programs do not, and Valgrind sometimes falls
+    over these corner cases.</para>
+  <para>If your Java programs do not run under Valgrind, even with
+    <computeroutput>--smc-check=all</computeroutput>, please file a bug
+    report and hopefully we'll be able to fix the problem.</para>
  </answer>
 </qandaentry>
 

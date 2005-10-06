@@ -79,12 +79,6 @@ FIXED-TRUNK:    requires policy decision
 FIXED-TRUNK:    unconfirmed (insufficient info from reporter)
 
 ----------------------------------------------------------------
-112432  vex amd64->IR: unhandled instruction bytes: 0x4F 0x62 0x6A 0x65
-        (bound, possibly invalid bug)
-
-FIXED-TRUNK:    TODO
-
-----------------------------------------------------------------
 112538  memalign crash
 
 FIXED-TRUNK:    uninvestigated

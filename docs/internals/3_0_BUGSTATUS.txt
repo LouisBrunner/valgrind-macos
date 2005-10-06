@@ -13,6 +13,9 @@ nb: "n-i-bz" == "not in Bugzilla"
 111901  cross-platform run of cachegrind fails on opteron
 113468  (vgPlain_mprotect_range): Assertion 'r != -1' failed.
  92071  Reading debugging info uses too much memory
+109744  memcheck loses track of mmap from direct ld-linux.so.2
+110183  tail of page with _end
+ 82301  FV memory layout too rigid
 
 Will fix in 3.1.  Long delay seems to be caused by amd64-Gentoo kernel
 not liking large mmap/munmap requests.  Other bugs also look like
@@ -29,13 +32,6 @@ FIXED-TRUNK:    4636 (needs verification)
 109345 ppc32 ptrace patch available    should be applied
 
 FIXED-TRUNK:    TODO
-
-----------------------------------------------------------------
-110183  tail of page with _end
-
-Could be a problem for glibc developers.  Consider fixing.
-
-FIXED-TRUNK:    TODO?
 
 ----------------------------------------------------------------
 110204 fmemopen false +ve

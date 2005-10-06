@@ -79,11 +79,6 @@ FIXED-TRUNK:    requires policy decision
 FIXED-TRUNK:    unconfirmed (insufficient info from reporter)
 
 ----------------------------------------------------------------
-112538  memalign crash
-
-FIXED-TRUNK:    uninvestigated
-
-----------------------------------------------------------------
 112670  Cachegrind: cg_main.c:486 (handleOneStatement ...
 
 FIXED-TRUNK:    the canonical cachegrind-doesn-like-multi-mem bug
@@ -245,6 +240,12 @@ FIXED-30BRANCH: TODO
 
 FIXED-TRUNK:    vex:1408
 FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+112538  memalign crash
+
+FIXED-TRUNK:    4879
+FIXED-30BRANCH: 4880
 
 ----------------------------------------------------------------
 113190  Broken links in docs/html/

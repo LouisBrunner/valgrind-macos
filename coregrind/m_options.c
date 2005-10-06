@@ -77,6 +77,7 @@ Bool   VG_(clo_show_emwarns)   = False;
 Int    VG_(clo_max_stackframe) = 2000000;
 Bool   VG_(clo_wait_for_gdb)   = False;
 VgSmc  VG_(clo_smc_check)      = Vg_SmcStack;
+HChar* VG_(clo_kernel_variant) = NULL;
 
 
 /*--------------------------------------------------------------------*/

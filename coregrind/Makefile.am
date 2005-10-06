@@ -86,6 +86,7 @@ noinst_HEADERS = \
 	m_syswrap/priv_types_n_macros.h \
 	m_syswrap/priv_syswrap-generic.h \
 	m_syswrap/priv_syswrap-linux.h \
+	m_syswrap/priv_syswrap-linux-variants.h \
 	m_syswrap/priv_syswrap-main.h
 
 BUILT_SOURCES = 
@@ -150,6 +151,7 @@ libcoregrind_a_SOURCES = \
 	m_syswrap/syscall-@VG_PLATFORM@.S \
 	m_syswrap/syswrap-generic.c \
 	m_syswrap/syswrap-@VG_OS@.c \
+	m_syswrap/syswrap-@VG_OS@-variants.c \
 	m_syswrap/syswrap-@VG_PLATFORM@.c \
 	m_syswrap/syswrap-main.c
 

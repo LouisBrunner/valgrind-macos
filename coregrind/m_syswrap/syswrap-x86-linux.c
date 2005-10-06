@@ -55,6 +55,7 @@
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"    /* for decls of generic wrappers */
 #include "priv_syswrap-linux.h"      /* for decls of linux-ish wrappers */
+#include "priv_syswrap-linux-variants.h" /* decls of linux variant wrappers */
 #include "priv_syswrap-main.h"
 
 #include "vki_unistd.h"              /* for the __NR_* constants */
@@ -976,6 +977,7 @@ DECL_TEMPLATE(x86_linux, sys_get_thread_area);
 DECL_TEMPLATE(x86_linux, sys_ptrace);
 DECL_TEMPLATE(x86_linux, sys_sigaction);
 DECL_TEMPLATE(x86_linux, old_select);
+DECL_TEMPLATE(x86_linux, sys_syscall223);
 
 PRE(old_select)
 {
@@ -1876,6 +1878,41 @@ POST(sys_sigaction)
       POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
 }
 
+
+/* ---------------------------------------------------------------
+   PRE/POST wrappers for x86/Linux-variant specific syscalls
+   ------------------------------------------------------------ */
+
+PRE(sys_syscall223)
+{
+   Int err;
+
+   /* 223 is used by sys_bproc.  If we're not on a declared bproc
+      variant, fail in the usual way. */
+
+   if (!VG_(strstr)(VG_(clo_kernel_variant), "bproc")) {
+      PRINT("non-existent syscall! (syscall 223)");
+      PRE_REG_READ0(long, "ni_syscall(223)");
+      SET_STATUS_Failure( VKI_ENOSYS );
+      return;
+   }
+
+   err = ML_(linux_variant_PRE_sys_bproc)( ARG1, ARG2, ARG3, 
+                                           ARG4, ARG5, ARG6 );
+   if (err) {
+      SET_STATUS_Failure( err );
+      return;
+   }
+   /* Let it go through. */
+   *flags |= SfMayBlock; /* who knows?  play safe. */
+}
+
+POST(sys_syscall223)
+{
+   ML_(linux_variant_POST_sys_bproc)( ARG1, ARG2, ARG3, 
+                                      ARG4, ARG5, ARG6 );
+}
+
 #undef PRE
 #undef POST
 
@@ -2168,7 +2205,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_getdents64,        sys_getdents64),     // 220
    GENXY(__NR_fcntl64,           sys_fcntl64),        // 221
    GENX_(222,                    sys_ni_syscall),     // 222
-   GENX_(223,                    sys_ni_syscall),     // 223
+   PLAXY(223,                    sys_syscall223),     // 223 // sys_bproc?
    LINX_(__NR_gettid,            sys_gettid),         // 224
 
 //zz    //   (__NR_readahead,         sys_readahead),      // 225 */(Linux?)

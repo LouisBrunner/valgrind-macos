@@ -1099,6 +1099,8 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else if (VG_CLO_STREQ(arg, "--smc-check=all"))
          VG_(clo_smc_check) = Vg_SmcAll;
 
+      else VG_STR_CLO (arg, "--kernel-variant",   VG_(clo_kernel_variant))
+
       else VG_BNUM_CLO(arg, "--vex-iropt-verbosity",
                        VG_(clo_vex_control).iropt_verbosity, 0, 10)
       else VG_BNUM_CLO(arg, "--vex-iropt-level",

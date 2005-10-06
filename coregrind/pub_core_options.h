@@ -163,8 +163,13 @@ typedef
    } 
    VgSmc;
 
+/* Describe extent to which self-modifying-code should be
+   auto-detected. */
 extern VgSmc VG_(clo_smc_check);
 
+/* String containing comma-separated names of minor kernel variants,
+   so they can be properly handled by m_syswrap. */
+extern HChar* VG_(clo_kernel_variant);
 
 #endif   // __PUB_CORE_OPTIONS_H
 

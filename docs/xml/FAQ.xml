@@ -181,6 +181,24 @@
  </answer>
 </qandaentry>
 
+<qandaentry id="faq.java">
+ <question>
+  <para>I tried running a Java program under Valgrind but Valgrind aborted.
+    Does Valgrind handle Java programs, dynamically generated code, etc?
+    </para>
+ </question>
+ <answer>
+  <para>Valgrind handles dynamically generated code without a problem.
+    In theory, Valgrind can run any Java program just fine, even those that
+    use JNI and are partially implemented in other languages like C and C++.
+    In practice, Java implementations tend to do nasty things that most
+    programs do not, and Valgrind sometimes falls over these corner
+    cases.</para>
+  <para>If your Java programs do not run under Valgrind, please file a
+    bug report and hopefully we'll be able to fix the problem.</para>
+ </answer>
+</qandaentry>
+
 </qandaset>
 </sect1>
 

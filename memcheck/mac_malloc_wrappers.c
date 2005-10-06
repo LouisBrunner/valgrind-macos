@@ -421,25 +421,27 @@ void* MAC_(realloc) ( ThreadId tid, void* p, SizeT new_size )
       /* Get new memory */
       p_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
 
-      /* First half kept and copied, second half new, 
-         red zones as normal */
-      MAC_(ban_mem_heap) ( p_new-MAC_MALLOC_REDZONE_SZB, MAC_MALLOC_REDZONE_SZB );
-      MAC_(copy_mem_heap)( (Addr)p, p_new, mc->size );
-      MAC_(new_mem_heap) ( p_new+mc->size, new_size-mc->size, /*inited*/False );
-      MAC_(ban_mem_heap) ( p_new+new_size, MAC_MALLOC_REDZONE_SZB );
+      if (p_new) {
+         /* First half kept and copied, second half new, 
+            red zones as normal */
+         MAC_(ban_mem_heap) ( p_new-MAC_MALLOC_REDZONE_SZB, MAC_MALLOC_REDZONE_SZB );
+         MAC_(copy_mem_heap)( (Addr)p, p_new, mc->size );
+         MAC_(new_mem_heap) ( p_new+mc->size, new_size-mc->size, /*inited*/False );
+         MAC_(ban_mem_heap) ( p_new+new_size, MAC_MALLOC_REDZONE_SZB );
 
-      /* Copy from old to new */
-      for (i = 0; i < mc->size; i++)
-         ((UChar*)p_new)[i] = ((UChar*)p)[i];
+         /* Copy from old to new */
+         for (i = 0; i < mc->size; i++)
+            ((UChar*)p_new)[i] = ((UChar*)p)[i];
 
-      /* Free old memory */
-      die_and_free_mem ( tid, mc, prev_chunks_next_ptr, MAC_MALLOC_REDZONE_SZB );
+         /* Free old memory */
+         die_and_free_mem ( tid, mc, prev_chunks_next_ptr, MAC_MALLOC_REDZONE_SZB );
 
-      /* this has to be after die_and_free_mem, otherwise the
-         former succeeds in shorting out the new block, not the
-         old, in the case when both are on the same list.  */
-      add_MAC_Chunk ( tid, p_new, new_size, 
-                           MAC_AllocMalloc, MAC_(malloc_list) );
+         /* this has to be after die_and_free_mem, otherwise the
+            former succeeds in shorting out the new block, not the
+            old, in the case when both are on the same list.  */
+         add_MAC_Chunk ( tid, p_new, new_size, 
+                         MAC_AllocMalloc, MAC_(malloc_list) );
+      }
 
       VGP_POPCC(VgpCliMalloc);
       return (void*)p_new;

@@ -823,24 +823,28 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
       // new size is bigger;  make new block, copy shared contents, free old
       p_new = VG_(cli_malloc)(VG_(clo_alignment), new_size);
 
-      for (i = 0; i < old_size; i++)
-         ((UChar*)p_new)[i] = ((UChar*)p_old)[i];
+      if (p_new) {
+         for (i = 0; i < old_size; i++)
+            ((UChar*)p_new)[i] = ((UChar*)p_old)[i];
 
-      VG_(cli_free)(p_old);
+         VG_(cli_free)(p_old);
+      }
    }
-   
-   old_where = hc->where;
-   new_where = get_XCon( tid, /*custom_malloc*/False);
 
-   // Update HP_Chunk
-   hc->data  = (Addr)p_new;
-   hc->size  = new_size;
-   hc->where = new_where;
+   if (p_new) {
+      old_where = hc->where;
+      new_where = get_XCon( tid, /*custom_malloc*/False);
 
-   // Update XPt curr_space fields
-   if (clo_heap) {
-      if (0 != old_size) update_XCon(old_where, -old_size);
-      if (0 != new_size) update_XCon(new_where,  new_size);
+      // Update HP_Chunk
+      hc->data  = (Addr)p_new;
+      hc->size  = new_size;
+      hc->where = new_where;
+
+      // Update XPt curr_space fields
+      if (clo_heap) {
+         if (0 != old_size) update_XCon(old_where, -old_size);
+         if (0 != new_size) update_XCon(new_where,  new_size);
+      }
    }
 
    // If block has moved, have to remove and reinsert in the malloclist

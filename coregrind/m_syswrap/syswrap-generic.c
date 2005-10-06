@@ -952,7 +952,10 @@ static Addr do_brk ( Addr newbrk )
    }
 
    /* otherwise we're expanding the brk segment. */
-   aseg = VG_(am_find_nsegment)( VG_(brk_base) );
+   if (VG_(brk_limit) > VG_(brk_base))
+      aseg = VG_(am_find_nsegment)( VG_(brk_limit)-1 );
+   else
+      aseg = VG_(am_find_nsegment)( VG_(brk_limit) );
    rseg = VG_(am_next_nsegment)( aseg, True/*forwards*/ );
 
    /* These should be assured by setup_client_dataseg in m_main. */

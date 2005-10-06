@@ -1200,6 +1200,10 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
    base_p = VG_(arena_malloc) ( aid, base_pszB_req );
    a->bytes_on_loan = saved_bytes_on_loan;
 
+   /* Give up if we couldn't allocate enough space */
+   if (base_p == 0)
+      return 0;
+
    /* Block ptr for the block we are going to split. */
    base_b = get_payload_block ( a, base_p );
 

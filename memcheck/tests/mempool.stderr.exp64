@@ -35,7 +35,7 @@ Invalid write of size 1
    by 0x........: main (mempool.c:148)
 
 
-100048 (32 direct, 100016 indirect) bytes in 1 blocks are definitely lost in loss record 2 of 3
+100,048 (32 direct, 100,016 indirect) bytes in 1 blocks are definitely lost in loss record 2 of 3
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: make_pool (mempool.c:37)
    by 0x........: test (mempool.c:111)

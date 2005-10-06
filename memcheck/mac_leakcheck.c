@@ -144,8 +144,8 @@ typedef
       /* Their reachability. */
       Reachedness  loss_mode;
       /* Number of blocks and total # bytes involved. */
-      UInt         total_bytes;
-      UInt	   indirect_bytes;
+      SizeT        total_bytes;
+      SizeT        indirect_bytes;
       UInt         num_blocks;
    }
    LossRecord;
@@ -281,8 +281,8 @@ void MAC_(pp_LeakError)(void* vextra)
 
    if (l->indirect_bytes) {
       VG_(message)(Vg_UserMsg, 
-         "%s%d (%d direct, %d indirect) bytes in %d blocks"
-         " are %s in loss record %d of %d%s",
+         "%s%,lu (%,lu direct, %,lu indirect) bytes in %,u blocks"
+         " are %s in loss record %,u of %,u%s",
          xpre,
          l->total_bytes + l->indirect_bytes, 
          l->total_bytes, l->indirect_bytes, l->num_blocks,
@@ -290,15 +290,16 @@ void MAC_(pp_LeakError)(void* vextra)
          xpost
       );
       if (VG_(clo_xml)) {
-         VG_(message)(Vg_UserMsg, "  <leakedbytes>%d</leakedbytes>", 
+         // Nb: don't put commas in these XML numbers 
+         VG_(message)(Vg_UserMsg, "  <leakedbytes>%lu</leakedbytes>", 
                                   l->total_bytes + l->indirect_bytes);
-         VG_(message)(Vg_UserMsg, "  <leakedblocks>%d</leakedblocks>", 
+         VG_(message)(Vg_UserMsg, "  <leakedblocks>%u</leakedblocks>", 
                                   l->num_blocks);
       }
    } else {
       VG_(message)(
          Vg_UserMsg, 
-         "%s%d bytes in %d blocks are %s in loss record %d of %d%s",
+         "%s%,lu bytes in %,u blocks are %s in loss record %,u of %,u%s",
          xpre,
          l->total_bytes, l->num_blocks,
          loss, extra->n_this_record, extra->n_total_records,
@@ -314,11 +315,11 @@ void MAC_(pp_LeakError)(void* vextra)
    VG_(pp_ExeContext)(l->allocated_at);
 }
 
-Int MAC_(bytes_leaked)     = 0;
-Int MAC_(bytes_indirect)   = 0;
-Int MAC_(bytes_dubious)    = 0;
-Int MAC_(bytes_reachable)  = 0;
-Int MAC_(bytes_suppressed) = 0;
+SizeT MAC_(bytes_leaked)     = 0;
+SizeT MAC_(bytes_indirect)   = 0;
+SizeT MAC_(bytes_dubious)    = 0;
+SizeT MAC_(bytes_reachable)  = 0;
+SizeT MAC_(bytes_suppressed) = 0;
 
 static Int lc_compar(void* n1, void* n2)
 {
@@ -497,11 +498,11 @@ static void lc_do_leakcheck(Int clique)
    }
 }
 
-static Int    blocks_leaked;
-static Int    blocks_indirect;
-static Int    blocks_dubious;
-static Int    blocks_reachable;
-static Int    blocks_suppressed;
+static SizeT blocks_leaked;
+static SizeT blocks_indirect;
+static SizeT blocks_dubious;
+static SizeT blocks_reachable;
+static SizeT blocks_suppressed;
 
 static void full_report(ThreadId tid)
 {
@@ -577,7 +578,7 @@ static void full_report(ThreadId tid)
    for (i = 0; i < n_lossrecords; i++) {
       Bool        print_record;
       LossRecord* p_min = NULL;
-      UInt        n_min = 0xFFFFFFFF;
+      SizeT       n_min = ~(0x0L);
       for (p = errlist; p != NULL; p = p->next) {
          if (p->num_blocks > 0 && p->total_bytes < n_min) {
             n_min = p->total_bytes + p->indirect_bytes;
@@ -715,7 +716,7 @@ void MAC_(do_detect_memory_leaks) (
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
       VG_(message)(Vg_UserMsg, 
-                   "searching for pointers to %d not-freed blocks.", 
+                   "searching for pointers to %,d not-freed blocks.", 
                    lc_n_shadows );
 
    lc_min_mallocd_addr = lc_shadows[0]->data;
@@ -773,7 +774,7 @@ void MAC_(do_detect_memory_leaks) (
    lc_do_leakcheck(-1);
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
-      VG_(message)(Vg_UserMsg, "checked %d bytes.", lc_scanned);
+      VG_(message)(Vg_UserMsg, "checked %,lu bytes.", lc_scanned);
 
    blocks_leaked     = MAC_(bytes_leaked)     = 0;
    blocks_indirect   = MAC_(bytes_indirect)   = 0;
@@ -789,16 +790,16 @@ void MAC_(do_detect_memory_leaks) (
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "LEAK SUMMARY:");
-      VG_(message)(Vg_UserMsg, "   definitely lost: %d bytes in %d blocks.", 
+      VG_(message)(Vg_UserMsg, "   definitely lost: %,lu bytes in %,lu blocks.",
                                MAC_(bytes_leaked), blocks_leaked );
       if (blocks_indirect > 0)
-	 VG_(message)(Vg_UserMsg, "   indirectly lost: %d bytes in %d blocks.", 
+	 VG_(message)(Vg_UserMsg, "   indirectly lost: %,lu bytes in %,lu blocks.",
 		      MAC_(bytes_indirect), blocks_indirect );
-      VG_(message)(Vg_UserMsg, "     possibly lost: %d bytes in %d blocks.", 
+      VG_(message)(Vg_UserMsg, "     possibly lost: %,lu bytes in %,lu blocks.",
                                MAC_(bytes_dubious), blocks_dubious );
-      VG_(message)(Vg_UserMsg, "   still reachable: %d bytes in %d blocks.", 
+      VG_(message)(Vg_UserMsg, "   still reachable: %,lu bytes in %,lu blocks.",
                                MAC_(bytes_reachable), blocks_reachable );
-      VG_(message)(Vg_UserMsg, "        suppressed: %d bytes in %d blocks.", 
+      VG_(message)(Vg_UserMsg, "        suppressed: %,lu bytes in %,lu blocks.",
                                MAC_(bytes_suppressed), blocks_suppressed );
       if (mode == LC_Summary && blocks_leaked > 0)
 	 VG_(message)(Vg_UserMsg,

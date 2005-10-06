@@ -5,24 +5,24 @@ checked ... bytes.
 LEAK SUMMARY:
    definitely lost: 0 bytes in 0 blocks.
      possibly lost: 0 bytes in 0 blocks.
-   still reachable: 1048576 bytes in 1 blocks.
+   still reachable: 1,048,576 bytes in 1 blocks.
         suppressed: 0 bytes in 0 blocks.
 Reachable blocks (those to which a pointer was found) are not shown.
 To see them, rerun with: --show-reachable=yes
 
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 1048576 bytes in 1 blocks.
-malloc/free: 1 allocs, 0 frees, 1048576 bytes allocated.
+malloc/free: in use at exit: 1,048,576 bytes in 1 blocks.
+malloc/free: 1 allocs, 0 frees, 1,048,576 bytes allocated.
 For counts of detected errors, rerun with: -v
 searching for pointers to 1 not-freed blocks.
 checked ... bytes.
 
-1048576 bytes in 1 blocks are definitely lost in loss record 1 of 1
+1,048,576 bytes in 1 blocks are definitely lost in loss record 1 of 1
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (pointer-trace.c:24)
 
 LEAK SUMMARY:
-   definitely lost: 1048576 bytes in 1 blocks.
+   definitely lost: 1,048,576 bytes in 1 blocks.
      possibly lost: 0 bytes in 0 blocks.
    still reachable: 0 bytes in 0 blocks.
         suppressed: 0 bytes in 0 blocks.

@@ -113,8 +113,8 @@ static void scheduler_sanity ( ThreadId tid );
 static void mostly_clear_thread_record ( ThreadId tid );
 
 /* Stats. */
-static UInt n_scheduling_events_MINOR = 0;
-static UInt n_scheduling_events_MAJOR = 0;
+static ULong n_scheduling_events_MINOR = 0;
+static ULong n_scheduling_events_MAJOR = 0;
 
 /* Sanity checking counts. */
 static UInt sanity_fast_count = 0;
@@ -123,9 +123,9 @@ static UInt sanity_slow_count = 0;
 void VG_(print_scheduler_stats)(void)
 {
    VG_(message)(Vg_DebugMsg,
-      "scheduler: %llu jumps (bb entries).", bbs_done );
+      "scheduler: %,llu jumps (bb entries).", bbs_done );
    VG_(message)(Vg_DebugMsg,
-      "scheduler: %d/%d major/minor sched events.", 
+      "scheduler: %,llu/%,llu major/minor sched events.", 
       n_scheduling_events_MAJOR, n_scheduling_events_MINOR);
    VG_(message)(Vg_DebugMsg, 
                 "   sanity: %d cheap, %d expensive checks.",

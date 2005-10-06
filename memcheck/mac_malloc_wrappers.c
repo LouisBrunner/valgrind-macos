@@ -511,7 +511,7 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
 void MAC_(print_malloc_stats) ( void )
 {
    MAC_Chunk* mc;
-   UInt       nblocks = 0;
+   SizeT      nblocks = 0;
    SizeT      nbytes  = 0;
    
    if (VG_(clo_verbosity) == 0)
@@ -527,10 +527,10 @@ void MAC_(print_malloc_stats) ( void )
    }
 
    VG_(message)(Vg_UserMsg, 
-                "malloc/free: in use at exit: %d bytes in %d blocks.",
+                "malloc/free: in use at exit: %,lu bytes in %,lu blocks.",
                 nbytes, nblocks);
    VG_(message)(Vg_UserMsg, 
-                "malloc/free: %d allocs, %d frees, %u bytes allocated.",
+                "malloc/free: %,lu allocs, %,lu frees, %,lu bytes allocated.",
                 cmalloc_n_mallocs,
                 cmalloc_n_frees, cmalloc_bs_mallocd);
    if (VG_(clo_verbosity) > 1)

@@ -64,18 +64,18 @@ static ExeContext* ec_list[N_EC_LISTS];
 
 /* Stats only: the number of times the system was searched to locate a
    context. */
-static UInt ec_searchreqs;
+static ULong ec_searchreqs;
 
 /* Stats only: the number of full context comparisons done. */
-static UInt ec_searchcmps;
+static ULong ec_searchcmps;
 
 /* Stats only: total number of stored contexts. */
-static UInt ec_totstored;
+static ULong ec_totstored;
 
 /* Number of 2, 4 and (fast) full cmps done. */
-static UInt ec_cmp2s;
-static UInt ec_cmp4s;
-static UInt ec_cmpAlls;
+static ULong ec_cmp2s;
+static ULong ec_cmp4s;
+static ULong ec_cmpAlls;
 
 
 /*------------------------------------------------------------*/
@@ -107,20 +107,18 @@ void VG_(print_ExeContext_stats) ( void )
 {
    init_ExeContext_storage();
    VG_(message)(Vg_DebugMsg, 
-      "   exectx: %d lists, %d contexts (avg %d per list)",
-      N_EC_LISTS, ec_totstored, 
-      ec_totstored / N_EC_LISTS 
+      "   exectx: %,lu lists, %,llu contexts (avg %,llu per list)",
+      N_EC_LISTS, ec_totstored, ec_totstored / N_EC_LISTS 
    );
    VG_(message)(Vg_DebugMsg, 
-      "   exectx: %d searches, %d full compares (%d per 1000)",
+      "   exectx: %,llu searches, %,llu full compares (%,llu per 1000)",
       ec_searchreqs, ec_searchcmps, 
       ec_searchreqs == 0 
-         ? 0 
-         : (UInt)( (((ULong)ec_searchcmps) * 1000) 
-           / ((ULong)ec_searchreqs )) 
+         ? 0L 
+         : ( (ec_searchcmps * 1000) / ec_searchreqs ) 
    );
    VG_(message)(Vg_DebugMsg, 
-      "   exectx: %d cmp2, %d cmp4, %d cmpAll",
+      "   exectx: %,llu cmp2, %,llu cmp4, %,llu cmpAll",
       ec_cmp2s, ec_cmp4s, ec_cmpAlls 
    );
 }

@@ -346,11 +346,11 @@ extern Bool (*MAC_(check_noaccess))( Addr a, SizeT len, Addr* bad_addr );
 extern Bool (*MAC_(describe_addr_supp))    ( Addr a, AddrInfo* ai );
 
 /* For VALGRIND_COUNT_LEAKS client request */
-extern Int MAC_(bytes_leaked);
-extern Int MAC_(bytes_indirect);
-extern Int MAC_(bytes_dubious);
-extern Int MAC_(bytes_reachable);
-extern Int MAC_(bytes_suppressed);
+extern SizeT MAC_(bytes_leaked);
+extern SizeT MAC_(bytes_indirect);
+extern SizeT MAC_(bytes_dubious);
+extern SizeT MAC_(bytes_reachable);
+extern SizeT MAC_(bytes_suppressed);
 
 /*------------------------------------------------------------*/
 /*--- Functions                                            ---*/

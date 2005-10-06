@@ -1,7 +1,7 @@
 
 Invalid write of size 1
    at 0x........: main (describe-block.c:6)
- Address 0x........ is 0 bytes inside a magic foople zone of size 4096 client-defined
+ Address 0x........ is 0 bytes inside a magic foople zone of size 4,096 client-defined
    at 0x........: main (describe-block.c:5)
 
 Process terminating with default action of signal 11 (SIGSEGV)

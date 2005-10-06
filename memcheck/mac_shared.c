@@ -279,9 +279,9 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
             relative = "inside";
          }
          VG_(message)(Vg_UserMsg, 
-            "%sAddress 0x%llx is %llu bytes %s a %s of size %d %s%s",
+            "%sAddress 0x%lx is %,lu bytes %s a %s of size %,lu %s%s",
             xpre,
-            (ULong)a, (ULong)delta, relative, kind,
+            a, delta, relative, kind,
             ai->blksize,
             ai->akind==Mallocd ? "alloc'd" 
                : ai->akind==Freed ? "free'd" 

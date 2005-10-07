@@ -234,7 +234,7 @@
 #define __NR_getdents64			202
 //#define __NR_pivot_root		203
 #define __NR_fcntl64			204
-//#define __NR_madvise			205
+#define __NR_madvise			205
 //#define __NR_mincore			206
 #define __NR_gettid			207
 #define __NR_tkill			208

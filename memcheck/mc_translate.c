@@ -687,7 +687,27 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
 
    The "& (7<<1)" reflects the fact that all result bits except 3,2,1
    are zero and therefore defined (viz, zero).
+
+   Also deal with a special case better:
+
+      CmpORD32S(x,0)
+
+   Here, bit 3 (LT) of the result is a copy of the top bit of x and
+   will be defined even if the rest of x isn't.  In which case we do:
+
+      CmpORD32S#(x,x#,0,{impliedly 0}#)
+         = PCast(x#) & (3<<1)      -- standard interp for GT,EQ
+           | (x# >> 31) << 3       -- LT = x#[31]
+
 */
+static Bool isZeroU32 ( IRAtom* e )
+{
+   return
+      toBool( e->tag == Iex_Const
+              && e->Iex.Const.con->tag == Ico_U32
+              && e->Iex.Const.con->Ico.U32 == 0 );
+}
+
 static IRAtom* doCmpORD32 ( MCEnv*  mce,
                             IROp    cmp_op,
                             IRAtom* xxhash, IRAtom* yyhash, 
@@ -701,16 +721,45 @@ static IRAtom* doCmpORD32 ( MCEnv*  mce,
    tl_assert(sameKindedAtoms(yyhash,yy));
    tl_assert(cmp_op == Iop_CmpORD32S || cmp_op == Iop_CmpORD32U);
 
-   return 
-      binop( 
-         Iop_And32, 
-         assignNew( 
-            mce,Ity_I32,
+   if (0) {
+      ppIROp(cmp_op); VG_(printf)(" "); 
+      ppIRExpr(xx); VG_(printf)(" "); ppIRExpr( yy ); VG_(printf)("\n");
+   }
+
+   if (isZeroU32(yy)) {
+      /* fancy interpretation */
+      /* if yy is zero, then it must be fully defined (zero#). */
+      tl_assert(isZeroU32(yyhash));
+      return
+         binop(
+            Iop_Or32,
+            assignNew(
+               mce,Ity_I32,
+               binop(
+                  Iop_And32,
+                  mkPCastTo(mce,Ity_I32, xxhash), 
+                  mkU32(3<<1)
+               )),
+            assignNew(
+               mce,Ity_I32,
+               binop(
+                  Iop_Shl32,
+                  assignNew(
+                     mce,Ity_I32,
+                     binop(Iop_Shr32, xxhash, mkU8(31))),
+                  mkU8(3)
+               ))
+	 );
+   } else {
+      /* standard interpretation */
+      return 
+         binop( 
+            Iop_And32, 
             mkPCastTo( mce,Ity_I32,
-                       assignNew( mce,Ity_I32,
-                                  mkUifU32(mce, xxhash,yyhash))) ),
-         mkU32(7<<1)
-      );
+                       mkUifU32(mce, xxhash,yyhash)),
+            mkU32(7<<1)
+         );
+   }
 }
 
 

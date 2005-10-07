@@ -384,7 +384,7 @@ Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port )
 static
 Int my_socket ( Int domain, Int type, Int protocol )
 {
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    SysRes res;
    UWord  args[3];
    args[0] = domain;
@@ -398,10 +398,6 @@ Int my_socket ( Int domain, Int type, Int protocol )
    res = VG_(do_syscall3)(__NR_socket, domain, type, protocol );
    return res.isError ? -1 : res.val;
 
-#elif defined(VGP_ppc32_linux)
-   //CAB: TODO
-   I_die_here;
-
 #else
 #  error Unknown arch
 #endif
@@ -411,7 +407,7 @@ static
 Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, 
                  Int addrlen )
 {
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    SysRes res;
    UWord  args[3];
    args[0] = sockfd;
@@ -424,10 +420,6 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
    SysRes res;
    res = VG_(do_syscall3)(__NR_connect, sockfd, (UWord)serv_addr, addrlen);
    return res.isError ? -1 : res.val;
-
-#elif defined(VGP_ppc32_linux)
-   //CAB: TODO
-   I_die_here;
 
 #else
 #  error Unknown arch

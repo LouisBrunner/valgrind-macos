@@ -2153,11 +2153,33 @@ static Bool dis_int_rot ( UInt theInstr )
 
    case 0x15: 
       // rlwinm (Rotate Left Word Immediate then AND with Mask, PPC32 p501)
-      DIP("rlwinm%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
-          Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
-      // Ra = ROTL(Rs, Imm) & mask
-      assign( Ra, binop(Iop_And32, ROTL32(mkexpr(Rs), mkU32(sh_imm)), 
-                                   mkU32(mask)) );
+      vassert(MaskBegin < 32);
+      vassert(MaskEnd   < 32);
+      vassert(sh_imm    < 32);
+
+      if (MaskBegin == 0 && sh_imm+MaskEnd == 31) {
+         /* Special-case the ,n,0,31-n form as that is just n-bit
+            shift left (PPC32 p501) */
+         DIP("slwi%s r%d,r%d,%d\n", flag_Rc ? "." : "",
+             Ra_addr, Rs_addr, sh_imm);
+         assign( Ra, binop(Iop_Shl32, mkexpr(Rs), mkU8(sh_imm)) );
+      }
+      else
+      if (MaskEnd == 31 && sh_imm+MaskBegin == 32) {
+         /* Special-case the ,32-n,n,31 form as that is just n-bit
+            unsigned shift right (PPC32 p501) */
+         DIP("srwi%s r%d,r%d,%d\n", flag_Rc ? "." : "",
+             Ra_addr, Rs_addr, sh_imm);
+         assign( Ra, binop(Iop_Shr32, mkexpr(Rs), mkU8(MaskBegin)) );
+      }
+      else {
+         /* General case. */
+         DIP("rlwinm%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
+             Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
+         // Ra = ROTL(Rs, Imm) & mask
+         assign( Ra, binop(Iop_And32, ROTL32(mkexpr(Rs), mkU32(sh_imm)), 
+                                      mkU32(mask)) );
+      }
       break;
 
    case 0x17: 

@@ -38,6 +38,20 @@
 #include "mc_include.h"
 
 
+/* This file implements the Memcheck instrumentation, and in
+   particular contains the core of its undefined value detection
+   machinery.  For a comprehensive background of the terminology,
+   algorithms and rationale used herein, read:
+
+     Using Valgrind to detect undefined value errors with
+     bit-precision
+
+     Julian Seward and Nicholas Nethercote
+
+     2005 USENIX Annual Technical Conference (General Track),
+     Anaheim, CA, USA, April 10-15, 2005.
+*/
+
 /*------------------------------------------------------------*/
 /*--- Forward decls                                        ---*/
 /*------------------------------------------------------------*/
@@ -655,6 +669,48 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
       = mkPCastTo( mce, Ity_I1, improved );
 
    return final_cast;
+}
+
+
+/* --------- Semi-accurate interpretation of CmpORD. --------- */
+
+/* CmpORD32{S,U} does PowerPC-style 3-way comparisons:
+
+      CmpORD32S(x,y) = 1<<3   if  x <s y
+                     = 1<<2   if  x >s y
+                     = 1<<1   if  x == y
+
+   and similarly the unsigned variant.  The default interpretation is:
+
+      CmpORD32{S,U}#(x,y,x#,y#) = PCast(x# `UifU` y#)  
+                                  &  (7<<1)
+
+   The "& (7<<1)" reflects the fact that all result bits except 3,2,1
+   are zero and therefore defined (viz, zero).
+*/
+static IRAtom* doCmpORD32 ( MCEnv*  mce,
+                            IROp    cmp_op,
+                            IRAtom* xxhash, IRAtom* yyhash, 
+                            IRAtom* xx,     IRAtom* yy )
+{
+   tl_assert(isShadowAtom(mce,xxhash));
+   tl_assert(isShadowAtom(mce,yyhash));
+   tl_assert(isOriginalAtom(mce,xx));
+   tl_assert(isOriginalAtom(mce,yy));
+   tl_assert(sameKindedAtoms(xxhash,xx));
+   tl_assert(sameKindedAtoms(yyhash,yy));
+   tl_assert(cmp_op == Iop_CmpORD32S || cmp_op == Iop_CmpORD32U);
+
+   return 
+      binop( 
+         Iop_And32, 
+         assignNew( 
+            mce,Ity_I32,
+            mkPCastTo( mce,Ity_I32,
+                       assignNew( mce,Ity_I32,
+                                  mkUifU32(mce, xxhash,yyhash))) ),
+         mkU32(7<<1)
+      );
 }
 
 
@@ -1752,9 +1808,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       cheap_AddSub32:
       case Iop_Mul32:
+         return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
+
       case Iop_CmpORD32S:
       case Iop_CmpORD32U:
-         return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
+         return doCmpORD32(mce, op, vatom1,vatom2, atom1,atom2);
 
       case Iop_Add64:
          if (mce->bogusLiterals)

@@ -1095,7 +1095,53 @@ IRAtom* expensiveAddSub ( MCEnv*  mce,
 
 
 /*------------------------------------------------------------*/
-/*--- Helpers for dealing with vector primops.            ---*/
+/*--- Scalar shifts.                                       ---*/
+/*------------------------------------------------------------*/
+
+/* Produce an interpretation for (aa << bb) (or >>s, >>u).  The basic
+   idea is to shift the definedness bits by the original shift amount.
+   This introduces 0s ("defined") in new positions for left shifts and
+   unsigned right shifts, and copies the top definedness bit for
+   signed right shifts.  So, conveniently, applying the original shift
+   operator to the definedness bits for the left arg is exactly the
+   right thing to do:
+
+      (qaa << bb)
+
+   However if the shift amount is undefined then the whole result
+   is undefined.  Hence need:
+
+      (qaa << bb) `UifU` PCast(qbb)
+
+   If the shift amount bb is a literal than qbb will say 'all defined'
+   and the UifU and PCast will get folded out by post-instrumentation
+   optimisation.
+*/
+static IRAtom* scalarShift ( MCEnv*  mce,
+                             IRType  ty,
+                             IROp    original_op,
+                             IRAtom* qaa, IRAtom* qbb, 
+                             IRAtom* aa,  IRAtom* bb )
+{
+   tl_assert(isShadowAtom(mce,qaa));
+   tl_assert(isShadowAtom(mce,qbb));
+   tl_assert(isOriginalAtom(mce,aa));
+   tl_assert(isOriginalAtom(mce,bb));
+   tl_assert(sameKindedAtoms(qaa,aa));
+   tl_assert(sameKindedAtoms(qbb,bb));
+   return 
+      assignNew(
+         mce, ty,
+         mkUifU( mce, ty,
+                 assignNew(mce, ty, binop(original_op, qaa, bb)),
+                 mkPCastTo(mce, ty, qbb)
+         )
+   );
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Helpers for dealing with vector primops.             ---*/
 /*------------------------------------------------------------*/
 
 /* Vector pessimisation -- pessimise within each lane individually. */
@@ -1764,26 +1810,17 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpEQ8: case Iop_CmpNE8:
          return mkPCastTo(mce, Ity_I1, mkUifU8(mce, vatom1,vatom2));
 
+      case Iop_Shl64: case Iop_Shr64: case Iop_Sar64:
+         return scalarShift( mce, Ity_I64, op, vatom1,vatom2, atom1,atom2 );
+
       case Iop_Shl32: case Iop_Shr32: case Iop_Sar32:
-         /* Complain if the shift amount is undefined.  Then simply
-            shift the first arg's V bits by the real shift amount. */
-         complainIfUndefined(mce, atom2);
-         return assignNew(mce, Ity_I32, binop(op, vatom1, atom2));
+         return scalarShift( mce, Ity_I32, op, vatom1,vatom2, atom1,atom2 );
 
       case Iop_Shl16: case Iop_Shr16: case Iop_Sar16:
-         /* Same scheme as with 32-bit shifts. */
-         complainIfUndefined(mce, atom2);
-         return assignNew(mce, Ity_I16, binop(op, vatom1, atom2));
+         return scalarShift( mce, Ity_I16, op, vatom1,vatom2, atom1,atom2 );
 
       case Iop_Shl8: case Iop_Shr8:
-         /* Same scheme as with 32-bit shifts. */
-         complainIfUndefined(mce, atom2);
-         return assignNew(mce, Ity_I8, binop(op, vatom1, atom2));
-
-      case Iop_Shl64: case Iop_Shr64: case Iop_Sar64:
-         /* Same scheme as with 32-bit shifts. */
-         complainIfUndefined(mce, atom2);
-         return assignNew(mce, Ity_I64, binop(op, vatom1, atom2));
+         return scalarShift( mce, Ity_I8, op, vatom1,vatom2, atom1,atom2 );
 
       case Iop_AndV128:
          uifu = mkUifUV128; difd = mkDifDV128; 

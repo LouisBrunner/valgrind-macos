@@ -2611,6 +2611,17 @@ static void mc_pre_clo_init(void)
    VG_(track_new_mem_mmap)        ( & mc_new_mem_mmap );
    
    VG_(track_copy_mem_remap)      ( & mc_copy_address_range_state );
+
+   // Nb: we don't do anything with mprotect.  This means that V bits are
+   // preserved if a program, for example, marks some memory as inaccessible
+   // and then later marks it as accessible again.
+   // 
+   // If an access violation occurs (eg. writing to read-only memory) we let
+   // it fault and print an informative termination message.  This doesn't
+   // happen if the program catches the signal, though, which is bad.  If we
+   // had two A bits (for readability and writability) that were completely
+   // distinct from V bits, then we could handle all this properly.
+   VG_(track_change_mem_mprotect) ( NULL );
       
    VG_(track_die_mem_stack_signal)( & mc_make_noaccess ); 
    VG_(track_die_mem_brk)         ( & mc_make_noaccess );

@@ -147,7 +147,7 @@
 //#define __NR_swapoff			115
 //#define __NR_sysinfo			116
 #define __NR_ipc			117
-//#define __NR_fsync			118
+#define __NR_fsync			118
 #define __NR_sigreturn			119
 #define __NR_clone			120
 //#define __NR_setdomainname		121
@@ -185,7 +185,7 @@
 //#define __NR_munlockall		153
 //#define __NR_sched_setparam		154
 #define __NR_sched_getparam		155
-//#define __NR_sched_setscheduler	156
+#define __NR_sched_setscheduler		156
 #define __NR_sched_getscheduler		157
 #define __NR_sched_yield		158
 #define __NR_sched_get_priority_max	159

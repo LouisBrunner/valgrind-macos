@@ -1795,7 +1795,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    //   (__NR_swapoff,           sys_swapoff),           // 115 */Linux 
 //..    LINXY(__NR_sysinfo,           sys_sysinfo),           // 116
    PLAXY(__NR_ipc,               sys_ipc),               // 117
-//..    GENX_(__NR_fsync,             sys_fsync),             // 118
+   GENX_(__NR_fsync,             sys_fsync),             // 118
    PLAX_(__NR_sigreturn,         sys_sigreturn),         // 119 ?/Linux
 //.. 
    PLAX_(__NR_clone,             sys_clone),             // 120
@@ -1843,7 +1843,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    LINXY(__NR_sched_setparam,    sys_sched_setparam),    // 154
 //.. 
    LINXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
-//..    LINX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
+   LINX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
    LINX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
 //..    LINX_(__NR_sched_yield,            sys_sched_yield),           // 158
    LINX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159

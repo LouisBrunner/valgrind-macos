@@ -2846,7 +2846,9 @@ static IRExpr* /* :: Ity_I32 */ branch_cond_ok( UInt BO, UInt BI )
 /*
   Integer Branch Instructions
 */
-static Bool dis_branch ( UInt theInstr, DisResult* dres )
+static Bool dis_branch ( UInt theInstr, 
+                         /*OUT*/DisResult* dres,
+                         Bool (*resteerOkFn)(Addr64) )
 {
    UChar opc1     = toUChar((theInstr >> 26) & 0x3F);    /* theInstr[26:31] */
    UChar BO       = toUChar((theInstr >> 21) & 0x1F);    /* theInstr[21:25] */
@@ -2863,22 +2865,21 @@ static Bool dis_branch ( UInt theInstr, DisResult* dres )
    
    Addr32 nia = 0;
    
-   //   IRTemp ctr       = newTemp(Ity_I32);
-   //   IRTemp lr        = newTemp(Ity_I32);
    IRTemp ir_nia    = newTemp(Ity_I32);
    IRTemp do_branch = newTemp(Ity_I32);
    IRTemp ctr_ok    = newTemp(Ity_I32);
    IRTemp cond_ok   = newTemp(Ity_I32);
    
-//   assign( ctr, getSPR( PPC32_SPR_CTR ) );
-
    /* Hack to pass through code that just wants to read the PC */
    if (theInstr == 0x429F0005) {
       DIP("bcl 0x%x, 0x%x (a.k.a mr lr,cia+4)\n", BO, BI);
       putSPR( PPC32_SPR_LR, mkU32(guest_CIA_curr_instr + 4) );
       return True;
    }
-    
+
+   /* The default what-next.  Individual cases can override it. */    
+   dres->whatNext = Dis_StopHere;
+
    switch (opc1) {
    case 0x12: // b     (Branch, PPC32 p360)
       if (flag_AA) {
@@ -2890,9 +2891,15 @@ static Bool dis_branch ( UInt theInstr, DisResult* dres )
 
       if (flag_LK) {
          putSPR( PPC32_SPR_LR, mkU32(guest_CIA_curr_instr + 4) );
-      }      
-      irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
-      irbb->next     = mkU32(nia);
+      }
+
+      if (resteerOkFn((Addr64)nia)) {
+         dres->whatNext = Dis_Resteer;
+         dres->continueAt = (Addr64)nia;
+      } else {
+         irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
+         irbb->next     = mkU32(nia);
+      }
       break;
       
    case 0x10: // bc    (Branch Conditional, PPC32 p361)
@@ -3006,12 +3013,12 @@ static Bool dis_branch ( UInt theInstr, DisResult* dres )
          return False;
       }
       break;
+
    default:
       vex_printf("dis_int_branch(PPC32)(opc1)\n");
       return False;
    }
     
-   dres->whatNext = Dis_StopHere;
    return True;
 }
 
@@ -6659,7 +6666,7 @@ DisResult disInstr_PPC32_WRK (
 
    /* Branch Instructions */
    case 0x12: case 0x10: // b, bc
-      if (dis_branch(theInstr, &dres)) goto decode_success;
+      if (dis_branch(theInstr, &dres, resteerOkFn)) goto decode_success;
       goto decode_failure;
 
    /* System Linkage Instructions */
@@ -6776,7 +6783,7 @@ DisResult disInstr_PPC32_WRK (
 
          /* Branch Instructions */
          case 0x210: case 0x010: // bcctr, bclr
-            if (dis_branch(theInstr, &dres)) goto decode_success;
+            if (dis_branch(theInstr, &dres, resteerOkFn)) goto decode_success;
             goto decode_failure;
 
          /* Memory Synchronization Instructions */

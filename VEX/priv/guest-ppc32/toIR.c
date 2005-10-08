@@ -3290,12 +3290,24 @@ static Bool dis_int_shift ( UInt theInstr )
       case 0x018: // slw (Shift Left Word, PPC32 p505)
          DIP("slw%s r%d,r%d,r%d\n", flag_Rc ? "." : "",
              Ra_addr, Rs_addr, Rb_addr);
-         assign( sh_amt, binop(Iop_And8, mkU8(0x1F),
-                               unop(Iop_32to8, mkexpr(Rb))) );
-         assign( Rs_sh, binop(Iop_Shl32, mkexpr(Rs), mkexpr(sh_amt)) );
-         assign( rb_b5, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
-         assign( Ra, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
-                                   mkexpr(Rs_sh), mkU32(0) ));
+         /* Ra = Rs << Rb */
+	 /* ppc32 semantics are: 
+            slw(x,y) = (x << (y & 31))         -- primary result
+                       & ~((y << 26) >>s 31)   -- make result 0 
+                                                  for y in 32 .. 63
+         */
+         assign(Ra,
+            binop(
+               Iop_And32,
+               binop( Iop_Shl32, 
+                      mkexpr(Rs), 
+                      unop( Iop_32to8, 
+                            binop(Iop_And32, mkexpr(Rb), mkU32(31)))),
+               unop( Iop_Not32, 
+                     binop( Iop_Sar32, 
+                            binop(Iop_Shl32, mkexpr(Rb), mkU8(26)), 
+                            mkU8(31))))
+	 );
          break;
          
       case 0x318: // sraw (Shift Right Algebraic Word, PPC32 p506)
@@ -3338,12 +3350,24 @@ static Bool dis_int_shift ( UInt theInstr )
       case 0x218: // srw (Shift Right Word, PPC32 p508)
          DIP("srw%s r%d,r%d,r%d\n", flag_Rc ? "." : "",
              Ra_addr, Rs_addr, Rb_addr);
-         assign( sh_amt, binop(Iop_And8, mkU8(0x1F),
-                               unop(Iop_32to8, mkexpr(Rb))) );
-         assign( Rs_sh, binop(Iop_Shr32, mkexpr(Rs), mkexpr(sh_amt)) );
-         assign( rb_b5, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
-         assign( Ra, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
-                                   mkexpr(Rs_sh), mkU32(0) ));
+         /* Ra = Rs >>u Rb */
+	 /* ppc32 semantics are: 
+            slw(x,y) = (x >>u (y & 31))        -- primary result
+                       & ~((y << 26) >>s 31)   -- make result 0 
+                                                  for y in 32 .. 63
+         */
+         assign(Ra,
+            binop(
+               Iop_And32,
+               binop( Iop_Shr32, 
+                      mkexpr(Rs), 
+                      unop( Iop_32to8, 
+                            binop(Iop_And32, mkexpr(Rb), mkU32(31)))),
+               unop( Iop_Not32, 
+                     binop( Iop_Sar32, 
+                            binop(Iop_Shl32, mkexpr(Rb), mkU8(26)), 
+                            mkU8(31))))
+	 );
          break;
          
       default:

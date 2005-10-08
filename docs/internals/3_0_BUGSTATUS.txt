@@ -16,6 +16,7 @@ nb: "n-i-bz" == "not in Bugzilla"
 109744  memcheck loses track of mmap from direct ld-linux.so.2
 110183  tail of page with _end
  82301  FV memory layout too rigid
+ 98278  Infinite recursion possible when allocating memory
 
 Will fix in 3.1.  Long delay seems to be caused by amd64-Gentoo kernel
 not liking large mmap/munmap requests.  Other bugs also look like

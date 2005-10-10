@@ -50,3 +50,26 @@ you want and do this in gdb:
 
   jump *$eip
 
+
+Self-hosting
+~~~~~~~~~~~~
+To run Valgrind under Valgrind:
+
+(1) Check out 2 trees, "inner" and "outer".  "inner" runs the app
+    directly and is what you will be profiling.  "outer" does the
+    profiling.
+
+(2) Configure inner with --enable-inner and build/install as
+    usual.
+
+(3) Configure outer normally and build/install as usual.
+
+(4) Choose a very simple program (date) and try
+
+    outer/.../bin/valgrind --weird-hacks=enable-outer   \
+       --tool=cachegrind -v inner/.../bin/valgrind --tool=none -v prog
+
+It's fragile, confusing and slow, but it does work well enough for
+you to get some useful performance data.  At the time of writing
+the allocator is not annotated with client requests so Memcheck is
+not as useful as it could be.

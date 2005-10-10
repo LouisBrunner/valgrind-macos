@@ -192,8 +192,8 @@ static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
 
 static UInt hash(Char *s, UInt table_size)
 {
-   const int hash_constant = 256;
-   int hash_value = 0;
+   const Int hash_constant = 256;
+   Int hash_value = 0;
    for ( ; *s; s++)
       hash_value = (hash_constant * hash_value + *s) % table_size;
    return hash_value;
@@ -963,7 +963,7 @@ static UInt ULong_width(ULong n)
 
 static void cg_fini(Int exitcode)
 {
-   static char buf1[128], buf2[128], buf3[128], fmt [128];
+   static Char buf1[128], buf2[128], buf3[128], fmt [128];
 
    CC D_total;
    ULong L2_total_m, L2_total_mr, L2_total_mw,
@@ -1053,7 +1053,7 @@ static void cg_fini(Int exitcode)
 
    // Various stats
    if (VG_(clo_verbosity) > 1) {
-       int BB_lookups = full_debug_BBs      + fn_debug_BBs +
+       Int BB_lookups = full_debug_BBs      + fn_debug_BBs +
                         file_line_debug_BBs + no_debug_BBs;
       
        VG_(message)(Vg_DebugMsg, "");
@@ -1100,9 +1100,9 @@ static void cg_discard_basic_block_info ( Addr a, SizeT size )
 /*--- Command line processing                                      ---*/
 /*--------------------------------------------------------------------*/
 
-static void parse_cache_opt ( cache_t* cache, char* opt )
+static void parse_cache_opt ( cache_t* cache, Char* opt )
 {
-   int   i = 0, i2, i3;
+   Int i = 0, i2, i3;
 
    // Option argument looks like "65536,2,64".
    // Find commas, replace with NULs to make three independent 

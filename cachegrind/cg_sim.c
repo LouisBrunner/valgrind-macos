@@ -39,22 +39,22 @@
 */
 
 typedef struct {
-   int          size;                   /* bytes */
-   int          assoc;
-   int          line_size;              /* bytes */
-   int          sets;
-   int          sets_min_1;
-   int          assoc_bits;
-   int          line_size_bits;
-   int          tag_shift;
-   char         desc_line[128];
+   Int          size;                   /* bytes */
+   Int          assoc;
+   Int          line_size;              /* bytes */
+   Int          sets;
+   Int          sets_min_1;
+   Int          assoc_bits;
+   Int          line_size_bits;
+   Int          tag_shift;
+   Char         desc_line[128];
    UWord*       tags;
 } cache_t2;
 
 /* By this point, the size/assoc/line_size has been checked. */
 static void cachesim_initcache(cache_t config, cache_t2* c)
 {
-   int i;
+   Int i;
 
    c->size      = config.size;
    c->assoc     = config.assoc;
@@ -114,7 +114,7 @@ void cachesim_##L##_doref(Addr a, UChar size, ULong* m1, ULong *m2)         \
    register UInt  set1 = ( a         >> L.line_size_bits) & (L.sets_min_1); \
    register UInt  set2 = ((a+size-1) >> L.line_size_bits) & (L.sets_min_1); \
    register UWord tag  = a >> L.tag_shift;                                  \
-   int i, j;                                                                \
+   Int i, j;                                                                \
    Bool is_miss = False;                                                    \
    UWord* set;                                                              \
                                                                             \

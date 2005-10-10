@@ -48,7 +48,7 @@ typedef struct {
    int          line_size_bits;
    int          tag_shift;
    char         desc_line[128];
-   int*         tags;
+   UWord*       tags;
 } cache_t2;
 
 /* By this point, the size/assoc/line_size has been checked. */
@@ -74,7 +74,7 @@ static void cachesim_initcache(cache_t config, cache_t2* c)
                                  c->size, c->line_size, c->assoc);
    }
 
-   c->tags = VG_(malloc)(sizeof(UInt) * c->sets * c->assoc);
+   c->tags = VG_(malloc)(sizeof(UWord) * c->sets * c->assoc);
 
    for (i = 0; i < c->sets * c->assoc; i++)
       c->tags[i] = 0;
@@ -88,7 +88,7 @@ static void print_cache(cache_t2* c)
    /* Note initialisation and update of 'i'. */
    for (i = 0, set = 0; set < c->sets; set++) {
       for (way = 0; way < c->assoc; way++, i++) {
-         VG_(printf)("%8x ", c->tags[i]);
+         VG_(printf)("%16lx ", c->tags[i]);
       }
       VG_(printf)("\n");
    }
@@ -111,12 +111,12 @@ static void cachesim_##L##_initcache(cache_t config)                        \
 static /* __inline__ */                                                     \
 void cachesim_##L##_doref(Addr a, UChar size, ULong* m1, ULong *m2)         \
 {                                                                           \
-   register UInt set1 = ( a         >> L.line_size_bits) & (L.sets_min_1);  \
-   register UInt set2 = ((a+size-1) >> L.line_size_bits) & (L.sets_min_1);  \
-   register UInt tag  = a >> L.tag_shift;                                   \
+   register UInt  set1 = ( a         >> L.line_size_bits) & (L.sets_min_1); \
+   register UInt  set2 = ((a+size-1) >> L.line_size_bits) & (L.sets_min_1); \
+   register UWord tag  = a >> L.tag_shift;                                  \
    int i, j;                                                                \
    Bool is_miss = False;                                                    \
-   int* set;                                                                \
+   UWord* set;                                                              \
                                                                             \
    /* First case: word entirely within line. */                             \
    if (set1 == set2) {                                                      \

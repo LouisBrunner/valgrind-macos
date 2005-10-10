@@ -70,6 +70,10 @@ To run Valgrind under Valgrind:
        --tool=cachegrind -v inner/.../bin/valgrind --tool=none -v prog
 
 It's fragile, confusing and slow, but it does work well enough for
-you to get some useful performance data.  At the time of writing
-the allocator is not annotated with client requests so Memcheck is
-not as useful as it could be.
+you to get some useful performance data.  The inner Valgrind has most of
+its output (ie. those lines beginning with "==<pid>==") prefixed with a
+'>', which helps a lot.
+
+At the time of writing the allocator is not annotated with client requests
+so Memcheck is not as useful as it could be.  It also has not been tested
+much, so don't be surprised if you hit problems.

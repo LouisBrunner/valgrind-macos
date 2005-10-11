@@ -53,6 +53,11 @@
 #include "pub_core_aspacemgr.h"  // self
 
 
+/* Note: many of the exported functions implemented below are
+   described more fully in comments in pub_core_aspacemgr.h.
+*/
+
+
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
 /*--- The Address Space Manager's state.                        ---*/
@@ -416,16 +421,6 @@ static Int allocate_segname ( const HChar* name )
    return i;
 }
 
-
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-
-
-/* Note: many of the exported functions implemented below are
-   described more fully in comments in pub_core_aspacemgr.h.
-*/
 
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
@@ -866,7 +861,8 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
                                           UInt dev, UInt ino, ULong offset, 
                                           const UChar* filename )
 {
-   Int iLo, iHi, i;
+   Int  iLo, iHi, i;
+   Bool sloppyRXcheck;
 
    /* If a problem has already been detected, don't continue comparing
       segments, so as to avoid flooding the output with error
@@ -889,6 +885,23 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
    aspacem_assert(iLo <= iHi);
    aspacem_assert(nsegments[iLo].start <= addr );
    aspacem_assert(nsegments[iHi].end   >= addr + len - 1 );
+
+   /* x86 doesn't differentiate 'x' and 'r' (at least, all except the
+      most recent NX-bit enabled CPUs) and so recent kernels mark most
+      readable sections also as executable (in the /proc/self/maps
+      they give out), which makes checking fail.  When sloppyRXcheck
+      is True, the checker therefore regards R and X as
+      interchangeable. */
+   sloppyRXcheck = False;
+#  if defined(VGA_x86)
+   sloppyRXcheck = True;
+#  endif
+
+   if (sloppyRXcheck) {
+      /* If either bit is set, ensure both are set. */
+      if (prot & (VKI_PROT_READ|VKI_PROT_EXEC))
+         prot |= (VKI_PROT_READ|VKI_PROT_EXEC);
+   }
 
    /* NSegments iLo .. iHi inclusive should agree with the presented
       data. */
@@ -920,6 +933,12 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
          migration, which changes the name of it, and its dev & ino */
       if (filename && 0==VG_(strcmp)(filename, "/dev/zero (deleted)"))
          cmp_devino = False;
+
+      if (sloppyRXcheck) {
+         /* If either bit is set, ensure both are set. */
+         if (seg_prot & (VKI_PROT_READ|VKI_PROT_EXEC))
+            seg_prot |= (VKI_PROT_READ|VKI_PROT_EXEC);
+      }
 
       same = same
              && seg_prot == prot

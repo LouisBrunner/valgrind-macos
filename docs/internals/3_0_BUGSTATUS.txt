@@ -17,6 +17,7 @@ nb: "n-i-bz" == "not in Bugzilla"
 110183  tail of page with _end
  82301  FV memory layout too rigid
  98278  Infinite recursion possible when allocating memory
+108994  Valgrind runs out of memory due to 133x overhead
 
 Will fix in 3.1.  Long delay seems to be caused by amd64-Gentoo kernel
 not liking large mmap/munmap requests.  Other bugs also look like

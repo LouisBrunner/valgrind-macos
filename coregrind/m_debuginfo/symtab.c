@@ -498,6 +498,8 @@ void ML_(addScopeInfo) ( SegInfo* si,
 void ML_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
 {
    static const Bool debug = False;
+   UInt   new_sz, i;
+   CfiSI* new_tab;
 
    if (debug) {
       VG_(printf)("adding CfiSI: ");
@@ -505,9 +507,6 @@ void ML_(addCfiSI) ( SegInfo* si, CfiSI* cfisi )
    }
 
    vg_assert(cfisi->len > 0 && cfisi->len < 2000000);
-
-   UInt   new_sz, i;
-   CfiSI* new_tab;
 
    /* Rule out ones which are completely outside the segment.  These
       probably indicate some kind of bug, but for the meantime ignore

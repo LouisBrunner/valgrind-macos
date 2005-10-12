@@ -1095,9 +1095,9 @@ ML_(generic_POST_sys_socketpair) ( ThreadId tid,
                                    UWord arg2, UWord arg3 )
 {
    SysRes r = res;
-   vg_assert(!res.isError); /* guaranteed by caller */
    Int fd1 = ((Int*)arg3)[0];
    Int fd2 = ((Int*)arg3)[1];
+   vg_assert(!res.isError); /* guaranteed by caller */
    POST_MEM_WRITE( arg3, 2*sizeof(int) );
    if (!ML_(fd_allowed)(fd1, "socketcall.socketpair", tid, True) ||
        !ML_(fd_allowed)(fd2, "socketcall.socketpair", tid, True)) {
@@ -4761,8 +4761,8 @@ PRE(sys_poll)
       int poll(struct pollfd *ufds, unsigned int nfds, int timeout) 
    */
    UInt i;
-   *flags |= SfMayBlock;
    struct vki_pollfd* ufds = (struct vki_pollfd *)ARG1;
+   *flags |= SfMayBlock;
    PRINT("sys_poll ( %p, %d, %d )\n", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "poll",
                  struct pollfd *, ufds, unsigned int, nfds, long, timeout);

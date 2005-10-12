@@ -114,7 +114,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 
    HChar** cpp;
    HChar** ret;
-   HChar*  preload_tool_path;;
+   HChar*  preload_tool_path;
    Int     envc, i;
 
    /* Alloc space for the vgpreload_core.so path and vgpreload_<tool>.so
@@ -417,6 +417,7 @@ Addr setup_client_stack( void*  init_sp,
      Addr  anon_start  = clstack_start;
      Addr  resvn_start = anon_start - resvn_size;
      SizeT inner_HACK  = 0;
+     Bool  ok;
 
      vg_assert(VG_IS_PAGE_ALIGNED(anon_size));
      vg_assert(VG_IS_PAGE_ALIGNED(resvn_size));
@@ -434,12 +435,12 @@ Addr setup_client_stack( void*  init_sp,
 
      /* Create a shrinkable reservation followed by an anonymous
         segment.  Together these constitute a growdown stack. */
-     Bool ok = VG_(am_create_reservation)(
-                  resvn_start,
-                  resvn_size -inner_HACK,
-                  SmUpper, 
-                  anon_size +inner_HACK
-               );
+     ok = VG_(am_create_reservation)(
+             resvn_start,
+             resvn_size -inner_HACK,
+             SmUpper, 
+             anon_size +inner_HACK
+          );
      vg_assert(ok);
      /* allocate a stack - mmap enough space for the stack */
      res = VG_(am_mmap_anon_fixed_client)(
@@ -1468,8 +1469,10 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
    results of a run which encompasses multiple processes. */
 static void print_preamble(Bool logging_to_fd, const char* toolname)
 {
-   Int i;
-   
+   HChar* xpre  = VG_(clo_xml) ? "  <line>" : "";
+   HChar* xpost = VG_(clo_xml) ? "</line>" : "";
+   Int    i;
+
    if (VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "<?xml version=\"1.0\"?>");
       VG_(message)(Vg_UserMsg, "");
@@ -1478,9 +1481,6 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       VG_(message)(Vg_UserMsg, "<protocolversion>1</protocolversion>");
       VG_(message)(Vg_UserMsg, "");
    }
-
-   HChar* xpre  = VG_(clo_xml) ? "  <line>" : "";
-   HChar* xpost = VG_(clo_xml) ? "</line>" : "";
 
    if (VG_(clo_verbosity > 0)) {
 

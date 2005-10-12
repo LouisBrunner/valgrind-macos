@@ -212,8 +212,7 @@ SysRes VG_(pread) ( Int fd, void* buf, Int count, Int offset )
    OffT off = VG_(lseek)( fd, (OffT)offset, VKI_SEEK_SET);
    if (off != 0)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
-   SysRes res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count );
-   return res;
+   return VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count );
 }
 
 /* Create and open (-rw------) a tmp file name incorporating said arg.

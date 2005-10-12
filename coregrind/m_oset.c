@@ -433,11 +433,13 @@ static Bool avl_insert(AvlTree* t, AvlNode* n)
 // avl_insert() which doesn't return a Bool.
 void VG_(OSet_Insert)(AvlTree* t, void* e)
 {
+   AvlNode* n;
+
    vg_assert(t);
 
    // Initialise.  Even though OSet_AllocNode zeroes these fields, we should
    // do it again in case a node is removed and then re-added to the tree.
-   AvlNode* n = node_of_elem(e);
+   n          = node_of_elem(e);
    n->left    = 0;
    n->right   = 0;
    n->balance = 0;
@@ -532,9 +534,9 @@ static Bool avl_remove(AvlTree* t, AvlNode* n)
    Int  cmpres = cmp_key_root(t, n);
 
    if (cmpres < 0) {
+      AvlTree left_subtree;
       // Remove from the left subtree
       vg_assert(t->root->left);
-      AvlTree left_subtree;
       // Only need to set the used fields in the subtree.
       left_subtree.root   = t->root->left;
       left_subtree.cmp    = t->cmp;

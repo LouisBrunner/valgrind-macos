@@ -607,8 +607,8 @@ Superblock* findSb ( Arena* a, Block* b )
 static
 UInt pszB_to_listNo ( SizeT pszB )
 {
-   vg_assert(0 == pszB % VG_MIN_MALLOC_SZB);
    SizeT n = pszB / VG_MIN_MALLOC_SZB;
+   vg_assert(0 == pszB % VG_MIN_MALLOC_SZB);
 
    // The first 13 lists hold blocks of size VG_MIN_MALLOC_SZB * list_num.
    // The final 5 hold bigger blocks.

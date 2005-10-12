@@ -405,10 +405,10 @@ static
 void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
                                       /*OUT*/VexGuestArchState* gst_vanilla )
 {
-   vg_assert(canonical->what == SsSuccess 
-             || canonical->what == SsFailure);
 #if defined(VGP_x86_linux)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
+   vg_assert(canonical->what == SsSuccess 
+             || canonical->what == SsFailure);
    if (canonical->what == SsFailure) {
       /* This isn't exactly right, in that really a Failure with res
          not in the range 1 .. 4095 is unrepresentable in the
@@ -419,6 +419,8 @@ void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
    }
 #elif defined(VGP_amd64_linux)
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
+   vg_assert(canonical->what == SsSuccess 
+             || canonical->what == SsFailure);
    if (canonical->what == SsFailure) {
       /* This isn't exactly right, in that really a Failure with res
          not in the range 1 .. 4095 is unrepresentable in the
@@ -431,6 +433,9 @@ void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
 #elif defined(VGP_ppc32_linux)
    VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
    UInt old_cr = LibVEX_GuestPPC32_get_CR(gst);
+
+   vg_assert(canonical->what == SsSuccess 
+             || canonical->what == SsFailure);
 
    gst->guest_GPR3 = canonical->val;
 

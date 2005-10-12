@@ -1630,8 +1630,8 @@ static inline Bool host_is_little_endian ( void )
 
 static Short read_Short ( UChar* data )
 {
-   vg_assert(host_is_little_endian());
    Short r = 0;
+   vg_assert(host_is_little_endian());
    r = data[0] 
        | ( ((UInt)data[1]) << 8 );
    return r;
@@ -1639,8 +1639,8 @@ static Short read_Short ( UChar* data )
 
 static Int read_Int ( UChar* data )
 {
-   vg_assert(host_is_little_endian());
    Int r = 0;
+   vg_assert(host_is_little_endian());
    r = data[0] 
        | ( ((UInt)data[1]) << 8 ) 
        | ( ((UInt)data[2]) << 16 ) 
@@ -1650,8 +1650,8 @@ static Int read_Int ( UChar* data )
 
 static Long read_Long ( UChar* data )
 {
-   vg_assert(host_is_little_endian());
    Long r = 0;
+   vg_assert(host_is_little_endian());
    r = data[0] 
        | ( ((ULong)data[1]) << 8 ) 
        | ( ((ULong)data[2]) << 16 ) 
@@ -1665,8 +1665,8 @@ static Long read_Long ( UChar* data )
 
 static UShort read_UShort ( UChar* data )
 {
-   vg_assert(host_is_little_endian());
    UInt r = 0;
+   vg_assert(host_is_little_endian());
    r = data[0] 
        | ( ((UInt)data[1]) << 8 );
    return r;
@@ -1674,8 +1674,8 @@ static UShort read_UShort ( UChar* data )
 
 static UInt read_UInt ( UChar* data )
 {
-   vg_assert(host_is_little_endian());
    UInt r = 0;
+   vg_assert(host_is_little_endian());
    r = data[0] 
        | ( ((UInt)data[1]) << 8 ) 
        | ( ((UInt)data[2]) << 16 ) 
@@ -1685,8 +1685,8 @@ static UInt read_UInt ( UChar* data )
 
 static ULong read_ULong ( UChar* data )
 {
-   vg_assert(host_is_little_endian());
    ULong r = 0;
+   vg_assert(host_is_little_endian());
    r = data[0] 
        | ( ((ULong)data[1]) << 8 ) 
        | ( ((ULong)data[2]) << 16 ) 
@@ -2236,6 +2236,9 @@ void ML_(read_callframe_info_dwarf2)
       previously-seen CIE.
    */
    while (True) {
+      UChar* ciefde_start;
+      UInt   ciefde_len;
+      UInt   cie_pointer;
 
       /* Are we done? */
       if (data == ehframe + ehframe_sz)
@@ -2250,12 +2253,12 @@ void ML_(read_callframe_info_dwarf2)
       /* Ok, we must be looking at the start of a new CIE or FDE.
          Figure out which it is. */
 
-      UChar* ciefde_start = data;
+      ciefde_start = data;
       if (VG_(clo_trace_cfi)) 
          VG_(printf)("\ncie/fde.start   = %p (ehframe + 0x%x)\n", 
                      ciefde_start, ciefde_start - ehframe);
 
-      UInt ciefde_len = read_UInt(data); data += sizeof(UInt);
+      ciefde_len = read_UInt(data); data += sizeof(UInt);
       if (VG_(clo_trace_cfi)) 
          VG_(printf)("cie/fde.length  = %d\n", ciefde_len);
 
@@ -2269,7 +2272,7 @@ void ML_(read_callframe_info_dwarf2)
          goto bad;
       }
 
-      UInt cie_pointer = read_UInt(data); 
+      cie_pointer = read_UInt(data); 
       data += sizeof(UInt); /* XXX see XXX below */
       if (VG_(clo_trace_cfi)) 
          VG_(printf)("cie.pointer     = %d\n", cie_pointer);
@@ -2277,7 +2280,9 @@ void ML_(read_callframe_info_dwarf2)
       /* If cie_pointer is zero, we've got a CIE; else it's an FDE. */
       if (cie_pointer == 0) {
 
-         Int this_CIE;
+         Int    this_CIE;
+         UChar  cie_version;
+         UChar* cie_augmentation;
 
          /* --------- CIE --------- */
 	 if (VG_(clo_trace_cfi)) 
@@ -2299,7 +2304,7 @@ void ML_(read_callframe_info_dwarf2)
             later when looking at an FDE. */
          the_CIEs[this_CIE].offset = ciefde_start - ehframe;
 
-         UChar cie_version = read_UChar(data); data += sizeof(UChar);
+         cie_version = read_UChar(data); data += sizeof(UChar);
          if (VG_(clo_trace_cfi))
             VG_(printf)("cie.version     = %d\n", (Int)cie_version);
          if (cie_version != 1) {
@@ -2307,7 +2312,7 @@ void ML_(read_callframe_info_dwarf2)
             goto bad;
          }
 
-         UChar* cie_augmentation = data;
+         cie_augmentation = data;
          data += 1 + VG_(strlen)(cie_augmentation);
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("cie.augment     = \"%s\"\n", cie_augmentation);
@@ -2408,9 +2413,13 @@ void ML_(read_callframe_info_dwarf2)
       } else {
 
          UnwindContext ctx, restore_ctx;
-         Int  cie;
-         UInt look_for;
-         Bool ok;
+         Int    cie;
+         UInt   look_for;
+         Bool   ok;
+         Addr   fde_initloc;
+         UWord  fde_arange;
+         UChar* fde_instrs;
+         Int    fde_ilen;
 
          /* --------- FDE --------- */
 
@@ -2433,14 +2442,14 @@ void ML_(read_callframe_info_dwarf2)
             goto bad;
 	 }
 
-         Addr fde_initloc 
+         fde_initloc 
             = read_encoded_Addr(data, the_CIEs[cie].address_encoding,
                                 &nbytes, ehframe, ehframe_addr);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
 
-         UWord fde_arange 
+         fde_arange 
             = read_encoded_Addr(data, the_CIEs[cie].address_encoding & 0xf,
                                 &nbytes, ehframe, ehframe_addr);
          data += nbytes;
@@ -2452,8 +2461,8 @@ void ML_(read_callframe_info_dwarf2)
             data += nbytes;
          }
 
-         UChar* fde_instrs = data;
-         Int    fde_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
+         fde_instrs = data;
+         fde_ilen   = ciefde_start + ciefde_len + sizeof(UInt) - data;
          if (VG_(clo_trace_cfi)) {
             VG_(printf)("fde.instrs      = %p\n", fde_instrs);
             VG_(printf)("fde.ilen        = %d\n", (Int)fde_ilen);

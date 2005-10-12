@@ -54,13 +54,13 @@
 // scheduler-return-code.
 VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
 {
-   VG_(debugLog)(1, "core_os", 
-                    "ML_(thread_wrapper)(tid=%lld): entry\n", 
-                    (ULong)tidW);
-
    VgSchedReturnCode ret;
    ThreadId     tid = (ThreadId)tidW;
    ThreadState* tst = VG_(get_ThreadState)(tid);
+
+   VG_(debugLog)(1, "core_os", 
+                    "ML_(thread_wrapper)(tid=%lld): entry\n", 
+                    (ULong)tidW);
 
    vg_assert(tst->status == VgTs_Init);
 

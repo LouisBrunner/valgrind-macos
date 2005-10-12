@@ -121,7 +121,7 @@ typedef struct {
    void  (*tool_print_extra_suppression_info)(Error*);
 
    // VG_(needs).basic_block_discards
-   void (*tool_discard_basic_block_info)(Addr, SizeT);
+   void (*tool_discard_basic_block_info)(VexGuestExtents);
 
    // VG_(needs).command_line_options
    Bool (*tool_process_cmd_line_option)(Char*);

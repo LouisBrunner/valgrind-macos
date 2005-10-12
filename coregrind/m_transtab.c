@@ -610,9 +610,14 @@ void VG_(discard_translations) ( Addr64 guest_start, ULong range,
              && overlaps( guest_start, range, &sectors[sno].tt[i].vge )) {
             sectors[sno].tt[i].status = Deleted;
             sectors[sno].tt_n_inuse--;
-              anyDeleted = True;
+            anyDeleted = True;
             n_disc_count++;
             n_disc_osize += vge_osize(&sectors[sno].tt[i].vge);
+            /* Tell the tool too. */
+            if (VG_(needs).basic_block_discards) {
+               VG_TDICT_CALL( tool_discard_basic_block_info,
+                              sectors[sno].tt[i].vge );
+            }
          }
       }    
    }

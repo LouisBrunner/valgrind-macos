@@ -51,6 +51,9 @@
 /*--- Constants                                            ---*/
 /*------------------------------------------------------------*/
 
+/* Set to 1 for very verbose debugging */
+#define DEBUG_CG 0
+
 #define MIN_LINE_SIZE         16
 #define FILE_LEN              256
 #define FN_LEN                256
@@ -131,7 +134,6 @@ typedef struct _instr_info instr_info;
 struct _instr_info {
    Addr    instr_addr;
    UChar   instr_len;
-   UChar   data_size;
    lineCC* parent;       // parent line-CC
 };
 
@@ -292,8 +294,8 @@ static lineCC* get_lineCC(Addr origAddr)
 static VG_REGPARM(1)
 void log_1I_0D_cache_access(instr_info* n)
 {
-   //VG_(printf)("1I_0D : CCaddr=0x%x, iaddr=0x%x, isize=%u\n",
-   //            n, n->instr_addr, n->instr_len);
+   //VG_(printf)("1I_0D :  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n",
+   //             n, n->instr_addr, n->instr_len);
    VGP_PUSHCC(VgpCacheSimulate);
    cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
@@ -302,62 +304,214 @@ void log_1I_0D_cache_access(instr_info* n)
 }
 
 static VG_REGPARM(2)
-void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr)
+void log_2I_0D_cache_access(instr_info* n, instr_info* n2)
 {
-   //VG_(printf)("1I_1Dr: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
-   //            n, n->instr_addr, n->instr_len, data_addr, n->data_size);
+   //VG_(printf)("2I_0D : CC1addr=0x%010lx, i1addr=0x%010lx, i1size=%lu\n"
+   //            "        CC2addr=0x%010lx, i2addr=0x%010lx, i2size=%lu\n",
+   //            n,  n->instr_addr,  n->instr_len,
+   //            n2, n2->instr_addr, n2->instr_len);
+   VGP_PUSHCC(VgpCacheSimulate);
+   cachesim_I1_doref(n->instr_addr, n->instr_len, 
+                     &n->parent->Ir.m1, &n->parent->Ir.m2);
+   n->parent->Ir.a++;
+   cachesim_I1_doref(n2->instr_addr, n2->instr_len, 
+                     &n2->parent->Ir.m1, &n2->parent->Ir.m2);
+   n2->parent->Ir.a++;
+   VGP_POPCC(VgpCacheSimulate);
+}
+
+static VG_REGPARM(3)
+void log_3I_0D_cache_access(instr_info* n, instr_info* n2, instr_info* n3)
+{
+   //VG_(printf)("3I_0D : CC1addr=0x%010lx, i1addr=0x%010lx, i1size=%lu\n"
+   //            "        CC2addr=0x%010lx, i2addr=0x%010lx, i2size=%lu\n"
+   //            "        CC3addr=0x%010lx, i3addr=0x%010lx, i3size=%lu\n",
+   //            n,  n->instr_addr,  n->instr_len,
+   //            n2, n2->instr_addr, n2->instr_len,
+   //            n3, n3->instr_addr, n3->instr_len);
+   VGP_PUSHCC(VgpCacheSimulate);
+   cachesim_I1_doref(n->instr_addr, n->instr_len, 
+                     &n->parent->Ir.m1, &n->parent->Ir.m2);
+   n->parent->Ir.a++;
+   cachesim_I1_doref(n2->instr_addr, n2->instr_len, 
+                     &n2->parent->Ir.m1, &n2->parent->Ir.m2);
+   n2->parent->Ir.a++;
+   cachesim_I1_doref(n3->instr_addr, n3->instr_len, 
+                     &n3->parent->Ir.m1, &n3->parent->Ir.m2);
+   n3->parent->Ir.a++;
+   VGP_POPCC(VgpCacheSimulate);
+}
+
+static VG_REGPARM(3)
+void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr, Word data_size)
+{
+   //VG_(printf)("1I_1Dr:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
+   //            "                               daddr=0x%010lx,  dsize=%lu\n",
+   //            n, n->instr_addr, n->instr_len, data_addr, data_size);
    VGP_PUSHCC(VgpCacheSimulate);
    cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
 
-   cachesim_D1_doref(data_addr, n->data_size, 
+   cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dr.m1, &n->parent->Dr.m2);
    n->parent->Dr.a++;
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static VG_REGPARM(2)
-void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr)
+static VG_REGPARM(3)
+void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr, Word data_size)
 {
-   //VG_(printf)("1I_1Dw: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
-   //            n, n->instr_addr, n->instr_len, data_addr, n->data_size);
+   //VG_(printf)("1I_1Dw:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
+   //            "                               daddr=0x%010lx,  dsize=%lu\n",
+   //            n, n->instr_addr, n->instr_len, data_addr, data_size);
    VGP_PUSHCC(VgpCacheSimulate);
    cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
 
-   cachesim_D1_doref(data_addr, n->data_size, 
+   cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dw.m1, &n->parent->Dw.m2);
    n->parent->Dw.a++;
    VGP_POPCC(VgpCacheSimulate);
 }
 
 static VG_REGPARM(3)
-void log_1I_2D_cache_access(instr_info* n, Addr data_addr1, Addr data_addr2)
+void log_0I_1Dr_cache_access(instr_info* n, Addr data_addr, Word data_size)
 {
-   //VG_(printf)("1I_2D: CCaddr=%p, iaddr=%p, isize=%u, daddr1=%p, daddr2=%p, dsize=%u\n",
-   //            n, n->instr_addr, n->instr_len, data_addr1, data_addr2, n->data_size);
+   //VG_(printf)("0I_1Dr:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
+   //            n, data_addr, data_size);
    VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_I1_doref(n->instr_addr, n->instr_len,
-                     &n->parent->Ir.m1,  &n->parent->Ir.m2);
-   n->parent->Ir.a++;
-
-   cachesim_D1_doref(data_addr1, n->data_size,
+   cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dr.m1, &n->parent->Dr.m2);
    n->parent->Dr.a++;
-   cachesim_D1_doref(data_addr2, n->data_size,
+   VGP_POPCC(VgpCacheSimulate);
+}
+
+static VG_REGPARM(3)
+void log_0I_1Dw_cache_access(instr_info* n, Addr data_addr, Word data_size)
+{
+   //VG_(printf)("0I_1Dw:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
+   //            n, data_addr, data_size);
+   VGP_PUSHCC(VgpCacheSimulate);
+   cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dw.m1, &n->parent->Dw.m2);
    n->parent->Dw.a++;
    VGP_POPCC(VgpCacheSimulate);
 }
 
 /*------------------------------------------------------------*/
-/*--- Instrumentation                                      ---*/
+/*--- Instrumentation types and structures                 ---*/
+/*------------------------------------------------------------*/
+
+/* Maintain an ordered list of memory events which are outstanding, in
+   the sense that no IR has yet been generated to do the relevant
+   helper calls.  The BB is scanned top to bottom and memory events
+   are added to the end of the list, merging with the most recent
+   notified event where possible (Dw immediately following Dr and
+   having the same size and EA can be merged).
+
+   This merging is done so that for architectures which have
+   load-op-store instructions (x86, amd64), the insn is treated as if
+   it makes just one memory reference (a modify), rather than two (a
+   read followed by a write at the same address).
+
+   At various points the list will need to be flushed, that is, IR
+   generated from it.  That must happen before any possible exit from
+   the block (the end, or an IRStmt_Exit).  Flushing also takes place
+   when there is no space to add a new event.
+
+   If we require the simulation statistics to be up to date with
+   respect to possible memory exceptions, then the list would have to
+   be flushed before each memory reference.  That would however lose
+   performance by inhibiting event-merging during flushing.
+
+   Flushing the list consists of walking it start to end and emitting
+   instrumentation IR for each event, in the order in which they
+   appear.  It may be possible to emit a single call for two adjacent
+   events in order to reduce the number of helper function calls made.
+   For example, it could well be profitable to handle two adjacent Ir
+   events with a single helper call.  */
+
+typedef
+   IRExpr 
+   IRAtom;
+
+typedef 
+   enum { Event_Ir=0, Event_Dr=1, Event_Dw=2, Event_Dm=3 }
+   EventKind;
+
+typedef
+   struct {
+      EventKind ekind;
+      Int       size;   /* ALL */
+      Addr64    iaddr;  /* ALL.  For Dr/Dw/Dm is & of parent insn. */
+      IRAtom*   dataEA; /* Dr/Dw/Dm only */ /* IR ATOM ONLY */
+   }
+   Event;
+
+/* Up to this many unnotified events are allowed.  Number is
+   arbitrary.  Larger numbers allow more event merging to occur, but
+   potentially induce more spilling due to extending live ranges of
+   address temporaries. */
+#define N_EVENTS 16
+
+
+/* A struct which holds all the running state during instrumentation.
+   Mostly to avoid passing loads of parameters everywhere. */
+typedef
+   struct {
+      /* The current outstanding-memory-event list. */
+      Event events[N_EVENTS];
+      Int   events_used;
+
+      /* The array of instr_info bins for the BB. */
+      BB_info* bbInfo;
+
+      /* Number instr_info bins 'used' so far. */
+      Int bbInfo_i;
+
+      /* Not sure what this is for (jrs 20051009) */
+      Bool bbSeenBefore;
+
+      /* The output BB being constructed. */
+      IRBB* bbOut;
+   }
+   CgState;
+
+
+static Int index3 ( EventKind k1, EventKind k2, EventKind k3 )
+{
+  Int i1 = k1;
+  Int i2 = k2;
+  Int i3 = k3;
+  Int  r;
+  tl_assert(i1 >= 0 && i1 < 4);
+  tl_assert(i2 >= 0 && i2 < 4);
+  tl_assert(i3 >= 0 && i3 < 4);
+  r = 16*i1 + 4*i2 + i3;
+  tl_assert(r >= 0 && r < 64);
+  return r;
+}
+
+static void show3 ( Int idx )
+{
+  HChar* names = "IRWM";
+  Int i1 = (idx >> 4) & 3;
+  Int i2 = (idx >> 2) & 3;
+  Int i3 = idx & 3;
+  VG_(printf)("%c%c%c", names[i1], names[i2], names[i3]);
+}
+
+static Int trigrams[64];
+
+
+/*------------------------------------------------------------*/
+/*--- Instrumentation main                                 ---*/
 /*------------------------------------------------------------*/
 
 static
-BB_info* get_BB_info(IRBB* bbIn, Addr origAddr, Bool* bbSeenBefore)
+BB_info* get_BB_info(IRBB* bbIn, Addr origAddr, /*OUT*/Bool* bbSeenBefore)
 {
    Int      i, n_instrs;
    IRStmt*  st;
@@ -389,143 +543,14 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr, Bool* bbSeenBefore)
    return bbInfo;
 }
 
-static 
-Bool handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st, IRStmt* st2,
-                        Addr* instrAddr, UInt* instrLen,
-                        IRExpr** loadAddrExpr, IRExpr** storeAddrExpr,
-                        UInt* dataSize)
-{
-   tl_assert(isFlatIRStmt(st));
-
-   switch (st->tag) {
-   case Ist_NoOp:
-   case Ist_AbiHint:
-   case Ist_Put:
-   case Ist_PutI:
-   case Ist_MFence:
-      break;
-
-   case Ist_Exit: {
-      // This is a conditional jump.  Most of the time, we want to add the
-      // instrumentation before it, to ensure it gets executed.  Eg, (1) if
-      // this conditional jump is just before an IMark:
-      //
-      //   t108 = Not1(t107)
-      //   [add instrumentation here]
-      //   if (t108) goto {Boring} 0x3A96637D:I32
-      //   ------ IMark(0x3A966370, 7) ------
-      //
-      // or (2) if this conditional jump is the last thing before the
-      // block-ending unconditional jump:
-      //
-      //   t111 = Not1(t110)
-      //   [add instrumentation here]
-      //   if (t111) goto {Boring} 0x3A96637D:I32
-      //   goto {Boring} 0x3A966370:I32
-      //
-      // One case (3) where we want the instrumentation after the conditional
-      // jump is when the conditional jump is for an x86 REP instruction:
-      //
-      //   ------ IMark(0x3A967F13, 2) ------
-      //   t1 = GET:I32(4)
-      //   t6 = CmpEQ32(t1,0x0:I32) 
-      //   if (t6) goto {Boring} 0x3A967F15:I32    # ignore this cond jmp
-      //   t7 = Sub32(t1,0x1:I32)
-      //   PUT(4) = t7
-      //   ...
-      //   t56 = Not1(t55)
-      //   [add instrumentation here]
-      //   if (t56) goto {Boring} 0x3A967F15:I32
-      //
-      // Therefore, we return true if the next statement is an IMark, or if
-      // there is no next statement (which matches case (2), as the final
-      // unconditional jump is not represented in the IRStmt list).
-      //
-      // Note that this approach won't do in the long run for supporting
-      // PPC, but it's good enough for x86/AMD64 for the 3.0.X series.
-      if (NULL == st2 || Ist_IMark == st2->tag)
-         return True;
-      else
-         return False;
-   }
-
-   case Ist_IMark:
-      /* st->Ist.IMark.addr is a 64-bit int.  ULong_to_Ptr casts this
-         to the host's native pointer type; if that is 32 bits then it
-         discards the upper 32 bits.  If we are cachegrinding on a
-         32-bit host then we are also ensured that the guest word size
-         is 32 bits, due to the assertion in cg_instrument that the
-         host and guest word sizes must be the same.  Hence
-         st->Ist.IMark.addr will have been derived from a 32-bit guest
-         code address and truncation of it is safe.  I believe this
-         assignment should be correct for both 32- and 64-bit
-         machines. */
-      *instrAddr = (Addr)ULong_to_Ptr(st->Ist.IMark.addr);
-      *instrLen =        st->Ist.IMark.len;
-      break;
-
-   case Ist_Tmp: {
-      IRExpr* data = st->Ist.Tmp.data;
-      if (data->tag == Iex_Load) {
-         IRExpr* aexpr = data->Iex.Load.addr;
-         tl_assert( isIRAtom(aexpr) );
-         // Note also, endianness info is ignored.  I guess that's not
-         // interesting.
-         // XXX: repe cmpsb does two loads... the first one is ignored here!
-         //tl_assert( NULL == *loadAddrExpr );          // XXX: ???
-         *loadAddrExpr = aexpr;
-         *dataSize = sizeofIRType(data->Iex.Load.ty);
-      }
-      break;
-   }
-      
-   case Ist_Store: {
-      IRExpr* data  = st->Ist.Store.data;
-      IRExpr* aexpr = st->Ist.Store.addr;
-      tl_assert( isIRAtom(aexpr) );
-      tl_assert( NULL == *storeAddrExpr );          // XXX: ???
-      *storeAddrExpr = aexpr;
-      *dataSize = sizeofIRType(typeOfIRExpr(tyenv, data));
-      break;
-   }
-   
-   case Ist_Dirty: {
-      IRDirty* d = st->Ist.Dirty.details;
-      if (d->mFx != Ifx_None) {
-         /* This dirty helper accesses memory.  Collect the
-            details. */
-         tl_assert(d->mAddr != NULL);
-         tl_assert(d->mSize != 0);
-         *dataSize = d->mSize;
-         if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
-            *loadAddrExpr = d->mAddr;
-         if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
-            *storeAddrExpr = d->mAddr;
-      } else {
-         tl_assert(d->mAddr == NULL);
-         tl_assert(d->mSize == 0);
-      }
-      break;
-   }
-
-   default:
-      VG_(printf)("\n");
-      ppIRStmt(st);
-      VG_(printf)("\n");
-      VG_(tool_panic)("Cachegrind: unhandled IRStmt");
-   }
-
-   return False;
-}
 
 static
-void do_details( instr_info* n, Bool bbSeenBefore,
-                 Addr instr_addr, Int instr_len, Int data_size )
+void init_instr_info( instr_info* n, Bool bbSeenBefore,
+                      Addr instr_addr, Int instr_len )
 {
    if (bbSeenBefore) {
       tl_assert( n->instr_addr == instr_addr );
       tl_assert( n->instr_len  == instr_len );
-      tl_assert( n->data_size  == data_size );
       // Don't check that (n->parent == parent)... it's conceivable that
       // the debug info might change;  the other asserts should be enough to
       // detect anything strange.
@@ -533,126 +558,318 @@ void do_details( instr_info* n, Bool bbSeenBefore,
       lineCC* parent = get_lineCC(instr_addr);
       n->instr_addr = instr_addr;
       n->instr_len  = instr_len;
-      n->data_size  = data_size;
       n->parent     = parent;
    }
 }
 
-static Bool loadStoreAddrsMatch(IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
+static void showEvent ( Event* ev )
 {
-  // I'm assuming that for 'modify' instructions, that Vex always makes
-  // the loadAddrExpr and storeAddrExpr be of the same type, ie. both Tmp
-  // expressions, or both Const expressions.
-  tl_assert(isIRAtom(loadAddrExpr));
-  tl_assert(isIRAtom(storeAddrExpr));
-  return eqIRAtom(loadAddrExpr, storeAddrExpr);
+   switch (ev->ekind) {
+      case Event_Ir: 
+         VG_(printf)("Ir %d 0x%llx\n", ev->size, ev->iaddr);
+         break;
+      case Event_Dr:
+         VG_(printf)("Dr %d 0x%llx EA=", ev->size, ev->iaddr);
+         ppIRExpr(ev->dataEA); 
+         VG_(printf)("\n");
+         break;
+      case Event_Dw:
+         VG_(printf)("Dw %d 0x%llx EA=", ev->size, ev->iaddr);
+         ppIRExpr(ev->dataEA); 
+         VG_(printf)("\n");
+         break;
+      case Event_Dm:
+         VG_(printf)("Dm %d 0x%llx EA=", ev->size, ev->iaddr);
+         ppIRExpr(ev->dataEA); 
+         VG_(printf)("\n");
+         break;
+      default: 
+         tl_assert(0);
+         break;
+   }
 }
 
-// Instrumentation for the end of each original instruction.
-static
-void instrumentInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
-                     UInt instrAddr, UInt instrLen, UInt dataSize,
-                     IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
+/* Reserve instr_info for the first mention of a new insn. */
+
+static instr_info* reserve_instr_info ( CgState* cgs )
 {
-   IRDirty* di;
-   IRExpr  *arg1, *arg2, *arg3, **argv;
-   Int      argc;
-   Char*    helperName;
-   void*    helperAddr;
-   IRType   wordTy;
+   instr_info* i_node;
+   tl_assert(cgs->bbInfo_i >= 0);
+   tl_assert(cgs->bbInfo_i < cgs->bbInfo->n_instrs);
+   i_node = &cgs->bbInfo->instrs[ cgs->bbInfo_i ];
+   cgs->bbInfo_i++;
+   return i_node;
+}
 
-   // Stay sane ...
-   tl_assert(sizeof(HWord) == sizeof(void*));
-   if (sizeof(HWord) == 4) {
-      wordTy = Ity_I32;
-   } else
-   if (sizeof(HWord) == 8) {
-      wordTy = Ity_I64;
-   } else {
-      VG_(tool_panic)("instrumentInstr: strange word size");
-   }
 
-   if (loadAddrExpr) 
-      tl_assert(wordTy == typeOfIRExpr(bbOut->tyenv, loadAddrExpr));
-   if (storeAddrExpr) 
-      tl_assert(wordTy == typeOfIRExpr(bbOut->tyenv, storeAddrExpr));
+/* Find the most recently allocated instr_info. */
 
-   // Large (eg. 28B, 108B, 512B on x86) data-sized instructions will be
-   // done inaccurately, but they're very rare and this avoids errors from
-   // hitting more than two cache lines in the simulation.
-   if (dataSize > MIN_LINE_SIZE) dataSize = MIN_LINE_SIZE;
+static instr_info* find_most_recent_instr_info ( CgState* cgs )
+{
+   tl_assert(cgs->bbInfo_i >= 0);
+   tl_assert(cgs->bbInfo_i <= cgs->bbInfo->n_instrs);
+   if (cgs->bbInfo_i == 0)
+      return NULL;
+   else
+      return &cgs->bbInfo->instrs[ cgs->bbInfo_i - 1 ];
+}
 
-   // Setup 1st arg: instr_info node's address
-   // Believed to be 64-bit clean
-   do_details(i_node, bbSeenBefore, instrAddr, instrLen, dataSize );
-   arg1 = mkIRExpr_HWord( (HWord)i_node );
 
-   if (!loadAddrExpr && !storeAddrExpr) {
-      // no load/store
-      tl_assert(0 == dataSize);
-      helperName = "log_1I_0D_cache_access";
-      helperAddr = &log_1I_0D_cache_access;
-      argc = 1;
-      argv = mkIRExprVec_1(arg1);
+/* Generate code for all outstanding memory events, and mark the queue
+   empty.  Code is generated into cgs->bbOut, and this activity
+   'consumes' slots in cgs->bbInfo. */
 
-   } else if (loadAddrExpr && !storeAddrExpr) {
-      // load
-      tl_assert( isIRAtom(loadAddrExpr) );
-      helperName = "log_1I_1Dr_cache_access";
-      helperAddr = &log_1I_1Dr_cache_access;
-      argc = 2;
-      arg2 = loadAddrExpr;
-      argv = mkIRExprVec_2(arg1, arg2);
+static void flushEvents ( CgState* cgs )
+{
+   Int         i, regparms;
+   Char*       helperName;
+   void*       helperAddr;
+   IRExpr**    argv;
+   IRExpr*     i_node_expr;
+   IRExpr*     i_node2_expr;
+   IRExpr*     i_node3_expr;
+   IRDirty*    di;
+   instr_info* i_node;
+   instr_info* i_node2;
+   instr_info* i_node3;
 
-   } else if (!loadAddrExpr && storeAddrExpr) {
-      // store
-      tl_assert( isIRAtom(storeAddrExpr) );
-      helperName = "log_1I_1Dw_cache_access";
-      helperAddr = &log_1I_1Dw_cache_access;
-      argc = 2;
-      arg2 = storeAddrExpr;
-      argv = mkIRExprVec_2(arg1, arg2);
- 
-   } else {
-      tl_assert( loadAddrExpr && storeAddrExpr );
-      tl_assert( isIRAtom(loadAddrExpr) );
-      tl_assert( isIRAtom(storeAddrExpr) );
+   for (i = 0; i < cgs->events_used-2; i++)
+     trigrams [ index3( cgs->events[i].ekind, cgs->events[i+1].ekind,cgs->events[i+2].ekind ) ]++;
 
-      if ( loadStoreAddrsMatch(loadAddrExpr, storeAddrExpr) ) {
-         // modify
-         helperName = "log_1I_1Dr_cache_access";
-         helperAddr = &log_1I_1Dr_cache_access;
-         argc = 2;
-         arg2 = loadAddrExpr;
-         argv = mkIRExprVec_2(arg1, arg2);
+   i = 0;
+   while (i < cgs->events_used) {
 
-      } else {
-         // load/store
-         helperName = "log_1I_2D_cache_access";
-         helperAddr = &log_1I_2D_cache_access;
-         argc = 3;
-         arg2 = loadAddrExpr;
-         arg3 = storeAddrExpr;
-         argv = mkIRExprVec_3(arg1, arg2, arg3);
+      helperName = NULL;
+      helperAddr = NULL;
+      argv       = NULL;
+      regparms   = 0;
+
+      /* generate IR to notify event i and possibly the ones
+         immediately following it. */
+      tl_assert(i >= 0 && i < cgs->events_used);
+      if (DEBUG_CG) {
+         VG_(printf)("   flush "); 
+         showEvent( &cgs->events[i] );
       }
+
+      /* For any event we find the relevant instr_info.  The following
+         assumes that Event_Ir is the first event to refer to any
+         specific insn, and so a new entry in the cgs->bbInfo->instrs
+         is allocated.  All other events (Dr,Dw,Dm) must refer to the
+         most recently encountered IMark and so we use the
+         most-recently allocated instrs[] entry, which must exist. */
+
+      if (cgs->events[i].ekind == Event_Ir) {
+         /* allocate an instr_info and fill in its addr/size. */
+         i_node = reserve_instr_info( cgs );
+         tl_assert(i_node);
+         init_instr_info( i_node, cgs->bbSeenBefore,
+                          (Addr)cgs->events[i].iaddr, /* i addr */
+                          cgs->events[i].size  /* i size */);
+      } else {
+         /* use the most-recently allocated i_node but don't mess with
+            its internals */
+         i_node = find_most_recent_instr_info( cgs );
+         /* it must actually exist */
+         tl_assert(i_node);
+         /* it must match the declared parent instruction of this
+            event. */
+         tl_assert(i_node->instr_addr == cgs->events[i].iaddr);
+      }
+
+      i_node_expr = mkIRExpr_HWord( (HWord)i_node );
+
+      /* Decide on helper fn to call and args to pass it, and advance
+         i appropriately. */
+      switch (cgs->events[i].ekind) {
+         case Event_Ir:
+            /* Merge with a following Dr/Dm if it is from this insn. */
+            if (i < cgs->events_used-1 
+                && cgs->events[i+1].iaddr == cgs->events[i].iaddr
+                && (cgs->events[i+1].ekind == Event_Dr
+                    || cgs->events[i+1].ekind == Event_Dm)) {
+               helperName = "log_1I_1Dr_cache_access";
+               helperAddr = &log_1I_1Dr_cache_access;
+               argv = mkIRExprVec_3( i_node_expr,
+                                     cgs->events[i+1].dataEA,
+                                     mkIRExpr_HWord( cgs->events[i+1].size ) );
+               regparms = 3;
+               i += 2;
+            }
+            /* Merge with a following Dw if it is from this insn. */
+            else
+            if (i < cgs->events_used-1 
+                && cgs->events[i+1].iaddr == cgs->events[i].iaddr
+                && cgs->events[i+1].ekind == Event_Dw) {
+               helperName = "log_1I_1Dw_cache_access";
+               helperAddr = &log_1I_1Dw_cache_access;
+               argv = mkIRExprVec_3( i_node_expr,
+                                     cgs->events[i+1].dataEA,
+                                     mkIRExpr_HWord( cgs->events[i+1].size ) );
+               regparms = 3;
+               i += 2;
+            }
+            /* Merge with two following Irs if possible. */
+            else
+            if (i < cgs->events_used-2 
+                && cgs->events[i+1].ekind == Event_Ir
+                && cgs->events[i+2].ekind == Event_Ir) {
+               helperName = "log_3I_0D_cache_access";
+               helperAddr = &log_3I_0D_cache_access;
+
+               i_node2 = reserve_instr_info( cgs );
+               tl_assert(i_node2);
+               init_instr_info( i_node2, cgs->bbSeenBefore,
+                                (Addr)cgs->events[i+1].iaddr, /* i addr */
+                                cgs->events[i+1].size  /* i size */);
+               i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
+
+               i_node3 = reserve_instr_info( cgs );
+               tl_assert(i_node3);
+               init_instr_info( i_node3, cgs->bbSeenBefore,
+                                (Addr)cgs->events[i+2].iaddr, /* i addr */
+                                cgs->events[i+2].size  /* i size */);
+               i_node3_expr = mkIRExpr_HWord( (HWord)i_node3 );
+
+               argv = mkIRExprVec_3( i_node_expr, i_node2_expr, i_node3_expr );
+               regparms = 3;
+               i += 3;
+            }
+            /* Merge with a following Ir if possible. */
+            else
+            if (i < cgs->events_used-1 
+                && cgs->events[i+1].ekind == Event_Ir) {
+               helperName = "log_2I_0D_cache_access";
+               helperAddr = &log_2I_0D_cache_access;
+               i_node2 = reserve_instr_info( cgs );
+               tl_assert(i_node2);
+               init_instr_info( i_node2, cgs->bbSeenBefore,
+                                (Addr)cgs->events[i+1].iaddr, /* i addr */
+                                cgs->events[i+1].size  /* i size */);
+               i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
+               argv = mkIRExprVec_2( i_node_expr, i_node2_expr );
+               regparms = 2;
+               i += 2;
+            }
+            /* No merging possible; emit as-is. */
+            else {
+               helperName = "log_1I_0D_cache_access";
+               helperAddr = &log_1I_0D_cache_access;
+               argv = mkIRExprVec_1( i_node_expr );
+               regparms = 1;
+               i++;
+            }
+            break;
+         case Event_Dr:
+         case Event_Dm:
+            helperName = "log_0I_1Dr_cache_access";
+            helperAddr = &log_0I_1Dr_cache_access;
+            argv = mkIRExprVec_3( i_node_expr, 
+                                  cgs->events[i].dataEA, 
+                                  mkIRExpr_HWord( cgs->events[i].size ) );
+            regparms = 3;
+            i++;
+            break;
+         case Event_Dw:
+            helperName = "log_0I_1Dw_cache_access";
+            helperAddr = &log_0I_1Dw_cache_access;
+            argv = mkIRExprVec_3( i_node_expr,
+                                  cgs->events[i].dataEA, 
+                                  mkIRExpr_HWord( cgs->events[i].size ) );
+            regparms = 3;
+            i++;
+            break;
+         default:
+            tl_assert(0);
+      }
+
+      /* Add the helper. */
+      tl_assert(helperName);
+      tl_assert(helperAddr);
+      tl_assert(argv);
+      di = unsafeIRDirty_0_N( regparms, helperName, helperAddr, argv);
+      addStmtToIRBB( cgs->bbOut, IRStmt_Dirty(di) );
    }
 
-   // Add call to the instrumentation function
-   di = unsafeIRDirty_0_N( argc, helperName, helperAddr, argv);
-   addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+   cgs->events_used = 0;
 }
+
+
+static void addEvent_Ir ( CgState* cgs, Int size, Addr64 iaddr )
+{
+   Event* evt;
+   tl_assert(size >= 0 && size <= MIN_LINE_SIZE);
+   if (cgs->events_used == N_EVENTS)
+      flushEvents(cgs);
+   tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
+   /* If vex fails to decode an insn, the size will be zero, but that
+      can't really be true -- the cpu couldn't have determined the
+      insn was undecodable without looking at it.  Hence: */
+   if (size == 0)
+      size = 1;
+   evt = &cgs->events[cgs->events_used];
+   evt->ekind  = Event_Ir;
+   evt->size   = size;
+   evt->iaddr  = iaddr;
+   evt->dataEA = NULL; /*paranoia*/
+   cgs->events_used++;
+}
+
+static void addEvent_Dr ( CgState* cgs, Int size, Addr64 iaddr, IRAtom* ea )
+{
+   Event* evt;
+   tl_assert(isIRAtom(ea));
+   tl_assert(size >= 1 && size <= MIN_LINE_SIZE);
+   if (cgs->events_used == N_EVENTS)
+      flushEvents(cgs);
+   tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
+   evt = &cgs->events[cgs->events_used];
+   evt->ekind  = Event_Dr;
+   evt->size   = size;
+   evt->iaddr  = iaddr;
+   evt->dataEA = ea;
+   cgs->events_used++;
+}
+
+static void addEvent_Dw ( CgState* cgs, Int size, Addr64 iaddr, IRAtom* ea )
+{
+   tl_assert(isIRAtom(ea));
+   tl_assert(size >= 1 && size <= MIN_LINE_SIZE);
+
+   /* Is it possible to merge this write into an immediately preceding
+      read? */
+   if (cgs->events_used > 0
+       && cgs->events[cgs->events_used-1].ekind == Event_Dr
+       && cgs->events[cgs->events_used-1].size  == size
+       && cgs->events[cgs->events_used-1].iaddr == iaddr
+       && eqIRAtom(cgs->events[cgs->events_used-1].dataEA, ea)) {
+      cgs->events[cgs->events_used-1].ekind = Event_Dm;
+      return;
+   }
+
+   /* No.  Add as normal. */
+   if (cgs->events_used == N_EVENTS)
+      flushEvents(cgs);
+   tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
+   cgs->events[cgs->events_used].ekind  = Event_Dw;
+   cgs->events[cgs->events_used].size   = size;
+   cgs->events[cgs->events_used].iaddr  = iaddr;
+   cgs->events[cgs->events_used].dataEA = ea;
+   cgs->events_used++;
+}
+
+////////////////////////////////////////////////////////////
+
 
 static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout, 
                              IRType gWordTy, IRType hWordTy )
 {
-   Int      i, dataSize = 0, bbInfo_i;
-   IRBB*    bbOut;
-   IRStmt*  st;
-   BB_info* bbInfo;
-   Bool     bbSeenBefore = False, addedInstrumentation, addInstNow;
-   Addr     instrAddr, origAddr;
-   UInt     instrLen;
-   IRExpr  *loadAddrExpr, *storeAddrExpr;
+   Int        i;
+   IRStmt*    st;
+   Addr64     cia; /* address of current insn */
+   CgState    cgs;
+   IRTypeEnv* tyenv = bbIn->tyenv;
+
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -660,75 +877,132 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
    }
 
    /* Set up BB */
-   bbOut           = emptyIRBB();
-   bbOut->tyenv    = dopyIRTypeEnv(bbIn->tyenv);
-   bbOut->next     = dopyIRExpr(bbIn->next);
-   bbOut->jumpkind = bbIn->jumpkind;
+   cgs.bbOut        = emptyIRBB();
+   cgs.bbOut->tyenv = dopyIRTypeEnv(tyenv);
 
-   // Get the first statement, and origAddr from it
+   // Get the first statement, and initial cia from it
    i = 0;
    tl_assert(bbIn->stmts_used > 0);
    st = bbIn->stmts[0];
    tl_assert(Ist_IMark == st->tag);
-   origAddr = (Addr)st->Ist.IMark.addr;
-   tl_assert(origAddr == st->Ist.IMark.addr);  // XXX: check no overflow
+   cia = st->Ist.IMark.addr;
 
-   // Get block info
-   bbInfo = get_BB_info(bbIn, origAddr, &bbSeenBefore);
-   bbInfo_i = 0;
+   // Set up running state and get block info
+   cgs.events_used = 0;
+   cgs.bbInfo      = get_BB_info(bbIn, (Addr)cia, &cgs.bbSeenBefore);
+   cgs.bbInfo_i    = 0;
 
-   do {
-      // We should be at an IMark statement
-      tl_assert(Ist_IMark == st->tag);
+   if (DEBUG_CG)
+      VG_(printf)("\n\n---------- cg_instrument ----------\n");
 
-      // Reset stuff for this original instruction
-      loadAddrExpr = storeAddrExpr = NULL;
-      dataSize = 0;
-      addedInstrumentation = False;
+   // Traverse the block, adding events and flushing as necessary.
+   for (i = 0; i < bbIn->stmts_used; i++) {
 
-      // Process all the statements for this original instruction (ie. until
-      // the next IMark statement, or the end of the block)
-      do {
-         IRStmt* st2 = ( i+1 < bbIn->stmts_used ? bbIn->stmts[i+1] : NULL );
+      st = bbIn->stmts[i];
+      tl_assert(isFlatIRStmt(st));
 
-         addInstNow = handleOneStatement(bbIn->tyenv, bbOut, st, st2,
-                                         &instrAddr, &instrLen, &loadAddrExpr,
-                                         &storeAddrExpr, &dataSize);
-         if (addInstNow) {
-            tl_assert(!addedInstrumentation);
-            addedInstrumentation = True;
-            
-            // Nb: instrLen will be zero if Vex failed to decode it.
-            // Also Client requests can appear to be very large (eg. 18
-            // bytes on x86) because they are really multiple instructions.
-            tl_assert( 0 == instrLen ||
-                       bbIn->jumpkind == Ijk_ClientReq ||
-                       (instrLen >= VG_MIN_INSTR_SZB && 
-                        instrLen <= VG_MAX_INSTR_SZB) );
+      switch (st->tag) {
+         case Ist_NoOp:
+         case Ist_AbiHint:
+         case Ist_Put:
+         case Ist_PutI:
+         case Ist_MFence:
+            break;
 
-            // Add instrumentation before this statement.
-            instrumentInstr(bbOut, &bbInfo->instrs[ bbInfo_i ], bbSeenBefore,
-                      instrAddr, instrLen, dataSize, loadAddrExpr, storeAddrExpr);
+         case Ist_IMark:
+            cia = st->Ist.IMark.addr;
+            addEvent_Ir( &cgs, st->Ist.IMark.len, cia );
+            break;
+
+         case Ist_Tmp: {
+            IRExpr* data = st->Ist.Tmp.data;
+            if (data->tag == Iex_Load) {
+               IRExpr* aexpr = data->Iex.Load.addr;
+               tl_assert( isIRAtom(aexpr) );
+               // Note also, endianness info is ignored.  I guess
+               // that's not interesting.
+               addEvent_Dr( &cgs, sizeofIRType(data->Iex.Load.ty), 
+                                  cia, aexpr );
+            }
+            break;
          }
 
-         addStmtToIRBB( bbOut, st );
+         case Ist_Store: {
+            IRExpr* data  = st->Ist.Store.data;
+            IRExpr* aexpr = st->Ist.Store.addr;
+            tl_assert( isIRAtom(aexpr) );
+            addEvent_Dw( &cgs, 
+                         sizeofIRType(typeOfIRExpr(tyenv, data)), 
+                         cia, aexpr );
+            break;
+         }
 
-         i++;
-         st = st2;
-      } 
-      while (st && Ist_IMark != st->tag);
+         case Ist_Dirty: {
+            Int      dataSize;
+            IRDirty* d = st->Ist.Dirty.details;
+            if (d->mFx != Ifx_None) {
+               /* This dirty helper accesses memory.  Collect the
+                  details. */
+               tl_assert(d->mAddr != NULL);
+               tl_assert(d->mSize != 0);
+               dataSize = d->mSize;
+               // Large (eg. 28B, 108B, 512B on x86) data-sized
+               // instructions will be done inaccurately, but they're
+               // very rare and this avoids errors from hitting more
+               // than two cache lines in the simulation.
+               if (dataSize > MIN_LINE_SIZE)
+                  dataSize = MIN_LINE_SIZE;
+               if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
+                  addEvent_Dr( &cgs, dataSize, cia, d->mAddr );
+               if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
+                  addEvent_Dw( &cgs, dataSize, cia, d->mAddr );
+            } else {
+               tl_assert(d->mAddr == NULL);
+               tl_assert(d->mSize == 0);
+            }
+            break;
+         }
 
-      if (!addedInstrumentation) {
-         // Add instrumentation now, after all the instruction's statements.
-         instrumentInstr(bbOut, &bbInfo->instrs[ bbInfo_i ], bbSeenBefore,
-                         instrAddr, instrLen, dataSize, loadAddrExpr, storeAddrExpr);
+         case Ist_Exit:
+            /* We may never reach the next statement, so need to flush
+               all outstanding transactions now. */
+            flushEvents( &cgs );
+            break;
+
+         default:
+            tl_assert(0);
+            break;
       }
 
-      bbInfo_i++;
-   }
-   while (st);
+      /* Copy the original statement */
+      addStmtToIRBB( cgs.bbOut, st );
 
-   return bbOut;
+      if (DEBUG_CG) {
+         ppIRStmt(st);
+         VG_(printf)("\n");
+      }
+   }
+
+   /* At the end of the bb.  Flush outstandings. */
+   tl_assert(isIRAtom(bbIn->next));
+   flushEvents( &cgs );
+
+   /* copy where-next stuff. */
+   cgs.bbOut->next     = dopyIRExpr(bbIn->next);
+   cgs.bbOut->jumpkind = bbIn->jumpkind;
+
+   /* done.  stay sane ... */
+   tl_assert(cgs.bbInfo_i == cgs.bbInfo->n_instrs);
+
+   if (DEBUG_CG) {
+      VG_(printf)( "goto {");
+      ppIRJumpKind(bbIn->jumpkind);
+      VG_(printf)( "} ");
+      ppIRExpr( bbIn->next );
+      VG_(printf)( "}\n");
+   }
+
+   return cgs.bbOut;
 }
 
 /*------------------------------------------------------------*/
@@ -1077,6 +1351,12 @@ static void cg_fini(Int exitcode)
        VG_(message)(Vg_DebugMsg, "BBs Retranslated: %d", BB_retranslations);
    }
    VGP_POPCC(VgpCacheResults);
+
+   if (0) { Int i;
+   for (i = 0; i < 64; i++) {
+     show3(i); VG_(printf)(" %5d\n", trigrams[i] );
+   }
+   }
 }
 
 /*--------------------------------------------------------------------*/
@@ -1084,15 +1364,20 @@ static void cg_fini(Int exitcode)
 /*--------------------------------------------------------------------*/
 
 // Called when a translation is invalidated due to code unloading.
-static void cg_discard_basic_block_info ( Addr a, SizeT size )
+static void cg_discard_basic_block_info ( VexGuestExtents vge )
 {
-   VgHashNode*  bbInfo;
+   VgHashNode* bbInfo;
 
-   if (0) VG_(printf)( "discard_basic_block_info: %p, %llu\n", a, (ULong)size);
+   tl_assert(vge.n_used > 0);
+
+   if (DEBUG_CG)
+      VG_(printf)( "discard_basic_block_info: %p, %llu\n", 
+                   (void*)(Addr)vge.base[0], (ULong)vge.len[0]);
 
    // Get BB info, remove from table, free BB info.  Simple!
-   bbInfo = VG_(HT_remove)(instr_info_table, a);
+   bbInfo = VG_(HT_remove)(instr_info_table, (UWord)vge.base[0]);
    tl_assert(NULL != bbInfo);
+
    VG_(free)(bbInfo);
 }
 
@@ -1192,7 +1477,7 @@ static void cg_pre_clo_init(void)
    VG_(details_copyright_author)(
       "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
-   VG_(details_avg_translation_sizeB) ( 155 );
+   VG_(details_avg_translation_sizeB) ( 245 );
 
    VG_(basic_tool_funcs)          (cg_post_clo_init,
                                    cg_instrument,

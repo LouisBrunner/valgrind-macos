@@ -186,17 +186,28 @@ extern void VG_(needs_tool_errors) (
    void (*print_extra_suppression_info)(Error* err)
 );
 
-
-/* Is information kept about specific individual basic blocks?  (Eg. for
-   cachegrind there are cost-centres for every instruction, stored at a
-   basic block level.)  If so, it sometimes has to be discarded, because
-   .so mmap/munmap-ping or self-modifying code (informed by the
-   DISCARD_TRANSLATIONS user request) can cause one instruction address
-   to be used for more than one instruction in one program run...  */
+/* Is information kept by the tool about specific instructions or
+   translations?  (Eg. for cachegrind there are cost-centres for every
+   instruction, stored in a per-translation fashion.)  If so, the info
+   may have to be discarded when translations are unloaded (eg. due to
+   .so unloading, or otherwise at the discretion of m_transtab, eg
+   when the table becomes too full) to avoid stale information being
+   reused for new translations. */
 extern void VG_(needs_basic_block_discards) (
-   // Should discard any information that pertains to specific basic blocks
-   // or instructions within the address range given.
-   void (*discard_basic_block_info)(Addr a, SizeT size)
+   // Discard any information that pertains to specific translations
+   // or instructions within the address range given.  The "extents"
+   // arg can be used in two ways.
+   // - If info is being stored at a per-translation level, the first
+   //   address in the extents can be used to identify which translation
+   //   is being discarded.  Each translation will be discarded exactly
+   //   once.
+   // - If info is being stored at a per-instruction level, you can get
+   //   the address range(s) being discarded by stepping through "extents".
+   //   Note that any single instruction may belong to more than one
+   //   translation, and so could be covered by the "extents" of more than
+   //   one call to this function.
+   // Doing it the first way (as eg. Cachegrind does) is probably easier.
+   void (*discard_basic_block_info)(VexGuestExtents vge)
 );
 
 /* Tool defines its own command line options? */

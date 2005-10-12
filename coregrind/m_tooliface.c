@@ -154,7 +154,7 @@ NEEDS(core_errors)
 NEEDS(data_syms)
 
 void VG_(needs_basic_block_discards)(
-   void (*discard)(Addr, SizeT)
+   void (*discard)(VexGuestExtents)
 )
 {
    VG_(needs).basic_block_discards = True;

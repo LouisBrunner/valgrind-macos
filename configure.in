@@ -418,6 +418,29 @@ if test x$no_pointer_sign = xyes; then
 fi
 
 
+# does this compiler support -Wdeclaration-after-statement ?
+AC_MSG_CHECKING([if gcc accepts -Wdeclaration-after-statement ])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wdeclaration-after-statement"
+
+AC_TRY_COMPILE(, [
+int main () { return 0 ; }
+],
+[
+no_pointer_sign=yes
+AC_MSG_RESULT([yes])
+], [
+no_pointer_sign=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+if test x$no_pointer_sign = xyes; then
+  CFLAGS="$CFLAGS -Wdeclaration-after-statement"
+fi
+
+
 # Check for TLS support in the compiler and linker
 AC_CACHE_CHECK([for TLS support], vg_cv_tls,
 	       [AC_ARG_ENABLE(tls, [  --enable-tls            platform supports TLS],

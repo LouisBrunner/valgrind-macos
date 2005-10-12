@@ -9,7 +9,7 @@ add_includes = -I$(top_srcdir)/coregrind \
 		-DVGO_$(VG_OS)=1 \
 		-DVGP_$(VG_ARCH)_$(VG_OS)=1
 
-BASE_AM_CFLAGS = @ARCH_CORE_AM_CFLAGS@ -Wmissing-prototypes -Wdeclaration-after-statement -Winline -Wall -Wshadow -O -g
+BASE_AM_CFLAGS = @ARCH_CORE_AM_CFLAGS@ -Wmissing-prototypes -Winline -Wall -Wshadow -O -g
 
 PIC_AM_CFLAGS = $(BASE_AM_CFLAGS) -fpic -fno-omit-frame-pointer
 

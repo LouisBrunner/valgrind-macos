@@ -155,6 +155,7 @@ VG_(trampoline_stuff_start):
    simple strlen implementation (written in C and compiled by gcc.)
 */
 .global VG_(ppc32_linux_REDIR_FOR_strlen)
+.type   VG_(ppc32_linux_REDIR_FOR_strlen), @function
 VG_(ppc32_linux_REDIR_FOR_strlen):
         lbz 4,0(3)
         li 9,0
@@ -168,9 +169,11 @@ VG_(ppc32_linux_REDIR_FOR_strlen):
 .L18:
         mr 3,9
         blr
+.size VG_(ppc32_linux_REDIR_FOR_strlen), .-VG_(ppc32_linux_REDIR_FOR_strlen)
 
 /* Ditto strcmp */
 .global VG_(ppc32_linux_REDIR_FOR_strcmp)
+.type   VG_(ppc32_linux_REDIR_FOR_strcmp), @function
 VG_(ppc32_linux_REDIR_FOR_strcmp):
 .L20:
         lbz 0,0(3)
@@ -204,7 +207,7 @@ VG_(ppc32_linux_REDIR_FOR_strcmp):
 .L22:
         mr 3,11
         blr
-
+.size VG_(ppc32_linux_REDIR_FOR_strcmp), .-VG_(ppc32_linux_REDIR_FOR_strcmp)
 
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):

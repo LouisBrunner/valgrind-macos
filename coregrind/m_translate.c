@@ -68,43 +68,44 @@ static Bool getArchAndArchInfo( /*OUT*/VexArch*     vex_arch,
    LibVEX_default_VexArchInfo(vai);
 
 #if defined(VGA_x86)
-   Bool have_sse1, have_sse2;
-   UInt eax, ebx, ecx, edx;
+   { Bool have_sse1, have_sse2;
+     UInt eax, ebx, ecx, edx;
 
-   if (!VG_(has_cpuid)())
-      /* we can't do cpuid at all.  Give up. */
-      return False;
+     if (!VG_(has_cpuid)())
+        /* we can't do cpuid at all.  Give up. */
+        return False;
 
-   VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
-   if (eax < 1)
-     /* we can't ask for cpuid(x) for x > 0.  Give up. */
-     return False;
+     VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
+     if (eax < 1)
+        /* we can't ask for cpuid(x) for x > 0.  Give up. */
+        return False;
 
-   /* get capabilities bits into edx */
-   VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
+     /* get capabilities bits into edx */
+     VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
 
-   have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
-   have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
+     have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
+     have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
 
-   VG_(have_mxcsr_x86) = 1;
+     VG_(have_mxcsr_x86) = 1;
 
-   if (have_sse2 && have_sse1) {
-      *vex_arch    = VexArchX86;
-      vai->subarch = VexSubArchX86_sse2;
-      return True;
-   }
+     if (have_sse2 && have_sse1) {
+        *vex_arch    = VexArchX86;
+        vai->subarch = VexSubArchX86_sse2;
+        return True;
+     }
 
-   if (have_sse1) {
-      *vex_arch    = VexArchX86;
-      vai->subarch = VexSubArchX86_sse1;
-      return True;
-   }
+     if (have_sse1) {
+        *vex_arch    = VexArchX86;
+        vai->subarch = VexSubArchX86_sse1;
+        return True;
+     }
 
-   {
-      *vex_arch    = VexArchX86;
-      vai->subarch = VexSubArchX86_sse0;
-      VG_(have_mxcsr_x86) = 0;
-      return True;
+     {
+        *vex_arch    = VexArchX86;
+        vai->subarch = VexSubArchX86_sse0;
+        VG_(have_mxcsr_x86) = 0;
+        return True;
+     }
    }
 
 #elif defined(VGA_amd64)

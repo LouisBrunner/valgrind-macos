@@ -83,7 +83,7 @@ void scan_all_valid_memory_catcher ( Int sigNo, Addr addr )
 static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
 {
    Addr* starts;
-   Int   n_starts, r;
+   Int   n_starts, r = 0;
 
    n_starts = 1;
    while (True) {

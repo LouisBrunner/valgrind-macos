@@ -100,13 +100,14 @@ char* identify ( char* p )
 int main ( void )
 {
   int alocal, maymove, fixed, nsi, dstpossible;
-  dst_impossible = (char*)(&alocal) + 500 * 1000 * 1000;
   int newsizes[6] = { 19, 20, 21, 29, 30, 31 };
 
   char* tidythis = NULL;
   int  tidylen = 0;
   int firsttime = 1;
   char buf[100];
+
+  dst_impossible = (char*)(&alocal) + 500 * 1000 * 1000;
 
   PAGE = sysconf(_SC_PAGESIZE);
 
@@ -116,13 +117,12 @@ int main ( void )
   for (nsi = 0; nsi < 6; nsi++) {
   for (dstpossible = 0; dstpossible <= 1; dstpossible++) {
 
+    char* r;
     int newsize = newsizes[nsi] * PAGE;
     int flags = (maymove ? MREMAP_MAYMOVE : 0)  |
                 (fixed ? MREMAP_FIXED : 0);
     dst = dstpossible ? try_dst : dst_impossible;
     src = setup( tidythis, tidylen );
-
-    char* r;
 
     if (firsttime) {
        printf("dst_possible   = %p\n", try_dst );

@@ -5,6 +5,6 @@ add_includes = -I$(top_srcdir)/include \
 		-DVGP_$(VG_ARCH)_$(VG_OS)=1
 
 AM_CPPFLAGS = $(add_includes)
-AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g @ARCH_TOOL_AM_CFLAGS@
+AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Wdeclaration-after-statement -Winline -Wall -Wshadow -O -g @ARCH_TOOL_AM_CFLAGS@
 AM_CCASFLAGS = $(add_includes)
 

@@ -331,6 +331,11 @@ static void initialiseSector ( Int sno )
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
          if (sectors[sno].tt[i].status == InUse) {
             n_dump_osize += vge_osize(&sectors[sno].tt[i].vge);
+            /* Tell the tool too. */
+            if (VG_(needs).basic_block_discards) {
+               VG_TDICT_CALL( tool_discard_basic_block_info,
+                              sectors[sno].tt[i].vge );
+            }
          }
       }
       if (VG_(clo_verbosity) > 2)

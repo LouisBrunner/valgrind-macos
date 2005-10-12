@@ -761,13 +761,13 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
 */
 static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e )
 {
+   HReg     r_src;
    HReg     dst = newVRegV(env);
    PPC32RI* ri  = iselIntExpr_RI(env, e);
    IRType   ty  = typeOfIRExpr(env->type_env,e);
    UInt     sz  = (ty == Ity_I8) ? 8 : (ty == Ity_I16) ? 16 : 32;
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
 
-   HReg r_src;
    /* special case: immediate */
    if (ri->tag == Pri_Imm) {
       Int simm32 = (Int)ri->Pri.Imm;
@@ -815,13 +815,13 @@ static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e )
    {
       /* CAB: Perhaps faster to store r_src multiple times (sz dependent),
               and simply load the vector? */
-
+      HReg r_aligned16;
       HReg v_src = newVRegV(env);
       PPC32AMode *am_off12;
 
       sub_from_sp( env, 32 );     // Move SP down
       /* Get a 16-aligned address within our stack space */
-      HReg r_aligned16 = get_sp_aligned16( env );
+      r_aligned16 = get_sp_aligned16( env );
       am_off12 = PPC32AMode_IR( 12, r_aligned16);
 
       /* Store r_src in low word of 16-aligned mem */
@@ -1295,13 +1295,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       case Iop_V128to32: {
+         HReg        r_aligned16;
          HReg        dst  = newVRegI(env);
          HReg        vec  = iselVecExpr(env, e->Iex.Unop.arg);
          PPC32AMode *am_off0, *am_off12;
          sub_from_sp( env, 32 );     // Move SP down 32 bytes
 
          // get a quadword aligned address within our stack space
-         HReg r_aligned16 = get_sp_aligned16( env );
+         r_aligned16 = get_sp_aligned16( env );
          am_off0  = PPC32AMode_IR( 0, r_aligned16 );
          am_off12 = PPC32AMode_IR( 12,r_aligned16 );
 
@@ -1802,16 +1803,14 @@ r_l, PPC32RH_Imm(False,0)));
            || e->Iex.Binop.op == Iop_CmpLT32U
            || e->Iex.Binop.op == Iop_CmpLE32S
            || e->Iex.Binop.op == Iop_CmpLE32U)) {
-      HReg     r1  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-
+      PPC32RH* ri2;
+      HReg r1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
       Bool syned = False;
       if (e->Iex.Binop.op == Iop_CmpLT32S ||
           e->Iex.Binop.op == Iop_CmpLE32S) {
          syned = True;
       }
-
-      PPC32RH* ri2 = iselIntExpr_RH(env, syned, e->Iex.Binop.arg2);
-
+      ri2 = iselIntExpr_RH(env, syned, e->Iex.Binop.arg2);
       addInstr(env, PPC32Instr_Cmp32(syned,7,r1,ri2));
 
       switch (e->Iex.Binop.op) {
@@ -2428,6 +2427,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          /* V128{HI}to64 */
          case Iop_V128HIto64:
          case Iop_V128to64: {
+            HReg r_aligned16;
             Int  off = e->Iex.Unop.op==Iop_V128HIto64 ? 0 : 8;
             HReg tLo = newVRegI(env);
             HReg tHi = newVRegI(env);
@@ -2436,7 +2436,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             sub_from_sp( env, 32 );     // Move SP down 32 bytes
 
             // get a quadword aligned address within our stack space
-            HReg r_aligned16 = get_sp_aligned16( env );
+            r_aligned16 = get_sp_aligned16( env );
             am_off0  = PPC32AMode_IR( 0,     r_aligned16 );
             am_offHI = PPC32AMode_IR( off,   r_aligned16 );
             am_offLO = PPC32AMode_IR( off+4, r_aligned16 );
@@ -3086,20 +3086,21 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       }
 
       case Iop_32UtoV128: {
+         HReg r_aligned16, r_zeros;
          HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
          HReg   dst = newVRegV(env);
          PPC32AMode *am_off0, *am_off4, *am_off8, *am_off12;
          sub_from_sp( env, 32 );     // Move SP down
 
          /* Get a quadword aligned address within our stack space */
-         HReg r_aligned16 = get_sp_aligned16( env );
+         r_aligned16 = get_sp_aligned16( env );
          am_off0  = PPC32AMode_IR( 0,  r_aligned16);
          am_off4  = PPC32AMode_IR( 4,  r_aligned16);
          am_off8  = PPC32AMode_IR( 8,  r_aligned16);
          am_off12 = PPC32AMode_IR( 12, r_aligned16);
 
-         /* Store zero's */
-         HReg r_zeros = newVRegI(env);
+         /* Store zeros */
+         r_zeros = newVRegI(env);
          addInstr(env, PPC32Instr_LI32(r_zeros, 0x0));
          addInstr(env, PPC32Instr_Store( 4, am_off0, r_zeros ));
          addInstr(env, PPC32Instr_Store( 4, am_off4, r_zeros ));
@@ -3170,14 +3171,14 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       }
 //.. 
       case Iop_64HLtoV128: {
-         HReg r3, r2, r1, r0;
+         HReg r3, r2, r1, r0, r_aligned16;
          PPC32AMode *am_off0, *am_off4, *am_off8, *am_off12;
          HReg        dst = newVRegV(env);
          /* do this via the stack (easy, convenient, etc) */
          sub_from_sp( env, 32 );        // Move SP down
 
          // get a quadword aligned address within our stack space
-         HReg r_aligned16 = get_sp_aligned16( env );
+         r_aligned16 = get_sp_aligned16( env );
          am_off0  = PPC32AMode_IR( 0,  r_aligned16);
          am_off4  = PPC32AMode_IR( 4,  r_aligned16);
          am_off8  = PPC32AMode_IR( 8,  r_aligned16);

@@ -1313,12 +1313,13 @@ void ppPPC32Instr ( PPC32Instr* i )
       return;
 
    case Pin_AvLdSt: {
-      UChar sz = i->Pin.AvLdSt.sz;
+      UChar  sz = i->Pin.AvLdSt.sz;
+      HChar* str_size;
       if (i->Pin.AvLdSt.addr->tag == Pam_IR) {
          ppLoadImm(hregPPC32_GPR30(), i->Pin.AvLdSt.addr->Pam.RR.index);
          vex_printf(" ; ");
       }
-      char* str_size = sz==1 ? "eb" : sz==2 ? "eh" : sz==4 ? "ew" : "";
+      str_size = sz==1 ? "eb" : sz==2 ? "eh" : sz==4 ? "ew" : "";
       if (i->Pin.AvLdSt.isLoad)
          vex_printf("lv%sx ", str_size);
       else
@@ -3121,18 +3122,20 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       vassert(sz == 8 || sz == 16 || sz == 32);
 
       if (i->Pin.AvSplat.src->tag == Pvi_Imm) {
+         Char simm5;
          opc2 = (sz == 8) ? 780 : (sz == 16) ? 844 : 908;   // 8,16,32
          /* expects 5-bit-signed-imm */
-         Char simm5 = i->Pin.AvSplat.src->Pvi.Imm5s;
+         simm5 = i->Pin.AvSplat.src->Pvi.Imm5s;
          vassert(simm5 >= -16 && simm5 <= 15);
          simm5 = simm5 & 0x1F;
          p = mkFormVX( p, 4, v_dst, (UInt)simm5, 0, opc2 );
       }
       else {  // Pri_Reg
+         UInt lowest_lane;
          opc2 = (sz == 8) ? 524 : (sz == 16) ? 588 : 652;  // 8,16,32
          vassert(hregClass(i->Pin.AvSplat.src->Pvi.Reg) == HRcVec128);
          v_src = vregNo(i->Pin.AvSplat.src->Pvi.Reg);
-         UInt lowest_lane = (128/sz)-1;
+         lowest_lane = (128/sz)-1;
          p = mkFormVX( p, 4, v_dst, lowest_lane, v_src, opc2 );
       }
       goto done;

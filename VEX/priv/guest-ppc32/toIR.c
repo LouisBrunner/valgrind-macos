@@ -788,11 +788,12 @@ static IRExpr* /* :: Ity_I32 */ getCRbit ( UInt bi )
    bit.  Indexing as per getCRbit. */
 static void putCRbit ( UInt bi, IRExpr* bit )
 {
+   UInt    n, off;
    IRExpr* safe;
    vassert(typeOfIRExpr(irbb->tyenv,bit) == Ity_I32);
    safe = binop(Iop_And32, bit, mkU32(1));
-   UInt n   = bi / 4;
-   UInt off = bi % 4;
+   n   = bi / 4;
+   off = bi % 4;
    vassert(bi < 32);
    if (off == 3) {
       /* This is the SO bit for this CR field */
@@ -1160,8 +1161,6 @@ static IRExpr* /* :: Ity_I32 */ get_XER_CA ( void )
 /* Set the CR6 flags following an AltiVec compare operation. */
 static void set_AV_CR6 ( IRExpr* result )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,result) == Ity_V128);
-
    /* CR6[0:3] = {all_ones, 0, all_zeros, 0}
       all_ones  = (v[0] && v[1] && v[2] && v[3])
       all_zeros = ~(v[0] || v[1] || v[2] || v[3])
@@ -1172,6 +1171,9 @@ static void set_AV_CR6 ( IRExpr* result )
    IRTemp v3 = newTemp(Ity_V128);
    IRTemp rOnes  = newTemp(Ity_I8);
    IRTemp rZeros = newTemp(Ity_I8);
+
+   vassert(typeOfIRExpr(irbb->tyenv,result) == Ity_V128);
+
    assign( v0, result );
    assign( v1, binop(Iop_ShrV128, result, mkU8(32)) );
    assign( v2, binop(Iop_ShrV128, result, mkU8(64)) );
@@ -3274,9 +3276,7 @@ static Bool dis_int_shift ( UInt theInstr )
    UChar flag_Rc = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
    
    IRTemp sh_amt = newTemp(Ity_I8);
-   IRTemp rb_b5  = newTemp(Ity_I32);
    IRTemp Rs     = newTemp(Ity_I32);
-   IRTemp Rs_sh  = newTemp(Ity_I32);
    IRTemp Ra     = newTemp(Ity_I32);
    IRTemp Rb     = newTemp(Ity_I32);
    IRTemp sh_amt32   = newTemp(Ity_I32);
@@ -4924,12 +4924,12 @@ static Bool dis_av_procctl ( UInt theInstr )
       break;
 
    case 0x644: { // mtvscr (Move to VSCR, AV p130)
+      IRTemp vB = newTemp(Ity_V128);
       if (vD_addr != 0 || vA_addr != 0) {
          vex_printf("dis_av_procctl(PPC32)(opc2,dst)\n");
          return False;
       }
       DIP("mtvscr v%d\n", vB_addr);
-      IRTemp vB = newTemp(Ity_V128);
       assign( vB, getVReg(vB_addr));
       putSPR( PPC32_SPR_VSCR, unop(Iop_V128to32, mkexpr(vB)) ); 
       break;
@@ -4966,13 +4966,13 @@ static Bool dis_av_load ( UInt theInstr )
    switch (opc2) {
 
    case 0x006: { // lvsl (Load Vector for Shift Left, AV p123)
-      DIP("lvsl v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
       IRExpr** args = mkIRExprVec_3(mkU32(vD_addr), mkexpr(EA), mkU32(0));
       IRDirty* d = unsafeIRDirty_0_N (
                       0/*regparms*/, 
                       "ppc32g_dirtyhelper_LVS",
                       &ppc32g_dirtyhelper_LVS,
                       args );
+      DIP("lvsl v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
       /* declare guest state effects */
       d->needsBBP = True;
       d->nFxState = 1;
@@ -4985,13 +4985,13 @@ static Bool dis_av_load ( UInt theInstr )
       break;
    }
    case 0x026: { // lvsr (Load Vector for Shift Right, AV p125)
-      DIP("lvsr v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
       IRExpr** args = mkIRExprVec_3(mkU32(vD_addr), mkexpr(EA), mkU32(1));
       IRDirty*    d = unsafeIRDirty_0_N (
                          0/*regparms*/, 
                          "ppc32g_dirtyhelper_LVS",
                          &ppc32g_dirtyhelper_LVS,
                          args );
+      DIP("lvsr v%d,r%d,r%d\n", vD_addr, rA_addr, rB_addr);
       /* declare guest state effects */
       d->needsBBP = True;
       d->nFxState = 1;
@@ -5071,9 +5071,9 @@ static Bool dis_av_store ( UInt theInstr )
 
    switch (opc2) {
    case 0x087: { // stvebx (Store Vector Byte Indexed, AV p131)
-      DIP("stvebx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
       IRTemp eb  = newTemp(Ity_I8);
       IRTemp idx = newTemp(Ity_I8);
+      DIP("stvebx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
       assign( eb, binop(Iop_And8, mkU8(0xF),
                         unop(Iop_32to8, mkexpr(EA) )) );
       assign( idx, binop(Iop_Shl8, binop(Iop_Sub8, mkU8(15), mkexpr(eb)),
@@ -5098,9 +5098,9 @@ static Bool dis_av_store ( UInt theInstr )
       break;
    }
    case 0x0C7: { // stvewx (Store Vector Word Indexed, AV p133)
-      DIP("stvewx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
       IRTemp eb  = newTemp(Ity_I8);
       IRTemp idx = newTemp(Ity_I8);
+      DIP("stvewx v%d,r%d,r%d\n", vS_addr, rA_addr, rB_addr);
       assign( EA_aligned, binop( Iop_And32, mkexpr(EA), mkU32(0xFFFFFFFC) ));
       assign( eb, binop(Iop_And8, mkU8(0xF),
                         unop(Iop_32to8, mkexpr(EA_aligned) )) );
@@ -5602,6 +5602,7 @@ static Bool dis_av_multarith ( UInt theInstr )
    UChar vC_addr  = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
    UChar opc2     = toUChar((theInstr >>  0) & 0x3F); /* theInstr[0:5]   */
 
+   IRTemp zeros = newTemp(Ity_V128);
    IRTemp vA = newTemp(Ity_V128);
    IRTemp vB = newTemp(Ity_V128);
    IRTemp vC = newTemp(Ity_V128);
@@ -5614,13 +5615,11 @@ static Bool dis_av_multarith ( UInt theInstr )
       return False;
    }
 
-   IRTemp zeros = newTemp(Ity_V128);
    assign( zeros, unop(Iop_Dup32x4, mkU32(0)) );
 
    switch (opc2) {
    /* Multiply-Add */
    case 0x20: { // vmhaddshs (Multiply High, Add Signed HW Saturate, AV p185)
-      DIP("vmhaddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       IRTemp aLo = newTemp(Ity_V128);
       IRTemp bLo = newTemp(Ity_V128);
       IRTemp cLo = newTemp(Ity_V128);
@@ -5630,6 +5629,7 @@ static Bool dis_av_multarith ( UInt theInstr )
       IRTemp cHi = newTemp(Ity_V128);
       IRTemp zHi = newTemp(Ity_V128);
       IRTemp cSigns = newTemp(Ity_V128);
+      DIP("vmhaddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       assign( cSigns, binop(Iop_CmpGT16Sx8, mkexpr(zeros), mkexpr(vC)) );
       assign( aLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros),  mkexpr(vA)) );
       assign( bLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros),  mkexpr(vB)) );
@@ -5654,7 +5654,6 @@ static Bool dis_av_multarith ( UInt theInstr )
       break;
    }
    case 0x21: { // vmhraddshs (Multiply High Round, Add Signed HW Saturate, AV p186)
-      DIP("vmhraddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       IRTemp zKonst = newTemp(Ity_V128);
       IRTemp aLo = newTemp(Ity_V128);
       IRTemp bLo = newTemp(Ity_V128);
@@ -5665,6 +5664,7 @@ static Bool dis_av_multarith ( UInt theInstr )
       IRTemp cHi = newTemp(Ity_V128);
       IRTemp zHi = newTemp(Ity_V128);
       IRTemp cSigns = newTemp(Ity_V128);
+      DIP("vmhraddshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       assign( cSigns, binop(Iop_CmpGT16Sx8, mkexpr(zeros), mkexpr(vC)) );
       assign( aLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros),  mkexpr(vA)) );
       assign( bLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros),  mkexpr(vB)) );
@@ -5695,7 +5695,6 @@ static Bool dis_av_multarith ( UInt theInstr )
       break;
    }
    case 0x22: { // vmladduhm (Multiply Low, Add Unsigned HW Modulo, AV p194)
-      DIP("vmladduhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       IRTemp aLo = newTemp(Ity_V128);
       IRTemp bLo = newTemp(Ity_V128);
       IRTemp cLo = newTemp(Ity_V128);
@@ -5704,6 +5703,7 @@ static Bool dis_av_multarith ( UInt theInstr )
       IRTemp bHi = newTemp(Ity_V128);
       IRTemp cHi = newTemp(Ity_V128);
       IRTemp zHi = newTemp(Ity_V128);
+      DIP("vmladduhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       assign( aLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros), mkexpr(vA)) );
       assign( bLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros), mkexpr(vB)) );
       assign( cLo, binop(Iop_InterleaveLO16x8, mkexpr(zeros), mkexpr(vC)) );
@@ -5723,7 +5723,6 @@ static Bool dis_av_multarith ( UInt theInstr )
 
    /* Multiply-Sum */
    case 0x24: { // vmsumubm (Multiply Sum Unsigned B Modulo, AV p204)
-      DIP("vmsumubm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       IRTemp zKonst = newTemp(Ity_V128);
       IRTemp odd = newTemp(Ity_V128);
       IRTemp even = newTemp(Ity_V128);
@@ -5731,6 +5730,7 @@ static Bool dis_av_multarith ( UInt theInstr )
       IRTemp odd_even = newTemp(Ity_V128);
       IRTemp even_odd = newTemp(Ity_V128);
       IRTemp even_even = newTemp(Ity_V128);
+      DIP("vmsumubm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       assign( odd,  binop(Iop_MulLo16Ux8, mkexpr(vA), mkexpr(vB)) );
       assign( even, binop(Iop_MulHi16Ux8, mkexpr(vA), mkexpr(vB)) );
       /* zKonst just used to separate the lanes out */
@@ -5754,9 +5754,9 @@ static Bool dis_av_multarith ( UInt theInstr )
       return False;
 
    case 0x26: { // vmsumuhm (Multiply Sum Unsigned HW Modulo, AV p205)
-      DIP("vmsumuhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       IRTemp odd = newTemp(Ity_V128);
       IRTemp even = newTemp(Ity_V128);
+      DIP("vmsumuhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       assign( odd,  binop(Iop_MulLo32Ux4, mkexpr(vA), mkexpr(vB)) );
       assign( even, binop(Iop_MulHi32Ux4, mkexpr(vA), mkexpr(vB)) );
       putVReg( vD_addr,
@@ -5770,9 +5770,9 @@ static Bool dis_av_multarith ( UInt theInstr )
       return False;
 
    case 0x28: { // vmsumshm (Multiply Sum Signed HW Modulo, AV p202)
-      DIP("vmsumshm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       IRTemp odd = newTemp(Ity_V128);
       IRTemp even = newTemp(Ity_V128);
+      DIP("vmsumshm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       assign( odd,  binop(Iop_MulLo32Sx4, mkexpr(vA), mkexpr(vB)) );
       assign( even, binop(Iop_MulHi32Sx4, mkexpr(vA), mkexpr(vB)) );
       putVReg( vD_addr,
@@ -5848,8 +5848,8 @@ static Bool dis_av_shift ( UInt theInstr )
       break;
 
    case 0x1C4: { // vsl (Shift Left, AV p239)
-      DIP("vsl v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       IRTemp sh = newTemp(Ity_I8);
+      DIP("vsl v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       assign( sh, binop(Iop_And8, mkU8(0x7),
                         unop(Iop_32to8,
                              unop(Iop_V128to32, mkexpr(vB)))) );
@@ -5858,8 +5858,8 @@ static Bool dis_av_shift ( UInt theInstr )
       break;
    }
    case 0x40C: { // vslo (Shift Left by Octet, AV p243)
-      DIP("vslo v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       IRTemp sh = newTemp(Ity_I8);
+      DIP("vslo v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       assign( sh, binop(Iop_And8, mkU8(0x78),
                         unop(Iop_32to8,
                              unop(Iop_V128to32, mkexpr(vB)))) );
@@ -5886,8 +5886,8 @@ static Bool dis_av_shift ( UInt theInstr )
       break;
 
    case 0x2C4: { // vsr (Shift Right, AV p251)
-      DIP("vsr v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       IRTemp sh = newTemp(Ity_I8);
+      DIP("vsr v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       assign( sh, binop(Iop_And8, mkU8(0x7),
                         unop(Iop_32to8,
                              unop(Iop_V128to32, mkexpr(vB)))) );
@@ -5911,8 +5911,8 @@ static Bool dis_av_shift ( UInt theInstr )
       break;
 
    case 0x44C: { // vsro (Shift Right by Octet, AV p258)
-      DIP("vsro v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       IRTemp sh = newTemp(Ity_I8);
+      DIP("vsro v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       assign( sh, binop(Iop_And8, mkU8(0x78),
                         unop(Iop_32to8,
                              unop(Iop_V128to32, mkexpr(vB)))) );
@@ -5968,11 +5968,11 @@ static Bool dis_av_permute ( UInt theInstr )
       return True;
      
    case 0x2B: { // vperm (Permute, AV p218)
-      DIP("vperma v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       /* limited to two args for IR, so have to play games... */
       IRTemp a_perm = newTemp(Ity_V128);
       IRTemp b_perm = newTemp(Ity_V128);
       IRTemp mask = newTemp(Ity_V128);
+      DIP("vperma v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       assign( a_perm, binop(Iop_Perm, mkexpr(vA), mkexpr(vC)) );
       assign( b_perm, binop(Iop_Perm, mkexpr(vB), mkexpr(vC)) );
       // mask[i8] = (vC[i8]_4 == 1) ? 0xFF : 0x0
@@ -6049,26 +6049,26 @@ static Bool dis_av_permute ( UInt theInstr )
 
    /* Splat */
    case 0x20C: { // vspltb (Splat Byte, AV p245)
-      DIP("vspltb v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       /* vD = Dup8x16( vB[UIMM_5] ) */
       UChar sh_uimm = (15-UIMM_5)*8;
+      DIP("vspltb v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       putVReg( vD_addr, unop(Iop_Dup8x16,
            unop(Iop_32to8, unop(Iop_V128to32, 
                 binop(Iop_ShrV128, mkexpr(vB), mkU8(sh_uimm))))) );
       break;
    }
    case 0x24C: { // vsplth (Splat Half Word, AV p246)
-      DIP("vsplth v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       UChar sh_uimm = (7-UIMM_5)*16;
+      DIP("vsplth v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       putVReg( vD_addr, unop(Iop_Dup16x8,
            unop(Iop_32to16, unop(Iop_V128to32, 
                 binop(Iop_ShrV128, mkexpr(vB), mkU8(sh_uimm))))) );
       break;
    }
    case 0x28C: { // vspltw (Splat Word, AV p250)
-      DIP("vspltw v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       /* vD = Dup32x4( vB[UIMM_5] ) */
       UChar sh_uimm = (3-UIMM_5)*32;
+      DIP("vspltw v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       putVReg( vD_addr, unop(Iop_Dup32x4,
          unop(Iop_V128to32,
               binop(Iop_ShrV128, mkexpr(vB), mkU8(sh_uimm)))) );
@@ -6107,6 +6107,8 @@ static Bool dis_av_pack ( UInt theInstr )
    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
    UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
 
+   IRTemp signs = IRTemp_INVALID;
+   IRTemp zeros = IRTemp_INVALID;
    IRTemp vA = newTemp(Ity_V128);
    IRTemp vB = newTemp(Ity_V128);
    assign( vA, getVReg(vA_addr));
@@ -6142,12 +6144,12 @@ static Bool dis_av_pack ( UInt theInstr )
       return True;
 
    case 0x10E: { // vpkshus (Pack Signed HW Unsigned Saturate, AV p221)
-      DIP("vpkshus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       // This insn does a signed->unsigned saturating conversion.
       // Conversion done here, then uses unsigned->unsigned vpk insn:
       //  => UnsignedSaturatingNarrow( x & ~ (x >>s 15) )
       IRTemp vA_tmp = newTemp(Ity_V128);
       IRTemp vB_tmp = newTemp(Ity_V128);
+      DIP("vpkshus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       assign( vA_tmp, binop(Iop_AndV128, mkexpr(vA),
                             unop(Iop_NotV128,
                                  binop(Iop_SarN16x8,
@@ -6162,12 +6164,12 @@ static Bool dis_av_pack ( UInt theInstr )
       return True;
    }
    case 0x14E: { // vpkswus (Pack Signed W Unsigned Saturate, AV p223)
-      DIP("vpkswus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       // This insn does a signed->unsigned saturating conversion.
       // Conversion done here, then uses unsigned->unsigned vpk insn:
       //  => UnsignedSaturatingNarrow( x & ~ (x >>s 31) )
       IRTemp vA_tmp = newTemp(Ity_V128);
       IRTemp vB_tmp = newTemp(Ity_V128);
+      DIP("vpkswus v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       assign( vA_tmp, binop(Iop_AndV128, mkexpr(vA),
                             unop(Iop_NotV128,
                                  binop(Iop_SarN32x4,
@@ -6194,7 +6196,6 @@ static Bool dis_av_pack ( UInt theInstr )
       return True;
 
    case 0x30E: { // vpkpx (Pack Pixel, AV p219)
-      DIP("vpkpx v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       /* CAB: Worth a new primop? */
       /* Using shifts to compact pixel elements, then packing them them */
       IRTemp a1 = newTemp(Ity_V128);
@@ -6205,6 +6206,7 @@ static Bool dis_av_pack ( UInt theInstr )
       IRTemp b2 = newTemp(Ity_V128);
       IRTemp b3 = newTemp(Ity_V128);
       IRTemp b_tmp = newTemp(Ity_V128);
+      DIP("vpkpx v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       assign( a1, binop(Iop_ShlN16x8,
                         binop(Iop_ShrN32x4, mkexpr(vA), mkU8(19)),
                         mkU8(10)) );
@@ -6244,8 +6246,8 @@ static Bool dis_av_pack ( UInt theInstr )
       return False;
    }
 
-   IRTemp signs = newTemp(Ity_V128);
-   IRTemp zeros = newTemp(Ity_V128);
+   signs = newTemp(Ity_V128);
+   zeros = newTemp(Ity_V128);
    assign( zeros, unop(Iop_Dup32x4, mkU32(0)) );
 
    switch (opc2) {
@@ -6275,7 +6277,6 @@ static Bool dis_av_pack ( UInt theInstr )
       break;
    }
    case 0x34E: { // vupkhpx (Unpack High Pixel16, AV p276)
-      DIP("vupkhpx v%d,v%d\n", vD_addr, vB_addr);
       /* CAB: Worth a new primop? */
       /* Using shifts to isolate pixel elements, then expanding them */
       IRTemp z0  = newTemp(Ity_V128);
@@ -6284,6 +6285,7 @@ static Bool dis_av_pack ( UInt theInstr )
       IRTemp z2  = newTemp(Ity_V128);
       IRTemp z3  = newTemp(Ity_V128);
       IRTemp z23 = newTemp(Ity_V128);
+      DIP("vupkhpx v%d,v%d\n", vD_addr, vB_addr);
       assign( z0,  binop(Iop_ShlN16x8,
                          binop(Iop_SarN16x8, mkexpr(vB), mkU8(15)),
                          mkU8(8)) );
@@ -6308,7 +6310,6 @@ static Bool dis_av_pack ( UInt theInstr )
       break;
    }
    case 0x3CE: { // vupklpx (Unpack Low Pixel16, AV p279)
-      DIP("vupklpx v%d,v%d\n", vD_addr, vB_addr);
       /* identical to vupkhpx, except interleaving LO */
       IRTemp z0  = newTemp(Ity_V128);
       IRTemp z1  = newTemp(Ity_V128);
@@ -6316,6 +6317,7 @@ static Bool dis_av_pack ( UInt theInstr )
       IRTemp z2  = newTemp(Ity_V128);
       IRTemp z3  = newTemp(Ity_V128);
       IRTemp z23 = newTemp(Ity_V128);
+      DIP("vupklpx v%d,v%d\n", vD_addr, vB_addr);
       assign( z0,  binop(Iop_ShlN16x8,
                          binop(Iop_SarN16x8, mkexpr(vB), mkU8(15)),
                          mkU8(8)) );

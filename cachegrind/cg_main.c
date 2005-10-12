@@ -495,9 +495,10 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
       if (Ist_IMark == st->tag) n_instrs++;
    }
 
-   // Check that the BB has never been translated before.  If this
-   // assertion fails, there has been some screwup in translation
-   // discard/invalidation management.
+   // Check that we don't have an entry for this BB in the instr-info table.
+   // If this assertion fails, there has been some screwup:  some
+   // translations must have been discarded but Cachegrind hasn't discarded
+   // the corresponding entries in the instr-info table.
    bbInfo = (BB_info*)VG_(HT_lookup)(instr_info_table, origAddr);
    tl_assert(NULL == bbInfo);
 
@@ -514,13 +515,11 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
 
 
 static
-void init_instr_info( /*OUT*/instr_info* n, 
-                      Addr instr_addr, Int instr_len )
+void init_instr_info( instr_info* n, Addr instr_addr, Int instr_len )
 {
-   lineCC* parent = get_lineCC(instr_addr);
-   n->instr_addr  = instr_addr;
-   n->instr_len   = instr_len;
-   n->parent      = parent;
+   n->instr_addr = instr_addr;
+   n->instr_len  = instr_len;
+   n->parent     = get_lineCC(instr_addr);
 }
 
 static void showEvent ( Event* ev )

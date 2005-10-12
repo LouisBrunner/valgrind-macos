@@ -471,9 +471,6 @@ typedef
       /* Number instr_info bins 'used' so far. */
       Int bbInfo_i;
 
-      /* Not sure what this is for (jrs 20051009) */
-      Bool bbSeenBefore;
-
       /* The output BB being constructed. */
       IRBB* bbOut;
    }
@@ -485,7 +482,7 @@ typedef
 /*------------------------------------------------------------*/
 
 static
-BB_info* get_BB_info(IRBB* bbIn, Addr origAddr, /*OUT*/Bool* bbSeenBefore)
+BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
 {
    Int      i, n_instrs;
    IRStmt*  st;
@@ -498,42 +495,32 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr, /*OUT*/Bool* bbSeenBefore)
       if (Ist_IMark == st->tag) n_instrs++;
    }
 
-   // Get the BB_info
+   // Check that the BB has never been translated before.  If this
+   // assertion fails, there has been some screwup in translation
+   // discard/invalidation management.
    bbInfo = (BB_info*)VG_(HT_lookup)(instr_info_table, origAddr);
-   *bbSeenBefore = ( NULL == bbInfo ? False : True );
-   if (*bbSeenBefore) {
-      // BB must have been translated before, but flushed from the TT
-      tl_assert(bbInfo->n_instrs == n_instrs );
-      BB_retranslations++;
-   } else {
-      // BB never translated before (at this address, at least;  could have
-      // been unloaded and then reloaded elsewhere in memory)
-      bbInfo = VG_(calloc)(1, sizeof(BB_info) + n_instrs*sizeof(instr_info)); 
-      bbInfo->BB_addr = origAddr;
-      bbInfo->n_instrs = n_instrs;
-      VG_(HT_add_node)( instr_info_table, (VgHashNode*)bbInfo );
-      distinct_instrs++;
-   }
+   tl_assert(NULL == bbInfo);
+
+   // BB has never translated before (at this address, at least; could
+   // have been unloaded and then reloaded elsewhere in memory).
+   bbInfo = VG_(calloc)(1, sizeof(BB_info) + n_instrs*sizeof(instr_info)); 
+   bbInfo->BB_addr = origAddr;
+   bbInfo->n_instrs = n_instrs;
+   VG_(HT_add_node)( instr_info_table, (VgHashNode*)bbInfo );
+   distinct_instrs++;
+
    return bbInfo;
 }
 
 
 static
-void init_instr_info( instr_info* n, Bool bbSeenBefore,
+void init_instr_info( /*OUT*/instr_info* n, 
                       Addr instr_addr, Int instr_len )
 {
-   if (bbSeenBefore) {
-      tl_assert( n->instr_addr == instr_addr );
-      tl_assert( n->instr_len  == instr_len );
-      // Don't check that (n->parent == parent)... it's conceivable that
-      // the debug info might change;  the other asserts should be enough to
-      // detect anything strange.
-   } else {
-      lineCC* parent = get_lineCC(instr_addr);
-      n->instr_addr = instr_addr;
-      n->instr_len  = instr_len;
-      n->parent     = parent;
-   }
+   lineCC* parent = get_lineCC(instr_addr);
+   n->instr_addr  = instr_addr;
+   n->instr_len   = instr_len;
+   n->parent      = parent;
 }
 
 static void showEvent ( Event* ev )
@@ -634,7 +621,7 @@ static void flushEvents ( CgState* cgs )
          /* allocate an instr_info and fill in its addr/size. */
          i_node = reserve_instr_info( cgs );
          tl_assert(i_node);
-         init_instr_info( i_node, cgs->bbSeenBefore,
+         init_instr_info( i_node,
                           (Addr)cgs->events[i].iaddr, /* i addr */
                           cgs->events[i].size  /* i size */);
       } else {
@@ -690,14 +677,14 @@ static void flushEvents ( CgState* cgs )
 
                i_node2 = reserve_instr_info( cgs );
                tl_assert(i_node2);
-               init_instr_info( i_node2, cgs->bbSeenBefore,
+               init_instr_info( i_node2,
                                 (Addr)cgs->events[i+1].iaddr, /* i addr */
                                 cgs->events[i+1].size  /* i size */);
                i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
 
                i_node3 = reserve_instr_info( cgs );
                tl_assert(i_node3);
-               init_instr_info( i_node3, cgs->bbSeenBefore,
+               init_instr_info( i_node3,
                                 (Addr)cgs->events[i+2].iaddr, /* i addr */
                                 cgs->events[i+2].size  /* i size */);
                i_node3_expr = mkIRExpr_HWord( (HWord)i_node3 );
@@ -714,7 +701,7 @@ static void flushEvents ( CgState* cgs )
                helperAddr = &log_2I_0D_cache_access;
                i_node2 = reserve_instr_info( cgs );
                tl_assert(i_node2);
-               init_instr_info( i_node2, cgs->bbSeenBefore,
+               init_instr_info( i_node2,
                                 (Addr)cgs->events[i+1].iaddr, /* i addr */
                                 cgs->events[i+1].size  /* i size */);
                i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
@@ -860,7 +847,7 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
 
    // Set up running state and get block info
    cgs.events_used = 0;
-   cgs.bbInfo      = get_BB_info(bbIn, (Addr)cia, &cgs.bbSeenBefore);
+   cgs.bbInfo      = get_BB_info(bbIn, (Addr)cia);
    cgs.bbInfo_i    = 0;
 
    if (DEBUG_CG)
@@ -1328,7 +1315,9 @@ static void cg_fini(Int exitcode)
 /*--- Discarding BB info                                           ---*/
 /*--------------------------------------------------------------------*/
 
-// Called when a translation is invalidated due to code unloading.
+// Called when a translation is removed from the translation cache for
+// any reason at all: to free up space, because the guest code was
+// unmapped or modified, or for any arbitrary reason.
 static void cg_discard_basic_block_info ( VexGuestExtents vge )
 {
    VgHashNode* bbInfo;

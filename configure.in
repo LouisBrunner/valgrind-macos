@@ -428,15 +428,15 @@ AC_TRY_COMPILE(, [
 int main () { return 0 ; }
 ],
 [
-no_pointer_sign=yes
+declaration_after_statement=yes
 AC_MSG_RESULT([yes])
 ], [
-no_pointer_sign=no
+declaration_after_statement=no
 AC_MSG_RESULT([no])
 ])
 CFLAGS=$safe_CFLAGS
 
-if test x$no_pointer_sign = xyes; then
+if test x$declaration_after_statement = xyes; then
   CFLAGS="$CFLAGS -Wdeclaration-after-statement"
 fi
 

@@ -438,7 +438,7 @@ typedef
    IRAtom;
 
 typedef 
-   enum { Event_Ir=0, Event_Dr=1, Event_Dw=2, Event_Dm=3 }
+   enum { Event_Ir, Event_Dr, Event_Dw, Event_Dm }
    EventKind;
 
 typedef
@@ -478,32 +478,6 @@ typedef
       IRBB* bbOut;
    }
    CgState;
-
-
-static Int index3 ( EventKind k1, EventKind k2, EventKind k3 )
-{
-  Int i1 = k1;
-  Int i2 = k2;
-  Int i3 = k3;
-  Int  r;
-  tl_assert(i1 >= 0 && i1 < 4);
-  tl_assert(i2 >= 0 && i2 < 4);
-  tl_assert(i3 >= 0 && i3 < 4);
-  r = 16*i1 + 4*i2 + i3;
-  tl_assert(r >= 0 && r < 64);
-  return r;
-}
-
-static void show3 ( Int idx )
-{
-  HChar* names = "IRWM";
-  Int i1 = (idx >> 4) & 3;
-  Int i2 = (idx >> 2) & 3;
-  Int i3 = idx & 3;
-  VG_(printf)("%c%c%c", names[i1], names[i2], names[i3]);
-}
-
-static Int trigrams[64];
 
 
 /*------------------------------------------------------------*/
@@ -632,9 +606,6 @@ static void flushEvents ( CgState* cgs )
    instr_info* i_node;
    instr_info* i_node2;
    instr_info* i_node3;
-
-   for (i = 0; i < cgs->events_used-2; i++)
-     trigrams [ index3( cgs->events[i].ekind, cgs->events[i+1].ekind,cgs->events[i+2].ekind ) ]++;
 
    i = 0;
    while (i < cgs->events_used) {
@@ -1351,12 +1322,6 @@ static void cg_fini(Int exitcode)
        VG_(message)(Vg_DebugMsg, "BBs Retranslated: %d", BB_retranslations);
    }
    VGP_POPCC(VgpCacheResults);
-
-   if (0) { Int i;
-   for (i = 0; i < 64; i++) {
-     show3(i); VG_(printf)(" %5d\n", trigrams[i] );
-   }
-   }
 }
 
 /*--------------------------------------------------------------------*/

@@ -131,7 +131,7 @@ FIXED-TRUNK:    vex:1410, test in valgrind:4851
 113796  read() and write() do not work if buffer is in shared memory
 
 Although the underlying cause is still present in the 3.0 code
-this bug isonly user visible in the 2.4 code base.
+this bug is only user visible in the 2.4 code base.
 
 FIXED-TRUNK:    4852
 
@@ -267,6 +267,12 @@ n-i-bz  Cachegrind shows incorrect miss rates when counts are
         greater than 32 bits
 
 FIXED-TRUNK:    vg:4769
+FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+114289  Memcheck fails to intercept malloc when used in an uclibc environment
+
+FIXED-TRUNK:    4916
 FIXED-30BRANCH: TODO
 
 

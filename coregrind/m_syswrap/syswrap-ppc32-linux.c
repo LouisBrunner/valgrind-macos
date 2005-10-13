@@ -106,7 +106,10 @@ static Addr allocstack ( ThreadId tid )
 */
 static void run_a_thread_NORETURN ( Word tidW )
 {
-   ThreadId tid = (ThreadId)tidW;
+   Int               c;
+   VgSchedReturnCode src;
+   ThreadState*      tst;
+   ThreadId          tid = (ThreadId)tidW;
 
    VG_(debugLog)(1, "syswrap-ppc32-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
@@ -114,14 +117,14 @@ static void run_a_thread_NORETURN ( Word tidW )
                        (ULong)tidW);
 
    /* Run the thread all the way through. */
-   VgSchedReturnCode src = ML_(thread_wrapper)(tid);  
+   src = ML_(thread_wrapper)(tid);  
 
    VG_(debugLog)(1, "syswrap-ppc32-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
                        "ML_(thread_wrapper) done\n",
                        (ULong)tidW);
 
-   Int c = VG_(count_living_threads)();
+   c = VG_(count_living_threads)();
    vg_assert(c >= 1); /* stay sane */
 
    if (c == 1) {
@@ -144,7 +147,7 @@ static void run_a_thread_NORETURN ( Word tidW )
                           (ULong)tidW);
 
       /* OK, thread is dead, but others still exist.  Just exit. */
-      ThreadState *tst = VG_(get_ThreadState)(tid);
+      tst = VG_(get_ThreadState)(tid);
 
       /* This releases the run lock */
       VG_(exit_thread)(tid);
@@ -237,10 +240,11 @@ asm(
 */
 void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
 {
+   Addr sp;
    VG_(debugLog)(1, "syswrap-ppc32-linux", 
                     "entering VG_(main_thread_wrapper_NORETURN)\n");
 
-   Addr sp = allocstack(tid);
+   sp = allocstack(tid);
 
    /* make a stack frame */
    sp -= 16;

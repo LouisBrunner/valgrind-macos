@@ -55,7 +55,7 @@
 
 /* Some handy Z-encoded names */
 #define  m_libstc_plus_plus_star  libstdcZpZpZa   // libstdc++*
-#define  m_libc_dot_so_dot_6      libcZdsoZd6     // libc.so.6
+#define  m_libc_dot_so_star       libcZdsoZa      // libc.so*
 //#define  m_libpgc_dot_so          libpgcZdso      // libpgc.so
 
 /* 2 Apr 05: the Portland Group compiler, which uses cfront/ARM style
@@ -127,7 +127,7 @@ static void init(void) __attribute__((constructor));
    { \
       void* v; \
       \
-      MALLOC_TRACE(#fnname "(%llu)", (ULong)n ); \
+      MALLOC_TRACE(#fnname "(%llu)", (ULong)n );        \
       if (!init_done) init(); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
@@ -146,27 +146,27 @@ static void init(void) __attribute__((constructor));
 
 // malloc
 ALLOC_or_NULL(m_libstc_plus_plus_star, malloc,      malloc);
-ALLOC_or_NULL(m_libc_dot_so_dot_6,     malloc,      malloc);
+ALLOC_or_NULL(m_libc_dot_so_star,      malloc,      malloc);
 //ALLOC_or_NULL(m_libpgc_dot_so,         malloc,      malloc);
 
 
 // operator new(unsigned int), unmangled for some bizarre reason
 ALLOC_or_BOMB(m_libstc_plus_plus_star, builtin_new,    __builtin_new);
-ALLOC_or_BOMB(m_libc_dot_so_dot_6,     builtin_new,    __builtin_new);
+ALLOC_or_BOMB(m_libc_dot_so_star,      builtin_new,    __builtin_new);
 
 ALLOC_or_BOMB(m_libstc_plus_plus_star, __builtin_new,  __builtin_new);
-ALLOC_or_BOMB(m_libc_dot_so_dot_6,     __builtin_new,  __builtin_new);
+ALLOC_or_BOMB(m_libc_dot_so_star,      __builtin_new,  __builtin_new);
 
 
 // operator new(unsigned int), GNU mangling, 32-bit platforms
 // operator new(unsigned long), GNU mangling, 64-bit platforms
 #if VG_WORDSIZE == 4
  ALLOC_or_BOMB(m_libstc_plus_plus_star, _Znwj,          __builtin_new);
- ALLOC_or_BOMB(m_libc_dot_so_dot_6,     _Znwj,          __builtin_new);
+ ALLOC_or_BOMB(m_libc_dot_so_star,      _Znwj,          __builtin_new);
 #endif
 #if VG_WORDSIZE == 8
  ALLOC_or_BOMB(m_libstc_plus_plus_star, _Znwm,          __builtin_new);
- ALLOC_or_BOMB(m_libc_dot_so_dot_6,     _Znwm,          __builtin_new);
+ ALLOC_or_BOMB(m_libc_dot_so_star,      _Znwm,          __builtin_new);
 #endif
 
 
@@ -178,28 +178,28 @@ ALLOC_or_BOMB(m_libc_dot_so_dot_6,     __builtin_new,  __builtin_new);
 // operator new(unsigned long, std::nothrow_t const&), GNU mangling, 64-bit
 #if VG_WORDSIZE == 4
  ALLOC_or_NULL(m_libstc_plus_plus_star, _ZnwjRKSt9nothrow_t,  __builtin_new);
- ALLOC_or_NULL(m_libc_dot_so_dot_6,     _ZnwjRKSt9nothrow_t,  __builtin_new);
+ ALLOC_or_NULL(m_libc_dot_so_star,      _ZnwjRKSt9nothrow_t,  __builtin_new);
 #endif
 #if VG_WORDSIZE == 8
  ALLOC_or_NULL(m_libstc_plus_plus_star, _ZnwmRKSt9nothrow_t,  __builtin_new);
- ALLOC_or_NULL(m_libc_dot_so_dot_6,     _ZnwmRKSt9nothrow_t,  __builtin_new);
+ ALLOC_or_NULL(m_libc_dot_so_star,      _ZnwmRKSt9nothrow_t,  __builtin_new);
 #endif
 
 
 // operator new[](unsigned int), unmangled for some bizarre reason
 ALLOC_or_BOMB(m_libstc_plus_plus_star, __builtin_vec_new, __builtin_vec_new );
-ALLOC_or_BOMB(m_libc_dot_so_dot_6,     __builtin_vec_new, __builtin_vec_new );
+ALLOC_or_BOMB(m_libc_dot_so_star,      __builtin_vec_new, __builtin_vec_new );
 
 
 // operator new[](unsigned int), GNU mangling, 32-bit platforms
 // operator new[](unsigned long), GNU mangling, 64-bit platforms
 #if VG_WORDSIZE == 4
  ALLOC_or_BOMB(m_libstc_plus_plus_star, _Znaj,             __builtin_vec_new );
- ALLOC_or_BOMB(m_libc_dot_so_dot_6,     _Znaj,             __builtin_vec_new );
+ ALLOC_or_BOMB(m_libc_dot_so_star,      _Znaj,             __builtin_vec_new );
 #endif
 #if VG_WORDSIZE == 8
  ALLOC_or_BOMB(m_libstc_plus_plus_star, _Znam,             __builtin_vec_new );
- ALLOC_or_BOMB(m_libc_dot_so_dot_6,     _Znam,             __builtin_vec_new );
+ ALLOC_or_BOMB(m_libc_dot_so_star,     _Znam,             __builtin_vec_new );
 #endif
 
 
@@ -207,11 +207,11 @@ ALLOC_or_BOMB(m_libc_dot_so_dot_6,     __builtin_vec_new, __builtin_vec_new );
 // operator new[](unsigned long, std::nothrow_t const&), GNU mangling, 64-bit
 #if VG_WORDSIZE == 4
  ALLOC_or_NULL(m_libstc_plus_plus_star, _ZnajRKSt9nothrow_t, __builtin_vec_new );
- ALLOC_or_NULL(m_libc_dot_so_dot_6,     _ZnajRKSt9nothrow_t, __builtin_vec_new );
+ ALLOC_or_NULL(m_libc_dot_so_star,      _ZnajRKSt9nothrow_t, __builtin_vec_new );
 #endif
 #if VG_WORDSIZE == 8
  ALLOC_or_NULL(m_libstc_plus_plus_star, _ZnamRKSt9nothrow_t, __builtin_vec_new );
- ALLOC_or_NULL(m_libc_dot_so_dot_6,     _ZnamRKSt9nothrow_t, __builtin_vec_new );
+ ALLOC_or_NULL(m_libc_dot_so_star,      _ZnamRKSt9nothrow_t, __builtin_vec_new );
 #endif
 
 
@@ -232,33 +232,33 @@ ALLOC_or_BOMB(m_libc_dot_so_dot_6,     __builtin_vec_new, __builtin_vec_new );
 
 // free
 FREE(m_libstc_plus_plus_star,  free,                 free );
-FREE(m_libc_dot_so_dot_6,      free,                 free );
+FREE(m_libc_dot_so_star,       free,                 free );
 
 // cfree
 FREE(m_libstc_plus_plus_star,  cfree,                free );
-FREE(m_libc_dot_so_dot_6,      cfree,                free );
+FREE(m_libc_dot_so_star,       cfree,                free );
 
 // do we really need these?
 FREE(m_libstc_plus_plus_star,  __builtin_delete,     __builtin_delete );
-FREE(m_libc_dot_so_dot_6,      __builtin_delete,     __builtin_delete );
+FREE(m_libc_dot_so_star,       __builtin_delete,     __builtin_delete );
 
 // operator delete(void*), GNU mangling
 FREE(m_libstc_plus_plus_star,  _ZdlPv,               __builtin_delete );
-FREE(m_libc_dot_so_dot_6,      _ZdlPv,               __builtin_delete );
+FREE(m_libc_dot_so_star,       _ZdlPv,               __builtin_delete );
 
 // operator delete(void*, std::nothrow_t const&), GNU mangling
 FREE(m_libstc_plus_plus_star, _ZdlPvRKSt9nothrow_t,  __builtin_delete );
-FREE(m_libc_dot_so_dot_6,     _ZdlPvRKSt9nothrow_t,  __builtin_delete );
+FREE(m_libc_dot_so_star,      _ZdlPvRKSt9nothrow_t,  __builtin_delete );
 
 // operator delete[](void*), GNU mangling
 FREE(m_libstc_plus_plus_star,  __builtin_vec_delete, __builtin_vec_delete );
-FREE(m_libc_dot_so_dot_6,      __builtin_vec_delete, __builtin_vec_delete );
+FREE(m_libc_dot_so_star,       __builtin_vec_delete, __builtin_vec_delete );
 FREE(m_libstc_plus_plus_star,  _ZdaPv,               __builtin_vec_delete );
-FREE(m_libc_dot_so_dot_6,      _ZdaPv,               __builtin_vec_delete );
+FREE(m_libc_dot_so_star,       _ZdaPv,               __builtin_vec_delete );
 
 // operator delete[](void*, std::nothrow_t const&), GNU mangling
 FREE(m_libstc_plus_plus_star,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
-FREE(m_libc_dot_so_dot_6,      _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+FREE(m_libc_dot_so_star,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
 
 
 #define CALLOC(soname, fnname) \
@@ -276,7 +276,7 @@ FREE(m_libc_dot_so_dot_6,      _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
       return v; \
    }
 
-CALLOC(m_libc_dot_so_dot_6, calloc);
+CALLOC(m_libc_dot_so_star, calloc);
 
 
 #define REALLOC(soname, fnname) \
@@ -291,9 +291,9 @@ CALLOC(m_libc_dot_so_dot_6, calloc);
       if (ptrV == NULL) \
          /* We need to call a malloc-like function; so let's use \
             one which we know exists. */ \
-         return VG_REPLACE_FUNCTION(libcZdsoZd6,malloc) (new_size); \
+         return VG_REPLACE_FUNCTION(libcZdsoZa,malloc) (new_size); \
       if (new_size <= 0) { \
-         VG_REPLACE_FUNCTION(libcZdsoZd6,free)(ptrV); \
+         VG_REPLACE_FUNCTION(libcZdsoZa,free)(ptrV); \
          MALLOC_TRACE(" = 0"); \
          return NULL; \
       } \
@@ -303,7 +303,7 @@ CALLOC(m_libc_dot_so_dot_6, calloc);
       return v; \
    }
 
-REALLOC(m_libc_dot_so_dot_6, realloc);
+REALLOC(m_libc_dot_so_star, realloc);
 
 
 #define MEMALIGN(soname, fnname) \
@@ -329,7 +329,7 @@ REALLOC(m_libc_dot_so_dot_6, realloc);
       return v; \
    }
 
-MEMALIGN(m_libc_dot_so_dot_6, memalign);
+MEMALIGN(m_libc_dot_so_star, memalign);
 
 
 #define VALLOC(soname, fnname) \
@@ -337,10 +337,10 @@ MEMALIGN(m_libc_dot_so_dot_6, memalign);
    void* VG_REPLACE_FUNCTION(soname,fnname) ( SizeT size ); \
    void* VG_REPLACE_FUNCTION(soname,fnname) ( SizeT size )  \
    { \
-      return VG_REPLACE_FUNCTION(libcZdsoZd6,memalign)(VKI_PAGE_SIZE, size); \
+      return VG_REPLACE_FUNCTION(libcZdsoZa,memalign)(VKI_PAGE_SIZE, size); \
    }
 
-VALLOC(m_libc_dot_so_dot_6, valloc);
+VALLOC(m_libc_dot_so_star, valloc);
 
 
 /* Various compatibility wrapper functions, for glibc and libstdc++. */
@@ -355,7 +355,7 @@ VALLOC(m_libc_dot_so_dot_6, valloc);
       return 1; \
    }
 
-MALLOPT(m_libc_dot_so_dot_6, mallopt);
+MALLOPT(m_libc_dot_so_star, mallopt);
 
 
 #define POSIX_MEMALIGN(soname, fnname) \
@@ -371,7 +371,7 @@ MALLOPT(m_libc_dot_so_dot_6, mallopt);
           || (alignment & (alignment - 1)) != 0) \
          return VKI_EINVAL; \
       \
-      mem = VG_REPLACE_FUNCTION(libcZdsoZd6,memalign)(alignment, size); \
+      mem = VG_REPLACE_FUNCTION(libcZdsoZa,memalign)(alignment, size); \
       \
       if (mem != NULL) { \
         *memptr = mem; \
@@ -381,7 +381,7 @@ MALLOPT(m_libc_dot_so_dot_6, mallopt);
       return VKI_ENOMEM; \
    }
 
-POSIX_MEMALIGN(m_libc_dot_so_dot_6, posix_memalign);
+POSIX_MEMALIGN(m_libc_dot_so_star, posix_memalign);
 
 
 #define MALLOC_USABLE_SIZE(soname, fnname) \
@@ -403,7 +403,7 @@ POSIX_MEMALIGN(m_libc_dot_so_dot_6, posix_memalign);
       return pszB; \
    }
 
-MALLOC_USABLE_SIZE(m_libc_dot_so_dot_6, malloc_usable_size);
+MALLOC_USABLE_SIZE(m_libc_dot_so_star, malloc_usable_size);
 
 
 /* Bomb out if we get any of these. */
@@ -423,11 +423,11 @@ static void panic(const char *str)
       panic(#fnname); \
    }
 
-PANIC(m_libc_dot_so_dot_6, pvalloc);
-PANIC(m_libc_dot_so_dot_6, malloc_stats);
-PANIC(m_libc_dot_so_dot_6, malloc_trim);
-PANIC(m_libc_dot_so_dot_6, malloc_get_state);
-PANIC(m_libc_dot_so_dot_6, malloc_set_state);
+PANIC(m_libc_dot_so_star, pvalloc);
+PANIC(m_libc_dot_so_star, malloc_stats);
+PANIC(m_libc_dot_so_star, malloc_trim);
+PANIC(m_libc_dot_so_star, malloc_get_state);
+PANIC(m_libc_dot_so_star, malloc_set_state);
 
 // mi must be static;  if it is auto then Memcheck thinks it is
 // uninitialised when used by the caller of this function, because Memcheck
@@ -444,7 +444,7 @@ PANIC(m_libc_dot_so_dot_6, malloc_set_state);
       return mi; \
    }
 
-MALLINFO(m_libc_dot_so_dot_6, mallinfo);
+MALLINFO(m_libc_dot_so_star, mallinfo);
 
 
 /* All the code in here is unused until this function is called */

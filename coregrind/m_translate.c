@@ -350,6 +350,59 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout,
 /*--- Main entry point for the JITter.                     ---*/
 /*------------------------------------------------------------*/
 
+/* Extra comments re self-checking translations and self-modifying
+   code.  (JRS 14 Oct 05).
+
+   There are 3 modes:
+   (1) no checking: all code assumed to be not self-modifying
+   (2) partial: known-problematic situations get a self-check
+   (3) full checking: all translations get a self-check
+
+   As currently implemented, the default is (2).  (3) is always safe,
+   but very slow.  (1) works mostly, but fails for gcc nested-function
+   code which uses trampolines on the stack; this situation is
+   detected and handled by (2).
+
+   ----------
+
+   A more robust and transparent solution, which is not currently
+   implemented, is a variant of (2): if a translation is made from an
+   area which aspacem says does not have 'w' permission, then it can
+   be non-self-checking.  Otherwise, it needs a self-check.
+
+   This is complicated by Vex's basic-block chasing.  If a self-check
+   is requested, then Vex will not chase over basic block boundaries
+   (it's too complex).  However there is still a problem if it chases
+   from a non-'w' area into a 'w' area.
+
+   I think the right thing to do is:
+
+   - if a translation request starts in a 'w' area, ask for a
+     self-checking translation, and do not allow any chasing (make
+     chase_into_ok return False).  Note that the latter is redundant
+     in the sense that Vex won't chase anyway in this situation.
+
+   - if a translation request starts in a non-'w' area, do not ask for
+     a self-checking translation.  However, do not allow chasing (as
+     determined by chase_into_ok) to go into a 'w' area.
+
+   The result of this is that all code inside 'w' areas is self
+   checking.
+
+   To complete the trick, there is a caveat: we must watch the
+   client's mprotect calls.  If pages are changed from non-'w' to 'w'
+   then we should throw away all translations which intersect the
+   affected area, so as to force them to be redone with self-checks.
+
+   ----------
+
+   The above outlines the conditions under which bb chasing is allowed
+   from a self-modifying-code point of view.  There are other
+   situations pertaining to function redirection in which it is
+   necessary to disallow chasing, but those fall outside the scope of
+   this comment.
+*/
+
 /* Vex dumps the final code in here.  Then we can copy it off
    wherever we like. */
 #define N_TMPBUF 20000

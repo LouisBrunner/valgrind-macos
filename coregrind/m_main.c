@@ -768,9 +768,10 @@ static HChar* find_executable ( HChar* exec )
       VG_(strncpy)( executable_name_out, exec, VKI_PATH_MAX-1 );
    } else {
       // No '/' - we need to search the path
+      HChar* path;
       VG_(strncpy)( executable_name_in,  exec, VKI_PATH_MAX-1 );
       VG_(memset) ( executable_name_out, 0,    VKI_PATH_MAX );
-      HChar *path = VG_(getenv)("PATH");
+      path = VG_(getenv)("PATH");
       scan_colsep(path, match_executable);
    }
    return VG_STREQ(executable_name_out, "") ? NULL : executable_name_out;

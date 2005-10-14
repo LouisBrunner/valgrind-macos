@@ -105,7 +105,7 @@ SysRes VG_(mk_SysRes_Success) ( UWord val ) {
    clobbers, so we preserve all the callee-save regs (%esi, %edi, %ebx,
    %ebp).
 */
-static UWord do_syscall_WRK (
+extern UWord do_syscall_WRK (
           UWord syscall_no, 
           UWord a1, UWord a2, UWord a3,
           UWord a4, UWord a5, UWord a6
@@ -143,7 +143,7 @@ asm(
    no matter, they are caller-save (the syscall clobbers no callee-save
    regs, so we don't have to do any register saving/restoring).
 */
-static UWord do_syscall_WRK (
+extern UWord do_syscall_WRK (
           UWord syscall_no, 
           UWord a1, UWord a2, UWord a3,
           UWord a4, UWord a5, UWord a6
@@ -173,7 +173,7 @@ asm(
    We return a ULong, of which %r3 is the high word, and %r4 the low.
    No callee-save regs are clobbered, so no saving/restoring is needed.
 */
-static ULong do_syscall_WRK (
+extern ULong do_syscall_WRK (
           UWord syscall_no, 
           UWord a1, UWord a2, UWord a3,
           UWord a4, UWord a5, UWord a6

@@ -138,6 +138,14 @@ Int VG_(fsize) ( Int fd )
    return res.isError ? (-1) : buf.st_size;
 }
 
+Bool VG_(is_dir) ( HChar* f )
+{
+   struct vki_stat buf;
+   SysRes res = VG_(do_syscall2)(__NR_stat, (UWord)f, (UWord)&buf);
+   return res.isError ? False
+                      : VKI_S_ISDIR(buf.st_mode) ? True : False;
+}
+
 SysRes VG_(dup) ( Int oldfd )
 {
    return VG_(do_syscall1)(__NR_dup, oldfd);
@@ -205,6 +213,66 @@ Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr )
 #else
 #  error "Don't know how to do VG_(access) on this OS"
 #endif
+}
+
+/* 
+   Emulate the normal Unix permissions checking algorithm.
+
+   If owner matches, then use the owner permissions, else
+   if group matches, then use the group permissions, else
+   use other permissions.
+
+   Note that we can't deal with SUID/SGID, so we refuse to run them
+   (otherwise the executable may misbehave if it doesn't have the
+   permissions it thinks it does).
+*/
+/* returns: 0 = success, non-0 is failure */
+Int VG_(check_executable)(HChar* f)
+{
+   struct vki_stat st;
+   SysRes res;
+
+   res = VG_(stat)(f, &st);
+   if (res.isError) {
+      return res.val;
+   }
+
+   if (st.st_mode & (VKI_S_ISUID | VKI_S_ISGID)) {
+      //VG_(printf)("Can't execute suid/sgid executable %s\n", exe);
+      return VKI_EACCES;
+   }
+
+   if (VG_(geteuid)() == st.st_uid) {
+      if (!(st.st_mode & VKI_S_IXUSR))
+         return VKI_EACCES;
+   } else {
+      int grpmatch = 0;
+
+      if (VG_(getegid)() == st.st_gid)
+	 grpmatch = 1;
+      else {
+	 UInt groups[32];
+	 Int ngrp = VG_(getgroups)(32, groups);
+	 Int i;
+         /* ngrp will be -1 if VG_(getgroups) failed. */
+         for (i = 0; i < ngrp; i++) {
+	    if (groups[i] == st.st_gid) {
+	       grpmatch = 1;
+	       break;
+	    }
+         }
+      }
+
+      if (grpmatch) {
+	 if (!(st.st_mode & VKI_S_IXGRP)) {
+            return VKI_EACCES;
+         }
+      } else if (!(st.st_mode & VKI_S_IXOTH)) {
+         return VKI_EACCES;
+      }
+   }
+
+   return 0;
 }
 
 SysRes VG_(pread) ( Int fd, void* buf, Int count, Int offset )

@@ -724,37 +724,56 @@ static Bool scan_colsep(char *colsep, Bool (*func)(const char *))
 }
 
 /* Need a static copy because can't use dynamic mem allocation yet */
-static HChar executable_name[VKI_PATH_MAX];
+static HChar executable_name_in [VKI_PATH_MAX];
+static HChar executable_name_out[VKI_PATH_MAX];
 
 static Bool match_executable(const char *entry) 
 {
-   HChar buf[VG_(strlen)(entry) + VG_(strlen)(executable_name) + 3];
+   HChar buf[VG_(strlen)(entry) + VG_(strlen)(executable_name_in) + 3];
 
-   /* empty PATH element means . */
+   /* empty PATH element means '.' */
    if (*entry == '\0')
       entry = ".";
 
-   VG_(snprintf)(buf, sizeof(buf), "%s/%s", entry, executable_name);
+   VG_(snprintf)(buf, sizeof(buf), "%s/%s", entry, executable_name_in);
+
+   // Don't match directories
+   if (VG_(is_dir)(buf))
+      return False;
+
+   // If we match an executable, we choose that immediately.  If we find a
+   // matching non-executable we remember it but keep looking for an
+   // matching executable later in the path.
    if (VG_(access)(buf, True/*r*/, False/*w*/, True/*x*/) == 0) {
-      VG_(strncpy)( executable_name, buf, VKI_PATH_MAX-1 );
-      executable_name[VKI_PATH_MAX-1] = 0;
-      return True;
+      VG_(strncpy)( executable_name_out, buf, VKI_PATH_MAX-1 );
+      executable_name_out[VKI_PATH_MAX-1] = 0;
+      return True;      // Stop looking
+   } else if (VG_(access)(buf, True/*r*/, False/*w*/, False/*x*/) == 0 
+           && VG_STREQ(executable_name_out, "")) 
+   {
+      VG_(strncpy)( executable_name_out, buf, VKI_PATH_MAX-1 );
+      executable_name_out[VKI_PATH_MAX-1] = 0;
+      return False;     // Keep looking
+   } else { 
+      return False;     // Keep looking
    }
-   return False;
 }
 
+// Returns NULL if it wasn't found.
 static HChar* find_executable ( HChar* exec )
 {
    vg_assert(NULL != exec);
-   VG_(strncpy)( executable_name, exec, VKI_PATH_MAX-1 );
-   executable_name[VKI_PATH_MAX-1] = 0;
-
-   if (VG_(strchr)(executable_name, '/') == NULL) {
-      /* no '/' - we need to search the path */
+   if (VG_(strchr)(exec, '/')) {
+      // Has a '/' - use the name as is
+      VG_(strncpy)( executable_name_out, exec, VKI_PATH_MAX-1 );
+   } else {
+      // No '/' - we need to search the path
+      VG_(strncpy)( executable_name_in,  exec, VKI_PATH_MAX-1 );
+      VG_(memset) ( executable_name_out, 0,    VKI_PATH_MAX );
       HChar *path = VG_(getenv)("PATH");
       scan_colsep(path, match_executable);
    }
-   return executable_name;
+   return VG_STREQ(executable_name_out, "") ? NULL : executable_name_out;
 }
 
 
@@ -802,27 +821,29 @@ static void config_error ( Char* msg )
 static void load_client ( /*OUT*/struct exeinfo* info, 
                           /*OUT*/Addr* client_eip)
 {
-   HChar* exec;
+   HChar* exe_name;
    Int    ret;
    SysRes res;
 
    vg_assert( VG_(args_the_exename) != NULL);
-   exec = find_executable( VG_(args_the_exename) );
+   exe_name = find_executable( VG_(args_the_exename) );
+
+   if (!exe_name) {
+      VG_(printf)("valgrind: %s: command not found\n", VG_(args_the_exename));
+      VG_(exit)(127);      // 127 is Posix NOTFOUND
+   }
 
    VG_(memset)(info, 0, sizeof(*info));
    info->exe_base = VG_(client_base);
    info->exe_end  = VG_(client_end);
 
-   ret = VG_(do_exec)(exec, info);
-   if (ret != 0) {
-      VG_(printf)("valgrind: do_exec(%s) failed: %s\n",
-                  exec, VG_(strerror)(ret));
-      VG_(exit)(127);
-   }
+   ret = VG_(do_exec)(exe_name, info);
+
+   // The client was successfully loaded!  Continue.
 
    /* Get hold of a file descriptor which refers to the client
       executable.  This is needed for attaching to GDB. */
-   res = VG_(open)(exec, VKI_O_RDONLY, VKI_S_IRUSR);
+   res = VG_(open)(exe_name, VKI_O_RDONLY, VKI_S_IRUSR);
    if (!res.isError)
       VG_(cl_exec_fd) = res.val;
 

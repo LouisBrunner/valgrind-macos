@@ -50,6 +50,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_ume.h"
 
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"
@@ -2288,6 +2289,7 @@ PRE(sys_execve)
    Char*        launcher_basename = NULL;
    ThreadState* tst;
    Int          i, j, tot_args;
+   SysRes       res;
 
    PRINT("sys_execve ( %p(%s), %p, %p )", ARG1, ARG1, ARG2, ARG3);
    PRE_REG_READ3(vki_off_t, "execve",
@@ -2307,28 +2309,18 @@ PRE(sys_execve)
       POST(execve), but that's close to impossible.  Instead, we make
       an effort to check that the execve will work before actually
       doing it. */
-   {
-      struct vki_stat st;
-      SysRes r = VG_(stat)((Char *)ARG1, &st);
 
-      if (r.isError) {
-         /* stat failed */
-         SET_STATUS_from_SysRes( r );
-	 return;
-      }
-      /* just look for regular file with any X bit set
-	 XXX do proper permissions check?
-       */
-      if ((st.st_mode & 0100111) == 0100000) {
-	 SET_STATUS_Failure( VKI_EACCES );
-	 return;
-      }
-   }
-
-   /* Check more .. that the name at least begins in client-accessible
-      storage. */
+   /* Check that the name at least begins in client-accessible storage. */
    if (!VG_(am_is_valid_for_client)( ARG1, 1, VKI_PROT_READ )) {
       SET_STATUS_Failure( VKI_EFAULT );
+      return;
+   }
+
+   // Do the important checks:  it is a file, is executable, permissions are
+   // ok, etc.
+   res = VG_(pre_exec_check)((const Char*)ARG1, NULL);
+   if (res.isError) {
+      SET_STATUS_Failure( res.val );
       return;
    }
 

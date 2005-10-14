@@ -48,6 +48,9 @@ extern Bool VG_(resolve_filename) ( Int fd, HChar* buf, Int n_buf );
 /* Return the size of a file */
 extern Int VG_(fsize) ( Int fd );
 
+/* Is the file a directory? */
+extern Bool VG_(is_dir) ( HChar* f );
+
 /* Default destination port to be used in logging over a network, if
    none specified. */
 #define VG_CLO_DEFAULT_LOGPORT 1500
@@ -60,6 +63,9 @@ extern Int VG_(getsockopt)  ( Int sd, Int level, Int optname, void *optval,
                               Int *optlen );
 
 extern Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr );
+
+/* Is the file executable?  Returns: 0 = success, non-0 is failure */
+extern Int VG_(check_executable)(HChar* f);
 
 extern SysRes VG_(pread) ( Int fd, void* buf, Int count, Int offset );
 

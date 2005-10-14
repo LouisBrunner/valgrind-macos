@@ -1,0 +1,18 @@
+
+./shell: x86/: is a directory
+
+./shell: x86: command not found
+
+./shell: ./shell.vgtest: Permission denied
+
+execve(0x........(./shell_badinterp), 0x........, 0x........) failed, errno 2
+EXEC FAILED: I can't recover from execve() failing, so I'm dying.
+Add more stringent tests in PRE(sys_execve), or work out how to recover.
+./shell: ./shell_binaryfile: cannot execute binary file
+
+./shell: shell_nosuchfile: command not found
+
+
+
+
+

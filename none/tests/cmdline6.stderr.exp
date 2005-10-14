@@ -1,1 +1,1 @@
-valgrind: do_exec(./cmdline6.vgtest) failed: Permission denied
+valgrind: ./cmdline6.vgtest: Permission denied

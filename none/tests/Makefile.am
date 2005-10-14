@@ -84,6 +84,17 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	selfrun.stderr.exp selfrun.stdout.exp selfrun.vgtest \
 	sem.stderr.exp sem.stdout.exp sem.vgtest \
 	semlimit.stderr.exp semlimit.stdout.exp semlimit.vgtest \
+	shell shell.vgtest shell.stderr.exp shell.stdout.exp \
+	shell_badinterp shell_badinterp.vgtest shell_badinterp.stderr.exp \
+	shell_binaryfile shell_binaryfile.vgtest shell_binaryfile.stderr.exp \
+	shell_dir.vgtest shell_dir.stderr.exp \
+	shell_nonexec shell_nonexec.vgtest shell_nonexec.stderr.exp \
+	shell_nonexec shell_nonexec.vgtest shell_nonexec.stderr.exp \
+	shell_nosuchfile.vgtest shell_nosuchfile.stderr.exp \
+	shell_valid1 shell_valid1.vgtest shell_valid1.stderr.exp \
+	shell_valid2 shell_valid2.vgtest shell_valid2.stderr.exp \
+	shell_valid3 shell_valid3.vgtest shell_valid3.stderr.exp \
+	shell_zerolength shell_zerolength.vgtest shell_zerolength.stderr.exp \
 	susphello.stdout.exp susphello.stderr.exp susphello.vgtest \
 	sha1_test.stderr.exp sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.vgtest \

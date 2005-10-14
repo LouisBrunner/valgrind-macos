@@ -38,6 +38,7 @@
 // included ahead of the glibc ones.  This fix is a kludge;  the right
 // solution is to entirely remove the glibc dependency.
 #include "pub_core_basics.h"
+#include "pub_core_aspacemgr.h"   // various mapping fns
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
@@ -45,9 +46,8 @@
 #include "pub_core_libcfile.h"    // VG_(close) et al
 #include "pub_core_libcproc.h"    // VG_(geteuid), VG_(getegid)
 #include "pub_core_libcassert.h"  // VG_(exit), vg_assert
-#include "pub_core_syscall.h"     // VG_(strerror)
 #include "pub_core_mallocfree.h"  // VG_(malloc), VG_(free)
-#include "pub_core_aspacemgr.h"   // various mapping fns
+#include "pub_core_syscall.h"     // VG_(strerror)
 #include "vki_unistd.h"           // mmap-related constants
 
 #include "pub_core_ume.h"
@@ -65,7 +65,7 @@ struct elfinfo
 {
    ESZ(Ehdr)	e;
    ESZ(Phdr)	*p;
-   int		fd;
+   Int		fd;
 };
 
 static void check_mmap(SysRes res, Addr base, SizeT len)
@@ -76,165 +76,6 @@ static void check_mmap(SysRes res, Addr base, SizeT len)
       VG_(exit)(1);
    }
 }
-
-//zz // 'extra' allows the caller to pass in extra args to 'fn', like free
-//zz // variables to a closure.
-//zz void VG_(foreach_map)(int (*fn)(char *start, char *end,
-//zz                                 const char *perm, off_t offset,
-//zz                                 int maj, int min, int ino, void* extra),
-//zz                       void* extra)
-//zz {
-//zz    static char buf[10240];
-//zz    char *bufptr = buf;
-//zz    int ret, fd;
-//zz 
-//zz    fd = open("/proc/self/maps", O_RDONLY);
-//zz 
-//zz    if (fd == -1) {
-//zz       perror("open /proc/self/maps");
-//zz       return;
-//zz    }
-//zz 
-//zz    ret = read(fd, buf, sizeof(buf));
-//zz 
-//zz    if (ret == -1) {
-//zz       perror("read /proc/self/maps");
-//zz       close(fd);
-//zz       return;
-//zz    }
-//zz    close(fd);
-//zz 
-//zz    if (ret == sizeof(buf)) {
-//zz       VG_(printf)("coregrind/m_ume.c: buf too small\n");
-//zz       return;
-//zz    }
-//zz 
-//zz    while(bufptr && bufptr < buf+ret) {
-//zz       char perm[5];
-//zz       ULong offset;
-//zz       int maj, min;
-//zz       int ino;
-//zz       void *segstart, *segend;
-//zz 
-//zz       sscanf(bufptr, "%p-%p %s %llx %x:%x %d",
-//zz 	     &segstart, &segend, perm, &offset, &maj, &min, &ino);
-//zz       bufptr = strchr(bufptr, '\n');
-//zz       if (bufptr != NULL)
-//zz 	 bufptr++; /* skip \n */
-//zz 
-//zz       if (!(*fn)(segstart, segend, perm, offset, maj, min, ino, extra))
-//zz 	 break;
-//zz    }
-//zz }
-//zz 
-//zz /*------------------------------------------------------------*/
-//zz /*--- Stack switching                                      ---*/
-//zz /*------------------------------------------------------------*/
-//zz 
-//zz // __attribute__((noreturn))
-//zz // void VG_(jump_and_switch_stacks) ( Addr stack, Addr dst );
-//zz #if defined(VGA_x86)
-//zz // 4(%esp) == stack
-//zz // 8(%esp) == dst
-//zz asm(
-//zz ".global vgPlain_jump_and_switch_stacks\n"
-//zz "vgPlain_jump_and_switch_stacks:\n"
-//zz "   movl   %esp, %esi\n"      // remember old stack pointer
-//zz "   movl   4(%esi), %esp\n"   // set stack
-//zz "   pushl  8(%esi)\n"         // dst to stack
-//zz "   movl $0, %eax\n"          // zero all GP regs
-//zz "   movl $0, %ebx\n"
-//zz "   movl $0, %ecx\n"
-//zz "   movl $0, %edx\n"
-//zz "   movl $0, %esi\n"
-//zz "   movl $0, %edi\n"
-//zz "   movl $0, %ebp\n"
-//zz "   ret\n"                    // jump to dst
-//zz "   ud2\n"                    // should never get here
-//zz );
-//zz #elif defined(VGA_amd64)
-//zz // %rdi == stack
-//zz // %rsi == dst
-//zz asm(
-//zz ".global vgPlain_jump_and_switch_stacks\n"
-//zz "vgPlain_jump_and_switch_stacks:\n"
-//zz "   movq   %rdi, %rsp\n"   // set stack
-//zz "   pushq  %rsi\n"         // dst to stack
-//zz "   movq $0, %rax\n"       // zero all GP regs
-//zz "   movq $0, %rbx\n"
-//zz "   movq $0, %rcx\n"
-//zz "   movq $0, %rdx\n"
-//zz "   movq $0, %rsi\n"
-//zz "   movq $0, %rdi\n"
-//zz "   movq $0, %rbp\n"
-//zz "   movq $0, %r8\n"
-//zz "   movq $0, %r9\n"
-//zz "   movq $0, %r10\n"
-//zz "   movq $0, %r11\n"
-//zz "   movq $0, %r12\n"
-//zz "   movq $0, %r13\n"
-//zz "   movq $0, %r14\n"
-//zz "   movq $0, %r15\n"
-//zz "   ret\n"                 // jump to dst
-//zz "   ud2\n"                 // should never get here
-//zz );
-//zz 
-//zz #elif defined(VGA_ppc32)
-//zz /* Jump to 'dst', but first set the stack pointer to 'stack'.  Also,
-//zz    clear all the integer registers before entering 'dst'.  It's
-//zz    important that the stack pointer is set to exactly 'stack' and not
-//zz    (eg) stack - apparently_harmless_looking_small_offset.  Basically
-//zz    because the code at 'dst' might be wanting to scan the area above
-//zz    'stack' (viz, the auxv array), and putting spurious words on the
-//zz    stack confuses it.
-//zz */
-//zz // %r3 == stack
-//zz // %r4 == dst
-//zz asm(
-//zz ".global vgPlain_jump_and_switch_stacks\n"
-//zz "vgPlain_jump_and_switch_stacks:\n"
-//zz "   mtctr %r4\n\t"         // dst to %ctr
-//zz "   mr %r1,%r3\n\t"        // stack to %sp
-//zz "   li 0,0\n\t"            // zero all GP regs
-//zz "   li 3,0\n\t"
-//zz "   li 4,0\n\t"
-//zz "   li 5,0\n\t"
-//zz "   li 6,0\n\t"
-//zz "   li 7,0\n\t"
-//zz "   li 8,0\n\t"
-//zz "   li 9,0\n\t"
-//zz "   li 10,0\n\t"
-//zz "   li 11,0\n\t"
-//zz "   li 12,0\n\t"
-//zz "   li 13,0\n\t"           // CAB: This right? r13 = small data area ptr
-//zz "   li 14,0\n\t"
-//zz "   li 15,0\n\t"
-//zz "   li 16,0\n\t"
-//zz "   li 17,0\n\t"
-//zz "   li 18,0\n\t"
-//zz "   li 19,0\n\t"
-//zz "   li 20,0\n\t"
-//zz "   li 21,0\n\t"
-//zz "   li 22,0\n\t"
-//zz "   li 23,0\n\t"
-//zz "   li 24,0\n\t"
-//zz "   li 25,0\n\t"
-//zz "   li 26,0\n\t"
-//zz "   li 27,0\n\t"
-//zz "   li 28,0\n\t"
-//zz "   li 29,0\n\t"
-//zz "   li 30,0\n\t"
-//zz "   li 31,0\n\t"
-//zz "   mtxer 0\n\t"
-//zz "   mtcr 0\n\t"
-//zz "   mtlr %r0\n\t"
-//zz "   bctr\n\t"              // jump to dst
-//zz "   trap\n"                // should never get here
-//zz );
-//zz 
-//zz #else
-//zz #  error Unknown architecture
-//zz #endif
 
 /*------------------------------------------------------------*/
 /*--- Finding auxv on the stack                            ---*/
@@ -267,11 +108,11 @@ struct ume_auxv *VG_(find_auxv)(UWord* sp)
 /*------------------------------------------------------------*/
 
 static 
-struct elfinfo *readelf(int fd, const char *filename)
+struct elfinfo *readelf(Int fd, const char *filename)
 {
    SysRes sres;
    struct elfinfo *e = VG_(malloc)(sizeof(*e));
-   int phsz;
+   Int phsz;
 
    vg_assert(e);
    e->fd = fd;
@@ -424,11 +265,7 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
    return elfbrk;
 }
 
-// Forward declaration.
-/* returns: 0 = success, non-0 is failure */
-static int do_exec_inner(const char *exe, struct exeinfo *info);
-
-static int match_ELF(const char *hdr, int len)
+static Bool match_ELF(const char *hdr, Int len)
 {
    ESZ(Ehdr) *e = (ESZ(Ehdr) *)hdr;
    return (len > sizeof(*e)) && VG_(memcmp)(&e->e_ident[0], ELFMAG, SELFMAG) == 0;
@@ -478,8 +315,7 @@ static int match_ELF(const char *hdr, int len)
 
    - The entry point in INFO is set to the interpreter's entry point,
      and we're done.  */
-static int load_ELF(char *hdr, int len, int fd, const char *name,
-                    /*MOD*/struct exeinfo *info)
+static Int load_ELF(Int fd, const char *name, /*MOD*/struct exeinfo *info)
 {
    SysRes sres;
    struct elfinfo *e;
@@ -489,7 +325,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
    ESZ(Addr) interp_addr = 0;	/* interpreter (ld.so) address */
    ESZ(Word) interp_size = 0;	/* interpreter size */
    ESZ(Word) interp_align = VKI_PAGE_SIZE;
-   int i;
+   Int i;
    void *entry;
    ESZ(Addr) ebase = 0;
 
@@ -529,9 +365,9 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
 			
       case PT_INTERP: {
 	 char *buf = VG_(malloc)(ph->p_filesz+1);
-	 int j;
-	 int intfd;
-	 int baseaddr_set;
+	 Int j;
+	 Int intfd;
+	 Int baseaddr_set;
 
          vg_assert(buf);
 	 VG_(pread)(fd, buf, ph->p_filesz, ph->p_offset);
@@ -646,30 +482,63 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
 }
 
 
-static int match_script(const char *hdr, Int len)
+static Bool match_script(char *hdr, Int len)
 {
-   return (len > 2) && VG_(memcmp)(hdr, "#!", 2) == 0;
+   Char* end    = hdr + len;
+   Char* interp = hdr + 2;
+
+   // len < 4: need '#', '!', plus at least a '/' and one more char
+   if (len < 4) return False;    
+   if (0 != VG_(memcmp)(hdr, "#!", 2)) return False;
+
+   // Find interpreter name, make sure it's an absolute path (starts with
+   // '/') and has at least one more char.
+   while (interp < end && VG_(isspace)(*interp)) interp++;
+   if (*interp != '/')  return False;  // absolute path only for interpreter
+   if (interp == end)   return False;  // nothing after the '/'
+
+   // Here we should get the full interpreter name and check it with
+   // check_executable().  See the "EXEC FAILED" failure when running shell
+   // for an example.
+
+   return True;   // looks like a #! script
 }
 
-/* returns: 0 = success, non-0 is failure */
-static int load_script(char *hdr, int len, int fd, const char *name,
-                       struct exeinfo *info)
-{
-   char *interp;
-   char *const end = hdr+len;
-   char *cp;
-   char *arg = NULL;
-   int eol;
+// Forward declaration.
+static Int do_exec_inner(const char *exe, struct exeinfo *info);
 
+/* returns: 0 = success, non-0 is failure */
+static Int load_script(Int fd, const char *name, struct exeinfo *info)
+{
+   Char  hdr[VKI_PAGE_SIZE];
+   Int   len = VKI_PAGE_SIZE;
+   Int   eol;
+   Char* interp;
+   Char* end;
+   Char* cp;
+   Char* arg = NULL;
+   SysRes res;
+
+   // Read the first part of the file.
+   res = VG_(pread)(fd, hdr, len, 0);
+   if (res.isError) {
+      VG_(close)(fd);
+      return VKI_EACCES;
+   } else {
+      len = res.val;
+   }
+
+   vg_assert('#' == hdr[0] && '!' == hdr[1]);
+
+   end    = hdr + len;
    interp = hdr + 2;
-   while(interp < end && (*interp == ' ' || *interp == '\t'))
+   while (interp < end && VG_(isspace)(*interp))
       interp++;
 
-   if (*interp != '/')
-      return VKI_ENOEXEC; /* absolute path only for interpreter */
+   vg_assert(*interp == '/');   /* absolute path only for interpreter */
 
    /* skip over interpreter name */
-   for(cp = interp; cp < end && *cp != ' ' && *cp != '\t' && *cp != '\n'; cp++)
+   for (cp = interp; cp < end && !VG_(isspace)(*cp); cp++)
       ;
 
    eol = (*cp == '\n');
@@ -678,7 +547,7 @@ static int load_script(char *hdr, int len, int fd, const char *name,
 
    if (!eol && cp < end) {
       /* skip space before arg */
-      while (cp < end && (*cp == '\t' || *cp == ' '))
+      while (cp < end && VG_(isspace)(*cp))
 	 cp++;
 
       /* arg is from here to eol */
@@ -705,114 +574,83 @@ static int load_script(char *hdr, int len, int fd, const char *name,
    return do_exec_inner(interp, info);
 }
 
-/* 
-   Emulate the normal Unix permissions checking algorithm.
 
-   If owner matches, then use the owner permissions, else
-   if group matches, then use the group permissions, else
-   use other permissions.
+typedef enum {
+   VG_EXE_FORMAT_ELF    = 1,
+   VG_EXE_FORMAT_SCRIPT = 2,
+} ExeFormat;
 
-   Note that we can't deal with SUID/SGID, so we refuse to run them
-   (otherwise the executable may misbehave if it doesn't have the
-   permissions it thinks it does).
-*/
-/* returns: 0 = success, non-0 is failure */
-static int check_perms(int fd)
+// Check the file looks executable.
+SysRes VG_(pre_exec_check)(const Char* exe_name, Int* out_fd)
 {
-   struct vki_stat st;
+   Int fd, ret;
+   SysRes res;
+   Char  buf[VKI_PAGE_SIZE];
+   SizeT bufsz = VKI_PAGE_SIZE, fsz;
 
-   if (VG_(fstat)(fd, &st) == -1) 
-      return VKI_EACCES;
+   // Check it's readable
+   res = VG_(open)(exe_name, VKI_O_RDONLY, 0);
+   if (res.isError) {
+      return res;
+   }
+   fd = res.val;
 
-   if (st.st_mode & (VKI_S_ISUID | VKI_S_ISGID)) {
-      //VG_(printf)("Can't execute suid/sgid executable %s\n", exe);
-      return VKI_EACCES;
+   // Check we have execute permissions
+   ret = VG_(check_executable)((HChar*)exe_name);
+   if (0 != ret) {
+      VG_(close)(fd);
+      return VG_(mk_SysRes_Error)(ret);
    }
 
-   if (VG_(geteuid)() == st.st_uid) {
-      if (!(st.st_mode & VKI_S_IXUSR))
-	 return VKI_EACCES;
+   fsz = VG_(fsize)(fd);
+   if (fsz < bufsz)
+      bufsz = fsz;
+
+   res = VG_(pread)(fd, buf, bufsz, 0);
+   if (res.isError || res.val != bufsz) {
+      VG_(close)(fd);
+      return VG_(mk_SysRes_Error)(VKI_EACCES);
+   }
+   bufsz = res.val;
+
+   if (match_ELF(buf, bufsz)) {
+      res = VG_(mk_SysRes_Success)(VG_EXE_FORMAT_ELF);
+   } else if (match_script(buf, bufsz)) {
+      res = VG_(mk_SysRes_Success)(VG_EXE_FORMAT_SCRIPT);
    } else {
-      int grpmatch = 0;
-
-      if (VG_(getegid)() == st.st_gid)
-	 grpmatch = 1;
-      else {
-	 UInt groups[32];
-	 Int ngrp = VG_(getgroups)(32, groups);
-	 Int i;
-         /* ngrp will be -1 if VG_(getgroups) failed. */
-         for (i = 0; i < ngrp; i++) {
-	    if (groups[i] == st.st_gid) {
-	       grpmatch = 1;
-	       break;
-	    }
-         }
-      }
-
-      if (grpmatch) {
-	 if (!(st.st_mode & VKI_S_IXGRP))
-	    return VKI_EACCES;
-      } else if (!(st.st_mode & VKI_S_IXOTH))
-	 return VKI_EACCES;
+      res = VG_(mk_SysRes_Error)(VKI_ENOEXEC);
    }
 
-   return 0;
+   // Write the 'out_fd' param if necessary, or close the file.
+   if (!res.isError && out_fd) {
+      *out_fd = fd; 
+   } else { 
+      VG_(close)(fd);
+   }
+
+   return res;
 }
 
-/* returns: 0 = success, non-0 is failure */
-static int do_exec_inner(const char *exe, struct exeinfo *info)
+// returns: 0 = success, non-0 is failure
+//
+// We can execute only ELF binaries or scripts that begin with "#!".  (Not,
+// for example, scripts that don't begin with "#!";  see the VG_(do_exec)()
+// invocation from m_main.c for how that's handled.)
+static Int do_exec_inner(const char *exe, struct exeinfo *info)
 {
-   SysRes sres;
-   int fd;
-   int err;
-   char buf[VKI_PAGE_SIZE];
-   int bufsz;
-   int i;
-   int ret;
-   static const struct {
-      int (*match)(const char *hdr, int len);
-      int (*load) (      char *hdr, int len, int fd2, const char *name,
-                         struct exeinfo *);
-   } formats[] = {
-      { match_ELF,    load_ELF },
-      { match_script, load_script },
-   };
+   SysRes res;
+   Int fd;
+   Int ret;
 
-   sres = VG_(open)(exe, VKI_O_RDONLY, 0);
-   if (sres.isError) {
-      if (0)
-	 VG_(printf)("Can't open executable %s: %s\n",
-                     exe, VG_(strerror)(sres.val));
-      return sres.val;
-   }
-   fd = sres.val;
+   res = VG_(pre_exec_check)(exe, &fd);
+   if (res.isError)
+      return res.val;
 
-   err = check_perms(fd);
-   if (err != 0) {
-      VG_(close)(fd);
-      return err;
-   }
-
-   bufsz = VG_(fsize)(fd);
-   if (bufsz > sizeof(buf))
-      bufsz = sizeof(buf);
-
-   sres = VG_(pread)(fd, buf, bufsz, 0);
-   if (sres.isError || sres.val != bufsz) {
-      VG_(printf)("Can't read executable header: %s\n",
-                  VG_(strerror)(sres.val));
-      VG_(close)(fd);
-      return sres.val;
-   }
-   bufsz = sres.val;
-
-   ret = VKI_ENOEXEC;
-   for(i = 0; i < sizeof(formats)/sizeof(*formats); i++) {
-      if ((formats[i].match)(buf, bufsz)) {
-	 ret = (formats[i].load)(buf, bufsz, fd, exe, info);
-	 break;
-      }
+   switch (res.val) {
+    case VG_EXE_FORMAT_ELF:    ret = load_ELF   (fd, exe, info); break;
+    case VG_EXE_FORMAT_SCRIPT: ret = load_script(fd, exe, info); break;
+    default:
+      vg_assert2(0, "unrecognised VG_EXE_FORMAT value\n");
    }
 
    VG_(close)(fd);
@@ -820,15 +658,131 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
    return ret;
 }
 
+
+static Bool is_hash_bang_file(Char* f)
+{
+   SysRes res = VG_(open)(f, VKI_O_RDONLY, 0);
+   if (!res.isError) {
+      Char buf[3] = {0,0,0};
+      Int fd = res.val;
+      Int n  = VG_(read)(fd, buf, 2); 
+      if (n == 2 && VG_STREQ("#!", buf))
+         return True;
+   }
+   return False;
+}
+
+// Look at the first 80 chars, and if any are greater than 127, it's binary.
+// This is crude, but should be good enough.  Note that it fails on a
+// zero-length file, as we want.
+static Bool is_binary_file(Char* f)
+{
+   SysRes res = VG_(open)(f, VKI_O_RDONLY, 0);
+   if (!res.isError) {
+      UChar buf[80];
+      Int fd = res.val;
+      Int n  = VG_(read)(fd, buf, 80); 
+      Int i;
+      for (i = 0; i < n; i++) {
+         if (buf[i] > 127)
+            return True;      // binary char found
+      }
+      return False;
+   } else {
+      // Something went wrong.  This will only happen if we earlier
+      // succeeded in opening the file but fail here (eg. the file was
+      // deleted between then and now).
+      VG_(printf)("valgrind: %s: unknown error\n", f);
+      VG_(exit)(126);      // 126 == NOEXEC
+   }
+}
+
+// If the do_exec fails we try to emulate what the shell does (I used
+// bash as a guide).  It's worth noting that the shell can execute some
+// things that VG_(do_exec)() (which subsitutes for the kernel's exec())
+// will refuse to (eg. scripts lacking a "#!" prefix).
+static Int do_exec_shell_followup(Int ret, Char* exe_name,
+                                  struct exeinfo* info)
+{
+   Char*  default_interp_name = "/bin/sh";
+   SysRes res;
+   struct vki_stat st;
+
+   if (VKI_ENOEXEC == ret) {
+      // It was an executable file, but in an unacceptable format.  Probably
+      // is a shell script lacking the "#!" prefix;  try to execute it so.
+
+      // Is it a binary file?  
+      if (is_binary_file(exe_name)) {
+         VG_(printf)("valgrind: %s: cannot execute binary file\n", exe_name);
+         VG_(exit)(126);      // 126 == NOEXEC
+      }
+
+      // Looks like a script.  Run it with /bin/sh.  This includes
+      // zero-length files.
+
+      info->interp_name = VG_(strdup)(default_interp_name);
+      info->interp_args = NULL;
+      if (info->argv && info->argv[0] != NULL)
+         info->argv[0] = (char *)exe_name;
+
+      ret = do_exec_inner(info->interp_name, info);
+
+      if (0 != ret) {
+         // Something went wrong with executing the default interpreter
+         VG_(printf)("valgrind: %s: bad interpreter (%s): %s\n",
+                     exe_name, info->interp_name, VG_(strerror)(ret));
+         VG_(exit)(126);      // 126 == NOEXEC
+      }
+
+   } else if (0 != ret) {
+      // Something else went wrong.  Try to make the error more specific,
+      // and then print a message and abort.
+   
+      // Was it a directory?
+      res = VG_(stat)(exe_name, &st);
+      if (!res.isError && VKI_S_ISDIR(st.st_mode)) {
+         VG_(printf)("valgrind: %s: is a directory\n", exe_name);
+      
+      // Was it not executable?
+      } else if (0 != VG_(check_executable)(exe_name)) {
+         VG_(printf)("valgrind: %s: %s\n", exe_name, VG_(strerror)(ret));
+
+      // Did it start with "#!"?  If so, it must have been a bad interpreter.
+      } else if (is_hash_bang_file(exe_name)) {
+         VG_(printf)("valgrind: %s: bad interpreter: %s\n",
+                     exe_name, VG_(strerror)(ret));
+
+      // Otherwise it was something else.
+      } else {
+         VG_(printf)("valgrind: %s\n", exe_name, VG_(strerror)(ret));
+      }
+      // 126 means NOEXEC;  I think this is Posix, and that in some cases we
+      // should be returning 127, meaning NOTFOUND.  Oh well.
+      VG_(exit)(126);
+   }
+   return ret;
+}
+
+
+// This emulates the kernel's exec().  If it fails, it then emulates the
+// shell's handling of the situation.
 // See ume.h for an indication of which entries of 'info' are inputs, which
 // are outputs, and which are both.
 /* returns: 0 = success, non-0 is failure */
-int VG_(do_exec)(const char *exe, struct exeinfo *info)
+Int VG_(do_exec)(const char *exe_name, struct exeinfo *info)
 {
+   Int ret;
+   
    info->interp_name = NULL;
    info->interp_args = NULL;
 
-   return do_exec_inner(exe, info);
+   ret = do_exec_inner(exe_name, info);
+
+   if (0 != ret) {
+      ret = do_exec_shell_followup(ret, (Char*)exe_name, info);
+   }
+   return ret;
 }
 
 /*--------------------------------------------------------------------*/

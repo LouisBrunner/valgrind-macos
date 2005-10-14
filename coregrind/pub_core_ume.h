@@ -93,11 +93,17 @@ struct exeinfo
    char*  interp_args;  // OUT: the args for the interpreter
 };
 
+// Do a number of appropriate checks to see if the file looks executable by
+// the kernel: ie. it's a file, it's readable and executable, and it's in
+// either ELF or "#!" format.  On success, 'out_fd' gets the fd of the file
+// if it's non-NULL.  Otherwise the fd is closed.
+extern SysRes VG_(pre_exec_check)(const Char* exe_name, Int* out_fd);
+
 // Does everything short of actually running 'exe': finds the file,
 // checks execute permissions, sets up interpreter if program is a script, 
 // reads headers, maps file into memory, and returns important info about
 // the program.
-extern int VG_(do_exec)(const char *exe, struct exeinfo *info);
+extern Int VG_(do_exec)(const char *exe, struct exeinfo *info);
 
 /*------------------------------------------------------------*/
 /*--- Finding and dealing with auxv                        ---*/

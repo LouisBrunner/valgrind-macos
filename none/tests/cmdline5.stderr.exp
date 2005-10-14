@@ -1,1 +1,1 @@
-valgrind: do_exec(./no-such-program-my-friend) failed: No such file or directory
+valgrind: ./no-such-program-my-friend: No such file or directory

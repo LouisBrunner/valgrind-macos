@@ -2152,10 +2152,10 @@ demangle_ctor_dtor_name (dm)
      <pointer-to-member-type> ::= M </class/ type> </member/ type>  */
 
 static status_t
-demangle_type_ptr (dm, insert_pos, substitution_start)
+demangle_type_ptr (dm, insert_pos, substitution_Start)
      demangling_t dm;
      int *insert_pos;
-     int substitution_start;
+     int substitution_Start;
 {
   status_t status;
   int is_substitution_candidate = 1;
@@ -2171,7 +2171,7 @@ demangle_type_ptr (dm, insert_pos, substitution_start)
       advance_char (dm);
       /* Demangle the underlying type.  */
       RETURN_IF_ERROR (demangle_type_ptr (dm, insert_pos, 
-					  substitution_start));
+					  substitution_Start));
       /* Insert an asterisk where we're told to; it doesn't
 	 necessarily go at the end.  If we're doing Java style output, 
 	 there is no pointer symbol.  */
@@ -2187,7 +2187,7 @@ demangle_type_ptr (dm, insert_pos, substitution_start)
       advance_char (dm);
       /* Demangle the underlying type.  */
       RETURN_IF_ERROR (demangle_type_ptr (dm, insert_pos, 
-					  substitution_start));
+					  substitution_Start));
       /* Insert an ampersand where we're told to; it doesn't
 	 necessarily go at the end.  */
       RETURN_IF_ERROR (result_insert_char (dm, *insert_pos, '&'));
@@ -2215,7 +2215,7 @@ demangle_type_ptr (dm, insert_pos, substitution_start)
 	   type, which would in this case give `void () (int, int)'
 	   and set *insert_pos to the spot between the first
 	   parentheses.  */
-	status = demangle_type_ptr (dm, insert_pos, substitution_start);
+	status = demangle_type_ptr (dm, insert_pos, substitution_Start);
       else if (peek_char (dm) == 'A')
 	/* A pointer-to-member array variable.  We want output that
 	   looks like `int (Klass::*) [10]'.  Demangle the array type
@@ -2297,7 +2297,7 @@ demangle_type_ptr (dm, insert_pos, substitution_start)
     }
   
   if (is_substitution_candidate)
-    RETURN_IF_ERROR (substitution_add (dm, substitution_start, 0));
+    RETURN_IF_ERROR (substitution_add (dm, substitution_Start, 0));
   
   return STATUS_OK;
 }

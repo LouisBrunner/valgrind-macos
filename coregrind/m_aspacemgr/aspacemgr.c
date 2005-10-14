@@ -60,6 +60,204 @@
 
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
+/*--- Overview.                                                 ---*/
+/*---                                                           ---*/
+/*-----------------------------------------------------------------*/
+
+/* Purpose
+   ~~~~~~~
+   The purpose of the address space manager (aspacem) is:
+
+   (1) to record the disposition of all parts of the process' address
+       space at all times.
+
+   (2) to the extent that it can, influence layout in ways favourable
+       to our purposes.
+
+   It is important to appreciate that whilst it can and does attempt
+   to influence layout, and usually succeeds, it isn't possible to
+   impose absolute control: in the end, the kernel is the final
+   arbiter, and can always bounce our requests.
+
+   Strategy
+   ~~~~~~~~
+   The strategy is therefore as follows: 
+
+   * Track ownership of mappings.  Each one can belong either to
+     Valgrind or to the client.
+
+   * Try to place the client's fixed and hinted mappings at the
+     requested addresses.  Fixed mappings are allowed anywhere except
+     in areas reserved by Valgrind; the client can trash its own
+     mappings if it wants.  Hinted mappings are allowed providing they
+     fall entirely in free areas; if not, they will be placed by
+     aspacem in a free area.
+
+   * Anonymous mappings are allocated so as to keep Valgrind and
+     client areas widely separated when possible.  If address space
+     runs low, then they may become intermingled: aspacem will attempt
+     to use all possible space.  But under most circumstances lack of
+     address space is not a problem and so the areas will remain far
+     apart.
+
+     Searches for client space start at aspacem_cStart and will wrap
+     around the end of the available space if needed.  Searches for
+     Valgrind space start at aspacem_vStart and will also wrap around.
+     Because aspacem_cStart is approximately at the start of the
+     available space and aspacem_vStart is approximately in the
+     middle, for the most part the client anonymous mappings will be
+     clustered towards the start of available space, and Valgrind ones
+     in the middle.
+
+     The available space is delimited by aspacem_minAddr and
+     aspacem_maxAddr.  aspacem is flexible and can operate with these
+     at any (sane) setting.  For 32-bit Linux, aspacem_minAddr is set
+     to some low-ish value at startup (64M) and aspacem_maxAddr is
+     derived from the stack pointer at system startup.  This seems a
+     reliable way to establish the initial boundaries.
+
+     64-bit Linux is similar except for the important detail that the
+     upper boundary is set to 32G.  The reason is so that all
+     anonymous mappings (basically all client data areas) are kept
+     below 32G, since that is the maximum range that memcheck can
+     track shadow memory using a fast 2-level sparse array.  It can go
+     beyond that but runs much more slowly.  The 32G limit is
+     arbitrary and is trivially changed.  So, with the current
+     settings, programs on 64-bit Linux will appear to run out of
+     address space and presumably fail at the 32G limit.  Given the
+     9/8 space overhead of Memcheck, that means you should be able to
+     memcheckify programs that use up to about 14G natively.
+
+   Note that the aspacem_minAddr/aspacem_maxAddr limits apply only to
+   anonymous mappings.  The client can still do fixed and hinted maps
+   at any addresses provided they do not overlap Valgrind's segments.
+   This makes Valgrind able to load prelinked .so's at their requested
+   addresses on 64-bit platforms, even if they are very high (eg,
+   112TB).
+
+   At startup, aspacem establishes the usable limits, and advises
+   m_main to place the client stack at the top of the range, which on
+   a 32-bit machine will be just below the real initial stack.  One
+   effect of this is that self-hosting sort-of works, because an inner
+   valgrind will then place its client's stack just below its own
+   initial stack.
+     
+   The segment array and segment kinds
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   The central data structure is the segment array (segments[0
+   .. nsegments_used-1]).  This covers the entire address space in
+   order, giving account of every byte of it.  Free spaces are
+   represented explicitly as this makes many operations simpler.
+   Mergeable adjacent segments are aggressively merged so as to create
+   a "normalised" representation (preen_nsegments).
+
+   There are 7 (mutually-exclusive) segment kinds, the meaning of
+   which is important:
+
+   SkFree: a free space, which may be allocated either to Valgrind (V)
+      or the client (C).
+
+   SkAnonC: an anonymous mapping belonging to C.  For these, aspacem
+      tracks a boolean indicating whether or not is is part of the
+      client's heap area (can't remember why).
+
+   SkFileC: a file mapping belonging to C.
+
+   SkShmC: a shared memory segment belonging to C.
+
+   SkAnonV: an anonymous mapping belonging to V.  These cover all V's
+      dynamic memory needs, including non-client malloc/free areas,
+      shadow memory, and the translation cache.
+
+   SkFileV: a file mapping belonging to V.  As far as I know these are
+      only created transiently for the purposes of reading debug info.
+
+   SkResvn: a reservation segment.
+
+   These are mostly straightforward.  Reservation segments have some
+   subtlety, however.
+
+   A reservation segment is unmapped from the kernel's point of view,
+   but is an area in which aspacem will not create anonymous maps
+   (either Vs or Cs).  The idea is that we will try to keep it clear
+   when the choice to do so is ours.  Reservation segments are
+   'invisible' from the client's point of view: it may choose to park
+   a fixed mapping in the middle of one, and that's just tough -- we
+   can't do anything about that.  From the client's perspective
+   reservations are semantically equivalent to (although
+   distinguishable from, if it makes enquiries) free areas.
+
+   Reservations are a primitive mechanism provided for whatever
+   purposes the rest of the system wants.  Currently they are used to
+   reserve the expansion space into which a growdown stack is
+   expanded, and into which the data segment is extended.  Note,
+   though, those uses are entirely external to this module, which only
+   supplies the primitives.
+
+   Reservations may be shrunk in order that an adjoining anonymous
+   mapping may be extended.  This makes dataseg/stack expansion work.
+   A reservation may not be shrunk below one page.
+
+   The advise/notify concept
+   ~~~~~~~~~~~~~~~~~~~~~~~~~
+   All mmap-related calls must be routed via aspacem.  Calling
+   sys_mmap directly from the rest of the system is very dangerous
+   because aspacem's data structures will become out of date.
+
+   The fundamental mode of operation of aspacem is to support client
+   mmaps.  Here's what happens (in ML_(generic_PRE_sys_mmap)):
+
+   * m_syswrap intercepts the mmap call.  It examines the parameters
+     and identifies the requested placement constraints.  There are
+     three possibilities: no constraint (MAny), hinted (MHint, "I
+     prefer X but will accept anything"), and fixed (MFixed, "X or
+     nothing").
+
+   * This request is passed to VG_(am_get_advisory).  This decides on
+     a placement as described in detail in Strategy above.  It may
+     also indicate that the map should fail, because it would trash
+     one of Valgrind's areas, which would probably kill the system.
+
+   * Control returns to the wrapper.  If VG_(am_get_advisory) has
+     declared that the map should fail, then it must be made to do so.
+     Usually, though, the request is considered acceptable, in which
+     case an "advised" address is supplied.  The advised address
+     replaces the original address supplied by the client, and
+     MAP_FIXED is set.
+
+     Note at this point that although aspacem has been asked for
+     advice on where to place the mapping, no commitment has yet been
+     made by either it or the kernel.
+
+   * The adjusted request is handed off to the kernel.
+
+   * The kernel's result is examined.  If the map succeeded, aspacem
+     is told of the outcome (VG_(am_notify_client_mmap)), so it can
+     update its records accordingly.
+
+  This then is the central advise-notify idiom for handling client
+  mmap/munmap/mprotect/shmat:
+
+  * ask aspacem for an advised placement (or a veto)
+
+  * if not vetoed, hand request to kernel, using the advised placement
+
+  * examine result, and if successful, notify aspacem of the result.
+
+  There are also many convenience functions, eg
+  VG_(am_mmap_anon_fixed_client), which do both phases entirely within
+  aspacem.
+
+  To debug all this, a sync-checker is provided.  It reads
+  /proc/self/maps, compares what it sees with aspacem's records, and
+  complains if there is a difference.  --sanity-level=3 runs it before
+  and after each syscall, which is a powerful, if slow way of finding
+  buggy syscall wrappers.
+*/
+
+
+/*-----------------------------------------------------------------*/
+/*---                                                           ---*/
 /*--- The Address Space Manager's state.                        ---*/
 /*---                                                           ---*/
 /*-----------------------------------------------------------------*/

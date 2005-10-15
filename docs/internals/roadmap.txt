@@ -42,6 +42,10 @@ Definite
   it is only present in GCC after 3.4.0 (ie. not in 3.0.X--3.3.X)...
   [Done by Tom and others]
 
+* We need to reintroduce some kind of core/tool interface versioning,
+  so that if external tools link with libcoregrind.a incompatibilities
+  are detected.
+
 Maybe
 -----
 * Get pthread modelling and Helgrind working again.  Requires function

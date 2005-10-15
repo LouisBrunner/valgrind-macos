@@ -761,7 +761,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 
 	 /* Add a new variable to the list */
          // (the declaration avoids a compiler warning)
-  static void newvar(Char *name, SymType *ty, Addr valuep, UInt size);
+	 //static void newvar(Char *name, SymType *ty, Addr valuep, UInt size);
          void newvar(Char *name, SymType *ty, Addr valuep, UInt size) {
 	    Variable *v;
 
@@ -982,7 +982,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
 	 Char expr[len*2];
 	 Char *sp = &expr[len];	/* pointer at start of string */
 	 Char *ep = sp;		/* pointer at end of string */
-  static void genstring(Variable *v, Variable *inner);  // avoid warning
+	 //  static void genstring(Variable *v, Variable *inner);  // avoid warning
          void genstring(Variable *v, Variable *inner) {
 	    Variable *c = v->container;
 

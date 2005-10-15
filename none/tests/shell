@@ -7,35 +7,35 @@
 #----------------------------------------------------------------------------
 
 echo "Execute a directory"
-x86/
-
-echo "Execute a directory (2)"
-x86
+./x86/
 
 echo "Execute a non-executable file"
-shell.vgtest
+./shell.vgtest
 
 echo "Execute a script with a bad interpreter name"
-shell_badinterp
+./shell_badinterp
 
 echo "Execute a binary file"
-shell_binaryfile
+./shell_binaryfile
 
 echo "Execute a non-existent file"
+./shell_nosuchfile
+
+echo "Execute a non-existent file (2)"
 shell_nosuchfile
 
 #----------------------------------------------------------------------------
 # Shell scripts that should pass
 #----------------------------------------------------------------------------
 echo "Execute a valid script with a #! line"
-shell_valid1
+./shell_valid1
 
 echo "Execute a valid script without a #! line"
-shell_valid2
+./shell_valid2
 
 echo "Execute a valid script with #! but no interpname"
-shell_valid3
+./shell_valid3
 
 echo "Execute a zero-length file"
-shell_zerolength
+./shell_zerolength
 

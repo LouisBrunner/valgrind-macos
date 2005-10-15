@@ -781,13 +781,16 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       case VEX_TRC_JMP_NODECODE:
 #define M(a) VG_(message)(Vg_UserMsg, a);
-   M("Your program just tried to execute an instruction that Valgrind");
-   M("did not recognise.  This might be because your program has a bug");
-   M("and erroneously jumped to a non-code location.  If you are running");
-   M("Memcheck, you might have just seen a warning about a bad jump,");
-   M("which is a good indication that this is so.  Or it might be" );
-   M("because the instruction is unimplemented in Valgrind;  if you");
-   M("think this is the case, or you are not sure, please let us know.");
+   M("Your program just tried to execute an instruction that Valgrind" );
+   M("did not recognise.  There are two possible reasons for this."    );
+   M("1. Your program has a bug and erroneously jumped to a non-code"  );
+   M("   location.  If you are running Memcheck and you just saw a"    );
+   M("   warning about a bad jump, it's probably your program's fault.");
+   M("2. The instruction is legitimate but Valgrind doesn't handle it,");
+   M("   i.e. it's Valgrind's fault.  If you think this is the case or");
+   M("   you are not sure, please let us know."                        );
+   M("Either way, Valgrind will now raise a SIGILL signal which will"  );
+   M("probably kill your program."                                     );
 #undef M
          VG_(synth_sigill)(tid, VG_(get_IP)(tid));
          break;

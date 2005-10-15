@@ -75,7 +75,6 @@ typedef void  (*OSetFree_t)  ( void* p );
 
 // * Create: allocates an initialises the OSet.  Arguments:
 //   - keyOff    The offset of the key within the element.
-//   - elemSize  The size of the element.
 //   - cmp       The comparison function between keys and elements, or NULL
 //               if the OSet should use fast comparisons.
 //   - alloc     The allocation function used for allocating the OSet itself;
@@ -110,6 +109,10 @@ extern void  VG_(OSet_FreeNode)  ( OSet* os, void* elem );
 /*--- Operations on OSets                                          ---*/
 /*--------------------------------------------------------------------*/
 
+// In everything that follows, the parameter 'key' is always the *address*
+// of the key, and 'elem' is *address* of the elem, as are the return values
+// of the functions that return elems.
+//
 // * Size: The number of elements in the set.
 //
 // * Contains: Determines if any element in the OSet matches the key.

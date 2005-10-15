@@ -60,8 +60,9 @@ extern void VG_(amd64_linux_REDIR_FOR_vtime);
 #endif
 
 #if defined(VGP_ppc32_linux)
-extern UInt VG_(ppc32_linux_REDIR_FOR_strlen)( void* );
-extern UInt VG_(ppc32_linux_REDIR_FOR_strcmp)( void*, void* );
+extern UInt  VG_(ppc32_linux_REDIR_FOR_strlen)( void* );
+extern UInt  VG_(ppc32_linux_REDIR_FOR_strcmp)( void*, void* );
+extern void* VG_(ppc32_linux_REDIR_FOR_strchr)( void*, Int );
 #endif
  
 #endif   // __PUB_CORE_TRAMPOLINE_H

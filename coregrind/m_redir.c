@@ -375,6 +375,10 @@ void VG_(setup_code_redirect_table) ( void )
       "soname:ld.so.1", "strcmp",
       (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp)
    );   
+   add_redirect_sym_to_addr(
+      "soname:ld.so.1", "index",
+      (Addr)&VG_(ppc32_linux_REDIR_FOR_strchr)
+   );   
 
 #else
 #  error Unknown platform

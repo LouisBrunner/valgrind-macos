@@ -1825,11 +1825,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    //   (__NR_sysfs,             sys_sysfs),             // 135 SVr4
 //..    LINX_(__NR_personality,       sys_personality),       // 136
 //..    GENX_(__NR_afs_syscall,       sys_ni_syscall),        // 137
-//..    LINX_(__NR_setfsuid,          sys_setfsuid16),        // 138
-//..    LINX_(__NR_setfsgid,          sys_setfsgid16),        // 139
-//.. 
+   LINX_(__NR_setfsuid,          sys_setfsuid16),        // 138
+   LINX_(__NR_setfsgid,          sys_setfsgid16),        // 139
+
    LINXY(__NR__llseek,           sys_llseek),            // 140
-//..    GENXY(__NR_getdents,          sys_getdents),          // 141
+   GENXY(__NR_getdents,          sys_getdents),          // 141
    GENX_(__NR__newselect,        sys_select),            // 142
    GENX_(__NR_flock,             sys_flock),             // 143
 //..    GENX_(__NR_msync,             sys_msync),             // 144

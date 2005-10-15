@@ -419,6 +419,18 @@
 
 
 ##----------------------------------------------------------------------##
+## glibc-2.3.5 on SuSE 10.0 (PPC)
+# 
+# I don't know why this is needed, but still:
+{
+   glibc-2.3.5-on-SuSE-10.0-(PPC)-1
+   Memcheck:Cond
+   fun:_dl_start
+   fun:_start
+}
+
+
+##----------------------------------------------------------------------##
 # Hacks pertaining to the fact that our intercept mechanism can't
 # always get hold of strlen early enough, due to idiocy in the low
 # level memory manager.

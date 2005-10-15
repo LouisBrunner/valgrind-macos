@@ -209,6 +209,29 @@ VG_(ppc32_linux_REDIR_FOR_strcmp):
         blr
 .size VG_(ppc32_linux_REDIR_FOR_strcmp), .-VG_(ppc32_linux_REDIR_FOR_strcmp)
 
+/* Ditto index/strchr */
+.global VG_(ppc32_linux_REDIR_FOR_strchr)
+.type   VG_(ppc32_linux_REDIR_FOR_strchr), @function
+VG_(ppc32_linux_REDIR_FOR_strchr):
+        lbz 0,0(3)
+        cmpw 7,4,0
+        beqlr 7
+        cmpwi 7,0,0
+        beq 7,.L307
+        .p2align 4,,15
+.L310:
+        lbzu 0,1(3)
+        cmpw 7,0,4
+        cmpwi 6,0,0
+        beq 7,.L313
+        bne 6,.L310
+.L307:
+        li 3,0
+        blr
+.L313:
+        blr
+.size   VG_(ppc32_linux_REDIR_FOR_strchr),.-VG_(ppc32_linux_REDIR_FOR_strchr)
+	
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 

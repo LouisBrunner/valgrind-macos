@@ -540,10 +540,7 @@ static InstrInfo* find_most_recent_InstrInfo ( CgState* cgs )
 {
    tl_assert(cgs->bbInfo_i >= 0);
    tl_assert(cgs->bbInfo_i <= cgs->bbInfo->n_instrs);
-   if (cgs->bbInfo_i == 0)
-      return NULL;
-   else
-      return &cgs->bbInfo->instrs[ cgs->bbInfo_i - 1 ];
+   return &cgs->bbInfo->instrs[ cgs->bbInfo_i - 1 ];
 }
 
 
@@ -564,6 +561,9 @@ static void flushEvents ( CgState* cgs )
    InstrInfo* i_node;
    InstrInfo* i_node2;
    InstrInfo* i_node3;
+   Event*     ev;
+   Event*     ev2;
+   Event*     ev3;
 
    i = 0;
    while (i < cgs->events_used) {
@@ -576,9 +576,14 @@ static void flushEvents ( CgState* cgs )
       /* generate IR to notify event i and possibly the ones
          immediately following it. */
       tl_assert(i >= 0 && i < cgs->events_used);
+
+      ev  = &cgs->events[i];
+      ev2 = ( i < cgs->events_used-1 ? &cgs->events[i+1] : NULL );
+      ev3 = ( i < cgs->events_used-2 ? &cgs->events[i+2] : NULL );
+      
       if (DEBUG_CG) {
          VG_(printf)("   flush "); 
-         showEvent( &cgs->events[i] );
+         showEvent( ev );
       }
 
       /* For any event we find the relevant InstrInfo.  The following
@@ -588,76 +593,66 @@ static void flushEvents ( CgState* cgs )
          most recently encountered IMark and so we use the
          most-recently allocated instrs[] entry, which must exist. */
 
-      if (cgs->events[i].ekind == Event_Ir) {
+      if (ev->ekind == Event_Ir) {
          /* allocate an InstrInfo and fill in its addr/size. */
          i_node = reserve_InstrInfo( cgs );
-         tl_assert(i_node);
          init_InstrInfo( i_node,
-                         (Addr)cgs->events[i].iaddr, /* i addr */
-                         cgs->events[i].size  /* i size */);
+                         (Addr)ev->iaddr, /* i addr */
+                         ev->size  /* i size */);
       } else {
          /* use the most-recently allocated i_node but don't mess with
             its internals */
          i_node = find_most_recent_InstrInfo( cgs );
-         /* it must actually exist */
-         tl_assert(i_node);
-         /* it must match the declared parent instruction of this
-            event. */
-         tl_assert(i_node->instr_addr == cgs->events[i].iaddr);
+         /* it must match the declared parent instruction of this event. */
+         tl_assert(i_node->instr_addr == ev->iaddr);
       }
 
       i_node_expr = mkIRExpr_HWord( (HWord)i_node );
 
       /* Decide on helper fn to call and args to pass it, and advance
          i appropriately. */
-      switch (cgs->events[i].ekind) {
+      switch (ev->ekind) {
          case Event_Ir:
             /* Merge with a following Dr/Dm if it is from this insn. */
-            if (i < cgs->events_used-1 
-                && cgs->events[i+1].iaddr == cgs->events[i].iaddr
-                && (cgs->events[i+1].ekind == Event_Dr
-                    || cgs->events[i+1].ekind == Event_Dm)) {
+            if (ev2 && (ev2->ekind == Event_Dr || ev2->ekind == Event_Dm)) {
+               tl_assert(ev2->iaddr == ev->iaddr);
                helperName = "log_1I_1Dr_cache_access";
                helperAddr = &log_1I_1Dr_cache_access;
                argv = mkIRExprVec_3( i_node_expr,
-                                     cgs->events[i+1].dataEA,
-                                     mkIRExpr_HWord( cgs->events[i+1].size ) );
+                                     ev2->dataEA,
+                                     mkIRExpr_HWord( ev2->size ) );
                regparms = 3;
                i += 2;
             }
             /* Merge with a following Dw if it is from this insn. */
             else
-            if (i < cgs->events_used-1 
-                && cgs->events[i+1].iaddr == cgs->events[i].iaddr
-                && cgs->events[i+1].ekind == Event_Dw) {
+            if (ev2 && ev2->ekind == Event_Dw) {
+               tl_assert(ev2->iaddr == ev->iaddr);
                helperName = "log_1I_1Dw_cache_access";
                helperAddr = &log_1I_1Dw_cache_access;
                argv = mkIRExprVec_3( i_node_expr,
-                                     cgs->events[i+1].dataEA,
-                                     mkIRExpr_HWord( cgs->events[i+1].size ) );
+                                     ev2->dataEA,
+                                     mkIRExpr_HWord( ev2->size ) );
                regparms = 3;
                i += 2;
             }
             /* Merge with two following Irs if possible. */
             else
-            if (i < cgs->events_used-2 
-                && cgs->events[i+1].ekind == Event_Ir
-                && cgs->events[i+2].ekind == Event_Ir) {
+            if (ev2 && ev3 && ev2->ekind == Event_Ir && ev3->ekind == Event_Ir)
+            {
                helperName = "log_3I_0D_cache_access";
                helperAddr = &log_3I_0D_cache_access;
 
                i_node2 = reserve_InstrInfo( cgs );
-               tl_assert(i_node2);
                init_InstrInfo( i_node2,
-                               (Addr)cgs->events[i+1].iaddr, /* i addr */
-                               cgs->events[i+1].size  /* i size */);
+                               (Addr)ev2->iaddr, /* i addr */
+                               ev2->size  /* i size */);
                i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
 
                i_node3 = reserve_InstrInfo( cgs );
-               tl_assert(i_node3);
                init_InstrInfo( i_node3,
-                               (Addr)cgs->events[i+2].iaddr, /* i addr */
-                               cgs->events[i+2].size  /* i size */);
+                               (Addr)ev3->iaddr, /* i addr */
+                               ev3->size  /* i size */);
                i_node3_expr = mkIRExpr_HWord( (HWord)i_node3 );
 
                argv = mkIRExprVec_3( i_node_expr, i_node2_expr, i_node3_expr );
@@ -666,15 +661,15 @@ static void flushEvents ( CgState* cgs )
             }
             /* Merge with a following Ir if possible. */
             else
-            if (i < cgs->events_used-1 
-                && cgs->events[i+1].ekind == Event_Ir) {
+            if (ev2 && ev2->ekind == Event_Ir) {
                helperName = "log_2I_0D_cache_access";
                helperAddr = &log_2I_0D_cache_access;
+
                i_node2 = reserve_InstrInfo( cgs );
-               tl_assert(i_node2);
                init_InstrInfo( i_node2,
-                               (Addr)cgs->events[i+1].iaddr, /* i addr */
-                               cgs->events[i+1].size  /* i size */);
+                               (Addr)ev2->iaddr, /* i addr */
+                               ev2->size  /* i size */);
+
                i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
                argv = mkIRExprVec_2( i_node_expr, i_node2_expr );
                regparms = 2;
@@ -682,6 +677,10 @@ static void flushEvents ( CgState* cgs )
             }
             /* No merging possible; emit as-is. */
             else {
+               // Assertion: this Event_Ir must be the last one in the
+               // events buffer, otherwise it would have been merged with a
+               // following event.
+               tl_assert(!ev2 && !ev3);
                helperName = "log_1I_0D_cache_access";
                helperAddr = &log_1I_0D_cache_access;
                argv = mkIRExprVec_1( i_node_expr );
@@ -694,8 +693,8 @@ static void flushEvents ( CgState* cgs )
             helperName = "log_0I_1Dr_cache_access";
             helperAddr = &log_0I_1Dr_cache_access;
             argv = mkIRExprVec_3( i_node_expr, 
-                                  cgs->events[i].dataEA, 
-                                  mkIRExpr_HWord( cgs->events[i].size ) );
+                                  ev->dataEA, 
+                                  mkIRExpr_HWord( ev->size ) );
             regparms = 3;
             i++;
             break;
@@ -703,8 +702,8 @@ static void flushEvents ( CgState* cgs )
             helperName = "log_0I_1Dw_cache_access";
             helperAddr = &log_0I_1Dw_cache_access;
             argv = mkIRExprVec_3( i_node_expr,
-                                  cgs->events[i].dataEA, 
-                                  mkIRExpr_HWord( cgs->events[i].size ) );
+                                  ev->dataEA, 
+                                  mkIRExpr_HWord( ev->size ) );
             regparms = 3;
             i++;
             break;

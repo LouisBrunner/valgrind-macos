@@ -253,6 +253,16 @@
   complains if there is a difference.  --sanity-level=3 runs it before
   and after each syscall, which is a powerful, if slow way of finding
   buggy syscall wrappers.
+
+  Loss of pointercheck
+  ~~~~~~~~~~~~~~~~~~~~
+  Up to and including Valgrind 2.4.1, x86 segmentation was used to
+  enforce seperation of V and C, so that wild writes by C could not
+  trash V.  This got called "pointercheck".  Unfortunately, the new
+  more flexible memory layout, plus the need to be portable across
+  different architectures, means doing this in hardware is no longer
+  viable, and doing it in software is expensive.  So at the moment we
+  don't do it at all.
 */
 
 

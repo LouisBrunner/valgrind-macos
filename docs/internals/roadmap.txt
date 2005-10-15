@@ -25,18 +25,22 @@ Definite
   4. With --trace-children=yes, allow 32-bit programs to exec 64-bit
      programs and vice versa, and invoke the appropriate Valgrind
      automatically.
+  [Underway, by Tom]
 
 * Get PPC32 working usably with Memcheck (Julian).  Has already improved a
   lot since.  Get Cachegrind working with it (Nick).
+  [Both almost there, by Julian]
 
 * Rewrite address space manager;  statically link the core with
-  each tool;  remove all glibc dependencies (Julian).  [What about
-  --time-stamp=yes?]
+  each tool;  remove all glibc dependencies (Julian).  
+  [Done by Julian]
+  [What about --time-stamp=yes?]
 
 * Make it work with GCC 2.95 (bug #111781) -- don't put declarations after
   statements in blocks.  Do it after merging ASPACEM with the trunk.
   -Wdeclaration-after-statement is the GCC warning that detects this, but
   it is only present in GCC after 3.4.0 (ie. not in 3.0.X--3.3.X)...
+  [Done by Tom and others]
 
 Maybe
 -----

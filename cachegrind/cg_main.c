@@ -31,7 +31,6 @@
 
 #include "pub_tool_basics.h"
 #include "pub_tool_debuginfo.h"
-#include "pub_tool_hashtable.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcfile.h"
@@ -40,6 +39,7 @@
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
+#include "pub_tool_oset.h"
 #include "pub_tool_profile.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_clientstate.h"
@@ -55,7 +55,7 @@
 #define DEBUG_CG 0
 
 #define MIN_LINE_SIZE         16
-#define FILE_LEN              256
+#define FILE_LEN              VKI_PATH_MAX
 #define FN_LEN                256
 
 /*------------------------------------------------------------*/
@@ -84,68 +84,79 @@ struct _CC {
 //------------------------------------------------------------
 // Primary data structure #1: CC table
 // - Holds the per-source-line hit/miss stats, grouped by file/function/line.
-// - hash(file, hash(fn, hash(line+CC)))
-// - Each hash table is separately chained.
-// - The array sizes below work fairly well for Konqueror.
-// - Lookups done by instr_addr, which is converted immediately to a source
-//   location.
+// - an ordered set of CCs.  CC indexing done by file/function/line (as
+//   determined from the instrAddr).
 // - Traversed for dumping stats at end in file/func/line hierarchy.
 
-#define N_FILE_ENTRIES        251
-#define   N_FN_ENTRIES         53
-#define N_LINE_ENTRIES         37
+typedef struct {
+   Char* file;
+   Char* fn;
+   Int   line;
+}
+CodeLoc;
 
-typedef struct _lineCC lineCC;
-struct _lineCC {
-   Int      line;
-   CC       Ir;
-   CC       Dr;
-   CC       Dw;
-   lineCC*  next;
+typedef struct _LineCC LineCC;
+struct _LineCC {
+   CodeLoc loc;
+   CC      Ir;
+   CC      Dr;
+   CC      Dw;
 };
 
-typedef struct _fnCC fnCC;
-struct _fnCC {
-   Char*   fn;
-   fnCC*   next;
-   lineCC* lines[N_LINE_ENTRIES];
-};
+// First compare file, then fn, then line.
+static Int cmp_CodeLoc_LineCC(void *vloc, void *vcc)
+{
+   Int res;
+   CodeLoc* a = (CodeLoc*)vloc;
+   CodeLoc* b = &(((LineCC*)vcc)->loc);
 
-typedef struct _fileCC fileCC;
-struct _fileCC {
-   Char*   file;
-   fileCC* next;
-   fnCC*   fns[N_FN_ENTRIES];
-};
+   res = VG_(strcmp)(a->file, b->file);
+   if (0 != res)
+      return res;
 
-// Top level of CC table.  Auto-zeroed.
-static fileCC *CC_table[N_FILE_ENTRIES];
+   res = VG_(strcmp)(a->fn, b->fn);
+   if (0 != res)
+      return res;
+
+   return a->line - b->line;
+}
+
+static OSet* CC_table;
 
 //------------------------------------------------------------
-// Primary data structure #2: Instr-info table
+// Primary data structure #2: InstrInfo table
 // - Holds the cached info about each instr that is used for simulation.
-// - table(BB_start_addr, list(instr_info))
-// - For each BB, each instr_info in the list holds info about the
-//   instruction (instr_len, instr_addr, etc), plus a pointer to its line
+// - table(BB_start_addr, list(InstrInfo))
+// - For each BB, each InstrInfo in the list holds info about the
+//   instruction (instrLen, instrAddr, etc), plus a pointer to its line
 //   CC.  This node is what's passed to the simulation function.
 // - When BBs are discarded the relevant list(instr_details) is freed.
 
-typedef struct _instr_info instr_info;
-struct _instr_info {
+typedef struct _InstrInfo InstrInfo;
+struct _InstrInfo {
    Addr    instr_addr;
    UChar   instr_len;
-   lineCC* parent;       // parent line-CC
+   LineCC* parent;         // parent line-CC
 };
 
 typedef struct _BB_info BB_info;
 struct _BB_info {
-   BB_info*   next;              // next field
-   Addr       BB_addr;           // key
-   Int        n_instrs;
-   instr_info instrs[0];
+   Addr      BB_addr;      // key
+   Int       n_instrs;
+   InstrInfo instrs[0];
 };
 
-VgHashTable instr_info_table;    // hash(Addr, BB_info)
+static OSet* instrInfoTable;
+
+//------------------------------------------------------------
+// Secondary data structure: string table
+// - holds strings, avoiding dups
+// - used for filenames and function names, each of which will be
+//   pointed to by one or more CCs.
+// - it also allows equality checks just by pointer comparison, which
+//   is good when printing the output file at the end.
+
+static OSet* stringTable;
 
 //------------------------------------------------------------
 // Stats
@@ -154,12 +165,36 @@ static Int  distinct_fns        = 0;
 static Int  distinct_lines      = 0;
 static Int  distinct_instrs     = 0;
 
-static Int  full_debug_BBs      = 0;
-static Int  file_line_debug_BBs = 0;
-static Int  fn_debug_BBs        = 0;
-static Int  no_debug_BBs        = 0;
+static Int  full_debugs         = 0;
+static Int  file_line_debugs    = 0;
+static Int  fn_debugs           = 0;
+static Int  no_debugs           = 0;
 
 static Int  BB_retranslations   = 0;
+
+/*------------------------------------------------------------*/
+/*--- String table operations                              ---*/
+/*------------------------------------------------------------*/
+
+static Int stringCmp( void* key, void* elem )
+{
+   return VG_(strcmp)(*(Char**)key, *(Char**)elem);
+}
+
+// Get a permanent string;  either pull it out of the string table if it's
+// been encountered before, or dup it and put it into the string table.
+static Char* get_perm_string(Char* s)
+{
+   Char** s_ptr = VG_(OSet_Lookup)(stringTable, &s);
+   if (s_ptr) {
+      return *s_ptr;
+   } else {
+      Char** s_node = VG_(OSet_AllocNode)(stringTable, sizeof(Char*));
+      *s_node = VG_(strdup)(s);
+      VG_(OSet_Insert)(stringTable, s_node);
+      return *s_node;
+   }
+}
 
 /*------------------------------------------------------------*/
 /*--- CC table operations                                  ---*/
@@ -184,107 +219,43 @@ static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
       VG_(strcpy)(fn,  "???");
    }
    if (found_file_line) {
-      if (found_fn) full_debug_BBs++;
-      else          file_line_debug_BBs++;
+      if (found_fn) full_debugs++;
+      else          file_line_debugs++;
    } else {
-      if (found_fn) fn_debug_BBs++;
-      else          no_debug_BBs++;
+      if (found_fn) fn_debugs++;
+      else          no_debugs++;
    }
 }
 
-static UInt hash(Char *s, UInt table_size)
-{
-   const Int hash_constant = 256;
-   Int hash_value = 0;
-   for ( ; *s; s++)
-      hash_value = (hash_constant * hash_value + *s) % table_size;
-   return hash_value;
-}
-
-static __inline__ 
-fileCC* new_fileCC(Char filename[], fileCC* next)
-{
-   // Using calloc() zeroes the fns[] array
-   fileCC* cc = VG_(calloc)(1, sizeof(fileCC));
-   cc->file   = VG_(strdup)(filename);
-   cc->next   = next;
-   return cc;
-}
-
-static __inline__ 
-fnCC* new_fnCC(Char fn[], fnCC* next)
-{
-   // Using calloc() zeroes the lines[] array
-   fnCC* cc = VG_(calloc)(1, sizeof(fnCC));
-   cc->fn   = VG_(strdup)(fn);
-   cc->next = next;
-   return cc;
-}
-
-static __inline__ 
-lineCC* new_lineCC(Int line, lineCC* next)
-{
-   // Using calloc() zeroes the Ir/Dr/Dw CCs and the instrs[] array
-   lineCC* cc = VG_(calloc)(1, sizeof(lineCC));
-   cc->line   = line;
-   cc->next   = next;
-   return cc;
-}
-
 // Do a three step traversal: by file, then fn, then line.
-// In all cases prepends new nodes to their chain.  Returns a pointer to the
-// line node, creates a new one if necessary.
-static lineCC* get_lineCC(Addr origAddr)
+// Returns a pointer to the line CC, creates a new one if necessary.
+static LineCC* get_lineCC(Addr origAddr)
 {
-   fileCC *curr_fileCC;
-   fnCC   *curr_fnCC;
-   lineCC *curr_lineCC;
    Char    file[FILE_LEN], fn[FN_LEN];
    Int     line;
-   UInt    file_hash, fn_hash, line_hash;
+   CodeLoc loc;
+   LineCC* lineCC;
 
    get_debug_info(origAddr, file, fn, &line);
 
    VGP_PUSHCC(VgpGetLineCC);
 
-   // level 1
-   file_hash = hash(file, N_FILE_ENTRIES);
-   curr_fileCC   = CC_table[file_hash];
-   while (NULL != curr_fileCC && !VG_STREQ(file, curr_fileCC->file)) {
-      curr_fileCC = curr_fileCC->next;
-   }
-   if (NULL == curr_fileCC) {
-      CC_table[file_hash] = curr_fileCC = 
-         new_fileCC(file, CC_table[file_hash]);
-      distinct_files++;
-   }
+   loc.file = file;
+   loc.fn   = fn;
+   loc.line = line;
 
-   // level 2
-   fn_hash = hash(fn, N_FN_ENTRIES);
-   curr_fnCC   = curr_fileCC->fns[fn_hash];
-   while (NULL != curr_fnCC && !VG_STREQ(fn, curr_fnCC->fn)) {
-      curr_fnCC = curr_fnCC->next;
-   }
-   if (NULL == curr_fnCC) {
-      curr_fileCC->fns[fn_hash] = curr_fnCC = 
-         new_fnCC(fn, curr_fileCC->fns[fn_hash]);
-      distinct_fns++;
-   }
-
-   // level 3
-   line_hash   = line % N_LINE_ENTRIES;
-   curr_lineCC = curr_fnCC->lines[line_hash];
-   while (NULL != curr_lineCC && line != curr_lineCC->line) {
-      curr_lineCC = curr_lineCC->next;
-   }
-   if (NULL == curr_lineCC) {
-      curr_fnCC->lines[line_hash] = curr_lineCC = 
-         new_lineCC(line, curr_fnCC->lines[line_hash]);
-      distinct_lines++;
+   lineCC = VG_(OSet_Lookup)(CC_table, &loc);
+   if (!lineCC) {
+      // Allocate and zero a new node.
+      lineCC           = VG_(OSet_AllocNode)(CC_table, sizeof(LineCC));
+      lineCC->loc.file = get_perm_string(loc.file);
+      lineCC->loc.fn   = get_perm_string(loc.fn);
+      lineCC->loc.line = loc.line;
+      VG_(OSet_Insert)(CC_table, lineCC);
    }
 
    VGP_POPCC(VgpGetLineCC);
-   return curr_lineCC;
+   return lineCC;
 }
 
 /*------------------------------------------------------------*/
@@ -292,7 +263,7 @@ static lineCC* get_lineCC(Addr origAddr)
 /*------------------------------------------------------------*/
 
 static VG_REGPARM(1)
-void log_1I_0D_cache_access(instr_info* n)
+void log_1I_0D_cache_access(InstrInfo* n)
 {
    //VG_(printf)("1I_0D :  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n",
    //             n, n->instr_addr, n->instr_len);
@@ -304,7 +275,7 @@ void log_1I_0D_cache_access(instr_info* n)
 }
 
 static VG_REGPARM(2)
-void log_2I_0D_cache_access(instr_info* n, instr_info* n2)
+void log_2I_0D_cache_access(InstrInfo* n, InstrInfo* n2)
 {
    //VG_(printf)("2I_0D : CC1addr=0x%010lx, i1addr=0x%010lx, i1size=%lu\n"
    //            "        CC2addr=0x%010lx, i2addr=0x%010lx, i2size=%lu\n",
@@ -321,7 +292,7 @@ void log_2I_0D_cache_access(instr_info* n, instr_info* n2)
 }
 
 static VG_REGPARM(3)
-void log_3I_0D_cache_access(instr_info* n, instr_info* n2, instr_info* n3)
+void log_3I_0D_cache_access(InstrInfo* n, InstrInfo* n2, InstrInfo* n3)
 {
    //VG_(printf)("3I_0D : CC1addr=0x%010lx, i1addr=0x%010lx, i1size=%lu\n"
    //            "        CC2addr=0x%010lx, i2addr=0x%010lx, i2size=%lu\n"
@@ -343,7 +314,7 @@ void log_3I_0D_cache_access(instr_info* n, instr_info* n2, instr_info* n3)
 }
 
 static VG_REGPARM(3)
-void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr, Word data_size)
+void log_1I_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
    //VG_(printf)("1I_1Dr:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
    //            "                               daddr=0x%010lx,  dsize=%lu\n",
@@ -360,7 +331,7 @@ void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr, Word data_size)
 }
 
 static VG_REGPARM(3)
-void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr, Word data_size)
+void log_1I_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
    //VG_(printf)("1I_1Dw:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
    //            "                               daddr=0x%010lx,  dsize=%lu\n",
@@ -377,7 +348,7 @@ void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr, Word data_size)
 }
 
 static VG_REGPARM(3)
-void log_0I_1Dr_cache_access(instr_info* n, Addr data_addr, Word data_size)
+void log_0I_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
    //VG_(printf)("0I_1Dr:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
    //            n, data_addr, data_size);
@@ -389,7 +360,7 @@ void log_0I_1Dr_cache_access(instr_info* n, Addr data_addr, Word data_size)
 }
 
 static VG_REGPARM(3)
-void log_0I_1Dw_cache_access(instr_info* n, Addr data_addr, Word data_size)
+void log_0I_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
    //VG_(printf)("0I_1Dw:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
    //            n, data_addr, data_size);
@@ -465,10 +436,10 @@ typedef
       Event events[N_EVENTS];
       Int   events_used;
 
-      /* The array of instr_info bins for the BB. */
+      /* The array of InstrInfo bins for the BB. */
       BB_info* bbInfo;
 
-      /* Number instr_info bins 'used' so far. */
+      /* Number InstrInfo bins 'used' so far. */
       Int bbInfo_i;
 
       /* The output BB being constructed. */
@@ -487,7 +458,7 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
    Int      i, n_instrs;
    IRStmt*  st;
    BB_info* bbInfo;
-   
+
    // Count number of original instrs in BB
    n_instrs = 0;
    for (i = 0; i < bbIn->stmts_used; i++) {
@@ -499,15 +470,16 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
    // If this assertion fails, there has been some screwup:  some
    // translations must have been discarded but Cachegrind hasn't discarded
    // the corresponding entries in the instr-info table.
-   bbInfo = (BB_info*)VG_(HT_lookup)(instr_info_table, origAddr);
+   bbInfo = VG_(OSet_Lookup)(instrInfoTable, &origAddr);
    tl_assert(NULL == bbInfo);
 
-   // BB has never translated before (at this address, at least; could
-   // have been unloaded and then reloaded elsewhere in memory).
-   bbInfo = VG_(calloc)(1, sizeof(BB_info) + n_instrs*sizeof(instr_info)); 
-   bbInfo->BB_addr = origAddr;
+   // BB never translated before (at this address, at least;  could have
+   // been unloaded and then reloaded elsewhere in memory)
+   bbInfo = VG_(OSet_AllocNode)(instrInfoTable,
+                                sizeof(BB_info) + n_instrs*sizeof(InstrInfo)); 
+   bbInfo->BB_addr  = origAddr;
    bbInfo->n_instrs = n_instrs;
-   VG_(HT_add_node)( instr_info_table, (VgHashNode*)bbInfo );
+   VG_(OSet_Insert)( instrInfoTable, bbInfo );
    distinct_instrs++;
 
    return bbInfo;
@@ -515,7 +487,7 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
 
 
 static
-void init_instr_info( instr_info* n, Addr instr_addr, Int instr_len )
+void init_InstrInfo( InstrInfo* n, Addr instr_addr, Int instr_len )
 {
    n->instr_addr = instr_addr;
    n->instr_len  = instr_len;
@@ -549,11 +521,11 @@ static void showEvent ( Event* ev )
    }
 }
 
-/* Reserve instr_info for the first mention of a new insn. */
+/* Reserve InstrInfo for the first mention of a new insn. */
 
-static instr_info* reserve_instr_info ( CgState* cgs )
+static InstrInfo* reserve_InstrInfo ( CgState* cgs )
 {
-   instr_info* i_node;
+   InstrInfo* i_node;
    tl_assert(cgs->bbInfo_i >= 0);
    tl_assert(cgs->bbInfo_i < cgs->bbInfo->n_instrs);
    i_node = &cgs->bbInfo->instrs[ cgs->bbInfo_i ];
@@ -562,9 +534,9 @@ static instr_info* reserve_instr_info ( CgState* cgs )
 }
 
 
-/* Find the most recently allocated instr_info. */
+/* Find the most recently allocated InstrInfo. */
 
-static instr_info* find_most_recent_instr_info ( CgState* cgs )
+static InstrInfo* find_most_recent_InstrInfo ( CgState* cgs )
 {
    tl_assert(cgs->bbInfo_i >= 0);
    tl_assert(cgs->bbInfo_i <= cgs->bbInfo->n_instrs);
@@ -581,17 +553,17 @@ static instr_info* find_most_recent_instr_info ( CgState* cgs )
 
 static void flushEvents ( CgState* cgs )
 {
-   Int         i, regparms;
-   Char*       helperName;
-   void*       helperAddr;
-   IRExpr**    argv;
-   IRExpr*     i_node_expr;
-   IRExpr*     i_node2_expr;
-   IRExpr*     i_node3_expr;
-   IRDirty*    di;
-   instr_info* i_node;
-   instr_info* i_node2;
-   instr_info* i_node3;
+   Int        i, regparms;
+   Char*      helperName;
+   void*      helperAddr;
+   IRExpr**   argv;
+   IRExpr*    i_node_expr;
+   IRExpr*    i_node2_expr;
+   IRExpr*    i_node3_expr;
+   IRDirty*   di;
+   InstrInfo* i_node;
+   InstrInfo* i_node2;
+   InstrInfo* i_node3;
 
    i = 0;
    while (i < cgs->events_used) {
@@ -609,7 +581,7 @@ static void flushEvents ( CgState* cgs )
          showEvent( &cgs->events[i] );
       }
 
-      /* For any event we find the relevant instr_info.  The following
+      /* For any event we find the relevant InstrInfo.  The following
          assumes that Event_Ir is the first event to refer to any
          specific insn, and so a new entry in the cgs->bbInfo->instrs
          is allocated.  All other events (Dr,Dw,Dm) must refer to the
@@ -617,16 +589,16 @@ static void flushEvents ( CgState* cgs )
          most-recently allocated instrs[] entry, which must exist. */
 
       if (cgs->events[i].ekind == Event_Ir) {
-         /* allocate an instr_info and fill in its addr/size. */
-         i_node = reserve_instr_info( cgs );
+         /* allocate an InstrInfo and fill in its addr/size. */
+         i_node = reserve_InstrInfo( cgs );
          tl_assert(i_node);
-         init_instr_info( i_node,
-                          (Addr)cgs->events[i].iaddr, /* i addr */
-                          cgs->events[i].size  /* i size */);
+         init_InstrInfo( i_node,
+                         (Addr)cgs->events[i].iaddr, /* i addr */
+                         cgs->events[i].size  /* i size */);
       } else {
          /* use the most-recently allocated i_node but don't mess with
             its internals */
-         i_node = find_most_recent_instr_info( cgs );
+         i_node = find_most_recent_InstrInfo( cgs );
          /* it must actually exist */
          tl_assert(i_node);
          /* it must match the declared parent instruction of this
@@ -674,18 +646,18 @@ static void flushEvents ( CgState* cgs )
                helperName = "log_3I_0D_cache_access";
                helperAddr = &log_3I_0D_cache_access;
 
-               i_node2 = reserve_instr_info( cgs );
+               i_node2 = reserve_InstrInfo( cgs );
                tl_assert(i_node2);
-               init_instr_info( i_node2,
-                                (Addr)cgs->events[i+1].iaddr, /* i addr */
-                                cgs->events[i+1].size  /* i size */);
+               init_InstrInfo( i_node2,
+                               (Addr)cgs->events[i+1].iaddr, /* i addr */
+                               cgs->events[i+1].size  /* i size */);
                i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
 
-               i_node3 = reserve_instr_info( cgs );
+               i_node3 = reserve_InstrInfo( cgs );
                tl_assert(i_node3);
-               init_instr_info( i_node3,
-                                (Addr)cgs->events[i+2].iaddr, /* i addr */
-                                cgs->events[i+2].size  /* i size */);
+               init_InstrInfo( i_node3,
+                               (Addr)cgs->events[i+2].iaddr, /* i addr */
+                               cgs->events[i+2].size  /* i size */);
                i_node3_expr = mkIRExpr_HWord( (HWord)i_node3 );
 
                argv = mkIRExprVec_3( i_node_expr, i_node2_expr, i_node3_expr );
@@ -698,11 +670,11 @@ static void flushEvents ( CgState* cgs )
                 && cgs->events[i+1].ekind == Event_Ir) {
                helperName = "log_2I_0D_cache_access";
                helperAddr = &log_2I_0D_cache_access;
-               i_node2 = reserve_instr_info( cgs );
+               i_node2 = reserve_InstrInfo( cgs );
                tl_assert(i_node2);
-               init_instr_info( i_node2,
-                                (Addr)cgs->events[i+1].iaddr, /* i addr */
-                                cgs->events[i+1].size  /* i size */);
+               init_InstrInfo( i_node2,
+                               (Addr)cgs->events[i+1].iaddr, /* i addr */
+                               cgs->events[i+1].size  /* i size */);
                i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
                argv = mkIRExprVec_2( i_node_expr, i_node2_expr );
                regparms = 2;
@@ -1074,30 +1046,12 @@ static CC Dw_total;
 
 static Char* cachegrind_out_file;
 
-static void fprint_lineCC(Int fd, lineCC* n)
-{
-   Char buf[512];
-   VG_(sprintf)(buf, "%u %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
-                      n->line,
-                      n->Ir.a, n->Ir.m1, n->Ir.m2, 
-                      n->Dr.a, n->Dr.m1, n->Dr.m2,
-                      n->Dw.a, n->Dw.m1, n->Dw.m2);
-   VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-
-   Ir_total.a += n->Ir.a;  Ir_total.m1 += n->Ir.m1;  Ir_total.m2 += n->Ir.m2;
-   Dr_total.a += n->Dr.a;  Dr_total.m1 += n->Dr.m1;  Dr_total.m2 += n->Dr.m2;
-   Dw_total.a += n->Dw.a;  Dw_total.m1 += n->Dw.m1;  Dw_total.m2 += n->Dw.m2;
-}
-
 static void fprint_CC_table_and_calc_totals(void)
 {
-   Int     fd;
+   Int     i, fd;
    SysRes  sres;
-   Char    buf[512];
-   fileCC *curr_fileCC;
-   fnCC   *curr_fnCC;
-   lineCC *curr_lineCC;
-   Int     i, j, k;
+   Char    buf[512], *currFile = NULL, *currFn = NULL;
+   LineCC* lineCC;
 
    VGP_PUSHCC(VgpCacheResults);
 
@@ -1143,32 +1097,48 @@ static void fprint_CC_table_and_calc_totals(void)
    VG_(sprintf)(buf, "\nevents: Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw\n");
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
-   // Six loops here:  three for the hash table arrays, and three for the
-   // chains hanging off the hash table arrays.
-   for (i = 0; i < N_FILE_ENTRIES; i++) {
-      curr_fileCC = CC_table[i];
-      while (curr_fileCC != NULL) {
-         VG_(sprintf)(buf, "fl=%s\n", curr_fileCC->file);
+   // Traverse every lineCC
+   VG_(OSet_ResetIter)(CC_table);
+   while ( (lineCC = VG_(OSet_Next)(CC_table)) ) {
+      // If we've hit a new file, print a "fl=" line.  Note that because
+      // each string is stored exactly once in the string table, we can use
+      // pointer comparison rather than strcmp() to test for equality, which
+      // is good because most of the time the comparisons are equal and so
+      // the whole strings would have to be traversed.
+      if ( lineCC->loc.file != currFile ) {
+         currFile = lineCC->loc.file;
+         VG_(sprintf)(buf, "fl=%s\n", currFile);
          VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-
-         for (j = 0; j < N_FN_ENTRIES; j++) {
-            curr_fnCC = curr_fileCC->fns[j];
-            while (curr_fnCC != NULL) {
-               VG_(sprintf)(buf, "fn=%s\n", curr_fnCC->fn);
-               VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-
-               for (k = 0; k < N_LINE_ENTRIES; k++) {
-                  curr_lineCC = curr_fnCC->lines[k];
-                  while (curr_lineCC != NULL) {
-                     fprint_lineCC(fd, curr_lineCC);
-                     curr_lineCC = curr_lineCC->next;
-                  }
-               }
-               curr_fnCC = curr_fnCC->next;
-            }
-         }
-         curr_fileCC = curr_fileCC->next;
+         distinct_files++;
       }
+      // If we've hit a new function, print a "fn=" line.
+      if ( lineCC->loc.fn != currFn ) {
+         currFn = lineCC->loc.fn;
+         VG_(sprintf)(buf, "fn=%s\n", currFn);
+         VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+         distinct_fns++;
+      }
+
+      // Print the LineCC
+      VG_(sprintf)(buf, "%u %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                         lineCC->loc.line,
+                         lineCC->Ir.a, lineCC->Ir.m1, lineCC->Ir.m2, 
+                         lineCC->Dr.a, lineCC->Dr.m1, lineCC->Dr.m2,
+                         lineCC->Dw.a, lineCC->Dw.m1, lineCC->Dw.m2);
+      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+
+      // Update summary stats
+      Ir_total.a  += lineCC->Ir.a;
+      Ir_total.m1 += lineCC->Ir.m1;
+      Ir_total.m2 += lineCC->Ir.m2;
+      Dr_total.a  += lineCC->Dr.a;
+      Dr_total.m1 += lineCC->Dr.m1;
+      Dr_total.m2 += lineCC->Dr.m2;
+      Dw_total.a  += lineCC->Dw.a;
+      Dw_total.m1 += lineCC->Dw.m1;
+      Dw_total.m2 += lineCC->Dw.m2;
+
+      distinct_lines++;
    }
 
    // Summary stats must come after rest of table, since we calculate them
@@ -1215,7 +1185,7 @@ static void cg_fini(Int exitcode)
 
    /* Make format string, getting width right for numbers */
    VG_(sprintf)(fmt, "%%s %%,%dllu", l1);
-   
+
    VG_(message)(Vg_UserMsg, fmt, "I   refs:     ", Ir_total.a);
    VG_(message)(Vg_UserMsg, fmt, "I1  misses:   ", Ir_total.m1);
    VG_(message)(Vg_UserMsg, fmt, "L2i misses:   ", Ir_total.m2);
@@ -1225,7 +1195,7 @@ static void cg_fini(Int exitcode)
    if (0 == Ir_total.a) Ir_total.a = 1;
    VG_(percentify)(Ir_total.m1, Ir_total.a, 2, l1+1, buf1);
    VG_(message)(Vg_UserMsg, "I1  miss rate: %s", buf1);
-                
+
    VG_(percentify)(Ir_total.m2, Ir_total.a, 2, l1+1, buf1);
    VG_(message)(Vg_UserMsg, "L2i miss rate: %s", buf1);
    VG_(message)(Vg_UserMsg, "");
@@ -1235,7 +1205,7 @@ static void cg_fini(Int exitcode)
    D_total.a  = Dr_total.a  + Dw_total.a;
    D_total.m1 = Dr_total.m1 + Dw_total.m1;
    D_total.m2 = Dr_total.m2 + Dw_total.m2;
-       
+
    /* Make format string, getting width right for numbers */
    VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu rd + %%,%dllu wr)", l1, l2, l3);
 
@@ -1247,7 +1217,7 @@ static void cg_fini(Int exitcode)
                             D_total.m2, Dr_total.m2, Dw_total.m2);
 
    p = 10;
-   
+
    if (0 == D_total.a)   D_total.a = 1;
    if (0 == Dr_total.a) Dr_total.a = 1;
    if (0 == Dw_total.a) Dw_total.a = 1;
@@ -1280,32 +1250,35 @@ static void cg_fini(Int exitcode)
    VG_(percentify)(L2_total_mr, (Ir_total.a + Dr_total.a), 1, l2+1, buf2);
    VG_(percentify)(L2_total_mw, Dw_total.a,                1, l3+1, buf3);
    VG_(message)(Vg_UserMsg, "L2 miss rate:  %s (%s   + %s  )", buf1, buf2,buf3);
-            
+
 
    // Various stats
    if (VG_(clo_verbosity) > 1) {
-       Int BB_lookups = full_debug_BBs      + fn_debug_BBs +
-                        file_line_debug_BBs + no_debug_BBs;
-      
+       Int debug_lookups = full_debugs      + fn_debugs +
+                           file_line_debugs + no_debugs;
+
        VG_(message)(Vg_DebugMsg, "");
-       VG_(message)(Vg_DebugMsg, "Distinct files:   %d", distinct_files);
-       VG_(message)(Vg_DebugMsg, "Distinct fns:     %d", distinct_fns);
-       VG_(message)(Vg_DebugMsg, "Distinct lines:   %d", distinct_lines);
-       VG_(message)(Vg_DebugMsg, "Distinct instrs:  %d", distinct_instrs);
-       VG_(message)(Vg_DebugMsg, "BB lookups:       %d", BB_lookups);
-       VG_(message)(Vg_DebugMsg, "With full      debug info:%3d%% (%d)", 
-                    full_debug_BBs    * 100 / BB_lookups,
-                    full_debug_BBs);
-       VG_(message)(Vg_DebugMsg, "With file/line debug info:%3d%% (%d)", 
-                    file_line_debug_BBs * 100 / BB_lookups,
-                    file_line_debug_BBs);
-       VG_(message)(Vg_DebugMsg, "With fn name   debug info:%3d%% (%d)", 
-                    fn_debug_BBs * 100 / BB_lookups,
-                    fn_debug_BBs);
-       VG_(message)(Vg_DebugMsg, "With no        debug info:%3d%% (%d)", 
-                    no_debug_BBs      * 100 / BB_lookups,
-                    no_debug_BBs);
-       VG_(message)(Vg_DebugMsg, "BBs Retranslated: %d", BB_retranslations);
+       VG_(message)(Vg_DebugMsg, "cachegrind: distinct files: %d", distinct_files);
+       VG_(message)(Vg_DebugMsg, "cachegrind: distinct fns:   %d", distinct_fns);
+       VG_(message)(Vg_DebugMsg, "cachegrind: distinct lines: %d", distinct_lines);
+       VG_(message)(Vg_DebugMsg, "cachegrind: distinct instrs:%d", distinct_instrs);
+       VG_(message)(Vg_DebugMsg, "cachegrind: debug lookups      : %d", debug_lookups);
+       VG_(message)(Vg_DebugMsg, "cachegrind: with full      info:%3d%% (%d)", 
+                    full_debugs * 100 / debug_lookups, full_debugs);
+       VG_(message)(Vg_DebugMsg, "cachegrind: with file/line info:%3d%% (%d)", 
+                    file_line_debugs * 100 / debug_lookups, file_line_debugs);
+       VG_(message)(Vg_DebugMsg, "cachegrind: with fn name   info:%3d%% (%d)", 
+                    fn_debugs * 100 / debug_lookups, fn_debugs);
+       VG_(message)(Vg_DebugMsg, "cachegrind: with zero      info:%3d%% (%d)", 
+                    no_debugs * 100 / debug_lookups, no_debugs);
+       VG_(message)(Vg_DebugMsg, "cachegrind: BBs Retranslated: %d",
+                    BB_retranslations);
+       VG_(message)(Vg_DebugMsg, "cachegrind: string table size: %u",
+                    VG_(OSet_Size)(stringTable));
+       VG_(message)(Vg_DebugMsg, "cachegrind: CC table size: %u",
+                    VG_(OSet_Size)(CC_table));
+       VG_(message)(Vg_DebugMsg, "cachegrind: InstrInfo table size: %u",
+                    VG_(OSet_Size)(instrInfoTable));
    }
    VGP_POPCC(VgpCacheResults);
 }
@@ -1319,7 +1292,7 @@ static void cg_fini(Int exitcode)
 // unmapped or modified, or for any arbitrary reason.
 static void cg_discard_basic_block_info ( VexGuestExtents vge )
 {
-   VgHashNode* bbInfo;
+   BB_info* bbInfo;
 
    tl_assert(vge.n_used > 0);
 
@@ -1328,10 +1301,9 @@ static void cg_discard_basic_block_info ( VexGuestExtents vge )
                    (void*)(Addr)vge.base[0], (ULong)vge.len[0]);
 
    // Get BB info, remove from table, free BB info.  Simple!
-   bbInfo = VG_(HT_remove)(instr_info_table, (UWord)vge.base[0]);
+   bbInfo = VG_(OSet_Remove)(instrInfoTable, &(vge.base[0]));
    tl_assert(NULL != bbInfo);
-
-   VG_(free)(bbInfo);
+   VG_(OSet_FreeNode)(instrInfoTable, bbInfo);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1449,7 +1421,15 @@ static void cg_pre_clo_init(void)
    VG_(sprintf)(cachegrind_out_file, "%s/cachegrind.out.%d",
                 base_dir, VG_(getpid)());
 
-   instr_info_table = VG_(HT_construct)( 4999 );   // prime, biggish
+   CC_table = VG_(OSet_Create)(offsetof(LineCC, loc),
+                               cmp_CodeLoc_LineCC,
+                               VG_(malloc), VG_(free));
+   instrInfoTable = VG_(OSet_Create)(offsetof(BB_info, BB_addr),
+                                     NULL,
+                                     VG_(malloc), VG_(free));
+   stringTable    = VG_(OSet_Create)(/*keyOff*/0,
+                                     stringCmp,
+                                     VG_(malloc), VG_(free));
 }
 
 VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init)
@@ -1457,3 +1437,4 @@ VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+

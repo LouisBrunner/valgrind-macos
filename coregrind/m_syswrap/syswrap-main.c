@@ -722,7 +722,6 @@ void VG_(client_syscall) ( ThreadId tid )
          /* Syscall may block, so run it asynchronously */
          vki_sigset_t mask;
 
-//         vg_assert(!(sci->flags & PadAddr));
          PRINT(" --> [async] ... \n");
 
          mask = tst->sig_mask;
@@ -768,9 +767,6 @@ void VG_(client_syscall) ( ThreadId tid )
             kernel, there's no point in flushing them back to the
             guest state.  Indeed doing so could be construed as
             incorrect. */
-
-//         if (sci->flags & PadAddr)
-//            VG_(pad_address_space)(VG_(client_end));
 
          SysRes sres 
             = VG_(do_syscall6)(sysno, sci->args.arg1, sci->args.arg2, 
@@ -890,13 +886,6 @@ void VG_(post_syscall) (ThreadId tid)
       res.isError = sci->status.what == SsFailure;
       VG_TDICT_CALL(tool_post_syscall, tid, sysno, res);
    }
-
-//zz    if (flags & PadAddr) {
-//zz       vg_assert(!mayBlock);
-//zz       VG_(unpad_address_space)(VG_(client_end));
-//zz       //VG_(sanity_check_memory)();
-//zz    }
-//zz 
 
    /* The syscall is done. */
    sci->status.what = SsIdle;

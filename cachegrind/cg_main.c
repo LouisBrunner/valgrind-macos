@@ -414,10 +414,10 @@ typedef
 
 typedef
    struct {
-      EventKind ekind;
-      Int       size;   /* ALL */
-      Addr64    iaddr;  /* ALL.  For Dr/Dw/Dm is & of parent insn. */
-      IRAtom*   dataEA; /* Dr/Dw/Dm only */ /* IR ATOM ONLY */
+      EventKind  ekind;       // All
+      InstrInfo* inode;       // All;  inode for this event's instruction
+      Int        datasize;    // Dr/Dw/Dm only
+      IRAtom*    dataEA;      // Dr/Dw/Dm only;  IR ATOM ONLY
    }
    Event;
 
@@ -486,32 +486,24 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
 }
 
 
-static
-void init_InstrInfo( InstrInfo* n, Addr instr_addr, Int instr_len )
-{
-   n->instr_addr = instr_addr;
-   n->instr_len  = instr_len;
-   n->parent     = get_lineCC(instr_addr);
-}
-
 static void showEvent ( Event* ev )
 {
    switch (ev->ekind) {
       case Event_Ir: 
-         VG_(printf)("Ir %d 0x%llx\n", ev->size, ev->iaddr);
+         VG_(printf)("Ir %p\n", ev->inode);
          break;
       case Event_Dr:
-         VG_(printf)("Dr %d 0x%llx EA=", ev->size, ev->iaddr);
+         VG_(printf)("Dr %p %d EA=", ev->inode, ev->datasize);
          ppIRExpr(ev->dataEA); 
          VG_(printf)("\n");
          break;
       case Event_Dw:
-         VG_(printf)("Dw %d 0x%llx EA=", ev->size, ev->iaddr);
+         VG_(printf)("Dw %p %d EA=", ev->inode, ev->datasize);
          ppIRExpr(ev->dataEA); 
          VG_(printf)("\n");
          break;
       case Event_Dm:
-         VG_(printf)("Dm %d 0x%llx EA=", ev->size, ev->iaddr);
+         VG_(printf)("Dm %p %d EA=", ev->inode, ev->datasize);
          ppIRExpr(ev->dataEA); 
          VG_(printf)("\n");
          break;
@@ -521,26 +513,19 @@ static void showEvent ( Event* ev )
    }
 }
 
-/* Reserve InstrInfo for the first mention of a new insn. */
-
-static InstrInfo* reserve_InstrInfo ( CgState* cgs )
+// Reserve and initialise an InstrInfo for the first mention of a new insn.
+static
+InstrInfo* setup_InstrInfo ( CgState* cgs, Addr instr_addr, UInt instr_len )
 {
    InstrInfo* i_node;
    tl_assert(cgs->bbInfo_i >= 0);
    tl_assert(cgs->bbInfo_i < cgs->bbInfo->n_instrs);
    i_node = &cgs->bbInfo->instrs[ cgs->bbInfo_i ];
+   i_node->instr_addr = instr_addr;
+   i_node->instr_len  = instr_len;
+   i_node->parent     = get_lineCC(instr_addr);
    cgs->bbInfo_i++;
    return i_node;
-}
-
-
-/* Find the most recently allocated InstrInfo. */
-
-static InstrInfo* find_most_recent_InstrInfo ( CgState* cgs )
-{
-   tl_assert(cgs->bbInfo_i >= 0);
-   tl_assert(cgs->bbInfo_i <= cgs->bbInfo->n_instrs);
-   return &cgs->bbInfo->instrs[ cgs->bbInfo_i - 1 ];
 }
 
 
@@ -555,12 +540,7 @@ static void flushEvents ( CgState* cgs )
    void*      helperAddr;
    IRExpr**   argv;
    IRExpr*    i_node_expr;
-   IRExpr*    i_node2_expr;
-   IRExpr*    i_node3_expr;
    IRDirty*   di;
-   InstrInfo* i_node;
-   InstrInfo* i_node2;
-   InstrInfo* i_node3;
    Event*     ev;
    Event*     ev2;
    Event*     ev3;
@@ -586,28 +566,7 @@ static void flushEvents ( CgState* cgs )
          showEvent( ev );
       }
 
-      /* For any event we find the relevant InstrInfo.  The following
-         assumes that Event_Ir is the first event to refer to any
-         specific insn, and so a new entry in the cgs->bbInfo->instrs
-         is allocated.  All other events (Dr,Dw,Dm) must refer to the
-         most recently encountered IMark and so we use the
-         most-recently allocated instrs[] entry, which must exist. */
-
-      if (ev->ekind == Event_Ir) {
-         /* allocate an InstrInfo and fill in its addr/size. */
-         i_node = reserve_InstrInfo( cgs );
-         init_InstrInfo( i_node,
-                         (Addr)ev->iaddr, /* i addr */
-                         ev->size  /* i size */);
-      } else {
-         /* use the most-recently allocated i_node but don't mess with
-            its internals */
-         i_node = find_most_recent_InstrInfo( cgs );
-         /* it must match the declared parent instruction of this event. */
-         tl_assert(i_node->instr_addr == ev->iaddr);
-      }
-
-      i_node_expr = mkIRExpr_HWord( (HWord)i_node );
+      i_node_expr = mkIRExpr_HWord( (HWord)ev->inode );
 
       /* Decide on helper fn to call and args to pass it, and advance
          i appropriately. */
@@ -615,24 +574,24 @@ static void flushEvents ( CgState* cgs )
          case Event_Ir:
             /* Merge with a following Dr/Dm if it is from this insn. */
             if (ev2 && (ev2->ekind == Event_Dr || ev2->ekind == Event_Dm)) {
-               tl_assert(ev2->iaddr == ev->iaddr);
+               tl_assert(ev2->inode == ev->inode);
                helperName = "log_1I_1Dr_cache_access";
                helperAddr = &log_1I_1Dr_cache_access;
                argv = mkIRExprVec_3( i_node_expr,
                                      ev2->dataEA,
-                                     mkIRExpr_HWord( ev2->size ) );
+                                     mkIRExpr_HWord( ev2->datasize ) );
                regparms = 3;
                i += 2;
             }
             /* Merge with a following Dw if it is from this insn. */
             else
             if (ev2 && ev2->ekind == Event_Dw) {
-               tl_assert(ev2->iaddr == ev->iaddr);
+               tl_assert(ev2->inode == ev->inode);
                helperName = "log_1I_1Dw_cache_access";
                helperAddr = &log_1I_1Dw_cache_access;
                argv = mkIRExprVec_3( i_node_expr,
                                      ev2->dataEA,
-                                     mkIRExpr_HWord( ev2->size ) );
+                                     mkIRExpr_HWord( ev2->datasize ) );
                regparms = 3;
                i += 2;
             }
@@ -642,20 +601,9 @@ static void flushEvents ( CgState* cgs )
             {
                helperName = "log_3I_0D_cache_access";
                helperAddr = &log_3I_0D_cache_access;
-
-               i_node2 = reserve_InstrInfo( cgs );
-               init_InstrInfo( i_node2,
-                               (Addr)ev2->iaddr, /* i addr */
-                               ev2->size  /* i size */);
-               i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
-
-               i_node3 = reserve_InstrInfo( cgs );
-               init_InstrInfo( i_node3,
-                               (Addr)ev3->iaddr, /* i addr */
-                               ev3->size  /* i size */);
-               i_node3_expr = mkIRExpr_HWord( (HWord)i_node3 );
-
-               argv = mkIRExprVec_3( i_node_expr, i_node2_expr, i_node3_expr );
+               argv = mkIRExprVec_3( i_node_expr, 
+                                     mkIRExpr_HWord( (HWord)ev2->inode ), 
+                                     mkIRExpr_HWord( (HWord)ev3->inode ) );
                regparms = 3;
                i += 3;
             }
@@ -664,14 +612,8 @@ static void flushEvents ( CgState* cgs )
             if (ev2 && ev2->ekind == Event_Ir) {
                helperName = "log_2I_0D_cache_access";
                helperAddr = &log_2I_0D_cache_access;
-
-               i_node2 = reserve_InstrInfo( cgs );
-               init_InstrInfo( i_node2,
-                               (Addr)ev2->iaddr, /* i addr */
-                               ev2->size  /* i size */);
-
-               i_node2_expr = mkIRExpr_HWord( (HWord)i_node2 );
-               argv = mkIRExprVec_2( i_node_expr, i_node2_expr );
+               argv = mkIRExprVec_2( i_node_expr,
+                                     mkIRExpr_HWord( (HWord)ev2->inode ) );
                regparms = 2;
                i += 2;
             }
@@ -694,7 +636,7 @@ static void flushEvents ( CgState* cgs )
             helperAddr = &log_0I_1Dr_cache_access;
             argv = mkIRExprVec_3( i_node_expr, 
                                   ev->dataEA, 
-                                  mkIRExpr_HWord( ev->size ) );
+                                  mkIRExpr_HWord( ev->datasize ) );
             regparms = 3;
             i++;
             break;
@@ -703,7 +645,7 @@ static void flushEvents ( CgState* cgs )
             helperAddr = &log_0I_1Dw_cache_access;
             argv = mkIRExprVec_3( i_node_expr,
                                   ev->dataEA, 
-                                  mkIRExpr_HWord( ev->size ) );
+                                  mkIRExpr_HWord( ev->datasize ) );
             regparms = 3;
             i++;
             break;
@@ -722,56 +664,55 @@ static void flushEvents ( CgState* cgs )
    cgs->events_used = 0;
 }
 
-
-static void addEvent_Ir ( CgState* cgs, Int size, Addr64 iaddr )
+static void addEvent_Ir ( CgState* cgs, InstrInfo* inode )
 {
    Event* evt;
-   tl_assert(size >= 0 && size <= MIN_LINE_SIZE);
-   if (cgs->events_used == N_EVENTS)
-      flushEvents(cgs);
-   tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
-   /* If vex fails to decode an insn, the size will be zero, but that
-      can't really be true -- the cpu couldn't have determined the
-      insn was undecodable without looking at it.  Hence: */
-   if (size == 0)
-      size = 1;
-   evt = &cgs->events[cgs->events_used];
-   evt->ekind  = Event_Ir;
-   evt->size   = size;
-   evt->iaddr  = iaddr;
-   evt->dataEA = NULL; /*paranoia*/
-   cgs->events_used++;
-}
-
-static void addEvent_Dr ( CgState* cgs, Int size, Addr64 iaddr, IRAtom* ea )
-{
-   Event* evt;
-   tl_assert(isIRAtom(ea));
-   tl_assert(size >= 1 && size <= MIN_LINE_SIZE);
    if (cgs->events_used == N_EVENTS)
       flushEvents(cgs);
    tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
    evt = &cgs->events[cgs->events_used];
-   evt->ekind  = Event_Dr;
-   evt->size   = size;
-   evt->iaddr  = iaddr;
-   evt->dataEA = ea;
+   evt->ekind    = Event_Ir;
+   evt->inode    = inode;
+   evt->datasize = 0;
+   evt->dataEA   = NULL; /*paranoia*/
    cgs->events_used++;
 }
 
-static void addEvent_Dw ( CgState* cgs, Int size, Addr64 iaddr, IRAtom* ea )
+static
+void addEvent_Dr ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 {
+   Event* evt;
    tl_assert(isIRAtom(ea));
-   tl_assert(size >= 1 && size <= MIN_LINE_SIZE);
+   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   if (cgs->events_used == N_EVENTS)
+      flushEvents(cgs);
+   tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
+   evt = &cgs->events[cgs->events_used];
+   evt->ekind    = Event_Dr;
+   evt->inode    = inode;
+   evt->datasize = datasize;
+   evt->dataEA   = ea;
+   cgs->events_used++;
+}
 
-   /* Is it possible to merge this write into an immediately preceding
-      read? */
+static
+void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
+{
+   Event* lastEvt;
+   Event* evt;
+
+   tl_assert(isIRAtom(ea));
+   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+
+   /* Is it possible to merge this write with the preceding read? */
+   lastEvt = &cgs->events[cgs->events_used-1];
    if (cgs->events_used > 0
-       && cgs->events[cgs->events_used-1].ekind == Event_Dr
-       && cgs->events[cgs->events_used-1].size  == size
-       && cgs->events[cgs->events_used-1].iaddr == iaddr
-       && eqIRAtom(cgs->events[cgs->events_used-1].dataEA, ea)) {
-      cgs->events[cgs->events_used-1].ekind = Event_Dm;
+    && lastEvt->ekind    == Event_Dr
+    && lastEvt->datasize == datasize
+    && lastEvt->inode    == inode
+    && eqIRAtom(lastEvt->dataEA, ea))
+   {
+      lastEvt->ekind = Event_Dm;
       return;
    }
 
@@ -779,10 +720,11 @@ static void addEvent_Dw ( CgState* cgs, Int size, Addr64 iaddr, IRAtom* ea )
    if (cgs->events_used == N_EVENTS)
       flushEvents(cgs);
    tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
-   cgs->events[cgs->events_used].ekind  = Event_Dw;
-   cgs->events[cgs->events_used].size   = size;
-   cgs->events[cgs->events_used].iaddr  = iaddr;
-   cgs->events[cgs->events_used].dataEA = ea;
+   evt = &cgs->events[cgs->events_used];
+   evt->ekind    = Event_Dw;
+   evt->inode    = inode;
+   evt->datasize = datasize;
+   evt->dataEA   = ea;
    cgs->events_used++;
 }
 
@@ -792,11 +734,12 @@ static void addEvent_Dw ( CgState* cgs, Int size, Addr64 iaddr, IRAtom* ea )
 static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout, 
                              IRType gWordTy, IRType hWordTy )
 {
-   Int        i;
+   Int        i, isize;
    IRStmt*    st;
    Addr64     cia; /* address of current insn */
    CgState    cgs;
    IRTypeEnv* tyenv = bbIn->tyenv;
+   InstrInfo* curr_inode = NULL;
 
 
    if (gWordTy != hWordTy) {
@@ -804,9 +747,12 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
       VG_(tool_panic)("host/guest word size mismatch");
    }
 
-   /* Set up BB */
-   cgs.bbOut        = emptyIRBB();
-   cgs.bbOut->tyenv = dopyIRTypeEnv(tyenv);
+   /* Set up BB, including copying of the where-next stuff. */
+   cgs.bbOut           = emptyIRBB();
+   cgs.bbOut->tyenv    = dopyIRTypeEnv(tyenv);
+   tl_assert( isIRAtom(bbIn->next) );
+   cgs.bbOut->next     = dopyIRExpr(bbIn->next);
+   cgs.bbOut->jumpkind = bbIn->jumpkind;
 
    // Get the first statement, and initial cia from it
    i = 0;
@@ -823,7 +769,8 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
    if (DEBUG_CG)
       VG_(printf)("\n\n---------- cg_instrument ----------\n");
 
-   // Traverse the block, adding events and flushing as necessary.
+   // Traverse the block, initialising inodes, adding events and flushing as
+   // necessary.
    for (i = 0; i < bbIn->stmts_used; i++) {
 
       st = bbIn->stmts[i];
@@ -838,19 +785,32 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
             break;
 
          case Ist_IMark:
-            cia = st->Ist.IMark.addr;
-            addEvent_Ir( &cgs, st->Ist.IMark.len, cia );
+            cia   = st->Ist.IMark.addr;
+            isize = st->Ist.IMark.len;
+
+            // If Vex fails to decode an instruction, the size will be zero.
+            // Pretend otherwise.
+            if (isize == 0) isize = VG_MIN_INSTR_SZB;
+
+            // Check size.  XXX: broken for client requests!
+            tl_assert(VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB);
+
+            // Get space for and init the inode, record it as the current one.
+            // Subsequent Dr/Dw/Dm events from the same instruction will 
+            // also use it.
+            curr_inode = setup_InstrInfo(&cgs, cia, isize);
+
+            addEvent_Ir( &cgs, curr_inode );
             break;
 
          case Ist_Tmp: {
             IRExpr* data = st->Ist.Tmp.data;
             if (data->tag == Iex_Load) {
                IRExpr* aexpr = data->Iex.Load.addr;
-               tl_assert( isIRAtom(aexpr) );
                // Note also, endianness info is ignored.  I guess
                // that's not interesting.
-               addEvent_Dr( &cgs, sizeofIRType(data->Iex.Load.ty), 
-                                  cia, aexpr );
+               addEvent_Dr( &cgs, curr_inode, sizeofIRType(data->Iex.Load.ty), 
+                                  aexpr );
             }
             break;
          }
@@ -858,10 +818,8 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
          case Ist_Store: {
             IRExpr* data  = st->Ist.Store.data;
             IRExpr* aexpr = st->Ist.Store.addr;
-            tl_assert( isIRAtom(aexpr) );
-            addEvent_Dw( &cgs, 
-                         sizeofIRType(typeOfIRExpr(tyenv, data)), 
-                         cia, aexpr );
+            addEvent_Dw( &cgs, curr_inode, 
+                         sizeofIRType(typeOfIRExpr(tyenv, data)), aexpr );
             break;
          }
 
@@ -869,8 +827,7 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
             Int      dataSize;
             IRDirty* d = st->Ist.Dirty.details;
             if (d->mFx != Ifx_None) {
-               /* This dirty helper accesses memory.  Collect the
-                  details. */
+               /* This dirty helper accesses memory.  Collect the details. */
                tl_assert(d->mAddr != NULL);
                tl_assert(d->mSize != 0);
                dataSize = d->mSize;
@@ -881,9 +838,9 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
                if (dataSize > MIN_LINE_SIZE)
                   dataSize = MIN_LINE_SIZE;
                if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
-                  addEvent_Dr( &cgs, dataSize, cia, d->mAddr );
+                  addEvent_Dr( &cgs, curr_inode, dataSize, d->mAddr );
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
-                  addEvent_Dw( &cgs, dataSize, cia, d->mAddr );
+                  addEvent_Dw( &cgs, curr_inode, dataSize, d->mAddr );
             } else {
                tl_assert(d->mAddr == NULL);
                tl_assert(d->mSize == 0);
@@ -912,12 +869,7 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
    }
 
    /* At the end of the bb.  Flush outstandings. */
-   tl_assert(isIRAtom(bbIn->next));
    flushEvents( &cgs );
-
-   /* copy where-next stuff. */
-   cgs.bbOut->next     = dopyIRExpr(bbIn->next);
-   cgs.bbOut->jumpkind = bbIn->jumpkind;
 
    /* done.  stay sane ... */
    tl_assert(cgs.bbInfo_i == cgs.bbInfo->n_instrs);

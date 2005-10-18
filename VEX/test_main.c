@@ -148,7 +148,8 @@ int main ( int argc, char** argv )
                  VexArchX86, &vai_x86, 
                  VexArchX86, &vai_x86, 
 #endif
-                 origbuf, (Addr64)orig_addr, chase_into_not_ok,
+                 origbuf, (Addr64)orig_addr, (Addr64)orig_addr,
+                 chase_into_not_ok,
                  &vge,
                  transbuf, N_TRANSBUF, &trans_used,
 #if 1 /* no instrumentation */

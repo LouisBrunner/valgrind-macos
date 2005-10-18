@@ -275,14 +275,20 @@ typedef
 
 extern 
 VexTranslateResult LibVEX_Translate (
+
    /* The instruction sets we are translating from and to. */
    VexArch      arch_guest,
    VexArchInfo* archinfo_guest,
    VexArch      arch_host,
    VexArchInfo* archinfo_host,
    /* IN: the block to translate, and its guest address. */
+   /* where are the actual bytes in the host's address space? */
    UChar*  guest_bytes,
+   /* where do the bytes came from in the guest's aspace? */
    Addr64  guest_bytes_addr,
+   /* what guest entry point address do they correspond to? */
+   Addr64  guest_bytes_addr_noredir,
+   /* Is it OK to chase into this guest address? */
    Bool    (*chase_into_ok) ( Addr64 ),
    /* OUT: which bits of guest code actually got translated */
    VexGuestExtents* guest_extents,
@@ -293,8 +299,10 @@ VexTranslateResult LibVEX_Translate (
    Int*    host_bytes_used,
    /* IN: optionally, two instrumentation functions. */
    IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, 
+                            Addr64, VexGuestExtents*,
                             IRType gWordTy, IRType hWordTy ),
    IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, 
+                            Addr64, VexGuestExtents*,
                             IRType gWordTy, IRType hWordTy ),
    Bool    cleanup_after_instrumentation,
    /* IN: should this translation be self-checking? */

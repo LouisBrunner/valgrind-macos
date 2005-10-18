@@ -55,18 +55,31 @@
 #define N_SECTORS 8
 
 /* Number of TC entries in each sector.  This needs to be a prime
-   number to work properly, and it is strongly recommended not to
-   change this. */
-#define N_TTES_PER_SECTOR /*30011*/ /*40009*/ 80021
+   number to work properly, it must be <= 65535 (so that a TT index
+   fits in a UShort, leaving room for 0xFFFF(EC2TTE_DELETED) to denote
+   'deleted') and it is strongly recommended not to change this.
+   65521 is the largest prime <= 65535. */
+#define N_TTES_PER_SECTOR /*30011*/ /*40009*/ 65521
 
 /* Because each sector contains a hash table of TTEntries, we need to
    specify the maximum allowable loading, after which the sector is
    deemed full. */
-#define SECTOR_TT_LIMIT_PERCENT 66
+#define SECTOR_TT_LIMIT_PERCENT 80
 
 /* The sector is deemed full when this many entries are in it. */
 #define N_TTES_PER_SECTOR_USABLE \
            ((N_TTES_PER_SECTOR * SECTOR_TT_LIMIT_PERCENT) / 100)
+
+/* Equivalence classes for fast address range deletion.  There are 1 +
+   2^ECLASS_WIDTH bins.  The highest one, ECLASS_MISC, describes an
+   address range which does not fall cleanly within any specific bin.
+   Note that ECLASS_SHIFT + ECLASS_WIDTH must be < 32. */
+#define ECLASS_SHIFT 11
+#define ECLASS_WIDTH 8
+#define ECLASS_MISC  (1 << ECLASS_WIDTH)
+#define ECLASS_N     (1 + ECLASS_MISC)
+
+#define EC2TTE_DELETED  0xFFFF /* 16-bit special value */
 
 
 /*------------------ TYPES ------------------*/
@@ -123,6 +136,20 @@ typedef
          delete it when translations of a given address range are
          invalidated. */
       VexGuestExtents vge;
+
+      /* Address range summary info: these are pointers back to
+         eclass[] entries in the containing Sector.  Those entries in
+         turn point back here -- the two structures are mutually
+         redundant but both necessary to make fast deletions work.
+         The eclass info is similar to, and derived from, this entry's
+         'vge' field, but it is not the same */
+      UShort n_tte2ec;      // # tte2ec pointers (1 to 3)
+      UShort tte2ec_ec[3];  // for each, the eclass #
+      UInt   tte2ec_ix[3];  // and the index within the eclass.
+      // for i in 0 .. n_tte2ec-1
+      //    sec->ec2tte[ tte2ec_ec[i] ][ tte2ec_ix[i] ] 
+      // should be the index 
+      // of this TTEntry in the containing Sector's tt array.
    }
    TTEntry;
 
@@ -153,6 +180,14 @@ typedef
 
       /* The count of tt entries with state InUse. */
       Int tt_n_inuse;
+
+      /* Expandable arrays of tt indices for each of the ECLASS_N
+         address range equivalence classes.  These hold indices into
+         the containing sector's tt array, which in turn should point
+         back here. */
+      Int     ec2tte_size[ECLASS_N];
+      Int     ec2tte_used[ECLASS_N];
+      UShort* ec2tte[ECLASS_N];
    }
    Sector;
 
@@ -243,9 +278,304 @@ ULong n_disc_count = 0;
 ULong n_disc_osize = 0;
 
 
+/*-------------------------------------------------------------*/
+/*--- Address-range equivalence class stuff                 ---*/
+/*-------------------------------------------------------------*/
+
+/* Return equivalence class number for a range. */
+
+static Int range_to_eclass ( Addr64 start, UInt len )
+{
+   UInt mask   = (1 << ECLASS_WIDTH) - 1;
+   UInt lo     = (UInt)start;
+   UInt hi     = lo + len - 1;
+   UInt loBits = (lo >> ECLASS_SHIFT) & mask;
+   UInt hiBits = (hi >> ECLASS_SHIFT) & mask;
+   if (loBits == hiBits) {
+      vg_assert(loBits < ECLASS_N-1);
+      return loBits;
+   } else {
+      return ECLASS_MISC;
+   }
+}
+
+
+/* Calculates the equivalence class numbers for any VexGuestExtent.
+   These are written in *eclasses, which must be big enough to hold 3
+   Ints.  The number written, between 1 and 3, is returned.  The
+   eclasses are presented in order, and any duplicates are removed.
+*/
+
+static 
+Int vexGuestExtents_to_eclasses ( /*OUT*/Int* eclasses,
+                                  VexGuestExtents* vge )
+{
+#  define SWAP(_lv1,_lv2) \
+      do { Int t = _lv1; _lv1 = _lv2; _lv2 = t; } while (0)
+
+   Int i, j, n_ec, r;
+
+   vg_assert(vge->n_used >= 1 && vge->n_used <= 3);
+
+   n_ec = 0;
+   for (i = 0; i < vge->n_used; i++) {
+      r = range_to_eclass( vge->base[i], (UInt)vge->len[i] );
+      if (r == ECLASS_MISC) 
+         goto bad;
+      /* only add if we haven't already seen it */
+      for (j = 0; j < n_ec; j++)
+         if (eclasses[j] == r)
+            break;
+      if (j == n_ec)
+         eclasses[n_ec++] = r;
+   }
+
+   if (n_ec == 1)
+      return 1;
+
+   if (n_ec == 2) {
+      /* sort */
+      if (eclasses[0] > eclasses[1])
+         SWAP(eclasses[0], eclasses[1]);
+      return 2;
+   }
+
+   if (n_ec == 3) {
+      /* sort */
+      if (eclasses[0] > eclasses[2])
+         SWAP(eclasses[0], eclasses[2]);
+      if (eclasses[0] > eclasses[1])
+         SWAP(eclasses[0], eclasses[1]);
+      if (eclasses[1] > eclasses[2])
+         SWAP(eclasses[1], eclasses[2]);
+      return 3;
+   }
+
+   /* NOTREACHED */
+   vg_assert(0);
+
+  bad:
+   eclasses[0] = ECLASS_MISC;
+   return 1;
+
+#  undef SWAP
+}
+
+
+/* Add tteno to the set of entries listed for equivalence class ec in
+   this sector.  Returns used location in eclass array. */
+
+static 
+UInt addEClassNo ( /*MOD*/Sector* sec, Int ec, UShort tteno )
+{
+   Int    old_sz, new_sz, i, r;
+   UShort *old_ar, *new_ar;
+
+   vg_assert(ec >= 0 && ec < ECLASS_N);
+   vg_assert(tteno < N_TTES_PER_SECTOR);
+
+   if (0) VG_(printf)("ec %d  gets %d\n", ec, (Int)tteno);
+
+   if (sec->ec2tte_used[ec] >= sec->ec2tte_size[ec]) {
+
+      vg_assert(sec->ec2tte_used[ec] == sec->ec2tte_size[ec]);
+
+      old_sz = sec->ec2tte_size[ec];
+      old_ar = sec->ec2tte[ec];
+      new_sz = old_sz==0 ? 8 : old_sz<64 ? 2*old_sz : (3*old_sz)/2;
+      new_ar = VG_(arena_malloc)(VG_AR_TTAUX, new_sz * sizeof(UShort));
+      for (i = 0; i < old_sz; i++)
+         new_ar[i] = old_ar[i];
+      if (old_ar)
+         VG_(arena_free)(VG_AR_TTAUX, old_ar);
+      sec->ec2tte_size[ec] = new_sz;
+      sec->ec2tte[ec] = new_ar;
+
+      if (0) VG_(printf)("expand ec %d to %d\n", ec, new_sz);
+   }
+
+   /* Common case */
+   r = sec->ec2tte_used[ec]++;
+   vg_assert(r >= 0 && r < sec->ec2tte_size[ec]);
+   sec->ec2tte[ec][r] = tteno;
+   return (UInt)r;
+}
+
+
+/* 'vge' is being added to 'sec' at TT entry 'tteno'.  Add appropriate
+   eclass entries to 'sec'. */
+
+static 
+void upd_eclasses_after_add ( /*MOD*/Sector* sec, Int tteno )
+{
+   Int i, r, eclasses[3];
+   TTEntry* tte;
+   vg_assert(tteno >= 0 && tteno < N_TTES_PER_SECTOR);
+
+   tte = &sec->tt[tteno];
+   r = vexGuestExtents_to_eclasses( eclasses, &tte->vge );
+
+   vg_assert(r >= 1 && r <= 3);
+   tte->n_tte2ec = r;
+
+   for (i = 0; i < r; i++) {
+      tte->tte2ec_ec[i] = eclasses[i];
+      tte->tte2ec_ix[i] = addEClassNo( sec, eclasses[i], (UShort)tteno );
+   }
+}
+
+
+/* Check the eclass info in 'sec' to ensure it is consistent.  Returns
+   True if OK, False if something's not right.  Expensive. */
+
+static Bool sanity_check_eclasses_in_sector ( Sector* sec )
+{
+#  define BAD(_str) do { whassup = (_str); goto bad; } while (0)
+
+   HChar*   whassup = NULL;
+   Int      i, j, k, n, ec_num, ec_idx;
+   TTEntry* tte;
+   UShort   tteno;
+   ULong*   tce;
+
+   /* Basic checks on this sector */
+   if (sec->tt_n_inuse < 0 || sec->tt_n_inuse > N_TTES_PER_SECTOR_USABLE)
+      BAD("invalid sec->tt_n_inuse");
+   tce = sec->tc_next;
+   if (tce < &sec->tc[0] || tce > &sec->tc[tc_sector_szQ])
+      BAD("sec->tc_next points outside tc");
+
+   /* For each eclass ... */
+   for (i = 0; i < ECLASS_N; i++) {
+      if (sec->ec2tte_size[i] == 0 && sec->ec2tte[i] != NULL)
+         BAD("ec2tte_size/ec2tte mismatch(1)");
+      if (sec->ec2tte_size[i] != 0 && sec->ec2tte[i] == NULL)
+         BAD("ec2tte_size/ec2tte mismatch(2)");
+      if (sec->ec2tte_used[i] < 0 
+          || sec->ec2tte_used[i] > sec->ec2tte_size[i])
+         BAD("implausible ec2tte_used");
+      if (sec->ec2tte_used[i] == 0)
+         continue;
+
+      /* For each tt reference in each eclass .. ensure the reference
+         is to a valid tt entry, and that the entry's address ranges
+         really include this eclass. */
+
+      for (j = 0; j < sec->ec2tte_used[i]; j++) {
+         tteno = sec->ec2tte[i][j];
+         if (tteno == EC2TTE_DELETED)
+            continue;
+         if (tteno >= N_TTES_PER_SECTOR)
+            BAD("implausible tteno");
+         tte = &sec->tt[tteno];
+         if (tte->status != InUse)
+            BAD("tteno points to non-inuse tte");
+         if (tte->n_tte2ec < 1 || tte->n_tte2ec > 3)
+            BAD("tte->n_tte2ec out of range");
+         /* Exactly least one of tte->eclasses[0 .. tte->n_eclasses-1]
+            must equal i.  Inspect tte's eclass info. */
+         n = 0;
+         for (k = 0; k < tte->n_tte2ec; k++) {
+            if (k < tte->n_tte2ec-1
+                && tte->tte2ec_ec[k] >= tte->tte2ec_ec[k+1])
+               BAD("tte->tte2ec_ec[..] out of order");
+            ec_num = tte->tte2ec_ec[k];
+            if (ec_num < 0 || ec_num >= ECLASS_N)
+               BAD("tte->tte2ec_ec[..] out of range");
+            if (ec_num != i)
+               continue;
+            ec_idx = tte->tte2ec_ix[k];
+            if (ec_idx < 0 || ec_idx >= sec->ec2tte_used[i])
+               BAD("tte->tte2ec_ix[..] out of range");
+            if (ec_idx == j)
+               n++;
+         }
+         if (n != 1)
+            BAD("tteno does not point back at eclass");
+      }
+   }
+
+   /* That establishes that for each forward pointer from TTEntrys
+      there is a corresponding backward pointer from the eclass[]
+      arrays.  However, it doesn't rule out the possibility of other,
+      bogus pointers in the eclass[] arrays.  So do those similarly:
+      scan through them and check the TTEntryies they point at point
+      back. */
+
+   for (i = 0; i < N_TTES_PER_SECTOR_USABLE; i++) {
+
+      tte = &sec->tt[i];
+      if (tte->status == Empty || tte->status == Deleted) {
+         if (tte->n_tte2ec != 0)
+            BAD("tte->n_eclasses nonzero for unused tte");
+         continue;
+      }
+
+      vg_assert(tte->status == InUse);
+
+      if (tte->n_tte2ec < 1 || tte->n_tte2ec > 3)
+         BAD("tte->n_eclasses out of range(2)");
+
+      for (j = 0; j < tte->n_tte2ec; j++) {
+         ec_num = tte->tte2ec_ec[j];
+         if (ec_num < 0 || ec_num >= ECLASS_N)
+            BAD("tte->eclass[..] out of range");
+         ec_idx = tte->tte2ec_ix[j];
+         if (ec_idx < 0 || ec_idx >= sec->ec2tte_used[ec_num])
+            BAD("tte->ec_idx[..] out of range(2)");
+         if (sec->ec2tte[ec_num][ec_idx] != i)
+            BAD("ec2tte does not point back to tte");
+      }
+   }
+
+   return True;
+
+  bad:
+   if (whassup)
+      VG_(debugLog)(0, "transtab", "eclass sanity fail: %s\n", whassup);
+
+#  if 0
+   VG_(printf)("eclass = %d\n", i);
+   VG_(printf)("tteno = %d\n", (Int)tteno);
+   switch (tte->status) {
+      case InUse:   VG_(printf)("InUse\n"); break;
+      case Deleted: VG_(printf)("Deleted\n"); break;
+      case Empty:   VG_(printf)("Empty\n"); break;
+   }
+   if (tte->status != Empty) {
+      for (k = 0; k < tte->vge.n_used; k++)
+         VG_(printf)("0x%llx %d\n", tte->vge.base[k], 
+                                    (Int)tte->vge.len[k]);
+   }
+#  endif
+
+   return False;
+
+#  undef BAD
+}
+
+
+/* Sanity check absolutely everything.  True == check passed. */
+
+static Bool sanity_check_all_sectors ( void )
+{
+   Int     sno;
+   Bool    sane;
+   Sector* sec;
+   for (sno = 0; sno < N_SECTORS; sno++) {
+      sec = &sectors[sno];
+      if (sec->tc == NULL)
+         continue;
+      sane = sanity_check_eclasses_in_sector( sec );
+      if (!sane)
+         return False;
+   }
+   return True;
+}
+
 
 /*-------------------------------------------------------------*/
-/*--- Add/delete/find translations                          ---*/
+/*--- Add/find translations                                 ---*/
 /*-------------------------------------------------------------*/
 
 static UInt vge_osize ( VexGuestExtents* vge )
@@ -267,7 +597,11 @@ static inline UInt HASH_TT ( Addr64 key )
 {
    UInt kHi = (UInt)(key >> 32);
    UInt kLo = (UInt)key;
-   return (kHi ^ kLo) % N_TTES_PER_SECTOR;
+   UInt k32 = kHi ^ kLo;
+   UInt ror = 7;
+   if (ror > 0)
+      k32 = (k32 >> ror) | (k32 << (32-ror));
+   return k32 % N_TTES_PER_SECTOR;
 }
 
 static void setFastCacheEntry ( Addr64 key, ULong* tce, UInt* count )
@@ -292,14 +626,23 @@ static void initialiseSector ( Int sno )
 {
    Int    i;
    SysRes sres;
+   Sector* sec;
    vg_assert(isValidSector(sno));
 
-   if (sectors[sno].tc == NULL) {
+   sec = &sectors[sno];
+
+   if (sec->tc == NULL) {
+
       /* Sector has never been used before.  Need to allocate tt and
          tc. */
-      vg_assert(sectors[sno].tt == NULL);
-      vg_assert(sectors[sno].tc_next == NULL);
-      vg_assert(sectors[sno].tt_n_inuse == 0);
+      vg_assert(sec->tt == NULL);
+      vg_assert(sec->tc_next == NULL);
+      vg_assert(sec->tt_n_inuse == 0);
+      for (i = 0; i < ECLASS_N; i++) {
+         vg_assert(sec->ec2tte_size[i] == 0);
+         vg_assert(sec->ec2tte_used[i] == 0);
+         vg_assert(sec->ec2tte[i] == NULL);
+      }
 
       VG_(debugLog)(1,"transtab", "allocate sector %d\n", sno);
 
@@ -309,7 +652,7 @@ static void initialiseSector ( Int sno )
                                      8 * tc_sector_szQ );
 	 /*NOTREACHED*/
       }
-      sectors[sno].tc = (ULong*)sres.val;
+      sec->tc = (ULong*)sres.val;
 
       sres = VG_(am_mmap_anon_float_valgrind)
                 ( N_TTES_PER_SECTOR * sizeof(TTEntry) );
@@ -318,34 +661,62 @@ static void initialiseSector ( Int sno )
                                      N_TTES_PER_SECTOR * sizeof(TTEntry) );
 	 /*NOTREACHED*/
       }
-      sectors[sno].tt = (TTEntry*)sres.val;
+      sec->tt = (TTEntry*)sres.val;
+
+      for (i = 0; i < N_TTES_PER_SECTOR; i++) {
+         sec->tt[i].status   = Empty;
+         sec->tt[i].n_tte2ec = 0;
+      }
 
       if (VG_(clo_verbosity) > 2)
          VG_(message)(Vg_DebugMsg, "TT/TC: initialise sector %d", sno);
+
    } else {
-      /* Sector has been used before. */
+
+      /* Sector has been used before.  Dump the old contents. */
       VG_(debugLog)(1,"transtab", "recycle sector %d\n", sno);
-      vg_assert(sectors[sno].tt != NULL);
-      vg_assert(sectors[sno].tc_next != NULL);
-      n_dump_count += sectors[sno].tt_n_inuse;
+      vg_assert(sec->tt != NULL);
+      vg_assert(sec->tc_next != NULL);
+      n_dump_count += sec->tt_n_inuse;
+
+      /* Visit each just-about-to-be-abandoned translation. */
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
-         if (sectors[sno].tt[i].status == InUse) {
-            n_dump_osize += vge_osize(&sectors[sno].tt[i].vge);
+         if (sec->tt[i].status == InUse) {
+            vg_assert(sec->tt[i].n_tte2ec >= 1);
+            vg_assert(sec->tt[i].n_tte2ec <= 3);
+            n_dump_osize += vge_osize(&sec->tt[i].vge);
             /* Tell the tool too. */
             if (VG_(needs).basic_block_discards) {
                VG_TDICT_CALL( tool_discard_basic_block_info,
-                              sectors[sno].tt[i].vge );
+                              sec->tt[i].vge );
             }
+         } else {
+            vg_assert(sec->tt[i].n_tte2ec == 0);
+         }
+         sec->tt[i].status   = Empty;
+         sec->tt[i].n_tte2ec = 0;
+      }
+
+      /* Free up the eclass structures. */
+      for (i = 0; i < ECLASS_N; i++) {
+         if (sec->ec2tte_size[i] == 0) {
+            vg_assert(sec->ec2tte_used[i] == 0);
+            vg_assert(sec->ec2tte[i] == NULL);
+         } else {
+            vg_assert(sec->ec2tte[i] != NULL);
+            VG_(arena_free)(VG_AR_TTAUX, sec->ec2tte[i]);
+            sec->ec2tte[i] = NULL;
+            sec->ec2tte_size[i] = 0;
+            sec->ec2tte_used[i] = 0;
          }
       }
+
       if (VG_(clo_verbosity) > 2)
          VG_(message)(Vg_DebugMsg, "TT/TC: recycle sector %d", sno);
    }
 
-   sectors[sno].tc_next = sectors[sno].tc;
-   sectors[sno].tt_n_inuse = 0;
-   for (i = 0; i < N_TTES_PER_SECTOR; i++)
-      sectors[sno].tt[i].status = Empty;
+   sec->tc_next = sec->tc;
+   sec->tt_n_inuse = 0;
 
    invalidateFastCache();
 }
@@ -498,7 +869,11 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
    sectors[y].tt[i].vge    = *vge;
    sectors[y].tt[i].entry  = entry;
 
+   /* Update the fast-cache. */
    setFastCacheEntry( entry, tce, &sectors[y].tt[i].count );
+
+   /* Note the eclass numbers for this translation. */
+   upd_eclasses_after_add( &sectors[y], i );
 }
 
 
@@ -564,9 +939,13 @@ Bool VG_(search_transtab) ( /*OUT*/AddrH* result,
 }
 
 
-/* Delete all translations which intersect with any part of the
-   specified guest address range.  Note, this is SLOW. 
-*/
+/*-------------------------------------------------------------*/
+/*--- Delete translations.                                  ---*/
+/*-------------------------------------------------------------*/
+
+/* Stuff for deleting translations which intersect with a given
+   address range.  Unfortunately, to make this run at a reasonable
+   speed, it is complex. */
 
 static inline
 Bool overlap1 ( Addr64 s1, ULong r1, Addr64 s2, ULong r2 )
@@ -595,11 +974,115 @@ Bool overlaps ( Addr64 start, ULong range, VexGuestExtents* vge )
 }
 
 
+/* Delete a tt entry, and update all the eclass data accordingly. */
+
+static void delete_tte ( /*MOD*/Sector* sec, Int tteno )
+{
+   Int      i, ec_num, ec_idx;
+   TTEntry* tte;
+
+   vg_assert(tteno >= 0 && tteno < N_TTES_PER_SECTOR);
+   tte = &sec->tt[tteno];
+   vg_assert(tte->status == InUse);
+   vg_assert(tte->n_tte2ec >= 1 && tte->n_tte2ec <= 3);
+
+   /* Deal with the ec-to-tte links first. */
+   for (i = 0; i < tte->n_tte2ec; i++) {
+      ec_num = (Int)tte->tte2ec_ec[i];
+      ec_idx = tte->tte2ec_ix[i];
+      vg_assert(ec_num >= 0 && ec_num < ECLASS_N);
+      vg_assert(ec_idx >= 0);
+      vg_assert(ec_idx < sec->ec2tte_used[ec_num]);
+      /* Assert that the two links point at each other. */
+      vg_assert(sec->ec2tte[ec_num][ec_idx] == (UShort)tteno);
+      /* "delete" the pointer back to here. */
+      sec->ec2tte[ec_num][ec_idx] = EC2TTE_DELETED;
+   }
+
+   /* Now fix up this TTEntry. */
+   tte->status   = Deleted;
+   tte->n_tte2ec = 0;
+
+   /* Stats .. */
+   sec->tt_n_inuse--;
+   n_disc_count++;
+   n_disc_osize += vge_osize(&tte->vge);
+
+   /* Tell the tool too. */
+   if (VG_(needs).basic_block_discards) {
+      VG_TDICT_CALL( tool_discard_basic_block_info,
+                     tte->vge );
+   }
+}
+
+
+/* Delete translations from sec which intersect specified range, but
+   only consider translations in the specified eclass. */
+
+static 
+Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, 
+                                            Addr64 guest_start, ULong range,
+                                            Int ec )
+{
+   Int      i;
+   UShort   tteno;
+   Bool     anyDeld = False;
+   TTEntry* tte;
+
+   vg_assert(ec >= 0 && ec < ECLASS_N);
+
+   for (i = 0; i < sec->ec2tte_used[ec]; i++) {
+
+      tteno = sec->ec2tte[ec][i];
+      if (tteno == EC2TTE_DELETED) {
+         /* already deleted */
+         continue;
+      }
+
+      vg_assert(tteno < N_TTES_PER_SECTOR);
+
+      tte = &sec->tt[tteno];
+      vg_assert(tte->status == InUse);
+
+      if (overlaps( guest_start, range, &tte->vge )) {
+         anyDeld = True;
+         delete_tte( sec, (Int)tteno );
+      }
+
+   }
+
+   return anyDeld;
+}
+
+
+/* Delete translations from sec which intersect specified range, the
+   slow way, by inspecting all translations in sec. */
+
+static 
+Bool delete_translations_in_sector ( /*MOD*/Sector* sec, 
+                                     Addr64 guest_start, ULong range )
+{
+   Int  i;
+   Bool anyDeld = False;
+
+   for (i = 0; i < N_TTES_PER_SECTOR; i++) {
+      if (sec->tt[i].status == InUse
+          && overlaps( guest_start, range, &sec->tt[i].vge )) {
+         anyDeld = True;
+         delete_tte( sec, i );
+      }
+   }
+
+   return anyDeld;
+} 
+
+
 void VG_(discard_translations) ( Addr64 guest_start, ULong range,
                                  HChar* who )
 {
-   Int sno, i;
-   Bool anyDeleted = False;
+   Sector* sec;
+   Int     sno, ec;
+   Bool    anyDeleted = False;
 
    vg_assert(init_done);
 
@@ -607,28 +1090,99 @@ void VG_(discard_translations) ( Addr64 guest_start, ULong range,
                     "discard_translations(0x%llx, %lld) req by %s\n",
                     guest_start, range, who );
 
-   for (sno = 0; sno < N_SECTORS; sno++) {
-      if (sectors[sno].tc == NULL)
-         continue;
-      for (i = 0; i < N_TTES_PER_SECTOR; i++) {
-         if (sectors[sno].tt[i].status == InUse
-             && overlaps( guest_start, range, &sectors[sno].tt[i].vge )) {
-            sectors[sno].tt[i].status = Deleted;
-            sectors[sno].tt_n_inuse--;
-            anyDeleted = True;
-            n_disc_count++;
-            n_disc_osize += vge_osize(&sectors[sno].tt[i].vge);
-            /* Tell the tool too. */
-            if (VG_(needs).basic_block_discards) {
-               VG_TDICT_CALL( tool_discard_basic_block_info,
-                              sectors[sno].tt[i].vge );
-            }
-         }
-      }    
+   /* Pre-deletion sanity check */
+   if (VG_(clo_sanity_level >= 4)) {
+      Bool sane = sanity_check_all_sectors();
+      vg_assert(sane);
+   }
+
+   if (range == 0)
+      return;
+
+   /* There are two different ways to do this.
+
+      If the range fits within a single address-range equivalence
+      class, as will be the case for a cache line sized invalidation,
+      then we only have to inspect the set of translations listed in
+      that equivalence class, and also in the "sin-bin" equivalence
+      class ECLASS_MISC.
+
+      Otherwise, the invalidation is of a larger range and probably
+      results from munmap.  In this case it's (probably!) faster just
+      to inspect all translations, dump those we don't want, and
+      regenerate the equivalence class information (since modifying it
+      in-situ is even more expensive).
+   */
+
+   /* First off, figure out if the range falls within a single class, 
+      and if so which one. */
+
+   ec = ECLASS_MISC;
+   if (range < (1ULL << ECLASS_SHIFT))
+      ec = range_to_eclass( guest_start, (UInt)range );
+
+   /* if ec is ECLASS_MISC then we aren't looking at just a single
+      class, so use the slow scheme.  Else use the fast scheme,
+      examining 'ec' and ECLASS_MISC. */
+
+   if (ec != ECLASS_MISC) {
+
+      VG_(debugLog)(2, "transtab",
+                       "                    FAST, ec = %d\n", ec);
+
+      /* Fast scheme */
+      vg_assert(ec >= 0 && ec < ECLASS_MISC);
+
+      for (sno = 0; sno < N_SECTORS; sno++) {
+         sec = &sectors[sno];
+         if (sec->tc == NULL)
+            continue;
+         anyDeleted |= delete_translations_in_sector_eclass( 
+                         sec, guest_start, range, ec );
+         anyDeleted |= delete_translations_in_sector_eclass( 
+                         sec, guest_start, range, ECLASS_MISC );
+      }
+
+   } else {
+
+      /* slow scheme */
+
+      VG_(debugLog)(2, "transtab",
+                       "                    SLOW, ec = %d\n", ec);
+
+      for (sno = 0; sno < N_SECTORS; sno++) {
+         sec = &sectors[sno];
+         if (sec->tc == NULL)
+            continue;
+         anyDeleted |= delete_translations_in_sector( 
+                         sec, guest_start, range );
+      }
+
    }
 
    if (anyDeleted)
       invalidateFastCache();
+
+   /* Post-deletion sanity check */
+   if (VG_(clo_sanity_level >= 4)) {
+      Int      i;
+      TTEntry* tte;
+      Bool     sane = sanity_check_all_sectors();
+      vg_assert(sane);
+      /* But now, also check the requested address range isn't
+         present anywhere. */
+      for (sno = 0; sno < N_SECTORS; sno++) {
+         sec = &sectors[sno];
+         if (sec->tc == NULL)
+            continue;
+         for (i = 0; i < N_TTES_PER_SECTOR; i++) {
+            tte = &sec->tt[i];
+            if (tte->status != InUse)
+               continue;
+            vg_assert(!overlaps( guest_start, range, &tte->vge ));
+         }
+      }
+   }
 }
 
 
@@ -638,7 +1192,7 @@ void VG_(discard_translations) ( Addr64 guest_start, ULong range,
 
 void VG_(init_tt_tc) ( void )
 {
-   Int i, avg_codeszQ;
+   Int i, j, avg_codeszQ;
 
    vg_assert(!init_done);
    init_done = True;
@@ -667,6 +1221,11 @@ void VG_(init_tt_tc) ( void )
       sectors[i].tt = NULL;
       sectors[i].tc_next = NULL;
       sectors[i].tt_n_inuse = 0;
+      for (j = 0; j < ECLASS_N; j++) {
+         sectors[i].ec2tte_size[j] = 0;
+         sectors[i].ec2tte_used[j] = 0;
+         sectors[i].ec2tte[j] = NULL;
+      }
    }
 
    /* and the fast caches. */
@@ -731,6 +1290,17 @@ void VG_(print_tt_tc_stats) ( void )
    VG_(message)(Vg_DebugMsg,
                 "translate: discarded  %,llu (%,llu -> ?" "?)",
                 n_disc_count, n_disc_osize );
+
+   if (0) {
+      Int i;
+      VG_(printf)("\n");
+      for (i = 0; i < ECLASS_N; i++) {
+         VG_(printf)(" %4d", sectors[0].ec2tte_used[i]);
+         if (i % 16 == 15)
+            VG_(printf)("\n");
+      }
+      VG_(printf)("\n\n");
+   }
 }
 
 /*------------------------------------------------------------*/

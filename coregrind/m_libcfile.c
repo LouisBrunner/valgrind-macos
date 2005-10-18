@@ -342,16 +342,24 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
 static 
 UInt my_htonl ( UInt x )
 {
+#  if defined(VG_BIGENDIAN)
+   return x;
+#  else
    return
       (((x >> 24) & 0xFF) << 0) | (((x >> 16) & 0xFF) << 8)
       | (((x >> 8) & 0xFF) << 16) | (((x >> 0) & 0xFF) << 24);
+#  endif
 }
 
 static
 UShort my_htons ( UShort x )
 {
+#  if defined(VG_BIGENDIAN)
+   return x;
+#  else
    return
       (((x >> 8) & 0xFF) << 0) | (((x >> 0) & 0xFF) << 8);
+#  endif
 }
 
 
@@ -388,16 +396,16 @@ Int VG_(connect_via_socket)( UChar* str )
    /* create socket */
    sd = my_socket(VKI_AF_INET, VKI_SOCK_STREAM, 0 /* IPPROTO_IP ? */);
    if (sd < 0) {
-     /* this shouldn't happen ... nevertheless */
-     return -2;
+      /* this shouldn't happen ... nevertheless */
+      return -2;
    }
-			
+		
    /* connect to server */
    res = my_connect(sd, (struct vki_sockaddr_in *) &servAddr, 
                         sizeof(servAddr));
    if (res < 0) {
-     /* connection failed */
-     return -2;
+      /* connection failed */
+      return -2;
    }
 
    return sd;
@@ -501,7 +509,7 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
       error is still returned. */
    Int flags = VKI_MSG_NOSIGNAL;
 
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    SysRes res;
    UWord  args[4];
    args[0] = sd;
@@ -515,11 +523,6 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    SysRes res;
    res = VG_(do_syscall6)(__NR_sendto, sd, (UWord)msg, count, flags, 0,0);
    return res.isError ? -1 : res.val;
-
-#elif defined(VGP_ppc32_linux)
-   //CAB: TODO
-   I_die_here;
-   flags = 0; // stop compiler complaints
 
 #else
 #  error Unknown arch

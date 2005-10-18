@@ -479,6 +479,7 @@ void ensure_mm_init ( ArenaId aid )
       arena_init ( VG_AR_DEMANGLE,  "demangle", 4,                    65536 );
       arena_init ( VG_AR_EXECTXT,   "exectxt",  4,                   262144 );
       arena_init ( VG_AR_ERRORS,    "errors",   4,                    65536 );
+      arena_init ( VG_AR_TTAUX,     "ttaux",    4,                    65536 );
       nonclient_inited = True;
    }
 

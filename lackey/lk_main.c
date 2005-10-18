@@ -124,8 +124,10 @@ static void lk_post_clo_init(void)
    Which gives us the right answer.  And just to avoid two C calls, we fold
    the basic-block-beginning call in with add_one_BB().  Phew.
 */ 
-static IRBB* lk_instrument(IRBB* bb_in, VexGuestLayout* layout, 
-                           IRType gWordTy, IRType hWordTy )
+static
+IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout, 
+                     Addr64 orig_addr_noredir, VexGuestExtents* vge,
+                     IRType gWordTy, IRType hWordTy )
 {
    IRDirty* di;
    Int      i;

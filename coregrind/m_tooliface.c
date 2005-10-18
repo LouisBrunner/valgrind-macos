@@ -40,7 +40,8 @@ VgToolInterface VG_(tdict);
 
 void VG_(basic_tool_funcs)(
    void(*post_clo_init)(void),
-   IRBB*(*instrument)(IRBB*, VexGuestLayout*, IRType, IRType ),
+   IRBB*(*instrument)(IRBB*, VexGuestLayout*, 
+                      Addr64, VexGuestExtents*, IRType, IRType ),
    void(*fini)(Int)
 )
 {
@@ -154,7 +155,7 @@ NEEDS(core_errors)
 NEEDS(data_syms)
 
 void VG_(needs_basic_block_discards)(
-   void (*discard)(VexGuestExtents)
+   void (*discard)(Addr64, VexGuestExtents)
 )
 {
    VG_(needs).basic_block_discards = True;

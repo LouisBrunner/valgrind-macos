@@ -1148,8 +1148,10 @@ static Bool ms_handle_client_request ( ThreadId tid, UWord* argv, UWord* ret )
 /*--- Instrumentation                                      ---*/
 /*------------------------------------------------------------*/
 
-static IRBB* ms_instrument ( IRBB* bb_in, VexGuestLayout* layout, 
-                             IRType gWordTy, IRType hWordTy )
+static
+IRBB* ms_instrument ( IRBB* bb_in, VexGuestLayout* layout, 
+                      Addr64 orig_addr_noredir, VexGuestExtents* vge,
+                      IRType gWordTy, IRType hWordTy )
 {
    /* XXX Will Massif work when gWordTy != hWordTy ? */
    return bb_in;

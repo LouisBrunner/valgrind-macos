@@ -78,10 +78,14 @@ extern void VG_(basic_tool_funcs)(
    // processing.
    void  (*post_clo_init)(void),
 
-   // Instrument a basic block.  Must be a true function, ie. the same input
-   // always results in the same output, because basic blocks can be
-   // retranslated.  Unless you're doing something really strange...
-   IRBB* (*instrument)(IRBB* bb_in, VexGuestLayout* layout, 
+   // Instrument a basic block.  Must be a true function, ie. the same
+   // input always results in the same output, because basic blocks
+   // can be retranslated.  Unless you're doing something really
+   // strange...  Note that orig_addr_noredir is not necessarily the
+   // same as the address of the first instruction in the IR, due to
+   // function redirection.
+   IRBB* (*instrument)(IRBB* bb_in, VexGuestLayout* layout,
+                       Addr64 orig_addr_noredir, VexGuestExtents* vge, 
                        IRType gWordTy, IRType hWordTy ),
 
    // Finish up, print out any results, etc.  `exitcode' is program's exit
@@ -195,19 +199,21 @@ extern void VG_(needs_tool_errors) (
    reused for new translations. */
 extern void VG_(needs_basic_block_discards) (
    // Discard any information that pertains to specific translations
-   // or instructions within the address range given.  The "extents"
-   // arg can be used in two ways.
-   // - If info is being stored at a per-translation level, the first
-   //   address in the extents can be used to identify which translation
-   //   is being discarded.  Each translation will be discarded exactly
-   //   once.
+   // or instructions within the address range given.  There are two
+   // possible approaches.
+   // - If info is being stored at a per-translation level, use orig_addr
+   //   to identify which translation is being discarded.  Each translation
+   //   will be discarded exactly once.
+   //   This orig_addr will match the orig_addr which was passed to
+   //   to instrument() when this translation was made.  Note that orig_addr
+   //   won't necessarily be the same as the first address in "extents".
    // - If info is being stored at a per-instruction level, you can get
    //   the address range(s) being discarded by stepping through "extents".
    //   Note that any single instruction may belong to more than one
    //   translation, and so could be covered by the "extents" of more than
    //   one call to this function.
    // Doing it the first way (as eg. Cachegrind does) is probably easier.
-   void (*discard_basic_block_info)(VexGuestExtents vge)
+   void (*discard_basic_block_info)(Addr64 orig_addr, VexGuestExtents extents)
 );
 
 /* Tool defines its own command line options? */

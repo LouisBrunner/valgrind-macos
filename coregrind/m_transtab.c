@@ -688,6 +688,7 @@ static void initialiseSector ( Int sno )
             /* Tell the tool too. */
             if (VG_(needs).basic_block_discards) {
                VG_TDICT_CALL( tool_discard_basic_block_info,
+                              sec->tt[i].entry,
                               sec->tt[i].vge );
             }
          } else {
@@ -1011,6 +1012,7 @@ static void delete_tte ( /*MOD*/Sector* sec, Int tteno )
    /* Tell the tool too. */
    if (VG_(needs).basic_block_discards) {
       VG_TDICT_CALL( tool_discard_basic_block_info,
+                     tte->entry,
                      tte->vge );
    }
 }

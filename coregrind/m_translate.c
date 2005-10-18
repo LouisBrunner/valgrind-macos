@@ -166,8 +166,12 @@ static Bool need_to_handle_SP_assignment(void)
 */
 
 static
-IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout, 
-                          IRType gWordTy, IRType hWordTy )
+IRBB* vg_SP_update_pass ( IRBB*             bb_in, 
+                          VexGuestLayout*   layout, 
+                          Addr64            orig_addr_noredir,
+                          VexGuestExtents*  vge,
+                          IRType            gWordTy, 
+                          IRType            hWordTy )
 {
    Int      i, j, minoff_ST, maxoff_ST, sizeof_SP, offset_SP;
    IRDirty  *dcall, *d;
@@ -520,7 +524,7 @@ Bool VG_(translate) ( ThreadId tid,
                       Int      debugging_verbosity,
                       ULong    bbs_done )
 {
-   Addr64    redir, orig_addr0 = orig_addr;
+   Addr64    redir, orig_addr_noredir = orig_addr;
    Int       tmpbuf_used, verbosity, i;
    Bool      notrace_until_done, do_self_check;
    UInt      notrace_until_limit = 0;
@@ -672,6 +676,7 @@ Bool VG_(translate) ( ThreadId tid,
              vex_arch, &vex_archinfo,
              (UChar*)ULong_to_Ptr(orig_addr), 
              (Addr64)orig_addr, 
+             (Addr64)orig_addr_noredir, 
              chase_into_ok,
              &vge,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
@@ -711,10 +716,10 @@ Bool VG_(translate) ( ThreadId tid,
    // If debugging, don't do anything with the translated block;  we
    // only did this for the debugging output produced along the way.
    if (!debugging_translation) {
-      // Note that we use orig_addr0, not orig_addr, which might have been
-      // changed by the redirection
+      // Note that we use orig_addr_noredir, not orig_addr, which
+      // might have been changed by the redirection
       VG_(add_to_transtab)( &vge,
-                            orig_addr0,
+                            orig_addr_noredir,
                             (Addr)(&tmpbuf[0]), 
                             tmpbuf_used,
                             do_self_check );

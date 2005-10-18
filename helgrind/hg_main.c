@@ -2297,8 +2297,10 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
    return cb;
 }
 #endif
-static IRBB* hg_instrument ( IRBB* bb_in, VexGuestLayout* layout, 
-                             IRType gWordTy, IRType hWordTy )
+static
+IRBB* hg_instrument ( IRBB* bb_in, VexGuestLayout* layout, 
+                      Addr64 orig_addr_noredir, VexGuestExtents* vge,
+                      IRType gWordTy, IRType hWordTy )
 {
    tl_assert(0);  // Need to convert to Vex
 }

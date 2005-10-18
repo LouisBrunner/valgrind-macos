@@ -36,8 +36,10 @@ static void nl_post_clo_init(void)
 {
 }
 
-static IRBB* nl_instrument(IRBB* bb, VexGuestLayout* layout, 
-                           IRType gWordTy, IRType hWordTy)
+static
+IRBB* nl_instrument(IRBB* bb, VexGuestLayout* layout, 
+                    Addr64 orig_addr_noredir, VexGuestExtents* vge,
+                    IRType gWordTy, IRType hWordTy)
 {
     return bb;
 }

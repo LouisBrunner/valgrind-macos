@@ -141,7 +141,7 @@ struct _InstrInfo {
 
 typedef struct _BB_info BB_info;
 struct _BB_info {
-   Addr      BB_addr;      // key
+   Addr      BB_addr;      // key;  MUST BE FIRST
    Int       n_instrs;
    InstrInfo instrs[0];
 };
@@ -452,6 +452,8 @@ typedef
 /*--- Instrumentation main                                 ---*/
 /*------------------------------------------------------------*/
 
+// Note that origAddr is the real origAddr, not the address of the first
+// instruction in the block (they can be different due to redirection).
 static
 BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
 {
@@ -731,8 +733,10 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 ////////////////////////////////////////////////////////////
 
 
-static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout, 
-                             IRType gWordTy, IRType hWordTy )
+static
+IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout, 
+                      Addr64 orig_addr_noredir, VexGuestExtents* vge,
+                      IRType gWordTy, IRType hWordTy )
 {
    Int        i, isize;
    IRStmt*    st;
@@ -763,7 +767,7 @@ static IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
 
    // Set up running state and get block info
    cgs.events_used = 0;
-   cgs.bbInfo      = get_BB_info(bbIn, (Addr)cia);
+   cgs.bbInfo      = get_BB_info(bbIn, (Addr)orig_addr_noredir);
    cgs.bbInfo_i    = 0;
 
    if (DEBUG_CG)
@@ -1241,18 +1245,22 @@ static void cg_fini(Int exitcode)
 // Called when a translation is removed from the translation cache for
 // any reason at all: to free up space, because the guest code was
 // unmapped or modified, or for any arbitrary reason.
-static void cg_discard_basic_block_info ( VexGuestExtents vge )
+static
+void cg_discard_basic_block_info ( Addr64 orig_addr64, VexGuestExtents vge )
 {
    BB_info* bbInfo;
+   Addr     orig_addr = (Addr)orig_addr64;
 
    tl_assert(vge.n_used > 0);
 
    if (DEBUG_CG)
-      VG_(printf)( "discard_basic_block_info: %p, %llu\n", 
+      VG_(printf)( "discard_basic_block_info: %p, %p, %llu\n", 
+                   (void*)(Addr)orig_addr,
                    (void*)(Addr)vge.base[0], (ULong)vge.len[0]);
 
-   // Get BB info, remove from table, free BB info.  Simple!
-   bbInfo = VG_(OSet_Remove)(instrInfoTable, &(vge.base[0]));
+   // Get BB info, remove from table, free BB info.  Simple!  Note that we
+   // use orig_addr, not the first instruction address in vge.
+   bbInfo = VG_(OSet_Remove)(instrInfoTable, &orig_addr);
    tl_assert(NULL != bbInfo);
    VG_(OSet_FreeNode)(instrInfoTable, bbInfo);
 }
@@ -1375,7 +1383,7 @@ static void cg_pre_clo_init(void)
    CC_table = VG_(OSet_Create)(offsetof(LineCC, loc),
                                cmp_CodeLoc_LineCC,
                                VG_(malloc), VG_(free));
-   instrInfoTable = VG_(OSet_Create)(offsetof(BB_info, BB_addr),
+   instrInfoTable = VG_(OSet_Create)(/*keyOff*/0,
                                      NULL,
                                      VG_(malloc), VG_(free));
    stringTable    = VG_(OSet_Create)(/*keyOff*/0,

@@ -104,7 +104,8 @@ typedef struct {
    // Basic functions
    void  (*tool_pre_clo_init) (void);
    void  (*tool_post_clo_init)(void);
-   IRBB* (*tool_instrument)   (IRBB*, VexGuestLayout*, IRType, IRType);
+   IRBB* (*tool_instrument)   (IRBB*, VexGuestLayout*, 
+                               Addr64, VexGuestExtents*, IRType, IRType);
    void  (*tool_fini)         (Int);
 
    // VG_(needs).core_errors
@@ -121,7 +122,7 @@ typedef struct {
    void  (*tool_print_extra_suppression_info)(Error*);
 
    // VG_(needs).basic_block_discards
-   void (*tool_discard_basic_block_info)(VexGuestExtents);
+   void (*tool_discard_basic_block_info)(Addr64, VexGuestExtents);
 
    // VG_(needs).command_line_options
    Bool (*tool_process_cmd_line_option)(Char*);

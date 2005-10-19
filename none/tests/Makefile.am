@@ -88,8 +88,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	shell_badinterp shell_badinterp.vgtest shell_badinterp.stderr.exp \
 	shell_binaryfile shell_binaryfile.vgtest shell_binaryfile.stderr.exp \
 	shell_dir.vgtest shell_dir.stderr.exp \
-	shell_nonexec shell_nonexec.vgtest shell_nonexec.stderr.exp \
-	shell_nonexec shell_nonexec.vgtest shell_nonexec.stderr.exp \
+	shell_nonexec.vgtest shell_nonexec.stderr.exp \
 	shell_nosuchfile.vgtest shell_nosuchfile.stderr.exp \
 	shell_valid1 shell_valid1.vgtest shell_valid1.stderr.exp \
 	shell_valid2 shell_valid2.vgtest shell_valid2.stderr.exp \

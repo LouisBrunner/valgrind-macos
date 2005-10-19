@@ -170,8 +170,6 @@ static Int  file_line_debugs    = 0;
 static Int  fn_debugs           = 0;
 static Int  no_debugs           = 0;
 
-static Int  BB_retranslations   = 0;
-
 /*------------------------------------------------------------*/
 /*--- String table operations                              ---*/
 /*------------------------------------------------------------*/
@@ -1226,8 +1224,6 @@ static void cg_fini(Int exitcode)
                     fn_debugs * 100 / debug_lookups, fn_debugs);
        VG_(message)(Vg_DebugMsg, "cachegrind: with zero      info:%3d%% (%d)", 
                     no_debugs * 100 / debug_lookups, no_debugs);
-       VG_(message)(Vg_DebugMsg, "cachegrind: BBs Retranslated: %d",
-                    BB_retranslations);
        VG_(message)(Vg_DebugMsg, "cachegrind: string table size: %u",
                     VG_(OSet_Size)(stringTable));
        VG_(message)(Vg_DebugMsg, "cachegrind: CC table size: %u",

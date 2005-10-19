@@ -1724,7 +1724,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_lock,              sys_ni_syscall),        // 53
    GENXY(__NR_ioctl,             sys_ioctl),             // 54
 //.. 
-//..    GENXY(__NR_fcntl,             sys_fcntl),             // 55
+   GENXY(__NR_fcntl,             sys_fcntl),             // 55
 //..    GENX_(__NR_mpx,               sys_ni_syscall),        // 56
    GENX_(__NR_setpgid,           sys_setpgid),           // 57
 //..    GENX_(__NR_ulimit,            sys_ni_syscall),        // 58
@@ -1787,7 +1787,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENXY(__NR_getitimer,         sys_getitimer),         // 105
    GENXY(__NR_stat,              sys_newstat),           // 106
 //..    GENXY(__NR_lstat,             sys_newlstat),          // 107
-//..    GENXY(__NR_fstat,             sys_newfstat),          // 108
+   GENXY(__NR_fstat,             sys_newfstat),          // 108
 //..    //   (__NR_olduname,          sys_uname),             // 109 -- obsolete
 //.. 
 //..    GENX_(__NR_iopl,              sys_iopl),              // 110

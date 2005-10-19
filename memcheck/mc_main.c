@@ -2269,7 +2269,7 @@ static void mc_print_usage(void)
 {  
    MAC_(print_common_usage)();
    VG_(printf)(
-"    --avoid-strlen-errors=no|yes  suppress errs from inlined strlen [yes]\n"
+"    --avoid-strlen-errors=no|yes     suppress errs from inlined strlen [yes]\n"
    );
 }
 

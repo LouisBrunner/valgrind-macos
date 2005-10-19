@@ -29,7 +29,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --xml=yes                 all output is in XML (Memcheck/Nulgrind only)
     --xml-user-comment=STR    copy STR verbatim to XML output
     --demangle=no|yes         automatically demangle C++ names? [yes]
-    --num-callers=<number>    show <num> callers in stack traces [12]
+    --num-callers=<number>    show <number> callers in stack traces [12]
     --error-limit=no|yes      stop showing new errors if too many? [yes]
     --show-below-main=no|yes  continue stack traces below main() [no]
     --suppressions=<filename> suppress errors described in <filename>
@@ -48,7 +48,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --profile=no|yes          profile? (tool must be built for it) [no]
     --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]
-    --trace-notbelow=<number>    only show BBs above <number> [0]
+    --trace-notbelow=<number> only show BBs above <number> [0]
     --trace-syscalls=no|yes   show all system calls? [no]
     --trace-signals=no|yes    show signal handling details? [no]
     --trace-symtab=no|yes     show symbol table details? [no]

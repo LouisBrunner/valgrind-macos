@@ -615,10 +615,20 @@ static void setFastCacheEntry ( Addr64 key, ULong* tce, UInt* count )
 static void invalidateFastCache ( void )
 {
    UInt j;
-   for (j = 0; j < VG_TT_FAST_SIZE; j++) {
-      VG_(tt_fast)[j]  = &bogus_tc_entry;
-      VG_(tt_fastN)[j] = NULL;
+   /* This loop is popular enough to make it worth unrolling a
+      bit, at least on ppc32. */
+   vg_assert(VG_TT_FAST_SIZE > 0 && (VG_TT_FAST_SIZE % 4) == 0);
+   for (j = 0; j < VG_TT_FAST_SIZE; j += 4) {
+      VG_(tt_fast)[j+0]  = &bogus_tc_entry;
+      VG_(tt_fast)[j+1]  = &bogus_tc_entry;
+      VG_(tt_fast)[j+2]  = &bogus_tc_entry;
+      VG_(tt_fast)[j+3]  = &bogus_tc_entry;
+      VG_(tt_fastN)[j+0] = NULL;
+      VG_(tt_fastN)[j+1] = NULL;
+      VG_(tt_fastN)[j+2] = NULL;
+      VG_(tt_fastN)[j+3] = NULL;
    }
+   vg_assert(j == VG_TT_FAST_SIZE);
    n_fast_flushes++;
 }
 

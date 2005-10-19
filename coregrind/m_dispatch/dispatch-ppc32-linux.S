@@ -124,7 +124,8 @@ dispatch_boring:
         bdz     counter_is_zero  /* decrements ctr reg */
 
         /* try a fast lookup in the translation cache */
-        rlwinm  4,30,2,VG_TT_FAST_MASK<<2  /* r4=((r30<<2) & (MASK<<2)) */
+	/* r4=((r30<<2) & (VG_TT_FAST_MASK<<2)) */
+        rlwinm  4,30, 2, 32-2-VG_TT_FAST_BITS, 31-2  
 // CAB:	use a caller-saved reg for this ?
         addis   5,4,VG_(tt_fast)@ha
         lwz     5,VG_(tt_fast)@l(5)

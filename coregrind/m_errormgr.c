@@ -51,16 +51,16 @@
 
 /* After this many different unsuppressed errors have been observed,
    be more conservative about collecting new ones. */
-#define M_COLLECT_ERRORS_SLOWLY_AFTER 50
+#define M_COLLECT_ERRORS_SLOWLY_AFTER 100
 
 /* After this many different unsuppressed errors have been observed,
    stop collecting errors at all, and tell the user their program is
    evidently a steaming pile of camel dung. */
-#define M_COLLECT_NO_ERRORS_AFTER_SHOWN 300
+#define M_COLLECT_NO_ERRORS_AFTER_SHOWN 1000
 
 /* After this many total errors have been observed, stop collecting
    errors at all.  Counterpart to M_COLLECT_NO_ERRORS_AFTER_SHOWN. */
-#define M_COLLECT_NO_ERRORS_AFTER_FOUND 30000
+#define M_COLLECT_NO_ERRORS_AFTER_FOUND 100000
 
 /* The list of error contexts found, both suppressed and unsuppressed.
    Initially empty, and grows as errors are detected. */

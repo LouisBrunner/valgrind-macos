@@ -330,9 +330,6 @@ Syscall param mount(data) contains uninitialised byte(s)
    by 0x........: __libc_start_main (in /...libc...)
    by 0x........: ...
 
-More than 50 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
-
 Syscall param mount(source) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
@@ -707,6 +704,9 @@ Syscall param fcntl(arg) contains uninitialised byte(s)
 -----------------------------------------------------
  55:          __NR_fcntl (GETLK) 1s 0m
 -----------------------------------------------------
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
 
 Syscall param fcntl(lock) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)

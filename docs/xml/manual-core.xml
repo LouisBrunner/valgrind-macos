@@ -348,10 +348,10 @@ problem.</para>
 expensive one and can become a significant performance overhead
 if your program generates huge quantities of errors.  To avoid
 serious problems here, Valgrind will simply stop collecting
-errors after 300 different errors have been seen, or 30000 errors
+errors after 1000 different errors have been seen, or 100000 errors
 in total have been seen.  In this situation you might as well
 stop your program and fix it, because Valgrind won't tell you
-anything else useful after this.  Note that the 300/30000 limits
+anything else useful after this.  Note that the 1000/100000 limits
 apply after suppressed errors are removed.  These limits are
 defined in <filename>m_errormgr.c</filename> and can be increased
 if necessary.</para>
@@ -769,7 +769,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     [default]</para>
     <para><computeroutput>--error-limit=no</computeroutput></para>
     <para>When enabled, Valgrind stops reporting errors after
-    30000 in total, or 300 different ones, have been seen.  This
+    100000 in total, or 1000 different ones, have been seen.  This
     is to stop the error tracking machinery from becoming a huge
     performance overhead in programs with many errors.</para>
    </listitem>

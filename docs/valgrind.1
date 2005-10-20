@@ -137,8 +137,8 @@ demangler handles symbols mangled by g++ versions 2.X and 3.X.
 .TP
 .B
 --error-limit=<yes|no> [default: yes]
-When enabled, \fBvalgrind\fP stops reporting errors after 30000 in total,
-or 300 different ones, have been seen. This is to stop the error tracking
+When enabled, \fBvalgrind\fP stops reporting errors after 100000 in total,
+or 1000 different ones, have been seen. This is to stop the error tracking
 machinery from becoming a huge performance overhead in programs with
 many errors.
 

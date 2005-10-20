@@ -3857,7 +3857,7 @@ PRE(sys_ioctl)
    default: {
       UInt dir  = _VKI_IOC_DIR(ARG2);
       UInt size = _VKI_IOC_SIZE(ARG2);
-      if (VG_(strstr)(VG_(clo_weird_hacks), "lax-ioctls") != NULL) {
+      if (VG_(strstr)(VG_(clo_simulation_hints), "lax-ioctls") != NULL) {
 	 /* 
 	  * Be very lax about ioctl handling; the only
 	  * assumption is that the size is correct. Doesn't
@@ -4711,10 +4711,10 @@ PRE(sys_write)
    PRE_REG_READ3(ssize_t, "write",
                  unsigned int, fd, const char *, buf, vki_size_t, count);
    /* check to see if it is allowed.  If not, try for an exemption from
-      --weird-hacks=enable-outer (used for self hosting). */
+      --simulation-hints=enable-outer (used for self hosting). */
    ok = ML_(fd_allowed)(ARG1, "write", tid, False);
    if (!ok && ARG1 == 2/*stderr*/ 
-           && VG_(strstr)(VG_(clo_weird_hacks),"enable-outer"))
+           && VG_(strstr)(VG_(clo_simulation_hints),"enable-outer"))
       ok = True;
    if (!ok)
       SET_STATUS_Failure( VKI_EBADF );

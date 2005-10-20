@@ -1009,13 +1009,13 @@ Addrcheck), the following options apply.</para>
     <computeroutput>libc.so</computeroutput>.</para>
    </listitem>
 
-   <listitem id="weird_hacks">
-    <para><computeroutput>--weird-hacks=hack1,hack2,...</computeroutput></para>
+   <listitem id="simulation_hints">
+    <para><computeroutput>--simulation-hints=hint1,hint2,...</computeroutput></para>
     <para>Pass miscellaneous hints to Valgrind which slightly
     modify the simulated behaviour in nonstandard or dangerous
     ways, possibly to help the simulation of strange features.
-    By default no hacks are enabled.  Use with caution!
-    Currently known hacks are:</para>
+    By default no hints are enabled.  Use with caution!
+    Currently known hints are:</para>
     <itemizedlist>
      <listitem><para><computeroutput>lax-ioctls</computeroutput></para>
       <para>Be very lax about ioctl handling; the only assumption

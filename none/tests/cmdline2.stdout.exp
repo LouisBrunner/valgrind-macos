@@ -18,8 +18,8 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
 
   uncommon user options for all Valgrind tools:
     --run-libc-freeres=no|yes free up glibc memory at exit? [yes]
-    --weird-hacks=hack1,hack2,...  known hacks: lax-ioctls
-                                                enable-outer [none]
+    --simulation-hints=hint1,hint2,...  known hints:
+                                 lax-ioctls, enable-outer [none]
     --pointercheck=no|yes     enforce client address space limits [yes]
     --show-emwarns=no|yes     show warnings about emulation limits? [no]
     --smc-check=none|stack|all  checks for self-modifying code: none,

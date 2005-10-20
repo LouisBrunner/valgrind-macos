@@ -281,6 +281,12 @@ FIXED-30BRANCH: TODO
 FIXED-TRUNK:    4958
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+114757  Valgrind dies with assertion: Assertion 'noLargerThan > 0' failed
+
+FIXED-TRUNK:    4960
+FIXED-30BRANCH: TODO
+
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.1 (all done, 3.0.1 released)     ===

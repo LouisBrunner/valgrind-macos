@@ -1463,7 +1463,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    //   (__NR_utimes,            sys_utimes),         // 235 
    //   (__NR_vserver,           sys_ni_syscall),     // 236 
-   //   (__NR_mbind,             sys_mbind),          // 237 
+   LINX_(__NR_mbind,             sys_mbind),          // 237 
    LINX_(__NR_set_mempolicy,     sys_set_mempolicy),  // 238 
    LINXY(__NR_get_mempolicy,     sys_get_mempolicy),  // 239
 

@@ -852,6 +852,18 @@ POST(sys_io_cancel)
    *_mempolicy wrappers
    ------------------------------------------------------------------ */
 
+PRE(sys_mbind)
+{
+   PRINT("sys_mbind ( %p, %lu, %d, %p, %lu, %u )", ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRE_REG_READ6(long, "mbind",
+                 unsigned long, start, unsigned long, len,
+                 unsigned long, policy, unsigned long *, nodemask,
+                 unsigned long, maxnode, unsigned, flags);
+   if (ARG1 != 0)
+      PRE_MEM_READ( "mbind(nodemask)", ARG4,
+                    VG_ROUNDUP( ARG5, sizeof(UWord) ) / sizeof(UWord) );
+}
+
 PRE(sys_set_mempolicy)
 {
    PRINT("sys_set_mempolicy ( %d, %p, %d )", ARG1,ARG2,ARG3);

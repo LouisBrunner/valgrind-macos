@@ -2272,8 +2272,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_utimes,            sys_utimes),         // 271
    LINX_(__NR_fadvise64_64,      sys_fadvise64_64),   // 272 */(Linux?)
    GENX_(__NR_vserver,           sys_ni_syscall),     // 273
-//zz    //   (__NR_mbind,             sys_mbind),          // 274 ?/?
-//zz 
+   LINX_(__NR_mbind,             sys_mbind),          // 274 ?/?
+
    LINXY(__NR_get_mempolicy,     sys_get_mempolicy),  // 275 ?/?
    LINX_(__NR_set_mempolicy,     sys_set_mempolicy),  // 276 ?/?
    LINXY(__NR_mq_open,           sys_mq_open),        // 277

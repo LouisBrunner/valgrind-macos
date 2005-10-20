@@ -999,12 +999,8 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	       /* General Protection Fault: The CPU/kernel
 		  isn't telling us anything useful, but this
 		  is commonly the result of exceeding a
-		  segment limit, such as the one imposed by
-		  --pointercheck=yes. */
-	       if (VG_(clo_pointercheck))
-		  event = "GPF (Pointer out of bounds?)"; 
-	       else
-		  event = "General Protection Fault"; 
+		  segment limit. */
+	       event = "General Protection Fault"; 
 	       haveaddr = False;
 	       break;
 	    }

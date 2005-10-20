@@ -135,9 +135,6 @@ extern Bool  VG_(clo_track_fds);
 extern Bool  VG_(clo_run_libc_freeres);
 /* Continue stack traces below main()?  Default: NO */
 extern Bool VG_(clo_show_below_main);
-/* Test each client pointer dereference to check it's within the
-   client address space bounds */
-extern Bool VG_(clo_pointercheck);
 /* Model the pthread library */
 extern Bool VG_(clo_model_pthreads);
 

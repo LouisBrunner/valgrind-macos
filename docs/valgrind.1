@@ -486,14 +486,6 @@ inclusive, and must be a power of two.
 
 .TP
 .B
---pointercheck=<yes|no> [default: yes]
-When enabled, enforces client address space limits. If this option is
-disabled, the client program has full and unfettered access to the part
-of the address space used internally by \fBvalgrind\fP.  This can cause
-unexplained crashes and false error reports, so it is best left enabled.
-
-.TP
-.B
 --run-libc-freeres=<yes|no> [default: yes]
 The GNU C library (libc.so), which is used by all programs, may allocate 
 memory for its own uses. Usually it doesn't bother to free that memory when 

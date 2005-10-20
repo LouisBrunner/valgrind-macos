@@ -1034,19 +1034,6 @@ Addrcheck), the following options apply.</para>
     </itemizedlist>
    </listitem>
 
-   <listitem id="pointer_check">
-    <para><computeroutput>--pointercheck=yes</computeroutput> [default]</para>
-    <para><computeroutput>--pointercheck=no</computeroutput></para>
-    <para>This option make Valgrind generate a check on every memory
-    reference to make sure it is within the client's part of the
-    address space.  This prevents stray writes from damaging
-    Valgrind itself.  On x86, this uses the CPU's segmentation
-    machinery, and has almost no performance cost; there's almost
-    never a reason to turn it off.  On the other architectures this 
-    option is currently ignored as they don't have a cheap way of achieving
-    the same functionality.</para>
-   </listitem>
-
    <listitem id="show_emwarns">
     <para><computeroutput>--show-emwarns=no</computeroutput> [default]</para>
     <para><computeroutput>--show-emwarns=yes</computeroutput></para>

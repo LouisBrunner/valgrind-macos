@@ -885,7 +885,6 @@ static void usage_NORETURN ( Bool debug_help )
 "    --run-libc-freeres=no|yes free up glibc memory at exit? [yes]\n"
 "    --simulation-hints=hint1,hint2,...  known hints:\n"
 "                                 lax-ioctls, enable-outer [none]\n"
-"    --pointercheck=no|yes     enforce client address space limits [yes]\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --smc-check=none|stack|all  checks for self-modifying code: none,\n"
 "                              only for code found in stacks, or all [stack]\n"
@@ -1091,7 +1090,6 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--db-attach",        VG_(clo_db_attach))
       else VG_BOOL_CLO(arg, "--demangle",         VG_(clo_demangle))
       else VG_BOOL_CLO(arg, "--error-limit",      VG_(clo_error_limit))
-      else VG_BOOL_CLO(arg, "--pointercheck",     VG_(clo_pointercheck))
       else VG_BOOL_CLO(arg, "--show-emwarns",     VG_(clo_show_emwarns))
       else VG_NUM_CLO (arg, "--max-stackframe",   VG_(clo_max_stackframe))
       else VG_BOOL_CLO(arg, "--profile",          VG_(clo_profile))
@@ -2477,15 +2475,6 @@ Int main(Int argc, HChar **argv, HChar **envp)
       VG_(debugLog)(1, "main", "Load suppressions\n");
       VG_(load_suppressions)();
    }
-
-   //--------------------------------------------------------------
-   // Setup pointercheck
-   //   p: layout_remaining_space() [for VG_(client_{base,end})]
-   //   p: process_cmd_line_options() [for VG_(clo_pointercheck)]
-   //--------------------------------------------------------------
-   //if (VG_(clo_pointercheck))
-   //   VG_(clo_pointercheck) =
-   //      VG_(setup_pointercheck)( VG_(client_base), VG_(client_end));
 
    //--------------------------------------------------------------
    // register client stack

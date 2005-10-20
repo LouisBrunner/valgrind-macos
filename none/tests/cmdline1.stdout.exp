@@ -20,7 +20,6 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --run-libc-freeres=no|yes free up glibc memory at exit? [yes]
     --simulation-hints=hint1,hint2,...  known hints:
                                  lax-ioctls, enable-outer [none]
-    --pointercheck=no|yes     enforce client address space limits [yes]
     --show-emwarns=no|yes     show warnings about emulation limits? [no]
     --smc-check=none|stack|all  checks for self-modifying code: none,
                               only for code found in stacks, or all [stack]

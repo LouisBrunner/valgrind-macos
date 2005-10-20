@@ -564,7 +564,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
       = LibVEX_Translate ( 
            VexArch, &vai,
            VexArch, &vai,
-           ULong_to_Ptr(guest_addr), guest_addr,
+           ULong_to_Ptr(guest_addr), guest_addr, guest_addr,
            chase_into_not_ok,
            &trans_table[trans_table_used],
            transbuf, N_TRANSBUF, &trans_used,

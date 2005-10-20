@@ -14,6 +14,6 @@ sed "s/\(\(I\|D\|L2\) *refs:\)[ 0-9,()+rdw]*$/\1/"  |
 sed "s/\(\(I1\|D1\|L2\|L2i\|L2d\) *\(misses\|miss rate\):\)[ 0-9,()+rdw%\.]*$/\1/" |
 
 # Remove CPUID warnings lines for P4s and other machines
-sed "/warning: Pentium with 12 K micro-op instruction trace cache/d" |
-sed "/Simulating a 16 KB cache with 32 B lines/d"   |
+sed "/warning: Pentium 4 with 12 KB micro-op instruction trace cache/d" |
+sed "/Simulating a 16 KB I-cache with 32 B lines/d"   |
 sed "/warning: L3 cache detected but ignored/d"

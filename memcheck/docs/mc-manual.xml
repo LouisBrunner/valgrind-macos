@@ -120,7 +120,7 @@ Memcheck can detect the following problems:</para>
 
   <listitem id="freelist">
     <para><computeroutput>--freelist-vol=&lt;number></computeroutput>
-    [default: 1000000]</para>
+    [default: 5000000]</para>
     <para>When the client program releases memory using free (in
     <literal>C</literal>) or delete (<literal>C++</literal>),
     that memory is not immediately made available for

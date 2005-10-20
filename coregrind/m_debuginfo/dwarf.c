@@ -408,8 +408,6 @@ void read_dwarf2_lineblock ( SegInfo*  si,
              == sizeof(DWARF2_Internal_LineInfo));
    */
 
-   vg_assert(noLargerThan > 0);
-
    init_WordArray(&filenames);
    init_WordArray(&dirnames);
    init_WordArray(&fnidx2dir);
@@ -430,6 +428,12 @@ void read_dwarf2_lineblock ( SegInfo*  si,
 
 
    external = (DWARF2_External_LineInfo *) data;
+
+   if (sizeof (external->li_length) > noLargerThan) {
+      ML_(symerr)("DWARF line info appears to be corrupt "
+                  "- the section is too small");
+      goto out;
+   }
 
    /* Check the length of the block.  */
    info.li_length = * ((UInt *)(external->li_length));

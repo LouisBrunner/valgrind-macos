@@ -182,7 +182,8 @@ SizeT get_bszB_as_is ( Block* b )
    SizeT bszB_hi = *(SizeT*)&b2[mk_plain_bszB(bszB_lo) - sizeof(SizeT)];
    vg_assert2(bszB_lo == bszB_hi, 
       "Heap block lo/hi size mismatch: lo = %llu, hi = %llu.\n"
-      "Probably caused by overrunning/underrunning a heap block's bounds\n");
+      "Probably caused by overrunning/underrunning a heap block's bounds.\n",
+      (ULong)bszB_lo, (ULong)bszB_hi);
    return bszB_lo;
 }
 

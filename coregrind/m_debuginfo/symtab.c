@@ -1622,6 +1622,7 @@ Bool read_lib_symbols ( SegInfo* si )
       for (i = 0; i < ehdr->e_shnum; i++) {
 #        define FIND(sec_name, sec_data, sec_size, sec_addr, in_exec, type) \
          if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
+            Bool nobits; \
             if (0 != sec_data) \
                VG_(core_panic)("repeated section!\n"); \
             if (in_exec) \
@@ -1629,10 +1630,12 @@ Bool read_lib_symbols ( SegInfo* si )
             else \
                sec_data = (type)(oimage + shdr[i].sh_offset); \
             sec_size = shdr[i].sh_size; \
+            nobits = shdr[i].sh_type == SHT_NOBITS; \
             sec_addr = si->offset + shdr[i].sh_addr; \
             TRACE_SYMTAB( "%18s: %p .. %p\n", \
                           sec_name, sec_data, sec_data + sec_size - 1); \
-            if ( shdr[i].sh_offset + sec_size > n_oimage ) { \
+            /* SHT_NOBITS sections have zero size in the file. */ \
+            if ( shdr[i].sh_offset + (nobits ? 0 : sec_size) > n_oimage ) { \
                ML_(symerr)("   section beyond image end?!"); \
                goto out; \
             } \
@@ -1692,13 +1695,16 @@ Bool read_lib_symbols ( SegInfo* si )
                for (i = 0; i < ehdr->e_shnum; i++) {
 #                 define FIND(sec_name, sec_data, sec_size, type) \
                   if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
+                     Bool nobits; \
                      if (0 != sec_data) \
                         VG_(core_panic)("repeated section!\n"); \
                      sec_data = (type)(dimage + shdr[i].sh_offset); \
                      sec_size = shdr[i].sh_size; \
+                     nobits = shdr[i].sh_type == SHT_NOBITS; \
                      TRACE_SYMTAB( "%18s: %p .. %p\n", \
                                    sec_name, sec_data, sec_data + sec_size - 1); \
-                     if ( shdr[i].sh_offset + sec_size > n_dimage ) { \
+                     /* SHT_NOBITS sections have zero size in the file. */ \
+                     if ( shdr[i].sh_offset + (nobits ? 0 : sec_size) > n_dimage ) { \
                         ML_(symerr)("   section beyond image end?!"); \
                         goto out; \
                      } \

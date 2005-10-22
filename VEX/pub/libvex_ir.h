@@ -597,8 +597,11 @@ typedef
       Iop_Dup8x16, Iop_Dup16x8, Iop_Dup32x4,
 
       /* PERMUTING -- copy src bytes to dst,
-         as indexed by control vector bytes: dst[i] = src[ ctl[i] ] */
-      Iop_Perm
+         as indexed by control vector bytes:
+            for i in 0 .. 15 . result[i] = argL[ argR[i] ] 
+         argR[i] values may only be in the range 0 .. 15, else behaviour
+         is undefined. */
+      Iop_Perm8x16
    }
    IROp;
 

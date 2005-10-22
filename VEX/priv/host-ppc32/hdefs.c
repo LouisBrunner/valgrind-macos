@@ -1608,9 +1608,17 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       addHRegUse(u, HRmRead,  i->Pin.AvUnary.src);
       return;
    case Pin_AvBinary:
-      addHRegUse(u, HRmWrite, i->Pin.AvBinary.dst);
-      addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcL);
-      addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcR);
+      if (i->Pin.AvBinary.op == Pav_XOR
+          && i->Pin.AvBinary.dst == i->Pin.AvBinary.srcL
+          && i->Pin.AvBinary.dst == i->Pin.AvBinary.srcR) {
+         /* reg-alloc needs to understand 'xor r,r,r' as a write of r */
+         /* (as opposed to a rite of passage :-) */
+         addHRegUse(u, HRmWrite, i->Pin.AvBinary.dst);
+      } else {
+         addHRegUse(u, HRmWrite, i->Pin.AvBinary.dst);
+         addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcL);
+         addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcR);
+      }
       return;
    case Pin_AvBin8x16:
       addHRegUse(u, HRmWrite, i->Pin.AvBin8x16.dst);

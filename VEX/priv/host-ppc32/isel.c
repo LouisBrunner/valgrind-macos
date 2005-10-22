@@ -2999,7 +2999,15 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          return dst;
 //..       }
 //.. 
-//..       case Iop_CmpNEZ8x16:
+      case Iop_CmpNEZ8x16: {
+         HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg zero = newVRegV(env);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPC32Instr_AvBinary(Pav_XOR, zero, zero, zero));
+         addInstr(env, PPC32Instr_AvBin8x16(Pav_CMPEQU, dst, arg, zero));
+         addInstr(env, PPC32Instr_AvUnary(Pav_NOT, dst, dst));
+         return dst;
+      }
 //..       case Iop_CmpNEZ16x8: {
 //..          /* We can use SSE2 instructions for this. */
 //..          HReg arg;
@@ -3433,7 +3441,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_Perm: {
+      case Iop_Perm8x16: {
          HReg dst   = newVRegV(env);
          HReg v_src = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg v_ctl = iselVecExpr(env, e->Iex.Binop.arg2);

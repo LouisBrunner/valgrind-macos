@@ -519,7 +519,7 @@ void ppIROp ( IROp op )
       case Iop_InterleaveLO32x4: vex_printf("InterleaveLO32x4"); return;
       case Iop_InterleaveLO64x2: vex_printf("InterleaveLO64x2"); return;
 
-      case Iop_Perm: vex_printf("Perm"); return;
+      case Iop_Perm8x16: vex_printf("Perm8x16"); return;
 
       default: vpanic("ppIROp(1)");
    }
@@ -1574,7 +1574,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_InterleaveHI32x4: case Iop_InterleaveHI64x2:
       case Iop_InterleaveLO8x16: case Iop_InterleaveLO16x8: 
       case Iop_InterleaveLO32x4: case Iop_InterleaveLO64x2:
-      case Iop_Perm:
+      case Iop_Perm8x16:
          BINARY(Ity_V128, Ity_V128,Ity_V128);
 
       case Iop_NotV128:

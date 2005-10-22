@@ -4966,7 +4966,11 @@ static Bool dis_av_load ( UInt theInstr )
    switch (opc2) {
 
    case 0x006: { // lvsl (Load Vector for Shift Left, AV p123)
-      IRExpr** args = mkIRExprVec_3(mkU32(vD_addr), mkexpr(EA), mkU32(0));
+      UInt vD_off = vectorGuestRegOffset(vD_addr);
+      IRExpr** args = mkIRExprVec_3(
+                         mkU32(vD_off), 
+                         binop(Iop_And32, mkexpr(EA), mkU32(0xF)),
+                         mkU32(0)/*left*/ );
       IRDirty* d = unsafeIRDirty_0_N (
                       0/*regparms*/, 
                       "ppc32g_dirtyhelper_LVS",
@@ -4977,7 +4981,7 @@ static Bool dis_av_load ( UInt theInstr )
       d->needsBBP = True;
       d->nFxState = 1;
       d->fxState[0].fx     = Ifx_Write;
-      d->fxState[0].offset = vectorGuestRegOffset(vD_addr);
+      d->fxState[0].offset = vD_off;
       d->fxState[0].size   = sizeof(U128);
 
       /* execute the dirty call, side-effecting guest state */
@@ -4985,7 +4989,11 @@ static Bool dis_av_load ( UInt theInstr )
       break;
    }
    case 0x026: { // lvsr (Load Vector for Shift Right, AV p125)
-      IRExpr** args = mkIRExprVec_3(mkU32(vD_addr), mkexpr(EA), mkU32(1));
+      UInt vD_off = vectorGuestRegOffset(vD_addr);
+      IRExpr** args = mkIRExprVec_3(
+                         mkU32(vD_off), 
+                         binop(Iop_And32, mkexpr(EA), mkU32(0xF)),
+                         mkU32(1)/*right*/ );
       IRDirty*    d = unsafeIRDirty_0_N (
                          0/*regparms*/, 
                          "ppc32g_dirtyhelper_LVS",
@@ -4996,7 +5004,7 @@ static Bool dis_av_load ( UInt theInstr )
       d->needsBBP = True;
       d->nFxState = 1;
       d->fxState[0].fx     = Ifx_Write;
-      d->fxState[0].offset = vectorGuestRegOffset(vD_addr);
+      d->fxState[0].offset = vD_off;
       d->fxState[0].size   = sizeof(U128);
 
       /* execute the dirty call, side-effecting guest state */
@@ -6050,7 +6058,7 @@ static Bool dis_av_permute ( UInt theInstr )
    /* Splat */
    case 0x20C: { // vspltb (Splat Byte, AV p245)
       /* vD = Dup8x16( vB[UIMM_5] ) */
-      UChar sh_uimm = (15-UIMM_5)*8;
+      UChar sh_uimm = (15 - (UIMM_5 & 15)) * 8;
       DIP("vspltb v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       putVReg( vD_addr, unop(Iop_Dup8x16,
            unop(Iop_32to8, unop(Iop_V128to32, 
@@ -6058,7 +6066,7 @@ static Bool dis_av_permute ( UInt theInstr )
       break;
    }
    case 0x24C: { // vsplth (Splat Half Word, AV p246)
-      UChar sh_uimm = (7-UIMM_5)*16;
+      UChar sh_uimm = (7 - (UIMM_5 & 7)) * 16;
       DIP("vsplth v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       putVReg( vD_addr, unop(Iop_Dup16x8,
            unop(Iop_32to16, unop(Iop_V128to32, 
@@ -6067,7 +6075,7 @@ static Bool dis_av_permute ( UInt theInstr )
    }
    case 0x28C: { // vspltw (Splat Word, AV p250)
       /* vD = Dup32x4( vB[UIMM_5] ) */
-      UChar sh_uimm = (3-UIMM_5)*32;
+      UChar sh_uimm = (3 - (UIMM_5 & 3)) * 32;
       DIP("vspltw v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       putVReg( vD_addr, unop(Iop_Dup32x4,
          unop(Iop_V128to32,

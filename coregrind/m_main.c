@@ -550,12 +550,8 @@ Addr setup_client_stack( void*  init_sp,
             /* Acquire altivecness info */
             VG_(debugLog)(2, "main", "PPC32 hwcaps: 0x%x\n", 
                                      (UInt)auxv->u.a_val);
-#if 0
             if (auxv->u.a_val & 0x10000000)
                VG_(have_altivec_ppc32) = 1;
-#else
-	    auxv->u.a_val &= ~0x10000000;
-#endif
             VG_(debugLog)(2, "main", "PPC32 AltiVec support: %u\n", 
                                      VG_(have_altivec_ppc32));
 #           endif

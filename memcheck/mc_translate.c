@@ -1650,7 +1650,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_ShlN16x8:
       case Iop_ShlN32x4:
       case Iop_ShlN64x2:
-         /* Same scheme as with all other shifts. */
+      case Iop_ShlN8x16:
+      case Iop_SarN8x16:
+         /* Same scheme as with all other shifts.  Note: 22 Oct 05:
+            this is wrong now, scalar shifts are done properly lazily.
+            Vector shifts should be fixed too. */
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_V128, binop(op, vatom1, atom2));
 
@@ -1755,6 +1759,16 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_InterleaveHI16x8:
       case Iop_InterleaveHI8x16:
          return assignNew(mce, Ity_V128, binop(op, vatom1, vatom2));
+ 
+     /* Perm8x16: rearrange values in left arg using steering values
+        from right arg.  So rearrange the vbits in the same way but
+        pessimise wrt steering values. */
+      case Iop_Perm8x16:
+         return mkUifUV128(
+                   mce,
+                   assignNew(mce, Ity_V128, binop(op, vatom1, atom2)),
+                   mkPCast8x16(mce, vatom2)
+                );
 
       /* I128-bit data-steering */
       case Iop_64HLto128:
@@ -2013,6 +2027,9 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
       case Iop_32UtoV128:
       case Iop_64UtoV128:
+      case Iop_Dup8x16:
+      case Iop_Dup16x8:
+      case Iop_Dup32x4:
          return assignNew(mce, Ity_V128, unop(op, vatom));
 
       case Iop_F32toF64: 

@@ -122,15 +122,21 @@ void addHRegUse ( HRegUsage* tab, HRegMode mode, HReg reg )
       tab->n_used++;
    } else {
       /* Found: combine or ignore. */
-      if (tab->mode[i] == mode)
-         return; /* duplicate, ignore */
-      if (mode == HRmModify) {
+      /* This is a greatest-lower-bound operation in the poset:
+
+            R   W
+             \ /
+              M
+
+         Need to do: tab->mode[i] = GLB(tab->mode, mode).  In this
+         case very simple -- if tab->mode[i] != mode then result must
+         be M.
+      */
+      if (tab->mode[i] == mode) {
+         /* duplicate, ignore */
+      } else {
          tab->mode[i] = HRmModify;
-         return; /* modify mode makes previous mode irrelevant */
       }
-      vassert( (mode == HRmRead && tab->mode[i] == HRmWrite)
-              || (mode == HRmWrite && tab->mode[i] == HRmRead) );
-      tab->mode[i] = HRmModify;
    }
 }
 

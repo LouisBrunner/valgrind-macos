@@ -743,7 +743,6 @@ IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
    IRTypeEnv* tyenv = bbIn->tyenv;
    InstrInfo* curr_inode = NULL;
 
-
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
       VG_(tool_panic)("host/guest word size mismatch");
@@ -756,10 +755,17 @@ IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
    cgs.bbOut->next     = dopyIRExpr(bbIn->next);
    cgs.bbOut->jumpkind = bbIn->jumpkind;
 
-   // Get the first statement, and initial cia from it
+   // Copy verbatim any IR preamble preceding the first IMark
    i = 0;
+   while (i < bbIn->stmts_used && bbIn->stmts[i]->tag != Ist_IMark) {
+      addStmtToIRBB( cgs.bbOut, bbIn->stmts[i] );
+      i++;
+   }
+
+   // Get the first statement, and initial cia from it
    tl_assert(bbIn->stmts_used > 0);
-   st = bbIn->stmts[0];
+   tl_assert(i < bbIn->stmts_used);
+   st = bbIn->stmts[i];
    tl_assert(Ist_IMark == st->tag);
    cia = st->Ist.IMark.addr;
 
@@ -773,7 +779,7 @@ IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
 
    // Traverse the block, initialising inodes, adding events and flushing as
    // necessary.
-   for (i = 0; i < bbIn->stmts_used; i++) {
+   for (/*use current i*/; i < bbIn->stmts_used; i++) {
 
       st = bbIn->stmts[i];
       tl_assert(isFlatIRStmt(st));

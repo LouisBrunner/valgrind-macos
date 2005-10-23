@@ -52,13 +52,6 @@ FIXED-TRUNK:    vex:1320 - vex impl of sysenter
                 vg:4337 - minimal Valgrind-side; does not do anything
 
 ----------------------------------------------------------------
-110536  Valgrind crashes when trying to realloc memory
-
-Uninvestigated.
-
-FIXED-TRUNK:    TODO
-
-----------------------------------------------------------------
 n-i-bz  Give more info about seginfo dropping.
 
 FIXED-TRUNK:    vg:4425
@@ -150,6 +143,7 @@ FIXED-TRUNK:    vex:1411, test in valgrind:4859
 102202 valgrind crashes when realloc'ing until out of memory
 109487 ==
 110536 ==
+112687 ==
 
 FIXED-TRUNK:    4875
 FIXED-30BRANCH: 4876

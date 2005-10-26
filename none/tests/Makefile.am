@@ -2,7 +2,8 @@ SUBDIRS      = ${VG_ARCH}     .
 DIST_SUBDIRS = ${VG_ARCH_ALL} .
 
 noinst_SCRIPTS = \
-	filter_as_mmap filter_fdleak filter_none_discards filter_stderr
+	filter_as_mmap filter_cmdline0 \
+	filter_fdleak filter_none_discards filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	ansi.stderr.exp ansi.vgtest \
@@ -13,6 +14,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	blockfault.vgtest blockfault.stderr.exp blockfault.stdout.exp \
 	closeall.stderr.exp closeall.vgtest \
+	cmdline0.stderr.exp cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
 	cmdline2.stderr.exp cmdline2.stdout.exp cmdline2.vgtest \
 	cmdline3.stderr.exp cmdline3.vgtest \

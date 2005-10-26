@@ -998,6 +998,8 @@ static void get_helprequest_and_toolname ( Int* need_help, HChar** tool )
       vg_assert(str);
 
       if (VG_STREQ(str, "--version")) {
+         // Ensure the version string goes to stdout
+         VG_(clo_log_fd) = 1;
          VG_(printf)("valgrind-" VERSION "\n");
          VG_(exit)(0);
 

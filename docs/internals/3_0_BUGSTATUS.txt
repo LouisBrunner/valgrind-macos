@@ -6,7 +6,7 @@ nb: "n-i-bz" == "not in Bugzilla"
 ========================================================================
 
 ----------------------------------------------------------------
-109861  amd64 hangs at startup
+109861  amd64 hangs at startup (******* needs closing)
 110301  ditto
 111554  valgrind crashes with Cannot allocate memory
 111809  Memcheck tool doesn't start java
@@ -24,6 +24,11 @@ not liking large mmap/munmap requests.  Other bugs also look like
 aspacem problems.
 
 FIXED-TRUNK:    now done (many many commits)
+
+----------------------------------------------------------------
+105227 The BOUND instruction is not implemented (x86, with test case)
+
+FIXED-TRUNK:    TODO ?
 
 ----------------------------------------------------------------
 109323  ppc32: dispatch.S uses Altivec insn, which doesn't work on POWER. 
@@ -44,12 +49,18 @@ FIXED-TRUNK:    TODO?
 
 ----------------------------------------------------------------
 110205 sigcancel unwind fails
+114629 == (TENTATIVE)
 
 Tom is considering this.  It would be nice to fix it for 3.1 but
 status currently unclear.
 
 FIXED-TRUNK:    vex:1320 - vex impl of sysenter
                 vg:4337 - minimal Valgrind-side; does not do anything
+
+----------------------------------------------------------------
+111364 False report of "definitly lost" memory
+
+Unclear what to do about this .. leak checker strangeness.
 
 ----------------------------------------------------------------
 n-i-bz  Give more info about seginfo dropping.
@@ -66,7 +77,7 @@ FIXED-TRUNK:    TODO
 ----------------------------------------------------------------
 111781  compile of valgrind-3.0.0 fails on my linux (gcc 2.X prob)
 
-FIXED-TRUNK:    requires policy decision
+FIXED-TRUNK:    fixed (multiple commits)
 
 ----------------------------------------------------------------
 112163  MASSIF crashed with  signal 7 (SIGBUS) after running 2 days
@@ -76,12 +87,7 @@ FIXED-TRUNK:    unconfirmed (insufficient info from reporter)
 ----------------------------------------------------------------
 112670  Cachegrind: cg_main.c:486 (handleOneStatement ...
 
-FIXED-TRUNK:    the canonical cachegrind-doesn-like-multi-mem bug
-
-----------------------------------------------------------------
-112687  Fatal run error (segfault in client request)
-
-FIXED-TRUNK:    unconfirmed
+FIXED-TRUNK:    fixed (many commits)
 
 ----------------------------------------------------------------
 112941  vex x86: 0xD9 0xF4 (fxtract)
@@ -96,6 +102,7 @@ FIXED-TRUNK:    vex:1413
 
 ----------------------------------------------------------------
 113126  Crash with binaries built with -gstabs+/-ggdb
+104065  ==
 
 FIXED-TRUNK:    TODO
 
@@ -129,11 +136,18 @@ this bug is only user visible in the 2.4 code base.
 FIXED-TRUNK:    4852
 
 ----------------------------------------------------------------
-113851  vex x86->IR: unhandled instruction bytes: 0x66 0xF 0xF5 0xC7
-        (pmaddwd)
+113851  vex x86->IR: (pmaddwd): 0x66 0xF 0xF5 0xC7
 
 FIXED-TRUNK:    vex:1411, test in valgrind:4859
 
+----------------------------------------------------------------
+114366  New: vex amd64 cannnot handle __asm__( "fninit" )
+
+----------------------------------------------------------------
+114412  vex amd64->IR: 0xF 0xAD 0xC2 0xD3 (128-bit shift, shrdq?)
+
+----------------------------------------------------------------
+114455: vex amd64->IR: 0xF 0xAC 0xD0 0x1 (also shrdq)
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.2                                ===
@@ -262,6 +276,23 @@ n-i-bz  Cachegrind shows incorrect miss rates when counts are
 
 FIXED-TRUNK:    vg:4769
 FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+113996  vex amd64->IR: fucomp (0xDD 0xE9 0xDF 0xE0)
+
+FIXED-TRUNK:    TODO
+
+----------------------------------------------------------------
+114196  vex x86->IR: out %eax,(%dx) (0xEF 0xC9 0xC3 0x90)
+
+FIXED-TRUNK:    TODO
+(has good test case)
+
+----------------------------------------------------------------
+114250  context record in signal handler contains incorrect values
+
+FIXED-TRUNK:    TODO
+(has good test case)
 
 ----------------------------------------------------------------
 114289  Memcheck fails to intercept malloc when used in an uclibc environment
@@ -446,6 +477,8 @@ FIXED-30BRANCH: vex:1359
 
 FIXED-TRUNK:    vg:4476
 FIXED-30BRANCH: vg:4502
+
+****** not yet closed
 
 ----------------------------------------------------------------
 111231  sctp_getladdrs() and sctp_getpaddrs() returns uninitialized

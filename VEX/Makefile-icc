@@ -70,7 +70,7 @@ PRIV_INCLUDES = -Ipriv
 #		$(EXTRA_CFLAGS)
 
 CC = icc
-CCFLAGS = -g -Wall -wd981 -wd279 -wd1287 -wd869 -wd111 -wd188 -wd186
+CCFLAGS = -g -Wall -wd981 -wd279 -wd1287 -wd869 -wd111 -wd188 -wd186 -wd810
 # 981: operands are evaluated in unspecified order
 # 279: controlling expression is constant
 # 1287: invalid attribute for parameter
@@ -79,7 +79,7 @@ CCFLAGS = -g -Wall -wd981 -wd279 -wd1287 -wd869 -wd111 -wd188 -wd186
 # 188: enumerated type mixed with another type
 # (the above are for icc 8.0 -- 8.0.0.55 I think)
 # 186: pointless comparison of unsigned integer with zero
-
+# 810: conversion from ... to ... may lose significant bits
 
 all: vex
 

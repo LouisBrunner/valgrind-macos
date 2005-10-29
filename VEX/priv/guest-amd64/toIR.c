@@ -5406,7 +5406,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 0xE0 ... 0xE7: /* FUCOM %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xE0;
-               DIP("fucom %%st(0),%%st(%d)\n", r_dst);
+               DIP("fucom %%st(0),%%st(%u)\n", r_dst);
                /* This forces C1 to zero, which isn't right. */
                put_C3210(
                    unop(Iop_32Uto64, 

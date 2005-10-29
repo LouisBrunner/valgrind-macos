@@ -1421,7 +1421,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       vex_printf(",");
       ppPPC32VI5s(i->Pin.AvSplat.src);
       if (i->Pin.AvSplat.src->tag == Pvi_Reg)
-         vex_printf(", %u", (128/sz)-1);   /* louis lane */
+         vex_printf(", %d", (128/sz)-1);   /* louis lane */
       return;
    }
 

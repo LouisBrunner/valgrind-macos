@@ -156,6 +156,10 @@ extern void  x86g_dirtyhelper_FSTENV ( VexGuestX86State*, HWord );
 
 extern ULong x86g_dirtyhelper_RDTSC ( void );
 
+extern UInt x86g_dirtyhelper_IN  ( UInt portno, UInt sz/*1,2 or 4*/ );
+extern void x86g_dirtyhelper_OUT ( UInt portno, UInt data, 
+                                   UInt sz/*1,2 or 4*/ );
+
 extern VexEmWarn
             x86g_dirtyhelper_FRSTOR ( VexGuestX86State*, HWord );
 

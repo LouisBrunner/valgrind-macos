@@ -1882,6 +1882,66 @@ void x86g_dirtyhelper_CPUID_sse2 ( VexGuestX86State* st )
 }
 
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-x86 platforms, return 0. */
+UInt x86g_dirtyhelper_IN ( UInt portno, UInt sz/*1,2 or 4*/ )
+{
+#  if defined(__i386__)
+   UInt r = 0;
+   portno &= 0xFFFF;
+   switch (sz) {
+      case 4: 
+         __asm__ __volatile__("movl $0,%%eax; inl %w1,%0" 
+                              : "=a" (r) : "Nd" (portno));
+	 break;
+      case 2: 
+         __asm__ __volatile__("movl $0,%%eax; inw %w1,%w0" 
+                              : "=a" (r) : "Nd" (portno));
+	 break;
+      case 1: 
+         __asm__ __volatile__("movl $0,%%eax; inb %w1,%b0" 
+                              : "=a" (r) : "Nd" (portno));
+	 break;
+      default:
+         break;
+   }
+   return r;
+#  else
+   return 0;
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-x86 platforms, do nothing. */
+void x86g_dirtyhelper_OUT ( UInt portno, UInt data, UInt sz/*1,2 or 4*/ )
+{
+#  if defined(__i386__)
+   portno &= 0xFFFF;
+   switch (sz) {
+      case 4: 
+         __asm__ __volatile__("outl %0, %w1" 
+                              : : "a" (data), "Nd" (portno));
+	 break;
+      case 2: 
+         __asm__ __volatile__("outw %w0, %w1" 
+                              : : "a" (data), "Nd" (portno));
+	 break;
+      case 1: 
+         __asm__ __volatile__("outb %b0, %w1" 
+                              : : "a" (data), "Nd" (portno));
+	 break;
+      default:
+         break;
+   }
+#  else
+   return 0;
+#  endif
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Helpers for MMX/SSE/SSE2.                               ---*/
 /*---------------------------------------------------------------*/

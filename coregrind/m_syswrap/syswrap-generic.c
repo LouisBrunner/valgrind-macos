@@ -4662,7 +4662,7 @@ PRE(sys_open)
       SET_STATUS_from_SysRes( sres );
       if (!sres.isError) {
          OffT off = VG_(lseek)( sres.val, 0, VKI_SEEK_SET );
-         if (off)
+         if (off < 0)
             SET_STATUS_Failure( VKI_EMFILE );
       }
       return;

@@ -18,6 +18,7 @@ val_PROGRAMS = \
 
 # Remember to include all the arch-specific files in the distribution.
 EXTRA_DIST = \
+        $(addsuffix .c,$(addprefix m_coredump/coredump-,$(VG_PLATFORM_ALL))) \
         $(addsuffix .S,$(addprefix m_dispatch/dispatch-,$(VG_PLATFORM_ALL))) \
         $(addsuffix .c,$(addprefix m_sigframe/sigframe-,$(VG_PLATFORM_ALL))) \
         $(addsuffix .S,$(addprefix m_syswrap/syscall-,$(VG_PLATFORM_ALL))) \
@@ -75,6 +76,7 @@ noinst_HEADERS = \
 	vki_unistd-amd64-linux.h\
 	vki_unistd-ppc32-linux.h\
 	vki_unistd-x86-linux.h	\
+	m_coredump/priv_elf.h	\
 	m_debuginfo/priv_symtab.h	\
 	m_debuginfo/priv_symtypes.h	\
 	m_demangle/ansidecl.h	\
@@ -97,7 +99,6 @@ valgrind_SOURCES = \
 
 libcoregrind_a_SOURCES = \
 	m_commandline.c \
-	m_coredump.c \
 	m_cpuid.S \
 	m_clientstate.c \
 	m_debugger.c \
@@ -132,6 +133,8 @@ libcoregrind_a_SOURCES = \
 	m_ume.c \
 	m_aspacemgr/read_procselfmaps.c \
 	m_aspacemgr/aspacemgr.c \
+	m_coredump/coredump-elf.c \
+	m_coredump/coredump-@VG_PLATFORM@.c \
 	m_debuginfo/dwarf.c \
 	m_debuginfo/stabs.c \
 	m_debuginfo/symtab.c \

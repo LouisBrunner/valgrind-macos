@@ -541,13 +541,14 @@ static Int aspacem_read ( Int fd, void* buf, Int count)
 
 /* Extract the device and inode numbers for a fd. */
 static 
-Bool get_inode_for_fd ( Int fd, /*OUT*/UInt* dev, /*OUT*/UInt* ino )
+Bool get_inode_for_fd ( Int fd, /*OUT*/UWord* dev, /*OUT*/UWord* ino, /*OUT*/UInt* mode )
 {
    struct vki_stat buf;
    Int r = aspacem_fstat(fd, &buf);
    if (r == 0) {
       *dev = buf.st_dev;
       *ino = buf.st_ino;
+      *mode = buf.st_mode;
       return True;
    }
    return False;
@@ -1621,6 +1622,7 @@ static void init_nsegment ( /*OUT*/NSegment* seg )
    seg->smode    = SmFixed;
    seg->dev      = 0;
    seg->ino      = 0;
+   seg->mode     = 0;
    seg->offset   = 0;
    seg->fnIdx    = -1;
    seg->hasR = seg->hasW = seg->hasX = seg->hasT = seg->isCH = False;
@@ -2047,7 +2049,8 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
                             Int fd, Off64T offset )
 {
    HChar    buf[VKI_PATH_MAX];
-   UInt     dev, ino;
+   UWord    dev, ino;
+   UInt     mode;
    NSegment seg;
    Bool     needDiscard;
 
@@ -2068,9 +2071,10 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
    seg.hasW   = toBool(prot & VKI_PROT_WRITE);
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
    if (!(flags & VKI_MAP_ANONYMOUS)) {
-      if (get_inode_for_fd(fd, &dev, &ino)) {
+      if (get_inode_for_fd(fd, &dev, &ino, &mode)) {
          seg.dev = dev;
          seg.ino = ino;
+         seg.mode = mode;
       }
       if (get_name_for_fd(fd, buf, VKI_PATH_MAX)) {
          seg.fnIdx = allocate_segname( buf );
@@ -2219,7 +2223,8 @@ SysRes VG_(am_mmap_file_fixed_client)
    Addr       advised;
    Bool       ok;
    MapRequest req;
-   UInt       dev, ino;
+   UWord      dev, ino;
+   UInt       mode;
    HChar      buf[VKI_PATH_MAX];
 
    /* Not allowable. */
@@ -2264,9 +2269,10 @@ SysRes VG_(am_mmap_file_fixed_client)
    seg.hasR   = toBool(prot & VKI_PROT_READ);
    seg.hasW   = toBool(prot & VKI_PROT_WRITE);
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
-   if (get_inode_for_fd(fd, &dev, &ino)) {
+   if (get_inode_for_fd(fd, &dev, &ino, &mode)) {
       seg.dev = dev;
       seg.ino = ino;
+      seg.mode = mode;
    }
    if (get_name_for_fd(fd, buf, VKI_PATH_MAX)) {
       seg.fnIdx = allocate_segname( buf );
@@ -2472,7 +2478,8 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
    Addr       advised;
    Bool       ok;
    MapRequest req;
-   UInt       dev, ino;
+   UWord      dev, ino;
+   UInt       mode;
    HChar      buf[VKI_PATH_MAX];
  
    /* Not allowable. */
@@ -2515,9 +2522,10 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
    seg.hasR   = toBool(prot & VKI_PROT_READ);
    seg.hasW   = toBool(prot & VKI_PROT_WRITE);
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
-   if (get_inode_for_fd(fd, &dev, &ino)) {
+   if (get_inode_for_fd(fd, &dev, &ino, &mode)) {
       seg.dev = dev;
       seg.ino = ino;
+      seg.mode - mode;
    }
    if (get_name_for_fd(fd, buf, VKI_PATH_MAX)) {
       seg.fnIdx = allocate_segname( buf );

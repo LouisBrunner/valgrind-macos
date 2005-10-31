@@ -114,7 +114,7 @@ Int VG_(pipe) ( Int fd[2] )
 OffT VG_(lseek) ( Int fd, OffT offset, Int whence )
 {
    SysRes res = VG_(do_syscall3)(__NR_lseek, fd, offset, whence);
-   return res.isError ? (-1) : 0;
+   return res.isError ? (-1) : res.val;
    /* if you change the error-reporting conventions of this, also
       change VG_(pread) and all other usage points. */
 }
@@ -278,7 +278,7 @@ Int VG_(check_executable)(HChar* f)
 SysRes VG_(pread) ( Int fd, void* buf, Int count, Int offset )
 {
    OffT off = VG_(lseek)( fd, (OffT)offset, VKI_SEEK_SET);
-   if (off != 0)
+   if (off < 0)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    return VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count );
 }

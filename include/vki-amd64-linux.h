@@ -480,6 +480,8 @@ typedef unsigned long vki_elf_greg_t;
 #define VKI_ELF_NGREG (sizeof (struct vki_user_regs_struct) / sizeof(vki_elf_greg_t))
 typedef vki_elf_greg_t vki_elf_gregset_t[VKI_ELF_NGREG];
 
+typedef struct vki_user_i387_struct vki_elf_fpregset_t;
+
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-x86_64/ucontext.h
 //----------------------------------------------------------------------

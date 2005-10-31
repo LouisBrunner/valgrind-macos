@@ -1068,7 +1068,6 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    }
 
       // See comment above about this temporary disabling of core dumps.
-      #if 0
    if (core) {
       const static struct vki_rlimit zero = { 0, 0 };
 
@@ -1078,7 +1077,6 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	 coredump when we finally exit */
       VG_(setrlimit)(VKI_RLIMIT_CORE, &zero);
    }
-      #endif
 
    /* stash fatal signal in main thread */
    // what's this for?

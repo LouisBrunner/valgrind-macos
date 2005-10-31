@@ -951,63 +951,6 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 //..    VG_TRACK( post_deliver_signal, tid, sigNo );
 }
 
-//:: /*------------------------------------------------------------*/
-//:: /*--- Making coredumps                                     ---*/
-//:: /*------------------------------------------------------------*/
-//:: 
-//:: void VG_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
-//::                                  const arch_thread_t* arch)
-//:: {
-//::    regs->eflags = arch->m_eflags;
-//::    regs->esp    = arch->m_esp;
-//::    regs->eip    = arch->m_eip;
-//:: 
-//::    regs->ebx    = arch->m_ebx;
-//::    regs->ecx    = arch->m_ecx;
-//::    regs->edx    = arch->m_edx;
-//::    regs->esi    = arch->m_esi;
-//::    regs->edi    = arch->m_edi;
-//::    regs->ebp    = arch->m_ebp;
-//::    regs->eax    = arch->m_eax;
-//:: 
-//::    regs->cs     = arch->m_cs;
-//::    regs->ds     = arch->m_ds;
-//::    regs->ss     = arch->m_ss;
-//::    regs->es     = arch->m_es;
-//::    regs->fs     = arch->m_fs;
-//::    regs->gs     = arch->m_gs;
-//:: }
-//:: 
-//:: static void fill_fpu(vki_elf_fpregset_t *fpu, const Char *from)
-//:: {
-//::    if (VG_(have_ssestate)) {
-//::       UShort *to;
-//::       Int i;
-//:: 
-//::       /* This is what the kernel does */
-//::       VG_(memcpy)(fpu, from, 7*sizeof(long));
-//::    
-//::       to = (UShort *)&fpu->st_space[0];
-//::       from += 18 * sizeof(UShort);
-//:: 
-//::       for (i = 0; i < 8; i++, to += 5, from += 8) 
-//:: 	 VG_(memcpy)(to, from, 5*sizeof(UShort));
-//::    } else
-//::       VG_(memcpy)(fpu, from, sizeof(*fpu));
-//:: }
-//:: 
-//:: void VG_(fill_elffpregs_from_tst)( vki_elf_fpregset_t* fpu,
-//::                                     const arch_thread_t* arch)
-//:: {
-//::    fill_fpu(fpu, (const Char *)&arch->m_sse);
-//:: }
-//:: 
-//:: void VG_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
-//::                                       const arch_thread_t* arch )
-//:: {
-//::    VG_(memcpy)(xfpu, arch->m_sse.state, sizeof(*xfpu));
-//:: }
-
 /*--------------------------------------------------------------------*/
 /*--- end                                   sigframe-ppc32-linux.c ---*/
 /*--------------------------------------------------------------------*/

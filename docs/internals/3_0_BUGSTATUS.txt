@@ -195,7 +195,7 @@ FIXED-30BRANCH: TODO
 n-i-bz  Print a more user-friendly message when vex bombs out
         with unhandled instruction bytes
 
-FIXED-TRUNK:    is fixed (dunno rev #)
+FIXED-TRUNK:    vg:4817,4932
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------

@@ -1118,6 +1118,7 @@ static UInt ULong_width(ULong n)
       n = n / 10;
       w++;
    }
+   if (w == 0) w = 1;
    return w + (w-1)/3;   // add space for commas
 }
 

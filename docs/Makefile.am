@@ -60,7 +60,7 @@ valid:
 FAQ.txt: $(myxmldir)/FAQ.xml $(myxmldir)/vg-entities.xml $(mylibdir)/*.xslt
 	$(XSLTPROC) $(XSLTPROC_FLAGS) $(mylibdir)/untag-inline.xslt $(myxmldir)/FAQ.xml | \
 	$(XSLTPROC) $(XSLTPROC_FLAGS) $(mylibdir)/docbook2text.xslt - > FAQ.txt
-	
+
 
 # chunked html
 html-docs:
@@ -85,7 +85,7 @@ print-docs:
 	(cd $(myprintdir) && \
          ( pdfxmltex index.fo && \
 	   pdfxmltex index.fo && \
-	   pdfxmltex index.fo ) &> $(LOGFILE) && \
+	   pdfxmltex index.fo ) &> $(LOGFILE) < /dev/null && \
 	 echo "Generating PS file: $(myprintdir)/index.ps ..." && \
 	 pdftops index.pdf && \
 	 rm -f *.log *.aux *.fo *.out)

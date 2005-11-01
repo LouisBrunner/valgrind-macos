@@ -9777,15 +9777,17 @@ DisResult disInstr_AMD64_WRK (
    }
 
    /* 66 0F 29 = MOVAPD -- move from G (xmm) to E (mem or xmm). */
-   if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x29) {
+   /* 66 0F 11 = MOVUPD -- move from G (xmm) to E (mem or xmm). */
+   if (have66noF2noF3(pfx) && insn[0] == 0x0F 
+       && (insn[1] == 0x29 || insn[1] == 0x11)) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
          /* fall through; awaiting test case */
       } else {
          addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
          storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
-         DIP("movapd %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
-                               dis_buf );
+         DIP("mov[ua]pd %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
+                                  dis_buf );
          delta += 2+alen;
          goto decode_success;
       }

@@ -4,4 +4,4 @@ Syscall param write(buf) points to uninitialised byte(s)
    by 0x........: ...
  Address 0x........ is 0 bytes inside a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (fwrite.c:6)
+   by 0x........: main (fwrite.c:7)

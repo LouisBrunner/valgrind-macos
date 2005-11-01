@@ -438,6 +438,7 @@ static Int load_ELF(Int fd, const char *name, /*MOD*/struct exeinfo *info)
 
    if (interp != NULL) {
       /* reserve a chunk of address space for interpreter */
+      MapRequest mreq;
       Addr       advised;
       Bool       ok;
 
@@ -447,9 +448,10 @@ static Int load_ELF(Int fd, const char *name, /*MOD*/struct exeinfo *info)
          the specified address.  This is a bit of hack, but it should
          work because there should be no intervening transactions with
          aspacem which could cause those fixed maps to fail. */
-      advised = VG_(am_get_advisory_client_simple)( 
-                   (Addr)interp_addr, interp_size, &ok 
-                );
+      mreq.rkind = MHint;
+      mreq.start = interp_addr;
+      mreq.len = interp_size;
+      advised = VG_(am_get_advisory)( &mreq, True/*client*/, &ok );
       if (!ok) {
          /* bomb out */
          SysRes res = VG_(mk_SysRes_Error)(VKI_EINVAL);

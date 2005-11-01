@@ -49,8 +49,8 @@ void ML_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs,
    regs->orig_gpr3 = arch->vex.guest_GPR3;
    regs->ctr = arch->vex.guest_CTR;
    regs->link = arch->vex.guest_LR;
-   regs->xer = LibVEX_GuestPPC32_get_XER(&arch->vex);
-   regs->ccr = LibVEX_GuestPPC32_get_CR(&arch->vex);
+   regs->xer = LibVEX_GuestPPC32_get_XER( &((ThreadArchState*)arch)->vex );
+   regs->ccr = LibVEX_GuestPPC32_get_CR( &((ThreadArchState*)arch)->vex );
    regs->mq = 0;
    regs->trap = 0;
    regs->dar = 0; /* should be fault address? */
@@ -61,7 +61,9 @@ void ML_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs,
 void ML_(fill_elffpregs_from_tst)(vki_elf_fpregset_t* fpu,
                                   const ThreadArchState* arch)
 {
-#  define DO(n)  fpu[n] = arch->vex.guest_FPR##n
+   /* The guest state has the FPR fields declared as ULongs, so need
+      to fish out the values without converting them. */
+#  define DO(n)  (*fpu)[n] = *(double*)(&arch->vex.guest_FPR##n)
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
    DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
    DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);

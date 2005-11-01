@@ -5,13 +5,12 @@
 <chapter id="lk-manual" xreflabel="Lackey">
 
 <title>Lackey: a very simple profiler</title>
-
 <para>Lackey is a simple Valgrind tool that does some basic
 program measurement.  It adds quite a lot of simple
 instrumentation to the program's code.  It is primarily intended
 to be of use as an example tool.</para>
 
-<para>It measures three things:</para>
+<para>It measures and reports:</para>
 
 <orderedlist>
 
@@ -19,21 +18,65 @@ to be of use as an example tool.</para>
   <para>The number of calls to
   <computeroutput>_dl_runtime_resolve()</computeroutput>, the
   function in glibc's dynamic linker that resolves function
-  lookups into shared objects.</para>
- </listitem>
-
- <listitem>
-  <para>The number of UCode instructions (UCode is Valgrind's
-  RISC-like intermediate language), x86 instructions, and basic
-  blocks executed by the program, and some ratios between the
-  three counts.</para>
+  references to shared objects.</para>
+  <para>You can change the name of the function with command line
+  option <computeroutput>--fnname=&lt;name&gt;</computeroutput>.</para>
  </listitem>
 
  <listitem>
   <para>The number of conditional branches encountered and the
-  proportion of those taken.</para>
+  number and proportion of those taken.</para>
+ </listitem>
+
+ <listitem>
+
+  <para>Statistics about the amount of work done during the execution
+  of the client program:</para>  
+
+  <orderedlist>
+
+   <listitem>
+    <para>The number of basic blocks entered and completed by the
+    program.  Note that due to optimisations done by the JIT, this
+    is not really an accurate value.</para>
+   </listitem>
+
+   <listitem>
+    <para>The number of guest (x86, amd64, ppc, etc.) instructions and IR
+    statements executed.  IR is Valgrind's RISC-like intermediate
+    representation via which all instrumentation is done.
+    </para>
+   </listitem>
+
+   <listitem>
+    <para>Ratios between some of these counts.</para>
+   </listitem>
+
+   <listitem>
+    <para>When command line option
+    <computeroutput>--detailed-counts=yes</computeroutput> is
+    specified, a table is printed with counts of loads, stores and ALU
+    operations for various types of operands.</para>
+
+    <para>The types are identified by their IR name ("I1" ... "I128",
+    "F32", "F64", and "V128").</para>
+   </listitem>
+
+  </orderedlist>
+
+ </listitem>
+
+ <listitem>
+  <para>The exit code of the client program.</para>
  </listitem>
 
 </orderedlist>
+
+<para>Note that Lackey runs quite slowly, especially when
+<computeroutput>--detailed-counts=yes</computeroutput> is specified.
+It could be made to run a lot faster by doing a slightly more
+sophisticated job of the instrumentation, but that would undermine
+its role as a simple example tool.  Hence we have chosen not to do
+so.</para>
 
 </chapter>

@@ -195,7 +195,7 @@ FIXED-30BRANCH: TODO
 n-i-bz  Print a more user-friendly message when vex bombs out
         with unhandled instruction bytes
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    is fixed (dunno rev #)
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
@@ -285,7 +285,7 @@ FIXED-TRUNK:    TODO
 ----------------------------------------------------------------
 114196  vex x86->IR: out %eax,(%dx) (0xEF 0xC9 0xC3 0x90)
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    vex:1425
 (has good test case)
 
 ----------------------------------------------------------------

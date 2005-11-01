@@ -102,6 +102,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_coredump.h"
 #include "vki_unistd.h"
 
 
@@ -1067,7 +1068,6 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       VG_(start_debugger)( tid );
    }
 
-      // See comment above about this temporary disabling of core dumps.
    if (core) {
       const static struct vki_rlimit zero = { 0, 0 };
 

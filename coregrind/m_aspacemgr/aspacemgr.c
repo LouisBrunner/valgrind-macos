@@ -2523,9 +2523,9 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
    seg.hasW   = toBool(prot & VKI_PROT_WRITE);
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
    if (get_inode_for_fd(fd, &dev, &ino, &mode)) {
-      seg.dev = dev;
-      seg.ino = ino;
-      seg.mode - mode;
+      seg.dev  = dev;
+      seg.ino  = ino;
+      seg.mode = mode;
    }
    if (get_name_for_fd(fd, buf, VKI_PATH_MAX)) {
       seg.fnIdx = allocate_segname( buf );

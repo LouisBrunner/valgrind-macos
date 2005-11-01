@@ -38,7 +38,7 @@
 void ML_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
                                 const ThreadArchState* arch)
 {
-   regs->eflags = LibVEX_GuestX86_get_eflags(&arch->vex);
+   regs->eflags = LibVEX_GuestX86_get_eflags( &((ThreadArchState*)arch)->vex );
    regs->esp    = arch->vex.guest_ESP;
    regs->eip    = arch->vex.guest_EIP;
 

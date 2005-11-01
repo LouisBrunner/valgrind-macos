@@ -541,7 +541,8 @@ static Int aspacem_read ( Int fd, void* buf, Int count)
 
 /* Extract the device and inode numbers for a fd. */
 static 
-Bool get_inode_for_fd ( Int fd, /*OUT*/UWord* dev, /*OUT*/UWord* ino, /*OUT*/UInt* mode )
+Bool get_inode_for_fd ( Int fd, /*OUT*/UWord* dev, 
+                                /*OUT*/UWord* ino, /*OUT*/UInt* mode )
 {
    struct vki_stat buf;
    Int r = aspacem_fstat(fd, &buf);

@@ -725,7 +725,7 @@ void do_setmask ( ThreadId tid,
       *oldset = VG_(threads)[tid].sig_mask;
       if (VG_(clo_trace_signals))
 	      VG_(message)(Vg_DebugExtraMsg, 
-			   "\toldset=%p %08x%08x",
+			   "\toldset=%p %s",
 			   oldset, format_sigset(oldset));
    }
    if (newset) {

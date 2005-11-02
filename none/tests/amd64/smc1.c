@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include <malloc.h>
+#include <sys/mman.h>
 
 typedef unsigned long long int Addr;
 typedef unsigned char UChar;
@@ -100,8 +100,9 @@ void diversion ( void ) { }
 int main ( void )
 {
    int i;
-   code = malloc(20);
-   assert(code);
+   code = mmap(NULL, 20, PROT_READ|PROT_WRITE|PROT_EXEC,
+               MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+   assert(code != MAP_FAILED);
    for (i = 0; i < 10; i += 2) {
       set_dest ( (Addr)&p );
       //      diversion();
@@ -110,5 +111,6 @@ int main ( void )
       //      diversion();
       aa(i+1);
    }
+   munmap(code, 20);
    return 0;
 }

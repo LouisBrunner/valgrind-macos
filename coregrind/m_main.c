@@ -669,7 +669,7 @@ static void setup_client_dataseg ( SizeT max_size )
    sres = VG_(am_mmap_anon_fixed_client)( 
              anon_start, 
              anon_size, 
-             VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC 
+             VKI_PROT_READ|VKI_PROT_WRITE
           );
    vg_assert(!sres.isError);
    vg_assert(sres.val == anon_start);

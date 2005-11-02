@@ -75,7 +75,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.vgtest \
 	stack_changes.stderr.exp stack_changes.stdout.exp stack_changes.vgtest \
-	strchr.stderr.exp strchr.vgtest \
+	strchr.stderr.exp strchr.stderr.exp2 strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
 	supp_unknown.stderr.exp supp_unknown.vgtest supp_unknown.supp \
 	supp1.stderr.exp supp1.vgtest \
@@ -87,7 +87,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest-HIDING \
 	vgtest_ume.stderr.exp vgtest_ume.disabled \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
-	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp64 xml1.stdout.exp \
+	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp3 \
+	xml1.stderr.exp64 xml1.stderr.exp64_2 xml1.stdout.exp \
 	xml1.vgtest \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.stdout.exp \
 	zeropage.vgtest

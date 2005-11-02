@@ -5,6 +5,7 @@ CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 INSN_TESTS=insn_mmx insn_sse insn_sse2 insn_fpu
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
+	faultstatus.vgtest faultstatus.stderr.exp \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
@@ -13,7 +14,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
         smc1.stderr.exp smc1.stdout.exp smc1.vgtest
 
 check_PROGRAMS = \
-	$(INSN_TESTS) looper jrcxz smc1
+	faultstatus $(INSN_TESTS) looper jrcxz smc1
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)

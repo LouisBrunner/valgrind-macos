@@ -73,26 +73,20 @@ static void handler(int sig, siginfo_t *si, void *uc)
 }
 
 
-static void test1(void)
+extern char test1_ill;
+static void test1()
 {
-	*BADADDR = 'x';
+	asm volatile("test1_ill: ud2");
 }
 
 static void test2()
 {
-	mapping[0] = 'x';
+	asm volatile ("int3");
 }
 
 static void test3()
 {
-	mapping[FILESIZE+10];
-}
-
-static void test4()
-{
-	volatile int v = 44/zero();
-
-	(void)v;
+	asm volatile ("int $0x10");
 }
 
 int main()
@@ -122,10 +116,10 @@ int main()
 	{
 		const struct test tests[] = {
 #define T(n, sig, code, addr) { test##n, sig, code, addr }
-			T(1, SIGSEGV,	SEGV_MAPERR,	BADADDR),
-			T(2, SIGSEGV,	SEGV_ACCERR,	mapping),
-			T(3, SIGBUS,	BUS_ADRERR,	&mapping[FILESIZE+10]),
-			T(4, SIGFPE,	FPE_INTDIV,	0),
+			T(1, SIGILL,	ILL_ILLOPN,     &test1_ill),
+
+			T(2, SIGTRAP,	128,		0), /* TRAP_BRKPT? */
+			T(3, SIGSEGV,	128,		0),
 #undef T
 		};
 

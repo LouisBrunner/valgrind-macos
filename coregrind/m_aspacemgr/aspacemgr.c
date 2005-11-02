@@ -1072,7 +1072,7 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
                                           const UChar* filename )
 {
    Int  iLo, iHi, i;
-   Bool sloppyRXcheck;
+   Bool sloppyXcheck;
 
    /* If a problem has already been detected, don't continue comparing
       segments, so as to avoid flooding the output with error
@@ -1097,21 +1097,21 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
    aspacem_assert(nsegments[iHi].end   >= addr + len - 1 );
 
    /* x86 doesn't differentiate 'x' and 'r' (at least, all except the
-      most recent NX-bit enabled CPUs) and so recent kernels mark most
-      readable sections also as executable (in the /proc/self/maps
-      they give out), which makes checking fail.  When sloppyRXcheck
-      is True, the checker therefore regards R and X as
-      interchangeable. */
-   sloppyRXcheck = False;
-#  if defined(VGA_x86)
-   sloppyRXcheck = True;
-#  endif
+      most recent NX-bit enabled CPUs) and so recent kernels attempt
+      to provide execute protection by placing all executable mappings
+      low down in the address space and then reducing the size of the
+      code segment to prevent code at higher addresses being executed.
 
-   if (sloppyRXcheck) {
-      /* If either bit is set, ensure both are set. */
-      if (prot & (VKI_PROT_READ|VKI_PROT_EXEC))
-         prot |= (VKI_PROT_READ|VKI_PROT_EXEC);
-   }
+      These kernels report which mappings are really executable in
+      the /proc/self/maps output rather than mirroring what was asked
+      for when each mapping was created. In order to cope with this we
+      have a slopyXcheck mode which we enable on x86 - in this mode we
+      allow the kernel to report execute permission when we weren't
+      expecting it but not vice versa. */
+   sloppyXcheck = False;
+#  if defined(VGA_x86)
+   sloppyXcheck = True;
+#  endif
 
    /* NSegments iLo .. iHi inclusive should agree with the presented
       data. */
@@ -1144,10 +1144,13 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       if (filename && 0==VG_(strcmp)(filename, "/dev/zero (deleted)"))
          cmp_devino = False;
 
-      if (sloppyRXcheck) {
-         /* If either bit is set, ensure both are set. */
-         if (seg_prot & (VKI_PROT_READ|VKI_PROT_EXEC))
-            seg_prot |= (VKI_PROT_READ|VKI_PROT_EXEC);
+      /* If we are doing sloppy execute permission checks then we
+         allow segment to have X permission when we weren't expecting
+         it (but not vice versa) so if the kernel reported execute
+         permission then pretend that this segment has it regardless
+         of what we were expecting. */
+      if (sloppyXcheck && (prot & VKI_PROT_EXEC) != 0) {
+         seg_prot |= VKI_PROT_EXEC;
       }
 
       same = same

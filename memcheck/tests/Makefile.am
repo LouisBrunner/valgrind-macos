@@ -73,7 +73,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	sigkill.stderr.exp sigkill.stderr.exp2 sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
-	sigprocmask.stderr.exp sigprocmask.vgtest \
+	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
 	stack_changes.stderr.exp stack_changes.stdout.exp stack_changes.vgtest \
 	strchr.stderr.exp strchr.stderr.exp2 strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \

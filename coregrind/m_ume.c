@@ -447,11 +447,29 @@ static Int load_ELF(Int fd, const char *name, /*MOD*/struct exeinfo *info)
          mapelf(), which in turn asks aspacem to do some fixed maps at
          the specified address.  This is a bit of hack, but it should
          work because there should be no intervening transactions with
-         aspacem which could cause those fixed maps to fail. */
-      mreq.rkind = MHint;
-      mreq.start = interp_addr;
-      mreq.len = interp_size;
+         aspacem which could cause those fixed maps to fail.
+
+         Placement policy is:
+
+         if the interpreter asks to be loaded at zero
+            ignore that and put it wherever we like (mappings at zero 
+            are bad news)
+         else
+            try and put it where it asks for, but if that doesn't work,
+            just put it anywhere.
+      */
+      if (interp_addr == 0) {
+         mreq.rkind = MAny;
+         mreq.start = 0;
+         mreq.len   = interp_size;
+      } else {
+         mreq.rkind = MHint;
+         mreq.start = interp_addr;
+         mreq.len   = interp_size;
+      }
+
       advised = VG_(am_get_advisory)( &mreq, True/*client*/, &ok );
+
       if (!ok) {
          /* bomb out */
          SysRes res = VG_(mk_SysRes_Error)(VKI_EINVAL);

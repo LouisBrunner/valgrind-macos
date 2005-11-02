@@ -675,6 +675,28 @@ void do_sigprocmask_bitops ( Int vki_how,
    }
 }
 
+static
+const Char *format_sigset ( const vki_sigset_t* set )
+{
+   static Char buf[128];
+   int w;
+
+   VG_(strcpy)(buf, "");
+
+   for (w = _VKI_NSIG_WORDS - 1; w >= 0; w--)
+   {
+#if _VKI_NSIG_BPW == 32
+      VG_(sprintf)(buf + VG_(strlen)(buf), "%08lx", set ? set->sig[w] : 0);
+#elif _VKI_NSIG_BPW == 64
+      VG_(sprintf)(buf + VG_(strlen)(buf), "%16lx", set ? set->sig[w] : 0);
+#else
+#error "Unsupported value for _VKI_NSIG_BPW"
+#endif
+   }
+
+   return buf;
+}
+
 /* 
    This updates the thread's signal mask.  There's no such thing as a
    process-wide signal mask.
@@ -690,13 +712,12 @@ void do_setmask ( ThreadId tid,
 {
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
-		   "do_setmask: tid = %d how = %d (%s), set = %p %08x%08x", 
+		   "do_setmask: tid = %d how = %d (%s), set = %p %s", 
 		   tid, how,
 		   how==VKI_SIG_BLOCK ? "SIG_BLOCK" : (
 		      how==VKI_SIG_UNBLOCK ? "SIG_UNBLOCK" : (
 			 how==VKI_SIG_SETMASK ? "SIG_SETMASK" : "???")),
-		   newset, newset ? newset->sig[1] : 0, newset ? newset->sig[0] : 0
-	 );
+		   newset, format_sigset(newset));
 
    /* Just do this thread. */
    vg_assert(VG_(is_valid_tid)(tid));
@@ -705,7 +726,7 @@ void do_setmask ( ThreadId tid,
       if (VG_(clo_trace_signals))
 	      VG_(message)(Vg_DebugExtraMsg, 
 			   "\toldset=%p %08x%08x",
-			   oldset, oldset->sig[1], oldset->sig[0]);
+			   oldset, format_sigset(oldset));
    }
    if (newset) {
       do_sigprocmask_bitops (how, &VG_(threads)[tid].sig_mask, newset );

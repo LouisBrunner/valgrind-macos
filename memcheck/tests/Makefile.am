@@ -84,7 +84,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	suppfree.stderr.exp suppfree.vgtest \
 	toobig-allocs.stderr.exp toobig-allocs.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
-	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest-HIDING \
 	vgtest_ume.stderr.exp vgtest_ume.disabled \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
@@ -114,7 +113,7 @@ check_PROGRAMS = \
 	realloc1 realloc2 realloc3 \
 	sigaltstack signal2 sigprocmask sigkill \
 	stack_changes strchr str_tester supp_unknown supp1 supp2 suppfree \
-	trivialleak weirdioctl	\
+	trivialleak \
 	mismatches new_override metadata \
 	xml1 \
 	writev zeropage

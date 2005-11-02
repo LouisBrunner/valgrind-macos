@@ -1,3 +1,0 @@
-prog:   weirdioctl
-vgopts: -q
-args:   < weirdioctl.c

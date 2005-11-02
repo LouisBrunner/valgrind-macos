@@ -2,14 +2,12 @@ SUBDIRS      = ${VG_ARCH}     .
 DIST_SUBDIRS = ${VG_ARCH_ALL} .
 
 noinst_SCRIPTS = \
-	filter_as_mmap filter_cmdline0 \
+	filter_cmdline0 \
 	filter_fdleak filter_none_discards filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
-	as_mmap.stderr.exp as_mmap.stderr.exp2 as_mmap.vgtest \
-	as_shm.stderr.exp as_shm.stdout.exp as_shm.vgtest \
 	async-sigs.stderr.exp async-sigs.stdout.exp async-sigs.vgtest \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	blockfault.vgtest blockfault.stderr.exp blockfault.stdout.exp \
@@ -113,7 +111,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest
 
 check_PROGRAMS = \
-	ansi args as_mmap as_shm \
+	ansi args \
 	async-sigs bitfield1 blockfault closeall coolo_strlen \
 	discard exec-sigmask execve faultstatus fcntl_setown \
 	fdleak_cmsg fdleak_creat fdleak_dup fdleak_dup2 \

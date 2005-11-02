@@ -1,8 +1,0 @@
-#! /bin/sh
-
-dir=`dirname $0`
-
-./filter_stderr                    |
-
-# Anonymise addresses
-$dir/../../tests/filter_addresses

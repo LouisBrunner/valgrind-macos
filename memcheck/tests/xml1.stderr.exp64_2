@@ -361,9 +361,6 @@
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
-      <dir>...</dir>
-      <file>start.S</file>
-      <line>...</line>
     </frame>
   </stack>
 </error>

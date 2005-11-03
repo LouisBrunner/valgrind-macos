@@ -2147,9 +2147,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Ijk_ClientReq: 
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_CLIENTREQ); break;
-         case Ijk_Syscall: 
+         case Ijk_Sys_int128:
             *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_SYSCALL); break;
+            p = emit32(p, VEX_TRC_JMP_SYS_INT128); break;
          case Ijk_Yield: 
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_YIELD); break;
@@ -2165,9 +2165,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Ijk_TInval:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_TINVAL); break;
-         case Ijk_SysenterX86:
+         case Ijk_Sys_sysenter:
             *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_SYSENTER_X86); break;
+            p = emit32(p, VEX_TRC_JMP_SYS_SYSENTER); break;
          case Ijk_Ret:
 	 case Ijk_Call:
          case Ijk_Boring:

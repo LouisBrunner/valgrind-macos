@@ -11516,6 +11516,27 @@ DisResult disInstr_AMD64_WRK (
          goto decode_failure;
       }
 
+   /* ------------------------ INT ------------------------ */
+
+   case 0xCD: { /* INT imm8 */
+      IRJumpKind jk = Ijk_Boring;
+      if (have66orF2orF3(pfx)) goto decode_failure;
+      d64 = getUChar(delta); delta++;
+      switch (d64) {
+         case 32: jk = Ijk_Sys_int32; break;
+         default: goto decode_failure;
+      }
+      guest_RIP_next_mustcheck = True;
+      guest_RIP_next_assumed = guest_RIP_bbstart + delta;
+      jmp_lit(jk, guest_RIP_next_assumed);
+      /* It's important that all ArchRegs carry their up-to-date value
+         at this point.  So we declare an end-of-block here, which
+         forces any TempRegs caching ArchRegs to be flushed. */
+      dres.whatNext = Dis_StopHere;
+      DIP("int $0x%02x\n", (UInt)d64);
+      break;
+   }
+
    /* ------------------------ Jcond, byte offset --------- */
 
    case 0xEB: /* Jb (jump, byte offset) */
@@ -13221,10 +13242,10 @@ DisResult disInstr_AMD64_WRK (
          /* It's important that all guest state is up-to-date
             at this point.  So we declare an end-of-block here, which
             forces any cached guest state to be flushed. */
-        jmp_lit(Ijk_Syscall, guest_RIP_next_assumed);
-        dres.whatNext = Dis_StopHere;
-        DIP("syscall\n");
-        break;
+         jmp_lit(Ijk_Sys_syscall, guest_RIP_next_assumed);
+         dres.whatNext = Dis_StopHere;
+         DIP("syscall\n");
+         break;
 
       /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
 

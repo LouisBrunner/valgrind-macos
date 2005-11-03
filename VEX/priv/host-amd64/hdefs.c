@@ -2585,9 +2585,12 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Ijk_ClientReq: 
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_CLIENTREQ); break;
-         case Ijk_Syscall: 
+         case Ijk_Sys_syscall: 
             *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_SYSCALL); break;
+            p = emit32(p, VEX_TRC_JMP_SYS_SYSCALL); break;
+         case Ijk_Sys_int32: 
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_SYS_INT32); break;
          case Ijk_Yield: 
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_YIELD); break;

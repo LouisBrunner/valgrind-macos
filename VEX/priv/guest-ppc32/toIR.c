@@ -3132,7 +3132,7 @@ static Bool dis_syslink ( UInt theInstr, DisResult* dres )
       at this point.  So we declare an end-of-block here, which
       forces any TempRegs caching ArchRegs to be flushed. */
    irbb->next     = mkU32( guest_CIA_curr_instr + 4 );
-   irbb->jumpkind = Ijk_Syscall;
+   irbb->jumpkind = Ijk_Sys_syscall;
    
    dres->whatNext = Dis_StopHere;
    return True;

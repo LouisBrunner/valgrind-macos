@@ -2491,13 +2491,13 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       
       /* If a non-boring, set GuestStatePtr appropriately. */
       switch (i->Pin.Goto.jk) {
-         case Ijk_ClientReq: trc = VEX_TRC_JMP_CLIENTREQ; break;
-         case Ijk_Syscall:   trc = VEX_TRC_JMP_SYSCALL;   break;
-         case Ijk_Yield:     trc = VEX_TRC_JMP_YIELD;     break;
-         case Ijk_EmWarn:    trc = VEX_TRC_JMP_EMWARN;    break;
-         case Ijk_MapFail:   trc = VEX_TRC_JMP_MAPFAIL;   break;
-         case Ijk_NoDecode:  trc = VEX_TRC_JMP_NODECODE;  break;
-         case Ijk_TInval:    trc = VEX_TRC_JMP_TINVAL;    break;
+         case Ijk_ClientReq:   trc = VEX_TRC_JMP_CLIENTREQ;   break;
+         case Ijk_Sys_syscall: trc = VEX_TRC_JMP_SYS_SYSCALL; break;
+         case Ijk_Yield:       trc = VEX_TRC_JMP_YIELD;       break;
+         case Ijk_EmWarn:      trc = VEX_TRC_JMP_EMWARN;      break;
+         case Ijk_MapFail:     trc = VEX_TRC_JMP_MAPFAIL;     break;
+         case Ijk_NoDecode:    trc = VEX_TRC_JMP_NODECODE;    break;
+         case Ijk_TInval:      trc = VEX_TRC_JMP_TINVAL;      break;
          case Ijk_Ret:
          case Ijk_Call:
          case Ijk_Boring:

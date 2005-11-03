@@ -10637,7 +10637,7 @@ DisResult disInstr_X86_WRK (
       /* It's important that all ArchRegs carry their up-to-date value
          at this point.  So we declare an end-of-block here, which
          forces any TempRegs caching ArchRegs to be flushed. */
-      jmp_lit(Ijk_Syscall,((Addr32)guest_EIP_bbstart)+delta);
+      jmp_lit(Ijk_Sys_int128,((Addr32)guest_EIP_bbstart)+delta);
       dres.whatNext = Dis_StopHere;
       DIP("int $0x80\n");
       break;
@@ -12245,13 +12245,13 @@ DisResult disInstr_X86_WRK (
             is that the return address is not known -- that is
             something that is beyond Vex's knowledge.  So this IR
             forces a return to the scheduler, which can do what it
-            likes to simulate the systemter, but it MUST set this
+            likes to simulate the systenter, but it MUST set this
             thread's guest_EIP field with the continuation address
             before resuming execution.  If that doesn't happen, the
             thread will jump to address zero, which is probably
             fatal. 
          */ 
-         jmp_lit(Ijk_SysenterX86, 0/*bogus next EIP value*/);
+         jmp_lit(Ijk_Sys_sysenter, 0/*bogus next EIP value*/);
          dres.whatNext = Dis_StopHere;
          DIP("sysenter");
          break;

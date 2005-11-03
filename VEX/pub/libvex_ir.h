@@ -833,14 +833,18 @@ typedef
       Ijk_Call,           /* guest is doing a call */
       Ijk_Ret,            /* guest is doing a return */
       Ijk_ClientReq,      /* do guest client req before continuing */
-      Ijk_Syscall,        /* do guest syscall before continuing */
       Ijk_Yield,          /* client is yielding to thread scheduler */
       Ijk_EmWarn,         /* report emulation warning before continuing */
       Ijk_NoDecode,       /* next instruction cannot be decoded */
       Ijk_MapFail,        /* Vex-provided address translation failed */
       Ijk_TInval,         /* Invalidate translations before continuing. */
-      Ijk_SysenterX86     /* X86 sysenter.  guest_EIP becomes invalid
-                             at the point this happens. */
+      /* Unfortunately, various guest-dependent syscall kinds.  They
+	 all mean: do a syscall before continuing. */
+      Ijk_Sys_syscall,    /* amd64 'syscall', ppc32 'sc' */
+      Ijk_Sys_int32,      /* amd64/x86 'int $0x20' */
+      Ijk_Sys_int128,     /* amd64/x86 'int $0x80' */
+      Ijk_Sys_sysenter    /* x86 'sysenter'.  guest_EIP becomes 
+                             invalid at the point this happens. */
    }
    IRJumpKind;
 

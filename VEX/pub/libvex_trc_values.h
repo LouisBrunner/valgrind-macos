@@ -56,20 +56,20 @@
    C-specific constructs in it.
 */
 
-#define VEX_TRC_JMP_TINVAL     13  /* invalidate translations before
+#define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
                                       continuing */
-#define VEX_TRC_JMP_EMWARN     17  /* deliver emulation warning before
+#define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
                                       continuing */
-#define VEX_TRC_JMP_SYSCALL    19  /* do a system call before continuing */
-#define VEX_TRC_JMP_CLIENTREQ  23  /* do a client req before continuing */
-#define VEX_TRC_JMP_YIELD      27  /* yield to thread sched 
+#define VEX_TRC_JMP_CLIENTREQ  65  /* do a client req before continuing */
+#define VEX_TRC_JMP_YIELD      67  /* yield to thread sched 
                                       before continuing */
-#define VEX_TRC_JMP_NODECODE   29  /* next instruction in not decodable */
-#define VEX_TRC_JMP_MAPFAIL    31  /* address translation failed */
+#define VEX_TRC_JMP_NODECODE   69  /* next instruction is not decodable */
+#define VEX_TRC_JMP_MAPFAIL    71  /* address translation failed */
 
-#define VEX_TRC_JMP_SYSENTER_X86 9  /* simulate X86 sysenter before
-                                       continuing */
-
+#define VEX_TRC_JMP_SYS_SYSCALL  73 /* do syscall before continuing */
+#define VEX_TRC_JMP_SYS_INT32    75 /* do syscall before continuing */
+#define VEX_TRC_JMP_SYS_INT128   77 /* do syscall before continuing */
+#define VEX_TRC_JMP_SYS_SYSENTER 79 /* do syscall before continuing */
 
 #endif /* ndef __LIBVEX_TRC_VALUES_H */
 

@@ -1937,7 +1937,7 @@ void x86g_dirtyhelper_OUT ( UInt portno, UInt data, UInt sz/*1,2 or 4*/ )
          break;
    }
 #  else
-   return 0;
+   /* do nothing */
 #  endif
 }
 

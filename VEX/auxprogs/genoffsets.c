@@ -88,14 +88,26 @@ Int main ( void )
   printf("#define OFFSET_amd64_RAX %3d\n", 
          offsetof(VexGuestAMD64State,guest_RAX));
 
-  printf("#define OFFSET_amd64_RDI %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RDI));
+  printf("#define OFFSET_amd64_RBX %3d\n", 
+         offsetof(VexGuestAMD64State,guest_RBX));
+
+  printf("#define OFFSET_amd64_RCX %3d\n", 
+         offsetof(VexGuestAMD64State,guest_RCX));
+
+  printf("#define OFFSET_amd64_RDX %3d\n", 
+         offsetof(VexGuestAMD64State,guest_RDX));
 
   printf("#define OFFSET_amd64_RSI %3d\n", 
          offsetof(VexGuestAMD64State,guest_RSI));
 
-  printf("#define OFFSET_amd64_RDX %3d\n", 
-         offsetof(VexGuestAMD64State,guest_RDX));
+  printf("#define OFFSET_amd64_RDI %3d\n", 
+         offsetof(VexGuestAMD64State,guest_RDI));
+
+  printf("#define OFFSET_amd64_RSP %3d\n", 
+         offsetof(VexGuestAMD64State,guest_RSP));
+
+  printf("#define OFFSET_amd64_RBP %3d\n", 
+         offsetof(VexGuestAMD64State,guest_RBP));
 
   printf("#define OFFSET_amd64_R8  %3d\n", 
          offsetof(VexGuestAMD64State,guest_R8));
@@ -105,6 +117,21 @@ Int main ( void )
 
   printf("#define OFFSET_amd64_R10 %3d\n", 
          offsetof(VexGuestAMD64State,guest_R10));
+
+  printf("#define OFFSET_amd64_R11 %3d\n", 
+         offsetof(VexGuestAMD64State,guest_R11));
+
+  printf("#define OFFSET_amd64_R12 %3d\n", 
+         offsetof(VexGuestAMD64State,guest_R12));
+
+  printf("#define OFFSET_amd64_R13 %3d\n", 
+         offsetof(VexGuestAMD64State,guest_R13));
+
+  printf("#define OFFSET_amd64_R14 %3d\n", 
+         offsetof(VexGuestAMD64State,guest_R14));
+
+  printf("#define OFFSET_amd64_R15 %3d\n", 
+         offsetof(VexGuestAMD64State,guest_R15));
 
   printf("#define OFFSET_amd64_RIP %3d\n", 
          offsetof(VexGuestAMD64State,guest_RIP));

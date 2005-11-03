@@ -77,3 +77,16 @@ its output (ie. those lines beginning with "==<pid>==") prefixed with a
 At the time of writing the allocator is not annotated with client requests
 so Memcheck is not as useful as it could be.  It also has not been tested
 much, so don't be surprised if you hit problems.
+
+Printing out problematic blocks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you want to print out a disassembly of a particular block that
+causes a crash, do the following.
+
+Try running with "--vex-guest-chase-thresh=0 --trace-flags=10000000
+--trace-notbelow=999999".  This should print one line for each block
+translated, and that includes the address.
+
+Then re-run with 999999 changed to the highest bb number shown.
+This will print the one line per block, and also will print a
+disassembly of the block in which the fault occurred.

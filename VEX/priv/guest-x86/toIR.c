@@ -7062,8 +7062,9 @@ DisResult disInstr_X86_WRK (
       delta++;
    }
 
-   /* Detect operand-size overrides. */
-   if (getIByte(delta) == 0x66) { sz = 2; delta++; };
+   /* Detect operand-size overrides.  It is possible for more than one
+      0x66 to appear. */
+   while (getIByte(delta) == 0x66) { sz = 2; delta++; };
 
    /* segment override prefixes come after the operand-size override,
       it seems */

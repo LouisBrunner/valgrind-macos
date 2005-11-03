@@ -150,7 +150,10 @@ static
 HChar* name_of_sched_event ( UInt event )
 {
    switch (event) {
-      case VEX_TRC_JMP_SYSCALL:       return "SYSCALL";
+      case VEX_TRC_JMP_SYS_SYSCALL:   return "SYSCALL";
+      case VEX_TRC_JMP_SYS_INT32:     return "INT32";
+      case VEX_TRC_JMP_SYS_INT128:    return "INT128";
+      case VEX_TRC_JMP_SYS_SYSENTER:  return "SYSENTER";
       case VEX_TRC_JMP_CLIENTREQ:     return "CLIENTREQ";
       case VEX_TRC_JMP_YIELD:         return "YIELD";
       case VEX_TRC_JMP_NODECODE:      return "NODECODE";
@@ -715,8 +718,9 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       case VEX_TRC_JMP_CLIENTREQ:
 	 do_client_request(tid);
 	 break;
-	    
-      case VEX_TRC_JMP_SYSCALL:
+
+      case VEX_TRC_JMP_SYS_INT128:  /* x86-linux */
+      case VEX_TRC_JMP_SYS_SYSCALL: /* amd64-linux, ppc32-linux */
 	 handle_syscall(tid);
 	 if (VG_(clo_sanity_level) > 2)
 	    VG_(sanity_check_general)(True); /* sanity-check every syscall */
@@ -817,7 +821,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
                        "run_innerloop detected host "
                        "state invariant failure", trc);
 
-      case VEX_TRC_JMP_SYSENTER_X86:
+      case VEX_TRC_JMP_SYS_SYSENTER:
          /* Do whatever simulation is appropriate for an x86 sysenter
             instruction.  Note that it is critical to set this thread's
             guest_EIP to point at the code to execute after the

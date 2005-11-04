@@ -49,14 +49,18 @@ our %SubTypeSuffixes = (
                         );
 
 our %RegNums = (
-                al => 0, ax => 0, eax => 0, rax => 0,
-                bl => 1, bx => 1, ebx => 1, rbx => 1,
-                cl => 2, cx => 2, ecx => 2, rcx => 2,
-                dl => 3, dx => 3, edx => 3, rdx => 3,
-                ah => 4,
-                bh => 5,
-                ch => 6,
-                dh => 7,
+                r9b => 0, r9w => 0, r9d => 0, r9 => 0,
+                r10b => 1, r10w => 1, r10d => 1, r10 => 1,
+                r11b => 2, r11w => 2, r11d => 2, r11 => 2,
+                r12b => 3, r12w => 3, r12d => 3, r12 => 3,
+                al => 4, ax => 4, eax => 4, rax => 4,
+                bl => 5, bx => 5, ebx => 5, rbx => 5,
+                cl => 6, cx => 6, ecx => 6, rcx => 6,
+                dl => 7, dx => 7, edx => 7, rdx => 7,
+                ah => 8,
+                bh => 9,
+                ch => 10,
+                dh => 11,
                 st0 => 0, st1 => 1, st2 => 2, st3 => 3,
                 st4 => 4, st5 => 5, st6 => 6, st7 => 7
                 );
@@ -80,10 +84,14 @@ our %RegTypes = (
 #                );
 
 our @IntRegs = (
-                { r8 => "r8b", r16 => "r8w", r32 => "r8d", r64 => "r8" },
                 { r8 => "r9b", r16 => "r9w", r32 => "r9d", r64 => "r9" },
                 { r8 => "r10b", r16 => "r10w", r32 => "r10d", r64 => "r10" },
                 { r8 => "r11b", r16 => "r11w", r32 => "r11d", r64 => "r11" },
+                { r8 => "r12b", r16 => "r12w", r32 => "r12d", r64 => "r12" },
+                { r8 => "al", r16 => "ax", r32 => "eax", r64 => "rax" },
+                { r8 => "bl", r16 => "bx", r32 => "ebx", r64 => "rbx" },
+                { r8 => "cl", r16 => "cx", r32 => "ecx", r64 => "rcx" },
+                { r8 => "dl", r16 => "dx", r32 => "edx", r64 => "rdx" },
                 { r8 => "ah" },
                 { r8 => "bh" },
                 { r8 => "ch" },

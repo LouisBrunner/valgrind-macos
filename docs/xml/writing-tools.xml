@@ -35,7 +35,7 @@ instrumenting a program from scratch yourself.</para>
 between its "core" and "tools".</para>
 
 <para>The core provides the common low-level infrastructure to
-support program instrumentation, including the x86-to-x86 JIT
+support program instrumentation, including the JIT
 compiler, low-level memory manager, signal handling and a
 scheduler (for pthreads).  It also provides certain services that
 are useful to some but not all tools, such as support for error
@@ -43,8 +43,8 @@ recording and suppression.</para>
 
 <para>But the core leaves certain operations undefined, which
 must be filled by tools.  Most notably, tools define how program
-code should be instrumented.  They can also define certain
-variables to indicate to the core that they would like to use
+code should be instrumented.  They can also call certain
+functions to indicate to the core that they would like to use
 certain services, or be notified when certain interesting events
 occur.  But the core takes care of all the hard work.</para>
 
@@ -81,7 +81,7 @@ that there are three spaces in which program code executes:</para>
       (<computeroutput>malloc()</computeroutput> etc.)</para>
     </listitem>
     <listitem>
-     <para>Pthread operations and scheduling</para>
+     <para>Thread scheduling</para>
     </listitem>
     <listitem>
      <para>Signal handling</para>
@@ -177,7 +177,7 @@ interest?  Consider some existing tools:</para>
   <para><command>lackey</command>: does simple counting of
   various things: the number of calls to a particular function
   (<computeroutput>_dl_runtime_resolve()</computeroutput>); the
-  number of basic blocks, x86 instruction, UCode instructions
+  number of basic blocks, guest instructions, VEX instructions
   executed; the number of branches executed and the proportion of
   them which were taken.</para>
  </listitem>
@@ -281,28 +281,17 @@ other tools.</para>
 <title>How tools work</title>
 
 <para>Tools must define various functions for instrumenting
-programs that are called by Valgrind's core, yet they must be
-implemented in such a way that they can be written and compiled
-without touching Valgrind's core.  This is important, because one
-of our aims is to allow people to write and distribute their own
-tools that can be plugged into Valgrind's core easily.</para>
+programs that are called by Valgrind's core. They are then linked
+against the coregrind library
+(<computeroutput>libcoregrind.a</computeroutput>) that valgrind
+provides as well as the VEX library
+(<computeroutput>libvex.a</computeroutput>) that also comes with
+valgrind and provides the JIT engine.
 
-<para>This is achieved by packaging each tool into a separate
-shared object which is then loaded ahead of the core shared
-object <computeroutput>valgrind.so</computeroutput>, using the
-dynamic linker's <computeroutput>LD_PRELOAD</computeroutput>
-variable.  Any functions defined in the tool that share the name
-with a function defined in core (such as the instrumentation
-function <computeroutput>instrument()</computeroutput>)
-override the core's definition.  Thus the core can call the
-necessary tool functions.</para>
-
-<para>This magic is all done for you; the shared object used is
-chosen with the <computeroutput>--tool</computeroutput> option to
-the <computeroutput>valgrind</computeroutput> startup script.
-The default tool used is
-<computeroutput>memcheck</computeroutput>, Valgrind's original
-memory checker.</para>
+<para>Each tool is linked as a statically linked program and placed
+in the valgrind library directory from where valgrind will load it
+automatically when the <computeroutput>--tool</computeroutput> option
+is used to select it.</para>
 
 </sect2>
 
@@ -357,8 +346,8 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
   trying to understand this file, at least a little; you might
   have to do more complicated things with it later on.  In
   particular, the name of the
-  <computeroutput>vgtool_foobar_so_SOURCES</computeroutput>
-  variable determines the name of the tool's shared object, which
+  <computeroutput>foobar_SOURCES</computeroutput>
+  variable determines the name of the tool, which
   determines what name must be passed to the
   <computeroutput>--tool</computeroutput> option to use the
   tool.</para>
@@ -396,8 +385,7 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
   make install]]></programlisting>
 
    <para>It should automake, configure and compile without
-   errors, putting copies of the tool's shared object
-   <computeroutput>vgtool_foobar.so</computeroutput> in
+   errors, putting copies of the tool in
    <computeroutput>foobar/</computeroutput> and
    <computeroutput>inst/lib/valgrind/</computeroutput>.</para>
   </listitem>
@@ -458,7 +446,7 @@ core and a plugged-in tool are binary compatible.</para>
 
 <para>In addition, if a tool wants to use some of the optional
 services provided by the core, it may have to define other
-functions.</para>
+functions and tell the code about them.</para>
 
 </sect2>
 
@@ -509,9 +497,8 @@ to be notified about, using the functions
 <computeroutput>VG_(track_*)()</computeroutput>.  These include
 things such as blocks of memory being malloc'd, the stack pointer
 changing, a mutex being locked, etc.  If a tool wants to know
-about this, it should set the relevant pointer in the structure
-to point to a function, which will be called when that event
-happens.</para>
+about this, it should provide a pointer to a function, which will
+be called when that event happens.</para>
 
 <para>For example, if the tool want to be notified when a new
 block of memory is malloc'd, it should call
@@ -532,20 +519,15 @@ events" can be found in
 
 <para><computeroutput>instrument()</computeroutput> is the
 interesting one.  It allows you to instrument
-<emphasis>UCode</emphasis>, which is Valgrind's RISC-like
-intermediate language.  UCode is described in 
+<emphasis>VEX IR</emphasis>, which is Valgrind's RISC-like
+intermediate language.  VEX IR is described in 
 <xref linkend="mc-tech-docs.ucode"/>.</para>
 
-<para>The easiest way to instrument UCode is to insert calls to C
+<para>The easiest way to instrument VEX IR is to insert calls to C
 functions when interesting things happen.  See the tool "Lackey"
 (<filename>lackey/lk_main.c</filename>) for a simple example of
 this, or Cachegrind (<filename>cachegrind/cg_main.c</filename>)
 for a more complex example.</para>
-
-<para>A much more complicated way to instrument UCode, albeit one
-that might result in faster instrumented programs, is to extend
-UCode with new UCode instructions.  This is recommended for
-advanced Valgrind hackers only!  See Memcheck for an example.</para>
 
 </sect2>
 
@@ -576,7 +558,7 @@ all the types, macros, functions, etc. that a tool should
 a tool should need to
 <computeroutput>#include</computeroutput>.</para>
 
-<para>In particular, you probably shouldn't use anything from the
+<para>In particular, you can't use anything from the
 C library (there are deep reasons for this, trust us).  Valgrind
 provides an implementation of a reasonable subset of the C
 library, details of which are in
@@ -592,13 +574,9 @@ you going.  But ultimately, the tools distributed (Memcheck,
 Addrcheck, Cachegrind, Lackey, etc.) are probably the best
 documentation of all, for the moment.</para>
 
-<para>Note that the <computeroutput>VG_</computeroutput> and
-<computeroutput>TL_</computeroutput> macros are used heavily.
-These just prepend longer strings in front of names to avoid
-potential namespace clashes.  We strongly recommend using the
-<computeroutput>TL_</computeroutput> macro for any global
-functions and variables in your tool, or writing a similar
-macro.</para>
+<para>Note that the <computeroutput>VG_</computeroutput> macro is used
+heavily.  This just prepends a longer string in front of names to
+avoid potential namespace clashes.</para>
 
 </sect2>
 
@@ -672,9 +650,9 @@ need to get rid of this to extract useful tracebacks from GDB.</para>
 <sect3 id="writing-tools.ucode-probs">
 <title>UCode Instrumentation Problems</title>
 
-<para>If you are having problems with your UCode instrumentation,
+<para>If you are having problems with your VEX UIR instrumentation,
 it's likely that GDB won't be able to help at all.  In this case,
-Valgrind's <computeroutput>--trace-codegen</computeroutput>
+Valgrind's <computeroutput>--trace-flags</computeroutput>
 option is invaluable for observing the results of
 instrumentation.</para>
 
@@ -690,7 +668,7 @@ reached, using the <computeroutput>OINK</computeroutput> macro
 than using GDB.</para>
 
 <para>The other debugging command line options can be useful too
-(run <computeroutput>valgrind -h</computeroutput> for the
+(run <computeroutput>valgrind --help-debug</computeroutput> for the
 list).</para>
 
 </sect3>

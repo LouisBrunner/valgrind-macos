@@ -286,7 +286,7 @@ against the coregrind library
 (<computeroutput>libcoregrind.a</computeroutput>) that valgrind
 provides as well as the VEX library
 (<computeroutput>libvex.a</computeroutput>) that also comes with
-valgrind and provides the JIT engine.
+valgrind and provides the JIT engine.</para>
 
 <para>Each tool is linked as a statically linked program and placed
 in the valgrind library directory from where valgrind will load it

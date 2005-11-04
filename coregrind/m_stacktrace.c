@@ -124,6 +124,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
          ips[i++] = ip;
          if (debug)
             VG_(printf)("     ipsC[%d]=%08p\n", i-1, ips[i-1]);
+         ip = ip - 1;
          continue;
       }
 
@@ -145,6 +146,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
          ips[i++] = ip;
          if (debug)
             VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
+         ip = ip - 1;
          continue;
       }
 

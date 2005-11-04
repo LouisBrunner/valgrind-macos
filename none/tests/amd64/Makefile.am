@@ -11,10 +11,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	jrcxz.stderr.exp jrcxz.stdout.exp jrcxz.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
-        smc1.stderr.exp smc1.stdout.exp smc1.vgtest
+        smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
+        shrld.stderr.exp shrld.stdout.exp shrld.vgtest
+
 
 check_PROGRAMS = \
-	faultstatus $(INSN_TESTS) looper jrcxz smc1
+	faultstatus $(INSN_TESTS) looper jrcxz smc1 shrld
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)

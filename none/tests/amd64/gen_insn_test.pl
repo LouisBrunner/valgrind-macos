@@ -68,27 +68,27 @@ our %RegTypes = (
                  dl => "r8", dh => "r8", dx => "r16", edx => "r32", rdx => "r64"
                  );
 
-our @IntRegs = (
-                { r8 => "al", r16 => "ax", r32 => "eax", r64 => "rax" },
-                { r8 => "bl", r16 => "bx", r32 => "ebx", r64 => "rbx" },
-                { r8 => "cl", r16 => "cx", r32 => "ecx", r64 => "rcx" },
-                { r8 => "dl", r16 => "dx", r32 => "edx", r64 => "rdx" },
-                { r8 => "ah" },
-                { r8 => "bh" },
-                { r8 => "ch" },
-                { r8 => "dh" }
-                );
-
 #our @IntRegs = (
-#                { r8 => "r8b", r16 => "r8w", r32 => "r8d", r64 => "r8" },
-#                { r8 => "r9b", r16 => "r9w", r32 => "r9d", r64 => "r9" },
-#                { r8 => "r10b", r16 => "r10w", r32 => "r10d", r64 => "r10" },
-#                { r8 => "r11b", r16 => "r11w", r32 => "r11d", r64 => "r11" },
+#                { r8 => "al", r16 => "ax", r32 => "eax", r64 => "rax" },
+#                { r8 => "bl", r16 => "bx", r32 => "ebx", r64 => "rbx" },
+#                { r8 => "cl", r16 => "cx", r32 => "ecx", r64 => "rcx" },
+#                { r8 => "dl", r16 => "dx", r32 => "edx", r64 => "rdx" },
 #                { r8 => "ah" },
 #                { r8 => "bh" },
 #                { r8 => "ch" },
 #                { r8 => "dh" }
 #                );
+
+our @IntRegs = (
+                { r8 => "r8b", r16 => "r8w", r32 => "r8d", r64 => "r8" },
+                { r8 => "r9b", r16 => "r9w", r32 => "r9d", r64 => "r9" },
+                { r8 => "r10b", r16 => "r10w", r32 => "r10d", r64 => "r10" },
+                { r8 => "r11b", r16 => "r11w", r32 => "r11d", r64 => "r11" },
+                { r8 => "ah" },
+                { r8 => "bh" },
+                { r8 => "ch" },
+                { r8 => "dh" }
+                );
 
 print <<EOF;
 #include <math.h>
@@ -881,7 +881,10 @@ while (<>)
     {
         if ($arg->{register} && $arg->{type} ne "st")
         {
-            print qq|$prefix\"$arg->{register}\"|;
+            my $register = $arg->{register};
+
+            $register =~ s/^(r[0-9]+)[bwd]$/$1/;
+            print qq|$prefix\"$register\"|;
             $prefix = ", ";
         }
     }

@@ -554,6 +554,10 @@ typedef
       Iop_MulHi16Ux8, Iop_MulHi32Ux4,
       Iop_MulHi16Sx8, Iop_MulHi32Sx4,
 
+      /* (widening signed/unsigned of even lanes) */
+      Iop_MullEven8Ux16, Iop_MullEven16Ux8,
+      Iop_MullEven8Sx16, Iop_MullEven16Sx8,
+
       /* AVERAGING: note: (arg1 + arg2 + 1) >>u 1 */
       Iop_Avg8Ux16, Iop_Avg16Ux8, Iop_Avg32Ux4,
       Iop_Avg8Sx16, Iop_Avg16Sx8, Iop_Avg32Sx4,

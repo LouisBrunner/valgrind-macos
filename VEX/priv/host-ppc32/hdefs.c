@@ -2910,6 +2910,11 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       case Pav_QSUBU:    opc2 = 1536; break; // vsububs
       case Pav_QSUBS:    opc2 = 1792; break; // vsubsbs
 
+      case Pav_OMULU:   opc2 =    8; break; // vmuloub
+      case Pav_OMULS:   opc2 =  264; break; // vmulosb
+      case Pav_EMULU:   opc2 =  520; break; // vmuleub
+      case Pav_EMULS:   opc2 =  776; break; // vmulesb
+
       case Pav_AVGU:     opc2 = 1026; break; // vavgub
       case Pav_AVGS:     opc2 = 1282; break; // vavgsb
       case Pav_MAXU:     opc2 =    2; break; // vmaxub
@@ -2951,10 +2956,10 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       case Pav_QSUBU:   opc2 = 1600; break; // vsubuhs
       case Pav_QSUBS:   opc2 = 1856; break; // vsubshs
 
-      case Pav_OMULU:   opc2 =    8; break; // vmuloub
-      case Pav_OMULS:   opc2 =  264; break; // vmulosb
-      case Pav_EMULU:   opc2 =  520; break; // vmuleub
-      case Pav_EMULS:   opc2 =  776; break; // vmulesb
+      case Pav_OMULU:   opc2 =   72; break; // vmulouh
+      case Pav_OMULS:   opc2 =  328; break; // vmulosh
+      case Pav_EMULU:   opc2 =  584; break; // vmuleuh
+      case Pav_EMULS:   opc2 =  840; break; // vmulesh
 
       case Pav_AVGU:    opc2 = 1090; break; // vavguh
       case Pav_AVGS:    opc2 = 1346; break; // vavgsh
@@ -3002,11 +3007,6 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       case Pav_SUBU:    opc2 = 1152; break; // vsubuwm
       case Pav_QSUBU:   opc2 = 1664; break; // vsubuws
       case Pav_QSUBS:   opc2 = 1920; break; // vsubsws
-
-      case Pav_OMULU:   opc2 =   72; break; // vmulouh
-      case Pav_OMULS:   opc2 =  328; break; // vmulosh
-      case Pav_EMULU:   opc2 =  584; break; // vmuleuh
-      case Pav_EMULS:   opc2 =  840; break; // vmulesh
 
       case Pav_AVGU:    opc2 = 1154; break; // vavguw
       case Pav_AVGS:    opc2 = 1410; break; // vavgsw

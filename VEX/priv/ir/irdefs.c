@@ -444,6 +444,11 @@ void ppIROp ( IROp op )
       case Iop_MulHi16Sx8: vex_printf("MulHi16Sx8"); return;
       case Iop_MulHi32Sx4: vex_printf("MulHi32Sx4"); return;
 
+      case Iop_MullEven8Ux16: vex_printf("MullEven8Ux16"); return;
+      case Iop_MullEven16Ux8: vex_printf("MullEven16Ux8"); return;
+      case Iop_MullEven8Sx16: vex_printf("MullEven8Sx16"); return;
+      case Iop_MullEven16Sx8: vex_printf("MullEven16Sx8"); return;
+
       case Iop_Avg8Ux16: vex_printf("Avg8Ux16"); return;
       case Iop_Avg16Ux8: vex_printf("Avg16Ux8"); return;
       case Iop_Avg32Ux4: vex_printf("Avg32Ux4"); return;
@@ -1556,6 +1561,8 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_MulLo16Sx8: case Iop_MulLo32Sx4:
       case Iop_MulHi16Ux8: case Iop_MulHi32Ux4: 
       case Iop_MulHi16Sx8: case Iop_MulHi32Sx4: 
+      case Iop_MullEven8Ux16: case Iop_MullEven16Ux8:
+      case Iop_MullEven8Sx16: case Iop_MullEven16Sx8:
       case Iop_Avg8Ux16: case Iop_Avg16Ux8: case Iop_Avg32Ux4:
       case Iop_Avg8Sx16: case Iop_Avg16Sx8: case Iop_Avg32Sx4:
       case Iop_Max8Sx16: case Iop_Max16Sx8: case Iop_Max32Sx4:

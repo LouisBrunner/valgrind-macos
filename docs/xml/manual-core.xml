@@ -192,19 +192,19 @@ places:</para>
    <computeroutput>--log-file=filename</computeroutput>.  Note
    carefully that the commentary is <command>not</command>
    written to the file you specify, but instead to one called
-   <computeroutput>filename.pid12345</computeroutput>, if for
+   <computeroutput>filename.12345</computeroutput>, if for
    example the pid of the traced process is 12345.  This is
    helpful when valgrinding a whole tree of processes at once,
    since it means that each process writes to its own logfile,
    rather than the result being jumbled up in one big
-   logfile.  If <computeroutput>filename.pid12345</computeroutput> already
+   logfile.  If <computeroutput>filename.12345</computeroutput> already
    exists, then it will name new files
-   <computeroutput>filename.pid12345.1</computeroutput> and so on.
+   <computeroutput>filename.12345.1</computeroutput> and so on.
    </para>
 
    <para>If you want to specify precisely the file name to use,
    without the trailing
-   <computeroutput>.pid12345</computeroutput>part, you can instead use
+   <computeroutput>.12345</computeroutput>part, you can instead use
    <computeroutput>--log-file-exactly=filename</computeroutput>.
    </para>
 
@@ -665,7 +665,7 @@ categories.</para>
     <para>Specifies that Valgrind should send all of its messages
     to the specified file.  In fact, the file name used is
     created by concatenating the text
-    <computeroutput>filename</computeroutput>, ".pid" and the
+    <computeroutput>filename</computeroutput>, "." and the
     process ID, so as to create a file per process.  The
     specified file name may not be the empty string.</para>
    </listitem>
@@ -673,7 +673,7 @@ categories.</para>
    <listitem id="log2file">
     <para><computeroutput>--log-file-exactly=&lt;filename&gt;</computeroutput></para>
     <para>Just like <computeroutput>--log-file</computeroutput>, but
-    the ".pid" suffix is not added.  If you trace multiple processes
+    the "." suffix is not added.  If you trace multiple processes
     with Valgrind when using this option the log file may get all messed
     up.
     </para>

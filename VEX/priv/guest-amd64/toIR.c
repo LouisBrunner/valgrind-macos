@@ -6497,7 +6497,9 @@ ULong dis_SHLRD_Gv_Ev ( Prefix pfx,
           shift_amt_txt,
           nameIRegG(sz, pfx, modrm), nameIRegE(sz, pfx, modrm));
    } else {
-      addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
+      addr = disAMode ( &len, pfx, delta, dis_buf, 
+                        /* # bytes following amode */
+                        amt_is_literal ? 1 : 0 );
       delta += len;
       assign( esrc, loadLE(ty, mkexpr(addr)) );
       DIP("sh%cd%c %s, %s, %s\n", 
@@ -13363,15 +13365,15 @@ DisResult disInstr_AMD64_WRK (
                     "%cl", True /* left */ );
          break;
 
-//..       case 0xAC: /* SHRDv imm8,Gv,Ev */
-//..          modrm = getUChar(delta);
-//..          d32   = delta + lengthAMode(delta);
-//..          vex_sprintf(dis_buf, "$%d", delta);
-//..          delta = dis_SHLRD_Gv_Ev ( 
-//..                     sorb, delta, modrm, sz, 
-//..                     mkU8(getUChar(d32)), True, /* literal */
-//..                     dis_buf, False );
-//..          break;
+      case 0xAC: /* SHRDv imm8,Gv,Ev */
+         modrm = getUChar(delta);
+         d64   = delta + lengthAMode(pfx, delta);
+         vex_sprintf(dis_buf, "$%d", (Int)getUChar(d64));
+         delta = dis_SHLRD_Gv_Ev ( 
+                    pfx, delta, modrm, sz, 
+                    mkU8(getUChar(d64)), True, /* literal */
+                    dis_buf, False /* right */ );
+         break;
       case 0xAD: /* SHRDv %cl,Gv,Ev */
          modrm = getUChar(delta);
          delta = dis_SHLRD_Gv_Ev ( 

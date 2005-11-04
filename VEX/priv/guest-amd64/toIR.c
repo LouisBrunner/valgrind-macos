@@ -93,6 +93,35 @@
 //..    should ever become relevant).
 */
 
+/* Notes re address size overrides (0x67).
+
+   According to the AMD documentation (24594 Rev 3.09, Sept 2003,
+   "AMD64 Architecture Programmer's Manual Volume 3: General-Purpose
+   and System Instructions"), Section 1.2.3 ("Address-Size Override
+   Prefix"):
+
+   0x67 applies to all explicit memory references, causing the top
+   32 bits of the effective address to become zero.
+
+   0x67 has no effect on stack references (push/pop); these always
+   use a 64-bit address.
+
+   0x67 changes the interpretation of instructions which implicitly
+   reference RCX/RSI/RDI, so that in fact ECX/ESI/EDI are used
+   instead.  These are:
+
+      cmp{s,sb,sw,sd,sq}
+      in{s,sb,sw,sd}
+      jcxz, jecxz, jrcxz
+      lod{s,sb,sw,sd,sq}
+      loop{,e,bz,be,z}
+      mov{s,sb,sw,sd,sq}
+      out{s,sb,sw,sd}
+      rep{,e,ne,nz}
+      sca{s,sb,sw,sd,sq}
+      sto{s,sb,sw,sd,sq}
+      xlat{,b} */
+
 /* Translates AMD64 code to IR. */
 
 #include "libvex_basictypes.h"
@@ -1900,15 +1929,18 @@ HChar* sorbTxt ( Prefix pfx )
 
 /* 'virtual' is an IRExpr* holding a virtual address.  Convert it to a
    linear address by adding any required segment override as indicated
-   by sorb. */
+   by sorb, and also dealing with any address size override
+   present. */
 static
-IRExpr* handleSegOverride ( Prefix pfx, IRExpr* virtual )
+IRExpr* handleAddrOverrides ( Prefix pfx, IRExpr* virtual )
 {
+   /* --- segment overrides --- */
+
    if (pfx & PFX_FS) {
       /* Note that this is a linux-kernel specific hack that relies
          on the assumption that %fs is always zero. */
       /* return virtual + guest_FS_ZERO. */
-      return binop(Iop_Add64, virtual, IRExpr_Get(OFFB_FS_ZERO, Ity_I64));
+      virtual = binop(Iop_Add64, virtual, IRExpr_Get(OFFB_FS_ZERO, Ity_I64));
    }
 
    if (pfx & PFX_GS) {
@@ -1916,6 +1948,11 @@ IRExpr* handleSegOverride ( Prefix pfx, IRExpr* virtual )
    }
 
    /* cs, ds, es and ss are simply ignored in 64-bit mode. */
+
+   /* --- address size override --- */
+   if (haveASO(pfx))
+      virtual = unop(Iop_32Uto64, unop(Iop_64to32, virtual));
+
    return virtual;
 }
 
@@ -1933,7 +1970,7 @@ IRExpr* handleSegOverride ( Prefix pfx, IRExpr* virtual )
 //..       case 0x26: sreg = R_ES; break;
 //..       case 0x64: sreg = R_FS; break;
 //..       case 0x65: sreg = R_GS; break;
-//..       default: vpanic("handleSegOverride(x86,guest)");
+//..       default: vpanic("handleAddrOverrides(x86,guest)");
 //..    }
 //.. 
 //..    hWordTy = sizeof(HWord)==4 ? Ity_I32 : Ity_I64;
@@ -2033,7 +2070,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
            DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegRexB(8,pfx,rm));
            *len = 1;
            return disAMode_copy2tmp(
-                  handleSegOverride(pfx, getIRegRexB(8,pfx,rm)));
+                  handleAddrOverrides(pfx, getIRegRexB(8,pfx,rm)));
          }
 
       /* REX.B==0: d8(%rax) ... d8(%rdi), not including d8(%rsp) 
@@ -2050,7 +2087,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
            }
            *len = 2;
            return disAMode_copy2tmp(
-                  handleSegOverride(pfx,
+                  handleAddrOverrides(pfx,
                      binop(Iop_Add64,getIRegRexB(8,pfx,rm),mkU64(d))));
          }
 
@@ -2064,7 +2101,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
            DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegRexB(8,pfx,rm));
            *len = 5;
            return disAMode_copy2tmp(
-                  handleSegOverride(pfx,
+                  handleAddrOverrides(pfx,
                      binop(Iop_Add64,getIRegRexB(8,pfx,rm),mkU64(d))));
          }
 
@@ -2089,7 +2126,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
            guest_RIP_next_assumed = guest_RIP_bbstart 
                                     + delta+4 + extra_bytes;
            return disAMode_copy2tmp( 
-                     handleSegOverride(pfx, 
+                     handleAddrOverrides(pfx, 
                         binop(Iop_Add64, mkU64(guest_RIP_next_assumed), 
                                          mkU64(d))));
          }
@@ -2133,7 +2170,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
             *len = 2;
             return
                disAMode_copy2tmp( 
-               handleSegOverride(pfx,
+               handleAddrOverrides(pfx,
                   binop(Iop_Add64, 
                         getIRegRexB(8,pfx,base_r),
                         binop(Iop_Shl64, getIReg64rexX(pfx,index_r),
@@ -2147,7 +2184,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
             *len = 6;
             return
                disAMode_copy2tmp(
-               handleSegOverride(pfx, 
+               handleAddrOverrides(pfx, 
                   binop(Iop_Add64,
                         binop(Iop_Shl64, getIReg64rexX(pfx,index_r), 
                                          mkU8(scale)),
@@ -2158,7 +2195,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
             DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegRexB(8,pfx,base_r));
             *len = 2;
             return disAMode_copy2tmp(
-                   handleSegOverride(pfx, getIRegRexB(8,pfx,base_r)));
+                   handleAddrOverrides(pfx, getIRegRexB(8,pfx,base_r)));
          }
 
          if (index_is_SP && base_is_BPor13) {
@@ -2166,7 +2203,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
             DIS(buf, "%s%lld", sorbTxt(pfx), d);
             *len = 6;
             return disAMode_copy2tmp(
-                   handleSegOverride(pfx, mkU64(d)));
+                   handleAddrOverrides(pfx, mkU64(d)));
          }
 
          vassert(0);
@@ -2193,7 +2230,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
                                    d, nameIRegRexB(8,pfx,base_r));
             *len = 3;
             return disAMode_copy2tmp(
-                   handleSegOverride(pfx, 
+                   handleAddrOverrides(pfx, 
                       binop(Iop_Add64, getIRegRexB(8,pfx,base_r), mkU64(d)) ));
          } else {
             if (scale == 0) {
@@ -2208,7 +2245,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
             *len = 3;
             return 
                 disAMode_copy2tmp(
-                handleSegOverride(pfx,
+                handleAddrOverrides(pfx,
                   binop(Iop_Add64,
                         binop(Iop_Add64, 
                               getIRegRexB(8,pfx,base_r), 
@@ -2240,7 +2277,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
                                    d, nameIRegRexB(8,pfx,base_r));
             *len = 6;
             return disAMode_copy2tmp(
-                   handleSegOverride(pfx, 
+                   handleAddrOverrides(pfx, 
                       binop(Iop_Add64, getIRegRexB(8,pfx,base_r), mkU64(d)) ));
          } else {
             if (scale == 0) {
@@ -2255,7 +2292,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
             *len = 6;
             return 
                 disAMode_copy2tmp(
-                handleSegOverride(pfx,
+                handleAddrOverrides(pfx,
                   binop(Iop_Add64,
                         binop(Iop_Add64, 
                               getIRegRexB(8,pfx,base_r), 
@@ -7870,10 +7907,8 @@ DisResult disInstr_AMD64_WRK (
    }
 
    not_a_prefix:
-   /* Dump invalid combinations */
-   if (pfx & PFX_ASO) 
-      goto decode_failure; /* don't support address-size override */
 
+   /* Dump invalid combinations */
    n = 0;
    if (pfx & PFX_F2) n++;
    if (pfx & PFX_F3) n++;
@@ -7889,6 +7924,9 @@ DisResult disInstr_AMD64_WRK (
    if (pfx & PFX_SS) n++;
    if (n > 1) 
       goto decode_failure; /* multiple seg overrides == illegal */
+
+   if (pfx & PFX_GS)
+      goto decode_failure; /* legal, but unsupported right now */
 
    /* Set up sz. */
    sz = 4;
@@ -11728,7 +11766,7 @@ DisResult disInstr_AMD64_WRK (
       delta += 8;
       ty = szToITy(sz);
       addr = newTemp(Ity_I64);
-      assign( addr, handleSegOverride(pfx, mkU64(d64)) );
+      assign( addr, handleAddrOverrides(pfx, mkU64(d64)) );
       putIRegRAX(sz, loadLE( ty, mkexpr(addr) ));
       DIP("mov%c %s0x%llx, %s\n", nameISize(sz), 
                                   sorbTxt(pfx), d64,
@@ -11746,7 +11784,7 @@ DisResult disInstr_AMD64_WRK (
       delta += 8;
       ty = szToITy(sz);
       addr = newTemp(Ity_I64);
-      assign( addr, handleSegOverride(pfx, mkU64(d64)) );
+      assign( addr, handleAddrOverrides(pfx, mkU64(d64)) );
       storeLE( mkexpr(addr), getIRegRAX(sz) );
       DIP("mov%c %s, %s0x%llx\n", nameISize(sz), nameIRegRAX(sz),
                                   sorbTxt(pfx), d64);
@@ -12475,6 +12513,8 @@ DisResult disInstr_AMD64_WRK (
    case 0xAE:
    case 0xAF:
       /* F2 AE/AF: repne scasb/repne scas{w,l,q} */
+      if (haveASO(pfx)) 
+         goto decode_failure;
       if (haveF2(pfx) && !haveF3(pfx)) {
          if (opc == 0xAE)
             sz = 1;
@@ -12497,6 +12537,8 @@ DisResult disInstr_AMD64_WRK (
    case 0xA6:
    case 0xA7:
       /* F3 A6/A7: repe cmps/rep cmps{w,l,q} */
+      if (haveASO(pfx)) 
+         goto decode_failure;
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xA6)
             sz = 1;
@@ -12512,6 +12554,8 @@ DisResult disInstr_AMD64_WRK (
    case 0xAA:
    case 0xAB:
       /* F3 AA/AB: rep stosb/rep stos{w,l,q} */
+      if (haveASO(pfx)) 
+         goto decode_failure;
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xAA)
             sz = 1;
@@ -12534,6 +12578,8 @@ DisResult disInstr_AMD64_WRK (
    case 0xA4:
    case 0xA5:
       /* F3 A4: rep movsb */
+      if (haveASO(pfx)) 
+         goto decode_failure;
       if (haveF3(pfx) && !haveF2(pfx)) {
          if (opc == 0xA4)
             sz = 1;
@@ -12625,7 +12671,7 @@ DisResult disInstr_AMD64_WRK (
 //.. //--    case 0xD7: /* XLAT */
 //.. //--       t1 = newTemp(cb); t2 = newTemp(cb);
 //.. //--       uInstr2(cb, GET, sz, ArchReg, R_EBX, TempReg, t1); /* get eBX */
-//.. //--       handleSegOverride( cb, sorb, t1 );               /* make t1 DS:eBX */
+//.. //--       handleAddrOverrides( cb, sorb, t1 );               /* make t1 DS:eBX */
 //.. //--       uInstr2(cb, GET, 1, ArchReg, R_AL, TempReg, t2); /* get AL */
 //.. //--       /* Widen %AL to 32 bits, so it's all defined when we add it. */
 //.. //--       uInstr1(cb, WIDEN, 4, TempReg, t2);

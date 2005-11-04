@@ -23,9 +23,7 @@ profiling.</para>
 quite a few things about Valgrind, it is much easier than
 instrumenting a program from scratch yourself.</para>
 
-<para>[Nb: What follows is slightly out of date.  In particular,
-there are various references to a file include/tool.h which has been
-split into a number of header files in include/.]</para>
+<para>[Nb: What follows is slightly out of date.]</para>
 
 </sect2>
 
@@ -572,25 +570,25 @@ quite complex and not brilliantly documented.  Here are some
 important points, but there are undoubtedly many others that I
 should note but haven't thought of.</para>
 
-<para>The file <filename>include/tool.h</filename> contains
+<para>The files <filename>include/pub_tool_*.h</filename> contain
 all the types, macros, functions, etc. that a tool should
-(hopefully) need, and is the only <filename>.h</filename> file a
-tool should need to
+(hopefully) need, and are the only <filename>.h</filename> files
+a tool should need to
 <computeroutput>#include</computeroutput>.</para>
 
 <para>In particular, you probably shouldn't use anything from the
 C library (there are deep reasons for this, trust us).  Valgrind
 provides an implementation of a reasonable subset of the C
 library, details of which are in
-<filename>tool.h</filename>.</para>
+<filename>pub_tool_libc*.h</filename>.</para>
 
 <para>Similarly, when writing a tool, you shouldn't need to look
 at any of the code in Valgrind's core.  Although it might be
 useful sometimes to help understand something.</para>
 
-<para><filename>tool.h</filename> has a reasonable amount of
-documentation in it that should hopefully be enough to get you
-going.  But ultimately, the tools distributed (Memcheck,
+<para>The <filename>pub_tool_*.h</filename> files have a reasonable
+amount of documentation in it that should hopefully be enough to get
+you going.  But ultimately, the tools distributed (Memcheck,
 Addrcheck, Cachegrind, Lackey, etc.) are probably the best
 documentation of all, for the moment.</para>
 

@@ -77,7 +77,7 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
 void VG_(replacement_malloc_print_usage)(void)
 {
    VG_(printf)(
-"    --alignment=<number>      set minimum alignment of allocations [%d]\n",
+"    --alignment=<number>             set minimum alignment of allocations [%d]\n",
    VG_MIN_MALLOC_SZB
    );
 }

@@ -872,7 +872,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
-"    --log-file=<file>         log messages to <file>.pid<pid>\n"
+"    --log-file=<file>         log messages to <file>.<pid>\n"
 "    --log-file-exactly=<file> log messages to <file>\n"
 "    --log-file-qualifier=<VAR> incorporate $VAR in logfile name [none]\n"
 "    --log-socket=ipaddr:port  log messages to socket ipaddr:port\n"
@@ -1148,11 +1148,6 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(clo_log_name) = &arg[11];
       }
 
-      else if (VG_CLO_STREQN(11, arg, "--log-file=")) {
-         log_to            = VgLogTo_File;
-         VG_(clo_log_name) = &arg[11];
-      }
-
       else if (VG_CLO_STREQN(21, arg, "--log-file-qualifier=")) {
          VG_(clo_log_file_qualifier) = &arg[21];
       }
@@ -1372,7 +1367,7 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
                // was some other file error, we give up.
 	       if (sres.val != VKI_EEXIST) {
 		  VG_(message)(Vg_UserMsg, 
-			       "Can't create/open log file '%s.pid%d'; giving up!", 
+			       "Can't create/open log file '%s.%d'; giving up!", 
 			       VG_(clo_log_name), pid);
 		  VG_(bad_option)(
 		     "--log-file=<file> (didn't work out for some reason.)");

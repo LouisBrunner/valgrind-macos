@@ -6396,128 +6396,217 @@ ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, Long delta )
 }
 
 
-//.. /*------------------------------------------------------------*/
-//.. /*--- More misc arithmetic and other obscure insns.        ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. /* Double length left and right shifts.  Apparently only required in
-//..    v-size (no b- variant). */
-//.. static
-//.. UInt dis_SHLRD_Gv_Ev ( UChar sorb,
-//..                        Long delta, UChar modrm,
-//..                        Int sz,
-//..                        IRExpr* shift_amt,
-//..                        Bool amt_is_literal,
-//..                        Char* shift_amt_txt,
-//..                        Bool left_shift )
-//.. {
-//..    /* shift_amt :: Ity_I8 is the amount to shift.  shift_amt_txt is used
-//..       for printing it.   And eip on entry points at the modrm byte. */
-//..    Int len;
-//..    HChar dis_buf[50];
-//.. 
-//..    IRType ty       = szToITy(sz);
-//..    IRTemp gsrc     = newTemp(ty);
-//..    IRTemp esrc     = newTemp(ty);
-//..    IRTemp addr     = IRTemp_INVALID;
-//..    IRTemp tmpSH    = newTemp(Ity_I8);
-//..    IRTemp tmpL     = IRTemp_INVALID;
-//..    IRTemp tmpRes   = IRTemp_INVALID;
-//..    IRTemp tmpSubSh = IRTemp_INVALID;
-//..    IROp   mkpair;
-//..    IROp   getres;
-//..    IROp   shift;
-//..    IRExpr* mask = NULL;
-//.. 
-//..    vassert(sz == 2 || sz == 4);
-//.. 
-//..    /* The E-part is the destination; this is shifted.  The G-part
-//..       supplies bits to be shifted into the E-part, but is not
-//..       changed.  
-//.. 
-//..       If shifting left, form a double-length word with E at the top
-//..       and G at the bottom, and shift this left.  The result is then in
-//..       the high part.
-//.. 
-//..       If shifting right, form a double-length word with G at the top
-//..       and E at the bottom, and shift this right.  The result is then
-//..       at the bottom.  */
-//.. 
-//..    /* Fetch the operands. */
-//.. 
-//..    assign( gsrc, getIReg(sz, gregOfRM(modrm)) );
-//.. 
-//..    if (epartIsReg(modrm)) {
-//..       delta++;
-//..       assign( esrc, getIReg(sz, eregOfRM(modrm)) );
-//..       DIP("sh%cd%c %s, %s, %s\n",
-//..           ( left_shift ? 'l' : 'r' ), nameISize(sz), 
-//..           shift_amt_txt,
-//..           nameIReg(sz, gregOfRM(modrm)), nameIReg(sz, eregOfRM(modrm)));
-//..    } else {
-//..       addr = disAMode ( &len, sorb, delta, dis_buf );
-//..       delta += len;
-//..       assign( esrc, loadLE(ty, mkexpr(addr)) );
-//..       DIP("sh%cd%c %s, %s, %s\n", 
-//..           ( left_shift ? 'l' : 'r' ), nameISize(sz), 
-//..           shift_amt_txt,
-//..           nameIReg(sz, gregOfRM(modrm)), dis_buf);
-//..    }
-//.. 
-//..    /* Round up the relevant primops. */
-//.. 
-//..    if (sz == 4) {
-//..       tmpL     = newTemp(Ity_I64);
-//..       tmpRes   = newTemp(Ity_I32);
-//..       tmpSubSh = newTemp(Ity_I32);
-//..       mkpair   = Iop_32HLto64;
-//..       getres   = left_shift ? Iop_64HIto32 : Iop_64to32;
-//..       shift    = left_shift ? Iop_Shl64 : Iop_Shr64;
-//..       mask     = mkU8(31);
-//..    } else {
-//..       /* sz == 2 */
-//..       tmpL     = newTemp(Ity_I32);
-//..       tmpRes   = newTemp(Ity_I16);
-//..       tmpSubSh = newTemp(Ity_I16);
-//..       mkpair   = Iop_16HLto32;
-//..       getres   = left_shift ? Iop_32HIto16 : Iop_32to16;
-//..       shift    = left_shift ? Iop_Shl32 : Iop_Shr32;
-//..       mask     = mkU8(15);
-//..    }
-//.. 
-//..    /* Do the shift, calculate the subshift value, and set 
-//..       the flag thunk. */
-//.. 
-//..    assign( tmpSH, binop(Iop_And8, shift_amt, mask) );
-//.. 
-//..    if (left_shift)
-//..       assign( tmpL, binop(mkpair, mkexpr(esrc), mkexpr(gsrc)) );
-//..    else
-//..       assign( tmpL, binop(mkpair, mkexpr(gsrc), mkexpr(esrc)) );
-//.. 
-//..    assign( tmpRes, unop(getres, binop(shift, mkexpr(tmpL), mkexpr(tmpSH)) ) );
-//..    assign( tmpSubSh, 
-//..            unop(getres, 
-//..                 binop(shift, 
-//..                       mkexpr(tmpL), 
-//..                       binop(Iop_And8, 
-//..                             binop(Iop_Sub8, mkexpr(tmpSH), mkU8(1) ),
-//..                             mask))) );
-//.. 
-//..    setFlags_DEP1_DEP2_shift ( left_shift ? Iop_Shl32 : Iop_Sar32,
-//..                               tmpRes, tmpSubSh, ty, tmpSH );
-//.. 
-//..    /* Put result back. */
-//.. 
-//..    if (epartIsReg(modrm)) {
-//..       putIReg(sz, eregOfRM(modrm), mkexpr(tmpRes));
-//..    } else {
-//..       storeLE( mkexpr(addr), mkexpr(tmpRes) );
-//..    }
-//.. 
-//..    if (amt_is_literal) delta++;
-//..    return delta;
-//.. }
+/*------------------------------------------------------------*/
+/*--- More misc arithmetic and other obscure insns.        ---*/
+/*------------------------------------------------------------*/
+
+/* Generate base << amt with vacated places filled with stuff
+   from xtra.  amt guaranteed in 0 .. 63. */
+static 
+IRExpr* shiftL64_with_extras ( IRTemp base, IRTemp xtra, IRTemp amt )
+{
+   /* if   amt == 0 
+      then base
+      else (base << amt) | (xtra >>u (64-amt))
+   */
+   return
+      IRExpr_Mux0X( 
+         mkexpr(amt), 
+         mkexpr(base),
+         binop(Iop_Or64, 
+               binop(Iop_Shl64, mkexpr(base), mkexpr(amt)),
+               binop(Iop_Shr64, mkexpr(xtra), 
+                                binop(Iop_Sub8, mkU8(64), mkexpr(amt)))
+         )
+      );
+}
+
+/* Generate base >>u amt with vacated places filled with stuff
+   from xtra.  amt guaranteed in 0 .. 63. */
+static 
+IRExpr* shiftR64_with_extras ( IRTemp xtra, IRTemp base, IRTemp amt )
+{
+   /* if   amt == 0 
+      then base
+      else (base >>u amt) | (xtra << (64-amt))
+   */
+   return
+      IRExpr_Mux0X( 
+         mkexpr(amt), 
+         mkexpr(base),
+         binop(Iop_Or64, 
+               binop(Iop_Shr64, mkexpr(base), mkexpr(amt)),
+               binop(Iop_Shl64, mkexpr(xtra), 
+                                binop(Iop_Sub8, mkU8(64), mkexpr(amt)))
+         )
+      );
+}
+
+/* Double length left and right shifts.  Apparently only required in
+   v-size (no b- variant). */
+static
+ULong dis_SHLRD_Gv_Ev ( Prefix pfx,
+                        Long delta, UChar modrm,
+                        Int sz,
+                        IRExpr* shift_amt,
+                        Bool amt_is_literal,
+                        Char* shift_amt_txt,
+                        Bool left_shift )
+{
+   /* shift_amt :: Ity_I8 is the amount to shift.  shift_amt_txt is used
+      for printing it.   And eip on entry points at the modrm byte. */
+   Int len;
+   HChar dis_buf[50];
+
+   IRType ty     = szToITy(sz);
+   IRTemp gsrc   = newTemp(ty);
+   IRTemp esrc   = newTemp(ty);
+   IRTemp addr   = IRTemp_INVALID;
+   IRTemp tmpSH  = newTemp(Ity_I8);
+   IRTemp tmpSS  = newTemp(Ity_I8);
+   IRTemp tmp64  = IRTemp_INVALID;
+   IRTemp res64  = IRTemp_INVALID;
+   IRTemp rss64  = IRTemp_INVALID;
+   IRTemp resTy  = IRTemp_INVALID;
+   IRTemp rssTy  = IRTemp_INVALID;
+   Int    mask   = sz==8 ? 63 : 31;
+
+   vassert(sz == 2 || sz == 4 || sz == 8);
+
+   /* The E-part is the destination; this is shifted.  The G-part
+      supplies bits to be shifted into the E-part, but is not
+      changed.  
+
+      If shifting left, form a double-length word with E at the top
+      and G at the bottom, and shift this left.  The result is then in
+      the high part.
+
+      If shifting right, form a double-length word with G at the top
+      and E at the bottom, and shift this right.  The result is then
+      at the bottom.  */
+
+   /* Fetch the operands. */
+
+   assign( gsrc, getIRegG(sz, pfx, modrm) );
+
+   if (epartIsReg(modrm)) {
+      delta++;
+      assign( esrc, getIRegE(sz, pfx, modrm) );
+      DIP("sh%cd%c %s, %s, %s\n",
+          ( left_shift ? 'l' : 'r' ), nameISize(sz), 
+          shift_amt_txt,
+          nameIRegG(sz, pfx, modrm), nameIRegE(sz, pfx, modrm));
+   } else {
+      addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
+      delta += len;
+      assign( esrc, loadLE(ty, mkexpr(addr)) );
+      DIP("sh%cd%c %s, %s, %s\n", 
+          ( left_shift ? 'l' : 'r' ), nameISize(sz), 
+          shift_amt_txt,
+          nameIRegG(sz, pfx, modrm), dis_buf);
+   }
+
+   /* Calculate the masked shift amount (tmpSH), the masked subshift
+      amount (tmpSS), the shifted value (res64) and the subshifted
+      value (rss64). */
+
+   assign( tmpSH, binop(Iop_And8, shift_amt, mkU8(mask)) );
+   assign( tmpSS, binop(Iop_And8, 
+                        binop(Iop_Sub8, mkexpr(tmpSH), mkU8(1) ),
+                        mkU8(mask)));
+
+   tmp64 = newTemp(Ity_I64);
+   res64 = newTemp(Ity_I64);
+   rss64 = newTemp(Ity_I64);
+
+   if (sz == 2 || sz == 4) {
+
+      /* G is xtra; E is data */
+      /* what a freaking nightmare: */
+      if (sz == 4 && left_shift) {
+         assign( tmp64, binop(Iop_32HLto64, mkexpr(esrc), mkexpr(gsrc)) );
+         assign( res64, 
+                 binop(Iop_Shr64, 
+                       binop(Iop_Shl64, mkexpr(tmp64), mkexpr(tmpSH)),
+                       mkU8(32)) );
+         assign( rss64, 
+                 binop(Iop_Shr64, 
+                       binop(Iop_Shl64, mkexpr(tmp64), mkexpr(tmpSS)),
+                       mkU8(32)) );
+      }
+      else
+      if (sz == 4 && !left_shift) {
+         assign( tmp64, binop(Iop_32HLto64, mkexpr(gsrc), mkexpr(esrc)) );
+         assign( res64, binop(Iop_Shr64, mkexpr(tmp64), mkexpr(tmpSH)) );
+         assign( rss64, binop(Iop_Shr64, mkexpr(tmp64), mkexpr(tmpSS)) );
+      }
+      else
+      if (sz == 2 && left_shift) {
+         assign( tmp64,
+                 binop(Iop_32HLto64,
+                       binop(Iop_16HLto32, mkexpr(esrc), mkexpr(gsrc)),
+                       binop(Iop_16HLto32, mkexpr(gsrc), mkexpr(gsrc))
+         ));
+	 /* result formed by shifting [esrc'gsrc'gsrc'gsrc] */
+         assign( res64, 
+                 binop(Iop_Shr64, 
+                       binop(Iop_Shl64, mkexpr(tmp64), mkexpr(tmpSH)),
+                       mkU8(48)) );
+         /* subshift formed by shifting [esrc'0000'0000'0000] */
+         assign( rss64, 
+                 binop(Iop_Shr64, 
+                       binop(Iop_Shl64, 
+                             binop(Iop_Shl64, unop(Iop_16Uto64, mkexpr(esrc)),
+                                              mkU8(48)),
+                             mkexpr(tmpSS)),
+                       mkU8(48)) );
+      }
+      else
+      if (sz == 2 && !left_shift) {
+         assign( tmp64,
+                 binop(Iop_32HLto64,
+                       binop(Iop_16HLto32, mkexpr(gsrc), mkexpr(gsrc)),
+                       binop(Iop_16HLto32, mkexpr(gsrc), mkexpr(esrc))
+         ));
+         /* result formed by shifting [gsrc'gsrc'gsrc'esrc] */
+         assign( res64, binop(Iop_Shr64, mkexpr(tmp64), mkexpr(tmpSH)) );
+         /* subshift formed by shifting [0000'0000'0000'esrc] */
+         assign( rss64, binop(Iop_Shr64, 
+                              unop(Iop_16Uto64, mkexpr(esrc)), 
+                              mkexpr(tmpSS)) );
+      }
+
+   } else {
+
+      vassert(sz == 8);
+      if (left_shift) {
+         assign( res64, shiftL64_with_extras( esrc, gsrc, tmpSH ));
+         assign( rss64, shiftL64_with_extras( esrc, gsrc, tmpSS ));
+      } else {
+         assign( res64, shiftR64_with_extras( gsrc, esrc, tmpSH ));
+         assign( rss64, shiftR64_with_extras( gsrc, esrc, tmpSS ));
+      }
+
+   }
+
+   resTy = newTemp(ty);
+   rssTy = newTemp(ty);
+   assign( resTy, narrowTo(ty, mkexpr(res64)) );
+   assign( rssTy, narrowTo(ty, mkexpr(rss64)) );
+
+   /* Put result back and write the flags thunk. */
+   setFlags_DEP1_DEP2_shift ( left_shift ? Iop_Shl64 : Iop_Sar64,
+                              resTy, rssTy, ty, tmpSH );
+
+   if (epartIsReg(modrm)) {
+      putIRegE(sz, pfx, modrm, mkexpr(resTy));
+   } else {
+      storeLE( mkexpr(addr), mkexpr(resTy) );
+   }
+
+   if (amt_is_literal) delta++;
+   return delta;
+}
 
 
 /* Handle BT/BTS/BTR/BTC Gv, Ev.  Apparently b-size is not
@@ -13255,8 +13344,8 @@ DisResult disInstr_AMD64_WRK (
          }
          break;
 
-//..       /* =-=-=-=-=-=-=-=-=- SHLD/SHRD -=-=-=-=-=-=-=-=-= */
-//.. 
+      /* =-=-=-=-=-=-=-=-=- SHLD/SHRD -=-=-=-=-=-=-=-=-= */
+
 //..       case 0xA4: /* SHLDv imm8,Gv,Ev */
 //..          modrm = getUChar(delta);
 //..          d32   = delta + lengthAMode(delta);
@@ -13266,14 +13355,14 @@ DisResult disInstr_AMD64_WRK (
 //..                   mkU8(getUChar(d32)), True, /* literal */
 //..                   dis_buf, True );
 //..          break;
-//..       case 0xA5: /* SHLDv %cl,Gv,Ev */
-//..          modrm = getUChar(delta);
-//..          delta = dis_SHLRD_Gv_Ev ( 
-//..                     sorb, delta, modrm, sz,
-//..                     getIReg(1,R_ECX), False, /* not literal */
-//..                     "%cl", True );
-//..          break;
-//.. 
+      case 0xA5: /* SHLDv %cl,Gv,Ev */
+         modrm = getUChar(delta);
+         delta = dis_SHLRD_Gv_Ev ( 
+                    pfx, delta, modrm, sz,
+                    getIRegCL(), False, /* not literal */
+                    "%cl", True /* left */ );
+         break;
+
 //..       case 0xAC: /* SHRDv imm8,Gv,Ev */
 //..          modrm = getUChar(delta);
 //..          d32   = delta + lengthAMode(delta);
@@ -13283,13 +13372,13 @@ DisResult disInstr_AMD64_WRK (
 //..                     mkU8(getUChar(d32)), True, /* literal */
 //..                     dis_buf, False );
 //..          break;
-//..       case 0xAD: /* SHRDv %cl,Gv,Ev */
-//..          modrm = getUChar(delta);
-//..          delta = dis_SHLRD_Gv_Ev ( 
-//..                     sorb, delta, modrm, sz, 
-//..                     getIReg(1,R_ECX), False, /* not literal */
-//..                     "%cl", False );
-//..          break;
+      case 0xAD: /* SHRDv %cl,Gv,Ev */
+         modrm = getUChar(delta);
+         delta = dis_SHLRD_Gv_Ev ( 
+                    pfx, delta, modrm, sz, 
+                    getIRegCL(), False, /* not literal */
+                    "%cl", False /* right */);
+         break;
 
       /* =-=-=-=-=-=-=-=-=- SYSCALL -=-=-=-=-=-=-=-=-=-= */
       case 0x05: /* SYSCALL */

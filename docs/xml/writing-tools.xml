@@ -93,7 +93,7 @@ that there are three spaces in which program code executes:</para>
    <para>A tool has no control over these operations; it never
    "sees" the code doing this work and thus cannot instrument it.
    However, the core provides hooks so a tool can be notified
-   when certain interesting events happen, for example when when
+   when certain interesting events happen, for example when
    dynamic memory is allocated or freed, the stack pointer is
    changed, or a pthread mutex is locked, etc.</para>
 
@@ -181,7 +181,7 @@ interest?  Consider some existing tools:</para>
   (<computeroutput>_dl_runtime_resolve()</computeroutput>); the
   number of basic blocks, x86 instruction, UCode instructions
   executed; the number of branches executed and the proportion of
-  those which were taken.</para>
+  them which were taken.</para>
  </listitem>
 </itemizedlist>
 
@@ -315,7 +315,8 @@ memory checker.</para>
 <para>To write your own tool, you'll need the Valgrind source code.
 A normal source distribution should do, although you might want to
 check out the latest code from the Subversion repository.  See the
-information about how to do so at <ulink url="http://www.valgrind.org/">the
+information about how to do so at
+<ulink url="http://www.valgrind.org/downloads/repository.html">the
 Valgrind website</ulink>.</para>
 
 </sect2>
@@ -494,16 +495,15 @@ errors; process command line options; wrap system calls; record
 extra information about malloc'd blocks, etc.</para>
 
 <para>For example, if a tool wants the core's help in recording
-and reporting errors, it must set the
-<computeroutput>tool_errors</computeroutput> need to
-<computeroutput>True</computeroutput>, and then provide
-definitions of six functions for comparing errors, printing out
+and reporting errors, it must call
+<computeroutput>VG_(needs_tool_errors)</computeroutput> and provide
+definitions of eight functions for comparing errors, printing out
 errors, reading suppressions from a suppressions file, etc.
 While writing these functions requires some work, it's much less
 than doing error handling from scratch because the core is doing
-most of the work.  See the type
-<computeroutput>VgNeeds</computeroutput> in
-<filename>include/tool.h</filename> for full details of all
+most of the work.  See the function
+<computeroutput>VG_(needs_tool_errors)</computeroutput> in
+<filename>include/pub_tool_tooliface.h</filename> for full details of all
 the needs.</para>
 
 <para>Third, the tool can indicate which events in core it wants
@@ -523,7 +523,7 @@ be called each time this happens.</para>
 
 <para>More information about "details", "needs" and "trackable
 events" can be found in
-<filename>include/tool.h</filename>.</para>
+<filename>include/pub_tool_tooliface.h</filename>.</para>
 
 </sect2>
 
@@ -688,8 +688,8 @@ instrumentation.</para>
 
 <para>If you just want to know whether a program point has been
 reached, using the <computeroutput>OINK</computeroutput> macro
-(in <filename>include/tool.h</filename>) can be easier than
-using GDB.</para>
+(in <filename>include/pub_tool_libcprint.h</filename>) can be easier
+than using GDB.</para>
 
 <para>The other debugging command line options can be useful too
 (run <computeroutput>valgrind -h</computeroutput> for the
@@ -808,7 +808,7 @@ example tool name again):</para>
  </listitem>
 
  <listitem>
-  <para>Write the documentation. There are some helpful bits and
+  <para>Write the documentation.  There are some helpful bits and
   pieces on using xml markup in
   <filename>valgrind/docs/xml/xml_help.txt</filename>.</para>
  </listitem>
@@ -1124,8 +1124,8 @@ and then use the <computeroutput>VGP_PUSHCC</computeroutput> and
 <computeroutput>VGP_POPCC</computeroutput> macros to record time
 spent doing certain things.  New profiling event numbers must not
 overlap with the core profiling event numbers.  See
-<filename>include/tool.h</filename> for details and Memcheck
-for an example.</para>
+<filename>include/pub_tool_profile.h</filename> for details and
+Memcheck for an example.</para>
 
 </sect2>
 

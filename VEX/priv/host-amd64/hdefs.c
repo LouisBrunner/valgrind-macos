@@ -3135,6 +3135,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Asse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Asse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
       p = doAMode_R(p, vreg2ireg(i->Ain.Sse32Fx4.dst),
@@ -3163,6 +3164,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Asse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Asse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
       p = doAMode_R(p, vreg2ireg(i->Ain.Sse64Fx2.dst),
@@ -3191,6 +3193,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Asse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Asse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
       p = doAMode_R(p, vreg2ireg(i->Ain.Sse32FLo.dst),
@@ -3219,6 +3222,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Asse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Asse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
       p = doAMode_R(p, vreg2ireg(i->Ain.Sse64FLo.dst),

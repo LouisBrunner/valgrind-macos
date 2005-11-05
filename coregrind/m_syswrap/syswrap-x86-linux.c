@@ -1067,13 +1067,18 @@ PRE(sys_clone)
       - ??? specifies clone flags of 0x1200011.
       - NPTL specifies clone flags of 0x7D0F00.
       - The Quadrics Elan3 driver specifies clone flags of 0xF00.
+      - Newer Quadrics Elan3 drivers with NTPL support specify 0x410F00.
       Everything else is rejected. 
    */
    if (
+        1 ||
+        /* 11 Nov 05: for the time being, disable this ultra-paranoia.
+           The switch below probably does a good enough job. */
           (cloneflags == 0x100011 || cloneflags == 0x1200011
                                   || cloneflags == 0x7D0F00
                                   || cloneflags == 0x790F00
                                   || cloneflags == 0x3D0F00
+                                  || cloneflags == 0x410F00
                                   || cloneflags == 0xF00
                                   || cloneflags == 0xF21)) {
      /* OK */

@@ -18,6 +18,10 @@ cmpltps_1 ... ok
 cmpltps_2 ... ok
 cmpltss_1 ... ok
 cmpltss_2 ... ok
+cmpunordps_1 ... ok
+cmpunordps_2 ... ok
+cmpunordss_1 ... ok
+cmpunordss_2 ... ok
 cmpneqps_1 ... ok
 cmpneqps_2 ... ok
 cmpneqss_1 ... ok
@@ -30,6 +34,10 @@ cmpnltps_1 ... ok
 cmpnltps_2 ... ok
 cmpnltss_1 ... ok
 cmpnltss_2 ... ok
+cmpordps_1 ... ok
+cmpordps_2 ... ok
+cmpordss_1 ... ok
+cmpordss_2 ... ok
 comiss_1 ... ok
 comiss_2 ... ok
 comiss_3 ... ok

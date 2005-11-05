@@ -1710,6 +1710,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpLT64Fx2:
       case Iop_CmpLE64Fx2:
       case Iop_CmpEQ64Fx2:
+      case Iop_CmpUN64Fx2:
       case Iop_Add64Fx2:
          return binary64Fx2(mce, vatom1, vatom2);      
 
@@ -1721,6 +1722,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpLT64F0x2:
       case Iop_CmpLE64F0x2:
       case Iop_CmpEQ64F0x2:
+      case Iop_CmpUN64F0x2:
       case Iop_Add64F0x2:
          return binary64F0x2(mce, vatom1, vatom2);      
 
@@ -1732,6 +1734,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpLT32Fx4:
       case Iop_CmpLE32Fx4:
       case Iop_CmpEQ32Fx4:
+      case Iop_CmpUN32Fx4:
       case Iop_Add32Fx4:
          return binary32Fx4(mce, vatom1, vatom2);      
 
@@ -1743,6 +1746,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpLT32F0x4:
       case Iop_CmpLE32F0x4:
       case Iop_CmpEQ32F0x4:
+      case Iop_CmpUN32F0x4:
       case Iop_Add32F0x4:
          return binary32F0x4(mce, vatom1, vatom2);      
 

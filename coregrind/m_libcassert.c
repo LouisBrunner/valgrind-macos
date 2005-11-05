@@ -44,22 +44,28 @@
    ------------------------------------------------------------------ */
 
 #if defined(VGP_x86_linux)
-#  define GET_REAL_SP_AND_FP(sp, fp) \
-      asm("movl %%esp, %0;" \
-          "movl %%ebp, %1;" \
-          : "=r" (sp),\
+#  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)      \
+      asm("call m_libcassert_get_ip;" \
+          "m_libcassert_get_ip: popl %0;" \
+          "movl %%esp, %1;" \
+          "movl %%ebp, %2;" \
+          : "=r" (pc),\
+            "=r" (sp),\
             "=r" (fp));
 #elif defined(VGP_amd64_linux)
-#  define GET_REAL_SP_AND_FP(sp, fp) \
-      asm("movq %%rsp, %0;" \
-          "movq %%rbp, %1;" \
-          : "=r" (sp),\
+#  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)      \
+      asm("leaq 0(%%rip), %0;" \
+          "movq %%rsp, %1;" \
+          "movq %%rbp, %2;" \
+          : "=r" (pc),\
+            "=r" (sp),\
             "=r" (fp));
 #elif defined(VGP_ppc32_linux)
-#  define GET_REAL_SP_AND_FP(sp, fp) \
+#  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)      \
       asm("mr %0,1;" \
           "mr %1,1;" \
-          : "=r" (sp),\
+          : "=r" (pc),\
+            "=r" (sp),\
             "=r" (fp));
 #else
 #  error Unknown platform
@@ -105,8 +111,7 @@ static void report_and_quit ( const Char* report,
    // state.  Could cause problems if we got the panic/exception within the
    // execontext/stack dump/symtab code.  But it's better than nothing.
    if (0 == ip && 0 == sp && 0 == fp) {
-       ip = (Addr)__builtin_return_address(0);
-       GET_REAL_SP_AND_FP(sp, fp);
+       GET_REAL_PC_SP_AND_FP(ip, sp, fp);
    }
  
    stacktop = tst->os_state.valgrind_stack_init_SP;

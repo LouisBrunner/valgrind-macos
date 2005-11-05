@@ -223,8 +223,8 @@ typedef
    }
    VexGuestX86State;
 
-#define VEX_GUEST_X86_LDT_NENT 64
-#define VEX_GUEST_X86_GDT_NENT 16
+#define VEX_GUEST_X86_LDT_NENT /*64*/ 8192 /* use complete LDT */
+#define VEX_GUEST_X86_GDT_NENT /*16*/ 8192 /* use complete GDT */
 
 
 /*---------------------------------------------------------------*/

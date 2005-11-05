@@ -6451,7 +6451,7 @@ ULong dis_SHLRD_Gv_Ev ( Prefix pfx,
                         Int sz,
                         IRExpr* shift_amt,
                         Bool amt_is_literal,
-                        Char* shift_amt_txt,
+                        HChar* shift_amt_txt,
                         Bool left_shift )
 {
    /* shift_amt :: Ity_I8 is the amount to shift.  shift_amt_txt is used

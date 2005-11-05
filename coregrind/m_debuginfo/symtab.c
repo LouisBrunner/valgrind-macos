@@ -130,9 +130,12 @@ static void unload_symbols ( Addr start, SizeT length );
    that third segment, which is wrong and causes crashes.
 */
 
+/* Make a guess (doesn't have to be 100% correct) as to whether a path
+   is that of the valgrind exe we're using. */
 static Bool is_self ( HChar* filename )
 { 
-   return VG_(strstr)( filename, "/lib/valgrind/" ) != NULL;
+   return VG_(strstr)( filename, "/lib/valgrind/" ) != NULL
+          || VG_(strstr)( filename, ".in_place/" ) != NULL;
 }
 
 static void nuke_syms_in_range ( Addr start, SizeT length )

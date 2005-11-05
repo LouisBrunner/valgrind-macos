@@ -1321,10 +1321,8 @@ ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl )
 }
 
 
-// MAYBE NOT TRUE: /* CALLED FROM GENERATED CODE */
-// MAYBE NOT TRUE: /* DIRTY HELPER (writes guest state) */
+/* DIRTY HELPER (writes guest state) */
 /* Initialise the x87 FPU state as per 'finit'. */
-static
 void amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* gst )
 {
    Int i;

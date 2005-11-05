@@ -5112,45 +5112,45 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                DIP("fnclex\n");
                break;
 
-//..             case 0xE3: {
-//..                /* Uses dirty helper: 
-//..                      void x86g_do_FINIT ( VexGuestX86State* ) */
-//..                IRDirty* d  = unsafeIRDirty_0_N ( 
-//..                                 0/*regparms*/, 
-//..                                 "x86g_dirtyhelper_FINIT", 
-//..                                 &x86g_dirtyhelper_FINIT,
-//..                                 mkIRExprVec_0()
-//..                              );
-//..                d->needsBBP = True;
-//.. 
-//..                /* declare we're writing guest state */
-//..                d->nFxState = 5;
-//.. 
-//..                d->fxState[0].fx     = Ifx_Write;
-//..                d->fxState[0].offset = OFFB_FTOP;
-//..                d->fxState[0].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[1].fx     = Ifx_Write;
-//..                d->fxState[1].offset = OFFB_FPREGS;
-//..                d->fxState[1].size   = 8 * sizeof(ULong);
-//.. 
-//..                d->fxState[2].fx     = Ifx_Write;
-//..                d->fxState[2].offset = OFFB_FPTAGS;
-//..                d->fxState[2].size   = 8 * sizeof(UChar);
-//.. 
-//..                d->fxState[3].fx     = Ifx_Write;
-//..                d->fxState[3].offset = OFFB_FPROUND;
-//..                d->fxState[3].size   = sizeof(UInt);
-//.. 
-//..                d->fxState[4].fx     = Ifx_Write;
-//..                d->fxState[4].offset = OFFB_FC3210;
-//..                d->fxState[4].size   = sizeof(UInt);
-//.. 
-//..                stmt( IRStmt_Dirty(d) );
-//.. 
-//..                DIP("fninit\n");
-//..                break;
-//..             }
+            case 0xE3: {
+               /* Uses dirty helper: 
+                     void amd64g_do_FINIT ( VexGuestAMD64State* ) */
+               IRDirty* d  = unsafeIRDirty_0_N ( 
+                                0/*regparms*/, 
+                                "amd64g_dirtyhelper_FINIT", 
+                                &amd64g_dirtyhelper_FINIT,
+                                mkIRExprVec_0()
+                             );
+               d->needsBBP = True;
+
+               /* declare we're writing guest state */
+               d->nFxState = 5;
+
+               d->fxState[0].fx     = Ifx_Write;
+               d->fxState[0].offset = OFFB_FTOP;
+               d->fxState[0].size   = sizeof(UInt);
+
+               d->fxState[1].fx     = Ifx_Write;
+               d->fxState[1].offset = OFFB_FPREGS;
+               d->fxState[1].size   = 8 * sizeof(ULong);
+
+               d->fxState[2].fx     = Ifx_Write;
+               d->fxState[2].offset = OFFB_FPTAGS;
+               d->fxState[2].size   = 8 * sizeof(UChar);
+
+               d->fxState[3].fx     = Ifx_Write;
+               d->fxState[3].offset = OFFB_FPROUND;
+               d->fxState[3].size   = sizeof(ULong);
+
+               d->fxState[4].fx     = Ifx_Write;
+               d->fxState[4].offset = OFFB_FC3210;
+               d->fxState[4].size   = sizeof(ULong);
+
+               stmt( IRStmt_Dirty(d) );
+
+               DIP("fninit\n");
+               break;
+            }
 
             case 0xE8 ... 0xEF: /* FUCOMI %st(0),%st(?) */
                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, False );

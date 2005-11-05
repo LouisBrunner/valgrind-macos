@@ -110,6 +110,21 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
    ips[0] = ip;
    i = 1;
 
+   /* Loop unwinding the stack. Note that the IP value we get on
+    * each pass (whether from CFI info or a stack frame) is a
+    * return address so is actually after the calling instruction
+    * in the calling function.
+    *
+    * Because of this we subtract one from the IP after each pass
+    * of the loop so that we find the right CFI block on the next
+    * pass - otherwise we can find the wrong CFI info if it happens
+    * to change after the calling instruction and that will mean
+    * that we will fail to unwind the next step.
+    *
+    * This most frequently happens at the end of a function when
+    * a tail call occurs and we wind up using the CFI info for the
+    * next function which is completely wrong.
+    */
    while (True) {
 
       if (i >= n_ips)

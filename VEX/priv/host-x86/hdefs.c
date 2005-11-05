@@ -2634,6 +2634,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Xsse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse32Fx4.dst)),
@@ -2659,6 +2660,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Xsse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse64Fx2.dst)),
@@ -2684,6 +2686,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Xsse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse32FLo.dst)),
@@ -2709,6 +2712,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Xsse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse64FLo.dst)),

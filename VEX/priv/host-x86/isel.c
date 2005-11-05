@@ -3076,6 +3076,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpEQ32Fx4: op = Xsse_CMPEQF; goto do_32Fx4;
       case Iop_CmpLT32Fx4: op = Xsse_CMPLTF; goto do_32Fx4;
       case Iop_CmpLE32Fx4: op = Xsse_CMPLEF; goto do_32Fx4;
+      case Iop_CmpUN32Fx4: op = Xsse_CMPUNF; goto do_32Fx4;
       case Iop_Add32Fx4:   op = Xsse_ADDF;   goto do_32Fx4;
       case Iop_Div32Fx4:   op = Xsse_DIVF;   goto do_32Fx4;
       case Iop_Max32Fx4:   op = Xsse_MAXF;   goto do_32Fx4;
@@ -3095,6 +3096,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpEQ64Fx2: op = Xsse_CMPEQF; goto do_64Fx2;
       case Iop_CmpLT64Fx2: op = Xsse_CMPLTF; goto do_64Fx2;
       case Iop_CmpLE64Fx2: op = Xsse_CMPLEF; goto do_64Fx2;
+      case Iop_CmpUN64Fx2: op = Xsse_CMPUNF; goto do_64Fx2;
       case Iop_Add64Fx2:   op = Xsse_ADDF;   goto do_64Fx2;
       case Iop_Div64Fx2:   op = Xsse_DIVF;   goto do_64Fx2;
       case Iop_Max64Fx2:   op = Xsse_MAXF;   goto do_64Fx2;
@@ -3115,6 +3117,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpEQ32F0x4: op = Xsse_CMPEQF; goto do_32F0x4;
       case Iop_CmpLT32F0x4: op = Xsse_CMPLTF; goto do_32F0x4;
       case Iop_CmpLE32F0x4: op = Xsse_CMPLEF; goto do_32F0x4;
+      case Iop_CmpUN32F0x4: op = Xsse_CMPUNF; goto do_32F0x4;
       case Iop_Add32F0x4:   op = Xsse_ADDF;   goto do_32F0x4;
       case Iop_Div32F0x4:   op = Xsse_DIVF;   goto do_32F0x4;
       case Iop_Max32F0x4:   op = Xsse_MAXF;   goto do_32F0x4;
@@ -3133,6 +3136,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpEQ64F0x2: op = Xsse_CMPEQF; goto do_64F0x2;
       case Iop_CmpLT64F0x2: op = Xsse_CMPLTF; goto do_64F0x2;
       case Iop_CmpLE64F0x2: op = Xsse_CMPLEF; goto do_64F0x2;
+      case Iop_CmpUN64F0x2: op = Xsse_CMPUNF; goto do_64F0x2;
       case Iop_Add64F0x2:   op = Xsse_ADDF;   goto do_64F0x2;
       case Iop_Div64F0x2:   op = Xsse_DIVF;   goto do_64F0x2;
       case Iop_Max64F0x2:   op = Xsse_MAXF;   goto do_64F0x2;

@@ -425,7 +425,7 @@ while (<>)
 
             print qq| \} \};\n|;
         }
-        elsif ($arg =~ /^(imm8|imm16|imm32)\[([^\]]+)\]$/)
+        elsif ($arg =~ /^(imm8|imm16|imm32|imm64)\[([^\]]+)\]$/)
         {
             my $type = $1;
             my $value = $2;
@@ -767,7 +767,7 @@ while (<>)
                 print qq|$prefix%$arg->{argnum}|;
             }
         }
-        elsif ($arg->{type} =~ /^imm(8|16|32)$/)
+        elsif ($arg->{type} =~ /^imm(8|16|32|64)$/)
         {
             print qq|$prefix\$$arg->{value}|;
         }

@@ -11,7 +11,7 @@ AM_CFLAGS_AMD64_LINUX = $(WERROR) -m64 -fomit-frame-pointer @PREFERRED_STACK_BOU
 AM_CCASFLAGS_AMD64_LINUX = $(add_includes_amd64_linux) -m64 -g
 
 AM_CPPFLAGS_PPC32_LINUX = $(add_includes_ppc32_linux)
-AM_CFLAGS_PPC32_LINUX = $(WERROR) -fpic $(AM_CFLAGS_BASE)
+AM_CFLAGS_PPC32_LINUX = $(WERROR) $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC32_LINUX = $(add_includes_ppc32_linux) -Wa,-maltivec -g
 
 PLATFORM = $(shell echo @VG_PLATFORM@ | tr '[a-z-]' '[A-Z_]')

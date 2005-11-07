@@ -101,12 +101,37 @@ libvex.a: $(LIB_OBJS)
 	rm -f libvex.a
 	$(AR) clq libvex.a $(LIB_OBJS)
 
+
+# The idea with these TAG_s is to mark the flavour of libvex.a 
+# most recently built, so if the same target is re-requested, we
+# don't rebuild everything, but if a different one is requested
+# then we scrub everything and start over.
+
+libvex_x86_linux.a: TAG_x86_linux libvex.a
+	mv -f libvex.a libvex_x86_linux.a
+TAG_x86_linux:
+	if [ ! -f TAG_x86_linux ] ; then rm -f $(LIB_OBJS) *.a TAG_* ; fi
+	touch TAG_x86_linux
+
+libvex_amd64_linux.a: TAG_amd64_linux libvex.a
+	mv -f libvex.a libvex_amd64_linux.a
+TAG_amd64_linux:
+	if [ ! -f TAG_amd64_linux ] ; then rm -f $(LIB_OBJS) *.a TAG_* ; fi
+	touch TAG_amd64_linux
+
+libvex_ppc32_linux.a: TAG_ppc32_linux libvex.a
+	mv -f libvex.a libvex_ppc32_linux.a
+TAG_ppc32_linux:
+	if [ ! -f TAG_ppc32_linux ] ; then rm -f $(LIB_OBJS) *.a TAG_* ; fi
+	touch TAG_ppc32_linux
+
+
 # This doesn't get rid of priv/main/vex_svnversion.h, because
 # that can't be regenerated in the final Valgrind tarball, and
 # so if 'make clean' did get rid of it, then in the tarball,
 # doing 'make ; make clean ; make' (or distclean) would fail.
 clean:
-	rm -f $(LIB_OBJS) libvex.a vex test_main.o \
+	rm -f $(LIB_OBJS) libvex.a vex test_main.o TAG_* \
 		pub/libvex_guest_offsets.h
 
 version:

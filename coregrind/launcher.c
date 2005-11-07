@@ -105,6 +105,7 @@ static const char *select_platform(const char *clientname)
    int fd;
    unsigned char *header;
    const char *platform = NULL;
+   int32_t pagesize = sysconf(_SC_PAGESIZE);
 
    if (strchr(clientname, '/') == NULL)
       clientname = find_client(clientname);
@@ -113,7 +114,7 @@ static const char *select_platform(const char *clientname)
       return NULL;
    //   barf("open(%s): %s", clientname, strerror(errno));
 
-   if ((header = mmap(NULL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
+   if ((header = mmap(NULL, pagesize, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
       return NULL;
    //   barf("mmap(%s): %s", clientname, strerror(errno));
 
@@ -155,7 +156,7 @@ static const char *select_platform(const char *clientname)
       }
    }
 
-   munmap(header, PAGE_SIZE);
+   munmap(header, pagesize);
 
    return platform;
 }

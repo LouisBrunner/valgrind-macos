@@ -110,19 +110,19 @@ libvex.a: $(LIB_OBJS)
 libvex_x86_linux.a: TAG_x86_linux libvex.a
 	mv -f libvex.a libvex_x86_linux.a
 TAG_x86_linux:
-	if [ ! -f TAG_x86_linux ] ; then rm -f $(LIB_OBJS) *.a TAG_* ; fi
+	if [ ! -f TAG_x86_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
 	touch TAG_x86_linux
 
 libvex_amd64_linux.a: TAG_amd64_linux libvex.a
 	mv -f libvex.a libvex_amd64_linux.a
 TAG_amd64_linux:
-	if [ ! -f TAG_amd64_linux ] ; then rm -f $(LIB_OBJS) *.a TAG_* ; fi
+	if [ ! -f TAG_amd64_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
 	touch TAG_amd64_linux
 
 libvex_ppc32_linux.a: TAG_ppc32_linux libvex.a
 	mv -f libvex.a libvex_ppc32_linux.a
 TAG_ppc32_linux:
-	if [ ! -f TAG_ppc32_linux ] ; then rm -f $(LIB_OBJS) *.a TAG_* ; fi
+	if [ ! -f TAG_ppc32_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
 	touch TAG_ppc32_linux
 
 
@@ -131,7 +131,7 @@ TAG_ppc32_linux:
 # so if 'make clean' did get rid of it, then in the tarball,
 # doing 'make ; make clean ; make' (or distclean) would fail.
 clean:
-	rm -f $(LIB_OBJS) libvex.a vex test_main.o TAG_* \
+	rm -f $(LIB_OBJS) *.a vex test_main.o TAG_* \
 		pub/libvex_guest_offsets.h
 
 version:

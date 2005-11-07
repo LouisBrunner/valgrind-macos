@@ -104,7 +104,6 @@ void ML_(fill_elffpxregs_from_tst)(vki_elf_fpxregset_t* xfpu,
    VG_(memset)(xfpu->padding, 0, sizeof(xfpu->padding));
 }
 
-void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
-{
-   ML_(make_elf_coredump)(tid, si, max_size);
-}
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

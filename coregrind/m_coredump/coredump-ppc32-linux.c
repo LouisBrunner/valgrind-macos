@@ -71,7 +71,6 @@ void ML_(fill_elffpregs_from_tst)(vki_elf_fpregset_t* fpu,
 #  undef DO
 }
 
-void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
-{
-   ML_(make_elf_coredump)(tid, si, max_size);
-}
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

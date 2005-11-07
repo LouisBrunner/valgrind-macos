@@ -281,7 +281,8 @@ static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 }
 #endif
 
-void ML_(make_elf_coredump)(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
+static
+void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 {
    Char buf[1000];
    Char *basename = "vgcore";
@@ -432,6 +433,11 @@ void ML_(make_elf_coredump)(ThreadId tid, const vki_siginfo_t *si, UInt max_size
    VG_(free)(seg_starts);
 
    VG_(close)(core_fd);
+}
+
+void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
+{
+   make_elf_coredump(tid, si, max_size);
 }
 
 /*--------------------------------------------------------------------*/

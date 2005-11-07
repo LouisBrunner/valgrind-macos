@@ -31,8 +31,6 @@
 #ifndef __PRIV_SYMTAB_H
 #define __PRIV_SYMTAB_H
 
-void ML_(make_elf_coredump)(ThreadId tid, const vki_siginfo_t *si, UInt max_size);
-
 void ML_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
                                 const ThreadArchState* arch);
 

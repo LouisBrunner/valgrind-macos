@@ -1,0 +1,78 @@
+-------------------------------------------------------------------
+Guide to multiple architecture support
+-------------------------------------------------------------------
+
+Valgrind supports systems where binaries for more than one architecture
+can be run and will allow all sorts of binaries to be run under valgrind.
+
+To support this the valgrind build system can now build multiple versions
+of the coregrind library and the VEX library and then build and link multiple
+versions of each tool.
+
+The configure script selects which architectures to build support for
+by defining a conditional for each platform that indicates whether or
+not support for that platform should be built. There are currently three
+such conditionals:
+
+  VG_X86_LINUX
+  VG_AMD64_LINUX
+  VG_PPC32_LINUX
+
+On an amd64 system both VG_X86_LINUX and VG_AMD64_LINUX will be true
+so that two versions of all the tools will be built. The coregrind
+libraries will be named:
+
+  libcoregrind_x86_linux.a
+  libcoregrind_amd64_linux.a
+
+and the VEX libraries:
+
+  libvex_x86_linux.a
+  libvex_amd64_linux.a
+
+Each tool will then be built twice, along with any preload library
+for the tool and the core preload libraries. At install time one
+subdirectory will be created in the valgrind library directory for
+each supported platforms and the tools and shared objects will be
+installed in the appropriate place. On amd64 the result will be:
+
+  <prefix>/lib/valgrind
+  <prefix>/lib/valgrind/default.supp
+  <prefix>/lib/valgrind/glibc-2.4.supp
+  <prefix>/lib/valgrind/hp2ps
+  <prefix>/lib/valgrind/amd64-linux
+  <prefix>/lib/valgrind/amd64-linux/vgpreload_core.so
+  <prefix>/lib/valgrind/amd64-linux/vgpreload_massif.so
+  <prefix>/lib/valgrind/amd64-linux/cachegrind
+  <prefix>/lib/valgrind/amd64-linux/memcheck
+  <prefix>/lib/valgrind/amd64-linux/helgrind
+  <prefix>/lib/valgrind/amd64-linux/massif
+  <prefix>/lib/valgrind/amd64-linux/vgpreload_memcheck.so
+  <prefix>/lib/valgrind/amd64-linux/lackey
+  <prefix>/lib/valgrind/amd64-linux/none
+  <prefix>/lib/valgrind/amd64-linux/vgpreload_helgrind.so
+  <prefix>/lib/valgrind/xfree-3.supp
+  <prefix>/lib/valgrind/x86-linux
+  <prefix>/lib/valgrind/x86-linux/vgpreload_core.so
+  <prefix>/lib/valgrind/x86-linux/vgpreload_massif.so
+  <prefix>/lib/valgrind/x86-linux/cachegrind
+  <prefix>/lib/valgrind/x86-linux/memcheck
+  <prefix>/lib/valgrind/x86-linux/helgrind
+  <prefix>/lib/valgrind/x86-linux/massif
+  <prefix>/lib/valgrind/x86-linux/vgpreload_memcheck.so
+  <prefix>/lib/valgrind/x86-linux/lackey
+  <prefix>/lib/valgrind/x86-linux/none
+  <prefix>/lib/valgrind/x86-linux/vgpreload_helgrind.so
+  <prefix>/lib/valgrind/glibc-2.3.supp
+  <prefix>/lib/valgrind/xfree-4.supp
+  <prefix>/lib/valgrind/glibc-2.2.supp
+
+The launcher program (ie the valgrind binary itself) is always
+built as a native program (so a 64 bit program on amd64) but will
+peek at the program which it is being asked to run and decide which
+of the possible tools to run taking both the requested tool and the
+format of the program being run into account.
+
+Because the execv system call is now routed back through the launcher
+it is also possible to exec an x86 program from an amd64 program and
+vice versa.

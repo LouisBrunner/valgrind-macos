@@ -1,0 +1,21 @@
+AM_CFLAGS_BASE = -Wmissing-prototypes -Winline -Wall -Wshadow -O -g
+
+AM_CFLAGS_PIC = -fpic -fno-omit-frame-pointer
+
+AM_CPPFLAGS_X86_LINUX = $(add_includes_x86_linux)
+AM_CFLAGS_X86_LINUX = $(WERROR) @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_X86_LINUX = $(add_includes_x86_linux) @FLAG_M32@ -g
+
+AM_CPPFLAGS_AMD64_LINUX = $(add_includes_amd64_linux)
+AM_CFLAGS_AMD64_LINUX = $(WERROR) -m64 -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_AMD64_LINUX = $(add_includes_amd64_linux) -m64 -g
+
+AM_CPPFLAGS_PPC32_LINUX = $(add_includes_ppc32_linux)
+AM_CFLAGS_PPC32_LINUX = $(WERROR) -fpic $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_PPC32_LINUX = $(add_includes_ppc32_linux) -Wa,-maltivec -g
+
+PLATFORM = $(shell echo @VG_PLATFORM@ | tr '[a-z-]' '[A-Z_]')
+
+$(eval AM_CPPFLAGS = $(value AM_CPPFLAGS_$(PLATFORM)))
+$(eval AM_CFLAGS = $(value AM_CFLAGS_$(PLATFORM)))
+$(eval AM_CCASFLAGS = $(value AM_CCASFLAGS_$(PLATFORM)))

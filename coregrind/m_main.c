@@ -104,7 +104,7 @@ static void print_all_stats ( void )
 */
 static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 {
-   HChar* preload_core_so = "vgpreload_core.so";
+   HChar* preload_core    = "vgpreload_core";
    HChar* ld_preload      = "LD_PRELOAD=";
    HChar* v_launcher      = VALGRIND_LAUNCHER "=";
    Int    ld_preload_len  = VG_(strlen)( ld_preload );
@@ -121,8 +121,8 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
       paths.  We might not need the space for vgpreload_<tool>.so, but it
       doesn't hurt to over-allocate briefly.  The 16s are just cautious
       slop. */
-   Int preload_core_path_len = vglib_len + sizeof(preload_core_so) + 16;
-   Int preload_tool_path_len = vglib_len + VG_(strlen)(toolname)   + 16;
+   Int preload_core_path_len = vglib_len + sizeof(preload_core) + sizeof(VG_PLATFORM) + 16;
+   Int preload_tool_path_len = vglib_len + VG_(strlen)(toolname) + sizeof(VG_PLATFORM) + 16;
    Int preload_string_len    = preload_core_path_len + preload_tool_path_len;
    HChar* preload_string     = VG_(malloc)(preload_string_len);
    vg_assert(preload_string);
@@ -132,13 +132,13 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    preload_tool_path = VG_(malloc)(preload_tool_path_len);
    vg_assert(preload_tool_path);
    VG_(snprintf)(preload_tool_path, preload_tool_path_len,
-                 "%s/vgpreload_%s.so", VG_(libdir), toolname);
+                 "%s/%s/vgpreload_%s.so", VG_(libdir), VG_PLATFORM, toolname);
    if (VG_(access)(preload_tool_path, True/*r*/, False/*w*/, False/*x*/) == 0) {
-      VG_(snprintf)(preload_string, preload_string_len, "%s/%s:%s", 
-                    VG_(libdir), preload_core_so, preload_tool_path);
+      VG_(snprintf)(preload_string, preload_string_len, "%s/%s/%s.so:%s", 
+                    VG_(libdir), VG_PLATFORM, preload_core, preload_tool_path);
    } else {
-      VG_(snprintf)(preload_string, preload_string_len, "%s/%s", 
-                    VG_(libdir), preload_core_so);
+      VG_(snprintf)(preload_string, preload_string_len, "%s/%s/%s.so", 
+                    VG_(libdir), VG_PLATFORM, preload_core);
    }
    VG_(free)(preload_tool_path);
 

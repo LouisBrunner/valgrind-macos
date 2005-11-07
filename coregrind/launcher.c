@@ -32,25 +32,132 @@
    and so it doesn't have to conform to Valgrind's arcane rules on
    no-glibc-usage etc. */
 
+#include <assert.h>
+#include <ctype.h>
+#include <elf.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/user.h>
 #include <unistd.h>
-#include <assert.h>
 
 #include "pub_core_debuglog.h"
 #include "pub_core_libcproc.h"  // For VALGRIND_LIB, VALGRIND_LAUNCHER
+#include "pub_core_ume.h"
 
 
 
 #define PATH_MAX 4096 /* POSIX refers to this a lot but I dunno
                          where it is defined */
 
-static void barf ( char* str )
+/* Report fatal errors */
+static void barf ( const char *format, ... )
 {
-   fprintf(stderr, "valgrind: Cannot continue: %s\n", str );
+   va_list vargs;
+
+   va_start(vargs, format);
+   fprintf(stderr, "valgrind: Cannot continue: ");
+   vfprintf(stderr, format, vargs);
+   fprintf(stderr, "\n");
+   va_end(vargs);
+
    exit(1);
+}
+
+/* Search the path for the client program */
+static const char *find_client(const char *clientname)
+{
+   static char fullname[PATH_MAX];
+   const char *path = getenv("PATH");
+   const char *colon;
+
+   while (path)
+   {
+      if ((colon = strchr(path, ':')) == NULL)
+      {
+         strcpy(fullname, path);
+         path = NULL;
+      }
+      else
+      {
+         memcpy(fullname, path, colon - path);
+         fullname[colon - path] = '\0';
+         path = colon + 1;
+      }
+
+      strcat(fullname, "/");
+      strcat(fullname, clientname);
+
+      if (access(fullname, R_OK|X_OK) == 0)
+         return fullname;
+   }
+
+   return clientname;
+}
+
+/* Examine the client and work out which platform it is for */
+static const char *select_platform(const char *clientname)
+{
+   int fd;
+   unsigned char *header;
+   const char *platform = NULL;
+
+   if (strchr(clientname, '/') == NULL)
+      clientname = find_client(clientname);
+
+   if ((fd = open(clientname, O_RDONLY)) < 0)
+      return NULL;
+   //   barf("open(%s): %s", clientname, strerror(errno));
+
+   if ((header = mmap(NULL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
+      return NULL;
+   //   barf("mmap(%s): %s", clientname, strerror(errno));
+
+   close(fd);
+
+   if (header[0] == '#' && header[1] == '!') {
+      char *interp = (char *)header + 2;
+      char *interpend;
+
+      while (*interp == ' ' || *interp == '\t')
+         interp++;
+
+      for (interpend = interp; !isspace(*interpend); interpend++)
+         ;
+
+      *interpend = '\0';
+
+      platform = select_platform(interp);
+   } else if (memcmp(header, ELFMAG, SELFMAG) == 0 &&
+              header[EI_CLASS] == ELFCLASS32 &&
+              header[EI_DATA] == ELFDATA2LSB) {
+      const Elf32_Ehdr *ehdr = (Elf32_Ehdr *)header;
+
+      if (ehdr->e_machine == EM_386 &&
+          ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+         platform = "x86-linux";
+      } else if (ehdr->e_machine == EM_PPC &&
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+         platform = "ppc32-linux";
+      }
+   } else if (memcmp(header, ELFMAG, SELFMAG) == 0 &&
+              header[EI_CLASS] == ELFCLASS64 &&
+              header[EI_DATA] == ELFDATA2LSB) {
+      const Elf64_Ehdr *ehdr = (Elf64_Ehdr *)header;
+
+      if (ehdr->e_machine == EM_X86_64 &&
+          ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+         platform = "amd64-linux";
+      }
+   }
+
+   munmap(header, PAGE_SIZE);
+
+   return platform;
 }
 
 /* Where we expect to find all our aux files */
@@ -60,6 +167,8 @@ int main(int argc, char** argv, char** envp)
 {
    int i, j, loglevel, r;
    const char *toolname = NULL;
+   const char *clientname = NULL;
+   const char *platform;
    const char *cp;
    char *toolfile;
    char launcher_name[PATH_MAX+1];
@@ -71,10 +180,15 @@ int main(int argc, char** argv, char** envp)
       At the same time, look for the tool name. */
    loglevel = 0;
    for (i = 1; i < argc; i++) {
-      if (argv[i][0] != '-')
+      if (argv[i][0] != '-') {
+         clientname = argv[i];
          break;
-      if (0 == strcmp(argv[i], "--")) 
+      }
+      if (0 == strcmp(argv[i], "--")) {
+         if (i+1 < argc)
+            clientname = argv[i+1];
          break;
+      }
       if (0 == strcmp(argv[i], "-d")) 
          loglevel++;
       if (0 == strncmp(argv[i], "--tool=", 7)) 
@@ -94,6 +208,17 @@ int main(int argc, char** argv, char** envp)
       toolname = "memcheck";
    }
 
+   /* Work out what platform to use */
+   if (clientname == NULL) {
+      VG_(debugLog)(1, "launcher", "no client specified, defaulting platform to '%s'\n", VG_PLATFORM);
+      platform = VG_PLATFORM;
+   } else if ((platform = select_platform(clientname)) != NULL) {
+      VG_(debugLog)(1, "launcher", "selected platform '%s'\n", platform);
+   } else {
+      VG_(debugLog)(1, "launcher", "no platform detected, defaulting platform to '%s'\n", VG_PLATFORM);
+      platform = VG_PLATFORM;
+   }
+   
    /* Figure out the name of this executable (viz, the launcher), so
       we can tell stage2.  stage2 will use the name for recursive
       invokations of valgrind on child processes. */
@@ -137,17 +262,17 @@ int main(int argc, char** argv, char** envp)
       valgrind_lib = cp;
 
    /* Build the stage2 invokation, and execve it.  Bye! */
-   toolfile = malloc(strlen(valgrind_lib) + strlen(toolname) + 2);
+   toolfile = malloc(strlen(valgrind_lib) + strlen(toolname) + strlen(platform) + 3);
    if (toolfile == NULL)
       barf("malloc of toolfile failed.");
-   sprintf(toolfile, "%s/%s", valgrind_lib, toolname);
+   sprintf(toolfile, "%s/%s/%s", valgrind_lib, platform, toolname);
 
    VG_(debugLog)(1, "launcher", "launching %s\n", toolfile);
 
    execve(toolfile, argv, new_env);
 
-   fprintf(stderr, "valgrind: failed to start tool '%s': %s\n",
-                   toolname, strerror(errno));
+   fprintf(stderr, "valgrind: failed to start tool '%s' for platform '%s': %s\n",
+                   toolname, platform, strerror(errno));
 
    exit(1);
 }

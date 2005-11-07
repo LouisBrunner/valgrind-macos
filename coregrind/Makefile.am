@@ -1,29 +1,40 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core.am
+include $(top_srcdir)/Makefile.install.am
 
-AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" \
+AM_CPPFLAGS_X86_LINUX += -DVG_LIBDIR="\"$(valdir)"\" \
+		-DKICKSTART_BASE=@KICKSTART_BASE@
+AM_CPPFLAGS_AMD64_LINUX += -DVG_LIBDIR="\"$(valdir)"\" \
+		-DKICKSTART_BASE=@KICKSTART_BASE@
+AM_CPPFLAGS_PPC32_LINUX += -DVG_LIBDIR="\"$(valdir)"\" \
 		-DKICKSTART_BASE=@KICKSTART_BASE@
 
 default.supp: $(SUPP_FILES)
 
-noinst_LIBRARIES = \
-    libcoregrind.a \
-    libreplacemalloc_toolpreload.a
+noinst_LIBRARIES =
+if VG_X86_LINUX
+noinst_LIBRARIES += libcoregrind_x86_linux.a libreplacemalloc_toolpreload_x86_linux.a
+endif
+if VG_AMD64_LINUX
+noinst_LIBRARIES += libcoregrind_amd64_linux.a libreplacemalloc_toolpreload_amd64_linux.a
+endif
+if VG_PPC32_LINUX
+noinst_LIBRARIES += libcoregrind_ppc32_linux.a libreplacemalloc_toolpreload_ppc32_linux.a
+endif
 
 bin_PROGRAMS = \
 	valgrind
 
-val_PROGRAMS = \
-	vgpreload_core.so
-
-# Remember to include all the arch-specific files in the distribution.
-EXTRA_DIST = \
-        $(addsuffix .c,$(addprefix m_coredump/coredump-,$(VG_PLATFORM_ALL))) \
-        $(addsuffix .S,$(addprefix m_dispatch/dispatch-,$(VG_PLATFORM_ALL))) \
-        $(addsuffix .c,$(addprefix m_sigframe/sigframe-,$(VG_PLATFORM_ALL))) \
-        $(addsuffix .S,$(addprefix m_syswrap/syscall-,$(VG_PLATFORM_ALL))) \
-        $(addsuffix .c,$(addprefix m_syswrap/syswrap-,$(VG_OS_ALL))) \
-        $(addsuffix .c,$(addprefix m_syswrap/syswrap-,$(VG_PLATFORM_ALL)))
+noinst_PROGRAMS =
+if VG_X86_LINUX
+noinst_PROGRAMS += vgpreload_core-x86-linux.so
+endif
+if VG_AMD64_LINUX
+noinst_PROGRAMS += vgpreload_core-amd64-linux.so
+endif
+if VG_PPC32_LINUX
+noinst_PROGRAMS += vgpreload_core-ppc32-linux.so
+endif
 
 noinst_HEADERS = \
 	coregrind.h		\
@@ -97,7 +108,7 @@ valgrind_SOURCES = \
 	launcher.c \
 	m_debuglog.c
 
-libcoregrind_a_SOURCES = \
+COREGRIND_SOURCES_COMMON = \
 	m_commandline.c \
 	m_cpuid.S \
 	m_clientstate.c \
@@ -133,8 +144,6 @@ libcoregrind_a_SOURCES = \
 	m_ume.c \
 	m_aspacemgr/read_procselfmaps.c \
 	m_aspacemgr/aspacemgr.c \
-	m_coredump/coredump-elf.c \
-	m_coredump/coredump-@VG_PLATFORM@.c \
 	m_debuginfo/dwarf.c \
 	m_debuginfo/stabs.c \
 	m_debuginfo/symtab.c \
@@ -144,35 +153,92 @@ libcoregrind_a_SOURCES = \
 	m_demangle/demangle.c \
 	m_demangle/dyn-string.c \
 	m_demangle/safe-ctype.c \
-	m_dispatch/dispatch-@VG_PLATFORM@.S \
 	m_replacemalloc/replacemalloc_core.c \
 	m_scheduler/scheduler.c \
 	m_scheduler/sema.c \
-	m_sigframe/sigframe-@VG_PLATFORM@.c \
-	m_syswrap/syscall-@VG_PLATFORM@.S \
 	m_syswrap/syswrap-generic.c \
-	m_syswrap/syswrap-@VG_OS@.c \
-	m_syswrap/syswrap-@VG_OS@-variants.c \
-	m_syswrap/syswrap-@VG_PLATFORM@.c \
 	m_syswrap/syswrap-main.c
 
-libreplacemalloc_toolpreload_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
-libreplacemalloc_toolpreload_a_CFLAGS = $(PIC_AM_CFLAGS)
+COREGRIND_LINUX_SOURCE = \
+	m_coredump/coredump-elf.c \
+	m_syswrap/syswrap-linux.c \
+	m_syswrap/syswrap-linux-variants.c
 
-m_dispatch/dispatch-@VG_PLATFORM@.S: libvex_guest_offsets.h
-m_syswrap/syscall-@VG_PLATFORM@.S:   libvex_guest_offsets.h
-m_syswrap/syswrap-main.c: 	     libvex_guest_offsets.h
+libcoregrind_x86_linux_a_SOURCES = \
+	$(COREGRIND_SOURCES_COMMON) \
+	$(COREGRIND_LINUX_SOURCE) \
+	m_coredump/coredump-x86-linux.c \
+	m_dispatch/dispatch-x86-linux.S \
+	m_sigframe/sigframe-x86-linux.c \
+	m_syswrap/syscall-x86-linux.S \
+	m_syswrap/syswrap-x86-linux.c
+
+libcoregrind_x86_linux_a_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
+libcoregrind_x86_linux_a_CFLAGS = $(AM_CFLAGS_X86_LINUX)
+libcoregrind_x86_linux_a_CCASFLAGS = $(AM_CCASFLAGS_X86_LINUX)
+
+libcoregrind_amd64_linux_a_SOURCES = \
+	$(COREGRIND_SOURCES_COMMON) \
+	$(COREGRIND_LINUX_SOURCE) \
+	m_coredump/coredump-amd64-linux.c \
+	m_dispatch/dispatch-amd64-linux.S \
+	m_sigframe/sigframe-amd64-linux.c \
+	m_syswrap/syscall-amd64-linux.S \
+	m_syswrap/syswrap-amd64-linux.c
+
+libcoregrind_amd64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_LINUX)
+libcoregrind_amd64_linux_a_CFLAGS = $(AM_CFLAGS_AMD64_LINUX)
+libcoregrind_amd64_linux_a_CCASFLAGS = $(AM_CCASFLAGS_AMD64_LINUX)
+
+libcoregrind_ppc32_linux_a_SOURCES = \
+	$(COREGRIND_SOURCES_COMMON) \
+	$(COREGRIND_LINUX_SOURCE) \
+	m_coredump/coredump-ppc32-linux.c \
+	m_dispatch/dispatch-ppc32-linux.S \
+	m_sigframe/sigframe-ppc32-linux.c \
+	m_syswrap/syscall-ppc32-linux.S \
+	m_syswrap/syswrap-ppc32-linux.c
+
+libcoregrind_ppc32_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_LINUX)
+libcoregrind_ppc32_linux_a_CFLAGS = $(AM_CFLAGS_PPC32_LINUX)
+libcoregrind_ppc32_linux_a_CCASFLAGS = $(AM_CCASFLAGS_PPC32_LINUX)
+
+libreplacemalloc_toolpreload_x86_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
+libreplacemalloc_toolpreload_x86_linux_a_CFLAGS = $(AM_CFLAGS_X86_LINUX) -fpic -fno-omit-frame-pointer
+
+libreplacemalloc_toolpreload_amd64_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_amd64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_AMD64_LINUX)
+libreplacemalloc_toolpreload_amd64_linux_a_CFLAGS = $(AM_CFLAGS_AMD64_LINUX) -fpic -fno-omit-frame-pointer
+
+libreplacemalloc_toolpreload_ppc32_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_ppc32_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_LINUX)
+libreplacemalloc_toolpreload_ppc32_linux_a_CFLAGS = $(AM_CFLAGS_PPC32_LINUX) -fpic -fno-omit-frame-pointer
+
+m_dispatch/dispatch-x86-linux.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-amd64-linux.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-ppc32-linux.S:	 libvex_guest_offsets.h
+m_syswrap/syscall-x86-linux.S:		 libvex_guest_offsets.h
+m_syswrap/syscall-amd64-linux.S:	 libvex_guest_offsets.h
+m_syswrap/syscall-ppc32-linux.S:	 libvex_guest_offsets.h
+m_syswrap/syswrap-main.c: 		 libvex_guest_offsets.h
 
 libvex_guest_offsets.h:
 	$(MAKE) -C @VEX_DIR@ pub/libvex_guest_offsets.h
 
-vgpreload_core_so_SOURCES = vg_preloaded.c
-vgpreload_core_so_CFLAGS = $(AM_CFLAGS) -fpic
-vgpreload_core_so_LDADD = -ldl
-vgpreload_core_so_LDFLAGS = \
-	-shared \
-	-Wl,--soname,vgpreload_core.so \
-	-Wl,-z,initfirst
+VGPRELOAD_CORE_SOURCES_COMMON = vg_preloaded.c
+
+vgpreload_core_x86_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_x86_linux_so_CFLAGS = $(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
+vgpreload_core_x86_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_X86_LINUX)
+
+vgpreload_core_amd64_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_amd64_linux_so_CFLAGS = $(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
+vgpreload_core_amd64_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_AMD64_LINUX)
+
+vgpreload_core_ppc32_linux_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_ppc32_linux_so_CFLAGS = $(AM_CFLAGS_PPC32_LINUX) $(AM_CFLAGS_PIC)
+vgpreload_core_ppc32_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC32_LINUX)
 
 clean-local:
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" clean
@@ -180,10 +246,10 @@ clean-local:
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 
 all-local:
-	mkdir -p $(inplacedir)
-	for i in $(val_PROGRAMS); do \
-		to=$(inplacedir)/$$i; \
-		rm -f $$$to; \
-		ln -sf ../$(subdir)/$$i $$to; \
+	for f in $(noinst_PROGRAMS); do \
+	  p=`echo $$f | sed -e 's/^[^-]*-//' -e 's/\..*$$//'`; \
+	  n=`echo $$f | sed -e 's/-[^-]\{1,\}-[^-.]\{1,\}//'`; \
+	  mkdir -p $(inplacedir)/$$p; \
+	  rm -f $(inplacedir)/$$p/$$n; \
+	  ln -f -s ../../$(subdir)/$$f $(inplacedir)/$$p/$$n; \
 	done
-

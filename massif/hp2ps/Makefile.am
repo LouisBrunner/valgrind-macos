@@ -54,5 +54,7 @@ noinst_HEADERS = \
        TraceElement.h \
        Utilities.h
 
-include $(top_srcdir)/Makefile.tool-inplace.am
-
+all-local:
+	mkdir -p $(inplacedir)
+	-rm -f $(addprefix $(inplacedir)/,$(val_PROGRAMS))
+	ln -f -s $(addprefix ../$(subdir)/,$(val_PROGRAMS)) $(inplacedir)

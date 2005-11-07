@@ -112,9 +112,6 @@ AC_SUBST(VG_ARCH)
 AC_SUBST(VG_ARCH_ALL)
 VG_ARCH_ALL="amd64 ppc32 x86"
 AC_SUBST(VALT_LOAD_ADDRESS)
-AC_SUBST(ARCH_CORE_AM_CFLAGS)
-AC_SUBST(ARCH_TOOL_AM_CFLAGS)
-AC_SUBST(ARCH_CORE_AM_CCASFLAGS)
 
 case "${host_cpu}" in
      i?86) 
@@ -122,9 +119,6 @@ case "${host_cpu}" in
         VG_ARCH="x86"
         valt_load_address_normal="0xb0000000"
         valt_load_address_inner="0xa0000000"
-        ARCH_CORE_AM_CFLAGS="@FLAG_M32@ @PREFERRED_STACK_BOUNDARY@"
-        ARCH_TOOL_AM_CFLAGS="@FLAG_M32@ @PREFERRED_STACK_BOUNDARY@"
-        ARCH_CORE_AM_CCASFLAGS="@FLAG_M32@"
         ;;
 
      x86_64) 
@@ -135,15 +129,6 @@ case "${host_cpu}" in
         # a problem.
         valt_load_address_normal="0x70000000"
         valt_load_address_inner="0x60000000"
-        ARCH_CORE_AM_CFLAGS="-m64 -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@" 
-        # XXX: need to use -fpic, otherwise when linking tools I get this error
-        # message:
-        #   relocation R_X86_64_32 can not be used when making a shared object;
-        #   recompile with -fPIC
-        #
-        # I don't understand...  --njn
-        ARCH_TOOL_AM_CFLAGS="-m64 -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -fpic"
-        ARCH_CORE_AM_CCASFLAGS="-m64"
         ;;
 
      powerpc*)
@@ -151,9 +136,6 @@ case "${host_cpu}" in
         VG_ARCH="ppc32"
         valt_load_address_normal="0x70000000"
         valt_load_address_inner="0x60000000"
-        ARCH_CORE_AM_CFLAGS=""
-        ARCH_TOOL_AM_CFLAGS="-fpic"
-        ARCH_CORE_AM_CCASFLAGS="-Wa,-maltivec"
         ;;
 
      *) 
@@ -237,6 +219,10 @@ case $VG_PLATFORM in
         AC_MSG_ERROR([Valgrind is platform specific. Sorry. Please consider doing a port.])
         ;;
 esac
+
+AM_CONDITIONAL(VG_X86_LINUX, test x$VG_PLATFORM = xx86-linux -o x$VG_PLATFORM = xamd64-linux)
+AM_CONDITIONAL(VG_AMD64_LINUX, test x$VG_PLATFORM = xamd64-linux)
+AM_CONDITIONAL(VG_PPC32_LINUX, test x$VG_PLATFORM = xppc32-linux)
 
 AC_SUBST(DEFAULT_SUPP)
 

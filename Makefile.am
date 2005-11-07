@@ -31,9 +31,22 @@ pkgconfig_DATA = valgrind.pc
 incincdir = $(includedir)/valgrind
 nodist_incinc_HEADERS = $(VEX_PUBLIC_HDRS)
 
-BUILT_SOURCES  = default.supp valgrind.pc valt_load_address.lds
-CLEANFILES     = valt_load_address.lds
+BUILT_SOURCES  = default.supp valgrind.pc
+CLEANFILES     = 
 DISTCLEANFILES = default.supp
+
+if VG_X86_LINUX
+BUILT_SOURCES += valt_load_address_x86_linux.lds
+CLEANFILES += valt_load_address_x86_linux.lds
+endif
+if VG_AMD64_LINUX
+BUILT_SOURCES += valt_load_address_amd64_linux.lds
+CLEANFILES += valt_load_address_amd64_linux.lds
+endif
+if VG_PPC32_LINUX
+BUILT_SOURCES += valt_load_address_ppc32_linux.lds
+CLEANFILES += valt_load_address_ppc32_linux.lds
+endif
 
 default.supp: $(SUPP_FILES)
 
@@ -161,10 +174,23 @@ VEX_PRIMARY_SOURCES = \
 #
 # So we search for the line with a hex value "+ SIZEOF_HEADERS", and replace
 # all the hex values in that line with "valt_load_address".
-valt_load_address.lds: Makefile
-	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \
+valt_load_address_x86_linux.lds: Makefile
+	$(CC) @FLAG_M32@ -Wl,--verbose -nostdlib 2>&1 | sed \
 		-e '1,/^=====\+$$/d' \
 		-e '/^=====\+$$/d' \
 		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
 	|| rm -f $@
 
+valt_load_address_amd64_linux.lds: Makefile
+	$(CC) -m64 -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/d' \
+		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
+	|| rm -f $@
+
+valt_load_address_ppc32_linux.lds: Makefile
+	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/d' \
+		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
+	|| rm -f $@

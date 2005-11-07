@@ -1,10 +1,19 @@
-add_includes = -I$(top_srcdir)/include \
+add_includes_x86_linux = -I$(top_srcdir)/include \
 		-I@VEX_DIR@/pub \
-		-DVGA_$(VG_ARCH)=1 \
-		-DVGO_$(VG_OS)=1 \
-		-DVGP_$(VG_ARCH)_$(VG_OS)=1
+		-DVGA_x86=1 \
+		-DVGO_linux=1 \
+		-DVGP_x86_linux=1
 
-AM_CPPFLAGS = $(add_includes)
-AM_CFLAGS = $(WERROR) -Wmissing-prototypes -Winline -Wall -Wshadow -O -g @ARCH_TOOL_AM_CFLAGS@
-AM_CCASFLAGS = $(add_includes)
+add_includes_amd64_linux = -I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub \
+		-DVGA_amd64=1 \
+		-DVGO_linux=1 \
+		-DVGP_amd64_linux=1
 
+add_includes_ppc32_linux = -I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub \
+		-DVGA_ppc32=1 \
+		-DVGO_linux=1 \
+		-DVGP_ppc32_linux=1
+
+include $(top_srcdir)/Makefile.flags.am

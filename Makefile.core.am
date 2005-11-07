@@ -1,19 +1,42 @@
-add_includes = -I$(top_srcdir)/coregrind \
+add_includes_x86_linux = -I$(top_srcdir)/coregrind \
 		-I$(top_srcdir) \
-		-I$(top_srcdir)/coregrind/$(VG_ARCH) \
-		-I$(top_srcdir)/coregrind/$(VG_OS) \
-		-I$(top_srcdir)/coregrind/$(VG_PLATFORM) \
+		-I$(top_srcdir)/coregrind/x86 \
+		-I$(top_srcdir)/coregrind/linux \
+		-I$(top_srcdir)/coregrind/x86-linux \
 		-I$(top_srcdir)/include \
 		-I@VEX_DIR@/pub \
-		-DVGA_$(VG_ARCH)=1 \
-		-DVGO_$(VG_OS)=1 \
-		-DVGP_$(VG_ARCH)_$(VG_OS)=1
+		-DVG_PLATFORM="\"x86-linux\"" \
+		-DVGA_x86=1 \
+		-DVGO_linux=1 \
+		-DVGP_x86_linux=1
 
-BASE_AM_CFLAGS = @ARCH_CORE_AM_CFLAGS@ -Wmissing-prototypes -Winline -Wall -Wshadow -O -g
+add_includes_amd64_linux = -I$(top_srcdir)/coregrind \
+		-I$(top_srcdir) \
+		-I$(top_srcdir)/coregrind/amd64 \
+		-I$(top_srcdir)/coregrind/linux \
+		-I$(top_srcdir)/coregrind/amd64-linux \
+		-I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub \
+		-DVG_PLATFORM="\"amd64-linux\"" \
+		-DVGA_amd64=1 \
+		-DVGO_linux=1 \
+		-DVGP_amd64_linux=1
 
-PIC_AM_CFLAGS = $(BASE_AM_CFLAGS) -fpic -fno-omit-frame-pointer
+add_includes_ppc32_linux = -I$(top_srcdir)/coregrind \
+		-I$(top_srcdir) \
+		-I$(top_srcdir)/coregrind/ppc32 \
+		-I$(top_srcdir)/coregrind/linux \
+		-I$(top_srcdir)/coregrind/ppc32-linux \
+		-I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub \
+		-DVG_PLATFORM="\"ppc32-linux\"" \
+		-DVGA_ppc32=1 \
+		-DVGO_linux=1 \
+		-DVGP_ppc32_linux=1
 
-AM_CPPFLAGS = $(add_includes)
-AM_CFLAGS = $(WERROR) $(BASE_AM_CFLAGS)
-AM_CCASFLAGS = $(add_includes) @ARCH_CORE_AM_CCASFLAGS@ -Wa,-gstabs
+include $(top_srcdir)/Makefile.flags.am
 
+PRELOAD_LDFLAGS_COMMON = -shared -Wl,-z,interpose,-z,initfirst
+PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON) @FLAG_M32@
+PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON) -m64
+PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON)

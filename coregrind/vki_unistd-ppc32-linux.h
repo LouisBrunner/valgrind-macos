@@ -96,7 +96,7 @@
 #define __NR_getppid			 64
 #define __NR_getpgrp			 65
 #define __NR_setsid			 66
-//#define __NR_sigaction		 67
+#define __NR_sigaction			 67
 //#define __NR_sgetmask			 68
 //#define __NR_ssetmask			 69
 //#define __NR_setreuid			 70

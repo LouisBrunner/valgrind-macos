@@ -10376,7 +10376,93 @@ DisResult disInstr_X86_WRK (
 
 
    /* ---------------------------------------------------- */
-   /* --- end of the SSE/SSE2 decoder.                 --- */
+   /* --- end of the SSE2 decoder.                     --- */
+   /* ---------------------------------------------------- */
+
+   /* ---------------------------------------------------- */
+   /* --- start of the SSE3 decoder.                   --- */
+   /* ---------------------------------------------------- */
+
+   /* Skip parts of the decoder which don't apply given the stated
+      guest subarchitecture. */
+   if (archinfo->subarch == VexSubArchX86_sse0 
+       || archinfo->subarch == VexSubArchX86_sse1
+       /* || archinfo->subarch == VexSubArchX86_sse2 */)
+      goto after_sse_decoders;
+
+   insn = (UChar*)&guest_code[delta];
+
+   /* F3 0F 12 = MOVSLDUP -- move from E (mem or xmm) to G (xmm),
+      duplicating some lanes (2:2:0:0). */
+   /* F3 0F 16 = MOVSHDUP -- move from E (mem or xmm) to G (xmm),
+      duplicating some lanes (3:3:1:1). */
+   if (sz == 4 && insn[0] == 0xF3 && insn[1] == 0x0F 
+       && (insn[2] == 0x12 || insn[2] == 0x16)) {
+      IRTemp s3, s2, s1, s0;
+      IRTemp sV  = newTemp(Ity_V128);
+      Bool   isH = insn[2] == 0x16;
+      s3 = s2 = s1 = s0 = IRTemp_INVALID;
+
+      modrm = insn[3];
+      if (epartIsReg(modrm)) {
+         assign( sV, getXMMReg( eregOfRM(modrm)) );
+         DIP("movs%cdup %s,%s\n", isH ? 'h' : 'l',
+                                  nameXMMReg(eregOfRM(modrm)),
+                                  nameXMMReg(gregOfRM(modrm)));
+         delta += 3+1;
+      } else {
+         addr = disAMode ( &alen, sorb, delta+3, dis_buf );
+         assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+         DIP("movs%cdup %s,%s\n", isH ? 'h' : 'l',
+	     dis_buf,
+             nameXMMReg(gregOfRM(modrm)));
+         delta += 3+alen;
+      }
+
+      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+      putXMMReg( gregOfRM(modrm), 
+                 isH ? mk128from32s( s3, s3, s1, s1 )
+                     : mk128from32s( s2, s2, s0, s0 ) );
+      goto decode_success;
+   }
+
+   /* F2 0F D0 = ADDSUBPS -- 32x4 +/-/+/- from E (mem or xmm) to G (xmm). */
+   if (sz == 4 && insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0xD0) {
+      IRTemp a3, a2, a1, a0, s3, s2, s1, s0;
+      IRTemp eV   = newTemp(Ity_V128);
+      IRTemp gV   = newTemp(Ity_V128);
+      IRTemp addV = newTemp(Ity_V128);
+      IRTemp subV = newTemp(Ity_V128);
+      a3 = a2 = a1 = a0 = s3 = s2 = s1 = s0 = IRTemp_INVALID;
+
+      modrm = insn[3];
+      if (epartIsReg(modrm)) {
+         assign( eV, getXMMReg( eregOfRM(modrm)) );
+         DIP("addsubps %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                                 nameXMMReg(gregOfRM(modrm)));
+         delta += 3+1;
+      } else {
+         addr = disAMode ( &alen, sorb, delta+3, dis_buf );
+         assign( eV, loadLE(Ity_V128, mkexpr(addr)) );
+         DIP("addsubps %s,%s\n", dis_buf,
+                                 nameXMMReg(gregOfRM(modrm)));
+         delta += 3+alen;
+      }
+
+      assign( gV, getXMMReg(gregOfRM(modrm)) );
+
+      assign( addV, binop(Iop_Add32Fx4, mkexpr(gV), mkexpr(eV)) );
+      assign( subV, binop(Iop_Sub32Fx4, mkexpr(gV), mkexpr(eV)) );
+
+      breakup128to32s( addV, &a3, &a2, &a1, &a0 );
+      breakup128to32s( subV, &s3, &s2, &s1, &s0 );
+
+      putXMMReg( gregOfRM(modrm), mk128from32s( a3, s2, a1, s0 ));
+      goto decode_success;
+   }
+
+   /* ---------------------------------------------------- */
+   /* --- end of the SSE3 decoder.                     --- */
    /* ---------------------------------------------------- */
 
    after_sse_decoders:

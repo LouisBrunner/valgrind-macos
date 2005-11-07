@@ -105,7 +105,7 @@ static const char *select_platform(const char *clientname)
    int fd;
    unsigned char *header;
    const char *platform = NULL;
-   int32_t pagesize = sysconf(_SC_PAGESIZE);
+   long pagesize = sysconf(_SC_PAGESIZE);
 
    if (strchr(clientname, '/') == NULL)
       clientname = find_client(clientname);

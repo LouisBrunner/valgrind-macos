@@ -30,7 +30,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	execve.stderr.exp execve.stderr.exp2 execve.vgtest \
 	execve2.stderr.exp execve2.stderr.exp2 execve2.vgtest \
 	fprw.stderr.exp fprw.vgtest \
-	fwrite.stderr.exp fwrite.stderr.exp2 fwrite.stdout.exp fwrite.vgtest \
+	fwrite.stderr.exp fwrite.stderr.exp2 fwrite.vgtest \
 	inits.stderr.exp inits.vgtest \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
 	leak-0.vgtest leak-0.stderr.exp \

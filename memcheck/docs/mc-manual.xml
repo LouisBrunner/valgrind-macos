@@ -46,9 +46,6 @@ Memcheck can detect the following problems:</para>
     <computeroutput>memcpy()</computeroutput> and related
     functions</para>
   </listitem>
-  <listitem>
-    <para>Some misuses of the POSIX pthreads API</para>
-  </listitem>
 </itemizedlist>
 
 </sect1>
@@ -159,19 +156,25 @@ Memcheck can detect the following problems:</para>
 
   <listitem id="partial">
     <para><computeroutput>--partial-loads-ok=yes</computeroutput>
-    [default]</para>
-    <para><computeroutput>--partial-loads-ok=no</computeroutput></para>
-    <para>Controls how Memcheck handles word (4-byte) loads from
+    </para>
+    <para><computeroutput>--partial-loads-ok=no</computeroutput>[default]
+    </para>
+    <para>Controls how Memcheck handles word-sized, word-aligned loads from
     addresses for which some bytes are addressible and others are
-    not.  When <computeroutput>yes</computeroutput> (the
-    default), such loads do not elicit an address error.
+    not.  When <computeroutput>yes</computeroutput>,
+    such loads do not elicit an address error.
     Instead, the loaded V bytes corresponding to the illegal
-    addresses indicate undefined, and those corresponding to
+    addresses indicate Undefined, and those corresponding to
     legal addresses are loaded from shadow memory, as usual.</para>
-    <para>When <computeroutput>no</computeroutput>, loads from
-    partially invalid addresses are treated the same as loads
-    from completely invalid addresses: an illegal-address error
+    <para>When <computeroutput>no</computeroutput>(the default), 
+    loads from partially invalid addresses are treated the same as 
+    loads from completely invalid addresses: an illegal-address error
     is issued, and the resulting V bytes indicate valid data.</para>
+    <para>Note that code that behaves in this way is in violation of
+    the the ISO C/C++ standards, and should be considered broken.
+    If at all possible, such code should be fixed.  This flag should
+    be used only as a last resort.
+    </para>
   </listitem>
 
   <listitem id="strlen">

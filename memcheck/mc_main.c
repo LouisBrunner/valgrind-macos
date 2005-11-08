@@ -417,7 +417,7 @@ ULong mc_LOADVn_slow ( Addr a, SizeT szB, Bool bigendian )
    SizeT i           = szB-1;
    SizeT n_addrs_bad = 0;
    Addr  ai;
-   Bool  aok;
+   Bool  aok, partial_load_exemption_applies;
    UWord abit, vbyte;
 
    PROF_EVENT(30, "mc_LOADVn_slow");
@@ -436,7 +436,25 @@ ULong mc_LOADVn_slow ( Addr a, SizeT szB, Bool bigendian )
       i--;
    }
 
-   if (n_addrs_bad > 0)
+   /* This is a hack which avoids producing errors for code which
+      insists in stepping along byte strings in aligned word-sized
+      chunks, and there is a partially defined word at the end.  (eg,
+      optimised strlen).  Such code is basically broken at least WRT
+      semantics of ANSI C, but sometimes users don't have the option
+      to fix it, and so this option is provided.  Note it is now
+      defaulted to not-engaged.
+
+      A load from a partially-addressible place is allowed if:
+      - the command-line flag is set
+      - it's a word-sized, word-aligned load
+      - at least one of the addresses in the word *is* valid
+   */
+   partial_load_exemption_applies
+      = MAC_(clo_partial_loads_ok) && szB == VG_WORDSIZE 
+                                   && VG_IS_WORD_ALIGNED(a) 
+                                   && n_addrs_bad < VG_WORDSIZE;
+
+   if (n_addrs_bad > 0 && !partial_load_exemption_applies)
       MAC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
 
    return vw;

@@ -58,7 +58,7 @@
 /*--- Command line options                                 ---*/
 /*------------------------------------------------------------*/
 
-Bool          MAC_(clo_partial_loads_ok)       = True;
+Bool          MAC_(clo_partial_loads_ok)       = False;
 Int           MAC_(clo_freelist_vol)           = 5000000;
 LeakCheckMode MAC_(clo_leak_check)             = LC_Summary;
 VgRes         MAC_(clo_leak_resolution)        = Vg_LowRes;
@@ -100,7 +100,7 @@ void MAC_(print_common_usage)(void)
 "    --leak-check=no|summary|full     search for memory leaks at exit?  [summary]\n"
 "    --leak-resolution=low|med|high   how much bt merging in leak check [low]\n"
 "    --show-reachable=no|yes          show reachable blocks in leak check? [no]\n"
-"    --partial-loads-ok=no|yes        too hard to explain here; see manual [yes]\n"
+"    --partial-loads-ok=no|yes        too hard to explain here; see manual [no]\n"
 "    --freelist-vol=<number>          volume of freed blocks queue [5000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
    );

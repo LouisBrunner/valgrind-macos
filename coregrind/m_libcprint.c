@@ -32,9 +32,9 @@
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcfile.h"   // For VG_(write)(), VG_(write_socket)()
+#include "pub_core_libcfile.h"   // VG_(write)(), VG_(write_socket)()
 #include "pub_core_libcprint.h"
-#include "pub_core_libcproc.h"   // For VG_(getpid)()
+#include "pub_core_libcproc.h"   // VG_(getpid)(), VG_(read_millisecond_timer()
 #include "pub_core_options.h"
 #include "valgrind.h"            // For RUNNING_ON_VALGRIND
 
@@ -252,28 +252,35 @@ void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, char buf[])
 
 
 /* ---------------------------------------------------------------------
-   ctime()
+   elapsed_wallclock_time()
    ------------------------------------------------------------------ */
 
-/* BUF must be at least 25 characters long.  This is unchecked. */
+/* Get the elapsed wallclock time since startup into buf, which must
+   16 chars long.  This is unchecked.  It also relies on the
+   millisecond timer having been set to zero by an initial read in
+   m_main during startup. */
 
-void VG_(ctime) ( /*OUT*/HChar* buf )
+void VG_(elapsed_wallclock_time) ( /*OUT*/HChar* buf )
 {
-#if 0
-   struct timeval tv;
-   struct tm tm;
-   buf[0] = 0;
-   if ( gettimeofday( &tv, NULL ) == 0
-        && localtime_r( &tv.tv_sec, &tm ) == &tm )
-   {
-      VG_(sprintf)( buf,
-                    "%04d-%02d-%02d %02d:%02d:%02d.%03d",
-                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-                    tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000 );
-   }
-#else
-   VG_(strcpy)(buf, "VG_(ctime) HACK!");
-#endif
+   UInt t, ms, s, mins, hours, days;
+
+   t  = VG_(read_millisecond_timer)(); /* milliseconds */
+
+   ms = t % 1000;
+   t /= 1000; /* now in seconds */
+
+   s = t % 60;
+   t /= 60; /* now in minutes */
+
+   mins = t % 60;
+   t /= 60; /* now in hours */
+
+   hours = t % 24;
+   t /= 24; /* now in days */
+
+   days = t;
+
+   VG_(sprintf)(buf, "%02u:%02u:%02u:%02u.%03u", days, hours, mins, s, ms);
 }
 
 
@@ -307,7 +314,7 @@ UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
 
    if (VG_(clo_time_stamp)) {
       HChar buf[50];
-      VG_(ctime)(buf);
+      VG_(elapsed_wallclock_time)(buf);
       count += VG_(printf)( "%s ", buf);
    }
 

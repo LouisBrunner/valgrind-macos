@@ -42,9 +42,11 @@
    descriptor or a socket descriptor. */
 extern Bool VG_(logging_to_socket);
 
-/* Get a human-readable representation of the local time into BUF,
-   which must be at least 25 characters long.  This is unchecked. */
-extern void VG_(ctime) ( /*OUT*/HChar* buf );
+/* Get the elapsed wallclock time since startup into buf, which must
+   16 chars long.  This is unchecked.  It also relies on the
+   millisecond timer having been set to zero by an initial read in
+   m_main during startup. */
+void VG_(elapsed_wallclock_time) ( /*OUT*/HChar* buf );
 
 #endif   // __PUB_CORE_LIBCPRINT_H
 

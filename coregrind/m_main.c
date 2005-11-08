@@ -2234,6 +2234,12 @@ Int main(Int argc, HChar **argv, HChar **envp)
    logging_to_fd = process_cmd_line_options(client_auxv, toolname);
 
    //--------------------------------------------------------------
+   // Zeroise the millisecond counter by doing a first read of it.
+   //   p: none
+   //--------------------------------------------------------------
+   (void) VG_(read_millisecond_timer)();
+
+   //--------------------------------------------------------------
    // Print the preamble
    //   p: tl_pre_clo_init            [for 'VG_(details).name' and friends]
    //   p: process_cmd_line_options() [for VG_(clo_verbosity), VG_(clo_xml),
@@ -2494,7 +2500,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
 
    if (VG_(clo_xml)) {
       HChar buf[50];
-      VG_(ctime)(buf);
+      VG_(elapsed_wallclock_time)(buf);
       VG_(message)(Vg_UserMsg, "<status>\n"
                                "  <state>RUNNING</state>\n"
                                "  <time>%t</time>\n"
@@ -2565,7 +2571,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
          VG_(show_error_counts_as_XML)();
          VG_(message)(Vg_UserMsg, "");
       }
-      VG_(ctime)(buf);
+      VG_(elapsed_wallclock_time)(buf);
       VG_(message)(Vg_UserMsg, "<status>\n"
                                "  <state>FINISHED</state>\n"
                                "  <time>%t</time>\n"

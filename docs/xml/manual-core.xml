@@ -647,8 +647,10 @@ categories.</para>
    <listitem id="time_stamp">
     <para><computeroutput>--time-stamp=no</computeroutput> [default]</para>
     <para><computeroutput>--time-stamp=yes</computeroutput></para>
-    <para>When enabled, Valgrind will precede each message with the
-    current time and date.</para>
+    <para>When enabled, Valgrind will precede each message with 
+    an indication of the elapsed wallclock time since startup,
+    expressed as days, hours, minutes, seconds and milliseconds.
+    </para>
    </listitem>
 
    <listitem id="log2fd">

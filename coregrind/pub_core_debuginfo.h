@@ -41,8 +41,16 @@
 
 #include "pub_tool_debuginfo.h"
 
-extern void VG_(di_notify_mmap)( Addr a );
+/* Notify the debuginfo system about a new mapping.  This is the way
+   new debug information gets loaded.  If allow_SkFileV is True, it
+   will try load debug info if the mapping at 'a' belongs to Valgrind;
+   whereas normally (False) it will not do that.  This allows us to
+   carefully control when the thing will read symbols from the
+   Valgrind executable itself. */
+extern void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV );
+
 extern void VG_(di_notify_munmap)( Addr a, SizeT len );
+
 extern void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot );
 
 extern SegInfo *VG_(read_seg_symbols) ( Addr addr, SizeT len,

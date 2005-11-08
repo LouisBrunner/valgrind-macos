@@ -1854,7 +1854,7 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
          arg5, arg6 
       );
       /* Load symbols? */
-      VG_(di_notify_mmap)( (Addr)sres.val );
+      VG_(di_notify_mmap)( (Addr)sres.val, False/*allow_SkFileV*/ );
    }
 
    /* Stay sane */

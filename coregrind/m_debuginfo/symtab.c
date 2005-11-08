@@ -130,14 +130,6 @@ static void unload_symbols ( Addr start, SizeT length );
    that third segment, which is wrong and causes crashes.
 */
 
-/* Make a guess (doesn't have to be 100% correct) as to whether a path
-   is that of the valgrind exe we're using. */
-static Bool is_self ( HChar* filename )
-{ 
-   return VG_(strstr)( filename, "/lib/valgrind/" ) != NULL
-          || VG_(strstr)( filename, ".in_place/" ) != NULL;
-}
-
 static void nuke_syms_in_range ( Addr start, SizeT length )
 {
    /* Repeatedly scan the segInfo list, looking for segInfos in this
@@ -168,7 +160,14 @@ static void nuke_syms_in_range ( Addr start, SizeT length )
    }
 }
 
-void VG_(di_notify_mmap)( Addr a )
+/* Notify the debuginfo system about a new mapping.  This is the way
+   new debug information gets loaded.  If allow_SkFileV is True, it
+   will try load debug info if the mapping at 'a' belongs to Valgrind;
+   whereas normally (False) it will not do that.  This allows us to
+   carefully control when the thing will read symbols from the
+   Valgrind executable itself. */
+
+void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 {
    NSegment* seg;
    HChar*    filename;
@@ -183,13 +182,13 @@ void VG_(di_notify_mmap)( Addr a )
 
    filename = VG_(arena_strdup)( VG_AR_SYMTAB, filename );
 
-   ok = (seg->kind == SkFileC || (seg->kind == SkFileV && is_self(filename)))
-         && seg->offset == 0
-         && seg->fnIdx != -1
-         && seg->hasR
-         && seg->hasX
-         && !seg->hasW
-         && is_elf_object_file( (const void*)seg->start );
+   ok = (seg->kind == SkFileC || (seg->kind == SkFileV && allow_SkFileV))
+        && seg->offset == 0
+        && seg->fnIdx != -1
+        && seg->hasR
+        && seg->hasX
+        && !seg->hasW
+        && is_elf_object_file( (const void*)seg->start );
 
    if (!ok) {
       VG_(arena_free)(VG_AR_SYMTAB, filename);

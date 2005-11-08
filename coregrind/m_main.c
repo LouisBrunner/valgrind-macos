@@ -2321,9 +2321,11 @@ Int main(Int argc, HChar **argv, HChar **envp)
      seg_starts = get_seg_starts( &n_seg_starts );
      vg_assert(seg_starts && n_seg_starts > 0);
 
-     /* show them all to the debug info reader */
+     /* show them all to the debug info reader.  allow_SkFileV has to
+        be True here so that we read info from the valgrind executable
+        itself. */
      for (i = 0; i < n_seg_starts; i++)
-        VG_(di_notify_mmap)( seg_starts[i] );
+        VG_(di_notify_mmap)( seg_starts[i], True/*allow_SkFileV*/ );
 
      VG_(free)( seg_starts );
    }

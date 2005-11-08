@@ -177,15 +177,6 @@ Memcheck can detect the following problems:</para>
     </para>
   </listitem>
 
-  <listitem id="strlen">
-    <para><computeroutput>--avoid-strlen-errors=no</computeroutput></para>
-    <para><computeroutput>--avoid-strlen-errors=yes</computeroutput> [default]</para>
-    <para>Enable or disable a heuristic for dealing with highly-optimized 
-    versions of strlen.  These versions of strlen can cause spurious errors 
-    to be reported by Memcheck, so it's usually a good idea to leave this
-    enabled.</para>
-  </listitem>
-
 </itemizedlist>
 </sect1>
 

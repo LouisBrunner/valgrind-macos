@@ -2272,32 +2272,21 @@ static Bool mc_expensive_sanity_check ( void )
 /*--- Command line args                                    ---*/
 /*------------------------------------------------------------*/
 
-Bool MC_(clo_avoid_strlen_errors)    = True;
-
 static Bool mc_process_cmd_line_option(Char* arg)
 {
-        VG_BOOL_CLO(arg, "--avoid-strlen-errors", MC_(clo_avoid_strlen_errors))
-   else
-      return MAC_(process_common_cmd_line_option)(arg);
-
-   return True;
+   return MAC_(process_common_cmd_line_option)(arg);
 }
 
 static void mc_print_usage(void)
 {  
    MAC_(print_common_usage)();
-   VG_(printf)(
-"    --avoid-strlen-errors=no|yes     suppress errs from inlined strlen [yes]\n"
-   );
 }
 
 static void mc_print_debug_usage(void)
 {  
    MAC_(print_common_debug_usage)();
-   VG_(printf)(
-"    --cleanup=no|yes          improve after instrumentation? [yes]\n"
-   );
 }
+
 
 /*------------------------------------------------------------*/
 /*--- Client requests                                      ---*/

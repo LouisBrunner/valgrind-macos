@@ -44,9 +44,8 @@
 /*--- Command line options                                 ---*/
 /*------------------------------------------------------------*/
 
-/* When instrumenting, omit some checks if tell-tale literals for
-   inlined strlen() are visible in the basic block.  default: YES */
-extern Bool MC_(clo_avoid_strlen_errors);
+/* There are no memcheck-specific ones, only mac-specific
+   ones (those shared by both memcheck and addrcheck). */
 
 
 /*------------------------------------------------------------*/

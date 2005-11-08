@@ -66,7 +66,7 @@ Building and installing it
 To install from the Subversion repository :
 
   0. Check out the code from SVN, following the instructions at
-     http://valgrind.org/devel/cvs_svn.html.
+     http://www.valgrind.org/downloads/repository.html.
 
   1. cd into the source directory.
 
@@ -96,6 +96,4 @@ cause things to break in subtle ways, mostly when Valgrind handles
 fork/exec calls.
 
 
-Julian Seward (jseward@acm.org)
-Nick Nethercote (njn@valgrind.org)
-Jeremy Fitzhardinge (jeremy@goop.org)
+The Valgrind Developers

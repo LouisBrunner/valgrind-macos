@@ -1034,6 +1034,26 @@ Addrcheck), the following options apply.</para>
     </itemizedlist>
    </listitem>
 
+   <listitem id="kernel_variant">
+    <para><computeroutput>--kernel-variant=variant1,variant2,...</computeroutput>
+    </para>
+    <para>Handle system calls and ioctls arising from minor variants
+    of the default kernel for this platform.  This is useful for
+    running on hacked kernels or with kernel modules which support
+    nonstandard ioctls, for example.  Use with caution.  If you don't
+    understand what this option does then you almost certainly don't
+    need it.
+    Currently known variants are:</para>
+    <itemizedlist>
+     <listitem><para><computeroutput>bproc</computeroutput></para>
+      <para>Support the sys_broc system call on x86.  This is for
+      running on BProc, which is a minor variant of standard Linux
+      which is sometimes used for building clusters.
+      </para>
+     </listitem>
+    </itemizedlist>
+   </listitem>
+
    <listitem id="show_emwarns">
     <para><computeroutput>--show-emwarns=no</computeroutput> [default]</para>
     <para><computeroutput>--show-emwarns=yes</computeroutput></para>

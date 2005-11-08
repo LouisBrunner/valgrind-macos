@@ -884,6 +884,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --smc-check=none|stack|all  checks for self-modifying code: none,\n"
 "                              only for code found in stacks, or all [stack]\n"
+"    --kernel-variant=variant1,variant2,...  known variants: bproc [none]\n"
+"                              handle non-standard kernel variants\n"
 "\n"
 "  user options for Valgrind tools that report errors:\n"
 "    --xml=yes                 all output is in XML (Memcheck/Nulgrind only)\n"

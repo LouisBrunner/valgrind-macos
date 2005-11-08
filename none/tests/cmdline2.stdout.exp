@@ -23,6 +23,8 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --show-emwarns=no|yes     show warnings about emulation limits? [no]
     --smc-check=none|stack|all  checks for self-modifying code: none,
                               only for code found in stacks, or all [stack]
+    --kernel-variant=variant1,variant2,...  known variants: bproc [none]
+                              handle non-standard kernel variants
 
   user options for Valgrind tools that report errors:
     --xml=yes                 all output is in XML (Memcheck/Nulgrind only)

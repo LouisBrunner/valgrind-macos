@@ -48,30 +48,84 @@ VG_(run_innerloop):
         mflr    0
         stw     0,4(1)
 
-        /* New stack frame: save callee-saved regs */
-        stwu    1,-88(1)
-        stw     31,84(1)
-        stw     30,80(1)
-        stw     29,76(1)
-        stw     28,72(1)
-        stw     27,68(1)
-        stw     26,64(1)
-        stw     25,60(1)
-        stw     24,56(1)
-        stw     23,52(1)
-        stw     22,48(1)
-        stw     21,44(1)
-        stw     20,40(1)
-        stw     19,36(1)
-        stw     18,32(1)
-        stw     17,28(1)
-        stw     16,24(1)
-        stw     15,20(1)
-        stw     14,16(1)
+        /* New stack frame */
+        stwu    1,-432(1)  /* sp should maintain 16-byte alignment */
+
+        /* CAB: should put this gap somewhere else - see ppc-abi */
+
+        /* callee-saved regs
+           http://developer.apple.com : PowerPCRuntime.pdf : p27 */
+        stw     31,424(1)
+        stw     30,420(1)
+        stw     29,416(1)
+        stw     28,412(1)
+        stw     27,408(1)
+        stw     26,404(1)
+        stw     25,400(1)
+        stw     24,396(1)
+        stw     23,392(1)
+        stw     22,388(1)
+        stw     21,384(1)
+        stw     20,380(1)
+        stw     19,376(1)
+        stw     18,372(1)
+        stw     17,368(1)
+        stw     16,364(1)
+        stw     15,360(1)
+        stw     14,356(1)
+        stw     13,352(1)
+
+        stfd    31,344(1)
+        stfd    30,336(1)
+        stfd    29,328(1)
+        stfd    28,320(1)
+        stfd    27,312(1)
+        stfd    26,304(1)
+        stfd    25,296(1)
+        stfd    24,288(1)
+        stfd    23,280(1)
+        stfd    22,272(1)
+        stfd    21,264(1)
+        stfd    20,256(1)
+        stfd    19,248(1)
+        stfd    18,240(1)
+        stfd    17,232(1)
+        stfd    16,224(1)
+        stfd    15,216(1)
+        stfd    14,208(1)
+
+        li      4,192
+        stvx    31,4,1
+        li      4,176
+        stvx    30,4,1
+        li      4,160
+        stvx    29,4,1
+        li      4,144
+        stvx    28,4,1
+        li      4,128
+        stvx    27,4,1
+        li      4,112
+        stvx    26,4,1
+        li      4,96
+        stvx    25,4,1
+        li      4,80
+        stvx    24,4,1
+        li      4,64
+        stvx    23,4,1
+        li      4,48
+        stvx    22,4,1
+        li      4,32
+        stvx    21,4,1
+        li      4,16
+        stvx    20,4,1
 
         /* r3 holds guest_state */
         mr      31,3
         stw     3,12(1)       /* spill orig guest_state ptr */
+
+        /* 8(1) used later to stop ctr reg being clobbered
+           4(1) = standard LR-save space
+        */
 
 // CAB TODO: Use a caller-saved reg for orig guest_state ptr
 // - rem to set non-allocateable in isel.c
@@ -79,19 +133,19 @@ VG_(run_innerloop):
         /* hold dispach_ctr in ctr reg */
         lis     17,VG_(dispatch_ctr)@ha
         lwz     17,VG_(dispatch_ctr)@l(17)
-	mtctr   17
+        mtctr   17
 
         /* fetch %CIA into r30 */
         lwz     30,OFFSET_ppc32_CIA(31)
 
-	/* set host FPU control word to the default mode expected 
+        /* set host FPU control word to the default mode expected 
            by VEX-generated code.  See comments in libvex.h for
            more info. */
         fsub    3,3,3   /* generate zero */
         mtfsf   0xFF,3
 
-	/* set host AltiVec control word to the default mode expected 
-	   by VEX-generated code. */
+        /* set host AltiVec control word to the default mode expected 
+           by VEX-generated code. */
         lis     3,VG_(have_altivec_ppc32)@ha
         lwz     3,VG_(have_altivec_ppc32)@l(3)
         cmplwi  3,0
@@ -124,14 +178,14 @@ dispatch_boring:
         bdz     counter_is_zero  /* decrements ctr reg */
 
         /* try a fast lookup in the translation cache */
-	/* r4=((r30<<2) & (VG_TT_FAST_MASK<<2)) */
+        /* r4=((r30<<2) & (VG_TT_FAST_MASK<<2)) */
         rlwinm  4,30, 2, 32-2-VG_TT_FAST_BITS, 31-2  
 // CAB:	use a caller-saved reg for this ?
         addis   5,4,VG_(tt_fast)@ha
         lwz     5,VG_(tt_fast)@l(5)
         lwz     6,4(5)   /* big-endian, so comparing 2nd 32bit word */
         cmpw    30,6
-	bne     fast_lookup_failed
+        bne     fast_lookup_failed
 
         /* increment bb profile counter */
 // CAB:	use a caller-saved reg for this ?
@@ -150,7 +204,7 @@ dispatch_boring:
 // CAB:	use a caller-saved reg for this ?
 //      but then (bdz) => (decr, cmp, bc)... still better than a stw?
         mfctr   9
-        stw     9,24(1)
+        stw     9,24(1)  /* => 24-16 = 8(1) on our parent stack */
 
         blrl
 
@@ -171,12 +225,12 @@ dispatch_boring:
         lwz     9,24(1)
         mtctr   9
 
-	mr      30,3             /* put CIA (=r3) in r30 */
+        mr      30,3             /* put CIA (=r3) in r30 */
         lwz     16,28(1)         /* original guest_state ptr */
         cmpw    16,31
         beq     dispatch_boring  /* r31 unchanged... */
 
-	mr      3,31             /* put return val (=r31) in r3 */
+        mr      3,31             /* put return val (=r31) in r3 */
         b       dispatch_exceptional
 
 /* All exits from the dispatcher go through here.
@@ -218,27 +272,75 @@ run_innerloop_exit_REALLY:
         lis     18,VG_(dispatch_ctr)@ha
         stw     17,VG_(dispatch_ctr)@l(18)
 
-        lwz     14,16(1)
-        lwz     15,20(1)
-        lwz     16,24(1)
-        lwz     17,28(1)
-        lwz     18,32(1)
-        lwz     19,36(1)
-        lwz     20,40(1)
-        lwz     21,44(1)
-        lwz     22,48(1)
-        lwz     23,52(1)
-        lwz     24,56(1)
-        lwz     25,60(1)
-        lwz     26,64(1)
-        lwz     27,68(1)
-        lwz     28,72(1)
-        lwz     29,76(1)
-        lwz     30,80(1)
-        lwz     31,84(1)
-        lwz     0,92(1)
+        /* restore callee-saved registers */
+        li      4,16
+        lvx     20,4,1
+        li      4,32
+        lvx     21,4,1
+        li      4,48
+        lvx     22,4,1
+        li      4,64
+        lvx     23,4,1
+        li      4,80
+        lvx     24,4,1
+        li      4,96
+        lvx     25,4,1
+        li      4,112
+        lvx     26,4,1
+        li      4,128
+        lvx     27,4,1	
+        li      4,144
+        lvx     28,4,1
+        li      4,160
+        lvx     29,4,1
+        li      4,176
+        lvx     30,4,1
+        li      4,192
+        lvx     31,4,1
+
+        lfd     14,208(1)
+        lfd     15,216(1)
+        lfd     16,224(1)
+        lfd     17,232(1)
+        lfd     18,240(1)
+        lfd     19,248(1)
+        lfd     20,256(1)
+        lfd     21,264(1)
+        lfd     22,272(1)
+        lfd     23,280(1)
+        lfd     24,288(1)
+        lfd     25,296(1)
+        lfd     26,304(1)
+        lfd     27,312(1)
+        lfd     28,320(1)
+        lfd     29,328(1)
+        lfd     30,336(1)
+        lfd     31,344(1)
+
+        lwz     13,352(1)
+        lwz     14,356(1)
+        lwz     15,360(1)
+        lwz     16,364(1)
+        lwz     17,368(1)
+        lwz     18,372(1)
+        lwz     19,376(1)
+        lwz     20,380(1)
+        lwz     21,384(1)
+        lwz     22,388(1)
+        lwz     23,392(1)
+        lwz     24,396(1)
+        lwz     25,400(1)
+        lwz     26,404(1)
+        lwz     27,408(1)
+        lwz     28,412(1)
+        lwz     29,416(1)
+        lwz     30,420(1)
+        lwz     31,424(1)
+
+        /* reset lr & sp */
+        lwz     0,436(1)  /* stack_size + 4 */
         mtlr    0
-        addi    1,1,88
+        addi    1,1,432   /* stack_size */
         blr
 
 
@@ -259,7 +361,6 @@ fast_lookup_failed:
 	mtctr   17
         li      3,VG_TRC_INNER_FASTMISS
 	b       run_innerloop_exit
-        
 
 counter_is_zero:
 	/* %CIA is up to date here since dispatch_boring dominates */

@@ -2,6 +2,13 @@
 TODO list when doing a Valgrind release (with release number "X.Y.Z")
 -----------------------------------------------------------------------------
 
+There are two kinds of releases:
+
+- Feature releases:  X.Y.0, which can include new features.
+
+- Bug-fix releases:  X.Y.[12...], which only include bug fixes.
+
+
 First of all:
 
 - Tell valgrind-developers you want to do a release.  Give a timeframe for
@@ -40,8 +47,8 @@ First of all:
   include/pub_tool_tooliface.h has been increased since the last release.
 
 
-For each release candidate (should do release candidates for big releases,
-bug-fix-only releases might not need one):
+For each release candidate (should do release candidates for feature
+releases, bug-fix-only releases might not need one):
 
 - Do pre-release testing:
   - Make sure regtests run ok on all platforms of interest.
@@ -108,6 +115,9 @@ For the official release:
   X.Y.Z is one more than the release just done.
 
 - Add a new section to docs/internals/X_Y_BUGSTATUS.txt.
+
+- If it was a feature (X.Y.0) release, add an X.Y+1.0 entry to
+  docs/internals/roadmap.txt.
 
 - Announce the release:
   - Email valgrind-users, valgrind-developers, and valgrind-announce.

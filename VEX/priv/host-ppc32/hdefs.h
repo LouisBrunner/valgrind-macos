@@ -419,6 +419,7 @@ typedef
    enum {
       Pin_LI32,       /* load 32-bit immediate (fake insn) */
       Pin_Alu32,      /* 32-bit add/sub/and/or/xor/shl/shr/sar */
+      Pin_AddSubC32,  /* 32-bit add/sub with read/write carry */
       Pin_Cmp32,      /* 32-bit compare */
       Pin_Unary32,    /* 32-bit not, neg, clz */
       Pin_MulL,       /* widening multiply */
@@ -491,6 +492,14 @@ typedef
             HReg       srcL;
             PPC32RH*   srcR;
          } Alu32;
+         /*  */
+         struct {
+            Bool isAdd;  /* else sub */
+            Bool setC;   /* else read carry */
+            HReg dst;
+            HReg srcL;
+            HReg srcR;
+         } AddSubC32;
          /* If signed, the immediate, if it exists, is a signed 16,
             else it is an unsigned 16. */
          struct {
@@ -710,6 +719,7 @@ typedef
 
 extern PPC32Instr* PPC32Instr_LI32       ( HReg, UInt );
 extern PPC32Instr* PPC32Instr_Alu32      ( PPC32AluOp, HReg, HReg, PPC32RH* );
+extern PPC32Instr* PPC32Instr_AddSubC32  ( Bool, Bool, HReg, HReg, HReg );
 extern PPC32Instr* PPC32Instr_Cmp32      ( Bool,       UInt, HReg, PPC32RH* );
 extern PPC32Instr* PPC32Instr_Unary32    ( PPC32UnaryOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_MulL       ( Bool syned, Bool hi32, HReg, HReg, HReg );

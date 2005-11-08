@@ -721,6 +721,17 @@ PPC32Instr* PPC32Instr_Alu32 ( PPC32AluOp op, HReg dst,
    i->Pin.Alu32.srcR = srcR;
    return i;
 }
+PPC32Instr* PPC32Instr_AddSubC32 ( Bool isAdd, Bool setC,
+                                   HReg dst, HReg srcL, HReg srcR ) {
+   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag                 = Pin_AddSubC32;
+   i->Pin.AddSubC32.isAdd = isAdd;
+   i->Pin.AddSubC32.setC  = setC;
+   i->Pin.AddSubC32.dst   = dst;
+   i->Pin.AddSubC32.srcL  = srcL;
+   i->Pin.AddSubC32.srcR  = srcR;
+   return i;
+}
 PPC32Instr* PPC32Instr_Cmp32 ( Bool syned, UInt crfD, 
                                HReg srcL, PPC32RH* srcR ) {
    PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
@@ -1079,6 +1090,16 @@ void ppPPC32Instr ( PPC32Instr* i )
          vex_printf(",");
          ppPPC32RH(i->Pin.Alu32.srcR);
       }
+      return;
+   case Pin_AddSubC32:
+      vex_printf("%s%s ",
+                 i->Pin.AddSubC32.isAdd ? "add" : "sub",
+                 i->Pin.AddSubC32.setC ? "c" : "e");
+      ppHRegPPC32(i->Pin.AddSubC32.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AddSubC32.srcL);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AddSubC32.srcR);
       return;
    case Pin_Cmp32:
       vex_printf("%s%s %%cr%u,",
@@ -1469,6 +1490,11 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       addRegUsage_PPC32RH(u, i->Pin.Alu32.srcR);
       addHRegUse(u, HRmWrite, i->Pin.Alu32.dst);
       return;
+   case Pin_AddSubC32:
+      addHRegUse(u, HRmWrite, i->Pin.AddSubC32.dst);
+      addHRegUse(u, HRmRead, i->Pin.AddSubC32.srcL);
+      addHRegUse(u, HRmRead, i->Pin.AddSubC32.srcR);
+      return;
    case Pin_Cmp32:
       addHRegUse(u, HRmRead, i->Pin.Cmp32.srcL);
       addRegUsage_PPC32RH(u, i->Pin.Cmp32.srcR);
@@ -1693,6 +1719,11 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapReg(m, &i->Pin.Alu32.dst);
       mapReg(m, &i->Pin.Alu32.srcL);
       mapRegs_PPC32RH(m, i->Pin.Alu32.srcR);
+      return;
+   case Pin_AddSubC32:
+      mapReg(m, &i->Pin.AddSubC32.dst);
+      mapReg(m, &i->Pin.AddSubC32.srcL);
+      mapReg(m, &i->Pin.AddSubC32.srcR);
       return;
    case Pin_Cmp32:
       mapReg(m, &i->Pin.Cmp32.srcL);
@@ -2342,6 +2373,28 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
       default:
          goto bad;
+      }
+      goto done;
+   }
+
+   case Pin_AddSubC32: {
+      Bool isAdd    = i->Pin.AddSubC32.isAdd;
+      Bool setC = i->Pin.AddSubC32.setC;
+      UInt r_srcL   = iregNo(i->Pin.AddSubC32.srcL);
+      UInt r_srcR   = iregNo(i->Pin.AddSubC32.srcR);
+      UInt r_dst    = iregNo(i->Pin.AddSubC32.dst);
+      
+      if (isAdd) {
+         if (setC) /* addc (PPC32 p348) */
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 10, 0);
+         else          /* adde (PPC32 p349) */
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 138, 0);
+      } else {
+         /* subfX, with args the "wrong" way round */
+         if (setC) /* subfc (PPC32 p538) */
+            p = mkFormXO(p, 31, r_dst, r_srcR, r_srcL, 0, 8, 0);
+         else          /* subfe (PPC32 p539) */
+            p = mkFormXO(p, 31, r_dst, r_srcR, r_srcL, 0, 136, 0);
       }
       goto done;
    }

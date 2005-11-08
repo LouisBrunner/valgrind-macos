@@ -870,16 +870,12 @@ struct vki_shminfo64 {
 //.. ///* We need to pay attention to this, because it mmaps memory */
 //.. //#define VKI_DRM_IOCTL_MAP_BUFS		_VKI_IOWR('d', 0x19, struct vki_drm_buf_map)
 
-//.. //----------------------------------------------------------------------
-//.. // From linux-2.6.9/include/asm-i386/ptrace.h
-//.. //----------------------------------------------------------------------
-//.. 
-//.. #define VKI_PTRACE_GETREGS			12
-//.. #define VKI_PTRACE_SETREGS			13
-//.. #define VKI_PTRACE_GETFPREGS		14
-//.. #define VKI_PTRACE_SETFPREGS		15
-//.. #define VKI_PTRACE_GETFPXREGS		18
-//.. #define VKI_PTRACE_SETFPXREGS		19
+//----------------------------------------------------------------------
+// From linux-2.6.13/include/asm-ppc64/ptrace.h
+//----------------------------------------------------------------------
+
+#define VKI_PTRACE_SETREGS			0x98
+
 
 //----------------------------------------------------------------------
 // And that's it!

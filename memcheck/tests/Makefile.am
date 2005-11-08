@@ -63,6 +63,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	oset_test.stderr.exp oset_test.stdout.exp oset_test.vgtest \
 	partiallydefinedeq.vgtest partiallydefinedeq.stderr.exp \
 	partiallydefinedeq.stdout.exp \
+	partial_load_ok.vgtest partial_load_ok.stderr.exp \
+	partial_load_dflt.vgtest partial_load_dflt.stderr.exp \
 	pipe.stderr.exp pipe.vgtest \
 	pointer-trace.vgtest \
 	pointer-trace.stderr.exp pointer-trace.stderr.exp64 \
@@ -109,6 +111,7 @@ check_PROGRAMS = \
 	nanoleak new_nothrow \
 	null_socket oset_test overlap \
 	partiallydefinedeq \
+	partial_load \
 	pipe pointer-trace \
 	post-syscall \
 	realloc1 realloc2 realloc3 \

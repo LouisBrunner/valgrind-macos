@@ -454,9 +454,9 @@ static void expand8Ux16( IRExpr* vIn, /*OUTs*/ IRTemp* vEvn, IRTemp* vOdd )
    *vOdd = newTemp(Ity_V128);
 
    assign( ones8x16, unop(Iop_Dup8x16, mkU8(0x1)) );
-   assign( *vEvn, binop(Iop_MullEven8Ux16, mkexpr(ones8x16), vIn) );
-   assign( *vOdd, binop(Iop_MullEven8Ux16, mkexpr(ones8x16), 
-                        binop(Iop_ShlV128, vIn, mkU8(8))) );
+   assign( *vOdd, binop(Iop_MullEven8Ux16, mkexpr(ones8x16), vIn) );
+   assign( *vEvn, binop(Iop_MullEven8Ux16, mkexpr(ones8x16), 
+                        binop(Iop_ShrV128, vIn, mkU8(8))) );
 }
 
 /* expand V128_8Sx16 to 2x V128_16Sx8's */
@@ -471,9 +471,9 @@ static void expand8Sx16( IRExpr* vIn, /*OUTs*/ IRTemp* vEvn, IRTemp* vOdd )
    *vOdd = newTemp(Ity_V128);
 
    assign( ones8x16, unop(Iop_Dup8x16, mkU8(0x1)) );
-   assign( *vEvn, binop(Iop_MullEven8Sx16, mkexpr(ones8x16), vIn) );
-   assign( *vOdd, binop(Iop_MullEven8Sx16, mkexpr(ones8x16), 
-                        binop(Iop_ShlV128, vIn, mkU8(8))) );
+   assign( *vOdd, binop(Iop_MullEven8Sx16, mkexpr(ones8x16), vIn) );
+   assign( *vEvn, binop(Iop_MullEven8Sx16, mkexpr(ones8x16), 
+                        binop(Iop_ShrV128, vIn, mkU8(8))) );
 }
 
 /* expand V128_16Uto8 to 2x V128_32Ux4's */
@@ -488,9 +488,9 @@ static void expand16Ux8( IRExpr* vIn, /*OUTs*/ IRTemp* vEvn, IRTemp* vOdd )
    *vOdd = newTemp(Ity_V128);
 
    assign( ones16x8, unop(Iop_Dup16x8, mkU16(0x1)) );
-   assign( *vEvn, binop(Iop_MullEven16Ux8, mkexpr(ones16x8), vIn) );
-   assign( *vOdd, binop(Iop_MullEven16Ux8, mkexpr(ones16x8), 
-                       binop(Iop_ShlV128, vIn, mkU8(16))) );
+   assign( *vOdd, binop(Iop_MullEven16Ux8, mkexpr(ones16x8), vIn) );
+   assign( *vEvn, binop(Iop_MullEven16Ux8, mkexpr(ones16x8), 
+                        binop(Iop_ShrV128, vIn, mkU8(16))) );
 }
 
 /* expand V128_16Sto8 to 2x V128_32Sx4's */
@@ -505,9 +505,9 @@ static void expand16Sx8( IRExpr* vIn, /*OUTs*/ IRTemp* vEvn, IRTemp* vOdd )
    *vOdd = newTemp(Ity_V128);
 
    assign( ones16x8, unop(Iop_Dup16x8, mkU16(0x1)) );
-   assign( *vEvn, binop(Iop_MullEven16Sx8, mkexpr(ones16x8), vIn) );
-   assign( *vOdd, binop(Iop_MullEven16Sx8, mkexpr(ones16x8), 
-                       binop(Iop_ShlV128, vIn, mkU8(16))) );
+   assign( *vOdd, binop(Iop_MullEven16Sx8, mkexpr(ones16x8), vIn) );
+   assign( *vEvn, binop(Iop_MullEven16Sx8, mkexpr(ones16x8), 
+                       binop(Iop_ShrV128, vIn, mkU8(16))) );
 }
 
 /* break V128 to 4xI32's, then sign-extend to I64's */
@@ -640,6 +640,28 @@ static IRExpr* mkV128from4x64U ( IRExpr* t3, IRExpr* t2,
                       mkQNarrow64Uto32( t1 ),
                       mkQNarrow64Uto32( t0 )));
 }
+
+/* Simulate irops Iop_MullOdd*, since we don't have them  */
+#define MK_Iop_MullOdd8Ux16( expr_vA, expr_vB ) \
+      binop(Iop_MullEven8Ux16, \
+            binop(Iop_ShrV128, expr_vA, mkU8(8)), \
+            binop(Iop_ShrV128, expr_vB, mkU8(8)))
+
+#define MK_Iop_MullOdd8Sx16( expr_vA, expr_vB ) \
+      binop(Iop_MullEven8Sx16, \
+            binop(Iop_ShrV128, expr_vA, mkU8(8)), \
+            binop(Iop_ShrV128, expr_vB, mkU8(8)))
+
+#define MK_Iop_MullOdd16Ux8( expr_vA, expr_vB ) \
+      binop(Iop_MullEven16Ux8, \
+            binop(Iop_ShrV128, expr_vA, mkU8(16)), \
+            binop(Iop_ShrV128, expr_vB, mkU8(16)))
+
+#define MK_Iop_MullOdd16Sx8( expr_vA, expr_vB ) \
+      binop(Iop_MullEven16Sx8, \
+            binop(Iop_ShrV128, expr_vA, mkU8(16)), \
+            binop(Iop_ShrV128, expr_vB, mkU8(16)))
+
 
 
 static Int integerGuestRegOffset ( UInt archreg )
@@ -5607,50 +5629,42 @@ static Bool dis_av_arith ( UInt theInstr )
    /* Multiply */
    case 0x008: // vmuloub (Multiply Odd Unsigned Byte, AV p213)
       DIP("vmuloub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_MullEven8Ux16,
-                              binop(Iop_ShlV128, mkexpr(vA), mkU8(8)),
-                              binop(Iop_ShlV128, mkexpr(vB), mkU8(8)) ));
+      putVReg( vD_addr, binop(Iop_MullEven8Ux16, mkexpr(vA), mkexpr(vB)));
       break;
 
    case 0x048: // vmulouh (Multiply Odd Unsigned Half Word, AV p214)
       DIP("vmulouh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_MullEven16Ux8,
-                              binop(Iop_ShlV128, mkexpr(vA), mkU8(16)),
-                              binop(Iop_ShlV128, mkexpr(vB), mkU8(16)) ));
+      putVReg( vD_addr, binop(Iop_MullEven16Ux8, mkexpr(vA), mkexpr(vB)));
       break;
 
    case 0x108: // vmulosb (Multiply Odd Signed Byte, AV p211)
       DIP("vmulosb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_MullEven8Sx16,
-                              binop(Iop_ShlV128, mkexpr(vA), mkU8(8)),
-                              binop(Iop_ShlV128, mkexpr(vB), mkU8(8)) ));
+      putVReg( vD_addr, binop(Iop_MullEven8Sx16, mkexpr(vA), mkexpr(vB)));
       break;
 
    case 0x148: // vmulosh (Multiply Odd Signed Half Word, AV p212)
       DIP("vmulosh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_MullEven16Sx8,
-                              binop(Iop_ShlV128, mkexpr(vA), mkU8(16)),
-                              binop(Iop_ShlV128, mkexpr(vB), mkU8(16)) ));
+      putVReg( vD_addr, binop(Iop_MullEven16Sx8, mkexpr(vA), mkexpr(vB)));
       break;
 
    case 0x208: // vmuleub (Multiply Even Unsigned Byte, AV p209)
       DIP("vmuleub v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_MullEven8Ux16, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, MK_Iop_MullOdd8Ux16( mkexpr(vA), mkexpr(vB) ));
       break;
 
    case 0x248: // vmuleuh (Multiply Even Unsigned Half Word, AV p210)
       DIP("vmuleuh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_MullEven16Ux8, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, MK_Iop_MullOdd16Ux8( mkexpr(vA), mkexpr(vB) ));
       break;
 
    case 0x308: // vmulesb (Multiply Even Signed Byte, AV p207)
       DIP("vmulesb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_MullEven8Sx16, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, MK_Iop_MullOdd8Sx16( mkexpr(vA), mkexpr(vB) ));
       break;
 
    case 0x348: // vmulesh (Multiply Even Signed Half Word, AV p208)
       DIP("vmulesh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_MullEven16Sx8, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, MK_Iop_MullOdd16Sx8( mkexpr(vA), mkexpr(vB) ));
       break;
 
 
@@ -6001,21 +6015,17 @@ static Bool dis_av_multarith ( UInt theInstr )
       assign( bHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros),  mkexpr(vB)) );
       assign( cHi, binop(Iop_InterleaveHI16x8, mkexpr(cSigns), mkexpr(vC)) );
 
-      assign( zLo, binop(Iop_Add32x4,
+      assign( zLo, binop(Iop_Add32x4, mkexpr(cLo),
                          binop(Iop_SarN32x4,
                                binop(Iop_MullEven16Sx8,
-                                     binop(Iop_ShlV128, mkexpr(aLo), mkU8(16)),
-                                     binop(Iop_ShlV128, mkexpr(bLo), mkU8(16)) ),
-                               mkU8(15)),
-                         mkexpr(cLo)) );
+                                     mkexpr(aLo), mkexpr(bLo)),
+                               mkU8(15))) );
 
-      assign( zHi, binop(Iop_Add32x4,
+      assign( zHi, binop(Iop_Add32x4, mkexpr(cHi),
                          binop(Iop_SarN32x4,
                                binop(Iop_MullEven16Sx8,
-                                     binop(Iop_ShlV128, mkexpr(aHi), mkU8(16)),
-                                     binop(Iop_ShlV128, mkexpr(bHi), mkU8(16)) ),
-                               mkU8(15)),
-                         mkexpr(cHi)) );
+                                     mkexpr(aHi), mkexpr(bHi)),
+                               mkU8(15))) );
 
       putVReg( vD_addr, binop(Iop_QNarrow32Sx4, mkexpr(zHi), mkexpr(zLo)) );
       break;
@@ -6036,23 +6046,19 @@ static Bool dis_av_multarith ( UInt theInstr )
       assign( zKonst, binop(Iop_ShlN32x4, unop(Iop_Dup32x4, mkU32(0x1)),
                             mkU8(14)) );
 
-      assign( zLo, binop(Iop_Add32x4,
+      assign( zLo, binop(Iop_Add32x4, mkexpr(cLo),
                          binop(Iop_SarN32x4,
                                binop(Iop_Add32x4, mkexpr(zKonst),
                                      binop(Iop_MullEven16Sx8,
-                                           binop(Iop_ShlV128, mkexpr(aLo), mkU8(16)),
-                                           binop(Iop_ShlV128, mkexpr(bLo), mkU8(16)) )),
-                               mkU8(15)),
-                         mkexpr(cLo)) );
+                                           mkexpr(aLo), mkexpr(bLo))),
+                               mkU8(15))) );
 
-      assign( zHi, binop(Iop_Add32x4,
+      assign( zHi, binop(Iop_Add32x4, mkexpr(cHi),
                          binop(Iop_SarN32x4,
                                binop(Iop_Add32x4, mkexpr(zKonst),
                                      binop(Iop_MullEven16Sx8,
-                                           binop(Iop_ShlV128, mkexpr(aHi), mkU8(16)),
-                                           binop(Iop_ShlV128, mkexpr(bHi), mkU8(16)) )),
-                               mkU8(15)),
-                         mkexpr(cHi)) );
+                                           mkexpr(aHi), mkexpr(bHi))),
+                               mkU8(15))) );
 
       putVReg( vD_addr, binop(Iop_QNarrow32Sx4, mkexpr(zHi), mkexpr(zLo)) );
       break;
@@ -6066,14 +6072,10 @@ static Bool dis_av_multarith ( UInt theInstr )
       assign( bHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros), mkexpr(vB)) );
       assign( cHi, binop(Iop_InterleaveHI16x8, mkexpr(zeros), mkexpr(vC)) );
       assign( zLo, binop(Iop_Add32x4,
-                         binop(Iop_MullEven16Ux8,
-                               binop(Iop_ShlV128, mkexpr(aLo), mkU8(16)),
-                               binop(Iop_ShlV128, mkexpr(bLo), mkU8(16)) ),
+                         binop(Iop_MullEven16Ux8, mkexpr(aLo), mkexpr(bLo) ),
                          mkexpr(cLo)) );
       assign( zHi, binop(Iop_Add32x4,
-                         binop(Iop_MullEven16Ux8,
-                               binop(Iop_ShlV128, mkexpr(aHi), mkU8(16)),
-                               binop(Iop_ShlV128, mkexpr(bHi), mkU8(16)) ),
+                         binop(Iop_MullEven16Ux8, mkexpr(aHi), mkexpr(bHi) ),
                          mkexpr(cHi)) );
       putVReg( vD_addr, binop(Iop_Narrow32Ux4, mkexpr(zHi), mkexpr(zLo)) );
       break;
@@ -6087,10 +6089,8 @@ static Bool dis_av_multarith ( UInt theInstr )
       DIP("vmsumubm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
 
       /* multiply vA,vB (unsigned, widening) */
-      assign( abEvn, binop(Iop_MullEven8Ux16, mkexpr(vA), mkexpr(vB)) );
-      assign( abOdd, binop(Iop_MullEven8Ux16,
-                           binop(Iop_ShlV128, mkexpr(vA), mkU8(8)),
-                           binop(Iop_ShlV128, mkexpr(vB), mkU8(8)) ));
+      assign( abEvn, MK_Iop_MullOdd8Ux16( mkexpr(vA), mkexpr(vB) ));
+      assign( abOdd, binop(Iop_MullEven8Ux16, mkexpr(vA), mkexpr(vB)) );
       
       /* evn,odd: V128_16Ux8 -> 2 x V128_32Ux4, zero-extended */
       expand16Ux8( mkexpr(abEvn), &abEE, &abEO );
@@ -6118,29 +6118,23 @@ static Bool dis_av_multarith ( UInt theInstr )
       expand8Ux16( mkexpr(vB), &bEvn, &bOdd );
 
       /* multiply vA, vB, again separating adjacent lanes */
-      assign( abEE, binop(Iop_MullEven16Sx8, mkexpr(aEvn), mkexpr(bEvn) ));
-      assign( abEO, binop(Iop_MullEven16Sx8,
-                          binop(Iop_ShlV128, mkexpr(aEvn), mkU8(16)),
-                          binop(Iop_ShlV128, mkexpr(bEvn), mkU8(16)) ));
-      assign( abOE, binop(Iop_MullEven16Sx8, mkexpr(aOdd), mkexpr(bOdd) ));
-      assign( abOO, binop(Iop_MullEven16Sx8,
-                          binop(Iop_ShlV128, mkexpr(aOdd), mkU8(16)),
-                          binop(Iop_ShlV128, mkexpr(bOdd), mkU8(16)) ));
+      assign( abEE, MK_Iop_MullOdd16Sx8( mkexpr(aEvn), mkexpr(bEvn) ));
+      assign( abEO, binop(Iop_MullEven16Sx8, mkexpr(aEvn), mkexpr(bEvn)) );
+      assign( abOE, MK_Iop_MullOdd16Sx8( mkexpr(aOdd), mkexpr(bOdd) ));
+      assign( abOO, binop(Iop_MullEven16Sx8, mkexpr(aOdd), mkexpr(bOdd)) );
 
       /* add results together, + vC */
       putVReg( vD_addr,
                binop(Iop_QAdd32Sx4, mkexpr(vC),
                      binop(Iop_QAdd32Sx4,
                            binop(Iop_QAdd32Sx4, mkexpr(abEE), mkexpr(abEO)),
-                           binop(Iop_QAdd32Sx4, mkexpr(abOE), mkexpr(abOO)) )));
+                           binop(Iop_QAdd32Sx4, mkexpr(abOE), mkexpr(abOO)))) );
       break;
    }
    case 0x26: { // vmsumuhm (Multiply Sum Unsigned HW Modulo, AV p205)
       DIP("vmsumuhm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      assign( abEvn, binop(Iop_MullEven16Ux8, mkexpr(vA), mkexpr(vB)) );
-      assign( abOdd, binop(Iop_MullEven16Ux8,
-                           binop(Iop_ShlV128, mkexpr(vA), mkU8(16)),
-                           binop(Iop_ShlV128, mkexpr(vB), mkU8(16)) ));
+      assign( abEvn, MK_Iop_MullOdd16Ux8( mkexpr(vA), mkexpr(vB) ));
+      assign( abOdd, binop(Iop_MullEven16Ux8, mkexpr(vA), mkexpr(vB)) );
       putVReg( vD_addr,
                binop(Iop_Add32x4, mkexpr(vC),
                      binop(Iop_Add32x4, mkexpr(abEvn), mkexpr(abOdd))) );
@@ -6149,10 +6143,8 @@ static Bool dis_av_multarith ( UInt theInstr )
    case 0x27: { // vmsumuhs (Multiply Sum Unsigned HW Saturate, AV p206)
       DIP("vmsumuhs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       /* widening multiply, separating lanes */
-      assign( abEvn, binop(Iop_MullEven16Ux8, mkexpr(vA), mkexpr(vB)) );
-      assign( abOdd, binop(Iop_MullEven16Ux8,
-                           binop(Iop_ShlV128, mkexpr(vA), mkU8(16)),
-                           binop(Iop_ShlV128, mkexpr(vB), mkU8(16))) );
+      assign( abEvn, MK_Iop_MullOdd16Ux8(mkexpr(vA), mkexpr(vB) ));
+      assign( abOdd, binop(Iop_MullEven16Ux8, mkexpr(vA), mkexpr(vB)) );
 
       /* break V128 to 4xI32's, zero-extending to I64's */
       breakV128to4x64U( mkexpr(abEvn), &ab7, &ab5, &ab3, &ab1 );
@@ -6177,10 +6169,8 @@ static Bool dis_av_multarith ( UInt theInstr )
    }
    case 0x28: { // vmsumshm (Multiply Sum Signed HW Modulo, AV p202)
       DIP("vmsumshm v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
-      assign( abEvn, binop(Iop_MullEven16Sx8, mkexpr(vA), mkexpr(vB)) );
-      assign( abOdd, binop(Iop_MullEven16Sx8,
-                           binop(Iop_ShlV128, mkexpr(vA), mkU8(16)),
-                           binop(Iop_ShlV128, mkexpr(vB), mkU8(16)) ));
+      assign( abEvn, MK_Iop_MullOdd16Sx8( mkexpr(vA), mkexpr(vB) ));
+      assign( abOdd, binop(Iop_MullEven16Sx8, mkexpr(vA), mkexpr(vB)) );
       putVReg( vD_addr,
                binop(Iop_Add32x4, mkexpr(vC),
                      binop(Iop_Add32x4, mkexpr(abOdd), mkexpr(abEvn))) );
@@ -6189,10 +6179,8 @@ static Bool dis_av_multarith ( UInt theInstr )
    case 0x29: { // vmsumshs (Multiply Sum Signed HW Saturate, AV p203)
       DIP("vmsumshs v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
       /* widening multiply, separating lanes */
-      assign( abEvn, binop(Iop_MullEven16Sx8, mkexpr(vA), mkexpr(vB)) );
-      assign( abOdd, binop(Iop_MullEven16Sx8,
-                           binop(Iop_ShlV128, mkexpr(vA), mkU8(16)),
-                           binop(Iop_ShlV128, mkexpr(vB), mkU8(16))) );
+      assign( abEvn, MK_Iop_MullOdd16Sx8( mkexpr(vA), mkexpr(vB) ));
+      assign( abOdd, binop(Iop_MullEven16Sx8, mkexpr(vA), mkexpr(vB)) );
 
       /* break V128 to 4xI32's, sign-extending to I64's */
       breakV128to4x64S( mkexpr(abEvn), &ab7, &ab5, &ab3, &ab1 );

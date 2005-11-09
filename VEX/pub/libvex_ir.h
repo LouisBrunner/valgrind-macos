@@ -553,8 +553,7 @@ typedef
       Iop_MulLo16Sx8, Iop_MulLo32Sx4,
       Iop_MulHi16Ux8, Iop_MulHi32Ux4,
       Iop_MulHi16Sx8, Iop_MulHi32Sx4,
-
-      /* (widening signed/unsigned of even lanes) */
+      /* (widening signed/unsigned of even lanes, with lowest lane=zero) */
       Iop_MullEven8Ux16, Iop_MullEven16Ux8,
       Iop_MullEven8Sx16, Iop_MullEven16Sx8,
 

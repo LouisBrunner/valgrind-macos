@@ -3307,8 +3307,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Max8Sx16:   op = Pav_MAXS;   goto do_AvBin8x16;
       case Iop_Min8Ux16:   op = Pav_MINU;   goto do_AvBin8x16;
       case Iop_Min8Sx16:   op = Pav_MINS;   goto do_AvBin8x16;
-      case Iop_MullEven8Ux16: op = Pav_EMULU;  goto do_AvBin8x16;
-      case Iop_MullEven8Sx16: op = Pav_EMULS;  goto do_AvBin8x16;
+      case Iop_MullEven8Ux16: op = Pav_OMULU;  goto do_AvBin8x16;
+      case Iop_MullEven8Sx16: op = Pav_OMULS;  goto do_AvBin8x16;
       case Iop_CmpEQ8x16:  op = Pav_CMPEQU; goto do_AvBin8x16;
       case Iop_CmpGT8Ux16: op = Pav_CMPGTU; goto do_AvBin8x16;
       case Iop_CmpGT8Sx16: op = Pav_CMPGTS; goto do_AvBin8x16;
@@ -3341,8 +3341,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Max16Sx8:   op = Pav_MAXS;   goto do_AvBin16x8;
       case Iop_Min16Ux8:   op = Pav_MINU;   goto do_AvBin16x8;
       case Iop_Min16Sx8:   op = Pav_MINS;   goto do_AvBin16x8;
-      case Iop_MullEven16Ux8: op = Pav_EMULU;  goto do_AvBin16x8;
-      case Iop_MullEven16Sx8: op = Pav_EMULS;  goto do_AvBin16x8;
+      case Iop_MullEven16Ux8: op = Pav_OMULU;  goto do_AvBin16x8;
+      case Iop_MullEven16Sx8: op = Pav_OMULS;  goto do_AvBin16x8;
       case Iop_CmpEQ16x8:  op = Pav_CMPEQU; goto do_AvBin16x8;
       case Iop_CmpGT16Ux8: op = Pav_CMPGTU; goto do_AvBin16x8;
       case Iop_CmpGT16Sx8: op = Pav_CMPGTS; goto do_AvBin16x8;

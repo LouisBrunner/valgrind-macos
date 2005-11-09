@@ -61,7 +61,7 @@ VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
    ThreadId     tid = (ThreadId)tidW;
    ThreadState* tst = VG_(get_ThreadState)(tid);
 
-   VG_(debugLog)(1, "core_os", 
+   VG_(debugLog)(1, "syswrap-linux", 
                     "ML_(thread_wrapper)(tid=%lld): entry\n", 
                     (ULong)tidW);
 
@@ -89,7 +89,7 @@ VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
    vg_assert(tst->status == VgTs_Runnable);
    vg_assert(VG_(is_running_thread)(tid));
 
-   VG_(debugLog)(1, "core_os", 
+   VG_(debugLog)(1, "syswrap-linux", 
                     "ML_(thread_wrapper)(tid=%lld): done\n", 
                     (ULong)tidW);
 
@@ -110,7 +110,7 @@ void ML_(run_a_thread_NORETURN) ( Word tidW )
    VgSchedReturnCode src;
    Int               c;
 
-   VG_(debugLog)(1, "syswrap-generic", 
+   VG_(debugLog)(1, "syswrap-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
                        "ML_(thread_wrapper) called\n",
                        (ULong)tidW);
@@ -118,7 +118,7 @@ void ML_(run_a_thread_NORETURN) ( Word tidW )
    /* Run the thread all the way through. */
    src = ML_(thread_wrapper)(tid);  
 
-   VG_(debugLog)(1, "syswrap-ppc32-linux", 
+   VG_(debugLog)(1, "syswrap-linux", 
                     "run_a_thread_NORETURN(tid=%lld): "
                        "ML_(thread_wrapper) done\n",
                        (ULong)tidW);
@@ -128,7 +128,7 @@ void ML_(run_a_thread_NORETURN) ( Word tidW )
 
    if (c == 1) {
 
-      VG_(debugLog)(1, "syswrap-ppc32-linux", 
+      VG_(debugLog)(1, "syswrap-linux", 
                        "run_a_thread_NORETURN(tid=%lld): "
                           "last one standing\n",
                           (ULong)tidW);
@@ -142,7 +142,7 @@ void ML_(run_a_thread_NORETURN) ( Word tidW )
 
       ThreadState *tst;
 
-      VG_(debugLog)(1, "syswrap-ppc32-linux", 
+      VG_(debugLog)(1, "syswrap-linux", 
                        "run_a_thread_NORETURN(tid=%lld): "
                           "not last one standing\n",
                           (ULong)tidW);

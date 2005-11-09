@@ -2023,6 +2023,7 @@ typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory 
 #define VKI_PTRACE_PEEKTEXT	   1
 #define VKI_PTRACE_PEEKDATA	   2
 #define VKI_PTRACE_PEEKUSR	   3
+#define VKI_PTRACE_POKEUSR	   6
 
 #define VKI_PTRACE_DETACH       0x11
 

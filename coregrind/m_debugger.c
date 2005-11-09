@@ -36,6 +36,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_libcassert.h"   // I_die_here
 #include "pub_core_options.h"
 
 #define WIFSTOPPED(status) (((status) & 0xff) == 0x7f)
@@ -84,48 +85,49 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    regs.rip    = vex->guest_RIP;
 
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
-
 #elif defined(VGA_ppc32)
-   regs.gpr[ 0] = vex->guest_GPR0;
-   regs.gpr[ 1] = vex->guest_GPR1;
-   regs.gpr[ 2] = vex->guest_GPR2;
-   regs.gpr[ 3] = vex->guest_GPR3;
-   regs.gpr[ 4] = vex->guest_GPR4;
-   regs.gpr[ 5] = vex->guest_GPR5;
-   regs.gpr[ 6] = vex->guest_GPR6;
-   regs.gpr[ 7] = vex->guest_GPR7;
-   regs.gpr[ 8] = vex->guest_GPR8;
-   regs.gpr[ 9] = vex->guest_GPR9;
-   regs.gpr[10] = vex->guest_GPR10;
-   regs.gpr[11] = vex->guest_GPR11;
-   regs.gpr[12] = vex->guest_GPR12;
-   regs.gpr[13] = vex->guest_GPR13;
-   regs.gpr[14] = vex->guest_GPR14;
-   regs.gpr[15] = vex->guest_GPR15;
-   regs.gpr[16] = vex->guest_GPR16;
-   regs.gpr[17] = vex->guest_GPR17;
-   regs.gpr[18] = vex->guest_GPR18;
-   regs.gpr[19] = vex->guest_GPR19;
-   regs.gpr[20] = vex->guest_GPR20;
-   regs.gpr[21] = vex->guest_GPR21;
-   regs.gpr[22] = vex->guest_GPR22;
-   regs.gpr[23] = vex->guest_GPR23;
-   regs.gpr[24] = vex->guest_GPR24;
-   regs.gpr[25] = vex->guest_GPR25;
-   regs.gpr[26] = vex->guest_GPR26;
-   regs.gpr[27] = vex->guest_GPR27;
-   regs.gpr[28] = vex->guest_GPR28;
-   regs.gpr[29] = vex->guest_GPR29;
-   regs.gpr[30] = vex->guest_GPR30;
-   regs.gpr[31] = vex->guest_GPR31;
-   regs.orig_gpr3 = vex->guest_GPR3;
-   regs.ctr     = vex->guest_CTR;
-   regs.link    = vex->guest_LR;
-   regs.xer     = LibVEX_GuestPPC32_get_XER(vex);
-   regs.ccr     = LibVEX_GuestPPC32_get_CR(vex);
-   regs.nip     = vex->guest_CIA + 4;
+   Int rc = 0;
 
-   return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R0 * 4, vex->guest_GPR0);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R1 * 4, vex->guest_GPR1);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R2 * 4, vex->guest_GPR2);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R3 * 4, vex->guest_GPR3);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R4 * 4, vex->guest_GPR4);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R5 * 4, vex->guest_GPR5);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R6 * 4, vex->guest_GPR6);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R7 * 4, vex->guest_GPR7);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R8 * 4, vex->guest_GPR8);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R9 * 4, vex->guest_GPR9);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R10 * 4, vex->guest_GPR10);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R11 * 4, vex->guest_GPR11);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R12 * 4, vex->guest_GPR12);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R13 * 4, vex->guest_GPR13);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R14 * 4, vex->guest_GPR14);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R15 * 4, vex->guest_GPR15);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R16 * 4, vex->guest_GPR16);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R17 * 4, vex->guest_GPR17);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R18 * 4, vex->guest_GPR18);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R19 * 4, vex->guest_GPR19);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R20 * 4, vex->guest_GPR20);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R21 * 4, vex->guest_GPR21);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R22 * 4, vex->guest_GPR22);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R23 * 4, vex->guest_GPR23);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R24 * 4, vex->guest_GPR24);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R25 * 4, vex->guest_GPR25);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R26 * 4, vex->guest_GPR26);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R27 * 4, vex->guest_GPR27);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R28 * 4, vex->guest_GPR28);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R29 * 4, vex->guest_GPR29);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R30 * 4, vex->guest_GPR30);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_R31 * 4, vex->guest_GPR31);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_NIP * 4, vex->guest_CIA);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_CCR * 4,
+                     LibVEX_GuestPPC32_get_CR(vex));
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_LNK * 4, vex->guest_LR);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_CTR * 4, vex->guest_CTR);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSER, pid, VKI_PT_XER * 4,
+                     LibVEX_GuestPPC32_get_XER(vex));
+   return rc;
 #else
 #  error Unknown arch
 #endif

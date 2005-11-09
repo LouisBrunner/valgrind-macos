@@ -203,7 +203,38 @@ struct vki_pt_regs {
 
 #define vki_user_regs_struct vki_pt_regs
 
-#define VKI_PT_R0		 0
+#define VKI_PT_R0		0
+#define VKI_PT_R1		1
+#define VKI_PT_R2		2
+#define VKI_PT_R3		3
+#define VKI_PT_R4		4
+#define VKI_PT_R5		5
+#define VKI_PT_R6		6
+#define VKI_PT_R7		7
+#define VKI_PT_R8		8
+#define VKI_PT_R9		9
+#define VKI_PT_R10		10
+#define VKI_PT_R11		11
+#define VKI_PT_R12		12
+#define VKI_PT_R13		13
+#define VKI_PT_R14		14
+#define VKI_PT_R15		15
+#define VKI_PT_R16		16
+#define VKI_PT_R17		17
+#define VKI_PT_R18		18
+#define VKI_PT_R19		19
+#define VKI_PT_R20		20
+#define VKI_PT_R21		21
+#define VKI_PT_R22		22
+#define VKI_PT_R23		23
+#define VKI_PT_R24		24
+#define VKI_PT_R25		25
+#define VKI_PT_R26		26
+#define VKI_PT_R27		27
+#define VKI_PT_R28		28
+#define VKI_PT_R29		29
+#define VKI_PT_R30		30
+#define VKI_PT_R31		31
 #define VKI_PT_NIP		32
 #define VKI_PT_MSR		33
 #define VKI_PT_ORIG_R3		34
@@ -869,13 +900,6 @@ struct vki_shminfo64 {
 //.. //
 //.. ///* We need to pay attention to this, because it mmaps memory */
 //.. //#define VKI_DRM_IOCTL_MAP_BUFS		_VKI_IOWR('d', 0x19, struct vki_drm_buf_map)
-
-//----------------------------------------------------------------------
-// From linux-2.6.13/include/asm-ppc64/ptrace.h
-//----------------------------------------------------------------------
-
-#define VKI_PTRACE_SETREGS			0x98
-
 
 //----------------------------------------------------------------------
 // And that's it!

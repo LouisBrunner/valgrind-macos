@@ -4554,7 +4554,23 @@ PRE(sys_mprotect)
 
    if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mprotect")) {
       SET_STATUS_Failure( VKI_ENOMEM );
-   } else if (ARG3 & (VKI_PROT_GROWSDOWN|VKI_PROT_GROWSUP)) {
+   } 
+   else 
+   if (ARG3 & (VKI_PROT_GROWSDOWN|VKI_PROT_GROWSUP)) {
+      /* Deal with mprotects on growable stack areas.
+
+         The critical files to understand all this are mm/mprotect.c
+         in the kernel and sysdeps/unix/sysv/linux/dl-execstack.c in
+         glibc.
+
+         The kernel provides PROT_GROWSDOWN and PROT_GROWSUP which
+         round the start/end address of mprotect to the start/end of
+         the underlying vma and glibc uses that as an easy way to
+         change the protection of the stack by calling mprotect on the
+         last page of the stack with PROT_GROWSDOWN set.
+
+         The sanity check provided by the kernel is that the vma must
+         have the VM_GROWSDOWN/VM_GROWSUP flag set as appropriate.  */
       UInt grows = ARG3 & (VKI_PROT_GROWSDOWN|VKI_PROT_GROWSUP);
       NSegment *aseg = VG_(am_find_nsegment)(ARG1);
       NSegment *rseg;
@@ -4586,6 +4602,7 @@ PRE(sys_mprotect)
             SET_STATUS_Failure( VKI_EINVAL );
          }
       } else {
+         /* both GROWSUP and GROWSDOWN */
          SET_STATUS_Failure( VKI_EINVAL );
       }
    }

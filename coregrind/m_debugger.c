@@ -44,8 +44,8 @@
 
 static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 {
-   struct vki_user_regs_struct regs;
 #if defined(VGA_x86)
+   struct vki_user_regs_struct regs;
    regs.cs     = vex->guest_CS;
    regs.ss     = vex->guest_SS;
    regs.ds     = vex->guest_DS;
@@ -62,9 +62,10 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    regs.esp    = vex->guest_ESP;
    regs.eflags = LibVEX_GuestX86_get_eflags(vex);
    regs.eip    = vex->guest_EIP;
-
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
+
 #elif defined(VGA_amd64)
+   struct vki_user_regs_struct regs;
    regs.rax    = vex->guest_RAX;
    regs.rbx    = vex->guest_RBX;
    regs.rcx    = vex->guest_RCX;
@@ -83,51 +84,52 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    regs.r15    = vex->guest_R15;
    regs.eflags = LibVEX_GuestAMD64_get_rflags(vex);
    regs.rip    = vex->guest_RIP;
-
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
+
 #elif defined(VGA_ppc32)
    Int rc = 0;
-
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R0 * 4, vex->guest_GPR0);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R1 * 4, vex->guest_GPR1);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R2 * 4, vex->guest_GPR2);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R3 * 4, vex->guest_GPR3);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R4 * 4, vex->guest_GPR4);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R5 * 4, vex->guest_GPR5);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R6 * 4, vex->guest_GPR6);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R7 * 4, vex->guest_GPR7);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R8 * 4, vex->guest_GPR8);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R9 * 4, vex->guest_GPR9);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R10 * 4, vex->guest_GPR10);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R11 * 4, vex->guest_GPR11);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R12 * 4, vex->guest_GPR12);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R13 * 4, vex->guest_GPR13);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R14 * 4, vex->guest_GPR14);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R15 * 4, vex->guest_GPR15);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R16 * 4, vex->guest_GPR16);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R17 * 4, vex->guest_GPR17);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R18 * 4, vex->guest_GPR18);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R19 * 4, vex->guest_GPR19);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R20 * 4, vex->guest_GPR20);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R21 * 4, vex->guest_GPR21);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R22 * 4, vex->guest_GPR22);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R23 * 4, vex->guest_GPR23);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R24 * 4, vex->guest_GPR24);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R25 * 4, vex->guest_GPR25);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R26 * 4, vex->guest_GPR26);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R27 * 4, vex->guest_GPR27);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R28 * 4, vex->guest_GPR28);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R29 * 4, vex->guest_GPR29);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R30 * 4, vex->guest_GPR30);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_R31 * 4, vex->guest_GPR31);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_NIP * 4, vex->guest_CIA);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_CCR * 4,
-                     LibVEX_GuestPPC32_get_CR(vex));
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_LNK * 4, vex->guest_LR);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_CTR * 4, vex->guest_CTR);
-   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, VKI_PT_XER * 4,
-                     LibVEX_GuestPPC32_get_XER(vex));
+   /* apparently the casting to void* is the Right Thing To Do */
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R0  * 4), (void*)vex->guest_GPR0);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R1  * 4), (void*)vex->guest_GPR1);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R2  * 4), (void*)vex->guest_GPR2);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R3  * 4), (void*)vex->guest_GPR3);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R4  * 4), (void*)vex->guest_GPR4);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R5  * 4), (void*)vex->guest_GPR5);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R6  * 4), (void*)vex->guest_GPR6);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R7  * 4), (void*)vex->guest_GPR7);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R8  * 4), (void*)vex->guest_GPR8);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R9  * 4), (void*)vex->guest_GPR9);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R10 * 4), (void*)vex->guest_GPR10);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R11 * 4), (void*)vex->guest_GPR11);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R12 * 4), (void*)vex->guest_GPR12);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R13 * 4), (void*)vex->guest_GPR13);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R14 * 4), (void*)vex->guest_GPR14);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R15 * 4), (void*)vex->guest_GPR15);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R16 * 4), (void*)vex->guest_GPR16);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R17 * 4), (void*)vex->guest_GPR17);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R18 * 4), (void*)vex->guest_GPR18);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R19 * 4), (void*)vex->guest_GPR19);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R20 * 4), (void*)vex->guest_GPR20);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R21 * 4), (void*)vex->guest_GPR21);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R22 * 4), (void*)vex->guest_GPR22);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R23 * 4), (void*)vex->guest_GPR23);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R24 * 4), (void*)vex->guest_GPR24);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R25 * 4), (void*)vex->guest_GPR25);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R26 * 4), (void*)vex->guest_GPR26);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R27 * 4), (void*)vex->guest_GPR27);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R28 * 4), (void*)vex->guest_GPR28);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R29 * 4), (void*)vex->guest_GPR29);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R30 * 4), (void*)vex->guest_GPR30);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R31 * 4), (void*)vex->guest_GPR31);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_NIP * 4), (void*)vex->guest_CIA);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_CCR * 4),
+                     (void*)LibVEX_GuestPPC32_get_CR(vex));
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_LNK * 4), (void*)vex->guest_LR);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_CTR * 4), (void*)vex->guest_CTR);
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_XER * 4),
+                     (void*)LibVEX_GuestPPC32_get_XER(vex));
    return rc;
+
 #else
 #  error Unknown arch
 #endif

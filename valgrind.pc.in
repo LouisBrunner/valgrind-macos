@@ -5,11 +5,12 @@ includedir=@includedir@/valgrind
 arch=@VG_ARCH@
 os=@VG_OS@
 platform=@VG_PLATFORM@
+valt_load_address=@VALT_LOAD_ADDRESS@
 
 Name: Valgrind
 Description: A dynamic binary instrumentation framework
 Version: @VERSION@
 Requires:
-Libs:
-Cflags: -I${includedir} @ARCH_TOOL_AM_CFLAGS@
+Libs: -L${libdir}/valgrind/@VG_PLATFORM@ -lcoregrind -lvex -lgcc
+Cflags: -I${includedir}
 

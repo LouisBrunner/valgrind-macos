@@ -58,141 +58,21 @@
    Note.  Why is this stuff here?
    ------------------------------------------------------------------ */
 
-/* Allocate a stack for this thread.  They're allocated lazily, and
-   never freed. */
-
-/* Allocate a stack for this thread, if it doesn't already have one.
-   Returns the initial stack pointer value to use, or 0 if allocation
-   failed. */
-
-static Addr allocstack ( ThreadId tid )
-{
-   ThreadState* tst = VG_(get_ThreadState)(tid);
-   VgStack*     stack;
-   Addr         initial_SP;
-
-   /* Either the stack_base and stack_init_SP are both zero (in which
-      case a stack hasn't been allocated) or they are both non-zero,
-      in which case it has. */
-
-   if (tst->os_state.valgrind_stack_base == 0)
-      vg_assert(tst->os_state.valgrind_stack_init_SP == 0);
-
-   if (tst->os_state.valgrind_stack_base != 0)
-      vg_assert(tst->os_state.valgrind_stack_init_SP != 0);
-
-   /* If no stack is present, allocate one. */
-
-   if (tst->os_state.valgrind_stack_base == 0) {
-      stack = VG_(am_alloc_VgStack)( &initial_SP );
-      if (stack) {
-         tst->os_state.valgrind_stack_base    = (Addr)stack;
-         tst->os_state.valgrind_stack_init_SP = initial_SP;
-      }
-   }
-
-   if (0)
-      VG_(printf)( "stack for tid %d at %p; init_SP=%p\n",
-                   tid, 
-                   (void*)tst->os_state.valgrind_stack_base, 
-                   (void*)tst->os_state.valgrind_stack_init_SP );
-                  
-   return tst->os_state.valgrind_stack_init_SP;
-}
-
-
-/* Run a thread all the way to the end, then do appropriate exit actions
-   (this is the last-one-out-turn-off-the-lights bit). 
-*/
-static void run_a_thread_NORETURN ( Word tidW )
-{
-   Int               c;
-   VgSchedReturnCode src;
-   ThreadState*      tst;
-   ThreadId          tid = (ThreadId)tidW;
-
-   VG_(debugLog)(1, "syswrap-ppc32-linux", 
-                    "run_a_thread_NORETURN(tid=%lld): "
-                       "ML_(thread_wrapper) called\n",
-                       (ULong)tidW);
-
-   /* Run the thread all the way through. */
-   src = ML_(thread_wrapper)(tid);  
-
-   VG_(debugLog)(1, "syswrap-ppc32-linux", 
-                    "run_a_thread_NORETURN(tid=%lld): "
-                       "ML_(thread_wrapper) done\n",
-                       (ULong)tidW);
-
-   c = VG_(count_living_threads)();
-   vg_assert(c >= 1); /* stay sane */
-
-   if (c == 1) {
-
-      VG_(debugLog)(1, "syswrap-ppc32-linux", 
-                       "run_a_thread_NORETURN(tid=%lld): "
-                          "last one standing\n",
-                          (ULong)tidW);
-
-      /* We are the last one standing.  Keep hold of the lock and
-         carry on to show final tool results, then exit the entire system. 
-         Use the continuation pointer set at startup in m_main. */
-      ( * VG_(address_of_m_main_shutdown_actions_NORETURN) ) (tid, src);
-
-   } else {
-
-      VG_(debugLog)(1, "syswrap-ppc32-linux", 
-                       "run_a_thread_NORETURN(tid=%lld): "
-                          "not last one standing\n",
-                          (ULong)tidW);
-
-      /* OK, thread is dead, but others still exist.  Just exit. */
-      tst = VG_(get_ThreadState)(tid);
-
-      /* This releases the run lock */
-      VG_(exit_thread)(tid);
-      vg_assert(tst->status == VgTs_Zombie);
-
-      /* We have to use this sequence to terminate the thread to
-         prevent a subtle race.  If VG_(exit_thread)() had left the
-         ThreadState as Empty, then it could have been reallocated,
-         reusing the stack while we're doing these last cleanups.
-         Instead, VG_(exit_thread) leaves it as Zombie to prevent
-         reallocation.  We need to make sure we don't touch the stack
-         between marking it Empty and exiting.  Hence the
-         assembler. */
-      { UInt vgts_empty = (UInt)VgTs_Empty;
-        asm volatile (
-          "stw %1,%0\n\t"          /* set tst->status = VgTs_Empty */
-          "li  0,%2\n\t"           /* set r0 = __NR_exit */
-          "lwz 3,%3\n\t"           /* set r3 = tst->os_state.exitcode */
-          "sc\n\t"                 /* exit(tst->os_state.exitcode) */
-          : "=m" (tst->status)
-          : "r" (vgts_empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
-      }
-
-      VG_(core_panic)("Thread exit failed?\n");
-   }
-
-  /*NOTREACHED*/
-  vg_assert(0);
-}
-
-
 /* Call f(arg1), but first switch stacks, using 'stack' as the new
-  stack, and use 'retaddr' as f's return-to address.  Also, clear all
+   stack, and use 'retaddr' as f's return-to address.  Also, clear all
    the integer registers before entering f.*/
 __attribute__((noreturn))
-void call_on_new_stack_0_1 ( Addr stack,
-                             Addr retaddr,
-                             void (*f)(Word),
-                             Word arg1 );
+void ML_(call_on_new_stack_0_1) ( Addr stack,
+                                  Addr retaddr,
+                                  void (*f)(Word),
+                                  Word arg1 );
 //    r3 = stack
 //    r4 = retaddr
 //    r5 = f
 //    r6 = arg1
 asm(
-"call_on_new_stack_0_1:\n"
+".globl vgModuleLocal_call_on_new_stack_0_1\n"
+"vgModuleLocal_call_on_new_stack_0_1:\n"
 "   mr    %r1,%r3\n\t"     // stack to %sp
 "   mtlr  %r4\n\t"         // retaddr to %lr
 "   mtctr %r5\n\t"         // f to count reg
@@ -231,53 +111,6 @@ asm(
 "   bctr\n\t"              // jump to dst
 "   trap\n"                // should never get here
 );
-
-
-/* Allocate a stack for the main thread, and run it all the way to the
-   end.  Although we already have a working VgStack
-   (VG_(interim_stack)) it's better to allocate a new one, so that
-   overflow detection works uniformly for all threads.
-*/
-void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
-{
-   Addr sp;
-   VG_(debugLog)(1, "syswrap-ppc32-linux", 
-                    "entering VG_(main_thread_wrapper_NORETURN)\n");
-
-   sp = allocstack(tid);
-
-   /* make a stack frame */
-   sp -= 16;
-   sp &= ~0xF;
-   *(UWord *)sp = 0;
-
-   /* If we can't even allocate the first thread's stack, we're hosed.
-      Give up. */
-   vg_assert2(sp != 0, "Cannot allocate main thread's stack.");
-
-   /* shouldn't be any other threads around yet */
-   vg_assert( VG_(count_living_threads)() == 1 );
-
-   call_on_new_stack_0_1( 
-      (Addr)sp,             /* stack */
-      0,                     /*bogus return address*/
-      run_a_thread_NORETURN,  /* fn to call */
-      (Word)tid              /* arg to give it */
-   );
-
-   /*NOTREACHED*/
-   vg_assert(0);
-}
-
-static Int start_thread_NORETURN ( void* arg )
-{
-   ThreadState* tst = (ThreadState*)arg;
-   ThreadId     tid = tst->tid;
-
-   run_a_thread_NORETURN ( (Word)tid );
-   /*NOTREACHED*/
-   vg_assert(0);
-}
 
 
 /* ---------------------------------------------------------------------
@@ -417,7 +250,7 @@ static SysRes do_clone ( ThreadId ptid,
    vg_assert(VG_(is_running_thread)(ptid));
    vg_assert(VG_(is_valid_tid)(ctid));
 
-   stack = (UWord*)allocstack(ctid);
+   stack = (UWord*)ML_(allocstack)(ctid);
    if (stack == NULL) {
       res = VG_(mk_SysRes_Error)( VKI_ENOMEM );
       goto out;
@@ -495,7 +328,7 @@ static SysRes do_clone ( ThreadId ptid,
 
    /* Create the new thread */
    word64 = do_syscall_clone_ppc32_linux(
-               start_thread_NORETURN, stack, flags, &VG_(threads)[ctid],
+               ML_(start_thread_NORETURN), stack, flags, &VG_(threads)[ctid],
                child_tidptr, parent_tidptr, NULL
             );
    /* High half word64 is syscall return value.  Low half is

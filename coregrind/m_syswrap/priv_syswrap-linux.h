@@ -36,6 +36,12 @@
 // Run a thread from beginning to end. 
 extern VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tid);
 
+extern Int  ML_(start_thread_NORETURN) ( void* arg );
+extern void ML_(run_a_thread_NORETURN) ( Word tidW );
+extern Addr ML_(allocstack)            ( ThreadId tid );
+extern void ML_(call_on_new_stack_0_1) ( Addr stack, Addr retaddr,
+			                 void (*f)(Word), Word arg1 );
+
 DECL_TEMPLATE(linux, sys_mount);
 DECL_TEMPLATE(linux, sys_oldumount);
 DECL_TEMPLATE(linux, sys_umount);

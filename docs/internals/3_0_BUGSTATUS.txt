@@ -38,7 +38,7 @@ FIXED-TRUNK:    4636 (needs verification)
 ----------------------------------------------------------------
 109345 ppc32 ptrace patch available    should be applied
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    vg:5046
 
 ----------------------------------------------------------------
 110204 fmemopen false +ve

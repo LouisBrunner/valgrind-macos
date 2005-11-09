@@ -44,87 +44,111 @@
 VG_(run_innerloop):
         /* ----- entry point to VG_(run_innerloop) ----- */
 
-        /* Save lr, sp */
+        /* Save lr */
         mflr    0
         stw     0,4(1)
 
         /* New stack frame */
-        stwu    1,-432(1)  /* sp should maintain 16-byte alignment */
+        stwu    1,-496(1)  /* sp should maintain 16-byte alignment */
 
-        /* CAB: should put this gap somewhere else - see ppc-abi */
+        /* Save callee-saved registers... */
 
-        /* callee-saved regs
-           http://developer.apple.com : PowerPCRuntime.pdf : p27 */
-        stw     31,424(1)
-        stw     30,420(1)
-        stw     29,416(1)
-        stw     28,412(1)
-        stw     27,408(1)
-        stw     26,404(1)
-        stw     25,400(1)
-        stw     24,396(1)
-        stw     23,392(1)
-        stw     22,388(1)
-        stw     21,384(1)
-        stw     20,380(1)
-        stw     19,376(1)
-        stw     18,372(1)
-        stw     17,368(1)
-        stw     16,364(1)
-        stw     15,360(1)
-        stw     14,356(1)
-        stw     13,352(1)
+        /* Floating-point reg save area : 144 bytes */
+        stfd    31,488(1)
+        stfd    30,480(1)
+        stfd    29,472(1)
+        stfd    28,464(1)
+        stfd    27,456(1)
+        stfd    26,448(1)
+        stfd    25,440(1)
+        stfd    24,432(1)
+        stfd    23,424(1)
+        stfd    22,416(1)
+        stfd    21,408(1)
+        stfd    20,400(1)
+        stfd    19,392(1)
+        stfd    18,384(1)
+        stfd    17,376(1)
+        stfd    16,368(1)
+        stfd    15,360(1)
+        stfd    14,352(1)
 
-        stfd    31,344(1)
-        stfd    30,336(1)
-        stfd    29,328(1)
-        stfd    28,320(1)
-        stfd    27,312(1)
-        stfd    26,304(1)
-        stfd    25,296(1)
-        stfd    24,288(1)
-        stfd    23,280(1)
-        stfd    22,272(1)
-        stfd    21,264(1)
-        stfd    20,256(1)
-        stfd    19,248(1)
-        stfd    18,240(1)
-        stfd    17,232(1)
-        stfd    16,224(1)
-        stfd    15,216(1)
-        stfd    14,208(1)
+        /* General reg save area : 72 bytes */
+        stw     31,348(1)
+        stw     30,344(1)
+        stw     29,340(1)
+        stw     28,336(1)
+        stw     27,332(1)
+        stw     26,328(1)
+        stw     25,324(1)
+        stw     24,320(1)
+        stw     23,316(1)
+        stw     22,312(1)
+        stw     21,308(1)
+        stw     20,304(1)
+        stw     19,300(1)
+        stw     18,296(1)
+        stw     17,292(1)
+        stw     16,288(1)
+        stw     15,284(1)
+        stw     14,280(1)
 
-        li      4,192
+// CAB: this necessary?
+        stw     13,276(1)
+
+// CAB: this necessary?
+        /* VRSAVE save word : 32 bytes */
+        mfspr   4,256         /* vrsave reg is spr number 256 */
+        stw     4,244(1)
+
+        /* Alignment padding : 4 bytes */
+
+        /* Vector reg save area (quadword aligned) : 192 bytes */
+        li      4,224
         stvx    31,4,1
-        li      4,176
+        li      4,208
         stvx    30,4,1
-        li      4,160
+        li      4,192
         stvx    29,4,1
-        li      4,144
+        li      4,176
         stvx    28,4,1
-        li      4,128
+        li      4,160
         stvx    27,4,1
-        li      4,112
+        li      4,144
         stvx    26,4,1
-        li      4,96
+        li      4,128
         stvx    25,4,1
-        li      4,80
+        li      4,112
         stvx    24,4,1
-        li      4,64
+        li      4,96
         stvx    23,4,1
-        li      4,48
+        li      4,80
         stvx    22,4,1
-        li      4,32
+        li      4,64
         stvx    21,4,1
-        li      4,16
+        li      4,48
         stvx    20,4,1
+
+        /* Local variable space... */
+
+// CAB: ok to save CR here? saving to parent stack corrupts...
+        /* Save cr */
+        mfcr    0
+        stw     0,32(1)
 
         /* r3 holds guest_state */
         mr      31,3
-        stw     3,12(1)       /* spill orig guest_state ptr */
+        stw     3,28(1)       /* spill orig guest_state ptr */
 
-        /* 8(1) used later to stop ctr reg being clobbered
-           4(1) = standard LR-save space
+        /* 24(sp) used later to stop ctr reg being clobbered */
+
+        /* Linkage Area (reserved)
+           20(sp) : TOC save area
+           16(sp) : link editor word
+           12(sp) : compiler word
+           8(sp)  : LR
+           4(sp)  : CR
+           0(sp)  : back-chain
         */
 
 // CAB TODO: Use a caller-saved reg for orig guest_state ptr
@@ -167,7 +191,7 @@ L1:
 	r31 (=guest_state)
 	ctr (=dispatch_ctr)
    Stack state:
-	28(r1) (=orig guest_state)
+	44(r1) (=orig guest_state)
 */
 
 dispatch_boring:
@@ -204,7 +228,7 @@ dispatch_boring:
 // CAB:	use a caller-saved reg for this ?
 //      but then (bdz) => (decr, cmp, bc)... still better than a stw?
         mfctr   9
-        stw     9,24(1)  /* => 24-16 = 8(1) on our parent stack */
+        stw     9,40(1)  /* => 40-16 = 24(1) on our parent stack */
 
         blrl
 
@@ -215,18 +239,18 @@ dispatch_boring:
            r31 may be unchanged (guest_state), or may indicate further
            details of the control transfer requested to *r3.
 
-           If r31 is unchanged (== 28(r1)), just jump next to r3.
+           If r31 is unchanged (== 44(r1)), just jump next to r3.
 
            Otherwise fall out, back to the scheduler, and let it
            figure out what to do next.
         */
 
 	/* reinstate clobbered ctr */
-        lwz     9,24(1)
+        lwz     9,40(1)
         mtctr   9
 
         mr      30,3             /* put CIA (=r3) in r30 */
-        lwz     16,28(1)         /* original guest_state ptr */
+        lwz     16,44(1)         /* original guest_state ptr */
         cmpw    16,31
         beq     dispatch_boring  /* r31 unchanged... */
 
@@ -266,81 +290,95 @@ invariant_violation:
 run_innerloop_exit_REALLY:
         /* r3 holds VG_TRC_* value to return */
 
+        /* Return to parent stack */
         addi    1,1,16
 
+        /* Write ctr to VG(dispatch_ctr) */
         mfctr   17
         lis     18,VG_(dispatch_ctr)@ha
         stw     17,VG_(dispatch_ctr)@l(18)
 
-        /* restore callee-saved registers */
-        li      4,16
-        lvx     20,4,1
-        li      4,32
-        lvx     21,4,1
-        li      4,48
-        lvx     22,4,1
-        li      4,64
-        lvx     23,4,1
-        li      4,80
-        lvx     24,4,1
-        li      4,96
-        lvx     25,4,1
-        li      4,112
-        lvx     26,4,1
-        li      4,128
-        lvx     27,4,1	
-        li      4,144
-        lvx     28,4,1
-        li      4,160
-        lvx     29,4,1
-        li      4,176
+        /* Restore cr */
+        lwz     0,32(1)
+        mtcr    0
+
+        /* Restore callee-saved registers... */
+
+        /* Floating-point regs */
+        lfd     31,488(1)
+        lfd     30,480(1)
+        lfd     29,472(1)
+        lfd     28,464(1)
+        lfd     27,456(1)
+        lfd     26,448(1)
+        lfd     25,440(1)
+        lfd     24,432(1)
+        lfd     23,424(1)
+        lfd     22,416(1)
+        lfd     21,408(1)
+        lfd     20,400(1)
+        lfd     19,392(1)
+        lfd     18,384(1)
+        lfd     17,376(1)
+        lfd     16,368(1)
+        lfd     15,360(1)
+        lfd     14,352(1)
+
+        /* General regs */
+        lwz     31,348(1)
+        lwz     30,344(1)
+        lwz     29,340(1)
+        lwz     28,336(1)
+        lwz     27,332(1)
+        lwz     26,328(1)
+        lwz     25,324(1)
+        lwz     24,320(1)
+        lwz     23,316(1)
+        lwz     22,312(1)
+        lwz     21,308(1)
+        lwz     20,304(1)
+        lwz     19,300(1)
+        lwz     18,296(1)
+        lwz     17,292(1)
+        lwz     16,288(1)
+        lwz     15,284(1)
+        lwz     14,280(1)
+        lwz     13,276(1)
+
+        /* VRSAVE */
+        lwz     4,244(1)
+        mfspr   4,256         /* VRSAVE reg is spr number 256 */
+
+        /* Vector regs */
+        li      4,224
+        lvx     31,4,1
+        li      4,208
         lvx     30,4,1
         li      4,192
-        lvx     31,4,1
-
-        lfd     14,208(1)
-        lfd     15,216(1)
-        lfd     16,224(1)
-        lfd     17,232(1)
-        lfd     18,240(1)
-        lfd     19,248(1)
-        lfd     20,256(1)
-        lfd     21,264(1)
-        lfd     22,272(1)
-        lfd     23,280(1)
-        lfd     24,288(1)
-        lfd     25,296(1)
-        lfd     26,304(1)
-        lfd     27,312(1)
-        lfd     28,320(1)
-        lfd     29,328(1)
-        lfd     30,336(1)
-        lfd     31,344(1)
-
-        lwz     13,352(1)
-        lwz     14,356(1)
-        lwz     15,360(1)
-        lwz     16,364(1)
-        lwz     17,368(1)
-        lwz     18,372(1)
-        lwz     19,376(1)
-        lwz     20,380(1)
-        lwz     21,384(1)
-        lwz     22,388(1)
-        lwz     23,392(1)
-        lwz     24,396(1)
-        lwz     25,400(1)
-        lwz     26,404(1)
-        lwz     27,408(1)
-        lwz     28,412(1)
-        lwz     29,416(1)
-        lwz     30,420(1)
-        lwz     31,424(1)
+        lvx     29,4,1
+        li      4,176
+        lvx     28,4,1
+        li      4,160
+        lvx     27,4,1
+        li      4,144
+        lvx     26,4,1
+        li      4,128
+        lvx     25,4,1
+        li      4,112
+        lvx     24,4,1
+        li      4,96
+        lvx     23,4,1
+        li      4,80
+        lvx     22,4,1
+        li      4,64
+        lvx     21,4,1
+        li      4,48
+        lvx     20,4,1
 
         /* reset lr & sp */
-        lwz     0,436(1)  /* stack_size + 4 */
+        lwz     0,500(1)  /* stack_size + 4 */
         mtlr    0
-        addi    1,1,432   /* stack_size */
+        addi    1,1,496   /* stack_size */
         blr
 
 
@@ -350,7 +388,7 @@ run_innerloop_exit_REALLY:
 dispatch_exceptional:
 	/* this is jumped to only, not fallen-through from above */
 	/* save r30 in %CIA and defer to sched */
-        lwz     16,28(1)
+        lwz     16,44(1)
         stw     30,OFFSET_ppc32_CIA(16)
         b       run_innerloop_exit
 

@@ -1,3 +1,9 @@
+
+# Be very careful when renaming any files, targets, whatever, in this
+# Makefile.  The install-exec-local target in ../Makefile.install.am
+# does some fragile sed file-name-mangling which is liable to break if
+# the names of noinst_LIBRARIES or noinst_PROGRAMS change 'shape'.
+
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core.am
 include $(top_srcdir)/Makefile.install.am

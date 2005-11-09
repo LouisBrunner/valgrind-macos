@@ -72,7 +72,7 @@ void ML_(call_on_new_stack_0_1) ( Addr stack,
 // %rcx == arg1
 asm(
 ".globl vgModuleLocal_call_on_new_stack_0_1\n"
-vgModuleLocal_call_on_new_stack_0_1:\n"
+"vgModuleLocal_call_on_new_stack_0_1:\n"
 "   movq   %rdi, %rsp\n"   // set stack
 "   pushq  %rsi\n"         // retaddr to stack
 "   pushq  %rdx\n"         // f to stack

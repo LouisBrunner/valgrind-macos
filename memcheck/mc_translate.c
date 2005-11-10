@@ -1659,10 +1659,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_V128, binop(op, vatom1, atom2));
 
+      /* V x V shifts/rotates are done using the standard lazy scheme. */
       case Iop_Shl8x16:
       case Iop_Shr8x16:
       case Iop_Sar8x16:
-      case Iop_Rotl8x16:
+      case Iop_Rol8x16:
          return mkUifUV128(mce,
                    assignNew(mce, Ity_V128, binop(op, vatom1, atom2)),
                    mkPCast8x16(mce,vatom2)
@@ -1671,7 +1672,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Shl16x8:
       case Iop_Shr16x8:
       case Iop_Sar16x8:
-      case Iop_Rotl16x8:
+      case Iop_Rol16x8:
          return mkUifUV128(mce,
                    assignNew(mce, Ity_V128, binop(op, vatom1, atom2)),
                    mkPCast16x8(mce,vatom2)
@@ -1680,7 +1681,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Shl32x4:
       case Iop_Shr32x4:
       case Iop_Sar32x4:
-      case Iop_Rotl32x4:
+      case Iop_Rol32x4:
          return mkUifUV128(mce,
                    assignNew(mce, Ity_V128, binop(op, vatom1, atom2)),
                    mkPCast32x4(mce,vatom2)
@@ -1852,8 +1853,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          32x4 -> 16x8 laneage, discarding the upper half of each lane.
          Simply apply same op to the V bits, since this really no more
          than a data steering operation. */
-      case Iop_Narrow32Ux4: 
-      case Iop_Narrow16Ux8: 
+      case Iop_Narrow32x4: 
+      case Iop_Narrow16x8: 
          return assignNew(mce, Ity_V128, 
                                binop(op, vatom1, vatom2));
 

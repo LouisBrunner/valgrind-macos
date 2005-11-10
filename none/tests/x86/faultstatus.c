@@ -18,7 +18,7 @@ struct test {
 
 static const struct test *cur_test;
 
-static int zero();
+
 
 static jmp_buf escape;
 
@@ -158,7 +158,3 @@ int main()
 	return 0;
 }
 
-static int zero()
-{
-	return 0;
-}

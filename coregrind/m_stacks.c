@@ -137,7 +137,8 @@ UWord VG_(register_stack)(Addr start, Addr end)
       current_stack = i;
    }
 
-   VG_(debugLog)(2, "stacks", "register %p-%p as stack %d\n", start, end, i->id);
+   VG_(debugLog)(2, "stacks", "register %p-%p as stack %lu\n",
+                    (void*)start, (void*)end, i->id);
 
    return i->id;
 }
@@ -151,7 +152,7 @@ void VG_(deregister_stack)(UWord id)
    Stack *i = stacks;
    Stack *prev = NULL;
 
-   VG_(debugLog)(2, "stacks", "deregister stack %d\n", id);
+   VG_(debugLog)(2, "stacks", "deregister stack %lu\n", id);
 
    if (current_stack->id == id) {
       current_stack = NULL;
@@ -183,8 +184,9 @@ void VG_(change_stack)(UWord id, Addr start, Addr end)
 
    while (i) {
       if (i->id == id) {
-         VG_(debugLog)(2, "stacks", "change stack %d from %p-%p to %p-%p\n",
-                       id, i->start, i->end, start, end);
+         VG_(debugLog)(2, "stacks", "change stack %lu from %p-%p to %p-%p\n",
+                       id, (void*)i->start, (void*)i->end,
+                           (void*)start,    (void*)end);
          i->start = start;
          i->end = end;
          return;

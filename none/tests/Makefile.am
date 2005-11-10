@@ -2,7 +2,7 @@ SUBDIRS      = ${VG_ARCH}     .
 DIST_SUBDIRS = ${VG_ARCH_ALL} .
 
 noinst_SCRIPTS = \
-	filter_cmdline0 \
+	filter_cmdline0 filter_linenos \
 	filter_fdleak filter_none_discards filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \

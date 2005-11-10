@@ -2,10 +2,14 @@
 noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
-	lsw.stderr.exp lsw.stdout.exp lsw.vgtest
+	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
+	jm-insns.stderr.exp jm-insns.stdout.exp jm-insns.vgtest
+	jm-vmx.stderr.exp   jm-vmx.stdout.exp   jm-vmx.vgtest
 
 check_PROGRAMS = \
-	lsw
+	lsw jm-insns
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
+
+jm_insns_CFLAGS  =  -Winline -Wall -O -mregnames -DHAS_ALTIVEC -maltivec 

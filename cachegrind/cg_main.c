@@ -800,8 +800,9 @@ IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
             // Pretend otherwise.
             if (isize == 0) isize = VG_MIN_INSTR_SZB;
 
-            // Check size.  XXX: broken for client requests!
-            tl_assert(VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB);
+            // Sanity-check size.
+            tl_assert( (VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB)
+                     || VG_CLREQ_SZB == isize );
 
             // Get space for and init the inode, record it as the current one.
             // Subsequent Dr/Dw/Dm events from the same instruction will 

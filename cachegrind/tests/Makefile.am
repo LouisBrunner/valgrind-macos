@@ -5,10 +5,11 @@ noinst_SCRIPTS = filter_stderr filter_cachesim_discards
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	chdir.vgtest chdir.stderr.exp \
+	clreq.vgtest clreq.stderr.exp \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp
 
 check_PROGRAMS = \
-	chdir dlclose myprint.so
+	chdir clreq dlclose myprint.so
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
 

@@ -29,6 +29,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -95,7 +96,7 @@ static UWord next_id;  /* Next id we hand out to a newly registered stack */
  * stack pointer falls outside the range of the current stack, we search
  * the stacks list above for a matching stack.
  */
-static Stack current_stack;
+static Stack *current_stack;
 
 /* Find what stack an address falls into. */
 static Stack* find_stack_by_addr(Addr sp)
@@ -119,8 +120,6 @@ UWord VG_(register_stack)(Addr start, Addr end)
 {
    Stack *i;
 
-   if (0) VG_(printf)("REGISTER STACK %p %p\n", start,end);
-
    if (start > end) {
       Addr t = end;
       end = start;
@@ -135,8 +134,10 @@ UWord VG_(register_stack)(Addr start, Addr end)
    stacks = i;
 
    if (i->id == 0) {
-      current_stack = *i;
+      current_stack = i;
    }
+
+   VG_(debugLog)(2, "stacks", "register %p-%p as stack %d\n", start, end, i->id);
 
    return i->id;
 }
@@ -150,8 +151,10 @@ void VG_(deregister_stack)(UWord id)
    Stack *i = stacks;
    Stack *prev = NULL;
 
-   if (current_stack.id == id) {
-      return;
+   VG_(debugLog)(2, "stacks", "deregister stack %d\n", id);
+
+   if (current_stack->id == id) {
+      current_stack = NULL;
    }
 
    while(i) {
@@ -178,13 +181,10 @@ void VG_(change_stack)(UWord id, Addr start, Addr end)
 {
    Stack *i = stacks;
 
-   if (id == current_stack.id) {
-      current_stack.start = start;
-      current_stack.end = end;
-   }
-
    while (i) {
       if (i->id == id) {
+         VG_(debugLog)(2, "stacks", "change stack %d from %p-%p to %p-%p\n",
+                       id, i->start, i->end, start, end);
          i->start = start;
          i->end = end;
          return;
@@ -204,12 +204,13 @@ void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
    Word delta  = (Word)new_SP - (Word)old_SP;
 
    /* Check if the stack pointer is still in the same stack as before. */
-   if (new_SP < current_stack.start || new_SP > current_stack.end) {
+   if (current_stack == NULL ||
+       new_SP < current_stack->start || new_SP > current_stack->end) {
       Stack* new_stack = find_stack_by_addr(new_SP);
-      if (new_stack && new_stack->id != current_stack.id) {
+      if (new_stack && new_stack->id != current_stack->id) {
          /* The stack pointer is now in another stack.  Update the current
             stack information and return without doing anything else. */
-         current_stack = *new_stack;
+         current_stack = new_stack;
          return;
       }
    }

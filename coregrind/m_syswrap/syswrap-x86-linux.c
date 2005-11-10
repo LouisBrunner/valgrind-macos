@@ -128,7 +128,7 @@ asm(
 #define __NR_EXIT         VG_STRINGIFY(__NR_exit)
 
 extern
-Int do_syscall_clone_x86_linux ( Int (*fn)(void *), 
+Int do_syscall_clone_x86_linux ( Word (*fn)(void *), 
                                  void* stack, 
                                  Int   flags, 
                                  void* arg,

@@ -143,7 +143,7 @@ asm(
 #define __NR_EXIT         VG_STRINGIFY(__NR_exit)
 
 extern
-ULong do_syscall_clone_ppc32_linux ( Int (*fn)(void *), 
+ULong do_syscall_clone_ppc32_linux ( Word (*fn)(void *), 
                                      void* stack, 
                                      Int   flags, 
                                      void* arg,

@@ -34,7 +34,7 @@
 /* requires #include "priv_types_n_macros.h" */
 
 // Clone-related functions
-extern Int  ML_(start_thread_NORETURN) ( void* arg );
+extern Word ML_(start_thread_NORETURN) ( void* arg );
 extern Addr ML_(allocstack)            ( ThreadId tid );
 extern void ML_(call_on_new_stack_0_1) ( Addr stack, Addr retaddr,
 			                 void (*f)(Word), Word arg1 );

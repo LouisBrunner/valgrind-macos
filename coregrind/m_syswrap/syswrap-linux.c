@@ -198,7 +198,7 @@ static void run_a_thread_NORETURN ( Word tidW )
    vg_assert(0);
 }
 
-Int ML_(start_thread_NORETURN) ( void* arg )
+Word ML_(start_thread_NORETURN) ( void* arg )
 {
    ThreadState* tst = (ThreadState*)arg;
    ThreadId     tid = tst->tid;

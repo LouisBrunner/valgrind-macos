@@ -54,8 +54,7 @@
 
 
 /* ---------------------------------------------------------------------
-   Stacks, thread wrappers
-   Note.  Why is this stuff here?
+   clone() handling
    ------------------------------------------------------------------ */
 
 /* Call f(arg1), but first switch stacks, using 'stack' as the new
@@ -96,10 +95,6 @@ asm(
 "   ret\n"                 // jump to f
 "   ud2\n"                 // should never get here
 );
-
-/* ---------------------------------------------------------------------
-   clone() handling
-   ------------------------------------------------------------------ */
 
 /*
         Perform a clone system call.  clone is strange because it has
@@ -299,54 +294,6 @@ static SysRes do_clone ( ThreadId ptid,
 }
 
 
-/* Do a clone which is really a fork() */
-static SysRes do_fork_clone ( ThreadId tid, 
-                              ULong flags, Addr rsp, 
-                              Long* parent_tidptr, 
-                              Long* child_tidptr )
-{
-   vki_sigset_t fork_saved_mask;
-   vki_sigset_t mask;
-   SysRes       res;
-
-   if (flags & (VKI_CLONE_SETTLS | VKI_CLONE_FS | VKI_CLONE_VM 
-                | VKI_CLONE_FILES | VKI_CLONE_VFORK))
-      return VG_(mk_SysRes_Error)( VKI_EINVAL );
-
-   /* Block all signals during fork, so that we can fix things up in
-      the child without being interrupted. */
-   VG_(sigfillset)(&mask);
-   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
-
-   /* Since this is the fork() form of clone, we don't need all that
-      VG_(clone) stuff - note that the last two arguments are the
-      opposite way round to x86 and ppc32 as the amd64 kernel expects
-      the arguments in a different order */
-   res = VG_(do_syscall5)( __NR_clone, flags, 
-                           (UWord)NULL, (UWord)parent_tidptr, 
-                           (UWord)child_tidptr, (UWord)NULL );
-
-   if (!res.isError && res.val == 0) {
-      /* child */
-      VG_(do_atfork_child)(tid);
-
-      /* restore signal mask */
-      VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
-   } 
-   else 
-   if (!res.isError && res.val > 0) {
-      /* parent */
-      if (VG_(clo_trace_syscalls))
-	  VG_(printf)("   clone(fork): process %d created child %d\n", 
-                      VG_(getpid)(), res.val);
-
-      /* restore signal mask */
-      VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
-   }
-
-   return res;
-}
-
 /* ---------------------------------------------------------------------
    More thread stuff
    ------------------------------------------------------------------ */
@@ -468,9 +415,8 @@ PRE(sys_clone)
 
    case 0: /* plain fork */
       SET_STATUS_from_SysRes(
-         do_fork_clone(tid,
+         ML_(do_fork_clone)(tid,
                        cloneflags,      /* flags */
-                       (Addr)ARG2,      /* child ESP */
                        (Long *)ARG3,    /* parent_tidptr */
                        (Long *)ARG4));  /* child_tidptr */
       break;

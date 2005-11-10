@@ -39,6 +39,7 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
+#include "pub_core_libcsignal.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_options.h"
@@ -55,14 +56,14 @@
 
 // Run a thread from beginning to end and return the thread's
 // scheduler-return-code.
-VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
+static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
 {
    VgSchedReturnCode ret;
    ThreadId     tid = (ThreadId)tidW;
    ThreadState* tst = VG_(get_ThreadState)(tid);
 
    VG_(debugLog)(1, "syswrap-linux", 
-                    "ML_(thread_wrapper)(tid=%lld): entry\n", 
+                    "thread_wrapper(tid=%lld): entry\n", 
                     (ULong)tidW);
 
    vg_assert(tst->status == VgTs_Init);
@@ -90,7 +91,7 @@ VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
    vg_assert(VG_(is_running_thread)(tid));
 
    VG_(debugLog)(1, "syswrap-linux", 
-                    "ML_(thread_wrapper)(tid=%lld): done\n", 
+                    "thread_wrapper(tid=%lld): exit\n", 
                     (ULong)tidW);
 
    /* Return to caller, still holding the lock. */
@@ -104,24 +105,22 @@ VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tidW)
 
 /* Run a thread all the way to the end, then do appropriate exit actions
    (this is the last-one-out-turn-off-the-lights bit).  */
-void ML_(run_a_thread_NORETURN) ( Word tidW )
+static void run_a_thread_NORETURN ( Word tidW )
 {
    ThreadId          tid = (ThreadId)tidW;
    VgSchedReturnCode src;
    Int               c;
 
    VG_(debugLog)(1, "syswrap-linux", 
-                    "run_a_thread_NORETURN(tid=%lld): "
-                       "ML_(thread_wrapper) called\n",
-                       (ULong)tidW);
+                    "run_a_thread_NORETURN(tid=%lld): pre-thread_wrapper\n",
+                    (ULong)tidW);
 
    /* Run the thread all the way through. */
-   src = ML_(thread_wrapper)(tid);  
+   src = thread_wrapper(tid);  
 
    VG_(debugLog)(1, "syswrap-linux", 
-                    "run_a_thread_NORETURN(tid=%lld): "
-                       "ML_(thread_wrapper) done\n",
-                       (ULong)tidW);
+                    "run_a_thread_NORETURN(tid=%lld): post-thread_wrapper\n",
+                    (ULong)tidW);
 
    c = VG_(count_living_threads)();
    vg_assert(c >= 1); /* stay sane */
@@ -204,7 +203,7 @@ Int ML_(start_thread_NORETURN) ( void* arg )
    ThreadState* tst = (ThreadState*)arg;
    ThreadId     tid = tst->tid;
 
-   ML_(run_a_thread_NORETURN) ( (Word)tid );
+   run_a_thread_NORETURN ( (Word)tid );
    /*NOTREACHED*/
    vg_assert(0);
 }
@@ -275,14 +274,70 @@ void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
    vg_assert( VG_(count_living_threads)() == 1 );
 
    ML_(call_on_new_stack_0_1)( 
-      (Addr)sp,                    /* stack */
-      0,                           /* bogus return address */
-      ML_(run_a_thread_NORETURN),  /* fn to call */
-      (Word)tid                    /* arg to give it */
+      (Addr)sp,               /* stack */
+      0,                      /* bogus return address */
+      run_a_thread_NORETURN,  /* fn to call */
+      (Word)tid               /* arg to give it */
    );
 
    /*NOTREACHED*/
    vg_assert(0);
+}
+
+
+/* Do a clone which is really a fork() */
+SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
+                            Int* parent_tidptr, Int* child_tidptr )
+{
+   vki_sigset_t fork_saved_mask;
+   vki_sigset_t mask;
+   SysRes       res;
+
+   if (flags & (VKI_CLONE_SETTLS | VKI_CLONE_FS | VKI_CLONE_VM 
+                | VKI_CLONE_FILES | VKI_CLONE_VFORK))
+      return VG_(mk_SysRes_Error)( VKI_EINVAL );
+
+   /* Block all signals during fork, so that we can fix things up in
+      the child without being interrupted. */
+   VG_(sigfillset)(&mask);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
+
+   /* Since this is the fork() form of clone, we don't need all that
+      VG_(clone) stuff */
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+   res = VG_(do_syscall5)( __NR_clone, flags, 
+                           (UWord)NULL, (UWord)parent_tidptr, 
+                           (UWord)NULL, (UWord)child_tidptr );
+#elif defined(VGP_amd64_linux)
+   /* note that the last two arguments are the opposite way round to x86 and
+      ppc32 as the amd64 kernel expects the arguments in a different order */
+   res = VG_(do_syscall5)( __NR_clone, flags, 
+                           (UWord)NULL, (UWord)parent_tidptr, 
+                           (UWord)child_tidptr, (UWord)NULL );
+#elif defined(VGP_ppc32_linux)
+#else
+# error Unknown platform
+#endif
+
+   if (!res.isError && res.val == 0) {
+      /* child */
+      VG_(do_atfork_child)(tid);
+
+      /* restore signal mask */
+      VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
+   } 
+   else 
+   if (!res.isError && res.val > 0) {
+      /* parent */
+      if (VG_(clo_trace_syscalls))
+	  VG_(printf)("   clone(fork): process %d created child %d\n", 
+                      VG_(getpid)(), res.val);
+
+      /* restore signal mask */
+      VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
+   }
+
+   return res;
 }
 
 

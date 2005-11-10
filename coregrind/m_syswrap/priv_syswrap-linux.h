@@ -33,14 +33,16 @@
 
 /* requires #include "priv_types_n_macros.h" */
 
-// Run a thread from beginning to end. 
-extern VgSchedReturnCode ML_(thread_wrapper)(Word /*ThreadId*/ tid);
-
+// Clone-related functions
 extern Int  ML_(start_thread_NORETURN) ( void* arg );
-extern void ML_(run_a_thread_NORETURN) ( Word tidW );
 extern Addr ML_(allocstack)            ( ThreadId tid );
 extern void ML_(call_on_new_stack_0_1) ( Addr stack, Addr retaddr,
 			                 void (*f)(Word), Word arg1 );
+extern SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
+                                   Int* parent_tidptr, Int* child_tidptr );
+
+
+// Linux-specific (but non-arch-specific) syscalls
 
 DECL_TEMPLATE(linux, sys_mount);
 DECL_TEMPLATE(linux, sys_oldumount);

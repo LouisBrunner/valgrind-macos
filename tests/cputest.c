@@ -34,7 +34,7 @@ static Bool go(char* cpu)
 #ifdef __powerpc__
 static Bool go(char* cpu)
 {
-   if ( strcmp( cpu, "ppc" ) == 0 )
+   if ( strcmp( cpu, "ppc32" ) == 0 )
       return True;
    else 
       return False;

@@ -20,7 +20,7 @@ install-exec-local:
 	  if expr match $$f libcoregrind_ > /dev/null ; then \
 	    pU=`echo $$f | sed -e 's/libcoregrind_//g' -e 's/\.a//g'` ; \
 	    pD=`echo $$pU | sed -e 's/_/-/g'` ; \
-	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir)/$$pD/libcoregrind.a ; \
-	    $(INSTALL_PROGRAM) @VEX_DIR@/libvex_$$pU.a $(DESTDIR)$(valdir)/$$pD/libvex.a ; \
+	    $(INSTALL_DATA) $$f $(DESTDIR)$(valdir)/$$pD/libcoregrind.a ; \
+	    $(INSTALL_DATA) @VEX_DIR@/libvex_$$pU.a $(DESTDIR)$(valdir)/$$pD/libvex.a ; \
 	  fi ; \
 	done

@@ -1449,6 +1449,7 @@ IRAtom* vectorNarrowV128 ( MCEnv* mce, IROp narrow_op,
    IRAtom* (*pcast)( MCEnv*, IRAtom* );
    switch (narrow_op) {
       case Iop_QNarrow32Sx4: pcast = mkPCast32x4; break;
+      case Iop_QNarrow32Ux4: pcast = mkPCast32x4; break;
       case Iop_QNarrow16Sx8: pcast = mkPCast16x8; break;
       case Iop_QNarrow16Ux8: pcast = mkPCast16x8; break;
       default: VG_(tool_panic)("vectorNarrowV128");
@@ -1658,14 +1659,45 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_V128, binop(op, vatom1, atom2));
 
+      case Iop_Shl8x16:
+      case Iop_Shr8x16:
+      case Iop_Sar8x16:
+      case Iop_Rotl8x16:
+         return mkUifUV128(mce,
+                   assignNew(mce, Ity_V128, binop(op, vatom1, atom2)),
+                   mkPCast8x16(mce,vatom2)
+                );
+
+      case Iop_Shl16x8:
+      case Iop_Shr16x8:
+      case Iop_Sar16x8:
+      case Iop_Rotl16x8:
+         return mkUifUV128(mce,
+                   assignNew(mce, Ity_V128, binop(op, vatom1, atom2)),
+                   mkPCast16x8(mce,vatom2)
+                );
+
+      case Iop_Shl32x4:
+      case Iop_Shr32x4:
+      case Iop_Sar32x4:
+      case Iop_Rotl32x4:
+         return mkUifUV128(mce,
+                   assignNew(mce, Ity_V128, binop(op, vatom1, atom2)),
+                   mkPCast32x4(mce,vatom2)
+                );
+
       case Iop_QSub8Ux16:
       case Iop_QSub8Sx16:
       case Iop_Sub8x16:
       case Iop_Min8Ux16:
+      case Iop_Min8Sx16:
       case Iop_Max8Ux16:
+      case Iop_Max8Sx16:
       case Iop_CmpGT8Sx16:
+      case Iop_CmpGT8Ux16:
       case Iop_CmpEQ8x16:
       case Iop_Avg8Ux16:
+      case Iop_Avg8Sx16:
       case Iop_QAdd8Ux16:
       case Iop_QAdd8Sx16:
       case Iop_Add8x16:
@@ -1678,10 +1710,14 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_MulHi16Sx8:
       case Iop_MulHi16Ux8:
       case Iop_Min16Sx8:
+      case Iop_Min16Ux8:
       case Iop_Max16Sx8:
+      case Iop_Max16Ux8:
       case Iop_CmpGT16Sx8:
+      case Iop_CmpGT16Ux8:
       case Iop_CmpEQ16x8:
       case Iop_Avg16Ux8:
+      case Iop_Avg16Sx8:
       case Iop_QAdd16Ux8:
       case Iop_QAdd16Sx8:
       case Iop_Add16x8:
@@ -1689,8 +1725,19 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_Sub32x4:
       case Iop_CmpGT32Sx4:
+      case Iop_CmpGT32Ux4:
       case Iop_CmpEQ32x4:
+      case Iop_QAdd32Sx4:
+      case Iop_QAdd32Ux4:
+      case Iop_QSub32Sx4:
+      case Iop_QSub32Ux4:
+      case Iop_Avg32Ux4:
+      case Iop_Avg32Sx4:
       case Iop_Add32x4:
+      case Iop_Max32Ux4:
+      case Iop_Max32Sx4:
+      case Iop_Min32Ux4:
+      case Iop_Min32Sx4:
          return binary32Ix4(mce, vatom1, vatom2);
 
       case Iop_Sub64x2:
@@ -1698,6 +1745,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return binary64Ix2(mce, vatom1, vatom2);
 
       case Iop_QNarrow32Sx4:
+      case Iop_QNarrow32Ux4:
       case Iop_QNarrow16Sx8:
       case Iop_QNarrow16Ux8:
          return vectorNarrowV128(mce, op, vatom1, vatom2);
@@ -1773,6 +1821,50 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
                    assignNew(mce, Ity_V128, binop(op, vatom1, atom2)),
                    mkPCast8x16(mce, vatom2)
                 );
+
+     /* These two take the lower half of each 16-bit lane, sign/zero
+        extend it to 32, and multiply together, producing a 32x4
+        result (and implicitly ignoring half the operand bits).  So
+        treat it as a bunch of independent 16x8 operations, but then
+        do 32-bit shifts left-right to copy the lower half results
+        (which are all 0s or all 1s due to PCasting in binary16Ix8)
+        into the upper half of each result lane. */
+      case Iop_MullEven16Ux8:
+      case Iop_MullEven16Sx8: {
+         IRAtom* at;
+         at = binary16Ix8(mce,vatom1,vatom2);
+         at = assignNew(mce, Ity_V128, binop(Iop_ShlN32x4, at, mkU8(16)));
+         at = assignNew(mce, Ity_V128, binop(Iop_SarN32x4, at, mkU8(16)));
+	 return at;
+      }
+
+      /* Same deal as Iop_MullEven16{S,U}x8 */
+      case Iop_MullEven8Ux16:
+      case Iop_MullEven8Sx16: {
+         IRAtom* at;
+         at = binary8Ix16(mce,vatom1,vatom2);
+         at = assignNew(mce, Ity_V128, binop(Iop_ShlN16x8, at, mkU8(8)));
+         at = assignNew(mce, Ity_V128, binop(Iop_SarN16x8, at, mkU8(8)));
+	 return at;
+      }
+
+      /* narrow 2xV128 into 1xV128, hi half from left arg, in a 2 x
+         32x4 -> 16x8 laneage, discarding the upper half of each lane.
+         Simply apply same op to the V bits, since this really no more
+         than a data steering operation. */
+      case Iop_Narrow32Ux4: 
+      case Iop_Narrow16Ux8: 
+         return assignNew(mce, Ity_V128, 
+                               binop(op, vatom1, vatom2));
+
+      case Iop_ShrV128:
+      case Iop_ShlV128:
+         /* Same scheme as with all other shifts.  Note: 10 Nov 05:
+            this is wrong now, scalar shifts are done properly lazily.
+            Vector shifts should be fixed too. */
+         complainIfUndefined(mce, atom2);
+         return assignNew(mce, Ity_V128, binop(op, vatom1, atom2));
+
 
       /* I128-bit data-steering */
       case Iop_64HLto128:

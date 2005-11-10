@@ -66,17 +66,19 @@ To run Valgrind under Valgrind:
 
 (4) Choose a very simple program (date) and try
 
-    outer/.../bin/valgrind --weird-hacks=enable-outer   \
+    outer/.../bin/valgrind --weird-hacks=enable-outer --trace-children=yes  \
        --tool=cachegrind -v inner/.../bin/valgrind --tool=none -v prog
 
-It's fragile, confusing and slow, but it does work well enough for
-you to get some useful performance data.  The inner Valgrind has most of
-its output (ie. those lines beginning with "==<pid>==") prefixed with a
-'>', which helps a lot.
+If you omit the --trace-children=yes, you'll only valgrind inner's launcher
+program, not its stage2.  The whole thing is fragile, confusing and slow,
+but it does work well enough for you to get some useful performance data.
+The inner Valgrind has most of its output (ie. those lines beginning with
+"==<pid>==") prefixed with a '>', which helps a lot.
 
 At the time of writing the allocator is not annotated with client requests
 so Memcheck is not as useful as it could be.  It also has not been tested
 much, so don't be surprised if you hit problems.
+
 
 Printing out problematic blocks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

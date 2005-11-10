@@ -61,7 +61,7 @@ TOOL_LDFLAGS_PPC32_LINUX = \
 	$(TOOL_LDFLAGS_COMMON) \
 	-Wl,-T,$(top_builddir)/valt_load_address_ppc32_linux.lds
 
-PRELOAD_LDFLAGS_COMMON = -shared -Wl,-z,interpose,-z,initfirst
+PRELOAD_LDFLAGS_COMMON = -nostdlib -shared -Wl,-z,interpose,-z,initfirst
 PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON) @FLAG_M32@
 PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON) -m64
 PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON)

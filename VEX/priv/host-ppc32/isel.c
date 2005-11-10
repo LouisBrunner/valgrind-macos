@@ -2460,6 +2460,22 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             return;
          }
 
+         case Iop_Neg64: {
+            HReg yLo, yHi;
+            HReg zero = newVRegI(env);
+            HReg tLo  = newVRegI(env);
+            HReg tHi  = newVRegI(env);
+            iselInt64Expr(&yHi, &yLo, env, e->Iex.Unop.arg);
+            addInstr(env, PPC32Instr_LI32(zero, 0));
+            addInstr(env, PPC32Instr_AddSubC32( False/*sub*/, True /*set carry*/,
+                                                tLo, zero, yLo));
+            addInstr(env, PPC32Instr_AddSubC32( False/*sub*/, False/*read carry*/,
+                                                tHi, zero, yHi));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
 //..          /* Not64(e) */
 //..          case Iop_Not64: {
 //..             HReg tLo = newVRegI(env);
@@ -3000,6 +3016,27 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, PPC32Instr_AvUnary(Pav_NOT, dst, dst));
          return dst;
       }
+
+      case Iop_CmpNEZ16x8: {
+         HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg zero = newVRegV(env);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPC32Instr_AvBinary(Pav_XOR, zero, zero, zero));
+         addInstr(env, PPC32Instr_AvBin16x8(Pav_CMPEQU, dst, arg, zero));
+         addInstr(env, PPC32Instr_AvUnary(Pav_NOT, dst, dst));
+         return dst;
+      }
+
+      case Iop_CmpNEZ32x4: {
+         HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg zero = newVRegV(env);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPC32Instr_AvBinary(Pav_XOR, zero, zero, zero));
+         addInstr(env, PPC32Instr_AvBin32x4(Pav_CMPEQU, dst, arg, zero));
+         addInstr(env, PPC32Instr_AvUnary(Pav_NOT, dst, dst));
+         return dst;
+      }
+
 //..       case Iop_CmpNEZ16x8: {
 //..          /* We can use SSE2 instructions for this. */
 //..          HReg arg;
@@ -3292,7 +3329,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Shl8x16:    op = Pav_SHL;    goto do_AvBin8x16;
       case Iop_Shr8x16:    op = Pav_SHR;    goto do_AvBin8x16;
       case Iop_Sar8x16:    op = Pav_SAR;    goto do_AvBin8x16;
-      case Iop_Rotl8x16:   op = Pav_ROTL;   goto do_AvBin8x16;
+      case Iop_Rol8x16:    op = Pav_ROTL;   goto do_AvBin8x16;
       case Iop_InterleaveHI8x16: op = Pav_MRGHI;  goto do_AvBin8x16;
       case Iop_InterleaveLO8x16: op = Pav_MRGLO;  goto do_AvBin8x16;
       case Iop_Add8x16:    op = Pav_ADDU;   goto do_AvBin8x16;
@@ -3323,8 +3360,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Shl16x8:    op = Pav_SHL;    goto do_AvBin16x8;
       case Iop_Shr16x8:    op = Pav_SHR;    goto do_AvBin16x8;
       case Iop_Sar16x8:    op = Pav_SAR;    goto do_AvBin16x8;
-      case Iop_Rotl16x8:   op = Pav_ROTL;   goto do_AvBin16x8;
-      case Iop_Narrow16Ux8:      op = Pav_PACKUU;  goto do_AvBin16x8;
+      case Iop_Rol16x8:    op = Pav_ROTL;   goto do_AvBin16x8;
+      case Iop_Narrow16x8:       op = Pav_PACKUU;  goto do_AvBin16x8;
       case Iop_QNarrow16Ux8:     op = Pav_QPACKUU; goto do_AvBin16x8;
       case Iop_QNarrow16Sx8:     op = Pav_QPACKSS; goto do_AvBin16x8;
       case Iop_InterleaveHI16x8: op = Pav_MRGHI;  goto do_AvBin16x8;
@@ -3357,8 +3394,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Shl32x4:    op = Pav_SHL;    goto do_AvBin32x4;
       case Iop_Shr32x4:    op = Pav_SHR;    goto do_AvBin32x4;
       case Iop_Sar32x4:    op = Pav_SAR;    goto do_AvBin32x4;
-      case Iop_Rotl32x4:   op = Pav_ROTL;   goto do_AvBin32x4;
-      case Iop_Narrow32Ux4:      op = Pav_PACKUU;  goto do_AvBin32x4;
+      case Iop_Rol32x4:    op = Pav_ROTL;   goto do_AvBin32x4;
+      case Iop_Narrow32x4:       op = Pav_PACKUU;  goto do_AvBin32x4;
       case Iop_QNarrow32Ux4:     op = Pav_QPACKUU; goto do_AvBin32x4;
       case Iop_QNarrow32Sx4:     op = Pav_QPACKSS; goto do_AvBin32x4;
       case Iop_InterleaveHI32x4: op = Pav_MRGHI;  goto do_AvBin32x4;

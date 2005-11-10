@@ -581,12 +581,13 @@ typedef
       Iop_Shl8x16, Iop_Shl16x8, Iop_Shl32x4,
       Iop_Shr8x16, Iop_Shr16x8, Iop_Shr32x4,
       Iop_Sar8x16, Iop_Sar16x8, Iop_Sar32x4,
-      Iop_Rotl8x16, Iop_Rotl16x8, Iop_Rotl32x4,
+      Iop_Rol8x16, Iop_Rol16x8, Iop_Rol32x4,
 
       /* NARROWING -- narrow 2xV128 into 1xV128, hi half from left arg */
+      /* Note: the 16{U,S} and 32{U,S} are the pre-narrow lane widths. */
       Iop_QNarrow16Ux8, Iop_QNarrow32Ux4,
       Iop_QNarrow16Sx8, Iop_QNarrow32Sx4,
-      Iop_Narrow16Ux8, Iop_Narrow32Ux4,
+      Iop_Narrow16x8, Iop_Narrow32x4,
 
       /* INTERLEAVING -- interleave lanes from low or high halves of
          operands.  Most-significant result lane is from the left

@@ -6077,7 +6077,7 @@ static Bool dis_av_multarith ( UInt theInstr )
       assign( zHi, binop(Iop_Add32x4,
                          binop(Iop_MullEven16Ux8, mkexpr(aHi), mkexpr(bHi) ),
                          mkexpr(cHi)) );
-      putVReg( vD_addr, binop(Iop_Narrow32Ux4, mkexpr(zHi), mkexpr(zLo)) );
+      putVReg( vD_addr, binop(Iop_Narrow32x4, mkexpr(zHi), mkexpr(zLo)) );
       break;
    }
 
@@ -6234,17 +6234,17 @@ static Bool dis_av_shift ( UInt theInstr )
    /* Rotate */
    case 0x004: // vrlb (Rotate Left Integer B, AV p234)
       DIP("vrlb v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_Rotl8x16, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_Rol8x16, mkexpr(vA), mkexpr(vB)) );
       break;
 
    case 0x044: // vrlh (Rotate Left Integer HW, AV p235)
       DIP("vrlh v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_Rotl16x8, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_Rol16x8, mkexpr(vA), mkexpr(vB)) );
       break;
 
    case 0x084: // vrlw (Rotate Left Integer W, AV p236)
       DIP("vrlw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_Rotl32x4, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_Rol32x4, mkexpr(vA), mkexpr(vB)) );
       break;
 
 
@@ -6546,12 +6546,12 @@ static Bool dis_av_pack ( UInt theInstr )
    /* Packing */
    case 0x00E: // vpkuhum (Pack Unsigned HW Unsigned Modulo, AV p224)
       DIP("vpkuhum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_Narrow16Ux8, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_Narrow16x8, mkexpr(vA), mkexpr(vB)) );
       return True;
 
    case 0x04E: // vpkuwum (Pack Unsigned W Unsigned Modulo, AV p226)
       DIP("vpkuwum v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      putVReg( vD_addr, binop(Iop_Narrow32Ux4, mkexpr(vA), mkexpr(vB)) );
+      putVReg( vD_addr, binop(Iop_Narrow32x4, mkexpr(vA), mkexpr(vB)) );
       return True;
 
    case 0x08E: // vpkuhus (Pack Unsigned HW Unsigned Saturate, AV p225)
@@ -6654,7 +6654,7 @@ static Bool dis_av_pack ( UInt theInstr )
       assign( b_tmp, binop(Iop_OrV128, mkexpr(b1),
                            binop(Iop_OrV128, mkexpr(b2), mkexpr(b3))) );
 
-      putVReg( vD_addr, binop(Iop_Narrow32Ux4,
+      putVReg( vD_addr, binop(Iop_Narrow32x4,
                               mkexpr(a_tmp), mkexpr(b_tmp)) );
       return True;
    }

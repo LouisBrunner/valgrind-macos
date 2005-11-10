@@ -314,7 +314,6 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)child_tidptr, (UWord)NULL );
-#elif defined(VGP_ppc32_linux)
 #else
 # error Unknown platform
 #endif

@@ -513,7 +513,6 @@ Addr setup_client_stack( void*  init_sp,
          case AT_EGID:
          case AT_CLKTCK:
          case AT_FPUCW:
-         case AT_SYSINFO:
             /* All these are pointerless, so we don't need to do
                anything about them. */
             break;
@@ -586,12 +585,13 @@ Addr setup_client_stack( void*  init_sp,
             auxv->u.a_val = 0;
             break;
 
+         case AT_SYSINFO:
 #        if !defined(VGP_ppc32_linux)
          case AT_SYSINFO_EHDR:
+#        endif
             /* Trash this, because we don't reproduce it */
             auxv->a_type = AT_IGNORE;
             break;
-#        endif
 
          default:
             /* stomp out anything we don't know about */

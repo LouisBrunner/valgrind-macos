@@ -86,6 +86,9 @@ CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline \
 # (the above are for icc 8.0 -- 8.0.0.55 I think)
 # 186: pointless comparison of unsigned integer with zero
 
+# kludge: stops V biarch builds screwing up at -j 2 or above
+# The Right fix is to autoconf/automake-ise vex.
+.NOTPARALLEL:
 
 all: vex
 

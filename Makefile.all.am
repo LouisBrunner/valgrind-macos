@@ -6,3 +6,8 @@ valdir = $(libdir)/valgrind
 inplacedir = $(top_builddir)/.in_place
 
 
+# The kludge that passes for vex's build system can't handle parallel
+# builds.  So, for the time being, serialise all Valgrind building.
+# (this is equivalent to enforcing "make -j 1".
+.NOTPARALLEL:
+

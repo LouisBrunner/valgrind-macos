@@ -6,6 +6,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	fpu-28-108
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+AM_CFLAGS   = $(WERROR) @FLAG_M32@ -Winline -Wall -Wshadow -g
 
 fpu_28_108_SOURCES	= fpu-28-108.S

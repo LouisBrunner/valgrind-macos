@@ -21,16 +21,6 @@ char* all_archs[] = {
    NULL
 };
 
-#ifdef __x86_64__
-static Bool go(char* cpu)
-{
-   if ( strcmp( cpu, "amd64" ) == 0 )
-      return True;
-   else 
-      return False;
-}
-#endif // __x86_64__
-
 #ifdef __powerpc__
 static Bool go(char* cpu)
 {
@@ -41,7 +31,7 @@ static Bool go(char* cpu)
 }
 #endif // __powerpc__
 
-#ifdef __i386__
+#if defined(__i386__) || defined(__x86_64__)
 static void cpuid ( unsigned int n,
                     unsigned int* a, unsigned int* b,
                     unsigned int* c, unsigned int* d )
@@ -77,6 +67,10 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "x86-sse2" ) == 0 ) {
      level = 1;
      mask = 1 << 26;
+#if defined(__x86_64__)
+   } else if ( strcmp( cpu, "amd64" ) == 0 ) {
+     return True;
+#endif
    } else {
      return False;
    }
@@ -90,7 +84,7 @@ static Bool go(char* cpu)
    }
    return False;
 }
-#endif // __i386__
+#endif // __i386__ || __x86_64__
 
 
 int main(int argc, char **argv)

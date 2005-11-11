@@ -35,16 +35,16 @@ check_PROGRAMS = \
 	lahf looper int pushpopseg sbbmisc \
 	seg_override sigcontext smc1 yield
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow \
-		-g -I$(top_srcdir)/include \
+AM_CFLAGS    = $(WERROR) -Winline -Wall -Wshadow \
+		@FLAG_M32@ -g -I$(top_srcdir)/include \
 		$(FLAG_MMMX) $(FLAG_MSSE)
-
-AM_CXXFLAGS = $(AM_CFLAGS)
+AM_CXXFLAGS  = $(AM_CFLAGS)
+AM_CCASFLAGS = @FLAG_M32@
 
 # generic C ones
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.s
 # fpu_lazy_eflags must use these flags -- the bug only occurred with them
-fpu_lazy_eflags_CFLAGS	= -O2 -march=pentiumpro
+fpu_lazy_eflags_CFLAGS	= @FLAG_M32@ -O2 -march=pentiumpro
 fxtract_LDADD		= -lm
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm

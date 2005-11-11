@@ -18,9 +18,10 @@ check_PROGRAMS = \
 	scalar_exit_group scalar_fork scalar_supp scalar_vfork \
 	fpeflags pushfpopf scalar tronical
 
-AM_CPPFLAGS = -I$(top_srcdir)/include
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
-AM_CXXFLAGS = $(AM_CFLAGS)
+AM_CPPFLAGS  = -I$(top_srcdir)/include
+AM_CFLAGS    = $(WERROR) @FLAG_M32@ -Winline -Wall -Wshadow -g 
+AM_CXXFLAGS  = $(AM_CFLAGS)
+AM_CCASFLAGS = @FLAG_M32@
 
 # must be built with these flags -- bug only occurred with them
 fpeflags_CFLAGS		= $(AM_CFLAGS) -march=i686

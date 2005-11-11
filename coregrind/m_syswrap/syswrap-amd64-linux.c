@@ -417,8 +417,8 @@ PRE(sys_clone)
       SET_STATUS_from_SysRes(
          ML_(do_fork_clone)(tid,
                        cloneflags,      /* flags */
-                       (Long *)ARG3,    /* parent_tidptr */
-                       (Long *)ARG4));  /* child_tidptr */
+                       (Int *)ARG3,     /* parent_tidptr */
+                       (Int *)ARG4));   /* child_tidptr */
       break;
 
    default:

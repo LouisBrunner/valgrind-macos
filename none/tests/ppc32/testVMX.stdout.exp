@@ -1,0 +1,507 @@
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_abs [type char]              ===> OK
+Function vec_abs [type short]             ===> OK
+Function vec_abs [type integer]           ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_abss [type char]             ===> OK
+Function vec_abss [type short]            ===> OK
+Function vec_abss [type integer]          ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_add [type char]              ===> OK
+Function vec_add [type unsigned char]     ===> OK
+Function vec_add [type short]             ===> OK
+Function vec_add [type unsigned short]    ===> OK
+Function vec_add [type integer]           ===> OK
+Function vec_add [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_addc [type unsigned int]     ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_adds [type char]             ===> OK
+Function vec_adds [type unsigned char]    ===> OK
+Function vec_adds [type short]            ===> OK
+Function vec_adds [type unsigned short]   ===> OK
+Function vec_adds [type integer]          ===> OK
+Function vec_adds [type unsigned int]     ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_and [type char]              ===> OK
+Function vec_and [type unsigned char]     ===> OK
+Function vec_and [type short]             ===> OK
+Function vec_and [type unsigned short]    ===> OK
+Function vec_and [type integer]           ===> OK
+Function vec_and [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_andc [type char]             ===> OK
+Function vec_andc [type unsigned char]    ===> OK
+Function vec_andc [type short]            ===> OK
+Function vec_andc [type unsigned short]   ===> OK
+Function vec_andc [type integer]          ===> OK
+Function vec_andc [type unsigned int]     ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_avg [type char]              ===> OK
+Function vec_avg [type unsigned char]     ===> OK
+Function vec_avg [type short]             ===> OK
+Function vec_avg [type unsigned short]    ===> OK
+Function vec_avg [type integer]           ===> OK
+Function vec_avg [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_cmpeq [type char]            ===> OK
+Function vec_cmpeq [type unsigned char]   ===> OK
+Function vec_cmpeq [type short]           ===> OK
+Function vec_cmpeq [type unsigned short]  ===> OK
+Function vec_cmpeq [type integer]         ===> OK
+Function vec_cmpeq [type unsigned int]    ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_cmpgt [type char]            ===> OK
+Function vec_cmpgt [type unsigned char]   ===> OK
+Function vec_cmpgt [type short]           ===> OK
+Function vec_cmpgt [type unsigned short]  ===> OK
+Function vec_cmpgt [type integer]         ===> OK
+Function vec_cmpgt [type unsigned int]    ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_cmplt [type char]            ===> OK
+Function vec_cmplt [type unsigned char]   ===> OK
+Function vec_cmplt [type short]           ===> OK
+Function vec_cmplt [type unsigned short]  ===> OK
+Function vec_cmplt [type integer]         ===> OK
+Function vec_cmplt [type unsigned int]    ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_dss [Vector data Stream Stop] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_dssall [Vector Stream Stop all] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_dst [Vector Data Stream Touch] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_dstst [Vector Data Stream Touch for Store] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_dststt [Vector Data Stream Touch for Store Transient] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_dstt [Vector Data Stream Touch Transient] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_ld [type unsigned char]      ===> OK
+Function vec_ld [type char]               ===> OK
+Function vec_ld [type unsigned short]     ===> OK
+Function vec_ld [type short]              ===> OK
+Function vec_ld [type unsigned int]       ===> OK
+Function vec_ld [type int]                ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_lde [type unsigned char]     ===> OK
+Function vec_lde [type char]              ===> OK
+Function vec_lde [type unsigned short]    ===> OK
+Function vec_lde [type short]             ===> OK
+Function vec_lde [type unsigned int]      ===> OK
+Function vec_lde [type int]               ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_lvsl [type unsigned char]    ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_lvsr [type unsigned char]    ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_madds [type short]           ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_max [type char]              ===> OK
+Function vec_max [type unsigned char]     ===> OK
+Function vec_max [type short]             ===> OK
+Function vec_max [type unsigned short]    ===> OK
+Function vec_max [type integer]           ===> OK
+Function vec_max [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_mergeh [type char]           ===> OK
+Function vec_mergeh [type unsigned char]  ===> OK
+Function vec_mergeh [type short]          ===> OK
+Function vec_mergeh [type unsigned short] ===> OK
+Function vec_mergeh [type integer]        ===> OK
+Function vec_mergeh [type unsigned int]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_mergel [type char]           ===> OK
+Function vec_mergel [type unsigned char]  ===> OK
+Function vec_mergel [type short]          ===> OK
+Function vec_mergel [type unsigned short] ===> OK
+Function vec_mergel [type integer]        ===> OK
+Function vec_mergel [type unsigned int]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_mfvscr [Vector Move from Vector Status and Control Register] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_min [type char]              ===> OK
+Function vec_min [type unsigned char]     ===> OK
+Function vec_min [type short]             ===> OK
+Function vec_min [type unsigned short]    ===> OK
+Function vec_min [type integer]           ===> OK
+Function vec_min [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_mladd [type short]           ===> OK
+Function vec_mladd [type unsigned short]  ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+vector: 258 
+scalar: 258 
+vector: 323 
+scalar: 323 
+vector: 344 
+scalar: 344 
+vector: 32767 
+scalar: 32767 
+vector: -32768 
+scalar: -32768 
+vector: 32767 
+scalar: 32767 
+vector: -32768 
+scalar: -32768 
+vector: 32766 
+scalar: 32766 
+Function vec_mradds [type short]          ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_msum [type char]             ===> OK
+Function vec_msum [type unsigned char]    ===> OK
+Function vec_msum [type short]            ===> OK
+Function vec_msum [type unsigned short]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_msums [type short]           ===> OK
+Function vec_msums [type unsigned short]  ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_mtvscr [Vector Move to Vector Status and Control Register] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_mule [type char]             ===> OK
+Function vec_mule [type unsigned char]    ===> OK
+Function vec_mule [type short]            ===> OK
+Function vec_mule [type unsigned short]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_mulo [type char]             ===> OK
+Function vec_mulo [type unsigned char]    ===> OK
+Function vec_mulo [type short]            ===> OK
+Function vec_mulo [type unsigned short]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_nor [type char]              ===> OK
+Function vec_nor [type unsigened char]    ===> OK
+Function vec_nor [type short]             ===> OK
+Function vec_nor [type unsigned short]    ===> OK
+Function vec_nor [type integer]           ===> OK
+Function vec_nor [type unsigened int]     ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_or [type char]               ===> OK
+Function vec_or [type unsigened char]     ===> OK
+Function vec_or [type short]              ===> OK
+Function vec_or [type unsigned short]     ===> OK
+Function vec_or [type integer]            ===> OK
+Function vec_or [type unsigened int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_pack [type char]             ===> OK
+Function vec_pack [type unsigned char]    ===> OK
+Function vec_pack [type short]            ===> OK
+Function vec_pack [type unsigned short]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_packpx [Vector Pack Pixel] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_packs [type char]            ===> OK
+Function vec_packs [type unsigned char]   ===> OK
+Function vec_packs [type short]           ===> OK
+Function vec_packs [type unsigned short]  ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_packsu [type char]           ===> OK
+Function vec_packsu [type unsigned char]  ===> OK
+Function vec_packsu [type short]          ===> OK
+Function vec_packsu [type unsigned short] ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_perm [Vector Permute] not checked
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_rl [type char]               ===> OK
+Function vec_rl [type unsigned char]      ===> OK
+Function vec_rl [type short]              ===> OK
+Function vec_rl [type unsigned short]     ===> OK
+Function vec_rl [type integer]            ===> OK
+Function vec_rl [type unsigned int]       ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sel [type char]              ===> OK
+Function vec_sel [type unsigned char]     ===> OK
+Function vec_sel [type short]             ===> OK
+Function vec_sel [type unsigned short]    ===> OK
+Function vec_sel [type integer]           ===> OK
+Function vec_sel [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sl [type char]               ===> OK
+Function vec_sl [type unsigned char]      ===> OK
+Function vec_sl [type short]              ===> OK
+Function vec_sl [type unsigned short]     ===> OK
+Function vec_sl [type int]                ===> OK
+Function vec_sl [type unsigned integer]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sld [type char]              ===> OK
+Function vec_sld [type unsigned char]     ===> OK
+Function vec_sld [type short]             ===> OK
+Function vec_sld [type unsigned short]    ===> OK
+Function vec_sld [type integer]           ===> OK
+Function vec_sld [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sll [type char]              ===> OK
+Function vec_sll [type unsigned char]     ===> OK
+Function vec_sll [type short]             ===> OK
+Function vec_sll [type unsigned char]     ===> OK
+Function vec_sll [type integer]           ===> OK
+Function vec_sll [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_slo [type char]              ===> OK
+Function vec_slo [type unsigned char]     ===> OK
+Function vec_slo [type short]             ===> OK
+Function vec_slo [type unsigned short]    ===> OK
+Function vec_slo [type integer]           ===> OK
+Function vec_slo [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_splat [type char]            ===> OK
+Function vec_splat [type unsigned char]   ===> OK
+Function vec_splat [type short]           ===> OK
+Function vec_splat [type unsigned short]  ===> OK
+Function vec_splat [type integer]         ===> OK
+Function vec_splat [type unsigned int]    ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_splat_s8 [type char]         ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_splat_s16 [type short]       ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_splat_s32 [type integer]     ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_splat_u8 [type unsig. char]  ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_splat_u16 [type unsg. short] ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_splat_u32 [type unsig. int]  ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sr [type char]               ===> OK
+Function vec_sr [type unsigned char]      ===> OK
+Function vec_sr [type short]              ===> OK
+Function vec_sr [type unsigned short]     ===> OK
+Function vec_sr [type integer]            ===> OK
+Function vec_sr [type unsigned int]       ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sra [type char]              ===> OK
+Function vec_sra [type unsigned char]     ===> OK
+Function vec_sra [type short]             ===> OK
+Function vec_sra [type unsigned short]    ===> OK
+Function vec_sra [type integer]           ===> OK
+Function vec_sra [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_srl [type char]              ===> OK
+Function vec_srl [type unsigned char]     ===> OK
+Function vec_srl [type short]             ===> OK
+Function vec_srl [type unsigned short]    ===> OK
+Function vec_srl [type integer]           ===> OK
+Function vec_srl [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sro [type char]              ===> OK
+Function vec_sro [type unsigned char]     ===> OK
+Function vec_sro [type short]             ===> OK
+Function vec_sro [type unsigned short]    ===> OK
+Function vec_sro [type integer]           ===> OK
+Function vec_sro [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_st [type unsigned char]      ===> OK
+Function vec_st [type char]               ===> OK
+Function vec_st [type unsigned short]     ===> OK
+Function vec_st [type short]              ===> OK
+Function vec_st [type unsigned int]       ===> OK
+Function vec_st [type int]                ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_ste [type unsigned char]     ===> OK
+Function vec_ste [type char]              ===> OK
+Function vec_ste [type unsigned short]    ===> OK
+Function vec_ste [type short]             ===> OK
+Function vec_ste [type unsigned int]      ===> OK
+Function vec_ste [type int]               ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sub [type char]              ===> OK
+Function vec_sub [type unsigned char]     ===> OK
+Function vec_sub [type short]             ===> OK
+Function vec_sub [type unsigned short]    ===> OK
+Function vec_sub [type integer]           ===> OK
+Function vec_sub [type unsigned int]      ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_subc [type unsigned int]     ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_subs [type char]             ===> OK
+Function vec_subs [type unsigned char]    ===> OK
+Function vec_subs [type short]            ===> OK
+Function vec_subs [type unsigned short]   ===> OK
+Function vec_subs [type integer]          ===> OK
+Function vec_subs [type unsigned int]     ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sum4s [type char]            ===> OK
+Function vec_sum4s [type unsigned char]   ===> OK
+Function vec_sum4s [type short]           ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sum2s [type integer]         ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_sums [type integer]          ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_unpackh [type short-char]    ===> OK
+Function vec_unpackh [type int-short]     ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_unpackl [type short-char]    ===> OK
+Function vec_unpackl [type int-short]     ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_xor [type unsigned char]     ===> OK
+Function vec_xor [type char]              ===> OK
+Function vec_xor [type unsigned short]    ===> OK
+Function vec_xor [type short]             ===> OK
+Function vec_xor [type unsigned int]      ===> OK
+Function vec_xor [type int]               ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_all_eq [type unsigned char]  ===> OK
+Function vec_all_eq [type char]           ===> OK
+Function vec_all_eq [type unsigned short] ===> OK
+Function vec_all_eq [type short]          ===> OK
+Function vec_all_eq [type unsigned int]   ===> OK
+Function vec_all_eq [type int]            ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_all_ge [type unsigned char]  ===> OK
+Function vec_all_ge [type char]           ===> OK
+Function vec_all_ge [type unsigned short] ===> OK
+Function vec_all_ge [type short]          ===> OK
+Function vec_all_ge [type unsigned int]   ===> OK
+Function vec_all_ge [type int]            ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_all_gt [type unsigned char]  ===> OK
+Function vec_all_gt [type char]           ===> OK
+Function vec_all_gt [type unsigned short] ===> OK
+Function vec_all_gt [type short]          ===> OK
+Function vec_all_gt [type unsigned int]   ===> OK
+Function vec_all_gt [type int]            ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_all_le [type unsigned char]  ===> OK
+Function vec_all_le [type char]           ===> OK
+Function vec_all_le [type unsigned short] ===> OK
+Function vec_all_le [type short]          ===> OK
+Function vec_all_le [type unsigned int]   ===> OK
+Function vec_all_le [type int]            ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_all_lt [type unsigned char]  ===> OK
+Function vec_all_lt [type char]           ===> OK
+Function vec_all_lt [type unsigned short] ===> OK
+Function vec_all_lt [type short]          ===> OK
+Function vec_all_lt [type unsigned int]   ===> OK
+Function vec_all_lt [type int]            ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_all_ne [type char]           ===> OK
+Function vec_all_ne [type unsigned char]  ===> OK
+Function vec_all_ne [type short]          ===> OK
+Function vec_all_ne [type unsigned short] ===> OK
+Function vec_all_ne [type int]            ===> OK
+Function vec_all_ne [type unsigned int]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_any_eq [type char]           ===> OK
+Function vec_any_eq [type unsigned char]  ===> OK
+Function vec_any_eq [type short]          ===> OK
+Function vec_any_eq [type unsigned short] ===> OK
+Function vec_any_eq [type int]            ===> OK
+Function vec_any_eq [type unsigned int]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_any_ge [type char]           ===> OK
+Function vec_any_ge [type unsigned char]  ===> OK
+Function vec_any_ge [type short]          ===> OK
+Function vec_any_ge [type unsigned short] ===> OK
+Function vec_any_ge [type int]            ===> OK
+Function vec_any_ge [type unsigned int]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_any_gt [type char]           ===> OK
+Function vec_any_gt [type unsigned char]  ===> OK
+Function vec_any_gt [type short]          ===> OK
+Function vec_any_gt [type unsigned short] ===> OK
+Function vec_any_gt [type int]            ===> OK
+Function vec_any_gt [type unsigned int]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_any_le [type char]           ===> OK
+Function vec_any_le [type unsigned char]  ===> OK
+Function vec_any_le [type short]          ===> OK
+Function vec_any_le [type unsigned short] ===> OK
+Function vec_any_le [type int]            ===> OK
+Function vec_any_le [type unsigned int]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_any_lt [type char]           ===> OK
+Function vec_any_lt [type unsigned char]  ===> OK
+Function vec_any_lt [type short]          ===> OK
+Function vec_any_lt [type unsigned short] ===> OK
+Function vec_any_lt [type int]            ===> OK
+Function vec_any_lt [type unsigned int]   ===> OK
+
+:::::::::::::::::::::::::::::::::::::::
+Function vec_any_ne [type char]           ===> OK
+Function vec_any_ne [type unsigned char]  ===> OK
+Function vec_any_ne [type short]          ===> OK
+Function vec_any_ne [type unsigned short] ===> OK
+Function vec_any_ne [type int]            ===> OK
+Function vec_any_ne [type unsigned int]   ===> OK

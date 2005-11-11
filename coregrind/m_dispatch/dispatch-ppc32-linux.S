@@ -44,6 +44,12 @@
 VG_(run_innerloop):
         /* ----- entry point to VG_(run_innerloop) ----- */
 
+        /* For Linux/ppc32 we need the SysV ABI, which uses
+           LR->4(parent_sp), CR->anywhere.
+           (The AIX ABI, used on Darwin, and maybe Linux/ppc64?,
+           uses LR->8(prt_sp), CR->4(prt_sp))
+        */
+
         /* Save lr */
         mflr    0
         stw     0,4(1)
@@ -92,11 +98,14 @@ VG_(run_innerloop):
         stw     16,288(1)
         stw     15,284(1)
         stw     14,280(1)
-
-// CAB: this necessary?
+        /* Probably not necessary to save r13 (thread-specific ptr),
+           as VEX stays clear of it... but what the hey. */
         stw     13,276(1)
 
-// CAB: this necessary?
+        /* It's necessary to save/restore VRSAVE in the AIX / Darwin ABI.
+           The Linux kernel might not actually use VRSAVE for its intended
+           purpose, but it should be harmless to preserve anyway. */
+
         /* VRSAVE save word : 32 bytes */
         mfspr   4,256         /* vrsave reg is spr number 256 */
         stw     4,244(1)
@@ -129,12 +138,11 @@ VG_(run_innerloop):
         li      4,48
         stvx    20,4,1
 
-        /* Local variable space... */
-
-// CAB: ok to save CR here? saving to parent stack corrupts...
         /* Save cr */
         mfcr    0
         stw     0,32(1)
+
+        /* Local variable space... */
 
         /* r3 holds guest_state */
         mr      31,3

@@ -153,16 +153,16 @@ typedef struct test_t test_t;
 typedef struct test_table_t test_table_t;
 struct test_t {
     test_func_t func;
-    const unsigned char *name;
+    const char *name;
 };
 
 struct test_table_t {
     test_t *tests;
-    const unsigned char *name;
+    const char *name;
     uint32_t flags;
 };
 
-typedef void (*test_loop_t) (const unsigned char *name, test_func_t func,
+typedef void (*test_loop_t) (const char *name, test_func_t func,
                              uint32_t flags);
 
 enum test_flags {
@@ -3756,7 +3756,7 @@ static void dump_vfargs (void)
 }
 #endif
 
-static void test_int_three_args (const unsigned char *name, test_func_t func,
+static void test_int_three_args (const char* name, test_func_t func,
                                  unused uint32_t test_flags)
 {
    volatile uint32_t res, flags, xer, tmpcr, tmpxer;
@@ -3796,7 +3796,7 @@ static void test_int_three_args (const unsigned char *name, test_func_t func,
    }
 }
 
-static void test_int_two_args (const unsigned char *name, test_func_t func,
+static void test_int_two_args (const char* name, test_func_t func,
                                uint32_t test_flags)
 {
    volatile uint32_t res, flags, xer, xer_orig, tmpcr, tmpxer;
@@ -3840,7 +3840,7 @@ static void test_int_two_args (const unsigned char *name, test_func_t func,
    }
 }
 
-static void test_int_one_arg (const unsigned char *name, test_func_t func,
+static void test_int_one_arg (const char* name, test_func_t func,
                                uint32_t test_flags)
 {
    volatile uint32_t res, flags, xer, xer_orig, tmpcr, tmpxer;
@@ -3923,7 +3923,7 @@ static inline void patch_op_imm16 (void *out, void *in, uint16_t imm)
    patch_op_imm(out, in, imm, 0, 16);
 }
 
-static void test_int_one_reg_imm16 (const unsigned char *name,
+static void test_int_one_reg_imm16 (const char* name,
                                     test_func_t func,
                                     unused uint32_t test_flags)
 {
@@ -3988,7 +3988,7 @@ static void test_int_one_reg_imm16 (const unsigned char *name,
  * mtspr_cb
  */
 
-static void rlwi_cb (const unsigned char *name, test_func_t func,
+static void rlwi_cb (const char* name, test_func_t func,
                      unused uint32_t test_flags)
 {
    uint32_t func_buf[2], *p;
@@ -4037,7 +4037,7 @@ static void rlwi_cb (const unsigned char *name, test_func_t func,
    }
 }
 
-static void rlwnm_cb (const unsigned char *name, test_func_t func,
+static void rlwnm_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    uint32_t func_buf[2], *p;
@@ -4086,7 +4086,7 @@ static void rlwnm_cb (const unsigned char *name, test_func_t func,
    }
 }
 
-static void srawi_cb (const unsigned char *name, test_func_t func,
+static void srawi_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    uint32_t func_buf[2], *p;
@@ -4129,7 +4129,7 @@ static void srawi_cb (const unsigned char *name, test_func_t func,
    }
 }
 
-static void mcrf_cb (const unsigned char *name, test_func_t func,
+static void mcrf_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    uint32_t func_buf[2], *p;
@@ -4175,13 +4175,13 @@ static void mcrf_cb (const unsigned char *name, test_func_t func,
 }
 
 #if 0
-static void mcrfs_cb (const unsigned char *name, test_func_t func,
+static void mcrfs_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {}
 #endif
 
 
-static void mcrxr_cb (const unsigned char *name, test_func_t func,
+static void mcrxr_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    uint32_t func_buf[2], *p;
@@ -4224,7 +4224,7 @@ static void mcrxr_cb (const unsigned char *name, test_func_t func,
    }
 }
 
-static void mfcr_cb (const unsigned char *name, test_func_t func,
+static void mfcr_cb (const char* name, test_func_t func,
                      unused uint32_t test_flags)
 {
    volatile uint32_t res, flags, xer, tmpcr, tmpxer;
@@ -4258,7 +4258,7 @@ static void mfcr_cb (const unsigned char *name, test_func_t func,
 }
 
 // NOTE: Not using func: calling function kills lr
-static void mfspr_cb (const unsigned char *name, test_func_t func,
+static void mfspr_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    volatile uint32_t res, flags, xer, ctr, lr, tmpcr, tmpxer;
@@ -4395,7 +4395,7 @@ static void mfspr_cb (const unsigned char *name, test_func_t func,
 }
 
 #if 0
-static void mftb_cb (const unsigned char *name, test_func_t func,
+static void mftb_cb (const char* name, test_func_t func,
                      unused uint32_t test_flags)
 {
 // How to test this?
@@ -4464,7 +4464,7 @@ static void mftb_cb (const unsigned char *name, test_func_t func,
 }
 #endif
 
-static void mtcrf_cb (const unsigned char *name, test_func_t func,
+static void mtcrf_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    uint32_t func_buf[2], *p;
@@ -4507,7 +4507,7 @@ static void mtcrf_cb (const unsigned char *name, test_func_t func,
 }
 
 // NOTE: Not using func: calling function kills lr
-static void mtspr_cb (const unsigned char *name, test_func_t func,
+static void mtspr_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    volatile uint32_t flags, xer, ctr, lr, tmpcr, tmpxer;
@@ -4648,16 +4648,16 @@ static void mtspr_cb (const unsigned char *name, test_func_t func,
 typedef struct special_t special_t;
 
 struct special_t {
-   const unsigned char *name;
-   void (*test_cb)(const unsigned char *name, test_func_t func,
+   const char *name;
+   void (*test_cb)(const char* name, test_func_t func,
                    unused uint32_t test_flags);
 };
 
 static void test_special (special_t *table,
-                          const unsigned char *name, test_func_t func,
+                          const char* name, test_func_t func,
                           unused uint32_t test_flags)
 {
-   const unsigned char *tmp;
+   const char *tmp;
    int i;
    
    for (tmp = name; isspace(*tmp); tmp++)
@@ -4750,14 +4750,14 @@ static special_t special_int_ops[] = {
    },
 };
 
-static void test_int_special (const unsigned char *name, test_func_t func,
+static void test_int_special (const char* name, test_func_t func,
                               uint32_t test_flags)
 {
    test_special(special_int_ops, name, func, test_flags);
 }
 
 
-static void test_int_ld_one_reg_imm16 (const unsigned char *name,
+static void test_int_ld_one_reg_imm16 (const char* name,
                                        test_func_t func,
                                        unused uint32_t test_flags)
 {
@@ -4841,7 +4841,7 @@ static void test_int_ld_one_reg_imm16 (const unsigned char *name,
    }
 }
 
-static void test_int_ld_two_regs (const unsigned char *name,
+static void test_int_ld_two_regs (const char* name,
                                   test_func_t func,
                                   unused uint32_t test_flags)
 {
@@ -4883,7 +4883,7 @@ static void test_int_ld_two_regs (const unsigned char *name,
    }
 }
 
-static void test_int_st_two_regs_imm16 (const unsigned char *name,
+static void test_int_st_two_regs_imm16 (const char* name,
                                         test_func_t func,
                                         unused uint32_t test_flags)
 {
@@ -4976,7 +4976,7 @@ static void test_int_st_two_regs_imm16 (const unsigned char *name,
    free(iargs_priv);
 }
 
-static void test_int_st_three_regs (const unsigned char *name,
+static void test_int_st_three_regs (const char* name,
                                     test_func_t func,
                                     unused uint32_t test_flags)
 {
@@ -5043,7 +5043,7 @@ static test_loop_t int_loops[] = {
 };
 
 #if !defined (NO_FLOAT)
-static void test_float_three_args (const unsigned char *name, test_func_t func,
+static void test_float_three_args (const char* name, test_func_t func,
                                    unused uint32_t test_flags)
 {
    double res;
@@ -5089,7 +5089,7 @@ static void test_float_three_args (const unsigned char *name, test_func_t func,
    }
 }
 
-static void test_float_two_args (const unsigned char *name, test_func_t func,
+static void test_float_two_args (const char* name, test_func_t func,
                                  unused uint32_t test_flags)
 {
    double res;
@@ -5131,7 +5131,7 @@ static void test_float_two_args (const unsigned char *name, test_func_t func,
    }
 }
 
-static void test_float_one_arg (const unsigned char *name, test_func_t func,
+static void test_float_one_arg (const char* name, test_func_t func,
                                 unused uint32_t test_flags)
 {
    double res;
@@ -5221,7 +5221,7 @@ static special_t special_float_ops[] = {
    },
 };
 
-static void test_float_special (const unsigned char *name, test_func_t func,
+static void test_float_special (const char* name, test_func_t func,
                                 uint32_t test_flags)
 {
    test_special(special_float_ops, name, func, test_flags);
@@ -5262,7 +5262,7 @@ static test_loop_t float_loops[] = {
 
 #define DEFAULT_VSCR 0x00010000
 
-static void test_av_int_one_arg (const unsigned char *name, test_func_t func,
+static void test_av_int_one_arg (const char* name, test_func_t func,
                                  unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5315,7 +5315,7 @@ static void test_av_int_one_arg (const unsigned char *name, test_func_t func,
    }
 }
 
-static void test_av_int_two_args (const unsigned char *name, test_func_t func,
+static void test_av_int_two_args (const char* name, test_func_t func,
                                   unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5375,7 +5375,7 @@ static void test_av_int_two_args (const unsigned char *name, test_func_t func,
    }
 }
 
-static void test_av_int_three_args (const unsigned char *name, test_func_t func,
+static void test_av_int_three_args (const char* name, test_func_t func,
                                     unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5443,7 +5443,7 @@ static void test_av_int_three_args (const unsigned char *name, test_func_t func,
 }
 
 
-static void vs128_cb (const unsigned char *name, test_func_t func,
+static void vs128_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5505,7 +5505,7 @@ static void vs128_cb (const unsigned char *name, test_func_t func,
    }
 }
 
-static void vsplt_cb (const unsigned char *name, test_func_t func,
+static void vsplt_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5570,7 +5570,7 @@ static void vsplt_cb (const unsigned char *name, test_func_t func,
    }
 }
 
-static void vspltis_cb (const unsigned char *name, test_func_t func,
+static void vspltis_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5624,7 +5624,7 @@ static void vspltis_cb (const unsigned char *name, test_func_t func,
    }
 }
 
-static void vsldoi_cb (const unsigned char *name, test_func_t func,
+static void vsldoi_cb (const char* name, test_func_t func,
                        unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5734,7 +5734,7 @@ static special_t special_av_int_ops[] = {
    },
 };
 
-static void test_av_int_special (const unsigned char *name, test_func_t func,
+static void test_av_int_special (const char* name, test_func_t func,
                                  uint32_t test_flags)
 {
    test_special(special_av_int_ops, name, func, test_flags);
@@ -5758,7 +5758,7 @@ static test_loop_t altivec_int_loops[] = {
 };
 
 
-static void test_av_float_one_arg (const unsigned char *name, test_func_t func,
+static void test_av_float_one_arg (const char* name, test_func_t func,
                                    unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5812,7 +5812,7 @@ static void test_av_float_one_arg (const unsigned char *name, test_func_t func,
    }
 }
 
-static void test_av_float_two_args (const unsigned char *name, test_func_t func,
+static void test_av_float_two_args (const char* name, test_func_t func,
                                     unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5873,7 +5873,7 @@ static void test_av_float_two_args (const unsigned char *name, test_func_t func,
    }
 }
 
-static void test_av_float_three_args (const unsigned char *name, test_func_t func,
+static void test_av_float_three_args (const char* name, test_func_t func,
                                       unused uint32_t test_flags)
 {
    volatile uint32_t flags, tmpcr;
@@ -5961,7 +5961,7 @@ static test_loop_t altivec_float_loops[] = {
 
 
 #if defined (IS_PPC405)
-static void test_ppc405 (const unsigned char *name, test_func_t func,
+static void test_ppc405 (const char* name, test_func_t func,
                          unused uint32_t test_flags)
 {
    volatile uint32_t res, flags, xer, tmpcr, tmpxer;
@@ -6005,9 +6005,9 @@ static void test_ppc405 (const unsigned char *name, test_func_t func,
 }
 #endif /* defined (IS_PPC405) */
 
-static int check_filter (unsigned char *filter)
+static int check_filter (char *filter)
 {
-   unsigned char *c;
+   char *c;
    int ret = 1;
    
    if (filter != NULL) {
@@ -6021,7 +6021,7 @@ static int check_filter (unsigned char *filter)
    return ret;
 }
 
-static int check_name (const unsigned char *name, const unsigned char *filter,
+static int check_name (const char* name, const char *filter,
                        int exact)
 {
    int nlen, flen;
@@ -6057,7 +6057,7 @@ typedef struct insn_sel_flags_t_struct {
 } insn_sel_flags_t;
 
 static void do_tests ( insn_sel_flags_t seln_flags,
-                       unsigned char *filter)
+                       char *filter)
 {
 #if defined (IS_PPC405)
    test_loop_t tmpl;
@@ -6337,7 +6337,7 @@ int main (int argc, char **argv)
       ./test-ppc      => all insns, except AV
       ./test-ppc -a   => all insns, including AV
    */
-   unsigned char *filter = NULL;
+   char *filter = NULL;
    insn_sel_flags_t flags;
    int c;
 

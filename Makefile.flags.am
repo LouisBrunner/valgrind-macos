@@ -1,4 +1,5 @@
-AM_CFLAGS_BASE = -Wmissing-prototypes -Winline -Wall -Wshadow -O -g
+AM_CFLAGS_BASE = -O -g -Wmissing-prototypes -Winline -Wall -Wshadow \
+                 -Wpointer-arith -Wstrict-prototypes -Wmissing-declarations
 
 AM_CFLAGS_PIC = -fpic -fno-omit-frame-pointer
 

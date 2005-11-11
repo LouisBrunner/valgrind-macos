@@ -382,14 +382,16 @@ void* VG_(memset) ( void *dest, Int c, SizeT sz )
 Int VG_(memcmp) ( const void* s1, const void* s2, SizeT n )
 {
    Int res;
+   const UChar *p1 = s1;
+   const UChar *p2 = s2;
    UChar a0;
    UChar b0;
 
    while (n != 0) {
-      a0 = ((UChar *) s1)[0];
-      b0 = ((UChar *) s2)[0];
-      s1 += 1;
-      s2 += 1;
+      a0 = p1[0];
+      b0 = p2[0];
+      p1 += 1;
+      p2 += 1;
       res = a0 - b0;
       if (res != 0)
          return res;

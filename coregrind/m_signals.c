@@ -831,7 +831,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
 		      "delivering signal %d (%s) to thread %d: on ALT STACK (%p-%p; %d bytes)", 
 		      sigNo, signame(sigNo), tid, 
 		      tst->altstack.ss_sp,
-		      tst->altstack.ss_sp + tst->altstack.ss_size,
+		      (UChar *)tst->altstack.ss_sp + tst->altstack.ss_size,
 		      tst->altstack.ss_size );
 
       /* Signal delivery to tools */

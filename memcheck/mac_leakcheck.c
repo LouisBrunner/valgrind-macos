@@ -637,7 +637,7 @@ static void full_report(ThreadId tid)
 }
 
 /* Compute a quick summary of the leak check. */
-static void make_summary()
+static void make_summary(void)
 {
    Int i;
 

@@ -1345,7 +1345,7 @@ static const Char *pp_MutexState(MutexState st)
    return "???";
 }
 
-static void pp_all_mutexes()
+static void pp_all_mutexes(void)
 {
    Int i;
    Int locks, buckets;

@@ -1716,7 +1716,7 @@ static UChar read_UChar ( UChar* data )
    return data[0];
 }
 
-static UChar default_Addr_encoding ()
+static UChar default_Addr_encoding ( void )
 {
    switch (sizeof(Addr)) {
       case 4: return DW_EH_PE_udata4;

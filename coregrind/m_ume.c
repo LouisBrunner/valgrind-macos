@@ -425,8 +425,8 @@ static Int load_ELF(Int fd, const char *name, /*MOD*/struct exeinfo *info)
 	   maxaddr + ebase > info->exe_end)) {
 	 VG_(printf)("Executable range %p-%p is outside the\n"
                      "acceptable range %p-%p\n",
-                     (void *)minaddr + ebase, (void *)maxaddr + ebase,
-                     (void *)info->exe_base,  (void *)info->exe_end);
+                     (char *)minaddr + ebase, (char *)maxaddr + ebase,
+                     (char *)info->exe_base,  (char *)info->exe_end);
 	 return VKI_ENOMEM;
       }
    }

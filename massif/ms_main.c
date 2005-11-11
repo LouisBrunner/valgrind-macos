@@ -1779,7 +1779,7 @@ static void ms_post_clo_init(void)
    hp_census();
 }
 
-static void ms_pre_clo_init()
+static void ms_pre_clo_init(void)
 { 
    VG_(details_name)            ("Massif");
    VG_(details_version)         (NULL);

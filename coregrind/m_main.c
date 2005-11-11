@@ -2407,7 +2407,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
      /* Also the assembly helpers. */
      VG_TRACK( new_mem_startup,
                (Addr)&VG_(trampoline_stuff_start),
-               &VG_(trampoline_stuff_end) - &VG_(trampoline_stuff_start),
+               (Addr)&VG_(trampoline_stuff_end) - (Addr)&VG_(trampoline_stuff_start),
                False, /* readable? */
                False, /* writable? */
                True   /* executable? */ );

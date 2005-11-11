@@ -644,7 +644,7 @@ void VG_(show_open_fds) ()
    process the hard way - by checking each fd in turn. */
 
 static
-void do_hacky_preopened()
+void do_hacky_preopened(void)
 {
    struct vki_rlimit lim;
    UInt count;

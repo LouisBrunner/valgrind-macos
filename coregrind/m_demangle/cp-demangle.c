@@ -235,6 +235,14 @@ static status_t result_push
   PARAMS ((demangling_t));
 static string_list_t result_pop
   PARAMS ((demangling_t));
+static int result_get_caret
+  PARAMS ((demangling_t));
+static void result_set_caret
+  PARAMS ((demangling_t, int));
+static void result_shift_caret
+  PARAMS ((demangling_t, int));
+static int result_previous_char_is_space
+  PARAMS ((demangling_t));
 static int substitution_start
   PARAMS ((demangling_t));
 static status_t substitution_add
@@ -3890,11 +3898,11 @@ VG_(java_demangle_v3) (mangled)
 
 #endif /* IN_LIBGCC2 */
 
+#if 0
 
 /* Demangle NAME in the G++ V3 ABI demangling style, and return either
    zero, indicating that some error occurred, or a demangling_t
    holding the results.  */
-__attribute__((unused))
 static demangling_t
 demangle_v3_with_details (name)
      const char *name;
@@ -3940,7 +3948,6 @@ demangle_v3_with_details (name)
    - '1' if NAME is a complete object constructor,
    - '2' if NAME is a base object constructor, or
    - '3' if NAME is a complete object allocating constructor.  */
-/*
 enum gnu_v3_ctor_kinds
 is_gnu_v3_mangled_ctor (name)
      const char *name;
@@ -3956,7 +3963,6 @@ is_gnu_v3_mangled_ctor (name)
   else
     return 0;
 }
-*/
 
 
 /* Return non-zero iff NAME is the mangled form of a destructor name
@@ -3964,7 +3970,6 @@ is_gnu_v3_mangled_ctor (name)
    - '0' if NAME is a deleting destructor,
    - '1' if NAME is a complete object destructor, or
    - '2' if NAME is a base object destructor.  */
-/*
 enum gnu_v3_dtor_kinds
 is_gnu_v3_mangled_dtor (name)
      const char *name;
@@ -3980,7 +3985,8 @@ is_gnu_v3_mangled_dtor (name)
   else
     return 0;
 }
-*/
+
+#endif
 
 #ifdef STANDALONE_DEMANGLER
 

@@ -1,4 +1,4 @@
-noinst_SCRIPTS = 
+noinst_SCRIPTS = filter_stderr
 
 noinst_HEADERS = 
 

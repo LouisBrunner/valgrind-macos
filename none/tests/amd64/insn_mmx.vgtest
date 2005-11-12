@@ -1,2 +1,2 @@
-prog: ../../../none/tests/x86/insn_mmx
+prog: ../../../none/tests/amd64/insn_mmx
 vgopts: -q

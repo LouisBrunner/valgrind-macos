@@ -879,7 +879,7 @@ static void usage_NORETURN ( Bool debug_help )
 "\n"
 "  uncommon user options for all Valgrind tools:\n"
 "    --run-libc-freeres=no|yes free up glibc memory at exit? [yes]\n"
-"    --simulation-hints=hint1,hint2,...  known hints:\n"
+"    --sim-hints=hint1,hint2,...  known hints:\n"
 "                                 lax-ioctls, enable-outer [none]\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --smc-check=none|stack|all  checks for self-modifying code: none,\n"
@@ -1109,7 +1109,7 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--model-pthreads",   VG_(clo_model_pthreads))
 
       else VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command))
-      else VG_STR_CLO (arg, "--simulation-hints", VG_(clo_simulation_hints))
+      else VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints))
 
       else VG_NUM_CLO (arg, "--dump-error",       VG_(clo_dump_error))
       else VG_NUM_CLO (arg, "--input-fd",         VG_(clo_input_fd))

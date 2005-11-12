@@ -1012,7 +1012,7 @@ Addrcheck), the following options apply.</para>
    </listitem>
 
    <listitem id="simulation_hints">
-    <para><computeroutput>--simulation-hints=hint1,hint2,...</computeroutput></para>
+    <para><computeroutput>--sim-hints=hint1,hint2,...</computeroutput></para>
     <para>Pass miscellaneous hints to Valgrind which slightly
     modify the simulated behaviour in nonstandard or dangerous
     ways, possibly to help the simulation of strange features.

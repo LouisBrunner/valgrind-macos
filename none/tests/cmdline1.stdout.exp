@@ -18,7 +18,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
 
   uncommon user options for all Valgrind tools:
     --run-libc-freeres=no|yes free up glibc memory at exit? [yes]
-    --simulation-hints=hint1,hint2,...  known hints:
+    --sim-hints=hint1,hint2,...  known hints:
                                  lax-ioctls, enable-outer [none]
     --show-emwarns=no|yes     show warnings about emulation limits? [no]
     --smc-check=none|stack|all  checks for self-modifying code: none,

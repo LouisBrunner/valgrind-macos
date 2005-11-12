@@ -122,7 +122,7 @@ extern Int   VG_(clo_dump_error);
 /* Number of parents of a backtrace.  Default: 8.  */
 extern Int   VG_(clo_backtrace_size);
 /* Engage miscellaneous weird hacks needed for some progs. */
-extern Char* VG_(clo_simulation_hints);
+extern Char* VG_(clo_sim_hints);
 
 /* Track open file descriptors? */
 extern Bool  VG_(clo_track_fds);

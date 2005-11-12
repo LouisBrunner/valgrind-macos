@@ -1,2 +1,3 @@
-prog: insn_mmx
+prog: ../../../none/tests/x86/insn_mmx
 prereq: ../../../tests/cputest x86-mmx
+vgopts: -q

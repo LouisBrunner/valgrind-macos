@@ -1,2 +1,3 @@
-prog: insn_cmov
+prog: ../../../none/tests/x86/insn_cmov
 prereq: ../../../tests/cputest x86-cmov
+vgopts: -q

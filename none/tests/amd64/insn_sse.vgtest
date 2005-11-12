@@ -1,1 +1,2 @@
-prog: insn_sse
+prog: ../../../none/tests/x86/insn_sse
+vgopts: -q

@@ -2,8 +2,13 @@ noinst_SCRIPTS = filter_stderr filter_pushfpopf filter_tronical
 
 noinst_HEADERS = scalar.h
 
+INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
+
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	fpeflags.stderr.exp fpeflags.vgtest \
+	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
 	scalar.stderr.exp scalar.stderr.exp2 scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \

@@ -1,1 +1,2 @@
-prog: insn_fpu
+prog: ../../../none/tests/x86/insn_fpu
+vgopts: -q

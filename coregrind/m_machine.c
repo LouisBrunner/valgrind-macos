@@ -33,6 +33,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
+#include "pub_core_cpuid.h"
 
 #define INSTR_PTR(regs)    ((regs).vex.VG_INSTR_PTR)
 #define STACK_PTR(regs)    ((regs).vex.VG_STACK_PTR)
@@ -211,36 +212,131 @@ Bool VG_(thread_stack_next)(ThreadId* tid, Addr* stack_min, Addr* stack_max)
    return False;
 }
 
-//////////////////////////////////////////////////////////////////
-// Architecture specifics
+//-------------------------------------------------------------
+/* Details about the capabilities of the underlying (host) CPU.  These
+   details are acquired by (1) enquiring with the CPU at startup, or
+   (2) from the AT_SYSINFO entries the kernel gave us (ppc32 cache
+   line size).  It's a bit nasty in the sense that there's no obvious
+   way to stop uses of some of this info before it's ready to go.
 
-#if defined(VGA_ppc32)
-/* PPC: what is the cache line size (for dcbz etc) ?  This info is
-   harvested on Linux at startup from the AT_SYSINFO entries.  0 means
-   not-yet-set. */
-Int VG_(cache_line_size_ppc32) = 0;
+   Current dependencies are:
 
-/* Altivec enabled?  Harvested on startup from the AT_HWCAP entry. */
-Int VG_(have_altivec_ppc32) = 0;
-#endif
+   x86:   initially:  call VG_(machine_get_hwcaps)
 
+          then safe to use VG_(machine_get_VexArchInfo) 
+                       and VG_(machine_x86_have_mxcsr)
+   -------------
+   amd64: initially:  call VG_(machine_get_hwcaps)
+
+          then safe to use VG_(machine_get_VexArchInfo) 
+   -------------
+   ppc32: initially:  call VG_(machine_get_hwcaps)
+                      call VG_(machine_ppc32_set_clszB)
+
+          then safe to use VG_(machine_get_VexArchInfo) 
+                       and VG_(machine_ppc32_has_FPU)
+                       and VG_(machine_ppc32_has_VMX)
+
+   VG_(machine_get_hwcaps) may use signals (although it attempts to
+   leave signal state unchanged) and therefore should only be
+   called before m_main sets up the client's signal state.
+*/
+
+/* --------- State --------- */
+static Bool        hwcaps_done = False;
+
+/* --- all archs --- */
+static VexArch     va;
+static VexArchInfo vai;
 
 #if defined(VGA_x86)
-/* X86: set to 1 if the host is able to do {ld,st}mxcsr (load/store
-   the SSE control/status register.  For most modern CPUs this will be
-   1.  It is set to 1, if possible, by m_translate.getArchAndArchInfo.
-   The value is read by m_dispatch.dispatch-x86.S, which is why it is
-   an Int rather than a Bool.
-
-   Ugly hack: this has to start as 0 and be set to 1 in the normal
-   case, rather than the other way round, because the dispatch loop
-   needs it, and it runs before the first translation is made.  Yet it
-   is the act of making that first translation which causes
-   getArchAndArchInfo to set this value to its final value.  So it is
-   necessary to start this value off at 0 as only that guarantees that
-   the dispatch loop will not SIGILL on its first attempt. */
-Int VG_(have_mxcsr_x86) = 0;
+UInt VG_(machine_x86_have_mxcsr) = 0;
 #endif
+#if defined(VGA_ppc32)
+UInt VG_(machine_ppc32_has_FPU) = 0;
+UInt VG_(machine_ppc32_has_VMX) = 0;
+#endif
+
+
+/* Determine what insn set and insn set variant the host has, and
+   record it.  To be called once at system startup.  Returns False if
+   this a CPU incapable of running Valgrind. */
+
+Bool VG_(machine_get_hwcaps)( void )
+{
+   vg_assert(hwcaps_done == False);
+   hwcaps_done = True;
+
+   // Whack default settings into vai, so that we only need to fill in
+   // any interesting bits.
+   LibVEX_default_VexArchInfo(&vai);
+
+#if defined(VGA_x86)
+   { Bool have_sse1, have_sse2;
+     UInt eax, ebx, ecx, edx;
+
+     if (!VG_(has_cpuid)())
+        /* we can't do cpuid at all.  Give up. */
+        return False;
+
+     VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
+     if (eax < 1)
+        /* we can't ask for cpuid(x) for x > 0.  Give up. */
+        return False;
+
+     /* get capabilities bits into edx */
+     VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
+
+     have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
+     have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
+
+     if (have_sse2 && have_sse1) {
+        va          = VexArchX86;
+        vai.subarch = VexSubArchX86_sse2;
+        VG_(machine_x86_have_mxcsr) = 1;
+        return True;
+     }
+
+     if (have_sse1) {
+        va          = VexArchX86;
+        vai.subarch = VexSubArchX86_sse1;
+        VG_(machine_x86_have_mxcsr) = 1;
+        return True;
+     }
+
+     va          = VexArchX86;
+     vai.subarch = VexSubArchX86_sse0;
+     VG_(machine_x86_have_mxcsr) = 0;
+     return True;
+   }
+
+#elif defined(VGA_amd64)
+   vg_assert(VG_(has_cpuid)());
+   va          = VexArchAMD64;
+   vai.subarch = VexSubArch_NONE;
+   return True;
+
+#elif defined(VGA_ppc32)
+   va          = VexArchPPC32;
+   vai.subarch = VexSubArchPPC32_AV;
+   /* But we're not done yet: VG_(machine_ppc32_set_clszB) must be
+      called before we're ready to go. */
+   return True;
+
+#else
+#  error "Unknown arch"
+#endif
+}
+
+
+/* Fetch host cpu info, once established. */
+void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch* pVa,
+                                   /*OUT*/VexArchInfo* pVai )
+{
+   vg_assert(hwcaps_done);
+   *pVa = va;
+   *pVai = vai;
+}
 
 
 /*--------------------------------------------------------------------*/

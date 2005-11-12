@@ -31,11 +31,9 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_aspacemgr.h"
-#include "pub_core_cpuid.h"
-#include "pub_core_machine.h"       // For VG_(cache_line_size_ppc32)
-                                    // and VG_(have_altivec_ppc)
+
+#include "pub_core_machine.h"       // For VG_(machine_get_VexArchInfo)
                                     // and VG_(get_SP)
-                                    // and VG_(have_mxcsr_x86)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -50,81 +48,6 @@
 #include "pub_core_tooliface.h"     // For VG_(tdict)
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"
-
-
-/*------------------------------------------------------------*/
-/*--- Determining arch/subarch.                            ---*/
-/*------------------------------------------------------------*/
-
-// Returns the architecture and auxiliary information, or indicates
-// that this subarchitecture is unable to run Valgrind.  Returns False
-// to indicate we cannot proceed further.
-
-static Bool getArchAndArchInfo( /*OUT*/VexArch*     vex_arch, 
-                                /*OUT*/VexArchInfo* vai )
-{
-   // Whack default settings into vai, so that we only need to fill in
-   // any interesting bits.
-   LibVEX_default_VexArchInfo(vai);
-
-#if defined(VGA_x86)
-   { Bool have_sse1, have_sse2;
-     UInt eax, ebx, ecx, edx;
-
-     if (!VG_(has_cpuid)())
-        /* we can't do cpuid at all.  Give up. */
-        return False;
-
-     VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
-     if (eax < 1)
-        /* we can't ask for cpuid(x) for x > 0.  Give up. */
-        return False;
-
-     /* get capabilities bits into edx */
-     VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
-
-     have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
-     have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
-
-     VG_(have_mxcsr_x86) = 1;
-
-     if (have_sse2 && have_sse1) {
-        *vex_arch    = VexArchX86;
-        vai->subarch = VexSubArchX86_sse2;
-        return True;
-     }
-
-     if (have_sse1) {
-        *vex_arch    = VexArchX86;
-        vai->subarch = VexSubArchX86_sse1;
-        return True;
-     }
-
-     {
-        *vex_arch    = VexArchX86;
-        vai->subarch = VexSubArchX86_sse0;
-        VG_(have_mxcsr_x86) = 0;
-        return True;
-     }
-   }
-
-#elif defined(VGA_amd64)
-   vg_assert(VG_(has_cpuid)());
-   *vex_arch    = VexArchAMD64;
-   vai->subarch = VexSubArch_NONE;
-   return True;
-
-#elif defined(VGA_ppc32)
-   *vex_arch    = VexArchPPC32;
-   vai->subarch = VG_(have_altivec_ppc32) ? VexSubArchPPC32_AV
-                                          : VexSubArchPPC32_noAV;
-   vai->ppc32_cache_line_szB = VG_(cache_line_size_ppc32);
-   return True;
-
-#else
-#  error Unknown architecture
-#endif
-}
 
 
 /*------------------------------------------------------------*/
@@ -524,42 +447,21 @@ Bool VG_(translate) ( ThreadId tid,
                       Int      debugging_verbosity,
                       ULong    bbs_done )
 {
-   Addr64    redir, orig_addr_noredir = orig_addr;
-   Int       tmpbuf_used, verbosity, i;
-   Bool      notrace_until_done, do_self_check;
-   UInt      notrace_until_limit = 0;
-   NSegment* seg;
-   VexGuestExtents vge;
-
-   /* Indicates what arch we are running on, and other important info
-      (subarch variant, cache line size). */
-   static VexArchInfo vex_archinfo;
-   static VexArch     vex_arch    = VexArch_INVALID;
+   Addr64             redir, orig_addr_noredir = orig_addr;
+   Int                tmpbuf_used, verbosity, i;
+   Bool               notrace_until_done, do_self_check;
+   UInt               notrace_until_limit = 0;
+   NSegment*          seg;
+   VexArch            vex_arch;
+   VexArchInfo        vex_archinfo;
+   VexGuestExtents    vge;
+   VexTranslateResult tres;
 
    /* Make sure Vex is initialised right. */
-   VexTranslateResult tres;
+
    static Bool vex_init_done = False;
 
    if (!vex_init_done) {
-      Bool ok = getArchAndArchInfo( &vex_arch, &vex_archinfo );
-      if (!ok) {
-         VG_(printf)("\n");
-         VG_(printf)("valgrind: fatal error: unsupported CPU.\n");
-         VG_(printf)("   Supported CPUs are:\n");
-         VG_(printf)("   * x86 (practically any; Pentium-I or above), "
-                     "AMD Athlon or above)\n");
-         VG_(printf)("   * AMD Athlon64/Opteron\n");
-         VG_(printf)("   * PowerPC with Altivec\n");
-         VG_(printf)("\n");
-         VG_(exit)(1);
-      }
-      if (VG_(clo_verbosity) > 2) {
-         VG_(message)(Vg_DebugMsg, 
-                      "Host CPU: arch = %s, subarch = %s",
-                      LibVEX_ppVexArch   ( vex_arch ),
-                      LibVEX_ppVexSubArch( vex_archinfo.subarch ) );
-      }
-
       LibVEX_Init ( &failure_exit, &log_bytes, 
                     1,     /* debug_paranoia */ 
                     False, /* valgrind support */
@@ -664,9 +566,12 @@ Bool VG_(translate) ( ThreadId tid,
 
    VGP_PUSHCC(VgpVexTime);
    
-   /* Actually do the translation. */
+   /* ------ Actually do the translation. ------ */
    tl_assert2(VG_(tdict).tool_instrument,
               "you forgot to set VgToolInterface function 'tool_instrument'");
+
+   /* Get the CPU info established at startup. */
+   VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
 
    /* Set up closure arg for "chase_into_ok" */
    chase_into_ok__CLOSURE_tid = tid;

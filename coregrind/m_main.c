@@ -2033,6 +2033,30 @@ Int main(Int argc, HChar **argv, HChar **envp)
    // Get the current process stack rlimit.
    VG_(getrlimit)(VKI_RLIMIT_STACK, &VG_(client_rlimit_stack));
 
+   //--------------------------------------------------------------
+   // Figure out what sort of CPU we're on, and whether it is 
+   // able to run V.
+   VG_(debugLog)(1, "main", "Get hardware capabilities ...\n");
+   { VexArch     vex_arch;
+     VexArchInfo vex_archinfo;
+     Bool ok = VG_(machine_get_hwcaps)();
+     if (!ok) {
+        VG_(printf)("\n");
+        VG_(printf)("valgrind: fatal error: unsupported CPU.\n");
+        VG_(printf)("   Supported CPUs are:\n");
+        VG_(printf)("   * x86 (practically any; Pentium-I or above), "
+                    "AMD Athlon or above)\n");
+        VG_(printf)("   * AMD Athlon64/Opteron\n");
+        VG_(printf)("   * PowerPC (most; ppc405 and above)\n");
+        VG_(printf)("\n");
+        VG_(exit)(1);
+     }
+     VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
+     VG_(debugLog)(1, "main", "... arch = %s, subarch = %s\n",
+                   LibVEX_ppVexArch   ( vex_arch ),
+                   LibVEX_ppVexSubArch( vex_archinfo.subarch ) );
+   }
+
    //============================================================
    // Command line argument handling order:
    // * If --help/--help-debug are present, show usage message 

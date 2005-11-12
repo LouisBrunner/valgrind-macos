@@ -76,23 +76,70 @@
 #define VG_O_STACK_PTR        (offsetof(VexGuestArchState, VG_STACK_PTR))
 
 
-// Architecture specifics
+//-------------------------------------------------------------
+/* Details about the capabilities of the underlying (host) CPU.  These
+   details are acquired by (1) enquiring with the CPU at startup, or
+   (2) from the AT_SYSINFO entries the kernel gave us (ppc32 cache
+   line size).  It's a bit nasty in the sense that there's no obvious
+   way to stop uses of some of this info before it's ready to go.
 
+   Current dependencies are:
+
+   x86:   initially:  call VG_(machine_get_hwcaps)
+
+          then safe to use VG_(machine_get_VexArchInfo) 
+                       and VG_(machine_x86_have_mxcsr)
+   -------------
+   amd64: initially:  call VG_(machine_get_hwcaps)
+
+          then safe to use VG_(machine_get_VexArchInfo) 
+   -------------
+   ppc32: initially:  call VG_(machine_get_hwcaps)
+                      call VG_(machine_ppc32_set_clszB)
+
+          then safe to use VG_(machine_get_VexArchInfo) 
+                       and VG_(machine_ppc32_has_FPU)
+                       and VG_(machine_ppc32_has_VMX)
+
+   VG_(machine_get_hwcaps) may use signals (although it attempts to
+   leave signal state unchanged) and therefore should only be
+   called before m_main sets up the client's signal state.
+*/
+
+/* Determine what insn set and insn set variant the host has, and
+   record it.  To be called once at system startup.  Returns False if
+   this a CPU incapable of running Valgrind. */
+extern Bool VG_(machine_get_hwcaps)( void );
+
+/* Fetch host cpu info, as per above comment. */
+extern void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch*,
+                                          /*OUT*/VexArchInfo* );
+
+/* Notify host cpu cache line size, as per above comment. */
 #if defined(VGA_ppc32)
-// PPC: what is the cache line size (for dcbz etc) ?
-// This info is harvested on Linux at startup from the AT_SYSINFO
-// entries.
-extern Int VG_(cache_line_size_ppc32);
-// Altivec enabled?  Harvested on startup from the AT_HWCAP entry
-extern Int VG_(have_altivec_ppc32);
+extern void VG_(machine_ppc32_set_clszB)( Int );
 #endif
 
-// X86: set to 1 if the host is able to do {ld,st}mxcsr (load/store
-// the SSE control/status register. 
+/* X86: set to 1 if the host is able to do {ld,st}mxcsr (load/store
+   the SSE control/status register), else zero.  Is referenced from
+   assembly code, so do not change from a 32-bit int. */
 #if defined(VGA_x86)
-extern Int VG_(have_mxcsr_x86);
+extern UInt VG_(machine_x86_have_mxcsr);
 #endif
 
+/* PPC32: set to 1 if FP instructions are supported in user-space,
+   else 0.  Is referenced from assembly code, so do not change from a
+   32-bit int. */
+#if defined(VGA_ppc32)
+extern UInt VG_(machine_ppc32_has_FPU);
+#endif
+
+/* PPC32: set to 1 if Altivec instructions are supported in
+   user-space, else 0.  Is referenced from assembly code, so do not
+   change from a 32-bit int. */
+#if defined(VGA_ppc32)
+extern UInt VG_(machine_ppc32_has_VMX);
+#endif
 
 #endif   // __PUB_CORE_MACHINE_H
 

@@ -1,4 +1,74 @@
 
+Release 3.1.0 (?? November 2005)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.1.0 is a feature release with a number of significant improvements.
+In particular, AMD64 support is much improved, PPC32 support is good
+enough to be usable, and the handling of memory management and address
+space is much more robust.
+
+The details of these changes are as follows.
+
+- AMD64 support is much improved.  The 64-bit vs. 32-bit issues in 3.0.0
+  and 3.0.1 have been resolved, and it should "just work" now in all
+  cases.  On AMD64 machines both 64-bit and 32-bit versions of Valgrind
+  are built.  The right version will be invoked automatically, even when
+  using --trace-children and mixing execution between 64-bit and 32-bit
+  executables.  Also, many more instructions are supported.
+
+- PPC32 support is now sufficient to be usable.  It should work with all
+  tools, but please let us know if you have problems with it.
+  [XXX: something about 405s?  how's the Altivec support?]
+
+- The address space manager has been rewritten.  As a result, Valgrind
+  should be much more robust with programs that use large amounts of
+  memory.  There should be many fewer "memory exhausted" messages, and
+  debug symbols should be read correctly on large (eg. 300MB+)
+  executables.  On 32-bit machines the full address space available
+  to user programs (usually 3GB or 4GB) should be usable and fully
+  utilised.  On 64-bit machines up to 32GB of memory is available;  when
+  using Memcheck that means your program can use up to about 14GB of
+  memory.
+
+  A side effect of this change is that Valgrind is no longer protected
+  against wild writes by the client.  This feature was nice but relied
+  on the x86 segment registers and so wasn't portable.
+
+- Most users should not notice, but as part of the address space
+  manager change, the way Valgrind is built has been changed.  Each tool
+  is now built as a statically linked stand-alone executable, rather
+  than as a shared object that is dynamically linked with the core.  The
+  "valgrind" program invokes the appropriate tool depending on the
+  --tool option.   This slightly increases the amount of disk space used
+  by Valgrind, but it greatly simplified many things and removed
+  Valgrind's dependence on glibc.
+
+Other user-visible changes:
+
+- The --weird-hacks option has been renamed --sim-hints.
+
+- The --time-stamp option no longer gives an absolute date and time.
+  It now prints the time elapsed since the program began.
+
+The following are some user-visible changes that occurred in earlier
+versions that may not have been announced, or were announced but not
+widely realised.  So we're mentioning them now.
+
+- The --tool flag is optional once again;  if you omit it, Memcheck
+  is run by default.
+
+- The --num-callers flag now has a default value of 12.  It was
+  previously 4.
+
+- The --xml flag causes Valgrind's output to be produced in XML format.
+  This is designed to make it easy for other programs to consume
+  Valgrind's output.  The format is described in the file
+  docs/internals/xml-format.txt.
+
+BUGS FIXED:
+
+XXX... insert bugs fixed here
+
+
 Release 3.0.1 (29 August 2005)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.0.1 fixes a bunch of bugs reported in 3.0.0.  There is no new

@@ -8,12 +8,10 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core.am
 include $(top_srcdir)/Makefile.install.am
 
-AM_CPPFLAGS_X86_LINUX += -DVG_LIBDIR="\"$(valdir)"\" \
-		-DKICKSTART_BASE=@KICKSTART_BASE@
-AM_CPPFLAGS_AMD64_LINUX += -DVG_LIBDIR="\"$(valdir)"\" \
-		-DKICKSTART_BASE=@KICKSTART_BASE@
-AM_CPPFLAGS_PPC32_LINUX += -DVG_LIBDIR="\"$(valdir)"\" \
-		-DKICKSTART_BASE=@KICKSTART_BASE@
+AM_CPPFLAGS_X86_LINUX   += -DVG_LIBDIR="\"$(valdir)"\"
+AM_CPPFLAGS_AMD64_LINUX += -DVG_LIBDIR="\"$(valdir)"\"
+AM_CPPFLAGS_PPC32_LINUX += -DVG_LIBDIR="\"$(valdir)"\"
+
 
 default.supp: $(SUPP_FILES)
 

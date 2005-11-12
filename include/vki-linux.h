@@ -431,12 +431,51 @@ typedef struct vki_siginfo {
 	} _sifields;
 } vki_siginfo_t;
 
+#define __VKI_SI_FAULT	0
+
 /*
  * si_code values
  * Digital reserves positive values for kernel-generated signals.
  */
 #define VKI_SI_USER	0		/* sent by kill, sigsend, raise */
 #define VKI_SI_TKILL	-6		/* sent by tkill system call */
+
+/*
+ * SIGILL si_codes
+ */
+#define VKI_ILL_ILLOPC	(__VKI_SI_FAULT|1)	/* illegal opcode */
+#define VKI_ILL_ILLOPN	(__VKI_SI_FAULT|2)	/* illegal operand */
+#define VKI_ILL_ILLADR	(__VKI_SI_FAULT|3)	/* illegal addressing mode */
+#define VKI_ILL_ILLTRP	(__VKI_SI_FAULT|4)	/* illegal trap */
+#define VKI_ILL_PRVOPC	(__VKI_SI_FAULT|5)	/* privileged opcode */
+#define VKI_ILL_PRVREG	(__VKI_SI_FAULT|6)	/* privileged register */
+#define VKI_ILL_COPROC	(__VKI_SI_FAULT|7)	/* coprocessor error */
+#define VKI_ILL_BADSTK	(__VKI_SI_FAULT|8)	/* internal stack error */
+
+/*
+ * SIGFPE si_codes
+ */
+#define VKI_FPE_INTDIV	(__VKI_SI_FAULT|1)	/* integer divide by zero */
+#define VKI_FPE_INTOVF	(__VKI_SI_FAULT|2)	/* integer overflow */
+#define VKI_FPE_FLTDIV	(__VKI_SI_FAULT|3)	/* floating point divide by zero */
+#define VKI_FPE_FLTOVF	(__VKI_SI_FAULT|4)	/* floating point overflow */
+#define VKI_FPE_FLTUND	(__VKI_SI_FAULT|5)	/* floating point underflow */
+#define VKI_FPE_FLTRES	(__VKI_SI_FAULT|6)	/* floating point inexact result */
+#define VKI_FPE_FLTINV	(__VKI_SI_FAULT|7)	/* floating point invalid operation */
+#define VKI_FPE_FLTSUB	(__VKI_SI_FAULT|8)	/* subscript out of range */
+
+/*
+ * SIGSEGV si_codes
+ */
+#define VKI_SEGV_MAPERR	(__VKI_SI_FAULT|1)	/* address not mapped to object */
+#define VKI_SEGV_ACCERR	(__VKI_SI_FAULT|2)	/* invalid permissions for mapped object */
+
+/*
+ * SIGBUS si_codes
+ */
+#define VKI_BUS_ADRALN	(__VKI_SI_FAULT|1)	/* invalid address alignment */
+#define VKI_BUS_ADRERR	(__VKI_SI_FAULT|2)	/* non-existant physical address */
+#define VKI_BUS_OBJERR	(__VKI_SI_FAULT|3)	/* object specific hardware error */
 
 /*
  * This works because the alignment is ok on all current architectures

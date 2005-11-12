@@ -1015,8 +1015,8 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	 switch(sigNo) {
 	 case VKI_SIGSEGV:
 	    switch(info->si_code) {
-	    case 1: event = "Access not within mapped region"; break;
-	    case 2: event = "Bad permissions for mapped region"; break;
+	    case VKI_SEGV_MAPERR: event = "Access not within mapped region"; break;
+	    case VKI_SEGV_ACCERR: event = "Bad permissions for mapped region"; break;
 	    case 128:
 	       /* General Protection Fault: The CPU/kernel
 		  isn't telling us anything useful, but this
@@ -1038,35 +1038,35 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 
 	 case VKI_SIGILL:
 	    switch(info->si_code) {
-	    case 1: event = "Illegal opcode"; break;
-	    case 2: event = "Illegal operand"; break;
-	    case 3: event = "Illegal addressing mode"; break;
-	    case 4: event = "Illegal trap"; break;
-	    case 5: event = "Privileged opcode"; break;
-	    case 6: event = "Privileged register"; break;
-	    case 7: event = "Coprocessor error"; break;
-	    case 8: event = "Internal stack error"; break;
+	    case VKI_ILL_ILLOPC: event = "Illegal opcode"; break;
+	    case VKI_ILL_ILLOPN: event = "Illegal operand"; break;
+	    case VKI_ILL_ILLADR: event = "Illegal addressing mode"; break;
+	    case VKI_ILL_ILLTRP: event = "Illegal trap"; break;
+	    case VKI_ILL_PRVOPC: event = "Privileged opcode"; break;
+	    case VKI_ILL_PRVREG: event = "Privileged register"; break;
+	    case VKI_ILL_COPROC: event = "Coprocessor error"; break;
+	    case VKI_ILL_BADSTK: event = "Internal stack error"; break;
 	    }
 	    break;
 
 	 case VKI_SIGFPE:
 	    switch (info->si_code) {
-	    case 1: event = "Integer divide by zero"; break;
-	    case 2: event = "Integer overflow"; break;
-	    case 3: event = "FP divide by zero"; break;
-	    case 4: event = "FP overflow"; break;
-	    case 5: event = "FP underflow"; break;
-	    case 6: event = "FP inexact"; break;
-	    case 7: event = "FP invalid operation"; break;
-	    case 8: event = "FP subscript out of range"; break;
+	    case VKI_FPE_INTDIV: event = "Integer divide by zero"; break;
+	    case VKI_FPE_INTOVF: event = "Integer overflow"; break;
+	    case VKI_FPE_FLTDIV: event = "FP divide by zero"; break;
+	    case VKI_FPE_FLTOVF: event = "FP overflow"; break;
+	    case VKI_FPE_FLTUND: event = "FP underflow"; break;
+	    case VKI_FPE_FLTRES: event = "FP inexact"; break;
+	    case VKI_FPE_FLTINV: event = "FP invalid operation"; break;
+	    case VKI_FPE_FLTSUB: event = "FP subscript out of range"; break;
 	    }
 	    break;
 
 	 case VKI_SIGBUS:
 	    switch (info->si_code) {
-	    case 1: event = "Invalid address alignment"; break;
-	    case 2: event = "Non-existent physical address"; break;
-	    case 3: event = "Hardware error"; break;
+	    case VKI_BUS_ADRALN: event = "Invalid address alignment"; break;
+	    case VKI_BUS_ADRERR: event = "Non-existent physical address"; break;
+	    case VKI_BUS_OBJERR: event = "Hardware error"; break;
 	    }
 	    break;
 	 }
@@ -1249,7 +1249,7 @@ void VG_(synth_sigill)(ThreadId tid, Addr addr)
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
    info.si_signo = VKI_SIGILL;
-   info.si_code = 1; /* jrs: no idea what this should be */
+   info.si_code = VKI_ILL_ILLOPC; /* jrs: no idea what this should be */
    info._sifields._sigfault._addr = (void*)addr;
 
    resume_scheduler(tid);
@@ -1563,7 +1563,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
                           "seg=%p-%p",
 			 info->si_code, fault, tid, esp, seg->start, seg->end);
       }
-      if (info->si_code == 1 /* SEGV_MAPERR */
+      if (info->si_code == VKI_SEGV_MAPERR
           && seg
           && seg->kind == SkResvn
           && seg->smode == SmUpper

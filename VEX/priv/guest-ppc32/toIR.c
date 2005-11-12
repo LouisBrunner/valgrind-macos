@@ -3233,7 +3233,10 @@ static Bool dis_branch ( UInt theInstr,
                   IRConst_U32(guest_CIA_curr_instr + 4)
              ));
 
-         irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Ret;
+         /* blrl is pretty strange; it's like a return that sets the
+            return address of its caller to the insn following this
+            one.  Mark it as a return. */
+         irbb->jumpkind = Ijk_Ret;  /* was flag_LK ? Ijk_Call : Ijk_Ret; */
          irbb->next     = mkexpr(ir_nia);
          break;
          

@@ -561,7 +561,7 @@ documented seperately for each tool.</para>
 <para>You invoke Valgrind like this:</para>
 
 <programlisting><![CDATA[
-valgrind --tool=<emphasis>tool_name</emphasis> [valgrind-options] your-prog [your-prog options]]]></programlisting>
+valgrind [valgrind-options] your-prog [your-prog options]]]></programlisting>
 
 <para>Valgrind's default settings succeed in giving reasonable
 behaviour in most cases.  We group the available options by rough
@@ -573,7 +573,8 @@ categories.</para>
 <para>The single most important option.</para>
   <itemizedlist>
    <listitem id="tool_name">
-    <para><computeroutput>--tool=name</computeroutput></para>
+    <para><computeroutput>--tool=&lt;name&gt;</computeroutput>
+    [default=memcheck]</para>
     <para>Run the Valgrind tool called <emphasis>name</emphasis>,
     e.g. Memcheck, Addrcheck, Cachegrind, etc.</para>
    </listitem>

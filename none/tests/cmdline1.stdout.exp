@@ -1,4 +1,4 @@
-usage: valgrind --tool=<toolname> [options] prog-and-args
+usage: valgrind [options] prog-and-args
 
   common user options for all Valgrind tools, with defaults in [ ]:
     --tool=<name>             use the Valgrind tool named <name> [memcheck]

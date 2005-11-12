@@ -859,7 +859,7 @@ static void load_client ( /*OUT*/struct exeinfo* info,
 static void usage_NORETURN ( Bool debug_help )
 {
    Char* usage1 = 
-"usage: valgrind --tool=<toolname> [options] prog-and-args\n"
+"usage: valgrind [options] prog-and-args\n"
 "\n"
 "  common user options for all Valgrind tools, with defaults in [ ]:\n"
 "    --tool=<name>             use the Valgrind tool named <name> [memcheck]\n"

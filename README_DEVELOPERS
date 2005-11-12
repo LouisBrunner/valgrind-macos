@@ -66,7 +66,7 @@ To run Valgrind under Valgrind:
 
 (4) Choose a very simple program (date) and try
 
-    outer/.../bin/valgrind --weird-hacks=enable-outer --trace-children=yes  \
+    outer/.../bin/valgrind --sim-hints=enable-outer --trace-children=yes  \
        --tool=cachegrind -v inner/.../bin/valgrind --tool=none -v prog
 
 If you omit the --trace-children=yes, you'll only valgrind inner's launcher

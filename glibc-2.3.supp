@@ -503,3 +503,30 @@
    obj:*
    fun:_dl_sysdep_start
 }
+
+##----------------------------------------------------------------------##
+## MontaVista 3.1 on ppc32 integer only
+{
+   MontaVista-3.1-ppc32-#1
+   Memcheck:Value4
+   obj:/lib/ld-2.3.2.so
+   obj:/lib/ld-2.3.2.so
+   fun:*dl_map_object*
+   obj:/lib/libc-2.3.2.so
+}
+
+{
+   MontaVista-3.1-ppc32-#2
+   Memcheck:Value4
+   fun:malloc
+   obj:/lib/ld-2.3.2.so
+   obj:/lib/ld-2.3.2.so
+   obj:/lib/libc-2.3.2.so
+}
+
+{
+   MontaVista-3.1-ppc32-#3
+   Memcheck:Value4
+   obj:/lib/ld-2.3.2.so
+   obj:/lib/ld-2.3.2.so
+}

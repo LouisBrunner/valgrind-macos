@@ -1139,9 +1139,14 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
          = nsegments[i].dev != 0 || nsegments[i].ino != 0;
 
       /* Consider other reasons to not compare dev/inode */
+
       /* bproc does some godawful hack on /dev/zero at process
          migration, which changes the name of it, and its dev & ino */
       if (filename && 0==VG_(strcmp)(filename, "/dev/zero (deleted)"))
+         cmp_devino = False;
+
+      /* hack apparently needed on MontaVista Linux */
+      if (filename && VG_(strstr)(filename, "/.lib-ro/"))
          cmp_devino = False;
 
       /* If we are doing sloppy execute permission checks then we

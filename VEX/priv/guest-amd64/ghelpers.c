@@ -897,6 +897,22 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            mkU64(0)));
       }
 
+      /*---------------- SUBQ ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondL)) {
+         /* long long sub/cmp, then L (signed less than) 
+            --> test dst <s src */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64S, cc_dep1, cc_dep2));
+      }
+
+      if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondB)) {
+         /* long long sub/cmp, then B (unsigned less than)
+            --> test dst <u src */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64U, cc_dep1, cc_dep2));
+      }
+
       /*---------------- SUBL ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondZ)) {
@@ -997,6 +1013,14 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 //.. 			   binop(Iop_And32,cc_dep1,mkU32(0xFF))));
 //..       }
 
+      /*---------------- LOGICQ ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICQ) && isU64(cond, AMD64CondZ)) {
+         /* long long and/or/xor, then Z --> test dst==0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64, cc_dep1, mkU64(0)));
+      }
+
       /*---------------- LOGICL ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICL) && isU64(cond, AMD64CondZ)) {
@@ -1050,16 +1074,15 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 //..                      binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(0xFFFF)), 
 //..                                         mkU32(0)));
 //..       }
-//.. 
-//..       /*---------------- LOGICB ----------------*/
-//.. 
-//..       if (isU32(cc_op, AMD64G_CC_OP_LOGICB) && isU32(cond, X86CondZ)) {
-//..          /* byte and/or/xor, then Z --> test dst==0 */
-//..          return unop(Iop_1Uto32,
-//..                      binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(255)), 
-//..                                         mkU32(0)));
-//..       }
-//.. 
+
+      /*---------------- LOGICB ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICB) && isU64(cond, AMD64CondZ)) {
+         /* byte and/or/xor, then Z --> test dst==0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64, binop(Iop_And64,cc_dep1,mkU64(255)), 
+                                        mkU64(0)));
+      }
 
       /*---------------- INCB ----------------*/
 

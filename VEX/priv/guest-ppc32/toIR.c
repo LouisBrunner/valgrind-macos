@@ -7012,6 +7012,12 @@ DisResult disInstr_PPC32_WRK (
    DisResult dres;
    UInt      theInstr;
 
+   /* What insn variants are we supporting today? */
+   Bool allow_FP  = archinfo->subarch == VexSubArchPPC32_FI
+                    || archinfo->subarch == VexSubArchPPC32_VFI;
+
+   Bool allow_VMX = archinfo->subarch == VexSubArchPPC32_VFI;
+
    /* The running delta */
    Int delta = (Int)delta64;
 
@@ -7134,16 +7140,19 @@ DisResult disInstr_PPC32_WRK (
    /* Floating Point Load Instructions */
    case 0x30: case 0x31: case 0x32: // lfs, lfsu, lfd
    case 0x33:                       // lfdu
+      if (!allow_FP) goto decode_failure;
       if (dis_fp_load( theInstr )) goto decode_success;
       goto decode_failure;
 
    /* Floating Point Store Instructions */
    case 0x34: case 0x35: case 0x36: // stfsx, stfsux, stfdx
    case 0x37:                       // stfdux
+      if (!allow_FP) goto decode_failure;
       if (dis_fp_store( theInstr )) goto decode_success;
       goto decode_failure;
 
    case 0x3B:
+      if (!allow_FP) goto decode_failure;
       opc2 = (theInstr >> 1) & 0x1F;    /* theInstr[1:5] */
       switch (opc2) {
          /* Floating Point Arith Instructions */
@@ -7164,6 +7173,7 @@ DisResult disInstr_PPC32_WRK (
       break;
 
    case 0x3F:
+      if (!allow_FP) goto decode_failure;
       /* Instrs using opc[1:5] never overlap with instrs using opc[1:10],
          so we can simply fall through the first switch statement */
 
@@ -7357,12 +7367,14 @@ DisResult disInstr_PPC32_WRK (
       /* Floating Point Load Instructions */
       case 0x217: case 0x237: case 0x257: // lfsx, lfsux, lfdx
       case 0x277:                         // lfdux
+         if (!allow_FP) goto decode_failure;
          if (dis_fp_load( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Floating Point Store Instructions */
       case 0x297: case 0x2B7: case 0x2D7: // stfs,  stfsu, stfd
       case 0x2F7: case 0x3D7:             // stfdu, stfiwx
+         if (!allow_FP) goto decode_failure;
          if (dis_fp_store( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7371,6 +7383,7 @@ DisResult disInstr_PPC32_WRK (
 
       /* AV Cache Control - Data streams */
       case 0x156: case 0x176: case 0x336: // dst, dstst, dss
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_datastream( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7378,12 +7391,14 @@ DisResult disInstr_PPC32_WRK (
       case 0x006: case 0x026:             // lvsl, lvsr
       case 0x007: case 0x027: case 0x047: // lvebx, lvehx, lvewx
       case 0x067: case 0x167:             // lvx, lvxl
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_load( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Store */
       case 0x087: case 0x0A7: case 0x0C7: // stvebx, stvehx, stvewx
       case 0x0E7: case 0x1E7:             // stvx, stvxl
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_store( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7402,6 +7417,7 @@ DisResult disInstr_PPC32_WRK (
       case 0x20: case 0x21: case 0x22: // vmhaddshs, vmhraddshs, vmladduhm
       case 0x24: case 0x25: case 0x26: // vmsumubm, vmsummbm, vmsumuhm
       case 0x27: case 0x28: case 0x29: // vmsumuhs, vmsumshm, vmsumshs
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_multarith( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7409,11 +7425,13 @@ DisResult disInstr_PPC32_WRK (
       case 0x2A:                       // vsel
       case 0x2B:                       // vperm
       case 0x2C:                       // vsldoi
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_permute( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Floating Point Mult-Add/Sub */
       case 0x2E: case 0x2F:            // vmaddfp, vnmsubfp
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_fp_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7444,6 +7462,7 @@ DisResult disInstr_PPC32_WRK (
       case 0x308: case 0x348:             // vmulesb, vmulesh
       case 0x608: case 0x708: case 0x648: // vsum4ubs, vsum4sbs, vsum4shs
       case 0x688: case 0x788:             // vsum2sws, vsumsws
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7454,17 +7473,20 @@ DisResult disInstr_PPC32_WRK (
       case 0x304: case 0x344: case 0x384: // vsrab, vsrah, vsraw
       case 0x1C4: case 0x2C4:             // vsl, vsr
       case 0x40C: case 0x44C:             // vslo, vsro
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_shift( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Logic */
       case 0x404: case 0x444: case 0x484: // vand, vandc, vor
       case 0x4C4: case 0x504:             // vxor, vnor
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_logic( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Processor Control */
       case 0x604: case 0x644:             // mfvscr, mtvscr
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_procctl( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7473,6 +7495,7 @@ DisResult disInstr_PPC32_WRK (
       case 0x10A: case 0x14A: case 0x18A: // vrefp, vrsqrtefp, vexptefp
       case 0x1CA:                         // vlogefp
       case 0x40A: case 0x44A:             // vmaxfp, vminfp
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_fp_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7481,6 +7504,7 @@ DisResult disInstr_PPC32_WRK (
       case 0x2CA:                         // vrfim
       case 0x30A: case 0x34A: case 0x38A: // vcfux, vcfsx, vctuxs
       case 0x3CA:                         // vctsxs
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_fp_convert( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7489,6 +7513,7 @@ DisResult disInstr_PPC32_WRK (
       case 0x10C: case 0x14C: case 0x18C: // vmrglb, vmrglh, vmrglw
       case 0x20C: case 0x24C: case 0x28C: // vspltb, vsplth, vspltw
       case 0x30C: case 0x34C: case 0x38C: // vspltisb, vspltish, vspltisw
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_permute( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7500,6 +7525,7 @@ DisResult disInstr_PPC32_WRK (
       case 0x20E: case 0x24E: case 0x28E: // vupkhsb, vupkhsh, vupklsb
       case 0x2CE:                         // vupklsh
       case 0x30E: case 0x34E: case 0x3CE: // vpkpx, vupkhpx, vupklpx
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_pack( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -7514,12 +7540,14 @@ DisResult disInstr_PPC32_WRK (
       case 0x006: case 0x046: case 0x086: // vcmpequb, vcmpequh, vcmpequw
       case 0x206: case 0x246: case 0x286: // vcmpgtub, vcmpgtuh, vcmpgtuw
       case 0x306: case 0x346: case 0x386: // vcmpgtsb, vcmpgtsh, vcmpgtsw
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_cmp( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Floating Point Compare */
       case 0x0C6: case 0x1C6: case 0x2C6: // vcmpeqfp, vcmpgefp, vcmpgtfp
       case 0x3C6:                         // vcmpbfp
+         if (!allow_VMX) goto decode_failure;
          if (dis_av_fp_cmp( theInstr )) goto decode_success;
          goto decode_failure;
 

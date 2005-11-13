@@ -3783,8 +3783,9 @@ HInstrArray* iselBB_PPC32 ( IRBB* bb, VexArchInfo* archinfo_host )
    VexSubArch subarch_host = archinfo_host->subarch;
 
    /* sanity ... */
-   vassert(subarch_host == VexSubArchPPC32_noAV
-           || subarch_host == VexSubArchPPC32_AV);
+   vassert(subarch_host == VexSubArchPPC32_I
+           || subarch_host == VexSubArchPPC32_FI
+           || subarch_host == VexSubArchPPC32_VFI);
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));

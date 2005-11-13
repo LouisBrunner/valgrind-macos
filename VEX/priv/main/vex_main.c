@@ -321,8 +321,9 @@ VexTranslateResult LibVEX_Translate (
          emit        = (Int(*)(UChar*,Int,HInstr*)) emit_PPC32Instr;
          host_is_bigendian = True;
          host_word_type    = Ity_I32;
-         vassert(archinfo_guest->subarch == VexSubArchPPC32_noAV
-                 || archinfo_guest->subarch == VexSubArchPPC32_AV);
+         vassert(archinfo_guest->subarch == VexSubArchPPC32_I
+                 || archinfo_guest->subarch == VexSubArchPPC32_FI
+                 || archinfo_guest->subarch == VexSubArchPPC32_VFI);
          break;
 
       default:
@@ -385,8 +386,9 @@ VexTranslateResult LibVEX_Translate (
          guest_layout     = &ppc32Guest_layout;
          offB_TISTART     = offsetof(VexGuestPPC32State,guest_TISTART);
          offB_TILEN       = offsetof(VexGuestPPC32State,guest_TILEN);
-         vassert(archinfo_guest->subarch == VexSubArchPPC32_noAV
-                 || archinfo_guest->subarch == VexSubArchPPC32_AV);
+         vassert(archinfo_guest->subarch == VexSubArchPPC32_I
+                 || archinfo_guest->subarch == VexSubArchPPC32_FI
+                 || archinfo_guest->subarch == VexSubArchPPC32_VFI);
          vassert(0 == sizeof(VexGuestPPC32State) % 8);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TISTART ) == 4);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TILEN ) == 4);
@@ -655,8 +657,9 @@ const HChar* LibVEX_ppVexSubArch ( VexSubArch subarch )
       case VexSubArchX86_sse1:   return "x86-sse1";
       case VexSubArchX86_sse2:   return "x86-sse2";
       case VexSubArchARM_v4:     return "arm-v4";
-      case VexSubArchPPC32_noAV: return "ppc32-noAltivec";
-      case VexSubArchPPC32_AV:   return "ppc32-Altivec";
+      case VexSubArchPPC32_I:    return "ppc32-int-only";
+      case VexSubArchPPC32_FI:   return "ppc32-int-and-fp";
+      case VexSubArchPPC32_VFI:  return "ppc32-int-fp-and-AV";
       default:                   return "VexSubArch???";
    }
 }

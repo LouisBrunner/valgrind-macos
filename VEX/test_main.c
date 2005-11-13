@@ -130,7 +130,7 @@ int main ( int argc, char** argv )
       vai_amd64.subarch = VexSubArch_NONE;
 
       LibVEX_default_VexArchInfo(&vai_ppc32);
-      vai_ppc32.subarch = VexSubArchPPC32_AV;
+      vai_ppc32.subarch = VexSubArchPPC32_VFI;
       vai_ppc32.ppc32_cache_line_szB = 128;
 
       for (i = 0; i < TEST_N_ITERS; i++)

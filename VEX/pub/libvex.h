@@ -78,8 +78,9 @@ typedef
       VexSubArchX86_sse1,     /* SSE1 support (Pentium III) */
       VexSubArchX86_sse2,     /* SSE2 support (Pentium 4) */
       VexSubArchARM_v4,       /* ARM version 4 */
-      VexSubArchPPC32_noAV,   /* 32-bit PowerPC, no Altivec */
-      VexSubArchPPC32_AV      /* 32-bit PowerPC with Altivec */
+      VexSubArchPPC32_I,      /* 32-bit PowerPC, no FP, no Altivec */
+      VexSubArchPPC32_FI,     /* 32-bit PowerPC, with FP but no Altivec */
+      VexSubArchPPC32_VFI     /* 32-bit PowerPC, with FP and Altivec */
    }
    VexSubArch;
 

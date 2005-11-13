@@ -545,15 +545,6 @@ Addr setup_client_stack( void*  init_sp,
             break;
 
          case AT_HWCAP:
-#           if defined(VGP_ppc32_linux)
-            /* Acquire altivecness info */
-            VG_(debugLog)(2, "main", "PPC32 hwcaps: 0x%x\n", 
-                                     (UInt)auxv->u.a_val);
-            if (auxv->u.a_val & 0x10000000)
-               VG_(have_altivec_ppc32) = 1;
-            VG_(debugLog)(2, "main", "PPC32 AltiVec support: %u\n", 
-                                     VG_(have_altivec_ppc32));
-#           endif
             break;
 
          case AT_DCACHEBSIZE:
@@ -562,7 +553,7 @@ Addr setup_client_stack( void*  init_sp,
 #           if defined(VGP_ppc32_linux)
             /* acquire cache info */
             if (auxv->u.a_val > 0) {
-               VG_(cache_line_size_ppc32) = auxv->u.a_val;
+               VG_(machine_ppc32_set_clszB)( auxv->u.a_val );
                VG_(debugLog)(2, "main", 
                                 "PPC32 cache line size %u (type %u)\n", 
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );

@@ -178,8 +178,8 @@ VG_(run_innerloop):
 
         /* set host AltiVec control word to the default mode expected 
            by VEX-generated code. */
-        lis     3,VG_(have_altivec_ppc32)@ha
-        lwz     3,VG_(have_altivec_ppc32)@l(3)
+        lis     3,VG_(machine_ppc32_has_VMX)@ha
+        lwz     3,VG_(machine_ppc32_has_VMX)@l(3)
         cmplwi  3,0
         beq     L1
         /* generate vector {0x0,0x0,0x0,0x00010000} */

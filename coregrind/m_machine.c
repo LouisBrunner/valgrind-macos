@@ -34,6 +34,8 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_machine.h"
 #include "pub_core_cpuid.h"
+#include "pub_core_libcsignal.h"   // for ppc32 messing with SIGILL
+
 
 #define INSTR_PTR(regs)    ((regs).vex.VG_INSTR_PTR)
 #define STACK_PTR(regs)    ((regs).vex.VG_STACK_PTR)
@@ -262,6 +264,12 @@ UInt VG_(machine_ppc32_has_VMX) = 0;
    record it.  To be called once at system startup.  Returns False if
    this a CPU incapable of running Valgrind. */
 
+#if defined(VGA_ppc32)
+#include <setjmp.h> // For jmp_buf
+static jmp_buf env_sigill;
+static void handler_sigill ( Int x ) { __builtin_longjmp(env_sigill,1); }
+#endif
+
 Bool VG_(machine_get_hwcaps)( void )
 {
    vg_assert(hwcaps_done == False);
@@ -317,16 +325,99 @@ Bool VG_(machine_get_hwcaps)( void )
    return True;
 
 #elif defined(VGA_ppc32)
-   va          = VexArchPPC32;
-   vai.subarch = VexSubArchPPC32_AV;
-   /* But we're not done yet: VG_(machine_ppc32_set_clszB) must be
-      called before we're ready to go. */
-   return True;
+   { /* ppc32 doesn't seem to have a sane way to find out what insn
+        sets the CPU supports.  So we have to arse around with
+        SIGILLs.  Yuck. */
+     vki_sigset_t         saved_set, tmp_set;
+     struct vki_sigaction saved_act, tmp_act;
+
+     Bool have_fp, have_vmx;
+
+     VG_(sigemptyset)(&tmp_set);
+     VG_(sigaddset)(&tmp_set, VKI_SIGILL);
+
+     VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+
+     VG_(sigaction)(VKI_SIGILL, NULL, &saved_act);
+     tmp_act = saved_act;
+
+     tmp_act.sa_flags &= ~VKI_SA_RESETHAND;
+     tmp_act.sa_flags &= ~VKI_SA_SIGINFO;
+
+     tmp_act.ksa_handler = handler_sigill;
+     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+
+     have_fp = True;
+     if (__builtin_setjmp(env_sigill)) {
+        have_fp = False;
+     } else {
+        __asm__ __volatile__("fmr 0,0");
+     }
+
+     tmp_act.ksa_handler = handler_sigill;
+     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+
+     have_vmx = True;
+     if (__builtin_setjmp(env_sigill)) {
+        have_vmx = False;
+     } else {
+        __asm__ __volatile__("vor 0,0,0");
+     }
+
+     VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
+     VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+
+     /* VG_(printf)("FP %d VMX %d\n", (Int)have_fp, (Int)have_vmx); */
+
+     /* We can only support 3 cases, not 4 (vmx but no fp).  So make
+	fp a prerequisite for vmx. */
+     if (have_vmx && !have_fp)
+        have_vmx = False;
+
+     VG_(machine_ppc32_has_FPU) = have_fp  ? 1 : 0;
+     VG_(machine_ppc32_has_VMX) = have_vmx ? 1 : 0;
+
+     va = VexArchPPC32;
+
+     if (have_fp == False && have_vmx == False) {
+        vai.subarch = VexSubArchPPC32_noAV; // _I
+     }
+     else if (have_fp == True && have_vmx == False) {
+        vai.subarch = VexSubArchPPC32_noAV; // _FI
+     }
+     else if (have_fp == True && have_vmx == True) {
+        vai.subarch = VexSubArchPPC32_AV; // _VFI
+     } else {
+        /* this can't happen. */
+        vg_assert2(0, "VG_(machine_get_hwcaps)(ppc32)");
+     }
+
+     /* But we're not done yet: VG_(machine_ppc32_set_clszB) must be
+        called before we're ready to go. */
+     return True;
+   }
 
 #else
 #  error "Unknown arch"
 #endif
 }
+
+/* Notify host cpu cache line size, as per above comment. */
+#if defined(VGA_ppc32)
+void VG_(machine_ppc32_set_clszB)( Int szB )
+{
+   vg_assert(hwcaps_done);
+
+   /* Either the value must not have been set yet (zero) or we can
+      tolerate it being set to the same value multiple times, as the
+      stack scanning logic in m_main is a bit stupid. */
+   vg_assert(vai.ppc32_cache_line_szB == 0
+             || vai.ppc32_cache_line_szB == szB);
+
+   vg_assert(szB == 32 || szB == 128);
+   vai.ppc32_cache_line_szB = szB;
+}
+#endif
 
 
 /* Fetch host cpu info, once established. */
@@ -334,8 +425,8 @@ void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch* pVa,
                                    /*OUT*/VexArchInfo* pVai )
 {
    vg_assert(hwcaps_done);
-   *pVa = va;
-   *pVai = vai;
+   if (pVa)  *pVa  = va;
+   if (pVai) *pVai = vai;
 }
 
 

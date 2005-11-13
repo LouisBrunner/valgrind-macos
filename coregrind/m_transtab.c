@@ -737,8 +737,12 @@ static void invalidate_icache ( void *ptr, Int nbytes )
 #  if defined(VGA_ppc32)
    Addr startaddr = (Addr) ptr;
    Addr endaddr   = startaddr + nbytes;
-   Addr cls       = VG_(cache_line_size_ppc32);
+   Addr cls;
    Addr addr;
+   VexArchInfo vai;
+
+   VG_(machine_get_VexArchInfo)( NULL, &vai );
+   cls = vai.ppc32_cache_line_szB;
 
    /* Stay sane .. */
    vg_assert(cls == 32 || cls == 128);

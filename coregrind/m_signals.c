@@ -1354,6 +1354,14 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
 
    vg_assert(tst->status == VgTs_WaitSys);
 
+#ifdef VGO_linux
+   /* The linux kernel uses the top 16 bits of si_code for it's own
+      use and only exports the bottom 16 bits to user space - at least
+      that is the theory, but it turns out that there are some kernels
+      around that forget to mask out the top 16 bits so we do it here. */
+   info->si_code &= 0xffff;
+#endif
+
    /* The thread isn't currently running, make it so before going on */
    VG_(set_running)(tid);
 
@@ -1462,6 +1470,14 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	     sigNo == VKI_SIGFPE  ||
 	     sigNo == VKI_SIGILL  ||
 	     sigNo == VKI_SIGTRAP);
+
+#ifdef VGO_linux
+   /* The linux kernel uses the top 16 bits of si_code for it's own
+      use and only exports the bottom 16 bits to user space - at least
+      that is the theory, but it turns out that there are some kernels
+      around that forget to mask out the top 16 bits so we do it here. */
+   info->si_code &= 0xffff;
+#endif
 
    if (info->si_code <= VKI_SI_USER) {
       /* If some user-process sent us one of these signals (ie,

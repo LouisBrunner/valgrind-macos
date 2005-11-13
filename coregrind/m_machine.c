@@ -380,13 +380,13 @@ Bool VG_(machine_get_hwcaps)( void )
      va = VexArchPPC32;
 
      if (have_fp == False && have_vmx == False) {
-        vai.subarch = VexSubArchPPC32_noAV; // _I
+        vai.subarch = VexSubArchPPC32_I;
      }
      else if (have_fp == True && have_vmx == False) {
-        vai.subarch = VexSubArchPPC32_noAV; // _FI
+        vai.subarch = VexSubArchPPC32_FI;
      }
      else if (have_fp == True && have_vmx == True) {
-        vai.subarch = VexSubArchPPC32_AV; // _VFI
+        vai.subarch = VexSubArchPPC32_VFI;
      } else {
         /* this can't happen. */
         vg_assert2(0, "VG_(machine_get_hwcaps)(ppc32)");

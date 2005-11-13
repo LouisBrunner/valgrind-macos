@@ -1751,9 +1751,12 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_minAddr = (Addr) 0x04000000; // 64M
 
 #  if VG_WORDSIZE == 8
-   aspacem_maxAddr = (Addr)0x800000000 - 1; // 32G
+     aspacem_maxAddr = (Addr)0x800000000 - 1; // 32G
+#    ifdef ENABLE_INNER
+     aspacem_maxAddr = VG_PGROUNDDN( sp_at_startup ) - 1;
+#    endif
 #  else
-   aspacem_maxAddr = VG_PGROUNDDN( sp_at_startup ) - 1;
+     aspacem_maxAddr = VG_PGROUNDDN( sp_at_startup ) - 1;
 #  endif
 
    aspacem_cStart = aspacem_minAddr; // 64M

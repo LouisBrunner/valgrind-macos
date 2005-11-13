@@ -1437,7 +1437,7 @@ POST(sys_sigaction)
 const SyscallTableEntry ML_(syscall_table)[] = {
 //..   (restart_syscall)                                      // 0
    GENX_(__NR_exit,              sys_exit),              // 1
-//..    GENX_(__NR_fork,              sys_fork),              // 2
+   GENX_(__NR_fork,              sys_fork),              // 2
    GENXY(__NR_read,              sys_read),              // 3
    GENX_(__NR_write,             sys_write),             // 4
 
@@ -1571,7 +1571,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    LINX_(__NR_vhangup,           sys_vhangup),           // 111
 //..    GENX_(__NR_idle,              sys_ni_syscall),        // 112
 //..    //   (__NR_vm86old,           sys_vm86old),           // 113 x86/Linux-only
-//..    GENXY(__NR_wait4,             sys_wait4),             // 114
+   GENXY(__NR_wait4,             sys_wait4),             // 114
 //.. 
 //..    //   (__NR_swapoff,           sys_swapoff),           // 115 */Linux 
 //..    LINXY(__NR_sysinfo,           sys_sysinfo),           // 116

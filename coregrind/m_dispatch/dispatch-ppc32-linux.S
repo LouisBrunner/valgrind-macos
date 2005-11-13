@@ -58,6 +58,11 @@ VG_(run_innerloop):
         stwu    1,-496(1)  /* sp should maintain 16-byte alignment */
 
         /* Save callee-saved registers... */
+	/* r3 is live here (guest state ptr), so use r4 */
+        lis     4,VG_(machine_ppc32_has_FP)@ha
+        lwz     4,VG_(machine_ppc32_has_FP)@l(4)
+        cmplwi  4,0
+        beq     LafterFP1
 
         /* Floating-point reg save area : 144 bytes */
         stfd    31,488(1)
@@ -78,6 +83,7 @@ VG_(run_innerloop):
         stfd    16,368(1)
         stfd    15,360(1)
         stfd    14,352(1)
+LafterFP1:
 
         /* General reg save area : 72 bytes */
         stw     31,348(1)
@@ -105,6 +111,11 @@ VG_(run_innerloop):
         /* It's necessary to save/restore VRSAVE in the AIX / Darwin ABI.
            The Linux kernel might not actually use VRSAVE for its intended
            purpose, but it should be harmless to preserve anyway. */
+	/* r3 is live here (guest state ptr), so use r4 */
+        lis     4,VG_(machine_ppc32_has_VMX)@ha
+        lwz     4,VG_(machine_ppc32_has_VMX)@l(4)
+        cmplwi  4,0
+        beq     LafterVMX1
 
         /* VRSAVE save word : 32 bytes */
         mfspr   4,256         /* vrsave reg is spr number 256 */
@@ -137,6 +148,7 @@ VG_(run_innerloop):
         stvx    21,4,1
         li      4,48
         stvx    20,4,1
+LafterVMX1:
 
         /* Save cr */
         mfcr    0
@@ -154,7 +166,7 @@ VG_(run_innerloop):
            20(sp) : TOC save area
            16(sp) : link editor word
            12(sp) : compiler word
-           8(sp)  : LR
+           8(sp) : LR
            4(sp)  : CR
            0(sp)  : back-chain
         */
@@ -162,7 +174,7 @@ VG_(run_innerloop):
 // CAB TODO: Use a caller-saved reg for orig guest_state ptr
 // - rem to set non-allocateable in isel.c
 
-        /* hold dispach_ctr in ctr reg */
+        /* hold dispatch_ctr in ctr reg */
         lis     17,VG_(dispatch_ctr)@ha
         lwz     17,VG_(dispatch_ctr)@l(17)
         mtctr   17
@@ -173,21 +185,27 @@ VG_(run_innerloop):
         /* set host FPU control word to the default mode expected 
            by VEX-generated code.  See comments in libvex.h for
            more info. */
+        lis     3,VG_(machine_ppc32_has_FP)@ha
+        lwz     3,VG_(machine_ppc32_has_FP)@l(3)
+        cmplwi  3,0
+        beq     LafterFP2
         fsub    3,3,3   /* generate zero */
         mtfsf   0xFF,3
+LafterFP2:
 
         /* set host AltiVec control word to the default mode expected 
            by VEX-generated code. */
         lis     3,VG_(machine_ppc32_has_VMX)@ha
         lwz     3,VG_(machine_ppc32_has_VMX)@l(3)
         cmplwi  3,0
-        beq     L1
+        beq     LafterVMX2
         /* generate vector {0x0,0x0,0x0,0x00010000} */
         vspltisw 3,0x1      /* 4x 0x00000001 */
         vspltisw 4,0x0      /* generate zero */
         vsldoi  3,4,3,0x6   /* v3 = v3 >> 10 bytes */
         mtvscr  3
-L1:
+LafterVMX2:
+
         /* make a stack frame for the code we are calling */
         stwu    1,-16(1)
 
@@ -312,6 +330,12 @@ run_innerloop_exit_REALLY:
 
         /* Restore callee-saved registers... */
 
+	/* must use r4 since r3 holds return value */
+        lis     4,VG_(machine_ppc32_has_FP)@ha
+        lwz     4,VG_(machine_ppc32_has_FP)@l(4)
+        cmplwi  4,0
+        beq     LafterFP9
+
         /* Floating-point regs */
         lfd     31,488(1)
         lfd     30,480(1)
@@ -331,6 +355,7 @@ run_innerloop_exit_REALLY:
         lfd     16,368(1)
         lfd     15,360(1)
         lfd     14,352(1)
+LafterFP9:
 
         /* General regs */
         lwz     31,348(1)
@@ -352,6 +377,12 @@ run_innerloop_exit_REALLY:
         lwz     15,284(1)
         lwz     14,280(1)
         lwz     13,276(1)
+
+	/* must use r4 since r3 holds return value */
+        lis     4,VG_(machine_ppc32_has_VMX)@ha
+        lwz     4,VG_(machine_ppc32_has_VMX)@l(4)
+        cmplwi  4,0
+        beq     LafterVMX9
 
         /* VRSAVE */
         lwz     4,244(1)
@@ -382,6 +413,7 @@ run_innerloop_exit_REALLY:
         lvx     21,4,1
         li      4,48
         lvx     20,4,1
+LafterVMX9:
 
         /* reset lr & sp */
         lwz     0,500(1)  /* stack_size + 4 */

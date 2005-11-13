@@ -98,7 +98,7 @@
                       call VG_(machine_ppc32_set_clszB)
 
           then safe to use VG_(machine_get_VexArchInfo) 
-                       and VG_(machine_ppc32_has_FPU)
+                       and VG_(machine_ppc32_has_FP)
                        and VG_(machine_ppc32_has_VMX)
 
    VG_(machine_get_hwcaps) may use signals (although it attempts to
@@ -131,7 +131,7 @@ extern UInt VG_(machine_x86_have_mxcsr);
    else 0.  Is referenced from assembly code, so do not change from a
    32-bit int. */
 #if defined(VGA_ppc32)
-extern UInt VG_(machine_ppc32_has_FPU);
+extern UInt VG_(machine_ppc32_has_FP);
 #endif
 
 /* PPC32: set to 1 if Altivec instructions are supported in

@@ -236,7 +236,7 @@ Bool VG_(thread_stack_next)(ThreadId* tid, Addr* stack_min, Addr* stack_max)
                       call VG_(machine_ppc32_set_clszB)
 
           then safe to use VG_(machine_get_VexArchInfo) 
-                       and VG_(machine_ppc32_has_FPU)
+                       and VG_(machine_ppc32_has_FP)
                        and VG_(machine_ppc32_has_VMX)
 
    VG_(machine_get_hwcaps) may use signals (although it attempts to
@@ -255,7 +255,7 @@ static VexArchInfo vai;
 UInt VG_(machine_x86_have_mxcsr) = 0;
 #endif
 #if defined(VGA_ppc32)
-UInt VG_(machine_ppc32_has_FPU) = 0;
+UInt VG_(machine_ppc32_has_FP)  = 0;
 UInt VG_(machine_ppc32_has_VMX) = 0;
 #endif
 
@@ -331,7 +331,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigset_t         saved_set, tmp_set;
      struct vki_sigaction saved_act, tmp_act;
 
-     Bool have_fp, have_vmx;
+     volatile Bool have_fp, have_vmx;
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
@@ -374,7 +374,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_vmx && !have_fp)
         have_vmx = False;
 
-     VG_(machine_ppc32_has_FPU) = have_fp  ? 1 : 0;
+     VG_(machine_ppc32_has_FP)  = have_fp  ? 1 : 0;
      VG_(machine_ppc32_has_VMX) = have_vmx ? 1 : 0;
 
      va = VexArchPPC32;

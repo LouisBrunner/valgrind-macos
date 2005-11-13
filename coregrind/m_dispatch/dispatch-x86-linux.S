@@ -133,8 +133,8 @@ run_innerloop_exit:
 	/* We're leaving.  Check that nobody messed with
            %mxcsr or %fpucw.  We can't mess with %eax here as it
 	   holds the tentative return value, but any other is OK. */
-/* This fails for self-hosting, so skip in that case */
 #if !defined(ENABLE_INNER)
+        /* This check fails for self-hosting, so skip in that case */
 	pushl	$0
 	fstcw	(%esp)
 	cmpl	$0x027F, (%esp)

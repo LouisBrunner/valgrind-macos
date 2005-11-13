@@ -1359,7 +1359,7 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
       use and only exports the bottom 16 bits to user space - at least
       that is the theory, but it turns out that there are some kernels
       around that forget to mask out the top 16 bits so we do it here. */
-   info->si_code &= 0xffff;
+   info->si_code = (Short)info->si_code;
 #endif
 
    /* The thread isn't currently running, make it so before going on */
@@ -1476,7 +1476,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       use and only exports the bottom 16 bits to user space - at least
       that is the theory, but it turns out that there are some kernels
       around that forget to mask out the top 16 bits so we do it here. */
-   info->si_code &= 0xffff;
+   info->si_code = (Short)info->si_code;
 #endif
 
    if (info->si_code <= VKI_SI_USER) {

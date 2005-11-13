@@ -508,6 +508,14 @@ static Int aspacem_fstat( Int fd, struct vki_stat* buf )
    return res.isError ? (-1) : 0;
 }
 
+#ifdef __NR_fstat64
+static Int aspacem_fstat64( Int fd, struct vki_stat64* buf )
+{
+   SysRes res = VG_(do_syscall2)(__NR_fstat64, fd, (UWord)buf);
+   return res.isError ? (-1) : 0;
+}
+#endif
+
 static void aspacem_exit( Int status )
 {
    (void)VG_(do_syscall1)(__NR_exit_group, status );
@@ -545,7 +553,21 @@ Bool get_inode_for_fd ( Int fd, /*OUT*/UWord* dev,
                                 /*OUT*/UWord* ino, /*OUT*/UInt* mode )
 {
    struct vki_stat buf;
-   Int r = aspacem_fstat(fd, &buf);
+   Int r;
+#ifdef __NR_fstat64
+   struct vki_stat64 buf64;
+   /* Try fstat64 first as it can cope with minor and major device
+      numbers outside the 0-255 range and it works properly for x86
+      binaries on amd64 systems where fstat seems to be broken. */
+   r = aspacem_fstat64(fd, &buf64);
+   if (r == 0) {
+      *dev = buf64.st_dev;
+      *ino = buf64.st_ino;
+      *mode = buf64.st_mode;
+      return True;
+   }
+#endif
+   r = aspacem_fstat(fd, &buf);
    if (r == 0) {
       *dev = buf.st_dev;
       *ino = buf.st_ino;
@@ -3200,7 +3222,7 @@ static void parse_procselfmaps (
    UChar* filename;
    UChar  rr, ww, xx, pp, ch, tmp;
    UInt	  ino, prot;
-   UWord  maj, min;
+   UWord  maj, min, dev;
    ULong  foffset;
 
    read_procselfmaps_into_buf();
@@ -3311,11 +3333,32 @@ static void parse_procselfmaps (
       if (ww == 'w') prot |= VKI_PROT_WRITE;
       if (xx == 'x') prot |= VKI_PROT_EXEC;
 
+      /* Linux has two ways to encode a device number when it
+         is exposed to user space (via fstat etc). The old way
+         is the traditional unix scheme that produces a 16 bit
+         device number with the top 8 being the major number and
+         the bottom 8 the minor number.
+         
+         The new scheme allows for a 12 bit major number and
+         a 20 bit minor number by using a 32 bit device number
+         and putting the top 12 bits of the minor number into
+         the top 12 bits of the device number thus leaving an
+         extra 4 bits for the major number.
+         
+         If the minor and major number are both single byte
+         values then both schemes give the same result so we
+         use the new scheme here in case either number is
+         outside the 0-255 range and then use fstat64 when
+         available (or fstat on 64 bit systems) so that we
+         should always have a new style device number and
+         everything should match. */
+      dev = (min & 0xff) | (maj << 8) | ((min & ~0xff) << 12);
+
       if (record_gap && gapStart < start)
          (*record_gap) ( gapStart, start-gapStart );
 
       (*record_mapping) ( start, endPlusOne-start, 
-                          prot, maj * 256 + min, ino,
+                          prot, dev, ino,
                           foffset, filename );
 
       if ('\0' != tmp) {

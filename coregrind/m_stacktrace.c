@@ -189,32 +189,37 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
 
    ips[0] = ip;
    i = 1;
-   fp = (((UWord*)fp)[0]);
 
-   while (True) {
+   if (fp_min <= fp && fp < fp_max-4+1) {
 
-      if (i >= n_ips)
+      /* initial FP is sane; keep going */
+      fp = (((UWord*)fp)[0]);
+
+      while (True) {
+
+         if (i >= n_ips)
+            break;
+
+         /* Try to derive a new (ip,fp) pair from the current set. */
+
+         if (fp_min <= fp && fp <= fp_max) {
+            /* fp looks sane, so use it. */
+
+            if (i == 1 && lr_is_first_RA)
+               ip = lr;
+            else
+               ip = (((UWord*)fp)[1]);
+
+            fp = (((UWord*)fp)[0]);
+            ips[i++] = ip;
+            if (debug)
+               VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
+            continue;
+         }
+
+         /* No luck there.  We have to give up. */
          break;
-
-      /* Try to derive a new (ip,fp) pair from the current set. */
-
-      if (fp_min <= fp && fp <= fp_max) {
-         /* fp looks sane, so use it. */
-
-         if (i == 1 && lr_is_first_RA)
-            ip = lr;
-         else
-            ip = (((UWord*)fp)[1]);
-
-         fp = (((UWord*)fp)[0]);
-         ips[i++] = ip;
-         if (debug)
-            VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
-         continue;
       }
-
-      /* No luck there.  We have to give up. */
-      break;
    }
 
 #  else

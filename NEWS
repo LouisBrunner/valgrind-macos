@@ -64,6 +64,9 @@ widely realised.  So we're mentioning them now.
   Valgrind's output.  The format is described in the file
   docs/internals/xml-format.txt.
 
+- The --gen-suppressions flag supports an "all" value that causes every
+  suppression to be printed without asking.
+
 BUGS FIXED:
 
 XXX... insert bugs fixed here

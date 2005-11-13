@@ -1021,6 +1021,19 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                      binop(Iop_CmpEQ64, cc_dep1, mkU64(0)));
       }
 
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICQ) && isU64(cond, AMD64CondL)) {
+         /* long long and/or/xor, then L
+            LOGIC sets SF and ZF according to the
+            result and makes OF be zero.  L computes SF ^ OF, but
+            OF is zero, so this reduces to SF -- which will be 1 iff
+            the result is < signed 0.  Hence ...
+         */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64S, 
+                           cc_dep1, 
+                           mkU64(0)));
+      }
+
       /*---------------- LOGICL ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICL) && isU64(cond, AMD64CondZ)) {
@@ -1047,8 +1060,8 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
       if (isU64(cc_op, AMD64G_CC_OP_LOGICL) && isU64(cond, AMD64CondLE)) {
          /* long and/or/xor, then LE
             This is pretty subtle.  LOGIC sets SF and ZF according to the
-            result and makes OF be zero.  LE computes (SZ ^ OF) | ZF, but
-            OF is zero, so this reduces to SZ | ZF -- which will be 1 iff
+            result and makes OF be zero.  LE computes (SF ^ OF) | ZF, but
+            OF is zero, so this reduces to SF | ZF -- which will be 1 iff
             the result is <=signed 0.  Hence ...
          */
          return unop(Iop_1Uto64,
@@ -1091,6 +1104,16 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
          return unop(Iop_1Uto64,
                      binop(Iop_CmpLE64S, 
                            binop(Iop_Shl64,cc_dep1,mkU8(56)),
+                           mkU64(0)));
+      }
+
+      /*---------------- DECL ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_DECL) && isU64(cond, AMD64CondZ)) {
+         /* dec L, then Z --> test dst == 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64,
+                           binop(Iop_Shl64,cc_dep1,mkU8(32)),
                            mkU64(0)));
       }
 
@@ -1184,6 +1207,13 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
       cc_dep2 = args[2];
       cc_ndep = args[3];
 
+      if (isU64(cc_op, AMD64G_CC_OP_SUBQ)) {
+         /* C after sub denotes unsigned less than */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64U, 
+                           cc_dep1,
+                           cc_dep2));
+      }
       if (isU64(cc_op, AMD64G_CC_OP_SUBL)) {
          /* C after sub denotes unsigned less than */
          return unop(Iop_1Uto64,

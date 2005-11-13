@@ -324,6 +324,12 @@ FIXED-30BRANCH: TODO
 FIXED-TRUNK:    vg:5079
 FIXED-30BRANCH: TODO
 
+----------------------------------------------------------------
+116200  enable fsetxattr, fgetxattr, and fremovexattr for amd64
+
+FIXED-TRUNK:    vg:5106
+FIXED-30BRANCH: TODO
+
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.1 (all done, 3.0.1 released)     ===

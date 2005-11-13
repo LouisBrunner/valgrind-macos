@@ -108,7 +108,10 @@ static void cachesim_##L##_initcache(cache_t config)                        \
     cachesim_initcache(config, &L);                                         \
 }                                                                           \
                                                                             \
-static /* __inline__ */                                                     \
+/* This attribute forces GCC to inline this function, even though it's */   \
+/* bigger than its usual limit.  Inlining gains around 5--10% speedup. */   \
+__attribute__((always_inline))                                              \
+static __inline__                                                           \
 void cachesim_##L##_doref(Addr a, UChar size, ULong* m1, ULong *m2)         \
 {                                                                           \
    register UInt  set1 = ( a         >> L.line_size_bits) & (L.sets_min_1); \

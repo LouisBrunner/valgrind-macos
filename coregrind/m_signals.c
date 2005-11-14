@@ -1358,7 +1358,11 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
    /* The linux kernel uses the top 16 bits of si_code for it's own
       use and only exports the bottom 16 bits to user space - at least
       that is the theory, but it turns out that there are some kernels
-      around that forget to mask out the top 16 bits so we do it here. */
+      around that forget to mask out the top 16 bits so we do it here.
+
+      The kernel treats the bottom 16 bits as signed and (when it does
+      mask them off) sign extends them when exporting to user space so
+      we do the same thing here. */
    info->si_code = (Short)info->si_code;
 #endif
 
@@ -1475,7 +1479,11 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
    /* The linux kernel uses the top 16 bits of si_code for it's own
       use and only exports the bottom 16 bits to user space - at least
       that is the theory, but it turns out that there are some kernels
-      around that forget to mask out the top 16 bits so we do it here. */
+      around that forget to mask out the top 16 bits so we do it here.
+
+      The kernel treats the bottom 16 bits as signed and (when it does
+      mask them off) sign extends them when exporting to user space so
+      we do the same thing here. */
    info->si_code = (Short)info->si_code;
 #endif
 

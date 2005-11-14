@@ -6806,13 +6806,21 @@ static Bool dis_av_fp_arith ( UInt theInstr )
    switch (opc2) {
    case 0x2E: // vmaddfp (Multiply Add FP, AV p177)
       DIP("vmaddfp v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vC_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Add32Fx4, mkexpr(vB),
+                              binop(Iop_Mul32Fx4, mkexpr(vA), mkexpr(vC))) );
+      return True;
 
-   case 0x2F: // vnmsubfp (Negative Multiply-Subtract FP, AV p215)
+   case 0x2F: { // vnmsubfp (Negative Multiply-Subtract FP, AV p215)
+      IRTemp zeros = newTemp(Ity_V128);
       DIP("vnmsubfp v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vC_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( zeros, unop(Iop_Dup32x4, mkU32(0)) );
+      putVReg( vD_addr,
+               binop(Iop_Sub32Fx4, mkexpr(zeros),
+                     binop(Iop_Sub32Fx4,
+                           binop(Iop_Mul32Fx4, mkexpr(vA), mkexpr(vC)),
+                           mkexpr(vB))) );
+      return True;
+   }
 
    default:
      break; // Fall through...

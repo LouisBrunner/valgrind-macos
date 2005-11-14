@@ -37,6 +37,7 @@
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"     // For VG_(details).{name,bug_reports_to}
+#include "pub_core_options.h"       // For VG_(clo_xml)
 #include "vki_unistd.h"
 
 /* ---------------------------------------------------------------------
@@ -167,6 +168,9 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
       bugs_to   = VG_(details).bug_reports_to;
    }
 
+   if (VG_(clo_xml))
+      VG_(message)(Vg_UserMsg, "</valgrindoutput>\n");
+
    // Treat vg_assert2(0, "foo") specially, as a panicky abort
    if (VG_STREQ(expr, "0")) {
       VG_(printf)("\n%s: %s:%d (%s): the 'impossible' happened.\n",
@@ -185,6 +189,8 @@ __attribute__ ((noreturn))
 static void panic ( Char* name, Char* report, Char* str,
                     Addr ip, Addr sp, Addr fp, Addr lr )
 {
+   if (VG_(clo_xml))
+      VG_(message)(Vg_UserMsg, "</valgrindoutput>\n");
    VG_(printf)("\n%s: the 'impossible' happened:\n   %s\n", name, str);
    report_and_quit(report, ip, sp, fp, lr);
 }
@@ -207,6 +213,8 @@ void VG_(tool_panic) ( Char* str )
 /* Print some helpful-ish text about unimplemented things, and give up. */
 void VG_(unimplemented) ( Char* msg )
 {
+   if (VG_(clo_xml))
+      VG_(message)(Vg_UserMsg, "</valgrindoutput>\n");
    VG_(message)(Vg_UserMsg, "");
    VG_(message)(Vg_UserMsg, 
       "Valgrind detected that your program requires");

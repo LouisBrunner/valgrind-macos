@@ -910,6 +910,8 @@ static void load_one_suppressions_file ( Char* filename )
    fd   = -1;
    sres = VG_(open)( filename, VKI_O_RDONLY, 0 );
    if (sres.isError) {
+      if (VG_(clo_xml))
+         VG_(message)(Vg_UserMsg, "</valgrindoutput>\n");
       VG_(message)(Vg_UserMsg, "FATAL: can't open suppressions file '%s'", 
                    filename );
       VG_(exit)(1);
@@ -1038,6 +1040,8 @@ static void load_one_suppressions_file ( Char* filename )
    return;
 
   syntax_error:
+   if (VG_(clo_xml))
+      VG_(message)(Vg_UserMsg, "</valgrindoutput>\n");
    VG_(message)(Vg_UserMsg, 
                 "FATAL: in suppressions file '%s': %s", filename, err_str );
    

@@ -3472,6 +3472,23 @@ PRE(sys_ioctl)
    case VKI_SNDCTL_DSP_SETDUPLEX:
       break;
 
+      /* linux/soundcard interface (ALSA) */
+   case VKI_SNDRV_PCM_IOCTL_HW_FREE:
+   case VKI_SNDRV_PCM_IOCTL_HWSYNC:
+   case VKI_SNDRV_PCM_IOCTL_PREPARE:
+   case VKI_SNDRV_PCM_IOCTL_RESET:
+   case VKI_SNDRV_PCM_IOCTL_START:
+   case VKI_SNDRV_PCM_IOCTL_DROP:
+   case VKI_SNDRV_PCM_IOCTL_DRAIN:
+   case VKI_SNDRV_PCM_IOCTL_RESUME:
+   case VKI_SNDRV_PCM_IOCTL_XRUN:
+   case VKI_SNDRV_PCM_IOCTL_UNLINK:
+   case VKI_SNDRV_TIMER_IOCTL_START:
+   case VKI_SNDRV_TIMER_IOCTL_STOP:
+   case VKI_SNDRV_TIMER_IOCTL_CONTINUE:
+   case VKI_SNDRV_TIMER_IOCTL_PAUSE:
+      break;
+
       /* Real Time Clock (/dev/rtc) ioctls */
    case VKI_RTC_UIE_ON:
    case VKI_RTC_UIE_OFF:
@@ -4152,6 +4169,23 @@ POST(sys_ioctl)
    case VKI_SNDCTL_DSP_SYNC:
    case VKI_SNDCTL_DSP_SETSYNCRO:
    case VKI_SNDCTL_DSP_SETDUPLEX:
+      break;
+
+      /* linux/soundcard interface (ALSA) */
+   case VKI_SNDRV_PCM_IOCTL_HW_FREE:
+   case VKI_SNDRV_PCM_IOCTL_HWSYNC:
+   case VKI_SNDRV_PCM_IOCTL_PREPARE:
+   case VKI_SNDRV_PCM_IOCTL_RESET:
+   case VKI_SNDRV_PCM_IOCTL_START:
+   case VKI_SNDRV_PCM_IOCTL_DROP:
+   case VKI_SNDRV_PCM_IOCTL_DRAIN:
+   case VKI_SNDRV_PCM_IOCTL_RESUME:
+   case VKI_SNDRV_PCM_IOCTL_XRUN:
+   case VKI_SNDRV_PCM_IOCTL_UNLINK:
+   case VKI_SNDRV_TIMER_IOCTL_START:
+   case VKI_SNDRV_TIMER_IOCTL_STOP:
+   case VKI_SNDRV_TIMER_IOCTL_CONTINUE:
+   case VKI_SNDRV_TIMER_IOCTL_PAUSE:
       break;
 
       /* Real Time Clock (/dev/rtc) ioctls */

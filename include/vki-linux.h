@@ -2066,6 +2066,30 @@ typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory 
 
 #define VKI_PTRACE_DETACH       0x11
 
+//----------------------------------------------------------------------
+// From linux-2.6.14/include/sound/asound.h
+//----------------------------------------------------------------------
+
+enum {
+	VKI_SNDRV_PCM_IOCTL_HW_FREE = _VKI_IO('A', 0x12),
+	VKI_SNDRV_PCM_IOCTL_HWSYNC = _VKI_IO('A', 0x22),
+	VKI_SNDRV_PCM_IOCTL_PREPARE = _VKI_IO('A', 0x40),
+	VKI_SNDRV_PCM_IOCTL_RESET = _VKI_IO('A', 0x41),
+	VKI_SNDRV_PCM_IOCTL_START = _VKI_IO('A', 0x42),
+	VKI_SNDRV_PCM_IOCTL_DROP = _VKI_IO('A', 0x43),
+	VKI_SNDRV_PCM_IOCTL_DRAIN = _VKI_IO('A', 0x44),
+	VKI_SNDRV_PCM_IOCTL_RESUME = _VKI_IO('A', 0x47),
+	VKI_SNDRV_PCM_IOCTL_XRUN = _VKI_IO('A', 0x48),
+	VKI_SNDRV_PCM_IOCTL_UNLINK = _VKI_IO('A', 0x61),
+};
+
+enum {
+	VKI_SNDRV_TIMER_IOCTL_START = _VKI_IO('T', 0xa0),
+	VKI_SNDRV_TIMER_IOCTL_STOP = _VKI_IO('T', 0xa1),
+	VKI_SNDRV_TIMER_IOCTL_CONTINUE = _VKI_IO('T', 0xa2),
+	VKI_SNDRV_TIMER_IOCTL_PAUSE = _VKI_IO('T', 0xa3),
+};
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

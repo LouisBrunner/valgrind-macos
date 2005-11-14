@@ -2616,7 +2616,8 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
 }
 
 /* Returns True if OK.  If not OK, *{ip,sp,fp}P are not changed. */
-
+/* NOTE: this function may rearrange the order of entries in the
+   SegInfo list. */
 Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
                          /*MOD*/Addr* spP,
                          /*MOD*/Addr* fpP,
@@ -2628,10 +2629,15 @@ Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
    CfiSI*   cfisi = NULL;
    Addr     cfa, ipHere, spHere, fpHere, ipPrev, spPrev, fpPrev;
 
+   static UInt n_search = 0;
+   static UInt n_steps = 0;
+   n_search++;
 
    if (0) VG_(printf)("search for %p\n", *ipP);
 
    for (si = segInfo_list; si != NULL; si = si->next) {
+      n_steps++;
+
       /* Use the per-SegInfo summary address ranges to skip
 	 inapplicable SegInfos quickly. */
       if (si->cfisi_used == 0)
@@ -2649,6 +2655,40 @@ Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
 
    if (cfisi == NULL)
       return False;
+
+   if (0 && ((n_search & 0xFFFFF) == 0))
+      VG_(printf)("%u %u\n", n_search, n_steps);
+
+   /* Start of performance-enhancing hack: once every 16 (chosen
+      hackily after profiling) successful searchs, move the found
+      SegInfo one step closer to the start of the list.  This makes
+      future searches cheaper.  For starting konqueror on amd64, this
+      in fact reduces the total amount of searching done by the above
+      find-the-right-SegInfo loop by more than a factor of 20. */
+   if ((n_search & 0xF) == 0) {
+      /* Move si one step closer to the start of the list. */
+      SegInfo* si0 = segInfo_list;
+      SegInfo* si1 = NULL;
+      SegInfo* si2 = NULL;
+      SegInfo* tmp;
+      while (True) {
+         if (si0 == NULL) break;
+         if (si0 == si) break;
+         si2 = si1;
+         si1 = si0;
+         si0 = si0->next;
+      }
+      if (si0 == si && si0 != NULL && si1 != NULL && si2 != NULL) {
+         /* si0 points to si, si1 to its predecessor, and si2 to si1's
+            predecessor.  Swap si0 and si1, that is, move si0 one step
+            closer to the start of the list. */
+         tmp = si0->next;
+         si2->next = si0;
+         si0->next = si1;
+         si1->next = tmp;
+      }
+   }
+   /* End of performance-enhancing hack. */
 
    if (0) {
       VG_(printf)("found cfisi: "); 

@@ -144,8 +144,8 @@ many errors.
 
 .TP
 .B
---gen-suppressions=<yes|no> [default: no]
-When enabled, \fBvalgrind\fP will pause after every error shown and
+--gen-suppressions=<yes|no|all> [default: no]
+When set to \fByes\fP, \fBvalgrind\fP will pause after every error shown and
 print the line:
 
 .PP
@@ -167,6 +167,10 @@ Pressing Ret or n Ret or N Ret will cause no suppression to be printed.
 .P
 Pressing C Ret or c Ret will cause no suppression to be printed and
 \fBvalgrind\fP will not ask again.
+
+.P
+When set to \fall\fP, \fBvalgrind\fP will print suppressions for all
+errors without asking any questions.
 .RE
 
 .TP
@@ -188,6 +192,14 @@ is used whenever \fBvalgrind\fP needs to prompt the user for a decision.
 
 .TP
 .B
+--log-fd=<number> [default: 2, stderr]
+Specifies that \fBvalgrind\fP should send all of its messages to
+the specified file descriptor. The default, 2, is the standard error
+channel (stderr).  Note that this may interfere with the client's own
+use of stderr.
+
+.TP
+.B
 --log-file=<filename>
 Specifies that \fBvalgrind\fP should send all of its messages to the
 specified file. In fact, the file name used is created by concatenating
@@ -197,23 +209,15 @@ per process.  The specified file name may not be the empty string.
 .TP
 .B
 --log-file-exactly=<filename>
-Just like \fB--log-file\fB, but the ".pid" suffix is not added.  If you
+Just like \fB--log-file\fP, but the ".pid" suffix is not added.  If you
 trace multiple processes with Valgrind when using this option the log
 file may get all messed up.
 
 .TP
 .B
---log-fd=<number> [default: 2, stderr]
-Specifies that \fBvalgrind\fP should send all of its messages to
-the specified file descriptor. The default, 2, is the standard error
-channel (stderr).  Note that this may interfere with the client's own
-use of stderr.
-
-.TP
-.B
 --log-file-qualifier=<VAR>
-Specifies that \fBvalgrind\fB should send all of its messages to the
-file named by the environment variable \fB$VAR\fB.  This is useful when
+Specifies that \fBvalgrind\fP should send all of its messages to the
+file named by the environment variable \fB$VAR\fP.  This is useful when
 running MPI programs.
 
 .TP
@@ -229,7 +233,14 @@ see section 2.3 of the user manual.
 
 .TP
 .B
---num-callers=<number> [default=12]
+--max-stackframe=<number> [default: 2000000]
+The maximum size of a stack frame - if the stack pointer moves by more
+than this amount then \fBvalgrind\fP will assume that the program is
+switching to a different stack.
+
+.TP
+.B
+--num-callers=<number> [default: 12]
 By default, \fBvalgrind\fP shows 12 levels of function call names to
 help you identify program locations. You can change that number with
 this option. This can help in determining the program's location in
@@ -304,6 +315,18 @@ tools only execute when the core version is one they are known to work
 with. This was done to minimise the chances of strange problems arising
 from tool-vs-core version incompatibilities.
 
+.TP
+.B
+--xml=<yes|no> [default: no]
+Generate output in XML format. Only \fBmemcheck\fP and \fBnulgrind\fP
+currently support this option.
+
+.TP
+.B
+--xml-user-comment=<string>
+The specified string will be output at the start of the XML file
+if XML output is requested.
+
 .SH ADDRCHECK OPTIONS
 
 .TP
@@ -344,7 +367,7 @@ four entries have to match.  When \fBhigh\fP, all entries need to match.
 
 .TP
 .B
---partial-loads-ok=<yes|no> [default: yes]
+--partial-loads-ok=<yes|no> [default: no]
 Controls how \fBaddrcheck\fP handles word (4-byte) loads from addresses
 for which some bytes are addressible and others are not.  When enabled,
 such loads do not elicit an address error.  Instead, \fBaddrcheck\fP
@@ -377,16 +400,7 @@ Another option is to use a gcc/g++ which does not generate accesses below
 the stack pointer.  2.95.3 seems to be a good choice in this respect.
 
 .SH MEMCHECK OPTIONS
-\fBmemcheck\fP understands the same options as \fBaddrcheck\fP, along
-with the following options:
-
-.TP
-.B
---avoid-strlen-errors=<yes|no> [default: yes]
-Enable or disable a heuristic for dealing with highly-optimized versions
-of \fBstrlen\fP.  These versions of \fBstrlen\fP can cause spurious
-errors to be reported by \fBmemcheck\fP, so it's usually a good idea to
-leave this enabled.
+\fBmemcheck\fP understands the same options as \fBaddrcheck\fP.
 
 .SH CACHEGRIND OPTIONS
 
@@ -529,10 +543,16 @@ lax-ioctls hack tells \fBvalgrind\fP to be very lax about ioctl handling
 and assume that unknown ioctls just behave correctly.
 .TP
 .B
-- enable-inner
+- enable-outer
 Enable some special magic needed when the program being run is 
 itself \fBvalgrind\fP.
 .RE
+
+.TP
+.B
+--smc-check=<none|stack|all> [default: stack]
+Control which areas of memory \fBvalgrind\fP should consider might
+contain self modifying code.
 
 .SH CORE DEBUGGING OPTIONS
 

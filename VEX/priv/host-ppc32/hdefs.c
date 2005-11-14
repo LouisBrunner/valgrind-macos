@@ -693,7 +693,7 @@ HChar* showPPC32AvOp ( PPC32AvOp op ) {
    }
 }
 
-HChar* showPPC32AvFpOp ( PPC32AvOp op ) {
+HChar* showPPC32AvFpOp ( PPC32AvFpOp op ) {
    switch (op) {
    /* Floating Point Binary */
    case Pavfp_ADDF:      return "vaddfp";

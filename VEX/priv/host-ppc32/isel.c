@@ -123,18 +123,16 @@ static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 //.. {
 //..    return IRExpr_Const(IRConst_U64(i));
 //.. }
-//.. 
-//.. static IRExpr* mkU32 ( UInt i )
-//.. {
-//..    return IRExpr_Const(IRConst_U32(i));
-//.. }
+
+static IRExpr* mkU32 ( UInt i )
+{
+   return IRExpr_Const(IRConst_U32(i));
+}
 
 static IRExpr* bind ( Int binder )
 {
    return IRExpr_Binder(binder);
 }
-
-
 
 
 /*---------------------------------------------------------*/
@@ -835,6 +833,30 @@ static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e )
       addInstr(env, PPC32Instr_AvSplat(sz, dst, PPC32VI5s_Reg(v_src)));
       return dst;
    }
+}
+
+
+/* for each lane of vSrc: lane == nan ? laneX = all 1's : all 0's */
+static HReg isNan ( ISelEnv* env, HReg vSrc )
+{
+   vassert(hregClass(vSrc) == HRcVec128);
+
+   HReg zeros   = mk_AvDuplicateRI(env, mkU32(0));
+   HReg msk_exp = mk_AvDuplicateRI(env, mkU32(0x7F800000));
+   HReg msk_mnt = mk_AvDuplicateRI(env, mkU32(0x7FFFFF));
+   HReg expt    = newVRegV(env);
+   HReg mnts    = newVRegV(env);
+   HReg vIsNan  = newVRegV(env); 
+
+   /* 32bit float => sign(1) | expontent(8) | mantissa(23)
+      nan => exponent all ones, mantissa > 0 */
+
+   addInstr(env, PPC32Instr_AvBinary(Pav_AND, expt, vSrc, msk_exp));
+   addInstr(env, PPC32Instr_AvBin32x4(Pav_CMPEQU, expt, expt, msk_exp));
+   addInstr(env, PPC32Instr_AvBinary(Pav_AND, mnts, vSrc, msk_mnt));
+   addInstr(env, PPC32Instr_AvBin32x4(Pav_CMPGTU, mnts, mnts, zeros));
+   addInstr(env, PPC32Instr_AvBinary(Pav_AND, vIsNan, expt, mnts));
+   return vIsNan;
 }
 
 
@@ -2978,35 +3000,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_SseReRg(Xsse_OR, tmp, dst));
 //..          return dst;
 //..       }
-//.. 
-//..       case Iop_CmpNEZ32x4: {
-//..          /* Sigh, we have to generate lousy code since this has to
-//..             work on SSE1 hosts */
-//..          /* basically, the idea is: for each lane:
-//..                movl lane, %r ; negl %r   (now CF = lane==0 ? 0 : 1)
-//..                sbbl %r, %r               (now %r = 1Sto32(CF))
-//..                movl %r, lane
-//..          */
-//..          Int       i;
-//..          X86AMode* am;
-//..          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
-//..          HReg      arg  = iselVecExpr(env, e->Iex.Unop.arg);
-//..          HReg      dst  = newVRegV(env);
-//..          HReg      r32  = newVRegI(env);
-//..          sub_from_esp(env, 16);
-//..          addInstr(env, X86Instr_SseLdSt(False/*store*/, arg, esp0));
-//..          for (i = 0; i < 4; i++) {
-//..             am = X86AMode_IR(i*4, hregX86_ESP());
-//..             addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(am), r32));
-//..             addInstr(env, X86Instr_Unary32(Xun_NEG, X86RM_Reg(r32)));
-//..             addInstr(env, X86Instr_Alu32R(Xalu_SBB, X86RMI_Reg(r32), r32));
-//..             addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r32), am));
-//..          }
-//..          addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
-//..          add_to_esp(env, 16);
-//..          return dst;
-//..       }
-//.. 
+
       case Iop_CmpNEZ8x16: {
          HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
          HReg zero = newVRegV(env);
@@ -3061,18 +3055,18 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_SseReRg(Xsse_XOR, vec1, dst));
 //..          return dst;
 //..       }
-//.. 
-//..       case Iop_Recip32Fx4: op = Xsse_RCPF;   goto do_32Fx4_unary;
-//..       case Iop_RSqrt32Fx4: op = Xsse_RSQRTF; goto do_32Fx4_unary;
+
+      case Iop_Recip32Fx4: op = Pavfp_RCPF;   goto do_32Fx4_unary;
+      case Iop_RSqrt32Fx4: op = Pavfp_RSQRTF; goto do_32Fx4_unary;
 //..       case Iop_Sqrt32Fx4:  op = Xsse_SQRTF;  goto do_32Fx4_unary;
-//..       do_32Fx4_unary:
-//..       {
-//..          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
-//..          HReg dst = newVRegV(env);
-//..          addInstr(env, X86Instr_Sse32Fx4(op, arg, dst));
-//..          return dst;
-//..       }
-//.. 
+      do_32Fx4_unary:
+      {
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, PPC32Instr_AvUn32Fx4(op, dst, arg));
+         return dst;
+      }
+
 //..       case Iop_Recip64Fx2: op = Xsse_RCPF;   goto do_64Fx2_unary;
 //..       case Iop_RSqrt64Fx2: op = Xsse_RSQRTF; goto do_64Fx2_unary;
 //..       case Iop_Sqrt64Fx2:  op = Xsse_SQRTF;  goto do_64Fx2_unary;
@@ -3237,24 +3231,44 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-//..       case Iop_CmpEQ32Fx4: op = Xsse_CMPEQF; goto do_32Fx4;
-//..       case Iop_CmpLT32Fx4: op = Xsse_CMPLTF; goto do_32Fx4;
-//..       case Iop_CmpLE32Fx4: op = Xsse_CMPLEF; goto do_32Fx4;
-//..       case Iop_Add32Fx4:   op = Xsse_ADDF;   goto do_32Fx4;
+      case Iop_Add32Fx4:   op = Pavfp_ADDF;   goto do_32Fx4;
+      case Iop_Sub32Fx4:   op = Pavfp_SUBF;   goto do_32Fx4;
+      case Iop_Max32Fx4:   op = Pavfp_MAXF;   goto do_32Fx4;
+      case Iop_Min32Fx4:   op = Pavfp_MINF;   goto do_32Fx4;
+      case Iop_Mul32Fx4:   op = Pavfp_MULF;   goto do_32Fx4;
 //..       case Iop_Div32Fx4:   op = Xsse_DIVF;   goto do_32Fx4;
-//..       case Iop_Max32Fx4:   op = Xsse_MAXF;   goto do_32Fx4;
-//..       case Iop_Min32Fx4:   op = Xsse_MINF;   goto do_32Fx4;
-//..       case Iop_Mul32Fx4:   op = Xsse_MULF;   goto do_32Fx4;
-//..       case Iop_Sub32Fx4:   op = Xsse_SUBF;   goto do_32Fx4;
-//..       do_32Fx4:
-//..       {
-//..          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
-//..          HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
-//..          HReg dst = newVRegV(env);
-//..          addInstr(env, mk_vMOVsd_RR(argL, dst));
-//..          addInstr(env, X86Instr_Sse32Fx4(op, argR, dst));
-//..          return dst;
-//..       }
+      case Iop_CmpEQ32Fx4: op = Pavfp_CMPEQF; goto do_32Fx4;
+      case Iop_CmpGT32Fx4: op = Pavfp_CMPGTF; goto do_32Fx4;
+      case Iop_CmpGE32Fx4: op = Pavfp_CMPGEF; goto do_32Fx4;
+//..       case Iop_CmpLT32Fx4:
+      do_32Fx4:
+      {
+         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         addInstr(env, PPC32Instr_AvBin32Fx4(op, dst, argL, argR));
+         return dst;
+      }
+
+      case Iop_CmpLE32Fx4: {
+         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         
+         /* stay consistent with native ppc compares:
+            if a left/right lane holds a nan, return zeros for that lane
+            so: le == NOT(gt OR isNan)
+          */
+         HReg isNanLR = newVRegV(env);
+         HReg isNanL = isNan(env, argL);
+         HReg isNanR = isNan(env, argR);
+         addInstr(env, PPC32Instr_AvBinary(Pav_OR, isNanLR, isNanL, isNanR));
+
+         addInstr(env, PPC32Instr_AvBin32Fx4(Pavfp_CMPGTF, dst, argL, argR));
+         addInstr(env, PPC32Instr_AvBinary(Pav_OR, dst, dst, isNanLR));
+         addInstr(env, PPC32Instr_AvUnary(Pav_NOT, dst, dst));
+         return dst;
+      }
 
 //..       case Iop_CmpEQ64Fx2: op = Xsse_CMPEQF; goto do_64Fx2;
 //..       case Iop_CmpLT64Fx2: op = Xsse_CMPLTF; goto do_64Fx2;

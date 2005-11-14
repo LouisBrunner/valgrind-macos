@@ -1386,7 +1386,7 @@ static IRExpr* /* :: Ity_I32 */ get_XER_CA ( void )
 
 
 /* Set the CR6 flags following an AltiVec compare operation. */
-static void set_AV_CR6 ( IRExpr* result )
+static void set_AV_CR6 ( IRExpr* result, Bool test_all_ones )
 {
    /* CR6[0:3] = {all_ones, 0, all_zeros, 0}
       all_ones  = (v[0] && v[1] && v[2] && v[3])
@@ -1406,13 +1406,6 @@ static void set_AV_CR6 ( IRExpr* result )
    assign( v2, binop(Iop_ShrV128, result, mkU8(64)) );
    assign( v3, binop(Iop_ShrV128, result, mkU8(96)) );
 
-   assign( rOnes, unop(Iop_1Uto8,
-      binop(Iop_CmpEQ32, mkU32(0xFFFFFFFF),
-            unop(Iop_V128to32,
-                 binop(Iop_AndV128,
-                       binop(Iop_AndV128, mkexpr(v0), mkexpr(v1)),
-                       binop(Iop_AndV128, mkexpr(v2), mkexpr(v3)))))) );
-
    assign( rZeros, unop(Iop_1Uto8,
        binop(Iop_CmpEQ32, mkU32(0xFFFFFFFF),
              unop(Iop_Not32,
@@ -1422,9 +1415,19 @@ static void set_AV_CR6 ( IRExpr* result )
                              binop(Iop_OrV128, mkexpr(v2), mkexpr(v3))))
                   ))) );
 
-   putCR321( 6, binop(Iop_Or8,
-                      binop(Iop_Shl8, mkexpr(rOnes),  mkU8(3)),
-                      binop(Iop_Shl8, mkexpr(rZeros), mkU8(1))) );
+   if (test_all_ones) {
+      assign( rOnes, unop(Iop_1Uto8,
+         binop(Iop_CmpEQ32, mkU32(0xFFFFFFFF),
+               unop(Iop_V128to32,
+                    binop(Iop_AndV128,
+                          binop(Iop_AndV128, mkexpr(v0), mkexpr(v1)),
+                          binop(Iop_AndV128, mkexpr(v2), mkexpr(v3)))))) );
+      putCR321( 6, binop(Iop_Or8,
+                         binop(Iop_Shl8, mkexpr(rOnes),  mkU8(3)),
+                         binop(Iop_Shl8, mkexpr(rZeros), mkU8(1))) );
+   } else {
+      putCR321( 6, binop(Iop_Shl8, mkexpr(rZeros), mkU8(1)) );
+   }
    putCR0( 6, mkU8(0) );
 } 
 
@@ -5954,7 +5957,7 @@ static Bool dis_av_cmp ( UInt theInstr )
    putVReg( vD_addr, mkexpr(vD) );
 
    if (flag_Rc) {
-      set_AV_CR6( mkexpr(vD) );
+      set_AV_CR6( mkexpr(vD), True );
    }
    return True;
 }
@@ -6787,6 +6790,13 @@ static Bool dis_av_fp_arith ( UInt theInstr )
    UChar vC_addr  = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10] */
    UInt  opc2=0;
 
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+   IRTemp vC = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+   assign( vC, getVReg(vC_addr));
+
    if (opc1 != 0x4) {
       vex_printf("dis_av_fp_arith(PPC32)(instr)\n");
       return False;
@@ -6812,23 +6822,23 @@ static Bool dis_av_fp_arith ( UInt theInstr )
    switch (opc2) {
    case 0x00A: // vaddfp (Add FP, AV p137)
       DIP("vaddfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Add32Fx4, mkexpr(vA), mkexpr(vB)) );
+      return True;
 
   case 0x04A: // vsubfp (Subtract FP, AV p261)
       DIP("vsubfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Sub32Fx4, mkexpr(vA), mkexpr(vB)) );
+      return True;
 
    case 0x40A: // vmaxfp (Maximum FP, AV p178)
       DIP("vmaxfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Max32Fx4, mkexpr(vA), mkexpr(vB)) );
+      return True;
 
    case 0x44A: // vminfp (Minimum FP, AV p187)
       DIP("vminfp v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Min32Fx4, mkexpr(vA), mkexpr(vB)) );
+      return True;
 
    default:
       break; // Fall through...
@@ -6843,13 +6853,13 @@ static Bool dis_av_fp_arith ( UInt theInstr )
    switch (opc2) {
    case 0x10A: // vrefp (Reciprocal Esimate FP, AV p228)
       DIP("vrefp v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_Recip32Fx4, mkexpr(vB)) );
+      return True;
 
    case 0x14A: // vrsqrtefp (Reciprocal Square Root Estimate FP, AV p237)
       DIP("vrsqrtefp v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_RSqrt32Fx4, mkexpr(vB)) );
+      return True;
 
    case 0x18A: // vexptefp (2 Raised to the Exp Est FP, AV p173)
       DIP("vexptefp v%d,v%d\n", vD_addr, vB_addr);
@@ -6880,6 +6890,14 @@ static Bool dis_av_fp_cmp ( UInt theInstr )
    UChar flag_Rc  = toUChar((theInstr >> 10) & 0x1);  /* theInstr[10]    */
    UInt  opc2     =         (theInstr >>  0) & 0x3FF; /* theInstr[0:9]   */
 
+   Bool cmp_bounds = False;
+
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+   IRTemp vD = newTemp(Ity_V128);
+   assign( vA, getVReg(vA_addr));
+   assign( vB, getVReg(vB_addr));
+
    if (opc1 != 0x4) {
       vex_printf("dis_av_fp_cmp(PPC32)(instr)\n");
       return False;
@@ -6888,27 +6906,60 @@ static Bool dis_av_fp_cmp ( UInt theInstr )
    switch (opc2) {
    case 0x0C6: // vcmpeqfp (Compare Equal-to FP, AV p159)
       DIP("vcmpeqfp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpEQ32Fx4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x1C6: // vcmpgefp (Compare Greater-than-or-Equal-to FP, AV p163)
       DIP("vcmpgefp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpGE32Fx4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
    case 0x2C6: // vcmpgtfp (Compare Greater-than FP, AV p164)
       DIP("vcmpgtfp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      assign( vD, binop(Iop_CmpGT32Fx4, mkexpr(vA), mkexpr(vB)) );
+      break;
 
-   case 0x3C6: // vcmpbfp (Compare Bounds FP, AV p157)
+   case 0x3C6: { // vcmpbfp (Compare Bounds FP, AV p157)
+      IRTemp gt      = newTemp(Ity_V128);
+      IRTemp lt      = newTemp(Ity_V128);
+      IRTemp zeros   = newTemp(Ity_V128);
       DIP("vcmpbfp%s v%d,v%d,v%d\n", (flag_Rc ? ".":""), vD_addr, vA_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      cmp_bounds = True;
+      assign( zeros,   unop(Iop_Dup32x4, mkU32(0)) );
+
+      /* Note: making use of fact that the ppc backend for compare insns
+         return zero'd lanes if either of the corresponding arg lanes is a nan.
+
+         Perhaps better to have an irop Iop_isNan32Fx4, but then we'd
+         need this for the other compares too (vcmpeqfp etc)...
+         Better still, tighten down the spec for compare irops.
+       */
+      assign( gt, unop(Iop_NotV128,
+                       binop(Iop_CmpLE32Fx4, mkexpr(vA), mkexpr(vB))) );
+      assign( lt, unop(Iop_NotV128,
+                       binop(Iop_CmpGE32Fx4, mkexpr(vA),
+                             binop(Iop_Sub32Fx4, mkexpr(zeros), mkexpr(vB)))) );
+
+      // finally, just shift gt,lt to correct position
+      assign( vD, binop(Iop_ShlN32x4,
+                        binop(Iop_OrV128,
+                              binop(Iop_AndV128, mkexpr(gt),
+                                    unop(Iop_Dup32x4, mkU32(0x2))),
+                              binop(Iop_AndV128, mkexpr(lt),
+                                    unop(Iop_Dup32x4, mkU32(0x1)))),
+                        mkU8(30)) );
+      break;
+   }
 
    default:
       vex_printf("dis_av_fp_cmp(PPC32)(opc2)\n");
       return False;
+   }
+
+   putVReg( vD_addr, mkexpr(vD) );
+
+   if (flag_Rc) {
+      set_AV_CR6( mkexpr(vD), !cmp_bounds );
    }
    return True;
 }

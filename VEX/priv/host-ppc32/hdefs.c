@@ -689,16 +689,26 @@ HChar* showPPC32AvOp ( PPC32AvOp op ) {
    case Pav_MRGHI:     return "vmrgh";    // b,h,w
    case Pav_MRGLO:     return "vmrgl";    // b,h,w
 
+   default: vpanic("showPPC32AvOp");
+   }
+}
+
+HChar* showPPC32AvFpOp ( PPC32AvOp op ) {
+   switch (op) {
    /* Floating Point Binary */
-   case Pav_ADDF:      return "vaddfp";
-   case Pav_SUBF:      return "vsubfp";
-   case Pav_MULF:      return "vmaddfp";
-   case Pav_MAXF:      return "vmaxfp";
-   case Pav_MINF:      return "vminfp";
-   case Pav_CMPEQF:    return "vcmpeqfp";
-   case Pav_CMPGTF:    return "vcmpgtfp";
-   case Pav_CMPGEF:    return "vcmpgefp";
+   case Pavfp_ADDF:      return "vaddfp";
+   case Pavfp_SUBF:      return "vsubfp";
+   case Pavfp_MULF:      return "vmaddfp";
+   case Pavfp_MAXF:      return "vmaxfp";
+   case Pavfp_MINF:      return "vminfp";
+   case Pavfp_CMPEQF:    return "vcmpeqfp";
+   case Pavfp_CMPGTF:    return "vcmpgtfp";
+   case Pavfp_CMPGEF:    return "vcmpgefp";
      
+   /* Floating Point Unary */
+   case Pavfp_RCPF:      return "vrefp";
+   case Pavfp_RSQRTF:    return "vrsqrtefp";
+
    default: vpanic("showPPC32AvOp");
    }
 }
@@ -931,8 +941,8 @@ PPC32Instr* PPC32Instr_AvLdSt ( Bool isLoad, UChar sz, HReg reg, PPC32AMode* add
    return i;
 }
 PPC32Instr* PPC32Instr_AvUnary ( PPC32AvOp op, HReg dst, HReg src ) {
-   PPC32Instr* i       = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag              = Pin_AvUnary;
+   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag             = Pin_AvUnary;
    i->Pin.AvUnary.op  = op;
    i->Pin.AvUnary.dst = dst;
    i->Pin.AvUnary.src = src;
@@ -981,6 +991,14 @@ PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR
    i->Pin.AvBin32Fx4.dst  = dst;
    i->Pin.AvBin32Fx4.srcL = srcL;
    i->Pin.AvBin32Fx4.srcR = srcR;
+   return i;
+}
+PPC32Instr* PPC32Instr_AvUn32Fx4 ( PPC32AvOp op, HReg dst, HReg src ) {
+   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag               = Pin_AvUn32Fx4;
+   i->Pin.AvUn32Fx4.op  = op;
+   i->Pin.AvUn32Fx4.dst = dst;
+   i->Pin.AvUn32Fx4.src = src;
    return i;
 }
 PPC32Instr* PPC32Instr_AvPerm ( HReg dst, HReg srcL, HReg srcR, HReg ctl ) {
@@ -1401,6 +1419,12 @@ void ppPPC32Instr ( PPC32Instr* i )
       vex_printf(",");
       ppHRegPPC32(i->Pin.AvBin32Fx4.srcR);
       return;
+   case Pin_AvUn32Fx4:
+      vex_printf("%s ", showPPC32AvOp(i->Pin.AvUn32Fx4.op));
+      ppHRegPPC32(i->Pin.AvUn32Fx4.dst);
+      vex_printf(",");
+      ppHRegPPC32(i->Pin.AvUn32Fx4.src);
+      return;
    case Pin_AvPerm:
       vex_printf("vperm ");
       ppHRegPPC32(i->Pin.AvPerm.dst);
@@ -1660,13 +1684,17 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       addHRegUse(u, HRmWrite, i->Pin.AvBin32x4.dst);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32x4.srcL);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32x4.srcR);
-      if (i->Pin.AvBin32x4.op == Pav_MULF)
-         addHRegUse(u, HRmWrite, hregPPC32_GPR29());
       return;
    case Pin_AvBin32Fx4:
       addHRegUse(u, HRmWrite, i->Pin.AvBin32Fx4.dst);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcL);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcR);
+      if (i->Pin.AvBin32Fx4.op == Pavfp_MULF)
+         addHRegUse(u, HRmWrite, hregPPC32_GPR29());
+      return;
+   case Pin_AvUn32Fx4:
+      addHRegUse(u, HRmWrite, i->Pin.AvUn32Fx4.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvUn32Fx4.src);
       return;
    case Pin_AvPerm:
       addHRegUse(u, HRmWrite, i->Pin.AvPerm.dst);
@@ -1836,6 +1864,10 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapReg(m, &i->Pin.AvBin32Fx4.dst);
       mapReg(m, &i->Pin.AvBin32Fx4.srcL);
       mapReg(m, &i->Pin.AvBin32Fx4.srcR);
+      return;
+   case Pin_AvUn32Fx4:
+      mapReg(m, &i->Pin.AvUn32Fx4.dst);
+      mapReg(m, &i->Pin.AvUn32Fx4.src);
       return;
    case Pin_AvPerm:
       mapReg(m, &i->Pin.AvPerm.dst);
@@ -2212,8 +2244,8 @@ static UChar* mkFormVX ( UChar* p, UInt opc1, UInt r1, UInt r2,
    return emit32(p, theInstr);
 }
 
-static UChar* mkFormVXR ( UChar* p, UInt opc1, UInt r1, UInt r2, UInt Rc,
-                          UInt r3, UInt opc2 )
+static UChar* mkFormVXR ( UChar* p, UInt opc1, UInt r1, UInt r2,
+                          UInt r3, UInt Rc, UInt opc2 )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -2915,8 +2947,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          p = mkFormVX( p, 4, v_dst, v_src, v_src, opc2 );
          break;
       default:
-	p = mkFormVX( p, 4, v_dst, 0, v_src, opc2 );
-	break;
+         p = mkFormVX( p, 4, v_dst, 0, v_src, opc2 );
+         break;
       }
       goto done;
    }
@@ -3100,30 +3132,30 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt v_srcR = vregNo(i->Pin.AvBin32Fx4.srcR);
       switch (i->Pin.AvBin32Fx4.op) {
 
-      case Pav_ADDF:
+      case Pavfp_ADDF:
          p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 10 );   // vaddfp
          break;
-      case Pav_SUBF:
+      case Pavfp_SUBF:
          p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 74 );   // vsubfp
          break;
-      case Pav_MAXF:
+      case Pavfp_MAXF:
          p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1034 ); // vmaxfp
          break;
-      case Pav_MINF:
+      case Pavfp_MINF:
          p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, 1098 ); // vminfp
          break;
 
-      case Pav_MULF: {
+      case Pavfp_MULF: {
          /* Make a vmulfp from a vmaddfp:
             load -0.0 (0x8000_0000) to each 32-bit word of vB
             this makes the add a noop.
          */
          UInt vB = 29;                    // XXX: Using r29 for temp
-         UInt zero_simm = 0x80000000;
+         UInt konst = 0x1F;
 
          // Better way to load zero_imm?
          // vspltisw vB,0x1F   (0x1F => each word of vB)
-         p = mkFormVX( p, 4, vB, zero_simm, 0, 908 );
+         p = mkFormVX( p, 4, vB, konst, 0, 908 );
 
          // vslw vB,vB,vB  (each word of vB = (0x1F << 0x1F) = 0x80000000
          p = mkFormVX( p, 4, vB, vB, vB, 388 );
@@ -3132,19 +3164,33 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          p = mkFormVA( p, 4, v_dst, v_srcL, vB, v_srcR, 46 );
          break;
       }
-      case Pav_CMPEQF:
+      case Pavfp_CMPEQF:
          p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 198 ); // vcmpeqfp
          break;
-      case Pav_CMPGTF:
-         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 1, 710 ); // vcmpgtfp
+      case Pavfp_CMPGTF:
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 710 ); // vcmpgtfp
          break;
-      case Pav_CMPGEF:
-         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 1, 454 ); // vcmpgefp
+      case Pavfp_CMPGEF:
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 454 ); // vcmpgefp
          break;
 
       default:
          goto bad;
       }
+      goto done;
+   }
+
+   case Pin_AvUn32Fx4: {
+      UInt v_dst = vregNo(i->Pin.AvUn32Fx4.dst);
+      UInt v_src = vregNo(i->Pin.AvUn32Fx4.src);
+      UInt opc2;
+      switch (i->Pin.AvUn32Fx4.op) {
+      case Pavfp_RCPF:   opc2 =  266; break; // vrefp
+      case Pavfp_RSQRTF: opc2 =  330; break; // vrsqrtefp
+      default:
+         goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, 0, v_src, opc2 );
       goto done;
    }
 

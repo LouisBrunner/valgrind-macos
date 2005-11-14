@@ -376,14 +376,10 @@ typedef
       Pav_UNPCKHPIX, Pav_UNPCKLPIX,
 
       /* Integer Binary */
-      Pav_AND, Pav_OR, Pav_XOR,   /* Bitwise */
-
+      Pav_AND, Pav_OR, Pav_XOR,            /* Bitwise */
       Pav_ADDU, Pav_QADDU, Pav_QADDS,
-
       Pav_SUBU, Pav_QSUBU, Pav_QSUBS,
-
       Pav_OMULU, Pav_OMULS, Pav_EMULU, Pav_EMULS,
-
       Pav_AVGU, Pav_AVGS,
       Pav_MAXU, Pav_MAXS,
       Pav_MINU, Pav_MINS,
@@ -400,18 +396,28 @@ typedef
 
       /* Merge */
       Pav_MRGHI, Pav_MRGLO,
-
-      /* Floating point binary */
-      Pav_ADDF, Pav_SUBF, Pav_MULF,
-      Pav_MAXF, Pav_MINF,
-      Pav_CMPEQF, Pav_CMPGTF, Pav_CMPGEF,
-
-//..       /* Floating point unary */
-//..       Xsse_RCPF, Xsse_RSQRTF, Xsse_SQRTF,
    }
    PPC32AvOp;
 
 extern HChar* showPPC32AvOp ( PPC32AvOp );
+
+
+/* --------- */
+typedef
+   enum {
+      Pavfp_INVALID,
+
+      /* Floating point binary */
+      Pavfp_ADDF, Pavfp_SUBF, Pavfp_MULF,
+      Pavfp_MAXF, Pavfp_MINF,
+      Pavfp_CMPEQF, Pavfp_CMPGTF, Pavfp_CMPGEF,
+
+      /* Floating point unary */
+      Pavfp_RCPF, Pavfp_RSQRTF,
+   }
+   PPC32AvFpOp;
+
+extern HChar* showPPC32AvFpOp ( PPC32AvFpOp );
 
 
 /* --------- */
@@ -453,6 +459,7 @@ typedef
       Pin_AvBin32x4,  /* AV binary, 32x4 */
 
       Pin_AvBin32Fx4, /* AV FP binary, 32Fx4 */
+      Pin_AvUn32Fx4,  /* AV FP unary,  32Fx4 */
 
       Pin_AvPerm,     /* AV permute (shuffle) */
       Pin_AvSel,      /* AV select */
@@ -672,11 +679,16 @@ typedef
             HReg      srcR;
          } AvBin32x4;
          struct {
-            PPC32AvOp op;
+            PPC32AvFpOp op;
             HReg      dst;
             HReg      srcL;
             HReg      srcR;
          } AvBin32Fx4;
+         struct {
+            PPC32AvFpOp op;
+            HReg      dst;
+            HReg      src;
+         } AvUn32Fx4;
          /* Perm,Sel,SlDbl,Splat are all weird AV permutations */
          struct {
             HReg dst;
@@ -752,6 +764,7 @@ extern PPC32Instr* PPC32Instr_AvBin8x16  ( PPC32AvOp op, HReg dst, HReg srcL, HR
 extern PPC32Instr* PPC32Instr_AvBin16x8  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvBin32x4  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_AvUn32Fx4  ( PPC32AvOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_AvPerm     ( HReg dst, HReg srcL, HReg srcR, HReg ctl );
 extern PPC32Instr* PPC32Instr_AvSel      ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg srcR );

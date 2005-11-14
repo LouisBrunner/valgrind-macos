@@ -372,6 +372,8 @@ void ppIROp ( IROp op )
       case Iop_CmpEQ32Fx4: vex_printf("CmpEQ32Fx4"); return;
       case Iop_CmpLT32Fx4: vex_printf("CmpLT32Fx4"); return;
       case Iop_CmpLE32Fx4: vex_printf("CmpLE32Fx4"); return;
+      case Iop_CmpGT32Fx4: vex_printf("CmpGT32Fx4"); return;
+      case Iop_CmpGE32Fx4: vex_printf("CmpGE32Fx4"); return;
       case Iop_CmpUN32Fx4: vex_printf("CmpUN32Fx4"); return;
       case Iop_CmpEQ64Fx2: vex_printf("CmpEQ64Fx2"); return;
       case Iop_CmpLT64Fx2: vex_printf("CmpLT64Fx2"); return;
@@ -1531,6 +1533,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_CmpEQ64Fx2: case Iop_CmpLT64Fx2:
       case Iop_CmpLE32Fx4: case Iop_CmpUN32Fx4:
       case Iop_CmpLE64Fx2: case Iop_CmpUN64Fx2:
+      case Iop_CmpGT32Fx4: case Iop_CmpGE32Fx4:
       case Iop_CmpEQ32F0x4: case Iop_CmpLT32F0x4:
       case Iop_CmpEQ64F0x2: case Iop_CmpLT64F0x2:
       case Iop_CmpLE32F0x4: case Iop_CmpUN32F0x4:

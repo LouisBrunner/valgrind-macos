@@ -470,6 +470,7 @@ typedef
       Iop_Add32Fx4, Iop_Sub32Fx4, Iop_Mul32Fx4, Iop_Div32Fx4, 
       Iop_Max32Fx4, Iop_Min32Fx4,
       Iop_CmpEQ32Fx4, Iop_CmpLT32Fx4, Iop_CmpLE32Fx4, Iop_CmpUN32Fx4, 
+      Iop_CmpGT32Fx4, Iop_CmpGE32Fx4,
 
       /* unary */
       Iop_Recip32Fx4, Iop_Sqrt32Fx4, Iop_RSqrt32Fx4,

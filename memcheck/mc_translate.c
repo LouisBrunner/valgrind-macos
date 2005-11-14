@@ -1784,6 +1784,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpLE32Fx4:
       case Iop_CmpEQ32Fx4:
       case Iop_CmpUN32Fx4:
+      case Iop_CmpGT32Fx4:
+      case Iop_CmpGE32Fx4:
       case Iop_Add32Fx4:
          return binary32Fx4(mce, vatom1, vatom2);      
 

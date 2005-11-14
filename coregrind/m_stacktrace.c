@@ -99,13 +99,79 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
 
    /* Otherwise unwind the stack in a platform-specific way.  Trying
       to merge the x86, amd64 and ppc32 logic into a single piece of
-      code is just too confusing. */
+      code is just too confusing and difficult to performance-tune.  */
 
-   /*--------------------- x86 and amd64 ---------------------*/
+#  if defined(VGP_x86_linux)
 
-#  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
+   /*--------------------- x86 ---------------------*/
 
-   /* fp is %ebp/%rbp.  sp is %esp/%rsp.  ip is %eip/%rip. */
+   /* fp is %ebp.  sp is %esp.  ip is %eip. */
+
+   ips[0] = ip;
+   i = 1;
+
+   /* Loop unwinding the stack. Note that the IP value we get on
+    * each pass (whether from CFI info or a stack frame) is a
+    * return address so is actually after the calling instruction
+    * in the calling function.
+    *
+    * Because of this we subtract one from the IP after each pass
+    * of the loop so that we find the right CFI block on the next
+    * pass - otherwise we can find the wrong CFI info if it happens
+    * to change after the calling instruction and that will mean
+    * that we will fail to unwind the next step.
+    *
+    * This most frequently happens at the end of a function when
+    * a tail call occurs and we wind up using the CFI info for the
+    * next function which is completely wrong.
+    */
+   while (True) {
+
+      if (i >= n_ips)
+         break;
+
+      /* Try to derive a new (ip,sp,fp) triple from the current
+         set. */
+
+      /* On x86, first try the old-fashioned method of following the
+         %ebp-chain.  Code which doesn't use this (that is, compiled
+         with -fomit-frame-pointer) is not ABI compliant and so
+         relatively rare.  Besides, trying the CFI first almost always
+         fails, and is expensive. */
+      /* Deal with frames resulting from functions which begin "pushl%
+         ebp ; movl %esp, %ebp" which is the ABI-mandated preamble. */
+      if (fp_min <= fp && fp <= fp_max) {
+         /* fp looks sane, so use it. */
+         ip = (((UWord*)fp)[1]);
+         sp = fp + sizeof(Addr) /*saved %ebp*/ 
+                 + sizeof(Addr) /*ra*/;
+         fp = (((UWord*)fp)[0]);
+         ips[i++] = ip;
+         if (debug)
+            VG_(printf)("     ipsF[%d]=%08p\n", i-1, ips[i-1]);
+         ip = ip - 1;
+         continue;
+      }
+
+      /* That didn't work out, so see if there is any CFI info to hand
+         which can be used. */
+      if ( VG_(use_CFI_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+         ips[i++] = ip;
+         if (debug)
+            VG_(printf)("     ipsC[%d]=%08p\n", i-1, ips[i-1]);
+         ip = ip - 1;
+         continue;
+      }
+
+      /* No luck.  We have to give up. */
+      break;
+   }
+
+#  elif defined(VGP_amd64_linux)
+
+   /*--------------------- amd64 ---------------------*/
+
+   /* fp is %rbp.  sp is %rsp.  ip is %rip. */
 
    ips[0] = ip;
    i = 1;
@@ -146,16 +212,15 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
       /* If VG_(use_CFI_info) fails, it won't modify ip/sp/fp, so
          we can safely try the old-fashioned method. */
       /* This bit is supposed to deal with frames resulting from
-         functions which begin "pushl% ebp ; movl %esp, %ebp" (x86)
-         or "pushq %rbp ; movq %rsp, %rbp" (amd64).  Unfortunately,
-         since we can't (easily) look at the insns at the start of
-         the fn, like GDB does, there's no reliable way to tell.
-         Hence the hack of first trying out CFI, and if that fails,
-         then use this as a fallback. */
+         functions which begin "pushq %rbp ; movq %rsp, %rbp".
+         Unfortunately, since we can't (easily) look at the insns at
+         the start of the fn, like GDB does, there's no reliable way
+         to tell.  Hence the hack of first trying out CFI, and if that
+         fails, then use this as a fallback. */
       if (fp_min <= fp && fp <= fp_max) {
          /* fp looks sane, so use it. */
          ip = (((UWord*)fp)[1]);
-         sp = fp + sizeof(Addr) /*saved %ebp/%rbp*/ 
+         sp = fp + sizeof(Addr) /*saved %rbp*/ 
                  + sizeof(Addr) /*ra*/;
          fp = (((UWord*)fp)[0]);
          ips[i++] = ip;
@@ -169,9 +234,9 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
       break;
    }
 
-   /*--------------------- ppc32 ---------------------*/
-
 #  elif defined(VGP_ppc32_linux)
+
+   /*--------------------- ppc32 ---------------------*/
 
    /* fp is %r1.  ip is %cia.  Note, ppc uses r1 as both the stack and
       frame pointers. */

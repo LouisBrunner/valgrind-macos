@@ -14,6 +14,10 @@
 
 #define STACK_SIZE 8192
 
+#ifndef CLONE_THREAD
+#define CLONE_THREAD	0x00010000	/* Same thread group? */
+#endif
+
 static int thread_main(void *arg)
 {
    char buffer[1024];

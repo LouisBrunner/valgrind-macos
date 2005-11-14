@@ -2540,14 +2540,14 @@ static void test_vexptefp (void)
 }
 
 static test_t tests_afa_ops_one[] = {
-    { &test_vrfin           , "       vrfin", },
-    { &test_vrfiz           , "       vrfiz", },
-    { &test_vrfip           , "       vrfip", },
-    { &test_vrfim           , "       vrfim", },
+    //    { &test_vrfin           , "       vrfin", },   // TODO: Not yet supported
+    //    { &test_vrfiz           , "       vrfiz", },   // TODO: Not yet supported
+    //    { &test_vrfip           , "       vrfip", },   // TODO: Not yet supported
+    //    { &test_vrfim           , "       vrfim", },   // TODO: Not yet supported
     { &test_vrefp           , "       vrefp", },
     { &test_vrsqrtefp       , "   vrsqrtefp", },
-    { &test_vlogefp         , "     vlogefp", },
-    { &test_vexptefp        , "    vexptefp", },
+    //    { &test_vlogefp         , "     vlogefp", },   // TODO: Not yet supported
+    //    { &test_vexptefp        , "    vexptefp", },   // TODO: Not yet supported
     { NULL,                   NULL,           },
 };
 #endif /* defined (HAS_ALTIVEC) */
@@ -6381,10 +6381,6 @@ int main (int argc, char **argv)
    arg_list_size = 0;
 #endif
    
-
-   // NO FLOAT ALTIVEC
-   flags.faltivec = 0;
-
 
    build_iargs_table();
    build_fargs_table();

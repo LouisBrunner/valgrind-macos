@@ -1497,6 +1497,8 @@ static test_t tests_fcr_ops_two[] = {
 #endif /* !defined (NO_FLOAT) */
 
 #if !defined (NO_FLOAT)
+
+#if 0   // TODO: Not yet supported
 static void test_fres (void)
 {
     __asm__ __volatile__ ("fres         17, 14");
@@ -1506,6 +1508,7 @@ static void test_frsqrte (void)
 {
     __asm__ __volatile__ ("frsqrte      17, 14");
 }
+#endif
 
 static void test_frsp (void)
 {
@@ -1543,8 +1546,8 @@ static void test_fnabs (void)
 }
 
 static test_t tests_fa_ops_one[] = {
-    { &test_fres            , "        fres", },
-    { &test_frsqrte         , "     frsqrte", },
+   //    { &test_fres            , "        fres", },   // TODO: Not yet supported
+   //    { &test_frsqrte         , "     frsqrte", },   // TODO: Not yet supported
     { &test_frsp            , "        frsp", },
     { &test_fctiw           , "       fctiw", },
     { &test_fctiwz          , "      fctiwz", },
@@ -1557,6 +1560,8 @@ static test_t tests_fa_ops_one[] = {
 #endif /* !defined (NO_FLOAT) */
 
 #if !defined (NO_FLOAT)
+
+#if 0   // TODO: Not yet supported
 static void test_fres_ (void)
 {
     __asm__ __volatile__ ("fres.        17, 14");
@@ -1566,6 +1571,7 @@ static void test_frsqrte_ (void)
 {
     __asm__ __volatile__ ("frsqrte.     17, 14");
 }
+#endif
 
 static void test_frsp_ (void)
 {
@@ -1603,8 +1609,8 @@ static void test_fnabs_ (void)
 }
 
 static test_t tests_far_ops_one[] = {
-    { &test_fres_           , "       fres.", },
-    { &test_frsqrte_        , "    frsqrte.", },
+   //    { &test_fres_           , "       fres.", },   // TODO: Not yet supported
+    //    { &test_frsqrte_        , "    frsqrte.", },   // TODO: Not yet supported
     { &test_frsp_           , "       frsp.", },
     { &test_fctiw_          , "      fctiw.", },
     { &test_fctiwz_         , "     fctiwz.", },
@@ -2436,6 +2442,16 @@ static void test_vsldoi (void)
     __asm__ __volatile__ ("vsldoi       17, 14, 15, 0");
 }
 
+static void test_lvsl (void)
+{
+    __asm__ __volatile__ ("lvsl         17, 14, 15");
+}
+
+static void test_lvsr (void)
+{
+    __asm__ __volatile__ ("lvsr         17, 14, 15");
+}
+
 static test_t tests_av_int_ops_spe[] = {
     { &test_vsl             , "         vsl", },
     { &test_vsr             , "         vsr", },
@@ -2446,11 +2462,74 @@ static test_t tests_av_int_ops_spe[] = {
     { &test_vspltish        , "    vspltish", },
     { &test_vspltisw        , "    vspltisw", },
     { &test_vsldoi          , "      vsldoi", },
+    { &test_lvsl            , "        lvsl", },
+    { &test_lvsr            , "        lvsr", },
     { NULL,                   NULL,           },
 };
 #endif /* defined (HAS_ALTIVEC) */
 
 #if defined (HAS_ALTIVEC)
+static void test_lvebx (void)
+{
+    __asm__ __volatile__ ("lvebx        17,14,15");
+}
+
+static void test_lvehx (void)
+{
+    __asm__ __volatile__ ("lvehx        17,14,15");
+}
+
+static void test_lvewx (void)
+{
+    __asm__ __volatile__ ("lvewx        17,14,15");
+}
+
+static void test_lvx (void)
+{
+    __asm__ __volatile__ ("lvx          17,14,15");
+}
+
+static test_t tests_ald_ops_two[] = {
+    { &test_lvebx           , "       lvebx", },
+    { &test_lvehx           , "       lvehx", },
+    { &test_lvewx           , "       lvewx", },
+    { &test_lvx             , "         lvx", },
+    { NULL,                   NULL,           },
+};
+#endif /* defined (HAS_ALTIVEC) */
+
+#if defined (HAS_ALTIVEC)
+static void test_stvebx (void)
+{
+    __asm__ __volatile__ ("stvebx       14,15,16");
+}
+
+static void test_stvehx (void)
+{
+    __asm__ __volatile__ ("stvehx       14,15,16");
+}
+
+static void test_stvewx (void)
+{
+    __asm__ __volatile__ ("stvewx       14,15,16");
+}
+
+static void test_stvx (void)
+{
+    __asm__ __volatile__ ("stvx         14,15,16");
+}
+
+static test_t tests_ast_ops_three[] = {
+    { &test_stvebx          , "      stvebx", },
+    { &test_stvehx          , "      stvehx", },
+    { &test_stvewx          , "      stvewx", },
+    { &test_stvx            , "        stvx", },
+    { NULL,                   NULL,           },
+};
+#endif /* defined (HAS_ALTIVEC) */
+
+#if defined (HAS_ALTIVEC)
+#if 0
 static void test_vmaddfp (void)
 {
     __asm__ __volatile__ ("vmaddfp      17, 14, 15, 16");
@@ -2460,10 +2539,11 @@ static void test_vnmsubfp (void)
 {
     __asm__ __volatile__ ("vnmsubfp     17, 14, 15, 16");
 }
+#endif
 
 static test_t tests_afa_ops_three[] = {
-    { &test_vmaddfp         , "     vmaddfp", },
-    { &test_vnmsubfp        , "    vnmsubfp", },
+//    { &test_vmaddfp         , "     vmaddfp", },   // TODO: Not yet supported
+//    { &test_vnmsubfp        , "    vnmsubfp", },   // TODO: Not yet supported
     { NULL,                   NULL,           },
 };
 #endif /* defined (HAS_ALTIVEC) */
@@ -2499,6 +2579,8 @@ static test_t tests_afa_ops_two[] = {
 #endif /* defined (HAS_ALTIVEC) */
 
 #if defined (HAS_ALTIVEC)
+
+#if 0   // TODO: Not yet supported
 static void test_vrfin (void)
 {
     __asm__ __volatile__ ("vrfin        17, 14");
@@ -2518,6 +2600,7 @@ static void test_vrfim (void)
 {
     __asm__ __volatile__ ("vrfim        17, 14");
 }
+#endif
 
 static void test_vrefp (void)
 {
@@ -2529,6 +2612,7 @@ static void test_vrsqrtefp (void)
     __asm__ __volatile__ ("vrsqrtefp    17, 14");
 }
 
+#if 0   // TODO: Not yet supported
 static void test_vlogefp (void)
 {
     __asm__ __volatile__ ("vlogefp      17, 14");
@@ -2538,6 +2622,7 @@ static void test_vexptefp (void)
 {
     __asm__ __volatile__ ("vexptefp     17, 14");
 }
+#endif
 
 static test_t tests_afa_ops_one[] = {
     //    { &test_vrfin           , "       vrfin", },   // TODO: Not yet supported
@@ -3365,6 +3450,20 @@ static test_table_t all_tests[] = {
 #endif /* defined (HAS_ALTIVEC) */
 #if defined (HAS_ALTIVEC)
     {
+        tests_ald_ops_two     ,
+        "Altivec load insns with two register args",
+        0x00040509,
+    },
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
+    {
+        tests_ast_ops_three   ,
+        "Altivec store insns with three register args",
+        0x0004050b,
+    },
+#endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
+    {
         tests_afa_ops_three   ,
         "Altivec floating point arith insns with three args",
         0x00050103,
@@ -3665,13 +3764,44 @@ static void build_vfargs_table (void)
     * (8 values)
     */
    uint32_t mant;
-   uint8_t exp;
+   uint16_t exp;
    int s;
    int i=0;
    
-   nb_vfargs = 8;
 
+#if !defined (ALTIVEC_ARGS_LARGE)
+   nb_vfargs = 12;
    vfargs = memalign(16, nb_vfargs * sizeof(vector float));
+
+   // 4 values:
+   for (s=0; s<2; s++) {
+      for (exp=0x5; ; exp += 0x9D ) {
+         if (exp > 0xDF)
+            break;
+         for (mant = 0x3FFFFF; mant < 0x7FFFFF;
+              mant = /* random */ ((mant + 0x1A6) << 31) + 0x159) {
+            register_vfarg(&vfargs[i++], s, (uint8_t)exp, mant);
+         }
+      }
+   }
+#else
+   nb_vfargs = 50;
+   vfargs = memalign(16, nb_vfargs * sizeof(vector float));
+
+   for (s=0; s<2; s++) {
+      for (exp=0x0; ; exp += 0x3F ) {
+         //      for (exp=0; ; exp = ((exp + 1) << 1) + 3) {
+         if (exp >= 0xFE)
+            exp = 0xFE;
+         for (mant = 0x0; mant < 0x7FFFFF;
+              mant = /* random */ ((mant + 0x4A6) << 5) + 0x359) {
+            register_vfarg(&vfargs[i++], s, (uint8_t)exp, mant);
+         }
+         if (exp >= 0xFE)
+            break;
+      }
+   }
+#endif
 
    /* Special values */
    /* +0.0      : 0 0x00 0x000000 */
@@ -3722,7 +3852,8 @@ static void build_vfargs_table (void)
    register_vfarg(&vfargs[i++], s, exp, mant);
    AB_DPRINTF("Registered %d vfargs values\n", i);
 
-   assert(i == nb_vfargs);
+   assert(i <= nb_vfargs);
+   nb_vfargs = i;
 }
 #endif
 
@@ -5695,6 +5826,53 @@ static void vsldoi_cb (const char* name, test_func_t func,
    }
 }
 
+/* lvsl, lvsr */
+static void lvs_cb (const char *name, test_func_t func,
+                    unused uint32_t test_flags)
+{
+   volatile uint32_t flags, tmpcr;
+   volatile vector unsigned int tmpvscr;
+   int i;
+   
+   for (i=-1; i<17; i++) {
+      vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+      
+      // make sure start address is 16 aligned - use viargs[0]
+      r15 = (uint32_t)&viargs[0];
+      r14 = i;
+
+      /* Save flags */
+      __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
+      __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+      
+      // reset VSCR and CR
+      vector unsigned int vscr = (vector unsigned int){ 0,0,0,0x00010000 };
+      flags = 0;
+      __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
+      __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));         
+      
+      // do stuff
+      (*func)();
+      
+      // retrieve output <- r17
+      __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+         
+      // get CR,VSCR flags
+      __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
+      __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+      
+      /* Restore flags */
+      __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
+      __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
+      
+      unsigned int* dst    = (unsigned int*)&vec_out;
+      printf("%s %3d, %3d", name, i, 0);
+      printf(" => %08x %08x %08x %08x ", dst[0], dst[1], dst[2], dst[3]);
+      printf("(%08x)\n", flags);
+   }
+   if (verbose) printf("\n");
+}
+
 static special_t special_av_int_ops[] = {
    {
       "vsr", /* Two registers arguments */
@@ -5732,12 +5910,136 @@ static special_t special_av_int_ops[] = {
       "vsldoi", /* Two regs, one 4-bit uimm arguments */
       &vsldoi_cb,
    },
+   {
+      "lvsl", /* Two regs */
+      &lvs_cb,
+   },
+   {
+      "lvsr", /* Two regs */
+      &lvs_cb,
+   },
+   {
+      NULL,
+      NULL,
+   },
 };
 
 static void test_av_int_special (const char* name, test_func_t func,
                                  uint32_t test_flags)
 {
    test_special(special_av_int_ops, name, func, test_flags);
+}
+
+static void test_av_int_ld_two_regs (const char *name,
+                                  test_func_t func,
+                                  unused uint32_t test_flags)
+{
+   volatile uint32_t flags, tmpcr;
+   volatile vector unsigned int tmpvscr;
+   int i,j;
+
+   for (i=0; i<nb_viargs; i++) {
+      for (j=0; j<16; j+=7) {
+         volatile vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+
+         // load from viargs array + some dis-alignment
+         r15 = (uint32_t)&viargs[0];
+         r14 = i*16 + j;
+         
+         /* Save flags */
+         __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
+         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+         
+         // reset VSCR and CR
+         volatile vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         flags = 0;
+         __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
+         __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
+         
+         // do stuff
+         (*func)();
+         
+         // retrieve output <- r17
+         __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+         
+         // get CR,VSCR flags
+         __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
+         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         
+         /* Restore flags */
+         __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
+         __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
+         
+         volatile vector unsigned int vec_in = (vector unsigned int)viargs[i];
+         unsigned int* src = (unsigned int*)&vec_in;
+         unsigned int* dst = (unsigned int*)&vec_out;
+         printf("%s %3d, %08x %08x %08x %08x", name, j, src[0], src[1], src[2], src[3]);
+         printf(" => %08x %08x %08x %08x ", dst[0], dst[1], dst[2], dst[3]);
+         printf("(%08x)\n", flags);
+      }
+      if (verbose) printf("\n");
+   }
+}
+
+
+static void test_av_int_st_three_regs (const char *name,
+                                       test_func_t func,
+                                       unused uint32_t test_flags)
+{
+   volatile uint32_t flags, tmpcr;
+   volatile vector unsigned int tmpvscr;
+   int i,j;
+   vector unsigned int* viargs_priv;
+
+   // private viargs table to store to
+   viargs_priv = memalign(16,(nb_viargs * sizeof(uint32_t)));
+   for (i=0; i<nb_viargs; i++)
+      viargs_priv[i] = (vector unsigned int) { 0,0,0,0 };
+
+   for (i=0; i<nb_viargs; i++) {
+      for (j=0; j<16; j+=7) {
+         // read from viargs
+         volatile vector unsigned int vec_in = (vector unsigned int)viargs[i];
+
+         // store to viargs_priv[0] + some dis-alignment
+         r16 = (uint32_t)&viargs_priv[0];
+         r15 = i*16 + j;
+
+         /* Save flags */
+         __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
+         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+         
+         // reset VSCR and CR
+         volatile vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         flags = 0;
+         __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
+         __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
+
+         // load inputs -> r14
+         __asm__ __volatile__ ("vor 14,%0,%0" : : "vr" (vec_in));
+         
+         // do stuff
+         (*func)();
+
+         // Output stored in viargs_priv
+         
+         // get CR,VSCR flags
+         __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
+         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         
+         /* Restore flags */
+         __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
+         __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
+         
+         volatile vector unsigned int vec_out = (vector unsigned int)viargs_priv[i];
+         unsigned int* src = (unsigned int*)&vec_in;
+         unsigned int* dst = (unsigned int*)&vec_out;
+         printf("%s %3d, %08x %08x %08x %08x", name, j, src[0], src[1], src[2], src[3]);
+         printf(" => %08x %08x %08x %08x ", dst[0], dst[1], dst[2], dst[3]);
+         printf("(%08x)\n", flags);
+      }
+      if (verbose) printf("\n");
+   }
 }
 
 /* Used in do_tests, indexed by flags->nb_args
@@ -5752,9 +6054,9 @@ static test_loop_t altivec_int_loops[] = {
    NULL,
    &test_av_int_special,
    NULL,
+   &test_av_int_ld_two_regs,
    NULL,
-   NULL,
-   NULL,
+   test_av_int_st_three_regs,
 };
 
 
@@ -6363,7 +6665,7 @@ int main (int argc, char **argv)
       switch (c) {
       case 'a':
          flags.altivec  = 1;
-//         flags.faltivec = 1;  // TODO: not yet supported
+         flags.faltivec = 1;
          break;
       case 'h':
          usage();

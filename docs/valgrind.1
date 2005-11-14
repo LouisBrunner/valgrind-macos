@@ -41,14 +41,17 @@ The following tools are available:
 .RS
 .TP
 .B
-- addrcheck
-\fBaddrcheck\fP is similar to memcheck, but does not perform the same
-granularity of memory checking.  This will run faster and use less memory,
-but may miss some problems that \fBmemcheck\fP would catch.
+." - addrcheck
+." \fBaddrcheck\fP is similar to memcheck, but does not perform the same
+." granularity of memory checking.  This will run faster and use less memory,
+." but may miss some problems that \fBmemcheck\fP would catch.
+." (\fBaddrcheck\fP is currently not working.)
 .TP
 .B
 - cachegrind
-\fBcachegrind\fP is a cache simulator.
+\fBcachegrind\fP is a cache simulator.  It can be used to annotate every
+line of your program with the number of instructions executed and cache
+misses incurred.
 ." .TP
 ." .B
 ." - helgrind
@@ -132,7 +135,7 @@ file name and \fB%p\fP is replaced by the process ID of the executable.
 Enable or disable automatic demangling (decoding) of C++ names. Enabled by
 default. When enabled, \fBvalgrind\fP will attempt to translate encoded
 C++ procedure names back to something approaching the original. The
-demangler handles symbols mangled by g++ versions 2.X and 3.X.
+demangler handles symbols mangled by g++ versions 2.X, 3.X and 4.X.
 
 .TP
 .B
@@ -195,21 +198,21 @@ is used whenever \fBvalgrind\fP needs to prompt the user for a decision.
 --log-fd=<number> [default: 2, stderr]
 Specifies that \fBvalgrind\fP should send all of its messages to
 the specified file descriptor. The default, 2, is the standard error
-channel (stderr).  Note that this may interfere with the client's own
-use of stderr.
+channel (stderr).  Note that in this case \fBvalgrind\fP's output will be
+interleaved with any output that the client sends to stderr.
 
 .TP
 .B
 --log-file=<filename>
 Specifies that \fBvalgrind\fP should send all of its messages to the
 specified file. In fact, the file name used is created by concatenating
-the text filename, ".pid" and the process ID, so as to create a file
-per process.  The specified file name may not be the empty string.
+the text filename and the process ID (ie. <filename>.<pid>), so as to create
+a file per process.  The specified file name may not be the empty string.
 
 .TP
 .B
 --log-file-exactly=<filename>
-Just like \fB--log-file\fP, but the ".pid" suffix is not added.  If you
+Just like \fB--log-file\fP, but the pid suffix is not added.  If you
 trace multiple processes with Valgrind when using this option the log
 file may get all messed up.
 
@@ -244,10 +247,10 @@ switching to a different stack.
 By default, \fBvalgrind\fP shows 12 levels of function call names to
 help you identify program locations. You can change that number with
 this option. This can help in determining the program's location in
-deeply-nested call chains. Note that errors are commoned up using only
-the top three function locations (the place in the current function,
-and that of its two immediate callers). So this doesn't affect the total
-number of errors reported.
+deeply-nested call chains. Note that in most cases errors are commoned up
+using only the top four function locations (the place in the current
+function, and that of its three immediate callers). So this doesn't affect
+the total number of errors reported.
 
 .RS
 .PP
@@ -279,7 +282,8 @@ suppress. You may specify up to 10 additional suppression files.
 .TP
 .B
 --time-stamp=<yes|no> [default: no]
-When enabled, a time-stamp is added to all log messages.
+When enabled, a time-stamp is added to all log messages.  It shows how long
+has elapsed since the client program started.
 
 .TP
 .B
@@ -289,8 +293,10 @@ Specify which tool to use. The default tool is memcheck.
 .TP
 .B
 --trace-children=<yes|no> [default: no]
-When enabled, \fBvalgrind\fP will trace into child processes. This is
-confusing and usually not what you want, so is disabled by default.
+When enabled, \fBvalgrind\fP will trace into child processes. This can be
+confusing and usually not what you want, so is disabled by default.  But
+it is necessary is some cases, particularly if your program is started
+by a script.
 
 .TP
 .B
@@ -327,7 +333,7 @@ currently support this option.
 The specified string will be output at the start of the XML file
 if XML output is requested.
 
-.SH ADDRCHECK OPTIONS
+.SH MEMCHECK OPTIONS
 
 .TP
 .B
@@ -336,14 +342,14 @@ When the client program releases memory using free (in C) or delete
 (C++), that memory is not immediately made available for re-allocation.
 Instead it is marked inaccessible and placed in a queue of freed blocks.
 The purpose is to delay the point at which freed-up memory comes back
-into circulation.  This increases the chance that \fBaddrcheck\fP will
+into circulation.  This increases the chance that \fBmemcheck\fP will
 be able to detect invalid accesses to blocks for some significant period
 of time after they have been freed.
 
 .RS
 This flag specifies the maximum total size, in bytes, of the blocks in
 the queue.  The default value is one million bytes.  Increasing this
-increases the total amount of memory used by \fBaddrcheck\fP but may
+increases the total amount of memory used by \fBmemcheck\fP but may
 detect invalid uses of freed blocks which would otherwise go undetected.
 .RE
 
@@ -360,7 +366,7 @@ leak checking can speed up your program execution.
 .TP
 .B
 --leak-resolution=<low|med|high> [default: low]
-When doing leak checking, determines how willing \fBaddrcheck\fP is to
+When doing leak checking, determines how willing \fBmemcheck\fP is to
 consider different backtraces to be the same.  When set to \fBlow\fP,
 the default, only the first two entries need match.  When \fBmed\fP,
 four entries have to match.  When \fBhigh\fP, all entries need to match.
@@ -368,16 +374,16 @@ four entries have to match.  When \fBhigh\fP, all entries need to match.
 .TP
 .B
 --partial-loads-ok=<yes|no> [default: no]
-Controls how \fBaddrcheck\fP handles word (4-byte) loads from addresses
+Controls how \fBmemcheck\fP handles word (4-byte) loads from addresses
 for which some bytes are addressible and others are not.  When enabled,
-such loads do not elicit an address error.  Instead, \fBaddrcheck\fP
+such loads do not elicit an address error.  Instead, \fBmemcheck\fP
 considers the bytes corresponding to the illegal addresses as undefined,
 and those corresponding to legal addresses are considered defined.
 
 .RS
 When disabled, loads from partially invalid addresses are treated the
 same as loads from completely invalid addresses: an illegal-address error
-is issued, and the \fBaddrcheck\fP considers all bytes as invalid data.
+is issued, and the \fBmemcheck\fP considers all bytes as invalid data.
 .RE
 
 .TP
@@ -398,9 +404,6 @@ report them.  The "small distance" is 256 bytes by default.  Note that gcc
 it if you do not have to, as it can cause real errors to be overlooked.
 Another option is to use a gcc/g++ which does not generate accesses below
 the stack pointer.  2.95.3 seems to be a good choice in this respect.
-
-.SH MEMCHECK OPTIONS
-\fBmemcheck\fP understands the same options as \fBaddrcheck\fP.
 
 .SH CACHEGRIND OPTIONS
 
@@ -567,4 +570,4 @@ Valgrind has several debugging options that are mostly of use to developers.  Us
 This manpage has been written by Andres Roldan <aroldan@debian.org>
 for the Debian Project, but can be used for any other distribution.
 Updated, rearranged and expanded by Robert Walsh <rjwalsh@durables.org>
-for the 2.4.0 release.
+for the 2.4.0 release, and other Valgrind developers subsequently.

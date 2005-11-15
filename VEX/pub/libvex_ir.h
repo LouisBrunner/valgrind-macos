@@ -550,8 +550,6 @@ typedef
 
       /* MULTIPLICATION (normal / high half of signed/unsigned) */
       Iop_Mul16x8,
-      Iop_MulLo16Ux8, Iop_MulLo32Ux4,
-      Iop_MulLo16Sx8, Iop_MulLo32Sx4,
       Iop_MulHi16Ux8, Iop_MulHi32Ux4,
       Iop_MulHi16Sx8, Iop_MulHi32Sx4,
       /* (widening signed/unsigned of even lanes, with lowest lane=zero) */

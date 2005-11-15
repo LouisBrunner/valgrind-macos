@@ -28,8 +28,8 @@ memory, this provides the following benefits:</para>
 
 <itemizedlist>
   <listitem><para>It can speed up your program -- a smaller
-    program will interact better with your machine's caches,
-    avoid paging, and so on.</para></listitem>
+    program will interact better with your machine's caches and
+    avoid paging.</para></listitem>
 
   <listitem><para>If your program uses lots of memory, it will
     reduce the chance that it exhausts your machine's swap
@@ -188,7 +188,7 @@ a PostScript viewer.</para>
 <computeroutput>hp2ps</computeroutput> to convert the raw data
 into the PostScript graph.  It's distributed with Massif, but
 came originally from the 
-<ulink url="http://haskell.cs.yale.edu/ghc/">Glasgow Haskell
+<ulink url="http://www.haskell.org/ghc/">Glasgow Haskell
 Compiler</ulink>.  You shouldn't need to worry about this at all.
 However, if the graph creation fails for any reason, Massif will
 tell you, and will leave behind a file named

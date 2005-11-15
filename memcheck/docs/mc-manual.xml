@@ -5,9 +5,10 @@
 <chapter id="mc-manual" xreflabel="Memcheck: a heavyweight memory checker">
 <title>Memcheck: a heavyweight memory checker</title>
 
-<para>To use this tool, you must specify
+<para>To use this tool, you may specify
 <computeroutput>--tool=memcheck</computeroutput> on the Valgrind
-command line.</para>
+command line.  You don't have to, though, since Memcheck is the default
+tool.</para>
 
 
 <sect1 id="mc-manual.bugs" 
@@ -122,13 +123,15 @@ Memcheck can detect the following problems:</para>
     <literal>C</literal>) or delete (<literal>C++</literal>),
     that memory is not immediately made available for
     re-allocation.  Instead it is marked inaccessible and placed
-    in a queue of freed blocks.  The purpose is to delay the
+    in a queue of freed blocks.  The purpose is to defer 
+    as long as possible
+    the
     point at which freed-up memory comes back into circulation.
     This increases the chance that Memcheck will be able to
     detect invalid accesses to blocks for some significant period
     of time after they have been freed.</para>
     <para>This flag specifies the maximum total size, in bytes,
-    of the blocks in the queue.  The default value is one million
+    of the blocks in the queue.  The default value is five million
     bytes.  Increasing this increases the total amount of memory
     used by Memcheck but may detect invalid uses of freed blocks
     which would otherwise go undetected.</para>
@@ -142,16 +145,11 @@ Memcheck can detect the following problems:</para>
     distance below the stack pointer are due to bugs in gcc
     2.96, and does not report them.  The "small distance" is 256
     bytes by default.  Note that gcc 2.96 is the default compiler
-    on some popular Linux distributions (RedHat 7.X, Mandrake)
-    and so you may well need to use this flag.  Do not use it if
+    on some older Linux distributions (RedHat 7.X)
+    and so you may need to use this flag.  Do not use it if
     you do not have to, as it can cause real errors to be
-    overlooked.  Another option is to use a gcc/g++ which does
-    not generate accesses below the stack pointer.  2.95.3 seems
-    to be a good choice in this respect.</para>
-    <para>Unfortunately (27 Feb 02) it looks like g++ 3.0.4 has a
-    similar bug, so you may need to issue this flag if you use
-    3.0.4.  A while later (early Apr 02) this is confirmed as a
-    scheduling bug in g++-3.0.4.</para>
+    overlooked.  A better alternative is to use a more recent gcc/g++ in which
+    this bug is fixed.</para>
   </listitem>
 
   <listitem id="partial">
@@ -186,7 +184,7 @@ Memcheck can detect the following problems:</para>
 <title>Explanation of error messages from Memcheck</title>
 
 <para>Despite considerable sophistication under the hood,
-Memcheck can only really detect two kinds of errors, use of
+Memcheck can only really detect two kinds of errors: use of
 illegal addresses, and use of undefined values.  Nevertheless,
 this is enough to help you discover all sorts of
 memory-management nasties in your code.  This section presents a
@@ -230,7 +228,7 @@ Actually the address is on the stack, but, for some reason, this
 is not a valid stack address -- it is below the stack pointer
 and that isn't allowed.  In this
 particular case it's probably caused by gcc generating invalid
-code, a known bug in various versions of gcc.</para>
+code, a known bug in some ancient versions of gcc.</para>
 
 <para>Note that Memcheck only tells you that your program is
 about to access memory at an illegal address.  It can't stop the
@@ -270,7 +268,7 @@ int main()
 }]]></programlisting>
 
 <para>It is important to understand that your program can copy
-around junk (uninitialised) data to its heart's content.
+around junk (uninitialised) data as much as it likes.
 Memcheck observes this and keeps track of the data, but does not
 complain.  A complaint is issued only when your program attempts
 to make use of uninitialised data.  In this example, x is
@@ -347,10 +345,6 @@ Mismatched free() / delete / delete []
    by 0x4C21788F: OLEFilter::convert(QCString const &) (olefilter.cc:272)
 ]]></programlisting>
 
-<para>The following was told to me be the KDE 3 developers.  I
-didn't know any of it myself.  They also implemented the check
-itself.</para>
-
 <para>In <literal>C++</literal> it's important to deallocate
 memory in a way compatible with how it was allocated.  The deal
 is:</para>
@@ -384,8 +378,8 @@ to the KDE folks "it's amazing how many C++ programmers don't
 know this".</para>
 
 <para>Pascal Massimino adds the following clarification:
-<computeroutput>delete[]</computeroutput> must be called
-associated with a <computeroutput>new[]</computeroutput> because
+<computeroutput>delete[]</computeroutput> must be used for
+objects allocated by <computeroutput>new[]</computeroutput> because
 the compiler stores the size of the array and the
 pointer-to-member to the destructor of the array's content just
 before the pointer actually returned.  This implies a
@@ -402,7 +396,7 @@ variable-sized overhead in what's returned by
 <title>Passing system call parameters with inadequate read/write
 permissions</title>
 
-<para>Memcheck checks all parameters to system calls, i.e:
+<para>Memcheck checks all parameters to system calls:
 <itemizedlist>
   <listitem><para>It checks all the direct parameters
   themselves.</para></listitem> 
@@ -517,8 +511,8 @@ Each block fits into one of the three following categories.</para>
   <listitem>
     <para>Still reachable: A pointer to the start
     of the block is found.  This usually indicates programming
-    sloppiness; since the block is still pointed at, the
-    programmer could, at least in principle, free'd it before
+    sloppiness.  Since the block is still pointed at, the
+    programmer could, at least in principle, free it before
     program exit.  Because these are very common and arguably
     not a problem, Memcheck won't report such blocks unless
     <computeroutput>--show-reachable=yes</computeroutput> is
@@ -558,7 +552,8 @@ programs do not have any leaked or dubious blocks at exit.</para>
    by 0x........: mk (leak-tree.c:11)
    by 0x........: main (leak-tree.c:39)
 
-88 (8 direct, 80 indirect) bytes in 1 blocks are definitely lost in loss record 13 of 14
+88 (8 direct, 80 indirect) bytes in 1 blocks are definitely lost 
+                           in loss record 13 of 14
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: mk (leak-tree.c:11)
    by 0x........: main (leak-tree.c:25)
@@ -572,7 +567,7 @@ indirect leak is a block which is only pointed to by other leaked
 blocks.  Both kinds of leak are bad.</para>
 
 <para>The precise area of memory in which Memcheck searches for
-pointers is: all naturally-aligned 4-byte words for which all A
+pointers is: all naturally-aligned machine-word-sized words for which all A
 bits indicate addressibility and all V bits indicated that the
 stored value is actually valid.</para>
 
@@ -702,7 +697,7 @@ bitmap.</para>
 
 <para>In short, each bit in the system has an associated V bit,
 which follows it around everywhere, even inside the CPU.  Yes,
-all the CPU's registers (integer, floating point, and condition 
+all the CPU's registers (integer, floating point, vector and condition 
 registers) have their own V bit vectors.</para>
 
 <para>Copying values around does not cause Memcheck to check for,
@@ -861,7 +856,7 @@ bits, only consult them.</para>
   <listitem>
     <para>When doing system calls, A bits are changed
     appropriately.  For example, mmap() magically makes files
-    appear in the process's address space, so the A bits must be
+    appear in the process' address space, so the A bits must be
     updated if mmap() succeeds.</para>
   </listitem>
 
@@ -956,13 +951,14 @@ follows:</para>
 
 
 <para>Memcheck intercepts calls to malloc, calloc, realloc,
-valloc, memalign, free, new and delete.  The behaviour you get
+valloc, memalign, free, new, new[], delete and delete[].
+The behaviour you get
 is:</para>
 
 <itemizedlist>
 
   <listitem>
-    <para>malloc/new: the returned memory is marked as
+    <para>malloc/new/new[]: the returned memory is marked as
     addressible but not having valid values.  This means you have
     to write on it before you can read it.</para>
   </listitem>
@@ -985,9 +981,10 @@ is:</para>
   </listitem>
 
   <listitem>
-    <para>free/delete: you may only pass to free a pointer
-    previously issued to you by malloc/calloc/realloc, or the
-    value NULL. Otherwise, Valgrind complains.  If the pointer is
+    <para>free/delete/delete[]: you may only pass to these
+    functions a pointer
+    previously issued to you by the corresponding allocation function.
+    Otherwise, Valgrind complains.  If the pointer is
     indeed valid, Valgrind marks the entire area it points at as
     unaddressible, and places the block in the
     freed-blocks-queue.  The aim is to defer as long as possible
@@ -1084,7 +1081,8 @@ arguments.</para>
     you to get and set the V (validity) bits for an address
     range.  You should probably only set V bits that you have got
     with <computeroutput>VALGRIND_GET_VBITS</computeroutput>.
-    Only for those who really know what they are doing.</para>
+    Only for those who really know what they are doing.  Note: currently
+    disabled in Valgrind 3.1.0.</para>
   </listitem>
 
 </itemizedlist>

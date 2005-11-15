@@ -7,7 +7,7 @@
 <title>Valgrind FAQ</title>
 <bookinfo>
   <subtitle>Valgrind Frequently Asked Questions</subtitle>
-  <releaseinfo>August 2005</releaseinfo>
+  <releaseinfo>November 2005</releaseinfo>
   <author>
     <surname>
       <ulink url="http://www.valgrind.org/info/developers.html">Valgrind Developers</ulink>
@@ -102,21 +102,8 @@
 <qandaentry id="faq.exit_errors">
  <question>
   <para>Programs run OK on Valgrind, but at exit produce a bunch
-  of errors a bit like this:
-<programlisting>
-==20755== Invalid read of size 4
-==20755==    at 0x40281C8A: _nl_unload_locale (loadlocale.c:238)
-==20755==    by 0x4028179D: free_mem (findlocale.c:257)
-==20755==    by 0x402E0962: __libc_freeres (set-freeres.c:34)
-==20755==    by 0x40048DCC: vgPlain___libc_freeres_wrapper (vg_clientfuncs.c:585)
-==20755==    Address 0x40CC304C is 8 bytes inside a block of size 380 free'd
-==20755==    at 0x400484C9: free (vg_clientfuncs.c:180)
-==20755==    by 0x40281CBA: _nl_unload_locale (loadlocale.c:246)
-==20755==    by 0x40281218: free_mem (setlocale.c:461)
-==20755==    by 0x402E0962: __libc_freeres (set-freeres.c:34)
-</programlisting>
-
- and then die with a segmentation fault.</para>
+  of errors involving <literal>__libc_freeres()</literal>
+  and then die with a segmentation fault.</para>
  </question>
  <answer>
  <para>When the program exits, Valgrind runs the procedure
@@ -222,30 +209,6 @@
        xreflabel="Valgrind behaves unexpectedly">
 <title>Valgrind behaves unexpectedly</title>
 <qandaset id="qset.unexpected">
-
-<qandaentry id="faq.slowthread">
- <question>
-  <para>My threaded server process runs unbelievably slowly on
-  Valgrind.  So slowly, in fact, that at first I thought it had
-  completely locked up.</para>
- </question>
- <answer>
-  <para>We are not completely sure about this, but one
-  possibility is that laptops with power management fool
-  Valgrind's timekeeping mechanism, which is (somewhat in error)
-  based on the x86 RDTSC instruction.  A "fix" which is claimed
-  to work is to run some other cpu-intensive process at the same
-  time, so that the laptop's power-management clock-slowing does
-  not kick in.  We would be interested in hearing more feedback
-  on this.</para>
-
-  <para>Another possible cause is that versions prior to 1.9.6
-  did not support threading on glibc 2.3.X systems well.
-  Hopefully the situation is much improved with 1.9.6 and later
-  versions.</para>
- </answer>
-</qandaentry>
-
 
 <qandaentry id="faq.reports">
  <question>

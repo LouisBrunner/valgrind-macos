@@ -5,6 +5,11 @@
 <chapter id="lk-manual" xreflabel="Lackey">
 
 <title>Lackey: a very simple profiler</title>
+
+<para>To use this tool, you must specify
+<computeroutput>--tool=lackey</computeroutput> on the Valgrind
+command line.</para>
+
 <para>Lackey is a simple Valgrind tool that does some basic
 program measurement.  It adds quite a lot of simple
 instrumentation to the program's code.  It is primarily intended

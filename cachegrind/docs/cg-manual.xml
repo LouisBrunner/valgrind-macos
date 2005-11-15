@@ -288,9 +288,9 @@ file:</para>
   </listitem>
 </itemizedlist>
 
-<para>Note that older versions of Cachegrind used a log file
-named <computeroutput>cachegrind.out</computeroutput> (i.e. no
-<computeroutput>.pid</computeroutput> suffix).  The suffix serves
+<para>The <computeroutput>.pid</computeroutput> suffix
+on the output file name 
+serves
 two purposes.  Firstly, it means you don't have to rename old log
 files that you don't want to overwrite.  Secondly, and more
 importantly, it allows correct profiling with the
@@ -605,7 +605,7 @@ for distinguishing between an event which cannot happen, and one
 which can but did not.</para>
 
 <para>Sometimes only a small section of a source file is
-executed.  To minimise uninteresting output, Valgrind only shows
+executed.  To minimise uninteresting output, Cachegrind only shows
 annotated lines and lines within a small distance of annotated
 lines.  Gaps are marked with the line numbers so you know which
 part of a file the shown code comes from, eg:</para>
@@ -761,7 +761,7 @@ way as for C/C++ programs.</para>
   </listitem>
 
   <listitem id="include">
-    <para><computeroutput>-I=&lt;dir&gt;,
+    <para><computeroutput>-I&lt;dir&gt;,
       --include=&lt;dir&gt;</computeroutput> [default: empty
       string]</para>
     <para>Adds a directory to the list in which to search for
@@ -955,13 +955,13 @@ shortcomings:</para>
   </listitem>
 
   <listitem>
-    <para>Valgrind's custom threads implementation will schedule
-    threads differently to the standard one.  This could warp the
-    results for threaded programs.</para>
+    <para>Valgrind will schedule
+    threads differently from how they would be when running natively.
+    This could warp the results for threaded programs.</para>
   </listitem>
 
   <listitem>
-    <para>The instructions <computeroutput>bts</computeroutput>,
+    <para>The x86/amd64 instructions <computeroutput>bts</computeroutput>,
     <computeroutput>btr</computeroutput> and
     <computeroutput>btc</computeroutput> will incorrectly be
     counted as doing a data read if both the arguments are
@@ -973,7 +973,7 @@ shortcomings:</para>
   </listitem>
 
   <listitem>
-    <para>FPU instructions with data sizes of 28 and 108 bytes
+    <para>x86/amd64 FPU instructions with data sizes of 28 and 108 bytes
     (e.g.  <computeroutput>fsave</computeroutput>) are treated as
     though they only access 16 bytes.  These instructions seem to
     be rare so hopefully this won't affect accuracy much.</para>

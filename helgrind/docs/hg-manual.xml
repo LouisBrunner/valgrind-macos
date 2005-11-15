@@ -8,7 +8,10 @@
 <para>Helgrind is a Valgrind tool for detecting data races in C
 and C++ programs that use the Pthreads library.</para>
 
-<para>To use this tool, you specify
+<para>Note: Helgrind does not work in Valgrind 3.1.0.  We hope
+to reinstate in version 3.2.0.</para>
+
+<para>To use this tool, you must specify
 <computeroutput>--tool=helgrind</computeroutput> on the Valgrind
 command line.</para>
 

@@ -98,29 +98,6 @@
 //zz    There are actually 4 distinguished secondaries.  These are used to
 //zz    represent a memory range which is either not addressable (validity
 //zz    doesn't matter), addressable+not valid, addressable+valid.
-//zz 
-//zz    [...] lots of stuff deleted due to out of date-ness
-//zz 
-//zz    As a final optimisation, the alignment and address checks for
-//zz    4-byte loads and stores are combined in a neat way.  The primary
-//zz    map is extended to have 262144 entries (2^18), rather than 2^16.
-//zz    The top 3/4 of these entries are permanently set to the
-//zz    distinguished secondary map.  For a 4-byte load/store, the
-//zz    top-level map is indexed not with (addr >> 16) but instead f(addr),
-//zz    where
-//zz 
-//zz     f( XXXX XXXX XXXX XXXX ____ ____ ____ __YZ )
-//zz         = ____ ____ ____ __YZ XXXX XXXX XXXX XXXX  or 
-//zz         = ____ ____ ____ __ZY XXXX XXXX XXXX XXXX
-//zz 
-//zz    ie the lowest two bits are placed above the 16 high address bits.
-//zz    If either of these two bits are nonzero, the address is misaligned;
-//zz    this will select a secondary map from the upper 3/4 of the primary
-//zz    map.  Because this is always the distinguished secondary map, a
-//zz    (bogus) address check failure will result.  The failure handling
-//zz    code can then figure out whether this is a genuine addr check
-//zz    failure or whether it is a possibly-legitimate access at a
-//zz    misaligned address.  
 //zz */
 
 /* --------------- Basic configuration --------------- */

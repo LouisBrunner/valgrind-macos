@@ -1484,7 +1484,7 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "<valgrindoutput>");
       VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "<protocolversion>1</protocolversion>");
+      VG_(message)(Vg_UserMsg, "<protocolversion>2</protocolversion>");
       VG_(message)(Vg_UserMsg, "");
    }
 

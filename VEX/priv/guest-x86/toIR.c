@@ -225,6 +225,8 @@ static IRBB* irbb;
 
 #define OFFB_EMWARN    offsetof(VexGuestX86State,guest_EMWARN)
 
+#define OFFB_TISTART   offsetof(VexGuestX86State,guest_TISTART)
+#define OFFB_TILEN     offsetof(VexGuestX86State,guest_TILEN)
 
 /*------------------------------------------------------------*/
 /*--- Helper bits and pieces for deconstructing the        ---*/
@@ -10339,7 +10341,6 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
-
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */
 //--    if (insn[0] == 0x0F && insn[1] == 0xAE 
 //--        && (!epartIsReg(insn[2]))
@@ -10356,24 +10357,37 @@ DisResult disInstr_X86_WRK (
 //--       DIP("fx%s %s\n", store ? "save" : "rstor", dis_buf );
 //--       goto decode_success;
 //--    }
-//-- 
-//--    /* CLFLUSH -- flush cache line */
-//--    if (insn[0] == 0x0F && insn[1] == 0xAE
-//--        && (!epartIsReg(insn[2]))
-//--        && (gregOfRM(insn[2]) == 7))
-//--    {
-//--       vg_assert(sz == 4);
-//--       pair = disAMode ( cb, sorb, eip+2, dis_buf );
-//--       t1   = LOW24(pair);
-//--       eip += 2+HI8(pair);
-//--       uInstr3(cb, SSE2a_MemRd, 0,  /* ignore sz for internal ops */
-//--                   Lit16, (((UShort)0x0F) << 8) | (UShort)0xAE,
-//--                   Lit16, (UShort)insn[2],
-//--                   TempReg, t1 );
-//--       DIP("clflush %s\n", dis_buf);
-//--       goto decode_success;
-//--    }
 
+   /* 0F AE /7 = CLFLUSH -- flush cache line */
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xAE
+       && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 7) {
+
+      /* This is something of a hack.  We need to know the size of the
+         cache line containing addr.  Since we don't (easily), assume
+         256 on the basis that no real cache would have a line that
+         big.  It's safe to invalidate more stuff than we need, just
+         inefficient. */
+      UInt lineszB = 256;
+
+      addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+      delta += 2+alen;
+
+      /* Round addr down to the start of the containing block. */
+      stmt( IRStmt_Put(
+               OFFB_TISTART,
+               binop( Iop_And32, 
+                      mkexpr(addr), 
+                      mkU32( ~(lineszB-1) ))) );
+
+      stmt( IRStmt_Put(OFFB_TILEN, mkU32(lineszB) ) );
+
+      irbb->jumpkind = Ijk_TInval;
+      irbb->next     = mkU32(guest_EIP_bbstart+delta);
+      dres.whatNext  = Dis_StopHere;
+
+      DIP("clflush %s\n", dis_buf);
+      goto decode_success;
+   }
 
    /* ---------------------------------------------------- */
    /* --- end of the SSE2 decoder.                     --- */

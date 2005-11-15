@@ -2222,8 +2222,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 
-   /* These should not ever be either read or written, but we
-      initialise them anyway. */
+   /* SSE2 has a 'clflush' cache-line-invalidator which uses these. */
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
 }

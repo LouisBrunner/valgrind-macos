@@ -42,7 +42,7 @@ right for earlier versions.</para>
 debugging information so that Memcheck's error messages include exact line
 numbers.  Using <computeroutput>-O0</computeroutput> is also a good idea, if
 you can tolerate the slowdown.  With <computeroutput>-O1</computeroutput> 
-line numbers in error messages can inaccurate, although generally speaking
+line numbers in error messages can be inaccurate, although generally speaking
 Memchecking code compiled at <computeroutput>-O1</computeroutput> works 
 fairly well.  Use of <computeroutput>-O2</computeroutput> and above is
 not recommended as Memcheck occasionally reports uninitialised-value

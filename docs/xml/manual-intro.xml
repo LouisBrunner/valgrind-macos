@@ -8,8 +8,9 @@
 <sect1 id="manual-intro.overview" xreflabel="An Overview of Valgrind">
 <title>An Overview of Valgrind</title>
 
-<para>Valgrind is a flexible system for debugging and profiling
-Linux executables.  The system consists of a core, which
+<para>Valgrind is a suite of simulation-based debugging and
+profiling tools for programs running on Linux (x86, amd64 and ppc32).
+The system consists of a core, which
 provides a synthetic CPU in software, and a series of tools,
 each of which performs some kind of debugging, profiling, or
 similar task.  The architecture is modular, so that new tools can
@@ -56,9 +57,7 @@ summary, these are:</para>
       <para>Overlapping <computeroutput>src</computeroutput> and
       <computeroutput>dst</computeroutput> pointers in
       <computeroutput>memcpy()</computeroutput> and related
-      functions</para></listitem> <listitem><para>Some misuses of
-      the POSIX pthreads API</para>
-     </listitem>
+      functions</para></listitem> 
     </itemizedlist>
 
     <para>Problems like these can be difficult to find by other
@@ -91,6 +90,10 @@ summary, these are:</para>
     stellar, it's quite usable, and it seems plausible to run KDE
     for long periods at a time like this, collecting up all the
     addressing errors that appear.</para>
+
+    <para>NOTE: Addrcheck is not available in Valgrind 3.1.X.  We hope
+    to reinstate its functionality in later releases.  For now, use 
+    Memcheck instead.</para>
    </listitem>
 
    <listitem>
@@ -135,27 +138,34 @@ summary, these are:</para>
     <para>Helgrind has been hacked on extensively by Jeremy
     Fitzhardinge, and we have him to thank for getting it to a
     releasable state.</para>
+
+    <para>NOTE: Helgrind is, unfortunately, not available in Valgrind 3.1.X,
+    as a result of threading changes that happened in the 2.4.0 release.
+    We hope to reinstate its functionality in a future 3.2.0 release.</para>
    </listitem>
 
 </orderedlist>
   
 
-<para>A number of minor tools (<command>Corecheck</command>,
-<command>Lackey</command> and <command>Nulgrind</command>) are
+<para>A couple of minor tools (<command>Lackey</command> 
+and <command>Nulgrind</command>) are
 also supplied.  These aren't particularly useful -- they exist to
 illustrate how to create simple tools and to help the valgrind
-developers in various ways.</para>
+developers in various ways.  Nulgrind is the null tool -- it adds 
+no instrumentation.  Lackey is a simple example tool 
+which counts instructions, memory accesses, and the number of
+integer and floating point operations your program does.</para>
 
 <para>Valgrind is closely tied to details of the CPU and operating
 system, and to a lesser extent, the compiler and basic C libraries.
-Nonetheless, as of version 3.0.0 it supports several platforms:  x86/Linux
-(mature), AMD64/Linux (immature but works well), and PPC32/Linux (very
-preliminary).  Valgrind uses the standard Unix
+Nonetheless, as of version 3.1.0 it supports several platforms: x86/Linux
+(mature), AMD64/Linux (maturing), and PPC32/Linux (immature but works well).
+Valgrind uses the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to
 ensure that it works on machines with kernel 2.4 or 2.6 and glibc
-2.2.X--2.4.X.</para>
+2.2.X--2.3.X.</para>
 
 <para>Valgrind is licensed under the <xref linkend="license.gpl"/>,
 version 2.  The <computeroutput>valgrind/*.h</computeroutput> headers that

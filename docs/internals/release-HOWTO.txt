@@ -13,7 +13,7 @@ First of all:
 
 - Tell valgrind-developers you want to do a release.  Give a timeframe for
   everyone to check in any final features/bug-fixes they want in the
-  release.
+  release.  (Especially Josef Weidendorfer for Callgrind.)
 
 - Go over the docs, make sure they're up to date.
 
@@ -51,8 +51,38 @@ For each release candidate (should do release candidates for feature
 releases, bug-fix-only releases might not need one):
 
 - Do pre-release testing:
-  - Make sure regtests run ok on all platforms of interest.
-  - Make sure Mozilla and OpenOffice run ok on all platforms of interest.
+
+  * Check it builds and regtests on a vanilla gcc-2.96 / RedHat 7.3 distro.
+    Also check that callgrind builds/installs alongside it OK.
+
+  * Check standard build and regtest on the following cpus:
+       x86, sse2 (P4)
+       x86, sse1 (PIII)
+       x86, no sse (eg older VIA C3s, or perhaps even Pentium-MMX)
+       amd64
+       ppc32, altivec
+       ppc32, no altivec (eg old iMac G3s)
+
+  * Check that the regression tests work with --sanity-level=4 on all
+    platforms.
+
+  * Check valgrind-listener works on all archs, also connecting to it
+    from all archs.
+
+  * Check memcheck can run all the insn-set tests.  The testsuite
+    only runs those on 'none', but memcheck looks at all primops, and I've
+    been caught out by this before.  Basically all the programs in
+    none/tests/{x86,amd64,ppc32}.
+
+  * Check XML output is still readable by Valkyrie and vk_logmerge tools
+
+  * Test with large applications (firefox and OOo 2.0) on all platforms.
+
+  * Run regression tests from gsl-1.6 on all platforms.  This is a good,
+    thorough test of FP.  Easy, using the scripts auxprogs/gsl16test.
+
+  * Check that a tarball build of callgrind is buildable/installable
+    against a from-tarball build of valgrind.
 
 - Change release number in AC_INIT() in configure.in to "X.Y.Z-rcN", where
   'N' is the release candidate number.

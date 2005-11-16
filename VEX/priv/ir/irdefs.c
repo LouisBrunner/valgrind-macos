@@ -275,6 +275,17 @@ void ppIROp ( IROp op )
       case Iop_ReinterpF32asI32: vex_printf("ReinterpF32asI32"); return;
       case Iop_ReinterpI32asF32: vex_printf("ReinterpI32asF32"); return;
 
+      case Iop_I32UtoFx4: vex_printf("Iop_I32UtoFx4"); return;
+      case Iop_I32StoFx4: vex_printf("Iop_I32StoFx4"); return;
+
+      case Iop_QFtoI32Ux4_RZ: vex_printf("Iop_QFtoI32Ux4_RZ"); return;
+      case Iop_QFtoI32Sx4_RZ: vex_printf("Iop_QFtoI32Sx4_RZ"); return;
+
+      case Iop_RoundF32x4_RM: vex_printf("Iop_RoundF32x4_RM"); return;
+      case Iop_RoundF32x4_RP: vex_printf("Iop_RoundF32x4_RP"); return;
+      case Iop_RoundF32x4_RN: vex_printf("Iop_RoundF32x4_RN"); return;
+      case Iop_RoundF32x4_RZ: vex_printf("Iop_RoundF32x4_RZ"); return;
+
       case Iop_Add8x8: vex_printf("Add8x8"); return;
       case Iop_Add16x4: vex_printf("Add16x4"); return;
       case Iop_Add32x2: vex_printf("Add32x2"); return;
@@ -1510,6 +1521,16 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_F64toF32: BINARY(Ity_F32, Ity_I32,Ity_F64);
 
       case Iop_RoundF64: BINARY(Ity_F64, Ity_I32,Ity_F64);
+
+      case Iop_I32UtoFx4:
+      case Iop_I32StoFx4:
+      case Iop_QFtoI32Ux4_RZ:
+      case Iop_QFtoI32Sx4_RZ:
+      case Iop_RoundF32x4_RM:
+      case Iop_RoundF32x4_RP:
+      case Iop_RoundF32x4_RN:
+      case Iop_RoundF32x4_RZ:
+         UNARY(Ity_V128, Ity_V128);
 
       case Iop_64HLtoV128: BINARY(Ity_V128, Ity_I64,Ity_I64);
       case Iop_V128to64: case Iop_V128HIto64: 

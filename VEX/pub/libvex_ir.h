@@ -469,11 +469,22 @@ typedef
       /* binary */
       Iop_Add32Fx4, Iop_Sub32Fx4, Iop_Mul32Fx4, Iop_Div32Fx4, 
       Iop_Max32Fx4, Iop_Min32Fx4,
+      /* Note: For the following compares, the ppc32 front-end assumes a
+         nan in a lane of either argument returns zero for that lane. */
       Iop_CmpEQ32Fx4, Iop_CmpLT32Fx4, Iop_CmpLE32Fx4, Iop_CmpUN32Fx4, 
       Iop_CmpGT32Fx4, Iop_CmpGE32Fx4,
 
       /* unary */
       Iop_Recip32Fx4, Iop_Sqrt32Fx4, Iop_RSqrt32Fx4,
+
+      /* --- Int to/from FP conversion --- */
+      /* Unlike the standard fp conversions, these irops take no
+         rounding mode argument. Instead the irop trailers _R{M,P,N,Z}
+         indicate the mode: {-inf, +inf, nearest, zero} respectively. */
+      Iop_I32UtoFx4,     Iop_I32StoFx4,       /* I32x4 -> F32x4       */
+      Iop_QFtoI32Ux4_RZ, Iop_QFtoI32Sx4_RZ,   /* F32x4 -> I32x4       */
+      Iop_RoundF32x4_RM, Iop_RoundF32x4_RP,   /* round to fp integer  */
+      Iop_RoundF32x4_RN, Iop_RoundF32x4_RZ,   /* round to fp integer  */
 
       /* --- 32x4 lowest-lane-only scalar FP --- */
 

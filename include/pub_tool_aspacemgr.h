@@ -137,6 +137,9 @@ extern Int VG_(am_get_segment_starts)( Addr* starts, Int nStarts );
 extern NSegment* VG_(am_find_nsegment) ( Addr a ); 
 
 // See pub_core_aspacemgr.h for description.
+extern HChar* VG_(am_get_filename)( NSegment* );
+
+// See pub_core_aspacemgr.h for description.
 extern Bool VG_(am_is_valid_for_client) ( Addr start, SizeT len, 
                                           UInt prot );
 

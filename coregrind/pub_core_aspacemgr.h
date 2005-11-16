@@ -103,7 +103,8 @@ extern void VG_(am_show_nsegments) ( Int logLevel, HChar* who );
    has one.  The returned name's storage cannot be assumed to be
    persistent, so the caller should immediately copy the name
    elsewhere. */
-extern HChar* VG_(am_get_filename)( NSegment* );
+// Is in tool-visible header file.
+// extern HChar* VG_(am_get_filename)( NSegment* );
 
 /* VG_(am_get_segment_starts) is also part of this section, but its
    prototype is tool-visible, hence not in this header file. */

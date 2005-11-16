@@ -658,7 +658,10 @@ static void setup_client_dataseg ( SizeT max_size )
    vg_assert(ok);
 
    /* We make the data segment (heap) executable because LinuxThreads on
-      ppc32 creates trampolines in this area. */
+      ppc32 creates trampolines in this area.  Also, on x86/Linux the data
+      segment is RWX natively, at least according to /proc/self/maps.
+      Also, having a non-executable data seg would kill any program which
+      tried to create code in the data seg and then run it. */
    sres = VG_(am_mmap_anon_fixed_client)( 
              anon_start, 
              anon_size, 

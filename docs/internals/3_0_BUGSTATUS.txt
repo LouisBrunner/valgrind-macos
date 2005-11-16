@@ -104,7 +104,7 @@ FIXED-TRUNK:    vex:1413
 113126  Crash with binaries built with -gstabs+/-ggdb
 104065  ==
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    vg:5138
 
 ----------------------------------------------------------------
 113403  Looks like a segfault in realloc?

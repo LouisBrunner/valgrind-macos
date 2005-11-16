@@ -152,9 +152,11 @@ LafterVMX1:
 
         /* Save cr */
         mfcr    0
-        stw     0,32(1)
+        stw     0,44(1)
 
         /* Local variable space... */
+
+        /* 32(sp) used later to check FPSCR[RM] */
 
         /* r3 holds guest_state */
         mr      31,3
@@ -288,23 +290,43 @@ dispatch_boring:
 */
 run_innerloop_exit: 
         /* We're leaving.  Check that nobody messed with
-           %mxcsr or %fpucw.  We can't mess with %eax here as it
-           holds the tentative return value, but any other is OK. */
-// CAB: TODO
-	
-//.. 	pushl	$0
-//.. 	fstcw	(%esp)
-//.. 	cmpl	$0x027F, (%esp)
-//.. 	popl	%esi /* get rid of the word without trashing %eflags */
-//.. 	jnz	invariant_violation
+           VSCR or FPSCR. */
 
-//.. 	pushl	$0
-//.. 	stmxcsr	(%esp)
-//.. 	andl	$0xFFFFFFC0, (%esp)  /* mask out status flags */
-//.. 	cmpl	$0x1F80, (%esp)
-//.. 	popl	%esi
-//.. 	jnz	invariant_violation
-	
+        /* Using r10 - value used again further on, so don't trash! */
+        lis     10,VG_(machine_ppc32_has_FP)@ha
+        lwz     10,VG_(machine_ppc32_has_FP)@l(10)
+        cmplwi  10,0
+        beq     LafterFP8
+
+        /* Check FPSCR[RM] == 0 */
+        mffs      4                       /* fpscr -> fpr */
+        li        5,48
+        stfiwx    4,5,1                   /* fpr to stack */
+        lwzx      6,5,1                   /* load to gpr */
+        andi.     6,6,0x3                 /* mask wanted bits */
+        cmplwi    6,0x0                   /* cmp with zero */
+        bne       invariant_violation     /* branch if not zero */
+LafterFP8:
+
+	/* Using r11 - value used again further on, so don't trash! */
+        lis     11,VG_(machine_ppc32_has_VMX)@ha
+        lwz     11,VG_(machine_ppc32_has_VMX)@l(11)
+        cmplwi  11,0
+        beq     LafterVMX8
+
+        /* Check VSCR[NJ] == 1 */
+        /* first generate 4x 0x00010000 */
+        vspltisw  4,0x1                   /* 4x 0x00000001 */
+        vspltisw  5,0x0                   /* zero */
+        vsldoi    6,4,5,0x2               /* << 2bytes => 4x 0x00010000 */
+        /* retrieve VSCR and mask wanted bits */
+        mfvscr    7
+        vand      7,7,6                   /* gives SAT flag */
+        vspltw    7,7,0x3                 /* flags-word to all lanes */
+        vcmpequw. 8,6,7                   /* CR[24] = 1 if equal */
+        bt        26,invariant_violation  /* branch if bit 26 of CR is true */
+LafterVMX8:
+
 	/* otherwise we're OK */
         b       run_innerloop_exit_REALLY
 
@@ -325,15 +347,13 @@ run_innerloop_exit_REALLY:
         stw     17,VG_(dispatch_ctr)@l(18)
 
         /* Restore cr */
-        lwz     0,32(1)
+        lwz     0,44(1)
         mtcr    0
 
         /* Restore callee-saved registers... */
 
-	/* must use r4 since r3 holds return value */
-        lis     4,VG_(machine_ppc32_has_FP)@ha
-        lwz     4,VG_(machine_ppc32_has_FP)@l(4)
-        cmplwi  4,0
+        /* r10 already holds VG_(machine_ppc32_has_FP) value */
+        cmplwi  10,0
         beq     LafterFP9
 
         /* Floating-point regs */
@@ -378,10 +398,8 @@ LafterFP9:
         lwz     14,280(1)
         lwz     13,276(1)
 
-	/* must use r4 since r3 holds return value */
-        lis     4,VG_(machine_ppc32_has_VMX)@ha
-        lwz     4,VG_(machine_ppc32_has_VMX)@l(4)
-        cmplwi  4,0
+        /* r11 already holds VG_(machine_ppc32_has_VMX) value */
+        cmplwi  11,0
         beq     LafterVMX9
 
         /* VRSAVE */

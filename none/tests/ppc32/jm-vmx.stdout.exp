@@ -3142,7 +3142,7 @@ Altivec floating point arith insns with two args:
       vaddfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vaddfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
       vaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vaddfp: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vaddfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => 513fffff 513fffff 513fffff 513fffff (00000000)
@@ -3150,7 +3150,7 @@ Altivec floating point arith insns with two args:
       vaddfp:  => 00000000 00000000 00000000 00000000 (00000000)
       vaddfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
       vaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vaddfp: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vaddfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3158,7 +3158,7 @@ Altivec floating point arith insns with two args:
       vaddfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vaddfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
       vaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vaddfp: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vaddfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
@@ -3166,7 +3166,7 @@ Altivec floating point arith insns with two args:
       vaddfp:  => d1bfffff d1bfffff d1bfffff d1bfffff (00000000)
       vaddfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
       vaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vaddfp: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vaddfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3174,7 +3174,7 @@ Altivec floating point arith insns with two args:
       vaddfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vaddfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
       vaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vaddfp: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vaddfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3182,7 +3182,7 @@ Altivec floating point arith insns with two args:
       vaddfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vaddfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
       vaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vaddfp: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vaddfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
@@ -3190,7 +3190,7 @@ Altivec floating point arith insns with two args:
       vaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
       vaddfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
       vaddfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vaddfp: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vaddfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
@@ -3198,7 +3198,23 @@ Altivec floating point arith insns with two args:
       vaddfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
       vaddfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
       vaddfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vaddfp: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+      vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vaddfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+      vaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vaddfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+      vaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vaddfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+      vaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vaddfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+      vaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vaddfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+      vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vaddfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+      vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vaddfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+      vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vaddfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
@@ -3206,7 +3222,7 @@ Altivec floating point arith insns with two args:
       vaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
       vaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
       vaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
-      vaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
       vaddfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
       vaddfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
@@ -3214,24 +3230,8 @@ Altivec floating point arith insns with two args:
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vaddfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-      vaddfp: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
+      vaddfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
       vaddfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-      vaddfp: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-      vaddfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vaddfp: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-      vaddfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vaddfp: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-      vaddfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vaddfp: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-      vaddfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vaddfp: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-      vaddfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vaddfp: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-      vaddfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vaddfp: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-      vaddfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vaddfp: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
-      vaddfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
 
       vsubfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3239,7 +3239,7 @@ Altivec floating point arith insns with two args:
       vsubfp:  => 513fffff 513fffff 513fffff 513fffff (00000000)
       vsubfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
       vsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
-      vsubfp: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vsubfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => 513fffff 513fffff 513fffff 513fffff (00000000)
@@ -3247,7 +3247,7 @@ Altivec floating point arith insns with two args:
       vsubfp:  => 51bfffff 51bfffff 51bfffff 51bfffff (00000000)
       vsubfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
       vsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
-      vsubfp: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vsubfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => 833fffff 833fffff 833fffff 833fffff (00000000)
@@ -3255,7 +3255,7 @@ Altivec floating point arith insns with two args:
       vsubfp:  => 513fffff 513fffff 513fffff 513fffff (00000000)
       vsubfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
       vsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
-      vsubfp: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vsubfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
@@ -3263,7 +3263,7 @@ Altivec floating point arith insns with two args:
       vsubfp:  => 00000000 00000000 00000000 00000000 (00000000)
       vsubfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
       vsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
-      vsubfp: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vsubfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => 82bfffff 82bfffff 82bfffff 82bfffff (00000000)
@@ -3271,7 +3271,7 @@ Altivec floating point arith insns with two args:
       vsubfp:  => 513fffff 513fffff 513fffff 513fffff (00000000)
       vsubfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
       vsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
-      vsubfp: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vsubfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => 82bfffff 82bfffff 82bfffff 82bfffff (00000000)
@@ -3279,7 +3279,7 @@ Altivec floating point arith insns with two args:
       vsubfp:  => 513fffff 513fffff 513fffff 513fffff (00000000)
       vsubfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
       vsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
-      vsubfp: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vsubfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
@@ -3287,7 +3287,7 @@ Altivec floating point arith insns with two args:
       vsubfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
       vsubfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
       vsubfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vsubfp: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vsubfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
@@ -3295,7 +3295,23 @@ Altivec floating point arith insns with two args:
       vsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
       vsubfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
       vsubfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
-      vsubfp: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+      vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vsubfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+      vsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vsubfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+      vsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vsubfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+      vsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vsubfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+      vsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vsubfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+      vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vsubfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+      vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vsubfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+      vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vsubfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
@@ -3303,7 +3319,7 @@ Altivec floating point arith insns with two args:
       vsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
       vsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
       vsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
-      vsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
       vsubfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
       vsubfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
@@ -3311,24 +3327,8 @@ Altivec floating point arith insns with two args:
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vsubfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-      vsubfp: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
+      vsubfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
       vsubfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-      vsubfp: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-      vsubfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vsubfp: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-      vsubfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vsubfp: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-      vsubfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vsubfp: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-      vsubfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vsubfp: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-      vsubfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vsubfp: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-      vsubfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vsubfp: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-      vsubfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vsubfp: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
-      vsubfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
 
       vmaxfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3336,7 +3336,7 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
       vmaxfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vmaxfp: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vmaxfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => 513fffff 513fffff 513fffff 513fffff (00000000)
@@ -3344,7 +3344,7 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => 513fffff 513fffff 513fffff 513fffff (00000000)
       vmaxfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vmaxfp: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vmaxfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3352,7 +3352,7 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => 82bfffff 82bfffff 82bfffff 82bfffff (00000000)
       vmaxfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vmaxfp: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vmaxfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3360,7 +3360,7 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vmaxfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vmaxfp: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vmaxfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3368,7 +3368,7 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => 00000000 00000000 00000000 00000000 (00000000)
       vmaxfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vmaxfp: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vmaxfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3376,7 +3376,7 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => 80000000 80000000 80000000 80000000 (00000000)
       vmaxfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vmaxfp: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vmaxfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
@@ -3384,7 +3384,7 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
       vmaxfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vmaxfp: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vmaxfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3392,7 +3392,23 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vmaxfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
       vmaxfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vmaxfp: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+      vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vmaxfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+      vmaxfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vmaxfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+      vmaxfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vmaxfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+      vmaxfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vmaxfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+      vmaxfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vmaxfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+      vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vmaxfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+      vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vmaxfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+      vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vmaxfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vmaxfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
@@ -3400,7 +3416,7 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
       vmaxfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
       vmaxfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
-      vmaxfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
       vmaxfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
       vmaxfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
@@ -3408,24 +3424,8 @@ Altivec floating point arith insns with two args:
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vmaxfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-      vmaxfp: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
+      vmaxfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
       vmaxfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-      vmaxfp: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-      vmaxfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vmaxfp: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-      vmaxfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vmaxfp: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-      vmaxfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vmaxfp: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-      vmaxfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vmaxfp: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-      vmaxfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vmaxfp: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-      vmaxfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vmaxfp: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-      vmaxfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vmaxfp: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
-      vmaxfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
 
       vminfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3433,7 +3433,7 @@ Altivec floating point arith insns with two args:
       vminfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vminfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
       vminfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
-      vminfp: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3441,7 +3441,7 @@ Altivec floating point arith insns with two args:
       vminfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vminfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
       vminfp:  => 513fffff 513fffff 513fffff 513fffff (00000000)
-      vminfp: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => 82bfffff 82bfffff 82bfffff 82bfffff (00000000)
@@ -3449,7 +3449,7 @@ Altivec floating point arith insns with two args:
       vminfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vminfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
       vminfp:  => 82bfffff 82bfffff 82bfffff 82bfffff (00000000)
-      vminfp: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
@@ -3457,7 +3457,7 @@ Altivec floating point arith insns with two args:
       vminfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vminfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
       vminfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
-      vminfp: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3465,7 +3465,7 @@ Altivec floating point arith insns with two args:
       vminfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vminfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
       vminfp:  => 00000000 00000000 00000000 00000000 (00000000)
-      vminfp: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => 80000000 80000000 80000000 80000000 (00000000)
@@ -3473,7 +3473,7 @@ Altivec floating point arith insns with two args:
       vminfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vminfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
       vminfp:  => 80000000 80000000 80000000 80000000 (00000000)
-      vminfp: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => 02bfffff 02bfffff 02bfffff 02bfffff (00000000)
@@ -3481,7 +3481,7 @@ Altivec floating point arith insns with two args:
       vminfp:  => d13fffff d13fffff d13fffff d13fffff (00000000)
       vminfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
       vminfp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
-      vminfp: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
@@ -3489,7 +3489,23 @@ Altivec floating point arith insns with two args:
       vminfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
       vminfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
       vminfp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
-      vminfp: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+      vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vminfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+      vminfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vminfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+      vminfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vminfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+      vminfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vminfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+      vminfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+      vminfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+      vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vminfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+      vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vminfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+      vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+      vminfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
@@ -3497,7 +3513,7 @@ Altivec floating point arith insns with two args:
       vminfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
       vminfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
       vminfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
-      vminfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
       vminfp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
       vminfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
@@ -3505,26 +3521,110 @@ Altivec floating point arith insns with two args:
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
       vminfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-      vminfp: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
+      vminfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
       vminfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-      vminfp: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-      vminfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vminfp: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-      vminfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vminfp: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-      vminfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vminfp: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-      vminfp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-      vminfp: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-      vminfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vminfp: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-      vminfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vminfp: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-      vminfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
-      vminfp: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
-      vminfp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
 
 Altivec floating point arith insns with one arg:
+       vrfin: 02bfffff 02bfffff 02bfffff 02bfffff
+       vrfin:  => 00000000 00000000 00000000 00000000 (00000000)
+       vrfin: 513fffff 513fffff 513fffff 513fffff
+       vrfin:  => 513fffff 513fffff 513fffff 513fffff (00000000)
+       vrfin: 82bfffff 82bfffff 82bfffff 82bfffff
+       vrfin:  => 80000000 80000000 80000000 80000000 (00000000)
+       vrfin: d13fffff d13fffff d13fffff d13fffff
+       vrfin:  => d13fffff d13fffff d13fffff d13fffff (00000000)
+       vrfin: 00000000 00000000 00000000 00000000
+       vrfin:  => 00000000 00000000 00000000 00000000 (00000000)
+       vrfin: 80000000 80000000 80000000 80000000
+       vrfin:  => 80000000 80000000 80000000 80000000 (00000000)
+       vrfin: 7f800000 7f800000 7f800000 7f800000
+       vrfin:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+       vrfin: ff800000 ff800000 ff800000 ff800000
+       vrfin:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+       vrfin: 7fffffff 7fffffff 7fffffff 7fffffff
+       vrfin:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrfin: ffffffff ffffffff ffffffff ffffffff
+       vrfin:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+       vrfin: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
+       vrfin:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrfin: ffbfffff ffbfffff ffbfffff ffbfffff
+       vrfin:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+
+       vrfiz: 02bfffff 02bfffff 02bfffff 02bfffff
+       vrfiz:  => 00000000 00000000 00000000 00000000 (00000000)
+       vrfiz: 513fffff 513fffff 513fffff 513fffff
+       vrfiz:  => 513fffff 513fffff 513fffff 513fffff (00000000)
+       vrfiz: 82bfffff 82bfffff 82bfffff 82bfffff
+       vrfiz:  => 80000000 80000000 80000000 80000000 (00000000)
+       vrfiz: d13fffff d13fffff d13fffff d13fffff
+       vrfiz:  => d13fffff d13fffff d13fffff d13fffff (00000000)
+       vrfiz: 00000000 00000000 00000000 00000000
+       vrfiz:  => 00000000 00000000 00000000 00000000 (00000000)
+       vrfiz: 80000000 80000000 80000000 80000000
+       vrfiz:  => 80000000 80000000 80000000 80000000 (00000000)
+       vrfiz: 7f800000 7f800000 7f800000 7f800000
+       vrfiz:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+       vrfiz: ff800000 ff800000 ff800000 ff800000
+       vrfiz:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+       vrfiz: 7fffffff 7fffffff 7fffffff 7fffffff
+       vrfiz:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrfiz: ffffffff ffffffff ffffffff ffffffff
+       vrfiz:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+       vrfiz: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
+       vrfiz:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrfiz: ffbfffff ffbfffff ffbfffff ffbfffff
+       vrfiz:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+
+       vrfip: 02bfffff 02bfffff 02bfffff 02bfffff
+       vrfip:  => 3f800000 3f800000 3f800000 3f800000 (00000000)
+       vrfip: 513fffff 513fffff 513fffff 513fffff
+       vrfip:  => 513fffff 513fffff 513fffff 513fffff (00000000)
+       vrfip: 82bfffff 82bfffff 82bfffff 82bfffff
+       vrfip:  => 80000000 80000000 80000000 80000000 (00000000)
+       vrfip: d13fffff d13fffff d13fffff d13fffff
+       vrfip:  => d13fffff d13fffff d13fffff d13fffff (00000000)
+       vrfip: 00000000 00000000 00000000 00000000
+       vrfip:  => 00000000 00000000 00000000 00000000 (00000000)
+       vrfip: 80000000 80000000 80000000 80000000
+       vrfip:  => 80000000 80000000 80000000 80000000 (00000000)
+       vrfip: 7f800000 7f800000 7f800000 7f800000
+       vrfip:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+       vrfip: ff800000 ff800000 ff800000 ff800000
+       vrfip:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+       vrfip: 7fffffff 7fffffff 7fffffff 7fffffff
+       vrfip:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrfip: ffffffff ffffffff ffffffff ffffffff
+       vrfip:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+       vrfip: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
+       vrfip:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrfip: ffbfffff ffbfffff ffbfffff ffbfffff
+       vrfip:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+
+       vrfim: 02bfffff 02bfffff 02bfffff 02bfffff
+       vrfim:  => 00000000 00000000 00000000 00000000 (00000000)
+       vrfim: 513fffff 513fffff 513fffff 513fffff
+       vrfim:  => 513fffff 513fffff 513fffff 513fffff (00000000)
+       vrfim: 82bfffff 82bfffff 82bfffff 82bfffff
+       vrfim:  => bf800000 bf800000 bf800000 bf800000 (00000000)
+       vrfim: d13fffff d13fffff d13fffff d13fffff
+       vrfim:  => d13fffff d13fffff d13fffff d13fffff (00000000)
+       vrfim: 00000000 00000000 00000000 00000000
+       vrfim:  => 00000000 00000000 00000000 00000000 (00000000)
+       vrfim: 80000000 80000000 80000000 80000000
+       vrfim:  => 80000000 80000000 80000000 80000000 (00000000)
+       vrfim: 7f800000 7f800000 7f800000 7f800000
+       vrfim:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+       vrfim: ff800000 ff800000 ff800000 ff800000
+       vrfim:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+       vrfim: 7fffffff 7fffffff 7fffffff 7fffffff
+       vrfim:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrfim: ffffffff ffffffff ffffffff ffffffff
+       vrfim:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+       vrfim: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
+       vrfim:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrfim: ffbfffff ffbfffff ffbfffff ffbfffff
+       vrfim:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+
        vrefp: 02bfffff 02bfffff 02bfffff 02bfffff
        vrefp:  => 7c2aa9d1 7c2aa9d1 7c2aa9d1 7c2aa9d1 (00000000)
        vrefp: 513fffff 513fffff 513fffff 513fffff
@@ -3541,14 +3641,14 @@ Altivec floating point arith insns with one arg:
        vrefp:  => 00000000 00000000 00000000 00000000 (00000000)
        vrefp: ff800000 ff800000 ff800000 ff800000
        vrefp:  => 80000000 80000000 80000000 80000000 (00000000)
+       vrefp: 7fffffff 7fffffff 7fffffff 7fffffff
+       vrefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrefp: ffffffff ffffffff ffffffff ffffffff
+       vrefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
        vrefp: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
        vrefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
        vrefp: ffbfffff ffbfffff ffbfffff ffbfffff
        vrefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-       vrefp: 7fc00000 7fc00000 7fc00000 7fc00000
-       vrefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-       vrefp: ffc00000 ffc00000 ffc00000 ffc00000
-       vrefp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
 
    vrsqrtefp: 02bfffff 02bfffff 02bfffff 02bfffff
    vrsqrtefp:  => 5dd10320 5dd10320 5dd10320 5dd10320 (00000000)
@@ -3566,14 +3666,14 @@ Altivec floating point arith insns with one arg:
    vrsqrtefp:  => 00000000 00000000 00000000 00000000 (00000000)
    vrsqrtefp: ff800000 ff800000 ff800000 ff800000
    vrsqrtefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+   vrsqrtefp: 7fffffff 7fffffff 7fffffff 7fffffff
+   vrsqrtefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+   vrsqrtefp: ffffffff ffffffff ffffffff ffffffff
+   vrsqrtefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
    vrsqrtefp: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
    vrsqrtefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
    vrsqrtefp: ffbfffff ffbfffff ffbfffff ffbfffff
    vrsqrtefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-   vrsqrtefp: 7fc00000 7fc00000 7fc00000 7fc00000
-   vrsqrtefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
-   vrsqrtefp: ffc00000 ffc00000 ffc00000 ffc00000
-   vrsqrtefp:  => ffc00000 ffc00000 ffc00000 ffc00000 (00000000)
 
 Altivec floating point compare insns:
     vcmpgtfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
@@ -3582,7 +3682,7 @@ Altivec floating point compare insns:
     vcmpgtfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgtfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
@@ -3590,7 +3690,7 @@ Altivec floating point compare insns:
     vcmpgtfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgtfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3598,7 +3698,7 @@ Altivec floating point compare insns:
     vcmpgtfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgtfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3606,7 +3706,7 @@ Altivec floating point compare insns:
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3614,7 +3714,7 @@ Altivec floating point compare insns:
     vcmpgtfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgtfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3622,7 +3722,7 @@ Altivec floating point compare insns:
     vcmpgtfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgtfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
@@ -3630,7 +3730,7 @@ Altivec floating point compare insns:
     vcmpgtfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgtfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3638,7 +3738,23 @@ Altivec floating point compare insns:
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgtfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgtfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgtfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgtfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgtfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgtfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgtfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgtfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3646,7 +3762,7 @@ Altivec floating point compare insns:
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3654,23 +3770,7 @@ Altivec floating point compare insns:
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgtfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
-    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-    vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgtfp: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgtfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
 
     vcmpeqfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
@@ -3679,7 +3779,7 @@ Altivec floating point compare insns:
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3687,7 +3787,7 @@ Altivec floating point compare insns:
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3695,7 +3795,7 @@ Altivec floating point compare insns:
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3703,7 +3803,7 @@ Altivec floating point compare insns:
     vcmpeqfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpeqfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3711,7 +3811,7 @@ Altivec floating point compare insns:
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3719,7 +3819,7 @@ Altivec floating point compare insns:
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3727,7 +3827,7 @@ Altivec floating point compare insns:
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-    vcmpeqfp: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3735,7 +3835,23 @@ Altivec floating point compare insns:
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpeqfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpeqfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpeqfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpeqfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpeqfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpeqfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpeqfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpeqfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3743,7 +3859,7 @@ Altivec floating point compare insns:
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3751,23 +3867,7 @@ Altivec floating point compare insns:
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpeqfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
-    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-    vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpeqfp: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpeqfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
     vcmpeqfp:  => 00000000 00000000 00000000 00000000 (00000000)
 
     vcmpgefp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
@@ -3776,7 +3876,7 @@ Altivec floating point compare insns:
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgefp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
@@ -3784,7 +3884,7 @@ Altivec floating point compare insns:
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgefp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3792,7 +3892,7 @@ Altivec floating point compare insns:
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgefp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3800,7 +3900,7 @@ Altivec floating point compare insns:
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgefp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3808,7 +3908,7 @@ Altivec floating point compare insns:
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgefp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3816,7 +3916,7 @@ Altivec floating point compare insns:
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgefp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
@@ -3824,7 +3924,7 @@ Altivec floating point compare insns:
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
     vcmpgefp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
-    vcmpgefp: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3832,7 +3932,23 @@ Altivec floating point compare insns:
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgefp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgefp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgefp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgefp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgefp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgefp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgefp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vcmpgefp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3840,7 +3956,7 @@ Altivec floating point compare insns:
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3848,23 +3964,7 @@ Altivec floating point compare insns:
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
     vcmpgefp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
-    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-    vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
-    vcmpgefp: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpgefp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
     vcmpgefp:  => 00000000 00000000 00000000 00000000 (00000000)
 
      vcmpbfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
@@ -3873,7 +3973,7 @@ Altivec floating point compare insns:
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
-     vcmpbfp: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
      vcmpbfp:  => 80000000 80000000 80000000 80000000 (00000000)
@@ -3881,7 +3981,7 @@ Altivec floating point compare insns:
      vcmpbfp:  => 80000000 80000000 80000000 80000000 (00000000)
      vcmpbfp: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
-     vcmpbfp: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3889,7 +3989,7 @@ Altivec floating point compare insns:
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
-     vcmpbfp: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
      vcmpbfp:  => 40000000 40000000 40000000 40000000 (00000000)
@@ -3897,7 +3997,7 @@ Altivec floating point compare insns:
      vcmpbfp:  => 40000000 40000000 40000000 40000000 (00000000)
      vcmpbfp: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
-     vcmpbfp: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3905,7 +4005,7 @@ Altivec floating point compare insns:
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
-     vcmpbfp: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3913,7 +4013,7 @@ Altivec floating point compare insns:
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
-     vcmpbfp: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
      vcmpbfp:  => 80000000 80000000 80000000 80000000 (00000000)
@@ -3921,7 +4021,7 @@ Altivec floating point compare insns:
      vcmpbfp:  => 80000000 80000000 80000000 80000000 (00000000)
      vcmpbfp: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
-     vcmpbfp: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
      vcmpbfp:  => 40000000 40000000 40000000 40000000 (00000000)
@@ -3929,7 +4029,23 @@ Altivec floating point compare insns:
      vcmpbfp:  => 40000000 40000000 40000000 40000000 (00000000)
      vcmpbfp: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => 00000000 00000000 00000000 00000000 (00000000)
-     vcmpbfp: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+     vcmpbfp: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+     vcmpbfp: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+     vcmpbfp: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+     vcmpbfp: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+     vcmpbfp: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+     vcmpbfp: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+     vcmpbfp: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+     vcmpbfp: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
@@ -3937,7 +4053,7 @@ Altivec floating point compare insns:
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
@@ -3945,23 +4061,7 @@ Altivec floating point compare insns:
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
      vcmpbfp: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
-     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-     vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-     vcmpbfp: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
+     vcmpbfp: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
      vcmpbfp:  => c0000000 c0000000 c0000000 c0000000 (00000000)
 
 Altivec floating point compare insns with flags update:
@@ -3971,7 +4071,7 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgtfp.: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgtfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
@@ -3979,7 +4079,7 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgtfp.: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -3987,7 +4087,7 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgtfp.: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -3995,7 +4095,7 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4003,7 +4103,7 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgtfp.: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4011,7 +4111,7 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgtfp.: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
    vcmpgtfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
@@ -4019,7 +4119,7 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgtfp.: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4027,7 +4127,23 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgtfp.: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgtfp.: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgtfp.: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgtfp.: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgtfp.: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgtfp.: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgtfp.: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgtfp.: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4035,7 +4151,7 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4043,23 +4159,7 @@ Altivec floating point compare insns with flags update:
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgtfp.: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
-   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-   vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgtfp.: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgtfp.: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
    vcmpgtfp.:  => 00000000 00000000 00000000 00000000 (00000020)
 
    vcmpeqfp.: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
@@ -4068,7 +4168,7 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4076,7 +4176,7 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4084,7 +4184,7 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4092,7 +4192,7 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpeqfp.: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4100,7 +4200,7 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4108,7 +4208,7 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4116,7 +4216,7 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
-   vcmpeqfp.: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4124,7 +4224,23 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpeqfp.: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpeqfp.: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpeqfp.: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpeqfp.: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpeqfp.: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpeqfp.: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpeqfp.: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpeqfp.: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4132,7 +4248,7 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4140,23 +4256,7 @@ Altivec floating point compare insns with flags update:
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpeqfp.: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
-   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-   vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpeqfp.: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpeqfp.: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
    vcmpeqfp.:  => 00000000 00000000 00000000 00000000 (00000020)
 
    vcmpgefp.: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
@@ -4165,7 +4265,7 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgefp.: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
@@ -4173,7 +4273,7 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgefp.: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4181,7 +4281,7 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgefp.: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4189,7 +4289,7 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgefp.: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4197,7 +4297,7 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgefp.: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4205,7 +4305,7 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgefp.: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
@@ -4213,7 +4313,7 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
    vcmpgefp.: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => ffffffff ffffffff ffffffff ffffffff (00000080)
-   vcmpgefp.: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4221,7 +4321,23 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgefp.: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgefp.: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgefp.: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgefp.: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgefp.: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgefp.: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgefp.: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
+   vcmpgefp.: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4229,7 +4345,7 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4237,23 +4353,7 @@ Altivec floating point compare insns with flags update:
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
    vcmpgefp.: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
-   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-   vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
-   vcmpgefp.: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
+   vcmpgefp.: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
    vcmpgefp.:  => 00000000 00000000 00000000 00000000 (00000020)
 
     vcmpbfp.: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
@@ -4262,7 +4362,7 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 02bfffff02bfffff02bfffff02bfffff, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-    vcmpbfp.: 02bfffff02bfffff02bfffff02bfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: 02bfffff02bfffff02bfffff02bfffff, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 513fffff513fffff513fffff513fffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpbfp.:  => 80000000 80000000 80000000 80000000 (00000000)
@@ -4270,7 +4370,7 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => 80000000 80000000 80000000 80000000 (00000000)
     vcmpbfp.: 513fffff513fffff513fffff513fffff, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-    vcmpbfp.: 513fffff513fffff513fffff513fffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: 513fffff513fffff513fffff513fffff, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 82bfffff82bfffff82bfffff82bfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4278,7 +4378,7 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 82bfffff82bfffff82bfffff82bfffff, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-    vcmpbfp.: 82bfffff82bfffff82bfffff82bfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: 82bfffff82bfffff82bfffff82bfffff, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: d13fffffd13fffffd13fffffd13fffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpbfp.:  => 40000000 40000000 40000000 40000000 (00000000)
@@ -4286,7 +4386,7 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => 40000000 40000000 40000000 40000000 (00000000)
     vcmpbfp.: d13fffffd13fffffd13fffffd13fffff, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-    vcmpbfp.: d13fffffd13fffffd13fffffd13fffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: d13fffffd13fffffd13fffffd13fffff, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 00000000000000000000000000000000, 02bfffff02bfffff02bfffff02bfffff
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4294,7 +4394,7 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 00000000000000000000000000000000, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-    vcmpbfp.: 00000000000000000000000000000000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: 00000000000000000000000000000000, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 80000000800000008000000080000000, 02bfffff02bfffff02bfffff02bfffff
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
@@ -4302,7 +4402,7 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 80000000800000008000000080000000, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-    vcmpbfp.: 80000000800000008000000080000000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: 80000000800000008000000080000000, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 7f8000007f8000007f8000007f800000, 02bfffff02bfffff02bfffff02bfffff
     vcmpbfp.:  => 80000000 80000000 80000000 80000000 (00000000)
@@ -4310,7 +4410,7 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => 80000000 80000000 80000000 80000000 (00000000)
     vcmpbfp.: 7f8000007f8000007f8000007f800000, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-    vcmpbfp.: 7f8000007f8000007f8000007f800000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: 7f8000007f8000007f8000007f800000, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: ff800000ff800000ff800000ff800000, 02bfffff02bfffff02bfffff02bfffff
     vcmpbfp.:  => 40000000 40000000 40000000 40000000 (00000000)
@@ -4318,7 +4418,23 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => 40000000 40000000 40000000 40000000 (00000000)
     vcmpbfp.: ff800000ff800000ff800000ff800000, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => 00000000 00000000 00000000 00000000 (00000020)
-    vcmpbfp.: ff800000ff800000ff800000ff800000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: ff800000ff800000ff800000ff800000, ffffffffffffffffffffffffffffffff
+    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+    vcmpbfp.: 7fffffff7fffffff7fffffff7fffffff, 02bfffff02bfffff02bfffff02bfffff
+    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+    vcmpbfp.: 7fffffff7fffffff7fffffff7fffffff, d13fffffd13fffffd13fffffd13fffff
+    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+    vcmpbfp.: 7fffffff7fffffff7fffffff7fffffff, 7f8000007f8000007f8000007f800000
+    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+    vcmpbfp.: 7fffffff7fffffff7fffffff7fffffff, ffffffffffffffffffffffffffffffff
+    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+    vcmpbfp.: ffffffffffffffffffffffffffffffff, 02bfffff02bfffff02bfffff02bfffff
+    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+    vcmpbfp.: ffffffffffffffffffffffffffffffff, d13fffffd13fffffd13fffffd13fffff
+    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+    vcmpbfp.: ffffffffffffffffffffffffffffffff, 7f8000007f8000007f8000007f800000
+    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
+    vcmpbfp.: ffffffffffffffffffffffffffffffff, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
@@ -4326,7 +4442,7 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: 7fbfffff7fbfffff7fbfffff7fbfffff, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: ffbfffffffbfffffffbfffffffbfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
@@ -4334,23 +4450,204 @@ Altivec floating point compare insns with flags update:
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
     vcmpbfp.: ffbfffffffbfffffffbfffffffbfffff, 7f8000007f8000007f8000007f800000
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: ffbfffffffbfffffffbfffffffbfffff, ffbfffffffbfffffffbfffffffbfffff
-    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: 7fc000007fc000007fc000007fc00000, 02bfffff02bfffff02bfffff02bfffff
-    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: 7fc000007fc000007fc000007fc00000, d13fffffd13fffffd13fffffd13fffff
-    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: 7fc000007fc000007fc000007fc00000, 7f8000007f8000007f8000007f800000
-    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: 7fc000007fc000007fc000007fc00000, ffbfffffffbfffffffbfffffffbfffff
-    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: ffc00000ffc00000ffc00000ffc00000, 02bfffff02bfffff02bfffff02bfffff
-    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: ffc00000ffc00000ffc00000ffc00000, d13fffffd13fffffd13fffffd13fffff
-    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: ffc00000ffc00000ffc00000ffc00000, 7f8000007f8000007f8000007f800000
-    vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
-    vcmpbfp.: ffc00000ffc00000ffc00000ffc00000, ffbfffffffbfffffffbfffffffbfffff
+    vcmpbfp.: ffbfffffffbfffffffbfffffffbfffff, ffffffffffffffffffffffffffffffff
     vcmpbfp.:  => c0000000 c0000000 c0000000 c0000000 (00000000)
 
-All done. Tested 307 different instructions
+Altivec float special insns:
+       vcfux: 02bfffff ( 2.821186e-37),  0 => 4c300000 ( 4.613734e+07) (00000000)
+       vcfux: 02bfffff ( 2.821186e-37),  9 => 47b00000 ( 9.011200e+04) (00000000)
+       vcfux: 02bfffff ( 2.821186e-37), 18 => 43300000 ( 1.760000e+02) (00000000)
+       vcfux: 02bfffff ( 2.821186e-37), 27 => 3eb00000 ( 3.437500e-01) (00000000)
+       vcfux: 513fffff ( 5.153960e+10),  0 => 4ea28000 ( 1.363149e+09) (00000000)
+       vcfux: 513fffff ( 5.153960e+10),  9 => 4a228000 ( 2.662400e+06) (00000000)
+       vcfux: 513fffff ( 5.153960e+10), 18 => 45a28000 ( 5.200000e+03) (00000000)
+       vcfux: 513fffff ( 5.153960e+10), 27 => 41228000 ( 1.015625e+01) (00000000)
+       vcfux: 82bfffff (-2.821186e-37),  0 => 4f02c000 ( 2.193621e+09) (00000000)
+       vcfux: 82bfffff (-2.821186e-37),  9 => 4a82c000 ( 4.284416e+06) (00000000)
+       vcfux: 82bfffff (-2.821186e-37), 18 => 4602c000 ( 8.368000e+03) (00000000)
+       vcfux: 82bfffff (-2.821186e-37), 27 => 4182c000 ( 1.634375e+01) (00000000)
+       vcfux: d13fffff (-5.153960e+10),  0 => 4f514000 ( 3.510632e+09) (00000000)
+       vcfux: d13fffff (-5.153960e+10),  9 => 4ad14000 ( 6.856704e+06) (00000000)
+       vcfux: d13fffff (-5.153960e+10), 18 => 46514000 ( 1.339200e+04) (00000000)
+       vcfux: d13fffff (-5.153960e+10), 27 => 41d14000 ( 2.615625e+01) (00000000)
+       vcfux: 00000000 ( 0.000000e+00),  0 => 00000000 ( 0.000000e+00) (00000000)
+       vcfux: 00000000 ( 0.000000e+00),  9 => 00000000 ( 0.000000e+00) (00000000)
+       vcfux: 00000000 ( 0.000000e+00), 18 => 00000000 ( 0.000000e+00) (00000000)
+       vcfux: 00000000 ( 0.000000e+00), 27 => 00000000 ( 0.000000e+00) (00000000)
+       vcfux: 80000000 (-0.000000e+00),  0 => 4f000000 ( 2.147484e+09) (00000000)
+       vcfux: 80000000 (-0.000000e+00),  9 => 4a800000 ( 4.194304e+06) (00000000)
+       vcfux: 80000000 (-0.000000e+00), 18 => 46000000 ( 8.192000e+03) (00000000)
+       vcfux: 80000000 (-0.000000e+00), 27 => 41800000 ( 1.600000e+01) (00000000)
+       vcfux: 7f800000 (          inf),  0 => 4eff0000 ( 2.139095e+09) (00000000)
+       vcfux: 7f800000 (          inf),  9 => 4a7f0000 ( 4.177920e+06) (00000000)
+       vcfux: 7f800000 (          inf), 18 => 45ff0000 ( 8.160000e+03) (00000000)
+       vcfux: 7f800000 (          inf), 27 => 417f0000 ( 1.593750e+01) (00000000)
+       vcfux: ff800000 (         -inf),  0 => 4f7f8000 ( 4.286579e+09) (00000000)
+       vcfux: ff800000 (         -inf),  9 => 4aff8000 ( 8.372224e+06) (00000000)
+       vcfux: ff800000 (         -inf), 18 => 467f8000 ( 1.635200e+04) (00000000)
+       vcfux: ff800000 (         -inf), 27 => 41ff8000 ( 3.193750e+01) (00000000)
+       vcfux: 7fffffff (          nan),  0 => 4f000000 ( 2.147484e+09) (00000000)
+       vcfux: 7fffffff (          nan),  9 => 4a800000 ( 4.194304e+06) (00000000)
+       vcfux: 7fffffff (          nan), 18 => 46000000 ( 8.192000e+03) (00000000)
+       vcfux: 7fffffff (          nan), 27 => 41800000 ( 1.600000e+01) (00000000)
+       vcfux: ffffffff (          nan),  0 => 4f800000 ( 4.294967e+09) (00000000)
+       vcfux: ffffffff (          nan),  9 => 4b000000 ( 8.388608e+06) (00000000)
+       vcfux: ffffffff (          nan), 18 => 46800000 ( 1.638400e+04) (00000000)
+       vcfux: ffffffff (          nan), 27 => 42000000 ( 3.200000e+01) (00000000)
+       vcfux: 7fbfffff (          nan),  0 => 4eff8000 ( 2.143289e+09) (00000000)
+       vcfux: 7fbfffff (          nan),  9 => 4a7f8000 ( 4.186112e+06) (00000000)
+       vcfux: 7fbfffff (          nan), 18 => 45ff8000 ( 8.176000e+03) (00000000)
+       vcfux: 7fbfffff (          nan), 27 => 417f8000 ( 1.596875e+01) (00000000)
+       vcfux: ffbfffff (          nan),  0 => 4f7fc000 ( 4.290773e+09) (00000000)
+       vcfux: ffbfffff (          nan),  9 => 4affc000 ( 8.380416e+06) (00000000)
+       vcfux: ffbfffff (          nan), 18 => 467fc000 ( 1.636800e+04) (00000000)
+       vcfux: ffbfffff (          nan), 27 => 41ffc000 ( 3.196875e+01) (00000000)
+
+       vcfsx: 02bfffff ( 2.821186e-37),  0 => 4c300000 ( 4.613734e+07) (00000000)
+       vcfsx: 02bfffff ( 2.821186e-37),  9 => 47b00000 ( 9.011200e+04) (00000000)
+       vcfsx: 02bfffff ( 2.821186e-37), 18 => 43300000 ( 1.760000e+02) (00000000)
+       vcfsx: 02bfffff ( 2.821186e-37), 27 => 3eb00000 ( 3.437500e-01) (00000000)
+       vcfsx: 513fffff ( 5.153960e+10),  0 => 4ea28000 ( 1.363149e+09) (00000000)
+       vcfsx: 513fffff ( 5.153960e+10),  9 => 4a228000 ( 2.662400e+06) (00000000)
+       vcfsx: 513fffff ( 5.153960e+10), 18 => 45a28000 ( 5.200000e+03) (00000000)
+       vcfsx: 513fffff ( 5.153960e+10), 27 => 41228000 ( 1.015625e+01) (00000000)
+       vcfsx: 82bfffff (-2.821186e-37),  0 => cefa8000 (-2.101346e+09) (00000000)
+       vcfsx: 82bfffff (-2.821186e-37),  9 => ca7a8000 (-4.104192e+06) (00000000)
+       vcfsx: 82bfffff (-2.821186e-37), 18 => c5fa8000 (-8.016000e+03) (00000000)
+       vcfsx: 82bfffff (-2.821186e-37), 27 => c17a8000 (-1.565625e+01) (00000000)
+       vcfsx: d13fffff (-5.153960e+10),  0 => ce3b0000 (-7.843348e+08) (00000000)
+       vcfsx: d13fffff (-5.153960e+10),  9 => c9bb0000 (-1.531904e+06) (00000000)
+       vcfsx: d13fffff (-5.153960e+10), 18 => c53b0000 (-2.992000e+03) (00000000)
+       vcfsx: d13fffff (-5.153960e+10), 27 => c0bb0000 (-5.843750e+00) (00000000)
+       vcfsx: 00000000 ( 0.000000e+00),  0 => 00000000 ( 0.000000e+00) (00000000)
+       vcfsx: 00000000 ( 0.000000e+00),  9 => 00000000 ( 0.000000e+00) (00000000)
+       vcfsx: 00000000 ( 0.000000e+00), 18 => 00000000 ( 0.000000e+00) (00000000)
+       vcfsx: 00000000 ( 0.000000e+00), 27 => 00000000 ( 0.000000e+00) (00000000)
+       vcfsx: 80000000 (-0.000000e+00),  0 => cf000000 (-2.147484e+09) (00000000)
+       vcfsx: 80000000 (-0.000000e+00),  9 => ca800000 (-4.194304e+06) (00000000)
+       vcfsx: 80000000 (-0.000000e+00), 18 => c6000000 (-8.192000e+03) (00000000)
+       vcfsx: 80000000 (-0.000000e+00), 27 => c1800000 (-1.600000e+01) (00000000)
+       vcfsx: 7f800000 (          inf),  0 => 4eff0000 ( 2.139095e+09) (00000000)
+       vcfsx: 7f800000 (          inf),  9 => 4a7f0000 ( 4.177920e+06) (00000000)
+       vcfsx: 7f800000 (          inf), 18 => 45ff0000 ( 8.160000e+03) (00000000)
+       vcfsx: 7f800000 (          inf), 27 => 417f0000 ( 1.593750e+01) (00000000)
+       vcfsx: ff800000 (         -inf),  0 => cb000000 (-8.388608e+06) (00000000)
+       vcfsx: ff800000 (         -inf),  9 => c6800000 (-1.638400e+04) (00000000)
+       vcfsx: ff800000 (         -inf), 18 => c2000000 (-3.200000e+01) (00000000)
+       vcfsx: ff800000 (         -inf), 27 => bd800000 (-6.250000e-02) (00000000)
+       vcfsx: 7fffffff (          nan),  0 => 4f000000 ( 2.147484e+09) (00000000)
+       vcfsx: 7fffffff (          nan),  9 => 4a800000 ( 4.194304e+06) (00000000)
+       vcfsx: 7fffffff (          nan), 18 => 46000000 ( 8.192000e+03) (00000000)
+       vcfsx: 7fffffff (          nan), 27 => 41800000 ( 1.600000e+01) (00000000)
+       vcfsx: ffffffff (          nan),  0 => bf800000 (-1.000000e+00) (00000000)
+       vcfsx: ffffffff (          nan),  9 => bb000000 (-1.953125e-03) (00000000)
+       vcfsx: ffffffff (          nan), 18 => b6800000 (-3.814697e-06) (00000000)
+       vcfsx: ffffffff (          nan), 27 => b2000000 (-7.450581e-09) (00000000)
+       vcfsx: 7fbfffff (          nan),  0 => 4eff8000 ( 2.143289e+09) (00000000)
+       vcfsx: 7fbfffff (          nan),  9 => 4a7f8000 ( 4.186112e+06) (00000000)
+       vcfsx: 7fbfffff (          nan), 18 => 45ff8000 ( 8.176000e+03) (00000000)
+       vcfsx: 7fbfffff (          nan), 27 => 417f8000 ( 1.596875e+01) (00000000)
+       vcfsx: ffbfffff (          nan),  0 => ca800002 (-4.194305e+06) (00000000)
+       vcfsx: ffbfffff (          nan),  9 => c6000002 (-8.192002e+03) (00000000)
+       vcfsx: ffbfffff (          nan), 18 => c1800002 (-1.600000e+01) (00000000)
+       vcfsx: ffbfffff (          nan), 27 => bd000002 (-3.125001e-02) (00000000)
+
+      vctuxs: 02bfffff ( 2.821186e-37),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 02bfffff ( 2.821186e-37),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 02bfffff ( 2.821186e-37), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 02bfffff ( 2.821186e-37), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 513fffff ( 5.153960e+10),  0 => ffffffff (          nan) (00000000)
+      vctuxs: 513fffff ( 5.153960e+10),  9 => ffffffff (          nan) (00000000)
+      vctuxs: 513fffff ( 5.153960e+10), 18 => ffffffff (          nan) (00000000)
+      vctuxs: 513fffff ( 5.153960e+10), 27 => ffffffff (          nan) (00000000)
+      vctuxs: 82bfffff (-2.821186e-37),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 82bfffff (-2.821186e-37),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 82bfffff (-2.821186e-37), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 82bfffff (-2.821186e-37), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: d13fffff (-5.153960e+10),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: d13fffff (-5.153960e+10),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: d13fffff (-5.153960e+10), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: d13fffff (-5.153960e+10), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 00000000 ( 0.000000e+00),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 00000000 ( 0.000000e+00),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 00000000 ( 0.000000e+00), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 00000000 ( 0.000000e+00), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 80000000 (-0.000000e+00),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 80000000 (-0.000000e+00),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 80000000 (-0.000000e+00), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 80000000 (-0.000000e+00), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 7f800000 (          inf),  0 => ffffffff (          nan) (00000000)
+      vctuxs: 7f800000 (          inf),  9 => ffffffff (          nan) (00000000)
+      vctuxs: 7f800000 (          inf), 18 => ffffffff (          nan) (00000000)
+      vctuxs: 7f800000 (          inf), 27 => ffffffff (          nan) (00000000)
+      vctuxs: ff800000 (         -inf),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ff800000 (         -inf),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ff800000 (         -inf), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ff800000 (         -inf), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 7fffffff (          nan),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 7fffffff (          nan),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 7fffffff (          nan), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 7fffffff (          nan), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ffffffff (          nan),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ffffffff (          nan),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ffffffff (          nan), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ffffffff (          nan), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 7fbfffff (          nan),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 7fbfffff (          nan),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 7fbfffff (          nan), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: 7fbfffff (          nan), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ffbfffff (          nan),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ffbfffff (          nan),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ffbfffff (          nan), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctuxs: ffbfffff (          nan), 27 => 00000000 ( 0.000000e+00) (00000000)
+
+      vctsxs: 02bfffff ( 2.821186e-37),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 02bfffff ( 2.821186e-37),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 02bfffff ( 2.821186e-37), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 02bfffff ( 2.821186e-37), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 513fffff ( 5.153960e+10),  0 => 7fffffff (          nan) (00000000)
+      vctsxs: 513fffff ( 5.153960e+10),  9 => 7fffffff (          nan) (00000000)
+      vctsxs: 513fffff ( 5.153960e+10), 18 => 7fffffff (          nan) (00000000)
+      vctsxs: 513fffff ( 5.153960e+10), 27 => 7fffffff (          nan) (00000000)
+      vctsxs: 82bfffff (-2.821186e-37),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 82bfffff (-2.821186e-37),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 82bfffff (-2.821186e-37), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 82bfffff (-2.821186e-37), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: d13fffff (-5.153960e+10),  0 => 80000000 (-0.000000e+00) (00000000)
+      vctsxs: d13fffff (-5.153960e+10),  9 => 80000000 (-0.000000e+00) (00000000)
+      vctsxs: d13fffff (-5.153960e+10), 18 => 80000000 (-0.000000e+00) (00000000)
+      vctsxs: d13fffff (-5.153960e+10), 27 => 80000000 (-0.000000e+00) (00000000)
+      vctsxs: 00000000 ( 0.000000e+00),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 00000000 ( 0.000000e+00),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 00000000 ( 0.000000e+00), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 00000000 ( 0.000000e+00), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 80000000 (-0.000000e+00),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 80000000 (-0.000000e+00),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 80000000 (-0.000000e+00), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 80000000 (-0.000000e+00), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 7f800000 (          inf),  0 => 7fffffff (          nan) (00000000)
+      vctsxs: 7f800000 (          inf),  9 => 7fffffff (          nan) (00000000)
+      vctsxs: 7f800000 (          inf), 18 => 7fffffff (          nan) (00000000)
+      vctsxs: 7f800000 (          inf), 27 => 7fffffff (          nan) (00000000)
+      vctsxs: ff800000 (         -inf),  0 => 80000000 (-0.000000e+00) (00000000)
+      vctsxs: ff800000 (         -inf),  9 => 80000000 (-0.000000e+00) (00000000)
+      vctsxs: ff800000 (         -inf), 18 => 80000000 (-0.000000e+00) (00000000)
+      vctsxs: ff800000 (         -inf), 27 => 80000000 (-0.000000e+00) (00000000)
+      vctsxs: 7fffffff (          nan),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 7fffffff (          nan),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 7fffffff (          nan), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 7fffffff (          nan), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: ffffffff (          nan),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: ffffffff (          nan),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: ffffffff (          nan), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: ffffffff (          nan), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 7fbfffff (          nan),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 7fbfffff (          nan),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 7fbfffff (          nan), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: 7fbfffff (          nan), 27 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: ffbfffff (          nan),  0 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: ffbfffff (          nan),  9 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: ffbfffff (          nan), 18 => 00000000 ( 0.000000e+00) (00000000)
+      vctsxs: ffbfffff (          nan), 27 => 00000000 ( 0.000000e+00) (00000000)
+
+All done. Tested 315 different instructions

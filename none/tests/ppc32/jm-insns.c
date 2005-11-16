@@ -2579,8 +2579,6 @@ static test_t tests_afa_ops_two[] = {
 #endif /* defined (HAS_ALTIVEC) */
 
 #if defined (HAS_ALTIVEC)
-
-#if 0   // TODO: Not yet supported
 static void test_vrfin (void)
 {
     __asm__ __volatile__ ("vrfin        17, 14");
@@ -2600,7 +2598,6 @@ static void test_vrfim (void)
 {
     __asm__ __volatile__ ("vrfim        17, 14");
 }
-#endif
 
 static void test_vrefp (void)
 {
@@ -2625,10 +2622,10 @@ static void test_vexptefp (void)
 #endif
 
 static test_t tests_afa_ops_one[] = {
-    //    { &test_vrfin           , "       vrfin", },   // TODO: Not yet supported
-    //    { &test_vrfiz           , "       vrfiz", },   // TODO: Not yet supported
-    //    { &test_vrfip           , "       vrfip", },   // TODO: Not yet supported
-    //    { &test_vrfim           , "       vrfim", },   // TODO: Not yet supported
+    { &test_vrfin           , "       vrfin", },
+    { &test_vrfiz           , "       vrfiz", },
+    { &test_vrfip           , "       vrfip", },
+    { &test_vrfim           , "       vrfim", },
     { &test_vrefp           , "       vrefp", },
     { &test_vrsqrtefp       , "   vrsqrtefp", },
     //    { &test_vlogefp         , "     vlogefp", },   // TODO: Not yet supported
@@ -2693,6 +2690,36 @@ static test_t tests_afcr_ops_two[] = {
     { &test_vcmpeqfp_       , "   vcmpeqfp.", },
     { &test_vcmpgefp_       , "   vcmpgefp.", },
     { &test_vcmpbfp_        , "    vcmpbfp.", },
+    { NULL,                   NULL,           },
+};
+#endif /* defined (HAS_ALTIVEC) */
+
+#if defined (HAS_ALTIVEC)
+static void test_vcfux (void)
+{
+    __asm__ __volatile__ ("vcfux        17, 14, 0");
+}
+
+static void test_vcfsx (void)
+{
+    __asm__ __volatile__ ("vcfsx        17, 14, 0");
+}
+
+static void test_vctuxs (void)
+{
+    __asm__ __volatile__ ("vctuxs       17, 14, 0");
+}
+
+static void test_vctsxs (void)
+{
+    __asm__ __volatile__ ("vctsxs       17, 14, 0");
+}
+
+static test_t tests_av_float_ops_spe[] = {
+    { &test_vcfux           , "       vcfux", },
+    { &test_vcfsx           , "       vcfsx", },
+    { &test_vctuxs          , "      vctuxs", },
+    { &test_vctsxs          , "      vctsxs", },
     { NULL,                   NULL,           },
 };
 #endif /* defined (HAS_ALTIVEC) */
@@ -3497,6 +3524,13 @@ static test_table_t all_tests[] = {
         0x01050302,
     },
 #endif /* defined (HAS_ALTIVEC) */
+#if defined (HAS_ALTIVEC)
+    {
+        tests_av_float_ops_spe,
+        "Altivec float special insns",
+        0x00050207,
+    },
+#endif /* defined (HAS_ALTIVEC) */
 #if defined (IS_PPC405)
     {
         tests_p4m_ops_two     ,
@@ -3753,14 +3787,14 @@ static void build_vfargs_table (void)
     * Exponent goes from 0 to ((1 << 9) - 1)
     * Mantissa goes from 1 to ((1 << 24) - 1)
     * + special values:
-    * +0.0      : 0 0x00 0x00000000
-    * -0.0      : 1 0x00 0x00000000
-    * +infinity : 0 0xFF 0x00000000
-    * -infinity : 1 0xFF 0x00000000
-    * +SNaN     : 0 0xFF 0x7FFFFFFF
-    * -SNaN     : 1 0xFF 0x7FFFFFFF
-    * +QNaN     : 0 0xFF 0x80000000
-    * -QNaN     : 1 0xFF 0x80000000
+    * +0.0      : 0 0x00 0x000000            => 0x00000000
+    * -0.0      : 1 0x00 0x000000            => 0x80000000
+    * +infinity : 0 0xFF 0x000000            => 0x7F800000
+    * -infinity : 1 0xFF 0x000000            => 0xFF800000
+    * +SNaN     : 0 0xFF 0x7FFFFF (non-zero) => 0x7FFFFFFF
+    * -SNaN     : 1 0xFF 0x7FFFFF (non-zero) => 0xFFFFFFFF
+    * +QNaN     : 0 0xFF 0x3FFFFF (non-zero) => 0x7FBFFFFF
+    * -QNaN     : 1 0xFF 0x3FFFFF (non-zero) => 0xFFBFFFFF
     * (8 values)
     */
    uint32_t mant;
@@ -3828,27 +3862,27 @@ static void build_vfargs_table (void)
 
    /* NaN: exponent all 1s, non-zero fraction */
    /* SNaN is a NaN with the most significant fraction bit clear.*/
-   /* +SNaN     : 0 0xFF 0x3FFFFF */
+   /* +SNaN     : 0 0xFF 0x7FFFFF */
    s = 0;
    exp = 0xFF;
-   mant = 0x3FFFFF;
+   mant = 0x7FFFFF;
    register_vfarg(&vfargs[i++], s, exp, mant);
-   /* -SNaN     : 1 0xFF 0x3FFFFF */
+   /* -SNaN     : 1 0xFF 0x7FFFFF */
    s = 1;
    exp = 0xFF;
-   mant = 0x3FFFFF;
+   mant = 0x7FFFFF;
    register_vfarg(&vfargs[i++], s, exp, mant);
 
    /* QNaN is a NaN with the most significant fraction bit set */
-   /* +QNaN     : 0 0xFF 0x400000 */
+   /* +QNaN     : 0 0xFF 0x3F0000 */
    s = 0;
    exp = 0xFF;
-   mant = 0x400000;
+   mant = 0x3FFFFF;
    register_vfarg(&vfargs[i++], s, exp, mant);
-   /* -QNaN     : 1 0xFF 0x400000 */
+   /* -QNaN     : 1 0xFF 0x3F0000 */
    s = 1;
    exp = 0xFF;
-   mant = 0x400000;
+   mant = 0x3FFFFF;
    register_vfarg(&vfargs[i++], s, exp, mant);
    AB_DPRINTF("Registered %d vfargs values\n", i);
 
@@ -5464,7 +5498,7 @@ static void test_av_int_two_args (const char* name, test_func_t func,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
          // reset VSCR and CR
-         volatile vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5593,7 +5627,7 @@ static void vs128_cb (const char* name, test_func_t func,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,0x00010000 };
+         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5661,7 +5695,7 @@ static void vsplt_cb (const char* name, test_func_t func,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,0x00010000 };
+         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5723,7 +5757,7 @@ static void vspltis_cb (const char* name, test_func_t func,
       __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
       
       // reset VSCR and CR
-      vector unsigned int vscr = (vector unsigned int){ 0,0,0,0x00010000 };
+      vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
       flags = 0;
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
       __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5781,7 +5815,7 @@ static void vsldoi_cb (const char* name, test_func_t func,
             __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
             
             // reset VSCR and CR
-            vector unsigned int vscr = (vector unsigned int){ 0,0,0,0x00010000 };
+            vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
             flags = 0;
             __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
             __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5846,7 +5880,7 @@ static void lvs_cb (const char *name, test_func_t func,
       __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
       
       // reset VSCR and CR
-      vector unsigned int vscr = (vector unsigned int){ 0,0,0,0x00010000 };
+      vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
       flags = 0;
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
       __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));         
@@ -5951,7 +5985,7 @@ static void test_av_int_ld_two_regs (const char *name,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
          
          // reset VSCR and CR
-         volatile vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6010,7 +6044,7 @@ static void test_av_int_st_three_regs (const char *name,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
          
          // reset VSCR and CR
-         volatile vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6076,7 +6110,7 @@ static void test_av_float_one_arg (const char* name, test_func_t func,
       __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
       // reset VSCR and CR
-      vector unsigned int vscr = (vector unsigned int){ 0,0,0,0 };
+      vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
       flags = 0;
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
       __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6132,7 +6166,7 @@ static void test_av_float_two_args (const char* name, test_func_t func,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,0 };
+         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6195,7 +6229,7 @@ static void test_av_float_three_args (const char* name, test_func_t func,
             __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
             // reset VSCR and CR
-            vector unsigned int vscr = (vector unsigned int){ 0,0,0,0 };
+            vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
             flags = 0;
             __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
             __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6242,6 +6276,102 @@ static void test_av_float_three_args (const char* name, test_func_t func,
    }
 }
 
+static void vcvt_cb (const char* name, test_func_t func,
+                     unused uint32_t test_flags)
+{
+   volatile uint32_t flags, tmpcr;
+   volatile vector unsigned int tmpvscr;
+   uint32_t func_buf[2], *p;
+   int i,j;
+
+   for (i=0; i<nb_vfargs; i++) {
+      vector unsigned int vec_in1 = (vector unsigned int)vfargs[i];
+
+      for (j=0; j<32; j+=9) {
+         vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+
+         /* Patch up the instruction */
+         p = (void *)func;
+         func_buf[1] = p[1];
+         patch_op_imm(func_buf, p, j, 16, 5);
+         func = (void *)func_buf;
+         
+         /* Save flags */
+         __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
+         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+
+         // reset VSCR and CR
+         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         flags = 0;
+         __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
+         __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
+         
+         // load input -> r14
+         __asm__ __volatile__ ("vor 14,%0,%0" : : "vr" (vec_in1));
+         
+         // do stuff
+         (*func)();
+         
+         // retrieve output <- r17
+         __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+         
+         // get CR,VSCR flags
+         __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
+         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         
+         /* Restore flags */
+         __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
+         __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
+
+         unsigned int* src1   = (unsigned int*)&vec_in1;
+         unsigned int* dst    = (unsigned int*)&vec_out;
+         printf("%s: %08x (%13e), %2u", name, src1[0], *(float*)(&src1[0]), j);
+         printf(" => %08x (%13e) ", dst[0], *(float*)(&dst[0]));
+//         printf(" => %08x ", dst[0]);
+#if defined TEST_VSCR_SAT
+            unsigned int* p_vscr = (unsigned int*)&vscr;
+            printf("(%08x, %08x)\n", flags, p_vscr[3]);
+#else
+            printf("(%08x)\n", flags);
+#endif
+      }
+      if (verbose) printf("\n");
+   }
+}
+
+static special_t special_av_float_ops[] = {
+   {
+      "vcfux", /* One reg, one 5-bit uimm argument */
+      &vcvt_cb,
+   },
+   {
+      "vcfsx", /* One reg, one 5-bit uimm argument */
+      &vcvt_cb,
+   },
+   {
+      "vctuxs", /* One reg, one 5-bit uimm argument */
+      &vcvt_cb,
+   },
+   {
+      "vcfux", /* One reg, one 5-bit uimm argument */
+      &vcvt_cb,
+   },
+   {
+      "vctsxs", /* One reg, one 5-bit uimm argument */
+      &vcvt_cb,
+   },
+   {
+      NULL,
+      NULL,
+   },
+};
+
+static void test_av_float_special (const char* name, test_func_t func,
+                                   uint32_t test_flags)
+{
+   test_special(special_av_float_ops, name, func, test_flags);
+}
+
 /* Used in do_tests, indexed by flags->nb_args
    Elements correspond to enum test_flags::num args
 */
@@ -6252,7 +6382,7 @@ static test_loop_t altivec_float_loops[] = {
    &test_av_float_two_args,
    NULL,
    NULL,
-   NULL,
+   &test_av_float_special,
    NULL,
    NULL,
    NULL,

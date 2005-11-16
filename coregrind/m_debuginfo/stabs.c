@@ -852,29 +852,39 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       }
 	 
       while(*p != ';') {
-	 Char *end;
+	 Char *start = p;
 	 Char *name;
 	 UInt off, sz;
 	 SymType *fieldty;
 
-         end = SKIPPAST(p, ':', "method name") - 1;
+         if (VG_(strncmp)(p, "operator<::", 11) == 0 ||
+             VG_(strncmp)(p, "operator>::", 11) == 0 ||
+             VG_(strncmp)(p, "operator<=::", 12) == 0 ||
+             VG_(strncmp)(p, "operator>=::", 12) == 0 ||
+             VG_(strncmp)(p, "operator<<::", 12) == 0 ||
+             VG_(strncmp)(p, "operator>>::", 12) == 0 ||
+             VG_(strncmp)(p, "operator->::", 12) == 0) {
+            p = SKIPPAST(p, ':', "member name");
+         } else {
+            p = templ_name(p);
+            EXPECT(':', "member name");
+         }
 
-	 if (end[1] == ':') {
+	 if (p[0] == ':') {
 	    /* c++ method names end in :: */
 	    method = True;
 
-	    if (VG_(strncmp)(p, "op$", 3) == 0) {
+	    if (VG_(strncmp)(start, "op$", 3) == 0) {
 	       /* According to stabs.info, operators are named
 		  ( "op$::" OP '.' ), where OP is +=, etc.  Current
 		  gcc doesn't seem to use this; operators just
 		  appear as "operator==::" */
-	       end = SKIPPAST(end, '.', "op$ name");
+	       p = SKIPPAST(p, '.', "op$ name");
 	    }
-	    name = ML_(addStr)(si, p, end-p);
-	    p = end+2;
+	    name = ML_(addStr)(si, start, p-start-1);
+	    p = p+1;
 	 } else {
-	    name = ML_(addStr)(si, p, end-p);
-	    p = end+1;
+	    name = ML_(addStr)(si, start, p-start-1);
 	 }
 
 	 if (method) {

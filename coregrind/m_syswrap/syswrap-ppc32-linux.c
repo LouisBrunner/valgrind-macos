@@ -387,6 +387,7 @@ DECL_TEMPLATE(ppc32_linux, sys_fstat64);
 DECL_TEMPLATE(ppc32_linux, sys_ipc);
 DECL_TEMPLATE(ppc32_linux, sys_clone);
 DECL_TEMPLATE(ppc32_linux, sys_sigreturn);
+DECL_TEMPLATE(ppc32_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(ppc32_linux, sys_sigaction);
 
 PRE(sys_socketcall)
@@ -1015,20 +1016,32 @@ PRE(sys_sigreturn)
    //   sigreturn sequence's "popl %eax" and handler ret addr */
    tst = VG_(get_ThreadState)(tid);
    //tst->arch.vex.guest_ESP -= sizeof(Addr)+sizeof(Word);
+   // Should we do something equivalent on ppc32?  Who knows.
 
    ///* This is only so that the EIP is (might be) useful to report if
    //   something goes wrong in the sigreturn */
    //ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
+   // Should we do something equivalent on ppc32?  Who knows.
 
    VG_(sigframe_destroy)(tid, False);
 
    /* For unclear reasons, it appears we need the syscall to return
-      without changing %EAX.  Since %EAX is the return value, and can
+      without changing R3.  Since R3 is the return value, and can
       denote either success or failure, we must set up so that the
-      driver logic copies it back unchanged.  Also, note %EAX is of
+      driver logic copies it back unchanged.  Also, note R3 is of
       the guest registers written by VG_(sigframe_destroy). */
-   //SET_STATUS_from_SysRes( VG_(mk_SysRes_x86_linux)( tst->arch.vex.guest_EAX ) );
-   SET_STATUS_from_SysRes(
+   /* jrs 16 Nov 05: for some reason this occasionally causes the 
+      is-this-a-sane-error-value sanity check to fail:
+      m_syswrap/syswrap-ppc32-linux.c:1037
+        (vgSysWrap_ppc32_linux_sys_sigreturn_before): 
+        Assertion 'wzz >= 0 && wzz < 10000' failed.
+      Hence use a sanity-check-free version.  
+      Perhaps we should ignore CR0.S0 here?
+      In general I have no idea what this is for or if it is necessary.
+      It's a conceptual copy-n-paste from the x86 equivalent, but I'm 
+      equally unclear as to whether it is needed there either.
+   */
+   SET_STATUS_from_SysRes_NO_SANITY_CHECK(
       VG_(mk_SysRes_ppc32_linux)( 
          tst->arch.vex.guest_GPR3,
          /* get CR0.SO */
@@ -1040,47 +1053,41 @@ PRE(sys_sigreturn)
    *flags |= SfPollAfter;
 }
 
-//.. PRE(sys_sigreturn, Special)
-//.. {
-//..    PRINT("sigreturn ( )");
-//.. 
-//..    /* Adjust esp to point to start of frame; skip back up over
-//..       sigreturn sequence's "popl %eax" and handler ret addr */
-//..    tst->arch.vex.guest_ESP -= sizeof(Addr)+sizeof(Word);
-//.. 
-//..    /* This is only so that the EIP is (might be) useful to report if
-//..       something goes wrong in the sigreturn */
-//..    VG_(restart_syscall)(&tst->arch);
-//.. 
-//..    VG_(sigframe_destroy)(tid, False);
-//.. 
-//..    /* Keep looking for signals until there are none */
-//..    VG_(poll_signals)(tid);
-//.. 
-//..    /* placate return-must-be-set assertion */
-//..    SET_RESULT(RES);
-//.. }
+PRE(sys_rt_sigreturn)
+{
+   ThreadState* tst;
+   PRINT("rt_sigreturn ( )");
 
-//.. PRE(sys_rt_sigreturn, Special)
-//.. {
-//..    PRINT("rt_sigreturn ( )");
-//.. 
-//..    /* Adjust esp to point to start of frame; skip back up over handler
-//..       ret addr */
-//..    tst->arch.vex.guest_ESP -= sizeof(Addr);
-//.. 
-//..    /* This is only so that the EIP is (might be) useful to report if
-//..       something goes wrong in the sigreturn */
-//..    VG_(restart_syscall)(&tst->arch);
-//.. 
-//..    VG_(sigframe_destroy)(tid, False);
-//.. 
-//..    /* Keep looking for signals until there are none */
-//..    VG_(poll_signals)(tid);
-//.. 
-//..    /* placate return-must-be-set assertion */
-//..    SET_RESULT(RES);
-//.. }
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(tid >= 1 && tid < VG_N_THREADS);
+   vg_assert(VG_(is_running_thread)(tid));
+
+   ///* Adjust esp to point to start of frame; skip back up over handler
+   //   ret addr */
+   tst = VG_(get_ThreadState)(tid);
+   //tst->arch.vex.guest_ESP -= sizeof(Addr);
+   // Should we do something equivalent on ppc32?  Who knows.
+
+   ///* This is only so that the EIP is (might be) useful to report if
+   //   something goes wrong in the sigreturn */
+   //ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
+   // Should we do something equivalent on ppc32?  Who knows.
+
+   VG_(sigframe_destroy)(tid, True);
+
+   /* See comments above in PRE(sys_sigreturn) about this. */
+   SET_STATUS_from_SysRes_NO_SANITY_CHECK(
+      VG_(mk_SysRes_ppc32_linux)( 
+         tst->arch.vex.guest_GPR3,
+         /* get CR0.SO */
+         (LibVEX_GuestPPC32_get_CR( &tst->arch.vex ) >> 28) & 1
+      )
+   );
+
+   /* Check to see if some any signals arose as a result of this. */
+   *flags |= SfPollAfter;
+}
+
 
 //.. PRE(sys_modify_ldt, Special)
 //.. {
@@ -1644,7 +1651,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    LINX_(__NR_setresgid,         sys_setresgid16),       // 169
    LINXY(__NR_getresgid,         sys_getresgid16),       // 170
    LINX_(__NR_prctl,             sys_prctl),             // 171
-//..    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),      // 172
+   PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),      // 172
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),      // 173
 
    LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask),    // 174

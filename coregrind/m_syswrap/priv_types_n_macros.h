@@ -277,6 +277,24 @@ static inline UWord getRES ( SyscallStatus* st ) {
       }                                              \
    } while (0)
 
+/* A lamentable kludge */
+#define SET_STATUS_Failure_NO_SANITY_CHECK(zzz)      \
+   do { Word wzz = (Word)(zzz);                      \
+        status->what = SsFailure;                    \
+        status->val  = wzz;                          \
+   } while (0)
+
+#define SET_STATUS_from_SysRes_NO_SANITY_CHECK(zzz)  \
+   do {                                              \
+      SysRes zres = (zzz);                           \
+      if (zres.isError) {                            \
+         SET_STATUS_Failure_NO_SANITY_CHECK(zres.val); \
+      } else {                                       \
+         SET_STATUS_Success(zres.val);               \
+      }                                              \
+   } while (0)
+
+
 #define PRINT(format, args...)                       \
    if (VG_(clo_trace_syscalls))                      \
       VG_(printf)(format, ## args)

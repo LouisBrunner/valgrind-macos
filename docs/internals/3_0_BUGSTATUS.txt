@@ -6,7 +6,7 @@ nb: "n-i-bz" == "not in Bugzilla"
 ========================================================================
 
 ----------------------------------------------------------------
-109861  amd64 hangs at startup (******* needs closing)
+109861  amd64 hangs at startup
 110301  ditto
 111554  valgrind crashes with Cannot allocate memory
 111809  Memcheck tool doesn't start java
@@ -18,6 +18,7 @@ nb: "n-i-bz" == "not in Bugzilla"
  82301  FV memory layout too rigid
  98278  Infinite recursion possible when allocating memory
 108994  Valgrind runs out of memory due to 133x overhead
+115643  valgrind cannot allocate memory
 
 Will fix in 3.1.  Long delay seems to be caused by amd64-Gentoo kernel
 not liking large mmap/munmap requests.  Other bugs also look like
@@ -26,17 +27,22 @@ aspacem problems.
 FIXED-TRUNK:    now done (many many commits)
 
 ----------------------------------------------------------------
-105227 The BOUND instruction is not implemented (x86, with test case)
+105227  The BOUND instruction is not implemented (x86, with test case)
 
 FIXED-TRUNK:    TODO ?
 
 ----------------------------------------------------------------
-109323  ppc32: dispatch.S uses Altivec insn, which doesn't work on POWER. 
+105974  vg_hashtable.c static hash table
 
-FIXED-TRUNK:    4636 (needs verification)
+FIXED-TRUNK:    vg:???
 
 ----------------------------------------------------------------
-109345 ppc32 ptrace patch available    should be applied
+109323  ppc32: dispatch.S uses Altivec insn, which doesn't work on POWER. 
+
+FIXED-TRUNK:    4636
+
+----------------------------------------------------------------
+109345  ptrace_setregs not yet implemented for ppc
 
 FIXED-TRUNK:    vg:5046
 
@@ -56,6 +62,13 @@ status currently unclear.
 
 FIXED-TRUNK:    vex:1320 - vex impl of sysenter
                 vg:4337 - minimal Valgrind-side; does not do anything
+
+----------------------------------------------------------------
+110831 Would like to be able to run against both 32 and 64 bit 
+       binaries on AMD64
+110829 ==
+
+FIXED-TRUNK:    many commits (vg:5031 ?)
 
 ----------------------------------------------------------------
 111364 False report of "definitly lost" memory
@@ -103,15 +116,14 @@ FIXED-TRUNK:    vex:1413
 ----------------------------------------------------------------
 113126  Crash with binaries built with -gstabs+/-ggdb
 104065  ==
+115741  ==
 
 FIXED-TRUNK:    vg:5138
 
 ----------------------------------------------------------------
-113403  Looks like a segfault in realloc?
+113403  Partial SSE3 support on x86
 
-Not the same bug as the other realloc failures
-
-FIXED-TRUNK:    reporter says it no longer happens
+FIXED-TRUNK:    vex:???
 
 ----------------------------------------------------------------
 113541  vex: the `impossible' happened: Grp5(x86) (alt encoding inc/dec)
@@ -156,6 +168,22 @@ FIXED-TRUNK:    vex:1435
 114455  vex amd64->IR: 0xF 0xAC 0xD0 0x1 (also shrdq)
 
 FIXED-TRUNK:    vex:1436
+
+----------------------------------------------------------------
+115590: amd64->IR: 0x67 0xE3 0x9 0xEB (address size override)
+
+FIXED-TRUNK:    vex:1433
+
+----------------------------------------------------------------
+115953  valgrind svn r5042 does not build with parallel make (-j3)
+
+FIXED-TRUNK:    vg:????
+
+----------------------------------------------------------------
+116057  New: valgrind maximum instruction size - VG_MAX_INSTR_SZB too
+        small?
+
+FIXED-TRUNK:    vg:5072
 
 ----------------------------------------------------------------
 116483  shmat failes with invalid argument when trying to attach a shm segment
@@ -333,6 +361,12 @@ FIXED-30BRANCH: TODO
 
 FIXED-TRUNK:    vg:5070
 FIXED-30BRANCH: TODO
+
+----------------------------------------------------------------
+114564: clone() and stacks
+114565  ==
+
+FIXED-TRUNK:    vg:5070
 
 ----------------------------------------------------------------
 115496  glibc crashes trying to use sysinfo page

@@ -1596,10 +1596,10 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
 
    if (VG_(clo_verbosity) > 1) {
       SysRes fd;
+      VexArch vex_arch;
+      VexArchInfo vex_archinfo;
       if (!logging_to_fd)
          VG_(message)(Vg_DebugMsg, "");
-      VG_(message)(Vg_DebugMsg, "Valgrind library directory: %s", VG_(libdir));
-
       VG_(message)(Vg_DebugMsg, "Command line");
       if (VG_(args_the_exename))
          VG_(message)(Vg_DebugMsg, "   %s", VG_(args_the_exename));
@@ -1629,6 +1629,12 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
          VG_(close)(fd.val);
 #        undef BUF_LEN
       }
+
+      VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
+      VG_(message)(Vg_DebugMsg, "Arch and subarch: %s, %s",
+                                LibVEX_ppVexArch   ( vex_arch ),
+                                LibVEX_ppVexSubArch( vex_archinfo.subarch ) );
+      VG_(message)(Vg_DebugMsg, "Valgrind library directory: %s", VG_(libdir));
    }
 }
 

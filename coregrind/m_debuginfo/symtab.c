@@ -1525,11 +1525,8 @@ Bool read_lib_symbols ( SegInfo* si )
 	    else
 	       si->bss_size = 0;
 	 }
-#if 0
-	 /* 20050228: disabled this until VG_(next_segment) can be
-	    reinstated in some clean incarnation of the low level
-	    memory manager. */
-	 mapped = mapped & ~(VKI_PAGE_SIZE-1);
+
+         mapped = mapped & ~(VKI_PAGE_SIZE-1);
 	 mapped_end = (mapped_end + VKI_PAGE_SIZE - 1) & ~(VKI_PAGE_SIZE-1);
 
 	 if (VG_(needs).data_syms &&
@@ -1537,36 +1534,14 @@ Bool read_lib_symbols ( SegInfo* si )
 	     (mapped_end > (si->start+si->size))) {
 	    UInt newsz = mapped_end - si->start;
 	    if (newsz > si->size) {
-	       Segment *seg;
-
 	       if (0)
 		  VG_(printf)("extending mapping %p..%p %d -> ..%p %d\n", 
 			      si->start, si->start+si->size, si->size,
 			      si->start+newsz, newsz);
 
-	       for(seg = VG_(find_segment_containing)(si->start);
-		   seg != NULL && VG_(seg_overlaps)(seg, si->start, si->size); 
-		   seg = VG_(next_segment)(seg)) {
-		  if (seg->symtab == si)
-		     continue;
-
-		  if (seg->symtab != NULL)
-		     VG_(seginfo_decref)(seg->symtab, seg->addr);
-
-		  VG_(seginfo_incref)(si);
-		  seg->symtab = si;
-		  
-		  if (0)
-		     VG_(printf)("adding symtab %p (%p-%p) to segment %p (%p-%p)\n",
-				 si, si->start, si->start+newsz,
-				 seg, seg->addr, seg->addr+seg->len);
-	       }
-	       
 	       si->size = newsz;
 	    }
 	 }
-#endif
-
       }
    }
 
@@ -1862,21 +1837,6 @@ static void unload_symbols ( Addr start, SizeT length )
    // Not found.
    VGP_POPCC(VgpReadSyms);
 }
-
-//static void seginfo_decref(SegInfo *si, Addr start)
-//{
-//   vg_assert(si);
-//   vg_assert(si->ref >= 1);
-//   if (--si->ref == 0)
-//      unload_symbols(si->start, si->size);
-//}
-//
-//static void seginfo_incref(SegInfo *si)
-//{
-//   vg_assert(si);
-//   vg_assert(si->ref > 0);
-//   si->ref++;
-//}
 
 /*------------------------------------------------------------*/
 /*--- Use of symbol table & location info to create        ---*/

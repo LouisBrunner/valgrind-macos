@@ -207,7 +207,7 @@
 //#define __NR_rt_sigpending		175
 #define __NR_rt_sigtimedwait		176
 //#define __NR_rt_sigqueueinfo		177
-//#define __NR_rt_sigsuspend		178
+#define __NR_rt_sigsuspend		178
 #define __NR_pread64			179
 #define __NR_pwrite64			180
 #define __NR_chown			181

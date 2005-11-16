@@ -109,7 +109,9 @@ FIXED-TRUNK:    vg:5138
 ----------------------------------------------------------------
 113403  Looks like a segfault in realloc?
 
-FIXED-TRUNK:    TODO
+Not the same bug as the other realloc failures
+
+FIXED-TRUNK:    reporter says it no longer happens
 
 ----------------------------------------------------------------
 113541  vex: the `impossible' happened: Grp5(x86) (alt encoding inc/dec)
@@ -119,7 +121,7 @@ FIXED-TRUNK:    vex:1412
 ----------------------------------------------------------------
 113642  New: valgrind crashes when trying to read debug information
 
-FIXED-TRUNK:    4856
+FIXED-TRUNK:    vg:4856
 
 ----------------------------------------------------------------
 113810  priv/guest-x86/toIR.c:7964 (disInstr_X86_WRK): Assertion `sz == 4'
@@ -133,7 +135,7 @@ FIXED-TRUNK:    vex:1410, test in valgrind:4851
 Although the underlying cause is still present in the 3.0 code
 this bug is only user visible in the 2.4 code base.
 
-FIXED-TRUNK:    4852
+FIXED-TRUNK:    vg:4852
 
 ----------------------------------------------------------------
 113851  vex x86->IR: (pmaddwd): 0x66 0xF 0xF5 0xC7
@@ -143,11 +145,22 @@ FIXED-TRUNK:    vex:1411, test in valgrind:4859
 ----------------------------------------------------------------
 114366  New: vex amd64 cannnot handle __asm__( "fninit" )
 
+FIXED-TRUNK:    vex:1440
+
 ----------------------------------------------------------------
 114412  vex amd64->IR: 0xF 0xAD 0xC2 0xD3 (128-bit shift, shrdq?)
 
+FIXED-TRUNK:    vex:1435
+
 ----------------------------------------------------------------
-114455: vex amd64->IR: 0xF 0xAC 0xD0 0x1 (also shrdq)
+114455  vex amd64->IR: 0xF 0xAC 0xD0 0x1 (also shrdq)
+
+FIXED-TRUNK:    vex:1436
+
+----------------------------------------------------------------
+116483  shmat failes with invalid argument when trying to attach a shm segment
+
+FIXED-TRUNK:    fixed by introduction of SkShmC during aspacem rewrite
 
 ========================================================================
 === Bugs targeted for 3.1.0 and 3.0.2                                ===
@@ -180,7 +193,7 @@ FIXED-30BRANCH: TODO
 ----------------------------------------------------------------
 n-i-bz  Jeroen's XML-to-text FAQ.xml translator
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    vg:4830
 FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
@@ -280,18 +293,21 @@ FIXED-30BRANCH: TODO
 ----------------------------------------------------------------
 113996  vex amd64->IR: fucomp (0xDD 0xE9 0xDF 0xE0)
 
-FIXED-TRUNK:    TODO
+FIXED-TRUNK:    vex:1437
+FIXED-30BRANCH: TODO
 
 ----------------------------------------------------------------
 114196  vex x86->IR: out %eax,(%dx) (0xEF 0xC9 0xC3 0x90)
 
 FIXED-TRUNK:    vex:1425
+FIXED-30BRANCH: TODO
 (has good test case)
 
 ----------------------------------------------------------------
 114250  context record in signal handler contains incorrect values
 
 FIXED-TRUNK:    TODO
+FIXED-30BRANCH: TODO
 (has good test case)
 
 ----------------------------------------------------------------

@@ -51,14 +51,14 @@ Other user-visible changes:
 
 - It should build with gcc-2.96.
 
-- Valgrind can now run itself (given some very-magical incantations).
+- Valgrind can now run itself (see README_DEVELOPERS for how).
   This is not much use to you, but it means the developers can now
   profile Valgrind using Cachegrind.  As a result a couple of
   performance bad cases have been fixed.
 
 The following are some user-visible changes that occurred in earlier
 versions that may not have been announced, or were announced but not
-widely realised.  So we're mentioning them now.
+widely noticed.  So we're mentioning them now.
 
 - The --tool flag is optional once again;  if you omit it, Memcheck
   is run by default.
@@ -66,9 +66,9 @@ widely realised.  So we're mentioning them now.
 - The --num-callers flag now has a default value of 12.  It was
   previously 4.
 
-- The --xml flag causes Valgrind's output to be produced in XML format.
-  This is designed to make it easy for other programs to consume
-  Valgrind's output.  The format is described in the file
+- The --xml=yes flag causes Valgrind's output to be produced in XML
+  format.  This is designed to make it easy for other programs to
+  consume Valgrind's output.  The format is described in the file
   docs/internals/xml-format.txt.
 
 - The --gen-suppressions flag supports an "all" value that causes every

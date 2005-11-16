@@ -51,6 +51,11 @@ Other user-visible changes:
 
 - It should build with gcc-2.96.
 
+- Valgrind can now run itself (given some very-magical incantations).
+  This is not much use to you, but it means the developers can now
+  profile Valgrind using Cachegrind.  As a result a couple of
+  performance bad cases have been fixed.
+
 The following are some user-visible changes that occurred in earlier
 versions that may not have been announced, or were announced but not
 widely realised.  So we're mentioning them now.

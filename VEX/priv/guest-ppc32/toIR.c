@@ -6811,14 +6811,10 @@ static Bool dis_av_fp_arith ( UInt theInstr )
       return True;
 
    case 0x2F: { // vnmsubfp (Negative Multiply-Subtract FP, AV p215)
-      IRTemp zeros = newTemp(Ity_V128);
       DIP("vnmsubfp v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vC_addr, vB_addr);
-      assign( zeros, unop(Iop_Dup32x4, mkU32(0)) );
-      putVReg( vD_addr,
-               binop(Iop_Sub32Fx4, mkexpr(zeros),
-                     binop(Iop_Sub32Fx4,
-                           binop(Iop_Mul32Fx4, mkexpr(vA), mkexpr(vC)),
-                           mkexpr(vB))) );
+      putVReg( vD_addr, binop(Iop_Sub32Fx4,
+                              mkexpr(vB),
+                              binop(Iop_Mul32Fx4, mkexpr(vA), mkexpr(vC))) );
       return True;
    }
 
@@ -6983,6 +6979,17 @@ static Bool dis_av_fp_convert ( UInt theInstr )
    UChar vB_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
    UInt  opc2     =         (theInstr >>  0) & 0x7FF; /* theInstr[0:10]  */
 
+   IRTemp vB = newTemp(Ity_V128);
+   IRTemp vScale = newTemp(Ity_V128);
+   IRTemp vInvScale = newTemp(Ity_V128);
+   assign( vB, getVReg(vB_addr));
+
+   /* scale = 2^UIMM, cast to float, reinterpreted as uint */
+   float scale = (float)( (unsigned int) 1<<UIMM_5 );
+   assign( vScale, unop(Iop_Dup32x4, mkU32( *((unsigned int*)(&scale)) )) );
+   float inv_scale = 1/scale;
+   assign( vInvScale, unop(Iop_Dup32x4, mkU32( *((unsigned int*)(&inv_scale)) )) );
+
    if (opc1 != 0x4) {
       vex_printf("dis_av_fp_convert(PPC32)(instr)\n");
       return False;
@@ -6991,23 +6998,32 @@ static Bool dis_av_fp_convert ( UInt theInstr )
    switch (opc2) {
    case 0x30A: // vcfux (Convert from Unsigned Fixed-Point W, AV p156)
       DIP("vcfux v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, binop(Iop_Mul32Fx4,
+                              unop(Iop_I32UtoFx4, mkexpr(vB)),
+                              mkexpr(vInvScale)) );
+      return True;
 
    case 0x34A: // vcfsx (Convert from Signed Fixed-Point W, AV p155)
       DIP("vcfsx v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-      DIP(" => not implemented\n");
-      return False;
+
+      putVReg( vD_addr, binop(Iop_Mul32Fx4,
+                              unop(Iop_I32StoFx4, mkexpr(vB)),
+                              mkexpr(vInvScale)) );
+      return True;
 
    case 0x38A: // vctuxs (Convert to Unsigned Fixed-Point W Saturate, AV p172)
       DIP("vctuxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr,
+               unop(Iop_QFtoI32Ux4_RZ, 
+                    binop(Iop_Mul32Fx4, mkexpr(vB), mkexpr(vScale))) );
+      return True;
 
    case 0x3CA: // vctsxs (Convert to Signed Fixed-Point W Saturate, AV p171)
       DIP("vctsxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, 
+               unop(Iop_QFtoI32Sx4_RZ, 
+                     binop(Iop_Mul32Fx4, mkexpr(vB), mkexpr(vScale))) );
+      return True;
 
    default:
      break;    // Fall through...
@@ -7021,23 +7037,23 @@ static Bool dis_av_fp_convert ( UInt theInstr )
    switch (opc2) {
    case 0x20A: // vrfin (Round to FP Integer Nearest, AV p231)
       DIP("vrfin v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_RoundF32x4_RN, mkexpr(vB)) );
+      break;
 
    case 0x24A: // vrfiz (Round to FP Integer toward zero, AV p233)
       DIP("vrfiz v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_RoundF32x4_RZ, mkexpr(vB)) );
+      break;
 
    case 0x28A: // vrfip (Round to FP Integer toward +inf, AV p232)
       DIP("vrfip v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_RoundF32x4_RP, mkexpr(vB)) );
+      break;
 
    case 0x2CA: // vrfim (Round to FP Integer toward -inf, AV p230)
       DIP("vrfim v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, unop(Iop_RoundF32x4_RM, mkexpr(vB)) );
+      break;
 
    default:
       vex_printf("dis_av_fp_convert(PPC32)(opc2)\n");

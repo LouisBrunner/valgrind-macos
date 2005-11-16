@@ -708,8 +708,16 @@ HChar* showPPC32AvFpOp ( PPC32AvFpOp op ) {
    /* Floating Point Unary */
    case Pavfp_RCPF:      return "vrefp";
    case Pavfp_RSQRTF:    return "vrsqrtefp";
+   case Pavfp_CVTU2F:    return "vcfux";
+   case Pavfp_CVTS2F:    return "vcfsx";
+   case Pavfp_QCVTF2U:   return "vctuxs";
+   case Pavfp_QCVTF2S:   return "vctsxs";
+   case Pavfp_ROUNDM:    return "vrfim";
+   case Pavfp_ROUNDP:    return "vrfip";
+   case Pavfp_ROUNDN:    return "vrfin";
+   case Pavfp_ROUNDZ:    return "vrfiz";
 
-   default: vpanic("showPPC32AvOp");
+   default: vpanic("showPPC32AvFpOp");
    }
 }
 
@@ -1412,7 +1420,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       ppHRegPPC32(i->Pin.AvBin32x4.srcR);
       return;
    case Pin_AvBin32Fx4:
-      vex_printf("%s ", showPPC32AvOp(i->Pin.AvBin32Fx4.op));
+      vex_printf("%s ", showPPC32AvFpOp(i->Pin.AvBin32Fx4.op));
       ppHRegPPC32(i->Pin.AvBin32Fx4.dst);
       vex_printf(",");
       ppHRegPPC32(i->Pin.AvBin32Fx4.srcL);
@@ -1420,7 +1428,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       ppHRegPPC32(i->Pin.AvBin32Fx4.srcR);
       return;
    case Pin_AvUn32Fx4:
-      vex_printf("%s ", showPPC32AvOp(i->Pin.AvUn32Fx4.op));
+      vex_printf("%s ", showPPC32AvFpOp(i->Pin.AvUn32Fx4.op));
       ppHRegPPC32(i->Pin.AvUn32Fx4.dst);
       vex_printf(",");
       ppHRegPPC32(i->Pin.AvUn32Fx4.src);
@@ -3153,7 +3161,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          UInt vB = 29;                    // XXX: Using r29 for temp
          UInt konst = 0x1F;
 
-         // Better way to load zero_imm?
+         // Better way to load -0.0 (0x80000000) ?
          // vspltisw vB,0x1F   (0x1F => each word of vB)
          p = mkFormVX( p, 4, vB, konst, 0, 908 );
 
@@ -3185,8 +3193,16 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt v_src = vregNo(i->Pin.AvUn32Fx4.src);
       UInt opc2;
       switch (i->Pin.AvUn32Fx4.op) {
-      case Pavfp_RCPF:   opc2 =  266; break; // vrefp
-      case Pavfp_RSQRTF: opc2 =  330; break; // vrsqrtefp
+      case Pavfp_RCPF:    opc2 =  266; break; // vrefp
+      case Pavfp_RSQRTF:  opc2 =  330; break; // vrsqrtefp
+      case Pavfp_CVTU2F:  opc2 =  778; break; // vcfux
+      case Pavfp_CVTS2F:  opc2 =  842; break; // vcfsx
+      case Pavfp_QCVTF2U: opc2 =  906; break; // vctuxs
+      case Pavfp_QCVTF2S: opc2 =  970; break; // vctsxs
+      case Pavfp_ROUNDM:  opc2 =  714; break; // vrfim
+      case Pavfp_ROUNDP:  opc2 =  650; break; // vrfip
+      case Pavfp_ROUNDN:  opc2 =  522; break; // vrfin
+      case Pavfp_ROUNDZ:  opc2 =  586; break; // vrfiz
       default:
          goto bad;
       }

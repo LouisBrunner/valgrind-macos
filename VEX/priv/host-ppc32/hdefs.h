@@ -414,6 +414,8 @@ typedef
 
       /* Floating point unary */
       Pavfp_RCPF, Pavfp_RSQRTF,
+      Pavfp_CVTU2F, Pavfp_CVTS2F, Pavfp_QCVTF2U, Pavfp_QCVTF2S,
+      Pavfp_ROUNDM, Pavfp_ROUNDP, Pavfp_ROUNDN, Pavfp_ROUNDZ,
    }
    PPC32AvFpOp;
 

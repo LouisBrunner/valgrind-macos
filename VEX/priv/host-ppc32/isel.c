@@ -3059,6 +3059,14 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Recip32Fx4: op = Pavfp_RCPF;   goto do_32Fx4_unary;
       case Iop_RSqrt32Fx4: op = Pavfp_RSQRTF; goto do_32Fx4_unary;
 //..       case Iop_Sqrt32Fx4:  op = Xsse_SQRTF;  goto do_32Fx4_unary;
+      case Iop_I32UtoFx4:     op = Pavfp_CVTU2F;  goto do_32Fx4_unary;
+      case Iop_I32StoFx4:     op = Pavfp_CVTS2F;  goto do_32Fx4_unary;
+      case Iop_QFtoI32Ux4_RZ: op = Pavfp_QCVTF2U; goto do_32Fx4_unary;
+      case Iop_QFtoI32Sx4_RZ: op = Pavfp_QCVTF2S; goto do_32Fx4_unary;
+      case Iop_RoundF32x4_RM: op = Pavfp_ROUNDM;    goto do_32Fx4_unary;
+      case Iop_RoundF32x4_RP: op = Pavfp_ROUNDP;    goto do_32Fx4_unary;
+      case Iop_RoundF32x4_RN: op = Pavfp_ROUNDN;    goto do_32Fx4_unary;
+      case Iop_RoundF32x4_RZ: op = Pavfp_ROUNDZ;    goto do_32Fx4_unary;
       do_32Fx4_unary:
       {
          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);

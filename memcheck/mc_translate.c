@@ -2117,6 +2117,14 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Sqrt32Fx4:
       case Iop_RSqrt32Fx4:
       case Iop_Recip32Fx4:
+      case Iop_I32UtoFx4:
+      case Iop_I32StoFx4:
+      case Iop_QFtoI32Ux4_RZ:
+      case Iop_QFtoI32Sx4_RZ:
+      case Iop_RoundF32x4_RM:
+      case Iop_RoundF32x4_RP:
+      case Iop_RoundF32x4_RN:
+      case Iop_RoundF32x4_RZ:
          return unary32Fx4(mce, vatom);
 
       case Iop_Sqrt32F0x4:

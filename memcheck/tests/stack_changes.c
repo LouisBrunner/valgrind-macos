@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ucontext.h>
+#include <sys/mman.h>
 
 #include "valgrind.h"
 
@@ -27,8 +28,11 @@ int init_context(struct ucontext *uc)
         exit(1);
     }
 
-    if ((stack = malloc(STACK_SIZE)) == NULL) {
-        perror("malloc");
+    stack = (void *)mmap(0, STACK_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC,
+                                        MAP_ANON|MAP_PRIVATE, -1, 0);
+
+    if (stack == (void*)-1) {
+        perror("mmap");
         exit(1);
     }
 
@@ -53,9 +57,9 @@ int main(int argc, char **argv)
     swapcontext(&oldc, &ctx1);
 
     VALGRIND_STACK_DEREGISTER(c1);
-    free(ctx1.uc_stack.ss_sp);
+    //free(ctx1.uc_stack.ss_sp);
     VALGRIND_STACK_DEREGISTER(c2);
-    free(ctx2.uc_stack.ss_sp);
+    //free(ctx2.uc_stack.ss_sp);
 
     return 0;
 }

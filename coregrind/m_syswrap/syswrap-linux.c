@@ -895,18 +895,30 @@ PRE(sys_tgkill)
       return;
    }
    
-   /* If we're sending SIGKILL, check to see if the target is one of
-      our threads and handle it specially. */
-   if (ARG3 == VKI_SIGKILL && ML_(do_sigkill)(ARG2, ARG1))
-      SET_STATUS_Success(0);
-   else
-      SET_STATUS_from_SysRes(VG_(do_syscall3)(SYSNO, ARG1, ARG2, ARG3));
-
-   if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "tgkill: sent signal %d to pid %d/%d",
-		   ARG3, ARG1, ARG2);
    /* Check to see if this kill gave us a pending signal */
    *flags |= SfPollAfter;
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "tgkill: sending signal %d to pid %d/%d",
+		   ARG3, ARG1, ARG2);
+
+   /* If we're sending SIGKILL, check to see if the target is one of
+      our threads and handle it specially. */
+   if (ARG3 == VKI_SIGKILL && ML_(do_sigkill)(ARG2, ARG1)) {
+      SET_STATUS_Success(0);
+      return;
+   }
+
+   /* Ask to handle this syscall via the slow route, since that's the
+      only one that sets tst->status to VgTs_WaitSys.  If the result
+      of doing the syscall is an immediate run of
+      async_signalhandler() in m_signals, then we need the thread to
+      be properly tidied away.  I have the impression the previous
+      version of this wrapper worked on x86/amd64 only because the
+      kernel did not immediately deliver the async signal to this
+      thread (on ppc it did, which broke the assertion re tst->status
+      at the top of async_signalhandler()). */
+   *flags |= SfMayBlock;
 }
 POST(sys_tgkill)
 {

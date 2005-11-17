@@ -713,9 +713,9 @@ void VG_(client_syscall) ( ThreadId tid )
          by doing it directly in this thread, which is a lot
          simpler. */
 
-      /* Check that the given flags are allowable: MayBlock and
-         PostOnFail are ok. */
-      vg_assert(0 == (sci->flags & ~(SfMayBlock | SfPostOnFail)));
+      /* Check that the given flags are allowable: MayBlock, PollAfter
+         and PostOnFail are ok. */
+      vg_assert(0 == (sci->flags & ~(SfMayBlock | SfPostOnFail | SfPollAfter)));
 
       if (sci->flags & SfMayBlock) {
 

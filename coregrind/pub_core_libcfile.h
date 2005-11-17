@@ -55,6 +55,11 @@ extern Bool VG_(is_dir) ( HChar* f );
    none specified. */
 #define VG_CLO_DEFAULT_LOGPORT 1500
 
+extern UInt   VG_(htonl) ( UInt x );
+extern UInt   VG_(ntohl) ( UInt x );
+extern UShort VG_(htons) ( UShort x );
+extern UShort VG_(ntohs) ( UShort x );
+
 extern Int VG_(write_socket)( Int sd, void *msg, Int count );
 extern Int VG_(connect_via_socket)( UChar* str );
 extern Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen );

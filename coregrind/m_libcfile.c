@@ -339,8 +339,7 @@ static
 Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, 
                  Int addrlen );
 
-static 
-UInt my_htonl ( UInt x )
+UInt VG_(htonl) ( UInt x )
 {
 #  if defined(VG_BIGENDIAN)
    return x;
@@ -351,8 +350,28 @@ UInt my_htonl ( UInt x )
 #  endif
 }
 
-static
-UShort my_htons ( UShort x )
+UInt VG_(ntohl) ( UInt x )
+{
+#  if defined(VG_BIGENDIAN)
+   return x;
+#  else
+   return
+      (((x >> 24) & 0xFF) << 0) | (((x >> 16) & 0xFF) << 8)
+      | (((x >> 8) & 0xFF) << 16) | (((x >> 0) & 0xFF) << 24);
+#  endif
+}
+
+UShort VG_(htons) ( UShort x )
+{
+#  if defined(VG_BIGENDIAN)
+   return x;
+#  else
+   return
+      (((x >> 8) & 0xFF) << 0) | (((x >> 0) & 0xFF) << 8);
+#  endif
+}
+
+UShort VG_(ntohs) ( UShort x )
 {
 #  if defined(VG_BIGENDIAN)
    return x;
@@ -390,8 +409,8 @@ Int VG_(connect_via_socket)( UChar* str )
    //               (UInt)port );
 
    servAddr.sin_family = VKI_AF_INET;
-   servAddr.sin_addr.s_addr = my_htonl(ip);
-   servAddr.sin_port = my_htons(port);
+   servAddr.sin_addr.s_addr = VG_(htonl)(ip);
+   servAddr.sin_port = VG_(htons)(port);
 
    /* create socket */
    sd = my_socket(VKI_AF_INET, VKI_SOCK_STREAM, 0 /* IPPROTO_IP ? */);

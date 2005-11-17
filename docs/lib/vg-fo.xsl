@@ -34,6 +34,25 @@
   <xsl:attribute name="color">blue</xsl:attribute>
 </xsl:attribute-set>
 
+<!-- Bug-fix for Suse 10 PassiveTex version -->
+<!-- Precompute attribute values; PassiveTex is too stupid: -->
+<xsl:attribute-set name="component.title.properties">
+  <xsl:attribute
+  name="keep-with-next.within-column">always</xsl:attribute>
+  <xsl:attribute name="space-before.optimum">
+    <xsl:value-of select="concat($body.font.master, 'pt')"/>
+  </xsl:attribute>
+  <xsl:attribute name="space-before.minimum">
+    <xsl:value-of select="$body.font.master * 0.8"/>
+    <xsl:text>pt</xsl:text>
+  </xsl:attribute>
+  <xsl:attribute name="space-before.maximum">
+    <xsl:value-of select="$body.font.master * 1.2"/>
+    <xsl:text>pt</xsl:text>
+  </xsl:attribute>
+  <xsl:attribute name="hyphenate">false</xsl:attribute>
+</xsl:attribute-set>
+
 <!-- make pre listings indented a bit + a bg colour -->
 <xsl:template match="programlisting | screen">
   <fo:block start-indent="0.25in" wrap-option="no-wrap" 

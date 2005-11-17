@@ -1,32 +1,9 @@
 
-New notes, JRS 20050727
-~~~~~~~~~~~~~~~~~~~~~~~
-* I had to install zillions of packages on SuSE 9.2 in order to
-  build the print docs (make print-docs), including
-
-    passivetex
-    xpdf (for pdftops)
-
-  It's possible to use pdf2ps instead, but that seems to generate
-  huge and almost-unreadable .ps.  pdftops does a much nicer job.
-
-
-* Even then, pdfxmltex eventually dies with "TeX capacity exceeded,
-  sorry [pool size = 67555]" or some such.  To fix this, I edited
-  /etc/texmf/texmf.cnf and changed
-
-     pool_size.pdfxmltex = 500000
-
-  to 1500000 and that fixed it.
-
-
-Old notes
-~~~~~~~~~
 Valgrind Documentation
 ----------------------
 This text assumes the following directory structure:
 
-Distribution text files (eg. README):
+Distribution text files (eg. AUTHORS, NEWS, ...):
   valgrind/
 
 Main /docs/ dir:
@@ -115,7 +92,6 @@ present on his system:
 - pdftops:   version 3.00
 - DocBook:   version 4.2
 - bzip2
-- lynx
 
 A big problem is latency.  Norman Walsh is constantly updating
 DocBook, but the tools tend to lag behind somewhat.  It is
@@ -133,25 +109,44 @@ then look at this:
 and modify your texmf files accordingly.
 
 
-Catalog Locations
-------------------
-oasis:
-http://www.oasis-open.org/docbook/xml/4.2/catalog.xml
-http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd
-
-Suse 9.1: 
-/usr/share/xml/docbook/ stylesheet/nwalsh/1.64.1/html/docbook.xsl
-/usr/share/xml/docbook/ schema/dtd/4.2/docbookx.dtd
-/usr/share/xml/docbook/ schema/dtd/4.2/catalog.xml
+Catalog/Stylesheet Location
+---------------------------
+Suse 10:
+/usr/share/xml/docbook/
 
 
-Notes:
-------
+
+Notes [Nov. 2004]:
+-----------------
 - the end of file.xml must have only ONE newline after the last tag:
   </book>
-
 - pdfxmltex barfs if given a filename with an underscore in it
   
+
+Notes [July 2005]
+-----------------
+jrs had to install zillions of packages on SuSE 9.2 in order to
+build the print docs (make print-docs), including
+   passivetex
+   xpdf (for pdftops, which does the nicest job)
+
+Even then, pdfxmltex eventually dies with "TeX capacity exceeded,
+sorry [pool size = 67555]" or some such.  To fix this, he edited
+/etc/texmf/texmf.cnf and changed
+   pool_size.pdfxmltex = 500000
+
+ to 1500000 and that fixed it.
+
+
+Notes [Nov. 2005]
+-----------------
+After upgrading to Suse 10, found a (known) bug in PassiveTex which 
+broke the build, so added a bug-fix to 'docs/lib/vg-fo.xsl'.
+Bug-fix related links:
+http://lists.oasis-open.org/archives/docbook/200509/msg00032.html
+http://www.dpawson.co.uk/docbook/tools.html#d850e300
+http://www.haskell.org/pipermail/glasgow-haskell-bugs/2005-January.txt
+
 
 References:
 ----------

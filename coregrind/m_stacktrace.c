@@ -391,7 +391,7 @@ void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
          mybuf[MYBUF_LEN-1] = 0; // paranoia
          if ( VG_STREQ("main", mybuf)
 #             if defined(VGO_linux)
-              || VG_STREQ("__libc_start_main", mybuf)  // glibc wretchedness
+              || VG_STREQ("__libc_start_main", mybuf)  // glibc glibness
               || VG_STREQ("generic_start_main", mybuf) // Yellow Dog doggedness
 #             endif
             )

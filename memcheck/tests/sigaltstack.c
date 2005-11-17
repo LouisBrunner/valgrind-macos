@@ -15,6 +15,9 @@ int main(int argv, char** argc) {
   stack_t sigstk;
   struct sigaction act;
   static const int size = SIGSTKSZ*2;
+  // We give EXEC permissions because this won't work on ppc32 unless you
+  // ask for an alt stack with EXEC permissions.
+  since signal returning requires execution of code on the stack.      
   char *stk = (char *)mmap(0, size, PROT_READ|PROT_WRITE|PROT_EXEC, 
                                     MAP_ANON|MAP_PRIVATE, -1, 0);
   sigstk.ss_sp = stk;

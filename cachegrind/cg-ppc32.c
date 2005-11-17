@@ -43,7 +43,12 @@ void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
    *D1c = (cache_t) {  65536, 2, 64 };
    *L2c = (cache_t) { 262144, 8, 64 };
 
-   // Warn if config not completely specified from cmd line.
+   // Warn if config not completely specified from cmd line.  Note that
+   // this message is slightly different from the one we give on x86/AMD64
+   // when auto-detection fails;  this lets us filter out this one (which is
+   // not important) in the regression test suite without filtering the
+   // x86/AMD64 one (which we want to see if it ever occurs in the
+   // regression test suite).
    if (!all_caches_clo_defined) {
       VG_(message)(Vg_DebugMsg, 
                    "Warning: Cannot auto-detect cache config on PPC32, using one "

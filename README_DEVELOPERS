@@ -35,20 +35,35 @@ file.  Eg:
 
 Debugging Valgrind with GDB
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To debug stage 1 just run it under GDB in the normal way.
+To debug the valgrind launcher program (<prefix>/bin/valgrind) just
+run it under gdb in the normal way.
 
-To debug Valgrind proper (stage 2) with GDB, start Valgrind like this:
+Debugging the main body of the valgrind code (and/or the code for
+a particular tool) requires a bit more trickery but can be achieved
+without too much problem by following these steps:
 
-  valgrind --tool=none --wait-for-gdb=yes <prog>
+(1) Set VALGRIND_LAUNCHER to <prefix>/bin/valgrind:
 
-Then start gdb like this in another terminal:
+    export VALGRIND_LAUNCHER=/usr/local/bin/valgrind
 
-  gdb /usr/lib/valgrind/stage2 <pid>
+(2) Run "gdb <prefix>/lib/valgrind/<platform>/<tool>":
 
-Where <pid> is the pid valgrind printed. Then set whatever breakpoints
-you want and do this in gdb:
+    gdb /usr/local/lib/valgrind/ppc32-linux/lackey
 
-  jump *$eip
+(3) Do "handle SIGSEGV SIGILL nostop noprint" in GDB to prevent GDB from
+    stopping on a SIGSEGV or SIGILL:
+
+    (gdb) handle SIGILL SIGSEGV nostop noprint
+
+(4) Set any breakpoints you want and proceed as normal for gdb. The
+    macro VG_(FUNC) is expanded to vgPlain_FUNC, so If you want to set
+    a breakpoint VG_(do_exec), you could do like this in GDB:
+
+    (gdb) b vgPlain_do_exec
+
+(5) Run the tool with required options:
+
+    (gdb) run pwd
 
 
 Self-hosting

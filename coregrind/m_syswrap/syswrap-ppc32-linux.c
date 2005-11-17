@@ -1570,7 +1570,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //.. 
 //..    GENXY(__NR_getitimer,         sys_getitimer),         // 105
    GENXY(__NR_stat,              sys_newstat),           // 106
-//..    GENXY(__NR_lstat,             sys_newlstat),          // 107
+   GENXY(__NR_lstat,             sys_newlstat),          // 107
    GENXY(__NR_fstat,             sys_newfstat),          // 108
 //..    //   (__NR_olduname,          sys_uname),             // 109 -- obsolete
 //.. 

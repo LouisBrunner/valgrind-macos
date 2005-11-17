@@ -7,6 +7,9 @@
 
 #define STACK_SIZE 4096
 
+// This test is checking the libc context calls (setcontext, etc.) and
+// checks that Valgrind notices their stack changes properly.
+
 struct ucontext ctx1, ctx2, oldc;
 int count;
 

@@ -1747,7 +1747,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // __NR_swapcontext                                           // 249
 
-   LINX_(__NR_tgkill,            sys_tgkill),            // 250 */Linux
+   LINXY(__NR_tgkill,            sys_tgkill),            // 250 */Linux
 //..    GENX_(__NR_utimes,            sys_utimes),            // 251
 //..    GENXY(__NR_statfs64,          sys_statfs64),          // 252
 //..    GENXY(__NR_fstatfs64,         sys_fstatfs64),         // 253

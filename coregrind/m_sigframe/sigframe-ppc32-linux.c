@@ -873,25 +873,31 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    /* Check that the stack frame looks valid */
    sp = tst->arch.vex.guest_GPR1;
    vg_assert(VG_IS_16_ALIGNED(sp));
-   frame_size = *(Addr *)sp - sp;
+   /* JRS 17 Nov 05: This code used to check that *sp -- which should
+      have been set by the stwu at the start of the handler -- points
+      to just above the frame (ie, the previous frame).  However, that
+      isn't valid when delivering signals on alt stacks.  So I removed
+      it.  The frame is still sanity-checked using the priv->magicPI
+      field. */
 
    if (has_siginfo) {
       struct rt_sigframe *frame = (struct rt_sigframe *)sp;
-      vg_assert(frame_size == sizeof(*frame));
+      frame_size = sizeof(*frame);
       mc = &frame->ucontext.uc_mcontext;
       priv = &frame->priv;
+      vg_assert(priv->magicPI == 0x31415927);
       tst->sig_mask = frame->ucontext.uc_sigmask;
    } else {
       struct nonrt_sigframe *frame = (struct nonrt_sigframe *)sp;
-      vg_assert(frame_size == sizeof(*frame));
+      frame_size = sizeof(*frame);
       mc = &frame->mcontext;
       priv = &frame->priv;
+      vg_assert(priv->magicPI == 0x31415927);
       tst->sig_mask.sig[0] = frame->sigcontext.oldmask;
       tst->sig_mask.sig[1] = frame->sigcontext._unused[3];
    }
    tst->tmp_sig_mask = tst->sig_mask;
 
-   vg_assert(priv->magicPI == 0x31415927);
    sigNo = priv->sigNo_private;
 
 #  define DO(gpr)  tst->arch.vex.guest_GPR##gpr = mc->mc_gregs[VKI_PT_R0+gpr]

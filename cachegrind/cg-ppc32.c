@@ -46,7 +46,7 @@ void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
    // Warn if config not completely specified from cmd line.
    if (!all_caches_clo_defined) {
       VG_(message)(Vg_DebugMsg, 
-                   "Warning: Couldn't auto-detect cache config, using one "
+                   "Warning: Cannot auto-detect cache config on PPC32, using one "
                    "or more defaults ");
    }
 }

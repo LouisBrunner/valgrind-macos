@@ -56,6 +56,9 @@ Other user-visible changes:
   profile Valgrind using Cachegrind.  As a result a couple of
   performance bad cases have been fixed.
 
+- The XML output format has changed slightly.  See
+  docs/internals/xml-output.txt.
+
 The following are some user-visible changes that occurred in earlier
 versions that may not have been announced, or were announced but not
 widely noticed.  So we're mentioning them now.

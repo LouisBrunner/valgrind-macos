@@ -103,15 +103,28 @@ protocol version is one they don`t understand.  Hence TOPLEVEL is:
   <?xml version="1.0"?>
   <valgrindoutput>
     <protocolversion>INT<protocolversion>
-    VERSION1STUFF
+    PROTOCOL
   </valgrindoutput>
 
-The only currently defined protocol version number is 1.  This
-document only defines protocol version 1.
+Valgrind versions 3.0.0 and 3.0.1 emit protocol version 1.  Version
+3.1.0 emits protocol version 2.
 
 
-VERSION1STUFF
--------------
+PROTOCOL for version 2
+----------------------
+Version 2 is identical in every way to version 1, except that the time
+string in
+
+   <time>human-readable-time-string</time>
+
+has changed format, and is also elapsed wallclock time since process
+start, and not local time or any such.  In fact version 1 does not
+define the format of the string so in some ways this revision is
+irrelevant.
+
+
+PROTOCOL for version 1
+----------------------
 This is the main top-level construction.  Roughly speaking, it
 contains a load of preamble, the errors from the run of the
 program, and the result of the final leak check.  Hence the
@@ -184,7 +197,7 @@ following in sequence:
 * Zero or more ERRORs, each of which is a complaint from the
   leak checker.
 
-That`s it.
+That's it.
 
 
 ERROR

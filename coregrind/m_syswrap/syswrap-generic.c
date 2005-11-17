@@ -536,20 +536,14 @@ Char *inet2name(struct vki_sockaddr_in *sa, UInt len, Char *name)
    if (sa == NULL || len == 0) {
       VG_(sprintf)(name, "<unknown>");
    } else {
-      UInt addr = sa->sin_addr.s_addr;
-#     if defined(VG_BIGENDIAN)
-      /* This is a hack.  I don't know enough to navigate my way through the
-         ntohl/ntonl maze.  JRS 17 Nov 05. */
-      addr = (((addr >> 24) & 0xFF) << 0) | (((addr >> 16) & 0xFF) << 8)
-             | (((addr >> 8) & 0xFF) << 16) | (((addr >> 0) & 0xFF) << 24);
-#     endif
+      UInt addr = VG_(ntohl)(sa->sin_addr.s_addr);
       if (addr == 0) {
          VG_(sprintf)(name, "<unbound>");
       } else {
          VG_(sprintf)(name, "%u.%u.%u.%u:%u",
-                      addr & 0xFF, (addr>>8) & 0xFF,
-                      (addr>>16) & 0xFF, (addr>>24) & 0xFF,
-                      vki_ntohs(sa->sin_port));
+                      (addr>>24) & 0xFF, (addr>>16) & 0xFF,
+                      (addr>>8) & 0xFF, addr & 0xFF,
+                      VG_(ntohs)(sa->sin_port));
       }
    }
 

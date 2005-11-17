@@ -182,58 +182,6 @@ struct vki_sysinfo {
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/byteorder/swab.h
-//----------------------------------------------------------------------
-
-#define ___vki_swab16(x) \
-({ \
-	__vki_u16 __x = (x); \
-	((__vki_u16)( \
-		(((__vki_u16)(__x) & (__vki_u16)0x00ffU) << 8) | \
-		(((__vki_u16)(__x) & (__vki_u16)0xff00U) >> 8) )); \
-})
-
-/*
- * provide defaults when no architecture-specific optimization is detected
- */
-#ifndef __vki_arch__swab16
-#  define __vki_arch__swab16(x) ({ __vki_u16 __tmp = (x) ; ___vki_swab16(__tmp); })
-#endif
-
-// [[Nb: using the non-OPTIMIZE version here -- easier to understand, and
-//   we don't need the optimised version as we use this very rarely]]
-#  define __vki_swab16(x) __vki_fswab16(x)
-
-static __inline__ __attribute_const__ __vki_u16 __vki_fswab16(__vki_u16 x)
-{
-	return __vki_arch__swab16(x);
-}
-
-//----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/byteorder/little_endian.h
-//----------------------------------------------------------------------
-
-#ifdef VKI_LITTLE_ENDIAN
-#define __vki_be16_to_cpu(x) __vki_swab16((x))
-#endif // VKI_LITTLE_ENDIAN
-
-//----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/byteorder/big_endian.h
-//----------------------------------------------------------------------
-
-#ifdef VKI_BIG_ENDIAN
-#define __vki_be16_to_cpu(x) ((__vki_u16)(x))
-#endif // VKI_BIG_ENDIAN
-
-//----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/byteorder/generic.h
-//----------------------------------------------------------------------
-
-#define ___vki_ntohs(x) __vki_be16_to_cpu(x)
-
-#define vki_ntohs(x) ___vki_ntohs(x)
-
-//----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/time.h
 //----------------------------------------------------------------------
 

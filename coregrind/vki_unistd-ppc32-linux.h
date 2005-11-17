@@ -291,12 +291,12 @@
 /* Number 259 is reserved for new sys_mbind */
 /* Number 260 is reserved for new sys_get_mempolicy */
 /* Number 261 is reserved for new sys_set_mempolicy */
-//#define __NR_mq_open			262
-//#define __NR_mq_unlink		263
-//#define __NR_mq_timedsend		264
-//#define __NR_mq_timedreceive		265
-//#define __NR_mq_notify		266
-//#define __NR_mq_getsetattr		267
+#define __NR_mq_open			262
+#define __NR_mq_unlink			263
+#define __NR_mq_timedsend		264
+#define __NR_mq_timedreceive		265
+#define __NR_mq_notify			266
+#define __NR_mq_getsetattr		267
 //#define __NR_kexec_load		268
 //#define __NR_add_key		269
 //#define __NR_request_key	270

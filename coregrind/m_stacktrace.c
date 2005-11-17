@@ -370,7 +370,8 @@ void VG_(get_and_pp_StackTrace) ( ThreadId tid, UInt n_ips )
 void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
                             StackTrace ips, UInt n_ips )
 {
-   #define MYBUF_LEN 10    // only needs to be long enough for "main"
+   #define MYBUF_LEN 50  // only needs to be long enough for 
+                         // the names specially tested for
 
    Bool main_done = False;
    Char mybuf[MYBUF_LEN];     // ok to stack allocate mybuf[] -- it's tiny
@@ -382,20 +383,26 @@ void VG_(apply_StackTrace)( void(*action)(UInt n, Addr ip),
       if (i > 0) 
          ip -= VG_MIN_INSTR_SZB;   // point to calling line
 
-      // Stop after "main";  if main() is recursive, stop after last main().
+      // Stop after the first appearance of "main" or one of the other names
+      // (the appearance of which is a pretty good sign that we've gone past
+      // main without seeing it, for whatever reason)
       if ( ! VG_(clo_show_below_main)) {
          VG_(get_fnname_nodemangle)( ip, mybuf, MYBUF_LEN );
-         if ( VG_STREQ("main", mybuf) )
+         mybuf[MYBUF_LEN-1] = 0; // paranoia
+         if ( VG_STREQ("main", mybuf)
+#             if defined(VGO_linux)
+              || VG_STREQ("__libc_start_main", mybuf)  // glibc wretchedness
+              || VG_STREQ("generic_start_main", mybuf) // Yellow Dog doggedness
+#             endif
+            )
             main_done = True;
-         else if (main_done)
-            break;
       }
 
       // Act on the ip
       action(i, ip);
 
       i++;
-   } while (i < n_ips && ips[i] != 0);
+   } while (i < n_ips && ips[i] != 0 && !main_done);
 
    #undef MYBUF_LEN
 }

@@ -49,9 +49,8 @@ Addrcheck can detect the following errors:</para>
 
 
 <para>Rather than duplicate much of the Memcheck docs here, 
-users of Addrcheck are
-advised to read <xref linkend="mc-manual.bugs"/>.  Some important
-points:</para>
+users of Addrcheck are advised to read <xref linkend="mc-manual.bugs"/>.  
+Some important points:</para>
 
 <itemizedlist>
 

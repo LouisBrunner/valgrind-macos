@@ -124,11 +124,9 @@ Memcheck can detect the following problems:</para>
     that memory is not immediately made available for
     re-allocation.  Instead it is marked inaccessible and placed
     in a queue of freed blocks.  The purpose is to defer 
-    as long as possible
-    the
-    point at which freed-up memory comes back into circulation.
-    This increases the chance that Memcheck will be able to
-    detect invalid accesses to blocks for some significant period
+    as long as possible the point at which freed-up memory comes back 
+    into circulation.  This increases the chance that Memcheck will be 
+    able to detect invalid accesses to blocks for some significant period
     of time after they have been freed.</para>
     <para>This flag specifies the maximum total size, in bytes,
     of the blocks in the queue.  The default value is five million
@@ -145,11 +143,10 @@ Memcheck can detect the following problems:</para>
     distance below the stack pointer are due to bugs in gcc
     2.96, and does not report them.  The "small distance" is 256
     bytes by default.  Note that gcc 2.96 is the default compiler
-    on some older Linux distributions (RedHat 7.X)
-    and so you may need to use this flag.  Do not use it if
-    you do not have to, as it can cause real errors to be
-    overlooked.  A better alternative is to use a more recent gcc/g++ in which
-    this bug is fixed.</para>
+    on some older Linux distributions (RedHat 7.X) and so you may need to use 
+    this flag.  Do not use it if you do not have to, as it can cause real errors 
+    to be overlooked.  A better alternative is to use a more recent gcc/g++ in 
+    which this bug is fixed.</para>
   </listitem>
 
   <listitem id="partial">

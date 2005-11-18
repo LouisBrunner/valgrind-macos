@@ -289,11 +289,9 @@ file:</para>
 </itemizedlist>
 
 <para>The <computeroutput>.pid</computeroutput> suffix
-on the output file name 
-serves
-two purposes.  Firstly, it means you don't have to rename old log
-files that you don't want to overwrite.  Secondly, and more
-importantly, it allows correct profiling with the
+on the output file name serves two purposes.  Firstly, it means you 
+don't have to rename old log files that you don't want to overwrite.  
+Secondly, and more importantly, it allows correct profiling with the
 <computeroutput>--trace-children=yes</computeroutput> option of
 programs that spawn child processes.</para>
 

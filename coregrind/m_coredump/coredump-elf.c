@@ -311,10 +311,10 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
       SysRes sres;
 
       if (seq == 0)
-	 VG_(sprintf)(buf, "%s%s.pid%d",
+	 VG_(sprintf)(buf, "%s%s.%d",
 		      basename, coreext, VG_(getpid)());
       else
-	 VG_(sprintf)(buf, "%s%s.pid%d.%d",
+	 VG_(sprintf)(buf, "%s%s.%d.%d",
 		      basename, coreext, VG_(getpid)(), seq);
       seq++;
 

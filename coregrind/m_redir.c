@@ -377,14 +377,20 @@ void VG_(setup_code_redirect_table) ( void )
 
 #elif defined(VGP_ppc32_linux)
 
-   add_redirect_sym_to_addr(
-      "soname:ld.so.1", "strlen",
-      (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen)
-   );   
-   add_redirect_sym_to_addr(
-      "soname:ld.so.1", "strcmp",
-      (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp)
-   );
+   /* If we're using memcheck, use these intercepts right from
+      the start, otherwise ld.so makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+
+      add_redirect_sym_to_addr(
+         "soname:ld.so.1", "strlen",
+         (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen)
+      );   
+      add_redirect_sym_to_addr(
+         "soname:ld.so.1", "strcmp",
+         (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp)
+      );
+
+   }
 
 #else
 #  error Unknown platform

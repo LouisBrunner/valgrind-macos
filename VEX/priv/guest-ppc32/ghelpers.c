@@ -348,7 +348,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_VRSAVE = 0;
 
-   vex_state->guest_VSCR = 0x00010000;  // Non-Java mode
+   vex_state->guest_VSCR = 0x0;  // Non-Java mode = 0
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 

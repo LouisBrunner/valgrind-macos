@@ -839,14 +839,16 @@ static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e )
 /* for each lane of vSrc: lane == nan ? laneX = all 1's : all 0's */
 static HReg isNan ( ISelEnv* env, HReg vSrc )
 {
+   HReg zeros, msk_exp, msk_mnt, expt, mnts, vIsNan;
+ 
    vassert(hregClass(vSrc) == HRcVec128);
 
-   HReg zeros   = mk_AvDuplicateRI(env, mkU32(0));
-   HReg msk_exp = mk_AvDuplicateRI(env, mkU32(0x7F800000));
-   HReg msk_mnt = mk_AvDuplicateRI(env, mkU32(0x7FFFFF));
-   HReg expt    = newVRegV(env);
-   HReg mnts    = newVRegV(env);
-   HReg vIsNan  = newVRegV(env); 
+   zeros   = mk_AvDuplicateRI(env, mkU32(0));
+   msk_exp = mk_AvDuplicateRI(env, mkU32(0x7F800000));
+   msk_mnt = mk_AvDuplicateRI(env, mkU32(0x7FFFFF));
+   expt    = newVRegV(env);
+   mnts    = newVRegV(env);
+   vIsNan  = newVRegV(env); 
 
    /* 32bit float => sign(1) | expontent(8) | mantissa(23)
       nan => exponent all ones, mantissa > 0 */

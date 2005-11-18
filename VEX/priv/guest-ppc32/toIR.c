@@ -1484,11 +1484,13 @@ static IRExpr* /* ::Ity_I32 */ getSPR_masked ( PPC32SPR reg, UInt mask )
    guaranteed to be zero. */
 static IRExpr* /* ::Ity_I32 */ getSPR_field ( PPC32SPR reg, UInt fld )
 {
+   UInt shft, mask;
+
    vassert( fld < 8 );
    vassert( reg < PPC32_SPR_MAX );
    
-   UInt shft = 4*(7-fld);
-   UInt mask = 0xF<<shft;
+   shft = 4*(7-fld);
+   mask = 0xF<<shft;
 
    switch (reg) {
    case PPC32_SPR_XER:
@@ -1613,12 +1615,14 @@ static void putSPR_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
    REG[FLD] (as per IBM/hardware notation). */
 static void putSPR_field ( PPC32SPR reg, IRExpr* src, UInt fld )
 {
+   UInt shft, mask;
+
    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
    vassert( fld < 8 );
    vassert( reg < PPC32_SPR_MAX );
    
-   UInt shft = 4*(7-fld);
-   UInt mask = 0xF<<shft;
+   shft = 4*(7-fld);
+   mask = 0xF<<shft;
 
    switch (reg) {
    case PPC32_SPR_CR:
@@ -3688,13 +3692,15 @@ static Bool dis_proc_ctl ( UInt theInstr )
    UInt  opc2     = ifieldOPClo10(theInstr);
    UChar b0       = ifieldBIT0(theInstr);
 
+   IRTemp rS;
+
    /* Reorder SPR field as per PPC32 p470 */
    SPR = ((SPR & 0x1F) << 5) | ((SPR >> 5) & 0x1F);
 
    /* Reorder TBR field as per PPC32 p475 */
    TBR = ((TBR & 31) << 5) | ((TBR >> 5) & 31);
 
-   IRTemp rS  = newTemp(Ity_I32);
+   rS = newTemp(Ity_I32);
    assign( rS, getIReg(rS_addr) );
    
    if (opc1 != 0x1F || b0 != 0) {
@@ -6817,12 +6823,15 @@ static Bool dis_av_fp_convert ( UInt theInstr )
    IRTemp vB        = newTemp(Ity_V128);
    IRTemp vScale    = newTemp(Ity_V128);
    IRTemp vInvScale = newTemp(Ity_V128);
+
+   float scale, inv_scale;
+
    assign( vB, getVReg(vB_addr));
 
    /* scale = 2^UIMM, cast to float, reinterpreted as uint */
-   float scale = (float)( (unsigned int) 1<<UIMM_5 );
+   scale = (float)( (unsigned int) 1<<UIMM_5 );
    assign( vScale, unop(Iop_Dup32x4, mkU32( *((unsigned int*)(&scale)) )) );
-   float inv_scale = 1/scale;
+   inv_scale = 1/scale;
    assign( vInvScale, unop(Iop_Dup32x4, mkU32( *((unsigned int*)(&inv_scale)) )) );
 
    if (opc1 != 0x4) {

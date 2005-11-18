@@ -1669,8 +1669,8 @@ the following constraints:</para>
 
   <listitem>
    <para>As of version 3.0.0, Valgrind has the following limitations
-   in its implementation of floating point relative to the IEEE754 standard.
-   </para>
+   in its implementation of x86/AMD64 floating point relative to 
+   the IEEE754 standard.</para>
 
    <para>Precision: There is no support for 80 bit arithmetic.
    Internally, Valgrind represents all such "long double"
@@ -1739,6 +1739,19 @@ the following constraints:</para>
    denormals to zero (FTZ).  Both of these cause SSE2 arithmetic to be
    less accurate than IEEE requires.  Valgrind detects, ignores, and
    can warn about, attempts to enable either mode.</para>
+  </listitem>
+
+  <listitem>
+   <para>As of version 3.1.0, Valgrind has the following limitations
+   in its implementation of PPC32 FP arithmetic, both scalar and
+   Altivec.</para>
+
+   <para>Scalar: essentially as with x86/AMD64: no exceptions, 
+   and limited observance of rounding mode.  For Altivec, FP arithmetic
+   is done in IEEE/Java mode, which is more accurate than the Linux default
+   setting.  "More accurate" means that denormals are handled properly, 
+   rather than simply being flushed to zero.
+   </para>
   </listitem>
 
  </itemizedlist>

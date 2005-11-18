@@ -73,7 +73,7 @@ typedef void  (*OSetFree_t)  ( void* p );
 /*--- Creating and destroying OSets and OSet members               ---*/
 /*--------------------------------------------------------------------*/
 
-// * Create: allocates an initialises the OSet.  Arguments:
+// * Create: allocates and initialises the OSet.  Arguments:
 //   - keyOff    The offset of the key within the element.
 //   - cmp       The comparison function between keys and elements, or NULL
 //               if the OSet should use fast comparisons.

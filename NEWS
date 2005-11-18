@@ -59,6 +59,13 @@ Other user-visible changes:
 - The XML output format has changed slightly.  See
   docs/internals/xml-output.txt.
 
+- Core dumping has been reinstated (it was disabled in 3.0.0 and 3.0.1).
+  If your program crashes while running under Valgrind, a core file with
+  the name "vgcore.<pid>" will be created (if your settings allow core
+  file creation).  Note that the floating point information is not all
+  there.  If Valgrind itself crashes, the OS will create a normal core
+  file.
+
 The following are some user-visible changes that occurred in earlier
 versions that may not have been announced, or were announced but not
 widely noticed.  So we're mentioning them now.

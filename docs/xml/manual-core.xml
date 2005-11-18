@@ -1479,10 +1479,14 @@ to use <computeroutput>--vex-iropt-precise-memory-exns=yes</computeroutput>.
 
 <para>If your program dies as a result of a fatal core-dumping signal,
 Valgrind will generate its own core file
-(<computeroutput>vgcore.pidNNNNN</computeroutput>) containing your program's
+(<computeroutput>vgcore.NNNNN</computeroutput>) containing your program's
 state.  You may use this core file for post-mortem debugging with gdb or
 similar.  (Note: it will not generate a core if your core dump size limit is
-0.)</para>
+0.)  At the time of writing the core dumps do not include all the floating
+point register information.</para>
+
+<para>If Valgrind itself crashes (hopefully not) the operating system
+will create a core dump in the usual way.</para>
 
 </sect1>
 

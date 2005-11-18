@@ -175,7 +175,7 @@ Memcheck cannot tell you why the memory leaked, unfortunately.  (Ignore the
  </listitem>
 </itemizedlist>
 
-If you don't understand an error message, please consult
+If you don't understand an error message, please consult 
 <xref linkend="mc-manual.errormsgs"/> in the <xref linkend="manual"/> which has
 examples of all the error messages Memcheck produces.</para>
 </sect1>
@@ -183,11 +183,14 @@ examples of all the error messages Memcheck produces.</para>
 <sect1 id="quick-start.caveats" xreflabel="Caveats">
 <title>Caveats</title>
 <para>Memcheck is not perfect;  it occasionally produces false positives,
-and there are mechanisms for suppressing these (see
+and there are mechanisms for suppressing these (see 
 <xref linkend="manual-core.suppress"/> in the <xref linkend="manual"/>).
 However, it is typically right 99% of the time, so you should be wary of
 ignoring its error messages.  After all, you wouldn't ignore warning
-messages produced by a compiler, right?</para>
+messages produced by a compiler, right?  The suppression mechanism is also
+useful if Memcheck is reporting errors in library code that you cannot
+change;  the default suppression set hides a lot of these, but you may
+come across more.</para>
 
 <para>Memcheck also cannot detect every memory error your program has.  For
 example, it can't detect if you overrun the bounds of an array that is

@@ -164,12 +164,10 @@ LafterVMX1:
 
         /* 24(sp) used later to stop ctr reg being clobbered */
 
+	/* 8:20(sp) free */
+	
         /* Linkage Area (reserved)
-           20(sp) : TOC save area
-           16(sp) : link editor word
-           12(sp) : compiler word
-           8(sp) : LR
-           4(sp)  : CR
+           4(sp)  : LR
            0(sp)  : back-chain
         */
 
@@ -191,6 +189,7 @@ LafterVMX1:
         lwz     3,VG_(machine_ppc32_has_FP)@l(3)
         cmplwi  3,0
         beq     LafterFP2
+
         fsub    3,3,3   /* generate zero */
         mtfsf   0xFF,3
 LafterFP2:
@@ -201,10 +200,8 @@ LafterFP2:
         lwz     3,VG_(machine_ppc32_has_VMX)@l(3)
         cmplwi  3,0
         beq     LafterVMX2
-        /* generate vector {0x0,0x0,0x0,0x00010000} */
-        vspltisw 3,0x1      /* 4x 0x00000001 */
-        vspltisw 4,0x0      /* generate zero */
-        vsldoi  3,4,3,0x6   /* v3 = v3 >> 10 bytes */
+
+        vspltisw 3,0x0  /* generate zero */
         mtvscr  3
 LafterVMX2:
 
@@ -298,12 +295,12 @@ run_innerloop_exit:
         cmplwi  10,0
         beq     LafterFP8
 
-        /* Check FPSCR[RM] == 0 */
+        /* Check FPSCR & 0xFF == 0 (lowest 8bits are controls)  */
         mffs      4                       /* fpscr -> fpr */
         li        5,48
         stfiwx    4,5,1                   /* fpr to stack */
         lwzx      6,5,1                   /* load to gpr */
-        andi.     6,6,0x3                 /* mask wanted bits */
+        andi.     6,6,0xFF                /* mask wanted bits */
         cmplwi    6,0x0                   /* cmp with zero */
         bne       invariant_violation     /* branch if not zero */
 LafterFP8:
@@ -318,13 +315,13 @@ LafterFP8:
         /* first generate 4x 0x00010000 */
         vspltisw  4,0x1                   /* 4x 0x00000001 */
         vspltisw  5,0x0                   /* zero */
-        vsldoi    6,4,5,0x2               /* << 2bytes => 4x 0x00010000 */
+        vsldoi    6,4,5,0x2               /* <<2*8 => 4x 0x00010000 */
         /* retrieve VSCR and mask wanted bits */
         mfvscr    7
-        vand      7,7,6                   /* gives SAT flag */
+        vand      7,7,6                   /* gives NJ flag */
         vspltw    7,7,0x3                 /* flags-word to all lanes */
-        vcmpequw. 8,6,7                   /* CR[24] = 1 if equal */
-        bt        26,invariant_violation  /* branch if bit 26 of CR is true */
+        vcmpequw. 8,6,7                   /* CR[24] = 1 if v6 == v7 */
+        bt        24,invariant_violation  /* branch if all_equal */
 LafterVMX8:
 
 	/* otherwise we're OK */

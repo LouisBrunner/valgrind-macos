@@ -5425,7 +5425,8 @@ static test_loop_t float_loops[] = {
          __asm__ __volatile__ ("vsubsbs 31,%0,%1" : : "vr" (v1), "vr" (v2));       // sets VSCR[SAT]
 */
 
-#define DEFAULT_VSCR 0x00010000
+//#define DEFAULT_VSCR 0x00010000
+#define DEFAULT_VSCR 0x0
 
 static void test_av_int_one_arg (const char* name, test_func_t func,
                                  unused uint32_t test_flags)

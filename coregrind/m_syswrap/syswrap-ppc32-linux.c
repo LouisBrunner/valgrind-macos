@@ -70,6 +70,7 @@ void ML_(call_on_new_stack_0_1) ( Addr stack,
 //    r5 = f
 //    r6 = arg1
 asm(
+".text\n"
 ".globl vgModuleLocal_call_on_new_stack_0_1\n"
 "vgModuleLocal_call_on_new_stack_0_1:\n"
 "   mr    %r1,%r3\n\t"     // stack to %sp
@@ -151,7 +152,7 @@ ULong do_syscall_clone_ppc32_linux ( Word (*fn)(void *),
                                      Int*  parent_tid, 
                                      vki_modify_ldt_t * );
 asm(
-"\n"
+".text\n"
 "do_syscall_clone_ppc32_linux:\n"
 "       stwu    1,-32(1)\n"
 "       stw     29,20(1)\n"

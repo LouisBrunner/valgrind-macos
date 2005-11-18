@@ -111,6 +111,7 @@ extern UWord do_syscall_WRK (
           UWord a4, UWord a5, UWord a6
        );
 asm(
+".text\n"
 "do_syscall_WRK:\n"
 "	push	%esi\n"
 "	push	%edi\n"
@@ -149,6 +150,7 @@ extern UWord do_syscall_WRK (
           UWord a4, UWord a5, UWord a6
        );
 asm(
+".text\n"
 "do_syscall_WRK:\n"
         /* Convert function calling convention --> syscall calling
            convention */
@@ -179,6 +181,7 @@ extern ULong do_syscall_WRK (
           UWord a4, UWord a5, UWord a6
        );
 asm(
+".text\n"
 "do_syscall_WRK:\n"
 "        mr      0,3\n"
 "        mr      3,4\n"

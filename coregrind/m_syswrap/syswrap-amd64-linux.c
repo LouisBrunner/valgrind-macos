@@ -70,6 +70,7 @@ void ML_(call_on_new_stack_0_1) ( Addr stack,
 // %rdx == f
 // %rcx == arg1
 asm(
+".text\n"
 ".globl vgModuleLocal_call_on_new_stack_0_1\n"
 "vgModuleLocal_call_on_new_stack_0_1:\n"
 "   movq   %rdi, %rsp\n"   // set stack
@@ -134,7 +135,7 @@ Long do_syscall_clone_amd64_linux ( Word (*fn)(void *),
                                     Long* parent_tid, 
                                     vki_modify_ldt_t * );
 asm(
-"\n"
+".text\n"
 "do_syscall_clone_amd64_linux:\n"
         // set up child stack, temporarily preserving fn and arg
 "       subq    $16, %rsi\n"            // make space on stack

@@ -397,16 +397,19 @@ extern void my_sigreturn(void);
 
 #if defined(VGP_x86_linux)
 #  define _MYSIG(name) \
+   ".text\n" \
    "my_sigreturn:\n" \
    "	movl	$" #name ", %eax\n" \
    "	int	$0x80\n"
 #elif defined(VGP_amd64_linux)
 #  define _MYSIG(name) \
+   ".text\n" \
    "my_sigreturn:\n" \
    "	movq	$" #name ", %rax\n" \
    "	syscall\n"
 #elif defined(VGP_ppc32_linux)
 #  define _MYSIG(name) \
+   ".text\n" \
    "my_sigreturn:\n" \
    "	li	0, " #name "\n" \
    "	sc\n"

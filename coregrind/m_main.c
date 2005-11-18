@@ -2785,6 +2785,7 @@ void* memset(void *s, int c, size_t n) {
    the new stack.  */
 #if defined(VGP_x86_linux)
 asm("\n"
+    ".text\n"
     "\t.globl _start\n"
     "\t.type _start,@function\n"
     "_start:\n"
@@ -2803,6 +2804,7 @@ asm("\n"
 );
 #elif defined(VGP_amd64_linux)
 asm("\n"
+    ".text\n"
     "\t.globl _start\n"
     "\t.type _start,@function\n"
     "_start:\n"
@@ -2819,6 +2821,7 @@ asm("\n"
 );
 #elif defined(VGP_ppc32_linux)
 asm("\n"
+    ".text\n"
     "\t.globl _start\n"
     "\t.type _start,@function\n"
     "_start:\n"

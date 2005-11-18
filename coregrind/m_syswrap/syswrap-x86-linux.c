@@ -78,6 +78,7 @@ void ML_(call_on_new_stack_0_1) ( Addr stack,
 // 12(%esp) == f
 // 16(%esp) == arg1
 asm(
+".text\n"
 ".globl vgModuleLocal_call_on_new_stack_0_1\n"
 "vgModuleLocal_call_on_new_stack_0_1:\n"
 "   movl %esp, %esi\n"     // remember old stack pointer
@@ -136,7 +137,7 @@ Int do_syscall_clone_x86_linux ( Word (*fn)(void *),
                                  Int*  parent_tid, 
                                  vki_modify_ldt_t * );
 asm(
-"\n"
+".text\n"
 "do_syscall_clone_x86_linux:\n"
 "        push    %ebx\n"
 "        push    %edi\n"

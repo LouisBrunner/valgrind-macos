@@ -42,4 +42,10 @@ reference toc,title
   <xsl:attribute name="align">center</xsl:attribute>
 </xsl:attribute-set>
 
+<!-- per Bob Stayton: turn off xml:base processing pro tem -->
+<!-- should hopefully be fixed in next docbook stylesheets release (1.70) -->
+<xsl:template match="@fileref">
+  <xsl:value-of select="."/>
+</xsl:template>
+
 </xsl:stylesheet>

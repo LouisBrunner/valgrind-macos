@@ -549,3 +549,17 @@
    obj:/lib/ld-2.3.2.so
    obj:/lib/ld-2.3.2.so
 }
+
+##----------------------------------------------------------------------##
+## Ubuntu something (based on Debian 3.0?) on x86
+
+{
+   Ubuntu-stripped-ld.so
+   Memcheck:Cond
+   obj:/lib/ld-2.3.5.so
+   obj:/lib/ld-2.3.5.so
+   obj:/lib/ld-2.3.5.so
+   obj:/lib/ld-2.3.5.so
+   obj:/lib/ld-2.3.5.so
+}
+

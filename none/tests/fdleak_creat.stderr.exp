@@ -5,7 +5,6 @@ Open file descriptor .: /tmp/file
 
    at 0x........: creat (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
-   by 0x........: ...
 
 Open file descriptor .: .
    <inherited from parent>

@@ -9,7 +9,6 @@ Open AF_UNIX socket .: <unknown>
 Open AF_UNIX socket .: <unknown>
    at 0x........: socketpair (in /...libc...)
    by 0x........: __libc_start_main (in /...libc...)
-   by 0x........: ...
 
 Open file descriptor .: .
    <inherited from parent>

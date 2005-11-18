@@ -54,8 +54,8 @@ int main(int argc, char **argv)
     int c1 = init_context(&ctx1);
     int c2 = init_context(&ctx2);
 
-    makecontext(&ctx1, (void (*)()) hello, 2, &ctx2);
-    makecontext(&ctx2, (void (*)()) hello, 2, &ctx1);
+    makecontext(&ctx1, (void (*)()) hello, 1, &ctx2);
+    makecontext(&ctx2, (void (*)()) hello, 1, &ctx1);
 
     swapcontext(&oldc, &ctx1);
 

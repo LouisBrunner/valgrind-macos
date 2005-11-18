@@ -377,19 +377,14 @@ void VG_(setup_code_redirect_table) ( void )
 
 #elif defined(VGP_ppc32_linux)
 
-   /* these two drive memcheck nuts if not replaced, and unfortunately
-      they need to be replaced right at the start, before the dynamic
-      linker starts.  */
-   if (VG_(needs).malloc_replacement) {
-      add_redirect_sym_to_addr(
-         "soname:ld.so.1", "strlen",
-         (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen)
-      );   
-      add_redirect_sym_to_addr(
-         "soname:ld.so.1", "strcmp",
-         (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp)
-      );
-   }
+   add_redirect_sym_to_addr(
+      "soname:ld.so.1", "strlen",
+      (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen)
+   );   
+   add_redirect_sym_to_addr(
+      "soname:ld.so.1", "strcmp",
+      (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp)
+   );
 
 #else
 #  error Unknown platform

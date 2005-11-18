@@ -808,9 +808,11 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     [default]</para>
     <para>By default, stack traces for errors do not show any
     functions that appear beneath
-    <computeroutput>main()</computeroutput>; most of the time
-    it's uninteresting C library stuff.  If this option is
-    enabled, these entries below
+    <computeroutput>main()</computeroutput> (or similar functions
+    such as glibc's <computeroutput>__libc_start_main()</computeroutput>, if
+    <computeroutput>main()</computeroutput> is not present in the stack
+    trace); most of the time it's uninteresting C library stuff.  If this
+    option is enabled, these entries below
     <computeroutput>main()</computeroutput> will be shown.</para>
    </listitem>
 

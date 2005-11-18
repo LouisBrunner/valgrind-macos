@@ -269,9 +269,11 @@ regression tests or have some other automated test machinery.
 .B
 --show-below-main=<yes|no> [default: no]
 When enabled, this option causes full stack backtraces to be emited,
-including the part before \fBmain\fP in your program (subject to the
-\fB--num-callers\fP option.)  When disabled, only the part of the stack
-backtrace up to and including main is printed.
+including the part before \fBmain\fP (or similar functions such as glibc's
+\fB__libc_start_main\fP, if \fBmain\fP is not present in the stack trace) in
+your program (subject to the \fB--num-callers\fP option.)  When disabled,
+only the part of the stack backtrace up to and including \fBmain\fP is
+printed.
 
 .TP
 .B

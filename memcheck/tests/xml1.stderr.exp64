@@ -358,13 +358,6 @@
       <obj>...</obj>
       <fn>__libc_start_main</fn>
     </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <dir>...</dir>
-      <file>start.S</file>
-      <line>...</line>
-    </frame>
   </stack>
 </error>
 

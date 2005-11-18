@@ -353,10 +353,6 @@
       <obj>...</obj>
       <fn>__libc_start_main</fn>
     </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-    </frame>
   </stack>
 </error>
 

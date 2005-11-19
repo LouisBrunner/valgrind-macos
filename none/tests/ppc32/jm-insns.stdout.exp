@@ -1202,28 +1202,19 @@ PPC logical insns with special forms:
         mfcr (000f423f) => 000f423f (000f423f 00000000)
         mfcr (ffffffff) => ffffffff (ffffffff 00000000)
 
-       mfspr 1 (00000000) => 00000000 (00000000 00000000, 00000000, 00000000)
-       mfspr 1 (000f423f) => 0000003f (00000000 0000003f, 00000000, 00000000)
-       mfspr 1 (ffffffff) => e000007f (00000000 e000007f, 00000000, 00000000)
-       mfspr 8 (00000000) => 00000000 (00000000 00000000, 00000000, 00000000)
-       mfspr 8 (000f423f) => 000f423f (00000000 00000000, 000f423f, 00000000)
-       mfspr 8 (ffffffff) => ffffffff (00000000 00000000, ffffffff, 00000000)
-       mfspr 9 (00000000) => 00000000 (00000000 00000000, 00000000, 00000000)
-       mfspr 9 (000f423f) => 000f423f (00000000 00000000, 00000000, 000f423f)
-       mfspr 9 (ffffffff) => ffffffff (00000000 00000000, 00000000, ffffffff)
+       mfspr: 00000000 -> mtxer -> mfxer => 00000000
+       mfspr: 000f423f -> mtxer -> mfxer => 0000003f
+       mfspr: ffffffff -> mtxer -> mfxer => e000007f
+       mfspr: 00000000 ->  mtlr ->  mflr => 00000000
+       mfspr: 000f423f ->  mtlr ->  mflr => 000f423f
+       mfspr: ffffffff ->  mtlr ->  mflr => ffffffff
+       mfspr: 00000000 -> mtctr -> mfctr => 00000000
+       mfspr: 000f423f -> mtctr -> mfctr => 000f423f
+       mfspr: ffffffff -> mtctr -> mfctr => ffffffff
 
-       mtspr 1, 00000000 => (00000000 00000000, 00000000, 00000000)
-       mtspr 1, 000f423f => (00000000 0000003f, 00000000, 00000000)
-       mtspr 1, ffffffff => (00000000 e000007f, 00000000, 00000000)
-       mtspr 8, 00000000 => (00000000 00000000, 00000000, 00000000)
-       mtspr 8, 000f423f => (00000000 00000000, 000f423f, 00000000)
-       mtspr 8, ffffffff => (00000000 00000000, ffffffff, 00000000)
-       mtspr 9, 00000000 => (00000000 00000000, 00000000, 00000000)
-       mtspr 9, 000f423f => (00000000 00000000, 00000000, 000f423f)
-       mtspr 9, ffffffff => (00000000 00000000, 00000000, ffffffff)
 
 PPC logical insns with special forms with flags update:
-     rlwimi. 00000000, 0, 0, 0 => 7fffffff (40000000 00000000)
+     rlwimi. 00000000, 0, 0, 0 => 20000000 (40000000 00000000)
      rlwimi. 00000000, 0, 0, 31 => 00000000 (20000000 00000000)
      rlwimi. 00000000, 0, 31, 0 => 00000000 (20000000 00000000)
      rlwimi. 00000000, 0, 31, 31 => 00000000 (20000000 00000000)

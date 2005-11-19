@@ -1202,28 +1202,19 @@ PPC logical insns with special forms:
         mfcr (000f423f) => 000f423f (000f423f 00000000)
         mfcr (ffffffff) => ffffffff (ffffffff 00000000)
 
-       mfspr 1 (00000000) => 00000000 (00000000 00000000, 00000000, 00000000)
-       mfspr 1 (000f423f) => 0000003f (00000000 0000003f, 00000000, 00000000)
-       mfspr 1 (ffffffff) => e000007f (00000000 e000007f, 00000000, 00000000)
-       mfspr 8 (00000000) => 00000000 (00000000 00000000, 00000000, 00000000)
-       mfspr 8 (000f423f) => 000f423f (00000000 00000000, 000f423f, 00000000)
-       mfspr 8 (ffffffff) => ffffffff (00000000 00000000, ffffffff, 00000000)
-       mfspr 9 (00000000) => 00000000 (00000000 00000000, 00000000, 00000000)
-       mfspr 9 (000f423f) => 000f423f (00000000 00000000, 00000000, 000f423f)
-       mfspr 9 (ffffffff) => ffffffff (00000000 00000000, 00000000, ffffffff)
+       mfspr: 00000000 -> mtxer -> mfxer => 00000000
+       mfspr: 000f423f -> mtxer -> mfxer => 0000003f
+       mfspr: ffffffff -> mtxer -> mfxer => e000007f
+       mfspr: 00000000 ->  mtlr ->  mflr => 00000000
+       mfspr: 000f423f ->  mtlr ->  mflr => 000f423f
+       mfspr: ffffffff ->  mtlr ->  mflr => ffffffff
+       mfspr: 00000000 -> mtctr -> mfctr => 00000000
+       mfspr: 000f423f -> mtctr -> mfctr => 000f423f
+       mfspr: ffffffff -> mtctr -> mfctr => ffffffff
 
-       mtspr 1, 00000000 => (00000000 00000000, 00000000, 00000000)
-       mtspr 1, 000f423f => (00000000 0000003f, 00000000, 00000000)
-       mtspr 1, ffffffff => (00000000 e000007f, 00000000, 00000000)
-       mtspr 8, 00000000 => (00000000 00000000, 00000000, 00000000)
-       mtspr 8, 000f423f => (00000000 00000000, 000f423f, 00000000)
-       mtspr 8, ffffffff => (00000000 00000000, ffffffff, 00000000)
-       mtspr 9, 00000000 => (00000000 00000000, 00000000, 00000000)
-       mtspr 9, 000f423f => (00000000 00000000, 00000000, 000f423f)
-       mtspr 9, ffffffff => (00000000 00000000, 00000000, ffffffff)
 
 PPC logical insns with special forms with flags update:
-     rlwimi. 00000000, 0, 0, 0 => 7fffffff (40000000 00000000)
+     rlwimi. 00000000, 0, 0, 0 => 20000000 (40000000 00000000)
      rlwimi. 00000000, 0, 0, 31 => 00000000 (20000000 00000000)
      rlwimi. 00000000, 0, 31, 0 => 00000000 (20000000 00000000)
      rlwimi. 00000000, 0, 31, 31 => 00000000 (20000000 00000000)
@@ -3626,13 +3617,13 @@ Altivec floating point arith insns with one arg:
        vrfim:  => ffffffff ffffffff ffffffff ffffffff (00000000)
 
        vrefp: 02bfffff 02bfffff 02bfffff 02bfffff
-       vrefp:  => 7c2aa9d1 7c2aa9d1 7c2aa9d1 7c2aa9d1 (00000000)
+       vrefp:  => 7c2aa900 7c2aa900 7c2aa900 7c2aa900 (00000000)
        vrefp: 513fffff 513fffff 513fffff 513fffff
-       vrefp:  => 2daaa9d1 2daaa9d1 2daaa9d1 2daaa9d1 (00000000)
+       vrefp:  => 2daaa900 2daaa900 2daaa900 2daaa900 (00000000)
        vrefp: 82bfffff 82bfffff 82bfffff 82bfffff
-       vrefp:  => fc2aa9d1 fc2aa9d1 fc2aa9d1 fc2aa9d1 (00000000)
+       vrefp:  => fc2aa900 fc2aa900 fc2aa900 fc2aa900 (00000000)
        vrefp: d13fffff d13fffff d13fffff d13fffff
-       vrefp:  => adaaa9d1 adaaa9d1 adaaa9d1 adaaa9d1 (00000000)
+       vrefp:  => adaaa900 adaaa900 adaaa900 adaaa900 (00000000)
        vrefp: 00000000 00000000 00000000 00000000
        vrefp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
        vrefp: 80000000 80000000 80000000 80000000
@@ -3642,18 +3633,18 @@ Altivec floating point arith insns with one arg:
        vrefp: ff800000 ff800000 ff800000 ff800000
        vrefp:  => 80000000 80000000 80000000 80000000 (00000000)
        vrefp: 7fffffff 7fffffff 7fffffff 7fffffff
-       vrefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrefp:  => 7fffff00 7fffff00 7fffff00 7fffff00 (00000000)
        vrefp: ffffffff ffffffff ffffffff ffffffff
-       vrefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+       vrefp:  => ffffff00 ffffff00 ffffff00 ffffff00 (00000000)
        vrefp: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
-       vrefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+       vrefp:  => 7fffff00 7fffff00 7fffff00 7fffff00 (00000000)
        vrefp: ffbfffff ffbfffff ffbfffff ffbfffff
-       vrefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+       vrefp:  => ffffff00 ffffff00 ffffff00 ffffff00 (00000000)
 
    vrsqrtefp: 02bfffff 02bfffff 02bfffff 02bfffff
-   vrsqrtefp:  => 5dd10320 5dd10320 5dd10320 5dd10320 (00000000)
+   vrsqrtefp:  => 5dd10300 5dd10300 5dd10300 5dd10300 (00000000)
    vrsqrtefp: 513fffff 513fffff 513fffff 513fffff
-   vrsqrtefp:  => 3693cacc 3693cacc 3693cacc 3693cacc (00000000)
+   vrsqrtefp:  => 3693ca00 3693ca00 3693ca00 3693ca00 (00000000)
    vrsqrtefp: 82bfffff 82bfffff 82bfffff 82bfffff
    vrsqrtefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
    vrsqrtefp: d13fffff d13fffff d13fffff d13fffff
@@ -3667,13 +3658,13 @@ Altivec floating point arith insns with one arg:
    vrsqrtefp: ff800000 ff800000 ff800000 ff800000
    vrsqrtefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
    vrsqrtefp: 7fffffff 7fffffff 7fffffff 7fffffff
-   vrsqrtefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+   vrsqrtefp:  => 7fffff00 7fffff00 7fffff00 7fffff00 (00000000)
    vrsqrtefp: ffffffff ffffffff ffffffff ffffffff
-   vrsqrtefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+   vrsqrtefp:  => ffffff00 ffffff00 ffffff00 ffffff00 (00000000)
    vrsqrtefp: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
-   vrsqrtefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+   vrsqrtefp:  => 7fffff00 7fffff00 7fffff00 7fffff00 (00000000)
    vrsqrtefp: ffbfffff ffbfffff ffbfffff ffbfffff
-   vrsqrtefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+   vrsqrtefp:  => ffffff00 ffffff00 ffffff00 ffffff00 (00000000)
 
 Altivec floating point compare insns:
     vcmpgtfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff

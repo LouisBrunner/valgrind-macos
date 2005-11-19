@@ -24,4 +24,31 @@
 #     if Param: name of system call param
 #     if Free: name of free-ing fn)
 
-# ... insert suppressions here ...
+##----------------------------------------------------------------------##
+## Suppressions for Fedora Core 5 on ppc32 (glibc-2.3.90)
+
+{
+   Fedora-Core-5-hack1
+   Memcheck:Cond
+   fun:_dl_start
+   fun:_start
+}
+
+{
+   Fedora-Core-5-hack2
+   Memcheck:Cond
+   obj:/lib/ld-2.3.90.so
+   obj:/lib/ld-2.3.90.so
+   obj:/lib/ld-2.3.90.so
+   obj:/lib/ld-2.3.90.so
+}
+
+{
+   Fedora-Core-5-hack3
+   Memcheck:Cond
+   obj:/lib/ld-2.3.90.so
+   obj:/lib/ld-2.3.90.so
+   obj:/lib/ld-2.3.90.so
+   obj:/lib/libc-2.3.90.so
+}
+

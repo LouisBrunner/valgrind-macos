@@ -4111,7 +4111,10 @@ static void test_int_two_args (const char* name, test_func_t func,
                                uint32_t test_flags)
 {
    volatile uint32_t res, flags, xer, xer_orig, tmpcr, tmpxer;
-   int i, j;
+   int i, j, is_div;
+
+   // catches div, divwu, divo, divwu, divwuo, and . variants
+   is_div = NULL != strstr(name, "divw");
    
    xer_orig = 0x00000000;
  redo:
@@ -4119,6 +4122,10 @@ static void test_int_two_args (const char* name, test_func_t func,
       for (j=0; j<nb_iargs; j++) {
          r14 = iargs[i];
          r15 = iargs[j];
+         /* result of division by zero is implementation dependent.
+            don't test it. */
+         if (is_div && iargs[j] == 0)
+            continue;
          /* Save flags */
          __asm__ __volatile__ ("mfcr 18");
          tmpcr = r18;
@@ -4145,7 +4152,7 @@ static void test_int_two_args (const char* name, test_func_t func,
       }
       if (verbose) printf("\n");
    }
-   if (test_flags & PPC_XER_CA && xer_orig == 0x00000000) {
+   if ((test_flags & PPC_XER_CA) && xer_orig == 0x00000000) {
       xer_orig = 0x20000000;
       goto redo;
    }
@@ -4185,7 +4192,7 @@ static void test_int_one_arg (const char* name, test_func_t func,
       printf("%s %08x => %08x (%08x %08x)\n",
              name, iargs[i], res, flags, xer);
    }
-   if (test_flags & PPC_XER_CA && xer_orig == 0x00000000) {
+   if ((test_flags & PPC_XER_CA) && xer_orig == 0x00000000) {
       xer_orig = 0x20000000;
       goto redo;
    }

@@ -3917,10 +3917,12 @@ static inline void register_vfarg (vector float* vfarg,
                                   int s, uint8_t exp, uint32_t mant)
 {
    uint32_t tmp;
-   
+   vector uint32_t* vfargI = (vector uint32_t*)vfarg;
+
    tmp = ((uint64_t)s << 31) | ((uint64_t)exp << 23) | mant;
-   float f = *(float*)&tmp;
-   *vfarg = (vector float){ f,f,f,f };
+   //float f = *(float*)&tmp;
+   //*vfarg = (vector float){ f,f,f,f };
+   *vfargI = (vector uint32_t){ tmp,tmp,tmp,tmp };
    AB_DPRINTF("%d %02x %06x => %08x %0e\n",
               s, exp, mant, *((uint32_t*)&tmp), f);
 }
@@ -6115,7 +6117,12 @@ static void test_av_int_ld_two_regs (const char *name,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
-   int i,j;
+   int i,j, k, do_mask;
+
+   do_mask = 0;
+   if (strstr(name, "lvebx")) do_mask = 1;
+   if (strstr(name, "lvehx")) do_mask = 2;
+   if (strstr(name, "lvewx")) do_mask = 4;
 
    for (i=0; i<nb_viargs; i++) {
       for (j=0; j<16; j+=7) {
@@ -6134,7 +6141,7 @@ static void test_av_int_ld_two_regs (const char *name,
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
-         
+
          // do stuff
          (*func)();
          
@@ -6152,6 +6159,31 @@ static void test_av_int_ld_two_regs (const char *name,
          volatile vector unsigned int vec_in = (vector unsigned int)viargs[i];
          unsigned int* src = (unsigned int*)&vec_in;
          unsigned int* dst = (unsigned int*)&vec_out;
+
+         /* For lvebx/lvehx/lvewx, as per the documentation, all of
+            the dest reg except the loaded bits are undefined
+            afterwards.  And different CPUs really do produce
+            different results.  So mask out bits of the result that
+            are undefined so as to make the test work reliably. */
+         if (do_mask == 1) {
+            char* p = (char*)dst;
+            for (k = 0; k < 16; k++)
+               if (k != j)
+                  p[k] = (char)0;
+	 }
+         if (do_mask == 2) {
+            short* p = (short*)dst;
+            for (k = 0; k < 8; k++)
+               if (k != (j>>1))
+                  p[k] = (short)0;
+	 }
+         if (do_mask == 4) {
+            int* p = (int*)dst;
+            for (k = 0; k < 4; k++)
+               if (k != (j>>2))
+                  p[k] = (int)0;
+	 }
+
          printf("%s %3d, %08x %08x %08x %08x", name, j, src[0], src[1], src[2], src[3]);
          printf(" => %08x %08x %08x %08x ", dst[0], dst[1], dst[2], dst[3]);
          printf("(%08x)\n", flags);
@@ -6171,7 +6203,7 @@ static void test_av_int_st_three_regs (const char *name,
    vector unsigned int* viargs_priv;
 
    // private viargs table to store to
-   viargs_priv = memalign(16,(nb_viargs * sizeof(uint32_t)));
+   viargs_priv = memalign(16,(nb_viargs * sizeof(vector unsigned int)));
    for (i=0; i<nb_viargs; i++)
       viargs_priv[i] = (vector unsigned int) { 0,0,0,0 };
 

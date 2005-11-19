@@ -4572,8 +4572,8 @@ static void mfcr_cb (const char* name, test_func_t func,
 static void mfspr_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
-   volatile uint32_t res, flags, xer, ctr, lr, tmpcr, tmpxer;
-   int j, k;
+   //volatile uint32_t res, flags, xer, ctr, lr, tmpcr, tmpxer;
+   int j, k, res;
    
    // Call func, just to stop compiler complaining
    (*func)();
@@ -4860,6 +4860,7 @@ static void mtcrf_cb (const char* name, test_func_t func,
 static void mtspr_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
+#if 0
    volatile uint32_t flags, xer, ctr, lr, tmpcr, tmpxer;
    int j, k;
    
@@ -4991,6 +4992,7 @@ static void mtspr_cb (const char* name, test_func_t func,
       printf("%s %d, %08x => (%08x %08x, %08x, %08x)\n",
              name, j, iargs[k], flags, xer, lr, ctr);
    }
+#endif
 }
 
 

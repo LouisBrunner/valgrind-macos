@@ -4,6 +4,7 @@
 <!ENTITY vg-vemail   "valgrind@valgrind.org">
 <!ENTITY vg-lifespan "2000-2005">
 <!ENTITY vg-users-list "http://lists.sourceforge.net/lists/listinfo/valgrind-users">
+<!ENTITY vg-developers "http://www.valgrind.org/info/developers.html">
 
 <!-- valgrind release + version stuff -->
 <!ENTITY rel-type    "Release">

@@ -5,9 +5,17 @@
 
 <book id="quick-start" xreflabel="Valgrind Quick Start Guide">
 
-  <bookinfo>
-    <title>Valgrind Quick Start Guide</title>
-  </bookinfo>
+<bookinfo>
+ <title>Valgrind Quick Start Guide</title>
+ <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
+ <copyright>
+  <year>&vg-lifespan;</year>
+  <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
+ </copyright>
+ <legalnotice>
+  <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
+ </legalnotice>
+</bookinfo>
 
 
 <title>Valgrind Quick Start Guide</title>

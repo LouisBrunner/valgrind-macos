@@ -6,7 +6,7 @@
  <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities;
 ]>
 
-<set lang="en" id="index">
+<set id="index" lang="en">
 
   <setinfo>
     <title>Valgrind Documentation</title>

@@ -4,19 +4,20 @@
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 <book id="FAQ" xreflabel="Valgrind FAQ">
-<title>Valgrind FAQ</title>
+
 <bookinfo>
+  <title>Valgrind FAQ</title>
   <subtitle>Valgrind Frequently Asked Questions</subtitle>
-  <releaseinfo>November 2005</releaseinfo>
-  <author>
-    <surname>
-      <ulink url="http://www.valgrind.org/info/developers.html">Valgrind Developers</ulink>
-    </surname>
-    <affiliation><orgname>
-      <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink>
-    </orgname></affiliation>
-  </author>
+  <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
+ <copyright>
+  <year>&vg-lifespan;</year>
+  <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
+ </copyright>
+ <legalnotice>
+  <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
+ </legalnotice>
 </bookinfo>
+
 
 <sect1 id="faq.background" xreflabel="Background">
 <title>Background</title>

@@ -295,6 +295,7 @@ run_innerloop_exit:
         cmplwi  10,0
         beq     LafterFP8
 
+#if !defined(ENABLE_INNER)
         /* Check FPSCR & 0xFF == 0 (lowest 8bits are controls)  */
         mffs      4                       /* fpscr -> fpr */
         li        5,48
@@ -303,6 +304,7 @@ run_innerloop_exit:
         andi.     6,6,0xFF                /* mask wanted bits */
         cmplwi    6,0x0                   /* cmp with zero */
         bne       invariant_violation     /* branch if not zero */
+#endif
 LafterFP8:
 
 	/* Using r11 - value used again further on, so don't trash! */

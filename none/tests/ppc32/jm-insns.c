@@ -6278,6 +6278,13 @@ static void test_av_float_one_arg (const char* name, test_func_t func,
    volatile vector unsigned int tmpvscr;
    int i;
 
+   /* if we're doing an estimation operation, arrange to zap the
+      bottom byte of the result as it's basically garbage, and differs
+      between cpus */
+   unsigned int mask
+      = (strstr(name,"vrsqrtefp") || strstr(name,"vrefp"))
+           ? 0xFFFFFF00 : 0xFFFFFFFF;
+
    for (i=0; i<nb_vfargs; i++) {
       vector float vec_in  = (vector float)vfargs[i];
       vector float vec_out = (vector float){ 0.0, 0.0, 0.0, 0.0 };
@@ -6315,7 +6322,7 @@ static void test_av_float_one_arg (const char* name, test_func_t func,
              src[0], src[1], src[2], src[3]);
 
       printf("%s:  => %08x %08x %08x %08x ", name,
-             dst[0], dst[1], dst[2], dst[3]);
+             dst[0] & mask, dst[1] & mask, dst[2] & mask, dst[3] & mask);
 #if defined TEST_VSCR_SAT
       unsigned int* p_vscr = (unsigned int*)&vscr;
       printf("(%08x, %08x)\n", flags, p_vscr[3]);

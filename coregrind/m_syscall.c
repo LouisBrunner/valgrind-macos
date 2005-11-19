@@ -130,6 +130,7 @@ asm(
 "	popl	%edi\n"
 "	popl	%esi\n"
 "	ret\n"
+".previous\n"
 );
 #elif defined(VGP_amd64_linux)
 /* Incoming args (syscall number + up to 6 args) come in %rdi, %rsi,
@@ -163,6 +164,7 @@ asm(
 "	movq    8(%rsp), %r9\n"	 /* last arg from stack */
 "	syscall\n"
 "	ret\n"
+".previous\n"
 );
 #elif defined(VGP_ppc32_linux)
 /* Incoming args (syscall number + up to 6 args) come in %r0, %r3:%r8
@@ -194,6 +196,7 @@ asm(
 "        mfcr    4\n"           /* %cr -> low word of return var          */
 "        rlwinm  4,4,4,31,31\n" /* rotate flag bit so to lsb, and mask it */
 "        blr\n"                 /* and return                             */
+".previous\n"
 );
 #else
 #  error Unknown platform

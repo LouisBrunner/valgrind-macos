@@ -400,19 +400,22 @@ extern void my_sigreturn(void);
    ".text\n" \
    "my_sigreturn:\n" \
    "	movl	$" #name ", %eax\n" \
-   "	int	$0x80\n"
+   "	int	$0x80\n" \
+   ".previous\n"
 #elif defined(VGP_amd64_linux)
 #  define _MYSIG(name) \
    ".text\n" \
    "my_sigreturn:\n" \
    "	movq	$" #name ", %rax\n" \
-   "	syscall\n"
+   "	syscall\n" \
+   ".previous\n"
 #elif defined(VGP_ppc32_linux)
 #  define _MYSIG(name) \
    ".text\n" \
    "my_sigreturn:\n" \
    "	li	0, " #name "\n" \
-   "	sc\n"
+   "	sc\n" \
+   ".previous\n"
 #else
 #  error Unknown platform
 #endif

@@ -95,6 +95,7 @@ asm(
 "   popq   %rdi\n"         // arg1 to correct arg reg
 "   ret\n"                 // jump to f
 "   ud2\n"                 // should never get here
+".previous\n"
 );
 
 /*
@@ -171,6 +172,7 @@ asm(
 
 "1:\n"  // PARENT or ERROR
 "       ret\n"
+".previous\n"
 );
 
 #undef __NR_CLONE

@@ -95,6 +95,7 @@ asm(
 "   movl $0, %ebp\n"
 "   ret\n"                 // jump to f
 "   ud2\n"                 // should never get here
+".previous\n"
 );
 
 
@@ -178,6 +179,7 @@ asm(
 "        pop     %edi\n"
 "        pop     %ebx\n"
 "        ret\n"
+".previous\n"
 );
 
 #undef FSZ

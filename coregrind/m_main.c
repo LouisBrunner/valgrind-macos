@@ -2801,6 +2801,7 @@ asm("\n"
     "\tpushl %eax\n"
     "\tcall  _start_in_C\n"
     "\thlt\n"
+    ".previous\n"
 );
 #elif defined(VGP_amd64_linux)
 asm("\n"
@@ -2818,6 +2819,7 @@ asm("\n"
     /* call _start_in_C, passing it the startup %rsp */
     "\tcall  _start_in_C\n"
     "\thlt\n"
+    ".previous\n"
 );
 #elif defined(VGP_ppc32_linux)
 asm("\n"
@@ -2843,6 +2845,7 @@ asm("\n"
     "\tmr 1,16\n"
     "\tbl _start_in_C\n"
     "\ttrap\n"
+    ".previous\n"
 );
 #else
 #error "_start: needs implementation on this platform"

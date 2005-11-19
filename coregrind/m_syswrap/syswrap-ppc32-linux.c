@@ -110,6 +110,7 @@ asm(
 "   mtcr 0\n\t"            // CAB: Need this?
 "   bctr\n\t"              // jump to dst
 "   trap\n"                // should never get here
+".previous\n"
 );
 
 
@@ -206,6 +207,7 @@ asm(
 "       lwz     31,28(1)\n"
 "       addi    1,1,32\n"
 "       blr\n"
+".previous\n"
 );
 
 #undef __NR_CLONE

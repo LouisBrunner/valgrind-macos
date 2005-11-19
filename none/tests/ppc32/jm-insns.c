@@ -4578,6 +4578,44 @@ static void mfspr_cb (const char* name, test_func_t func,
    // Call func, just to stop compiler complaining
    (*func)();
  
+   // mtxer followed by mfxer
+   for (k=0; k<nb_iargs; k++) {
+      j = iargs[k];
+      __asm__ __volatile__(
+         "mtxer %1\n"
+         "\tmfxer %0"
+         : /*out*/"=r"(res) : /*in*/"r"(j) : /*trashed*/"xer" 
+      );
+      res &= 0xE000007F; /* rest of the bits are undefined */
+      printf("%s: %08x -> mtxer -> mfxer => %08x\n",
+             name, j, res);
+   }
+
+   // mtlr followed by mflr
+   for (k=0; k<nb_iargs; k++) {
+      j = iargs[k];
+      __asm__ __volatile__(
+         "mtlr %1\n"
+         "\tmflr %0"
+         : /*out*/"=r"(res) : /*in*/"r"(j) : /*trashed*/"lr" 
+      );
+      printf("%s: %08x ->  mtlr ->  mflr => %08x\n",
+             name, j, res);
+   }
+
+   // mtctr followed by mfctr
+   for (k=0; k<nb_iargs; k++) {
+      j = iargs[k];
+      __asm__ __volatile__(
+         "mtctr %1\n"
+         "\tmfctr %0"
+         : /*out*/"=r"(res) : /*in*/"r"(j) : /*trashed*/"ctr" 
+      );
+      printf("%s: %08x -> mtctr -> mfctr => %08x\n",
+             name, j, res);
+   }
+
+#if 0
    // mfxer
    j = 1;
    for (k=0; k<nb_iargs; k++) {
@@ -4703,6 +4741,7 @@ static void mfspr_cb (const char* name, test_func_t func,
       printf("%s %d (%08x) => %08x (%08x %08x, %08x, %08x)\n",
              name, 9, iargs[k], res, flags, xer, lr, ctr);
    }
+#endif
 }
 
 #if 0

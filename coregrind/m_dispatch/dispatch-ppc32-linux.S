@@ -295,6 +295,7 @@ run_innerloop_exit:
         cmplwi  10,0
         beq     LafterFP8
 
+/* This check avoidance may be removable if stfiwx is implemented. */
 #if !defined(ENABLE_INNER)
         /* Check FPSCR & 0xFF == 0 (lowest 8bits are controls)  */
         mffs      4                       /* fpscr -> fpr */

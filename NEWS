@@ -42,6 +42,10 @@ much more robust.  In detail:
   space used by Valgrind, but it greatly simplified many things and
   removed Valgrind's dependence on glibc.
 
+Please note that Addrcheck and Helgrind are still not working.  Work
+is underway to reinstate them (or equivalents).  We apologise for the
+inconvenience.
+
 Other user-visible changes:
 
 - The --weird-hacks option has been renamed --sim-hints.

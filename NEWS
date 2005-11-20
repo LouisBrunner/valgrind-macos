@@ -84,6 +84,9 @@ widely noticed.  So we're mentioning them now.
 - The --gen-suppressions flag supports an "all" value that causes every
   suppression to be printed without asking.
 
+- The --log-file option no longer puts "pid" in the filename, eg. the
+  old name "foo.pid12345" is now "foo.12345".
+
 BUGS FIXED:
 
 109861  amd64 hangs at startup

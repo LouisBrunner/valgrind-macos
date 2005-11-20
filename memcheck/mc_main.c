@@ -439,7 +439,7 @@ ULong mc_LOADVn_slow ( Addr a, SizeT szB, Bool bigendian )
 
 
 static 
-void mc_STOREVn_slow ( Addr a, SizeT szB, UWord vbytes, Bool bigendian )
+void mc_STOREVn_slow ( Addr a, SizeT szB, ULong vbytes, Bool bigendian )
 {
    SizeT i;
    SizeT n_addrs_bad = 0;

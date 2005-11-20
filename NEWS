@@ -87,6 +87,10 @@ widely noticed.  So we're mentioning them now.
 - The --log-file option no longer puts "pid" in the filename, eg. the
   old name "foo.pid12345" is now "foo.12345".
 
+- There are several graphical front-ends for Valgrind, such as Valkyrie,
+  Alleyoop and Valgui.  See http://www.valgrind.org/downloads/guis.html
+  for a list.
+
 BUGS FIXED:
 
 109861  amd64 hangs at startup

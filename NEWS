@@ -168,6 +168,8 @@ BUGS FIXED:
 115496  glibc crashes trying to use sysinfo page
 116200  enable fsetxattr, fgetxattr, and fremovexattr for amd64
 
+(3.1.0RC1: 20 November 2005, vex r1466, valgrind r5224).
+
 
 Release 3.0.1 (29 August 2005)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -9,5 +9,5 @@
 <!-- valgrind release + version stuff -->
 <!ENTITY rel-type    "Release">
 <!ENTITY rel-version "3.1.0">
-<!ENTITY rel-date    "November 15 2005">
+<!ENTITY rel-date    "November 25 2005">
 

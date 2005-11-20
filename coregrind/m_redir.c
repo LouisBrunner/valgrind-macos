@@ -160,7 +160,11 @@ static void add_redir_to_resolved_list(CodeRedirect *redir, Bool need_discard)
          TRACE_REDIR("  redir %s:%s:%p->%p duplicated\n",
                      redir->from_lib, redir->from_sym, redir->from_addr,
                      redir->to_addr);
-         VG_(arena_free)(VG_AR_SYMTAB, redir);
+         // jrs 20 Nov 05: causes this: m_mallocfree.c:170
+         // (mk_plain_bszB): Assertion 'bszB != 0' failed.
+         // Perhaps it is an invalid free?  Disable for now
+         // XXX leak?
+         //VG_(arena_free)(VG_AR_SYMTAB, redir);
       }
       break;
    }
@@ -362,6 +366,14 @@ void VG_(setup_code_redirect_table) ( void )
       "soname:ld-linux.so.2", "_dl_sysinfo_int80",
       (Addr)&VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80)
    );
+   /* If we're using memcheck, use this intercept right from the
+      start, otherwise ld.so (glibc-2.3.5) makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_redirect_sym_to_addr(
+         "soname:ld-linux.so.2", "index",
+         (Addr)&VG_(x86_linux_REDIR_FOR_index)
+      );   
+   }
 
 #elif defined(VGP_amd64_linux)
 

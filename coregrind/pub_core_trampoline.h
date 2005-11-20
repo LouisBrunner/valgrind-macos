@@ -51,6 +51,7 @@ extern void VG_(trampoline_stuff_end);
 extern void VG_(x86_linux_SUBST_FOR_sigreturn);
 extern void VG_(x86_linux_SUBST_FOR_rt_sigreturn);
 extern void VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80);
+extern Char* VG_(x86_linux_REDIR_FOR_index) ( const Char*, Int );
 #endif
 
 #if defined(VGP_amd64_linux)

@@ -73,7 +73,49 @@ VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80):
 	/* We can point our sysinfo stuff here */
 	int	$0x80
 	ret
-	
+
+/* There's no particular reason that this needs to be handwritten
+   assembly, but since that's what this file contains, here's a
+   simple index implementation (written in C and compiled by gcc.)
+
+   unsigned char* REDIR_FOR_index ( const char* s, int c ) 
+   { 
+      unsigned char  ch   = (unsigned char)((unsigned int)c); 
+      unsigned char* p    = (unsigned char*)s; 
+      unsigned char* last = 0; 
+      while (1) { 
+         if (*p == ch) last = p; 
+         if (*p == 0) return last; 
+         p++; 
+      } 
+   }
+*/
+.global VG_(x86_linux_REDIR_FOR_index)
+.type   VG_(x86_linux_REDIR_FOR_index), @function
+VG_(x86_linux_REDIR_FOR_index):
+        pushl   %ebp
+        movl    %esp, %ebp
+        pushl   %ebx
+        movb    12(%ebp), %al
+        movl    8(%ebp), %ecx
+        movl    $0, %ebx
+.L2:
+        movb    (%ecx), %dl
+        cmpb    %dl, %al
+        jne     .L3
+        movl    %ecx, %ebx
+.L3:
+        testb   %dl, %dl
+        je      .L8
+        addl    $1, %ecx
+        jmp     .L2
+.L8:
+        movl    %ebx, %eax
+        popl    %ebx
+        popl    %ebp
+        ret
+.size VG_(x86_linux_REDIR_FOR_index), .-VG_(x86_linux_REDIR_FOR_index)
+
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 

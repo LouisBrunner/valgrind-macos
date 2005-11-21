@@ -1051,7 +1051,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    PLAXY(__NR_msgrcv,            sys_msgrcv),         // 70 
    PLAXY(__NR_msgctl,            sys_msgctl),         // 71 
    GENXY(__NR_fcntl,             sys_fcntl),          // 72 
-   //   (__NR_flock,             sys_flock),          // 73 
+   GENX_(__NR_flock,             sys_flock),          // 73 
    GENX_(__NR_fsync,             sys_fsync),          // 74 
 
    GENX_(__NR_fdatasync,         sys_fdatasync),      // 75 
@@ -1129,7 +1129,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_personality,       sys_personality),    // 135 
    //   (__NR_ustat,             sys_ustat),          // 136 
    GENXY(__NR_statfs,            sys_statfs),         // 137 
-   //   (__NR_fstatfs,           sys_fstatfs),        // 138 
+   GENXY(__NR_fstatfs,           sys_fstatfs),        // 138 
    //   (__NR_sysfs,             sys_sysfs),          // 139 
 
    //   (__NR_getpriority,             sys_getpriority),             // 140 
@@ -1246,7 +1246,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_epoll_ctl,         sys_epoll_ctl),      // 233 
    LINXY(__NR_tgkill,            sys_tgkill),         // 234 
 
-   //   (__NR_utimes,            sys_utimes),         // 235 
+   GENX_(__NR_utimes,            sys_utimes),         // 235 
    //   (__NR_vserver,           sys_ni_syscall),     // 236 
    LINX_(__NR_mbind,             sys_mbind),          // 237 
    LINX_(__NR_set_mempolicy,     sys_set_mempolicy),  // 238 

@@ -168,7 +168,30 @@ extern const HChar* LibVEX_Version ( void );
    LibVEX_Translate.  The storage allocated will only stay alive until
    translation of the current basic block is complete.
  */
-extern void* LibVEX_Alloc ( Int nbytes );
+extern HChar* private_LibVEX_alloc_first;
+extern HChar* private_LibVEX_alloc_curr;
+extern HChar* private_LibVEX_alloc_last;
+extern void   private_LibVEX_alloc_OOM(void) __attribute__((noreturn));
+
+static inline void* LibVEX_Alloc ( Int nbytes )
+{
+#if 0
+  /* Nasty debugging hack, do not use. */
+  return malloc(nbytes);
+#else
+   HChar* curr;
+   HChar* next;
+   Int    ALIGN;
+   ALIGN  = sizeof(void*)-1;
+   nbytes = (nbytes + ALIGN) & ~ALIGN;
+   curr   = private_LibVEX_alloc_curr;
+   next   = curr + nbytes;
+   if (next >= private_LibVEX_alloc_last)
+      private_LibVEX_alloc_OOM();
+   private_LibVEX_alloc_curr = next;
+   return curr;
+#endif
+}
 
 /* Show Vex allocation statistics. */
 extern void LibVEX_ShowAllocStats ( void );

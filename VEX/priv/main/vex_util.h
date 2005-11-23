@@ -101,9 +101,9 @@ typedef
 
 extern void         vexSetAllocMode ( VexAllocMode );
 extern VexAllocMode vexGetAllocMode ( void );
+extern void         vexAllocSanityCheck ( void );
 
-extern void vexClearTEMP ( void );
-
+extern void vexSetAllocModeTEMP_and_clear ( void );
 
 #endif /* ndef __VEX_UTIL_H */
 

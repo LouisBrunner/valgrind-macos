@@ -64,28 +64,94 @@
 */
 #define N_TEMPORARY_BYTES 2400000
 
-static Char temporary[N_TEMPORARY_BYTES];
-static Int  temporary_used = 0;
+static HChar  temporary[N_TEMPORARY_BYTES];
+static HChar* temporary_first = &temporary[0];
+static HChar* temporary_curr  = &temporary[0];
+static HChar* temporary_last  = &temporary[N_TEMPORARY_BYTES-1];
+
+static ULong  temporary_bytes_allocd_TOT = 0;
 
 #define N_PERMANENT_BYTES 1000
 
-static Char permanent[N_TEMPORARY_BYTES];
-static Int  permanent_used = 0;
+static HChar  permanent[N_TEMPORARY_BYTES];
+static HChar* permanent_first = &permanent[0];
+static HChar* permanent_curr  = &permanent[0];
+static HChar* permanent_last  = &permanent[N_TEMPORARY_BYTES-1];
 
-
-/* Gather statistics. */
-static Int temporary_bytes_allocd = 0;
-static Int temporary_count_allocs = 0;
-
-static ULong temporary_bytes_allocd_TOT = 0;
-static ULong temporary_count_allocs_TOT = 0;
-
-/* The current allocation mode. */
 static VexAllocMode mode = VexAllocModeTEMP;
 
+void vexAllocSanityCheck ( void )
+{
+   vassert(temporary_first == &temporary[0]);
+   vassert(temporary_last  == &temporary[N_TEMPORARY_BYTES-1]);
+   vassert(permanent_first == &permanent[0]);
+   vassert(permanent_last  == &permanent[N_TEMPORARY_BYTES-1]);
+   vassert(temporary_first <= temporary_curr);
+   vassert(temporary_curr  <= temporary_last);
+   vassert(permanent_first <= permanent_curr);
+   vassert(permanent_curr  <= permanent_last);
+   vassert(private_LibVEX_alloc_first <= private_LibVEX_alloc_curr);
+   vassert(private_LibVEX_alloc_curr  <= private_LibVEX_alloc_last);
+   if (mode == VexAllocModeTEMP){
+      vassert(private_LibVEX_alloc_first == temporary_first);
+      vassert(private_LibVEX_alloc_last  == temporary_last);
+   } 
+   else
+   if (mode == VexAllocModePERM) {
+      vassert(private_LibVEX_alloc_first == permanent_first);
+      vassert(private_LibVEX_alloc_last  == permanent_last);
+   }
+   else 
+      vassert(0);
+
+#  define IS_WORD_ALIGNED(p)   (0 == (((HWord)p) & (sizeof(HWord)-1)))
+   vassert(sizeof(HWord) == 4 || sizeof(HWord) == 8);
+   vassert(IS_WORD_ALIGNED(temporary_first));
+   vassert(IS_WORD_ALIGNED(temporary_curr));
+   vassert(IS_WORD_ALIGNED(temporary_last+1));
+   vassert(IS_WORD_ALIGNED(permanent_first));
+   vassert(IS_WORD_ALIGNED(permanent_curr));
+   vassert(IS_WORD_ALIGNED(permanent_last+1));
+   vassert(IS_WORD_ALIGNED(private_LibVEX_alloc_first));
+   vassert(IS_WORD_ALIGNED(private_LibVEX_alloc_curr));
+   vassert(IS_WORD_ALIGNED(private_LibVEX_alloc_last+1));
+#  undef IS_WORD_ALIGNED
+}
+
+/* The current allocation mode. */
 
 void vexSetAllocMode ( VexAllocMode m )
 {
+   vexAllocSanityCheck();
+
+   /* Save away the current allocation point .. */
+   if (mode == VexAllocModeTEMP){
+      temporary_curr = private_LibVEX_alloc_curr;
+   } 
+   else
+   if (mode == VexAllocModePERM) {
+      permanent_curr = private_LibVEX_alloc_curr;
+   }
+   else 
+      vassert(0);
+
+   /* Did that screw anything up? */
+   vexAllocSanityCheck();
+
+   if (m == VexAllocModeTEMP){
+      private_LibVEX_alloc_first = temporary_first;
+      private_LibVEX_alloc_curr  = temporary_curr;
+      private_LibVEX_alloc_last  = temporary_last;
+   } 
+   else
+   if (m == VexAllocModePERM) {
+      private_LibVEX_alloc_first = permanent_first;
+      private_LibVEX_alloc_curr  = permanent_curr;
+      private_LibVEX_alloc_last  = permanent_last;
+   }
+   else 
+      vassert(0);
+
    mode = m;
 }
 
@@ -94,48 +160,39 @@ VexAllocMode vexGetAllocMode ( void )
    return mode;
 }
 
-/* Exported to library client. */
+/* Visible to library client, unfortunately. */
 
-void* LibVEX_Alloc ( Int nbytes ) 
+HChar* private_LibVEX_alloc_first = &temporary[0];
+HChar* private_LibVEX_alloc_curr  = &temporary[0];
+HChar* private_LibVEX_alloc_last  = &temporary[N_TEMPORARY_BYTES-1];
+
+__attribute__((noreturn))
+void private_LibVEX_alloc_OOM(void)
 {
-   /* 3 or 7 depending on host word size. */
-#  define ALIGN (sizeof(void*)-1)
-   vassert(vex_initdone);
-   vassert(nbytes >= 0);
-   if (0 && vex_valgrind_support) {
-      /* ugly hack -- do not remove */
-      //extern void* malloc ( int );
-      //return malloc(nbytes);
-      return NULL;
-   } else {
-      nbytes = (nbytes + ALIGN) & ~ALIGN;
-      if (mode == VexAllocModeTEMP) {
-         if (temporary_used + nbytes > N_TEMPORARY_BYTES)
-            vpanic("VEX temporary storage exhausted.\n"
-                   "Increase N_TEMPORARY_BYTES and recompile.");
-         temporary_count_allocs++;
-         temporary_bytes_allocd += nbytes;
-         temporary_used += nbytes;
-         return (void*)(&temporary[temporary_used - nbytes]);
-      } else {
-         if (permanent_used + nbytes > N_PERMANENT_BYTES)
-            vpanic("VEX permanent storage exhausted.\n"
-                   "Increase N_PERMANENT_BYTES and recompile.");
-         permanent_used += nbytes;
-         return (void*)(&permanent[permanent_used - nbytes]);
-      }
-   }
-#  undef ALIGN
+   HChar* pool = "???";
+   if (private_LibVEX_alloc_first == &temporary[0]) pool = "TEMP";
+   if (private_LibVEX_alloc_first == &permanent[0]) pool = "PERM";
+   vex_printf("VEX temporary storage exhausted.\n");
+   vex_printf("Pool = %s,  start %p curr %p end %p (size %d)\n",
+              pool, 
+              private_LibVEX_alloc_first,
+              private_LibVEX_alloc_curr,
+              private_LibVEX_alloc_last,
+              private_LibVEX_alloc_last - private_LibVEX_alloc_first);
+   vpanic("VEX temporary storage exhausted.\n"
+          "Increase N_{TEMPORARY,PERMANENT}_BYTES and recompile.");
 }
 
-void vexClearTEMP ( void )
+void vexSetAllocModeTEMP_and_clear ( void )
 {
    /* vassert(vex_initdone); */ /* causes infinite assert loops */
-   temporary_bytes_allocd_TOT += (ULong)temporary_bytes_allocd;
-   temporary_count_allocs_TOT += (ULong)temporary_count_allocs;
-   temporary_used = 0;
-   temporary_bytes_allocd = 0;
-   temporary_count_allocs = 0;
+   temporary_bytes_allocd_TOT 
+      += (ULong)( private_LibVEX_alloc_curr - private_LibVEX_alloc_first);
+
+   mode = VexAllocModeTEMP;
+   temporary_curr            = &temporary[0];
+   private_LibVEX_alloc_curr = &temporary[0];
+   vexAllocSanityCheck();
 }
 
 
@@ -143,11 +200,8 @@ void vexClearTEMP ( void )
 
 void LibVEX_ShowAllocStats ( void )
 {
-   vex_printf("vex storage:  P %d,  T total %lld (%lld),  T curr %d (%d)\n",
-              permanent_used,
-              (Long)temporary_bytes_allocd_TOT, 
-              (Long)temporary_count_allocs_TOT,
-              temporary_bytes_allocd, temporary_count_allocs );
+   vex_printf("vex storage: T total %lld bytes allocated\n",
+              (Long)temporary_bytes_allocd_TOT );
 }
 
 

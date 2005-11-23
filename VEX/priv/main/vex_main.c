@@ -263,8 +263,8 @@ VexTranslateResult LibVEX_Translate (
    vex_traceflags = traceflags;
 
    vassert(vex_initdone);
-   vexClearTEMP();
-
+   vexSetAllocModeTEMP_and_clear();
+   vexAllocSanityCheck();
 
    /* First off, check that the guest and host insn sets
       are supported. */
@@ -406,6 +406,8 @@ VexTranslateResult LibVEX_Translate (
       vassert(archinfo_guest->subarch == archinfo_host->subarch);
    }
 
+   vexAllocSanityCheck();
+
    if (vex_traceflags & VEX_TRACE_FE)
       vex_printf("\n------------------------" 
                    " Front end "
@@ -423,9 +425,11 @@ VexTranslateResult LibVEX_Translate (
                      offB_TISTART,
                      offB_TILEN );
 
+   vexAllocSanityCheck();
+
    if (irbb == NULL) {
       /* Access failure. */
-      vexClearTEMP();
+      vexSetAllocModeTEMP_and_clear();
       vex_traceflags = 0;
       return VexTransAccessFail;
    }
@@ -455,6 +459,8 @@ VexTranslateResult LibVEX_Translate (
    sanityCheckIRBB( irbb, "initial IR", 
                     False/*can be non-flat*/, guest_word_type );
 
+   vexAllocSanityCheck();
+
    /* Clean it up, hopefully a lot. */
    irbb = do_iropt_BB ( irbb, specHelper, preciseMemExnsFn, 
                               guest_bytes_addr );
@@ -469,11 +475,15 @@ VexTranslateResult LibVEX_Translate (
       vex_printf("\n");
    }
 
+   vexAllocSanityCheck();
+
    /* Get the thing instrumented. */
    if (instrument1)
       irbb = (*instrument1)(irbb, guest_layout, 
                             guest_bytes_addr_noredir, guest_extents,
                             guest_word_type, host_word_type);
+   vexAllocSanityCheck();
+
    if (instrument2)
       irbb = (*instrument2)(irbb, guest_layout,
                             guest_bytes_addr_noredir, guest_extents,
@@ -500,6 +510,8 @@ VexTranslateResult LibVEX_Translate (
                        True/*must be flat*/, guest_word_type );
    }
 
+   vexAllocSanityCheck();
+
    if (vex_traceflags & VEX_TRACE_OPT2) {
       vex_printf("\n------------------------" 
                    " After post-instr IR optimisation "
@@ -511,6 +523,8 @@ VexTranslateResult LibVEX_Translate (
    /* Turn it into virtual-registerised code. */
    do_deadcode_BB( irbb );
    do_treebuild_BB( irbb );
+
+   vexAllocSanityCheck();
 
    if (vex_traceflags & VEX_TRACE_TREES) {
       vex_printf("\n------------------------" 
@@ -531,6 +545,8 @@ VexTranslateResult LibVEX_Translate (
 
    vcode = iselBB ( irbb, archinfo_host );
 
+   vexAllocSanityCheck();
+
    if (vex_traceflags & VEX_TRACE_VCODE)
       vex_printf("\n");
 
@@ -549,6 +565,8 @@ VexTranslateResult LibVEX_Translate (
                                   isMove, getRegUsage, mapRegs, 
                                   genSpill, genReload, guest_sizeB,
                                   ppInstr, ppReg );
+
+   vexAllocSanityCheck();
 
    if (vex_traceflags & VEX_TRACE_RCODE) {
       vex_printf("\n------------------------" 
@@ -589,7 +607,7 @@ VexTranslateResult LibVEX_Translate (
          vex_printf("\n\n");
       }
       if (out_used + j > host_bytes_size) {
-         vexClearTEMP();
+         vexSetAllocModeTEMP_and_clear();
          vex_traceflags = 0;
          return VexTransOutputFull;
       }
@@ -601,7 +619,9 @@ VexTranslateResult LibVEX_Translate (
    }
    *host_bytes_used = out_used;
 
-   vexClearTEMP();
+   vexAllocSanityCheck();
+
+   vexSetAllocModeTEMP_and_clear();
 
    vex_traceflags = 0;
    return VexTransOK;

@@ -303,6 +303,18 @@ typedef enum {
 
 static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ );
 
+/* Produce the 32-bit pattern corresponding to the supplied
+   float. */
+static UInt float_to_bits ( Float f )
+{
+   union { UInt i; Float f; } u;
+   vassert(4 == sizeof(UInt));
+   vassert(4 == sizeof(Float));
+   vassert(4 == sizeof(u));
+   u.f = f;
+   return u.i;
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Misc Helpers                                         ---*/
@@ -6830,9 +6842,9 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 
    /* scale = 2^UIMM, cast to float, reinterpreted as uint */
    scale = (float)( (unsigned int) 1<<UIMM_5 );
-   assign( vScale, unop(Iop_Dup32x4, mkU32( *((unsigned int*)(&scale)) )) );
+   assign( vScale, unop(Iop_Dup32x4, mkU32( float_to_bits(scale) )) );
    inv_scale = 1/scale;
-   assign( vInvScale, unop(Iop_Dup32x4, mkU32( *((unsigned int*)(&inv_scale)) )) );
+   assign( vInvScale, unop(Iop_Dup32x4, mkU32( float_to_bits(inv_scale) )) );
 
    if (opc1 != 0x4) {
       vex_printf("dis_av_fp_convert(PPC32)(instr)\n");

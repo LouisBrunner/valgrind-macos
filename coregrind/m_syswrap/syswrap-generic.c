@@ -223,7 +223,7 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
    old_seg = VG_(am_find_nsegment)( old_addr );
    if (old_addr < old_seg->start || old_addr+old_len-1 > old_seg->end)
       goto eINVAL;
-   if (old_seg->kind != SkAnonC && old_seg->kind != SkAnonV)
+   if (old_seg->kind != SkAnonC && old_seg->kind != SkFileC)
       goto eINVAL;
 
    vg_assert(old_len > 0);

@@ -155,10 +155,12 @@ typedef struct SigQueue {
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[1])
 #  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[1])
 #  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.mc_gregs[0])
-#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                                 \
-      /* Convert the values in uc_mcontext r3,cr into a SysRes. */       \
-      VG_(mk_SysRes_ppc32_linux)( (uc)->uc_mcontext.mc_gregs[3],         \
-				  (uc)->uc_mcontext.mc_gregs[VKI_PT_CCR] )
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                            \
+      /* Convert the values in uc_mcontext r3,cr into a SysRes. */  \
+      VG_(mk_SysRes_ppc32_linux)(                                   \
+         (uc)->uc_mcontext.mc_gregs[3],                             \
+         (((uc)->uc_mcontext.mc_gregs[VKI_PT_CCR] >> 28) & 1)       \
+      )
 #  define VG_UCONTEXT_LINK_REG(uc)        ((uc)->uc_mcontext.mc_gregs[VKI_PT_LNK]) 
 
 #else

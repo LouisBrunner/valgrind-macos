@@ -70,9 +70,10 @@ SysRes VG_(mk_SysRes_amd64_linux) ( Word val ) {
 }
 
 /* PPC uses the CR7.SO bit to flag an error (CR0 in IBM-speke) */
-SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt errflag ) {
+/* Note this must be in the bottom bit of the second arg */
+SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
    SysRes res;
-   res.isError = errflag != 0;
+   res.isError = (cr0so & 1) != 0;
    res.val     = val;
    return res;
 }
@@ -167,13 +168,14 @@ asm(
 ".previous\n"
 );
 #elif defined(VGP_ppc32_linux)
-/* Incoming args (syscall number + up to 6 args) come in %r0, %r3:%r8
+/* Incoming args (syscall number + up to 6 args) come in %r3:%r9.
 
    The syscall number goes in %r0.  The args are passed to the syscall in
    the regs %r3:%r8, i.e. the kernel's syscall calling convention.
 
    The %cr0.so bit flags an error.
-   We return the syscall return value in %r3, and the %cr in %r4.
+   We return the syscall return value in %r3, and the %cr0.so in 
+   the lowest bit of %r4.
    We return a ULong, of which %r3 is the high word, and %r4 the low.
    No callee-save regs are clobbered, so no saving/restoring is needed.
 */
@@ -214,8 +216,8 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
 #elif defined(VGP_ppc32_linux)
   ULong ret     = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
   UInt  val     = (UInt)(ret>>32);
-  UInt  errflag = (UInt)(ret);
-  return VG_(mk_SysRes_ppc32_linux)( val, errflag );
+  UInt  cr0so   = (UInt)(ret);
+  return VG_(mk_SysRes_ppc32_linux)( val, cr0so );
 #else
 #  error Unknown platform
 #endif

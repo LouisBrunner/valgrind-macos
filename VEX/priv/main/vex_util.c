@@ -64,7 +64,7 @@
 */
 #define N_TEMPORARY_BYTES 2400000
 
-static HChar  temporary[N_TEMPORARY_BYTES];
+static HChar  temporary[N_TEMPORARY_BYTES] __attribute__((aligned(8)));
 static HChar* temporary_first = &temporary[0];
 static HChar* temporary_curr  = &temporary[0];
 static HChar* temporary_last  = &temporary[N_TEMPORARY_BYTES-1];
@@ -73,7 +73,7 @@ static ULong  temporary_bytes_allocd_TOT = 0;
 
 #define N_PERMANENT_BYTES 1000
 
-static HChar  permanent[N_TEMPORARY_BYTES];
+static HChar  permanent[N_TEMPORARY_BYTES] __attribute__((aligned(8)));
 static HChar* permanent_first = &permanent[0];
 static HChar* permanent_curr  = &permanent[0];
 static HChar* permanent_last  = &permanent[N_TEMPORARY_BYTES-1];

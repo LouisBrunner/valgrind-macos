@@ -151,17 +151,61 @@ typedef struct SigQueue {
 #  define VG_UCONTEXT_LINK_REG(uc)        0 /* No LR on amd64 either */
 
 #elif defined(VGP_ppc32_linux)
-#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[VKI_PT_NIP])
-#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[1])
-#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.mc_gregs[1])
-#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.mc_gregs[0])
+/* Comments from Paul Mackerras 25 Nov 05:
+
+   > I'm tracking down a problem where V's signal handling doesn't
+   > work properly on a ppc440gx running 2.4.20.  The problem is that
+   > the ucontext being presented to V's sighandler seems completely
+   > bogus.
+
+   > V's kernel headers and hence ucontext layout are derived from
+   > 2.6.9.  I compared include/asm-ppc/ucontext.h from 2.4.20 and
+   > 2.6.13.
+
+   > Can I just check my interpretation: the 2.4.20 one contains the
+   > uc_mcontext field in line, whereas the 2.6.13 one has a pointer
+   > to said struct?  And so if V is using the 2.6.13 struct then a
+   > 2.4.20 one will make no sense to it.
+
+   Not quite... what is inline in the 2.4.20 version is a
+   sigcontext_struct, not an mcontext.  The sigcontext looks like
+   this:
+
+     struct sigcontext_struct {
+        unsigned long   _unused[4];
+        int             signal;
+        unsigned long   handler;
+        unsigned long   oldmask;
+        struct pt_regs  *regs;
+     };
+
+   The regs pointer of that struct ends up at the same offset as the
+   uc_regs of the 2.6 struct ucontext, and a struct pt_regs is the
+   same as the mc_gregs field of the mcontext.  In fact the integer
+   regs are followed in memory by the floating point regs on 2.4.20.
+
+   Thus if you are using the 2.6 definitions, it should work on 2.4.20
+   provided that you go via uc->uc_regs rather than looking in
+   uc->uc_mcontext directly.
+
+   There is another subtlety: 2.4.20 doesn't save the vector regs when
+   delivering a signal, and 2.6.x only saves the vector regs if the
+   process has ever used an altivec instructions.  If 2.6.x does save
+   the vector regs, it sets the MSR_VEC bit in
+   uc->uc_regs->mc_gregs[PT_MSR], otherwise it clears it.  That bit
+   will always be clear under 2.4.20.  So you can use that bit to tell
+   whether uc->uc_regs->mc_vregs is valid. */
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_regs->mc_gregs[VKI_PT_NIP])
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_regs->mc_gregs[VKI_PT_R1])
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_regs->mc_gregs[VKI_PT_R1])
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_regs->mc_gregs[VKI_PT_R0])
 #  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                            \
       /* Convert the values in uc_mcontext r3,cr into a SysRes. */  \
       VG_(mk_SysRes_ppc32_linux)(                                   \
-         (uc)->uc_mcontext.mc_gregs[3],                             \
-         (((uc)->uc_mcontext.mc_gregs[VKI_PT_CCR] >> 28) & 1)       \
+         (uc)->uc_regs->mc_gregs[VKI_PT_R3],                        \
+         (((uc)->uc_regs->mc_gregs[VKI_PT_CCR] >> 28) & 1)          \
       )
-#  define VG_UCONTEXT_LINK_REG(uc)        ((uc)->uc_mcontext.mc_gregs[VKI_PT_LNK]) 
+#  define VG_UCONTEXT_LINK_REG(uc)        ((uc)->uc_regs->mc_gregs[VKI_PT_LNK]) 
 
 #else
 #  error Unknown platform

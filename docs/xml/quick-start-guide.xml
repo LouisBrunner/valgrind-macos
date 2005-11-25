@@ -6,24 +6,28 @@
 <book id="quick-start" xreflabel="Valgrind Quick Start Guide">
 
 <bookinfo>
- <title>Valgrind Quick Start Guide</title>
- <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
- <copyright>
-  <year>&vg-lifespan;</year>
-  <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
- </copyright>
- <legalnotice>
-  <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
- </legalnotice>
+  <title>The Valgrind Quick Start Guide</title>
+  <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
+  <copyright>
+    <year>&vg-lifespan;</year>
+    <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
+  </copyright>
+  <author>
+    <email><ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></email>
+  </author>
 </bookinfo>
 
 
-<title>Valgrind Quick Start Guide</title>
+<article>
+<title>The Valgrind Quick Start Guide</title>
+
+
+<sect1 id="quick-start.intro" xreflabel="Introduction">
+<title>Introduction</title>
 
 <para>The Valgrind distribution has multiple tools.  The most popular is the
 memory checking tool (called Memcheck) which can detect many common memory
-errors such as:
-</para>
+errors such as:</para>
 
 <itemizedlist>
  <listitem><para>touching memory you shouldn't (eg. overrunning heap block 
@@ -43,9 +47,12 @@ memory errors in your program with Memcheck.  Note that this guide applies
 to Valgrind version 2.4.0 and later;  some of the information is not quite
 right for earlier versions.</para>
 
-<sect1 id="quick-start.prepare" 
-       xreflabel="Preparing your program">
+</sect1>
+
+
+<sect1 id="quick-start.prepare" xreflabel="Preparing your program">
 <title>Preparing your program</title>
+
 <para>Compile your program with <computeroutput>-g</computeroutput> to include
 debugging information so that Memcheck's error messages include exact line
 numbers.  Using <computeroutput>-O0</computeroutput> is also a good idea, if
@@ -57,9 +64,10 @@ not recommended as Memcheck occasionally reports uninitialised-value
 errors which don't really exist.</para>
 </sect1>
 
-<sect1 id="quick-start.mcrun" 
-       xreflabel="Running your program under Memcheck">
+
+<sect1 id="quick-start.mcrun" xreflabel="Running your program under Memcheck">
 <title>Running your program under Memcheck</title>
+
 <para>If you normally run your program like this:
 
 <programlisting>
@@ -80,6 +88,7 @@ memory leak detector.</para>
 and use a lot more memory.  Memcheck will issue messages about memory errors
 and leaks that it detects.</para>
 </sect1>
+
 
 <sect1 id="quick-start.interpret" 
        xreflabel="Interpreting Memcheck's output">
@@ -188,8 +197,10 @@ If you don't understand an error message, please consult
 examples of all the error messages Memcheck produces.</para>
 </sect1>
 
+
 <sect1 id="quick-start.caveats" xreflabel="Caveats">
 <title>Caveats</title>
+
 <para>Memcheck is not perfect;  it occasionally produces false positives,
 and there are mechanisms for suppressing these (see 
 <xref linkend="manual-core.suppress"/> in the <xref linkend="manual"/>).
@@ -206,12 +217,16 @@ allocated statically or on the stack.  But it should detect every error that
 could crash your program (eg. cause a segmentation fault).</para>
 </sect1>
 
+
 <sect1 id="quick-start.info" xreflabel="More Information">
 <title>More information</title>
+
 <para>Please consult the <xref linkend="FAQ"/> and the
 <xref linkend="manual"/>, which have much more information.  Note that the
 other tools in the Valgrind distribution can be invoked with the
 <computeroutput>--tool</computeroutput> option.</para>
 </sect1>
 
+
+</article>
 </book>

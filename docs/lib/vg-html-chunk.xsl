@@ -1,22 +1,70 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<xsl:stylesheet 
-     xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
 <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/docbook.xsl"/>
 <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/chunk-common.xsl"/>
 <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/manifest.xsl"/>
 <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/chunk-code.xsl"/>
-<xsl:import href="vg-common.xsl"/>
+
 
 <!-- use 8859-1 encoding -->
 <xsl:output method="html" encoding="ISO-8859-1" indent="yes"/>
 
+<!-- set various parameters -->
 <xsl:param name="use.id.as.filename" select="'1'"/> 
 <xsl:param name="chunker.output.indent" select="'yes'"/>
 <!-- use our custom html stylesheet -->
 <xsl:param name="html.stylesheet" select="'vg_basic.css'"/>
 <!-- set chunking at the chapter level only -->
 <xsl:param name="chunk.section.depth" select="'0'"/> 
+<!-- do not generate sub-tocs for qanda sets -->
+<xsl:param name="generate.toc">
+set       toc,title
+book      toc,title,figure,table,example,equation
+chapter   toc,title
+section   toc
+sect1     toc
+sect2     toc
+sect3     toc
+sect4     nop
+sect5     nop
+qandaset  toc
+qandadiv  toc
+appendix  toc,title
+article/appendix  nop
+article   nop
+preface   toc,title
+reference toc,title
+</xsl:param>
+
+
+<!-- properties common to html + fo -->
+<!-- we like '1.2 Title' -->
+<xsl:param name="section.autolabel" select="'1'"/> 
+<xsl:param name="section.label.includes.component.label" select="'1'"/>
+
+<!-- Do not put 'Chapter' at the start of eg 'Chapter 1. Doing This' -->
+<xsl:param name="local.l10n.xml" select="document('')"/> 
+<l:i18n xmlns:l="http://docbook.sourceforge.net/xmlns/l10n/1.0"> 
+  <l:l10n language="en"> 
+    <l:context name="title-numbered">
+      <l:template name="chapter" text="%n.&#160;%t"/>
+    </l:context> 
+  </l:l10n>
+</l:i18n>
+
+<!-- per Bob Stayton: turn off xml:base processing pro tem -->
+<!-- should hopefully be fixed in next docbook stylesheets release (1.70) -->
+<xsl:template match="@fileref">
+  <xsl:value-of select="."/>
+</xsl:template>
+
+
+<!-- center everything at the top of a titlepage -->
+<xsl:attribute-set name="set.titlepage.recto.style">
+  <xsl:attribute name="align">center</xsl:attribute>
+</xsl:attribute-set>
+
 
 <!-- use our custom header -->
 <xsl:template name="header.navigation">

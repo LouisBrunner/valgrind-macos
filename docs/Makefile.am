@@ -48,8 +48,8 @@ XSLTPROC_FLAGS = --nonet --xinclude
 
 # stylesheets
 XSL_HTML_CHUNK_STYLE  = $(mylibdir)/vg-html-chunk.xsl
-XSL_HTML_SINGLE_STYLE = $(mylibdir)/vg-html-single.xsl
 XSL_FO_STYLE          = $(mylibdir)/vg-fo.xsl
+XSL_TEXT_STYLE        = $(mylibdir)/vg-faq2txt.xsl
 
 all-docs: FAQ.txt html-docs print-docs
 
@@ -57,12 +57,12 @@ valid:
 	$(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml
 
 # The text version of the FAQ.
-FAQ.txt: $(myxmldir)/FAQ.xml $(myxmldir)/vg-entities.xml $(mylibdir)/*.xslt
-	$(XSLTPROC) $(XSLTPROC_FLAGS) $(mylibdir)/untag-inline.xslt $(myxmldir)/FAQ.xml | \
-	$(XSLTPROC) $(XSLTPROC_FLAGS) $(mylibdir)/docbook2text.xslt - > FAQ.txt
+FAQ.txt:
+	@echo "Generating the text version of the FAQ ..."
+	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
+	$(XSLTPROC) $(XSLTPROC_FLAGS) -o ./FAQ.txt $(XSL_TEXT_STYLE) $(myxmldir)/FAQ.xml
 
-
-# chunked html
+# chunked html, on a chapter-by-chapter basis
 html-docs:
 	@echo "Generating html files..."
 	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \

@@ -1,11 +1,20 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 <book id="dist" xreflabel="Distribution Documents">
 
   <bookinfo>
-    <title>Distribution Documents</title>
+    <title>Valgrind Distribution Documents</title>
+  <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
+  <copyright>
+    <year>&vg-lifespan;</year>
+    <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
+  </copyright>
+  <author>
+    <email><ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></email>
+  </author>
   </bookinfo>
 
   <!-- Nb: because these are all text files, we have to wrap them in suitable

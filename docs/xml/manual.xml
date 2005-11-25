@@ -7,15 +7,15 @@
 <book id="manual" xreflabel="Valgrind User Manual">
 
 <bookinfo>
- <title>Valgrind User Manual</title>
- <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
- <copyright>
-  <year>&vg-lifespan;</year>
-  <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
- </copyright>
- <legalnotice>
-  <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
- </legalnotice>
+  <title>Valgrind User Manual</title>
+  <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
+  <copyright>
+    <year>&vg-lifespan;</year>
+    <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
+   </copyright>
+   <author>
+     <email><ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></email>
+   </author>
 </bookinfo>
 
   <xi:include href="manual-intro.xml" parse="xml"  

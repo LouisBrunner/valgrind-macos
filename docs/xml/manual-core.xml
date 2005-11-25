@@ -1226,7 +1226,7 @@ tool-specific macros).</para>
  <variablelist>
 
   <varlistentry>
-   <term><computeroutput>RUNNING_ON_VALGRIND</computeroutput>:</term>
+   <term><command><computeroutput>RUNNING_ON_VALGRIND</computeroutput></command>:</term>
    <listitem>
     <para>returns 1 if running on Valgrind, 0 if running on the
     real CPU.  If you are running Valgrind on itself, it will return the
@@ -1236,7 +1236,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_DISCARD_TRANSLATIONS</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_DISCARD_TRANSLATIONS</computeroutput>:</command></term>
    <listitem>
     <para>discard translations of code in the specified address
     range.  Useful if you are debugging a JITter or some other
@@ -1260,7 +1260,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_COUNT_ERRORS</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_COUNT_ERRORS</computeroutput>:</command></term>
    <listitem>
     <para>returns the number of errors found so far by Valgrind.
     Can be useful in test harness code when combined with the
@@ -1274,7 +1274,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_MALLOCLIKE_BLOCK</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_MALLOCLIKE_BLOCK</computeroutput>:</command></term>
    <listitem>
     <para>If your program manages its own memory instead of using
     the standard <computeroutput>malloc()</computeroutput> /
@@ -1291,7 +1291,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_FREELIKE_BLOCK</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_FREELIKE_BLOCK</computeroutput>:</command></term>
    <listitem>
     <para>This should be used in conjunction with
     <computeroutput>VALGRIND_MALLOCLIKE_BLOCK</computeroutput>.
@@ -1301,7 +1301,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>:</command></term>
    <listitem>
     <para>This is similar to
     <computeroutput>VALGRIND_MALLOCLIKE_BLOCK</computeroutput>,
@@ -1312,7 +1312,7 @@ tool-specific macros).</para>
   </varlistentry>
   
   <varlistentry>
-  <term><computeroutput>VALGRIND_DESTROY_MEMPOOL</computeroutput>:</term>
+  <term><command><computeroutput>VALGRIND_DESTROY_MEMPOOL</computeroutput>:</command></term>
    <listitem>
     <para>This should be used in conjunction with
     <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>
@@ -1322,7 +1322,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_MEMPOOL_ALLOC</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_MEMPOOL_ALLOC</computeroutput>:</command></term>
    <listitem>
     <para>This should be used in conjunction with
     <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>
@@ -1332,7 +1332,7 @@ tool-specific macros).</para>
   </varlistentry>
    
   <varlistentry>
-   <term><computeroutput>VALGRIND_MEMPOOL_FREE</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_MEMPOOL_FREE</computeroutput>:</command></term>
    <listitem>
     <para>This should be used in conjunction with
     <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>
@@ -1342,7 +1342,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_NON_SIMD_CALL[0123]</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_NON_SIMD_CALL[0123]</computeroutput>:</command></term>
    <listitem>
     <para>executes a function of 0, 1, 2 or 3 args in the client
     program on the <emphasis>real</emphasis> CPU, not the virtual
@@ -1356,7 +1356,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_PRINTF(format, ...)</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_PRINTF(format, ...)</computeroutput>:</command></term>
    <listitem>
     <para>printf a message to the log file when running under
     Valgrind.  Nothing is output if not running under Valgrind.
@@ -1365,7 +1365,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_PRINTF_BACKTRACE(format, ...)</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_PRINTF_BACKTRACE(format, ...)</computeroutput>:</command></term>
    <listitem>
     <para>printf a message to the log file along with a stack
     backtrace when running under Valgrind.  Nothing is output if
@@ -1375,7 +1375,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_STACK_REGISTER(start, end)</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_STACK_REGISTER(start, end)</computeroutput>:</command></term>
    <listitem>
     <para>Register a new stack.  Informs Valgrind that the memory range
     between start and end is a unique stack.  Returns a stack identifier
@@ -1390,7 +1390,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_STACK_DEREGISTER(id)</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_STACK_DEREGISTER(id)</computeroutput>:</command></term>
    <listitem>
     <para>Deregister a previously registered stack.  Informs
     Valgrind that previously registered memory range with stack id
@@ -1399,7 +1399,7 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
-   <term><computeroutput>VALGRIND_STACK_CHANGE(id, start, end)</computeroutput>:</term>
+   <term><command><computeroutput>VALGRIND_STACK_CHANGE(id, start, end)</computeroutput>:</command></term>
    <listitem>
     <para>Change a previously registered stack.  Informs
     Valgrind that the previously registerer stack with stack id
@@ -1893,4 +1893,5 @@ shipped.</para>
  </itemizedlist>
 
 </sect1>
+
 </chapter>

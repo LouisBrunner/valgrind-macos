@@ -173,12 +173,12 @@ void private_LibVEX_alloc_OOM(void)
    if (private_LibVEX_alloc_first == &temporary[0]) pool = "TEMP";
    if (private_LibVEX_alloc_first == &permanent[0]) pool = "PERM";
    vex_printf("VEX temporary storage exhausted.\n");
-   vex_printf("Pool = %s,  start %p curr %p end %p (size %d)\n",
+   vex_printf("Pool = %s,  start %p curr %p end %p (size %lld)\n",
               pool, 
               private_LibVEX_alloc_first,
               private_LibVEX_alloc_curr,
               private_LibVEX_alloc_last,
-              private_LibVEX_alloc_last - private_LibVEX_alloc_first);
+              (ULong)(private_LibVEX_alloc_last - private_LibVEX_alloc_first));
    vpanic("VEX temporary storage exhausted.\n"
           "Increase N_{TEMPORARY,PERMANENT}_BYTES and recompile.");
 }
@@ -187,7 +187,7 @@ void vexSetAllocModeTEMP_and_clear ( void )
 {
    /* vassert(vex_initdone); */ /* causes infinite assert loops */
    temporary_bytes_allocd_TOT 
-      += (ULong)( private_LibVEX_alloc_curr - private_LibVEX_alloc_first);
+      += (ULong)(private_LibVEX_alloc_curr - private_LibVEX_alloc_first);
 
    mode = VexAllocModeTEMP;
    temporary_curr            = &temporary[0];

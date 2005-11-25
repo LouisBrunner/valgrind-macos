@@ -25,7 +25,7 @@
 #     if Free: name of free-ing fn)
 
 ##----------------------------------------------------------------------##
-## Suppressions for Fedora Core 5 on ppc32 (glibc-2.3.90)
+## Suppressions for Fedora Core 5 on ppc32/amd64 (glibc-2.3.90)
 
 {
    Fedora-Core-5-hack1
@@ -37,18 +37,18 @@
 {
    Fedora-Core-5-hack2
    Memcheck:Cond
-   obj:/lib/ld-2.3.90.so
-   obj:/lib/ld-2.3.90.so
-   obj:/lib/ld-2.3.90.so
-   obj:/lib/ld-2.3.90.so
+   obj:/lib*/ld-2.3.90.so
+   obj:/lib*/ld-2.3.90.so
+   obj:/lib*/ld-2.3.90.so
+   obj:/lib*/ld-2.3.90.so
 }
 
 {
    Fedora-Core-5-hack3
    Memcheck:Cond
-   obj:/lib/ld-2.3.90.so
-   obj:/lib/ld-2.3.90.so
-   obj:/lib/ld-2.3.90.so
-   obj:/lib/libc-2.3.90.so
+   obj:/lib*/ld-2.3.90.so
+   obj:/lib*/ld-2.3.90.so
+   obj:/lib*/ld-2.3.90.so
+   obj:/lib*/libc-2.3.90.so
 }
 

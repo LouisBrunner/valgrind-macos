@@ -169,6 +169,7 @@ BUGS FIXED:
 116200  enable fsetxattr, fgetxattr, and fremovexattr for amd64
 
 (3.1.0RC1: 20 November 2005, vex r1466, valgrind r5224).
+(3.1.0:    26 November 2005, vex r1471, valgrind r5235).
 
 
 Release 3.0.1 (29 August 2005)

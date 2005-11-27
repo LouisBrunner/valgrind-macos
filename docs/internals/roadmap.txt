@@ -10,12 +10,38 @@ X.Y.[12...] releases fix bugs and don't add new features.
 -----------------------------------------------------------------------------
 3.2.0
 -----------------------------------------------------------------------------
-Scheduled for ???
+Scheduled for end-Mar 06 (3.1.0 + 4 months) ?
+
+In order of increasing speculativeness
+--------------------------------------
+
+* Add ppc64-linux support.
+
+* Fold in the V bit compression stuff if it works well (early signs
+  are promising) and get rid of Addrcheck.
+
+* Get function wrapping working again.  Reinstate basic thread checks.
+  Reinstate Helgrind.
+
+* Performance tuning:
+  - faster register allocation in vex
+  - improve stack-update pass
+  - assess effect of branch misprediction in dispatchers
+
+* Try to accelerate development for Darwin ?
+
+
+-----------------------------------------------------------------------------
+3.1.1
+-----------------------------------------------------------------------------
+Tentatively end-Dec 05 (3.1.0 + 1 month): fix any critical bugs in
+3.1.0.
+
 
 -----------------------------------------------------------------------------
 3.1.0
 -----------------------------------------------------------------------------
-Scheduled for around November 2005.
+Scheduled for around November 2005.  (Released 27 Nov 05).
 
 Definite
 --------

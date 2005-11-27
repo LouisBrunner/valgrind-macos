@@ -523,10 +523,17 @@ int main(void)
 
   <para>If you think an answer is incomplete or inaccurate, please
   e-mail <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink>.</para>
-
+<!--
   <para>Read the appropriate section(s) of the <xref linkend="set-index"/>.</para>
+-->
+  <para>Read the appropriate section(s) of the 
+  <ulink url="&vg-bookset;">Valgrind Documentation</ulink>.</para>
 
+<!--
   <para>Read the <xref linkend="dist"/>.</para>
+-->
+  <para>Read the 
+  <ulink url="&vg-dist-docs;">Distribution Documents</ulink>.</para>
 
   <para><ulink url="http://search.gmane.org">Search</ulink> the 
   <ulink url="http://news.gmane.org/gmane.comp.debugging.valgrind">valgrind-users</ulink> mailing list archives, using the group name 

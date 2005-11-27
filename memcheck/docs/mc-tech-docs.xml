@@ -2692,12 +2692,9 @@ the error.</para>
     <para>The first is that we don't want to annotate sources by
     hand, so the Right Thing to do is to write a C/C++ parser,
     annotator, prettyprinter which does this automatically, and
-    run it on post-CPP'd C/C++ source.  See
-    http://www.cacheprof.org for an example of a system which
-    transparently inserts another phase into the gcc/g++
-    compilation route.  The parser/prettyprinter is probably not
-    as hard as it sounds; I would write it in Haskell, a powerful
-    functional language well suited to doing symbolic
+    run it on post-CPP'd C/C++ source.  The parser/prettyprinter 
+    is probably not as hard as it sounds; I would write it in Haskell, 
+    a powerful functional language well suited to doing symbolic
     computation, with which I am intimately familar.  There is
     already a C parser written in Haskell by someone in the
     Haskell community, and that would probably be a good starting

@@ -6,6 +6,8 @@
 <!ENTITY vg-users-list "http://lists.sourceforge.net/lists/listinfo/valgrind-users">
 <!ENTITY vg-developers "http://www.valgrind.org/info/developers.html">
 <!ENTITY vg-svn-repo   "http://www.valgrind.org/downloads/repository.html">
+<!ENTITY vg-bookset    "http://www.valgrind.org/docs/manual/index.html">
+<!ENTITY vg-dist-docs  "http://www.valgrind.org/docs/manual/dist.html">
 
 
 <!-- valgrind release + version stuff -->

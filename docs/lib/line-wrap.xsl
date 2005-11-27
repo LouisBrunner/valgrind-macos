@@ -97,7 +97,7 @@
 <!-- which is a list of 'line' elements, each having a list of 'word'       -->
 <!-- children. After the last 'line' element there's a single 'word', in    -->
 <!-- which the 'current word; is being accumulated.  Whenever the current   -->
-<!--- character is one of the specified delimiters,  this signals the       -->
+<!-- character is one of the specified delimiters,  this signals the        -->
 <!-- formation of a new word. This word is either added to the last line    -->
 <!-- (if the total line length will not exceed the specified line-length),  -->
 <!-- or a new line is started and this word becomes the 1st in the new line -->
@@ -105,7 +105,7 @@
   <xsl:param name="pLine" select="/.."/>
   <xsl:param name="pWord" select="/.."/>
   <xsl:param name="pLineLength" />
-      
+
   <xsl:variable name="vnWordsInLine" select="count($pLine/word)"/>
   <xsl:variable name="vLineLength" 
                 select="string-length($pLine) + $vnWordsInLine"/>

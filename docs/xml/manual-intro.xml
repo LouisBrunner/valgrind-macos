@@ -114,7 +114,7 @@ summary, these are:</para>
 
     <para>Cachegrind is nicely complemented by Josef
     Weidendorfer's amazing KCacheGrind visualisation tool 
-    (<ulink url="http://kcachegrind.sourceforge.net">http://kcachegrind.sourceforge.net</ulink>),
+    (<ulink url="http://kcachegrind.sourceforge.net/cgi-bin/show.cgi/KcacheGrindIndex">http://kcachegrind.sourceforge.net</ulink>),
     a KDE application which presents these profiling results in a
     graphical and easier-to-understand form.</para>
    </listitem>

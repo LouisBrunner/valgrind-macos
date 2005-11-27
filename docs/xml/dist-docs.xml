@@ -3,6 +3,7 @@
   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
+
 <book id="dist" xreflabel="Distribution Documents">
 
   <bookinfo>
@@ -17,8 +18,8 @@
   </author>
   </bookinfo>
 
-  <!-- Nb: because these are all text files, we have to wrap them in suitable
-       XML.  Hence the chapter/title stuff -->
+  <!-- Nb: because these are all text files, we have to wrap -->
+  <!-- them in suitable XML.  Hence the chapter/title stuff  -->
 
   <chapter id="dist.acknowledge" xreflabel="Acknowledgements">
     <title>ACKNOWLEDGEMENTS</title>

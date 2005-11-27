@@ -1,8 +1,7 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"[
-<!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities;
-]>
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 <chapter id="writing-tools" xreflabel="Writing a New Valgrind Tool">
 <title>Writing a New Valgrind Tool</title>
@@ -302,9 +301,8 @@ is used to select it.</para>
 <para>To write your own tool, you'll need the Valgrind source code.
 A normal source distribution should do, although you might want to
 check out the latest code from the Subversion repository.  See the
-information about how to do so at
-<ulink url="http://www.valgrind.org/downloads/repository.html">the
-Valgrind website</ulink>.</para>
+information about how to do so at 
+<ulink url="&vg-svn-repo;">the Valgrind website</ulink>.</para>
 
 </sect2>
 
@@ -761,7 +759,7 @@ your local installation.</para>
 <para>If you aren't confident using XML, or you have problems
 with the toolchain, then write your documentation in text format,
 email it to
-<computeroutput>valgrind@valgrind.org</computeroutput>, and
+<computeroutput>&vg-vemail;</computeroutput>, and
 someone will convert it to XML for you.  Otherwise, follow these
 steps (using <computeroutput>foobar</computeroutput> as the
 example tool name again):</para>
@@ -862,7 +860,7 @@ fb-manual.xml:1632: element xref: validity error :
 ]]></programlisting>
 
   <para>Send a patch for this to
-  <computeroutput>valgrind@valgrind.org</computeroutput>.</para>
+  <computeroutput>&vg-vemail;</computeroutput>.</para>
 
   <para>To achieve true anality, try for a full doc-set build:</para>
 <screen><![CDATA[

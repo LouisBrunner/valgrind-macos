@@ -3,7 +3,7 @@
   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
-<book id="quick-start" xreflabel="Valgrind Quick Start Guide">
+<book id="QuickStart" xreflabel="Valgrind Quick Start Guide">
 
 <bookinfo>
   <title>The Valgrind Quick Start Guide</title>
@@ -18,7 +18,7 @@
 </bookinfo>
 
 
-<article>
+<article id="quick-start">
 <title>The Valgrind Quick Start Guide</title>
 
 

@@ -1,13 +1,18 @@
 <!-- misc. strings -->
-<!ENTITY vg-url      "http://www.valgrind.org">
-<!ENTITY vg-jemail   "julian@valgrind.org">
-<!ENTITY vg-vemail   "valgrind@valgrind.org">
-<!ENTITY vg-lifespan "2000-2005">
+<!ENTITY vg-url        "http://www.valgrind.org/">
+<!ENTITY vg-jemail     "julian@valgrind.org">
+<!ENTITY vg-vemail     "valgrind@valgrind.org">
+<!ENTITY vg-lifespan   "2000-2005">
 <!ENTITY vg-users-list "http://lists.sourceforge.net/lists/listinfo/valgrind-users">
 <!ENTITY vg-developers "http://www.valgrind.org/info/developers.html">
+<!ENTITY vg-svn-repo   "http://www.valgrind.org/downloads/repository.html">
+
 
 <!-- valgrind release + version stuff -->
 <!ENTITY rel-type    "Release">
 <!ENTITY rel-version "3.1.0">
 <!ENTITY rel-date    "November 25 2005">
 
+<!-- valgrind website links used in lots of places in the docs  -->
+<!-- kept in here 'cos everytime the website gets changed, it`s -->
+<!-- a real pain tracking the links down in the docs            -->

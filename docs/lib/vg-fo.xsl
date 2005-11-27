@@ -41,10 +41,12 @@ qandadiv  toc
 qandaset  toc
 </xsl:param>
 
-<!-- properties common to html + fo -->
+<!-- properties common to html + fo ................................... -->
+
 <!-- we like '1.2 Title' -->
 <xsl:param name="section.autolabel" select="'1'"/> 
 <xsl:param name="section.label.includes.component.label" select="'1'"/>
+
 <!-- Do not put 'Chapter' at the start of eg 'Chapter 1. Doing This' -->
 <xsl:param name="local.l10n.xml" select="document('')"/> 
 <l:i18n xmlns:l="http://docbook.sourceforge.net/xmlns/l10n/1.0"> 
@@ -54,6 +56,15 @@ qandaset  toc
     </l:context> 
   </l:l10n>
 </l:i18n>
+
+<!-- per Bob Stayton: turn off xml:base processing pro tem -->
+<!-- should hopefully be fixed in next docbook stylesheets release (1.70) -->
+<!-- ensures correct source paths, eg. images/my_img.png -->
+<xsl:template match="@fileref">
+  <xsl:value-of select="."/>
+</xsl:template>
+
+<!-- end properties common to html + fo ............................... -->
 
 
 <!-- Bug-fix for Suse 10 PassiveTex version -->
@@ -73,13 +84,6 @@ qandaset  toc
   </xsl:attribute>
   <xsl:attribute name="hyphenate">false</xsl:attribute>
 </xsl:attribute-set>
-
-<!-- per Bob Stayton: turn off xml:base processing pro tem -->
-<!-- should hopefully be fixed in next docbook stylesheets release (1.70) -->
-<!-- ensures correct source paths, eg. images/my_img.png -->
-<xsl:template match="@fileref">
-  <xsl:value-of select="."/>
-</xsl:template>
 
 <!-- show links in color -->
 <xsl:attribute-set name="xref.properties">

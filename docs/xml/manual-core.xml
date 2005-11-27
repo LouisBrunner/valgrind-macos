@@ -1,6 +1,8 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
+
 
 <chapter id="manual-core" xreflabel="Valgrind's core">
 <title>Using and understanding the Valgrind core</title>
@@ -1558,7 +1560,7 @@ know if you have build problems.</para>
 <sect1 id="manual-core.problems" xreflabel="If You Have Problems">
 <title>If You Have Problems</title>
 
-<para>Contact us at <ulink url="http://www.valgrind.org">http://www.valgrind.org</ulink>.</para>
+<para>Contact us at <ulink url="&vg-url;">&vg-url;</ulink>.</para>
 
 <para>See <xref linkend="manual-core.limits"/> for the known
 limitations of Valgrind, and for a list of programs which are
@@ -1577,9 +1579,8 @@ beginning.  Valgrind hopefully will have emitted a proper message to that
 effect before dying in this way.  This is a known problem which
 we should fix.</para>
 
-<para>Read the 
-<ulink url="http://www.valgrind.org/docs/FAQ/">FAQ</ulink> for
-more advice about common problems, crashes, etc.</para>
+<para>Read the <xref linkend="FAQ"/> for more advice about common problems, 
+crashes, etc.</para>
 
 </sect1>
 

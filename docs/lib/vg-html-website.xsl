@@ -6,6 +6,12 @@
 <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/manifest.xsl"/>
 <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/chunk-code.xsl"/>
 
+<!-- special stylesheet to generate the docs to fit into the website    -->
+<!-- the only differences between this and vg-html-chunk.xsl should be: -->
+<!-- (a) no css stylesheet is used;        -->
+<!-- (b) no navigation header is used;     -->
+<!-- (c) no html start/end tags are output -->
+
 
 <!-- use 8859-1 encoding -->
 <xsl:output method="html" encoding="ISO-8859-1" indent="yes"/>
@@ -13,8 +19,6 @@
 <!-- set various parameters -->
 <xsl:param name="use.id.as.filename" select="'1'"/> 
 <xsl:param name="chunker.output.indent" select="'yes'"/>
-<!-- use our custom html stylesheet -->
-<xsl:param name="html.stylesheet" select="'vg_basic.css'"/>
 <!-- set chunking at the chapter level only -->
 <xsl:param name="chunk.section.depth" select="'0'"/> 
 <!-- do not generate sub-tocs for qanda sets -->
@@ -36,7 +40,6 @@ article   nop
 preface   toc,title
 reference toc,title
 </xsl:param>
-
 
 <!-- properties common to html + fo ................................... -->
 
@@ -82,127 +85,30 @@ reference toc,title
     <xsl:otherwise>
       <xsl:call-template name="subtoc">
         <xsl:with-param name="toc-context" select="$toc-context"/>
-        <xsl:with-param name="nodes" select="part|reference
-                                         |preface|chapter|appendix
-                                         |article
-                                         |bibliography|glossary|index
-                                         |refentry
-                                         |bridgehead[$bridgehead.in.toc !=
-0]"/>
+        <xsl:with-param name="nodes" 
+                        select="part|reference|preface|chapter|appendix
+                                |article|bibliography|glossary|index
+                                |refentry|bridgehead[$bridgehead.in.toc != 0]"/>
       </xsl:call-template>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
 
 
-<!-- custom header for html docs -->
-<xsl:template name="header.navigation">
-  <xsl:param name="prev" select="/foo"/>
-  <xsl:param name="next" select="/foo"/>
+<!-- custom header for website: no 'html' / 'body' etc. tags -->
+<xsl:template name="chunk-element-content">
+  <xsl:param name="prev"/>
+  <xsl:param name="next"/>
   <xsl:param name="nav.context"/>
-
-  <xsl:variable name="home" select="/*[1]"/>
-  <xsl:variable name="up" select="parent::*"/>
-
-  <xsl:variable name="row1" select="$navig.showtitles != 0"/>
-  <xsl:variable name="row2" select="count($prev) &gt; 0
-                            or (count($up) &gt; 0 
-                            and generate-id($up) != generate-id($home) )
-                            or count($next) &gt; 0"/>
-
-<div>
-<!-- never show header nav stuff on title page -->
-<xsl:if test="count($prev)>0">
- <xsl:if test="$row1 or $row2">
-  <table class="nav" width="100%" cellspacing="3" cellpadding="3" border="0" summary="Navigation header">
-   <xsl:if test="$row2">
-    <tr>
-     <!-- prev -->
-     <td width="22px" align="center" valign="middle">
-      <xsl:if test="count($prev)>0">
-       <a accesskey="p">
-        <xsl:attribute name="href">
-         <xsl:call-template name="href.target">
-          <xsl:with-param name="object" select="$prev"/>
-         </xsl:call-template>
-        </xsl:attribute>
-        <img src="images/prev.png" width="18" height="21" border="0">
-         <xsl:attribute name="alt">
-          <xsl:call-template name="gentext">
-           <xsl:with-param name="key">nav-prev</xsl:with-param>
-          </xsl:call-template>
-         </xsl:attribute>
-        </img>
-       </a>
-      </xsl:if>
-     </td>
-     <!-- up -->
-     <xsl:if test="count($up)>0">
-      <td width="25px" align="center" valign="middle">
-       <a accesskey="u">
-        <xsl:attribute name="href">
-         <xsl:call-template name="href.target">
-          <xsl:with-param name="object" select="$up"/>
-         </xsl:call-template>
-        </xsl:attribute>
-        <img src="images/up.png" width="21" height="18" border="0">
-         <xsl:attribute name="alt">
-          <xsl:call-template name="gentext">
-           <xsl:with-param name="key">nav-up</xsl:with-param>
-          </xsl:call-template>
-         </xsl:attribute>
-        </img>
-       </a>
-      </td>
-     </xsl:if>
-     <!-- home -->
-     <xsl:if test="$home != . or $nav.context = 'toc'">
-      <td width="31px" align="center" valign="middle">
-       <a accesskey="h">
-        <xsl:attribute name="href">
-         <xsl:call-template name="href.target">
-          <xsl:with-param name="object" select="$home"/>
-         </xsl:call-template>
-        </xsl:attribute>
-        <img src="images/home.png" width="27" height="20" border="0">
-         <xsl:attribute name="alt">
-          <xsl:call-template name="gentext">
-           <xsl:with-param name="key">nav-up</xsl:with-param>
-          </xsl:call-template>
-         </xsl:attribute>
-        </img>
-       </a>
-      </td>
-     </xsl:if>
-     <!-- chapter|section heading -->
-     <th align="center" valign="middle">
-       <xsl:apply-templates select="$up" mode="object.title.markup"/>
-     </th>
-     <!-- next -->
-      <td width="22px" align="center" valign="middle">
-        <xsl:if test="count($next)>0">
-         <a accesskey="n">
-          <xsl:attribute name="href">
-           <xsl:call-template name="href.target">
-            <xsl:with-param name="object" select="$next"/>
-           </xsl:call-template>
-          </xsl:attribute>
-          <img src="images/next.png" width="18" height="21" border="0">
-           <xsl:attribute name="alt">
-            <xsl:call-template name="gentext">
-             <xsl:with-param name="key">nav-next</xsl:with-param>
-            </xsl:call-template>
-           </xsl:attribute>
-          </img>
-         </a>
-        </xsl:if>
-       </td>
-      </tr>
-    </xsl:if>
-   </table>
- </xsl:if>
-</xsl:if>
-</div>
+  <xsl:param name="content">
+    <xsl:apply-imports/>
+  </xsl:param>
+  <xsl:copy-of select="$content"/>
+  <xsl:call-template name="footer.navigation">
+	  <xsl:with-param name="prev" select="$prev"/>
+	  <xsl:with-param name="next" select="$next"/>
+	  <xsl:with-param name="nav.context" select="$nav.context"/>
+  </xsl:call-template>
 </xsl:template>
 
 
@@ -276,7 +182,6 @@ reference toc,title
       </td>
      </tr>
     </xsl:if>
-
     <xsl:if test="$row2">
      <tr>
       <td width="20%" align="center">
@@ -319,8 +224,83 @@ reference toc,title
 </xsl:template>
 
 
-<!-- faq styles -->
-<xsl:template match="answer">
+<!-- qandaset styles -->
+<!-- these templates have been carefully tweaked to correct the horrible -->
+<!-- mess that docbook makes of dl/dt/dd tags. Edit with care.           -->
+<xsl:template match="qandaset">
+  <xsl:variable name="title" select="(blockinfo/title|title)[1]"/>
+  <xsl:variable name="toc">
+    <xsl:call-template name="dbhtml-attribute">
+      <xsl:with-param name="pis" select="processing-instruction('dbhtml')"/>
+      <xsl:with-param name="attribute" select="'toc'"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:variable name="toc.params">
+    <xsl:call-template name="find.path.params">
+      <xsl:with-param name="table" select="normalize-space($generate.toc)"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <div class="{name(.)}">
+    <xsl:apply-templates select="$title"/>
+    <xsl:if test="(contains($toc.params, 'toc') and $toc != '0') or $toc = '1'">
+      <xsl:call-template name="process.qanda.toc"/>
+    </xsl:if>
+    <xsl:apply-templates select="qandaentry|qandadiv"/>
+  </div>
+</xsl:template>
+
+
+<xsl:template match="qandadiv">
+<!--
+  <hr/>
+-->
+  <br/>
+  <table width="100%" summary="Q and A Div" cellpadding="2" cellspacing="2" border="0">
+  <xsl:if test="blockinfo/title|title">
+    <tr class="qandadiv">
+      <td align="left" valign="top" colspan="2">
+        <xsl:call-template name="anchor">
+          <xsl:with-param name="conditional" select="0"/>
+        </xsl:call-template>
+        <xsl:apply-templates select="(blockinfo/title|title)[1]"/>
+      </td>
+    </tr>
+  </xsl:if>
+
+  <xsl:variable name="toc">
+    <xsl:call-template name="dbhtml-attribute">
+      <xsl:with-param name="pis"
+                      select="processing-instruction('dbhtml')"/>
+      <xsl:with-param name="attribute" select="'toc'"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:variable name="toc.params">
+    <xsl:call-template name="find.path.params">
+      <xsl:with-param name="table" select="normalize-space($generate.toc)"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:if test="(contains($toc.params, 'toc') and $toc != '0') or $toc = '1'">
+    <tr class="toc" colspan="2">
+      <td align="left" valign="top" colspan="2">
+        <xsl:call-template name="process.myqanda.toc"/>
+      </td>
+    </tr>
+  </xsl:if>
+  <xsl:apply-templates select="qandadiv|qandaentry"/>
+  </table>
+</xsl:template>
+
+
+<!-- put questions in bold -->
+<xsl:template match="question/para">
+  <b><xsl:apply-templates/></b>
+</xsl:template>
+
+<xsl:template match="question">
   <xsl:variable name="deflabel">
     <xsl:choose>
       <xsl:when test="ancestor-or-self::*[@defaultlabel]">
@@ -332,13 +312,122 @@ reference toc,title
       </xsl:otherwise>
     </xsl:choose>
   </xsl:variable>
+  <tr><td colspan="2"><xsl:text>&#160;</xsl:text></td></tr>
   <tr class="{name(.)}">
-    <td><xsl:text>&#160;</xsl:text></td>
     <td align="left" valign="top">
-      <xsl:apply-templates select="*[name(.) != 'label']"/>
+      <xsl:call-template name="anchor">
+        <xsl:with-param name="node" select=".."/>
+        <xsl:with-param name="conditional" select="0"/>
+      </xsl:call-template>
+      <xsl:call-template name="anchor">
+        <xsl:with-param name="conditional" select="0"/>
+      </xsl:call-template>
+      <b>
+        <xsl:apply-templates select="." mode="label.markup"/>
+        <xsl:if test="$deflabel = 'number' and not(label)">
+          <xsl:apply-templates select="." mode="intralabel.punctuation"/>
+	      </xsl:if>
+      </b>
+    </td>
+    <td align="left" valign="top">
+      <xsl:choose>
+        <xsl:when test="$deflabel = 'none' and not(label)">
+          <b><xsl:apply-templates select="*[name(.) != 'label']"/></b>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates select="*[name(.) != 'label']"/>
+        </xsl:otherwise>
+      </xsl:choose>
     </td>
   </tr>
-  <tr><td colspan="2"><xsl:text>&#160;</xsl:text></td></tr>
 </xsl:template>
+
+
+<xsl:template name="process.myqanda.toc">
+  <xsl:apply-templates select="qandadiv" mode="qandatoc.mode"/>
+  <xsl:apply-templates select="qandaentry" mode="myqandatoc.mode"/>
+</xsl:template>
+
+
+<xsl:template name="process.qanda.toc">
+  <xsl:apply-templates select="qandadiv" mode="qandatoc.mode"/>
+  <xsl:apply-templates select="qandaentry" mode="qandatoc.mode"/>
+</xsl:template>
+
+
+<xsl:template match="qandadiv" mode="qandatoc.mode">
+<dl>
+  <dt><xsl:apply-templates select="title" mode="qandatoc.mode"/></dt>
+  <xsl:call-template name="process.qanda.toc"/>
+</dl>
+</xsl:template>
+
+
+<!-- this one is used at the top of the page -->
+<xsl:template match="question" mode="qandatoc.mode">
+  <xsl:variable name="firstch" select="(*[name(.)!='label'])[1]"/>
+  <xsl:variable name="deflabel">
+    <xsl:choose>
+      <xsl:when test="ancestor-or-self::*[@defaultlabel]">
+        <xsl:value-of select="(ancestor-or-self::*[@defaultlabel])[last()]
+                              /@defaultlabel"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$qanda.defaultlabel"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+  <dd>
+    <xsl:apply-templates select="." mode="label.markup"/>
+    <xsl:if test="$deflabel = 'number' and not(label)">
+      <xsl:apply-templates select="." mode="intralabel.punctuation"/>
+    </xsl:if>
+    <xsl:text> </xsl:text>
+    <a>
+      <xsl:attribute name="href">
+        <xsl:call-template name="href.target">
+          <xsl:with-param name="object" select=".."/>
+        </xsl:call-template>
+      </xsl:attribute>
+      <xsl:value-of select="$firstch"/>
+    </a>
+  </dd>
+</xsl:template>
+
+
+<!-- this one is used within table cells -->
+<xsl:template match="qandaentry" mode="myqandatoc.mode">
+  <xsl:apply-templates select="question" mode="myqandatoc.mode"/>
+</xsl:template>
+
+<xsl:template match="question" mode="myqandatoc.mode">
+  <xsl:variable name="firstch" select="(*[name(.)!='label'])[1]"/>
+  <xsl:variable name="deflabel">
+    <xsl:choose>
+      <xsl:when test="ancestor-or-self::*[@defaultlabel]">
+        <xsl:value-of select="(ancestor-or-self::*[@defaultlabel])[last()]
+                              /@defaultlabel"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$qanda.defaultlabel"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+    <xsl:apply-templates select="." mode="label.markup"/>
+    <xsl:if test="$deflabel = 'number' and not(label)">
+      <xsl:apply-templates select="." mode="intralabel.punctuation"/>
+    </xsl:if>
+    <xsl:text> </xsl:text>
+    <a>
+      <xsl:attribute name="href">
+        <xsl:call-template name="href.target">
+          <xsl:with-param name="object" select=".."/>
+        </xsl:call-template>
+      </xsl:attribute>
+      <xsl:value-of select="$firstch"/>
+    </a>
+  <br />
+</xsl:template>
+
 
 </xsl:stylesheet>

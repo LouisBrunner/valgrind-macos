@@ -4,8 +4,7 @@ Valgrind Roadmap
 
 This file serves as a rough roadmap for Valgrind development.  It shows a
 minimal set of features we hope to implement for each version.  It's in
-reverse chronological order.  It only mentions X.Y.0 releases, since
-X.Y.[12...] releases fix bugs and don't add new features.
+reverse chronological order.
 
 -----------------------------------------------------------------------------
 3.2.0

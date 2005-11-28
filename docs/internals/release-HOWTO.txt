@@ -162,8 +162,7 @@ For the official release:
 
 - Add a new section to docs/internals/X_Y_BUGSTATUS.txt.
 
-- If it was a feature (X.Y.0) release, add an X.Y+1.0 entry to
-  docs/internals/roadmap.txt.
+- Add new entries to docs/internals/roadmap.txt for the next release(s).
 
 - Announce the release:
   - Email valgrind-users, valgrind-developers, and valgrind-announce.

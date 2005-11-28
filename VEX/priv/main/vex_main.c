@@ -520,9 +520,9 @@ VexTranslateResult LibVEX_Translate (
       vex_printf("\n");
    }
 
-   /* Turn it into virtual-registerised code. */
-   do_deadcode_BB( irbb );
-   do_treebuild_BB( irbb );
+   /* Turn it into virtual-registerised code.  Build trees -- this
+      also throws away any dead bindings. */
+   ado_treebuild_BB( irbb );
 
    vexAllocSanityCheck();
 

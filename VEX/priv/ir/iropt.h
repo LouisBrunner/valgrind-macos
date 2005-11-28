@@ -63,8 +63,7 @@ IRBB* do_iropt_BB ( IRBB* bb,
 extern
 IRBB* cprop_BB ( IRBB* );
 
-/* Do a dead-code removal pass, which is generally needed to avoid
-   crashing the tree-builder. bb is destructively modified. */
+/* Do a dead-code removal pass.  bb is destructively modified. */
 extern
 void do_deadcode_BB ( IRBB* bb );
 
@@ -72,10 +71,10 @@ void do_deadcode_BB ( IRBB* bb );
 extern
 void do_cse_BB ( IRBB* bb );
 
-/* The tree-builder.  Make maximal safe trees.  bb is destructively
-   modified. */
+/* The tree-builder.  Make (approximately) maximal safe trees.  bb is
+   destructively modified. */
 extern
-void do_treebuild_BB ( IRBB* bb );
+void ado_treebuild_BB ( IRBB* bb );
 
 #endif /* ndef __LIBVEX_IROPT_H */
 

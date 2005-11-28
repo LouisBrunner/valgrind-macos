@@ -3194,285 +3194,42 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
    to instruction selection, which improves the code that the
    instruction selector can produce. */
 
-typedef
-   struct { 
-      Int     occ;          /* occurrence count for this tmp */
-      IRExpr* expr;         /* expr it is bound to, 
-                               or NULL if already 'used' */
-      Bool    eDoesLoad;    /* True <=> expr reads mem */
-      Bool    eDoesGet;     /* True <=> expr reads guest state */
-      Bool    invalidateMe; /* used when dumping bindings */
-      Int     origPos;      /* posn of the binder in the original bb */
-   }
-   TmpInfo;
+/* --- The 'tmp' environment is the central data structure here --- */
 
-/* Given env :: IRTemp -> TmpInfo*
-   Add the use-occurrences of temps in this expression 
-   to the environment. 
+/* The number of outstanding bindings we're prepared to track.
+   The number of times the env becomes full and we have to dump
+   the oldest binding (hence reducing code quality) falls very
+   rapidly as the env size increases.  8 gives reasonable performance 
+   under most circumstances. */
+#define A_NENV 10
+
+/* bindee == NULL   ===  slot is not in use
+   bindee != NULL   ===  slot is in use
 */
-static void occCount_Temp ( TmpInfo** env, IRTemp tmp )
-{
-   TmpInfo* ti = env[(Int)tmp];
-   if (ti) {
-      ti->occ++;
-   } else {
-      ti               = LibVEX_Alloc(sizeof(TmpInfo));
-      ti->occ          = 1;
-      ti->expr         = NULL;
-      ti->eDoesLoad    = False;
-      ti->eDoesGet     = False;
-      ti->invalidateMe = False;
-      ti->origPos      = -1; /* filed in properly later */
-      env[(Int)tmp] = ti;
+typedef
+   struct {
+      IRTemp  binder;
+      IRExpr* bindee;
+      Bool    doesLoad;
+      Bool    doesGet;
    }
-}
+   ATmpInfo;
 
-static void occCount_Expr ( TmpInfo** env, IRExpr* e )
+__attribute__((unused))
+static void ppAEnv ( ATmpInfo* env )
 {
    Int i;
-
-   switch (e->tag) {
-
-      case Iex_Tmp: /* the only interesting case */
-         occCount_Temp(env, e->Iex.Tmp.tmp);
-         return;
-
-      case Iex_Mux0X:
-         occCount_Expr(env, e->Iex.Mux0X.cond);
-         occCount_Expr(env, e->Iex.Mux0X.expr0);
-         occCount_Expr(env, e->Iex.Mux0X.exprX);
-         return;
-
-      case Iex_Binop: 
-         occCount_Expr(env, e->Iex.Binop.arg1);
-         occCount_Expr(env, e->Iex.Binop.arg2);
-         return;
-
-      case Iex_Unop: 
-         occCount_Expr(env, e->Iex.Unop.arg);
-         return;
-
-      case Iex_Load:
-         occCount_Expr(env, e->Iex.Load.addr);
-         return;
-
-      case Iex_CCall:
-         for (i = 0; e->Iex.CCall.args[i]; i++)
-            occCount_Expr(env, e->Iex.CCall.args[i]);
-         return;
-
-      case Iex_GetI:
-         occCount_Expr(env, e->Iex.GetI.ix);
-         return;
-
-      case Iex_Const:
-      case Iex_Get:
-         return;
-
-      default: 
-         vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
-         vpanic("occCount_Expr");
-    }
-}
-
-
-/* Given env :: IRTemp -> TmpInfo*
-   Add the use-occurrences of temps in this expression 
-   to the environment. 
-*/
-static void occCount_Stmt ( TmpInfo** env, IRStmt* st )
-{
-   Int      i;
-   IRDirty* d;
-   switch (st->tag) {
-      case Ist_AbiHint:
-         occCount_Expr(env, st->Ist.AbiHint.base);
-         return;
-      case Ist_Tmp: 
-         occCount_Expr(env, st->Ist.Tmp.data); 
-         return; 
-      case Ist_Put: 
-         occCount_Expr(env, st->Ist.Put.data);
-         return;
-      case Ist_PutI:
-         occCount_Expr(env, st->Ist.PutI.ix);
-         occCount_Expr(env, st->Ist.PutI.data);
-         return;
-      case Ist_Store:
-         occCount_Expr(env, st->Ist.Store.addr);
-         occCount_Expr(env, st->Ist.Store.data);
-         return;
-      case Ist_Dirty:
-         d = st->Ist.Dirty.details;
-         if (d->mFx != Ifx_None)
-            occCount_Expr(env, d->mAddr);
-         occCount_Expr(env, d->guard);
-         for (i = 0; d->args[i]; i++)
-            occCount_Expr(env, d->args[i]);
-         return;
-      case Ist_NoOp:
-      case Ist_IMark:
-      case Ist_MFence:
-         return;
-      case Ist_Exit:
-         occCount_Expr(env, st->Ist.Exit.guard);
-         return;
-      default: 
-         vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
-         vpanic("occCount_Stmt");
+   for (i = 0; i < A_NENV; i++) {
+      vex_printf("%d  tmp %d  val ", i, (Int)env[i].binder);
+      if (env[i].bindee) 
+         ppIRExpr(env[i].bindee);
+      else 
+         vex_printf("(null)");
+      vex_printf("\n");
    }
 }
 
-/* Look up a binding for tmp in the env.  If found, return the bound
-   expression, and set the env's binding to NULL so it is marked as
-   used.  If not found, return NULL. */
-
-static IRExpr* tbSubst_Temp ( TmpInfo** env, IRTemp tmp )
-{
-   TmpInfo* ti;
-   IRExpr*  e;
-   ti = env[(Int)tmp];
-   if (ti){
-      e = ti->expr;
-      if (e) {
-         ti->expr = NULL;
-         return e;
-      } else {
-         return NULL;
-      }
-   } else {
-      return NULL;
-   }
-}
-
-/* Traverse e, looking for temps.  For each observed temp, see if env
-   contains a binding for the temp, and if so return the bound value.
-   The env has the property that any binding it holds is
-   'single-shot', so once a binding is used, it is marked as no longer
-   available, by setting its .expr field to NULL. */
-
-static IRExpr* tbSubst_Expr ( TmpInfo** env, IRExpr* e )
-{
-   IRExpr*  e2;
-   IRExpr** args2;
-   Int      i;
-
-   switch (e->tag) {
-
-      case Iex_CCall:
-         args2 = sopyIRExprVec(e->Iex.CCall.args);
-         for (i = 0; args2[i]; i++)
-            args2[i] = tbSubst_Expr(env,args2[i]);
-         return IRExpr_CCall(e->Iex.CCall.cee,
-                   e->Iex.CCall.retty,
-                   args2
-                );
-      case Iex_Tmp:
-         e2 = tbSubst_Temp(env, e->Iex.Tmp.tmp);
-         return e2 ? e2 : e;
-      case Iex_Mux0X:
-         return IRExpr_Mux0X(
-                   tbSubst_Expr(env, e->Iex.Mux0X.cond),
-                   tbSubst_Expr(env, e->Iex.Mux0X.expr0),
-                   tbSubst_Expr(env, e->Iex.Mux0X.exprX)
-                );
-      case Iex_Binop:
-         return IRExpr_Binop(
-                   e->Iex.Binop.op,
-                   tbSubst_Expr(env, e->Iex.Binop.arg1),
-                   tbSubst_Expr(env, e->Iex.Binop.arg2)
-                );
-      case Iex_Unop:
-         return IRExpr_Unop(
-                   e->Iex.Unop.op,
-                   tbSubst_Expr(env, e->Iex.Unop.arg)
-                );
-      case Iex_Load:
-         return IRExpr_Load(
-                   e->Iex.Load.end,
-                   e->Iex.Load.ty,
-                  tbSubst_Expr(env, e->Iex.Load.addr)
-                );
-      case Iex_GetI:
-         return IRExpr_GetI(
-                   e->Iex.GetI.descr,
-                   tbSubst_Expr(env, e->Iex.GetI.ix),
-                   e->Iex.GetI.bias
-                );
-      case Iex_Const:
-      case Iex_Get:
-         return e;
-      default: 
-         vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
-         vpanic("tbSubst_Expr");
-   }
-}
-
-/* Same deal as tbSubst_Expr, except for stmts. */
-
-static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
-{
-   Int      i;
-   IRDirty* d;
-   IRDirty* d2;
-   switch (st->tag) {
-      case Ist_AbiHint:
-         return IRStmt_AbiHint(
-                   tbSubst_Expr(env, st->Ist.AbiHint.base),
-                   st->Ist.AbiHint.len
-                );
-      case Ist_Store:
-         return IRStmt_Store(
-                   st->Ist.Store.end,
-                   tbSubst_Expr(env, st->Ist.Store.addr),
-                   tbSubst_Expr(env, st->Ist.Store.data)
-                );
-      case Ist_Tmp:
-         return IRStmt_Tmp(
-                   st->Ist.Tmp.tmp,
-                   tbSubst_Expr(env, st->Ist.Tmp.data)
-                );
-      case Ist_Put:
-         return IRStmt_Put(
-                   st->Ist.Put.offset,
-                   tbSubst_Expr(env, st->Ist.Put.data)
-                );
-      case Ist_PutI:
-         return IRStmt_PutI(
-                   st->Ist.PutI.descr,
-                   tbSubst_Expr(env, st->Ist.PutI.ix),
-                   st->Ist.PutI.bias,
-                   tbSubst_Expr(env, st->Ist.PutI.data)
-                );
-
-      case Ist_Exit:
-         return IRStmt_Exit(
-                   tbSubst_Expr(env, st->Ist.Exit.guard),
-                   st->Ist.Exit.jk,
-                   st->Ist.Exit.dst
-                );
-      case Ist_IMark:
-         return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
-      case Ist_NoOp:
-         return IRStmt_NoOp();
-      case Ist_MFence:
-         return IRStmt_MFence();
-      case Ist_Dirty:
-         d = st->Ist.Dirty.details;
-         d2 = emptyIRDirty();
-         *d2 = *d;
-         if (d2->mFx != Ifx_None)
-            d2->mAddr = tbSubst_Expr(env, d2->mAddr);
-         d2->guard = tbSubst_Expr(env, d2->guard);
-         for (i = 0; d2->args[i]; i++)
-            d2->args[i] = tbSubst_Expr(env, d2->args[i]);
-         return IRStmt_Dirty(d2);
-      default: 
-         vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
-         vpanic("tbSubst_Stmt");
-   }
-}
-
+/* --- Tree-traversal fns --- */
 
 /* Traverse an expr, and detect if any part of it reads memory or does
    a Get.  Be careful ... this really controls how much the
@@ -3519,122 +3276,327 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
 }
 
 
-static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
+/* Add a binding to the front of the env and slide all the rest
+   backwards.  It should be the case that the last slot is free. */
+static void addToEnvFront ( ATmpInfo* env, IRTemp binder, IRExpr* bindee )
 {
-   Int k, oldest_op, oldest_k;
-   TmpInfo* ti;
+   Int i;
+   vassert(env[A_NENV-1].bindee == NULL);
+   for (i = A_NENV-1; i >= 1; i--)
+      env[i] = env[i-1];
+   env[0].binder   = binder;
+   env[0].bindee   = bindee;
+   env[0].doesLoad = False; /* filled in later */
+   env[0].doesGet  = False; /* filled in later */
+}
 
-   /* Dump all the bindings to marked as invalidated, in order. */
-   while (True) {
-  
-      /* find the oldest bind marked 'invalidateMe'. */
-      oldest_op = 1<<30;
-      oldest_k =  1<<30;
-      for (k = 0; k < bb->tyenv->types_used; k++) {
-         ti = env[k];
-         if (!ti)
-            continue;
-         if (!ti->expr)
-            continue;
-         if (!ti->invalidateMe)
-           continue;
-         /* vex_printf("FOUND INVAL %d %d\n", ti->origPos, oldest_op); */
-         if (ti->origPos < oldest_op) {
-            oldest_op = ti->origPos;
-            oldest_k = k;
-         }
-      }
+/* Given uses :: array of UShort, indexed by IRTemp
+   Add the use-occurrences of temps in this expression 
+   to the env. 
+*/
+static void aoccCount_Expr ( UShort* uses, IRExpr* e )
+{
+   Int i;
 
-      /* No more binds to invalidate. */
-      if (oldest_op == 1<<30)
+   switch (e->tag) {
+
+      case Iex_Tmp: /* the only interesting case */
+         uses[e->Iex.Tmp.tmp]++;
          return;
 
-      /* the oldest bind to invalidate has been identified */
-      vassert(oldest_op != 1<<31 && oldest_k != 1<<31);
-      ti = env[oldest_k];
-      vassert(ti->expr && ti->invalidateMe);
+      case Iex_Mux0X:
+         aoccCount_Expr(uses, e->Iex.Mux0X.cond);
+         aoccCount_Expr(uses, e->Iex.Mux0X.expr0);
+         aoccCount_Expr(uses, e->Iex.Mux0X.exprX);
+         return;
 
-      /* and invalidate it ... */
-      bb->stmts[*j] = IRStmt_Tmp( (IRTemp)oldest_k, ti->expr );
-      /*  vex_printf("**1  "); ppIRStmt(bb->stmts[*j]); vex_printf("\n"); */
-      (*j)++;
-      ti->invalidateMe = False;
-      ti->expr = NULL; /* no longer available for substitution */
+      case Iex_Binop: 
+         aoccCount_Expr(uses, e->Iex.Binop.arg1);
+         aoccCount_Expr(uses, e->Iex.Binop.arg2);
+         return;
 
-   } /* loop which dumps the binds marked for invalidation */
+      case Iex_Unop: 
+         aoccCount_Expr(uses, e->Iex.Unop.arg);
+         return;
+
+      case Iex_Load:
+         aoccCount_Expr(uses, e->Iex.Load.addr);
+         return;
+
+      case Iex_CCall:
+         for (i = 0; e->Iex.CCall.args[i]; i++)
+            aoccCount_Expr(uses, e->Iex.CCall.args[i]);
+         return;
+
+      case Iex_GetI:
+         aoccCount_Expr(uses, e->Iex.GetI.ix);
+         return;
+
+      case Iex_Const:
+      case Iex_Get:
+         return;
+
+      default: 
+         vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
+         vpanic("aoccCount_Expr");
+    }
 }
 
 
-
-/* notstatic */ void do_treebuild_BB ( IRBB* bb )
+/* Given uses :: array of UShort, indexed by IRTemp
+   Add the use-occurrences of temps in this statement 
+   to the env. 
+*/
+static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
 {
-   Int      i, j, k;
-   Bool     invPut, invStore;
+   Int      i;
+   IRDirty* d;
+   switch (st->tag) {
+      case Ist_AbiHint:
+         aoccCount_Expr(uses, st->Ist.AbiHint.base);
+         return;
+      case Ist_Tmp: 
+         aoccCount_Expr(uses, st->Ist.Tmp.data); 
+         return; 
+      case Ist_Put: 
+         aoccCount_Expr(uses, st->Ist.Put.data);
+         return;
+      case Ist_PutI:
+         aoccCount_Expr(uses, st->Ist.PutI.ix);
+         aoccCount_Expr(uses, st->Ist.PutI.data);
+         return;
+      case Ist_Store:
+         aoccCount_Expr(uses, st->Ist.Store.addr);
+         aoccCount_Expr(uses, st->Ist.Store.data);
+         return;
+      case Ist_Dirty:
+         d = st->Ist.Dirty.details;
+         if (d->mFx != Ifx_None)
+            aoccCount_Expr(uses, d->mAddr);
+         aoccCount_Expr(uses, d->guard);
+         for (i = 0; d->args[i]; i++)
+            aoccCount_Expr(uses, d->args[i]);
+         return;
+      case Ist_NoOp:
+      case Ist_IMark:
+      case Ist_MFence:
+         return;
+      case Ist_Exit:
+         aoccCount_Expr(uses, st->Ist.Exit.guard);
+         return;
+      default: 
+         vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
+         vpanic("aoccCount_Stmt");
+   }
+}
+
+/* Look up a binding for tmp in the env.  If found, return the bound
+   expression, and set the env's binding to NULL so it is marked as
+   used.  If not found, return NULL. */
+
+static IRExpr* atbSubst_Temp ( ATmpInfo* env, IRTemp tmp )
+{
+   Int i;
+   for (i = 0; i < A_NENV; i++) {
+      if (env[i].binder == tmp && env[i].bindee != NULL) {
+         IRExpr* bindee = env[i].bindee;
+         env[i].bindee = NULL;
+         return bindee;
+      }
+   }
+   return NULL;
+}
+
+/* Traverse e, looking for temps.  For each observed temp, see if env
+   contains a binding for the temp, and if so return the bound value.
+   The env has the property that any binding it holds is
+   'single-shot', so once a binding is used, it is marked as no longer
+   available, by setting its .bindee field to NULL. */
+
+static IRExpr* atbSubst_Expr ( ATmpInfo* env, IRExpr* e )
+{
+   IRExpr*  e2;
+   IRExpr** args2;
+   Int      i;
+
+   switch (e->tag) {
+
+      case Iex_CCall:
+         args2 = sopyIRExprVec(e->Iex.CCall.args);
+         for (i = 0; args2[i]; i++)
+            args2[i] = atbSubst_Expr(env,args2[i]);
+         return IRExpr_CCall(
+                   e->Iex.CCall.cee,
+                   e->Iex.CCall.retty,
+                   args2
+                );
+      case Iex_Tmp:
+         e2 = atbSubst_Temp(env, e->Iex.Tmp.tmp);
+         return e2 ? e2 : e;
+      case Iex_Mux0X:
+         return IRExpr_Mux0X(
+                   atbSubst_Expr(env, e->Iex.Mux0X.cond),
+                   atbSubst_Expr(env, e->Iex.Mux0X.expr0),
+                   atbSubst_Expr(env, e->Iex.Mux0X.exprX)
+                );
+      case Iex_Binop:
+         return IRExpr_Binop(
+                   e->Iex.Binop.op,
+                   atbSubst_Expr(env, e->Iex.Binop.arg1),
+                   atbSubst_Expr(env, e->Iex.Binop.arg2)
+                );
+      case Iex_Unop:
+         return IRExpr_Unop(
+                   e->Iex.Unop.op,
+                   atbSubst_Expr(env, e->Iex.Unop.arg)
+                );
+      case Iex_Load:
+         return IRExpr_Load(
+                   e->Iex.Load.end,
+                   e->Iex.Load.ty,
+                   atbSubst_Expr(env, e->Iex.Load.addr)
+                );
+      case Iex_GetI:
+         return IRExpr_GetI(
+                   e->Iex.GetI.descr,
+                   atbSubst_Expr(env, e->Iex.GetI.ix),
+                   e->Iex.GetI.bias
+                );
+      case Iex_Const:
+      case Iex_Get:
+         return e;
+      default: 
+         vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
+         vpanic("atbSubst_Expr");
+   }
+}
+
+/* Same deal as atbSubst_Expr, except for stmts. */
+
+static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
+{
+   Int      i;
+   IRDirty* d;
+   IRDirty* d2;
+   switch (st->tag) {
+      case Ist_AbiHint:
+         return IRStmt_AbiHint(
+                   atbSubst_Expr(env, st->Ist.AbiHint.base),
+                   st->Ist.AbiHint.len
+                );
+      case Ist_Store:
+         return IRStmt_Store(
+                   st->Ist.Store.end,
+                   atbSubst_Expr(env, st->Ist.Store.addr),
+                   atbSubst_Expr(env, st->Ist.Store.data)
+                );
+      case Ist_Tmp:
+         return IRStmt_Tmp(
+                   st->Ist.Tmp.tmp,
+                   atbSubst_Expr(env, st->Ist.Tmp.data)
+                );
+      case Ist_Put:
+         return IRStmt_Put(
+                   st->Ist.Put.offset,
+                   atbSubst_Expr(env, st->Ist.Put.data)
+                );
+      case Ist_PutI:
+         return IRStmt_PutI(
+                   st->Ist.PutI.descr,
+                   atbSubst_Expr(env, st->Ist.PutI.ix),
+                   st->Ist.PutI.bias,
+                   atbSubst_Expr(env, st->Ist.PutI.data)
+                );
+
+      case Ist_Exit:
+         return IRStmt_Exit(
+                   atbSubst_Expr(env, st->Ist.Exit.guard),
+                   st->Ist.Exit.jk,
+                   st->Ist.Exit.dst
+                );
+      case Ist_IMark:
+         return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
+      case Ist_NoOp:
+         return IRStmt_NoOp();
+      case Ist_MFence:
+         return IRStmt_MFence();
+      case Ist_Dirty:
+         d  = st->Ist.Dirty.details;
+         d2 = emptyIRDirty();
+         *d2 = *d;
+         if (d2->mFx != Ifx_None)
+            d2->mAddr = atbSubst_Expr(env, d2->mAddr);
+         d2->guard = atbSubst_Expr(env, d2->guard);
+         for (i = 0; d2->args[i]; i++)
+            d2->args[i] = atbSubst_Expr(env, d2->args[i]);
+         return IRStmt_Dirty(d2);
+      default: 
+         vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
+         vpanic("atbSubst_Stmt");
+   }
+}
+
+/* notstatic */ void ado_treebuild_BB ( IRBB* bb )
+{
+   Int      i, j, k, m;
+   Bool     stmtPuts, stmtStores, invalidateMe;
    IRStmt*  st;
    IRStmt*  st2;
-   TmpInfo* ti;
-   IRExpr*  next2;
+   ATmpInfo env[A_NENV];
 
-   /* Mapping from IRTemp to TmpInfo*. */
    Int       n_tmps = bb->tyenv->types_used;
-   TmpInfo** env    = LibVEX_Alloc(n_tmps * sizeof(TmpInfo*));
-
-   for (i = 0; i < n_tmps; i++)
-      env[i] = NULL;
+   UShort*   uses   = LibVEX_Alloc(n_tmps * sizeof(UShort));
 
    /* Phase 1.  Scan forwards in bb, counting use occurrences of each
       temp.  Also count occurrences in the bb->next field. */
+
+   for (i = 0; i < n_tmps; i++)
+      uses[i] = 0;
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
       if (st->tag == Ist_NoOp)
          continue;
-      occCount_Stmt( env, st );
+      aoccCount_Stmt( uses, st );
    }
-   occCount_Expr(env, bb->next );
+   aoccCount_Expr(uses, bb->next );
 
 #  if 0
-   for (i = 0; i < env->used; i++) {
-      if (!env->inuse[i])
+   for (i = 0; i < n_tmps; i++) {
+      if (uses[i] == 0)
         continue;
-      ppIRTemp( (IRTemp)(env->key[i]) );
-      vex_printf("  used %d\n", ((TmpInfo*)env->val[i])->occ );
+      ppIRTemp( (IRTemp)i );
+      vex_printf("  used %d\n", (Int)uses[i] );
    }
 #  endif
 
-   /* Phase 2.  Fill in the origPos fields. */
+   /* Phase 2.  Scan forwards in bb.  For each statement in turn:
 
-   for (i = 0; i < bb->stmts_used; i++) {
-      st = bb->stmts[i];
-      if (st->tag != Ist_Tmp)
-         continue;
+         If the env is full, emit the end element.  This guarantees
+         there is at least one free slot in the following.
 
-      ti = env[(Int)st->Ist.Tmp.tmp];
-      if (!ti) {
-         vex_printf("\n");
-         ppIRTemp(st->Ist.Tmp.tmp);
-         vex_printf("\n");
-         vpanic("treebuild_BB (phase 2): unmapped IRTemp");
-      }
-      ti->origPos = i;
-   }
-
-   /* Phase 3.  Scan forwards in bb.  
-
-      On seeing 't = E', occ(t)==1,  
-            let E'=env(E), set t's binding to be E', and
-            delete this stmt.
-            Also examine E' and set the hints for E' appropriately
+         On seeing 't = E', occ(t)==1,  
+            let E'=env(E)
+            delete this stmt
+            add t -> E' to the front of the env
+            Examine E' and set the hints for E' appropriately
               (doesLoad? doesGet?)
 
-      On seeing any other stmt, 
+         On seeing any other stmt, 
             let stmt' = env(stmt)
             remove from env any 't=E' binds invalidated by stmt
                 emit the invalidated stmts
             emit stmt'
+            compact any holes in env 
+              by sliding entries towards the front
 
-      Apply env to bb->next.
+      Finally, apply env to bb->next.  
    */
+
+   for (i = 0; i < A_NENV; i++) {
+      env[i].bindee = NULL;
+      env[i].binder = IRTemp_INVALID;
+   }
 
    /* The stmts in bb are being reordered, and we are guaranteed to
       end up with no more than the number we started with.  Use i to
@@ -3643,67 +3605,77 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
    */
    j = 0;
    for (i = 0; i < bb->stmts_used; i++) {
+
       st = bb->stmts[i];
       if (st->tag == Ist_NoOp)
          continue;
      
-      if (st->tag == Ist_Tmp) {
-         /* vex_printf("acquire binding\n"); */
-         ti = env[st->Ist.Tmp.tmp];
-         if (!ti) {
-            vpanic("treebuild_BB (phase 2): unmapped IRTemp");
+      /* Ensure there's at least one space in the env, by emitting
+         the oldest binding if necessary. */
+      if (env[A_NENV-1].bindee != NULL) {
+         bb->stmts[j] = IRStmt_Tmp( env[A_NENV-1].binder, env[A_NENV-1].bindee );
+         j++;
+         vassert(j <= i);
+         env[A_NENV-1].bindee = NULL;
+      }
+
+      /* Consider current stmt. */
+      if (st->tag == Ist_Tmp && uses[st->Ist.Tmp.tmp] <= 1) {
+
+         /* optional extra: dump dead bindings as we find them.
+            Removes the need for a prior dead-code removal pass. */
+         if (uses[st->Ist.Tmp.tmp] == 0) {
+	   //vex_printf("DEAD binding\n");
+            continue; /* for (i = 0; i < bb->stmts_used; i++) loop */
          }
-         if (ti->occ == 1) {
-            /* ok, we have 't = E', occ(t)==1.  Do the abovementioned actions. */
-            IRExpr* e = st->Ist.Tmp.data;
-            IRExpr* e2 = tbSubst_Expr(env, e);
-            ti->expr = e2;
-            ti->eDoesLoad = ti->eDoesGet = False;
-            setHints_Expr(&ti->eDoesLoad, &ti->eDoesGet, e2);
-            /* don't advance j, as we are deleting this stmt and instead
-               holding it temporarily in the env. */
-            continue; /* the for (i = 0; i < bb->stmts_used; i++) loop */
-         }
+         vassert(uses[st->Ist.Tmp.tmp] == 1);
+
+         /* ok, we have 't = E', occ(t)==1.  Do the abovementioned
+            actions. */
+         IRExpr* e  = st->Ist.Tmp.data;
+         IRExpr* e2 = atbSubst_Expr(env, e);
+         addToEnvFront(env, st->Ist.Tmp.tmp, e2);
+         setHints_Expr(&env[0].doesLoad, &env[0].doesGet, e2);
+         /* don't advance j, as we are deleting this stmt and instead
+            holding it temporarily in the env. */
+         continue; /* for (i = 0; i < bb->stmts_used; i++) loop */
       }
 
       /* we get here for any other kind of statement. */
       /* 'use up' any bindings required by the current statement. */
-      st2 = tbSubst_Stmt(env, st);
+      st2 = atbSubst_Stmt(env, st);
 
-      /* Now, before this stmt, dump any bindings it invalidates.
-         These need to be dumped in the order in which they originally
-         appeared.  (Stupid algorithm): first, mark all bindings which
-         need to be dumped.  Then, dump them in the order in which
-         they were defined. */
+      /* Now, before this stmt, dump any bindings in env that it
+         invalidates.  These need to be dumped in the order in which
+         they originally entered env -- that means from oldest to
+         youngest. */
 
-      invPut = toBool(st->tag == Ist_Put 
-                      || st->tag == Ist_PutI 
-                      || st->tag == Ist_Dirty);
-
-      invStore = toBool(st->tag == Ist_Store
+      /* stmtPuts/stmtStores characterise what the stmt under
+         consideration does. */
+      stmtPuts = toBool(st->tag == Ist_Put 
+                        || st->tag == Ist_PutI 
                         || st->tag == Ist_Dirty);
 
-      for (k = 0; k < n_tmps; k++) {
-         ti = env[k];
-         if (!ti)
-            continue;
-         if (!ti->expr)
-            continue;
+      stmtStores = toBool(st->tag == Ist_Store
+                          || st->tag == Ist_Dirty);
 
-         /* Do we have to invalidate this binding? */
-
-         ti->invalidateMe 
+      for (k = A_NENV-1; k >= 0; k--) {
+         if (env[k].bindee == NULL)
+            continue;
+         /* Compare the actions of this stmt with the actions of
+            binding 'k', to see if they invalidate the binding. */
+         invalidateMe
             = toBool(
               /* a store invalidates loaded data */
-              (ti->eDoesLoad && invStore)
+              (env[k].doesLoad && stmtStores)
               /* a put invalidates get'd data */
-              || (ti->eDoesGet && invPut)
+              || (env[k].doesGet && stmtPuts)
               /* a put invalidates loaded data.  Note, we could do
                  much better here in the sense that we only need to
                  invalidate trees containing loads if the Put in
                  question is marked as requiring precise
                  exceptions. */
-              || (ti->eDoesLoad && invPut)
+              || (env[k].doesLoad && stmtPuts)
               /* probably overly conservative: a memory fence
                  invalidates absolutely everything, so that all
                  computation prior to it is forced to complete before
@@ -3712,17 +3684,29 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
               /* also be (probably overly) paranoid re AbiHints */
               || st->tag == Ist_AbiHint
               );
-         /*
-         if (ti->invalidateMe)
-            vex_printf("SET INVAL\n");
-         */
+         if (invalidateMe) {
+            bb->stmts[j] = IRStmt_Tmp( env[k].binder, env[k].bindee );
+            j++;
+            vassert(j <= i);
+            env[k].bindee = NULL;
+         }
       }
 
-      dumpInvalidated ( env, bb, &j );
+      /* Slide in-use entries in env up to the front */
+      m = 0;
+      for (k = 0; k < A_NENV; k++) {
+         if (env[k].bindee != NULL) {
+            env[m] = env[k];
+            m++;
+	 }
+      }
+      for (m = m; m < A_NENV; m++) {
+         env[m].bindee = NULL;
+      }
 
       /* finally, emit the substituted statement */
       bb->stmts[j] = st2;
-      /*  vex_printf("**2  "); ppIRStmt(bb->stmts[j]); vex_printf("\n"); */
+      /* vex_printf("**2  "); ppIRStmt(bb->stmts[j]); vex_printf("\n"); */
       j++;
 
       vassert(j <= i+1);
@@ -3732,8 +3716,7 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
       dump any left-over bindings.  Hmm.  Perhaps there should be no
       left over bindings?  Or any left-over bindings are
       by definition dead? */
-   next2 = tbSubst_Expr(env, bb->next);
-   bb->next = next2;
+   bb->next = atbSubst_Expr(env, bb->next);
    bb->stmts_used = j;
 }
 

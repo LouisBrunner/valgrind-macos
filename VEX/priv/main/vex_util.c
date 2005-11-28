@@ -178,7 +178,7 @@ void private_LibVEX_alloc_OOM(void)
               private_LibVEX_alloc_first,
               private_LibVEX_alloc_curr,
               private_LibVEX_alloc_last,
-              (ULong)(private_LibVEX_alloc_last - private_LibVEX_alloc_first));
+              (Long)(private_LibVEX_alloc_last - private_LibVEX_alloc_first));
    vpanic("VEX temporary storage exhausted.\n"
           "Increase N_{TEMPORARY,PERMANENT}_BYTES and recompile.");
 }

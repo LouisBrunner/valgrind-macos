@@ -138,8 +138,9 @@ static Addr64 guest_CIA_curr_instr;
 /* The IRBB* into which we're generating code. */
 static IRBB* irbb;
 
-/* Is our guest binary 32 or 64bit? */
-static Bool mode64;
+/* Is our guest binary 32 or 64bit?  Set at each call to
+   disInstr_PPC32 below. */
+static Bool mode64 = False;
 
 
 /*------------------------------------------------------------*/
@@ -8450,8 +8451,26 @@ DisResult disInstr_PPC32 ( IRBB*        irbb_IN,
                            VexArchInfo* archinfo,
                            Bool         host_bigendian_IN )
 {
-   DisResult dres;
-   IRType ty = mode64 ? Ity_I64 : Ity_I32;
+   IRType     ty;
+   DisResult  dres;
+   VexSubArch gsa = archinfo->subarch;
+
+   /* Figure out whether we're being ppc32 or ppc64 today. */
+   switch (gsa) {
+      case VexSubArchPPC32_VFI:
+      case VexSubArchPPC32_FI:
+      case VexSubArchPPC32_I:
+         mode64 = False;
+         break;
+      case VexSubArchPPC64_VFI:
+      case VexSubArchPPC64_FI:
+         mode64 = True;
+         break;
+      default:
+         vpanic("disInstr_PPC32: illegal subarch");
+   }
+
+   ty = mode64 ? Ity_I64 : Ity_I32;
 
    /* Set globals (see top of this file) */
    guest_code           = guest_code_IN;

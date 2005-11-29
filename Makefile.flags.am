@@ -12,8 +12,12 @@ AM_CFLAGS_AMD64_LINUX = $(WERROR) -m64 -fomit-frame-pointer @PREFERRED_STACK_BOU
 AM_CCASFLAGS_AMD64_LINUX = $(add_includes_amd64_linux) -m64 -g
 
 AM_CPPFLAGS_PPC32_LINUX = $(add_includes_ppc32_linux)
-AM_CFLAGS_PPC32_LINUX = $(WERROR) $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC32_LINUX = $(add_includes_ppc32_linux) -Wa,-maltivec -g
+AM_CFLAGS_PPC32_LINUX = $(WERROR) @FLAG_M32@ $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_PPC32_LINUX = $(add_includes_ppc32_linux) -Wa,-maltivec @FLAG_M32@ -g
+
+AM_CPPFLAGS_PPC64_LINUX = $(add_includes_ppc64_linux)
+AM_CFLAGS_PPC64_LINUX = $(WERROR) -m64 $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_PPC64_LINUX = $(add_includes_ppc64_linux) -Wa,-maltivec -m64 -g
 
 AM_CPPFLAGS = $(AM_CPPFLAGS_@VG_MAKE_PLATFORM@)
 AM_CFLAGS = $(AM_CFLAGS_@VG_MAKE_PLATFORM@)

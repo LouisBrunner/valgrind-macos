@@ -8,6 +8,9 @@ endif
 if VG_PPC32_LINUX
 SUBDIRS += ppc32
 endif
+if VG_PPC64_LINUX
+SUBDIRS += ppc64
+endif
 
 DIST_SUBDIRS = ${VG_ARCH_ALL} .
 

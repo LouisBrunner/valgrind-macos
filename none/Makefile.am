@@ -10,6 +10,9 @@ endif
 if VG_PPC32_LINUX
 noinst_PROGRAMS += none-ppc32-linux
 endif
+if VG_PPC64_LINUX
+noinst_PROGRAMS += none-ppc64-linux
+endif
 
 NONE_SOURCES_COMMON = nl_main.c
 
@@ -33,3 +36,10 @@ none_ppc32_linux_CFLAGS       = $(AM_CFLAGS_PPC32_LINUX)
 none_ppc32_linux_DEPENDENCIES = $(COREGRIND_LIBS_PPC32_LINUX)
 none_ppc32_linux_LDADD        = $(TOOL_LDADD_PPC32_LINUX)
 none_ppc32_linux_LDFLAGS      = $(TOOL_LDFLAGS_PPC32_LINUX)
+
+none_ppc64_linux_SOURCES      = $(NONE_SOURCES_COMMON)
+none_ppc64_linux_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_LINUX)
+none_ppc64_linux_CFLAGS       = $(AM_CFLAGS_PPC64_LINUX)
+none_ppc64_linux_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_LINUX)
+none_ppc64_linux_LDADD        = $(TOOL_LDADD_PPC64_LINUX)
+none_ppc64_linux_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_LINUX)

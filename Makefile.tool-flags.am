@@ -16,4 +16,10 @@ add_includes_ppc32_linux = -I$(top_srcdir)/include \
 		-DVGO_linux=1 \
 		-DVGP_ppc32_linux=1
 
+add_includes_ppc64_linux = -I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub \
+		-DVGA_ppc64=1 \
+		-DVGO_linux=1 \
+		-DVGP_ppc64_linux=1
+
 include $(top_srcdir)/Makefile.flags.am

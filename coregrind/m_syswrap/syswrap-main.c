@@ -56,6 +56,7 @@
    x86    eax  ebx   ecx   edx   esi   edi   ebp   eax       (== NUM)
    amd64  rax  rdi   rsi   rdx   r10   r8    r9    rax       (== NUM)
    ppc32  r0   r3    r4    r5    r6    r7    r8    r3+CR0.SO (== ARG1)
+   ppc64  r0   r3    r4    r5    r6    r7    r8    r3+CR0.SO (== ARG1)
 */
 
 /* This is the top level of the system-call handler module.  All
@@ -329,6 +330,16 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg5  = gst->guest_GPR7;
    canonical->arg6  = gst->guest_GPR8;
 
+#elif defined(VGP_ppc64_linux)
+   VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
+   canonical->sysno = gst->guest_GPR0;
+   canonical->arg1  = gst->guest_GPR3;
+   canonical->arg2  = gst->guest_GPR4;
+   canonical->arg3  = gst->guest_GPR5;
+   canonical->arg4  = gst->guest_GPR6;
+   canonical->arg5  = gst->guest_GPR7;
+   canonical->arg6  = gst->guest_GPR8;
+
 #else
 #  error "getSyscallArgsFromGuestState: unknown arch"
 #endif
@@ -368,6 +379,16 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_GPR7 = canonical->arg5;
    gst->guest_GPR8 = canonical->arg6;
 
+#elif defined(VGP_ppc64_linux)
+   VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
+   gst->guest_GPR0 = canonical->sysno;
+   gst->guest_GPR3 = canonical->arg1;
+   gst->guest_GPR4 = canonical->arg2;
+   gst->guest_GPR5 = canonical->arg3;
+   gst->guest_GPR6 = canonical->arg4;
+   gst->guest_GPR7 = canonical->arg5;
+   gst->guest_GPR8 = canonical->arg6;
+
 #else
 #  error "putSyscallArgsIntoGuestState: unknown arch"
 #endif
@@ -392,6 +413,13 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
 #elif defined(VGP_ppc32_linux)
    VexGuestPPC32State* gst = (VexGuestPPC32State*)gst_vanilla;
    UInt                cr  = LibVEX_GuestPPC32_get_CR( gst );
+   UInt                err = (cr >> 28) & 1;  // CR0.SO
+   canonical->what = (err == 1)  ? SsFailure  : SsSuccess;
+   canonical->val  = (UWord)gst->guest_GPR3;
+
+#elif defined(VGP_ppc64_linux)
+   VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
+   UInt                cr  = LibVEX_GuestPPC64_get_CR( gst );
    UInt                err = (cr >> 28) & 1;  // CR0.SO
    canonical->what = (err == 1)  ? SsFailure  : SsSuccess;
    canonical->val  = (UWord)gst->guest_GPR3;
@@ -447,6 +475,23 @@ void putSyscallStatusIntoGuestState ( /*IN*/ SyscallStatus*     canonical,
       LibVEX_GuestPPC32_put_CR( old_cr & ~(1<<28), gst );
    }
 
+#elif defined(VGP_ppc64_linux)
+   VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
+   UInt old_cr = LibVEX_GuestPPC64_get_CR(gst);
+
+   vg_assert(canonical->what == SsSuccess 
+             || canonical->what == SsFailure);
+
+   gst->guest_GPR3 = canonical->val;
+
+   if (canonical->what == SsFailure) {
+      /* set CR0.SO */
+      LibVEX_GuestPPC64_put_CR( old_cr | (1<<28), gst );
+   } else {
+      /* clear CR0.SO */
+      LibVEX_GuestPPC64_put_CR( old_cr & ~(1<<28), gst );
+   }
+
 #else
 #  error "putSyscallStatusIntoGuestState: unknown arch"
 #endif
@@ -489,6 +534,16 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg5   = OFFSET_ppc32_GPR7;
    layout->o_arg6   = OFFSET_ppc32_GPR8;
    layout->o_retval = OFFSET_ppc32_GPR3;
+
+#elif defined(VGP_ppc64_linux)
+   layout->o_sysno  = OFFSET_ppc64_GPR0;
+   layout->o_arg1   = OFFSET_ppc64_GPR3;
+   layout->o_arg2   = OFFSET_ppc64_GPR4;
+   layout->o_arg3   = OFFSET_ppc64_GPR5;
+   layout->o_arg4   = OFFSET_ppc64_GPR6;
+   layout->o_arg5   = OFFSET_ppc64_GPR7;
+   layout->o_arg6   = OFFSET_ppc64_GPR8;
+   layout->o_retval = OFFSET_ppc64_GPR3;
 
 #else
 #  error "getSyscallLayout: unknown arch"
@@ -981,7 +1036,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       vg_assert(p[0] == 0x0F && p[1] == 0x05);
    }
 
-#elif defined(VGP_ppc32_linux)
+#elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    arch->vex.guest_CIA -= 4;             // sizeof(ppc32 instr)
 
    /* Make sure our caller is actually sane, and we're really backing

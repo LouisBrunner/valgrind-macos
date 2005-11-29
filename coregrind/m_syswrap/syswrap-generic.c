@@ -3427,7 +3427,7 @@ PRE(sys_ioctl)
    case VKI_SOUND_PCM_READ_RATE:
    case VKI_SOUND_PCM_READ_CHANNELS:
    case VKI_SOUND_PCM_READ_BITS:
-#if !defined(VGA_ppc32)
+#if !defined(VGA_ppc32) && !defined(VGA_ppc64)
    case (VKI_SOUND_PCM_READ_BITS|0x40000000): /* what the fuck ? */
 #endif
    case VKI_SOUND_PCM_READ_FILTER:
@@ -4134,7 +4134,7 @@ POST(sys_ioctl)
    case VKI_SOUND_PCM_READ_RATE:
    case VKI_SOUND_PCM_READ_CHANNELS:
    case VKI_SOUND_PCM_READ_BITS:
-#if !defined(VGA_ppc32)
+#if !defined(VGA_ppc32) && !defined(VGA_ppc64)
    case (VKI_SOUND_PCM_READ_BITS|0x40000000): /* what the fuck ? */
 #endif
    case VKI_SOUND_PCM_READ_FILTER:

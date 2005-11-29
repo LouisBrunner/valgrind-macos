@@ -110,7 +110,7 @@ AC_CANONICAL_HOST
 AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH)
 AC_SUBST(VG_ARCH_ALL)
-VG_ARCH_ALL="amd64 ppc32 x86"
+VG_ARCH_ALL="amd64 ppc32 ppc64 x86"
 AC_SUBST(VALT_LOAD_ADDRESS)
 
 case "${host_cpu}" in
@@ -131,7 +131,14 @@ case "${host_cpu}" in
         valt_load_address_inner="0x60000000"
         ;;
 
-     powerpc*)
+     powerpc64)
+        AC_MSG_RESULT([ok (${host_cpu})])
+        VG_ARCH="ppc64"
+        valt_load_address_normal="0x70000000"
+        valt_load_address_inner="0x60000000"
+        ;;
+
+     powerpc)
         AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="ppc32"
         valt_load_address_normal="0x70000000"
@@ -205,12 +212,12 @@ esac
 AC_MSG_CHECKING([for a supported CPU/OS combination])
 AC_SUBST(VG_PLATFORM)
 AC_SUBST(VG_PLATFORM_ALL)
-VG_PLATFORM_ALL="amd64-linux ppc32-linux x86-linux"
+VG_PLATFORM_ALL="amd64-linux ppc32-linux ppc64-linux x86-linux"
 
 VG_PLATFORM="$VG_ARCH-$VG_OS"
 
 case $VG_PLATFORM in
-    x86-linux|amd64-linux|ppc32-linux)
+    x86-linux|amd64-linux|ppc32-linux|ppc64-linux)
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
         ;;
 
@@ -220,12 +227,27 @@ case $VG_PLATFORM in
         ;;
 esac
 
-AM_CONDITIONAL(VG_X86_LINUX, test x$VG_PLATFORM = xx86-linux -o x$VG_PLATFORM = xamd64-linux)
+AM_CONDITIONAL(VG_X86_LINUX,   test x$VG_PLATFORM = xx86-linux -o x$VG_PLATFORM = xamd64-linux)
 AM_CONDITIONAL(VG_AMD64_LINUX, test x$VG_PLATFORM = xamd64-linux)
-AM_CONDITIONAL(VG_PPC32_LINUX, test x$VG_PLATFORM = xppc32-linux)
+AM_CONDITIONAL(VG_PPC32_LINUX, test x$VG_PLATFORM = xppc32-linux -o x$VG_PLATFORM = xppc64-linux)
+AM_CONDITIONAL(VG_PPC64_LINUX, test x$VG_PLATFORM = xppc64-linux)
 
 AC_SUBST(VG_MAKE_PLATFORM)
-VG_MAKE_PLATFORM=`echo $VG_PLATFORM | tr [a-z-] [A-Z_]`
+case $VG_PLATFORM in
+     x86-linux)
+	VG_MAKE_PLATFORM=X86_LINUX
+	;;
+     amd64-linux)
+	VG_MAKE_PLATFORM=AMD64_LINUX
+	;;
+     ppc32-linux|ppc64-linux)
+	VG_MAKE_PLATFORM=PPC32_LINUX
+	;;
+     *)
+	AC_MSG_ERROR([VG_PLATFORM is not known -- configure script bug])
+	;;
+esac
+##VG_MAKE_PLATFORM=`echo $VG_PLATFORM | tr [a-z-] [A-Z_]`
 
 AC_SUBST(DEFAULT_SUPP)
 
@@ -484,12 +506,14 @@ AC_OUTPUT(
    memcheck/tests/Makefile
    memcheck/tests/amd64/Makefile
    memcheck/tests/ppc32/Makefile
+   memcheck/tests/ppc64/Makefile
    memcheck/tests/x86/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/amd64/Makefile
    cachegrind/tests/ppc32/Makefile
+   cachegrind/tests/ppc64/Makefile
    cachegrind/tests/x86/Makefile
    cachegrind/docs/Makefile
    cachegrind/cg_annotate
@@ -507,6 +531,7 @@ AC_OUTPUT(
    none/tests/Makefile
    none/tests/amd64/Makefile
    none/tests/ppc32/Makefile
+   none/tests/ppc64/Makefile
    none/tests/x86/Makefile
    none/docs/Makefile
 ) 

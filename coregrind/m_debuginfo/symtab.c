@@ -2267,8 +2267,8 @@ static Addr regaddr_from_tst(Int regno, ThreadArchState *arch)
    case 15:          return (Addr) & arch->vex.guest_R15;
    default:          return 0;
    }
-#elif defined(VGA_ppc32)
-   /* This is the Intel register encoding -- integer regs. */
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+   /* This is the PPC register encoding -- integer regs. */
 #  define R_STACK_PTR   1
 #  define R_FRAME_PTR   1
    switch (regno) {

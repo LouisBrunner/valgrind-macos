@@ -734,7 +734,7 @@ static void initialiseSector ( Int sno )
 
 static void invalidate_icache ( void *ptr, Int nbytes )
 {
-#  if defined(VGA_ppc32)
+#  if defined(VGA_ppc32) || defined(VGA_ppc64)
    Addr startaddr = (Addr) ptr;
    Addr endaddr   = startaddr + nbytes;
    Addr cls;

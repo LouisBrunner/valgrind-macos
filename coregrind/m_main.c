@@ -1741,6 +1741,20 @@ static void init_thread1state ( Addr client_ip,
    arch->vex.guest_GPR1 = client_sp;
    arch->vex.guest_CIA  = client_ip;
 
+#elif defined(VGA_ppc64)
+   vg_assert(0 == sizeof(VexGuestPPC64State) % 8);
+
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestPPC64_initialise(&arch->vex);
+
+   /* Zero out the shadow area. */
+   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestPPC64State));
+
+   /* Put essential stuff into the new state. */
+   arch->vex.guest_GPR1 = client_sp;
+   arch->vex.guest_CIA  = client_ip;
+
 #else
 #  error Unknown arch
 #endif
@@ -2320,7 +2334,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
 
 #     if defined(VGP_x86_linux)
       iters = 5;
-#     elif defined(VGP_amd64_linux)
+#     elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
       iters = 10;
 #     elif defined(VGP_ppc32_linux)
       iters = 5;
@@ -2837,6 +2851,37 @@ asm("\n"
     "\tadd 16,17,16\n"
     "\tadd 16,18,16\n"
     "\trlwinm 16,16,0,0,27\n"
+    /* now r16 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
+       VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
+       boundary.  And r1 is the original SP.  Set the SP to r16 and
+       call _start_in_C, passing it the initial SP. */
+    "\tmr 3,1\n"
+    "\tmr 1,16\n"
+    "\tbl _start_in_C\n"
+    "\ttrap\n"
+    ".previous\n"
+);
+#elif defined(VGP_ppc64_linux)
+asm("\n"
+    ".text\n"
+    "\t.globl _start\n"
+    "\t.type _start,@function\n"
+    "_start:\n"
+    /* set up the new stack in r16 */
+    "\tlis  16,   vgPlain_interim_stack@highest\n"
+    "\tori  16,16,vgPlain_interim_stack@higher\n"
+    "\tsldi 16,16,32\n"
+    "\toris 16,16,vgPlain_interim_stack@h\n"
+    "\tori  16,16,vgPlain_interim_stack@l\n"
+    "\txor  17,17,17\n"
+    "\tlis    17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" >> 16)\n"
+    "\tori 17,17,("VG_STRINGIFY(VG_STACK_GUARD_SZB)" & 0xFFFF)\n"
+    "\txor 18,18,18\n"
+    "\tlis    18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" >> 16)\n"
+    "\tori 18,18,("VG_STRINGIFY(VG_STACK_ACTIVE_SZB)" & 0xFFFF)\n"
+    "\tadd 16,17,16\n"
+    "\tadd 16,18,16\n"
+    "\trldicr 16,16,0,59\n"
     /* now r16 = &vgPlain_interim_stack + VG_STACK_GUARD_SZB +
        VG_STACK_ACTIVE_SZB rounded down to the nearest 16-byte
        boundary.  And r1 is the original SP.  Set the SP to r16 and

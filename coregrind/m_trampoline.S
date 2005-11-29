@@ -283,10 +283,36 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
 
+/*---------------- ppc64-linux ----------------*/
+#else
+#if defined(VGP_ppc64_linux)
+
+#	define UD2_16     trap ; trap ; trap; trap
+#	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+
+	/* a leading page of unexecutable code */
+	UD2_PAGE
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+	
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_PAGE
+
 /*---------------- unknown ----------------*/
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

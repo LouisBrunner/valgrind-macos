@@ -1,12 +1,11 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Generic header for Valgrind's kernel interface.              ---*/
-/*---                                                 vki_unistd.h ---*/
+/*--- PPC64-specific definitions.                 ppc64/cg-ppc64.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Valgrind, a dynamic binary instrumentation
-   framework.
+   This file is part of Cachegrind, a Valgrind tool for cache
+   profiling programs.
 
    Copyright (C) 2005 Nicholas Nethercote
       njn@valgrind.org
@@ -29,22 +28,33 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VKI_UNISTD_H
-#define __VKI_UNISTD_H
+#include "pub_tool_basics.h"
+#include "pub_tool_libcbase.h"
+#include "pub_tool_libcassert.h"
+#include "pub_tool_libcprint.h"
 
-#if defined(VGP_x86_linux)
-#  include "vki_unistd-x86-linux.h"   
-#elif defined(VGP_amd64_linux)
-#  include "vki_unistd-amd64-linux.h" 
-#elif defined(VGP_ppc32_linux)
-#  include "vki_unistd-ppc32-linux.h" 
-#elif defined(VGP_ppc64_linux)
-#  include "vki_unistd-ppc64-linux.h" 
-#else
-#  error Unknown platform
-#endif
+#include "cg_arch.h"
 
-#endif   // __VKI_UNISTD_H
+void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
+                           Bool all_caches_clo_defined)
+{
+   // Set caches to default.
+   *I1c = (cache_t) {  65536, 2, 64 };
+   *D1c = (cache_t) {  65536, 2, 64 };
+   *L2c = (cache_t) { 262144, 8, 64 };
+
+   // Warn if config not completely specified from cmd line.  Note that
+   // this message is slightly different from the one we give on x86/AMD64
+   // when auto-detection fails;  this lets us filter out this one (which is
+   // not important) in the regression test suite without filtering the
+   // x86/AMD64 one (which we want to see if it ever occurs in the
+   // regression test suite).
+   if (!all_caches_clo_defined) {
+      VG_(message)(Vg_DebugMsg, 
+                   "Warning: Cannot auto-detect cache config on PPC64, using one "
+                   "or more defaults ");
+   }
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

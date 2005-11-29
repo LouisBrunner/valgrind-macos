@@ -36,6 +36,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_libcassert.h"
 #include "pub_core_options.h"
 
 
@@ -129,6 +130,9 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_XER * 4),
                      (void*)LibVEX_GuestPPC32_get_XER(vex));
    return rc;
+
+#elif defined(VGA_ppc64)
+   I_die_here;
 
 #else
 #  error Unknown arch

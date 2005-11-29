@@ -901,7 +901,7 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined(VGA_amd64)
 #  define VG_CLREQ_ARGS       guest_RAX
 #  define VG_CLREQ_RET        guest_RDX
-#elif defined(VGA_ppc32)
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  define VG_CLREQ_ARGS       guest_GPR4
 #  define VG_CLREQ_RET        guest_GPR3
 #else

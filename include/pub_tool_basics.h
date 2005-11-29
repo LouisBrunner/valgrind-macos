@@ -121,14 +121,14 @@ SysRes;
 
 #if defined(VGA_x86) || defined(VGA_amd64)
 #  define VG_LITTLEENDIAN 1
-#elif defined(VGA_ppc32)
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  define VG_BIGENDIAN 1
 #endif
 
 /* Regparmness */
 #if defined(VGA_x86)
 #  define VG_REGPARM(n)            __attribute__((regparm(n)))
-#elif defined(VGA_amd64) || defined(VGA_ppc32)
+#elif defined(VGA_amd64) || defined(VGA_ppc32) || defined(VGA_ppc64)
 #  define VG_REGPARM(n)            /* */
 #else
 #  error Unknown arch

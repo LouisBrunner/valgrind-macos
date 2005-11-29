@@ -47,6 +47,10 @@ if VG_PPC32_LINUX
 BUILT_SOURCES += valt_load_address_ppc32_linux.lds
 CLEANFILES += valt_load_address_ppc32_linux.lds
 endif
+if VG_PPC64_LINUX
+BUILT_SOURCES += valt_load_address_ppc64_linux.lds
+CLEANFILES += valt_load_address_ppc64_linux.lds
+endif
 
 default.supp: $(SUPP_FILES)
 
@@ -82,6 +86,7 @@ VEX_PUBLIC_HDRS = \
 	@VEX_DIR@/pub/libvex_guest_amd64.h \
 	@VEX_DIR@/pub/libvex_ir.h \
 	@VEX_DIR@/pub/libvex_guest_ppc32.h \
+	@VEX_DIR@/pub/libvex_guest_ppc64.h \
 	@VEX_DIR@/pub/libvex_basictypes.h \
 	@VEX_DIR@/pub/libvex_guest_offsets.h \
 	@VEX_DIR@/pub/libvex_emwarn.h \
@@ -101,6 +106,7 @@ VEX_PRIMARY_SOURCES = \
 	VEX/pub/libvex_guest_amd64.h \
 	VEX/pub/libvex_ir.h \
 	VEX/pub/libvex_guest_ppc32.h \
+	VEX/pub/libvex_guest_ppc64.h \
 	VEX/pub/libvex_basictypes.h \
 	VEX/pub/libvex_guest_offsets.h \
 	VEX/pub/libvex_emwarn.h \
@@ -189,7 +195,14 @@ valt_load_address_amd64_linux.lds: Makefile
 	|| rm -f $@
 
 valt_load_address_ppc32_linux.lds: Makefile
-	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \
+	$(CC) @FLAG_M32@ -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/d' \
+		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \
+	|| rm -f $@
+
+valt_load_address_ppc64_linux.lds: Makefile
+	$(CC) -m64 -Wl,--verbose -nostdlib 2>&1 | sed \
 		-e '1,/^=====\+$$/d' \
 		-e '/^=====\+$$/d' \
 		-e '/\. = 0x[0-9A-Fa-f]\+ + SIZEOF_HEADERS/s/0x[0-9A-Fa-f]\+/valt_load_address/g' > $@ \

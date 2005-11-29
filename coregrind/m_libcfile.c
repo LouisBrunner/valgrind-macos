@@ -478,7 +478,7 @@ Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port )
 static
 Int my_socket ( Int domain, Int type, Int protocol )
 {
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    SysRes res;
    UWord  args[3];
    args[0] = domain;
@@ -501,7 +501,7 @@ static
 Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, 
                  Int addrlen )
 {
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    SysRes res;
    UWord  args[3];
    args[0] = sockfd;
@@ -528,7 +528,7 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
       error is still returned. */
    Int flags = VKI_MSG_NOSIGNAL;
 
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    SysRes res;
    UWord  args[4];
    args[0] = sd;
@@ -552,7 +552,7 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
    SysRes res;
 
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
@@ -574,7 +574,7 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
    SysRes res;
 
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    UWord  args[3];
    args[0] = sd;
    args[1] = (UWord)name;
@@ -597,7 +597,7 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
 {
    SysRes res;
 
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    UWord  args[5];
    args[0] = sd;
    args[1] = level;

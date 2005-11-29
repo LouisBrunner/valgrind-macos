@@ -70,6 +70,8 @@
 #  include "vki_posixtypes-amd64-linux.h"
 #elif defined(VGA_ppc32)
 #  include "vki_posixtypes-ppc32-linux.h"
+#elif defined(VGA_ppc64)
+#  include "vki_posixtypes-ppc64-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -150,6 +152,8 @@ typedef unsigned int	        vki_uint;
 #  include "vki-amd64-linux.h"
 #elif defined(VGA_ppc32)
 #  include "vki-ppc32-linux.h"
+#elif defined(VGA_ppc64)
+#  include "vki-ppc64-linux.h"
 #else
 #  error Unknown platform
 #endif

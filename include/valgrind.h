@@ -81,7 +81,9 @@
 /* If we're not compiling for our target architecture, don't generate
    any inline asms.  Note that in this file we're using the compiler's
    CPP symbols for identifying architectures, which are different to
-   the ones we use within the rest of Valgrind. */
+   the ones we use within the rest of Valgrind.  Note, __powerpc__ is
+   active for both 32 and 64-bit PPC, whereas __powerpc64__ is only
+   active for the latter. */
 #if !defined(__i386__) && !defined(__x86_64__) && !defined(__powerpc__)
 #  ifndef NVALGRIND
 #    define NVALGRIND	1
@@ -165,7 +167,7 @@
   }
 #endif  /* __i386__ */
 
-#ifdef __powerpc__
+#if defined(__powerpc__) && !defined(__powerpc64__)
 #define VALGRIND_MAGIC_SEQUENCE(                                        \
         _zzq_rlval, _zzq_default, _zzq_request,                         \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
@@ -190,7 +192,34 @@
                      : "memory");                                       \
     _zzq_rlval = (__typeof__(_zzq_rlval)) _zzq_tmp;                     \
   }
-#endif   /* __powerpc__ */
+#endif   /* __powerpc__ 32-bit only */
+
+#if defined(__powerpc__) && defined(__powerpc64__)
+#define VALGRIND_MAGIC_SEQUENCE(                                        \
+        _zzq_rlval, _zzq_default, _zzq_request,                         \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
+                                                                        \
+  { volatile unsigned long long int _zzq_args[5];                       \
+    register unsigned long long int _zzq_tmp __asm__("r3");             \
+    register volatile unsigned long long int *_zzq_ptr __asm__("r4");   \
+    _zzq_args[0] = (volatile unsigned long long int)(_zzq_request);     \
+    _zzq_args[1] = (volatile unsigned long long int)(_zzq_arg1);        \
+    _zzq_args[2] = (volatile unsigned long long int)(_zzq_arg2);        \
+    _zzq_args[3] = (volatile unsigned long long int)(_zzq_arg3);        \
+    _zzq_args[4] = (volatile unsigned long long int)(_zzq_arg4);        \
+    _zzq_ptr = _zzq_args;                                               \
+    __asm__ volatile("tw 0,3,27\n\t"                                    \
+                     "rotldi  0,0,61\n\t"                               \
+                     "rotldi  0,0,3\n\t"                                \
+                     "rotldi  0,0,13\n\t"                               \
+                     "rotldi  0,0,51\n\t"                               \
+                     "nop\n\t"                                          \
+                     : "=r" (_zzq_tmp)                                  \
+                     : "0" (_zzq_default), "r" (_zzq_ptr)               \
+                     : "memory");                                       \
+    _zzq_rlval = (__typeof__(_zzq_rlval)) _zzq_tmp;                     \
+  }
+#endif   /* __powerpc__ 64-bit only */
 
 /* Insert assembly code for other architectures here... */
 

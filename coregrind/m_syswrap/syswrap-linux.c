@@ -177,7 +177,7 @@ static void run_a_thread_NORETURN ( Word tidW )
          "syscall\n"		/* exit(tst->os_state.exitcode) */
          : "=m" (tst->status)
          : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
-#elif defined(VGP_ppc32_linux)
+#elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
       { UInt vgts_empty = (UInt)VgTs_Empty;
         asm volatile (
           "stw %1,%0\n\t"          /* set tst->status = VgTs_Empty */
@@ -304,7 +304,7 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
 
    /* Since this is the fork() form of clone, we don't need all that
       VG_(clone) stuff */
-#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)NULL, (UWord)child_tidptr );

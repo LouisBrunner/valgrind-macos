@@ -58,7 +58,7 @@ Addr VG_(get_FP) ( ThreadId tid )
 
 Addr VG_(get_LR) ( ThreadId tid )
 {
-#  if defined(VGA_ppc32)
+#  if defined(VGA_ppc32) || defined(VGA_ppc64)
    return VG_(threads)[tid].arch.vex.guest_LR;
 #  elif defined(VGA_x86) || defined(VGA_amd64)
    return 0;
@@ -137,7 +137,7 @@ static void apply_to_GPs_of_tid(VexGuestArchState* vex, void (*f)(Addr))
    (*f)(vex->guest_R13);
    (*f)(vex->guest_R14);
    (*f)(vex->guest_R15);
-#elif defined(VGA_ppc32)
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
    /* XXX ask tool about validity? */
    (*f)(vex->guest_GPR0);
    (*f)(vex->guest_GPR1);
@@ -258,13 +258,16 @@ UInt VG_(machine_x86_have_mxcsr) = 0;
 UInt VG_(machine_ppc32_has_FP)  = 0;
 UInt VG_(machine_ppc32_has_VMX) = 0;
 #endif
+#if defined(VGA_ppc64)
+ULong VG_(machine_ppc64_has_VMX) = 0;
+#endif
 
 
 /* Determine what insn set and insn set variant the host has, and
    record it.  To be called once at system startup.  Returns False if
    this a CPU incapable of running Valgrind. */
 
-#if defined(VGA_ppc32)
+#if defined(VGA_ppc32) || defined(VGA_ppc64)
 #include <setjmp.h> // For jmp_buf
 static jmp_buf env_sigill;
 static void handler_sigill ( Int x ) { __builtin_longjmp(env_sigill,1); }
@@ -397,14 +400,74 @@ Bool VG_(machine_get_hwcaps)( void )
      return True;
    }
 
+#elif defined(VGA_ppc64)
+   { vki_sigset_t         saved_set, tmp_set;
+     struct vki_sigaction saved_act, tmp_act;
+
+     volatile Bool have_vmx;
+
+     VG_(sigemptyset)(&tmp_set);
+     VG_(sigaddset)(&tmp_set, VKI_SIGILL);
+
+     VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+
+     VG_(sigaction)(VKI_SIGILL, NULL, &saved_act);
+     tmp_act = saved_act;
+
+     tmp_act.sa_flags &= ~VKI_SA_RESETHAND;
+     tmp_act.sa_flags &= ~VKI_SA_SIGINFO;
+
+     tmp_act.ksa_handler = handler_sigill;
+     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+
+     have_vmx = True;
+     if (__builtin_setjmp(env_sigill)) {
+        have_vmx = False;
+     } else {
+        __asm__ __volatile__("vor 0,0,0");
+     }
+
+     VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
+     VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+
+     /* VG_(printf)("VMX %d\n", (Int)have_vmx); */
+
+     VG_(machine_ppc64_has_VMX) = have_vmx ? 1 : 0;
+
+     va = VexArchPPC64;
+     vai.subarch = have_vmx ? VexSubArchPPC64_VFI : VexSubArchPPC64_FI;
+
+     /* But we're not done yet: VG_(machine_ppc64_set_clszB) must be
+        called before we're ready to go. */
+     return True;
+   }
+
 #else
 #  error "Unknown arch"
 #endif
 }
 
-/* Notify host cpu cache line size, as per above comment. */
+/* Notify host cpu cache line size. */
 #if defined(VGA_ppc32)
 void VG_(machine_ppc32_set_clszB)( Int szB )
+{
+   vg_assert(hwcaps_done);
+
+   /* Either the value must not have been set yet (zero) or we can
+      tolerate it being set to the same value multiple times, as the
+      stack scanning logic in m_main is a bit stupid. */
+   vg_assert(vai.ppc32_cache_line_szB == 0
+             || vai.ppc32_cache_line_szB == szB);
+
+   vg_assert(szB == 32 || szB == 128);
+   vai.ppc32_cache_line_szB = szB;
+}
+#endif
+
+
+/* Notify host cpu cache line size. */
+#if defined(VGA_ppc64)
+void VG_(machine_ppc64_set_clszB)( Int szB )
 {
    vg_assert(hwcaps_done);
 

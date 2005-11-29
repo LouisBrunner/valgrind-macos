@@ -54,7 +54,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
                             Addr ip, Addr sp, Addr fp, Addr lr,
                             Addr fp_min, Addr fp_max_orig )
 {
-#if defined(VGP_ppc32_linux)
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    Bool  lr_is_first_RA = False; /* ppc only */
 #endif
    Bool  debug = False;
@@ -234,7 +234,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
       break;
    }
 
-#  elif defined(VGP_ppc32_linux)
+#  elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
 
    /*--------------------- ppc32 ---------------------*/
 

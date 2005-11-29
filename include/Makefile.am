@@ -32,7 +32,9 @@ incinc_HEADERS = \
 	vki-linux.h			\
 	vki-amd64-linux.h		\
 	vki-ppc32-linux.h		\
+	vki-ppc64-linux.h		\
 	vki-x86-linux.h			\
 	vki_posixtypes-amd64-linux.h	\
 	vki_posixtypes-ppc32-linux.h	\
+	vki_posixtypes-ppc64-linux.h	\
 	vki_posixtypes-x86-linux.h

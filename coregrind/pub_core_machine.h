@@ -51,6 +51,10 @@
 #  define VG_ELF_DATA2XXX     ELFDATA2MSB
 #  define VG_ELF_MACHINE      EM_PPC
 #  define VG_ELF_CLASS        ELFCLASS32
+#elif defined(VGA_ppc64)
+#  define VG_ELF_DATA2XXX     ELFDATA2MSB
+#  define VG_ELF_MACHINE      EM_PPC64
+#  define VG_ELF_CLASS        ELFCLASS64
 #else
 #  error Unknown arch
 #endif
@@ -64,6 +68,10 @@
 #  define VG_STACK_PTR        guest_RSP
 #  define VG_FRAME_PTR        guest_RBP
 #elif defined(VGA_ppc32)
+#  define VG_INSTR_PTR        guest_CIA
+#  define VG_STACK_PTR        guest_GPR1
+#  define VG_FRAME_PTR        guest_GPR1   // No frame ptr for PPC
+#elif defined(VGA_ppc64)
 #  define VG_INSTR_PTR        guest_CIA
 #  define VG_STACK_PTR        guest_GPR1
 #  define VG_FRAME_PTR        guest_GPR1   // No frame ptr for PPC
@@ -100,6 +108,12 @@
           then safe to use VG_(machine_get_VexArchInfo) 
                        and VG_(machine_ppc32_has_FP)
                        and VG_(machine_ppc32_has_VMX)
+   -------------
+   ppc64: initially:  call VG_(machine_get_hwcaps)
+                      call VG_(machine_ppc64_set_clszB)
+
+          then safe to use VG_(machine_get_VexArchInfo) 
+                       and VG_(machine_ppc64_has_VMX)
 
    VG_(machine_get_hwcaps) may use signals (although it attempts to
    leave signal state unchanged) and therefore should only be
@@ -118,6 +132,10 @@ extern void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch*,
 /* Notify host cpu cache line size, as per above comment. */
 #if defined(VGA_ppc32)
 extern void VG_(machine_ppc32_set_clszB)( Int );
+#endif
+
+#if defined(VGA_ppc64)
+extern void VG_(machine_ppc64_set_clszB)( Int );
 #endif
 
 /* X86: set to 1 if the host is able to do {ld,st}mxcsr (load/store
@@ -139,6 +157,13 @@ extern UInt VG_(machine_ppc32_has_FP);
    change from a 32-bit int. */
 #if defined(VGA_ppc32)
 extern UInt VG_(machine_ppc32_has_VMX);
+#endif
+
+/* PPC64: set to 1 if Altivec instructions are supported in
+   user-space, else 0.  Is referenced from assembly code, so do not
+   change from a 64-bit int. */
+#if defined(VGA_ppc64)
+extern ULong VG_(machine_ppc64_has_VMX);
 #endif
 
 #endif   // __PUB_CORE_MACHINE_H

@@ -15,6 +15,9 @@ LIBREPLACEMALLOC_AMD64_LINUX = \
 LIBREPLACEMALLOC_PPC32_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc32_linux.a
 
+LIBREPLACEMALLOC_PPC64_LINUX = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc64_linux.a
+
 COREGRIND_LIBS_X86_LINUX = \
 	$(top_builddir)/coregrind/libcoregrind_x86_linux.a \
 	@VEX_DIR@/libvex_x86_linux.a
@@ -27,6 +30,10 @@ COREGRIND_LIBS_PPC32_LINUX = \
 	$(top_builddir)/coregrind/libcoregrind_ppc32_linux.a \
 	@VEX_DIR@/libvex_ppc32_linux.a
 
+COREGRIND_LIBS_PPC64_LINUX = \
+	$(top_builddir)/coregrind/libcoregrind_ppc64_linux.a \
+	@VEX_DIR@/libvex_ppc64_linux.a
+
 ##.PHONY:  @VEX_DIR@/libvex.a
 
 @VEX_DIR@/libvex_x86_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
@@ -37,6 +44,9 @@ COREGRIND_LIBS_PPC32_LINUX = \
 
 @VEX_DIR@/libvex_ppc32_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" libvex_ppc32_linux.a EXTRA_CFLAGS="$(AM_CFLAGS_PPC32_LINUX)"
+
+@VEX_DIR@/libvex_ppc64_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" libvex_ppc64_linux.a EXTRA_CFLAGS="$(AM_CFLAGS_PPC64_LINUX)"
 
 @VEX_DIR@/priv/main/vex_svnversion.h:
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" version
@@ -58,13 +68,19 @@ TOOL_LDFLAGS_AMD64_LINUX = \
 
 TOOL_LDADD_PPC32_LINUX = $(COREGRIND_LIBS_PPC32_LINUX) $(TOOL_LDADD_COMMON)
 TOOL_LDFLAGS_PPC32_LINUX = \
-	$(TOOL_LDFLAGS_COMMON) \
+	$(TOOL_LDFLAGS_COMMON) @FLAG_M32@ \
 	-Wl,-T,$(top_builddir)/valt_load_address_ppc32_linux.lds
+
+TOOL_LDADD_PPC64_LINUX = $(COREGRIND_LIBS_PPC64_LINUX) $(TOOL_LDADD_COMMON)
+TOOL_LDFLAGS_PPC64_LINUX = \
+	$(TOOL_LDFLAGS_COMMON) -m64 \
+	-Wl,-T,$(top_builddir)/valt_load_address_ppc64_linux.lds
 
 PRELOAD_LDFLAGS_COMMON = -nostdlib -shared -Wl,-z,interpose,-z,initfirst
 PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON) @FLAG_M32@
 PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON) -m64
-PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON)
+PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON) @FLAG_M32@
+PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON) -m64
 
 LIBREPLACEMALLOC_LDFLAGS_X86_LINUX = \
 	-Wl,--whole-archive \
@@ -77,4 +93,8 @@ LIBREPLACEMALLOC_LDFLAGS_AMD64_LINUX = \
 LIBREPLACEMALLOC_LDFLAGS_PPC32_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_PPC32_LINUX) \
+	-Wl,--no-whole-archive
+LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX = \
+	-Wl,--whole-archive \
+	$(LIBREPLACEMALLOC_PPC64_LINUX) \
 	-Wl,--no-whole-archive

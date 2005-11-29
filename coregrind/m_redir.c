@@ -404,6 +404,10 @@ void VG_(setup_code_redirect_table) ( void )
 
    }
 
+#elif defined(VGP_ppc64_linux)
+
+   // we'll have to stick some godawful hacks in here, no doubt
+
 #else
 #  error Unknown platform
 #endif

@@ -55,6 +55,8 @@
 #  include "libvex_guest_amd64.h"
 #elif defined(VGA_ppc32)
 #  include "libvex_guest_ppc32.h"
+#elif defined(VGA_ppc64)
+#  include "libvex_guest_ppc64.h"
 #else
 #  error Unknown arch
 #endif

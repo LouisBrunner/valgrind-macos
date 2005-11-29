@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PRIV_SYMTAB_H
-#define __PRIV_SYMTAB_H
+#ifndef __PRIV_ELF_H
+#define __PRIV_ELF_H
 
 void ML_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
                                 const ThreadArchState* arch);
@@ -42,7 +42,7 @@ void ML_(fill_elffpxregs_from_tst)(vki_elf_fpxregset_t* xfpu,
                                    const ThreadArchState* arch);
 #endif
 
-#endif   // __PRIV_SYMTAB_H
+#endif   // __PRIV_ELF_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

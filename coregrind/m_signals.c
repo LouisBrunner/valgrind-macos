@@ -207,6 +207,19 @@ typedef struct SigQueue {
       )
 #  define VG_UCONTEXT_LINK_REG(uc)        ((uc)->uc_regs->mc_gregs[VKI_PT_LNK]) 
 
+#elif defined(VGP_ppc64_linux)
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.gp_regs[VKI_PT_NIP])
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.gp_regs[VKI_PT_R1])
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.gp_regs[VKI_PT_R1])
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.gp_regs[VKI_PT_R0])
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                            \
+      /* Convert the values in uc_mcontext r3,cr into a SysRes. */  \
+      VG_(mk_SysRes_ppc64_linux)(                                   \
+         (uc)->uc_mcontext.gp_regs[VKI_PT_R3],                      \
+         (((uc)->uc_mcontext.gp_regs[VKI_PT_CCR] >> 28) & 1)        \
+      )
+#  define VG_UCONTEXT_LINK_REG(uc)        ((uc)->uc_mcontext.gp_regs[VKI_PT_LNK]) 
+
 #else
 #  error Unknown platform
 #endif
@@ -456,6 +469,13 @@ extern void my_sigreturn(void);
    "	syscall\n" \
    ".previous\n"
 #elif defined(VGP_ppc32_linux)
+#  define _MYSIG(name) \
+   ".text\n" \
+   "my_sigreturn:\n" \
+   "	li	0, " #name "\n" \
+   "	sc\n" \
+   ".previous\n"
+#elif defined(VGP_ppc64_linux)
 #  define _MYSIG(name) \
    ".text\n" \
    "my_sigreturn:\n" \

@@ -30,6 +30,7 @@ Some files of note:
 The docs/internals directory contains some useful high-level stuff about
 Valgrind's internals.  It's not relevant for the rest of this discussion.
 
+
 Overview
 ---------
 The Documentation Set contains all books, articles,
@@ -83,15 +84,15 @@ least-problematical of the various options.
 
 The maintainer is responsible for ensure the following tools are
 present on his system:
-- xmllint:   using libxml version 20607
-- xsltproc:  using libxml 20607, libxslt 10102 and libexslt 802
-             (Nb:be sure to use a version based on libxml2 
-              version 2.6.11 or later.  There was a bug in 
-	            xml:base processing in versions before that.)
-- pdfxmltex: pdfTeX (Web2C 7.4.5) 3.14159-1.10b
-- pdftops:   version 3.00
-- DocBook:   version 4.2
-- bzip2
+- xmllint:    using libxml version 20620
+- xsltproc:   Using libxml 20620, libxslt 10114 and libexslt 812
+                (Nb:be sure to use a version based on libxml2 
+                version 2.6.11 or later.  There was a bug in 
+	              xml:base processing in versions before that.)
+- pdfxmltex:  pdfeTeX 3.141592-1.21a-2.2 (Web2C 7.5.4)
+- pdftops:    version 3.00
+- DocBook:    version 4.2
+- bzip2       
 
 A big problem is latency.  Norman Walsh is constantly updating
 DocBook, but the tools tend to lag behind somewhat.  It is
@@ -109,10 +110,11 @@ then look at this:
 and modify your texmf files accordingly.
 
 
+
 Catalog/Stylesheet Location
 ---------------------------
-Suse 10:
-/usr/share/xml/docbook/
+/etc/xml/ seems to have become the standard place for catalogs
+in recent distros.
 
 
 
@@ -121,7 +123,7 @@ Notes [Nov. 2004]:
 - the end of file.xml must have only ONE newline after the last tag:
   </book>
 - pdfxmltex barfs if given a filename with an underscore in it
-  
+
 
 Notes [July 2005]
 -----------------
@@ -134,8 +136,9 @@ Even then, pdfxmltex eventually dies with "TeX capacity exceeded,
 sorry [pool size = 67555]" or some such.  To fix this, he edited
 /etc/texmf/texmf.cnf and changed
    pool_size.pdfxmltex = 500000
-
- to 1500000 and that fixed it.
+to 
+   pool_size.pdfxmltex = 1500000 
+and that fixed it.
 
 
 Notes [Nov. 2005]
@@ -175,14 +178,5 @@ some useful xls stylesheets in cvs:
 
 TODO LESS CRUCIAL:
 ------------------
-- add the HOWTO doc?
-- writing-tools.xml refers to vg-catalog.xml but it's not in the repo... should
-  it be, and if so, how should it be used?
-- get rid of blank pages in fo output
 - concat titlepage + subtitle page in fo output
-- generate an index for the user manual (??)
-- run through and check for not-linked hrefs: grep on 'http'
-- run through and check for bad email addresses: grep on '@' etc.
-- go through and wrap refs+addresses in '<address>' tags
-
-
+- try and get the QuickStart and FAQ titlepages and tocs onto the same page

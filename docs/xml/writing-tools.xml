@@ -606,36 +606,36 @@ achieve this by following these steps:</para>
 <orderedlist>
  <listitem>
   <para>Set <computeroutput>VALGRIND_LAUNCHER</computeroutput> to 
-<computeroutput><![CDATA[ <prefix>/bin/valgrind]]></computeroutput>:
-  </para>
-  <programlisting><![CDATA[
-  export VALGRIND_LAUNCHER=/usr/local/bin/valgrind]]></programlisting>
+   <computeroutput><![CDATA[<prefix>/bin/valgrind]]></computeroutput>:</para>
+<programlisting>
+  export VALGRIND_LAUNCHER=/usr/local/bin/valgrind</programlisting>
  </listitem>
 
  <listitem>
-  <para>Then run <computeroutput>gdb <![CDATA[ <prefix>/lib/valgrind/<platform>/<tool>"]]></computeroutput>:
-  </para>
-<programlisting><![CDATA[
-  gdb /usr/local/lib/valgrind/ppc32-linux/lackey]]></programlisting>
+  <para>Then run <computeroutput><![CDATA[ gdb <prefix>/lib/valgrind/<platform>/<tool>:]]></computeroutput></para>
+<programlisting>
+  gdb /usr/local/lib/valgrind/ppc32-linux/lackey</programlisting>
  </listitem>
 
  <listitem>
   <para>Do <computeroutput>handle SIGSEGV SIGILL nostop noprint</computeroutput> in
   GDB to prevent GDB from stopping on a SIGSEGV or SIGILL:</para>
-<programlisting><![CDATA[
-  (gdb) handle SIGILL SIGSEGV nostop noprint]]></programlisting>
+<programlisting>
+  (gdb) handle SIGILL SIGSEGV nostop noprint</programlisting>
  </listitem>
 
  <listitem>
   <para>Set any breakpoints you want and proceed as normal for GDB:</para>
-  <programlisting>  <![CDATA[(gdb) b vgPlain_do_exec]]></programlisting>
+<programlisting>
+  (gdb) b vgPlain_do_exec</programlisting>
   <para>The macro VG_(FUNC) is expanded to vgPlain_FUNC, so If you
-want to set a breakpoint VG_(do_exec), you could do like this in GDB</para>
+  want to set a breakpoint VG_(do_exec), you could do like this in GDB.</para>
  </listitem>
 
  <listitem>
   <para>Run the tool with required options:</para>
-  <programlisting>  <![CDATA[(gdb) run pwd]]></programlisting>
+<programlisting>
+  (gdb) run `pwd`</programlisting>
  </listitem>
 
 </orderedlist>

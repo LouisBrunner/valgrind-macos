@@ -66,7 +66,8 @@ typedef
       VexArchX86, 
       VexArchAMD64, 
       VexArchARM,
-      VexArchPPC32
+      VexArchPPC32,
+      VexArchPPC64
    }
    VexArch;
 
@@ -80,7 +81,9 @@ typedef
       VexSubArchARM_v4,       /* ARM version 4 */
       VexSubArchPPC32_I,      /* 32-bit PowerPC, no FP, no Altivec */
       VexSubArchPPC32_FI,     /* 32-bit PowerPC, with FP but no Altivec */
-      VexSubArchPPC32_VFI     /* 32-bit PowerPC, with FP and Altivec */
+      VexSubArchPPC32_VFI,    /* 32-bit PowerPC, with FP and Altivec */
+      VexSubArchPPC64_FI,     /* 64-bit PowerPC, with FP but no Altivec */
+      VexSubArchPPC64_VFI     /* 64-bit PowerPC, with FP and Altivec */
    }
    VexSubArch;
 
@@ -98,7 +101,7 @@ typedef
    struct {
       /* This is the only mandatory field. */
       VexSubArch subarch;
-      /* PPC32 only: size of cache line */
+      /* PPC32/PPC64 only: size of cache line */
       Int ppc32_cache_line_szB;
    }
    VexArchInfo;

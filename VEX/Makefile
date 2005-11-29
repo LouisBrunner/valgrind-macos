@@ -130,6 +130,12 @@ TAG_ppc32_linux:
 	if [ ! -f TAG_ppc32_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
 	touch TAG_ppc32_linux
 
+libvex_ppc64_linux.a: TAG_ppc64_linux libvex.a
+	mv -f libvex.a libvex_ppc64_linux.a
+TAG_ppc64_linux:
+	if [ ! -f TAG_ppc64_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
+	touch TAG_ppc64_linux
+
 
 # This doesn't get rid of priv/main/vex_svnversion.h, because
 # that can't be regenerated in the final Valgrind tarball, and

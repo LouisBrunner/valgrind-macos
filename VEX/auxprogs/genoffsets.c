@@ -52,6 +52,7 @@
 #include "../pub/libvex_guest_x86.h"
 #include "../pub/libvex_guest_amd64.h"
 #include "../pub/libvex_guest_ppc32.h"
+#include "../pub/libvex_guest_ppc64.h"
 
 Int main ( void )
 {
@@ -165,6 +166,36 @@ Int main ( void )
 
   printf("#define OFFSET_ppc32_CR0_0     %3d\n",
          offsetof(VexGuestPPC32State,guest_CR0_0));
+
+  printf("\n");
+
+  // ppc64
+  printf("#define OFFSET_ppc64_GPR0      %3d\n",
+         offsetof(VexGuestPPC64State,guest_GPR0));
+
+  printf("#define OFFSET_ppc64_GPR3      %3d\n",
+         offsetof(VexGuestPPC64State,guest_GPR3));
+
+  printf("#define OFFSET_ppc64_GPR4      %3d\n",
+         offsetof(VexGuestPPC64State,guest_GPR4));
+
+  printf("#define OFFSET_ppc64_GPR5      %3d\n",
+         offsetof(VexGuestPPC64State,guest_GPR5));
+
+  printf("#define OFFSET_ppc64_GPR6      %3d\n",
+         offsetof(VexGuestPPC64State,guest_GPR6));
+
+  printf("#define OFFSET_ppc64_GPR7      %3d\n",
+         offsetof(VexGuestPPC64State,guest_GPR7));
+
+  printf("#define OFFSET_ppc64_GPR8      %3d\n",
+         offsetof(VexGuestPPC64State,guest_GPR8));
+
+  printf("#define OFFSET_ppc64_CIA       %3d\n",
+         offsetof(VexGuestPPC64State,guest_CIA));
+
+  printf("#define OFFSET_ppc64_CR0_0     %3d\n",
+         offsetof(VexGuestPPC64State,guest_CR0_0));
 
   printf("\n");
 

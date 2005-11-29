@@ -3894,21 +3894,21 @@ static void build_ii16_table (void)
 #if defined (HAS_ALTIVEC)
 static void build_viargs_table (void)
 {
-   unsigned int i=0;
-   
 #if !defined (ALTIVEC_ARGS_LARGE)
-   i=2;
+   unsigned int i=2;
    viargs = memalign(16, i * sizeof(vector unsigned int));
    viargs[0] = (vector unsigned int) { 0x01020304,0x05060708,0x090A0B0C,0x0E0D0E0F };
    viargs[1] = (vector unsigned int) { 0xF1F2F3F4,0xF5F6F7F8,0xF9FAFBFC,0xFEFDFEFF };
 #else
+   unsigned int i,j;
    // build from iargs table (large/default already set)
    viargs = malloc(nb_iargs * sizeof(vector unsigned int));
    for (i=0; i<nb_iargs; i++) {
-      unsigned int j = iargs[i];
+      j = iargs[i];
       viargs[i] = (vector unsigned int){ j, j*2, j*3, j*4 };
    }
 #endif
+
    AB_DPRINTF("Registered %d viargs values\n", i);
    nb_viargs = i;
 }
@@ -4058,10 +4058,12 @@ static void dump_iargs16 (void)
 
 static void dump_vfargs (void)
 {
+   vector float vf;
+   float f;
    int i=0;
    for (i=0; i<nb_vfargs; i++) {
-      vector float vf = (vector float)vfargs[i];
-      float f = ((float*)&vf)[0];
+      vf = (vector float)vfargs[i];
+      f  = ((float*)&vf)[0];
       printf("vfarg %3d: %24f : %08x\n", i, f, ((unsigned int*)&f)[0]);
    }
 }
@@ -4746,7 +4748,7 @@ static void mfspr_cb (const char* name, test_func_t func,
       __asm__ __volatile__ ("mtxer 18");
 
       printf("%s %d (%08x) => %08x (%08x %08x, %08x, %08x)\n",
-             name, 9, iargs[k], res, flags, xer, lr, ctr);
+             name, j, iargs[k], res, flags, xer, lr, ctr);
    }
 #endif
 }
@@ -5627,18 +5629,23 @@ static void test_av_int_one_arg (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_in, vec_out, vscr;
+   unsigned int *src, *dst;
    int i;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<nb_viargs; i++) {
       /* Save flags */
       __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
       __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
-      vector unsigned int vec_in  = (vector unsigned int)viargs[i];
-      vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+      vec_in  = (vector unsigned int)viargs[i];
+      vec_out = (vector unsigned int){ 0,0,0,0 };
       
       // reset VSCR and CR
-      vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+      vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
       flags = 0;
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
       __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5660,14 +5667,14 @@ static void test_av_int_one_arg (const char* name, test_func_t func,
       __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
 
-      unsigned int* src = (unsigned int*)&vec_in;
-      unsigned int* dst = (unsigned int*)&vec_out;
+      src = (unsigned int*)&vec_in;
+      dst = (unsigned int*)&vec_out;
       printf("%s: %08x %08x %08x %08x\n", name,
              src[0], src[1], src[2], src[3]);
       printf("%s:  => %08x %08x %08x %08x ", name,
              dst[0], dst[1], dst[2], dst[3]);
 #if defined TEST_VSCR_SAT
-      unsigned int* p_vscr = (unsigned int*)&vscr;
+      p_vscr = (unsigned int*)&vscr;
       printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
       printf("(%08x)\n", flags);
@@ -5680,20 +5687,25 @@ static void test_av_int_two_args (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_in1, vec_in2, vec_out, vscr;
+   unsigned int *src1, *src2, *dst;
    int i,j;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<nb_viargs; i++) {
-      volatile vector unsigned int vec_in1 = (vector unsigned int)viargs[i];
+      vec_in1 = (vector unsigned int)viargs[i];
       for (j=0; j<nb_viargs; j++) {
-         volatile vector unsigned int vec_in2 = (vector unsigned int)viargs[j];
-         volatile vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+         vec_in2 = (vector unsigned int)viargs[j];
+         vec_out = (vector unsigned int){ 0,0,0,0 };
          
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5716,16 +5728,16 @@ static void test_av_int_two_args (const char* name, test_func_t func,
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
 
-         unsigned int* src1   = (unsigned int*)&vec_in1;
-         unsigned int* src2   = (unsigned int*)&vec_in2;
-         unsigned int* dst    = (unsigned int*)&vec_out;
+         src1 = (unsigned int*)&vec_in1;
+         src2 = (unsigned int*)&vec_in2;
+         dst  = (unsigned int*)&vec_out;
          printf("%s: ", name);
          printf("%08x%08x%08x%08x, ", src1[0], src1[1], src1[2], src1[3]);
          printf("%08x%08x%08x%08x\n", src2[0], src2[1], src2[2], src2[3]);
          printf("%s:  => %08x %08x %08x %08x ", name,
                 dst[0], dst[1], dst[2], dst[3]);
 #if defined TEST_VSCR_SAT
-         unsigned int* p_vscr = (unsigned int*)&vscr;
+         p_vscr = (unsigned int*)&vscr;
          printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
          printf("(%08x)\n", flags);
@@ -5740,22 +5752,27 @@ static void test_av_int_three_args (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_in1, vec_in2, vec_in3, vec_out, vscr;
+   unsigned int *src1, *src2, *src3, *dst;
    int i,j,k;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<nb_viargs; i++) {
-      vector unsigned int vec_in1 = (vector unsigned int)viargs[i];
+      vec_in1 = (vector unsigned int)viargs[i];
       for (j=0; j<nb_viargs; j++) {
-         vector unsigned int vec_in2 = (vector unsigned int)viargs[j];
+         vec_in2 = (vector unsigned int)viargs[j];
          for (k=0; k<nb_viargs; k++) {
-            vector unsigned int vec_in3 = (vector unsigned int)viargs[k];
-            vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+            vec_in3 = (vector unsigned int)viargs[k];
+            vec_out = (vector unsigned int){ 0,0,0,0 };
             
             /* Save flags */
             __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
             __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
             // reset VSCR and CR
-            vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+            vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
             flags = 0;
             __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
             __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5779,10 +5796,10 @@ static void test_av_int_three_args (const char* name, test_func_t func,
             __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
             __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
 
-            unsigned int* src1 = (unsigned int*)&vec_in1;
-            unsigned int* src2 = (unsigned int*)&vec_in2;
-            unsigned int* src3 = (unsigned int*)&vec_in3;
-            unsigned int* dst = (unsigned int*)&vec_out;
+            src1 = (unsigned int*)&vec_in1;
+            src2 = (unsigned int*)&vec_in2;
+            src3 = (unsigned int*)&vec_in3;
+            dst  = (unsigned int*)&vec_out;
             printf("%s: %08x%08x%08x%08x, %08x%08x%08x%08x, %08x%08x%08x%08x\n", name,
                    src1[0], src1[1], src1[2], src1[3],
                    src2[0], src2[1], src2[2], src2[3],
@@ -5791,7 +5808,7 @@ static void test_av_int_three_args (const char* name, test_func_t func,
             printf("%s:  => %08x%08x%08x%08x ", name,
                    dst[0], dst[1], dst[2], dst[3]);
 #if defined TEST_VSCR_SAT
-            unsigned int* p_vscr = (unsigned int*)&vscr;
+            p_vscr = (unsigned int*)&vscr;
             printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
             printf("(%08x)\n", flags);
@@ -5808,21 +5825,27 @@ static void vs128_cb (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned char vec_shft;
+   volatile vector unsigned int vec_in1, vec_out, vscr;
+   unsigned int *src1, *src2, *dst;
    int i,j;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<nb_viargs; i++) {
-      vector unsigned int vec_in1 = (vector unsigned int)viargs[i];
+      vec_in1 = (vector unsigned int)viargs[i];
       for (j=0; j<8; j++) {
          /* low-order 3bits of every byte must be the same for the shift vector */
-         vector unsigned char vec_shft = (vector unsigned char) { j,j,j,j, j,j,j,j, j,j,j,j, j,j,j,j };
-         vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+         vec_shft = (vector unsigned char) { j,j,j,j, j,j,j,j, j,j,j,j, j,j,j,j };
+         vec_out  = (vector unsigned int){ 0,0,0,0 };
          
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5845,9 +5868,9 @@ static void vs128_cb (const char* name, test_func_t func,
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
 
-         unsigned int* src1   = (unsigned int*)&vec_in1;
-         unsigned int* src2   = (unsigned int*)&vec_shft;
-         unsigned int* dst    = (unsigned int*)&vec_out;
+         src1 = (unsigned int*)&vec_in1;
+         src2 = (unsigned int*)&vec_shft;
+         dst  = (unsigned int*)&vec_out;
          printf("%s: ", name);
          printf("%08x%08x%08x%08x, ", src1[0], src1[1], src1[2], src1[3]);
          printf("%08x%08x%08x%08x\n", src2[0], src2[1], src2[2], src2[3]);
@@ -5855,10 +5878,10 @@ static void vs128_cb (const char* name, test_func_t func,
          printf("%s:  => %08x %08x %08x %08x ", name,
                 dst[0], dst[1], dst[2], dst[3]);
 #if defined TEST_VSCR_SAT
-            unsigned int* p_vscr = (unsigned int*)&vscr;
-            printf("(%08x, %08x)\n", flags, p_vscr[3]);
+         p_vscr = (unsigned int*)&vscr;
+         printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
-            printf("(%08x)\n", flags);
+         printf("(%08x)\n", flags);
 #endif
       }
       if (verbose) printf("\n");
@@ -5870,14 +5893,19 @@ static void vsplt_cb (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_in1, vec_out, vscr;
    uint32_t func_buf[2], *p;
+   unsigned int *src1, *dst;
    int i,j;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<nb_viargs; i++) {
-      vector unsigned int vec_in1 = (vector unsigned int)viargs[i];
+      vec_in1 = (vector unsigned int)viargs[i];
 
       for (j=0; j<16; j+=3) {
-         vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+         vec_out = (vector unsigned int){ 0,0,0,0 };
 
          /* Patch up the instruction */
          p = (void *)func;
@@ -5890,7 +5918,7 @@ static void vsplt_cb (const char* name, test_func_t func,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5912,18 +5940,18 @@ static void vsplt_cb (const char* name, test_func_t func,
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
 
-         unsigned int* src1   = (unsigned int*)&vec_in1;
-         unsigned int* dst    = (unsigned int*)&vec_out;
+         src1 = (unsigned int*)&vec_in1;
+         dst  = (unsigned int*)&vec_out;
          printf("%s: ", name);
          printf("%08x %08x %08x %08x, %u\n", src1[0], src1[1], src1[2], src1[3], j);
 
          printf("%s:  => %08x %08x %08x %08x ", name,
                 dst[0], dst[1], dst[2], dst[3]);
 #if defined TEST_VSCR_SAT
-            unsigned int* p_vscr = (unsigned int*)&vscr;
-            printf("(%08x, %08x)\n", flags, p_vscr[3]);
+         p_vscr = (unsigned int*)&vscr;
+         printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
-            printf("(%08x)\n", flags);
+         printf("(%08x)\n", flags);
 #endif
       }
       if (verbose) printf("\n");
@@ -5935,11 +5963,16 @@ static void vspltis_cb (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_out, vscr;
    uint32_t func_buf[2], *p;
+   unsigned int *dst;
    int i;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<32; i++) {
-      vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+      vec_out = (vector unsigned int){ 0,0,0,0 };
       
       /* Patch up the instruction */
       p = (void *)func;
@@ -5952,7 +5985,7 @@ static void vspltis_cb (const char* name, test_func_t func,
       __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
       
       // reset VSCR and CR
-      vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+      vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
       flags = 0;
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
       __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -5971,12 +6004,12 @@ static void vspltis_cb (const char* name, test_func_t func,
       __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
       
-      unsigned int* dst    = (unsigned int*)&vec_out;
+      dst = (unsigned int*)&vec_out;
       printf("%s: %2d => ", name, i);
 
       printf("%08x %08x %08x %08x ", dst[0], dst[1], dst[2], dst[3]);
 #if defined TEST_VSCR_SAT
-      unsigned int* p_vscr = (unsigned int*)&vscr;
+      p_vscr = (unsigned int*)&vscr;
       printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
       printf("(%08x)\n", flags);
@@ -5989,15 +6022,20 @@ static void vsldoi_cb (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_in1, vec_in2, vec_out, vscr;
    uint32_t func_buf[2], *p;
+   unsigned int *src1, *src2, *dst;
    int i,j,k;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<nb_viargs; i++) {
-      vector unsigned int vec_in1 = (vector unsigned int)viargs[i];
+      vec_in1 = (vector unsigned int)viargs[i];
       for (j=0; j<nb_viargs; j++) {
-         vector unsigned int vec_in2 = (vector unsigned int)viargs[j];
+         vec_in2 = (vector unsigned int)viargs[j];
          for (k=0; k<16; k+=14) {
-            vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+            vec_out = (vector unsigned int){ 0,0,0,0 };
 
             /* Patch up the instruction */
             p = (void *)func;
@@ -6010,7 +6048,7 @@ static void vsldoi_cb (const char* name, test_func_t func,
             __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
             
             // reset VSCR and CR
-            vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+            vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
             flags = 0;
             __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
             __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6033,9 +6071,9 @@ static void vsldoi_cb (const char* name, test_func_t func,
             __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
             __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
             
-            unsigned int* src1   = (unsigned int*)&vec_in1;
-            unsigned int* src2   = (unsigned int*)&vec_in2;
-            unsigned int* dst    = (unsigned int*)&vec_out;
+            src1   = (unsigned int*)&vec_in1;
+            src2   = (unsigned int*)&vec_in2;
+            dst    = (unsigned int*)&vec_out;
             printf("%s: ", name);
             printf("%08x%08x%08x%08x, %08x%08x%08x%08x, %u\n",
                    src1[0], src1[1], src1[2], src1[3],
@@ -6044,7 +6082,7 @@ static void vsldoi_cb (const char* name, test_func_t func,
             printf("%s:  => %08x %08x %08x %08x] ", name,
                    dst[0], dst[1], dst[2], dst[3]);
 #if defined TEST_VSCR_SAT
-            unsigned int* p_vscr = (unsigned int*)&vscr;
+            p_vscr = (unsigned int*)&vscr;
             printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
             printf("(%08x)\n", flags);
@@ -6061,10 +6099,15 @@ static void lvs_cb (const char *name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_out, vscr;
+   unsigned int *dst;
    int i;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
    
    for (i=-1; i<17; i++) {
-      vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+      vec_out = (vector unsigned int){ 0,0,0,0 };
       
       // make sure start address is 16 aligned - use viargs[0]
       r15 = (uint32_t)&viargs[0];
@@ -6075,7 +6118,7 @@ static void lvs_cb (const char *name, test_func_t func,
       __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
       
       // reset VSCR and CR
-      vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+      vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
       flags = 0;
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
       __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));         
@@ -6094,7 +6137,7 @@ static void lvs_cb (const char *name, test_func_t func,
       __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
       
-      unsigned int* dst    = (unsigned int*)&vec_out;
+      dst = (unsigned int*)&vec_out;
       printf("%s %3d, %3d", name, i, 0);
       printf(" => %08x %08x %08x %08x ", dst[0], dst[1], dst[2], dst[3]);
       printf("(%08x)\n", flags);
@@ -6165,6 +6208,8 @@ static void test_av_int_ld_two_regs (const char *name,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_in, vec_out, vscr;
+   unsigned int *src, *dst;
    int i,j, k, do_mask;
 
    do_mask = 0;
@@ -6174,7 +6219,7 @@ static void test_av_int_ld_two_regs (const char *name,
 
    for (i=0; i<nb_viargs; i++) {
       for (j=0; j<16; j+=7) {
-         volatile vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+         vec_out = (vector unsigned int){ 0,0,0,0 };
 
          // load from viargs array + some dis-alignment
          r15 = (uint32_t)&viargs[0];
@@ -6185,7 +6230,7 @@ static void test_av_int_ld_two_regs (const char *name,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
          
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6204,9 +6249,9 @@ static void test_av_int_ld_two_regs (const char *name,
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
          
-         volatile vector unsigned int vec_in = (vector unsigned int)viargs[i];
-         unsigned int* src = (unsigned int*)&vec_in;
-         unsigned int* dst = (unsigned int*)&vec_out;
+         vec_in = (vector unsigned int)viargs[i];
+         src = (unsigned int*)&vec_in;
+         dst = (unsigned int*)&vec_out;
 
          /* For lvebx/lvehx/lvewx, as per the documentation, all of
             the dest reg except the loaded bits are undefined
@@ -6218,19 +6263,19 @@ static void test_av_int_ld_two_regs (const char *name,
             for (k = 0; k < 16; k++)
                if (k != j)
                   p[k] = (char)0;
-	 }
+         }
          if (do_mask == 2) {
             short* p = (short*)dst;
             for (k = 0; k < 8; k++)
                if (k != (j>>1))
                   p[k] = (short)0;
-	 }
+         }
          if (do_mask == 4) {
             int* p = (int*)dst;
             for (k = 0; k < 4; k++)
                if (k != (j>>2))
                   p[k] = (int)0;
-	 }
+         }
 
          printf("%s %3d, %08x %08x %08x %08x", name, j, src[0], src[1], src[2], src[3]);
          printf(" => %08x %08x %08x %08x ", dst[0], dst[1], dst[2], dst[3]);
@@ -6247,6 +6292,8 @@ static void test_av_int_st_three_regs (const char *name,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_in, vec_out, vscr;
+   unsigned int *src, *dst;
    int i,j;
    vector unsigned int* viargs_priv;
 
@@ -6258,7 +6305,7 @@ static void test_av_int_st_three_regs (const char *name,
    for (i=0; i<nb_viargs; i++) {
       for (j=0; j<16; j+=7) {
          // read from viargs
-         volatile vector unsigned int vec_in = (vector unsigned int)viargs[i];
+         vec_in = (vector unsigned int)viargs[i];
 
          // store to viargs_priv[0] + some dis-alignment
          r16 = (uint32_t)&viargs_priv[0];
@@ -6269,7 +6316,7 @@ static void test_av_int_st_three_regs (const char *name,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
          
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6290,9 +6337,9 @@ static void test_av_int_st_three_regs (const char *name,
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
          
-         volatile vector unsigned int vec_out = (vector unsigned int)viargs_priv[i];
-         unsigned int* src = (unsigned int*)&vec_in;
-         unsigned int* dst = (unsigned int*)&vec_out;
+         vec_out = (vector unsigned int)viargs_priv[i];
+         src = (unsigned int*)&vec_in;
+         dst = (unsigned int*)&vec_out;
          printf("%s %3d, %08x %08x %08x %08x", name, j, src[0], src[1], src[2], src[3]);
          printf(" => %08x %08x %08x %08x ", dst[0], dst[1], dst[2], dst[3]);
          printf("(%08x)\n", flags);
@@ -6324,7 +6371,13 @@ static void test_av_float_one_arg (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector float vec_in, vec_out;
+   volatile vector unsigned int vscr;
+   unsigned int *src, *dst;
    int i;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    /* if we're doing an estimation operation, arrange to zap the
       bottom byte of the result as it's basically garbage, and differs
@@ -6334,15 +6387,15 @@ static void test_av_float_one_arg (const char* name, test_func_t func,
            ? 0xFFFFFF00 : 0xFFFFFFFF;
 
    for (i=0; i<nb_vfargs; i++) {
-      vector float vec_in  = (vector float)vfargs[i];
-      vector float vec_out = (vector float){ 0.0, 0.0, 0.0, 0.0 };
+      vec_in  = (vector float)vfargs[i];
+      vec_out = (vector float){ 0.0, 0.0, 0.0, 0.0 };
       
       /* Save flags */
       __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
       __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
       // reset VSCR and CR
-      vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+      vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
       flags = 0;
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
       __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6364,15 +6417,15 @@ static void test_av_float_one_arg (const char* name, test_func_t func,
       __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
       __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
 
-      unsigned int* src = (unsigned int*)&vec_in;
-      unsigned int* dst = (unsigned int*)&vec_out;
+      src = (unsigned int*)&vec_in;
+      dst = (unsigned int*)&vec_out;
       printf("%s: %08x %08x %08x %08x\n", name,
              src[0], src[1], src[2], src[3]);
 
       printf("%s:  => %08x %08x %08x %08x ", name,
              dst[0] & mask, dst[1] & mask, dst[2] & mask, dst[3] & mask);
 #if defined TEST_VSCR_SAT
-      unsigned int* p_vscr = (unsigned int*)&vscr;
+      p_vscr = (unsigned int*)&vscr;
       printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
       printf("(%08x)\n", flags);
@@ -6385,20 +6438,26 @@ static void test_av_float_two_args (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector float vec_in1, vec_in2, vec_out;
+   volatile vector unsigned int vscr;
+   unsigned int *src1, *src2, *dst;
    int i,j;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<nb_vfargs; i++) {
       for (j=0; j<nb_vfargs; j+=3) {
-         vector float vec_in1 = (vector float)vfargs[i];
-         vector float vec_in2 = (vector float)vfargs[j];
-         vector float vec_out = (vector float){ 0.0, 0.0, 0.0, 0.0 };
+         vec_in1 = (vector float)vfargs[i];
+         vec_in2 = (vector float)vfargs[j];
+         vec_out = (vector float){ 0.0, 0.0, 0.0, 0.0 };
 
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6421,9 +6480,9 @@ static void test_av_float_two_args (const char* name, test_func_t func,
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
 
-         unsigned int* src1 = (unsigned int*)&vec_in1;
-         unsigned int* src2 = (unsigned int*)&vec_in2;
-         unsigned int* dst = (unsigned int*)&vec_out;
+         src1 = (unsigned int*)&vec_in1;
+         src2 = (unsigned int*)&vec_in2;
+         dst  = (unsigned int*)&vec_out;
          printf("%s: %08x%08x%08x%08x, %08x%08x%08x%08x\n", name,
                 src1[0], src1[1], src1[2], src1[3],
                 src2[0], src2[1], src2[2], src2[3]);
@@ -6431,7 +6490,7 @@ static void test_av_float_two_args (const char* name, test_func_t func,
          printf("%s:  => %08x %08x %08x %08x ", name,
                 dst[0], dst[1], dst[2], dst[3]);
 #if defined TEST_VSCR_SAT
-         unsigned int* p_vscr = (unsigned int*)&vscr;
+         p_vscr = (unsigned int*)&vscr;
          printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
          printf("(%08x)\n", flags);
@@ -6446,22 +6505,28 @@ static void test_av_float_three_args (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector float vec_in1, vec_in2, vec_in3, vec_out;
+   volatile vector unsigned int vscr;
+   unsigned int *src1, *src2, *src3, *dst;
    int i,j,k;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<nb_vfargs; i++) {
       for (j=0; j<nb_vfargs; j+=3) {
          for (k=0; k<nb_vfargs; k+=5) {
-            vector float vec_in1 = (vector float)vfargs[i];
-            vector float vec_in2 = (vector float)vfargs[j];
-            vector float vec_in3 = (vector float)vfargs[k];
-            vector float vec_out = (vector float){ 0.0, 0.0, 0.0, 0.0 };
+            vec_in1 = (vector float)vfargs[i];
+            vec_in2 = (vector float)vfargs[j];
+            vec_in3 = (vector float)vfargs[k];
+            vec_out = (vector float){ 0.0, 0.0, 0.0, 0.0 };
             
             /* Save flags */
             __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
             __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
             // reset VSCR and CR
-            vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+            vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
             flags = 0;
             __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
             __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
@@ -6485,10 +6550,10 @@ static void test_av_float_three_args (const char* name, test_func_t func,
             __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
             __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
 
-            unsigned int* src1 = (unsigned int*)&vec_in1;
-            unsigned int* src2 = (unsigned int*)&vec_in2;
-            unsigned int* src3 = (unsigned int*)&vec_in3;
-            unsigned int* dst = (unsigned int*)&vec_out;
+            src1 = (unsigned int*)&vec_in1;
+            src2 = (unsigned int*)&vec_in2;
+            src3 = (unsigned int*)&vec_in3;
+            dst  = (unsigned int*)&vec_out;
             printf("%s: %08x%08x%08x%08x, %08x%08x%08x%08x, %08x%08x%08x%08x\n", name,
                    src1[0], src1[1], src1[2], src1[3],
                    src2[0], src2[1], src2[2], src2[3],
@@ -6497,7 +6562,7 @@ static void test_av_float_three_args (const char* name, test_func_t func,
             printf("%s:  => %08x %08x %08x %08x ", name,
                    dst[0], dst[1], dst[2], dst[3]);
 #if defined TEST_VSCR_SAT
-            unsigned int* p_vscr = (unsigned int*)&vscr;
+            p_vscr = (unsigned int*)&vscr;
             printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
             printf("(%08x)\n", flags);
@@ -6513,14 +6578,19 @@ static void vcvt_cb (const char* name, test_func_t func,
 {
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
+   volatile vector unsigned int vec_in, vec_out, vscr;
    uint32_t func_buf[2], *p;
+   unsigned int *src, *dst;
    int i,j;
+#if defined TEST_VSCR_SAT
+   unsigned int* p_vscr;
+#endif
 
    for (i=0; i<nb_vfargs; i++) {
-      vector unsigned int vec_in1 = (vector unsigned int)vfargs[i];
+      vec_in = (vector unsigned int)vfargs[i];
 
       for (j=0; j<32; j+=9) {
-         vector unsigned int vec_out = (vector unsigned int){ 0,0,0,0 };
+         vec_out = (vector unsigned int){ 0,0,0,0 };
 
          /* Patch up the instruction */
          p = (void *)func;
@@ -6533,13 +6603,13 @@ static void vcvt_cb (const char* name, test_func_t func,
          __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
 
          // reset VSCR and CR
-         vector unsigned int vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
+         vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
          flags = 0;
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (vscr) );
          __asm__ __volatile__ ("mtcr   %0" : : "r" (flags));
          
          // load input -> r14
-         __asm__ __volatile__ ("vor 14,%0,%0" : : "vr" (vec_in1));
+         __asm__ __volatile__ ("vor 14,%0,%0" : : "vr" (vec_in));
          
          // do stuff
          (*func)();
@@ -6555,13 +6625,13 @@ static void vcvt_cb (const char* name, test_func_t func,
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
          __asm__ __volatile__ ("mtvscr %0" : : "vr" (tmpvscr));
 
-         unsigned int* src1   = (unsigned int*)&vec_in1;
-         unsigned int* dst    = (unsigned int*)&vec_out;
-         printf("%s: %08x (%13e), %2u", name, src1[0], *(float*)(&src1[0]), j);
+         src = (unsigned int*)&vec_in;
+         dst = (unsigned int*)&vec_out;
+         printf("%s: %08x (%13e), %2u", name, src[0], *(float*)(&src[0]), j);
          printf(" => %08x (%13e) ", dst[0], *(float*)(&dst[0]));
 //         printf(" => %08x ", dst[0]);
 #if defined TEST_VSCR_SAT
-            unsigned int* p_vscr = (unsigned int*)&vscr;
+            p_vscr = (unsigned int*)&vscr;
             printf("(%08x, %08x)\n", flags, p_vscr[3]);
 #else
             printf("(%08x)\n", flags);
@@ -6831,7 +6901,7 @@ static void usage (void)
 {
 #if !defined (USAGE_SIMPLE)
    fprintf(stderr,
-           "test-ppc [-1] [-2] [-3] [-*] [-t <type>] [-f <family>] [-u] "
+           "jm-insns [-1] [-2] [-3] [-*] [-t <type>] [-f <family>] [-u] "
            "[-n <filter>] [-r <test_rigour>] [-h]\n"
            "\t-1: test opcodes with one argument\n"
            "\t-2: test opcodes with two arguments\n"
@@ -6863,7 +6933,7 @@ static void usage (void)
            );
 #else
    fprintf(stderr,
-           "test-ppc [-a]\n"
+           "jm-insns [-a]\n"
            "\t-a: include tests for altivec instructions\n"
            );
 #endif
@@ -6998,8 +7068,8 @@ int main (int argc, char **argv)
 
 #else
    /* Simple usage:
-      ./test-ppc      => all insns, except AV
-      ./test-ppc -a   => all insns, including AV
+      ./jm-insns      => all insns, except AV
+      ./jm-insns -a   => all insns, including AV
    */
    char *filter = NULL;
    insn_sel_flags_t flags;

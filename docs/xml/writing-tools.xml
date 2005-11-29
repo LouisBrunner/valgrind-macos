@@ -601,38 +601,41 @@ by your tool, the usual GDB command:</para>
 <sect3 id="writing-tools.debugfns">
 <title>Debugging C functions</title>
 
-<para>If you want to debug C functions used by your tool, you can
-attach GDB to Valgrind with some effort:</para>
+<para>If you want to debug C functions used by your tool, you can 
+achieve this by following these steps:</para>
 <orderedlist>
  <listitem>
-  <para>Enable the following code in
-  <filename>coregrind/vg_main.c</filename> by changing
-  <computeroutput>if (0)</computeroutput> 
-  into <computeroutput>if (1)</computeroutput>:
-<programlisting><![CDATA[
-  /* Hook to delay things long enough so we can get the pid and
-     attach GDB in another shell. */
-  if (0) { 
-    Int p, q;
-    for ( p = 0; p < 50000; p++ )
-      for ( q = 0; q < 50000; q++ ) ;
-  }]]></programlisting>
-  and rebuild Valgrind.</para>
+  <para>Set VALGRIND_LAUNCHER to <![CDATA[ <prefix>/bin/valgrind]]>:
+  </para>
+  <programlisting><![CDATA[
+  export VALGRIND_LAUNCHER=/usr/local/bin/valgrind]]>
+  </programlisting>
  </listitem>
 
  <listitem>
-  <para>Then run:</para>
+  <para>Then run <screen>gdb <![CDATA[ <prefix>/lib/valgrind/<platform>/<tool>"]]></screen>:
+  </para>
 <programlisting><![CDATA[
-  valgrind <prog>]]></programlisting>
-  <para>Valgrind starts the program, printing its process id, and
-  then delays for a few seconds (you may have to change the loop
-  bounds to get a suitable delay).</para>
+  gdb /usr/local/lib/valgrind/ppc32-linux/lackey]]></programlisting>
  </listitem>
 
  <listitem>
-  <para>In a second shell run:</para>
+  <para>Do <screen>handle SIGSEGV SIGILL nostop noprint</screen> in
+  GDB to prevent GDB from stopping on a SIGSEGV or SIGILL:</para>
 <programlisting><![CDATA[
-  gdb <prog pid>]]></programlisting>
+  (gdb) handle SIGILL SIGSEGV nostop noprint]]></programlisting>
+ </listitem>
+
+ <listitem>
+  <para>Set any breakpoints you want and proceed as normal for gdb:</para>
+  <programlisting><![CDATA[(gdb) b vgPlain_do_exec]]></programlisting>
+  <para>The macro VG_(FUNC) is expanded to vgPlain_FUNC, so If you
+want to set a breakpoint VG_(do_exec), you could do like this in GDB</para>
+ </listitem>
+
+ <listitem>
+  <para>Run the tool with required options:</para>
+  <programlisting><![CDATA[(gdb) run pwd]]></programlisting>
  </listitem>
 
 </orderedlist>
@@ -1026,13 +1029,10 @@ want to write regression tests for your tool:</para>
 <orderedlist>
  <listitem>
   <para>Make a directory
-  <computeroutput>foobar/tests/</computeroutput>.</para>
- </listitem>
-
- <listitem>
-  <para>Edit <computeroutput>foobar/Makefile.am</computeroutput>,
-  adding <computeroutput>tests</computeroutput> to the
-  <computeroutput>SUBDIRS</computeroutput> variable.</para>
+  <computeroutput>foobar/tests/</computeroutput>.  Make sure the name
+  of the directory is <computeroutput>tests/</computeroutput> as the
+  build system assumes that any tests for the tool will be in a
+  directory by that name.</para>
  </listitem>
 
  <listitem>

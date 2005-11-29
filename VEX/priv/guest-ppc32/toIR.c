@@ -3962,6 +3962,7 @@ static Bool dis_branch ( UInt theInstr,
    IRTemp   cond_ok   = newTemp(ty);
    IRExpr*  e_nia     = mkSizedImm(ty, nextInsnAddr());
    IRConst* c_nia     = mkSizedConst( ty, nextInsnAddr() );
+   IRTemp   lr_old    = newTemp(ty);
 
    /* Hack to pass through code that just wants to read the PC */
    if (theInstr == 0x429F0005) {
@@ -4055,6 +4056,8 @@ static Bool dis_branch ( UInt theInstr,
          
          assign( cond_ok, branch_cond_ok( BO, BI ) );
 
+	 assign( lr_old, addr_align( getGST( PPC_GST_CTR ), 4 ));
+
          if (flag_LK)
             putGST( PPC_GST_LR, e_nia );
          
@@ -4064,7 +4067,7 @@ static Bool dis_branch ( UInt theInstr,
                   c_nia ));
          
          irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
-         irbb->next     = addr_align( getGST( PPC_GST_CTR ), 4 );
+         irbb->next     = mkexpr(lr_old);
          break;
          
       case 0x010: // bclr (Branch Cond. to Link Register, PPC32 p365) 
@@ -4087,7 +4090,9 @@ static Bool dis_branch ( UInt theInstr,
          assign( cond_ok, branch_cond_ok( BO, BI ) );
          assign( do_branch,
                  binop(Iop_And32, mkexpr(cond_ok), mkexpr(ctr_ok)) );
-         
+ 
+         assign( lr_old, addr_align( getGST( PPC_GST_LR ), 4 ));
+
          if (flag_LK)
             putGST( PPC_GST_LR,  e_nia );
 
@@ -4100,7 +4105,7 @@ static Bool dis_branch ( UInt theInstr,
             return address of its caller to the insn following this
             one.  Mark it as a return. */
          irbb->jumpkind = Ijk_Ret;  /* was flag_LK ? Ijk_Call : Ijk_Ret; */
-         irbb->next     = addr_align( getGST( PPC_GST_LR ), 4 );
+         irbb->next     = mkexpr(lr_old);
          break;
          
       default:

@@ -609,8 +609,7 @@ achieve this by following these steps:</para>
 <computeroutput><![CDATA[ <prefix>/bin/valgrind]]></computeroutput>:
   </para>
   <programlisting><![CDATA[
-  export VALGRIND_LAUNCHER=/usr/local/bin/valgrind]]>
-  </programlisting>
+  export VALGRIND_LAUNCHER=/usr/local/bin/valgrind]]></programlisting>
  </listitem>
 
  <listitem>
@@ -629,14 +628,14 @@ achieve this by following these steps:</para>
 
  <listitem>
   <para>Set any breakpoints you want and proceed as normal for GDB:</para>
-  <programlisting><![CDATA[(gdb) b vgPlain_do_exec]]></programlisting>
+  <programlisting>  <![CDATA[(gdb) b vgPlain_do_exec]]></programlisting>
   <para>The macro VG_(FUNC) is expanded to vgPlain_FUNC, so If you
 want to set a breakpoint VG_(do_exec), you could do like this in GDB</para>
  </listitem>
 
  <listitem>
   <para>Run the tool with required options:</para>
-  <programlisting><![CDATA[(gdb) run pwd]]></programlisting>
+  <programlisting>  <![CDATA[(gdb) run pwd]]></programlisting>
  </listitem>
 
 </orderedlist>

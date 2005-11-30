@@ -270,7 +270,8 @@ typedef
                  | x > y  = 0x4 else
                  | x == y = 0x2
       */
-      Iop_CmpORD32U, Iop_CmpORD32S,
+      Iop_CmpORD32U, Iop_CmpORD64U,
+      Iop_CmpORD32S, Iop_CmpORD64S,
 
       /* Division */
       /* TODO: clarify semantics wrt rounding, negative values, whatever */

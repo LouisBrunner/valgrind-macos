@@ -160,7 +160,8 @@ For the official release:
 - Change release number in AC_INIT() in configure.in to "X.Y.Z.SVN", where
   X.Y.Z is one more than the release just done.
 
-- Add a new section to docs/internals/X_Y_BUGSTATUS.txt.
+- Add a new section to docs/internals/X_Y_BUGSTATUS.txt (or a new file if
+  it's a feature release).
 
 - Add new entries to docs/internals/roadmap.txt for the next release(s).
 

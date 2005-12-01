@@ -1132,8 +1132,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_fstatfs,           sys_fstatfs),        // 138 
    //   (__NR_sysfs,             sys_sysfs),          // 139 
 
-   //   (__NR_getpriority,             sys_getpriority),             // 140 
-   //   (__NR_setpriority,             sys_setpriority),             // 141 
+   GENX_(__NR_getpriority,             sys_getpriority),             // 140 
+   GENX_(__NR_setpriority,             sys_setpriority),             // 141 
 //zz    LINXY(__NR_sched_setparam,          sys_sched_setparam),          // 142 
    LINXY(__NR_sched_getparam,          sys_sched_getparam),          // 143 
    LINX_(__NR_sched_setscheduler,      sys_sched_setscheduler),      // 144 

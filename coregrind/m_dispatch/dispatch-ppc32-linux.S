@@ -163,8 +163,8 @@ LafterVMX1:
         stw     3,28(1)       /* spill orig guest_state ptr */
 
         /* 24(sp) used later to stop ctr reg being clobbered */
-
-	/* 8:20(sp) free */
+        /* 20(sp) used later to load fpscr with zero */
+        /* 8:16(sp) free */
 	
         /* Linkage Area (reserved)
            4(sp)  : LR
@@ -190,7 +190,14 @@ LafterVMX1:
         cmplwi  3,0
         beq     LafterFP2
 
-        fsub    3,3,3   /* generate zero */
+       /* get zero into f3 (tedious) */
+       /* note: fsub 3,3,3 is not a reliable way to do this, 
+          since if f3 holds a NaN or similar then we don't necessarily
+          wind up with zero. */
+        li      3,0
+        stw     3,20(1)
+        lfs     3,20(1)
+	/* load f3 to fpscr (0xFF = all bit fields) */
         mtfsf   0xFF,3
 LafterFP2:
 

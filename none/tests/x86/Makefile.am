@@ -26,7 +26,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	seg_override.stderr.exp seg_override.stdout.exp seg_override.vgtest \
 	sigcontext.stdout.exp sigcontext.stderr.exp sigcontext.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
-	yield.stderr.exp yield.stdout.exp yield.vgtest
+	yield.stderr.exp yield.stdout.exp yield.disabled
 
 check_PROGRAMS = \
 	badseg bt_everything bt_literal cmpxchg8b cpuid \

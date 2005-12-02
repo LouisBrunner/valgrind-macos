@@ -2,7 +2,7 @@
 
 TRUNK    31BRANCH   BUG#     WHAT
 
-pending   pending   n-i-bz   fsub 3,3,3 in ppc32 dispatcher doesn't clear NaNs
+v5262     pending   n-i-bz   fsub 3,3,3 in ppc32 dispatcher doesn't clear NaNs
 pending   pending   n-i-bz   ppc32: __NR_setpriority (97)
 pending   pending   117332   missing line info with icc 8.1 (x86)
 pending   pending   117362   partially defined equality
@@ -10,3 +10,4 @@ pending   pending   117366   amd64: 0xDD 0x7C fnstsw
 pending   pending   117367   amd64: 0xD9 0xF4 fxtract
 v5256       v5260   117369   amd64: __NR_getpriority (140)
 pending   pending   117419   ppc32: lfsu f5, -4(r11)
+pending   pending   n-i-bz   ppc32: jm-insns doesn't do FP tests

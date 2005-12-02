@@ -125,8 +125,8 @@
 #define __NR_ftruncate			 93
 #define __NR_fchmod			 94
 #define __NR_fchown			 95
-//#define __NR_getpriority		 96
-//#define __NR_setpriority		 97
+#define __NR_getpriority		 96
+#define __NR_setpriority		 97
 //#define __NR_profil			 98
 //#define __NR_statfs			 99
 //#define __NR_fstatfs			100

@@ -1560,8 +1560,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_fchmod,            sys_fchmod),            // 94
 
    LINX_(__NR_fchown,            sys_fchown16),          // 95
-//..    GENX_(__NR_getpriority,       sys_getpriority),       // 96
-//..    GENX_(__NR_setpriority,       sys_setpriority),       // 97
+   GENX_(__NR_getpriority,       sys_getpriority),       // 96
+   GENX_(__NR_setpriority,       sys_setpriority),       // 97
 //..    GENX_(__NR_profil,            sys_ni_syscall),        // 98
 //..    GENXY(__NR_statfs,            sys_statfs),            // 99
 //.. 

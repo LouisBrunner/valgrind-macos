@@ -221,6 +221,28 @@ enum test_flags {
 #define FDPRINTF(fmt, args...) do { } while (0)
 #endif
 
+/* Produce the 64-bit pattern corresponding to the supplied double. */
+static uint64_t double_to_bits ( double d )
+{
+   union { uint64_t i; double d; } u;
+   assert(8 == sizeof(uint64_t));
+   assert(8 == sizeof(double));
+   assert(8 == sizeof(u));
+   u.d = d;
+   return u.i;
+}
+
+#if 0
+static float bits_to_float ( uint32_t i )
+{
+   union { uint32_t i; float f; } u;
+   assert(4 == sizeof(uint32_t));
+   assert(4 == sizeof(float));
+   assert(4 == sizeof(u));
+   u.i = i;
+   return u.f;
+}
+#endif
 
 #define unused __attribute__ (( unused ))
 
@@ -1744,6 +1766,154 @@ static test_t tests_flr_ops_spe[] = {
     { NULL,                   NULL,           },
 };
 #endif /* !defined (NO_FLOAT) */
+
+
+#if !defined (NO_FLOAT)
+extern void test_lfs (void);
+asm(".text\n"
+    "test_lfs:\n"
+    "\tlfs          17,0(14)\n"
+    "\tblr\n"
+    ".previous\n"
+);
+
+extern void test_lfsu (void);
+asm(".text\n"
+    "test_lfsu:\n"
+    "\tlfsu          17,0(14)\n"
+    "\tblr\n"
+    ".previous\n"
+);
+
+extern void test_lfd (void);
+asm(".text\n"
+    "test_lfd:\n"
+    "\tlfd          17,0(14)\n"
+    "\tblr\n"
+    ".previous\n"
+);
+
+extern void test_lfdu (void);
+asm(".text\n"
+    "test_lfdu:\n"
+    "\tlfdu          17,0(14)\n"
+    "\tblr\n"
+    ".previous\n"
+);
+
+static test_t tests_fld_ops_two_i16[] = {
+    { &test_lfs             , "         lfs", },
+    { &test_lfsu            , "        lfsu", },
+    { &test_lfd             , "         lfd", },
+    { &test_lfdu            , "        lfdu", },
+    { NULL,                   NULL,           },
+};
+#endif /* !defined (NO_FLOAT) */
+
+#if !defined (NO_FLOAT)
+static void test_lfsx (void)
+{
+    __asm__ __volatile__ ("lfsx         17,14,15");
+}
+
+static void test_lfsux (void)
+{
+    __asm__ __volatile__ ("lfsux        17,14,15");
+}
+
+static void test_lfdx (void)
+{
+    __asm__ __volatile__ ("lfdx         17,14,15");
+}
+
+static void test_lfdux (void)
+{
+    __asm__ __volatile__ ("lfdux        17,14,15");
+}
+
+static test_t tests_fld_ops_two[] = {
+    { &test_lfsx            , "        lfsx", },
+    { &test_lfsux           , "       lfsux", },
+    { &test_lfdx            , "        lfdx", },
+    { &test_lfdux           , "       lfdux", },
+    { NULL,                   NULL,           },
+};
+#endif /* !defined (NO_FLOAT) */
+
+#if !defined (NO_FLOAT)
+extern void test_stfs (void);
+asm(".text\n"
+    "test_stfs:\n"
+    "\tstfs          14,0(15)\n"
+    "\tblr\n"
+    ".previous\n"
+);
+
+extern void test_stfsu (void);
+asm(".text\n"
+    "test_stfsu:\n"
+    "\tstfsu          14,0(15)\n"
+    "\tblr\n"
+    ".previous\n"
+);
+
+extern void test_stfd (void);
+asm(".text\n"
+    "test_stfd:\n"
+    "\tstfd          14,0(15)\n"
+    "\tblr\n"
+    ".previous\n"
+);
+
+extern void test_stfdu (void);
+asm(".text\n"
+    "test_stfdu:\n"
+    "\tstfdu         14,0(15)\n"
+    "\tblr\n"
+    ".previous\n"
+);
+
+static test_t tests_fst_ops_three_i16[] = {
+// TODO: Fix VEX to stop rounding these twice...
+//    { &test_stfs             , "         stfs", },
+//    { &test_stfsu            , "        stfsu", },
+    { &test_stfd             , "         stfd", },
+    { &test_stfdu            , "        stfdu", },
+    { NULL,                   NULL,           },
+};
+#endif /* !defined (NO_FLOAT) */
+
+#if !defined (NO_FLOAT)
+static void test_stfsx (void)
+{
+    __asm__ __volatile__ ("stfsx         14,15,16");
+}
+
+static void test_stfsux (void)
+{
+    __asm__ __volatile__ ("stfsux        14,15,16");
+}
+
+static void test_stfdx (void)
+{
+    __asm__ __volatile__ ("stfdx         14,15,16");
+}
+
+static void test_stfdux (void)
+{
+    __asm__ __volatile__ ("stfdux        14,15,16");
+}
+
+static test_t tests_fst_ops_three[] = {
+// TODO: Fix VEX to stop rounding these twice...
+//    { &test_stfsx            , "        stfsx", },
+//    { &test_stfsux           , "       stfsux", },
+    { &test_stfdx            , "        stfdx", },
+    { &test_stfdux           , "       stfdux", },
+    { NULL,                   NULL,           },
+};
+#endif /* !defined (NO_FLOAT) */
+
 
 #if defined (HAS_ALTIVEC)
 static void test_vmhaddshs (void)
@@ -3509,7 +3679,7 @@ static test_table_t all_tests[] = {
 #endif /* !defined (NO_FLOAT) */
 #if !defined (NO_FLOAT)
     {
-        tests_far_ops_three   ,
+        tests_far_ops_three    ,
         "PPC floating point arith insns\n    with three args with flags update",
         0x01020103,
     },
@@ -3561,6 +3731,34 @@ static test_table_t all_tests[] = {
         tests_flr_ops_spe     ,
         "PPC floating point status register manipulation insns\n  with flags update",
         0x01020207,
+    },
+#endif /* !defined (NO_FLOAT) */
+#if !defined (NO_FLOAT)
+    {
+        tests_fld_ops_two_i16 ,
+        "PPC float load insns\n    with one register + one 16 bits immediate args with flags update",
+        0x00020508,
+    },
+#endif /* !defined (NO_FLOAT) */
+#if !defined (NO_FLOAT)
+    {
+        tests_fld_ops_two     ,
+        "PPC float load insns with two register args",
+        0x00020509,
+    },
+#endif /* !defined (NO_FLOAT) */
+#if !defined (NO_FLOAT)
+    {
+        tests_fst_ops_three_i16,
+        "PPC float store insns\n    with one register + one 16 bits immediate args with flags update",
+        0x0002050a,
+    },
+#endif /* !defined (NO_FLOAT) */
+#if !defined (NO_FLOAT)
+    {
+        tests_fst_ops_three   ,
+        "PPC float store insns with three register args",
+        0x0002050b,
     },
 #endif /* !defined (NO_FLOAT) */
 #if defined (HAS_ALTIVEC)
@@ -3725,19 +3923,34 @@ static inline void register_farg (void *farg,
 
 static void build_fargs_table (void)
 {
-   /* Sign goes from zero to one
-    * Exponent goes from 0 to ((1 << 12) - 1)
-    * Mantissa goes from 1 to ((1 << 52) - 1)
+   /* Double precision:
+    * Sign goes from zero to one               (1 bit)
+    * Exponent goes from 0 to ((1 << 12) - 1)  (11 bits)
+    * Mantissa goes from 1 to ((1 << 52) - 1)  (52 bits)
     * + special values:
-    * +0.0      : 0 0x000 0x0000000000000
-    * -0.0      : 1 0x000 0x0000000000000
-    * +infinity : 0 0x7FF 0x0000000000000
-    * -infinity : 1 0x7FF 0x0000000000000
-    * +SNaN     : 0 0x7FF 0x7FFFFFFFFFFFF
-    * -SNaN     : 1 0x7FF 0x7FFFFFFFFFFFF
-    * +QNaN     : 0 0x7FF 0x8000000000000
-    * -QNaN     : 1 0x7FF 0x8000000000000
+    * +0.0      : 0 0x000 0x0000000000000 => 0x0000000000000000
+    * -0.0      : 1 0x000 0x0000000000000 => 0x8000000000000000
+    * +infinity : 0 0x7FF 0x0000000000000 => 0x7FF0000000000000
+    * -infinity : 1 0x7FF 0x0000000000000 => 0xFFF0000000000000
+    * +QNaN     : 0 0x7FF 0x7FFFFFFFFFFFF => 0x7FF7FFFFFFFFFFFF
+    * -QNaN     : 1 0x7FF 0x7FFFFFFFFFFFF => 0xFFF7FFFFFFFFFFFF
+    * +SNaN     : 0 0x7FF 0x8000000000000 => 0x7FF8000000000000
+    * -SNaN     : 1 0x7FF 0x8000000000000 => 0xFFF8000000000000
     * (8 values)
+
+    * Ref only:
+    * Single precision
+    * Sign:     1 bit
+    * Exponent: 8 bits
+    * Mantissa: 23 bits
+    * +0.0      : 0 0x00 0x000000 => 0x00000000
+    * -0.0      : 1 0x00 0x000000 => 0x80000000
+    * +infinity : 0 0xFF 0x000000 => 0x7F800000
+    * -infinity : 1 0xFF 0x000000 => 0xFF800000
+    * +QNaN     : 0 0xFF 0x3FFFFF => 0x7FBFFFFF
+    * -QNaN     : 1 0xFF 0x3FFFFF => 0xFFBFFFFF
+    * +SNaN     : 0 0xFF 0x400000 => 0x7FC00000
+    * -SNaN     : 1 0xFF 0x400000 => 0xFFC00000
     */
    uint64_t mant;
    uint16_t exp, e0, e1;
@@ -3805,27 +4018,28 @@ static void build_fargs_table (void)
    exp = 0x7FF;
    mant = 0x0000000000000ULL;
    register_farg(&fargs[i++], s, exp, mant);
-   /* +SNaN     : 0 0x7FF 0x7FFFFFFFFFFFF */
+   /* +QNaN     : 0 0x7FF 0x7FFFFFFFFFFFF */
    s = 0;
    exp = 0x7FF;
    mant = 0x7FFFFFFFFFFFFULL;
    register_farg(&fargs[i++], s, exp, mant);
-   /* -SNaN     : 1 0x7FF 0x7FFFFFFFFFFFF */
+   /* -QNaN     : 1 0x7FF 0x7FFFFFFFFFFFF */
    s = 1;
    exp = 0x7FF;
    mant = 0x7FFFFFFFFFFFFULL;
    register_farg(&fargs[i++], s, exp, mant);
-   /* +QNaN     : 0 0x7FF 0x8000000000000 */
+   /* +SNaN     : 0 0x7FF 0x8000000000000 */
    s = 0;
    exp = 0x7FF;
    mant = 0x8000000000000ULL;
    register_farg(&fargs[i++], s, exp, mant);
-   /* -QNaN     : 1 0x7FF 0x8000000000000 */
+   /* -SNaN     : 1 0x7FF 0x8000000000000 */
    s = 1;
    exp = 0x7FF;
    mant = 0x8000000000000ULL;
    register_farg(&fargs[i++], s, exp, mant);
    AB_DPRINTF("Registered %d fargs values\n", i);
+
    nb_fargs = i;
 }
 
@@ -3920,11 +4134,9 @@ static inline void register_vfarg (vector float* vfarg,
    vector uint32_t* vfargI = (vector uint32_t*)vfarg;
 
    tmp = ((uint64_t)s << 31) | ((uint64_t)exp << 23) | mant;
-   //float f = *(float*)&tmp;
-   //*vfarg = (vector float){ f,f,f,f };
    *vfargI = (vector uint32_t){ tmp,tmp,tmp,tmp };
    AB_DPRINTF("%d %02x %06x => %08x %0e\n",
-              s, exp, mant, *((uint32_t*)&tmp), f);
+              s, exp, mant, *((uint32_t*)&tmp), *(float*)&tmp);
 }
 
 static void build_vfargs_table (void)
@@ -5128,12 +5340,12 @@ static void test_int_ld_one_reg_imm16 (const char* name,
    
    // +ve d
    for (i=0; i<nb_iargs; i++) {
-      j = i * 4;          // sizeof(uint32_t)
+      j = i * 4;                      // offset = i * sizeof(uint32_t)
       p = (void *)func;
       func_buf[1] = p[1];
       patch_op_imm16(func_buf, p, j);
       func = (void *)func_buf;
-      r14 = (uint32_t)&iargs[0];
+      r14 = (uint32_t)&iargs[0];      // base reg = start of array
 
       /* Save flags */
       __asm__ __volatile__ ("mfcr 18");
@@ -5411,7 +5623,7 @@ static void test_float_three_args (const char* name, test_func_t func,
    uint64_t u0, u1, u2, ur;
    volatile uint32_t flags, tmpcr, tmpxer;
    int i, j, k;
-   
+
    for (i=0; i<nb_fargs; i+=3) {
       for (j=0; j<nb_fargs; j+=5) {
          for (k=0; k<nb_fargs; k+=7) {
@@ -5421,6 +5633,7 @@ static void test_float_three_args (const char* name, test_func_t func,
             f14 = fargs[i];
             f15 = fargs[j];
             f16 = fargs[k];
+
             /* Save flags */
             __asm__ __volatile__ ("mfcr 18");
             tmpcr = r18;
@@ -5588,6 +5801,251 @@ static void test_float_special (const char* name, test_func_t func,
    test_special(special_float_ops, name, func, test_flags);
 }
 
+
+static void test_float_ld_one_reg_imm16 (const char* name,
+                                         test_func_t func,
+                                         unused uint32_t test_flags)
+{
+   uint32_t base, func_buf[2], *p;
+   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile double src, res;
+   int i, offs;
+
+   /* offset within [1-nb_fargs:nb_fargs] */
+   for (i=1-nb_fargs; i<nb_fargs; i++) {
+      offs = i * 8;      // offset = i * sizeof(double)
+      if (i < 0) {
+         src  = fargs[nb_fargs-1 + i];
+         base = (uint32_t)&fargs[nb_fargs-1];
+      } else {
+         src = fargs[i];
+         base = (uint32_t)&fargs[0];
+      }
+
+      p = (void *)func;
+      func_buf[1] = p[1];
+      patch_op_imm16(func_buf, p, offs);
+      func = (void *)func_buf;
+
+      // load from fargs[idx] => r14 + offs
+      r14 = base;
+
+      /* Save flags */
+      __asm__ __volatile__ ("mfcr 18");
+      tmpcr = r18;
+      __asm__ __volatile__ ("mfxer 18");
+      tmpxer = r18;
+      
+      /* Set up flags for test */
+      r18 = 0;
+      __asm__ __volatile__ ("mtcr 18");
+      __asm__ __volatile__ ("mtxer 18");
+      (*func)();
+      __asm__ __volatile__ ("mfcr 18");
+      flags = r18;
+      __asm__ __volatile__ ("mfxer 18");
+      xer = r18;
+      res = f17;
+
+      /* Restore flags */
+      r18 = tmpcr;
+      __asm__ __volatile__ ("mtcr 18");
+      r18 = tmpxer;
+      __asm__ __volatile__ ("mtxer 18");
+
+      printf("%s %016llx, %4d => %016llx, %08x (%08x %08x)\n",
+             name, double_to_bits(src), offs,
+             double_to_bits(res), r14, flags, xer);
+   }
+   if (verbose) printf("\n");
+}
+
+static void test_float_ld_two_regs (const char* name,
+                                    test_func_t func,
+                                    unused uint32_t test_flags)
+{
+   volatile uint32_t base, flags, xer, tmpcr, tmpxer;
+   volatile double src, res;
+   int i;
+   
+   /* offset within [1-nb_fargs:nb_fargs] */
+   for (i=1-nb_fargs; i<nb_fargs; i++) {
+      r15 = i * 8;                 // offset = i * sizeof(double)
+      if (i < 0) {                 // base reg = start of array
+         src  = fargs[nb_fargs-1 + i];
+         base = (uint32_t)&fargs[nb_fargs-1];
+      } else {
+         src  = fargs[i];
+         base = (uint32_t)&fargs[0];
+      }
+
+      r14 = base;
+
+      /* Save flags */
+      __asm__ __volatile__ ("mfcr 18");
+      tmpcr = r18;
+      __asm__ __volatile__ ("mfxer 18");
+      tmpxer = r18;
+      
+      /* Set up flags for test */
+      r18 = 0;
+      __asm__ __volatile__ ("mtcr 18");
+      __asm__ __volatile__ ("mtxer 18");
+      (*func)();
+      __asm__ __volatile__ ("mfcr 18");
+      flags = r18;
+      __asm__ __volatile__ ("mfxer 18");
+      xer = r18;
+      res = f17;
+
+      /* Restore flags */
+      r18 = tmpcr;
+      __asm__ __volatile__ ("mtcr 18");
+      r18 = tmpxer;
+      __asm__ __volatile__ ("mtxer 18");
+
+      printf("%s %016llx, %4d => %016llx, %08x (%08x %08x)\n",
+             name, double_to_bits(src), r15,
+             double_to_bits(res), r14, flags, xer);
+   }
+}
+
+static void test_float_st_two_regs_imm16 (const char* name,
+                                          test_func_t func,
+                                          unused uint32_t test_flags)
+{
+   uint32_t base, func_buf[2], *p;
+   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   double src, *p_dst;
+   int i, offs;
+   double *fargs_priv;
+   
+   // private fargs table to store to
+   fargs_priv = malloc(nb_fargs * sizeof(double));
+   
+   /* offset within [1-nb_fargs:nb_fargs] */
+   for (i=1-nb_fargs; i<nb_fargs; i++) {
+      offs = i * 8;    // offset = i * sizeof(double)
+      if (i < 0) {
+         src   =  fargs     [nb_fargs-1 + i];
+         p_dst = &fargs_priv[nb_fargs-1 + i];
+         base  = (uint32_t)&fargs_priv[nb_fargs-1];
+      } else {
+         src   =  fargs     [i];
+         p_dst = &fargs_priv[i];
+         base  = (uint32_t)&fargs_priv[0];
+      }
+      *p_dst = 0;  // clear dst
+
+      p = (void *)func;
+      func_buf[1] = p[1];
+      patch_op_imm16(func_buf, p, offs);
+      func = (void *)func_buf;
+
+      // read from fargs[idx] => f14
+      // store to fargs_priv[idx] => r15 + offs
+      f14 = src;
+      r15 = base;
+
+     /* Save flags */
+      __asm__ __volatile__ ("mfcr 18");
+      tmpcr = r18;
+      __asm__ __volatile__ ("mfxer 18");
+      tmpxer = r18;
+      
+      /* Set up flags for test */
+      r18 = 0;
+      __asm__ __volatile__ ("mtcr 18");
+      __asm__ __volatile__ ("mtxer 18");
+      (*func)();
+      __asm__ __volatile__ ("mfcr 18");
+      flags = r18;
+      __asm__ __volatile__ ("mfxer 18");
+      xer = r18;
+
+      /* Restore flags */
+      r18 = tmpcr;
+      __asm__ __volatile__ ("mtcr 18");
+      r18 = tmpxer;
+      __asm__ __volatile__ ("mtxer 18");
+
+      printf("%s %016llx, %4d => %016llx, %08x (%08x %08x)\n",
+             name, double_to_bits(src), offs,
+             double_to_bits(*p_dst), r15, flags, xer);
+   }
+   free(fargs_priv);
+}
+
+static void test_float_st_three_regs (const char* name,
+                                      test_func_t func,
+                                      unused uint32_t test_flags)
+{
+   volatile uint32_t base, flags, xer, tmpcr, tmpxer;
+   double src, *p_dst;
+   int i, offs;
+   double *fargs_priv;
+
+   // private fargs table to store to
+   fargs_priv = malloc(nb_fargs * sizeof(double));
+   
+   //   /* offset within [1-nb_fargs:nb_fargs] */
+   //   for (i=1-nb_fargs; i<nb_fargs; i++) {
+   for (i=0; i<nb_fargs; i++) {
+      offs = i * 8;    // offset = i * sizeof(double)
+      if (i < 0) {
+         src   =  fargs     [nb_fargs-1 + i];
+         p_dst = &fargs_priv[nb_fargs-1 + i];
+         base  = (uint32_t)&fargs_priv[nb_fargs-1];
+      } else {
+         src   =  fargs     [i];
+         p_dst = &fargs_priv[i];
+         base  = (uint32_t)&fargs_priv[0];
+      }
+      *p_dst = 0;  // clear dst
+
+      f14  = src;    // read from fargs
+      r15  = base;   // store to r15 + offs
+      r16  = offs;
+
+      /* Save flags */
+      __asm__ __volatile__ ("mfcr 18");
+      tmpcr = r18;
+      __asm__ __volatile__ ("mfxer 18");
+      tmpxer = r18;
+      
+     /* Set up flags for test */
+      r18 = 0;
+      __asm__ __volatile__ ("mtcr 18");
+      __asm__ __volatile__ ("mtxer 18");
+      (*func)();
+      __asm__ __volatile__ ("mfcr 18");
+      flags = r18;
+      __asm__ __volatile__ ("mfxer 18");
+      xer = r18;
+
+      /* Restore flags */
+      r18 = tmpcr;
+      __asm__ __volatile__ ("mtcr 18");
+      r18 = tmpxer;
+      __asm__ __volatile__ ("mtxer 18");
+
+#if 1
+      printf("%s %016llx (%014e), %4d => %016llx (%014e), %08x (%08x %08x)\n",
+             name, double_to_bits(src), src, offs,
+             double_to_bits(*p_dst), *p_dst, r15, flags, xer);
+#else
+      // print single precision result
+      printf("%s %016llx (%014e), %4d => %08x (%f), %08x (%08x %08x)\n",
+             name, double_to_bits(src), src, offs,
+             (uint32_t)(double_to_bits(*p_dst) >> 32),
+             bits_to_float( (uint32_t)(double_to_bits(*p_dst) >> 32) ),
+             r15, flags, xer);
+#endif
+   }
+   free(fargs_priv);
+}
+
+
 /* Used in do_tests, indexed by flags->nb_args
    Elements correspond to enum test_flags::num args
 */
@@ -5599,10 +6057,10 @@ static test_loop_t float_loops[] = {
    NULL,
    NULL,
    &test_float_special,
-   NULL,
-   NULL,
-   NULL,
-   NULL,
+   &test_float_ld_one_reg_imm16,
+   &test_float_ld_two_regs,
+   &test_float_st_two_regs_imm16,
+   &test_float_st_three_regs,
 };
 #endif /* !defined (NO_FLOAT) */
 

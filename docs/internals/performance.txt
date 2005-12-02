@@ -14,7 +14,8 @@ Post 3.1.0:
 
 COMPVBITS branch:
 - Nick converted to compress V bits, initial version saved 0--5% on most
-  cases, with a 30% improvement on one case which calls
+  cases, with a 30% improvement on one case (tsim_arch) which calls
   set_address_range_perms() a lot.
-
+- Nick rewrote set_address_range_perms(), which gained 0--3% typically,
+  and 22% on tsim_arch.
 

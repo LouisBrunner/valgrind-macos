@@ -48,8 +48,8 @@ case I chased).
  */
 
 /*
- * Operation details:
- *
+ * Operation details
+ * -----------------
  * The 'test' functions (via all_tests[]) are wrappers of single asm instns
  *
  * The 'loops' (e.g. int_loops) do the actual work:
@@ -93,6 +93,48 @@ case I chased).
  *       }
  *    }
  * }
+ *
+ *
+ * Details of intruction patching for immediate operands
+ * -----------------------------------------------------
+ * All the immediate insn test functions are of the form {imm_insn, blr}
+ * In order to patch one of these functions, we simply copy both insns
+ * to a stack buffer, and rewrite the immediate part of imm_insn.
+ * We then execute our stack buffer.
+ * All ppc instructions are 32bits wide, which makes this fairly easy.
+ *
+ * Example:
+ * extern void test_addi (void);
+ *      asm(".text\n"
+ *      "test_addi:\n"
+ *      "\taddi         17, 14, 0\n"
+ *      "\tblr\n"
+ *      ".previous\n"
+ * );
+ *
+ * We are interested only in:
+ *      "\taddi         17, 14, 0\n"
+ *      "\tblr\n"
+ *
+ * In a loop test, we may see:
+ * uint32_t func_buf[2];               // our new stack based 'function'
+ * uint32_t *p;                        // ptr to access insns by idx
+ * for imm...                          // loop over imm
+ *   p = (void *)func;
+ *   func_buf[1] = p[1];               // copy 'blr' to func_buf[1]
+ *   patch_op_imm16(func_buf, p, imm); // patched 'addi' -> func_buf[0]
+ *   func = (void *)func_buf;          // ptr to stack based insns
+ *   (*func)();                        // exec our rewritten code
+ *
+ * patch_op_imm16() itself simply takes the uint32_t insn and overwrites
+ * the immediate field with the new value (which, for 'addi', is the
+ * low 16 bits).
+ *
+ * So in the loop test, if 'imm' is currently 9, and p[0] is:
+ *   0x3A2E0000   => addi 17, 14, 0
+ *
+ * after patch_op_imm16(), func_buf[0] becomes:
+ *   0x3A2E0009   => addi 17, 14, 9
 */
 
 #include <stdint.h>

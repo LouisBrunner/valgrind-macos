@@ -3,7 +3,7 @@
 TRUNK    31BRANCH   BUG#     WHAT
 
 v5262     pending   n-i-bz   fsub 3,3,3 in ppc32 dispatcher doesn't clear NaNs
-pending   pending   n-i-bz   ppc32: __NR_setpriority (97)
+v5270     pending   n-i-bz   ppc32: __NR_setpriority (97)
 pending   pending   117332   missing line info with icc 8.1 (x86)
 pending   pending   117362   partially defined equality
 pending   pending   117366   amd64: 0xDD 0x7C fnstsw

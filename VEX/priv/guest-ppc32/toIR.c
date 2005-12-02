@@ -54,6 +54,12 @@
    - lvxl,stvxl: load/store with 'least recently used' hint
    - vexptefp, vlogefp
 
+   Floating Point
+   - Single precision stores are rounded twice - once by F64toF32,
+     and then again by the backend for storeBE( F32 ), giving a loss
+     of precision.
+
+
    LIMITATIONS:
 
    Various, including:
@@ -4959,16 +4965,16 @@ static Bool dis_fp_load ( UInt theInstr )
       putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
       break;
 
-//zz    case 0x31: // lfsu (Load Float Single with Update, PPC32 p442)
-//zz       if (rA_addr == 0) {
-//zz          vex_printf("dis_fp_load(PPC32)(instr,lfsu)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("lfsu fr%u,%d(r%u)\n", frD_addr, simm16, rA_addr);
-//zz       assign( EA, ea_rA_simm(rA_addr, simm16) );
-//zz       putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
-//zz       putIReg( rA_addr, mkexpr(EA) );
-//zz       break;
+   case 0x31: // lfsu (Load Float Single with Update, PPC32 p442)
+      if (rA_addr == 0) {
+         vex_printf("dis_fp_load(PPC32)(instr,lfsu)\n");
+         return False;
+      }
+      DIP("lfsu fr%u,%d(r%u)\n", frD_addr, simm16, rA_addr);
+      assign( EA, ea_rA_simm(rA_addr, simm16) );
+      putFReg( frD_addr, unop(Iop_F32toF64, loadBE(Ity_F32, mkexpr(EA))) );
+      putIReg( rA_addr, mkexpr(EA) );
+      break;
       
    case 0x32: // lfd (Load Float Double, PPC32 p437)
       DIP("lfd fr%u,%d(r%u)\n", frD_addr, simm16, rA_addr);
@@ -5078,17 +5084,17 @@ static Bool dis_fp_store ( UInt theInstr )
                binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
       break;
 
-//zz    case 0x35: // stfsu (Store Float Single with Update, PPC32 p519)
-//zz       if (rA_addr == 0) {
-//zz          vex_printf("dis_fp_store(PPC32)(instr,stfsu)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("stfsu fr%u,%d(r%u)\n", frS_addr, simm16, rA_addr);
-//zz       assign( EA, ea_rA_simm(rA_addr, simm16) );
-//zz       storeBE( mkexpr(EA),
-//zz                binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
-//zz       putIReg( rA_addr, mkexpr(EA) );
-//zz       break;
+   case 0x35: // stfsu (Store Float Single with Update, PPC32 p519)
+      if (rA_addr == 0) {
+         vex_printf("dis_fp_store(PPC32)(instr,stfsu)\n");
+         return False;
+      }
+      DIP("stfsu fr%u,%d(r%u)\n", frS_addr, simm16, rA_addr);
+      assign( EA, ea_rA_simm(rA_addr, simm16) );
+      storeBE( mkexpr(EA),
+               binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
+      putIReg( rA_addr, mkexpr(EA) );
+      break;
 
    case 0x36: // stfd (Store Float Double, PPC32 p513)
       DIP("stfd fr%u,%d(r%u)\n", frS_addr, simm16, rA_addr);
@@ -5121,17 +5127,17 @@ static Bool dis_fp_store ( UInt theInstr )
                   binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
          break;
          
-//zz   case 0x2B7: // stfsux (Store Float Single with Update Indexed, PPC32 p520)
-//zz      if (rA_addr == 0) {
-//zz         vex_printf("dis_fp_store(PPC32)(instr,stfsux)\n");
-//zz         return False;
-//zz      }
-//zz      DIP("stfsux fr%u,r%u,r%u\n", frS_addr, rA_addr, rB_addr);
-//zz      assign( EA, ea_rA_idxd(rA_addr, rB_addr) );
-//zz      storeBE( mkexpr(EA),
-//zz               binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
-//zz      putIReg( rA_addr, mkexpr(EA) );
-//zz      break;
+      case 0x2B7: // stfsux (Store Float Single with Update Indexed, PPC32 p520)
+         if (rA_addr == 0) {
+            vex_printf("dis_fp_store(PPC32)(instr,stfsux)\n");
+            return False;
+         }
+         DIP("stfsux fr%u,r%u,r%u\n", frS_addr, rA_addr, rB_addr);
+         assign( EA, ea_rA_idxd(rA_addr, rB_addr) );
+         storeBE( mkexpr(EA),
+                  binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
+         putIReg( rA_addr, mkexpr(EA) );
+         break;
 
       case 0x2D7: // stfdx (Store Float Double Indexed, PPC32 p516)
          DIP("stfdx fr%u,r%u,r%u\n", frS_addr, rA_addr, rB_addr);

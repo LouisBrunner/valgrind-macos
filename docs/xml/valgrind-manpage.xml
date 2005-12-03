@@ -112,9 +112,10 @@ leaks.</para>
 <refsect1 id="basic-options">
 <title>Basic Options</title>
 
-<para>These options work with all tools.</para>
+<xi:include href="manual-core.xml" xpointer="basic.opts.para"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-<xi:include href="manual-core.xml" xpointer="basic.opts"
+<xi:include href="manual-core.xml" xpointer="basic.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
@@ -124,10 +125,10 @@ leaks.</para>
 <refsect1 id="error-related-options">
 <title>Error-Related Options</title>
 
-<para>These options are used by all tools that can report errors,
-e.g. Memcheck, but not Cachegrind.</para>
+<xi:include href="manual-core.xml" xpointer="error-related.opts.para"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-<xi:include href="manual-core.xml" xpointer="error-related.opts"
+<xi:include href="manual-core.xml" xpointer="error-related.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
@@ -137,11 +138,10 @@ e.g. Memcheck, but not Cachegrind.</para>
 <refsect1 id="malloc-related-options">
 <title>malloc()-related Options</title>
 
-<para>For tools that use their own version of
-<function>malloc()</function> (e.g. Memcheck and Addrcheck), the
-following options apply.</para>
+<xi:include href="manual-core.xml" xpointer="malloc-related.opts.para"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-<xi:include href="manual-core.xml" xpointer="malloc-related.opts"
+<xi:include href="manual-core.xml" xpointer="malloc-related.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
@@ -151,11 +151,11 @@ following options apply.</para>
 <refsect1 id="uncommon-options">
 <title>Uncommon Options</title>
 
-<para>These options apply to all tools, as they affect certain obscure
-workings of the Valgrind core.  Most people won't need to use
-these.</para>
 
-<xi:include href="manual-core.xml" xpointer="uncommon.opts"
+<xi:include href="manual-core.xml" xpointer="uncommon.opts.para"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+<xi:include href="manual-core.xml" xpointer="uncommon.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
@@ -165,9 +165,8 @@ these.</para>
 <refsect1 id="debugging-valgrind-options">
 <title>Debugging Valgrind Options</title>
 
-<para>There are also some options for debugging Valgrind itself.  You
-shouldn't need to use them in the normal run of things.  If you wish to
-see the list, use the <option>--help-debug</option> option.</para>
+<xi:include href="manual-core.xml" xpointer="debug.opts.para"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
 
@@ -176,7 +175,8 @@ see the list, use the <option>--help-debug</option> option.</para>
 <refsect1 id="memcheck-options">
 <title>Memcheck Options</title>
 
-<xi:include href="../../memcheck/docs/mc-manual.xml" xpointer="mc.opts"
+<xi:include href="../../memcheck/docs/mc-manual.xml" 
+            xpointer="mc.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
@@ -186,10 +186,12 @@ see the list, use the <option>--help-debug</option> option.</para>
 <refsect1 id="cachegrind-options">
 <title>Cachegrind Options</title>
 
-<xi:include href="../../cachegrind/docs/cg-manual.xml" xpointer="cg.opts.p1"
+<xi:include href="../../cachegrind/docs/cg-manual.xml" 
+            xpointer="cg.opts.para"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-<xi:include href="../../cachegrind/docs/cg-manual.xml" xpointer="cg.opts"
+<xi:include href="../../cachegrind/docs/cg-manual.xml" 
+            xpointer="cg.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
@@ -199,7 +201,8 @@ see the list, use the <option>--help-debug</option> option.</para>
 <refsect1 id="massif-options">
 <title>Massif Options</title>
 
-<xi:include href="../../massif/docs/ms-manual.xml" xpointer="ms.opts"
+<xi:include href="../../massif/docs/ms-manual.xml" 
+            xpointer="ms.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
@@ -209,7 +212,8 @@ see the list, use the <option>--help-debug</option> option.</para>
 <refsect1 id="helgrind-options">
 <title>Helgrind Options</title>
 
-<xi:include href="../../helgrind/docs/hg-manual.xml" xpointer="hg.opts"
+<xi:include href="../../helgrind/docs/hg-manual.xml" 
+            xpointer="hg.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>
@@ -219,7 +223,8 @@ see the list, use the <option>--help-debug</option> option.</para>
 <refsect1 id="lackey-options">
 <title>Lackey Options</title>
 
-<xi:include href="../../lackey/docs/lk-manual.xml" xpointer="lk.opts"
+<xi:include href="../../lackey/docs/lk-manual.xml" 
+            xpointer="lk.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>

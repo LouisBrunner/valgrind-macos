@@ -10,10 +10,14 @@
 <computeroutput>--tool=lackey</computeroutput> on the Valgrind
 command line.</para>
 
-<para>Lackey is a simple Valgrind tool that does some basic
-program measurement.  It adds quite a lot of simple
-instrumentation to the program's code.  It is primarily intended
-to be of use as an example tool.</para>
+
+<sect1 id="lk-manual.overview" xreflabel="Overview">
+<title>Overview</title>
+
+<para>Lackey is a simple valgrind tool that does some basic program
+measurement.  It adds quite a lot of simple instrumentation to the
+program's code.  It is primarily intended to be of use as an example
+tool.</para>
 
 <para>It measures and reports:</para>
 
@@ -83,5 +87,39 @@ It could be made to run a lot faster by doing a slightly more
 sophisticated job of the instrumentation, but that would undermine
 its role as a simple example tool.  Hence we have chosen not to do
 so.</para>
+
+</sect1>
+
+
+<sect1 id="lk-manual.options" xreflabel="Lackey Options">
+<title>Lackey Options</title>
+
+<para>Lackey-specific options are:</para>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="lk.opts.list">
+
+  <varlistentry id="opt.fnname" xreflabel="--fnname">
+    <term>
+      <option><![CDATA[--fnname=<name> [default: _dl_runtime_resolve()] ]]></option>
+    </term>
+    <listitem>
+      <para>Count calls to &lt;name&gt;.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.detailed-counts" xreflabel="--detailed-counts">
+    <term>
+      <option><![CDATA[--detailed-counts=<no|yes> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Count loads, stores and alu ops.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+<!-- end of xi:include in the manpage -->
+
+</sect1>
 
 </chapter>

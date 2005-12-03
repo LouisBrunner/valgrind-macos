@@ -1,6 +1,7 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
 
 <chapter id="mc-tech-docs" 
          xreflabel="The design and implementation of Valgrind">
@@ -12,66 +13,61 @@
 <sect1 id="mc-tech-docs.intro" xreflabel="Introduction">
 <title>Introduction</title>
 
-<para>This document contains a detailed, highly-technical
-description of the internals of Valgrind.  This is not the user
-manual; if you are an end-user of Valgrind, you do not want to
-read this.  Conversely, if you really are a hacker-type and want
-to know how it works, I assume that you have read the user manual
-thoroughly.</para>
+<para>This document contains a detailed, highly-technical description of
+the internals of Valgrind.  This is not the user manual; if you are an
+end-user of Valgrind, you do not want to read this.  Conversely, if you
+really are a hacker-type and want to know how it works, I assume that
+you have read the user manual thoroughly.</para>
 
-<para>You may need to read this document several times, and
-carefully.  Some important things, I only say once.</para>
+<para>You may need to read this document several times, and carefully.
+Some important things, I only say once.</para>
 
-<para>[Note: this document is now very old, and a lot of its contents are out
-of date, and misleading.]</para>
+<para>[Note: this document is now very old, and a lot of its contents
+are out of date, and misleading.]</para>
 
 
 <sect2 id="mc-tech-docs.history" xreflabel="History">
 <title>History</title>
 
-<para>Valgrind came into public view in late Feb 2002.  However,
-it has been under contemplation for a very long time, perhaps
-seriously for about five years.  Somewhat over two years ago, I
-started working on the x86 code generator for the Glasgow Haskell
-Compiler (http://www.haskell.org/ghc), gaining familiarity with
-x86 internals on the way.  I then did Cacheprof,
-gaining further x86 experience.  Some
-time around Feb 2000 I started experimenting with a user-space
-x86 interpreter for x86-Linux.  This worked, but it was clear
-that a JIT-based scheme would be necessary to give reasonable
-performance for Valgrind.  Design work for the JITter started in
-earnest in Oct 2000, and by early 2001 I had an x86-to-x86
-dynamic translator which could run quite large programs.  This
-translator was in a sense pointless, since it did not do any
-instrumentation or checking.</para>
+<para>Valgrind came into public view in late Feb 2002.  However, it has
+been under contemplation for a very long time, perhaps seriously for
+about five years.  Somewhat over two years ago, I started working on the
+x86 code generator for the Glasgow Haskell Compiler
+(http://www.haskell.org/ghc), gaining familiarity with x86 internals on
+the way.  I then did Cacheprof, gaining further x86 experience.  Some
+time around Feb 2000 I started experimenting with a user-space x86
+interpreter for x86-Linux.  This worked, but it was clear that a
+JIT-based scheme would be necessary to give reasonable performance for
+Valgrind.  Design work for the JITter started in earnest in Oct 2000,
+and by early 2001 I had an x86-to-x86 dynamic translator which could run
+quite large programs.  This translator was in a sense pointless, since
+it did not do any instrumentation or checking.</para>
 
-<para>Most of the rest of 2001 was taken up designing and
-implementing the instrumentation scheme.  The main difficulty,
-which consumed a lot of effort, was to design a scheme which did
-not generate large numbers of false uninitialised-value warnings.
-By late 2001 a satisfactory scheme had been arrived at, and I
-started to test it on ever-larger programs, with an eventual eye
-to making it work well enough so that it was helpful to folks
-debugging the upcoming version 3 of KDE.  I've used KDE since
-before version 1.0, and wanted to Valgrind to be an indirect
-contribution to the KDE 3 development effort.  At the start of
-Feb 02 the kde-core-devel crew started using it, and gave a huge
-amount of helpful feedback and patches in the space of three
-weeks.  Snapshot 20020306 is the result.</para>
+<para>Most of the rest of 2001 was taken up designing and implementing
+the instrumentation scheme.  The main difficulty, which consumed a lot
+of effort, was to design a scheme which did not generate large numbers
+of false uninitialised-value warnings.  By late 2001 a satisfactory
+scheme had been arrived at, and I started to test it on ever-larger
+programs, with an eventual eye to making it work well enough so that it
+was helpful to folks debugging the upcoming version 3 of KDE.  I've used
+KDE since before version 1.0, and wanted to Valgrind to be an indirect
+contribution to the KDE 3 development effort.  At the start of Feb 02
+the kde-core-devel crew started using it, and gave a huge amount of
+helpful feedback and patches in the space of three weeks.  Snapshot
+20020306 is the result.</para>
 
-<para>In the best Unix tradition, or perhaps in the spirit of
-Fred Brooks' depressing-but-completely-accurate epitaph "build
-one to throw away; you will anyway", much of Valgrind is a second
-or third rendition of the initial idea.  The instrumentation
-machinery (<filename>vg_translate.c</filename>,
-<filename>vg_memory.c</filename>) and core CPU simulation
-(<filename>vg_to_ucode.c</filename>,
-<filename>vg_from_ucode.c</filename>) have had three redesigns
-and rewrites; the register allocator, low-level memory manager
+<para>In the best Unix tradition, or perhaps in the spirit of Fred
+Brooks' depressing-but-completely-accurate epitaph "build one to throw
+away; you will anyway", much of Valgrind is a second or third rendition
+of the initial idea.  The instrumentation machinery
+(<filename>vg_translate.c</filename>, <filename>vg_memory.c</filename>)
+and core CPU simulation (<filename>vg_to_ucode.c</filename>,
+<filename>vg_from_ucode.c</filename>) have had three redesigns and
+rewrites; the register allocator, low-level memory manager
 (<filename>vg_malloc2.c</filename>) and symbol table reader
-(<filename>vg_symtab2.c</filename>) are on the second rewrite.
-In a sense, this document serves to record some of the knowledge
-gained as a result.</para>
+(<filename>vg_symtab2.c</filename>) are on the second rewrite.  In a
+sense, this document serves to record some of the knowledge gained as a
+result.</para>
 
 </sect2>
 
@@ -84,11 +80,11 @@ gained as a result.</para>
 <filename>valgrinq.so</filename>, of which more later.  The
 <filename>valgrind</filename> shell script adds
 <filename>valgrind.so</filename> to the
-<computeroutput>LD_PRELOAD</computeroutput> list of extra
-libraries to be loaded with any dynamically linked library.  This
-is a standard trick, one which I assume the
-<computeroutput>LD_PRELOAD</computeroutput> mechanism was
-developed to support.</para>
+<computeroutput>LD_PRELOAD</computeroutput> list of extra libraries to
+be loaded with any dynamically linked library.  This is a standard
+trick, one which I assume the
+<computeroutput>LD_PRELOAD</computeroutput> mechanism was developed to
+support.</para>
 
 <para><filename>valgrind.so</filename> is linked with the
 <computeroutput>-z initfirst</computeroutput> flag, which
@@ -101,7 +97,7 @@ return from this initialisation function.  So the normal startup
 actions, orchestrated by the dynamic linker
 <filename>ld.so</filename>, continue as usual, except on the
 synthetic CPU, not the real one.  Eventually
-<computeroutput>main</computeroutput> is run and returns, and
+<function>main</function> is run and returns, and
 then the finalisation code of the shared objects is run,
 presumably in inverse order to which they were initialised.
 Remember, this is still all happening on the simulated CPU.
@@ -111,14 +107,14 @@ CPU, prints any error summaries and/or does leak detection, and
 returns from the initialisation code on the real CPU.  At this
 point, in effect the real and synthetic CPUs have merged back
 into one, Valgrind has lost control of the program, and the
-program finally <computeroutput>exit()s</computeroutput> back to
+program finally <function>exit()s</function> back to
 the kernel in the usual way.</para>
 
 <para>The normal course of activity, once Valgrind has started
 up, is as follows.  Valgrind never runs any part of your program
 (usually referred to as the "client"), not a single byte of it,
 directly.  Instead it uses function
-<computeroutput>VG_(translate)</computeroutput> to translate
+<function>VG_(translate)</function> to translate
 basic blocks (BBs, straight-line sequences of code) into
 instrumented translations, and those are run instead.  The
 translations are stored in the translation cache (TC),
@@ -130,7 +126,7 @@ direct-map cache for fast lookups in TT; it usually achieves a
 hit rate of around 98% and facilitates an orig-to-trans lookup in
 4 x86 insns, which is not bad.</para>
 
-<para>Function <computeroutput>VG_(dispatch)</computeroutput> in
+<para>Function <function>VG_(dispatch)</function> in
 <filename>vg_dispatch.S</filename> is the heart of the JIT
 dispatcher.  Once a translated code address has been found, it is
 executed simply by an x86 <computeroutput>call</computeroutput>
@@ -141,19 +137,19 @@ does a <computeroutput>ret</computeroutput>, taking it back to
 the dispatch loop, with, interestingly, zero branch
 mispredictions.  The address requested in
 <computeroutput>%eax</computeroutput> is looked up first in
-<computeroutput>VG_(tt_fast)</computeroutput>, and, if not found,
+<function>VG_(tt_fast)</function>, and, if not found,
 by calling C helper
-<computeroutput>VG_(search_transtab)</computeroutput>.  If there
+<function>VG_(search_transtab)</function>.  If there
 is still no translation available,
-<computeroutput>VG_(dispatch)</computeroutput> exits back to the
+<function>VG_(dispatch)</function> exits back to the
 top-level C dispatcher
-<computeroutput>VG_(toploop)</computeroutput>, which arranges for
-<computeroutput>VG_(translate)</computeroutput> to make a new
+<function>VG_(toploop)</function>, which arranges for
+<function>VG_(translate)</function> to make a new
 translation.  All fairly unsurprising, really.  There are various
 complexities described below.</para>
 
 <para>The translator, orchestrated by
-<computeroutput>VG_(translate)</computeroutput>, is complicated
+<function>VG_(translate)</function>, is complicated
 but entirely self-contained.  It is described in great detail in
 subsequent sections.  Translations are stored in TC, with TT
 tracking administrative information.  The translations are
@@ -168,7 +164,7 @@ new translations is expensive, so it is worth having a large TC
 to minimise the (capacity) miss rate.</para>
 
 <para>The dispatcher,
-<computeroutput>VG_(dispatch)</computeroutput>, receives hints
+<function>VG_(dispatch)</function>, receives hints
 from the translations which allow it to cheaply spot all control
 transfers corresponding to x86
 <computeroutput>call</computeroutput> and
@@ -178,24 +174,24 @@ this in order to spot some special events:</para>
 <itemizedlist>
   <listitem>
     <para>Calls to
-    <computeroutput>VG_(shutdown)</computeroutput>.  This is
+    <function>VG_(shutdown)</function>.  This is
     Valgrind's cue to exit.  NOTE: actually this is done a
     different way; it should be cleaned up.</para>
   </listitem>
 
   <listitem>
     <para>Returns of system call handlers, to the return address
-    <computeroutput>VG_(signalreturn_bogusRA)</computeroutput>.
+    <function>VG_(signalreturn_bogusRA)</function>.
     The signal simulator needs to know when a signal handler is
     returning, so we spot jumps (returns) to this address.</para>
   </listitem>
 
   <listitem>
-    <para>Calls to <computeroutput>vg_trap_here</computeroutput>.
-    All <computeroutput>malloc</computeroutput>,
-    <computeroutput>free</computeroutput>, etc calls that the
+    <para>Calls to <function>vg_trap_here</function>.
+    All <function>malloc</function>,
+    <function>free</function>, etc calls that the
     client program makes are eventually routed to a call to
-    <computeroutput>vg_trap_here</computeroutput>, and Valgrind
+    <function>vg_trap_here</function>, and Valgrind
     does its own special thing with these calls.  In effect this
     provides a trapdoor, by which Valgrind can intercept certain
     calls on the simulated CPU, run the call as it sees fit
@@ -207,24 +203,24 @@ this in order to spot some special events:</para>
 </itemizedlist>
 
 <para>Valgrind intercepts the client's
-<computeroutput>malloc</computeroutput>,
-<computeroutput>free</computeroutput>, etc, calls, so that it can
+<function>malloc</function>,
+<function>free</function>, etc, calls, so that it can
 store additional information.  Each block
-<computeroutput>malloc</computeroutput>'d by the client gives
+<function>malloc</function>'d by the client gives
 rise to a shadow block in which Valgrind stores the call stack at
-the time of the <computeroutput>malloc</computeroutput> call.
-When the client calls <computeroutput>free</computeroutput>,
+the time of the <function>malloc</function> call.
+When the client calls <function>free</function>,
 Valgrind tries to find the shadow block corresponding to the
-address passed to <computeroutput>free</computeroutput>, and
+address passed to <function>free</function>, and
 emits an error message if none can be found.  If it is found, the
 block is placed on the freed blocks queue
 <computeroutput>vg_freed_list</computeroutput>, it is marked as
 inaccessible, and its shadow block now records the call stack at
-the time of the <computeroutput>free</computeroutput> call.
+the time of the <function>free</function> call.
 Keeping <computeroutput>free</computeroutput>'d blocks in this
 queue allows Valgrind to spot all (presumably invalid) accesses
 to them.  However, once the volume of blocks in the free queue
-exceeds <computeroutput>VG_(clo_freelist_vol)</computeroutput>,
+exceeds <function>VG_(clo_freelist_vol)</function>,
 blocks are finally removed from the queue.</para>
 
 <para>Keeping track of <literal>A</literal> and
@@ -236,7 +232,7 @@ in a way which is reasonably fast and reasonably space efficient.
 The 4G address space is divided up into 64K sections, each
 covering 64Kb of address space.  Given a 32-bit address, the top
 16 bits are used to select one of the 65536 entries in
-<computeroutput>VG_(primary_map)</computeroutput>.  The resulting
+<function>VG_(primary_map)</function>.  The resulting
 "secondary" (<computeroutput>SecMap</computeroutput>) holds A and
 V bits for the 64k of address space chunk corresponding to the
 lower 16 bits of the address.</para>
@@ -257,7 +253,7 @@ How can you figure out where in your simulator the bug is?</para>
 <para>Valgrind's answer is: cheat.  Valgrind is designed so that
 it is possible to switch back to running the client program on
 the real CPU at any point.  Using the
-<computeroutput>--stop-after= </computeroutput> flag, you can ask
+<option>--stop-after= </option> flag, you can ask
 Valgrind to run just some number of basic blocks, and then run
 the rest of the way on the real CPU.  If you are searching for a
 bug in the simulated CPU, you can use this to do a binary search,
@@ -271,7 +267,7 @@ regardless of whether it is running on the real or simulated CPU.
 This means that Valgrind can't do pointer swizzling -- well, no
 great loss -- and it can't run on the same stack as the client --
 again, no great loss.  Valgrind operates on its own stack,
-<computeroutput>VG_(stack)</computeroutput>, which it switches to
+<function>VG_(stack)</function>, which it switches to
 at startup, temporarily switching back to the client's stack when
 doing system calls for the client.</para>
 
@@ -299,8 +295,8 @@ transition inside a sighandler and still have things working, but
 in practice that's not much of a restriction.</para>
 
 <para>Valgrind's implementation of
-<computeroutput>malloc</computeroutput>,
-<computeroutput>free</computeroutput>, etc, (in
+<function>malloc</function>,
+<function>free</function>, etc, (in
 <filename>vg_clientmalloc.c</filename>, not the low-level stuff
 in <filename>vg_malloc2.c</filename>) is somewhat complicated by
 the need to handle switching back at arbitrary points.  It does
@@ -341,7 +337,7 @@ result:</para>
     <para>Aside from the assertions, valgrind contains various
     sets of internal sanity checks, which get run at varying
     frequencies during normal operation.
-    <computeroutput>VG_(do_sanity_checks)</computeroutput> runs
+    <function>VG_(do_sanity_checks)</function> runs
     every 1000 basic blocks, which means 500 to 2000 times/second
     for typical machines at present.  It checks that Valgrind
     hasn't overrun its private stack, and does some simple checks
@@ -359,7 +355,7 @@ result:</para>
       <listitem>
         <para>The symbol table reader(s): various checks to
         ensure uniqueness of mappings; see
-        <computeroutput>VG_(read_symbols)</computeroutput> for a
+        <function>VG_(read_symbols)</function> for a
         start.  Is permanently engaged.</para>
       </listitem>
 
@@ -381,9 +377,9 @@ result:</para>
       <listitem>
         <para>The JITter parses x86 basic blocks into sequences
         of UCode instructions.  It then sanity checks each one
-        with <computeroutput>VG_(saneUInstr)</computeroutput> and
+        with <function>VG_(saneUInstr)</function> and
         sanity checks the sequence as a whole with
-        <computeroutput>VG_(saneUCodeBlock)</computeroutput>.
+        <function>VG_(saneUCodeBlock)</function>.
         This stuff is engaged by default, and has caught some
         way-obscure bugs in the simulated CPU machinery in its
         time.</para>
@@ -391,14 +387,14 @@ result:</para>
 
       <listitem>
         <para>The system call wrapper does
-        <computeroutput>VG_(first_and_last_secondaries_look_plausible)</computeroutput>
+        <function>VG_(first_and_last_secondaries_look_plausible)</function>
         after every syscall; this is known to pick up bugs in the
         syscall wrappers.  Engaged by default.</para>
       </listitem>
 
       <listitem>
         <para>The main dispatch loop, in
-        <computeroutput>VG_(dispatch)</computeroutput>, checks
+        <function>VG_(dispatch)</function>, checks
         that translations do not set
         <computeroutput>%ebp</computeroutput> to any value
         different from
@@ -455,8 +451,8 @@ result:</para>
     valgrind.so | grep " T "</computeroutput>, which shows you
     all the globally exported text symbols.  They should all have
     an approved prefix, except for those like
-    <computeroutput>malloc</computeroutput>,
-    <computeroutput>free</computeroutput>, etc, which we
+    <function>malloc</function>,
+    <function>free</function>, etc, which we
     deliberately want to shadow and take precedence over the same
     names exported from <filename>glibc.so</filename>, so that
     valgrind can intercept those calls easily.  Similarly,
@@ -905,24 +901,24 @@ stages, coordinated by
 transformation passes, all on straight-line blocks of UCode (type
 <computeroutput>UCodeBlock</computeroutput>).  Steps 2 and 4 are
 optimisation passes and can be disabled for debugging purposes,
-with <computeroutput>--optimise=no</computeroutput> and
-<computeroutput>--cleanup=no</computeroutput> respectively.</para>
+with <option>--optimise=no</option> and
+<option>--cleanup=no</option> respectively.</para>
 
 <para>Valgrind can also run in a no-instrumentation mode, given
-<computeroutput>--instrument=no</computeroutput>.  This is useful
+<option>--instrument=no</option>.  This is useful
 for debugging the JITter quickly without having to deal with the
 complexity of the instrumentation mechanism too.  In this mode,
 steps 3 and 4 are omitted.</para>
 
 <para>These flags combine, so that
-<computeroutput>--instrument=no</computeroutput> together with
-<computeroutput>--optimise=no</computeroutput> means only steps
+<option>--instrument=no</option> together with
+<option>--optimise=no</option> means only steps
 1, 5 and 6 are used.
-<computeroutput>--single-step=yes</computeroutput> causes each
+<option>--single-step=yes</option> causes each
 x86 instruction to be treated as a single basic block.  The
 translations are terrible but this is sometimes instructive.</para>
 
-<para>The <computeroutput>--stop-after=N</computeroutput> flag
+<para>The <option>--stop-after=N</option> flag
 switches back to the real CPU after
 <computeroutput>N</computeroutput> basic blocks.  It also re-JITs
 the final basic block executed and prints the debugging info

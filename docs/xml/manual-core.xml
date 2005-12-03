@@ -559,9 +559,10 @@ categories.</para>
 <sect2 id="manual-core.basicopts" xreflabel="Basic Options">
 <title>Basic Options</title>
 
-<para>These options work with all tools.</para>
+<!-- start of xi:include in the manpage -->
+<para id="basic.opts.para">These options work with all tools.</para>
 
-<variablelist id="basic.opts">
+<variablelist id="basic.opts.list">
 
   <varlistentry id="opt.help" xreflabel="--help">
     <term><option>-h --help</option></term>
@@ -743,6 +744,7 @@ categories.</para>
   </varlistentry>
 
 </variablelist>
+<!-- end of xi:include in the manpage -->
 
 </sect2>
 
@@ -750,10 +752,11 @@ categories.</para>
 <sect2 id="manual-core.erropts" xreflabel="Error-related Options">
 <title>Error-related options</title>
 
-<para>These options are used by all tools that can report
-errors, e.g. Memcheck, but not Cachegrind.</para>
+<!-- start of xi:include in the manpage -->
+<para id="error-related.opts.para">These options are used by all tools
+that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
-<variablelist id="error-related.opts">
+<variablelist id="error-related.opts.list">
 
   <varlistentry id="opt.xml" xreflabel="--xml">
     <term>
@@ -1011,6 +1014,7 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
   </varlistentry>
 
 </variablelist>
+<!-- end of xi:include in the manpage -->
 
 </sect2>
 
@@ -1018,11 +1022,12 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
 <sect2 id="manual-core.mallocopts" xreflabel="malloc()-related Options">
 <title><computeroutput>malloc()</computeroutput>-related Options</title>
 
-<para>For tools that use their own version of
+<!-- start of xi:include in the manpage -->
+<para id="malloc-related.opts.para">For tools that use their own version of
 <computeroutput>malloc()</computeroutput> (e.g. Memcheck and
 Addrcheck), the following options apply.</para>
 
-<variablelist id="malloc-related.opts">
+<variablelist id="malloc-related.opts.list">
 
   <varlistentry id="opt.alignment" xreflabel="--alignment">
     <term>
@@ -1039,6 +1044,7 @@ Addrcheck), the following options apply.</para>
   </varlistentry>
 
 </variablelist>
+<!-- end of xi:include in the manpage -->
 
 </sect2>
 
@@ -1046,11 +1052,12 @@ Addrcheck), the following options apply.</para>
 <sect2 id="manual-core.rareopts" xreflabel="Uncommon Options">
 <title>Uncommon Options</title>
 
-<para>These options apply to all tools, as they affect certain obscure
-workings of the Valgrind core.  Most people won't need to use
-these.</para>
+<!-- start of xi:include in the manpage -->
+<para id="uncommon.opts.para">These options apply to all tools, as they
+affect certain obscure workings of the Valgrind core.  Most people won't
+need to use these.</para>
 
-<variablelist id="uncommon.opts">
+<variablelist id="uncommon.opts.list">
 
   <varlistentry id="opt.run-libc-freeres" xreflabel="--run-libc-freeres">
     <term>
@@ -1161,6 +1168,7 @@ these.</para>
   </varlistentry>
 
 </variablelist>
+<!-- end of xi:include in the manpage -->
 
 </sect2>
 
@@ -1168,10 +1176,12 @@ these.</para>
 <sect2 id="manual-core.debugopts" xreflabel="Debugging Valgrind Options">
 <title>Debugging Valgrind Options</title>
 
-<para>There are also some options for debugging Valgrind itself.
-You shouldn't need to use them in the normal run of things.  If you
-wish to see the list, use the <computeroutput>--help-debug</computeroutput>
-option.</para>
+<!-- start of xi:include in the manpage -->
+<para id="debug.opts.para">There are also some options for debugging
+Valgrind itself.  You shouldn't need to use them in the normal run of
+things.  If you wish to see the list, use the
+<option>--help-debug</option> option.</para>
+<!-- end of xi:include in the manpage -->
 
 </sect2>
 

@@ -2,6 +2,7 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
+
 <chapter id="cg-manual" xreflabel="Cachegrind: a cache-miss profiler">
 <title>Cachegrind: a cache profiler</title>
 
@@ -302,28 +303,54 @@ programs that spawn child processes.</para>
 <sect2 id="cg-manual.cgopts" xreflabel="Cachegrind options">
 <title>Cachegrind options</title>
 
+<!-- start of xi:include in the manpage -->
+<para id="cg.opts.para">Manually specifies the I1/D1/L2 cache
+configuration, where <varname>size</varname> and
+<varname>line_size</varname> are measured in bytes.  The three items
+must be comma-separated, but with no spaces, eg:
+<literallayout>    valgrind --tool=cachegrind --I1=65535,2,64</literallayout>
+
+You can specify one, two or three of the I1/D1/L2 caches.  Any level not
+manually specified will be simulated using the configuration found in
+the normal way (via the CPUID instruction for automagic cache
+configuration, or failing that, via defaults).</para>
+
 <para>Cache-simulation specific options are:</para>
 
-<screen><![CDATA[
---I1=<size>,<associativity>,<line_size>
---D1=<size>,<associativity>,<line_size>
---L2=<size>,<associativity>,<line_size>
+<variablelist id="cg.opts.list">
 
-[default: uses CPUID for automagic cache configuration]]]></screen>
+  <varlistentry id="opt.I1" xreflabel="--I1">
+    <term>
+      <option><![CDATA[--I1=<size>,<associativity>,<line size> ]]></option>
+    </term>
+    <listitem>
+      <para>Specify the size, associativity and line size of the level 1
+      instruction cache.  </para>
+    </listitem>
+  </varlistentry>
 
-<para>Manually specifies the I1/D1/L2 cache configuration, where
-<computeroutput>size</computeroutput> and
-<computeroutput>line_size</computeroutput> are measured in bytes.
-The three items must be comma-separated, but with no spaces,
-eg:</para>
+  <varlistentry id="opt.D1" xreflabel="--D1">
+    <term>
+      <option><![CDATA[--D1=<size>,<associativity>,<line size> ]]></option>
+    </term>
+    <listitem>
+      <para>Specify the size, associativity and line size of the level 1
+      data cache.</para>
+    </listitem>
+  </varlistentry>
 
-<programlisting><![CDATA[
-valgrind --tool=cachegrind --I1=65535,2,64]]></programlisting>
+  <varlistentry id="opt.L2" xreflabel="--L2">
+    <term>
+      <option><![CDATA[--L2=<size>,<associativity>,<line size> ]]></option>
+    </term>
+    <listitem>
+      <para>Specify the size, associativity and line size of the level 2
+      cache.</para>
+    </listitem>
+  </varlistentry>
 
-<para>You can specify one, two or three of the I1/D1/L2 caches.
-Any level not manually specified will be simulated using the
-configuration found in the normal way (via the CPUID instruction,
-or failing that, via defaults).</para>
+</variablelist>
+<!-- end of xi:include in the manpage -->
 
 </sect2>
 
@@ -338,10 +365,10 @@ wide if possible, as the output lines can be quite long.</para>
 
 <para>To get a function-by-function summary, run
 <computeroutput>cg_annotate --pid</computeroutput> in a directory
-containing a <computeroutput>cachegrind.out.pid</computeroutput>
-file.  The <emphasis>--pid</emphasis> is required so that
-<computeroutput>cg_annotate</computeroutput> knows which log file
-to use when several are present.</para>
+containing a <filename>cachegrind.out.pid</filename> file.  The
+<emphasis>--pid</emphasis> is required so that
+<computeroutput>cg_annotate</computeroutput> knows which log file to use
+when several are present.</para>
 
 <para>The output looks like this:</para>
 
@@ -501,8 +528,7 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
 
 <para>Then follows summary statistics for the whole
 program. These are similar to the summary provided when running
-<computeroutput>valgrind
---tool=cachegrind</computeroutput>.</para>
+<computeroutput>valgrind --tool=cachegrind</computeroutput>.</para>
   
 <para>Then follows function-by-function statistics. Each function
 is identified by a

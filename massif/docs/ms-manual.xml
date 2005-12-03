@@ -1,6 +1,7 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
 
 <chapter id="ms-manual" xreflabel="Massif: a heap profiler">
   <title>Massif: a heap profiler</title>
@@ -8,6 +9,7 @@
 <para>To use this tool, you must specify
 <computeroutput>--tool=massif</computeroutput> on the Valgrind
 command line.</para>
+
 
 <sect1 id="ms-manual.spaceprof" xreflabel="Heap profiling">
 <title>Heap profiling</title>
@@ -393,73 +395,93 @@ please let us know.</para>
 </sect1>
 
 
-<sect1 id="ms-manual.options" xreflabel="Massif options">
-<title>Massif options</title>
+<sect1 id="ms-manual.options" xreflabel="Massif Options">
+<title>Massif Options</title>
 
 <para>Massif-specific options are:</para>
 
-<itemizedlist>
+<!-- start of xi:include in the manpage -->
+<variablelist id="ms.opts">
 
-  <listitem id="heap">
-    <para><computeroutput>--heap=no</computeroutput></para>
-    <para><computeroutput>--heap=yes</computeroutput> [default]</para>
-    <para>When enabled, profile heap usage in detail.  Without
-    it, the <filename>massif.pid.txt</filename> or
-    <filename>massif.pid.html</filename> will be very
-    short.</para>
-  </listitem>
+  <varlistentry id="opt.heap" xreflabel="--heap">
+    <term>
+      <option><![CDATA[--heap=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, profile heap usage in detail.  Without it, the
+      <filename>massif.pid.txt</filename> or
+      <filename>massif.pid.html</filename> will be very short.</para>
+    </listitem>
+  </varlistentry>
 
-  <listitem id="heap-admin">
-    <para><computeroutput>--heap-admin=n</computeroutput>
-    [default: 8]</para>
-    <para>The number of admin bytes per block to use.  This can
-    only be an estimate of the average, since it may vary.  The
-    allocator used by <computeroutput>glibc</computeroutput>
-    requires somewhere between 4--15 bytes per block, depending
-    on various factors.  It also requires admin space for freed
-    blocks, although Massif does not count this.</para>
-  </listitem>
+  <varlistentry id="opt.heap-admin" xreflabel="--heap-admin">
+    <term>
+      <option><![CDATA[--heap-admin=<number> [default: 8] ]]></option>
+    </term>
+    <listitem>
+      <para>The number of admin bytes per block to use.  This can only
+      be an estimate of the average, since it may vary.  The allocator
+      used by <computeroutput>glibc</computeroutput> requires somewhere
+      between 4 to 15 bytes per block, depending on various factors.  It
+      also requires admin space for freed blocks, although
+      <constant>massif</constant> does not count this.</para>
+    </listitem>
+  </varlistentry>
 
-  <listitem id="stacks">
-    <para><computeroutput>--stacks=no</computeroutput></para>
-    <para><computeroutput>--stacks=yes</computeroutput> [default]</para>
-    <para>When enabled, include stack(s) in the profile.
-    Threaded programs can have multiple stacks.</para>
-  </listitem>
+  <varlistentry id="opt.stacks" xreflabel="--stacks">
+    <term>
+      <option><![CDATA[--stacks=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, include stack(s) in the profile.  Threaded
+      programs can have multiple stacks.</para>
+    </listitem>
+  </varlistentry>
 
-  <listitem id="depth">
-    <para><computeroutput>--depth=n</computeroutput>
-    [default: 3]</para>
-    <para>Depth of call chains to present in the detailed heap
-    information.  Increasing it will give more information, but
-    Massif will run the program more slowly, using more memory,
-    and produce a bigger <computeroutput>.txt</computeroutput> /
-    <computeroutput>.hp</computeroutput> file.</para>
-  </listitem>
+  <varlistentry id="opt.depth" xreflabel="--depth">
+    <term>
+      <option><![CDATA[--depth=<number> [default: 3] ]]></option>
+    </term>
+    <listitem>
+      <para>Depth of call chains to present in the detailed heap
+      information.  Increasing it will give more information, but
+      <constant>massif</constant> will run the program more slowly,
+      using more memory, and produce a bigger
+      <filename>massif.pid.txt</filename> or
+      <filename>massif.pid.hp</filename> file.</para>
+    </listitem>
+  </varlistentry>
 
-  <listitem id="alloc-fn">
-    <para><computeroutput>--alloc-fn=name</computeroutput></para>
-    <para>Specify a function that allocates memory.  This is
-    useful for functions that are wrappers to
-    <computeroutput>malloc()</computeroutput>, which can fill up
-    the context information uselessly (and give very
-    uninformative bands on the graph).  Functions specified will
-    be ignored in contexts, i.e. treated as though they were
-    <computeroutput>malloc()</computeroutput>.  This option can
-    be specified multiple times on the command line, to name
-    multiple functions.</para>
-  </listitem>
+  <varlistentry id="opt.alloc-fn" xreflabel="--alloc-fn">
+    <term>
+      <option><![CDATA[--alloc-fn=<name> ]]></option>
+    </term>
+    <listitem>
+      <para>Specify a function that allocates memory.  This is useful
+      for functions that are wrappers to <function>malloc()</function>,
+      which can fill up the context information uselessly (and give very
+      uninformative bands on the graph).  Functions specified will be
+      ignored in contexts, i.e. treated as though they were
+      <function>malloc()</function>.  This option can be specified
+      multiple times on the command line, to name multiple
+      functions.</para>
+    </listitem>
+  </varlistentry>
 
-  <listitem id="format">
-    <para><computeroutput>--format=text</computeroutput> [default]</para>
-    <para><computeroutput>--format=html</computeroutput></para>
-    <para>Produce the detailed heap information in text or HTML
-    format.  The file suffix used will be either
-    <computeroutput>.txt</computeroutput> or
-    <computeroutput>.html</computeroutput>.</para>
-  </listitem>
+  <varlistentry id="opt.format" xreflabel="--format">
+    <term>
+      <option><![CDATA[--format=<text|html> [default: text] ]]></option>
+    </term>
+    <listitem>
+      <para>Produce the detailed heap information in text or HTML
+      format.  The file suffix used will be either
+      <filename>.txt</filename> or <filename>.html</filename>.</para>
+    </listitem>
+  </varlistentry>
 
-</itemizedlist>
+</variablelist>
+<!-- end of xi:include in the manpage -->
 
 </sect1>
+
 </chapter>

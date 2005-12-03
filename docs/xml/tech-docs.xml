@@ -5,17 +5,17 @@
 
 <book id="tech-docs" xreflabel="Valgrind Technical Documentation">
 
-  <bookinfo>
-    <title>Valgrind Technical Documentation</title>
-    <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
+<bookinfo>
+  <title>Valgrind Technical Documentation</title>
+  <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
   <copyright>
     <year>&vg-lifespan;</year>
     <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
   </copyright>
-  <author>
-    <email><ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></email>
-  </author>
-  </bookinfo>
+  <legalnotice>
+    <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
+  </legalnotice>
+</bookinfo>
 
   <xi:include href="../../memcheck/docs/mc-tech-docs.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />

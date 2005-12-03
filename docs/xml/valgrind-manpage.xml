@@ -1,0 +1,255 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
+
+
+<refentry id="valgrind">
+
+<refmeta>
+  <refentrytitle>VALGRIND</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo>Release &rel-version;</refmiscinfo>
+</refmeta>
+
+<refnamediv>
+  <refname>valgrind</refname>
+  <refpurpose>a suite of tools for debugging and profiling programs</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+  <command>valgrind</command>
+  <arg>
+    <arg><replaceable>valgrind</replaceable></arg>
+    <arg><replaceable>options</replaceable></arg>
+  </arg>
+  <arg><replaceable>your-program</replaceable></arg>
+  <arg>
+    <arg><replaceable>your-program-options</replaceable></arg>
+  </arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="description">
+<title>Description</title>
+
+<para><command>Valgrind</command> is a flexible program for debugging
+and profiling Linux executables.  It consists of a core, which provides
+a synthetic CPU in software, and a series of "tools", each of which is a
+debugging or profiling tool. The architecture is modular, so that new
+tools can be created easily and without disturbing the existing
+structure.</para>
+
+<para>This manual page covers only basic usage and options.  For more
+comprehensive information, please see the HTML documentation on your
+system: <filename>&vg-doc-path;</filename>, or online:
+<filename>&vg-bookset;</filename>.</para>
+
+</refsect1>
+
+
+<refsect1 id="invocation">
+<title>Invocation</title>
+
+<para><command>Valgrind</command> is typically invoked as follows:
+<literallayout>    valgrind program args</literallayout>
+
+This runs <command>program</command> (with arguments
+<command>args</command>) under Valgrind using the Memcheck tool.
+Memcheck performs a range of memory-checking functions, including
+detecting accesses to uninitialised memory, misuse of allocated memory
+(double frees, access after free, etc.) and detecting memory
+leaks.</para>
+
+<para>To use a different tool, use the <option>--tool</option> option:
+<literallayout>    valgrind --tool=toolname program args</literallayout></para>
+
+<para>The following tools are available:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para><option>cachegrind</option> is a cache simulator.  It can be
+    used to annotate every line of your program with the number of
+    instructions executed and cache misses incurred.</para>
+  </listitem>
+
+  <listitem>
+    <para><option>helgrind</option> spots potential race conditions in
+    your program.</para>
+  </listitem>
+
+  <listitem>
+    <para><option>lackey</option> is a sample tool that can be used as a
+    template for generating your own tools. After the program
+    terminates, it prints out some basic statistics about the program
+    execution.</para>
+  </listitem>
+
+  <listitem>
+    <para><option>massif</option> is a heap profiler.  It measures how
+    much heap memory your program uses.</para>
+  </listitem>
+
+  <listitem>
+    <para><option>memcheck</option> is a fine-grained memory checker.</para>
+  </listitem>
+
+  <listitem>
+    <para><option>none</option> performs no function - it simply runs
+    the program under Valgrind.  This is typically used for debugging
+    and benchmarking Valgrind.</para>
+  </listitem>
+
+</itemizedlist>
+
+</refsect1>
+
+
+
+<refsect1 id="basic-options">
+<title>Basic Options</title>
+
+<para>These options work with all tools.</para>
+
+<xi:include href="manual-core.xml" xpointer="basic.opts"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="error-related-options">
+<title>Error-Related Options</title>
+
+<para>These options are used by all tools that can report errors,
+e.g. Memcheck, but not Cachegrind.</para>
+
+<xi:include href="manual-core.xml" xpointer="error-related.opts"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="malloc-related-options">
+<title>malloc()-related Options</title>
+
+<para>For tools that use their own version of
+<function>malloc()</function> (e.g. Memcheck and Addrcheck), the
+following options apply.</para>
+
+<xi:include href="manual-core.xml" xpointer="malloc-related.opts"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="uncommon-options">
+<title>Uncommon Options</title>
+
+<para>These options apply to all tools, as they affect certain obscure
+workings of the Valgrind core.  Most people won't need to use
+these.</para>
+
+<xi:include href="manual-core.xml" xpointer="uncommon.opts"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="debugging-valgrind-options">
+<title>Debugging Valgrind Options</title>
+
+<para>There are also some options for debugging Valgrind itself.  You
+shouldn't need to use them in the normal run of things.  If you wish to
+see the list, use the <option>--help-debug</option> option.</para>
+
+</refsect1>
+
+
+
+<refsect1 id="memcheck-options">
+<title>Memcheck Options</title>
+
+<xi:include href="../../memcheck/docs/mc-manual.xml" xpointer="mc.opts"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="cachegrind-options">
+<title>Cachegrind Options</title>
+
+<xi:include href="../../cachegrind/docs/cg-manual.xml" xpointer="cg.opts.p1"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+<xi:include href="../../cachegrind/docs/cg-manual.xml" xpointer="cg.opts"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="massif-options">
+<title>Massif Options</title>
+
+<xi:include href="../../massif/docs/ms-manual.xml" xpointer="ms.opts"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="helgrind-options">
+<title>Helgrind Options</title>
+
+<xi:include href="../../helgrind/docs/hg-manual.xml" xpointer="hg.opts"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="lackey-options">
+<title>Lackey Options</title>
+
+<xi:include href="../../lackey/docs/lk-manual.xml" xpointer="lk.opts"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="see_also">
+<title>See Also</title>
+
+<para>
+<filename>&vg-doc-path;</filename>, 
+and/or 
+<filename>&vg-bookset;</filename>.
+</para>
+
+</refsect1>
+
+
+<refsect1 id="author">
+<title>Author</title>
+
+<para>This manpage has been written by Andres Roldan &lt;aroldan@debian.org&gt;
+for the Debian Project, but can be used for any other distribution.</para>
+
+<para>Updated, rearranged and expanded by Robert Walsh
+&lt;rjwalsh@durables.org&gt; for the 2.4.0 release, and by other
+Valgrind developers subsequently.</para>
+
+</refsect1>
+
+
+</refentry>
+

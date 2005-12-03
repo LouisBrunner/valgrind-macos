@@ -12,9 +12,9 @@
     <year>&vg-lifespan;</year>
     <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
   </copyright>
-  <author>
-    <email><ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></email>
-  </author>
+  <legalnotice>
+    <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
+  </legalnotice>
 </bookinfo>
 
 
@@ -25,27 +25,31 @@
 <sect1 id="quick-start.intro" xreflabel="Introduction">
 <title>Introduction</title>
 
-<para>The Valgrind distribution has multiple tools.  The most popular is the
-memory checking tool (called Memcheck) which can detect many common memory
-errors such as:</para>
+<para>The Valgrind distribution has multiple tools.  The most popular is
+the memory checking tool (called Memcheck) which can detect many common
+memory errors such as:</para>
 
 <itemizedlist>
- <listitem><para>touching memory you shouldn't (eg. overrunning heap block 
+  <listitem>
+    <para>touching memory you shouldn't (eg. overrunning heap block
     boundaries);</para>
- </listitem>
- <listitem><para>using values before they have been initialized;</para>
- </listitem>
- <listitem><para>incorrect freeing of memory, such as double-freeing heap
-  blocks;</para>
- </listitem>
- <listitem><para>memory leaks.</para>
- </listitem>
+  </listitem>
+  <listitem>
+    <para>using values before they have been initialized;</para>
+  </listitem>
+  <listitem>
+    <para>incorrect freeing of memory, such as double-freeing heap
+    blocks;</para>
+  </listitem>
+  <listitem>
+    <para>memory leaks.</para>
+  </listitem>
 </itemizedlist>
 
-<para>What follows is the minimum information you need to start detecting
-memory errors in your program with Memcheck.  Note that this guide applies
-to Valgrind version 2.4.0 and later;  some of the information is not quite
-right for earlier versions.</para>
+<para>What follows is the minimum information you need to start
+detecting memory errors in your program with Memcheck.  Note that this
+guide applies to Valgrind version 2.4.0 and later; some of the
+information is not quite right for earlier versions.</para>
 
 </sect1>
 
@@ -53,15 +57,17 @@ right for earlier versions.</para>
 <sect1 id="quick-start.prepare" xreflabel="Preparing your program">
 <title>Preparing your program</title>
 
-<para>Compile your program with <computeroutput>-g</computeroutput> to include
-debugging information so that Memcheck's error messages include exact line
-numbers.  Using <computeroutput>-O0</computeroutput> is also a good idea, if
-you can tolerate the slowdown.  With <computeroutput>-O1</computeroutput> 
-line numbers in error messages can be inaccurate, although generally speaking
-Memchecking code compiled at <computeroutput>-O1</computeroutput> works 
-fairly well.  Use of <computeroutput>-O2</computeroutput> and above is
-not recommended as Memcheck occasionally reports uninitialised-value
-errors which don't really exist.</para>
+<para>Compile your program with <option>-g</option> to include debugging
+information so that Memcheck's error messages include exact line
+numbers.  Using <computeroutput>-O0</computeroutput> is also a good
+idea, if you can tolerate the slowdown.  With
+<computeroutput>-O1</computeroutput> line numbers in error messages can
+be inaccurate, although generally speaking Memchecking code compiled at
+<computeroutput>-O1</computeroutput> works fairly well.  Use of
+<computeroutput>-O2</computeroutput> and above is not recommended as
+Memcheck occasionally reports uninitialised-value errors which don't
+really exist.</para>
+
 </sect1>
 
 
@@ -69,24 +75,20 @@ errors which don't really exist.</para>
 <title>Running your program under Memcheck</title>
 
 <para>If you normally run your program like this:
-
-<programlisting>
-  myprog arg1 arg2
+<programlisting>    myprog arg1 arg2
 </programlisting>
 
 Use this command line:
-
-<programlisting>
-  valgrind --leak-check=yes myprog arg1 arg2
+<programlisting>    valgrind --leak-check=yes myprog arg1 arg2
 </programlisting>
 
-Memcheck is the default tool.  The
-<computeroutput>--leak-check</computeroutput> option turns on the detailed
-memory leak detector.</para>
+Memcheck is the default tool.  The <option>--leak-check</option> option
+turns on the detailed memory leak detector.</para>
 
-<para>Your program will run much slower (eg. 20 to 30 times) than normal,
-and use a lot more memory.  Memcheck will issue messages about memory errors
-and leaks that it detects.</para>
+<para>Your program will run much slower (eg. 20 to 30 times) than
+normal, and use a lot more memory.  Memcheck will issue messages about
+memory errors and leaks that it detects.</para>
+
 </sect1>
 
 
@@ -111,8 +113,8 @@ and leaks that it detects.</para>
   }
 </programlisting>
 
-Most error messages look like the following, which describes problem 1, the
-heap block overrun:
+Most error messages look like the following, which describes problem 1,
+the heap block overrun:
 
 <programlisting>
   ==19182== Invalid write of size 4
@@ -127,44 +129,40 @@ heap block overrun:
 Things to notice:
 
 <itemizedlist>
- <listitem>
- <para>There is a lot of information in each error message;  read it
- carefully.</para> 
- </listitem>
-
- <listitem>
- <para>The 19182 is the process ID;  it's usually unimportant.</para>
- </listitem>
-
- <listitem>
- <para>The first line ("Invalid write...") tells you what kind of error it
- is.  Here, the program wrote to some memory it should not have due to a
- heap block overrun.</para>
- </listitem>
-
- <listitem>
- <para>Below the first line is a stack trace telling you where the problem
-   occurred.  Stack traces can get quite large, and be confusing, especially
-   if you are using the C++ STL.  Reading them from the bottom up can help.
-   If the stack trace is not big enough, use the
-   <computeroutput>--num-callers</computeroutput> option to make it
-   bigger.</para>
- </listitem>
-
- <listitem>
- <para>The code addresses (eg. 0x804838F) are usually unimportant, but
- occasionally crucial for tracking down weirder bugs.</para>
- </listitem>
-
- <listitem>
- <para>Some error messages have a second component which describes the memory
-   address involved.  This one shows that the written memory is just past
-   the end of a block allocated with malloc() on line 5 of example.c.</para>
- </listitem>
+  <listitem>
+   <para>There is a lot of information in each error message; read it
+   carefully.</para>
+  </listitem>
+  <listitem>
+    <para>The 19182 is the process ID;  it's usually unimportant.</para>
+  </listitem>
+  <listitem>
+   <para>The first line ("Invalid write...") tells you what kind of
+   error it is.  Here, the program wrote to some memory it should not
+   have due to a heap block overrun.</para>
+  </listitem>
+  <listitem>
+    <para>Below the first line is a stack trace telling you where the
+    problem occurred.  Stack traces can get quite large, and be
+    confusing, especially if you are using the C++ STL.  Reading them
+    from the bottom up can help.  If the stack trace is not big enough,
+    use the <option>--num-callers</option> option to make it
+    bigger.</para>
+  </listitem>
+  <listitem>
+   <para>The code addresses (eg. 0x804838F) are usually unimportant, but
+   occasionally crucial for tracking down weirder bugs.</para>
+  </listitem>
+  <listitem>
+    <para>Some error messages have a second component which describes
+    the memory address involved.  This one shows that the written memory
+    is just past the end of a block allocated with malloc() on line 5 of
+    example.c.</para>
+  </listitem>
 </itemizedlist>
 
-It's worth fixing errors in the order they are reported, as later
-errors can be caused by earlier errors.</para>
+It's worth fixing errors in the order they are reported, as later errors
+can be caused by earlier errors.</para>
 
 <para>Memory leak messages look like this:
 
@@ -176,25 +174,28 @@ errors can be caused by earlier errors.</para>
 </programlisting>
 
 The stack trace tells you where the leaked memory was allocated.
-Memcheck cannot tell you why the memory leaked, unfortunately.  (Ignore the
-"vg_replace_malloc.c", that's an implementation detail.)</para>
+Memcheck cannot tell you why the memory leaked, unfortunately.  (Ignore
+the "vg_replace_malloc.c", that's an implementation detail.)</para>
 
-<para>There are several kinds of leaks;  the two most important categories are:
+<para>There are several kinds of leaks; the two most important
+categories are:
 
 <itemizedlist>
- <listitem><para>"definitely lost":  your program is leaking memory -- fix
- it!</para>
- </listitem>
-
- <listitem><para>"probably lost":  your program is leaking memory, unless
-   you're doing funny things with pointers (such as moving them to point to
-   the middle of a heap block).</para>
- </listitem>
+  <listitem>
+    <para>"definitely lost": your program is leaking memory -- fix
+    it!</para>
+  </listitem>
+  <listitem>
+    <para>"probably lost": your program is leaking memory, unless you're
+    doing funny things with pointers (such as moving them to point to
+    the middle of a heap block).</para>
+  </listitem>
 </itemizedlist>
 
 If you don't understand an error message, please consult 
-<xref linkend="mc-manual.errormsgs"/> in the <xref linkend="manual"/> which has
-examples of all the error messages Memcheck produces.</para>
+<xref linkend="mc-manual.errormsgs"/> in the <xref linkend="manual"/>
+which has examples of all the error messages Memcheck produces.</para>
+
 </sect1>
 
 
@@ -206,25 +207,28 @@ and there are mechanisms for suppressing these (see
 <xref linkend="manual-core.suppress"/> in the <xref linkend="manual"/>).
 However, it is typically right 99% of the time, so you should be wary of
 ignoring its error messages.  After all, you wouldn't ignore warning
-messages produced by a compiler, right?  The suppression mechanism is also
-useful if Memcheck is reporting errors in library code that you cannot
-change;  the default suppression set hides a lot of these, but you may
-come across more.</para>
+messages produced by a compiler, right?  The suppression mechanism is
+also useful if Memcheck is reporting errors in library code that you
+cannot change; the default suppression set hides a lot of these, but you
+may come across more.</para>
 
-<para>Memcheck also cannot detect every memory error your program has.  For
-example, it can't detect if you overrun the bounds of an array that is
-allocated statically or on the stack.  But it should detect every error that
-could crash your program (eg. cause a segmentation fault).</para>
+<para>Memcheck also cannot detect every memory error your program has.
+For example, it can't detect if you overrun the bounds of an array that
+is allocated statically or on the stack.  But it should detect every
+error that could crash your program (eg. cause a segmentation
+fault).</para>
+
 </sect1>
 
 
 <sect1 id="quick-start.info" xreflabel="More Information">
 <title>More information</title>
 
-<para>Please consult the <xref linkend="FAQ"/> and the
-<xref linkend="manual"/>, which have much more information.  Note that the
-other tools in the Valgrind distribution can be invoked with the
-<computeroutput>--tool</computeroutput> option.</para>
+<para>Please consult the <xref linkend="FAQ"/> and the 
+<xref linkend="manual"/>, which have much more information.  Note that
+the other tools in the Valgrind distribution can be invoked with the
+<option>--tool</option> option.</para>
+
 </sect1>
 
 

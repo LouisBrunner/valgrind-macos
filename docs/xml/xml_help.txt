@@ -27,7 +27,7 @@ xml to html markup transformations:
 Important: inside <screen> and <programlisting> blocks, do NOT
 use 'html entities' in your markup, eg. '&lt;' If you *do* use
 them, they will be output verbatim, which is not what you want.
-
+Instead, wrap the content with CDATA tags (see below).
 
 ----------------------------------------------
 
@@ -83,6 +83,8 @@ Do this:
  </listitem>
 </itemizedlist>
 
+<para>and this is some more text after the list.</para>
+
 
 ----------------------------------------------
 To achieve this:
@@ -116,12 +118,12 @@ Or this:
 
 ----------------------------------------------
 To achieve this:
-<p>It uses the Eraser algorithm described in:<br />
-<br />
-  Eraser: A Dynamic Data Race Detector for Multithreaded Programs<br />
-  Stefan Savage, Michael Burrows, Patrick Sobalvarro and Thomas Anderson<br />
-  ACM Transactions on Computer Systems, 15(4):391-411<br />
-  November 1997.<br />
+<p>It uses the Eraser algorithm described in:<br/>
+<br/>
+  Eraser: A Dynamic Data Race Detector for Multithreaded Programs<br/>
+  Stefan Savage, Michael Burrows, Patrick Sobalvarro and Thomas Anderson<br/>
+  ACM Transactions on Computer Systems, 15(4):391-411<br/>
+  November 1997.<br/>
 </p>
 
 Do this:
@@ -171,4 +173,4 @@ Note: you cannot put <emphasis> inside <computeroutput>, unfortunately.
 
 ----------------------------------------------
 
-Any other helpful hints?  Please tell us.
+Any other helpful hints?  Please add to this.

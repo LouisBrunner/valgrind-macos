@@ -22,10 +22,11 @@ Stylesheets, catalogs, parsing/formatting scripts:
   valgrind/docs/lib/
 
 Some files of note:
-  docs/xml/index.xml:       Top-level book-set wrapper
-  docs/xml/FAQ.xml:         The FAQ
-  docs/xml/vg-entities.xml: Various strings, dates etc. used all over
-  docs/xml/xml_help.txt:    Basic guide to common XML tags.
+  docs/xml/index.xml:        Top-level book-set wrapper
+  docs/xml/FAQ.xml:          The FAQ
+  docs/valgrind-manpage.xml  The valgrind manpage
+  docs/xml/vg-entities.xml:  Various strings, dates etc. used all over
+  docs/xml/xml_help.txt:     Basic guide to common XML tags.
 
 The docs/internals directory contains some useful high-level stuff about
 Valgrind's internals.  It's not relevant for the rest of this discussion.
@@ -33,11 +34,12 @@ Valgrind's internals.  It's not relevant for the rest of this discussion.
 
 Overview
 ---------
-The Documentation Set contains all books, articles,
+The Documentation Set contains all books, articles, manpages, 
 etc. pertaining to Valgrind, and is designed to be built as:
 - chunked html files
 - PDF file
 - PS file
+- manpage
 
 The whole thing is a "book set", made up of multiple books (the user
 manual, the FAQ, the tech-docs, the licenses).  Each book could be
@@ -118,11 +120,14 @@ in recent distros.
 
 
 
-Notes [Nov. 2004]:
+Notes [Nov. 2005]
 -----------------
-- the end of file.xml must have only ONE newline after the last tag:
-  </book>
-- pdfxmltex barfs if given a filename with an underscore in it
+After upgrading to Suse 10, found a (known) bug in PassiveTex which 
+broke the build, so added a bug-fix to 'docs/lib/vg-fo.xsl'.
+Bug-fix related links:
+http://lists.oasis-open.org/archives/docbook/200509/msg00032.html
+http://www.dpawson.co.uk/docbook/tools.html#d850e300
+http://www.haskell.org/pipermail/glasgow-haskell-bugs/2005-January.txt
 
 
 Notes [July 2005]
@@ -141,14 +146,11 @@ to
 and that fixed it.
 
 
-Notes [Nov. 2005]
+Notes [Nov. 2004]:
 -----------------
-After upgrading to Suse 10, found a (known) bug in PassiveTex which 
-broke the build, so added a bug-fix to 'docs/lib/vg-fo.xsl'.
-Bug-fix related links:
-http://lists.oasis-open.org/archives/docbook/200509/msg00032.html
-http://www.dpawson.co.uk/docbook/tools.html#d850e300
-http://www.haskell.org/pipermail/glasgow-haskell-bugs/2005-January.txt
+- the end of file.xml must have only ONE newline after the last tag:
+  </book>
+- pdfxmltex barfs if given a filename with an underscore in it
 
 
 References:
@@ -179,4 +181,4 @@ some useful xls stylesheets in cvs:
 TODO LESS CRUCIAL:
 ------------------
 - concat titlepage + subtitle page in fo output
-- try and get the QuickStart and FAQ titlepages and tocs onto the same page
+- try and get the QuickStart and FAQ titlepage+toc+content onto one page

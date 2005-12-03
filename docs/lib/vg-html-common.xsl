@@ -7,6 +7,12 @@
 <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/chunk-code.xsl"/>
 
 
+<!-- Note [Dec.1 2005]: the tempate 'chunk-code.xsl' in       -->
+<!-- '/usr/share/xml/docbook/stylesheet/nwalsh/1.69.0/html/'  -->
+<!-- has been edited to remove 'article' and 'refentry'       -->
+<!-- so that separate titlepages don't get generated for them -->
+
+
 <!-- use 8859-1 encoding -->
 <xsl:output method="html" encoding="ISO-8859-1" indent="yes"/>
 

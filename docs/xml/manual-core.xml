@@ -7,81 +7,77 @@
 <chapter id="manual-core" xreflabel="Valgrind's core">
 <title>Using and understanding the Valgrind core</title>
 
-<para>This section describes the Valgrind core services, flags
-and behaviours.  That means it is relevant regardless of what
-particular tool you are using.  A point of terminology: most
-references to "valgrind" in the rest of this section (Section 2)
-refer to the valgrind core services.</para>
+<para>This section describes the Valgrind core services, flags and
+behaviours.  That means it is relevant regardless of what particular
+tool you are using.  A point of terminology: most references to
+"valgrind" in the rest of this section (Section 2) refer to the Valgrind
+core services.</para>
 
 <sect1 id="manual-core.whatdoes" 
        xreflabel="What Valgrind does with your program">
 <title>What Valgrind does with your program</title>
 
-<para>Valgrind is designed to be as non-intrusive as possible. It
-works directly with existing executables. You don't need to
-recompile, relink, or otherwise modify, the program to be
-checked.</para>
+<para>Valgrind is designed to be as non-intrusive as possible. It works
+directly with existing executables. You don't need to recompile, relink,
+or otherwise modify, the program to be checked.</para>
 
-<para>Simply put <computeroutput>valgrind
---tool=tool_name</computeroutput> at the start of the command
-line normally used to run the program.  For example, if want to
-run the command <computeroutput>ls -l</computeroutput> using the
-heavyweight memory-checking tool Memcheck, issue the
-command:</para>
+<para>Simply put 
+<computeroutput>valgrind --tool=tool_name</computeroutput> 
+at the start of the command line normally used to run the program.  For
+example, if want to run the command 
+<computeroutput>ls -l</computeroutput> using the heavyweight
+memory-checking tool Memcheck, issue the command:</para>
 
 <programlisting><![CDATA[
 valgrind --tool=memcheck ls -l]]></programlisting>
 
 <para>(Memcheck is the default, so if you want to use it you can
-actually omit the <computeroutput>--tool</computeroutput> flag.</para>
+actually omit the <option>--tool</option> flag.</para>
 
-<para>Regardless of which tool is in use, Valgrind takes control
-of your program before it starts.  Debugging information is read
-from the executable and associated libraries, so that error
-messages and other outputs can be phrased in terms of source code
-locations (if that is appropriate).</para>
+<para>Regardless of which tool is in use, Valgrind takes control of your
+program before it starts.  Debugging information is read from the
+executable and associated libraries, so that error messages and other
+outputs can be phrased in terms of source code locations (if that is
+appropriate).</para>
 
-<para>Your program is then run on a synthetic CPU provided by
-the Valgrind core.  As new code is executed for the first time,
-the core hands the code to the selected tool.  The tool adds its
-own instrumentation code to this and hands the result back to the
-core, which coordinates the continued execution of this
-instrumented code.</para>
+<para>Your program is then run on a synthetic CPU provided by the
+Valgrind core.  As new code is executed for the first time, the core
+hands the code to the selected tool.  The tool adds its own
+instrumentation code to this and hands the result back to the core,
+which coordinates the continued execution of this instrumented
+code.</para>
 
-<para>The amount of instrumentation code added varies widely
-between tools.  At one end of the scale, Memcheck adds code to
-check every memory access and every value computed, increasing
-the size of the code at least 12 times, and making it run 25-50
-times slower than natively.  At the other end of the spectrum,
-the ultra-trivial "none" tool (a.k.a. Nulgrind) adds no
-instrumentation at all and causes in total "only" about a 4 times
-slowdown.</para>
+<para>The amount of instrumentation code added varies widely between
+tools.  At one end of the scale, Memcheck adds code to check every
+memory access and every value computed, increasing the size of the code
+at least 12 times, and making it run 25-50 times slower than natively.
+At the other end of the spectrum, the ultra-trivial "none" tool
+(a.k.a. Nulgrind) adds no instrumentation at all and causes in total
+"only" about a 4 times slowdown.</para>
 
-<para>Valgrind simulates every single instruction your program
-executes.  Because of this, the active tool checks, or profiles,
-not only the code in your application but also in all supporting
-dynamically-linked (<computeroutput>.so</computeroutput>-format)
-libraries, including the GNU C library, the X client libraries,
-Qt, if you work with KDE, and so on.</para>
+<para>Valgrind simulates every single instruction your program executes.
+Because of this, the active tool checks, or profiles, not only the code
+in your application but also in all supporting dynamically-linked
+(<computeroutput>.so</computeroutput>-format) libraries, including the
+GNU C library, the X client libraries, Qt, if you work with KDE, and so
+on.</para>
 
-<para>If you're using one of the error-detection tools, Valgrind
-will often detect errors in libraries, for example the GNU C or
-X11 libraries, which you have to use.  You might not be
-interested in these errors, since you probably have no control
-over that code.  Therefore, Valgrind allows you to selectively
-suppress errors, by recording them in a suppressions file which
-is read when Valgrind starts up.  The build mechanism attempts to
-select suppressions which give reasonable behaviour for the libc
-and XFree86 versions detected on your machine.  To make it easier
-to write suppressions, you can use the
-<computeroutput>--gen-suppressions=yes</computeroutput> option
-which tells Valgrind to print out a suppression for each error
-that appears, which you can then copy into a suppressions
-file.</para>
+<para>If you're using one of the error-detection tools, Valgrind will
+often detect errors in libraries, for example the GNU C or X11
+libraries, which you have to use.  You might not be interested in these
+errors, since you probably have no control over that code.  Therefore,
+Valgrind allows you to selectively suppress errors, by recording them in
+a suppressions file which is read when Valgrind starts up.  The build
+mechanism attempts to select suppressions which give reasonable
+behaviour for the libc and XFree86 versions detected on your machine.
+To make it easier to write suppressions, you can use the
+<option>--gen-suppressions=yes</option> option which tells Valgrind to
+print out a suppression for each error that appears, which you can then
+copy into a suppressions file.</para>
 
-<para>Different error-checking tools report different kinds of
-errors.  The suppression mechanism therefore allows you to say
-which tool or tool(s) each suppression applies to.</para>
+<para>Different error-checking tools report different kinds of errors.
+The suppression mechanism therefore allows you to say which tool or
+tool(s) each suppression applies to.</para>
 
 </sect1>
 
@@ -89,221 +85,199 @@ which tool or tool(s) each suppression applies to.</para>
 <sect1 id="manual-core.started" xreflabel="Getting started">
 <title>Getting started</title>
 
-<para>First off, consider whether it might be beneficial to
-recompile your application and supporting libraries with
-debugging info enabled (the <computeroutput>-g</computeroutput>
-flag).  Without debugging info, the best Valgrind tools will be
-able to do is guess which function a particular piece of code
-belongs to, which makes both error messages and profiling output
-nearly useless.  With <computeroutput>-g</computeroutput>, you'll
-hopefully get messages which point directly to the relevant
-source code lines.</para>
+<para>First off, consider whether it might be beneficial to recompile
+your application and supporting libraries with debugging info enabled
+(the <option>-g</option> flag).  Without debugging info, the best
+Valgrind tools will be able to do is guess which function a particular
+piece of code belongs to, which makes both error messages and profiling
+output nearly useless.  With <option>-g</option>, you'll hopefully get
+messages which point directly to the relevant source code lines.</para>
 
-<para>Another flag you might like to consider, if you are working
-with C++, is <computeroutput>-fno-inline</computeroutput>.  That
-makes it easier to see the function-call chain, which can help
-reduce confusion when navigating around large C++ apps.  For
-whatever it's worth, debugging OpenOffice.org with Memcheck is a
-bit easier when using this flag.
-You don't have to do this, but doing so helps Valgrind
-produce more accurate and less confusing error reports.  Chances
-are you're set up like this already, if you intended to debug
-your program with GNU gdb, or some other debugger.</para>
+<para>Another flag you might like to consider, if you are working with
+C++, is <option>-fno-inline</option>.  That makes it easier to see the
+function-call chain, which can help reduce confusion when navigating
+around large C++ apps.  For whatever it's worth, debugging
+OpenOffice.org with Memcheck is a bit easier when using this flag.  You
+don't have to do this, but doing so helps Valgrind produce more accurate
+and less confusing error reports.  Chances are you're set up like this
+already, if you intended to debug your program with GNU gdb, or some
+other debugger.</para>
 
-<para>This paragraph applies only if you plan to use Memcheck: On
-rare occasions, optimisation levels at
-<computeroutput>-O2</computeroutput> and above have been observed
-to generate code which fools Memcheck into wrongly reporting
-uninitialised value errors.  We have looked in detail into fixing
-this, and unfortunately the result is that doing so would give a
-further significant slowdown in what is already a slow tool.  So
-the best solution is to turn off optimisation altogether.  Since
-this often makes things unmanagably slow, a plausible compromise
-is to use <computeroutput>-O</computeroutput>.  This gets you the
-majority of the benefits of higher optimisation levels whilst
-keeping relatively small the chances of false complaints from
-Memcheck.  All other tools (as far as we know) are unaffected by
-optimisation level.</para>
+<para>This paragraph applies only if you plan to use Memcheck: On rare
+occasions, optimisation levels at <computeroutput>-O2</computeroutput>
+and above have been observed to generate code which fools Memcheck into
+wrongly reporting uninitialised value errors.  We have looked in detail
+into fixing this, and unfortunately the result is that doing so would
+give a further significant slowdown in what is already a slow tool.  So
+the best solution is to turn off optimisation altogether.  Since this
+often makes things unmanagably slow, a plausible compromise is to use
+<computeroutput>-O</computeroutput>.  This gets you the majority of the
+benefits of higher optimisation levels whilst keeping relatively small
+the chances of false complaints from Memcheck.  All other tools (as far
+as we know) are unaffected by optimisation level.</para>
 
-<para>Valgrind understands both the older "stabs" debugging
-format, used by gcc versions prior to 3.1, and the newer DWARF2
-format used by gcc 3.1 and later.  We continue to refine and
-debug our debug-info readers, although the majority of effort
-will naturally enough go into the newer DWARF2 reader.</para>
+<para>Valgrind understands both the older "stabs" debugging format, used
+by gcc versions prior to 3.1, and the newer DWARF2 format used by gcc
+3.1 and later.  We continue to refine and debug our debug-info readers,
+although the majority of effort will naturally enough go into the newer
+DWARF2 reader.</para>
 
 <para>When you're ready to roll, just run your application as you
-would normally, but place <computeroutput>valgrind
---tool=tool_name</computeroutput> in front of your usual
-command-line invocation.  Note that you should run the real
-(machine-code) executable here.  If your application is started
-by, for example, a shell or perl script, you'll need to modify it
-to invoke Valgrind on the real executables.  Running such scripts
-directly under Valgrind will result in you getting error reports
-pertaining to <computeroutput>/bin/sh</computeroutput>,
-<computeroutput>/usr/bin/perl</computeroutput>, or whatever
-interpreter you're using.  This may not be what you want and can
-be confusing.  You can force the issue by giving the flag
-<computeroutput>--trace-children=yes</computeroutput>, but
-confusion is still likely.</para>
+would normally, but place 
+<computeroutput>valgrind --tool=tool_name</computeroutput> in front of
+your usual command-line invocation.  Note that you should run the real
+(machine-code) executable here.  If your application is started by, for
+example, a shell or perl script, you'll need to modify it to invoke
+Valgrind on the real executables.  Running such scripts directly under
+Valgrind will result in you getting error reports pertaining to
+<computeroutput>/bin/sh</computeroutput>,
+<computeroutput>/usr/bin/perl</computeroutput>, or whatever interpreter
+you're using.  This may not be what you want and can be confusing.  You
+can force the issue by giving the flag
+<option>--trace-children=yes</option>, but confusion is still
+likely.</para>
 
 </sect1>
 
 
-<sect1 id="manual-core.comment" xreflabel="The commentary">
-<title>The commentary</title>
+<sect1 id="manual-core.comment" xreflabel="The Commentary">
+<title>The Commentary</title>
 
-<para>Valgrind tools write a commentary, a stream of text,
-detailing error reports and other significant events.  All lines
-in the commentary have following form:
+<para>Valgrind tools write a commentary, a stream of text, detailing
+error reports and other significant events.  All lines in the commentary
+have following form:
 
 <programlisting><![CDATA[
 ==12345== some-message-from-Valgrind]]></programlisting>
 </para>
 
-<para>The <computeroutput>12345</computeroutput> is the process
-ID.  This scheme makes it easy to distinguish program output from
-Valgrind commentary, and also easy to differentiate commentaries
-from different processes which have become merged together, for
-whatever reason.</para>
+<para>The <computeroutput>12345</computeroutput> is the process ID.
+This scheme makes it easy to distinguish program output from Valgrind
+commentary, and also easy to differentiate commentaries from different
+processes which have become merged together, for whatever reason.</para>
 
-<para>By default, Valgrind tools write only essential messages to
-the commentary, so as to avoid flooding you with information of
-secondary importance.  If you want more information about what is
-happening, re-run, passing the
-<computeroutput>-v</computeroutput> flag to Valgrind.
-A second <computeroutput>-v</computeroutput> gives yet more detail.
+<para>By default, Valgrind tools write only essential messages to the
+commentary, so as to avoid flooding you with information of secondary
+importance.  If you want more information about what is happening,
+re-run, passing the <option>-v</option> flag to Valgrind.  A second
+<option>-v</option> gives yet more detail.
 </para>
 
-<para>You can direct the commentary to three different
-places:</para>
+<para>You can direct the commentary to three different places:</para>
 
 <orderedlist>
 
- <listitem id="manual-core.out2fd" xreflabel="Directing output to fd">
-   <para>The default: send it to a file descriptor, which is by
-   default 2 (stderr).  So, if you give the core no options, it
-   will write commentary to the standard error stream.  If you
-   want to send it to some other file descriptor, for example
-   number 9, you can specify
-   <computeroutput>--log-fd=9</computeroutput>.</para>
-   <para>This is the simplest and most common arrangement, but can
-   cause problems when Valgrinding entire trees of
-   processes which expect specific file descriptors, particularly
-   stdin/stdout/stderr, to be available for their own use.
-   </para>
+  <listitem id="manual-core.out2fd" xreflabel="Directing output to fd">
+    <para>The default: send it to a file descriptor, which is by default
+    2 (stderr).  So, if you give the core no options, it will write
+    commentary to the standard error stream.  If you want to send it to
+    some other file descriptor, for example number 9, you can specify
+    <option>--log-fd=9</option>.</para>
+
+    <para>This is the simplest and most common arrangement, but can
+    cause problems when valgrinding entire trees of processes which
+    expect specific file descriptors, particularly stdin/stdout/stderr,
+    to be available for their own use.</para>
   </listitem>
 
   <listitem id="manual-core.out2file" 
-            xreflabel="Directing output to file">
-   <para>A less intrusive option is to write the commentary to a
-   file, which you specify by
-   <computeroutput>--log-file=filename</computeroutput>.  Note
-   carefully that the commentary is <command>not</command>
-   written to the file you specify, but instead to one called
-   <computeroutput>filename.12345</computeroutput>, if for
-   example the pid of the traced process is 12345.  This is
-   helpful when valgrinding a whole tree of processes at once,
-   since it means that each process writes to its own logfile,
-   rather than the result being jumbled up in one big
-   logfile.  If <computeroutput>filename.12345</computeroutput> already
-   exists, then it will name new files
-   <computeroutput>filename.12345.1</computeroutput> and so on.
-   </para>
+            xreflabel="Directing output to file"> <para>A less intrusive
+    option is to write the commentary to a file, which you specify by
+    <option>--log-file=filename</option>.  Note carefully that the
+    commentary is <command>not</command> written to the file you
+    specify, but instead to one called
+    <filename>filename.12345</filename>, if for example the pid of the
+    traced process is 12345.  This is helpful when valgrinding a whole
+    tree of processes at once, since it means that each process writes
+    to its own logfile, rather than the result being jumbled up in one
+    big logfile.  If <filename>filename.12345</filename> already exists,
+    then it will name new files <filename>filename.12345.1</filename>
+    and so on.</para>
 
-   <para>If you want to specify precisely the file name to use,
-   without the trailing
-   <computeroutput>.12345</computeroutput> part, you can instead use
-   <computeroutput>--log-file-exactly=filename</computeroutput>.
-   </para>
+    <para>If you want to specify precisely the file name to use, without
+    the trailing <computeroutput>.12345</computeroutput> part, you can
+    instead use <option>--log-file-exactly=filename</option>.</para>
 
-   <para>You can also use the
-   <computeroutput>--log-file-qualifier=&lt;VAR&gt;</computeroutput> option
-   to modify the filename via according to the environment variable
-   <computeroutput>VAR</computeroutput>.  This is rarely needed, but
-   very useful in certain circumstances (eg. when running MPI programs).
-   In this case, the trailing <computeroutput>.12345</computeroutput>
-   part is replaced by the contents of
-   <computeroutput>$VAR</computeroutput>.  The idea is that you
-   specify a variable which will be set differently for each process
-   in the job, for example <computeroutput>BPROC_RANK</computeroutput>
-   or whatever is applicable in your MPI setup.
-   </para>
+    <para>You can also use the
+    <option>--log-file-qualifier=&lt;VAR&gt;</option> option to modify
+    the filename via according to the environment variable
+    <varname>VAR</varname>.  This is rarely needed, but very useful in
+    certain circumstances (eg. when running MPI programs).  In this
+    case, the trailing <computeroutput>.12345</computeroutput> part is
+    replaced by the contents of <varname>$VAR</varname>.  The idea is
+    that you specify a variable which will be set differently for each
+    process in the job, for example
+    <computeroutput>BPROC_RANK</computeroutput> or whatever is
+    applicable in your MPI setup.</para>
   </listitem>
 
   <listitem id="manual-core.out2socket" 
-            xreflabel="Directing output to network socket">
-   <para>The least intrusive option is to send the commentary to
-   a network socket.  The socket is specified as an IP address
-   and port number pair, like this:
-   <computeroutput>--log-socket=192.168.0.1:12345</computeroutput>
-   if you want to send the output to host IP 192.168.0.1 port
-   12345 (I have no idea if 12345 is a port of pre-existing
-   significance).  You can also omit the port number:
-   <computeroutput>--log-socket=192.168.0.1</computeroutput>, in
-   which case a default port of 1500 is used.  This default is
-   defined by the constant
-   <computeroutput>VG_CLO_DEFAULT_LOGPORT</computeroutput> in the
-   sources.</para>
+            xreflabel="Directing output to network socket"> <para>The
+    least intrusive option is to send the commentary to a network
+    socket.  The socket is specified as an IP address and port number
+    pair, like this: <option>--log-socket=192.168.0.1:12345</option> if
+    you want to send the output to host IP 192.168.0.1 port 12345 (I
+    have no idea if 12345 is a port of pre-existing significance).  You
+    can also omit the port number:
+    <option>--log-socket=192.168.0.1</option>, in which case a default
+    port of 1500 is used.  This default is defined by the constant
+    <computeroutput>VG_CLO_DEFAULT_LOGPORT</computeroutput> in the
+    sources.</para>
 
-   <para>Note, unfortunately, that you have to use an IP address
-   here, rather than a hostname.</para>
+    <para>Note, unfortunately, that you have to use an IP address here,
+    rather than a hostname.</para>
 
-   <para>Writing to a network socket is pretty useless if you
-   don't have something listening at the other end.  We provide a
-   simple listener program,
-   <computeroutput>valgrind-listener</computeroutput>, which
-   accepts connections on the specified port and copies whatever
-   it is sent to stdout.  Probably someone will tell us this is a
-   horrible security risk.  It seems likely that people will
-   write more sophisticated listeners in the fullness of
-   time.</para>
+    <para>Writing to a network socket is pretty useless if you don't
+    have something listening at the other end.  We provide a simple
+    listener program,
+    <computeroutput>valgrind-listener</computeroutput>, which accepts
+    connections on the specified port and copies whatever it is sent to
+    stdout.  Probably someone will tell us this is a horrible security
+    risk.  It seems likely that people will write more sophisticated
+    listeners in the fullness of time.</para>
 
-   <para>valgrind-listener can accept simultaneous connections
-   from up to 50 valgrinded processes.  In front of each line of
-   output it prints the current number of active connections in
-   round brackets.</para>
+    <para>valgrind-listener can accept simultaneous connections from up
+    to 50 valgrinded processes.  In front of each line of output it
+    prints the current number of active connections in round
+    brackets.</para>
 
-   <para>valgrind-listener accepts two command-line flags:</para>
+    <para>valgrind-listener accepts two command-line flags:</para>
     <itemizedlist>
-     <listitem>
-      <para><computeroutput>-e</computeroutput> or 
-      <computeroutput>--exit-at-zero</computeroutput>: when the
-      number of connected processes falls back to zero, exit.
-      Without this, it will run forever, that is, until you send
-      it Control-C.</para>
-     </listitem>
-     <listitem>
-      <para><computeroutput>portnumber</computeroutput>: changes
-      the port it listens on from the default (1500).  The
-      specified port must be in the range 1024 to 65535.  The
-      same restriction applies to port numbers specified by a
-      <computeroutput>--log-socket=</computeroutput> to Valgrind
-      itself.</para>
-     </listitem>
+       <listitem>
+         <para><option>-e</option> or <option>--exit-at-zero</option>: 
+         when the number of connected processes falls back to zero,
+         exit.  Without this, it will run forever, that is, until you
+         send it Control-C.</para>
+       </listitem>
+       <listitem>
+        <para><option>portnumber</option>: changes the port it listens
+        on from the default (1500).  The specified port must be in the
+        range 1024 to 65535.  The same restriction applies to port
+        numbers specified by a <option>--log-socket</option> to
+        Valgrind itself.</para>
+      </listitem>
     </itemizedlist>
 
-    <para>If a valgrinded process fails to connect to a listener,
-    for whatever reason (the listener isn't running, invalid or
-    unreachable host or port, etc), Valgrind switches back to
-    writing the commentary to stderr.  The same goes for any
-    process which loses an established connection to a listener.
-    In other words, killing the listener doesn't kill the
-    processes sending data to it.</para>
+    <para>If a valgrinded process fails to connect to a listener, for
+    whatever reason (the listener isn't running, invalid or unreachable
+    host or port, etc), Valgrind switches back to writing the commentary
+    to stderr.  The same goes for any process which loses an established
+    connection to a listener.  In other words, killing the listener
+    doesn't kill the processes sending data to it.</para>
   </listitem>
- </orderedlist>
 
-<para>Here is an important point about the relationship between
-the commentary and profiling output from tools.  The commentary
-contains a mix of messages from the Valgrind core and the
-selected tool.  If the tool reports errors, it will report them
-to the commentary.  However, if the tool does profiling, the
-profile data will be written to a file of some kind, depending on
-the tool, and independent of what
-<computeroutput>--log-*</computeroutput> options are in force.
-The commentary is intended to be a low-bandwidth, human-readable
-channel.  Profiling data, on the other hand, is usually
-voluminous and not meaningful without further processing, which
-is why we have chosen this arrangement.</para>
+</orderedlist>
+
+<para>Here is an important point about the relationship between the
+commentary and profiling output from tools.  The commentary contains a
+mix of messages from the Valgrind core and the selected tool.  If the
+tool reports errors, it will report them to the commentary.  However, if
+the tool does profiling, the profile data will be written to a file of
+some kind, depending on the tool, and independent of what
+<option>--log-*</option> options are in force.  The commentary is
+intended to be a low-bandwidth, human-readable channel.  Profiling data,
+on the other hand, is usually voluminous and not meaningful without
+further processing, which is why we have chosen this arrangement.</para>
 
 </sect1>
 
@@ -312,8 +286,8 @@ is why we have chosen this arrangement.</para>
 <title>Reporting of errors</title>
 
 <para>When one of the error-checking tools (Memcheck, Addrcheck,
-Helgrind) detects something bad happening in the program, an
-error message is written to the commentary.  For example:</para>
+Helgrind) detects something bad happening in the program, an error
+message is written to the commentary.  For example:</para>
 
 <programlisting><![CDATA[
 ==25832== Invalid read of size 4
@@ -321,42 +295,39 @@ error message is written to the commentary.  For example:</para>
 ==25832==    by 0x80487AF: main (bogon.cpp:66)
 ==25832==  Address 0xBFFFF74C is not stack'd, malloc'd or free'd]]></programlisting>
 
-<para>This message says that the program did an illegal 4-byte
-read of address 0xBFFFF74C, which, as far as Memcheck can tell,
-is not a valid stack address, nor corresponds to any currently
-malloc'd or free'd blocks.  The read is happening at line 45 of
-<filename>bogon.cpp</filename>, called from line 66 of the same
-file, etc.  For errors associated with an identified
-malloc'd/free'd block, for example reading free'd memory,
-Valgrind reports not only the location where the error happened,
-but also where the associated block was malloc'd/free'd.</para>
+<para>This message says that the program did an illegal 4-byte read of
+address 0xBFFFF74C, which, as far as Memcheck can tell, is not a valid
+stack address, nor corresponds to any currently malloc'd or free'd
+blocks.  The read is happening at line 45 of
+<filename>bogon.cpp</filename>, called from line 66 of the same file,
+etc.  For errors associated with an identified malloc'd/free'd block,
+for example reading free'd memory, Valgrind reports not only the
+location where the error happened, but also where the associated block
+was malloc'd/free'd.</para>
 
-<para>Valgrind remembers all error reports.  When an error is
-detected, it is compared against old reports, to see if it is a
-duplicate.  If so, the error is noted, but no further commentary
-is emitted.  This avoids you being swamped with bazillions of
-duplicate error reports.</para>
+<para>Valgrind remembers all error reports.  When an error is detected,
+it is compared against old reports, to see if it is a duplicate.  If so,
+the error is noted, but no further commentary is emitted.  This avoids
+you being swamped with bazillions of duplicate error reports.</para>
 
-<para>If you want to know how many times each error occurred, run
-with the <computeroutput>-v</computeroutput> option.  When
-execution finishes, all the reports are printed out, along with,
-and sorted by, their occurrence counts.  This makes it easy to
-see which errors have occurred most frequently.</para>
+<para>If you want to know how many times each error occurred, run with
+the <option>-v</option> option.  When execution finishes, all the
+reports are printed out, along with, and sorted by, their occurrence
+counts.  This makes it easy to see which errors have occurred most
+frequently.</para>
 
-<para>Errors are reported before the associated operation
-actually happens.  If you're using a tool (Memcheck, Addrcheck)
-which does address checking, and your program attempts to read
-from address zero, the tool will emit a message to this effect,
-and the program will then duly die with a segmentation
-fault.</para>
+<para>Errors are reported before the associated operation actually
+happens.  If you're using a tool (Memcheck, Addrcheck) which does
+address checking, and your program attempts to read from address zero,
+the tool will emit a message to this effect, and the program will then
+duly die with a segmentation fault.</para>
 
-<para>In general, you should try and fix errors in the order that
-they are reported.  Not doing so can be confusing.  For example,
-a program which copies uninitialised values to several memory
-locations, and later uses them, will generate several error
-messages, when run on Memcheck.  The first such error message may
-well give the most direct clue to the root cause of the
-problem.</para>
+<para>In general, you should try and fix errors in the order that they
+are reported.  Not doing so can be confusing.  For example, a program
+which copies uninitialised values to several memory locations, and later
+uses them, will generate several error messages, when run on Memcheck.
+The first such error message may well give the most direct clue to the
+root cause of the problem.</para>
 
 <para>The process of detecting duplicate errors is quite an
 expensive one and can become a significant performance overhead
@@ -371,10 +342,9 @@ defined in <filename>m_errormgr.c</filename> and can be increased
 if necessary.</para>
 
 <para>To avoid this cutoff you can use the
-<computeroutput>--error-limit=no</computeroutput> flag.  Then
-Valgrind will always show errors, regardless of how many there
-are.  Use this flag carefully, since it may have a bad effect on
-performance.</para>
+<option>--error-limit=no</option> flag.  Then Valgrind will always show
+errors, regardless of how many there are.  Use this flag carefully,
+since it may have a bad effect on performance.</para>
 
 </sect1>
 
@@ -382,136 +352,124 @@ performance.</para>
 <sect1 id="manual-core.suppress" xreflabel="Suppressing errors">
 <title>Suppressing errors</title>
 
-<para>The error-checking tools detect numerous problems in the
-base libraries, such as the GNU C library, and the XFree86 client
-libraries, which come pre-installed on your GNU/Linux system.
-You can't easily fix these, but you don't want to see these
-errors (and yes, there are many!)  So Valgrind reads a list of
-errors to suppress at startup.  A default suppression file is
-cooked up by the <computeroutput>./configure</computeroutput>
-script when the system is built.</para>
+<para>The error-checking tools detect numerous problems in the base
+libraries, such as the GNU C library, and the XFree86 client libraries,
+which come pre-installed on your GNU/Linux system.  You can't easily fix
+these, but you don't want to see these errors (and yes, there are many!)
+So Valgrind reads a list of errors to suppress at startup.  A default
+suppression file is cooked up by the
+<computeroutput>./configure</computeroutput> script when the system is
+built.</para>
 
-<para>You can modify and add to the suppressions file at your
-leisure, or, better, write your own.  Multiple suppression files
-are allowed.  This is useful if part of your project contains
-errors you can't or don't want to fix, yet you don't want to
-continuously be reminded of them.</para>
+<para>You can modify and add to the suppressions file at your leisure,
+or, better, write your own.  Multiple suppression files are allowed.
+This is useful if part of your project contains errors you can't or
+don't want to fix, yet you don't want to continuously be reminded of
+them.</para>
 
-<formalpara><title>Note:</title>
-<para>By far the easiest way to add suppressions is to use the
-<computeroutput>--gen-suppressions=yes</computeroutput> flag
+<formalpara><title>Note:</title> <para>By far the easiest way to add
+suppressions is to use the <option>--gen-suppressions=yes</option> flag
 described in <xref linkend="manual-core.flags"/>.</para>
 </formalpara>
 
-<para>Each error to be suppressed is described very specifically,
-to minimise the possibility that a suppression-directive
-inadvertantly suppresses a bunch of similar errors which you did
-want to see.  The suppression mechanism is designed to allow
-precise yet flexible specification of errors to suppress.</para>
+<para>Each error to be suppressed is described very specifically, to
+minimise the possibility that a suppression-directive inadvertantly
+suppresses a bunch of similar errors which you did want to see.  The
+suppression mechanism is designed to allow precise yet flexible
+specification of errors to suppress.</para>
 
-<para>If you use the <computeroutput>-v</computeroutput> flag, at
-the end of execution, Valgrind prints out one line for each used
-suppression, giving its name and the number of times it got used.
-Here's the suppressions used by a run of <computeroutput>valgrind
---tool=memcheck ls -l</computeroutput>:</para>
+<para>If you use the <option>-v</option> flag, at the end of execution,
+Valgrind prints out one line for each used suppression, giving its name
+and the number of times it got used.  Here's the suppressions used by a
+run of <computeroutput>valgrind --tool=memcheck ls l</computeroutput>:</para>
 
 <programlisting><![CDATA[
 --27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getgrgid_r
 --27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getpwuid_r
 --27579-- supp: 6 strrchr/_dl_map_object_from_fd/_dl_map_object]]></programlisting>
 
-<para>Multiple suppressions files are allowed.  By default,
-Valgrind uses
-<computeroutput>$PREFIX/lib/valgrind/default.supp</computeroutput>.
-You can ask to add suppressions from another file, by specifying
-<computeroutput>--suppressions=/path/to/file.supp</computeroutput>.
+<para>Multiple suppressions files are allowed.  By default, Valgrind
+uses <filename>$PREFIX/lib/valgrind/default.supp</filename>.  You can
+ask to add suppressions from another file, by specifying
+<option>--suppressions=/path/to/file.supp</option>.
 </para>
 
-<para>If you want to understand more about suppressions, look at
-an existing suppressions file whilst reading the following
-documentation.  The file
-<computeroutput>glibc-2.2.supp</computeroutput>, in the source
+<para>If you want to understand more about suppressions, look at an
+existing suppressions file whilst reading the following documentation.
+The file <filename>glibc-2.2.supp</filename>, in the source
 distribution, provides some good examples.</para>
 
 <para>Each suppression has the following components:</para>
 
- <itemizedlist>
+<itemizedlist>
 
   <listitem>
-   <para>First line: its name.  This merely gives a handy name to
-   the suppression, by which it is referred to in the summary of
-   used suppressions printed out when a program finishes.  It's
-   not important what the name is; any identifying string will
-   do.</para>
+    <para>First line: its name.  This merely gives a handy name to the
+    suppression, by which it is referred to in the summary of used
+    suppressions printed out when a program finishes.  It's not
+    important what the name is; any identifying string will do.</para>
   </listitem>
 
   <listitem>
-   <para>Second line: name of the tool(s) that the suppression is
-   for (if more than one, comma-separated), and the name of the
-   suppression itself, separated by a colon (Nb: no spaces are
-   allowed), eg:</para>
-
+    <para>Second line: name of the tool(s) that the suppression is for
+    (if more than one, comma-separated), and the name of the suppression
+    itself, separated by a colon (Nb: no spaces are allowed), eg:</para>
 <programlisting><![CDATA[
 tool_name1,tool_name2:suppression_name]]></programlisting>
 
-   <para>Recall that Valgrind-2.0.X is a modular system, in which
-   different instrumentation tools can observe your program
-   whilst it is running.  Since different tools detect different
-   kinds of errors, it is necessary to say which tool(s) the
-   suppression is meaningful to.</para>
+    <para>Recall that valgrind-2.0.X is a modular system, in which
+    different instrumentation tools can observe your program whilst it
+    is running.  Since different tools detect different kinds of errors,
+    it is necessary to say which tool(s) the suppression is meaningful
+    to.</para>
 
-   <para>Tools will complain, at startup, if a tool does not
-   understand any suppression directed to it.  Tools ignore
-   suppressions which are not directed to them.  As a result, it
-   is quite practical to put suppressions for all tools into the
-   same suppression file.</para>
+    <para>Tools will complain, at startup, if a tool does not understand
+    any suppression directed to it.  Tools ignore suppressions which are
+    not directed to them.  As a result, it is quite practical to put
+    suppressions for all tools into the same suppression file.</para>
 
-   <para>Valgrind's core can detect certain PThreads API errors,
-   for which this line reads:</para>
+    <para>Valgrind's core can detect certain PThreads API errors, for
+    which this line reads:</para>
 
 <programlisting><![CDATA[
 core:PThread]]></programlisting>
   </listitem>
 
   <listitem>
-   <para>Next line: a small number of suppression types have
-   extra information after the second line (eg. the
-   <computeroutput>Param</computeroutput> suppression for
-   Memcheck)</para>
+    <para>Next line: a small number of suppression types have extra
+    information after the second line (eg. the <varname>Param</varname>
+    suppression for Memcheck)</para>
   </listitem>
 
   <listitem>
-   <para>Remaining lines: This is the calling context for the
-   error -- the chain of function calls that led to it.  There
-   can be up to four of these lines.</para>
+    <para>Remaining lines: This is the calling context for the error --
+    the chain of function calls that led to it.  There can be up to four
+    of these lines.</para>
 
-   <para>Locations may be either names of shared
-   objects/executables or wildcards matching function names.
-   They begin <computeroutput>obj:</computeroutput> and
-   <computeroutput>fun:</computeroutput> respectively.  Function
-   and object names to match against may use the wildcard
-   characters <computeroutput>*</computeroutput> and
-   <computeroutput>?</computeroutput>.</para>
+    <para>Locations may be either names of shared objects/executables or
+    wildcards matching function names.  They begin
+    <computeroutput>obj:</computeroutput> and
+    <computeroutput>fun:</computeroutput> respectively.  Function and
+    object names to match against may use the wildcard characters
+    <computeroutput>*</computeroutput> and
+    <computeroutput>?</computeroutput>.</para>
 
-   <formalpara><title>Important note:</title>
-    <para>C++ function names must be <command>mangled</command>.
-    If you are writing suppressions by hand, use the
-    <computeroutput>--demangle=no</computeroutput> option to get
-    the mangled names in your error messages.</para>
-   </formalpara>
+    <para><command>Important note: </command> C++ function names must be
+    <command>mangled</command>.  If you are writing suppressions by
+    hand, use the <option>--demangle=no</option> option to get the
+    mangled names in your error messages.</para>
   </listitem>
 
   <listitem>
-   <para>Finally, the entire suppression must be between curly
-   braces. Each brace must be the first character on its own
-   line.</para>
+    <para>Finally, the entire suppression must be between curly
+    braces. Each brace must be the first character on its own
+    line.</para>
   </listitem>
 
  </itemizedlist>
 
-<para>A suppression only suppresses an error when the error
-matches all the details in the suppression.  Here's an
-example:</para>
+<para>A suppression only suppresses an error when the error matches all
+the details in the suppression.  Here's an example:</para>
 
 <programlisting><![CDATA[
 {
@@ -524,14 +482,14 @@ example:</para>
 
 
 <para>What it means is: for Memcheck only, suppress a
-use-of-uninitialised-value error, when the data size is 4, when
-it occurs in the function
-<computeroutput>__gconv_transform_ascii_internal</computeroutput>,
-when that is called from any function of name matching
-<computeroutput>__mbr*toc</computeroutput>, when that is called
-from <computeroutput>mbtowc</computeroutput>.  It doesn't apply
-under any other circumstances.  The string by which this
-suppression is identified to the user is
+use-of-uninitialised-value error, when the data size is 4, when it
+occurs in the function
+<computeroutput>__gconv_transform_ascii_internal</computeroutput>, when
+that is called from any function of name matching
+<computeroutput>__mbr*toc</computeroutput>, when that is called from
+<computeroutput>mbtowc</computeroutput>.  It doesn't apply under any
+other circumstances.  The string by which this suppression is identified
+to the user is
 <computeroutput>__gconv_transform_ascii_internal/__mbrtowc/mbtowc</computeroutput>.</para>
 
 <para>(See <xref linkend="mc-manual.suppfiles"/> for more details
@@ -549,17 +507,17 @@ on the specifics of Memcheck's suppression kinds.)</para>
 }]]></programlisting>
 
 <para>Suppress any size 4 uninitialised-value error which occurs
-anywhere in <computeroutput>libX11.so.6.2</computeroutput>, when
-called from anywhere in the same library, when called from
-anywhere in <computeroutput>libXaw.so.7.0</computeroutput>.  The
-inexact specification of locations is regrettable, but is about
-all you can hope for, given that the X11 libraries shipped with
-Red Hat 7.2 have had their symbol tables removed.</para>
+anywhere in <filename>libX11.so.6.2</filename>, when called from
+anywhere in the same library, when called from anywhere in
+<filename>libXaw.so.7.0</filename>.  The inexact specification of
+locations is regrettable, but is about all you can hope for, given that
+the X11 libraries shipped with Red Hat 7.2 have had their symbol tables
+removed.</para>
 
-<para>Note: since the above two examples did not make it clear,
-you can freely mix the <computeroutput>obj:</computeroutput> and
-<computeroutput>fun:</computeroutput> styles of description
-within a single suppression record.</para>
+<para>Note: since the above two examples did not make it clear, you can
+freely mix the <computeroutput>obj:</computeroutput> and
+<computeroutput>fun:</computeroutput> styles of description within a
+single suppression record.</para>
 
 </sect1>
 
@@ -568,170 +526,225 @@ within a single suppression record.</para>
        xreflabel="Command-line flags for the Valgrind core">
 <title>Command-line flags for the Valgrind core</title>
 
-<para>As mentioned above, Valgrind's core accepts a common set of
-flags.  The tools also accept tool-specific flags, which are
-documented seperately for each tool.</para>
+<para>As mentioned above, Valgrind's core accepts a common set of flags.
+The tools also accept tool-specific flags, which are documented
+seperately for each tool.</para>
 
 <para>You invoke Valgrind like this:</para>
 
 <programlisting><![CDATA[
-valgrind [valgrind-options] your-prog [your-prog options]]]></programlisting>
+valgrind [valgrind-options] your-prog [your-prog-options]]]></programlisting>
 
-<para>Valgrind's default settings succeed in giving reasonable
-behaviour in most cases.  We group the available options by rough
+<para>Valgrind's default settings succeed in giving reasonable behaviour
+in most cases.  We group the available options by rough
 categories.</para>
 
 <sect2 id="manual-core.toolopts" xreflabel="Tool-selection option">
 <title>Tool-selection option</title>
 
 <para>The single most important option.</para>
-  <itemizedlist>
-   <listitem id="tool_name">
-    <para><computeroutput>--tool=&lt;name&gt;</computeroutput>
-    [default=memcheck]</para>
+
+<itemizedlist>
+  <listitem id="tool_name">
+    <para><option>--tool=&lt;name&gt;</option> [default=memcheck]</para>
     <para>Run the Valgrind tool called <emphasis>name</emphasis>,
     e.g. Memcheck, Addrcheck, Cachegrind, etc.</para>
-   </listitem>
-  </itemizedlist>
+  </listitem>
+</itemizedlist>
+
 </sect2>
+
+
 
 <sect2 id="manual-core.basicopts" xreflabel="Basic Options">
 <title>Basic Options</title>
 
 <para>These options work with all tools.</para>
 
- <itemizedlist>
-   <listitem>
-    <para><computeroutput>--help</computeroutput></para>
-    <para>Show help for all options, both for the core and for
-    the selected tool.</para>
-   </listitem>
+<variablelist id="basic.opts">
 
-   <listitem>
-    <para><computeroutput>--help-debug</computeroutput></para>
-    <para>Same as <computeroutput>--help</computeroutput>, but
-     also lists debugging options which usually are only of use
-     to Valgrind's developers.</para>
-   </listitem>
+  <varlistentry id="opt.help" xreflabel="--help">
+    <term><option>-h --help</option></term>
+    <listitem>
+      <para>Show help for all options, both for the core and for the
+      selected tool.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem>
-    <para><computeroutput>--version</computeroutput></para>
-    <para>Show the version number of the Valgrind core.  Tools
-    can have their own version numbers.  There is a scheme in
-    place to ensure that tools only execute when the core version
-    is one they are known to work with.  This was done to
-    minimise the chances of strange problems arising from
-    tool-vs-core version incompatibilities.</para>
-   </listitem>
+  <varlistentry id="opt.help-debug" xreflabel="--help-debug">
+    <term><option>--help-debug</option></term>
+    <listitem>
+      <para>Same as <option>--help</option>, but also lists debugging
+      options which usually are only of use to Valgrind's
+      developers.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem>
-    <para><computeroutput>-q --quiet</computeroutput></para>
-    <para>Run silently, and only print error messages.  Useful if
-    you are running regression tests or have some other automated
-    test machinery.</para>
-   </listitem>
+  <varlistentry id="opt.version" xreflabel="--version">
+    <term><option>--version</option></term>
+    <listitem>
+      <para>Show the version number of the Valgrind core. Tools can have
+      their own version numbers. There is a scheme in place to ensure
+      that tools only execute when the core version is one they are
+      known to work with. This was done to minimise the chances of
+      strange problems arising from tool-vs-core version
+      incompatibilities.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="verbosity">
-    <para><computeroutput>-v --verbose</computeroutput></para>
-    <para>Be more verbose.  Gives extra information on various
-    aspects of your program, such as: the shared objects loaded,
-    the suppressions used, the progress of the instrumentation
-    and execution engines, and warnings about unusual behaviour.
-    Repeating the flag increases the verbosity level.</para>
-   </listitem>
+  <varlistentry id="opt.quiet" xreflabel="--quiet">
+    <term><option>-q --quiet</option></term>
+    <listitem>
+      <para>Run silently, and only print error messages. Useful if you
+      are running regression tests or have some other automated test
+      machinery.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem>
-    <para><computeroutput>-d</computeroutput></para>
-    <para>Emit information for debugging Valgrind itself.  This
-    is usually only of interest to the Valgrind developers.
-    Repeating the flag produces more detailed output.  If you
-    want to send us a bug report, a log of the output
-    generated by <computeroutput>-v -v -d -d</computeroutput>
-    will make your report more useful.
-    </para>
-   </listitem>
+  <varlistentry id="opt.verbose" xreflabel="--verbose">
+    <term><option>-v --verbose</option></term>
+    <listitem>
+      <para>Be more verbose. Gives extra information on various aspects
+      of your program, such as: the shared objects loaded, the
+      suppressions used, the progress of the instrumentation and
+      execution engines, and warnings about unusual behaviour. Repeating
+      the flag increases the verbosity level.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="trace_children">
-    <para><computeroutput>--trace-children=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--trace-children=yes</computeroutput></para>
-    <para>When enabled, Valgrind will trace into child processes.
-    This is confusing and usually not what you want, so is
-    disabled by default.</para>
-   </listitem>
+  <varlistentry id="opt.d" xreflabel="-d">
+    <term><option>-d</option></term>
+    <listitem>
+      <para>Emit information for debugging Valgrind itself.  This is
+      usually only of interest to the Valgrind developers.  Repeating
+      the flag produces more detailed output.  If you want to send us a
+      bug report, a log of the output generated by 
+      <option>-v -v -d -d</option> will make your report more
+      useful.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="track_fds">
-    <para><computeroutput>--track-fds=no</computeroutput> [default]</para>
-    <para><computeroutput>--track-fds=yes</computeroutput></para>
-    <para>When enabled, Valgrind will print out a list of open
-    file descriptors on exit.  Along with each file descriptor,
-    Valgrind prints out a stack backtrace of where the file was
-    opened and any details relating to the file descriptor such
-    as the file name or socket details.</para>
-   </listitem>
+  <varlistentry id="opt.tool" xreflabel="--tool">
+    <term>
+      <option><![CDATA[--tool=<toolname> [default: memcheck] ]]></option>
+    </term>
+    <listitem>
+      <para>Run the Valgrind tool called <varname>toolname</varname>,
+      e.g. Memcheck, Addrcheck, Cachegrind, etc.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="time_stamp">
-    <para><computeroutput>--time-stamp=no</computeroutput> [default]</para>
-    <para><computeroutput>--time-stamp=yes</computeroutput></para>
-    <para>When enabled, Valgrind will precede each message with 
-    an indication of the elapsed wallclock time since startup,
-    expressed as days, hours, minutes, seconds and milliseconds.
-    </para>
-   </listitem>
+  <varlistentry id="opt.trace-children" xreflabel="--trace-children">
+    <term>
+      <option><![CDATA[--trace-children=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, Valgrind will trace into child processes.
+      This can be confusing and isn't usually what you want, so it is
+      disabled by default.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="log2fd">
-    <para><computeroutput>--log-fd=&lt;number&gt;</computeroutput>
-    [default: 2, stderr]</para>
-    <para>Specifies that Valgrind should send all of its messages
-    to the specified file descriptor.  The default, 2, is the
-    standard error channel (stderr).  Note that this may
-    interfere with the client's own use of stderr.</para>
-   </listitem>
+  <varlistentry id="opt.track-fds" xreflabel="--track-fds">
+    <term>
+      <option><![CDATA[--track-fds=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, Valgrind will print out a list of open file
+      descriptors on exit.  Along with each file descriptor is printed a
+      stack backtrace of where the file was opened and any details
+      relating to the file descriptor such as the file name or socket
+      details.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="log2file_pid">
-    <para><computeroutput>--log-file=&lt;filename&gt;</computeroutput></para>
-    <para>Specifies that Valgrind should send all of its messages
-    to the specified file.  In fact, the file name used is
-    created by concatenating the text
-    <computeroutput>filename</computeroutput>, "." and the
-    process ID, so as to create a file per process.  The
-    specified file name may not be the empty string.</para>
-   </listitem>
+  <varlistentry id="opt.time-stamp" xreflabel="--time-stamp">
+    <term>
+      <option><![CDATA[--time-stamp=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, each message is preceded with an indication of
+      the elapsed wallclock time since startup, expressed as days,
+      hours, minutes, seconds and milliseconds.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="log2file">
-    <para><computeroutput>--log-file-exactly=&lt;filename&gt;</computeroutput></para>
-    <para>Just like <computeroutput>--log-file</computeroutput>, but
-    the "." suffix is not added.  If you trace multiple processes
-    with Valgrind when using this option the log file may get all messed
-    up.
-    </para>
-   </listitem>
+  <varlistentry id="opt.log-fd" xreflabel="--log-fd">
+    <term>
+      <option><![CDATA[--log-fd=<number> [default: 2, stderr] ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies that Valgrind should send all of its messages to
+      the specified file descriptor.  The default, 2, is the standard
+      error channel (stderr).  Note that this may interfere with the
+      client's own use of stderr, as Valgrind's output will be
+      interleaved with any output that the client sends to
+      stderr.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="log2file_qualifier">
-    <para><computeroutput>--log-file-qualifer=&lt;VAR&gt;</computeroutput></para>
-    <para>When used in conjunction with
-    <computeroutput>--log-file=</computeroutput>, causes the log file
-    name to be qualified using the contents of environment variable
-    <computeroutput>VAR</computeroutput>.  This is useful when running
-    MPI programs.
-    For further details, see <xref linkend="manual-core.comment"/>.
-    </para>
-   </listitem>
+  <varlistentry id="opt.log-file" xreflabel="--log-file">
+    <term>
+      <option><![CDATA[--log-file=<filename> ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies that Valgrind should send all of its messages to
+      the specified file. In fact, the file name used is created by
+      concatenating the text <filename>filename</filename>, "." and the
+      process ID, (ie. <![CDATA[<filename>.<pid>]]>), so as to create a
+      file per process.  The specified file name may not be the empty
+      string.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="log2socket">
-    <para><computeroutput>--log-socket=&lt;ip-address:port-number&gt;</computeroutput></para>
-    <para>Specifies that Valgrind should send all of its messages
-    to the specified port at the specified IP address.  The port
-    may be omitted, in which case port 1500 is used.  If a
-    connection cannot be made to the specified socket, Valgrind
-    falls back to writing output to the standard error (stderr).
-    This option is intended to be used in conjunction with the
-    <computeroutput>valgrind-listener</computeroutput> program.
-    For further details, see <xref linkend="manual-core.comment"/>.</para>
-   </listitem>
+  <varlistentry id="opt.log-file-exactly" xreflabel="--log-file-exactly">
+    <term>
+      <option><![CDATA[--log-file-exactly=<filename> ]]></option>
+    </term>
+    <listitem>
+      <para>Just like <option>--log-file</option>, but the suffix
+      <computeroutput>".pid"</computeroutput> is not added.  If you
+      trace multiple processes with Valgrind when using this option the
+      log file may get all messed up.</para>
+    </listitem>
+  </varlistentry>
 
-  </itemizedlist>
- </sect2>
+  <varlistentry id="opt.log-file-qualifier" xreflabel="--log-file-qualifier">
+    <term>
+      <option><![CDATA[--log-file-qualifier=<VAR> ]]></option>
+    </term>
+    <listitem>
+      <para>When used in conjunction with <option>--log-file</option>,
+      causes the log file name to be qualified using the contents of the
+      environment variable <computeroutput>$VAR</computeroutput>.  This
+      is useful when running MPI programs.  For further details, see
+      <link linkend="manual-core.comment">Section 2.3 "The Commentary"</link>
+      in the manual.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.log-socket" xreflabel="--log-socket">
+    <term>
+      <option><![CDATA[--log-socket=<ip-address:port-number> ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies that Valgrind should send all of its messages to
+      the specified port at the specified IP address.  The port may be
+      omitted, in which case port 1500 is used.  If a connection cannot
+      be made to the specified socket, Valgrind falls back to writing
+      output to the standard error (stderr).  This option is intended to
+      be used in conjunction with the
+      <computeroutput>valgrind-listener</computeroutput> program.  For
+      further details, see 
+      <link linkend="manual-core.comment">Section 2.3 "The Commentary"</link>
+      in the manual.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+
+</sect2>
 
 
 <sect2 id="manual-core.erropts" xreflabel="Error-related Options">
@@ -740,234 +753,267 @@ categories.</para>
 <para>These options are used by all tools that can report
 errors, e.g. Memcheck, but not Cachegrind.</para>
 
-  <itemizedlist>
+<variablelist id="error-related.opts">
 
-   <listitem id="xml_output">
-    <para><computeroutput>--xml=no</computeroutput> [default]</para>
-    <para><computeroutput>--xml=yes</computeroutput></para>
-    <para>When enabled, output will be in XML format.  This is aimed at
-    making life easier for tools that consume Valgrind's output as input,
-    such as GUI front ends.  Currently this option only works with Memcheck
-    and Nulgrind.
-    </para>
-   </listitem>
-    
-   <listitem id="xml_user_comment">
-    <para><computeroutput>--xml-user-comment=&lt;string&gt;</computeroutput> [default=""]</para>
-    <para>Embeds an extra user comment string in the XML output.  Only works
-    with <computeroutput>--xml=yes</computeroutput> is specified;  ignored
-    otherwise.</para>
-   </listitem>
-    
-   <listitem id="auto_demangle">
-    <para><computeroutput>--demangle=no</computeroutput></para>
-    <para><computeroutput>--demangle=yes</computeroutput> [default]</para>
-    <para>Disable/enable automatic demangling (decoding) of C++
-    names.  Enabled by default.  When enabled, Valgrind will
-    attempt to translate encoded C++ names back to
-    something approaching the original.  The demangler handles
-    symbols mangled by g++ versions 2.X and 3.X.</para>
+  <varlistentry id="opt.xml" xreflabel="--xml">
+    <term>
+      <option><![CDATA[--xml=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, output will be in XML format.  This is aimed
+      at making life easier for tools that consume Valgrind's output as
+      input, such as GUI front ends.  Currently this option only works
+      with Memcheck and Nulgrind.</para>
+    </listitem>
+  </varlistentry>
 
-    <para>An important fact about demangling is that function
-    names mentioned in suppressions files should be in their
-    mangled form.  Valgrind does not demangle function names when
-    searching for applicable suppressions, because to do
-    otherwise would make suppressions file contents dependent on
-    the state of Valgrind's demangling machinery, and would also
-    be slow and pointless.</para>
-   </listitem>
+  <varlistentry id="opt.xml-user-comment" xreflabel="--xml-user-comment">
+    <term>
+      <option><![CDATA[--xml-user-comment=<string> ]]></option>
+    </term>
+    <listitem>
+      <para>Embeds an extra user comment string at the start of the XML
+      output.  Only works when <option>--xml=yes</option> is specified;
+      ignored otherwise.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="num_callers">
-    <para><computeroutput>--num-callers=&lt;number&gt;</computeroutput> [default=12]</para>
-    <para>By default, Valgrind shows twelve levels of function call
-    names to help you identify program locations.  You can change
-    that number with this option.  This can help in determining
-    the program's location in deeply-nested call chains.  Note
-    that errors are commoned up using only the top three function
-    locations (the place in the current function, and that of its
-    two immediate callers).  So this doesn't affect the total
-    number of errors reported.</para>
+  <varlistentry id="opt.demangle" xreflabel="--demangle">
+    <term>
+      <option><![CDATA[--demangle=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>Enable/disable automatic demangling (decoding) of C++ names.
+      Enabled by default.  When enabled, Valgrind will attempt to
+      translate encoded C++ names back to something approaching the
+      original.  The demangler handles symbols mangled by g++ versions
+      2.X, 3.X and 4.X.</para>
 
-    <para>The maximum value for this is 50.  Note that higher
-    settings will make Valgrind run a bit more slowly and take a
-    bit more memory, but can be useful when working with programs
-    with deeply-nested call chains.</para>
-   </listitem>
+      <para>An important fact about demangling is that function names
+      mentioned in suppressions files should be in their mangled form.
+      Valgrind does not demangle function names when searching for
+      applicable suppressions, because to do otherwise would make
+      suppressions file contents dependent on the state of Valgrind's
+      demangling machinery, and would also be slow and pointless.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="error_limit">
-    <para><computeroutput>--error-limit=yes</computeroutput>
-    [default]</para>
-    <para><computeroutput>--error-limit=no</computeroutput></para>
-    <para>When enabled, Valgrind stops reporting errors after
-    100000 in total, or 1000 different ones, have been seen.  This
-    is to stop the error tracking machinery from becoming a huge
-    performance overhead in programs with many errors.</para>
-   </listitem>
+  <varlistentry id="opt.num-callers" xreflabel="--num-callers">
+    <term>
+      <option><![CDATA[--num-callers=<number> [default: 12] ]]></option>
+    </term>
+    <listitem>
+      <para>By default, Valgrind shows twelve levels of function call
+      names to help you identify program locations.  You can change that
+      number with this option.  This can help in determining the
+      program's location in deeply-nested call chains.  Note that errors
+      are commoned up using only the top four function locations (the
+      place in the current function, and that of its three immediate
+      callers).  So this doesn't affect the total number of errors
+      reported.</para>
 
-   <listitem id="stack_traces">
-    <para><computeroutput>--show-below-main=yes</computeroutput></para>
-    <para><computeroutput>--show-below-main=no</computeroutput>
-    [default]</para>
-    <para>By default, stack traces for errors do not show any
-    functions that appear beneath
-    <computeroutput>main()</computeroutput> (or similar functions
-    such as glibc's <computeroutput>__libc_start_main()</computeroutput>, if
-    <computeroutput>main()</computeroutput> is not present in the stack
-    trace); most of the time it's uninteresting C library stuff.  If this
-    option is enabled, these entries below
-    <computeroutput>main()</computeroutput> will be shown.</para>
-   </listitem>
+      <para>The maximum value for this is 50. Note that higher settings
+      will make Valgrind run a bit more slowly and take a bit more
+      memory, but can be useful when working with programs with
+      deeply-nested call chains.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="supps_files">
-    <para><computeroutput>--suppressions=&lt;filename&gt;</computeroutput>
-    [default: $PREFIX/lib/valgrind/default.supp]</para>
-    <para>Specifies an extra file from which to read descriptions
-    of errors to suppress.  You may use as many extra
-    suppressions files as you like.</para>
-   </listitem>
+  <varlistentry id="opt.error-limit" xreflabel="--error-limit">
+    <term>
+      <option><![CDATA[--error-limit=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, Valgrind stops reporting errors after 100,000
+      in total, or 1,000 different ones, have been seen.  This is to
+      stop the error tracking machinery from becoming a huge performance
+      overhead in programs with many errors.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="gen_supps">
-    <para><computeroutput>--gen-suppressions=no</computeroutput>
-    [default]</para>
-    <para><computeroutput>--gen-suppressions=yes</computeroutput></para>
-    <para><computeroutput>--gen-suppressions=all</computeroutput></para>
+  <varlistentry id="opt.stack-traces" xreflabel="--show-below-main">
+    <term>
+      <option><![CDATA[--show-below-main=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>By default, stack traces for errors do not show any
+      functions that appear beneath <function>main()</function> 
+      (or similar functions such as glibc's
+      <function>__libc_start_main()</function>, if
+      <function>main()</function> is not present in the stack trace);
+      most of the time it's uninteresting C library stuff.  If this
+      option is enabled, those entries below <function>main()</function>
+      will be shown.</para>
+    </listitem>
+  </varlistentry>
 
-    <para>When set to <computeroutput>yes</computeroutput>, Valgrind
-    will pause after every error shown, and print the line:
-    <computeroutput>---- Print suppression ?  --- [Return/N/n/Y/y/C/c]
-    ----</computeroutput></para>
+  <varlistentry id="opt.suppressions" xreflabel="--suppressions">
+    <term>
+      <option><![CDATA[--suppressions=<filename> [default: $PREFIX/lib/valgrind/default.supp] ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies an extra file from which to read descriptions of
+      errors to suppress.  You may use as many extra suppressions files
+      as you like.</para>
+    </listitem>
+  </varlistentry>
 
-    <para>The prompt's behaviour is the same as for the 
-    <computeroutput>--db-attach</computeroutput> option.</para>
+  <varlistentry id="opt.gen-suppressions" xreflabel="--gen-supressions">
+    <term>
+      <option><![CDATA[--gen-suppressions=<yes|no|all> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When set to <varname>yes</varname>, Valgrind will pause
+      after every error shown and print the line:
+      <literallayout>    ---- Print suppression ? --- [Return/N/n/Y/y/C/c] ----</literallayout>
 
-    <para>If you choose to, Valgrind will print out a suppression
-    for this error.  You can then cut and paste it into a
-    suppression file if you don't want to hear about the error in
-    the future.</para>
+      The prompt's behaviour is the same as for the
+      <option>--db-attach</option> option (see below).</para>
 
-    <para>When set to <computeroutput>all</computeroutput>, Valgrind
-    will print a suppression for every reported error, without
-    querying the user.</para>
+      <para>If you choose to, Valgrind will print out a suppression for
+      this error.  You can then cut and paste it into a suppression file
+      if you don't want to hear about the error in the future.</para>
 
-    <para>This option is particularly useful with C++ programs,
-    as it prints out the suppressions with mangled names, as
-    required.</para>
+      <para>When set to <varname>all</varname>, Valgrind will print a
+      suppression for every reported error, without querying the
+      user.</para>
 
-    <para>Note that the suppressions printed are as specific as
-    possible.  You may want to common up similar ones, eg. by
-    adding wildcards to function names.  Also, sometimes two
-    different errors are suppressed by the same suppression, in
-    which case Valgrind will output the suppression more than
-    once, but you only need to have one copy in your suppression
-    file (but having more than one won't cause problems).  Also,
-    the suppression name is given as <computeroutput>&lt;insert a
-    suppression name here&gt;</computeroutput>; the name doesn't
-    really matter, it's only used with the
-    <computeroutput>-v</computeroutput> option which prints out
-    all used suppression records.</para>
-   </listitem>
+      <para>This option is particularly useful with C++ programs, as it
+      prints out the suppressions with mangled names, as
+      required.</para>
 
-   <listitem id="attach_debugger">
-    <para><computeroutput>--db-attach=no</computeroutput> [default]</para>
-    <para><computeroutput>--db-attach=yes</computeroutput></para>
-    <para>When enabled, Valgrind will pause after every error
-    shown, and print the line: <computeroutput>---- Attach to
-    debugger ? --- [Return/N/n/Y/y/C/c] ----</computeroutput></para>
+      <para>Note that the suppressions printed are as specific as
+      possible.  You may want to common up similar ones, eg. by adding
+      wildcards to function names.  Also, sometimes two different errors
+      are suppressed by the same suppression, in which case Valgrind
+      will output the suppression more than once, but you only need to
+      have one copy in your suppression file (but having more than one
+      won't cause problems).  Also, the suppression name is given as
+      <computeroutput>&lt;insert a suppression name
+      here&gt;</computeroutput>; the name doesn't really matter, it's
+      only used with the <option>-v</option> option which prints out all
+      used suppression records.</para>
+    </listitem>
+  </varlistentry>
 
-    <para>Pressing <literal>Ret</literal>, or 
-    <literal>N Ret</literal> or <literal>n Ret</literal>, causes
-    Valgrind not to start a debugger for this error.</para>
+  <varlistentry id="opt.db-attach" xreflabel="--db-attach">
+    <term>
+      <option><![CDATA[--db-attach=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, Valgrind will pause after every error shown
+      and print the line:
+      <literallayout>    ---- Attach to debugger ? --- [Return/N/n/Y/y/C/c] ----</literallayout>
 
-    <para><literal>Y Ret</literal> or <literal>y Ret</literal>
-    causes Valgrind to start a debugger, for the program at this
-    point.  When you have finished with the debugger, quit from
-    it, and the program will continue.  Trying to continue from
-    inside the debugger doesn't work.</para>
+      Pressing <varname>Ret</varname>, or <varname>N Ret</varname> or
+      <varname>n Ret</varname>, causes Valgrind not to start a debugger
+      for this error.</para>
 
-    <para><literal>C Ret</literal> or <literal>c Ret</literal>
-    causes Valgrind not to start a debugger, and not to ask
-    again.</para>
+      <para>Pressing <varname>Y Ret</varname> or
+      <varname>y Ret</varname> causes Valgrind to start a debugger for
+      the program at this point. When you have finished with the
+      debugger, quit from it, and the program will continue. Trying to
+      continue from inside the debugger doesn't work.</para>
 
-    <formalpara>
-     <title>Note:</title>
-     <para><computeroutput>--db-attach=yes</computeroutput>
-     conflicts with
-     <computeroutput>--trace-children=yes</computeroutput>.  You
-     can't use them together.  Valgrind refuses to start up in
-     this situation.</para>
-    </formalpara>
-    <para>1 May 2002: this is a historical relic which could be
-    easily fixed if it gets in your way.  Mail us and complain if
-    this is a problem for you.</para> <para>Nov 2002: if you're
-    sending output to a logfile or to a network socket, I guess
-    this option doesn't make any sense.  Caveat emptor.</para>
-   </listitem>
+      <para><varname>C Ret</varname> or <varname>c Ret</varname> causes
+      Valgrind not to start a debugger, and not to ask again.</para>
 
-   <listitem id="which_debugger">
-    <para><computeroutput>--db-command=&lt;command&gt;</computeroutput>
-    [default: gdb -nw %f %p]</para>
-    <para>This specifies how Valgrind will invoke the debugger.
-    By default it will use whatever GDB is detected at build
-    time, which is usually
-    <computeroutput>/usr/bin/gdb</computeroutput>.  Using this
-    command, you can specify some alternative command to invoke
-    the debugger you want to use.</para>
+      <para><command>Note:</command> <option>--db-attach=yes</option>
+      conflicts with <option>--trace-children=yes</option>.  You can't
+      use them together.  Valgrind refuses to start up in this
+      situation.</para>
 
-    <para>The command string given can include one or instances
-    of the <literal>%p</literal> and <literal>%f</literal>
-    expansions. Each instance of <literal>%p</literal> expands to
-    the PID of the process to be debugged and each instance of
-    <literal>%f</literal> expands to the path to the executable
-    for the process to be debugged.</para>
-   </listitem>
+      <para>May 2002: this is a historical relic which could be easily
+      fixed if it gets in your way.  Mail us and complain if this is a
+      problem for you.</para>
+      <para>Nov 2002: if you're sending output to a logfile or to a
+      network socket, I guess this option doesn't make any sense.
+      Caveat emptor.</para>
+    </listitem>
+  </varlistentry>
 
-   <listitem id="input_fd">
-    <para><computeroutput>--input-fd=&lt;number&gt;</computeroutput>
-    [default=0, stdin]</para>
-    <para>When using
-    <computeroutput>--db-attach=yes</computeroutput> and
-    <computeroutput>--gen-suppressions=yes</computeroutput>,
-    Valgrind will stop so as to read keyboard input from you,
-    when each error occurs.  By default it reads from the
-    standard input (stdin), which is problematic for programs
-    which close stdin.  This option allows you to specify an
-    alternative file descriptor from which to read input.</para>
-   </listitem>
+  <varlistentry id="opt.db-command" xreflabel="--db-command">
+    <term>
+      <option><![CDATA[--db-command=<command> [default: gdb -nw %f %p] ]]></option>
+    </term>
+    <listitem>
+      <para>Specify the debugger to use with the
+      <option>--db-attach</option> command. The default debugger is
+      gdb. This option is a template that is expanded by Valgrind at
+      runtime.  <literal>%f</literal> is replaced with the executable's
+      file name and <literal>%p</literal> is replaced by the process ID
+      of the executable.</para>
 
-   <listitem id="max_frames">
-    <para><computeroutput>--max-stackframe=&lt;number&gt;</computeroutput>
-                          [default=2000000]
-    </para>
-    <para>You may need to use this option if your program has large
-    stack-allocated arrays.  Valgrind keeps track of your program's
-    stack pointer.  If it changes by more than the threshold amount,
-    Valgrind assumes your program is switching to a different stack,
-    and Memcheck behaves differently than it would for a stack pointer
-    change smaller than the threshold.  Usually this heuristic works
-    well.  However, if your program allocates large structures on the
-    stack, this heuristic will be fooled, and Memcheck will
-    subsequently report large numbers of invalid stack accesses.  This
-    option allows you to change the threshold to a different value.
-    </para>
-    <para>
-    You should only consider use of this flag if Valgrind's debug output
-    directs you to do so.  In that case it will tell you the new
-    threshold you should specify.
-    </para>
-    <para>
-    In general, allocating large structures on the stack is a bad
-    idea, because (1) you can easily run out of stack space,
-    especially on systems with limited memory or which expect to
-    support large numbers of threads each with a small stack, and (2)
-    because the error checking performed by Memcheck is more effective
-    for heap-allocated data than for stack-allocated data.  If you
-    have to use this flag, you may wish to consider rewriting your
-    code to allocate on the heap rather than on the stack.
-   </para>
-   </listitem>
+      <para>This specifies how Valgrind will invoke the debugger.  By
+      default it will use whatever GDB is detected at build time, which
+      is usually <computeroutput>/usr/bin/gdb</computeroutput>.  Using
+      this command, you can specify some alternative command to invoke
+      the debugger you want to use.</para>
 
-  </itemizedlist>
+      <para>The command string given can include one or instances of the
+      <literal>%p</literal> and <literal>%f</literal> expansions. Each
+      instance of <literal>%p</literal> expands to the PID of the
+      process to be debugged and each instance of <literal>%f</literal>
+      expands to the path to the executable for the process to be
+      debugged.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.input-fd" xreflabel="--input-fd">
+    <term>
+      <option><![CDATA[--input-fd=<number> [default: 0, stdin] ]]></option>
+    </term>
+    <listitem>
+      <para>When using <option>--db-attach=yes</option> and
+      <option>--gen-suppressions=yes</option>, Valgrind will stop so as
+      to read keyboard input from you, when each error occurs.  By
+      default it reads from the standard input (stdin), which is
+      problematic for programs which close stdin.  This option allows
+      you to specify an alternative file descriptor from which to read
+      input.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.max-stackframe" xreflabel="--max-stackframe">
+    <term>
+      <option><![CDATA[--max-stackframe=<number> [default: 2000000] ]]></option>
+    </term>
+    <listitem>
+      <para>The maximum size of a stack frame - if the stack pointer moves by
+      more than this amount then Valgrind will assume that
+      the program is switching to a different stack.</para>
+
+      <para>You may need to use this option if your program has large
+      stack-allocated arrays.  Valgrind keeps track of your program's
+      stack pointer.  If it changes by more than the threshold amount,
+      Valgrind assumes your program is switching to a different stack,
+      and Memcheck behaves differently than it would for a stack pointer
+      change smaller than the threshold.  Usually this heuristic works
+      well.  However, if your program allocates large structures on the
+      stack, this heuristic will be fooled, and Memcheck will
+      subsequently report large numbers of invalid stack accesses.  This
+      option allows you to change the threshold to a different
+      value.</para>
+
+      <para>You should only consider use of this flag if Valgrind's
+      debug output directs you to do so.  In that case it will tell you
+      the new threshold you should specify.</para>
+
+      <para>In general, allocating large structures on the stack is a
+      bad idea, because (1) you can easily run out of stack space,
+      especially on systems with limited memory or which expect to
+      support large numbers of threads each with a small stack, and (2)
+      because the error checking performed by Memcheck is more effective
+      for heap-allocated data than for stack-allocated data.  If you
+      have to use this flag, you may wish to consider rewriting your
+      code to allocate on the heap rather than on the stack.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+
 </sect2>
+
 
 <sect2 id="manual-core.mallocopts" xreflabel="malloc()-related Options">
 <title><computeroutput>malloc()</computeroutput>-related Options</title>
@@ -976,138 +1022,146 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
 <computeroutput>malloc()</computeroutput> (e.g. Memcheck and
 Addrcheck), the following options apply.</para>
 
-  <itemizedlist>
+<variablelist id="malloc-related.opts">
 
-   <listitem id="alignment">
-    <para><computeroutput>--alignment=&lt;number&gt;</computeroutput>
-    [default: 8]</para>
-    <para>By default Valgrind's
-    <computeroutput>malloc</computeroutput>,
-    <computeroutput>realloc</computeroutput>, etc, return 8-byte
-    aligned addresses.  This is standard for
-    most processors.  Some programs might however assume that
-    <computeroutput>malloc</computeroutput> et al return 16- or
-    more aligned memory.  The supplied value must be between 4
-    and 4096 inclusive, and must be a power of two.</para>
-   </listitem>
-
-  </itemizedlist>
-
- </sect2>
-
-
- <sect2 id="manual-core.rareopts" xreflabel="Uncommon Options">
-  <title>Uncommon Options</title>
-
-  <para>These options apply to all tools, as they affect certain
-  obscure workings of the Valgrind core.  Most people won't need
-  to use these.</para>
-
-  <itemizedlist>
-
-   <listitem id="free_glibc">
-    <para><computeroutput>--run-libc-freeres=yes</computeroutput>
-     [default]</para>
-    <para><computeroutput>--run-libc-freeres=no</computeroutput></para>
-    <para>The GNU C library
-    (<computeroutput>libc.so</computeroutput>), which is used by
-    all programs, may allocate memory for its own uses.  Usually
-    it doesn't bother to free that memory when the program ends -
-    there would be no point, since the Linux kernel reclaims all
-    process resources when a process exits anyway, so it would
-    just slow things down.</para>
-
-    <para>The glibc authors realised that this behaviour causes
-    leak checkers, such as Valgrind, to falsely report leaks in
-    glibc, when a leak check is done at exit.  In order to avoid
-    this, they provided a routine called
-    <computeroutput>__libc_freeres</computeroutput> specifically
-    to make glibc release all memory it has allocated.  Memcheck
-    and Addrcheck therefore try and run
-    <computeroutput>__libc_freeres</computeroutput> at
-    exit.</para>
-
-    <para>Unfortunately, in some versions of glibc,
-    <computeroutput>__libc_freeres</computeroutput> is
-    sufficiently buggy to cause segmentation faults.  This is
-    particularly noticeable on Red Hat 7.1.  So this flag is
-    provided in order to inhibit the run of
-    <computeroutput>__libc_freeres</computeroutput>.  If your
-    program seems to run fine on Valgrind, but segfaults at exit,
-    you may find that
-    <computeroutput>--run-libc-freeres=no</computeroutput> fixes
-    that, although at the cost of possibly falsely reporting
-    space leaks in
-    <computeroutput>libc.so</computeroutput>.</para>
-   </listitem>
-
-   <listitem id="simulation_hints">
-    <para><computeroutput>--sim-hints=hint1,hint2,...</computeroutput></para>
-    <para>Pass miscellaneous hints to Valgrind which slightly
-    modify the simulated behaviour in nonstandard or dangerous
-    ways, possibly to help the simulation of strange features.
-    By default no hints are enabled.  Use with caution!
-    Currently known hints are:</para>
-    <itemizedlist>
-     <listitem><para><computeroutput>lax-ioctls</computeroutput></para>
-      <para>Be very lax about ioctl handling; the only assumption
-      is that the size is correct. Doesn't require the full
-      buffer to be initialized when writing.  Without this, using
-      some device drivers with a large number of strange ioctl
-      commands becomes very tiresome.</para>
-     </listitem>
-
-     <listitem><para><computeroutput>enable-inner</computeroutput></para> 
-      <para>Enable some special magic needed when the program being
-      run is itself Valgrind.
-      </para>
-     </listitem>
-
-    </itemizedlist>
-   </listitem>
-
-   <listitem id="kernel_variant">
-    <para><computeroutput>--kernel-variant=variant1,variant2,...</computeroutput>
-    </para>
-    <para>Handle system calls and ioctls arising from minor variants
-    of the default kernel for this platform.  This is useful for
-    running on hacked kernels or with kernel modules which support
-    nonstandard ioctls, for example.  Use with caution.  If you don't
-    understand what this option does then you almost certainly don't
-    need it.
-    Currently known variants are:</para>
-    <itemizedlist>
-     <listitem><para><computeroutput>bproc</computeroutput></para>
-      <para>Support the sys_broc system call on x86.  This is for
-      running on BProc, which is a minor variant of standard Linux
-      which is sometimes used for building clusters.
-      </para>
-     </listitem>
-    </itemizedlist>
-   </listitem>
-
-   <listitem id="show_emwarns">
-    <para><computeroutput>--show-emwarns=no</computeroutput> [default]</para>
-    <para><computeroutput>--show-emwarns=yes</computeroutput></para>
-    <para>When enabled, Valgrind will emit warnings about its CPU emulation
-    in certain cases.  These are usually not interesting.</para>
-   </listitem>
-
-   <listitem id="smc_support">
-    <para><computeroutput>--smc-check=none</computeroutput></para>
-    <para><computeroutput>--smc-check=stack</computeroutput> [default]</para>
-    <para><computeroutput>--smc-check=all</computeroutput></para>
-    <para>This option controls Valgrind's detection of self-modifying code.
-    Valgrind can do no detection, detect self-modifying code on the stack,
-    or detect self-modifying code anywhere.  Note that the default option
-    will catch the vast majority of cases, as far as we know.  Running with
-    <computeroutput>all</computeroutput> will slow Valgrind down greatly
-    (but running with <computeroutput>none</computeroutput> will rarely
-    speed things up, since very little code gets put on the stack for most
-    programs). </para>
+  <varlistentry id="opt.alignment" xreflabel="--alignment">
+    <term>
+      <option><![CDATA[--alignment=<number> [default: 8] ]]></option>
+    </term>
+    <listitem>
+      <para>By default Valgrind's <function>malloc()</function>,
+      <function>realloc()</function>, etc, return 8-byte aligned
+      addresses.  This is standard for most processors.  However, some
+      programs might assume that <function>malloc()</function> et al
+      return 16-byte or more aligned memory.  The supplied value must be
+      between 8 and 4096 inclusive, and must be a power of two.</para>
     </listitem>
+  </varlistentry>
 
-  </itemizedlist>
+</variablelist>
+
+</sect2>
+
+
+<sect2 id="manual-core.rareopts" xreflabel="Uncommon Options">
+<title>Uncommon Options</title>
+
+<para>These options apply to all tools, as they affect certain obscure
+workings of the Valgrind core.  Most people won't need to use
+these.</para>
+
+<variablelist id="uncommon.opts">
+
+  <varlistentry id="opt.run-libc-freeres" xreflabel="--run-libc-freeres">
+    <term>
+      <option><![CDATA[--run-libc-freeres=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>The GNU C library (<function>libc.so</function>), which is
+      used by all programs, may allocate memory for its own uses.
+      Usually it doesn't bother to free that memory when the program
+      ends - there would be no point, since the Linux kernel reclaims
+      all process resources when a process exits anyway, so it would
+      just slow things down.</para>
+
+      <para>The glibc authors realised that this behaviour causes leak
+      checkers, such as Valgrind, to falsely report leaks in glibc, when
+      a leak check is done at exit.  In order to avoid this, they
+      provided a routine called <function>__libc_freeres</function>
+      specifically to make glibc release all memory it has allocated.
+      Memcheck and Addrcheck therefore try and run
+      <function>__libc_freeres</function> at exit.</para>
+
+      <para>Unfortunately, in some versions of glibc,
+      <function>__libc_freeres</function> is sufficiently buggy to cause
+      segmentation faults.  This is particularly noticeable on Red Hat
+      7.1.  So this flag is provided in order to inhibit the run of
+      <function>__libc_freeres</function>.  If your program seems to run
+      fine on Valgrind, but segfaults at exit, you may find that
+      <option>--run-libc-freeres=no</option> fixes that, although at the
+      cost of possibly falsely reporting space leaks in
+      <filename>libc.so</filename>.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.sim-hints" xreflabel="--sim-hints">
+    <term>
+      <option><![CDATA[--sim-hints=hint1,hint2,... ]]></option>
+    </term>
+    <listitem>
+      <para>Pass miscellaneous hints to Valgrind which slightly modify
+      the simulated behaviour in nonstandard or dangerous ways, possibly
+      to help the simulation of strange features.  By default no hints
+      are enabled.  Use with caution!  Currently known hints are:</para>
+      <itemizedlist>
+        <listitem>
+          <para><option>lax-ioctls: </option> Be very lax about ioctl
+          handling; the only assumption is that the size is
+          correct. Doesn't require the full buffer to be initialized
+          when writing.  Without this, using some device drivers with a
+          large number of strange ioctl commands becomes very
+          tiresome.</para>
+        </listitem>
+        <listitem>
+          <para><option>enable-inner: </option> Enable some special
+          magic needed when the program being run is itself
+          Valgrind.</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.kernel-variant" xreflabel="--kernel-variant">
+    <term>
+      <option>--kernel-variant=variant1,variant2,...</option>
+    </term>
+    <listitem>
+      <para>Handle system calls and ioctls arising from minor variants
+      of the default kernel for this platform.  This is useful for
+      running on hacked kernels or with kernel modules which support
+      nonstandard ioctls, for example.  Use with caution.  If you don't
+      understand what this option does then you almost certainly don't
+      need it.  Currently known variants are:</para>
+      <itemizedlist>
+        <listitem>
+          <para><option>bproc: </option> Support the sys_broc system
+          call on x86.  This is for running on BProc, which is a minor
+          variant of standard Linux which is sometimes used for building
+          clusters.</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.show-emwarns" xreflabel="--show-emwarns">
+    <term>
+      <option><![CDATA[--show-emwarns=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, Valgrind will emit warnings about its CPU
+      emulation in certain cases.  These are usually not
+      interesting.</para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.smc-check" xreflabel="--smc-check">
+    <term>
+      <option><![CDATA[--smc-check=<none|stack|all> [default: stack] ]]></option>
+    </term>
+    <listitem>
+      <para>This option controls Valgrind's detection of self-modifying
+      code.  Valgrind can do no detection, detect self-modifying code on
+      the stack, or detect self-modifying code anywhere.  Note that the
+      default option will catch the vast majority of cases, as far as we
+      know.  Running with <varname>all</varname> will slow Valgrind down
+      greatly (but running with <varname>none</varname> will rarely
+      speed things up, since very little code gets put on the stack for
+      most programs).</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+
 </sect2>
 
 
@@ -1264,14 +1318,13 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_COUNT_ERRORS</computeroutput>:</command></term>
    <listitem>
-    <para>returns the number of errors found so far by Valgrind.
-    Can be useful in test harness code when combined with the
-    <computeroutput>--log-fd=-1</computeroutput> option; this
-    runs Valgrind silently, but the client program can detect
-    when errors occur.  Only useful for tools that report errors,
-    e.g. it's useful for Memcheck, but for Cachegrind it will
-    always return zero because Cachegrind doesn't report
-    errors.</para>
+    <para>returns the number of errors found so far by Valgrind.  Can be
+    useful in test harness code when combined with the
+    <option>--log-fd=-1</option> option; this runs Valgrind silently,
+    but the client program can detect when errors occur.  Only useful
+    for tools that report errors, e.g. it's useful for Memcheck, but for
+    Cachegrind it will always return zero because Cachegrind doesn't
+    report errors.</para>
    </listitem>
   </varlistentry>
 
@@ -1350,10 +1403,10 @@ tool-specific macros).</para>
     program on the <emphasis>real</emphasis> CPU, not the virtual
     CPU that Valgrind normally runs code on.  These are used in
     various ways internally to Valgrind.  They might be useful to
-    client programs.</para> <formalpara><title>Warning:</title>
-    <para>Only use these if you <emphasis>really</emphasis> know
-    what you are doing.</para>
-    </formalpara>
+    client programs.</para> 
+
+    <para><command>Warning:</command> Only use these if you
+    <emphasis>really</emphasis> know what you are doing.</para>
    </listitem>
   </varlistentry>
 
@@ -1507,33 +1560,34 @@ with <computeroutput>make regtest</computeroutput>.
 </para>
 
 <para>There are three options (in addition to the usual
-<computeroutput>--prefix=</computeroutput> which affect how Valgrind is built:
+<option>--prefix=</option> which affect how Valgrind is built:
 <itemizedlist>
- <listitem>
-  <para><computeroutput>--enable-inner</computeroutput></para>
-  <para>This builds Valgrind with some special magic hacks which
-   make it possible to run it on a standard build of Valgrind
-   (what the developers call "self-hosting").  Ordinarily you
-   should not use this flag as various kinds of safety checks
-   are disabled.
-   </para>
- </listitem>
 
- <listitem>
-  <para><computeroutput>--enable-tls</computeroutput></para>
-  <para>TLS (Thread Local Storage) is a relatively new mechanism which
-  requires compiler, linker and kernel support.  Valgrind automatically test
-  if TLS is supported and enable this option.  Sometimes it cannot test for
-  TLS, so this option allows you to override the automatic test.</para>
- </listitem>
-
- <listitem>
-  <para><computeroutput>--with-vex=</computeroutput></para>
-  <para>Specifies the path to the underlying VEX dynamic-translation 
-   library.  By default this is taken to be in the VEX directory
-   off the root of the source tree.
+  <listitem>
+    <para><option>--enable-inner</option></para>
+    <para>This builds Valgrind with some special magic hacks which make
+     it possible to run it on a standard build of Valgrind (what the
+     developers call "self-hosting").  Ordinarily you should not use
+     this flag as various kinds of safety checks are disabled.
    </para>
- </listitem>
+  </listitem>
+
+  <listitem>
+    <para><option>--enable-tls</option></para>
+    <para>TLS (Thread Local Storage) is a relatively new mechanism which
+    requires compiler, linker and kernel support.  Valgrind
+    automatically test if TLS is supported and enable this option.
+    Sometimes it cannot test for TLS, so this option allows you to
+    override the automatic test.</para>
+  </listitem>
+
+  <listitem>
+    <para><option>--with-vex=</option></para>
+    <para>Specifies the path to the underlying VEX dynamic-translation
+     library.  By default this is taken to be in the VEX directory off
+     the root of the source tree.
+   </para>
+  </listitem>
 </itemizedlist>
 </para>
 
@@ -1589,83 +1643,79 @@ crashes, etc.</para>
 <sect1 id="manual-core.limits" xreflabel="Limitations">
 <title>Limitations</title>
 
-<para>The following list of limitations seems long.
-However, most programs actually work fine.</para>
+<para>The following list of limitations seems long.  However, most
+programs actually work fine.</para>
 
-<para>Valgrind will run Linux ELF 
-binaries, on a kernel 2.4.X or 2.6.X system, on the x86, amd64
-and ppc32 architectures, subject to
-the following constraints:</para>
+<para>Valgrind will run Linux ELF binaries, on a kernel 2.4.X or 2.6.X
+system, on the x86, amd64 and ppc32 architectures, subject to the
+following constraints:</para>
 
  <itemizedlist>
   <listitem>
-   <para>On x86 and amd64, there is no support for 3DNow! instructions.  If
-   the translator encounters these, Valgrind will generate a SIGILL when the
-   instruction is executed.  Apart from that, on x86 and amd64, 
+   <para>On x86 and amd64, there is no support for 3DNow! instructions.
+   If the translator encounters these, Valgrind will generate a SIGILL
+   when the instruction is executed.  Apart from that, on x86 and amd64,
    essentially all instructions are supported, up to and including SSE2.
-   Version 3.1.0 includes limited support for SSE3 on x86.  This could be 
-   improved
-   if necessary.</para>
-   <para>On ppc32, almost all integer, floating point and Altivec instructions
-   are supported.</para>
+   Version 3.1.0 includes limited support for SSE3 on x86.  This could
+   be improved if necessary.</para>
+
+   <para>On ppc32, almost all integer, floating point and Altivec
+   instructions are supported.</para>
   </listitem>
 
   <listitem>
    <para>Atomic instruction sequences are not properly supported, in the
-   sense that their atomicity is not preserved.  This will affect
-   any use of synchronization via memory shared between processes.  They
+   sense that their atomicity is not preserved.  This will affect any
+   use of synchronization via memory shared between processes.  They
    will appear to work, but fail sporadically.</para>
   </listitem>
 
   <listitem>
-   <para>If your program does its own memory management, rather
-   than using malloc/new/free/delete, it should still work, but
-   Valgrind's error checking won't be so effective.  If you
-   describe your program's memory management scheme using "client
-   requests" (see <xref linkend="manual-core.clientreq"/>), 
-   Memcheck can do
-   better.  Nevertheless, using malloc/new and free/delete is
-   still the best approach.</para>
+   <para>If your program does its own memory management, rather than
+   using malloc/new/free/delete, it should still work, but Valgrind's
+   error checking won't be so effective.  If you describe your program's
+   memory management scheme using "client requests" 
+   (see <xref linkend="manual-core.clientreq"/>), Memcheck can do
+   better.  Nevertheless, using malloc/new and free/delete is still the
+   best approach.</para>
   </listitem>
 
   <listitem>
-   <para>Valgrind's signal simulation is not as robust as it
-   could be.  Basic POSIX-compliant sigaction and sigprocmask
-   functionality is supplied, but it's conceivable that things
-   could go badly awry if you do weird things with signals.
-   Workaround: don't.  Programs that do non-POSIX signal tricks
-   are in any case inherently unportable, so should be avoided if
-   possible.</para>
+   <para>Valgrind's signal simulation is not as robust as it could be.
+   Basic POSIX-compliant sigaction and sigprocmask functionality is
+   supplied, but it's conceivable that things could go badly awry if you
+   do weird things with signals.  Workaround: don't.  Programs that do
+   non-POSIX signal tricks are in any case inherently unportable, so
+   should be avoided if possible.</para>
   </listitem>
 
   <listitem>
-   <para>Machine instructions, and system calls, have been
-   implemented on demand.  So it's possible, although unlikely,
-   that a program will fall over with a message to that effect.
-   If this happens, please report ALL the details printed out, so
-   we can try and implement the missing feature.</para>
+   <para>Machine instructions, and system calls, have been implemented
+   on demand.  So it's possible, although unlikely, that a program will
+   fall over with a message to that effect.  If this happens, please
+   report ALL the details printed out, so we can try and implement the
+   missing feature.</para>
   </listitem>
 
   <listitem>
-   <para>Memory consumption of your program is majorly increased
-   whilst running under Valgrind.  This is due to the large
-   amount of administrative information maintained behind the
-   scenes.  Another cause is that Valgrind dynamically translates
-   the original executable.  Translated, instrumented code is
-   12-18 times larger than the original so you can easily end
-   up with 50+ MB of translations when running (eg) a web
-   browser.</para>
+   <para>Memory consumption of your program is majorly increased whilst
+   running under Valgrind.  This is due to the large amount of
+   administrative information maintained behind the scenes.  Another
+   cause is that Valgrind dynamically translates the original
+   executable.  Translated, instrumented code is 12-18 times larger than
+   the original so you can easily end up with 50+ MB of translations
+   when running (eg) a web browser.</para>
   </listitem>
 
   <listitem>
-   <para>Valgrind can handle dynamically-generated code just
-   fine.  If you regenerate code over the top of old code
-   (ie. at the same memory addresses), if the code is on the stack Valgrind
-   will realise the code has changed, and work correctly.  This is necessary
-   to handle the trampolines GCC uses to implemented nested functions.
-   If you regenerate code somewhere other than the stack, you will need to
-   use the <computeroutput>--smc-check=all</computeroutput> flag, and
-   Valgrind will run more slowly than normal.</para>
+   <para>Valgrind can handle dynamically-generated code just fine.  If
+   you regenerate code over the top of old code (ie. at the same memory
+   addresses), if the code is on the stack Valgrind will realise the
+   code has changed, and work correctly.  This is necessary to handle
+   the trampolines GCC uses to implemented nested functions.  If you
+   regenerate code somewhere other than the stack, you will need to use
+   the <option>--smc-check=all</option> flag, and Valgrind will run more
+   slowly than normal.</para>
   </listitem>
 
   <listitem>
@@ -1674,26 +1724,25 @@ the following constraints:</para>
    the IEEE754 standard.</para>
 
    <para>Precision: There is no support for 80 bit arithmetic.
-   Internally, Valgrind represents all such "long double"
-   numbers in 64 bits, and so
-   there may be some differences in results.  Whether or not this is
-   critical remains to be seen.  Note, the x86/amd64 fldt/fstpt
-   instructions (read/write 80-bit numbers) are correctly simulated,
-   using conversions to/from 64 bits, so that in-memory images of
-   80-bit numbers look correct if anyone wants to see.</para>
+   Internally, Valgrind represents all such "long double" numbers in 64
+   bits, and so there may be some differences in results.  Whether or
+   not this is critical remains to be seen.  Note, the x86/amd64
+   fldt/fstpt instructions (read/write 80-bit numbers) are correctly
+   simulated, using conversions to/from 64 bits, so that in-memory
+   images of 80-bit numbers look correct if anyone wants to see.</para>
 
    <para>The impression observed from many FP regression tests is that
    the accuracy differences aren't significant.  Generally speaking, if
    a program relies on 80-bit precision, there may be difficulties
    porting it to non x86/amd64 platforms which only support 64-bit FP
    precision.  Even on x86/amd64, the program may get different results
-   depending on whether it is compiled to use SSE2 instructions
-   (64-bits only), or x87 instructions (80-bit).  The net effect is to
-   make FP programs behave as if they had been run on a machine with
-   64-bit IEEE floats, for example PowerPC.  On amd64 FP arithmetic is
-   done by default on SSE2, so amd64 looks more like PowerPC than x86
-   from an FP perspective, and there are far fewer noticable accuracy
-   differences than with x86.</para>
+   depending on whether it is compiled to use SSE2 instructions (64-bits
+   only), or x87 instructions (80-bit).  The net effect is to make FP
+   programs behave as if they had been run on a machine with 64-bit IEEE
+   floats, for example PowerPC.  On amd64 FP arithmetic is done by
+   default on SSE2, so amd64 looks more like PowerPC than x86 from an FP
+   perspective, and there are far fewer noticable accuracy differences
+   than with x86.</para>
 
    <para>Rounding: Valgrind does observe the 4 IEEE-mandated rounding
    modes (to nearest, to +infinity, to -infinity, to zero) for the
@@ -1719,10 +1768,9 @@ the following constraints:</para>
    <para>When Valgrind detects that the program is trying to exceed any
    of these limitations (setting exception handlers, rounding mode, or
    precision control), it can print a message giving a traceback of
-   where this has happened, and continue execution.  This behaviour
-   used to be the default, but the messages are annoying and so showing
-   them is now optional.  Use
-   <computeroutput>--show-emwarns=yes</computeroutput> to see
+   where this has happened, and continue execution.  This behaviour used
+   to be the default, but the messages are annoying and so showing them
+   is now optional.  Use <option>--show-emwarns=yes</option> to see
    them.</para>
 
    <para>The above limitations define precisely the IEEE754 'default'
@@ -1731,15 +1779,15 @@ the following constraints:</para>
   </listitem>
    
   <listitem>
-   <para>As of version 3.0.0, Valgrind has the following limitations
-   in its implementation of x86/AMD64 SSE2 FP arithmetic.</para>
+   <para>As of version 3.0.0, Valgrind has the following limitations in
+   its implementation of x86/AMD64 SSE2 FP arithmetic.</para>
 
-   <para>Essentially the same: no exceptions, and limited observance
-   of rounding mode.  Also, SSE2 has control bits which make it treat
+   <para>Essentially the same: no exceptions, and limited observance of
+   rounding mode.  Also, SSE2 has control bits which make it treat
    denormalised numbers as zero (DAZ) and a related action, flush
    denormals to zero (FTZ).  Both of these cause SSE2 arithmetic to be
-   less accurate than IEEE requires.  Valgrind detects, ignores, and
-   can warn about, attempts to enable either mode.</para>
+   less accurate than IEEE requires.  Valgrind detects, ignores, and can
+   warn about, attempts to enable either mode.</para>
   </listitem>
 
   <listitem>
@@ -1824,71 +1872,75 @@ shipped.</para>
  <itemizedlist>
 
   <listitem>
-   <para><computeroutput>More than 100 errors detected.
-   Subsequent errors will still be recorded, but in less detail
-   than before.</computeroutput></para>
-   <para>After 100 different errors have been shown, Valgrind
-   becomes more conservative about collecting them.  It then
-   requires only the program counters in the top two stack frames
-   to match when deciding whether or not two errors are really
-   the same one.  Prior to this point, the PCs in the top four
-   frames are required to match.  This hack has the effect of
-   slowing down the appearance of new errors after the first 100.
-   The 100 constant can be changed by recompiling Valgrind.</para>
+    <para><computeroutput>More than 100 errors detected.  Subsequent
+    errors will still be recorded, but in less detail than
+    before.</computeroutput></para>
+
+    <para>After 100 different errors have been shown, Valgrind becomes
+    more conservative about collecting them.  It then requires only the
+    program counters in the top two stack frames to match when deciding
+    whether or not two errors are really the same one.  Prior to this
+    point, the PCs in the top four frames are required to match.  This
+    hack has the effect of slowing down the appearance of new errors
+    after the first 100.  The 100 constant can be changed by recompiling
+    Valgrind.</para>
   </listitem>
 
   <listitem>
-   <para><computeroutput>More than 1000 errors detected.  I'm not
-   reporting any more.  Final error counts may be inaccurate.  Go
-   fix your program!</computeroutput></para>
-   <para>After 1000 different errors have been detected, Valgrind
-   ignores any more.  It seems unlikely that collecting even more
-   different ones would be of practical help to anybody, and it
-   avoids the danger that Valgrind spends more and more of its
-   time comparing new errors against an ever-growing collection.
-   As above, the 1000 number is a compile-time constant.</para>
+    <para><computeroutput>More than 1000 errors detected.  I'm not
+    reporting any more.  Final error counts may be inaccurate.  Go fix
+    your program!</computeroutput></para>
+
+    <para>After 1000 different errors have been detected, Valgrind
+    ignores any more.  It seems unlikely that collecting even more
+    different ones would be of practical help to anybody, and it avoids
+    the danger that Valgrind spends more and more of its time comparing
+    new errors against an ever-growing collection.  As above, the 1000
+    number is a compile-time constant.</para>
   </listitem>
 
   <listitem>
-   <para><computeroutput>Warning: client switching
-   stacks?</computeroutput></para>
-   <para>Valgrind spotted such a large change in the stack
-   pointer, <literal>%esp</literal>, that it guesses the client
-   is switching to a different stack.  At this point it makes a
-   kludgey guess where the base of the new stack is, and sets
-   memory permissions accordingly.  You may get many bogus error
-   messages following this, if Valgrind guesses wrong.  At the
-   moment "large change" is defined as a change of more that
-   2000000 in the value of the <literal>%esp</literal> (stack
-   pointer) register.</para>
+    <para><computeroutput>Warning: client switching stacks?</computeroutput></para>
+
+    <para>Valgrind spotted such a large change in the stack pointer,
+    <literal>%esp</literal>, that it guesses the client is switching to
+    a different stack.  At this point it makes a kludgey guess where the
+    base of the new stack is, and sets memory permissions accordingly.
+    You may get many bogus error messages following this, if Valgrind
+    guesses wrong.  At the moment "large change" is defined as a change
+    of more that 2000000 in the value of the <literal>%esp</literal>
+    (stack pointer) register.</para>
   </listitem>
 
   <listitem>
-   <para><computeroutput>Warning: client attempted to close
-   Valgrind's logfile fd &lt;number&gt;</computeroutput></para>
-   <para>Valgrind doesn't allow the client to close the logfile,
-   because you'd never see any diagnostic information after that
-   point.  If you see this message, you may want to use the
-   <computeroutput>--log-fd=&lt;number&gt;</computeroutput> option
-   to specify a different logfile file-descriptor number.</para>
+    <para><computeroutput>Warning: client attempted to close Valgrind's
+    logfile fd &lt;number&gt;</computeroutput></para>
+
+    <para>Valgrind doesn't allow the client to close the logfile,
+    because you'd never see any diagnostic information after that point.
+    If you see this message, you may want to use the
+    <option>--log-fd=&lt;number&gt;</option> option to specify a
+    different logfile file-descriptor number.</para>
   </listitem>
 
   <listitem>
-   <para><computeroutput>Warning: noted but unhandled ioctl
-   &lt;number&gt;</computeroutput></para>
-   <para>Valgrind observed a call to one of the vast family of
-   <computeroutput>ioctl</computeroutput> system calls, but did
-   not modify its memory status info (because I have not yet got
-   round to it).  The call will still have gone through, but you
-   may get spurious errors after this as a result of the
-   non-update of the memory info.</para>
+    <para><computeroutput>Warning: noted but unhandled ioctl
+    &lt;number&gt;</computeroutput></para>
+
+    <para>Valgrind observed a call to one of the vast family of
+    <computeroutput>ioctl</computeroutput> system calls, but did not
+    modify its memory status info (because I have not yet got round to
+    it).  The call will still have gone through, but you may get
+    spurious errors after this as a result of the non-update of the
+    memory info.</para>
   </listitem>
 
   <listitem>
-   <para><computeroutput>Warning: set address range perms: large
-   range &lt;number></computeroutput></para>
-   <para>Diagnostic message, mostly for benefit of the valgrind
-   developers, to do with memory permissions.</para>
+    <para><computeroutput>Warning: set address range perms: large range
+    &lt;number></computeroutput></para>
+
+    <para>Diagnostic message, mostly for benefit of the Valgrind
+    developers, to do with memory permissions.</para>
   </listitem>
 
  </itemizedlist>

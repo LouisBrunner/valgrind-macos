@@ -16,9 +16,14 @@ body, td {
 h1, h2, h3, h4 { color: #74240f; }
 h3 { margin-bottom: 0.4em; }
 
-code, tt, pre { color: #3366cc; }
 code, tt { color: #761596; }
+code a, code a:link, code a:visited, code a:active, code a:hover {
+  color: #761596;
+  text-decoration: none;
+  border-bottom:   dashed 1px #761596;
+}
 
+pre { color: #3366cc; }
 pre.programlisting {
  color:      #000000;
  padding:    0.5em;

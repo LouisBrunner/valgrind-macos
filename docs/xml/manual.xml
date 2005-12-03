@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" 
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
@@ -13,9 +13,9 @@
     <year>&vg-lifespan;</year>
     <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
    </copyright>
-   <author>
-     <email><ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></email>
-   </author>
+   <legalnotice>
+     <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
+   </legalnotice>
 </bookinfo>
 
   <xi:include href="manual-intro.xml" parse="xml"  

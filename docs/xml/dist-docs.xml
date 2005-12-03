@@ -6,17 +6,17 @@
 
 <book id="dist" xreflabel="Distribution Documents">
 
-  <bookinfo>
-    <title>Valgrind Distribution Documents</title>
+<bookinfo>
+  <title>Valgrind Distribution Documents</title>
   <releaseinfo>&rel-type; &rel-version; &rel-date;</releaseinfo>
   <copyright>
     <year>&vg-lifespan;</year>
     <holder><ulink url="&vg-developers;">Valgrind Developers</ulink></holder>
   </copyright>
-  <author>
-    <email><ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></email>
-  </author>
-  </bookinfo>
+  <legalnotice>
+    <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
+  </legalnotice>
+</bookinfo>
 
   <!-- Nb: because these are all text files, we have to wrap -->
   <!-- them in suitable XML.  Hence the chapter/title stuff  -->

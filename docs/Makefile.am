@@ -43,21 +43,23 @@ LOGFILE = print.log
 
 # validation stuff
 XMLLINT       = xmllint
-LINT_FLAGS    = --noout --xinclude --noblanks --postvalid
-VALID_FLAGS   = --dtdvalid http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd 
+LINT_FLAGS    = --noblanks --noout --xinclude --postvalid --noent
+# validate with docbook 4.3 'cos it supports xml:base natively
+VALID_FLAGS   = --dtdvalid http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd 
 XMLLINT_FLAGS = $(LINT_FLAGS) $(VALID_FLAGS)
 
 # stylesheet processor
 XSLTPROC       = xsltproc
-XSLTPROC_FLAGS = --nonet --xinclude 
+XSLTPROC_FLAGS = --nonet --xinclude
 
 # stylesheets
 XSL_HTML_CHUNK_STYLE  = $(mylibdir)/vg-html-chunk.xsl
 XSL_FO_STYLE          = $(mylibdir)/vg-fo.xsl
 XSL_TEXT_STYLE        = $(mylibdir)/vg-faq2txt.xsl
 XSL_WEBSITE_STYLE     = $(mylibdir)/vg-html-website.xsl
+XSL_MAN_STYLE = /usr/share/xml/docbook/stylesheet/nwalsh/1.69.0/manpages/docbook.xsl
 
-all-docs: FAQ.txt html-docs print-docs
+all-docs: FAQ.txt man-page html-docs print-docs
 
 valid:
 	$(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml
@@ -67,6 +69,18 @@ FAQ.txt:
 	@echo "Generating the text version of the FAQ ..."
 	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
 	$(XSLTPROC) $(XSLTPROC_FLAGS) -o ./FAQ.txt $(XSL_TEXT_STYLE) $(myxmldir)/FAQ.xml
+
+# the valgrind manpage
+man-page:
+	@echo "Generating the valgrind manpage ..."
+	@if test ! -f $(XSL_MAN_STYLE); then \
+    echo "Error: I can't find the file '$(XSL_MAN_STYLE)'";     \
+    echo "Please check where it lives on your system, and"      \
+         "amend the line 'XSL_MAN_STYLE = ' in this Makefile."; \
+	  exit 1; \
+	fi;       \
+	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
+	$(XSLTPROC) $(XSLTPROC_FLAGS) -o ./ $(XSL_MAN_STYLE) $(myxmldir)/valgrind-manpage.xml
 
 # chunked html, on a chapter-by-chapter basis
 html-docs:

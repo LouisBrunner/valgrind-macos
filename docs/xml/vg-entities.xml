@@ -4,17 +4,20 @@
 <!ENTITY vg-vemail     "valgrind@valgrind.org">
 <!ENTITY vg-lifespan   "2000-2005">
 <!ENTITY vg-users-list "http://lists.sourceforge.net/lists/listinfo/valgrind-users">
-<!ENTITY vg-developers "http://www.valgrind.org/info/developers.html">
-<!ENTITY vg-svn-repo   "http://www.valgrind.org/downloads/repository.html">
-<!ENTITY vg-bookset    "http://www.valgrind.org/docs/manual/index.html">
-<!ENTITY vg-dist-docs  "http://www.valgrind.org/docs/manual/dist.html">
-
 
 <!-- valgrind release + version stuff -->
 <!ENTITY rel-type    "Release">
 <!ENTITY rel-version "3.1.0">
 <!ENTITY rel-date    "November 25 2005">
 
+<!-- where the docs are installed -->
+<!ENTITY vg-doc-path  "/usr/share/doc/valgrind/html/index.html">
+
 <!-- valgrind website links used in lots of places in the docs  -->
 <!-- kept in here 'cos everytime the website gets changed, it`s -->
 <!-- a real pain tracking the links down in the docs            -->
+<!ENTITY vg-developers "http://www.valgrind.org/info/developers.html">
+<!ENTITY vg-svn-repo   "http://www.valgrind.org/downloads/repository.html">
+<!ENTITY vg-bookset    "http://www.valgrind.org/docs/manual/index.html">
+<!ENTITY vg-dist-docs  "http://www.valgrind.org/docs/manual/dist.html">
+<!ENTITY vg-commentary "http://www.valgrind.org/docs/manual/manual-core.html#manual-core.comment">

@@ -101,7 +101,7 @@ dispatch_boring:
 	jnz  fast_lookup_failed
 	/* increment bb profile counter */
 	movl VG_(tt_fastN)(,%ebx,4), %edx
-	incl (%edx)
+	addl $1, (%edx)
 
 	/* Found a match.  Call tce[1], which is 8 bytes along, since
            each tce element is a 64-bit int. */

@@ -401,7 +401,7 @@ please let us know.</para>
 <para>Massif-specific options are:</para>
 
 <!-- start of xi:include in the manpage -->
-<variablelist id="ms.opts">
+<variablelist id="ms.opts.list">
 
   <varlistentry id="opt.heap" xreflabel="--heap">
     <term>

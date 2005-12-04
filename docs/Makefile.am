@@ -18,8 +18,6 @@ SUBDIRS = xml lib images internals
 
 EXTRA_DIST = README
 
-dist_man_MANS = valgrind.1
-
 
 ##-------------------------------------------------------------------
 ## Below here is more ordinary make stuff...
@@ -72,13 +70,12 @@ FAQ.txt:
 
 # the valgrind manpage
 man-page:
-	@echo "Generating the valgrind manpage ..."
-	@if test ! -f $(XSL_MAN_STYLE); then \
-    echo "Error: I can't find the file '$(XSL_MAN_STYLE)'";     \
-    echo "Please check where it lives on your system, and"      \
-         "amend the line 'XSL_MAN_STYLE = ' in this Makefile."; \
-	  exit 1; \
-	fi;       \
+	if test ! -f $(XSL_MAN_STYLE); then \
+	    echo "Error: I can't find the file '$(XSL_MAN_STYLE)'";     \
+	    echo "Please check where it lives on your system, and"      \
+	         "amend the line 'XSL_MAN_STYLE = ' in this Makefile."; \
+		  exit 1; \
+	fi;
 	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
 	$(XSLTPROC) $(XSLTPROC_FLAGS) -o ./ $(XSL_MAN_STYLE) $(myxmldir)/valgrind-manpage.xml
 
@@ -121,30 +118,36 @@ print-docs:
 # as we intend.
 install-data-hook:
 	if test -r html ; then \
-		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind/; \
-		cp -r html $(DESTDIR)$(datadir)/doc/valgrind/; \
+		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
+		cp -r html $(DESTDIR)$(datadir)/doc/valgrind; \
 	fi
  ifeq ($(BUILD_ALL_DOCS),yes)
 	if test -r index.pdf ; then \
-		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind/; \
+		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
 		cp index.pdf $(DESTDIR)$(datadir)/doc/valgrind/valgrind_manual.pdf; \
 	fi
 	if test -r index.ps ; then \
-		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind/; \
+		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
 		cp index.ps $(DESTDIR)$(datadir)/doc/valgrind/valgrind_manual.ps; \
+	fi
+	if test -r valgrind.1 ; then \
+		mkdir -p $(DESTDIR)$(mandir)/man1; \
+		cp valgrind.1 $(DESTDIR)$(mandir)/man1/valgrind.1; \
 	fi
  endif
 
-# This is done at 'make dist' time.  It builds the html and print docs
-# and copies them into the docs/ directory in the tarball.
+# This is done at 'make dist' time.  It builds the html docs, print
+# docs and man page and copies them into the docs/ directory in the
+# tarball.
  ifeq ($(BUILD_ALL_DOCS),yes)
-dist-hook: FAQ.txt html-docs print-docs
+dist-hook: FAQ.txt html-docs print-docs man-page
 	cp -r html $(distdir)
 	cp FAQ.txt $(distdir)/..
+	cp valgrind.1 $(distdir)
 	cp print/index.pdf $(distdir)
 	cp print/index.ps $(distdir)
  else
-dist-hook: FAQ.txt html-docs
+dist-hook: FAQ.txt html-docs man-page
 	cp FAQ.txt $(distdir)/..
 	cp -r html $(distdir)
  endif
@@ -155,7 +158,10 @@ distclean-local:
 
 
 
-# Note: the following three rules are nothing to do with the normal build tree.
+# -----------------------------------------------------------------------
+# Note: the rest of this file is nothing to do with the normal build
+# tree.  The stuff below contains special targets for web-site
+# artefacts.
 
 # chunked html with no html/body tags, css, or top nav, to fit into the website
 website-docs:

@@ -372,10 +372,19 @@ void* VG_(memcpy) ( void *dest, const void *src, SizeT sz )
 void* VG_(memset) ( void *dest, Int c, SizeT sz )
 {
    Char *d = (Char *)dest;
-
-   while (sz--)
-      *d++ = c;
-
+   while (sz >= 4) {
+      d[0] = c;
+      d[1] = c;
+      d[2] = c;
+      d[3] = c;
+      d += 4;
+      sz -= 4;
+   }
+   while (sz > 0) {
+      d[0] = c;
+      d++;
+      sz--;
+   }
    return dest;
 }
 

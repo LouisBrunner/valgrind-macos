@@ -101,6 +101,7 @@ dispatch_boring:
 	jnz  fast_lookup_failed
 	/* increment bb profile counter */
 	movl VG_(tt_fastN)(,%ebx,4), %edx
+	/* Use "addl $1", not "incl", to avoid partial-flags stall on P4 */
 	addl $1, (%edx)
 
 	/* Found a match.  Call tce[1], which is 8 bytes along, since

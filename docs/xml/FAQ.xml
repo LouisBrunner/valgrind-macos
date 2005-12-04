@@ -539,7 +539,7 @@ int main(void)
   reply.</para>
 
   <para>Make sure you give full details of the problem, including the
-  full output of <computeroutput>valgrind -v</computeroutput>, if
+  full output of <computeroutput>valgrind -v &lt;your-prog&gt;</computeroutput>, if
   applicable.  Also which Linux distribution you're using (Red Hat,
   Debian, etc) and its version number.</para>
 

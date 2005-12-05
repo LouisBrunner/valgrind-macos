@@ -1636,7 +1636,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_sched_getparam,         sys_sched_getparam),        // 155
    LINX_(__NR_sched_setscheduler,     sys_sched_setscheduler),    // 156
    LINX_(__NR_sched_getscheduler,     sys_sched_getscheduler),    // 157
-//..    LINX_(__NR_sched_yield,            sys_sched_yield),           // 158
+   LINX_(__NR_sched_yield,            sys_sched_yield),           // 158
    LINX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
 
    LINX_(__NR_sched_get_priority_min, sys_sched_get_priority_min),// 160
@@ -1745,7 +1745,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    LINX_(__NR_timer_delete,      sys_timer_delete),      // 244
 //..    LINX_(__NR_clock_settime,     sys_clock_settime),     // 245
    LINXY(__NR_clock_gettime,     sys_clock_gettime),     // 246
-//..    LINXY(__NR_clock_getres,      sys_clock_getres),      // 247
+   LINXY(__NR_clock_getres,      sys_clock_getres),      // 247
 //..    LINXY(__NR_clock_nanosleep,   sys_clock_nanosleep),   // 248
 
 // __NR_swapcontext                                           // 249

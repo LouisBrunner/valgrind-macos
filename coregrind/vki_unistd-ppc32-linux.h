@@ -276,7 +276,7 @@
 //#define __NR_timer_delete		244
 //#define __NR_clock_settime		245
 #define __NR_clock_gettime		246
-//#define __NR_clock_getres		247
+#define __NR_clock_getres		247
 //#define __NR_clock_nanosleep		248
 //#define __NR_swapcontext		249
 #define __NR_tgkill			250

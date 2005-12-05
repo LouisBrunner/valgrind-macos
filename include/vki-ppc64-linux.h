@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- PPC64/Linux-specific kernel interface.                       ---*/
-/*---                                ppc64-linux/vki-ppc64-linux.h ---*/
+/*--- PPC64/Linux-specific kernel interface.     vki-ppc64-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*

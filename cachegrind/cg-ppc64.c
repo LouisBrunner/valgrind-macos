@@ -49,6 +49,10 @@ void VG_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
    // not important) in the regression test suite without filtering the
    // x86/AMD64 one (which we want to see if it ever occurs in the
    // regression test suite).
+   //
+   // If you change this message, please update
+   // cachegrind/tests/filter_stderr!
+   //
    if (!all_caches_clo_defined) {
       VG_(message)(Vg_DebugMsg, 
                    "Warning: Cannot auto-detect cache config on PPC64, using one "

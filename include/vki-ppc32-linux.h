@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- PPC32/Linux-specific kernel interface.                       ---*/
-/*---                                ppc32-linux/vki-ppc32-linux.h ---*/
+/*--- PPC32/Linux-specific kernel interface.     vki-ppc32-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*

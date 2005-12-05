@@ -147,9 +147,16 @@ nextarg: ;
 	baseName = copystring(Basename(pathName));
 
         hpfp  = Fp(pathName, &hpfile, ".hp", "r"); 
-	psfp  = Fp(baseName, &psfile, ".ps", "w"); 
 
-	if (pflag) auxfp = Fp(baseName, &auxfile, ".aux", "r");
+        // I changed these two lines to use 'pathName' instead of
+        // 'baseName'.  This means that the .ps and .aux files get put in
+        // the same directory as the .hp file.  This solved Valgrind bugt
+        // #117686.  --njn 
+//	psfp  = Fp(baseName, &psfile, ".ps", "w"); 
+	psfp  = Fp(pathName, &psfile, ".ps", "w"); 
+
+//	if (pflag) auxfp = Fp(baseName, &auxfile, ".aux", "r");
+	if (pflag) auxfp = Fp(pathName, &auxfile, ".aux", "r");
     }
 
     GetHpFile(hpfp);

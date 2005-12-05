@@ -51,6 +51,35 @@
 
 
 /*------------------------------------------------------------*/
+/*--- Stats                                                ---*/
+/*------------------------------------------------------------*/
+
+static UInt n_SP_updates_fast            = 0;
+static UInt n_SP_updates_generic_known   = 0;
+static UInt n_SP_updates_generic_unknown = 0;
+
+void VG_(print_translation_stats) ( void )
+{
+   Char buf[6];
+   UInt n_SP_updates = n_SP_updates_fast + n_SP_updates_generic_known
+                                         + n_SP_updates_generic_unknown;
+   VG_(percentify)(n_SP_updates_fast, n_SP_updates, 1, 6, buf);
+   VG_(message)(Vg_DebugMsg,
+      "translate:            fast SP updates identified: %,u (%s)",
+      n_SP_updates_fast, buf );
+
+   VG_(percentify)(n_SP_updates_generic_known, n_SP_updates, 1, 6, buf);
+   VG_(message)(Vg_DebugMsg,
+      "translate:   generic_known SP updates identified: %,u (%s)",
+      n_SP_updates_generic_known, buf );
+
+   VG_(percentify)(n_SP_updates_generic_unknown, n_SP_updates, 1, 6, buf);
+   VG_(message)(Vg_DebugMsg,
+      "translate: generic_unknown SP updates identified: %,u (%s)",
+      n_SP_updates_generic_unknown, buf );
+}
+
+/*------------------------------------------------------------*/
 /*--- %SP-update pass                                      ---*/
 /*------------------------------------------------------------*/
 
@@ -147,6 +176,9 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
          dcall->fxState[0].size   = layout->sizeof_SP;                  \
                                                                         \
          addStmtToIRBB( bb, IRStmt_Dirty(dcall) );                      \
+                                                                        \
+         n_SP_updates_fast++;                                           \
+                                                                        \
       } while (0)
 
    for (i = 0; i <  bb_in->stmts_used; i++) {
@@ -211,10 +243,14 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
             case -16: DO(new, 16); addStmtToIRBB(bb,st); delta = 0; continue;
             case  32: DO(die, 32); addStmtToIRBB(bb,st); delta = 0; continue;
             case -32: DO(new, 32); addStmtToIRBB(bb,st); delta = 0; continue;
-            default:  goto generic;
+            default:  
+               n_SP_updates_generic_known++;
+               goto generic;
          }
       } else {
          IRTemp old_SP;
+         n_SP_updates_generic_unknown++;
+
         generic:
          /* Pass both the old and new SP values to this helper. */
          old_SP = newIRTemp(bb->tyenv, typeof_SP);

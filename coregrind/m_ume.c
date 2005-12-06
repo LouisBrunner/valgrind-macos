@@ -493,8 +493,15 @@ static Int load_ELF(Int fd, const char *name, /*MOD*/struct exeinfo *info)
    info->exe_base = minaddr + ebase;
    info->exe_end  = maxaddr + ebase;
 
+#if defined(VGP_ppc64_linux)
+   /* On PPC64, a func ptr is represented by a TOC entry ptr.  This
+      TOC entry contains three words; the first word is the function
+      address, the second word is the TOC ptr (r2), and the third word
+      is the static chain value. */
+   info->init_eip = ((ULong*)entry)[0];
+#else
    info->init_eip = (Addr)entry;
-
+#endif
    VG_(free)(e->p);
    VG_(free)(e);
 

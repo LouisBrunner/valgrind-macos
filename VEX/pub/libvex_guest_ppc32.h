@@ -208,7 +208,8 @@ typedef
       /* 952 */ UInt guest_RESVN;
 
       /* Padding to make it have an 8-aligned size */
-      UInt  padding;
+      /* 956 */ UInt  padding;
+      /* 960 */
    }
    VexGuestPPC32State;
 

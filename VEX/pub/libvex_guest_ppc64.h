@@ -161,7 +161,7 @@ typedef
       /* 480 */ ULong guest_FPR28;
       /* 488 */ ULong guest_FPR29;
       /* 496 */ ULong guest_FPR30;
-      /*  504 */ ULong guest_FPR31;
+      /* 504 */ ULong guest_FPR31;
 
       // Vector Registers
       /*  512 */ U128 guest_VR0 __attribute__ ((aligned (16)));
@@ -237,16 +237,20 @@ typedef
       /* Emulation warnings */
       /* 1080 */ UInt guest_EMWARN;
 
+      /* gcc adds 4 bytes padding here: pre-empt it. */
+      /* 1084 */ UInt  padding;
+
       /* For icbi: record start and length of area to invalidate */
-      /* 1084 */ ULong guest_TISTART;
-      /* 1092 */ ULong guest_TILEN;
+      /* 1088 */ ULong guest_TISTART;
+      /* 1096 */ ULong guest_TILEN;
 
       /* For lwarx/stwcx.: 0 == no reservation exists, non-0 == a
          reservation exists. */
-      /* 2000 */ ULong guest_RESVN;
+      /* 1104 */ ULong guest_RESVN;
 
-      /* Padding to make it have an 8-aligned size */
-      //UInt  padding;
+      /* Padding to make it have an 16-aligned size */
+      /* 1112 */ ULong padding2;
+      /* 1120 */
    }
    VexGuestPPC64State;
 

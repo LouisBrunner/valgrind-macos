@@ -399,10 +399,10 @@ struct vki_sigcontext {
 struct vki_stat {
   unsigned long   st_dev;
   unsigned long   st_ino;
-  unsigned short  st_nlink;
-  unsigned short  st_mode;
-  unsigned short  st_uid;
-  unsigned short  st_gid;
+  unsigned long   st_nlink;
+  unsigned int    st_mode;
+  unsigned int    st_uid;
+  unsigned int    st_gid;
   unsigned long   st_rdev;
   long            st_size;
   unsigned long   st_blksize;

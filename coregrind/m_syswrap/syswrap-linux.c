@@ -264,6 +264,11 @@ void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
    sp -= 16;
    sp &= ~0xF;
    *(UWord *)sp = 0;
+#elif defined(VGP_ppc64_linux)
+   /* make a stack frame */
+   sp -= 112;
+   sp &= ~((Addr)0xF);
+   *(UWord *)sp = 0;
 #endif
 
    /* If we can't even allocate the first thread's stack, we're hosed.

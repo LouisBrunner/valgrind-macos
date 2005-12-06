@@ -133,26 +133,37 @@ static const char *select_platform(const char *clientname)
       *interpend = '\0';
 
       platform = select_platform(interp);
-   } else if (memcmp(header, ELFMAG, SELFMAG) == 0 &&
-              header[EI_CLASS] == ELFCLASS32 &&
-              header[EI_DATA] == ELFDATA2LSB) {
-      const Elf32_Ehdr *ehdr = (Elf32_Ehdr *)header;
+   } else if (memcmp(header, ELFMAG, SELFMAG) == 0) {
 
-      if (ehdr->e_machine == EM_386 &&
-          ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
-         platform = "x86-linux";
-      } else if (ehdr->e_machine == EM_PPC &&
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
-         platform = "ppc32-linux";
-      }
-   } else if (memcmp(header, ELFMAG, SELFMAG) == 0 &&
-              header[EI_CLASS] == ELFCLASS64 &&
-              header[EI_DATA] == ELFDATA2LSB) {
-      const Elf64_Ehdr *ehdr = (Elf64_Ehdr *)header;
+      if (header[EI_CLASS] == ELFCLASS32) {
+         const Elf32_Ehdr *ehdr = (Elf32_Ehdr *)header;
 
-      if (ehdr->e_machine == EM_X86_64 &&
-          ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
-         platform = "amd64-linux";
+         if (header[EI_DATA] == ELFDATA2LSB) {
+            if (ehdr->e_machine == EM_386 &&
+                ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+               platform = "x86-linux";
+            }
+         }
+         else if (header[EI_DATA] == ELFDATA2MSB) {
+            if (ehdr->e_machine == EM_PPC &&
+                ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+               platform = "ppc32-linux";
+            }
+         }
+      } else if (header[EI_CLASS] == ELFCLASS64) {
+         const Elf64_Ehdr *ehdr = (Elf64_Ehdr *)header;
+
+         if (header[EI_DATA] == ELFDATA2LSB) {
+            if (ehdr->e_machine == EM_X86_64 &&
+                ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+               platform = "amd64-linux";
+            }
+         } else if (header[EI_DATA] == ELFDATA2MSB) {
+            if (ehdr->e_machine == EM_PPC64 &&
+                ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV) {
+               platform = "ppc64-linux";
+            }
+         }
       }
    }
 

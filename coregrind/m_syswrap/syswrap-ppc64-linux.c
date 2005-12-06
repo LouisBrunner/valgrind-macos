@@ -63,19 +63,31 @@
 __attribute__((noreturn))
 void ML_(call_on_new_stack_0_1) ( Addr stack,
                                   Addr retaddr,
-                                  void (*f)(Word),
+                                  void (*f_desc)(Word),
                                   Word arg1 );
 //    r3 = stack
 //    r4 = retaddr
-//    r5 = f
+//    r5 = function descriptor
 //    r6 = arg1
+/* On PPC64, a func ptr is represented by a TOC entry ptr.
+   This TOC entry contains three words; the first word is the function
+   address, the second word is the TOC ptr (r2), and the third word is
+   the static chain value. */
 asm(
 ".text\n"
-".globl .vgModuleLocal_call_on_new_stack_0_1\n"
+"   .globl   vgModuleLocal_call_on_new_stack_0_1\n"
+"   .section \".opd\",\"aw\"\n"
+"   .align   3\n"
+"vgModuleLocal_call_on_new_stack_0_1:\n"
+"   .quad    .vgModuleLocal_call_on_new_stack_0_1,.TOC.@tocbase,0\n"
+"   .previous\n"
+"   .type    .vgModuleLocal_call_on_new_stack_0_1,@function\n"
+"   .globl   .vgModuleLocal_call_on_new_stack_0_1\n"
 ".vgModuleLocal_call_on_new_stack_0_1:\n"
 "   mr    %r1,%r3\n\t"     // stack to %sp
 "   mtlr  %r4\n\t"         // retaddr to %lr
-"   mtctr %r5\n\t"         // f to count reg
+"   ld 5,0(5)\n\t"         // load f_ptr from f_desc[0]
+"   mtctr %r5\n\t"         // f_ptr to count reg
 "   mr %r3,%r6\n\t"        // arg1 to %r3
 "   li 0,0\n\t"            // zero all GP regs
 "   li 4,0\n\t"

@@ -36,35 +36,48 @@
 
 /* References to globals via the TOC */
 
-	.section        ".toc","aw"
-tocent__vgPlain_tt_fast:
-	.tc vgPlain_tt_fast[TC],vgPlain_tt_fast
+/*
+        .globl vgPlain_tt_fast
+        .lcomm  vgPlain_tt_fast,4,4
+        .type   vgPlain_tt_fast, @object
+*/
+        .section        ".toc","aw"
+.tocent__vgPlain_tt_fast:
+        .tc vgPlain_tt_fast[TC],vgPlain_tt_fast
+.tocent__vgPlain_dispatch_ctr:
+        .tc vgPlain_dispatch_ctr[TC],vgPlain_dispatch_ctr
+.tocent__vgPlain_machine_ppc64_has_VMX:
+        .tc vgPlain_machine_ppc64_has_VMX[TC],vgPlain_machine_ppc64_has_VMX
 
 /*------------------------------------------------------------*/
 /*--- The dispatch loop.                                   ---*/
 /*------------------------------------------------------------*/
 
-	.section	".text"
-	.align 2
-
 /* signature: UWord VG_(run_innerloop) ( void* guest_state ) */
 
+        .section        ".text"
+        .align 2
+        .globl VG_(run_innerloop)
+        .section        ".opd","aw"
+        .align 3
+VG_(run_innerloop):
+        .quad   .VG_(run_innerloop),.TOC.@tocbase,0
+        .previous
+        .type   .VG_(run_innerloop),@function
         .globl  .VG_(run_innerloop)
+
 .VG_(run_innerloop):
         /* ----- entry point to VG_(run_innerloop) ----- */
 
-        /* For Linux/ppc32 we need the SysV ABI, which uses
-           LR->4(parent_sp), CR->anywhere.
-           (The AIX ABI, used on Darwin, and maybe Linux/ppc64?,
-           uses LR->8(prt_sp), CR->4(prt_sp))
-        */
-
-        /* Save lr */
+        /* PPC64 ABI saves LR->16(prt_sp), CR->8(prt_sp)) */
+        /* Save lr, cr */
         mflr    0
-        stw     0,4(1)
+        std     0,16(1)
+        mfcr    0
+        std     0,8(1)
 
         /* New stack frame */
-        stwu    1,-624(1)  /* sp should maintain 16-byte alignment */
+        stdu    1,-624(1)  /* sp should maintain 16-byte alignment */
 
         /* Save callee-saved registers... */
 
@@ -89,36 +102,36 @@ tocent__vgPlain_tt_fast:
         stfd    14,480(1)
 
         /* General reg save area : 144 bytes */
-        stw     31,472(1)
-        stw     30,464(1)
-        stw     29,456(1)
-        stw     28,448(1)
-        stw     27,440(1)
-        stw     26,432(1)
-        stw     25,424(1)
-        stw     24,416(1)
-        stw     23,408(1)
-        stw     22,400(1)
-        stw     21,392(1)
-        stw     20,384(1)
-        stw     19,376(1)
-        stw     18,368(1)
-        stw     17,360(1)
-        stw     16,352(1)
-        stw     15,344(1)
-        stw     14,336(1)
+        std     31,472(1)
+        std     30,464(1)
+        std     29,456(1)
+        std     28,448(1)
+        std     27,440(1)
+        std     26,432(1)
+        std     25,424(1)
+        std     24,416(1)
+        std     23,408(1)
+        std     22,400(1)
+        std     21,392(1)
+        std     20,384(1)
+        std     19,376(1)
+        std     18,368(1)
+        std     17,360(1)
+        std     16,352(1)
+        std     15,344(1)
+        std     14,336(1)
         /* Probably not necessary to save r13 (thread-specific ptr),
            as VEX stays clear of it... but what the hey. */
-        stw     13,328(1)
+        std     13,328(1)
 
         /* It's necessary to save/restore VRSAVE in the AIX / Darwin ABI.
            The Linux kernel might not actually use VRSAVE for its intended
            purpose, but it should be harmless to preserve anyway. */
 	/* r3 is live here (guest state ptr), so use r4 */
-        lis     4,VG_(machine_ppc64_has_VMX)@ha
-        lwz     4,VG_(machine_ppc64_has_VMX)@l(4)
-        cmplwi  4,0
-        beq     LafterVMX1
+        lis     4,.tocent__vgPlain_machine_ppc64_has_VMX@ha
+        ld      4,.tocent__vgPlain_machine_ppc64_has_VMX@l(4)
+        cmpldi  4,0
+        beq     .LafterVMX1
 
         /* VRSAVE save word : 32 bytes */
         mfspr   4,256         /* vrsave reg is spr number 256 */
@@ -151,24 +164,18 @@ tocent__vgPlain_tt_fast:
         stvx    21,4,1
         li      4,128
         stvx    20,4,1
-LafterVMX1:
-
-        /* Save cr */
-        mfcr    0
-        stw     0,112(1)
-
+.LafterVMX1:
 
         /* Local variable space... */
 
         /* r3 holds guest_state */
         mr      31,3
-        stw     3,104(1)       /* spill orig guest_state ptr */
+        std     3,104(1)       /* spill orig guest_state ptr */
 
         /* 96(sp) used later to check FPSCR[RM] */
-
         /* 88(sp) used later to stop ctr reg being clobbered */
-
-	/* 48:87(sp) free */
+        /* 80(sp) used later to load fpscr with zero */
+	/* 48:79(sp) free */
 	
         /* Linkage Area (reserved)
            40(sp) : TOC
@@ -182,33 +189,39 @@ LafterVMX1:
 // CAB TODO: Use a caller-saved reg for orig guest_state ptr
 // - rem to set non-allocateable in isel.c
 
-        /* hold dispatch_ctr in ctr reg */
-        lis     17,VG_(dispatch_ctr)@ha
-        lwz     17,VG_(dispatch_ctr)@l(17)
+        /* hold VG_(dispatch_ctr) (=32bit value) in ctr reg */
+        lis     17,.tocent__vgPlain_dispatch_ctr@ha
+        lwz     17,.tocent__vgPlain_dispatch_ctr@l(17)
         mtctr   17
 
         /* fetch %CIA into r30 */
-        lwz     30,OFFSET_ppc64_CIA(31)
+        ld      30,OFFSET_ppc64_CIA(31)
 
         /* set host FPU control word to the default mode expected 
            by VEX-generated code.  See comments in libvex.h for
            more info. */
-        fsub    3,3,3   /* generate zero */
-        mtfsf   0xFF,3
+        /* => get zero into f3 (tedious)
+           fsub 3,3,3 is not a reliable way to do this, since if
+           f3 holds a NaN or similar then we don't necessarily
+           wind up with zero. */
+        li      3,0
+        stw     3,80(1)
+        lfs     3,80(1)
+        mtfsf   0xFF,3   /* fpscr = lo32 of f3 */
 
         /* set host AltiVec control word to the default mode expected 
            by VEX-generated code. */
-        lis     3,VG_(machine_ppc64_has_VMX)@ha
-        lwz     3,VG_(machine_ppc64_has_VMX)@l(3)
-        cmplwi  3,0
-        beq     LafterVMX2
+        lis     3,.tocent__vgPlain_machine_ppc64_has_VMX@ha
+        ld      3,.tocent__vgPlain_machine_ppc64_has_VMX@l(3)
+        cmpldi  3,0
+        beq     .LafterVMX2
 
         vspltisw 3,0x0  /* generate zero */
         mtvscr  3
-LafterVMX2:
+.LafterVMX2:
 
         /* make a stack frame for the code we are calling */
-        stwu    1,-48(1)
+        stdu    1,-48(1)
 
         /* fall into main loop */
 
@@ -226,30 +239,30 @@ LafterVMX2:
         0:43 (r1) (=stack frame header)
 */
 
-dispatch_boring:
+.dispatch_boring:
         /* save the jump address in the guest state */
         std     30,OFFSET_ppc64_CIA(31)
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-        bdz     counter_is_zero  /* decrements ctr reg */
+        bdz     .counter_is_zero  /* decrements ctr reg */
 
         /* try a fast lookup in the translation cache */
         /* r4=((r30<<3) & (VG_TT_FAST_MASK<<3)) */
 	rldic	4,30, 3,64-3-VG_TT_FAST_BITS
 // CAB:	use a caller-saved reg for this ?
 	/* r5 = & VG_(tt_fast) */
-	ld	5, tocent__vgPlain_tt_fast@toc(2)
+	ld	5, .tocent__vgPlain_tt_fast@toc(2)
 	/* r5 = VG_(tt_fast)[r30 & VG_TT_FAST_MASK] */
 	ldx	5, 5,4
 	/* r6 = VG_(tt_fast)[r30 & VG_TT_FAST_MASK]->orig_addr */
 	ld	6, 0(5)
         cmpw    30,6
-        bne     fast_lookup_failed
+        bne     .fast_lookup_failed
 
-        /* increment bb profile counter */
+        /* increment bb profile counter VG_(tt_fastN)[x] (=32bit val) */
 // CAB:	use a caller-saved reg for this ?
 	/* r7 = & VG_(tt_fastN) */
-	ld	7, tocent__vgPlain_tt_fast@toc(2)
+	ld	7, .tocent__vgPlain_tt_fast@toc(2)
 	/* r7 = VG_(tt_fastN)[r30 & VG_TT_FAST_MASK] */
 	srdi	4, 4,1
 	lwzx	6, 7,4
@@ -263,7 +276,7 @@ dispatch_boring:
 
         /* stop ctr being clobbered */
 // CAB:	use a caller-saved reg for this ?
-//      but then (bdz) => (decr, cmp, bc)... still better than a stw?
+//      but then (bdz) => (decr, cmp, bc)... still better than a std?
         mfctr   9
         std     9,136(1)         /* => 88(parent_sp) */
 
@@ -289,15 +302,15 @@ dispatch_boring:
         mr      30,3             /* put CIA (=r3) in r30 */
         ld      16,152(1)        /* gst_state ptr => 104(prnt_sp) */
         cmpd    16,31
-        beq     dispatch_boring  /* r31 unchanged... */
+        beq     .dispatch_boring /* r31 unchanged... */
 
         mr      3,31             /* put return val (=r31) in r3 */
-        b       dispatch_exceptional
+        b       .dispatch_exceptional
 
 /* All exits from the dispatcher go through here.
    r3 holds the return value. 
 */
-run_innerloop_exit: 
+.run_innerloop_exit: 
         /* We're leaving.  Check that nobody messed with
            VSCR or FPSCR. */
 
@@ -310,14 +323,14 @@ run_innerloop_exit:
         lwzx      6,5,1                   /* load to gpr */
         andi.     6,6,0xFF                /* mask wanted bits */
         cmplwi    6,0x0                   /* cmp with zero */
-        bne       invariant_violation     /* branch if not zero */
+        bne       .invariant_violation    /* branch if not zero */
 #endif
 
 	/* Using r11 - value used again further on, so don't trash! */
-        lis     11,VG_(machine_ppc64_has_VMX)@ha
-        lwz     11,VG_(machine_ppc64_has_VMX)@l(11)
-        cmplwi  11,0
-        beq     LafterVMX8
+        lis     11,.tocent__vgPlain_machine_ppc64_has_VMX@ha
+        ld      11,.tocent__vgPlain_machine_ppc64_has_VMX@l(11)
+        cmpldi  11,0
+        beq     .LafterVMX8
 
         /* Check VSCR[NJ] == 1 */
         /* first generate 4x 0x00010000 */
@@ -329,78 +342,74 @@ run_innerloop_exit:
         vand      7,7,6                   /* gives NJ flag */
         vspltw    7,7,0x3                 /* flags-word to all lanes */
         vcmpequw. 8,6,7                   /* CR[24] = 1 if v6 == v7 */
-        bt        24,invariant_violation  /* branch if all_equal */
-LafterVMX8:
+        bt        24,.invariant_violation /* branch if all_equal */
+.LafterVMX8:
 
 	/* otherwise we're OK */
-        b       run_innerloop_exit_REALLY
+        b       .run_innerloop_exit_REALLY
 
 
-invariant_violation:
+.invariant_violation:
         li      3,VG_TRC_INVARIANT_FAILED
-        b       run_innerloop_exit_REALLY
+        b       .run_innerloop_exit_REALLY
 
-run_innerloop_exit_REALLY:
+.run_innerloop_exit_REALLY:
         /* r3 holds VG_TRC_* value to return */
 
         /* Return to parent stack */
         addi    1,1,48
 
-        /* Write ctr to VG(dispatch_ctr) */
+        /* Write ctr to VG_(dispatch_ctr) (=32bit value) */
         mfctr   17
-        lis     18,VG_(dispatch_ctr)@ha
-        stw     17,VG_(dispatch_ctr)@l(18)
-
-        /* Restore cr */
-        lwz     0,112(1)
-        mtcr    0
+        lis     18,.tocent__vgPlain_dispatch_ctr@ha
+        stw     17,.tocent__vgPlain_dispatch_ctr@l(18)
 
         /* Restore callee-saved registers... */
 
         /* Floating-point regs */
-        lfd    31,616(1)
-        lfd    30,608(1)
-        lfd    29,600(1)
-        lfd    28,592(1)
-        lfd    27,584(1)
-        lfd    26,576(1)
-        lfd    25,568(1)
-        lfd    24,560(1)
-        lfd    23,552(1)
-        lfd    22,544(1)
-        lfd    21,536(1)
-        lfd    20,528(1)
-        lfd    19,520(1)
-        lfd    18,512(1)
-        lfd    17,504(1)
-        lfd    16,496(1)
-        lfd    15,488(1)
-        lfd    14,480(1)
+        lfd     31,616(1)
+        lfd     30,608(1)
+        lfd     29,600(1)
+        lfd     28,592(1)
+        lfd     27,584(1)
+        lfd     26,576(1)
+        lfd     25,568(1)
+        lfd     24,560(1)
+        lfd     23,552(1)
+        lfd     22,544(1)
+        lfd     21,536(1)
+        lfd     20,528(1)
+        lfd     19,520(1)
+        lfd     18,512(1)
+        lfd     17,504(1)
+        lfd     16,496(1)
+        lfd     15,488(1)
+        lfd     14,480(1)
 
         /* General regs */
-        lwz     31,472(1)
-        lwz     30,464(1)
-        lwz     29,456(1)
-        lwz     28,448(1)
-        lwz     27,440(1)
-        lwz     26,432(1)
-        lwz     25,424(1)
-        lwz     24,416(1)
-        lwz     23,408(1)
-        lwz     22,400(1)
-        lwz     21,392(1)
-        lwz     20,384(1)
-        lwz     19,376(1)
-        lwz     18,368(1)
-        lwz     17,360(1)
-        lwz     16,352(1)
-        lwz     15,344(1)
-        lwz     14,336(1)
-        lwz     13,328(1)
+        ld      31,472(1)
+        ld      30,464(1)
+        ld      29,456(1)
+        ld      28,448(1)
+        ld      27,440(1)
+        ld      26,432(1)
+        ld      25,424(1)
+        ld      24,416(1)
+        ld      23,408(1)
+        ld      22,400(1)
+        ld      21,392(1)
+        ld      20,384(1)
+        ld      19,376(1)
+        ld      18,368(1)
+        ld      17,360(1)
+        ld      16,352(1)
+        ld      15,344(1)
+        ld      14,336(1)
+        ld      13,328(1)
 
         /* r11 already holds VG_(machine_ppc64_has_VMX) value */
-        cmplwi  11,0
-        beq     LafterVMX9
+        cmpldi  11,0
+        beq     .LafterVMX9
 
         /* VRSAVE */
         lwz     4,324(1)
@@ -431,10 +440,12 @@ run_innerloop_exit_REALLY:
         lvx     21,4,1
         li      4,128
         lvx     20,4,1
-LafterVMX9:
+.LafterVMX9:
 
-        /* reset lr & sp */
-        lwz     0,628(1)  /* stack_size + 4 */
+        /* reset cr, lr, sp */
+        ld      0,632(1)  /* stack_size + 8 */
+        mtcr    0
+        ld      0,640(1)  /* stack_size + 16 */
         mtlr    0
         addi    1,1,624   /* stack_size */
         blr
@@ -443,28 +454,28 @@ LafterVMX9:
 /* Other ways of getting out of the inner loop.  Placed out-of-line to
    make it look cleaner. 
 */
-dispatch_exceptional:
+.dispatch_exceptional:
 	/* this is jumped to only, not fallen-through from above */
 	/* save r30 in %CIA and defer to sched */
-        lwz     16,152(1)
-        stw     30,OFFSET_ppc64_CIA(16)
-        b       run_innerloop_exit
+        ld      16,152(1)
+        std     30,OFFSET_ppc64_CIA(16)
+        b       .run_innerloop_exit
 
-fast_lookup_failed:
+.fast_lookup_failed:
 	/* %CIA is up to date here since dispatch_boring dominates */
         mfctr   17
         addi    17,17,1
 	mtctr   17
         li      3,VG_TRC_INNER_FASTMISS
-	b       run_innerloop_exit
+	b       .run_innerloop_exit
 
-counter_is_zero:
+.counter_is_zero:
 	/* %CIA is up to date here since dispatch_boring dominates */
         mfctr   17
         addi    17,17,1
 	mtctr   17
         li      3,VG_TRC_INNER_COUNTERZERO
-        b       run_innerloop_exit
+        b       .run_innerloop_exit
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits

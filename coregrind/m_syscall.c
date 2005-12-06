@@ -231,7 +231,6 @@ asm(
 "        sc\n"             /* result in r3 and cr0.so */
 "        ld   5,-16(1)\n"  /* reacquire argblock ptr (r5 is caller-save) */
 "        std  3,0(5)\n"    /* argblock[0] = r3 */
-"        xor  3,3,3\n"
 "        mfcr 3\n"
 "        srwi 3,3,28\n"
 "        andi. 3,3,1\n"

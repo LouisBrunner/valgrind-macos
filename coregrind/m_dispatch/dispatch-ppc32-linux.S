@@ -197,8 +197,7 @@ LafterVMX1:
         li      3,0
         stw     3,20(1)
         lfs     3,20(1)
-	/* load f3 to fpscr (0xFF = all bit fields) */
-        mtfsf   0xFF,3
+        mtfsf   0xFF,3   /* fpscr = f3 */
 LafterFP2:
 
         /* set host AltiVec control word to the default mode expected 

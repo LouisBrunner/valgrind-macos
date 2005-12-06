@@ -1743,7 +1743,7 @@ static void init_thread1state ( Addr client_ip,
    arch->vex.guest_CIA  = client_ip;
 
 #elif defined(VGA_ppc64)
-   vg_assert(0 == sizeof(VexGuestPPC64State) % 8);
+   vg_assert(0 == sizeof(VexGuestPPC64State) % 16);
 
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
@@ -2865,9 +2865,17 @@ asm("\n"
 #elif defined(VGP_ppc64_linux)
 asm("\n"
     ".text\n"
-    "\t.globl _start\n"
-    "\t.type _start,@function\n"
+    /* PPC64 ELF ABI says '_start' points to a function descriptor.
+       So we must have one, and that is what goes into the .opd section. */
+    "\t.global _start\n"
+    "\t.section \".opd\",\"aw\"\n"
+    "\t.align 3\n"
     "_start:\n"
+    "\t.quad ._start,.TOC.@tocbase,0\n"
+    "\t.previous\n"
+    "\t.type ._start,@function\n"
+    "\t.global  ._start\n"
+    "._start:\n"
     /* set up the new stack in r16 */
     "\tlis  16,   vgPlain_interim_stack@highest\n"
     "\tori  16,16,vgPlain_interim_stack@higher\n"
@@ -2889,7 +2897,8 @@ asm("\n"
        call _start_in_C, passing it the initial SP. */
     "\tmr 3,1\n"
     "\tmr 1,16\n"
-    "\tbl _start_in_C\n"
+    "\tbl ._start_in_C\n"
+    "\tnop\n"
     "\ttrap\n"
     ".previous\n"
 );

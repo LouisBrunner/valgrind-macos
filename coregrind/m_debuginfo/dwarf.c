@@ -2209,7 +2209,7 @@ void ML_(read_callframe_info_dwarf2)
    Int    n_CIEs = 0;
    UChar* data = ehframe;
 
-#if defined(VGP_ppc32_linux)
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    // CAB: tmp hack for ppc - no stacktraces for now...
    return;
 #endif

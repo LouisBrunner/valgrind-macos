@@ -256,7 +256,7 @@ VG_(run_innerloop):
 	ldx	5, 5,4
 	/* r6 = VG_(tt_fast)[r30 & VG_TT_FAST_MASK]->orig_addr */
 	ld	6, 0(5)
-        cmpw    30,6
+        cmpd    30,6
         bne     .fast_lookup_failed
 
         /* increment bb profile counter VG_(tt_fastN)[x] (=32bit val) */

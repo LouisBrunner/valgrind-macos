@@ -370,7 +370,7 @@ Addr setup_client_stack( void*  init_sp,
       auxsize += sizeof(*cauxv);
    }
 
-#  if defined(VGP_ppc32_linux)
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    auxsize += 2 * sizeof(*cauxv);
 #  endif
 
@@ -487,7 +487,7 @@ Addr setup_client_stack( void*  init_sp,
    auxv = (struct ume_auxv *)ptr;
    *client_auxv = (UInt *)auxv;
 
-#  if defined(VGP_ppc32_linux)
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    auxv[0].a_type  = AT_IGNOREPPC;
    auxv[0].u.a_val = AT_IGNOREPPC;
    auxv[1].a_type  = AT_IGNOREPPC;
@@ -559,10 +559,18 @@ Addr setup_client_stack( void*  init_sp,
                                 "PPC32 cache line size %u (type %u)\n", 
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );
             }
+#           elif defined(VGP_ppc64_linux)
+            /* acquire cache info */
+            if (auxv->u.a_val > 0) {
+               VG_(machine_ppc64_set_clszB)( auxv->u.a_val );
+               VG_(debugLog)(2, "main", 
+                                "PPC64 cache line size %u (type %u)\n", 
+                                (UInt)auxv->u.a_val, (UInt)auxv->a_type );
+            }
 #           endif
             break;
 
-#        if defined(VGP_ppc32_linux)
+#        if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
          case AT_IGNOREPPC:
             break;
 #        endif
@@ -578,7 +586,7 @@ Addr setup_client_stack( void*  init_sp,
             break;
 
          case AT_SYSINFO:
-#        if !defined(VGP_ppc32_linux)
+#        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc64_linux)
          case AT_SYSINFO_EHDR:
 #        endif
             /* Trash this, because we don't reproduce it */
@@ -1692,6 +1700,7 @@ static void setup_file_descriptors(void)
 */
 static void init_thread1state ( Addr client_ip, 
                                 Addr client_sp,
+                                Addr entry,
                                 /*inout*/ ThreadArchState* arch )
 {
 #if defined(VGA_x86)
@@ -1754,8 +1763,8 @@ static void init_thread1state ( Addr client_ip,
 
    /* Put essential stuff into the new state. */
    arch->vex.guest_GPR1 = client_sp;
+   arch->vex.guest_GPR2 = ((ULong*)entry)[1];  // TOC ptr
    arch->vex.guest_CIA  = client_ip;
-
 #else
 #  error Unknown arch
 #endif
@@ -2477,6 +2486,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise thread 1's state\n");
    init_thread1state( initial_client_IP, initial_client_SP, 
+                      info.entry,
                       &VG_(threads)[1].arch);
 
    //--------------------------------------------------------------

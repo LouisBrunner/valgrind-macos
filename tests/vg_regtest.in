@@ -328,6 +328,9 @@ sub test_one_dir($$)
     # Ignore dirs into which we should not recurse.
     if ($dir =~ /^(BitKeeper|CVS|SCCS|docs|doc)$/) { return; }
 
+    (-x "$tests_dir/tests/cputest") or die 
+        "vg_regtest: 'cputest' is missing.  Did you forget to 'make check'?\n";
+    
     # Ignore any dir whose name matches that of an architecture which is not
     # the architecture we are running on (eg. when running on x86, ignore ppc/
     # directories).

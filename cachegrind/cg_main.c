@@ -1060,23 +1060,29 @@ static void fprint_CC_table_and_calc_totals(void)
    // Traverse every lineCC
    VG_(OSet_ResetIter)(CC_table);
    while ( (lineCC = VG_(OSet_Next)(CC_table)) ) {
+      Bool just_hit_a_new_file = False;
       // If we've hit a new file, print a "fl=" line.  Note that because
       // each string is stored exactly once in the string table, we can use
       // pointer comparison rather than strcmp() to test for equality, which
       // is good because most of the time the comparisons are equal and so
-      // the whole strings would have to be traversed.
+      // the whole strings would have to be checked.
       if ( lineCC->loc.file != currFile ) {
          currFile = lineCC->loc.file;
          VG_(sprintf)(buf, "fl=%s\n", currFile);
          VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
          distinct_files++;
+         just_hit_a_new_file = True;
       }
-      // If we've hit a new function, print a "fn=" line.
-      if ( lineCC->loc.fn != currFn ) {
+      // If we've hit a new function, print a "fn=" line.  We know to do
+      // this when the function name changes, and also every time we hit a
+      // new file (in which case the new function name might be the same as
+      // in the old file, hence the just_hit_a_new_file test).
+      if ( just_hit_a_new_file || lineCC->loc.fn != currFn ) {
          currFn = lineCC->loc.fn;
          VG_(sprintf)(buf, "fn=%s\n", currFn);
          VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
          distinct_fns++;
+         just_hit_a_new_file = False;
       }
 
       // Print the LineCC

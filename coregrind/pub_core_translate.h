@@ -43,6 +43,8 @@ Bool VG_(translate) ( ThreadId tid,
                       Int      debugging_verbosity,
                       ULong    bbs_done );
 
+extern void VG_(print_translation_stats) ( void );
+
 #endif   // __PUB_CORE_TRANSLATE_H
 
 /*--------------------------------------------------------------------*/

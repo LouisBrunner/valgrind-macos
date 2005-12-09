@@ -344,7 +344,6 @@ sub test_one_dir($$)
     my $dashes = "-" x (50 - length $full_dir);
 
     my @fs = glob "*";
-    my @vgtests = grep { $_ =~ /\.vgtest$/ } @fs;
     my $found_tests = (0 != (grep { $_ =~ /\.vgtest$/ } @fs));
 
     if ($found_tests) {

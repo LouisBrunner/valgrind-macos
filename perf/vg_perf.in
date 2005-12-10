@@ -1,0 +1,368 @@
+#! @PERL@
+##--------------------------------------------------------------------##
+##--- Valgrind performance testing script                  vg_perf ---##
+##--------------------------------------------------------------------##
+
+#  This file is part of Valgrind, a dynamic binary instrumentation
+#  framework.
+#
+#  Copyright (C) 2005 Nicholas Nethercote
+#     njn@valgrind.org
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+#  02111-1307, USA.
+#
+#  The GNU General Public License is contained in the file COPYING.
+
+#----------------------------------------------------------------------------
+# usage: vg_perf [options] <dirs | files>
+#
+# Options:
+#   --all:      run tests in all subdirs
+#   --valgrind: valgrind to use (the directory it's in).  Default is the one
+#               in the current tree.
+#
+# The easiest way is to run all tests in valgrind/ with (assuming you installed
+# in $PREFIX):
+#
+#   perl perf/vg_perf --all
+#
+# You can specify individual files to test, or whole directories, or both.
+# Directories are traversed recursively, except for ones named, for example, 
+# CVS/ or docs/.
+#
+# Each test is defined in a file <test>.vgperf, containing one or more of the
+# following lines, in any order:
+#   - prog:   <prog to run>                         (compulsory)
+#   - tools:  <Valgrind tools>                      (compulsory)
+#   - args:   <args for prog>                       (default: none)
+#   - vgopts: <Valgrind options>                    (default: none)
+#   - prereq: <prerequisite command>                (default: none)
+#   - cleanup: <post-test cleanup cmd to run>       (default: none)
+#
+# The prerequisite command, if present, must return 0 otherwise the test is
+# skipped.
+#----------------------------------------------------------------------------
+
+use warnings;
+use strict;
+
+#----------------------------------------------------------------------------
+# Global vars
+#----------------------------------------------------------------------------
+my $usage="vg_perf [--all, --valgrind]\n";
+
+my $tmp="vg_perf.tmp.$$";
+
+# Test variables
+my $vgopts;             # valgrind options
+my $prog;               # test prog
+my $args;               # test prog args
+my $prereq;             # prerequisite test to satisfy before running test
+my $cleanup;            # cleanup command to run
+my @tools;              # which tools are we measuring the program with
+
+# Abbreviations used in output
+my %toolnames = ( 
+    none        => "nl",
+    memcheck    => "mc",
+    cachegrind  => "cg",
+    massif      => "ms"
+);
+
+# We run each program this many times and choose the best time.
+my $n_runs = 3;
+
+my $num_tests_done   = 0;
+my $num_timings_done = 0;
+
+# Starting directory
+chomp(my $tests_dir = `pwd`);
+
+# Directory of the Valgrind being measured.  Default is the one in the
+# current tree.
+my $vg_dir = $tests_dir;
+
+#----------------------------------------------------------------------------
+# Process command line, setup
+#----------------------------------------------------------------------------
+
+# If $prog is a relative path, it prepends $dir to it.  Useful for two reasons:
+#
+# 1. Can prepend "." onto programs to avoid trouble with users who don't have
+#    "." in their path (by making $dir = ".")
+# 2. Can prepend the current dir to make the command absolute to avoid
+#    subsequent trouble when we change directories.
+#
+# Also checks the program exists and is executable.
+sub validate_program ($$$$) 
+{
+    my ($dir, $prog, $must_exist, $must_be_executable) = @_;
+
+    # If absolute path, leave it alone.  If relative, make it
+    # absolute -- by prepending current dir -- so we can change
+    # dirs and still use it.
+    $prog = "$dir/$prog" if ($prog !~ /^\//);
+    if ($must_exist) {
+        (-f $prog) or die "vg_perf: '$prog' not found or not a file ($dir)\n";
+    }
+    if ($must_be_executable) { 
+        (-x $prog) or die "vg_perf: '$prog' not executable ($dir)\n";
+    }
+
+    return $prog;
+}
+
+sub validate_tools($)
+{
+    # XXX: should check they exist!
+    my ($toolnames) = @_;
+    my @t = split(/\s+/, $toolnames);
+    return @t;
+}
+
+sub process_command_line() 
+{
+    my $alldirs = 0;
+    my @fs;
+    
+    for my $arg (@ARGV) {
+        if ($arg =~ /^-/) {
+            if      ($arg =~ /^--all$/) {
+                $alldirs = 1;
+            } elsif ($arg =~ /^--valgrind=(.*)$/) {
+                $vg_dir = $1;
+            } else {
+                die $usage;
+            }
+        } else {
+            push(@fs, $arg);
+        }
+    }
+    # Make $vg_dir absolute if not already
+    if ($vg_dir !~ /^\//) { $vg_dir = "$tests_dir/$vg_dir"; }
+    validate_program($vg_dir, "./coregrind/valgrind", 1, 1);
+
+    if ($alldirs) {
+        @fs = ();
+        foreach my $f (glob "*") {
+            push(@fs, $f) if (-d $f);
+        }
+    }
+
+    (0 != @fs) or die "No test files or directories specified\n";
+
+    return @fs;
+}
+
+#----------------------------------------------------------------------------
+# Read a .vgperf file
+#----------------------------------------------------------------------------
+sub read_vgperf_file($)
+{
+    my ($f) = @_;
+
+    # Defaults.
+    ($vgopts, $prog, $args, $prereq, $cleanup)
+      = ("", undef, "", undef, undef, undef, undef);
+
+    open(INPUTFILE, "< $f") || die "File $f not openable\n";
+
+    while (my $line = <INPUTFILE>) {
+        if      ($line =~ /^\s*#/ || $line =~ /^\s*$/) {
+	    next;
+	} elsif ($line =~ /^\s*vgopts:\s*(.*)$/) {
+            $vgopts = $1;
+        } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
+            $prog = validate_program(".", $1, 0, 0);
+        } elsif ($line =~ /^\s*tools:\s*(.*)$/) {
+            @tools = validate_tools($1);
+        } elsif ($line =~ /^\s*args:\s*(.*)$/) {
+            $args = $1;
+        } elsif ($line =~ /^\s*prereq:\s*(.*)$/) {
+            $prereq = $1;
+        } elsif ($line =~ /^\s*cleanup:\s*(.*)$/) {
+            $cleanup = $1;
+        } else {
+            die "Bad line in $f: $line\n";
+        }
+    }
+    close(INPUTFILE);
+
+    if (!defined $prog) {
+        $prog = "";     # allow no prog for testing error and --help cases
+    }
+    if (0 == @tools) {
+        die "vg_perf: missing 'tools' line in $f\n";
+    }
+}
+
+#----------------------------------------------------------------------------
+# Do one test
+#----------------------------------------------------------------------------
+# Since most of the program time is spent in system() calls, need this to
+# propagate a Ctrl-C enabling us to quit.
+sub mysystem($) 
+{
+    (system($_[0]) != 2) or exit 1;      # 2 is SIGINT
+}
+
+# Run program N times, return the best wall-clock time.
+sub time_prog($$)
+{
+    my ($cmd, $n) = @_;
+    my $tmin = 999999;
+    for (my $i = 0; $i < $n; $i++) {
+        my $out = `$cmd 2>&1 1>/dev/null`;
+        $out =~ /walltime: ([\d\.]+)s/;
+        $tmin = $1 if ($1 < $tmin);
+    }
+    return $tmin;
+}
+
+sub do_one_test($$) 
+{
+    my ($dir, $vgperf) = @_;
+    $vgperf =~ /^(.*)\.vgperf/;
+    my $name = $1;
+
+    read_vgperf_file($vgperf);
+
+    if (defined $prereq) {
+        if (system("$prereq") != 0) {
+            printf("%-16s (skipping, prereq failed: $prereq)\n", "$name:");
+            return;
+        }
+    }
+
+    printf("%-12s", "$name:");
+
+    my $timecmd = "/usr/bin/time -f 'walltime: %es'";
+
+    # Do the native run(s).
+    printf("nt:");
+    my $cmd     = "$timecmd $prog $args";
+    my $tNative = time_prog($cmd, $n_runs);
+    printf("%4.1fs  ", $tNative);
+
+    foreach my $tool (@tools) {
+        (defined $toolnames{$tool}) or 
+            die "unknown tool $tool, please add to %toolnames\n";
+
+        # Do the tool run(s).  Set both VALGRIND_LIB and VALGRIND_LIB_INNER
+        # in case this Valgrind was configured with --enable-inner.
+        printf("%s:", $toolnames{$tool});
+        my $vgsetup = "VALGRIND_LIB=$vg_dir/.in_place "
+                    . "VALGRIND_LIB_INNER=$vg_dir/.in_place ";
+        my $vgcmd   = "$vg_dir/coregrind/valgrind "
+                    . "--command-line-only=yes --tool=$tool -q "
+                    . "--memcheck:leak-check=no --addrcheck:leak-check=no "
+                    . "$vgopts ";
+        my $cmd     = "$vgsetup $timecmd $vgcmd $prog $args";
+        my $tTool   = time_prog($cmd, $n_runs);
+        printf("%4.1fs (%4.1fx)  ", $tTool, $tTool/$tNative);
+
+        $num_timings_done++;
+    }
+    printf("\n");
+
+    if (defined $cleanup) {
+        (system("$cleanup") == 0) or 
+            print("  ($name cleanup operation failed: $cleanup)\n");
+    }
+
+    $num_tests_done++;
+}
+
+#----------------------------------------------------------------------------
+# Test one directory (and any subdirs)
+#----------------------------------------------------------------------------
+sub test_one_dir($$);    # forward declaration
+
+sub test_one_dir($$) 
+{
+    my ($dir, $prev_dirs) = @_;
+    $dir =~ s/\/$//;    # trim a trailing '/'
+
+    # Ignore dirs into which we should not recurse.
+    if ($dir =~ /^(BitKeeper|CVS|SCCS|docs|doc)$/) { return; }
+
+    chdir($dir) or die "Could not change into $dir\n";
+
+    # Nb: Don't prepend a '/' to the base directory
+    my $full_dir = $prev_dirs . ($prev_dirs eq "" ? "" : "/") . $dir;
+    my $dashes = "-" x (50 - length $full_dir);
+
+    my @fs = glob "*";
+    my $found_tests = (0 != (grep { $_ =~ /\.vgperf$/ } @fs));
+
+    if ($found_tests) {
+        print "-- Running  tests in $full_dir $dashes\n";
+    }
+    foreach my $f (@fs) {
+        if (-d $f) {
+            test_one_dir($f, $full_dir);
+        } elsif ($f =~ /\.vgperf$/) {
+            do_one_test($full_dir, $f);
+        }
+    }
+    if ($found_tests) {
+        print "-- Finished tests in $full_dir $dashes\n";
+    }
+
+    chdir("..");
+}
+
+#----------------------------------------------------------------------------
+# Summarise results
+#----------------------------------------------------------------------------
+sub summarise_results 
+{
+    printf("\n== %d programs, %d timings =================\n\n", 
+           $num_tests_done, $num_timings_done);
+}
+
+#----------------------------------------------------------------------------
+# main()
+#----------------------------------------------------------------------------
+
+# nuke VALGRIND_OPTS
+$ENV{"VALGRIND_OPTS"} = "";
+
+my @fs = process_command_line();
+foreach my $f (@fs) {
+    if (-d $f) {
+        test_one_dir($f, "");
+    } else { 
+        # Allow the .vgperf suffix to be given or omitted
+        if ($f =~ /.vgperf$/ && -r $f) {
+            # do nothing
+        } elsif (-r "$f.vgperf") {
+            $f = "$f.vgperf";
+        } else {
+            die "`$f' neither a directory nor a readable test file/name\n"
+        }
+        my $dir  = `dirname  $f`;   chomp $dir;
+        my $file = `basename $f`;   chomp $file;
+        chdir($dir) or die "Could not change into $dir\n";
+        do_one_test($dir, $file);
+        chdir($tests_dir);
+    }
+}
+summarise_results();
+
+##--------------------------------------------------------------------##
+##--- end                                                          ---##
+##--------------------------------------------------------------------##

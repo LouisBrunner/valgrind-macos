@@ -16,7 +16,7 @@ TOOLS =		memcheck \
 # And we want to include Addrcheck in the distro, but not compile/test it.
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.
-SUBDIRS = include coregrind . tests auxprogs $(TOOLS) helgrind docs
+SUBDIRS = include coregrind . tests perf auxprogs $(TOOLS) helgrind docs
 DIST_SUBDIRS  = $(SUBDIRS) addrcheck
 
 SUPP_FILES = \
@@ -57,6 +57,10 @@ default.supp: $(SUPP_FILES)
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
 regtest: check
 	@PERL@ tests/vg_regtest $(TOOLS)
+
+## Preprend @PERL@ because tests/vg_per isn't executable
+perf: check
+	@PERL@ perf/vg_perf perf
 
 EXTRA_DIST = \
 	ACKNOWLEDGEMENTS \

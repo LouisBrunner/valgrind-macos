@@ -496,6 +496,8 @@ AC_OUTPUT(
    docs/xml/Makefile
    tests/Makefile 
    tests/vg_regtest 
+   perf/Makefile 
+   perf/vg_perf
    include/Makefile 
    auxprogs/Makefile
    coregrind/Makefile 

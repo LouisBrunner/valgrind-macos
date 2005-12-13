@@ -1,2 +1,2 @@
-prog: bz2 
+prog: bz2
 tools: none memcheck

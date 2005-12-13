@@ -215,15 +215,15 @@ VexTranslateResult LibVEX_Translate (
       from the target instruction set. */
    HReg* available_real_regs;
    Int   n_available_real_regs;
-   Bool         (*isMove)      (HInstr*, HReg*, HReg*);
-   void         (*getRegUsage) (HRegUsage*, HInstr*);
-   void         (*mapRegs)     (HRegRemap*, HInstr*);
-   HInstr*      (*genSpill)    ( HReg, Int );
-   HInstr*      (*genReload)   ( HReg, Int );
-   void         (*ppInstr)     ( HInstr* );
+   Bool         (*isMove)      ( HInstr*, HReg*, HReg* );
+   void         (*getRegUsage) ( HRegUsage*, HInstr*, Bool );
+   void         (*mapRegs)     ( HRegRemap*, HInstr*, Bool );
+   HInstr*      (*genSpill)    ( HReg, Int, Bool );
+   HInstr*      (*genReload)   ( HReg, Int, Bool );
+   void         (*ppInstr)     ( HInstr*, Bool );
    void         (*ppReg)       ( HReg );
    HInstrArray* (*iselBB)      ( IRBB*, VexArchInfo* );
-   Int          (*emit)        ( UChar*, Int, HInstr* );
+   Int          (*emit)        ( UChar*, Int, HInstr*, Bool );
    IRExpr*      (*specHelper)  ( HChar*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
@@ -239,6 +239,7 @@ VexTranslateResult LibVEX_Translate (
    UChar           insn_bytes[32];
    IRType          guest_word_type;
    IRType          host_word_type;
+   Bool            mode64;
 
    guest_layout           = NULL;
    available_real_regs    = NULL;
@@ -259,6 +260,7 @@ VexTranslateResult LibVEX_Translate (
    host_word_type         = Ity_INVALID;
    offB_TISTART           = 0;
    offB_TILEN             = 0;
+   mode64                 = False;
 
    vex_traceflags = traceflags;
 
@@ -272,17 +274,18 @@ VexTranslateResult LibVEX_Translate (
    switch (arch_host) {
 
       case VexArchX86:
+         mode64      = False;
          getAllocableRegs_X86 ( &n_available_real_regs,
                                 &available_real_regs );
          isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_X86Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*)) getRegUsage_X86Instr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*)) mapRegs_X86Instr;
-         genSpill    = (HInstr*(*)(HReg,Int)) genSpill_X86;
-         genReload   = (HInstr*(*)(HReg,Int)) genReload_X86;
-         ppInstr     = (void(*)(HInstr*)) ppX86Instr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_X86Instr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_X86Instr;
+         genSpill    = (HInstr*(*)(HReg,Int, Bool)) genSpill_X86;
+         genReload   = (HInstr*(*)(HReg,Int, Bool)) genReload_X86;
+         ppInstr     = (void(*)(HInstr*, Bool)) ppX86Instr;
          ppReg       = (void(*)(HReg)) ppHRegX86;
          iselBB      = iselBB_X86;
-         emit        = (Int(*)(UChar*,Int,HInstr*)) emit_X86Instr;
+         emit        = (Int(*)(UChar*,Int,HInstr*, Bool)) emit_X86Instr;
          host_is_bigendian = False;
          host_word_type    = Ity_I32;
          vassert(archinfo_host->subarch == VexSubArchX86_sse0
@@ -291,34 +294,36 @@ VexTranslateResult LibVEX_Translate (
          break;
 
       case VexArchAMD64:
+         mode64      = True;
          getAllocableRegs_AMD64 ( &n_available_real_regs,
                                   &available_real_regs );
          isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_AMD64Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*)) getRegUsage_AMD64Instr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*)) mapRegs_AMD64Instr;
-         genSpill    = (HInstr*(*)(HReg,Int)) genSpill_AMD64;
-         genReload   = (HInstr*(*)(HReg,Int)) genReload_AMD64;
-         ppInstr     = (void(*)(HInstr*)) ppAMD64Instr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_AMD64Instr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_AMD64Instr;
+         genSpill    = (HInstr*(*)(HReg,Int, Bool)) genSpill_AMD64;
+         genReload   = (HInstr*(*)(HReg,Int, Bool)) genReload_AMD64;
+         ppInstr     = (void(*)(HInstr*, Bool)) ppAMD64Instr;
          ppReg       = (void(*)(HReg)) ppHRegAMD64;
          iselBB      = iselBB_AMD64;
-         emit        = (Int(*)(UChar*,Int,HInstr*)) emit_AMD64Instr;
+         emit        = (Int(*)(UChar*,Int,HInstr*, Bool)) emit_AMD64Instr;
          host_is_bigendian = False;
          host_word_type    = Ity_I64;
          vassert(archinfo_host->subarch == VexSubArch_NONE);
          break;
 
       case VexArchPPC32:
+         mode64      = False;
          getAllocableRegs_PPC32 ( &n_available_real_regs,
-                                  &available_real_regs );
+                                  &available_real_regs, mode64 );
          isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPC32Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*)) getRegUsage_PPC32Instr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*)) mapRegs_PPC32Instr;
-         genSpill    = (HInstr*(*)(HReg,Int)) genSpill_PPC32;
-         genReload   = (HInstr*(*)(HReg,Int)) genReload_PPC32;
-         ppInstr     = (void(*)(HInstr*)) ppPPC32Instr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*,Bool)) getRegUsage_PPC32Instr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*,Bool)) mapRegs_PPC32Instr;
+         genSpill    = (HInstr*(*)(HReg,Int,Bool)) genSpill_PPC32;
+         genReload   = (HInstr*(*)(HReg,Int,Bool)) genReload_PPC32;
+         ppInstr     = (void(*)(HInstr*,Bool)) ppPPC32Instr;
          ppReg       = (void(*)(HReg)) ppHRegPPC32;
          iselBB      = iselBB_PPC32;
-         emit        = (Int(*)(UChar*,Int,HInstr*)) emit_PPC32Instr;
+         emit        = (Int(*)(UChar*,Int,HInstr*,Bool)) emit_PPC32Instr;
          host_is_bigendian = True;
          host_word_type    = Ity_I32;
          vassert(archinfo_guest->subarch == VexSubArchPPC32_I
@@ -553,7 +558,7 @@ VexTranslateResult LibVEX_Translate (
    if (vex_traceflags & VEX_TRACE_VCODE) {
       for (i = 0; i < vcode->arr_used; i++) {
          vex_printf("%3d   ", i);
-         ppInstr(vcode->arr[i]);
+         ppInstr(vcode->arr[i], mode64);
          vex_printf("\n");
       }
       vex_printf("\n");
@@ -564,7 +569,7 @@ VexTranslateResult LibVEX_Translate (
                                            n_available_real_regs,
                                   isMove, getRegUsage, mapRegs, 
                                   genSpill, genReload, guest_sizeB,
-                                  ppInstr, ppReg );
+                                  ppInstr, ppReg, mode64 );
 
    vexAllocSanityCheck();
 
@@ -574,7 +579,7 @@ VexTranslateResult LibVEX_Translate (
                    "------------------------\n\n");
       for (i = 0; i < rcode->arr_used; i++) {
          vex_printf("%3d   ", i);
-         ppInstr(rcode->arr[i]);
+         ppInstr(rcode->arr[i], mode64);
          vex_printf("\n");
       }
       vex_printf("\n");
@@ -594,10 +599,10 @@ VexTranslateResult LibVEX_Translate (
    out_used = 0; /* tracks along the host_bytes array */
    for (i = 0; i < rcode->arr_used; i++) {
       if (vex_traceflags & VEX_TRACE_ASM) {
-         ppInstr(rcode->arr[i]);
+         ppInstr(rcode->arr[i], mode64);
          vex_printf("\n");
       }
-      j = (*emit)( insn_bytes, 32, rcode->arr[i] );
+      j = (*emit)( insn_bytes, 32, rcode->arr[i], mode64 );
       if (vex_traceflags & VEX_TRACE_ASM) {
          for (k = 0; k < j; k++)
             if (insn_bytes[k] < 16)

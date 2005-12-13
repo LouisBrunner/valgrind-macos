@@ -183,7 +183,7 @@ static void addInstr ( ISelEnv* env, X86Instr* instr )
 {
    addHInstr(env->code, instr);
    if (vex_traceflags & VEX_TRACE_VCODE) {
-      ppX86Instr(instr);
+      ppX86Instr(instr, False);
       vex_printf("\n");
    }
 }

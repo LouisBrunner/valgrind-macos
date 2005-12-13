@@ -708,16 +708,16 @@ extern AMD64Instr* AMD64Instr_SseCMov    ( AMD64CondCode, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseShuf    ( Int order, HReg src, HReg dst );
 
 
-extern void ppAMD64Instr ( AMD64Instr* );
+extern void ppAMD64Instr ( AMD64Instr*, Bool );
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void         getRegUsage_AMD64Instr ( HRegUsage*, AMD64Instr* );
-extern void         mapRegs_AMD64Instr     ( HRegRemap*, AMD64Instr* );
+extern void         getRegUsage_AMD64Instr ( HRegUsage*, AMD64Instr*, Bool );
+extern void         mapRegs_AMD64Instr     ( HRegRemap*, AMD64Instr*, Bool );
 extern Bool         isMove_AMD64Instr      ( AMD64Instr*, HReg*, HReg* );
-extern Int          emit_AMD64Instr        ( UChar* buf, Int nbuf, AMD64Instr* );
-extern AMD64Instr*  genSpill_AMD64         ( HReg rreg, Int offset );
-extern AMD64Instr*  genReload_AMD64        ( HReg rreg, Int offset );
+extern Int          emit_AMD64Instr        ( UChar* buf, Int nbuf, AMD64Instr*, Bool );
+extern AMD64Instr*  genSpill_AMD64         ( HReg rreg, Int offset, Bool );
+extern AMD64Instr*  genReload_AMD64        ( HReg rreg, Int offset, Bool );
 extern void         getAllocableRegs_AMD64 ( Int*, HReg** );
 extern HInstrArray* iselBB_AMD64           ( IRBB*, VexArchInfo* );
 

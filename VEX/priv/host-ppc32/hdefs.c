@@ -189,7 +189,7 @@ HReg hregPPC32_VR29 ( void ) { return mkHReg(29, HRcVec128, False); }
 HReg hregPPC32_VR30 ( void ) { return mkHReg(30, HRcVec128, False); }
 HReg hregPPC32_VR31 ( void ) { return mkHReg(31, HRcVec128, False); }
 
-void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
+void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
 {
    UInt i=0;
    *nregs = 90 - 24 - 24;
@@ -1088,7 +1088,7 @@ static void ppMovReg ( HReg dst, HReg src ) {
    }
 }
 
-void ppPPC32Instr ( PPC32Instr* i )
+void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
 {
    switch (i->tag) {
    case Pin_LI32:
@@ -1510,7 +1510,7 @@ void ppPPC32Instr ( PPC32Instr* i )
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
+void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
 {
    initHRegUsage(u);
    switch (i->tag) {
@@ -1734,18 +1734,18 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       return;
 
    default:
-      ppPPC32Instr(i);
+      ppPPC32Instr(i, mode64);
       vpanic("getRegUsage_PPC32Instr");
    }
 }
 
 /* local helper */
-static void mapReg(HRegRemap* m, HReg* r)
+static void mapReg( HRegRemap* m, HReg* r )
 {
    *r = lookupHRegRemap(m, *r);
 }
 
-void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
+void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
 {
    switch (i->tag) {
    case Pin_LI32:
@@ -1907,7 +1907,7 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       return;
 
    default:
-      ppPPC32Instr(i);
+      ppPPC32Instr(i, mode64);
       vpanic("mapRegs_PPC32Instr");
    }
 }
@@ -1946,7 +1946,7 @@ Bool isMove_PPC32Instr ( PPC32Instr* i, HReg* src, HReg* dst )
 /* Generate ppc32 spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the
    condition codes. */
-PPC32Instr* genSpill_PPC32 ( HReg rreg, UShort offsetB )
+PPC32Instr* genSpill_PPC32 ( HReg rreg, UShort offsetB, Bool mode64 )
 {
    PPC32AMode* am;
    vassert(!hregIsVirtual(rreg));
@@ -1966,7 +1966,7 @@ PPC32Instr* genSpill_PPC32 ( HReg rreg, UShort offsetB )
    }
 }
 
-PPC32Instr* genReload_PPC32 ( HReg rreg, UShort offsetB )
+PPC32Instr* genReload_PPC32 ( HReg rreg, UShort offsetB, Bool mode64 )
 {
    PPC32AMode* am;
    vassert(!hregIsVirtual(rreg));
@@ -2286,13 +2286,13 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code. */
 
-Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
+Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i, Bool mode64 )
 {
    UChar* p = &buf[0];
    UChar* ptmp = p;
    vassert(nbuf >= 32);
 
-//   vex_printf("asm  ");ppPPC32Instr(i); vex_printf("\n");
+//   vex_printf("asm  ");ppPPC32Instr(i, mode64); vex_printf("\n");
 
    switch (i->tag) {
 
@@ -3295,7 +3295,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
   bad:
    vex_printf("\n=> ");
-   ppPPC32Instr(i);
+   ppPPC32Instr(i, mode64);
    vpanic("emit_PPC32Instr");
    /*NOTREACHED*/
    

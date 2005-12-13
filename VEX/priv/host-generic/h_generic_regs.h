@@ -253,20 +253,23 @@ HInstrArray* doRegisterAllocation (
    Bool (*isMove) (HInstr*, HReg*, HReg*),
 
    /* Get info about register usage in this insn. */
-   void (*getRegUsage) (HRegUsage*, HInstr*),
+   void (*getRegUsage) (HRegUsage*, HInstr*, Bool),
 
    /* Apply a reg-reg mapping to an insn. */
-   void (*mapRegs) (HRegRemap*, HInstr*),
+   void (*mapRegs) (HRegRemap*, HInstr*, Bool),
 
    /* Return an insn to spill/restore a real reg to a spill slot
       offset. */
-   HInstr* (*genSpill) ( HReg, Int ),
-   HInstr* (*genReload) ( HReg, Int ),
+   HInstr* (*genSpill) ( HReg, Int, Bool ),
+   HInstr* (*genReload) ( HReg, Int, Bool ),
    Int     guest_sizeB,
 
    /* For debug printing only. */
-   void (*ppInstr) ( HInstr* ),
-   void (*ppReg) ( HReg )
+   void (*ppInstr) ( HInstr*, Bool ),
+   void (*ppReg) ( HReg ),
+
+   /* 32/64bit mode */
+   Bool mode64
 );
 
 

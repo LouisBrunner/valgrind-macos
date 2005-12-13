@@ -877,7 +877,8 @@ X86Instr* X86Instr_SseShuf ( Int order, HReg src, HReg dst ) {
    return i;
 }
 
-void ppX86Instr ( X86Instr* i ) {
+void ppX86Instr ( X86Instr* i, Bool mode64 ) {
+   vassert(mode64 == False);
    switch (i->tag) {
       case Xin_Alu32R:
          vex_printf("%sl ", showX86AluOp(i->Xin.Alu32R.op));
@@ -1128,9 +1129,10 @@ void ppX86Instr ( X86Instr* i ) {
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
+void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i, Bool mode64)
 {
    Bool unary;
+   vassert(mode64 == False);
    initHRegUsage(u);
    switch (i->tag) {
       case Xin_Alu32R:
@@ -1348,19 +1350,20 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmWrite, i->Xin.SseShuf.dst);
          return;
       default:
-         ppX86Instr(i);
+         ppX86Instr(i, False);
          vpanic("getRegUsage_X86Instr");
    }
 }
 
 /* local helper */
-static void mapReg(HRegRemap* m, HReg* r)
+static void mapReg( HRegRemap* m, HReg* r )
 {
    *r = lookupHRegRemap(m, *r);
 }
 
-void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
+void mapRegs_X86Instr ( HRegRemap* m, X86Instr* i, Bool mode64 )
 {
+   vassert(mode64 == False);
    switch (i->tag) {
       case Xin_Alu32R:
          mapRegs_X86RMI(m, i->Xin.Alu32R.src);
@@ -1493,7 +1496,7 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapReg(m, &i->Xin.SseShuf.dst);
          return;
       default:
-         ppX86Instr(i);
+         ppX86Instr(i, mode64);
          vpanic("mapRegs_X86Instr");
    }
 }
@@ -1537,11 +1540,12 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
    register allocator.  Note it's critical these don't write the
    condition codes. */
 
-X86Instr* genSpill_X86 ( HReg rreg, Int offsetB )
+X86Instr* genSpill_X86 ( HReg rreg, Int offsetB, Bool mode64 )
 {
    X86AMode* am;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
+   vassert(mode64 == False);
    am = X86AMode_IR(offsetB, hregX86_EBP());
 
    switch (hregClass(rreg)) {
@@ -1557,11 +1561,12 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offsetB )
    }
 }
 
-X86Instr* genReload_X86 ( HReg rreg, Int offsetB )
+X86Instr* genReload_X86 ( HReg rreg, Int offsetB, Bool mode64 )
 {
    X86AMode* am;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
+   vassert(mode64 == False);
    am = X86AMode_IR(offsetB, hregX86_EBP());
    switch (hregClass(rreg)) {
       case HRcInt32:
@@ -1827,7 +1832,7 @@ static UChar* push_word_from_tags ( UChar* p, UShort tags )
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code. */
 
-Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
+Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i, Bool mode64 )
 {
    UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 
@@ -1835,13 +1840,14 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    UChar* p = &buf[0];
    UChar* ptmp;
    vassert(nbuf >= 32);
+   vassert(mode64 == False);
 
    /* Wrap an integer as a int register, for use assembling
       GrpN insns, in which the greg field is used as a sub-opcode
       and does not really contain a register. */
 #  define fake(_n) mkHReg((_n), HRcInt32, False)
 
-   /* vex_printf("asm  ");ppX86Instr(i); vex_printf("\n"); */
+   /* vex_printf("asm  ");ppX86Instr(i, mode64); vex_printf("\n"); */
 
    switch (i->tag) {
 
@@ -2815,7 +2821,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    }
 
   bad:
-   ppX86Instr(i);
+   ppX86Instr(i, mode64);
    vpanic("emit_X86Instr");
    /*NOTREACHED*/
    

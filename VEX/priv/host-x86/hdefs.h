@@ -653,16 +653,16 @@ extern X86Instr* X86Instr_SseCMov   ( X86CondCode, HReg src, HReg dst );
 extern X86Instr* X86Instr_SseShuf   ( Int order, HReg src, HReg dst );
 
 
-extern void ppX86Instr ( X86Instr* );
+extern void ppX86Instr ( X86Instr*, Bool );
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void         getRegUsage_X86Instr ( HRegUsage*, X86Instr* );
-extern void         mapRegs_X86Instr     ( HRegRemap*, X86Instr* );
+extern void         getRegUsage_X86Instr ( HRegUsage*, X86Instr*, Bool );
+extern void         mapRegs_X86Instr     ( HRegRemap*, X86Instr*, Bool );
 extern Bool         isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
-extern Int          emit_X86Instr        ( UChar* buf, Int nbuf, X86Instr* );
-extern X86Instr*    genSpill_X86         ( HReg rreg, Int offset );
-extern X86Instr*    genReload_X86        ( HReg rreg, Int offset );
+extern Int          emit_X86Instr        ( UChar* buf, Int nbuf, X86Instr*, Bool );
+extern X86Instr*    genSpill_X86         ( HReg rreg, Int offset, Bool );
+extern X86Instr*    genReload_X86        ( HReg rreg, Int offset, Bool );
 extern void         getAllocableRegs_X86 ( Int*, HReg** );
 extern HInstrArray* iselBB_X86           ( IRBB*, VexArchInfo* );
 

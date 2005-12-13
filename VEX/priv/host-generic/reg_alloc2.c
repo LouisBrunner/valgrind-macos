@@ -155,14 +155,15 @@ typedef
 
 /* Does this instruction mention a particular reg? */
 static Bool instrMentionsReg ( 
-   void (*getRegUsage) (HRegUsage*, HInstr*),
+   void (*getRegUsage) (HRegUsage*, HInstr*, Bool),
    HInstr* instr, 
-   HReg r 
+   HReg r,
+   Bool mode64
 )
 {
    Int       i;
    HRegUsage reg_usage;
-   (*getRegUsage)(&reg_usage, instr);
+   (*getRegUsage)(&reg_usage, instr, mode64);
    for (i = 0; i < reg_usage.n_used; i++)
       if (reg_usage.hreg[i] == r)
          return True;
@@ -184,11 +185,12 @@ static Bool instrMentionsReg (
    spill, or -1 if none was found.  */
 static
 Int findMostDistantlyMentionedVReg ( 
-   void (*getRegUsage) (HRegUsage*, HInstr*),
+   void (*getRegUsage) (HRegUsage*, HInstr*, Bool),
    HInstrArray* instrs_in,
    Int          search_from_instr,
    RRegState*   state,
-   Int          n_state
+   Int          n_state,
+   Bool         mode64
 )
 {
    Int k, m;
@@ -201,7 +203,7 @@ Int findMostDistantlyMentionedVReg (
       vassert(state[k].disp == Bound);
       for (m = search_from_instr; m < instrs_in->arr_used; m++) {
          if (instrMentionsReg(getRegUsage, 
-                              instrs_in->arr[m], state[k].vreg))
+                              instrs_in->arr[m], state[k].vreg, mode64))
             break;
       }
       if (m > furthest) {
@@ -258,23 +260,26 @@ HInstrArray* doRegisterAllocation (
 
    /* Return True iff the given insn is a reg-reg move, in which
       case also return the src and dst regs. */
-   Bool (*isMove) (HInstr*, HReg*, HReg*),
+   Bool (*isMove) ( HInstr*, HReg*, HReg* ),
 
    /* Get info about register usage in this insn. */
-   void (*getRegUsage) (HRegUsage*, HInstr*),
+   void (*getRegUsage) ( HRegUsage*, HInstr*, Bool ),
 
    /* Apply a reg-reg mapping to an insn. */
-   void (*mapRegs) (HRegRemap*, HInstr*),
+   void (*mapRegs) ( HRegRemap*, HInstr*, Bool ),
 
    /* Return an insn to spill/restore a real reg to a spill slot
       byte offset. */
-   HInstr* (*genSpill) ( HReg, Int ),
-   HInstr* (*genReload) ( HReg, Int ),
+   HInstr* (*genSpill) ( HReg, Int, Bool ),
+   HInstr* (*genReload) ( HReg, Int, Bool ),
    Int     guest_sizeB,
 
    /* For debug printing only. */
-   void (*ppInstr) ( HInstr* ),
-   void (*ppReg) ( HReg )
+   void (*ppInstr) ( HInstr*, Bool ),
+   void (*ppReg) ( HReg ),
+
+   /* 32/64bit mode */
+   Bool mode64
 )
 {
 #  define N_SPILL64S  (LibVEX_N_SPILL_BYTES / 8)
@@ -336,7 +341,7 @@ HInstrArray* doRegisterAllocation (
         HInstr* _tmp = (_instr);              \
         if (DEBUG_REGALLOC) {                 \
            vex_printf("**  ");                \
-           (*ppInstr)(_tmp);                  \
+           (*ppInstr)(_tmp, mode64);          \
            vex_printf("\n\n");                \
         }                                     \
         addHInstr ( instrs_out, _tmp );       \
@@ -451,11 +456,11 @@ HInstrArray* doRegisterAllocation (
 
    for (ii = 0; ii < instrs_in->arr_used; ii++) {
 
-      (*getRegUsage)( &reg_usage, instrs_in->arr[ii] );
+      (*getRegUsage)( &reg_usage, instrs_in->arr[ii], mode64 );
 
 #     if 0
       vex_printf("\n%d  stage1: ", ii);
-      (*ppInstr)(instrs_in->arr[ii]);
+      (*ppInstr)(instrs_in->arr[ii], mode64);
       vex_printf("\n");
       ppHRegUsage(&reg_usage);
 #     endif
@@ -472,7 +477,7 @@ HInstrArray* doRegisterAllocation (
          k = hregNumber(vreg);
          if (k < 0 || k >= n_vregs) {
             vex_printf("\n");
-            (*ppInstr)(instrs_in->arr[ii]);
+            (*ppInstr)(instrs_in->arr[ii], mode64);
             vex_printf("\n");
             vex_printf("vreg %d, n_vregs %d\n", k, n_vregs);
             vpanic("doRegisterAllocation: out-of-range vreg");
@@ -561,7 +566,7 @@ HInstrArray* doRegisterAllocation (
                   (*ppReg)(available_real_regs[k]);
                   vex_printf("\n");
                   vex_printf("\nOFFENDING instr = ");
-                  (*ppInstr)(instrs_in->arr[ii]);
+                  (*ppInstr)(instrs_in->arr[ii], mode64);
                   vex_printf("\n");
                   vpanic("doRegisterAllocation: "
                          "first event for rreg is Read");
@@ -574,7 +579,7 @@ HInstrArray* doRegisterAllocation (
                   (*ppReg)(available_real_regs[k]);
                   vex_printf("\n");
                   vex_printf("\nOFFENDING instr = ");
-                  (*ppInstr)(instrs_in->arr[ii]);
+                  (*ppInstr)(instrs_in->arr[ii], mode64);
                   vex_printf("\n");
                   vpanic("doRegisterAllocation: "
                          "first event for rreg is Modify");
@@ -786,7 +791,7 @@ HInstrArray* doRegisterAllocation (
 #     if DEBUG_REGALLOC
       vex_printf("\n====----====---- Insn %d ----====----====\n", ii);
       vex_printf("---- ");
-      (*ppInstr)(instrs_in->arr[ii]);
+      (*ppInstr)(instrs_in->arr[ii], mode64);
       vex_printf("\n\nInitial state:\n");
       PRINT_STATE;
       vex_printf("\n");
@@ -1009,7 +1014,8 @@ HInstrArray* doRegisterAllocation (
                if (vreg_lrs[m].dead_before > ii) {
                   vassert(vreg_lrs[m].reg_class != HRcINVALID);
                   EMIT_INSTR( (*genSpill)( rreg_state[k].rreg,
-                                           vreg_lrs[m].spill_offset ) );
+                                           vreg_lrs[m].spill_offset,
+                                           mode64 ) );
                }
             }
             rreg_state[k].disp = Unavail;
@@ -1033,7 +1039,7 @@ HInstrArray* doRegisterAllocation (
          We also build up the final vreg->rreg mapping to be applied
          to the insn. */
       
-      (*getRegUsage)( &reg_usage, instrs_in->arr[ii] );
+      (*getRegUsage)( &reg_usage, instrs_in->arr[ii], mode64 );
 
       initHRegRemap(&remap);
 
@@ -1098,7 +1104,8 @@ HInstrArray* doRegisterAllocation (
             if (reg_usage.mode[j] != HRmWrite) {
                vassert(vreg_lrs[m].reg_class != HRcINVALID);
                EMIT_INSTR( (*genReload)( rreg_state[k].rreg,
-                                         vreg_lrs[m].spill_offset ) );
+                                         vreg_lrs[m].spill_offset,
+                                         mode64 ) );
             }
             continue;
          }
@@ -1133,7 +1140,7 @@ HInstrArray* doRegisterAllocation (
             of consequent reloads required. */
          spillee
             = findMostDistantlyMentionedVReg ( 
-                 getRegUsage, instrs_in, ii+1, rreg_state, n_rregs );
+                 getRegUsage, instrs_in, ii+1, rreg_state, n_rregs, mode64 );
 
          if (spillee == -1) {
             /* Hmmmmm.  There don't appear to be any spill candidates.
@@ -1161,7 +1168,8 @@ HInstrArray* doRegisterAllocation (
          vassert(vreg_lrs[m].dead_before > ii);
          vassert(vreg_lrs[m].reg_class != HRcINVALID);
          EMIT_INSTR( (*genSpill)( rreg_state[spillee].rreg,
-                                  vreg_lrs[m].spill_offset ) );
+                                  vreg_lrs[m].spill_offset,
+                                  mode64 ) );
 
          /* Update the rreg_state to reflect the new assignment for this
             rreg. */
@@ -1177,7 +1185,8 @@ HInstrArray* doRegisterAllocation (
          if (reg_usage.mode[j] != HRmWrite) {
             vassert(vreg_lrs[m].reg_class != HRcINVALID);
             EMIT_INSTR( (*genReload)( rreg_state[spillee].rreg,
-                                      vreg_lrs[m].spill_offset ) );
+                                      vreg_lrs[m].spill_offset,
+                                      mode64 ) );
          }
 
          /* So after much twisting and turning, we have vreg mapped to
@@ -1198,7 +1207,7 @@ HInstrArray* doRegisterAllocation (
       */
 
       /* NOTE, DESTRUCTIVELY MODIFIES instrs_in->arr[ii]. */
-      (*mapRegs)( &remap, instrs_in->arr[ii] );
+      (*mapRegs)( &remap, instrs_in->arr[ii], mode64 );
       EMIT_INSTR( instrs_in->arr[ii] );
 
 #     if DEBUG_REGALLOC

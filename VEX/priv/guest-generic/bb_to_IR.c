@@ -274,8 +274,8 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
             vassert(resteerOKfn(dres.continueAt));
             delta = dres.continueAt - guest_IP_bbstart;
             /* we now have to start a new extent slot. */
-	    vge->n_used++;
-	    vassert(vge->n_used <= 3);
+            vge->n_used++;
+            vassert(vge->n_used <= 3);
             vge->base[vge->n_used-1] = dres.continueAt;
             vge->len[vge->n_used-1] = 0;
             n_resteers++;

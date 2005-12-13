@@ -209,7 +209,7 @@ static void addInstr ( ISelEnv* env, PPC32Instr* instr )
 {
    addHInstr(env->code, instr);
    if (vex_traceflags & VEX_TRACE_VCODE) {
-      ppPPC32Instr(instr);
+      ppPPC32Instr(instr, False);
       vex_printf("\n");
    }
 }

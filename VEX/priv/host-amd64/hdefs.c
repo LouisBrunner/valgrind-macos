@@ -1019,8 +1019,9 @@ AMD64Instr* AMD64Instr_SseShuf ( Int order, HReg src, HReg dst ) {
    return i;
 }
 
-void ppAMD64Instr ( AMD64Instr* i ) 
+void ppAMD64Instr ( AMD64Instr* i, Bool mode64 ) 
 {
+   vassert(mode64 == True);
    switch (i->tag) {
       case Ain_Imm64: 
          vex_printf("movabsq $0x%llx,", i->Ain.Imm64.imm64);
@@ -1335,9 +1336,10 @@ void ppAMD64Instr ( AMD64Instr* i )
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
+void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
 {
    Bool unary;
+   vassert(mode64 == True);
    initHRegUsage(u);
    switch (i->tag) {
       case Ain_Imm64:
@@ -1607,7 +1609,7 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          addHRegUse(u, HRmWrite, i->Ain.SseShuf.dst);
          return;
       default:
-         ppAMD64Instr(i);
+         ppAMD64Instr(i, mode64);
          vpanic("getRegUsage_AMD64Instr");
    }
 }
@@ -1618,8 +1620,9 @@ static inline void mapReg(HRegRemap* m, HReg* r)
    *r = lookupHRegRemap(m, *r);
 }
 
-void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
+void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
 {
+   vassert(mode64 == True);
    switch (i->tag) {
       case Ain_Imm64:
          mapReg(m, &i->Ain.Imm64.dst);
@@ -1781,7 +1784,7 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
          mapReg(m, &i->Ain.SseShuf.dst);
          return;
       default:
-         ppAMD64Instr(i);
+         ppAMD64Instr(i, mode64);
          vpanic("mapRegs_AMD64Instr");
    }
 }
@@ -1818,11 +1821,12 @@ Bool isMove_AMD64Instr ( AMD64Instr* i, HReg* src, HReg* dst )
    register allocator.  Note it's critical these don't write the
    condition codes. */
 
-AMD64Instr* genSpill_AMD64 ( HReg rreg, Int offsetB )
+AMD64Instr* genSpill_AMD64 ( HReg rreg, Int offsetB, Bool mode64 )
 {
    AMD64AMode* am;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
+   vassert(mode64 == True);
    am = AMD64AMode_IR(offsetB, hregAMD64_RBP());
 
    switch (hregClass(rreg)) {
@@ -1836,11 +1840,12 @@ AMD64Instr* genSpill_AMD64 ( HReg rreg, Int offsetB )
    }
 }
 
-AMD64Instr* genReload_AMD64 ( HReg rreg, Int offsetB )
+AMD64Instr* genReload_AMD64 ( HReg rreg, Int offsetB, Bool mode64 )
 {
    AMD64AMode* am;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
+   vassert(mode64 == True);
    am = AMD64AMode_IR(offsetB, hregAMD64_RBP());
    switch (hregClass(rreg)) {
       case HRcInt64:
@@ -2195,7 +2200,7 @@ static UChar* do_ffree_st ( UChar* p, Int n )
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code. */
 
-Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
+Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i, Bool mode64 )
 {
    UInt /*irno,*/ opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
    UInt   xtra;
@@ -2205,13 +2210,14 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
    UChar* ptmp;
    Int    j;
    vassert(nbuf >= 32);
+   vassert(mode64 == True);
 
    /* Wrap an integer as a int register, for use assembling
       GrpN insns, in which the greg field is used as a sub-opcode
       and does not really contain a register. */
 #  define fake(_n) mkHReg((_n), HRcInt64, False)
 
-   /* vex_printf("asm  "); ppAMD64Instr(i); vex_printf("\n"); */
+   /* vex_printf("asm  "); ppAMD64Instr(i, mode64); vex_printf("\n"); */
 
    switch (i->tag) {
 
@@ -3337,7 +3343,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
    }
 
   bad:
-   ppAMD64Instr(i);
+   ppAMD64Instr(i, mode64);
    vpanic("emit_AMD64Instr");
    /*NOTREACHED*/
    

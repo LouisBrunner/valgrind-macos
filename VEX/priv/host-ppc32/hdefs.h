@@ -774,17 +774,17 @@ extern PPC32Instr* PPC32Instr_AvSplat    ( UChar sz, HReg dst, PPC32VI5s* src );
 extern PPC32Instr* PPC32Instr_AvCMov     ( PPC32CondCode, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_AvLdVSCR   ( HReg src );
 
-extern void ppPPC32Instr ( PPC32Instr* );
+extern void ppPPC32Instr ( PPC32Instr*, Bool mode64 );
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void         getRegUsage_PPC32Instr ( HRegUsage*, PPC32Instr* );
-extern void         mapRegs_PPC32Instr     ( HRegRemap*, PPC32Instr* );
+extern void         getRegUsage_PPC32Instr ( HRegUsage*, PPC32Instr*, Bool mode64 );
+extern void         mapRegs_PPC32Instr     ( HRegRemap*, PPC32Instr* , Bool mode64);
 extern Bool         isMove_PPC32Instr      ( PPC32Instr*, HReg*, HReg* );
-extern Int          emit_PPC32Instr        ( UChar* buf, Int nbuf, PPC32Instr* );
-extern PPC32Instr*  genSpill_PPC32         ( HReg rreg, UShort offsetB );
-extern PPC32Instr*  genReload_PPC32        ( HReg rreg, UShort offsetB );
-extern void         getAllocableRegs_PPC32 ( Int*, HReg** );
+extern Int          emit_PPC32Instr        ( UChar* buf, Int nbuf, PPC32Instr*, Bool mode64 );
+extern PPC32Instr*  genSpill_PPC32         ( HReg rreg, UShort offsetB, Bool mode64 );
+extern PPC32Instr*  genReload_PPC32        ( HReg rreg, UShort offsetB, Bool mode64 );
+extern void         getAllocableRegs_PPC32 ( Int*, HReg**, Bool mode64 );
 extern HInstrArray* iselBB_PPC32           ( IRBB*, VexArchInfo* );
 
 #endif /* ndef __LIBVEX_HOST_PPC32_HDEFS_H */

@@ -41,6 +41,6 @@ int main(void)
    for (i = 0; i < REPS; i++) {
       sum += f(i & 0xff);
    }
-   return sum % 256;
+   return ( sum == 0xdeadbeef ? 1 : 0 );
 }
 

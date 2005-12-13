@@ -186,7 +186,7 @@ sub read_vgperf_file($)
 	} elsif ($line =~ /^\s*vgopts:\s*(.*)$/) {
             $vgopts = $1;
         } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
-            $prog = validate_program(".", $1, 0, 0);
+            $prog = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*tools:\s*(.*)$/) {
             @tools = validate_tools($1);
         } elsif ($line =~ /^\s*args:\s*(.*)$/) {

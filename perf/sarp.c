@@ -11,18 +11,18 @@
 #include <assert.h>
 #include <time.h>
 
-#define REPS   1000*1000
+#define REPS   1000*1000*10
 
 int f(int i)
 {
    // This nonsense is just to ensure that the compiler does not optimise
    // away the stack allocation.
-   char big_array[8348];
-   big_array[0]    = 12;
-   big_array[2333] = 34;
-   big_array[5678] = 56;
-   big_array[8347] = 78;
-   assert( 8000 == (&big_array[8100] - &big_array[100]) );
+   char big_array[500];
+   big_array[0]   = 12;
+   big_array[ 23] = 34;
+   big_array[256] = 56;
+   big_array[434] = 78;
+   assert( 480 == (&big_array[490] - &big_array[10]) );
    return big_array[i];
 }
 
@@ -36,7 +36,7 @@ int main(void)
 
    // Pause for a bit so that the native run-time is not 0.00, which leads
    // to ridiculous slow-down figures.
-   nanosleep(&req, NULL);
+   //nanosleep(&req, NULL);
    
    for (i = 0; i < REPS; i++) {
       sum += f(i & 0xff);

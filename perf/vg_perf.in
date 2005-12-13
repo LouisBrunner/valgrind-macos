@@ -62,9 +62,16 @@ use strict;
 #----------------------------------------------------------------------------
 # Global vars
 #----------------------------------------------------------------------------
-my $usage="vg_perf [--all, --valgrind]\n";
+my $usage = <<END
+usage: vg_perf [options] [files or dirs]
 
-my $tmp="vg_perf.tmp.$$";
+  options for the user, with defaults in [ ], are:
+    -h --help             show this message
+    --all                 run all tests under this directory
+    --reps                number of repeats for each program [3]
+
+END
+;
 
 # Test variables
 my $vgopts;             # valgrind options
@@ -83,7 +90,7 @@ my %toolnames = (
 );
 
 # We run each program this many times and choose the best time.
-my $n_runs = 3;
+my $n_reps = 3;
 
 my $num_tests_done   = 0;
 my $num_timings_done = 0;
@@ -144,6 +151,8 @@ sub process_command_line()
                 $alldirs = 1;
             } elsif ($arg =~ /^--valgrind=(.*)$/) {
                 $vg_dir = $1;
+            } elsif ($arg =~ /^--reps=(\d)+$/) {
+                $n_reps = $1;
             } else {
                 die $usage;
             }
@@ -266,7 +275,7 @@ sub do_one_test($$)
     # Do the native run(s).
     printf("nt:");
     my $cmd     = "$timecmd $prog $args";
-    my $tNative = time_prog($cmd, $n_runs);
+    my $tNative = time_prog($cmd, $n_reps);
     printf("%4.1fs  ", $tNative);
 
     foreach my $tool (@tools) {
@@ -283,7 +292,7 @@ sub do_one_test($$)
                     . "--memcheck:leak-check=no --addrcheck:leak-check=no "
                     . "$vgopts ";
         my $cmd     = "$vgsetup $timecmd $vgcmd $prog $args";
-        my $tTool   = time_prog($cmd, $n_runs);
+        my $tTool   = time_prog($cmd, $n_reps);
         printf("%4.1fs (%4.1fx)  ", $tTool, $tTool/$tNative);
 
         $num_timings_done++;

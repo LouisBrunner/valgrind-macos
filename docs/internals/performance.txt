@@ -11,6 +11,9 @@ Just before 3.1.0:
 
 Post 3.1.0:
 - Julian made the tree builder linear.  Saved 2--13% on a range of programs.
+- Nick improved vg_SP_update_pass() to identify more small constant
+  increments/decrements of SP, so the fast cases can be used more often.
+  Saved 1--3% on a few programs.
 
 COMPVBITS branch:
 - Nick converted to compress V bits, initial version saved 0--5% on most

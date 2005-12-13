@@ -1295,16 +1295,16 @@ void VG_(print_tt_tc_stats) ( void )
       n_fast_updates, n_fast_flushes );
 
    VG_(message)(Vg_DebugMsg,
-                "translate: new        %,lld "
+                " transtab: new        %,lld "
                 "(%,llu -> %,llu; ratio %,llu:10) [%,llu scs]",
                 n_in_count, n_in_osize, n_in_tsize,
                 safe_idiv(10*n_in_tsize, n_in_osize),
                 n_in_sc_count);
    VG_(message)(Vg_DebugMsg,
-                "translate: dumped     %,llu (%,llu -> ?" "?)",
+                " transtab: dumped     %,llu (%,llu -> ?" "?)",
                 n_dump_count, n_dump_osize );
    VG_(message)(Vg_DebugMsg,
-                "translate: discarded  %,llu (%,llu -> ?" "?)",
+                " transtab: discarded  %,llu (%,llu -> ?" "?)",
                 n_disc_count, n_disc_osize );
 
    if (0) {

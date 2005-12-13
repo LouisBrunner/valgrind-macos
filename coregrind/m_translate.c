@@ -49,7 +49,6 @@
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"
 
-
 /*------------------------------------------------------------*/
 /*--- Stats                                                ---*/
 /*------------------------------------------------------------*/
@@ -99,24 +98,99 @@ static Bool need_to_handle_SP_assignment(void)
             VG_(tdict).track_die_mem_stack    );
 }
 
-/* NOTE: this comment is out of date */
+// - The SP aliases are held in an array which is used as a circular buffer.
+//   This misses very few constant updates of SP (ie. < 0.1%) while using a
+//   small, constant structure that will also never fill up and cause
+//   execution to abort.
+// - Unused slots have a .temp value of 'IRTemp_INVALID'.
+// - 'next_SP_alias_slot' is the index where the next alias will be stored.
+// - If the buffer fills, we circle around and start over-writing
+//   non-IRTemp_INVALID values.  This is rare, and the overwriting of a
+//   value that would have subsequently be used is even rarer.
+// - Every slot below next_SP_alias_slot holds a non-IRTemp_INVALID value.
+//   The rest either all won't (if we haven't yet circled around) or all
+//   will (if we have circled around).
 
-/* For tools that want to know about %ESP changes, this pass adds
+typedef 
+   struct {
+      IRTemp temp;
+      Long   delta;
+   }
+   SP_Alias;
+
+// With 32 slots the buffer fills very rarely -- eg. once in a run of GCC.
+// And I've tested with smaller values and the wrap-around case works ok.
+#define N_ALIASES    32
+static SP_Alias SP_aliases[N_ALIASES];
+static Int      next_SP_alias_slot = 0;
+
+static void clear_SP_aliases(void)
+{
+   Int i;
+   for (i = 0; i < N_ALIASES; i++) {
+      SP_aliases[i].temp  = IRTemp_INVALID;
+      SP_aliases[i].delta = 0;
+   }
+   next_SP_alias_slot = 0;
+}
+
+static void add_SP_alias(IRTemp temp, Long delta)
+{
+   vg_assert(temp != IRTemp_INVALID);
+   SP_aliases[ next_SP_alias_slot ].temp  = temp;
+   SP_aliases[ next_SP_alias_slot ].delta = delta;
+   next_SP_alias_slot++;
+   if (N_ALIASES == next_SP_alias_slot) next_SP_alias_slot = 0;
+}
+
+static Bool get_SP_delta(IRTemp temp, ULong* delta)
+{
+   Int i;      // i must be signed!
+   vg_assert(IRTemp_INVALID != temp);
+   // Search backwards between current buffer position and the start.
+   for (i = next_SP_alias_slot-1; i >= 0; i--) {
+      if (temp == SP_aliases[i].temp) {
+         *delta = SP_aliases[i].delta;
+         return True;
+      }
+   }
+   // Search backwards between the end and the current buffer position.
+   for (i = N_ALIASES-1; i >= next_SP_alias_slot; i--) {
+      if (temp == SP_aliases[i].temp) {
+         *delta = SP_aliases[i].delta;
+         return True;
+      }
+   }
+   return False;
+}
+
+static void update_SP_aliases(Long delta)
+{
+   Int i;
+   for (i = 0; i < N_ALIASES; i++) {
+      if (SP_aliases[i].temp == IRTemp_INVALID) {
+         return;
+      }
+      SP_aliases[i].delta += delta;
+   }
+}
+
+
+/* For tools that want to know about SP changes, this pass adds
    in the appropriate hooks.  We have to do it after the tool's
-   instrumentation, so the tool doesn't have to worry about the CCALLs
+   instrumentation, so the tool doesn't have to worry about the C calls
    it adds in, and we must do it before register allocation because
-   spilled temps make it much harder to work out the %esp deltas.
-   Thus we have it as an extra phase between the two. 
-   
-   We look for "GETL %ESP, t_ESP", then track ADDs and SUBs of
-   literal values to t_ESP, and the total delta of the ADDs/SUBs.  Then if
-   "PUTL t_ESP, %ESP" happens, we call the helper with the known delta.  We
-   also cope with "MOVL t_ESP, tX", making tX the new t_ESP.  If any other
-   instruction clobbers t_ESP, we don't track it anymore, and fall back to
-   the delta-is-unknown case.  That case is also used when the delta is not
-   a nice small amount, or an unknown amount.
-*/
+   spilled temps make it much harder to work out the SP deltas.
+   This it is done with Vex's "second instrumentation" pass.
 
+   Basically, we look for GET(SP)/PUT(SP) pairs and track constant
+   increments/decrements of SP between them.  (This requires tracking one or
+   more "aliases", which are not exact aliases but instead are tempregs
+   whose value is equal to the SP's plus or minus a known constant.)
+   If all the changes to SP leading up to a PUT(SP) are by known, small
+   constants, we can do a specific call to eg. new_mem_stack_4, otherwise
+   we fall back to the case that handles an unknown SP change.
+*/
 static
 IRBB* vg_SP_update_pass ( IRBB*             bb_in, 
                           VexGuestLayout*   layout, 
@@ -130,9 +204,8 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
    IRStmt*  st;
    IRExpr*  e;
    IRArray* descr;
-   IRTemp   curr;
    IRType   typeof_SP;
-   Long     delta;
+   Long     delta, con;
 
    /* Set up BB */
    IRBB* bb     = emptyIRBB();
@@ -140,7 +213,6 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
    bb->next     = dopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;
 
-   curr  = IRTemp_INVALID;
    delta = 0;
 
    sizeof_SP = layout->sizeof_SP;
@@ -157,9 +229,10 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
        (sizeof_SP==4 ? (Long)(Int)(con->Ico.U32)                        \
                      : (Long)(con->Ico.U64))
 
-#  define DO(kind, syze)                                                \
+// XXX: convert this to a function
+#  define DO(kind, syze, tmpp)                                          \
       do {                                                              \
-         if (!VG_(tdict).track_##kind##_mem_stack_##syze) \
+         if (!VG_(tdict).track_##kind##_mem_stack_##syze)               \
             goto generic;                                               \
                                                                         \
          /* I don't know if it's really necessary to say that the */    \
@@ -168,7 +241,7 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
                     1/*regparms*/,                                      \
                     "track_" #kind "_mem_stack_" #syze,                 \
                     VG_(tdict).track_##kind##_mem_stack_##syze,         \
-                    mkIRExprVec_1(IRExpr_Tmp(curr))                     \
+                    mkIRExprVec_1(IRExpr_Tmp(tmpp))                     \
                  );                                                     \
          dcall->nFxState = 1;                                           \
          dcall->fxState[0].fx     = Ifx_Read;                           \
@@ -177,15 +250,17 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
                                                                         \
          addStmtToIRBB( bb, IRStmt_Dirty(dcall) );                      \
                                                                         \
+         update_SP_aliases(-delta);                                     \
+                                                                        \
          n_SP_updates_fast++;                                           \
                                                                         \
       } while (0)
 
+   clear_SP_aliases();
+
    for (i = 0; i <  bb_in->stmts_used; i++) {
 
       st = bb_in->stmts[i];
-      if (!st)
-         continue;
 
       /* t = Get(sp):   curr = t, delta = 0 */
       if (st->tag != Ist_Tmp) goto case2;
@@ -193,8 +268,7 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
       if (e->tag != Iex_Get)              goto case2;
       if (e->Iex.Get.offset != offset_SP) goto case2;
       if (e->Iex.Get.ty != typeof_SP)     goto case2;
-      curr = st->Ist.Tmp.tmp;
-      delta = 0;
+      add_SP_alias(st->Ist.Tmp.tmp, 0);
       addStmtToIRBB( bb, st );
       continue;
 
@@ -204,14 +278,15 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
       e = st->Ist.Tmp.data;
       if (e->tag != Iex_Binop) goto case3;
       if (e->Iex.Binop.arg1->tag != Iex_Tmp) goto case3;
-      if (e->Iex.Binop.arg1->Iex.Tmp.tmp != curr) goto case3;
+      if (!get_SP_delta(e->Iex.Binop.arg1->Iex.Tmp.tmp, &delta)) goto case3;
       if (e->Iex.Binop.arg2->tag != Iex_Const) goto case3;
       if (!IS_ADD_OR_SUB(e->Iex.Binop.op)) goto case3;
-      curr = st->Ist.Tmp.tmp;
-      if (IS_ADD(e->Iex.Binop.op))
-         delta += GET_CONST(e->Iex.Binop.arg2->Iex.Const.con);
-      else
-         delta -= GET_CONST(e->Iex.Binop.arg2->Iex.Const.con);
+      con = GET_CONST(e->Iex.Binop.arg2->Iex.Const.con);
+      if (IS_ADD(e->Iex.Binop.op)) {
+         add_SP_alias(st->Ist.Tmp.tmp, delta + con);
+      } else {
+         add_SP_alias(st->Ist.Tmp.tmp, delta - con);
+      }
       addStmtToIRBB( bb, st );
       continue;
 
@@ -220,8 +295,8 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
       if (st->tag != Ist_Tmp) goto case4;
       e = st->Ist.Tmp.data;
       if (e->tag != Iex_Tmp) goto case4;
-      if (e->Iex.Tmp.tmp != curr) goto case4;
-      curr = st->Ist.Tmp.tmp;
+      if (!get_SP_delta(e->Iex.Tmp.tmp, &delta)) goto case4;
+      add_SP_alias(st->Ist.Tmp.tmp, delta);
       addStmtToIRBB( bb, st );
       continue;
 
@@ -230,19 +305,20 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
       if (st->tag != Ist_Put) goto case5;
       if (st->Ist.Put.offset != offset_SP) goto case5;
       if (st->Ist.Put.data->tag != Iex_Tmp) goto case5;
-      if (st->Ist.Put.data->Iex.Tmp.tmp == curr) {
+      if (get_SP_delta(st->Ist.Put.data->Iex.Tmp.tmp, &delta)) {
+         IRTemp tttmp = st->Ist.Put.data->Iex.Tmp.tmp;
          switch (delta) {
-            case   0:              addStmtToIRBB(bb,st); delta = 0; continue;
-            case   4: DO(die, 4);  addStmtToIRBB(bb,st); delta = 0; continue;
-            case  -4: DO(new, 4);  addStmtToIRBB(bb,st); delta = 0; continue;
-            case   8: DO(die, 8);  addStmtToIRBB(bb,st); delta = 0; continue;
-            case  -8: DO(new, 8);  addStmtToIRBB(bb,st); delta = 0; continue;
-            case  12: DO(die, 12); addStmtToIRBB(bb,st); delta = 0; continue;
-            case -12: DO(new, 12); addStmtToIRBB(bb,st); delta = 0; continue;
-            case  16: DO(die, 16); addStmtToIRBB(bb,st); delta = 0; continue;
-            case -16: DO(new, 16); addStmtToIRBB(bb,st); delta = 0; continue;
-            case  32: DO(die, 32); addStmtToIRBB(bb,st); delta = 0; continue;
-            case -32: DO(new, 32); addStmtToIRBB(bb,st); delta = 0; continue;
+            case   0:                     addStmtToIRBB(bb,st); continue;
+            case   4: DO(die, 4,  tttmp); addStmtToIRBB(bb,st); continue;
+            case  -4: DO(new, 4,  tttmp); addStmtToIRBB(bb,st); continue;
+            case   8: DO(die, 8,  tttmp); addStmtToIRBB(bb,st); continue;
+            case  -8: DO(new, 8,  tttmp); addStmtToIRBB(bb,st); continue;
+            case  12: DO(die, 12, tttmp); addStmtToIRBB(bb,st); continue;
+            case -12: DO(new, 12, tttmp); addStmtToIRBB(bb,st); continue;
+            case  16: DO(die, 16, tttmp); addStmtToIRBB(bb,st); continue;
+            case -16: DO(new, 16, tttmp); addStmtToIRBB(bb,st); continue;
+            case  32: DO(die, 32, tttmp); addStmtToIRBB(bb,st); continue;
+            case -32: DO(new, 32, tttmp); addStmtToIRBB(bb,st); continue;
             default:  
                n_SP_updates_generic_known++;
                goto generic;
@@ -251,6 +327,9 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
          IRTemp old_SP;
          n_SP_updates_generic_unknown++;
 
+         // Nb: if all is well, this generic case will typically be
+         // called something like every 1000th SP update.  If it's more than
+         // that, the above code may be missing some cases.
         generic:
          /* Pass both the old and new SP values to this helper. */
          old_SP = newIRTemp(bb->tyenv, typeof_SP);
@@ -268,8 +347,8 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
 
          addStmtToIRBB( bb, st );
 
-         curr = st->Ist.Put.data->Iex.Tmp.tmp;
-         delta = 0;
+         clear_SP_aliases();
+         add_SP_alias(st->Ist.Put.data->Iex.Tmp.tmp, 0);
          continue;
       }
 
@@ -307,7 +386,6 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
    VG_(core_panic)("vg_SP_update_pass: PutI or Dirty which overlaps SP");
 
 }
-
 
 /*------------------------------------------------------------*/
 /*--- Main entry point for the JITter.                     ---*/

@@ -2,8 +2,8 @@
 // Valgrind's handling of FP operations.  It is representative of all
 // programs that do a lot of FP operations.
 
-// This program was taken from http://www.fourmilab.ch/.  The front page of
-// that site says:
+// Licensing: This program is closely based on the one of the same name from
+// http://www.fourmilab.ch/.  The front page of that site says:
 //
 //   "Except for a few clearly-marked exceptions, all the material on this
 //   site is in the public domain and may be used in any manner without

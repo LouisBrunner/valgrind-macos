@@ -1,0 +1,2 @@
+prog: fbench
+tools: none memcheck

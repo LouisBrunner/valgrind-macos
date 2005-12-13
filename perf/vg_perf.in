@@ -225,7 +225,7 @@ sub mysystem($)
     }
 }
 
-# Run program N times, return the best wall-clock time.
+# Run program N times, return the best user time.
 sub time_prog($$)
 {
     my ($cmd, $n) = @_;
@@ -234,11 +234,11 @@ sub time_prog($$)
         mysystem("echo '$cmd' > perf.cmd");
         my $retval = mysystem("$cmd > perf.stdout 2> perf.stderr");
         (0 == $retval) or 
-            die "\n*** Command returned non-zero:  $cmd\n"
+            die "\n*** Command returned non-zero:  $cmd"
               . "\n*** See perf.{cmd,stdout,stderr} to diagnose what went wrong.\n";
         my $out = `cat perf.stderr`;
-        ($out =~ /walltime: ([\d\.]+)s/) or 
-            die "\n*** missing walltime in perf.stderr\n";
+        ($out =~ /usertime: ([\d\.]+)s/) or 
+            die "\n*** missing usertime in perf.stderr\n";
         $tmin = $1 if ($1 < $tmin);
     }
     return $tmin;
@@ -261,7 +261,7 @@ sub do_one_test($$)
 
     printf("%-12s", "$name:");
 
-    my $timecmd = "/usr/bin/time -f 'walltime: %es'";
+    my $timecmd = "/usr/bin/time -f 'usertime: %Us'";
 
     # Do the native run(s).
     printf("nt:");

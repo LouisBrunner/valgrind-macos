@@ -216,7 +216,13 @@ sub read_vgperf_file($)
 # propagate a Ctrl-C enabling us to quit.
 sub mysystem($) 
 {
-    (system($_[0]) != 2) or exit 1;      # 2 is SIGINT
+    my ($cmd) = @_;
+    my $retval = system($cmd);
+    if ($retval == 2) { 
+        exit 1; 
+    } else {
+        return $retval;
+    }
 }
 
 # Run program N times, return the best wall-clock time.
@@ -225,8 +231,14 @@ sub time_prog($$)
     my ($cmd, $n) = @_;
     my $tmin = 999999;
     for (my $i = 0; $i < $n; $i++) {
-        my $out = `$cmd 2>&1 1>/dev/null`;
-        $out =~ /walltime: ([\d\.]+)s/;
+        mysystem("echo '$cmd' > perf.cmd");
+        my $retval = mysystem("$cmd > perf.stdout 2> perf.stderr");
+        (0 == $retval) or 
+            die "\n*** Command returned non-zero:  $cmd\n"
+              . "\n*** See perf.{cmd,stdout,stderr} to diagnose what went wrong.\n";
+        my $out = `cat perf.stderr`;
+        ($out =~ /walltime: ([\d\.]+)s/) or 
+            die "\n*** missing walltime in perf.stderr\n";
         $tmin = $1 if ($1 < $tmin);
     }
     return $tmin;

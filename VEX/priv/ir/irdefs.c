@@ -213,6 +213,8 @@ void ppIROp ( IROp op )
 
       case Iop_DivU32: vex_printf("DivU32"); return;
       case Iop_DivS32: vex_printf("DivS32"); return;
+      case Iop_DivU64: vex_printf("DivU64"); return;
+      case Iop_DivS64: vex_printf("DivS64"); return;
 
       case Iop_DivModU64to32: vex_printf("DivModU64to32"); return;
       case Iop_DivModS64to32: vex_printf("DivModS64to32"); return;
@@ -1439,6 +1441,9 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
 
       case Iop_DivU32: case Iop_DivS32:
          BINARY(Ity_I32, Ity_I32,Ity_I32);
+
+      case Iop_DivU64: case Iop_DivS64:
+         BINARY(Ity_I64, Ity_I64, Ity_I64);
 
       case Iop_DivModU64to32: case Iop_DivModS64to32:
          BINARY(Ity_I64, Ity_I64,Ity_I32);

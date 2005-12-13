@@ -50,6 +50,7 @@
 #include "libvex_guest_amd64.h"
 #include "libvex_guest_arm.h"
 #include "libvex_guest_ppc32.h"
+#include "libvex_guest_ppc64.h"
 
 #include "main/vex_globals.h"
 #include "main/vex_util.h"
@@ -331,6 +332,25 @@ VexTranslateResult LibVEX_Translate (
                  || archinfo_guest->subarch == VexSubArchPPC32_VFI);
          break;
 
+      case VexArchPPC64:
+         mode64      = True;
+         getAllocableRegs_PPC32 ( &n_available_real_regs,
+                                  &available_real_regs, mode64 );
+         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPC32Instr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_PPC32Instr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_PPC32Instr;
+         genSpill    = (HInstr*(*)(HReg,Int, Bool)) genSpill_PPC32;
+         genReload   = (HInstr*(*)(HReg,Int, Bool)) genReload_PPC32;
+         ppInstr     = (void(*)(HInstr*, Bool)) ppPPC32Instr;
+         ppReg       = (void(*)(HReg)) ppHRegPPC32;
+         iselBB      = iselBB_PPC32;
+         emit        = (Int(*)(UChar*,Int,HInstr*, Bool)) emit_PPC32Instr;
+         host_is_bigendian = True;
+         host_word_type    = Ity_I64;
+         vassert(archinfo_guest->subarch == VexSubArchPPC64_FI
+                 || archinfo_guest->subarch == VexSubArchPPC64_VFI);
+         break;
+
       default:
          vpanic("LibVEX_Translate: unsupported target insn set");
    }
@@ -399,6 +419,22 @@ VexTranslateResult LibVEX_Translate (
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TILEN ) == 4);
          break;
 
+      case VexArchPPC64:
+         preciseMemExnsFn = guest_ppc64_state_requires_precise_mem_exns;
+         disInstrFn       = disInstr_PPC32;
+         specHelper       = guest_ppc64_spechelper;
+         guest_sizeB      = sizeof(VexGuestPPC64State);
+         guest_word_type  = Ity_I64;
+         guest_layout     = &ppc64Guest_layout;
+         offB_TISTART     = offsetof(VexGuestPPC64State,guest_TISTART);
+         offB_TILEN       = offsetof(VexGuestPPC64State,guest_TILEN);
+         vassert(archinfo_guest->subarch == VexSubArchPPC64_FI
+                 || archinfo_guest->subarch == VexSubArchPPC64_VFI);
+         vassert(0 == sizeof(VexGuestPPC64State) % 16);
+         vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TISTART ) == 8);
+         vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TILEN ) == 8);
+         break;
+
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
    }
@@ -455,7 +491,7 @@ VexTranslateResult LibVEX_Translate (
          UInt   guest_bytes_read = (UInt)guest_extents->len[0];
          vex_printf(". 0 %llx %u\n.", guest_bytes_addr, guest_bytes_read );
          for (i = 0; i < guest_bytes_read; i++)
-         vex_printf(" %02x", (Int)p[i] );
+            vex_printf(" %02x", (Int)p[i] );
          vex_printf("\n\n");
       }
    }
@@ -566,7 +602,7 @@ VexTranslateResult LibVEX_Translate (
 
    /* Register allocate. */
    rcode = doRegisterAllocation ( vcode, available_real_regs,
-                                           n_available_real_regs,
+                                  n_available_real_regs,
                                   isMove, getRegUsage, mapRegs, 
                                   genSpill, genReload, guest_sizeB,
                                   ppInstr, ppReg, mode64 );
@@ -669,6 +705,7 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
       case VexArchAMD64:    return "AMD64";
       case VexArchARM:      return "ARM";
       case VexArchPPC32:    return "PPC32";
+      case VexArchPPC64:    return "PPC64";
       default:              return "VexArch???";
    }
 }
@@ -685,6 +722,8 @@ const HChar* LibVEX_ppVexSubArch ( VexSubArch subarch )
       case VexSubArchPPC32_I:    return "ppc32-int-only";
       case VexSubArchPPC32_FI:   return "ppc32-int-and-fp";
       case VexSubArchPPC32_VFI:  return "ppc32-int-fp-and-AV";
+      case VexSubArchPPC64_FI:   return "ppc64-int-and-fp";
+      case VexSubArchPPC64_VFI:  return "ppc64-int-fp-and-AV";
       default:                   return "VexSubArch???";
    }
 }

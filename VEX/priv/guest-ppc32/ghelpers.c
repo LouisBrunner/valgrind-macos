@@ -137,6 +137,12 @@ IRExpr* guest_ppc32_spechelper ( HChar* function_name,
    return NULL;
 }
 
+IRExpr* guest_ppc64_spechelper ( HChar* function_name,
+                                 IRExpr** args )
+{
+   return NULL;
+}
+
 
 /*----------------------------------------------*/
 /*--- The exported fns ..                    ---*/
@@ -614,8 +620,39 @@ Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff,
    return False;
 }
 
+Bool guest_ppc64_state_requires_precise_mem_exns ( Int minoff, 
+                                                   Int maxoff )
+{
+   Int lr_min  = offsetof(VexGuestPPC64State, guest_LR);
+   Int lr_max  = lr_min + 4 - 1;
+   Int r1_min  = offsetof(VexGuestPPC64State, guest_GPR1);
+   Int r1_max  = r1_min + 4 - 1;
+   Int cia_min = offsetof(VexGuestPPC64State, guest_CIA);
+   Int cia_max = cia_min + 4 - 1;
 
-#define ALWAYSDEFD(field)                             \
+   if (maxoff < lr_min || minoff > lr_max) {
+      /* no overlap with LR */
+   } else {
+      return True;
+   }
+
+   if (maxoff < r1_min || minoff > r1_max) {
+      /* no overlap with R1 */
+   } else {
+      return True;
+   }
+
+   if (maxoff < cia_min || minoff > cia_max) {
+      /* no overlap with CIA */
+   } else {
+      return True;
+   }
+
+   return False;
+}
+
+
+#define ALWAYSDEFD32(field)                           \
     { offsetof(VexGuestPPC32State, field),            \
       (sizeof ((VexGuestPPC32State*)0)->field) }
 
@@ -638,16 +675,48 @@ VexGuestLayout
           .n_alwaysDefd = 7,
 
           .alwaysDefd 
-	  = { /*  0 */ ALWAYSDEFD(guest_CIA),
-	      /*  1 */ ALWAYSDEFD(guest_EMWARN),
-	      /*  2 */ ALWAYSDEFD(guest_TISTART),
-	      /*  3 */ ALWAYSDEFD(guest_TILEN),
-	      /*  4 */ ALWAYSDEFD(guest_VSCR),
-	      /*  5 */ ALWAYSDEFD(guest_FPROUND),
-	      /*  6 */ ALWAYSDEFD(guest_RESVN)
+	  = { /*  0 */ ALWAYSDEFD32(guest_CIA),
+	      /*  1 */ ALWAYSDEFD32(guest_EMWARN),
+	      /*  2 */ ALWAYSDEFD32(guest_TISTART),
+	      /*  3 */ ALWAYSDEFD32(guest_TILEN),
+	      /*  4 */ ALWAYSDEFD32(guest_VSCR),
+	      /*  5 */ ALWAYSDEFD32(guest_FPROUND),
+	      /*  6 */ ALWAYSDEFD32(guest_RESVN)
             }
         };
 
+#define ALWAYSDEFD64(field)                           \
+    { offsetof(VexGuestPPC64State, field),            \
+      (sizeof ((VexGuestPPC64State*)0)->field) }
+
+VexGuestLayout
+   ppc64Guest_layout 
+      = { 
+          /* Total size of the guest state, in bytes. */
+          .total_sizeB = sizeof(VexGuestPPC64State),
+
+          /* Describe the stack pointer. */
+          .offset_SP = offsetof(VexGuestPPC64State,guest_GPR1),
+          .sizeof_SP = 4,
+
+          /* Describe the instruction pointer. */
+          .offset_IP = offsetof(VexGuestPPC64State,guest_CIA),
+          .sizeof_IP = 4,
+
+          /* Describe any sections to be regarded by Memcheck as
+             'always-defined'. */
+          .n_alwaysDefd = 7,
+
+          .alwaysDefd 
+	  = { /*  0 */ ALWAYSDEFD64(guest_CIA),
+	      /*  1 */ ALWAYSDEFD64(guest_EMWARN),
+	      /*  2 */ ALWAYSDEFD64(guest_TISTART),
+	      /*  3 */ ALWAYSDEFD64(guest_TILEN),
+	      /*  4 */ ALWAYSDEFD64(guest_VSCR),
+	      /*  5 */ ALWAYSDEFD64(guest_FPROUND),
+	      /*  6 */ ALWAYSDEFD64(guest_RESVN)
+            }
+        };
 
 /*---------------------------------------------------------------*/
 /*--- end                              guest-ppc32/ghelpers.c ---*/

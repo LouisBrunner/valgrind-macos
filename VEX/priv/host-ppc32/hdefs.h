@@ -48,7 +48,7 @@
 #define __LIBVEX_HOST_PPC32_HDEFS_H
 
 /* Num registers used for function calls */
-#define PPC32_N_REGPARMS 8
+#define PPC_N_REGPARMS 8
 
 
 /* --------- Registers. --------- */
@@ -59,38 +59,38 @@
 
 extern void ppHRegPPC32 ( HReg );
 
-extern HReg hregPPC32_GPR0  ( void );   // scratch reg / zero reg
-extern HReg hregPPC32_GPR1  ( void );   // Stack Frame Pointer
-extern HReg hregPPC32_GPR2  ( void );   // TOC pointer - not used
-extern HReg hregPPC32_GPR3  ( void );
-extern HReg hregPPC32_GPR4  ( void );
-extern HReg hregPPC32_GPR5  ( void );
-extern HReg hregPPC32_GPR6  ( void );
-extern HReg hregPPC32_GPR7  ( void );
-extern HReg hregPPC32_GPR8  ( void );
-extern HReg hregPPC32_GPR9  ( void );
-extern HReg hregPPC32_GPR10 ( void );
-extern HReg hregPPC32_GPR11 ( void );
-extern HReg hregPPC32_GPR12 ( void );
-extern HReg hregPPC32_GPR13 ( void );   // thread specific pointer - not used
-extern HReg hregPPC32_GPR14 ( void );
-extern HReg hregPPC32_GPR15 ( void );
-extern HReg hregPPC32_GPR16 ( void );
-extern HReg hregPPC32_GPR17 ( void );
-extern HReg hregPPC32_GPR18 ( void );
-extern HReg hregPPC32_GPR19 ( void );
-extern HReg hregPPC32_GPR20 ( void );
-extern HReg hregPPC32_GPR21 ( void );
-extern HReg hregPPC32_GPR22 ( void );
-extern HReg hregPPC32_GPR23 ( void );
-extern HReg hregPPC32_GPR24 ( void );
-extern HReg hregPPC32_GPR25 ( void );
-extern HReg hregPPC32_GPR26 ( void );
-extern HReg hregPPC32_GPR27 ( void );
-extern HReg hregPPC32_GPR28 ( void );
-extern HReg hregPPC32_GPR29 ( void );
-extern HReg hregPPC32_GPR30 ( void );
-extern HReg hregPPC32_GPR31 ( void );    // GuestStatePtr
+extern HReg hregPPC_GPR0  ( Bool mode64 ); // scratch reg / zero reg
+extern HReg hregPPC_GPR1  ( Bool mode64 ); // Stack Frame Pointer
+extern HReg hregPPC_GPR2  ( Bool mode64 ); // not used: TOC pointer
+extern HReg hregPPC_GPR3  ( Bool mode64 );
+extern HReg hregPPC_GPR4  ( Bool mode64 );
+extern HReg hregPPC_GPR5  ( Bool mode64 );
+extern HReg hregPPC_GPR6  ( Bool mode64 );
+extern HReg hregPPC_GPR7  ( Bool mode64 );
+extern HReg hregPPC_GPR8  ( Bool mode64 );
+extern HReg hregPPC_GPR9  ( Bool mode64 );
+extern HReg hregPPC_GPR10 ( Bool mode64 );
+extern HReg hregPPC_GPR11 ( Bool mode64 ); // not used: calls by ptr / env ptr for some langs
+extern HReg hregPPC_GPR12 ( Bool mode64 ); // not used: exception handling and global linkage code
+extern HReg hregPPC_GPR13 ( Bool mode64 ); // not used: thread specific pointer
+extern HReg hregPPC_GPR14 ( Bool mode64 );
+extern HReg hregPPC_GPR15 ( Bool mode64 );
+extern HReg hregPPC_GPR16 ( Bool mode64 );
+extern HReg hregPPC_GPR17 ( Bool mode64 );
+extern HReg hregPPC_GPR18 ( Bool mode64 );
+extern HReg hregPPC_GPR19 ( Bool mode64 );
+extern HReg hregPPC_GPR20 ( Bool mode64 );
+extern HReg hregPPC_GPR21 ( Bool mode64 );
+extern HReg hregPPC_GPR22 ( Bool mode64 );
+extern HReg hregPPC_GPR23 ( Bool mode64 );
+extern HReg hregPPC_GPR24 ( Bool mode64 );
+extern HReg hregPPC_GPR25 ( Bool mode64 );
+extern HReg hregPPC_GPR26 ( Bool mode64 );
+extern HReg hregPPC_GPR27 ( Bool mode64 );
+extern HReg hregPPC_GPR28 ( Bool mode64 );
+extern HReg hregPPC_GPR29 ( Bool mode64 );
+extern HReg hregPPC_GPR30 ( Bool mode64 );
+extern HReg hregPPC_GPR31 ( Bool mode64 ); // GuestStatePtr
 
 extern HReg hregPPC32_FPR0  ( void );
 extern HReg hregPPC32_FPR1  ( void );
@@ -158,8 +158,8 @@ extern HReg hregPPC32_VR29 ( void );
 extern HReg hregPPC32_VR30 ( void );
 extern HReg hregPPC32_VR31 ( void );
 
-#define StackFramePtr hregPPC32_GPR1()
-#define GuestStatePtr hregPPC32_GPR31()
+#define StackFramePtr(_mode64) hregPPC_GPR1(_mode64)
+#define GuestStatePtr(_mode64) hregPPC_GPR31(_mode64)
 
 
 
@@ -267,7 +267,7 @@ extern PPC32RH* PPC32RH_Reg ( HReg );
 extern void ppPPC32RH ( PPC32RH* );
 
 
-/* --------- Operand, which can be a reg or a u32. --------- */
+/* --------- Operand, which can be a reg or a u32/64. --------- */
 
 typedef
    enum {
@@ -280,14 +280,14 @@ typedef
    struct {
       PPC32RITag tag;
       union {
-         UInt Imm;
-         HReg Reg;
+         ULong Imm;
+         HReg  Reg;
       }
       Pri;
    }
    PPC32RI;
 
-extern PPC32RI* PPC32RI_Imm ( UInt );
+extern PPC32RI* PPC32RI_Imm ( ULong );
 extern PPC32RI* PPC32RI_Reg ( HReg );
 
 extern void ppPPC32RI ( PPC32RI* );
@@ -345,7 +345,8 @@ typedef
 
 extern 
 HChar* showPPC32AluOp ( PPC32AluOp, 
-                        Bool /* is the 2nd operand an immediate? */ );
+                        Bool /* is the 2nd operand an immediate? */,
+                        Bool /* is this a 32bit or 64bit op? */ );
 
 
 /* --------- */
@@ -425,16 +426,16 @@ extern HChar* showPPC32AvFpOp ( PPC32AvFpOp );
 /* --------- */
 typedef
    enum {
-      Pin_LI32,       /* load 32-bit immediate (fake insn) */
-      Pin_Alu32,      /* 32-bit add/sub/and/or/xor/shl/shr/sar */
+      Pin_LI,         /* load word (32/64-bit) immediate (fake insn) */
+      Pin_Alu,        /* word add/sub/and/or/xor/shl/shr/sar */
       Pin_AddSubC32,  /* 32-bit add/sub with read/write carry */
-      Pin_Cmp32,      /* 32-bit compare */
-      Pin_Unary32,    /* 32-bit not, neg, clz */
+      Pin_Cmp,        /* word compare */
+      Pin_Unary,      /* not, neg, clz */
       Pin_MulL,       /* widening multiply */
       Pin_Div,        /* div */
       Pin_Call,       /* call to address in register */
       Pin_Goto,       /* conditional/unconditional jmp to dst */
-      Pin_CMov32,     /* conditional move */
+      Pin_CMov,       /* conditional move */
       Pin_Load,       /* load a 8|16|32 bit value from mem */
       Pin_Store,      /* store a 8|16|32 bit value to mem */
       Pin_Set32,      /* convert condition code to 32-bit value */
@@ -482,8 +483,8 @@ typedef
 	    two real insns. */
          struct {
             HReg dst;
-            UInt imm32;
-         } LI32;
+            ULong imm64;
+         } LI;
          /* Integer add/sub/and/or/xor/shl/shr/sar.  Limitations:
             - For add, the immediate, if it exists, is a signed 16.
             - For sub, the immediate, if it exists, is a signed 16
@@ -500,7 +501,7 @@ typedef
             HReg       dst;
             HReg       srcL;
             PPC32RH*   srcR;
-         } Alu32;
+         } Alu;
          /*  */
          struct {
             Bool isAdd;  /* else sub */
@@ -516,7 +517,7 @@ typedef
             UInt     crfD;
             HReg     srcL;
             PPC32RH* srcR;
-         } Cmp32;
+         } Cmp;
          /* Not and Neg */
          struct {
             PPC32UnaryOp op;
@@ -525,7 +526,7 @@ typedef
          } Unary32;
          struct {
             Bool syned;  /* meaningless if hi32==False */
-            Bool hi32;   /* False=>low, True=>high */
+            Bool hi;     /* False=>low, True=>high */
             HReg dst;
             HReg srcL;
             HReg srcR;
@@ -544,7 +545,7 @@ typedef
             3 .. 10 inclusive). */
          struct {
             PPC32CondCode cond;
-            Addr32        target;
+            Addr64        target;
             UInt          argiregs;
          } Call;
          /* Pseudo-insn.  Goto dst, on given condition (which could be
@@ -560,7 +561,7 @@ typedef
             PPC32CondCode cond;
             HReg          dst;
             PPC32RI*      src;
-         } CMov32;
+         } CMov;
          /* Sign/Zero extending loads.  Dst size is always 32 bits. */
          struct {
             UChar       sz; /* 1|2|4 */
@@ -731,19 +732,20 @@ typedef
    PPC32Instr;
 
 
-extern PPC32Instr* PPC32Instr_LI32       ( HReg, UInt );
-extern PPC32Instr* PPC32Instr_Alu32      ( PPC32AluOp, HReg, HReg, PPC32RH* );
+extern PPC32Instr* PPC32Instr_LI         ( HReg, ULong, Bool );
+extern PPC32Instr* PPC32Instr_Alu        ( PPC32AluOp, HReg, HReg, PPC32RH* );
 extern PPC32Instr* PPC32Instr_AddSubC32  ( Bool, Bool, HReg, HReg, HReg );
-extern PPC32Instr* PPC32Instr_Cmp32      ( Bool,       UInt, HReg, PPC32RH* );
-extern PPC32Instr* PPC32Instr_Unary32    ( PPC32UnaryOp op, HReg dst, HReg src );
+extern PPC32Instr* PPC32Instr_Cmp        ( Bool,       UInt, HReg, PPC32RH* );
+extern PPC32Instr* PPC32Instr_Unary      ( PPC32UnaryOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_MulL       ( Bool syned, Bool hi32, HReg, HReg, HReg );
 extern PPC32Instr* PPC32Instr_Div        ( Bool syned, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_Call       ( PPC32CondCode, Addr32, UInt );
+extern PPC32Instr* PPC32Instr_Call       ( PPC32CondCode, Addr64, UInt );
 extern PPC32Instr* PPC32Instr_Goto       ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
-extern PPC32Instr* PPC32Instr_CMov32     ( PPC32CondCode, HReg dst, PPC32RI* src );
+extern PPC32Instr* PPC32Instr_CMov       ( PPC32CondCode, HReg dst, PPC32RI* src );
 extern PPC32Instr* PPC32Instr_Load       ( UChar sz, Bool syned,
-                                           HReg dst, PPC32AMode* src );
-extern PPC32Instr* PPC32Instr_Store      ( UChar sz, PPC32AMode* dst, HReg src );
+                                           HReg dst, PPC32AMode* src, Bool mode64 );
+extern PPC32Instr* PPC32Instr_Store      ( UChar sz, PPC32AMode* dst,
+                                           HReg src, Bool mode64 );
 extern PPC32Instr* PPC32Instr_Set32      ( PPC32CondCode cond, HReg dst );
 extern PPC32Instr* PPC32Instr_MfCR       ( HReg dst );
 extern PPC32Instr* PPC32Instr_MFence     ( void );

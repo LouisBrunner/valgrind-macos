@@ -170,31 +170,31 @@ Int main ( void )
   printf("\n");
 
   // ppc64
-  printf("#define OFFSET_ppc64_GPR0      %3d\n",
+  printf("#define OFFSET_ppc64_GPR0     %4d\n",
          offsetof(VexGuestPPC64State,guest_GPR0));
 
-  printf("#define OFFSET_ppc64_GPR3      %3d\n",
+  printf("#define OFFSET_ppc64_GPR3     %4d\n",
          offsetof(VexGuestPPC64State,guest_GPR3));
 
-  printf("#define OFFSET_ppc64_GPR4      %3d\n",
+  printf("#define OFFSET_ppc64_GPR4     %4d\n",
          offsetof(VexGuestPPC64State,guest_GPR4));
 
-  printf("#define OFFSET_ppc64_GPR5      %3d\n",
+  printf("#define OFFSET_ppc64_GPR5     %4d\n",
          offsetof(VexGuestPPC64State,guest_GPR5));
 
-  printf("#define OFFSET_ppc64_GPR6      %3d\n",
+  printf("#define OFFSET_ppc64_GPR6     %4d\n",
          offsetof(VexGuestPPC64State,guest_GPR6));
 
-  printf("#define OFFSET_ppc64_GPR7      %3d\n",
+  printf("#define OFFSET_ppc64_GPR7     %4d\n",
          offsetof(VexGuestPPC64State,guest_GPR7));
 
-  printf("#define OFFSET_ppc64_GPR8      %3d\n",
+  printf("#define OFFSET_ppc64_GPR8     %4d\n",
          offsetof(VexGuestPPC64State,guest_GPR8));
 
-  printf("#define OFFSET_ppc64_CIA       %3d\n",
+  printf("#define OFFSET_ppc64_CIA      %4d\n",
          offsetof(VexGuestPPC64State,guest_CIA));
 
-  printf("#define OFFSET_ppc64_CR0_0     %3d\n",
+  printf("#define OFFSET_ppc64_CR0_0    %4d\n",
          offsetof(VexGuestPPC64State,guest_CR0_0));
 
   printf("\n");

@@ -72,14 +72,24 @@ extern
 IRExpr* guest_ppc32_spechelper ( HChar* function_name,
                                  IRExpr** args );
 
+extern
+IRExpr* guest_ppc64_spechelper ( HChar* function_name,
+                                 IRExpr** args );
+
 /* Describes to the optimser which part of the guest state require
    precise memory exceptions.  This is logically part of the guest
    state description. */
 extern 
 Bool guest_ppc32_state_requires_precise_mem_exns ( Int, Int );
 
+extern 
+Bool guest_ppc64_state_requires_precise_mem_exns ( Int, Int );
+
 extern
 VexGuestLayout ppc32Guest_layout;
+
+extern
+VexGuestLayout ppc64Guest_layout;
 
 
 /* FP Rounding mode - different encoding to IR */
@@ -117,6 +127,8 @@ enum {
    /* 9  */ PPC32G_FLAG_OP_SUBFI,   // subfic
    /* 10 */ PPC32G_FLAG_OP_SRAW,    // sraw
    /* 11 */ PPC32G_FLAG_OP_SRAWI,   // srawi
+   /* 12 */ PPC32G_FLAG_OP_SRAD,    // srad
+   /* 13 */ PPC32G_FLAG_OP_SRADI,   // sradi
    PPC32G_FLAG_OP_NUMBER
 };
 

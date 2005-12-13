@@ -151,7 +151,7 @@ sub process_command_line()
                 $alldirs = 1;
             } elsif ($arg =~ /^--valgrind=(.*)$/) {
                 $vg_dir = $1;
-            } elsif ($arg =~ /^--reps=(\d)+$/) {
+            } elsif ($arg =~ /^--reps=(\d+)$/) {
                 $n_reps = $1;
             } else {
                 die $usage;

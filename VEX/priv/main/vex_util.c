@@ -375,8 +375,8 @@ UInt vprintf_wrk ( void(*sink)(HChar),
                str = "(null)";
             len1 = len3 = 0;
             len2 = vex_strlen(str);
-            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
-                                 len3 = ljustify ? 0 : fwidth-len2; }
+            if (fwidth > len2) { len1 = ljustify ? 0 : fwidth-len2;
+                                 len3 = ljustify ? fwidth-len2 : 0; }
             PAD(len1); PUTSTR(str); PAD(len3);
             break;
          }
@@ -387,8 +387,8 @@ UInt vprintf_wrk ( void(*sink)(HChar),
             str[1] = 0;
             len1 = len3 = 0;
             len2 = vex_strlen(str);
-            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
-                                 len3 = ljustify ? 0 : fwidth-len2; }
+            if (fwidth > len2) { len1 = ljustify ? 0 : fwidth-len2;
+                                 len3 = ljustify ? fwidth-len2 : 0; }
             PAD(len1); PUTSTR(str); PAD(len3);
             break;
          }
@@ -403,8 +403,8 @@ UInt vprintf_wrk ( void(*sink)(HChar),
                                 False/*irrelevant*/);
             len1 = len3 = 0;
             len2 = vex_strlen(intbuf);
-            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
-                                 len3 = ljustify ? 0 : fwidth-len2; }
+            if (fwidth > len2) { len1 = ljustify ? 0 : fwidth-len2;
+                                 len3 = ljustify ? fwidth-len2 : 0; }
             PAD(len1); PUTSTR(intbuf); PAD(len3);
             break;
          }
@@ -422,8 +422,8 @@ UInt vprintf_wrk ( void(*sink)(HChar),
             convert_int(intbuf, l, base, False/*unsigned*/, hexcaps);
             len1 = len3 = 0;
             len2 = vex_strlen(intbuf);
-            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
-                                 len3 = ljustify ? 0 : fwidth-len2; }
+            if (fwidth > len2) { len1 = ljustify ? 0 : fwidth-len2;
+                                 len3 = ljustify ? fwidth-len2 : 0; }
             PAD(len1); PUTSTR(intbuf); PAD(len3);
             break;
          }
@@ -434,8 +434,8 @@ UInt vprintf_wrk ( void(*sink)(HChar),
             convert_int(intbuf, l, 16/*base*/, False/*unsigned*/, hexcaps);
             len1 = len3 = 0;
             len2 = vex_strlen(intbuf)+2;
-            if (fwidth > len2) { len1 = ljustify ? fwidth-len2 : 0;
-                                 len3 = ljustify ? 0 : fwidth-len2; }
+            if (fwidth > len2) { len1 = ljustify ? 0 : fwidth-len2;
+                                 len3 = ljustify ? fwidth-len2 : 0; }
             PAD(len1); PUT('0'); PUT('x'); PUTSTR(intbuf); PAD(len3);
             break;
          }

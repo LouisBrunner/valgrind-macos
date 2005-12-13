@@ -86,7 +86,7 @@ static void* my_memmove( void *dst, const void *src, unsigned int len )
 
 /////////////////////////////////////////////////////////////////////
 
-static void vex_log_bytes ( char* p, int n )
+static void vexxx_log_bytes ( char* p, int n )
 {
    int i;
    for (i = 0; i < n; i++)
@@ -94,14 +94,14 @@ static void vex_log_bytes ( char* p, int n )
 }
 
 /*---------------------------------------------------------*/
-/*--- vex_printf                                        ---*/
+/*--- vexxx_printf                                        ---*/
 /*---------------------------------------------------------*/
 
-/* This should be the only <...> include in the entire VEX library.
-   New code for vex_util.c should go above this point. */
+/* This should be the only <...> include in the entire VEXXX library.
+   New code for vexxx_util.c should go above this point. */
 #include <stdarg.h>
 
-static HChar vex_toupper ( HChar c )
+static HChar vexxx_toupper ( HChar c )
 {
    if (c >= 'a' && c <= 'z')
       return toHChar(c + ('A' - 'a'));
@@ -109,14 +109,14 @@ static HChar vex_toupper ( HChar c )
       return c;
 }
 
-static Int vex_strlen ( const HChar* str )
+static Int vexxx_strlen ( const HChar* str )
 {
    Int i = 0;
    while (str[i] != 0) i++;
    return i;
 }
 
-Bool vex_streq ( const HChar* s1, const HChar* s2 )
+Bool vexxx_streq ( const HChar* s1, const HChar* s2 )
 {
    while (True) {
       if (*s1 == 0 && *s2 == 0)
@@ -140,10 +140,10 @@ static UInt
 myvprintf_str ( void(*send)(HChar), Int flags, Int width, HChar* str, 
                 Bool capitalise )
 {
-#  define MAYBE_TOUPPER(ch) toHChar(capitalise ? vex_toupper(ch) : (ch))
+#  define MAYBE_TOUPPER(ch) toHChar(capitalise ? vexxx_toupper(ch) : (ch))
    UInt ret = 0;
    Int i, extra;
-   Int len = vex_strlen(str);
+   Int len = vexxx_strlen(str);
 
    if (width == 0) {
       ret += len;
@@ -388,7 +388,7 @@ static Int   n_myprintf_buf;
 static void add_to_myprintf_buf ( HChar c )
 {
    if (c == '\n' || n_myprintf_buf >= 1000-10 /*paranoia*/ ) {
-      (*vex_log_bytes)( myprintf_buf, vex_strlen(myprintf_buf) );
+      (*vexxx_log_bytes)( myprintf_buf, vexxx_strlen(myprintf_buf) );
       n_myprintf_buf = 0;
       myprintf_buf[n_myprintf_buf] = 0;      
    }
@@ -396,7 +396,7 @@ static void add_to_myprintf_buf ( HChar c )
    myprintf_buf[n_myprintf_buf] = 0;
 }
 
-static UInt vex_printf ( const char *format, ... )
+static UInt vexxx_printf ( const char *format, ... )
 {
    UInt ret;
    va_list vargs;
@@ -407,7 +407,7 @@ static UInt vex_printf ( const char *format, ... )
    ret = vprintf_wrk ( add_to_myprintf_buf, format, vargs );
 
    if (n_myprintf_buf > 0) {
-      (*vex_log_bytes)( myprintf_buf, n_myprintf_buf );
+      (*vexxx_log_bytes)( myprintf_buf, n_myprintf_buf );
    }
 
    va_end(vargs);
@@ -416,7 +416,7 @@ static UInt vex_printf ( const char *format, ... )
 }
 
 /*---------------------------------------------------------------*/
-/*--- end                                          vex_util.c ---*/
+/*--- end                                          vexxx_util.c ---*/
 /*---------------------------------------------------------------*/
 
 
@@ -610,7 +610,7 @@ int number_of_loops;
  loops = 100;
 number_of_loops=loops-1; /* the index of the first loop we run */
 
-vex_printf(str1, (int)loops);
+vexxx_printf(str1, (int)loops);
 
 /*
 ** Each pass through the array performs operations in
@@ -662,7 +662,7 @@ vex_printf(str1, (int)loops);
       for(k=0;k<8;k++){
 	i=j[k];
 	InternalFPFToString(buffer,abase+i);
-	vex_printf("%6d: (%s) ",i,buffer);
+	vexxx_printf("%6d: (%s) ",i,buffer);
 	switch(jtable[i % 16])
 	  {
 	  case 0: my_strcpy(buffer,"+"); break;
@@ -670,11 +670,11 @@ vex_printf(str1, (int)loops);
 	  case 2: my_strcpy(buffer,"*"); break;
 	  case 3: my_strcpy(buffer,"/"); break;
 	  }
-	vex_printf("%s ",buffer);
+	vexxx_printf("%s ",buffer);
 	InternalFPFToString(buffer,bbase+i);
-	vex_printf("(%s) = ",buffer);
+	vexxx_printf("(%s) = ",buffer);
 	InternalFPFToString(buffer,cbase+i);
-	vex_printf("%s\n",buffer);
+	vexxx_printf("%s\n",buffer);
       }
 return 0;
     }
@@ -944,7 +944,7 @@ long exponent_difference;
 
 if (IsMantissaZero(ptr->mantissa))
 {
-        vex_printf("Error:  zero significand in denormalize\n");
+        vexxx_printf("Error:  zero significand in denormalize\n");
 }
 
 exponent_difference = ptr->exp-minimum_exponent;
@@ -1938,7 +1938,7 @@ return;
 void entry ( HWord(*f)(HWord,HWord) )
 {
   serviceFn = f;
-  vex_printf("starting\n");
+  vexxx_printf("starting\n");
   DoEmFloat();
   (*serviceFn)(0,0);
 }

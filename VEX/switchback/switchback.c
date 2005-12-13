@@ -1,10 +1,15 @@
 
 /* HOW TO USE
 
-Compile test file (eg test_hello.c) to a .o
+13 Dec '05 - Linker no longer used (apart from mymalloc)
+Simply compile and link switchback.c with test_xxx.c,
+e.g. for ppc64:
+$ (cd .. && make EXTRA_CFLAGS="-m64" libvex_ppc64_linux.a)
+$ gcc -m64 -Wall -O -g -o switchback switchback.c linker.c ../libvex_ppc64_linux.a test_xxx.c
 
-It must have an entry point called "entry", which expects to 
-take a single argument which is a function pointer (to "serviceFn").
+Test file test_xxx.c must have an entry point called "entry",
+which expects to take a single argument which is a function pointer
+(to "serviceFn").
 
 Test file may not reference any other symbols.
 
@@ -26,6 +31,7 @@ CacheLineSize to the right value.  Values we currently know of:
 #include "../pub/libvex_guest_x86.h"
 #include "../pub/libvex_guest_amd64.h"
 #include "../pub/libvex_guest_ppc32.h"
+#include "../pub/libvex_guest_ppc64.h"
 #include "../pub/libvex.h"
 #include "../pub/libvex_trc_values.h"
 #include "linker.h"
@@ -49,12 +55,23 @@ static Int   n_translations_made = 0;
 #  define GuestPC                   guest_RIP
 #  define CacheLineSize             0/*irrelevant*/
 #elif defined(__powerpc__)
+
+#if !defined(__powerpc64__) // ppc32
 #  define VexGuestState             VexGuestPPC32State
 #  define LibVEX_Guest_initialise   LibVEX_GuestPPC32_initialise
 #  define VexArch                   VexArchPPC32
-#  define VexSubArch                VexSubArchPPC32_noAV
+#  define VexSubArch                VexSubArchPPC32_FI
 #  define GuestPC                   guest_CIA
 #  define CacheLineSize             128
+#else
+#  define VexGuestState             VexGuestPPC64State
+#  define LibVEX_Guest_initialise   LibVEX_GuestPPC64_initialise
+#  define VexArch                   VexArchPPC64
+#  define VexSubArch                VexSubArchPPC64_FI
+#  define GuestPC                   guest_CIA
+#  define CacheLineSize             128
+#endif
+
 #else
 #   error "Unknown arch"
 #endif
@@ -67,8 +84,8 @@ static Int   n_translations_made = 0;
 /* 2: show selected insns */
 /* 1: show after reg-alloc */
 /* 0: show final assembly */
-#define TEST_FLAGS (1<<7)|(1<<3)|(1<<2)|(1<<1)|(0<<0)
-#define DEBUG_TRACE_FLAGS 0 //(1<<7)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(1<<2)|(1<<1)|(0<<0)
+#define TEST_FLAGS (1<<7)|(1<<3)|(1<<2)|(1<<1)|(1<<0)
+#define DEBUG_TRACE_FLAGS 0//(1<<7)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(1<<2)|(1<<1)|(1<<0)
 
 
 /* guest state */
@@ -96,6 +113,24 @@ Int trans_cache_used = 0;
 Int trans_table_used = 0;
 
 static Bool chase_into_not_ok ( Addr64 dst ) { return False; }
+
+#if 0
+// local_sys_write_stderr(&c,1);
+static void local_sys_write_stderr ( HChar* buf, Int n )
+{
+   UInt __res;
+   __asm__ volatile (
+      "li %%r0,4\n\t"      /* set %r0 = __NR_write */
+      "li %%r3,1\n\t"      /* set %r3 = stdout */
+      "mr %%r4,%1\n\t"     /* set %r4 = buf */
+      "mr %%r5,%2\n\t"     /* set %r5 = n */
+      "sc\n\t"             /* write(stderr, buf, n) */
+      "mr %0,%%r3\n"       /* set __res = r3 */
+      : "=mr" (__res)
+      : "g" (buf), "g" (n)
+      : "r0", "r3", "r4", "r5" );
+}
+#endif
 
 /* For providing services. */
 static HWord serviceFn ( HWord arg1, HWord arg2 )
@@ -209,6 +244,7 @@ static void invalidate_icache(void *ptr, int nbytes)
 }
 
 
+#if !defined(__powerpc64__) // ppc32
 asm(
 "switchback_asm:\n"
 // gst
@@ -275,6 +311,101 @@ asm(
 "   nop\n"
 "nop_end_point:\n"
 );
+
+#else // ppc64
+
+asm(
+".text\n"
+"   .global switchback_asm\n"
+"   .section \".opd\",\"aw\"\n"
+"   .align 3\n"
+"switchback_asm:\n"
+"   .quad .switchback_asm,.TOC.@tocbase,0\n"
+"   .previous\n"
+"   .type .switchback_asm,@function\n"
+"   .global  .switchback_asm\n"
+".switchback_asm:\n"
+"switchback_asm_undotted:\n"
+
+// gst: load word of guest_state_ptr to r31
+"   lis    %r31,sb_helper1@highest\n"
+"   ori    %r31,%r31,sb_helper1@higher\n"
+"   rldicr %r31,%r31,32,31\n"
+"   oris   %r31,%r31,sb_helper1@h\n"
+"   ori    %r31,%r31,sb_helper1@l\n"
+"   ld     %r31,0(%r31)\n"
+
+
+// LR
+"   ld   %r3,1032(%r31)\n"          // guest_LR
+"   mtlr %r3\n"                     // move to LR
+
+// CR
+"   lis    %r3,sb_helper2@highest\n"
+"   ori    %r3,%r3,sb_helper2@higher\n"
+"   rldicr %r3,%r3,32,31\n"
+"   oris   %r3,%r3,sb_helper2@h\n"
+"   ori    %r3,%r3,sb_helper2@l\n"
+"   ld     %r3,0(%r3)\n"            // load flags word to r3
+"   mtcr   %r3\n"                   // move r3 to CR
+
+// CTR
+"   ld     %r3,1040(%r31)\n"        // guest_CTR
+"   mtctr  %r3\n"                   // move r3 to CTR
+
+// XER
+"   lis    %r3,sb_helper3@highest\n"
+"   ori    %r3,%r3,sb_helper3@higher\n"
+"   rldicr %r3,%r3,32,31\n"
+"   oris   %r3,%r3,sb_helper3@h\n"
+"   ori    %r3,%r3,sb_helper3@l\n"
+"   ld     %r3,0(%r3)\n"            // load xer word to r3
+"   mtxer  %r3\n"                   // move r3 to XER
+
+// GPR's
+"   ld %r0,    0(%r31)\n"
+"   ld %r1,    8(%r31)\n"     // switch stacks (r1 = SP)
+"   ld %r2,   16(%r31)\n"
+"   ld %r3,   24(%r31)\n"
+"   ld %r4,   32(%r31)\n"
+"   ld %r5,   40(%r31)\n"
+"   ld %r6,   48(%r31)\n"
+"   ld %r7,   56(%r31)\n"
+"   ld %r8,   64(%r31)\n"
+"   ld %r9,   72(%r31)\n"
+"   ld %r10,  80(%r31)\n"
+"   ld %r11,  88(%r31)\n"
+"   ld %r12,  96(%r31)\n"
+"   ld %r13, 104(%r31)\n"
+"   ld %r14, 112(%r31)\n"
+"   ld %r15, 120(%r31)\n"
+"   ld %r16, 128(%r31)\n"
+"   ld %r17, 136(%r31)\n"
+"   ld %r18, 144(%r31)\n"
+"   ld %r19, 152(%r31)\n"
+"   ld %r20, 160(%r31)\n"
+"   ld %r21, 168(%r31)\n"
+"   ld %r22, 176(%r31)\n"
+"   ld %r23, 184(%r31)\n"
+"   ld %r24, 192(%r31)\n"
+"   ld %r25, 200(%r31)\n"
+"   ld %r26, 208(%r31)\n"
+"   ld %r27, 216(%r31)\n"
+"   ld %r28, 224(%r31)\n"
+"   ld %r29, 232(%r31)\n"
+"   ld %r30, 240(%r31)\n"
+"   ld %r31, 248(%r31)\n"
+"nop_start_point:\n"
+"   nop\n"
+"   nop\n"
+"   nop\n"
+"   nop\n"
+"   nop\n"
+"nop_end_point:\n"
+);
+#endif
+
+extern void switchback_asm_undotted;
 extern void nop_start_point;
 extern void nop_end_point;
 void switchback ( void )
@@ -284,10 +415,19 @@ void switchback ( void )
       memory on which can can set both write and execute permissions,
       so we can poke around with it and then run the results. */
 
+#if defined(__powerpc64__) // ppc32
+   UChar* sa_start     = (UChar*)&switchback_asm_undotted;
+#else
    UChar* sa_start     = (UChar*)&switchback_asm;
+#endif
    UChar* sa_nop_start = (UChar*)&nop_start_point;
    UChar* sa_end       = (UChar*)&nop_end_point;
 
+#if 0
+   printf("sa_start     %p\n", sa_start );
+   printf("sa_nop_start %p\n", sa_nop_start);
+   printf("sa_end       %p\n", sa_end);
+#endif
    Int nbytes       = sa_end - sa_start;
    Int off_nopstart = sa_nop_start - sa_start;
    if (0)
@@ -301,6 +441,7 @@ void switchback ( void )
 
    UInt* p = (UInt*)(&copy[off_nopstart]);
 
+#if !defined(__powerpc64__) // ppc32
    Addr32 addr_of_nop = (Addr32)p;
    Addr32 where_to_go = gst.guest_CIA;
    Int    diff = ((Int)where_to_go) - ((Int)addr_of_nop);
@@ -311,6 +452,18 @@ void switchback ( void )
    printf("diff = 0x%x\n", diff);
 #endif
 
+#else // ppc64
+   Addr64 addr_of_nop = (Addr64)p;
+   Addr64 where_to_go = gst.guest_CIA;
+   Long   diff = ((Long)where_to_go) - ((Long)addr_of_nop);
+
+#if 0
+   printf("addr of first nop = 0x%llx\n", addr_of_nop);
+   printf("where to go       = 0x%llx\n", where_to_go);
+   printf("diff = 0x%llx\n", diff);
+#endif
+#endif
+
    if (diff < -0x2000000 || diff >= 0x2000000) {
      // we're hosed.  Give up
      printf("hosed -- offset too large\n");
@@ -318,8 +471,13 @@ void switchback ( void )
    }
 
    sb_helper1 = (HWord)&gst;
+#if !defined(__powerpc64__) // ppc32
    sb_helper2 = LibVEX_GuestPPC32_get_CR(&gst);
    sb_helper3 = LibVEX_GuestPPC32_get_XER(&gst);
+#else // ppc64
+   sb_helper2 = LibVEX_GuestPPC64_get_CR(&gst);
+   sb_helper3 = LibVEX_GuestPPC64_get_XER(&gst);
+#endif
 
    /* stay sane ... */
    assert(p[0] == 24<<26); /* nop */
@@ -329,7 +487,17 @@ void switchback ( void )
 
    invalidate_icache( copy, nbytes );
 
+#if defined(__powerpc64__)
+   //printf("jumping to %p\n", copy);
+   { ULong faketoc[3];
+     void* v;
+     faketoc[0] = (ULong)copy;
+     v = &faketoc[0];
+     ( (void(*)(void)) v )();
+   }
+#else
    ( (void(*)(void))copy )();
+#endif
 }
 
 #else
@@ -397,6 +565,8 @@ asm(
 );
 
 #elif defined(__powerpc__)
+
+#if !defined(__powerpc64__) // ppc32
 asm(
 "run_translation_asm:\n"
 
@@ -482,6 +652,124 @@ asm(
 // return
 "   blr"
 );
+
+#else // ppc64
+
+asm(
+".text\n"
+"   .global run_translation_asm\n"
+"   .section \".opd\",\"aw\"\n"
+"   .align 3\n"
+"run_translation_asm:\n"
+"   .quad .run_translation_asm,.TOC.@tocbase,0\n"
+"   .previous\n"
+"   .type .run_translation_asm,@function\n"
+"   .global  .run_translation_asm\n"
+".run_translation_asm:\n"
+
+// save LR,CTR
+"   mflr  %r0\n"
+"   std   %r0,16(%r1)\n"
+"   mfctr %r0\n"
+"   std   %r0,8(%r1)\n"
+
+// create new stack:
+// save old sp at first word & update sp
+"   stdu 1,-256(1)\n"
+
+// leave hole @ 4(%r1) for a callee to save it's LR
+// no params
+// no need to save non-volatile CR fields
+
+// store registers to stack: just the callee-saved regs
+"   std %r13,  48(%r1)\n"
+"   std %r14,  56(%r1)\n"
+"   std %r15,  64(%r1)\n"
+"   std %r16,  72(%r1)\n"
+"   std %r17,  80(%r1)\n"
+"   std %r18,  88(%r1)\n"
+"   std %r19,  96(%r1)\n"
+"   std %r20, 104(%r1)\n"
+"   std %r21, 112(%r1)\n"
+"   std %r22, 120(%r1)\n"
+"   std %r23, 128(%r1)\n"
+"   std %r24, 136(%r1)\n"
+"   std %r25, 144(%r1)\n"
+"   std %r26, 152(%r1)\n"
+"   std %r27, 160(%r1)\n"
+"   std %r28, 168(%r1)\n"
+"   std %r29, 176(%r1)\n"
+"   std %r30, 184(%r1)\n"
+"   std %r31, 192(%r1)\n"
+
+// r31 (guest state ptr) := global var "gp"
+"   lis    %r31,gp@highest\n"
+"   ori    %r31,%r31,gp@higher\n"
+"   rldicr %r31,%r31,32,31\n"
+"   oris   %r31,%r31,gp@h\n"
+"   ori    %r31,%r31,gp@l\n"
+"   ld     %r31,0(%r31)\n"
+
+// call translation address in global var "f"
+"   lis    %r4,f@highest\n"
+"   ori    %r4,%r4,f@higher\n"
+"   rldicr %r4,%r4,32,31\n"
+"   oris   %r4,%r4,f@h\n"
+"   ori    %r4,%r4,f@l\n"
+"   ld     %r4,0(%r4)\n"
+"   mtctr  %r4\n"
+"   bctrl\n"
+
+// save return value (in r3) into global var "res"
+"   lis    %r5,res@highest\n"
+"   ori    %r5,%r5,res@higher\n"
+"   rldicr %r5,%r5,32,31\n"
+"   oris   %r5,%r5,res@h\n"
+"   ori    %r5,%r5,res@l\n"
+"   std    %r3,0(%r5)\n"
+
+// save possibly modified guest state ptr (r31) in "gp"
+"   lis    %r5,gp@highest\n"
+"   ori    %r5,%r5,gp@higher\n"
+"   rldicr %r5,%r5,32,31\n"
+"   oris   %r5,%r5,gp@h\n"
+"   ori    %r5,%r5,gp@l\n"
+"   std    %r31,0(%r5)\n"
+
+// reload registers from stack
+"   ld %r13,  48(%r1)\n"
+"   ld %r14,  56(%r1)\n"
+"   ld %r15,  64(%r1)\n"
+"   ld %r16,  72(%r1)\n"
+"   ld %r17,  80(%r1)\n"
+"   ld %r18,  88(%r1)\n"
+"   ld %r19,  96(%r1)\n"
+"   ld %r20, 104(%r1)\n"
+"   ld %r21, 112(%r1)\n"
+"   ld %r22, 120(%r1)\n"
+"   ld %r23, 128(%r1)\n"
+"   ld %r24, 136(%r1)\n"
+"   ld %r25, 144(%r1)\n"
+"   ld %r26, 152(%r1)\n"
+"   ld %r27, 160(%r1)\n"
+"   ld %r28, 168(%r1)\n"
+"   ld %r29, 176(%r1)\n"
+"   ld %r30, 184(%r1)\n"
+"   ld %r31, 192(%r1)\n"
+
+// restore previous stack pointer
+"   addi %r1,%r1,256\n"
+
+// restore LR,CTR
+"   ld    %r0,16(%r1)\n"
+"   mtlr  %r0\n"
+"   ld    %r0,8(%r1)\n"
+"   mtctr %r0\n"
+
+// return
+"   blr"
+);
+#endif
 
 #else
 
@@ -632,7 +920,7 @@ static void dump_translations ( Addr64 start, UInt len )
 
 
 static ULong  stopAfter = 0;
-static UChar* entry     = NULL;
+static UChar* entryP    = NULL;
 
 
 __attribute__ ((noreturn))
@@ -665,8 +953,12 @@ static void run_simulator ( void )
 
       if (0)
          printf("\nnext_guest: 0x%x\n", (UInt)next_guest);
-      
+
+#if defined(__powerpc64__)
+      if (next_guest == Ptr_to_ULong( (void*)(*(ULong*)(&serviceFn)) )) {
+#else
       if (next_guest == Ptr_to_ULong(&serviceFn)) {
+#endif
          /* "do" the function call to serviceFn */
 #        if defined(__i386__)
          {
@@ -736,13 +1028,15 @@ static void run_simulator ( void )
 
 static void usage ( void )
 {
-   printf("usage: switchback file.o #bbs\n");
+   printf("usage: switchback #bbs\n");
    printf("   - begins switchback for basic block #bbs\n");
    printf("   - use -1 for largest possible run without switchback\n\n");
    exit(1);
 }
 
 #if defined(__powerpc__)
+
+#if !defined(__powerpc64__) // ppc32
 UInt saved_R2;
 asm(
 "get_R2:\n"
@@ -750,29 +1044,63 @@ asm(
 "   stw  %r2,saved_R2@l(%r10)\n"
 "   blr\n"
 );
+#else // ppc64
+ULong saved_R2;
+ULong saved_R13;
+asm(
+".text\n"
+"   .global get_R2\n"
+"   .section \".opd\",\"aw\"\n"
+"   .align 3\n"
+"get_R2:\n"
+"   .quad .get_R2,.TOC.@tocbase,0\n"
+"   .previous\n"
+"   .type .get_R2,@function\n"
+"   .global  .get_R2\n"
+".get_R2:\n"
+"   lis    %r10,saved_R2@highest\n"
+"   ori    %r10,%r10,saved_R2@higher\n"
+"   rldicr %r10,%r10,32,31\n"
+"   oris   %r10,%r10,saved_R2@h\n"
+"   ori    %r10,%r10,saved_R2@l\n"
+"   std    %r2,0(%r10)\n"
+"   blr\n"
+);
+asm(
+".text\n"
+"   .global get_R13\n"
+"   .section \".opd\",\"aw\"\n"
+"   .align 3\n"
+"get_R13:\n"
+"   .quad .get_R13,.TOC.@tocbase,0\n"
+"   .previous\n"
+"   .type .get_R13,@function\n"
+"   .global  .get_R13\n"
+".get_R13:\n"
+"   lis    %r10,saved_R13@highest\n"
+"   ori    %r10,%r10,saved_R13@higher\n"
+"   rldicr %r10,%r10,32,31\n"
+"   oris   %r10,%r10,saved_R13@h\n"
+"   ori    %r10,%r10,saved_R13@l\n"
+"   std    %r13,0(%r10)\n"
+"   blr\n"
+);
+#endif
 extern void get_R2 ( void );
+extern void get_R13 ( void );
 #endif
 
 int main ( Int argc, HChar** argv )
 {
-   HChar* oname;
-
-   struct stat buf;
-
-   if (argc != 3) 
+   if (argc != 2)
       usage();
 
-   oname = argv[1];
-   stopAfter = (ULong)atoll(argv[2]);
+   stopAfter = (ULong)atoll(argv[1]);
 
-   if (stat(oname, &buf)) {
-      printf("switchback: can't stat %s\n", oname);
-      return 1;
-   }
+   extern void entry ( void*(*service)(int,int) );
+   entryP = (UChar*)&entry;
 
-   entry = linker_top_level_LINK( 1, &argv[1] );
-
-   if (!entry) {
+   if (!entryP) {
       printf("switchback: can't find entry point\n");
       exit(1);
    }
@@ -788,22 +1116,35 @@ int main ( Int argc, HChar** argv )
    /* set up as if a call to the entry point passing serviceFn as 
       the one and only parameter */
 #  if defined(__i386__)
-   gst.guest_EIP = (UInt)entry;
+   gst.guest_EIP = (UInt)entryP;
    gst.guest_ESP = (UInt)&gstack[25000];
    *(UInt*)(gst.guest_ESP+4) = (UInt)serviceFn;
    *(UInt*)(gst.guest_ESP+0) = 0x12345678;
 #  elif defined(__x86_64__)
-   gst.guest_RIP = (ULong)entry;
+   gst.guest_RIP = (ULong)entryP;
    gst.guest_RSP = (ULong)&gstack[25000];
    gst.guest_RDI = (ULong)serviceFn;
    *(ULong*)(gst.guest_RSP+0) = 0x12345678AABBCCDDULL;
 #  elif defined(__powerpc__)
    get_R2();
-   gst.guest_CIA  = (UInt)entry;
+
+#if !defined(__powerpc64__) // ppc32
+   gst.guest_CIA  = (UInt)entryP;
    gst.guest_GPR1 = (UInt)&gstack[25000]; /* stack pointer */
    gst.guest_GPR3 = (UInt)serviceFn; /* param to entry */
    gst.guest_GPR2 = saved_R2;
    gst.guest_LR = 0x12345678; /* bogus return address */
+#else // ppc64
+   get_R13();
+   gst.guest_CIA  = * (ULong*)entryP;
+   gst.guest_GPR1 = (ULong)&gstack[25000]; /* stack pointer */
+   gst.guest_GPR3 = (ULong)serviceFn;      /* param to entry */
+   gst.guest_GPR2 = saved_R2;
+   gst.guest_GPR13 = saved_R13;
+   gst.guest_LR   = 0x1234567812345678ULL; /* bogus return address */
+//   printf("setting CIA to %p\n", (void*)gst.guest_CIA);
+#endif
+
 #  else
 #  error "Unknown arch"
 #  endif
@@ -813,7 +1154,7 @@ int main ( Int argc, HChar** argv )
 #if 1
    run_simulator();
 #else
-   ( (void(*)(HWord(*)(HWord,HWord))) entry ) (serviceFn);
+   ( (void(*)(HWord(*)(HWord,HWord))) entryP ) (serviceFn);
 #endif
 
 

@@ -451,17 +451,17 @@ extern void bz_internal_error ( int errcode );
    { if (!(cond)) bz_internal_error ( errcode ); }
 #define AssertD(cond,msg) /* */
 #define VPrintf0(zf) \
-   vex_printf(zf)
+   vexxx_printf(zf)
 #define VPrintf1(zf,za1) \
-   vex_printf(zf,za1)
+   vexxx_printf(zf,za1)
 #define VPrintf2(zf,za1,za2) \
-   vex_printf(zf,za1,za2)
+   vexxx_printf(zf,za1,za2)
 #define VPrintf3(zf,za1,za2,za3) \
-   vex_printf(zf,za1,za2,za3)
+   vexxx_printf(zf,za1,za2,za3)
 #define VPrintf4(zf,za1,za2,za3,za4) \
-   vex_printf(zf,za1,za2,za3,za4)
+   vexxx_printf(zf,za1,za2,za3,za4)
 #define VPrintf5(zf,za1,za2,za3,za4,za5) \
-   vex_printf(zf,za1,za2,za3,za4,za5)
+   vexxx_printf(zf,za1,za2,za3,za4,za5)
 #endif
 
 
@@ -955,7 +955,7 @@ char* my_strcat ( char* dest, const char* src )
 
 /////////////////////////////////////////////////////////////////////
 
-static void vex_log_bytes ( char* p, int n )
+static void vexxx_log_bytes ( char* p, int n )
 {
    int i;
    for (i = 0; i < n; i++)
@@ -963,14 +963,14 @@ static void vex_log_bytes ( char* p, int n )
 }
 
 /*---------------------------------------------------------*/
-/*--- vex_printf                                        ---*/
+/*--- vexxx_printf                                        ---*/
 /*---------------------------------------------------------*/
 
 /* This should be the only <...> include in the entire VEX library.
-   New code for vex_util.c should go above this point. */
+   New code for vexxx_util.c should go above this point. */
 #include <stdarg.h>
 
-static HChar vex_toupper ( HChar c )
+static HChar vexxx_toupper ( HChar c )
 {
    if (c >= 'a' && c <= 'z')
       return c + ('A' - 'a');
@@ -978,14 +978,14 @@ static HChar vex_toupper ( HChar c )
       return c;
 }
 
-static Int vex_strlen ( const HChar* str )
+static Int vexxx_strlen ( const HChar* str )
 {
    Int i = 0;
    while (str[i] != 0) i++;
    return i;
 }
 
-Bool vex_streq ( const HChar* s1, const HChar* s2 )
+Bool vexxx_streq ( const HChar* s1, const HChar* s2 )
 {
    while (True) {
       if (*s1 == 0 && *s2 == 0)
@@ -1009,10 +1009,10 @@ static UInt
 myvprintf_str ( void(*send)(HChar), Int flags, Int width, HChar* str, 
                 Bool capitalise )
 {
-#  define MAYBE_TOUPPER(ch) (capitalise ? vex_toupper(ch) : (ch))
+#  define MAYBE_TOUPPER(ch) (capitalise ? vexxx_toupper(ch) : (ch))
    UInt ret = 0;
    Int i, extra;
-   Int len = vex_strlen(str);
+   Int len = vexxx_strlen(str);
 
    if (width == 0) {
       ret += len;
@@ -1257,7 +1257,7 @@ static Int   n_myprintf_buf;
 static void add_to_myprintf_buf ( HChar c )
 {
    if (c == '\n' || n_myprintf_buf >= 1000-10 /*paranoia*/ ) {
-      (*vex_log_bytes)( myprintf_buf, vex_strlen(myprintf_buf) );
+      (*vexxx_log_bytes)( myprintf_buf, vexxx_strlen(myprintf_buf) );
       n_myprintf_buf = 0;
       myprintf_buf[n_myprintf_buf] = 0;      
    }
@@ -1265,7 +1265,7 @@ static void add_to_myprintf_buf ( HChar c )
    myprintf_buf[n_myprintf_buf] = 0;
 }
 
-static UInt vex_printf ( const char *format, ... )
+static UInt vexxx_printf ( const char *format, ... )
 {
    UInt ret;
    va_list vargs;
@@ -1276,7 +1276,7 @@ static UInt vex_printf ( const char *format, ... )
    ret = vprintf_wrk ( add_to_myprintf_buf, format, vargs );
 
    if (n_myprintf_buf > 0) {
-      (*vex_log_bytes)( myprintf_buf, n_myprintf_buf );
+      (*vexxx_log_bytes)( myprintf_buf, n_myprintf_buf );
    }
 
    va_end(vargs);
@@ -1285,7 +1285,7 @@ static UInt vex_printf ( const char *format, ... )
 }
 
 /*---------------------------------------------------------------*/
-/*--- end                                          vex_util.c ---*/
+/*--- end                                          vexxx_util.c ---*/
 /*---------------------------------------------------------------*/
 
 
@@ -4427,13 +4427,13 @@ UInt32 BZ2_crc32Table[256] = {
 /*---------------------------------------------------*/
 void BZ2_bz__AssertH__fail ( int errcode )
 {
-   vex_printf("BZ2_bz__AssertH__fail(%d) called, exiting\n", errcode);
+   vexxx_printf("BZ2_bz__AssertH__fail(%d) called, exiting\n", errcode);
    (*serviceFn)(0,0);
 }
 
 void bz_internal_error ( int errcode )
 {
-   vex_printf("bz_internal_error called, exiting\n", errcode);
+   vexxx_printf("bz_internal_error called, exiting\n", errcode);
    (*serviceFn)(0,0);
 }
 
@@ -6062,40 +6062,40 @@ void entry ( HWord(*service)(HWord,HWord) )
    serviceFn = service;
 
    set_inbuf();
-   nIn = vex_strlen(inbuf)+1;
-   vex_printf( "%d bytes read\n", nIn );
+   nIn = vexxx_strlen(inbuf)+1;
+   vexxx_printf( "%d bytes read\n", nIn );
 
    nZ = M_BLOCK;
    r = BZ2_bzBuffToBuffCompress (
           zbuf, &nZ, inbuf, nIn, 9, 4/*verb*/, 30 );
 
    if (r != BZ_OK) {
-     vex_printf("initial compress failed!\n");
+     vexxx_printf("initial compress failed!\n");
      (*serviceFn)(0,0);
    }
-   vex_printf( "%d after compression\n", nZ );
+   vexxx_printf( "%d after compression\n", nZ );
 
    for (bit = 0; bit < nZ*8; bit += (bit < 35 ? 1 : 377)) {
-      vex_printf( "bit %d  ", bit );
+      vexxx_printf( "bit %d  ", bit );
       flip_bit ( bit );
       nOut = M_BLOCK_OUT;
       r = BZ2_bzBuffToBuffDecompress (
              outbuf, &nOut, zbuf, nZ, 1/*small*/, 0 );
-      vex_printf( " %d  %s ", r, bzerrorstrings[-r] );
+      vexxx_printf( " %d  %s ", r, bzerrorstrings[-r] );
 
       if (r != BZ_OK) {
-         vex_printf( "\n" );
+         vexxx_printf( "\n" );
       } else {
          if (nOut != nIn) {
-           vex_printf(  "nIn/nOut mismatch %d %d\n", nIn, nOut );
+           vexxx_printf(  "nIn/nOut mismatch %d %d\n", nIn, nOut );
            (*serviceFn)(0,0);
          } else {
            for (i = 0; i < nOut; i++)
              if (inbuf[i] != outbuf[i]) { 
-                vex_printf(  "mismatch at %d\n", i ); 
+                vexxx_printf(  "mismatch at %d\n", i ); 
                 (*serviceFn)(0,0); 
            }
-           if (i == nOut) vex_printf( "really ok!\n" );
+           if (i == nOut) vexxx_printf( "really ok!\n" );
          }
       }
 
@@ -6106,12 +6106,12 @@ void entry ( HWord(*service)(HWord,HWord) )
    assert (nOut == nIn);
    for (i = 0; i < nOut; i++) {
      if (inbuf[i] != outbuf[i]) {
-        vex_printf( "difference at %d !\n", i );
+        vexxx_printf( "difference at %d !\n", i );
         return 1;
      }
    }
 #endif
 
-   vex_printf( "all ok\n" );
+   vexxx_printf( "all ok\n" );
    (*serviceFn)(0,0);
 }

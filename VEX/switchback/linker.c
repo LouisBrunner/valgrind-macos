@@ -1,3 +1,10 @@
+/*
+  13 Dec '05
+  Linker no longer used - apart from mymalloc().
+  Instead, simply compile and link switchback.c with test_xxx.c, e.g.:
+  ./> (cd .. && make EXTRA_CFLAGS="-m64" libvex_ppc64_linux.a) && gcc -m64 -Wall -O -g -o switchback switchback.c linker.c ../libvex_ppc64_linux.a test_bzip2.c
+*/
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,8 +21,10 @@
 
 #include "../pub/libvex_basictypes.h"
 
+#if 0
 #define IF_DEBUG(x,y) /* */
 static int debug_linker = 0;
+#endif
 
 
 #if defined(__x86_64__)
@@ -29,6 +38,7 @@ static int debug_linker = 0;
 #endif
 
 
+#if 0
 #define CALLOC_MAX 10000000
 static HChar calloc_area[CALLOC_MAX];
 static UInt calloc_used = 0;
@@ -44,6 +54,7 @@ static void* calloc_below2G ( Int n, Int m )
    calloc_used += n*m;
    return p;
 }
+#endif
 
 #define MYMALLOC_MAX 50*1000*1000
 static HChar mymalloc_area[MYMALLOC_MAX];
@@ -51,8 +62,11 @@ static UInt  mymalloc_used = 0;
 void* mymalloc ( Int n )
 {
    void* p;
-   while 
-      ((UInt)(mymalloc_area+mymalloc_used) & 0xFFF)
+#if defined(__powerpc64__)
+   while ((ULong)(mymalloc_area+mymalloc_used) & 0xFFF)
+#else
+   while ((UInt)(mymalloc_area+mymalloc_used) & 0xFFF)
+#endif
       mymalloc_used++;
    assert(mymalloc_used+n < MYMALLOC_MAX);
    p = (void*)(&mymalloc_area[mymalloc_used]);
@@ -66,6 +80,12 @@ void myfree ( void* p )
 }
 
 
+
+
+
+
+
+#if 0
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
@@ -1460,3 +1480,4 @@ void* linker_top_level_LINK ( int n_object_names, char** object_names )
 }
 
 
+#endif

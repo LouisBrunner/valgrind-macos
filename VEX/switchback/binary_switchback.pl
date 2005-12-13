@@ -6,17 +6,20 @@ use warnings;
 # Binary search script for switchback
 # Finds bad basic block for seg faults and bad output.
 #
-# To test output, you need to create $TEST.ref
-# $TEST.ref should hold the correct output for running the program:
+# To test output, you need to create test_ref
+# test_ref should hold the correct output for running the test_xxx program:
 #  - Everything between (not including) /^---START---$/ and /^---STOP---$/
 #  - But NOT including output from /^---begin SWITCHBACK/
 #    to /^---  end SWITCHBACK/ inclusive
+#
+# This script can't handle other vex output,
+# so e.g switchback.c::DEBUG_TRACE_FLAGS should be 0
 #
 
 ######################################################
 # Global consts, vars
 use constant DEBUG => 0;
-use constant CONST_N_MAX => 100000000;
+use constant CONST_N_MAX => 10000000000;
 use constant CONST_N_MUL => 2;
 
 my $SWITCHBACK = "./switchback";
@@ -25,7 +28,7 @@ my $N_LAST_GOOD = 0;
 my $N_LAST_BAD = -1;
 my $GIVEN_LAST_GOOD = -1;
 my $GIVEN_LAST_BAD = -1;
-my $TEST;
+my $TEST_REF;
 
 
 
@@ -37,9 +40,9 @@ sub Exit {
 }
 
 sub Usage {
-    print "Usage: binary_switchback.pl test_name [last_good [last_bad]]\n";
+    print "Usage: binary_switchback.pl test_ref [last_good [last_bad]]\n";
     print "where:\n";
-    print "   test_name = obj filename - without '.o'\n";
+    print "   test_ref  = reference output from test_xxx\n";
     print "   last_good = last known good bb (search space minimum)\n";
     print "   last_bad  = last known bad bb (search space maximum)\n";
     print "\n";
@@ -60,11 +63,7 @@ if (@ARGV < 1 || @ARGV > 3) {
     QuitUsage "Error: Bad num args\n";
 }
 
-$TEST = $ARGV[0];
-
-if ( ! -e "$TEST.o" ) {
-    QuitUsage "File doesn't exist: '$TEST.o'\n";
-}
+$TEST_REF = $ARGV[0];
 
 if ( ! -x "$SWITCHBACK" ) {
     QuitUsage "File doesn't exist | not executable: '$SWITCHBACK'\n";
@@ -146,7 +145,7 @@ sub SwitchBack {
 
     print "=== Calling switchback for bb $n ===\n";
 
-    system("$SWITCHBACK $TEST.o $n >& $TMPFILE");
+    system("$SWITCHBACK $n >& $TMPFILE");
     my $ret = $?;
 
     if ($ret == 256) {
@@ -217,7 +216,7 @@ sub get_N_simulated {
 sub TestOutput {
     my @lines = @{$_[0]};
     my $n = $_[1];
-    my $ref_output = "$TEST.ref";
+    my $ref_output = "$TEST_REF";
 
     # Get the current section we want to compare:
     my @newlines;

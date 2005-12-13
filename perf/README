@@ -1,0 +1,34 @@
+-----------------------------------------------------------------------------
+Notes about performance benchmarks
+-----------------------------------------------------------------------------
+For each benchmark, here is a brief description and notes about strengths
+and weaknesses of the benchmark.
+
+bz2:
+- Description: Burrows-Wheeler compression and decompression.
+- Strengths:   A real, widely used program, very similar to the 256.bzip2
+               SPEC2000 benchmark.  Not dominated by any code, the hottest
+               55 blocks account for only 90% of execution.  Has lots of
+               short blocks and stresses the memory system hard.
+- Weaknesses:  None, really, it's a good benchmark.
+
+fbench:
+- Description: Does some ray-tracing.
+- Strengths:   Moderately realistic program.
+- Weaknesses:  Dominated by sin and cos, which are not widely used, and are
+               hardware-supported on x86 but not on other platforms such as
+               PPC.
+
+ffbench: 
+- Description: Does a Fast Fourier Transform (FFT).
+- Strengths:   Tests common FP ops (mostly adding and multiplying array
+               elements), FFT is a very important operation.
+- Weaknesses:  Dominated by the inner loop, which is quite long and flatters
+               Valgrind due to the small dispatcher overhead.
+
+sarp:
+- Description: Does a lot of stack allocation and deallocation.
+- Strengths:   Tests for a specific performance bug that existed in 3.1.0 and
+               all earlier versions.
+- Weaknesses:  Highly artificial.
+

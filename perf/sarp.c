@@ -13,12 +13,13 @@
 
 #define REPS   1000*1000*10
 
+__attribute__((noinline))
 int f(int i)
 {
    // This nonsense is just to ensure that the compiler does not optimise
    // away the stack allocation.
    char big_array[500];
-   big_array[0]   = 12;
+   big_array[  0] = 12;
    big_array[ 23] = 34;
    big_array[256] = 56;
    big_array[434] = 78;

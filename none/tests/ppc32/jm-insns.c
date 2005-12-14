@@ -137,6 +137,28 @@ case I chased).
  *   0x3A2E0009   => addi 17, 14, 9
 */
 
+
+/**********************************************************************/
+/* Uncomment to enable many arguments for altivec insns */
+#define USAGE_SIMPLE
+
+/* Uncomment to enable many arguments for altivec insns */
+//#define ALTIVEC_ARGS_LARGE
+
+/* Uncomment to enable output of CR flags for float tests */
+//#define TEST_FLOAT_FLAGS
+
+/* Uncomment to enable debug output */
+//#define DEBUG_ARGS_BUILD
+//#define DEBUG_FILTER
+
+/* These should be set at build time */
+//#define NO_FLOAT
+//#define HAS_ALTIVEC
+//#define IS_PPC405
+/**********************************************************************/
+
+
 #include <stdint.h>
 
 register double f14 __asm__ ("f14");
@@ -245,18 +267,14 @@ enum test_flags {
 /* -------------- END #include "test-ppc.h" -------------- */
 
 
-#define USAGE_SIMPLE
-//#define ALTIVEC_ARGS_LARGE
 
 
-//#define DEBUG_ARGS_BUILD
 #if defined (DEBUG_ARGS_BUILD)
 #define AB_DPRINTF(fmt, args...) do { fprintf(stderr, fmt , ##args); } while (0)
 #else
 #define AB_DPRINTF(fmt, args...) do { } while (0)
 #endif
 
-//#define DEBUG_FILTER
 #if defined (DEBUG_FILTER)
 #define FDPRINTF(fmt, args...) do { fprintf(stderr, fmt , ##args); } while (0)
 #else
@@ -1720,6 +1738,11 @@ static void test_fnabs (void)
     __asm__ __volatile__ ("fnabs        17, 14");
 }
 
+static void test_fsqrt (void)
+{
+    __asm__ __volatile__ ("fsqrt        17, 14");
+}
+
 static test_t tests_fa_ops_one[] = {
    //    { &test_fres            , "        fres", },   // TODO: Not yet supported
    //    { &test_frsqrte         , "     frsqrte", },   // TODO: Not yet supported
@@ -1730,6 +1753,7 @@ static test_t tests_fa_ops_one[] = {
     { &test_fneg            , "        fneg", },
     { &test_fabs            , "        fabs", },
     { &test_fnabs           , "       fnabs", },
+    { &test_fsqrt           , "       fsqrt", },
     { NULL,                   NULL,           },
 };
 #endif /* !defined (NO_FLOAT) */
@@ -1916,9 +1940,8 @@ asm(".text\n"
 );
 
 static test_t tests_fst_ops_three_i16[] = {
-// TODO: Fix VEX to stop rounding these twice...
-//    { &test_stfs             , "         stfs", },
-//    { &test_stfsu            , "        stfsu", },
+    { &test_stfs             , "         stfs", },
+    { &test_stfsu            , "        stfsu", },
     { &test_stfd             , "         stfd", },
     { &test_stfdu            , "        stfdu", },
     { NULL,                   NULL,           },
@@ -1947,9 +1970,8 @@ static void test_stfdux (void)
 }
 
 static test_t tests_fst_ops_three[] = {
-// TODO: Fix VEX to stop rounding these twice...
-//    { &test_stfsx            , "        stfsx", },
-//    { &test_stfsux           , "       stfsux", },
+    { &test_stfsx            , "        stfsx", },
+    { &test_stfsux           , "       stfsux", },
     { &test_stfdx            , "        stfdx", },
     { &test_stfdux           , "       stfdux", },
     { NULL,                   NULL,           },
@@ -3939,6 +3961,7 @@ static int arg_list_size = 0;
 
 static double *fargs;
 static int nb_fargs;
+static int nb_normal_fargs;
 static uint32_t *iargs;
 static int nb_iargs;
 static uint16_t *ii16;
@@ -3999,11 +4022,15 @@ static void build_fargs_table (void)
    int s;
    int i=0;
    
+   /* Note: VEX isn't so hot with denormals, so don't bother
+      testing them: set exp > 0
+   */
+
    if ( arg_list_size == 1 ) {   // Large
       fargs = malloc(200 * sizeof(double));
       for (s=0; s<2; s++) {
          for (e0=0; e0<2; e0++) {
-            for (e1=0x000; ; e1 = ((e1 + 1) << 2) + 6) {
+            for (e1=0x001; ; e1 = ((e1 + 1) << 2) + 6) {
                if (e1 >= 0x400)
                   e1 = 0x3fe;
                exp = (e0 << 10) | e1;
@@ -4022,7 +4049,7 @@ static void build_fargs_table (void)
       for (s=0; s<2; s++) {                                // x2
 //       for (e0=0; e0<2; e0++) {
             for (e1=0x001; ; e1 = ((e1 + 1) << 13) + 7) {  // x2
-//          for (e1=0x000; ; e1 = ((e1 + 1) << 5) + 7) {   // x3
+//          for (e1=0x001; ; e1 = ((e1 + 1) << 5) + 7) {   // x3
                if (e1 >= 0x400)
                   e1 = 0x3fe;
 //             exp = (e0 << 10) | e1;
@@ -4038,6 +4065,10 @@ static void build_fargs_table (void)
 //       }
       }
    }
+
+   /* To iterate over non-special values only */
+   nb_normal_fargs = i;
+
 
    /* Special values */
    /* +0.0      : 0 0x000 0x0000000000000 */
@@ -5666,9 +5697,13 @@ static void test_float_three_args (const char* name, test_func_t func,
    volatile uint32_t flags, tmpcr, tmpxer;
    int i, j, k;
 
-   for (i=0; i<nb_fargs; i+=3) {
-      for (j=0; j<nb_fargs; j+=5) {
-         for (k=0; k<nb_fargs; k+=7) {
+   /* Note: using nb_normal_fargs:
+      - not testing special values for these insns
+   */
+
+   for (i=0; i<nb_normal_fargs; i+=3) {
+      for (j=0; j<nb_normal_fargs; j+=5) {
+         for (k=0; k<nb_normal_fargs; k+=7) {
             u0 = *(uint64_t *)(&fargs[i]);
             u1 = *(uint64_t *)(&fargs[j]);
             u2 = *(uint64_t *)(&fargs[k]);
@@ -5697,8 +5732,18 @@ static void test_float_three_args (const char* name, test_func_t func,
             __asm__ __volatile__ ("mtcr 18");
             r18 = tmpxer;
             __asm__ __volatile__ ("mtxer 18");
+
+            /* Note: zapping the bottom byte of the result, 
+               as vex's accuracy isn't perfect */
+            ur &= 0xFFFFFFFFFFFFFF00ULL;
+
+#if defined TEST_FLOAT_FLAGS
             printf("%s %016llx, %016llx, %016llx => %016llx (%08x)\n",
                    name, u0, u1, u2, ur, flags);
+#else
+            printf("%s %016llx, %016llx, %016llx => %016llx\n",
+                   name, u0, u1, u2, ur);
+#endif
          }
          if (verbose) printf("\n");
       }
@@ -5740,8 +5785,13 @@ static void test_float_two_args (const char* name, test_func_t func,
          __asm__ __volatile__ ("mtcr 18");
          r18 = tmpxer;
          __asm__ __volatile__ ("mtxer 18");
+#if defined TEST_FLOAT_FLAGS
          printf("%s %016llx, %016llx => %016llx (%08x)\n",
                 name, u0, u1, ur, flags);
+#else
+         printf("%s %016llx, %016llx => %016llx\n",
+                name, u0, u1, ur);
+#endif
       }
       if (verbose) printf("\n");
    }
@@ -5754,7 +5804,11 @@ static void test_float_one_arg (const char* name, test_func_t func,
    uint64_t u0, ur;
    volatile uint32_t flags, tmpcr, tmpxer;
    int i;
-   
+
+   /* if we're testing fctiw or fctiwz, zap the hi 32bits,
+      as they're undefined */
+   unsigned char zap_hi_32bits = strstr(name,"fctiw") ? 1 : 0;
+
    for (i=0; i<nb_fargs; i++) {
       u0 = *(uint64_t *)(&fargs[i]);
       f14 = fargs[i];
@@ -5779,7 +5833,15 @@ static void test_float_one_arg (const char* name, test_func_t func,
       __asm__ __volatile__ ("mtcr 18");
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
+
+      if (zap_hi_32bits != 0)
+         ur &= 0xFFFFFFFFULL;
+
+#if defined TEST_FLOAT_FLAGS
       printf("%s %016llx => %016llx (%08x)\n", name, u0, ur, flags);
+#else
+      printf("%s %016llx => %016llx\n", name, u0, ur);
+#endif
     }
 }
 
@@ -5895,9 +5957,15 @@ static void test_float_ld_one_reg_imm16 (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#if defined TEST_FLOAT_FLAGS
       printf("%s %016llx, %4d => %016llx, %08x (%08x %08x)\n",
              name, double_to_bits(src), offs,
              double_to_bits(res), r14, flags, xer);
+#else
+      printf("%s %016llx, %4d => %016llx, %08x\n",
+             name, double_to_bits(src), offs,
+             double_to_bits(res), r14);
+#endif
    }
    if (verbose) printf("\n");
 }
@@ -5946,9 +6014,15 @@ static void test_float_ld_two_regs (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#if defined TEST_FLOAT_FLAGS
       printf("%s %016llx, %4d => %016llx, %08x (%08x %08x)\n",
              name, double_to_bits(src), r15,
              double_to_bits(res), r14, flags, xer);
+#else
+      printf("%s %016llx, %4d => %016llx, %08x\n",
+             name, double_to_bits(src), r15,
+             double_to_bits(res), r14);
+#endif
    }
 }
 
@@ -5961,17 +6035,28 @@ static void test_float_st_two_regs_imm16 (const char* name,
    double src, *p_dst;
    int i, offs;
    double *fargs_priv;
-   
+   int nb_tmp_fargs = nb_fargs;
+
+   /* if we're storing an fp single-precision, don't want nans
+      - the vex implementation doesn't like them (yet)
+      Note: This is actually a bigger problem: the vex implementation
+      rounds these insns twice.  This leads to many rounding errors.
+      For the small fargs set, however, this doesn't show up.
+   */
+   if (strstr(name, "stfs"))
+      nb_tmp_fargs = nb_normal_fargs;
+
+
    // private fargs table to store to
-   fargs_priv = malloc(nb_fargs * sizeof(double));
+   fargs_priv = malloc(nb_tmp_fargs * sizeof(double));
    
-   /* offset within [1-nb_fargs:nb_fargs] */
-   for (i=1-nb_fargs; i<nb_fargs; i++) {
+   /* offset within [1-nb_tmp_fargs:nb_tmp_fargs] */
+   for (i=1-nb_tmp_fargs; i<nb_tmp_fargs; i++) {
       offs = i * 8;    // offset = i * sizeof(double)
       if (i < 0) {
-         src   =  fargs     [nb_fargs-1 + i];
-         p_dst = &fargs_priv[nb_fargs-1 + i];
-         base  = (uint32_t)&fargs_priv[nb_fargs-1];
+         src   =  fargs     [nb_tmp_fargs-1 + i];
+         p_dst = &fargs_priv[nb_tmp_fargs-1 + i];
+         base  = (uint32_t)&fargs_priv[nb_tmp_fargs-1];
       } else {
          src   =  fargs     [i];
          p_dst = &fargs_priv[i];
@@ -6011,9 +6096,15 @@ static void test_float_st_two_regs_imm16 (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#if defined TEST_FLOAT_FLAGS
       printf("%s %016llx, %4d => %016llx, %08x (%08x %08x)\n",
              name, double_to_bits(src), offs,
              double_to_bits(*p_dst), r15, flags, xer);
+#else
+      printf("%s %016llx, %4d => %016llx, %08x\n",
+             name, double_to_bits(src), offs,
+             double_to_bits(*p_dst), r15);
+#endif
    }
    free(fargs_priv);
 }
@@ -6026,18 +6117,29 @@ static void test_float_st_three_regs (const char* name,
    double src, *p_dst;
    int i, offs;
    double *fargs_priv;
+   int nb_tmp_fargs = nb_fargs;
+
+   /* if we're storing an fp single-precision, don't want nans
+      - the vex implementation doesn't like them (yet)
+      Note: This is actually a bigger problem: the vex implementation
+      rounds these insns twice.  This leads to many rounding errors.
+      For the small fargs set, however, this doesn't show up.
+   */
+   if (strstr(name, "stfs"))  // stfs(u)(x)
+      nb_tmp_fargs = nb_normal_fargs;
+
 
    // private fargs table to store to
-   fargs_priv = malloc(nb_fargs * sizeof(double));
+   fargs_priv = malloc(nb_tmp_fargs * sizeof(double));
    
-   //   /* offset within [1-nb_fargs:nb_fargs] */
-   //   for (i=1-nb_fargs; i<nb_fargs; i++) {
-   for (i=0; i<nb_fargs; i++) {
+   //   /* offset within [1-nb_tmp_fargs:nb_tmp_fargs] */
+   //   for (i=1-nb_tmp_fargs; i<nb_tmp_fargs; i++) {
+   for (i=0; i<nb_tmp_fargs; i++) {
       offs = i * 8;    // offset = i * sizeof(double)
       if (i < 0) {
-         src   =  fargs     [nb_fargs-1 + i];
-         p_dst = &fargs_priv[nb_fargs-1 + i];
-         base  = (uint32_t)&fargs_priv[nb_fargs-1];
+         src   =  fargs     [nb_tmp_fargs-1 + i];
+         p_dst = &fargs_priv[nb_tmp_fargs-1 + i];
+         base  = (uint32_t)&fargs_priv[nb_tmp_fargs-1];
       } else {
          src   =  fargs     [i];
          p_dst = &fargs_priv[i];
@@ -6071,11 +6173,23 @@ static void test_float_st_three_regs (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
-#if 1
+#if defined TEST_FLOAT_FLAGS
+      printf("%s %016llx, %4d => %016llx, %08x (%08x %08x)\n",
+             name, double_to_bits(src), offs,
+             double_to_bits(*p_dst), r15, flags, xer);
+#else
+      printf("%s %016llx, %4d => %016llx, %08x\n",
+             name, double_to_bits(src), offs,
+             double_to_bits(*p_dst), r15);
+#endif
+
+
+#if 0
+      // print double precision result
       printf("%s %016llx (%014e), %4d => %016llx (%014e), %08x (%08x %08x)\n",
              name, double_to_bits(src), src, offs,
              double_to_bits(*p_dst), *p_dst, r15, flags, xer);
-#else
+
       // print single precision result
       printf("%s %016llx (%014e), %4d => %08x (%f), %08x (%08x %08x)\n",
              name, double_to_bits(src), src, offs,

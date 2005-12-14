@@ -4,6 +4,7 @@ noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
+	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest \
 	jm-vmx.stderr.exp   jm-vmx.stdout.exp   jm-vmx.vgtest \
 	testVMX.stderr.exp  testVMX.stdout.exp  testVMX.vgtest
 

@@ -1,9 +1,27 @@
------------------------------------------------------------------------------
+=============================================================================
 Notes about performance benchmarks
------------------------------------------------------------------------------
-For each benchmark, here is a brief description and notes about strengths
-and weaknesses of the benchmark.
+=============================================================================
+For each benchmark, here is a brief description and notes about its
+strengths and weaknesses.
 
+-----------------------------------------------------------------------------
+Artificial stress tests
+-----------------------------------------------------------------------------
+bigcode1, bigcode2:
+- Description: Executes a lot of (nonsensical) code.
+- Strengths:   Demonstrates the cost of translation which is a large part
+               of runtime, particularly on larger programs.
+- Weaknesses:  Highly artificial.
+
+sarp:
+- Description: Does a lot of stack allocation and deallocation.
+- Strengths:   Tests for a specific performance bug that existed in 3.1.0 and
+               all earlier versions.
+- Weaknesses:  Highly artificial.
+
+-----------------------------------------------------------------------------
+Real programs
+-----------------------------------------------------------------------------
 bz2:
 - Description: Burrows-Wheeler compression and decompression.
 - Strengths:   A real, widely used program, very similar to the 256.bzip2
@@ -26,9 +44,4 @@ ffbench:
 - Weaknesses:  Dominated by the inner loop, which is quite long and flatters
                Valgrind due to the small dispatcher overhead.
 
-sarp:
-- Description: Does a lot of stack allocation and deallocation.
-- Strengths:   Tests for a specific performance bug that existed in 3.1.0 and
-               all earlier versions.
-- Weaknesses:  Highly artificial.
 

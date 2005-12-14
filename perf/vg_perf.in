@@ -27,12 +27,7 @@
 #  The GNU General Public License is contained in the file COPYING.
 
 #----------------------------------------------------------------------------
-# usage: vg_perf [options] <dirs | files>
-#
-# Options:
-#   --all:      run tests in all subdirs
-#   --valgrind: valgrind to use (the directory it's in).  Default is the one
-#               in the current tree.
+# usage: see usage message.
 #
 # The easiest way is to run all tests in valgrind/ with (assuming you installed
 # in $PREFIX):
@@ -69,7 +64,9 @@ usage: vg_perf [options] [files or dirs]
     -h --help             show this message
     --all                 run all tests under this directory
     --reps                number of repeats for each program [3]
-
+    --vg                  Valgrind(s) to measure (can be specified multiple
+                            times).  The "in-place" build is used.
+                            [Valgrind in the current directory]
 END
 ;
 
@@ -89,18 +86,15 @@ my %toolnames = (
     massif      => "ms"
 );
 
-# We run each program this many times and choose the best time.
-my $n_reps = 3;
+# Command line options
+my $n_reps = 3;     # Run each program $n_reps times and choose the best one.
+my @vgdirs;         # Dirs of the various Valgrinds being measured.
 
 my $num_tests_done   = 0;
 my $num_timings_done = 0;
 
 # Starting directory
 chomp(my $tests_dir = `pwd`);
-
-# Directory of the Valgrind being measured.  Default is the one in the
-# current tree.
-my $vg_dir = $tests_dir;
 
 #----------------------------------------------------------------------------
 # Process command line, setup
@@ -140,6 +134,14 @@ sub validate_tools($)
     return @t;
 }
 
+sub add_vgdir($)
+{
+    my ($vgdir) = @_;
+    if ($vgdir !~ /^\//) { $vgdir = "$tests_dir/$vgdir"; }
+    validate_program($vgdir, "./coregrind/valgrind", 1, 1);
+    push(@vgdirs, $vgdir);
+}
+
 sub process_command_line() 
 {
     my $alldirs = 0;
@@ -149,10 +151,11 @@ sub process_command_line()
         if ($arg =~ /^-/) {
             if      ($arg =~ /^--all$/) {
                 $alldirs = 1;
-            } elsif ($arg =~ /^--valgrind=(.*)$/) {
-                $vg_dir = $1;
             } elsif ($arg =~ /^--reps=(\d+)$/) {
                 $n_reps = $1;
+            } elsif ($arg =~ /^--vg=(.+)$/) {
+                # Make dir absolute if not already
+                add_vgdir($1);
             } else {
                 die $usage;
             }
@@ -160,9 +163,11 @@ sub process_command_line()
             push(@fs, $arg);
         }
     }
-    # Make $vg_dir absolute if not already
-    if ($vg_dir !~ /^\//) { $vg_dir = "$tests_dir/$vg_dir"; }
-    validate_program($vg_dir, "./coregrind/valgrind", 1, 1);
+
+    # If no --vg options were specified, use the current tree.
+    if (0 == @vgdirs) {
+        add_vgdir($tests_dir);
+    }
 
     if ($alldirs) {
         @fs = ();
@@ -243,8 +248,8 @@ sub time_prog($$)
         mysystem("echo '$cmd' > perf.cmd");
         my $retval = mysystem("$cmd > perf.stdout 2> perf.stderr");
         (0 == $retval) or 
-            die "\n*** Command returned non-zero:  $cmd"
-              . "\n*** See perf.{cmd,stdout,stderr} to diagnose what went wrong.\n";
+            die "\n*** Command returned non-zero ($retval)"
+              . "\n*** See perf.{cmd,stdout,stderr} to determine what went wrong.\n";
         my $out = `cat perf.stderr`;
         ($out =~ /usertime: ([\d\.]+)s/) or 
             die "\n*** missing usertime in perf.stderr\n";
@@ -268,40 +273,50 @@ sub do_one_test($$)
         }
     }
 
-    printf("%-12s", "$name:");
-
     my $timecmd = "/usr/bin/time -f 'usertime: %Us'";
 
     # Do the native run(s).
-    printf("nt:");
+    printf("-- $name --\n") if (@vgdirs > 1);
     my $cmd     = "$timecmd $prog $args";
     my $tNative = time_prog($cmd, $n_reps);
-    printf("%4.1fs  ", $tNative);
 
-    foreach my $tool (@tools) {
-        (defined $toolnames{$tool}) or 
-            die "unknown tool $tool, please add to %toolnames\n";
+    foreach my $vgdir (@vgdirs) {
+        # Benchmark name
+        printf("%-8s ", $name);
 
-        # Do the tool run(s).  Set both VALGRIND_LIB and VALGRIND_LIB_INNER
-        # in case this Valgrind was configured with --enable-inner.
-        printf("%s:", $toolnames{$tool});
-        my $vgsetup = "VALGRIND_LIB=$vg_dir/.in_place "
-                    . "VALGRIND_LIB_INNER=$vg_dir/.in_place ";
-        my $vgcmd   = "$vg_dir/coregrind/valgrind "
-                    . "--command-line-only=yes --tool=$tool -q "
-                    . "--memcheck:leak-check=no --addrcheck:leak-check=no "
-                    . "$vgopts ";
-        my $cmd     = "$vgsetup $timecmd $vgcmd $prog $args";
-        my $tTool   = time_prog($cmd, $n_reps);
-        printf("%4.1fs (%4.1fx)  ", $tTool, $tTool/$tNative);
+        # Print the Valgrind version if we are measuring more than one.
+        my $vgdirname = $vgdir;
+        chomp($vgdirname = `basename $vgdir`);
+        printf("%-10s:", $vgdirname);
+        
+        # Native execution time
+        printf("%4.1fs  ", $tNative);
 
-        $num_timings_done++;
-    }
-    printf("\n");
+        foreach my $tool (@tools) {
+            (defined $toolnames{$tool}) or 
+                die "unknown tool $tool, please add to %toolnames\n";
 
-    if (defined $cleanup) {
-        (system("$cleanup") == 0) or 
-            print("  ($name cleanup operation failed: $cleanup)\n");
+            # Do the tool run(s).  Set both VALGRIND_LIB and VALGRIND_LIB_INNER
+            # in case this Valgrind was configured with --enable-inner.
+            printf("%s:", $toolnames{$tool});
+            my $vgsetup = "VALGRIND_LIB=$vgdir/.in_place "
+                        . "VALGRIND_LIB_INNER=$vgdir/.in_place ";
+            my $vgcmd   = "$vgdir/coregrind/valgrind "
+                        . "--command-line-only=yes --tool=$tool -q "
+                        . "--memcheck:leak-check=no --addrcheck:leak-check=no "
+                        . "$vgopts ";
+            my $cmd     = "$vgsetup $timecmd $vgcmd $prog $args";
+            my $tTool   = time_prog($cmd, $n_reps);
+            printf("%4.1fs (%4.1fx)  ", $tTool, $tTool/$tNative);
+
+            $num_timings_done++;
+
+            if (defined $cleanup) {
+                (system("$cleanup") == 0) or 
+                    print("  ($name cleanup operation failed: $cleanup)\n");
+            }
+        }
+        printf("\n");
     }
 
     $num_tests_done++;

@@ -7433,15 +7433,21 @@ static void usage (void)
            );
 #else
    fprintf(stderr,
-           "jm-insns [-a]\n"
-           "\t-a: include tests for altivec instructions\n"
+           "Usage: jm-insns [OPTION]\n"
+           "\t-i: test integer instructions (default)\n"
+           "\t-f: test floating point instructions\n"
+           "\t-a: test altivec instructions\n"
+           "\t-v: be verbose\n"
+           "\t-h: display this help and exit\n"
            );
 #endif
 }
 
+
 int main (int argc, char **argv)
 {
 #if !defined (USAGE_SIMPLE)
+////////////////////////////////////////////////////////////////////////
    unsigned char *tmp, *filter = NULL;
    insn_sel_flags_t flags;
    int c;
@@ -7567,9 +7573,11 @@ int main (int argc, char **argv)
       flags.cr = 2;       // both
 
 #else
+////////////////////////////////////////////////////////////////////////
    /* Simple usage:
-      ./jm-insns      => all insns, except AV
-      ./jm-insns -a   => all insns, including AV
+      ./jm-insns -i   => int insns
+      ./jm-insns -f   => fp  insns
+      ./jm-insns -a   => av  insns
    */
    char *filter = NULL;
    insn_sel_flags_t flags;
@@ -7585,7 +7593,7 @@ int main (int argc, char **argv)
    flags.compare    = 1;
    flags.ldst       = 1;
    // Family
-   flags.integer    = 1;
+   flags.integer    = 0;
    flags.floats     = 0;
    flags.p405       = 0;
    flags.altivec    = 0;
@@ -7593,8 +7601,14 @@ int main (int argc, char **argv)
    // Flags
    flags.cr         = 2;
 
-   while ((c = getopt(argc, argv, "ahv")) != -1) {
+   while ((c = getopt(argc, argv, "ifahv")) != -1) {
       switch (c) {
+      case 'i':
+         flags.integer  = 1;
+         break;
+      case 'f':
+         flags.floats   = 1;
+         break;
       case 'a':
          flags.altivec  = 1;
          flags.faltivec = 1;

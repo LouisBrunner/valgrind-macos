@@ -153,6 +153,7 @@ sub process_command_line()
                 $alldirs = 1;
             } elsif ($arg =~ /^--reps=(\d+)$/) {
                 $n_reps = $1;
+                if ($n_reps < 1) { die "bad --reps value: $n_reps\n"; }
             } elsif ($arg =~ /^--vg=(.+)$/) {
                 # Make dir absolute if not already
                 add_vgdir($1);
@@ -255,7 +256,8 @@ sub time_prog($$)
             die "\n*** missing usertime in perf.stderr\n";
         $tmin = $1 if ($1 < $tmin);
     }
-    return $tmin;
+    # Avoid divisions by zero!
+    return (0 == $tmin ? 0.01 : $tmin);
 }
 
 sub do_one_test($$) 
@@ -263,6 +265,8 @@ sub do_one_test($$)
     my ($dir, $vgperf) = @_;
     $vgperf =~ /^(.*)\.vgperf/;
     my $name = $1;
+    my %first_tTool;    # For doing percentage speedups when comparing
+                        # multiple Valgrinds
 
     read_vgperf_file($vgperf);
 
@@ -307,7 +311,19 @@ sub do_one_test($$)
                         . "$vgopts ";
             my $cmd     = "$vgsetup $timecmd $vgcmd $prog $args";
             my $tTool   = time_prog($cmd, $n_reps);
-            printf("%4.1fs (%4.1fx)  ", $tTool, $tTool/$tNative);
+            printf("%4.1fs (%4.1fx,", $tTool, $tTool/$tNative);
+
+            # If it's the first timing for this tool on this benchmark,
+            # record the time so we can get the percentage speedup of the
+            # subsequent Valgrinds.  Otherwise, compute and print
+            # the speedup.
+            if (not defined $first_tTool{$tool}) {
+                $first_tTool{$tool} = $tTool;
+                print(" -----) ");
+            } else {
+                my $speedup = 100 - (100 * $tTool / $first_tTool{$tool});
+                printf("%5.1f%%) ", $speedup);
+            }
 
             $num_timings_done++;
 

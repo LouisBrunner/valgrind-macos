@@ -14,11 +14,12 @@ Post 3.1.0:
 - Nick improved vg_SP_update_pass() to identify more small constant
   increments/decrements of SP, so the fast cases can be used more often.
   Saved 1--3% on a few programs.
-- r5345,r5346: Julian improved the dispatcher so that x86 and AMD64 use
-  jumps instead of call/return for calling translations, and also removed
-  the --profile-flags profiling from the dispatcher unless --profile-flags
-  is being used.  Improved Nulgrind performance typically by 10--20%,
-  and Memcheck performance typically by 2--20%.
+- r5345,r5346,r5352: Julian improved the dispatcher so that x86 and
+  AMD64 use jumps instead of call/return for calling translations.
+  Also, on x86, amd64 and ppc32, --profile-flags style profiling was
+  removed from the despatch loop unless --profile-flags is being used.
+  Improved Nulgrind performance typically by 10--20%, and Memcheck
+  performance typically by 2--20%.
 
 COMPVBITS branch:
 - Nick converted to compress V bits, initial version saved 0--5% on most

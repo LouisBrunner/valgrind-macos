@@ -300,45 +300,89 @@ typedef
    VexGuestExtents;
 
 
-extern 
-VexTranslateResult LibVEX_Translate (
+/* A structure to carry arguments for LibVEX_Translate.  There are so
+   many of them, it seems better to have a structure. */
+typedef
+   struct {
+      /* IN: The instruction sets we are translating from and to. */
+      VexArch      arch_guest;
+      VexArchInfo  archinfo_guest;
+      VexArch      arch_host;
+      VexArchInfo  archinfo_host;
 
-   /* The instruction sets we are translating from and to. */
-   VexArch      arch_guest,
-   VexArchInfo* archinfo_guest,
-   VexArch      arch_host,
-   VexArchInfo* archinfo_host,
-   /* IN: the block to translate, and its guest address. */
-   /* where are the actual bytes in the host's address space? */
-   UChar*  guest_bytes,
-   /* where do the bytes came from in the guest's aspace? */
-   Addr64  guest_bytes_addr,
-   /* what guest entry point address do they correspond to? */
-   Addr64  guest_bytes_addr_noredir,
-   /* Is it OK to chase into this guest address? */
-   Bool    (*chase_into_ok) ( Addr64 ),
-   /* OUT: which bits of guest code actually got translated */
-   VexGuestExtents* guest_extents,
-   /* IN: a place to put the resulting code, and its size */
-   UChar*  host_bytes,
-   Int     host_bytes_size,
-   /* OUT: how much of the output area is used. */
-   Int*    host_bytes_used,
-   /* IN: optionally, two instrumentation functions. */
-   IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, 
-                            Addr64, VexGuestExtents*,
-                            IRType gWordTy, IRType hWordTy ),
-   IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, 
-                            Addr64, VexGuestExtents*,
-                            IRType gWordTy, IRType hWordTy ),
-   Bool    cleanup_after_instrumentation,
-   /* IN: should this translation be self-checking? */
-   Bool    do_self_check,
-   /* IN: optionally, an access check function for guest code. */
-   Bool    (*byte_accessible) ( Addr64 ),
-   /* IN: debug: trace vex activity at various points */
-   Int     traceflags
-);
+      /* IN: the block to translate, and its guest address. */
+      /* where are the actual bytes in the host's address space? */
+      UChar*  guest_bytes;
+      /* where do the bytes really come from in the guest's aspace?
+         This is the post-redirection guest address. */
+      Addr64  guest_bytes_addr;
+      /* where do the bytes claim to come from in the guest address
+         space?  (what guest entry point address do they correspond
+         to?)  This is the pre-redirection guest address. */
+      Addr64  guest_bytes_addr_noredir;
+
+      /* Is it OK to chase into this guest address?  May not be
+	 NULL. */
+      Bool    (*chase_into_ok) ( Addr64 );
+
+      /* OUT: which bits of guest code actually got translated */
+      VexGuestExtents* guest_extents;
+
+      /* IN: a place to put the resulting code, and its size */
+      UChar*  host_bytes;
+      Int     host_bytes_size;
+      /* OUT: how much of the output area is used. */
+      Int*    host_bytes_used;
+
+      /* IN: optionally, two instrumentation functions.  May be
+	 NULL. */
+      IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, 
+                               Addr64, VexGuestExtents*,
+                               IRType gWordTy, IRType hWordTy );
+      IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, 
+                               Addr64, VexGuestExtents*,
+                               IRType gWordTy, IRType hWordTy );
+
+      /* IN: should this translation be self-checking?  default: False */
+      Bool    do_self_check;
+      /* IN: debug: trace vex activity at various points */
+      Int     traceflags;
+
+      /* IN: address of the dispatcher entry point.  Describes the
+         place where generated code should jump to at the end of each
+         bb.
+
+         At the end of each translation, the next guest address is
+         placed in the host's standard return register (x86: %eax,
+         amd64: %rax, ppc32: %r3, ppc64: %r3).  Optionally, the guest
+         state pointer register (on host x86: %ebp; amd64: %rbp;
+         ppc32/64: r31) may be set to a VEX_TRC_ value to indicate any
+         special action required before the next block is run.
+
+         Control is then passed back to the dispatcher (beyond Vex's
+         control; caller supplies this) in the following way:
+
+         - On host archs which lack a link register (x86, amd64), by a
+           jump to the host address specified in 'dispatcher', which
+           must be non-NULL.
+
+         - On host archs which have a link register (ppc32, ppc64), by
+           a branch to the link register (which is guaranteed to be
+           unchanged from whatever it was at entry to the
+           translation).  'dispatch' must be NULL.
+
+         The aim is to get back and forth between translations and the
+         dispatcher without creating memory traffic to store return
+         addresses.
+      */
+      void* dispatch;
+   }
+   VexTranslateArgs;
+
+
+extern 
+VexTranslateResult LibVEX_Translate ( VexTranslateArgs* );
+
 
 /* A subtlety re interaction between self-checking translations and
    bb-chasing.  The supplied chase_into_ok function should say NO
@@ -369,7 +413,7 @@ extern void LibVEX_ShowStats ( void );
 
    x86
    ~~~
-   Generated code should be entered using a CALL instruction.  On
+   Generated code should be entered using a JMP instruction.  On
    entry, %ebp should point to the guest state, and %esp should be a
    valid stack pointer.  The generated code may change %eax, %ebx,
    %ecx, %edx, %esi, %edi, all the FP registers and control state, and
@@ -380,9 +424,11 @@ extern void LibVEX_ShowStats ( void );
    should still have those values (after masking off the lowest 6 bits
    of %mxcsr).  If they don't, there is a bug in VEX-generated code.
 
-   Generated code returns to the scheduler using a RET instruction.
+   Generated code returns to the scheduler using a JMP instruction, to
+   the address specified in the .dispatch field of VexTranslateArgs.
    %eax (or %eax:%edx, if simulating a 64-bit target) will contain the
-   guest address of the next block to execute.
+   guest address of the next block to execute.  %ebp may be changed
+   to a VEX_TRC_ value, otherwise it should be as it was at entry.
 
    CRITICAL ISSUES in x86 code generation.  The only known critical
    issue is that the host FPU and SSE state is not properly saved
@@ -391,6 +437,22 @@ extern void LibVEX_ShowStats ( void );
    stack tags will not be as expected, and (2) after returning to
    generated code, the generated code is likely to go wrong.  This
    really should be fixed.
+
+   amd64
+   ~~~~~
+   Analogous to x86.
+
+   ppc32
+   ~~~~~
+   On entry, guest state pointer is r31.  .dispatch must be NULL.
+   Control is returned with a branch to the link register.  Generated
+   code will not change lr.  At return, r3 holds the next guest addr
+   (or r3:r4 ?).  r31 may be may be changed to a VEX_TRC_ value,
+   otherwise it should be as it was at entry.
+
+   ppc64
+   ~~~~~
+   Probably the same as ppc32.
 
    ALL GUEST ARCHITECTURES
    ~~~~~~~~~~~~~~~~~~~~~~~

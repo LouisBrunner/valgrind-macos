@@ -942,14 +942,16 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
             vex_printf("if (%%eflags.%s) { ", 
                        showX86CondCode(i->Xin.Goto.cond));
 	 }
-         if (i->Xin.Goto.jk != Ijk_Boring) {
+         if (i->Xin.Goto.jk != Ijk_Boring
+             && i->Xin.Goto.jk != Ijk_Call
+             && i->Xin.Goto.jk != Ijk_Ret) {
             vex_printf("movl $");
             ppIRJumpKind(i->Xin.Goto.jk);
             vex_printf(",%%ebp ; ");
          }
          vex_printf("movl ");
          ppX86RI(i->Xin.Goto.dst);
-         vex_printf(",%%eax ; ret");
+         vex_printf(",%%eax ; movl $dispatcher_addr,%%edx ; jmp *%%edx");
          if (i->Xin.Goto.cond != Xcc_ALWAYS) {
             vex_printf(" }");
 	 }
@@ -1216,8 +1218,13 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i, Bool mode64)
          return;
       case Xin_Goto:
          addRegUsage_X86RI(u, i->Xin.Goto.dst);
-         addHRegUse(u, HRmWrite, hregX86_EAX());
-         if (i->Xin.Goto.jk != Ijk_Boring)
+         addHRegUse(u, HRmWrite, hregX86_EAX()); /* used for next guest addr */
+         addHRegUse(u, HRmWrite, hregX86_EDX()); /* used for dispatcher addr */
+         if (i->Xin.Goto.jk != Ijk_Boring
+             && i->Xin.Goto.jk != Ijk_Call
+             && i->Xin.Goto.jk != Ijk_Ret)
+            /* note, this is irrelevant since ebp is not actually
+               available to the allocator.  But still .. */
             addHRegUse(u, HRmWrite, hregX86_EBP());
          return;
       case Xin_CMov32:
@@ -1832,7 +1839,8 @@ static UChar* push_word_from_tags ( UChar* p, UShort tags )
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code. */
 
-Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i, Bool mode64 )
+Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i, 
+                    Bool mode64, void* dispatch )
 {
    UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 
@@ -2185,20 +2193,30 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i, Bool mode64 )
 
       /* Get the destination address into %eax */
       if (i->Xin.Goto.dst->tag == Xri_Imm) {
-         /* movl $immediate, %eax ; ret */
+         /* movl $immediate, %eax */
          *p++ = 0xB8;
          p = emit32(p, i->Xin.Goto.dst->Xri.Imm.imm32);
       } else {
          vassert(i->Xin.Goto.dst->tag == Xri_Reg);
-         /* movl %reg, %eax ; ret */
+         /* movl %reg, %eax */
          if (i->Xin.Goto.dst->Xri.Reg.reg != hregX86_EAX()) {
             *p++ = 0x89;
             p = doAMode_R(p, i->Xin.Goto.dst->Xri.Reg.reg, hregX86_EAX());
          }
       }
 
-      /* ret */
-      *p++ = 0xC3;
+      /* Get the dispatcher address into %edx.  This has to happen
+         after the load of %eax since %edx might be carrying the value
+         destined for %eax immediately prior to this Xin_Goto. */
+      vassert(sizeof(UInt) == sizeof(void*));
+      vassert(dispatch != NULL);
+      /* movl $imm32, %edx */
+      *p++ = 0xBA;
+      p = emit32(p, (UInt)dispatch);
+
+      /* jmp *%edx */
+      *p++ = 0xFF;
+      *p++ = 0xE2;
 
       /* Fix up the conditional jump, if there was one. */
       if (i->Xin.Goto.cond != Xcc_ALWAYS) {

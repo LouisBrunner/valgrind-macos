@@ -67,6 +67,7 @@ int main ( int argc, char** argv )
    VexControl vcon;
    VexGuestExtents vge;
    VexArchInfo vai_x86, vai_amd64, vai_ppc32;
+   VexTranslateArgs vta;
 
    if (argc != 2) {
       fprintf(stderr, "usage: vex file.org\n");
@@ -133,44 +134,55 @@ int main ( int argc, char** argv )
       vai_ppc32.subarch = VexSubArchPPC32_VFI;
       vai_ppc32.ppc32_cache_line_szB = 128;
 
-      for (i = 0; i < TEST_N_ITERS; i++)
-         tres
-            = LibVEX_Translate ( 
+      /* ----- Set up args for LibVEX_Translate ----- */
 #if 1 /* ppc32 -> ppc32 */
-                 VexArchPPC32, &vai_ppc32,
-                 VexArchPPC32, &vai_ppc32,
+      vta.arch_guest     = VexArchPPC32;
+      vta.archinfo_guest = vai_ppc32;
+      vta.arch_host      = VexArchPPC32;
+      vta.archinfo_host  = vai_ppc32;
 #endif
 #if 0 /* amd64 -> amd64 */
-                 VexArchAMD64, &vai_amd64, 
-                 VexArchAMD64, &vai_amd64, 
+      vta.arch_guest     = VexArchAMD64;
+      vta.archinfo_guest = vai_amd64;
+      vta.arch_host      = VexArchAMD64;
+      vta.archinfo_host  = vai_amd64;
 #endif
 #if 0 /* x86 -> x86 */
-                 VexArchX86, &vai_x86, 
-                 VexArchX86, &vai_x86, 
+      vta.arch_guest     = VexArchX86;
+      vta.archinfo_guest = vai_x86;
+      vta.arch_host      = VexArchX86;
+      vta.archinfo_host  = vai_x86;
 #endif
-                 origbuf, (Addr64)orig_addr, (Addr64)orig_addr,
-                 chase_into_not_ok,
-                 &vge,
-                 transbuf, N_TRANSBUF, &trans_used,
+      vta.guest_bytes     = origbuf;
+      vta.guest_bytes_addr = (Addr64)orig_addr;
+      vta.guest_bytes_addr_noredir = (Addr64)orig_addr;
+      vta.chase_into_ok   = chase_into_not_ok;
+      vta.guest_extents   = &vge;
+      vta.host_bytes      = transbuf;
+      vta.host_bytes_size = N_TRANSBUF;
+      vta.host_bytes_used = &trans_used;
 #if 1 /* no instrumentation */
-                 NULL,          /* instrument1 */
-                 NULL,          /* instrument2 */
-		 False,         /* cleanup after instrument */
+      vta.instrument1     = NULL;
+      vta.instrument2     = NULL;
 #endif
 #if 0 /* addrcheck */
-                 ac_instrument, /* instrument1 */
-                 NULL,          /* instrument2 */
-		 False,         /* cleanup after instrument */
+      vta.instrument1     = ac_instrument;
+      vta.instrument2     = NULL;
 #endif
 #if 0 /* memcheck */
-                 mc_instrument, /* instrument1 */
-                 NULL,          /* instrument2 */
-		 True,          /* cleanup after instrument */
+      vta.instrument1     = mc_instrument;
+      vta.instrument2     = NULL;
 #endif
-                 False, /* do_self_check ? */
-                 NULL, /* access checker */
-                 TEST_FLAGS 
-              );
+      vta.do_self_check   = False;
+      vta.traceflags      = TEST_FLAGS;
+#if 1 /* x86, amd64 hosts */
+      vta.dispatch        = (void*)0x12345678;
+#else /* ppc32, ppc64 hosts */
+      vta.dispatch        = NULL;
+#endif
+
+      for (i = 0; i < TEST_N_ITERS; i++)
+         tres = LibVEX_Translate ( &vta );
 
       if (tres != VexTransOK)
          printf("\ntres = %d\n", (Int)tres);

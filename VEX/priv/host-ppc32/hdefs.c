@@ -227,6 +227,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
       (*arr)[i++] = hregPPC_GPR12(mode64);
    }
    // GPR13 = thread specific pointer
+   // GPR 14 and above are callee save.  Yay.
    (*arr)[i++] = hregPPC_GPR14(mode64);
    (*arr)[i++] = hregPPC_GPR15(mode64);
    (*arr)[i++] = hregPPC_GPR16(mode64);
@@ -243,9 +244,12 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
    (*arr)[i++] = hregPPC_GPR27(mode64);
    (*arr)[i++] = hregPPC_GPR28(mode64);
    (*arr)[i++] = hregPPC_GPR29(mode64);
-   // GPR30 AltiVec spill reg temporary
-   // GPR31 = GuestStatePtr
+   // GPR30 is reserved as AltiVec spill reg temporary
+   // GPR31 is reserved for the GuestStatePtr
 
+   /* Don't waste the reg-allocs's time trawling through zillions of
+      FP registers - they mostly will never be used.  We'll tolerate
+      the occasional extra spill instead. */
    (*arr)[i++] = hregPPC32_FPR0();
    (*arr)[i++] = hregPPC32_FPR1();
    (*arr)[i++] = hregPPC32_FPR2();
@@ -254,32 +258,8 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
    (*arr)[i++] = hregPPC32_FPR5();
    (*arr)[i++] = hregPPC32_FPR6();
    (*arr)[i++] = hregPPC32_FPR7();
-/*
-   (*arr)[i++] = hregPPC32_FPR8();
-   (*arr)[i++] = hregPPC32_FPR9();
-   (*arr)[i++] = hregPPC32_FPR10();
-   (*arr)[i++] = hregPPC32_FPR11();
-   (*arr)[i++] = hregPPC32_FPR12();
-   (*arr)[i++] = hregPPC32_FPR13();
-   (*arr)[i++] = hregPPC32_FPR14();
-   (*arr)[i++] = hregPPC32_FPR15();
-   (*arr)[i++] = hregPPC32_FPR16();
-   (*arr)[i++] = hregPPC32_FPR17();
-   (*arr)[i++] = hregPPC32_FPR18();
-   (*arr)[i++] = hregPPC32_FPR19();
-   (*arr)[i++] = hregPPC32_FPR20();
-   (*arr)[i++] = hregPPC32_FPR21();
-   (*arr)[i++] = hregPPC32_FPR22();
-   (*arr)[i++] = hregPPC32_FPR23();
-   (*arr)[i++] = hregPPC32_FPR24();
-   (*arr)[i++] = hregPPC32_FPR25();
-   (*arr)[i++] = hregPPC32_FPR26();
-   (*arr)[i++] = hregPPC32_FPR27();
-   (*arr)[i++] = hregPPC32_FPR28();
-   (*arr)[i++] = hregPPC32_FPR29();
-   (*arr)[i++] = hregPPC32_FPR30();
-   (*arr)[i++] = hregPPC32_FPR31();
-*/
+
+   /* Same deal re Altivec */
    (*arr)[i++] = hregPPC32_VR0();
    (*arr)[i++] = hregPPC32_VR1();
    (*arr)[i++] = hregPPC32_VR2();
@@ -288,32 +268,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
    (*arr)[i++] = hregPPC32_VR5();
    (*arr)[i++] = hregPPC32_VR6();
    (*arr)[i++] = hregPPC32_VR7();
-/*
-   (*arr)[i++] = hregPPC32_VR8();
-   (*arr)[i++] = hregPPC32_VR9();
-   (*arr)[i++] = hregPPC32_VR10();
-   (*arr)[i++] = hregPPC32_VR11();
-   (*arr)[i++] = hregPPC32_VR12();
-   (*arr)[i++] = hregPPC32_VR13();
-   (*arr)[i++] = hregPPC32_VR14();
-   (*arr)[i++] = hregPPC32_VR15();
-   (*arr)[i++] = hregPPC32_VR16();
-   (*arr)[i++] = hregPPC32_VR17();
-   (*arr)[i++] = hregPPC32_VR18();
-   (*arr)[i++] = hregPPC32_VR19();
-   (*arr)[i++] = hregPPC32_VR20();
-   (*arr)[i++] = hregPPC32_VR21();
-   (*arr)[i++] = hregPPC32_VR22();
-   (*arr)[i++] = hregPPC32_VR23();
-   (*arr)[i++] = hregPPC32_VR24();
-   (*arr)[i++] = hregPPC32_VR25();
-   (*arr)[i++] = hregPPC32_VR26();
-   (*arr)[i++] = hregPPC32_VR27();
-   (*arr)[i++] = hregPPC32_VR28();
-   (*arr)[i++] = hregPPC32_VR29();
-   (*arr)[i++] = hregPPC32_VR30();
-   (*arr)[i++] = hregPPC32_VR31();
-*/
+
    vassert(i == *nregs);
 }
 
@@ -1263,7 +1218,9 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
          vex_printf("if (%s) ", showPPC32CondCode(i->Pin.Goto.cond));
       }
       vex_printf("{ ");
-      if (i->Pin.Goto.jk != Ijk_Boring) {
+      if (i->Pin.Goto.jk != Ijk_Boring
+          && i->Pin.Goto.jk != Ijk_Call
+          && i->Pin.Goto.jk != Ijk_Ret) {
          vex_printf("li %%r31,$");
          ppIRJumpKind(i->Pin.Goto.jk);
          vex_printf(" ; ");
@@ -1670,7 +1627,12 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
       addRegUsage_PPC32RI(u, i->Pin.Goto.dst);
       /* GPR3 holds destination address from Pin_Goto */
       addHRegUse(u, HRmWrite, hregPPC_GPR3(mode64));
-      if (i->Pin.Goto.jk != Ijk_Boring)
+      if (i->Pin.Goto.jk != Ijk_Boring
+          && i->Pin.Goto.jk != Ijk_Call
+          && i->Pin.Goto.jk != Ijk_Ret)
+            /* note, this is irrelevant since the guest state pointer
+               register is not actually available to the allocator.
+               But still .. */
          addHRegUse(u, HRmWrite, GuestStatePtr(mode64));
       return;
    case Pin_CMov:
@@ -2437,9 +2399,14 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
 
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
-   imperative to emit position-independent code. */
+   imperative to emit position-independent code. 
 
-Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i, Bool mode64 )
+   Note, dispatch should always be NULL since ppc32/ppc64 backends
+   use a call-return scheme to get from the dispatcher to generated
+   code and back.
+*/
+Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i, 
+                      Bool mode64, void* dispatch )
 {
    UChar* p = &buf[0];
    UChar* ptmp = p;
@@ -2789,6 +2756,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i, Bool mode64 )
       PPC32CondCode cond = i->Pin.Goto.cond;
       UInt r_dst;
       ULong imm_dst;
+
+      vassert(dispatch == NULL);
       
       /* First off, if this is conditional, create a conditional
          jump over the rest of it. */

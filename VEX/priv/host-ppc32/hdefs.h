@@ -88,9 +88,9 @@ extern HReg hregPPC_GPR25 ( Bool mode64 );
 extern HReg hregPPC_GPR26 ( Bool mode64 );
 extern HReg hregPPC_GPR27 ( Bool mode64 );
 extern HReg hregPPC_GPR28 ( Bool mode64 );
-extern HReg hregPPC_GPR29 ( Bool mode64 );
-extern HReg hregPPC_GPR30 ( Bool mode64 );
-extern HReg hregPPC_GPR31 ( Bool mode64 ); // GuestStatePtr
+extern HReg hregPPC_GPR29 ( Bool mode64 ); // reserved for dispatcher
+extern HReg hregPPC_GPR30 ( Bool mode64 ); // we use as VMX spill temporary
+extern HReg hregPPC_GPR31 ( Bool mode64 ); // GuestStatePtr (callee-saved)
 
 extern HReg hregPPC32_FPR0  ( void );
 extern HReg hregPPC32_FPR1  ( void );
@@ -783,7 +783,8 @@ extern void ppPPC32Instr ( PPC32Instr*, Bool mode64 );
 extern void         getRegUsage_PPC32Instr ( HRegUsage*, PPC32Instr*, Bool mode64 );
 extern void         mapRegs_PPC32Instr     ( HRegRemap*, PPC32Instr* , Bool mode64);
 extern Bool         isMove_PPC32Instr      ( PPC32Instr*, HReg*, HReg* );
-extern Int          emit_PPC32Instr        ( UChar* buf, Int nbuf, PPC32Instr*, Bool mode64 );
+extern Int          emit_PPC32Instr        ( UChar* buf, Int nbuf, PPC32Instr*, 
+                                             Bool mode64, void* dispatch );
 extern PPC32Instr*  genSpill_PPC32         ( HReg rreg, UShort offsetB, Bool mode64 );
 extern PPC32Instr*  genReload_PPC32        ( HReg rreg, UShort offsetB, Bool mode64 );
 extern void         getAllocableRegs_PPC32 ( Int*, HReg**, Bool mode64 );

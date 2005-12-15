@@ -2212,7 +2212,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
       vassert(dispatch != NULL);
       /* movl $imm32, %edx */
       *p++ = 0xBA;
-      p = emit32(p, (UInt)dispatch);
+      p = emit32(p, (UInt)Ptr_to_ULong(dispatch));
 
       /* jmp *%edx */
       *p++ = 0xFF;

@@ -250,7 +250,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppInstr     = (void(*)(HInstr*, Bool)) ppX86Instr;
          ppReg       = (void(*)(HReg)) ppHRegX86;
          iselBB      = iselBB_X86;
-         emit        = emit_X86Instr;
+         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_X86Instr;
          host_is_bigendian = False;
          host_word_type    = Ity_I32;
          vassert(vta->archinfo_host.subarch == VexSubArchX86_sse0
@@ -271,7 +271,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppInstr     = (void(*)(HInstr*, Bool)) ppAMD64Instr;
          ppReg       = (void(*)(HReg)) ppHRegAMD64;
          iselBB      = iselBB_AMD64;
-         emit        = (Int(*)(UChar*,Int,HInstr*, Bool)) emit_AMD64Instr;
+         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_AMD64Instr;
          host_is_bigendian = False;
          host_word_type    = Ity_I64;
          vassert(vta->archinfo_host.subarch == VexSubArch_NONE);
@@ -290,7 +290,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppInstr     = (void(*)(HInstr*,Bool)) ppPPC32Instr;
          ppReg       = (void(*)(HReg)) ppHRegPPC32;
          iselBB      = iselBB_PPC32;
-         emit        = (Int(*)(UChar*,Int,HInstr*,Bool)) emit_PPC32Instr;
+         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_PPC32Instr;
          host_is_bigendian = True;
          host_word_type    = Ity_I32;
          vassert(vta->archinfo_guest.subarch == VexSubArchPPC32_I
@@ -311,7 +311,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          ppInstr     = (void(*)(HInstr*, Bool)) ppPPC32Instr;
          ppReg       = (void(*)(HReg)) ppHRegPPC32;
          iselBB      = iselBB_PPC32;
-         emit        = (Int(*)(UChar*,Int,HInstr*, Bool)) emit_PPC32Instr;
+         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_PPC32Instr;
          host_is_bigendian = True;
          host_word_type    = Ity_I64;
          vassert(vta->archinfo_guest.subarch == VexSubArchPPC64_FI

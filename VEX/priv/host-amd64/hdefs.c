@@ -1091,14 +1091,16 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
             vex_printf("if (%%rflags.%s) { ", 
                        showAMD64CondCode(i->Ain.Goto.cond));
          }
-         if (i->Ain.Goto.jk != Ijk_Boring) {
+         if (i->Ain.Goto.jk != Ijk_Boring
+             && i->Ain.Goto.jk != Ijk_Call
+             && i->Ain.Goto.jk != Ijk_Ret) {
             vex_printf("movl $");
             ppIRJumpKind(i->Ain.Goto.jk);
             vex_printf(",%%ebp ; ");
          }
          vex_printf("movq ");
          ppAMD64RI(i->Ain.Goto.dst);
-         vex_printf(",%%rax ; ret");
+         vex_printf(",%%rax ; movabsq $dispatcher_addr,%%rdx ; jmp *%%rdx");
          if (i->Ain.Goto.cond != Acc_ALWAYS) {
             vex_printf(" }");
          }
@@ -1447,8 +1449,13 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
          return;
       case Ain_Goto:
          addRegUsage_AMD64RI(u, i->Ain.Goto.dst);
-         addHRegUse(u, HRmWrite, hregAMD64_RAX());
-         if (i->Ain.Goto.jk != Ijk_Boring)
+         addHRegUse(u, HRmWrite, hregAMD64_RAX()); /* used for next guest addr */
+         addHRegUse(u, HRmWrite, hregAMD64_RDX()); /* used for dispatcher addr */
+         if (i->Ain.Goto.jk != Ijk_Boring
+             && i->Ain.Goto.jk != Ijk_Call
+             && i->Ain.Goto.jk != Ijk_Ret)
+            /* note, this is irrelevant since rbp is not actually
+               available to the allocator.  But still .. */
             addHRegUse(u, HRmWrite, hregAMD64_RBP());
          return;
       case Ain_CMov64:
@@ -2200,7 +2207,8 @@ static UChar* do_ffree_st ( UChar* p, Int n )
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code. */
 
-Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i, Bool mode64 )
+Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i, 
+                      Bool mode64, void* dispatch )
 {
    UInt /*irno,*/ opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
    UInt   xtra;
@@ -2638,13 +2646,24 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i, Bool mode64 )
          }
       }
 
-      /* ret */
-      *p++ = 0xC3;
+      /* Get the dispatcher address into %rdx.  This has to happen
+         after the load of %rax since %rdx might be carrying the value
+         destined for %rax immediately prior to this Ain_Goto. */
+      vassert(sizeof(ULong) == sizeof(void*));
+      vassert(dispatch != NULL);
+      /* movabsq $imm64, %rdx */
+      *p++ = 0x48;
+      *p++ = 0xBA;
+      p = emit64(p, Ptr_to_ULong(dispatch));
+
+      /* jmp *%rdx */
+      *p++ = 0xFF;
+      *p++ = 0xE2;
 
       /* Fix up the conditional jump, if there was one. */
       if (i->Ain.Goto.cond != Acc_ALWAYS) {
          Int delta = p - ptmp;
-         vassert(delta > 0 && delta < 20);
+         vassert(delta > 0 && delta < 30);
          *ptmp = toUChar(delta-1);
       }
       goto done;

@@ -50,11 +50,23 @@
    signal, for example SIGSEGV, in which case control longjmp()s back past
    here.
 
+   If do_profiling is nonzero, the profile counters arrays should be
+   updated for each translation run.
+
    This code simply handles the common case fast -- when the translation
    address is found in the translation cache.  For anything else, the
    scheduler does the work.
 */
-extern UWord VG_(run_innerloop) ( void* guest_state );
+extern 
+UWord VG_(run_innerloop) ( void* guest_state, UWord do_profiling );
+
+#if defined(VGA_x86) || defined(VGA_amd64)
+/* We need to locate a couple of labels inside VG_(run_innerloop), so
+   that Vex can add branches to them from generated code.  Hence the
+   following somewhat bogus decls.  At least on x86 and amd64. */
+extern void VG_(run_innerloop__dispatch_unprofiled);
+extern void VG_(run_innerloop__dispatch_profiled);
+#endif
 
 #endif   // __PUB_CORE_DISPATCH_H
 

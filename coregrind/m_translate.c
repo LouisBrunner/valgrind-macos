@@ -32,22 +32,24 @@
 #include "pub_core_basics.h"
 #include "pub_core_aspacemgr.h"
 
-#include "pub_core_machine.h"       // For VG_(machine_get_VexArchInfo)
-                                    // and VG_(get_SP)
+#include "pub_core_machine.h"   // For VG_(machine_get_VexArchInfo)
+                                // and VG_(get_SP)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 #include "pub_core_profile.h"
 
-#include "pub_core_debuginfo.h"     // Needed for pub_core_redir :(
-#include "pub_core_redir.h"         // For VG_(code_redirect)()
+#include "pub_core_debuginfo.h" // Needed for pub_core_redir :(
+#include "pub_core_redir.h"     // For VG_(code_redirect)()
 
-#include "pub_core_signals.h"       // For VG_(synth_fault_{perms,mapping})()
-#include "pub_core_stacks.h"        // For VG_(unknown_SP_update)()
-#include "pub_core_tooliface.h"     // For VG_(tdict)
+#include "pub_core_signals.h"   // For VG_(synth_fault_{perms,mapping})()
+#include "pub_core_stacks.h"    // For VG_(unknown_SP_update)()
+#include "pub_core_tooliface.h" // For VG_(tdict)
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"
+#include "pub_core_dispatch.h"  // VG_(run_innerloop__dispatch_{un}profiled)
+
 
 /*------------------------------------------------------------*/
 /*--- Stats                                                ---*/
@@ -569,6 +571,7 @@ Bool VG_(translate) ( ThreadId tid,
    VexArch            vex_arch;
    VexArchInfo        vex_archinfo;
    VexGuestExtents    vge;
+   VexTranslateArgs   vta;
    VexTranslateResult tres;
 
    /* Make sure Vex is initialised right. */
@@ -690,24 +693,40 @@ Bool VG_(translate) ( ThreadId tid,
    /* Set up closure arg for "chase_into_ok" */
    chase_into_ok__CLOSURE_tid = tid;
 
-   tres = LibVEX_Translate ( 
-             vex_arch, &vex_archinfo,
-             vex_arch, &vex_archinfo,
-             (UChar*)ULong_to_Ptr(orig_addr), 
-             (Addr64)orig_addr, 
-             (Addr64)orig_addr_noredir, 
-             chase_into_ok,
-             &vge,
-             tmpbuf, N_TMPBUF, &tmpbuf_used,
-             VG_(tdict).tool_instrument,
-             need_to_handle_SP_assignment()
-                ? vg_SP_update_pass
-                : NULL,
-             True, /* cleanup after instrumentation */
-             do_self_check,
-             NULL,
-             verbosity
-          );
+   vta.arch_guest       = vex_arch;
+   vta.archinfo_guest   = vex_archinfo;
+   vta.arch_host        = vex_arch;
+   vta.archinfo_host    = vex_archinfo;
+   vta.guest_bytes      = (UChar*)ULong_to_Ptr(orig_addr);
+   vta.guest_bytes_addr = (Addr64)orig_addr;
+   vta.guest_bytes_addr_noredir = (Addr64)orig_addr_noredir;
+   vta.chase_into_ok    = chase_into_ok;
+   vta.guest_extents    = &vge;
+   vta.host_bytes       = tmpbuf;
+   vta.host_bytes_size  = N_TMPBUF;
+   vta.host_bytes_used  = &tmpbuf_used;
+   vta.instrument1      = VG_(tdict).tool_instrument;
+   vta.instrument2      = need_to_handle_SP_assignment()
+                             ? vg_SP_update_pass
+                             : NULL;
+   vta.do_self_check    = do_self_check;
+   vta.traceflags       = verbosity;
+
+   /* Set up the dispatch-return info.  For archs without a link
+      register, vex generates a jump back to the specified dispatch
+      address.  Else, it just generates a branch-to-LR. */
+#  if defined(VGA_x86) || defined(VGA_amd64)
+   vta.dispatch = VG_(clo_profile_flags) > 0
+                    ? (void*) &VG_(run_innerloop__dispatch_profiled)
+                    : (void*) &VG_(run_innerloop__dispatch_unprofiled);
+#  elif defined(VGA_ppc32) || defined(VGA_ppc64)
+   vta.dispatch = NULL;
+#  else
+#    error "Unknown arch"
+#  endif
+
+   /* Sheesh.  Finally, actually _do_ the translation! */
+   tres = LibVEX_Translate ( &vta );
 
    vg_assert(tres == VexTransOK);
    vg_assert(tmpbuf_used <= N_TMPBUF);

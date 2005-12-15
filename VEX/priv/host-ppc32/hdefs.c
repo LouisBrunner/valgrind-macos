@@ -1296,7 +1296,7 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
       Bool idxd = toBool(i->Pin.Load.src->tag == Pam_RR);
       UChar sz = i->Pin.Load.sz;
       UChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
-      UChar* s_syned = i->Pin.Load.syned ? "a" : sz==8 ? "" : "z";
+      HChar* s_syned = i->Pin.Load.syned ? "a" : sz==8 ? "" : "z";
       vex_printf("l%c%s%s ", c_sz, s_syned, idxd ? "x" : "" );
       ppHRegPPC32(i->Pin.Load.dst);
       vex_printf(",");

@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
+#include <sys/mman.h>
 
 #define FN_SIZE   996      // Must be big enough to hold the compiled f()
 #define N_LOOPS   20000    // Should be divisible by four
@@ -28,12 +30,15 @@ int f(int x, int y)
    return y;
 }
 
-static char a[FN_SIZE * N_LOOPS];
-
 int main(int argc, char* argv[])
 {
    int h, i, sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0;
    int n_fns, n_reps;
+
+   char* a = mmap(0, FN_SIZE * N_LOOPS, 
+                     PROT_EXEC|PROT_WRITE, 
+                     MAP_PRIVATE|MAP_ANONYMOUS, 0,0);
+   assert(a != (char*)MAP_FAILED);
 
    if (argc <= 1) {
       // Mode 1: not so much code

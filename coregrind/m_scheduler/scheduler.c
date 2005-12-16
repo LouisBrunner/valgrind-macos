@@ -157,6 +157,10 @@ HChar* name_of_sched_event ( UInt event )
       case VEX_TRC_JMP_CLIENTREQ:     return "CLIENTREQ";
       case VEX_TRC_JMP_YIELD:         return "YIELD";
       case VEX_TRC_JMP_NODECODE:      return "NODECODE";
+      case VEX_TRC_JMP_MAPFAIL:       return "MAPFAIL";
+      case VEX_TRC_JMP_EMWARN:        return "EMWARN";
+      case VEX_TRC_JMP_TINVAL:        return "TINVAL";
+      case VG_TRC_INVARIANT_FAILED:   return "INVFAILED";
       case VG_TRC_INNER_COUNTERZERO:  return "COUNTERZERO";
       case VG_TRC_INNER_FASTMISS:     return "FASTMISS";
       case VG_TRC_FAULT_SIGNAL:       return "FAULTSIGNAL";

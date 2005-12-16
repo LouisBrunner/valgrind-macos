@@ -749,11 +749,16 @@ static IRExpr* mkV128from4x64U ( IRExpr* t3, IRExpr* t2,
             binop(Iop_ShrV128, expr_vA, mkU8(16)), \
             binop(Iop_ShrV128, expr_vB, mkU8(16)))
 
-/* */
-static IRExpr* /* :: Ity_I64 */ mkExtendLoS32 ( IRExpr* src )
+static IRExpr* /* :: Ity_I32/64 */ mk64lo32Sto64 ( IRExpr* src )
 {
    vassert(typeOfIRExpr(irbb->tyenv, src) == Ity_I64);
    return unop(Iop_32Sto64, unop(Iop_64to32, src));
+}
+
+static IRExpr* /* :: Ity_I32/64 */ mk64lo32Uto64 ( IRExpr* src )
+{
+   vassert(typeOfIRExpr(irbb->tyenv, src) == Ity_I64);
+   return unop(Iop_32Uto64, unop(Iop_64to32, src));
 }
 
 static IROp mkSzOp ( IRType ty, IROp op8 )
@@ -1551,28 +1556,28 @@ static void set_AV_CR6 ( IRExpr* result, Bool test_all_ones )
 static void putXER_SO ( IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
-   IRExpr* so = binop(Iop_And8, mkU8(1), e);
+   IRExpr* so = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( (mode64 ? OFFB64_XER_SO : OFFB32_XER_SO), so) );
 }
 
 static void putXER_OV ( IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
-   IRExpr* ov = binop(Iop_And8, mkU8(1), e);
+   IRExpr* ov = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( (mode64 ? OFFB64_XER_OV : OFFB32_XER_OV), ov) );
 }
 
 static void putXER_CA ( IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
-   IRExpr* ca = binop(Iop_And8, mkU8(1), e);
+   IRExpr* ca = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( (mode64 ? OFFB64_XER_CA : OFFB32_XER_CA), ca) );
 }
 
 static void putXER_BC ( IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
-   IRExpr* bc = binop(Iop_And8, mkU8(0x7F), e);
+   IRExpr* bc = binop(Iop_And8, e, mkU8(0x7F));
    stmt( IRStmt_Put( (mode64 ? OFFB64_XER_BC : OFFB32_XER_BC), bc) );
 }
 
@@ -1792,14 +1797,13 @@ static void set_XER_OV_64( UInt op, IRExpr* res,
    case /* 4  */ PPC32G_FLAG_OP_MULLW: {
       /* OV true if result can't be represented in 64 bits
          i.e sHi != sign extension of sLo */
-      IRTemp t128 = newTemp(Ity_I128);
-      assign( t128, binop(Iop_MullS64, argL, argR) );
       xer_ov 
-         = binop( Iop_CmpNE64,
-                  unop(Iop_128HIto64, mkexpr(t128)),
-                  binop( Iop_Sar64, 
-                         unop(Iop_128to64, mkexpr(t128)), 
-                         mkU8(63)) );
+         = binop( Iop_CmpNE32,
+                  unop(Iop_64HIto32, res),
+                  binop( Iop_Sar32, 
+                         unop(Iop_64to32, res), 
+                         mkU8(31))
+                  );
       break;
    }
       
@@ -2647,13 +2651,11 @@ static Bool dis_int_arith ( UInt theInstr )
                overflow of the low-order 32bit result
                CR0[LT|GT|EQ] are undefined if flag_rC && mode64
             */
-            IRExpr* dividend = unop(Iop_32Sto64,
-                                    unop(Iop_64to32, mkexpr(rA)));
-            IRExpr* divisor  = unop(Iop_32Sto64,
-                                    unop(Iop_64to32, mkexpr(rB)));
-            assign( rD, unop(Iop_32Uto64,
-                             unop(Iop_64to32,
-                                  binop(Iop_DivS64, dividend, divisor))) );
+            /* rD[hi32] are undefined: setting them to sign of lo32
+                - makes set_CR0 happy */
+            IRExpr* dividend = mk64lo32Sto64( mkexpr(rA) );
+            IRExpr* divisor  = mk64lo32Sto64( mkexpr(rB) );
+            assign( rD, mk64lo32Uto64( binop(Iop_DivS64, dividend, divisor) ) );
             if (flag_OE) {
                set_XER_OV( ty, PPC32G_FLAG_OP_DIVW, 
                            mkexpr(rD), dividend, divisor );
@@ -2681,13 +2683,9 @@ static Bool dis_int_arith ( UInt theInstr )
                overflow of the low-order 32bit result
                CR0[LT|GT|EQ] are undefined if flag_rC && mode64
             */
-            IRExpr* dividend = unop(Iop_32Uto64,
-                                    unop(Iop_64to32, mkexpr(rA)));
-            IRExpr* divisor  = unop(Iop_32Uto64,
-                                    unop(Iop_64to32, mkexpr(rB)));
-            assign( rD, unop(Iop_32Uto64,
-                             unop(Iop_64to32,
-                                  binop(Iop_DivU64, dividend, divisor))) );
+            IRExpr* dividend = mk64lo32Uto64( mkexpr(rA) );
+            IRExpr* divisor  = mk64lo32Uto64( mkexpr(rB) );
+            assign( rD, mk64lo32Uto64( binop(Iop_DivU64, dividend, divisor) ) );
             if (flag_OE) {
                set_XER_OV( ty, PPC32G_FLAG_OP_DIVWU, 
                            mkexpr(rD), dividend, divisor );
@@ -2710,9 +2708,13 @@ static Bool dis_int_arith ( UInt theInstr )
          DIP("mulhw%s r%u,r%u,r%u\n", flag_rC ? "." : "",
              rD_addr, rA_addr, rB_addr);
          if (mode64) {
-            assign( rD, unop(Iop_128HIto64,
-                             binop(Iop_MullS64,
-                                   mkexpr(rA), mkexpr(rB))) );
+            /* rD[hi32] are undefined: setting them to sign of lo32
+                - makes set_CR0 happy */
+            assign( rD, binop(Iop_Sar64,
+                           binop(Iop_Mul64,
+                                 mk64lo32Sto64( mkexpr(rA) ),
+                                 mk64lo32Sto64( mkexpr(rB) )),
+                              mkU8(32)) );
          } else {
             assign( rD, unop(Iop_64HIto32,
                              binop(Iop_MullS32,
@@ -2728,9 +2730,13 @@ static Bool dis_int_arith ( UInt theInstr )
          DIP("mulhwu%s r%u,r%u,r%u\n", flag_rC ? "." : "",
              rD_addr, rA_addr, rB_addr);
          if (mode64) {
-            assign( rD, unop(Iop_128HIto64,
-                             binop(Iop_MullU64,
-                                   mkexpr(rA), mkexpr(rB))) );
+            /* rD[hi32] are undefined: setting them to sign of lo32
+                - makes set_CR0 happy */
+            assign( rD, binop(Iop_Sar64,
+                           binop(Iop_Mul64,
+                                 mk64lo32Uto64( mkexpr(rA) ),
+                                 mk64lo32Uto64( mkexpr(rB) ) ),
+                              mkU8(32)) );
          } else {
             assign( rD, unop(Iop_64HIto32, 
                              binop(Iop_MullU32,
@@ -2743,17 +2749,24 @@ static Bool dis_int_arith ( UInt theInstr )
              flag_OE ? "o" : "", flag_rC ? "." : "",
              rD_addr, rA_addr, rB_addr);
          if (mode64) {
-            assign( rD, unop(Iop_128to64,
-                             binop(Iop_MullU64,
-                                   mkexpr(rA), mkexpr(rB))) );
+            /* rD[hi32] are undefined: setting them to sign of lo32
+                - set_XER_OV() and set_CR0() depend on this */
+            IRExpr *a = unop(Iop_64to32, mkexpr(rA) );
+            IRExpr *b = unop(Iop_64to32, mkexpr(rB) );
+            assign( rD, binop(Iop_MullS32, a, b) );
+            if (flag_OE) {
+               set_XER_OV( ty, PPC32G_FLAG_OP_MULLW, 
+                           mkexpr(rD),
+                           unop(Iop_32Uto64, a), unop(Iop_32Uto64, b) );
+            }
          } else {
             assign( rD, unop(Iop_64to32,
                              binop(Iop_MullU32,
                                    mkexpr(rA), mkexpr(rB))) );
-         }
-         if (flag_OE) {
-            set_XER_OV( ty, PPC32G_FLAG_OP_MULLW, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            if (flag_OE) {
+               set_XER_OV( ty, PPC32G_FLAG_OP_MULLW, 
+                           mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            }
          }
          break;
 
@@ -2999,14 +3012,10 @@ static Bool dis_int_cmp ( UInt theInstr )
    UInt  opc2    = ifieldOPClo10(theInstr);
    UChar b0      = ifieldBIT0(theInstr);
 
-   IRType ty     = mode64 ? Ity_I64 : Ity_I32;
-   IRTemp rA     = newTemp(ty);
-   IRTemp rB     = newTemp(ty);
-   IRExpr *a, *b;
+   IRType ty = mode64 ? Ity_I64 : Ity_I32;
+   IRExpr *a = getIReg(rA_addr);
+   IRExpr *b;
 
-   assign(rA, getIReg(rA_addr));
-   a = mkexpr(rA);
-   
    if (!mode64 && flag_L==1) {  // L==1 invalid for 32 bit.
       vex_printf("dis_int_cmp(PPC32)(flag_L)\n");
       return False;
@@ -3022,10 +3031,11 @@ static Bool dis_int_cmp ( UInt theInstr )
       DIP("cmpi cr%u,%u,r%u,%d\n", crfD, flag_L, rA_addr,
           (Int)extend_s_16to32(uimm16));
       b = mkSzExtendS16( ty, uimm16 );
-      if (mode64) {
-         if (flag_L == 0) a = mkExtendLoS32( mkexpr(rA) );
+      if (flag_L == 1) {
          putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64S, a, b)));
       } else {
+         a = mkSzNarrow32( ty, a );
+         b = mkSzNarrow32( ty, b );
          putCR321(crfD, unop(Iop_32to8, binop(Iop_CmpORD32S, a, b)));
       }
       putCR0( crfD, getXER_SO() );
@@ -3034,10 +3044,11 @@ static Bool dis_int_cmp ( UInt theInstr )
    case 0x0A: // cmpli (Compare Logical Immediate, PPC32 p370)
       DIP("cmpli cr%u,%u,r%u,0x%x\n", crfD, flag_L, rA_addr, uimm16);
       b = mkSzImm( ty, uimm16 );
-      if (mode64) {
-         if (flag_L == 0) a = mkExtendLoS32( mkexpr(rA) );
+      if (flag_L == 1) {
          putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64U, a, b)));
       } else {
+         a = mkSzNarrow32( ty, a );
+         b = mkSzNarrow32( ty, b );
          putCR321(crfD, unop(Iop_32to8, binop(Iop_CmpORD32U, a, b)));
       }
       putCR0( crfD, getXER_SO() );
@@ -3049,34 +3060,29 @@ static Bool dis_int_cmp ( UInt theInstr )
          vex_printf("dis_int_cmp(PPC32)(0x1F,b0)\n");
          return False;
       }
-      assign(rB, getIReg(rB_addr));
-      b = mkexpr(rB);
-      if (mode64 && flag_L == 0) {
-         a = mkExtendLoS32( mkexpr(rA) );
-         b = mkExtendLoS32( mkexpr(rB) );
-      }
+      b = getIReg(rB_addr);
 
       switch (opc2) {
       case 0x000: // cmp (Compare, PPC32 p367)
          DIP("cmp cr%u,%u,r%u,r%u\n", crfD, flag_L, rA_addr, rB_addr);
-         if (mode64) {
-            putCR321( crfD, unop(Iop_64to8,
-                                 binop(Iop_CmpORD64S, a, b)) );
+         if (flag_L == 1) {
+            putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64S, a, b)));
          } else {
-            putCR321( crfD, unop(Iop_32to8,
-                                 binop(Iop_CmpORD32S, a, b)) );
+            a = mkSzNarrow32( ty, a );
+            b = mkSzNarrow32( ty, b );
+            putCR321(crfD, unop(Iop_32to8,binop(Iop_CmpORD32S, a, b)));
          }
          putCR0( crfD, getXER_SO() );
          break;
          
       case 0x020: // cmpl (Compare Logical, PPC32 p369)
          DIP("cmpl cr%u,%u,r%u,r%u\n", crfD, flag_L, rA_addr, rB_addr);
-         if (mode64) {
-            putCR321( crfD, unop(Iop_64to8,
-                                 binop(Iop_CmpORD64U, a, b)) );
+         if (flag_L == 1) {
+            putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64U, a, b)));
          } else {
-            putCR321( crfD, unop(Iop_32to8,
-                                 binop(Iop_CmpORD32U, a, b)) );
+            a = mkSzNarrow32( ty, a );
+            b = mkSzNarrow32( ty, b );
+            putCR321(crfD, unop(Iop_32to8, binop(Iop_CmpORD32U, a, b)));
          }
          putCR0( crfD, getXER_SO() );
          break;
@@ -3196,8 +3202,8 @@ static Bool dis_int_logic ( UInt theInstr )
          // Iop_Clz32 undefined for arg==0, so deal with that case:
          irx =  binop(Iop_CmpNE32, lo32, mkU32(0));
          assign(rA, IRExpr_Mux0X( unop(Iop_1Uto8, irx),
-                                  mkU32(32),
-                                  unop(Iop_Clz32, lo32) ));
+                                  mkSzImm(ty, 32),
+                                  mkSzWiden32(ty, unop(Iop_Clz32, lo32), False) ));
          // TODO: alternatively: assign(rA, verbose_Clz32(rS));
          break;
       }
@@ -3348,6 +3354,7 @@ static Bool dis_int_rot ( UInt theInstr )
    IRTemp rS     = newTemp(ty);
    IRTemp rA     = newTemp(ty);
    IRTemp rB     = newTemp(ty);
+   IRTemp rot    = newTemp(ty);
    IRExpr *r;
    UInt   mask32;
    ULong  mask64;
@@ -3366,10 +3373,10 @@ static Bool dis_int_rot ( UInt theInstr )
          mask64 = MASK64(31-MaskEnd, 31-MaskBeg);
          r = ROTL( unop(Iop_64to32, mkexpr(rS) ), mkU8(sh_imm) );
          r = unop(Iop_32Uto64, r);
-         r = binop(Iop_Or64, r, binop(Iop_Shl64, r, mkU8(32)));
+         assign( rot, binop(Iop_Or64, r, binop(Iop_Shl64, r, mkU8(32))) );
          assign( rA,
             binop(Iop_Or64,
-                  binop(Iop_And64, r, mkU64(mask64)),
+                  binop(Iop_And64, mkexpr(rot), mkU64(mask64)),
                   binop(Iop_And64, getIReg(rA_addr), mkU64(~mask64))) );
       }
       else {
@@ -3398,8 +3405,8 @@ static Bool dis_int_rot ( UInt theInstr )
          // rA = ((tmp32 || tmp32) & mask64)
          r = ROTL( unop(Iop_64to32, mkexpr(rS) ), mkU8(sh_imm) );
          r = unop(Iop_32Uto64, r);
-         r = binop(Iop_Or64, r, binop(Iop_Shl64, r, mkU8(32)));
-         assign( rA, binop(Iop_And64, r, mkU64(mask64)) );
+         assign( rot, binop(Iop_Or64, r, binop(Iop_Shl64, r, mkU8(32))) );
+         assign( rA, binop(Iop_And64, mkexpr(rot), mkU64(mask64)) );
       }
       else {
          if (MaskBeg == 0 && sh_imm+MaskEnd == 31) {
@@ -3435,14 +3442,16 @@ static Bool dis_int_rot ( UInt theInstr )
           rA_addr, rS_addr, rB_addr, MaskBeg, MaskEnd);
       if (mode64) {
          mask64 = MASK64(31-MaskEnd, 31-MaskBeg);
-         // tmp32 = (ROTL(rS_Lo32, rB[0-4])
-         // rA = ((tmp32 || tmp32) & mask64)
+         /* weird insn alert!
+            tmp32 = (ROTL(rS_Lo32, rB[0-4])
+            rA = ((tmp32 || tmp32) & mask64)
+         */
          // note, ROTL does the masking, so we don't do it here
          r = ROTL( unop(Iop_64to32, mkexpr(rS)),
-                   unop(Iop_32to8, mkexpr(rB)) );
+                   unop(Iop_64to8, mkexpr(rB)) );
          r = unop(Iop_32Uto64, r);
-         r = binop(Iop_Or64, r, binop(Iop_Shl64, r, mkU8(32)));
-         assign( rA, binop(Iop_And64, r, mkU64(mask64)) );
+         assign(rot, binop(Iop_Or64, r, binop(Iop_Shl64, r, mkU8(32))));
+         assign( rA, binop(Iop_And64, mkexpr(rot), mkU64(mask64)) );
       } else {
          mask32 = MASK32(31-MaskEnd, 31-MaskBeg);
          // rA = ROTL(rS, rB[0-4]) & mask

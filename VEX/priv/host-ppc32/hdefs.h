@@ -339,14 +339,26 @@ typedef
       Palu_INVALID,
       Palu_ADD, Palu_SUB,
       Palu_AND, Palu_OR, Palu_XOR,
-      Palu_SHL, Palu_SHR, Palu_SAR, 
    }
    PPC32AluOp;
 
 extern 
 HChar* showPPC32AluOp ( PPC32AluOp, 
-                        Bool /* is the 2nd operand an immediate? */,
-                        Bool /* is this a 32bit or 64bit op? */ );
+                        Bool /* is the 2nd operand an immediate? */);
+
+
+/* --------- */
+typedef 
+   enum {
+      Pshft_INVALID,
+      Pshft_SHL, Pshft_SHR, Pshft_SAR, 
+   }
+   PPC32ShftOp;
+
+extern 
+HChar* showPPC32ShftOp ( PPC32ShftOp, 
+                         Bool /* is the 2nd operand an immediate? */,
+                         Bool /* is this a 32bit or 64bit op? */ );
 
 
 /* --------- */
@@ -427,7 +439,8 @@ extern HChar* showPPC32AvFpOp ( PPC32AvFpOp );
 typedef
    enum {
       Pin_LI,         /* load word (32/64-bit) immediate (fake insn) */
-      Pin_Alu,        /* word add/sub/and/or/xor/shl/shr/sar */
+      Pin_Alu,        /* word add/sub/and/or/xor */
+      Pin_Shft,       /* word shl/shr/sar */
       Pin_AddSubC32,  /* 32-bit add/sub with read/write carry */
       Pin_Cmp,        /* word compare */
       Pin_Unary,      /* not, neg, clz */
@@ -485,7 +498,7 @@ typedef
             HReg dst;
             ULong imm64;
          } LI;
-         /* Integer add/sub/and/or/xor/shl/shr/sar.  Limitations:
+         /* Integer add/sub/and/or/xor.  Limitations:
             - For add, the immediate, if it exists, is a signed 16.
             - For sub, the immediate, if it exists, is a signed 16
               which may not be -32768, since no such instruction 
@@ -493,8 +506,6 @@ typedef
               that is not possible.
             - For and/or/xor,  the immediate, if it exists, 
               is an unsigned 16.
-            - For shr/shr/sar, the immediate, if it exists,
-              is a signed 5-bit value between 1 and 31 inclusive.
          */
          struct {
             PPC32AluOp op;
@@ -502,6 +513,17 @@ typedef
             HReg       srcL;
             PPC32RH*   srcR;
          } Alu;
+         /* Integer shl/shr/sar.
+            Limitations: the immediate, if it exists,
+            is a signed 5-bit value between 1 and 31 inclusive.
+         */
+         struct {
+            PPC32ShftOp op;
+            Bool        sz32;   /* mode64 has both 32 and 64bit shft */
+            HReg        dst;
+            HReg        srcL;
+            PPC32RH*    srcR;
+         } Shft;
          /*  */
          struct {
             Bool isAdd;  /* else sub */
@@ -514,6 +536,7 @@ typedef
             else it is an unsigned 16. */
          struct {
             Bool     syned;
+            Bool     sz32;    /* mode64 has both 32 and 64bit cmp */
             UInt     crfD;
             HReg     srcL;
             PPC32RH* srcR;
@@ -527,6 +550,7 @@ typedef
          struct {
             Bool syned;  /* meaningless if hi32==False */
             Bool hi;     /* False=>low, True=>high */
+            Bool sz32;   /* mode64 has both 32 & 64bit mull */
             HReg dst;
             HReg srcL;
             HReg srcR;
@@ -534,6 +558,7 @@ typedef
          /* ppc32 div/divu instruction. */
          struct {
             Bool syned;
+            Bool sz32;   /* mode64 has both 32 & 64bit div */
             HReg dst;
             HReg srcL;
             HReg srcR;
@@ -564,14 +589,14 @@ typedef
          } CMov;
          /* Sign/Zero extending loads.  Dst size is always 32 bits. */
          struct {
-            UChar       sz; /* 1|2|4 */
+            UChar       sz; /* 1|2|4|8 */
             Bool        syned;
             HReg        dst;
             PPC32AMode* src;
          } Load;
          /* 32/16/8 bit stores */
          struct {
-            UChar       sz; /* 1|2|4 */
+            UChar       sz; /* 1|2|4|8 */
             PPC32AMode* dst;
             HReg        src;
          } Store;
@@ -734,11 +759,12 @@ typedef
 
 extern PPC32Instr* PPC32Instr_LI         ( HReg, ULong, Bool );
 extern PPC32Instr* PPC32Instr_Alu        ( PPC32AluOp, HReg, HReg, PPC32RH* );
+extern PPC32Instr* PPC32Instr_Shft       ( PPC32AluOp, Bool sz32, HReg, HReg, PPC32RH* );
 extern PPC32Instr* PPC32Instr_AddSubC32  ( Bool, Bool, HReg, HReg, HReg );
-extern PPC32Instr* PPC32Instr_Cmp        ( Bool,       UInt, HReg, PPC32RH* );
+extern PPC32Instr* PPC32Instr_Cmp        ( Bool, Bool, UInt, HReg, PPC32RH* );
 extern PPC32Instr* PPC32Instr_Unary      ( PPC32UnaryOp op, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_MulL       ( Bool syned, Bool hi32, HReg, HReg, HReg );
-extern PPC32Instr* PPC32Instr_Div        ( Bool syned, HReg dst, HReg srcL, HReg srcR );
+extern PPC32Instr* PPC32Instr_MulL       ( Bool syned, Bool hi32, Bool sz32, HReg, HReg, HReg );
+extern PPC32Instr* PPC32Instr_Div        ( Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR );
 extern PPC32Instr* PPC32Instr_Call       ( PPC32CondCode, Addr64, UInt );
 extern PPC32Instr* PPC32Instr_Goto       ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
 extern PPC32Instr* PPC32Instr_CMov       ( PPC32CondCode, HReg dst, PPC32RI* src );

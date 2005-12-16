@@ -204,9 +204,9 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
 {
    UInt i=0;
    if (mode64)
-      *nregs = (32-8) + (32-24) + (32-24);
+      *nregs = (32-9) + (32-24) + (32-24);
    else
-      *nregs = (32-6) + (32-24) + (32-24);
+      *nregs = (32-7) + (32-24) + (32-24);
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    // GPR0 = scratch reg where possible - some ops interpret as value zero
    // GPR1 = stack pointer
@@ -227,7 +227,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
       (*arr)[i++] = hregPPC_GPR12(mode64);
    }
    // GPR13 = thread specific pointer
-   // GPR 14 and above are callee save.  Yay.
+   // GPR14 and above are callee save.  Yay.
    (*arr)[i++] = hregPPC_GPR14(mode64);
    (*arr)[i++] = hregPPC_GPR15(mode64);
    (*arr)[i++] = hregPPC_GPR16(mode64);
@@ -243,7 +243,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
    (*arr)[i++] = hregPPC_GPR26(mode64);
    (*arr)[i++] = hregPPC_GPR27(mode64);
    (*arr)[i++] = hregPPC_GPR28(mode64);
-   (*arr)[i++] = hregPPC_GPR29(mode64);
+   // GPR29 is reserved for the dispatcher
    // GPR30 is reserved as AltiVec spill reg temporary
    // GPR31 is reserved for the GuestStatePtr
 
@@ -260,6 +260,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
    (*arr)[i++] = hregPPC32_FPR7();
 
    /* Same deal re Altivec */
+   /* NB, vr29 is used as a scratch temporary -- do not allocate */
    (*arr)[i++] = hregPPC32_VR0();
    (*arr)[i++] = hregPPC32_VR1();
    (*arr)[i++] = hregPPC32_VR2();
@@ -1287,7 +1288,7 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
             ppHRegPPC32(i->Pin.Set32.dst);
             vex_printf(",");
             ppHRegPPC32(i->Pin.Set32.dst);
-            vex_printf("1");
+            vex_printf(",1");
          }
          vex_printf(" }");
       }
@@ -1741,7 +1742,7 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcL);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcR);
       if (i->Pin.AvBin32Fx4.op == Pavfp_MULF)
-         addHRegUse(u, HRmWrite, hregPPC_GPR29(mode64));
+         addHRegUse(u, HRmWrite, hregPPC32_VR29());
       return;
    case Pin_AvUn32Fx4:
       addHRegUse(u, HRmWrite, i->Pin.AvUn32Fx4.dst);
@@ -3374,7 +3375,9 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
             load -0.0 (0x8000_0000) to each 32-bit word of vB
             this makes the add a noop.
          */
-         UInt vB = 29;                    // XXX: Using r29 for temp
+         UInt vB = 29;  // XXX: Using v29 for temp do not change
+                        // without also changing
+                        // getRegUsage_PPC32Instr
          UInt konst = 0x1F;
 
          // Better way to load -0.0 (0x80000000) ?

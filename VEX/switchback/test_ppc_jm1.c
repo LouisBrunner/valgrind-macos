@@ -119,14 +119,14 @@ enum test_flags {
 
 //#define DEBUG_ARGS_BUILD
 #if defined (DEBUG_ARGS_BUILD)
-#define AB_DPRINTF(fmt, args...) do { vex_printf(fmt , ##args); } while (0)
+#define AB_DPRINTF(fmt, args...) do { vexxx_printf(fmt , ##args); } while (0)
 #else
 #define AB_DPRINTF(fmt, args...) do { } while (0)
 #endif
 
 //#define DEBUG_FILTER
 #if defined (DEBUG_FILTER)
-#define FDPRINTF(fmt, args...) do { vex_printf(fmt , ##args); } while (0)
+#define FDPRINTF(fmt, args...) do { vexxx_printf(fmt , ##args); } while (0)
 #else
 #define FDPRINTF(fmt, args...) do { } while (0)
 #endif
@@ -304,7 +304,7 @@ void* my_malloc ( int n )
 
 /////////////////////////////////////////////////////////////////////
 
-static void vex_log_bytes ( char* p, int n )
+static void vexxx_log_bytes ( char* p, int n )
 {
    int i;
    for (i = 0; i < n; i++)
@@ -312,14 +312,14 @@ static void vex_log_bytes ( char* p, int n )
 }
 
 /*---------------------------------------------------------*/
-/*--- vex_printf                                        ---*/
+/*--- vexxx_printf                                        ---*/
 /*---------------------------------------------------------*/
 
 /* This should be the only <...> include in the entire VEX library.
    New code for vex_util.c should go above this point. */
 #include <stdarg.h>
 
-static HChar vex_toupper ( HChar c )
+static HChar vexxx_toupper ( HChar c )
 {
    if (c >= 'a' && c <= 'z')
       return c + ('A' - 'a');
@@ -327,14 +327,14 @@ static HChar vex_toupper ( HChar c )
       return c;
 }
 
-static Int vex_strlen ( const HChar* str )
+static Int vexxx_strlen ( const HChar* str )
 {
    Int i = 0;
    while (str[i] != 0) i++;
    return i;
 }
 
-Bool vex_streq ( const HChar* s1, const HChar* s2 )
+Bool vexxx_streq ( const HChar* s1, const HChar* s2 )
 {
    while (True) {
       if (*s1 == 0 && *s2 == 0)
@@ -358,10 +358,10 @@ static UInt
 myvprintf_str ( void(*send)(HChar), Int flags, Int width, HChar* str, 
                 Bool capitalise )
 {
-#  define MAYBE_TOUPPER(ch) (capitalise ? vex_toupper(ch) : (ch))
+#  define MAYBE_TOUPPER(ch) (capitalise ? vexxx_toupper(ch) : (ch))
    UInt ret = 0;
    Int i, extra;
-   Int len = vex_strlen(str);
+   Int len = vexxx_strlen(str);
 
    if (width == 0) {
       ret += len;
@@ -606,7 +606,7 @@ static Int   n_myprintf_buf;
 static void add_to_myprintf_buf ( HChar c )
 {
    if (c == '\n' || n_myprintf_buf >= 1000-10 /*paranoia*/ ) {
-      (*vex_log_bytes)( myprintf_buf, vex_strlen(myprintf_buf) );
+      (*vexxx_log_bytes)( myprintf_buf, vexxx_strlen(myprintf_buf) );
       n_myprintf_buf = 0;
       myprintf_buf[n_myprintf_buf] = 0;      
    }
@@ -614,7 +614,7 @@ static void add_to_myprintf_buf ( HChar c )
    myprintf_buf[n_myprintf_buf] = 0;
 }
 
-static UInt vex_printf ( const char *format, ... )
+static UInt vexxx_printf ( const char *format, ... )
 {
    UInt ret;
    va_list vargs;
@@ -625,7 +625,7 @@ static UInt vex_printf ( const char *format, ... )
    ret = vprintf_wrk ( add_to_myprintf_buf, format, vargs );
 
    if (n_myprintf_buf > 0) {
-      (*vex_log_bytes)( myprintf_buf, n_myprintf_buf );
+      (*vexxx_log_bytes)( myprintf_buf, n_myprintf_buf );
    }
 
    va_end(vargs);
@@ -3576,14 +3576,14 @@ static uint16_t *ii16;
 static int nb_ii16;
 
 static inline void register_farg (void *farg,
-                                  int s, uint16_t exp, uint64_t mant)
+                                  int s, uint16_t _exp, uint64_t mant)
 {
     uint64_t tmp;
 
-    tmp = ((uint64_t)s << 63) | ((uint64_t)exp << 52) | mant;
+    tmp = ((uint64_t)s << 63) | ((uint64_t)_exp << 52) | mant;
     *(uint64_t *)farg = tmp;
     AB_DPRINTF("%d %03x %013llx => %016llx %0e\n",
-               s, exp, mant, *(uint64_t *)farg, *(double *)farg);
+               s, _exp, mant, *(uint64_t *)farg, *(double *)farg);
 }
 
 static void build_fargs_table (void)
@@ -3603,7 +3603,7 @@ static void build_fargs_table (void)
      * (8 values)
      */
     uint64_t mant;
-    uint16_t exp, e0, e1;
+    uint16_t _exp, e0, e1;
     int s;
     int i;
 
@@ -3614,11 +3614,11 @@ static void build_fargs_table (void)
             for (e1 = 0x000; ; e1 = ((e1 + 1) << 2) + 6) {
                 if (e1 >= 0x400)
                     e1 = 0x3fe;
-                exp = (e0 << 10) | e1;
+                _exp = (e0 << 10) | e1;
                 for (mant = 0x0000000000001ULL; mant < (1ULL << 52);
                      /* Add 'random' bits */
                      mant = ((mant + 0x4A6) << 13) + 0x359) {
-                    register_farg(&fargs[i++], s, exp, mant);
+                    register_farg(&fargs[i++], s, _exp, mant);
                 }
                 if (e1 == 0x3fe)
                     break;
@@ -3628,44 +3628,44 @@ static void build_fargs_table (void)
     /* Special values */
     /* +0.0      : 0 0x000 0x0000000000000 */
     s = 0;
-    exp = 0x000;
+    _exp = 0x000;
     mant = 0x0000000000000ULL;
-    register_farg(&fargs[i++], s, exp, mant);
+    register_farg(&fargs[i++], s, _exp, mant);
     /* -0.0      : 1 0x000 0x0000000000000 */
     s = 1;
-    exp = 0x000;
+    _exp = 0x000;
     mant = 0x0000000000000ULL;
-    register_farg(&fargs[i++], s, exp, mant);
+    register_farg(&fargs[i++], s, _exp, mant);
     /* +infinity : 0 0x7FF 0x0000000000000  */
     s = 0;
-    exp = 0x7FF;
+    _exp = 0x7FF;
     mant = 0x0000000000000ULL;
-    register_farg(&fargs[i++], s, exp, mant);
+    register_farg(&fargs[i++], s, _exp, mant);
     /* -infinity : 1 0x7FF 0x0000000000000 */
     s = 1;
-    exp = 0x7FF;
+    _exp = 0x7FF;
     mant = 0x0000000000000ULL;
-    register_farg(&fargs[i++], s, exp, mant);
+    register_farg(&fargs[i++], s, _exp, mant);
     /* +SNaN     : 0 0x7FF 0x7FFFFFFFFFFFF */
     s = 0;
-    exp = 0x7FF;
+    _exp = 0x7FF;
     mant = 0x7FFFFFFFFFFFFULL;
-    register_farg(&fargs[i++], s, exp, mant);
+    register_farg(&fargs[i++], s, _exp, mant);
     /* -SNaN     : 1 0x7FF 0x7FFFFFFFFFFFF */
     s = 1;
-    exp = 0x7FF;
+    _exp = 0x7FF;
     mant = 0x7FFFFFFFFFFFFULL;
-    register_farg(&fargs[i++], s, exp, mant);
+    register_farg(&fargs[i++], s, _exp, mant);
     /* +QNaN     : 0 0x7FF 0x8000000000000 */
     s = 0;
-    exp = 0x7FF;
+    _exp = 0x7FF;
     mant = 0x8000000000000ULL;
-    register_farg(&fargs[i++], s, exp, mant);
+    register_farg(&fargs[i++], s, _exp, mant);
     /* -QNaN     : 1 0x7FF 0x8000000000000 */
     s = 1;
-    exp = 0x7FF;
+    _exp = 0x7FF;
     mant = 0x8000000000000ULL;
-    register_farg(&fargs[i++], s, exp, mant);
+    register_farg(&fargs[i++], s, _exp, mant);
     AB_DPRINTF("Registered %d floats values\n", i);
     nb_fargs = i;
 }
@@ -3714,7 +3714,7 @@ static void test_int_three_args (const unsigned char *name, test_func_t func)
     int i, j, k;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_iargs; i++) {
         for (j = 0; j < nb_iargs; j++) {
             for (k = 0;k < nb_iargs; k++) {
@@ -3730,14 +3730,14 @@ static void test_int_three_args (const unsigned char *name, test_func_t func)
                 __asm__ __volatile__ ("mfxer 18");
                 xer = r18;
                 res = r17;
-                vex_printf("%s %08x, %08x, %08x => %08x (%08x %08x)\n",
+                vexxx_printf("%s %08x, %08x, %08x => %08x (%08x %08x)\n",
                        name, iargs[i], iargs[j], iargs[k], res, flags, xer);
             }
-            vex_printf("\n");
+            vexxx_printf("\n");
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 static void test_int_two_args (const unsigned char *name, test_func_t func)
@@ -3746,7 +3746,7 @@ static void test_int_two_args (const unsigned char *name, test_func_t func)
     int i, j;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_iargs; i++) {
         for (j = 0; j < nb_iargs; j++) {
             r14 = iargs[i];
@@ -3760,12 +3760,12 @@ static void test_int_two_args (const unsigned char *name, test_func_t func)
             __asm__ __volatile__ ("mfxer 18");
             xer = r18;
             res = r17;
-            vex_printf("%s %08x, %08x => %08x (%08x %08x)\n",
+            vexxx_printf("%s %08x, %08x => %08x (%08x %08x)\n",
                    name, iargs[i], iargs[j], res, flags, xer);
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 static void test_int_one_arg (const unsigned char *name, test_func_t func)
@@ -3774,7 +3774,7 @@ static void test_int_one_arg (const unsigned char *name, test_func_t func)
     int i;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_iargs; i++) {
         r14 = iargs[i];
         r18 = 0;
@@ -3787,10 +3787,10 @@ static void test_int_one_arg (const unsigned char *name, test_func_t func)
         flags = r18;
         __asm__ __volatile__ ("mfxer 18");
         xer = r18;
-        vex_printf("%s %08x => %08x (%08x %08x)\n",
+        vexxx_printf("%s %08x => %08x (%08x %08x)\n",
                name, iargs[i], res, flags, xer);
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 static inline void _patch_op_imm (void *out, void *in,
@@ -3826,19 +3826,19 @@ static void test_int_one_reg_imm16 (const unsigned char *name,
     int i, j;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_iargs; i++) {
         for (j = 0; j < nb_ii16; j++) {
             p = (void *)func;
 #if 0
-            vex_printf("copy func %s from %p to %p (%08x %08x)\n",
+            vexxx_printf("copy func %s from %p to %p (%08x %08x)\n",
                    name, func, func_buf, p[0], p[1]);
 #endif
             func_buf[1] = p[1];
             patch_op_imm16(func_buf, p, ii16[j]);
             func = (void *)func_buf;
 #if 0
-            vex_printf(" =>  func %s from %p to %p (%08x %08x)\n",
+            vexxx_printf(" =>  func %s from %p to %p (%08x %08x)\n",
                    name, func, func_buf, func_buf[0], func_buf[1]);
 #endif
             r14 = iargs[i];
@@ -3851,12 +3851,12 @@ static void test_int_one_reg_imm16 (const unsigned char *name,
             __asm__ __volatile__ ("mfxer 18");
             xer = r18;
             res = r17;
-            vex_printf("%s %08x, %08x => %08x (%08x %08x)\n",
+            vexxx_printf("%s %08x, %08x => %08x (%08x %08x)\n",
                    name, iargs[i], ii16[j], res, flags, xer);
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 /* Special test cases for:
@@ -3878,7 +3878,7 @@ static void rlwi_cb (const unsigned char *name, test_func_t func)
     int i, j, k, l;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0;;) {
         if (i >= nb_iargs)
             i = nb_iargs - 1;
@@ -3901,14 +3901,14 @@ static void rlwi_cb (const unsigned char *name, test_func_t func)
                     __asm__ __volatile__ ("mfxer 18");
                     xer = r18;
                     res = r17;
-                    vex_printf("%s %08x, %d, %d, %d => %08x (%08x %08x)\n",
+                    vexxx_printf("%s %08x, %d, %d, %d => %08x (%08x %08x)\n",
                            name, iargs[i], j, k, l, res, flags, xer);
                 }
-                vex_printf("\n");
+                vexxx_printf("\n");
             }
-            vex_printf("\n");
+            vexxx_printf("\n");
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
         if (i == 0)
             i = 1;
         else if (i == nb_iargs - 1)
@@ -3916,7 +3916,7 @@ static void rlwi_cb (const unsigned char *name, test_func_t func)
         else
             i += 3;
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 static void rlwnm_cb (const unsigned char *name, test_func_t func)
@@ -3926,7 +3926,7 @@ static void rlwnm_cb (const unsigned char *name, test_func_t func)
     int i, j, k, l;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_iargs; i++) {
         for (j = 0; j < 64; j++) {
             for (k = 0; k < 32; k++) {
@@ -3947,16 +3947,16 @@ static void rlwnm_cb (const unsigned char *name, test_func_t func)
                     __asm__ __volatile__ ("mfxer 18");
                     xer = r18;
                     res = r17;
-                    vex_printf("%s %08x, %08x, %d, %d => %08x (%08x %08x)\n",
+                    vexxx_printf("%s %08x, %08x, %d, %d => %08x (%08x %08x)\n",
                            name, iargs[i], j, k, l, res, flags, xer);
                 }
-                vex_printf("\n");
+                vexxx_printf("\n");
             }
-            vex_printf("\n");
+            vexxx_printf("\n");
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 static void srawi_cb (const unsigned char *name, test_func_t func)
@@ -3966,7 +3966,7 @@ static void srawi_cb (const unsigned char *name, test_func_t func)
     int i, j;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_iargs; i++) {
         for (j = 0; j < 32; j++) {
             p = (void *)func;
@@ -3983,12 +3983,12 @@ static void srawi_cb (const unsigned char *name, test_func_t func)
             __asm__ __volatile__ ("mfxer 18");
             xer = r18;
             res = r17;
-            vex_printf("%s %08x, %d => %08x (%08x %08x)\n",
+            vexxx_printf("%s %08x, %d => %08x (%08x %08x)\n",
                    name, iargs[i], j, res, flags, xer);
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 typedef struct special_t special_t;
@@ -4007,7 +4007,7 @@ static void test_special (special_t *table,
         continue;
     for (i = 0; table[i].name != NULL; i++) {
 #if 0
-        vex_printf( "look for handler for '%s' (%s)\n", name,
+        vexxx_printf( "look for handler for '%s' (%s)\n", name,
                 table[i].name);
 #endif
         if (my_strcmp(table[i].name, tmp) == 0) {
@@ -4015,7 +4015,7 @@ static void test_special (special_t *table,
             return;
         }
     }
-    vex_printf( "ERROR: no test found for op '%s'\n", name);
+    vexxx_printf( "ERROR: no test found for op '%s'\n", name);
 }
 
 static special_t special_int_ops[] = {
@@ -4093,7 +4093,7 @@ static void test_float_three_args (const unsigned char *name, test_func_t func)
     int i, j, k;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_fargs; i++) {
         for (j = 0; j < nb_fargs; j++) {
             for (k = 0;k < nb_fargs; k++) {
@@ -4113,14 +4113,14 @@ static void test_float_three_args (const unsigned char *name, test_func_t func)
                 flags = r18;
                 res = f17;
                 ur = *(uint64_t *)(&res);
-                vex_printf("%s %016llx, %016llx, %016llx => %016llx (%08x)\n",
+                vexxx_printf("%s %016llx, %016llx, %016llx => %016llx (%08x)\n",
                        name, u0, u1, u2, ur, flags);
             }
-            vex_printf("\n");
+            vexxx_printf("\n");
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 static void test_float_two_args (const unsigned char *name, test_func_t func)
@@ -4131,7 +4131,7 @@ static void test_float_two_args (const unsigned char *name, test_func_t func)
     int i, j;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_fargs; i++) {
         for (j = 0; j < nb_fargs; j++) {
             u0 = *(uint64_t *)(&fargs[i]);
@@ -4148,12 +4148,12 @@ static void test_float_two_args (const unsigned char *name, test_func_t func)
             flags = r18;
             res = f17;
             ur = *(uint64_t *)(&res);
-            vex_printf("%s %016llx, %016llx => %016llx (%08x)\n",
+            vexxx_printf("%s %016llx, %016llx => %016llx (%08x)\n",
                    name, u0, u1, ur, flags);
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 static void test_float_one_arg (const unsigned char *name, test_func_t func)
@@ -4164,7 +4164,7 @@ static void test_float_one_arg (const unsigned char *name, test_func_t func)
     int i;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_fargs; i++) {
         u0 = *(uint64_t *)(&fargs[i]);
         f14 = fargs[i];
@@ -4178,9 +4178,9 @@ static void test_float_one_arg (const unsigned char *name, test_func_t func)
         flags = r18;
         res = f17;
         ur = *(uint64_t *)(&res);
-        vex_printf("%s %016llx => %016llx (%08x)\n", name, u0, ur, flags);
+        vexxx_printf("%s %016llx => %016llx (%08x)\n", name, u0, ur, flags);
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 
 static special_t special_float_ops[] = {
@@ -4259,7 +4259,7 @@ static void test_ppc405 (const unsigned char *name, test_func_t func)
     int i, j, k;
 
     if (verbose > 1)
-        vex_printf( "Test instruction %s\n", name);
+        vexxx_printf( "Test instruction %s\n", name);
     for (i = 0; i < nb_iargs; i++) {
         for (j = 0; j < nb_iargs; j++) {
             for (k = 0;k < nb_iargs; k++) {
@@ -4278,14 +4278,14 @@ static void test_ppc405 (const unsigned char *name, test_func_t func)
                 __asm__ __volatile__ ("mfxer 18");
                 xer = r18;
                 res = r17;
-                vex_printf("%s %08x, %08x, %08x => %08x (%08x %08x)\n",
+                vexxx_printf("%s %08x, %08x, %08x => %08x (%08x %08x)\n",
                        name, iargs[i], iargs[j], iargs[k], res, flags, xer);
             }
-            vex_printf("\n");
+            vexxx_printf("\n");
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
     }
-    vex_printf("\n");
+    vexxx_printf("\n");
 }
 #endif /* defined (IS_PPC405) */
 
@@ -4316,8 +4316,8 @@ static int check_name (const unsigned char *name, const unsigned char *filter,
             continue;
         FDPRINTF("Check '%s' againt '%s' (%s match)\n",
                  name, filter, exact ? "exact" : "starting");
-        nlen = vex_strlen(name);
-        flen = vex_strlen(filter);
+        nlen = vexxx_strlen(name);
+        flen = vexxx_strlen(filter);
         if (exact) {
             if (nlen == flen && my_memcmp(name, filter, flen) == 0)
                 ret = 1;
@@ -4386,7 +4386,7 @@ static void do_tests (int one_arg, int two_args, int three_args,
             loop = &float_loops[nb_args - 1];
             break;
 #else
-            vex_printf( "Sorry. "
+            vexxx_printf( "Sorry. "
                     "PPC floating point instructions tests "
                     "are disabled on your host\n");
 #endif /* !defined (NO_FLOAT) */
@@ -4397,7 +4397,7 @@ static void do_tests (int one_arg, int two_args, int three_args,
             loop = &tmpl;
             break;
 #else
-            vex_printf( "Sorry. "
+            vexxx_printf( "Sorry. "
                     "PPC405 instructions tests are disabled on your host\n");
             continue;
 #endif /* defined (IS_PPC405) */
@@ -4407,12 +4407,12 @@ static void do_tests (int one_arg, int two_args, int three_args,
             loop = &altivec_int_loops[nb_args - 1];
             break;
 #else
-            vex_printf( "Sorry. "
+            vexxx_printf( "Sorry. "
                     "Altivec instructions tests are not yet implemented\n");
             continue;
 #endif
 #else
-            vex_printf( "Sorry. "
+            vexxx_printf( "Sorry. "
                     "Altivec instructions tests are disabled on your host\n");
             continue;
 #endif
@@ -4422,36 +4422,36 @@ static void do_tests (int one_arg, int two_args, int three_args,
             loop = &altivec_float_loops[nb_args - 1];
             break;
 #else
-            vex_printf( "Sorry. "
+            vexxx_printf( "Sorry. "
                     "Altivec instructions tests are not yet implemented\n");
             continue;
 #endif
 #else
-            vex_printf( "Sorry. "
+            vexxx_printf( "Sorry. "
                     "Altivec float instructions tests "
                     "are disabled on your host\n");
 #endif
             continue;
         default:
-            vex_printf("ERROR: unknown insn family %08x\n", family);
+            vexxx_printf("ERROR: unknown insn family %08x\n", family);
             continue;
         }
         if (verbose > 0)
-            vex_printf( "%s:\n", all_tests[i].name);
+            vexxx_printf( "%s:\n", all_tests[i].name);
         for (j = 0; tests[j].name != NULL; j++) {
             if (check_name(tests[j].name, filter, exact))
                 (*loop)(tests[j].name, tests[j].func);
             n++;
         }
-        vex_printf("\n");
+        vexxx_printf("\n");
     }
-    vex_printf( "All done. Tested %d different instructions\n", n);
+    vexxx_printf( "All done. Tested %d different instructions\n", n);
 }
 
 #if 0 // unused
 static void usage (void)
 {
-    vex_printf(
+    vexxx_printf(
             "test-ppc [-1] [-2] [-3] [-*] [-t <type>] [-f <family>] [-u] "
             "[-n <filter>] [-x] [-h]\n"
             "\t-1: test opcodes with one argument\n"
@@ -4479,7 +4479,7 @@ static void usage (void)
 }
 #endif
 
-int main (int argc, char **argv)
+int _main (int argc, char **argv)
 {
     unsigned char /* *tmp, */ *filter = NULL;
     int one_arg = 0, two_args = 0, three_args = 0;
@@ -4540,17 +4540,17 @@ int main (int argc, char **argv)
     //            break;
     //        default:
     //            usage();
-    //            vex_printf( "Unknown argument: '%c'\n", c);
+    //            vexxx_printf( "Unknown argument: '%c'\n", c);
     //            return 1;
     //        bad_arg:
     //            usage();
-    //            vex_printf( "Bad argument for '%c': '%s'\n", c, tmp);
+    //            vexxx_printf( "Bad argument for '%c': '%s'\n", c, tmp);
     //            return 1;
     //        }
     //    }
     //    if (argc != optind) {
     //        usage();
-    //        vex_printf( "Bad number of arguments\n");
+    //        vexxx_printf( "Bad number of arguments\n");
     //        return 1;
     //    }
 
@@ -4608,6 +4608,6 @@ void entry ( HWord(*service)(HWord,HWord) )
 {
    char* argv[2] = { NULL, NULL };
    serviceFn = service;
-   main(0, argv);
+   _main(0, argv);
    (*service)(0,0);
 }

@@ -4,8 +4,7 @@
 13 Dec '05 - Linker no longer used (apart from mymalloc)
 Simply compile and link switchback.c with test_xxx.c,
 e.g. for ppc64:
-$ (cd .. && make EXTRA_CFLAGS="-m64" libvex_ppc64_linux.a)
-$ gcc -m64 -Wall -O -g -o switchback switchback.c linker.c ../libvex_ppc64_linux.a test_xxx.c
+$ (cd .. && make EXTRA_CFLAGS="-m64" libvex_ppc64_linux.a) && gcc -m64 -mregnames -Wall -Wshadow -Wno-long-long -Winline -O -g -o switchback switchback.c linker.c ../libvex_ppc64_linux.a test_xxx.c
 
 Test file test_xxx.c must have an entry point called "entry",
 which expects to take a single argument which is a function pointer
@@ -112,7 +111,7 @@ ULong*          trans_tableP[N_TRANS_TABLE];
 Int trans_cache_used = 0;
 Int trans_table_used = 0;
 
-static Bool chase_into_not_ok ( Addr64 dst ) { return False; }
+static Bool chase_into_ok ( Addr64 dst ) { return False; }
 
 #if 0
 // local_sys_write_stderr(&c,1);
@@ -796,7 +795,7 @@ Bool run_translation ( HWord translation )
 HWord find_translation ( Addr64 guest_addr )
 {
    Int i;
-   HWord res;
+   HWord __res;
    if (0)
       printf("find translation %p ... ", ULong_to_Ptr(guest_addr));
    for (i = 0; i < trans_table_used; i++)
@@ -819,17 +818,18 @@ HWord find_translation ( Addr64 guest_addr )
       i--;
    }
 
-   res = (HWord)trans_tableP[i];
-   if (0) printf("%p\n", (void*)res);
-   return res;
+   __res = (HWord)trans_tableP[i];
+   if (0) printf("%p\n", (void*)__res);
+   return __res;
 }
 
 #define N_TRANSBUF 5000
 static UChar transbuf[N_TRANSBUF];
 void make_translation ( Addr64 guest_addr, Bool verbose )
 {
+   VexTranslateArgs   vta;
    VexTranslateResult tres;
-   VexArchInfo vai;
+   VexArchInfo vex_archinfo;
    Int trans_used, i, ws_needed;
 
    if (trans_table_used >= N_TRANS_TABLE
@@ -844,25 +844,32 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    if (0)
       printf("make translation %p\n", ULong_to_Ptr(guest_addr));
 
-   LibVEX_default_VexArchInfo(&vai);
-   vai.subarch = VexSubArch;
-   vai.ppc32_cache_line_szB = CacheLineSize;
+   LibVEX_default_VexArchInfo(&vex_archinfo);
+   vex_archinfo.subarch = VexSubArch;
+   vex_archinfo.ppc32_cache_line_szB = CacheLineSize;
 
-   tres
-      = LibVEX_Translate ( 
-           VexArch, &vai,
-           VexArch, &vai,
-           ULong_to_Ptr(guest_addr), guest_addr, guest_addr,
-           chase_into_not_ok,
-           &trans_table[trans_table_used],
-           transbuf, N_TRANSBUF, &trans_used,
-           NULL,          /* instrument1 */
-           NULL,          /* instrument2 */
-           False,         /* cleanup after instrument */
-           False,         /* self-checking translation? */
-           NULL, /* access checker */
-           verbose ? TEST_FLAGS : DEBUG_TRACE_FLAGS
-        );
+   /* */
+   vta.arch_guest       = VexArch;
+   vta.archinfo_guest   = vex_archinfo;
+   vta.arch_host        = VexArch;
+   vta.archinfo_host    = vex_archinfo;
+   vta.guest_bytes      = (UChar*)ULong_to_Ptr(guest_addr);
+   vta.guest_bytes_addr = (Addr64)guest_addr;
+   vta.guest_bytes_addr_noredir = (Addr64)guest_addr;
+   vta.chase_into_ok    = chase_into_ok;
+//   vta.guest_extents    = &vge;
+   vta.guest_extents    = &trans_table[trans_table_used];
+   vta.host_bytes       = transbuf;
+   vta.host_bytes_size  = N_TRANSBUF;
+   vta.host_bytes_used  = &trans_used;
+   vta.instrument1      = NULL;
+   vta.instrument2      = NULL;
+   vta.do_self_check    = False;
+   vta.traceflags       = verbose ? TEST_FLAGS : DEBUG_TRACE_FLAGS;
+   vta.dispatch         = NULL;
+
+   tres = LibVEX_Translate ( &vta );
+
    assert(tres == VexTransOK);
    ws_needed = (trans_used+7) / 8;
    assert(ws_needed > 0);
@@ -1129,19 +1136,19 @@ int main ( Int argc, HChar** argv )
    get_R2();
 
 #if !defined(__powerpc64__) // ppc32
-   gst.guest_CIA  = (UInt)entryP;
-   gst.guest_GPR1 = (UInt)&gstack[25000]; /* stack pointer */
-   gst.guest_GPR3 = (UInt)serviceFn; /* param to entry */
-   gst.guest_GPR2 = saved_R2;
-   gst.guest_LR = 0x12345678; /* bogus return address */
+   gst.guest_CIA   = (UInt)entryP;
+   gst.guest_GPR1  = (UInt)&gstack[25000]; /* stack pointer */
+   gst.guest_GPR3  = (UInt)serviceFn; /* param to entry */
+   gst.guest_GPR2  = saved_R2;
+   gst.guest_LR    = 0x12345678; /* bogus return address */
 #else // ppc64
    get_R13();
-   gst.guest_CIA  = * (ULong*)entryP;
-   gst.guest_GPR1 = (ULong)&gstack[25000]; /* stack pointer */
-   gst.guest_GPR3 = (ULong)serviceFn;      /* param to entry */
-   gst.guest_GPR2 = saved_R2;
+   gst.guest_CIA   = * (ULong*)entryP;
+   gst.guest_GPR1  = (ULong)&gstack[25000]; /* stack pointer */
+   gst.guest_GPR3  = (ULong)serviceFn;      /* param to entry */
+   gst.guest_GPR2  = saved_R2;
    gst.guest_GPR13 = saved_R13;
-   gst.guest_LR   = 0x1234567812345678ULL; /* bogus return address */
+   gst.guest_LR    = 0x1234567812345678ULL; /* bogus return address */
 //   printf("setting CIA to %p\n", (void*)gst.guest_CIA);
 #endif
 

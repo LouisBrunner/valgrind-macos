@@ -80,6 +80,15 @@ typedef UChar UByte;
 
       bszB == pszB + 2*sizeof(SizeT) + 2*a->rz_szB
 
+   The minimum overhead per heap block for arenas used by
+   the core is:   
+
+      32-bit platforms:  2*4 + 2*4 == 16 bytes
+      64-bit platforms:  2*8 + 2*8 == 32 bytes
+
+   In both cases extra overhead may be incurred when rounding the payload
+   size up to VG_MIN_MALLOC_SZB.
+
    Furthermore, both size fields in the block have their least-significant
    bit set if the block is not in use, and unset if it is in use.
    (The bottom 3 or so bits are always free for this because of alignment.)

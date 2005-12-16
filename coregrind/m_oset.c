@@ -42,7 +42,8 @@
 // - First is the AVL metadata, which is three words: a left pointer, a
 //   right pointer, and a word containing balancing information and a
 //   "magic" value which provides some checking that the user has not
-//   corrupted the metadata.
+//   corrupted the metadata.  So the overhead is 12 bytes on 32-bit
+//   platforms and 24 bytes on 64-bit platforms.
 // - Second is the user's data.  This can be anything.  Note that because it
 //   comes after the metadata, it will only be word-aligned, even if the
 //   user data is a struct that would normally be doubleword-aligned.

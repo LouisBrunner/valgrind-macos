@@ -183,10 +183,9 @@ LafterVMX1:
         /* CAB TODO: Use a caller-saved reg for orig guest_state ptr
            - rem to set non-allocateable in isel.c */
 
-        /* hold dispatch_ctr in ctr reg */
+        /* hold dispatch_ctr in r29 */
         lis     5,VG_(dispatch_ctr)@ha
-        lwz     5,VG_(dispatch_ctr)@l(5)
-        mtctr   5
+        lwz     29,VG_(dispatch_ctr)@l(5)
 
         /* set host FPU control word to the default mode expected 
            by VEX-generated code.  See comments in libvex.h for
@@ -240,8 +239,8 @@ VG_(run_innerloop__dispatch_unprofiled):
 	/* At entry: Live regs:
 		r1 (=sp)
 		r3  (=CIA = next guest address)
+		r29 (=dispatch_ctr)
 		r31 (=guest_state)
-		ctr (=dispatch_ctr)
 	   Stack state:
 		44(r1) (=orig guest_state)
 	*/
@@ -255,7 +254,10 @@ VG_(run_innerloop__dispatch_unprofiled):
         stw     3,OFFSET_ppc32_CIA(31)
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-        bdz     counter_is_zero  /* decrements ctr reg */
+//	addic.	29,29,-1
+	addi	29,29,-1
+	cmplwi	29,0
+        beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
         /* r4=((r30<<2) & (VG_TT_FAST_MASK<<2)) */
@@ -271,16 +273,8 @@ VG_(run_innerloop__dispatch_unprofiled):
         addi    8,5,8
         mtlr    8
 
-        /* stop ctr being clobbered */
-        mfctr   5
-        stw     5,40(1)  /* => 40-16 = 24(1) on our parent stack */
-
 	/* run the translation */
         blrl
-
-	/* reinstate clobbered ctr */
-        lwz     5,40(1)
-        mtctr   5
 
 	/* start over */
 	b	VG_(run_innerloop__dispatch_unprofiled)
@@ -295,8 +289,8 @@ VG_(run_innerloop__dispatch_profiled):
 	/* At entry: Live regs:
 		r1 (=sp)
 		r3  (=CIA = next guest address)
+		r29 (=dispatch_ctr)
 		r31 (=guest_state)
-		ctr (=dispatch_ctr)
 	   Stack state:
 		44(r1) (=orig guest_state)
 	*/
@@ -310,7 +304,8 @@ VG_(run_innerloop__dispatch_profiled):
         stw     3,OFFSET_ppc32_CIA(31)
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-        bdz     counter_is_zero  /* decrements ctr reg */
+	addic.	29,29,-1
+        beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
         /* r4=((r30<<2) & (VG_TT_FAST_MASK<<2)) */
@@ -333,16 +328,8 @@ VG_(run_innerloop__dispatch_profiled):
         addi    8,5,8
         mtlr    8
 
-        /* stop ctr being clobbered */
-        mfctr   5
-        stw     5,40(1)  /* => 40-16 = 24(1) on our parent stack */
-
 	/* run the translation */
         blrl
-
-	/* reinstate clobbered ctr */
-        lwz     5,40(1)
-        mtctr   5
 
 	/* start over */
 	b	VG_(run_innerloop__dispatch_profiled)
@@ -369,18 +356,14 @@ gsp_changed:
 counter_is_zero:
 	/* %CIA is up to date */
 	/* back out decrement of the dispatch counter */
-        mfctr   5
-        addi    5,5,1
-	mtctr   5
+        addi    29,29,1
         li      3,VG_TRC_INNER_COUNTERZERO
         b       run_innerloop_exit
 
 fast_lookup_failed:
 	/* %CIA is up to date */
 	/* back out decrement of the dispatch counter */
-        mfctr   5
-        addi    5,5,1
-	mtctr   5
+        addi    29,29,1
         li      3,VG_TRC_INNER_FASTMISS
 	b       run_innerloop_exit
 
@@ -447,9 +430,8 @@ run_innerloop_exit_REALLY:
         addi    1,1,16
 
         /* Write ctr to VG(dispatch_ctr) */
-        mfctr   17
-        lis     18,VG_(dispatch_ctr)@ha
-        stw     17,VG_(dispatch_ctr)@l(18)
+        lis     5,VG_(dispatch_ctr)@ha
+        stw     29,VG_(dispatch_ctr)@l(5)
 
         /* Restore cr */
         lwz     0,44(1)

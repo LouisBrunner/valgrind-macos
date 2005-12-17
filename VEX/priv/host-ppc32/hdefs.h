@@ -759,7 +759,7 @@ typedef
 
 extern PPC32Instr* PPC32Instr_LI         ( HReg, ULong, Bool );
 extern PPC32Instr* PPC32Instr_Alu        ( PPC32AluOp, HReg, HReg, PPC32RH* );
-extern PPC32Instr* PPC32Instr_Shft       ( PPC32AluOp, Bool sz32, HReg, HReg, PPC32RH* );
+extern PPC32Instr* PPC32Instr_Shft       ( PPC32ShftOp, Bool sz32, HReg, HReg, PPC32RH* );
 extern PPC32Instr* PPC32Instr_AddSubC32  ( Bool, Bool, HReg, HReg, HReg );
 extern PPC32Instr* PPC32Instr_Cmp        ( Bool, Bool, UInt, HReg, PPC32RH* );
 extern PPC32Instr* PPC32Instr_Unary      ( PPC32UnaryOp op, HReg dst, HReg src );

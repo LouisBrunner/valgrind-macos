@@ -749,13 +749,13 @@ static IRExpr* mkV128from4x64U ( IRExpr* t3, IRExpr* t2,
             binop(Iop_ShrV128, expr_vA, mkU8(16)), \
             binop(Iop_ShrV128, expr_vB, mkU8(16)))
 
-static IRExpr* /* :: Ity_I32/64 */ mk64lo32Sto64 ( IRExpr* src )
+static IRExpr* /* :: Ity_I64 */ mk64lo32Sto64 ( IRExpr* src )
 {
    vassert(typeOfIRExpr(irbb->tyenv, src) == Ity_I64);
    return unop(Iop_32Sto64, unop(Iop_64to32, src));
 }
 
-static IRExpr* /* :: Ity_I32/64 */ mk64lo32Uto64 ( IRExpr* src )
+static IRExpr* /* :: Ity_I64 */ mk64lo32Uto64 ( IRExpr* src )
 {
    vassert(typeOfIRExpr(irbb->tyenv, src) == Ity_I64);
    return unop(Iop_32Uto64, unop(Iop_64to32, src));

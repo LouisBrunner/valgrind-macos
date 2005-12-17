@@ -597,13 +597,48 @@ static
 Superblock* findSb ( Arena* a, Block* b )
 {
    Superblock* sb;
-   for (sb = a->sblocks; sb; sb = sb->next)
-      if ((Block*)&sb->payload_bytes[0] <= b
+   static UInt n_search = 0;
+   for (sb = a->sblocks; sb; sb = sb->next) {
+      if ((Block*)&sb->payload_bytes[0] <= b 
           && b < (Block*)&sb->payload_bytes[sb->n_payload_bytes])
-         return sb;
-   VG_(printf)("findSb: can't find pointer %p in arena '%s'\n", b, a->name );
-   VG_(core_panic)("findSb: VG_(arena_free)() in wrong arena?");
-   return NULL; /*NOTREACHED*/
+         break;
+   }
+   if (!sb) {
+      VG_(printf)("findSb: can't find pointer %p in arena '%s'\n", 
+                  b, a->name );
+      VG_(core_panic)("findSb: VG_(arena_free)() in wrong arena?");
+      return NULL; /*NOTREACHED*/
+   }
+
+   /* Start of performance-enhancing hack: once every 128 (chosen
+      hackily after profiling) successful searches, move the found
+      Superblock one step closer to the start of the list.  This makes
+      future searches cheaper. */
+   if ((n_search & 0x7F) == 0) {
+      /* Move sb one step closer to the start of the list. */
+      Superblock* sb0 = a->sblocks;
+      Superblock* sb1 = NULL;
+      Superblock* sb2 = NULL;
+      Superblock* tmp;
+      while (True) {
+         if (sb0 == NULL) break;
+         if (sb0 == sb) break;
+         sb2 = sb1;
+         sb1 = sb0;
+         sb0 = sb0->next;
+      }
+      if (sb0 == sb && sb0 != NULL && sb1 != NULL && sb2 != NULL) {
+         /* sb0 points to sb, sb1 to its predecessor, and sb2 to sb1's
+            predecessor.  Swap sb0 and sb1, that is, move sb0 one step
+            closer to the start of the list. */
+         tmp = sb0->next;
+         sb2->next = sb0;
+         sb0->next = sb1;
+         sb1->next = tmp;
+      }
+   }
+   /* End of performance-enhancing hack. */
+   return sb;
 }
 
 

@@ -319,10 +319,10 @@ sub do_one_test($$)
             # the speedup.
             if (not defined $first_tTool{$tool}) {
                 $first_tTool{$tool} = $tTool;
-                print(" -----) ");
+                print(" -----)  ");
             } else {
                 my $speedup = 100 - (100 * $tTool / $first_tTool{$tool});
-                printf("%5.1f%%) ", $speedup);
+                printf("%5.1f%%)  ", $speedup);
             }
 
             $num_timings_done++;

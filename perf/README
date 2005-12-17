@@ -13,6 +13,15 @@ bigcode1, bigcode2:
                of runtime, particularly on larger programs.
 - Weaknesses:  Highly artificial.
 
+heap:
+- Description: Does a lot of heap allocation and deallocation, and has a lot
+               of heap blocks live while doing so.
+- Strengths:   Stress test for an important sub-system; bug #105039 showed
+               that inefficiencies in heap allocation can make a big
+               difference to programs that allocate a lot.
+- Weaknesses:  Highly artificial -- allocation pattern is not real, and only
+               a few different size allocations are used.
+
 sarp:
 - Description: Does a lot of stack allocation and deallocation.
 - Strengths:   Tests for a specific performance bug that existed in 3.1.0 and

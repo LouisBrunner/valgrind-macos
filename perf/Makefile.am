@@ -6,10 +6,11 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bz2.vgperf \
 	fbench.vgperf \
 	ffbench.vgperf \
+	heap.vgperf \
 	sarp.vgperf
 
 check_PROGRAMS = \
-	bigcode bz2 fbench ffbench sarp
+	bigcode bz2 fbench ffbench heap sarp
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include

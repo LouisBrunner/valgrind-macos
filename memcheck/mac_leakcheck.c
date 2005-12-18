@@ -702,7 +702,7 @@ void MAC_(do_detect_memory_leaks) (
    /* Sanity check -- make sure they don't overlap */
    for (i = 0; i < lc_n_shadows-1; i++) {
       tl_assert( lc_shadows[i]->data + lc_shadows[i]->size
-                 < lc_shadows[i+1]->data );
+                 <= lc_shadows[i+1]->data );
    }
 
    if (lc_n_shadows == 0) {

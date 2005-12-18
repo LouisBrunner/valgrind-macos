@@ -146,9 +146,10 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    continue, quit the debugger.  */
 void VG_(start_debugger) ( ThreadId tid )
 {
-  Int pid;
+#  define N_BUF 4096
+   Int pid;
 
-  if ((pid = VG_(fork)()) == 0) {
+   if ((pid = VG_(fork)()) == 0) {
       VG_(ptrace)(VKI_PTRACE_TRACEME, 0, NULL, NULL);
       VG_(kill)(VG_(getpid)(), VKI_SIGSTOP);
 
@@ -163,8 +164,8 @@ void VG_(start_debugger) ( ThreadId tid )
           VG_(ptrace)(VKI_PTRACE_DETACH, pid, NULL, 0) == 0)
       {
          Char pidbuf[15];
-         Char file[30];
-         Char buf[100];
+         Char file[50];
+         Char buf[N_BUF];
          Char *bufptr;
          Char *cmdptr;
          
@@ -175,6 +176,10 @@ void VG_(start_debugger) ( ThreadId tid )
          cmdptr = VG_(clo_db_command);
          
          while (*cmdptr) {
+            /* each iteration can advance bufptr by at most the length
+               of file[], so the following assertion is generously
+               over-paranoid. */
+            vg_assert(bufptr - buf < N_BUF-15-50-10/*paranoia*/);
             switch (*cmdptr) {
                case '%':
                   switch (*++cmdptr) {
@@ -183,20 +188,21 @@ void VG_(start_debugger) ( ThreadId tid )
                         bufptr += VG_(strlen)(file);
                         cmdptr++;
                         break;
-                  case 'p':
-                     VG_(memcpy)(bufptr, pidbuf, VG_(strlen)(pidbuf));
-                     bufptr += VG_(strlen)(pidbuf);
-                     cmdptr++;
-                     break;
-                  default:
-                     *bufptr++ = *cmdptr++;
-                     break;
+                     case 'p':
+                        VG_(memcpy)(bufptr, pidbuf, VG_(strlen)(pidbuf));
+                        bufptr += VG_(strlen)(pidbuf);
+                        cmdptr++;
+                        break;
+                     default:
+                        *bufptr++ = *cmdptr++;
+                        break;
                   }
                   break;
                default:
                   *bufptr++ = *cmdptr++;
                   break;
             }
+            vg_assert(bufptr - buf < N_BUF-15-50-10/*paranoia*/);
          }
          
          *bufptr++ = '\0';
@@ -216,6 +222,7 @@ void VG_(start_debugger) ( ThreadId tid )
       VG_(kill)(pid, VKI_SIGKILL);
       VG_(waitpid)(pid, &status, 0);
    }
+#  undef N_BUF
 }
 
 

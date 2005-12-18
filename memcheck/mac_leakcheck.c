@@ -536,7 +536,6 @@ static void full_report(ThreadId tid)
       lc_do_leakcheck(i);
 
       tl_assert(lc_markstack_top == -1);
-      VG_(printf)("state = %d\n", (Int)lc_markstack[i].state);
       tl_assert(lc_markstack[i].state == IndirectLeak
                 /* jrs 20051218: Ashley Pittman supplied a
                    custom-allocator test program which causes the ==

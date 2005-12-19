@@ -20,6 +20,9 @@ Post 3.1.0:
   removed from the despatch loop unless --profile-flags is being used.
   Improved Nulgrind performance typically by 10--20%, and Memcheck
   performance typically by 2--20%.
+- Julian changed findSb to slowly move superblocks to the front of the list
+  as they were accessed.  This sped up perf/heap by 25--50%, and some big
+  programs (eg. ktuberling) programs by a couple of percent.
 
 COMPVBITS branch:
 - Nick converted to compress V bits, initial version saved 0--5% on most

@@ -719,7 +719,7 @@ void MAC_(do_detect_memory_leaks) (
       tl_assert(lc_shadows == NULL);
       if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
          VG_(message)(Vg_UserMsg, 
-                      "No malloc'd blocks -- no leaks are possible.");
+                      "All heap blocks were freed -- no leaks are possible.");
       }
       return;
    }

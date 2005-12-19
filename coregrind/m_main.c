@@ -1027,8 +1027,11 @@ static void get_helprequest_and_toolname ( Int* need_help, HChar** tool )
 
 static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
 {
+   // VG_(clo_log_fd) is used by all the messaging.  It starts as 2 (stderr)
+   // and we cannot change it until we know what we are changing it to is
+   // ok.  So we have tmp_log_fd to hold the tmp fd prior to that point.
    SysRes sres;
-   Int    i, eventually_log_fd;
+   Int    i, tmp_log_fd;
    Int    toolname_len = VG_(strlen)(toolname);
    enum {
       VgLogTo_Fd,
@@ -1038,7 +1041,7 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
    } log_to = VgLogTo_Fd;   // Where is logging output to be sent?
 
    /* log to stderr by default, but usage message goes to stdout */
-   eventually_log_fd = 2; 
+   tmp_log_fd = 2; 
 
    /* Check for sane path in ./configure --prefix=... */
    if (VG_LIBDIR[0] != '/') 
@@ -1147,7 +1150,7 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else if (VG_CLO_STREQN(9,  arg, "--log-fd=")) {
          log_to            = VgLogTo_Fd;
          VG_(clo_log_name) = NULL;
-         eventually_log_fd = (Int)VG_(atoll)(&arg[9]);
+         tmp_log_fd        = (Int)VG_(atoll)(&arg[9]);
       }
 
       else if (VG_CLO_STREQN(11, arg, "--log-file=")) {
@@ -1322,7 +1325,6 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
       case VgLogTo_Fd: 
          vg_assert(VG_(clo_log_name) == NULL);
-         VG_(clo_log_fd) = eventually_log_fd;
          break;
 
       case VgLogTo_File: {
@@ -1361,13 +1363,11 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
                           seqtxt );
 
             // EXCL: it will fail with EEXIST if the file already exists.
-            sres
-	       = VG_(open)(logfilename, 
-			   VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
-			   VKI_S_IRUSR|VKI_S_IWUSR);
+            sres = VG_(open)(logfilename, 
+                             VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
+                             VKI_S_IRUSR|VKI_S_IWUSR);
 	    if (!sres.isError) {
-               eventually_log_fd = sres.val;
-	       VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
+               tmp_log_fd = sres.val;
 	       break; /* for (;;) */
 	    } else {
                // If the file already existed, we try the next name.  If it
@@ -1389,13 +1389,11 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
          vg_assert(VG_(clo_log_name) != NULL);
          vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
 
-         sres
-            = VG_(open)(VG_(clo_log_name),
-                        VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
-                        VKI_S_IRUSR|VKI_S_IWUSR);
+         sres = VG_(open)(VG_(clo_log_name),
+                          VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
+                          VKI_S_IRUSR|VKI_S_IWUSR);
          if (!sres.isError) {
-            eventually_log_fd = sres.val;
-            VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
+            tmp_log_fd = sres.val;
          } else {
             VG_(message)(Vg_UserMsg, 
                          "Can't create/open log file '%s'; giving up!", 
@@ -1410,8 +1408,8 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       case VgLogTo_Socket: {
          vg_assert(VG_(clo_log_name) != NULL);
          vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
-         eventually_log_fd = VG_(connect_via_socket)( VG_(clo_log_name) );
-         if (eventually_log_fd == -1) {
+         tmp_log_fd = VG_(connect_via_socket)( VG_(clo_log_name) );
+         if (tmp_log_fd == -1) {
             VG_(message)(Vg_UserMsg, 
                "Invalid --log-socket=ipaddr or --log-socket=ipaddr:port spec"); 
             VG_(message)(Vg_UserMsg, 
@@ -1420,7 +1418,7 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
                "--log-socket=");
             /*NOTREACHED*/
 	 }
-         if (eventually_log_fd == -2) {
+         if (tmp_log_fd == -2) {
             VG_(message)(Vg_UserMsg, 
                "valgrind: failed to connect to logging server '%s'.",
                VG_(clo_log_name) ); 
@@ -1430,9 +1428,9 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
                 "" );
             /* We don't change anything here. */
             vg_assert(VG_(clo_log_fd) == 2);
+            tmp_log_fd = 2;
 	 } else {
-            vg_assert(eventually_log_fd > 0);
-            VG_(clo_log_fd) = eventually_log_fd;
+            vg_assert(tmp_log_fd > 0);
             VG_(logging_to_socket) = True;
          }
          break;
@@ -1450,17 +1448,20 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       /*NOTREACHED*/
    }
 
-   // Move log_fd into the safe range, so it doesn't conflict with any app fds.
-   // XXX: this is more or less duplicating the behaviour of the calls to
-   // VG_(safe_fd)() above, although this does not close the original fd.
-   // Perhaps the VG_(safe_fd)() calls above should be removed, and this
-   // code should be replaced with a call to VG_(safe_fd)().   --njn
-   eventually_log_fd = VG_(fcntl)(VG_(clo_log_fd), VKI_F_DUPFD, VG_(fd_hard_limit));
-   if (eventually_log_fd < 0)
-      VG_(message)(Vg_UserMsg, "valgrind: failed to move logfile fd into safe range");
-   else {
-      VG_(clo_log_fd) = eventually_log_fd;
-      VG_(fcntl)(VG_(clo_log_fd), VKI_F_SETFD, VKI_FD_CLOEXEC);
+   if (tmp_log_fd >= 0) {
+      // Move log_fd into the safe range, so it doesn't conflict with any app fds.
+      tmp_log_fd = VG_(fcntl)(tmp_log_fd, VKI_F_DUPFD, VG_(fd_hard_limit));
+      if (tmp_log_fd < 0) {
+         VG_(message)(Vg_UserMsg, "valgrind: failed to move logfile fd into safe range, using stderr");
+         VG_(clo_log_fd) = 2;   // stderr
+      } else {
+         VG_(clo_log_fd) = tmp_log_fd;
+         VG_(fcntl)(VG_(clo_log_fd), VKI_F_SETFD, VKI_FD_CLOEXEC);
+      }
+   } else {
+      // If they said --log-fd=-1, don't print anything.  Plausible for use in
+      // regression testing suites that use client requests to count errors.
+      VG_(clo_log_fd) = tmp_log_fd;
    }
 
    if (VG_(clo_n_suppressions) < VG_CLO_MAX_SFILES-1 &&

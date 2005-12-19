@@ -47,7 +47,6 @@
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
-#include "pub_tool_profile.h"       // For mac_shared.h
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_threadstate.h"
@@ -2670,10 +2669,6 @@ static void mc_pre_clo_init(void)
 
    VG_(track_post_reg_write)                  ( & mc_post_reg_write );
    VG_(track_post_reg_write_clientcall_return)( & mc_post_reg_write_clientcall );
-
-   VG_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
-   VG_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
-   VG_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
 
    /* Additional block description for VG_(describe_addr)() */
    MAC_(describe_addr_supp) = client_perm_maybe_describe;

@@ -33,7 +33,6 @@
 #include "pub_tool_hashtable.h"     // For mac_shared.h
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
-#include "pub_tool_profile.h"
 #include "pub_tool_tooliface.h"
 #include "mc_include.h"
 

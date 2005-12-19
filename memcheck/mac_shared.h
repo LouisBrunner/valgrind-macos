@@ -157,16 +157,8 @@ typedef
 
 
 /*------------------------------------------------------------*/
-/*--- Profiling of tools and memory events                 ---*/
+/*--- Profiling of memory events                           ---*/
 /*------------------------------------------------------------*/
-
-typedef 
-   enum { 
-      VgpCheckMem = VgpFini+1,
-      VgpSetMem,
-      VgpESPAdj
-   } 
-   VgpToolCC;
 
 /* Define to collect detailed performance info. */
 /* #define MAC_PROFILE_MEMORY */

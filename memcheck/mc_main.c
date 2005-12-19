@@ -56,8 +56,13 @@
 #include "memcheck.h"   /* for client requests */
 
 
+#ifdef HAVE_BUILTIN_EXPECT
 #define EXPECTED_TAKEN(cond)     __builtin_expect((cond),1)
 #define EXPECTED_NOT_TAKEN(cond) __builtin_expect((cond),0)
+#else
+#define EXPECTED_TAKEN(cond)     (cond)
+#define EXPECTED_NOT_TAKEN(cond) (cond)
+#endif
 
 /* Define to debug the mem audit system.  Set to:
       0  no debugging, fast cases are used

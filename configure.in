@@ -451,6 +451,23 @@ if test x$declaration_after_statement = xyes; then
   CFLAGS="$CFLAGS -Wdeclaration-after-statement"
 fi
 
+# does this compiler support __builtin_expect?
+AC_MSG_CHECKING([if gcc supports __builtin_expect])
+ 
+AC_TRY_LINK(, [
+return __builtin_expect(1, 1) ? 1 : 0
+],
+[
+ac_have_builtin_expect=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_builtin_expect=no
+AC_MSG_RESULT([no])
+])
+if test x$ac_have_builtin_expect = xyes ; then
+  AC_DEFINE(HAVE_BUILTIN_EXPECT, 1, [Define to 1 if gcc supports __builtin_expect.])
+fi
+
 
 # Check for TLS support in the compiler and linker
 AC_CACHE_CHECK([for TLS support], vg_cv_tls,

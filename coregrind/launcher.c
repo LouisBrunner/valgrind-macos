@@ -55,8 +55,8 @@
                          where it is defined */
 
 #ifndef EM_X86_64
-#define EM_X86_64 62
-#endif /* EM_X86_64 */
+#define EM_X86_64 62    // elf.h doesn't define this on some older systems
+#endif
 
 /* Report fatal errors */
 static void barf ( const char *format, ... )

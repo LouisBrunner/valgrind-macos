@@ -54,6 +54,10 @@
 #define PATH_MAX 4096 /* POSIX refers to this a lot but I dunno
                          where it is defined */
 
+#ifndef EM_X86_64
+#define EM_X86_64 62
+#endif /* EM_X86_64 */
+
 /* Report fatal errors */
 static void barf ( const char *format, ... )
 {

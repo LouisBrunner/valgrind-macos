@@ -46,7 +46,6 @@
 #include "pub_core_machine.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
-#include "pub_core_profile.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_redir.h"
 #include "pub_core_scheduler.h"
@@ -912,7 +911,6 @@ static void usage_NORETURN ( Bool debug_help )
 "\n"
 "  debugging options for all Valgrind tools:\n"
 "    --sanity-level=<number>   level of sanity checking to do [1]\n"
-"    --profile=no|yes          profile? (tool must be built for it) [no]\n"
 "    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]\n"
 "    --trace-notbelow=<number> only show BBs above <number> [0]\n"
@@ -1100,7 +1098,6 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--error-limit",      VG_(clo_error_limit))
       else VG_BOOL_CLO(arg, "--show-emwarns",     VG_(clo_show_emwarns))
       else VG_NUM_CLO (arg, "--max-stackframe",   VG_(clo_max_stackframe))
-      else VG_BOOL_CLO(arg, "--profile",          VG_(clo_profile))
       else VG_BOOL_CLO(arg, "--run-libc-freeres", VG_(clo_run_libc_freeres))
       else VG_BOOL_CLO(arg, "--show-below-main",  VG_(clo_show_below_main))
       else VG_BOOL_CLO(arg, "--time-stamp",       VG_(clo_time_stamp))
@@ -2506,23 +2503,6 @@ Int main(Int argc, HChar **argv, HChar **envp)
    VG_(sigstartup_actions)();
 
    //--------------------------------------------------------------
-   // Perhaps we're profiling Valgrind?
-   //   p: process_cmd_line_options()  [for VG_(clo_profile)]
-   //   p: others?
-   //
-   // XXX: this seems to be broken?   It always says the tool wasn't built
-   // for profiling;  vg_profile.c's functions don't seem to be overriding
-   // vg_dummy_profile.c's?
-   //
-   // XXX: want this as early as possible.  Looking for --profile
-   // in get_helprequest_and_toolname() could get it earlier.
-   //--------------------------------------------------------------
-   if (VG_(clo_profile))
-      VG_(init_profiling)();
-
-   VGP_PUSHCC(VgpStartup);
-
-   //--------------------------------------------------------------
    // Read suppression file
    //   p: process_cmd_line_options()  [for VG_(clo_suppressions)]
    //--------------------------------------------------------------
@@ -2548,8 +2528,6 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //--------------------------------------------------------------
    // Run!
    //--------------------------------------------------------------
-   VGP_POPCC(VgpStartup);
-
    if (VG_(clo_xml)) {
       HChar buf[50];
       VG_(elapsed_wallclock_time)(buf);
@@ -2651,9 +2629,6 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    if (VG_(clo_verbosity) > 1)
       print_all_stats();
-
-   if (VG_(clo_profile))
-      VG_(done_profiling)();
 
    if (VG_(clo_profile_flags) > 0) {
       #define N_MAX 100

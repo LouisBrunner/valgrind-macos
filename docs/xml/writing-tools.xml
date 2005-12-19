@@ -880,8 +880,8 @@ write regression tests for your tool:</para>
 <sect2 id="writing-tools.profiling" xreflabel="Profiling">
 <title>Profiling</title>
 
-<para>Nb: as of 25-Mar-2005, the profiling is broken, and has been for a
-long time...</para>
+<para>To profile a tool, use Cachegrind on it.  Read README_DEVELOPERS for
+details on running Valgrind under Valgrind.</para>
 
 <para>To do simple tick-based profiling of a tool, include the
 line:</para>

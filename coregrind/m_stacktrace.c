@@ -37,7 +37,6 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_machine.h"
 #include "pub_core_options.h"
-#include "pub_core_profile.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_trampoline.h"
 
@@ -61,8 +60,6 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
    Int   i;
    Addr  fp_max;
    UInt  n_found = 0;
-
-   VGP_PUSHCC(VgpExeContext);
 
    vg_assert(sizeof(Addr) == sizeof(UWord));
    vg_assert(sizeof(Addr) == sizeof(void*));
@@ -93,7 +90,6 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
          don't bomb out either.  Needed to make John Regehr's
          user-space threads package work. JRS 20021001 */
       ips[0] = ip;
-      VGP_POPCC(VgpExeContext);
       return 1;
    } 
 
@@ -292,7 +288,6 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
 #  endif
 
    n_found = i;
-   VGP_POPCC(VgpExeContext);
    return n_found;
 }
 

@@ -40,7 +40,6 @@
 #include "pub_core_machine.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
-#include "pub_core_profile.h"
 #include "pub_core_redir.h"
 #include "pub_core_tooliface.h"     // For VG_(needs).data_syms
 
@@ -1780,8 +1779,6 @@ SegInfo *VG_(read_seg_symbols) ( Addr seg_addr, SizeT seg_len,
 {
    SegInfo* si = alloc_SegInfo(seg_addr, seg_len, seg_offset, seg_filename);
 
-   VGP_PUSHCC(VgpReadSyms);
-
    if (!read_lib_symbols ( si )) {
       // Something went wrong (eg. bad ELF file).
       freeSegInfo( si );
@@ -1800,7 +1797,6 @@ SegInfo *VG_(read_seg_symbols) ( Addr seg_addr, SizeT seg_len,
       /* do redirects */
       VG_(resolve_existing_redirs_with_seginfo)( si );
    }
-   VGP_POPCC(VgpReadSyms);
 
    return si;
 }
@@ -1835,7 +1831,6 @@ static void unload_symbols ( Addr start, SizeT length )
    }
 
    // Not found.
-   VGP_POPCC(VgpReadSyms);
 }
 
 /*------------------------------------------------------------*/
@@ -1899,21 +1894,17 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/SegInfo** psi,
    Int      sno;
    SegInfo* si;
 
-   VGP_PUSHCC(VgpSearchSyms);
-
    for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->start <= ptr && ptr < si->start+si->size) {
          sno = search_one_symtab ( si, ptr, match_anywhere_in_fun );
          if (sno == -1) goto not_found;
          *symno = sno;
          *psi = si;
-         VGP_POPCC(VgpSearchSyms);
          return;
       }
    }
   not_found:
    *psi = NULL;
-   VGP_POPCC(VgpSearchSyms);
 }
 
 
@@ -1951,21 +1942,17 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/SegInfo** psi,
    Int      lno;
    SegInfo* si;
 
-   VGP_PUSHCC(VgpSearchSyms);
-
    for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->start <= ptr && ptr < si->start+si->size) {
          lno = search_one_loctab ( si, ptr );
          if (lno == -1) goto not_found;
          *locno = lno;
          *psi = si;
-         VGP_POPCC(VgpSearchSyms);
          return;
       }
    }
   not_found:
    *psi = NULL;
-   VGP_POPCC(VgpSearchSyms);
 }
 
 
@@ -2004,21 +1991,17 @@ static void search_all_scopetabs ( Addr ptr,
    Int      scno;
    SegInfo* si;
 
-   VGP_PUSHCC(VgpSearchSyms);
-
    for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->start <= ptr && ptr < si->start+si->size) {
          scno = search_one_scopetab ( si, ptr );
          if (scno == -1) goto not_found;
          *scopeno = scno;
          *psi = si;
-         VGP_POPCC(VgpSearchSyms);
          return;
       }
    }
   not_found:
    *psi = NULL;
-   VGP_POPCC(VgpSearchSyms);
 }
 
 

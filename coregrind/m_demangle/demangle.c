@@ -33,14 +33,11 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
-#include "pub_core_profile.h"
 #include "demangle.h"
 
 void VG_(demangle) ( Char* orig, Char* result, Int result_size )
 {
    Char* demangled = NULL;
-
-   VGP_PUSHCC(VgpDemangle);
 
    if (VG_(clo_demangle))
       demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
@@ -57,8 +54,6 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
    // very rarely (ie. I've heard of it twice in 3 years), the demangler
    // does leak.  But, we can't do much about it, and it's not a disaster,
    // so we just let it slide without aborting or telling the user.
-
-   VGP_POPCC(VgpDemangle);
 }
 
 /*--------------------------------------------------------------------*/

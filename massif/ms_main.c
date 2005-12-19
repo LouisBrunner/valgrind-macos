@@ -46,7 +46,6 @@
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
-#include "pub_tool_profile.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_stacktrace.h"
 #include "pub_tool_tooliface.h"
@@ -197,25 +196,6 @@ typedef
       XPt*              where;   // Where allocated; bottom-XPt
    }
    HP_Chunk;
-
-/*------------------------------------------------------------*/
-/*--- Profiling events                                     ---*/
-/*------------------------------------------------------------*/
-
-typedef 
-   enum {
-      VgpGetXPt = VgpFini+1,
-      VgpGetXPtSearch,
-      VgpCensus,
-      VgpCensusHeap,
-      VgpCensusSnapshot,
-      VgpCensusTreeSize,
-      VgpUpdateXCon,
-      VgpCalcSpacetime2,
-      VgpPrintHp,
-      VgpPrintXPts,
-   }
-   VgpToolCC;
 
 /*------------------------------------------------------------*/
 /*--- Statistics                                           ---*/
@@ -442,8 +422,6 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
    UInt overestimate;
    Bool reached_bottom;
 
-   VGP_PUSHCC(VgpGetXPt);
-
    // Want at least clo_depth non-alloc-fn entries in the snapshot.
    // However, because we have 1 or more (an unknown number, at this point)
    // alloc-fns ignored, we overestimate the size needed for the stack
@@ -490,7 +468,6 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
       // XXX: linear search, ugh -- about 10% of time for konqueror startup
       // XXX: tried cacheing last result, only hit about 4% for konqueror
       // Nb:  this search hits about 98% of the time for konqueror
-      VGP_PUSHCC(VgpGetXPtSearch);
 
       // If we've searched/added deep enough, or run out of EIPs, this is
       // the bottom XPt.
@@ -518,12 +495,10 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
          if (ips[L] == xpt->children[nC]->ip) break;   // found the IP
          nC++;                                           // keep looking
       }
-      VGP_POPCC(VgpGetXPtSearch);
 
       // Return found/built bottom-XPt.
       if (reached_bottom) {
          tl_assert(0 == xpt->children[nC]->n_children);   // Must be bottom-XPt
-         VGP_POPCC(VgpGetXPt);
          return xpt->children[nC];
       }
 
@@ -536,8 +511,6 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
 // Update 'curr_space' of every XPt in the XCon, by percolating upwards.
 static void update_XCon(XPt* xpt, Int space_delta)
 {
-   VGP_PUSHCC(VgpUpdateXCon);
-
    tl_assert(True == clo_heap);
    tl_assert(0    != space_delta);
    tl_assert(NULL != xpt);
@@ -550,8 +523,6 @@ static void update_XCon(XPt* xpt, Int space_delta)
    } 
    if (space_delta < 0) tl_assert(alloc_xpt->curr_space >= -space_delta);
    alloc_xpt->curr_space += space_delta;
-
-   VGP_POPCC(VgpUpdateXCon);
 }
 
 // Actually want a reverse sort, biggest to smallest
@@ -668,8 +639,6 @@ void* new_block ( ThreadId tid, void* p, SizeT size, SizeT align,
    Bool custom_alloc = (NULL == p);
    if (size < 0) return NULL;
 
-   VGP_PUSHCC(VgpCliMalloc);
-
    // Update statistics
    n_allocs++;
    if (0 == size) n_zero_allocs++;
@@ -678,7 +647,6 @@ void* new_block ( ThreadId tid, void* p, SizeT size, SizeT align,
    if (!p) {
       p = VG_(cli_malloc)( align, size );
       if (!p) {
-         VGP_POPCC(VgpCliMalloc);
          return NULL;
       }
       if (is_zeroed) VG_(memset)(p, 0, size);
@@ -700,7 +668,6 @@ void* new_block ( ThreadId tid, void* p, SizeT size, SizeT align,
    // do a census!
    hp_census();      
 
-   VGP_POPCC(VgpCliMalloc);
    return p;
 }
 
@@ -709,8 +676,6 @@ void die_block ( void* p, Bool custom_free )
 {
    HP_Chunk* hc;
    
-   VGP_PUSHCC(VgpCliMalloc);
-
    // Update statistics
    n_frees++;
 
@@ -732,8 +697,6 @@ void die_block ( void* p, Bool custom_free )
 
    // do a census!
    hp_census();
-
-   VGP_POPCC(VgpCliMalloc);
 }
  
 
@@ -784,12 +747,9 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
    SizeT     old_size;
    XPt      *old_where, *new_where;
    
-   VGP_PUSHCC(VgpCliMalloc);
-
    // Remove the old block
    hc = VG_(HT_remove)(malloc_list, (UWord)p_old);
    if (hc == NULL) {
-      VGP_POPCC(VgpCliMalloc);
       return NULL;   // must have been a bogus realloc()
    }
 
@@ -831,7 +791,6 @@ static void* ms_realloc ( ThreadId tid, void* p_old, SizeT new_size )
    // than growing it, and this way simplifies the growing case.
    VG_(HT_add_node)(malloc_list, hc);
 
-   VGP_POPCC(VgpCliMalloc);
    return p_new;
 }
 
@@ -974,14 +933,11 @@ static void hp_census(void)
    Int     ms_time, ms_time_since_prev;
    Census* census;
 
-   VGP_PUSHCC(VgpCensus);
-
    // Only do a census if it's time
    ms_time            = VG_(read_millisecond_timer)();
    ms_time_since_prev = ms_time - ms_prev_census;
    if (ms_time < ms_next_census) {
       n_fake_censi++;
-      VGP_POPCC(VgpCensus);
       return;
    }
    n_real_censi++;
@@ -1007,8 +963,6 @@ static void hp_census(void)
       VG_(ssort)(alloc_xpt->children, alloc_xpt->n_children, sizeof(XPt*),
                  XPt_cmp_approx_ST);
 
-      VGP_PUSHCC(VgpCensusHeap);
-
       // For each significant top-level XPt, record space info about its
       // entire XTree, in a single census entry.
       // Nb: the xtree_size count/snapshot buffer allocation, and the actual
@@ -1018,9 +972,7 @@ static void hp_census(void)
          UInt xtree_size, xtree_size2;
 //         VG_(printf)("%7u ", alloc_xpt->children[i]->approx_ST);
          // Count how many XPts are in the XTree
-         VGP_PUSHCC(VgpCensusTreeSize);
          xtree_size = get_xtree_size( alloc_xpt->children[i], 0 );
-         VGP_POPCC(VgpCensusTreeSize);
 
          // If no XPts counted (ie. alloc_xpt.curr_space==0 or XTree
          // insignificant) then don't take any more snapshots.
@@ -1039,17 +991,13 @@ static void hp_census(void)
          // (Except for ones with curr_space==0, which wouldn't contribute
          // to the final exact_ST_dbld calculation anyway;  excluding them
          // saves a lot of memory and up to 40% time with big --depth valus.
-         VGP_PUSHCC(VgpCensusSnapshot);
          xtree_size2 = do_space_snapshot(alloc_xpt->children[i],
                                          census->xtree_snapshots[i], 0);
          tl_assert(xtree_size == xtree_size2);
-         VGP_POPCC(VgpCensusSnapshot);
       }
 //      VG_(printf)("\n\n");
       // Zero-terminate 'xtree_snapshot' array
       census->xtree_snapshots[i] = NULL;
-
-      VGP_POPCC(VgpCensusHeap);
 
       //VG_(printf)("printed %d censi\n", K);
 
@@ -1097,8 +1045,6 @@ static void hp_census(void)
    //ms_next_census += ms_interval;
 
    //VG_(printf)("Next: %d ms\n", ms_next_census);
-
-   VGP_POPCC(VgpCensus);
 } 
 
 /*------------------------------------------------------------*/
@@ -1227,8 +1173,6 @@ static void calc_exact_ST_dbld(ULong* heap2, ULong* heap_admin2, ULong* stack2)
 {
    UInt i, N = curr_census;
 
-   VGP_PUSHCC(VgpCalcSpacetime2);
-
    *heap2       = 0;
    *heap_admin2 = 0;
    *stack2      = 0;
@@ -1250,8 +1194,6 @@ static void calc_exact_ST_dbld(ULong* heap2, ULong* heap_admin2, ULong* stack2)
    *heap2       /= 2;
    *heap_admin2 /= 2;
    *stack2      /= 2;
-
-   VGP_POPCC(VgpCalcSpacetime2);
 }
 
 /*------------------------------------------------------------*/
@@ -1333,8 +1275,6 @@ static void write_hp_file(void)
    Char*  cmdbuf;
    Int    cmdlen;
 
-   VGP_PUSHCC(VgpPrintHp);
-   
    // Open file
    hp_file  = make_filename( base_dir, ".hp" );
    ps_file  = make_filename( base_dir, ".ps" );
@@ -1343,7 +1283,6 @@ static void write_hp_file(void)
                              VKI_S_IRUSR|VKI_S_IWUSR);
    if (sres.isError) {
       file_err( hp_file );
-      VGP_POPCC(VgpPrintHp);
       return;
    } else {
       fd = sres.val;
@@ -1426,8 +1365,6 @@ static void write_hp_file(void)
    VG_(free)(hp_file);
    VG_(free)(ps_file);
    VG_(free)(aux_file);
-
-   VGP_POPCC(VgpPrintHp);
 }
 
 /*------------------------------------------------------------*/
@@ -1651,8 +1588,6 @@ write_text_file(ULong total_ST, ULong heap_ST)
    Char*  text_file;
    Char*  maybe_p = ( XHTML == clo_format ? "<p>" : "" );
 
-   VGP_PUSHCC(VgpPrintXPts);
-
    // Open file
    text_file = make_filename( base_dir, 
                               ( XText == clo_format ? ".txt" : ".html" ) );
@@ -1661,7 +1596,6 @@ write_text_file(ULong total_ST, ULong heap_ST)
                              VKI_S_IRUSR|VKI_S_IWUSR);
    if (sres.isError) {
       file_err( text_file );
-      VGP_POPCC(VgpPrintXPts);
       return;
    } else {
       fd = sres.val;
@@ -1693,8 +1627,6 @@ write_text_file(ULong total_ST, ULong heap_ST)
 
    tl_assert(fd >= 0);
    VG_(close)(fd);
-
-   VGP_POPCC(VgpPrintXPts);
 }
 
 /*------------------------------------------------------------*/
@@ -1812,18 +1744,6 @@ static void ms_pre_clo_init(void)
    // Events to track
    VG_(track_new_mem_stack_signal)( new_mem_stack_signal );
    VG_(track_die_mem_stack_signal)( die_mem_stack_signal );
-
-   // Profiling events
-   VG_(register_profile_event)(VgpGetXPt,         "get-XPt");
-   VG_(register_profile_event)(VgpGetXPtSearch,   "get-XPt-search");
-   VG_(register_profile_event)(VgpCensus,         "census");
-   VG_(register_profile_event)(VgpCensusHeap,     "census-heap");
-   VG_(register_profile_event)(VgpCensusSnapshot, "census-snapshot");
-   VG_(register_profile_event)(VgpCensusTreeSize, "census-treesize");
-   VG_(register_profile_event)(VgpUpdateXCon,     "update-XCon");
-   VG_(register_profile_event)(VgpCalcSpacetime2, "calc-exact_ST_dbld");
-   VG_(register_profile_event)(VgpPrintHp,        "print-hp");
-   VG_(register_profile_event)(VgpPrintXPts,      "print-XPts");
 
    // HP_Chunks
    malloc_list  = VG_(HT_construct)( 80021 );   // prime, big

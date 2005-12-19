@@ -46,7 +46,6 @@ usage: valgrind [options] prog-and-args
 
   debugging options for all Valgrind tools:
     --sanity-level=<number>   level of sanity checking to do [1]
-    --profile=no|yes          profile? (tool must be built for it) [no]
     --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]
     --trace-notbelow=<number> only show BBs above <number> [0]

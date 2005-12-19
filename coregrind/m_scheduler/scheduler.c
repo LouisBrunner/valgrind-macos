@@ -73,7 +73,6 @@
 #include "pub_core_machine.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
-#include "pub_core_profile.h"
 #include "pub_core_replacemalloc.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_signals.h"
@@ -398,8 +397,6 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(sz_spill == LibVEX_N_SPILL_BYTES);
    vg_assert(a_vex + 2 * sz_vex == a_spill);
 
-   VGP_PUSHCC(VgpRun);
-
 #  if defined(VGA_ppc32)
    /* This is necessary due to the hacky way vex models reservations
       on ppc.  It's really quite incorrect for each thread to have its
@@ -459,7 +456,6 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(done_this_time >= 0);
    bbs_done += (ULong)done_this_time;
 
-   VGP_POPCC(VgpRun);
    return trc;
 }
 
@@ -657,8 +653,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
    if (VG_(clo_trace_sched))
       print_sched_event(tid, "entering VG_(scheduler)");      
-
-   VGP_PUSHCC(VgpSched);
 
    /* set the proper running signal mask */
    block_signals(tid);
@@ -862,8 +856,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       print_sched_event(tid, "exiting VG_(scheduler)");
 
    vg_assert(VG_(is_exiting)(tid));
-
-   VGP_POPCC(VgpSched);
 
    //if (VG_(clo_model_pthreads))
    //   VG_(tm_thread_exit)(tid);
@@ -1156,8 +1148,6 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 {
    ThreadId tid;
 
-   VGP_PUSHCC(VgpCoreCheapSanity);
-
    if (VG_(clo_sanity_level) < 1) return;
 
    /* --- First do all the tests that we can do quickly. ---*/
@@ -1169,9 +1159,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
    /* Check that nobody has spuriously claimed that the first or
       last 16 pages of memory have become accessible [...] */
    if (VG_(needs).sanity_checks) {
-      VGP_PUSHCC(VgpToolCheapSanity);
       vg_assert(VG_TDICT_CALL(tool_cheap_sanity_check));
-      VGP_POPCC(VgpToolCheapSanity);
    }
 
    /* --- Now some more expensive checks. ---*/
@@ -1181,13 +1169,10 @@ void VG_(sanity_check_general) ( Bool force_expensive )
      || VG_(clo_sanity_level) > 1
      || (VG_(clo_sanity_level) == 1 && (sanity_fast_count % 25) == 0)) {
 
-      VGP_PUSHCC(VgpCoreExpensiveSanity);
       sanity_slow_count++;
 
       if (VG_(needs).sanity_checks) {
-          VGP_PUSHCC(VgpToolExpensiveSanity);
           vg_assert(VG_TDICT_CALL(tool_expensive_sanity_check));
-          VGP_POPCC(VgpToolExpensiveSanity);
       }
 
       /* Look for stack overruns.  Visit all threads. */
@@ -1210,20 +1195,15 @@ void VG_(sanity_check_general) ( Bool force_expensive )
                          "of running out of stack!",
 		         tid, remains);
       }
-
-      VGP_POPCC(VgpCoreExpensiveSanity);
    }
 
    if (VG_(clo_sanity_level) > 1) {
-      VGP_PUSHCC(VgpCoreExpensiveSanity);
       /* Check sanity of the low-level memory manager.  Note that bugs
          in the client's code can cause this to fail, so we don't do
          this check unless specially asked for.  And because it's
          potentially very expensive. */
       VG_(sanity_check_malloc_all)();
-      VGP_POPCC(VgpCoreExpensiveSanity);
    }
-   VGP_POPCC(VgpCoreCheapSanity);
 }
 
 /*--------------------------------------------------------------------*/

@@ -34,7 +34,6 @@
 #include "pub_core_libcprint.h"     // For VG_(message)()
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
-#include "pub_core_profile.h"
 #include "pub_core_stacktrace.h"
 
 /*------------------------------------------------------------*/
@@ -190,8 +189,6 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
    ExeContext* new_ec;
    ExeContext* list;
 
-   VGP_PUSHCC(VgpExeContext);
-
    init_ExeContext_storage();
    vg_assert(VG_(clo_backtrace_size) >= 1 
              && VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
@@ -230,7 +227,6 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
 
    if (list != NULL) {
       /* Yay!  We found it.  */
-      VGP_POPCC(VgpExeContext);
       return list;
    }
 
@@ -247,7 +243,6 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
    new_ec->next = ec_list[hash];
    ec_list[hash] = new_ec;
 
-   VGP_POPCC(VgpExeContext);
    return new_ec;
 }
 

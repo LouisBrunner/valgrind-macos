@@ -38,7 +38,6 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
-#include "pub_core_profile.h"
 
 #include "pub_core_debuginfo.h" // Needed for pub_core_redir :(
 #include "pub_core_redir.h"     // For VG_(code_redirect)()
@@ -586,9 +585,6 @@ Bool VG_(translate) ( ThreadId tid,
       vex_init_done = True;
    }
 
-   /* profiling ... */
-   VGP_PUSHCC(VgpTranslate);
-
    /* Look in the code redirect table to see if we should
       translate an alternative address for orig_addr. */
    redir = VG_(code_redirect)(orig_addr);
@@ -681,8 +677,6 @@ Bool VG_(translate) ( ThreadId tid,
       verbosity = VG_(clo_trace_flags);
    }
 
-   VGP_PUSHCC(VgpVexTime);
-   
    /* ------ Actually do the translation. ------ */
    tl_assert2(VG_(tdict).tool_instrument,
               "you forgot to set VgToolInterface function 'tool_instrument'");
@@ -732,8 +726,6 @@ Bool VG_(translate) ( ThreadId tid,
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
 
-   VGP_POPCC(VgpVexTime);
-
    /* Tell aspacem of all segments that have had translations taken
       from them.  Optimisation: don't re-look up vge.base[0] since seg
       should already point to it. */
@@ -762,8 +754,6 @@ Bool VG_(translate) ( ThreadId tid,
                             tmpbuf_used,
                             do_self_check );
    }
-
-   VGP_POPCC(VgpTranslate);
 
    return True;
 }

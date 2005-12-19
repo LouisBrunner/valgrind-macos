@@ -37,7 +37,6 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
-#include "pub_core_profile.h"
 #include "pub_core_tooliface.h"
 #include "valgrind.h"
 
@@ -997,8 +996,6 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
    Arena*      a;
    void*       v;
 
-   VGP_PUSHCC(VgpMalloc);
-
    ensure_mm_init(aid);
    a = arenaId_to_ArenaP(aid);
 
@@ -1070,7 +1067,6 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
    sanity_check_malloc_arena(aid);
 #  endif
 
-   VGP_POPCC(VgpMalloc);
    v = get_block_payload(a, b);
    vg_assert( (((Addr)v) & (VG_MIN_MALLOC_SZB-1)) == 0 );
 
@@ -1090,13 +1086,10 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    UInt        b_listno;
    Arena*      a;
 
-   VGP_PUSHCC(VgpMalloc);
-
    ensure_mm_init(aid);
    a = arenaId_to_ArenaP(aid);
 
    if (ptr == NULL) {
-      VGP_POPCC(VgpMalloc);
       return;
    }
       
@@ -1179,8 +1172,6 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
 #  endif
 
    //zzVALGRIND_FREELIKE_BLOCK(ptr, 0);
-
-   VGP_POPCC(VgpMalloc);
 }
 
 
@@ -1223,8 +1214,6 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
    UByte  *base_p, *align_p;
    SizeT  saved_bytes_on_loan;
    Arena* a;
-
-   VGP_PUSHCC(VgpMalloc);
 
    ensure_mm_init(aid);
    a = arenaId_to_ArenaP(aid);
@@ -1301,8 +1290,6 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
    sanity_check_malloc_arena(aid);
 #  endif
 
-   VGP_POPCC(VgpMalloc);
-
    vg_assert( (((Addr)align_p) % req_alignB) == 0 );
 
    //zzVALGRIND_MALLOCLIKE_BLOCK(align_p, req_pszB, 0, False);
@@ -1337,8 +1324,6 @@ void* VG_(arena_calloc) ( ArenaId aid, SizeT nmemb, SizeT bytes_per_memb )
    SizeT  size;
    UChar* p;
 
-   VGP_PUSHCC(VgpMalloc);
-
    size = nmemb * bytes_per_memb;
    vg_assert(size >= nmemb && size >= bytes_per_memb);// check against overflow
 
@@ -1348,8 +1333,6 @@ void* VG_(arena_calloc) ( ArenaId aid, SizeT nmemb, SizeT bytes_per_memb )
 
    //zzVALGRIND_MALLOCLIKE_BLOCK(p, size, 0, True);
 
-   VGP_POPCC(VgpMalloc);
-   
    return p;
 }
 
@@ -1360,8 +1343,6 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
    SizeT  old_pszB;
    UChar  *p_new;
    Block* b;
-
-   VGP_PUSHCC(VgpMalloc);
 
    ensure_mm_init(aid);
    a = arenaId_to_ArenaP(aid);
@@ -1375,7 +1356,6 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
    old_pszB = get_pszB(a, b);
 
    if (req_pszB <= old_pszB) {
-      VGP_POPCC(VgpMalloc);
       return ptr;
    }
 
@@ -1385,7 +1365,6 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr, SizeT req_pszB )
 
    VG_(arena_free)(aid, ptr);
 
-   VGP_POPCC(VgpMalloc);
    return p_new;
 }
 

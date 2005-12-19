@@ -40,7 +40,6 @@
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
 #include "pub_tool_oset.h"
-#include "pub_tool_profile.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_clientstate.h"
 
@@ -57,18 +56,6 @@
 #define MIN_LINE_SIZE         16
 #define FILE_LEN              VKI_PATH_MAX
 #define FN_LEN                256
-
-/*------------------------------------------------------------*/
-/*--- Profiling events                                     ---*/
-/*------------------------------------------------------------*/
-
-typedef 
-   enum { 
-      VgpGetLineCC = VgpFini+1,
-      VgpCacheSimulate,
-      VgpCacheResults
-   } 
-   VgpToolCC;
 
 /*------------------------------------------------------------*/
 /*--- Types and Data Structures                            ---*/
@@ -236,8 +223,6 @@ static LineCC* get_lineCC(Addr origAddr)
 
    get_debug_info(origAddr, file, fn, &line);
 
-   VGP_PUSHCC(VgpGetLineCC);
-
    loc.file = file;
    loc.fn   = fn;
    loc.line = line;
@@ -252,7 +237,6 @@ static LineCC* get_lineCC(Addr origAddr)
       VG_(OSet_Insert)(CC_table, lineCC);
    }
 
-   VGP_POPCC(VgpGetLineCC);
    return lineCC;
 }
 
@@ -265,11 +249,9 @@ void log_1I_0D_cache_access(InstrInfo* n)
 {
    //VG_(printf)("1I_0D :  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n",
    //             n, n->instr_addr, n->instr_len);
-   VGP_PUSHCC(VgpCacheSimulate);
    cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
-   VGP_POPCC(VgpCacheSimulate);
 }
 
 static VG_REGPARM(2)
@@ -279,14 +261,12 @@ void log_2I_0D_cache_access(InstrInfo* n, InstrInfo* n2)
    //            "        CC2addr=0x%010lx, i2addr=0x%010lx, i2size=%lu\n",
    //            n,  n->instr_addr,  n->instr_len,
    //            n2, n2->instr_addr, n2->instr_len);
-   VGP_PUSHCC(VgpCacheSimulate);
    cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
    cachesim_I1_doref(n2->instr_addr, n2->instr_len, 
                      &n2->parent->Ir.m1, &n2->parent->Ir.m2);
    n2->parent->Ir.a++;
-   VGP_POPCC(VgpCacheSimulate);
 }
 
 static VG_REGPARM(3)
@@ -298,7 +278,6 @@ void log_3I_0D_cache_access(InstrInfo* n, InstrInfo* n2, InstrInfo* n3)
    //            n,  n->instr_addr,  n->instr_len,
    //            n2, n2->instr_addr, n2->instr_len,
    //            n3, n3->instr_addr, n3->instr_len);
-   VGP_PUSHCC(VgpCacheSimulate);
    cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
@@ -308,7 +287,6 @@ void log_3I_0D_cache_access(InstrInfo* n, InstrInfo* n2, InstrInfo* n3)
    cachesim_I1_doref(n3->instr_addr, n3->instr_len, 
                      &n3->parent->Ir.m1, &n3->parent->Ir.m2);
    n3->parent->Ir.a++;
-   VGP_POPCC(VgpCacheSimulate);
 }
 
 static VG_REGPARM(3)
@@ -317,7 +295,6 @@ void log_1I_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
    //VG_(printf)("1I_1Dr:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
    //            "                               daddr=0x%010lx,  dsize=%lu\n",
    //            n, n->instr_addr, n->instr_len, data_addr, data_size);
-   VGP_PUSHCC(VgpCacheSimulate);
    cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
@@ -325,7 +302,6 @@ void log_1I_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
    cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dr.m1, &n->parent->Dr.m2);
    n->parent->Dr.a++;
-   VGP_POPCC(VgpCacheSimulate);
 }
 
 static VG_REGPARM(3)
@@ -334,7 +310,6 @@ void log_1I_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
    //VG_(printf)("1I_1Dw:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
    //            "                               daddr=0x%010lx,  dsize=%lu\n",
    //            n, n->instr_addr, n->instr_len, data_addr, data_size);
-   VGP_PUSHCC(VgpCacheSimulate);
    cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
@@ -342,7 +317,6 @@ void log_1I_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
    cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dw.m1, &n->parent->Dw.m2);
    n->parent->Dw.a++;
-   VGP_POPCC(VgpCacheSimulate);
 }
 
 static VG_REGPARM(3)
@@ -350,11 +324,9 @@ void log_0I_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
    //VG_(printf)("0I_1Dr:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
    //            n, data_addr, data_size);
-   VGP_PUSHCC(VgpCacheSimulate);
    cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dr.m1, &n->parent->Dr.m2);
    n->parent->Dr.a++;
-   VGP_POPCC(VgpCacheSimulate);
 }
 
 static VG_REGPARM(3)
@@ -362,11 +334,9 @@ void log_0I_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
    //VG_(printf)("0I_1Dw:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
    //            n, data_addr, data_size);
-   VGP_PUSHCC(VgpCacheSimulate);
    cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dw.m1, &n->parent->Dw.m2);
    n->parent->Dw.a++;
-   VGP_POPCC(VgpCacheSimulate);
 }
 
 /*------------------------------------------------------------*/
@@ -1013,8 +983,6 @@ static void fprint_CC_table_and_calc_totals(void)
    Char    buf[512], *currFile = NULL, *currFn = NULL;
    LineCC* lineCC;
 
-   VGP_PUSHCC(VgpCacheResults);
-
    sres = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
                                          VKI_S_IRUSR|VKI_S_IWUSR);
    if (sres.isError) {
@@ -1245,7 +1213,6 @@ static void cg_fini(Int exitcode)
        VG_(message)(Vg_DebugMsg, "cachegrind: InstrInfo table size: %u",
                     VG_(OSet_Size)(instrInfoTable));
    }
-   VGP_POPCC(VgpCacheResults);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1355,10 +1322,6 @@ static void cg_post_clo_init(void)
    cachesim_I1_initcache(I1c);
    cachesim_D1_initcache(D1c);
    cachesim_L2_initcache(L2c);
-
-   VG_(register_profile_event)(VgpGetLineCC,     "get-lineCC");
-   VG_(register_profile_event)(VgpCacheSimulate, "cache-simulate");
-   VG_(register_profile_event)(VgpCacheResults,  "cache-results");
 }
 
 static Char base_dir[VKI_PATH_MAX];

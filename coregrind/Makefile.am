@@ -75,7 +75,6 @@ noinst_HEADERS = \
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
 	pub_core_oset.h		\
-	pub_core_profile.h	\
 	pub_core_pthreadmodel.h	\
 	pub_core_redir.h	\
 	pub_core_replacemalloc.h\
@@ -139,7 +138,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_mallocfree.c \
 	m_options.c \
 	m_oset.c \
-	m_profile.c \
 	m_pthreadmodel.c \
 	m_redir.c \
 	m_signals.c \

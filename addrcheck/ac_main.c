@@ -35,7 +35,6 @@
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
-#include "pub_tool_profile.h"       // For mac_shared.h
 #include "pub_tool_tooliface.h"
 #include "pub_tool_threadstate.h"
 
@@ -290,8 +289,6 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
                    len, example_a_bit );
    }
 
-   VGP_PUSHCC(VgpSetMem);
-
    /* Requests to change permissions of huge address ranges may
       indicate bugs in our machinery.  30,000,000 is arbitrary, but so
       far all legitimate requests have fallen beneath that size. */
@@ -329,7 +326,6 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
    }   
 
    if (len == 0) {
-      VGP_POPCC(VgpSetMem);
       return;
    }
    tl_assert((a % 8) == 0 && len > 0);
@@ -389,8 +385,6 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
       len--;
    }   
 #  endif
-
-   VGP_POPCC(VgpSetMem);
 }
 
 /* Set permissions for address ranges ... */
@@ -416,7 +410,6 @@ void make_aligned_word_noaccess(Addr a)
    UInt      sm_off;
    UChar     mask;
 
-   VGP_PUSHCC(VgpESPAdj);
    ENSURE_MAPPABLE(a, "make_aligned_word_noaccess");
    sm     = primary_map[PM_IDX(a)];
    sm_off = SM_OFF(a);
@@ -424,7 +417,6 @@ void make_aligned_word_noaccess(Addr a)
    mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
    /* mask now contains 1s where we wish to make address bits invalid (1s). */
    sm->abits[sm_off >> 3] |= mask;
-   VGP_POPCC(VgpESPAdj);
 }
 
 static __inline__
@@ -434,7 +426,6 @@ void make_aligned_word_accessible(Addr a)
    UInt      sm_off;
    UChar     mask;
 
-   VGP_PUSHCC(VgpESPAdj);
    ENSURE_MAPPABLE(a, "make_aligned_word_accessible");
    sm     = primary_map[PM_IDX(a)];
    sm_off = SM_OFF(a);
@@ -443,7 +434,6 @@ void make_aligned_word_accessible(Addr a)
    /* mask now contains 1s where we wish to make address bits
       invalid (0s). */
    sm->abits[sm_off >> 3] &= ~mask;
-   VGP_POPCC(VgpESPAdj);
 }
 
 /* Nb: by "aligned" here we mean 8-byte aligned */
@@ -453,12 +443,10 @@ void make_aligned_doubleword_accessible(Addr a)
    AcSecMap* sm;
    UInt      sm_off;
    
-   VGP_PUSHCC(VgpESPAdj);
    ENSURE_MAPPABLE(a, "make_aligned_doubleword_accessible");
    sm = primary_map[PM_IDX(a)];
    sm_off = SM_OFF(a);
    sm->abits[sm_off >> 3] = VGM_BYTE_VALID;
-   VGP_POPCC(VgpESPAdj);
 }  
    
 static __inline__
@@ -467,12 +455,10 @@ void make_aligned_doubleword_noaccess(Addr a)
    AcSecMap* sm;
    UInt      sm_off;
    
-   VGP_PUSHCC(VgpESPAdj);
    ENSURE_MAPPABLE(a, "make_aligned_doubleword_noaccess");
    sm = primary_map[PM_IDX(a)];
    sm_off = SM_OFF(a);
    sm->abits[sm_off >> 3] = VGM_BYTE_INVALID;
-   VGP_POPCC(VgpESPAdj);
 }  
    
 /* The %esp update handling functions */
@@ -578,8 +564,6 @@ void ac_check_is_accessible ( CorePart part, ThreadId tid,
    Bool ok;
    Addr bad_addr = 0;   // Initialise to shut gcc up
 
-   VGP_PUSHCC(VgpCheckMem);
-
    ok = ac_check_accessible ( base, size, &bad_addr );
    if (!ok) {
       switch (part) {
@@ -606,8 +590,6 @@ void ac_check_is_accessible ( CorePart part, ThreadId tid,
          VG_(tool_panic)("ac_check_is_accessible: unexpected CorePart");
       }
    }
-
-   VGP_POPCC(VgpCheckMem);
 }
 
 static
@@ -631,16 +613,12 @@ void ac_check_is_readable_asciiz ( CorePart part, ThreadId tid,
    Bool ok = True;
    Addr bad_addr = 0;   // Initialise to shut gcc up
 
-   VGP_PUSHCC(VgpCheckMem);
-
    tl_assert(part == Vg_CoreSysCall);
    ok = ac_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (!ok) {
       MAC_(record_param_error) ( tid, bad_addr, /*IsReg*/False,
                                  /*IsUnaddr*/True, s );
    }
-
-   VGP_POPCC(VgpCheckMem);
 }
 
 static
@@ -1426,10 +1404,6 @@ static void ac_pre_clo_init(void)
    VG_(track_pre_mem_read_asciiz) ( & ac_check_is_readable_asciiz );
    VG_(track_pre_mem_write)       ( & ac_check_is_writable );
    VG_(track_post_mem_write)      ( & ac_post_mem_write );
-
-   VG_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
-   VG_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
-   VG_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
 
    init_shadow_memory();
    MAC_(common_pre_clo_init)();

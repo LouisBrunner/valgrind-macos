@@ -1184,8 +1184,6 @@ void mc_check_is_writable ( CorePart part, ThreadId tid, Char* s,
    Bool ok;
    Addr bad_addr;
 
-   VGP_PUSHCC(VgpCheckMem);
-
    /* VG_(message)(Vg_DebugMsg,"check is writable: %x .. %x",
                                base,base+size-1); */
    ok = mc_check_writable ( base, size, &bad_addr );
@@ -1205,8 +1203,6 @@ void mc_check_is_writable ( CorePart part, ThreadId tid, Char* s,
          VG_(tool_panic)("mc_check_is_writable: unexpected CorePart");
       }
    }
-
-   VGP_POPCC(VgpCheckMem);
 }
 
 static
@@ -1216,8 +1212,6 @@ void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
    Addr bad_addr;
    MC_ReadResult res;
 
-   VGP_PUSHCC(VgpCheckMem);
-   
    res = mc_check_readable ( base, size, &bad_addr );
 
    if (0)
@@ -1247,7 +1241,6 @@ void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
          VG_(tool_panic)("mc_check_is_readable: unexpected CorePart");
       }
    }
-   VGP_POPCC(VgpCheckMem);
 }
 
 static
@@ -1258,16 +1251,12 @@ void mc_check_is_readable_asciiz ( CorePart part, ThreadId tid,
    Addr bad_addr = 0;   // shut GCC up
    /* VG_(message)(Vg_DebugMsg,"check is readable asciiz: 0x%x",str); */
 
-   VGP_PUSHCC(VgpCheckMem);
-
    tl_assert(part == Vg_CoreSysCall);
    res = mc_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (MC_Ok != res) {
       Bool isUnaddr = ( MC_AddrErr == res ? True : False );
       MAC_(record_param_error) ( tid, bad_addr, /*isReg*/False, isUnaddr, s );
    }
-
-   VGP_POPCC(VgpCheckMem);
 }
 
 static

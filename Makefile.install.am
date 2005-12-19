@@ -10,17 +10,21 @@
 # It then copies libcoregrind.a and libvex.a to the right places.
 
 install-exec-local:
-	for f in $(noinst_PROGRAMS); do \
-	  p=`echo $$f | sed -e 's/^[^-]*-//' -e 's/\..*$$//'`; \
-	  n=`echo $$f | sed -e 's/-[^-]\{1,\}-[^-.]\{1,\}//'`; \
-	  $(mkinstalldirs) $(DESTDIR)$(valdir)/$$p; \
-	  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir)/$$p/$$n; \
-	done ; \
-	for f in $(noinst_LIBRARIES); do \
-	  if expr match $$f libcoregrind_ > /dev/null ; then \
-	    pU=`echo $$f | sed -e 's/libcoregrind_//g' -e 's/\.a//g'` ; \
-	    pD=`echo $$pU | sed -e 's/_/-/g'` ; \
-	    $(INSTALL_DATA) $$f $(DESTDIR)$(valdir)/$$pD/libcoregrind.a ; \
-	    $(INSTALL_DATA) @VEX_DIR@/libvex_$$pU.a $(DESTDIR)$(valdir)/$$pD/libvex.a ; \
-	  fi ; \
-	done
+	if [ -n "$(noinst_PROGRAMS)" ] ; then \
+	  for f in $(noinst_PROGRAMS); do \
+	    p=`echo $$f | sed -e 's/^[^-]*-//' -e 's/\..*$$//'`; \
+	    n=`echo $$f | sed -e 's/-[^-]\{1,\}-[^-.]\{1,\}//'`; \
+	    $(mkinstalldirs) $(DESTDIR)$(valdir)/$$p; \
+	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir)/$$p/$$n; \
+	  done ; \
+	fi ; \
+	if [ -n "$(noinst_LIBRARIES)" ] ; then \
+	  for f in $(noinst_LIBRARIES); do \
+	    if expr match $$f libcoregrind_ > /dev/null ; then \
+	      pU=`echo $$f | sed -e 's/libcoregrind_//g' -e 's/\.a//g'` ; \
+	      pD=`echo $$pU | sed -e 's/_/-/g'` ; \
+	      $(INSTALL_DATA) $$f $(DESTDIR)$(valdir)/$$pD/libcoregrind.a ; \
+	      $(INSTALL_DATA) @VEX_DIR@/libvex_$$pU.a $(DESTDIR)$(valdir)/$$pD/libvex.a ; \
+	    fi ; \
+	  done ; \
+	fi

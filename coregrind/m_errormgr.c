@@ -404,19 +404,21 @@ static void gen_suppression(Error* err)
    if (stop_at > VG_MAX_SUPP_CALLERS) stop_at = VG_MAX_SUPP_CALLERS;
    vg_assert(stop_at > 0);
 
-   VG_(printf)("{\n");
-   VG_(printf)("   <insert a suppression name here>\n");
-
    if (ThreadErr == err->ekind || MutexErr == err->ekind) {
+      VG_(printf)("{\n");
+      VG_(printf)("   <insert a suppression name here>\n");
       VG_(printf)("   core:PThread\n");
 
    } else {
       Char* name = VG_TDICT_CALL(tool_get_error_name, err);
       if (NULL == name) {
          VG_(message)(Vg_UserMsg, 
-                      "(tool does not allow error to be suppressed)");
+                      "(%s does not allow error to be suppressed)",
+                      VG_(details).name);
          return;
       }
+      VG_(printf)("{\n");
+      VG_(printf)("   <insert a suppression name here>\n");
       VG_(printf)("   %s:%s\n", VG_(details).name, name);
       VG_TDICT_CALL(tool_print_extra_suppression_info, err);
    }

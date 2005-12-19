@@ -409,7 +409,7 @@ valgrind-listener 12345
     certain functions, such as malloc(), with their own versions.  A key
     indicator of this is if Memcheck says:
 <programlisting>
-No malloc'd blocks -- no leaks are possible
+All heap blocks were freed -- no leaks are possible
 </programlisting>
     when you know your program calls malloc().  The workaround is to
     avoid statically linking your program.</para>

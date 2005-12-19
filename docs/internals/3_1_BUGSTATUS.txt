@@ -27,3 +27,5 @@ pending   pending   n-i-bz   memcheck/tests/mempool reads freed memory
 v5366/67/70 pending n-i-bz   AshleyP's custom-allocator assertion
 vx1501    pending   n-i-bz   Dirk strict-aliasing stuff
 v5368     pending   n-i-bz   More space for debugger cmd line (Dan Thaler)
+v5378/80  v5379/81  n-i-bz   Clarified leak checker output message
+v5382     pending   n-i-bz   AshleyP's --gen-suppressions output fix

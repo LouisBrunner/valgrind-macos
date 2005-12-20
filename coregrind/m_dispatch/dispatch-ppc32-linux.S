@@ -54,7 +54,7 @@ VG_(run_innerloop):
         /* ----- entry point to VG_(run_innerloop) ----- */
         /* For Linux/ppc32 we need the SysV ABI, which uses
            LR->4(parent_sp), CR->anywhere.
-           (The AIX ABI, used on Darwin, and maybe Linux/ppc64?,
+           (The AIX ABI, used on Darwin,
            uses LR->8(prt_sp), CR->4(prt_sp))
         */
 
@@ -119,7 +119,7 @@ LafterFP1:
         /* It's necessary to save/restore VRSAVE in the AIX / Darwin ABI.
            The Linux kernel might not actually use VRSAVE for its intended
            purpose, but it should be harmless to preserve anyway. */
-	/* r3, r4 are live here (guest state ptr), so use r5 */
+	/* r3, r4 are live here, so use r5 */
         lis     5,VG_(machine_ppc32_has_VMX)@ha
         lwz     5,VG_(machine_ppc32_has_VMX)@l(5)
         cmplwi  5,0
@@ -222,7 +222,7 @@ LafterVMX2:
         /* fetch %CIA into r3 */
         lwz     3,OFFSET_ppc32_CIA(31)
 
-        /* fall into main loop  (the right one) */
+        /* fall into main loop (the right one) */
 	/* r4 = do_profiling.  It's probably trashed after here,
            but that's OK: we don't need it after here. */
 	cmplwi	4,0
@@ -237,7 +237,7 @@ LafterVMX2:
 .global	VG_(run_innerloop__dispatch_unprofiled)
 VG_(run_innerloop__dispatch_unprofiled):
 	/* At entry: Live regs:
-		r1 (=sp)
+		r1  (=sp)
 		r3  (=CIA = next guest address)
 		r29 (=dispatch_ctr)
 		r31 (=guest_state)
@@ -254,13 +254,13 @@ VG_(run_innerloop__dispatch_unprofiled):
         stw     3,OFFSET_ppc32_CIA(31)
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-//	addic.	29,29,-1
-	addi	29,29,-1
+//	subic.	29,29,1
+	subi	29,29,1
 	cmplwi	29,0
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4=((r30<<2) & (VG_TT_FAST_MASK<<2)) */
+        /* r4=((r3<<2) & (VG_TT_FAST_MASK<<2)) */
         rlwinm  4,3, 2, 32-2-VG_TT_FAST_BITS, 31-2  
         addis   5,4,VG_(tt_fast)@ha
         lwz     5,VG_(tt_fast)@l(5)
@@ -275,6 +275,12 @@ VG_(run_innerloop__dispatch_unprofiled):
 
 	/* run the translation */
         blrl
+
+        /* On return from guest code:
+	   r3  holds destination (original) address.
+           r31 may be unchanged (guest_state), or may indicate further
+           details of the control transfer requested to *r3.
+        */
 
 	/* start over */
 	b	VG_(run_innerloop__dispatch_unprofiled)
@@ -308,7 +314,7 @@ VG_(run_innerloop__dispatch_profiled):
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4=((r30<<2) & (VG_TT_FAST_MASK<<2)) */
+        /* r4=((r3<<2) & (VG_TT_FAST_MASK<<2)) */
         rlwinm  4,3, 2, 32-2-VG_TT_FAST_BITS, 31-2  
         addis   5,4,VG_(tt_fast)@ha
         lwz     5,VG_(tt_fast)@l(5)
@@ -330,6 +336,12 @@ VG_(run_innerloop__dispatch_profiled):
 
 	/* run the translation */
         blrl
+
+        /* On return from guest code:
+	   r3  holds destination (original) address.
+           r31 may be unchanged (guest_state), or may indicate further
+           details of the control transfer requested to *r3.
+        */
 
 	/* start over */
 	b	VG_(run_innerloop__dispatch_profiled)

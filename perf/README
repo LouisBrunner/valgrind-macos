@@ -53,4 +53,11 @@ ffbench:
 - Weaknesses:  Dominated by the inner loop, which is quite long and flatters
                Valgrind due to the small dispatcher overhead.
 
+tinycc:
+- Description: A very small and fast C compiler.  A munged version of
+               Fabrice Bellard's TinyCC compiling itself multiple times.
+- Strengths:   A real program, lots of code (top 100 blocks only account for
+               47% of execution), involves large irregular data structures
+               (presumably, since it's a compiler).
+- Weaknesses   None, really, it's a good benchmark.
 

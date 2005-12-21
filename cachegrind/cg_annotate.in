@@ -1,9 +1,7 @@
-#! @PERL@ -w
+#! @PERL@
 
 ##--------------------------------------------------------------------##
-##--- The cache simulation framework: instrumentation, recording   ---##
-##--- and results printing.                                        ---##
-##---                                               cg_annotate.in ---##
+##--- Cachegrind's annotator.                       cg_annotate.in ---##
 ##--------------------------------------------------------------------##
 
 #  This file is part of Cachegrind, a Valgrind tool for cache
@@ -30,10 +28,53 @@
 #  The GNU General Public License is contained in the file COPYING.
 
 #----------------------------------------------------------------------------
-# Annotator for cachegrind. 
-#
-# File format is described in /docs/techdocs.html.
-#
+# The file format is simple, basically printing the cost centre for every
+# source line, grouped by files and functions:
+# 
+#   file         ::= desc_line* cmd_line events_line data_line+ summary_line
+#   desc_line    ::= "desc:" ws? non_nl_string
+#   cmd_line     ::= "cmd:" ws? cmd
+#   events_line  ::= "events:" ws? (event ws)+
+#   data_line    ::= file_line | fn_line | count_line
+#   file_line    ::= ("fl=" | "fi=" | "fe=") filename
+#   fn_line      ::= "fn=" fn_name
+#   count_line   ::= line_num ws? (count ws)+
+#   summary_line ::= "summary:" ws? (count ws)+
+#   count        ::= num | "."
+# 
+# where
+#   'non_nl_string' is any string not containing a newline.
+#   'cmd' is a string holding the command line of the profiled program.
+#   'filename' and 'fn_name' are strings.
+#   'num' and 'line_num' are decimal integers.
+#   'ws' is whitespace.
+# 
+# The contents of the "desc:" lines are printed out at the top
+# of the summary.  This is a generic way of providing simulation
+# specific information, eg. for giving the cache configuration for
+# cache simulation.
+# 
+# Counts can be "." to represent "N/A", eg. the number of write misses for an
+# instruction that doesn't write to memory.
+# 
+# The number of counts in each 'line' and the 'summary_line' should not exceed
+# the number of events in the 'event_line'.  If the number in each 'line' is
+# less, cg_annotate treats those missing as though they were a "." entry.
+# 
+# A 'file_line' changes the current file name.  A 'fn_line' changes the
+# current function name.  A 'count_line' contains counts that pertain to the
+# current filename/fn_name.  A 'file_line' and a 'fn_line' must appear
+# before any 'count_line's to give the context of the first 'count_line'.
+# 
+# Each 'file_line' should be immediately followed by a 'fn_line'.  "fi="
+# 'file_lines' are used to switch filenames for inlined functions; "fe="
+# 'file_lines' are similar, but are put at the end of a basic block in which
+# the file name hasn't been switched back to the original file name.  (fi
+# and fe lines behave the same, they are only distinguished to help
+# debugging.)  [Nb: "fi=" and "fe=" have not been produced by Cachegrind for
+# some time, they are no longer necessary.]
+
+#----------------------------------------------------------------------------
 # Performance improvements record, using cachegrind.out for cacheprof, doing no
 # source annotation (irrelevant ones removed):
 #                                                               user time
@@ -57,6 +98,7 @@
 #16. Finding count lengths by int((length-1)/3), not by
 #    commifying (halves the number of commify calls)            1.68s --> 1.47s
 
+use warnings;
 use strict;
 
 #----------------------------------------------------------------------------
@@ -187,18 +229,25 @@ sub process_cmd_line()
                 @show_events = split(/,/, $1);
 
             # --sort=A,B,C
+            #   Nb: You can specify thresholds individually, eg.
+            #   --sort=A:99,B:95,C:90.  These will override any --threshold
+            #   argument.
             } elsif ($arg =~ /^--sort=(.*)$/) {
                 @sort_events = split(/,/, $1);
+                my $th_specified = 0;
                 foreach my $i (0 .. scalar @sort_events - 1) {
-                    if ($sort_events[$i] =~#/.*:(\d+)$/) {
-                                            /.*:([\d\.]+)%?$/) {
+                    if ($sort_events[$i] =~ /.*:([\d\.]+)%?$/) {
                         my $th = $1;
                         ($th >= 0 && $th <= 100) or die($usage);
                         $sort_events[$i] =~ s/:.*//;
                         $thresholds[$i] = $th;
+                        $th_specified = 1;
                     } else {
                         $thresholds[$i] = 0;
                     }
+                }
+                if (not $th_specified) {
+                    @thresholds = ();
                 }
 
             # --threshold=X (tolerates a trailing '%')

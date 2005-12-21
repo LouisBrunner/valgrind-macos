@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Internal client requests.                        coregrind.h ---*/
+/*--- Internal client requests.                   pub_core_clreq.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -28,16 +28,14 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __COREGRIND_H
-#define __COREGRIND_H
+#ifndef __PUB_CORE_CLREQ_H
+#define __PUB_CORE_CLREQ_H
 
 //--------------------------------------------------------------------
-// PURPOSE: This file is the counterpart to valgrind.h.  It contains
-// the client requests that are internal to Valgrind, and not to be seen
-// by client programs.
+// PURPOSE: This module defined client requests.
 //--------------------------------------------------------------------
 
-#include <stdarg.h>
+#include "pub_tool_clreq.h"
 
 // The strange choice of values here is due to historical reasons -- there
 // used to be many more internal client requests.
@@ -73,7 +71,7 @@ int VALGRIND_INTERNAL_PRINTF(char *format, ...)
 }
 
 
-#endif   // __COREGRIND_H
+#endif   // __PUB_CORE_CLREQ_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

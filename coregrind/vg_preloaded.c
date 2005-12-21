@@ -42,10 +42,8 @@
    originates from Valgrind.
    ------------------------------------------------------------------ */
 
-#include "valgrind.h"
-#include "coregrind.h"
-
 #include "pub_core_basics.h"
+#include "pub_core_clreq.h"
 #include "pub_core_debuginfo.h"  // Needed for pub_core_redir.h
 #include "pub_core_redir.h"      // For VG_NOTIFY_ON_LOAD
 

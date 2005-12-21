@@ -57,12 +57,10 @@
    way back for the moment, until we do an OS port in earnest...]
  */
 
-#include "valgrind.h"   // for VG_USERREQ__*
-#include "coregrind.h"  // for VG_USERREQ__*
-
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_clreq.h"         // for VG_USERREQ__*
 #include "pub_core_dispatch.h"
 #include "pub_core_errormgr.h"      // For VG_(get_n_errs_found)()
 #include "pub_core_libcbase.h"

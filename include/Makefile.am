@@ -6,6 +6,7 @@ incinc_HEADERS = \
 	pub_tool_basics_asm.h 		\
 	pub_tool_aspacemgr.h 		\
 	pub_tool_clientstate.h		\
+	pub_tool_clreq.h		\
 	pub_tool_cpuid.h 		\
 	pub_tool_debuginfo.h 		\
 	pub_tool_errormgr.h 		\

@@ -78,8 +78,8 @@
 #elif defined(VGP_ppc64_linux)
 #  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)                   \
       asm("mflr 0;"                   /* r0 = lr */           \
-          "bl m_libcassert_get_ip;"   /* lr = pc */           \
-          "m_libcassert_get_ip:\n"                            \
+          "bl .m_libcassert_get_ip;"  /* lr = pc */           \
+          ".m_libcassert_get_ip:\n"                           \
           "mflr %0;"                \
           "mtlr 0;"                   /* restore lr */        \
           "mr %1,1;"                \

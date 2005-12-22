@@ -74,7 +74,7 @@ void ML_(call_on_new_stack_0_1) ( Addr stack,
    address, the second word is the TOC ptr (r2), and the third word is
    the static chain value. */
 asm(
-".text\n"
+"   .align   2\n"
 "   .globl   vgModuleLocal_call_on_new_stack_0_1\n"
 "   .section \".opd\",\"aw\"\n"
 "   .align   3\n"
@@ -122,7 +122,6 @@ asm(
 "   mtcr 0\n\t"            // CAB: Need this?
 "   bctr\n\t"              // jump to dst
 "   trap\n"                // should never get here
-".previous\n"
 );
 
 
@@ -166,7 +165,15 @@ ULong do_syscall_clone_ppc64_linux ( Word (*fn)(void *),
                                      Int*  parent_tid, 
                                      void/*vki_modify_ldt_t*/ * );
 asm(
-".text\n"
+"   .align   2\n"
+"   .globl   do_syscall_clone_ppc64_linux\n"
+"   .section \".opd\",\"aw\"\n"
+"   .align   3\n"
+"do_syscall_clone_ppc64_linux:\n"
+"   .quad    .do_syscall_clone_ppc64_linux,.TOC.@tocbase,0\n"
+"   .previous\n"
+"   .type    .do_syscall_clone_ppc64_linux,@function\n"
+"   .globl   .do_syscall_clone_ppc64_linux\n"
 ".do_syscall_clone_ppc64_linux:\n"
 "       stdu    1,-64(1)\n"
 "       std     29,40(1)\n"
@@ -229,7 +236,6 @@ asm(
 "       ld      31,56(1)\n"
 "       addi    1,1,64\n"
 "       blr\n"
-".previous\n"
 );
 
 #undef __NR_CLONE

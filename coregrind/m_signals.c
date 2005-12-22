@@ -477,11 +477,18 @@ extern void my_sigreturn(void);
    ".previous\n"
 #elif defined(VGP_ppc64_linux)
 #  define _MYSIG(name) \
-   ".text\n" \
+   ".align   2\n" \
+   ".globl   my_sigreturn\n" \
+   ".section \".opd\",\"aw\"\n" \
+   ".align   3\n" \
    "my_sigreturn:\n" \
+   ".quad    .my_sigreturn,.TOC.@tocbase,0\n" \
+   ".previous\n" \
+   ".type    .my_sigreturn,@function\n" \
+   ".globl   .my_sigreturn\n" \
+   ".my_sigreturn:\n" \
    "	li	0, " #name "\n" \
-   "	sc\n" \
-   ".previous\n"
+   "	sc\n"
 #else
 #  error Unknown platform
 #endif

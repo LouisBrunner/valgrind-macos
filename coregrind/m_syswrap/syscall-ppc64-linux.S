@@ -70,14 +70,22 @@
 /* from vki_arch.h */
 #define VKI_SIG_SETMASK 2
 
+.align 2
+.globl ML_(do_syscall_for_client_WRK)
+.section ".opd","aw"
+.align 3
+ML_(do_syscall_for_client_WRK):	
+.quad .ML_(do_syscall_for_client_WRK),.TOC.@tocbase,0
+.previous
+.type .ML_(do_syscall_for_client_WRK),@function
 .globl .ML_(do_syscall_for_client_WRK)
 .ML_(do_syscall_for_client_WRK):
         /* make a stack frame */
-        stdu    1,-64(1)
-        std     31,56(1)
-        std     30,48(1)
-        std     29,40(1)
-        std     28,32(1)
+        stdu    1,-80(1)
+        std     31,72(1)
+        std     30,64(1)
+        std     29,56(1)
+        std     28,48(1)
         mr      31,3            /* syscall number */
         mr      30,4            /* guest_state */
         mr      29,6            /* postmask */
@@ -122,11 +130,11 @@
         /* now safe from signals */
 
         /* pop off stack frame */
-5:      ld      28,32(1)
-        ld      29,40(1)
-        ld      30,48(1)
-        ld      31,56(1)
-        addi    1,1,64
+5:      ld      28,48(1)
+        ld      29,56(1)
+        ld      30,64(1)
+        ld      31,72(1)
+        addi    1,1,80
         blr
 
 	/* failure: return -ve error code */
@@ -149,8 +157,7 @@ ML_(blksys_complete):  .long 3b
 ML_(blksys_committed): .long 4b
 ML_(blksys_finished):  .long 5b
 
-.previous
-		
+
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
 

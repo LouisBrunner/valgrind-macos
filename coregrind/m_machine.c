@@ -373,7 +373,7 @@ Bool VG_(machine_get_hwcaps)( void )
      /* VG_(printf)("FP %d VMX %d\n", (Int)have_fp, (Int)have_vmx); */
 
      /* We can only support 3 cases, not 4 (vmx but no fp).  So make
-	fp a prerequisite for vmx. */
+        fp a prerequisite for vmx. */
      if (have_vmx && !have_fp)
         have_vmx = False;
 

@@ -296,11 +296,28 @@ VG_(trampoline_stuff_end):
 	/* a leading page of unexecutable code */
 	UD2_PAGE
 
+.align 2
 .global VG_(trampoline_stuff_start)
+.section ".opd","aw"
+.align 3
 VG_(trampoline_stuff_start):
+.quad .VG_(trampoline_stuff_start),.TOC.@tocbase,0
+.previous
+.type .VG_(trampoline_stuff_start),@function
+.global  .VG_(trampoline_stuff_start)
+.VG_(trampoline_stuff_start):
 	
+
+.align 2
 .global VG_(trampoline_stuff_end)
+.section ".opd","aw"
+.align 3
 VG_(trampoline_stuff_end):
+.quad .VG_(trampoline_stuff_end),.TOC.@tocbase,0
+.previous
+.type .VG_(trampoline_stuff_end),@function
+.global  .VG_(trampoline_stuff_end)
+.VG_(trampoline_stuff_end):
 
 #	undef UD2_16
 #	undef UD2_64

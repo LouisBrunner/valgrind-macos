@@ -309,4 +309,4 @@
 #define __NR_inotify_rm_watch   277
 
 
-#endif /* __VKI_UNISTD_PPC32_LINUX_H */
+#endif /* __VKI_UNISTD_PPC64_LINUX_H */

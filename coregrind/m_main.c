@@ -2850,9 +2850,9 @@ asm("\n"
 );
 #elif defined(VGP_ppc64_linux)
 asm("\n"
-    ".text\n"
     /* PPC64 ELF ABI says '_start' points to a function descriptor.
        So we must have one, and that is what goes into the .opd section. */
+    "\t.align 2\n"
     "\t.global _start\n"
     "\t.section \".opd\",\"aw\"\n"
     "\t.align 3\n"
@@ -2886,7 +2886,6 @@ asm("\n"
     "\tbl ._start_in_C\n"
     "\tnop\n"
     "\ttrap\n"
-    ".previous\n"
 );
 #else
 #error "_start: needs implementation on this platform"

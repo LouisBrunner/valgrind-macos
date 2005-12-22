@@ -218,7 +218,15 @@ asm(
    bottom but of [1]. */
 extern void do_syscall_WRK ( ULong* argblock );
 asm(
-".text\n"
+".align   2\n"
+".globl   do_syscall_WRK\n"
+".section \".opd\",\"aw\"\n"
+".align   3\n"
+"do_syscall_WRK:\n"
+".quad    .do_syscall_WRK,.TOC.@tocbase,0\n"
+".previous\n"
+".type    .do_syscall_WRK,@function\n"
+".globl   .do_syscall_WRK\n"
 ".do_syscall_WRK:\n"
 "        std  3,-16(1)\n"  /* stash arg */
 "        ld   8, 48(3)\n"  /* sc arg 6 */
@@ -236,7 +244,6 @@ asm(
 "        andi. 3,3,1\n"
 "        std  3,8(5)\n"    /* argblock[1] = cr0.s0 & 1 */
 "        blr\n"
-".previous\n"
 );
 #else
 #  error Unknown platform

@@ -568,7 +568,8 @@ HChar* showPPC32UnaryOp ( PPC32UnaryOp op ) {
    switch (op) {
    case Pun_NOT: return "not";
    case Pun_NEG: return "neg";
-   case Pun_CLZ: return "cntlzw";
+   case Pun_CLZ32: return "cntlzw";
+   case Pun_CLZ64: return "cntlzd";
    default: vpanic("showPPC32UnaryOp");
    }
 }
@@ -907,6 +908,20 @@ PPC32Instr* PPC32Instr_FpF64toI32 ( HReg dst, HReg src ) {
    i->tag                = Pin_FpF64toI32;
    i->Pin.FpF64toI32.dst = dst;
    i->Pin.FpF64toI32.src = src;
+   return i;
+}
+PPC32Instr* PPC32Instr_FpF64toI64 ( HReg dst, HReg src ) {
+   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag                = Pin_FpF64toI64;
+   i->Pin.FpF64toI64.dst = dst;
+   i->Pin.FpF64toI64.src = src;
+   return i;
+}
+PPC32Instr* PPC32Instr_FpI64toF64 ( HReg dst, HReg src ) {
+   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag                = Pin_FpI64toF64;
+   i->Pin.FpI64toF64.dst = dst;
+   i->Pin.FpI64toF64.src = src;
    return i;
 }
 PPC32Instr* PPC32Instr_FpCMov ( PPC32CondCode cond, HReg dst, HReg src ) {
@@ -1396,6 +1411,23 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
       ppHRegPPC32(i->Pin.FpF64toI32.dst);
       vex_printf(",%%r0,%%r1");
       return;
+   case Pin_FpF64toI64:
+      vex_printf("fctid %%fr7,");
+      ppHRegPPC32(i->Pin.FpF64toI64.src);
+      vex_printf("; stfdx %%fr7,%%r0,%%r1");
+      vex_printf("; ldx ");
+      ppHRegPPC32(i->Pin.FpF64toI64.dst);
+      vex_printf(",%%r0,%%r1");
+      return;
+   case Pin_FpI64toF64:
+      vex_printf("stdx ");
+      ppHRegPPC32(i->Pin.FpI64toF64.src);
+      vex_printf(",%%r0,%%r1");
+      vex_printf("; lfdx %%fr7,%%r0,%%r1");
+      vex_printf("; fcfid ");
+      ppHRegPPC32(i->Pin.FpI64toF64.dst);
+      vex_printf(",%%r7");
+      return;
    case Pin_FpCMov:
       vex_printf("fpcmov (%s) ", showPPC32CondCode(i->Pin.FpCMov.cond));
       ppHRegPPC32(i->Pin.FpCMov.dst);
@@ -1731,6 +1763,16 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
       addHRegUse(u, HRmWrite, hregPPC32_FPR7());
       addHRegUse(u, HRmRead,   i->Pin.FpF64toI32.src);
       return;
+   case Pin_FpF64toI64:
+      addHRegUse(u, HRmWrite, i->Pin.FpF64toI64.dst);
+      addHRegUse(u, HRmWrite, hregPPC32_FPR7());
+      addHRegUse(u, HRmRead,  i->Pin.FpF64toI64.src);
+      return;
+   case Pin_FpI64toF64:
+      addHRegUse(u, HRmWrite, i->Pin.FpI64toF64.dst);
+      addHRegUse(u, HRmWrite, hregPPC32_FPR7());
+      addHRegUse(u, HRmRead,  i->Pin.FpI64toF64.src);
+      return;
    case Pin_FpCMov:
       addHRegUse(u, HRmModify, i->Pin.FpCMov.dst);
       addHRegUse(u, HRmRead, i->Pin.FpCMov.src);
@@ -1924,6 +1966,14 @@ void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
    case Pin_FpF64toI32:
       mapReg(m, &i->Pin.FpF64toI32.dst);
       mapReg(m, &i->Pin.FpF64toI32.src);
+      return;
+   case Pin_FpF64toI64:
+      mapReg(m, &i->Pin.FpF64toI64.dst);
+      mapReg(m, &i->Pin.FpF64toI64.src);
+      return;
+   case Pin_FpI64toF64:
+      mapReg(m, &i->Pin.FpI64toF64.dst);
+      mapReg(m, &i->Pin.FpI64toF64.src);
       return;
    case Pin_FpCMov:
       mapReg(m, &i->Pin.FpCMov.dst);
@@ -2728,8 +2778,11 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
       case Pun_NEG:  // neg r_dst,r_src
          p = mkFormXO(p, 31, r_dst, r_src, 0, 0, 104, 0);
          break;
-      case Pun_CLZ:  // cntlzw r_dst, r_src
+      case Pun_CLZ32:  // cntlzw r_dst, r_src
          p = mkFormX(p, 31, r_src, r_dst, 0, 26, 0);
+         break;
+      case Pun_CLZ64:  // cntlzd r_dst, r_src
+         p = mkFormX(p, 31, r_src, r_dst, 0, 58, 0);
          break;
       default: goto bad;
       }
@@ -3144,6 +3197,44 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
 
       // lwzx (load int32), PPC32 p463
       p = doAMode_RR(p, 31, 23, r_dst, am_addr, mode64);
+      goto done;
+   }
+
+   case Pin_FpF64toI64: {
+      UInt  r_dst   = iregNo(i->Pin.FpF64toI64.dst, mode64);
+      UInt  fr_src  = fregNo(i->Pin.FpF64toI64.src);
+      UChar fr_tmp  = 7;                // Temp freg
+      PPC32AMode* am_addr;
+
+      // fctid (conv f64 to i64), PPC64 p437
+      p = mkFormX(p, 63, fr_tmp, 0, fr_src, 814, 0);
+
+      am_addr = PPC32AMode_RR( StackFramePtr(mode64),
+                               hregPPC_GPR0(mode64) );
+
+      // stfdx (store fp64), PPC64 p589
+      p = doAMode_RR(p, 31, 727, fr_tmp, am_addr, mode64);
+
+      // ldx (load int64), PPC64 p476
+      p = doAMode_RR(p, 31, 21, r_dst, am_addr, mode64);
+      goto done;
+   }
+
+   case Pin_FpI64toF64: {
+      UInt  r_src   = iregNo(i->Pin.FpI64toF64.src, mode64);
+      UInt  fr_dst  = fregNo(i->Pin.FpI64toF64.dst);
+      UChar fr_tmp  = 7;                // Temp freg
+      PPC32AMode* am_addr = PPC32AMode_RR( StackFramePtr(mode64),
+                                           hregPPC_GPR0(mode64) );
+
+      // stdx r_src,r0,r1
+      p = doAMode_RR(p, 31, 149, r_src, am_addr, mode64);
+
+      // lfdx fr7,r0,r1
+      p = doAMode_RR(p, 31, 599, fr_tmp, am_addr, mode64);
+
+      // fcfid (conv i64 to f64), PPC64 p434
+      p = mkFormX(p, 63, fr_dst, 0, fr_tmp, 846, 0);
       goto done;
    }
 

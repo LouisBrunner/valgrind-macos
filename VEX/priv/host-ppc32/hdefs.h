@@ -326,7 +326,8 @@ typedef
    enum {
       Pun_NEG,
       Pun_NOT,
-      Pun_CLZ
+      Pun_CLZ32,
+      Pun_CLZ64
    }
    PPC32UnaryOp;
 
@@ -460,6 +461,8 @@ typedef
       Pin_FpLdSt,     /* FP load/store */
       Pin_FpF64toF32, /* FP round IEEE754 double to IEEE754 single */
       Pin_FpF64toI32, /* FP round IEEE754 double to 32-bit integer */
+      Pin_FpF64toI64, /* FP round IEEE754 double to 32-bit integer */
+      Pin_FpI64toF64, /* FP round IEEE754 64-bit integer to double */
       Pin_FpCMov,     /* FP floating point conditional move */
       Pin_FpLdFPSCR,  /* mtfsf */
       Pin_FpCmp,      /* FP compare, generating value into int reg */
@@ -645,6 +648,17 @@ typedef
             HReg src;
             HReg dst;
          } FpF64toI32;
+         /* Ditto to 64-bit integer type. */
+         struct {
+            HReg src;
+            HReg dst;
+         } FpF64toI64;
+         /* By observing the current FPU rounding mode, reinterpret src from
+            a 64-bit integer to double type, and round into dst. */
+         struct {
+            HReg src;
+            HReg dst;
+         } FpI64toF64;
          /* Mov src to dst on the given condition, which may not
             be the bogus Xcc_ALWAYS. */
          struct {
@@ -781,6 +795,8 @@ extern PPC32Instr* PPC32Instr_FpBinary   ( PPC32FpOp op, HReg dst, HReg srcL, HR
 extern PPC32Instr* PPC32Instr_FpLdSt     ( Bool isLoad, UChar sz, HReg, PPC32AMode* );
 extern PPC32Instr* PPC32Instr_FpF64toF32 ( HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_FpF64toI32 ( HReg dst, HReg src );
+extern PPC32Instr* PPC32Instr_FpF64toI64 ( HReg dst, HReg src );
+extern PPC32Instr* PPC32Instr_FpI64toF64 ( HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_FpCMov     ( PPC32CondCode, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_FpLdFPSCR  ( HReg src );
 extern PPC32Instr* PPC32Instr_FpCmp      ( HReg dst, HReg srcL, HReg srcR );

@@ -786,13 +786,10 @@ static HReg roundModeIRtoPPC32 ( ISelEnv* env, HReg r_rmIR )
 static
 void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
 {
-   HReg fr_src  = newVRegF(env);
+   HReg fr_src = newVRegF(env);
    HReg r_src;
 
-   if (mode64)
-      vassert(typeOfIRExpr(env->type_env,mode) == Ity_I64);
-   else
-      vassert(typeOfIRExpr(env->type_env,mode) == Ity_I32);
+   vassert(typeOfIRExpr(env->type_env,mode) == Ity_I32);
 
    /* Only supporting the rounding-mode bits - the rest of FPSCR is 0x0
        - so we can set the whole register at once (faster)
@@ -1324,6 +1321,21 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return r_dst;
       }
 
+      if (e->Iex.Binop.op == Iop_F64toI64) {
+         HReg fr_src = iselDblExpr(env, e->Iex.Binop.arg2);
+         HReg r_dst = newVRegI(env);         
+         /* Set host rounding mode */
+         set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+
+         sub_from_sp( env, 16 );
+         addInstr(env, PPC32Instr_FpF64toI64(r_dst, fr_src));
+         add_to_sp( env, 16 );
+
+         /* Restore default FPU rounding. */
+         set_FPU_rounding_default( env );
+         return r_dst;
+      }
+
 
 //..       /* C3210 flags following FPU partial remainder (fprem), both
 //..          IEEE compliant (PREM1) and non-IEEE compliant (PREM). */
@@ -1538,19 +1550,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                        r_dst, r_dst, PPC32RH_Imm(False,31)));
          return r_dst;
       }
-
-//..          case Iop_Ctz32: {
-//..             /* Count trailing zeroes, implemented by x86 'bsfl' */
-//..             HReg dst = newVRegI32(env);
-//..             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-//..             addInstr(env, X86Instr_Bsfr32(True,src,dst));
-//..             return dst;
-//..          }
-      case Iop_Clz32: {
+      case Iop_Clz32:
+      case Iop_Clz64: {
+         PPC32UnaryOp op_clz =
+            (e->Iex.Unop.op == Iop_Clz32) ? Pun_CLZ32 : Pun_CLZ64;
          /* Count leading zeroes. */
          HReg r_dst = newVRegI(env);
          HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, PPC32Instr_Unary(Pun_CLZ,r_dst,r_src));
+         addInstr(env, PPC32Instr_Unary(op_clz,r_dst,r_src));
          return r_dst;
       }
       case Iop_Neg8:
@@ -1590,6 +1597,27 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          /* These are no-ops. */
          return iselIntExpr_R(env, e->Iex.Unop.arg);
          
+      /* ReinterpF64asI64(e) */
+      /* Given an IEEE754 double, produce an I64 with the same bit
+         pattern. */
+      case Iop_ReinterpF64asI64: {
+         PPC32AMode *am_addr;
+         HReg fr_src = iselDblExpr(env, e->Iex.Unop.arg);
+         HReg r_dst  = newVRegI(env);
+         vassert(mode64);
+
+         sub_from_sp( env, 16 );     // Move SP down 16 bytes
+         am_addr = PPC32AMode_IR(0, StackFramePtr(mode64));
+
+         // store as F64
+         addInstr(env, PPC32Instr_FpLdSt( False/*store*/, 8, fr_src, am_addr ));
+         // load as Ity_I64
+         addInstr(env, PPC32Instr_Load( 8, False, r_dst, am_addr, mode64 ));
+
+         add_to_sp( env, 16 );       // Reset SP
+         return r_dst;
+      }
+
       default: 
          break;
       }
@@ -3159,18 +3187,16 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       else
          vpanic("iselDblExpr(ppc32): const");
 
-      if (mode64) {
-         HReg r_src = newVRegI(env);
-         vassert(0);
-         // AWAITING TEST CASE
-         addInstr(env, PPC32Instr_LI(r_src, u.u64, mode64));
-         return mk_LoadR64toFPR( env, r_src );         // 1*I64 -> F64
-      } else { // mode32
+      if (!mode64) {
          HReg r_srcHi = newVRegI(env);
          HReg r_srcLo = newVRegI(env);
          addInstr(env, PPC32Instr_LI(r_srcHi, u.u32x2[1], mode64));
          addInstr(env, PPC32Instr_LI(r_srcLo, u.u32x2[0], mode64));
          return mk_LoadRR32toFPR( env, r_srcHi, r_srcLo );
+      } else { // mode64
+         HReg r_src = newVRegI(env);
+         addInstr(env, PPC32Instr_LI(r_src, u.u64, mode64));
+         return mk_LoadR64toFPR( env, r_src );         // 1*I64 -> F64
       }
    }
 
@@ -3216,6 +3242,23 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg r_srcR = iselDblExpr(env, e->Iex.Binop.arg2);
          addInstr(env, PPC32Instr_FpBinary(fpop, r_dst, r_srcL, r_srcR));
          return r_dst;
+      }
+
+      if (e->Iex.Binop.op == Iop_I64toF64) {
+         HReg fr_dst = newVRegF(env);
+         HReg r_src  = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         vassert(mode64);
+
+         /* Set host rounding mode */
+         set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+
+         sub_from_sp( env, 16 );
+         addInstr(env, PPC32Instr_FpI64toF64(fr_dst, r_src));
+         add_to_sp( env, 16 );
+
+         /* Restore default FPU rounding. */
+         set_FPU_rounding_default( env );
+         return fr_dst;
       }
    }
 
@@ -3299,6 +3342,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..             add_to_esp(env, 4);
 //..             return dst;
 //..          }
+
       case Iop_ReinterpI64asF64: {
          /* Given an I64, produce an IEEE754 double with the same
             bit pattern. */
@@ -3307,8 +3351,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             iselInt64Expr( &r_srcHi, &r_srcLo, env, e->Iex.Unop.arg);
             return mk_LoadRR32toFPR( env, r_srcHi, r_srcLo );
          } else {
-            // TODO
-            vassert(0);
+            HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            return mk_LoadR64toFPR( env, r_src );
          }
       }
       case Iop_F32toF64: {

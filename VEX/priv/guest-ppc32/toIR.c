@@ -1216,7 +1216,7 @@ static Int guestCR0offset ( UInt cr )
    }
 }
 
-// ROTL(src32/64, rot_amt5)
+// ROTL(src32/64, rot_amt5/6)
 static IRExpr* /* :: Ity_I32/64 */ ROTL ( IRExpr* src,
                                           IRExpr* rot_amt )
 {
@@ -2086,8 +2086,6 @@ static void set_XER_CA_64 ( UInt op, IRExpr* res,
       
 
    case /* 12 */ PPC32G_FLAG_OP_SRAD:
-      vassert(0); // AWAITING TEST CASE
-
       /* The shift amount is guaranteed to be in 0 .. 63 inclusive.
          If it is <= 63, behave like SRADI; else XER.CA is the sign
          bit of argL. */
@@ -2108,8 +2106,8 @@ static void set_XER_CA_64 ( UInt op, IRExpr* res,
          = IRExpr_Mux0X(
               /* shift amt > 63 ? */
               unop(Iop_1Uto8, binop(Iop_CmpLT64U, mkU64(63), argR)),
-              /* no -- be like srawi */
-              unop(Iop_1Uto32, binop(Iop_CmpNE32, xer_ca, mkU32(0))),
+              /* no -- be like sradi */
+              unop(Iop_1Uto32, binop(Iop_CmpNE64, xer_ca, mkU64(0))),
               /* yes -- get sign bit of argL */
               unop(Iop_64to32, binop(Iop_Shr64, argL, mkU8(63)))
            );
@@ -2900,13 +2898,11 @@ static Bool dis_int_arith ( UInt theInstr )
          }
          DIP("mulhd%s r%u,r%u,r%u\n", flag_rC ? "." : "",
              rD_addr, rA_addr, rB_addr);
-         DIP(" => not implemented\n");
-         return False;
-         /*
          assign( rD, unop(Iop_128HIto64, 
-                          binop(Iop_MullU64,
+                          binop(Iop_MullS64,
                                 mkexpr(rA), mkexpr(rB))) );
-         */
+
+         break;
 
       case 0x9:   // mulhdu (Multiply High Double Word Unsigned, PPC64 p540)
          if (flag_OE != 0) {
@@ -2915,13 +2911,10 @@ static Bool dis_int_arith ( UInt theInstr )
          }
          DIP("mulhdu%s r%u,r%u,r%u\n", flag_rC ? "." : "",
              rD_addr, rA_addr, rB_addr);
-         DIP(" => not implemented\n");
-         return False;
-         /*
-            assign( rD, unop(Iop_128HIto64, 
-                             binop(Iop_MullU64,
-                                   mkexpr(rA), mkexpr(rB))) );
-         */
+         assign( rD, unop(Iop_128HIto64, 
+                          binop(Iop_MullU64,
+                                mkexpr(rA), mkexpr(rB))) );
+         break;
 
       case 0xE9:  // mulld (Multiply Low Double Word, PPC64 p543)
          DIP("mulld%s%s r%u,r%u,r%u\n",
@@ -2938,21 +2931,14 @@ static Bool dis_int_arith ( UInt theInstr )
          DIP("divd%s%s r%u,r%u,r%u\n",
              flag_OE ? "o" : "", flag_rC ? "." : "",
              rD_addr, rA_addr, rB_addr);
-         DIP(" => not implemented\n");
-         return False;
-         /*
-            assign( rD, binop(Iop_DivS64, mkexpr(rA), mkexpr(rB)) );
-            if (flag_OE) {
-               set_XER_OV( ty, PPC32G_FLAG_OP_DIVW, 
-                           mkexpr(rD), mkexpr(rA), mkexpr(rB) );
-            }
-
-           if invalid divide (rA==0x8000_0000_0000_0000 && rB==-1, OR rB==0)
-             rD undefined, CR[LT,GT,EQ] undefined
-             flag_OE ? XER: set OV
-         */
+         assign( rD, binop(Iop_DivS64, mkexpr(rA), mkexpr(rB)) );
+         if (flag_OE) {
+            set_XER_OV( ty, PPC32G_FLAG_OP_DIVW, 
+                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+         }
+         break;
          /* Note:
-            if (0x8000_0000 / -1) or (x / 0)
+            if (0x8000_0000_0000_0000 / -1) or (x / 0)
             => rD=undef, if(flag_rC) CR7=undef, if(flag_OE) XER_OV=1
             => But _no_ exception raised. */
 
@@ -2960,19 +2946,12 @@ static Bool dis_int_arith ( UInt theInstr )
          DIP("divdu%s%s r%u,r%u,r%u\n",
              flag_OE ? "o" : "", flag_rC ? "." : "",
              rD_addr, rA_addr, rB_addr);
-         DIP(" => not implemented\n");
-         return False;
-         /*
-           assign( rD, binop(Iop_DivU64, mkexpr(rA), mkexpr(rB)) );
-           if (flag_OE) {
-              set_XER_OV( PPC32G_FLAG_OP_DIVWU, 
-                          mkexpr(rD), mkexpr(rA), mkexpr(rB) );
-           }
-
-           if invalid divide (rB==0)
-             rD undefined, CR[LT,GT,EQ] undefined
-             flag_OE ? XER: set OV
-         */
+         assign( rD, binop(Iop_DivU64, mkexpr(rA), mkexpr(rB)) );
+         if (flag_OE) {
+            set_XER_OV( ty, PPC32G_FLAG_OP_DIVWU, 
+                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+         }
+         break;
          /* Note: ditto comment divd, for (x / 0) */
 
       default:
@@ -3301,15 +3280,12 @@ static Bool dis_int_logic ( UInt theInstr )
             return False;
          }
          DIP("cntlzd%s r%u,r%u\n", flag_rC ? "." : "", rA_addr, rS_addr);
-         DIP(" => not implemented\n");
-         return False;
-         /*
-           // Iop_Clz64 undefined for arg==0, so deal with that case:
-           irx =  binop(Iop_CmpNE64, mkexpr(rS), mkU64(0));
-           assign(rA, IRExpr_Mux0X( unop(Iop_1Uto8, irx),
-                                    mkU64(64),
-                                    unop(Iop_Clz64, mkexpr(rS)) ));
-         */
+         // Iop_Clz64 undefined for arg==0, so deal with that case:
+         irx =  binop(Iop_CmpNE64, mkexpr(rS), mkU64(0));
+         assign(rA, IRExpr_Mux0X( unop(Iop_1Uto8, irx),
+                                  mkU64(64),
+                                  unop(Iop_Clz64, mkexpr(rS)) ));
+         break;
 
       default:
          vex_printf("dis_int_logic(PPC32)(opc2)\n");
@@ -3473,28 +3449,26 @@ static Bool dis_int_rot ( UInt theInstr )
       vassert( sh_imm < 64 );
 
       switch (opc2) {
-      case 0x4:
-         /*
-           n = lowest 6bits of rB
-           r = ROTL64(rS,n)
-         */
+      case 0x4: {
+         /* r = ROTL64( rS, rB_lo6) */
+         r = ROTL( mkexpr(rS), unop(Iop_64to8, mkexpr(rB)) );
+
          if (b1 == 0) { // rldcl (Rotate Left DW then Clear Left, PPC64 p555)
             DIP("rldcl%s r%u,r%u,r%u,%u\n", flag_rC ? "." : "",
                 rA_addr, rS_addr, rB_addr, msk_imm);
-            r = ROTL(mkexpr(rS), mkU8(sh_imm));
+            // note, ROTL does the masking, so we don't do it here
             mask64 = MASK64(0, 63-msk_imm);
             assign( rA, binop(Iop_And64, r, mkU64(mask64)) );
             break;
          } else {       // rldcr (Rotate Left DW then Clear Right, PPC64 p556)
             DIP("rldcr%s r%u,r%u,r%u,%u\n", flag_rC ? "." : "",
                 rA_addr, rS_addr, rB_addr, msk_imm);
-            r = ROTL(mkexpr(rS), mkU8(sh_imm));
             mask64 = MASK64(63-msk_imm, 63);
             assign( rA, binop(Iop_And64, r, mkU64(mask64)) );
             break;
          }
          break;
-
+      }
       case 0x2: // rldic (Rotate Left DW Imm then Clear, PPC64 p557)
          DIP("rldic%s r%u,r%u,%u,%u\n", flag_rC ? "." : "",
              rA_addr, rS_addr, sh_imm, msk_imm);
@@ -3528,16 +3502,18 @@ static Bool dis_int_rot ( UInt theInstr )
          break;
          // later: deal with special case: (msk_imm == sh_imm) => SHL(sh_imm)
          
-      case 0x3: // rldimi (Rotate Left DW Imm then Mask Insert, PPC64 p560)
+      case 0x3: { // rldimi (Rotate Left DW Imm then Mask Insert, PPC64 p560)
+         IRTemp rA_orig = newTemp(ty);
          DIP("rldimi%s r%u,r%u,%u,%u\n", flag_rC ? "." : "",
              rA_addr, rS_addr, sh_imm, msk_imm);
          r = ROTL(mkexpr(rS), mkU8(sh_imm));
          mask64 = MASK64(sh_imm, 63-msk_imm);
+         assign( rA_orig, getIReg(rA_addr) );
          assign( rA, binop(Iop_Or64,
                            binop(Iop_And64, mkU64(mask64),  r),
-                           binop(Iop_And64, mkU64(~mask64), mkexpr(rA))) );
+                           binop(Iop_And64, mkU64(~mask64), mkexpr(rA_orig))) );
          break;
-        
+      }
       default:
          vex_printf("dis_int_rot(PPC32)(opc2)\n");
          return False;
@@ -4600,6 +4576,12 @@ static Bool dis_syslink ( UInt theInstr, DisResult* dres )
 
 /*
   Memory Synchronization Instructions
+
+  Note on Reservations:
+  We rely on the assumption that V will in fact only allow one thread at
+  once to run.  In effect, a thread can make a reservation, but we don't
+  check any stores it does.  Instead, the reservation is cancelled when
+  the scheduler switches to another thread (run_thread_for_a_while()).
 */
 static Bool dis_memsync ( UInt theInstr )
 {
@@ -4717,50 +4699,43 @@ static Bool dis_memsync ( UInt theInstr )
             return False;
          }
          DIP("ldarx r%u,r%u,r%u\n", rD_addr, rA_addr, rB_addr);
-         DIP(" => not implemented\n");
-         return False;
-         /*
-           assign( EA, ea_standard(rA_addr, rB_addr) );
-           putIReg( rD_addr, loadBE(Ity_I64, mkexpr(EA)) );
-           // Take a reservation
-           stmt( IRStmt_Put( OFFB_RESVN, mkexpr(EA) ));           
-         */
-      
-      case 0x0D6: // stdcx. (Store DW Condition Indexed, PPC64 p581)
+         putIReg( rD_addr, loadBE(Ity_I64, mkexpr(EA)) );
+         // Take a reservation
+         putGST( PPC_GST_RESVN, mkexpr(EA) );
+         break;
+       
+      case 0x0D6: { // stdcx. (Store DW Condition Indexed, PPC64 p581)
+         IRTemp resaddr = newTemp(ty);
          if (b0 != 1) {
             vex_printf("dis_memsync(PPC32)(stdcx.,b0)\n");
             return False;
          }
          DIP("stdcx. r%u,r%u,r%u\n", rS_addr, rA_addr, rB_addr);
-         DIP(" => not implemented\n");
-         return False;
-         /*
-           assign( rS, getIReg(rS_addr) );
-           assign( EA, ea_standard(rA_addr, rB_addr) );
+         assign( rS, getIReg(rS_addr) );
 
-           // First set up as if the reservation failed
-           // Set CR0[LT GT EQ S0] = 0b000 || XER[SO]
-           putCR321(0, mkU8(0<<1));
-           putCR0(0, getXER_SO());
+         // First set up as if the reservation failed
+         // Set CR0[LT GT EQ S0] = 0b000 || XER[SO]
+         putCR321(0, mkU8(0<<1));
+         putCR0(0, getXER_SO());
            
-           // Get the reservation address into a temporary, then clear it.
-           assign( resaddr, IRExpr_Get(OFFB_RESVN, Ity_I64) );
-           stmt( IRStmt_Put( OFFB_RESVN, mkU64(0) ));
+         // Get the reservation address into a temporary, then clear it.
+         assign( resaddr, getGST(PPC_GST_RESVN) );
+         putGST( PPC_GST_RESVN, mkSzImm(ty, 0) );
 
-           // Skip the rest if the reservation really did fail.
-           stmt( IRStmt_Exit(
-                    binop(Iop_CmpNE64, mkexpr(resaddr),
-                                       mkexpr(EA)),
-                    Ijk_Boring,
-                    IRConst_U32(guest_CIA_curr_instr + 4)) );
+         // Skip the rest if the reservation really did fail.
+         stmt( IRStmt_Exit( binop(Iop_CmpNE64, mkexpr(resaddr),
+                                  mkexpr(EA)),
+                            Ijk_Boring,
+                            IRConst_U64(nextInsnAddr())) );
 
-           // Success?  Do the store
-           storeBE( mkexpr(EA), mkexpr(rS) );
+         // Success?  Do the store
+         storeBE( mkexpr(EA), mkexpr(rS) );
          
-           // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]
-           putCR321(0, mkU8(1<<1));
-         */
-      
+         // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]
+         putCR321(0, mkU8(1<<1));
+         break;
+      }
+
       default:
          vex_printf("dis_memsync(PPC32)(opc2)\n");
          return False;
@@ -4793,15 +4768,17 @@ static Bool dis_int_shift ( UInt theInstr )
 
    IRType  ty         = mode64 ? Ity_I64 : Ity_I32;
    IRTemp  rA         = newTemp(ty);
+   IRTemp  rS         = newTemp(ty);
+   IRTemp  rB         = newTemp(ty);
    IRTemp  outofrange = newTemp(Ity_I8);
-//   IRTemp  sh_amt     = newTemp(Ity_I8);
-   IRTemp  sh_amt32   = newTemp(Ity_I32);
    IRTemp  rS_lo32    = newTemp(Ity_I32);
    IRTemp  rB_lo32    = newTemp(Ity_I32);
    IRExpr* e_tmp;
 
-   assign( rS_lo32, mkSzNarrow32(ty, getIReg(rS_addr)) );
-   assign( rB_lo32, mkSzNarrow32(ty, getIReg(rB_addr)) );
+   assign( rS, getIReg(rS_addr) );
+   assign( rB, getIReg(rB_addr) );
+   assign( rS_lo32, mkSzNarrow32(ty, mkexpr(rS)) );
+   assign( rB_lo32, mkSzNarrow32(ty, mkexpr(rB)) );
    
    if (opc1 == 0x1F) {
       switch (opc2) {
@@ -4829,7 +4806,8 @@ static Bool dis_int_shift ( UInt theInstr )
          break;
       }
 
-      case 0x318: // sraw (Shift Right Algebraic Word, PPC32 p506)
+      case 0x318: { // sraw (Shift Right Algebraic Word, PPC32 p506)
+         IRTemp sh_amt = newTemp(Ity_I32);
          DIP("sraw%s r%u,r%u,r%u\n", flag_rC ? "." : "",
              rA_addr, rS_addr, rB_addr);
          /* JRS: my reading of the (poorly worded) PPC32 doc p506 is:
@@ -4837,24 +4815,25 @@ static Bool dis_int_shift ( UInt theInstr )
             rA = Sar32( rS, amt > 31 ? 31 : amt )
             XER.CA = amt > 31 ? sign-of-rS : (computation as per srawi)
          */
-         assign( sh_amt32, binop(Iop_And32, mkU32(0x3F), mkexpr(rB_lo32)) );
+         assign( sh_amt, binop(Iop_And32, mkU32(0x3F), mkexpr(rB_lo32)) );
          assign( outofrange,
                  unop( Iop_1Uto8, 
-                       binop(Iop_CmpLT32U, mkU32(31), mkexpr(sh_amt32)) ));
+                       binop(Iop_CmpLT32U, mkU32(31), mkexpr(sh_amt)) ));
          e_tmp = binop( Iop_Sar32, 
                         mkexpr(rS_lo32), 
                         unop( Iop_32to8, 
                               IRExpr_Mux0X( mkexpr(outofrange), 
-                                            mkexpr(sh_amt32), 
+                                            mkexpr(sh_amt), 
                                             mkU32(31)) ) );
          assign( rA, mkSzWiden32(ty, e_tmp, /* Signed */True) );
 
          set_XER_CA( ty, PPC32G_FLAG_OP_SRAW,
                      mkexpr(rA),
                      mkSzWiden32(ty, mkexpr(rS_lo32), True),
-                     mkSzWiden32(ty, mkexpr(sh_amt32), True ),
+                     mkSzWiden32(ty, mkexpr(sh_amt), True ),
                      mkSzWiden32(ty, getXER_CA32(), True) );
          break;
+      }
          
       case 0x338: // srawi (Shift Right Algebraic Word Immediate, PPC32 p507)
          DIP("srawi%s r%u,r%u,%d\n", flag_rC ? "." : "",
@@ -4903,14 +4882,11 @@ static Bool dis_int_shift ( UInt theInstr )
       case 0x01B: // sld (Shift Left DW, PPC64 p568)
          DIP("sld%s r%u,r%u,r%u\n", flag_rC ? "." : "", rA_addr, rS_addr, rB_addr);
          /* rA = rS << rB */
-         /* ppc32 semantics are: 
+         /* ppc64 semantics are: 
             slw(x,y) = (x << (y & 63))         -- primary result
                        & ~((y << 57) >>s 63)   -- make result 0 
                                                   for y in 64 .. 
          */
-         DIP(" => not implemented\n");
-         return False;
-         /*
          assign( rA,
             binop(
                Iop_And64,
@@ -4922,34 +4898,33 @@ static Bool dis_int_shift ( UInt theInstr )
                      binop( Iop_Sar64,
                             binop(Iop_Shl64, mkexpr(rB), mkU8(57)), 
                             mkU8(63)))) );
-         */
+         break;
       
-      case 0x31A: // srad (Shift Right Algebraic DW, PPC64 p570)
+      case 0x31A: { // srad (Shift Right Algebraic DW, PPC64 p570)
+         IRTemp sh_amt = newTemp(Ity_I64);
          DIP("srad%s r%u,r%u,r%u\n", flag_rC ? "." : "", rA_addr, rS_addr, rB_addr);
          /* amt = rB & 127
             rA = Sar64( rS, amt > 63 ? 63 : amt )
             XER.CA = amt > 63 ? sign-of-rS : (computation as per srawi)
          */
-         DIP(" => not implemented\n");
-         return False;
-         /*
-         assign( sh_amt64, binop(Iop_And64, mkU64(0x7F), mkexpr(rB)) );
+         assign( sh_amt, binop(Iop_And64, mkU64(0x7F), mkexpr(rB)) );
          assign( outofrange,
                  unop( Iop_1Uto8, 
-                       binop(Iop_CmpLT64U, mkU64(63), mkexpr(sh_amt64)) ));
+                       binop(Iop_CmpLT64U, mkU64(63), mkexpr(sh_amt)) ));
          assign( rA,
                  binop( Iop_Sar64, 
                         mkexpr(rS), 
                         unop( Iop_64to8, 
                               IRExpr_Mux0X( mkexpr(outofrange), 
-                                            mkexpr(sh_amt64), 
-                                            mkU32(63)) ))
+                                            mkexpr(sh_amt), 
+                                            mkU64(63)) ))
                );
-         set_XER_CA( PPC32G_FLAG_OP_SRAD,
-                     mkexpr(rA), mkexpr(rS), mkexpr(sh_amt64),
-                     getXER_CA32() );
-         */
-      
+         set_XER_CA( ty, PPC32G_FLAG_OP_SRAD,
+                     mkexpr(rA), mkexpr(rS), mkexpr(sh_amt),
+                     mkSzWiden32(ty, getXER_CA32(), /* Signed */False) );
+         break;
+      }
+
       case 0x33A: case 0x33B: // sradi (Shift Right Algebraic DW Imm, PPC64 p571)
          sh_imm |= b1<<5;
          vassert(sh_imm < 64);
@@ -4965,15 +4940,12 @@ static Bool dis_int_shift ( UInt theInstr )
 
       case 0x21B: // srd (Shift Right DW, PPC64 p574)
          DIP("srd%s r%u,r%u,r%u\n", flag_rC ? "." : "", rA_addr, rS_addr, rB_addr);
-         DIP(" => not implemented\n");
-         return False;
          /* rA = rS >>u rB */
-         /* ppc32 semantics are: 
+         /* ppc semantics are: 
             srw(x,y) = (x >>u (y & 63))        -- primary result
                        & ~((y << 57) >>s 63)   -- make result 0 
                                                   for y in 64 .. 127
          */
-         /*
          assign( rA,
             binop(
                Iop_And64,
@@ -4985,7 +4957,7 @@ static Bool dis_int_shift ( UInt theInstr )
                      binop( Iop_Sar64, 
                             binop(Iop_Shl64, mkexpr(rB), mkU8(57)), 
                             mkU8(63)))) );
-         */
+         break;
      
       default:
          vex_printf("dis_int_shift(PPC32)(opc2)\n");
@@ -6113,7 +6085,8 @@ static Bool dis_fp_round ( UInt theInstr )
 
    IRTemp frD = newTemp(Ity_F64);
    IRTemp frB = newTemp(Ity_F64);
-   IRTemp r_tmp = newTemp(Ity_I32);
+   IRTemp r_tmp32 = newTemp(Ity_I32);
+   IRTemp r_tmp64 = newTemp(Ity_I64);
 
    if (opc1 != 0x3F || b16to20 != 0) {
       vex_printf("dis_fp_round(PPC32)(instr)\n");
@@ -6130,47 +6103,37 @@ static Bool dis_fp_round ( UInt theInstr )
       
    case 0x00E: // fctiw (Float Conv to Int, PPC32 p404)
       DIP("fctiw%s fr%u,fr%u\n", flag_rC ? "." : "", frD_addr, frB_addr);
-      assign( r_tmp, binop(Iop_F64toI32, get_roundingmode(), mkexpr(frB)) );
+      assign( r_tmp32, binop(Iop_F64toI32, get_roundingmode(), mkexpr(frB)) );
       assign( frD, unop( Iop_ReinterpI64asF64,
-                         unop( Iop_32Uto64, mkexpr(r_tmp))));
+                         unop( Iop_32Uto64, mkexpr(r_tmp32))));
       break;
       
    case 0x00F: // fctiwz (Float Conv to Int, Round to Zero, PPC32 p405)
       DIP("fctiwz%s fr%u,fr%u\n", flag_rC ? "." : "", frD_addr, frB_addr);
-      assign( r_tmp, binop(Iop_F64toI32, mkU32(0x3), mkexpr(frB)) );
+      assign( r_tmp32, binop(Iop_F64toI32, mkU32(0x3), mkexpr(frB)) );
       assign( frD, unop( Iop_ReinterpI64asF64,
-                         unop( Iop_32Uto64, mkexpr(r_tmp))));
+                         unop( Iop_32Uto64, mkexpr(r_tmp32))));
       break;
 
 
    /* 64bit FP conversions */
    case 0x32E: // fctid (Float Conv to Int DW, PPC64 p437)
       DIP("fctid%s fr%u,fr%u\n", flag_rC ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
-      /*
-        assign( r_tmp, binop(Iop_F64toI64, get_roundingmode(), mkexpr(frB)) );
-        assign( frD, unop( Iop_ReinterpI64asF64, mkexpr(r_tmp)) );
-      */
+      assign( r_tmp64, binop(Iop_F64toI64, get_roundingmode(), mkexpr(frB)) );
+      assign( frD, unop( Iop_ReinterpI64asF64, mkexpr(r_tmp64)) );
+      break;
 
    case 0x32F: // fctidz (Float Conv to Int DW, Round to Zero, PPC64 p437)
       DIP("fctidz%s fr%u,fr%u\n", flag_rC ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
-      /*
-        assign( r_tmp, binop(Iop_F64toI64, mkU32(0x3), mkexpr(frB)) );
-        assign( frD, unop( Iop_ReinterpI64asF64, mkexpr(r_tmp)) );
-      */
+      assign( r_tmp64, binop(Iop_F64toI64, mkU32(0x3), mkexpr(frB)) );
+      assign( frD, unop( Iop_ReinterpI64asF64, mkexpr(r_tmp64)) );
+      break;
 
    case 0x34E: // fcfid (Float Conv from Int DW, PPC64 p434)
       DIP("fcfid%s fr%u,fr%u\n", flag_rC ? "." : "", frD_addr, frB_addr);
-      DIP(" => not implemented\n");
-      return False;
-      /*
-        ?
-        assign( r_tmp, unop( Iop_ReinterpF64asI64, mkexpr(rD)) );
-        assign( frD, binop(Iop_I64toF64, get_roundingmode(), mkexpr(frB)) );
-      */
+      assign( r_tmp64, unop( Iop_ReinterpF64asI64, mkexpr(frB)) );
+      assign( frD, binop(Iop_I64toF64, get_roundingmode(), mkexpr(r_tmp64)) );
+      break;
 
    default:
       vex_printf("dis_fp_round(PPC32)(opc2)\n");
@@ -8722,7 +8685,7 @@ DisResult disInstr_PPC32_WRK (
          goto decode_failure;
 
       /* 64bit Integer Logical Instructions */
-      case 0x3DA: case 0x03A: // extsw, cntlzw
+      case 0x3DA: case 0x03A: // extsw, cntlzd
          if (!mode64) goto decode_failure;
          if (dis_int_logic( theInstr )) goto decode_success;
          goto decode_failure;
@@ -8735,7 +8698,7 @@ DisResult disInstr_PPC32_WRK (
 
       /* 64bit Integer Shift Instructions */
       case 0x01B: case 0x31A: // sld, srad
-      case 0x33A: case 0x33B: // sradi_a, sradi_b
+      case 0x33A: case 0x33B: // sradi
       case 0x21B:             // srd
          if (!mode64) goto decode_failure;
          if (dis_int_shift( theInstr )) goto decode_success;

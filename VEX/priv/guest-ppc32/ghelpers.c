@@ -624,11 +624,11 @@ Bool guest_ppc64_state_requires_precise_mem_exns ( Int minoff,
                                                    Int maxoff )
 {
    Int lr_min  = offsetof(VexGuestPPC64State, guest_LR);
-   Int lr_max  = lr_min + 4 - 1;
+   Int lr_max  = lr_min + 8 - 1;
    Int r1_min  = offsetof(VexGuestPPC64State, guest_GPR1);
-   Int r1_max  = r1_min + 4 - 1;
+   Int r1_max  = r1_min + 8 - 1;
    Int cia_min = offsetof(VexGuestPPC64State, guest_CIA);
-   Int cia_max = cia_min + 4 - 1;
+   Int cia_max = cia_min + 8 - 1;
 
    if (maxoff < lr_min || minoff > lr_max) {
       /* no overlap with LR */
@@ -697,11 +697,11 @@ VexGuestLayout
 
           /* Describe the stack pointer. */
           .offset_SP = offsetof(VexGuestPPC64State,guest_GPR1),
-          .sizeof_SP = 4,
+          .sizeof_SP = 8,
 
           /* Describe the instruction pointer. */
           .offset_IP = offsetof(VexGuestPPC64State,guest_CIA),
-          .sizeof_IP = 4,
+          .sizeof_IP = 8,
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */

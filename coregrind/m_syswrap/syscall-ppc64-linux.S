@@ -50,9 +50,10 @@
         back to regs->m_gpr[3]/m_xer/m_result on completion.
 
         Returns 0 if the syscall was successfully called (even if the
-        syscall itself failed), or a -ve error code if one of the
-        sigprocmasks failed (there's no way to determine which one
-        failed).
+        syscall itself failed), or an nonzero error code in the lowest
+	8 bits if one of the sigprocmasks failed (there's no way to
+	determine which one failed).  And there's no obvious way to
+	recover from that either, but nevertheless we want to know.
 
         VG_(fixup_guest_state_after_syscall_interrupted) does the
 	thread state fixup in the case where we were interrupted by a
@@ -60,7 +61,7 @@
 
         Prototype:
 
-	Int ML_(do_syscall_for_client_WRK)(
+	UWord ML_(do_syscall_for_client_WRK)(
 				  Int syscallno,		// r3
 				  void* guest_state,		// r4
 				  const vki_sigset_t *sysmask,	// r5
@@ -93,10 +94,11 @@ ML_(do_syscall_for_client_WRK):
 
         /* set the signal mask for doing the system call */
         /* set up for sigprocmask(SIG_SETMASK, sysmask, postmask) */
-1:      li      0,__NR_sigprocmask
+1:      li      0,__NR_rt_sigprocmask
         li      3,VKI_SIG_SETMASK
         mr      4,5
         mr      5,6
+	mr	6,7
         sc                      /* set the mask */
         bso     7f              /* if the sigprocmask fails */
 
@@ -119,15 +121,15 @@ ML_(do_syscall_for_client_WRK):
 
         /* block signals again */
 	/* set up for sigprocmask(SIG_SETMASK, postmask, NULL) */
-4:      li      0,__NR_sigprocmask
+4:      li      0,__NR_rt_sigprocmask
         li      3,VKI_SIG_SETMASK
         mr      4,29
         li      5,0
         mr      6,28
         sc                      /* set the mask */
         bso     7f              /* if the sigprocmask fails */
-
         /* now safe from signals */
+	li	3,0		/* SUCCESS */
 
         /* pop off stack frame */
 5:      ld      28,48(1)
@@ -138,7 +140,7 @@ ML_(do_syscall_for_client_WRK):
         blr
 
 	/* failure: return -ve error code */
-7:      neg     3,3
+7:	ori	3,3,0x8000	/* FAILURE -- ensure return value is nonzero */
         b       5b
 
 .section .rodata

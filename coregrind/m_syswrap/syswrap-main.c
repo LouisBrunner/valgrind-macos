@@ -223,11 +223,11 @@
    VG_(fixup_guest_state_after_syscall_interrupted) below for details.
 */
 extern
-void ML_(do_syscall_for_client_WRK)( Int syscallno, 
-                                     void* guest_state,
-                                     const vki_sigset_t *syscall_mask,
-                                     const vki_sigset_t *restore_mask,
-                                     Int nsigwords );
+UWord ML_(do_syscall_for_client_WRK)( Int syscallno, 
+                                      void* guest_state,
+                                      const vki_sigset_t *syscall_mask,
+                                      const vki_sigset_t *restore_mask,
+                                      Int nsigwords );
 
 static
 void do_syscall_for_client ( Int syscallno,
@@ -235,9 +235,15 @@ void do_syscall_for_client ( Int syscallno,
                              const vki_sigset_t* syscall_mask )
 {
    vki_sigset_t saved;
-   ML_(do_syscall_for_client_WRK)(
-      syscallno, &tst->arch.vex, 
-      syscall_mask, &saved, _VKI_NSIG_WORDS * sizeof(UWord)
+   UWord err 
+      = ML_(do_syscall_for_client_WRK)(
+           syscallno, &tst->arch.vex, 
+           syscall_mask, &saved, _VKI_NSIG_WORDS * sizeof(UWord)
+        );
+   vg_assert2(
+      err == 0,
+      "ML_(do_syscall_for_client_WRK): sigprocmask error %d",
+      (Int)(err & 0xFFF)
    );
 }
 

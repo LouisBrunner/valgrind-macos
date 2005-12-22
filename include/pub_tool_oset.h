@@ -65,9 +65,10 @@
 typedef struct _OSet     OSet;
 typedef struct _OSetNode OSetNode;
 
-typedef Int   (*OSetCmp_t)   ( void* key, void* elem );
-typedef void* (*OSetAlloc_t) ( SizeT szB );
-typedef void  (*OSetFree_t)  ( void* p );
+typedef Int   (*OSetCmp_t)         ( void* key, void* elem );
+typedef void* (*OSetAlloc_t)       ( SizeT szB );
+typedef void  (*OSetFree_t)        ( void* p );
+typedef void  (*OSetNodeDestroy_t) ( void* elem );
 
 /*--------------------------------------------------------------------*/
 /*--- Creating and destroying OSets and OSet members               ---*/
@@ -85,7 +86,9 @@ typedef void  (*OSetFree_t)  ( void* p );
 //   If cmp is NULL, keyOff must be zero.  This is checked.
 //
 // * Destroy: frees all nodes in the table, plus the memory used by
-//   the table itself.
+//   the table itself.  The passed-in function is called on each node first
+//   to allow the destruction of any attached resources;  if NULL it is not
+//   called.
 //
 // * AllocNode: Allocate and zero memory for a node to go into the OSet.
 //   Uses the alloc function given to VG_(OSet_Create)() to allocated a node
@@ -101,7 +104,7 @@ typedef void  (*OSetFree_t)  ( void* p );
 
 extern OSet* VG_(OSet_Create)    ( OffT keyOff, OSetCmp_t cmp,
                                    OSetAlloc_t alloc, OSetFree_t free );
-extern void  VG_(OSet_Destroy)   ( OSet* os );
+extern void  VG_(OSet_Destroy)   ( OSet* os, OSetNodeDestroy_t destroyNode );
 extern void* VG_(OSet_AllocNode) ( OSet* os, SizeT elemSize );
 extern void  VG_(OSet_FreeNode)  ( OSet* os, void* elem );
 

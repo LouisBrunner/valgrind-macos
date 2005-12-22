@@ -294,7 +294,7 @@ AvlTree* VG_(OSet_Create)(OffT _keyOff, OSetCmp_t _cmp,
 }
 
 // Destructor, frees up all memory held by remaining nodes.
-void VG_(OSet_Destroy)(AvlTree* t)
+void VG_(OSet_Destroy)(AvlTree* t, OSetNodeDestroy_t destroyNode)
 {
    AvlNode* n;
    Int i, sz = 0;
@@ -317,6 +317,7 @@ void VG_(OSet_Destroy)(AvlTree* t)
          if (n->right) stackPush(t, n->right, 1);
          break;
       case 3:
+         if (destroyNode) destroyNode(n);
          t->free(n);
          sz++;
          break;

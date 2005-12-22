@@ -1164,236 +1164,236 @@ void setup_child ( /*OUT*/ ThreadArchState *child,
 // (unknown).
 
 const SyscallTableEntry ML_(syscall_table)[] = {
-// _____(__NR_restart_syscall,   sys__NR_restart_syscall),    //   0
-// _____(__NR_exit,              sys__NR_exit),               //   1
-// _____(__NR_fork,              sys__NR_fork),               //   2
-// _____(__NR_read,              sys__NR_read),               //   3
-// _____(__NR_write,             sys__NR_write),              //   4
+// _____(__NR_restart_syscall,   sys_restart_syscall),    //   0
+// _____(__NR_exit,              sys_exit),               //   1
+// _____(__NR_fork,              sys_fork),               //   2
+// _____(__NR_read,              sys_read),               //   3
+// _____(__NR_write,             sys_write),              //   4
 
-// _____(__NR_open,              sys__NR_open),               //   5
-// _____(__NR_close,             sys__NR_close),              //   6
-// _____(__NR_waitpid,           sys__NR_waitpid),            //   7
-// _____(__NR_creat,             sys__NR_creat),              //   8
-// _____(__NR_link,              sys__NR_link),               //   9
+// _____(__NR_open,              sys_open),               //   5
+// _____(__NR_close,             sys_close),              //   6
+// _____(__NR_waitpid,           sys_waitpid),            //   7
+// _____(__NR_creat,             sys_creat),              //   8
+// _____(__NR_link,              sys_link),               //   9
 
-// _____(__NR_unlink,            sys__NR_unlink),             //  10
-// _____(__NR_execve,            sys__NR_execve),             //  11
-// _____(__NR_chdir,             sys__NR_chdir),              //  12
-// _____(__NR_time,              sys__NR_time),               //  13
-// _____(__NR_mknod,             sys__NR_mknod),              //  14
+// _____(__NR_unlink,            sys_unlink),             //  10
+// _____(__NR_execve,            sys_execve),             //  11
+// _____(__NR_chdir,             sys_chdir),              //  12
+// _____(__NR_time,              sys_time),               //  13
+// _____(__NR_mknod,             sys_mknod),              //  14
 
-// _____(__NR_chmod,             sys__NR_chmod),              //  15
-// _____(__NR_lchown,            sys__NR_lchown),             //  16
-// _____(__NR_break,             sys__NR_break),              //  17
-// _____(__NR_oldstat,           sys__NR_oldstat),            //  18
-// _____(__NR_lseek,             sys__NR_lseek),              //  19
+// _____(__NR_chmod,             sys_chmod),              //  15
+// _____(__NR_lchown,            sys_lchown),             //  16
+// _____(__NR_break,             sys_break),              //  17
+// _____(__NR_oldstat,           sys_oldstat),            //  18
+// _____(__NR_lseek,             sys_lseek),              //  19
 
-// _____(__NR_getpid,            sys__NR_getpid),             //  20
-// _____(__NR_mount,             sys__NR_mount),              //  21
-// _____(__NR_umount,            sys__NR_umount),             //  22
-// _____(__NR_setuid,            sys__NR_setuid),             //  23
-// _____(__NR_getuid,            sys__NR_getuid),             //  24
+// _____(__NR_getpid,            sys_getpid),             //  20
+// _____(__NR_mount,             sys_mount),              //  21
+// _____(__NR_umount,            sys_umount),             //  22
+// _____(__NR_setuid,            sys_setuid),             //  23
+// _____(__NR_getuid,            sys_getuid),             //  24
 
-// _____(__NR_stime,             sys__NR_stime),              //  25
-// _____(__NR_ptrace,            sys__NR_ptrace),             //  26
-// _____(__NR_alarm,             sys__NR_alarm),              //  27
-// _____(__NR_oldfstat,          sys__NR_oldfstat),           //  28
-// _____(__NR_pause,             sys__NR_pause),              //  29
+// _____(__NR_stime,             sys_stime),              //  25
+// _____(__NR_ptrace,            sys_ptrace),             //  26
+// _____(__NR_alarm,             sys_alarm),              //  27
+// _____(__NR_oldfstat,          sys_oldfstat),           //  28
+// _____(__NR_pause,             sys_pause),              //  29
 
-// _____(__NR_utime,             sys__NR_utime),              //  30
-// _____(__NR_stty,              sys__NR_stty),               //  31
-// _____(__NR_gtty,              sys__NR_gtty),               //  32
-// _____(__NR_access,            sys__NR_access),             //  33
-// _____(__NR_nice,              sys__NR_nice),               //  34
+// _____(__NR_utime,             sys_utime),              //  30
+// _____(__NR_stty,              sys_stty),               //  31
+// _____(__NR_gtty,              sys_gtty),               //  32
+// _____(__NR_access,            sys_access),             //  33
+// _____(__NR_nice,              sys_nice),               //  34
 
-// _____(__NR_ftime,             sys__NR_ftime),              //  35
-// _____(__NR_sync,              sys__NR_sync),               //  36
-// _____(__NR_kill,              sys__NR_kill),               //  37
-// _____(__NR_rename,            sys__NR_rename),             //  38
-// _____(__NR_mkdir,             sys__NR_mkdir),              //  39
+// _____(__NR_ftime,             sys_ftime),              //  35
+// _____(__NR_sync,              sys_sync),               //  36
+// _____(__NR_kill,              sys_kill),               //  37
+// _____(__NR_rename,            sys_rename),             //  38
+// _____(__NR_mkdir,             sys_mkdir),              //  39
 
-// _____(__NR_rmdir,             sys__NR_rmdir),              //  40
-// _____(__NR_dup,               sys__NR_dup),                //  41
-// _____(__NR_pipe,              sys__NR_pipe),               //  42
-// _____(__NR_times,             sys__NR_times),              //  43
-// _____(__NR_prof,              sys__NR_prof),               //  44
+// _____(__NR_rmdir,             sys_rmdir),              //  40
+// _____(__NR_dup,               sys_dup),                //  41
+// _____(__NR_pipe,              sys_pipe),               //  42
+// _____(__NR_times,             sys_times),              //  43
+// _____(__NR_prof,              sys_prof),               //  44
 
-// _____(__NR_brk,               sys__NR_brk),                //  45
-// _____(__NR_setgid,            sys__NR_setgid),             //  46
-// _____(__NR_getgid,            sys__NR_getgid),             //  47
-// _____(__NR_signal,            sys__NR_signal),             //  48
-// _____(__NR_geteuid,           sys__NR_geteuid),            //  49
+   GENX_(__NR_brk,               sys_brk),                //  45
+// _____(__NR_setgid,            sys_setgid),             //  46
+// _____(__NR_getgid,            sys_getgid),             //  47
+// _____(__NR_signal,            sys_signal),             //  48
+// _____(__NR_geteuid,           sys_geteuid),            //  49
 
-// _____(__NR_getegid,           sys__NR_getegid),            //  50
-// _____(__NR_acct,              sys__NR_acct),               //  51
-// _____(__NR_umount2,           sys__NR_umount2),            //  52
-// _____(__NR_lock,              sys__NR_lock),               //  53
-// _____(__NR_ioctl,             sys__NR_ioctl),              //  54
+// _____(__NR_getegid,           sys_getegid),            //  50
+// _____(__NR_acct,              sys_acct),               //  51
+// _____(__NR_umount2,           sys_umount2),            //  52
+// _____(__NR_lock,              sys_lock),               //  53
+// _____(__NR_ioctl,             sys_ioctl),              //  54
 
-// _____(__NR_fcntl,             sys__NR_fcntl),              //  55
-// _____(__NR_mpx,               sys__NR_mpx),                //  56
-// _____(__NR_setpgid,           sys__NR_setpgid),            //  57
-// _____(__NR_ulimit,            sys__NR_ulimit),             //  58
-// _____(__NR_oldolduname,       sys__NR_oldolduname),        //  59
+// _____(__NR_fcntl,             sys_fcntl),              //  55
+// _____(__NR_mpx,               sys_mpx),                //  56
+// _____(__NR_setpgid,           sys_setpgid),            //  57
+// _____(__NR_ulimit,            sys_ulimit),             //  58
+// _____(__NR_oldolduname,       sys_oldolduname),        //  59
 
-// _____(__NR_umask,             sys__NR_umask),              //  60
-// _____(__NR_chroot,            sys__NR_chroot),             //  61
-// _____(__NR_ustat,             sys__NR_ustat),              //  62
-// _____(__NR_dup2,              sys__NR_dup2),               //  63
-// _____(__NR_getppid,           sys__NR_getppid),            //  64
+// _____(__NR_umask,             sys_umask),              //  60
+// _____(__NR_chroot,            sys_chroot),             //  61
+// _____(__NR_ustat,             sys_ustat),              //  62
+// _____(__NR_dup2,              sys_dup2),               //  63
+// _____(__NR_getppid,           sys_getppid),            //  64
 
-// _____(__NR_getpgrp,           sys__NR_getpgrp),            //  65
-// _____(__NR_setsid,            sys__NR_setsid),             //  66
-// _____(__NR_sigaction,         sys__NR_sigaction),          //  67
-// _____(__NR_sgetmask,          sys__NR_sgetmask),           //  68
-// _____(__NR_ssetmask,          sys__NR_ssetmask),           //  69
+// _____(__NR_getpgrp,           sys_getpgrp),            //  65
+// _____(__NR_setsid,            sys_setsid),             //  66
+// _____(__NR_sigaction,         sys_sigaction),          //  67
+// _____(__NR_sgetmask,          sys_sgetmask),           //  68
+// _____(__NR_ssetmask,          sys_ssetmask),           //  69
 
-// _____(__NR_setreuid,          sys__NR_setreuid),           //  70
-// _____(__NR_setregid,          sys__NR_setregid),           //  71
-// _____(__NR_sigsuspend,        sys__NR_sigsuspend),         //  72
-// _____(__NR_sigpending,        sys__NR_sigpending),         //  73
-// _____(__NR_sethostname,       sys__NR_sethostname),        //  74
+// _____(__NR_setreuid,          sys_setreuid),           //  70
+// _____(__NR_setregid,          sys_setregid),           //  71
+// _____(__NR_sigsuspend,        sys_sigsuspend),         //  72
+// _____(__NR_sigpending,        sys_sigpending),         //  73
+// _____(__NR_sethostname,       sys_sethostname),        //  74
 
-// _____(__NR_setrlimit,         sys__NR_setrlimit),          //  75
-// _____(__NR_getrlimit,         sys__NR_getrlimit),          //  76
-// _____(__NR_getrusage,         sys__NR_getrusage),          //  77
-// _____(__NR_gettimeofday,      sys__NR_gettimeofday),       //  78
-// _____(__NR_settimeofday,      sys__NR_settimeofday),       //  79
+// _____(__NR_setrlimit,         sys_setrlimit),          //  75
+// _____(__NR_getrlimit,         sys_getrlimit),          //  76
+// _____(__NR_getrusage,         sys_getrusage),          //  77
+// _____(__NR_gettimeofday,      sys_gettimeofday),       //  78
+// _____(__NR_settimeofday,      sys_settimeofday),       //  79
 
-// _____(__NR_getgroups,         sys__NR_getgroups),          //  80
-// _____(__NR_setgroups,         sys__NR_setgroups),          //  81
-// _____(__NR_select,            sys__NR_select),             //  82
-// _____(__NR_symlink,           sys__NR_symlink),            //  83
-// _____(__NR_oldlstat,          sys__NR_oldlstat),           //  84
+// _____(__NR_getgroups,         sys_getgroups),          //  80
+// _____(__NR_setgroups,         sys_setgroups),          //  81
+// _____(__NR_select,            sys_select),             //  82
+// _____(__NR_symlink,           sys_symlink),            //  83
+// _____(__NR_oldlstat,          sys_oldlstat),           //  84
 
-// _____(__NR_readlink,          sys__NR_readlink),           //  85
-// _____(__NR_uselib,            sys__NR_uselib),             //  86
-// _____(__NR_swapon,            sys__NR_swapon),             //  87
-// _____(__NR_reboot,            sys__NR_reboot),             //  88
-// _____(__NR_readdir,           sys__NR_readdir),            //  89
+// _____(__NR_readlink,          sys_readlink),           //  85
+// _____(__NR_uselib,            sys_uselib),             //  86
+// _____(__NR_swapon,            sys_swapon),             //  87
+// _____(__NR_reboot,            sys_reboot),             //  88
+// _____(__NR_readdir,           sys_readdir),            //  89
 
-// _____(__NR_mmap,              sys__NR_mmap),               //  90
-// _____(__NR_munmap,            sys__NR_munmap),             //  91
-// _____(__NR_truncate,          sys__NR_truncate),           //  92
-// _____(__NR_ftruncate,         sys__NR_ftruncate),          //  93
-// _____(__NR_fchmod,            sys__NR_fchmod),             //  94
+// _____(__NR_mmap,              sys_mmap),               //  90
+// _____(__NR_munmap,            sys_munmap),             //  91
+// _____(__NR_truncate,          sys_truncate),           //  92
+// _____(__NR_ftruncate,         sys_ftruncate),          //  93
+// _____(__NR_fchmod,            sys_fchmod),             //  94
 
-// _____(__NR_fchown,            sys__NR_fchown),             //  95
-// _____(__NR_getpriority,       sys__NR_getpriority),        //  96
-// _____(__NR_setpriority,       sys__NR_setpriority),        //  97
-// _____(__NR_profil,            sys__NR_profil),             //  98
-// _____(__NR_statfs,            sys__NR_statfs),             //  99
+// _____(__NR_fchown,            sys_fchown),             //  95
+// _____(__NR_getpriority,       sys_getpriority),        //  96
+// _____(__NR_setpriority,       sys_setpriority),        //  97
+// _____(__NR_profil,            sys_profil),             //  98
+// _____(__NR_statfs,            sys_statfs),             //  99
 
-// _____(__NR_fstatfs,           sys__NR_fstatfs),            // 100
-// _____(__NR_ioperm,            sys__NR_ioperm),             // 101
-// _____(__NR_socketcall,        sys__NR_socketcall),         // 102
-// _____(__NR_syslog,            sys__NR_syslog),             // 103
-// _____(__NR_setitimer,         sys__NR_setitimer),          // 104
+// _____(__NR_fstatfs,           sys_fstatfs),            // 100
+// _____(__NR_ioperm,            sys_ioperm),             // 101
+// _____(__NR_socketcall,        sys_socketcall),         // 102
+// _____(__NR_syslog,            sys_syslog),             // 103
+// _____(__NR_setitimer,         sys_setitimer),          // 104
 
-// _____(__NR_getitimer,         sys__NR_getitimer),          // 105
-// _____(__NR_stat,              sys__NR_stat),               // 106
-// _____(__NR_lstat,             sys__NR_lstat),              // 107
-// _____(__NR_fstat,             sys__NR_fstat),              // 108
-// _____(__NR_olduname,          sys__NR_olduname),           // 109
+// _____(__NR_getitimer,         sys_getitimer),          // 105
+// _____(__NR_stat,              sys_stat),               // 106
+// _____(__NR_lstat,             sys_lstat),              // 107
+// _____(__NR_fstat,             sys_fstat),              // 108
+// _____(__NR_olduname,          sys_olduname),           // 109
 
-// _____(__NR_iopl,              sys__NR_iopl),               // 110
-// _____(__NR_vhangup,           sys__NR_vhangup),            // 111
-// _____(__NR_idle,              sys__NR_idle),               // 112
-// _____(__NR_vm86,              sys__NR_vm86),               // 113
-// _____(__NR_wait4,             sys__NR_wait4),              // 114
+// _____(__NR_iopl,              sys_iopl),               // 110
+// _____(__NR_vhangup,           sys_vhangup),            // 111
+// _____(__NR_idle,              sys_idle),               // 112
+// _____(__NR_vm86,              sys_vm86),               // 113
+// _____(__NR_wait4,             sys_wait4),              // 114
 
-// _____(__NR_swapoff,           sys__NR_swapoff),            // 115
-// _____(__NR_sysinfo,           sys__NR_sysinfo),            // 116
-// _____(__NR_ipc,               sys__NR_ipc),                // 117
-// _____(__NR_fsync,             sys__NR_fsync),              // 118
-// _____(__NR_sigreturn,         sys__NR_sigreturn),          // 119
+// _____(__NR_swapoff,           sys_swapoff),            // 115
+// _____(__NR_sysinfo,           sys_sysinfo),            // 116
+// _____(__NR_ipc,               sys_ipc),                // 117
+// _____(__NR_fsync,             sys_fsync),              // 118
+// _____(__NR_sigreturn,         sys_sigreturn),          // 119
 
-// _____(__NR_clone,             sys__NR_clone),              // 120
-// _____(__NR_setdomainname,     sys__NR_setdomainname),      // 121
-// _____(__NR_uname,             sys__NR_uname),              // 122
-// _____(__NR_modify_ldt,        sys__NR_modify_ldt),         // 123
-// _____(__NR_adjtimex,          sys__NR_adjtimex),           // 124
+// _____(__NR_clone,             sys_clone),              // 120
+// _____(__NR_setdomainname,     sys_setdomainname),      // 121
+   GENXY(__NR_uname,             sys_newuname),           // 122
+// _____(__NR_modify_ldt,        sys_modify_ldt),         // 123
+// _____(__NR_adjtimex,          sys_adjtimex),           // 124
 
-// _____(__NR_mprotect,          sys__NR_mprotect),           // 125
-// _____(__NR_sigprocmask,       sys__NR_sigprocmask),        // 126
-// _____(__NR_create_module,     sys__NR_create_module),      // 127
-// _____(__NR_init_module,       sys__NR_init_module),        // 128
-// _____(__NR_delete_module,     sys__NR_delete_module),      // 129
+// _____(__NR_mprotect,          sys_mprotect),           // 125
+// _____(__NR_sigprocmask,       sys_sigprocmask),        // 126
+// _____(__NR_create_module,     sys_create_module),      // 127
+// _____(__NR_init_module,       sys_init_module),        // 128
+// _____(__NR_delete_module,     sys_delete_module),      // 129
 
-// _____(__NR_get_kernel_syms,   sys__NR_get_kernel_syms),    // 130
-// _____(__NR_quotactl,          sys__NR_quotactl),           // 131
-// _____(__NR_getpgid,           sys__NR_getpgid),            // 132
-// _____(__NR_fchdir,            sys__NR_fchdir),             // 133
-// _____(__NR_bdflush,           sys__NR_bdflush),            // 134
+// _____(__NR_get_kernel_syms,   sys_get_kernel_syms),    // 130
+// _____(__NR_quotactl,          sys_quotactl),           // 131
+// _____(__NR_getpgid,           sys_getpgid),            // 132
+// _____(__NR_fchdir,            sys_fchdir),             // 133
+// _____(__NR_bdflush,           sys_bdflush),            // 134
 
-// _____(__NR_sysfs,             sys__NR_sysfs),              // 135
-// _____(__NR_personality,       sys__NR_personality),        // 136
-// _____(__NR_afs_syscall,       sys__NR_afs_syscall),        // 137
-// _____(__NR_setfsuid,          sys__NR_setfsuid),           // 138
-// _____(__NR_setfsgid,          sys__NR_setfsgid),           // 139
+// _____(__NR_sysfs,             sys_sysfs),              // 135
+// _____(__NR_personality,       sys_personality),        // 136
+// _____(__NR_afs_syscall,       sys_afs_syscall),        // 137
+// _____(__NR_setfsuid,          sys_setfsuid),           // 138
+// _____(__NR_setfsgid,          sys_setfsgid),           // 139
 
-// _____(__NR__llseek,           sys__NR__llseek),            // 140
-// _____(__NR_getdents,          sys__NR_getdents),           // 141
-// _____(__NR__newselect,        sys__NR__newselect),         // 142
-// _____(__NR_flock,             sys__NR_flock),              // 143
-// _____(__NR_msync,             sys__NR_msync),              // 144
+// _____(__NR__llseek,           sys__llseek),            // 140
+// _____(__NR_getdents,          sys_getdents),           // 141
+// _____(__NR__newselect,        sys__newselect),         // 142
+// _____(__NR_flock,             sys_flock),              // 143
+// _____(__NR_msync,             sys_msync),              // 144
 
-// _____(__NR_readv,             sys__NR_readv),              // 145
-// _____(__NR_writev,            sys__NR_writev),             // 146
-// _____(__NR_getsid,            sys__NR_getsid),             // 147
-// _____(__NR_fdatasync,         sys__NR_fdatasync),          // 148
-// _____(__NR__sysctl,           sys__NR__sysctl),            // 149
+// _____(__NR_readv,             sys_readv),              // 145
+// _____(__NR_writev,            sys_writev),             // 146
+// _____(__NR_getsid,            sys_getsid),             // 147
+// _____(__NR_fdatasync,         sys_fdatasync),          // 148
+// _____(__NR__sysctl,           sys__sysctl),            // 149
 
-// _____(__NR_mlock,             sys__NR_mlock),              // 150
-// _____(__NR_munlock,           sys__NR_munlock),            // 151
-// _____(__NR_mlockall,          sys__NR_mlockall),           // 152
-// _____(__NR_munlockall,        sys__NR_munlockall),         // 153
-// _____(__NR_sched_setparam,    sys__NR_sched_setparam),     // 154
+// _____(__NR_mlock,             sys_mlock),              // 150
+// _____(__NR_munlock,           sys_munlock),            // 151
+// _____(__NR_mlockall,          sys_mlockall),           // 152
+// _____(__NR_munlockall,        sys_munlockall),         // 153
+// _____(__NR_sched_setparam,    sys_sched_setparam),     // 154
 
-// _____(__NR_sched_getparam,    sys__NR_sched_getparam),     // 155
-// _____(__NR_sched_setscheduler,      sys__NR_sched_setscheduler),     // 156
-// _____(__NR_sched_getscheduler,      sys__NR_sched_getscheduler),     // 157
-// _____(__NR_sched_yield,             sys__NR_sched_yield),            // 158
-// _____(__NR_sched_get_priority_max,  sys__NR_sched_get_priority_max), // 159
+// _____(__NR_sched_getparam,    sys_sched_getparam),     // 155
+// _____(__NR_sched_setscheduler,      sys_sched_setscheduler),     // 156
+// _____(__NR_sched_getscheduler,      sys_sched_getscheduler),     // 157
+// _____(__NR_sched_yield,             sys_sched_yield),            // 158
+// _____(__NR_sched_get_priority_max,  sys_sched_get_priority_max), // 159
 
-// _____(__NR_sched_get_priority_min,  sys__NR_sched_get_priority_min), // 160
-// _____(__NR_sched_rr_get_interval,   sys__NR_sched_rr_get_interval),  // 161
-// _____(__NR_nanosleep,         sys__NR_nanosleep),          // 162
-// _____(__NR_mremap,            sys__NR_mremap),             // 163
-// _____(__NR_setresuid,         sys__NR_setresuid),          // 164
+// _____(__NR_sched_get_priority_min,  sys_sched_get_priority_min), // 160
+// _____(__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),  // 161
+// _____(__NR_nanosleep,         sys_nanosleep),          // 162
+// _____(__NR_mremap,            sys_mremap),             // 163
+// _____(__NR_setresuid,         sys_setresuid),          // 164
 
-// _____(__NR_getresuid,         sys__NR_getresuid),          // 165
-// _____(__NR_query_module,      sys__NR_query_module),       // 166
-// _____(__NR_poll,              sys__NR_poll),               // 167
-// _____(__NR_nfsservctl,        sys__NR_nfsservctl),         // 168
-// _____(__NR_setresgid,         sys__NR_setresgid),          // 169
+// _____(__NR_getresuid,         sys_getresuid),          // 165
+// _____(__NR_query_module,      sys_query_module),       // 166
+// _____(__NR_poll,              sys_poll),               // 167
+// _____(__NR_nfsservctl,        sys_nfsservctl),         // 168
+// _____(__NR_setresgid,         sys_setresgid),          // 169
 
-// _____(__NR_getresgid,         sys__NR_getresgid),          // 170
-// _____(__NR_prctl,             sys__NR_prctl),              // 171
-// _____(__NR_rt_sigreturn,      sys__NR_rt_sigreturn),       // 172
-// _____(__NR_rt_sigaction,      sys__NR_rt_sigaction),       // 173
-// _____(__NR_rt_sigprocmask,    sys__NR_rt_sigprocmask),     // 174
+// _____(__NR_getresgid,         sys_getresgid),          // 170
+// _____(__NR_prctl,             sys_prctl),              // 171
+// _____(__NR_rt_sigreturn,      sys_rt_sigreturn),       // 172
+// _____(__NR_rt_sigaction,      sys_rt_sigaction),       // 173
+// _____(__NR_rt_sigprocmask,    sys_rt_sigprocmask),     // 174
 
-// _____(__NR_rt_sigpending,     sys__NR_rt_sigpending),      // 175
-// _____(__NR_rt_sigtimedwait,   sys__NR_rt_sigtimedwait),    // 176
-// _____(__NR_rt_sigqueueinfo,   sys__NR_rt_sigqueueinfo),    // 177
-// _____(__NR_rt_sigsuspend,     sys__NR_rt_sigsuspend),      // 178
-// _____(__NR_pread64,           sys__NR_pread64),            // 179
+// _____(__NR_rt_sigpending,     sys_rt_sigpending),      // 175
+// _____(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),    // 176
+// _____(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),    // 177
+// _____(__NR_rt_sigsuspend,     sys_rt_sigsuspend),      // 178
+// _____(__NR_pread64,           sys_pread64),            // 179
 
-// _____(__NR_pwrite64,          sys__NR_pwrite64),           // 180
-// _____(__NR_chown,             sys__NR_chown),              // 181
-// _____(__NR_getcwd,            sys__NR_getcwd),             // 182
-// _____(__NR_capget,            sys__NR_capget),             // 183
-// _____(__NR_capset,            sys__NR_capset),             // 184
+// _____(__NR_pwrite64,          sys_pwrite64),           // 180
+// _____(__NR_chown,             sys_chown),              // 181
+// _____(__NR_getcwd,            sys_getcwd),             // 182
+// _____(__NR_capget,            sys_capget),             // 183
+// _____(__NR_capset,            sys_capset),             // 184
 
-// _____(__NR_sigaltstack,       sys__NR_sigaltstack),        // 185
-// _____(__NR_sendfile,          sys__NR_sendfile),           // 186
-// _____(__NR_getpmsg,           sys__NR_getpmsg),            // 187
-// _____(__NR_putpmsg,           sys__NR_putpmsg),            // 188
-// _____(__NR_vfork,             sys__NR_vfork),              // 189
+// _____(__NR_sigaltstack,       sys_sigaltstack),        // 185
+// _____(__NR_sendfile,          sys_sendfile),           // 186
+// _____(__NR_getpmsg,           sys_getpmsg),            // 187
+// _____(__NR_putpmsg,           sys_putpmsg),            // 188
+// _____(__NR_vfork,             sys_vfork),              // 189
 
-// _____(__NR_ugetrlimit,        sys__NR_ugetrlimit),         // 190
-// _____(__NR_readahead,         sys__NR_readahead),          // 191
+// _____(__NR_ugetrlimit,        sys_ugetrlimit),         // 190
+// _____(__NR_readahead,         sys_readahead),          // 191
 // /* #define __NR_mmap2           192     32bit only */
 // /* #define __NR_truncate64      193     32bit only */
 // /* #define __NR_ftruncate64     194     32bit only */
@@ -1401,102 +1401,102 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // /* #define __NR_stat64          195     32bit only */
 // /* #define __NR_lstat64         196     32bit only */
 // /* #define __NR_fstat64         197     32bit only */
-// _____(__NR_pciconfig_read,    sys__NR_pciconfig_read),     // 198
-// _____(__NR_pciconfig_write,   sys__NR_pciconfig_write),    // 199
+// _____(__NR_pciconfig_read,    sys_pciconfig_read),     // 198
+// _____(__NR_pciconfig_write,   sys_pciconfig_write),    // 199
 
-// _____(__NR_pciconfig_iobase,  sys__NR_pciconfig_iobase),   // 200
-// _____(__NR_multiplexer,       sys__NR_multiplexer),        // 201
-// _____(__NR_getdents64,        sys__NR_getdents64),         // 202
-// _____(__NR_pivot_root,        sys__NR_pivot_root),         // 203
+// _____(__NR_pciconfig_iobase,  sys_pciconfig_iobase),   // 200
+// _____(__NR_multiplexer,       sys_multiplexer),        // 201
+// _____(__NR_getdents64,        sys_getdents64),         // 202
+// _____(__NR_pivot_root,        sys_pivot_root),         // 203
 // /* #define __NR_fcntl64         204     32bit only */
 
-// _____(__NR_madvise,           sys__NR_madvise),            // 205
-// _____(__NR_mincore,           sys__NR_mincore),            // 206
-// _____(__NR_gettid,            sys__NR_gettid),             // 207
-// _____(__NR_tkill,             sys__NR_tkill),              // 208
-// _____(__NR_setxattr,          sys__NR_setxattr),           // 209
+// _____(__NR_madvise,           sys_madvise),            // 205
+// _____(__NR_mincore,           sys_mincore),            // 206
+// _____(__NR_gettid,            sys_gettid),             // 207
+// _____(__NR_tkill,             sys_tkill),              // 208
+// _____(__NR_setxattr,          sys_setxattr),           // 209
 
-// _____(__NR_lsetxattr,         sys__NR_lsetxattr),          // 210
-// _____(__NR_fsetxattr,         sys__NR_fsetxattr),          // 211
-// _____(__NR_getxattr,          sys__NR_getxattr),           // 212
-// _____(__NR_lgetxattr,         sys__NR_lgetxattr),          // 213
-// _____(__NR_fgetxattr,         sys__NR_fgetxattr),          // 214
+// _____(__NR_lsetxattr,         sys_lsetxattr),          // 210
+// _____(__NR_fsetxattr,         sys_fsetxattr),          // 211
+// _____(__NR_getxattr,          sys_getxattr),           // 212
+// _____(__NR_lgetxattr,         sys_lgetxattr),          // 213
+// _____(__NR_fgetxattr,         sys_fgetxattr),          // 214
 
-// _____(__NR_listxattr,         sys__NR_listxattr),          // 215
-// _____(__NR_llistxattr,        sys__NR_llistxattr),         // 216
-// _____(__NR_flistxattr,        sys__NR_flistxattr),         // 217
-// _____(__NR_removexattr,       sys__NR_removexattr),        // 218
-// _____(__NR_lremovexattr,      sys__NR_lremovexattr),       // 219
+// _____(__NR_listxattr,         sys_listxattr),          // 215
+// _____(__NR_llistxattr,        sys_llistxattr),         // 216
+// _____(__NR_flistxattr,        sys_flistxattr),         // 217
+// _____(__NR_removexattr,       sys_removexattr),        // 218
+// _____(__NR_lremovexattr,      sys_lremovexattr),       // 219
 
-// _____(__NR_fremovexattr,      sys__NR_fremovexattr),       // 220
-// _____(__NR_futex,             sys__NR_futex),              // 221
-// _____(__NR_sched_setaffinity, sys__NR_sched_setaffinity),  // 222
-// _____(__NR_sched_getaffinity, sys__NR_sched_getaffinity),  // 223
+// _____(__NR_fremovexattr,      sys_fremovexattr),       // 220
+// _____(__NR_futex,             sys_futex),              // 221
+// _____(__NR_sched_setaffinity, sys_sched_setaffinity),  // 222
+// _____(__NR_sched_getaffinity, sys_sched_getaffinity),  // 223
 // /* 224 currently unused */
 
-// _____(__NR_tuxcall,           sys__NR_tuxcall),            // 225
+// _____(__NR_tuxcall,           sys_tuxcall),            // 225
 // /* #define __NR_sendfile64      226     32bit only */
-// _____(__NR_io_setup,          sys__NR_io_setup),           // 227
-// _____(__NR_io_destroy,        sys__NR_io_destroy),         // 228
-// _____(__NR_io_getevents,      sys__NR_io_getevents),       // 229
+// _____(__NR_io_setup,          sys_io_setup),           // 227
+// _____(__NR_io_destroy,        sys_io_destroy),         // 228
+// _____(__NR_io_getevents,      sys_io_getevents),       // 229
 
-// _____(__NR_io_submit,         sys__NR_io_submit),          // 230
-// _____(__NR_io_cancel,         sys__NR_io_cancel),          // 231
-// _____(__NR_set_tid_address,   sys__NR_set_tid_address),    // 232
-// _____(__NR_fadvise64,         sys__NR_fadvise64),          // 233
-// _____(__NR_exit_group,        sys__NR_exit_group),         // 234
+// _____(__NR_io_submit,         sys_io_submit),          // 230
+// _____(__NR_io_cancel,         sys_io_cancel),          // 231
+// _____(__NR_set_tid_address,   sys_set_tid_address),    // 232
+// _____(__NR_fadvise64,         sys_fadvise64),          // 233
+// _____(__NR_exit_group,        sys_exit_group),         // 234
 
-// _____(__NR_lookup_dcookie,    sys__NR_lookup_dcookie),     // 235
-// _____(__NR_epoll_create,      sys__NR_epoll_create),       // 236
-// _____(__NR_epoll_ctl,         sys__NR_epoll_ctl),          // 237
-// _____(__NR_epoll_wait,        sys__NR_epoll_wait),         // 238
-// _____(__NR_remap_file_pages,  sys__NR_remap_file_pages),   // 239
+// _____(__NR_lookup_dcookie,    sys_lookup_dcookie),     // 235
+// _____(__NR_epoll_create,      sys_epoll_create),       // 236
+// _____(__NR_epoll_ctl,         sys_epoll_ctl),          // 237
+// _____(__NR_epoll_wait,        sys_epoll_wait),         // 238
+// _____(__NR_remap_file_pages,  sys_remap_file_pages),   // 239
 
-// _____(__NR_timer_create,      sys__NR_timer_create),       // 240
-// _____(__NR_timer_settime,     sys__NR_timer_settime),      // 241
-// _____(__NR_timer_gettime,     sys__NR_timer_gettime),      // 242
-// _____(__NR_timer_getoverrun,  sys__NR_timer_getoverrun),   // 243
-// _____(__NR_timer_delete,      sys__NR_timer_delete),       // 244
+// _____(__NR_timer_create,      sys_timer_create),       // 240
+// _____(__NR_timer_settime,     sys_timer_settime),      // 241
+// _____(__NR_timer_gettime,     sys_timer_gettime),      // 242
+// _____(__NR_timer_getoverrun,  sys_timer_getoverrun),   // 243
+// _____(__NR_timer_delete,      sys_timer_delete),       // 244
 
-// _____(__NR_clock_settime,     sys__NR_clock_settime),      // 245
-// _____(__NR_clock_gettime,     sys__NR_clock_gettime),      // 246
-// _____(__NR_clock_getres,      sys__NR_clock_getres),       // 247
-// _____(__NR_clock_nanosleep,   sys__NR_clock_nanosleep),    // 248
-// _____(__NR_swapcontext,       sys__NR_swapcontext),        // 249
+// _____(__NR_clock_settime,     sys_clock_settime),      // 245
+// _____(__NR_clock_gettime,     sys_clock_gettime),      // 246
+// _____(__NR_clock_getres,      sys_clock_getres),       // 247
+// _____(__NR_clock_nanosleep,   sys_clock_nanosleep),    // 248
+// _____(__NR_swapcontext,       sys_swapcontext),        // 249
 
-// _____(__NR_tgkill,            sys__NR_tgkill),             // 250
-// _____(__NR_utimes,            sys__NR_utimes),             // 251
-// _____(__NR_statfs64,          sys__NR_statfs64),           // 252
-// _____(__NR_fstatfs64,         sys__NR_fstatfs64),          // 253
+// _____(__NR_tgkill,            sys_tgkill),             // 250
+// _____(__NR_utimes,            sys_utimes),             // 251
+// _____(__NR_statfs64,          sys_statfs64),           // 252
+// _____(__NR_fstatfs64,         sys_fstatfs64),          // 253
 // /* #define __NR_fadvise64_64    254     32bit only */
 
-// _____(__NR_rtas,              sys__NR_rtas),               // 255
+// _____(__NR_rtas,              sys_rtas),               // 255
 // /* Number 256 is reserved for sys_debug_setcontext */
 // /* Number 257 is reserved for vserver */
 // /* 258 currently unused */
-// _____(__NR_mbind,             sys__NR_mbind),              // 259
+// _____(__NR_mbind,             sys_mbind),              // 259
 
-// _____(__NR_get_mempolicy,     sys__NR_get_mempolicy),      // 260
-// _____(__NR_set_mempolicy,     sys__NR_set_mempolicy),      // 261
-// _____(__NR_mq_open,           sys__NR_mq_open),            // 262
-// _____(__NR_mq_unlink,         sys__NR_mq_unlink),          // 263
-// _____(__NR_mq_timedsend,      sys__NR_mq_timedsend),       // 264
+// _____(__NR_get_mempolicy,     sys_get_mempolicy),      // 260
+// _____(__NR_set_mempolicy,     sys_set_mempolicy),      // 261
+// _____(__NR_mq_open,           sys_mq_open),            // 262
+// _____(__NR_mq_unlink,         sys_mq_unlink),          // 263
+// _____(__NR_mq_timedsend,      sys_mq_timedsend),       // 264
 
-// _____(__NR_mq_timedreceive,   sys__NR_mq_timedreceive),    // 265
-// _____(__NR_mq_notify,         sys__NR_mq_notify),          // 266
-// _____(__NR_mq_getsetattr,     sys__NR_mq_getsetattr),      // 267
-// _____(__NR_kexec_load,        sys__NR_kexec_load),         // 268
-// _____(__NR_add_key,           sys__NR_add_key),            // 269
+// _____(__NR_mq_timedreceive,   sys_mq_timedreceive),    // 265
+// _____(__NR_mq_notify,         sys_mq_notify),          // 266
+// _____(__NR_mq_getsetattr,     sys_mq_getsetattr),      // 267
+// _____(__NR_kexec_load,        sys_kexec_load),         // 268
+// _____(__NR_add_key,           sys_add_key),            // 269
 
-// _____(__NR_request_key,       sys__NR_request_key),        // 270
-// _____(__NR_keyctl,            sys__NR_keyctl),             // 271
-// _____(__NR_waitid,            sys__NR_waitid),             // 272
-// _____(__NR_ioprio_set,        sys__NR_ioprio_set),         // 273
-// _____(__NR_ioprio_get,        sys__NR_ioprio_get),         // 274
+// _____(__NR_request_key,       sys_request_key),        // 270
+// _____(__NR_keyctl,            sys_keyctl),             // 271
+// _____(__NR_waitid,            sys_waitid),             // 272
+// _____(__NR_ioprio_set,        sys_ioprio_set),         // 273
+// _____(__NR_ioprio_get,        sys_ioprio_get),         // 274
 
-// _____(__NR_inotify_init,      sys__NR_inotify_init),       // 275
-// _____(__NR_inotify_add_watch, sys__NR_inotify_add_watch),  // 276
-// _____(__NR_inotify_rm_watch,  sys__NR_inotify_rm_watch)    // 277
+// _____(__NR_inotify_init,      sys_inotify_init),       // 275
+// _____(__NR_inotify_add_watch, sys_inotify_add_watch),  // 276
+// _____(__NR_inotify_rm_watch,  sys_inotify_rm_watch)    // 277
 };
 
 const UInt ML_(syscall_table_size) = 

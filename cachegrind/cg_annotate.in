@@ -497,6 +497,7 @@ sub print_options ()
     print($fancy);
     print($desc);
     print("Command:          $cmd\n");
+    print("Data file:        $input_file\n");
     print("Events recorded:  @events\n");
     print("Events shown:     @show_events\n");
     print("Event sort order: @sort_events\n");

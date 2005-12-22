@@ -395,7 +395,7 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(sz_spill == LibVEX_N_SPILL_BYTES);
    vg_assert(a_vex + 2 * sz_vex == a_spill);
 
-#  if defined(VGA_ppc32)
+#  if defined(VGA_ppc32) || defined(VGA_ppc64)
    /* This is necessary due to the hacky way vex models reservations
       on ppc.  It's really quite incorrect for each thread to have its
       own reservation flag/address, since it's really something that

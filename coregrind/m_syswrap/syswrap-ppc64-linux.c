@@ -400,8 +400,8 @@ void setup_child ( /*OUT*/ ThreadArchState *child,
    PRE/POST wrappers for ppc64/Linux-specific syscalls
    ------------------------------------------------------------------ */
 
-#define PRE(name)       DEFN_PRE_TEMPLATE(ppc32_linux, name)
-#define POST(name)      DEFN_POST_TEMPLATE(ppc32_linux, name)
+#define PRE(name)       DEFN_PRE_TEMPLATE(ppc64_linux, name)
+#define POST(name)      DEFN_POST_TEMPLATE(ppc64_linux, name)
 
 /* Add prototypes for the wrappers declared here, so that gcc doesn't
    harass us for not having prototypes.  Really this is a kludge --
@@ -410,7 +410,7 @@ void setup_child ( /*OUT*/ ThreadArchState *child,
    magic. */
 
 //zz DECL_TEMPLATE(ppc64_linux, sys_socketcall);
-//zz DECL_TEMPLATE(ppc64_linux, sys_mmap);
+DECL_TEMPLATE(ppc64_linux, sys_mmap);
 //zz DECL_TEMPLATE(ppc64_linux, sys_mmap2);
 //zz DECL_TEMPLATE(ppc64_linux, sys_stat64);
 //zz DECL_TEMPLATE(ppc64_linux, sys_lstat64);
@@ -677,23 +677,23 @@ void setup_child ( /*OUT*/ ThreadArchState *child,
 //zz #  undef ARG2_4
 //zz #  undef ARG2_5
 //zz }
-//zz 
-//zz PRE(sys_mmap)
-//zz {
-//zz    SysRes r;
-//zz 
-//zz    PRINT("sys_mmap ( %p, %llu, %d, %d, %d, %d )",
-//zz          ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
-//zz    PRE_REG_READ6(long, "mmap",
-//zz                  unsigned long, start, unsigned long, length,
-//zz                  unsigned long, prot,  unsigned long, flags,
-//zz                  unsigned long, fd,    unsigned long, offset);
-//zz 
-//zz    r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
-//zz                                        (Off64T)ARG6 );
-//zz    SET_STATUS_from_SysRes(r);
-//zz }
-//zz 
+
+PRE(sys_mmap)
+{
+   SysRes r;
+
+   PRINT("sys_mmap ( %p, %llu, %d, %d, %d, %d )",
+         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
+   PRE_REG_READ6(long, "mmap",
+                 unsigned long, start, unsigned long, length,
+                 unsigned long, prot,  unsigned long, flags,
+                 unsigned long, fd,    unsigned long, offset);
+
+   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
+                                       (Off64T)ARG6 );
+   SET_STATUS_from_SysRes(r);
+}
+
 //zz PRE(sys_mmap2)
 //zz {
 //zz    SysRes r;
@@ -1171,10 +1171,10 @@ void setup_child ( /*OUT*/ ThreadArchState *child,
 
 const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_restart_syscall,   sys_restart_syscall),    //   0
-// _____(__NR_exit,              sys_exit),               //   1
+   GENX_(__NR_exit,              sys_exit),               //   1
 // _____(__NR_fork,              sys_fork),               //   2
 // _____(__NR_read,              sys_read),               //   3
-// _____(__NR_write,             sys_write),              //   4
+   GENX_(__NR_write,             sys_write),              //   4
 
 // _____(__NR_open,              sys_open),               //   5
 // _____(__NR_close,             sys_close),              //   6
@@ -1278,8 +1278,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_reboot,            sys_reboot),             //  88
 // _____(__NR_readdir,           sys_readdir),            //  89
 
-// _____(__NR_mmap,              sys_mmap),               //  90
-// _____(__NR_munmap,            sys_munmap),             //  91
+   PLAX_(__NR_mmap,              sys_mmap),               //  90
+   GENXY(__NR_munmap,            sys_munmap),             //  91
 // _____(__NR_truncate,          sys_truncate),           //  92
 // _____(__NR_ftruncate,         sys_ftruncate),          //  93
 // _____(__NR_fchmod,            sys_fchmod),             //  94
@@ -1299,7 +1299,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_getitimer,         sys_getitimer),          // 105
 // _____(__NR_stat,              sys_stat),               // 106
 // _____(__NR_lstat,             sys_lstat),              // 107
-// _____(__NR_fstat,             sys_fstat),              // 108
+   GENXY(__NR_fstat,             sys_newfstat),           // 108
 // _____(__NR_olduname,          sys_olduname),           // 109
 
 // _____(__NR_iopl,              sys_iopl),               // 110
@@ -1450,7 +1450,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_io_cancel,         sys_io_cancel),          // 231
 // _____(__NR_set_tid_address,   sys_set_tid_address),    // 232
 // _____(__NR_fadvise64,         sys_fadvise64),          // 233
-// _____(__NR_exit_group,        sys_exit_group),         // 234
+   LINX_(__NR_exit_group,        sys_exit_group),         // 234
 
 // _____(__NR_lookup_dcookie,    sys_lookup_dcookie),     // 235
 // _____(__NR_epoll_create,      sys_epoll_create),       // 236

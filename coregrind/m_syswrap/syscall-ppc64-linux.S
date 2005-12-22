@@ -1,7 +1,7 @@
 
-##--------------------------------------------------------------------##
-##--- Support for doing system calls.        syscall-ppc64-linux.S ---##
-##--------------------------------------------------------------------##
+/*--------------------------------------------------------------------*/
+/*--- Support for doing system calls.        syscall-ppc64-linux.S ---*/
+/*--------------------------------------------------------------------*/
 
 /*
   This file is part of Valgrind, a dynamic binary instrumentation
@@ -50,7 +50,7 @@
         back to regs->m_gpr[3]/m_xer/m_result on completion.
 
         Returns 0 if the syscall was successfully called (even if the
-        syscall itself failed), or an nonzero error code in the lowest
+        syscall itself failed), or a nonzero error code in the lowest
 	8 bits if one of the sigprocmasks failed (there's no way to
 	determine which one failed).  And there's no obvious way to
 	recover from that either, but nevertheless we want to know.
@@ -139,7 +139,7 @@ ML_(do_syscall_for_client_WRK):
         addi    1,1,80
         blr
 
-	/* failure: return -ve error code */
+	/* failure: return 0x8000 | error code */
 7:	ori	3,3,0x8000	/* FAILURE -- ensure return value is nonzero */
         b       5b
 
@@ -163,6 +163,6 @@ ML_(blksys_finished):  .long 5b
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
 
-##--------------------------------------------------------------------##
-##--- end                                                          ---##
-##--------------------------------------------------------------------##
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

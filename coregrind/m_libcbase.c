@@ -413,6 +413,7 @@ Int VG_(memcmp) ( const void* s1, const void* s2, SizeT n )
    Misc useful functions
    ------------------------------------------------------------------ */
 
+/* Returns the base-2 logarithm of x.  Returns -1 if x is not a power of two. */
 Int VG_(log2) ( Int x ) 
 {
    Int i;

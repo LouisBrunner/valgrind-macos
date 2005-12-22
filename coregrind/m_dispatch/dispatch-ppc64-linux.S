@@ -397,7 +397,7 @@ VG_(run_innerloop__dispatch_profiled):
 	   that holds the value we want to return to the scheduler.
 	   Hence use %r5 transiently for the guest state pointer. */
         ld      5,152(1)         /* original guest_state ptr */
-        std     3,OFFSET_ppc32_CIA(5)
+        std     3,OFFSET_ppc64_CIA(5)
 	mr	3,31		/* r3 = new gsp value */
 	b	.run_innerloop_exit
 	/*NOTREACHED*/

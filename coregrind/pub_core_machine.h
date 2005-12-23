@@ -87,7 +87,7 @@
 //-------------------------------------------------------------
 /* Details about the capabilities of the underlying (host) CPU.  These
    details are acquired by (1) enquiring with the CPU at startup, or
-   (2) from the AT_SYSINFO entries the kernel gave us (ppc32 cache
+   (2) from the AT_SYSINFO entries the kernel gave us (ppc cache
    line size).  It's a bit nasty in the sense that there's no obvious
    way to stop uses of some of this info before it's ready to go.
 

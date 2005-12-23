@@ -31,7 +31,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_debuglog.h"
-#include "pub_core_machine.h"    // ppc32: VG_(cache_line_size_ppc32)
+#include "pub_core_machine.h"    // For VG(machine_get_VexArchInfo)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -742,7 +742,7 @@ static void invalidate_icache ( void *ptr, Int nbytes )
    VexArchInfo vai;
 
    VG_(machine_get_VexArchInfo)( NULL, &vai );
-   cls = vai.ppc32_cache_line_szB;
+   cls = vai.ppc_cache_line_szB;
 
    /* Stay sane .. */
    vg_assert(cls == 32 || cls == 128);

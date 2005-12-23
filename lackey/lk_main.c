@@ -36,7 +36,7 @@
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_options.h"
-
+#include "pub_tool_machine.h"     // VG_(fnptr_to_fnentry)
 
 /* The name of the function of which the number of calls is to be
  * counted, with default. Override with command line option
@@ -196,7 +196,9 @@ static void instrument_detail(IRBB* bb, Op op, IRType type)
    tl_assert(typeIx < N_TYPES);
 
    argv = mkIRExprVec_1( mkIRExpr_HWord( (HWord)&detailCounts[op][typeIx] ) );
-   di = unsafeIRDirty_0_N( 1, "increment_detail", &increment_detail, argv);
+   di = unsafeIRDirty_0_N( 1, "increment_detail",
+                              VG_(fnptr_to_fnentry)( &increment_detail ), 
+                              argv);
    addStmtToIRBB( bb, IRStmt_Dirty(di) );
 }
 
@@ -264,7 +266,8 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
    }
 
    /* Count this basic block. */
-   di = unsafeIRDirty_0_N( 0, "add_one_BB_entered", &add_one_BB_entered,
+   di = unsafeIRDirty_0_N( 0, "add_one_BB_entered", 
+                              VG_(fnptr_to_fnentry)( &add_one_BB_entered ),
                               mkIRExprVec_0() );
    addStmtToIRBB( bb, IRStmt_Dirty(di) );
 
@@ -273,7 +276,8 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
       if (!st || st->tag == Ist_NoOp) continue;
 
       /* Count one VEX statement. */
-      di = unsafeIRDirty_0_N( 0, "add_one_IRStmt", &add_one_IRStmt, 
+      di = unsafeIRDirty_0_N( 0, "add_one_IRStmt", 
+                                 VG_(fnptr_to_fnentry)( &add_one_IRStmt ), 
                                  mkIRExprVec_0() );
       addStmtToIRBB( bb, IRStmt_Dirty(di) );
       
@@ -281,7 +285,7 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
          case Ist_IMark:
             /* Count guest instruction. */
             di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
-                                       &add_one_guest_instr, 
+                                       VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
                                        mkIRExprVec_0() );
             addStmtToIRBB( bb, IRStmt_Dirty(di) );
             
@@ -302,9 +306,10 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
             if (VG_(get_fnname_if_entry)(st->Ist.IMark.addr, 
                                          fnname, sizeof(fnname))
                 && 0 == VG_(strcmp)(fnname, lk_clo_fnname)) {
-               di = unsafeIRDirty_0_N( 0, "add_one_func_call", 
-                                          &add_one_func_call, 
-                                          mkIRExprVec_0() );
+               di = unsafeIRDirty_0_N( 
+                       0, "add_one_func_call", 
+                          VG_(fnptr_to_fnentry)( &add_one_func_call ), 
+                          mkIRExprVec_0() );
                addStmtToIRBB( bb, IRStmt_Dirty(di) );
             }
             addStmtToIRBB( bb, st );
@@ -312,7 +317,8 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
 
          case Ist_Exit:
             /* Count Jcc */
-            di = unsafeIRDirty_0_N( 0, "add_one_Jcc", &add_one_Jcc, 
+            di = unsafeIRDirty_0_N( 0, "add_one_Jcc", 
+                                       VG_(fnptr_to_fnentry)( &add_one_Jcc ), 
                                        mkIRExprVec_0() );
             addStmtToIRBB( bb, IRStmt_Dirty(di) );
 
@@ -320,7 +326,8 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
 
             /* Count non-taken Jcc */
             di = unsafeIRDirty_0_N( 0, "add_one_Jcc_untaken", 
-                                       &add_one_Jcc_untaken, mkIRExprVec_0() );
+                                       VG_(fnptr_to_fnentry)( &add_one_Jcc_untaken ),
+                                       mkIRExprVec_0() );
             addStmtToIRBB( bb, IRStmt_Dirty(di) );
             break;
 
@@ -374,7 +381,8 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
 
    /* Count this basic block. */
    di = unsafeIRDirty_0_N( 0, "add_one_BB_completed", 
-                              &add_one_BB_completed, mkIRExprVec_0() );
+                              VG_(fnptr_to_fnentry)( &add_one_BB_completed ), 
+                              mkIRExprVec_0() );
    addStmtToIRBB( bb, IRStmt_Dirty(di) );
 
    return bb;

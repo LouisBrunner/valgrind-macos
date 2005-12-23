@@ -123,9 +123,9 @@ VEX_PRIMARY_SOURCES = \
 	VEX/priv/ir/irdefs.c \
 	VEX/priv/ir/iropt.c \
 	VEX/priv/ir/iropt.h \
-	VEX/priv/host-ppc32/isel.c \
-	VEX/priv/host-ppc32/hdefs.c \
-	VEX/priv/host-ppc32/hdefs.h \
+	VEX/priv/host-ppc/isel.c \
+	VEX/priv/host-ppc/hdefs.c \
+	VEX/priv/host-ppc/hdefs.h \
 	VEX/priv/main/vex_svnversion.h \
 	VEX/priv/main/vex_globals.c \
 	VEX/priv/main/vex_globals.h \
@@ -151,9 +151,9 @@ VEX_PRIMARY_SOURCES = \
 	VEX/priv/guest-amd64/ghelpers.c \
 	VEX/priv/guest-amd64/gdefs.h \
 	VEX/priv/guest-amd64/toIR.c \
-	VEX/priv/guest-ppc32/ghelpers.c \
-	VEX/priv/guest-ppc32/gdefs.h \
-	VEX/priv/guest-ppc32/toIR.c \
+	VEX/priv/guest-ppc/ghelpers.c \
+	VEX/priv/guest-ppc/gdefs.h \
+	VEX/priv/guest-ppc/toIR.c \
 	VEX/priv/host-generic/reg_alloc2.c \
 	VEX/priv/host-generic/h_generic_regs.c \
 	VEX/priv/host-generic/h_generic_regs.h \

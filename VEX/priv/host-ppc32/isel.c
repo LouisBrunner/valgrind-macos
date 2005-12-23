@@ -74,7 +74,8 @@ static Bool mode64 = False;
   GPR11      if mode64: not used - calls by ptr / env ptr for some langs
   GPR12      if mode64: not used - exceptions / global linkage code
   GPR13      not used - Thread-specific pointer
-  GPR14:29   Allocateable
+  GPR14:28   Allocateable
+  GPR29      Unused by us (reserved for the dispatcher)
   GPR30      AltiVec temp spill register
   GPR31      GuestStatePointer
 

@@ -30,10 +30,11 @@
 */
 
 #include "pub_tool_basics.h"
-#include "pub_tool_hashtable.h"     // For mac_shared.h
+#include "pub_tool_hashtable.h"   // For mac_shared.h
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_tooliface.h"
+#include "pub_tool_machine.h"     // VG_(fnptr_to_fnentry)
 #include "mc_include.h"
 
 
@@ -845,39 +846,44 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
 
    switch (sz) {
       case 0:
-         di = unsafeIRDirty_0_N( 0/*regparms*/, 
-                                 "MC_(helperc_value_check0_fail)",
-                                 &MC_(helperc_value_check0_fail),
-                                 mkIRExprVec_0() 
-                               );
+         di = unsafeIRDirty_0_N( 
+                 0/*regparms*/, 
+                 "MC_(helperc_value_check0_fail)",
+                 VG_(fnptr_to_fnentry)( &MC_(helperc_value_check0_fail) ),
+                 mkIRExprVec_0() 
+              );
          break;
       case 1:
-         di = unsafeIRDirty_0_N( 0/*regparms*/, 
-                                 "MC_(helperc_value_check1_fail)",
-                                 &MC_(helperc_value_check1_fail),
-                                 mkIRExprVec_0() 
-                               );
+         di = unsafeIRDirty_0_N( 
+                 0/*regparms*/, 
+                 "MC_(helperc_value_check1_fail)",
+                 VG_(fnptr_to_fnentry)( &MC_(helperc_value_check1_fail) ),
+                 mkIRExprVec_0() 
+              );
          break;
       case 4:
-         di = unsafeIRDirty_0_N( 0/*regparms*/, 
-                                 "MC_(helperc_value_check4_fail)",
-                                 &MC_(helperc_value_check4_fail),
-                                 mkIRExprVec_0() 
-                               );
+         di = unsafeIRDirty_0_N( 
+                 0/*regparms*/, 
+                 "MC_(helperc_value_check4_fail)",
+                 VG_(fnptr_to_fnentry)( &MC_(helperc_value_check4_fail) ),
+                 mkIRExprVec_0() 
+              );
          break;
       case 8:
-         di = unsafeIRDirty_0_N( 0/*regparms*/, 
-                                 "MC_(helperc_value_check8_fail)",
-                                 &MC_(helperc_value_check8_fail),
-                                 mkIRExprVec_0() 
-                               );
+         di = unsafeIRDirty_0_N( 
+                 0/*regparms*/, 
+                 "MC_(helperc_value_check8_fail)",
+                 VG_(fnptr_to_fnentry)( &MC_(helperc_value_check8_fail) ),
+                 mkIRExprVec_0() 
+              );
          break;
       default:
-         di = unsafeIRDirty_0_N( 1/*regparms*/, 
-                                 "MC_(helperc_complain_undef)",
-                                 &MC_(helperc_complain_undef),
-                                 mkIRExprVec_1( mkIRExpr_HWord( sz ))
-                               );
+         di = unsafeIRDirty_0_N( 
+                 1/*regparms*/, 
+                 "MC_(helperc_complain_undef)",
+                 VG_(fnptr_to_fnentry)( &MC_(helperc_complain_undef) ),
+                 mkIRExprVec_1( mkIRExpr_HWord( sz ))
+              );
          break;
    }
    di->guard = cond;
@@ -2331,7 +2337,8 @@ IRAtom* expr2vbits_Load_WRK ( MCEnv* mce,
       read. */
    datavbits = newIRTemp(mce->bb->tyenv, ty);
    di = unsafeIRDirty_1_N( datavbits, 
-                           1/*regparms*/, hname, helper, 
+                           1/*regparms*/, 
+                           hname, VG_(fnptr_to_fnentry)( helper ), 
                            mkIRExprVec_1( addrAct ));
    setHelperAnns( mce, di );
    stmt( mce->bb, IRStmt_Dirty(di) );
@@ -2594,16 +2601,18 @@ void do_shadow_Store ( MCEnv* mce,
       addrLo64  = assignNew(mce, tyAddr, binop(mkAdd, addr, eBiasLo64) );
       vdataLo64 = assignNew(mce, Ity_I64, unop(Iop_V128to64, vdata));
       diLo64    = unsafeIRDirty_0_N( 
-                     1/*regparms*/, hname, helper, 
-                     mkIRExprVec_2( addrLo64, vdataLo64 ));
-
+                     1/*regparms*/, 
+                     hname, VG_(fnptr_to_fnentry)( helper ), 
+                     mkIRExprVec_2( addrLo64, vdataLo64 )
+                  );
       eBiasHi64 = tyAddr==Ity_I32 ? mkU32(bias+offHi64) : mkU64(bias+offHi64);
       addrHi64  = assignNew(mce, tyAddr, binop(mkAdd, addr, eBiasHi64) );
       vdataHi64 = assignNew(mce, Ity_I64, unop(Iop_V128HIto64, vdata));
       diHi64    = unsafeIRDirty_0_N( 
-                     1/*regparms*/, hname, helper, 
-                     mkIRExprVec_2( addrHi64, vdataHi64 ));
-
+                     1/*regparms*/, 
+                     hname, VG_(fnptr_to_fnentry)( helper ), 
+                     mkIRExprVec_2( addrHi64, vdataHi64 )
+                  );
       setHelperAnns( mce, diLo64 );
       setHelperAnns( mce, diHi64 );
       stmt( mce->bb, IRStmt_Dirty(diLo64) );
@@ -2625,13 +2634,17 @@ void do_shadow_Store ( MCEnv* mce,
             the back ends aren't clever enough to handle 64-bit
             regparm args.  Therefore be different. */
          di = unsafeIRDirty_0_N( 
-                 1/*regparms*/, hname, helper, 
-                 mkIRExprVec_2( addrAct, vdata ));
+                 1/*regparms*/, 
+                 hname, VG_(fnptr_to_fnentry)( helper ), 
+                 mkIRExprVec_2( addrAct, vdata )
+              );
       } else {
          di = unsafeIRDirty_0_N( 
-                 2/*regparms*/, hname, helper, 
+                 2/*regparms*/, 
+                 hname, VG_(fnptr_to_fnentry)( helper ), 
                  mkIRExprVec_2( addrAct,
-                                zwidenToHostWord( mce, vdata )));
+                                zwidenToHostWord( mce, vdata ))
+              );
       }
       setHelperAnns( mce, di );
       stmt( mce->bb, IRStmt_Dirty(di) );
@@ -2849,7 +2862,7 @@ void do_AbiHint ( MCEnv* mce, IRExpr* base, Int len )
    di = unsafeIRDirty_0_N(
            0/*regparms*/,
            "MC_(helperc_MAKE_STACK_UNINIT)",
-           &MC_(helperc_MAKE_STACK_UNINIT),
+           VG_(fnptr_to_fnentry)( &MC_(helperc_MAKE_STACK_UNINIT) ),
            mkIRExprVec_2( base, mkIRExpr_HWord( (UInt)len) )
         );
    stmt( mce->bb, IRStmt_Dirty(di) );

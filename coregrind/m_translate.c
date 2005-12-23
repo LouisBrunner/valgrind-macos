@@ -241,7 +241,8 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
          dcall = unsafeIRDirty_0_N(                                     \
                     1/*regparms*/,                                      \
                     "track_" #kind "_mem_stack_" #syze,                 \
-                    VG_(tdict).track_##kind##_mem_stack_##syze,         \
+                    VG_(fnptr_to_fnentry)(                              \
+                       VG_(tdict).track_##kind##_mem_stack_##syze ),    \
                     mkIRExprVec_1(IRExpr_Tmp(tmpp))                     \
                  );                                                     \
          dcall->nFxState = 1;                                           \
@@ -341,7 +342,8 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
 
          dcall = unsafeIRDirty_0_N( 
                     2/*regparms*/, 
-                    "VG_(unknown_SP_update)", &VG_(unknown_SP_update),
+                    "VG_(unknown_SP_update)", 
+                    VG_(fnptr_to_fnentry)( &VG_(unknown_SP_update) ),
                     mkIRExprVec_2( IRExpr_Tmp(old_SP), st->Ist.Put.data ) 
                  );
          addStmtToIRBB( bb, IRStmt_Dirty(dcall) );

@@ -2401,6 +2401,12 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
          return;
       }
 
+      /* 64HLto128(e1,e2) */
+      case Iop_64HLto128:
+         *rHi = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         *rLo = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         return;
+
       default: 
          break;
       }

@@ -42,6 +42,7 @@
 #include "pub_tool_oset.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_clientstate.h"
+#include "pub_tool_machine.h"      // VG_(fnptr_to_fnentry)
 
 #include "cg_arch.h"
 #include "cg_sim.c"
@@ -627,7 +628,9 @@ static void flushEvents ( CgState* cgs )
       tl_assert(helperName);
       tl_assert(helperAddr);
       tl_assert(argv);
-      di = unsafeIRDirty_0_N( regparms, helperName, helperAddr, argv);
+      di = unsafeIRDirty_0_N( regparms, 
+                              helperName, VG_(fnptr_to_fnentry)( helperAddr ), 
+                              argv );
       addStmtToIRBB( cgs->bbOut, IRStmt_Dirty(di) );
    }
 

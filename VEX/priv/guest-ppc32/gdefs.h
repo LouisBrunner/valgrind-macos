@@ -47,25 +47,25 @@
 /* Only to be used within the guest-ppc32 directory. */
 
 
-#ifndef __LIBVEX_GUEST_PPC32_DEFS_H
-#define __LIBVEX_GUEST_PPC32_DEFS_H
+#ifndef __LIBVEX_GUEST_PPC_DEFS_H
+#define __LIBVEX_GUEST_PPC_DEFS_H
 
 
 /*---------------------------------------------------------*/
-/*--- ppc32 to IR conversion                            ---*/
+/*--- ppc to IR conversion                              ---*/
 /*---------------------------------------------------------*/
 
-/* Convert one ppc32 insn to IR.  See the type DisOneInstrFn in
+/* Convert one ppc insn to IR.  See the type DisOneInstrFn in
    bb_to_IR.h. */
 extern
-DisResult disInstr_PPC32 ( IRBB*        irbb,
-                           Bool         put_IP,
-                           Bool         (*resteerOkFn) ( Addr64 ),
-                           UChar*       guest_code,
-                           Long         delta,
-                           Addr64       guest_IP,
-                           VexArchInfo* archinfo,
-                           Bool         host_bigendian );
+DisResult disInstr_PPC ( IRBB*        irbb,
+                         Bool         put_IP,
+                         Bool         (*resteerOkFn) ( Addr64 ),
+                         UChar*       guest_code,
+                         Long         delta,
+                         Addr64       guest_IP,
+                         VexArchInfo* archinfo,
+                         Bool         host_bigendian );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
@@ -95,46 +95,46 @@ VexGuestLayout ppc64Guest_layout;
 /* FP Rounding mode - different encoding to IR */
 typedef
    enum {
-      PPC32rm_NEAREST = 0,
-      PPC32rm_NegINF  = 1,
-      PPC32rm_PosINF  = 2,
-      PPC32rm_ZERO    = 3
-   } PPC32RoundingMode;
+      PPCrm_NEAREST = 0,
+      PPCrm_NegINF  = 1,
+      PPCrm_PosINF  = 2,
+      PPCrm_ZERO    = 3
+   } PPCRoundingMode;
 
 /* Floating point comparison values - different encoding to IR */
 typedef
    enum {
-      PPC32cr_LT = 0x8,
-      PPC32cr_GT = 0x4,
-      PPC32cr_EQ = 0x2,
-      PPC32cr_UN = 0x1
+      PPCcr_LT = 0x8,
+      PPCcr_GT = 0x4,
+      PPCcr_EQ = 0x2,
+      PPCcr_UN = 0x1
    }
-   PPC32CmpF64Result;
+   PPCCmpF64Result;
 
 /*
   Enumeration for xer_ca/ov calculation helper functions
 */
 enum {
-   /* 0  */ PPC32G_FLAG_OP_ADD=0,   // addc[o], addic
-   /* 1  */ PPC32G_FLAG_OP_ADDE,    // adde[o], addme[o], addze[o]
-   /* 2  */ PPC32G_FLAG_OP_DIVW,    // divwo
-   /* 3  */ PPC32G_FLAG_OP_DIVWU,   // divwuo
-   /* 4  */ PPC32G_FLAG_OP_MULLW,   // mullwo
-   /* 5  */ PPC32G_FLAG_OP_NEG,     // nego
-   /* 6  */ PPC32G_FLAG_OP_SUBF,    // subfo
-   /* 7  */ PPC32G_FLAG_OP_SUBFC,   // subfc[o]
-   /* 8  */ PPC32G_FLAG_OP_SUBFE,   // subfe[o], subfme[o], subfze[o]
-   /* 9  */ PPC32G_FLAG_OP_SUBFI,   // subfic
-   /* 10 */ PPC32G_FLAG_OP_SRAW,    // sraw
-   /* 11 */ PPC32G_FLAG_OP_SRAWI,   // srawi
-   /* 12 */ PPC32G_FLAG_OP_SRAD,    // srad
-   /* 13 */ PPC32G_FLAG_OP_SRADI,   // sradi
-   PPC32G_FLAG_OP_NUMBER
+   /* 0  */ PPCG_FLAG_OP_ADD=0,   // addc[o], addic
+   /* 1  */ PPCG_FLAG_OP_ADDE,    // adde[o], addme[o], addze[o]
+   /* 2  */ PPCG_FLAG_OP_DIVW,    // divwo
+   /* 3  */ PPCG_FLAG_OP_DIVWU,   // divwuo
+   /* 4  */ PPCG_FLAG_OP_MULLW,   // mullwo
+   /* 5  */ PPCG_FLAG_OP_NEG,     // nego
+   /* 6  */ PPCG_FLAG_OP_SUBF,    // subfo
+   /* 7  */ PPCG_FLAG_OP_SUBFC,   // subfc[o]
+   /* 8  */ PPCG_FLAG_OP_SUBFE,   // subfe[o], subfme[o], subfze[o]
+   /* 9  */ PPCG_FLAG_OP_SUBFI,   // subfic
+   /* 10 */ PPCG_FLAG_OP_SRAW,    // sraw
+   /* 11 */ PPCG_FLAG_OP_SRAWI,   // srawi
+   /* 12 */ PPCG_FLAG_OP_SRAD,    // srad
+   /* 13 */ PPCG_FLAG_OP_SRADI,   // sradi
+   PPCG_FLAG_OP_NUMBER
 };
 
 
 /*---------------------------------------------------------*/
-/*--- ppc32 guest helpers                               ---*/
+/*--- ppc guest helpers                                 ---*/
 /*---------------------------------------------------------*/
 
 /* --- CLEAN HELPERS --- */
@@ -143,13 +143,17 @@ enum {
 
 /* --- DIRTY HELPERS --- */
 
-extern ULong ppc32g_dirtyhelper_MFTB ( void );
+extern ULong ppcg_dirtyhelper_MFTB ( void );
 
 extern void ppc32g_dirtyhelper_LVS ( VexGuestPPC32State* gst,
                                      UInt vD_idx, UInt sh,
                                      UInt shift_right );
 
-#endif /* ndef __LIBVEX_GUEST_PPC32_DEFS_H */
+extern void ppc64g_dirtyhelper_LVS ( VexGuestPPC64State* gst,
+                                     UInt vD_idx, UInt sh,
+                                     UInt shift_right );
+
+#endif /* ndef __LIBVEX_GUEST_PPC_DEFS_H */
 
 /*---------------------------------------------------------------*/
 /*--- end                                 guest-ppc32/gdefs.h ---*/

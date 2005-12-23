@@ -44,8 +44,8 @@
    without prior written permission.
 */
 
-#ifndef __LIBVEX_HOST_PPC32_HDEFS_H
-#define __LIBVEX_HOST_PPC32_HDEFS_H
+#ifndef __LIBVEX_HOST_PPC_HDEFS_H
+#define __LIBVEX_HOST_PPC_HDEFS_H
 
 /* Num registers used for function calls */
 #define PPC_N_REGPARMS 8
@@ -57,7 +57,7 @@
    32 real float regs, and 32 real vector regs. 
 */
 
-extern void ppHRegPPC32 ( HReg );
+extern void ppHRegPPC ( HReg );
 
 extern HReg hregPPC_GPR0  ( Bool mode64 ); // scratch reg / zero reg
 extern HReg hregPPC_GPR1  ( Bool mode64 ); // Stack Frame Pointer
@@ -70,9 +70,9 @@ extern HReg hregPPC_GPR7  ( Bool mode64 );
 extern HReg hregPPC_GPR8  ( Bool mode64 );
 extern HReg hregPPC_GPR9  ( Bool mode64 );
 extern HReg hregPPC_GPR10 ( Bool mode64 );
-extern HReg hregPPC_GPR11 ( Bool mode64 ); // not used: calls by ptr / env ptr for some langs
-extern HReg hregPPC_GPR12 ( Bool mode64 ); // not used: exception handling and global linkage code
-extern HReg hregPPC_GPR13 ( Bool mode64 ); // not used: thread specific pointer
+extern HReg hregPPC_GPR11 ( Bool mode64 );
+extern HReg hregPPC_GPR12 ( Bool mode64 );
+extern HReg hregPPC_GPR13 ( Bool mode64 );
 extern HReg hregPPC_GPR14 ( Bool mode64 );
 extern HReg hregPPC_GPR15 ( Bool mode64 );
 extern HReg hregPPC_GPR16 ( Bool mode64 );
@@ -89,74 +89,74 @@ extern HReg hregPPC_GPR26 ( Bool mode64 );
 extern HReg hregPPC_GPR27 ( Bool mode64 );
 extern HReg hregPPC_GPR28 ( Bool mode64 );
 extern HReg hregPPC_GPR29 ( Bool mode64 ); // reserved for dispatcher
-extern HReg hregPPC_GPR30 ( Bool mode64 ); // we use as VMX spill temporary
+extern HReg hregPPC_GPR30 ( Bool mode64 ); // used as VMX spill temp
 extern HReg hregPPC_GPR31 ( Bool mode64 ); // GuestStatePtr (callee-saved)
 
-extern HReg hregPPC32_FPR0  ( void );
-extern HReg hregPPC32_FPR1  ( void );
-extern HReg hregPPC32_FPR2  ( void );
-extern HReg hregPPC32_FPR3  ( void );
-extern HReg hregPPC32_FPR4  ( void );
-extern HReg hregPPC32_FPR5  ( void );
-extern HReg hregPPC32_FPR6  ( void );
-extern HReg hregPPC32_FPR7  ( void );
-extern HReg hregPPC32_FPR8  ( void );
-extern HReg hregPPC32_FPR9  ( void );
-extern HReg hregPPC32_FPR10 ( void );
-extern HReg hregPPC32_FPR11 ( void );
-extern HReg hregPPC32_FPR12 ( void );
-extern HReg hregPPC32_FPR13 ( void );
-extern HReg hregPPC32_FPR14 ( void );
-extern HReg hregPPC32_FPR15 ( void );
-extern HReg hregPPC32_FPR16 ( void );
-extern HReg hregPPC32_FPR17 ( void );
-extern HReg hregPPC32_FPR18 ( void );
-extern HReg hregPPC32_FPR19 ( void );
-extern HReg hregPPC32_FPR20 ( void );
-extern HReg hregPPC32_FPR21 ( void );
-extern HReg hregPPC32_FPR22 ( void );
-extern HReg hregPPC32_FPR23 ( void );
-extern HReg hregPPC32_FPR24 ( void );
-extern HReg hregPPC32_FPR25 ( void );
-extern HReg hregPPC32_FPR26 ( void );
-extern HReg hregPPC32_FPR27 ( void );
-extern HReg hregPPC32_FPR28 ( void );
-extern HReg hregPPC32_FPR29 ( void );
-extern HReg hregPPC32_FPR30 ( void );
-extern HReg hregPPC32_FPR31 ( void );
+extern HReg hregPPC_FPR0  ( void );
+extern HReg hregPPC_FPR1  ( void );
+extern HReg hregPPC_FPR2  ( void );
+extern HReg hregPPC_FPR3  ( void );
+extern HReg hregPPC_FPR4  ( void );
+extern HReg hregPPC_FPR5  ( void );
+extern HReg hregPPC_FPR6  ( void );
+extern HReg hregPPC_FPR7  ( void );
+extern HReg hregPPC_FPR8  ( void );
+extern HReg hregPPC_FPR9  ( void );
+extern HReg hregPPC_FPR10 ( void );
+extern HReg hregPPC_FPR11 ( void );
+extern HReg hregPPC_FPR12 ( void );
+extern HReg hregPPC_FPR13 ( void );
+extern HReg hregPPC_FPR14 ( void );
+extern HReg hregPPC_FPR15 ( void );
+extern HReg hregPPC_FPR16 ( void );
+extern HReg hregPPC_FPR17 ( void );
+extern HReg hregPPC_FPR18 ( void );
+extern HReg hregPPC_FPR19 ( void );
+extern HReg hregPPC_FPR20 ( void );
+extern HReg hregPPC_FPR21 ( void );
+extern HReg hregPPC_FPR22 ( void );
+extern HReg hregPPC_FPR23 ( void );
+extern HReg hregPPC_FPR24 ( void );
+extern HReg hregPPC_FPR25 ( void );
+extern HReg hregPPC_FPR26 ( void );
+extern HReg hregPPC_FPR27 ( void );
+extern HReg hregPPC_FPR28 ( void );
+extern HReg hregPPC_FPR29 ( void );
+extern HReg hregPPC_FPR30 ( void );
+extern HReg hregPPC_FPR31 ( void );
 
-extern HReg hregPPC32_VR0  ( void );
-extern HReg hregPPC32_VR1  ( void );
-extern HReg hregPPC32_VR2  ( void );
-extern HReg hregPPC32_VR3  ( void );
-extern HReg hregPPC32_VR4  ( void );
-extern HReg hregPPC32_VR5  ( void );
-extern HReg hregPPC32_VR6  ( void );
-extern HReg hregPPC32_VR7  ( void );
-extern HReg hregPPC32_VR8  ( void );
-extern HReg hregPPC32_VR9  ( void );
-extern HReg hregPPC32_VR10 ( void );
-extern HReg hregPPC32_VR11 ( void );
-extern HReg hregPPC32_VR12 ( void );
-extern HReg hregPPC32_VR13 ( void );
-extern HReg hregPPC32_VR14 ( void );
-extern HReg hregPPC32_VR15 ( void );
-extern HReg hregPPC32_VR16 ( void );
-extern HReg hregPPC32_VR17 ( void );
-extern HReg hregPPC32_VR18 ( void );
-extern HReg hregPPC32_VR19 ( void );
-extern HReg hregPPC32_VR20 ( void );
-extern HReg hregPPC32_VR21 ( void );
-extern HReg hregPPC32_VR22 ( void );
-extern HReg hregPPC32_VR23 ( void );
-extern HReg hregPPC32_VR24 ( void );
-extern HReg hregPPC32_VR25 ( void );
-extern HReg hregPPC32_VR26 ( void );
-extern HReg hregPPC32_VR27 ( void );
-extern HReg hregPPC32_VR28 ( void );
-extern HReg hregPPC32_VR29 ( void );
-extern HReg hregPPC32_VR30 ( void );
-extern HReg hregPPC32_VR31 ( void );
+extern HReg hregPPC_VR0  ( void );
+extern HReg hregPPC_VR1  ( void );
+extern HReg hregPPC_VR2  ( void );
+extern HReg hregPPC_VR3  ( void );
+extern HReg hregPPC_VR4  ( void );
+extern HReg hregPPC_VR5  ( void );
+extern HReg hregPPC_VR6  ( void );
+extern HReg hregPPC_VR7  ( void );
+extern HReg hregPPC_VR8  ( void );
+extern HReg hregPPC_VR9  ( void );
+extern HReg hregPPC_VR10 ( void );
+extern HReg hregPPC_VR11 ( void );
+extern HReg hregPPC_VR12 ( void );
+extern HReg hregPPC_VR13 ( void );
+extern HReg hregPPC_VR14 ( void );
+extern HReg hregPPC_VR15 ( void );
+extern HReg hregPPC_VR16 ( void );
+extern HReg hregPPC_VR17 ( void );
+extern HReg hregPPC_VR18 ( void );
+extern HReg hregPPC_VR19 ( void );
+extern HReg hregPPC_VR20 ( void );
+extern HReg hregPPC_VR21 ( void );
+extern HReg hregPPC_VR22 ( void );
+extern HReg hregPPC_VR23 ( void );
+extern HReg hregPPC_VR24 ( void );
+extern HReg hregPPC_VR25 ( void );
+extern HReg hregPPC_VR26 ( void );
+extern HReg hregPPC_VR27 ( void );
+extern HReg hregPPC_VR28 ( void );
+extern HReg hregPPC_VR29 ( void );
+extern HReg hregPPC_VR30 ( void );
+extern HReg hregPPC_VR31 ( void );
 
 #define StackFramePtr(_mode64) hregPPC_GPR1(_mode64)
 #define GuestStatePtr(_mode64) hregPPC_GPR31(_mode64)
@@ -175,7 +175,7 @@ typedef
       Pcf_7EQ  = 30,  /* zero | equal       */
       Pcf_7SO  = 31   /* summary overflow   */
    }
-   PPC32CondFlag;
+   PPCCondFlag;
 
 typedef
    enum {   /* Maps bc bitfield BO */
@@ -183,22 +183,22 @@ typedef
       Pct_TRUE   = 0xC,
       Pct_ALWAYS = 0x14
    }
-   PPC32CondTest;
+   PPCCondTest;
 
 typedef
    struct {
-      PPC32CondFlag flag;
-      PPC32CondTest test;
+      PPCCondFlag flag;
+      PPCCondTest test;
    }
-   PPC32CondCode;
+   PPCCondCode;
 
-extern HChar* showPPC32CondCode ( PPC32CondCode );
+extern HChar* showPPCCondCode ( PPCCondCode );
 
 /* constructor */
-extern PPC32CondCode mk_PPCCondCode ( PPC32CondTest, PPC32CondFlag );
+extern PPCCondCode mk_PPCCondCode ( PPCCondTest, PPCCondFlag );
 
 /* false->true, true->false */
-extern PPC32CondTest invertCondTest ( PPC32CondTest );
+extern PPCCondTest invertCondTest ( PPCCondTest );
 
 
 
@@ -210,11 +210,11 @@ typedef
      Pam_IR,        /* Immediate (signed 16-bit) + Reg */
      Pam_RR         /* Reg1 + Reg2     */
    }
-   PPC32AModeTag;
+   PPCAModeTag;
 
 typedef
    struct {
-      PPC32AModeTag tag;
+      PPCAModeTag tag;
       union {
          struct {
             HReg base;
@@ -226,14 +226,14 @@ typedef
          } RR;
       } Pam;
    }
-   PPC32AMode;
+   PPCAMode;
 
-extern PPC32AMode* PPC32AMode_IR ( Int,  HReg );
-extern PPC32AMode* PPC32AMode_RR ( HReg, HReg );
+extern PPCAMode* PPCAMode_IR ( Int,  HReg );
+extern PPCAMode* PPCAMode_RR ( HReg, HReg );
 
-extern PPC32AMode* dopyPPC32AMode ( PPC32AMode* );
+extern PPCAMode* dopyPPCAMode ( PPCAMode* );
 
-extern void ppPPC32AMode ( PPC32AMode* );
+extern void ppPPCAMode ( PPCAMode* );
 
 
 /* --------- Operand, which can be a reg or a u16/s16. --------- */
@@ -243,11 +243,11 @@ typedef
       Prh_Imm=1,
       Prh_Reg=2
    }
-   PPC32RHTag;
+   PPCRHTag;
 
 typedef
    struct {
-      PPC32RHTag tag;
+      PPCRHTag tag;
       union {
          struct {
             Bool   syned;
@@ -259,12 +259,12 @@ typedef
       }
       Prh;
    }
-   PPC32RH;
+   PPCRH;
 
-extern PPC32RH* PPC32RH_Imm ( Bool, UShort );
-extern PPC32RH* PPC32RH_Reg ( HReg );
+extern PPCRH* PPCRH_Imm ( Bool, UShort );
+extern PPCRH* PPCRH_Reg ( HReg );
 
-extern void ppPPC32RH ( PPC32RH* );
+extern void ppPPCRH ( PPCRH* );
 
 
 /* --------- Operand, which can be a reg or a u32/64. --------- */
@@ -274,23 +274,23 @@ typedef
       Pri_Imm=3,
       Pri_Reg=4
    } 
-   PPC32RITag;
+   PPCRITag;
 
 typedef
    struct {
-      PPC32RITag tag;
+      PPCRITag tag;
       union {
          ULong Imm;
          HReg  Reg;
       }
       Pri;
    }
-   PPC32RI;
+   PPCRI;
 
-extern PPC32RI* PPC32RI_Imm ( ULong );
-extern PPC32RI* PPC32RI_Reg ( HReg );
+extern PPCRI* PPCRI_Imm ( ULong );
+extern PPCRI* PPCRI_Reg ( HReg );
 
-extern void ppPPC32RI ( PPC32RI* );
+extern void ppPPCRI ( PPCRI* );
 
 
 /* --------- Operand, which can be a vector reg or a s6. --------- */
@@ -300,23 +300,23 @@ typedef
       Pvi_Imm=5,
       Pvi_Reg=6
    } 
-   PPC32VI5sTag;
+   PPCVI5sTag;
 
 typedef
    struct {
-      PPC32VI5sTag tag;
+      PPCVI5sTag tag;
       union {
          Char Imm5s;
          HReg Reg;
       }
       Pvi;
    }
-   PPC32VI5s;
+   PPCVI5s;
 
-extern PPC32VI5s* PPC32VI5s_Imm ( Char );
-extern PPC32VI5s* PPC32VI5s_Reg ( HReg );
+extern PPCVI5s* PPCVI5s_Imm ( Char );
+extern PPCVI5s* PPCVI5s_Reg ( HReg );
 
-extern void ppPPC32VI5s ( PPC32VI5s* );
+extern void ppPPCVI5s ( PPCVI5s* );
 
 
 /* --------- Instructions. --------- */
@@ -329,9 +329,9 @@ typedef
       Pun_CLZ32,
       Pun_CLZ64
    }
-   PPC32UnaryOp;
+   PPCUnaryOp;
 
-extern HChar* showPPC32UnaryOp ( PPC32UnaryOp );
+extern HChar* showPPCUnaryOp ( PPCUnaryOp );
 
 
 /* --------- */
@@ -341,11 +341,11 @@ typedef
       Palu_ADD, Palu_SUB,
       Palu_AND, Palu_OR, Palu_XOR,
    }
-   PPC32AluOp;
+   PPCAluOp;
 
 extern 
-HChar* showPPC32AluOp ( PPC32AluOp, 
-                        Bool /* is the 2nd operand an immediate? */);
+HChar* showPPCAluOp ( PPCAluOp, 
+                      Bool /* is the 2nd operand an immediate? */);
 
 
 /* --------- */
@@ -354,12 +354,12 @@ typedef
       Pshft_INVALID,
       Pshft_SHL, Pshft_SHR, Pshft_SAR, 
    }
-   PPC32ShftOp;
+   PPCShftOp;
 
 extern 
-HChar* showPPC32ShftOp ( PPC32ShftOp, 
-                         Bool /* is the 2nd operand an immediate? */,
-                         Bool /* is this a 32bit or 64bit op? */ );
+HChar* showPPCShftOp ( PPCShftOp, 
+                       Bool /* is the 2nd operand an immediate? */,
+                       Bool /* is this a 32bit or 64bit op? */ );
 
 
 /* --------- */
@@ -372,9 +372,9 @@ typedef
       /* Unary */
       Pfp_SQRT, Pfp_ABS, Pfp_NEG, Pfp_MOV
    }
-   PPC32FpOp;
+   PPCFpOp;
 
-extern HChar* showPPC32FpOp ( PPC32FpOp );
+extern HChar* showPPCFpOp ( PPCFpOp );
 
 
 /* --------- */
@@ -411,9 +411,9 @@ typedef
       /* Merge */
       Pav_MRGHI, Pav_MRGLO,
    }
-   PPC32AvOp;
+   PPCAvOp;
 
-extern HChar* showPPC32AvOp ( PPC32AvOp );
+extern HChar* showPPCAvOp ( PPCAvOp );
 
 
 /* --------- */
@@ -431,9 +431,9 @@ typedef
       Pavfp_CVTU2F, Pavfp_CVTS2F, Pavfp_QCVTF2U, Pavfp_QCVTF2S,
       Pavfp_ROUNDM, Pavfp_ROUNDP, Pavfp_ROUNDN, Pavfp_ROUNDZ,
    }
-   PPC32AvFpOp;
+   PPCAvFpOp;
 
-extern HChar* showPPC32AvFpOp ( PPC32AvFpOp );
+extern HChar* showPPCAvFpOp ( PPCAvFpOp );
 
 
 /* --------- */
@@ -442,7 +442,7 @@ typedef
       Pin_LI,         /* load word (32/64-bit) immediate (fake insn) */
       Pin_Alu,        /* word add/sub/and/or/xor */
       Pin_Shft,       /* word shl/shr/sar */
-      Pin_AddSubC32,  /* 32-bit add/sub with read/write carry */
+      Pin_AddSubC,    /* add/sub with read/write carry */
       Pin_Cmp,        /* word compare */
       Pin_Unary,      /* not, neg, clz */
       Pin_MulL,       /* widening multiply */
@@ -450,9 +450,9 @@ typedef
       Pin_Call,       /* call to address in register */
       Pin_Goto,       /* conditional/unconditional jmp to dst */
       Pin_CMov,       /* conditional move */
-      Pin_Load,       /* load a 8|16|32 bit value from mem */
-      Pin_Store,      /* store a 8|16|32 bit value to mem */
-      Pin_Set32,      /* convert condition code to 32-bit value */
+      Pin_Load,       /* load a 8|16|32|64 bit value from mem */
+      Pin_Store,      /* store a 8|16|32|64 bit value to mem */
+      Pin_Set,        /* convert condition code to value 0 or 1 */
       Pin_MfCR,       /* move from condition register to GPR */
       Pin_MFence,     /* mem fence */
 
@@ -461,7 +461,7 @@ typedef
       Pin_FpLdSt,     /* FP load/store */
       Pin_FpF64toF32, /* FP round IEEE754 double to IEEE754 single */
       Pin_FpF64toI32, /* FP round IEEE754 double to 32-bit integer */
-      Pin_FpF64toI64, /* FP round IEEE754 double to 32-bit integer */
+      Pin_FpF64toI64, /* FP round IEEE754 double to 64-bit integer */
       Pin_FpI64toF64, /* FP round IEEE754 64-bit integer to double */
       Pin_FpCMov,     /* FP floating point conditional move */
       Pin_FpLdFPSCR,  /* mtfsf */
@@ -487,16 +487,16 @@ typedef
       Pin_AvLdVSCR,   /* mtvscr */
       Pin_AvCMov      /* AV conditional move */
    }
-   PPC32InstrTag;
+   PPCInstrTag;
 
 /* Destinations are on the LEFT (first operand) */
 
 typedef
    struct {
-      PPC32InstrTag tag;
+      PPCInstrTag tag;
       union {
-         /* Get a 32-bit literal into a register.  May turn into one or
-	    two real insns. */
+         /* Get a 32/64-bit literal into a register.
+            May turn into a number of real insns. */
          struct {
             HReg dst;
             ULong imm64;
@@ -511,21 +511,21 @@ typedef
               is an unsigned 16.
          */
          struct {
-            PPC32AluOp op;
-            HReg       dst;
-            HReg       srcL;
-            PPC32RH*   srcR;
+            PPCAluOp op;
+            HReg     dst;
+            HReg     srcL;
+            PPCRH*   srcR;
          } Alu;
          /* Integer shl/shr/sar.
             Limitations: the immediate, if it exists,
             is a signed 5-bit value between 1 and 31 inclusive.
          */
          struct {
-            PPC32ShftOp op;
-            Bool        sz32;   /* mode64 has both 32 and 64bit shft */
-            HReg        dst;
-            HReg        srcL;
-            PPC32RH*    srcR;
+            PPCShftOp op;
+            Bool      sz32;   /* mode64 has both 32 and 64bit shft */
+            HReg      dst;
+            HReg      srcL;
+            PPCRH*    srcR;
          } Shft;
          /*  */
          struct {
@@ -534,22 +534,22 @@ typedef
             HReg dst;
             HReg srcL;
             HReg srcR;
-         } AddSubC32;
+         } AddSubC;
          /* If signed, the immediate, if it exists, is a signed 16,
             else it is an unsigned 16. */
          struct {
-            Bool     syned;
-            Bool     sz32;    /* mode64 has both 32 and 64bit cmp */
-            UInt     crfD;
-            HReg     srcL;
-            PPC32RH* srcR;
+            Bool   syned;
+            Bool   sz32;    /* mode64 has both 32 and 64bit cmp */
+            UInt   crfD;
+            HReg   srcL;
+            PPCRH* srcR;
          } Cmp;
          /* Not and Neg */
          struct {
-            PPC32UnaryOp op;
-            HReg         dst;
-            HReg         src;
-         } Unary32;
+            PPCUnaryOp op;
+            HReg       dst;
+            HReg       src;
+         } Unary;
          struct {
             Bool syned;  /* meaningless if hi32==False */
             Bool hi;     /* False=>low, True=>high */
@@ -572,77 +572,77 @@ typedef
             using a bit mask (1<<N is set if rN holds an arg, for N in
             3 .. 10 inclusive). */
          struct {
-            PPC32CondCode cond;
-            Addr64        target;
-            UInt          argiregs;
+            PPCCondCode cond;
+            Addr64      target;
+            UInt        argiregs;
          } Call;
          /* Pseudo-insn.  Goto dst, on given condition (which could be
             Pct_ALWAYS). */
          struct {
-            IRJumpKind    jk;
-            PPC32CondCode cond;
-            PPC32RI*      dst;
+            IRJumpKind  jk;
+            PPCCondCode cond;
+            PPCRI*      dst;
          } Goto;
          /* Mov src to dst on the given condition, which may not
             be the bogus Pct_ALWAYS. */
          struct {
-            PPC32CondCode cond;
-            HReg          dst;
-            PPC32RI*      src;
-         } CMov;
-         /* Sign/Zero extending loads.  Dst size is always 32 bits. */
-         struct {
-            UChar       sz; /* 1|2|4|8 */
-            Bool        syned;
+            PPCCondCode cond;
             HReg        dst;
-            PPC32AMode* src;
+            PPCRI*      src;
+         } CMov;
+         /* Sign/Zero extending loads.  Dst size is host word size */
+         struct {
+            UChar     sz; /* 1|2|4|8 */
+            Bool      syned;
+            HReg      dst;
+            PPCAMode* src;
          } Load;
-         /* 32/16/8 bit stores */
+         /* 64/32/16/8 bit stores */
          struct {
-            UChar       sz; /* 1|2|4|8 */
-            PPC32AMode* dst;
-            HReg        src;
+            UChar     sz; /* 1|2|4|8 */
+            PPCAMode* dst;
+            HReg      src;
          } Store;
-         /* Convert a ppc32 condition code to a 32-bit value (0 or 1). */
+         /* Convert a ppc condition code to value 0 or 1. */
          struct {
-            PPC32CondCode cond;
-            HReg          dst;
-         } Set32;
+            PPCCondCode cond;
+            HReg        dst;
+         } Set;
          /* Move the entire CR to a GPR */
          struct {
             HReg dst;
          } MfCR;
          /* Mem fence.  In short, an insn which flushes all preceding
             loads and stores as much as possible before continuing.
-            On PPC32 we emit a "sync". */
+            On PPC we emit a "sync". */
          struct {
          } MFence;
 
-         /* PPC32 Floating point */
+         /* PPC Floating point */
          struct {
-            PPC32FpOp op;
-            HReg      dst;
-            HReg      src;
+            PPCFpOp op;
+            HReg    dst;
+            HReg    src;
          } FpUnary;
          struct {
-            PPC32FpOp op;
-            HReg      dst;
-            HReg      srcL;
-            HReg      srcR;
+            PPCFpOp op;
+            HReg    dst;
+            HReg    srcL;
+            HReg    srcR;
          } FpBinary;
          struct {
-            Bool        isLoad;
-            UChar       sz; /* only 4 (IEEE single) or 8 (IEEE double) */
-            HReg        reg;
-            PPC32AMode* addr;
+            Bool      isLoad;
+            UChar     sz; /* only 4 (IEEE single) or 8 (IEEE double) */
+            HReg      reg;
+            PPCAMode* addr;
          } FpLdSt;
-         /* By observing the current FPU rounding mode, round src into dst,
+         /* By observing the current FPU rounding mode, round src->dst,
             re-interpreting dst to an IEEE754 32-bit (float) type. */
          struct {
             HReg src;
             HReg dst;
          } FpF64toF32;
-         /* By observing the current FPU rounding mode, round src into dst,
+         /* By observing the current FPU rounding mode, round src->dst,
             re-interpreting dst to an 32-bit integer type. */
          struct {
             HReg src;
@@ -653,8 +653,8 @@ typedef
             HReg src;
             HReg dst;
          } FpF64toI64;
-         /* By observing the current FPU rounding mode, reinterpret src from
-            a 64-bit integer to double type, and round into dst. */
+         /* By observing the current FPU rounding mode, reinterpret src
+            from a 64bit integer to double type, and round into dst. */
          struct {
             HReg src;
             HReg dst;
@@ -662,9 +662,9 @@ typedef
          /* Mov src to dst on the given condition, which may not
             be the bogus Xcc_ALWAYS. */
          struct {
-            PPC32CondCode cond;
-            HReg          dst;
-            HReg          src;
+            PPCCondCode cond;
+            HReg        dst;
+            HReg        src;
          } FpCMov;
          /* Load FP Status & Control Register */
          struct {
@@ -686,48 +686,48 @@ typedef
 
          /* Simplistic AltiVec */
          struct {
-            Bool        isLoad;
-            UChar       sz;      /* 8|16|32|128 */
-            HReg        reg;
-            PPC32AMode* addr;
+            Bool      isLoad;
+            UChar     sz;      /* 8|16|32|128 */
+            HReg      reg;
+            PPCAMode* addr;
          } AvLdSt;
          struct {
-            PPC32AvOp op;
-            HReg      dst;
-            HReg      src;
+            PPCAvOp op;
+            HReg    dst;
+            HReg    src;
          } AvUnary;
          struct {
-            PPC32AvOp op;
-            HReg      dst;
-            HReg      srcL;
-            HReg      srcR;
+            PPCAvOp op;
+            HReg    dst;
+            HReg    srcL;
+            HReg    srcR;
          } AvBinary;
          struct {
-            PPC32AvOp op;
-            HReg      dst;
-            HReg      srcL;
-            HReg      srcR;
+            PPCAvOp op;
+            HReg    dst;
+            HReg    srcL;
+            HReg    srcR;
          } AvBin8x16;
          struct {
-            PPC32AvOp op;
-            HReg      dst;
-            HReg      srcL;
-            HReg      srcR;
+            PPCAvOp op;
+            HReg    dst;
+            HReg    srcL;
+            HReg    srcR;
          } AvBin16x8;
          struct {
-            PPC32AvOp op;
-            HReg      dst;
-            HReg      srcL;
-            HReg      srcR;
+            PPCAvOp op;
+            HReg    dst;
+            HReg    srcL;
+            HReg    srcR;
          } AvBin32x4;
          struct {
-            PPC32AvFpOp op;
+            PPCAvFpOp op;
             HReg      dst;
             HReg      srcL;
             HReg      srcR;
          } AvBin32Fx4;
          struct {
-            PPC32AvFpOp op;
+            PPCAvFpOp op;
             HReg      dst;
             HReg      src;
          } AvUn32Fx4;
@@ -753,14 +753,14 @@ typedef
          struct {
             UChar    sz;   /* 8,16,32 */
             HReg     dst;
-            PPC32VI5s* src; 
+            PPCVI5s* src; 
          } AvSplat;
          /* Mov src to dst on the given condition, which may not
             be the bogus Xcc_ALWAYS. */
          struct {
-            PPC32CondCode cond;
-            HReg          dst;
-            HReg          src;
+            PPCCondCode cond;
+            HReg        dst;
+            HReg        src;
          } AvCMov;
          /* Load AltiVec Status & Control Register */
          struct {
@@ -768,71 +768,71 @@ typedef
          } AvLdVSCR;
        } Pin;
    }
-   PPC32Instr;
+   PPCInstr;
 
 
-extern PPC32Instr* PPC32Instr_LI         ( HReg, ULong, Bool );
-extern PPC32Instr* PPC32Instr_Alu        ( PPC32AluOp, HReg, HReg, PPC32RH* );
-extern PPC32Instr* PPC32Instr_Shft       ( PPC32ShftOp, Bool sz32, HReg, HReg, PPC32RH* );
-extern PPC32Instr* PPC32Instr_AddSubC32  ( Bool, Bool, HReg, HReg, HReg );
-extern PPC32Instr* PPC32Instr_Cmp        ( Bool, Bool, UInt, HReg, PPC32RH* );
-extern PPC32Instr* PPC32Instr_Unary      ( PPC32UnaryOp op, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_MulL       ( Bool syned, Bool hi32, Bool sz32, HReg, HReg, HReg );
-extern PPC32Instr* PPC32Instr_Div        ( Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_Call       ( PPC32CondCode, Addr64, UInt );
-extern PPC32Instr* PPC32Instr_Goto       ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
-extern PPC32Instr* PPC32Instr_CMov       ( PPC32CondCode, HReg dst, PPC32RI* src );
-extern PPC32Instr* PPC32Instr_Load       ( UChar sz, Bool syned,
-                                           HReg dst, PPC32AMode* src, Bool mode64 );
-extern PPC32Instr* PPC32Instr_Store      ( UChar sz, PPC32AMode* dst,
-                                           HReg src, Bool mode64 );
-extern PPC32Instr* PPC32Instr_Set32      ( PPC32CondCode cond, HReg dst );
-extern PPC32Instr* PPC32Instr_MfCR       ( HReg dst );
-extern PPC32Instr* PPC32Instr_MFence     ( void );
+extern PPCInstr* PPCInstr_LI         ( HReg, ULong, Bool );
+extern PPCInstr* PPCInstr_Alu        ( PPCAluOp, HReg, HReg, PPCRH* );
+extern PPCInstr* PPCInstr_Shft       ( PPCShftOp, Bool sz32, HReg, HReg, PPCRH* );
+extern PPCInstr* PPCInstr_AddSubC    ( Bool, Bool, HReg, HReg, HReg );
+extern PPCInstr* PPCInstr_Cmp        ( Bool, Bool, UInt, HReg, PPCRH* );
+extern PPCInstr* PPCInstr_Unary      ( PPCUnaryOp op, HReg dst, HReg src );
+extern PPCInstr* PPCInstr_MulL       ( Bool syned, Bool hi32, Bool sz32, HReg, HReg, HReg );
+extern PPCInstr* PPCInstr_Div        ( Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_Call       ( PPCCondCode, Addr64, UInt );
+extern PPCInstr* PPCInstr_Goto       ( IRJumpKind, PPCCondCode cond, PPCRI* dst );
+extern PPCInstr* PPCInstr_CMov       ( PPCCondCode, HReg dst, PPCRI* src );
+extern PPCInstr* PPCInstr_Load       ( UChar sz, Bool syned,
+                                       HReg dst, PPCAMode* src, Bool mode64 );
+extern PPCInstr* PPCInstr_Store      ( UChar sz, PPCAMode* dst,
+                                       HReg src, Bool mode64 );
+extern PPCInstr* PPCInstr_Set        ( PPCCondCode cond, HReg dst );
+extern PPCInstr* PPCInstr_MfCR       ( HReg dst );
+extern PPCInstr* PPCInstr_MFence     ( void );
 
-extern PPC32Instr* PPC32Instr_FpUnary    ( PPC32FpOp op, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_FpBinary   ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_FpLdSt     ( Bool isLoad, UChar sz, HReg, PPC32AMode* );
-extern PPC32Instr* PPC32Instr_FpF64toF32 ( HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_FpF64toI32 ( HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_FpF64toI64 ( HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_FpI64toF64 ( HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_FpCMov     ( PPC32CondCode, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_FpLdFPSCR  ( HReg src );
-extern PPC32Instr* PPC32Instr_FpCmp      ( HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_FpUnary    ( PPCFpOp op, HReg dst, HReg src );
+extern PPCInstr* PPCInstr_FpBinary   ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_FpLdSt     ( Bool isLoad, UChar sz, HReg, PPCAMode* );
+extern PPCInstr* PPCInstr_FpF64toF32 ( HReg dst, HReg src );
+extern PPCInstr* PPCInstr_FpF64toI32 ( HReg dst, HReg src );
+extern PPCInstr* PPCInstr_FpF64toI64 ( HReg dst, HReg src );
+extern PPCInstr* PPCInstr_FpI64toF64 ( HReg dst, HReg src );
+extern PPCInstr* PPCInstr_FpCMov     ( PPCCondCode, HReg dst, HReg src );
+extern PPCInstr* PPCInstr_FpLdFPSCR  ( HReg src );
+extern PPCInstr* PPCInstr_FpCmp      ( HReg dst, HReg srcL, HReg srcR );
 
-extern PPC32Instr* PPC32Instr_RdWrLR     ( Bool wrLR, HReg gpr );
+extern PPCInstr* PPCInstr_RdWrLR     ( Bool wrLR, HReg gpr );
 
-extern PPC32Instr* PPC32Instr_AvLdSt     ( Bool isLoad, UChar sz, HReg, PPC32AMode* );
-extern PPC32Instr* PPC32Instr_AvUnary    ( PPC32AvOp op, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_AvBinary   ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvBin8x16  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvBin16x8  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvBin32x4  ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvUn32Fx4  ( PPC32AvOp op, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_AvPerm     ( HReg dst, HReg srcL, HReg srcR, HReg ctl );
-extern PPC32Instr* PPC32Instr_AvSel      ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg srcR );
-extern PPC32Instr* PPC32Instr_AvSplat    ( UChar sz, HReg dst, PPC32VI5s* src );
-extern PPC32Instr* PPC32Instr_AvCMov     ( PPC32CondCode, HReg dst, HReg src );
-extern PPC32Instr* PPC32Instr_AvLdVSCR   ( HReg src );
+extern PPCInstr* PPCInstr_AvLdSt     ( Bool isLoad, UChar sz, HReg, PPCAMode* );
+extern PPCInstr* PPCInstr_AvUnary    ( PPCAvOp op, HReg dst, HReg src );
+extern PPCInstr* PPCInstr_AvBinary   ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvBin8x16  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvBin16x8  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvBin32x4  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvUn32Fx4  ( PPCAvOp op, HReg dst, HReg src );
+extern PPCInstr* PPCInstr_AvPerm     ( HReg dst, HReg srcL, HReg srcR, HReg ctl );
+extern PPCInstr* PPCInstr_AvSel      ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvSplat    ( UChar sz, HReg dst, PPCVI5s* src );
+extern PPCInstr* PPCInstr_AvCMov     ( PPCCondCode, HReg dst, HReg src );
+extern PPCInstr* PPCInstr_AvLdVSCR   ( HReg src );
 
-extern void ppPPC32Instr ( PPC32Instr*, Bool mode64 );
+extern void ppPPCInstr ( PPCInstr*, Bool mode64 );
 
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void         getRegUsage_PPC32Instr ( HRegUsage*, PPC32Instr*, Bool mode64 );
-extern void         mapRegs_PPC32Instr     ( HRegRemap*, PPC32Instr* , Bool mode64);
-extern Bool         isMove_PPC32Instr      ( PPC32Instr*, HReg*, HReg* );
-extern Int          emit_PPC32Instr        ( UChar* buf, Int nbuf, PPC32Instr*, 
-                                             Bool mode64, void* dispatch );
-extern PPC32Instr*  genSpill_PPC32         ( HReg rreg, UShort offsetB, Bool mode64 );
-extern PPC32Instr*  genReload_PPC32        ( HReg rreg, UShort offsetB, Bool mode64 );
-extern void         getAllocableRegs_PPC32 ( Int*, HReg**, Bool mode64 );
-extern HInstrArray* iselBB_PPC32           ( IRBB*, VexArchInfo* );
+extern void         getRegUsage_PPCInstr ( HRegUsage*, PPCInstr*, Bool mode64 );
+extern void         mapRegs_PPCInstr     ( HRegRemap*, PPCInstr* , Bool mode64);
+extern Bool         isMove_PPCInstr      ( PPCInstr*, HReg*, HReg* );
+extern Int          emit_PPCInstr        ( UChar* buf, Int nbuf, PPCInstr*, 
+                                           Bool mode64, void* dispatch );
+extern PPCInstr*    genSpill_PPC         ( HReg rreg, UShort offsetB, Bool mode64 );
+extern PPCInstr*    genReload_PPC        ( HReg rreg, UShort offsetB, Bool mode64 );
+extern void         getAllocableRegs_PPC ( Int*, HReg**, Bool mode64 );
+extern HInstrArray* iselBB_PPC           ( IRBB*, VexArchInfo* );
 
-#endif /* ndef __LIBVEX_HOST_PPC32_HDEFS_H */
+#endif /* ndef __LIBVEX_HOST_PPC_HDEFS_H */
 
 /*---------------------------------------------------------------*/
 /*--- end                                  host-ppc32/hdefs.h ---*/

@@ -132,7 +132,7 @@ int main ( int argc, char** argv )
 
       LibVEX_default_VexArchInfo(&vai_ppc32);
       vai_ppc32.subarch = VexSubArchPPC32_VFI;
-      vai_ppc32.ppc32_cache_line_szB = 128;
+      vai_ppc32.ppc_cache_line_szB = 128;
 
       /* ----- Set up args for LibVEX_Translate ----- */
 #if 1 /* ppc32 -> ppc32 */

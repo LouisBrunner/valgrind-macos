@@ -102,7 +102,7 @@ typedef
       /* This is the only mandatory field. */
       VexSubArch subarch;
       /* PPC32/PPC64 only: size of cache line */
-      Int ppc32_cache_line_szB;
+      Int ppc_cache_line_szB;
    }
    VexArchInfo;
 
@@ -452,7 +452,7 @@ extern void LibVEX_ShowStats ( void );
 
    ppc64
    ~~~~~
-   Probably the same as ppc32.
+   Same as ppc32.
 
    ALL GUEST ARCHITECTURES
    ~~~~~~~~~~~~~~~~~~~~~~~

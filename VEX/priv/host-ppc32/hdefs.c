@@ -55,14 +55,18 @@
 
 /* --------- Registers. --------- */
 
-void ppHRegPPC32 ( HReg reg ) 
+void ppHRegPPC ( HReg reg ) 
 {
    Int r;
    static HChar* ireg32_names[32] 
-      = { "%r0",  "%r1",  "%r2",  "%r3",  "%r4",  "%r5",  "%r6",  "%r7",
-          "%r8",  "%r9",  "%r10", "%r11", "%r12", "%r13", "%r14", "%r15",
-          "%r16", "%r17", "%r18", "%r19", "%r20", "%r21", "%r22", "%r23",
-          "%r24", "%r25", "%r26", "%r27", "%r28", "%r29", "%r30", "%r31" };
+      = { "%r0",  "%r1",  "%r2",  "%r3",
+          "%r4",  "%r5",  "%r6",  "%r7",
+          "%r8",  "%r9",  "%r10", "%r11",
+          "%r12", "%r13", "%r14", "%r15",
+          "%r16", "%r17", "%r18", "%r19",
+          "%r20", "%r21", "%r22", "%r23",
+          "%r24", "%r25", "%r26", "%r27",
+          "%r28", "%r29", "%r30", "%r31" };
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
       ppHReg(reg);
@@ -91,7 +95,7 @@ void ppHRegPPC32 ( HReg reg )
       vex_printf("%%v%d", r);
       return;
    default:
-      vpanic("ppHRegPPC32");
+      vpanic("ppHRegPPC");
    }
 }
 
@@ -134,73 +138,73 @@ HReg hregPPC_GPR31 ( Bool mode64 ) { return MkHRegGPR(31, mode64); }
 
 #undef MK_INT_HREG
 
-HReg hregPPC32_FPR0  ( void ) { return mkHReg( 0, HRcFlt64, False); }
-HReg hregPPC32_FPR1  ( void ) { return mkHReg( 1, HRcFlt64, False); }
-HReg hregPPC32_FPR2  ( void ) { return mkHReg( 2, HRcFlt64, False); }
-HReg hregPPC32_FPR3  ( void ) { return mkHReg( 3, HRcFlt64, False); }
-HReg hregPPC32_FPR4  ( void ) { return mkHReg( 4, HRcFlt64, False); }
-HReg hregPPC32_FPR5  ( void ) { return mkHReg( 5, HRcFlt64, False); }
-HReg hregPPC32_FPR6  ( void ) { return mkHReg( 6, HRcFlt64, False); }
-HReg hregPPC32_FPR7  ( void ) { return mkHReg( 7, HRcFlt64, False); }
-HReg hregPPC32_FPR8  ( void ) { return mkHReg( 8, HRcFlt64, False); }
-HReg hregPPC32_FPR9  ( void ) { return mkHReg( 9, HRcFlt64, False); }
-HReg hregPPC32_FPR10 ( void ) { return mkHReg(10, HRcFlt64, False); }
-HReg hregPPC32_FPR11 ( void ) { return mkHReg(11, HRcFlt64, False); }
-HReg hregPPC32_FPR12 ( void ) { return mkHReg(12, HRcFlt64, False); }
-HReg hregPPC32_FPR13 ( void ) { return mkHReg(13, HRcFlt64, False); }
-HReg hregPPC32_FPR14 ( void ) { return mkHReg(14, HRcFlt64, False); }
-HReg hregPPC32_FPR15 ( void ) { return mkHReg(15, HRcFlt64, False); }
-HReg hregPPC32_FPR16 ( void ) { return mkHReg(16, HRcFlt64, False); }
-HReg hregPPC32_FPR17 ( void ) { return mkHReg(17, HRcFlt64, False); }
-HReg hregPPC32_FPR18 ( void ) { return mkHReg(18, HRcFlt64, False); }
-HReg hregPPC32_FPR19 ( void ) { return mkHReg(19, HRcFlt64, False); }
-HReg hregPPC32_FPR20 ( void ) { return mkHReg(20, HRcFlt64, False); }
-HReg hregPPC32_FPR21 ( void ) { return mkHReg(21, HRcFlt64, False); }
-HReg hregPPC32_FPR22 ( void ) { return mkHReg(22, HRcFlt64, False); }
-HReg hregPPC32_FPR23 ( void ) { return mkHReg(23, HRcFlt64, False); }
-HReg hregPPC32_FPR24 ( void ) { return mkHReg(24, HRcFlt64, False); }
-HReg hregPPC32_FPR25 ( void ) { return mkHReg(25, HRcFlt64, False); }
-HReg hregPPC32_FPR26 ( void ) { return mkHReg(26, HRcFlt64, False); }
-HReg hregPPC32_FPR27 ( void ) { return mkHReg(27, HRcFlt64, False); }
-HReg hregPPC32_FPR28 ( void ) { return mkHReg(28, HRcFlt64, False); }
-HReg hregPPC32_FPR29 ( void ) { return mkHReg(29, HRcFlt64, False); }
-HReg hregPPC32_FPR30 ( void ) { return mkHReg(30, HRcFlt64, False); }
-HReg hregPPC32_FPR31 ( void ) { return mkHReg(31, HRcFlt64, False); }
+HReg hregPPC_FPR0  ( void ) { return mkHReg( 0, HRcFlt64, False); }
+HReg hregPPC_FPR1  ( void ) { return mkHReg( 1, HRcFlt64, False); }
+HReg hregPPC_FPR2  ( void ) { return mkHReg( 2, HRcFlt64, False); }
+HReg hregPPC_FPR3  ( void ) { return mkHReg( 3, HRcFlt64, False); }
+HReg hregPPC_FPR4  ( void ) { return mkHReg( 4, HRcFlt64, False); }
+HReg hregPPC_FPR5  ( void ) { return mkHReg( 5, HRcFlt64, False); }
+HReg hregPPC_FPR6  ( void ) { return mkHReg( 6, HRcFlt64, False); }
+HReg hregPPC_FPR7  ( void ) { return mkHReg( 7, HRcFlt64, False); }
+HReg hregPPC_FPR8  ( void ) { return mkHReg( 8, HRcFlt64, False); }
+HReg hregPPC_FPR9  ( void ) { return mkHReg( 9, HRcFlt64, False); }
+HReg hregPPC_FPR10 ( void ) { return mkHReg(10, HRcFlt64, False); }
+HReg hregPPC_FPR11 ( void ) { return mkHReg(11, HRcFlt64, False); }
+HReg hregPPC_FPR12 ( void ) { return mkHReg(12, HRcFlt64, False); }
+HReg hregPPC_FPR13 ( void ) { return mkHReg(13, HRcFlt64, False); }
+HReg hregPPC_FPR14 ( void ) { return mkHReg(14, HRcFlt64, False); }
+HReg hregPPC_FPR15 ( void ) { return mkHReg(15, HRcFlt64, False); }
+HReg hregPPC_FPR16 ( void ) { return mkHReg(16, HRcFlt64, False); }
+HReg hregPPC_FPR17 ( void ) { return mkHReg(17, HRcFlt64, False); }
+HReg hregPPC_FPR18 ( void ) { return mkHReg(18, HRcFlt64, False); }
+HReg hregPPC_FPR19 ( void ) { return mkHReg(19, HRcFlt64, False); }
+HReg hregPPC_FPR20 ( void ) { return mkHReg(20, HRcFlt64, False); }
+HReg hregPPC_FPR21 ( void ) { return mkHReg(21, HRcFlt64, False); }
+HReg hregPPC_FPR22 ( void ) { return mkHReg(22, HRcFlt64, False); }
+HReg hregPPC_FPR23 ( void ) { return mkHReg(23, HRcFlt64, False); }
+HReg hregPPC_FPR24 ( void ) { return mkHReg(24, HRcFlt64, False); }
+HReg hregPPC_FPR25 ( void ) { return mkHReg(25, HRcFlt64, False); }
+HReg hregPPC_FPR26 ( void ) { return mkHReg(26, HRcFlt64, False); }
+HReg hregPPC_FPR27 ( void ) { return mkHReg(27, HRcFlt64, False); }
+HReg hregPPC_FPR28 ( void ) { return mkHReg(28, HRcFlt64, False); }
+HReg hregPPC_FPR29 ( void ) { return mkHReg(29, HRcFlt64, False); }
+HReg hregPPC_FPR30 ( void ) { return mkHReg(30, HRcFlt64, False); }
+HReg hregPPC_FPR31 ( void ) { return mkHReg(31, HRcFlt64, False); }
 
-HReg hregPPC32_VR0  ( void ) { return mkHReg( 0, HRcVec128, False); }
-HReg hregPPC32_VR1  ( void ) { return mkHReg( 1, HRcVec128, False); }
-HReg hregPPC32_VR2  ( void ) { return mkHReg( 2, HRcVec128, False); }
-HReg hregPPC32_VR3  ( void ) { return mkHReg( 3, HRcVec128, False); }
-HReg hregPPC32_VR4  ( void ) { return mkHReg( 4, HRcVec128, False); }
-HReg hregPPC32_VR5  ( void ) { return mkHReg( 5, HRcVec128, False); }
-HReg hregPPC32_VR6  ( void ) { return mkHReg( 6, HRcVec128, False); }
-HReg hregPPC32_VR7  ( void ) { return mkHReg( 7, HRcVec128, False); }
-HReg hregPPC32_VR8  ( void ) { return mkHReg( 8, HRcVec128, False); }
-HReg hregPPC32_VR9  ( void ) { return mkHReg( 9, HRcVec128, False); }
-HReg hregPPC32_VR10 ( void ) { return mkHReg(10, HRcVec128, False); }
-HReg hregPPC32_VR11 ( void ) { return mkHReg(11, HRcVec128, False); }
-HReg hregPPC32_VR12 ( void ) { return mkHReg(12, HRcVec128, False); }
-HReg hregPPC32_VR13 ( void ) { return mkHReg(13, HRcVec128, False); }
-HReg hregPPC32_VR14 ( void ) { return mkHReg(14, HRcVec128, False); }
-HReg hregPPC32_VR15 ( void ) { return mkHReg(15, HRcVec128, False); }
-HReg hregPPC32_VR16 ( void ) { return mkHReg(16, HRcVec128, False); }
-HReg hregPPC32_VR17 ( void ) { return mkHReg(17, HRcVec128, False); }
-HReg hregPPC32_VR18 ( void ) { return mkHReg(18, HRcVec128, False); }
-HReg hregPPC32_VR19 ( void ) { return mkHReg(19, HRcVec128, False); }
-HReg hregPPC32_VR20 ( void ) { return mkHReg(20, HRcVec128, False); }
-HReg hregPPC32_VR21 ( void ) { return mkHReg(21, HRcVec128, False); }
-HReg hregPPC32_VR22 ( void ) { return mkHReg(22, HRcVec128, False); }
-HReg hregPPC32_VR23 ( void ) { return mkHReg(23, HRcVec128, False); }
-HReg hregPPC32_VR24 ( void ) { return mkHReg(24, HRcVec128, False); }
-HReg hregPPC32_VR25 ( void ) { return mkHReg(25, HRcVec128, False); }
-HReg hregPPC32_VR26 ( void ) { return mkHReg(26, HRcVec128, False); }
-HReg hregPPC32_VR27 ( void ) { return mkHReg(27, HRcVec128, False); }
-HReg hregPPC32_VR28 ( void ) { return mkHReg(28, HRcVec128, False); }
-HReg hregPPC32_VR29 ( void ) { return mkHReg(29, HRcVec128, False); }
-HReg hregPPC32_VR30 ( void ) { return mkHReg(30, HRcVec128, False); }
-HReg hregPPC32_VR31 ( void ) { return mkHReg(31, HRcVec128, False); }
+HReg hregPPC_VR0  ( void ) { return mkHReg( 0, HRcVec128, False); }
+HReg hregPPC_VR1  ( void ) { return mkHReg( 1, HRcVec128, False); }
+HReg hregPPC_VR2  ( void ) { return mkHReg( 2, HRcVec128, False); }
+HReg hregPPC_VR3  ( void ) { return mkHReg( 3, HRcVec128, False); }
+HReg hregPPC_VR4  ( void ) { return mkHReg( 4, HRcVec128, False); }
+HReg hregPPC_VR5  ( void ) { return mkHReg( 5, HRcVec128, False); }
+HReg hregPPC_VR6  ( void ) { return mkHReg( 6, HRcVec128, False); }
+HReg hregPPC_VR7  ( void ) { return mkHReg( 7, HRcVec128, False); }
+HReg hregPPC_VR8  ( void ) { return mkHReg( 8, HRcVec128, False); }
+HReg hregPPC_VR9  ( void ) { return mkHReg( 9, HRcVec128, False); }
+HReg hregPPC_VR10 ( void ) { return mkHReg(10, HRcVec128, False); }
+HReg hregPPC_VR11 ( void ) { return mkHReg(11, HRcVec128, False); }
+HReg hregPPC_VR12 ( void ) { return mkHReg(12, HRcVec128, False); }
+HReg hregPPC_VR13 ( void ) { return mkHReg(13, HRcVec128, False); }
+HReg hregPPC_VR14 ( void ) { return mkHReg(14, HRcVec128, False); }
+HReg hregPPC_VR15 ( void ) { return mkHReg(15, HRcVec128, False); }
+HReg hregPPC_VR16 ( void ) { return mkHReg(16, HRcVec128, False); }
+HReg hregPPC_VR17 ( void ) { return mkHReg(17, HRcVec128, False); }
+HReg hregPPC_VR18 ( void ) { return mkHReg(18, HRcVec128, False); }
+HReg hregPPC_VR19 ( void ) { return mkHReg(19, HRcVec128, False); }
+HReg hregPPC_VR20 ( void ) { return mkHReg(20, HRcVec128, False); }
+HReg hregPPC_VR21 ( void ) { return mkHReg(21, HRcVec128, False); }
+HReg hregPPC_VR22 ( void ) { return mkHReg(22, HRcVec128, False); }
+HReg hregPPC_VR23 ( void ) { return mkHReg(23, HRcVec128, False); }
+HReg hregPPC_VR24 ( void ) { return mkHReg(24, HRcVec128, False); }
+HReg hregPPC_VR25 ( void ) { return mkHReg(25, HRcVec128, False); }
+HReg hregPPC_VR26 ( void ) { return mkHReg(26, HRcVec128, False); }
+HReg hregPPC_VR27 ( void ) { return mkHReg(27, HRcVec128, False); }
+HReg hregPPC_VR28 ( void ) { return mkHReg(28, HRcVec128, False); }
+HReg hregPPC_VR29 ( void ) { return mkHReg(29, HRcVec128, False); }
+HReg hregPPC_VR30 ( void ) { return mkHReg(30, HRcVec128, False); }
+HReg hregPPC_VR31 ( void ) { return mkHReg(31, HRcVec128, False); }
 
-void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
+void getAllocableRegs_PPC ( Int* nregs, HReg** arr, Bool mode64 )
 {
    UInt i=0;
    if (mode64)
@@ -208,7 +212,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
    else
       *nregs = (32-7) + (32-24) + (32-24);
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
-   // GPR0 = scratch reg where possible - some ops interpret as value zero
+   // GPR0 = scratch reg where poss. - some ops interpret as value zero
    // GPR1 = stack pointer
    // GPR2 = TOC pointer
    (*arr)[i++] = hregPPC_GPR3(mode64);
@@ -250,25 +254,25 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
    /* Don't waste the reg-allocs's time trawling through zillions of
       FP registers - they mostly will never be used.  We'll tolerate
       the occasional extra spill instead. */
-   (*arr)[i++] = hregPPC32_FPR0();
-   (*arr)[i++] = hregPPC32_FPR1();
-   (*arr)[i++] = hregPPC32_FPR2();
-   (*arr)[i++] = hregPPC32_FPR3();
-   (*arr)[i++] = hregPPC32_FPR4();
-   (*arr)[i++] = hregPPC32_FPR5();
-   (*arr)[i++] = hregPPC32_FPR6();
-   (*arr)[i++] = hregPPC32_FPR7();
+   (*arr)[i++] = hregPPC_FPR0();
+   (*arr)[i++] = hregPPC_FPR1();
+   (*arr)[i++] = hregPPC_FPR2();
+   (*arr)[i++] = hregPPC_FPR3();
+   (*arr)[i++] = hregPPC_FPR4();
+   (*arr)[i++] = hregPPC_FPR5();
+   (*arr)[i++] = hregPPC_FPR6();
+   (*arr)[i++] = hregPPC_FPR7();
 
    /* Same deal re Altivec */
    /* NB, vr29 is used as a scratch temporary -- do not allocate */
-   (*arr)[i++] = hregPPC32_VR0();
-   (*arr)[i++] = hregPPC32_VR1();
-   (*arr)[i++] = hregPPC32_VR2();
-   (*arr)[i++] = hregPPC32_VR3();
-   (*arr)[i++] = hregPPC32_VR4();
-   (*arr)[i++] = hregPPC32_VR5();
-   (*arr)[i++] = hregPPC32_VR6();
-   (*arr)[i++] = hregPPC32_VR7();
+   (*arr)[i++] = hregPPC_VR0();
+   (*arr)[i++] = hregPPC_VR1();
+   (*arr)[i++] = hregPPC_VR2();
+   (*arr)[i++] = hregPPC_VR3();
+   (*arr)[i++] = hregPPC_VR4();
+   (*arr)[i++] = hregPPC_VR5();
+   (*arr)[i++] = hregPPC_VR6();
+   (*arr)[i++] = hregPPC_VR7();
 
    vassert(i == *nregs);
 }
@@ -276,30 +280,34 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr, Bool mode64 )
 
 /* --------- Condition codes, Intel encoding. --------- */
 
-HChar* showPPC32CondCode ( PPC32CondCode cond )
+HChar* showPPCCondCode ( PPCCondCode cond )
 {
    if (cond.test == Pct_ALWAYS) return "always";
 
    switch (cond.flag) {
-      case Pcf_7SO: return (cond.test == Pct_TRUE) ? "cr7.so=1" : "cr7.so=0";
-      case Pcf_7EQ: return (cond.test == Pct_TRUE) ? "cr7.eq=1" : "cr7.eq=0";
-      case Pcf_7GT: return (cond.test == Pct_TRUE) ? "cr7.gt=1" : "cr7.gt=0";
-      case Pcf_7LT: return (cond.test == Pct_TRUE) ? "cr7.lt=1" : "cr7.lt=0";
-      default: vpanic("ppPPC32CondCode");
+   case Pcf_7SO:
+      return (cond.test == Pct_TRUE) ? "cr7.so=1" : "cr7.so=0";
+   case Pcf_7EQ:
+      return (cond.test == Pct_TRUE) ? "cr7.eq=1" : "cr7.eq=0";
+   case Pcf_7GT:
+      return (cond.test == Pct_TRUE) ? "cr7.gt=1" : "cr7.gt=0";
+   case Pcf_7LT:
+      return (cond.test == Pct_TRUE) ? "cr7.lt=1" : "cr7.lt=0";
+   default: vpanic("ppPPCCondCode");
    }
 }
 
 /* construct condition code */
-PPC32CondCode mk_PPCCondCode ( PPC32CondTest test, PPC32CondFlag flag )
+PPCCondCode mk_PPCCondCode ( PPCCondTest test, PPCCondFlag flag )
 {
-   PPC32CondCode cc;
+   PPCCondCode cc;
    cc.flag = flag;
    cc.test = test;
    return cc;
 }
 
 /* false->true, true->false */
-PPC32CondTest invertCondTest ( PPC32CondTest ct )
+PPCCondTest invertCondTest ( PPCCondTest ct )
 {
    vassert(ct != Pct_ALWAYS);
    return (ct == Pct_TRUE) ? Pct_FALSE : Pct_TRUE;
@@ -308,54 +316,54 @@ PPC32CondTest invertCondTest ( PPC32CondTest ct )
 
 /* --------- PPCAMode: memory address expressions. --------- */
 
-PPC32AMode* PPC32AMode_IR ( Int idx, HReg base ) {
-   PPC32AMode* am = LibVEX_Alloc(sizeof(PPC32AMode));
+PPCAMode* PPCAMode_IR ( Int idx, HReg base ) {
+   PPCAMode* am = LibVEX_Alloc(sizeof(PPCAMode));
    vassert(idx >= -0x8000 && idx < 0x8000);
    am->tag = Pam_IR;
    am->Pam.IR.base = base;
    am->Pam.IR.index = idx;
    return am;
 }
-PPC32AMode* PPC32AMode_RR ( HReg idx, HReg base ) {
-   PPC32AMode* am = LibVEX_Alloc(sizeof(PPC32AMode));
+PPCAMode* PPCAMode_RR ( HReg idx, HReg base ) {
+   PPCAMode* am = LibVEX_Alloc(sizeof(PPCAMode));
    am->tag = Pam_RR;
    am->Pam.RR.base = base;
    am->Pam.RR.index = idx;
    return am;
 }
 
-PPC32AMode* dopyPPC32AMode ( PPC32AMode* am ) {
+PPCAMode* dopyPPCAMode ( PPCAMode* am ) {
    switch (am->tag) {
    case Pam_IR: 
-      return PPC32AMode_IR( am->Pam.IR.index, am->Pam.IR.base );
+      return PPCAMode_IR( am->Pam.IR.index, am->Pam.IR.base );
    case Pam_RR: 
-      return PPC32AMode_RR( am->Pam.RR.index, am->Pam.RR.base );
+      return PPCAMode_RR( am->Pam.RR.index, am->Pam.RR.base );
    default:
-      vpanic("dopyPPC32AMode");
+      vpanic("dopyPPCAMode");
    }
 }
 
-void ppPPC32AMode ( PPC32AMode* am ) {
+void ppPPCAMode ( PPCAMode* am ) {
    switch (am->tag) {
    case Pam_IR: 
       if (am->Pam.IR.index == 0)
          vex_printf("0(");
       else
          vex_printf("%d(", (Int)am->Pam.IR.index);
-      ppHRegPPC32(am->Pam.IR.base);
+      ppHRegPPC(am->Pam.IR.base);
       vex_printf(")");
       return;
    case Pam_RR:
-      ppHRegPPC32(am->Pam.RR.base);
+      ppHRegPPC(am->Pam.RR.base);
       vex_printf(",");
-      ppHRegPPC32(am->Pam.RR.index);
+      ppHRegPPC(am->Pam.RR.index);
       return;
    default:
-      vpanic("ppPPC32AMode");
+      vpanic("ppPPCAMode");
    }
 }
 
-static void addRegUsage_PPC32AMode ( HRegUsage* u, PPC32AMode* am ) {
+static void addRegUsage_PPCAMode ( HRegUsage* u, PPCAMode* am ) {
    switch (am->tag) {
    case Pam_IR: 
       addHRegUse(u, HRmRead, am->Pam.IR.base);
@@ -365,11 +373,11 @@ static void addRegUsage_PPC32AMode ( HRegUsage* u, PPC32AMode* am ) {
       addHRegUse(u, HRmRead, am->Pam.RR.index);
       return;
    default:
-      vpanic("addRegUsage_PPC32AMode");
+      vpanic("addRegUsage_PPCAMode");
    }
 }
 
-static void mapRegs_PPC32AMode ( HRegRemap* m, PPC32AMode* am ) {
+static void mapRegs_PPCAMode ( HRegRemap* m, PPCAMode* am ) {
    switch (am->tag) {
    case Pam_IR: 
       am->Pam.IR.base = lookupHRegRemap(m, am->Pam.IR.base);
@@ -379,14 +387,14 @@ static void mapRegs_PPC32AMode ( HRegRemap* m, PPC32AMode* am ) {
       am->Pam.RR.index = lookupHRegRemap(m, am->Pam.RR.index);
       return;
    default:
-      vpanic("mapRegs_PPC32AMode");
+      vpanic("mapRegs_PPCAMode");
    }
 }
 
 /* --------- Operand, which can be a reg or a u16/s16. --------- */
 
-PPC32RH* PPC32RH_Imm ( Bool syned, UShort imm16 ) {
-   PPC32RH* op       = LibVEX_Alloc(sizeof(PPC32RH));
+PPCRH* PPCRH_Imm ( Bool syned, UShort imm16 ) {
+   PPCRH* op         = LibVEX_Alloc(sizeof(PPCRH));
    op->tag           = Prh_Imm;
    op->Prh.Imm.syned = syned;
    op->Prh.Imm.imm16 = imm16;
@@ -397,14 +405,14 @@ PPC32RH* PPC32RH_Imm ( Bool syned, UShort imm16 ) {
    vassert(syned == True || syned == False);
    return op;
 }
-PPC32RH* PPC32RH_Reg ( HReg reg ) {
-   PPC32RH* op     = LibVEX_Alloc(sizeof(PPC32RH));
+PPCRH* PPCRH_Reg ( HReg reg ) {
+   PPCRH* op       = LibVEX_Alloc(sizeof(PPCRH));
    op->tag         = Prh_Reg;
    op->Prh.Reg.reg = reg;
    return op;
 }
 
-void ppPPC32RH ( PPC32RH* op ) {
+void ppPPCRH ( PPCRH* op ) {
    switch (op->tag) {
    case Prh_Imm: 
       if (op->Prh.Imm.syned)
@@ -413,17 +421,17 @@ void ppPPC32RH ( PPC32RH* op ) {
          vex_printf("%u", (UInt)(UShort)op->Prh.Imm.imm16);
       return;
    case Prh_Reg: 
-      ppHRegPPC32(op->Prh.Reg.reg);
+      ppHRegPPC(op->Prh.Reg.reg);
       return;
    default: 
-      vpanic("ppPPC32RH");
+      vpanic("ppPPCRH");
    }
 }
 
-/* An PPC32RH can only be used in a "read" context (what would it mean
+/* An PPCRH can only be used in a "read" context (what would it mean
    to write or modify a literal?) and so we enumerate its registers
    accordingly. */
-static void addRegUsage_PPC32RH ( HRegUsage* u, PPC32RH* op ) {
+static void addRegUsage_PPCRH ( HRegUsage* u, PPCRH* op ) {
    switch (op->tag) {
    case Prh_Imm: 
       return;
@@ -431,11 +439,11 @@ static void addRegUsage_PPC32RH ( HRegUsage* u, PPC32RH* op ) {
       addHRegUse(u, HRmRead, op->Prh.Reg.reg);
       return;
    default: 
-      vpanic("addRegUsage_PPC32RH");
+      vpanic("addRegUsage_PPCRH");
    }
 }
 
-static void mapRegs_PPC32RH ( HRegRemap* m, PPC32RH* op ) {
+static void mapRegs_PPCRH ( HRegRemap* m, PPCRH* op ) {
    switch (op->tag) {
    case Prh_Imm: 
       return;
@@ -443,43 +451,43 @@ static void mapRegs_PPC32RH ( HRegRemap* m, PPC32RH* op ) {
       op->Prh.Reg.reg = lookupHRegRemap(m, op->Prh.Reg.reg);
       return;
    default: 
-      vpanic("mapRegs_PPC32RH");
+      vpanic("mapRegs_PPCRH");
    }
 }
 
 
 /* --------- Operand, which can be a reg or a u32/64. --------- */
 
-PPC32RI* PPC32RI_Imm ( ULong imm64 ) {
-   PPC32RI* op = LibVEX_Alloc(sizeof(PPC32RI));
+PPCRI* PPCRI_Imm ( ULong imm64 ) {
+   PPCRI* op   = LibVEX_Alloc(sizeof(PPCRI));
    op->tag     = Pri_Imm;
    op->Pri.Imm = imm64;
    return op;
 }
-PPC32RI* PPC32RI_Reg ( HReg reg ) {
-   PPC32RI* op = LibVEX_Alloc(sizeof(PPC32RI));
+PPCRI* PPCRI_Reg ( HReg reg ) {
+   PPCRI* op   = LibVEX_Alloc(sizeof(PPCRI));
    op->tag     = Pri_Reg;
    op->Pri.Reg = reg;
    return op;
 }
 
-void ppPPC32RI ( PPC32RI* dst ) {
+void ppPPCRI ( PPCRI* dst ) {
    switch (dst->tag) {
       case Pri_Imm: 
          vex_printf("0x%llx", dst->Pri.Imm);
          break;
       case Pri_Reg: 
-         ppHRegPPC32(dst->Pri.Reg);
+         ppHRegPPC(dst->Pri.Reg);
          break;
       default: 
-         vpanic("ppPPC32RI");
+         vpanic("ppPPCRI");
    }
 }
 
-/* An PPC32RI can only be used in a "read" context (what would it
+/* An PPCRI can only be used in a "read" context (what would it
    mean to write or modify a literal?) and so we enumerate its
    registers accordingly. */
-static void addRegUsage_PPC32RI ( HRegUsage* u, PPC32RI* dst ) {
+static void addRegUsage_PPCRI ( HRegUsage* u, PPCRI* dst ) {
    switch (dst->tag) {
       case Pri_Imm: 
          return;
@@ -487,11 +495,11 @@ static void addRegUsage_PPC32RI ( HRegUsage* u, PPC32RI* dst ) {
          addHRegUse(u, HRmRead, dst->Pri.Reg);
          return;
       default: 
-         vpanic("addRegUsage_PPC32RI");
+         vpanic("addRegUsage_PPCRI");
    }
 }
 
-static void mapRegs_PPC32RI ( HRegRemap* m, PPC32RI* dst ) {
+static void mapRegs_PPCRI ( HRegRemap* m, PPCRI* dst ) {
    switch (dst->tag) {
       case Pri_Imm: 
          return;
@@ -499,45 +507,45 @@ static void mapRegs_PPC32RI ( HRegRemap* m, PPC32RI* dst ) {
          dst->Pri.Reg = lookupHRegRemap(m, dst->Pri.Reg);
          return;
       default: 
-         vpanic("mapRegs_PPC32RI");
+         vpanic("mapRegs_PPCRI");
    }
 }
 
 
 /* --------- Operand, which can be a vector reg or a simm5. --------- */
 
-PPC32VI5s* PPC32VI5s_Imm ( Char simm5 ) {
-   PPC32VI5s* op = LibVEX_Alloc(sizeof(PPC32VI5s));
+PPCVI5s* PPCVI5s_Imm ( Char simm5 ) {
+   PPCVI5s* op   = LibVEX_Alloc(sizeof(PPCVI5s));
    op->tag       = Pvi_Imm;
    op->Pvi.Imm5s = simm5;
    vassert(simm5 >= -16 && simm5 <= 15);
    return op;
 }
-PPC32VI5s* PPC32VI5s_Reg ( HReg reg ) {
-   PPC32VI5s* op = LibVEX_Alloc(sizeof(PPC32VI5s));
-   op->tag       = Pvi_Reg;
-   op->Pvi.Reg   = reg;
+PPCVI5s* PPCVI5s_Reg ( HReg reg ) {
+   PPCVI5s* op = LibVEX_Alloc(sizeof(PPCVI5s));
+   op->tag     = Pvi_Reg;
+   op->Pvi.Reg = reg;
    vassert(hregClass(reg) == HRcVec128);
    return op;
 }
 
-void ppPPC32VI5s ( PPC32VI5s* src ) {
+void ppPPCVI5s ( PPCVI5s* src ) {
    switch (src->tag) {
       case Pvi_Imm: 
          vex_printf("%d", (Int)src->Pvi.Imm5s);
          break;
       case Pvi_Reg: 
-         ppHRegPPC32(src->Pvi.Reg);
+         ppHRegPPC(src->Pvi.Reg);
          break;
       default: 
-         vpanic("ppPPC32VI5s");
+         vpanic("ppPPCVI5s");
    }
 }
 
-/* An PPC32VI5s can only be used in a "read" context (what would it
+/* An PPCVI5s can only be used in a "read" context (what would it
    mean to write or modify a literal?) and so we enumerate its
    registers accordingly. */
-static void addRegUsage_PPC32VI5s ( HRegUsage* u, PPC32VI5s* dst ) {
+static void addRegUsage_PPCVI5s ( HRegUsage* u, PPCVI5s* dst ) {
    switch (dst->tag) {
       case Pvi_Imm: 
          return;
@@ -545,11 +553,11 @@ static void addRegUsage_PPC32VI5s ( HRegUsage* u, PPC32VI5s* dst ) {
          addHRegUse(u, HRmRead, dst->Pvi.Reg);
          return;
       default: 
-         vpanic("addRegUsage_PPC32VI5s");
+         vpanic("addRegUsage_PPCVI5s");
    }
 }
 
-static void mapRegs_PPC32VI5s ( HRegRemap* m, PPC32VI5s* dst ) {
+static void mapRegs_PPCVI5s ( HRegRemap* m, PPCVI5s* dst ) {
    switch (dst->tag) {
       case Pvi_Imm: 
          return;
@@ -557,35 +565,35 @@ static void mapRegs_PPC32VI5s ( HRegRemap* m, PPC32VI5s* dst ) {
          dst->Pvi.Reg = lookupHRegRemap(m, dst->Pvi.Reg);
          return;
       default: 
-         vpanic("mapRegs_PPC32VI5s");
+         vpanic("mapRegs_PPCVI5s");
    }
 }
 
 
 /* --------- Instructions. --------- */
 
-HChar* showPPC32UnaryOp ( PPC32UnaryOp op ) {
+HChar* showPPCUnaryOp ( PPCUnaryOp op ) {
    switch (op) {
-   case Pun_NOT: return "not";
-   case Pun_NEG: return "neg";
+   case Pun_NOT:   return "not";
+   case Pun_NEG:   return "neg";
    case Pun_CLZ32: return "cntlzw";
    case Pun_CLZ64: return "cntlzd";
-   default: vpanic("showPPC32UnaryOp");
+   default: vpanic("showPPCUnaryOp");
    }
 }
 
-HChar* showPPC32AluOp ( PPC32AluOp op, Bool immR ) {
+HChar* showPPCAluOp ( PPCAluOp op, Bool immR ) {
    switch (op) {
       case Palu_ADD: return immR ? "addi"  : "add";
       case Palu_SUB: return immR ? "subi"  : "sub";
       case Palu_AND: return immR ? "andi." : "and";
       case Palu_OR:  return immR ? "ori"   : "or";
       case Palu_XOR: return immR ? "xori"  : "xor";
-      default: vpanic("showPPC32AluOp");
+      default: vpanic("showPPCAluOp");
    }
 }
 
-HChar* showPPC32ShftOp ( PPC32ShftOp op, Bool immR, Bool sz32 ) {
+HChar* showPPCShftOp ( PPCShftOp op, Bool immR, Bool sz32 ) {
    switch (op) {
       case Pshft_SHL: return sz32 ? (immR ? "slwi"  : "slw") : 
                                     (immR ? "sldi"  : "sld");
@@ -593,11 +601,11 @@ HChar* showPPC32ShftOp ( PPC32ShftOp op, Bool immR, Bool sz32 ) {
                                     (immR ? "srdi"  : "srd");
       case Pshft_SAR: return sz32 ? (immR ? "srawi" : "sraw") :
                                     (immR ? "sradi" : "srad");
-      default: vpanic("showPPC32ShftOp");
+      default: vpanic("showPPCShftOp");
    }
 }
 
-HChar* showPPC32FpOp ( PPC32FpOp op ) {
+HChar* showPPCFpOp ( PPCFpOp op ) {
    switch (op) {
       case Pfp_ADD:    return "fadd";
       case Pfp_SUB:    return "fsub";
@@ -607,11 +615,11 @@ HChar* showPPC32FpOp ( PPC32FpOp op ) {
       case Pfp_ABS:    return "fabs";
       case Pfp_NEG:    return "fneg";
       case Pfp_MOV:    return "fmr";
-      default: vpanic("showPPC32FpOp");
+      default: vpanic("showPPCFpOp");
    }
 }
 
-HChar* showPPC32AvOp ( PPC32AvOp op ) {
+HChar* showPPCAvOp ( PPCAvOp op ) {
    switch (op) {
 
    /* Unary */
@@ -674,11 +682,11 @@ HChar* showPPC32AvOp ( PPC32AvOp op ) {
    case Pav_MRGHI:     return "vmrgh";    // b,h,w
    case Pav_MRGLO:     return "vmrgl";    // b,h,w
 
-   default: vpanic("showPPC32AvOp");
+   default: vpanic("showPPCAvOp");
    }
 }
 
-HChar* showPPC32AvFpOp ( PPC32AvFpOp op ) {
+HChar* showPPCAvFpOp ( PPCAvFpOp op ) {
    switch (op) {
    /* Floating Point Binary */
    case Pavfp_ADDF:      return "vaddfp";
@@ -702,13 +710,13 @@ HChar* showPPC32AvFpOp ( PPC32AvFpOp op ) {
    case Pavfp_ROUNDN:    return "vrfin";
    case Pavfp_ROUNDZ:    return "vrfiz";
 
-   default: vpanic("showPPC32AvFpOp");
+   default: vpanic("showPPCAvFpOp");
    }
 }
 
-PPC32Instr* PPC32Instr_LI ( HReg dst, ULong imm64, Bool mode64 )
+PPCInstr* PPCInstr_LI ( HReg dst, ULong imm64, Bool mode64 )
 {
-   PPC32Instr* i   = LibVEX_Alloc(sizeof(PPC32Instr));
+   PPCInstr* i     = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag          = Pin_LI;
    i->Pin.LI.dst   = dst;
    i->Pin.LI.imm64 = imm64;
@@ -716,9 +724,9 @@ PPC32Instr* PPC32Instr_LI ( HReg dst, ULong imm64, Bool mode64 )
       vassert( (Long)imm64 == (Long)(Int)(UInt)imm64 );
    return i;
 }
-PPC32Instr* PPC32Instr_Alu ( PPC32AluOp op, HReg dst, 
-                             HReg srcL, PPC32RH* srcR ) {
-   PPC32Instr* i   = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_Alu ( PPCAluOp op, HReg dst, 
+                         HReg srcL, PPCRH* srcR ) {
+   PPCInstr* i     = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag          = Pin_Alu;
    i->Pin.Alu.op   = op;
    i->Pin.Alu.dst  = dst;
@@ -726,9 +734,9 @@ PPC32Instr* PPC32Instr_Alu ( PPC32AluOp op, HReg dst,
    i->Pin.Alu.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_Shft ( PPC32ShftOp op, Bool sz32, 
-                              HReg dst, HReg srcL, PPC32RH* srcR ) {
-   PPC32Instr* i    = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_Shft ( PPCShftOp op, Bool sz32, 
+                          HReg dst, HReg srcL, PPCRH* srcR ) {
+   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag           = Pin_Shft;
    i->Pin.Shft.op   = op;
    i->Pin.Shft.sz32 = sz32;
@@ -737,20 +745,20 @@ PPC32Instr* PPC32Instr_Shft ( PPC32ShftOp op, Bool sz32,
    i->Pin.Shft.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AddSubC32 ( Bool isAdd, Bool setC,
-                                   HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag                 = Pin_AddSubC32;
-   i->Pin.AddSubC32.isAdd = isAdd;
-   i->Pin.AddSubC32.setC  = setC;
-   i->Pin.AddSubC32.dst   = dst;
-   i->Pin.AddSubC32.srcL  = srcL;
-   i->Pin.AddSubC32.srcR  = srcR;
+PPCInstr* PPCInstr_AddSubC ( Bool isAdd, Bool setC,
+                             HReg dst, HReg srcL, HReg srcR ) {
+   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag               = Pin_AddSubC;
+   i->Pin.AddSubC.isAdd = isAdd;
+   i->Pin.AddSubC.setC  = setC;
+   i->Pin.AddSubC.dst   = dst;
+   i->Pin.AddSubC.srcL  = srcL;
+   i->Pin.AddSubC.srcR  = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_Cmp ( Bool syned, Bool sz32, 
-                             UInt crfD, HReg srcL, PPC32RH* srcR ) {
-   PPC32Instr* i    = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_Cmp ( Bool syned, Bool sz32, 
+                         UInt crfD, HReg srcL, PPCRH* srcR ) {
+   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag           = Pin_Cmp;
    i->Pin.Cmp.syned = syned;
    i->Pin.Cmp.sz32  = sz32;
@@ -759,17 +767,17 @@ PPC32Instr* PPC32Instr_Cmp ( Bool syned, Bool sz32,
    i->Pin.Cmp.srcR  = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_Unary ( PPC32UnaryOp op, HReg dst, HReg src ) {
-   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag             = Pin_Unary;
-   i->Pin.Unary32.op  = op;
-   i->Pin.Unary32.dst = dst;
-   i->Pin.Unary32.src = src;
+PPCInstr* PPCInstr_Unary ( PPCUnaryOp op, HReg dst, HReg src ) {
+   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag           = Pin_Unary;
+   i->Pin.Unary.op  = op;
+   i->Pin.Unary.dst = dst;
+   i->Pin.Unary.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_MulL ( Bool syned, Bool hi, Bool sz32, 
-                              HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_MulL ( Bool syned, Bool hi, Bool sz32, 
+                          HReg dst, HReg srcL, HReg srcR ) {
+   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag            = Pin_MulL;
    i->Pin.MulL.syned = syned;
    i->Pin.MulL.hi    = hi;
@@ -782,21 +790,21 @@ PPC32Instr* PPC32Instr_MulL ( Bool syned, Bool hi, Bool sz32,
    if (!hi) vassert(!syned);
    return i;
 }
-PPC32Instr* PPC32Instr_Div ( Bool syned, Bool sz32,
-                             HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag             = Pin_Div;
-   i->Pin.Div.syned   = syned;
-   i->Pin.Div.sz32    = sz32;
-   i->Pin.Div.dst     = dst;
-   i->Pin.Div.srcL    = srcL;
-   i->Pin.Div.srcR    = srcR;
+PPCInstr* PPCInstr_Div ( Bool syned, Bool sz32,
+                         HReg dst, HReg srcL, HReg srcR ) {
+   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag           = Pin_Div;
+   i->Pin.Div.syned = syned;
+   i->Pin.Div.sz32  = sz32;
+   i->Pin.Div.dst   = dst;
+   i->Pin.Div.srcL  = srcL;
+   i->Pin.Div.srcR  = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_Call ( PPC32CondCode cond, 
-                              Addr64 target, UInt argiregs ) {
+PPCInstr* PPCInstr_Call ( PPCCondCode cond, 
+                          Addr64 target, UInt argiregs ) {
    UInt mask;
-   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_Call;
    i->Pin.Call.cond     = cond;
    i->Pin.Call.target   = target;
@@ -806,18 +814,18 @@ PPC32Instr* PPC32Instr_Call ( PPC32CondCode cond,
    vassert(0 == (argiregs & ~mask));
    return i;
 }
-PPC32Instr* PPC32Instr_Goto ( IRJumpKind jk, 
-                              PPC32CondCode cond, PPC32RI* dst ) {
-   PPC32Instr* i    = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_Goto ( IRJumpKind jk, 
+                          PPCCondCode cond, PPCRI* dst ) {
+   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag           = Pin_Goto;
    i->Pin.Goto.cond = cond;
    i->Pin.Goto.dst  = dst;
    i->Pin.Goto.jk   = jk;
    return i;
 }
-PPC32Instr* PPC32Instr_CMov  ( PPC32CondCode cond, 
-                               HReg dst, PPC32RI* src ) {
-   PPC32Instr* i    = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_CMov  ( PPCCondCode cond, 
+                           HReg dst, PPCRI* src ) {
+   PPCInstr* i    = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag           = Pin_CMov;
    i->Pin.CMov.cond = cond;
    i->Pin.CMov.src  = src;
@@ -825,9 +833,9 @@ PPC32Instr* PPC32Instr_CMov  ( PPC32CondCode cond,
    vassert(cond.test != Pct_ALWAYS);
    return i;
 }
-PPC32Instr* PPC32Instr_Load ( UChar sz, Bool syned,
-                              HReg dst, PPC32AMode* src, Bool mode64 ) {
-   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_Load ( UChar sz, Bool syned,
+                          HReg dst, PPCAMode* src, Bool mode64 ) {
+   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag            = Pin_Load;
    i->Pin.Load.sz    = sz;
    i->Pin.Load.syned = syned;
@@ -837,9 +845,9 @@ PPC32Instr* PPC32Instr_Load ( UChar sz, Bool syned,
    if (sz == 8) vassert(mode64);
    return i;
 }
-PPC32Instr* PPC32Instr_Store ( UChar sz, PPC32AMode* dst, HReg src,
-                               Bool mode64 ) {
-   PPC32Instr* i    = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_Store ( UChar sz, PPCAMode* dst, HReg src,
+                           Bool mode64 ) {
+   PPCInstr* i      = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag           = Pin_Store;
    i->Pin.Store.sz  = sz;
    i->Pin.Store.src = src;
@@ -848,37 +856,38 @@ PPC32Instr* PPC32Instr_Store ( UChar sz, PPC32AMode* dst, HReg src,
    if (sz == 8) vassert(mode64);
    return i;
 }
-PPC32Instr* PPC32Instr_Set32 ( PPC32CondCode cond, HReg dst ) {
-   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag            = Pin_Set32;
-   i->Pin.Set32.cond = cond;
-   i->Pin.Set32.dst  = dst;
+PPCInstr* PPCInstr_Set ( PPCCondCode cond, HReg dst ) {
+   PPCInstr* i     = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag          = Pin_Set;
+   i->Pin.Set.cond = cond;
+   i->Pin.Set.dst  = dst;
    return i;
 }
-PPC32Instr* PPC32Instr_MfCR ( HReg dst )
+PPCInstr* PPCInstr_MfCR ( HReg dst )
 {
-   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag            = Pin_MfCR;
-   i->Pin.MfCR.dst   = dst;
+   PPCInstr* i     = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag          = Pin_MfCR;
+   i->Pin.MfCR.dst = dst;
    return i;
 }
-PPC32Instr* PPC32Instr_MFence ( void )
+PPCInstr* PPCInstr_MFence ( void )
 {
-   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag            = Pin_MFence;
+   PPCInstr* i = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag      = Pin_MFence;
    return i;
 }
 
-PPC32Instr* PPC32Instr_FpUnary ( PPC32FpOp op, HReg dst, HReg src ) {
-   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpUnary ( PPCFpOp op, HReg dst, HReg src ) {
+   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag             = Pin_FpUnary;
    i->Pin.FpUnary.op  = op;
    i->Pin.FpUnary.dst = dst;
    i->Pin.FpUnary.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_FpBinary ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpBinary ( PPCFpOp op, HReg dst,
+                              HReg srcL, HReg srcR ) {
+   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_FpBinary;
    i->Pin.FpBinary.op   = op;
    i->Pin.FpBinary.dst  = dst;
@@ -886,8 +895,9 @@ PPC32Instr* PPC32Instr_FpBinary ( PPC32FpOp op, HReg dst, HReg srcL, HReg srcR )
    i->Pin.FpBinary.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_FpLdSt ( Bool isLoad, UChar sz, HReg reg, PPC32AMode* addr ) {
-   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpLdSt ( Bool isLoad, UChar sz,
+                            HReg reg, PPCAMode* addr ) {
+   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_FpLdSt;
    i->Pin.FpLdSt.isLoad = isLoad;
    i->Pin.FpLdSt.sz     = sz;
@@ -896,36 +906,36 @@ PPC32Instr* PPC32Instr_FpLdSt ( Bool isLoad, UChar sz, HReg reg, PPC32AMode* add
    vassert(sz == 4 || sz == 8);
    return i;
 }
-PPC32Instr* PPC32Instr_FpF64toF32 ( HReg dst, HReg src ) {
-   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpF64toF32 ( HReg dst, HReg src ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag                = Pin_FpF64toF32;
    i->Pin.FpF64toF32.dst = dst;
    i->Pin.FpF64toF32.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_FpF64toI32 ( HReg dst, HReg src ) {
-   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpF64toI32 ( HReg dst, HReg src ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag                = Pin_FpF64toI32;
    i->Pin.FpF64toI32.dst = dst;
    i->Pin.FpF64toI32.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_FpF64toI64 ( HReg dst, HReg src ) {
-   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpF64toI64 ( HReg dst, HReg src ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag                = Pin_FpF64toI64;
    i->Pin.FpF64toI64.dst = dst;
    i->Pin.FpF64toI64.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_FpI64toF64 ( HReg dst, HReg src ) {
-   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpI64toF64 ( HReg dst, HReg src ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag                = Pin_FpI64toF64;
    i->Pin.FpI64toF64.dst = dst;
    i->Pin.FpI64toF64.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_FpCMov ( PPC32CondCode cond, HReg dst, HReg src ) {
-   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpCMov ( PPCCondCode cond, HReg dst, HReg src ) {
+   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag             = Pin_FpCMov;
    i->Pin.FpCMov.cond = cond;
    i->Pin.FpCMov.dst  = dst;
@@ -933,14 +943,14 @@ PPC32Instr* PPC32Instr_FpCMov ( PPC32CondCode cond, HReg dst, HReg src ) {
    vassert(cond.test != Pct_ALWAYS);
    return i;
 }
-PPC32Instr* PPC32Instr_FpLdFPSCR ( HReg src ) {
-   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpLdFPSCR ( HReg src ) {
+   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_FpLdFPSCR;
    i->Pin.FpLdFPSCR.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_FpCmp ( HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_FpCmp ( HReg dst, HReg srcL, HReg srcR ) {
+   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag            = Pin_FpCmp;
    i->Pin.FpCmp.dst  = dst;
    i->Pin.FpCmp.srcL = srcL;
@@ -949,8 +959,8 @@ PPC32Instr* PPC32Instr_FpCmp ( HReg dst, HReg srcL, HReg srcR ) {
 }
 
 /* Read/Write Link Register */
-PPC32Instr* PPC32Instr_RdWrLR ( Bool wrLR, HReg gpr ) {
-   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_RdWrLR ( Bool wrLR, HReg gpr ) {
+   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag             = Pin_RdWrLR;
    i->Pin.RdWrLR.wrLR = wrLR;
    i->Pin.RdWrLR.gpr  = gpr;
@@ -958,8 +968,9 @@ PPC32Instr* PPC32Instr_RdWrLR ( Bool wrLR, HReg gpr ) {
 }
 
 /* AltiVec */
-PPC32Instr* PPC32Instr_AvLdSt ( Bool isLoad, UChar sz, HReg reg, PPC32AMode* addr ) {
-   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvLdSt ( Bool isLoad, UChar sz,
+                            HReg reg, PPCAMode* addr ) {
+   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_AvLdSt;
    i->Pin.AvLdSt.isLoad = isLoad;
    i->Pin.AvLdSt.sz     = sz;
@@ -967,16 +978,17 @@ PPC32Instr* PPC32Instr_AvLdSt ( Bool isLoad, UChar sz, HReg reg, PPC32AMode* add
    i->Pin.AvLdSt.addr   = addr;
    return i;
 }
-PPC32Instr* PPC32Instr_AvUnary ( PPC32AvOp op, HReg dst, HReg src ) {
-   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvUnary ( PPCAvOp op, HReg dst, HReg src ) {
+   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag             = Pin_AvUnary;
    i->Pin.AvUnary.op  = op;
    i->Pin.AvUnary.dst = dst;
    i->Pin.AvUnary.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_AvBinary ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvBinary ( PPCAvOp op, HReg dst,
+                              HReg srcL, HReg srcR ) {
+   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_AvBinary;
    i->Pin.AvBinary.op   = op;
    i->Pin.AvBinary.dst  = dst;
@@ -984,35 +996,39 @@ PPC32Instr* PPC32Instr_AvBinary ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR )
    i->Pin.AvBinary.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AvBin8x16 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag                 = Pin_AvBin8x16;
+PPCInstr* PPCInstr_AvBin8x16 ( PPCAvOp op, HReg dst,
+                               HReg srcL, HReg srcR ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                = Pin_AvBin8x16;
    i->Pin.AvBin8x16.op   = op;
    i->Pin.AvBin8x16.dst  = dst;
    i->Pin.AvBin8x16.srcL = srcL;
    i->Pin.AvBin8x16.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AvBin16x8 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag                 = Pin_AvBin16x8;
+PPCInstr* PPCInstr_AvBin16x8 ( PPCAvOp op, HReg dst,
+                               HReg srcL, HReg srcR ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                = Pin_AvBin16x8;
    i->Pin.AvBin16x8.op   = op;
    i->Pin.AvBin16x8.dst  = dst;
    i->Pin.AvBin16x8.srcL = srcL;
    i->Pin.AvBin16x8.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AvBin32x4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag                 = Pin_AvBin32x4;
+PPCInstr* PPCInstr_AvBin32x4 ( PPCAvOp op, HReg dst,
+                               HReg srcL, HReg srcR ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                = Pin_AvBin32x4;
    i->Pin.AvBin32x4.op   = op;
    i->Pin.AvBin32x4.dst  = dst;
    i->Pin.AvBin32x4.srcL = srcL;
    i->Pin.AvBin32x4.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i          = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvOp op, HReg dst,
+                                HReg srcL, HReg srcR ) {
+   PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag                 = Pin_AvBin32Fx4;
    i->Pin.AvBin32Fx4.op   = op;
    i->Pin.AvBin32Fx4.dst  = dst;
@@ -1020,16 +1036,16 @@ PPC32Instr* PPC32Instr_AvBin32Fx4 ( PPC32AvOp op, HReg dst, HReg srcL, HReg srcR
    i->Pin.AvBin32Fx4.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AvUn32Fx4 ( PPC32AvOp op, HReg dst, HReg src ) {
-   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvUn32Fx4 ( PPCAvOp op, HReg dst, HReg src ) {
+   PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_AvUn32Fx4;
    i->Pin.AvUn32Fx4.op  = op;
    i->Pin.AvUn32Fx4.dst = dst;
    i->Pin.AvUn32Fx4.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_AvPerm ( HReg dst, HReg srcL, HReg srcR, HReg ctl ) {
-   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvPerm ( HReg dst, HReg srcL, HReg srcR, HReg ctl ) {
+   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag             = Pin_AvPerm;
    i->Pin.AvPerm.dst  = dst;
    i->Pin.AvPerm.srcL = srcL;
@@ -1037,8 +1053,8 @@ PPC32Instr* PPC32Instr_AvPerm ( HReg dst, HReg srcL, HReg srcR, HReg ctl ) {
    i->Pin.AvPerm.ctl  = ctl;
    return i;
 }
-PPC32Instr* PPC32Instr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
+   PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag            = Pin_AvSel;
    i->Pin.AvSel.ctl  = ctl;
    i->Pin.AvSel.dst  = dst;
@@ -1046,8 +1062,9 @@ PPC32Instr* PPC32Instr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
    i->Pin.AvSel.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AvShlDbl ( UChar shift, HReg dst, HReg srcL, HReg srcR ) {
-   PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvShlDbl ( UChar shift, HReg dst,
+                              HReg srcL, HReg srcR ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag                = Pin_AvShlDbl;
    i->Pin.AvShlDbl.shift = shift;
    i->Pin.AvShlDbl.dst   = dst;
@@ -1055,16 +1072,16 @@ PPC32Instr* PPC32Instr_AvShlDbl ( UChar shift, HReg dst, HReg srcL, HReg srcR ) 
    i->Pin.AvShlDbl.srcR  = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_AvSplat ( UChar sz, HReg dst, PPC32VI5s* src ) {
-   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvSplat ( UChar sz, HReg dst, PPCVI5s* src ) {
+   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag             = Pin_AvSplat;
    i->Pin.AvSplat.sz  = sz;
    i->Pin.AvSplat.dst = dst;
    i->Pin.AvSplat.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_AvCMov ( PPC32CondCode cond, HReg dst, HReg src ) {
-   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvCMov ( PPCCondCode cond, HReg dst, HReg src ) {
+   PPCInstr* i        = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag             = Pin_AvCMov;
    i->Pin.AvCMov.cond = cond;
    i->Pin.AvCMov.dst  = dst;
@@ -1072,8 +1089,8 @@ PPC32Instr* PPC32Instr_AvCMov ( PPC32CondCode cond, HReg dst, HReg src ) {
    vassert(cond.test != Pct_ALWAYS);
    return i;
 }
-PPC32Instr* PPC32Instr_AvLdVSCR ( HReg src ) {
-   PPC32Instr* i       = LibVEX_Alloc(sizeof(PPC32Instr));
+PPCInstr* PPCInstr_AvLdVSCR ( HReg src ) {
+   PPCInstr* i         = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag              = Pin_AvLdVSCR;
    i->Pin.AvLdVSCR.src = src;
    return i;
@@ -1084,7 +1101,7 @@ PPC32Instr* PPC32Instr_AvLdVSCR ( HReg src ) {
 static void ppLoadImm ( HReg dst, ULong imm, Bool mode64 ) {
 #if 1
    vex_printf("li_word ");
-   ppHRegPPC32(dst);
+   ppHRegPPC(dst);
    if (!mode64) {
       vassert(imm == (ULong)(Long)(Int)(UInt)imm);
       vex_printf(",0x%08x", (UInt)imm);
@@ -1092,23 +1109,21 @@ static void ppLoadImm ( HReg dst, ULong imm, Bool mode64 ) {
       vex_printf(",0x%016llx", imm);
    }
 #else
-// if (imm >= 0xFFFFFFFFFFFF8000ULL || imm < 0x8000) {
-   if (imm == (ULong)(Long)(Int)(Short)(UShort)imm) {
+   if (imm >= 0xFFFFFFFFFFFF8000ULL || imm < 0x8000) {
       // sign-extendable from 16 bits
       vex_printf("li ");
-      ppHRegPPC32(dst);
+      ppHRegPPC(dst);
       vex_printf(",0x%x", (UInt)imm);
    } else {
-//    if (imm >= 0xFFFFFFFF80000000ULL || imm < 0x80000000ULL) {
-      if (imm == (ULong)(Long)(Int)(UInt)imm) {
+      if (imm >= 0xFFFFFFFF80000000ULL || imm < 0x80000000ULL) {
          // sign-extendable from 32 bits
          vex_printf("lis ");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",0x%x ; ", (UInt)(imm >> 16));
          vex_printf("ori ");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",0x%x", (UInt)(imm & 0xFFFF));
       } else {
          // full 64bit immediate load: 5 (five!) insns.
@@ -1116,31 +1131,31 @@ static void ppLoadImm ( HReg dst, ULong imm, Bool mode64 ) {
 
          // load high word
          vex_printf("lis ");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",0x%x ; ", (UInt)(imm >> 48) & 0xFFFF);
          vex_printf("ori ");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",0x%x ; ", (UInt)(imm >> 32) & 0xFFFF);
          
          // shift r_dst low word to high word => rldicr
          vex_printf("rldicr ");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",32,31 ; ");
 
          // load low word
          vex_printf("oris ");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",0x%x ; ", (UInt)(imm >> 16) & 0xFFFF);
          vex_printf("ori ");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",");
-         ppHRegPPC32(dst);
+         ppHRegPPC(dst);
          vex_printf(",0x%x", (UInt)(imm >>  0) & 0xFFFF);
       }
    }
@@ -1150,29 +1165,29 @@ static void ppLoadImm ( HReg dst, ULong imm, Bool mode64 ) {
 static void ppMovReg ( HReg dst, HReg src ) {
    if (hregNumber(dst) != hregNumber(src)) {
       vex_printf("mr ");
-      ppHRegPPC32(dst);
+      ppHRegPPC(dst);
       vex_printf(",");
-      ppHRegPPC32(src);
+      ppHRegPPC(src);
    }
 }
 
-void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
+void ppPPCInstr ( PPCInstr* i, Bool mode64 )
 {
    switch (i->tag) {
    case Pin_LI:
       ppLoadImm(i->Pin.LI.dst, i->Pin.LI.imm64, mode64);
       break;
    case Pin_Alu: {
-      HReg     r_srcL  = i->Pin.Alu.srcL;
-      PPC32RH* rh_srcR = i->Pin.Alu.srcR;
+      HReg   r_srcL  = i->Pin.Alu.srcL;
+      PPCRH* rh_srcR = i->Pin.Alu.srcR;
       /* special-case "mr" */
       if (i->Pin.Alu.op == Palu_OR &&   // or Rd,Rs,Rs == mr Rd,Rs
           rh_srcR->tag == Prh_Reg &&
           rh_srcR->Prh.Reg.reg == r_srcL) {
          vex_printf("mr ");
-         ppHRegPPC32(i->Pin.Alu.dst);
+         ppHRegPPC(i->Pin.Alu.dst);
          vex_printf(",");
-         ppHRegPPC32(r_srcL);
+         ppHRegPPC(r_srcL);
          return;
       }
       /* special-case "li" */
@@ -1180,43 +1195,43 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
           rh_srcR->tag == Prh_Imm &&
           hregNumber(r_srcL) == 0) {
          vex_printf("li ");
-         ppHRegPPC32(i->Pin.Alu.dst);
+         ppHRegPPC(i->Pin.Alu.dst);
          vex_printf(",");
-         ppPPC32RH(rh_srcR);
+         ppPPCRH(rh_srcR);
          return;
       }
       /* generic */
-      vex_printf("%s ", showPPC32AluOp(i->Pin.Alu.op,
-                                       toBool(rh_srcR->tag == Prh_Imm)));
-      ppHRegPPC32(i->Pin.Alu.dst);
+      vex_printf("%s ", showPPCAluOp(i->Pin.Alu.op,
+                                     toBool(rh_srcR->tag == Prh_Imm)));
+      ppHRegPPC(i->Pin.Alu.dst);
       vex_printf(",");
-      ppHRegPPC32(r_srcL);
+      ppHRegPPC(r_srcL);
       vex_printf(",");
-      ppPPC32RH(rh_srcR);
+      ppPPCRH(rh_srcR);
       return;
    }
    case Pin_Shft: {
-      HReg     r_srcL  = i->Pin.Shft.srcL;
-      PPC32RH* rh_srcR = i->Pin.Shft.srcR;
-      vex_printf("%s ", showPPC32ShftOp(i->Pin.Shft.op,
-                                        toBool(rh_srcR->tag == Prh_Imm),
-                                        i->Pin.Shft.sz32));
-      ppHRegPPC32(i->Pin.Shft.dst);
+      HReg   r_srcL  = i->Pin.Shft.srcL;
+      PPCRH* rh_srcR = i->Pin.Shft.srcR;
+      vex_printf("%s ", showPPCShftOp(i->Pin.Shft.op,
+                                      toBool(rh_srcR->tag == Prh_Imm),
+                                      i->Pin.Shft.sz32));
+      ppHRegPPC(i->Pin.Shft.dst);
       vex_printf(",");
-      ppHRegPPC32(r_srcL);
+      ppHRegPPC(r_srcL);
       vex_printf(",");
-      ppPPC32RH(rh_srcR);
+      ppPPCRH(rh_srcR);
       return;
    }
-   case Pin_AddSubC32:
+   case Pin_AddSubC:
       vex_printf("%s%s ",
-                 i->Pin.AddSubC32.isAdd ? "add" : "sub",
-                 i->Pin.AddSubC32.setC ? "c" : "e");
-      ppHRegPPC32(i->Pin.AddSubC32.dst);
+                 i->Pin.AddSubC.isAdd ? "add" : "sub",
+                 i->Pin.AddSubC.setC ? "c" : "e");
+      ppHRegPPC(i->Pin.AddSubC.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AddSubC32.srcL);
+      ppHRegPPC(i->Pin.AddSubC.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AddSubC32.srcR);
+      ppHRegPPC(i->Pin.AddSubC.srcR);
       return;
    case Pin_Cmp:
       vex_printf("%s%c%s %%cr%u,",
@@ -1224,42 +1239,42 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
                  i->Pin.Cmp.sz32 ? 'w' : 'd',
                  i->Pin.Cmp.srcR->tag == Prh_Imm ? "i" : "",
                  i->Pin.Cmp.crfD);
-      ppHRegPPC32(i->Pin.Cmp.srcL);
+      ppHRegPPC(i->Pin.Cmp.srcL);
       vex_printf(",");
-      ppPPC32RH(i->Pin.Cmp.srcR);
+      ppPPCRH(i->Pin.Cmp.srcR);
       return;
    case Pin_Unary:
-      vex_printf("%s ", showPPC32UnaryOp(i->Pin.Unary32.op));
-      ppHRegPPC32(i->Pin.Unary32.dst);
+      vex_printf("%s ", showPPCUnaryOp(i->Pin.Unary.op));
+      ppHRegPPC(i->Pin.Unary.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.Unary32.src);
+      ppHRegPPC(i->Pin.Unary.src);
       return;
    case Pin_MulL:
       vex_printf("mul%c%c%s ",
                  i->Pin.MulL.hi ? 'h' : 'l',
                  i->Pin.MulL.sz32 ? 'w' : 'd',
                  i->Pin.MulL.hi ? (i->Pin.MulL.syned ? "s" : "u") : "");
-      ppHRegPPC32(i->Pin.MulL.dst);
+      ppHRegPPC(i->Pin.MulL.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.MulL.srcL);
+      ppHRegPPC(i->Pin.MulL.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.MulL.srcR);
+      ppHRegPPC(i->Pin.MulL.srcR);
       return;
    case Pin_Div:
       vex_printf("div%c%s ",
                  i->Pin.Div.sz32 ? 'w' : 'd',
                  i->Pin.Div.syned ? "" : "u");
-      ppHRegPPC32(i->Pin.Div.dst);
+      ppHRegPPC(i->Pin.Div.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.Div.srcL);
+      ppHRegPPC(i->Pin.Div.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.Div.srcR);
+      ppHRegPPC(i->Pin.Div.srcR);
       return;
    case Pin_Call: {
       Int n;
       vex_printf("call: ");
       if (i->Pin.Call.cond.test != Pct_ALWAYS) {
-         vex_printf("if (%s) ", showPPC32CondCode(i->Pin.Call.cond));
+         vex_printf("if (%s) ", showPPCCondCode(i->Pin.Call.cond));
       }
       vex_printf("{ ");
       ppLoadImm(hregPPC_GPR10(mode64), i->Pin.Call.target, mode64);
@@ -1277,7 +1292,7 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
    case Pin_Goto:
       vex_printf("goto: ");
       if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
-         vex_printf("if (%s) ", showPPC32CondCode(i->Pin.Goto.cond));
+         vex_printf("if (%s) ", showPPCCondCode(i->Pin.Goto.cond));
       }
       vex_printf("{ ");
       if (i->Pin.Goto.jk != Ijk_Boring
@@ -1288,20 +1303,21 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
          vex_printf(" ; ");
       }
       if (i->Pin.Goto.dst->tag == Pri_Imm) {
-         ppLoadImm(hregPPC_GPR3(mode64), i->Pin.Goto.dst->Pri.Imm, mode64);
+         ppLoadImm(hregPPC_GPR3(mode64), i->Pin.Goto.dst->Pri.Imm,
+                   mode64);
       } else {
          ppMovReg(hregPPC_GPR3(mode64), i->Pin.Goto.dst->Pri.Reg);
       }
       vex_printf(" ; blr }");
       return;
    case Pin_CMov:
-      vex_printf("cmov (%s) ", showPPC32CondCode(i->Pin.CMov.cond));
-      ppHRegPPC32(i->Pin.CMov.dst);
+      vex_printf("cmov (%s) ", showPPCCondCode(i->Pin.CMov.cond));
+      ppHRegPPC(i->Pin.CMov.dst);
       vex_printf(",");
-      ppPPC32RI(i->Pin.CMov.src);
+      ppPPCRI(i->Pin.CMov.src);
       vex_printf(": ");
       if (i->Pin.CMov.cond.test != Pct_ALWAYS) {
-         vex_printf("if (%s) ", showPPC32CondCode(i->Pin.CMov.cond));
+         vex_printf("if (%s) ", showPPCCondCode(i->Pin.CMov.cond));
       }
       vex_printf("{ ");
       if (i->Pin.CMov.src->tag == Pri_Imm) {
@@ -1317,9 +1333,9 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
       UChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
       HChar* s_syned = i->Pin.Load.syned ? "a" : sz==8 ? "" : "z";
       vex_printf("l%c%s%s ", c_sz, s_syned, idxd ? "x" : "" );
-      ppHRegPPC32(i->Pin.Load.dst);
+      ppHRegPPC(i->Pin.Load.dst);
       vex_printf(",");
-      ppPPC32AMode(i->Pin.Load.src);
+      ppPPCAMode(i->Pin.Load.src);
       return;
    }
    case Pin_Store: {
@@ -1327,28 +1343,28 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
       Bool idxd = toBool(i->Pin.Store.dst->tag == Pam_RR);
       UChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : /*8*/ 'd';
       vex_printf("st%c%s ", c_sz, idxd ? "x" : "" );
-      ppHRegPPC32(i->Pin.Store.src);
+      ppHRegPPC(i->Pin.Store.src);
       vex_printf(",");
-      ppPPC32AMode(i->Pin.Store.dst);
+      ppPPCAMode(i->Pin.Store.dst);
       return;
    }
-   case Pin_Set32: {
-      PPC32CondCode cc = i->Pin.Set32.cond;
-      vex_printf("set32 (%s),", showPPC32CondCode(cc));
-      ppHRegPPC32(i->Pin.Set32.dst);
+   case Pin_Set: {
+      PPCCondCode cc = i->Pin.Set.cond;
+      vex_printf("set (%s),", showPPCCondCode(cc));
+      ppHRegPPC(i->Pin.Set.dst);
       if (cc.test == Pct_ALWAYS) {
          vex_printf(": { li ");
-         ppHRegPPC32(i->Pin.Set32.dst);
+         ppHRegPPC(i->Pin.Set.dst);
          vex_printf(",1 }");
       } else {
          vex_printf(": { mfcr r0 ; rlwinm ");
-         ppHRegPPC32(i->Pin.Set32.dst);
+         ppHRegPPC(i->Pin.Set.dst);
          vex_printf(",r0,%u,31,31", cc.flag+1);
          if (cc.test == Pct_FALSE) {
             vex_printf("; xori ");
-            ppHRegPPC32(i->Pin.Set32.dst);
+            ppHRegPPC(i->Pin.Set.dst);
             vex_printf(",");
-            ppHRegPPC32(i->Pin.Set32.dst);
+            ppHRegPPC(i->Pin.Set.dst);
             vex_printf(",1");
          }
          vex_printf(" }");
@@ -1357,25 +1373,25 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
    }
    case Pin_MfCR:
       vex_printf("mfcr ");
-      ppHRegPPC32(i->Pin.MfCR.dst);
+      ppHRegPPC(i->Pin.MfCR.dst);
       break;
    case Pin_MFence:
       vex_printf("mfence (=sync)");
       return;
 
    case Pin_FpUnary:
-      vex_printf("%s ", showPPC32FpOp(i->Pin.FpUnary.op));
-      ppHRegPPC32(i->Pin.FpUnary.dst);
+      vex_printf("%s ", showPPCFpOp(i->Pin.FpUnary.op));
+      ppHRegPPC(i->Pin.FpUnary.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.FpUnary.src);
+      ppHRegPPC(i->Pin.FpUnary.src);
       return;
    case Pin_FpBinary:
-      vex_printf("%s ", showPPC32FpOp(i->Pin.FpBinary.op));
-      ppHRegPPC32(i->Pin.FpBinary.dst);
+      vex_printf("%s ", showPPCFpOp(i->Pin.FpBinary.op));
+      ppHRegPPC(i->Pin.FpBinary.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.FpBinary.srcL);
+      ppHRegPPC(i->Pin.FpBinary.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.FpBinary.srcR);
+      ppHRegPPC(i->Pin.FpBinary.srcR);
       return;
    case Pin_FpLdSt: {
       UChar sz = i->Pin.FpLdSt.sz;
@@ -1384,89 +1400,89 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
          vex_printf("lf%c%s ",
                     (sz==4 ? 's' : 'd'),
                     idxd ? "x" : "" );
-         ppHRegPPC32(i->Pin.FpLdSt.reg);
+         ppHRegPPC(i->Pin.FpLdSt.reg);
          vex_printf(",");
-         ppPPC32AMode(i->Pin.FpLdSt.addr);
+         ppPPCAMode(i->Pin.FpLdSt.addr);
       } else {
          vex_printf("stf%c%s ",
                     (sz==4 ? 's' : 'd'),
                     idxd ? "x" : "" );
-         ppHRegPPC32(i->Pin.FpLdSt.reg);
+         ppHRegPPC(i->Pin.FpLdSt.reg);
          vex_printf(",");
-         ppPPC32AMode(i->Pin.FpLdSt.addr);
+         ppPPCAMode(i->Pin.FpLdSt.addr);
       }
       return;
    }
    case Pin_FpF64toF32:
       vex_printf("frsp ");
-      ppHRegPPC32(i->Pin.FpF64toF32.dst);
+      ppHRegPPC(i->Pin.FpF64toF32.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.FpF64toF32.src);
+      ppHRegPPC(i->Pin.FpF64toF32.src);
       return;
    case Pin_FpF64toI32:
       vex_printf("fctiw %%fr7,");
-      ppHRegPPC32(i->Pin.FpF64toI32.src);
+      ppHRegPPC(i->Pin.FpF64toI32.src);
       vex_printf("; stfiwx %%fr7,%%r0,%%r1");
       vex_printf("; lwzx ");
-      ppHRegPPC32(i->Pin.FpF64toI32.dst);
+      ppHRegPPC(i->Pin.FpF64toI32.dst);
       vex_printf(",%%r0,%%r1");
       return;
    case Pin_FpF64toI64:
       vex_printf("fctid %%fr7,");
-      ppHRegPPC32(i->Pin.FpF64toI64.src);
+      ppHRegPPC(i->Pin.FpF64toI64.src);
       vex_printf("; stfdx %%fr7,%%r0,%%r1");
       vex_printf("; ldx ");
-      ppHRegPPC32(i->Pin.FpF64toI64.dst);
+      ppHRegPPC(i->Pin.FpF64toI64.dst);
       vex_printf(",%%r0,%%r1");
       return;
    case Pin_FpI64toF64:
       vex_printf("stdx ");
-      ppHRegPPC32(i->Pin.FpI64toF64.src);
+      ppHRegPPC(i->Pin.FpI64toF64.src);
       vex_printf(",%%r0,%%r1");
       vex_printf("; lfdx %%fr7,%%r0,%%r1");
       vex_printf("; fcfid ");
-      ppHRegPPC32(i->Pin.FpI64toF64.dst);
+      ppHRegPPC(i->Pin.FpI64toF64.dst);
       vex_printf(",%%r7");
       return;
    case Pin_FpCMov:
-      vex_printf("fpcmov (%s) ", showPPC32CondCode(i->Pin.FpCMov.cond));
-      ppHRegPPC32(i->Pin.FpCMov.dst);
+      vex_printf("fpcmov (%s) ", showPPCCondCode(i->Pin.FpCMov.cond));
+      ppHRegPPC(i->Pin.FpCMov.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.FpCMov.src);
+      ppHRegPPC(i->Pin.FpCMov.src);
       vex_printf(": ");
       vex_printf("if (fr_dst != fr_src) { ");
       if (i->Pin.FpCMov.cond.test != Pct_ALWAYS) {
-         vex_printf("if (%s) { ", showPPC32CondCode(i->Pin.FpCMov.cond));
+         vex_printf("if (%s) { ", showPPCCondCode(i->Pin.FpCMov.cond));
       }
       vex_printf("fmr ");
-      ppHRegPPC32(i->Pin.FpCMov.dst);
+      ppHRegPPC(i->Pin.FpCMov.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.FpCMov.src);
+      ppHRegPPC(i->Pin.FpCMov.src);
       if (i->Pin.FpCMov.cond.test != Pct_ALWAYS)
          vex_printf(" }");
       vex_printf(" }");
       return;
    case Pin_FpLdFPSCR:
       vex_printf("mtfsf 0xFF,");
-      ppHRegPPC32(i->Pin.FpLdFPSCR.src);
+      ppHRegPPC(i->Pin.FpLdFPSCR.src);
       return;
    case Pin_FpCmp:
       vex_printf("fcmpo %%cr1,");
-      ppHRegPPC32(i->Pin.FpCmp.srcL);
+      ppHRegPPC(i->Pin.FpCmp.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.FpCmp.srcR);
+      ppHRegPPC(i->Pin.FpCmp.srcR);
       vex_printf("; mfcr ");
-      ppHRegPPC32(i->Pin.FpCmp.dst);
+      ppHRegPPC(i->Pin.FpCmp.dst);
       vex_printf("; rlwinm ");
-      ppHRegPPC32(i->Pin.FpCmp.dst);
+      ppHRegPPC(i->Pin.FpCmp.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.FpCmp.dst);
+      ppHRegPPC(i->Pin.FpCmp.dst);
       vex_printf(",8,28,31");
       return;
 
    case Pin_RdWrLR:
       vex_printf("%s ", i->Pin.RdWrLR.wrLR ? "mtlr" : "mflr");
-      ppHRegPPC32(i->Pin.RdWrLR.gpr);
+      ppHRegPPC(i->Pin.RdWrLR.gpr);
       return;
 
    case Pin_AvLdSt: {
@@ -1482,97 +1498,97 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
          vex_printf("lv%sx ", str_size);
       else
          vex_printf("stv%sx ", str_size);
-      ppHRegPPC32(i->Pin.AvLdSt.reg);
+      ppHRegPPC(i->Pin.AvLdSt.reg);
       vex_printf(",");
       if (i->Pin.AvLdSt.addr->tag == Pam_IR)
          vex_printf("%%r30");
       else 
-         ppHRegPPC32(i->Pin.AvLdSt.addr->Pam.RR.index);
+         ppHRegPPC(i->Pin.AvLdSt.addr->Pam.RR.index);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvLdSt.addr->Pam.RR.base);
+      ppHRegPPC(i->Pin.AvLdSt.addr->Pam.RR.base);
       return;
    }
    case Pin_AvUnary:
-      vex_printf("%s ", showPPC32AvOp(i->Pin.AvUnary.op));
-      ppHRegPPC32(i->Pin.AvUnary.dst);
+      vex_printf("%s ", showPPCAvOp(i->Pin.AvUnary.op));
+      ppHRegPPC(i->Pin.AvUnary.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvUnary.src);
+      ppHRegPPC(i->Pin.AvUnary.src);
       return;
    case Pin_AvBinary:
-      vex_printf("%s ", showPPC32AvOp(i->Pin.AvBinary.op));
-      ppHRegPPC32(i->Pin.AvBinary.dst);
+      vex_printf("%s ", showPPCAvOp(i->Pin.AvBinary.op));
+      ppHRegPPC(i->Pin.AvBinary.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBinary.srcL);
+      ppHRegPPC(i->Pin.AvBinary.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBinary.srcR);
+      ppHRegPPC(i->Pin.AvBinary.srcR);
       return;
    case Pin_AvBin8x16:
-      vex_printf("%s(b) ", showPPC32AvOp(i->Pin.AvBin8x16.op));
-      ppHRegPPC32(i->Pin.AvBin8x16.dst);
+      vex_printf("%s(b) ", showPPCAvOp(i->Pin.AvBin8x16.op));
+      ppHRegPPC(i->Pin.AvBin8x16.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBin8x16.srcL);
+      ppHRegPPC(i->Pin.AvBin8x16.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBin8x16.srcR);
+      ppHRegPPC(i->Pin.AvBin8x16.srcR);
       return;
    case Pin_AvBin16x8:
-      vex_printf("%s(h) ", showPPC32AvOp(i->Pin.AvBin16x8.op));
-      ppHRegPPC32(i->Pin.AvBin16x8.dst);
+      vex_printf("%s(h) ", showPPCAvOp(i->Pin.AvBin16x8.op));
+      ppHRegPPC(i->Pin.AvBin16x8.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBin16x8.srcL);
+      ppHRegPPC(i->Pin.AvBin16x8.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBin16x8.srcR);
+      ppHRegPPC(i->Pin.AvBin16x8.srcR);
       return;
    case Pin_AvBin32x4:
-      vex_printf("%s(w) ", showPPC32AvOp(i->Pin.AvBin32x4.op));
-      ppHRegPPC32(i->Pin.AvBin32x4.dst);
+      vex_printf("%s(w) ", showPPCAvOp(i->Pin.AvBin32x4.op));
+      ppHRegPPC(i->Pin.AvBin32x4.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBin32x4.srcL);
+      ppHRegPPC(i->Pin.AvBin32x4.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBin32x4.srcR);
+      ppHRegPPC(i->Pin.AvBin32x4.srcR);
       return;
    case Pin_AvBin32Fx4:
-      vex_printf("%s ", showPPC32AvFpOp(i->Pin.AvBin32Fx4.op));
-      ppHRegPPC32(i->Pin.AvBin32Fx4.dst);
+      vex_printf("%s ", showPPCAvFpOp(i->Pin.AvBin32Fx4.op));
+      ppHRegPPC(i->Pin.AvBin32Fx4.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBin32Fx4.srcL);
+      ppHRegPPC(i->Pin.AvBin32Fx4.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvBin32Fx4.srcR);
+      ppHRegPPC(i->Pin.AvBin32Fx4.srcR);
       return;
    case Pin_AvUn32Fx4:
-      vex_printf("%s ", showPPC32AvFpOp(i->Pin.AvUn32Fx4.op));
-      ppHRegPPC32(i->Pin.AvUn32Fx4.dst);
+      vex_printf("%s ", showPPCAvFpOp(i->Pin.AvUn32Fx4.op));
+      ppHRegPPC(i->Pin.AvUn32Fx4.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvUn32Fx4.src);
+      ppHRegPPC(i->Pin.AvUn32Fx4.src);
       return;
    case Pin_AvPerm:
       vex_printf("vperm ");
-      ppHRegPPC32(i->Pin.AvPerm.dst);
+      ppHRegPPC(i->Pin.AvPerm.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvPerm.srcL);
+      ppHRegPPC(i->Pin.AvPerm.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvPerm.srcR);
+      ppHRegPPC(i->Pin.AvPerm.srcR);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvPerm.ctl);
+      ppHRegPPC(i->Pin.AvPerm.ctl);
       return;
 
    case Pin_AvSel:
       vex_printf("vsel ");
-      ppHRegPPC32(i->Pin.AvSel.dst);
+      ppHRegPPC(i->Pin.AvSel.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvSel.srcL);
+      ppHRegPPC(i->Pin.AvSel.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvSel.srcR);
+      ppHRegPPC(i->Pin.AvSel.srcR);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvSel.ctl);
+      ppHRegPPC(i->Pin.AvSel.ctl);
       return;
 
    case Pin_AvShlDbl:
       vex_printf("vsldoi ");
-      ppHRegPPC32(i->Pin.AvShlDbl.dst);
+      ppHRegPPC(i->Pin.AvShlDbl.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvShlDbl.srcL);
+      ppHRegPPC(i->Pin.AvShlDbl.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvShlDbl.srcR);
+      ppHRegPPC(i->Pin.AvShlDbl.srcR);
       vex_printf(",%d", i->Pin.AvShlDbl.shift);
       return;
 
@@ -1581,28 +1597,28 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
       UChar ch_sz = toUChar( (sz == 8) ? 'b' : (sz == 16) ? 'h' : 'w' );
       vex_printf("vsplt%s%c ",
                  i->Pin.AvSplat.src->tag == Pvi_Imm ? "is" : "", ch_sz);
-      ppHRegPPC32(i->Pin.AvSplat.dst);
+      ppHRegPPC(i->Pin.AvSplat.dst);
       vex_printf(",");
-      ppPPC32VI5s(i->Pin.AvSplat.src);
+      ppPPCVI5s(i->Pin.AvSplat.src);
       if (i->Pin.AvSplat.src->tag == Pvi_Reg)
          vex_printf(", %d", (128/sz)-1);   /* louis lane */
       return;
    }
 
    case Pin_AvCMov:
-      vex_printf("avcmov (%s) ", showPPC32CondCode(i->Pin.AvCMov.cond));
-      ppHRegPPC32(i->Pin.AvCMov.dst);
+      vex_printf("avcmov (%s) ", showPPCCondCode(i->Pin.AvCMov.cond));
+      ppHRegPPC(i->Pin.AvCMov.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvCMov.src);
+      ppHRegPPC(i->Pin.AvCMov.src);
       vex_printf(": ");
       vex_printf("if (v_dst != v_src) { ");
       if (i->Pin.AvCMov.cond.test != Pct_ALWAYS) {
-         vex_printf("if (%s) { ", showPPC32CondCode(i->Pin.AvCMov.cond));
+         vex_printf("if (%s) { ", showPPCCondCode(i->Pin.AvCMov.cond));
       }
       vex_printf("vmr ");
-      ppHRegPPC32(i->Pin.AvCMov.dst);
+      ppHRegPPC(i->Pin.AvCMov.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.AvCMov.src);
+      ppHRegPPC(i->Pin.AvCMov.src);
       if (i->Pin.FpCMov.cond.test != Pct_ALWAYS)
          vex_printf(" }");
       vex_printf(" }");
@@ -1610,18 +1626,18 @@ void ppPPC32Instr ( PPC32Instr* i, Bool mode64 )
 
    case Pin_AvLdVSCR:
       vex_printf("mtvscr ");
-      ppHRegPPC32(i->Pin.AvLdVSCR.src);
+      ppHRegPPC(i->Pin.AvLdVSCR.src);
       return;
 
    default:
-      vex_printf("\nppPPC32Instr(ppc32): No such tag(%d)\n", (Int)i->tag);
-      vpanic("ppPPC32Instr(ppc32)");
+      vex_printf("\nppPPCInstr: No such tag(%d)\n", (Int)i->tag);
+      vpanic("ppPPCInstr");
    }
 }
 
 /* --------- Helpers for register allocation. --------- */
 
-void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
+void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
 {
    initHRegUsage(u);
    switch (i->tag) {
@@ -1629,37 +1645,37 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
       addHRegUse(u, HRmWrite, i->Pin.LI.dst);
       break;
    case Pin_Alu:
-      addHRegUse(u, HRmRead, i->Pin.Alu.srcL);
-      addRegUsage_PPC32RH(u, i->Pin.Alu.srcR);
+      addHRegUse(u, HRmRead,  i->Pin.Alu.srcL);
+      addRegUsage_PPCRH(u,    i->Pin.Alu.srcR);
       addHRegUse(u, HRmWrite, i->Pin.Alu.dst);
       return;
    case Pin_Shft:
       addHRegUse(u, HRmRead,  i->Pin.Shft.srcL);
-      addRegUsage_PPC32RH(u,  i->Pin.Shft.srcR);
+      addRegUsage_PPCRH(u,    i->Pin.Shft.srcR);
       addHRegUse(u, HRmWrite, i->Pin.Shft.dst);
       return;
-   case Pin_AddSubC32:
-      addHRegUse(u, HRmWrite, i->Pin.AddSubC32.dst);
-      addHRegUse(u, HRmRead, i->Pin.AddSubC32.srcL);
-      addHRegUse(u, HRmRead, i->Pin.AddSubC32.srcR);
+   case Pin_AddSubC:
+      addHRegUse(u, HRmWrite, i->Pin.AddSubC.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AddSubC.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AddSubC.srcR);
       return;
    case Pin_Cmp:
       addHRegUse(u, HRmRead, i->Pin.Cmp.srcL);
-      addRegUsage_PPC32RH(u, i->Pin.Cmp.srcR);
+      addRegUsage_PPCRH(u,   i->Pin.Cmp.srcR);
       return;
    case Pin_Unary:
-      addHRegUse(u, HRmWrite, i->Pin.Unary32.dst);
-      addHRegUse(u, HRmRead, i->Pin.Unary32.src);
+      addHRegUse(u, HRmWrite, i->Pin.Unary.dst);
+      addHRegUse(u, HRmRead,  i->Pin.Unary.src);
       return;
    case Pin_MulL:
       addHRegUse(u, HRmWrite, i->Pin.MulL.dst);
-      addHRegUse(u, HRmRead, i->Pin.MulL.srcL);
-      addHRegUse(u, HRmRead, i->Pin.MulL.srcR);
+      addHRegUse(u, HRmRead,  i->Pin.MulL.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.MulL.srcR);
       return;
    case Pin_Div:
       addHRegUse(u, HRmWrite, i->Pin.Div.dst);
-      addHRegUse(u, HRmRead, i->Pin.Div.srcL);
-      addHRegUse(u, HRmRead, i->Pin.Div.srcR);
+      addHRegUse(u, HRmRead,  i->Pin.Div.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.Div.srcR);
       return;
    case Pin_Call: {
       UInt argir;
@@ -1701,14 +1717,14 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
       /* Finally, there is the issue that the insn trashes a
          register because the literal target address has to be
          loaded into a register.  %r10 seems a suitable victim.
-         (Can't use %r0, as use ops that interpret it as value zero).  */
+         (Can't use %r0, as use ops that interpret it as value zero). */
       addHRegUse(u, HRmWrite, hregPPC_GPR10(mode64));
       /* Upshot of this is that the assembler really must use %r10,
          and no other, as a destination temporary. */
       return;
    }
    case Pin_Goto:
-      addRegUsage_PPC32RI(u, i->Pin.Goto.dst);
+      addRegUsage_PPCRI(u, i->Pin.Goto.dst);
       /* GPR3 holds destination address from Pin_Goto */
       addHRegUse(u, HRmWrite, hregPPC_GPR3(mode64));
       if (i->Pin.Goto.jk != Ijk_Boring
@@ -1720,19 +1736,19 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, GuestStatePtr(mode64));
       return;
    case Pin_CMov:
-      addRegUsage_PPC32RI(u, i->Pin.CMov.src);
+      addRegUsage_PPCRI(u,  i->Pin.CMov.src);
       addHRegUse(u, HRmWrite, i->Pin.CMov.dst);
       return;
    case Pin_Load:
-      addRegUsage_PPC32AMode(u, i->Pin.Load.src);
+      addRegUsage_PPCAMode(u, i->Pin.Load.src);
       addHRegUse(u, HRmWrite, i->Pin.Load.dst);
       return;
    case Pin_Store:
-      addHRegUse(u, HRmRead, i->Pin.Store.src);
-      addRegUsage_PPC32AMode(u, i->Pin.Store.dst);
+      addHRegUse(u, HRmRead,  i->Pin.Store.src);
+      addRegUsage_PPCAMode(u, i->Pin.Store.dst);
       return;
-   case Pin_Set32:
-      addHRegUse(u, HRmWrite, i->Pin.Set32.dst);
+   case Pin_Set:
+      addHRegUse(u, HRmWrite, i->Pin.Set.dst);
       return;
    case Pin_MfCR:
       addHRegUse(u, HRmWrite, i->Pin.MfCR.dst);
@@ -1752,38 +1768,38 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
    case Pin_FpLdSt:
       addHRegUse(u, (i->Pin.FpLdSt.isLoad ? HRmWrite : HRmRead),
                  i->Pin.FpLdSt.reg);
-      addRegUsage_PPC32AMode(u, i->Pin.FpLdSt.addr);
+      addRegUsage_PPCAMode(u, i->Pin.FpLdSt.addr);
       return;
    case Pin_FpF64toF32:
       addHRegUse(u, HRmWrite, i->Pin.FpF64toF32.dst);
       addHRegUse(u, HRmRead,  i->Pin.FpF64toF32.src);
       return;
    case Pin_FpF64toI32:
-      addHRegUse(u, HRmWrite,  i->Pin.FpF64toI32.dst);
-      addHRegUse(u, HRmWrite, hregPPC32_FPR7());
-      addHRegUse(u, HRmRead,   i->Pin.FpF64toI32.src);
+      addHRegUse(u, HRmWrite, i->Pin.FpF64toI32.dst);
+      addHRegUse(u, HRmWrite, hregPPC_FPR7());
+      addHRegUse(u, HRmRead,  i->Pin.FpF64toI32.src);
       return;
    case Pin_FpF64toI64:
       addHRegUse(u, HRmWrite, i->Pin.FpF64toI64.dst);
-      addHRegUse(u, HRmWrite, hregPPC32_FPR7());
+      addHRegUse(u, HRmWrite, hregPPC_FPR7());
       addHRegUse(u, HRmRead,  i->Pin.FpF64toI64.src);
       return;
    case Pin_FpI64toF64:
       addHRegUse(u, HRmWrite, i->Pin.FpI64toF64.dst);
-      addHRegUse(u, HRmWrite, hregPPC32_FPR7());
+      addHRegUse(u, HRmWrite, hregPPC_FPR7());
       addHRegUse(u, HRmRead,  i->Pin.FpI64toF64.src);
       return;
    case Pin_FpCMov:
       addHRegUse(u, HRmModify, i->Pin.FpCMov.dst);
-      addHRegUse(u, HRmRead, i->Pin.FpCMov.src);
+      addHRegUse(u, HRmRead,   i->Pin.FpCMov.src);
       return;
    case Pin_FpLdFPSCR:
       addHRegUse(u, HRmRead, i->Pin.FpLdFPSCR.src);
       return;
    case Pin_FpCmp:
       addHRegUse(u, HRmWrite, i->Pin.FpCmp.dst);
-      addHRegUse(u, HRmRead,   i->Pin.FpCmp.srcL);
-      addHRegUse(u, HRmRead,   i->Pin.FpCmp.srcR);
+      addHRegUse(u, HRmRead,  i->Pin.FpCmp.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.FpCmp.srcR);
       return;
 
    case Pin_RdWrLR:
@@ -1796,7 +1812,7 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
                  i->Pin.AvLdSt.reg);
       if (i->Pin.AvLdSt.addr->tag == Pam_IR)
          addHRegUse(u, HRmWrite, hregPPC_GPR30(mode64));
-      addRegUsage_PPC32AMode(u, i->Pin.AvLdSt.addr);
+      addRegUsage_PPCAMode(u, i->Pin.AvLdSt.addr);
       return;
    case Pin_AvUnary:
       addHRegUse(u, HRmWrite, i->Pin.AvUnary.dst);
@@ -1835,7 +1851,7 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcL);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcR);
       if (i->Pin.AvBin32Fx4.op == Pavfp_MULF)
-         addHRegUse(u, HRmWrite, hregPPC32_VR29());
+         addHRegUse(u, HRmWrite, hregPPC_VR29());
       return;
    case Pin_AvUn32Fx4:
       addHRegUse(u, HRmWrite, i->Pin.AvUn32Fx4.dst);
@@ -1859,20 +1875,20 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.AvShlDbl.srcR);
       return;
    case Pin_AvSplat:
-      addHRegUse(u, HRmWrite,  i->Pin.AvSplat.dst);
-      addRegUsage_PPC32VI5s(u, i->Pin.AvSplat.src);
+      addHRegUse(u, HRmWrite, i->Pin.AvSplat.dst);
+      addRegUsage_PPCVI5s(u,  i->Pin.AvSplat.src);
       return;
    case Pin_AvCMov:
       addHRegUse(u, HRmModify, i->Pin.AvCMov.dst);
-      addHRegUse(u, HRmRead, i->Pin.AvCMov.src);
+      addHRegUse(u, HRmRead,   i->Pin.AvCMov.src);
       return;
    case Pin_AvLdVSCR:
       addHRegUse(u, HRmRead, i->Pin.AvLdVSCR.src);
       return;
 
    default:
-      ppPPC32Instr(i, mode64);
-      vpanic("getRegUsage_PPC32Instr");
+      ppPPCInstr(i, mode64);
+      vpanic("getRegUsage_PPCInstr");
    }
 }
 
@@ -1882,7 +1898,7 @@ static void mapReg( HRegRemap* m, HReg* r )
    *r = lookupHRegRemap(m, *r);
 }
 
-void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
+void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
 {
    switch (i->tag) {
    case Pin_LI:
@@ -1891,25 +1907,25 @@ void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
    case Pin_Alu:
       mapReg(m, &i->Pin.Alu.dst);
       mapReg(m, &i->Pin.Alu.srcL);
-      mapRegs_PPC32RH(m, i->Pin.Alu.srcR);
+      mapRegs_PPCRH(m, i->Pin.Alu.srcR);
       return;
    case Pin_Shft:
       mapReg(m, &i->Pin.Shft.dst);
       mapReg(m, &i->Pin.Shft.srcL);
-      mapRegs_PPC32RH(m, i->Pin.Shft.srcR);
+      mapRegs_PPCRH(m, i->Pin.Shft.srcR);
       return;
-   case Pin_AddSubC32:
-      mapReg(m, &i->Pin.AddSubC32.dst);
-      mapReg(m, &i->Pin.AddSubC32.srcL);
-      mapReg(m, &i->Pin.AddSubC32.srcR);
+   case Pin_AddSubC:
+      mapReg(m, &i->Pin.AddSubC.dst);
+      mapReg(m, &i->Pin.AddSubC.srcL);
+      mapReg(m, &i->Pin.AddSubC.srcR);
       return;
    case Pin_Cmp:
       mapReg(m, &i->Pin.Cmp.srcL);
-      mapRegs_PPC32RH(m, i->Pin.Cmp.srcR);
+      mapRegs_PPCRH(m, i->Pin.Cmp.srcR);
       return;
    case Pin_Unary:
-      mapReg(m, &i->Pin.Unary32.dst);
-      mapReg(m, &i->Pin.Unary32.src);
+      mapReg(m, &i->Pin.Unary.dst);
+      mapReg(m, &i->Pin.Unary.src);
       return;
    case Pin_MulL:
       mapReg(m, &i->Pin.MulL.dst);
@@ -1924,22 +1940,22 @@ void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
    case Pin_Call:
       return;
    case Pin_Goto:
-      mapRegs_PPC32RI(m, i->Pin.Goto.dst);
+      mapRegs_PPCRI(m, i->Pin.Goto.dst);
       return;
    case Pin_CMov:
-      mapRegs_PPC32RI(m, i->Pin.CMov.src);
+      mapRegs_PPCRI(m, i->Pin.CMov.src);
       mapReg(m, &i->Pin.CMov.dst);
       return;
    case Pin_Load:
-      mapRegs_PPC32AMode(m, i->Pin.Load.src);
+      mapRegs_PPCAMode(m, i->Pin.Load.src);
       mapReg(m, &i->Pin.Load.dst);
       return;
    case Pin_Store:
       mapReg(m, &i->Pin.Store.src);
-      mapRegs_PPC32AMode(m, i->Pin.Store.dst);
+      mapRegs_PPCAMode(m, i->Pin.Store.dst);
       return;
-   case Pin_Set32:
-      mapReg(m, &i->Pin.Set32.dst);
+   case Pin_Set:
+      mapReg(m, &i->Pin.Set.dst);
       return;
    case Pin_MfCR:
       mapReg(m, &i->Pin.MfCR.dst);
@@ -1957,7 +1973,7 @@ void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
       return;
    case Pin_FpLdSt:
       mapReg(m, &i->Pin.FpLdSt.reg);
-      mapRegs_PPC32AMode(m, i->Pin.FpLdSt.addr);
+      mapRegs_PPCAMode(m, i->Pin.FpLdSt.addr);
       return;
    case Pin_FpF64toF32:
       mapReg(m, &i->Pin.FpF64toF32.dst);
@@ -1992,7 +2008,7 @@ void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
       return;
    case Pin_AvLdSt:
       mapReg(m, &i->Pin.AvLdSt.reg);
-      mapRegs_PPC32AMode(m, i->Pin.AvLdSt.addr);
+      mapRegs_PPCAMode(m, i->Pin.AvLdSt.addr);
       return;
    case Pin_AvUnary:
       mapReg(m, &i->Pin.AvUnary.dst);
@@ -2046,7 +2062,7 @@ void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
       return;
    case Pin_AvSplat:
       mapReg(m, &i->Pin.AvSplat.dst);
-      mapRegs_PPC32VI5s(m, i->Pin.AvSplat.src);
+      mapRegs_PPCVI5s(m, i->Pin.AvSplat.src);
       return;
    case Pin_AvCMov:
      mapReg(m, &i->Pin.AvCMov.dst);
@@ -2057,8 +2073,8 @@ void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
       return;
 
    default:
-      ppPPC32Instr(i, mode64);
-      vpanic("mapRegs_PPC32Instr");
+      ppPPCInstr(i, mode64);
+      vpanic("mapRegs_PPCInstr");
    }
 }
 
@@ -2066,7 +2082,7 @@ void mapRegs_PPC32Instr ( HRegRemap* m, PPC32Instr* i, Bool mode64 )
    source and destination to *src and *dst.  If in doubt say No.  Used
    by the register allocator to do move coalescing. 
 */
-Bool isMove_PPC32Instr ( PPC32Instr* i, HReg* src, HReg* dst )
+Bool isMove_PPCInstr ( PPCInstr* i, HReg* src, HReg* dst )
 {
    /* Moves between integer regs */
    if (i->tag == Pin_Alu) {
@@ -2096,51 +2112,51 @@ Bool isMove_PPC32Instr ( PPC32Instr* i, HReg* src, HReg* dst )
 /* Generate ppc32 spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the
    condition codes. */
-PPC32Instr* genSpill_PPC32 ( HReg rreg, UShort offsetB, Bool mode64 )
+PPCInstr* genSpill_PPC ( HReg rreg, UShort offsetB, Bool mode64 )
 {
-   PPC32AMode* am;
+   PPCAMode* am;
    vassert(!hregIsVirtual(rreg));
-   am = PPC32AMode_IR(offsetB, GuestStatePtr(mode64));
+   am = PPCAMode_IR( offsetB, GuestStatePtr(mode64) );
    
    switch (hregClass(rreg)) {
    case HRcInt64:
       vassert(mode64);
-      return PPC32Instr_Store( 8, am, rreg, mode64 );
+      return PPCInstr_Store( 8, am, rreg, mode64 );
    case HRcInt32:
       vassert(!mode64);
-      return PPC32Instr_Store( 4, am, rreg, mode64 );
+      return PPCInstr_Store( 4, am, rreg, mode64 );
    case HRcFlt64:
-      return PPC32Instr_FpLdSt ( False/*store*/, 8, rreg, am );
+      return PPCInstr_FpLdSt ( False/*store*/, 8, rreg, am );
    case HRcVec128:
       // XXX: GPR30 used as spill register to kludge AltiVec AMode_IR
-      return PPC32Instr_AvLdSt ( False/*store*/, 16, rreg, am );
+      return PPCInstr_AvLdSt ( False/*store*/, 16, rreg, am );
    default: 
       ppHRegClass(hregClass(rreg));
-      vpanic("genSpill_PPC32: unimplemented regclass");
+      vpanic("genSpill_PPC: unimplemented regclass");
    }
 }
 
-PPC32Instr* genReload_PPC32 ( HReg rreg, UShort offsetB, Bool mode64 )
+PPCInstr* genReload_PPC ( HReg rreg, UShort offsetB, Bool mode64 )
 {
-   PPC32AMode* am;
+   PPCAMode* am;
    vassert(!hregIsVirtual(rreg));
-   am = PPC32AMode_IR(offsetB, GuestStatePtr(mode64));
+   am = PPCAMode_IR( offsetB, GuestStatePtr(mode64) );
 
    switch (hregClass(rreg)) {
    case HRcInt64:
       vassert(mode64);
-      return PPC32Instr_Load( 8, False, rreg, am, mode64 );
+      return PPCInstr_Load( 8, False, rreg, am, mode64 );
    case HRcInt32:
       vassert(!mode64);
-     return PPC32Instr_Load( 4, False, rreg, am, mode64 );
+     return PPCInstr_Load( 4, False, rreg, am, mode64 );
    case HRcFlt64:
-      return PPC32Instr_FpLdSt ( True/*load*/, 8, rreg, am );
+      return PPCInstr_FpLdSt ( True/*load*/, 8, rreg, am );
    case HRcVec128:
       // XXX: GPR30 used as spill register to kludge AltiVec AMode_IR
-      return PPC32Instr_AvLdSt ( True/*load*/, 16, rreg, am );
+      return PPCInstr_AvLdSt ( True/*load*/, 16, rreg, am );
    default: 
       ppHRegClass(hregClass(rreg));
-      vpanic("genReload_PPC32: unimplemented regclass");
+      vpanic("genReload_PPC: unimplemented regclass");
    }
 }
 
@@ -2191,7 +2207,8 @@ static UChar* emit32 ( UChar* p, UInt w32 )
    as per PPC32 p576
  */
 
-static UChar* mkFormD ( UChar* p, UInt opc1, UInt r1, UInt r2, UInt imm )
+static UChar* mkFormD ( UChar* p, UInt opc1,
+                        UInt r1, UInt r2, UInt imm )
 {
    UInt theInstr;
    vassert(opc1 < 0x40);
@@ -2214,7 +2231,8 @@ static UChar* mkFormMD ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(opc2 < 0x08);
    imm2 = ((imm2 & 0x1F) << 1) | (imm2 >> 5);
    theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
-               ((imm1 & 0x1F)<<11) | (imm2<<5) | (opc2<<2) | ((imm1 >> 5)<<1));
+               ((imm1 & 0x1F)<<11) | (imm2<<5) |
+               (opc2<<2) | ((imm1 >> 5)<<1));
    return emit32(p, theInstr);
 }
 
@@ -2228,7 +2246,8 @@ static UChar* mkFormX ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(r3   < 0x20);
    vassert(opc2 < 0x400);
    vassert(b0   < 0x2);
-   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | (opc2<<1) | (b0));
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
+               (r3<<11) | (opc2<<1) | (b0));
    return emit32(p, theInstr);
 }
 
@@ -2258,7 +2277,8 @@ static UChar* mkFormXL ( UChar* p, UInt opc1, UInt f1, UInt f2,
    vassert(f3   < 0x20);
    vassert(opc2 < 0x400);
    vassert(b0   < 0x2);
-   theInstr = ((opc1<<26) | (f1<<21) | (f2<<16) | (f3<<11) | (opc2<<1) | (b0));
+   theInstr = ((opc1<<26) | (f1<<21) | (f2<<16) |
+               (f3<<11) | (opc2<<1) | (b0));
    return emit32(p, theInstr);
 }
 
@@ -2278,9 +2298,10 @@ static UChar* mkFormXFX ( UChar* p, UInt r1, UInt f2, UInt opc2 )
    case 371:  // mftb
    case 467:  // mtspr
       vassert(f2 < 0x400);
-      f2 = ((f2>>5) & 0x1F) | ((f2 & 0x1F)<<5);  // re-arrange split field
+      // re-arrange split field
+      f2 = ((f2>>5) & 0x1F) | ((f2 & 0x1F)<<5);
       break;
-   default: vpanic("mkFormXFX(PPC32)");
+   default: vpanic("mkFormXFX(ppch)");
    }
    theInstr = ((31<<26) | (r1<<21) | (f2<<11) | (opc2<<1));
    return emit32(p, theInstr);
@@ -2335,7 +2356,8 @@ static UChar* mkFormB ( UChar* p, UInt BO, UInt BI,
    vassert(BD  < 0x4000);
    vassert(AA  < 0x2);
    vassert(LK  < 0x2);
-   theInstr = ((16<<26) | (BO<<21) | (BI<<16) | (BD<<2) | (AA<<1) | (LK));
+   theInstr = ((16<<26) | (BO<<21) | (BI<<16) |
+               (BD<<2) | (AA<<1) | (LK));
    return emit32(p, theInstr);
 }
 
@@ -2373,7 +2395,7 @@ static UChar* mkFormA ( UChar* p, UInt opc1, UInt r1, UInt r2,
 }
 
 static UChar* doAMode_IR ( UChar* p, UInt opc1, UInt rSD,
-                           PPC32AMode* am, Bool mode64 )
+                           PPCAMode* am, Bool mode64 )
 {
    UInt rA, idx;
    vassert(am->tag == Pam_IR);
@@ -2392,7 +2414,7 @@ static UChar* doAMode_IR ( UChar* p, UInt opc1, UInt rSD,
 }
 
 static UChar* doAMode_RR ( UChar* p, UInt opc1, UInt opc2,
-                           UInt rSD, PPC32AMode* am, Bool mode64 )
+                           UInt rSD, PPCAMode* am, Bool mode64 )
 {
    UInt rA, rB;
    vassert(am->tag == Pam_RR);
@@ -2410,15 +2432,13 @@ static UChar* mkLoadImm ( UChar* p, UInt r_dst, ULong imm, Bool mode64 )
 {
    vassert(r_dst < 0x20);
 
-// if (imm >= 0xFFFFFFFFFFFF8000ULL || imm < 0x8000) {
-   if (imm == (ULong)(Long)(Int)(Short)(UShort)imm) {
+   if (imm >= 0xFFFFFFFFFFFF8000ULL || imm < 0x8000) {
       // sign-extendable from 16 bits
 
       // addi r_dst,0,imm  => li r_dst,imm
       p = mkFormD(p, 14, r_dst, 0, imm & 0xFFFF);
    } else {
-//    if (imm >= 0xFFFFFFFF80000000ULL || imm < 0x80000000ULL) {
-      if (imm == (ULong)(Long)(Int)(UInt)imm) {
+      if (imm >= 0xFFFFFFFF80000000ULL || imm < 0x80000000ULL) {
          // sign-extendable from 32 bits
 
          // addis r_dst,r0,(imm>>16) => lis r_dst, (imm>>16)
@@ -2484,7 +2504,8 @@ static UChar* mkFormVXR ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(r3   < 0x20);
    vassert(Rc   < 0x2);
    vassert(opc2 < 0x400);
-   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | (Rc<<10) | opc2);
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
+               (r3<<11) | (Rc<<10) | opc2);
    return emit32(p, theInstr);
 }
 
@@ -2498,7 +2519,8 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
    vassert(r3   < 0x20);
    vassert(r4   < 0x20);
    vassert(opc2 < 0x40);
-   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | (r4<<6) | opc2);
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
+               (r3<<11) | (r4<<6) | opc2);
    return emit32(p, theInstr);
 }
 
@@ -2512,14 +2534,14 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
    use a call-return scheme to get from the dispatcher to generated
    code and back.
 */
-Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i, 
-                      Bool mode64, void* dispatch )
+Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i, 
+                    Bool mode64, void* dispatch )
 {
    UChar* p = &buf[0];
    UChar* ptmp = p;
    vassert(nbuf >= 32);
 
-//   vex_printf("asm  ");ppPPC32Instr(i, mode64); vex_printf("\n");
+//   vex_printf("asm  ");ppPPCInstr(i, mode64); vex_printf("\n");
 
    switch (i->tag) {
 
@@ -2529,12 +2551,12 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
       goto done;
 
    case Pin_Alu: {
-      PPC32RH* srcR   = i->Pin.Alu.srcR;
-      Bool     immR   = toBool(srcR->tag == Prh_Imm);
-      UInt     r_dst  = iregNo(i->Pin.Alu.dst, mode64);
-      UInt     r_srcL = iregNo(i->Pin.Alu.srcL, mode64);
-      UInt     r_srcR = immR ? (-1)/*bogus*/ :
-                               iregNo(srcR->Prh.Reg.reg, mode64);
+      PPCRH* srcR   = i->Pin.Alu.srcR;
+      Bool   immR   = toBool(srcR->tag == Prh_Imm);
+      UInt   r_dst  = iregNo(i->Pin.Alu.dst, mode64);
+      UInt   r_srcL = iregNo(i->Pin.Alu.srcL, mode64);
+      UInt   r_srcR = immR ? (-1)/*bogus*/ :
+                             iregNo(srcR->Prh.Reg.reg, mode64);
 
       switch (i->Pin.Alu.op) {
       case Palu_ADD:
@@ -2601,13 +2623,13 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
    }
 
    case Pin_Shft: {
-      PPC32RH* srcR   = i->Pin.Shft.srcR;
-      Bool     sz32   = i->Pin.Shft.sz32;
-      Bool     immR   = toBool(srcR->tag == Prh_Imm);
-      UInt     r_dst  = iregNo(i->Pin.Shft.dst, mode64);
-      UInt     r_srcL = iregNo(i->Pin.Shft.srcL, mode64);
-      UInt     r_srcR = immR ? (-1)/*bogus*/ :
-                               iregNo(srcR->Prh.Reg.reg, mode64);
+      PPCRH* srcR   = i->Pin.Shft.srcR;
+      Bool   sz32   = i->Pin.Shft.sz32;
+      Bool   immR   = toBool(srcR->tag == Prh_Imm);
+      UInt   r_dst  = iregNo(i->Pin.Shft.dst, mode64);
+      UInt   r_srcL = iregNo(i->Pin.Shft.srcL, mode64);
+      UInt   r_srcR = immR ? (-1)/*bogus*/ :
+                             iregNo(srcR->Prh.Reg.reg, mode64);
       if (!mode64)
          vassert(sz32);
 
@@ -2708,12 +2730,12 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
       goto done;
    }
 
-   case Pin_AddSubC32: {
-      Bool isAdd    = i->Pin.AddSubC32.isAdd;
-      Bool setC = i->Pin.AddSubC32.setC;
-      UInt r_srcL   = iregNo(i->Pin.AddSubC32.srcL, mode64);
-      UInt r_srcR   = iregNo(i->Pin.AddSubC32.srcR, mode64);
-      UInt r_dst    = iregNo(i->Pin.AddSubC32.dst, mode64);
+   case Pin_AddSubC: {
+      Bool isAdd  = i->Pin.AddSubC.isAdd;
+      Bool setC   = i->Pin.AddSubC.setC;
+      UInt r_srcL = iregNo(i->Pin.AddSubC.srcL, mode64);
+      UInt r_srcR = iregNo(i->Pin.AddSubC.srcR, mode64);
+      UInt r_dst  = iregNo(i->Pin.AddSubC.dst, mode64);
       
       if (isAdd) {
          if (setC) /* addc (PPC32 p348) */
@@ -2736,7 +2758,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
       UInt fld1   = i->Pin.Cmp.crfD << 2;
       UInt r_srcL = iregNo(i->Pin.Cmp.srcL, mode64);
       UInt r_srcR, imm_srcR;
-      PPC32RH* srcR = i->Pin.Cmp.srcR;
+      PPCRH* srcR = i->Pin.Cmp.srcR;
 
       if (!mode64)        // cmp double word invalid for mode32
          vassert(sz32);      
@@ -2768,10 +2790,10 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
    }
 
    case Pin_Unary: {
-      UInt r_dst = iregNo(i->Pin.Unary32.dst, mode64);
-      UInt r_src = iregNo(i->Pin.Unary32.src, mode64);
+      UInt r_dst = iregNo(i->Pin.Unary.dst, mode64);
+      UInt r_src = iregNo(i->Pin.Unary.src, mode64);
 
-      switch (i->Pin.Unary32.op) {
+      switch (i->Pin.Unary.op) {
       case Pun_NOT:  // nor r_dst,r_src,r_src
          p = mkFormX(p, 31, r_src, r_dst, r_src, 124, 0);
          break;
@@ -2848,10 +2870,10 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
    }
 
    case Pin_Call: {
-      PPC32CondCode cond = i->Pin.Call.cond;
-      UInt r_dst = 10;
+      PPCCondCode cond  = i->Pin.Call.cond;
+      UInt        r_dst = 10;
       /* As per detailed comment for Pin_Call in
-         getRegUsage_PPC32Instr above, %r10 is used as an address temp */
+         getRegUsage_PPCInstr above, %r10 is used as an address temp */
 
       /* jump over the following insns if condition does not hold */
       if (cond.test != Pct_ALWAYS) {
@@ -2859,32 +2881,33 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
          /* don't know how many bytes to jump over yet...
             make space for a jump instruction and fill in later. */
          ptmp = p; /* fill in this bit later */
-         p += 4;                                               // p += 4
+         p += 4;                                          // p += 4
       }
 
-      /* load target to r_dst */
-      p = mkLoadImm(p, r_dst, i->Pin.Call.target, mode64);     // p += 4|8|20
+      /* load target to r_dst */                          // p += 4|8|20
+      p = mkLoadImm(p, r_dst, i->Pin.Call.target, mode64);
 
       /* mtspr 9,r_dst => move r_dst to count register */
-      p = mkFormXFX(p, r_dst, 9, 467);                         // p += 4
+      p = mkFormXFX(p, r_dst, 9, 467);                    // p += 4
       
       /* bctrl => branch to count register (and save to lr) */
-      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);           // p += 4
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);      // p += 4
 
       /* Fix up the conditional jump, if there was one. */
       if (cond.test != Pct_ALWAYS) {
          Int delta = p - ptmp;
          vassert(delta >= 16 && delta <= 32);
          /* bc !ct,cf,delta */
-         mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 0, 0);
+         mkFormB(ptmp, invertCondTest(cond.test),
+                 cond.flag, (delta>>2), 0, 0);
       }
       goto done;
    }
 
    case Pin_Goto: {
-      UInt  trc      = 0;
-      UChar r_return = 3;    /* Put target addr into %r3 */
-      PPC32CondCode cond = i->Pin.Goto.cond;
+      UInt        trc   = 0;
+      UChar       r_ret = 3;        /* Put target addr into %r3 */
+      PPCCondCode cond  = i->Pin.Goto.cond;
       UInt r_dst;
       ULong imm_dst;
 
@@ -2917,7 +2940,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
             break;
          default: 
             ppIRJumpKind(i->Pin.Goto.jk);
-            vpanic("emit_PPC32Instr.Pin_Goto: unknown jump kind");
+            vpanic("emit_PPCInstr.Pin_Goto: unknown jump kind");
       }
       if (trc !=0) {
          vassert(trc < 0x10000);
@@ -2925,14 +2948,14 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
          p = mkFormD(p, 14, 31, 0, trc);               // p += 4
       }
 
-      /* Get the destination address into %r_return */
+      /* Get the destination address into %r_ret */
       if (i->Pin.Goto.dst->tag == Pri_Imm) {
          imm_dst = i->Pin.Goto.dst->Pri.Imm;
-         p = mkLoadImm(p, r_return, imm_dst, mode64);  // p += 4|8|20
+         p = mkLoadImm(p, r_ret, imm_dst, mode64);     // p += 4|8|20
       } else {
          vassert(i->Pin.Goto.dst->tag == Pri_Reg);
          r_dst = iregNo(i->Pin.Goto.dst->Pri.Reg, mode64);
-         p = mkMoveReg(p, r_return, r_dst);            // p += 4
+         p = mkMoveReg(p, r_ret, r_dst);               // p += 4
       }
       
       /* blr */
@@ -2943,15 +2966,16 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
          Int delta = p - ptmp;
          vassert(delta >= 12 && delta <= 32);
          /* bc !ct,cf,delta */
-         mkFormB(ptmp, invertCondTest(cond.test), cond.flag, delta>>2, 0, 0);
+         mkFormB(ptmp, invertCondTest(cond.test),
+                 cond.flag, delta>>2, 0, 0);
       }
       goto done;
    }
 
    case Pin_CMov: {
-      UInt r_dst, r_src;
+      UInt  r_dst, r_src;
       ULong imm_src;
-      PPC32CondCode cond;
+      PPCCondCode cond;
       vassert(i->Pin.CMov.cond.test != Pct_ALWAYS);
 
       r_dst = iregNo(i->Pin.CMov.dst, mode64);
@@ -2983,13 +3007,14 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
          Int delta = p - ptmp;
          vassert(delta >= 8 && delta <= 24);
          /* bc !ct,cf,delta */
-         mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 0, 0);
+         mkFormB(ptmp, invertCondTest(cond.test),
+                 cond.flag, (delta>>2), 0, 0);
       }
       goto done;
    }
 
    case Pin_Load: {
-      PPC32AMode* am_addr = i->Pin.Load.src;
+      PPCAMode* am_addr = i->Pin.Load.src;
       UInt r_dst = iregNo(i->Pin.Load.dst, mode64);
       Bool syned = i->Pin.Load.syned;
       UInt opc1, opc2, sz = i->Pin.Load.sz;
@@ -3021,20 +3046,19 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
       }
    }
 
-   case Pin_Set32: {
+   case Pin_Set: {
       /* Make the destination register be 1 or 0, depending on whether
          the relevant condition holds. */
-      UInt r_dst = iregNo(i->Pin.Set32.dst, mode64);
-      PPC32CondCode cond = i->Pin.Set32.cond;
-      UInt rot_imm;
-      UInt r_tmp;
+      UInt        r_dst = iregNo(i->Pin.Set.dst, mode64);
+      PPCCondCode cond  = i->Pin.Set.cond;
+      UInt rot_imm, r_tmp;
 
       if (cond.test == Pct_ALWAYS) {
          // Just load 1 to dst => li dst,1
          p = mkFormD(p, 14, r_dst, 0, 1);
       } else {
          rot_imm = 1 + cond.flag;
-         r_tmp = 0;  // Not within scope of regalloc, so no need to declare.
+         r_tmp = 0;  // Not set in getAllocable, so no need to declare.
 
          // r_tmp = CR  => mfcr r_tmp
          p = mkFormX(p, 31, r_tmp, 0, 0, 19, 0);
@@ -3064,7 +3088,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
    }
 
    case Pin_Store: {
-      PPC32AMode* am_addr = i->Pin.Store.dst;
+      PPCAMode* am_addr = i->Pin.Store.dst;
       UInt r_src = iregNo(i->Pin.Store.src, mode64);
       UInt opc1, opc2, sz = i->Pin.Store.sz;
       switch (i->Pin.Store.dst->tag) {
@@ -3144,7 +3168,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
    }
 
    case Pin_FpLdSt: {
-      PPC32AMode* am_addr = i->Pin.FpLdSt.addr;
+      PPCAMode* am_addr = i->Pin.FpLdSt.addr;
       UInt f_reg = fregNo(i->Pin.FpLdSt.reg);
       Bool idxd = toBool(i->Pin.FpLdSt.addr->tag == Pam_RR);
       UChar sz = i->Pin.FpLdSt.sz;
@@ -3183,14 +3207,14 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
       UInt  r_dst   = iregNo(i->Pin.FpF64toI32.dst, mode64);
       UInt  fr_src  = fregNo(i->Pin.FpF64toI32.src);
       UChar fr_tmp  = 7;                // Temp freg
-      PPC32AMode* am_addr;
+      PPCAMode* am_addr;
 
       // fctiw (conv f64 to i32), PPC32 p404
       p = mkFormX(p, 63, fr_tmp, 0, fr_src, 14, 0);
 
-      // No RI form of stfiwx, so need PPC32AMode_RR:
-      am_addr = PPC32AMode_RR( StackFramePtr(mode64),
-                               hregPPC_GPR0(mode64) );
+      // No RI form of stfiwx, so need PPCAMode_RR:
+      am_addr = PPCAMode_RR( StackFramePtr(mode64),
+                             hregPPC_GPR0(mode64) );
 
       // stfiwx (store fp64[lo32] as int32), PPC32 p517
       p = doAMode_RR(p, 31, 983, fr_tmp, am_addr, mode64);
@@ -3204,13 +3228,13 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
       UInt  r_dst   = iregNo(i->Pin.FpF64toI64.dst, mode64);
       UInt  fr_src  = fregNo(i->Pin.FpF64toI64.src);
       UChar fr_tmp  = 7;                // Temp freg
-      PPC32AMode* am_addr;
+      PPCAMode* am_addr;
 
       // fctid (conv f64 to i64), PPC64 p437
       p = mkFormX(p, 63, fr_tmp, 0, fr_src, 814, 0);
 
-      am_addr = PPC32AMode_RR( StackFramePtr(mode64),
-                               hregPPC_GPR0(mode64) );
+      am_addr = PPCAMode_RR( StackFramePtr(mode64),
+                             hregPPC_GPR0(mode64) );
 
       // stfdx (store fp64), PPC64 p589
       p = doAMode_RR(p, 31, 727, fr_tmp, am_addr, mode64);
@@ -3224,8 +3248,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
       UInt  r_src   = iregNo(i->Pin.FpI64toF64.src, mode64);
       UInt  fr_dst  = fregNo(i->Pin.FpI64toF64.dst);
       UChar fr_tmp  = 7;                // Temp freg
-      PPC32AMode* am_addr = PPC32AMode_RR( StackFramePtr(mode64),
-                                           hregPPC_GPR0(mode64) );
+      PPCAMode* am_addr = PPCAMode_RR( StackFramePtr(mode64),
+                                       hregPPC_GPR0(mode64) );
 
       // stdx r_src,r0,r1
       p = doAMode_RR(p, 31, 149, r_src, am_addr, mode64);
@@ -3239,9 +3263,9 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
    }
 
    case Pin_FpCMov: {
-      UInt fr_dst      = fregNo(i->Pin.FpCMov.dst);
-      UInt fr_src      = fregNo(i->Pin.FpCMov.src);
-      PPC32CondCode cc = i->Pin.FpCMov.cond;
+      UInt        fr_dst = fregNo(i->Pin.FpCMov.dst);
+      UInt        fr_src = fregNo(i->Pin.FpCMov.src);
+      PPCCondCode cc     = i->Pin.FpCMov.cond;
 
       if (fr_dst == fr_src) goto done;
       
@@ -3303,16 +3327,17 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
       // Only have AltiVec AMode_RR: kludge AMode_IR
       if (!idxd) {
          r_idx = 30;                       // XXX: Using r30 as temp
-         p = mkLoadImm(p, r_idx, i->Pin.AvLdSt.addr->Pam.IR.index, mode64);
+         p = mkLoadImm(p, r_idx,
+                       i->Pin.AvLdSt.addr->Pam.IR.index, mode64);
       } else {
          r_idx  = iregNo(i->Pin.AvLdSt.addr->Pam.RR.index, mode64);
       }
 
       if (i->Pin.FpLdSt.isLoad) {  // Load from memory (1,2,4,16)
-         opc2 = (sz == 1) ? 7 : (sz == 2) ? 39 : (sz == 4) ? 71 : 103;
+         opc2 = (sz==1) ?   7 : (sz==2) ?  39 : (sz==4) ?  71 : 103;
          p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0);
       } else {                      // Store to memory (1,2,4,16)
-         opc2 = (sz == 1) ? 135 : (sz == 2) ? 167 : (sz == 4) ? 199 : 231;
+         opc2 = (sz==1) ? 135 : (sz==2) ? 167 : (sz==4) ? 199 : 231;
          p = mkFormX(p, 31, v_reg, r_idx, r_base, opc2, 0);
       }
       goto done;
@@ -3545,28 +3570,28 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
          */
          UInt vB = 29;  // XXX: Using v29 for temp do not change
                         // without also changing
-                        // getRegUsage_PPC32Instr
+                        // getRegUsage_PPCInstr
          UInt konst = 0x1F;
 
          // Better way to load -0.0 (0x80000000) ?
          // vspltisw vB,0x1F   (0x1F => each word of vB)
          p = mkFormVX( p, 4, vB, konst, 0, 908 );
 
-         // vslw vB,vB,vB  (each word of vB = (0x1F << 0x1F) = 0x80000000
+         // vslw vB,vB,vB (each word of vB = (0x1F << 0x1F) = 0x80000000
          p = mkFormVX( p, 4, vB, vB, vB, 388 );
 
          // Finally, do the multiply:
          p = mkFormVA( p, 4, v_dst, v_srcL, vB, v_srcR, 46 );
          break;
       }
-      case Pavfp_CMPEQF:
-         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 198 ); // vcmpeqfp
+      case Pavfp_CMPEQF:  // vcmpeqfp
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 198 );
          break;
-      case Pavfp_CMPGTF:
-         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 710 ); // vcmpgtfp
+      case Pavfp_CMPGTF:  // vcmpgtfp
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 710 );
          break;
-      case Pavfp_CMPGEF:
-         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 454 ); // vcmpgefp
+      case Pavfp_CMPGEF:  // vcmpgefp
+         p = mkFormVXR( p, 4, v_dst, v_srcL, v_srcR, 0, 454 );
          break;
 
       default:
@@ -3652,9 +3677,9 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
    }
 
    case Pin_AvCMov: {
-      UInt v_dst      = vregNo(i->Pin.AvCMov.dst);
-      UInt v_src      = vregNo(i->Pin.AvCMov.src);
-      PPC32CondCode cc = i->Pin.AvCMov.cond;
+      UInt v_dst     = vregNo(i->Pin.AvCMov.dst);
+      UInt v_src     = vregNo(i->Pin.AvCMov.src);
+      PPCCondCode cc = i->Pin.AvCMov.cond;
 
       if (v_dst == v_src) goto done;
       
@@ -3682,8 +3707,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i,
 
   bad:
    vex_printf("\n=> ");
-   ppPPC32Instr(i, mode64);
-   vpanic("emit_PPC32Instr");
+   ppPPCInstr(i, mode64);
+   vpanic("emit_PPCInstr");
    /*NOTREACHED*/
    
   done:

@@ -280,17 +280,17 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
       case VexArchPPC32:
          mode64      = False;
-         getAllocableRegs_PPC32 ( &n_available_real_regs,
-                                  &available_real_regs, mode64 );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPC32Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*,Bool)) getRegUsage_PPC32Instr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*,Bool)) mapRegs_PPC32Instr;
-         genSpill    = (HInstr*(*)(HReg,Int,Bool)) genSpill_PPC32;
-         genReload   = (HInstr*(*)(HReg,Int,Bool)) genReload_PPC32;
-         ppInstr     = (void(*)(HInstr*,Bool)) ppPPC32Instr;
-         ppReg       = (void(*)(HReg)) ppHRegPPC32;
-         iselBB      = iselBB_PPC32;
-         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_PPC32Instr;
+         getAllocableRegs_PPC ( &n_available_real_regs,
+                                &available_real_regs, mode64 );
+         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPCInstr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*,Bool)) getRegUsage_PPCInstr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*,Bool)) mapRegs_PPCInstr;
+         genSpill    = (HInstr*(*)(HReg,Int,Bool)) genSpill_PPC;
+         genReload   = (HInstr*(*)(HReg,Int,Bool)) genReload_PPC;
+         ppInstr     = (void(*)(HInstr*,Bool)) ppPPCInstr;
+         ppReg       = (void(*)(HReg)) ppHRegPPC;
+         iselBB      = iselBB_PPC;
+         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_PPCInstr;
          host_is_bigendian = True;
          host_word_type    = Ity_I32;
          vassert(vta->archinfo_guest.subarch == VexSubArchPPC32_I
@@ -301,17 +301,17 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
       case VexArchPPC64:
          mode64      = True;
-         getAllocableRegs_PPC32 ( &n_available_real_regs,
-                                  &available_real_regs, mode64 );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPC32Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_PPC32Instr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_PPC32Instr;
-         genSpill    = (HInstr*(*)(HReg,Int, Bool)) genSpill_PPC32;
-         genReload   = (HInstr*(*)(HReg,Int, Bool)) genReload_PPC32;
-         ppInstr     = (void(*)(HInstr*, Bool)) ppPPC32Instr;
-         ppReg       = (void(*)(HReg)) ppHRegPPC32;
-         iselBB      = iselBB_PPC32;
-         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_PPC32Instr;
+         getAllocableRegs_PPC ( &n_available_real_regs,
+                                &available_real_regs, mode64 );
+         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPCInstr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_PPCInstr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_PPCInstr;
+         genSpill    = (HInstr*(*)(HReg,Int, Bool)) genSpill_PPC;
+         genReload   = (HInstr*(*)(HReg,Int, Bool)) genReload_PPC;
+         ppInstr     = (void(*)(HInstr*, Bool)) ppPPCInstr;
+         ppReg       = (void(*)(HReg)) ppHRegPPC;
+         iselBB      = iselBB_PPC;
+         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_PPCInstr;
          host_is_bigendian = True;
          host_word_type    = Ity_I64;
          vassert(vta->archinfo_guest.subarch == VexSubArchPPC64_FI
@@ -372,7 +372,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
       case VexArchPPC32:
          preciseMemExnsFn = guest_ppc32_state_requires_precise_mem_exns;
-         disInstrFn       = disInstr_PPC32;
+         disInstrFn       = disInstr_PPC;
          specHelper       = guest_ppc32_spechelper;
          guest_sizeB      = sizeof(VexGuestPPC32State);
          guest_word_type  = Ity_I32;
@@ -389,7 +389,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
 
       case VexArchPPC64:
          preciseMemExnsFn = guest_ppc64_state_requires_precise_mem_exns;
-         disInstrFn       = disInstr_PPC32;
+         disInstrFn       = disInstr_PPC;
          specHelper       = guest_ppc64_spechelper;
          guest_sizeB      = sizeof(VexGuestPPC64State);
          guest_word_type  = Ity_I64;
@@ -701,8 +701,8 @@ const HChar* LibVEX_ppVexSubArch ( VexSubArch subarch )
 /* Write default settings info *vai. */
 void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
 {
-   vai->subarch              = VexSubArch_INVALID;
-   vai->ppc32_cache_line_szB = 0;
+   vai->subarch            = VexSubArch_INVALID;
+   vai->ppc_cache_line_szB = 0;
 }
 
 

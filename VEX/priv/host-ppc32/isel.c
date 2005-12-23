@@ -1582,6 +1582,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                 r_dst, r_dst, PPCRH_Imm(False,31)));
          return r_dst;
       }
+      case Iop_1Sto64: {
+         /* could do better than this, but for now ... */
+         HReg        r_dst = newVRegI(env);
+         PPCCondCode cond  = iselCondCode(env, e->Iex.Unop.arg);
+         addInstr(env, PPCInstr_Set(cond,r_dst));
+         addInstr(env, PPCInstr_Shft(Pshft_SHL, False/*64bit shift*/,
+                                     r_dst, r_dst, PPCRH_Imm(False,63)));
+         addInstr(env, PPCInstr_Shft(Pshft_SAR, False/*64bit shift*/,
+                                     r_dst, r_dst, PPCRH_Imm(False,63)));
+         return r_dst;
+      }
       case Iop_Clz32:
       case Iop_Clz64: {
          PPCUnaryOp op_clz = (op_unop == Iop_Clz32) ? Pun_CLZ32 :

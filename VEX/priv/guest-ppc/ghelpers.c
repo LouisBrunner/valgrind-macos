@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (guest-ppc32/ghelpers.c) is                   ---*/
+/*--- This file (guest-ppc/ghelpers.c) is                     ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -53,7 +53,7 @@
 
 #include "main/vex_util.h"
 #include "guest-generic/bb_to_IR.h"
-#include "guest-ppc32/gdefs.h"
+#include "guest-ppc/gdefs.h"
 
 
 /* This file contains helper functions for ppc32 and ppc64 guest code.
@@ -64,7 +64,7 @@
    Only change the signatures of these helper functions very
    carefully.  If you change the signature here, you'll have to change
    the parameters passed to it in the IR calls constructed by
-   guest-ppc32/toIR.c.
+   guest-ppc/toIR.c.
 */
 
 
@@ -74,7 +74,7 @@
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */
-/* Horrible hack.  On non-ppc32 platforms, return 1. */
+/* Horrible hack.  On non-ppc platforms, return 1. */
 /* Reads a complete, consistent 64-bit TB value. */
 ULong ppcg_dirtyhelper_MFTB ( void )
 {
@@ -748,5 +748,5 @@ VexGuestLayout
         };
 
 /*---------------------------------------------------------------*/
-/*--- end                              guest-ppc32/ghelpers.c ---*/
+/*--- end                                guest-ppc/ghelpers.c ---*/
 /*---------------------------------------------------------------*/

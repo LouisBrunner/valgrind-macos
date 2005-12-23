@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*---                                                              ---*/
-/*--- This file (guest-ppc32/toIR.c) is                            ---*/
+/*--- This file (guest-ppc/toIR.c) is                              ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.           ---*/
 /*---                                                              ---*/
 /*--------------------------------------------------------------------*/
@@ -116,7 +116,7 @@
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
 #include "guest-generic/bb_to_IR.h"
-#include "guest-ppc32/gdefs.h"
+#include "guest-ppc/gdefs.h"
 
 
 /*------------------------------------------------------------*/
@@ -9089,5 +9089,5 @@ DisResult disInstr_PPC ( IRBB*        irbb_IN,
 //}
 
 /*--------------------------------------------------------------------*/
-/*--- end                                       guest-ppc32/toIR.c ---*/
+/*--- end                                         guest-ppc/toIR.c ---*/
 /*--------------------------------------------------------------------*/

@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (host-ppc32/hdefs.h) is                       ---*/
+/*--- This file (host-ppc/hdefs.h) is                         ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -835,5 +835,5 @@ extern HInstrArray* iselBB_PPC           ( IRBB*, VexArchInfo* );
 #endif /* ndef __LIBVEX_HOST_PPC_HDEFS_H */
 
 /*---------------------------------------------------------------*/
-/*--- end                                  host-ppc32/hdefs.h ---*/
+/*--- end                                    host-ppc/hdefs.h ---*/
 /*---------------------------------------------------------------*/

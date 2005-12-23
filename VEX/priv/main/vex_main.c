@@ -59,13 +59,13 @@
 
 #include "host-x86/hdefs.h"
 #include "host-amd64/hdefs.h"
-#include "host-ppc32/hdefs.h"
+#include "host-ppc/hdefs.h"
 
 #include "guest-generic/bb_to_IR.h"
 #include "guest-x86/gdefs.h"
 #include "guest-amd64/gdefs.h"
 #include "guest-arm/gdefs.h"
-#include "guest-ppc32/gdefs.h"
+#include "guest-ppc/gdefs.h"
 
 
 /* This file contains the top level interface to the library. */

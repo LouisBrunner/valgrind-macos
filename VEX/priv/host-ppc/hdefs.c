@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (host-ppc32/hdefs.c) is                       ---*/
+/*--- This file (host-ppc/hdefs.c) is                         ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -50,7 +50,7 @@
 
 #include "main/vex_util.h"
 #include "host-generic/h_generic_regs.h"
-#include "host-ppc32/hdefs.h"
+#include "host-ppc/hdefs.h"
 
 
 /* --------- Registers. --------- */
@@ -3717,5 +3717,5 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
 }
 
 /*---------------------------------------------------------------*/
-/*--- end                                  host-ppc32/hdefs.c ---*/
+/*--- end                                    host-ppc/hdefs.c ---*/
 /*---------------------------------------------------------------*/

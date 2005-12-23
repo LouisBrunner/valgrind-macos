@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (guest-ppc32/gdefs.h) is                      ---*/
+/*--- This file (guest-ppc/gdefs.h) is                        ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -44,7 +44,7 @@
    without prior written permission.
 */
 
-/* Only to be used within the guest-ppc32 directory. */
+/* Only to be used within the guest-ppc directory. */
 
 
 #ifndef __LIBVEX_GUEST_PPC_DEFS_H
@@ -156,5 +156,5 @@ extern void ppc64g_dirtyhelper_LVS ( VexGuestPPC64State* gst,
 #endif /* ndef __LIBVEX_GUEST_PPC_DEFS_H */
 
 /*---------------------------------------------------------------*/
-/*--- end                                 guest-ppc32/gdefs.h ---*/
+/*--- end                                   guest-ppc/gdefs.h ---*/
 /*---------------------------------------------------------------*/

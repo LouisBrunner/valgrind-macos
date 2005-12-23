@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (host-ppc32/isel.c) is                        ---*/
+/*--- This file (host-ppc/isel.c) is                          ---*/
 /*--- Copyright (C) OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -52,7 +52,7 @@
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
 #include "host-generic/h_generic_regs.h"
-#include "host-ppc32/hdefs.h"
+#include "host-ppc/hdefs.h"
 
 /* Is our guest binary 32 or 64bit?  Set at each call to
    iselBB_PPC below. */
@@ -133,7 +133,7 @@ static Bool mode64 = False;
 /*--- misc helpers                                      ---*/
 /*---------------------------------------------------------*/
 
-/* These are duplicated in guest-ppc32/toIR.c */
+/* These are duplicated in guest-ppc/toIR.c */
 static IRExpr* unop ( IROp op, IRExpr* a )
 {
    return IRExpr_Unop(op, a);
@@ -4473,5 +4473,5 @@ HInstrArray* iselBB_PPC ( IRBB* bb, VexArchInfo* archinfo_host )
 
 
 /*---------------------------------------------------------------*/
-/*--- end                                   host-ppc32/isel.c ---*/
+/*--- end                                     host-ppc/isel.c ---*/
 /*---------------------------------------------------------------*/

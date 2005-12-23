@@ -36,7 +36,7 @@
 #  define VG_MAX_INSTR_SZB         16  // max length of native instruction
 #  define VG_CLREQ_SZB             18  // length of a client request, may
                                        //   be larger than VG_MAX_INSTR_SZB
-#  define VG_STACK_REDZONE_SZB      0  // number of addressable bytes below SP
+#  define VG_STACK_REDZONE_SZB      0  // number of addressable bytes below %RSP
 #elif defined(VGA_amd64)
 #  define VG_MIN_INSTR_SZB          1
 #  define VG_MAX_INSTR_SZB         16
@@ -51,7 +51,8 @@
 #  define VG_MIN_INSTR_SZB          4
 #  define VG_MAX_INSTR_SZB          4 
 #  define VG_CLREQ_SZB             24
-#  define VG_STACK_REDZONE_SZB      0
+#  define VG_STACK_REDZONE_SZB    288  // number of addressable bytes below R1
+                                       // from 64-bit PowerPC ELF ABI Supplement 1.7
 #else
 #  error Unknown arch
 #endif

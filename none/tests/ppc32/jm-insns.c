@@ -186,6 +186,18 @@ register uint32_t r18 __asm__ ("r18");
 #include <unistd.h>
 #include <malloc.h>
 
+
+#define ASSEMBLY_FUNC(__fname, __insn)     \
+asm(".section \".text\"\n"                 \
+    "\t.align 2\n"                         \
+    "\t.type "__fname",@function\n"        \
+    __fname":\n"                           \
+    "\t"__insn"\n"                         \
+    "\tblr\n"                              \
+    "\t.previous\n"                        \
+    )
+
+
 /* -------------- BEGIN #include "test-ppc.h" -------------- */
 /*
  * test-ppc.h:
@@ -281,6 +293,7 @@ enum test_flags {
 #define FDPRINTF(fmt, args...) do { } while (0)
 #endif
 
+
 /* Produce the 64-bit pattern corresponding to the supplied double. */
 static uint64_t double_to_bits ( double d )
 {
@@ -304,7 +317,25 @@ static float bits_to_float ( uint32_t i )
 }
 #endif
 
+
+#if defined (HAS_ALTIVEC)
+static void AB_DPRINTF_VEC32x4 ( vector unsigned int v )
+{
+#if defined (DEBUG_ARGS_BUILD)
+   int i;
+   unsigned int* p_int = (unsigned int*)&v;
+   AB_DPRINTF("val");
+   for (i=0; i<4; i++) {
+      AB_DPRINTF(" %08x", p_int[i]);
+   }
+   AB_DPRINTF("\n");
+#endif
+}
+#endif
+
+
 #define unused __attribute__ (( unused ))
+
 
 /* -------------- BEGIN #include "ops-ppc.c" -------------- */
 
@@ -706,83 +737,48 @@ static test_t tests_ilr_ops_two[] = {
     { NULL,                   NULL,           },
 };
 
-static void test_cmp (void)
+static void test_cmpw (void)
 {
-    __asm__ __volatile__ ("cmp          2, 14, 15");
+    __asm__ __volatile__ ("cmpw         2, 14, 15");
 }
 
-static void test_cmpl (void)
+static void test_cmplw (void)
 {
-    __asm__ __volatile__ ("cmpl         2, 14, 15");
+    __asm__ __volatile__ ("cmplw        2, 14, 15");
 }
 
 static test_t tests_icr_ops_two[] = {
-    { &test_cmp             , "         cmp", },
-    { &test_cmpl            , "        cmpl", },
+    { &test_cmpw            , "        cmpw", },
+    { &test_cmplw           , "       cmplw", },
     { NULL,                   NULL,           },
 };
 
-extern void test_cmpi (void);
-asm(".text\n"
-    "test_cmpi:\n"
-    "\tcmpi         2, 14, 15\n"
-    "\tblr\n"
-    ".previous\n"
-);
+extern void test_cmpwi (void);
+ASSEMBLY_FUNC("test_cmpwi", "cmpwi         2, 14, 0");
 
-extern void test_cmpli (void);
-asm(".text\n"
-    "test_cmpli:\n"
-    "\tcmpli         2, 14, 15\n"
-    "\tblr\n"
-    ".previous\n"
-);
+extern void test_cmplwi (void);
+ASSEMBLY_FUNC("test_cmplwi", "cmplwi        2, 14, 0");
 
 static test_t tests_icr_ops_two_i16[] = {
-    { &test_cmpi            , "        cmpi", },
-    { &test_cmpli           , "       cmpli", },
+    { &test_cmpwi           , "       cmpwi", },
+    { &test_cmplwi          , "      cmplwi", },
     { NULL,                   NULL,           },
 };
 
 extern void test_addi (void);
-asm(".text\n"
-    "test_addi:\n"
-    "\taddi         17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_addi", "addi         17, 14, 0");
 
 extern void test_addic (void);
-asm(".text\n"
-    "test_addic:\n"
-    "\taddic        17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_addic", "addic        17, 14, 0");
 
 extern void test_addis (void);
-asm(".text\n"
-    "test_addis:\n"
-    "\taddis        17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_addis", "addis        17, 14, 0");
 
 extern void test_mulli (void);
-asm(".text\n"
-    "test_mulli:\n"
-    "\tmulli        17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_mulli", "mulli        17, 14, 0");
 
 extern void test_subfic (void);
-asm(".text\n"
-    "test_subfic:\n"
-    "\tsubfic       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_subfic", "subfic       17, 14, 0");
 
 static test_t tests_ia_ops_two_i16[] = {
     { &test_addi            , "        addi", },
@@ -794,12 +790,7 @@ static test_t tests_ia_ops_two_i16[] = {
 };
 
 extern void test_addic_ (void);
-asm(".text\n"
-    "test_addic_:\n"
-    "\taddic.       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_addic_", "addic.       17, 14, 0");
 
 static test_t tests_iar_ops_two_i16[] = {
     { &test_addic_          , "      addic.", },
@@ -807,36 +798,16 @@ static test_t tests_iar_ops_two_i16[] = {
 };
 
 extern void test_ori (void);
-asm(".text\n"
-    "test_ori:\n"
-    "\tori       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_ori", "ori       17, 14, 0");
 
 extern void test_oris (void);
-asm(".text\n"
-    "test_oris:\n"
-    "\toris       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_oris", "oris       17, 14, 0");
 
 extern void test_xori (void);
-asm(".text\n"
-    "test_xori:\n"
-    "\txori       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_xori", "xori       17, 14, 0");
 
 extern void test_xoris (void);
-asm(".text\n"
-    "test_xoris:\n"
-    "\txoris       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_xoris", "xoris       17, 14, 0");
 
 static test_t tests_il_ops_two_i16[] = {
     { &test_ori             , "         ori", },
@@ -847,20 +818,10 @@ static test_t tests_il_ops_two_i16[] = {
 };
 
 extern void test_andi_ (void);
-asm(".text\n"
-    "test_andi_:\n"
-    "\tandi.       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_andi_", "andi.       17, 14, 0");
 
 extern void test_andis_ (void);
-asm(".text\n"
-    "test_andis_:\n"
-    "\tandis.      17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_andis_", "andis.      17, 14, 0");
 
 static test_t tests_ilr_ops_two_i16[] = {
     { &test_andi_           , "       andi.", },
@@ -1093,36 +1054,16 @@ static test_t tests_ilr_ops_one[] = {
 };
 
 extern void test_rlwimi (void);
-asm(".text\n"
-    "test_rlwimi:\n"
-    "\trlwimi      17, 14, 0, 0, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_rlwimi", "rlwimi      17, 14, 0, 0, 0");
 
 extern void test_rlwinm (void);
-asm(".text\n"
-    "test_rlwinm:\n"
-    "\trlwinm      17, 14, 0, 0, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_rlwinm", "rlwinm      17, 14, 0, 0, 0");
 
 extern void test_rlwnm (void);
-asm(".text\n"
-    "test_rlwnm:\n"
-    "\trlwnm      17, 14, 15, 0, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_rlwnm", "rlwnm      17, 14, 15, 0, 0");
 
 extern void test_srawi (void);
-asm(".text\n"
-    "test_srawi:\n"
-    "\tsrawi      17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_srawi", "srawi      17, 14, 0");
 
 static void test_mfcr (void)
 {
@@ -1151,60 +1092,25 @@ static test_t tests_il_ops_spe[] = {
 };
 
 extern void test_rlwimi_ (void);
-asm(".text\n"
-    "test_rlwimi_:\n"
-    "\trlwimi.      17, 14, 0, 0, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_rlwimi_", "rlwimi.      17, 14, 0, 0, 0");
 
 extern void test_rlwinm_ (void);
-asm(".text\n"
-    "test_rlwinm_:\n"
-    "\trlwinm.      17, 14, 0, 0, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_rlwinm_", "rlwinm.      17, 14, 0, 0, 0");
 
 extern void test_rlwnm_ (void);
-asm(".text\n"
-    "test_rlwnm_:\n"
-    "\trlwnm.      17, 14, 15, 0, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_rlwnm_", "rlwnm.      17, 14, 15, 0, 0");
 
 extern void test_srawi_ (void);
-asm(".text\n"
-    "test_srawi_:\n"
-    "\tsrawi.      17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_srawi_", "srawi.      17, 14, 0");
 
 extern void test_mcrf (void);
-asm(".text\n"
-    "test_mcrf:\n"
-    "\tmcrf      0, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_mcrf", "mcrf      0, 0");
 
 extern void test_mcrxr (void);
-asm(".text\n"
-    "test_mcrxr:\n"
-    "\tmcrxr      0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_mcrxr", "mcrxr      0");
 
 extern void test_mtcrf (void);
-asm(".text\n"
-    "test_mtcrf:\n"
-    "\tmtcrf      0, 14\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_mtcrf", "mtcrf      0, 14");
 
 static test_t tests_ilr_ops_spe[] = {
     { &test_rlwimi_         , "     rlwimi.", },
@@ -1218,68 +1124,28 @@ static test_t tests_ilr_ops_spe[] = {
 };
 
 extern void test_lbz (void);
-asm(".text\n"
-    "test_lbz:\n"
-    "\tlbz          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lbz", "lbz          17,0(14)");
 
 extern void test_lbzu (void);
-asm(".text\n"
-    "test_lbzu:\n"
-    "\tlbzu          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lbzu", "lbzu          17,0(14)");
 
 extern void test_lha (void);
-asm(".text\n"
-    "test_lha:\n"
-    "\tlha          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lha", "lha          17,0(14)");
 
 extern void test_lhau (void);
-asm(".text\n"
-    "test_lhau:\n"
-    "\tlhau          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lhau", "lhau          17,0(14)");
 
 extern void test_lhz (void);
-asm(".text\n"
-    "test_lhz:\n"
-    "\tlhz          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lhz", "lhz          17,0(14)");
 
 extern void test_lhzu (void);
-asm(".text\n"
-    "test_lhzu:\n"
-    "\tlhzu         17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lhzu", "lhzu         17,0(14)");
 
 extern void test_lwz (void);
-asm(".text\n"
-    "test_lwz:\n"
-    "\tlwz          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lwz", "lwz          17,0(14)");
 
 extern void test_lwzu (void);
-asm(".text\n"
-    "test_lwzu:\n"
-    "\tlwzu          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lwzu", "lwzu          17,0(14)");
 
 static test_t tests_ild_ops_two_i16[] = {
     { &test_lbz             , "         lbz", },
@@ -1346,52 +1212,22 @@ static test_t tests_ild_ops_two[] = {
 };
 
 extern void test_stb (void);
-asm(".text\n"
-    "test_stb:\n"
-    "\tstb          14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_stb", "stb          14,0(15)");
 
 extern void test_stbu (void);
-asm(".text\n"
-    "test_stbu:\n"
-    "\tstbu          14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_stbu", "stbu          14,0(15)");
 
 extern void test_sth (void);
-asm(".text\n"
-    "test_sth:\n"
-    "\tsth          14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_sth", "sth          14,0(15)");
 
 extern void test_sthu (void);
-asm(".text\n"
-    "test_sthu:\n"
-    "\tsthu         14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_sthu", "sthu         14,0(15)");
 
 extern void test_stw (void);
-asm(".text\n"
-    "test_stw:\n"
-    "\tstw          14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_stw", "stw          14,0(15)");
 
 extern void test_stwu (void);
-asm(".text\n"
-    "test_stwu:\n"
-    "\tstwu          14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_stwu", "stwu          14,0(15)");
 
 static test_t tests_ist_ops_three_i16[] = {
     { &test_stb             , "         stb", },
@@ -1836,36 +1672,16 @@ static test_t tests_flr_ops_spe[] = {
 
 #if !defined (NO_FLOAT)
 extern void test_lfs (void);
-asm(".text\n"
-    "test_lfs:\n"
-    "\tlfs          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lfs", "lfs          17,0(14)");
 
 extern void test_lfsu (void);
-asm(".text\n"
-    "test_lfsu:\n"
-    "\tlfsu          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lfsu", "lfsu          17,0(14)");
 
 extern void test_lfd (void);
-asm(".text\n"
-    "test_lfd:\n"
-    "\tlfd          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lfd", "lfd          17,0(14)");
 
 extern void test_lfdu (void);
-asm(".text\n"
-    "test_lfdu:\n"
-    "\tlfdu          17,0(14)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_lfdu", "lfdu          17,0(14)");
 
 static test_t tests_fld_ops_two_i16[] = {
     { &test_lfs             , "         lfs", },
@@ -1908,36 +1724,16 @@ static test_t tests_fld_ops_two[] = {
 
 #if !defined (NO_FLOAT)
 extern void test_stfs (void);
-asm(".text\n"
-    "test_stfs:\n"
-    "\tstfs          14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_stfs", "stfs          14,0(15)");
 
 extern void test_stfsu (void);
-asm(".text\n"
-    "test_stfsu:\n"
-    "\tstfsu          14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_stfsu", "stfsu          14,0(15)");
 
 extern void test_stfd (void);
-asm(".text\n"
-    "test_stfd:\n"
-    "\tstfd          14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_stfd", "stfd          14,0(15)");
 
 extern void test_stfdu (void);
-asm(".text\n"
-    "test_stfdu:\n"
-    "\tstfdu         14,0(15)\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_stfdu", "stfdu         14,0(15)");
 
 static test_t tests_fst_ops_three_i16[] = {
     { &test_stfs             , "         stfs", },
@@ -2753,60 +2549,25 @@ static void test_vsr (void)
 }
 
 extern void test_vspltb (void);
-asm(".text\n"
-    "test_vspltb:\n"
-    "\tvspltb       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vspltb", "vspltb       17, 14, 0");
 
 extern void test_vsplth (void);
-asm(".text\n"
-    "test_vsplth:\n"
-    "\tvsplth       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vsplth", "vsplth       17, 14, 0");
 
 extern void test_vspltw (void);
-asm(".text\n"
-    "test_vspltw:\n"
-    "\tvspltw       17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vspltw", "vspltw       17, 14, 0");
 
 extern void test_vspltisb (void);
-asm(".text\n"
-    "test_vspltisb:\n"
-    "\tvspltisb       17, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vspltisb", "vspltisb       17, 0");
 
 extern void test_vspltish (void);
-asm(".text\n"
-    "test_vspltish:\n"
-    "\tvspltish       17, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vspltish", "vspltish       17, 0");
 
 extern void test_vspltisw (void);
-asm(".text\n"
-    "test_vspltisw:\n"
-    "\tvspltisw       17, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vspltisw", "vspltisw       17, 0");
 
 extern void test_vsldoi (void);
-asm(".text\n"
-    "test_vsldoi:\n"
-    "\tvsldoi       17, 14, 15, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vsldoi", "vsldoi       17, 14, 15, 0");
 
 static void test_lvsl (void)
 {
@@ -3062,36 +2823,16 @@ static test_t tests_afcr_ops_two[] = {
 
 #if defined (HAS_ALTIVEC)
 extern void test_vcfux (void);
-asm(".text\n"
-    "test_vcfux:\n"
-    "\tvcfux        17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vcfux", "vcfux        17, 14, 0");
 
 extern void test_vcfsx (void);
-asm(".text\n"
-    "test_vcfsx:\n"
-    "\tvcfsx        17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vcfsx", "vcfsx        17, 14, 0");
 
 extern void test_vctuxs (void);
-asm(".text\n"
-    "test_vctuxs:\n"
-    "\tvctuxs        17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vctuxs", "vctuxs        17, 14, 0");
 
 extern void test_vctsxs (void);
-asm(".text\n"
-    "test_vctsxs:\n"
-    "\tvctsxs        17, 14, 0\n"
-    "\tblr\n"
-    ".previous\n"
-);
+ASSEMBLY_FUNC("test_vctsxs", "vctsxs        17, 14, 0");
 
 static test_t tests_av_float_ops_spe[] = {
     { &test_vcfux           , "       vcfux", },
@@ -3976,14 +3717,14 @@ static int nb_vfargs;
 #endif
 
 static inline void register_farg (void *farg,
-                                  int s, uint16_t exp, uint64_t mant)
+                                  int s, uint16_t _exp, uint64_t mant)
 {
    uint64_t tmp;
    
-   tmp = ((uint64_t)s << 63) | ((uint64_t)exp << 52) | mant;
+   tmp = ((uint64_t)s << 63) | ((uint64_t)_exp << 52) | mant;
    *(uint64_t *)farg = tmp;
    AB_DPRINTF("%d %03x %013llx => %016llx %0e\n",
-              s, exp, mant, *(uint64_t *)farg, *(double *)farg);
+              s, _exp, mant, *(uint64_t *)farg, *(double *)farg);
 }
 
 static void build_fargs_table (void)
@@ -4018,12 +3759,12 @@ static void build_fargs_table (void)
     * -SNaN     : 1 0xFF 0x400000 => 0xFFC00000
     */
    uint64_t mant;
-   uint16_t exp, e0, e1;
+   uint16_t _exp, e0, e1;
    int s;
    int i=0;
    
    /* Note: VEX isn't so hot with denormals, so don't bother
-      testing them: set exp > 0
+      testing them: set _exp > 0
    */
 
    if ( arg_list_size == 1 ) {   // Large
@@ -4033,11 +3774,11 @@ static void build_fargs_table (void)
             for (e1=0x001; ; e1 = ((e1 + 1) << 2) + 6) {
                if (e1 >= 0x400)
                   e1 = 0x3fe;
-               exp = (e0 << 10) | e1;
+               _exp = (e0 << 10) | e1;
                for (mant = 0x0000000000001ULL; mant < (1ULL << 52);
                     /* Add 'random' bits */
                     mant = ((mant + 0x4A6) << 13) + 0x359) {
-                  register_farg(&fargs[i++], s, exp, mant);
+                  register_farg(&fargs[i++], s, _exp, mant);
                }
                if (e1 == 0x3fe)
                   break;
@@ -4052,12 +3793,12 @@ static void build_fargs_table (void)
 //          for (e1=0x001; ; e1 = ((e1 + 1) << 5) + 7) {   // x3
                if (e1 >= 0x400)
                   e1 = 0x3fe;
-//             exp = (e0 << 10) | e1;
-               exp = e1;
+//             _exp = (e0 << 10) | e1;
+               _exp = e1;
                for (mant = 0x0000000000001ULL; mant < (1ULL << 52);
                     /* Add 'random' bits */
                     mant = ((mant + 0x4A6) << 29) + 0x359) {  // x2
-                  register_farg(&fargs[i++], s, exp, mant);
+                  register_farg(&fargs[i++], s, _exp, mant);
                }
                if (e1 == 0x3fe)
                   break;
@@ -4073,44 +3814,44 @@ static void build_fargs_table (void)
    /* Special values */
    /* +0.0      : 0 0x000 0x0000000000000 */
    s = 0;
-   exp = 0x000;
+   _exp = 0x000;
    mant = 0x0000000000000ULL;
-   register_farg(&fargs[i++], s, exp, mant);
+   register_farg(&fargs[i++], s, _exp, mant);
    /* -0.0      : 1 0x000 0x0000000000000 */
    s = 1;
-   exp = 0x000;
+   _exp = 0x000;
    mant = 0x0000000000000ULL;
-   register_farg(&fargs[i++], s, exp, mant);
+   register_farg(&fargs[i++], s, _exp, mant);
    /* +infinity : 0 0x7FF 0x0000000000000  */
    s = 0;
-   exp = 0x7FF;
+   _exp = 0x7FF;
    mant = 0x0000000000000ULL;
-   register_farg(&fargs[i++], s, exp, mant);
+   register_farg(&fargs[i++], s, _exp, mant);
    /* -infinity : 1 0x7FF 0x0000000000000 */
    s = 1;
-   exp = 0x7FF;
+   _exp = 0x7FF;
    mant = 0x0000000000000ULL;
-   register_farg(&fargs[i++], s, exp, mant);
+   register_farg(&fargs[i++], s, _exp, mant);
    /* +QNaN     : 0 0x7FF 0x7FFFFFFFFFFFF */
    s = 0;
-   exp = 0x7FF;
+   _exp = 0x7FF;
    mant = 0x7FFFFFFFFFFFFULL;
-   register_farg(&fargs[i++], s, exp, mant);
+   register_farg(&fargs[i++], s, _exp, mant);
    /* -QNaN     : 1 0x7FF 0x7FFFFFFFFFFFF */
    s = 1;
-   exp = 0x7FF;
+   _exp = 0x7FF;
    mant = 0x7FFFFFFFFFFFFULL;
-   register_farg(&fargs[i++], s, exp, mant);
+   register_farg(&fargs[i++], s, _exp, mant);
    /* +SNaN     : 0 0x7FF 0x8000000000000 */
    s = 0;
-   exp = 0x7FF;
+   _exp = 0x7FF;
    mant = 0x8000000000000ULL;
-   register_farg(&fargs[i++], s, exp, mant);
+   register_farg(&fargs[i++], s, _exp, mant);
    /* -SNaN     : 1 0x7FF 0x8000000000000 */
    s = 1;
-   exp = 0x7FF;
+   _exp = 0x7FF;
    mant = 0x8000000000000ULL;
-   register_farg(&fargs[i++], s, exp, mant);
+   register_farg(&fargs[i++], s, _exp, mant);
    AB_DPRINTF("Registered %d fargs values\n", i);
 
    nb_fargs = i;
@@ -4126,8 +3867,8 @@ static void build_iargs_table (void)
       for (tmp=0; ; tmp = tmp + 1 + (tmp >> 1)) {
          if (tmp >= 0x100000000ULL)
             tmp = 0xFFFFFFFF;
-         iargs[i++] = tmp;
-         AB_DPRINTF("val %08llx\n", tmp);
+         iargs[i++] = (uint32_t)tmp;
+         AB_DPRINTF("val %08x\n", (uint32_t)tmp);
          if (tmp == 0xFFFFFFFF)
             break;
       }
@@ -4138,8 +3879,8 @@ static void build_iargs_table (void)
       for (tmp=0; ; tmp = 999999*tmp + 999999) {  // gives 3
          if (tmp >= 0x100000000ULL)
             tmp = 0xFFFFFFFF;
-         iargs[i++] = tmp;
-         AB_DPRINTF("val %08llx\n", tmp);
+         iargs[i++] = (uint32_t)tmp;
+         AB_DPRINTF("val %08x\n", (uint32_t)tmp);
          if (tmp == 0xFFFFFFFF)
             break;
       }
@@ -4185,7 +3926,9 @@ static void build_viargs_table (void)
    unsigned int i=2;
    viargs = memalign(16, i * sizeof(vector unsigned int));
    viargs[0] = (vector unsigned int) { 0x01020304,0x05060708,0x090A0B0C,0x0E0D0E0F };
+   AB_DPRINTF_VEC32x4( viargs[0] );
    viargs[1] = (vector unsigned int) { 0xF1F2F3F4,0xF5F6F7F8,0xF9FAFBFC,0xFEFDFEFF };
+   AB_DPRINTF_VEC32x4( viargs[1] );
 #else
    unsigned int i,j;
    // build from iargs table (large/default already set)
@@ -4193,6 +3936,7 @@ static void build_viargs_table (void)
    for (i=0; i<nb_iargs; i++) {
       j = iargs[i];
       viargs[i] = (vector unsigned int){ j, j*2, j*3, j*4 };
+      AB_DPRINTF_VEC32x4( viargs[i] );
    }
 #endif
 
@@ -4201,15 +3945,15 @@ static void build_viargs_table (void)
 }
 
 static inline void register_vfarg (vector float* vfarg,
-                                  int s, uint8_t exp, uint32_t mant)
+                                  int s, uint8_t _exp, uint32_t mant)
 {
    uint32_t tmp;
    vector uint32_t* vfargI = (vector uint32_t*)vfarg;
 
-   tmp = ((uint64_t)s << 31) | ((uint64_t)exp << 23) | mant;
+   tmp = ((uint64_t)s << 31) | ((uint64_t)_exp << 23) | mant;
    *vfargI = (vector uint32_t){ tmp,tmp,tmp,tmp };
    AB_DPRINTF("%d %02x %06x => %08x %0e\n",
-              s, exp, mant, *((uint32_t*)&tmp), *(float*)&tmp);
+              s, _exp, mant, *((uint32_t*)&tmp), *(float*)&tmp);
 }
 
 static void build_vfargs_table (void)
@@ -4229,7 +3973,7 @@ static void build_vfargs_table (void)
     * (8 values)
     */
    uint32_t mant;
-   uint16_t exp;
+   uint16_t _exp;
    int s;
    int i=0;
    
@@ -4240,12 +3984,12 @@ static void build_vfargs_table (void)
 
    // 4 values:
    for (s=0; s<2; s++) {
-      for (exp=0x5; ; exp += 0x9D ) {
-         if (exp > 0xDF)
+      for (_exp=0x5; ; _exp += 0x9D ) {
+         if (_exp > 0xDF)
             break;
          for (mant = 0x3FFFFF; mant < 0x7FFFFF;
               mant = /* random */ ((mant + 0x1A6) << 31) + 0x159) {
-            register_vfarg(&vfargs[i++], s, (uint8_t)exp, mant);
+            register_vfarg(&vfargs[i++], s, (uint8_t)_exp, mant);
          }
       }
    }
@@ -4254,15 +3998,15 @@ static void build_vfargs_table (void)
    vfargs = memalign(16, nb_vfargs * sizeof(vector float));
 
    for (s=0; s<2; s++) {
-      for (exp=0x0; ; exp += 0x3F ) {
-         //      for (exp=0; ; exp = ((exp + 1) << 1) + 3) {
-         if (exp >= 0xFE)
-            exp = 0xFE;
+      for (_exp=0x0; ; _exp += 0x3F ) {
+         //      for (_exp=0; ; _exp = ((_exp + 1) << 1) + 3) {
+         if (_exp >= 0xFE)
+            _exp = 0xFE;
          for (mant = 0x0; mant < 0x7FFFFF;
               mant = /* random */ ((mant + 0x4A6) << 5) + 0x359) {
-            register_vfarg(&vfargs[i++], s, (uint8_t)exp, mant);
+            register_vfarg(&vfargs[i++], s, (uint8_t)_exp, mant);
          }
-         if (exp >= 0xFE)
+         if (_exp >= 0xFE)
             break;
       }
    }
@@ -4271,50 +4015,50 @@ static void build_vfargs_table (void)
    /* Special values */
    /* +0.0      : 0 0x00 0x000000 */
    s = 0;
-   exp = 0x00;
+   _exp = 0x00;
    mant = 0x000000;
-   register_vfarg(&vfargs[i++], s, exp, mant);
+   register_vfarg(&vfargs[i++], s, _exp, mant);
    /* -0.0      : 1 0x00 0x000000 */
    s = 1;
-   exp = 0x00;
+   _exp = 0x00;
    mant = 0x000000;
-   register_vfarg(&vfargs[i++], s, exp, mant);
+   register_vfarg(&vfargs[i++], s, _exp, mant);
 
    /* +infinity : 0 0xFF 0x000000  */
    s = 0;
-   exp = 0xFF;
+   _exp = 0xFF;
    mant = 0x000000;
-   register_vfarg(&vfargs[i++], s, exp, mant);
+   register_vfarg(&vfargs[i++], s, _exp, mant);
    /* -infinity : 1 0xFF 0x000000 */
    s = 1;
-   exp = 0xFF;
+   _exp = 0xFF;
    mant = 0x000000;
-   register_vfarg(&vfargs[i++], s, exp, mant);
+   register_vfarg(&vfargs[i++], s, _exp, mant);
 
-   /* NaN: exponent all 1s, non-zero fraction */
+   /* NaN: _exponent all 1s, non-zero fraction */
    /* SNaN is a NaN with the most significant fraction bit clear.*/
    /* +SNaN     : 0 0xFF 0x7FFFFF */
    s = 0;
-   exp = 0xFF;
+   _exp = 0xFF;
    mant = 0x7FFFFF;
-   register_vfarg(&vfargs[i++], s, exp, mant);
+   register_vfarg(&vfargs[i++], s, _exp, mant);
    /* -SNaN     : 1 0xFF 0x7FFFFF */
    s = 1;
-   exp = 0xFF;
+   _exp = 0xFF;
    mant = 0x7FFFFF;
-   register_vfarg(&vfargs[i++], s, exp, mant);
+   register_vfarg(&vfargs[i++], s, _exp, mant);
 
    /* QNaN is a NaN with the most significant fraction bit set */
    /* +QNaN     : 0 0xFF 0x3F0000 */
    s = 0;
-   exp = 0xFF;
+   _exp = 0xFF;
    mant = 0x3FFFFF;
-   register_vfarg(&vfargs[i++], s, exp, mant);
+   register_vfarg(&vfargs[i++], s, _exp, mant);
    /* -QNaN     : 1 0xFF 0x3F0000 */
    s = 1;
-   exp = 0xFF;
+   _exp = 0xFF;
    mant = 0x3FFFFF;
-   register_vfarg(&vfargs[i++], s, exp, mant);
+   register_vfarg(&vfargs[i++], s, _exp, mant);
    AB_DPRINTF("Registered %d vfargs values\n", i);
 
    assert(i <= nb_vfargs);

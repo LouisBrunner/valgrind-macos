@@ -87,7 +87,7 @@ my %toolnames = (
 );
 
 # Command line options
-my $n_reps = 3;     # Run each program $n_reps times and choose the best one.
+my $n_reps = 1;     # Run each program $n_reps times and choose the best one.
 my @vgdirs;         # Dirs of the various Valgrinds being measured.
 
 my $num_tests_done   = 0;

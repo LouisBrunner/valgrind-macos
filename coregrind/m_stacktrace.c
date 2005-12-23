@@ -94,8 +94,9 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
    } 
 
    /* Otherwise unwind the stack in a platform-specific way.  Trying
-      to merge the x86, amd64 and ppc32 logic into a single piece of
-      code is just too confusing and difficult to performance-tune.  */
+      to merge the x86, amd64, ppc32 and ppc64 logic into a single
+      piece of code is just too confusing and difficult to
+      performance-tune.  */
 
 #  if defined(VGP_x86_linux)
 
@@ -251,12 +252,17 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
    ips[0] = ip;
    i = 1;
 
-   if (fp_min <= fp && fp < fp_max-4+1) {
+   if (fp_min <= fp && fp < fp_max-VG_WORDSIZE+1) {
 
       /* initial FP is sane; keep going */
       fp = (((UWord*)fp)[0]);
 
       while (True) {
+
+        /* on ppc64-linux (ppc64-elf, really), the lr save slot is 2
+           words back from sp, whereas on ppc32-elf(?) it's only one
+           word back. */
+         const Int lr_offset = VG_WORDSIZE==8 ? 2 : 1;
 
          if (i >= n_ips)
             break;
@@ -269,7 +275,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
             if (i == 1 && lr_is_first_RA)
                ip = lr;
             else
-               ip = (((UWord*)fp)[1]);
+               ip = (((UWord*)fp)[lr_offset]);
 
             fp = (((UWord*)fp)[0]);
             ips[i++] = ip;

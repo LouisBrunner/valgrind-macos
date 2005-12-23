@@ -682,7 +682,7 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
    and similarly the unsigned variant.  The default interpretation is:
 
       CmpORD32{S,U}#(x,y,x#,y#) = PCast(x# `UifU` y#)  
-                                  &  (7<<1)
+                                  & (7<<1)
 
    The "& (7<<1)" reflects the fact that all result bits except 3,2,1
    are zero and therefore defined (viz, zero).
@@ -695,9 +695,10 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
    will be defined even if the rest of x isn't.  In which case we do:
 
       CmpORD32S#(x,x#,0,{impliedly 0}#)
-         = PCast(x#) & (3<<1)      -- standard interp for GT,EQ
-           | (x# >> 31) << 3       -- LT = x#[31]
+         = PCast(x#) & (3<<1)      -- standard interp for GT#,EQ#
+           | (x# >>u 31) << 3      -- LT# = x#[31]
 
+   Analogous handling for CmpORD64{S,U}.
 */
 static Bool isZeroU32 ( IRAtom* e )
 {
@@ -707,56 +708,81 @@ static Bool isZeroU32 ( IRAtom* e )
               && e->Iex.Const.con->Ico.U32 == 0 );
 }
 
-static IRAtom* doCmpORD32 ( MCEnv*  mce,
-                            IROp    cmp_op,
-                            IRAtom* xxhash, IRAtom* yyhash, 
-                            IRAtom* xx,     IRAtom* yy )
+static Bool isZeroU64 ( IRAtom* e )
 {
+   return
+      toBool( e->tag == Iex_Const
+              && e->Iex.Const.con->tag == Ico_U64
+              && e->Iex.Const.con->Ico.U64 == 0 );
+}
+
+static IRAtom* doCmpORD ( MCEnv*  mce,
+                          IROp    cmp_op,
+                          IRAtom* xxhash, IRAtom* yyhash, 
+                          IRAtom* xx,     IRAtom* yy )
+{
+   Bool   m64    = cmp_op == Iop_CmpORD64S || cmp_op == Iop_CmpORD64U;
+   Bool   syned  = cmp_op == Iop_CmpORD64S || cmp_op == Iop_CmpORD32S;
+   IROp   opOR   = m64 ? Iop_Or64  : Iop_Or32;
+   IROp   opAND  = m64 ? Iop_And64 : Iop_And32;
+   IROp   opSHL  = m64 ? Iop_Shl64 : Iop_Shl32;
+   IROp   opSHR  = m64 ? Iop_Shr64 : Iop_Shr32;
+   IRType ty     = m64 ? Ity_I64   : Ity_I32;
+   Int    width  = m64 ? 64        : 32;
+
+   Bool (*isZero)(IRAtom*) = m64 ? isZeroU64 : isZeroU32;
+
+   IRAtom* threeLeft1 = NULL;
+   IRAtom* sevenLeft1 = NULL;
+
    tl_assert(isShadowAtom(mce,xxhash));
    tl_assert(isShadowAtom(mce,yyhash));
    tl_assert(isOriginalAtom(mce,xx));
    tl_assert(isOriginalAtom(mce,yy));
    tl_assert(sameKindedAtoms(xxhash,xx));
    tl_assert(sameKindedAtoms(yyhash,yy));
-   tl_assert(cmp_op == Iop_CmpORD32S || cmp_op == Iop_CmpORD32U);
+   tl_assert(cmp_op == Iop_CmpORD32S || cmp_op == Iop_CmpORD32U
+             || cmp_op == Iop_CmpORD64S || cmp_op == Iop_CmpORD64U);
 
    if (0) {
       ppIROp(cmp_op); VG_(printf)(" "); 
       ppIRExpr(xx); VG_(printf)(" "); ppIRExpr( yy ); VG_(printf)("\n");
    }
 
-   if (isZeroU32(yy)) {
+   if (syned && isZero(yy)) {
       /* fancy interpretation */
       /* if yy is zero, then it must be fully defined (zero#). */
-      tl_assert(isZeroU32(yyhash));
+      tl_assert(isZero(yyhash));
+      threeLeft1 = m64 ? mkU64(3<<1) : mkU32(3<<1);
       return
          binop(
-            Iop_Or32,
+            opOR,
             assignNew(
-               mce,Ity_I32,
+               mce,ty,
                binop(
-                  Iop_And32,
-                  mkPCastTo(mce,Ity_I32, xxhash), 
-                  mkU32(3<<1)
+                  opAND,
+                  mkPCastTo(mce,ty, xxhash), 
+                  threeLeft1
                )),
             assignNew(
-               mce,Ity_I32,
+               mce,ty,
                binop(
-                  Iop_Shl32,
+                  opSHL,
                   assignNew(
-                     mce,Ity_I32,
-                     binop(Iop_Shr32, xxhash, mkU8(31))),
+                     mce,ty,
+                     binop(opSHR, xxhash, mkU8(width-1))),
                   mkU8(3)
                ))
 	 );
    } else {
       /* standard interpretation */
+      sevenLeft1 = m64 ? mkU64(7<<1) : mkU32(7<<1);
       return 
          binop( 
-            Iop_And32, 
-            mkPCastTo( mce,Ity_I32,
-                       mkUifU32(mce, xxhash,yyhash)),
-            mkU32(7<<1)
+            opAND, 
+            mkPCastTo( mce,ty,
+                       mkUifU(mce,ty, xxhash,yyhash)),
+            sevenLeft1
          );
    }
 }
@@ -1973,7 +1999,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_CmpORD32S:
       case Iop_CmpORD32U:
-         return doCmpORD32(mce, op, vatom1,vatom2, atom1,atom2);
+      case Iop_CmpORD64S:
+      case Iop_CmpORD64U:
+         return doCmpORD(mce, op, vatom1,vatom2, atom1,atom2);
 
       case Iop_Add64:
          if (mce->bogusLiterals)

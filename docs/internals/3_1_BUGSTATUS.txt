@@ -23,7 +23,7 @@ pending   pending   118239   amd64: 0xF 0xAE 0x3F (clflush)
 pending   pending   118274   amd64: 0xDD #7 (fnsave)
 pending   pending   118466   add %r,%r mishandled by memcheck
 pending   pending   n-i-bz   VALGRIND_COUNT_LEAKS arg types (Olly Betts)
-pending   pending   n-i-bz   memcheck/tests/mempool reads freed memory
+v5429     pending   n-i-bz   memcheck/tests/mempool reads freed memory
 v5366/67/70 pending n-i-bz   AshleyP's custom-allocator assertion
 vx1501    pending   n-i-bz   Dirk strict-aliasing stuff
 v5368     pending   n-i-bz   More space for debugger cmd line (Dan Thaler)

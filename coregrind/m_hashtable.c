@@ -234,11 +234,12 @@ void* VG_(HT_Next)(VgHashTable table)
 
 void VG_(HT_destruct)(VgHashTable table)
 {
-   UInt      i;
-   VgHashNode* node;
+   UInt       i;
+   VgHashNode *node, *node_next;
    
    for (i = 0; i < table->n_chains; i++) {
-      for (node = table->chains[i]; node != NULL; node = node->next) {
+      for (node = table->chains[i]; node != NULL; node = node_next) {
+         node_next = node->next;
          VG_(free)(node);
       }
    }

@@ -1145,8 +1145,7 @@ static IRExpr* addr_align( IRExpr* addr, UChar align )
    }
 
    vassert(typeOfIRExpr(irbb->tyenv,addr) == ty);
-   return binop( mkSzOp(ty, Iop_And8),
-                 addr, mkSzImm(ty, mask) );
+   return binop( mkSzOp(ty, Iop_And8), addr, mkSzImm(ty, mask) );
 }
 
 
@@ -6306,27 +6305,28 @@ static Bool dis_av_load ( UInt theInstr )
    UInt  opc2     = ifieldOPClo10(theInstr);
    UChar b0       = ifieldBIT0(theInstr);
 
-   IRType ty           = mode64 ? Ity_I64 : Ity_I32;
-   IRTemp EA_lo32      = newTemp(Ity_I32);
-   IRTemp addr_align16 = newTemp(ty);
+   IRType ty         = mode64 ? Ity_I64 : Ity_I32;
+   IRTemp EA         = newTemp(ty);
+   IRTemp EA_align16 = newTemp(ty);
 
    if (opc1 != 0x1F || b0 != 0) {
       vex_printf("dis_av_load(ppc)(instr)\n");
       return False;
    }
 
-   assign( EA_lo32, mkSzNarrow32(ty, ea_rAor0_idxd(rA_addr, rB_addr)) );
-   assign( addr_align16, addr_align( mkexpr(EA_lo32), 16 ) );
+   assign( EA, ea_rAor0_idxd(rA_addr, rB_addr) );
+   assign( EA_align16, addr_align( mkexpr(EA), 16 ) );
 
    switch (opc2) {
 
    case 0x006: { // lvsl (Load Vector for Shift Left, AV p123)
+      IRDirty* d;
       UInt vD_off = vectorGuestRegOffset(vD_addr);
       IRExpr** args = mkIRExprVec_3(
                          mkU32(vD_off), 
-                         binop(Iop_And32, mkexpr(EA_lo32), mkU32(0xF)),
+                         binop(Iop_And32, mkSzNarrow32(ty, mkexpr(EA)),
+                                          mkU32(0xF)),
                          mkU32(0)/*left*/ );
-      IRDirty* d;
       if (!mode64) {
          d = unsafeIRDirty_0_N ( 0/*regparms*/, 
                                  "ppc32g_dirtyhelper_LVS",
@@ -6351,12 +6351,13 @@ static Bool dis_av_load ( UInt theInstr )
       break;
    }
    case 0x026: { // lvsr (Load Vector for Shift Right, AV p125)
+      IRDirty* d;
       UInt vD_off = vectorGuestRegOffset(vD_addr);
       IRExpr** args = mkIRExprVec_3(
                          mkU32(vD_off), 
-                         binop(Iop_And32, mkexpr(EA_lo32), mkU32(0xF)),
+                         binop(Iop_And32, mkSzNarrow32(ty, mkexpr(EA)),
+                                          mkU32(0xF)),
                          mkU32(1)/*right*/ );
-      IRDirty* d;
       if (!mode64) {
          d = unsafeIRDirty_0_N ( 0/*regparms*/, 
                                  "ppc32g_dirtyhelper_LVS",
@@ -6385,24 +6386,24 @@ static Bool dis_av_load ( UInt theInstr )
       /* loads addressed byte into vector[EA[0:3]
          since all other destination bytes are undefined,
          can simply load entire vector from 16-aligned EA */
-      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(addr_align16)) );
+      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_align16)) );
       break;
 
    case 0x027: // lvehx (Load Vector Element Half Word Indexed, AV p121)
       DIP("lvehx v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
       /* see note for lvebx */
-      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(addr_align16)) );
+      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_align16)) );
       break;
 
    case 0x047: // lvewx (Load Vector Element Word Indexed, AV p122)
       DIP("lvewx v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
       /* see note for lvebx */
-      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(addr_align16)) );
+      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_align16)) );
       break;
 
    case 0x067: // lvx (Load Vector Indexed, AV p127)
       DIP("lvx v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
-      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(addr_align16)) );
+      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_align16)) );
       break;
 
    case 0x167: // lvxl (Load Vector Indexed LRU, AV p128)

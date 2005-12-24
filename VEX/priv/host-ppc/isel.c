@@ -54,11 +54,8 @@
 #include "host-generic/h_generic_regs.h"
 #include "host-ppc/hdefs.h"
 
-/* Is our guest binary 32 or 64bit?  Set at each call to
-   iselBB_PPC below. */
-static Bool mode64 = False;
-
-#define HRcIntWRDSZ (mode64 ? HRcInt64 : HRcInt32)
+/* GPR register class for ppc32/64 */
+#define HRcGPR(__mode64) (__mode64 ? HRcInt64 : HRcInt32)
 
 
 /*---------------------------------------------------------*/
@@ -192,8 +189,11 @@ static IRExpr* bind ( Int binder )
     - The host subarchitecture we are selecting insns for.  
       This is set at the start and does not change.
  
-    Note, this is all host-independent.  (JRS 20050201: well, kinda
-   ... not completely.  Compare with ISelEnv for amd64.)
+    - A Bool to tell us if the host is 32 or 64bit.
+      This is set at the start and does not change.
+ 
+    Note, this is mostly host-independent.
+    (JRS 20050201: well, kinda...  Compare with ISelEnv for amd64.)
 */
  
 typedef
@@ -211,6 +211,8 @@ typedef
       Int          vreg_ctr;
  
       VexSubArch   subarch;
+
+      Bool         mode64;
    }
    ISelEnv;
  
@@ -225,7 +227,7 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO,
                              ISelEnv* env, IRTemp tmp )
 {
-   vassert(!mode64);
+   vassert(!env->mode64);
    vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(env->vregmapHI[tmp] != INVALID_HREG);
@@ -236,7 +238,7 @@ static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO,
 static void lookupIRTemp128 ( HReg* vrHI, HReg* vrLO,
                               ISelEnv* env, IRTemp tmp )
 {
-   vassert(mode64);
+   vassert(env->mode64);
    vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(env->vregmapHI[tmp] != INVALID_HREG);
@@ -248,14 +250,15 @@ static void addInstr ( ISelEnv* env, PPCInstr* instr )
 {
    addHInstr(env->code, instr);
    if (vex_traceflags & VEX_TRACE_VCODE) {
-      ppPPCInstr(instr, mode64);
+      ppPPCInstr(instr, env->mode64);
       vex_printf("\n");
    }
 }
 
 static HReg newVRegI ( ISelEnv* env )
 {   
-   HReg reg = mkHReg(env->vreg_ctr, HRcIntWRDSZ, True/*virtual reg*/);
+   HReg reg = mkHReg(env->vreg_ctr, HRcGPR(env->mode64),
+                     True/*virtual reg*/);
    env->vreg_ctr++;
    return reg;
 }
@@ -361,8 +364,9 @@ static HReg          iselVecExpr     ( ISelEnv* env, IRExpr* e );
 
 static PPCInstr* mk_iMOVds_RR ( HReg r_dst, HReg r_src )
 {
-   vassert(hregClass(r_dst) == HRcIntWRDSZ);
-   vassert(hregClass(r_src) == HRcIntWRDSZ);
+   vassert(hregClass(r_dst) == hregClass(r_src));
+   vassert(hregClass(r_src) ==  HRcInt32 ||
+           hregClass(r_src) ==  HRcInt64);
    return PPCInstr_Alu(Palu_OR, r_dst, r_src, PPCRH_Reg(r_src));
 }
 
@@ -379,7 +383,7 @@ static PPCInstr* mk_iMOVds_RR ( HReg r_dst, HReg r_src )
 
 static void add_to_sp ( ISelEnv* env, UInt n )
 {
-   HReg sp = StackFramePtr(mode64);
+   HReg sp = StackFramePtr(env->mode64);
    vassert(n < 256 && (n%16) == 0);
    addInstr(env, PPCInstr_Alu( Palu_ADD, sp, sp,
                                PPCRH_Imm(True,toUShort(n)) ));
@@ -387,7 +391,7 @@ static void add_to_sp ( ISelEnv* env, UInt n )
 
 static void sub_from_sp ( ISelEnv* env, UInt n )
 {
-   HReg sp = StackFramePtr(mode64);
+   HReg sp = StackFramePtr(env->mode64);
    vassert(n < 256 && (n%16) == 0);
    addInstr(env, PPCInstr_Alu( Palu_SUB, sp, sp,
                                PPCRH_Imm(True,toUShort(n)) ));
@@ -403,12 +407,13 @@ static HReg get_sp_aligned16 ( ISelEnv* env )
 {
    HReg       r = newVRegI(env);
    HReg align16 = newVRegI(env);
-   addInstr(env, mk_iMOVds_RR(r, StackFramePtr(mode64)));
+   addInstr(env, mk_iMOVds_RR(r, StackFramePtr(env->mode64)));
    // add 16
    addInstr(env, PPCInstr_Alu( Palu_ADD, r, r,
                                PPCRH_Imm(True,toUShort(16)) ));
    // mask to quadword
-   addInstr(env, PPCInstr_LI(align16, 0xFFFFFFFFFFFFFFF0ULL, mode64));
+   addInstr(env,
+            PPCInstr_LI(align16, 0xFFFFFFFFFFFFFFF0ULL, env->mode64));
    addInstr(env, PPCInstr_Alu(Palu_AND, r,r, PPCRH_Reg(align16)));
    return r;
 }
@@ -422,17 +427,17 @@ static HReg mk_LoadRR32toFPR ( ISelEnv* env,
    HReg fr_dst = newVRegF(env);
    PPCAMode *am_addr0, *am_addr1;
 
-   vassert(!mode64);
+   vassert(!env->mode64);
    vassert(hregClass(r_srcHi) == HRcInt32);
    vassert(hregClass(r_srcLo) == HRcInt32);
 
    sub_from_sp( env, 16 );        // Move SP down 16 bytes
-   am_addr0 = PPCAMode_IR( 0, StackFramePtr(mode64) );
-   am_addr1 = PPCAMode_IR( 4, StackFramePtr(mode64) );
+   am_addr0 = PPCAMode_IR( 0, StackFramePtr(env->mode64) );
+   am_addr1 = PPCAMode_IR( 4, StackFramePtr(env->mode64) );
 
    // store hi,lo as Ity_I32's
-   addInstr(env, PPCInstr_Store( 4, am_addr0, r_srcHi, mode64 ));
-   addInstr(env, PPCInstr_Store( 4, am_addr1, r_srcLo, mode64 ));
+   addInstr(env, PPCInstr_Store( 4, am_addr0, r_srcHi, env->mode64 ));
+   addInstr(env, PPCInstr_Store( 4, am_addr1, r_srcLo, env->mode64 ));
 
    // load as float
    addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fr_dst, am_addr0));
@@ -447,14 +452,14 @@ static HReg mk_LoadR64toFPR ( ISelEnv* env, HReg r_src )
    HReg fr_dst = newVRegF(env);
    PPCAMode *am_addr0;
 
-   vassert(mode64);
+   vassert(env->mode64);
    vassert(hregClass(r_src) == HRcInt64);
 
    sub_from_sp( env, 16 );        // Move SP down 16 bytes
-   am_addr0 = PPCAMode_IR( 0, StackFramePtr(mode64) );
+   am_addr0 = PPCAMode_IR( 0, StackFramePtr(env->mode64) );
 
    // store as Ity_I64
-   addInstr(env, PPCInstr_Store( 8, am_addr0, r_src, mode64 ));
+   addInstr(env, PPCInstr_Store( 8, am_addr0, r_src, env->mode64 ));
 
    // load as float
    addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fr_dst, am_addr0));
@@ -512,6 +517,7 @@ void doHelperCall ( ISelEnv* env,
    Int         n_args, i, argreg;
    UInt        argiregs;
    ULong       target;
+   Bool        mode64 = env->mode64;
 
    /* Marshal args for a call and do the call.
 
@@ -741,8 +747,8 @@ void set_FPU_rounding_default ( ISelEnv* env )
        - so we can set the whole register at once (faster)
       note: upper 32 bits ignored by FpLdFPSCR
    */
-   addInstr(env, PPCInstr_LI(r_src, 0x0, mode64));
-   if (mode64) {
+   addInstr(env, PPCInstr_LI(r_src, 0x0, env->mode64));
+   if (env->mode64) {
       fr_src = mk_LoadR64toFPR( env, r_src );         // 1*I64 -> F64
    } else {
       fr_src = mk_LoadRR32toFPR( env, r_src, r_src ); // 2*I32 -> F64
@@ -764,7 +770,7 @@ static HReg roundModeIRtoPPC ( ISelEnv* env, HReg r_rmIR )
    HReg r_rmPPC = newVRegI(env);
    HReg r_tmp   = newVRegI(env);
 
-   vassert(hregClass(r_rmIR) == HRcIntWRDSZ);
+   vassert(hregClass(r_rmIR) == HRcGPR(env->mode64));
 
    // AND r_rmIR,3   -- shouldn't be needed; paranoia
    addInstr(env, PPCInstr_Alu( Palu_AND, r_rmIR, r_rmIR,
@@ -802,7 +808,7 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
    // Resolve rounding mode and convert to PPC representation
    r_src = roundModeIRtoPPC( env, iselIntExpr_R(env, mode) );
    // gpr -> fpr
-   if (mode64) {
+   if (env->mode64) {
       fr_src = mk_LoadR64toFPR( env, r_src );         // 1*I64 -> F64
    } else {
       fr_src = mk_LoadRR32toFPR( env, r_src, r_src ); // 2*I32 -> F64
@@ -900,7 +906,7 @@ static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e )
 
       /* no luck; use the Slow way. */
       r_src = newVRegI(env);
-      addInstr(env, PPCInstr_LI(r_src, (Long)simm32, mode64));
+      addInstr(env, PPCInstr_LI(r_src, (Long)simm32, env->mode64));
    }
    else {
       r_src = ri->Pri.Reg;
@@ -921,7 +927,7 @@ static HReg mk_AvDuplicateRI( ISelEnv* env, IRExpr* e )
       am_off12 = PPCAMode_IR( 12, r_aligned16 );
 
       /* Store r_src in low word of 16-aligned mem */
-      addInstr(env, PPCInstr_Store( 4, am_off12, r_src, mode64 ));
+      addInstr(env, PPCInstr_Store( 4, am_off12, r_src, env->mode64 ));
 
       /* Load src to vector[low lane] */
       addInstr(env, PPCInstr_AvLdSt( True/*ld*/, 4, v_src, am_off12 ) );
@@ -987,7 +993,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
    vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
 #  endif
 
-   vassert(hregClass(r) == HRcIntWRDSZ);
+   vassert(hregClass(r) == HRcGPR(env->mode64));
    vassert(hregIsVirtual(r));
    return r;
 }
@@ -995,6 +1001,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY ! */
 static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 {
+   Bool mode64 = env->mode64;
    MatchInfo mi;
    DECLARE_PATTERN(p_32to1_then_1Uto8);
 
@@ -1790,17 +1797,18 @@ static Bool fits16bits ( UInt u )
    return toBool(u == (UInt)i);
 }
 
-static Bool sane_AMode ( PPCAMode* am )
+static Bool sane_AMode ( ISelEnv* env, PPCAMode* am )
 {
+   Bool mode64 = env->mode64;
    switch (am->tag) {
    case Pam_IR:
-      return toBool( hregClass(am->Pam.IR.base) == HRcIntWRDSZ && 
+      return toBool( hregClass(am->Pam.IR.base) == HRcGPR(mode64) && 
                      hregIsVirtual(am->Pam.IR.base) && 
                      fits16bits(am->Pam.IR.index) );
    case Pam_RR:
-      return toBool( hregClass(am->Pam.RR.base) == HRcIntWRDSZ && 
-                     hregIsVirtual(am->Pam.IR.base) &&
-                     hregClass(am->Pam.RR.index) == HRcIntWRDSZ &&
+      return toBool( hregClass(am->Pam.RR.base) == HRcGPR(mode64) && 
+                     hregIsVirtual(am->Pam.RR.base) &&
+                     hregClass(am->Pam.RR.index) == HRcGPR(mode64) &&
                      hregIsVirtual(am->Pam.IR.index) );
    default:
       vpanic("sane_AMode: unknown ppc amode tag");
@@ -1810,7 +1818,7 @@ static Bool sane_AMode ( PPCAMode* am )
 static PPCAMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 {
    PPCAMode* am = iselIntExpr_AMode_wrk(env, e);
-   vassert(sane_AMode(am));
+   vassert(sane_AMode(env, am));
    return am;
 }
 
@@ -1818,7 +1826,7 @@ static PPCAMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 static PPCAMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
-   vassert(ty == (mode64 ? Ity_I64 : Ity_I32));
+   vassert(ty == (env->mode64 ? Ity_I64 : Ity_I32));
    
    /* Add32(expr,i), where i == sign-extend of (i & 0xFFFF) */
    if (e->tag == Iex_Binop 
@@ -1866,7 +1874,7 @@ static PPCRH* iselIntExpr_RH ( ISelEnv* env, Bool syned, IRExpr* e )
          vassert(ri->Prh.Imm.imm16 != 0x8000);
       return ri;
    case Prh_Reg:
-      vassert(hregClass(ri->Prh.Reg.reg) == HRcIntWRDSZ);
+      vassert(hregClass(ri->Prh.Reg.reg) == HRcGPR(env->mode64));
       vassert(hregIsVirtual(ri->Prh.Reg.reg));
       return ri;
    default:
@@ -1881,7 +1889,7 @@ static PPCRH* iselIntExpr_RH_wrk ( ISelEnv* env, Bool syned, IRExpr* e )
    Long  l;
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I8  || ty == Ity_I16 ||
-           ty == Ity_I32 || ((ty == Ity_I64) && mode64));
+           ty == Ity_I32 || ((ty == Ity_I64) && env->mode64));
 
    /* special case: immediate */
    if (e->tag == Iex_Const) {
@@ -1889,7 +1897,7 @@ static PPCRH* iselIntExpr_RH_wrk ( ISelEnv* env, Bool syned, IRExpr* e )
       /* What value are we aiming to generate? */
       switch (con->tag) {
       /* Note: Not sign-extending - we carry 'syned' around */
-      case Ico_U64: vassert(mode64);
+      case Ico_U64: vassert(env->mode64);
                     u =              con->Ico.U64; break;
       case Ico_U32: u = 0xFFFFFFFF & con->Ico.U32; break;
       case Ico_U16: u = 0x0000FFFF & con->Ico.U16; break;
@@ -1928,7 +1936,7 @@ static PPCRI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
    case Pri_Imm:
       return ri;
    case Pri_Reg:
-      vassert(hregClass(ri->Pri.Reg) == HRcIntWRDSZ);
+      vassert(hregClass(ri->Pri.Reg) == HRcGPR(env->mode64));
       vassert(hregIsVirtual(ri->Pri.Reg));
       return ri;
    default:
@@ -1942,13 +1950,13 @@ static PPCRI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
    Long  l;
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I8  || ty == Ity_I16 ||
-           ty == Ity_I32 || ((ty == Ity_I64) && mode64));
+           ty == Ity_I32 || ((ty == Ity_I64) && env->mode64));
 
    /* special case: immediate */
    if (e->tag == Iex_Const) {
       IRConst* con = e->Iex.Const.con;
       switch (con->tag) {
-      case Ico_U64: vassert(mode64);
+      case Ico_U64: vassert(env->mode64);
                     l = (Long)            con->Ico.U64; break;
       case Ico_U32: l = (Long)(Int)       con->Ico.U32; break;
       case Ico_U16: l = (Long)(Int)(Short)con->Ico.U16; break;
@@ -1982,7 +1990,7 @@ static PPCRH* iselIntExpr_RH5u ( ISelEnv* env, IRExpr* e )
       vassert(!ri->Prh.Imm.syned);
       return ri;
    case Prh_Reg:
-      vassert(hregClass(ri->Prh.Reg.reg) == HRcIntWRDSZ);
+      vassert(hregClass(ri->Prh.Reg.reg) == HRcGPR(env->mode64));
       vassert(hregIsVirtual(ri->Prh.Reg.reg));
       return ri;
    default:
@@ -2028,7 +2036,7 @@ static PPCRH* iselIntExpr_RH6u ( ISelEnv* env, IRExpr* e )
       vassert(!ri->Prh.Imm.syned);
       return ri;
    case Prh_Reg:
-      vassert(hregClass(ri->Prh.Reg.reg) == HRcIntWRDSZ);
+      vassert(hregClass(ri->Prh.Reg.reg) == HRcGPR(env->mode64));
       vassert(hregIsVirtual(ri->Prh.Reg.reg));
       return ri;
    default:
@@ -2085,7 +2093,7 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Const && e->Iex.Const.con->Ico.U1 == True) {
       // Make a compare that will always be true:
       HReg r_zero = newVRegI(env);
-      addInstr(env, PPCInstr_LI(r_zero, 0, mode64));
+      addInstr(env, PPCInstr_LI(r_zero, 0, env->mode64));
       addInstr(env, PPCInstr_Cmp(False/*unsigned*/, True/*32bit cmp*/,
                                  7/*cr*/, r_zero, PPCRH_Reg(r_zero)));
       return mk_PPCCondCode( Pct_TRUE, Pcf_7EQ );
@@ -2241,7 +2249,7 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
                       e->Iex.Binop.op == Iop_CmpLE64S);
       HReg    r1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
       PPCRH* ri2 = iselIntExpr_RH(env, syned, e->Iex.Binop.arg2);
-      vassert(mode64);
+      vassert(env->mode64);
       addInstr(env, PPCInstr_Cmp(syned, False/*64bit cmp*/,
                                  7/*cr*/, r1, ri2));
 
@@ -2307,7 +2315,7 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* CmpNEZ64 */
    if (e->tag == Iex_Unop 
        && e->Iex.Unop.op == Iop_CmpNEZ64) {
-      if (!mode64) {
+      if (!env->mode64) {
          HReg hi, lo;
          HReg tmp = newVRegI(env);
          iselInt64Expr( &hi, &lo, env, e->Iex.Unop.arg );
@@ -2355,14 +2363,14 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 static void iselInt128Expr ( HReg* rHi, HReg* rLo,
                              ISelEnv* env, IRExpr* e )
 {
-   vassert(mode64);
+   vassert(env->mode64);
    iselInt128Expr_wrk(rHi, rLo, env, e);
 #  if 0
    vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
 #  endif
-   vassert(hregClass(*rHi) == HRcIntWRDSZ);
+   vassert(hregClass(*rHi) == HRcGPR(env->mode64));
    vassert(hregIsVirtual(*rHi));
-   vassert(hregClass(*rLo) == HRcIntWRDSZ);
+   vassert(hregClass(*rLo) == HRcGPR(env->mode64));
    vassert(hregIsVirtual(*rLo));
 }
 
@@ -2439,7 +2447,7 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
 static void iselInt64Expr ( HReg* rHi, HReg* rLo,
                             ISelEnv* env, IRExpr* e )
 {
-   vassert(!mode64);
+   vassert(!env->mode64);
    iselInt64Expr_wrk(rHi, rLo, env, e);
 #  if 0
    vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
@@ -2454,6 +2462,7 @@ static void iselInt64Expr ( HReg* rHi, HReg* rLo,
 static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
                                 ISelEnv* env, IRExpr* e )
 {
+   Bool mode64 = env->mode64;
 //   HWord fn = 0; /* helper fn for most SIMD64 stuff */
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I64);
@@ -3168,7 +3177,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Get) {
       HReg r_dst = newVRegF(env);
       PPCAMode* am_addr = PPCAMode_IR( e->Iex.Get.offset,
-                                       GuestStatePtr(mode64) );
+                                       GuestStatePtr(env->mode64) );
       addInstr(env, PPCInstr_FpLdSt( True/*load*/, 4, r_dst, am_addr ));
       return r_dst;
    }
@@ -3235,6 +3244,7 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY */
 static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
+   Bool mode64 = env->mode64;
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
    vassert(ty == Ity_F64);
@@ -3482,6 +3492,7 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY */
 static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
+   Bool mode64 = env->mode64;
 //..    Bool     arg1isEReg = False;
    PPCAvOp op = Pav_INVALID;
    IRType  ty = typeOfIRExpr(env->type_env,e);
@@ -4089,6 +4100,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 
 static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 {
+   Bool mode64 = env->mode64;
    if (vex_traceflags & VEX_TRACE_VCODE) {
       vex_printf("\n -- ");
       ppIRStmt(stmt);
@@ -4393,6 +4405,7 @@ HInstrArray* iselBB_PPC ( IRBB* bb, VexArchInfo* archinfo_host )
    HReg       hreg, hregHI;
    ISelEnv*   env;
    VexSubArch subarch_host = archinfo_host->subarch;
+   Bool       mode64;
 
    /* Figure out whether we're being ppc32 or ppc64 today. */
    switch (subarch_host) {
@@ -4412,6 +4425,9 @@ HInstrArray* iselBB_PPC ( IRBB* bb, VexArchInfo* archinfo_host )
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;
+
+   /* Are we being ppc32 or ppc64? */
+   env->mode64 = mode64;
 
    /* Set up output code array. */
    env->code = newHInstrArray();

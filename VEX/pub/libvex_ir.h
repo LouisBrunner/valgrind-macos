@@ -472,7 +472,7 @@ typedef
       /* binary */
       Iop_Add32Fx4, Iop_Sub32Fx4, Iop_Mul32Fx4, Iop_Div32Fx4, 
       Iop_Max32Fx4, Iop_Min32Fx4,
-      /* Note: For the following compares, the ppc32 front-end assumes a
+      /* Note: For the following compares, the ppc front-end assumes a
          nan in a lane of either argument returns zero for that lane. */
       Iop_CmpEQ32Fx4, Iop_CmpLT32Fx4, Iop_CmpLE32Fx4, Iop_CmpUN32Fx4, 
       Iop_CmpGT32Fx4, Iop_CmpGE32Fx4,
@@ -857,7 +857,7 @@ typedef
       Ijk_TInval,         /* Invalidate translations before continuing. */
       /* Unfortunately, various guest-dependent syscall kinds.  They
 	 all mean: do a syscall before continuing. */
-      Ijk_Sys_syscall,    /* amd64 'syscall', ppc32 'sc' */
+      Ijk_Sys_syscall,    /* amd64 'syscall', ppc 'sc' */
       Ijk_Sys_int32,      /* amd64/x86 'int $0x20' */
       Ijk_Sys_int128,     /* amd64/x86 'int $0x80' */
       Ijk_Sys_sysenter    /* x86 'sysenter'.  guest_EIP becomes 

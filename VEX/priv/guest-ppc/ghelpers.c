@@ -604,7 +604,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
 
 /*-----------------------------------------------------------*/
-/*--- Describing the ppc32 guest state, for the benefit   ---*/
+/*--- Describing the ppc guest state, for the benefit     ---*/
 /*--- of iropt and instrumenters.                         ---*/
 /*-----------------------------------------------------------*/
 
@@ -614,7 +614,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    By default we enforce precise exns for guest R1 (stack pointer),
    CIA (current insn address) and LR (link register).  These are the
-   minimum needed to extract correct stack backtraces from ppc32
+   minimum needed to extract correct stack backtraces from ppc
    code. [[NB: not sure if keeping LR up to date is actually
    necessary.]]
 */

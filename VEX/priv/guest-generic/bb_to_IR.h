@@ -50,7 +50,7 @@
 
 /* This defines stuff needed by the guest insn disassemblers.
    It's a bit circular; is imported by
-   - the guest-specific toIR.c files (guest-{x86,amd64,ppc32,arm}/toIR.c)
+   - the guest-specific toIR.c files (guest-{x86,amd64,ppc,arm}/toIR.c)
    - the generic disassembly driver (bb_to_IR.c)
    - vex_main.c
 */

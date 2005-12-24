@@ -2109,7 +2109,7 @@ Bool isMove_PPCInstr ( PPCInstr* i, HReg* src, HReg* dst )
 }
 
 
-/* Generate ppc32 spill/reload instructions under the direction of the
+/* Generate ppc spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the
    condition codes. */
 PPCInstr* genSpill_PPC ( HReg rreg, UShort offsetB, Bool mode64 )
@@ -2161,7 +2161,7 @@ PPCInstr* genReload_PPC ( HReg rreg, UShort offsetB, Bool mode64 )
 }
 
 
-/* --------- The ppc32 assembler (bleh.) --------- */
+/* --------- The ppc assembler (bleh.) --------- */
 
 static UInt iregNo ( HReg r, Bool mode64 )
 {
@@ -2203,7 +2203,7 @@ static UChar* emit32 ( UChar* p, UInt w32 )
    return p;
 }
 
-/* The following mkForm[...] functions refer to PPC32 instruction forms
+/* The following mkForm[...] functions refer to ppc instruction forms
    as per PPC32 p576
  */
 
@@ -2530,7 +2530,7 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
    Note that buf is not the insn's final place, and therefore it is
    imperative to emit position-independent code. 
 
-   Note, dispatch should always be NULL since ppc32/ppc64 backends
+   Note, dispatch should always be NULL since ppc32/64 backends
    use a call-return scheme to get from the dispatcher to generated
    code and back.
 */

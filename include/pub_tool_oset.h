@@ -65,7 +65,7 @@
 typedef struct _OSet     OSet;
 typedef struct _OSetNode OSetNode;
 
-typedef Int   (*OSetCmp_t)         ( void* key, void* elem );
+typedef Word  (*OSetCmp_t)         ( void* key, void* elem );
 typedef void* (*OSetAlloc_t)       ( SizeT szB );
 typedef void  (*OSetFree_t)        ( void* p );
 typedef void  (*OSetNodeDestroy_t) ( void* elem );

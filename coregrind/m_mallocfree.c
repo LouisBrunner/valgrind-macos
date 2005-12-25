@@ -704,7 +704,12 @@ void swizzle ( Arena* a, UInt lno )
    if (p_best == NULL) return;
 
    pn = pp = p_best;
-   for (i = 0; i < 20; i++) {
+
+   // This loop bound was 20 for a long time, but experiments showed that
+   // reducing it to 10 gave the same result in all the tests, and 5 got the
+   // same result in 85--100% of cases.  And it's called often enough to be
+   // noticeable in programs that allocated a lot.
+   for (i = 0; i < 5; i++) {
       pn = get_next_b(pn);
       pp = get_prev_b(pp);
       if (pn < p_best) p_best = pn;

@@ -58,6 +58,8 @@ tinycc:
                Fabrice Bellard's TinyCC compiling itself multiple times.
 - Strengths:   A real program, lots of code (top 100 blocks only account for
                47% of execution), involves large irregular data structures
-               (presumably, since it's a compiler).
+               (presumably, since it's a compiler).  Does lots of
+               malloc/free calls and so changes that make a big improvement
+               to perf/heap typically cause a small improvement.
 - Weaknesses   None, really, it's a good benchmark.
 

@@ -26,6 +26,9 @@ Post 3.1.0:
 - Nick reduced the iteration count of the loop in swizzle() from 20 to 5,
   which gave almost identical results while saving 2% in perf/tinycc and 10%
   in perf/heap on a 3GHz Prescott P4.
+- Nick changed ExeContext gathering to not record/save extra zeroes at the
+  end.  Saved 7% on perf/heap with --num-callers=50, and about 1% on
+  perf/tinycc.
 
 COMPVBITS branch:
 - Nick converted to compress V bits, initial version saved 0--5% on most

@@ -46,7 +46,8 @@
 
 struct _ExeContext {
    struct _ExeContext * next;
-   /* Variable-length array.  The size is VG_(clo_backtrace_size); at
+   UInt   n_ips;
+   /* Variable-length array.  The size is 'n_ips'; at
       least 1, at most VG_DEEPEST_BACKTRACE.  [0] is the current IP,
       [1] is its caller, [2] is the caller of [1], etc. */
    Addr ips[0];
@@ -126,38 +127,42 @@ void VG_(print_ExeContext_stats) ( void )
 /* Print an ExeContext. */
 void VG_(pp_ExeContext) ( ExeContext* ec )
 {
-   VG_(pp_StackTrace)( ec->ips, VG_(clo_backtrace_size) );
+   VG_(pp_StackTrace)( ec->ips, ec->n_ips );
 }
 
 
 /* Compare two ExeContexts, comparing all callers. */
 Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
 {
+   Int i;
+
    if (e1 == NULL || e2 == NULL) 
       return False;
+
+   // Must be at least one address in each trace.
+   tl_assert(e1->n_ips >= 1 && e2->n_ips >= 1);
+
    switch (res) {
    case Vg_LowRes:
       /* Just compare the top two callers. */
       ec_cmp2s++;
-      if (e1->ips[0] != e2->ips[0]) return False;
-
-      if (VG_(clo_backtrace_size) < 2) return True;
-      if (e1->ips[1] != e2->ips[1]) return False;
+      for (i = 0; i < 2; i++) {
+         if ( (e1->n_ips <= i) &&  (e2->n_ips <= i)) return True;
+         if ( (e1->n_ips <= i) && !(e2->n_ips <= i)) return False;
+         if (!(e1->n_ips <= i) &&  (e2->n_ips <= i)) return False;
+         if (e1->ips[i] != e2->ips[i])               return False;
+      }
       return True;
 
    case Vg_MedRes:
       /* Just compare the top four callers. */
       ec_cmp4s++;
-      if (e1->ips[0] != e2->ips[0]) return False;
-
-      if (VG_(clo_backtrace_size) < 2) return True;
-      if (e1->ips[1] != e2->ips[1]) return False;
-
-      if (VG_(clo_backtrace_size) < 3) return True;
-      if (e1->ips[2] != e2->ips[2]) return False;
-
-      if (VG_(clo_backtrace_size) < 4) return True;
-      if (e1->ips[3] != e2->ips[3]) return False;
+      for (i = 0; i < 4; i++) {
+         if ( (e1->n_ips <= i) &&  (e2->n_ips <= i)) return True;
+         if ( (e1->n_ips <= i) && !(e2->n_ips <= i)) return False;
+         if (!(e1->n_ips <= i) &&  (e2->n_ips <= i)) return False;
+         if (e1->ips[i] != e2->ips[i])               return False;
+      }
       return True;
 
    case Vg_HighRes:
@@ -188,18 +193,20 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
    UWord       hash;
    ExeContext* new_ec;
    ExeContext* list;
+   UInt        n_ips;
 
    init_ExeContext_storage();
-   vg_assert(VG_(clo_backtrace_size) >= 1 
-             && VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
+   vg_assert(VG_(clo_backtrace_size) >= 1 &&
+             VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
 
-   VG_(get_StackTrace)( tid, ips, VG_(clo_backtrace_size) );
+   n_ips = VG_(get_StackTrace)( tid, ips, VG_(clo_backtrace_size) );
+   tl_assert(n_ips >= 1);
 
    /* Now figure out if we've seen this one before.  First hash it so
       as to determine the list number. */
 
    hash = 0;
-   for (i = 0; i < VG_(clo_backtrace_size); i++) {
+   for (i = 0; i < n_ips; i++) {
       hash ^= ips[i];
       hash = (hash << 29) | (hash >> 3);
    }
@@ -215,7 +222,7 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
       if (list == NULL) break;
       ec_searchcmps++;
       same = True;
-      for (i = 0; i < VG_(clo_backtrace_size); i++) {
+      for (i = 0; i < n_ips; i++) {
          if (list->ips[i] != ips[i]) {
             same = False;
             break; 
@@ -234,13 +241,14 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
    ec_totstored++;
 
    new_ec = VG_(arena_malloc)( VG_AR_EXECTXT, 
-                               sizeof(struct _ExeContext *) 
-                               + VG_(clo_backtrace_size) * sizeof(Addr) );
+                               sizeof(struct _ExeContext) 
+                               + n_ips * sizeof(Addr) );
 
-   for (i = 0; i < VG_(clo_backtrace_size); i++)
+   for (i = 0; i < n_ips; i++)
       new_ec->ips[i] = ips[i];
 
-   new_ec->next = ec_list[hash];
+   new_ec->n_ips = n_ips;
+   new_ec->next  = ec_list[hash];
    ec_list[hash] = new_ec;
 
    return new_ec;

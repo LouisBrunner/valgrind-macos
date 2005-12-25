@@ -65,11 +65,8 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
    vg_assert(sizeof(Addr) == sizeof(void*));
 
    /* Snaffle IPs from the client's stack into ips[0 .. n_ips-1],
-      putting zeroes in when the trail goes cold, which we guess to be
+      stopping when the trail goes cold, which we guess to be
       when FP is not a reasonable stack location. */
-
-   for (i = 0; i < n_ips; i++)
-      ips[i] = 0;
 
    // JRS 2002-sep-17: hack, to round up fp_max to the end of the
    // current page, at least.  Dunno if it helps.

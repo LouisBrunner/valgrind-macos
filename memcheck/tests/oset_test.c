@@ -212,7 +212,7 @@ static Char *blockToStr(void *p)
    return buf;
 }
 
-static Int blockCmp(void* vkey, void* velem)
+static Word blockCmp(void* vkey, void* velem)
 {
    Addr   key  = *(Addr*)vkey;
    Block* elem = (Block*)velem;

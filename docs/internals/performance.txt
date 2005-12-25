@@ -23,6 +23,9 @@ Post 3.1.0:
 - Julian changed findSb to slowly move superblocks to the front of the list
   as they were accessed.  This sped up perf/heap by 25--50%, and some big
   programs (eg. ktuberling) programs by a couple of percent.
+- Nick reduced the iteration count of the loop in swizzle() from 20 to 5,
+  which gave almost identical results while saving 2% in perf/tinycc and 10%
+  in perf/heap on a 3GHz Prescott P4.
 
 COMPVBITS branch:
 - Nick converted to compress V bits, initial version saved 0--5% on most

@@ -10,7 +10,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	ffbench.vgperf \
 	heap.vgperf \
 	sarp.vgperf \
-	tinycc.vgperf
+	tinycc.vgperf \
+	test_input_for_tinycc.c
 
 check_PROGRAMS = \
 	bigcode bz2 fbench ffbench heap sarp tinycc
@@ -22,6 +23,4 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 # Extra stuff
 fbench_LDADD	= -lm
 ffbench_LDADD	= -lm
-tinycc_CFLAGS	=
-tinycc_LDADD	= -ldl
 

@@ -37,6 +37,7 @@
 //
 //#else
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -6621,7 +6622,9 @@ void *resolve_sym(TCCState *s1, const char *symbol, int type)
 
 void *resolve_sym(TCCState *s1, const char *sym, int type)
 {
-    return dlsym(RTLD_DEFAULT, sym);
+  assert(0);
+  return 0; //dlsym(RTLD_DEFAULT, sym);
+  // jrs: remove need for dlsym
 }
 
 #endif
@@ -20577,14 +20580,6 @@ static void rt_printline(unsigned long wanted_pc)
 
 #if !defined(WIN32) && !defined(CONFIG_TCCBOOT)
 
-#ifdef __i386__
-
-/* fix for glibc 2.1 */
-#ifndef REG_EIP
-#define REG_EIP EIP
-#define REG_EBP EBP
-#endif
-
 /* return the PC at frame level 'level'. Return non zero if not found */
 static int rt_get_caller_pc(unsigned long *paddr, 
                             ucontext_t *uc, int level)
@@ -20593,42 +20588,13 @@ static int rt_get_caller_pc(unsigned long *paddr,
     int i;
 
     if (level == 0) {
-#if defined(__FreeBSD__)
-        *paddr = uc->uc_mcontext.mc_eip;
-#elif defined(__dietlibc__)
-        *paddr = uc->uc_mcontext.eip;
-#else
-        *paddr = uc->uc_mcontext.gregs[REG_EIP];
-#endif
+        *paddr = 12345; //uc->uc_mcontext.gregs[REG_EIP];
         return 0;
     } else {
-#if defined(__FreeBSD__) 
-        fp = uc->uc_mcontext.mc_ebp;
-#elif defined(__dietlibc__)
-        fp = uc->uc_mcontext.ebp;
-#else
-        fp = uc->uc_mcontext.gregs[REG_EBP];
-#endif
-        for(i=1;i<level;i++) {
-            /* XXX: check address validity with program info */
-            if (fp <= 0x1000 || fp >= 0xc0000000)
-                return -1;
-            fp = ((unsigned long *)fp)[0];
-        }
-        *paddr = ((unsigned long *)fp)[1];
+        fp = 23456; //uc->uc_mcontext.gregs[REG_EBP];
         return 0;
     }
 }
-#else
-
-#warning add arch specific rt_get_caller_pc()
-
-static int rt_get_caller_pc(unsigned long *paddr,
-                            ucontext_t *uc, int level)
-{
-    return -1;
-}
-#endif
 
 /* emit a run time error at position 'pc' */
 void rt_error(ucontext_t *uc, const char *fmt, ...)
@@ -21032,7 +20998,10 @@ static int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
                     ret = -1;
 #else
                     void *h;
-                    h = dlopen(filename, RTLD_GLOBAL | RTLD_LAZY);
+		    assert(0);
+		    h = 0;
+                    //h = dlopen(filename, RTLD_GLOBAL | RTLD_LAZY);
+		    // jrs: remove need for dlopen
                     if (h)
                         ret = 0;
                     else
@@ -21814,7 +21783,7 @@ int main2(int argc, char **argv)
 // zero here (as required by vg_perf).
 int main(int argc, char **argv)
 {
-   #define REPS   10
+   #define REPS   30
    int i;
    for (i = 0; i < REPS; i++) {
       main2(argc, argv);
@@ -21828,6 +21797,8 @@ int main(int argc, char **argv)
 // is not present.
 unsigned short __tcc_fpu_control = 0x137f;
 unsigned short __tcc_int_fpu_control = 0x137f | 0x0c00;
+
+#if 0
 long long __shldi3(long long a, int b)
 {
 #ifdef __TINYC__ 
@@ -21845,6 +21816,4 @@ long long __shldi3(long long a, int b)
     return a << b;
 #endif
 }
-
-
-
+#endif

@@ -883,7 +883,7 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
 
       if (isU32(cc_op, X86G_CC_OP_SUBB) && isU32(cond, X86CondNBE)) {
          /* long sub/cmp, then NBE (unsigned greater than)
-            --> test src <=u dst */
+            --> test src <u dst */
          /* Note, args are opposite way round from the usual */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32U, 

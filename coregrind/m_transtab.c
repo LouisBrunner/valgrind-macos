@@ -606,7 +606,7 @@ static inline UInt HASH_TT ( Addr64 key )
 
 static void setFastCacheEntry ( Addr64 key, ULong* tce, UInt* count )
 {
-   UInt cno = ((UInt)key) & VG_TT_FAST_MASK;
+   UInt cno = (UInt)VG_TT_FAST_HASH(key);
    VG_(tt_fast)[cno]  = tce;
    VG_(tt_fastN)[cno] = count;
    n_fast_updates++;

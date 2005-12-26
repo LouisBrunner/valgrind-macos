@@ -254,14 +254,14 @@ VG_(run_innerloop__dispatch_unprofiled):
         stw     3,OFFSET_ppc32_CIA(31)
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-//	subic.	29,29,1
 	subi	29,29,1
 	cmplwi	29,0
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4=((r3<<2) & (VG_TT_FAST_MASK<<2)) */
-        rlwinm  4,3, 2, 32-2-VG_TT_FAST_BITS, 31-2  
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong)
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 2 */
+        rlwinm  4,3, 0, 32-2-VG_TT_FAST_BITS, 31-2  
         addis   5,4,VG_(tt_fast)@ha
         lwz     5,VG_(tt_fast)@l(5)
         lwz     6,4(5)   /* big-endian, so comparing 2nd 32bit word */
@@ -310,12 +310,14 @@ VG_(run_innerloop__dispatch_profiled):
         stw     3,OFFSET_ppc32_CIA(31)
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-	addic.	29,29,-1
+	subi	29,29,1
+	cmplwi	29,0
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4=((r3<<2) & (VG_TT_FAST_MASK<<2)) */
-        rlwinm  4,3, 2, 32-2-VG_TT_FAST_BITS, 31-2  
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong)
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 2 */
+        rlwinm  4,3, 0, 32-2-VG_TT_FAST_BITS, 31-2 
         addis   5,4,VG_(tt_fast)@ha
         lwz     5,VG_(tt_fast)@l(5)
         lwz     6,4(5)   /* big-endian, so comparing 2nd 32bit word */

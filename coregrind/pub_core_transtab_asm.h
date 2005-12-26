@@ -31,10 +31,30 @@
 #ifndef __PUB_CORE_TRANSTAB_ASM_H
 #define __PUB_CORE_TRANSTAB_ASM_H
 
-/* Constants for the fast translation lookup cache. */
+/* Constants for the fast translation lookup cache.  It is a direct
+   mapped cache, with 2^VG_TT_FAST_BITS entries.
+
+   On x86/amd64, the cache index is computed as
+   'address[VG_TT_FAST_BITS-1 : 0]'.
+
+   On ppc32/ppc64, the bottom two bits of instruction addresses are
+   zero, which means that function causes only 1/4 of the entries to
+   ever be used.  So instead the function is '(address >>u
+   2)[VG_TT_FAST_BITS-1 : 0]' on those targets. */
+
 #define VG_TT_FAST_BITS 15
 #define VG_TT_FAST_SIZE (1 << VG_TT_FAST_BITS)
 #define VG_TT_FAST_MASK ((VG_TT_FAST_SIZE) - 1)
+
+/* This macro isn't usable in asm land; nevertheless this seems
+   like a good place to put it. */
+#if defined(VGA_x86) || defined(VGA_amd64)
+#  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr))     ) & VG_TT_FAST_MASK)
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+#  define VG_TT_FAST_HASH(_addr)  ((((UWord)(_addr)) >> 2) & VG_TT_FAST_MASK)
+#else
+#  error "VG_TT_FAST_HASH: unknown platform"
+#endif
 
 #endif   // __PUB_CORE_TRANSTAB_ASM_H
 

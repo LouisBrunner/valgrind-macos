@@ -331,8 +331,8 @@ static void block_signals(ThreadId tid)
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
 }
 
-/* Use libc setjmp/longjmp.  longjmp must not restore signal mask
-   state, but does need to pass "val" through. */
+/* Use gcc's built-in setjmp/longjmp.  longjmp must not restore signal
+   mask state, but does need to pass "val" through. */
 #define SCHEDSETJMP(tid, jumped, stmt)					\
    do {									\
       ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
@@ -343,7 +343,8 @@ static void block_signals(ThreadId tid)
 	 _qq_tst->sched_jmpbuf_valid = True;				\
 	 stmt;								\
       }	else if (VG_(clo_trace_sched))					\
-	 VG_(printf)("SCHEDSETJMP(line %d) tid %d, jumped=%d\n", __LINE__, tid, jumped); \
+	 VG_(printf)("SCHEDSETJMP(line %d) tid %d, jumped=%d\n",        \
+                     __LINE__, tid, jumped);                            \
       vg_assert(_qq_tst->sched_jmpbuf_valid);				\
       _qq_tst->sched_jmpbuf_valid = False;				\
    } while(0)
@@ -369,7 +370,6 @@ UInt run_thread_for_a_while ( ThreadId tid )
    volatile UInt sz_spill = (UInt) sizeof VG_(threads)[tid].arch.vex_spill;
 
    /* Paranoia */
-   vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(is_running_thread)(tid));
    vg_assert(!VG_(is_exiting)(tid));
@@ -408,11 +408,9 @@ UInt run_thread_for_a_while ( ThreadId tid )
 
       This should be abstractified and lifted out.
    */
-   { Int i;
-     /* Clear any existing reservation.  Be paranoid and clear them all. */
-     for (i = 0; i < VG_N_THREADS; i++)
-        VG_(threads)[i].arch.vex.guest_RESVN = 0;
-   }
+   /* Clear any existing reservation that this thread might have made
+      last time it was running. */
+   VG_(threads)[tid].arch.vex.guest_RESVN = 0;
 
    /* ppc guest_state vector regs must be 16byte aligned for loads/stores */
    vg_assert(VG_IS_16_ALIGNED(VG_(threads)[tid].arch.vex.guest_VR0));
@@ -422,7 +420,8 @@ UInt run_thread_for_a_while ( ThreadId tid )
    /* there should be no undealt-with signals */
    //vg_assert(VG_(threads)[tid].siginfo.si_signo == 0);
 
-   //VG_(printf)("running EIP = %p ESP=%p\n", VG_(threads)[tid].arch.m_eip, VG_(threads)[tid].arch.m_esp);
+   //VG_(printf)("running EIP = %p ESP=%p\n",
+   //VG_(threads)[tid].arch.m_eip, VG_(threads)[tid].arch.m_esp);
 
    vg_assert(VG_(my_fault));
    VG_(my_fault) = False;

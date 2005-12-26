@@ -437,7 +437,7 @@ void ensure_mm_init ( ArenaId aid )
 {
    static Bool     client_inited = False;
    static Bool  nonclient_inited = False;
-   static SizeT client_redzone_szB = 8;   // default: be paranoid
+   static SizeT client_rz_szB = 8;     // default: be paranoid
 
    /* We use checked red zones (of various sizes) for our internal stuff,
       and an unchecked zone of arbitrary size for the client.  Of
@@ -458,23 +458,23 @@ void ensure_mm_init ( ArenaId aid )
          // redzone size with VG_(needs_malloc_replacement)() after this module
          // has done its first allocation from the client arena.
          if (VG_(needs).malloc_replacement)
-            vg_assert(client_redzone_szB == VG_(tdict).tool_client_redzone_szB);
+            vg_assert(client_rz_szB == VG_(tdict).tool_client_redzone_szB);
          return;
       }
 
       // Check and set the client arena redzone size
       if (VG_(needs).malloc_replacement) {
-         client_redzone_szB = VG_(tdict).tool_client_redzone_szB;
+         client_rz_szB = VG_(tdict).tool_client_redzone_szB;
          // 128 is no special figure, just something not too big
-         if (client_redzone_szB > 128) {
+         if (client_rz_szB > 128) {
             VG_(printf)( "\nTool error:\n"
                          "  specified redzone size is too big (%llu)\n", 
-                         (ULong)client_redzone_szB);
+                         (ULong)client_rz_szB);
             VG_(exit)(1);
          }
       }
       // Initialise the client arena
-      arena_init ( VG_AR_CLIENT,    "client",   client_redzone_szB, 1048576 );
+      arena_init ( VG_AR_CLIENT,    "client",   client_rz_szB, 1048576 );
       client_inited = True;
 
    } else {
@@ -482,13 +482,13 @@ void ensure_mm_init ( ArenaId aid )
          return;
       }
       // Initialise the non-client arenas
-      arena_init ( VG_AR_CORE,      "core",     4,       CORE_ARENA_MIN_SZB );
-      arena_init ( VG_AR_TOOL,      "tool",     4,                  1048576 );
-      arena_init ( VG_AR_SYMTAB,    "symtab",   4,                  1048576 );
-      arena_init ( VG_AR_DEMANGLE,  "demangle", 4,                    65536 );
-      arena_init ( VG_AR_EXECTXT,   "exectxt",  4,                   262144 );
-      arena_init ( VG_AR_ERRORS,    "errors",   4,                    65536 );
-      arena_init ( VG_AR_TTAUX,     "ttaux",    4,                    65536 );
+      arena_init ( VG_AR_CORE,      "core",     4,             1048576 );
+      arena_init ( VG_AR_TOOL,      "tool",     4,             1048576 );
+      arena_init ( VG_AR_SYMTAB,    "symtab",   4,             1048576 );
+      arena_init ( VG_AR_DEMANGLE,  "demangle", 4,               65536 );
+      arena_init ( VG_AR_EXECTXT,   "exectxt",  4,              262144 );
+      arena_init ( VG_AR_ERRORS,    "errors",   4,               65536 );
+      arena_init ( VG_AR_TTAUX,     "ttaux",    4,               65536 );
       nonclient_inited = True;
    }
 

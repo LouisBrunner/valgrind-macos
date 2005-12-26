@@ -2115,7 +2115,7 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLT64S
            || e->Iex.Binop.op == Iop_CmpLT64U
            || e->Iex.Binop.op == Iop_CmpLE64S
-           //|| e->Iex.Binop.op == Iop_CmpLE64U
+           || e->Iex.Binop.op == Iop_CmpLE64U
           )) {
       HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
@@ -2126,7 +2126,7 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 	 case Iop_CmpLT64S: return Acc_L;
 	 case Iop_CmpLT64U: return Acc_B;
 	 case Iop_CmpLE64S: return Acc_LE;
-	   //case Iop_CmpLE64U: return Acc_BE;
+         case Iop_CmpLE64U: return Acc_BE;
          default: vpanic("iselCondCode(amd64): CmpXX64");
       }
    }

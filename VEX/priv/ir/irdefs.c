@@ -75,13 +75,16 @@ void ppIRType ( IRType ty )
 
 void ppIRConst ( IRConst* con )
 {
+   vassert(sizeof(ULong) == sizeof(Double));
+   union { ULong i64; Double f64; } u;
    switch (con->tag) {
       case Ico_U1:   vex_printf( "%d:I1",        con->Ico.U1 ? 1 : 0); break;
       case Ico_U8:   vex_printf( "0x%x:I8",      (UInt)(con->Ico.U8)); break;
       case Ico_U16:  vex_printf( "0x%x:I16",     (UInt)(con->Ico.U16)); break;
       case Ico_U32:  vex_printf( "0x%x:I32",     (UInt)(con->Ico.U32)); break;
       case Ico_U64:  vex_printf( "0x%llx:I64",   (ULong)(con->Ico.U64)); break;
-      case Ico_F64:  vex_printf( "F64{0x%llx}",  *(ULong*)(&con->Ico.F64));
+      case Ico_F64:  u.f64 = con->Ico.F64;
+                     vex_printf( "F64{0x%llx}",  u.i64);
                      break;
       case Ico_F64i: vex_printf( "F64i{0x%llx}", con->Ico.F64i); break;
       case Ico_V128: vex_printf( "V128{0x%04x}", (UInt)(con->Ico.V128)); break;

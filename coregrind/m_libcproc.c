@@ -400,17 +400,17 @@ Int VG_(getgroups)( Int size, UInt* list )
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
    Int    i;
    SysRes sres;
-   UShort list16[32];
+   UShort list16[64];
    if (size < 0) return -1;
-   if (size > 32) size = 32;
+   if (size > 64) size = 64;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list16);
    if (sres.isError)
       return -1;
-   if (sres.val != size)
+   if (sres.val > size)
       return -1;
-   for (i = 0; i < size; i++)
+   for (i = 0; i < sres.val; i++)
       list[i] = (UInt)list16[i];
-   return size;
+   return sres.val;
 
 #  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
    SysRes sres;

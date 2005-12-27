@@ -31,3 +31,4 @@ v5378/80  v5379/81  n-i-bz   Clarified leak checker output message
 v5382     pending   n-i-bz   AshleyP's --gen-suppressions output fix
 v5384     wontfix   117096   Weird errors when --log-fd= has invalid value
 v5396     pending   n-i-bz   cg_annotate's --sort option broken
+v5445     pending   n-i-bz   VG_(getgroups) fix (Shinichi Noda)

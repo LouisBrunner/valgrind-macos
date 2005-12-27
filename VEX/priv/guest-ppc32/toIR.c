@@ -4340,6 +4340,16 @@ static Bool dis_fp_arith ( UInt theInstr )
                          binop(Iop_AddF64, mkexpr(frA), mkexpr(frB)) ));
          break;
 
+      case 0x16: // fsqrt (Floating SqRt (Double-Precision), PPC32 p427)
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_arith(PPC32)(instr,fsqrt)\n");
+            return False;
+         }
+         DIP("fsqrt%s fr%u,fr%u\n", flag_rC ? "." : "",
+             frD_addr, frB_addr);
+         assign( frD, unop( Iop_SqrtF64, mkexpr(frB) ) );
+         break;
+
 //zz       case 0x16: // fsqrts (Floating SqRt (Single-Precision), PPC32 p428)
 //zz          if (frA_addr != 0 || frC_addr != 0) {
 //zz             vex_printf("dis_fp_arith(PPC32)(instr,fsqrts)\n");

@@ -170,13 +170,13 @@ void* fast_key_of_node(AvlNode* n)
 }
 
 // Compare the first word of each element.  Inlining is *crucial*.
-static inline Int fast_cmp(void* k, AvlNode* n)
+static inline Word fast_cmp(void* k, AvlNode* n)
 {
-   return ( *(Int*)k - *(Int*)elem_of_node(n) );
+   return ( *(Word*)k - *(Word*)elem_of_node(n) );
 }
 
 // Compare a key and an element.  Inlining is *crucial*.
-static inline Int slow_cmp(AvlTree* t, void* k, AvlNode* n)
+static inline Word slow_cmp(AvlTree* t, void* k, AvlNode* n)
 {
    return t->cmp(k, elem_of_node(n));
 }
@@ -347,7 +347,7 @@ void VG_(OSet_FreeNode)(AvlTree* t, void* e)
 /*--- Insertion                                                    ---*/
 /*--------------------------------------------------------------------*/
 
-static inline Int cmp_key_root(AvlTree* t, AvlNode* n)
+static inline Word cmp_key_root(AvlTree* t, AvlNode* n)
 {
    return t->cmp
           ? slow_cmp(t, slow_key_of_node(t, n), t->root)
@@ -358,7 +358,7 @@ static inline Int cmp_key_root(AvlTree* t, AvlNode* n)
 // Returns True if the depth of the tree has grown.
 static Bool avl_insert(AvlTree* t, AvlNode* n)
 {
-   Int cmpres = cmp_key_root(t, n);
+   Word cmpres = cmp_key_root(t, n);
 
    if (cmpres < 0) {
       // Insert into the left subtree.
@@ -462,7 +462,7 @@ void VG_(OSet_Insert)(AvlTree* t, void* e)
 // Find the *node* in t matching k, or NULL if not found.
 static AvlNode* avl_lookup(AvlTree* t, void* k)
 {
-   Int      cmpres;
+   Word     cmpres;
    AvlNode* curr = t->root;
 
    if (t->cmp) {
@@ -479,10 +479,10 @@ static AvlNode* avl_lookup(AvlTree* t, void* k)
       // elem_of_node because it saves about 10% on lookup time.  This
       // shouldn't be very dangerous because each node will have been
       // checked on insertion.
-      Int kk = *(Int*)k;
+      Word kk = *(Word*)k;
       while (True) {
          if (curr == NULL) return NULL;
-         cmpres = kk - *(Int*)elem_of_node_no_check(curr);
+         cmpres = kk - *(Word*)elem_of_node_no_check(curr);
          if (cmpres < 0) curr = curr->left;  else
          if (cmpres > 0) curr = curr->right; else
          return curr;
@@ -531,7 +531,7 @@ static Bool avl_removeroot(AvlTree* t);
 static Bool avl_remove(AvlTree* t, AvlNode* n)
 {
    Bool ch;
-   Int  cmpres = cmp_key_root(t, n);
+   Word cmpres = cmp_key_root(t, n);
 
    if (cmpres < 0) {
       AvlTree left_subtree;
@@ -614,7 +614,7 @@ static Bool avl_remove(AvlTree* t, AvlNode* n)
 // Returns True if the depth of the tree has shrunk.
 static Bool avl_removeroot(AvlTree* t)
 {
-   Int ch;
+   Bool     ch;
    AvlNode* n;
 
    if (!t->root->left) {

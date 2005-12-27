@@ -109,66 +109,82 @@ ML_(do_syscall_for_client_WRK):
 
 	PUSH_di_si_dx_cx_8
 
-		movq	$__NR_rt_sigprocmask, %rax	// syscall #
-		movq	$VKI_SIG_SETMASK, %rdi		// how
-		movq	%rdx, %rsi			// sysmask
-		movq	%rcx, %rdx			// postmask
-		movq	%r8, %r10			// nsigwords
-		syscall
+	movq	$__NR_rt_sigprocmask, %rax	// syscall #
+	movq	$VKI_SIG_SETMASK, %rdi		// how
+	movq	%rdx, %rsi			// sysmask
+	movq	%rcx, %rdx			// postmask
+	movq	%r8, %r10			// nsigwords
+	syscall
 
 	POP_di_si_dx_cx_8
 	
-	testl	%eax, %eax
-	js	5f	/* sigprocmask failed */
+	testq	%rax, %rax
+	js	7f	/* sigprocmask failed */
 
 	/* OK, that worked.  Now do the syscall proper. */
 	
 	PUSH_di_si_dx_cx_8
 
-		movq	%rsi, %rax	/* rax --> VexGuestAMD64State * */
-		pushq	%rdi		/* syscallno -> stack */
-		movq	OFFSET_amd64_RDI(%rax), %rdi
-		movq	OFFSET_amd64_RSI(%rax), %rsi
-		movq	OFFSET_amd64_RDX(%rax), %rdx
-		movq	OFFSET_amd64_R10(%rax), %r10
-		movq	OFFSET_amd64_R8(%rax), %r8
-		movq	OFFSET_amd64_R9(%rax), %r9
-		popq	%rax	/* syscallno -> %rax */
+	movq	%rsi, %rax	/* rax --> VexGuestAMD64State * */
+	pushq	%rdi		/* syscallno -> stack */
+	movq	OFFSET_amd64_RDI(%rax), %rdi
+	movq	OFFSET_amd64_RSI(%rax), %rsi
+	movq	OFFSET_amd64_RDX(%rax), %rdx
+	movq	OFFSET_amd64_R10(%rax), %r10
+	movq	OFFSET_amd64_R8(%rax), %r8
+	movq	OFFSET_amd64_R9(%rax), %r9
+	popq	%rax	/* syscallno -> %rax */
 	
-		/* If rip==2, then the syscall was either just about
-		   to start, or was interrupted and the kernel was 
-		   restarting it. */
-2:		syscall
-3:		/* In the range [3, 4), the syscall result is in %rax, 
-		   but hasn't been committed to RAX. */
+	/* If rip==2, then the syscall was either just about
+	   to start, or was interrupted and the kernel was 
+	   restarting it. */
+2:	syscall
+3:	/* In the range [3, 4), the syscall result is in %rax, 
+	   but hasn't been committed to RAX. */
 
 	POP_di_si_dx_cx_8
 
 	movq	%rax, OFFSET_amd64_RAX(%rsi)	/* save back to RAX */
 
-4:	/* Re-block signals.  If eip is in [4,5), then the syscall is complete and 
-	   we needn't worry about it. */
+4:	/* Re-block signals.  If eip is in [4,5), then the syscall 
+	   is complete and we needn't worry about it. */
+
 	PUSH_di_si_dx_cx_8
 
-		movq	$__NR_rt_sigprocmask, %rax	// syscall #
-		movq	$VKI_SIG_SETMASK, %rdi		// how
-		movq	%rcx, %rsi			// postmask
-		xorq	%rdx, %rdx			// NULL
-		movq	%r8, %r10			// nsigwords
-		syscall
+	movq	$__NR_rt_sigprocmask, %rax	// syscall #
+	movq	$VKI_SIG_SETMASK, %rdi		// how
+	movq	%rcx, %rsi			// postmask
+	xorq	%rdx, %rdx			// NULL
+	movq	%r8, %r10			// nsigwords
+	syscall
 
 	POP_di_si_dx_cx_8
 
+	testq	%rax, %rax
+	js	7f	/* sigprocmask failed */
+
 5:	/* now safe from signals */
-		
+	movq	$0, %rax	/* SUCCESS */
 	popq	%r15
 	popq	%r14
 	popq	%r13
 	popq	%r12
 	popq	%rbp
 	popq	%rbx
-#undef FSZ
 	ret
+
+7:	/* failure:	 return 0x8000 | error code */
+	negq	%rax
+	andq	$0x7FFF, %rax
+	orq	$0x8000, %rax
+	popq	%r15
+	popq	%r14
+	popq	%r13
+	popq	%r12
+	popq	%rbp
+	popq	%rbx
+	ret
+#undef FSZ
 
 .section .rodata
 /* export the ranges so that

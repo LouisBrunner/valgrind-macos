@@ -127,6 +127,15 @@ static void unload_symbols ( Addr start, SizeT length );
    symbols from the rwx segment -- which overlaps the r-x segment in the
    file -- causes the redirection mechanism to redirect to addresses in
    that third segment, which is wrong and causes crashes.
+
+   ------
+   JRS 28 Dec 05: unfortunately icc 8.1 on x86 has been seen to
+   produce executables with a single rwx segment rather than a
+   (r-x,rw-) pair. That means the rules have to be modified thusly:
+
+   x86-linux:   consider if r and x
+   all others:  consider if r and x and NOT w
+
 */
 
 static void nuke_syms_in_range ( Addr start, SizeT length )
@@ -144,7 +153,8 @@ static void nuke_syms_in_range ( Addr start, SizeT length )
       curr = segInfo_list;
       while (True) {
          if (curr == NULL) break;
-         if (start+length-1 < curr->start || curr->start+curr->size-1 < start) {
+         if (start+length-1 < curr->start 
+             || curr->start+curr->size-1 < start) {
 	   /* no overlap */
 	 } else {
 	   found = True;
@@ -155,7 +165,6 @@ static void nuke_syms_in_range ( Addr start, SizeT length )
 
       if (!found) break;
       unload_symbols( curr->start, curr->size );
-
    }
 }
 
@@ -172,6 +181,14 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    HChar*    filename;
    Bool      ok;
 
+   /* See comment at start of section for explanation of this do/don't
+      logic. */
+#  if defined(VGP_x86_linux)
+   Bool      require_no_W = False;
+#  else
+   Bool      require_no_W = True;
+#  endif
+
    seg = VG_(am_find_nsegment)(a);
    vg_assert(seg);
 
@@ -186,7 +203,7 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
         && seg->fnIdx != -1
         && seg->hasR
         && seg->hasX
-        && !seg->hasW
+        && (require_no_W ? (!seg->hasW) : True)
         && is_elf_object_file( (const void*)seg->start );
 
    if (!ok) {

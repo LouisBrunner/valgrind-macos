@@ -21,6 +21,6 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # Extra stuff
-fbench_LDADD	= -lm
+fbench_CFLAGS   = -g -O2
+fbench_LDADD	= 
 ffbench_LDADD	= -lm
-

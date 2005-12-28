@@ -8,6 +8,16 @@
 //   site is in the public domain and may be used in any manner without
 //   permission, restriction, attribution, or compensation."
 
+/* This program can be used in two ways.  If INTRIG is undefined, sin,
+   cos, tan, etc, will be used as supplied by <math.h>.  If it is
+   defined, then the program calculates all this stuff from first
+   principles (so to speak) and does not use the libc facilities.  For
+   benchmarking purposes it seems better to avoid the libc stuff, so
+   that the inner loops (sin, sqrt) present a workload independent of
+   libc implementations on different platforms.  Hence: */
+
+#define INTRIG 1
+
 
 /*
 
@@ -238,6 +248,7 @@
 
 */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -289,7 +300,7 @@ int itercount;			   /* The iteration counter for the main loop
 				      tracing code. */
 
 #ifndef ITERATIONS
-#define ITERATIONS /*1000*/ /*500000*/ 125000
+#define ITERATIONS /*1000*/ /*500000*/ 80000
 #endif
 int niter = ITERATIONS; 	   /* Iteration counter */
 

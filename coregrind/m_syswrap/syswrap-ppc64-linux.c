@@ -1320,7 +1320,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_modify_ldt,        sys_modify_ldt),         // 123
 // _____(__NR_adjtimex,          sys_adjtimex),           // 124
 
-// _____(__NR_mprotect,          sys_mprotect),           // 125
+   GENXY(__NR_mprotect,          sys_mprotect),           // 125
 // _____(__NR_sigprocmask,       sys_sigprocmask),        // 126
 // _____(__NR_create_module,     sys_create_module),      // 127
 // _____(__NR_init_module,       sys_init_module),        // 128
@@ -1345,7 +1345,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_msync,             sys_msync),              // 144
 
 // _____(__NR_readv,             sys_readv),              // 145
-// _____(__NR_writev,            sys_writev),             // 146
+   GENX_(__NR_writev,            sys_writev),             // 146
 // _____(__NR_getsid,            sys_getsid),             // 147
 // _____(__NR_fdatasync,         sys_fdatasync),          // 148
 // _____(__NR__sysctl,           sys__sysctl),            // 149
@@ -1388,7 +1388,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_pwrite64,          sys_pwrite64),           // 180
    GENX_(__NR_chown,             sys_chown),              // 181
-// _____(__NR_getcwd,            sys_getcwd),             // 182
+   GENXY(__NR_getcwd,            sys_getcwd),             // 182
 // _____(__NR_capget,            sys_capget),             // 183
 // _____(__NR_capset,            sys_capset),             // 184
 

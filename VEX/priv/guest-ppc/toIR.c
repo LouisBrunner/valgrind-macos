@@ -4511,17 +4511,37 @@ static Bool dis_memsync ( UInt theInstr )
          break;
       }
 
-      case 0x256: // sync (Synchronize, PPC32 p543)
-         if (b11to25 != 0 || b0 != 0) {
-            vex_printf("dis_memsync(ppc)(sync,b11to25|b0)\n");
+      case 0x256: // sync (Synchronize, PPC32 p543), 
+                  // also lwsync, which appears to be undocumented
+         /* http://sources.redhat.com/ml/binutils/2000-12/msg00311.html
+
+            The PowerPC architecture used in IBM chips has expanded
+            the sync instruction into two variants: lightweight sync
+            and heavyweight sync.  The original sync instruction is
+            the new heavyweight sync and lightweight sync is a strict
+            subset of the heavyweight sync functionality. This allows
+            the programmer to specify a less expensive operation on
+            high-end systems when the full sync functionality is not
+            necessary.
+
+            The basic "sync" mnemonic now utilizes an operand. "sync"
+            without an operand now becomes a extended mnemonic for
+            heavyweight sync.  Processors without the lwsync
+            instruction will not decode the L field and will perform a
+            heavyweight sync.  Everything is backward compatible.
+
+            sync    =       sync 0
+            lwsync  =       sync 1
+	 */
+         if ((b11to25 != 0/*sync*/ && b11to25 != 1024/*lwsync*/) || b0 != 0) {
+            vex_printf("dis_memsync(ppc)(sync/lwsync,b11to25|b0)\n");
             return False;
          }
-         DIP("sync\n");
+         DIP("%ssync\n", b11to25 == 1024 ? "lw" : "");
          /* Insert a memory fence.  It's sometimes important that these
             are carried through to the generated code. */
          stmt( IRStmt_MFence() );
          break;
-
 
       /* 64bit Memsync */
       case 0x054: // ldarx (Load DWord and Reserve Indexed, PPC64 p473)

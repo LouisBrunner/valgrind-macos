@@ -259,7 +259,7 @@ VG_(run_innerloop__dispatch_unprofiled):
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong)
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
               = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 2 */
         rlwinm  4,3, 0, 32-2-VG_TT_FAST_BITS, 31-2  
         addis   5,4,VG_(tt_fast)@ha
@@ -315,7 +315,7 @@ VG_(run_innerloop__dispatch_profiled):
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong)
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
               = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 2 */
         rlwinm  4,3, 0, 32-2-VG_TT_FAST_BITS, 31-2 
         addis   5,4,VG_(tt_fast)@ha

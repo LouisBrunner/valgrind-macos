@@ -276,14 +276,16 @@ VG_(run_innerloop__dispatch_unprofiled):
         std     3,OFFSET_ppc64_CIA(31)
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-//	subic.	29,29,1
 	subi	29,29,1
 	cmpldi	29,0
         beq	.counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4=((r3<<3) & (VG_TT_FAST_MASK<<3)) */
-	rldic	4,3, 3, 64-3-VG_TT_FAST_BITS
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
+	rldicl	4,3, 62, 64-VG_TT_FAST_BITS
+	sldi	4,4,3
+
 	ld	5, .tocent__vgPlain_tt_fast@toc(2)
 	ldx	5, 5,4     /* r5 = VG_(tt_fast)[r3 & VG_TT_FAST_MASK] */
 	ld	6, 0(5)    /* r6 = (r5)->orig_addr */
@@ -344,14 +346,16 @@ VG_(run_innerloop__dispatch_profiled):
         std     3,OFFSET_ppc64_CIA(31)
 
         /* Are we out of timeslice?  If yes, defer to scheduler. */
-//	subic.	29,29,1
 	subi	29,29,1
 	cmpldi	29,0
         beq	.counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4=((r3<<3) & (VG_TT_FAST_MASK<<3)) */
-	rldic	4,3, 3, 64-3-VG_TT_FAST_BITS
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
+	rldicl	4,3, 62, 64-VG_TT_FAST_BITS
+	sldi	4,4,3
+
 	ld	5, .tocent__vgPlain_tt_fast@toc(2)
 	ldx	5, 5,4     /* r5 = VG_(tt_fast)[r3 & VG_TT_FAST_MASK] */
 	ld	6, 0(5)    /* r6 = (r5)->orig_addr */

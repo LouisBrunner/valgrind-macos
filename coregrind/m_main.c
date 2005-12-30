@@ -299,7 +299,7 @@ static char *copy_str(char **tab, const char *str)
 static 
 Addr setup_client_stack( void*  init_sp,
                          char** orig_envp, 
-                         const struct exeinfo *info,
+                         const ExeInfo* info,
                          UInt** client_auxv,
                          Addr   clstack_end,
                          SizeT  clstack_max_size )
@@ -819,8 +819,9 @@ static void config_error ( Char* msg )
 
 /* Load the client whose name is VG_(argv_the_exename). */
 
-static void load_client ( /*OUT*/struct exeinfo* info, 
-                          /*OUT*/Addr* client_eip)
+static void load_client ( /*OUT*/ExeInfo* info, 
+                          /*OUT*/Addr*    client_ip,
+			  /*OUT*/Addr*    client_toc)
 {
    HChar* exe_name;
    Int    ret;
@@ -849,7 +850,8 @@ static void load_client ( /*OUT*/struct exeinfo* info,
       VG_(cl_exec_fd) = res.val;
 
    /* Copy necessary bits of 'info' that were filled in */
-   *client_eip = info->init_eip;
+   *client_ip  = info->init_ip;
+   *client_toc = info->init_toc;
    VG_(brk_base) = VG_(brk_limit) = VG_PGROUNDUP(info->brkbase);
 }
 
@@ -1698,7 +1700,7 @@ static void setup_file_descriptors(void)
 */
 static void init_thread1state ( Addr client_ip, 
                                 Addr client_sp,
-                                Addr entry,
+                                Addr client_toc,
                                 /*inout*/ ThreadArchState* arch )
 {
 #if defined(VGA_x86)
@@ -1761,7 +1763,7 @@ static void init_thread1state ( Addr client_ip,
 
    /* Put essential stuff into the new state. */
    arch->vex.guest_GPR1 = client_sp;
-   arch->vex.guest_GPR2 = ((ULong*)entry)[1];  // TOC ptr
+   arch->vex.guest_GPR2 = client_toc;
    arch->vex.guest_CIA  = client_ip;
 #else
 #  error Unknown arch
@@ -1919,18 +1921,19 @@ static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
 
 Int main(Int argc, HChar **argv, HChar **envp)
 {
-   HChar*  toolname          = "memcheck";    // default to Memcheck
-   HChar** env               = NULL;
-   Int     need_help         = 0; // 0 = no, 1 = --help, 2 = --help-debug
-   Addr    initial_client_IP = 0;
-   Addr    initial_client_SP = 0;
-   Addr    clstack_top       = 0;
-   SizeT   clstack_max_size  = 0;
+   HChar*  toolname           = "memcheck";    // default to Memcheck
+   HChar** env                = NULL;
+   Int     need_help          = 0; // 0 = no, 1 = --help, 2 = --help-debug
+   Addr    initial_client_IP  = 0;
+   Addr    initial_client_SP  = 0;
+   Addr    initial_client_TOC = 0;
+   Addr    clstack_top        = 0;
+   SizeT   clstack_max_size   = 0;
    UInt*   client_auxv;
    Int     loglevel, i;
    Bool    logging_to_fd;
    struct vki_rlimit zero = { 0, 0 };
-   struct exeinfo info;
+   ExeInfo info;
 
    //============================================================
    //
@@ -2127,7 +2130,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
       if (VG_(args_the_exename) == NULL)
          missing_prog();
 
-      load_client(&info, &initial_client_IP);
+      load_client(&info, &initial_client_IP, &initial_client_TOC);
    }
 
    //--------------------------------------------------------------
@@ -2164,9 +2167,10 @@ Int main(Int argc, HChar **argv, HChar **envp)
 
       VG_(debugLog)(2, "main",
                        "Client info: "
-                       "initial_IP=%p initial_SP=%p brk_base=%p\n",
+                       "initial_IP=%p initial_SP=%p initial_TOC=%p brk_base=%p\n",
                        (void*)initial_client_IP, 
                        (void*)initial_client_SP,
+                       (void*)initial_client_TOC,
                        (void*)VG_(brk_base) );
    }
 
@@ -2483,8 +2487,9 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //      setup_scheduler()      [for the rest of state 1 stuff]
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise thread 1's state\n");
-   init_thread1state( initial_client_IP, initial_client_SP, 
-                      info.entry,
+   init_thread1state( initial_client_IP, 
+                      initial_client_SP, 
+                      initial_client_TOC,
                       &VG_(threads)[1].arch);
 
    //--------------------------------------------------------------

@@ -29,6 +29,27 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+// This tool shows how to do some basic instrumentation.
+//
+// In particular, if you are interested in tracing every load and store a
+// program does, use the --trace-mem=yes option.  Please note that the
+// address trace is good, but not perfect;  see Section 3.3.7 of Nicholas
+// Nethercote's PhD dissertation "Dynamic Binary Analysis and
+// Instrumentation", 2004, for details about the few loads and stores that
+// it misses, and other caveats about the accuracy of the address trace.
+//
+// If you want to modify how the memory traces are printed/gathered, look at
+// the code that is controlled by the variable 'lk_clo_trace_mem' and the
+// functions 'trace_load()' and 'trace_mem'..  With a bit of effort you
+// should be able to see which other bits of code can be removed, if that's
+// what you want.  If you want to do more complex modifications, please read
+// VEX/pub/libvex_ir.h to understand the intermediate representation.
+//
+// For further inspiration, you should look at cachegrind/cg_main.c which
+// handles memory accesses in a more sophisticated way -- it groups them
+// together for processing into twos and threes so that fewer C calls are
+// made and things run faster.
+
 #include "pub_tool_basics.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_libcassert.h"
@@ -47,6 +68,9 @@ static Char* lk_clo_fnname = "_dl_runtime_resolve";
  * with command line option --detailed-counts. */
 static Bool lk_clo_detailed_counts = False;
 
+/* If true, print the trace of loads and stores.  Set with --trace-mem. */
+static Bool lk_clo_trace_mem = False;
+
 /***********************************************************************
  * Implement the needs_command_line_options for Valgrind.
  **********************************************************************/
@@ -55,6 +79,7 @@ static Bool lk_process_cmd_line_option(Char* arg)
 {
    VG_STR_CLO(arg, "--fnname", lk_clo_fnname)
    else VG_BOOL_CLO(arg, "--detailed-counts", lk_clo_detailed_counts)
+   else VG_BOOL_CLO(arg, "--trace-mem",       lk_clo_trace_mem)
    else
       return False;
    
@@ -88,7 +113,6 @@ static ULong n_guest_instrs  = 0;
 static ULong n_Jccs          = 0;
 static ULong n_Jccs_untaken  = 0;
 
-__attribute__((unused))
 static void add_one_func_call(void)
 {
    n_func_calls++;
@@ -104,13 +128,11 @@ static void add_one_BB_completed(void)
    n_BBs_completed++;
 }
 
-__attribute__((unused))
 static void add_one_IRStmt(void)
 {
    n_IRStmts++;
 }
 
-__attribute__((unused))
 static void add_one_guest_instr(void)
 {
    n_guest_instrs++;
@@ -224,6 +246,20 @@ static void print_details ( void )
 
 
 /***********************************************************************
+ * Data and helpers related to --trace-mem.      
+ **********************************************************************/
+
+static VG_REGPARM(2) void trace_load(Addr addr, SizeT size)
+{
+   VG_(printf)("load : %p, %d\n", addr, size);
+}
+
+static VG_REGPARM(2) void trace_store(Addr addr, SizeT size)
+{
+   VG_(printf)("store: %p, %d\n", addr, size);
+}
+
+/***********************************************************************
  * Implement the basic_tool_funcs for Valgrind.
  **********************************************************************/
 
@@ -246,6 +282,9 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
    IRBB*    bb;
    Char     fnname[100];
    IRType   type;
+   IRExpr** argv;
+   IRExpr*  addr_expr;
+   IRExpr*  size_expr;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -345,6 +384,19 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
           * constrains them to being flat SSA-style.
           */
          case Ist_Store:
+            // Add a call to trace_store() if --trace-mem=yes.
+            if (lk_clo_trace_mem) {
+               addr_expr = st->Ist.Store.addr;
+               size_expr = mkIRExpr_HWord( 
+                             sizeofIRType(
+                               typeOfIRExpr(bb->tyenv, st->Ist.Store.data)));
+               argv = mkIRExprVec_2( addr_expr, size_expr );
+               di = unsafeIRDirty_0_N( /*regparms*/2, 
+                                       "trace_store",
+                                       VG_(fnptr_to_fnentry)( trace_store ), 
+                                       argv );
+               addStmtToIRBB( bb, IRStmt_Dirty(di) );
+            }
             if (lk_clo_detailed_counts) {
                type = typeOfIRExpr(bb->tyenv, st->Ist.Store.data);
                tl_assert(type != Ity_INVALID);
@@ -354,6 +406,20 @@ IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout,
             break;
 
          case Ist_Tmp:
+            // Add a call to trace_load() if --trace-mem=yes.
+            if (lk_clo_trace_mem) {
+               IRExpr* data = st->Ist.Tmp.data;
+               if (data->tag == Iex_Load) {
+                  addr_expr = data->Iex.Load.addr;
+                  size_expr = mkIRExpr_HWord( sizeofIRType(data->Iex.Load.ty) );
+                  argv = mkIRExprVec_2( addr_expr, size_expr );
+                  di = unsafeIRDirty_0_N( /*regparms*/2, 
+                                          "trace_load",
+                                          VG_(fnptr_to_fnentry)( trace_load ), 
+                                          argv );
+                  addStmtToIRBB( bb, IRStmt_Dirty(di) );
+               }
+            }
             if (lk_clo_detailed_counts) {
                IRExpr* expr = st->Ist.Tmp.data;
                type = typeOfIRExpr(bb->tyenv, expr);

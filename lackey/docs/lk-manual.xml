@@ -4,7 +4,7 @@
 
 <chapter id="lk-manual" xreflabel="Lackey">
 
-<title>Lackey: a very simple profiler</title>
+<title>Lackey: a simple profiler and memory tracer</title>
 
 <para>To use this tool, you must specify
 <computeroutput>--tool=lackey</computeroutput> on the Valgrind
@@ -69,6 +69,16 @@ tool.</para>
 
     <para>The types are identified by their IR name ("I1" ... "I128",
     "F32", "F64", and "V128").</para>
+   </listitem>
+
+   <listitem>
+    <para>When command line option
+    <computeroutput>--trace-mem=yes</computeroutput> is
+    specified, it prints out the size and address of almost every load and
+    store made by the program.  See Section 3.3.7 of Nicholas Nethercote's
+    PhD dissertation "Dynamic Binary Analysis and Instrumentation", 2004,
+    for details about the few loads and stores that it misses, and other
+    caveats about the accuracy of the address trace.</para>
    </listitem>
 
   </orderedlist>

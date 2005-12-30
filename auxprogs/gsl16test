@@ -23,7 +23,7 @@
 
 if [ $# != 5 ]
 then 
-   echo "usage: gsl15test /absolute/name/of/gsl-1.6-patched.tar.gz"
+   echo "usage: gsl16test /absolute/name/of/gsl-1.6-patched.tar.gz"
    echo "                 C-compiler-command"      
    echo "                 flags-for-C-compiler"     
    echo "                 Valgrind-command"

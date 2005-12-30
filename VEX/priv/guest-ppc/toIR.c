@@ -5157,10 +5157,7 @@ static Bool dis_cache_manage ( UInt         theInstr,
       IRExpr* irx_addr;
       UInt    i;
       DIP("dcbz r%u,r%u\n", rA_addr, rB_addr);
-      if (mode64) {
-         DIP(" => mode64 not implemented\n");
-         return False;
-      }
+
       assign( EA, ea_rAor0_idxd(rA_addr, rB_addr) );
 
       if (mode64) {

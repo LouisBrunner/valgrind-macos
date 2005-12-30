@@ -254,25 +254,29 @@ void getAllocableRegs_PPC ( Int* nregs, HReg** arr, Bool mode64 )
    /* Don't waste the reg-allocs's time trawling through zillions of
       FP registers - they mostly will never be used.  We'll tolerate
       the occasional extra spill instead. */
-   (*arr)[i++] = hregPPC_FPR0();
-   (*arr)[i++] = hregPPC_FPR1();
-   (*arr)[i++] = hregPPC_FPR2();
-   (*arr)[i++] = hregPPC_FPR3();
-   (*arr)[i++] = hregPPC_FPR4();
-   (*arr)[i++] = hregPPC_FPR5();
-   (*arr)[i++] = hregPPC_FPR6();
-   (*arr)[i++] = hregPPC_FPR7();
+   /* For both ppc32-linux and ppc64-linux, f14-f31 are callee save.
+      So use them. */
+   (*arr)[i++] = hregPPC_FPR14();
+   (*arr)[i++] = hregPPC_FPR15();
+   (*arr)[i++] = hregPPC_FPR16();
+   (*arr)[i++] = hregPPC_FPR17();
+   (*arr)[i++] = hregPPC_FPR18();
+   (*arr)[i++] = hregPPC_FPR19();
+   (*arr)[i++] = hregPPC_FPR20();
+   (*arr)[i++] = hregPPC_FPR21();
 
    /* Same deal re Altivec */
+   /* For both ppc32-linux and ppc64-linux, v20-v31 are callee save.
+      So use them. */
    /* NB, vr29 is used as a scratch temporary -- do not allocate */
-   (*arr)[i++] = hregPPC_VR0();
-   (*arr)[i++] = hregPPC_VR1();
-   (*arr)[i++] = hregPPC_VR2();
-   (*arr)[i++] = hregPPC_VR3();
-   (*arr)[i++] = hregPPC_VR4();
-   (*arr)[i++] = hregPPC_VR5();
-   (*arr)[i++] = hregPPC_VR6();
-   (*arr)[i++] = hregPPC_VR7();
+   (*arr)[i++] = hregPPC_VR20();
+   (*arr)[i++] = hregPPC_VR21();
+   (*arr)[i++] = hregPPC_VR22();
+   (*arr)[i++] = hregPPC_VR23();
+   (*arr)[i++] = hregPPC_VR24();
+   (*arr)[i++] = hregPPC_VR25();
+   (*arr)[i++] = hregPPC_VR26();
+   (*arr)[i++] = hregPPC_VR27();
 
    vassert(i == *nregs);
 }
@@ -1686,6 +1690,10 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
          mode32: r3 to r12
          mode64: r3 to r10
       */
+      /* XXXXXXXXXXXXXXXXX BUG! This doesn't say anything about the FP
+         or Altivec registers.  We get away with this ONLY because
+         getAllocatableRegs_PPC gives the allocator callee-saved fp
+         and Altivec regs, and no caller-save ones. */
       addHRegUse(u, HRmWrite, hregPPC_GPR3(mode64));
       addHRegUse(u, HRmWrite, hregPPC_GPR4(mode64));
       addHRegUse(u, HRmWrite, hregPPC_GPR5(mode64));

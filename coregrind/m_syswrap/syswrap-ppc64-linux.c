@@ -1364,7 +1364,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_sched_get_priority_min,  sys_sched_get_priority_min), // 160
 // _____(__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),  // 161
-// _____(__NR_nanosleep,         sys_nanosleep),          // 162
+   GENXY(__NR_nanosleep,         sys_nanosleep),          // 162
 // _____(__NR_mremap,            sys_mremap),             // 163
 // _____(__NR_setresuid,         sys_setresuid),          // 164
 
@@ -1378,7 +1378,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_prctl,             sys_prctl),              // 171
 // _____(__NR_rt_sigreturn,      sys_rt_sigreturn),       // 172
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),       // 173
-// _____(__NR_rt_sigprocmask,    sys_rt_sigprocmask),     // 174
+   LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask),     // 174
 
 // _____(__NR_rt_sigpending,     sys_rt_sigpending),      // 175
 // _____(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),    // 176

@@ -6672,7 +6672,7 @@ static void findSSECmpOp ( Bool* needNot, IROp* op,
    vpanic("findSSECmpOp(x86,guest)");
 }
 
-/* Handles SSE 32F comparisons. */
+/* Handles SSE 32F/64F comparisons. */
 
 static UInt dis_SSEcmp_E_to_G ( UChar sorb, Int delta, 
 				HChar* opname, Bool all_lanes, Int sz )
@@ -6700,8 +6700,15 @@ static UInt dis_SSEcmp_E_to_G ( UChar sorb, Int delta,
       addr = disAMode ( &alen, sorb, delta, dis_buf );
       imm8 = getIByte(delta+alen);
       findSSECmpOp(&needNot, &op, imm8, all_lanes, sz);
-      assign( plain, binop(op, getXMMReg(gregOfRM(rm)), 
-                               loadLE(Ity_V128, mkexpr(addr))) );
+      assign( plain, 
+              binop(
+                 op,
+                 getXMMReg(gregOfRM(rm)), 
+                   all_lanes  ? loadLE(Ity_V128, mkexpr(addr))
+                 : sz == 8    ? unop( Iop_64UtoV128, loadLE(Ity_I64, mkexpr(addr)))
+                 : /*sz==4*/    unop( Iop_32UtoV128, loadLE(Ity_I32, mkexpr(addr)))
+             ) 
+      );
       delta += alen+1;
       DIP("%s $%d,%s,%s\n", opname,
                             (Int)imm8,

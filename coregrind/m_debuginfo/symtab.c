@@ -1743,7 +1743,12 @@ Bool read_lib_symbols ( SegInfo* si )
                                          stabstr, stabstr_sz );
       }
 #     endif
-      if (debug_info && debug_abbv && debug_line && debug_str) {
+      /* jrs 2006-01-01: icc-8.1 has been observed to generate
+         binaries without debug_str sections.  Don't preclude
+         debuginfo reading for that reason, but, in
+         read_unitinfo_dwarf2, do check that debugstr is non-NULL
+         before using it. */
+      if (debug_info && debug_abbv && debug_line /* && debug_str */) {
          ML_(read_debuginfo_dwarf2) ( si, 
                                       debug_info,   debug_info_sz,
                                       debug_abbv,

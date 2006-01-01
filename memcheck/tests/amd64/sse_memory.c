@@ -99,10 +99,10 @@ static void showRM ( char* op, RMArgs* rra, UChar* mem, Int nMem )
    void r_r_##OP ( RRArgs* p )             \
    {                                       \
       __asm__ __volatile__("\n"            \
-         "\tmovupd 0(%0), %%xmm6\n"        \
-         "\tmovupd 16(%0), %%xmm7\n"       \
+         "\tmovups 0(%0), %%xmm6\n"        \
+         "\tmovups 16(%0), %%xmm7\n"       \
          "\t" #OP " %%xmm6, %%xmm7\n"      \
-         "\tmovupd %%xmm7, 32(%0)\n"       \
+         "\tmovups %%xmm7, 32(%0)\n"       \
          :                                 \
          : "r" (p)                         \
          : "memory", "xmm6", "xmm7", "cc"  \
@@ -113,9 +113,9 @@ static void showRM ( char* op, RMArgs* rra, UChar* mem, Int nMem )
    void r_m_##OP ( RMArgs* p, void* mem )  \
    {                                       \
       __asm__ __volatile__("\n"            \
-         "\tmovupd 0(%0), %%xmm7\n"        \
+         "\tmovups 0(%0), %%xmm7\n"        \
          "\t" #OP " 0(%1), %%xmm7\n"       \
-         "\tmovupd %%xmm7, 16(%0)\n"       \
+         "\tmovups %%xmm7, 16(%0)\n"       \
          :                                 \
          : "r" (p), "r" (mem)              \
          : "memory", "xmm7", "cc"          \

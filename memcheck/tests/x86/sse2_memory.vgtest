@@ -1,0 +1,4 @@
+prog: sse_memory
+vgopts: -q
+args: sse2
+prereq: ../../../tests/cputest x86-sse2

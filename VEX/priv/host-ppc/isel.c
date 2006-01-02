@@ -1643,6 +1643,32 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_V128to64:
+      case Iop_V128HIto64: {
+         HReg        r_aligned16;
+         HReg        dst  = newVRegI(env);
+         HReg        vec  = iselVecExpr(env, e->Iex.Unop.arg);
+         PPCAMode *am_off0, *am_off8;
+         vassert(mode64);
+         sub_from_sp( env, 32 );     // Move SP down 32 bytes
+
+         // get a quadword aligned address within our stack space
+         r_aligned16 = get_sp_aligned16( env );
+         am_off0 = PPCAMode_IR( 0, r_aligned16 );
+         am_off8 = PPCAMode_IR( 8 ,r_aligned16 );
+
+         // store vec, load low word (+8) or high (+0) to dst
+         addInstr(env,
+                  PPCInstr_AvLdSt( False/*store*/, 16, vec, am_off0 ));
+         addInstr(env,
+                  PPCInstr_Load( 8, False, dst, 
+                                    op_unop == Iop_V128HIto64 ? am_off0 : am_off8, 
+                                    mode64 ));
+
+         add_to_sp( env, 32 );       // Reset SP
+         return dst;
+      }
+
       case Iop_16to8:
       case Iop_32to8:
       case Iop_32to16:

@@ -847,9 +847,14 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             /* Those cases extract the data properly */
             case 0x05: /* FORM_data2 */     cval = *((UShort*)p); p +=2; break;
             case 0x06: /* FORM_data4 */     cval = *((UInt*)p);p +=4; break;
-            case 0x0e: /* FORM_strp */      sval = debugstr + *((UInt*)p); 
-                                            p += 4; break;
-                                            /* pointer in .debug_str */
+            case 0x0e: /* FORM_strp */      /* pointer in .debug_str */
+                       /* 2006-01-01: only generate a value if
+                          debugstr is non-NULL (which means that a
+                          debug_str section was found) */
+                                            if (debugstr)
+                                               sval = debugstr + *((UInt*)p); 
+                                            p += 4; 
+                                            break;
             case 0x08: /* FORM_string */    sval = (Char*)p; 
                                             p += VG_(strlen)((Char*)p) + 1; break;
             case 0x0b: /* FORM_data1 */     cval = *p; p++; break;

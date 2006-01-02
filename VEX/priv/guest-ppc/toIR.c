@@ -4049,18 +4049,20 @@ static IRExpr* /* :: Ity_I32 */ branch_ctr_ok( UInt BO )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    IRTemp ok = newTemp(Ity_I32);
-   IRExpr* ctr_lo32;
 
    if ((BO >> 2) & 1) {     // independent of ctr
       assign( ok, mkU32(0xFFFFFFFF) );
    } else {
-      ctr_lo32 = mkSzNarrow32(ty, getGST( PPC_GST_CTR ));
       if ((BO >> 1) & 1) {  // ctr == 0 ?
          assign( ok, unop( Iop_1Sto32,
-                           binop( Iop_CmpEQ32, ctr_lo32, mkU32(0))) );
+                           binop( mkSzOp(ty, Iop_CmpEQ8),
+                                  getGST( PPC_GST_CTR ),
+                                  mkSzImm(ty,0))) );
       } else {              // ctr != 0 ?
          assign( ok, unop( Iop_1Sto32,
-                           binop( Iop_CmpNE32, ctr_lo32, mkU32(0))) );
+                           binop( mkSzOp(ty, Iop_CmpNE8),
+                                  getGST( PPC_GST_CTR ),
+                                  mkSzImm(ty,0))) );
       }
    }
    return mkexpr(ok);
@@ -4503,8 +4505,8 @@ static Bool dis_memsync ( UInt theInstr )
             If resaddr != lwarx_resaddr, CR0[EQ] is undefined, and
             whether rS is stored is dependent on that value. */
 
-         /* Success?  Do the store */
-         storeBE( mkexpr(EA), mkexpr(rS) );
+         /* Success?  Do the (32bit) store */
+         storeBE( mkexpr(EA), mkSzNarrow32(ty, mkexpr(rS)) );
          
          // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]
          putCR321(0, mkU8(1<<1));
@@ -4532,7 +4534,7 @@ static Bool dis_memsync ( UInt theInstr )
 
             sync    =       sync 0
             lwsync  =       sync 1
-	 */
+         */
          if ((b11to25 != 0/*sync*/ && b11to25 != 1024/*lwsync*/) || b0 != 0) {
             vex_printf("dis_memsync(ppc)(sync/lwsync,b11to25|b0)\n");
             return False;

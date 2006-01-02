@@ -148,6 +148,22 @@ static IRBB* irbb;
    disInstr_PPC below. */
 static Bool mode64 = False;
 
+// Given a pointer to a function as obtained by "& functionname" in C,
+// produce a pointer to the actual entry point for the function.  For
+// most platforms it's the identity function.  Unfortunately, on
+// ppc64-linux it isn't (sigh).
+static void* fnptr_to_fnentry( void* f )
+{
+#if defined(__powerpc64__)
+   /* f is a pointer to a 3-word function descriptor, of which
+      the first word is the entry address. */
+   ULong* fdescr = (ULong*)f;
+   return (void*)(fdescr[0]);
+#else
+   return f;
+#endif
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Debugging output                                     ---*/
@@ -5037,11 +5053,12 @@ static Bool dis_proc_ctl ( UInt theInstr )
    case 0x173: { // mftb (Move from Time Base, PPC32 p475)
       IRTemp   val  = newTemp(Ity_I64);
       IRExpr** args = mkIRExprVec_0();
-      IRDirty* d    = unsafeIRDirty_1_N( val, 
-                                         0/*regparms*/, 
-                                         "ppcg_dirtyhelper_MFTB", 
-                                         &ppcg_dirtyhelper_MFTB, 
-                                         args );
+      IRDirty* d    = unsafeIRDirty_1_N(
+                              val, 
+                              0/*regparms*/, 
+                              "ppcg_dirtyhelper_MFTB", 
+                              fnptr_to_fnentry(&ppcg_dirtyhelper_MFTB), 
+                              args );
       /* execute the dirty call, dumping the result in val. */
       stmt( IRStmt_Dirty(d) );
 
@@ -6347,15 +6364,17 @@ static Bool dis_av_load ( UInt theInstr )
                                           mkU32(0xF)),
                          mkU32(0)/*left*/ );
       if (!mode64) {
-         d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                                 "ppc32g_dirtyhelper_LVS",
-                                 &ppc32g_dirtyhelper_LVS,
-                                 args );
+         d = unsafeIRDirty_0_N (
+                        0/*regparms*/, 
+                        "ppc32g_dirtyhelper_LVS",
+                        fnptr_to_fnentry(&ppc32g_dirtyhelper_LVS),
+                        args );
       } else {
-         d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                                 "ppc64g_dirtyhelper_LVS",
-                                 &ppc64g_dirtyhelper_LVS,
-                                 args );
+         d = unsafeIRDirty_0_N (
+                        0/*regparms*/, 
+                        "ppc64g_dirtyhelper_LVS",
+                        fnptr_to_fnentry(&ppc64g_dirtyhelper_LVS),
+                        args );
       }
       DIP("lvsl v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
       /* declare guest state effects */
@@ -6378,15 +6397,17 @@ static Bool dis_av_load ( UInt theInstr )
                                           mkU32(0xF)),
                          mkU32(1)/*right*/ );
       if (!mode64) {
-         d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                                 "ppc32g_dirtyhelper_LVS",
-                                 &ppc32g_dirtyhelper_LVS,
-                                 args );
+         d = unsafeIRDirty_0_N (
+                        0/*regparms*/, 
+                        "ppc32g_dirtyhelper_LVS",
+                        fnptr_to_fnentry(&ppc32g_dirtyhelper_LVS),
+                        args );
       } else {
-         d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                                 "ppc64g_dirtyhelper_LVS",
-                                 &ppc64g_dirtyhelper_LVS,
-                                 args );
+         d = unsafeIRDirty_0_N (
+                        0/*regparms*/, 
+                        "ppc64g_dirtyhelper_LVS",
+                        fnptr_to_fnentry(&ppc64g_dirtyhelper_LVS),
+                        args );
       }
       DIP("lvsr v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
       /* declare guest state effects */

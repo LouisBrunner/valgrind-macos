@@ -6475,7 +6475,7 @@ static Bool dis_av_store ( UInt theInstr )
 
    IRType ty           = mode64 ? Ity_I64 : Ity_I32;
    IRTemp EA           = newTemp(ty);
-   IRTemp addr_aligned = newTemp(Ity_I32);
+   IRTemp addr_aligned = newTemp(ty);
    IRTemp vS           = newTemp(Ity_V128);
    IRTemp eb           = newTemp(Ity_I8);
    IRTemp idx          = newTemp(Ity_I8);
@@ -6504,10 +6504,9 @@ static Bool dis_av_store ( UInt theInstr )
    }
    case 0x0A7: { // stvehx (Store Vector Half Word Indexed, AV p132)
       DIP("stvehx v%d,r%u,r%u\n", vS_addr, rA_addr, rB_addr);
-      assign( addr_aligned,
-              mkSzNarrow32(ty, addr_align(mkexpr(EA), 2)) );
+      assign( addr_aligned, addr_align(mkexpr(EA), 2) );
       assign( eb, binop(Iop_And8, mkU8(0xF),
-                        unop(Iop_32to8, mkexpr(addr_aligned) )) );
+                        mkSzNarrow8(ty, mkexpr(addr_aligned) )) );
       assign( idx, binop(Iop_Shl8,
                          binop(Iop_Sub8, mkU8(14), mkexpr(eb)),
                          mkU8(3)) );
@@ -6518,10 +6517,9 @@ static Bool dis_av_store ( UInt theInstr )
    }
    case 0x0C7: { // stvewx (Store Vector Word Indexed, AV p133)
       DIP("stvewx v%d,r%u,r%u\n", vS_addr, rA_addr, rB_addr);
-      assign( addr_aligned,
-              mkSzNarrow32(ty, addr_align(mkexpr(EA), 4)) );
+      assign( addr_aligned, addr_align(mkexpr(EA), 4) );
       assign( eb, binop(Iop_And8, mkU8(0xF),
-                        unop(Iop_32to8, mkexpr(addr_aligned) )) );
+                        mkSzNarrow8(ty, mkexpr(addr_aligned) )) );
       assign( idx, binop(Iop_Shl8,
                          binop(Iop_Sub8, mkU8(12), mkexpr(eb)),
                          mkU8(3)) );

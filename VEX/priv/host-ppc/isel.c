@@ -1252,13 +1252,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //zz       }
 
       if (e->Iex.Binop.op == Iop_32HLto64) {
-         HReg   r_dst = newVRegI(env);
          HReg   r_Hi  = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg   r_Lo  = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         HReg   r_dst = newVRegI(env);
+         HReg   msk   = newVRegI(env);
          vassert(mode64);
          /* r_dst = OR( r_Hi<<32, r_Lo ) */
          addInstr(env, PPCInstr_Shft(Pshft_SHL, False/*64bit shift*/,
                                      r_dst, r_Hi, PPCRH_Imm(False,32)));
+         addInstr(env, PPCInstr_LI(msk, 0xFFFFFFFF, mode64));
+         addInstr(env, PPCInstr_Alu( Palu_AND, r_Lo, r_Lo,
+                                     PPCRH_Reg(msk) ));
          addInstr(env, PPCInstr_Alu( Palu_OR, r_dst, r_dst,
                                      PPCRH_Reg(r_Lo) ));
          return r_dst;

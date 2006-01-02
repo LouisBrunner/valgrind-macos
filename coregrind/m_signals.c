@@ -1699,7 +1699,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 Valgrind internally.
        */
       VG_(message)(Vg_DebugMsg, 
-		   "INTERNAL ERROR: Valgrind received a signal %d (%s) - exiting",
+		   "VALGRIND INTERNAL ERROR: Valgrind received a signal %d (%s) - exiting",
 		   sigNo, signame(sigNo));
 
       VG_(message)(Vg_DebugMsg, 

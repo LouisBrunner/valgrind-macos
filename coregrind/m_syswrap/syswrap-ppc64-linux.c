@@ -413,7 +413,7 @@ void setup_child ( /*OUT*/ ThreadArchState *child,
    aren't visible outside this file, but that requires even more macro
    magic. */
 
-//zz DECL_TEMPLATE(ppc64_linux, sys_socketcall);
+DECL_TEMPLATE(ppc64_linux, sys_socketcall);
 DECL_TEMPLATE(ppc64_linux, sys_mmap);
 //zz DECL_TEMPLATE(ppc64_linux, sys_mmap2);
 //zz DECL_TEMPLATE(ppc64_linux, sys_stat64);
@@ -424,263 +424,263 @@ DECL_TEMPLATE(ppc64_linux, sys_clone);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigreturn);
 //zz DECL_TEMPLATE(ppc64_linux, sys_rt_sigreturn);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigaction);
-//zz 
-//zz PRE(sys_socketcall)
-//zz {
-//zz #  define ARG2_0  (((UWord*)ARG2)[0])
-//zz #  define ARG2_1  (((UWord*)ARG2)[1])
-//zz #  define ARG2_2  (((UWord*)ARG2)[2])
-//zz #  define ARG2_3  (((UWord*)ARG2)[3])
-//zz #  define ARG2_4  (((UWord*)ARG2)[4])
-//zz #  define ARG2_5  (((UWord*)ARG2)[5])
-//zz 
-//zz    *flags |= SfMayBlock;
-//zz    PRINT("sys_socketcall ( %d, %p )",ARG1,ARG2);
-//zz    PRE_REG_READ2(long, "socketcall", int, call, unsigned long *, args);
-//zz 
-//zz    switch (ARG1 /* request */) {
-//zz 
-//zz    case VKI_SYS_SOCKETPAIR:
-//zz      /* int socketpair(int d, int type, int protocol, int sv[2]); */
-//zz       PRE_MEM_READ( "socketcall.socketpair(args)", ARG2, 4*sizeof(Addr) );
-//zz       ML_(generic_PRE_sys_socketpair)( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
-//zz       break;
-//zz 
-//zz    case VKI_SYS_SOCKET:
-//zz      /* int socket(int domain, int type, int protocol); */
-//zz       PRE_MEM_READ( "socketcall.socket(args)", ARG2, 3*sizeof(Addr) );
-//zz       break;
-//zz 
-//zz    case VKI_SYS_BIND:
-//zz      /* int bind(int sockfd, struct sockaddr *my_addr,
-//zz 	int addrlen); */
-//zz       PRE_MEM_READ( "socketcall.bind(args)", ARG2, 3*sizeof(Addr) );
-//zz       ML_(generic_PRE_sys_bind)( tid, ARG2_0, ARG2_1, ARG2_2 );
-//zz       break;
-//zz 
-//zz    case VKI_SYS_LISTEN:
-//zz      /* int listen(int s, int backlog); */
-//zz       PRE_MEM_READ( "socketcall.listen(args)", ARG2, 2*sizeof(Addr) );
-//zz       break;
-//zz 
-//zz    case VKI_SYS_ACCEPT: {
-//zz      /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-//zz       PRE_MEM_READ( "socketcall.accept(args)", ARG2, 3*sizeof(Addr) );
-//zz       ML_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
-//zz       break;
-//zz    }
-//zz 
-//zz    case VKI_SYS_SENDTO:
-//zz      /* int sendto(int s, const void *msg, int len,
-//zz                     unsigned int flags,
-//zz                     const struct sockaddr *to, int tolen); */
-//zz      PRE_MEM_READ( "socketcall.sendto(args)", ARG2, 6*sizeof(Addr) );
-//zz      ML_(generic_PRE_sys_sendto)( tid, ARG2_0, ARG2_1, ARG2_2,
-//zz 				  ARG2_3, ARG2_4, ARG2_5 );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_SEND:
-//zz      /* int send(int s, const void *msg, size_t len, int flags); */
-//zz      PRE_MEM_READ( "socketcall.send(args)", ARG2, 4*sizeof(Addr) );
-//zz      ML_(generic_PRE_sys_send)( tid, ARG2_0, ARG2_1, ARG2_2 );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_RECVFROM:
-//zz      /* int recvfrom(int s, void *buf, int len, unsigned int flags,
-//zz 	struct sockaddr *from, int *fromlen); */
-//zz      PRE_MEM_READ( "socketcall.recvfrom(args)", ARG2, 6*sizeof(Addr) );
-//zz      ML_(generic_PRE_sys_recvfrom)( tid, ARG2_0, ARG2_1, ARG2_2,
-//zz 				    ARG2_3, ARG2_4, ARG2_5 );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_RECV:
-//zz      /* int recv(int s, void *buf, int len, unsigned int flags); */
-//zz      /* man 2 recv says:
-//zz          The  recv call is normally used only on a connected socket
-//zz          (see connect(2)) and is identical to recvfrom with a  NULL
-//zz          from parameter.
-//zz      */
-//zz      PRE_MEM_READ( "socketcall.recv(args)", ARG2, 4*sizeof(Addr) );
-//zz      ML_(generic_PRE_sys_recv)( tid, ARG2_0, ARG2_1, ARG2_2 );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_CONNECT:
-//zz      /* int connect(int sockfd,
-//zz 	struct sockaddr *serv_addr, int addrlen ); */
-//zz      PRE_MEM_READ( "socketcall.connect(args)", ARG2, 3*sizeof(Addr) );
-//zz      ML_(generic_PRE_sys_connect)( tid, ARG2_0, ARG2_1, ARG2_2 );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_SETSOCKOPT:
-//zz      /* int setsockopt(int s, int level, int optname,
-//zz 	const void *optval, int optlen); */
-//zz      PRE_MEM_READ( "socketcall.setsockopt(args)", ARG2, 5*sizeof(Addr) );
-//zz      ML_(generic_PRE_sys_setsockopt)( tid, ARG2_0, ARG2_1, ARG2_2,
-//zz 				      ARG2_3, ARG2_4 );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_GETSOCKOPT:
-//zz      /* int getsockopt(int s, int level, int optname,
-//zz 	void *optval, socklen_t *optlen); */
-//zz      PRE_MEM_READ( "socketcall.getsockopt(args)", ARG2, 5*sizeof(Addr) );
-//zz      ML_(generic_PRE_sys_getsockopt)( tid, ARG2_0, ARG2_1, ARG2_2,
-//zz 				      ARG2_3, ARG2_4 );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_GETSOCKNAME:
-//zz      /* int getsockname(int s, struct sockaddr* name, int* namelen) */
-//zz      PRE_MEM_READ( "socketcall.getsockname(args)", ARG2, 3*sizeof(Addr) );
-//zz      ML_(generic_PRE_sys_getsockname)( tid, ARG2_0, ARG2_1, ARG2_2 );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_GETPEERNAME:
-//zz      /* int getpeername(int s, struct sockaddr* name, int* namelen) */
-//zz      PRE_MEM_READ( "socketcall.getpeername(args)", ARG2, 3*sizeof(Addr) );
-//zz      ML_(generic_PRE_sys_getpeername)( tid, ARG2_0, ARG2_1, ARG2_2 );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_SHUTDOWN:
-//zz      /* int shutdown(int s, int how); */
-//zz      PRE_MEM_READ( "socketcall.shutdown(args)", ARG2, 2*sizeof(Addr) );
-//zz      break;
-//zz 
-//zz    case VKI_SYS_SENDMSG: {
-//zz      /* int sendmsg(int s, const struct msghdr *msg, int flags); */
-//zz 
-//zz      /* this causes warnings, and I don't get why. glibc bug?
-//zz       * (after all it's glibc providing the arguments array)
-//zz        PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
-//zz      */
-//zz      ML_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
-//zz      break;
-//zz    }
-//zz 
-//zz    case VKI_SYS_RECVMSG: {
-//zz      /* int recvmsg(int s, struct msghdr *msg, int flags); */
-//zz 
-//zz      /* this causes warnings, and I don't get why. glibc bug?
-//zz       * (after all it's glibc providing the arguments array)
-//zz        PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
-//zz      */
-//zz      ML_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
-//zz      break;
-//zz    }
-//zz 
-//zz    default:
-//zz      VG_(message)(Vg_DebugMsg,"Warning: unhandled socketcall 0x%x",ARG1);
-//zz      SET_STATUS_Failure( VKI_EINVAL );
-//zz      break;
-//zz    }
-//zz #  undef ARG2_0
-//zz #  undef ARG2_1
-//zz #  undef ARG2_2
-//zz #  undef ARG2_3
-//zz #  undef ARG2_4
-//zz #  undef ARG2_5
-//zz }
-//zz 
-//zz POST(sys_socketcall)
-//zz {
-//zz #  define ARG2_0  (((UWord*)ARG2)[0])
-//zz #  define ARG2_1  (((UWord*)ARG2)[1])
-//zz #  define ARG2_2  (((UWord*)ARG2)[2])
-//zz #  define ARG2_3  (((UWord*)ARG2)[3])
-//zz #  define ARG2_4  (((UWord*)ARG2)[4])
-//zz #  define ARG2_5  (((UWord*)ARG2)[5])
-//zz 
-//zz   SysRes r;
-//zz   vg_assert(SUCCESS);
-//zz   switch (ARG1 /* request */) {
-//zz 
-//zz   case VKI_SYS_SOCKETPAIR:
-//zz     r = ML_(generic_POST_sys_socketpair)(
-//zz 					 tid, VG_(mk_SysRes_Success)(RES),
-//zz 					 ARG2_0, ARG2_1, ARG2_2, ARG2_3
-//zz 					 );
-//zz     SET_STATUS_from_SysRes(r);
-//zz     break;
-//zz 
-//zz   case VKI_SYS_SOCKET:
-//zz     r = ML_(generic_POST_sys_socket)( tid, VG_(mk_SysRes_Success)(RES) );
-//zz     SET_STATUS_from_SysRes(r);
-//zz     break;
-//zz 
-//zz   case VKI_SYS_BIND:
-//zz     /* int bind(int sockfd, struct sockaddr *my_addr,
-//zz        int addrlen); */
-//zz     break;
-//zz 
-//zz   case VKI_SYS_LISTEN:
-//zz     /* int listen(int s, int backlog); */
-//zz     break;
-//zz 
-//zz   case VKI_SYS_ACCEPT:
-//zz     /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-//zz     r = ML_(generic_POST_sys_accept)( tid, VG_(mk_SysRes_Success)(RES),
-//zz 				      ARG2_0, ARG2_1, ARG2_2 );
-//zz     SET_STATUS_from_SysRes(r);
-//zz     break;
-//zz 
-//zz   case VKI_SYS_SENDTO:
-//zz     break;
-//zz 
-//zz   case VKI_SYS_SEND:
-//zz     break;
-//zz 
-//zz   case VKI_SYS_RECVFROM:
-//zz     ML_(generic_POST_sys_recvfrom)( tid, VG_(mk_SysRes_Success)(RES),
-//zz 				    ARG2_0, ARG2_1, ARG2_2,
-//zz 				    ARG2_3, ARG2_4, ARG2_5 );
-//zz     break;
-//zz 
-//zz   case VKI_SYS_RECV:
-//zz     ML_(generic_POST_sys_recv)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
-//zz     break;
-//zz 
-//zz   case VKI_SYS_CONNECT:
-//zz     break;
-//zz 
-//zz   case VKI_SYS_SETSOCKOPT:
-//zz     break;
-//zz 
-//zz   case VKI_SYS_GETSOCKOPT:
-//zz     ML_(generic_POST_sys_getsockopt)( tid, VG_(mk_SysRes_Success)(RES),
-//zz 				      ARG2_0, ARG2_1,
-//zz 				      ARG2_2, ARG2_3, ARG2_4 );
-//zz     break;
-//zz 
-//zz   case VKI_SYS_GETSOCKNAME:
-//zz     ML_(generic_POST_sys_getsockname)( tid, VG_(mk_SysRes_Success)(RES),
-//zz 				       ARG2_0, ARG2_1, ARG2_2 );
-//zz     break;
-//zz 
-//zz   case VKI_SYS_GETPEERNAME:
-//zz     ML_(generic_POST_sys_getpeername)( tid, VG_(mk_SysRes_Success)(RES),
-//zz 				       ARG2_0, ARG2_1, ARG2_2 );
-//zz     break;
-//zz 
-//zz   case VKI_SYS_SHUTDOWN:
-//zz     break;
-//zz 
-//zz   case VKI_SYS_SENDMSG:
-//zz     break;
-//zz 
-//zz   case VKI_SYS_RECVMSG:
-//zz     ML_(generic_POST_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
-//zz     break;
-//zz 
-//zz   default:
-//zz     VG_(message)(Vg_DebugMsg,"FATAL: unhandled socketcall 0x%x",ARG1);
-//zz     VG_(core_panic)("... bye!\n");
-//zz     break; /*NOTREACHED*/
-//zz   }
-//zz #  undef ARG2_0
-//zz #  undef ARG2_1
-//zz #  undef ARG2_2
-//zz #  undef ARG2_3
-//zz #  undef ARG2_4
-//zz #  undef ARG2_5
-//zz }
+
+PRE(sys_socketcall)
+{
+#  define ARG2_0  (((UWord*)ARG2)[0])
+#  define ARG2_1  (((UWord*)ARG2)[1])
+#  define ARG2_2  (((UWord*)ARG2)[2])
+#  define ARG2_3  (((UWord*)ARG2)[3])
+#  define ARG2_4  (((UWord*)ARG2)[4])
+#  define ARG2_5  (((UWord*)ARG2)[5])
+
+   *flags |= SfMayBlock;
+   PRINT("sys_socketcall ( %d, %p )",ARG1,ARG2);
+   PRE_REG_READ2(long, "socketcall", int, call, unsigned long *, args);
+
+   switch (ARG1 /* request */) {
+
+   case VKI_SYS_SOCKETPAIR:
+     /* int socketpair(int d, int type, int protocol, int sv[2]); */
+      PRE_MEM_READ( "socketcall.socketpair(args)", ARG2, 4*sizeof(Addr) );
+      ML_(generic_PRE_sys_socketpair)( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
+      break;
+
+   case VKI_SYS_SOCKET:
+     /* int socket(int domain, int type, int protocol); */
+      PRE_MEM_READ( "socketcall.socket(args)", ARG2, 3*sizeof(Addr) );
+      break;
+
+   case VKI_SYS_BIND:
+     /* int bind(int sockfd, struct sockaddr *my_addr,
+	int addrlen); */
+      PRE_MEM_READ( "socketcall.bind(args)", ARG2, 3*sizeof(Addr) );
+      ML_(generic_PRE_sys_bind)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      break;
+
+   case VKI_SYS_LISTEN:
+     /* int listen(int s, int backlog); */
+      PRE_MEM_READ( "socketcall.listen(args)", ARG2, 2*sizeof(Addr) );
+      break;
+
+   case VKI_SYS_ACCEPT: {
+     /* int accept(int s, struct sockaddr *addr, int *addrlen); */
+      PRE_MEM_READ( "socketcall.accept(args)", ARG2, 3*sizeof(Addr) );
+      ML_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      break;
+   }
+
+   case VKI_SYS_SENDTO:
+     /* int sendto(int s, const void *msg, int len,
+                    unsigned int flags,
+                    const struct sockaddr *to, int tolen); */
+     PRE_MEM_READ( "socketcall.sendto(args)", ARG2, 6*sizeof(Addr) );
+     ML_(generic_PRE_sys_sendto)( tid, ARG2_0, ARG2_1, ARG2_2,
+				  ARG2_3, ARG2_4, ARG2_5 );
+     break;
+
+   case VKI_SYS_SEND:
+     /* int send(int s, const void *msg, size_t len, int flags); */
+     PRE_MEM_READ( "socketcall.send(args)", ARG2, 4*sizeof(Addr) );
+     ML_(generic_PRE_sys_send)( tid, ARG2_0, ARG2_1, ARG2_2 );
+     break;
+
+   case VKI_SYS_RECVFROM:
+     /* int recvfrom(int s, void *buf, int len, unsigned int flags,
+	struct sockaddr *from, int *fromlen); */
+     PRE_MEM_READ( "socketcall.recvfrom(args)", ARG2, 6*sizeof(Addr) );
+     ML_(generic_PRE_sys_recvfrom)( tid, ARG2_0, ARG2_1, ARG2_2,
+				    ARG2_3, ARG2_4, ARG2_5 );
+     break;
+
+   case VKI_SYS_RECV:
+     /* int recv(int s, void *buf, int len, unsigned int flags); */
+     /* man 2 recv says:
+         The  recv call is normally used only on a connected socket
+         (see connect(2)) and is identical to recvfrom with a  NULL
+         from parameter.
+     */
+     PRE_MEM_READ( "socketcall.recv(args)", ARG2, 4*sizeof(Addr) );
+     ML_(generic_PRE_sys_recv)( tid, ARG2_0, ARG2_1, ARG2_2 );
+     break;
+
+   case VKI_SYS_CONNECT:
+     /* int connect(int sockfd,
+	struct sockaddr *serv_addr, int addrlen ); */
+     PRE_MEM_READ( "socketcall.connect(args)", ARG2, 3*sizeof(Addr) );
+     ML_(generic_PRE_sys_connect)( tid, ARG2_0, ARG2_1, ARG2_2 );
+     break;
+
+   case VKI_SYS_SETSOCKOPT:
+     /* int setsockopt(int s, int level, int optname,
+	const void *optval, int optlen); */
+     PRE_MEM_READ( "socketcall.setsockopt(args)", ARG2, 5*sizeof(Addr) );
+     ML_(generic_PRE_sys_setsockopt)( tid, ARG2_0, ARG2_1, ARG2_2,
+				      ARG2_3, ARG2_4 );
+     break;
+
+   case VKI_SYS_GETSOCKOPT:
+     /* int getsockopt(int s, int level, int optname,
+	void *optval, socklen_t *optlen); */
+     PRE_MEM_READ( "socketcall.getsockopt(args)", ARG2, 5*sizeof(Addr) );
+     ML_(generic_PRE_sys_getsockopt)( tid, ARG2_0, ARG2_1, ARG2_2,
+				      ARG2_3, ARG2_4 );
+     break;
+
+   case VKI_SYS_GETSOCKNAME:
+     /* int getsockname(int s, struct sockaddr* name, int* namelen) */
+     PRE_MEM_READ( "socketcall.getsockname(args)", ARG2, 3*sizeof(Addr) );
+     ML_(generic_PRE_sys_getsockname)( tid, ARG2_0, ARG2_1, ARG2_2 );
+     break;
+
+   case VKI_SYS_GETPEERNAME:
+     /* int getpeername(int s, struct sockaddr* name, int* namelen) */
+     PRE_MEM_READ( "socketcall.getpeername(args)", ARG2, 3*sizeof(Addr) );
+     ML_(generic_PRE_sys_getpeername)( tid, ARG2_0, ARG2_1, ARG2_2 );
+     break;
+
+   case VKI_SYS_SHUTDOWN:
+     /* int shutdown(int s, int how); */
+     PRE_MEM_READ( "socketcall.shutdown(args)", ARG2, 2*sizeof(Addr) );
+     break;
+
+   case VKI_SYS_SENDMSG: {
+     /* int sendmsg(int s, const struct msghdr *msg, int flags); */
+
+     /* this causes warnings, and I don't get why. glibc bug?
+      * (after all it's glibc providing the arguments array)
+       PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
+     */
+     ML_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
+     break;
+   }
+
+   case VKI_SYS_RECVMSG: {
+     /* int recvmsg(int s, struct msghdr *msg, int flags); */
+
+     /* this causes warnings, and I don't get why. glibc bug?
+      * (after all it's glibc providing the arguments array)
+       PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
+     */
+     ML_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+     break;
+   }
+
+   default:
+     VG_(message)(Vg_DebugMsg,"Warning: unhandled socketcall 0x%x",ARG1);
+     SET_STATUS_Failure( VKI_EINVAL );
+     break;
+   }
+#  undef ARG2_0
+#  undef ARG2_1
+#  undef ARG2_2
+#  undef ARG2_3
+#  undef ARG2_4
+#  undef ARG2_5
+}
+
+POST(sys_socketcall)
+{
+#  define ARG2_0  (((UWord*)ARG2)[0])
+#  define ARG2_1  (((UWord*)ARG2)[1])
+#  define ARG2_2  (((UWord*)ARG2)[2])
+#  define ARG2_3  (((UWord*)ARG2)[3])
+#  define ARG2_4  (((UWord*)ARG2)[4])
+#  define ARG2_5  (((UWord*)ARG2)[5])
+
+  SysRes r;
+  vg_assert(SUCCESS);
+  switch (ARG1 /* request */) {
+
+  case VKI_SYS_SOCKETPAIR:
+    r = ML_(generic_POST_sys_socketpair)(
+					 tid, VG_(mk_SysRes_Success)(RES),
+					 ARG2_0, ARG2_1, ARG2_2, ARG2_3
+					 );
+    SET_STATUS_from_SysRes(r);
+    break;
+
+  case VKI_SYS_SOCKET:
+    r = ML_(generic_POST_sys_socket)( tid, VG_(mk_SysRes_Success)(RES) );
+    SET_STATUS_from_SysRes(r);
+    break;
+
+  case VKI_SYS_BIND:
+    /* int bind(int sockfd, struct sockaddr *my_addr,
+       int addrlen); */
+    break;
+
+  case VKI_SYS_LISTEN:
+    /* int listen(int s, int backlog); */
+    break;
+
+  case VKI_SYS_ACCEPT:
+    /* int accept(int s, struct sockaddr *addr, int *addrlen); */
+    r = ML_(generic_POST_sys_accept)( tid, VG_(mk_SysRes_Success)(RES),
+				      ARG2_0, ARG2_1, ARG2_2 );
+    SET_STATUS_from_SysRes(r);
+    break;
+
+  case VKI_SYS_SENDTO:
+    break;
+
+  case VKI_SYS_SEND:
+    break;
+
+  case VKI_SYS_RECVFROM:
+    ML_(generic_POST_sys_recvfrom)( tid, VG_(mk_SysRes_Success)(RES),
+				    ARG2_0, ARG2_1, ARG2_2,
+				    ARG2_3, ARG2_4, ARG2_5 );
+    break;
+
+  case VKI_SYS_RECV:
+    ML_(generic_POST_sys_recv)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
+    break;
+
+  case VKI_SYS_CONNECT:
+    break;
+
+  case VKI_SYS_SETSOCKOPT:
+    break;
+
+  case VKI_SYS_GETSOCKOPT:
+    ML_(generic_POST_sys_getsockopt)( tid, VG_(mk_SysRes_Success)(RES),
+				      ARG2_0, ARG2_1,
+				      ARG2_2, ARG2_3, ARG2_4 );
+    break;
+
+  case VKI_SYS_GETSOCKNAME:
+    ML_(generic_POST_sys_getsockname)( tid, VG_(mk_SysRes_Success)(RES),
+				       ARG2_0, ARG2_1, ARG2_2 );
+    break;
+
+  case VKI_SYS_GETPEERNAME:
+    ML_(generic_POST_sys_getpeername)( tid, VG_(mk_SysRes_Success)(RES),
+				       ARG2_0, ARG2_1, ARG2_2 );
+    break;
+
+  case VKI_SYS_SHUTDOWN:
+    break;
+
+  case VKI_SYS_SENDMSG:
+    break;
+
+  case VKI_SYS_RECVMSG:
+    ML_(generic_POST_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+    break;
+
+  default:
+    VG_(message)(Vg_DebugMsg,"FATAL: unhandled socketcall 0x%x",ARG1);
+    VG_(core_panic)("... bye!\n");
+    break; /*NOTREACHED*/
+  }
+#  undef ARG2_0
+#  undef ARG2_1
+#  undef ARG2_2
+#  undef ARG2_3
+#  undef ARG2_4
+#  undef ARG2_5
+}
 
 PRE(sys_mmap)
 {
@@ -1182,12 +1182,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENXY(__NR_open,              sys_open),               //   5
    GENXY(__NR_close,             sys_close),              //   6
-// _____(__NR_waitpid,           sys_waitpid),            //   7
-// _____(__NR_creat,             sys_creat),              //   8
+   GENXY(__NR_waitpid,           sys_waitpid),            //   7
+   GENXY(__NR_creat,             sys_creat),              //   8
 // _____(__NR_link,              sys_link),               //   9
 
    GENX_(__NR_unlink,            sys_unlink),             //  10
-// _____(__NR_execve,            sys_execve),             //  11
+   GENX_(__NR_execve,            sys_execve),             //  11
 // _____(__NR_chdir,             sys_chdir),              //  12
 // _____(__NR_time,              sys_time),               //  13
 // _____(__NR_mknod,             sys_mknod),              //  14
@@ -1198,7 +1198,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_oldstat,           sys_oldstat),            //  18
 // _____(__NR_lseek,             sys_lseek),              //  19
 
-// _____(__NR_getpid,            sys_getpid),             //  20
+   GENX_(__NR_getpid,            sys_getpid),             //  20
 // _____(__NR_mount,             sys_mount),              //  21
 // _____(__NR_umount,            sys_umount),             //  22
 // _____(__NR_setuid,            sys_setuid),             //  23
@@ -1208,7 +1208,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_ptrace,            sys_ptrace),             //  26
 // _____(__NR_alarm,             sys_alarm),              //  27
 // _____(__NR_oldfstat,          sys_oldfstat),           //  28
-// _____(__NR_pause,             sys_pause),              //  29
+   GENX_(__NR_pause,             sys_pause),              //  29
 
    LINX_(__NR_utime,             sys_utime),              //  30
 // _____(__NR_stty,              sys_stty),               //  31
@@ -1218,12 +1218,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_ftime,             sys_ftime),              //  35
 // _____(__NR_sync,              sys_sync),               //  36
-// _____(__NR_kill,              sys_kill),               //  37
+   GENX_(__NR_kill,              sys_kill),               //  37
 // _____(__NR_rename,            sys_rename),             //  38
 // _____(__NR_mkdir,             sys_mkdir),              //  39
 
 // _____(__NR_rmdir,             sys_rmdir),              //  40
-// _____(__NR_dup,               sys_dup),                //  41
+   GENXY(__NR_dup,               sys_dup),                //  41
 // _____(__NR_pipe,              sys_pipe),               //  42
 // _____(__NR_times,             sys_times),              //  43
 // _____(__NR_prof,              sys_prof),               //  44
@@ -1264,10 +1264,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_sigpending,        sys_sigpending),         //  73
 // _____(__NR_sethostname,       sys_sethostname),        //  74
 
-// _____(__NR_setrlimit,         sys_setrlimit),          //  75
+   GENX_(__NR_setrlimit,         sys_setrlimit),          //  75
 // _____(__NR_getrlimit,         sys_getrlimit),          //  76
 // _____(__NR_getrusage,         sys_getrusage),          //  77
-// _____(__NR_gettimeofday,      sys_gettimeofday),       //  78
+   GENXY(__NR_gettimeofday,      sys_gettimeofday),       //  78
 // _____(__NR_settimeofday,      sys_settimeofday),       //  79
 
 // _____(__NR_getgroups,         sys_getgroups),          //  80
@@ -1296,7 +1296,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_fstatfs,           sys_fstatfs),            // 100
 // _____(__NR_ioperm,            sys_ioperm),             // 101
-// _____(__NR_socketcall,        sys_socketcall),         // 102
+   PLAXY(__NR_socketcall,        sys_socketcall),         // 102
 // _____(__NR_syslog,            sys_syslog),             // 103
 // _____(__NR_setitimer,         sys_setitimer),          // 104
 
@@ -1310,7 +1310,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_vhangup,           sys_vhangup),            // 111
 // _____(__NR_idle,              sys_idle),               // 112
 // _____(__NR_vm86,              sys_vm86),               // 113
-// _____(__NR_wait4,             sys_wait4),              // 114
+   GENXY(__NR_wait4,             sys_wait4),              // 114
 
 // _____(__NR_swapoff,           sys_swapoff),            // 115
 // _____(__NR_sysinfo,           sys_sysinfo),            // 116
@@ -1369,12 +1369,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_sched_get_priority_min,  sys_sched_get_priority_min), // 160
 // _____(__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),  // 161
    GENXY(__NR_nanosleep,         sys_nanosleep),          // 162
-// _____(__NR_mremap,            sys_mremap),             // 163
+   GENX_(__NR_mremap,            sys_mremap),             // 163
 // _____(__NR_setresuid,         sys_setresuid),          // 164
 
 // _____(__NR_getresuid,         sys_getresuid),          // 165
 // _____(__NR_query_module,      sys_query_module),       // 166
-// _____(__NR_poll,              sys_poll),               // 167
+   GENXY(__NR_poll,              sys_poll),               // 167
 // _____(__NR_nfsservctl,        sys_nfsservctl),         // 168
 // _____(__NR_setresgid,         sys_setresgid),          // 169
 
@@ -1474,7 +1474,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_clock_nanosleep,   sys_clock_nanosleep),    // 248
 // _____(__NR_swapcontext,       sys_swapcontext),        // 249
 
-// _____(__NR_tgkill,            sys_tgkill),             // 250
+   LINXY(__NR_tgkill,            sys_tgkill),             // 250
 // _____(__NR_utimes,            sys_utimes),             // 251
 // _____(__NR_statfs64,          sys_statfs64),           // 252
 // _____(__NR_fstatfs64,         sys_fstatfs64),          // 253

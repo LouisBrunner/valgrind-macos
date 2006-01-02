@@ -1251,6 +1251,19 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //zz          return hi16;
 //zz       }
 
+      if (e->Iex.Binop.op == Iop_32HLto64) {
+         HReg   r_dst = newVRegI(env);
+         HReg   r_Hi  = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg   r_Lo  = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         vassert(mode64);
+         /* r_dst = OR( r_Hi<<32, r_Lo ) */
+         addInstr(env, PPCInstr_Shft(Pshft_SHL, False/*64bit shift*/,
+                                     r_dst, r_Hi, PPCRH_Imm(False,32)));
+         addInstr(env, PPCInstr_Alu( Palu_OR, r_dst, r_dst,
+                                     PPCRH_Reg(r_Lo) ));
+         return r_dst;
+      }
+
 //..       if (e->Iex.Binop.op == Iop_MullS16 || e->Iex.Binop.op == Iop_MullS8
 //..           || e->Iex.Binop.op == Iop_MullU16 || e->Iex.Binop.op == Iop_MullU8) {
 //..          HReg a16   = newVRegI32(env);
@@ -1645,9 +1658,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
       case Iop_V128to64:
       case Iop_V128HIto64: {
-         HReg        r_aligned16;
-         HReg        dst  = newVRegI(env);
-         HReg        vec  = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg     r_aligned16;
+         HReg     dst = newVRegI(env);
+         HReg     vec = iselVecExpr(env, e->Iex.Unop.arg);
          PPCAMode *am_off0, *am_off8;
          vassert(mode64);
          sub_from_sp( env, 32 );     // Move SP down 32 bytes
@@ -3804,9 +3817,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //.. 
       case Iop_64HLtoV128: {
          if (!mode64) {
-            HReg r3, r2, r1, r0, r_aligned16;
+            HReg     r3, r2, r1, r0, r_aligned16;
             PPCAMode *am_off0, *am_off4, *am_off8, *am_off12;
-            HReg        dst = newVRegV(env);
+            HReg     dst = newVRegV(env);
             /* do this via the stack (easy, convenient, etc) */
             sub_from_sp( env, 32 );        // Move SP down
             
@@ -3832,8 +3845,28 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
             add_to_sp( env, 32 );          // Reset SP
             return dst;
          } else {
-            // TODO
-            vassert(0);
+            HReg     rHi = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            HReg     rLo = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            HReg     dst = newVRegV(env);
+            HReg     r_aligned16;
+            PPCAMode *am_off0, *am_off8;
+            /* do this via the stack (easy, convenient, etc) */
+            sub_from_sp( env, 32 );        // Move SP down
+            
+            // get a quadword aligned address within our stack space
+            r_aligned16 = get_sp_aligned16( env );
+            am_off0  = PPCAMode_IR( 0,  r_aligned16 );
+            am_off8  = PPCAMode_IR( 8,  r_aligned16 );
+            
+            /* Store 2*I64 to stack */
+            addInstr(env, PPCInstr_Store( 8, am_off0, rHi, mode64 ));
+            addInstr(env, PPCInstr_Store( 8, am_off8, rLo, mode64 ));
+
+            /* Fetch result back from stack. */
+            addInstr(env, PPCInstr_AvLdSt(True/*ld*/, 16, dst, am_off0));
+            
+            add_to_sp( env, 32 );          // Reset SP
+            return dst;
          }
       }
 

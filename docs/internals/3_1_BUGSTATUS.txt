@@ -8,7 +8,7 @@ TRUNK    31BRANCH   BUG#     WHAT
 
 v5262     v5446     n-i-bz   fsub 3,3,3 in ppc32 dispatcher doesn't clear NaNs
 v5270     v5447     n-i-bz   ppc32: __NR_{set,get}priority
-v5470     pending   117332   missing line info with icc 8.1 (x86)
+v5470     v5479     117332   missing line info with icc 8.1 (x86)
 pending   pending   117362   partially defined equality
 pending   pending   117366   amd64: 0xDD 0x7C fnstsw
 pending   pending   117367   amd64: 0xD9 0xF4 fxtract
@@ -24,11 +24,11 @@ pending   pending   118274   amd64: 0xDD #7 (fnsave)
 pending   pending   118466   add %r,%r mishandled by memcheck
 pending   pending   n-i-bz   VALGRIND_COUNT_LEAKS arg types (Olly Betts)
 v5429     v5450     n-i-bz   memcheck/tests/mempool reads freed memory
-v5366/67/70 pending n-i-bz   AshleyP's custom-allocator assertion
+v5366/67/70 v5480   n-i-bz   AshleyP's custom-allocator assertion
 vx1501    vx1516    n-i-bz   Dirk strict-aliasing stuff
 v5368     v5448     n-i-bz   More space for debugger cmd line (Dan Thaler)
 v5378/80  v5379/81  n-i-bz   Clarified leak checker output message
-v5382     pending   n-i-bz   AshleyP's --gen-suppressions output fix
+v5382     v5481     n-i-bz   AshleyP's --gen-suppressions output fix
 v5384     wontfix   117096   Weird errors when --log-fd= has invalid value
 v5396     v5449     n-i-bz   cg_annotate's --sort option broken 
                              (TODO: VERIFY 31BRANCH)

@@ -41,6 +41,7 @@
 
 void ML_(sema_init)(vg_sema_t *sema)
 {
+   Int res;
    VG_(pipe)(sema->pipe);
    sema->pipe[0] = VG_(safe_fd)(sema->pipe[0]);
    sema->pipe[1] = VG_(safe_fd)(sema->pipe[1]);
@@ -48,7 +49,8 @@ void ML_(sema_init)(vg_sema_t *sema)
    sema->owner_thread = -1;
 
    /* create initial token */
-   VG_(write)(sema->pipe[1], "T", 1);
+   res = VG_(write)(sema->pipe[1], "T", 1);
+   vg_assert(res == 1);
 }
 
 void ML_(sema_deinit)(vg_sema_t *sema)
@@ -89,7 +91,6 @@ void ML_(sema_up)(vg_sema_t *sema)
    sema->owner_thread = 0;
 
    ret = VG_(write)(sema->pipe[1], "T", 1);
-
    vg_assert(ret == 1);
 }
 

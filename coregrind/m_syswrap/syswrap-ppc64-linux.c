@@ -140,6 +140,7 @@ asm(
             pid_t* parent_tid   in r8
             void* ???           in r9
 
+        Note: r3 contains fn ptr, not fn entry ptr -- needs toc deref
         System call requires:
 
             int    $__NR_clone  in r0  (sc number)
@@ -183,8 +184,8 @@ asm(
 "       mr      31,6\n"              // preserve arg
 
         // setup child stack
-"       rlwinm  4,4,0,~0xf\n"        // trim sp to multiple of 16 bytes
-"       li      0,0\n"
+"       rldicr  4,4, 0,59\n"         // trim sp to multiple of 16 bytes
+"       li      0,0\n"               // (r4 &= ~0xF)
 "       stdu    0,-32(4)\n"          // make initial stack frame
 "       mr      29,4\n"              // preserve sp
 
@@ -193,7 +194,7 @@ asm(
 "       mr      3,5\n"               // syscall arg1: flags
         // r4 already setup          // syscall arg2: child_stack
 "       mr      5,8\n"               // syscall arg3: parent_tid
-"       mr      6,2\n"               // syscall arg4: REAL THREAD tls
+"       mr      6,13\n"              // syscall arg4: REAL THREAD tls
 "       mr      7,7\n"               // syscall arg5: child_tid
 "       mr      8,8\n"               // syscall arg6: ????
 "       mr      9,9\n"               // syscall arg7: ????
@@ -201,15 +202,15 @@ asm(
 "       sc\n"                        // clone()
 
 "       mfcr    4\n"                 // CR now in low half r4
-"       slwi    4,4,16\n"
-"       slwi    4,4,16\n"            // CR now in hi half r4
+"       sldi    4,4,16\n"
+"       sldi    4,4,16\n"            // CR now in hi half r4
 
-"       slwi    3,3,16\n"
-"       slwi    3,3,16\n"
-"       srwi    3,3,16\n"
-"       srwi    3,3,16\n"            // zero out hi half r3
+"       sldi    3,3,16\n"
+"       sldi    3,3,16\n"
+"       srdi    3,3,16\n"
+"       srdi    3,3,16\n"            // zero out hi half r3
 
-"       and     3,3,4\n"             // r3 = CR : syscall-retval
+"       or      3,3,4\n"             // r3 = CR : syscall-retval
 "       cmpwi   3,0\n"               // child if retval == 0 (note, cmpw)
 "       bne     1f\n"                // jump if !child
 
@@ -219,6 +220,7 @@ asm(
            That does leave a small window for a signal to be delivered
            on the wrong stack, unfortunately. */
 "       mr      1,29\n"
+"       ld      30, 0(30)\n"         // convert fn ptr to fn entry
 "       mtctr   30\n"                // ctr reg = fn
 "       mr      3,31\n"              // r3 = arg
 "       bctrl\n"                     // call fn()
@@ -354,13 +356,15 @@ static SysRes do_clone ( ThreadId ptid,
 
    /* Create the new thread */
    word64 = do_syscall_clone_ppc64_linux(
-               ML_(start_thread_NORETURN), stack, flags, &VG_(threads)[ctid],
+               ML_(start_thread_NORETURN),
+               stack, flags, &VG_(threads)[ctid],
                child_tidptr, parent_tidptr, NULL
             );
+
    /* Low half word64 is syscall return value.  Hi half is
       the entire CR, from which we need to extract CR0.SO. */
    /* VG_(printf)("word64 = 0x%llx\n", word64); */
-   res = VG_(mk_SysRes_ppc32_linux)( 
+   res = VG_(mk_SysRes_ppc64_linux)( 
             /*val*/(UInt)(word64 & 0xFFFFFFFFULL), 
             /*errflag*/ (UInt)((word64 >> (32+28)) & 1)
          );
@@ -416,7 +420,7 @@ DECL_TEMPLATE(ppc64_linux, sys_mmap);
 //zz DECL_TEMPLATE(ppc64_linux, sys_lstat64);
 //zz DECL_TEMPLATE(ppc64_linux, sys_fstat64);
 //zz DECL_TEMPLATE(ppc64_linux, sys_ipc);
-//zz DECL_TEMPLATE(ppc64_linux, sys_clone);
+DECL_TEMPLATE(ppc64_linux, sys_clone);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigreturn);
 //zz DECL_TEMPLATE(ppc64_linux, sys_rt_sigreturn);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigaction);
@@ -912,92 +916,92 @@ PRE(sys_mmap)
 //zz     break; /*NOTREACHED*/
 //zz   }
 //zz }
-//zz 
-//zz PRE(sys_clone)
-//zz {
-//zz    UInt cloneflags;
-//zz 
-//zz    PRINT("sys_clone ( %x, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
-//zz    PRE_REG_READ5(int, "clone",
-//zz                  unsigned long, flags,
-//zz                  void *,        child_stack,
-//zz                  int *,         parent_tidptr,
-//zz                  void *,        child_tls,
-//zz                  int *,         child_tidptr);
-//zz 
-//zz    if (ARG1 & VKI_CLONE_PARENT_SETTID) {
-//zz       PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
-//zz       if (!VG_(am_is_valid_for_client)(ARG3, sizeof(Int), 
-//zz                                              VKI_PROT_WRITE)) {
-//zz          SET_STATUS_Failure( VKI_EFAULT );
-//zz          return;
-//zz       }
-//zz    }
-//zz    if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
-//zz       PRE_MEM_WRITE("clone(child_tidptr)", ARG5, sizeof(Int));
-//zz       if (!VG_(am_is_valid_for_client)(ARG5, sizeof(Int), 
-//zz                                              VKI_PROT_WRITE)) {
-//zz          SET_STATUS_Failure( VKI_EFAULT );
-//zz          return;
-//zz       }
-//zz    }
-//zz 
-//zz    cloneflags = ARG1;
-//zz 
-//zz    if (!ML_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
-//zz       SET_STATUS_Failure( VKI_EINVAL );
-//zz       return;
-//zz    }
-//zz 
-//zz    /* Only look at the flags we really care about */
-//zz    switch (cloneflags & (VKI_CLONE_VM | VKI_CLONE_FS 
-//zz                          | VKI_CLONE_FILES | VKI_CLONE_VFORK)) {
-//zz    case VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES:
-//zz       /* thread creation */
-//zz       SET_STATUS_from_SysRes(
-//zz          do_clone(tid,
-//zz                   ARG1,         /* flags */
-//zz                   (Addr)ARG2,   /* child SP */
-//zz                   (Int *)ARG3,  /* parent_tidptr */
-//zz                   (Int *)ARG5,  /* child_tidptr */
-//zz                   (Addr)ARG4)); /* child_tls */
-//zz       break;
-//zz 
-//zz    case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
-//zz       /* FALLTHROUGH - assume vfork == fork */
-//zz       cloneflags &= ~(VKI_CLONE_VFORK | VKI_CLONE_VM);
-//zz 
-//zz    case 0: /* plain fork */
-//zz       SET_STATUS_from_SysRes(
-//zz          ML_(do_fork_clone)(tid,
-//zz                        cloneflags,      /* flags */
-//zz                        (Int *)ARG3,     /* parent_tidptr */
-//zz                        (Int *)ARG5));   /* child_tidptr */
-//zz       break;
-//zz 
-//zz    default:
-//zz       /* should we just ENOSYS? */
-//zz       VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%x", ARG1);
-//zz       VG_(message)(Vg_UserMsg, "");
-//zz       VG_(message)(Vg_UserMsg, "The only supported clone() uses are:");
-//zz       VG_(message)(Vg_UserMsg, " - via a threads library (LinuxThreads or NPTL)");
-//zz       VG_(message)(Vg_UserMsg, " - via the implementation of fork or vfork");
-//zz       VG_(unimplemented)
-//zz          ("Valgrind does not support general clone().");
-//zz    }
-//zz 
-//zz    if (SUCCESS) {
-//zz       if (ARG1 & VKI_CLONE_PARENT_SETTID)
-//zz          POST_MEM_WRITE(ARG3, sizeof(Int));
-//zz       if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID))
-//zz          POST_MEM_WRITE(ARG5, sizeof(Int));
-//zz 
-//zz       /* Thread creation was successful; let the child have the chance
-//zz          to run */
-//zz       *flags |= SfYieldAfter;
-//zz    }
-//zz }
-//zz 
+
+PRE(sys_clone)
+{
+   UInt cloneflags;
+
+   PRINT("sys_clone ( %x, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(int, "clone",
+                 unsigned long, flags,
+                 void *,        child_stack,
+                 int *,         parent_tidptr,
+                 void *,        child_tls,
+                 int *,         child_tidptr);
+
+   if (ARG1 & VKI_CLONE_PARENT_SETTID) {
+      PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
+      if (!VG_(am_is_valid_for_client)(ARG3, sizeof(Int), 
+                                             VKI_PROT_WRITE)) {
+         SET_STATUS_Failure( VKI_EFAULT );
+         return;
+      }
+   }
+   if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
+      PRE_MEM_WRITE("clone(child_tidptr)", ARG5, sizeof(Int));
+      if (!VG_(am_is_valid_for_client)(ARG5, sizeof(Int), 
+                                             VKI_PROT_WRITE)) {
+         SET_STATUS_Failure( VKI_EFAULT );
+         return;
+      }
+   }
+
+   cloneflags = ARG1;
+
+   if (!ML_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
+   }
+
+   /* Only look at the flags we really care about */
+   switch (cloneflags & (VKI_CLONE_VM | VKI_CLONE_FS 
+                         | VKI_CLONE_FILES | VKI_CLONE_VFORK)) {
+   case VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES:
+      /* thread creation */
+      SET_STATUS_from_SysRes(
+         do_clone(tid,
+                  ARG1,         /* flags */
+                  (Addr)ARG2,   /* child SP */
+                  (Int *)ARG3,  /* parent_tidptr */
+                  (Int *)ARG5,  /* child_tidptr */
+                  (Addr)ARG4)); /* child_tls */
+      break;
+
+   case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
+      /* FALLTHROUGH - assume vfork == fork */
+      cloneflags &= ~(VKI_CLONE_VFORK | VKI_CLONE_VM);
+
+   case 0: /* plain fork */
+      SET_STATUS_from_SysRes(
+         ML_(do_fork_clone)(tid,
+                       cloneflags,      /* flags */
+                       (Int *)ARG3,     /* parent_tidptr */
+                       (Int *)ARG5));   /* child_tidptr */
+      break;
+
+   default:
+      /* should we just ENOSYS? */
+      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%x", ARG1);
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "The only supported clone() uses are:");
+      VG_(message)(Vg_UserMsg, " - via a threads library (LinuxThreads or NPTL)");
+      VG_(message)(Vg_UserMsg, " - via the implementation of fork or vfork");
+      VG_(unimplemented)
+         ("Valgrind does not support general clone().");
+   }
+
+   if (SUCCESS) {
+      if (ARG1 & VKI_CLONE_PARENT_SETTID)
+         POST_MEM_WRITE(ARG3, sizeof(Int));
+      if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID))
+         POST_MEM_WRITE(ARG5, sizeof(Int));
+
+      /* Thread creation was successful; let the child have the chance
+         to run */
+      *flags |= SfYieldAfter;
+   }
+}
+
 //zz PRE(sys_sigreturn)
 //zz {
 //zz    ThreadState* tst;
@@ -1314,7 +1318,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_fsync,             sys_fsync),              // 118
 // _____(__NR_sigreturn,         sys_sigreturn),          // 119
 
-// _____(__NR_clone,             sys_clone),              // 120
+   PLAX_(__NR_clone,             sys_clone),              // 120
 // _____(__NR_setdomainname,     sys_setdomainname),      // 121
    GENXY(__NR_uname,             sys_newuname),           // 122
 // _____(__NR_modify_ldt,        sys_modify_ldt),         // 123
@@ -1398,7 +1402,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_putpmsg,           sys_putpmsg),            // 188
 // _____(__NR_vfork,             sys_vfork),              // 189
 
-// _____(__NR_ugetrlimit,        sys_ugetrlimit),         // 190
+   GENXY(__NR_ugetrlimit,        sys_getrlimit),          // 190
 // _____(__NR_readahead,         sys_readahead),          // 191
 // /* #define __NR_mmap2           192     32bit only */
 // /* #define __NR_truncate64      193     32bit only */
@@ -1435,7 +1439,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_lremovexattr,      sys_lremovexattr),       // 219
 
 // _____(__NR_fremovexattr,      sys_fremovexattr),       // 220
-// _____(__NR_futex,             sys_futex),              // 221
+   LINXY(__NR_futex,             sys_futex),              // 221
 // _____(__NR_sched_setaffinity, sys_sched_setaffinity),  // 222
 // _____(__NR_sched_getaffinity, sys_sched_getaffinity),  // 223
 // /* 224 currently unused */
@@ -1448,7 +1452,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_io_submit,         sys_io_submit),          // 230
 // _____(__NR_io_cancel,         sys_io_cancel),          // 231
-// _____(__NR_set_tid_address,   sys_set_tid_address),    // 232
+   LINX_(__NR_set_tid_address,   sys_set_tid_address),    // 232
 // _____(__NR_fadvise64,         sys_fadvise64),          // 233
    LINX_(__NR_exit_group,        sys_exit_group),         // 234
 

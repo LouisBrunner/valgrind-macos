@@ -57,11 +57,11 @@ __attribute((regparm(2)))
 static UInt genericg_compute_adler32 ( HWord addr, HWord len );
 
 
-/* Disassemble a complete basic block, starting at guest_IP_start, 
+/* Disassemble a complete basic block, starting at guest_IP_bbstart, 
    returning a new IRBB.  The disassembler may chase across basic
    block boundaries if it wishes and if chase_into_ok allows it.
    The precise guest address ranges from which code has been taken
-   are written into vge.  guest_IP_start is taken to be the IP in
+   are written into vge.  guest_IP_bbstart is taken to be the IP in
    the guest's address space corresponding to the instruction at
    &guest_code[0].  
 
@@ -344,7 +344,11 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                    Ity_I32, 
                    2/*regparms*/, 
                    "genericg_compute_adler32",
+#if defined(__powerpc__) && defined(__powerpc64__)
+                   (void*)((ULong*)(&genericg_compute_adler32))[0],
+#else
                    &genericg_compute_adler32,
+#endif
                    mkIRExprVec_2( 
                       mkIRExpr_HWord( (HWord)guest_code ), 
                       mkIRExpr_HWord( (HWord)len2check )

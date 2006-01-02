@@ -78,9 +78,10 @@ SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
    return res;
 }
 
-SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong errflag ) {
+/* As per ppc32 version, cr0.so must be in l.s.b. of 2nd arg */
+SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
    SysRes res;
-   res.isError = errflag != 0;
+   res.isError = (cr0so & 1) != 0;
    res.val     = val;
    return res;
 }

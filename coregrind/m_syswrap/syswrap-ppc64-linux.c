@@ -140,7 +140,7 @@ asm(
             pid_t* parent_tid   in r8
             void* ???           in r9
 
-        Note: r3 contains fn ptr, not fn entry ptr -- needs toc deref
+        Note: r3 contains fn desc ptr, not fn ptr -- p_fn = p_fn_desc[0]
         System call requires:
 
             int    $__NR_clone  in r0  (sc number)
@@ -185,7 +185,8 @@ asm(
 
         // setup child stack
 "       rldicr  4,4, 0,59\n"         // trim sp to multiple of 16 bytes
-"       li      0,0\n"               // (r4 &= ~0xF)
+                                     // (r4 &= ~0xF)
+"       li      0,0\n"
 "       stdu    0,-32(4)\n"          // make initial stack frame
 "       mr      29,4\n"              // preserve sp
 
@@ -202,13 +203,10 @@ asm(
 "       sc\n"                        // clone()
 
 "       mfcr    4\n"                 // CR now in low half r4
-"       sldi    4,4,16\n"
-"       sldi    4,4,16\n"            // CR now in hi half r4
+"       sldi    4,4,32\n"            // CR now in hi half r4
 
-"       sldi    3,3,16\n"
-"       sldi    3,3,16\n"
-"       srdi    3,3,16\n"
-"       srdi    3,3,16\n"            // zero out hi half r3
+"       sldi    3,3,32\n"
+"       srdi    3,3,32\n"            // zero out hi half r3
 
 "       or      3,3,4\n"             // r3 = CR : syscall-retval
 "       cmpwi   3,0\n"               // child if retval == 0 (note, cmpw)
@@ -220,7 +218,7 @@ asm(
            That does leave a small window for a signal to be delivered
            on the wrong stack, unfortunately. */
 "       mr      1,29\n"
-"       ld      30, 0(30)\n"         // convert fn ptr to fn entry
+"       ld      30, 0(30)\n"         // convert fn desc ptr to fn ptr
 "       mtctr   30\n"                // ctr reg = fn
 "       mr      3,31\n"              // r3 = arg
 "       bctrl\n"                     // call fn()

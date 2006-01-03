@@ -8361,7 +8361,35 @@ DisResult disInstr_PPC_WRK (
 
    /* Spot the client-request magic sequence. */
    // Essentially a v. unlikely sequence of noops that we can catch
-   {
+   if (mode64) {
+      /* Spot the magic sequence, 64-bit mode */
+      UChar* code = (UChar*)(&guest_code[delta]);
+
+      /* Spot this:                                       
+         0x7C03D808   tw 0,3,27            => trap word if (0) => nop
+         0x7800E802   rotldi  0,0,61       => ro = rotl(r0,61)
+         0x78001800   rotldi  0,0,3        => ro = rotl(r0,3)
+         0x78006800   rotldi  0,0,13       => ro = rotl(r0,13)
+         0x78009802   rotldi  0,0,51       => ro = rotl(r0,51)
+         0x60000000   nop
+      */
+      if (getUIntBigendianly(code+ 0) == 0x7C03D808 &&
+          getUIntBigendianly(code+ 4) == 0x7800E802 &&
+          getUIntBigendianly(code+ 8) == 0x78001800 &&
+          getUIntBigendianly(code+12) == 0x78006800 &&
+          getUIntBigendianly(code+16) == 0x78009802 &&
+          getUIntBigendianly(code+20) == 0x60000000) {
+         DIP("%%r3 = client_request ( %%r31 )\n");
+         dres.len = 24;
+         delta += 24;
+
+         irbb->next     = mkSzImm( ty, guest_CIA_bbstart + delta );
+         irbb->jumpkind = Ijk_ClientReq;
+         dres.whatNext  = Dis_StopHere;
+         goto decode_success;
+      }
+   } else {
+      /* Spot the magic sequence, 32-bit mode */
       UChar* code = (UChar*)(&guest_code[delta]);
 
       /* Spot this:                                       

@@ -306,6 +306,16 @@ void LibVEX_GuestPPC32_put_XER ( UInt xer_native,
    vex_state->guest_XER_CA = toUChar((xer_native >> 29) & 0x1);
 }
 
+/* VISIBLE TO LIBVEX CLIENT */
+/* Note: %XER is 32 bits even for ppc64 */
+void LibVEX_GuestPPC64_put_XER ( UInt xer_native,
+                                 /*OUT*/VexGuestPPC64State* vex_state )
+{
+   vex_state->guest_XER_BC = toUChar(xer_native & 0xFF);
+   vex_state->guest_XER_SO = toUChar((xer_native >> 31) & 0x1);
+   vex_state->guest_XER_OV = toUChar((xer_native >> 30) & 0x1);
+   vex_state->guest_XER_CA = toUChar((xer_native >> 29) & 0x1);
+}
 
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )

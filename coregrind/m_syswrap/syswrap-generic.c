@@ -80,7 +80,7 @@ Bool ML_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
    if (!ret && syscallname != NULL) {
       VG_(message)(Vg_UserMsg, "Warning: client syscall %s tried "
                                "to modify addresses %p-%p",
-                               syscallname, start, start+size-1);
+                               syscallname, (void*)start, (void*)(start+size-1));
       if (VG_(clo_verbosity) > 1) {
          VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
       }

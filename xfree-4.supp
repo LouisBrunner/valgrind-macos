@@ -183,5 +183,16 @@
    fun:_XSend
 }
 
+{
+   Xorg 6.9.0 writev uninit padding
+   Memcheck:Param
+   writev(vector[...])
+   fun:do_writev
+   fun:writev
+   obj:/usr/X11R6/lib*/libX11.so.6.2
+   fun:_X11TransWritev
+   fun:_XSend
+}
+
 ##----------------------------------------------------------------------##
 

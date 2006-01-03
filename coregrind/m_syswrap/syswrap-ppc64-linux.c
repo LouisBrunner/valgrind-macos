@@ -422,7 +422,7 @@ DECL_TEMPLATE(ppc64_linux, sys_mmap);
 //zz DECL_TEMPLATE(ppc64_linux, sys_ipc);
 DECL_TEMPLATE(ppc64_linux, sys_clone);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigreturn);
-//zz DECL_TEMPLATE(ppc64_linux, sys_rt_sigreturn);
+DECL_TEMPLATE(ppc64_linux, sys_rt_sigreturn);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigaction);
 
 PRE(sys_socketcall)
@@ -1051,42 +1051,42 @@ PRE(sys_clone)
 //zz    /* Check to see if some any signals arose as a result of this. */
 //zz    *flags |= SfPollAfter;
 //zz }
-//zz 
-//zz PRE(sys_rt_sigreturn)
-//zz {
-//zz    ThreadState* tst;
-//zz    PRINT("rt_sigreturn ( )");
-//zz 
-//zz    vg_assert(VG_(is_valid_tid)(tid));
-//zz    vg_assert(tid >= 1 && tid < VG_N_THREADS);
-//zz    vg_assert(VG_(is_running_thread)(tid));
-//zz 
-//zz    ///* Adjust esp to point to start of frame; skip back up over handler
-//zz    //   ret addr */
-//zz    tst = VG_(get_ThreadState)(tid);
-//zz    //tst->arch.vex.guest_ESP -= sizeof(Addr);
-//zz    // Should we do something equivalent on ppc64?  Who knows.
-//zz 
-//zz    ///* This is only so that the EIP is (might be) useful to report if
-//zz    //   something goes wrong in the sigreturn */
-//zz    //ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
-//zz    // Should we do something equivalent on ppc64?  Who knows.
-//zz 
-//zz    VG_(sigframe_destroy)(tid, True);
-//zz 
-//zz    /* See comments above in PRE(sys_sigreturn) about this. */
-//zz    SET_STATUS_from_SysRes_NO_SANITY_CHECK(
-//zz       VG_(mk_SysRes_ppc64_linux)( 
-//zz          tst->arch.vex.guest_GPR3,
-//zz          /* get CR0.SO */
-//zz          (LibVEX_GuestPPC32_get_CR( &tst->arch.vex ) >> 28) & 1
-//zz       )
-//zz    );
-//zz 
-//zz    /* Check to see if some any signals arose as a result of this. */
-//zz    *flags |= SfPollAfter;
-//zz }
-//zz 
+
+PRE(sys_rt_sigreturn)
+{
+   ThreadState* tst;
+   PRINT("rt_sigreturn ( )");
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(tid >= 1 && tid < VG_N_THREADS);
+   vg_assert(VG_(is_running_thread)(tid));
+
+   ///* Adjust esp to point to start of frame; skip back up over handler
+   //   ret addr */
+   tst = VG_(get_ThreadState)(tid);
+   //tst->arch.vex.guest_ESP -= sizeof(Addr);
+   // Should we do something equivalent on ppc64?  Who knows.
+
+   ///* This is only so that the EIP is (might be) useful to report if
+   //   something goes wrong in the sigreturn */
+   //ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
+   // Should we do something equivalent on ppc64?  Who knows.
+
+   VG_(sigframe_destroy)(tid, True);
+
+   /* See comments above in PRE(sys_sigreturn) about this. */
+   SET_STATUS_from_SysRes_NO_SANITY_CHECK(
+      VG_(mk_SysRes_ppc64_linux)( 
+         tst->arch.vex.guest_GPR3,
+         /* get CR0.SO */
+         (LibVEX_GuestPPC64_get_CR( &tst->arch.vex ) >> 28) & 1
+      )
+   );
+
+   /* Check to see if some any signals arose as a result of this. */
+   *flags |= SfPollAfter;
+}
+
 //zz /* Convert from non-RT to RT sigset_t's */
 //zz static 
 //zz void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
@@ -1188,7 +1188,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENX_(__NR_unlink,            sys_unlink),             //  10
    GENX_(__NR_execve,            sys_execve),             //  11
-// _____(__NR_chdir,             sys_chdir),              //  12
+   GENX_(__NR_chdir,             sys_chdir),              //  12
 // _____(__NR_time,              sys_time),               //  13
 // _____(__NR_mknod,             sys_mknod),              //  14
 
@@ -1380,7 +1380,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_getresgid,         sys_getresgid),          // 170
 // _____(__NR_prctl,             sys_prctl),              // 171
-// _____(__NR_rt_sigreturn,      sys_rt_sigreturn),       // 172
+   PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),       // 172
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),       // 173
    LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask),     // 174
 
@@ -1400,7 +1400,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_sendfile,          sys_sendfile),           // 186
 // _____(__NR_getpmsg,           sys_getpmsg),            // 187
 // _____(__NR_putpmsg,           sys_putpmsg),            // 188
-// _____(__NR_vfork,             sys_vfork),              // 189
+   GENX_(__NR_vfork,             sys_fork),               // 189 treat as fork
 
    GENXY(__NR_ugetrlimit,        sys_getrlimit),          // 190
 // _____(__NR_readahead,         sys_readahead),          // 191

@@ -78,104 +78,52 @@
 // A structure in which to save the application's registers
 // during the execution of signal handlers.
 
-// Linux has 2 signal frame structures: one for normal signal
-// deliveries, and one for SA_SIGINFO deliveries (also known as RT
-// signals).
-//
+// On ppc64-linux, rt_sigframe is used for all signals.
+
 // In theory, so long as we get the arguments to the handler function
 // right, it doesn't matter what the exact layout of the rest of the
 // frame is.  Unfortunately, things like gcc's exception unwinding
 // make assumptions about the locations of various parts of the frame,
 // so we need to duplicate it exactly.
 
+/* Many of these byzantine details derived from
+   linux-2.6.13/arch/ppc64/kernel/signal.c */
+
+#define TRAMP_SIZE 6 /* who knows why - it only needs to be 2. */
+
 /* Structure containing bits of information that we want to save
    on signal delivery. */
-//zz struct vg_sig_private {
-//zz    UInt magicPI;
-//zz    UInt sigNo_private;
-//zz    VexGuestPPC32State shadow;
-//zz };
-//zz 
-//zz /* Structure put on stack for signal handlers with SA_SIGINFO clear. */
-//zz struct nonrt_sigframe {
-//zz    UInt gap1[16];
-//zz    struct vki_sigcontext sigcontext;
-//zz    struct vki_mcontext mcontext;
-//zz    struct vg_sig_private priv;
-//zz    unsigned char abigap[224];
-//zz };
-//zz 
-//zz /* Structure put on stack for signal handlers with SA_SIGINFO set. */
-//zz struct rt_sigframe {
-//zz    UInt gap1[20];
-//zz    vki_siginfo_t siginfo;
-//zz    struct vki_ucontext ucontext;
-//zz    struct vg_sig_private priv;
-//zz    unsigned char abigap[224];
-//zz };
+struct vg_sig_private {
+   UInt magicPI;
+   UInt sigNo_private;
+   VexGuestPPC64State shadow;
+};
+
+/* Structure put on stack for all signal handlers. */
+struct rt_sigframe {
+   struct vki_ucontext   uc;
+   ULong                 _unused[2];
+   UInt                  tramp[TRAMP_SIZE];
+   struct vki_siginfo*   pinfo;
+   void*                 puc;
+   vki_siginfo_t         info;
+   struct vg_sig_private priv;
+   UChar                 abigap[288];
+};
 
 #define SET_SIGNAL_LR(zztst, zzval)                          \
    do { tst->arch.vex.guest_LR = (zzval);                    \
       VG_TRACK( post_reg_write, Vg_CoreSignal, tst->tid,     \
-                offsetof(VexGuestPPC32State,guest_LR),       \
+                offsetof(VexGuestPPC64State,guest_LR),       \
                 sizeof(UWord) );                             \
    } while (0)
 
 #define SET_SIGNAL_GPR(zztst, zzn, zzval)                    \
    do { tst->arch.vex.guest_GPR##zzn = (zzval);              \
       VG_TRACK( post_reg_write, Vg_CoreSignal, tst->tid,     \
-                offsetof(VexGuestPPC32State,guest_GPR##zzn), \
+                offsetof(VexGuestPPC64State,guest_GPR##zzn), \
                 sizeof(UWord) );                             \
    } while (0)
-
-
-static 
-void stack_mcontext ( struct vki_mcontext *mc, 
-                      ThreadState* tst, 
-                      Int ret,
-                      UInt fault_addr )
-{
-//   VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal frame mcontext",
-//             (Addr)mc, sizeof(struct vki_pt_regs) );
-//
-//#  define DO(gpr)  mc->mc_gregs[VKI_PT_R0+gpr] = tst->arch.vex.guest_GPR##gpr
-//   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
-//   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
-//   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
-//   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
-//#  undef DO
-//
-//   mc->mc_gregs[VKI_PT_NIP]     = tst->arch.vex.guest_CIA;
-//   mc->mc_gregs[VKI_PT_MSR]     = 0xf032;   /* pretty arbitrary */
-//   mc->mc_gregs[VKI_PT_ORIG_R3] = tst->arch.vex.guest_GPR3;
-//   mc->mc_gregs[VKI_PT_CTR]     = tst->arch.vex.guest_CTR;
-//   mc->mc_gregs[VKI_PT_LNK]     = tst->arch.vex.guest_LR;
-//   mc->mc_gregs[VKI_PT_XER]     = LibVEX_GuestPPC32_get_XER(&tst->arch.vex);
-//   mc->mc_gregs[VKI_PT_CCR]     = LibVEX_GuestPPC32_get_CR(&tst->arch.vex);
-//   mc->mc_gregs[VKI_PT_MQ]      = 0;
-//   mc->mc_gregs[VKI_PT_TRAP]    = 0;
-//   mc->mc_gregs[VKI_PT_DAR]     = fault_addr;
-//   mc->mc_gregs[VKI_PT_DSISR]   = 0;
-//   mc->mc_gregs[VKI_PT_RESULT]  = 0;
-//   VG_TRACK( post_mem_write, Vg_CoreSignal, tst->tid, 
-//             (Addr)mc, sizeof(struct vki_pt_regs) );
-//
-//   /* XXX should do FP and vector regs */
-//
-//   /* set up signal return trampoline */
-//   VG_TRACK(pre_mem_write, Vg_CoreSignal, tst->tid, "signal frame mcontext",
-//            (Addr)&mc->mc_pad, sizeof(mc->mc_pad));
-//   mc->mc_pad[0] = 0x38000000U + ret;   /* li 0,ret */
-//   mc->mc_pad[1] = 0x44000002U;         /* sc */
-//   VG_TRACK( post_mem_write,  Vg_CoreSignal, tst->tid, 
-//             (Addr)&mc->mc_pad, sizeof(mc->mc_pad) );
-//   /* invalidate any translation of this area */
-//   VG_(discard_translations)( (Addr64)(Addr)&mc->mc_pad, 
-//                              sizeof(mc->mc_pad), "stack_mcontext" );   
-//
-//   /* set the signal handler to return to the trampoline */
-//   SET_SIGNAL_LR(tst, (Addr) &mc->mc_pad[0]);
-}
 
 
 /* Extend the stack segment downwards if needed so as to ensure the
@@ -184,42 +132,41 @@ void stack_mcontext ( struct vki_mcontext *mc,
 */
 static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 {
-   I_die_here;
-//   ThreadId tid = tst->tid;
-//   NSegment *stackseg = NULL;
-//
-//   if (VG_(extend_stack)(addr, tst->client_stack_szB)) {
-//      stackseg = VG_(am_find_nsegment)(addr);
-//      if (0 && stackseg)
-//	 VG_(printf)("frame=%p seg=%p-%p\n",
-//		     addr, stackseg->start, stackseg->end);
-//   }
-//
-//   if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
-//      VG_(message)(
-//         Vg_UserMsg,
-//         "Can't extend stack to %p during signal delivery for thread %d:",
-//         addr, tid);
-//      if (stackseg == NULL)
-//         VG_(message)(Vg_UserMsg, "  no stack segment");
-//      else
-//         VG_(message)(Vg_UserMsg, "  too small or bad protection modes");
-//
-//      /* set SIGSEGV to default handler */
-//      VG_(set_default_handler)(VKI_SIGSEGV);
-//      VG_(synth_fault_mapping)(tid, addr);
-//
-//      /* The whole process should be about to die, since the default
-//	 action of SIGSEGV to kill the whole process. */
-//      return False;
-//   }
-//
-//   /* For tracking memory events, indicate the entire frame has been
-//      allocated. */
-//   VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB,
-//             size + VG_STACK_REDZONE_SZB );
-//
-//   return True;
+   ThreadId tid = tst->tid;
+   NSegment *stackseg = NULL;
+
+   if (VG_(extend_stack)(addr, tst->client_stack_szB)) {
+      stackseg = VG_(am_find_nsegment)(addr);
+      if (0 && stackseg)
+	 VG_(printf)("frame=%p seg=%p-%p\n",
+		     addr, stackseg->start, stackseg->end);
+   }
+
+   if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
+      VG_(message)(
+         Vg_UserMsg,
+         "Can't extend stack to %p during signal delivery for thread %d:",
+         addr, tid);
+      if (stackseg == NULL)
+         VG_(message)(Vg_UserMsg, "  no stack segment");
+      else
+         VG_(message)(Vg_UserMsg, "  too small or bad protection modes");
+
+      /* set SIGSEGV to default handler */
+      VG_(set_default_handler)(VKI_SIGSEGV);
+      VG_(synth_fault_mapping)(tid, addr);
+
+      /* The whole process should be about to die, since the default
+	 action of SIGSEGV to kill the whole process. */
+      return False;
+   }
+
+   /* For tracking memory events, indicate the entire frame has been
+      allocated. */
+   VG_TRACK( new_mem_stack_signal, addr - VG_STACK_REDZONE_SZB,
+             size + VG_STACK_REDZONE_SZB );
+
+   return True;
 }
 
 
@@ -232,107 +179,123 @@ void VG_(sigframe_create)( ThreadId tid,
                            const vki_sigset_t *mask,
 		           void *restorer )
 {
-   I_die_here;
-//   struct vg_sig_private *priv;
-//   Addr sp;
-//   ThreadState *tst;
-//   Int sigNo = siginfo->si_signo;
-//   Addr faultaddr;
-//
-//   /* Stack must be 16-byte aligned */
-//   sp_top_of_frame &= ~0xf;
-//
-//   if (flags & VKI_SA_SIGINFO) {
-//      sp = sp_top_of_frame - sizeof(struct rt_sigframe);
-//   } else {
-//      sp = sp_top_of_frame - sizeof(struct nonrt_sigframe);
-//   }
-//
-//   tst = VG_(get_ThreadState)(tid);
-//
-//   if (!extend(tst, sp, sp_top_of_frame - sp))
-//      return;
-//
-//   vg_assert(VG_IS_16_ALIGNED(sp));
-//
-//   /* Set up the stack chain pointer */
-//   VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame",
-//             sp, sizeof(UWord) );
-//   *(Addr *)sp = tst->arch.vex.guest_GPR1;
-//   VG_TRACK( post_mem_write, Vg_CoreSignal, tid, 
-//             sp, sizeof(UWord) );
-//
-//   faultaddr = (Addr)siginfo->_sifields._sigfault._addr;
-//   if (sigNo == VKI_SIGILL && siginfo->si_code > 0)
-//      faultaddr = tst->arch.vex.guest_CIA;
-//
-//   if (flags & VKI_SA_SIGINFO) {
-//      struct rt_sigframe *frame = (struct rt_sigframe *) sp;
-//      struct vki_ucontext *ucp = &frame->ucontext;
-//
-//      VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal frame siginfo",
-//                (Addr)&frame->siginfo, sizeof(frame->siginfo) );
-//      VG_(memcpy)(&frame->siginfo, siginfo, sizeof(*siginfo));
-//      VG_TRACK( post_mem_write, Vg_CoreSignal, tid, 
-//                (Addr)&frame->siginfo, sizeof(frame->siginfo) );
-//
-//      VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal frame ucontext",
-//                (Addr)ucp, offsetof(struct vki_ucontext, uc_pad) );
-//      ucp->uc_flags = 0;
-//      ucp->uc_link = 0;
-//      ucp->uc_stack = tst->altstack;
-//      VG_TRACK( post_mem_write, Vg_CoreSignal, tid, (Addr)ucp,
-//                offsetof(struct vki_ucontext, uc_pad) );
-//
-//      VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal frame ucontext",
-//                (Addr)&ucp->uc_regs,
-//                sizeof(ucp->uc_regs) + sizeof(ucp->uc_sigmask) );
-//      ucp->uc_regs = &ucp->uc_mcontext;
-//      ucp->uc_sigmask = tst->sig_mask;
-//      VG_TRACK( post_mem_write, Vg_CoreSignal, tid, 
-//                (Addr)&ucp->uc_regs,
-//                sizeof(ucp->uc_regs) + sizeof(ucp->uc_sigmask) );
-//
-//      stack_mcontext(&ucp->uc_mcontext, tst, __NR_rt_sigreturn, faultaddr);
-//      priv = &frame->priv;
-//
-//      SET_SIGNAL_GPR(tid, 4, (Addr) &frame->siginfo);
-//      SET_SIGNAL_GPR(tid, 5, (Addr) ucp);
-//      /* the kernel sets this, though it doesn't seem to be in the ABI */
-//      SET_SIGNAL_GPR(tid, 6, (Addr) &frame->siginfo);
-//
-//   } else {
-//      /* non-RT signal delivery */
-//      struct nonrt_sigframe *frame = (struct nonrt_sigframe *) sp;
-//      struct vki_sigcontext *scp = &frame->sigcontext;
-//
-//      VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal frame sigcontext",
-//                (Addr)&scp->_unused[3], sizeof(*scp) - 3 * sizeof(UInt) );
-//      scp->signal = sigNo;
-//      scp->handler = (Addr) handler;
-//      scp->oldmask = tst->sig_mask.sig[0];
-//      scp->_unused[3] = tst->sig_mask.sig[1];
-//      VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
-//                (Addr)&scp->_unused[3], sizeof(*scp) - 3 * sizeof(UInt) );
-//
-//      stack_mcontext(&frame->mcontext, tst, __NR_sigreturn, faultaddr);
-//      priv = &frame->priv;
-//
-//      SET_SIGNAL_GPR(tid, 4, (Addr) scp);
-//   }
-//
-//   priv->magicPI       = 0x31415927;
-//   priv->sigNo_private = sigNo;
-//   priv->shadow        = tst->arch.vex_shadow;
-//
-//   SET_SIGNAL_GPR(tid, 1, sp);
-//   SET_SIGNAL_GPR(tid, 3, sigNo);
-//   tst->arch.vex.guest_CIA = (Addr) handler;
-//
-//   if (0)
-//      VG_(printf)("pushed signal frame; %R1 now = %p, "
-//                  "next %%CIA = %p, status=%d\n", 
-//		  sp, tst->arch.vex.guest_CIA, tst->status);
+   struct vg_sig_private* priv;
+   Addr sp;
+   ThreadState* tst;
+   Int sigNo = siginfo->si_signo;
+   Addr faultaddr;
+   struct rt_sigframe* frame;
+
+   /* Stack must be 16-byte aligned */
+   vg_assert(VG_IS_16_ALIGNED(sizeof(struct rt_sigframe)));
+
+   sp_top_of_frame &= ~0xf;
+   sp = sp_top_of_frame - sizeof(struct rt_sigframe);
+
+   tst = VG_(get_ThreadState)(tid);
+   if (!extend(tst, sp, sp_top_of_frame - sp))
+      return;
+
+   vg_assert(VG_IS_16_ALIGNED(sp));
+
+   frame = (struct rt_sigframe *) sp;
+
+   /* clear it (conservatively) */
+   VG_(memset)(frame, 0, sizeof(*frame));
+
+   /////////
+   frame->pinfo = &frame->info;
+   frame->puc = &frame->uc;
+
+   frame->uc.uc_flags = 0;
+   frame->uc.uc_link = 0;
+   /////////
+
+   /* Set up the stack chain pointer */
+   VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame",
+             sp, sizeof(UWord) );
+   *(Addr *)sp = tst->arch.vex.guest_GPR1;
+   VG_TRACK( post_mem_write, Vg_CoreSignal, tid, 
+             sp, sizeof(UWord) );
+
+   faultaddr = (Addr)siginfo->_sifields._sigfault._addr;
+   if (sigNo == VKI_SIGILL && siginfo->si_code > 0)
+      faultaddr = tst->arch.vex.guest_CIA;
+
+   VG_(memcpy)(&frame->info, siginfo, sizeof(*siginfo));
+   VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
+             (Addr)&frame->info, sizeof(frame->info) );
+
+   frame->uc.uc_flags = 0;
+   frame->uc.uc_link  = 0;
+   frame->uc.uc_stack = tst->altstack;
+   frame->uc.uc_sigmask = tst->sig_mask;
+   VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
+             (Addr)(&frame->uc), sizeof(frame->uc) );
+
+#  define DO(gpr)  frame->uc.uc_mcontext.gp_regs[VKI_PT_R0+gpr] \
+                      = tst->arch.vex.guest_GPR##gpr 
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
+   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
+#  undef DO
+
+   frame->uc.uc_mcontext.gp_regs[VKI_PT_NIP]     = tst->arch.vex.guest_CIA;
+   frame->uc.uc_mcontext.gp_regs[VKI_PT_MSR]     = 0xf032;   /* pretty arbitrary */
+   frame->uc.uc_mcontext.gp_regs[VKI_PT_ORIG_R3] = tst->arch.vex.guest_GPR3;
+   frame->uc.uc_mcontext.gp_regs[VKI_PT_CTR]     = tst->arch.vex.guest_CTR;
+   frame->uc.uc_mcontext.gp_regs[VKI_PT_LNK]     = tst->arch.vex.guest_LR;
+   frame->uc.uc_mcontext.gp_regs[VKI_PT_XER]     = LibVEX_GuestPPC64_get_XER(
+                                                      &tst->arch.vex);
+   frame->uc.uc_mcontext.gp_regs[VKI_PT_CCR]     = LibVEX_GuestPPC64_get_CR(
+                                                      &tst->arch.vex);
+   //mc->mc_gregs[VKI_PT_MQ]      = 0;
+   //mc->mc_gregs[VKI_PT_TRAP]    = 0;
+   //mc->mc_gregs[VKI_PT_DAR]     = fault_addr;
+   //mc->mc_gregs[VKI_PT_DSISR]   = 0;
+   //mc->mc_gregs[VKI_PT_RESULT]  = 0;
+
+   /* XXX should do FP and vector regs */
+
+   /* set up signal return trampoline */
+   frame->tramp[0] = 0x38000000U + __NR_rt_sigreturn; /* li 0,__NR_rt_sigreturn */
+   frame->tramp[1] = 0x44000002U;                     /* sc */
+   VG_TRACK(post_mem_write, Vg_CoreSignal, tst->tid,
+            (Addr)&frame->tramp, sizeof(frame->tramp));
+
+   /* invalidate any translation of this area */
+   VG_(discard_translations)( (Addr64)&frame->tramp[0], 
+                              sizeof(frame->tramp), "stack_mcontext" );   
+
+   /* set the signal handler to return to the trampoline */
+   SET_SIGNAL_LR(tst, (Addr) &frame->tramp[0]);
+
+   /* Stack pointer for the handler .. (note, back chain set
+      earlier) */
+   SET_SIGNAL_GPR(tid, 1, sp);
+
+   /* Args for the handler .. */
+   SET_SIGNAL_GPR(tid, 3, sigNo);
+   SET_SIGNAL_GPR(tid, 4, (Addr) &frame->info);
+   SET_SIGNAL_GPR(tid, 5, (Addr) &frame->uc);
+   /* the kernel sets this, though it doesn't seem to be in the ABI */
+   SET_SIGNAL_GPR(tid, 6, (Addr) &frame->info);
+
+   /* Handler is in fact a standard ppc64-linux function descriptor, 
+      so extract the function entry point and also the toc ptr to use. */
+   SET_SIGNAL_GPR(tid, 2, (Addr) ((ULong*)handler)[1]);
+   tst->arch.vex.guest_CIA = (Addr) ((ULong*)handler)[0];
+
+   priv = &frame->priv;
+   priv->magicPI       = 0x31415927;
+   priv->sigNo_private = sigNo;
+   priv->shadow        = tst->arch.vex_shadow;
+
+   if (0)
+      VG_(printf)("pushed signal frame; %R1 now = %p, "
+                  "next %%CIA = %p, status=%d\n", 
+		  sp, tst->arch.vex.guest_CIA, tst->status);
 }
 
 
@@ -343,77 +306,65 @@ void VG_(sigframe_create)( ThreadId tid,
 /* EXPORTED */
 void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 {
-   I_die_here;
-//   ThreadState *tst;
-//   struct vg_sig_private *priv;
-//   Addr sp;
-//   UInt frame_size;
-//   struct vki_mcontext *mc;
-//   Int sigNo;
-//   Bool has_siginfo = isRT;
-//
-//   vg_assert(VG_(is_valid_tid)(tid));
-//   tst = VG_(get_ThreadState)(tid);
-//
-//   /* Check that the stack frame looks valid */
-//   sp = tst->arch.vex.guest_GPR1;
-//   vg_assert(VG_IS_16_ALIGNED(sp));
-//   /* JRS 17 Nov 05: This code used to check that *sp -- which should
-//      have been set by the stwu at the start of the handler -- points
-//      to just above the frame (ie, the previous frame).  However, that
-//      isn't valid when delivering signals on alt stacks.  So I removed
-//      it.  The frame is still sanity-checked using the priv->magicPI
-//      field. */
-//
-//   if (has_siginfo) {
-//      struct rt_sigframe *frame = (struct rt_sigframe *)sp;
-//      frame_size = sizeof(*frame);
-//      mc = &frame->ucontext.uc_mcontext;
-//      priv = &frame->priv;
-//      vg_assert(priv->magicPI == 0x31415927);
-//      tst->sig_mask = frame->ucontext.uc_sigmask;
-//   } else {
-//      struct nonrt_sigframe *frame = (struct nonrt_sigframe *)sp;
-//      frame_size = sizeof(*frame);
-//      mc = &frame->mcontext;
-//      priv = &frame->priv;
-//      vg_assert(priv->magicPI == 0x31415927);
-//      tst->sig_mask.sig[0] = frame->sigcontext.oldmask;
-//      tst->sig_mask.sig[1] = frame->sigcontext._unused[3];
-//   }
-//   tst->tmp_sig_mask = tst->sig_mask;
-//
-//   sigNo = priv->sigNo_private;
-//
-//#  define DO(gpr)  tst->arch.vex.guest_GPR##gpr = mc->mc_gregs[VKI_PT_R0+gpr]
-//   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
-//   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
-//   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
-//   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
-//#  undef DO
-//
-//   tst->arch.vex.guest_CIA = mc->mc_gregs[VKI_PT_NIP];
-//
-//   // Umm ... ? (jrs 2005 July 8)
-//   // tst->arch.m_orig_gpr3 = mc->mc_gregs[VKI_PT_ORIG_R3];
-//
-//   LibVEX_GuestPPC32_put_CR( mc->mc_gregs[VKI_PT_CCR], &tst->arch.vex );
-//
-//   tst->arch.vex.guest_LR  = mc->mc_gregs[VKI_PT_LNK];
-//   tst->arch.vex.guest_CTR = mc->mc_gregs[VKI_PT_CTR];
-//   LibVEX_GuestPPC32_put_XER( mc->mc_gregs[VKI_PT_XER], &tst->arch.vex );
-//
-//   tst->arch.vex_shadow = priv->shadow;
-//
-//   VG_TRACK(die_mem_stack_signal, sp, frame_size);
-//
-//   if (VG_(clo_trace_signals))
-//      VG_(message)(Vg_DebugMsg,
-//                   "vg_pop_signal_frame (thread %d): isRT=%d valid magic; EIP=%p",
-//                   tid, has_siginfo, tst->arch.vex.guest_CIA);
-//
-//   /* tell the tools */
-//   VG_TRACK( post_deliver_signal, tid, sigNo );
+   ThreadState *tst;
+   struct vg_sig_private *priv;
+   Addr sp;
+   UInt frame_size;
+   struct rt_sigframe *frame;
+   Int sigNo;
+   Bool has_siginfo = isRT;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = VG_(get_ThreadState)(tid);
+
+   /* Check that the stack frame looks valid */
+   sp = tst->arch.vex.guest_GPR1;
+   vg_assert(VG_IS_16_ALIGNED(sp));
+   /* JRS 17 Nov 05: This code used to check that *sp -- which should
+      have been set by the stwu at the start of the handler -- points
+      to just above the frame (ie, the previous frame).  However, that
+      isn't valid when delivering signals on alt stacks.  So I removed
+      it.  The frame is still sanity-checked using the priv->magicPI
+      field. */
+
+   frame = (struct rt_sigframe *)sp;
+   frame_size = sizeof(*frame);
+   priv = &frame->priv;
+   vg_assert(priv->magicPI == 0x31415927);
+   tst->sig_mask = frame->uc.uc_sigmask;
+   tst->tmp_sig_mask = tst->sig_mask;
+
+   sigNo = priv->sigNo_private;
+
+#  define DO(gpr)  tst->arch.vex.guest_GPR##gpr \
+                      = frame->uc.uc_mcontext.gp_regs[VKI_PT_R0+gpr]
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
+   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
+#  undef DO
+
+   tst->arch.vex.guest_CIA = frame->uc.uc_mcontext.gp_regs[VKI_PT_NIP];
+
+   LibVEX_GuestPPC64_put_CR( frame->uc.uc_mcontext.gp_regs[VKI_PT_CCR], 
+                             &tst->arch.vex );
+
+   tst->arch.vex.guest_LR  = frame->uc.uc_mcontext.gp_regs[VKI_PT_LNK];
+   tst->arch.vex.guest_CTR = frame->uc.uc_mcontext.gp_regs[VKI_PT_CTR];
+   LibVEX_GuestPPC64_put_XER( frame->uc.uc_mcontext.gp_regs[VKI_PT_XER], 
+                              &tst->arch.vex );
+
+   tst->arch.vex_shadow = priv->shadow;
+
+   VG_TRACK(die_mem_stack_signal, sp, frame_size);
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg,
+                   "vg_pop_signal_frame (thread %d): isRT=%d valid magic; EIP=%p",
+                   tid, has_siginfo, tst->arch.vex.guest_CIA);
+
+   /* tell the tools */
+   VG_TRACK( post_deliver_signal, tid, sigNo );
 }
 
 /*--------------------------------------------------------------------*/

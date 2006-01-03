@@ -1,7 +1,10 @@
 
 /* HOW TO COMPILE:
 
-gcc -Winline -Wall -O -mregnames -DHAS_ALTIVEC -maltivec 
+* 32bit build:
+   gcc -Winline -Wall -g -O -mregnames -DHAS_ALTIVEC -maltivec
+* 64bit build:
+   gcc -Winline -Wall -g -O -mregnames -DHAS_ALTIVEC -maltivec -m64
 
 This program is useful, but the register usage conventions in
 it are a complete dog.  In particular, _patch_op_imm has to
@@ -167,7 +170,11 @@ case I chased).
 
 /* Something of the same size as void*, so can be safely be coerced
    to/from a pointer type. Also same size as the host's gp registers. */
+#ifndef __powerpc64__
 typedef uint32_t  HWord_t;
+#else
+typedef uint64_t  HWord_t;
+#endif // #ifndef __powerpc64__
 
 
 register double f14 __asm__ ("f14");
@@ -197,6 +204,7 @@ register HWord_t r18 __asm__ ("r18");
 
 
 
+#ifndef __powerpc64__
 #define ASSEMBLY_FUNC(__fname, __insn)     \
 asm(".section \".text\"\n"                 \
     "\t.align 2\n"                         \
@@ -206,6 +214,23 @@ asm(".section \".text\"\n"                 \
     "\tblr\n"                              \
     "\t.previous\n"                        \
     )
+#else
+#define ASSEMBLY_FUNC(__fname, __insn)     \
+asm(".section  \".text\"\n"                \
+    "\t.align 2\n"                         \
+    "\t.global "__fname"\n"                \
+    "\t.section \".opd\",\"aw\"\n"         \
+    "\t.align 3\n"                         \
+    ""__fname":\n"                         \
+    "\t.quad ."__fname",.TOC.@tocbase,0\n" \
+    "\t.previous\n"                        \
+    "\t.type ."__fname",@function\n"       \
+    "\t.global  ."__fname"\n"              \
+    "."__fname":\n"                        \
+    "\t"__insn"\n"                         \
+    "\tblr\n"                              \
+    )
+#endif // #ifndef __powerpc64__
 
 
 
@@ -432,6 +457,33 @@ static void test_subfco (void)
     __asm__ __volatile__ ("subfco       17, 14, 15");
 }
 
+#ifdef __powerpc64__
+static void test_mulld (void)
+{
+    __asm__ __volatile__ ("mulld        17, 14, 15");
+}
+
+static void test_mulhd (void)
+{
+    __asm__ __volatile__ ("mulhd        17, 14, 15");
+}
+
+static void test_mulhdu (void)
+{
+    __asm__ __volatile__ ("mulhdu       17, 14, 15");
+}
+
+static void test_divd (void)
+{
+    __asm__ __volatile__ ("divd         17, 14, 15");
+}
+
+static void test_divdu (void)
+{
+    __asm__ __volatile__ ("divdu        17, 14, 15");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_ia_ops_two[] = {
     { &test_add             , "         add", },
     { &test_addo            , "        addo", },
@@ -449,6 +501,13 @@ static test_t tests_ia_ops_two[] = {
     { &test_subfo           , "       subfo", },
     { &test_subfc           , "       subfc", },
     { &test_subfco          , "      subfco", },
+#ifdef __powerpc64__
+    { &test_mulhd           , "       mulhd", },
+    { &test_mulhdu          , "      mulhdu", },
+    { &test_mulld           , "       mulld", },
+    { &test_divd            , "        divd", },
+    { &test_divdu           , "       divdu", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -532,6 +591,33 @@ static void test_subfco_ (void)
     __asm__ __volatile__ ("subfco.      17, 14, 15");
 }
 
+#ifdef __powerpc64__
+static void test_mulhd_ (void)
+{
+    __asm__ __volatile__ ("mulhd.       17, 14, 15");
+}
+
+static void test_mulhdu_ (void)
+{
+    __asm__ __volatile__ ("mulhdu.      17, 14, 15");
+}
+
+static void test_mulld_ (void)
+{
+    __asm__ __volatile__ ("mulld.       17, 14, 15");
+}
+
+static void test_divd_ (void)
+{
+    __asm__ __volatile__ ("divd.        17, 14, 15");
+}
+
+static void test_divdu_ (void)
+{
+    __asm__ __volatile__ ("divdu.       17, 14, 15");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_iar_ops_two[] = {
     { &test_add_            , "        add.", },
     { &test_addo_           , "       addo.", },
@@ -549,6 +635,13 @@ static test_t tests_iar_ops_two[] = {
     { &test_subfo_          , "      subfo.", },
     { &test_subfc_          , "      subfc.", },
     { &test_subfco_         , "     subfco.", },
+#ifdef __powerpc64__
+    { &test_mulhd_          , "      mulhd.", },
+    { &test_mulhdu_         , "     mulhdu.", },
+    { &test_mulld_          , "      mulld.", },
+    { &test_divd_           , "       divd.", },
+    { &test_divdu_          , "      divdu.", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -663,6 +756,23 @@ static void test_srw (void)
     __asm__ __volatile__ ("srw          17, 14, 15");
 }
 
+#ifdef __powerpc64__
+static void test_sld (void)
+{
+    __asm__ __volatile__ ("sld          17, 14, 15");
+}
+
+static void test_srad (void)
+{
+    __asm__ __volatile__ ("srad         17, 14, 15");
+}
+
+static void test_srd (void)
+{
+    __asm__ __volatile__ ("srd          17, 14, 15");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_il_ops_two[] = {
     { &test_and             , "         and", },
     { &test_andc            , "        andc", },
@@ -675,6 +785,11 @@ static test_t tests_il_ops_two[] = {
     { &test_slw             , "         slw", },
     { &test_sraw            , "        sraw", },
     { &test_srw             , "         srw", },
+#ifdef __powerpc64__
+    { &test_sld             , "         sld", },
+    { &test_srad            , "        srad", },
+    { &test_srd             , "         srd", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -733,6 +848,23 @@ static void test_srw_ (void)
     __asm__ __volatile__ ("srw.         17, 14, 15");
 }
 
+#ifdef __powerpc64__
+static void test_sld_ (void)
+{
+    __asm__ __volatile__ ("sld.         17, 14, 15");
+}
+
+static void test_srad_ (void)
+{
+    __asm__ __volatile__ ("srad.        17, 14, 15");
+}
+
+static void test_srd_ (void)
+{
+    __asm__ __volatile__ ("srd.         17, 14, 15");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_ilr_ops_two[] = {
     { &test_and_            , "        and.", },
     { &test_andc_           , "       andc.", },
@@ -745,6 +877,11 @@ static test_t tests_ilr_ops_two[] = {
     { &test_slw_            , "        slw.", },
     { &test_sraw_           , "       sraw.", },
     { &test_srw_            , "        srw.", },
+#ifdef __powerpc64__
+    { &test_sld_            , "        sld.", },
+    { &test_srad_           , "       srad.", },
+    { &test_srd_            , "        srd.", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -758,9 +895,25 @@ static void test_cmplw (void)
     __asm__ __volatile__ ("cmplw        2, 14, 15");
 }
 
+#ifdef __powerpc64__
+static void test_cmpd (void)
+{
+    __asm__ __volatile__ ("cmpd         2, 14, 15");
+}
+
+static void test_cmpld (void)
+{
+    __asm__ __volatile__ ("cmpld        2, 14, 15");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_icr_ops_two[] = {
     { &test_cmpw            , "        cmpw", },
     { &test_cmplw           , "       cmplw", },
+#ifdef __powerpc64__
+    { &test_cmpd            , "        cmpd", },
+    { &test_cmpld           , "       cmpld", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -770,9 +923,21 @@ ASSEMBLY_FUNC("test_cmpwi", "cmpwi         2, 14, 0");
 extern void test_cmplwi (void);
 ASSEMBLY_FUNC("test_cmplwi", "cmplwi        2, 14, 0");
 
+#ifdef __powerpc64__
+extern void test_cmpdi (void);
+ASSEMBLY_FUNC("test_cmpdi", "cmpdi        2, 14, 0");
+
+extern void test_cmpldi (void);
+ASSEMBLY_FUNC("test_cmpldi", "cmpldi       2, 14, 0");
+#endif // #ifdef __powerpc64__
+
 static test_t tests_icr_ops_two_i16[] = {
     { &test_cmpwi           , "       cmpwi", },
     { &test_cmplwi          , "      cmplwi", },
+#ifdef __powerpc64__
+    { &test_cmpdi           , "       cmpdi", },
+    { &test_cmpldi          , "      cmpldi", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -1021,12 +1186,28 @@ static void test_nego (void)
     __asm__ __volatile__ ("nego         17, 14");
 }
 
+#ifdef __powerpc64__
+static void test_cntlzd (void)
+{
+    __asm__ __volatile__ ("cntlzd       17, 14");
+}
+
+static void test_extsw (void)
+{
+    __asm__ __volatile__ ("extsw        17, 14");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_il_ops_one[] = {
     { &test_cntlzw          , "      cntlzw", },
     { &test_extsb           , "       extsb", },
     { &test_extsh           , "       extsh", },
     { &test_neg             , "         neg", },
     { &test_nego            , "        nego", },
+#ifdef __powerpc64__
+    { &test_cntlzd          , "      cntlzd", },
+    { &test_extsw           , "       extsw", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -1055,12 +1236,28 @@ static void test_nego_ (void)
     __asm__ __volatile__ ("nego.        17, 14");
 }
 
+#ifdef __powerpc64__
+static void test_cntlzd_ (void)
+{
+    __asm__ __volatile__ ("cntlzd.      17, 14");
+}
+
+static void test_extsw_ (void)
+{
+    __asm__ __volatile__ ("extsw.       17, 14");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_ilr_ops_one[] = {
     { &test_cntlzw_         , "     cntlzw.", },
     { &test_extsb_          , "      extsb.", },
     { &test_extsh_          , "      extsh.", },
     { &test_neg_            , "        neg.", },
     { &test_nego_           , "       nego.", },
+#ifdef __powerpc64__
+    { &test_cntlzd_         , "     cntlzd.", },
+    { &test_extsw_          , "      extsw.", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -1091,6 +1288,29 @@ static void test_mtspr (void)
     __asm__ __volatile__ ("mtspr        1, 14");
 }
 
+#ifdef __powerpc64__
+extern void test_rldcl (void);
+ASSEMBLY_FUNC("test_rldcl", "rldcl       17, 14, 15, 0");
+
+extern void test_rldcr (void);
+ASSEMBLY_FUNC("test_rldcr", "rldcr       17, 14, 15, 0");
+
+extern void test_rldic (void);
+ASSEMBLY_FUNC("test_rldic", "rldic       17, 14, 0, 0");
+
+extern void test_rldicl (void);
+ASSEMBLY_FUNC("test_rldicl", "rldicl      17, 14, 0, 0");
+
+extern void test_rldicr (void);
+ASSEMBLY_FUNC("test_rldicr", "rldicr      17, 14, 0, 0");
+
+extern void test_rldimi (void);
+ASSEMBLY_FUNC("test_rldimi", "rldimi      17, 14, 0, 0");
+
+extern void test_sradi (void);
+ASSEMBLY_FUNC("test_sradi", "sradi      17, 14, 0");
+#endif // #ifdef __powerpc64__
+
 static test_t tests_il_ops_spe[] = {
     { &test_rlwimi          , "      rlwimi", },
     { &test_rlwinm          , "      rlwinm", },
@@ -1099,6 +1319,15 @@ static test_t tests_il_ops_spe[] = {
     { &test_mfcr            , "        mfcr", },
     { &test_mfspr           , "       mfspr", },
     { &test_mtspr           , "       mtspr", },
+#ifdef __powerpc64__
+    { &test_rldcl           , "       rldcl", },
+    { &test_rldcr           , "       rldcr", },
+    { &test_rldic           , "       rldic", },
+    { &test_rldicl          , "      rldicl", },
+    { &test_rldicr          , "      rldicr", },
+    { &test_rldimi          , "      rldimi", },
+    { &test_sradi           , "       sradi", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -1123,6 +1352,29 @@ ASSEMBLY_FUNC("test_mcrxr", "mcrxr      0");
 extern void test_mtcrf (void);
 ASSEMBLY_FUNC("test_mtcrf", "mtcrf      0, 14");
 
+#ifdef __powerpc64__
+extern void test_rldcl_ (void);
+ASSEMBLY_FUNC("test_rldcl_", "rldcl.      17, 14, 15, 0");
+
+extern void test_rldcr_ (void);
+ASSEMBLY_FUNC("test_rldcr_", "rldcr.      17, 14, 15, 0");
+
+extern void test_rldic_ (void);
+ASSEMBLY_FUNC("test_rldic_", "rldic.      17, 14, 0, 0");
+
+extern void test_rldicl_ (void);
+ASSEMBLY_FUNC("test_rldicl_", "rldicl.     17, 14, 0, 0");
+
+extern void test_rldicr_ (void);
+ASSEMBLY_FUNC("test_rldicr_", "rldicr.     17, 14, 0, 0");
+
+extern void test_rldimi_ (void);
+ASSEMBLY_FUNC("test_rldimi_", "rldimi.     17, 14, 0, 0");
+
+extern void test_sradi_ (void);
+ASSEMBLY_FUNC("test_sradi_", "sradi.      17, 14, 0");
+#endif // #ifdef __powerpc64__
+
 static test_t tests_ilr_ops_spe[] = {
     { &test_rlwimi_         , "     rlwimi.", },
     { &test_rlwinm_         , "     rlwinm.", },
@@ -1131,6 +1383,15 @@ static test_t tests_ilr_ops_spe[] = {
     { &test_mcrf            , "        mcrf", },
     { &test_mcrxr           , "       mcrxr", },
     { &test_mtcrf           , "       mtcrf", },
+#ifdef __powerpc64__
+    { &test_rldcl_          , "      rldcl.", },
+    { &test_rldcr_          , "      rldcr.", },
+    { &test_rldic_          , "      rldic.", },
+    { &test_rldicl_         , "     rldicl.", },
+    { &test_rldicr_         , "     rldicr.", },
+    { &test_rldimi_         , "     rldimi.", },
+    { &test_sradi_          , "      sradi.", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -1158,6 +1419,17 @@ ASSEMBLY_FUNC("test_lwz", "lwz          17,0(14)");
 extern void test_lwzu (void);
 ASSEMBLY_FUNC("test_lwzu", "lwzu          17,0(14)");
 
+#ifdef __powerpc64__
+extern void test_ld (void);
+ASSEMBLY_FUNC("test_ld", "ld            17,0(14)");
+
+extern void test_ldu (void);
+ASSEMBLY_FUNC("test_ldu", "ldu           17,0(14)");
+
+extern void test_lwa (void);
+ASSEMBLY_FUNC("test_lwa", "lwa           17,0(14)");
+#endif // #ifdef __powerpc64__
+
 static test_t tests_ild_ops_two_i16[] = {
     { &test_lbz             , "         lbz", },
     { &test_lbzu            , "        lbzu", },
@@ -1167,6 +1439,11 @@ static test_t tests_ild_ops_two_i16[] = {
     { &test_lhzu            , "        lhzu", },
     { &test_lwz             , "         lwz", },
     { &test_lwzu            , "        lwzu", },
+#ifdef __powerpc64__
+    { &test_ld              , "          ld", },
+    { &test_ldu             , "         ldu", },
+    { &test_lwa             , "         lwa", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -1210,6 +1487,28 @@ static void test_lwzux (void)
     __asm__ __volatile__ ("lwzux        17,14,15");
 }
 
+#ifdef __powerpc64__
+static void test_ldx (void)
+{
+    __asm__ __volatile__ ("ldx         17,14,15");
+}
+
+static void test_ldux (void)
+{
+    __asm__ __volatile__ ("ldux        17,14,15");
+}
+
+static void test_lwax (void)
+{
+    __asm__ __volatile__ ("lwax        17,14,15");
+}
+
+static void test_lwaux (void)
+{
+    __asm__ __volatile__ ("lwaux        17,14,15");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_ild_ops_two[] = {
     { &test_lbzx            , "        lbzx", },
     { &test_lbzux           , "       lbzux", },
@@ -1219,6 +1518,12 @@ static test_t tests_ild_ops_two[] = {
     { &test_lhzux           , "       lhzux", },
     { &test_lwzx            , "        lwzx", },
     { &test_lwzux           , "       lwzux", },
+#ifdef __powerpc64__
+    { &test_ldx             , "         ldx", },
+    { &test_ldux            , "        ldux", },
+    { &test_lwax            , "        lwax", },
+    { &test_lwaux           , "       lwaux", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -1240,6 +1545,14 @@ ASSEMBLY_FUNC("test_stw", "stw          14,0(15)");
 extern void test_stwu (void);
 ASSEMBLY_FUNC("test_stwu", "stwu          14,0(15)");
 
+#ifdef __powerpc64__
+extern void test_std (void);
+ASSEMBLY_FUNC("test_std", "std          14,0(15)");
+
+extern void test_stdu (void);
+ASSEMBLY_FUNC("test_stdu", "stdu          14,0(15)");
+#endif // #ifdef __powerpc64__
+
 static test_t tests_ist_ops_three_i16[] = {
     { &test_stb             , "         stb", },
     { &test_stbu            , "        stbu", },
@@ -1247,6 +1560,10 @@ static test_t tests_ist_ops_three_i16[] = {
     { &test_sthu            , "        sthu", },
     { &test_stw             , "         stw", },
     { &test_stwu            , "        stwu", },
+#ifdef __powerpc64__
+    { &test_std             , "         std", },
+    { &test_stdu            , "        stdu", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -1280,6 +1597,18 @@ static void test_stwux (void)
     __asm__ __volatile__ ("stwux        14,15,16");
 }
 
+#ifdef __powerpc64__
+static void test_stdx (void)
+{
+    __asm__ __volatile__ ("stdx         14,15,16");
+}
+
+static void test_stdux (void)
+{
+    __asm__ __volatile__ ("stdux        14,15,16");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_ist_ops_three[] = {
     { &test_stbx            , "        stbx", },
     { &test_stbux           , "       stbux", },
@@ -1287,6 +1616,10 @@ static test_t tests_ist_ops_three[] = {
     { &test_sthux           , "       sthux", },
     { &test_stwx            , "        stwx", },
     { &test_stwux           , "       stwux", },
+#ifdef __powerpc64__
+    { &test_stdx            , "        stdx", },
+    { &test_stdux           , "       stdux", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 
@@ -1590,6 +1923,23 @@ static void test_fsqrt (void)
     __asm__ __volatile__ ("fsqrt        17, 14");
 }
 
+#ifdef __powerpc64__
+static void test_fcfid (void)
+{
+    __asm__ __volatile__ ("fcfid        17, 14");
+}
+
+static void test_fctid (void)
+{
+    __asm__ __volatile__ ("fctid        17, 14");
+}
+
+static void test_fctidz (void)
+{
+    __asm__ __volatile__ ("fctidz       17, 14");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_fa_ops_one[] = {
    //    { &test_fres            , "        fres", },   // TODO: Not yet supported
    //    { &test_frsqrte         , "     frsqrte", },   // TODO: Not yet supported
@@ -1601,6 +1951,11 @@ static test_t tests_fa_ops_one[] = {
     { &test_fabs            , "        fabs", },
     { &test_fnabs           , "       fnabs", },
     { &test_fsqrt           , "       fsqrt", },
+#ifdef __powerpc64__
+    { &test_fcfid           , "       fcfid", },
+    { &test_fctid           , "       fctid", },
+    { &test_fctidz          , "      fctidz", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 #endif /* !defined (NO_FLOAT) */
@@ -1654,6 +2009,23 @@ static void test_fnabs_ (void)
     __asm__ __volatile__ ("fnabs.       17, 14");
 }
 
+#ifdef __powerpc64__
+static void test_fcfid_ (void)
+{
+    __asm__ __volatile__ ("fcfid.       17, 14");
+}
+
+static void test_fctid_ (void)
+{
+    __asm__ __volatile__ ("fctid.       17, 14");
+}
+
+static void test_fctidz_ (void)
+{
+    __asm__ __volatile__ ("fctidz.      17, 14");
+}
+#endif // #ifdef __powerpc64__
+
 static test_t tests_far_ops_one[] = {
    //    { &test_fres_           , "       fres.", },   // TODO: Not yet supported
     //    { &test_frsqrte_        , "    frsqrte.", },   // TODO: Not yet supported
@@ -1664,6 +2036,11 @@ static test_t tests_far_ops_one[] = {
     { &test_fneg_           , "       fneg.", },
     { &test_fabs_           , "       fabs.", },
     { &test_fnabs_          , "      fnabs.", },
+#ifdef __powerpc64__
+    { &test_fcfid_          , "      fcfid.", },
+    { &test_fctid_          , "      fctid.", },
+    { &test_fctidz_         , "     fctidz.", },
+#endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
 #endif /* !defined (NO_FLOAT) */
@@ -3734,7 +4111,11 @@ static inline void register_farg (void *farg,
    
    tmp = ((uint64_t)s << 63) | ((uint64_t)_exp << 52) | mant;
    *(uint64_t *)farg = tmp;
+#ifndef __powerpc64__
    AB_DPRINTF("%d %03x %013llx => %016llx %0e\n",
+#else
+   AB_DPRINTF("%d %03x %013lx => %016lx %0e\n",
+#endif
               s, _exp, mant, *(uint64_t *)farg, *(double *)farg);
 }
 
@@ -3873,6 +4254,7 @@ static void build_iargs_table (void)
    uint64_t tmp;
    int i=0;
    
+#ifndef __powerpc64__
    if (arg_list_size == 1) {                   // Large
       iargs = malloc(400 * sizeof(HWord_t));
       for (tmp=0; ; tmp = tmp + 1 + (tmp >> 1)) {
@@ -3896,6 +4278,31 @@ static void build_iargs_table (void)
             break;
       }
    }
+#else
+   if (arg_list_size == 1) {                   // Large
+      iargs = malloc(800 * sizeof(HWord_t));
+      for (tmp=0; ; tmp = 2*tmp + 1 + (tmp >> 2)) {
+         if ((long)tmp < 0 )
+            tmp = 0xFFFFFFFFFFFFFFFFULL;
+         iargs[i++] = tmp;
+         AB_DPRINTF("val %016lx\n", tmp);
+         if (tmp == 0xFFFFFFFFFFFFFFFFULL)
+            break;
+      }
+   } else {                                    // Default
+      iargs = malloc(20 * sizeof(HWord_t));
+      // for (tmp=0; ; tmp = 9999*tmp + 999999) {  // gives 6
+      for (tmp = 0; ; tmp = 123456789*tmp + 123456789999) {  // gives 3
+         if ((long)tmp < 0 )
+            tmp = 0xFFFFFFFFFFFFFFFFULL;
+         iargs[i++] = tmp;
+         AB_DPRINTF("val %016lx\n", tmp);
+         if (tmp == 0xFFFFFFFFFFFFFFFFULL)
+            break;
+      }
+   }
+#endif // #ifndef __powerpc64__
+
    AB_DPRINTF("Registered %d iargs values\n", i);
    nb_iargs = i;
 }
@@ -4146,7 +4553,11 @@ static void test_int_three_args (const char* name, test_func_t func,
             r18 = tmpxer;
             __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
             printf("%s %08x, %08x, %08x => %08x (%08x %08x)\n",
+#else
+            printf("%s %016lx, %016lx, %016lx => %016lx (%08x %08x)\n",
+#endif
                    name, iargs[i], iargs[j], iargs[k], res, flags, xer);
          }
          if (verbose) printf("\n");
@@ -4201,7 +4612,12 @@ static void test_int_two_args (const char* name, test_func_t func,
          r18 = tmpxer;
          __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
          printf("%s %08x, %08x => %08x (%08x %08x)\n",
+#else
+         if (zap_hi32) res &= 0xFFFFFFFFULL;
+         printf("%s %016lx, %016lx => %016lx (%08x %08x)\n",
+#endif
                 name, iargs[i], iargs[j], res, flags, xer);
       }
       if (verbose) printf("\n");
@@ -4248,7 +4664,11 @@ static void test_int_one_arg (const char* name, test_func_t func,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %08x => %08x (%08x %08x)\n",
+#else
+      printf("%s %016lx => %016lx (%08x %08x)\n",
+#endif
              name, iargs[i], res, flags, xer);
    }
    if ((test_flags & PPC_XER_CA) && xer_orig == 0x00000000) {
@@ -4300,10 +4720,17 @@ static inline
 void init_function( test_func_t *p_func, uint32_t func_buf[] )
 {
    uint32_t *p;
+#ifndef __powerpc64__
    p = (uint32_t *)*p_func;
    func_buf[0] = p[0];
    func_buf[1] = p[1];
    *p_func = (void *)func_buf;
+#else
+   p = (uint32_t *)((uint64_t *)*p_func)[0];
+   func_buf[0] = p[0];
+   func_buf[1] = p[1];
+   ((uint64_t *)*p_func)[0] = (uint64_t)&func_buf[0];
+#endif // #ifndef __powerpc64__
 }
 
 
@@ -4347,7 +4774,11 @@ static void test_int_one_reg_imm16 (const char* name,
          r18 = tmpxer;
          __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
          printf("%s %08x, %08x => %08x (%08x %08x)\n",
+#else
+         printf("%s %016lx, %08x => %016lx (%08x %08x)\n",
+#endif
                 name, iargs[i], ii16[j], res, flags, xer);
       }
       if (verbose) printf("\n");
@@ -4367,6 +4798,15 @@ static void test_int_one_reg_imm16 (const char* name,
  * mftb_cb
  * mtcrf_cb
  * mtspr_cb
+
+ __powerpc64__ only:
+ * rldcl       rA,rS,SH,MB
+ * rldcr       rA,rS,SH,ME
+ * rldic       rA,rS,SH,MB
+ * rldicl      rA,rS,SH,MB
+ * rldicr      rA,rS,SH,ME
+ * rldimi      rA,rS,SH,MB
+ * sradi       rA,rS,SH
  */
 
 static void rlwi_cb (const char* name, test_func_t func,
@@ -4416,7 +4856,11 @@ static void rlwi_cb (const char* name, test_func_t func,
                r18 = tmpxer;
                __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
                printf("%s %08x, %2d, %2d, %2d => %08x (%08x %08x)\n",
+#else
+               printf("%s %016lx, %2d, %2d, %2d => %016lx (%08x %08x)\n",
+#endif
                       name, iargs[i], j, k, l, res, flags, xer);
             }
             if (verbose) printf("\n");
@@ -4470,7 +4914,11 @@ static void rlwnm_cb (const char* name, test_func_t func,
                r18 = tmpxer;
                __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
                printf("%s %08x, %08x, %2d, %2d => %08x (%08x %08x)\n",
+#else
+               printf("%s %016lx, %016lx, %2d, %2d => %016lx (%08x %08x)\n",
+#endif
                       name, iargs[i], iargs[j], k, l, res, flags, xer);
             }
             if (verbose) printf("\n");
@@ -4520,7 +4968,11 @@ static void srawi_cb (const char* name, test_func_t func,
          r18 = tmpxer;
          __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
          printf("%s %08x, %2d => %08x (%08x %08x)\n",
+#else
+         printf("%s %016lx, %2d => %016lx (%08x %08x)\n",
+#endif
                 name, iargs[i], j, res, flags, xer);
       }
       if (verbose) printf("\n");
@@ -4568,7 +5020,11 @@ static void mcrf_cb (const char* name, test_func_t func,
             r18 = tmpxer;
             __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
             printf("%s %d, %d (%08x) => (%08x %08x)\n",
+#else
+            printf("%s %d, %d (%016lx) => (%08x %08x)\n",
+#endif
                    name, j, k, iargs[i], flags, xer);
          }
          if (verbose) printf("\n");
@@ -4663,7 +5119,11 @@ static void mfcr_cb (const char* name, test_func_t func,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s (%08x) => %08x (%08x %08x)\n",
+#else
+      printf("%s (%016lx) => %016lx (%08x %08x)\n",
+#endif
              name, iargs[i], res, flags, xer);
    }
 }
@@ -4687,7 +5147,11 @@ static void mfspr_cb (const char* name, test_func_t func,
       );
       res &= 0xE000007F; /* rest of the bits are undefined */
 
+#ifndef __powerpc64__
       printf("%s 1 (%08x) -> mtxer -> mfxer => %08x\n",
+#else
+      printf("%s 1 (%08x) -> mtxer -> mfxer => %016lx\n",
+#endif
              name, j, res);
    }
 
@@ -4700,7 +5164,11 @@ static void mfspr_cb (const char* name, test_func_t func,
          : /*out*/"=r"(res) : /*in*/"r"(j) : /*trashed*/"lr" 
       );
 
+#ifndef __powerpc64__
       printf("%s 8 (%08x) ->  mtlr ->  mflr => %08x\n",
+#else
+      printf("%s 8 (%08x) ->  mtlr ->  mflr => %016lx\n",
+#endif
              name, j, res);
    }
 
@@ -4713,7 +5181,11 @@ static void mfspr_cb (const char* name, test_func_t func,
          : /*out*/"=r"(res) : /*in*/"r"(j) : /*trashed*/"ctr" 
       );
 
+#ifndef __powerpc64__
       printf("%s 9 (%08x) -> mtctr -> mfctr => %08x\n",
+#else
+      printf("%s 9 (%08x) -> mtctr -> mfctr => %016lx\n",
+#endif
              name, j, res);
    }
 
@@ -4963,7 +5435,11 @@ static void mtcrf_cb (const char* name, test_func_t func,
          r18 = tmpxer;
          __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
          printf("%s %3d, %08x => (%08x %08x)\n",
+#else
+         printf("%s %3d, %016lx => (%08x %08x)\n",
+#endif
                 name, j, iargs[i], flags, xer);
       }
       if (verbose) printf("\n");
@@ -5022,7 +5498,11 @@ static void mtspr_cb (const char* name, test_func_t func,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %d, %08x => (%08x %08x, %08x, %08x)\n",
+#else
+      printf("%s %d, %016lx => (%08x %08x, %016lx, %016lx)\n",
+#endif
              name, j, iargs[k], flags, xer, lr, ctr);
    }
    if (verbose) printf("\n");
@@ -5062,7 +5542,11 @@ static void mtspr_cb (const char* name, test_func_t func,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %d, %08x => (%08x %08x, %08x, %08x)\n",
+#else
+      printf("%s %d, %016lx => (%08x %08x, %016lx, %016lx)\n",
+#endif
              name, j, iargs[k], flags, xer, lr, ctr);
    }
    if (verbose) printf("\n");
@@ -5102,12 +5586,169 @@ static void mtspr_cb (const char* name, test_func_t func,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %d, %08x => (%08x %08x, %08x, %08x)\n",
+#else
+      printf("%s %d, %016lx => (%08x %08x, %016lx, %016lx)\n",
+#endif
              name, j, iargs[k], flags, xer, lr, ctr);
    }
 #endif
 }
 
+#ifdef __powerpc64__
+static void rldc_cb (const char* name, test_func_t func,
+                     unused uint32_t test_flags)
+{
+   uint32_t func_buf[2];
+   volatile HWord_t res;
+   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   int i, j, k, arg_step;
+   
+   arg_step = (arg_list_size == 0) ? 7 : 3;
+   
+   for (i=0; i<nb_iargs; i++) {
+      for (j=0; j<nb_iargs; j++) {
+         for (k=0; k<64; k+=arg_step) {
+            /* Patch up the instruction */
+            init_function( &func, func_buf );
+            patch_op_imm(&func_buf[0], (((k & 0x1F)<<1) | ((k>>5)&1)), 5, 6);
+            
+            r14 = iargs[i];
+            r15 = iargs[j];
+
+            /* Save flags */
+            __asm__ __volatile__ ("mfcr 18");
+            tmpcr = r18;
+            __asm__ __volatile__ ("mfxer 18");
+            tmpxer = r18;
+
+            /* Set up flags for test */
+            r18 = 0;
+            __asm__ __volatile__ ("mtcr 18");
+            __asm__ __volatile__ ("mtxer 18");
+            (*func)();
+            __asm__ __volatile__ ("mfcr 18");
+            flags = r18;
+            __asm__ __volatile__ ("mfxer 18");
+            xer = r18;
+            res = r17;
+
+            /* Restore flags */
+            r18 = tmpcr;
+            __asm__ __volatile__ ("mtcr 18");
+            r18 = tmpxer;
+            __asm__ __volatile__ ("mtxer 18");
+
+            printf("%s %016lx, %016lx, %2d => %016lx (%08x %08x)\n",
+                   name, iargs[i], iargs[j], k, res, flags, xer);
+         }
+         if (verbose) printf("\n");
+      }
+   }
+}
+
+static void rldi_cb (const char* name, test_func_t func,
+                     unused uint32_t test_flags)
+{
+   uint32_t func_buf[2];
+   volatile HWord_t res;
+   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   int i, j, k, arg_step;
+   
+   arg_step = (arg_list_size == 0) ? 7 : 3;
+   
+   for (i=0; i<nb_iargs; i++) {
+      for (j=0; j<64; j+=arg_step) {     // SH
+         for (k=0; k<64; k+=arg_step) {  // MB|ME
+            /* Patch up the instruction */
+            init_function( &func, func_buf );
+            _patch_op_imm(&func_buf[0], (j & 0x1F), 11, 5);
+            _patch_op_imm(&func_buf[0], ((j>>5)&1), 1, 1);
+            patch_op_imm(&func_buf[0], (((k & 0x1F)<<1) | ((k>>5)&1)), 5, 6);
+            
+            r14 = iargs[i];
+
+            /* Save flags */
+            __asm__ __volatile__ ("mfcr 18");
+            tmpcr = r18;
+            __asm__ __volatile__ ("mfxer 18");
+            tmpxer = r18;
+
+            /* Set up flags for test */
+            r18 = 0;
+            __asm__ __volatile__ ("mtcr 18");
+            __asm__ __volatile__ ("mtxer 18");
+            (*func)();
+            __asm__ __volatile__ ("mfcr 18");
+            flags = r18;
+            __asm__ __volatile__ ("mfxer 18");
+            xer = r18;
+            res = r17;
+
+            /* Restore flags */
+            r18 = tmpcr;
+            __asm__ __volatile__ ("mtcr 18");
+            r18 = tmpxer;
+            __asm__ __volatile__ ("mtxer 18");
+
+            printf("%s %016lx, %2d, %2d => %016lx (%08x %08x)\n",
+                   name, iargs[i], j, k, res, flags, xer);
+         }
+         if (verbose) printf("\n");
+      }
+   }
+}
+
+static void sradi_cb (const char* name, test_func_t func,
+                      unused uint32_t test_flags)
+{
+   uint32_t func_buf[2];
+   volatile HWord_t res;
+   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   int i, j, arg_step;
+   
+   arg_step = (arg_list_size == 0) ? 7 : 3;
+   
+   for (i=0; i<nb_iargs; i++) {
+      for (j=0; j<64; j+=arg_step) {     // SH
+         /* Patch up the instruction */
+         init_function( &func, func_buf );
+         _patch_op_imm(&func_buf[0], (j & 0x1F), 11, 5);
+         patch_op_imm(&func_buf[0], ((j>>5)&1), 1, 1);
+            
+         r14 = iargs[i];
+
+         /* Save flags */
+         __asm__ __volatile__ ("mfcr 18");
+         tmpcr = r18;
+         __asm__ __volatile__ ("mfxer 18");
+         tmpxer = r18;
+
+         /* Set up flags for test */
+         r18 = 0;
+         __asm__ __volatile__ ("mtcr 18");
+         __asm__ __volatile__ ("mtxer 18");
+         (*func)();
+         __asm__ __volatile__ ("mfcr 18");
+         flags = r18;
+         __asm__ __volatile__ ("mfxer 18");
+         xer = r18;
+         res = r17;
+
+         /* Restore flags */
+         r18 = tmpcr;
+         __asm__ __volatile__ ("mtcr 18");
+         r18 = tmpxer;
+         __asm__ __volatile__ ("mtxer 18");
+
+         printf("%s %016lx, %2d => %016lx (%08x %08x)\n",
+                name, iargs[i], j, res, flags, xer);
+      }
+      if (verbose) printf("\n");
+   }
+}
+#endif // #ifdef __powerpc64__
 
 
 typedef struct special_t special_t;
@@ -5209,6 +5850,64 @@ static special_t special_int_ops[] = {
       "mtspr",  /* One register + 1 10 bits immediate arguments */
       &mtspr_cb,
    },
+#ifdef __powerpc64__
+   {
+      "rldcl",   /* Two registers + 1 6 bit immediate argument */
+      &rldc_cb,
+   },
+   {
+      "rldcl.",  /* Two registers + 1 6 bit immediate argument */
+      &rldc_cb,
+   },
+   {
+      "rldcr",   /* Two registers + 1 6 bit immediate argument */
+      &rldc_cb,
+   },
+   {
+      "rldcr.",  /* Two registers + 1 6 bit immediate argument */
+      &rldc_cb,
+   },
+   {
+      "rldic",   /* One register + 2 6 bit immediate arguments */
+      &rldi_cb,
+   },
+   {
+      "rldic.",  /* One register + 2 6 bit immediate arguments */
+      &rldi_cb,
+   },
+   {
+      "rldicl",  /* One register + 2 6 bit immediate arguments */
+      &rldi_cb,
+   },
+   {
+      "rldicl.", /* One register + 2 6 bit immediate arguments */
+      &rldi_cb,
+   },
+   {
+      "rldicr",  /* One register + 2 6 bit immediate arguments */
+      &rldi_cb,
+   },
+   {
+      "rldicr.", /* One register + 2 6 bit immediate arguments */
+      &rldi_cb,
+   },
+   {
+      "rldimi",  /* One register + 2 6 bit immediate arguments */
+      &rldi_cb,
+   },
+   {
+      "rldimi.", /* One register + 2 6 bit immediate arguments */
+      &rldi_cb,
+   },
+   {
+      "sradi",  /* One register + 1 6 bit immediate argument */
+      &sradi_cb,
+   },
+   {
+      "sradi.", /* One register + 1 6 bit immediate argument */
+      &sradi_cb,
+   },
+#endif // #ifdef __powerpc64__
    {
       NULL,
       NULL,
@@ -5229,7 +5928,11 @@ static void test_int_ld_one_reg_imm16 (const char* name,
    uint32_t func_buf[2];
    volatile HWord_t res, base;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
-   int i, offs;
+   int i, offs, is_lwa=0;
+
+#ifdef __powerpc64__
+   is_lwa = strstr(name, "lwa") != NULL;
+#endif
 
    // +ve d
    base = (HWord_t)&iargs[0];
@@ -5238,7 +5941,10 @@ static void test_int_ld_one_reg_imm16 (const char* name,
 
       /* Patch up the instruction */
       init_function( &func, func_buf );
-      patch_op_imm16(&func_buf[0], offs);
+      if (is_lwa)
+         patch_op_imm(&func_buf[0], offs>>2, 2, 14);
+      else
+         patch_op_imm16(&func_buf[0], offs);
 
       r14 = base;
 
@@ -5265,7 +5971,11 @@ static void test_int_ld_one_reg_imm16 (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %2d, (%08x) => %08x, %2d (%08x %08x)\n",
+#else
+      printf("%s %3d, (%016lx) => %016lx, %3ld (%08x %08x)\n",
+#endif
              name, offs, iargs[i], res, r14-base, flags, xer);
    }
    if (verbose) printf("\n");
@@ -5304,7 +6014,11 @@ static void test_int_ld_one_reg_imm16 (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %2d, (%08x) => %08x, %2d (%08x %08x)\n",
+#else
+      printf("%s %3d, (%016lx) => %016lx, %3ld (%08x %08x)\n",
+#endif
              name, offs, iargs[nb_iargs-1+i], res, r14-base, flags, xer);
    }
 }
@@ -5347,7 +6061,11 @@ static void test_int_ld_two_regs (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %d (%08x) => %08x, %d (%08x %08x)\n",
+#else
+      printf("%s %3d, (%016lx) => %016lx, %2ld (%08x %08x)\n",
+#endif
              name, offs, iargs[i], res, r14-base, flags, xer);
    }
 }
@@ -5401,7 +6119,11 @@ static void test_int_st_two_regs_imm16 (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %08x, %2d => %08x, %2d (%08x %08x)\n",
+#else
+      printf("%s %016lx, %3d => %016lx, %3ld (%08x %08x)\n",
+#endif
              name, iargs[i], offs, iargs_priv[i], r15-base, flags, xer);
    }
    if (verbose) printf("\n");
@@ -5443,7 +6165,11 @@ static void test_int_st_two_regs_imm16 (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %08x, %2d => %08x, %2d (%08x %08x)\n",
+#else
+      printf("%s %016lx, %3d => %016lx, %3ld (%08x %08x)\n",
+#endif
              name, iargs[nb_iargs-1+i], offs, iargs_priv[nb_iargs-1+i],
              r15-base, flags, xer);
    }
@@ -5493,7 +6219,11 @@ static void test_int_st_three_regs (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %08x, %d => %08x, %d (%08x %08x)\n",
+#else
+      printf("%s %016lx, %3d => %016lx, %2ld (%08x %08x)\n",
+#endif
              name, iargs[i], offs, iargs_priv[i], r15-base, flags, xer);
    }
    free(iargs_priv);
@@ -5568,7 +6298,11 @@ static void test_float_three_args (const char* name, test_func_t func,
                as vex's accuracy isn't perfect */
             ur &= 0xFFFFFFFFFFFFFF00ULL;
 
+#ifndef __powerpc64__
             printf("%s %016llx, %016llx, %016llx => %016llx",
+#else
+            printf("%s %016lx, %016lx, %016lx => %016lx",
+#endif
                    name, u0, u1, u2, ur);
 #if defined TEST_FLOAT_FLAGS
             printf(" (%08x)", flags);
@@ -5619,7 +6353,11 @@ static void test_float_two_args (const char* name, test_func_t func,
          r18 = tmpxer;
          __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
          printf("%s %016llx, %016llx => %016llx",
+#else
+         printf("%s %016lx, %016lx => %016lx",
+#endif
                 name, u0, u1, ur);
 #if defined TEST_FLOAT_FLAGS
          printf(" (%08x)", flags);
@@ -5673,7 +6411,11 @@ static void test_float_one_arg (const char* name, test_func_t func,
       if (zap_hi_32bits)
          ur &= 0xFFFFFFFFULL;
 
+#ifndef __powerpc64__
       printf("%s %016llx => %016llx",
+#else
+      printf("%s %016lx => %016lx",
+#endif
              name, u0, ur);
 #if defined TEST_FLOAT_FLAGS
       printf(" (%08x)", flags);
@@ -5793,7 +6535,11 @@ static void test_float_ld_one_reg_imm16 (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
+#else
+      printf("%s %016lx, %4d => %016lx, %4ld",
+#endif
              name, double_to_bits(src), offs,
              double_to_bits(res), r14-base);
 #if defined TEST_FLOAT_FLAGS
@@ -5850,7 +6596,11 @@ static void test_float_ld_two_regs (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
+#else
+      printf("%s %016lx, %4ld => %016lx, %4ld",
+#endif
              name, double_to_bits(src), r15/*offs*/,
              double_to_bits(res), r14-base);
 #if defined TEST_FLOAT_FLAGS
@@ -5931,7 +6681,11 @@ static void test_float_st_two_regs_imm16 (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
+#else
+      printf("%s %016lx, %4d => %016lx, %4ld",
+#endif
              name, double_to_bits(src), offs,
              double_to_bits(*p_dst), r15-base);
 #if defined TEST_FLOAT_FLAGS
@@ -6008,7 +6762,11 @@ static void test_float_st_three_regs (const char* name,
       r18 = tmpxer;
       __asm__ __volatile__ ("mtxer 18");
 
+#ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
+#else
+      printf("%s %016lx, %4ld => %016lx, %4ld",
+#endif
              name, double_to_bits(src), r16/*offs*/,
              double_to_bits(*p_dst), r15-base);
 #if defined TEST_FLOAT_FLAGS
@@ -6019,12 +6777,20 @@ static void test_float_st_three_regs (const char* name,
 
 #if 0
       // print double precision result
+#ifndef __powerpc64__
       printf("%s %016llx (%014e), %4d => %016llx (%014e), %08x (%08x %08x)\n",
+#else
+      printf("%s %016lx (%014e), %4d => %016lx (%014e), %08x (%08x %08x)\n",
+#endif
              name, double_to_bits(src), src, offs,
              double_to_bits(*p_dst), *p_dst, r15, flags, xer);
 
       // print single precision result
+#ifndef __powerpc64__
       printf("%s %016llx (%014e), %4d => %08x (%f), %08x (%08x %08x)\n",
+#else
+      printf("%s %016lx (%014e), %4d => %08x (%f), %08x (%08x %08x)\n",
+#endif
              name, double_to_bits(src), src, offs,
              (uint32_t)(double_to_bits(*p_dst) >> 32),
              bits_to_float( (uint32_t)(double_to_bits(*p_dst) >> 32) ),

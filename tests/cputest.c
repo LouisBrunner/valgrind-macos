@@ -27,8 +27,7 @@ static Bool go(char* cpu)
 {
    if ( strcmp( cpu, "ppc32" ) == 0 )
       return True;
-   else 
-      return False;
+   return False;
 }
 #endif // __powerpc__ (32)
 
@@ -37,8 +36,9 @@ static Bool go(char* cpu)
 {
    if ( strcmp( cpu, "ppc64" ) == 0 )
       return True;
-   else 
-      return False;
+   if ( strcmp( cpu, "ppc32" ) == 0 )
+      return True;
+   return False;
 }
 #endif // __powerpc__ (64)
 

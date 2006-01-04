@@ -14,4 +14,5 @@ check_PROGRAMS = sse_memory
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
+		@FLAG_M64@
 AM_CXXFLAGS = $(AM_CFLAGS)

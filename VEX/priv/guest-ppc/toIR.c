@@ -2058,10 +2058,6 @@ static IRExpr* /* ::Ity_I32 */ getGST_masked ( PPC_GST reg, UInt mask )
    switch (reg) {
 
    case PPC_GST_FPSCR: {
-      vassert((mask & 0x3)    == 0x3    || (mask & 0x3)    == 0x0);
-      vassert((mask & 0xF000) == 0xF000 || (mask & 0xF000) == 0x0);
-      /* all masks now refer to valid fields */
-      
       /* Vex-generated code expects the FPSCR to be set as follows:
          all exceptions masked, round-to-nearest.
          This corresponds to a FPSCR value of 0x0. */
@@ -2192,10 +2188,6 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
    
    switch (reg) {
    case PPC_GST_FPSCR: {
-      vassert((mask & 0x3)    == 0x3    || (mask & 0x3)    == 0x0);
-      vassert((mask & 0xF000) == 0xF000 || (mask & 0xF000) == 0x0);
-      /* all masks now refer to valid fields */
-
       /* Allow writes to Rounding Mode */
       if (mask & 0x3) {
          stmt( IRStmt_Put( OFFB_FPROUND,
@@ -6110,20 +6102,20 @@ static Bool dis_fp_scr ( UInt theInstr )
    }
 
    switch (opc2) {
-//zz    case 0x026: { // mtfsb1 (Move to FPSCR Bit 1, PPC32 p479)
-//zz       // Bit crbD of the FPSCR is set.
-//zz       UChar crbD    = ifieldRegDS(theInstr);
-//zz       UInt  b11to20 = IFIELD(theInstr, 11, 10);
-//zz 
-//zz       if (b11to20 != 0) {
-//zz          vex_printf("dis_fp_scr(ppc)(instr,mtfsb1)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("mtfsb1%s crb%d \n", flag_rC ? ".":"", crbD);
-//zz       putGST_masked( PPC_GST_FPSCR, mkU32(1<<(31-crbD)), 1<<(31-crbD) );
-//zz       break;
-//zz    }
-//zz 
+   case 0x026: { // mtfsb1 (Move to FPSCR Bit 1, PPC32 p479)
+      // Bit crbD of the FPSCR is set.
+      UChar crbD    = ifieldRegDS(theInstr);
+      UInt  b11to20 = IFIELD(theInstr, 11, 10);
+
+      if (b11to20 != 0) {
+         vex_printf("dis_fp_scr(ppc)(instr,mtfsb1)\n");
+         return False;
+      }
+      DIP("mtfsb1%s crb%d \n", flag_rC ? ".":"", crbD);
+      putGST_masked( PPC_GST_FPSCR, mkU32(1<<(31-crbD)), 1<<(31-crbD) );
+      break;
+   }
+
 //zz    case 0x040: { // mcrfs (Move to Condition Register from FPSCR, PPC32 p465)
 //zz       UChar crfD    = toUChar( IFIELD( theInstr, 23, 3 ) );
 //zz       UChar b21to22 = toUChar( IFIELD( theInstr, 21, 2 ) );
@@ -8582,7 +8574,7 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
 
       /* Floating Point Status/Control Register Instructions */         
-//zz       case 0x026: // mtfsb1
+      case 0x026: // mtfsb1
 //zz       case 0x040: // mcrfs
       case 0x046: // mtfsb0
       case 0x086: // mtfsfi

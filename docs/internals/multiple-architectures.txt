@@ -2,25 +2,63 @@
 Guide to multiple architecture support
 -------------------------------------------------------------------
 
-Valgrind supports systems where binaries for more than one architecture
-can be run and will allow all sorts of binaries to be run under valgrind.
+What is achieved
+~~~~~~~~~~~~~~~~
+Valgrind supports systems where binaries for more than one
+architecture can be run.  The current arrangements build:
 
-To support this the valgrind build system can now build multiple versions
-of the coregrind library and the VEX library and then build and link multiple
-versions of each tool.
+- single-arch support on x86 and ppc32 systems
+- dual-arch support on amd64 and ppc64 systems
 
-The configure script selects which architectures to build support for
-by defining a conditional for each platform that indicates whether or
-not support for that platform should be built. There are currently three
-such conditionals:
+To support this the valgrind build system can now build multiple
+versions of the coregrind library and of VEX, and then build and link
+multiple versions of each tool.
+
+A central notion is that of 'primary' vs 'secondary' platforms.  The
+system is built in its entirety for the primary platform, including
+performance and regression suites and all auxiliary programs.  For
+dual-arch systems, the primary platform is amd64 and ppc64
+respectively.
+
+On dual-arch systems, there is a 'secondary' target - x86 and ppc32 
+respectively.  The tools are built again for the secondary target, and
+the 'valgrind' launcher program can handle executables for either the 
+primary or secondary target.  However, the regression and performance
+tests and everything else is not rebuilt for the secondary target.
+
+On single-arch systems, there is no secondary target.
+
+
+How the build system does that
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The keys to understanding this are in:
+
+- configure.in
+- Makefile.flags.am
+- <tool>/tests/Makefile.am
+- <tool>/tests/<arch>/Makefile.am
+- perf/Makefile.am
+
+The configure script inspects the CPU.  It then sets
+
+   VG_PLATFORM_PRI to be the primary target
+   VG_PLATFORM_SEC to be the secondary target, if any
+
+(VG_PLATFORM_SEC is only used for printing an informational message at
+configure time).
+
+It also sets one (single-arch build) or two (dual-arch build) of
+the following:
 
   VG_X86_LINUX
   VG_AMD64_LINUX
   VG_PPC32_LINUX
+  VG_PPC64_LINUX
 
 On an amd64 system both VG_X86_LINUX and VG_AMD64_LINUX will be true
-so that two versions of all the tools will be built. The coregrind
-libraries will be named:
+so that two versions of all the tools will be built.  Similarly on a
+ppc64 system both VG_PPC32_LINUX and VG_PPC64_LINUX will be defined.
+For the amd64 example, the coregrind libraries will be named:
 
   libcoregrind_x86_linux.a
   libcoregrind_amd64_linux.a
@@ -67,12 +105,61 @@ installed in the appropriate place. On amd64 the result will be:
   <prefix>/lib/valgrind/xfree-4.supp
   <prefix>/lib/valgrind/glibc-2.2.supp
 
-The launcher program (ie the valgrind binary itself) is always
-built as a native program (so a 64 bit program on amd64) but will
-peek at the program which it is being asked to run and decide which
-of the possible tools to run taking both the requested tool and the
-format of the program being run into account.
+The launcher program (ie the valgrind binary itself) is always built
+as a program for the primary target (so a 64 bit program on amd64 and
+ppc64) but will peek at the program which it is being asked to run and
+decide which of the possible tools to run taking both the requested
+tool and the format of the program being run into account.
 
 Because the execv system call is now routed back through the launcher
 it is also possible to exec an x86 program from an amd64 program and
-vice versa.
+vice versa.  Ditto ppc32 and ppc64.
+
+
+Rules for Makefile.am hacking
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In places where compilation should happen twice (on a dual-arch
+system), the decision about which directories and flags to use is
+guarded by the symbols:
+
+  VG_X86_LINUX
+  VG_AMD64_LINUX
+  VG_PPC32_LINUX
+  VG_PPC64_LINUX
+
+But there are also places where building must only happen once,
+for the primary architecture.  These places are (at least):
+
+* the launcher, valgrind.c
+* all the architecture-independent regression tests
+* the performance tests
+* optionally, auxilary programs like hp2ps and valgrind-listener
+
+In order to do that, we need to know what flags to use to build for
+the primary target, and in particular whether to hand -m32 or -m64 to
+gcc.  This is where Makefile.flags.am comes in.
+
+At the bottom of that file are defined AM_CPPFLAGS_PRI, AM_CFLAGS_PRI
+and AM_CCASFLAGS_PRI that must be used for compiling for the primary
+architecture.  For example, look in coregrind/Makefile.am, and you
+will see these flag-sets being used to build the launcher (valgrind).
+
+Also at the bottom of Makefile.flags.am, AM_FLAG_M3264_PRI is defined.
+This gives the -m32/-m64 flag needed to build for the primary target.
+That flag is also contained within AM_CFLAGS_PRI -- AM_FLAG_M3264_PRI
+merely facilitates getting hold of it without the surrounding gunk.
+
+This leads to the final complication: building the regression tests.
+Most of them are architecture-neutral and so should be built for the
+primary target.  The /test/ Makefile.am's duly include
+AM_FLAG_M3264_PRI in the compilation invokations, and you should
+ensure you preserve that when adding more tests.
+
+However, there are some arch-specific test directories (eg,
+none/tests/ppc32, etc).  In each of these, we implicitly 'know'
+whether -m32 or -m64 is the right thing to specify.  So instead of
+messing with AM_FLAG_M3264_PRI, these directories merely specific
+@FLAG_M32@ or @FLAG_M64@ directly.  (These two symbols are also
+automagically set up by configure.in.  Do not use -m32 and -m64
+directly - older compilers barf on them).
+

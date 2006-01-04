@@ -1,3 +1,12 @@
+
+##------------------------------------------------------------##
+# 
+# The multiple-architecture stuff in this file is pretty
+# cryptic.  Read docs/internals/multiple-architectures.txt
+# for at least a partial explanation of what is going on.
+#
+##------------------------------------------------------------##
+
 # Process this file with autoconf to produce a configure script.
 AC_INIT(Valgrind, 3.2.0.SVN, valgrind-users@lists.sourceforge.net)
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
@@ -72,11 +81,6 @@ AC_SUBST(AS)
 ASFLAGS=""
 AC_SUBST(ASFLAGS)
 ])
-
-# This variable will collect the individual suppression files
-# depending on the results of autoconf
-
-DEFAULT_SUPP=""
 
 
 # We don't want gcc < 3.0
@@ -209,47 +213,72 @@ case "${host_os}" in
 	;;
 esac
 
-AC_MSG_CHECKING([for a supported CPU/OS combination])
-AC_SUBST(VG_PLATFORM)
+# What's this used for?
 AC_SUBST(VG_PLATFORM_ALL)
 VG_PLATFORM_ALL="amd64-linux ppc32-linux ppc64-linux x86-linux"
 
-VG_PLATFORM="$VG_ARCH-$VG_OS"
+# Establish VG_PLATFORM_PRI.  This is the primary build target.  The
+# entire system, including regression and performance tests, will be
+# built for this target.  On 32-bit systems this is the only build
+# target.
+#
+# Now establish VG_PLATFORM_SEC, the secondary build target, if
+# possible.  The system will also be built for this target, but not
+# the regression or performance tests.  Also decide what -m32/-m64
+# flags are needed for the primary and secondary build targets.
+# XXXXXXXXXXXXX is this needed?
+#
+AC_MSG_CHECKING([for a supported CPU/OS combination])
 
-case $VG_PLATFORM in
-    x86-linux|amd64-linux|ppc32-linux|ppc64-linux)
+AC_SUBST(VG_PLATFORM_PRI)
+AC_SUBST(VG_PLATFORM_SEC)
+
+case "$VG_ARCH-$VG_OS" in
+     x86-linux)
+	VG_PLATFORM_PRI="X86_LINUX"
+	VG_PLATFORM_SEC=""
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
-        ;;
-
+	;;
+     amd64-linux)
+	VG_PLATFORM_PRI="AMD64_LINUX"
+	VG_PLATFORM_SEC="X86_LINUX"
+        AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
+	;;
+     ppc32-linux)
+	VG_PLATFORM_PRI="PPC32_LINUX"
+	VG_PLATFORM_SEC=""
+        AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
+	;;
+     ppc64-linux)
+	VG_PLATFORM_PRI="PPC64_LINUX"
+	VG_PLATFORM_SEC="PPC32_LINUX"
+        AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
+	;;
     *)
+	VG_PLATFORM_PRI="unknown"
+	VG_PLATFORM_SEC="unknown"
         AC_MSG_RESULT([no (${host_cpu}-${host_os})])
         AC_MSG_ERROR([Valgrind is platform specific. Sorry. Please consider doing a port.])
         ;;
 esac
 
-AM_CONDITIONAL(VG_X86_LINUX,   test x$VG_PLATFORM = xx86-linux -o x$VG_PLATFORM = xamd64-linux)
-AM_CONDITIONAL(VG_AMD64_LINUX, test x$VG_PLATFORM = xamd64-linux)
-AM_CONDITIONAL(VG_PPC32_LINUX, test x$VG_PLATFORM = xppc32-linux -o x$VG_PLATFORM = xppc64-linux)
-AM_CONDITIONAL(VG_PPC64_LINUX, test x$VG_PLATFORM = xppc64-linux)
+# Set up VG_<platform>.  Either one or two of these become defined.
+#
+AM_CONDITIONAL(VG_X86_LINUX,   
+               test x$VG_PLATFORM_PRI = xX86_LINUX -o x$VG_PLATFORM_PRI = xAMD64_LINUX)
+AM_CONDITIONAL(VG_AMD64_LINUX, 
+               test x$VG_PLATFORM_PRI = xAMD64_LINUX)
+AM_CONDITIONAL(VG_PPC32_LINUX, 
+               test x$VG_PLATFORM_PRI = xPPC32_LINUX -o x$VG_PLATFORM_PRI = xPPC64_LINUX)
+AM_CONDITIONAL(VG_PPC64_LINUX, 
+               test x$VG_PLATFORM_PRI = xPPC64_LINUX)
 
-AC_SUBST(VG_MAKE_PLATFORM)
-case $VG_PLATFORM in
-     x86-linux)
-	VG_MAKE_PLATFORM=X86_LINUX
-	;;
-     amd64-linux)
-	VG_MAKE_PLATFORM=AMD64_LINUX
-	;;
-     ppc32-linux|ppc64-linux)
-	VG_MAKE_PLATFORM=PPC32_LINUX
-	;;
-     *)
-	AC_MSG_ERROR([VG_PLATFORM is not known -- configure script bug])
-	;;
-esac
-##VG_MAKE_PLATFORM=`echo $VG_PLATFORM | tr [a-z-] [A-Z_]`
 
+# This variable will collect the individual suppression files
+# depending on the results of autoconf
+DEFAULT_SUPP=""
 AC_SUBST(DEFAULT_SUPP)
+
 
 glibc=""
 
@@ -289,19 +318,19 @@ case "${glibc}" in
      2.2)
 	AC_MSG_RESULT(2.2 family)
 	AC_DEFINE([GLIBC_2_2], 1, [Define to 1 if you're using glibc 2.2.x])
-	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.2.supp"
+	DEFAULT_SUPP="glibc-2.2.supp ${DEFAULT_SUPP}"
 	;;
 
      2.3)
 	AC_MSG_RESULT(2.3 family)
 	AC_DEFINE([GLIBC_2_3], 1, [Define to 1 if you're using glibc 2.3.x])
-	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.3.supp"
+	DEFAULT_SUPP="glibc-2.3.supp ${DEFAULT_SUPP}"
 	;;
 
      2.4)
 	AC_MSG_RESULT(2.4 family)
 	AC_DEFINE([GLIBC_2_4], 1, [Define to 1 if you're using glibc 2.4.x])
-	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.4.supp"
+	DEFAULT_SUPP="glibc-2.4.supp ${DEFAULT_SUPP}"
 	;;
 
      *)
@@ -317,8 +346,8 @@ esac
 # versions 3 and 4.
 AC_PATH_X
 if test "${no_x}" != 'yes' ; then
-   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
-   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
+   DEFAULT_SUPP="xfree-4.supp ${DEFAULT_SUPP}"
+   DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
 fi
 
 
@@ -341,6 +370,27 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_M32)
+
+
+# does this compiler support -m64 ?
+AC_MSG_CHECKING([if gcc accepts -m64])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-m64"
+
+AC_TRY_COMPILE(, [
+int main () { return 0 ; }
+],
+[
+FLAG_M64="-m64"
+AC_MSG_RESULT([yes])
+], [
+FLAG_M64=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_M64)
 
 
 # does this compiler support -mmmx ?
@@ -557,9 +607,10 @@ AC_OUTPUT(
 
 cat<<EOF
 
-Using the following suppressions by default: 
+   Primary build target: ${VG_PLATFORM_PRI}
+       Secondary target: ${VG_PLATFORM_SEC}
+     Default supp files: ${DEFAULT_SUPP}
 
-      ${DEFAULT_SUPP}
 EOF
 
 cat<<EOF > default.supp

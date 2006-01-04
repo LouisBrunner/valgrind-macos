@@ -30,8 +30,23 @@ if VG_PPC64_LINUX
 noinst_LIBRARIES += libcoregrind_ppc64_linux.a libreplacemalloc_toolpreload_ppc64_linux.a
 endif
 
+#------------------------- launcher -----------------------
+# Build the launcher (valgrind) for the primary target only.
+#
 bin_PROGRAMS = \
 	valgrind
+
+valgrind_SOURCES = \
+	launcher.c \
+	m_debuglog.c
+
+valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
+valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
+valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
+#
+#----------------------------------------------------------
+
 
 noinst_PROGRAMS =
 if VG_X86_LINUX
@@ -114,9 +129,6 @@ noinst_HEADERS = \
 BUILT_SOURCES = 
 CLEANFILES = 
 
-valgrind_SOURCES = \
-	launcher.c \
-	m_debuglog.c
 
 COREGRIND_SOURCES_COMMON = \
 	m_commandline.c \

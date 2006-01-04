@@ -1,3 +1,7 @@
+
+# For AM_FLAG_M3264_PRI
+include $(top_srcdir)/Makefile.flags.am
+
 noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
@@ -13,5 +17,5 @@ check_PROGRAMS = \
 	allok deadlock inherit race race2 readshared
 
 # force -gstabs, because we don't print symaddr for DWARF yet
-AM_CFLAGS	= $(WERROR) -Winline -Wall -Wshadow -gstabs
+AM_CFLAGS	= $(WERROR) -Winline -Wall -Wshadow -gstabs $(AM_FLAG_M3264_PRI)
 LDADD		= -lpthread

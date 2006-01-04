@@ -1,3 +1,7 @@
+
+# For AM_FLAG_M3264_PRI
+include $(top_srcdir)/Makefile.flags.am
+
 SUBDIRS = .
 if VG_X86_LINUX
 SUBDIRS += x86
@@ -138,13 +142,16 @@ check_PROGRAMS = \
 	writev zeropage
 
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/coregrind -I$(top_builddir)/include -I@VEX_DIR@/pub
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
+		-I$(top_srcdir)/coregrind -I$(top_builddir)/include \
+		-I@VEX_DIR@/pub
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # Extra stuff for C tests
-memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
-oset_test_CFLAGS	= -DVGA_$(VG_ARCH) -DVGO_$(VG_OS) -DVGP_$(VG_PLATFORM)
+memcmptest_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -fno-builtin-memcmp
+oset_test_CFLAGS	= $(AM_FLAG_M3264_PRI) \
+				-DVGA_$(VG_ARCH) -DVGO_$(VG_OS) -DVGP_$(VG_PLATFORM)
 # Don't allow GCC to inline memcpy(), because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
 stack_switch_LDADD      = -lpthread

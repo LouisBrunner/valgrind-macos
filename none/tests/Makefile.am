@@ -1,3 +1,7 @@
+
+# For AM_FLAG_M3264_PRI
+include $(top_srcdir)/Makefile.flags.am
+
 SUBDIRS = .
 if VG_X86_LINUX
 SUBDIRS += x86
@@ -145,12 +149,12 @@ check_PROGRAMS = \
 	tls tls.so tls2.so vgprintf \
 	coolo_sigaction gxx304
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # Extra stuff for C tests
-ansi_CFLAGS		= -ansi
+ansi_CFLAGS		= $(AM_FLAG_M3264_PRI) -ansi
 floored_LDADD 		= -lm
 manythreads_LDADD	= -lpthread
 mq_LDADD		= -lrt
@@ -180,7 +184,7 @@ tls_so_SOURCES		= tls_so.c
 tls_so_LDADD		= tls2.so
 tls_so_DEPENDENCIES	= tls2.so
 tls_so_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
-tls_so_CFLAGS		= -fPIC
+tls_so_CFLAGS		= $(AM_FLAG_M3264_PRI) -fPIC
 tls2_so_SOURCES		= tls2_so.c
 tls2_so_LDFLAGS		= -shared
 

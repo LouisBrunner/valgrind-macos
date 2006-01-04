@@ -9,8 +9,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	jm-insns
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
-AM_CXXFLAGS = $(AM_CFLAGS)
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
+		@FLAG_M64@
+AM_CXXFLAGS = $(AM_CFLAGS) @FLAG_M64@
 
-jm_insns_CFLAGS = -Winline -Wall -O -mregnames -DHAS_ALTIVEC -maltivec -m64 
-jm_insns_LDFLAGS = -m64
+jm_insns_CFLAGS = -Winline -Wall -O -mregnames -DHAS_ALTIVEC -maltivec \
+			@FLAG_M64@

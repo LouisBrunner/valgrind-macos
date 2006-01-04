@@ -1,4 +1,6 @@
+
 include $(top_srcdir)/Makefile.all.am
+include $(top_srcdir)/Makefile.flags.am
 
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -g
 
@@ -31,7 +33,13 @@ hp2ps_SOURCES = \
 	Scale.c		\
 	Shade.c 	\
 	Utilities.c
-hp2ps_LDADD = -lm
+
+# Build hp2ps for the primary target only.
+hp2ps_LDADD     = -lm
+hp2ps_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+hp2ps_CFLAGS    = $(AM_CFLAGS_PRI)
+hp2ps_CCASFLAGS = $(AM_CCASFLAGS_PRI)
+hp2ps_LDFLAGS   = $(AM_CFLAGS_PRI)
 
 noinst_HEADERS = \
        AreaBelow.h \

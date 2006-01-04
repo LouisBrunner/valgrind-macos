@@ -113,8 +113,7 @@ AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH)
-AC_SUBST(VG_ARCH_ALL)
-VG_ARCH_ALL="amd64 ppc32 ppc64 x86"
+
 AC_SUBST(VALT_LOAD_ADDRESS)
 
 case "${host_cpu}" in
@@ -170,8 +169,6 @@ fi
 
 AC_MSG_CHECKING([for a supported OS])
 AC_SUBST(VG_OS)
-AC_SUBST(VG_OS_ALL)
-VG_OS_ALL="linux"
 
 case "${host_os}" in
      *linux*)
@@ -213,20 +210,14 @@ case "${host_os}" in
 	;;
 esac
 
-# What's this used for?
-AC_SUBST(VG_PLATFORM_ALL)
-VG_PLATFORM_ALL="amd64-linux ppc32-linux ppc64-linux x86-linux"
 
 # Establish VG_PLATFORM_PRI.  This is the primary build target.  The
 # entire system, including regression and performance tests, will be
-# built for this target.  On 32-bit systems this is the only build
-# target.
+# built for this target.
 #
-# Now establish VG_PLATFORM_SEC, the secondary build target, if
+# Also establish VG_PLATFORM_SEC, the secondary build target, if
 # possible.  The system will also be built for this target, but not
-# the regression or performance tests.  Also decide what -m32/-m64
-# flags are needed for the primary and secondary build targets.
-# XXXXXXXXXXXXX is this needed?
+# the regression or performance tests.
 #
 AC_MSG_CHECKING([for a supported CPU/OS combination])
 
@@ -265,11 +256,13 @@ esac
 # Set up VG_<platform>.  Either one or two of these become defined.
 #
 AM_CONDITIONAL(VG_X86_LINUX,   
-               test x$VG_PLATFORM_PRI = xX86_LINUX -o x$VG_PLATFORM_PRI = xAMD64_LINUX)
+               test x$VG_PLATFORM_PRI = xX86_LINUX \
+                 -o x$VG_PLATFORM_SEC = xX86_LINUX)
 AM_CONDITIONAL(VG_AMD64_LINUX, 
                test x$VG_PLATFORM_PRI = xAMD64_LINUX)
 AM_CONDITIONAL(VG_PPC32_LINUX, 
-               test x$VG_PLATFORM_PRI = xPPC32_LINUX -o x$VG_PLATFORM_PRI = xPPC64_LINUX)
+               test x$VG_PLATFORM_PRI = xPPC32_LINUX \ 
+                 -o x$VG_PLATFORM_SEC = xPPC32_LINUX)
 AM_CONDITIONAL(VG_PPC64_LINUX, 
                test x$VG_PLATFORM_PRI = xPPC64_LINUX)
 

@@ -44,9 +44,6 @@ The configure script inspects the CPU.  It then sets
    VG_PLATFORM_PRI to be the primary target
    VG_PLATFORM_SEC to be the secondary target, if any
 
-(VG_PLATFORM_SEC is only used for printing an informational message at
-configure time).
-
 It also sets one (single-arch build) or two (dual-arch build) of
 the following:
 

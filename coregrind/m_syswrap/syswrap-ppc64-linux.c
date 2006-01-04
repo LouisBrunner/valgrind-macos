@@ -1222,7 +1222,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_rmdir,             sys_rmdir),              //  40
    GENXY(__NR_dup,               sys_dup),                //  41
-// _____(__NR_pipe,              sys_pipe),               //  42
+   LINXY(__NR_pipe,              sys_pipe),               //  42
 // _____(__NR_times,             sys_times),              //  43
 // _____(__NR_prof,              sys_prof),               //  44
 
@@ -1247,7 +1247,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_umask,             sys_umask),              //  60
 // _____(__NR_chroot,            sys_chroot),             //  61
 // _____(__NR_ustat,             sys_ustat),              //  62
-// _____(__NR_dup2,              sys_dup2),               //  63
+   GENXY(__NR_dup2,              sys_dup2),               //  63
 // _____(__NR_getppid,           sys_getppid),            //  64
 
 // _____(__NR_getpgrp,           sys_getpgrp),            //  65
@@ -1383,7 +1383,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask),     // 174
 
 // _____(__NR_rt_sigpending,     sys_rt_sigpending),      // 175
-// _____(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),    // 176
+   LINXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),    // 176
 // _____(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),    // 177
 // _____(__NR_rt_sigsuspend,     sys_rt_sigsuspend),      // 178
 // _____(__NR_pread64,           sys_pread64),            // 179

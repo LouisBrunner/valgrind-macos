@@ -151,7 +151,8 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 # Extra stuff for C tests
 memcmptest_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -fno-builtin-memcmp
 oset_test_CFLAGS	= $(AM_FLAG_M3264_PRI) \
-				-DVGA_$(VG_ARCH) -DVGO_$(VG_OS) -DVGP_$(VG_PLATFORM)
+				-DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \
+				-DVGP_$(VG_ARCH)_$(VG_OS)=1
 # Don't allow GCC to inline memcpy(), because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
 stack_switch_LDADD      = -lpthread

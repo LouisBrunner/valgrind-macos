@@ -1211,7 +1211,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_utime,             sys_utime),              //  30
 // _____(__NR_stty,              sys_stty),               //  31
 // _____(__NR_gtty,              sys_gtty),               //  32
-// _____(__NR_access,            sys_access),             //  33
+   GENX_(__NR_access,            sys_access),             //  33
 // _____(__NR_nice,              sys_nice),               //  34
 
 // _____(__NR_ftime,             sys_ftime),              //  35
@@ -1350,7 +1350,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_writev,            sys_writev),             // 146
 // _____(__NR_getsid,            sys_getsid),             // 147
 // _____(__NR_fdatasync,         sys_fdatasync),          // 148
-// _____(__NR__sysctl,           sys__sysctl),            // 149
+   LINXY(__NR__sysctl,           sys_sysctl),             // 149
 
 // _____(__NR_mlock,             sys_mlock),              // 150
 // _____(__NR_munlock,           sys_munlock),            // 151

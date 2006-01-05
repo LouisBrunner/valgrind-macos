@@ -1518,7 +1518,7 @@ static Bool mc_recognised_suppression ( Char* name, Supp* su )
       /* slow-path case. */						\
       if (EXPECTED_NOT_TAKEN(a & mask)) {				\
          PROF_EVENT(201, #nAME"-slow1");			        \
-         return (UWord)mc_LOADVn_slow( aA, 8, iS_BIGENDIAN );	        \
+         return (ULong)mc_LOADVn_slow( aA, 8, iS_BIGENDIAN );	        \
       }									\
    									\
       sec_no = (UWord)(a >> 16);					\

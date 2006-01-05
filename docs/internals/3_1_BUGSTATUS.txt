@@ -36,3 +36,4 @@ v5427     v5451     n-i-bz   OSet 64-bit fastcmp bug
 v5445     pending   n-i-bz   VG_(getgroups) fix (Shinichi Noda)
 vx1519    pending   n-i-bz   ppc32/64: allocate from callee-saved FP/VMX regs
 vx1521/2  pending   119297   Incorrect error message for sse code
+v5500     pending   n-i-bz   misaligned path word-size bug in mc_main.c

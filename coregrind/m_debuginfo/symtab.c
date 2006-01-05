@@ -1105,9 +1105,22 @@ static Bool is_elf_object_file(const void *buf)
    return False;
 }
 
-static Bool is_interesting_symbol(SegInfo* si, ElfXX_Sym* sym, 
-                                  Char* sym_name, Addr sym_addr)
+/* Decide whether SYM is something we should collect.  It may also
+   decide to change the stated address of the symbol, in which case a
+   different value is assigned to *SYM_ADDR_REALLY; otherwise SYM is
+   copied to *SYM_ADDR_REALLY. */
+
+static Bool is_interesting_symbol( SegInfo*   si, 
+                                   ElfXX_Sym* sym, 
+                                   Char*      sym_name, 
+                                   Addr       sym_addr,
+                                   UChar*     opd_filea, /* oimage addr of .opd sec
+                                                            (ppc64-linux only) */
+				   /*OUT*/Addr* sym_addr_really )
 {
+   /* Set default real address for the symbol. */
+   *sym_addr_really = sym_addr;
+
    /* Figure out if we're interested in the symbol.
       Firstly, is it of the right flavour?  */
    if ( ! ( (ELFXX_ST_BIND(sym->st_info) == STB_GLOBAL ||
@@ -1123,15 +1136,15 @@ static Bool is_interesting_symbol(SegInfo* si, ElfXX_Sym* sym,
 
    /* Secondly, if it's apparently in a GOT or PLT, it's really
       a reference to a symbol defined elsewhere, so ignore it. */
-   if (si->got_start != 0
-       && sym_addr >= si->got_start 
-       && sym_addr <  si->got_start + si->got_size) {
+   if (si->got_start_vma != 0
+       && sym_addr >= si->got_start_vma 
+       && sym_addr <  si->got_start_vma + si->got_size) {
       TRACE_SYMTAB("ignore -- in GOT: %s\n", sym_name);
       return False;
    }
-   if (si->plt_start != 0
-       && sym_addr >= si->plt_start
-       && sym_addr <  si->plt_start + si->plt_size) {
+   if (si->plt_start_vma != 0
+       && sym_addr >= si->plt_start_vma
+       && sym_addr <  si->plt_start_vma + si->plt_size) {
       TRACE_SYMTAB("ignore -- in PLT: %s\n", sym_name);
       return False;
    }
@@ -1154,6 +1167,67 @@ static Bool is_interesting_symbol(SegInfo* si, ElfXX_Sym* sym,
       return False;
    }
 
+   /* ppc64-linux nasty hack: if the symbol is in a .opd section, then
+      really what we have is the address of a function descriptor.  So
+      use the first word of that as the function's text.
+
+      See thread starting at
+      http://gcc.gnu.org/ml/gcc-patches/2004-08/msg00557.html
+   */
+   if (si->opd_start_vma != 0
+       && sym_addr >= si->opd_start_vma
+       && sym_addr <  si->opd_start_vma + si->opd_size) {
+#     if !defined(VGP_ppc64_linux)
+      TRACE_SYMTAB("ignore -- in OPD: %s\n", sym_name);
+      return False;
+#     else
+      Int    offset_in_opd;
+      ULong* fn_descr;
+
+      if (0) VG_(printf)("opdXXX: si->offset %p, sym_addr %p\n", 
+                         (void*)(si->offset), (void*)sym_addr);
+
+      if (!VG_IS_8_ALIGNED(sym_addr))
+         return False;
+
+      /* sym_addr is a vma pointing into the .opd section.  We know
+         the vma of the opd section start, so we can figure out how
+         far into the opd section this is. */
+
+      offset_in_opd = (Addr)sym_addr - (Addr)(si->opd_start_vma);
+      if (offset_in_opd < 0 || offset_in_opd >= si->opd_size)
+         return False;
+
+      /* Now we want to know what's at that offset in the .opd
+         section.  We can't look in the running image since it won't
+         necessarily have been mapped.  But we can consult the oimage.
+         opd_filea is the start address of the .opd in the oimage.
+         Hence: */
+
+      fn_descr = (ULong*)(opd_filea + offset_in_opd);
+
+      if (0) VG_(printf)("opdXXY: offset %d,  fn_descr %p\n", offset_in_opd, fn_descr);
+      if (0) VG_(printf)("opdXXZ: *fn_descr %p\n", (void*)(fn_descr[0]));
+
+      sym_addr = fn_descr[0];
+
+      /* Hopefully sym_addr is now an offset into the text section.
+         Problem is, where did the text section get mapped?  Well,
+         this SegInfo (si) exists because a text section got mapped,
+         and it got mapped to si->start.  Hence add si->start to the
+         sym_addr to get the real vma. */
+
+      sym_addr += si->offset;
+      *sym_addr_really = sym_addr;
+
+      /* Do a final sanity check: if the symbol falls outside the
+         SegInfo's mapped range, ignore it.  Since sym_addr has been
+         updated, that can be achieved simply by falling through to
+         the test below. */
+
+#     endif /* ppc64-linux nasty hack */
+   }
+
    /* If no part of the symbol falls within the mapped range,
       ignore it. */
    if (sym_addr+sym->st_size <= si->start
@@ -1170,10 +1244,11 @@ static Bool is_interesting_symbol(SegInfo* si, ElfXX_Sym* sym,
 static
 void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
                   ElfXX_Sym* o_symtab, UInt o_symtab_sz,
-                  UChar*     o_strtab, UInt o_strtab_sz )
+                  UChar*     o_strtab, UInt o_strtab_sz,
+                  UChar*     opd_filea /* ppc64-linux only */ )
 {
    Int   i;
-   Addr  sym_addr;
+   Addr  sym_addr, sym_addr_really;
    Char* sym_name;
    RiSym risym;
    Char* name;
@@ -1224,9 +1299,18 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
       }               
 
       // Record interesting symbols in our symtab.
-      if ( is_interesting_symbol(si, sym, sym_name, sym_addr) ) {
+      if ( is_interesting_symbol(si, sym, sym_name, sym_addr, opd_filea, &sym_addr_really) ) {
          vg_assert(sym->st_name != 0);
          vg_assert(sym_name[0]  != 0);
+#        if defined(VGP_ppc64_linux)
+         /* It's crucial that we never add symbol addresses in the
+            .opd section.  This would completely mess up function
+            redirection and intercepting.  This assert ensures that
+            any symbols that make it into the symbol table on
+            ppc64-linux don't point into .opd. */
+         vg_assert(sym_addr_really + sym->st_size <= si->opd_start_vma
+                   || sym_addr_really >= si->opd_start_vma + si->opd_size);
+#        endif
          name = ML_(addStr) ( si, sym_name, -1 );
          vg_assert(name != NULL);
 
@@ -1238,10 +1322,10 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
           * the string table.  Importantly, it never makes it bigger.
           */
          if (do_intercepts) {
-            VG_(maybe_redir_or_notify)( name, sym_addr );
+            VG_(maybe_redir_or_notify)( name, sym_addr_really );
          }
 
-         risym.addr  = sym_addr;
+         risym.addr  = sym_addr_really;
          risym.size  = sym->st_size;
          risym.name  = name;
          addSym ( si, &risym );
@@ -1531,11 +1615,11 @@ Bool read_lib_symbols ( SegInfo* si )
          // Get the data and bss start/size if appropriate
 	 mapped = o_phdr->p_vaddr + si->offset;
 	 mapped_end = mapped + o_phdr->p_memsz;
-	 if (si->data_start == 0 &&
+	 if (si->data_start_vma == 0 &&
 	     (o_phdr->p_flags & (PF_R|PF_W|PF_X)) == (PF_R|PF_W)) {
-	    si->data_start = mapped;
-	    si->data_size = o_phdr->p_filesz;
-	    si->bss_start = mapped + o_phdr->p_filesz;
+	    si->data_start_vma = mapped;
+	    si->data_size      = o_phdr->p_filesz;
+	    si->bss_start_vma  = mapped + o_phdr->p_filesz;
 	    if (o_phdr->p_memsz > o_phdr->p_filesz)
 	       si->bss_size = o_phdr->p_memsz - o_phdr->p_filesz;
 	    else
@@ -1575,7 +1659,8 @@ Bool read_lib_symbols ( SegInfo* si )
    /* Find interesting sections, read the symbol table(s), read any debug
       information */
    {
-      /* Pointers to start of sections */
+      /* Pointers to start of sections (in the oimage, not in the
+	 running image) */
       UChar*     o_strtab     = NULL; /* .strtab */
       ElfXX_Sym* o_symtab     = NULL; /* .symtab */
       UChar*     o_dynstr     = NULL; /* .dynstr */
@@ -1590,6 +1675,8 @@ Bool read_lib_symbols ( SegInfo* si )
       UChar*     dwarf1d      = NULL; /* .debug        (dwarf1) */
       UChar*     dwarf1l      = NULL; /* .line         (dwarf1) */
       UChar*     ehframe      = NULL; /* .eh_frame     (dwarf2) */
+      UChar*     opd_filea    = NULL; /* .opd          (dwarf2, ppc64-linux) */
+      UChar*     dummy_filea  = NULL;
 
       /* Section sizes, in bytes */
       UInt       o_strtab_sz     = 0;
@@ -1608,25 +1695,36 @@ Bool read_lib_symbols ( SegInfo* si )
       UInt       ehframe_sz      = 0;
 
       /* Section virtual addresses */
-      Addr       dummy_addr      = 0;
-      Addr       ehframe_addr    = 0;
+      Addr       dummy_vma       = 0;
+      Addr       ehframe_vma     = 0;
 
       /* Find all interesting sections */
+
+      /* What FIND does: it finds the section called SEC_NAME.  The
+	 size of it is assigned to SEC_SIZE.  The address that it will
+	 appear in the running image is assigned to SEC_VMA (note,
+	 this will be meaningless for sections which are not marked
+	 loadable.  Even for sections which are marked loadable, the
+	 client's ld.so may not have loaded them yet, so there is no
+	 guarantee that we can safely prod around in any such area)
+	 The address of the section in the transiently loaded oimage
+	 is assigned to SEC_FILEA.  Because the entire object file is
+	 transiently mapped aboard for inspection, it's always safe to
+	 inspect that area. */
+
       for (i = 0; i < ehdr->e_shnum; i++) {
-#        define FIND(sec_name, sec_data, sec_size, sec_addr, in_exec, type) \
+
+#        define FIND(sec_name, sec_size, sec_filea, sec_vma) \
          if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
             Bool nobits; \
-            if (0 != sec_data) \
-               VG_(core_panic)("repeated section!\n"); \
-            if (in_exec) \
-               sec_data = (type)(si->offset + shdr[i].sh_addr); \
-            else \
-               sec_data = (type)(oimage + shdr[i].sh_offset); \
-            sec_size = shdr[i].sh_size; \
+            sec_vma   = (Addr)(si->offset + shdr[i].sh_addr); \
+            sec_filea = (void*)(oimage + shdr[i].sh_offset); \
+            sec_size  = shdr[i].sh_size; \
             nobits = shdr[i].sh_type == SHT_NOBITS; \
-            sec_addr = si->offset + shdr[i].sh_addr; \
-            TRACE_SYMTAB( "%18s: %p .. %p\n", \
-                          sec_name, sec_data, sec_data + sec_size - 1); \
+            TRACE_SYMTAB( "%18s: filea %p .. %p, vma %p .. %p\n", \
+                          sec_name, (UChar*)sec_filea, \
+                                    ((UChar*)sec_filea) + sec_size - 1, \
+                          sec_vma, sec_vma + sec_size - 1); \
             /* SHT_NOBITS sections have zero size in the file. */ \
             if ( shdr[i].sh_offset + (nobits ? 0 : sec_size) > n_oimage ) { \
                ML_(symerr)("   section beyond image end?!"); \
@@ -1636,27 +1734,29 @@ Bool read_lib_symbols ( SegInfo* si )
 
          /* Nb: must find where .got and .plt sections will be in the
           * executable image, not in the object image transiently loaded. */
-              FIND(".dynsym",       o_dynsym,     o_dynsym_sz,   dummy_addr,   0, ElfXX_Sym*)
-         else FIND(".dynstr",       o_dynstr,     o_dynstr_sz,   dummy_addr,   0, UChar*)
-         else FIND(".symtab",       o_symtab,     o_symtab_sz,   dummy_addr,   0, ElfXX_Sym*)
-         else FIND(".strtab",       o_strtab,     o_strtab_sz,   dummy_addr,   0, UChar*)
+         /*   NAME              SIZE           ADDR_IN_OIMAGE  ADDR_WHEN_MAPPED */
+         FIND(".dynsym",        o_dynsym_sz,   o_dynsym,       dummy_vma)
+         FIND(".dynstr",        o_dynstr_sz,   o_dynstr,       dummy_vma)
+         FIND(".symtab",        o_symtab_sz,   o_symtab,       dummy_vma)
+         FIND(".strtab",        o_strtab_sz,   o_strtab,       dummy_vma)
 
-         else FIND(".gnu_debuglink", debuglink,   debuglink_sz,  dummy_addr,   0, Char*)
+         FIND(".gnu_debuglink", debuglink_sz,  debuglink,      dummy_vma)
 
-         else FIND(".stab",         stab,         stab_sz,       dummy_addr,   0, UChar*)
-         else FIND(".stabstr",      stabstr,      stabstr_sz,    dummy_addr,   0, UChar*)
+         FIND(".stab",          stab_sz,       stab,           dummy_vma)
+         FIND(".stabstr",       stabstr_sz,    stabstr,        dummy_vma)
 
-         else FIND(".debug_line",   debug_line,   debug_line_sz, dummy_addr,   0, UChar*)
-         else FIND(".debug_info",   debug_info,   debug_info_sz, dummy_addr,   0, UChar*)
-         else FIND(".debug_abbrev", debug_abbv,   debug_abbv_sz, dummy_addr,   0, UChar*)
-         else FIND(".debug_str",    debug_str,    debug_str_sz,  dummy_addr,   0, UChar*)
+         FIND(".debug_line",    debug_line_sz, debug_line,     dummy_vma)
+         FIND(".debug_info",    debug_info_sz, debug_info,     dummy_vma)
+         FIND(".debug_abbrev",  debug_abbv_sz, debug_abbv,     dummy_vma)
+         FIND(".debug_str",     debug_str_sz,  debug_str,      dummy_vma)
 
-         else FIND(".debug",        dwarf1d,      dwarf1d_sz,    dummy_addr,   0, UChar*)
-         else FIND(".line",         dwarf1l,      dwarf1l_sz,    dummy_addr,   0, UChar*)
-         else FIND(".eh_frame",     ehframe,      ehframe_sz,    ehframe_addr, 0, UChar*)
+         FIND(".debug",         dwarf1d_sz,    dwarf1d,        dummy_vma)
+         FIND(".line",          dwarf1l_sz,    dwarf1l,        dummy_vma)
+         FIND(".eh_frame",      ehframe_sz,    ehframe,        ehframe_vma)
 
-         else FIND(".got",         si->got_start, si->got_size,  dummy_addr,   1, Addr)
-         else FIND(".plt",         si->plt_start, si->plt_size,  dummy_addr,   1, Addr)
+         FIND(".got",           si->got_size,  dummy_filea,    si->got_start_vma)
+         FIND(".plt",           si->plt_size,  dummy_filea,    si->plt_start_vma)
+         FIND(".opd",           si->opd_size,  opd_filea,      si->opd_start_vma)
 
 #        undef FIND
       }
@@ -1679,23 +1779,27 @@ Bool read_lib_symbols ( SegInfo* si )
          if ((dimage = find_debug_file(si->filename, debuglink, crc, &n_dimage)) != 0) {
             ehdr = (ElfXX_Ehdr*)dimage;
 
-            if (n_dimage >= sizeof(ElfXX_Ehdr) && is_elf_object_file(ehdr))
-            {
+            if (n_dimage >= sizeof(ElfXX_Ehdr) && is_elf_object_file(ehdr)) {
                shdr = (ElfXX_Shdr*)(dimage + ehdr->e_shoff);
                sh_strtab = (UChar*)(dimage + shdr[ehdr->e_shstrndx].sh_offset);
 
+               /* Same deal as previous FIND, except simpler - doesn't
+                  look for vma, only oimage address. */
+
                /* Find all interesting sections */
                for (i = 0; i < ehdr->e_shnum; i++) {
-#                 define FIND(sec_name, sec_data, sec_size, type) \
+
+#                 define FIND(sec_name, sec_size, sec_filea)	\
                   if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
                      Bool nobits; \
-                     if (0 != sec_data) \
+                     if (0 != sec_filea) \
                         VG_(core_panic)("repeated section!\n"); \
-                     sec_data = (type)(dimage + shdr[i].sh_offset); \
-                     sec_size = shdr[i].sh_size; \
+                     sec_filea = (void*)(dimage + shdr[i].sh_offset); \
+                     sec_size  = shdr[i].sh_size; \
                      nobits = shdr[i].sh_type == SHT_NOBITS; \
-                     TRACE_SYMTAB( "%18s: %p .. %p\n", \
-                                   sec_name, sec_data, sec_data + sec_size - 1); \
+                     TRACE_SYMTAB( "%18s: filea %p .. %p\n", \
+                                   sec_name, (UChar*)sec_filea, \
+                                             ((UChar*)sec_filea) + sec_size - 1); \
                      /* SHT_NOBITS sections have zero size in the file. */ \
                      if ( shdr[i].sh_offset + (nobits ? 0 : sec_size) > n_dimage ) { \
                         ML_(symerr)("   section beyond image end?!"); \
@@ -1703,16 +1807,14 @@ Bool read_lib_symbols ( SegInfo* si )
                      } \
                   }
 
-                  /* Nb: must find where .got and .plt sections will be in the
-                   * executable image, not in the object image transiently loaded. */
-                       FIND(".stab",         stab,         stab_sz,       UChar*)
-                  else FIND(".stabstr",      stabstr,      stabstr_sz,    UChar*)
-                  else FIND(".debug_line",   debug_line,   debug_line_sz, UChar*)
-                  else FIND(".debug_info",   debug_info,   debug_info_sz, UChar*)
-                  else FIND(".debug_abbrev", debug_abbv,   debug_abbv_sz, UChar*)
-                  else FIND(".debug_str",    debug_str,    debug_str_sz,  UChar*)
-                  else FIND(".debug",        dwarf1d,      dwarf1d_sz,    UChar*)
-                  else FIND(".line",         dwarf1l,      dwarf1l_sz,    UChar*)
+                  FIND(".stab",         stab_sz,         stab)
+                  FIND(".stabstr",      stabstr_sz,      stabstr)
+                  FIND(".debug_line",   debug_line_sz,   debug_line)
+                  FIND(".debug_info",   debug_info_sz,   debug_info)
+                  FIND(".debug_abbrev", debug_abbv_sz,   debug_abbv)
+                  FIND(".debug_str",    debug_str_sz,    debug_str)
+                  FIND(".debug",        dwarf1d_sz,      dwarf1d)
+                  FIND(".line",         dwarf1l_sz,      dwarf1l)
 
 #                 undef FIND
                }
@@ -1723,15 +1825,15 @@ Bool read_lib_symbols ( SegInfo* si )
       /* Read symbols */
       read_symtab(si, "symbol table", False,
                   o_symtab, o_symtab_sz,
-                  o_strtab, o_strtab_sz);
+                  o_strtab, o_strtab_sz, opd_filea);
 
       read_symtab(si, "dynamic symbol table", True,
                   o_dynsym, o_dynsym_sz,
-                  o_dynstr, o_dynstr_sz);
+                  o_dynstr, o_dynstr_sz, opd_filea);
 
       /* Read .eh_frame (call-frame-info) if any */
       if (ehframe) {
-         ML_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz, ehframe_addr );
+         ML_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz, ehframe_vma );
       }
 
       /* Read the stabs and/or dwarf2 debug information, if any.  It
@@ -2748,19 +2850,22 @@ VgSectKind VG_(seginfo_sect_kind)(Addr a)
 	 if (0)
 	    VG_(printf)("addr=%p si=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",
 			a, si, si->filename, 
-			si->got_start, si->got_size,
-			si->plt_start, si->plt_size,
-			si->data_start, si->data_size,
-			si->bss_start, si->bss_size);
+			si->got_start_vma,  si->got_size,
+			si->plt_start_vma,  si->plt_size,
+			si->data_start_vma, si->data_size,
+			si->bss_start_vma,  si->bss_size);
 	 ret = Vg_SectText;
 
-	 if (a >= si->data_start && a < (si->data_start + si->data_size))
+	 if (a >= si->data_start_vma && a < (si->data_start_vma + si->data_size))
 	    ret = Vg_SectData;
-	 else if (a >= si->bss_start && a < (si->bss_start + si->bss_size))
+	 else 
+         if (a >= si->bss_start_vma && a < (si->bss_start_vma + si->bss_size))
 	    ret = Vg_SectBSS;
-	 else if (a >= si->plt_start && a < (si->plt_start + si->plt_size))
+	 else 
+         if (a >= si->plt_start_vma && a < (si->plt_start_vma + si->plt_size))
 	    ret = Vg_SectPLT;
-	 else if (a >= si->got_start && a < (si->got_start + si->got_size))
+	 else 
+         if (a >= si->got_start_vma && a < (si->got_start_vma + si->got_size))
 	    ret = Vg_SectGOT;
       }
    }

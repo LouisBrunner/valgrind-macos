@@ -4428,6 +4428,8 @@ static Bool dis_memsync ( UInt theInstr )
    /* X-Form, XL-Form */
    UChar opc1    = ifieldOPC(theInstr);
    UInt  b11to25 = IFIELD(theInstr, 11, 15);
+   UChar flag_L  = ifieldRegDS(theInstr);
+   UInt  b11to20 = IFIELD(theInstr, 11, 10);
    UChar rD_addr = ifieldRegDS(theInstr);
    UChar rS_addr = rD_addr;
    UChar rA_addr = ifieldRegA(theInstr);
@@ -4522,7 +4524,7 @@ static Bool dis_memsync ( UInt theInstr )
       }
 
       case 0x256: // sync (Synchronize, PPC32 p543), 
-                  // also lwsync, which appears to be undocumented
+                  // also lwsync (L==1), ptesync (L==2)
          /* http://sources.redhat.com/ml/binutils/2000-12/msg00311.html
 
             The PowerPC architecture used in IBM chips has expanded
@@ -4542,12 +4544,17 @@ static Bool dis_memsync ( UInt theInstr )
 
             sync    =       sync 0
             lwsync  =       sync 1
+            ptesync =       sync 2    *** TODO - not implemented ***
          */
-         if ((b11to25 != 0/*sync*/ && b11to25 != 1024/*lwsync*/) || b0 != 0) {
-            vex_printf("dis_memsync(ppc)(sync/lwsync,b11to25|b0)\n");
+         if (b11to20 != 0 || b0 != 0) {
+            vex_printf("dis_memsync(ppc)(sync/lwsync,b11to20|b0)\n");
             return False;
          }
-         DIP("%ssync\n", b11to25 == 1024 ? "lw" : "");
+         if (flag_L != 0/*sync*/ && flag_L != 1/*lwsync*/) {
+            vex_printf("dis_memsync(ppc)(sync/lwsync,flag_L)\n");
+            return False;
+         }
+         DIP("%ssync\n", flag_L == 1 ? "lw" : "");
          /* Insert a memory fence.  It's sometimes important that these
             are carried through to the generated code. */
          stmt( IRStmt_MFence() );

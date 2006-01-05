@@ -43,6 +43,7 @@
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
 #include "pub_core_tooliface.h"    // VG_(needs).malloc_replacement
+#include "pub_tool_machine.h"      // VG_(fnptr_to_fnentry)
 
 
 /*------------------------------------------------------------*/
@@ -406,7 +407,16 @@ void VG_(setup_code_redirect_table) ( void )
 
 #elif defined(VGP_ppc64_linux)
 
-   // we'll have to stick some godawful hacks in here, no doubt
+   /* If we're using memcheck, use these intercepts right from
+      the start, otherwise ld.so makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+
+      add_redirect_sym_to_addr(
+         "soname:ld64.so.1", "strlen",
+         (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strlen) )
+      );   
+
+   }
 
 #else
 #  error Unknown platform

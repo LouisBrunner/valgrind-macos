@@ -65,6 +65,10 @@ extern UInt  VG_(ppc32_linux_REDIR_FOR_strlen)( void* );
 extern UInt  VG_(ppc32_linux_REDIR_FOR_strcmp)( void*, void* );
 extern void* VG_(ppc32_linux_REDIR_FOR_strchr)( void*, Int );
 #endif
+
+#if defined(VGP_ppc64_linux)
+extern UInt  VG_(ppc64_linux_REDIR_FOR_strlen)( void* );
+#endif
  
 #endif   // __PUB_CORE_TRAMPOLINE_H
 

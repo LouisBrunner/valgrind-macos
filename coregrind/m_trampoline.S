@@ -277,6 +277,9 @@ VG_(ppc32_linux_REDIR_FOR_strchr):
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 
+	/* and a trailing page of unexecutable code */
+	UD2_PAGE
+
 #	undef UD2_16
 #	undef UD2_64
 #	undef UD2_256
@@ -306,7 +309,32 @@ VG_(trampoline_stuff_start):
 .type .VG_(trampoline_stuff_start),@function
 .global  .VG_(trampoline_stuff_start)
 .VG_(trampoline_stuff_start):
-	
+
+.align 2
+.globl VG_(ppc64_linux_REDIR_FOR_strlen)
+.section        ".opd","aw"
+.align 3
+VG_(ppc64_linux_REDIR_FOR_strlen):
+.quad   .L.VG_(ppc64_linux_REDIR_FOR_strlen),.TOC.@tocbase
+.previous
+.type   VG_(ppc64_linux_REDIR_FOR_strlen), @function
+.L.VG_(ppc64_linux_REDIR_FOR_strlen):
+        mr 9,3
+        lbz 0,0(3)
+        li 3,0
+        cmpwi 7,0,0
+        beqlr 7
+        li 3,0
+.L5:
+        addi 0,3,1
+        extsw 3,0
+        lbzx 0,9,3
+        cmpwi 7,0,0
+        bne 7,.L5
+        blr
+        .long 0
+        .byte 0,0,0,0,0,0,0,0
+        .size   VG_(ppc64_linux_REDIR_FOR_strlen),.-.L.VG_(ppc64_linux_REDIR_FOR_strlen)
 
 .align 2
 .global VG_(trampoline_stuff_end)
@@ -318,6 +346,9 @@ VG_(trampoline_stuff_end):
 .type .VG_(trampoline_stuff_end),@function
 .global  .VG_(trampoline_stuff_end)
 .VG_(trampoline_stuff_end):
+
+	/* and a trailing page of unexecutable code */
+	UD2_PAGE
 
 #	undef UD2_16
 #	undef UD2_64

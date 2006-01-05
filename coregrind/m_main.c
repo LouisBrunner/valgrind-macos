@@ -2398,8 +2398,12 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //   p: aspacem
    //--------------------------------------------------------------
    { Bool change_ownership_v_c_OK;
-     Addr co_start   = VG_PGROUNDDN( (Addr)&VG_(trampoline_stuff_start) );
-     Addr co_endPlus = VG_PGROUNDUP( (Addr)&VG_(trampoline_stuff_end) );
+     Addr co_start   = VG_PGROUNDDN( 
+                          (Addr)VG_(fnptr_to_fnentry)( 
+                             &VG_(trampoline_stuff_start) ) );
+     Addr co_endPlus = VG_PGROUNDUP( 
+                          (Addr)VG_(fnptr_to_fnentry)( 
+                             &VG_(trampoline_stuff_end) ) );
      VG_(debugLog)(1,"redir",
                      "transfer ownership V -> C of 0x%llx .. 0x%llx\n",
                      (ULong)co_start, (ULong)co_endPlus-1 );

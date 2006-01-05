@@ -212,15 +212,17 @@ struct _SegInfo {
    */
    OffT   offset;
 
-   /* Bounds of data, BSS, PLT and GOT, so that tools can see what
-      section an address is in */
-   Addr	  plt_start;
+   /* Bounds of data, BSS, PLT, GOT and OPD (for ppc64-linux) so that
+      tools can see what section an address is in.  In the running image! */
+   Addr	  plt_start_vma;
    UInt   plt_size;
-   Addr   got_start;
+   Addr   got_start_vma;
    UInt   got_size;
-   Addr   data_start;
+   Addr   opd_start_vma;
+   UInt   opd_size;
+   Addr   data_start_vma;
    UInt   data_size;
-   Addr   bss_start;
+   Addr   bss_start_vma;
    UInt   bss_size;
 
    /* data used by stabs parser */

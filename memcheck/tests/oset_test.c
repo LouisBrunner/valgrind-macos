@@ -34,31 +34,32 @@
 #define NN  1000       // Size of OSets being created
 
 //---------------------------------------------------------------------------
-// Int example
+// Word example
 //---------------------------------------------------------------------------
 
-// This example shows that an element can be a single value (in this case an
-// Int), in which case the element is also the key.
+// This example shows that an element can be a single value (in this
+// case a Word), in which case the element is also the key.
 
 __attribute__((unused))
-static Char *intToStr(void *p)
+static Char *wordToStr(void *p)
 {
-   static char buf[16];
-   sprintf(buf, "%d", *(Int*)p);
+   static char buf[32];
+   sprintf(buf, "%ld", *(Word*)p);
    return buf;
 }
 
 __attribute__((unused))
-static Int intCmp(void* vkey, void* velem)
+static Word wordCmp(void* vkey, void* velem)
 {
-   return *(Int*)vkey - *(Int*)velem;
+   return *(Word*)vkey - *(Word*)velem;
 }
 
 void example1(void)
 {
-   Int i, v, n, prev;
-   Int* vs[NN];
-   Int *pv;
+   Int  i, n;
+   Word v, prev;
+   Word* vs[NN];
+   Word *pv;
 
    // Create a static OSet of Ints.  This one uses fast (built-in)
    // comparisons.
@@ -76,15 +77,15 @@ void example1(void)
    // Create some elements, with gaps (they're all even) but no dups,
    // and shuffle them randomly.
    for (i = 0; i < NN; i++) {
-      vs[i] = VG_(OSet_AllocNode)(oset1, sizeof(Int));
+      vs[i] = VG_(OSet_AllocNode)(oset1, sizeof(Word));
       *(vs[i]) = 2*i;
    }
    for (i = 0; i < NN; i++) {
-      Int r1  = random() % NN;
-      Int r2  = random() % NN;
-      Int* tmp= vs[r1];
-      vs[r1]  = vs[r2];
-      vs[r2]  = tmp;
+      Word r1  = random() % NN;
+      Word r2  = random() % NN;
+      Word* tmp= vs[r1];
+      vs[r1]   = vs[r2];
+      vs[r2]   = tmp;
    }
 
    // Insert the elements
@@ -124,7 +125,7 @@ void example1(void)
    prev = -1;
    VG_(OSet_ResetIter)(oset1);
    while ( (pv = VG_(OSet_Next)(oset1)) ) {
-      Int curr = *pv;
+      Word curr = *pv;
       assert(prev < curr); 
       prev = curr;
       n++;
@@ -179,7 +180,7 @@ void example1(void)
    }
 
    // Print the list
-   OSet_Print(oset1, "foo", intToStr);
+   OSet_Print(oset1, "foo", wordToStr);
 
    // Destroy the OSet
    VG_(OSet_Destroy)(oset1, NULL);

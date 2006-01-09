@@ -7,7 +7,8 @@ noinst_SCRIPTS = vg_perf
 noinst_HEADERS = stdarg.h stddef.h
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
-	bigcode.vgperf \
+	bigcode1.vgperf \
+	bigcode2.vgperf \
 	bz2.vgperf \
 	fbench.vgperf \
 	ffbench.vgperf \

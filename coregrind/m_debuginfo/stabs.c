@@ -863,6 +863,8 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
              VG_(strncmp)(p, "operator>=::", 12) == 0 ||
              VG_(strncmp)(p, "operator<<::", 12) == 0 ||
              VG_(strncmp)(p, "operator>>::", 12) == 0 ||
+             VG_(strncmp)(p, "operator<<=::", 13) == 0 ||
+             VG_(strncmp)(p, "operator>>=::", 13) == 0 ||
              VG_(strncmp)(p, "operator->::", 12) == 0) {
             p = SKIPPAST(p, ':', "member name");
          } else {

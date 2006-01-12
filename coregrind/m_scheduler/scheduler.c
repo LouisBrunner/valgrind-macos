@@ -657,33 +657,6 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
 extern UWord run_a_translation ( UWord* argblock );
 #if defined(VGP_x86_linux)
 #elif defined(VGP_amd64_linux)
-asm("\n"
-".text\n"
-"run_a_translation:\n"
-"   pushq %rbx\n"
-"   pushq %rbp\n"
-"   pushq %r12\n"
-"   pushq %r13\n"
-"   pushq %r14\n"
-"   pushq %r15\n"
-
-"   pushq %rdi\n"  /* we will need it after running the translation */
-"   movq 8(%rdi), %rbp\n"
-"   call *0(%rdi)\n"
-
-"   popq %rdi\n"
-"   movq %rax, 16(%rdi)\n"
-"   movq %rbp, 24(%rdi)\n"
-
-"   popq  %r15\n"
-"   popq  %r14\n"
-"   popq  %r13\n"
-"   popq  %r12\n"
-"   popq  %rbp\n"
-"   popq  %rbx\n"
-"   ret\n"
-".previous\n"
-);
 #elif defined(VGP_ppc32_linux)
 asm("\n"
 ".text\n"

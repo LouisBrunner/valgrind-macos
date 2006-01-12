@@ -36,7 +36,10 @@
 
 
 /*------------------------------------------------------------*/
-/*--- The dispatch loop.                                   ---*/
+/*---                                                      ---*/
+/*--- The dispatch loop.  VG_(run_innerloop) is used to    ---*/
+/*--- run all translations except no-redir ones.           ---*/
+/*---                                                      ---*/
 /*------------------------------------------------------------*/
 
 /*----------------------------------------------------*/
@@ -272,13 +275,55 @@ run_innerloop_exit_REALLY:
 	ret	
 
 	
-	
-/* Other ways of getting out of the inner loop.  Placed out-of-line to
-   make it look cleaner. 
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*--- A special dispatcher, for running no-redir           ---*/
+/*--- translations.  Just runs the given translation once. ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+/* signature:
+void VG_(run_a_noredir_translation) ( UWord* argblock );
 */
 
+/* Run a no-redir translation.  argblock points to 4 UWords, 2 to carry args
+   and 2 to carry results:
+      0: input:  ptr to translation
+      1: input:  ptr to guest state
+      2: output: next guest PC
+      3: output: guest state pointer afterwards (== thread return code)
+*/
+.align 16
+.global VG_(run_a_noredir_translation)
+VG_(run_a_noredir_translation):
+	/* Save callee-saves regs */
+	pushq %rbx
+	pushq %rbp
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
 
+	pushq %rdi  /* we will need it after running the translation */
+	movq 8(%rdi), %rbp
+	jmp *0(%rdi)
+	/*NOTREACHED*/
+	ud2
+	/* If the translation has been correctly constructed, we
+	should resume at the the following label. */
+.global VG_(run_a_noredir_translation__return_point)
+VG_(run_a_noredir_translation__return_point):
+	popq %rdi
+	movq %rax, 16(%rdi)
+	movq %rbp, 24(%rdi)
 
+	popq  %r15
+	popq  %r14
+	popq  %r13
+	popq  %r12
+	popq  %rbp
+	popq  %rbx
+	ret
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits

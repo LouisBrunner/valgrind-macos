@@ -1,0 +1,53 @@
+
+This file records register use conventions and info for the 4
+supported platforms (since it is ABI dependent).  This is so as to
+avoid having to endlessly re-look up this info in ABI documents.
+
+                      -----------------------
+
+x86-linux
+~~~~~~~~~
+
+Reg        Callee      Arg   
+Name       Saves?      Reg?     Comment              Vex-uses?
+--------------------------------------------------------------
+eax        n           n        int[31:0] retreg     y
+ebx        y           n                             y
+ecx        n           n                             y
+edx        n           n        int[63:32] retreg    y
+esi        y           n                             y
+edi        y           n                             y
+ebp        y           n                             & guest state
+esp        reserved    n/a                           n/a
+eflags     n           n/a                           y
+st0        n ?         n        fp retreg            y
+st1-7      n ?         n                             y
+xmm0-7     n ?         n                             y
+
+
+amd64-linux
+~~~~~~~~~~~
+
+Reg        Callee      Arg    
+Name       Saves?      Reg?     Comment              Vex-uses?
+-------------------------------------------------------------------
+rax        n           n        int[63:0] retreg     y
+rbx        y           n                             y
+rcx        n           int#4                         y
+rdx        n           int#3    int[127:64] retreg   y
+rsi        n           int#2                         y
+rdi        n           int#1                         y
+rbp        y           n                             & guest state
+rsp        reserved    n/a                           n/a
+r8         n           int#5
+r9         n           int#6
+r10        n ?
+r11        n
+r12-15     y
+eflags     n           n/a                           y
+st0-7      n           n        long double retreg   y
+xmm0       n           fp#1     fp retreg            y
+xmm1       n           fp#2     fp-high retreg       y
+xmm2-7     n           fp#3-8
+xmm8-15    n
+

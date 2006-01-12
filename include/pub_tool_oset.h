@@ -47,7 +47,7 @@
 // every comparison can be high during lookup.  If no comparison function is
 // provided, we assume that keys are (signed or unsigned) words, and that
 // the key is the first word in each element.  This fast comparison is
-// suitable for an OSet of Ints, or an OSet containing structs where the
+// suitable for an OSet of Words, or an OSet containing structs where the
 // first element is an Addr, for example.
 //
 // Each OSet also has an iterator, which makes it simple to traverse all the

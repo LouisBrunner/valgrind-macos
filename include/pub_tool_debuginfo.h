@@ -102,12 +102,28 @@ typedef struct _SegInfo SegInfo;
    is present or not. */
 extern       SegInfo* VG_(find_seginfo)      ( Addr a );
 
-extern const SegInfo* VG_(next_seginfo)      ( const SegInfo *si );
+/* Fish bits out of SegInfos. */
 extern       Addr     VG_(seginfo_start)     ( const SegInfo *si );
 extern       SizeT    VG_(seginfo_size)      ( const SegInfo *si );
 extern const UChar*   VG_(seginfo_soname)    ( const SegInfo *si );
 extern const UChar*   VG_(seginfo_filename)  ( const SegInfo *si );
 extern       ULong    VG_(seginfo_sym_offset)( const SegInfo *si );
+
+/* Function for traversing the seginfo list.  When called with NULL it
+   returns the first element; otherwise it returns the given element's
+   successor. */
+extern const SegInfo* VG_(next_seginfo)      ( const SegInfo *si );
+
+/* Functions for traversing all the symbols in a SegInfo.  _howmany
+   tells how many there are.  _getidx retrieves the n'th, for n in 0
+   .. _howmany-1.  You may not modify the function name thereby
+   acquired; if you want to do so, first strdup it. */
+extern Int  VG_(seginfo_syms_howmany) ( const SegInfo *si );
+extern void VG_(seginfo_syms_getidx)  ( const SegInfo *si, 
+                                        Int idx,
+                                        /*OUT*/Addr*   addr,
+                                        /*OUT*/UInt*   size,
+                                        /*OUT*/HChar** name );
 
 typedef
    enum {

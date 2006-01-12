@@ -33,14 +33,49 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
+#include "pub_core_libcassert.h"
 #include "demangle.h"
+#include "pub_core_libcprint.h"
+
+/* The demangler's job is to take a raw symbol name and turn it into
+   something a Human Bean can understand.  There are two levels of
+   mangling.
+
+   1. First, C++ names are mangled by the compiler.  So we'll have to
+      undo that.
+
+   2. Optionally, in relatively rare cases, the resulting name is then
+      itself encoded using Z-escaping (see pub_core_redir.h) so as to
+      become part of a redirect-specification.
+
+   Therefore, VG_(demangle) first tries to undo (2).  If successful,
+   the soname part is discarded (humans don't want to see that).
+   Then, it tries to undo (1) (using demangling code from GNU/FSF).
+*/
+
+/* This is the main, standard demangler entry point. */
 
 void VG_(demangle) ( Char* orig, Char* result, Int result_size )
 {
-   Char* demangled = NULL;
+#  define N_ZBUF 4096
+   HChar* demangled = NULL;
+   HChar z_demangled[N_ZBUF];
 
-   if (VG_(clo_demangle))
-      demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
+   if (!VG_(clo_demangle)) {
+      VG_(strncpy_safely)(result, orig, result_size);
+      return;
+   }
+
+   /* Demangling was requested.  First see if it's a Z-mangled
+      intercept specification.  The fastest way is just to attempt a
+      Z-demangling (with NULL soname buffer, since we're not
+      interested in that). */
+   if (VG_(maybe_Z_demangle)( orig, NULL,0,/*soname*/
+                              z_demangled, N_ZBUF, NULL)) {
+      orig = z_demangled;
+   }
+
+   demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
 
    if (demangled) {
       VG_(strncpy_safely)(result, demangled, result_size);
@@ -54,7 +89,176 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
    // very rarely (ie. I've heard of it twice in 3 years), the demangler
    // does leak.  But, we can't do much about it, and it's not a disaster,
    // so we just let it slide without aborting or telling the user.
+
+#  undef N_ZBUF
 }
+
+
+/*------------------------------------------------------------*/
+/*--- DEMANGLE Z-ENCODED NAMES                             ---*/
+/*------------------------------------------------------------*/
+
+/* Demangle a Z-encoded name as described in pub_tool_redir.h. 
+   Z-encoded names are used by Valgrind for doing function 
+   interception/wrapping.
+
+   Demangle 'sym' into its soname and fnname parts, putting them in
+   the specified buffers.  Returns a Bool indicating whether the
+   demangled failed or not.  A failure can occur because the prefix
+   isn't recognised, the internal Z-escaping is wrong, or because one
+   or the other (or both) of the output buffers becomes full.  Passing
+   'so' as NULL is acceptable if the caller is only interested in the
+   function name part. */
+
+Bool VG_(maybe_Z_demangle) ( const HChar* sym, 
+                             /*OUT*/HChar* so, Int soLen,
+                             /*OUT*/HChar* fn, Int fnLen,
+                             /*OUT*/Bool* isWrap )
+{
+#  define EMITSO(ch)                           \
+      do {                                     \
+         if (so) {                             \
+            if (soi >= soLen) {                \
+               so[soLen-1] = 0; oflow = True;  \
+            } else {                           \
+               so[soi++] = ch; so[soi] = 0;    \
+            }                                  \
+         }                                     \
+      } while (0)
+#  define EMITFN(ch)                           \
+      do {                                     \
+         if (fni >= fnLen) {                   \
+            fn[fnLen-1] = 0; oflow = True;     \
+         } else {                              \
+            fn[fni++] = ch; fn[fni] = 0;       \
+         }                                     \
+      } while (0)
+
+   Bool error, oflow, valid, fn_is_encoded;
+   Int  soi, fni, i;
+
+   vg_assert(soLen > 0 || (soLen == 0 && so == NULL));
+   vg_assert(fnLen > 0);
+   error = False;
+   oflow = False;
+   soi = 0;
+   fni = 0;
+
+   valid =     sym[0] == '_'
+           &&  sym[1] == 'v'
+           &&  sym[2] == 'g'
+           && (sym[3] == 'r' || sym[3] == 'w' || sym[3] == 'n')
+           &&  sym[4] == 'Z'
+           && (sym[5] == 'Z' || sym[5] == 'U')
+           &&  sym[6] == '_';
+   if (!valid)
+      return False;
+
+   fn_is_encoded = sym[5] == 'Z';
+
+   if (isWrap)
+      *isWrap = sym[3] == 'w';
+
+   /* Now scan the Z-encoded soname. */
+   i = 7;
+   while (True) {
+
+      if (sym[i] == '_')
+      /* Found the delimiter.  Move on to the fnname loop. */
+         break;
+
+      if (sym[i] == 0) {
+         error = True;
+         goto out;
+      }
+
+      if (sym[i] != 'Z') {
+         EMITSO(sym[i]);
+         i++;
+         continue;
+      }
+
+      /* We've got a Z-escape. */
+      i++;
+      switch (sym[i]) {
+         case 'a': EMITSO('*'); break;
+         case 'p': EMITSO('+'); break;
+         case 'c': EMITSO(':'); break;
+         case 'd': EMITSO('.'); break;
+         case 'u': EMITSO('_'); break;
+         case 'h': EMITSO('-'); break;
+         case 's': EMITSO(' '); break;
+         case 'Z': EMITSO('Z'); break;
+         case 'A': EMITSO('@'); break;
+         default: error = True; goto out;
+      }
+      i++;
+   }
+
+   vg_assert(sym[i] == '_');
+   i++;
+
+   /* Now deal with the function name part. */
+   if (!fn_is_encoded) {
+
+      /* simple; just copy. */
+      while (True) {
+         if (sym[i] == 0)
+            break;
+         EMITFN(sym[i]);
+         i++;
+      }
+      goto out;
+
+   }
+
+   /* else use a Z-decoding loop like with soname */
+   while (True) {
+
+      if (sym[i] == 0)
+         break;
+
+      if (sym[i] != 'Z') {
+         EMITFN(sym[i]);
+         i++;
+         continue;
+      }
+
+      /* We've got a Z-escape. */
+      i++;
+      switch (sym[i]) {
+         case 'a': EMITFN('*'); break;
+         case 'p': EMITFN('+'); break;
+         case 'c': EMITFN(':'); break;
+         case 'd': EMITFN('.'); break;
+         case 'u': EMITFN('_'); break;
+         case 'h': EMITFN('-'); break;
+         case 's': EMITFN(' '); break;
+         case 'Z': EMITFN('Z'); break;
+         case 'A': EMITFN('@'); break;
+         default: error = True; goto out;
+      }
+      i++;
+   }
+
+  out:
+   EMITSO(0);
+   EMITFN(0);
+
+   if (error) {
+      /* Something's wrong.  Give up. */
+      VG_(message)(Vg_UserMsg, "m_demangle: error Z-demangling: %s", sym);
+      return False;
+   }
+   if (oflow) {
+      /* It didn't fit.  Give up. */
+      VG_(message)(Vg_UserMsg, "m_demangle: oflow Z-demangling: %s", sym);
+      return False;
+   }
+
+   return True;
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

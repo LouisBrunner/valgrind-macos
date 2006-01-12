@@ -32,22 +32,25 @@
 #include "pub_core_basics.h"
 #include "pub_core_aspacemgr.h"
 
-#include "pub_core_machine.h"   // For VG_(machine_get_VexArchInfo)
-                                // and VG_(get_SP)
+#include "pub_core_machine.h"    // VG_(fnptr_to_fnentry)
+                                 // VG_(get_SP)
+                                 // VG_(machine_get_VexArchInfo)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_options.h"
 
-#include "pub_core_debuginfo.h" // Needed for pub_core_redir :(
-#include "pub_core_redir.h"     // For VG_(code_redirect)()
+#include "pub_core_debuginfo.h"  // VG_(get_fnname_w_offset)
+#include "pub_core_redir.h"      // VG_(redir_do_lookup)
 
-#include "pub_core_signals.h"   // For VG_(synth_fault_{perms,mapping})()
-#include "pub_core_stacks.h"    // For VG_(unknown_SP_update)()
-#include "pub_core_tooliface.h" // For VG_(tdict)
+#include "pub_core_signals.h"    // VG_(synth_fault_{perms,mapping}
+#include "pub_core_stacks.h"     // VG_(unknown_SP_update)()
+#include "pub_core_tooliface.h"  // VG_(tdict)
+
 #include "pub_core_translate.h"
 #include "pub_core_transtab.h"
-#include "pub_core_dispatch.h"  // VG_(run_innerloop__dispatch_{un}profiled)
+#include "pub_core_dispatch.h" // VG_(run_innerloop__dispatch_{un}profiled)
+                               // VG_(run_a_noredir_translation__return_point)
 
 
 /*------------------------------------------------------------*/
@@ -543,7 +546,7 @@ static Bool     chase_into_ok ( Addr64 addr64 )
    }
 
    /* Destination is redirected? */
-   if (addr != VG_(code_redirect)(addr))
+   if (addr != VG_(redir_do_lookup)(addr, NULL))
       goto dontchase;
 
    /* well, ok then.  go on and chase. */
@@ -558,15 +561,20 @@ static Bool     chase_into_ok ( Addr64 addr64 )
 }
 
 
+/* Note: see comments at top of m_redir.c for the Big Picture on how
+   redirections are managed. */
+
 Bool VG_(translate) ( ThreadId tid, 
                       Addr64   orig_addr,
                       Bool     debugging_translation,
                       Int      debugging_verbosity,
-                      ULong    bbs_done )
+                      ULong    bbs_done,
+                      Bool     allow_redirection )
 {
    Addr64             redir, orig_addr_noredir = orig_addr;
    Int                tmpbuf_used, verbosity, i;
    Bool               notrace_until_done, do_self_check;
+   Bool               did_redirect, isWrap;
    UInt               notrace_until_limit = 0;
    NSegment*          seg;
    VexArch            vex_arch;
@@ -589,9 +597,19 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* Look in the code redirect table to see if we should
       translate an alternative address for orig_addr. */
-   redir = VG_(code_redirect)(orig_addr);
+   isWrap = False;
+   if (allow_redirection) {
+      redir        = VG_(redir_do_lookup)(orig_addr, &isWrap);
+      did_redirect = redir != orig_addr;
+   } else {
+      redir        = orig_addr;
+      did_redirect = False;
+   }
 
-   if (redir != orig_addr && VG_(clo_verbosity) >= 2) {
+   if (did_redirect == False) vg_assert(isWrap == False);
+
+   if (redir != orig_addr 
+       && (VG_(clo_verbosity) >= 2 || VG_(clo_trace_redir))) {
       Bool ok;
       Char name1[64] = "";
       Char name2[64] = "";
@@ -689,6 +707,7 @@ Bool VG_(translate) ( ThreadId tid,
    /* Set up closure arg for "chase_into_ok" */
    chase_into_ok__CLOSURE_tid = tid;
 
+   /* Set up args for LibVEX_Translate. */
    vta.arch_guest       = vex_arch;
    vta.archinfo_guest   = vex_archinfo;
    vta.arch_host        = vex_arch;
@@ -706,15 +725,28 @@ Bool VG_(translate) ( ThreadId tid,
                              ? vg_SP_update_pass
                              : NULL;
    vta.do_self_check    = do_self_check;
+   /* If this translation started at a redirected address, then we
+      need to ask the JIT to generate code to put the non-redirected
+      guest address into guest_NRADDR. */
+   vta.do_set_NRADDR    = isWrap;
    vta.traceflags       = verbosity;
 
    /* Set up the dispatch-return info.  For archs without a link
       register, vex generates a jump back to the specified dispatch
       address.  Else, it just generates a branch-to-LR. */
 #  if defined(VGA_x86) || defined(VGA_amd64)
-   vta.dispatch = VG_(clo_profile_flags) > 0
-                    ? (void*) &VG_(run_innerloop__dispatch_profiled)
-                    : (void*) &VG_(run_innerloop__dispatch_unprofiled);
+   vta.dispatch 
+      = (!allow_redirection)
+        ? /* It's a no-redir translation.  Will be run with the nonstandard
+           dispatcher VG_(run_a_noredir_translation)
+           and so needs a nonstandard return point. */
+          (void*) &VG_(run_a_noredir_translation__return_point)
+
+        : /* normal translation.  Uses VG_(run_innerloop).  Return
+             point depends on whether we're profiling bbs or not. */
+          VG_(clo_profile_flags) > 0
+          ? (void*) &VG_(run_innerloop__dispatch_profiled)
+          : (void*) &VG_(run_innerloop__dispatch_unprofiled);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
    vta.dispatch = NULL;
 #  else
@@ -748,13 +780,25 @@ Bool VG_(translate) ( ThreadId tid,
    // If debugging, don't do anything with the translated block;  we
    // only did this for the debugging output produced along the way.
    if (!debugging_translation) {
-      // Note that we use orig_addr_noredir, not orig_addr, which
-      // might have been changed by the redirection
-      VG_(add_to_transtab)( &vge,
-                            orig_addr_noredir,
-                            (Addr)(&tmpbuf[0]), 
-                            tmpbuf_used,
-                            do_self_check );
+
+      if (allow_redirection) {
+          // Put it into the normal TT/TC structures.  This is the
+          // normal case.
+
+          // Note that we use orig_addr_noredir, not orig_addr, which
+          // might have been changed by the redirection
+          VG_(add_to_transtab)( &vge,
+                                orig_addr_noredir,
+                                (Addr)(&tmpbuf[0]), 
+                                tmpbuf_used,
+                                do_self_check );
+      } else {
+          VG_(add_to_unredir_transtab)( &vge,
+                                        orig_addr_noredir,
+                                        (Addr)(&tmpbuf[0]), 
+                                        tmpbuf_used,
+                                        do_self_check );
+      }
    }
 
    return True;
@@ -763,4 +807,3 @@ Bool VG_(translate) ( ThreadId tid,
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

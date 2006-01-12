@@ -87,6 +87,10 @@ HChar* VG_(name_of_launcher) = NULL;
 Int VG_(fd_soft_limit) = -1;
 Int VG_(fd_hard_limit) = -1;
 
+/* Useful addresses extracted from the client */
+/* Where is the __libc_freeres_wrapper routine we made? */
+Addr VG_(client___libc_freeres_wrapper) = 0;
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

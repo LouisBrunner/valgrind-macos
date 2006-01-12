@@ -78,6 +78,9 @@ extern HChar* VG_(name_of_launcher);
 extern Int VG_(fd_soft_limit);
 extern Int VG_(fd_hard_limit);
 
+/* Useful addresses extracted from the client */
+/* Where is the __libc_freeres_wrapper routine we made? */
+extern Addr VG_(client___libc_freeres_wrapper);
 
 #endif   // __PUB_CORE_CLIENTSTATE_H
 

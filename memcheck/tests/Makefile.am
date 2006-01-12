@@ -106,6 +106,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	trivialleak.stderr.exp trivialleak.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest-HIDING \
 	vgtest_ume.stderr.exp vgtest_ume.disabled \
+	wrap1.vgtest wrap1.stdout.exp wrap1.stderr.exp \
+	wrap2.vgtest wrap2.stdout.exp wrap2.stderr.exp \
+	wrap3.vgtest wrap3.stdout.exp wrap3.stderr.exp \
+	wrap4.vgtest wrap4.stdout.exp wrap4.stderr.exp \
+	wrap5.vgtest wrap5.stdout.exp wrap5.stderr.exp \
+	wrap6.vgtest wrap6.stdout.exp wrap6.stderr.exp \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
 	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp3 \
 	xml1.stderr.exp64 xml1.stderr.exp64_2 xml1.stdout.exp \
@@ -139,6 +145,7 @@ check_PROGRAMS = \
 	trivialleak \
 	mismatches new_override metadata \
 	xml1 \
+	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 \
 	writev zeropage
 
 

@@ -1,0 +1,26 @@
+computing fact1(5)
+in wrapper1-pre:  fact(5)
+in wrapper2-pre:  fact(4)
+in wrapper1-pre:  fact(3)
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+in wrapper1-post: fact(3) = 6
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+in wrapper2-post: fact(4) = 32
+in wrapper1-post: fact(5) = 160
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+fact1(5) = 162

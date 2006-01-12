@@ -42,6 +42,7 @@
 
 /* And some more of our own.  These must not have the same values as
    those from libvex_trc_values.h.  (viz, 60 or below is safe). */
+#define VG_TRC_BORING             29 /* no event; just keep going */
 #define VG_TRC_INNER_FASTMISS     37 /* TRC only; means fast-cache miss. */
 #define VG_TRC_INNER_COUNTERZERO  41 /* TRC only; means bb ctr == 0 */
 #define VG_TRC_FAULT_SIGNAL       43 /* TRC only; got sigsegv/sigbus */

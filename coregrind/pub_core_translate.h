@@ -41,7 +41,8 @@ Bool VG_(translate) ( ThreadId tid,
                       Addr64   orig_addr,
                       Bool     debugging_translation,
                       Int      debugging_verbosity,
-                      ULong    bbs_done );
+                      ULong    bbs_done,
+                      Bool     allow_redirection );
 
 extern void VG_(print_translation_stats) ( void );
 

@@ -64,8 +64,10 @@ int VALGRIND_INTERNAL_PRINTF(char *format, ...)
    unsigned long _qzz_res = 0;
    va_list vargs;
    va_start(vargs, format);
-   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
-                           (unsigned long)format, (unsigned long)vargs, 0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(
+      _qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
+      (unsigned long)format, (unsigned long)vargs, 0, 0
+   );
    va_end(vargs);
    return _qzz_res;
 }

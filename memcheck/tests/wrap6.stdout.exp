@@ -1,0 +1,18 @@
+fn_0  ...
+fn_0  wrapper pre ()
+fn_0  wrapper post1 = 0
+fn_0  wrapper post2 = 0
+      ...  0
+
+fn_1  ...
+fn_1  wrapper pre ( 42 )
+fn_1  wrapper post1 = -13631437
+fn_1  wrapper post2 = -13631437
+      ...  -13631437
+
+fn_2  ...
+fn_2  wrapper pre ( 42, 43 )
+fn_2  wrapper post1 = 201956282
+fn_2  wrapper post2 = 201956282
+      ...  201956282
+

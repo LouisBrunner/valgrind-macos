@@ -99,7 +99,7 @@ typedef
    _qzz_len bytes.   */
 #define VALGRIND_MAKE_NOACCESS(_qzz_addr,_qzz_len)               \
    (__extension__({unsigned int _qzz_res;                        \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__MAKE_NOACCESS,           \
                             _qzz_addr, _qzz_len, 0, 0);          \
     _qzz_res;                                                    \
@@ -109,7 +109,7 @@ typedef
    for _qzz_len bytes. */
 #define VALGRIND_MAKE_WRITABLE(_qzz_addr,_qzz_len)               \
    (__extension__({unsigned int _qzz_res;                        \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__MAKE_WRITABLE,           \
                             _qzz_addr, _qzz_len, 0, 0);          \
     _qzz_res;                                                    \
@@ -119,7 +119,7 @@ typedef
    for _qzz_len bytes. */
 #define VALGRIND_MAKE_READABLE(_qzz_addr,_qzz_len)               \
    (__extension__({unsigned int _qzz_res;                        \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__MAKE_READABLE,           \
                             _qzz_addr, _qzz_len, 0, 0);          \
     _qzz_res;                                                    \
@@ -129,19 +129,19 @@ typedef
    string which is included in any messages pertaining to addresses
    within the specified memory range.  Has no other effect on the
    properties of the memory range. */
-#define VALGRIND_CREATE_BLOCK(_qzz_addr,_qzz_len, _qzz_desc)	\
-	(__extension__({unsigned int _qzz_res;			\
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,	\
-                            VG_USERREQ__CREATE_BLOCK,           \
-                            _qzz_addr, _qzz_len, _qzz_desc, 0);	\
-    _qzz_res;							\
+#define VALGRIND_CREATE_BLOCK(_qzz_addr,_qzz_len, _qzz_desc)	 \
+	(__extension__({unsigned int _qzz_res;			 \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
+                            VG_USERREQ__CREATE_BLOCK,            \
+                            _qzz_addr, _qzz_len, _qzz_desc, 0);	 \
+    _qzz_res;							 \
    }))
 
 /* Discard a block-description-handle. Returns 1 for an
    invalid handle, 0 for a valid handle. */
 #define VALGRIND_DISCARD(_qzz_blkindex)                          \
    (__extension__ ({unsigned int _qzz_res;                       \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0 /* default return */,    \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__DISCARD,                 \
                             0, _qzz_blkindex, 0, 0);             \
     _qzz_res;                                                    \
@@ -154,24 +154,24 @@ typedef
    If suitable addressibility is not established, Valgrind prints an
    error message and returns the address of the first offending byte.
    Otherwise it returns zero. */
-#define VALGRIND_CHECK_WRITABLE(_qzz_addr,_qzz_len)                \
-   (__extension__({unsigned int _qzz_res;                          \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
-                            VG_USERREQ__CHECK_WRITABLE,            \
-                            _qzz_addr, _qzz_len, 0, 0);            \
-    _qzz_res;                                                      \
+#define VALGRIND_CHECK_WRITABLE(_qzz_addr,_qzz_len)              \
+   (__extension__({unsigned int _qzz_res;                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
+                            VG_USERREQ__CHECK_WRITABLE,          \
+                            _qzz_addr, _qzz_len, 0, 0);          \
+    _qzz_res;                                                    \
    }))
 
 /* Check that memory at _qzz_addr is addressible and defined for
    _qzz_len bytes.  If suitable addressibility and definedness are not
    established, Valgrind prints an error message and returns the
    address of the first offending byte.  Otherwise it returns zero. */
-#define VALGRIND_CHECK_READABLE(_qzz_addr,_qzz_len)                \
-   (__extension__({unsigned int _qzz_res;                          \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
-                            VG_USERREQ__CHECK_READABLE,            \
-                            _qzz_addr, _qzz_len, 0, 0);            \
-    _qzz_res;                                                      \
+#define VALGRIND_CHECK_READABLE(_qzz_addr,_qzz_len)              \
+   (__extension__({unsigned int _qzz_res;                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
+                            VG_USERREQ__CHECK_READABLE,          \
+                            _qzz_addr, _qzz_len, 0, 0);          \
+    _qzz_res;                                                    \
    }))
 
 /* Use this macro to force the definedness and addressibility of a
@@ -179,35 +179,35 @@ typedef
    are not established, Valgrind prints an error message and returns
    the address of the first offending byte.  Otherwise it returns
    zero. */
-#define VALGRIND_CHECK_DEFINED(__lvalue)                           \
-   VALGRIND_CHECK_READABLE(                                        \
-      (volatile unsigned char *)&(__lvalue),                       \
+#define VALGRIND_CHECK_DEFINED(__lvalue)                         \
+   VALGRIND_CHECK_READABLE(                                      \
+      (volatile unsigned char *)&(__lvalue),                     \
                       (unsigned int)(sizeof (__lvalue)))
 
 /* Do a memory leak check mid-execution.  */
-#define VALGRIND_DO_LEAK_CHECK                                     \
-   {unsigned int _qzz_res;                                         \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
-                            VG_USERREQ__DO_LEAK_CHECK,             \
-                            0, 0, 0, 0);                           \
+#define VALGRIND_DO_LEAK_CHECK                                   \
+   {unsigned int _qzz_res;                                       \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
+                            VG_USERREQ__DO_LEAK_CHECK,           \
+                            0, 0, 0, 0);                         \
    }
 
 /* Just display summaries of leaked memory, rather than all the
    details */
-#define VALGRIND_DO_QUICK_LEAK_CHECK				   \
-   {unsigned int _qzz_res;                                         \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
-                            VG_USERREQ__DO_LEAK_CHECK,             \
-                            1, 0, 0, 0);                           \
+#define VALGRIND_DO_QUICK_LEAK_CHECK				 \
+   {unsigned int _qzz_res;                                       \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
+                            VG_USERREQ__DO_LEAK_CHECK,           \
+                            1, 0, 0, 0);                         \
    }
 
 /* Return number of leaked, dubious, reachable and suppressed bytes found by
    all previous leak checks.  They must be lvalues. */
-#define VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed)    \
-   {unsigned int _qzz_res;                                              \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                                \
-                            VG_USERREQ__COUNT_LEAKS,                    \
-                            &leaked, &dubious, &reachable, &suppressed);\
+#define VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed)     \
+   {unsigned int _qzz_res;                                               \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                              \
+                            VG_USERREQ__COUNT_LEAKS,                     \
+                            &leaked, &dubious, &reachable, &suppressed); \
    }
 
 
@@ -225,7 +225,7 @@ typedef
    (__extension__({unsigned int _qzz_res;                        \
     char* czzsrc   = (char*)zzsrc;                               \
     char* czzvbits = (char*)zzvbits;                             \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                         \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
                             VG_USERREQ__GET_VBITS,               \
                             czzsrc, czzvbits, zznbytes,0 );      \
     _qzz_res;                                                    \
@@ -245,7 +245,7 @@ typedef
    (__extension__({unsigned int _qzz_res;                        \
     char* czzdst   = (char*)zzdst;                               \
     char* czzvbits = (char*)zzvbits;                             \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                         \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
                             VG_USERREQ__SET_VBITS,               \
                             czzdst, czzvbits, zznbytes,0 );      \
     _qzz_res;                                                    \

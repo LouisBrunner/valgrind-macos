@@ -1,0 +1,14 @@
+computing fact(5)
+in wrapper1-pre:  fact(5)
+in wrapper1-pre:  fact(4)
+in wrapper1-pre:  fact(3)
+in wrapper1-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper1-pre:  fact(0)
+in wrapper1-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper1-post: fact(2) = 2
+in wrapper1-post: fact(3) = 6
+in wrapper1-post: fact(4) = 24
+in wrapper1-post: fact(5) = 120
+fact(5) = 120

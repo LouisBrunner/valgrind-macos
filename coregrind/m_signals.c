@@ -1685,7 +1685,8 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	       VG_(message)(Vg_DebugMsg, 
 			    "       -> extended stack base to %p", 
                             VG_PGROUNDDN(fault));
-	    return; // extension succeeded, restart instruction
+            return; // extension succeeded, restart host (hence guest)
+                    // instruction
 	 } else
 	    VG_(message)(Vg_UserMsg, 
                          "Stack overflow in thread %d: can't grow stack to %p", 
@@ -1705,7 +1706,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 VG_(set_default_handler)(sigNo);
       }
 
-      if (!VG_(my_fault)) {
+      if (VG_(in_generated_code)) {
 	 /* Can't continue; must longjmp back to the scheduler and thus
 	    enter the sighandler immediately. */
 	 deliver_signal(tid, info);

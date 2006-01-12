@@ -164,7 +164,8 @@ extern void ML_(ppCfiSI)   ( CfiSI* );
 
 
 /* A structure which contains information pertaining to one mapped
-   text segment. (typedef in tool.h) */
+   text segment.  This type is exported only abstractly - in
+   pub_tool_debuginfo.h. */
 struct _SegInfo {
    struct _SegInfo* next;	/* list of SegInfos */
 

@@ -92,9 +92,9 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
 #define RECORD_OVERLAP_ERROR(s, p_extra) \
 { \
    Word unused_res; \
-   VALGRIND_MAGIC_SEQUENCE(unused_res, 0, \
-			   _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR, \
-			   s, p_extra, 0, 0); \
+   VALGRIND_DO_CLIENT_REQUEST(unused_res, 0, \
+			      _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR, \
+			      s, p_extra, 0, 0); \
 }
 
 static __inline__
@@ -123,8 +123,8 @@ void complain3 ( Char* s, void* dst, const void* src, int n )
 
 
 #define STRRCHR(soname, fnname) \
-   char* VG_REPLACE_FUNCTION(soname,fnname)( const char* s, int c ); \
-   char* VG_REPLACE_FUNCTION(soname,fnname)( const char* s, int c ) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* s, int c ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* s, int c ) \
    { \
       UChar  ch   = (UChar)((UInt)c); \
       UChar* p    = (UChar*)s; \
@@ -143,8 +143,8 @@ STRRCHR(m_ld_linux_so_2, rindex)
    
 
 #define STRCHR(soname, fnname) \
-   char* VG_REPLACE_FUNCTION(soname,fnname) ( const char* s, int c ); \
-   char* VG_REPLACE_FUNCTION(soname,fnname) ( const char* s, int c ) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ) \
    { \
       UChar  ch = (UChar)((UInt)c); \
       UChar* p  = (UChar*)s; \
@@ -165,8 +165,8 @@ STRCHR(m_ld_linux_x86_64_so_2, index)
 
 
 #define STRCAT(soname, fnname) \
-   char* VG_REPLACE_FUNCTION(soname,fnname) ( char* dst, const char* src ); \
-   char* VG_REPLACE_FUNCTION(soname,fnname) ( char* dst, const char* src ) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( char* dst, const char* src ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( char* dst, const char* src ) \
    { \
       const Char* src_orig = src; \
             Char* dst_orig = dst; \
@@ -189,8 +189,10 @@ STRCAT(m_libc_so_star, strcat)
 
 
 #define STRNCAT(soname, fnname) \
-   char* VG_REPLACE_FUNCTION(soname,fnname) ( char* dst, const char* src, SizeT n ); \
-   char* VG_REPLACE_FUNCTION(soname,fnname) ( char* dst, const char* src, SizeT n ) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            ( char* dst, const char* src, SizeT n ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            ( char* dst, const char* src, SizeT n ) \
    { \
       const Char* src_orig = src; \
             Char* dst_orig = dst; \
@@ -215,8 +217,8 @@ STRNCAT(m_libc_so_star, strncat)
    
 
 #define STRNLEN(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION(soname,fnname) ( const char* str, SizeT n ); \
-   SizeT VG_REPLACE_FUNCTION(soname,fnname) ( const char* str, SizeT n ) \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ); \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* str, SizeT n ) \
    { \
       SizeT i = 0; \
       while (i < n && str[i] != 0) i++; \
@@ -231,8 +233,8 @@ STRNLEN(m_libc_so_star, strnlen)
 // confusing if you aren't expecting it.  Other small functions in this file
 // may also be inline by gcc.
 #define STRLEN(soname, fnname) \
-   SizeT VG_REPLACE_FUNCTION(soname,fnname)( const char* str ); \
-   SizeT VG_REPLACE_FUNCTION(soname,fnname)( const char* str ) \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ); \
+   SizeT VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* str ) \
    { \
       SizeT i = 0; \
       while (str[i] != 0) i++; \
@@ -245,8 +247,8 @@ STRLEN(m_ld_linux_x86_64_so_2, strlen)
    
 
 #define STRCPY(soname, fnname) \
-   char* VG_REPLACE_FUNCTION(soname, fnname) ( char* dst, const char* src ); \
-   char* VG_REPLACE_FUNCTION(soname, fnname) ( char* dst, const char* src ) \
+   char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ) \
    { \
       const Char* src_orig = src; \
             Char* dst_orig = dst; \
@@ -269,8 +271,10 @@ STRCPY(m_libc_so_star, strcpy)
 
 
 #define STRNCPY(soname, fnname) \
-   char* VG_REPLACE_FUNCTION(soname, fnname) ( char* dst, const char* src, SizeT n ); \
-   char* VG_REPLACE_FUNCTION(soname, fnname) ( char* dst, const char* src, SizeT n ) \
+   char* VG_REPLACE_FUNCTION_ZU(soname, fnname) \
+            ( char* dst, const char* src, SizeT n ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname, fnname) \
+            ( char* dst, const char* src, SizeT n ) \
    { \
       const Char* src_orig = src; \
             Char* dst_orig = dst; \
@@ -290,8 +294,10 @@ STRNCPY(m_libc_so_star, strncpy)
 
 
 #define STRNCMP(soname, fnname) \
-   int VG_REPLACE_FUNCTION(soname,fnname) ( const char* s1, const char* s2, SizeT nmax ); \
-   int VG_REPLACE_FUNCTION(soname,fnname) ( const char* s1, const char* s2, SizeT nmax ) \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, SizeT nmax ); \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2, SizeT nmax ) \
    { \
       SizeT n = 0; \
       while (True) { \
@@ -311,8 +317,10 @@ STRNCMP(m_libc_so_star, strncmp)
 
 
 #define STRCMP(soname, fnname) \
-   int VG_REPLACE_FUNCTION(soname,fnname) ( const char* s1, const char* s2 ); \
-   int VG_REPLACE_FUNCTION(soname,fnname) ( const char* s1, const char* s2 ) \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2 ); \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const char* s1, const char* s2 ) \
    { \
       register unsigned char c1; \
       register unsigned char c2; \
@@ -333,8 +341,8 @@ STRCMP(m_ld_linux_x86_64_so_2, strcmp)
 
 
 #define MEMCHR(soname, fnname) \
-   void* VG_REPLACE_FUNCTION(soname,fnname) (const void *s, int c, SizeT n); \
-   void* VG_REPLACE_FUNCTION(soname,fnname) (const void *s, int c, SizeT n) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const void *s, int c, SizeT n); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const void *s, int c, SizeT n) \
    { \
       SizeT i; \
       UChar c0 = (UChar)c; \
@@ -348,8 +356,10 @@ MEMCHR(m_libc_so_star, memchr)
 
 
 #define MEMCPY(soname, fnname) \
-   void* VG_REPLACE_FUNCTION(soname,fnname)( void *dst, const void *src, SizeT len ); \
-   void* VG_REPLACE_FUNCTION(soname,fnname)( void *dst, const void *src, SizeT len ) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            ( void *dst, const void *src, SizeT len ); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            ( void *dst, const void *src, SizeT len ) \
    { \
       register char *d; \
       register char *s; \
@@ -394,8 +404,10 @@ MEMCPY(m_libc_so_star, memcpy)
    
 
 #define MEMCMP(soname, fnname) \
-   int VG_REPLACE_FUNCTION(soname,fnname)( const void *s1V, const void *s2V, SizeT n ); \
-   int VG_REPLACE_FUNCTION(soname,fnname)( const void *s1V, const void *s2V, SizeT n ) \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const void *s1V, const void *s2V, SizeT n ); \
+   int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+          ( const void *s1V, const void *s2V, SizeT n ) \
    { \
       int res; \
       unsigned char a0; \
@@ -423,8 +435,8 @@ MEMCMP(m_libc_so_star, bcmp)
 /* Copy SRC to DEST, returning the address of the terminating '\0' in
    DEST. (minor variant of strcpy) */
 #define STPCPY(soname, fnname) \
-   char* VG_REPLACE_FUNCTION(soname,fnname) ( char* dst, const char* src ); \
-   char* VG_REPLACE_FUNCTION(soname,fnname) ( char* dst, const char* src ) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( char* dst, const char* src ); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( char* dst, const char* src ) \
    { \
       const Char* src_orig = src; \
             Char* dst_orig = dst; \
@@ -449,8 +461,8 @@ STPCPY(m_ld_linux_x86_64_so_2, stpcpy)
    
 
 #define MEMSET(soname, fnname) \
-   void* VG_REPLACE_FUNCTION(soname,fnname)(void *s, Int c, SizeT n); \
-   void* VG_REPLACE_FUNCTION(soname,fnname)(void *s, Int c, SizeT n) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname)(void *s, Int c, SizeT n); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname)(void *s, Int c, SizeT n) \
    { \
       unsigned char *cp = s; \
  \
@@ -464,8 +476,10 @@ MEMSET(m_libc_so_star, memset)
 
 
 #define MEMMOVE(soname, fnname) \
-   void* VG_REPLACE_FUNCTION(soname,fnname)(void *dstV, const void *srcV, SizeT n); \
-   void* VG_REPLACE_FUNCTION(soname,fnname)(void *dstV, const void *srcV, SizeT n) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            (void *dstV, const void *srcV, SizeT n); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            (void *dstV, const void *srcV, SizeT n) \
    { \
       SizeT i; \
       Char* dst = (Char*)dstV; \
@@ -487,8 +501,8 @@ MEMMOVE(m_libc_so_star, memmove)
 
 /* Find the first occurrence of C in S or the final NUL byte.  */
 #define GLIBC232_STRCHRNUL(soname, fnname) \
-   char* VG_REPLACE_FUNCTION(soname,fnname) (const char* s, int c_in); \
-   char* VG_REPLACE_FUNCTION(soname,fnname) (const char* s, int c_in) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const char* s, int c_in); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const char* s, int c_in) \
    { \
       unsigned char  c        = (unsigned char) c_in; \
       unsigned char* char_ptr = (unsigned char *)s; \
@@ -504,8 +518,8 @@ GLIBC232_STRCHRNUL(m_libc_so_star, strchrnul)
 
 /* Find the first occurrence of C in S.  */
 #define GLIBC232_RAWMEMCHR(soname, fnname) \
-   char* VG_REPLACE_FUNCTION(soname,fnname) (const char* s, int c_in); \
-   char* VG_REPLACE_FUNCTION(soname,fnname) (const char* s, int c_in) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const char* s, int c_in); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const char* s, int c_in) \
    { \
       unsigned char  c        = (unsigned char) c_in; \
       unsigned char* char_ptr = (unsigned char *)s; \

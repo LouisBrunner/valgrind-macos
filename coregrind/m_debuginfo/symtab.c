@@ -29,6 +29,11 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+/*
+   Stabs reader greatly improved by Nick Nethercote, Apr 02.
+*/
+
+
 #include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_debuginfo.h"
@@ -40,8 +45,8 @@
 #include "pub_core_machine.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
-#include "pub_core_redir.h"
-#include "pub_core_tooliface.h"     // For VG_(needs).data_syms
+#include "pub_core_redir.h"       // VG_(redir_notify_{new,delete}_SegInfo)
+#include "pub_core_tooliface.h"   // VG_(needs).data_syms
 
 #include "pub_core_aspacemgr.h"
 
@@ -233,34 +238,6 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
 #  endif
    if (0 && !exe_ok)
       nuke_syms_in_range(a, len);
-}
-
-
-/*------------------------------------------------------------*/
-/*---                                                      ---*/
-/*------------------------------------------------------------*/
-
-/* Majorly rewritten Sun 3 Feb 02 to enable loading symbols from
-   dlopen()ed libraries, which is something that KDE3 does a lot.
-
-   Stabs reader greatly improved by Nick Nethercote, Apr 02.
-*/
-
-static void freeSegInfo ( SegInfo* si )
-{
-   struct strchunk *chunk, *next;
-   vg_assert(si != NULL);
-   if (si->filename) VG_(arena_free)(VG_AR_SYMTAB, si->filename);
-   if (si->symtab)   VG_(arena_free)(VG_AR_SYMTAB, si->symtab);
-   if (si->loctab)   VG_(arena_free)(VG_AR_SYMTAB, si->loctab);
-   if (si->scopetab) VG_(arena_free)(VG_AR_SYMTAB, si->scopetab);
-   if (si->cfisi)    VG_(arena_free)(VG_AR_SYMTAB, si->cfisi);
-
-   for(chunk = si->strchunks; chunk != NULL; chunk = next) {
-      next = chunk->next;
-      VG_(arena_free)(VG_AR_SYMTAB, chunk);
-   }
-   VG_(arena_free)(VG_AR_SYMTAB, si);
 }
 
 
@@ -682,6 +659,17 @@ static RiSym *prefersym(RiSym *a, RiSym *b)
       vlenb = vpb - b->name;
 
    TRACE_SYMTAB("choosing between '%s' and '%s'\n", a->name, b->name);
+
+   /* MPI hack: prefer PMPI_Foo over MPI_Foo */
+   if (0==VG_(strncmp)(a->name, "MPI_", 4)
+       && 0==VG_(strncmp)(b->name, "PMPI_", 5)
+       && 0==VG_(strcmp)(a->name, 1+b->name))
+      return b;
+   else
+   if (0==VG_(strncmp)(b->name, "MPI_", 4)
+       && 0==VG_(strncmp)(a->name, "PMPI_", 5)
+       && 0==VG_(strcmp)(b->name, 1+a->name))
+      return a;
 
    /* Select the shortest unversioned name */
    if (vlena < vlenb)
@@ -1313,18 +1301,6 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
 #        endif
          name = ML_(addStr) ( si, sym_name, -1 );
          vg_assert(name != NULL);
-
-         /*
-          * Is this symbol a magic valgrind-intercept symbol?  If so,
-          * hand this off to the redir module.  
-          *
-          * Note: this function can change the symbol name just added to
-          * the string table.  Importantly, it never makes it bigger.
-          */
-         if (do_intercepts) {
-            VG_(maybe_redir_or_notify)( name, sym_addr_really );
-         }
-
          risym.addr  = sym_addr_really;
          risym.size  = sym->st_size;
          risym.name  = name;
@@ -1499,7 +1475,7 @@ Bool read_lib_symbols ( SegInfo* si )
    struct vki_stat stat_buf;
 
    oimage = (Addr)NULL;
-   if (VG_(clo_verbosity) > 1)
+   if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
       VG_(message)(Vg_DebugMsg, "Reading syms from %s (%p)", 
                                 si->filename, si->start );
 
@@ -1571,7 +1547,10 @@ Bool read_lib_symbols ( SegInfo* si )
 
 	 o_phdr = &((ElfXX_Phdr *)(oimage + ehdr->e_phoff))[i];
 
-         // Try to get the soname.
+         /* Try to get the soname.  If there isn't one, use "NONE".
+            The seginfo needs to have some kind of soname in order to
+            facilitate writing redirect functions, since all redirect
+            specifications require a soname (pattern). */
 	 if (o_phdr->p_type == PT_DYNAMIC && si->soname == NULL) {
 	    const ElfXX_Dyn *dyn = (const ElfXX_Dyn *)(oimage + o_phdr->p_offset);
 	    Int stroff = -1;
@@ -1581,7 +1560,7 @@ Bool read_lib_symbols ( SegInfo* si )
 	    for(j = 0; dyn[j].d_tag != DT_NULL; j++) {
 	       switch(dyn[j].d_tag) {
 	       case DT_SONAME:
-		  stroff =  dyn[j].d_un.d_val;
+		  stroff = dyn[j].d_un.d_val;
 		  break;
 
 	       case DT_STRTAB:
@@ -1643,6 +1622,13 @@ Bool read_lib_symbols ( SegInfo* si )
 	    }
 	 }
       }
+   }
+
+   /* If, after looking at all the program headers, we still didn't 
+      find a soname, add a fake one. */
+   if (si->soname == NULL) {
+      TRACE_SYMTAB("soname(fake)=\"NONE\"\n");
+      si->soname = "NONE";
    }
 
    TRACE_SYMTAB("shoff = %d,  shnum = %d,  size = %d,  n_vg_oimage = %d\n",
@@ -1898,6 +1884,24 @@ alloc_SegInfo(Addr start, SizeT size, OffT foffset, const Char* filename)
    return si;
 }
 
+static void freeSegInfo ( SegInfo* si )
+{
+   struct strchunk *chunk, *next;
+   vg_assert(si != NULL);
+   if (si->filename) VG_(arena_free)(VG_AR_SYMTAB, si->filename);
+   if (si->symtab)   VG_(arena_free)(VG_AR_SYMTAB, si->symtab);
+   if (si->loctab)   VG_(arena_free)(VG_AR_SYMTAB, si->loctab);
+   if (si->scopetab) VG_(arena_free)(VG_AR_SYMTAB, si->scopetab);
+   if (si->cfisi)    VG_(arena_free)(VG_AR_SYMTAB, si->cfisi);
+
+   for(chunk = si->strchunks; chunk != NULL; chunk = next) {
+      next = chunk->next;
+      VG_(arena_free)(VG_AR_SYMTAB, chunk);
+   }
+   VG_(arena_free)(VG_AR_SYMTAB, si);
+}
+
+
 SegInfo *VG_(read_seg_symbols) ( Addr seg_addr, SizeT seg_len,
                                  OffT seg_offset, const Char* seg_filename)
 {
@@ -1918,8 +1922,8 @@ SegInfo *VG_(read_seg_symbols) ( Addr seg_addr, SizeT seg_len,
       canonicaliseScopetab ( si );
       canonicaliseCfiSI    ( si );
 
-      /* do redirects */
-      VG_(resolve_existing_redirs_with_seginfo)( si );
+      /* notify m_redir about it */
+      VG_(redir_notify_new_SegInfo)( si );
    }
 
    return si;
@@ -1940,13 +1944,14 @@ static void unload_symbols ( Addr start, SizeT length )
    while (curr) {
       if (start == curr->start) {
          // Found it;  remove from list and free it.
-         if (VG_(clo_verbosity) > 1)
+         if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
             VG_(message)(Vg_DebugMsg, 
-                         "discard syms at %p-%p in %s due to munmap()", 
+                         "Discarding syms at %p-%p in %s due to munmap()", 
                          start, start+length,
                          curr->filename ? curr->filename : (Char *)"???");
          vg_assert(*prev_next_ptr == curr);
          *prev_next_ptr = curr->next;
+         VG_(redir_notify_delete_SegInfo)( curr );
          freeSegInfo(curr);
          return;
       }
@@ -1987,24 +1992,6 @@ static Int search_one_symtab ( SegInfo* si, Addr ptr,
       vg_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
       return mid;
    }
-}
-
-
-/* SLOW (Linear search).  Try and map a symbol name to an address.
-   Since this is searching in the direction opposite to which the
-   table is designed we have no option but to do a complete linear
-   scan of the table.  Returns NULL if not found. */
-
-Addr VG_(reverse_search_one_symtab) ( const SegInfo* si, const Char* name )
-{
-   UInt i;
-   for (i = 0; i < si->symtab_used; i++) {
-      if (0) 
-         VG_(printf)("%p %s\n",  si->symtab[i].addr, si->symtab[i].name);
-      if (0 == VG_(strcmp)(name, si->symtab[i].name))
-         return si->symtab[i].addr;
-   }
-   return (Addr)NULL;
 }
 
 
@@ -2847,13 +2834,16 @@ VgSectKind VG_(seginfo_sect_kind)(Addr a)
 
    for(si = segInfo_list; si != NULL; si = si->next) {
       if (a >= si->start && a < (si->start + si->size)) {
+
 	 if (0)
-	    VG_(printf)("addr=%p si=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",
-			a, si, si->filename, 
-			si->got_start_vma,  si->got_size,
-			si->plt_start_vma,  si->plt_size,
-			si->data_start_vma, si->data_size,
-			si->bss_start_vma,  si->bss_size);
+	    VG_(printf)(
+               "addr=%p si=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",
+               a, si, si->filename, 
+               si->got_start_vma,  si->got_size,
+               si->plt_start_vma,  si->plt_size,
+               si->data_start_vma, si->data_size,
+               si->bss_start_vma,  si->bss_size);
+
 	 ret = Vg_SectText;
 
 	 if (a >= si->data_start_vma && a < (si->data_start_vma + si->data_size))
@@ -2872,6 +2862,24 @@ VgSectKind VG_(seginfo_sect_kind)(Addr a)
 
    return ret;
 }
+
+Int VG_(seginfo_syms_howmany) ( const SegInfo *si )
+{
+   return si->symtab_used;
+}
+
+void VG_(seginfo_syms_getidx) ( const SegInfo *si, 
+                                      Int idx,
+                               /*OUT*/Addr*   addr,
+                               /*OUT*/UInt*   size,
+                               /*OUT*/HChar** name )
+{
+   vg_assert(idx >= 0 && idx < si->symtab_used);
+   if (addr) *addr = si->symtab[idx].addr;
+   if (size) *size = si->symtab[idx].size;
+   if (name) *name = (HChar*)si->symtab[idx].name;
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -767,7 +767,8 @@ void VG_(show_all_errors) ( void )
          StackTrace ips = VG_(extract_StackTrace)(p_min->where);
          VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to debugging*/,
                           ips[0], /*debugging*/True, 0xFE/*verbosity*/,
-                          /*bbs_done*/0);
+                          /*bbs_done*/0,
+                          /*allow redir?*/True);
       }
 
       p_min->count = 1 << 30;

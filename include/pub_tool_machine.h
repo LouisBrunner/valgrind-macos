@@ -34,13 +34,13 @@
 #if defined(VGA_x86)
 #  define VG_MIN_INSTR_SZB          1  // min length of native instruction
 #  define VG_MAX_INSTR_SZB         16  // max length of native instruction
-#  define VG_CLREQ_SZB             18  // length of a client request, may
+#  define VG_CLREQ_SZB             14  // length of a client request, may
                                        //   be larger than VG_MAX_INSTR_SZB
 #  define VG_STACK_REDZONE_SZB      0  // number of addressable bytes below %RSP
 #elif defined(VGA_amd64)
 #  define VG_MIN_INSTR_SZB          1
 #  define VG_MAX_INSTR_SZB         16
-#  define VG_CLREQ_SZB             18
+#  define VG_CLREQ_SZB             19
 #  define VG_STACK_REDZONE_SZB    128
 #elif defined(VGA_ppc32)
 #  define VG_MIN_INSTR_SZB          4

@@ -59,8 +59,8 @@ void VG_NOTIFY_ON_LOAD(freeres)( void )
    extern void __libc_freeres(void);
    __libc_freeres();
 #endif
-   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                           VG_USERREQ__LIBC_FREERES_DONE, 0, 0, 0, 0);
+   VALGRIND_DO_CLIENT_REQUEST(res, 0 /* default */,
+                              VG_USERREQ__LIBC_FREERES_DONE, 0, 0, 0, 0);
    /*NOTREACHED*/
    *(int *)0 = 'x';
 }
@@ -69,3 +69,60 @@ void VG_NOTIFY_ON_LOAD(freeres)( void )
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
 
+#if 0
+
+#define PTH_FUNC(ret_ty, f, args...) \
+   ret_ty VG_WRAP_FUNCTION_ZZ(libpthreadZdsoZd0,f)(args); \
+   ret_ty VG_WRAP_FUNCTION_ZZ(libpthreadZdsoZd0,f)(args)
+
+#include <stdio.h>
+#include <pthread.h>
+
+// pthread_create
+PTH_FUNC(int, pthreadZucreateZAZa, // pthread_create@*
+              pthread_t *thread, const pthread_attr_t *attr,
+              void *(*start) (void *), void *arg)
+{
+   int   ret;
+   void* fn;
+   VALGRIND_GET_NRADDR(fn);
+   fprintf(stderr, "<< pthread_create wrapper"); fflush(stderr);
+
+   CALL_FN_W_WWWW(ret, fn, thread,attr,start,arg);
+
+   fprintf(stderr, " -> %d >>\n", ret);
+   return ret;
+}
+
+// pthread_mutex_lock
+PTH_FUNC(int, pthreadZumutexZulock, // pthread_mutex_lock
+              pthread_mutex_t *mutex)
+{
+   int   ret;
+   void* fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   fprintf(stderr, "<< pthread_mxlock %p", mutex); fflush(stderr);
+
+   CALL_FN_W_W(ret, fn, mutex);
+
+   fprintf(stderr, " -> %d >>\n", ret);
+   return ret;
+}
+
+// pthread_mutex_unlock
+PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
+              pthread_mutex_t *mutex)
+{
+   int ret;
+   void* fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   fprintf(stderr, "<< pthread_mxunlk %p", mutex); fflush(stderr);
+
+   CALL_FN_W_W(ret, fn, mutex);
+
+   fprintf(stderr, " -> %d >>\n", ret);
+   return ret;
+}
+
+#endif

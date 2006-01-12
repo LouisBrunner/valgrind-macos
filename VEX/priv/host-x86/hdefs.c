@@ -2179,6 +2179,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
          case Ijk_TInval:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_TINVAL); break;
+         case Ijk_NoRedir:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_NOREDIR); break;
          case Ijk_Sys_sysenter:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_SYS_SYSENTER); break;

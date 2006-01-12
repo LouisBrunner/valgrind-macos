@@ -56,8 +56,10 @@
 __attribute((regparm(2)))
 static UInt genericg_compute_adler32 ( HWord addr, HWord len );
 
+/* Small helpers */
+static Bool const_False ( Addr64 a ) { return False; }
 
-/* Disassemble a complete basic block, starting at guest_IP_bbstart, 
+/* Disassemble a complete basic block, starting at guest_IP_start, 
    returning a new IRBB.  The disassembler may chase across basic
    block boundaries if it wishes and if chase_into_ok allows it.
    The precise guest address ranges from which code has been taken
@@ -71,24 +73,29 @@ static UInt genericg_compute_adler32 ( HWord addr, HWord len );
    do_self_check indicates that the caller needs a self-checking
    translation.
 
-   offB_TIADDR and offB_TILEN are the offsets of guest_TIADDR and
-   guest_TILEN.  Since this routine has to work for any guest state,
-   without knowing what it is, those offsets have to passed in.
-*/
+   do_set_NRADDR indicates that the unredirected guest address for
+   this BB should be written to the guest's NRADDR pseudo-register.
 
-static Bool const_False ( Addr64 a ) { return False; }
+   offB_TIADDR, offB_TILEN and offB_NRADDR are the offsets of
+   guest_TIADDR, guest_TILEN and guest_NRADDR.  Since this routine has
+   to work for any guest state, without knowing what it is, those
+   offsets have to passed in.
+*/
 
 IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                  /*IN*/ DisOneInstrFn    dis_instr_fn,
                  /*IN*/ UChar*           guest_code,
                  /*IN*/ Addr64           guest_IP_bbstart,
+                 /*IN*/ Addr64           guest_IP_bbstart_noredir,
                  /*IN*/ Bool             (*chase_into_ok)(Addr64),
                  /*IN*/ Bool             host_bigendian,
                  /*IN*/ VexArchInfo*     archinfo_guest,
                  /*IN*/ IRType           guest_word_type,
                  /*IN*/ Bool             do_self_check,
+                 /*IN*/ Bool             do_set_NRADDR,
                  /*IN*/ Int              offB_TISTART,
-                 /*IN*/ Int              offB_TILEN )
+                 /*IN*/ Int              offB_TILEN,
+                 /*IN*/ Int              offB_NRADDR )
 {
    Long       delta;
    Int        i, n_instrs, first_stmt_idx;
@@ -100,6 +107,8 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    Int        selfcheck_idx = 0;
    IRBB*      irbb;
    Addr64     guest_IP_curr_instr;
+   IRConst*   guest_IP_bbstart_IRConst = NULL;
+   IRConst*   guest_IP_bbstart_noredir_IRConst = NULL;
 
    Bool (*resteerOKfn)(Addr64) = NULL;
 
@@ -131,7 +140,23 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    delta    = 0;
    n_instrs = 0;
 
-   /* If asked to make a self-checking translation, leave a 5 spaces
+   /* Guest addresses as IRConsts.  Used in the two self-checks
+      generated. */
+   if (do_self_check) {
+      guest_IP_bbstart_IRConst
+         = guest_word_type==Ity_I32 
+              ? IRConst_U32(toUInt(guest_IP_bbstart))
+              : IRConst_U64(guest_IP_bbstart);
+   }
+
+   if (do_set_NRADDR) {
+      guest_IP_bbstart_noredir_IRConst
+         = guest_word_type==Ity_I32 
+              ? IRConst_U32(toUInt(guest_IP_bbstart_noredir))
+              : IRConst_U64(guest_IP_bbstart_noredir);
+   }
+
+   /* If asked to make a self-checking translation, leave 5 spaces
       in which to put the check statements.  We'll fill them in later
       when we know the length and adler32 of the area to check. */
    if (do_self_check) {
@@ -141,6 +166,18 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       addStmtToIRBB( irbb, IRStmt_NoOp() );
       addStmtToIRBB( irbb, IRStmt_NoOp() );
       addStmtToIRBB( irbb, IRStmt_NoOp() );
+   }
+
+   /* Set guest_NRADDR if asked to.  This records the unredirected
+      guest address of this bb, so that it can later be read (and so
+      used by a function wrapper to get to the function itself. */
+   if (do_set_NRADDR) {
+      /* set guest_NRADDR to guest_IP_bbstart_noredir */
+      addStmtToIRBB( 
+         irbb,
+         IRStmt_Put( offB_NRADDR, 
+                     IRExpr_Const(guest_IP_bbstart_noredir_IRConst))
+      );
    }
 
    /* Process instructions. */
@@ -197,7 +234,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       vassert(dres.whatNext == Dis_StopHere
               || dres.whatNext == Dis_Continue
               || dres.whatNext == Dis_Resteer);
-      vassert(dres.len >= 0 && dres.len <= 18);
+      vassert(dres.len >= 0 && dres.len <= 20);
       if (dres.whatNext != Dis_Resteer)
          vassert(dres.continueAt == 0);
 
@@ -298,7 +335,6 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    if (do_self_check) {
 
       UInt     len2check, adler32;
-      IRConst* guest_IP_bbstart_IRConst;
       IRTemp   tistart_tmp, tilen_tmp;
 
       vassert(vge->n_used == 1);
@@ -307,11 +343,6 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
          len2check = 1;
 
      adler32 = genericg_compute_adler32( (HWord)guest_code, len2check );
-
-     guest_IP_bbstart_IRConst
-        = guest_word_type==Ity_I32 
-             ? IRConst_U32(toUInt(guest_IP_bbstart))
-             : IRConst_U64(guest_IP_bbstart);
 
      /* Set TISTART and TILEN.  These will describe to the despatcher
         the area of guest code to invalidate should we exit with a

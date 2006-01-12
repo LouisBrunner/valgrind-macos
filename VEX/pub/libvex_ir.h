@@ -855,6 +855,7 @@ typedef
       Ijk_NoDecode,       /* next instruction cannot be decoded */
       Ijk_MapFail,        /* Vex-provided address translation failed */
       Ijk_TInval,         /* Invalidate translations before continuing. */
+      Ijk_NoRedir,        /* Jump to un-redirected guest addr */
       /* Unfortunately, various guest-dependent syscall kinds.  They
 	 all mean: do a syscall before continuing. */
       Ijk_Sys_syscall,    /* amd64 'syscall', ppc 'sc' */

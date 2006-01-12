@@ -2620,6 +2620,9 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          case Ijk_TInval:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_TINVAL); break;
+         case Ijk_NoRedir:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_NOREDIR); break;
          case Ijk_Ret:
          case Ijk_Call:
          case Ijk_Boring:

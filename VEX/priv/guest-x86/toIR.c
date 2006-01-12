@@ -122,6 +122,30 @@
      way through bbs as usual.
 */
 
+/* "Special" instructions.
+
+   This instruction decoder can decode three special instructions
+   which mean nothing natively (are no-ops as far as regs/mem are
+   concerned) but have meaning for supporting Valgrind.  A special
+   instruction is flagged by the 12-byte preamble C1C703 C1C70D C1C71D
+   C1C713 (in the standard interpretation, that means: roll $3, %edi;
+   roll $13, %edi; roll $29, %edi; roll $19, %edi).  Following that,
+   one of the following 3 are allowed (standard interpretation in
+   parentheses):
+
+      87DB (xchgl %ebx,%ebx)   %EDX = client_request ( %EAX )
+      87C9 (xchgl %ecx,%ecx)   %EAX = guest_NRADDR
+      87D2 (xchgl %edx,%edx)   call-noredir *%EAX
+
+   Any other bytes following the 12-byte preamble are illegal and
+   constitute a failure in instruction decoding.  This all assumes
+   that the preamble will never occur except in specific code
+   fragments designed for Valgrind to catch.
+
+   No prefixes may precede a "Special" instruction.
+*/
+
+
 /* Translates x86 code to IR. */
 
 #include "libvex_basictypes.h"
@@ -227,6 +251,8 @@ static IRBB* irbb;
 
 #define OFFB_TISTART   offsetof(VexGuestX86State,guest_TISTART)
 #define OFFB_TILEN     offsetof(VexGuestX86State,guest_TILEN)
+#define OFFB_NRADDR    offsetof(VexGuestX86State,guest_NRADDR)
+
 
 /*------------------------------------------------------------*/
 /*--- Helper bits and pieces for deconstructing the        ---*/
@@ -7012,32 +7038,58 @@ DisResult disInstr_X86_WRK (
    if (put_IP)
       stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_EIP_curr_instr)) );
 
-   /* Spot the client-request magic sequence. */
+   /* Spot "Special" instructions (see comment at top of file). */
    {
       UChar* code = (UChar*)(guest_code + delta);
-      /* Spot this:
-         C1C01D                roll $29, %eax
-         C1C003                roll $3,  %eax
-         C1C81B                rorl $27, %eax
-         C1C805                rorl $5,  %eax
-         C1C00D                roll $13, %eax
-         C1C013                roll $19, %eax      
+      /* Spot the 12-byte preamble:
+         C1C703   roll $3,  %edi
+         C1C70D   roll $13, %edi
+         C1C71D   roll $29, %edi
+         C1C713   roll $19, %edi
       */
-      if (code[ 0] == 0xC1 && code[ 1] == 0xC0 && code[ 2] == 0x1D &&
-          code[ 3] == 0xC1 && code[ 4] == 0xC0 && code[ 5] == 0x03 &&
-          code[ 6] == 0xC1 && code[ 7] == 0xC8 && code[ 8] == 0x1B &&
-          code[ 9] == 0xC1 && code[10] == 0xC8 && code[11] == 0x05 &&
-          code[12] == 0xC1 && code[13] == 0xC0 && code[14] == 0x0D &&
-          code[15] == 0xC1 && code[16] == 0xC0 && code[17] == 0x13
-         ) {
-         DIP("%%edx = client_request ( %%eax )\n");         
-         delta += 18;
-         jmp_lit(Ijk_ClientReq, guest_EIP_bbstart+delta);
-         dres.whatNext = Dis_StopHere;
-         goto decode_success;
+      if (code[ 0] == 0xC1 && code[ 1] == 0xC7 && code[ 2] == 0x03 &&
+          code[ 3] == 0xC1 && code[ 4] == 0xC7 && code[ 5] == 0x0D &&
+          code[ 6] == 0xC1 && code[ 7] == 0xC7 && code[ 8] == 0x1D &&
+          code[ 9] == 0xC1 && code[10] == 0xC7 && code[11] == 0x13) {
+         /* Got a "Special" instruction preamble.  Which one is it? */
+         if (code[12] == 0x87 && code[13] == 0xDB /* xchgl %ebx,%ebx */) {
+            /* %EDX = client_request ( %EAX ) */
+            DIP("%%edx = client_request ( %%eax )\n");
+            delta += 14;
+            jmp_lit(Ijk_ClientReq, guest_EIP_bbstart+delta);
+            dres.whatNext = Dis_StopHere;
+            goto decode_success;
+         }
+         else
+         if (code[12] == 0x87 && code[13] == 0xC9 /* xchgl %ecx,%ecx */) {
+            /* %EAX = guest_NRADDR */
+            DIP("%%eax = guest_NRADDR\n");
+            delta += 14;
+            putIReg(4, R_EAX, IRExpr_Get( OFFB_NRADDR, Ity_I32 ));
+            goto decode_success;
+         }
+         else
+         if (code[12] == 0x87 && code[13] == 0xD2 /* xchgl %edx,%edx */) {
+            /* call-noredir *%EAX */
+            DIP("call-noredir *%%eax\n");
+            delta += 14;
+            t1 = newTemp(Ity_I32);
+            assign(t1, getIReg(4,R_EAX));
+            t2 = newTemp(Ity_I32);
+            assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
+            putIReg(4, R_ESP, mkexpr(t2));
+            storeLE( mkexpr(t2), mkU32(guest_EIP_bbstart+delta));
+            jmp_treg(Ijk_NoRedir,t1);
+            dres.whatNext = Dis_StopHere;
+            goto decode_success;
+         }
+         /* We don't know what it is. */
+         goto decode_failure;
+         /*NOTREACHED*/
       }
    }
 
+   /* Deal with prefixes. */
    /* Skip a LOCK prefix. */
    /* 2005 Jan 06: the following insns are observed to sometimes
       have a LOCK prefix:

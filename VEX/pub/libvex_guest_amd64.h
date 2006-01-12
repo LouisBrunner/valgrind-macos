@@ -145,6 +145,14 @@ typedef
       ULong guest_TISTART;
       ULong guest_TILEN;
 
+      /* Used to record the unredirected guest address at the start of
+         a translation whose start has been redirected.  By reading
+         this pseudo-register shortly afterwards, the translation can
+         find out what the corresponding no-redirection address was.
+         Note, this is only set for wrap-style redirects, not for
+         replace-style ones. */
+      ULong guest_NRADDR;
+
       /* Padding to make it have an 8-aligned size */
       /* UInt   padding; */
    }

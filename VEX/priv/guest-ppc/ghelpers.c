@@ -458,10 +458,12 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 
+   vex_state->guest_RESVN   = 0;
+
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
 
-   vex_state->guest_RESVN   = 0;
+   vex_state->guest_NRADDR = 0;
 }
 
 
@@ -606,10 +608,12 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 
+   vex_state->guest_RESVN   = 0;
+
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
 
-   vex_state->guest_RESVN   = 0;
+   vex_state->guest_NRADDR = 0;
 }
 
 

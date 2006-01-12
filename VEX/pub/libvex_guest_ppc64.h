@@ -248,9 +248,16 @@ typedef
          reservation exists. */
       /* 1104 */ ULong guest_RESVN;
 
-      /* Padding to make it have an 16-aligned size */
-      /* 1112 */ ULong padding2;
-      /* 1120 */
+      /* Used to record the unredirected guest address at the start of
+         a translation whose start has been redirected.  By reading
+         this pseudo-register shortly afterwards, the translation can
+         find out what the corresponding no-redirection address was.
+         Note, this is only set for wrap-style redirects, not for
+         replace-style ones. */
+      /* 1112 */ ULong guest_NRADDR;
+
+      /* Padding to make it have an 8-aligned size */
+      /* UInt  padding; */
    }
    VexGuestPPC64State;
 

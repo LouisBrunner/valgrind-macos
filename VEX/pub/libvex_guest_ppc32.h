@@ -199,13 +199,21 @@ typedef
       /* Emulation warnings */
       /* 940 */ UInt guest_EMWARN;
 
-      /* For icbi: record start and length of area to invalidate */
-      /* 944 */ UInt guest_TISTART;
-      /* 948 */ UInt guest_TILEN;
-
       /* For lwarx/stwcx.: 0 == no reservation exists, non-0 == a
          reservation exists. */
-      /* 952 */ UInt guest_RESVN;
+      /* 944 */ UInt guest_RESVN;
+
+      /* For icbi: record start and length of area to invalidate */
+      /* 948 */ UInt guest_TISTART;
+      /* 952 */ UInt guest_TILEN;
+
+      /* Used to record the unredirected guest address at the start of
+         a translation whose start has been redirected.  By reading
+         this pseudo-register shortly afterwards, the translation can
+         find out what the corresponding no-redirection address was.
+         Note, this is only set for wrap-style redirects, not for
+         replace-style ones. */
+      /* 956 */ UInt guest_NRADDR;
 
       /* Padding to make it have an 8-aligned size */
       /* 956 */ UInt  padding;

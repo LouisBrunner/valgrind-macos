@@ -1965,6 +1965,8 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
       initialise them anyway. */
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
+
+   vex_state->guest_NRADDR = 0;
 }
 
 

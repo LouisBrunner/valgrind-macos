@@ -174,6 +174,7 @@ int main ( int argc, char** argv )
       vta.instrument2     = NULL;
 #endif
       vta.do_self_check   = False;
+      vta.do_set_NRADDR   = False;
       vta.traceflags      = TEST_FLAGS;
 #if 1 /* x86, amd64 hosts */
       vta.dispatch        = (void*)0x12345678;

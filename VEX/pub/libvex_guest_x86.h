@@ -208,18 +208,20 @@ typedef
       /* Emulation warnings */
       UInt   guest_EMWARN;
 
-      /* Translation-invalidation area description.  Not used on x86
-         (there is no invalidate-icache insn), but needed so as to
-         allow users of the library to uniformly assume that the guest
-         state contains these two fields -- otherwise there is
-         compilation breakage.  On x86, these two fields are set to
-         zero by LibVEX_GuestX86_initialise and then should be ignored
-         forever thereafter. */
+      /* For clflush: record start and length of area to invalidate */
       UInt guest_TISTART;
       UInt guest_TILEN;
 
+      /* Used to record the unredirected guest address at the start of
+         a translation whose start has been redirected.  By reading
+         this pseudo-register shortly afterwards, the translation can
+         find out what the corresponding no-redirection address was.
+         Note, this is only set for wrap-style redirects, not for
+         replace-style ones. */
+      UInt guest_NRADDR;
+
       /* Padding to make it have an 8-aligned size */
-      /* UInt   padding; */
+      UInt padding;
    }
    VexGuestX86State;
 

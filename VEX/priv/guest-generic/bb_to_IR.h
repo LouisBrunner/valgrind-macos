@@ -154,13 +154,16 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                  /*IN*/ DisOneInstrFn    dis_instr_fn,
                  /*IN*/ UChar*           guest_code,
                  /*IN*/ Addr64           guest_IP_bbstart,
+                 /*IN*/ Addr64           guest_IP_bbstart_noredir,
                  /*IN*/ Bool             (*chase_into_ok)(Addr64),
                  /*IN*/ Bool             host_bigendian,
                  /*IN*/ VexArchInfo*     archinfo_guest,
                  /*IN*/ IRType           guest_word_type,
                  /*IN*/ Bool             do_self_check,
+                 /*IN*/ Bool             do_set_NRADDR,
                  /*IN*/ Int              offB_TISTART,
-                 /*IN*/ Int              offB_TILEN );
+                 /*IN*/ Int              offB_TILEN,
+                 /*IN*/ Int              offB_NRADDR );
 
 
 #endif /* ndef GENERIC_BB_TO_IR_H */

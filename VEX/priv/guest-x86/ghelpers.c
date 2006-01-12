@@ -2225,6 +2225,8 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    /* SSE2 has a 'clflush' cache-line-invalidator which uses these. */
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
+
+   vex_state->guest_NRADDR = 0;
 }
 
 

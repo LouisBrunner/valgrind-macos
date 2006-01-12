@@ -767,9 +767,14 @@ void VG_(redir_initialise) ( void )
       the start, otherwise ld.so makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
 
-      add_redirect_sym_to_addr(
-         "soname:ld64.so.1", "strlen",
+      add_hardwired_spec(
+         "ld64.so.1", "strlen",
          (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strlen) )
+      );   
+
+      add_hardwired_spec(
+         "ld64.so.1", "index",
+         (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strchr) )
       );   
 
    }

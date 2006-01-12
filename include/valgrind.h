@@ -163,7 +163,7 @@
 #if defined(ARCH_x86)
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
                      "roll $3,  %%edi ; roll $13, %%edi\n\t"      \
-                     "roll $29, %%edi ; roll $19, %%edi\n\t"      \
+                     "roll $29, %%edi ; roll $19, %%edi\n\t"
 
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
@@ -208,7 +208,7 @@
 #if defined(ARCH_amd64)
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
                      "rolq $3,  %%rdi ; rolq $13, %%rdi\n\t"      \
-                     "rolq $61, %%rdi ; rolq $51, %%rdi\n\t"      \
+                     "rolq $61, %%rdi ; rolq $51, %%rdi\n\t"
 
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
@@ -253,15 +253,15 @@
 #if defined(ARCH_ppc32)
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
                      "rlwinm 0,0,3,0,0  ; rlwinm 0,0,13,0,0\n\t"  \
-                     "rlwinm 0,0,29,0,0 ; rlwinm 0,0,19,0,0\n\t"  \
+                     "rlwinm 0,0,29,0,0 ; rlwinm 0,0,19,0,0\n\t"
 
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)               \
                                                                   \
-  { volatile unsigned int _zzq_args[5];                           \
-    register unsigned int _zzq_result __asm__("r3");              \
-    register volatile unsigned int *_zzq_ptr __asm__("r4");       \
+  {          unsigned int  _zzq_args[5];                          \
+    register unsigned int  _zzq_result __asm__("r3");             \
+    register unsigned int* _zzq_ptr __asm__("r4");                \
     _zzq_args[0] = (unsigned int)(_zzq_request);                  \
     _zzq_args[1] = (unsigned int)(_zzq_arg1);                     \
     _zzq_args[2] = (unsigned int)(_zzq_arg2);                     \
@@ -298,30 +298,49 @@
 /* --------------------------- ppc64 --------------------------- */
 
 #if defined(ARCH_ppc64)
+#define __SPECIAL_INSTRUCTION_PREAMBLE                            \
+                     "rotldi 0,0,3  ; rotldi 0,0,13\n\t"          \
+                     "rotldi 0,0,61 ; rotldi 0,0,51\n\t"
+
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)               \
                                                                   \
-  { volatile unsigned long long int _zzq_args[5];                 \
-    register unsigned long long int _zzq_tmp __asm__("r3");       \
-    register volatile unsigned long long int *_zzq_ptr __asm__("r4"); \
-    _zzq_args[0] = (volatile unsigned long long int)(_zzq_request);   \
-    _zzq_args[1] = (volatile unsigned long long int)(_zzq_arg1);  \
-    _zzq_args[2] = (volatile unsigned long long int)(_zzq_arg2);  \
-    _zzq_args[3] = (volatile unsigned long long int)(_zzq_arg3);  \
-    _zzq_args[4] = (volatile unsigned long long int)(_zzq_arg4);  \
+  {          unsigned long long int  _zzq_args[5];                \
+    register unsigned long long int  _zzq_result __asm__("r3");   \
+    register unsigned long long int* _zzq_ptr __asm__("r4");      \
+    _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
+    _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
+    _zzq_args[2] = (unsigned long long int)(_zzq_arg2);           \
+    _zzq_args[3] = (unsigned long long int)(_zzq_arg3);           \
+    _zzq_args[4] = (unsigned long long int)(_zzq_arg4);           \
     _zzq_ptr = _zzq_args;                                         \
-    __asm__ volatile("tw 0,3,27\n\t"                              \
-                     "rotldi  0,0,61\n\t"                         \
-                     "rotldi  0,0,3\n\t"                          \
-                     "rotldi  0,0,13\n\t"                         \
-                     "rotldi  0,0,51\n\t"                         \
-                     "nop\n\t"                                    \
-                     : "=r" (_zzq_tmp)                            \
+    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
+                     /* %R3 = client_request ( %R4 ) */           \
+                     "or 1,1,1"                                   \
+                     : "=r" (_zzq_result)                         \
                      : "0" (_zzq_default), "r" (_zzq_ptr)         \
-                     : "memory");                                 \
-    _zzq_rlval = (__typeof__(_zzq_rlval)) _zzq_tmp;               \
+                     : "cc", "memory");                           \
+    _zzq_rlval = _zzq_result;                                     \
   }
+
+#define VALGRIND_GET_NRADDR(_zzq_rlval)                           \
+  { register unsigned long long int __addr __asm__("r3");         \
+    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
+                     /* %R3 = guest_NRADDR */                     \
+                     "or 2,2,2"                                   \
+                     : "=r" (__addr)                              \
+                     :                                            \
+                     : "cc", "memory"                             \
+                    );                                            \
+    _zzq_rlval = (void*)__addr;                                   \
+  }
+
+#define VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                   \
+                     __SPECIAL_INSTRUCTION_PREAMBLE               \
+                     /* branch-and-link-to-noredir *%R11 */       \
+                     "or 3,3,3\n\t"
+
 #endif /* ARCH_ppc64 */
 
 /* Insert assembly code for other architectures here... */

@@ -522,7 +522,7 @@ static inline void do_pre_run_checks ( volatile ThreadState* tst )
 static UInt run_thread_for_a_while ( ThreadId tid )
 {
    volatile Int          jumped;
-   volatile ThreadState* tst; 
+   volatile ThreadState* tst = NULL; /* stop gcc complaining */
    volatile UInt         trc;
    volatile Int          dispatch_ctr_SAVED;
    volatile Int          done_this_time;

@@ -299,25 +299,21 @@ VG_(trampoline_stuff_end):
 	/* a leading page of unexecutable code */
 	UD2_PAGE
 
-.align 2
 .global VG_(trampoline_stuff_start)
-.section ".opd","aw"
-.align 3
 VG_(trampoline_stuff_start):
-.quad .VG_(trampoline_stuff_start),.TOC.@tocbase,0
-.previous
-.type .VG_(trampoline_stuff_start),@function
-.global  .VG_(trampoline_stuff_start)
-.VG_(trampoline_stuff_start):
 
-.align 2
-.globl VG_(ppc64_linux_REDIR_FOR_strlen)
-.section        ".opd","aw"
-.align 3
+	/* this function is written using the "dotless" ABI convention */
+	.align 2
+	.globl VG_(ppc64_linux_REDIR_FOR_strlen)
+	.section        ".opd","aw"
+	.align 3
 VG_(ppc64_linux_REDIR_FOR_strlen):
-.quad   .L.VG_(ppc64_linux_REDIR_FOR_strlen),.TOC.@tocbase
-.previous
-.type   VG_(ppc64_linux_REDIR_FOR_strlen), @function
+	.quad   .L.VG_(ppc64_linux_REDIR_FOR_strlen),.TOC.@tocbase,0
+	.previous
+	.size	VG_(ppc64_linux_REDIR_FOR_strlen), \
+			.L0end-.L.VG_(ppc64_linux_REDIR_FOR_strlen)
+	.type	VG_(ppc64_linux_REDIR_FOR_strlen), @function
+
 .L.VG_(ppc64_linux_REDIR_FOR_strlen):
         mr 9,3
         lbz 0,0(3)
@@ -325,27 +321,51 @@ VG_(ppc64_linux_REDIR_FOR_strlen):
         cmpwi 7,0,0
         beqlr 7
         li 3,0
-.L5:
+.L01:
         addi 0,3,1
         extsw 3,0
         lbzx 0,9,3
         cmpwi 7,0,0
-        bne 7,.L5
+        bne 7,.L01
         blr
         .long 0
         .byte 0,0,0,0,0,0,0,0
-        .size   VG_(ppc64_linux_REDIR_FOR_strlen),.-.L.VG_(ppc64_linux_REDIR_FOR_strlen)
+.L0end:
 
-.align 2
+        /* this function is written using the "dotless" ABI convention */
+        .align 2
+        .globl VG_(ppc64_linux_REDIR_FOR_strchr)
+	.section        ".opd","aw"
+	.align 3
+VG_(ppc64_linux_REDIR_FOR_strchr):
+        .quad   .L.VG_(ppc64_linux_REDIR_FOR_strchr),.TOC.@tocbase,0
+        .previous
+        .size   VG_(ppc64_linux_REDIR_FOR_strchr), \
+                        .L1end-.L.VG_(ppc64_linux_REDIR_FOR_strchr)
+        .type   VG_(ppc64_linux_REDIR_FOR_strchr),@function
+	
+.L.VG_(ppc64_linux_REDIR_FOR_strchr):
+        rldicl 4,4,0,56
+        li 9,0
+.L11:
+        lbz 0,0(3)
+        cmpw 7,0,4
+        bne+ 7,.L12
+        mr 9,3
+.L12:
+        lbz 0,0(3)
+        addi 3,3,1
+        cmpwi 7,0,0
+        bne+ 7,.L11
+        mr 3,9
+        blr
+        .long 0
+        .byte 0,0,0,0,0,0,0,0
+.L1end:
+
+	
 .global VG_(trampoline_stuff_end)
-.section ".opd","aw"
-.align 3
 VG_(trampoline_stuff_end):
-.quad .VG_(trampoline_stuff_end),.TOC.@tocbase,0
-.previous
-.type .VG_(trampoline_stuff_end),@function
-.global  .VG_(trampoline_stuff_end)
-.VG_(trampoline_stuff_end):
 
 	/* and a trailing page of unexecutable code */
 	UD2_PAGE

@@ -1106,20 +1106,38 @@ static Bool is_interesting_symbol( SegInfo*   si,
                                                             (ppc64-linux only) */
 				   /*OUT*/Addr* sym_addr_really )
 {
+   Bool plausible;
+
    /* Set default real address for the symbol. */
    *sym_addr_really = sym_addr;
 
-   /* Figure out if we're interested in the symbol.
-      Firstly, is it of the right flavour?  */
-   if ( ! ( (ELFXX_ST_BIND(sym->st_info) == STB_GLOBAL ||
-             ELFXX_ST_BIND(sym->st_info) == STB_LOCAL ||
-             ELFXX_ST_BIND(sym->st_info) == STB_WEAK)
-          &&
-            (ELFXX_ST_TYPE(sym->st_info) == STT_FUNC ||
-             (VG_(needs).data_syms 
-              && ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT))
-          )
-      )
+   /* Figure out if we're interested in the symbol.  Firstly, is it of
+      the right flavour?  */
+   plausible 
+      = (ELFXX_ST_BIND(sym->st_info) == STB_GLOBAL 
+         || ELFXX_ST_BIND(sym->st_info) == STB_LOCAL 
+         || ELFXX_ST_BIND(sym->st_info) == STB_WEAK
+        )
+        &&
+        (ELFXX_ST_TYPE(sym->st_info) == STT_FUNC 
+         || (VG_(needs).data_syms 
+             && ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT)
+        );
+
+#  if defined(VGP_ppc64_linux)
+   /* Allow STT_NOTYPE in the very special case where we're running on
+      ppc64-linux and the symbol is one which the .opd-chasing hack
+      below will chase. */
+   if (!plausible
+       && ELFXX_ST_TYPE(sym->st_info) == STT_NOTYPE
+       && sym->st_size > 0
+       && si->opd_start_vma != 0
+       && sym_addr >= si->opd_start_vma
+       && sym_addr <  si->opd_start_vma + si->opd_size)
+      plausible = True;
+#  endif
+
+   if (!plausible)
       return False;
 
    /* Secondly, if it's apparently in a GOT or PLT, it's really
@@ -1287,7 +1305,8 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
       }               
 
       // Record interesting symbols in our symtab.
-      if ( is_interesting_symbol(si, sym, sym_name, sym_addr, opd_filea, &sym_addr_really) ) {
+      if ( is_interesting_symbol(si, sym, sym_name, sym_addr, 
+                                     opd_filea, &sym_addr_really) ) {
          vg_assert(sym->st_name != 0);
          vg_assert(sym_name[0]  != 0);
 #        if defined(VGP_ppc64_linux)
@@ -1299,12 +1318,30 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
          vg_assert(sym_addr_really + sym->st_size <= si->opd_start_vma
                    || sym_addr_really >= si->opd_start_vma + si->opd_size);
 #        endif
+#        if defined(VGP_ppc64_linux)
+         /* Another ppc64-linux kludge, for the pre-"dotless" ABI
+            (prior to gcc 4.0.0).  If the symbol to be added has a
+            leading dot and it wasn't derived via an indirect through
+            .opd, remove the dot before adding it. */
+         if (sym_addr_really == sym_addr && sym_name[0] == '.')
+            sym_name++;
+#        endif
+
          name = ML_(addStr) ( si, sym_name, -1 );
          vg_assert(name != NULL);
+
          risym.addr  = sym_addr_really;
          risym.size  = sym->st_size;
          risym.name  = name;
          addSym ( si, &risym );
+
+         if (VG_(clo_trace_symtab))
+            VG_(printf)("    record [%d]:          "
+                        " value %p, size %d, name %s\n",
+                        i, (void*)risym.addr, (Int)risym.size, 
+                           (HChar*)risym.name
+            );
+
       }
    }
 }

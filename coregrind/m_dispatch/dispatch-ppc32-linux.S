@@ -562,7 +562,6 @@ void VG_(run_a_noredir_translation) ( UWord* argblock );
       2: output: next guest PC
       3: output: guest state pointer afterwards (== thread return code)
 */
-.align 16
 .global VG_(run_a_noredir_translation)
 VG_(run_a_noredir_translation):
 	/* save callee-save int regs, & lr */

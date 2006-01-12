@@ -2399,12 +2399,8 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //   p: aspacem
    //--------------------------------------------------------------
    { Bool change_ownership_v_c_OK;
-     Addr co_start   = VG_PGROUNDDN( 
-                          (Addr)VG_(fnptr_to_fnentry)( 
-                             &VG_(trampoline_stuff_start) ) );
-     Addr co_endPlus = VG_PGROUNDUP( 
-                          (Addr)VG_(fnptr_to_fnentry)( 
-                             &VG_(trampoline_stuff_end) ) );
+     Addr co_start   = VG_PGROUNDDN( (Addr)&VG_(trampoline_stuff_start) );
+     Addr co_endPlus = VG_PGROUNDUP( (Addr)&VG_(trampoline_stuff_end) );
      VG_(debugLog)(1,"redir",
                      "transfer ownership V -> C of 0x%llx .. 0x%llx\n",
                      (ULong)co_start, (ULong)co_endPlus-1 );
@@ -2703,8 +2699,11 @@ static void final_tidyup(ThreadId tid)
 		   "Caught __NR_exit; running __libc_freeres()");
       
    /* set thread context to point to libc_freeres_wrapper */
+   /* ppc64-linux note: __libc_freeres_wrapper gives us the real
+      function entry point, not a fn descriptor, so can use it
+      directly.  However, we need to set R2 (the toc pointer)
+      appropriately. */
    VG_(set_IP)(tid, __libc_freeres_wrapper);
-   // XXX should we use a special stack?
 
    /* Block all blockable signals by copying the real block state into
       the thread's block state*/

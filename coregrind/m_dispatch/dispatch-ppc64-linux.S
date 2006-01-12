@@ -52,7 +52,10 @@
         .tc vgPlain_machine_ppc64_has_VMX[TC],vgPlain_machine_ppc64_has_VMX
 
 /*------------------------------------------------------------*/
-/*--- The dispatch loop.                                   ---*/
+/*---                                                      ---*/
+/*--- The dispatch loop.  VG_(run_innerloop) is used to    ---*/
+/*--- run all translations except no-redir ones.           ---*/
+/*---                                                      ---*/
 /*------------------------------------------------------------*/
 
 /*----------------------------------------------------*/
@@ -568,6 +571,95 @@ VG_(run_innerloop__dispatch_profiled):
         mtlr    0
         addi    1,1,624   /* stack_size */
         blr
+
+
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*--- A special dispatcher, for running no-redir           ---*/
+/*--- translations.  Just runs the given translation once. ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+/* signature:
+void VG_(run_a_noredir_translation) ( UWord* argblock );
+*/
+
+/* Run a no-redir translation.  argblock points to 4 UWords, 2 to carry args
+   and 2 to carry results:
+      0: input:  ptr to translation
+      1: input:  ptr to guest state
+      2: output: next guest PC
+      3: output: guest state pointer afterwards (== thread return code)
+*/
+.section ".text"
+.align   2
+.globl VG_(run_a_noredir_translation)
+.section ".opd","aw"
+.align   3
+VG_(run_a_noredir_translation):
+.quad    .VG_(run_a_noredir_translation),.TOC.@tocbase,0
+.previous
+.type    .VG_(run_a_noredir_translation),@function
+.globl   .VG_(run_a_noredir_translation)
+.VG_(run_a_noredir_translation):
+	/* save callee-save int regs, & lr */
+	stdu 1,-512(1)
+	std  14,256(1)
+	std  15,264(1)
+	std  16,272(1)
+	std  17,280(1)
+	std  18,288(1)
+	std  19,296(1)
+	std  20,304(1)
+	std  21,312(1)
+	std  22,320(1)
+	std  23,328(1)
+	std  24,336(1)
+	std  25,344(1)
+	std  26,352(1)
+	std  27,360(1)
+	std  28,368(1)
+	std  29,376(1)
+	std  30,384(1)
+	std  31,392(1)
+	mflr 31
+	std  31,400(1)
+	std   2,408(1)  /* also preserve R2, just in case .. */
+
+	stw  3,416(1)
+	lwz  31,8(3)
+	lwz  30,0(3)
+	mtlr 30
+	blrl
+
+	lwz  4,416(1)
+	stw  3, 16(4)
+	stw  31,24(4)
+
+	ld   14,256(1)
+	ld   15,264(1)
+	ld   16,272(1)
+	ld   17,280(1)
+	ld   18,288(1)
+	ld   19,296(1)
+	ld   20,304(1)
+	ld   21,312(1)
+	ld   22,320(1)
+	ld   23,328(1)
+	ld   24,336(1)
+	ld   25,344(1)
+	ld   26,352(1)
+	ld   27,360(1)
+	ld   28,368(1)
+	ld   29,376(1)
+	ld   30,384(1)
+	ld   31,400(1)
+	mtlr 31
+	ld   31,392(1)
+	ld    2,408(1)  /* also preserve R2, just in case .. */
+
+	addi 1,1,512
+	blr
 
 
 /* Let the linker know we don't need an executable stack */

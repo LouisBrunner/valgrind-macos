@@ -88,10 +88,17 @@
    This instruction decoder can decode three special instructions
    which mean nothing natively (are no-ops as far as regs/mem are
    concerned) but have meaning for supporting Valgrind.  A special
-   instruction is flagged by the 16-byte preamble 54001800 54006800
-   5400E800 54009800 (in the standard interpretation, that means:
-   rlwinm 0,0,3,0,0; rlwinm 0,0,13,0,0; rlwinm 0,0,29,0,0; rlwinm
-   0,0,19,0,0).  Following that, one of the following 3 are allowed
+   instruction is flagged by a 16-byte preamble:
+
+      32-bit mode: 54001800 54006800 5400E800 54009800
+                   (rlwinm 0,0,3,0,0; rlwinm 0,0,13,0,0; 
+                    rlwinm 0,0,29,0,0; rlwinm 0,0,19,0,0)
+
+      64-bit mode: 78001800 78006800 7800E802 78009802
+                   (rotldi 0,0,3; rotldi 0,0,13;
+                    rotldi 0,0,61; rotldi 0,0,51)
+
+   Following that, one of the following 3 are allowed
    (standard interpretation in parentheses):
 
       7C210B78 (or 1,1,1)   %R3 = client_request ( %R4 )
@@ -8369,56 +8376,35 @@ DisResult disInstr_PPC_WRK (
 
 //   vex_printf("insn: 0x%x\n", theInstr);
 
-   if (mode64) {
-      DIP("\t0x%llx:  ", guest_CIA_curr_instr);
-   } else {
-      DIP("\t0x%x:  ", (Addr32)guest_CIA_curr_instr);
-   }
+   DIP("\t0x%llx:  ", (ULong)guest_CIA_curr_instr);
 
    /* We may be asked to update the guest CIA before going further. */
    if (put_IP)
       putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr) );
 
    /* Spot "Special" instructions (see comment at top of file). */
-   if (mode64) {
-      /* Spot the magic sequence, 64-bit mode */
-      UChar* code = (UChar*)(&guest_code[delta]);
-
-      /* Spot this:                                       
-         0x7C03D808   tw 0,3,27            => trap word if (0) => nop
-         0x7800E802   rotldi  0,0,61       => ro = rotl(r0,61)
-         0x78001800   rotldi  0,0,3        => ro = rotl(r0,3)
-         0x78006800   rotldi  0,0,13       => ro = rotl(r0,13)
-         0x78009802   rotldi  0,0,51       => ro = rotl(r0,51)
-         0x60000000   nop
-      */
-      if (getUIntBigendianly(code+ 0) == 0x7C03D808 &&
-          getUIntBigendianly(code+ 4) == 0x7800E802 &&
-          getUIntBigendianly(code+ 8) == 0x78001800 &&
-          getUIntBigendianly(code+12) == 0x78006800 &&
-          getUIntBigendianly(code+16) == 0x78009802 &&
-          getUIntBigendianly(code+20) == 0x60000000) {
-         DIP("%%r3 = client_request ( %%r31 )\n");
-         dres.len = 24;
-         delta += 24;
-
-         irbb->next     = mkSzImm( ty, guest_CIA_bbstart + delta );
-         irbb->jumpkind = Ijk_ClientReq;
-         dres.whatNext  = Dis_StopHere;
-         goto decode_success;
-      }
-   } else {
+   {
       UChar* code = (UChar*)(guest_code + delta);
-      /* Spot the 16-byte preamble:
-         54001800  rlwinm 0,0,3,0,0
-         54006800  rlwinm 0,0,13,0,0
-         5400E800  rlwinm 0,0,29,0,0
-         54009800  rlwinm 0,0,19,0,0
+      /* Spot the 16-byte preamble: 
+         32-bit mode:
+            54001800  rlwinm 0,0,3,0,0
+            54006800  rlwinm 0,0,13,0,0
+            5400E800  rlwinm 0,0,29,0,0
+            54009800  rlwinm 0,0,19,0,0
+         64-bit mode:
+            78001800  rotldi 0,0,3
+            78006800  rotldi 0,0,13
+            7800E802  rotldi 0,0,61
+            78009802  rotldi 0,0,51
       */
-      if (getUIntBigendianly(code+ 0) == 0x54001800 &&
-          getUIntBigendianly(code+ 4) == 0x54006800 &&
-          getUIntBigendianly(code+ 8) == 0x5400E800 &&
-          getUIntBigendianly(code+12) == 0x54009800) {
+      UInt word1 = mode64 ? 0x78001800 : 0x54001800;
+      UInt word2 = mode64 ? 0x78006800 : 0x54006800;
+      UInt word3 = mode64 ? 0x7800E802 : 0x5400E800;
+      UInt word4 = mode64 ? 0x78009802 : 0x54009800;
+      if (getUIntBigendianly(code+ 0) == word1 &&
+          getUIntBigendianly(code+ 4) == word2 &&
+          getUIntBigendianly(code+ 8) == word3 &&
+          getUIntBigendianly(code+12) == word4) {
          /* Got a "Special" instruction preamble.  Which one is it? */
          if (getUIntBigendianly(code+16) == 0x7C210B78 /* or 1,1,1 */) {
             /* %R3 = client_request ( %R4 ) */
@@ -8443,7 +8429,7 @@ DisResult disInstr_PPC_WRK (
             /*  branch-and-link-to-noredir %R11 */
             DIP("branch-and-link-to-noredir r11\n");
             delta += 20;
-            putGST( PPC_GST_LR, mkSzImm(ty, guest_CIA_bbstart + delta) );
+            putGST( PPC_GST_LR, mkSzImm(ty, guest_CIA_bbstart + (Long)delta) );
             irbb->next     = getIReg(11);
             irbb->jumpkind = Ijk_NoRedir;
             dres.whatNext  = Dis_StopHere;

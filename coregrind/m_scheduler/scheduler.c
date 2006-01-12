@@ -643,121 +643,6 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    }
 }
 
-/* ---------------------------------------------------------------------
-   Helper stuff for managing no-redirection translations.
-   ------------------------------------------------------------------ */
-
-/* Run a translation.  argblock points to 4 UWords, 2 to carry args
-   and 2 to carry results:
-      0: input:  ptr to translation
-      1: input:  ptr to guest state
-      2: output: next guest PC
-      3: output: guest state pointer afterwards (== thread return code)
-*/
-extern UWord run_a_translation ( UWord* argblock );
-#if defined(VGP_x86_linux)
-#elif defined(VGP_amd64_linux)
-#elif defined(VGP_ppc32_linux)
-asm("\n"
-".text\n"
-"run_a_translation:\n"
-"   stwu 1,-256(1)\n"
-"   stw  14,128(1)\n"
-"   stw  15,132(1)\n"
-"   stw  16,136(1)\n"
-"   stw  17,140(1)\n"
-"   stw  18,144(1)\n"
-"   stw  19,148(1)\n"
-"   stw  20,152(1)\n"
-"   stw  21,156(1)\n"
-"   stw  22,160(1)\n"
-"   stw  23,164(1)\n"
-"   stw  24,168(1)\n"
-"   stw  25,172(1)\n"
-"   stw  26,176(1)\n"
-"   stw  27,180(1)\n"
-"   stw  28,184(1)\n"
-"   stw  29,188(1)\n"
-"   stw  30,192(1)\n"
-"   stw  31,196(1)\n"
-"   mflr 31\n"
-"   stw  31,200(1)\n"
-
-"   stw  3,204(1)\n"
-"   lwz  31,4(3)\n"
-"   lwz  30,0(3)\n"
-"   mtlr 30\n"
-"   blrl\n"
-
-"   lwz  4,204(1)\n"
-"   stw  3,  8(4)\n"
-"   stw  31,12(4)\n"
-
-"   lwz  14,128(1)\n"
-"   lwz  15,132(1)\n"
-"   lwz  16,136(1)\n"
-"   lwz  17,140(1)\n"
-"   lwz  18,144(1)\n"
-"   lwz  19,148(1)\n"
-"   lwz  20,152(1)\n"
-"   lwz  21,156(1)\n"
-"   lwz  22,160(1)\n"
-"   lwz  23,164(1)\n"
-"   lwz  24,168(1)\n"
-"   lwz  25,172(1)\n"
-"   lwz  26,176(1)\n"
-"   lwz  27,180(1)\n"
-"   lwz  28,184(1)\n"
-"   lwz  29,188(1)\n"
-"   lwz  30,192(1)\n"
-"   lwz  31,200(1)\n"
-"   mtlr 31\n"
-"   lwz  31,196(1)\n"
-"   addi 1,1,256\n"
-"   blr\n"
-
-".previous\n"
-);
-#else
-#  error "Not implemented"
-#endif
-
-
-/* tid just requested a jump to the noredir version of its current
-   program counter.  So make up that translation if needed, run it,
-   and return the resulting thread return code. */
-static UInt/*trc*/ handle_noredir_jump ( ThreadId tid )
-{
-   AddrH hcode = 0;
-   Addr  ip    = VG_(get_IP)(tid);
-
-   Bool  found = VG_(search_unredir_transtab)( &hcode, ip );
-   if (!found) {
-      /* Not found; we need to request a translation. */
-      if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, bbs_done,
-                          False/*NO REDIRECTION*/ )) {
-
-         found = VG_(search_unredir_transtab)( &hcode, ip );
-         vg_assert2(found, "unredir translation missing after creation?!");
-      
-      } else {
-	 // If VG_(translate)() fails, it's because it had to throw a
-	 // signal because the client jumped to a bad address.  That
-	 // means that either a signal has been set up for delivery,
-	 // or the thread has been marked for termination.  Either
-	 // way, we just need to go back into the scheduler loop.
-         return VG_TRC_BORING;
-      }
-
-   }
-
-   vg_assert(found);
-   vg_assert(hcode != 0);
-
-   /* Otherwise run it and return the resulting VG_TRC_* value. */ 
-   return run_noredir_translation( hcode, tid );
-}
-
 
 /* ---------------------------------------------------------------------
    The scheduler proper.
@@ -816,6 +701,42 @@ static void handle_syscall(ThreadId tid)
       VG_(poll_signals)(tid);
    }
 }
+
+/* tid just requested a jump to the noredir version of its current
+   program counter.  So make up that translation if needed, run it,
+   and return the resulting thread return code. */
+static UInt/*trc*/ handle_noredir_jump ( ThreadId tid )
+{
+   AddrH hcode = 0;
+   Addr  ip    = VG_(get_IP)(tid);
+
+   Bool  found = VG_(search_unredir_transtab)( &hcode, ip );
+   if (!found) {
+      /* Not found; we need to request a translation. */
+      if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, bbs_done,
+                          False/*NO REDIRECTION*/ )) {
+
+         found = VG_(search_unredir_transtab)( &hcode, ip );
+         vg_assert2(found, "unredir translation missing after creation?!");
+      
+      } else {
+	 // If VG_(translate)() fails, it's because it had to throw a
+	 // signal because the client jumped to a bad address.  That
+	 // means that either a signal has been set up for delivery,
+	 // or the thread has been marked for termination.  Either
+	 // way, we just need to go back into the scheduler loop.
+         return VG_TRC_BORING;
+      }
+
+   }
+
+   vg_assert(found);
+   vg_assert(hcode != 0);
+
+   /* Otherwise run it and return the resulting VG_TRC_* value. */ 
+   return run_noredir_translation( hcode, tid );
+}
+
 
 /* 
    Run a thread until it wants to exit.

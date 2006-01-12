@@ -35,7 +35,10 @@
 
 
 /*------------------------------------------------------------*/
-/*--- The dispatch loop.                                   ---*/
+/*---                                                      ---*/
+/*--- The dispatch loop.  VG_(run_innerloop) is used to    ---*/
+/*--- run all translations except no-redir ones.           ---*/
+/*---                                                      ---*/
 /*------------------------------------------------------------*/
 
 /*----------------------------------------------------*/
@@ -539,6 +542,85 @@ LafterVMX9:
         mtlr    0
         addi    1,1,496   /* stack_size */
         blr
+
+
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*--- A special dispatcher, for running no-redir           ---*/
+/*--- translations.  Just runs the given translation once. ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+/* signature:
+void VG_(run_a_noredir_translation) ( UWord* argblock );
+*/
+
+/* Run a no-redir translation.  argblock points to 4 UWords, 2 to carry args
+   and 2 to carry results:
+      0: input:  ptr to translation
+      1: input:  ptr to guest state
+      2: output: next guest PC
+      3: output: guest state pointer afterwards (== thread return code)
+*/
+.align 16
+.global VG_(run_a_noredir_translation)
+VG_(run_a_noredir_translation):
+	/* save callee-save int regs, & lr */
+	stwu 1,-256(1)
+	stw  14,128(1)
+	stw  15,132(1)
+	stw  16,136(1)
+	stw  17,140(1)
+	stw  18,144(1)
+	stw  19,148(1)
+	stw  20,152(1)
+	stw  21,156(1)
+	stw  22,160(1)
+	stw  23,164(1)
+	stw  24,168(1)
+	stw  25,172(1)
+	stw  26,176(1)
+	stw  27,180(1)
+	stw  28,184(1)
+	stw  29,188(1)
+	stw  30,192(1)
+	stw  31,196(1)
+	mflr 31
+	stw  31,200(1)
+
+	stw  3,204(1)
+	lwz  31,4(3)
+	lwz  30,0(3)
+	mtlr 30
+	blrl
+
+	lwz  4,204(1)
+	stw  3,  8(4)
+	stw  31,12(4)
+
+	lwz  14,128(1)
+	lwz  15,132(1)
+	lwz  16,136(1)
+	lwz  17,140(1)
+	lwz  18,144(1)
+	lwz  19,148(1)
+	lwz  20,152(1)
+	lwz  21,156(1)
+	lwz  22,160(1)
+	lwz  23,164(1)
+	lwz  24,168(1)
+	lwz  25,172(1)
+	lwz  26,176(1)
+	lwz  27,180(1)
+	lwz  28,184(1)
+	lwz  29,188(1)
+	lwz  30,192(1)
+	lwz  31,200(1)
+	mtlr 31
+	lwz  31,196(1)
+	addi 1,1,256
+	blr
+
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits

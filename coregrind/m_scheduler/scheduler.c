@@ -611,10 +611,23 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
       been used immediately before, on this same thread. */
 #  endif
 
+   /* There can be 3 outcomes from VG_(run_a_noredir_translation):
+
+      - a signal occurred and the sighandler longjmp'd.  Then both [2]
+        and [3] are unchanged - hence zero.
+
+      - translation ran normally, set [2] (next guest IP) and set [3]
+        to whatever [1] was beforehand, indicating a normal (boring)
+        jump to the next block.
+
+      - translation ran normally, set [2] (next guest IP) and set [3]
+        to something different from [1] beforehand, which indicates a
+        TRC_ value.
+   */
    argblock[0] = (UWord)hcode;
    argblock[1] = (UWord)&VG_(threads)[tid].arch.vex;
-   argblock[2] = 0;
-   argblock[3] = 0;
+   argblock[2] = 0; /* next guest IP is written here */
+   argblock[3] = 0; /* guest state ptr afterwards is written here */
 
    vg_assert(VG_(in_generated_code) == False);
    VG_(in_generated_code) = True;
@@ -630,7 +643,8 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    if (jumped) {
       /* We get here if the client took a fault that caused our signal
          handler to longjmp. */
-      vg_assert(argblock[3] == argblock[1]); /* iow, trc was not set */
+      vg_assert(argblock[2] == 0); /* next guest IP was not written */
+      vg_assert(argblock[3] == 0); /* trc was not written */
       block_signals(tid);
       return VG_TRC_FAULT_SIGNAL;
    } else {

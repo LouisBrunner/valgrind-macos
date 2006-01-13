@@ -47,6 +47,7 @@
 #include "pub_core_options.h"
 #include "pub_core_redir.h"       // VG_(redir_notify_{new,delete}_SegInfo)
 #include "pub_core_tooliface.h"   // VG_(needs).data_syms
+#include "pub_core_oset.h"        // for ppc64-linux elf symbol reading
 
 #include "pub_core_aspacemgr.h"
 
@@ -285,8 +286,7 @@ Char* ML_(addStr) ( SegInfo* si, Char* str, Int len )
 }
 
 /* Add a symbol to the symbol table. */
-static __inline__
-void addSym ( SegInfo* si, RiSym* sym )
+static void addSym ( SegInfo* si, RiSym* sym )
 {
    UInt   new_sz, i;
    RiSym* new_tab;
@@ -1061,55 +1061,117 @@ void canonicaliseCfiSI ( SegInfo* si )
 
 
 /*------------------------------------------------------------*/
-/*--- Read info from a .so/exe file.                       ---*/
+/*---                                                      ---*/
+/*--- Read symbol table and line info from ELF files.      ---*/
+/*---                                                      ---*/
 /*------------------------------------------------------------*/
+
+/* Identify an ELF object file. */
 
 static Bool is_elf_object_file(const void *buf)
 {
-   {
-      ElfXX_Ehdr *ehdr = (ElfXX_Ehdr *)buf;
-      Int ok = 1;
+   ElfXX_Ehdr *ehdr = (ElfXX_Ehdr *)buf;
+   Int ok = 1;
 
-      ok &= (ehdr->e_ident[EI_MAG0] == 0x7F
-             && ehdr->e_ident[EI_MAG1] == 'E'
-             && ehdr->e_ident[EI_MAG2] == 'L'
-             && ehdr->e_ident[EI_MAG3] == 'F');
-      ok &= (ehdr->e_ident[EI_CLASS] == VG_ELF_CLASS
-             && ehdr->e_ident[EI_DATA] == VG_ELF_DATA2XXX
-             && ehdr->e_ident[EI_VERSION] == EV_CURRENT);
-      ok &= (ehdr->e_type == ET_EXEC || ehdr->e_type == ET_DYN);
-      ok &= (ehdr->e_machine == VG_ELF_MACHINE);
-      ok &= (ehdr->e_version == EV_CURRENT);
-      ok &= (ehdr->e_shstrndx != SHN_UNDEF);
-      ok &= (ehdr->e_shoff != 0 && ehdr->e_shnum != 0);
-      ok &= (ehdr->e_phoff != 0 && ehdr->e_phnum != 0);
+   ok &= (ehdr->e_ident[EI_MAG0] == 0x7F
+          && ehdr->e_ident[EI_MAG1] == 'E'
+          && ehdr->e_ident[EI_MAG2] == 'L'
+          && ehdr->e_ident[EI_MAG3] == 'F');
+   ok &= (ehdr->e_ident[EI_CLASS] == VG_ELF_CLASS
+          && ehdr->e_ident[EI_DATA] == VG_ELF_DATA2XXX
+          && ehdr->e_ident[EI_VERSION] == EV_CURRENT);
+   ok &= (ehdr->e_type == ET_EXEC || ehdr->e_type == ET_DYN);
+   ok &= (ehdr->e_machine == VG_ELF_MACHINE);
+   ok &= (ehdr->e_version == EV_CURRENT);
+   ok &= (ehdr->e_shstrndx != SHN_UNDEF);
+   ok &= (ehdr->e_shoff != 0 && ehdr->e_shnum != 0);
+   ok &= (ehdr->e_phoff != 0 && ehdr->e_phnum != 0);
 
-      if (ok)
-	 return True;
-   }
-
-   /* other file formats here? */
-
-   return False;
+   if (ok)
+      return True;
+   else
+      return False;
 }
 
-/* Decide whether SYM is something we should collect.  It may also
-   decide to change the stated address of the symbol, in which case a
-   different value is assigned to *SYM_ADDR_REALLY; otherwise SYM is
-   copied to *SYM_ADDR_REALLY. */
 
-static Bool is_interesting_symbol( SegInfo*   si, 
-                                   ElfXX_Sym* sym, 
-                                   Char*      sym_name, 
-                                   Addr       sym_addr,
-                                   UChar*     opd_filea, /* oimage addr of .opd sec
-                                                            (ppc64-linux only) */
-				   /*OUT*/Addr* sym_addr_really )
+/* Show a raw ELF symbol, given its in-image address and name. */
+
+static
+void show_raw_elf_symbol ( Int i, 
+                           ElfXX_Sym* sym, Char* sym_name, Addr sym_addr)
 {
-   Bool plausible;
+   VG_(printf)("raw symbol [%3d]: ", i);
+   switch (ELFXX_ST_BIND(sym->st_info)) {
+      case STB_LOCAL:  VG_(printf)("LOC "); break;
+      case STB_GLOBAL: VG_(printf)("GLO "); break;
+      case STB_WEAK:   VG_(printf)("WEA "); break;
+      case STB_LOPROC: VG_(printf)("lop "); break;
+      case STB_HIPROC: VG_(printf)("hip "); break;
+      default:         VG_(printf)("??? "); break;
+   }
+   switch (ELFXX_ST_TYPE(sym->st_info)) {
+      case STT_NOTYPE:  VG_(printf)("NOT "); break;
+      case STT_OBJECT:  VG_(printf)("OBJ "); break;
+      case STT_FUNC:    VG_(printf)("FUN "); break;
+      case STT_SECTION: VG_(printf)("SEC "); break;
+      case STT_FILE:    VG_(printf)("FIL "); break;
+      case STT_LOPROC:  VG_(printf)("lop "); break;
+      case STT_HIPROC:  VG_(printf)("hip "); break;
+      default:          VG_(printf)("??? "); break;
+   }
+   VG_(printf)(": val %08p, sz %4d  %s\n",
+               sym_addr, sym->st_size,
+               ( sym->st_name ? sym_name : (Char*)"NONAME" ) ); 
+}               
 
-   /* Set default real address for the symbol. */
-   *sym_addr_really = sym_addr;
+
+/* Decide whether SYM is something we should collect, and if so, copy
+   relevant info to the _OUT arguments.  For {x86,amd64,ppc32}-linux
+   this is straightforward - the name, address, size are copied out
+   unchanged.
+
+   For ppc64-linux it's more complex.  If the symbol is seen to be in
+   the .opd section, it is taken to be a function descriptor, and so
+   a dereference is attempted, in order to get hold of the real entry
+   point address.  Also as part of the dereference, there is an attempt
+   to calculate the TOC pointer (R2 value) associated with the symbol.
+
+   To support the ppc64-linux pre-"dotless" ABI (prior to gcc 4.0.0),
+   if the symbol is seen to be outside the .opd section and its name
+   starts with a dot, and .opd deference is not attempted, and no TOC
+   pointer is calculated, but the the leading dot is removed from the
+   name.
+
+   As a result, on ppc64-linux, the caller of this function may have
+   to piece together the real size, address, name of the symbol from
+   multiple calls to this function.  Ugly and confusing.
+*/
+static 
+Bool get_elf_symbol_info ( 
+        /* INPUTS */
+        SegInfo*   si,        /* containing SegInfo */
+        ElfXX_Sym* sym,       /* ELF symbol */
+        Char*      sym_name,  /* name */
+        Addr       sym_addr,  /* declared address */
+        UChar*     opd_filea, /* oimage of .opd sec (ppc64-linux only) */
+        /* OUTPUTS */
+        Char** sym_name_out,     /* name we should record */
+        Addr*  sym_addr_out,     /* addr we should record */
+        Int*   sym_size_out,     /* symbol size */
+        Addr*  sym_tocptr_out,   /* ppc64-linux only: R2 value to be
+                                    used on entry */
+        Bool*  did_opd_deref_out /* ppc64-linux only: did we deref an
+                                   .opd entry? */ 
+     )
+{
+   Bool plausible, is_in_opd;
+
+   /* Set defaults */
+   *sym_name_out      = sym_name;
+   *sym_addr_out      = sym_addr;
+   *sym_size_out      = (Int)sym->st_size;
+   *sym_tocptr_out    = 0; /* unknown/inapplicable */
+   *did_opd_deref_out = False;
 
    /* Figure out if we're interested in the symbol.  Firstly, is it of
       the right flavour?  */
@@ -1140,28 +1202,13 @@ static Bool is_interesting_symbol( SegInfo*   si,
    if (!plausible)
       return False;
 
-   /* Secondly, if it's apparently in a GOT or PLT, it's really
-      a reference to a symbol defined elsewhere, so ignore it. */
-   if (si->got_start_vma != 0
-       && sym_addr >= si->got_start_vma 
-       && sym_addr <  si->got_start_vma + si->got_size) {
-      TRACE_SYMTAB("ignore -- in GOT: %s\n", sym_name);
-      return False;
-   }
-   if (si->plt_start_vma != 0
-       && sym_addr >= si->plt_start_vma
-       && sym_addr <  si->plt_start_vma + si->plt_size) {
-      TRACE_SYMTAB("ignore -- in PLT: %s\n", sym_name);
-      return False;
-   }
-
-   /* Don't bother if nameless, or zero-sized. */
+   /* Ignore if nameless, or zero-sized. */
    if (sym->st_name == (ElfXX_Word)NULL
        || /* VG_(strlen)(sym_name) == 0 */
           /* equivalent but cheaper ... */
           sym_name[0] == 0
        || sym->st_size == 0) {
-      TRACE_SYMTAB("ignore -- size=0: %s\n", sym_name);
+      TRACE_SYMTAB("    ignore -- size=0: %s\n", sym_name);
       return False;
    }
 
@@ -1169,22 +1216,40 @@ static Bool is_interesting_symbol( SegInfo*   si,
       symbols, and particularly reduces the number of
       overlapping address ranges.  Don't ask me why ... */
    if ((Int)sym->st_value == 0) {
-      TRACE_SYMTAB( "ignore -- valu=0: %s\n", sym_name);
+      TRACE_SYMTAB( "    ignore -- valu=0: %s\n", sym_name);
       return False;
    }
 
-   /* ppc64-linux nasty hack: if the symbol is in a .opd section, then
-      really what we have is the address of a function descriptor.  So
-      use the first word of that as the function's text.
+   /* If it's apparently in a GOT or PLT, it's really a reference to a
+      symbol defined elsewhere, so ignore it. */
+   if (si->got_start_vma != 0
+       && sym_addr >= si->got_start_vma 
+       && sym_addr <  si->got_start_vma + si->got_size) {
+      TRACE_SYMTAB("    ignore -- in GOT: %s\n", sym_name);
+      return False;
+   }
+   if (si->plt_start_vma != 0
+       && sym_addr >= si->plt_start_vma
+       && sym_addr <  si->plt_start_vma + si->plt_size) {
+      TRACE_SYMTAB("    ignore -- in PLT: %s\n", sym_name);
+      return False;
+   }
+
+   /* ppc64-linux nasty hack: if the symbol is in an .opd section,
+      then really what we have is the address of a function
+      descriptor.  So use the first word of that as the function's
+      text.
 
       See thread starting at
       http://gcc.gnu.org/ml/gcc-patches/2004-08/msg00557.html
    */
+   is_in_opd = False;
+
    if (si->opd_start_vma != 0
        && sym_addr >= si->opd_start_vma
        && sym_addr <  si->opd_start_vma + si->opd_size) {
 #     if !defined(VGP_ppc64_linux)
-      TRACE_SYMTAB("ignore -- in OPD: %s\n", sym_name);
+      TRACE_SYMTAB("    ignore -- in OPD: %s\n", sym_name);
       return False;
 #     else
       Int    offset_in_opd;
@@ -1193,16 +1258,20 @@ static Bool is_interesting_symbol( SegInfo*   si,
       if (0) VG_(printf)("opdXXX: si->offset %p, sym_addr %p\n", 
                          (void*)(si->offset), (void*)sym_addr);
 
-      if (!VG_IS_8_ALIGNED(sym_addr))
+      if (!VG_IS_8_ALIGNED(sym_addr)) {
+         TRACE_SYMTAB("    ignore -- not 8-aligned: %s\n", sym_name);
          return False;
+      }
 
       /* sym_addr is a vma pointing into the .opd section.  We know
          the vma of the opd section start, so we can figure out how
          far into the opd section this is. */
 
       offset_in_opd = (Addr)sym_addr - (Addr)(si->opd_start_vma);
-      if (offset_in_opd < 0 || offset_in_opd >= si->opd_size)
+      if (offset_in_opd < 0 || offset_in_opd >= si->opd_size) {
+         TRACE_SYMTAB("    ignore -- invalid OPD offset: %s\n", sym_name);
          return False;
+      }
 
       /* Now we want to know what's at that offset in the .opd
          section.  We can't look in the running image since it won't
@@ -1212,7 +1281,8 @@ static Bool is_interesting_symbol( SegInfo*   si,
 
       fn_descr = (ULong*)(opd_filea + offset_in_opd);
 
-      if (0) VG_(printf)("opdXXY: offset %d,  fn_descr %p\n", offset_in_opd, fn_descr);
+      if (0) VG_(printf)("opdXXY: offset %d,  fn_descr %p\n", 
+                         offset_in_opd, fn_descr);
       if (0) VG_(printf)("opdXXZ: *fn_descr %p\n", (void*)(fn_descr[0]));
 
       sym_addr = fn_descr[0];
@@ -1224,7 +1294,9 @@ static Bool is_interesting_symbol( SegInfo*   si,
          sym_addr to get the real vma. */
 
       sym_addr += si->offset;
-      *sym_addr_really = sym_addr;
+      *sym_addr_out = sym_addr;
+      *did_opd_deref_out = True;
+      is_in_opd = True;
 
       /* Do a final sanity check: if the symbol falls outside the
          SegInfo's mapped range, ignore it.  Since sym_addr has been
@@ -1234,31 +1306,60 @@ static Bool is_interesting_symbol( SegInfo*   si,
 #     endif /* ppc64-linux nasty hack */
    }
 
+   /* Here's yet another ppc64-linux hack.  Get rid of leading dot if
+      the symbol is outside .opd. */
+#  if defined(VGP_ppc64_linux)
+   if (si->opd_start_vma != 0
+       && !is_in_opd
+       && sym_name[0] == '.') {
+      vg_assert(!(*did_opd_deref_out));
+      *sym_name_out = &sym_name[1];
+   }
+#  endif
+
    /* If no part of the symbol falls within the mapped range,
       ignore it. */
-   if (sym_addr+sym->st_size <= si->start
-       || sym_addr >= si->start+si->size) {
-      TRACE_SYMTAB( "ignore -- outside mapped range\n" );
+   if (*sym_addr_out + *sym_size_out <= si->start
+       || *sym_addr_out >= si->start+si->size) {
+      TRACE_SYMTAB( "   ignore -- outside mapped range\n" );
       return False;
    }
 
-   // It is an interesting symbol!
+#  if defined(VGP_ppc64_linux)
+   /* It's crucial that we never add symbol addresses in the .opd
+      section.  This would completely mess up function redirection and
+      intercepting.  This assert ensures that any symbols that make it
+      into the symbol table on ppc64-linux don't point into .opd. */
+   if (si->opd_start_vma != 0) {
+      vg_assert(*sym_addr_out + *sym_size_out <= si->opd_start_vma
+                || *sym_addr_out >= si->opd_start_vma + si->opd_size);
+   }
+#  endif
+
+   /* Acquire! */
    return True;
 }
 
-/* Read a symbol table (normal or dynamic) */
+
+/* Read an ELF symbol table (normal or dynamic).  This one is for the
+   "normal" case ({x86,amd64,ppc32}-linux). */
 static
-void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
-                  ElfXX_Sym* o_symtab, UInt o_symtab_sz,
-                  UChar*     o_strtab, UInt o_strtab_sz,
-                  UChar*     opd_filea /* ppc64-linux only */ )
+__attribute__((unused)) /* not referred to on all targets */
+void read_elf_symtab__normal( 
+        SegInfo* si, Char* tab_name,
+        ElfXX_Sym* o_symtab, UInt o_symtab_sz,
+        UChar*     o_strtab, UInt o_strtab_sz,
+        UChar*     opd_filea /* ppc64-linux only */ 
+     )
 {
-   Int   i;
-   Addr  sym_addr, sym_addr_really;
-   Char* sym_name;
-   RiSym risym;
-   Char* name;
-   ElfXX_Sym* sym;
+   Int        i;
+   Addr       sym_addr, sym_addr_really;
+   Char      *sym_name, *sym_name_really;
+   Int        sym_size;
+   Addr       sym_tocptr;
+   Bool       did_opd_deref;
+   RiSym      risym;
+   ElfXX_Sym *sym;
 
    if (o_strtab == NULL || o_symtab == NULL) {
       Char buf[80];
@@ -1268,7 +1369,7 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
       return;
    }
 
-   TRACE_SYMTAB("Reading %s (%d entries)\n", tab_name, 
+   TRACE_SYMTAB("Reading (ELF, standard) %s (%d entries)\n", tab_name, 
                 o_symtab_sz/sizeof(ElfXX_Sym) );
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
@@ -1278,73 +1379,211 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
       sym_name = (Char*)(o_strtab + sym->st_name);
       sym_addr = si->offset + sym->st_value;
 
-      if (VG_(clo_trace_symtab)) {
-         VG_(printf)("raw symbol [%d]: ", i);
-         switch (ELFXX_ST_BIND(sym->st_info)) {
-         case STB_LOCAL:  VG_(printf)("LOC "); break;
-         case STB_GLOBAL: VG_(printf)("GLO "); break;
-         case STB_WEAK:   VG_(printf)("WEA "); break;
-         case STB_LOPROC: VG_(printf)("lop "); break;
-         case STB_HIPROC: VG_(printf)("hip "); break;
-         default:         VG_(printf)("??? "); break;
-         }
-         switch (ELFXX_ST_TYPE(sym->st_info)) {
-         case STT_NOTYPE:  VG_(printf)("NOT "); break;
-         case STT_OBJECT:  VG_(printf)("OBJ "); break;
-         case STT_FUNC:    VG_(printf)("FUN "); break;
-         case STT_SECTION: VG_(printf)("SEC "); break;
-         case STT_FILE:    VG_(printf)("FIL "); break;
-         case STT_LOPROC:  VG_(printf)("lop "); break;
-         case STT_HIPROC:  VG_(printf)("hip "); break;
-         default:          VG_(printf)("??? "); break;
-         }
-         VG_(printf)(
-            ": value %p, size %d, name %s\n",
-            sym_addr, sym->st_size,
-            ( sym->st_name ? sym_name : (Char*)"NONAME" ) ); 
-      }               
+      if (VG_(clo_trace_symtab))
+         show_raw_elf_symbol(i, sym, sym_name, sym_addr);
 
-      // Record interesting symbols in our symtab.
-      if ( is_interesting_symbol(si, sym, sym_name, sym_addr, 
-                                     opd_filea, &sym_addr_really) ) {
-         vg_assert(sym->st_name != 0);
-         vg_assert(sym_name[0]  != 0);
-#        if defined(VGP_ppc64_linux)
-         /* It's crucial that we never add symbol addresses in the
-            .opd section.  This would completely mess up function
-            redirection and intercepting.  This assert ensures that
-            any symbols that make it into the symbol table on
-            ppc64-linux don't point into .opd. */
-         vg_assert(sym_addr_really + sym->st_size <= si->opd_start_vma
-                   || sym_addr_really >= si->opd_start_vma + si->opd_size);
-#        endif
-#        if defined(VGP_ppc64_linux)
-         /* Another ppc64-linux kludge, for the pre-"dotless" ABI
-            (prior to gcc 4.0.0).  If the symbol to be added has a
-            leading dot and it wasn't derived via an indirect through
-            .opd, remove the dot before adding it. */
-         if (sym_addr_really == sym_addr && sym_name[0] == '.')
-            sym_name++;
-#        endif
+      if (get_elf_symbol_info(si, sym, sym_name, sym_addr, opd_filea,
+                              &sym_name_really, 
+                              &sym_addr_really,
+                              &sym_size,
+                              &sym_tocptr,
+                              &did_opd_deref)) {
 
-         name = ML_(addStr) ( si, sym_name, -1 );
-         vg_assert(name != NULL);
-
-         risym.addr  = sym_addr_really;
-         risym.size  = sym->st_size;
-         risym.name  = name;
+         risym.addr = sym_addr_really;
+         risym.size = sym_size;
+         risym.name = ML_(addStr) ( si, sym_name_really, -1 );
+         vg_assert(risym.name != NULL);
          addSym ( si, &risym );
 
-         if (VG_(clo_trace_symtab))
-            VG_(printf)("    record [%d]:          "
-                        " value %p, size %d, name %s\n",
+         if (VG_(clo_trace_symtab)) {
+            VG_(printf)("    record [%3d]:          "
+                        " val %8p, sz %4d  %s\n",
                         i, (void*)risym.addr, (Int)risym.size, 
                            (HChar*)risym.name
             );
+         }
 
       }
    }
 }
+
+
+/* Read an ELF symbol table (normal or dynamic).  This one is for
+   ppc64-linux, which requires special treatment. */
+
+typedef
+   struct { 
+      Addr  addr; 
+      Char* name; 
+   }
+   TempSymKey;
+
+typedef
+   struct {
+      TempSymKey key;
+      Addr       tocptr;
+      Int        size;
+      Bool       from_opd;
+   }
+   TempSym;
+
+static Word cmp_TempSymKey ( TempSymKey* key1, TempSym* elem2 ) {
+   if (key1->addr < elem2->key.addr) return -1;
+   if (key1->addr > elem2->key.addr) return 1;
+   return (Word)VG_(strcmp)(key1->name, elem2->key.name);
+}
+static void* oset_malloc ( SizeT szB ) { 
+   return VG_(arena_malloc)(VG_AR_SYMTAB, szB);
+}
+static void oset_free ( void* p ) {
+   VG_(arena_free)(VG_AR_SYMTAB, p);
+}
+
+static
+__attribute__((unused)) /* not referred to on all targets */
+void read_elf_symtab__ppc64_linux( 
+        SegInfo* si, Char* tab_name,
+        ElfXX_Sym* o_symtab, UInt o_symtab_sz,
+        UChar*     o_strtab, UInt o_strtab_sz,
+        UChar*     opd_filea /* ppc64-linux only */ 
+     )
+{
+   Int         i, old_size;
+   Addr        sym_addr, sym_addr_really;
+   Char       *sym_name, *sym_name_really;
+   Int         sym_size;
+   Addr        sym_tocptr;
+   Bool        from_opd, modify;
+   RiSym       risym;
+   ElfXX_Sym  *sym;
+   OSet       *oset;
+   TempSymKey  key;
+   TempSym    *elem;
+   TempSym    *prev;
+
+   if (o_strtab == NULL || o_symtab == NULL) {
+      Char buf[80];
+      vg_assert(VG_(strlen)(tab_name) < 40);
+      VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
+      ML_(symerr)(buf);
+      return;
+   }
+
+   TRACE_SYMTAB("Reading (ELF, ppc64-linux) %s (%d entries)\n", tab_name, 
+                o_symtab_sz/sizeof(ElfXX_Sym) );
+
+   oset = VG_(OSet_Create)( offsetof(TempSym,key), 
+                            (OSetCmp_t)cmp_TempSymKey, 
+                            oset_malloc, oset_free );
+   vg_assert(oset);
+
+   /* Perhaps should start at i = 1; ELF docs suggest that entry
+      0 always denotes 'unknown symbol'. */
+   for (i = 1; i < (Int)(o_symtab_sz/sizeof(ElfXX_Sym)); i++) {
+      sym      = & o_symtab[i];
+      sym_name = (Char*)(o_strtab + sym->st_name);
+      sym_addr = si->offset + sym->st_value;
+
+      if (VG_(clo_trace_symtab))
+         show_raw_elf_symbol(i, sym, sym_name, sym_addr);
+
+      if (get_elf_symbol_info(si, sym, sym_name, sym_addr, opd_filea,
+                              &sym_name_really, 
+                              &sym_addr_really,
+                              &sym_size,
+                              &sym_tocptr,
+                              &from_opd)) {
+
+         /* Check if we've seen this (name,addr) key before. */
+         key.addr = sym_addr_really;
+         key.name = sym_name_really;
+         prev = VG_(OSet_Lookup)( oset, &key );
+
+         if (prev) {
+
+            /* Seen it before.  Fold in whatever new info we can. */
+            modify   = False;
+            old_size = 0;
+
+            if (prev->from_opd && !from_opd 
+                && (prev->size == 24 || prev->size == 16)
+                && sym_size != prev->size) {
+               /* Existing one is an opd-redirect, with a bogus size,
+                  so the only useful new fact we have is the real size
+                  of the symbol. */
+               modify = True;
+               old_size = prev->size;
+               prev->size = sym_size;
+            }
+            else
+            if (!prev->from_opd && from_opd
+                && (sym_size == 24 || sym_size == 16)) {
+               /* Existing one is non-opd, new one is.  What we can
+                  acquire from the new one is the TOC ptr to be used.
+                  Since the existing sym is non-toc, it shouldn't
+                  currently have an known TOC ptr. */
+            }
+            else {
+               /* ignore. can we do better here? */
+            }
+
+            if (modify && VG_(clo_trace_symtab)) {
+               VG_(printf)("    modify (old sz %4d)   "
+                           " val %8p, sz %4d  %s\n",
+                            old_size,
+                            (void*)prev->key.addr, (Int)prev->size, 
+                            (HChar*)prev->key.name
+               );
+            }
+
+         } else {
+
+            /* A new (name,addr) key.  Add and continue. */
+            elem = VG_(OSet_AllocNode)(oset, sizeof(TempSym));
+            vg_assert(elem);
+            elem->key      = key;
+            elem->tocptr   = sym_tocptr;
+            elem->size     = sym_size;
+            elem->from_opd = from_opd;
+            VG_(OSet_Insert)(oset, elem);
+            if (VG_(clo_trace_symtab)) {
+               VG_(printf)("   to-oset [%3d]:          "
+                           " val %8p, sz %4d  %s\n",
+                           i, (void*)elem->key.addr, (Int)elem->size, 
+                              (HChar*)elem->key.name
+               );
+            }
+
+         }
+      }
+   }
+
+   /* All the syms that matter are in the oset.  Now pull them out,
+      build a "standard" symbol table, and nuke the oset. */
+
+   i = 0;
+   VG_(OSet_ResetIter)( oset );
+
+   while ( (elem = VG_(OSet_Next)(oset)) ) {
+      risym.addr = elem->key.addr;
+      risym.size = elem->size;
+      risym.name = ML_(addStr) ( si, elem->key.name, -1 );
+      vg_assert(risym.name != NULL);
+
+      addSym ( si, &risym );
+      if (VG_(clo_trace_symtab)) {
+         VG_(printf)("    record [%3d]:          "
+                     " val %8p, sz %4d  %s\n",
+                     i, (void*)risym.addr, (Int)risym.size, 
+                        (HChar*)risym.name
+         );
+      }
+      i++;
+   }
+
+   VG_(OSet_Destroy)( oset, NULL );
+}
+
 
 /*
  * This routine for calculating the CRC for a separate debug file
@@ -1493,10 +1732,15 @@ Addr find_debug_file( Char* objpath, Char* debugname, UInt crc, UInt* size )
    return addr;
 }
 
-/* Read the symbols from the object/exe specified by the SegInfo into
-   the tables within the supplied SegInfo.  */
+
+/* The central function for reading ELF debug info.  For the
+   object/exe specified by the SegInfo, find ELF sections, then read
+   the symbols, line number info, file name info, CFA (stack-unwind
+   info) and anything else we want, into the tables within the
+   supplied SegInfo.
+*/
 static
-Bool read_lib_symbols ( SegInfo* si )
+Bool read_elf_debug_info ( SegInfo* si )
 {
    Bool          res;
    ElfXX_Ehdr*   ehdr;       /* The ELF header                          */
@@ -1846,13 +2090,22 @@ Bool read_lib_symbols ( SegInfo* si )
       }
 
       /* Read symbols */
-      read_symtab(si, "symbol table", False,
-                  o_symtab, o_symtab_sz,
-                  o_strtab, o_strtab_sz, opd_filea);
+      {
+         void (*read_elf_symtab)(SegInfo*,Char*,ElfXX_Sym*,
+                                 UInt,UChar*,UInt,UChar*);
+#        if defined(VGP_ppc64_linux)
+         read_elf_symtab = read_elf_symtab__ppc64_linux;
+#        else
+         read_elf_symtab = read_elf_symtab__normal;
+#        endif
+         read_elf_symtab(si, "symbol table",
+                         o_symtab, o_symtab_sz,
+                         o_strtab, o_strtab_sz, opd_filea);
 
-      read_symtab(si, "dynamic symbol table", True,
-                  o_dynsym, o_dynsym_sz,
-                  o_dynstr, o_dynstr_sz, opd_filea);
+         read_elf_symtab(si, "dynamic symbol table",
+                         o_dynsym, o_dynsym_sz,
+                         o_dynstr, o_dynstr_sz, opd_filea);
+      }
 
       /* Read .eh_frame (call-frame-info) if any */
       if (ehframe) {
@@ -1944,7 +2197,7 @@ SegInfo *VG_(read_seg_symbols) ( Addr seg_addr, SizeT seg_len,
 {
    SegInfo* si = alloc_SegInfo(seg_addr, seg_len, seg_offset, seg_filename);
 
-   if (!read_lib_symbols ( si )) {
+   if (!read_elf_debug_info ( si )) {
       // Something went wrong (eg. bad ELF file).
       freeSegInfo( si );
       si = NULL;

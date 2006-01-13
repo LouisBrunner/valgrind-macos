@@ -1241,8 +1241,8 @@ typedef
    UTCEntry;
 
 /* We just allocate forwards in _tc, never deleting. */
-static ULong    unredir_tc[N_UNREDIR_TCQ] __attribute__((aligned(8)));
-static Int      unredir_tc_used;
+static ULong    *unredir_tc;
+static Int      unredir_tc_used = N_UNREDIR_TCQ;
 
 /* Slots in _tt can come into use and out again (.inUse).
    Nevertheless _tt_highwater is maintained so that invalidations
@@ -1256,6 +1256,14 @@ static Int      unredir_tt_highwater;
 static void init_unredir_tt_tc ( void )
 {
    Int i;
+   if (unredir_tc == NULL) {
+      SysRes sres = VG_(am_mmap_anon_float_valgrind)( N_UNREDIR_TT * UNREDIR_SZB );
+      if (sres.isError) {
+         VG_(out_of_memory_NORETURN)("init_unredir_tt_tc", N_UNREDIR_TT * UNREDIR_SZB);
+         /*NOTREACHED*/
+      }
+      unredir_tc = (ULong *)sres.val;
+   }
    unredir_tc_used = 0;
    for (i = 0; i < N_UNREDIR_TT; i++)
       unredir_tt[i].inUse = False;

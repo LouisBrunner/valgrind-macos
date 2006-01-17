@@ -1098,9 +1098,11 @@ static Bool is_elf_object_file(const void *buf)
 
 static
 void show_raw_elf_symbol ( Int i, 
-                           ElfXX_Sym* sym, Char* sym_name, Addr sym_addr)
+                           ElfXX_Sym* sym, Char* sym_name, Addr sym_addr,
+                           Bool ppc64_linux_format )
 {
-   VG_(printf)("raw symbol [%3d]: ", i);
+   HChar* space = ppc64_linux_format ? "                  " : "";
+   VG_(printf)("raw symbol [%4d]: ", i);
    switch (ELFXX_ST_BIND(sym->st_info)) {
       case STB_LOCAL:  VG_(printf)("LOC "); break;
       case STB_GLOBAL: VG_(printf)("GLO "); break;
@@ -1119,8 +1121,8 @@ void show_raw_elf_symbol ( Int i,
       case STT_HIPROC:  VG_(printf)("hip "); break;
       default:          VG_(printf)("??? "); break;
    }
-   VG_(printf)(": val %08p, sz %4d  %s\n",
-               sym_addr, sym->st_size,
+   VG_(printf)(": val %010p, %ssz %4d  %s\n",
+               sym_addr, space, sym->st_size,
                ( sym->st_name ? sym_name : (Char*)"NONAME" ) ); 
 }               
 
@@ -1138,7 +1140,7 @@ void show_raw_elf_symbol ( Int i,
 
    To support the ppc64-linux pre-"dotless" ABI (prior to gcc 4.0.0),
    if the symbol is seen to be outside the .opd section and its name
-   starts with a dot, and .opd deference is not attempted, and no TOC
+   starts with a dot, an .opd deference is not attempted, and no TOC
    pointer is calculated, but the the leading dot is removed from the
    name.
 
@@ -1155,23 +1157,23 @@ Bool get_elf_symbol_info (
         Addr       sym_addr,  /* declared address */
         UChar*     opd_filea, /* oimage of .opd sec (ppc64-linux only) */
         /* OUTPUTS */
-        Char** sym_name_out,     /* name we should record */
-        Addr*  sym_addr_out,     /* addr we should record */
-        Int*   sym_size_out,     /* symbol size */
-        Addr*  sym_tocptr_out,   /* ppc64-linux only: R2 value to be
-                                    used on entry */
-        Bool*  did_opd_deref_out /* ppc64-linux only: did we deref an
-                                   .opd entry? */ 
+        Char** sym_name_out,   /* name we should record */
+        Addr*  sym_addr_out,   /* addr we should record */
+        Int*   sym_size_out,   /* symbol size */
+        Addr*  sym_tocptr_out, /* ppc64-linux only: R2 value to be
+                                  used on entry */
+        Bool*  from_opd_out    /* ppc64-linux only: did we deref an
+                                  .opd entry? */ 
      )
 {
    Bool plausible, is_in_opd;
 
    /* Set defaults */
-   *sym_name_out      = sym_name;
-   *sym_addr_out      = sym_addr;
-   *sym_size_out      = (Int)sym->st_size;
-   *sym_tocptr_out    = 0; /* unknown/inapplicable */
-   *did_opd_deref_out = False;
+   *sym_name_out   = sym_name;
+   *sym_addr_out   = sym_addr;
+   *sym_size_out   = (Int)sym->st_size;
+   *sym_tocptr_out = 0; /* unknown/inapplicable */
+   *from_opd_out   = False;
 
    /* Figure out if we're interested in the symbol.  Firstly, is it of
       the right flavour?  */
@@ -1294,8 +1296,9 @@ Bool get_elf_symbol_info (
          sym_addr to get the real vma. */
 
       sym_addr += si->offset;
-      *sym_addr_out = sym_addr;
-      *did_opd_deref_out = True;
+      *sym_addr_out   = sym_addr;
+      *sym_tocptr_out = fn_descr[1] + si->offset;
+      *from_opd_out   = True;
       is_in_opd = True;
 
       /* Do a final sanity check: if the symbol falls outside the
@@ -1312,7 +1315,7 @@ Bool get_elf_symbol_info (
    if (si->opd_start_vma != 0
        && !is_in_opd
        && sym_name[0] == '.') {
-      vg_assert(!(*did_opd_deref_out));
+      vg_assert(!(*from_opd_out));
       *sym_name_out = &sym_name[1];
    }
 #  endif
@@ -1357,7 +1360,7 @@ void read_elf_symtab__normal(
    Char      *sym_name, *sym_name_really;
    Int        sym_size;
    Addr       sym_tocptr;
-   Bool       did_opd_deref;
+   Bool       from_opd;
    RiSym      risym;
    ElfXX_Sym *sym;
 
@@ -1369,7 +1372,7 @@ void read_elf_symtab__normal(
       return;
    }
 
-   TRACE_SYMTAB("Reading (ELF, standard) %s (%d entries)\n", tab_name, 
+   TRACE_SYMTAB("\nReading (ELF, standard) %s (%d entries)\n", tab_name, 
                 o_symtab_sz/sizeof(ElfXX_Sym) );
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
@@ -1380,24 +1383,26 @@ void read_elf_symtab__normal(
       sym_addr = si->offset + sym->st_value;
 
       if (VG_(clo_trace_symtab))
-         show_raw_elf_symbol(i, sym, sym_name, sym_addr);
+         show_raw_elf_symbol(i, sym, sym_name, sym_addr, False);
 
       if (get_elf_symbol_info(si, sym, sym_name, sym_addr, opd_filea,
                               &sym_name_really, 
                               &sym_addr_really,
                               &sym_size,
                               &sym_tocptr,
-                              &did_opd_deref)) {
+                              &from_opd)) {
 
-         risym.addr = sym_addr_really;
-         risym.size = sym_size;
-         risym.name = ML_(addStr) ( si, sym_name_really, -1 );
+         risym.addr   = sym_addr_really;
+         risym.size   = sym_size;
+         risym.name   = ML_(addStr) ( si, sym_name_really, -1 );
+         risym.tocptr = sym_tocptr;
          vg_assert(risym.name != NULL);
+         vg_assert(risym.tocptr == 0); /* has no role except on ppc64-linux */
          addSym ( si, &risym );
 
          if (VG_(clo_trace_symtab)) {
-            VG_(printf)("    record [%3d]:          "
-                        " val %8p, sz %4d  %s\n",
+            VG_(printf)("    record [%4d]:          "
+                        " val %010p, sz %4d  %s\n",
                         i, (void*)risym.addr, (Int)risym.size, 
                            (HChar*)risym.name
             );
@@ -1452,8 +1457,8 @@ void read_elf_symtab__ppc64_linux(
    Addr        sym_addr, sym_addr_really;
    Char       *sym_name, *sym_name_really;
    Int         sym_size;
-   Addr        sym_tocptr;
-   Bool        from_opd, modify;
+   Addr        sym_tocptr, old_tocptr;
+   Bool        from_opd, modify_size, modify_tocptr;
    RiSym       risym;
    ElfXX_Sym  *sym;
    OSet       *oset;
@@ -1469,7 +1474,7 @@ void read_elf_symtab__ppc64_linux(
       return;
    }
 
-   TRACE_SYMTAB("Reading (ELF, ppc64-linux) %s (%d entries)\n", tab_name, 
+   TRACE_SYMTAB("\nReading (ELF, ppc64-linux) %s (%d entries)\n", tab_name, 
                 o_symtab_sz/sizeof(ElfXX_Sym) );
 
    oset = VG_(OSet_Create)( offsetof(TempSym,key), 
@@ -1485,7 +1490,7 @@ void read_elf_symtab__ppc64_linux(
       sym_addr = si->offset + sym->st_value;
 
       if (VG_(clo_trace_symtab))
-         show_raw_elf_symbol(i, sym, sym_name, sym_addr);
+         show_raw_elf_symbol(i, sym, sym_name, sym_addr, True);
 
       if (get_elf_symbol_info(si, sym, sym_name, sym_addr, opd_filea,
                               &sym_name_really, 
@@ -1502,8 +1507,10 @@ void read_elf_symtab__ppc64_linux(
          if (prev) {
 
             /* Seen it before.  Fold in whatever new info we can. */
-            modify   = False;
-            old_size = 0;
+            modify_size   = False;
+            modify_tocptr = False;
+            old_size   = 0;
+	    old_tocptr = 0;
 
             if (prev->from_opd && !from_opd 
                 && (prev->size == 24 || prev->size == 16)
@@ -1511,27 +1518,45 @@ void read_elf_symtab__ppc64_linux(
                /* Existing one is an opd-redirect, with a bogus size,
                   so the only useful new fact we have is the real size
                   of the symbol. */
-               modify = True;
+               modify_size = True;
                old_size = prev->size;
                prev->size = sym_size;
             }
             else
             if (!prev->from_opd && from_opd
                 && (sym_size == 24 || sym_size == 16)) {
-               /* Existing one is non-opd, new one is.  What we can
-                  acquire from the new one is the TOC ptr to be used.
-                  Since the existing sym is non-toc, it shouldn't
-                  currently have an known TOC ptr. */
+               /* Existing one is non-opd, new one is opd.  What we
+                  can acquire from the new one is the TOC ptr to be
+                  used.  Since the existing sym is non-toc, it
+                  shouldn't currently have an known TOC ptr. */
+               vg_assert(prev->tocptr == 0);
+               modify_tocptr = True;
+               old_tocptr = prev->tocptr;
+               prev->tocptr = sym_tocptr;
             }
             else {
                /* ignore. can we do better here? */
             }
 
-            if (modify && VG_(clo_trace_symtab)) {
-               VG_(printf)("    modify (old sz %4d)   "
-                           " val %8p, sz %4d  %s\n",
-                            old_size,
-                            (void*)prev->key.addr, (Int)prev->size, 
+            /* Only one or the other is possible (I think) */
+	    vg_assert(!(modify_size && modify_tocptr));
+
+            if (modify_size && VG_(clo_trace_symtab)) {
+               VG_(printf)("    modify (old sz %4d)    "
+                           " val %010p, toc %010p, sz %4d  %s\n",
+                           old_size,
+                           (void*) prev->key.addr, 
+                           (void*) prev->tocptr,
+                           (Int)   prev->size, 
+                           (HChar*)prev->key.name
+               );
+            }
+            if (modify_tocptr && VG_(clo_trace_symtab)) {
+               VG_(printf)("    modify (upd tocptr)     "
+                           " val %010p, toc %010p, sz %4d  %s\n",
+                            (void*) prev->key.addr, 
+                            (void*) prev->tocptr, 
+                            (Int)   prev->size, 
                             (HChar*)prev->key.name
                );
             }
@@ -1547,9 +1572,11 @@ void read_elf_symtab__ppc64_linux(
             elem->from_opd = from_opd;
             VG_(OSet_Insert)(oset, elem);
             if (VG_(clo_trace_symtab)) {
-               VG_(printf)("   to-oset [%3d]:          "
-                           " val %8p, sz %4d  %s\n",
-                           i, (void*)elem->key.addr, (Int)elem->size, 
+               VG_(printf)("   to-oset [%4d]:          "
+                           " val %010p, toc %010p, sz %4d  %s\n",
+                           i, (void*) elem->key.addr,
+                              (void*) elem->tocptr,
+                              (Int)   elem->size, 
                               (HChar*)elem->key.name
                );
             }
@@ -1565,18 +1592,21 @@ void read_elf_symtab__ppc64_linux(
    VG_(OSet_ResetIter)( oset );
 
    while ( (elem = VG_(OSet_Next)(oset)) ) {
-      risym.addr = elem->key.addr;
-      risym.size = elem->size;
-      risym.name = ML_(addStr) ( si, elem->key.name, -1 );
+      risym.addr   = elem->key.addr;
+      risym.size   = elem->size;
+      risym.name   = ML_(addStr) ( si, elem->key.name, -1 );
+      risym.tocptr = elem->tocptr;
       vg_assert(risym.name != NULL);
 
       addSym ( si, &risym );
       if (VG_(clo_trace_symtab)) {
-         VG_(printf)("    record [%3d]:          "
-                     " val %8p, sz %4d  %s\n",
-                     i, (void*)risym.addr, (Int)risym.size, 
+         VG_(printf)("    record [%4d]:          "
+                     " val %010p, toc %010p, sz %4d  %s\n",
+                     i, (void*) risym.addr,
+                        (void*) risym.tocptr,
+                        (Int)   risym.size, 
                         (HChar*)risym.name
-         );
+               );
       }
       i++;
    }
@@ -2472,6 +2502,21 @@ Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
    }
 
    return True;
+}
+
+/* ppc64-linux only: find the TOC pointer (R2 value) that should be in
+   force at the entry point address of the function containing
+   guest_code_addr.  Returns 0 if not known. */
+Addr VG_(get_tocptr) ( Addr guest_code_addr )
+{
+   SegInfo* si;
+   Int      sno;
+   search_all_symtabs ( guest_code_addr, 
+                        &si, &sno, True/*match_anywhere_in_fun*/ );
+   if (si == NULL) 
+      return 0;
+   else
+      return si->symtab[sno].tocptr;
 }
 
 /* This is available to tools... always demangle C++ names,

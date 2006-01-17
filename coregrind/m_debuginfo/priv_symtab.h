@@ -37,6 +37,7 @@ typedef
       Addr addr;   /* lowest address of entity */
       UInt size;   /* size in bytes */
       Char *name;  /* name */
+      Addr tocptr; /* ppc64-linux only: value that R2 should have */
    }
    RiSym;
 

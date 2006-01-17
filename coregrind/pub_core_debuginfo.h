@@ -64,6 +64,10 @@ extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
                                 Addr min_accessible,
                                 Addr max_accessible );
 
+/* ppc64-linux only: find the TOC pointer (R2 value) that should be in
+   force at the entry point address of the function containing
+   guest_code_addr.  Returns 0 if not known. */
+extern Addr VG_(get_tocptr) ( Addr guest_code_addr );
 
 #endif   // __PUB_CORE_DEBUGINFO_H
 

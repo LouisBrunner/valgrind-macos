@@ -705,8 +705,10 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 
 
 static
-IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout, 
-                      Addr64 orig_addr_noredir, VexGuestExtents* vge,
+IRBB* cg_instrument ( VgCallbackClosure* closure,
+                      IRBB* bbIn, 
+                      VexGuestLayout* layout, 
+                      VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )
 {
    Int        i, isize;
@@ -744,7 +746,7 @@ IRBB* cg_instrument ( IRBB* bbIn, VexGuestLayout* layout,
 
    // Set up running state and get block info
    cgs.events_used = 0;
-   cgs.bbInfo      = get_BB_info(bbIn, (Addr)orig_addr_noredir);
+   cgs.bbInfo      = get_BB_info(bbIn, (Addr)closure->nraddr);
    cgs.bbInfo_i    = 0;
 
    if (DEBUG_CG)

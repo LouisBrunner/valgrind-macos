@@ -79,8 +79,10 @@ extern void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len );
 
 /* Functions defined in mc_translate.c */
 extern
-IRBB* MC_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, 
-                        Addr64 orig_addr_noredir, VexGuestExtents* vge,
+IRBB* MC_(instrument) ( VgCallbackClosure* closure,
+                        IRBB* bb_in, 
+                        VexGuestLayout* layout, 
+                        VexGuestExtents* vge,
                         IRType gWordTy, IRType hWordTy );
 
 #endif /* ndef __MC_INCLUDE_H */

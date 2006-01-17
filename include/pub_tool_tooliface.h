@@ -73,6 +73,19 @@ extern const ToolInfo VG_(tool_info);
 /* ------------------------------------------------------------------ */
 /* Basic tool functions */
 
+/* The tool_instrument function is passed as a callback to
+   LibVEX_Translate.  VgInstrumentClosure carries additional info
+   which the instrumenter might like to know, but which is opaque to
+   Vex.
+*/
+typedef 
+   struct {
+      Addr64   nraddr; /* non-redirected guest address */
+      Addr64   readdr; /* redirected guest address */
+      ThreadId tid;    /* tid requesting translation */
+   }
+   VgCallbackClosure;
+
 extern void VG_(basic_tool_funcs)(
    // Do any initialisation that can only be done after command line
    // processing.
@@ -84,9 +97,10 @@ extern void VG_(basic_tool_funcs)(
    // strange...  Note that orig_addr_noredir is not necessarily the
    // same as the address of the first instruction in the IR, due to
    // function redirection.
-   IRBB* (*instrument)(IRBB* bb_in, VexGuestLayout* layout,
-                       Addr64 orig_addr_noredir, VexGuestExtents* vge, 
-                       IRType gWordTy, IRType hWordTy ),
+   IRBB*(*instrument)(VgCallbackClosure*, 
+                      IRBB* bb_in, 
+                      VexGuestLayout*, VexGuestExtents*, 
+                      IRType gWordTy, IRType hWordTy),
 
    // Finish up, print out any results, etc.  `exitcode' is program's exit
    // code.  The shadow can be found with VG_(get_exit_status_shadow)().

@@ -273,9 +273,11 @@ static void lk_post_clo_init(void)
 }
 
 static
-IRBB* lk_instrument( IRBB* bb_in, VexGuestLayout* layout, 
-                     Addr64 orig_addr_noredir, VexGuestExtents* vge,
-                     IRType gWordTy, IRType hWordTy )
+IRBB* lk_instrument ( VgCallbackClosure* closure,
+                      IRBB* bb_in, 
+                      VexGuestLayout* layout, 
+                      VexGuestExtents* vge,
+                      IRType gWordTy, IRType hWordTy )
 {
    IRDirty* di;
    Int      i;

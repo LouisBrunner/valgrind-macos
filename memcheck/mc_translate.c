@@ -2977,8 +2977,10 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 }
 
 
-IRBB* MC_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, 
-                        Addr64 orig_addr_noredir, VexGuestExtents* vge,
+IRBB* MC_(instrument) ( VgCallbackClosure* closure,
+                        IRBB* bb_in, 
+                        VexGuestLayout* layout, 
+                        VexGuestExtents* vge,
                         IRType gWordTy, IRType hWordTy )
 {
    Bool    verboze = False; //True; 

@@ -1296,12 +1296,13 @@ void mc_post_mem_write(CorePart part, ThreadId tid, Addr a, SizeT len)
 
 /* When some chunk of guest state is written, mark the corresponding
    shadow area as valid.  This is used to initialise arbitrarily large
-   chunks of guest state, hence the (somewhat arbitrary) 1024 limit.
+   chunks of guest state, hence the _SIZE value, which has to be as
+   big as the biggest guest state.
 */
 static void mc_post_reg_write ( CorePart part, ThreadId tid, 
                                 OffT offset, SizeT size)
 {
-#  define MAX_REG_WRITE_SIZE 1120
+#  define MAX_REG_WRITE_SIZE 1264
    UChar area[MAX_REG_WRITE_SIZE];
    tl_assert(size <= MAX_REG_WRITE_SIZE);
    VG_(memset)(area, VGM_BYTE_VALID, size);

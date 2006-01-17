@@ -35,33 +35,33 @@
 // PURPOSE: This module does thread modelling stuff...
 //--------------------------------------------------------------------
 
-//extern void VG_(tm_thread_create)  (ThreadId creator, ThreadId tid, Bool detached);
-//extern void VG_(tm_thread_exit)    (ThreadId tid);
-//extern Bool VG_(tm_thread_exists)  (ThreadId tid);
-//extern void VG_(tm_thread_detach)  (ThreadId tid);
-//extern void VG_(tm_thread_join)    (ThreadId joiner, ThreadId joinee);
-//extern void VG_(tm_thread_switchto)(ThreadId tid);
-//
-//extern void VG_(tm_mutex_init)   (ThreadId tid, Addr mutexp);
-//extern void VG_(tm_mutex_destroy)(ThreadId tid, Addr mutexp);
-//extern void VG_(tm_mutex_trylock)(ThreadId tid, Addr mutexp);
-//extern void VG_(tm_mutex_giveup) (ThreadId tid, Addr mutexp);
-//extern void VG_(tm_mutex_acquire)(ThreadId tid, Addr mutexp);
-//extern void VG_(tm_mutex_tryunlock)(ThreadId tid, Addr mutexp);
-//extern void VG_(tm_mutex_unlock) (ThreadId tid, Addr mutexp);
-//extern Bool VG_(tm_mutex_exists) (Addr mutexp);
-//
-//extern UInt VG_(tm_error_update_extra) (Error *err);
-//extern Bool VG_(tm_error_equal) (VgRes res, Error *e1, Error *e2);
-//extern void VG_(tm_error_print) (Error *err);
-//
-//extern void VG_(tm_init) ();
-//
-//extern void VG_(tm_cond_init)    (ThreadId tid, Addr condp);
-//extern void VG_(tm_cond_destroy) (ThreadId tid, Addr condp);
-//extern void VG_(tm_cond_wait)    (ThreadId tid, Addr condp, Addr mutexp);
-//extern void VG_(tm_cond_wakeup)  (ThreadId tid, Addr condp, Addr mutexp);
-//extern void VG_(tm_cond_signal)  (ThreadId tid, Addr condp);
+extern void VG_(tm_thread_create)  (ThreadId creator, ThreadId tid, Bool detached);
+extern void VG_(tm_thread_exit)    (ThreadId tid);
+extern Bool VG_(tm_thread_exists)  (ThreadId tid);
+extern void VG_(tm_thread_detach)  (ThreadId tid);
+extern void VG_(tm_thread_join)    (ThreadId joiner, ThreadId joinee);
+extern void VG_(tm_thread_switchto)(ThreadId tid);
+
+extern void VG_(tm_mutex_init)   (ThreadId tid, Addr mutexp);
+extern void VG_(tm_mutex_destroy)(ThreadId tid, Addr mutexp);
+extern void VG_(tm_mutex_trylock)(ThreadId tid, Addr mutexp);
+extern void VG_(tm_mutex_giveup) (ThreadId tid, Addr mutexp);
+extern void VG_(tm_mutex_acquire)(ThreadId tid, Addr mutexp);
+extern void VG_(tm_mutex_tryunlock)(ThreadId tid, Addr mutexp);
+extern void VG_(tm_mutex_unlock) (ThreadId tid, Addr mutexp);
+extern Bool VG_(tm_mutex_exists) (Addr mutexp);
+
+extern UInt VG_(tm_error_update_extra) (Error *err);
+extern Bool VG_(tm_error_equal) (VgRes res, Error *e1, Error *e2);
+extern void VG_(tm_error_print) (Error *err);
+
+extern void VG_(tm_init) (void);
+
+extern void VG_(tm_cond_init)    (ThreadId tid, Addr condp);
+extern void VG_(tm_cond_destroy) (ThreadId tid, Addr condp);
+extern void VG_(tm_cond_wait)    (ThreadId tid, Addr condp, Addr mutexp);
+extern void VG_(tm_cond_wakeup)  (ThreadId tid, Addr condp, Addr mutexp);
+extern void VG_(tm_cond_signal)  (ThreadId tid, Addr condp);
 
 #endif   // __PUB_CORE_THREADMODEL_H
 

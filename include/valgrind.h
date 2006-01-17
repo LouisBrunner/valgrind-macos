@@ -806,6 +806,89 @@
 
 /* --------------------------- ppc64 --------------------------- */
 
+#if defined(ARCH_ppc64)
+
+/* ARGREGS: r3 r4 r5 r6 r7 r8 r9 r10 (the rest on stack somewhere) */
+
+/* These regs are trashed by the hidden call. */
+#define __CALLER_SAVED_REGS "lr",                                 \
+                            "r0", "r2", "r3", "r4", "r5", "r6",   \
+                            "r7", "r8", "r9", "r10", "r11", "r12"
+
+/* These CALL_FN_ macros assume that on ppc64-linux, sizeof(unsigned
+   long) == 8. */
+
+#define CALL_FN_W_v(lval, fnptr)                                  \
+   do {                                                           \
+      volatile void*         _fnptr = (fnptr);                    \
+      volatile unsigned long _argvec[1+1];                        \
+      volatile unsigned long _res;                                \
+      _argvec[1+0] = (unsigned long)_fnptr;                       \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-8(11)\n\t" /* save tocptr */                     \
+         "ld 11,0(11)\n\t"  /* target->r11 */                     \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-8(11)" /* restore tocptr */                       \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[1+0])                          \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_W(lval, fnptr, arg1)                            \
+   do {                                                           \
+      volatile void*         _fnptr = (fnptr);                    \
+      volatile unsigned long _argvec[1+2];                        \
+      volatile unsigned long _res;                                \
+      _argvec[1+0] = (unsigned long)_fnptr;                       \
+      _argvec[1+1] = (unsigned long)arg1;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-8(11)\n\t" /* save tocptr */                     \
+         "ld 3,8(11)\n\t"   /* arg1->r3 */                        \
+         "ld 11,0(11)\n\t"  /* target->r11 */                     \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-8(11)" /* restore tocptr */                       \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[1+0])                          \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_WW(lval, fnptr, arg1,arg2)                      \
+   do {                                                           \
+      volatile void*         _fnptr = (fnptr);                    \
+      volatile unsigned long _argvec[1+3];                        \
+      volatile unsigned long _res;                                \
+      _argvec[1+0] = (unsigned long)_fnptr;                       \
+      _argvec[1+1] = (unsigned long)arg1;                         \
+      _argvec[1+2] = (unsigned long)arg1;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-8(11)\n\t" /* save tocptr */                     \
+         "ld 3, 8(11)\n\t"   /* arg1->r3 */                       \
+         "ld 4,16(11)\n\t"                                        \
+         "ld 11,0(11)\n\t"  /* target->r11 */                     \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-8(11)" /* restore tocptr */                       \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[1+0])                          \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#endif /* ARCH_ppc64 */
+
 
 /* ------------------------------------------------------------------ */
 /* ARCHITECTURE INDEPENDENT MACROS for CLIENT REQUESTS.               */

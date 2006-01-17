@@ -84,6 +84,9 @@
 #include "vki_unistd.h"
 #include "priv_sema.h"
 
+/* #include "pub_core_debuginfo.h" */   // DEBUGGING HACK ONLY
+
+
 /* ---------------------------------------------------------------------
    Types and globals for the scheduler.
    ------------------------------------------------------------------ */
@@ -536,6 +539,19 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    tst = VG_(get_ThreadState)(tid);
    do_pre_run_checks(tst);
    /* end Paranoia */
+
+   //if (0) {
+   //  Char buf[100];
+   //  Bool ok = VG_(get_fnname_if_entry) ( tst->arch.vex.guest_CIA,
+   //                                       buf, 100 );
+   //  if (ok) {
+   //    Addr r2actual = tst->arch.vex.guest_GPR2;
+   //    Addr r2tocptr = VG_(get_tocptr)( tst->arch.vex.guest_CIA );
+   //    if (1) VG_(printf)("R2 act 0x%016llx toc 0x%016llx  %s\n", 
+   //			  r2actual, r2tocptr, buf);
+   //    if (r2tocptr != 0) vg_assert(r2actual == r2tocptr);
+   //  }
+   //}
 
    trc = 0;
    dispatch_ctr_SAVED = VG_(dispatch_ctr);
@@ -1141,19 +1157,19 @@ void do_client_request ( ThreadId tid )
          break;
 
       case VG_USERREQ__PRINTF: {
-         int count = 
+         Int count = 
             VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
       case VG_USERREQ__INTERNAL_PRINTF: {
-         int count = 
+         Int count = 
             VG_(vmessage)( Vg_DebugMsg, (char *)arg[1], (void*)arg[2] );
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
       case VG_USERREQ__PRINTF_BACKTRACE: {
-         int count =
+         Int count =
             VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
             VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
             SET_CLREQ_RETVAL( tid, count );

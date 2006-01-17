@@ -470,6 +470,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 {
+   Int i;
    vex_state->guest_GPR0  = 0;
    vex_state->guest_GPR1  = 0;
    vex_state->guest_GPR2  = 0;
@@ -614,6 +615,10 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_TILEN   = 0;
 
    vex_state->guest_NRADDR = 0;
+
+   vex_state->guest_REDIR_SP = -1;
+   for (i = 0; i < VEX_GUEST_PPC64_REDIR_STACK_SIZE; i++)
+      vex_state->guest_REDIR_STACK[i] = 0;
 }
 
 
@@ -715,7 +720,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 7,
+          .n_alwaysDefd = 8,
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD32(guest_CIA),
@@ -724,7 +729,8 @@ VexGuestLayout
 	      /*  3 */ ALWAYSDEFD32(guest_TILEN),
 	      /*  4 */ ALWAYSDEFD32(guest_VSCR),
 	      /*  5 */ ALWAYSDEFD32(guest_FPROUND),
-	      /*  6 */ ALWAYSDEFD32(guest_RESVN)
+	      /*  6 */ ALWAYSDEFD32(guest_RESVN),
+	      /*  7 */ ALWAYSDEFD32(guest_NRADDR)
             }
         };
 
@@ -748,7 +754,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 7,
+          .n_alwaysDefd = 10,
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD64(guest_CIA),
@@ -757,7 +763,10 @@ VexGuestLayout
 	      /*  3 */ ALWAYSDEFD64(guest_TILEN),
 	      /*  4 */ ALWAYSDEFD64(guest_VSCR),
 	      /*  5 */ ALWAYSDEFD64(guest_FPROUND),
-	      /*  6 */ ALWAYSDEFD64(guest_RESVN)
+	      /*  6 */ ALWAYSDEFD64(guest_RESVN),
+	      /*  7 */ ALWAYSDEFD64(guest_NRADDR),
+	      /*  8 */ ALWAYSDEFD64(guest_REDIR_SP),
+	      /*  9 */ ALWAYSDEFD64(guest_REDIR_STACK)
             }
         };
 

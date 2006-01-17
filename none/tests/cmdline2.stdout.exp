@@ -48,7 +48,7 @@ usage: valgrind [options] prog-and-args
     --sanity-level=<number>   level of sanity checking to do [1]
     --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]
-    --trace-notbelow=<number> only show BBs above <number> [0]
+    --trace-notbelow=<number> only show BBs above <number> [999999999]
     --trace-syscalls=no|yes   show all system calls? [no]
     --trace-signals=no|yes    show signal handling details? [no]
     --trace-symtab=no|yes     show symbol table details? [no]

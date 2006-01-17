@@ -915,7 +915,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --sanity-level=<number>   level of sanity checking to do [1]\n"
 "    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]\n"
-"    --trace-notbelow=<number> only show BBs above <number> [0]\n"
+"    --trace-notbelow=<number> only show BBs above <number> [999999999]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"

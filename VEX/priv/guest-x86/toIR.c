@@ -6994,7 +6994,8 @@ static IRExpr* mk64from16s ( IRTemp t3, IRTemp t2,
 static
 DisResult disInstr_X86_WRK ( 
              Bool         put_IP,
-             Bool         (*resteerOkFn) ( Addr64 ),
+             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo 
           )
@@ -10586,7 +10587,7 @@ DisResult disInstr_X86_WRK (
          assign(t1, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
          putIReg(4, R_ESP, mkexpr(t1));
          storeLE( mkexpr(t1), mkU32(guest_EIP_bbstart+delta));
-         if (resteerOkFn((Addr64)(Addr32)d32)) {
+         if (resteerOkFn( callback_opaque, (Addr64)(Addr32)d32 )) {
             /* follow into the call target. */
             dres.whatNext   = Dis_Resteer;
             dres.continueAt = (Addr64)(Addr32)d32;
@@ -10807,7 +10808,7 @@ DisResult disInstr_X86_WRK (
    case 0xEB: /* Jb (jump, byte offset) */
       d32 = (((Addr32)guest_EIP_bbstart)+delta+1) + getSDisp8(delta); 
       delta++;
-      if (resteerOkFn((Addr64)(Addr32)d32)) {
+      if (resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
          dres.whatNext   = Dis_Resteer;
          dres.continueAt = (Addr64)(Addr32)d32;
       } else {
@@ -10821,7 +10822,7 @@ DisResult disInstr_X86_WRK (
       vassert(sz == 4); /* JRS added 2004 July 11 */
       d32 = (((Addr32)guest_EIP_bbstart)+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
-      if (resteerOkFn((Addr64)(Addr32)d32)) {
+      if (resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
          dres.whatNext   = Dis_Resteer;
          dres.continueAt = (Addr64)(Addr32)d32;
       } else {
@@ -10849,7 +10850,7 @@ DisResult disInstr_X86_WRK (
    case 0x7F: /* JGb/JNLEb (jump greater) */
       d32 = (((Addr32)guest_EIP_bbstart)+delta+1) + getSDisp8(delta); 
       delta++;
-      if (0 && resteerOkFn((Addr64)(Addr32)d32)) {
+      if (0 && resteerOkFn( callback_opaque, (Addr64)(Addr32)d32) ) {
          /* Unused experimental hack: speculatively follow one arm
             of a conditional branch. */
          /* Assume the branch is taken.  So we need to emit a
@@ -12574,7 +12575,8 @@ DisResult disInstr_X86_WRK (
 
 DisResult disInstr_X86 ( IRBB*        irbb_IN,
                          Bool         put_IP,
-                         Bool         (*resteerOkFn) ( Addr64 ),
+                         Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         void*        callback_opaque,
                          UChar*       guest_code_IN,
                          Long         delta,
                          Addr64       guest_IP,
@@ -12590,7 +12592,7 @@ DisResult disInstr_X86 ( IRBB*        irbb_IN,
    guest_EIP_curr_instr = (Addr32)guest_IP;
    guest_EIP_bbstart    = (Addr32)toUInt(guest_IP - delta);
 
-   dres = disInstr_X86_WRK ( put_IP, resteerOkFn,
+   dres = disInstr_X86_WRK ( put_IP, resteerOkFn, callback_opaque,
                              delta, archinfo );
 
    return dres;

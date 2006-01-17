@@ -7927,7 +7927,8 @@ static IRExpr* mk64from16s ( IRTemp t3, IRTemp t2,
 static
 DisResult disInstr_AMD64_WRK ( 
              Bool         put_IP,
-             Bool         (*resteerOkFn) ( Addr64 ),
+             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo 
           )
@@ -11543,7 +11544,7 @@ DisResult disInstr_AMD64_WRK (
       putIReg64(R_RSP, mkexpr(t1));
       storeLE( mkexpr(t1), mkU64(guest_RIP_bbstart+delta));
       make_redzone_AbiHint(t1, "call-d32");
-      if (resteerOkFn((Addr64)d64)) {
+      if (resteerOkFn( callback_opaque, (Addr64)d64) ) {
          /* follow into the call target. */
          dres.whatNext   = Dis_Resteer;
          dres.continueAt = d64;
@@ -11755,7 +11756,7 @@ DisResult disInstr_AMD64_WRK (
          goto decode_failure; /* JRS added 2004 July 11 */
       d64 = (guest_RIP_bbstart+delta+1) + getSDisp8(delta); 
       delta++;
-      if (resteerOkFn(d64)) {
+      if (resteerOkFn(callback_opaque,d64)) {
          dres.whatNext   = Dis_Resteer;
          dres.continueAt = d64;
       } else {
@@ -11771,7 +11772,7 @@ DisResult disInstr_AMD64_WRK (
          goto decode_failure; /* JRS added 2004 July 11 */
       d64 = (guest_RIP_bbstart+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
-      if (resteerOkFn(d64)) {
+      if (resteerOkFn(callback_opaque,d64)) {
          dres.whatNext   = Dis_Resteer;
          dres.continueAt = d64;
       } else {
@@ -13639,7 +13640,8 @@ DisResult disInstr_AMD64_WRK (
 
 DisResult disInstr_AMD64 ( IRBB*        irbb_IN,
                            Bool         put_IP,
-                           Bool         (*resteerOkFn) ( Addr64 ),
+                           Bool         (*resteerOkFn) ( void*, Addr64 ),
+                           void*        callback_opaque,
                            UChar*       guest_code_IN,
                            Long         delta,
                            Addr64       guest_IP,
@@ -13659,7 +13661,7 @@ DisResult disInstr_AMD64 ( IRBB*        irbb_IN,
    guest_RIP_next_assumed   = 0;
    guest_RIP_next_mustcheck = False;
 
-   dres = disInstr_AMD64_WRK ( put_IP, resteerOkFn,
+   dres = disInstr_AMD64_WRK ( put_IP, resteerOkFn, callback_opaque,
                                delta, archinfo );
 
    /* If disInstr_AMD64_WRK tried to figure out the next rip, check it

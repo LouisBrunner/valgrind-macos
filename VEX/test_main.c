@@ -53,7 +53,7 @@ static IRBB* ac_instrument ( IRBB*, VexGuestLayout*, IRType );
 static IRBB* mc_instrument ( IRBB*, VexGuestLayout*, IRType, IRType );
 #endif
 
-static Bool chase_into_not_ok ( Addr64 dst ) { return False; }
+static Bool chase_into_not_ok ( void* opaque, Addr64 dst ) { return False; }
 
 int main ( int argc, char** argv )
 {
@@ -155,7 +155,7 @@ int main ( int argc, char** argv )
 #endif
       vta.guest_bytes     = origbuf;
       vta.guest_bytes_addr = (Addr64)orig_addr;
-      vta.guest_bytes_addr_noredir = (Addr64)orig_addr;
+      vta.callback_opaque = NULL;
       vta.chase_into_ok   = chase_into_not_ok;
       vta.guest_extents   = &vge;
       vta.host_bytes      = transbuf;
@@ -174,7 +174,7 @@ int main ( int argc, char** argv )
       vta.instrument2     = NULL;
 #endif
       vta.do_self_check   = False;
-      vta.do_set_NRADDR   = False;
+      vta.preamble_function = NULL;
       vta.traceflags      = TEST_FLAGS;
 #if 1 /* x86, amd64 hosts */
       vta.dispatch        = (void*)0x12345678;

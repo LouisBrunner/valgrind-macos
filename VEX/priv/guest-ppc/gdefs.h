@@ -60,7 +60,8 @@
 extern
 DisResult disInstr_PPC ( IRBB*        irbb,
                          Bool         put_IP,
-                         Bool         (*resteerOkFn) ( Addr64 ),
+                         Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         void*        callback_opaque,
                          UChar*       guest_code,
                          Long         delta,
                          Addr64       guest_IP,

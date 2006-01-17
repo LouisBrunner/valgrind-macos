@@ -358,7 +358,7 @@ static UInt MASK32( UInt begin, UInt end )
    vassert(begin < 32);
    vassert(end < 32);
    UInt m1 = ((UInt)(-1)) << begin;
-   UInt m2 = ((UInt)(-1)) << (end + 1);
+   UInt m2 = ((UInt)(-1)) << end << 1;
    UInt mask = m1 ^ m2;
    if (begin > end) mask = ~mask;  // wrap mask
    return mask;
@@ -370,7 +370,7 @@ static ULong MASK64( UInt begin, UInt end )
    vassert(begin < 64);
    vassert(end < 64);
    ULong m1 = ((ULong)(-1)) << begin;
-   ULong m2 = ((ULong)(-1)) << (end + 1);
+   ULong m2 = ((ULong)(-1)) << end << 1;
    ULong mask = m1 ^ m2;
    if (begin > end) mask = ~mask;  // wrap mask
    return mask;
@@ -4144,7 +4144,8 @@ static IRExpr* /* :: Ity_I32 */ branch_cond_ok( UInt BO, UInt BI )
 */
 static Bool dis_branch ( UInt theInstr, 
                          /*OUT*/DisResult* dres,
-                         Bool (*resteerOkFn)(Addr64) )
+                         Bool (*resteerOkFn)(void*,Addr64),
+                         void* callback_opaque )
 {
    UChar opc1    = ifieldOPC(theInstr);
    UChar BO      = ifieldRegDS(theInstr);
@@ -4195,7 +4196,7 @@ static Bool dis_branch ( UInt theInstr,
       if (flag_LK)
          putGST( PPC_GST_LR, e_nia );
 
-      if (resteerOkFn(tgt)) {
+      if (resteerOkFn( callback_opaque, tgt )) {
          dres->whatNext   = Dis_Resteer;
          dres->continueAt = tgt;
       } else {
@@ -8341,7 +8342,8 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 static   
 DisResult disInstr_PPC_WRK ( 
              Bool         put_IP,
-             Bool         (*resteerOkFn) ( Addr64 ),
+             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+             void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo 
           )
@@ -8498,7 +8500,8 @@ DisResult disInstr_PPC_WRK (
 
    /* Branch Instructions */
    case 0x12: case 0x10: // b, bc
-      if (dis_branch(theInstr, &dres, resteerOkFn)) goto decode_success;
+      if (dis_branch(theInstr, &dres, resteerOkFn, callback_opaque)) 
+         goto decode_success;
       goto decode_failure;
 
    /* System Linkage Instructions */
@@ -8644,7 +8647,8 @@ DisResult disInstr_PPC_WRK (
          
       /* Branch Instructions */
       case 0x210: case 0x010: // bcctr, bclr
-         if (dis_branch(theInstr, &dres, resteerOkFn)) goto decode_success;
+         if (dis_branch(theInstr, &dres, resteerOkFn, callback_opaque)) 
+            goto decode_success;
          goto decode_failure;
          
       /* Memory Synchronization Instructions */
@@ -9057,7 +9061,8 @@ DisResult disInstr_PPC_WRK (
 
 DisResult disInstr_PPC ( IRBB*        irbb_IN,
                          Bool         put_IP,
-                         Bool         (*resteerOkFn) ( Addr64 ),
+                         Bool         (*resteerOkFn) ( void*, Addr64 ),
+                         void*        callback_opaque,
                          UChar*       guest_code_IN,
                          Long         delta,
                          Addr64       guest_IP,
@@ -9093,7 +9098,7 @@ DisResult disInstr_PPC ( IRBB*        irbb_IN,
    guest_CIA_curr_instr = mkSzAddr(ty, guest_IP);
    guest_CIA_bbstart    = mkSzAddr(ty, guest_IP - delta);
 
-   dres = disInstr_PPC_WRK ( put_IP, resteerOkFn,
+   dres = disInstr_PPC_WRK ( put_IP, resteerOkFn, callback_opaque,
                              delta, archinfo );
 
    return dres;

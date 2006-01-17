@@ -124,7 +124,11 @@ typedef
       /*IN*/  Bool         put_IP,
 
       /* Return True iff resteering to the given addr is allowed */
-      /*IN*/  Bool         (*resteerOkFn) ( Addr64 ),
+      /*IN*/  Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
+
+      /* Vex-opaque data passed to all caller (valgrind) supplied
+         callbacks. */
+      /*IN*/  void*        callback_opaque,
 
       /* Where is the guest code? */
       /*IN*/  UChar*       guest_code,
@@ -151,19 +155,18 @@ typedef
 /* See detailed comment in bb_to_IR.c. */
 extern
 IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
+                 /*IN*/ void*            closure_opaque,
                  /*IN*/ DisOneInstrFn    dis_instr_fn,
                  /*IN*/ UChar*           guest_code,
                  /*IN*/ Addr64           guest_IP_bbstart,
-                 /*IN*/ Addr64           guest_IP_bbstart_noredir,
-                 /*IN*/ Bool             (*chase_into_ok)(Addr64),
+                 /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
                  /*IN*/ Bool             host_bigendian,
                  /*IN*/ VexArchInfo*     archinfo_guest,
                  /*IN*/ IRType           guest_word_type,
                  /*IN*/ Bool             do_self_check,
-                 /*IN*/ Bool             do_set_NRADDR,
+                 /*IN*/ Bool             (*preamble_function)(void*,IRBB*),
                  /*IN*/ Int              offB_TISTART,
-                 /*IN*/ Int              offB_TILEN,
-                 /*IN*/ Int              offB_NRADDR );
+                 /*IN*/ Int              offB_TILEN );
 
 
 #endif /* ndef GENERIC_BB_TO_IR_H */

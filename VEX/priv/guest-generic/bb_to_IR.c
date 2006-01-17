@@ -57,7 +57,9 @@ __attribute((regparm(2)))
 static UInt genericg_compute_adler32 ( HWord addr, HWord len );
 
 /* Small helpers */
-static Bool const_False ( Addr64 a ) { return False; }
+static Bool const_False ( void* callback_opaque, Addr64 a ) { 
+   return False; 
+}
 
 /* Disassemble a complete basic block, starting at guest_IP_start, 
    returning a new IRBB.  The disassembler may chase across basic
@@ -73,29 +75,36 @@ static Bool const_False ( Addr64 a ) { return False; }
    do_self_check indicates that the caller needs a self-checking
    translation.
 
-   do_set_NRADDR indicates that the unredirected guest address for
-   this BB should be written to the guest's NRADDR pseudo-register.
+   preamble_function is a callback which allows the caller to add
+   its own IR preamble (following the self-check, if any).  May be
+   NULL.  If non-NULL, the IRBB under construction is handed to 
+   this function, which presumably adds IR statements to it.  The
+   callback may optionally complete the block and direct bb_to_IR
+   not to disassemble any instructions into it; this is indicated
+   by the callback returning True.
 
-   offB_TIADDR, offB_TILEN and offB_NRADDR are the offsets of
-   guest_TIADDR, guest_TILEN and guest_NRADDR.  Since this routine has
-   to work for any guest state, without knowing what it is, those
-   offsets have to passed in.
+   offB_TIADDR and offB_TILEN are the offsets of guest_TIADDR and
+   guest_TILEN.  Since this routine has to work for any guest state,
+   without knowing what it is, those offsets have to passed in.
+
+   callback_opaque is a caller-supplied pointer to data which the
+   callbacks may want to see.  Vex has no idea what it is.
+   (In fact it's a VgInstrumentClosure.)
 */
 
 IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
+                 /*IN*/ void*            callback_opaque,
                  /*IN*/ DisOneInstrFn    dis_instr_fn,
                  /*IN*/ UChar*           guest_code,
                  /*IN*/ Addr64           guest_IP_bbstart,
-                 /*IN*/ Addr64           guest_IP_bbstart_noredir,
-                 /*IN*/ Bool             (*chase_into_ok)(Addr64),
+                 /*IN*/ Bool             (*chase_into_ok)(void*,Addr64),
                  /*IN*/ Bool             host_bigendian,
                  /*IN*/ VexArchInfo*     archinfo_guest,
                  /*IN*/ IRType           guest_word_type,
                  /*IN*/ Bool             do_self_check,
-                 /*IN*/ Bool             do_set_NRADDR,
+                 /*IN*/ Bool             (*preamble_function)(void*,IRBB*),
                  /*IN*/ Int              offB_TISTART,
-                 /*IN*/ Int              offB_TILEN,
-                 /*IN*/ Int              offB_NRADDR )
+                 /*IN*/ Int              offB_TILEN )
 {
    Long       delta;
    Int        i, n_instrs, first_stmt_idx;
@@ -108,9 +117,8 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
    IRBB*      irbb;
    Addr64     guest_IP_curr_instr;
    IRConst*   guest_IP_bbstart_IRConst = NULL;
-   IRConst*   guest_IP_bbstart_noredir_IRConst = NULL;
 
-   Bool (*resteerOKfn)(Addr64) = NULL;
+   Bool (*resteerOKfn)(void*,Addr64) = NULL;
 
    debug_print = toBool(vex_traceflags & VEX_TRACE_FE);
 
@@ -149,13 +157,6 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
               : IRConst_U64(guest_IP_bbstart);
    }
 
-   if (do_set_NRADDR) {
-      guest_IP_bbstart_noredir_IRConst
-         = guest_word_type==Ity_I32 
-              ? IRConst_U32(toUInt(guest_IP_bbstart_noredir))
-              : IRConst_U64(guest_IP_bbstart_noredir);
-   }
-
    /* If asked to make a self-checking translation, leave 5 spaces
       in which to put the check statements.  We'll fill them in later
       when we know the length and adler32 of the area to check. */
@@ -168,16 +169,18 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       addStmtToIRBB( irbb, IRStmt_NoOp() );
    }
 
-   /* Set guest_NRADDR if asked to.  This records the unredirected
-      guest address of this bb, so that it can later be read (and so
-      used by a function wrapper to get to the function itself. */
-   if (do_set_NRADDR) {
-      /* set guest_NRADDR to guest_IP_bbstart_noredir */
-      addStmtToIRBB( 
-         irbb,
-         IRStmt_Put( offB_NRADDR, 
-                     IRExpr_Const(guest_IP_bbstart_noredir_IRConst))
-      );
+   /* If the caller supplied a function to add its own preamble, use
+      it now. */
+   if (preamble_function) {
+      Bool stopNow = preamble_function( callback_opaque, irbb );
+      if (stopNow) {
+         /* The callback has completed the IR block without any guest
+            insns being disassembled into it, so just return it at
+            this point, even if a self-check was requested - as there
+            is nothing to self-check.  The five self-check no-ops will
+            still be in place, but they are harmless. */
+         return irbb;
+      }
    }
 
    /* Process instructions. */
@@ -224,6 +227,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
       dres = dis_instr_fn ( irbb,
                             need_to_put_IP,
                             resteerOKfn,
+                            callback_opaque,
                             guest_code,
                             delta,
                             guest_IP_curr_instr,
@@ -308,7 +312,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
             vassert(resteerOK);
             vassert(irbb->next == NULL);
             /* figure out a new delta to continue at. */
-            vassert(resteerOKfn(dres.continueAt));
+            vassert(resteerOKfn(callback_opaque,dres.continueAt));
             delta = dres.continueAt - guest_IP_bbstart;
             /* we now have to start a new extent slot. */
             vge->n_used++;

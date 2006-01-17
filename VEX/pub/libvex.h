@@ -310,20 +310,23 @@ typedef
       VexArch      arch_host;
       VexArchInfo  archinfo_host;
 
+      /* IN: an opaque value which is passed as the first arg to all
+         callback functions supplied in this struct.  Vex has no idea
+         what's at the other end of this pointer. */
+      void*   callback_opaque;
+
       /* IN: the block to translate, and its guest address. */
       /* where are the actual bytes in the host's address space? */
       UChar*  guest_bytes;
       /* where do the bytes really come from in the guest's aspace?
-         This is the post-redirection guest address. */
+         This is the post-redirection guest address.  Not that Vex
+         understands anything about redirection; that is all done on
+         the Valgrind side. */
       Addr64  guest_bytes_addr;
-      /* where do the bytes claim to come from in the guest address
-         space?  (what guest entry point address do they correspond
-         to?)  This is the pre-redirection guest address. */
-      Addr64  guest_bytes_addr_noredir;
 
       /* Is it OK to chase into this guest address?  May not be
 	 NULL. */
-      Bool    (*chase_into_ok) ( Addr64 );
+      Bool    (*chase_into_ok) ( /*callback_opaque*/void*, Addr64 );
 
       /* OUT: which bits of guest code actually got translated */
       VexGuestExtents* guest_extents;
@@ -336,17 +339,30 @@ typedef
 
       /* IN: optionally, two instrumentation functions.  May be
 	 NULL. */
-      IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, 
-                               Addr64, VexGuestExtents*,
+      IRBB*   (*instrument1) ( /*callback_opaque*/void*, 
+                               IRBB*, 
+                               VexGuestLayout*, 
+                               VexGuestExtents*,
                                IRType gWordTy, IRType hWordTy );
-      IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, 
-                               Addr64, VexGuestExtents*,
+      IRBB*   (*instrument2) ( /*callback_opaque*/void*, 
+                               IRBB*, 
+                               VexGuestLayout*, 
+                               VexGuestExtents*,
                                IRType gWordTy, IRType hWordTy );
 
       /* IN: should this translation be self-checking?  default: False */
       Bool    do_self_check;
-      /* IN: should this translation set guest_NRADDR? */
-      Bool    do_set_NRADDR;
+
+      /* IN: optionally, a callback which allows the caller to add its
+         own IR preamble following the self-check and any other
+         VEX-generated preamble, if any.  May be NULL.  If non-NULL,
+         the IRBB under construction is handed to this function, which
+         presumably adds IR statements to it.  The callback may
+         optionally complete the block and direct bb_to_IR not to
+         disassemble any instructions into it; this is indicated by
+         the callback returning True.
+      */
+      Bool    (*preamble_function)(/*callback_opaque*/void*, IRBB*);
 
       /* IN: debug: trace vex activity at various points */
       Int     traceflags;

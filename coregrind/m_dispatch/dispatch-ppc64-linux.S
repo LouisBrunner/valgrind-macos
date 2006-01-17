@@ -626,15 +626,15 @@ VG_(run_a_noredir_translation):
 	std  31,400(1)
 	std   2,408(1)  /* also preserve R2, just in case .. */
 
-	stw  3,416(1)
-	lwz  31,8(3)
-	lwz  30,0(3)
+	std  3,416(1)
+	ld   31,8(3)
+	ld   30,0(3)
 	mtlr 30
 	blrl
 
-	lwz  4,416(1)
-	stw  3, 16(4)
-	stw  31,24(4)
+	ld   4,416(1)
+	std  3, 16(4)
+	std  31,24(4)
 
 	ld   14,256(1)
 	ld   15,264(1)

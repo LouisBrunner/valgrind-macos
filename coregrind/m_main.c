@@ -2683,6 +2683,9 @@ void shutdown_actions_NORETURN( ThreadId tid,
 */
 static void final_tidyup(ThreadId tid)
 {
+#  if defined(VGP_ppc64_linux)
+   Addr r2;
+#  endif
    Addr __libc_freeres_wrapper = VG_(client___libc_freeres_wrapper);
 
    vg_assert(VG_(is_running_thread)(tid));
@@ -2691,6 +2694,17 @@ static void final_tidyup(ThreadId tid)
         !VG_(clo_run_libc_freeres) ||
         0 == __libc_freeres_wrapper )
       return;			/* can't/won't do it */
+
+#  if defined(VGP_ppc64_linux)
+   r2 = VG_(get_tocptr)( __libc_freeres_wrapper );
+   if (r2 == 0) {
+      VG_(message)(Vg_UserMsg, 
+                   "Caught __NR_exit, but can't run __libc_freeres()");
+      VG_(message)(Vg_UserMsg, 
+                   "   since cannot establish TOC pointer for it.");
+      return;
+   }
+#  endif
 
    if (VG_(clo_verbosity) > 2  ||
        VG_(clo_trace_syscalls) ||
@@ -2704,6 +2718,9 @@ static void final_tidyup(ThreadId tid)
       directly.  However, we need to set R2 (the toc pointer)
       appropriately. */
    VG_(set_IP)(tid, __libc_freeres_wrapper);
+#  if defined(VGP_ppc64_linux)
+   VG_(threads)[tid].arch.vex.guest_GPR2 = r2;
+#  endif
 
    /* Block all blockable signals by copying the real block state into
       the thread's block state*/

@@ -735,6 +735,69 @@ void doHelperCall ( ISelEnv* env,
 }
 
 
+/* Given a guest-state array descriptor, an index expression and a
+   bias, generate a PPCAMode pointing at the relevant piece of 
+   guest state.  Only needed in 64-bit mode. */
+static
+PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
+                                IRExpr* off, Int bias )
+{
+   HReg rtmp, roff;
+   Int  elemSz = sizeofIRType(descr->elemTy);
+   Int  nElems = descr->nElems;
+   Int  shift  = 0;
+
+   vassert(env->mode64);
+
+   /* Throw out any cases we don't need.  In theory there might be a
+      day where we need to handle others, but not today. */
+
+   if (nElems != 16)
+      vpanic("genGuestArrayOffset(ppc64 host)(1)");
+
+   switch (elemSz) {
+      case 8:  shift = 3; break;
+      default: vpanic("genGuestArrayOffset(ppc64 host)(2)");
+   }
+
+   if (bias < -100 || bias > 100) /* somewhat arbitrarily */
+      vpanic("genGuestArrayOffset(ppc64 host)(3)");
+   if (descr->base < 0 || descr->base > 2000) /* somewhat arbitrarily */
+     vpanic("genGuestArrayOffset(ppc64 host)(4)");
+
+   /* Compute off into a reg, %off.  Then return:
+
+         addi %tmp, %off, bias (if bias != 0)
+         andi %tmp, 15
+         sldi %tmp, shift
+         addi %tmp, %tmp, base
+         ... Baseblockptr + %tmp ...
+   */
+   roff = iselIntExpr_R(env, off);
+   rtmp = newVRegI(env);
+   addInstr(env, PPCInstr_Alu(
+                    Palu_ADD, 
+                    rtmp, roff, 
+                    PPCRH_Imm(True/*signed*/, toUShort(bias))));
+   addInstr(env, PPCInstr_Alu(
+                    Palu_AND, 
+                    rtmp, rtmp, 
+                    PPCRH_Imm(False/*signed*/, toUShort(nElems-1))));
+   addInstr(env, PPCInstr_Shft(
+                    Pshft_SHL, 
+                    False/*64-bit shift*/,
+                    rtmp, rtmp, 
+                    PPCRH_Imm(False/*unsigned*/, toUShort(shift))));
+   addInstr(env, PPCInstr_Alu(
+                    Palu_ADD, 
+                    rtmp, rtmp, 
+                    PPCRH_Imm(True/*signed*/, toUShort(descr->base))));
+   return
+      PPCAMode_RR( GuestStatePtr(env->mode64), rtmp );
+}
+
+
+
 /* Set FPU's rounding mode to the default */
 static 
 void set_FPU_rounding_default ( ISelEnv* env )
@@ -1736,18 +1799,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       break;
    }
 
-//..    case Iex_GetI: {
-//..       X86AMode* am 
-//..          = genGuestArrayOffset(
-//..               env, e->Iex.GetI.descr, 
-//..                    e->Iex.GetI.ix, e->Iex.GetI.bias );
-//..       HReg dst = newVRegI32(env);
-//..       if (ty == Ity_I8) {
-//..          addInstr(env, X86Instr_Load( 1, False, am, dst ));
-//..          return dst;
-//..       }
-//..       break;
-//..    }
+   case Iex_GetI: 
+      if (mode64 && ty == Ity_I64) {
+         PPCAMode* src_am
+            = genGuestArrayOffset( env, e->Iex.GetI.descr,
+                                        e->Iex.GetI.ix, e->Iex.GetI.bias );
+         HReg r_dst = newVRegI(env);
+         addInstr(env, PPCInstr_Load( toUChar(8),
+                                      False, r_dst, src_am, mode64 ));
+         return r_dst;
+      }
+      break;
 
    /* --------- CCALL --------- */
    case Iex_CCall: {
@@ -4273,34 +4335,22 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       break;
    }
       
-//..    /* --------- Indexed PUT --------- */
-//..    case Ist_PutI: {
-//..       X86AMode* am 
-//..          = genGuestArrayOffset(
-//..               env, stmt->Ist.PutI.descr, 
-//..                    stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
-//.. 
-//..       IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
-//..       if (ty == Ity_F64) {
-//..          HReg val = iselDblExpr(env, stmt->Ist.PutI.data);
-//..          addInstr(env, X86Instr_FpLdSt( False/*store*/, 8, val, am ));
-//..          return;
-//..       }
-//..       if (ty == Ity_I8) {
-//..          HReg r = iselIntExpr_R(env, stmt->Ist.PutI.data);
-//..          addInstr(env, X86Instr_Store( 1, r, am ));
-//..          return;
-//..       }
-//..       if (ty == Ity_I64) {
-//..          HReg rHi, rLo;
-//..          X86AMode* am4 = advance4(am);
-//..          iselInt64Expr(&rHi, &rLo, env, stmt->Ist.PutI.data);
-//..          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rLo), am ));
-//..          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rHi), am4 ));
-//..          return;
-//..       }
-//..       break;
-//..    }
+   /* --------- Indexed PUT --------- */
+   case Ist_PutI:
+      if (mode64) {
+         PPCAMode* dst_am
+            = genGuestArrayOffset(
+                 env, stmt->Ist.PutI.descr, 
+                      stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
+         IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
+         if (ty == Ity_I64) {
+            HReg r_src = iselIntExpr_R(env, stmt->Ist.PutI.data);
+            addInstr(env, PPCInstr_Store( toUChar(8),
+                                          dst_am, r_src, mode64 ));
+            return;
+         }
+      }
+      break;
 
    /* --------- TMP --------- */
    case Ist_Tmp: {

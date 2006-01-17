@@ -302,6 +302,11 @@ VG_(trampoline_stuff_end):
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
 
+	/* See comment in pub_core_trampoline.h for what this is for */
+.global VG_(ppc64_linux_magic_redirect_return_stub)
+VG_(ppc64_linux_magic_redirect_return_stub):
+	trap
+
 	/* this function is written using the "dotless" ABI convention */
 	.align 2
 	.globl VG_(ppc64_linux_REDIR_FOR_strlen)

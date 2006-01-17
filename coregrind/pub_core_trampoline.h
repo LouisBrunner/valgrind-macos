@@ -69,6 +69,14 @@ extern void* VG_(ppc32_linux_REDIR_FOR_strchr)( void*, Int );
 #if defined(VGP_ppc64_linux)
 extern UInt  VG_(ppc64_linux_REDIR_FOR_strlen)( void* );
 extern void* VG_(ppc64_linux_REDIR_FOR_strchr)( void*, Int );
+/* A label (sans dot) marking the ultra-magical return stub via which
+   all redirected and wrapped functions are made to "return" on
+   ppc64-linux.  The one insn at this label is never really
+   translated.  Instead, m_translate generates IR to restore the
+   thread's LR and R2 registers from a small stack in the ppc64 guest
+   state structure, and then branch to LR.  Convoluted?  Confusing?
+   You betcha.  Could I think of anything simpler?  No. */
+extern void VG_(ppc64_linux_magic_redirect_return_stub);
 #endif
  
 #endif   // __PUB_CORE_TRAMPOLINE_H

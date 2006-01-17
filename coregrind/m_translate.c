@@ -52,6 +52,9 @@
 #include "pub_core_dispatch.h" // VG_(run_innerloop__dispatch_{un}profiled)
                                // VG_(run_a_noredir_translation__return_point)
 
+#include "pub_core_threadstate.h"  // VexGuestArchState
+#include "pub_core_trampoline.h"   // VG_(ppc64_linux_magic_redirect_return_stub)
+
 
 /*------------------------------------------------------------*/
 /*--- Stats                                                ---*/
@@ -196,9 +199,9 @@ static void update_SP_aliases(Long delta)
    we fall back to the case that handles an unknown SP change.
 */
 static
-IRBB* vg_SP_update_pass ( IRBB*             bb_in, 
+IRBB* vg_SP_update_pass ( void*             closureV,
+                          IRBB*             bb_in, 
                           VexGuestLayout*   layout, 
-                          Addr64            orig_addr_noredir,
                           VexGuestExtents*  vge,
                           IRType            gWordTy, 
                           IRType            hWordTy )
@@ -450,10 +453,12 @@ IRBB* vg_SP_update_pass ( IRBB*             bb_in,
    this comment.
 */
 
+
 /* Vex dumps the final code in here.  Then we can copy it off
    wherever we like. */
 #define N_TMPBUF 20000
 static UChar tmpbuf[N_TMPBUF];
+
 
 /* Function pointers we must supply to LibVEX in order that it
    can bomb out and emit messages under Valgrind's control. */
@@ -475,14 +480,8 @@ void log_bytes ( HChar* bytes, Int nbytes )
      VG_(printf)("%c", bytes[i]);
 }
 
-/* Translate the basic block beginning at orig_addr, and add it to
-   the translation cache & translation table.  Unless 'debugging' is true,
-   in which case the call is being done for debugging purposes, so
-   (a) throw away the translation once it is made, and (b) produce a
-   load of debugging output. 
 
-   'tid' is the identity of the thread needing this block.
-*/
+/* --------- Various helper functions for translation --------- */
 
 /* Look for reasons to disallow making translations from the given
    segment. */
@@ -494,60 +493,66 @@ static Bool translations_allowable_from_seg ( NSegment* seg )
 #  else
    Bool allowR = False;
 #  endif
-
    return seg != NULL
           && (seg->kind == SkAnonC || seg->kind == SkFileC)
           && (seg->hasX || (seg->hasR && allowR));
 }
 
 
+/* Is a self-check required for a translation of a guest address
+   inside segment SEG when requested by thread TID ? */
 
-/* This stops Vex from chasing into function entry points that we wish
-   to redirect.  Chasing across them obviously defeats the redirect
-   mechanism, with bad effects for Memcheck, Addrcheck, and possibly
-   others.
+static Bool self_check_required ( NSegment* seg, ThreadId tid )
+{
+   switch (VG_(clo_smc_check)) {
+      case Vg_SmcNone:  return False;
+      case Vg_SmcAll:   return True;
+      case Vg_SmcStack: 
+         return seg 
+                ? (seg->start <= VG_(get_SP)(tid)
+                   && VG_(get_SP)(tid)+sizeof(Word)-1 <= seg->end)
+                : False;
+         break;
+      default: 
+         vg_assert2(0, "unknown VG_(clo_smc_check) value");
+   }
+}
+
+
+/* This is a callback passed to LibVEX_Translate.  It stops Vex from
+   chasing into function entry points that we wish to redirect.
+   Chasing across them obviously defeats the redirect mechanism, with
+   bad effects for Memcheck, Addrcheck, and possibly others.
 
    Also, we must stop Vex chasing into blocks for which we might want
    to self checking.
-
-   This fn needs to know also the tid of the requesting thread, but
-   it can't be passed in as a parameter since this fn is passed to
-   Vex and that has no notion of tids.  So we clumsily pass it as
-   a global, chase_into_ok__CLOSURE_tid.
 */
-static ThreadId chase_into_ok__CLOSURE_tid;
-static Bool     chase_into_ok ( Addr64 addr64 )
+static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 {
-   NSegment* seg;
+   Addr               addr    = (Addr)addr64;
+   NSegment*          seg     = VG_(am_find_nsegment)(addr);
+   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
 
    /* Work through a list of possibilities why we might not want to
       allow a chase. */
-   Addr addr = (Addr)addr64;
 
-   /* All chasing disallowed if all bbs require self-checks. */
-   if (VG_(clo_smc_check) == Vg_SmcAll)
-      goto dontchase;
-
-   /* Check the segment permissions. */
-   seg = VG_(am_find_nsegment)(addr);
+   /* Destination not in a plausible segment? */
    if (!translations_allowable_from_seg(seg))
       goto dontchase;
 
-   /* AAABBBCCC: if default self-checks are in force, reject if we
-      would choose to have a self-check for the dest.  Note, this must
-      match the logic at XXXYYYZZZ below. */
-   if (VG_(clo_smc_check) == Vg_SmcStack) {
-      ThreadId tid = chase_into_ok__CLOSURE_tid;
-      if (seg
-          && (seg->kind == SkAnonC || seg->kind == SkFileC)
-          && seg->start <= VG_(get_SP)(tid)
-          && VG_(get_SP)(tid)+sizeof(Word)-1 <= seg->end)
-         goto dontchase;
-   }
+   /* Destination requires a self-check? */
+   if (self_check_required(seg, closure->tid))
+      goto dontchase;
 
    /* Destination is redirected? */
    if (addr != VG_(redir_do_lookup)(addr, NULL))
       goto dontchase;
+
+#  if defined(VGP_ppc64_linux)
+   /* This needs to be at the start of its own block.  Don't chase. */
+   if (addr64 == (Addr64)&VG_(ppc64_linux_magic_redirect_return_stub))
+      goto dontchase;
+#  endif
 
    /* well, ok then.  go on and chase. */
    return True;
@@ -561,27 +566,232 @@ static Bool     chase_into_ok ( Addr64 addr64 )
 }
 
 
+#if defined(VGP_ppc64_linux)
+static IRExpr* mkU64 ( ULong n )
+{
+   return IRExpr_Const(IRConst_U64(n));
+}
+
+static void gen_PUSH ( IRBB* bb, IRExpr* e )
+{
+   Int stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
+   Int offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
+   Int offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
+
+   IRArray* descr = mkIRArray( offB_REDIR_STACK, Ity_I64, stack_size );
+   IRTemp   t1    = newIRTemp( bb->tyenv, Ity_I64 );
+   IRExpr*  one   = mkU64(1);
+
+   /* t1 = guest_REDIR_SP + 1 */
+   addStmtToIRBB(
+      bb, 
+      IRStmt_Tmp(
+         t1, 
+         IRExpr_Binop(Iop_Add64, IRExpr_Get( offB_REDIR_SP, Ity_I64 ), one)
+      )
+   );
+
+   /* bomb out if t1 >= # elements in stack (16) */
+
+   /* guest_REDIR_SP = t1 */
+   addStmtToIRBB(bb, IRStmt_Put(offB_REDIR_SP, IRExpr_Tmp(t1)));
+
+   /* guest_REDIR_STACK[t1+0] = e */
+   addStmtToIRBB(
+      bb, 
+      IRStmt_PutI(descr, IRExpr_Unop(Iop_64to32,IRExpr_Tmp(t1)), 0, e)
+   );
+}
+
+static IRTemp gen_POP ( IRBB* bb )
+{
+   Int stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
+   Int offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
+   Int offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
+
+   IRArray* descr = mkIRArray( offB_REDIR_STACK, Ity_I64, stack_size );
+   IRTemp   t1    = newIRTemp( bb->tyenv, Ity_I64 );
+   IRTemp   res   = newIRTemp( bb->tyenv, Ity_I64 );
+   IRExpr*  one   = mkU64(1);
+
+   /* t1 = guest_REDIR_SP */
+   addStmtToIRBB(
+      bb, 
+      IRStmt_Tmp( t1, IRExpr_Get( offB_REDIR_SP, Ity_I64 ) )
+   );
+
+   /* bomb out if t1 < 0 */
+
+   /* res = guest_REDIR_STACK[t1+0] */
+   addStmtToIRBB(
+      bb,
+      IRStmt_Tmp(
+         res, 
+         IRExpr_GetI(descr, IRExpr_Unop(Iop_64to32,IRExpr_Tmp(t1)), 0)
+      )
+   );
+
+   /* guest_REDIR_SP = t1-1 */
+   addStmtToIRBB(
+      bb, 
+      IRStmt_Put(offB_REDIR_SP, IRExpr_Binop(Iop_Sub64, IRExpr_Tmp(t1), one))
+   );
+
+   return res;
+}
+
+static void gen_push_and_set_LR_R2 ( IRBB* bb, Addr64 new_R2_value )
+{
+   Addr64 bogus_RA = (Addr64)&VG_(ppc64_linux_magic_redirect_return_stub);
+   Int offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
+   Int offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
+   gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I64) );
+   gen_PUSH( bb, IRExpr_Get(offB_GPR2, Ity_I64) );
+   addStmtToIRBB( bb, IRStmt_Put( offB_LR,   mkU64( bogus_RA )) );
+   addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, mkU64( new_R2_value )) );
+}
+
+static void gen_pop_R2_LR_then_bLR ( IRBB* bb )
+{
+   Int offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
+   Int offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
+   IRTemp old_R2 = newIRTemp( bb->tyenv, Ity_I64 );
+   IRTemp old_LR = newIRTemp( bb->tyenv, Ity_I64 );
+   /* Restore R2 */
+   old_R2 = gen_POP( bb );
+   addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, IRExpr_Tmp(old_R2)) );
+   /* Restore LR */
+   old_LR = gen_POP( bb );
+   addStmtToIRBB( bb, IRStmt_Put( offB_LR, IRExpr_Tmp(old_LR)) );
+   /* Branch to LR */
+   /* re boring, we arrived here precisely because a wrapped fn did a
+      blr (hence Ijk_Ret); so we should just mark this jump as Boring,
+      else one _Call will have resulted in to _Rets. */
+   bb->jumpkind = Ijk_Boring;
+   bb->next = IRExpr_Binop(Iop_And64, IRExpr_Tmp(old_LR), mkU64(~(3ULL)));
+}
+
+static
+Bool mk_preamble__ppc64_magic_return_stub ( void* closureV, IRBB* bb )
+{
+   gen_pop_R2_LR_then_bLR(bb);
+   return True; /* True == this is the entire BB; don't disassemble any
+                   real insns into it - just hand it directly to
+                   optimiser/instrumenter/backend. */
+}
+#endif
+
+
+/* This is an the IR preamble generators used for replacement
+   functions.  It adds code to set the guest_NRADDR to zero
+   (technically not necessary, but facilitates detecting mixups in
+   which the wrong preamble generator has been used).
+
+   On ppc64-linux the follow hacks are also done: LR and R2 are pushed
+   onto a hidden stack, sets R2 to the correct value for the
+   replacement function, and sets LR to point at the magic return-stub
+   address.  Setting LR causes the return of the wrapped/redirected
+   function to lead to our magic return stub, which restores LR and R2
+   from said stack and returns for real. */
+static 
+Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
+{
+   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
+   Int nraddr_szB
+      = sizeof(((VexGuestArchState*)0)->guest_NRADDR);
+   vg_assert(nraddr_szB == 4 || nraddr_szB == 8);
+   addStmtToIRBB( 
+      bb,
+      IRStmt_Put( 
+         offsetof(VexGuestArchState,guest_NRADDR),
+         nraddr_szB == 8
+            ? IRExpr_Const(IRConst_U64(0))
+            : IRExpr_Const(IRConst_U32(0))
+      )
+   );
+#  if defined(VGP_ppc64_linux)
+   gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
+#  endif
+   return False;
+}
+
+/* Ditto, except set guest_NRADDR to nraddr (the un-redirected guest
+   address).  This is needed for function wrapping - so the wrapper
+   can read _NRADDR and find the address of the function being
+   wrapped. */
+static 
+Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRBB* bb )
+{
+   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
+   Int nraddr_szB
+      = sizeof(((VexGuestArchState*)0)->guest_NRADDR);
+   vg_assert(nraddr_szB == 4 || nraddr_szB == 8);
+   addStmtToIRBB( 
+      bb,
+      IRStmt_Put( 
+         offsetof(VexGuestArchState,guest_NRADDR),
+         nraddr_szB == 8
+            ? IRExpr_Const(IRConst_U64( closure->nraddr ))
+            : IRExpr_Const(IRConst_U32( (UInt)closure->nraddr ))
+      )
+   );
+#  if defined(VGP_ppc64_linux)
+   gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
+#  endif
+   return False;
+}
+
+
+/* --------------- main translation function --------------- */
+
 /* Note: see comments at top of m_redir.c for the Big Picture on how
    redirections are managed. */
 
+typedef 
+   enum {
+      /* normal translation, redir neither requested nor inhibited */
+      T_Normal, 
+      /* redir translation, function-wrap (set _NRADDR) style */
+      T_Redir_Wrap,
+      /* redir translation, replacement (don't set _NRADDR) style */
+      T_Redir_Replace,
+      /* a translation in which redir is specifically disallowed */
+      T_NoRedir
+   }
+   T_Kind;
+
+/* Translate the basic block beginning at NRADDR, and add it to the
+   translation cache & translation table.  Unless
+   DEBUGGING_TRANSLATION is true, in which case the call is being done
+   for debugging purposes, so (a) throw away the translation once it
+   is made, and (b) produce a load of debugging output.  If
+   ALLOW_REDIRECTION is False, do not attempt redirection of NRADDR,
+   and also, put the resulting translation into the no-redirect tt/tc
+   instead of the normal one.
+
+   TID is the identity of the thread requesting this translation.
+*/
+
 Bool VG_(translate) ( ThreadId tid, 
-                      Addr64   orig_addr,
+                      Addr64   nraddr,
                       Bool     debugging_translation,
                       Int      debugging_verbosity,
                       ULong    bbs_done,
                       Bool     allow_redirection )
 {
-   Addr64             redir, orig_addr_noredir = orig_addr;
+   Addr64             addr;
+   T_Kind             kind;
    Int                tmpbuf_used, verbosity, i;
    Bool               notrace_until_done, do_self_check;
-   Bool               did_redirect, isWrap;
    UInt               notrace_until_limit = 0;
    NSegment*          seg;
+   Bool (*preamble_fn)(void*,IRBB*);
    VexArch            vex_arch;
    VexArchInfo        vex_archinfo;
    VexGuestExtents    vge;
    VexTranslateArgs   vta;
    VexTranslateResult tres;
+   VgCallbackClosure  closure;
 
    /* Make sure Vex is initialised right. */
 
@@ -595,35 +805,44 @@ Bool VG_(translate) ( ThreadId tid,
       vex_init_done = True;
    }
 
-   /* Look in the code redirect table to see if we should
-      translate an alternative address for orig_addr. */
-   isWrap = False;
+   /* Establish the translation kind and actual guest address to
+      start from.  Sets (addr,kind). */
    if (allow_redirection) {
-      redir        = VG_(redir_do_lookup)(orig_addr, &isWrap);
-      did_redirect = redir != orig_addr;
+      Bool isWrap;
+      Addr64 tmp = VG_(redir_do_lookup)( nraddr, &isWrap );
+      if (tmp == nraddr) {
+         /* no redirection found */
+         addr = nraddr;
+         kind = T_Normal;
+      } else {
+         /* found a redirect */
+         addr = tmp;
+         kind = isWrap ? T_Redir_Wrap : T_Redir_Replace;
+      }
    } else {
-      redir        = orig_addr;
-      did_redirect = False;
+      addr = nraddr;
+      kind = T_NoRedir;
    }
 
-   if (did_redirect == False) vg_assert(isWrap == False);
+   /* Established: (nraddr, addr, kind) */
 
-   if (redir != orig_addr 
+   /* Printing redirection info. */
+
+   if ((kind == T_Redir_Wrap || kind == T_Redir_Replace)
        && (VG_(clo_verbosity) >= 2 || VG_(clo_trace_redir))) {
       Bool ok;
       Char name1[64] = "";
       Char name2[64] = "";
       name1[0] = name2[0] = 0;
-      ok = VG_(get_fnname_w_offset)(orig_addr, name1, 64);
+      ok = VG_(get_fnname_w_offset)(nraddr, name1, 64);
       if (!ok) VG_(strcpy)(name1, "???");
-      ok = VG_(get_fnname_w_offset)(redir, name2, 64);
+      ok = VG_(get_fnname_w_offset)(addr, name2, 64);
       if (!ok) VG_(strcpy)(name2, "???");
       VG_(message)(Vg_DebugMsg, 
                    "REDIR: 0x%llx (%s) redirected to 0x%llx (%s)",
-                   orig_addr, name1,
-                   redir, name2 );
+                   nraddr, name1,
+                   addr, name2 );
    }
-   orig_addr = redir;
 
    /* If codegen tracing, don't start tracing until
       notrace_until_limit blocks have gone by.  This avoids printing
@@ -636,21 +855,21 @@ Bool VG_(translate) ( ThreadId tid,
 
    if (!debugging_translation)
       VG_TRACK( pre_mem_read, Vg_CoreTranslate, 
-                              tid, "(translator)", orig_addr, 1 );
+                              tid, "(translator)", addr, 1 );
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_flags) || debugging_translation) {
       Char fnname[64] = "";
-      VG_(get_fnname_w_offset)(orig_addr, fnname, 64);
+      VG_(get_fnname_w_offset)(addr, fnname, 64);
       VG_(printf)(
               "==== BB %d %s(0x%llx) BBs exec'd %lld ====\n",
-              VG_(get_bbs_translated)(), fnname, orig_addr, 
+              VG_(get_bbs_translated)(), fnname, addr, 
               bbs_done);
    }
 
    /* Are we allowed to translate here? */
 
-   seg = VG_(am_find_nsegment)(orig_addr);
+   seg = VG_(am_find_nsegment)(addr);
 
    if (!translations_allowable_from_seg(seg)) {
       /* U R busted, sonny.  Place your hands on your head and step
@@ -659,32 +878,17 @@ Bool VG_(translate) ( ThreadId tid,
       if (seg != NULL) {
          /* There's some kind of segment at the requested place, but we
             aren't allowed to execute code here. */
-         VG_(synth_fault_perms)(tid, orig_addr);
+         VG_(synth_fault_perms)(tid, addr);
       } else {
         /* There is no segment at all; we are attempting to execute in
            the middle of nowhere. */
-         VG_(synth_fault_mapping)(tid, orig_addr);
+         VG_(synth_fault_mapping)(tid, addr);
       }
       return False;
    }
 
    /* Do we want a self-checking translation? */
-   do_self_check = False;
-   switch (VG_(clo_smc_check)) {
-      case Vg_SmcNone:  do_self_check = False; break;
-      case Vg_SmcAll:   do_self_check = True;  break;
-      case Vg_SmcStack: 
-         /* XXXYYYZZZ: must match the logic at AAABBBCCC above */
-         do_self_check
-            /* = seg ? toBool(seg->flags & SF_GROWDOWN) : False; */
-            = seg 
-              ? (seg->start <= VG_(get_SP)(tid)
-                 && VG_(get_SP)(tid)+sizeof(Word)-1 <= seg->end)
-              : False;
-         break;
-      default: 
-         vg_assert2(0, "unknown VG_(clo_smc_check) value");
-   }
+   do_self_check = self_check_required( seg, tid );
 
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
    verbosity = 0;
@@ -697,6 +901,26 @@ Bool VG_(translate) ( ThreadId tid,
       verbosity = VG_(clo_trace_flags);
    }
 
+   /* Figure out which preamble-mangling callback to send. */
+   preamble_fn = NULL;
+   if (kind == T_Redir_Replace)
+      preamble_fn = mk_preamble__set_NRADDR_to_zero;
+   else 
+   if (kind == T_Redir_Wrap)
+      preamble_fn = mk_preamble__set_NRADDR_to_nraddr;
+#  if defined(VGP_ppc64_linux)
+   if (nraddr == (Addr64)&VG_(ppc64_linux_magic_redirect_return_stub)) {
+      /* If entering the special return stub, this means a wrapped or
+         redirected function is returning.  Make this translation one
+         which restores R2 and LR from the thread's hidden redir
+         stack, and branch to the (restored) link register, thereby
+         really causing the function to return. */
+      vg_assert(kind == T_Normal);
+      vg_assert(nraddr == addr);
+      preamble_fn = mk_preamble__ppc64_magic_return_stub;
+    }
+#  endif
+
    /* ------ Actually do the translation. ------ */
    tl_assert2(VG_(tdict).tool_instrument,
               "you forgot to set VgToolInterface function 'tool_instrument'");
@@ -704,31 +928,46 @@ Bool VG_(translate) ( ThreadId tid,
    /* Get the CPU info established at startup. */
    VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
 
-   /* Set up closure arg for "chase_into_ok" */
-   chase_into_ok__CLOSURE_tid = tid;
+   /* Set up closure args. */
+   closure.tid    = tid;
+   closure.nraddr = nraddr;
+   closure.readdr = addr;
 
    /* Set up args for LibVEX_Translate. */
    vta.arch_guest       = vex_arch;
    vta.archinfo_guest   = vex_archinfo;
    vta.arch_host        = vex_arch;
    vta.archinfo_host    = vex_archinfo;
-   vta.guest_bytes      = (UChar*)ULong_to_Ptr(orig_addr);
-   vta.guest_bytes_addr = (Addr64)orig_addr;
-   vta.guest_bytes_addr_noredir = (Addr64)orig_addr_noredir;
+   vta.guest_bytes      = (UChar*)ULong_to_Ptr(addr);
+   vta.guest_bytes_addr = (Addr64)addr;
+   vta.callback_opaque  = (void*)&closure;
    vta.chase_into_ok    = chase_into_ok;
+   vta.preamble_function = preamble_fn;
    vta.guest_extents    = &vge;
    vta.host_bytes       = tmpbuf;
    vta.host_bytes_size  = N_TMPBUF;
    vta.host_bytes_used  = &tmpbuf_used;
-   vta.instrument1      = VG_(tdict).tool_instrument;
+   { /* At this point we have to reconcile Vex's view of the
+        instrumentation callback - which takes a void* first argument
+        - with Valgrind's view, in which the first arg is a
+        VgCallbackClosure*.  Hence the following longwinded casts.
+        They are entirely legal but longwinded so as to maximise the
+        chance of the C typechecker picking up any type snafus. */
+     IRBB*(*f)(VgCallbackClosure*,
+               IRBB*,VexGuestLayout*,VexGuestExtents*,
+               IRType,IRType)
+       = VG_(tdict).tool_instrument;
+     IRBB*(*g)(void*,
+               IRBB*,VexGuestLayout*,VexGuestExtents*,
+               IRType,IRType)
+       = (IRBB*(*)(void*,IRBB*,VexGuestLayout*,VexGuestExtents*,IRType,IRType))f;
+     vta.instrument1    = g;
+   }
+   /* No need for type kludgery here. */
    vta.instrument2      = need_to_handle_SP_assignment()
                              ? vg_SP_update_pass
                              : NULL;
    vta.do_self_check    = do_self_check;
-   /* If this translation started at a redirected address, then we
-      need to ask the JIT to generate code to put the non-redirected
-      guest address into guest_NRADDR. */
-   vta.do_set_NRADDR    = isWrap;
    vta.traceflags       = verbosity;
 
    /* Set up the dispatch-return info.  For archs without a link
@@ -764,7 +1003,7 @@ Bool VG_(translate) ( ThreadId tid,
       from them.  Optimisation: don't re-look up vge.base[0] since seg
       should already point to it. */
 
-   vg_assert( vge.base[0] == (Addr64)orig_addr );
+   vg_assert( vge.base[0] == (Addr64)addr );
    if (seg->kind == SkFileC || seg->kind == SkAnonC)
       seg->hasT = True; /* has cached code */
 
@@ -781,20 +1020,20 @@ Bool VG_(translate) ( ThreadId tid,
    // only did this for the debugging output produced along the way.
    if (!debugging_translation) {
 
-      if (allow_redirection) {
+      if (kind != T_NoRedir) {
           // Put it into the normal TT/TC structures.  This is the
           // normal case.
 
-          // Note that we use orig_addr_noredir, not orig_addr, which
-          // might have been changed by the redirection
+          // Note that we use nraddr (the non-redirected address), not
+          // addr, which might have been changed by the redirection
           VG_(add_to_transtab)( &vge,
-                                orig_addr_noredir,
+                                nraddr,
                                 (Addr)(&tmpbuf[0]), 
                                 tmpbuf_used,
                                 do_self_check );
       } else {
           VG_(add_to_unredir_transtab)( &vge,
-                                        orig_addr_noredir,
+                                        nraddr,
                                         (Addr)(&tmpbuf[0]), 
                                         tmpbuf_used,
                                         do_self_check );

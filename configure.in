@@ -114,6 +114,9 @@ AC_CANONICAL_HOST
 AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH)
 
+AC_SUBST(VG_ARCH_ALL)
+VG_ARCH_ALL="amd64 ppc32 ppc64 x86"
+
 AC_SUBST(VALT_LOAD_ADDRESS)
 
 case "${host_cpu}" in

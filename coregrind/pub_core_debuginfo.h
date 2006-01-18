@@ -69,6 +69,12 @@ extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
    guest_code_addr.  Returns 0 if not known. */
 extern Addr VG_(get_tocptr) ( Addr guest_code_addr );
 
+/* This is only available to core... don't demangle C++ names, but do
+   do Z-demangling, match anywhere in function, and don't show
+   offsets. */
+extern
+Bool VG_(get_fnname_Z_demangle_only) ( Addr a, Char* buf, Int nbuf );
+
 #endif   // __PUB_CORE_DEBUGINFO_H
 
 /*--------------------------------------------------------------------*/

@@ -2556,6 +2556,32 @@ Bool VG_(get_fnname_nodemangle) ( Addr a, Char* buf, Int nbuf )
                        /*show offset?*/False );
 }
 
+/* This is only available to core... don't demangle C++ names, but do
+   do Z-demangling, match anywhere in function, and don't show
+   offsets. */
+Bool VG_(get_fnname_Z_demangle_only) ( Addr a, Char* buf, Int nbuf )
+{
+#  define N_TMPBUF 4096 /* arbitrary, 4096 == ERRTXT_LEN */
+   Char tmpbuf[N_TMPBUF];
+   Bool ok;
+   vg_assert(nbuf > 0);
+   ok = get_fnname ( /*demangle*/False, a, tmpbuf, N_TMPBUF,
+                     /*match_anywhere_in_fun*/True, 
+                     /*show offset?*/False );
+   tmpbuf[N_TMPBUF-1] = 0; /* paranoia */
+   if (!ok) 
+      return False;
+   /* We have something, at least.  Try to Z-demangle it. */
+   ok = VG_(maybe_Z_demangle)(tmpbuf, NULL, 0, buf, nbuf, NULL);
+   if (!ok) {
+      /* Didn't Z-demangle, so just return whatever we have. */
+      VG_(strncpy)(buf, tmpbuf, nbuf);
+   }
+   buf[nbuf-1] = 0; /* paranoia */
+   return True;
+#  undef N_TMPBUF
+}
+
 /* Map a code address to the name of a shared object file or the executable.
    Returns False if no idea; otherwise True.  Doesn't require debug info.
    Caller supplies buf and nbuf. */

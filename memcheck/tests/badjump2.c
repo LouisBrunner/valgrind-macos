@@ -33,8 +33,16 @@ int main(void)
 
    if (__builtin_setjmp(myjmpbuf) == 0) {
       // Jump to zero; will cause seg fault
+#if defined(__powerpc64__)
+      unsigned long long int fake_fndescr[3];
+      fake_fndescr[0] = 0;
+      fake_fndescr[1] = 0;
+      fake_fndescr[2] = 0;
+      ((void(*)(void)) fake_fndescr) ();
+#else
       void (*fn)(void) = 0;
       fn();
+#endif
       fprintf(stderr, "Got here??\n");
    } else  {
       fprintf(stderr, "Signal caught, as expected\n");

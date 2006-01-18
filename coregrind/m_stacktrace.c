@@ -48,8 +48,13 @@
    IPs into 'ips'.  In order to be thread-safe, we pass in the
    thread's IP SP, FP if that's meaningful, and LR if that's
    meaningful.  Returns number of IPs put in 'ips'.
+
+   If you know what the thread ID for this stack is, send that as the
+   first parameter, else send zero.  This helps generate better stack
+   traces on ppc64-linux and has no effect on other platforms.
 */
-UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips, 
+UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
+                            Addr* ips, UInt n_ips, 
                             Addr ip, Addr sp, Addr fp, Addr lr,
                             Addr fp_min, Addr fp_max_orig )
 {
@@ -230,7 +235,7 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
 
 #  elif defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
 
-   /*--------------------- ppc32 ---------------------*/
+   /*--------------------- ppc32/64 ---------------------*/
 
    /* fp is %r1.  ip is %cia.  Note, ppc uses r1 as both the stack and
       frame pointers. */
@@ -259,7 +264,11 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
         /* on ppc64-linux (ppc64-elf, really), the lr save slot is 2
            words back from sp, whereas on ppc32-elf(?) it's only one
            word back. */
-         const Int lr_offset = VG_WORDSIZE==8 ? 2 : 1;
+#        if defined(VGP_ppc64_linux)
+         const Int lr_offset = 2;
+#        else
+         const Int lr_offset = 1;
+#        endif
 
          if (i >= n_ips)
             break;
@@ -273,6 +282,24 @@ UInt VG_(get_StackTrace2) ( Addr* ips, UInt n_ips,
                ip = lr;
             else
                ip = (((UWord*)fp)[lr_offset]);
+
+#           if defined(VGP_ppc64_linux)
+            /* Nasty hack to do with function replacement/wrapping on
+               ppc64-linux.  If LR points to our magic return stub,
+               then we are in a wrapped or intercepted function, in
+               which LR has been messed with.  The original LR will
+               have been pushed onto the thread's hidden REDIR stack
+               one down from the top (top element is the saved R2) and
+               so we should restore the value from there instead. */
+            if (i == 1 
+                && ip == (Addr)&VG_(ppc64_linux_magic_redirect_return_stub)
+                && VG_(is_valid_tid)(tid_if_known)) {
+               Long hsp = VG_(threads)[tid_if_known].arch.vex.guest_REDIR_SP;
+               if (hsp >= 1 && hsp < VEX_GUEST_PPC64_REDIR_STACK_SIZE)
+                  ip = VG_(threads)[tid_if_known]
+                          .arch.vex.guest_REDIR_STACK[hsp-1];
+            }
+#           endif
 
             fp = (((UWord*)fp)[0]);
             ips[i++] = ip;
@@ -324,7 +351,8 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
       VG_(printf)("tid %d: stack_highest=%p ip=%p sp=%p fp=%p\n",
 		  tid, stack_highest_word, ip, sp, fp);
 
-   return VG_(get_StackTrace2)(ips, n_ips, ip, sp, fp, lr, sp, stack_highest_word);
+   return VG_(get_StackTrace2)(tid, ips, n_ips, ip, sp, fp, lr, sp, 
+                                    stack_highest_word);
 }
 
 static void printIpDesc(UInt n, Addr ip)

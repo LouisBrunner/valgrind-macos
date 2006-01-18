@@ -39,7 +39,12 @@
 #include "pub_tool_stacktrace.h"
 
 // Variant that gives a little more control over the stack-walking.
-extern UInt VG_(get_StackTrace2) ( StackTrace ips, UInt n_ips, 
+// If you know what the thread ID for this stack is, send that
+// as the first parameter, else send zero.  This helps generate
+// better stack traces on ppc64-linux and has no effect on other
+// platforms.
+extern UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
+                                   StackTrace ips, UInt n_ips, 
                                    Addr ip, Addr sp, Addr fp, Addr lr,
                                    Addr fp_min, Addr fp_max );
 

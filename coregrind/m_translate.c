@@ -566,6 +566,8 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 }
 
 
+/* --------------- ppc64-linux specific helpers --------------- */
+
 #if defined(VGP_ppc64_linux)
 static IRExpr* mkU64 ( ULong n )
 {
@@ -681,6 +683,7 @@ Bool mk_preamble__ppc64_magic_return_stub ( void* closureV, IRBB* bb )
 }
 #endif
 
+/* --------------- END ppc64-linux specific helpers --------------- */
 
 /* This is an the IR preamble generators used for replacement
    functions.  It adds code to set the guest_NRADDR to zero
@@ -692,7 +695,11 @@ Bool mk_preamble__ppc64_magic_return_stub ( void* closureV, IRBB* bb )
    replacement function, and sets LR to point at the magic return-stub
    address.  Setting LR causes the return of the wrapped/redirected
    function to lead to our magic return stub, which restores LR and R2
-   from said stack and returns for real. */
+   from said stack and returns for real.
+
+   VG_(get_StackTrace2) understands that the LR value may point to the
+   return stub address, and that in that case it can get the real LR
+   value from the hidden stack instead. */
 static 
 Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
 {

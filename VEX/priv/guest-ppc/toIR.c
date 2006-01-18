@@ -46,8 +46,8 @@
 
 /* TODO 18/Nov/05:
 
-   Spot rlwimi cases which are simply left/right shifts and
-   emit Shl32/Shr32 accordingly.
+   Spot rld... cases which are simply left/right shifts and emit
+   Shl64/Shr64 accordingly.
 
    Altivec
    - datastream insns
@@ -81,6 +81,11 @@
        to zero, whereas we keep maximum accuracy.  However, using
        Non-Java mode would give us more inaccuracy, as our intermediate
        results would then be zeroed, too.
+
+   - 64-bit mode: AbiHints for the stack red zone are only emitted for
+       unconditional calls and returns (bl, blr).  They should also be
+       emitted for conditional calls and returns, but we don't have a 
+       way to express that right now.  Ah well.
 */
 
 /* "Special" instructions.
@@ -1190,6 +1195,22 @@ static IRExpr* addr_align( IRExpr* addr, UChar align )
 
    vassert(typeOfIRExpr(irbb->tyenv,addr) == ty);
    return binop( mkSzOp(ty, Iop_And8), addr, mkSzImm(ty, mask) );
+}
+
+
+/* Generate AbiHints which mark points at which the ELF ppc64 ABI says
+   that the stack red zone (viz, -288(r1) .. -1(r1)) becomes
+   undefined.  That is at function calls and returns.  Only in 64-bit
+   mode - ELF ppc32 doesn't have this "feature".
+*/
+static void make_redzone_AbiHint ( HChar* who )
+{
+   if (0) vex_printf("AbiHint: %s\n", who);
+   vassert(mode64);
+   stmt( IRStmt_AbiHint( 
+            binop(Iop_Sub64, getIReg(1), mkU64(288)), 
+            288 
+   ));
 }
 
 
@@ -4193,8 +4214,11 @@ static Bool dis_branch ( UInt theInstr,
              flag_LK ? "l" : "", flag_AA ? "a" : "", (Addr32)tgt);
       }
 
-      if (flag_LK)
+      if (flag_LK) {
          putGST( PPC_GST_LR, e_nia );
+         if (mode64)
+            make_redzone_AbiHint( "branch-and-link (unconditional call)" );
+      }
 
       if (resteerOkFn( callback_opaque, tgt )) {
          dres->whatNext   = Dis_Resteer;
@@ -4273,10 +4297,11 @@ static Bool dis_branch ( UInt theInstr,
          irbb->next     = mkexpr(lr_old);
          break;
          
-      case 0x010: // bclr (Branch Cond. to Link Register, PPC32 p365) 
-
+      case 0x010: { // bclr (Branch Cond. to Link Register, PPC32 p365) 
+         Bool vanilla_return = False;
          if ((BO & 0x14 /* 1z1zz */) == 0x14 && flag_LK == 0) {
             DIP("blr\n");
+            vanilla_return = True;
          } else {
             DIP("bclr%s 0x%x, 0x%x\n", flag_LK ? "l" : "", BO, BI);
          }
@@ -4303,13 +4328,16 @@ static Bool dis_branch ( UInt theInstr,
                   Ijk_Boring,
                   c_nia ));
 
+	 if (vanilla_return && mode64)
+            make_redzone_AbiHint( "branch-to-lr (unconditional return)" );
+
          /* blrl is pretty strange; it's like a return that sets the
             return address of its caller to the insn following this
             one.  Mark it as a return. */
          irbb->jumpkind = Ijk_Ret;  /* was flag_LK ? Ijk_Call : Ijk_Ret; */
          irbb->next     = mkexpr(lr_old);
          break;
-         
+      }
       default:
          vex_printf("dis_int_branch(ppc)(opc2)\n");
          return False;

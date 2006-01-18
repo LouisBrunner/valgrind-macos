@@ -1006,6 +1006,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
       any attempt to access it will elicit an addressing error,
       and that's good enough.
    */
+   /* 128 bytes (16 ULongs) is the magic value for ELF amd64. */
    if (EXPECTED_TAKEN( len == 128
                        && VG_IS_8_ALIGNED(base) 
       )) {
@@ -1050,7 +1051,74 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
       }
    }
 
+   /* 288 bytes (36 ULongs) is the magic value for ELF ppc64. */
+   if (EXPECTED_TAKEN( len == 288
+                       && VG_IS_8_ALIGNED(base) 
+      )) {
+      /* Now we know the address range is suitably sized and
+         aligned. */
+      UWord a_lo   = (UWord)base;
+      UWord a_hi   = (UWord)(base + 287);
+      UWord sec_lo = a_lo >> 16;
+      UWord sec_hi = a_hi >> 16;
+
+      if (EXPECTED_TAKEN( sec_lo == sec_hi 
+                          && sec_lo <= N_PRIMARY_MAP
+         )) {
+         /* Now we know that the entire address range falls within a
+            single secondary map, and that that secondary 'lives' in
+            the main primary map. */
+         SecMap* sm = primary_map[sec_lo];
+
+         if (EXPECTED_TAKEN( !is_distinguished_sm(sm) )) {
+            /* And finally, now we know that the secondary in question
+               is modifiable. */
+            UWord   v_off = a_lo & 0xFFFF;
+            ULong*  p     = (ULong*)(&sm->vbyte[v_off]);
+            p[ 0] =  VGM_WORD64_INVALID;
+            p[ 1] =  VGM_WORD64_INVALID;
+            p[ 2] =  VGM_WORD64_INVALID;
+            p[ 3] =  VGM_WORD64_INVALID;
+            p[ 4] =  VGM_WORD64_INVALID;
+            p[ 5] =  VGM_WORD64_INVALID;
+            p[ 6] =  VGM_WORD64_INVALID;
+            p[ 7] =  VGM_WORD64_INVALID;
+            p[ 8] =  VGM_WORD64_INVALID;
+            p[ 9] =  VGM_WORD64_INVALID;
+            p[10] =  VGM_WORD64_INVALID;
+            p[11] =  VGM_WORD64_INVALID;
+            p[12] =  VGM_WORD64_INVALID;
+            p[13] =  VGM_WORD64_INVALID;
+            p[14] =  VGM_WORD64_INVALID;
+            p[15] =  VGM_WORD64_INVALID;
+            p[16] =  VGM_WORD64_INVALID;
+            p[17] =  VGM_WORD64_INVALID;
+            p[18] =  VGM_WORD64_INVALID;
+            p[19] =  VGM_WORD64_INVALID;
+            p[20] =  VGM_WORD64_INVALID;
+            p[21] =  VGM_WORD64_INVALID;
+            p[22] =  VGM_WORD64_INVALID;
+            p[23] =  VGM_WORD64_INVALID;
+            p[24] =  VGM_WORD64_INVALID;
+            p[25] =  VGM_WORD64_INVALID;
+            p[26] =  VGM_WORD64_INVALID;
+            p[27] =  VGM_WORD64_INVALID;
+            p[28] =  VGM_WORD64_INVALID;
+            p[29] =  VGM_WORD64_INVALID;
+            p[30] =  VGM_WORD64_INVALID;
+            p[31] =  VGM_WORD64_INVALID;
+            p[32] =  VGM_WORD64_INVALID;
+            p[33] =  VGM_WORD64_INVALID;
+            p[34] =  VGM_WORD64_INVALID;
+            p[35] =  VGM_WORD64_INVALID;
+            return;
+	 }
+      }
+   }
+
    /* else fall into slow case */
+   if (0) VG_(printf)("MC_(helperc_MAKE_STACK_UNINIT): "
+                      "slow case, %d\n", len);
    mc_make_writable(base, len);
 }
 

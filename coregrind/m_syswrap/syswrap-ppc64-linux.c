@@ -1194,7 +1194,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_lchown,            sys_lchown),             //  16
 // _____(__NR_break,             sys_break),              //  17
 // _____(__NR_oldstat,           sys_oldstat),            //  18
-// _____(__NR_lseek,             sys_lseek),              //  19
+   LINX_(__NR_lseek,             sys_lseek),              //  19
 
    GENX_(__NR_getpid,            sys_getpid),             //  20
 // _____(__NR_mount,             sys_mount),              //  21
@@ -1204,7 +1204,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_stime,             sys_stime),              //  25
 // _____(__NR_ptrace,            sys_ptrace),             //  26
-// _____(__NR_alarm,             sys_alarm),              //  27
+   GENX_(__NR_alarm,             sys_alarm),              //  27
 // _____(__NR_oldfstat,          sys_oldfstat),           //  28
    GENX_(__NR_pause,             sys_pause),              //  29
 
@@ -1218,7 +1218,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_sync,              sys_sync),               //  36
    GENX_(__NR_kill,              sys_kill),               //  37
 // _____(__NR_rename,            sys_rename),             //  38
-// _____(__NR_mkdir,             sys_mkdir),              //  39
+   GENX_(__NR_mkdir,             sys_mkdir),              //  39
 
 // _____(__NR_rmdir,             sys_rmdir),              //  40
    GENXY(__NR_dup,               sys_dup),                //  41
@@ -1346,7 +1346,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_flock,             sys_flock),              // 143
 // _____(__NR_msync,             sys_msync),              // 144
 
-// _____(__NR_readv,             sys_readv),              // 145
+   GENXY(__NR_readv,             sys_readv),              // 145
    GENX_(__NR_writev,            sys_writev),             // 146
 // _____(__NR_getsid,            sys_getsid),             // 147
 // _____(__NR_fdatasync,         sys_fdatasync),          // 148

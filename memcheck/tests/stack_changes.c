@@ -27,7 +27,8 @@ int init_context(struct ucontext *uc)
     int ret;
 
     if (getcontext(uc) == -1) {
-        perror("getcontext");
+        //perror("getcontext");
+        printf("getcontext() doesn't seem to work\n");
         exit(1);
     }
 

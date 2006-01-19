@@ -107,8 +107,8 @@ static void init(void) __attribute__((constructor));
    { \
       void* v; \
       \
-      MALLOC_TRACE(#fnname "(%llu)", (ULong)n ); \
       if (!init_done) init(); \
+      MALLOC_TRACE(#fnname "(%llu)", (ULong)n ); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
       MALLOC_TRACE(" = %p", v ); \
@@ -127,8 +127,8 @@ static void init(void) __attribute__((constructor));
    { \
       void* v; \
       \
-      MALLOC_TRACE(#fnname "(%llu)", (ULong)n );        \
       if (!init_done) init(); \
+      MALLOC_TRACE(#fnname "(%llu)", (ULong)n );        \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
       MALLOC_TRACE(" = %p", v ); \
@@ -223,10 +223,10 @@ ALLOC_or_BOMB(m_libc_dot_so_star,      __builtin_vec_new, __builtin_vec_new );
    void VG_REPLACE_FUNCTION_ZU(soname,fnname) (void *p); \
    void VG_REPLACE_FUNCTION_ZU(soname,fnname) (void *p)  \
    { \
+      if (!init_done) init(); \
       MALLOC_TRACE(#vg_replacement "(%p)", p ); \
       if (p == NULL)  \
          return; \
-      if (!init_done) init(); \
       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
    }
 
@@ -268,9 +268,9 @@ FREE(m_libc_dot_so_star,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
    { \
       void* v; \
       \
+      if (!init_done) init(); \
       MALLOC_TRACE("calloc(%llu,%llu)", (ULong)nmemb, (ULong)size ); \
       \
-      if (!init_done) init(); \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_calloc, nmemb, size ); \
       MALLOC_TRACE(" = %p", v ); \
       return v; \
@@ -286,6 +286,7 @@ CALLOC(m_libc_dot_so_star, calloc);
    { \
       void* v; \
       \
+      if (!init_done) init(); \
       MALLOC_TRACE("realloc(%p,%llu)", ptrV, (ULong)new_size ); \
       \
       if (ptrV == NULL) \
@@ -297,7 +298,6 @@ CALLOC(m_libc_dot_so_star, calloc);
          MALLOC_TRACE(" = 0"); \
          return NULL; \
       } \
-      if (!init_done) init(); \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
       MALLOC_TRACE(" = %p", v ); \
       return v; \
@@ -313,6 +313,7 @@ REALLOC(m_libc_dot_so_star, realloc);
    { \
       void* v; \
       \
+      if (!init_done) init(); \
       MALLOC_TRACE("memalign(al %llu, size %llu)", \
                    (ULong)alignment, (ULong)n ); \
       \
@@ -323,7 +324,6 @@ REALLOC(m_libc_dot_so_star, realloc);
       /* Round up to nearest power-of-two if necessary (like glibc). */ \
       while (0 != (alignment & (alignment - 1))) alignment++; \
       \
-      if (!init_done) init(); \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, alignment, n ); \
       MALLOC_TRACE(" = %p", v ); \
       return v; \
@@ -393,11 +393,11 @@ POSIX_MEMALIGN(m_libc_dot_so_star, posix_memalign);
    {  \
       SizeT pszB; \
       \
+      if (!init_done) init(); \
       MALLOC_TRACE("malloc_usable_size(%p)", p ); \
       if (NULL == p) \
          return 0; \
       \
-      if (!init_done) init(); \
       pszB = (SizeT)VALGRIND_NON_SIMD_CALL2( info.arena_payload_szB, \
                                              VG_AR_CLIENT, p ); \
       MALLOC_TRACE(" = %llu", (ULong)pszB ); \
@@ -440,8 +440,8 @@ PANIC(m_libc_dot_so_star, malloc_set_state);
    struct vg_mallinfo VG_REPLACE_FUNCTION_ZU(soname, fnname) ( void )  \
    { \
       static struct vg_mallinfo mi; \
-      MALLOC_TRACE("mallinfo()"); \
       if (!init_done) init(); \
+      MALLOC_TRACE("mallinfo()"); \
       (void)VALGRIND_NON_SIMD_CALL1( info.mallinfo, &mi ); \
       return mi; \
    }

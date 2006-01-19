@@ -240,6 +240,19 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
    /* fp is %r1.  ip is %cia.  Note, ppc uses r1 as both the stack and
       frame pointers. */
 
+#  if defined(VGP_ppc64_linux)
+   /* Deal with bogus LR values caused by function
+      interception/wrapping; see comment on similar code a few lines
+      further down. */
+   if (lr == (Addr)&VG_(ppc64_linux_magic_redirect_return_stub)
+       && VG_(is_valid_tid)(tid_if_known)) {
+      Long hsp = VG_(threads)[tid_if_known].arch.vex.guest_REDIR_SP;
+      if (hsp >= 1 && hsp < VEX_GUEST_PPC64_REDIR_STACK_SIZE)
+         lr = VG_(threads)[tid_if_known]
+                 .arch.vex.guest_REDIR_STACK[hsp-1];
+   }
+#  endif
+
    lr_is_first_RA = False;
    {
 #     define M_VG_ERRTXT 1000

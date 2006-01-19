@@ -11,7 +11,7 @@ int main(void)
 {
    int x[6], *s, *os, i;
 
-#ifdef __NR_sigprocmask
+#if defined(__NR_sigprocmask) && !defined(__powerpc64__)
 
    x[0] = 0x11111111;
    x[1] = 0x89abcdef;

@@ -1120,6 +1120,7 @@ Bool supp_matches_callers(Error* err, Supp* su)
             break;
          default: VG_(tool_panic)("supp_matches_callers");
       }
+      if (0) VG_(printf)("cmp %s %s\n", su->callers[i].name, caller_name);
       if (!VG_(string_match)(su->callers[i].name, caller_name))
          return False;
    }

@@ -18,7 +18,7 @@ void foo ( int* p1, int* p2, unsigned int * hack )
     printf("bar\n");
 }
 
-
+static void bar ( void );
 int main ( void )
 {
 
@@ -32,7 +32,7 @@ int main ( void )
 
   int*   pi1 = (int*)junk1;
   int*   pi2 = (int*)junk2;
-
+  bar();
   // both words completely undefined.  This should give an error.
   foo(pi1,pi2, &hack);
 
@@ -52,4 +52,14 @@ int main ( void )
   foo(pi1,pi2, &hack);
 
   return 0;
+}
+
+// Note: on ppc32/64 the second call to foo() does give an error,
+// since the expensive EQ/NE scheme does not apply to the CmpORD
+// primops used by ppc.
+static void bar ( void )
+{
+#if defined(__powerpc__) || defined(__powerpc64__)
+  fprintf(stderr, "Currently running on ppc32/64: this test should give 3 errors, not 2.\n");
+#endif
 }

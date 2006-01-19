@@ -73,7 +73,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
 	mq.stderr.exp mq.vgtest \
 	mremap.stderr.exp mremap.stdout.exp mremap.vgtest \
-	mremap2.stderr.exp mremap2.stdout.exp mremap2.vgtest \
+	mremap2.stderr.exp \
+	mremap2.stdout.exp mremap2.stdout.exp2 mremap2.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \

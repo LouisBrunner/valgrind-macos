@@ -39,7 +39,8 @@
 /* This is the main, standard demangler entry point. */
 
 extern 
-void VG_(demangle) ( Char* orig, Char* result, Int result_size );
+void VG_(demangle) ( Bool do_cxx_demangle,
+                     Char* orig, Char* result, Int result_size );
 
 /* Demangle a Z-encoded name as described in pub_tool_redir.h. 
    Z-encoded names are used by Valgrind for doing function 

@@ -2478,7 +2478,8 @@ Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
    if (si == NULL) 
       return False;
    if (demangle) {
-      VG_(demangle) ( si->symtab[sno].name, buf, nbuf );
+      VG_(demangle) ( True/*do C++ demangle*/,
+                      si->symtab[sno].name, buf, nbuf );
    } else {
       VG_(strncpy_safely) ( buf, si->symtab[sno].name, nbuf );
    }
@@ -2571,12 +2572,10 @@ Bool VG_(get_fnname_Z_demangle_only) ( Addr a, Char* buf, Int nbuf )
    tmpbuf[N_TMPBUF-1] = 0; /* paranoia */
    if (!ok) 
       return False;
+
    /* We have something, at least.  Try to Z-demangle it. */
-   ok = VG_(maybe_Z_demangle)(tmpbuf, NULL, 0, buf, nbuf, NULL);
-   if (!ok) {
-      /* Didn't Z-demangle, so just return whatever we have. */
-      VG_(strncpy)(buf, tmpbuf, nbuf);
-   }
+   VG_(demangle)( False/*don't do C++ demangling*/, tmpbuf, buf, nbuf);
+
    buf[nbuf-1] = 0; /* paranoia */
    return True;
 #  undef N_TMPBUF

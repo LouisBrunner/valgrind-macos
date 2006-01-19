@@ -51,11 +51,27 @@
    Therefore, VG_(demangle) first tries to undo (2).  If successful,
    the soname part is discarded (humans don't want to see that).
    Then, it tries to undo (1) (using demangling code from GNU/FSF).
+
+   Finally, change the name of all symbols which are known to be
+   functions below main() to "(below main)".  This helps reduce
+   variability of stack traces, something which has been a problem for
+   the testsuite for a long time.
+
+   --------
+   If do_cxx_demangle == True, does all the above stages:
+   - undo (2) [Z-encoding]
+   - undo (1) [C++ mangling]
+   - do the below-main hack
+
+   If do_cxx_demangle == False, the middle stage is skipped:
+   - undo (2) [Z-encoding]
+   - do the below-main hack
 */
 
 /* This is the main, standard demangler entry point. */
 
-void VG_(demangle) ( Char* orig, Char* result, Int result_size )
+void VG_(demangle) ( Bool do_cxx_demangle, 
+                     Char* orig, Char* result, Int result_size )
 {
 #  define N_ZBUF 4096
    HChar* demangled = NULL;
@@ -66,6 +82,7 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
       return;
    }
 
+   /* Undo (2) */
    /* Demangling was requested.  First see if it's a Z-mangled
       intercept specification.  The fastest way is just to attempt a
       Z-demangling (with NULL soname buffer, since we're not
@@ -75,7 +92,11 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
       orig = z_demangled;
    }
 
-   demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
+   /* Possibly undo (1) */
+   if (do_cxx_demangle)
+      demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
+   else
+      demangled = NULL;
 
    if (demangled) {
       VG_(strncpy_safely)(result, demangled, result_size);
@@ -84,6 +105,7 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
       VG_(strncpy_safely)(result, orig, result_size);
    }
 
+   /* Do the below-main hack */
    // 13 Mar 2005: We used to check here that the demangler wasn't leaking
    // by calling the (now-removed) function VG_(is_empty_arena)().  But,
    // very rarely (ie. I've heard of it twice in 3 years), the demangler

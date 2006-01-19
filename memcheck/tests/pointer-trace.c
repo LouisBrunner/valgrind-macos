@@ -11,19 +11,38 @@
 
 int main()
 {
-	const int ptrbits = sizeof(void *) * 8;
-	const int stepbits = 14;
-	const int stepsize = (1 << stepbits);
-	const int nptrs = 1 << (ptrbits - stepbits);
-
 	char **volatile ptrs;
 	int i;
 	int fd;
 	char *map;
 
+	/* I _think_ the point of this is to fill ptrs with a pointer
+	   to every 4th page in the entire address space, hence
+	   guaranteeing that at least one of them points into one of
+	   the below traps, and so checks that the leak checker
+	   doesn't bomb when following them.  That's fine on 32-bit
+	   platforms, but hopeless for a 64-bit system.  So the
+	   following settings do achieve that on a 32-bit target but
+	   merely make a 64-bit target give the same output without
+	   properly testing it. */
+        int ptrbits, stepbits, stepsize, nptrs;
+	if (sizeof(void*) == 8) {
+           /* 64-bit machine */
+	   ptrbits = 32;   //bogus
+           stepbits = 14+1;  //bogus
+	   stepsize = (1 << stepbits);
+	   nptrs = 1 << (ptrbits - stepbits);
+	} else {
+           /* 32-bit machine */
+	   ptrbits = 32;
+           stepbits = 14;
+	   stepsize = (1 << stepbits);
+	   nptrs = 1 << (ptrbits - stepbits);
+	}
+
 	ptrs = malloc(nptrs * sizeof(char *));
 	for(i = 0; i < nptrs; i++)
-		ptrs[i] = (char *)(i << stepbits);
+		ptrs[i] = (char *)((long)i << stepbits);
 
 	/* lay some traps */
 	map = mmap(0, stepsize * 2, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);

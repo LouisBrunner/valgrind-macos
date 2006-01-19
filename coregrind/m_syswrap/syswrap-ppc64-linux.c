@@ -417,7 +417,7 @@ DECL_TEMPLATE(ppc64_linux, sys_mmap);
 //zz DECL_TEMPLATE(ppc64_linux, sys_stat64);
 //zz DECL_TEMPLATE(ppc64_linux, sys_lstat64);
 //zz DECL_TEMPLATE(ppc64_linux, sys_fstat64);
-//zz DECL_TEMPLATE(ppc64_linux, sys_ipc);
+DECL_TEMPLATE(ppc64_linux, sys_ipc);
 DECL_TEMPLATE(ppc64_linux, sys_clone);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigreturn);
 DECL_TEMPLATE(ppc64_linux, sys_rt_sigreturn);
@@ -759,161 +759,161 @@ PRE(sys_mmap)
 //zz {
 //zz   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
 //zz }
-//zz 
-//zz static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
-//zz {
-//zz    Addr* a_p = (Addr*)a;
-//zz    PRE_MEM_READ( s, (Addr)a_p, sizeof(Addr) );
-//zz    return *a_p;
-//zz }
-//zz 
-//zz PRE(sys_ipc)
-//zz {
-//zz   PRINT("sys_ipc ( %d, %d, %d, %d, %p, %d )", ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
-//zz   // XXX: this is simplistic -- some args are not used in all circumstances.
-//zz   PRE_REG_READ6(int, "ipc",
-//zz 		vki_uint, call, int, first, int, second, int, third,
-//zz 		void *, ptr, long, fifth)
-//zz 
-//zz     switch (ARG1 /* call */) {
-//zz     case VKI_SEMOP:
-//zz       ML_(generic_PRE_sys_semop)( tid, ARG2, ARG5, ARG3 );
-//zz       *flags |= SfMayBlock;
-//zz       break;
-//zz     case VKI_SEMGET:
-//zz       break;
-//zz     case VKI_SEMCTL:
-//zz       {
-//zz 	UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
-//zz 	ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
-//zz 	break;
-//zz       }
-//zz     case VKI_SEMTIMEDOP:
-//zz       ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
-//zz       *flags |= SfMayBlock;
-//zz       break;
-//zz     case VKI_MSGSND:
-//zz       ML_(linux_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
-//zz       if ((ARG4 & VKI_IPC_NOWAIT) == 0)
-//zz 	*flags |= SfMayBlock;
-//zz       break;
-//zz     case VKI_MSGRCV:
-//zz       {
-//zz 	Addr msgp;
-//zz 	Word msgtyp;
-//zz 
-//zz 	msgp = deref_Addr( tid,
-//zz 			   (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgp),
-//zz 			   "msgrcv(msgp)" );
-//zz 	msgtyp = deref_Addr( tid,
-//zz 			     (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
-//zz 			     "msgrcv(msgp)" );
-//zz 
-//zz 	ML_(linux_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
-//zz 
-//zz 	if ((ARG4 & VKI_IPC_NOWAIT) == 0)
-//zz 	  *flags |= SfMayBlock;
-//zz 	break;
-//zz       }
-//zz     case VKI_MSGGET:
-//zz       break;
-//zz     case VKI_MSGCTL:
-//zz       ML_(linux_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
-//zz       break;
-//zz     case VKI_SHMAT:
-//zz       {
-//zz 	UWord w;
-//zz 	PRE_MEM_WRITE( "shmat(raddr)", ARG4, sizeof(Addr) );
-//zz 	w = ML_(generic_PRE_sys_shmat)( tid, ARG2, ARG5, ARG3 );
-//zz 	if (w == 0)
-//zz 	  SET_STATUS_Failure( VKI_EINVAL );
-//zz 	else
-//zz 	  ARG5 = w;
-//zz 	break;
-//zz       }
-//zz     case VKI_SHMDT:
-//zz       if (!ML_(generic_PRE_sys_shmdt)(tid, ARG5))
-//zz 	SET_STATUS_Failure( VKI_EINVAL );
-//zz       break;
-//zz     case VKI_SHMGET:
-//zz       break;
-//zz     case VKI_SHMCTL: /* IPCOP_shmctl */
-//zz       ML_(generic_PRE_sys_shmctl)( tid, ARG2, ARG3, ARG5 );
-//zz       break;
-//zz     default:
-//zz       VG_(message)(Vg_DebugMsg, "FATAL: unhandled syscall(ipc) %d", ARG1 );
-//zz       VG_(core_panic)("... bye!\n");
-//zz       break; /*NOTREACHED*/
-//zz     }
-//zz }
-//zz 
-//zz POST(sys_ipc)
-//zz {
-//zz   vg_assert(SUCCESS);
-//zz   switch (ARG1 /* call */) {
-//zz   case VKI_SEMOP:
-//zz   case VKI_SEMGET:
-//zz     break;
-//zz   case VKI_SEMCTL:
-//zz     {
-//zz       UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
-//zz       ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
-//zz       break;
-//zz     }
-//zz   case VKI_SEMTIMEDOP:
-//zz   case VKI_MSGSND:
-//zz     break;
-//zz   case VKI_MSGRCV:
-//zz     {
-//zz       Addr msgp;
-//zz       Word msgtyp;
-//zz 
-//zz       msgp = deref_Addr( tid,
-//zz                          (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgp),
-//zz                          "msgrcv(msgp)" );
-//zz       msgtyp = deref_Addr( tid,
-//zz                            (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
-//zz                            "msgrcv(msgp)" );
-//zz 
-//zz       ML_(linux_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
-//zz       break;
-//zz     }
-//zz   case VKI_MSGGET:
-//zz     break;
-//zz   case VKI_MSGCTL:
-//zz     ML_(linux_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
-//zz     break;
-//zz   case VKI_SHMAT:
-//zz     {
-//zz       Addr addr;
-//zz 
-//zz       /* force readability. before the syscall it is
-//zz        * indeed uninitialized, as can be seen in
-//zz        * glibc/sysdeps/unix/sysv/linux/shmat.c */
-//zz       POST_MEM_WRITE( ARG4, sizeof( Addr ) );
-//zz 
-//zz       addr = deref_Addr ( tid, ARG4, "shmat(addr)" );
-//zz       if ( addr > 0 ) {
-//zz 	ML_(generic_POST_sys_shmat)( tid, addr, ARG2, ARG5, ARG3 );
-//zz       }
-//zz       break;
-//zz     }
-//zz   case VKI_SHMDT:
-//zz     ML_(generic_POST_sys_shmdt)( tid, RES, ARG5 );
-//zz     break;
-//zz   case VKI_SHMGET:
-//zz     break;
-//zz   case VKI_SHMCTL:
-//zz     ML_(generic_POST_sys_shmctl)( tid, RES, ARG2, ARG3, ARG5 );
-//zz     break;
-//zz   default:
-//zz     VG_(message)(Vg_DebugMsg,
-//zz 		 "FATAL: unhandled syscall(ipc) %d",
-//zz 		 ARG1 );
-//zz     VG_(core_panic)("... bye!\n");
-//zz     break; /*NOTREACHED*/
-//zz   }
-//zz }
+
+static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
+{
+   Addr* a_p = (Addr*)a;
+   PRE_MEM_READ( s, (Addr)a_p, sizeof(Addr) );
+   return *a_p;
+}
+
+PRE(sys_ipc)
+{
+  PRINT("sys_ipc ( %d, %d, %d, %d, %p, %d )", ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+  // XXX: this is simplistic -- some args are not used in all circumstances.
+  PRE_REG_READ6(int, "ipc",
+		vki_uint, call, int, first, int, second, int, third,
+		void *, ptr, long, fifth)
+
+    switch (ARG1 /* call */) {
+    case VKI_SEMOP:
+      ML_(generic_PRE_sys_semop)( tid, ARG2, ARG5, ARG3 );
+      *flags |= SfMayBlock;
+      break;
+    case VKI_SEMGET:
+      break;
+    case VKI_SEMCTL:
+      {
+	UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
+	ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
+	break;
+      }
+    case VKI_SEMTIMEDOP:
+      ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
+      *flags |= SfMayBlock;
+      break;
+    case VKI_MSGSND:
+      ML_(linux_PRE_sys_msgsnd)( tid, ARG2, ARG5, ARG3, ARG4 );
+      if ((ARG4 & VKI_IPC_NOWAIT) == 0)
+	*flags |= SfMayBlock;
+      break;
+    case VKI_MSGRCV:
+      {
+	Addr msgp;
+	Word msgtyp;
+
+	msgp = deref_Addr( tid,
+			   (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgp),
+			   "msgrcv(msgp)" );
+	msgtyp = deref_Addr( tid,
+			     (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
+			     "msgrcv(msgp)" );
+
+	ML_(linux_PRE_sys_msgrcv)( tid, ARG2, msgp, ARG3, msgtyp, ARG4 );
+
+	if ((ARG4 & VKI_IPC_NOWAIT) == 0)
+	  *flags |= SfMayBlock;
+	break;
+      }
+    case VKI_MSGGET:
+      break;
+    case VKI_MSGCTL:
+      ML_(linux_PRE_sys_msgctl)( tid, ARG2, ARG3, ARG5 );
+      break;
+    case VKI_SHMAT:
+      {
+	UWord w;
+	PRE_MEM_WRITE( "shmat(raddr)", ARG4, sizeof(Addr) );
+	w = ML_(generic_PRE_sys_shmat)( tid, ARG2, ARG5, ARG3 );
+	if (w == 0)
+	  SET_STATUS_Failure( VKI_EINVAL );
+	else
+	  ARG5 = w;
+	break;
+      }
+    case VKI_SHMDT:
+      if (!ML_(generic_PRE_sys_shmdt)(tid, ARG5))
+	SET_STATUS_Failure( VKI_EINVAL );
+      break;
+    case VKI_SHMGET:
+      break;
+    case VKI_SHMCTL: /* IPCOP_shmctl */
+      ML_(generic_PRE_sys_shmctl)( tid, ARG2, ARG3, ARG5 );
+      break;
+    default:
+      VG_(message)(Vg_DebugMsg, "FATAL: unhandled syscall(ipc) %d", ARG1 );
+      VG_(core_panic)("... bye!\n");
+      break; /*NOTREACHED*/
+    }
+}
+
+POST(sys_ipc)
+{
+  vg_assert(SUCCESS);
+  switch (ARG1 /* call */) {
+  case VKI_SEMOP:
+  case VKI_SEMGET:
+    break;
+  case VKI_SEMCTL:
+    {
+      UWord arg = deref_Addr( tid, ARG5, "semctl(arg)" );
+      ML_(generic_PRE_sys_semctl)( tid, ARG2, ARG3, ARG4, arg );
+      break;
+    }
+  case VKI_SEMTIMEDOP:
+  case VKI_MSGSND:
+    break;
+  case VKI_MSGRCV:
+    {
+      Addr msgp;
+      Word msgtyp;
+
+      msgp = deref_Addr( tid,
+                         (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgp),
+                         "msgrcv(msgp)" );
+      msgtyp = deref_Addr( tid,
+                           (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgtyp),
+                           "msgrcv(msgp)" );
+
+      ML_(linux_POST_sys_msgrcv)( tid, RES, ARG2, msgp, ARG3, msgtyp, ARG4 );
+      break;
+    }
+  case VKI_MSGGET:
+    break;
+  case VKI_MSGCTL:
+    ML_(linux_POST_sys_msgctl)( tid, RES, ARG2, ARG3, ARG5 );
+    break;
+  case VKI_SHMAT:
+    {
+      Addr addr;
+
+      /* force readability. before the syscall it is
+       * indeed uninitialized, as can be seen in
+       * glibc/sysdeps/unix/sysv/linux/shmat.c */
+      POST_MEM_WRITE( ARG4, sizeof( Addr ) );
+
+      addr = deref_Addr ( tid, ARG4, "shmat(addr)" );
+      if ( addr > 0 ) {
+	ML_(generic_POST_sys_shmat)( tid, addr, ARG2, ARG5, ARG3 );
+      }
+      break;
+    }
+  case VKI_SHMDT:
+    ML_(generic_POST_sys_shmdt)( tid, RES, ARG5 );
+    break;
+  case VKI_SHMGET:
+    break;
+  case VKI_SHMCTL:
+    ML_(generic_POST_sys_shmctl)( tid, RES, ARG2, ARG3, ARG5 );
+    break;
+  default:
+    VG_(message)(Vg_DebugMsg,
+		 "FATAL: unhandled syscall(ipc) %d",
+		 ARG1 );
+    VG_(core_panic)("... bye!\n");
+    break; /*NOTREACHED*/
+  }
+}
 
 PRE(sys_clone)
 {
@@ -1283,7 +1283,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    PLAX_(__NR_mmap,              sys_mmap),               //  90
    GENXY(__NR_munmap,            sys_munmap),             //  91
 // _____(__NR_truncate,          sys_truncate),           //  92
-// _____(__NR_ftruncate,         sys_ftruncate),          //  93
+   GENX_(__NR_ftruncate,         sys_ftruncate),          //  93
 // _____(__NR_fchmod,            sys_fchmod),             //  94
 
 // _____(__NR_fchown,            sys_fchown),             //  95
@@ -1312,7 +1312,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_swapoff,           sys_swapoff),            // 115
 // _____(__NR_sysinfo,           sys_sysinfo),            // 116
-// _____(__NR_ipc,               sys_ipc),                // 117
+   PLAXY(__NR_ipc,               sys_ipc),                // 117
 // _____(__NR_fsync,             sys_fsync),              // 118
 // _____(__NR_sigreturn,         sys_sigreturn),          // 119
 
@@ -1394,7 +1394,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_capget,            sys_capget),             // 183
 // _____(__NR_capset,            sys_capset),             // 184
 
-// _____(__NR_sigaltstack,       sys_sigaltstack),        // 185
+   GENXY(__NR_sigaltstack,       sys_sigaltstack),        // 185
 // _____(__NR_sendfile,          sys_sendfile),           // 186
 // _____(__NR_getpmsg,           sys_getpmsg),            // 187
 // _____(__NR_putpmsg,           sys_putpmsg),            // 188
@@ -1420,7 +1420,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_madvise,           sys_madvise),            // 205
 // _____(__NR_mincore,           sys_mincore),            // 206
-// _____(__NR_gettid,            sys_gettid),             // 207
+   LINX_(__NR_gettid,            sys_gettid),             // 207
 // _____(__NR_tkill,             sys_tkill),              // 208
 // _____(__NR_setxattr,          sys_setxattr),           // 209
 

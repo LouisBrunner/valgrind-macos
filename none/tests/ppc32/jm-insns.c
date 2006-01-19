@@ -166,7 +166,7 @@ case I chased).
 
 
 #include <stdint.h>
-
+#include <sys/mman.h>
 
 /* Something of the same size as void*, so can be safely be coerced
    to/from a pointer type. Also same size as the host's gp registers. */
@@ -232,6 +232,25 @@ asm(".section  \".text\"\n"                \
     )
 #endif // #ifndef __powerpc64__
 
+
+/* Return a pointer to a 1-page area where is is safe to both write
+   and execute instructions.  Area is filled with 'trap' insns. */
+static
+uint32_t* get_rwx_area ( void )
+{
+   int i;
+   static uint32_t* p = NULL;
+   if (p == NULL) {
+      p = mmap(NULL, 4096, PROT_READ|PROT_WRITE|PROT_EXEC,
+                           MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+      assert(p != MAP_FAILED);
+   }
+
+   for (i = 0; i < 4096/sizeof(uint32_t); i++)
+      p[i] = 0x7fe00008; /* trap */
+
+   return p;
+}
 
 
 /* -------------- BEGIN #include "test-ppc.h" -------------- */
@@ -4716,29 +4735,37 @@ void patch_op_imm16 (uint32_t *p_insn, uint16_t imm)
 }
 
 
+/* Copy the 2 insn function starting at p_func_F to func_buf[], and
+   return a possibly different pointer, which, when called, runs the
+   copy in func_buf[]. */
 static inline
-void init_function( test_func_t *p_func, uint32_t func_buf[] )
+test_func_t init_function( test_func_t p_func_F, uint32_t func_buf[] )
 {
-   uint32_t *p;
+   uint32_t* p_func = (uint32_t*)p_func_F;
 #ifndef __powerpc64__
-   p = (uint32_t *)*p_func;
-   func_buf[0] = p[0];
-   func_buf[1] = p[1];
-   *p_func = (void *)func_buf;
+   func_buf[0] = p_func[0];
+   func_buf[1] = p_func[1];
+   return (test_func_t)&func_buf[0];
 #else
-   p = (uint32_t *)((uint64_t *)*p_func)[0];
-   func_buf[0] = p[0];
-   func_buf[1] = p[1];
-   ((uint64_t *)*p_func)[0] = (uint64_t)&func_buf[0];
+   /* p_func points to a function descriptor, the first word of which
+      points to the real code.  Copy the code itself but not the
+      descriptor, and just swizzle the descriptor's entry pointer. */
+   uint64_t* descr = (uint64_t*)p_func;
+   uint32_t* entry = (uint32_t*)(descr[0]);
+   func_buf[0] = entry[0];
+   func_buf[1] = entry[1];
+   descr[0] = (uint64_t)&func_buf[0];
+   return (test_func_t)descr;
 #endif // #ifndef __powerpc64__
 }
 
 
 static void test_int_one_reg_imm16 (const char* name,
-                                    test_func_t func,
+                                    test_func_t func_IN,
                                     unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j;
@@ -4746,7 +4773,7 @@ static void test_int_one_reg_imm16 (const char* name,
    for (i=0; i<nb_iargs; i++) {
       for (j=0; j<nb_ii16; j++) {
          /* Patch up the instruction */
-         init_function( &func, func_buf );
+         func = init_function( func_IN, func_buf );
          patch_op_imm16(&func_buf[0], ii16[j]);
 
          r14 = iargs[i];
@@ -4809,10 +4836,11 @@ static void test_int_one_reg_imm16 (const char* name,
  * sradi       rA,rS,SH
  */
 
-static void rlwi_cb (const char* name, test_func_t func,
+static void rlwi_cb (const char* name, test_func_t func_IN,
                      unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j, k, l, arg_step;
@@ -4826,7 +4854,7 @@ static void rlwi_cb (const char* name, test_func_t func,
          for (k=0; k<32; k+=arg_step) {
             for (l=0; l<32; l+=arg_step) {
                /* Patch up the instruction */
-               init_function( &func, func_buf );
+               func = init_function( func_IN, func_buf );
                _patch_op_imm(&func_buf[0], j, 11, 5);
                _patch_op_imm(&func_buf[0], k, 6, 5);
                patch_op_imm(&func_buf[0], l, 1, 5);
@@ -4869,10 +4897,11 @@ static void rlwi_cb (const char* name, test_func_t func,
    }
 }
 
-static void rlwnm_cb (const char* name, test_func_t func,
+static void rlwnm_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j, k, l, arg_step;
@@ -4884,7 +4913,7 @@ static void rlwnm_cb (const char* name, test_func_t func,
          for (k=0; k<32; k+=arg_step) {
             for (l=0; l<32; l+=arg_step) {
                /* Patch up the instruction */
-               init_function( &func, func_buf );
+               func = init_function( func_IN, func_buf );
                _patch_op_imm(&func_buf[0], k, 6, 5);
                patch_op_imm(&func_buf[0], l, 1, 5);
 
@@ -4927,10 +4956,11 @@ static void rlwnm_cb (const char* name, test_func_t func,
    }
 }
 
-static void srawi_cb (const char* name, test_func_t func,
+static void srawi_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j, arg_step;
@@ -4940,7 +4970,7 @@ static void srawi_cb (const char* name, test_func_t func,
    for (i=0; i<nb_iargs; i++) {
       for (j=0; j<32; j+=arg_step) {
          /* Patch up the instruction */
-         init_function( &func, func_buf );
+         func = init_function( func_IN, func_buf );
          patch_op_imm(&func_buf[0], j, 11, 5);
 
          r14 = iargs[i];
@@ -4979,10 +5009,11 @@ static void srawi_cb (const char* name, test_func_t func,
    }
 }
 
-static void mcrf_cb (const char* name, test_func_t func,
+static void mcrf_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j, k, arg_step;
    
@@ -4992,7 +5023,7 @@ static void mcrf_cb (const char* name, test_func_t func,
       for (j=0; j<8; j+=arg_step) {
          for (k=0; k<8; k+=arg_step) {
             /* Patch up the instruction */
-            init_function( &func, func_buf );
+            func = init_function( func_IN, func_buf );
             _patch_op_imm(&func_buf[0], j, 23, 3);
             patch_op_imm(&func_buf[0], k, 18, 3);
 
@@ -5039,10 +5070,11 @@ static void mcrfs_cb (const char* name, test_func_t func,
 #endif
 
 
-static void mcrxr_cb (const char* name, test_func_t func,
+static void mcrxr_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j, k, arg_step;
    
@@ -5052,7 +5084,7 @@ static void mcrxr_cb (const char* name, test_func_t func,
       j = i << 28;
       for (k=0; k<8; k+=arg_step) {
          /* Patch up the instruction */
-         init_function( &func, func_buf );
+         func = init_function( func_IN, func_buf );
          patch_op_imm(&func_buf[0], k, 23, 3);
 
          r14 = j;
@@ -5396,10 +5428,11 @@ static void mftb_cb (const char* name, test_func_t func,
 }
 #endif
 
-static void mtcrf_cb (const char* name, test_func_t func,
+static void mtcrf_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j, arg_step;
    
@@ -5408,7 +5441,7 @@ static void mtcrf_cb (const char* name, test_func_t func,
    for (i=0; i<nb_iargs; i++) {
       for (j=0; j<256; j+=arg_step) {
          /* Patch up the instruction */
-         init_function( &func, func_buf );
+         func = init_function( func_IN, func_buf );
          patch_op_imm(&func_buf[0], j, 12, 8);
 
          r14 = iargs[i];
@@ -5597,10 +5630,11 @@ static void mtspr_cb (const char* name, test_func_t func,
 }
 
 #ifdef __powerpc64__
-static void rldc_cb (const char* name, test_func_t func,
+static void rldc_cb (const char* name, test_func_t func_IN,
                      unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j, k, arg_step;
@@ -5611,7 +5645,7 @@ static void rldc_cb (const char* name, test_func_t func,
       for (j=0; j<nb_iargs; j++) {
          for (k=0; k<64; k+=arg_step) {
             /* Patch up the instruction */
-            init_function( &func, func_buf );
+            func = init_function( func_IN, func_buf );
             patch_op_imm(&func_buf[0], (((k & 0x1F)<<1) | ((k>>5)&1)), 5, 6);
             
             r14 = iargs[i];
@@ -5648,10 +5682,11 @@ static void rldc_cb (const char* name, test_func_t func,
    }
 }
 
-static void rldi_cb (const char* name, test_func_t func,
+static void rldi_cb (const char* name, test_func_t func_IN,
                      unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j, k, arg_step;
@@ -5662,7 +5697,7 @@ static void rldi_cb (const char* name, test_func_t func,
       for (j=0; j<64; j+=arg_step) {     // SH
          for (k=0; k<64; k+=arg_step) {  // MB|ME
             /* Patch up the instruction */
-            init_function( &func, func_buf );
+            func = init_function( func_IN, func_buf );
             _patch_op_imm(&func_buf[0], (j & 0x1F), 11, 5);
             _patch_op_imm(&func_buf[0], ((j>>5)&1), 1, 1);
             patch_op_imm(&func_buf[0], (((k & 0x1F)<<1) | ((k>>5)&1)), 5, 6);
@@ -5700,10 +5735,11 @@ static void rldi_cb (const char* name, test_func_t func,
    }
 }
 
-static void sradi_cb (const char* name, test_func_t func,
+static void sradi_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, j, arg_step;
@@ -5713,7 +5749,7 @@ static void sradi_cb (const char* name, test_func_t func,
    for (i=0; i<nb_iargs; i++) {
       for (j=0; j<64; j+=arg_step) {     // SH
          /* Patch up the instruction */
-         init_function( &func, func_buf );
+         func = init_function( func_IN, func_buf );
          _patch_op_imm(&func_buf[0], (j & 0x1F), 11, 5);
          patch_op_imm(&func_buf[0], ((j>>5)&1), 1, 1);
             
@@ -5922,10 +5958,11 @@ static void test_int_special (const char* name, test_func_t func,
 
 
 static void test_int_ld_one_reg_imm16 (const char* name,
-                                       test_func_t func,
+                                       test_func_t func_IN,
                                        unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res, base;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, offs, is_lwa=0;
@@ -5940,7 +5977,7 @@ static void test_int_ld_one_reg_imm16 (const char* name,
       offs = i * sizeof(HWord_t);
 
       /* Patch up the instruction */
-      init_function( &func, func_buf );
+      func = init_function( func_IN, func_buf );
       if (is_lwa)
          patch_op_imm(&func_buf[0], offs>>2, 2, 14);
       else
@@ -5986,7 +6023,7 @@ static void test_int_ld_one_reg_imm16 (const char* name,
       offs = i * sizeof(HWord_t);
 
       /* Patch up the instruction */
-      init_function( &func, func_buf );
+      func = init_function( func, func_buf );
       patch_op_imm16(&func_buf[0], offs);
 
       r14 = base;
@@ -6071,10 +6108,11 @@ static void test_int_ld_two_regs (const char* name,
 }
 
 static void test_int_st_two_regs_imm16 (const char* name,
-                                        test_func_t func,
+                                        test_func_t func_IN,
                                         unused uint32_t test_flags)
 {
-   uint32_t func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    int i, offs, k;
    HWord_t *iargs_priv, base;
@@ -6091,7 +6129,7 @@ static void test_int_st_two_regs_imm16 (const char* name,
       offs = i * sizeof(HWord_t);
 
       /* Patch up the instruction */
-      init_function( &func, func_buf );
+      func = init_function( func_IN, func_buf );
       patch_op_imm16(&func_buf[0], offs);
 
       r14 = iargs[i];             // read from iargs
@@ -6137,7 +6175,7 @@ static void test_int_st_two_regs_imm16 (const char* name,
       offs = i * sizeof(HWord_t);
 
       /* Patch up the instruction */
-      init_function( &func, func_buf );
+      func = init_function( func, func_buf );
       patch_op_imm16(&func_buf[0], offs);
 
       r14 = iargs[nb_iargs-1+i];  // read from iargs
@@ -6486,10 +6524,12 @@ static void test_float_special (const char* name, test_func_t func,
 
 
 static void test_float_ld_one_reg_imm16 (const char* name,
-                                         test_func_t func,
+                                         test_func_t func_IN,
                                          unused uint32_t test_flags)
 {
-   uint32_t base, func_buf[2];
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
+   uint32_t base;
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    volatile double src, res;
    int i, offs;
@@ -6506,7 +6546,7 @@ static void test_float_ld_one_reg_imm16 (const char* name,
       }
 
       /* Patch up the instruction */
-      init_function( &func, func_buf );
+      func = init_function( func_IN, func_buf );
       patch_op_imm16(&func_buf[0], offs);
 
       // load from fargs[idx] => r14 + offs
@@ -6611,11 +6651,12 @@ static void test_float_ld_two_regs (const char* name,
 }
 
 static void test_float_st_two_regs_imm16 (const char* name,
-                                          test_func_t func,
+                                          test_func_t func_IN,
                                           unused uint32_t test_flags)
 {
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    HWord_t base;
-   uint32_t func_buf[2];
    volatile uint32_t flags, xer, tmpcr, tmpxer;
    double src, *p_dst;
    int i, offs;
@@ -6651,7 +6692,7 @@ static void test_float_st_two_regs_imm16 (const char* name,
       *p_dst = 0;  // clear dst
 
       /* Patch up the instruction */
-      init_function( &func, func_buf );
+      func = init_function( func_IN, func_buf );
       patch_op_imm16(&func_buf[0], offs);
 
       // read from fargs[idx] => f14
@@ -7105,13 +7146,14 @@ static void vs128_cb (const char* name, test_func_t func,
    }
 }
 
-static void vsplt_cb (const char* name, test_func_t func,
+static void vsplt_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
    volatile vector unsigned int vec_in1, vec_out, vscr;
-   uint32_t func_buf[2];
    unsigned int *src1, *dst;
    int i,j;
 #if defined TEST_VSCR_SAT
@@ -7125,7 +7167,7 @@ static void vsplt_cb (const char* name, test_func_t func,
          vec_out = (vector unsigned int){ 0,0,0,0 };
 
          /* Patch up the instruction */
-         init_function( &func, func_buf );
+         func = init_function( func_IN, func_buf );
          patch_op_imm(&func_buf[0], j, 16, 5);
 
          /* Save flags */
@@ -7174,13 +7216,14 @@ static void vsplt_cb (const char* name, test_func_t func,
    }
 }
 
-static void vspltis_cb (const char* name, test_func_t func,
+static void vspltis_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
    volatile vector unsigned int vec_out, vscr;
-   uint32_t func_buf[2];
    unsigned int *dst;
    int i;
 #if defined TEST_VSCR_SAT
@@ -7191,7 +7234,7 @@ static void vspltis_cb (const char* name, test_func_t func,
       vec_out = (vector unsigned int){ 0,0,0,0 };
       
       /* Patch up the instruction */
-      init_function( &func, func_buf );
+      func = init_function( func_IN, func_buf );
       patch_op_imm(&func_buf[0], i, 16, 5);
       
       /* Save flags */
@@ -7231,13 +7274,14 @@ static void vspltis_cb (const char* name, test_func_t func,
    }
 }
 
-static void vsldoi_cb (const char* name, test_func_t func,
+static void vsldoi_cb (const char* name, test_func_t func_IN,
                        unused uint32_t test_flags)
 {
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
    volatile vector unsigned int vec_in1, vec_in2, vec_out, vscr;
-   uint32_t func_buf[2];
    unsigned int *src1, *src2, *dst;
    int i,j,k;
 #if defined TEST_VSCR_SAT
@@ -7252,7 +7296,7 @@ static void vsldoi_cb (const char* name, test_func_t func,
             vec_out = (vector unsigned int){ 0,0,0,0 };
 
             /* Patch up the instruction */
-            init_function( &func, func_buf );
+            func = init_function( func_IN, func_buf );
             patch_op_imm(&func_buf[0], k, 6, 4);
             
             /* Save flags */
@@ -7789,13 +7833,14 @@ static void test_av_float_three_args (const char* name, test_func_t func,
    }
 }
 
-static void vcvt_cb (const char* name, test_func_t func,
+static void vcvt_cb (const char* name, test_func_t func_IN,
                      unused uint32_t test_flags)
 {
+   volatile test_func_t func;
+   uint32_t* func_buf = get_rwx_area();
    volatile uint32_t flags, tmpcr;
    volatile vector unsigned int tmpvscr;
    volatile vector unsigned int vec_in, vec_out, vscr;
-   uint32_t func_buf[2];
    unsigned int *src, *dst;
    int i,j;
 #if defined TEST_VSCR_SAT
@@ -7809,7 +7854,7 @@ static void vcvt_cb (const char* name, test_func_t func,
          vec_out = (vector unsigned int){ 0,0,0,0 };
 
          /* Patch up the instruction */
-         init_function( &func, func_buf );
+         func = init_function( func_IN, func_buf );
          patch_op_imm(&func_buf[0], j, 16, 5);
          
          /* Save flags */

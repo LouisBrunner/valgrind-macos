@@ -752,7 +752,7 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
    /* Throw out any cases we don't need.  In theory there might be a
       day where we need to handle others, but not today. */
 
-   if (nElems != 16)
+   if (nElems != 16 && nElems != 32)
       vpanic("genGuestArrayOffset(ppc64 host)(1)");
 
    switch (elemSz) {
@@ -768,7 +768,7 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
    /* Compute off into a reg, %off.  Then return:
 
          addi %tmp, %off, bias (if bias != 0)
-         andi %tmp, 15
+         andi %tmp, nElems-1
          sldi %tmp, shift
          addi %tmp, %tmp, base
          ... Baseblockptr + %tmp ...

@@ -93,7 +93,7 @@ vrsave    Non-volatile 32-bit register
 /*--- Vex's representation of the PPC64 CPU state             ---*/
 /*---------------------------------------------------------------*/
 
-#define VEX_GUEST_PPC64_REDIR_STACK_SIZE 16
+#define VEX_GUEST_PPC64_REDIR_STACK_SIZE (16/*entries*/ * 2/*words per entry*/)
 
 typedef
    struct {
@@ -257,13 +257,14 @@ typedef
          Note, this is only set for wrap-style redirects, not for
          replace-style ones. */
       /* 1112 */ ULong guest_NRADDR;
+      /* 1120 */ ULong guest_NRADDR_GPR2;
 
      /* A grows-upwards stack for hidden saves/restores of LR and R2
         needed for function interception and wrapping on ppc64-linux.
         A horrible hack.  REDIR_SP points to the highest live entry,
         and so starts at -1. */
-      /* 1120 */ ULong guest_REDIR_SP;
-      /* 1128 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
+      /* 1128 */ ULong guest_REDIR_SP;
+      /* 1136 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
 
       /* Padding to make it have an 8-aligned size */
       /* UInt  padding; */

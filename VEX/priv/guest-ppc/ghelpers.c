@@ -615,6 +615,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_TILEN   = 0;
 
    vex_state->guest_NRADDR = 0;
+   vex_state->guest_NRADDR_GPR2 = 0;
 
    vex_state->guest_REDIR_SP = -1;
    for (i = 0; i < VEX_GUEST_PPC64_REDIR_STACK_SIZE; i++)
@@ -671,10 +672,16 @@ Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff,
 Bool guest_ppc64_state_requires_precise_mem_exns ( Int minoff, 
                                                    Int maxoff )
 {
+   /* Given that R2 is a Big Deal in the ELF ppc64 ABI, it seems
+      prudent to be conservative with it, even though thus far there
+      is no evidence to suggest that it actually needs to be kept up
+      to date wrt possible exceptions. */
    Int lr_min  = offsetof(VexGuestPPC64State, guest_LR);
    Int lr_max  = lr_min + 8 - 1;
    Int r1_min  = offsetof(VexGuestPPC64State, guest_GPR1);
    Int r1_max  = r1_min + 8 - 1;
+   Int r2_min  = offsetof(VexGuestPPC64State, guest_GPR2);
+   Int r2_max  = r2_min + 8 - 1;
    Int cia_min = offsetof(VexGuestPPC64State, guest_CIA);
    Int cia_max = cia_min + 8 - 1;
 
@@ -686,6 +693,12 @@ Bool guest_ppc64_state_requires_precise_mem_exns ( Int minoff,
 
    if (maxoff < r1_min || minoff > r1_max) {
       /* no overlap with R1 */
+   } else {
+      return True;
+   }
+
+   if (maxoff < r2_min || minoff > r2_max) {
+      /* no overlap with R2 */
    } else {
       return True;
    }
@@ -754,7 +767,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 10,
+          .n_alwaysDefd = 11,
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD64(guest_CIA),
@@ -765,8 +778,9 @@ VexGuestLayout
 	      /*  5 */ ALWAYSDEFD64(guest_FPROUND),
 	      /*  6 */ ALWAYSDEFD64(guest_RESVN),
 	      /*  7 */ ALWAYSDEFD64(guest_NRADDR),
-	      /*  8 */ ALWAYSDEFD64(guest_REDIR_SP),
-	      /*  9 */ ALWAYSDEFD64(guest_REDIR_STACK)
+	      /*  8 */ ALWAYSDEFD64(guest_NRADDR_GPR2),
+	      /*  9 */ ALWAYSDEFD64(guest_REDIR_SP),
+	      /* 10 */ ALWAYSDEFD64(guest_REDIR_STACK)
             }
         };
 

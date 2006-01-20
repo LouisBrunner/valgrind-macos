@@ -109,6 +109,7 @@
       7C210B78 (or 1,1,1)   %R3 = client_request ( %R4 )
       7C421378 (or 2,2,2)   %R3 = guest_NRADDR
       7C631B78 (or 3,3,3)   branch-and-link-to-noredir %R11
+      7C842378 (or 4,4,4)   %R3 = guest_NRADDR_GPR2 (64-bit mode only)
 
    Any other bytes following the 16-byte preamble are illegal and
    constitute a failure in instruction decoding.  This all assumes
@@ -234,6 +235,10 @@ static void* fnptr_to_fnentry( void* f )
 #define OFFB_TILEN      offsetofPPCGuestState(guest_TILEN)
 #define OFFB_RESVN      offsetofPPCGuestState(guest_RESVN)
 #define OFFB_NRADDR     offsetofPPCGuestState(guest_NRADDR)
+
+/* This only exists in the 64-bit guest state */
+#define OFFB64_NRADDR_GPR2 \
+                        offsetof(VexGuestPPC64State,guest_NRADDR_GPR2)
 
 
 /*------------------------------------------------------------*/
@@ -2248,7 +2253,7 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
          - Non-IEEE Mode
       */
       if (mask & 0xFC) {  // Exception Control, Non-IEE mode
-         VexEmWarn ew = EmWarn_PPC32exns;
+         VexEmWarn ew = EmWarn_PPCexns;
 
          /* If any of the src::exception_control bits are actually set,
             side-exit to the next insn, reporting the warning,
@@ -8463,6 +8468,17 @@ DisResult disInstr_PPC_WRK (
             irbb->next     = getIReg(11);
             irbb->jumpkind = Ijk_NoRedir;
             dres.whatNext  = Dis_StopHere;
+            goto decode_success;
+         }
+         else
+         if (mode64 
+             && getUIntBigendianly(code+16) == 0x7C842378 /* or 4,4,4 */) {
+            /* %R3 = guest_NRADDR_GPR2 */
+            DIP("r3 = guest_NRADDR_GPR2\n");
+            delta += 20;
+            dres.len = 20;
+            vassert(ty == Ity_I64);
+            putIReg(3, IRExpr_Get( OFFB64_NRADDR_GPR2, ty ));
             goto decode_success;
          }
          /* We don't know what it is.  Set opc1/opc2 so decode_failure

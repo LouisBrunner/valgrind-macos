@@ -923,12 +923,30 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          show = (ew < 0 || ew >= EmWarn_NUMBER)
                    ? True
                    : counts[ew]++ < 3;
-         if (show && VG_(clo_show_emwarns)) {
+         if (show && VG_(clo_show_emwarns) && !VG_(clo_xml)) {
             VG_(message)( Vg_UserMsg,
                           "Emulation warning: unsupported action:");
             VG_(message)( Vg_UserMsg, "  %s", what);
             VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
          }
+         break;
+      }
+
+      case VEX_TRC_JMP_EMFAIL: {
+         VexEmWarn ew;
+         HChar*    what;
+         ew   = (VexEmWarn)VG_(threads)[tid].arch.vex.guest_EMWARN;
+         what = (ew < 0 || ew >= EmWarn_NUMBER)
+                   ? "unknown (?!)"
+                   : LibVEX_EmWarn_string(ew);
+         VG_(message)( Vg_UserMsg,
+                       "Emulation fatal error -- Valgrind cannot continue:");
+         VG_(message)( Vg_UserMsg, "  %s", what);
+         VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
+         VG_(message)(Vg_UserMsg, "");
+         VG_(message)(Vg_UserMsg, "Valgrind has to exit now.  Sorry.");
+         VG_(message)(Vg_UserMsg, "");
+         VG_(exit)(1);
          break;
       }
 

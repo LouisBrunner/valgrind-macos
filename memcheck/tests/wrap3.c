@@ -24,8 +24,8 @@ int fact2 ( int n )
 
 int I_WRAP_SONAME_FNNAME_ZU(NONE,fact1) ( int n )
 {
-   int   r;
-   void* fn;
+   int    r;
+   OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    printf("in wrapper1-pre:  fact(%d)\n", n);
    CALL_FN_W_W(r,fn,n);
@@ -35,8 +35,8 @@ int I_WRAP_SONAME_FNNAME_ZU(NONE,fact1) ( int n )
 
 int I_WRAP_SONAME_FNNAME_ZU(NONE,fact2) ( int n )
 {
-   int   r;
-   void* fn;
+   int    r;
+   OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    printf("in wrapper2-pre:  fact(%d)\n", n);
    CALL_FN_W_W(r,fn,n);

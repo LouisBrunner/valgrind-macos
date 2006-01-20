@@ -15,8 +15,8 @@ int fact ( int n )
 
 int I_WRAP_SONAME_FNNAME_ZU(NONE,fact) ( int n )
 {
-   int r;
-   void* orig;
+   int    r;
+   OrigFn orig;
    VALGRIND_GET_ORIG_FN(orig);
    printf("in wrapper1-pre:  fact(%d)\n", n);
    CALL_FN_W_W(r, orig, n);

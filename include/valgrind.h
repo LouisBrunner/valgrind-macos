@@ -149,13 +149,18 @@
       _zzq_arg1..4  request params
 
    The other two macros are used to support function wrapping, and are
-   a lot simpler.  VALGRIND_GET_NRADDR returns the value of the
-   guest's NRADDR pseudo-register.  VALGRIND_CALL_NOREDIR_* behaves
-   the same as the following on the guest, but guarantees that the
-   branch instruction will not be redirected: x86: call *%eax, amd64:
-   call *%rax, ppc32/ppc64: bctrl.  VALGRIND_CALL_NOREDIR is just
-   text, not a complete inline asm, since it needs to be combined with
-   more magic inline asm stuff to be useful.
+   a lot simpler.  VALGRIND_GET_NR_CONTEXT returns the value of the
+   guest's NRADDR pseudo-register and whatever other information is
+   needed to safely run the call original from the wrapper: on
+   ppc64-linux, the R2 value at the divert point is also needed.  This
+   information is abstracted into a user-visible type, OrigFn.
+
+   VALGRIND_CALL_NOREDIR_* behaves the same as the following on the
+   guest, but guarantees that the branch instruction will not be
+   redirected: x86: call *%eax, amd64: call *%rax, ppc32/ppc64:
+   branch-and-link-to-r11.  VALGRIND_CALL_NOREDIR is just text, not a
+   complete inline asm, since it needs to be combined with more magic
+   inline asm stuff to be useful.
 */
 
 /* ---------------------------- x86 ---------------------------- */
@@ -251,6 +256,13 @@
 /* --------------------------- ppc32 --------------------------- */
 
 #if defined(ARCH_ppc32)
+
+typedef
+   struct { 
+      unsigned long int nraddr; /* where's the code? */
+   }
+   OrigFn;
+
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
                      "rlwinm 0,0,3,0,0  ; rlwinm 0,0,13,0,0\n\t"  \
                      "rlwinm 0,0,29,0,0 ; rlwinm 0,0,19,0,0\n\t"
@@ -277,8 +289,9 @@
     _zzq_rlval = _zzq_result;                                     \
   }
 
-#define VALGRIND_GET_NRADDR(_zzq_rlval)                           \
-  { register unsigned int __addr __asm__("r3");                   \
+#define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
+  { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
+    register unsigned int __addr __asm__("r3");                   \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %R3 = guest_NRADDR */                     \
                      "or 2,2,2"                                   \
@@ -286,7 +299,7 @@
                      :                                            \
                      : "cc", "memory"                             \
                     );                                            \
-    _zzq_rlval = (void*)__addr;                                   \
+    _zzq_orig->nraddr = __addr;                                   \
   }
 
 #define VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                   \
@@ -298,6 +311,14 @@
 /* --------------------------- ppc64 --------------------------- */
 
 #if defined(ARCH_ppc64)
+
+typedef
+   struct { 
+      unsigned long long int nraddr; /* where's the code? */
+      unsigned long long int r2;  /* what tocptr do we need? */
+   }
+   OrigFn;
+
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
                      "rotldi 0,0,3  ; rotldi 0,0,13\n\t"          \
                      "rotldi 0,0,61 ; rotldi 0,0,51\n\t"
@@ -324,8 +345,9 @@
     _zzq_rlval = _zzq_result;                                     \
   }
 
-#define VALGRIND_GET_NRADDR(_zzq_rlval)                           \
-  { register unsigned long long int __addr __asm__("r3");         \
+#define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
+  { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
+    register unsigned long long int __addr __asm__("r3");         \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %R3 = guest_NRADDR */                     \
                      "or 2,2,2"                                   \
@@ -333,7 +355,15 @@
                      :                                            \
                      : "cc", "memory"                             \
                     );                                            \
-    _zzq_rlval = (void*)__addr;                                   \
+    _zzq_orig->nraddr = __addr;                                   \
+    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
+                     /* %R3 = guest_NRADDR_GPR2 */                \
+                     "or 4,4,4"                                   \
+                     : "=r" (__addr)                              \
+                     :                                            \
+                     : "cc", "memory"                             \
+                    );                                            \
+    _zzq_orig->r2 = __addr;                                       \
   }
 
 #define VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                   \
@@ -380,10 +410,11 @@
 #define I_WRAP_SONAME_FNNAME_ZZ(soname,fnname)                    \
    _vgwZZ_##soname##_##fnname
 
-/* Use this macro from within a wrapper function to get the address of
-   the original function.  Once you have that you can then use it in
-   one of the CALL_FN_ macros. */
-#define VALGRIND_GET_ORIG_FN(_lval)  VALGRIND_GET_NRADDR(_lval)
+/* Use this macro from within a wrapper function to collect the
+   context (address and possibly other info) of the original function.
+   Once you have that you can then use it in one of the CALL_FN_
+   macros.  The type of the argument _lval is OrigFn. */
+#define VALGRIND_GET_ORIG_FN(_lval)  VALGRIND_GET_NR_CONTEXT(_lval)
 
 /* Derivatives of the main macros below, for calling functions
    returning void. */
@@ -744,10 +775,10 @@
 
 #define CALL_FN_W_v(lval, fnptr)                                  \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[1];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       __asm__ volatile(                                           \
          "mr 11,%1\n\t"                                           \
          "lwz 11,0(11)\n\t"  /* target->r11 */                    \
@@ -818,70 +849,79 @@
 /* These CALL_FN_ macros assume that on ppc64-linux, sizeof(unsigned
    long) == 8. */
 
-#define CALL_FN_W_v(lval, fnptr)                                  \
+#define CALL_FN_W_v(lval, orig)                                   \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
-      volatile unsigned long _argvec[1+1];                        \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+0];                        \
       volatile unsigned long _res;                                \
-      _argvec[1+0] = (unsigned long)_fnptr;                       \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1] = (unsigned long)_orig.r2;                       \
+      _argvec[2] = (unsigned long)_orig.nraddr;                   \
       __asm__ volatile(                                           \
          "mr 11,%1\n\t"                                           \
-         "std 2,-8(11)\n\t" /* save tocptr */                     \
-         "ld 11,0(11)\n\t"  /* target->r11 */                     \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
          VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
          "mr 11,%1\n\t"                                           \
          "mr %0,3\n\t"                                            \
-         "ld 2,-8(11)" /* restore tocptr */                       \
+         "ld 2,-16(11)" /* restore tocptr */                      \
          : /*out*/   "=r" (_res)                                  \
-         : /*in*/    "r" (&_argvec[1+0])                          \
+         : /*in*/    "r" (&_argvec[2])                            \
          : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_W(lval, fnptr, arg1)                            \
+#define CALL_FN_W_W(lval, orig, arg1)                             \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
-      volatile unsigned long _argvec[1+2];                        \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+1];                        \
       volatile unsigned long _res;                                \
-      _argvec[1+0] = (unsigned long)_fnptr;                       \
-      _argvec[1+1] = (unsigned long)arg1;                         \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
       __asm__ volatile(                                           \
          "mr 11,%1\n\t"                                           \
-         "std 2,-8(11)\n\t" /* save tocptr */                     \
-         "ld 3,8(11)\n\t"   /* arg1->r3 */                        \
-         "ld 11,0(11)\n\t"  /* target->r11 */                     \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
          VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
          "mr 11,%1\n\t"                                           \
          "mr %0,3\n\t"                                            \
-         "ld 2,-8(11)" /* restore tocptr */                       \
+         "ld 2,-16(11)" /* restore tocptr */                      \
          : /*out*/   "=r" (_res)                                  \
-         : /*in*/    "r" (&_argvec[1+0])                          \
+         : /*in*/    "r" (&_argvec[2])                            \
          : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_WW(lval, fnptr, arg1,arg2)                      \
+#define CALL_FN_W_WW(lval, orig, arg1,arg2)                       \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
-      volatile unsigned long _argvec[1+3];                        \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+2];                        \
       volatile unsigned long _res;                                \
-      _argvec[1+0] = (unsigned long)_fnptr;                       \
-      _argvec[1+1] = (unsigned long)arg1;                         \
-      _argvec[1+2] = (unsigned long)arg1;                         \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
       __asm__ volatile(                                           \
          "mr 11,%1\n\t"                                           \
-         "std 2,-8(11)\n\t" /* save tocptr */                     \
-         "ld 3, 8(11)\n\t"   /* arg1->r3 */                       \
-         "ld 4,16(11)\n\t"                                        \
-         "ld 11,0(11)\n\t"  /* target->r11 */                     \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg1->r4 */                      \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
          VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
          "mr 11,%1\n\t"                                           \
          "mr %0,3\n\t"                                            \
-         "ld 2,-8(11)" /* restore tocptr */                       \
+         "ld 2,-16(11)" /* restore tocptr */                      \
          : /*out*/   "=r" (_res)                                  \
-         : /*in*/    "r" (&_argvec[1+0])                          \
+         : /*in*/    "r" (&_argvec[2])                            \
          : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
       );                                                          \
       lval = (__typeof__(lval)) _res;                             \

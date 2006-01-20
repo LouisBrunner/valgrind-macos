@@ -569,9 +569,14 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 /* --------------- ppc64-linux specific helpers --------------- */
 
 #if defined(VGP_ppc64_linux)
-static IRExpr* mkU64 ( ULong n )
-{
+static IRExpr* mkU64 ( ULong n ) {
    return IRExpr_Const(IRConst_U64(n));
+}
+static IRExpr* mkU32 ( UInt n ) {
+   return IRExpr_Const(IRConst_U32(n));
+}
+static IRExpr* mkU8 ( UChar n ) {
+   return IRExpr_Const(IRConst_U8(n));
 }
 
 static void gen_PUSH ( IRBB* bb, IRExpr* e )
@@ -579,6 +584,7 @@ static void gen_PUSH ( IRBB* bb, IRExpr* e )
    Int stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
+   Int offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
 
    IRArray* descr = mkIRArray( offB_REDIR_STACK, Ity_I64, stack_size );
    IRTemp   t1    = newIRTemp( bb->tyenv, Ity_I64 );
@@ -593,7 +599,31 @@ static void gen_PUSH ( IRBB* bb, IRExpr* e )
       )
    );
 
-   /* bomb out if t1 >= # elements in stack (16) */
+   /* Bomb out if t1 >=s stack_size, that is, (stack_size-1)-t1 <s 0.
+      The destination (0) is a bit bogus but it doesn't matter since
+      this is an unrecoverable error and will lead to Valgrind
+      shutting down.  _EMWARN is set regardless - that's harmless
+      since is only has a meaning if the exit is taken. */
+   addStmtToIRBB(
+      bb,
+      IRStmt_Put(offB_EMWARN, mkU32(EmWarn_PPC64_redir_overflow))
+   );
+   addStmtToIRBB(
+      bb,
+      IRStmt_Exit(
+         IRExpr_Binop(
+            Iop_CmpNE64,
+            IRExpr_Binop(
+               Iop_Sar64,
+               IRExpr_Binop(Iop_Sub64,mkU64(stack_size-1),IRExpr_Tmp(t1)),
+               mkU8(63)
+            ),
+            mkU64(0)
+         ),
+         Ijk_EmFail,
+         IRConst_U64(0)
+      )
+   );
 
    /* guest_REDIR_SP = t1 */
    addStmtToIRBB(bb, IRStmt_Put(offB_REDIR_SP, IRExpr_Tmp(t1)));
@@ -610,6 +640,7 @@ static IRTemp gen_POP ( IRBB* bb )
    Int stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
+   Int offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
 
    IRArray* descr = mkIRArray( offB_REDIR_STACK, Ity_I64, stack_size );
    IRTemp   t1    = newIRTemp( bb->tyenv, Ity_I64 );
@@ -622,7 +653,27 @@ static IRTemp gen_POP ( IRBB* bb )
       IRStmt_Tmp( t1, IRExpr_Get( offB_REDIR_SP, Ity_I64 ) )
    );
 
-   /* bomb out if t1 < 0 */
+   /* Bomb out if t1 < 0.  Same comments as gen_PUSH apply. */
+   addStmtToIRBB(
+      bb,
+      IRStmt_Put(offB_EMWARN, mkU32(EmWarn_PPC64_redir_underflow))
+   );
+   addStmtToIRBB(
+      bb,
+      IRStmt_Exit(
+         IRExpr_Binop(
+            Iop_CmpNE64,
+            IRExpr_Binop(
+               Iop_Sar64,
+               IRExpr_Tmp(t1),
+               mkU8(63)
+            ),
+            mkU64(0)
+         ),
+         Ijk_EmFail,
+         IRConst_U64(0)
+      )
+   );
 
    /* res = guest_REDIR_STACK[t1+0] */
    addStmtToIRBB(
@@ -743,6 +794,14 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRBB* bb )
       )
    );
 #  if defined(VGP_ppc64_linux)
+   addStmtToIRBB( 
+      bb,
+      IRStmt_Put( 
+         offsetof(VexGuestArchState,guest_NRADDR_GPR2),
+         IRExpr_Get(offsetof(VexGuestArchState,guest_GPR2), 
+                    Ity_I64)
+      )
+   );
    gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
 #  endif
    return False;

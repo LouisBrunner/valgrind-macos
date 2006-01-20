@@ -70,8 +70,8 @@ UInt fn_0 ( void )
 
 UInt I_WRAP_SONAME_FNNAME_ZU(NONE,fn_0) ( UInt a1 )
 {
-   UInt r;
-   void* fn;
+   UInt   r;
+   OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    printf("fn_0  wrapper pre ()\n");
    CALL_FN_W_v(r, fn);
@@ -85,7 +85,7 @@ UInt I_WRAP_SONAME_FNNAME_ZU(NONE,fn_0) ( UInt a1 )
 
 UInt fn_1 ( UInt a1 )
 {
-   UInt r;
+   UInt  r;
    UInt* words = calloc(200, sizeof(UInt));
    words[1-1] = a1;
    TRASH_IREGS(r, words);
@@ -95,8 +95,8 @@ UInt fn_1 ( UInt a1 )
 
 UInt I_WRAP_SONAME_FNNAME_ZU(NONE,fn_1) ( UInt a1 )
 {
-   UInt r;
-   void* fn;
+   UInt   r;
+   OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    printf("fn_1  wrapper pre ( %d )\n", (int)a1);
    CALL_FN_W_W(r, fn, a1);
@@ -121,8 +121,8 @@ UInt fn_2 ( UInt a1, UInt a2 )
 
 UInt I_WRAP_SONAME_FNNAME_ZU(NONE,fn_2) ( UInt a1, UInt a2 )
 {
-   UInt r;
-   void* fn;
+   UInt   r;
+   OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    printf("fn_2  wrapper pre ( %d, %d )\n", (int)a1, (int)a2);
    CALL_FN_W_WW(r, fn, a1, a2);

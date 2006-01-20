@@ -1370,7 +1370,7 @@ void mc_post_mem_write(CorePart part, ThreadId tid, Addr a, SizeT len)
 static void mc_post_reg_write ( CorePart part, ThreadId tid, 
                                 OffT offset, SizeT size)
 {
-#  define MAX_REG_WRITE_SIZE 1264
+#  define MAX_REG_WRITE_SIZE 1392
    UChar area[MAX_REG_WRITE_SIZE];
    tl_assert(size <= MAX_REG_WRITE_SIZE);
    VG_(memset)(area, VGM_BYTE_VALID, size);

@@ -46,7 +46,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	execve.vgtest execve.stdout.exp execve.stderr.exp \
 	faultstatus.vgtest faultstatus.stderr.exp \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
-	fdleak_cmsg.stderr.exp fdleak_cmsg.stderr.exp2 fdleak_cmsg.stderr.exp3 \
+	fdleak_cmsg.stderr.exp fdleak_cmsg.stderr.exp2 \
+	fdleak_cmsg.stderr.exp3 fdleak_cmsg.stderr.exp4 \
 	fdleak_cmsg.vgtest \
 	fdleak_creat.stderr.exp fdleak_creat.stderr.exp2 \
 	fdleak_creat.stderr.exp3 fdleak_creat.vgtest \

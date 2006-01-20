@@ -1418,7 +1418,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_pivot_root,        sys_pivot_root),         // 203
    GENXY(__NR_fcntl64,           sys_fcntl64),            // 204 !!!!?? 32bit only */
 
-// _____(__NR_madvise,           sys_madvise),            // 205
+   GENX_(__NR_madvise,           sys_madvise),            // 205
 // _____(__NR_mincore,           sys_mincore),            // 206
    LINX_(__NR_gettid,            sys_gettid),             // 207
 // _____(__NR_tkill,             sys_tkill),              // 208

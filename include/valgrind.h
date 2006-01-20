@@ -789,7 +789,7 @@ typedef
 /* These CALL_FN_ macros assume that on ppc32-linux, sizeof(unsigned
    long) == 4. */
 
-#define CALL_FN_W_v(lval, fnptr)                                  \
+#define CALL_FN_W_v(lval, orig)                                   \
    do {                                                           \
       volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[1];                          \
@@ -807,12 +807,12 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_W(lval, fnptr, arg1)                            \
+#define CALL_FN_W_W(lval, orig, arg1)                             \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[2];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)arg1;                           \
       __asm__ volatile(                                           \
          "mr 11,%1\n\t"                                           \
@@ -827,12 +827,12 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_WW(lval, fnptr, arg1,arg2)                      \
+#define CALL_FN_W_WW(lval, orig, arg1,arg2)                       \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[3];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)arg1;                           \
       _argvec[2] = (unsigned long)arg2;                           \
       __asm__ volatile(                                           \

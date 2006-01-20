@@ -458,12 +458,12 @@ typedef
 /* These CALL_FN_ macros assume that on x86-linux, sizeof(unsigned
    long) == 4. */
 
-#define CALL_FN_W_v(lval, fnptr)                                  \
+#define CALL_FN_W_v(lval, orig)                                   \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[1];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       __asm__ volatile(                                           \
          "movl (%%eax), %%eax\n\t"  /* target->%eax */            \
          VALGRIND_CALL_NOREDIR_EAX                                \
@@ -474,12 +474,12 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_W(lval, fnptr, arg1)                            \
+#define CALL_FN_W_W(lval, orig, arg1)                             \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[2];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       __asm__ volatile(                                           \
          "pushl 4(%%eax)\n\t"                                     \
@@ -493,12 +493,12 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_WW(lval, fnptr, arg1,arg2)                      \
+#define CALL_FN_W_WW(lval, orig, arg1,arg2)                       \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[3];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       _argvec[2] = (unsigned long)(arg2);                         \
       __asm__ volatile(                                           \
@@ -514,12 +514,12 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_WWWW(lval, fnptr, arg1,arg2,arg3,arg4)          \
+#define CALL_FN_W_WWWW(lval, orig, arg1,arg2,arg3,arg4)           \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[5];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       _argvec[2] = (unsigned long)(arg2);                         \
       _argvec[3] = (unsigned long)(arg3);                         \
@@ -539,12 +539,12 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_5W(lval, fnptr, arg1,arg2,arg3,arg4,arg5)       \
+#define CALL_FN_W_5W(lval, orig, arg1,arg2,arg3,arg4,arg5)        \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[6];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       _argvec[2] = (unsigned long)(arg2);                         \
       _argvec[3] = (unsigned long)(arg3);                         \
@@ -566,12 +566,12 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_6W(lval, fnptr, arg1,arg2,arg3,arg4,arg5,arg6)  \
+#define CALL_FN_W_6W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6)   \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[7];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       _argvec[2] = (unsigned long)(arg2);                         \
       _argvec[3] = (unsigned long)(arg3);                         \
@@ -595,13 +595,13 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_7W(lval, fnptr, arg1,arg2,arg3,arg4,arg5,arg6,  \
-                                  arg7)                           \
+#define CALL_FN_W_7W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,   \
+                                 arg7)                            \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[8];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       _argvec[2] = (unsigned long)(arg2);                         \
       _argvec[3] = (unsigned long)(arg3);                         \
@@ -627,13 +627,13 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_8W(lval, fnptr, arg1,arg2,arg3,arg4,arg5,arg6,  \
-                                  arg7,arg8)                      \
+#define CALL_FN_W_8W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,   \
+                                 arg7,arg8)                       \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[9];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       _argvec[2] = (unsigned long)(arg2);                         \
       _argvec[3] = (unsigned long)(arg3);                         \
@@ -661,14 +661,14 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_12W(lval, fnptr, arg1,arg2,arg3,arg4,arg5,      \
-                                   arg6,arg7,arg8,arg9,arg10,     \
-                                   arg11,arg12)                   \
+#define CALL_FN_W_12W(lval, orig, arg1,arg2,arg3,arg4,arg5,       \
+                                  arg6,arg7,arg8,arg9,arg10,      \
+                                  arg11,arg12)                    \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[13];                         \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       _argvec[2] = (unsigned long)(arg2);                         \
       _argvec[3] = (unsigned long)(arg3);                         \

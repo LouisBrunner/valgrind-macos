@@ -114,6 +114,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	wrap4.vgtest wrap4.stdout.exp wrap4.stderr.exp \
 	wrap5.vgtest wrap5.stdout.exp wrap5.stderr.exp \
 	wrap6.vgtest wrap6.stdout.exp wrap6.stderr.exp \
+	wrap7.vgtest wrap7.stdout.exp wrap7.stderr.exp \
+	wrap8.vgtest wrap8.stdout.exp wrap8.stderr.exp \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
 	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp3 \
 	xml1.stderr.exp64 xml1.stderr.exp64_2 xml1.stdout.exp \
@@ -147,7 +149,7 @@ check_PROGRAMS = \
 	trivialleak \
 	mismatches new_override metadata \
 	xml1 \
-	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 \
+	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
 	writev zeropage
 
 
@@ -162,6 +164,7 @@ memcmptest_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -fno-builtin-memcmp
 oset_test_CFLAGS	= $(AM_FLAG_M3264_PRI) \
 				-DVGA_$(VG_ARCH)=1 -DVGO_$(VG_OS)=1 \
 				-DVGP_$(VG_ARCH)_$(VG_OS)=1
+
 # Don't allow GCC to inline memcpy(), because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy
 stack_switch_LDADD      = -lpthread
@@ -174,6 +177,19 @@ supp2_SOURCES		= supp.c
 mismatches_SOURCES	= mismatches.cpp
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
+
+# Build shared object for wrap7
+wrap7_SOURCES           = wrap7.c
+wrap7_DEPENDENCIES      = wrap7so.so
+wrap7_LDFLAGS           = $(AM_FLAG_M3264_PRI) \
+				-Wl,-rpath,$(top_builddir)/memcheck/tests
+wrap7_LDADD             = wrap7so.so
+wrap7so_so_SOURCES      = wrap7so.c
+wrap7so_so_LDADD        = 
+wrap7so_so_DEPENDENCIES = 
+wrap7so_so_LDFLAGS      = -fpic $(AM_FLAG_M3264_PRI) \
+				-Wl,-soname -Wl,wrap7so.so -shared
+wrap7so_so_CFLAGS       = -fpic $(AM_FLAG_M3264_PRI)
 
 # Valgrind unit self-tests
 #hello_LDFLAGS		= -Wl,-defsym,valt_load_address=0x50000000 \

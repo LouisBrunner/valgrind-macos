@@ -116,6 +116,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	wrap6.vgtest wrap6.stdout.exp wrap6.stderr.exp \
 	wrap7.vgtest wrap7.stdout.exp wrap7.stderr.exp \
 	wrap8.vgtest wrap8.stdout.exp wrap8.stderr.exp \
+	wrap8.stdout.exp2 wrap8.stderr.exp2 \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
 	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp3 \
 	xml1.stderr.exp64 xml1.stderr.exp64_2 xml1.stdout.exp \

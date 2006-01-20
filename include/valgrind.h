@@ -166,6 +166,13 @@
 /* ---------------------------- x86 ---------------------------- */
 
 #if defined(ARCH_x86)
+
+typedef
+   struct { 
+      unsigned int nraddr; /* where's the code? */
+   }
+   OrigFn;
+
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
                      "roll $3,  %%edi ; roll $13, %%edi\n\t"      \
                      "roll $29, %%edi ; roll $19, %%edi\n\t"
@@ -190,8 +197,9 @@
     _zzq_rlval = _zzq_result;                                     \
   }
 
-#define VALGRIND_GET_NRADDR(_zzq_rlval)                           \
-  { volatile unsigned int __addr;                                 \
+#define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
+  { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
+    volatile unsigned int __addr;                                 \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %EAX = guest_NRADDR */                    \
                      "xchgl %%ecx,%%ecx"                          \
@@ -199,7 +207,7 @@
                      :                                            \
                      : "cc", "memory"                             \
                     );                                            \
-    _zzq_rlval = (void*)__addr;                                   \
+    _zzq_orig->nraddr = __addr;                                   \
   }
 
 #define VALGRIND_CALL_NOREDIR_EAX                                 \
@@ -211,6 +219,13 @@
 /* --------------------------- amd64 --------------------------- */
 
 #if defined(ARCH_amd64)
+
+typedef
+   struct { 
+      unsigned long long int nraddr; /* where's the code? */
+   }
+   OrigFn;
+
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
                      "rolq $3,  %%rdi ; rolq $13, %%rdi\n\t"      \
                      "rolq $61, %%rdi ; rolq $51, %%rdi\n\t"
@@ -235,8 +250,9 @@
     _zzq_rlval = _zzq_result;                                     \
   }
 
-#define VALGRIND_GET_NRADDR(_zzq_rlval)                           \
-  { volatile unsigned long long int __addr;                       \
+#define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
+  { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
+    volatile unsigned long long int __addr;                       \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %RAX = guest_NRADDR */                    \
                      "xchgq %%rcx,%%rcx"                          \
@@ -244,7 +260,7 @@
                      :                                            \
                      : "cc", "memory"                             \
                     );                                            \
-    _zzq_rlval = (void*)__addr;                                   \
+    _zzq_orig->nraddr = __addr;                                   \
   }
 
 #define VALGRIND_CALL_NOREDIR_RAX                                 \
@@ -259,7 +275,7 @@
 
 typedef
    struct { 
-      unsigned long int nraddr; /* where's the code? */
+      unsigned int nraddr; /* where's the code? */
    }
    OrigFn;
 
@@ -703,12 +719,12 @@ typedef
 /* These CALL_FN_ macros assume that on amd64-linux, sizeof(unsigned
    long) == 8. */
 
-#define CALL_FN_W_v(lval, fnptr)                                  \
+#define CALL_FN_W_v(lval, orig)                                   \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[1];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       __asm__ volatile(                                           \
          "movq (%%rax), %%rax\n\t"  /* target->%rax */            \
          VALGRIND_CALL_NOREDIR_RAX                                \
@@ -719,12 +735,12 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_W(lval, fnptr, arg1)                            \
+#define CALL_FN_W_W(lval, orig, arg1)                             \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[2];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       __asm__ volatile(                                           \
          "movq 8(%%rax), %%rdi\n\t"                               \
@@ -737,12 +753,12 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
-#define CALL_FN_W_WW(lval, fnptr, arg1,arg2)                      \
+#define CALL_FN_W_WW(lval, orig, arg1,arg2)                       \
    do {                                                           \
-      volatile void*         _fnptr = (fnptr);                    \
+      volatile OrigFn        _orig = (orig);                      \
       volatile unsigned long _argvec[3];                          \
       volatile unsigned long _res;                                \
-      _argvec[0] = (unsigned long)_fnptr;                         \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
       _argvec[1] = (unsigned long)(arg1);                         \
       _argvec[2] = (unsigned long)(arg2);                         \
       __asm__ volatile(                                           \

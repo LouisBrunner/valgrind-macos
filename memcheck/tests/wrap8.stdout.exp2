@@ -1,0 +1,77 @@
+computing fact1(15)
+in wrapper1-pre:  fact(15)
+in wrapper2-pre:  fact(14)
+in wrapper1-pre:  fact(13)
+in wrapper2-pre:  fact(12)
+in wrapper1-pre:  fact(11)
+in wrapper2-pre:  fact(10)
+in wrapper1-pre:  fact(9)
+in wrapper2-pre:  fact(8)
+in wrapper1-pre:  fact(7)
+in wrapper2-pre:  fact(6)
+in wrapper1-pre:  fact(5)
+in wrapper2-pre:  fact(4)
+in wrapper1-pre:  fact(3)
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+in wrapper1-post: fact(3) = 6
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+in wrapper2-post: fact(4) = 32
+in wrapper1-post: fact(5) = 160
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+in wrapper2-post: fact(6) = 972
+in wrapper1-post: fact(7) = 6804
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+in wrapper2-post: fact(8) = 54448
+in wrapper1-post: fact(9) = 490032
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+in wrapper2-post: fact(10) = 4900340
+in wrapper1-post: fact(11) = 53903740
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+in wrapper2-post: fact(12) = 646844904
+in wrapper1-post: fact(13) = -180950840
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+in wrapper2-post: fact(14) = 1761655564
+in wrapper1-post: fact(15) = 655029684
+in wrapper2-pre:  fact(2)
+in wrapper1-pre:  fact(1)
+in wrapper2-pre:  fact(0)
+in wrapper2-post: fact(0) = 1
+in wrapper1-post: fact(1) = 1
+in wrapper2-post: fact(2) = 2
+fact1(15) = 655029686
+allocated 111 Lards

@@ -17,10 +17,10 @@ void actual ( void )
    as if its soname was "NONE". */
 void I_WRAP_SONAME_FNNAME_ZU(NONE,actual) ( void )
 {
-   OrigFn orig;
-   VALGRIND_GET_ORIG_FN(orig);
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
    printf("wrapper-pre\n");
-   CALL_FN_v_v(orig);
+   CALL_FN_v_v(fn);
    printf("wrapper-post\n");
 }
 

@@ -87,8 +87,12 @@ typedef
       /* settings to %eflags.ac (alignment check) are noted but ignored */
       EmWarn_X86_acFlag,
       
-      /* unmasking PPC32 FP exceptions is not supported */
-      EmWarn_PPC32exns,
+      /* unmasking PPC32/64 FP exceptions is not supported */
+      EmWarn_PPCexns,
+
+      /* overflow/underflow of the PPC64 _REDIR stack (ppc64 only) */
+      EmWarn_PPC64_redir_overflow,
+      EmWarn_PPC64_redir_underflow,
 
       EmWarn_NUMBER
    }

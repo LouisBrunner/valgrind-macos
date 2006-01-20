@@ -664,8 +664,12 @@ HChar* LibVEX_EmWarn_string ( VexEmWarn ew )
         return "Setting %mxcsr.daz (SSE treat-denormals-as-zero mode)";
      case EmWarn_X86_acFlag:
         return "Setting %eflags.ac (setting noted but ignored)";
-     case EmWarn_PPC32exns:
-        return "Unmasking PPC32 FP exceptions";
+     case EmWarn_PPCexns:
+        return "Unmasking PPC32/64 FP exceptions";
+     case EmWarn_PPC64_redir_overflow:
+        return "PPC64 function redirection stack overflow";
+     case EmWarn_PPC64_redir_underflow:
+        return "PPC64 function redirection stack underflow";
      default: 
         vpanic("LibVEX_EmWarn_string: unknown warning");
    }

@@ -54,6 +54,9 @@
 
    This file may get included in assembly code, so do not put
    C-specific constructs in it.
+
+   These values should be 61 or above so as not to conflict
+   with Valgrind's VG_TRC_ values, which are 60 or below.
 */
 
 #define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
@@ -61,6 +64,8 @@
 #define VEX_TRC_JMP_NOREDIR    81  /* jump to undirected guest addr */
 #define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
                                       continuing */
+#define VEX_TRC_JMP_EMFAIL     83  /* emulation fatal error; abort system */
+
 #define VEX_TRC_JMP_CLIENTREQ  65  /* do a client req before continuing */
 #define VEX_TRC_JMP_YIELD      67  /* yield to thread sched 
                                       before continuing */

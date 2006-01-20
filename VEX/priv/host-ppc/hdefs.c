@@ -2939,6 +2939,7 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          case Ijk_Sys_syscall: trc = VEX_TRC_JMP_SYS_SYSCALL; break;
          case Ijk_Yield:       trc = VEX_TRC_JMP_YIELD;       break;
          case Ijk_EmWarn:      trc = VEX_TRC_JMP_EMWARN;      break;
+         case Ijk_EmFail:      trc = VEX_TRC_JMP_EMFAIL;      break;
          case Ijk_MapFail:     trc = VEX_TRC_JMP_MAPFAIL;     break;
          case Ijk_NoDecode:    trc = VEX_TRC_JMP_NODECODE;    break;
          case Ijk_TInval:      trc = VEX_TRC_JMP_TINVAL;      break;

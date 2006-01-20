@@ -843,6 +843,14 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
    the size of a guest word. It is the responsibility of the relevant
    toIR.c to ensure that these are filled in with suitable values
    before issuing a jump of kind Ijk_TInval.  
+
+   Re Ijk_EmWarn and Ijk_EmFail: the guest state must have a
+   pseudo-register guest_EMWARN, which is 32-bits regardless of
+   the host or guest word size.  That register should be made
+   to hold an EmWarn_* value to indicate the reason for the exit.
+
+   In the case of Ijk_EmFail, the exit is fatal (Vex-generated code
+   cannot continue) and so the jump destination can be anything.
 */
 typedef
    enum { 
@@ -852,6 +860,7 @@ typedef
       Ijk_ClientReq,      /* do guest client req before continuing */
       Ijk_Yield,          /* client is yielding to thread scheduler */
       Ijk_EmWarn,         /* report emulation warning before continuing */
+      Ijk_EmFail,         /* emulation critical (FATAL) error; give up */
       Ijk_NoDecode,       /* next instruction cannot be decoded */
       Ijk_MapFail,        /* Vex-provided address translation failed */
       Ijk_TInval,         /* Invalidate translations before continuing. */

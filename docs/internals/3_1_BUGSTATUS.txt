@@ -38,3 +38,21 @@ vx1519    pending   n-i-bz   ppc32/64: allocate from callee-saved FP/VMX regs
 vx1521/2  pending   119297   Incorrect error message for sse code
 v5500     pending   n-i-bz   misaligned path word-size bug in mc_main.c
 v5514     pending   119914   more stabs problems
+
+119482: mtfsb1 ppc instruction not implemented
+  fixed (head?) (vx1531, check)
+
+119973 Sun JVM problems
+
+120277 unimplemented PPC floating point instructions: fres, fctid,
+       fctidz, frsqrte
+
+120345 another stabs bug (maybe == 119914 ?)
+
+
+
+
+don't forget:
+Dave Nomura extra suppression (dev, Tue Jan 17 00:14:30 2006)
+Control-Z bug
+Sun JVM hangs; possible sigcontext problem

@@ -1,0 +1,2 @@
+prog: wrap5
+cleanup: rm cachegrind.out.*

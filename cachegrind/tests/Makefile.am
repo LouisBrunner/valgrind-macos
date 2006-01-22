@@ -23,11 +23,13 @@ noinst_SCRIPTS = filter_stderr filter_cachesim_discards
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	chdir.vgtest chdir.stderr.exp \
 	clreq.vgtest clreq.stderr.exp \
-	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp
+	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \
+	wrap5.vgtest wrap5.stderr.exp wrap5.stdout.exp
 
 check_PROGRAMS = \
-	chdir clreq dlclose myprint.so
+	chdir clreq dlclose myprint.so wrap5
 
+AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 
 # C ones

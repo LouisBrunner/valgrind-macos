@@ -568,13 +568,13 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 
 /* --------------- ppc64-linux specific helpers --------------- */
 
-#if defined(VGP_ppc64_linux)
 static IRExpr* mkU64 ( ULong n ) {
    return IRExpr_Const(IRConst_U64(n));
 }
 static IRExpr* mkU32 ( UInt n ) {
    return IRExpr_Const(IRConst_U32(n));
 }
+#if defined(VGP_ppc64_linux)
 static IRExpr* mkU8 ( UChar n ) {
    return IRExpr_Const(IRConst_U8(n));
 }
@@ -727,6 +727,16 @@ static void gen_pop_R2_LR_then_bLR ( IRBB* bb )
 static
 Bool mk_preamble__ppc64_magic_return_stub ( void* closureV, IRBB* bb )
 {
+   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
+   /* Since we're creating the entire IRBB right here, give it a
+      proper IMark, as it won't get one any other way, and cachegrind
+      will barf if it doesn't have one (fair enough really). */
+   addStmtToIRBB( bb, IRStmt_IMark( closure->readdr, 4 ) );
+   /* Generate the magic sequence:
+         pop R2 from hidden stack
+         pop LR from hidden stack
+         goto LR
+   */
    gen_pop_R2_LR_then_bLR(bb);
    return True; /* True == this is the entire BB; don't disassemble any
                    real insns into it - just hand it directly to
@@ -737,9 +747,11 @@ Bool mk_preamble__ppc64_magic_return_stub ( void* closureV, IRBB* bb )
 /* --------------- END ppc64-linux specific helpers --------------- */
 
 /* This is an the IR preamble generators used for replacement
-   functions.  It adds code to set the guest_NRADDR to zero
+   functions.  It adds code to set the guest_NRADDR{_GPR2} to zero
    (technically not necessary, but facilitates detecting mixups in
-   which the wrong preamble generator has been used).
+   which a replacement function has been erroneously declared using
+   VG_REPLACE_FUNCTION_Z{U,Z} when instead it should have been written
+   using VG_WRAP_FUNCTION_Z{U,Z}).
 
    On ppc64-linux the follow hacks are also done: LR and R2 are pushed
    onto a hidden stack, sets R2 to the correct value for the
@@ -754,7 +766,6 @@ Bool mk_preamble__ppc64_magic_return_stub ( void* closureV, IRBB* bb )
 static 
 Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
 {
-   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
    Int nraddr_szB
       = sizeof(((VexGuestArchState*)0)->guest_NRADDR);
    vg_assert(nraddr_szB == 4 || nraddr_szB == 8);
@@ -762,13 +773,20 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
       bb,
       IRStmt_Put( 
          offsetof(VexGuestArchState,guest_NRADDR),
-         nraddr_szB == 8
-            ? IRExpr_Const(IRConst_U64(0))
-            : IRExpr_Const(IRConst_U32(0))
+         nraddr_szB == 8 ? mkU64(0) : mkU32(0)
       )
    );
 #  if defined(VGP_ppc64_linux)
-   gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
+   { VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
+     addStmtToIRBB(
+        bb,
+        IRStmt_Put(
+           offsetof(VexGuestArchState,guest_NRADDR_GPR2),
+           mkU64(0)
+        )
+     );
+     gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
+   }
 #  endif
    return False;
 }

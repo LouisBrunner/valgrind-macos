@@ -484,7 +484,7 @@ void VG_(scheduler_init) ( Addr clstack_end, SizeT clstack_size )
 /* Do various guest state alignment checks prior to running a thread.
    Specifically, check that what we have matches Vex's guest state
    layout requirements. */
-static inline void do_pre_run_checks ( volatile ThreadState* tst )
+static void do_pre_run_checks ( volatile ThreadState* tst )
 {
    Addr a_vex    = (Addr) & tst->arch.vex;
    Addr a_vexsh  = (Addr) & tst->arch.vex_shadow;

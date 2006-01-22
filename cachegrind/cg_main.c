@@ -745,8 +745,9 @@ IRBB* cg_instrument ( VgCallbackClosure* closure,
    cia = st->Ist.IMark.addr;
 
    // Set up running state and get block info
+   tl_assert(closure->readdr == vge->base[0]);
    cgs.events_used = 0;
-   cgs.bbInfo      = get_BB_info(bbIn, (Addr)closure->nraddr);
+   cgs.bbInfo      = get_BB_info(bbIn, (Addr)closure->readdr);
    cgs.bbInfo_i    = 0;
 
    if (DEBUG_CG)
@@ -1231,7 +1232,7 @@ static
 void cg_discard_basic_block_info ( Addr64 orig_addr64, VexGuestExtents vge )
 {
    BB_info* bbInfo;
-   Addr     orig_addr = (Addr)orig_addr64;
+   Addr     orig_addr = (Addr)vge.base[0];
 
    tl_assert(vge.n_used > 0);
 

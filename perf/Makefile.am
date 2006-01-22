@@ -4,8 +4,6 @@ include $(top_srcdir)/Makefile.flags.am
 
 noinst_SCRIPTS = vg_perf
 
-noinst_HEADERS = stdarg.h stddef.h
-
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	bigcode1.vgperf \
 	bigcode2.vgperf \

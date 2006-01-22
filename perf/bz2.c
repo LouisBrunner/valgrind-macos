@@ -5,6 +5,12 @@
 // --profile-flags indicates that to get to the top 90%th percentile of
 // dynamic BB counts requires considering the top 51 basic blocks
 
+// This program can be used both as part of the performance test
+// suite, in which case we want it to run for quite a while,
+// and as part of the regression (correctness) test suite, in
+// which case we want it to run quickly and be verbose.
+// So it does the latter iff given a command line arg.
+
 // Licensing: the code within is mostly taken from bzip2, which has a BSD
 // license.  There is a little code from Vex, which is GPL for
 // non-commercial use.  And it's all written by Julian Seward.
@@ -6429,12 +6435,37 @@ static HWord g_serviceFn ( HWord arg1, HWord arg2 )
    }
 }
 
-//void entry ( HWord(*service)(HWord,HWord) )
-int main ( void )
+static char *bzerrorstrings[] = {
+       "OK"
+       ,"SEQUENCE_ERROR"
+       ,"PARAM_ERROR"
+       ,"MEM_ERROR"
+       ,"DATA_ERROR"
+       ,"DATA_ERROR_MAGIC"
+       ,"IO_ERROR"
+       ,"UNEXPECTED_EOF"
+       ,"OUTBUFF_FULL"
+       ,"CONFIG_ERROR"
+       ,"???"   /* for future */
+       ,"???"   /* for future */
+       ,"???"   /* for future */
+       ,"???"   /* for future */
+       ,"???"   /* for future */
+       ,"???"   /* for future */
+};
+
+// If given a cmd line arg, behave as a correctness regtest
+// (run fast and be verbose).  If not, run for a long time
+// which is what is needed for the performance suite.
+int main ( int argc, char** argv )
 {
    int   r;
    int   bit;
    int   i;
+
+   int regtest;
+   assert(argc == 1 || argc == 2);
+   regtest = argc==2;
 
    serviceFn = g_serviceFn;
 
@@ -6452,16 +6483,19 @@ int main ( void )
    }
    vex_printf( "%d after compression\n", nZ );
 
-   for (bit = 0; bit < nZ*8; bit += (bit < 35 ? 1 : 137)) {
-     //vex_printf( "bit %d  ", bit );
+   for (bit = 0; bit < nZ*8; bit += (bit < 35 ? 1 : (regtest?2377:137))) {
+      if (regtest)
+         vex_printf( "bit %d  ", bit );
       flip_bit ( bit );
       nOut = M_BLOCK_OUT;
       r = BZ2_bzBuffToBuffDecompress (
              outbuf, &nOut, zbuf, nZ, 1/*small*/, 0 );
-      //vex_printf( " %d  %s ", r, bzerrorstrings[-r] );
+      if (regtest)
+         vex_printf( " %d  %s ", r, bzerrorstrings[-r] );
 
       if (r != BZ_OK) {
-	//vex_printf( "\n" );
+	 if (regtest)
+            vex_printf( "\n" );
       } else {
          if (nOut != nIn) {
            vex_printf(  "nIn/nOut mismatch %d %d\n", nIn, nOut );

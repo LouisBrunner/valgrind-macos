@@ -1,0 +1,70 @@
+22323 bytes read
+    block 1: crc = 0xA212ABF8, combined CRC = 0xA212ABF8, size = 22373
+    too repetitive; using fallback sorting algorithm
+      22373 in block, 13504 after MTF & 1-2 coding, 79+2 syms in use
+      pass 1: size is 17143, grp uses are 38 62 2 92 6 71 
+      pass 2: size is 6506, grp uses are 28 71 0 86 9 77 
+      pass 3: size is 6479, grp uses are 26 70 0 81 11 83 
+      pass 4: size is 6469, grp uses are 26 69 0 74 17 85 
+      bytes: mapping 19, selectors 66, code lengths 134, codes 6465
+    final combined CRC = 0xA212ABF8
+   6710 after compression
+bit 0   -5  DATA_ERROR_MAGIC 
+bit 1   -5  DATA_ERROR_MAGIC 
+bit 2   -5  DATA_ERROR_MAGIC 
+bit 3   -5  DATA_ERROR_MAGIC 
+bit 4   -5  DATA_ERROR_MAGIC 
+bit 5   -5  DATA_ERROR_MAGIC 
+bit 6   -5  DATA_ERROR_MAGIC 
+bit 7   -5  DATA_ERROR_MAGIC 
+bit 8   -5  DATA_ERROR_MAGIC 
+bit 9   -5  DATA_ERROR_MAGIC 
+bit 10   -5  DATA_ERROR_MAGIC 
+bit 11   -5  DATA_ERROR_MAGIC 
+bit 12   -5  DATA_ERROR_MAGIC 
+bit 13   -5  DATA_ERROR_MAGIC 
+bit 14   -5  DATA_ERROR_MAGIC 
+bit 15   -5  DATA_ERROR_MAGIC 
+bit 16   -5  DATA_ERROR_MAGIC 
+bit 17   -5  DATA_ERROR_MAGIC 
+bit 18   -5  DATA_ERROR_MAGIC 
+bit 19   -5  DATA_ERROR_MAGIC 
+bit 20   -5  DATA_ERROR_MAGIC 
+bit 21   -5  DATA_ERROR_MAGIC 
+bit 22   -5  DATA_ERROR_MAGIC 
+bit 23   -5  DATA_ERROR_MAGIC 
+bit 24   0  OK really ok!
+bit 25   -5  DATA_ERROR_MAGIC 
+bit 26   -5  DATA_ERROR_MAGIC 
+bit 27   0  OK really ok!
+bit 28   -5  DATA_ERROR_MAGIC 
+bit 29   -5  DATA_ERROR_MAGIC 
+bit 30   -5  DATA_ERROR_MAGIC 
+bit 31   -5  DATA_ERROR_MAGIC 
+bit 32   -4  DATA_ERROR 
+bit 33   -4  DATA_ERROR 
+bit 34   -4  DATA_ERROR 
+bit 35   -4  DATA_ERROR 
+bit 2412   -4  DATA_ERROR 
+bit 4789   -4  DATA_ERROR 
+bit 7166   -4  DATA_ERROR 
+bit 9543   -4  DATA_ERROR 
+bit 11920   -4  DATA_ERROR 
+bit 14297   -4  DATA_ERROR 
+bit 16674   -4  DATA_ERROR 
+bit 19051   -4  DATA_ERROR 
+bit 21428   -4  DATA_ERROR 
+bit 23805   -4  DATA_ERROR 
+bit 26182   -4  DATA_ERROR 
+bit 28559   -4  DATA_ERROR 
+bit 30936   -4  DATA_ERROR 
+bit 33313   -4  DATA_ERROR 
+bit 35690   -4  DATA_ERROR 
+bit 38067   -4  DATA_ERROR 
+bit 40444   -4  DATA_ERROR 
+bit 42821   -4  DATA_ERROR 
+bit 45198   -4  DATA_ERROR 
+bit 47575   -4  DATA_ERROR 
+bit 49952   -4  DATA_ERROR 
+bit 52329   -4  DATA_ERROR 
+all ok

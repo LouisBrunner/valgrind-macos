@@ -7,11 +7,11 @@
 
 //#include "config.h"
 
-#ifdef __STDC__
+//#ifdef __STDC__
 #define PROTO(x)	x
-#else
-#define PROTO(x)	()
-#endif
+//#else
+//#define PROTO(x)	()
+//#endif
 
 /* our own ASSERT macro (for C) */
 #ifndef DEBUG

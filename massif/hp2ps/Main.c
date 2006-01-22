@@ -66,9 +66,7 @@ intish nidents;
 floatish THRESHOLD_PERCENT = DEFAULT_THRESHOLD;
 int TWENTY = DEFAULT_TWENTY;
 
-int main(argc, argv)
-int argc;
-char* argv[];
+int main(int argc, char* argv[])
 {
 
     programname = copystring(Basename(argv[0]));

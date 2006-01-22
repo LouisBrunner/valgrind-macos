@@ -446,8 +446,7 @@ IsIdChar(ch)
 static struct entry* hashtable[ N_HASH ];
 
 static intish
-Hash(s)
-  char *s;
+Hash(char* s)
 {
     int r;
  
@@ -466,7 +465,7 @@ Hash(s)
  */
  
 static struct chunk*
-MakeChunk()
+MakeChunk(void)
 {
     struct chunk* ch;
     struct datapoint* d;

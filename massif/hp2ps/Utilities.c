@@ -4,14 +4,14 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "Main.h"
 #include "Error.h"
+#include "Utilities.h"
 
-extern void* malloc();
 
 char*
-Basename(name)
-  char* name;
+Basename(char* name)
 {
     char* t;
 
@@ -101,7 +101,6 @@ xrealloc(p, n)
   size_t n;
 {
     void *r;
-    extern void *realloc();
 
     r = realloc(p, n);
     if (!r) {

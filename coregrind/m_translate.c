@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- The JITter proper: register allocation & code improvement    ---*/
+/*--- Interface to LibVEX_Translate, and the SP-update pass        ---*/
 /*---                                                m_translate.c ---*/
 /*--------------------------------------------------------------------*/
 
@@ -328,6 +328,7 @@ IRBB* vg_SP_update_pass ( void*             closureV,
             case  32: DO(die, 32, tttmp); addStmtToIRBB(bb,st); continue;
             case -32: DO(new, 32, tttmp); addStmtToIRBB(bb,st); continue;
             default:  
+               /* common values for ppc64: 144 128 160 112 176 */
                n_SP_updates_generic_known++;
                goto generic;
          }

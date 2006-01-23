@@ -108,6 +108,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	trivialleak.stderr.exp trivialleak.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest-HIDING \
 	vcpu_bz2.stdout.exp vcpu_bz2.stderr.exp vcpu_bz2.vgtest \
+	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
 	vgtest_ume.stderr.exp vgtest_ume.disabled \
 	wrap1.vgtest wrap1.stdout.exp wrap1.stderr.exp \
 	wrap2.vgtest wrap2.stdout.exp wrap2.stderr.exp \
@@ -150,7 +151,7 @@ check_PROGRAMS = \
 	supp_unknown supp1 supp2 suppfree \
 	trivialleak \
 	mismatches new_override metadata \
-	vcpu_bz2 \
+	vcpu_bz2 vcpu_fbench \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
 	writev zeropage

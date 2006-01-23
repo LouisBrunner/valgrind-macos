@@ -290,7 +290,7 @@ VG_(run_innerloop__dispatch_unprofiled):
 	sldi	4,4,3
 
 	ld	5, .tocent__vgPlain_tt_fast@toc(2)
-	ldx	5, 5,4     /* r5 = VG_(tt_fast)[r3 & VG_TT_FAST_MASK] */
+	ldx	5, 5,4     /* r5 = VG_(tt_fast)[VG_TT_FAST_HASH(addr)] */
 	ld	6, 0(5)    /* r6 = (r5)->orig_addr */
         cmpd    3,6
         bne     .fast_lookup_failed
@@ -360,17 +360,17 @@ VG_(run_innerloop__dispatch_profiled):
 	sldi	4,4,3
 
 	ld	5, .tocent__vgPlain_tt_fast@toc(2)
-	ldx	5, 5,4     /* r5 = VG_(tt_fast)[r3 & VG_TT_FAST_MASK] */
+	ldx	5, 5,4     /* r5 = VG_(tt_fast)[VG_TT_FAST_HASH(addr)] */
 	ld	6, 0(5)    /* r6 = (r5)->orig_addr */
         cmpd    3,6
         bne     .fast_lookup_failed
 
         /* increment bb profile counter VG_(tt_fastN)[x] (=32bit val) */
 	ld	7, .tocent__vgPlain_tt_fastN@toc(2)
-	srdi	4, 4,1   /* r4 = ((r3<<2) & (VG_TT_FAST_MASK<<2)) */
-	lwzx	6, 7,4   /* r6 = VG_(tt_fastN)[(r4)] */
+	ldx	7, 7,4     /* r7 = VG_(tt_fastN)[VG_TT_HASH(addr)] */
+	lwz	6, 0(7)    /* *(UInt*)r7 ++ */
 	addi	6, 6,1
-	stwx	6, 7,4
+	stw	6, 0(7)
 
         /* Found a match.  Call tce[1], which is 8 bytes along, since
            each tce element is a 64-bit int. */

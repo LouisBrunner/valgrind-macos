@@ -1486,13 +1486,13 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
 // _____(__NR_get_mempolicy,     sys_get_mempolicy),      // 260
 // _____(__NR_set_mempolicy,     sys_set_mempolicy),      // 261
-// _____(__NR_mq_open,           sys_mq_open),            // 262
-// _____(__NR_mq_unlink,         sys_mq_unlink),          // 263
-// _____(__NR_mq_timedsend,      sys_mq_timedsend),       // 264
+   LINXY(__NR_mq_open,           sys_mq_open),            // 262
+   LINX_(__NR_mq_unlink,         sys_mq_unlink),          // 263
+   LINX_(__NR_mq_timedsend,      sys_mq_timedsend),       // 264
 
-// _____(__NR_mq_timedreceive,   sys_mq_timedreceive),    // 265
-// _____(__NR_mq_notify,         sys_mq_notify),          // 266
-// _____(__NR_mq_getsetattr,     sys_mq_getsetattr),      // 267
+   LINX_(__NR_mq_timedreceive,   sys_mq_timedreceive),    // 265
+   LINX_(__NR_mq_notify,         sys_mq_notify),          // 266
+   LINXY(__NR_mq_getsetattr,     sys_mq_getsetattr),      // 267
 // _____(__NR_kexec_load,        sys_kexec_load),         // 268
 // _____(__NR_add_key,           sys_add_key),            // 269
 

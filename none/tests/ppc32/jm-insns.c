@@ -4107,18 +4107,19 @@ static test_table_t all_tests[] = {
 static int verbose = 0;
 static int arg_list_size = 0;
 
-static double *fargs;
-static int nb_fargs;
-static int nb_normal_fargs;
-static HWord_t *iargs;
-static int nb_iargs;
-static uint16_t *ii16;
-static int nb_ii16;
+static double *fargs = NULL;
+static int nb_fargs = 0;
+static int nb_normal_fargs = 0;
+static HWord_t *iargs = NULL;
+static int nb_iargs = 0;
+static uint16_t *ii16 = NULL;
+static int nb_ii16 = 0;
+
 #if defined (HAS_ALTIVEC)
-static vector unsigned int* viargs;
-static int nb_viargs;
-static vector float* vfargs;
-static int nb_vfargs;
+static vector unsigned int* viargs = NULL;
+static int nb_viargs = 0;
+static vector float* vfargs = NULL;
+static int nb_vfargs = 0;
 
 //#define TEST_VSCR_SAT
 #endif
@@ -8399,8 +8400,10 @@ int main (int argc, char **argv)
    build_fargs_table();
    build_ii16_table();
 #if defined (HAS_ALTIVEC)
-   build_viargs_table();
-   build_vfargs_table();
+   if (flags.altivec || flags.faltivec) {
+      build_viargs_table();
+      build_vfargs_table();
+   }
 #endif
    // dump_iargs();
    // dump_iargs16();

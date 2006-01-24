@@ -245,7 +245,7 @@ typedef
    On entry, the baseblock pointer register must be 8-aligned.
 */
 
-#define LibVEX_N_SPILL_BYTES 1024
+#define LibVEX_N_SPILL_BYTES 1536
 
 
 /*-------------------------------------------------------*/

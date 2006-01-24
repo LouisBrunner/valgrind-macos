@@ -5672,15 +5672,15 @@ static Bool dis_fp_arith ( UInt theInstr )
                          binop(Iop_AddF64, mkexpr(frA), mkexpr(frB)) ));
          break;
 
-//zz       case 0x16: // fsqrts (Floating SqRt (Single-Precision), PPC32 p428)
-//zz          if (frA_addr != 0 || frC_addr != 0) {
-//zz             vex_printf("dis_fp_arith(ppc)(instr,fsqrts)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("fsqrts%s fr%u,fr%u\n", flag_rC ? ".":"",
-//zz              frD_addr, frB_addr);
-//zz          assign( frD, roundToSgl( unop(Iop_SqrtF64, mkexpr(frB)) ));
-//zz          break;
+      case 0x16: // fsqrts (Floating SqRt (Single-Precision), PPC32 p428)
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_arith(ppc)(instr,fsqrts)\n");
+            return False;
+         }
+         DIP("fsqrts%s fr%u,fr%u\n", flag_rC ? ".":"",
+             frD_addr, frB_addr);
+         assign( frD, roundToSgl( unop(Iop_SqrtF64, mkexpr(frB)) ));
+         break;
 
 //zz       case 0x18: // fres (Floating Reciprocal Estimate Single, PPC32 p421)
 //zz          if (frA_addr != 0 || frC_addr != 0) {

@@ -4273,8 +4273,11 @@ static Bool dis_branch ( UInt theInstr,
       break;
       
    case 0x13:
-      if (b11to15!=0) {
-         vex_printf("dis_int_branch(ppc)(0x13,b11to15)\n");
+      /* For bclr and bcctr, it appears that the lowest two bits of
+         b11to15 are a branch hint, and so we only need to ensure it's
+         of the form 000XX. */
+      if ((b11to15 & ~3) != 0) {
+         vex_printf("dis_int_branch(ppc)(0x13,b11to15)(%d)\n", (Int)b11to15);
          return False;
       }
 
@@ -5214,7 +5217,18 @@ static Bool dis_cache_manage ( UInt         theInstr,
 
    IRType ty     = mode64 ? Ity_I64 : Ity_I32;
 
+   /* For dcbt, the lowest two bits of b21to25 encode an
+      access-direction hint (TH field) which we ignore.  Well, that's
+      what the PowerPC documentation says.  In fact xlc -O4 on POWER5
+      seems to generate values of 8 and 10 for b21to25. */
+   if (opc1 == 0x1F && opc2 == 0x116) {
+     /* b21to25 &= ~3; */ /* if the docs were true */
+     b21to25 = 0; /* blunt instrument */
+   }
+
    if (opc1 != 0x1F || b21to25 != 0 || b0 != 0) {
+      if (0) vex_printf("dis_cache_manage %d %d %d\n", 
+                        (Int)opc1, (Int)b21to25, (Int)b0);
       vex_printf("dis_cache_manage(ppc)(opc1|b21to25|b0)\n");
       return False;
    }
@@ -5232,7 +5246,6 @@ static Bool dis_cache_manage ( UInt         theInstr,
    case 0x056: // dcbf (Data Cache Block Flush, PPC32 p382)
       DIP("dcbf r%u,r%u\n", rA_addr, rB_addr);
       /* nop as far as vex is concerned */
-      if (0) vex_printf("vex ppc->IR: kludged dcbf\n");
       break;
       
    case 0x036: // dcbst (Data Cache Block Store, PPC32 p384)
@@ -6062,13 +6075,11 @@ static Bool dis_fp_round ( UInt theInstr )
       
    case 0x00F: // fctiwz (Float Conv to Int, Round to Zero, PPC32 p405)
       DIP("fctiwz%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
-      assign( r_tmp32, binop(Iop_F64toI32, mkU32(0x3), mkexpr(frB)) );
+      assign( r_tmp32, binop(Iop_F64toI32, mkU32(Irrm_ZERO), mkexpr(frB)) );
       assign( frD, unop( Iop_ReinterpI64asF64,
                          unop( Iop_32Uto64, mkexpr(r_tmp32))));
       break;
 
-
-   /* 64bit FP conversions */
    case 0x32E: // fctid (Float Conv to Int DWord, PPC64 p437)
       DIP("fctid%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
       assign( r_tmp64,
@@ -6078,7 +6089,7 @@ static Bool dis_fp_round ( UInt theInstr )
 
    case 0x32F: // fctidz (Float Conv to Int DWord, Round to Zero, PPC64 p437)
       DIP("fctidz%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
-      assign( r_tmp64, binop(Iop_F64toI64, mkU32(0x3), mkexpr(frB)) );
+      assign( r_tmp64, binop(Iop_F64toI64, mkU32(Irrm_ZERO), mkexpr(frB)) );
       assign( frD, unop( Iop_ReinterpI64asF64, mkexpr(r_tmp64)) );
       break;
 
@@ -8645,6 +8656,9 @@ DisResult disInstr_PPC_WRK (
       case 0x00C: // frsp
       case 0x00E: // fctiw
       case 0x00F: // fctiwz
+      case 0x32E: // fctid
+      case 0x32F: // fctidz
+      case 0x34E: // fcfid
          if (dis_fp_round(theInstr)) goto decode_success;
          goto decode_failure;
          
@@ -8658,20 +8672,12 @@ DisResult disInstr_PPC_WRK (
 
       /* Floating Point Status/Control Register Instructions */         
       case 0x026: // mtfsb1
-//zz       case 0x040: // mcrfs
+      /* case 0x040: // mcrfs */
       case 0x046: // mtfsb0
       case 0x086: // mtfsfi
       case 0x247: // mffs
       case 0x2C7: // mtfsf
          if (dis_fp_scr( theInstr )) goto decode_success;
-         goto decode_failure;
-
-      /* 64bit FP conversions */
-      case 0x32E: // fctid
-      case 0x32F: // fctidz
-      case 0x34E: // fcfid
-         if (!mode64) goto decode_failure;
-         if (dis_fp_round(theInstr)) goto decode_success;
          goto decode_failure;
 
       default:

@@ -1299,18 +1299,27 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       if (e->Iex.Binop.op == Iop_F64toI32) {
-         HReg fr_src = iselDblExpr(env, e->Iex.Binop.arg2);
-         HReg r_dst = newVRegI(env);         
+         /* This works in both mode64 and mode32. */
+         HReg      r1      = StackFramePtr(env->mode64);
+         PPCAMode* zero_r1 = PPCAMode_IR( 0, r1 );
+         HReg      fsrc    = iselDblExpr(env, e->Iex.Binop.arg2);
+         HReg      ftmp    = newVRegF(env);
+         HReg      idst    = newVRegI(env);
+	 vassert(!env->mode64); // wait for 64-bit test case
          /* Set host rounding mode */
          set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
          sub_from_sp( env, 16 );
-         addInstr(env, PPCInstr_FpF64toI32(r_dst, fr_src));
+         addInstr(env, PPCInstr_FpCftI(False/*F->I*/, True/*int32*/, 
+                                       ftmp, fsrc));
+         addInstr(env, PPCInstr_FpSTFIW(r1, ftmp));
+         addInstr(env, PPCInstr_Load(4, True/*signed*/, 
+                                     idst, zero_r1, mode64));
          add_to_sp( env, 16 );
 
          /* Restore default FPU rounding. */
          set_FPU_rounding_default( env );
-         return r_dst;
+         return idst;
       }
 
       if (e->Iex.Binop.op == Iop_F64toI64) {
@@ -1320,7 +1329,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
          sub_from_sp( env, 16 );
-         addInstr(env, PPCInstr_FpF64toI64(r_dst, fr_src));
+vassert(0);
+//         addInstr(env, PPCInstr_FpF64toI64(r_dst, fr_src));
          add_to_sp( env, 16 );
 
          /* Restore default FPU rounding. */
@@ -2638,7 +2648,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg r_dst = newVRegF(env);
       HReg r_src = iselDblExpr(env, e->Iex.Binop.arg2);
       set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
-      addInstr(env, PPCInstr_FpF64toF32(r_dst, r_src));
+      addInstr(env, PPCInstr_FpRSP(r_dst, r_src));
       set_FPU_rounding_default( env );
       return r_dst;
    }
@@ -2780,7 +2790,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
          sub_from_sp( env, 16 );
-         addInstr(env, PPCInstr_FpI64toF64(fr_dst, r_src));
+vassert(0);
+//         addInstr(env, PPCInstr_FpI64toF64(fr_dst, r_src));
          add_to_sp( env, 16 );
 
          /* Restore default FPU rounding. */

@@ -207,8 +207,8 @@ extern PPCCondTest invertCondTest ( PPCCondTest );
 
 typedef
    enum {
-     Pam_IR,        /* Immediate (signed 16-bit) + Reg */
-     Pam_RR         /* Reg1 + Reg2     */
+     Pam_IR=1,      /* Immediate (signed 16-bit) + Reg */
+     Pam_RR=2       /* Reg1 + Reg2     */
    }
    PPCAModeTag;
 
@@ -240,8 +240,8 @@ extern void ppPPCAMode ( PPCAMode* );
 /* ("RH" == "Register or Halfword immediate") */
 typedef 
    enum {
-      Prh_Imm=1,
-      Prh_Reg=2
+      Prh_Imm=3,
+      Prh_Reg=4
    }
    PPCRHTag;
 
@@ -271,8 +271,8 @@ extern void ppPPCRH ( PPCRH* );
 
 typedef
    enum {
-      Pri_Imm=3,
-      Pri_Reg=4
+      Pri_Imm=5,
+      Pri_Reg=6
    } 
    PPCRITag;
 
@@ -297,8 +297,8 @@ extern void ppPPCRI ( PPCRI* );
 /* ("VI" == "Vector Register or Immediate") */
 typedef
    enum {
-      Pvi_Imm=5,
-      Pvi_Reg=6
+      Pvi_Imm=7,
+      Pvi_Reg=8
    } 
    PPCVI5sTag;
 
@@ -459,16 +459,15 @@ typedef
       Pin_FpUnary,    /* FP unary op */
       Pin_FpBinary,   /* FP binary op */
       Pin_FpLdSt,     /* FP load/store */
-      Pin_FpF64toF32, /* FP round IEEE754 double to IEEE754 single */
-      Pin_FpF64toI32, /* FP round IEEE754 double to 32-bit integer */
-      Pin_FpF64toI64, /* FP round IEEE754 double to 64-bit integer */
-      Pin_FpI64toF64, /* FP round IEEE754 64-bit integer to double */
+      Pin_FpSTFIW,    /* stfiwx */
+      Pin_FpRSP,      /* FP round IEEE754 double to IEEE754 single */
+      Pin_FpCftI,     /* fcfid/fctid/fctiw */
       Pin_FpCMov,     /* FP floating point conditional move */
       Pin_FpLdFPSCR,  /* mtfsf */
       Pin_FpCmp,      /* FP compare, generating value into int reg */
+
       Pin_RdWrLR,     /* Read/Write Link Register */
 
-//    Pin_AvConst,    /* Generate restricted AV literal */
       Pin_AvLdSt,     /* AV load/store (kludging for AMode_IR) */
       Pin_AvUnary,    /* AV unary general reg=>reg */
 
@@ -636,31 +635,24 @@ typedef
             HReg      reg;
             PPCAMode* addr;
          } FpLdSt;
-         /* By observing the current FPU rounding mode, round src->dst,
-            re-interpreting dst to an IEEE754 32-bit (float) type. */
+         struct {
+            HReg addr; /* int reg */
+            HReg data; /* float reg */
+         } FpSTFIW;
+         /* Round 64-bit FP value to 32-bit FP value in an FP reg. */
          struct {
             HReg src;
             HReg dst;
-         } FpF64toF32;
-         /* By observing the current FPU rounding mode, round src->dst,
-            re-interpreting dst to an 32-bit integer type. */
+         } FpRSP;
+         /* fcfid/fctid/fctiw.  Note there's no fcfiw so fromI==True
+            && int32==True is not allowed. */
          struct {
+            Bool fromI; /* False==F->I, True==I->F */
+            Bool int32; /* True== I is 32, False==I is 64 */
             HReg src;
             HReg dst;
-         } FpF64toI32;
-         /* Ditto to 64-bit integer type. */
-         struct {
-            HReg src;
-            HReg dst;
-         } FpF64toI64;
-         /* By observing the current FPU rounding mode, reinterpret src
-            from a 64bit integer to double type, and round into dst. */
-         struct {
-            HReg src;
-            HReg dst;
-         } FpI64toF64;
-         /* Mov src to dst on the given condition, which may not
-            be the bogus Xcc_ALWAYS. */
+         } FpCftI;
+         /* FP mov src to dst on the given condition. */
          struct {
             PPCCondCode cond;
             HReg        dst;
@@ -793,10 +785,10 @@ extern PPCInstr* PPCInstr_MFence     ( void );
 extern PPCInstr* PPCInstr_FpUnary    ( PPCFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_FpBinary   ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_FpLdSt     ( Bool isLoad, UChar sz, HReg, PPCAMode* );
-extern PPCInstr* PPCInstr_FpF64toF32 ( HReg dst, HReg src );
-extern PPCInstr* PPCInstr_FpF64toI32 ( HReg dst, HReg src );
-extern PPCInstr* PPCInstr_FpF64toI64 ( HReg dst, HReg src );
-extern PPCInstr* PPCInstr_FpI64toF64 ( HReg dst, HReg src );
+extern PPCInstr* PPCInstr_FpSTFIW    ( HReg addr, HReg data );
+extern PPCInstr* PPCInstr_FpRSP      ( HReg dst, HReg src );
+extern PPCInstr* PPCInstr_FpCftI     ( Bool fromI, Bool int32, 
+                                       HReg dst, HReg src );
 extern PPCInstr* PPCInstr_FpCMov     ( PPCCondCode, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_FpLdFPSCR  ( HReg src );
 extern PPCInstr* PPCInstr_FpCmp      ( HReg dst, HReg srcL, HReg srcR );

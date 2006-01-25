@@ -486,12 +486,16 @@ int main () { return 0 ; }
 ],
 [
 declaration_after_statement=yes
+FLAG_WDECL_AFTER_STMT="-Wdeclaration-after-statement"
 AC_MSG_RESULT([yes])
 ], [
 declaration_after_statement=no
+FLAG_WDECL_AFTER_STMT=""
 AC_MSG_RESULT([no])
 ])
 CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_WDECL_AFTER_STMT)
 
 if test x$declaration_after_statement = xyes; then
   CFLAGS="$CFLAGS -Wdeclaration-after-statement"

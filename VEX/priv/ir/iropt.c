@@ -3621,6 +3621,7 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
 
       /* Consider current stmt. */
       if (st->tag == Ist_Tmp && uses[st->Ist.Tmp.tmp] <= 1) {
+         IRExpr *e, *e2;
 
          /* optional extra: dump dead bindings as we find them.
             Removes the need for a prior dead-code removal pass. */
@@ -3632,8 +3633,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
 
          /* ok, we have 't = E', occ(t)==1.  Do the abovementioned
             actions. */
-         IRExpr* e  = st->Ist.Tmp.data;
-         IRExpr* e2 = atbSubst_Expr(env, e);
+         e  = st->Ist.Tmp.data;
+         e2 = atbSubst_Expr(env, e);
          addToEnvFront(env, st->Ist.Tmp.tmp, e2);
          setHints_Expr(&env[0].doesLoad, &env[0].doesGet, e2);
          /* don't advance j, as we are deleting this stmt and instead

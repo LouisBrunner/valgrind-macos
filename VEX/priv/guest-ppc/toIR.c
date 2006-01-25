@@ -365,11 +365,12 @@ static UInt float_to_bits ( Float f )
 */
 static UInt MASK32( UInt begin, UInt end )
 {
+   UInt m1, m2, mask;
    vassert(begin < 32);
    vassert(end < 32);
-   UInt m1 = ((UInt)(-1)) << begin;
-   UInt m2 = ((UInt)(-1)) << end << 1;
-   UInt mask = m1 ^ m2;
+   m1   = ((UInt)(-1)) << begin;
+   m2   = ((UInt)(-1)) << end << 1;
+   mask = m1 ^ m2;
    if (begin > end) mask = ~mask;  // wrap mask
    return mask;
 }
@@ -377,11 +378,12 @@ static UInt MASK32( UInt begin, UInt end )
 /* ditto for 64bit mask */
 static ULong MASK64( UInt begin, UInt end )
 {
+   ULong m1, m2, mask;
    vassert(begin < 64);
    vassert(end < 64);
-   ULong m1 = ((ULong)(-1)) << begin;
-   ULong m2 = ((ULong)(-1)) << end << 1;
-   ULong mask = m1 ^ m2;
+   m1   = ((ULong)(-1)) << begin;
+   m2   = ((ULong)(-1)) << end << 1;
+   mask = m1 ^ m2;
    if (begin > end) mask = ~mask;  // wrap mask
    return mask;
 }
@@ -848,8 +850,8 @@ static IRExpr* mkSzNarrow32 ( IRType ty, IRExpr* src )
 /* Signed/Unsigned IR widens I8/I16/I32 -> I32/I64 */
 static IRExpr* mkSzWiden8 ( IRType ty, IRExpr* src, Bool sined )
 {
-   vassert(ty == Ity_I32 || ty == Ity_I64);
    IROp op;
+   vassert(ty == Ity_I32 || ty == Ity_I64);
    if (sined) op = (ty==Ity_I32) ? Iop_8Sto32 : Iop_8Sto64;
    else       op = (ty==Ity_I32) ? Iop_8Uto32 : Iop_8Uto64;
    return unop(op, src);
@@ -857,8 +859,8 @@ static IRExpr* mkSzWiden8 ( IRType ty, IRExpr* src, Bool sined )
 
 static IRExpr* mkSzWiden16 ( IRType ty, IRExpr* src, Bool sined )
 {
-   vassert(ty == Ity_I32 || ty == Ity_I64);
    IROp op;
+   vassert(ty == Ity_I32 || ty == Ity_I64);
    if (sined) op = (ty==Ity_I32) ? Iop_16Sto32 : Iop_16Sto64;
    else       op = (ty==Ity_I32) ? Iop_16Uto32 : Iop_16Uto64;
    return unop(op, src);
@@ -1436,29 +1438,33 @@ static void set_AV_CR6 ( IRExpr* result, Bool test_all_ones )
 
 static void putXER_SO ( IRExpr* e )
 {
+   IRExpr* so;
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
-   IRExpr* so = binop(Iop_And8, e, mkU8(1));
+   so = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( OFFB_XER_SO, so ) );
 }
 
 static void putXER_OV ( IRExpr* e )
 {
+   IRExpr* ov;
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
-   IRExpr* ov = binop(Iop_And8, e, mkU8(1));
+   ov = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( OFFB_XER_OV, ov ) );
 }
 
 static void putXER_CA ( IRExpr* e )
 {
+   IRExpr* ca;
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
-   IRExpr* ca = binop(Iop_And8, e, mkU8(1));
+   ca = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( OFFB_XER_CA, ca ) );
 }
 
 static void putXER_BC ( IRExpr* e )
 {
+   IRExpr* bc;
    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
-   IRExpr* bc = binop(Iop_And8, e, mkU8(0x7F));
+   bc = binop(Iop_And8, e, mkU8(0x7F));
    stmt( IRStmt_Put( OFFB_XER_BC, bc ) );
 }
 

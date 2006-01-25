@@ -1517,13 +1517,14 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          break;
       case Iop_Clz32:
       case Iop_Clz64: {
+         HReg r_src, r_dst;
          PPCUnaryOp op_clz = (op_unop == Iop_Clz32) ? Pun_CLZ32 :
                                                       Pun_CLZ64;
          if (op_unop == Iop_Clz64 && !mode64)
             goto irreducible;
          /* Count leading zeroes. */
-         HReg r_dst = newVRegI(env);
-         HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
+         r_dst = newVRegI(env);
+         r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, PPCInstr_Unary(op_clz,r_dst,r_src));
          return r_dst;
       }

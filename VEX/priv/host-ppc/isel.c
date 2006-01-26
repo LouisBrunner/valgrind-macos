@@ -2478,6 +2478,35 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
             *rLo = iselWordExpr_R(env, e->Iex.Binop.arg2);
             return;
 
+         /* F64toI64 */
+         case Iop_F64toI64: {
+            HReg      tLo     = newVRegI(env);
+            HReg      tHi     = newVRegI(env);
+            HReg      r1      = StackFramePtr(env->mode64);
+            PPCAMode* zero_r1 = PPCAMode_IR( 0, r1 );
+            PPCAMode* four_r1 = PPCAMode_IR( 4, r1 );
+            HReg      fsrc    = iselDblExpr(env, e->Iex.Binop.arg2);
+            HReg      ftmp    = newVRegF(env);
+
+            vassert(!env->mode64);
+            /* Set host rounding mode */
+            set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+
+            sub_from_sp( env, 16 );
+            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/,
+                                          ftmp, fsrc));
+            addInstr(env, PPCInstr_FpLdSt(False/*store*/, 8, ftmp, zero_r1));
+            addInstr(env, PPCInstr_Load(4, tHi, zero_r1, False/*mode32*/));
+            addInstr(env, PPCInstr_Load(4, tLo, four_r1, False/*mode32*/));
+            add_to_sp( env, 16 );
+
+            /* Restore default FPU rounding. */
+            set_FPU_rounding_default( env );
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
          default: 
             break;
       }
@@ -2805,6 +2834,32 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             sub_from_sp( env, 16 );
 
             addInstr(env, PPCInstr_Store(8, zero_r1, isrc, True/*mode64*/));
+            addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fdst, zero_r1));
+            addInstr(env, PPCInstr_FpCftI(True/*I->F*/, False/*int64*/, 
+                                          fdst, fdst));
+
+            add_to_sp( env, 16 );
+
+            /* Restore default FPU rounding. */
+            set_FPU_rounding_default( env );
+            return fdst;
+         } else {
+            /* 32-bit mode */
+            HReg fdst = newVRegF(env);
+            HReg isrcHi, isrcLo;
+            HReg r1   = StackFramePtr(env->mode64);
+            PPCAMode* zero_r1 = PPCAMode_IR( 0, r1 );
+            PPCAMode* four_r1 = PPCAMode_IR( 4, r1 );
+
+            iselInt64Expr(&isrcHi, &isrcLo, env, e->Iex.Binop.arg2);
+
+            /* Set host rounding mode */
+            set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+
+            sub_from_sp( env, 16 );
+
+            addInstr(env, PPCInstr_Store(4, zero_r1, isrcHi, False/*mode32*/));
+            addInstr(env, PPCInstr_Store(4, four_r1, isrcLo, False/*mode32*/));
             addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fdst, zero_r1));
             addInstr(env, PPCInstr_FpCftI(True/*I->F*/, False/*int64*/, 
                                           fdst, fdst));

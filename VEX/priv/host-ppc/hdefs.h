@@ -327,7 +327,8 @@ typedef
       Pun_NEG,
       Pun_NOT,
       Pun_CLZ32,
-      Pun_CLZ64
+      Pun_CLZ64,
+      Pun_EXTSW
    }
    PPCUnaryOp;
 
@@ -450,7 +451,7 @@ typedef
       Pin_Call,       /* call to address in register */
       Pin_Goto,       /* conditional/unconditional jmp to dst */
       Pin_CMov,       /* conditional move */
-      Pin_Load,       /* load a 8|16|32|64 bit value from mem */
+      Pin_Load,       /* zero-extending load a 8|16|32|64 bit value from mem */
       Pin_Store,      /* store a 8|16|32|64 bit value to mem */
       Pin_Set,        /* convert condition code to value 0 or 1 */
       Pin_MfCR,       /* move from condition register to GPR */
@@ -543,7 +544,7 @@ typedef
             HReg   srcL;
             PPCRH* srcR;
          } Cmp;
-         /* Not and Neg */
+         /* Not, Neg, Clz32/64, Extsw */
          struct {
             PPCUnaryOp op;
             HReg       dst;
@@ -589,10 +590,9 @@ typedef
             HReg        dst;
             PPCRI*      src;
          } CMov;
-         /* Sign/Zero extending loads.  Dst size is host word size */
+         /* Zero extending loads.  Dst size is host word size */
          struct {
             UChar     sz; /* 1|2|4|8 */
-            Bool      syned;
             HReg      dst;
             PPCAMode* src;
          } Load;
@@ -774,7 +774,7 @@ extern PPCInstr* PPCInstr_Div        ( Bool syned, Bool sz32, HReg dst, HReg src
 extern PPCInstr* PPCInstr_Call       ( PPCCondCode, Addr64, UInt );
 extern PPCInstr* PPCInstr_Goto       ( IRJumpKind, PPCCondCode cond, PPCRI* dst );
 extern PPCInstr* PPCInstr_CMov       ( PPCCondCode, HReg dst, PPCRI* src );
-extern PPCInstr* PPCInstr_Load       ( UChar sz, Bool syned,
+extern PPCInstr* PPCInstr_Load       ( UChar sz,
                                        HReg dst, PPCAMode* src, Bool mode64 );
 extern PPCInstr* PPCInstr_Store      ( UChar sz, PPCAMode* dst,
                                        HReg src, Bool mode64 );

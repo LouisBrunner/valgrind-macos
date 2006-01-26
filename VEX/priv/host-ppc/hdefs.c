@@ -582,6 +582,7 @@ HChar* showPPCUnaryOp ( PPCUnaryOp op ) {
    case Pun_NEG:   return "neg";
    case Pun_CLZ32: return "cntlzw";
    case Pun_CLZ64: return "cntlzd";
+   case Pun_EXTSW: return "extsw";
    default: vpanic("showPPCUnaryOp");
    }
 }
@@ -837,12 +838,11 @@ PPCInstr* PPCInstr_CMov  ( PPCCondCode cond,
    vassert(cond.test != Pct_ALWAYS);
    return i;
 }
-PPCInstr* PPCInstr_Load ( UChar sz, Bool syned,
+PPCInstr* PPCInstr_Load ( UChar sz,
                           HReg dst, PPCAMode* src, Bool mode64 ) {
    PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag            = Pin_Load;
    i->Pin.Load.sz    = sz;
-   i->Pin.Load.syned = syned;
    i->Pin.Load.src   = src;
    i->Pin.Load.dst   = dst;
    vassert(sz == 1 || sz == 2 || sz == 4 || sz == 8);
@@ -1333,8 +1333,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       Bool idxd = toBool(i->Pin.Load.src->tag == Pam_RR);
       UChar sz = i->Pin.Load.sz;
       UChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
-      HChar* s_syned = i->Pin.Load.syned ? "a" : sz==8 ? "" : "z";
-      vex_printf("l%c%s%s ", c_sz, s_syned, idxd ? "x" : "" );
+      vex_printf("l%cz%s ", c_sz, idxd ? "x" : "" );
       ppHRegPPC(i->Pin.Load.dst);
       vex_printf(",");
       ppPPCAMode(i->Pin.Load.src);
@@ -2138,10 +2137,10 @@ PPCInstr* genReload_PPC ( HReg rreg, UShort offsetB, Bool mode64 )
    switch (hregClass(rreg)) {
    case HRcInt64:
       vassert(mode64);
-      return PPCInstr_Load( 8, False, rreg, am, mode64 );
+      return PPCInstr_Load( 8, rreg, am, mode64 );
    case HRcInt32:
       vassert(!mode64);
-     return PPCInstr_Load( 4, False, rreg, am, mode64 );
+      return PPCInstr_Load( 4, rreg, am, mode64 );
    case HRcFlt64:
       return PPCInstr_FpLdSt ( True/*load*/, 8, rreg, am );
    case HRcVec128:
@@ -2534,7 +2533,9 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
    UChar* ptmp = p;
    vassert(nbuf >= 32);
 
-//   vex_printf("asm  ");ppPPCInstr(i, mode64); vex_printf("\n");
+   if (0) {
+      vex_printf("asm  ");ppPPCInstr(i, mode64); vex_printf("\n");
+   }
 
    switch (i->tag) {
 
@@ -2797,7 +2798,12 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          p = mkFormX(p, 31, r_src, r_dst, 0, 26, 0);
          break;
       case Pun_CLZ64:  // cntlzd r_dst, r_src
+         vassert(mode64);
          p = mkFormX(p, 31, r_src, r_dst, 0, 58, 0);
+         break;
+      case Pun_EXTSW:  // extsw r_dst, r_src
+         vassert(mode64);
+         p = mkFormX(p, 31, r_src, r_dst, 0, 986, 0);
          break;
       default: goto bad;
       }
@@ -3011,28 +3017,25 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
    case Pin_Load: {
       PPCAMode* am_addr = i->Pin.Load.src;
       UInt r_dst = iregNo(i->Pin.Load.dst, mode64);
-      Bool syned = i->Pin.Load.syned;
       UInt opc1, opc2, sz = i->Pin.Load.sz;
       switch (am_addr->tag) {
       case Pam_IR:
          switch(sz) {
-         case 1: opc1 = 34; break;
-         case 2: opc1 = (syned) ? 42: 40;  break;
-         case 4: opc1 = 32; break;
-         case 8: opc1 = 58; break;
-         default:
-            goto bad;
+            case 1:  opc1 = 34; break;
+            case 2:  opc1 = 40; break;
+            case 4:  opc1 = 32; break;
+            case 8:  opc1 = 58; vassert(mode64); break;
+            default: goto bad;
          }
          p = doAMode_IR(p, opc1, r_dst, am_addr, mode64);
          goto done;
       case Pam_RR:
          switch(sz) {
-         case 1: opc2 = 87; break;
-         case 2: opc2 = (syned) ? 343: 279;  break;
-         case 4: opc2 = 23; break;
-         case 8: opc2 = 21; break;
-         default:
-            goto bad;
+            case 1:  opc2 = 87;  break;
+            case 2:  opc2 = 279; break;
+            case 4:  opc2 = 23;  break;
+            case 8:  opc2 = 21; vassert(mode64); break;
+            default: goto bad;
          }
          p = doAMode_RR(p, 31, opc2, r_dst, am_addr, mode64);
          goto done;
@@ -3215,67 +3218,18 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          p = mkFormX(p, 63, fr_dst, 0, fr_src, 14, 0);
          goto done;
       }
+      if (i->Pin.FpCftI.fromI == False && i->Pin.FpCftI.int32 == False) {
+         // fctid (conv f64 to i64), PPC64 p437
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 814, 0);
+         goto done;
+      }
+      if (i->Pin.FpCftI.fromI == True && i->Pin.FpCftI.int32 == False) {
+         // fcfid (conv i64 to f64), PPC64 p434
+         p = mkFormX(p, 63, fr_dst, 0, fr_src, 846, 0);
+         goto done;
+      }
       goto bad;
    }
-
-//   case Pin_FpF64toI32: {
-//      UInt  r_dst   = iregNo(i->Pin.FpF64toI32.dst, mode64);
-//      UInt  fr_src  = fregNo(i->Pin.FpF64toI32.src);
-//      UChar fr_tmp  = 7;                // Temp freg
-//      PPCAMode* am_addr;
-//
-//      // fctiw (conv f64 to i32), PPC32 p404
-//      p = mkFormX(p, 63, fr_tmp, 0, fr_src, 14, 0);
-//
-//      // No RI form of stfiwx, so need PPCAMode_RR:
-//      am_addr = PPCAMode_RR( StackFramePtr(mode64),
-//                             hregPPC_GPR0(mode64) );
-//
-//      // stfiwx (store fp64[lo32] as int32), PPC32 p517
-//      p = doAMode_RR(p, 31, 983, fr_tmp, am_addr, mode64);
-//
-//      // lwzx (load int32), PPC32 p463
-//      p = doAMode_RR(p, 31, 23, r_dst, am_addr, mode64);
-//      goto done;
-//   }
-//
-//   case Pin_FpF64toI64: {
-//      UInt  r_dst   = iregNo(i->Pin.FpF64toI64.dst, mode64);
-//      UInt  fr_src  = fregNo(i->Pin.FpF64toI64.src);
-//      UChar fr_tmp  = 7;                // Temp freg
-//      PPCAMode* am_addr;
-//
-//      // fctid (conv f64 to i64), PPC64 p437
-//      p = mkFormX(p, 63, fr_tmp, 0, fr_src, 814, 0);
-//
-//      am_addr = PPCAMode_RR( StackFramePtr(mode64),
-//                             hregPPC_GPR0(mode64) );
-//
-//      // stfdx (store fp64), PPC64 p589
-//      p = doAMode_RR(p, 31, 727, fr_tmp, am_addr, mode64);
-//
-//      // ldx (load int64), PPC64 p476
-//      p = doAMode_RR(p, 31, 21, r_dst, am_addr, mode64);
-//      goto done;
-//   }
-//
-//   case Pin_FpI64toF64: {
-//      UInt  r_src   = iregNo(i->Pin.FpI64toF64.src, mode64);
-//      UInt  fr_dst  = fregNo(i->Pin.FpI64toF64.dst);
-//      UChar fr_tmp  = 7;                // Temp freg
-//      PPCAMode* am_addr = PPCAMode_RR( StackFramePtr(mode64),
-//                                       hregPPC_GPR0(mode64) );
-//
-//      // stdx r_src,r0,r1
-//      p = doAMode_RR(p, 31, 149, r_src, am_addr, mode64);
-//
-//      // lfdx fr7,r0,r1
-//      p = doAMode_RR(p, 31, 599, fr_tmp, am_addr, mode64);
-//
-//      // fcfid (conv i64 to f64), PPC64 p434
-//      p = mkFormX(p, 63, fr_dst, 0, fr_tmp, 846, 0);
-//      goto done;
-//   }
 
    case Pin_FpCMov: {
       UInt        fr_dst = fregNo(i->Pin.FpCMov.dst);

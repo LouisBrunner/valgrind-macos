@@ -1029,7 +1029,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (e->Iex.Load.end != Iend_BE)
          goto irreducible;
       addInstr(env, PPCInstr_Load( toUChar(sizeofIRType(ty)), 
-                                   False, r_dst, am_addr, mode64 ));
+                                   r_dst, am_addr, mode64 ));
       return r_dst;
       break;
    }
@@ -1305,7 +1305,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg      fsrc    = iselDblExpr(env, e->Iex.Binop.arg2);
          HReg      ftmp    = newVRegF(env);
          HReg      idst    = newVRegI(env);
-	 vassert(!env->mode64); // wait for 64-bit test case
+
          /* Set host rounding mode */
          set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
@@ -1313,8 +1313,12 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, PPCInstr_FpCftI(False/*F->I*/, True/*int32*/, 
                                        ftmp, fsrc));
          addInstr(env, PPCInstr_FpSTFIW(r1, ftmp));
-         addInstr(env, PPCInstr_Load(4, True/*signed*/, 
-                                     idst, zero_r1, mode64));
+         addInstr(env, PPCInstr_Load(4, idst, zero_r1, mode64));
+
+         /* in 64-bit mode we need to sign-widen idst. */
+         if (mode64)
+            addInstr(env, PPCInstr_Unary(Pun_EXTSW, idst, idst));
+
          add_to_sp( env, 16 );
 
          /* Restore default FPU rounding. */
@@ -1323,19 +1327,27 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       if (e->Iex.Binop.op == Iop_F64toI64) {
-         HReg fr_src = iselDblExpr(env, e->Iex.Binop.arg2);
-         HReg r_dst = newVRegI(env);         
-         /* Set host rounding mode */
-         set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+         if (mode64) {
+            HReg      r1      = StackFramePtr(env->mode64);
+            PPCAMode* zero_r1 = PPCAMode_IR( 0, r1 );
+            HReg      fsrc    = iselDblExpr(env, e->Iex.Binop.arg2);
+            HReg      idst    = newVRegI(env);         
+            HReg      ftmp    = newVRegF(env);
 
-         sub_from_sp( env, 16 );
-vassert(0);
-//         addInstr(env, PPCInstr_FpF64toI64(r_dst, fr_src));
-         add_to_sp( env, 16 );
+            /* Set host rounding mode */
+            set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
-         /* Restore default FPU rounding. */
-         set_FPU_rounding_default( env );
-         return r_dst;
+            sub_from_sp( env, 16 );
+            addInstr(env, PPCInstr_FpCftI(False/*F->I*/, False/*int64*/,
+                                          ftmp, fsrc));
+            addInstr(env, PPCInstr_FpLdSt(False/*store*/, 8, ftmp, zero_r1));
+            addInstr(env, PPCInstr_Load(8, idst, zero_r1, True/*mode64*/));
+            add_to_sp( env, 16 );
+
+            /* Restore default FPU rounding. */
+            set_FPU_rounding_default( env );
+            return idst;
+         }
       }
 
       break;
@@ -1366,7 +1378,7 @@ vassert(0);
          if (matchIRExpr(&mi,p_LDbe16_then_16Uto32,e)) {
             HReg r_dst = newVRegI(env);
             PPCAMode* amode = iselWordExpr_AMode( env, mi.bindee[0] );
-            addInstr(env, PPCInstr_Load(2,False,r_dst,amode, mode64));
+            addInstr(env, PPCInstr_Load(2,r_dst,amode, mode64));
             return r_dst;
          }
       }
@@ -1566,7 +1578,7 @@ vassert(0);
          addInstr(env,
                   PPCInstr_AvLdSt( False/*store*/, 16, vec, am_off0 ));
          addInstr(env,
-                  PPCInstr_Load( 4, False, dst, am_off12, mode64 ));
+                  PPCInstr_Load( 4, dst, am_off12, mode64 ));
 
          add_to_sp( env, 32 );       // Reset SP
          return dst;
@@ -1591,7 +1603,7 @@ vassert(0);
                      PPCInstr_AvLdSt( False/*store*/, 16, vec, am_off0 ));
             addInstr(env,
                      PPCInstr_Load( 
-                        8, False, dst, 
+                        8, dst, 
                         op_unop == Iop_V128HIto64 ? am_off0 : am_off8, 
                         mode64 ));
 
@@ -1624,8 +1636,7 @@ vassert(0);
             addInstr(env, PPCInstr_FpLdSt( False/*store*/, 8,
                                            fr_src, am_addr ));
             // load as Ity_I64
-            addInstr(env, PPCInstr_Load( 8, False,
-                                         r_dst, am_addr, mode64 ));
+            addInstr(env, PPCInstr_Load( 8, r_dst, am_addr, mode64 ));
 
             add_to_sp( env, 16 );       // Reset SP
             return r_dst;
@@ -1646,7 +1657,7 @@ vassert(0);
          PPCAMode* am_addr = PPCAMode_IR( e->Iex.Get.offset,
                                           GuestStatePtr(mode64) );
          addInstr(env, PPCInstr_Load( toUChar(sizeofIRType(ty)), 
-                                      False, r_dst, am_addr, mode64 ));
+                                      r_dst, am_addr, mode64 ));
          return r_dst;
       }
       break;
@@ -1659,7 +1670,7 @@ vassert(0);
                                         e->Iex.GetI.ix, e->Iex.GetI.bias );
          HReg r_dst = newVRegI(env);
          addInstr(env, PPCInstr_Load( toUChar(8),
-                                      False, r_dst, src_am, mode64 ));
+                                      r_dst, src_am, mode64 ));
          return r_dst;
       }
       break;
@@ -2370,8 +2381,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
       PPCAMode* am_addr4 = advance4(env, am_addr);
       HReg tLo = newVRegI(env);
       HReg tHi = newVRegI(env);
-      addInstr(env, PPCInstr_Load( 4, False, tHi, am_addr,  False/*mode32*/ ));
-      addInstr(env, PPCInstr_Load( 4, False, tLo, am_addr4, False/*mode32*/ ));
+      addInstr(env, PPCInstr_Load( 4, tHi, am_addr,  False/*mode32*/ ));
+      addInstr(env, PPCInstr_Load( 4, tLo, am_addr4, False/*mode32*/ ));
       *rHi = tHi;
       *rLo = tLo;
       return;
@@ -2521,9 +2532,9 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          
          // load hi,lo words (of hi/lo half of vec) as Ity_I32's
          addInstr(env,
-                  PPCInstr_Load( 4, False, tHi, am_offHI, False/*mode32*/ ));
+                  PPCInstr_Load( 4, tHi, am_offHI, False/*mode32*/ ));
          addInstr(env,
-                  PPCInstr_Load( 4, False, tLo, am_offLO, False/*mode32*/ ));
+                  PPCInstr_Load( 4, tLo, am_offLO, False/*mode32*/ ));
          
          add_to_sp( env, 32 );       // Reset SP
          *rHi = tHi;
@@ -2581,9 +2592,9 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
                                         fr_src, am_addr0 ));
          
          // load hi,lo as Ity_I32's
-         addInstr(env, PPCInstr_Load( 4, False, r_dstHi,
+         addInstr(env, PPCInstr_Load( 4, r_dstHi,
                                       am_addr0, False/*mode32*/ ));
-         addInstr(env, PPCInstr_Load( 4, False, r_dstLo,
+         addInstr(env, PPCInstr_Load( 4, r_dstLo,
                                       am_addr1, False/*mode32*/ ));
          *rHi = r_dstHi;
          *rLo = r_dstLo;
@@ -2782,21 +2793,28 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       if (e->Iex.Binop.op == Iop_I64toF64) {
-         HReg fr_dst = newVRegF(env);
-         HReg r_src  = iselWordExpr_R(env, e->Iex.Binop.arg2);
-         vassert(mode64);
+         if (mode64) {
+            HReg fdst = newVRegF(env);
+            HReg isrc = iselWordExpr_R(env, e->Iex.Binop.arg2);
+            HReg r1   = StackFramePtr(env->mode64);
+            PPCAMode* zero_r1 = PPCAMode_IR( 0, r1 );
 
-         /* Set host rounding mode */
-         set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+            /* Set host rounding mode */
+            set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
-         sub_from_sp( env, 16 );
-vassert(0);
-//         addInstr(env, PPCInstr_FpI64toF64(fr_dst, r_src));
-         add_to_sp( env, 16 );
+            sub_from_sp( env, 16 );
 
-         /* Restore default FPU rounding. */
-         set_FPU_rounding_default( env );
-         return fr_dst;
+            addInstr(env, PPCInstr_Store(8, zero_r1, isrc, True/*mode64*/));
+            addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fdst, zero_r1));
+            addInstr(env, PPCInstr_FpCftI(True/*I->F*/, False/*int64*/, 
+                                          fdst, fdst));
+
+            add_to_sp( env, 16 );
+
+            /* Restore default FPU rounding. */
+            set_FPU_rounding_default( env );
+            return fdst;
+         }
       }
    }
 

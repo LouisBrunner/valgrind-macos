@@ -150,14 +150,6 @@ ALLOC_or_NULL(m_libc_dot_so_star,      malloc,      malloc);
 //ALLOC_or_NULL(m_libpgc_dot_so,         malloc,      malloc);
 
 
-// operator new(unsigned int), unmangled for some bizarre reason
-ALLOC_or_BOMB(m_libstc_plus_plus_star, builtin_new,    __builtin_new);
-ALLOC_or_BOMB(m_libc_dot_so_star,      builtin_new,    __builtin_new);
-
-ALLOC_or_BOMB(m_libstc_plus_plus_star, __builtin_new,  __builtin_new);
-ALLOC_or_BOMB(m_libc_dot_so_star,      __builtin_new,  __builtin_new);
-
-
 // operator new(unsigned int), GNU mangling, 32-bit platforms
 // operator new(unsigned long), GNU mangling, 64-bit platforms
 #if VG_WORDSIZE == 4
@@ -184,11 +176,6 @@ ALLOC_or_BOMB(m_libc_dot_so_star,      __builtin_new,  __builtin_new);
  ALLOC_or_NULL(m_libstc_plus_plus_star, _ZnwmRKSt9nothrow_t,  __builtin_new);
  ALLOC_or_NULL(m_libc_dot_so_star,      _ZnwmRKSt9nothrow_t,  __builtin_new);
 #endif
-
-
-// operator new[](unsigned int), unmangled for some bizarre reason
-ALLOC_or_BOMB(m_libstc_plus_plus_star, __builtin_vec_new, __builtin_vec_new );
-ALLOC_or_BOMB(m_libc_dot_so_star,      __builtin_vec_new, __builtin_vec_new );
 
 
 // operator new[](unsigned int), GNU mangling, 32-bit platforms
@@ -238,10 +225,6 @@ FREE(m_libc_dot_so_star,       free,                 free );
 FREE(m_libstc_plus_plus_star,  cfree,                free );
 FREE(m_libc_dot_so_star,       cfree,                free );
 
-// do we really need these?
-FREE(m_libstc_plus_plus_star,  __builtin_delete,     __builtin_delete );
-FREE(m_libc_dot_so_star,       __builtin_delete,     __builtin_delete );
-
 // operator delete(void*), GNU mangling
 FREE(m_libstc_plus_plus_star,  _ZdlPv,               __builtin_delete );
 FREE(m_libc_dot_so_star,       _ZdlPv,               __builtin_delete );
@@ -251,8 +234,6 @@ FREE(m_libstc_plus_plus_star, _ZdlPvRKSt9nothrow_t,  __builtin_delete );
 FREE(m_libc_dot_so_star,      _ZdlPvRKSt9nothrow_t,  __builtin_delete );
 
 // operator delete[](void*), GNU mangling
-FREE(m_libstc_plus_plus_star,  __builtin_vec_delete, __builtin_vec_delete );
-FREE(m_libc_dot_so_star,       __builtin_vec_delete, __builtin_vec_delete );
 FREE(m_libstc_plus_plus_star,  _ZdaPv,               __builtin_vec_delete );
 FREE(m_libc_dot_so_star,       _ZdaPv,               __builtin_vec_delete );
 

@@ -128,7 +128,7 @@
 #define __NR_getpriority		 96
 #define __NR_setpriority		 97
 //#define __NR_profil			 98
-//#define __NR_statfs			 99
+#define __NR_statfs			 99
 //#define __NR_fstatfs			100
 //#define __NR_ioperm			101
 #define __NR_socketcall			102

@@ -90,7 +90,7 @@
 
 /* "Special" instructions.
 
-   This instruction decoder can decode three special instructions
+   This instruction decoder can decode four special instructions
    which mean nothing natively (are no-ops as far as regs/mem are
    concerned) but have meaning for supporting Valgrind.  A special
    instruction is flagged by a 16-byte preamble:
@@ -5609,12 +5609,12 @@ static Bool dis_fp_store ( UInt theInstr )
          putIReg( rA_addr, mkexpr(EA) );
          break;
 
-//zz   case 0x3D7: // stfiwx (Store Float as Int, Indexed, PPC32 p517)
-//zz      DIP("stfiwx fr%u,r%u,r%u\n", frS_addr, rA_addr, rB_addr);
-//zz      assign( EA, ea_rAor0_idxd(rA_addr, rB_addr) );
-//zz      storeBE( mkexpr(EA),
-//zz               unop(Iop_64to32, unop(Iop_ReinterpF64asI64, mkexpr(frS))) );
-//zz      break;
+      case 0x3D7: // stfiwx (Store Float as Int, Indexed, PPC32 p517)
+         DIP("stfiwx fr%u,r%u,r%u\n", frS_addr, rA_addr, rB_addr);
+         assign( EA, ea_rAor0_idxd(rA_addr, rB_addr) );
+         storeBE( mkexpr(EA),
+                  unop(Iop_64to32, unop(Iop_ReinterpF64asI64, mkexpr(frS))) );
+         break;
 
       default:
          vex_printf("dis_fp_store(ppc)(opc2)\n");

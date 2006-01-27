@@ -2185,6 +2185,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_SqrtF64:
       case Iop_AbsF64:
       case Iop_2xm1F64:
+      case Iop_Est8FRecip:
+      case Iop_Est5FRSqrt:
       case Iop_Clz64:
       case Iop_Ctz64:
          return mkPCastTo(mce, Ity_I64, vatom);

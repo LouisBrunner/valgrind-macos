@@ -398,9 +398,10 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          offB_TILEN       = offsetof(VexGuestPPC64State,guest_TILEN);
          vassert(are_valid_hwcaps(VexArchPPC64, vta->archinfo_guest.hwcaps));
          vassert(0 == sizeof(VexGuestPPC64State) % 16);
-         vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TISTART ) == 8);
-         vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TILEN   ) == 8);
-         vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR  ) == 8);
+         vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TISTART    ) == 8);
+         vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TILEN      ) == 8);
+         vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR     ) == 8);
+         vassert(sizeof( ((VexGuestPPC64State*)0)->guest_NRADDR_GPR2) == 8);
          break;
 
       default:
@@ -757,9 +758,9 @@ static HChar* show_hwcaps_ppc64 ( UInt hwcaps )
 {
    /* Monotonic with complications.  Basically V > baseline(==F),
       but once you have F then you can have FX or GX too. */
-   const UInt V  = VEX_HWCAPS_PPC32_V;
-   const UInt FX = VEX_HWCAPS_PPC32_FX;
-   const UInt GX = VEX_HWCAPS_PPC32_GX;
+   const UInt V  = VEX_HWCAPS_PPC64_V;
+   const UInt FX = VEX_HWCAPS_PPC64_FX;
+   const UInt GX = VEX_HWCAPS_PPC64_GX;
          UInt c  = hwcaps;
    if (c == 0)         return "ppc64-int-flt";
    if (c == FX)        return "ppc64-int-flt-FX";
@@ -782,11 +783,11 @@ static HChar* show_hwcaps_arm ( UInt hwcaps )
 static HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
 {
    switch (arch) {
-      case VexArchX86: return show_hwcaps_x86(hwcaps);
+      case VexArchX86:   return show_hwcaps_x86(hwcaps);
       case VexArchAMD64: return show_hwcaps_amd64(hwcaps);
       case VexArchPPC32: return show_hwcaps_ppc32(hwcaps);
       case VexArchPPC64: return show_hwcaps_ppc64(hwcaps);
-      case VexArchARM: return show_hwcaps_arm(hwcaps);
+      case VexArchARM:   return show_hwcaps_arm(hwcaps);
       default: return NULL;
    }
 }

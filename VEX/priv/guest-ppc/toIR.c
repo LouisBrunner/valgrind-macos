@@ -9103,12 +9103,12 @@ DisResult disInstr_PPC_WRK (
       vex_printf("disInstr(ppc): declined to decode an AltiVec insn.\n");
       goto decode_failure;
    decode_noFX:
-      vassert(!allow_V);
+      vassert(!allow_FX);
       vex_printf("disInstr(ppc): "
                  "declined to decode an GeneralPurpose-Optional insn.\n");
       goto decode_failure;
    decode_noGX:
-      vassert(!allow_V);
+      vassert(!allow_GX);
       vex_printf("disInstr(ppc): "
                  "declined to decode a Graphics-Optional insn.\n");
       goto decode_failure;
@@ -9181,12 +9181,12 @@ DisResult disInstr_PPC ( IRBB*        irbb_IN,
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
             | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX;
 
-   is32 = (hwcaps_guest & ~mask32) > 0;
+   is32 = (hwcaps_guest & mask32) > 0;
 
    mask64 = VEX_HWCAPS_PPC64_V
             | VEX_HWCAPS_PPC64_FX | VEX_HWCAPS_PPC64_GX;
 
-   is64 = (hwcaps_guest & ~mask64) > 0;
+   is64 = (hwcaps_guest & mask64) > 0;
 
    if (is32 && !is64)
       mode64 = False;

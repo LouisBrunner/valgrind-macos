@@ -1646,9 +1646,12 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       }
 
       VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
-      VG_(message)(Vg_DebugMsg, "Arch and subarch: %s, %s",
-                                LibVEX_ppVexArch   ( vex_arch ),
-                                LibVEX_ppVexSubArch( vex_archinfo.subarch ) );
+      VG_(message)(
+         Vg_DebugMsg, 
+         "Arch and hwcaps: %s, %s",
+         LibVEX_ppVexArch   ( vex_arch ),
+         LibVEX_ppVexHwCaps ( vex_arch, vex_archinfo.hwcaps )
+      );
       VG_(message)(Vg_DebugMsg, "Valgrind library directory: %s", VG_(libdir));
    }
 }
@@ -2080,9 +2083,11 @@ Int main(Int argc, HChar **argv, HChar **envp)
         VG_(exit)(1);
      }
      VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
-     VG_(debugLog)(1, "main", "... arch = %s, subarch = %s\n",
-                   LibVEX_ppVexArch   ( vex_arch ),
-                   LibVEX_ppVexSubArch( vex_archinfo.subarch ) );
+     VG_(debugLog)(
+        1, "main", "... arch = %s, hwcaps = %s\n",
+           LibVEX_ppVexArch   ( vex_arch ),
+           LibVEX_ppVexHwCaps ( vex_arch, vex_archinfo.hwcaps ) 
+     );
    }
 
    //============================================================

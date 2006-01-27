@@ -309,28 +309,29 @@ Bool VG_(machine_get_hwcaps)( void )
 
      if (have_sse2 && have_sse1) {
         va          = VexArchX86;
-        vai.subarch = VexSubArchX86_sse2;
+        vai.hwcaps  = VEX_HWCAPS_X86_SSE1;
+        vai.hwcaps |= VEX_HWCAPS_X86_SSE2;
         VG_(machine_x86_have_mxcsr) = 1;
         return True;
      }
 
      if (have_sse1) {
         va          = VexArchX86;
-        vai.subarch = VexSubArchX86_sse1;
+        vai.hwcaps  = VEX_HWCAPS_X86_SSE1;
         VG_(machine_x86_have_mxcsr) = 1;
         return True;
      }
 
-     va          = VexArchX86;
-     vai.subarch = VexSubArchX86_sse0;
+     va         = VexArchX86;
+     vai.hwcaps = 0; /*baseline - no sse at all*/
      VG_(machine_x86_have_mxcsr) = 0;
      return True;
    }
 
 #elif defined(VGA_amd64)
    vg_assert(VG_(has_cpuid)());
-   va          = VexArchAMD64;
-   vai.subarch = VexSubArch_NONE;
+   va         = VexArchAMD64;
+   vai.hwcaps = 0; /*baseline - SSE2 */
    return True;
 
 #elif defined(VGA_ppc32)
@@ -353,53 +354,71 @@ Bool VG_(machine_get_hwcaps)( void )
      tmp_act.sa_flags &= ~VKI_SA_RESETHAND;
      tmp_act.sa_flags &= ~VKI_SA_SIGINFO;
 
+     /* standard FP insns */
+     have_F = True;
      tmp_act.ksa_handler = handler_sigill;
      VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-
-     have_fp = True;
      if (__builtin_setjmp(env_sigill)) {
-        have_fp = False;
+        have_F = False;
      } else {
         __asm__ __volatile__("fmr 0,0");
      }
 
+     /* Altivec insns */
+     have_V = True;
      tmp_act.ksa_handler = handler_sigill;
      VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-
-     have_vmx = True;
      if (__builtin_setjmp(env_sigill)) {
-        have_vmx = False;
+        have_V = False;
      } else {
         __asm__ __volatile__("vor 0,0,0");
+     }
+
+     /* General-Purpose optional (fsqrt, fsqrts) */
+     have_FX = True;
+     tmp_act.ksa_handler = handler_sigill;
+     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     if (__builtin_setjmp(env_sigill)) {
+        have_FX = False;
+     } else {
+        __asm__ __volatile__("fsqrt 0,0");
+     }
+
+     /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
+     have_GX = True;
+     tmp_act.ksa_handler = handler_sigill;
+     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     if (__builtin_setjmp(env_sigill)) {
+        have_GX = False;
+     } else {
+        __asm__ __volatile__("fsqrte 0,0");
      }
 
      VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
 
-     /* VG_(printf)("FP %d VMX %d\n", (Int)have_fp, (Int)have_vmx); */
+     if (0)
+        VG_(printf)("F %d V %d FX %d GX %d\n", 
+                    (Int)have_F, (Int)have_V, (Int)have_FX, (Int)have_GX);
 
-     /* We can only support 3 cases, not 4 (vmx but no fp).  So make
-        fp a prerequisite for vmx. */
-     if (have_vmx && !have_fp)
-        have_vmx = False;
+     /* Make FP a prerequisite for VMX (bogusly so), and for FX and GX. */
+     if (have_V && !have_F)
+        have_V = False;
+     if (have_FX && !have_F)
+        have_FX = False;
+     if (have_GX && !have_F)
+        have_GX = False;
 
-     VG_(machine_ppc32_has_FP)  = have_fp  ? 1 : 0;
-     VG_(machine_ppc32_has_VMX) = have_vmx ? 1 : 0;
+     VG_(machine_ppc32_has_FP)  = have_F ? 1 : 0;
+     VG_(machine_ppc32_has_VMX) = have_V ? 1 : 0;
 
      va = VexArchPPC32;
 
-     if (have_fp == False && have_vmx == False) {
-        vai.subarch = VexSubArchPPC32_I;
-     }
-     else if (have_fp == True && have_vmx == False) {
-        vai.subarch = VexSubArchPPC32_FI;
-     }
-     else if (have_fp == True && have_vmx == True) {
-        vai.subarch = VexSubArchPPC32_VFI;
-     } else {
-        /* this can't happen. */
-        vg_assert2(0, "VG_(machine_get_hwcaps)(ppc32)");
-     }
+     vai.hwcaps = 0;
+     if (have_F)  vai.hwcaps |= VEX_HWCAPS_PPC32_F;
+     if (have_V)  vai.hwcaps |= VEX_HWCAPS_PPC32_V;
+     if (have_FX) vai.hwcaps |= VEX_HWCAPS_PPC32_FX;
+     if (have_GX) vai.hwcaps |= VEX_HWCAPS_PPC32_GX;
 
      /* But we're not done yet: VG_(machine_ppc32_set_clszB) must be
         called before we're ready to go. */
@@ -407,10 +426,11 @@ Bool VG_(machine_get_hwcaps)( void )
    }
 
 #elif defined(VGA_ppc64)
-   { vki_sigset_t         saved_set, tmp_set;
+   { /* Same idiocy as for ppc32 - arse around with SIGILLs. */
+     vki_sigset_t         saved_set, tmp_set;
      struct vki_sigaction saved_act, tmp_act;
 
-     volatile Bool have_vmx;
+     volatile Bool have_fp, have_vmx;
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
@@ -423,25 +443,65 @@ Bool VG_(machine_get_hwcaps)( void )
      tmp_act.sa_flags &= ~VKI_SA_RESETHAND;
      tmp_act.sa_flags &= ~VKI_SA_SIGINFO;
 
+     /* standard FP insns */
+     have_F = True;
      tmp_act.ksa_handler = handler_sigill;
      VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
-
-     have_vmx = True;
      if (__builtin_setjmp(env_sigill)) {
-        have_vmx = False;
+        have_F = False;
+     } else {
+        __asm__ __volatile__("fmr 0,0");
+     }
+
+     /* Altivec insns */
+     have_V = True;
+     tmp_act.ksa_handler = handler_sigill;
+     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     if (__builtin_setjmp(env_sigill)) {
+        have_V = False;
      } else {
         __asm__ __volatile__("vor 0,0,0");
+     }
+
+     /* General-Purpose optional (fsqrt, fsqrts) */
+     have_FX = True;
+     tmp_act.ksa_handler = handler_sigill;
+     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     if (__builtin_setjmp(env_sigill)) {
+        have_FX = False;
+     } else {
+        __asm__ __volatile__("fsqrt 0,0");
+     }
+
+     /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
+     have_GX = True;
+     tmp_act.ksa_handler = handler_sigill;
+     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     if (__builtin_setjmp(env_sigill)) {
+        have_GX = False;
+     } else {
+        __asm__ __volatile__("fsqrte 0,0");
      }
 
      VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
 
-     /* VG_(printf)("VMX %d\n", (Int)have_vmx); */
+     if (0)
+        VG_(printf)("F %d V %d FX %d GX %d\n", 
+                    (Int)have_F, (Int)have_V, (Int)have_FX, (Int)have_GX);
 
-     VG_(machine_ppc64_has_VMX) = have_vmx ? 1 : 0;
+     /* on ppc64, if we don't even have FP, just give up. */
+     if (!have_F)
+        return False;
+
+     VG_(machine_ppc64_has_VMX) = have_V ? 1 : 0;
 
      va = VexArchPPC64;
-     vai.subarch = have_vmx ? VexSubArchPPC64_VFI : VexSubArchPPC64_FI;
+
+     vai.hwcaps = 0;
+     if (have_V)  vai.hwcaps |= VEX_HWCAPS_PPC64_V;
+     if (have_FX) vai.hwcaps |= VEX_HWCAPS_PPC64_FX;
+     if (have_GX) vai.hwcaps |= VEX_HWCAPS_PPC64_GX;
 
      /* But we're not done yet: VG_(machine_ppc64_set_clszB) must be
         called before we're ready to go. */

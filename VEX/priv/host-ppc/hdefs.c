@@ -620,6 +620,8 @@ HChar* showPPCFpOp ( PPCFpOp op ) {
       case Pfp_ABS:    return "fabs";
       case Pfp_NEG:    return "fneg";
       case Pfp_MOV:    return "fmr";
+      case Pfp_RES:    return "fres";
+      case Pfp_RSQRTE: return "frsqrte";
       default: vpanic("showPPCFpOp");
    }
 }
@@ -3124,6 +3126,12 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
       UInt fr_dst = fregNo(i->Pin.FpUnary.dst);
       UInt fr_src = fregNo(i->Pin.FpUnary.src);
       switch (i->Pin.FpUnary.op) {
+      case Pfp_RSQRTE: // frsqrtre, PPC32 p424
+         p = mkFormA( p, 63, fr_dst, 0, fr_src, 0, 26, 0 );
+         break;
+      case Pfp_RES:   // fres, PPC32 p421
+         p = mkFormA( p, 59, fr_dst, 0, fr_src, 0, 24, 0 );
+         break;
       case Pfp_SQRT:  // fsqrt, PPC32 p427
          p = mkFormA( p, 63, fr_dst, 0, fr_src, 0, 22, 0 );
          break;

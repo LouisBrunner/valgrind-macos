@@ -5701,16 +5701,15 @@ static Bool dis_fp_arith ( UInt theInstr )
          assign( frD, roundToSgl( unop(Iop_SqrtF64, mkexpr(frB)) ));
          break;
 
-//zz       case 0x18: // fres (Floating Reciprocal Estimate Single, PPC32 p421)
-//zz          if (frA_addr != 0 || frC_addr != 0) {
-//zz             vex_printf("dis_fp_arith(ppc)(instr,fres)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("fres%s fr%u,fr%u\n", flag_rC ? ".":"",
-//zz              frD_addr, frB_addr);
-//zz          DIP(" => not implemented\n");        
-//zz          // CAB: Can we use one of the 128 bit SIMD Iop_Recip32F ops?
-//zz          return False;
+      case 0x18: // fres (Floating Reciprocal Estimate Single, PPC32 p421)
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_arith(ppc)(instr,fres)\n");
+            return False;
+         }
+         DIP("fres%s fr%u,fr%u\n", flag_rC ? ".":"",
+             frD_addr, frB_addr);
+         assign( frD, unop(Iop_Est8FRecip, mkexpr(frB)) );
+         break;
 
       case 0x19: // fmuls (Floating Multiply Single, PPC32 p414)
          if (frB_addr != 0) {
@@ -5805,16 +5804,15 @@ static Bool dis_fp_arith ( UInt theInstr )
          assign( frD, binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ) );
          break;
 
-//zz       case 0x1A: // frsqrte (Floating Recip SqRt Est., PPC32 p424)
-//zz          if (frA_addr != 0 || frC_addr != 0) {
-//zz             vex_printf("dis_fp_arith(ppc)(instr,frsqrte)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("frsqrte%s fr%u,fr%u\n", flag_rC ? ".":"",
-//zz              frD_addr, frB_addr);
-//zz          DIP(" => not implemented\n");
-//zz          // CAB: Iop_SqrtF64, then one of the 128 bit SIMD Iop_Recip32F ops?
-//zz          return False;
+      case 0x1A: // frsqrte (Floating Recip SqRt Est., PPC32 p424)
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_arith(ppc)(instr,frsqrte)\n");
+            return False;
+         }
+         DIP("frsqrte%s fr%u,fr%u\n", flag_rC ? ".":"",
+             frD_addr, frB_addr);
+         assign( frD, unop(Iop_Est5FRSqrt, mkexpr(frB)) );
+         break;
 
       default:
          vex_printf("dis_fp_arith(ppc)(3F: opc2)\n");

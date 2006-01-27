@@ -263,6 +263,9 @@ void ppIROp ( IROp op )
       case Iop_TanF64:    vex_printf("TanF64"); return;
       case Iop_2xm1F64:   vex_printf("2xm1F64"); return;
 
+      case Iop_Est8FRecip: vex_printf("Est8FRecip"); return;
+      case Iop_Est5FRSqrt: vex_printf("Est5FRSqrt"); return;
+
       case Iop_CmpF64:    vex_printf("CmpF64"); return;
 
       case Iop_F64toI16: vex_printf("F64toI16"); return;
@@ -1517,6 +1520,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
          BINARY(Ity_I32,Ity_F64,Ity_F64);
       case Iop_NegF64: case Iop_AbsF64: case Iop_SqrtF64:
       case Iop_SinF64: case Iop_CosF64: case Iop_TanF64: case Iop_2xm1F64:
+      case Iop_Est8FRecip: case Iop_Est5FRSqrt:
          UNARY(Ity_F64,Ity_F64);
 
       case Iop_ReinterpI64asF64: UNARY(Ity_F64, Ity_I64);

@@ -331,7 +331,7 @@ typedef
       Iop_1Sto32, /* :: Ity_Bit -> Ity_I32, signed widen */
       Iop_1Sto64, /* :: Ity_Bit -> Ity_I64, signed widen */
 
-      /* ------ Floating point.  We try and be IEEE754 compliant. ------ */
+      /* ------ Floating point.  We try to be IEEE754 compliant. ------ */
 
       /* Binary operations mandated by IEEE754. */
       Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, /* Iop_RemF64, */
@@ -358,6 +358,10 @@ typedef
       Iop_CosF64,    /* FCOS */
       Iop_TanF64,    /* FTAN */
       Iop_2xm1F64,   /* (2^arg - 1.0) */
+
+      /* Unary ops supported by PPC but not mandated by 754. */
+      Iop_Est8FRecip, /* reciprocal estimate, 8 good bits */
+      Iop_Est5FRSqrt, /* reciprocal square root estimate, 5 good bits */
 
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
             0x45 Unordered

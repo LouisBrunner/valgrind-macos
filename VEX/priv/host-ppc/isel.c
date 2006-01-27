@@ -2876,9 +2876,11 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
       PPCFpOp fpop = Pfp_INVALID;
       switch (e->Iex.Unop.op) {
-      case Iop_NegF64:  fpop = Pfp_NEG; break;
-      case Iop_AbsF64:  fpop = Pfp_ABS; break;
-      case Iop_SqrtF64: fpop = Pfp_SQRT; break;
+         case Iop_NegF64:     fpop = Pfp_NEG; break;
+         case Iop_AbsF64:     fpop = Pfp_ABS; break;
+         case Iop_SqrtF64:    fpop = Pfp_SQRT; break;
+         case Iop_Est8FRecip: fpop = Pfp_RES; break;
+         case Iop_Est5FRSqrt: fpop = Pfp_RSQRTE; break;
          default: break;
       }
       if (fpop != Pfp_INVALID) {

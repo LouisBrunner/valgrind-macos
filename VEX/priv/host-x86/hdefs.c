@@ -703,14 +703,13 @@ X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
    i->Xin.Bsfr32.dst    = dst;
    return i;
 }
-X86Instr* X86Instr_MFence ( VexSubArch subarch )
+X86Instr* X86Instr_MFence ( UInt hwcaps )
 {
-   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag                = Xin_MFence;
-   i->Xin.MFence.subarch = subarch;
-   vassert(subarch == VexSubArchX86_sse0
-           || subarch == VexSubArchX86_sse1
-           || subarch == VexSubArchX86_sse2);
+   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag               = Xin_MFence;
+   i->Xin.MFence.hwcaps = hwcaps;
+   vassert(0 == (hwcaps & ~(VEX_HWCAPS_X86_SSE1|VEX_HWCAPS_X86_SSE2
+                                               |VEX_HWCAPS_X86_SSE3)));
    return i;
 }
 
@@ -988,7 +987,7 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
          return;
       case Xin_MFence:
          vex_printf("mfence(%s)",
-                    LibVEX_ppVexSubArch(i->Xin.MFence.subarch));
+                    LibVEX_ppVexHwCaps(VexArchX86,i->Xin.MFence.hwcaps));
          return;
       case Xin_FpUnary:
          vex_printf("g%sD ", showX86FpOp(i->Xin.FpUnary.op));
@@ -2340,26 +2339,28 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
    case Xin_MFence:
       /* see comment in hdefs.h re this insn */
       if (0) vex_printf("EMIT FENCE\n");
-      switch (i->Xin.MFence.subarch) {
-         case VexSubArchX86_sse0:
-            /* lock addl $0,0(%esp) */
-            *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
-            *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
-            goto done;
-         case VexSubArchX86_sse1:
-            /* sfence */
-            *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF8;
-            /* lock addl $0,0(%esp) */
-            *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
-            *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
-            goto done;
-         case VexSubArchX86_sse2:
-            /* mfence */
-            *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
-            goto done;
-         default: 
-            vpanic("emit_X86Instr:mfence:subarch");
+      if (i->Xin.MFence.hwcaps & (VEX_HWCAPS_X86_SSE3
+                                  |VEX_HWCAPS_X86_SSE2)) {
+         /* mfence */
+         *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
+         goto done;
       }
+      if (i->Xin.MFence.hwcaps & VEX_HWCAPS_X86_SSE1) {
+         /* sfence */
+         *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF8;
+         /* lock addl $0,0(%esp) */
+         *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
+         *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
+         goto done;
+      }
+      if (i->Xin.MFence.hwcaps == 0/*baseline, no SSE*/) {
+         /* lock addl $0,0(%esp) */
+         *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
+         *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
+         goto done;
+      }
+      vpanic("emit_X86Instr:mfence:hwcaps");
+      /*NOTREACHED*/
       break;
 
    case Xin_Store:

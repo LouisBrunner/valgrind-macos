@@ -491,10 +491,10 @@ typedef
             much as possible before continuing.  On SSE2 we emit a
             real "mfence", on SSE1 "sfence ; lock addl $0,0(%esp)" and
             on SSE0 "lock addl $0,0(%esp)".  This insn therefore
-            carries the subarch so the assembler knows what to
+            carries the host's hwcaps so the assembler knows what to
             emit. */
          struct {
-            VexSubArch subarch;
+            UInt hwcaps;
          } MFence;
 
          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
@@ -629,7 +629,7 @@ extern X86Instr* X86Instr_LoadEX    ( UChar szSmall, Bool syned,
 extern X86Instr* X86Instr_Store     ( UChar sz, HReg src, X86AMode* dst );
 extern X86Instr* X86Instr_Set32     ( X86CondCode cond, HReg dst );
 extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
-extern X86Instr* X86Instr_MFence    ( VexSubArch );
+extern X86Instr* X86Instr_MFence    ( UInt hwcaps );
 
 extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );

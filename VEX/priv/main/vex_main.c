@@ -70,6 +70,12 @@
 
 /* This file contains the top level interface to the library. */
 
+/* --------- fwds ... --------- */
+
+static Bool   are_valid_hwcaps ( VexArch arch, UInt hwcaps );
+static HChar* show_hwcaps ( VexArch arch, UInt hwcaps );
+
+
 /* --------- Initialise the library. --------- */
 
 /* Exported to library client. */
@@ -253,9 +259,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_X86Instr;
          host_is_bigendian = False;
          host_word_type    = Ity_I32;
-         vassert(vta->archinfo_host.subarch == VexSubArchX86_sse0
-                 || vta->archinfo_host.subarch == VexSubArchX86_sse1
-                 || vta->archinfo_host.subarch == VexSubArchX86_sse2);
+         vassert(are_valid_hwcaps(VexArchX86, vta->archinfo_host.hwcaps));
          vassert(vta->dispatch != NULL); /* jump-to-dispatcher scheme */
          break;
 
@@ -274,7 +278,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_AMD64Instr;
          host_is_bigendian = False;
          host_word_type    = Ity_I64;
-         vassert(vta->archinfo_host.subarch == VexSubArch_NONE);
+         vassert(are_valid_hwcaps(VexArchAMD64, vta->archinfo_host.hwcaps));
          vassert(vta->dispatch != NULL); /* jump-to-dispatcher scheme */
          break;
 
@@ -293,9 +297,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_PPCInstr;
          host_is_bigendian = True;
          host_word_type    = Ity_I32;
-         vassert(vta->archinfo_guest.subarch == VexSubArchPPC32_I
-                 || vta->archinfo_guest.subarch == VexSubArchPPC32_FI
-                 || vta->archinfo_guest.subarch == VexSubArchPPC32_VFI);
+         vassert(are_valid_hwcaps(VexArchPPC32, vta->archinfo_host.hwcaps));
          vassert(vta->dispatch == NULL); /* return-to-dispatcher scheme */
          break;
 
@@ -314,8 +316,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_PPCInstr;
          host_is_bigendian = True;
          host_word_type    = Ity_I64;
-         vassert(vta->archinfo_guest.subarch == VexSubArchPPC64_FI
-                 || vta->archinfo_guest.subarch == VexSubArchPPC64_VFI);
+         vassert(are_valid_hwcaps(VexArchPPC64, vta->archinfo_host.hwcaps));
          vassert(vta->dispatch == NULL); /* return-to-dispatcher scheme */
          break;
 
@@ -335,9 +336,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          guest_layout     = &x86guest_layout;
          offB_TISTART     = offsetof(VexGuestX86State,guest_TISTART);
          offB_TILEN       = offsetof(VexGuestX86State,guest_TILEN);
-         vassert(vta->archinfo_guest.subarch == VexSubArchX86_sse0
-                 || vta->archinfo_guest.subarch == VexSubArchX86_sse1
-                 || vta->archinfo_guest.subarch == VexSubArchX86_sse2);
+         vassert(are_valid_hwcaps(VexArchX86, vta->archinfo_guest.hwcaps));
          vassert(0 == sizeof(VexGuestX86State) % 8);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_TISTART) == 4);
          vassert(sizeof( ((VexGuestX86State*)0)->guest_TILEN  ) == 4);
@@ -353,7 +352,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          guest_layout     = &amd64guest_layout;
          offB_TISTART     = offsetof(VexGuestAMD64State,guest_TISTART);
          offB_TILEN       = offsetof(VexGuestAMD64State,guest_TILEN);
-         vassert(vta->archinfo_guest.subarch == VexSubArch_NONE);
+         vassert(are_valid_hwcaps(VexArchAMD64, vta->archinfo_guest.hwcaps));
          vassert(0 == sizeof(VexGuestAMD64State) % 8);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_TISTART ) == 8);
          vassert(sizeof( ((VexGuestAMD64State*)0)->guest_TILEN   ) == 8);
@@ -369,7 +368,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          guest_layout     = &armGuest_layout;
          offB_TISTART     = 0; /* hack ... arm has bitrot */
          offB_TILEN       = 0; /* hack ... arm has bitrot */
-         vassert(vta->archinfo_guest.subarch == VexSubArchARM_v4);
+         vassert(are_valid_hwcaps(VexArchARM, vta->archinfo_guest.hwcaps));
          break;
 
       case VexArchPPC32:
@@ -381,9 +380,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          guest_layout     = &ppc32Guest_layout;
          offB_TISTART     = offsetof(VexGuestPPC32State,guest_TISTART);
          offB_TILEN       = offsetof(VexGuestPPC32State,guest_TILEN);
-         vassert(vta->archinfo_guest.subarch == VexSubArchPPC32_I
-                 || vta->archinfo_guest.subarch == VexSubArchPPC32_FI
-                 || vta->archinfo_guest.subarch == VexSubArchPPC32_VFI);
+         vassert(are_valid_hwcaps(VexArchPPC32, vta->archinfo_guest.hwcaps));
          vassert(0 == sizeof(VexGuestPPC32State) % 8);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TISTART ) == 4);
          vassert(sizeof( ((VexGuestPPC32State*)0)->guest_TILEN   ) == 4);
@@ -399,8 +396,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          guest_layout     = &ppc64Guest_layout;
          offB_TISTART     = offsetof(VexGuestPPC64State,guest_TISTART);
          offB_TILEN       = offsetof(VexGuestPPC64State,guest_TILEN);
-         vassert(vta->archinfo_guest.subarch == VexSubArchPPC64_FI
-                 || vta->archinfo_guest.subarch == VexSubArchPPC64_VFI);
+         vassert(are_valid_hwcaps(VexArchPPC64, vta->archinfo_guest.hwcaps));
          vassert(0 == sizeof(VexGuestPPC64State) % 16);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TISTART ) == 8);
          vassert(sizeof( ((VexGuestPPC64State*)0)->guest_TILEN   ) == 8);
@@ -416,7 +412,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       /* doesn't necessarily have to be true, but if it isn't it means
          we are simulating one flavour of an architecture a different
          flavour of the same architecture, which is pretty strange. */
-      vassert(vta->archinfo_guest.subarch == vta->archinfo_host.subarch);
+      vassert(vta->archinfo_guest.hwcaps == vta->archinfo_host.hwcaps);
    }
 
    vexAllocSanityCheck();
@@ -675,7 +671,7 @@ HChar* LibVEX_EmWarn_string ( VexEmWarn ew )
    }
 }
 
-/* --------- Arch/Subarch stuff. --------- */
+/* ------------------ Arch/HwCaps stuff. ------------------ */
 
 const HChar* LibVEX_ppVexArch ( VexArch arch )
 {
@@ -690,29 +686,114 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
    }
 }
 
-const HChar* LibVEX_ppVexSubArch ( VexSubArch subarch )
+const HChar* LibVEX_ppVexHwCaps ( VexArch arch, UInt hwcaps )
 {
-   switch (subarch) {
-      case VexSubArch_INVALID:   return "INVALID";
-      case VexSubArch_NONE:      return "NONE";
-      case VexSubArchX86_sse0:   return "x86-sse0";
-      case VexSubArchX86_sse1:   return "x86-sse1";
-      case VexSubArchX86_sse2:   return "x86-sse2";
-      case VexSubArchARM_v4:     return "arm-v4";
-      case VexSubArchPPC32_I:    return "ppc32-int-only";
-      case VexSubArchPPC32_FI:   return "ppc32-int-and-fp";
-      case VexSubArchPPC32_VFI:  return "ppc32-int-fp-and-AV";
-      case VexSubArchPPC64_FI:   return "ppc64-int-and-fp";
-      case VexSubArchPPC64_VFI:  return "ppc64-int-fp-and-AV";
-      default:                   return "VexSubArch???";
-   }
+   HChar* str = show_hwcaps(arch,hwcaps);
+   return str ? str : "INVALID";
 }
+
+
 
 /* Write default settings info *vai. */
 void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
 {
-   vai->subarch            = VexSubArch_INVALID;
+   vai->hwcaps             = 0;
    vai->ppc_cache_line_szB = 0;
+}
+
+
+/* Return a string showing the hwcaps in a nice way.  The string will
+   be NULL for invalid combinations of flags, so these functions also
+   serve as a way to validate hwcaps values. */
+
+static HChar* show_hwcaps_x86 ( UInt hwcaps ) 
+{
+   /* Monotonic, SSE3 > SSE2 > SSE1 > baseline. */
+   if (hwcaps == 0)
+      return "x86-sse0";
+   if (hwcaps == VEX_HWCAPS_X86_SSE1)
+      return "x86-sse1";
+   if (hwcaps == (VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2))
+      return "x86-sse1-sse2";
+   if (hwcaps == (VEX_HWCAPS_X86_SSE1 
+                  | VEX_HWCAPS_X86_SSE2 | VEX_HWCAPS_X86_SSE3))
+      return "x86-sse1-sse2-sse3";
+
+   return False;
+}
+
+static HChar* show_hwcaps_amd64 ( UInt hwcaps )
+{
+   /* Monotonic, SSE3 > baseline. */
+   if (hwcaps == 0)
+      return "amd64-sse2";
+   if (hwcaps == VEX_HWCAPS_AMD64_SSE3)
+      return "amd64-sse3";
+   return False;
+}
+
+static HChar* show_hwcaps_ppc32 ( UInt hwcaps )
+{
+   /* Monotonic with complications.  Basically V > F > baseline,
+      but once you have F then you can have FX or GX too. */
+   const UInt F  = VEX_HWCAPS_PPC32_F;
+   const UInt V  = VEX_HWCAPS_PPC32_V;
+   const UInt FX = VEX_HWCAPS_PPC32_FX;
+   const UInt GX = VEX_HWCAPS_PPC32_GX;
+         UInt c  = hwcaps;
+   if (c == 0)           return "ppc32-int";
+   if (c == F)           return "ppc32-int-flt";
+   if (c == (F|FX))      return "ppc32-int-flt-FX";
+   if (c == (F|GX))      return "ppc32-int-flt-GX";
+   if (c == (F|FX|GX))   return "ppc32-int-flt-FX-GX";
+   if (c == (F|V))       return "ppc32-int-flt-vmx";
+   if (c == (F|V|FX))    return "ppc32-int-flt-vmx-FX";
+   if (c == (F|V|GX))    return "ppc32-int-flt-vmx-GX";
+   if (c == (F|V|FX|GX)) return "ppc32-int-flt-vmx-FX-GX";
+   return NULL;
+}
+
+static HChar* show_hwcaps_ppc64 ( UInt hwcaps )
+{
+   /* Monotonic with complications.  Basically V > baseline(==F),
+      but once you have F then you can have FX or GX too. */
+   const UInt V  = VEX_HWCAPS_PPC32_V;
+   const UInt FX = VEX_HWCAPS_PPC32_FX;
+   const UInt GX = VEX_HWCAPS_PPC32_GX;
+         UInt c  = hwcaps;
+   if (c == 0)         return "ppc64-int-flt";
+   if (c == FX)        return "ppc64-int-flt-FX";
+   if (c == GX)        return "ppc64-int-flt-GX";
+   if (c == (FX|GX))   return "ppc64-int-flt-FX-GX";
+   if (c == V)         return "ppc64-int-flt-vmx";
+   if (c == (V|FX))    return "ppc64-int-flt-vmx-FX";
+   if (c == (V|GX))    return "ppc64-int-flt-vmx-GX";
+   if (c == (V|FX|GX)) return "ppc64-int-flt-vmx-FX-GX";
+   return NULL;
+}
+
+static HChar* show_hwcaps_arm ( UInt hwcaps )
+{
+   if (hwcaps == 0) return "arm-baseline";
+   return NULL;
+}
+
+/* ---- */
+static HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
+{
+   switch (arch) {
+      case VexArchX86: return show_hwcaps_x86(hwcaps);
+      case VexArchAMD64: return show_hwcaps_amd64(hwcaps);
+      case VexArchPPC32: return show_hwcaps_ppc32(hwcaps);
+      case VexArchPPC64: return show_hwcaps_ppc64(hwcaps);
+      case VexArchARM: return show_hwcaps_arm(hwcaps);
+      default: return NULL;
+   }
+}
+
+static Bool are_valid_hwcaps ( VexArch arch, UInt hwcaps )
+{
+   return show_hwcaps(arch,hwcaps) != NULL;
 }
 
 

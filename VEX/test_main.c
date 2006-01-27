@@ -124,14 +124,15 @@ int main ( int argc, char** argv )
          origbuf[i] = (UChar)u;
       }
 
+      /* FIXME: put sensible values into the .hwcaps fields */
       LibVEX_default_VexArchInfo(&vai_x86);
-      vai_x86.subarch = VexSubArchX86_sse1;
+      vai_x86.hwcaps = 0;
 
       LibVEX_default_VexArchInfo(&vai_amd64);
-      vai_amd64.subarch = VexSubArch_NONE;
+      vai_amd64.hwcaps = 0;
 
       LibVEX_default_VexArchInfo(&vai_ppc32);
-      vai_ppc32.subarch = VexSubArchPPC32_VFI;
+      vai_ppc32.hwcaps = 0;
       vai_ppc32.ppc_cache_line_szB = 128;
 
       /* ----- Set up args for LibVEX_Translate ----- */

@@ -194,7 +194,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
-   vassert(archinfo_guest->subarch == VexSubArchARM_v4);
+   vassert(archinfo_guest->hwcaps == 0);
 
    /* Start a new, empty extent. */
    vge->n_used  = 1;

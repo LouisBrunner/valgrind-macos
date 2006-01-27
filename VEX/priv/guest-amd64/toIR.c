@@ -13231,14 +13231,13 @@ DisResult disInstr_AMD64_WRK (
          HChar*   fName = NULL;
          void*    fAddr = NULL;
          if (haveF2orF3(pfx)) goto decode_failure;
-         switch (archinfo->subarch) {
-            case VexSubArch_NONE:
-               fName = "amd64g_dirtyhelper_CPUID";
-               fAddr = &amd64g_dirtyhelper_CPUID; 
-               break;
-            default:
-               vpanic("disInstr(amd64)(cpuid)");
+         if (archinfo->hwcaps == 0/*baseline, == SSE2*/) {
+            fName = "amd64g_dirtyhelper_CPUID";
+            fAddr = &amd64g_dirtyhelper_CPUID; 
          }
+         else
+            vpanic("disInstr(amd64)(cpuid)");
+
          vassert(fName); vassert(fAddr);
          d = unsafeIRDirty_0_N ( 0/*regparms*/, 
                                  fName, fAddr, mkIRExprVec_0() );

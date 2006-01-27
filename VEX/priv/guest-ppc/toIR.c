@@ -5610,6 +5610,7 @@ static Bool dis_fp_store ( UInt theInstr )
          break;
 
       case 0x3D7: // stfiwx (Store Float as Int, Indexed, PPC32 p517)
+         // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
          DIP("stfiwx fr%u,r%u,r%u\n", frS_addr, rA_addr, rB_addr);
          assign( EA, ea_rAor0_idxd(rA_addr, rB_addr) );
          storeBE( mkexpr(EA),
@@ -5692,6 +5693,7 @@ static Bool dis_fp_arith ( UInt theInstr )
          break;
 
       case 0x16: // fsqrts (Floating SqRt (Single-Precision), PPC32 p428)
+         // NOTE: POWERPC OPTIONAL, "General-Purpose Group" (PPC32_FX)
          if (frA_addr != 0 || frC_addr != 0) {
             vex_printf("dis_fp_arith(ppc)(instr,fsqrts)\n");
             return False;
@@ -5702,6 +5704,7 @@ static Bool dis_fp_arith ( UInt theInstr )
          break;
 
       case 0x18: // fres (Floating Reciprocal Estimate Single, PPC32 p421)
+         // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
          if (frA_addr != 0 || frC_addr != 0) {
             vex_printf("dis_fp_arith(ppc)(instr,fres)\n");
             return False;
@@ -5761,6 +5764,7 @@ static Bool dis_fp_arith ( UInt theInstr )
          break;
 
       case 0x16: // fsqrt (Floating SqRt (Double-Precision), PPC32 p427)
+         // NOTE: POWERPC OPTIONAL, "General-Purpose Group" (PPC32_FX)
          if (frA_addr != 0 || frC_addr != 0) {
             vex_printf("dis_fp_arith(ppc)(instr,fsqrt)\n");
             return False;
@@ -5771,6 +5775,7 @@ static Bool dis_fp_arith ( UInt theInstr )
          break;
 
       case 0x17: { // fsel (Floating Select, PPC32 p426)
+         // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
          IRTemp cc    = newTemp(Ity_I32);
          IRTemp cc_b0 = newTemp(Ity_I32);
 
@@ -5805,6 +5810,7 @@ static Bool dis_fp_arith ( UInt theInstr )
          break;
 
       case 0x1A: // frsqrte (Floating Recip SqRt Est., PPC32 p424)
+         // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
          if (frA_addr != 0 || frC_addr != 0) {
             vex_printf("dis_fp_arith(ppc)(instr,frsqrte)\n");
             return False;
@@ -8401,18 +8407,28 @@ DisResult disInstr_PPC_WRK (
    DisResult dres;
    UInt      theInstr;
    IRType    ty = mode64 ? Ity_I64 : Ity_I32;
+   Bool      allow_F  = False;
+   Bool      allow_V  = False;
+   Bool      allow_FX = False;
+   Bool      allow_GX = False;
+   UInt      hwcaps = archinfo->hwcaps;
+   Long      delta;
 
    /* What insn variants are we supporting today? */
-   Bool allow_FP  = archinfo->subarch == VexSubArchPPC32_FI  ||
-                    archinfo->subarch == VexSubArchPPC32_VFI ||
-                    archinfo->subarch == VexSubArchPPC64_FI  ||
-                    archinfo->subarch == VexSubArchPPC64_VFI;
-
-   Bool allow_VMX = archinfo->subarch == VexSubArchPPC32_VFI ||
-                    archinfo->subarch == VexSubArchPPC64_VFI;
+   if (mode64) {
+      allow_F  = True;
+      allow_V  = (0 != (hwcaps & VEX_HWCAPS_PPC64_V));
+      allow_FX = (0 != (hwcaps & VEX_HWCAPS_PPC64_FX));
+      allow_GX = (0 != (hwcaps & VEX_HWCAPS_PPC64_GX));
+   } else {
+      allow_F  = (0 != (hwcaps & VEX_HWCAPS_PPC32_F));
+      allow_V  = (0 != (hwcaps & VEX_HWCAPS_PPC32_V));
+      allow_FX = (0 != (hwcaps & VEX_HWCAPS_PPC32_FX));
+      allow_GX = (0 != (hwcaps & VEX_HWCAPS_PPC32_GX));
+   }
 
    /* The running delta */
-   Long delta = (Long)mkSzAddr(ty, (ULong)delta64);
+   delta = (Long)mkSzAddr(ty, (ULong)delta64);
 
    /* Set result defaults. */
    dres.whatNext   = Dis_Continue;
@@ -8424,7 +8440,7 @@ DisResult disInstr_PPC_WRK (
       and have done. */
    theInstr = getUIntBigendianly( (UChar*)(&guest_code[delta]) );
 
-//   vex_printf("insn: 0x%x\n", theInstr);
+   if (0) vex_printf("insn: 0x%x\n", theInstr);
 
    DIP("\t0x%llx:  ", (ULong)guest_CIA_curr_instr);
 
@@ -8579,14 +8595,14 @@ DisResult disInstr_PPC_WRK (
    /* Floating Point Load Instructions */
    case 0x30: case 0x31: case 0x32: // lfs, lfsu, lfd
    case 0x33:                       // lfdu
-      if (!allow_FP) goto decode_noFP;
+      if (!allow_F) goto decode_noF;
       if (dis_fp_load( theInstr )) goto decode_success;
       goto decode_failure;
 
    /* Floating Point Store Instructions */
    case 0x34: case 0x35: case 0x36: // stfsx, stfsux, stfdx
    case 0x37:                       // stfdux
-      if (!allow_FP) goto decode_noFP;
+      if (!allow_F) goto decode_noF;
       if (dis_fp_store( theInstr )) goto decode_success;
       goto decode_failure;
 
@@ -8597,16 +8613,23 @@ DisResult disInstr_PPC_WRK (
       goto decode_failure;
 
    case 0x3B:
-      if (!allow_FP) goto decode_noFP;
-
+      if (!allow_F) goto decode_noF;
       opc2 = IFIELD(theInstr, 1, 5);
       switch (opc2) {
       /* Floating Point Arith Instructions */
       case 0x12: case 0x14: case 0x15: // fdivs,  fsubs, fadds
-      case 0x16: case 0x18: case 0x19: // fsqrts, fres,  fmuls
+      case 0x19:                       // fmuls
          if (dis_fp_arith(theInstr)) goto decode_success;
          goto decode_failure;
-         
+      case 0x16:                       // fsqrts
+         if (!allow_FX) goto decode_noFX;
+         if (dis_fp_arith(theInstr)) goto decode_success;
+         goto decode_failure;
+      case 0x18:                       // fres
+         if (!allow_GX) goto decode_noGX;
+         if (dis_fp_arith(theInstr)) goto decode_success;
+         goto decode_failure;
+
       /* Floating Point Mult-Add Instructions */
       case 0x1C: case 0x1D: case 0x1E: // fmsubs, fmadds, fnmsubs
       case 0x1F:                       // fnmadds
@@ -8625,16 +8648,23 @@ DisResult disInstr_PPC_WRK (
       goto decode_failure;
 
    case 0x3F:
-      if (!allow_FP) goto decode_noFP;
+      if (!allow_F) goto decode_noF;
       /* Instrs using opc[1:5] never overlap instrs using opc[1:10],
          so we can simply fall through the first switch statement */
 
       opc2 = IFIELD(theInstr, 1, 5);
       switch (opc2) {
       /* Floating Point Arith Instructions */
-      case 0x12: case 0x14: case 0x15: // fdiv,  fsub, fadd
-      case 0x16: case 0x17: case 0x19: // fsqrt, fsel, fmul
-      case 0x1A:                       // frsqrte
+      case 0x12: case 0x14: case 0x15: // fdiv, fsub, fadd
+      case 0x19:                       // fmul
+         if (dis_fp_arith(theInstr)) goto decode_success;
+         goto decode_failure;
+      case 0x16:                       // fsqrt
+         if (!allow_FX) goto decode_noFX;
+         if (dis_fp_arith(theInstr)) goto decode_success;
+         goto decode_failure;
+      case 0x17: case 0x1A:            // fsel, frsqrte
+         if (!allow_GX) goto decode_noGX;
          if (dis_fp_arith(theInstr)) goto decode_success;
          goto decode_failure;
          
@@ -8868,23 +8898,27 @@ DisResult disInstr_PPC_WRK (
       /* Floating Point Load Instructions */
       case 0x217: case 0x237: case 0x257: // lfsx, lfsux, lfdx
       case 0x277:                         // lfdux
-         if (!allow_FP) goto decode_noFP;
+         if (!allow_F) goto decode_noF;
          if (dis_fp_load( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Floating Point Store Instructions */
       case 0x297: case 0x2B7: case 0x2D7: // stfs,  stfsu, stfd
-      case 0x2F7: case 0x3D7:             // stfdu, stfiwx
-         if (!allow_FP) goto decode_noFP;
+      case 0x2F7:                         // stfdu, stfiwx
+         if (!allow_F) goto decode_noF;
          if (dis_fp_store( theInstr )) goto decode_success;
          goto decode_failure;
-
+      case 0x3D7:                         // stfiwx
+         if (!allow_F) goto decode_noF;
+         if (!allow_GX) goto decode_noGX;
+         if (dis_fp_store( theInstr )) goto decode_success;
+         goto decode_failure;
 
       /* AltiVec instructions */
 
       /* AV Cache Control - Data streams */
       case 0x156: case 0x176: case 0x336: // dst, dstst, dss
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_datastream( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -8892,14 +8926,14 @@ DisResult disInstr_PPC_WRK (
       case 0x006: case 0x026:             // lvsl, lvsr
       case 0x007: case 0x027: case 0x047: // lvebx, lvehx, lvewx
       case 0x067: case 0x167:             // lvx, lvxl
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_load( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Store */
       case 0x087: case 0x0A7: case 0x0C7: // stvebx, stvehx, stvewx
       case 0x0E7: case 0x1E7:             // stvx, stvxl
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_store( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -8918,7 +8952,7 @@ DisResult disInstr_PPC_WRK (
       case 0x20: case 0x21: case 0x22: // vmhaddshs, vmhraddshs, vmladduhm
       case 0x24: case 0x25: case 0x26: // vmsumubm, vmsummbm, vmsumuhm
       case 0x27: case 0x28: case 0x29: // vmsumuhs, vmsumshm, vmsumshs
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_multarith( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -8926,13 +8960,13 @@ DisResult disInstr_PPC_WRK (
       case 0x2A:                       // vsel
       case 0x2B:                       // vperm
       case 0x2C:                       // vsldoi
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_permute( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Floating Point Mult-Add/Sub */
       case 0x2E: case 0x2F:            // vmaddfp, vnmsubfp
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_fp_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -8963,7 +8997,7 @@ DisResult disInstr_PPC_WRK (
       case 0x308: case 0x348:             // vmulesb, vmulesh
       case 0x608: case 0x708: case 0x648: // vsum4ubs, vsum4sbs, vsum4shs
       case 0x688: case 0x788:             // vsum2sws, vsumsws
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -8974,20 +9008,20 @@ DisResult disInstr_PPC_WRK (
       case 0x304: case 0x344: case 0x384: // vsrab, vsrah, vsraw
       case 0x1C4: case 0x2C4:             // vsl, vsr
       case 0x40C: case 0x44C:             // vslo, vsro
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_shift( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Logic */
       case 0x404: case 0x444: case 0x484: // vand, vandc, vor
       case 0x4C4: case 0x504:             // vxor, vnor
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_logic( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Processor Control */
       case 0x604: case 0x644:             // mfvscr, mtvscr
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_procctl( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -8996,7 +9030,7 @@ DisResult disInstr_PPC_WRK (
       case 0x10A: case 0x14A: case 0x18A: // vrefp, vrsqrtefp, vexptefp
       case 0x1CA:                         // vlogefp
       case 0x40A: case 0x44A:             // vmaxfp, vminfp
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_fp_arith( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -9005,7 +9039,7 @@ DisResult disInstr_PPC_WRK (
       case 0x2CA:                         // vrfim
       case 0x30A: case 0x34A: case 0x38A: // vcfux, vcfsx, vctuxs
       case 0x3CA:                         // vctsxs
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_fp_convert( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -9014,7 +9048,7 @@ DisResult disInstr_PPC_WRK (
       case 0x10C: case 0x14C: case 0x18C: // vmrglb, vmrglh, vmrglw
       case 0x20C: case 0x24C: case 0x28C: // vspltb, vsplth, vspltw
       case 0x30C: case 0x34C: case 0x38C: // vspltisb, vspltish, vspltisw
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_permute( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -9026,7 +9060,7 @@ DisResult disInstr_PPC_WRK (
       case 0x20E: case 0x24E: case 0x28E: // vupkhsb, vupkhsh, vupklsb
       case 0x2CE:                         // vupklsh
       case 0x30E: case 0x34E: case 0x3CE: // vpkpx, vupkhpx, vupklpx
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_pack( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -9041,14 +9075,14 @@ DisResult disInstr_PPC_WRK (
       case 0x006: case 0x046: case 0x086: // vcmpequb, vcmpequh, vcmpequw
       case 0x206: case 0x246: case 0x286: // vcmpgtub, vcmpgtuh, vcmpgtuw
       case 0x306: case 0x346: case 0x386: // vcmpgtsb, vcmpgtsh, vcmpgtsw
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_cmp( theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Floating Point Compare */
       case 0x0C6: case 0x1C6: case 0x2C6: // vcmpeqfp, vcmpgefp, vcmpgtfp
       case 0x3C6:                         // vcmpbfp
-         if (!allow_VMX) goto decode_noVMX;
+         if (!allow_V) goto decode_noV;
          if (dis_av_fp_cmp( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -9058,14 +9092,25 @@ DisResult disInstr_PPC_WRK (
       break;
 
    default:
-   decode_noFP:
-      vassert(!allow_FP);
-      vex_printf("disInstr(ppc): Floating Point insns disabled for this arch.\n");
       goto decode_failure;
 
-   decode_noVMX:
-      vassert(!allow_VMX);
-      vex_printf("disInstr(ppc): AltiVec insns disabled for this arch.\n");
+   decode_noF:
+      vassert(!allow_F);
+      vex_printf("disInstr(ppc): declined to decode an FP insn.\n");
+      goto decode_failure;
+   decode_noV:
+      vassert(!allow_V);
+      vex_printf("disInstr(ppc): declined to decode an AltiVec insn.\n");
+      goto decode_failure;
+   decode_noFX:
+      vassert(!allow_V);
+      vex_printf("disInstr(ppc): "
+                 "declined to decode an GeneralPurpose-Optional insn.\n");
+      goto decode_failure;
+   decode_noGX:
+      vassert(!allow_V);
+      vex_printf("disInstr(ppc): "
+                 "declined to decode a Graphics-Optional insn.\n");
       goto decode_failure;
 
    decode_failure:
@@ -9125,22 +9170,31 @@ DisResult disInstr_PPC ( IRBB*        irbb_IN,
 {
    IRType     ty;
    DisResult  dres;
-   VexSubArch gsa = archinfo->subarch;
+   Bool       is32, is64;
+   UInt       mask32, mask64;
+   UInt hwcaps_guest = archinfo->hwcaps;
+
+   /* global -- ick */
+   mode64 = False;
 
    /* Figure out whether we're being ppc32 or ppc64 today. */
-   switch (gsa) {
-      case VexSubArchPPC32_VFI:
-      case VexSubArchPPC32_FI:
-      case VexSubArchPPC32_I:
-         mode64 = False;
-         break;
-      case VexSubArchPPC64_VFI:
-      case VexSubArchPPC64_FI:
-         mode64 = True;
-         break;
-      default:
-         vpanic("disInstr_PPC(): illegal subarch");
-   }
+   mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
+            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX;
+
+   is32 = (hwcaps_guest & ~mask32) > 0;
+
+   mask64 = VEX_HWCAPS_PPC64_V
+            | VEX_HWCAPS_PPC64_FX | VEX_HWCAPS_PPC64_GX;
+
+   is64 = (hwcaps_guest & ~mask64) > 0;
+
+   if (is32 && !is64)
+      mode64 = False;
+   else if (is64 && !is32)
+      mode64 = True;
+   else
+      vpanic("distInstr_PPC: illegal subarch");
+
 
    ty = mode64 ? Ity_I64 : Ity_I32;
 

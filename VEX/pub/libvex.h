@@ -71,26 +71,42 @@ typedef
    }
    VexArch;
 
-typedef
-   enum {
-      VexSubArch_INVALID,
-      VexSubArch_NONE,        /* Arch has no variants */
-      VexSubArchX86_sse0,     /* no SSE state; or SSE state but no insns */
-      VexSubArchX86_sse1,     /* SSE1 support (Pentium III) */
-      VexSubArchX86_sse2,     /* SSE2 support (Pentium 4) */
-      VexSubArchARM_v4,       /* ARM version 4 */
-      VexSubArchPPC32_I,      /* 32-bit PowerPC, no FP, no Altivec */
-      VexSubArchPPC32_FI,     /* 32-bit PowerPC, with FP but no Altivec */
-      VexSubArchPPC32_VFI,    /* 32-bit PowerPC, with FP and Altivec */
-      VexSubArchPPC64_FI,     /* 64-bit PowerPC, with FP but no Altivec */
-      VexSubArchPPC64_VFI     /* 64-bit PowerPC, with FP and Altivec */
-   }
-   VexSubArch;
+
+/* For a given architecture, these specify extra capabilities beyond
+   the minimum supported (baseline) capabilities.  They may be OR'd
+   together, although some combinations don't make sense.  (eg, SSE2
+   but not SSE1).  LibVEX_Translate will check for nonsensical
+   combinations. */
+
+/* x86: baseline capability is Pentium-1 (FPU, MMX, but no SSE) */
+#define VEX_HWCAPS_X86_SSE1   (1<<1)  /* SSE1 support (Pentium III) */
+#define VEX_HWCAPS_X86_SSE2   (1<<2)  /* SSE2 support (Pentium 4) */
+#define VEX_HWCAPS_X86_SSE3   (1<<3)  /* SSE3 support (>= Prescott) */
+
+/* amd64: baseline capability is SSE2 */
+#define VEX_HWCAPS_AMD64_SSE3 (1<<4)  /* SSE3 support */
+
+/* ppc32: baseline capability is integer only */
+#define VEX_HWCAPS_PPC32_F    (1<<5)  /* basic (non-optional) FP */
+#define VEX_HWCAPS_PPC32_V    (1<<6)  /* Altivec (VMX) */
+#define VEX_HWCAPS_PPC32_FX   (1<<7)  /* FP extns (fsqrt, fsqrts) */
+#define VEX_HWCAPS_PPC32_GX   (1<<8)  /* Graphics extns
+                                         (fres,frsqrte,fsel,stfiwx) */
+
+/* ppc64: baseline capability is integer and basic FP insns */
+#define VEX_HWCAPS_PPC64_V    (1<<9)  /* Altivec (VMX) */
+#define VEX_HWCAPS_PPC64_FX   (1<<10) /* FP extns (fsqrt, fsqrts) */
+#define VEX_HWCAPS_PPC64_GX   (1<<11) /* Graphics extns
+                                         (fres,frsqrte,fsel,stfiwx) */
+
+/* arm: baseline capability is ARMv4 */
+/* No extra capabilities */
+
 
 /* These return statically allocated strings. */
 
 extern const HChar* LibVEX_ppVexArch    ( VexArch );
-extern const HChar* LibVEX_ppVexSubArch ( VexSubArch );
+extern const HChar* LibVEX_ppVexHwCaps  ( VexArch, UInt );
 
 
 /* This struct is a bit of a hack, but is needed to carry misc
@@ -100,7 +116,7 @@ extern const HChar* LibVEX_ppVexSubArch ( VexSubArch );
 typedef
    struct {
       /* This is the only mandatory field. */
-      VexSubArch subarch;
+      UInt hwcaps;
       /* PPC32/PPC64 only: size of cache line */
       Int ppc_cache_line_szB;
    }

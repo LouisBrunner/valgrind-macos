@@ -7253,7 +7253,7 @@ DisResult disInstr_X86_WRK (
 
    /* Skip parts of the decoder which don't apply given the stated
       guest subarchitecture. */
-   if (archinfo->subarch == VexSubArchX86_sse0)
+   if (archinfo->hwcaps == 0/*baseline, no sse at all*/)
       goto after_sse_decoders;
    
    /* Otherwise we must be doing sse1 or sse2, so we can at least try
@@ -8274,9 +8274,8 @@ DisResult disInstr_X86_WRK (
 
    /* Skip parts of the decoder which don't apply given the stated
       guest subarchitecture. */
-   if (archinfo->subarch == VexSubArchX86_sse0 
-       || archinfo->subarch == VexSubArchX86_sse1)
-      goto after_sse_decoders;
+   if (0 == (archinfo->hwcaps & VEX_HWCAPS_X86_SSE2))
+      goto after_sse_decoders; /* no SSE2 capabilities */
 
    insn = (UChar*)&guest_code[delta];
 
@@ -10459,10 +10458,12 @@ DisResult disInstr_X86_WRK (
 
    /* Skip parts of the decoder which don't apply given the stated
       guest subarchitecture. */
-   if (archinfo->subarch == VexSubArchX86_sse0 
-       || archinfo->subarch == VexSubArchX86_sse1
-       /* || archinfo->subarch == VexSubArchX86_sse2 */)
-      goto after_sse_decoders;
+   /* if (0 == (archinfo->hwcaps & VEX_HWCAPS_X86_SSE3)) */
+   /* In fact this is highly bogus; we accept SSE3 insns even on a
+      SSE2-only guest since they turn into IR which can be re-emitted
+      successfully on an SSE2 host. */
+   if (0 == (archinfo->hwcaps & VEX_HWCAPS_X86_SSE2))
+      goto after_sse_decoders; /* no SSE3 capabilities */
 
    insn = (UChar*)&guest_code[delta];
 
@@ -12148,22 +12149,22 @@ DisResult disInstr_X86_WRK (
          IRDirty* d     = NULL;
          HChar*   fName = NULL;
          void*    fAddr = NULL;
-         switch (archinfo->subarch) {
-            case VexSubArchX86_sse0:
-               fName = "x86g_dirtyhelper_CPUID_sse0";
-               fAddr = &x86g_dirtyhelper_CPUID_sse0; 
-               break;
-            case VexSubArchX86_sse1:
-               fName = "x86g_dirtyhelper_CPUID_sse1";
-               fAddr = &x86g_dirtyhelper_CPUID_sse1; 
-               break;
-            case VexSubArchX86_sse2:
-               fName = "x86g_dirtyhelper_CPUID_sse2";
-               fAddr = &x86g_dirtyhelper_CPUID_sse2; 
-               break;
-            default:
-               vpanic("disInstr(x86)(cpuid)");
-         }
+         if (archinfo->hwcaps & VEX_HWCAPS_X86_SSE2) {
+            fName = "x86g_dirtyhelper_CPUID_sse2";
+            fAddr = &x86g_dirtyhelper_CPUID_sse2; 
+         } 
+         else
+         if (archinfo->hwcaps & VEX_HWCAPS_X86_SSE1) {
+            fName = "x86g_dirtyhelper_CPUID_sse1";
+            fAddr = &x86g_dirtyhelper_CPUID_sse1; 
+         } 
+         else
+         if (archinfo->hwcaps == 0/*no SSE*/) {
+            fName = "x86g_dirtyhelper_CPUID_sse0";
+            fAddr = &x86g_dirtyhelper_CPUID_sse0; 
+         } else
+            vpanic("disInstr(x86)(cpuid)");
+
          vassert(fName); vassert(fAddr);
          d = unsafeIRDirty_0_N ( 0/*regparms*/, 
                                  fName, fAddr, mkIRExprVec_0() );

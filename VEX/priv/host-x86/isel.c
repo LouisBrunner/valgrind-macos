@@ -158,7 +158,7 @@ typedef
 
       Int          vreg_ctr;
 
-      VexSubArch   subarch;
+      UInt         hwcaps;
    }
    ISelEnv;
 
@@ -2773,20 +2773,18 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
 static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
 
-#  define REQUIRE_SSE1                                  \
-      do { if (env->subarch == VexSubArchX86_sse0)      \
-              goto vec_fail;                            \
+#  define REQUIRE_SSE1                                    \
+      do { if (env->hwcaps == 0/*baseline, no sse*/)      \
+              goto vec_fail;                              \
       } while (0)
 
-#  define REQUIRE_SSE2                                  \
-      do { if (env->subarch == VexSubArchX86_sse0       \
-               || env->subarch == VexSubArchX86_sse1)   \
-              goto vec_fail;                            \
+#  define REQUIRE_SSE2                                    \
+      do { if (0 == (env->hwcaps & VEX_HWCAPS_X86_SSE2))  \
+              goto vec_fail;                              \
       } while (0)
 
-#  define SSE2_OR_ABOVE                                 \
-      (env->subarch != VexSubArchX86_sse0               \
-       && env->subarch != VexSubArchX86_sse1)
+#  define SSE2_OR_ABOVE                                   \
+       (env->hwcaps & VEX_HWCAPS_X86_SSE2)
 
    MatchInfo mi;
    Bool      arg1isEReg = False;
@@ -3271,8 +3269,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    vec_fail:
-   vex_printf("iselVecExpr (subarch = %s): can't reduce\n",
-              LibVEX_ppVexSubArch(env->subarch));
+   vex_printf("iselVecExpr (hwcaps = %s): can't reduce\n",
+              LibVEX_ppVexHwCaps(VexArchX86,env->hwcaps));
    ppIRExpr(e);
    vpanic("iselVecExpr_wrk");
 
@@ -3522,7 +3520,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- MEM FENCE --------- */
    case Ist_MFence:
-      addInstr(env, X86Instr_MFence(env->subarch));
+      addInstr(env, X86Instr_MFence(env->hwcaps));
       return;
 
    /* --------- INSTR MARK --------- */
@@ -3582,15 +3580,15 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 HInstrArray* iselBB_X86 ( IRBB* bb, VexArchInfo* archinfo_host )
 {
-   Int        i, j;
-   HReg       hreg, hregHI;
-   ISelEnv*   env;
-   VexSubArch subarch_host = archinfo_host->subarch;
+   Int      i, j;
+   HReg     hreg, hregHI;
+   ISelEnv* env;
+   UInt     hwcaps_host = archinfo_host->hwcaps;
 
    /* sanity ... */
-   vassert(subarch_host == VexSubArchX86_sse0
-           || subarch_host == VexSubArchX86_sse1
-           || subarch_host == VexSubArchX86_sse2);
+   vassert(0 == (hwcaps_host & ~(VEX_HWCAPS_X86_SSE1
+                                 |VEX_HWCAPS_X86_SSE2
+                                 |VEX_HWCAPS_X86_SSE3)));
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));
@@ -3609,7 +3607,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb, VexArchInfo* archinfo_host )
    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
 
    /* and finally ... */
-   env->subarch = subarch_host;
+   env->hwcaps = hwcaps_host;
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */

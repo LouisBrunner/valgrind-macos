@@ -206,7 +206,8 @@ typedef
  
       Int          vreg_ctr;
  
-      VexSubArch   subarch;
+      /* 27 Jan 06: Not currently used, but should be */
+      UInt         hwcaps;
 
       Bool         mode64;
    }
@@ -3350,7 +3351,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    } /* if (e->tag == Iex_Binop) */
 
    vex_printf("iselVecExpr(ppc) (subarch = %s): can't reduce\n",
-              LibVEX_ppVexSubArch(env->subarch));
+              LibVEX_ppVexHwCaps(mode64 ? VexArchPPC64 : VexArchPPC32,
+                                 env->hwcaps));
    ppIRExpr(e);
    vpanic("iselVecExpr_wrk(ppc)");
 }
@@ -3640,26 +3642,31 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 HInstrArray* iselBB_PPC ( IRBB* bb, VexArchInfo* archinfo_host )
 {
-   Int        i, j;
-   HReg       hreg, hregHI;
-   ISelEnv*   env;
-   VexSubArch subarch_host = archinfo_host->subarch;
-   Bool       mode64;
+   Int      i, j;
+   HReg     hreg, hregHI;
+   ISelEnv* env;
+   UInt     hwcaps_host = archinfo_host->hwcaps;
+   Bool     mode64 = False;
+   Bool     is32, is64;
+   UInt     mask32, mask64;
 
    /* Figure out whether we're being ppc32 or ppc64 today. */
-   switch (subarch_host) {
-   case VexSubArchPPC32_VFI:
-   case VexSubArchPPC32_FI:
-   case VexSubArchPPC32_I:
+   mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
+            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX;
+
+   is32 = (hwcaps_host & ~mask32) > 0;
+
+   mask64 = VEX_HWCAPS_PPC64_V
+            | VEX_HWCAPS_PPC64_FX | VEX_HWCAPS_PPC64_GX;
+
+   is64 = (hwcaps_host & ~mask64) > 0;
+
+   if (is32 && !is64)
       mode64 = False;
-      break;
-   case VexSubArchPPC64_VFI:
-   case VexSubArchPPC64_FI:
+   else if (is64 && !is32)
       mode64 = True;
-      break;
-   default:
+   else
       vpanic("iselBB_PPC: illegal subarch");
-   }
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));
@@ -3681,7 +3688,7 @@ HInstrArray* iselBB_PPC ( IRBB* bb, VexArchInfo* archinfo_host )
    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
 
    /* and finally ... */
-   env->subarch = subarch_host;
+   env->hwcaps = hwcaps_host;
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */

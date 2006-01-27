@@ -341,7 +341,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigset_t         saved_set, tmp_set;
      struct vki_sigaction saved_act, tmp_act;
 
-     volatile Bool have_fp, have_vmx;
+     volatile Bool have_F, have_V, have_FX, have_GX;
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
@@ -391,16 +391,15 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_GX = False;
      } else {
-        __asm__ __volatile__("fsqrte 0,0");
+        __asm__ __volatile__("frsqrte 0,0");
      }
 
      VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-
-     if (0)
+     /*
         VG_(printf)("F %d V %d FX %d GX %d\n", 
                     (Int)have_F, (Int)have_V, (Int)have_FX, (Int)have_GX);
-
+     */
      /* Make FP a prerequisite for VMX (bogusly so), and for FX and GX. */
      if (have_V && !have_F)
         have_V = False;
@@ -430,7 +429,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigset_t         saved_set, tmp_set;
      struct vki_sigaction saved_act, tmp_act;
 
-     volatile Bool have_fp, have_vmx;
+     volatile Bool have_F, have_V, have_FX, have_GX;
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
@@ -480,16 +479,16 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_GX = False;
      } else {
-        __asm__ __volatile__("fsqrte 0,0");
+        __asm__ __volatile__("frsqrte 0,0");
      }
 
      VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-
+     /*
      if (0)
         VG_(printf)("F %d V %d FX %d GX %d\n", 
                     (Int)have_F, (Int)have_V, (Int)have_FX, (Int)have_GX);
-
+     */
      /* on ppc64, if we don't even have FP, just give up. */
      if (!have_F)
         return False;

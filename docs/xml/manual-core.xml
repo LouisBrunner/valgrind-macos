@@ -1569,7 +1569,7 @@ ensure that it works on machines with kernel 2.4 or 2.6 and glibc
 with <computeroutput>make regtest</computeroutput>.
 </para>
 
-<para>There are three options (in addition to the usual
+<para>There are five options (in addition to the usual
 <option>--prefix=</option> which affect how Valgrind is built:
 <itemizedlist>
 
@@ -1585,8 +1585,8 @@ with <computeroutput>make regtest</computeroutput>.
   <listitem>
     <para><option>--enable-tls</option></para>
     <para>TLS (Thread Local Storage) is a relatively new mechanism which
-    requires compiler, linker and kernel support.  Valgrind
-    automatically test if TLS is supported and enable this option.
+    requires compiler, linker and kernel support.  Valgrind tries to
+    automatically test if TLS is supported and if so enables this option.
     Sometimes it cannot test for TLS, so this option allows you to
     override the automatic test.</para>
   </listitem>
@@ -1598,6 +1598,20 @@ with <computeroutput>make regtest</computeroutput>.
      the root of the source tree.
    </para>
   </listitem>
+
+  <listitem>
+    <para><option>--enable-only64bit</option></para>
+    <para><option>--enable-only32bit</option></para>
+    <para>On 64-bit
+     platforms (amd64-linux, ppc64-linux), Valgrind is by default built
+     in such a way that both 32-bit and 64-bit executables can be run.
+     Sometimes this cleverness is a problem for a variety of reasons.
+     These two flags allow for single-target builds in this situation.
+     If you issue both, the configure script will complain.  Note they
+     are ignored on 32-bit-only platforms (x86-linux, ppc32-linux).
+   </para>
+  </listitem>
+
 </itemizedlist>
 </para>
 

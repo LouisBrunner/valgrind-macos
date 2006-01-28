@@ -4,10 +4,11 @@ noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
 	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest \
-	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.vgtest
+	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.vgtest \
+	lsw.stderr.exp lsw.stdout.exp lsw.vgtest
 
 check_PROGRAMS = \
-	jm-insns
+	jm-insns lsw
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
 		@FLAG_M64@

@@ -3955,16 +3955,26 @@ void generate_lsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
       }
       /* rD |=  (8Uto32(*(EA+i))) << shift */
       vassert(shift == 0 || shift == 8 || shift == 16 || shift == 24);
-      putIReg( rD, 
-         mkSzWiden32(ty, 
-            binop(Iop_Or32, 
-                  mkSzNarrow32(ty, getIReg(rD)),
-                  binop(Iop_Shl32, 
-                        unop(Iop_8Uto32, 
-                             loadBE(Ity_I8, 
-                                    binop(Iop_Add32, e_EA, mkU32(i)))), 
-                        mkU8(toUChar(shift)))),
-            /*Signed*/False) ); 
+      putIReg( 
+         rD, 
+         mkSzWiden32(
+            ty, 
+            binop(
+               Iop_Or32, 
+               mkSzNarrow32(ty, getIReg(rD)),
+               binop(
+                  Iop_Shl32, 
+                  unop(
+                     Iop_8Uto32, 
+                     loadBE(Ity_I8, 
+                            binop(mkSzOp(ty,Iop_Add8), e_EA, mkSzImm(ty,i)))
+                  ), 
+                  mkU8(toUChar(shift))
+               )
+            ),
+            /*Signed*/False
+	 ) 
+      ); 
       shift -= 8;
    }
 }
@@ -4035,7 +4045,7 @@ static Bool dis_int_ldst_str ( UInt theInstr, /*OUT*/Bool* stopHere )
          registers to be loaded.  It should. */
       DIP("lswi r%u,r%u,%d\n", rD_addr, rA_addr, NumBytes);
       assign( t_EA, ea_rAor0(rA_addr) );
-      if (!mode64 && NumBytes == 8) {
+      if (NumBytes == 8 && !mode64) {
          /* Special case hack */
          /* rD = Mem[EA]; (rD+1)%32 = Mem[EA+4] */
          putIReg( rD_addr,          
@@ -4071,7 +4081,7 @@ static Bool dis_int_ldst_str ( UInt theInstr, /*OUT*/Bool* stopHere )
    case 0x2D5: // stswi (Store String Word Immediate, PPC32 p528)
       DIP("stswi r%u,r%u,%d\n", rS_addr, rA_addr, NumBytes);
       assign( t_EA, ea_rAor0(rA_addr) );
-      if (NumBytes == 8) {
+      if (NumBytes == 8 && !mode64) {
          /* Special case hack */
          /* Mem[EA] = rD; Mem[EA+4] = (rD+1)%32 */
          storeBE( mkexpr(t_EA), 

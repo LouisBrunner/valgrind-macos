@@ -5710,7 +5710,9 @@ static Bool dis_fp_arith ( UInt theInstr )
          }
          DIP("fsqrts%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
-         assign( frD, roundToSgl( unop(Iop_SqrtF64, mkexpr(frB)) ));
+         // however illogically, on ppc970 this insn behaves identically
+         // to fsqrt (double-precision).  So don't do round-to-single.
+         assign( frD, unop(Iop_SqrtF64, mkexpr(frB)) );
          break;
 
       case 0x18: // fres (Floating Reciprocal Estimate Single, PPC32 p421)
@@ -5733,6 +5735,18 @@ static Bool dis_fp_arith ( UInt theInstr )
              frD_addr, frA_addr, frC_addr);
          assign( frD, roundToSgl( binop(Iop_MulF64,
                                         mkexpr(frA), mkexpr(frC)) ));
+         break;
+
+      case 0x1A: // frsqrtes (Floating Recip SqRt Est Single)
+         // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
+         // Undocumented instruction?
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_arith(ppc)(instr,frsqrte)\n");
+            return False;
+         }
+         DIP("frsqrtes%s fr%u,fr%u\n", flag_rC ? ".":"",
+             frD_addr, frB_addr);
+         assign( frD, unop(Iop_Est5FRSqrt, mkexpr(frB)) );
          break;
 
       default:
@@ -5808,6 +5822,19 @@ static Bool dis_fp_arith ( UInt theInstr )
                     mkexpr(frC) ));
          break;
       }
+
+      case 0x18: // fre (Floating Reciprocal Estimate)
+         // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
+         // Note: unclear whether this insn really exists or not
+         // ppc970 doesn't have it, but POWER5 does
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_arith(ppc)(instr,fres)\n");
+            return False;
+         }
+         DIP("fre%s fr%u,fr%u\n", flag_rC ? ".":"",
+             frD_addr, frB_addr);
+         assign( frD, unop(Iop_Est8FRecip, mkexpr(frB)) );
+         break;
 
       case 0x19: // fmul (Floating Mult (Double Precision), PPC32 p413)
          if (frB_addr != 0) {
@@ -8645,6 +8672,11 @@ DisResult disInstr_PPC_WRK (
       case 0x1F:                       // fnmadds
          if (dis_fp_multadd(theInstr)) goto decode_success;
          goto decode_failure;
+
+      case 0x1A:                       // frsqrtes
+         if (!allow_GX) goto decode_noGX;
+         if (dis_fp_arith(theInstr)) goto decode_success;
+         goto decode_failure;
          
       default:
          goto decode_failure;
@@ -8682,6 +8714,11 @@ DisResult disInstr_PPC_WRK (
       case 0x1C: case 0x1D: case 0x1E: // fmsub, fmadd, fnmsub
       case 0x1F:                       // fnmadd
          if (dis_fp_multadd(theInstr)) goto decode_success;
+         goto decode_failure;
+
+      case 0x18:                       // fre
+         if (!allow_GX) goto decode_noGX;
+         if (dis_fp_arith(theInstr)) goto decode_success;
          goto decode_failure;
          
       default:

@@ -102,22 +102,22 @@ int main ( void )
   args[6]  = -5e20;
   args[7]  = -501.0;
   args[8]  = -6.0;
-  args[9]  = -1.0;
+  args[9]  = -1.01;
   args[10] = -2e-20;
   args[11] = -2e-200;
   args[12] =  2e-200;
   args[13] =  2e-20;
-  args[14] =  1.0;
+  args[14] =  1.01;
   args[15] =  6.0;
   args[16] =  501.0;
   args[17] =  5e20;
   args[18] =  5e100;
 
-  do_one( "fre",  do_fre,  args, nargs, "%e", "%e");
-  do_one( "fres", do_fres, args, nargs, "%e", "%e");
+  do_one( "fre",  do_fre,  args, nargs, "%e", "%4.1e");
+  do_one( "fres", do_fres, args, nargs, "%e", "%4.1e");
 
-  do_one( "frsqrte",  do_frsqrte,  args, nargs, "%e", "%e");
-  do_one( "frsqrtes", do_frsqrtes, args, nargs, "%e", "%e");
+  do_one( "frsqrte",  do_frsqrte,  args, nargs, "%e", "%4.1e");
+  do_one( "frsqrtes", do_frsqrtes, args, nargs, "%e", "%4.1e");
 
   free(args);
   return 0;

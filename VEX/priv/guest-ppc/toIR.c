@@ -5723,7 +5723,11 @@ static Bool dis_fp_arith ( UInt theInstr )
          }
          DIP("fres%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
-         assign( frD, unop(Iop_Est8FRecip, mkexpr(frB)) );
+         //assign( frD, unop(Iop_Est8FRecip, mkexpr(frB)) );
+         { IRExpr* ieee_one
+              = IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL));
+           assign( frD, roundToSgl(binop(Iop_DivF64, ieee_one, mkexpr(frB))) );
+         }
          break;
 
       case 0x19: // fmuls (Floating Multiply Single, PPC32 p414)
@@ -5833,7 +5837,11 @@ static Bool dis_fp_arith ( UInt theInstr )
          }
          DIP("fre%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
-         assign( frD, unop(Iop_Est8FRecip, mkexpr(frB)) );
+         //assign( frD, unop(Iop_Est8FRecip, mkexpr(frB)) );
+         { IRExpr* ieee_one
+              = IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL));
+           assign( frD, binop(Iop_DivF64, ieee_one, mkexpr(frB)) );
+         }
          break;
 
       case 0x19: // fmul (Floating Mult (Double Precision), PPC32 p413)

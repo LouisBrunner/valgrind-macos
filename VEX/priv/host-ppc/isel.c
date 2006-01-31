@@ -2778,8 +2778,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       if (!mode64) {
          HReg r_srcHi = newVRegI(env);
          HReg r_srcLo = newVRegI(env);
-         addInstr(env, PPCInstr_LI(r_srcHi, u.u32x2[1], mode64));
-         addInstr(env, PPCInstr_LI(r_srcLo, u.u32x2[0], mode64));
+         addInstr(env, PPCInstr_LI(r_srcHi, u.u32x2[0], mode64));
+         addInstr(env, PPCInstr_LI(r_srcLo, u.u32x2[1], mode64));
          return mk_LoadRR32toFPR( env, r_srcHi, r_srcLo );
       } else { // mode64
          HReg r_src = newVRegI(env);

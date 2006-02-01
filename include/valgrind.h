@@ -121,7 +121,7 @@
    assert()) */
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)               \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
    {                                                              \
       (_zzq_rlval) = (_zzq_default);                              \
    }
@@ -140,13 +140,13 @@
    value gets put in the return slot, so that everything works when
    this is executed not under Valgrind.  Args are passed in a memory
    block, and so there's no intrinsic limit to the number that could
-   be passed, but it's currently four.
+   be passed, but it's currently five.
    
    The macro args are: 
       _zzq_rlval    result lvalue
       _zzq_default  default value (result returned when running on real CPU)
       _zzq_request  request code
-      _zzq_arg1..4  request params
+      _zzq_arg1..5  request params
 
    The other two macros are used to support function wrapping, and are
    a lot simpler.  VALGRIND_GET_NR_CONTEXT returns the value of the
@@ -179,14 +179,15 @@ typedef
 
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)               \
-  { volatile unsigned int _zzq_args[5];                           \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
+  { volatile unsigned int _zzq_args[6];                           \
     volatile unsigned int _zzq_result;                            \
     _zzq_args[0] = (unsigned int)(_zzq_request);                  \
     _zzq_args[1] = (unsigned int)(_zzq_arg1);                     \
     _zzq_args[2] = (unsigned int)(_zzq_arg2);                     \
     _zzq_args[3] = (unsigned int)(_zzq_arg3);                     \
     _zzq_args[4] = (unsigned int)(_zzq_arg4);                     \
+    _zzq_args[5] = (unsigned int)(_zzq_arg5);                     \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %EDX = client_request ( %EAX ) */         \
                      "xchgl %%ebx,%%ebx"                          \
@@ -232,14 +233,15 @@ typedef
 
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)               \
-  { volatile unsigned long long int _zzq_args[5];                 \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
+  { volatile unsigned long long int _zzq_args[6];                 \
     volatile unsigned long long int _zzq_result;                  \
     _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
     _zzq_args[1] = (unsigned long long int)(_zzq_arg1);           \
     _zzq_args[2] = (unsigned long long int)(_zzq_arg2);           \
     _zzq_args[3] = (unsigned long long int)(_zzq_arg3);           \
     _zzq_args[4] = (unsigned long long int)(_zzq_arg4);           \
+    _zzq_args[5] = (unsigned long long int)(_zzq_arg5);           \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %RDX = client_request ( %RAX ) */         \
                      "xchgq %%rbx,%%rbx"                          \
@@ -285,9 +287,9 @@ typedef
 
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)               \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
-  {          unsigned int  _zzq_args[5];                          \
+  {          unsigned int  _zzq_args[6];                          \
     register unsigned int  _zzq_result __asm__("r3");             \
     register unsigned int* _zzq_ptr __asm__("r4");                \
     _zzq_args[0] = (unsigned int)(_zzq_request);                  \
@@ -295,6 +297,7 @@ typedef
     _zzq_args[2] = (unsigned int)(_zzq_arg2);                     \
     _zzq_args[3] = (unsigned int)(_zzq_arg3);                     \
     _zzq_args[4] = (unsigned int)(_zzq_arg4);                     \
+    _zzq_args[5] = (unsigned int)(_zzq_arg5);                     \
     _zzq_ptr = _zzq_args;                                         \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %R3 = client_request ( %R4 ) */           \
@@ -341,9 +344,9 @@ typedef
 
 #define VALGRIND_DO_CLIENT_REQUEST(                               \
         _zzq_rlval, _zzq_default, _zzq_request,                   \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)               \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
-  {          unsigned long long int  _zzq_args[5];                \
+  {          unsigned long long int  _zzq_args[6];                \
     register unsigned long long int  _zzq_result __asm__("r3");   \
     register unsigned long long int* _zzq_ptr __asm__("r4");      \
     _zzq_args[0] = (unsigned long long int)(_zzq_request);        \
@@ -351,6 +354,7 @@ typedef
     _zzq_args[2] = (unsigned long long int)(_zzq_arg2);           \
     _zzq_args[3] = (unsigned long long int)(_zzq_arg3);           \
     _zzq_args[4] = (unsigned long long int)(_zzq_arg4);           \
+    _zzq_args[5] = (unsigned long long int)(_zzq_arg5);           \
     _zzq_ptr = _zzq_args;                                         \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %R3 = client_request ( %R4 ) */           \
@@ -1017,7 +1021,7 @@ typedef
    ({unsigned int _qzz_res;                                       \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* if not */,          \
                                VG_USERREQ__RUNNING_ON_VALGRIND,   \
-                               0, 0, 0, 0);                       \
+                               0, 0, 0, 0, 0);                    \
     _qzz_res;                                                     \
    })
 
@@ -1030,7 +1034,7 @@ typedef
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__DISCARD_TRANSLATIONS,  \
-                               _qzz_addr, _qzz_len, 0, 0);        \
+                               _qzz_addr, _qzz_len, 0, 0, 0);     \
    }
 
 
@@ -1054,7 +1058,8 @@ VALGRIND_PRINTF(const char *format, ...)
    va_list vargs;
    va_start(vargs, format);
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0, VG_USERREQ__PRINTF,
-                           (unsigned long)format, (unsigned long)vargs, 0, 0);
+                              (unsigned long)format, (unsigned long)vargs, 
+                              0, 0, 0);
    va_end(vargs);
    return (int)_qzz_res;
 }
@@ -1069,7 +1074,8 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    va_list vargs;
    va_start(vargs, format);
    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0, VG_USERREQ__PRINTF_BACKTRACE,
-                           (unsigned long)format, (unsigned long)vargs, 0, 0);
+                              (unsigned long)format, (unsigned long)vargs, 
+                              0, 0, 0);
    va_end(vargs);
    return (int)_qzz_res;
 }
@@ -1084,7 +1090,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
                                VG_USERREQ__CLIENT_CALL0,          \
                                _qyy_fn,                           \
-                               0, 0, 0);                          \
+                               0, 0, 0, 0);                       \
     _qyy_res;                                                     \
    })
 
@@ -1093,7 +1099,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
                                VG_USERREQ__CLIENT_CALL1,          \
                                _qyy_fn,                           \
-                               _qyy_arg1, 0, 0);                  \
+                               _qyy_arg1, 0, 0, 0);               \
     _qyy_res;                                                     \
    })
 
@@ -1102,7 +1108,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
                                VG_USERREQ__CLIENT_CALL2,          \
                                _qyy_fn,                           \
-                               _qyy_arg1, _qyy_arg2, 0);          \
+                               _qyy_arg1, _qyy_arg2, 0, 0);       \
     _qyy_res;                                                     \
    })
 
@@ -1111,7 +1117,8 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
                                VG_USERREQ__CLIENT_CALL3,          \
                                _qyy_fn,                           \
-                               _qyy_arg1, _qyy_arg2, _qyy_arg3);  \
+                               _qyy_arg1, _qyy_arg2,              \
+                               _qyy_arg3, 0);                     \
     _qyy_res;                                                     \
    })
 
@@ -1123,7 +1130,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    ({unsigned int _qyy_res;                                       \
     VALGRIND_DO_CLIENT_REQUEST(_qyy_res, 0 /* default return */,  \
                                VG_USERREQ__COUNT_ERRORS,          \
-                               0, 0, 0, 0);                       \
+                               0, 0, 0, 0, 0);                    \
     _qyy_res;                                                     \
    })
 
@@ -1151,7 +1158,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__MALLOCLIKE_BLOCK,      \
-                               addr, sizeB, rzB, is_zeroed);      \
+                               addr, sizeB, rzB, is_zeroed, 0);   \
    }
 
 /* Mark a block of memory as having been freed by a free()-like function.
@@ -1162,7 +1169,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__FREELIKE_BLOCK,        \
-                               addr, rzB, 0, 0);                  \
+                               addr, rzB, 0, 0, 0);               \
    }
 
 /* Create a memory pool. */
@@ -1170,7 +1177,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__CREATE_MEMPOOL,        \
-                               pool, rzB, is_zeroed, 0);          \
+                               pool, rzB, is_zeroed, 0, 0);       \
    }
 
 /* Destroy a memory pool. */
@@ -1178,7 +1185,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__DESTROY_MEMPOOL,       \
-                               pool, 0, 0, 0);                    \
+                               pool, 0, 0, 0, 0);                 \
    }
 
 /* Associate a piece of memory with a memory pool. */
@@ -1186,7 +1193,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__MEMPOOL_ALLOC,         \
-                               pool, addr, size, 0);              \
+                               pool, addr, size, 0, 0);           \
    }
 
 /* Disassociate a piece of memory from a memory pool. */
@@ -1194,7 +1201,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__MEMPOOL_FREE,          \
-                               pool, addr, 0, 0);                 \
+                               pool, addr, 0, 0, 0);              \
    }
 
 /* Mark a piece of memory as being a stack. Returns a stack id. */
@@ -1202,7 +1209,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    ({unsigned int _qzz_res;                                       \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__STACK_REGISTER,        \
-                               start, end, 0, 0);                 \
+                               start, end, 0, 0, 0);              \
     _qzz_res;                                                     \
    })
 
@@ -1212,7 +1219,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__STACK_DEREGISTER,      \
-                               id, 0, 0, 0);                      \
+                               id, 0, 0, 0, 0);                   \
    }
 
 /* Change the start and end address of the stack id. */
@@ -1220,7 +1227,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    {unsigned int _qzz_res;                                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__STACK_CHANGE,          \
-                               id, start, end, 0);                \
+                               id, start, end, 0, 0);             \
    }
 
 

@@ -60,7 +60,8 @@ void VG_NOTIFY_ON_LOAD(freeres)( void )
    __libc_freeres();
 #endif
    VALGRIND_DO_CLIENT_REQUEST(res, 0 /* default */,
-                              VG_USERREQ__LIBC_FREERES_DONE, 0, 0, 0, 0);
+                              VG_USERREQ__LIBC_FREERES_DONE, 
+                              0, 0, 0, 0, 0);
    /*NOTREACHED*/
    *(int *)0 = 'x';
 }

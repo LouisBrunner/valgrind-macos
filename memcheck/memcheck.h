@@ -101,7 +101,7 @@ typedef
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__MAKE_NOACCESS,           \
-                            _qzz_addr, _qzz_len, 0, 0);          \
+                            _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))
       
@@ -111,7 +111,7 @@ typedef
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__MAKE_WRITABLE,           \
-                            _qzz_addr, _qzz_len, 0, 0);          \
+                            _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))
 
@@ -121,7 +121,7 @@ typedef
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__MAKE_READABLE,           \
-                            _qzz_addr, _qzz_len, 0, 0);          \
+                            _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))
 
@@ -133,7 +133,8 @@ typedef
 	(__extension__({unsigned int _qzz_res;			 \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__CREATE_BLOCK,            \
-                            _qzz_addr, _qzz_len, _qzz_desc, 0);	 \
+                            _qzz_addr, _qzz_len, _qzz_desc,      \
+                            0, 0);                               \
     _qzz_res;							 \
    }))
 
@@ -143,7 +144,7 @@ typedef
    (__extension__ ({unsigned int _qzz_res;                       \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__DISCARD,                 \
-                            0, _qzz_blkindex, 0, 0);             \
+                            0, _qzz_blkindex, 0, 0, 0);          \
     _qzz_res;                                                    \
    }))
 
@@ -158,7 +159,7 @@ typedef
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
                             VG_USERREQ__CHECK_WRITABLE,          \
-                            _qzz_addr, _qzz_len, 0, 0);          \
+                            _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))
 
@@ -170,7 +171,7 @@ typedef
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
                             VG_USERREQ__CHECK_READABLE,          \
-                            _qzz_addr, _qzz_len, 0, 0);          \
+                            _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))
 
@@ -189,7 +190,7 @@ typedef
    {unsigned int _qzz_res;                                       \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
                             VG_USERREQ__DO_LEAK_CHECK,           \
-                            0, 0, 0, 0);                         \
+                            0, 0, 0, 0, 0);                      \
    }
 
 /* Just display summaries of leaked memory, rather than all the
@@ -198,7 +199,7 @@ typedef
    {unsigned int _qzz_res;                                       \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
                             VG_USERREQ__DO_LEAK_CHECK,           \
-                            1, 0, 0, 0);                         \
+                            1, 0, 0, 0, 0);                      \
    }
 
 /* Return number of leaked, dubious, reachable and suppressed bytes found by
@@ -207,7 +208,8 @@ typedef
    {unsigned int _qzz_res;                                               \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                              \
                             VG_USERREQ__COUNT_LEAKS,                     \
-                            &leaked, &dubious, &reachable, &suppressed); \
+                            &leaked, &dubious, &reachable, &suppressed,  \
+                            0);                                          \
    }
 
 
@@ -227,7 +229,7 @@ typedef
     char* czzvbits = (char*)zzvbits;                             \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
                             VG_USERREQ__GET_VBITS,               \
-                            czzsrc, czzvbits, zznbytes,0 );      \
+                            czzsrc, czzvbits, zznbytes, 0, 0);   \
     _qzz_res;                                                    \
    }))
 
@@ -247,7 +249,7 @@ typedef
     char* czzvbits = (char*)zzvbits;                             \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
                             VG_USERREQ__SET_VBITS,               \
-                            czzdst, czzvbits, zznbytes,0 );      \
+                            czzdst, czzvbits, zznbytes, 0, 0);   \
     _qzz_res;                                                    \
    }))
 

@@ -401,7 +401,7 @@ run_innerloop_exit:
 
 	/* This check avoidance may be removable if stfiwx is
 	implemented. */
-#	if !defined(ENABLE_INNER)
+#	if 0 //!defined(ENABLE_INNER)
         /* Check FPSCR & 0xFF == 0 (lowest 8bits are controls)  */
         mffs      4                       /* fpscr -> fpr */
         li        5,48

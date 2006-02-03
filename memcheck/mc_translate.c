@@ -1677,6 +1677,11 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_MulF64r32:
       case Iop_DivF64:
       case Iop_DivF64r32:
+      case Iop_ScaleF64:
+      case Iop_Yl2xF64:
+      case Iop_Yl2xp1F64:
+      case Iop_AtanF64:
+         /* I32(rm) x F64 x F64 -> F64 */
          return mkLazy3(mce, Ity_I64, vatom1, vatom2, vatom3);
       default:
          ppIROp(op);
@@ -2005,8 +2010,12 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_RoundF64toF32:
       case Iop_F64toI64:
       case Iop_I64toF64:
-         /* First arg is I32 (rounding mode), second is F64 or I64
-            (data). */
+      case Iop_SinF64:
+      case Iop_CosF64:
+      case Iop_TanF64:
+      case Iop_2xm1F64:
+      case Iop_SqrtF64:
+         /* I32(rm) x I64/F64 -> I64/F64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_PRemC3210F64: case Iop_PRem1C3210F64:
@@ -2020,12 +2029,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I16, vatom1, vatom2);
 
-      case Iop_ScaleF64:
-      case Iop_Yl2xF64:
-      case Iop_Yl2xp1F64:
       case Iop_PRemF64:
       case Iop_PRem1F64:
-      case Iop_AtanF64:
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_CmpF64:
@@ -2271,12 +2276,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_F32toF64: 
       case Iop_I32toF64:
       case Iop_NegF64:
-      case Iop_SinF64:
-      case Iop_CosF64:
-      case Iop_TanF64:
-      case Iop_SqrtF64:
       case Iop_AbsF64:
-      case Iop_2xm1F64:
       case Iop_Est5FRSqrt:
       case Iop_Clz64:
       case Iop_Ctz64:

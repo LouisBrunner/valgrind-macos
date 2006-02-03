@@ -368,7 +368,8 @@ typedef
    enum {
       Pfp_INVALID,
       /* Binary */
-      Pfp_ADD, Pfp_SUB, Pfp_MUL, Pfp_DIV, 
+      Pfp_ADDD, Pfp_SUBD, Pfp_MULD, Pfp_DIVD, 
+      Pfp_ADDS, Pfp_SUBS, Pfp_MULS, Pfp_DIVS, 
 
       /* Unary */
       Pfp_SQRT, Pfp_ABS, Pfp_NEG, Pfp_MOV, Pfp_RES, Pfp_RSQRTE

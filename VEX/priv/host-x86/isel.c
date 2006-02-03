@@ -2631,7 +2631,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
-   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64) {
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64toInt) {
       HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
       HReg dst = newVRegF(env);
 

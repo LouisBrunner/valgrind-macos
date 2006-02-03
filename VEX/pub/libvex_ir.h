@@ -333,35 +333,24 @@ typedef
 
       /* ------ Floating point.  We try to be IEEE754 compliant. ------ */
 
-      /* Binary operations mandated by IEEE754. */
-      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, /* Iop_RemF64, */
+      /* --- Simple stuff as mandated by 754. --- */
 
-      /* Binary ops supported by IA32 but not mandated by 754. */
-      Iop_AtanF64,       /* FPATAN,  arctan(arg1/arg2)       */
-      Iop_Yl2xF64,       /* FYL2X,   arg1 * log2(arg2)       */
-      Iop_Yl2xp1F64,     /* FYL2XP1, arg1 * log2(arg2+1.0)   */
-      Iop_PRemF64,       /* FPREM,   non-IEEE remainder(arg1/arg2)    */
-      Iop_PRemC3210F64,  /* C3210 flags resulting from FPREM, :: I32 */
-      Iop_PRem1F64,      /* FPREM1,  IEEE remainder(arg1/arg2)    */
-      Iop_PRem1C3210F64, /* C3210 flags resulting from FPREM1, :: I32 */
-      Iop_ScaleF64,      /* FSCALE,  arg1 * (2^RoundTowardsZero(arg2)) */
-      /* Note that on x86 guest, PRem1{C3210} has the same behaviour
-         as the IEEE mandated RemF64, except it is limited in the
-         range of its operand.  Hence the partialness. */
+      /* Binary operations, with rounding. */
+      /* :: IRRoundingMode(I32) x F64 x F64 -> F64 */ 
+      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64,
 
-      /* Unary operations mandated by IEEE754. */
-      Iop_NegF64, Iop_SqrtF64, 
+      /* Variants of the above which produce a 64-bit result but which
+         round their result to a IEEE float range first. */
+      /* :: IRRoundingMode(I32) x F64 x F64 -> F64 */ 
+      Iop_AddF64r32, Iop_SubF64r32, Iop_MulF64r32, Iop_DivF64r32, 
 
-      /* Unary ops supported by IA32 but not mandated by 754. */
-      Iop_AbsF64,    /* FABS */
-      Iop_SinF64,    /* FSIN */
-      Iop_CosF64,    /* FCOS */
-      Iop_TanF64,    /* FTAN */
-      Iop_2xm1F64,   /* (2^arg - 1.0) */
+      /* Unary operations, without rounding. */
+      /* :: F64 -> F64 */
+      Iop_NegF64, Iop_AbsF64,
 
-      /* Unary ops supported by PPC but not mandated by 754. */
-      Iop_Est8FRecip, /* reciprocal estimate, 8 good bits */
-      Iop_Est5FRSqrt, /* reciprocal square root estimate, 5 good bits */
+      /* Unary operations, with rounding. */
+      /* :: IRRoundingMode(I32) x F64 -> F64 */
+      Iop_SqrtF64, Iop_SqrtF64r32,
 
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
             0x45 Unordered
@@ -374,6 +363,7 @@ typedef
       Iop_CmpF64,
 
       /* --- Int to/from FP conversions. --- */
+
       /* For the most part, these take a first argument :: Ity_I32
          (as IRRoundingMode) which is an indication of the rounding
          mode to use, as per the following encoding:
@@ -410,14 +400,52 @@ typedef
       Iop_F32toF64,  /*                       F32 -> F64 */
       Iop_F64toF32,  /* IRRoundingMode(I32) x F64 -> F32 */
 
-      /* F64 -> F64, also takes an I32 first argument encoding the
-         rounding mode. */
-      Iop_RoundF64,
-
       /* Reinterpretation.  Take an F64 and produce an I64 with 
          the same bit pattern, or vice versa. */
       Iop_ReinterpF64asI64, Iop_ReinterpI64asF64,
-      Iop_ReinterpF32asI32, Iop_ReinterpI32asF32,
+                            Iop_ReinterpI32asF32,
+
+      /* --- guest x86/amd64 specifics, not mandated by 754. --- */
+
+      /* Binary ops, with rounding. */
+      /* :: IRRoundingMode(I32) x F64 x F64 -> F64 */ 
+      Iop_AtanF64,       /* FPATAN,  arctan(arg1/arg2)       */
+      Iop_Yl2xF64,       /* FYL2X,   arg1 * log2(arg2)       */
+      Iop_Yl2xp1F64,     /* FYL2XP1, arg1 * log2(arg2+1.0)   */
+      Iop_PRemF64,       /* FPREM,   non-IEEE remainder(arg1/arg2)    */
+      Iop_PRemC3210F64,  /* C3210 flags resulting from FPREM, :: I32 */
+      Iop_PRem1F64,      /* FPREM1,  IEEE remainder(arg1/arg2)    */
+      Iop_PRem1C3210F64, /* C3210 flags resulting from FPREM1, :: I32 */
+      Iop_ScaleF64,      /* FSCALE,  arg1 * (2^RoundTowardsZero(arg2)) */
+      /* Note that on x86 guest, PRem1{C3210} has the same behaviour
+         as the IEEE mandated RemF64, except it is limited in the
+         range of its operand.  Hence the partialness. */
+
+      /* Unary ops, with rounding. */
+      /* :: IRRoundingMode(I32) x F64 -> F64 */
+      Iop_SinF64,    /* FSIN */
+      Iop_CosF64,    /* FCOS */
+      Iop_TanF64,    /* FTAN */
+      Iop_2xm1F64,   /* (2^arg - 1.0) */
+      Iop_RoundF64toInt, /* F64 value to nearest integral value (still
+                            as F64) */
+
+      /* --- guest ppc32/64 specifics, not mandated by 754. --- */
+
+      /* :: F64 -> F64 */
+      Iop_Est5FRSqrt,    /* reciprocal square root estimate, 5 good bits */
+
+      /* :: F64 -> F32 */
+      Iop_TruncF64asF32, /* do F64->F32 truncation as per 'fsts' */
+
+      /* :: IRRoundingMode(I32) x F64 -> F64 */
+      Iop_RoundF64toF32, /* round F64 to nearest F32 value (still as F64) */
+      /* NB: pretty much the same as Iop_F64toF32, except no change 
+         of type. */
+
+      /* :: F64 -> I32 */
+      Iop_CalcFPRF, /* Calc 5 fpscr[FPRF] bits (Class, <, =, >, Unord)
+                       from FP result */
 
       /* ------------------ 64-bit SIMD Integer. ------------------ */
 
@@ -629,9 +657,8 @@ typedef
 extern void ppIROp ( IROp );
 
 
-/* Encoding of IEEE754-specified rounding modes in Float -> Int
-   conversions.  This is the same as the encoding used by Intel IA32
-   to indicate x87 rounding mode. */
+/* Encoding of IEEE754-specified rounding modes.  This is the same as
+   the encoding used by Intel IA32 to indicate x87 rounding mode. */
 typedef
    enum { Irrm_NEAREST=0, Irrm_NegINF=1, Irrm_PosINF=2, Irrm_ZERO=3 }
    IRRoundingMode;
@@ -726,6 +753,7 @@ typedef
       Iex_Get,     /* read guest state, fixed offset */
       Iex_GetI,    /* read guest state, run-time offset */
       Iex_Tmp,     /* value of temporary */
+      Iex_Triop,   /* ternary operation */
       Iex_Binop,   /* binary operation */
       Iex_Unop,    /* unary operation */
       Iex_Load,    /* read from memory */ 
@@ -754,6 +782,12 @@ typedef
          struct {
             IRTemp tmp;
          } Tmp;
+         struct {
+            IROp op;
+            struct _IRExpr* arg1;
+            struct _IRExpr* arg2;
+            struct _IRExpr* arg3;
+         } Triop;
          struct {
             IROp op;
             struct _IRExpr* arg1;
@@ -789,6 +823,8 @@ extern IRExpr* IRExpr_Binder ( Int binder );
 extern IRExpr* IRExpr_Get    ( Int off, IRType ty );
 extern IRExpr* IRExpr_GetI   ( IRArray* descr, IRExpr* ix, Int bias );
 extern IRExpr* IRExpr_Tmp    ( IRTemp tmp );
+extern IRExpr* IRExpr_Triop  ( IROp op, IRExpr* arg1, 
+                                        IRExpr* arg2, IRExpr* arg3 );
 extern IRExpr* IRExpr_Binop  ( IROp op, IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
 extern IRExpr* IRExpr_Load   ( IREndness end, IRType ty, IRExpr* addr );

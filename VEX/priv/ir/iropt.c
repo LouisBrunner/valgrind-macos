@@ -121,6 +121,7 @@
    Level 2: the following sequence
       * Flatten into atomic form.
       * Cheap transformations.
+      * If block contains any floating or vector types, CSE.
       * If block contains GetI or PutI, Expensive transformations.
       * Try unrolling loops.  Three possible outcomes:
         - No effect: do nothing more.
@@ -294,6 +295,15 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
          t1 = newIRTemp(bb->tyenv, ty);
          addStmtToIRBB(bb, 
             IRStmt_Tmp(t1, ex));
+         return IRExpr_Tmp(t1);
+
+      case Iex_Triop:
+         t1 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRBB(bb, IRStmt_Tmp(t1, 
+            IRExpr_Triop(ex->Iex.Triop.op,
+                         flatten_Expr(bb, ex->Iex.Triop.arg1),
+                         flatten_Expr(bb, ex->Iex.Triop.arg2),
+                         flatten_Expr(bb, ex->Iex.Triop.arg3))));
          return IRExpr_Tmp(t1);
 
       case Iex_Binop:
@@ -1406,10 +1416,24 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = IRExpr_Const(IRConst_U32(0));
          } else
 
+         /* And32(0,x) ==> 0 */
+         if (e->Iex.Binop.op == Iop_And32
+             && e->Iex.Binop.arg1->tag == Iex_Const
+             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U32 == 0) {
+            e2 = IRExpr_Const(IRConst_U32(0));
+         } else
+
          /* Or32(0,x) ==> x */
          if (e->Iex.Binop.op == Iop_Or32
              && e->Iex.Binop.arg1->tag == Iex_Const
              && e->Iex.Binop.arg1->Iex.Const.con->Ico.U32 == 0) {
+            e2 = e->Iex.Binop.arg2;
+         } else
+
+         /* Or64(0,x) ==> x */
+         if (e->Iex.Binop.op == Iop_Or64
+             && e->Iex.Binop.arg1->tag == Iex_Const
+             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U64 == 0) {
             e2 = e->Iex.Binop.arg2;
          } else
 
@@ -1499,6 +1523,17 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
             subst_Expr(env, ex->Iex.GetI.ix),
             ex->Iex.GetI.bias
          );
+
+      case Iex_Triop:
+         vassert(isIRAtom(ex->Iex.Triop.arg1));
+         vassert(isIRAtom(ex->Iex.Triop.arg2));
+         vassert(isIRAtom(ex->Iex.Triop.arg3));
+         return IRExpr_Triop(
+                   ex->Iex.Triop.op,
+                   subst_Expr(env, ex->Iex.Triop.arg1),
+                   subst_Expr(env, ex->Iex.Triop.arg2),
+                   subst_Expr(env, ex->Iex.Triop.arg3)
+                );
 
       case Iex_Binop:
          vassert(isIRAtom(ex->Iex.Binop.arg1));
@@ -1778,6 +1813,11 @@ static void addUses_Expr ( Bool* set, IRExpr* e )
          return;
       case Iex_Load:
          addUses_Expr(set, e->Iex.Load.addr);
+         return;
+      case Iex_Triop:
+         addUses_Expr(set, e->Iex.Triop.arg1);
+         addUses_Expr(set, e->Iex.Triop.arg2);
+         addUses_Expr(set, e->Iex.Triop.arg3);
          return;
       case Iex_Binop:
          addUses_Expr(set, e->Iex.Binop.arg1);
@@ -2199,11 +2239,10 @@ void do_cse_BB ( IRBB* bb )
 
    vassert(sizeof(IRTemp) <= sizeof(HWord));
 
-   //ppIRBB(bb);
-   //vex_printf("\n\n");
+   if (0) { ppIRBB(bb); vex_printf("\n\n"); }
 
    /* Iterate forwards over the stmts.  
-      On seeing "t = E", where E is one of the 3 AvailExpr forms:
+      On seeing "t = E", where E is one of the 5 AvailExpr forms:
          let E' = apply tenv substitution to E
          search aenv for E'
             if a mapping E' -> q is found, 
@@ -2253,10 +2292,11 @@ void do_cse_BB ( IRBB* bb )
       }
    }
 
-   //ppIRBB(bb);
-   //sanityCheckIRBB(bb, Ity_I32);
-   //vex_printf("\n\n");
-      
+   /*
+   ppIRBB(bb);
+   sanityCheckIRBB(bb, Ity_I32);
+   vex_printf("\n\n");
+   */
 }
 
 
@@ -2883,6 +2923,11 @@ static void deltaIRExpr ( IRExpr* e, Int delta )
       case Iex_GetI:
          deltaIRExpr(e->Iex.GetI.ix, delta);
          break;
+      case Iex_Triop:
+         deltaIRExpr(e->Iex.Triop.arg1, delta);
+         deltaIRExpr(e->Iex.Triop.arg2, delta);
+         deltaIRExpr(e->Iex.Triop.arg3, delta);
+         break;
       case Iex_Binop:
          deltaIRExpr(e->Iex.Binop.arg1, delta);
          deltaIRExpr(e->Iex.Binop.arg2, delta);
@@ -3248,6 +3293,11 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.expr0);
          setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.exprX);
          return;
+      case Iex_Triop:
+         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.arg1);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.arg2);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.arg3);
+         return;
       case Iex_Binop:
          setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg1);
          setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg2);
@@ -3308,6 +3358,12 @@ static void aoccCount_Expr ( UShort* uses, IRExpr* e )
          aoccCount_Expr(uses, e->Iex.Mux0X.cond);
          aoccCount_Expr(uses, e->Iex.Mux0X.expr0);
          aoccCount_Expr(uses, e->Iex.Mux0X.exprX);
+         return;
+
+      case Iex_Triop: 
+         aoccCount_Expr(uses, e->Iex.Triop.arg1);
+         aoccCount_Expr(uses, e->Iex.Triop.arg2);
+         aoccCount_Expr(uses, e->Iex.Triop.arg3);
          return;
 
       case Iex_Binop: 
@@ -3438,6 +3494,13 @@ static IRExpr* atbSubst_Expr ( ATmpInfo* env, IRExpr* e )
                    atbSubst_Expr(env, e->Iex.Mux0X.cond),
                    atbSubst_Expr(env, e->Iex.Mux0X.expr0),
                    atbSubst_Expr(env, e->Iex.Mux0X.exprX)
+                );
+      case Iex_Triop:
+         return IRExpr_Triop(
+                   e->Iex.Triop.op,
+                   atbSubst_Expr(env, e->Iex.Triop.arg1),
+                   atbSubst_Expr(env, e->Iex.Triop.arg2),
+                   atbSubst_Expr(env, e->Iex.Triop.arg3)
                 );
       case Iex_Binop:
          return IRExpr_Binop(
@@ -3626,7 +3689,7 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          /* optional extra: dump dead bindings as we find them.
             Removes the need for a prior dead-code removal pass. */
          if (uses[st->Ist.Tmp.tmp] == 0) {
-	   //vex_printf("DEAD binding\n");
+	    if (0) vex_printf("DEAD binding\n");
             continue; /* for (i = 0; i < bb->stmts_used; i++) loop */
          }
          vassert(uses[st->Ist.Tmp.tmp] == 1);
@@ -3726,7 +3789,7 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
 /*--- iropt main                                              ---*/
 /*---------------------------------------------------------------*/
 
-static Bool iropt_verbose = False; //True;
+static Bool iropt_verbose = False; /* True; */
 
 
 /* Do a simple cleanup pass on bb.  This is: redundant Get removal,
@@ -3792,16 +3855,22 @@ IRBB* expensive_transformations( IRBB* bb )
 }
 
 
-/* Scan a flattened BB to see if it has any GetI or PutIs in it.  Used
-   as a heuristic hack to see if iropt needs to do expensive
-   optimisations (CSE, PutI -> GetI forwarding, redundant PutI
-   elimination) to improve code containing GetI or PutI.  */
+/* Scan a flattened BB to look for signs that more expensive
+   optimisations might be useful:
+   - find out if there are any GetIs and PutIs
+   - find out if there are any floating or vector-typed temporaries
+*/
 
-static Bool hasGetIorPutI ( IRBB* bb )
+static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
+                                 /*OUT*/Bool* hasVorFtemps,
+                                 IRBB* bb )
 {
    Int i, j;
    IRStmt* st;
    IRDirty* d;
+
+   *hasGetIorPutI = False;
+   *hasVorFtemps  = False;
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
@@ -3810,10 +3879,21 @@ static Bool hasGetIorPutI ( IRBB* bb )
             vassert(isIRAtom(st->Ist.AbiHint.base));
             break;
          case Ist_PutI: 
-            return True;
+            *hasGetIorPutI = True;
+            break;
          case Ist_Tmp:  
             if (st->Ist.Tmp.data->tag == Iex_GetI)
-               return True;
+               *hasGetIorPutI = True;
+            switch (typeOfIRTemp(bb->tyenv, st->Ist.Tmp.tmp)) {
+               case Ity_I1: case Ity_I8: case Ity_I16: 
+               case Ity_I32: case Ity_I64: case Ity_I128: 
+                  break;
+               case Ity_F32: case Ity_F64: case Ity_V128: 
+                  *hasVorFtemps = True;
+                  break;
+               default: 
+                  goto bad;
+            }
             break;
          case Ist_Put:
             vassert(isIRAtom(st->Ist.Put.data));
@@ -3838,13 +3918,11 @@ static Bool hasGetIorPutI ( IRBB* bb )
             vassert(isIRAtom(st->Ist.Exit.guard));
             break;
          default: 
+         bad:
             ppIRStmt(st);
             vpanic("hasGetIorPutI");
       }
-
    }
-   return False;
-
 }
 
 
@@ -3867,7 +3945,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    static Int n_total     = 0;
    static Int n_expensive = 0;
 
-   Bool do_expensive;
+   Bool hasGetIorPutI, hasVorFtemps;
    IRBB *bb, *bb2;
 
    n_total++;
@@ -3894,8 +3972,20 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
 
    if (vex_control.iropt_level > 1) {
-      do_expensive = hasGetIorPutI(bb);
-      if (do_expensive) {
+
+      /* Peer at what we have, to decide how much more effort to throw
+         at it. */
+      considerExpensives( &hasGetIorPutI, &hasVorFtemps, bb );
+
+      if (hasVorFtemps) {
+         /* If any evidence of FP or Vector activity, CSE, as that
+            tends to mop up all manner of lardy code to do with
+            rounding modes. */
+         do_cse_BB( bb );
+         do_deadcode_BB( bb );
+      }
+
+      if (hasGetIorPutI) {
          n_expensive++;
          if (DEBUG_IROPT)
             vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
@@ -3909,7 +3999,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
       bb2 = maybe_loop_unroll_BB( bb, guest_addr );
       if (bb2) {
          bb = cheap_transformations( bb2, specHelper, preciseMemExnsFn );
-         if (do_expensive) {
+         if (hasGetIorPutI) {
             bb = expensive_transformations( bb );
             bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
          } else {

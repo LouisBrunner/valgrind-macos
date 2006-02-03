@@ -188,8 +188,11 @@ static IRExpr* bind ( Int binder )
     - A Bool to tell us if the host is 32 or 64bit.
       This is set at the start and does not change.
  
-    Note, this is mostly host-independent.
-    (JRS 20050201: well, kinda...  Compare with ISelEnv for amd64.)
+    - An IRExpr*, which may be NULL, holding the IR expression (an
+      IRRoundingMode-encoded value) to which the FPU's rounding mode
+      was most recently set.  Setting to NULL is always safe.  Used to
+      avoid redundant settings of the FPU's rounding mode, as
+      described in set_FPU_rounding_mode below.
 */
  
 typedef
@@ -210,6 +213,8 @@ typedef
       UInt         hwcaps;
 
       Bool         mode64;
+
+      IRExpr*      previous_rm;
    }
    ISelEnv;
  
@@ -359,7 +364,7 @@ static PPCInstr* mk_iMOVds_RR ( HReg r_dst, HReg r_src )
    return PPCInstr_Alu(Palu_OR, r_dst, r_src, PPCRH_Reg(r_src));
 }
 
-/* Advance/retreat %sp by n. */
+/* Advance/retreat %r1 by n. */
 
 static void add_to_sp ( ISelEnv* env, UInt n )
 {
@@ -463,6 +468,73 @@ static PPCAMode* advance4 ( ISelEnv* env, PPCAMode* am )
    }
    return am4;
 }
+
+
+/* Given a guest-state array descriptor, an index expression and a
+   bias, generate a PPCAMode pointing at the relevant piece of 
+   guest state.  Only needed in 64-bit mode. */
+static
+PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
+                                IRExpr* off, Int bias )
+{
+   HReg rtmp, roff;
+   Int  elemSz = sizeofIRType(descr->elemTy);
+   Int  nElems = descr->nElems;
+   Int  shift  = 0;
+
+   vassert(env->mode64);
+
+   /* Throw out any cases we don't need.  In theory there might be a
+      day where we need to handle others, but not today. */
+
+   if (nElems != 16 && nElems != 32)
+      vpanic("genGuestArrayOffset(ppc64 host)(1)");
+
+   switch (elemSz) {
+      case 8:  shift = 3; break;
+      default: vpanic("genGuestArrayOffset(ppc64 host)(2)");
+   }
+
+   if (bias < -100 || bias > 100) /* somewhat arbitrarily */
+      vpanic("genGuestArrayOffset(ppc64 host)(3)");
+   if (descr->base < 0 || descr->base > 2000) /* somewhat arbitrarily */
+     vpanic("genGuestArrayOffset(ppc64 host)(4)");
+
+   /* Compute off into a reg, %off.  Then return:
+
+         addi %tmp, %off, bias (if bias != 0)
+         andi %tmp, nElems-1
+         sldi %tmp, shift
+         addi %tmp, %tmp, base
+         ... Baseblockptr + %tmp ...
+   */
+   roff = iselWordExpr_R(env, off);
+   rtmp = newVRegI(env);
+   addInstr(env, PPCInstr_Alu(
+                    Palu_ADD, 
+                    rtmp, roff, 
+                    PPCRH_Imm(True/*signed*/, toUShort(bias))));
+   addInstr(env, PPCInstr_Alu(
+                    Palu_AND, 
+                    rtmp, rtmp, 
+                    PPCRH_Imm(False/*signed*/, toUShort(nElems-1))));
+   addInstr(env, PPCInstr_Shft(
+                    Pshft_SHL, 
+                    False/*64-bit shift*/,
+                    rtmp, rtmp, 
+                    PPCRH_Imm(False/*unsigned*/, toUShort(shift))));
+   addInstr(env, PPCInstr_Alu(
+                    Palu_ADD, 
+                    rtmp, rtmp, 
+                    PPCRH_Imm(True/*signed*/, toUShort(descr->base))));
+   return
+      PPCAMode_RR( GuestStatePtr(env->mode64), rtmp );
+}
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Function call helpers                       ---*/
+/*---------------------------------------------------------*/
 
 /* Used only in doHelperCall.  See big comment in doHelperCall re
    handling of register-parameter args.  This function figures out
@@ -715,126 +787,92 @@ void doHelperCall ( ISelEnv* env,
 }
 
 
-/* Given a guest-state array descriptor, an index expression and a
-   bias, generate a PPCAMode pointing at the relevant piece of 
-   guest state.  Only needed in 64-bit mode. */
-static
-PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
-                                IRExpr* off, Int bias )
-{
-   HReg rtmp, roff;
-   Int  elemSz = sizeofIRType(descr->elemTy);
-   Int  nElems = descr->nElems;
-   Int  shift  = 0;
+/*---------------------------------------------------------*/
+/*--- ISEL: FP rounding mode helpers                    ---*/
+/*---------------------------------------------------------*/
 
-   vassert(env->mode64);
-
-   /* Throw out any cases we don't need.  In theory there might be a
-      day where we need to handle others, but not today. */
-
-   if (nElems != 16 && nElems != 32)
-      vpanic("genGuestArrayOffset(ppc64 host)(1)");
-
-   switch (elemSz) {
-      case 8:  shift = 3; break;
-      default: vpanic("genGuestArrayOffset(ppc64 host)(2)");
-   }
-
-   if (bias < -100 || bias > 100) /* somewhat arbitrarily */
-      vpanic("genGuestArrayOffset(ppc64 host)(3)");
-   if (descr->base < 0 || descr->base > 2000) /* somewhat arbitrarily */
-     vpanic("genGuestArrayOffset(ppc64 host)(4)");
-
-   /* Compute off into a reg, %off.  Then return:
-
-         addi %tmp, %off, bias (if bias != 0)
-         andi %tmp, nElems-1
-         sldi %tmp, shift
-         addi %tmp, %tmp, base
-         ... Baseblockptr + %tmp ...
-   */
-   roff = iselWordExpr_R(env, off);
-   rtmp = newVRegI(env);
-   addInstr(env, PPCInstr_Alu(
-                    Palu_ADD, 
-                    rtmp, roff, 
-                    PPCRH_Imm(True/*signed*/, toUShort(bias))));
-   addInstr(env, PPCInstr_Alu(
-                    Palu_AND, 
-                    rtmp, rtmp, 
-                    PPCRH_Imm(False/*signed*/, toUShort(nElems-1))));
-   addInstr(env, PPCInstr_Shft(
-                    Pshft_SHL, 
-                    False/*64-bit shift*/,
-                    rtmp, rtmp, 
-                    PPCRH_Imm(False/*unsigned*/, toUShort(shift))));
-   addInstr(env, PPCInstr_Alu(
-                    Palu_ADD, 
-                    rtmp, rtmp, 
-                    PPCRH_Imm(True/*signed*/, toUShort(descr->base))));
-   return
-      PPCAMode_RR( GuestStatePtr(env->mode64), rtmp );
-}
-
-
-
-/* Set FPU's rounding mode to the default */
-static 
-void set_FPU_rounding_default ( ISelEnv* env )
-{
-   HReg fr_src = newVRegF(env);
-   HReg r_src  = newVRegI(env);
-
-   /* Default rounding mode = 0x0
-      Only supporting the rounding-mode bits - the rest of FPSCR is 0x0
-       - so we can set the whole register at once (faster)
-      note: upper 32 bits ignored by FpLdFPSCR
-   */
-   addInstr(env, PPCInstr_LI(r_src, 0x0, env->mode64));
-   if (env->mode64) {
-      fr_src = mk_LoadR64toFPR( env, r_src );         // 1*I64 -> F64
-   } else {
-      fr_src = mk_LoadRR32toFPR( env, r_src, r_src ); // 2*I32 -> F64
-   }
-   addInstr(env, PPCInstr_FpLdFPSCR( fr_src ));
-}
+///* Set FPU's rounding mode to the default */
+//static 
+//void set_FPU_rounding_default ( ISelEnv* env )
+//{
+//   HReg fr_src = newVRegF(env);
+//   HReg r_src  = newVRegI(env);
+//
+//   /* Default rounding mode = 0x0
+//      Only supporting the rounding-mode bits - the rest of FPSCR is 0x0
+//       - so we can set the whole register at once (faster)
+//      note: upper 32 bits ignored by FpLdFPSCR
+//   */
+//   addInstr(env, PPCInstr_LI(r_src, 0x0, env->mode64));
+//   if (env->mode64) {
+//      fr_src = mk_LoadR64toFPR( env, r_src );         // 1*I64 -> F64
+//   } else {
+//      fr_src = mk_LoadRR32toFPR( env, r_src, r_src ); // 2*I32 -> F64
+//   }
+//   addInstr(env, PPCInstr_FpLdFPSCR( fr_src ));
+//}
 
 /* Convert IR rounding mode to PPC encoding */
 static HReg roundModeIRtoPPC ( ISelEnv* env, HReg r_rmIR )
 {
-/* 
+   /* 
    rounding mode | PPC | IR
    ------------------------
    to nearest    | 00  | 00
    to zero       | 01  | 11
    to +infinity  | 10  | 10
    to -infinity  | 11  | 01
-*/
+   */
    HReg r_rmPPC = newVRegI(env);
-   HReg r_tmp   = newVRegI(env);
+   HReg r_tmp1  = newVRegI(env);
 
    vassert(hregClass(r_rmIR) == HRcGPR(env->mode64));
 
-   // AND r_rmIR,3   -- shouldn't be needed; paranoia
-   addInstr(env, PPCInstr_Alu( Palu_AND, r_rmIR, r_rmIR,
+   // r_rmPPC = XOR(r_rmIR, r_rmIR << 1) & 3
+   //
+   // slwi  tmp1,    r_rmIR, 1
+   // xor   tmp1,    r_rmIR, tmp1
+   // andi  r_rmPPC, tmp1, 3
+
+   addInstr(env, PPCInstr_Shft(Pshft_SHL, True/*32bit shift*/,
+                               r_tmp1, r_rmIR, PPCRH_Imm(False,1)));
+
+   addInstr(env, PPCInstr_Alu( Palu_XOR, r_tmp1, r_rmIR,
+                               PPCRH_Reg(r_tmp1) ));
+
+   addInstr(env, PPCInstr_Alu( Palu_AND, r_rmPPC, r_tmp1,
                                PPCRH_Imm(False,3) ));
 
-   // r_rmPPC = XOR( r_rmIR, (r_rmIR << 1) & 2)
-   addInstr(env, PPCInstr_Shft(Pshft_SHL, True/*32bit shift*/,
-                               r_tmp, r_rmIR, PPCRH_Imm(False,1)));
-   addInstr(env, PPCInstr_Alu( Palu_AND, r_tmp, r_tmp,
-                               PPCRH_Imm(False,2) ));
-   addInstr(env, PPCInstr_Alu( Palu_XOR, r_rmPPC, r_rmIR,
-                               PPCRH_Reg(r_tmp) ));
    return r_rmPPC;
 }
 
 
-/* Mess with the FPU's rounding mode: 'mode' is an I32-typed
-   expression denoting a value in the range 0 .. 3, indicating a round
-   mode encoded as per type IRRoundingMode.  Set the PPC FPSCR to have
-   the same rounding.
+/* Set the FPU's rounding mode: 'mode' is an I32-typed expression
+   denoting a value in the range 0 .. 3, indicating a round mode
+   encoded as per type IRRoundingMode.  Set the PPC FPSCR to have the
+   same rounding.
+
    For speed & simplicity, we're setting the *entire* FPSCR here.
+
+   Setting the rounding mode is expensive.  So this function tries to
+   avoid repeatedly setting the rounding mode to the same thing by
+   first comparing 'mode' to the 'mode' tree supplied in the previous
+   call to this function, if any.  (The previous value is stored in
+   env->previous_rm.)  If 'mode' is a single IR temporary 't' and
+   env->previous_rm is also just 't', then the setting is skipped.
+
+   This is safe because of the SSA property of IR: an IR temporary can
+   only be defined once and so will have the same value regardless of
+   where it appears in the block.  Cool stuff, SSA.
+
+   A safety condition: all attempts to set the RM must be aware of
+   this mechanism - by being routed through the functions here.
+
+   Of course this only helps if blocks where the RM is set more than
+   once and it is set to the same value each time, *and* that value is
+   held in the same IR temporary each time.  In order to assure the
+   latter as much as possible, the IR optimiser takes care to do CSE
+   on any block with any sign of floating point activity.
 */
 static
 void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
@@ -843,10 +881,22 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
    HReg r_src;
 
    vassert(typeOfIRExpr(env->type_env,mode) == Ity_I32);
+   
+   /* Do we need to do anything? */
+   if (env->previous_rm
+       && env->previous_rm->tag == Iex_Tmp
+       && mode->tag == Iex_Tmp
+       && env->previous_rm->Iex.Tmp.tmp == mode->Iex.Tmp.tmp) {
+      /* no - setting it to what it was before.  */
+      vassert(typeOfIRExpr(env->type_env, env->previous_rm) == Ity_I32);
+      return;
+   }
 
-   /* Only supporting the rounding-mode bits - the rest of FPSCR is 0x0
-       - so we can set the whole register at once (faster)
-   */
+   /* No luck - we better set it, and remember what we set it to. */
+   env->previous_rm = mode;
+
+   /* Only supporting the rounding-mode bits - the rest of FPSCR is
+      0x0 - so we can set the whole register at once (faster). */
 
    // Resolve rounding mode and convert to PPC representation
    r_src = roundModeIRtoPPC( env, iselWordExpr_R(env, mode) );
@@ -861,6 +911,10 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
    addInstr(env, PPCInstr_FpLdFPSCR( fr_src ));
 }
 
+
+/*---------------------------------------------------------*/
+/*--- ISEL: vector helpers                              ---*/
+/*---------------------------------------------------------*/
 
 /*
   Generates code for AvSplat
@@ -962,7 +1016,7 @@ static HReg isNan ( ISelEnv* env, HReg vSrc )
    mnts    = newVRegV(env);
    vIsNan  = newVRegV(env); 
 
-   /* 32bit float => sign(1) | expontent(8) | mantissa(23)
+   /* 32bit float => sign(1) | exponent(8) | mantissa(23)
       nan => exponent all ones, mantissa > 0 */
 
    addInstr(env, PPCInstr_AvBinary(Pav_AND, expt, vSrc, msk_exp));
@@ -1322,8 +1376,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          add_to_sp( env, 16 );
 
-         /* Restore default FPU rounding. */
-         set_FPU_rounding_default( env );
+         ///* Restore default FPU rounding. */
+         //set_FPU_rounding_default( env );
          return idst;
       }
 
@@ -1345,8 +1399,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, PPCInstr_Load(8, idst, zero_r1, True/*mode64*/));
             add_to_sp( env, 16 );
 
-            /* Restore default FPU rounding. */
-            set_FPU_rounding_default( env );
+            ///* Restore default FPU rounding. */
+            //set_FPU_rounding_default( env );
             return idst;
          }
       }
@@ -2179,8 +2233,7 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          HReg hi, lo;
          HReg tmp = newVRegI(env);
          iselInt64Expr( &hi, &lo, env, e->Iex.Unop.arg );
-         addInstr(env, mk_iMOVds_RR(tmp, lo));
-         addInstr(env, PPCInstr_Alu(Palu_OR, tmp, tmp, PPCRH_Reg(hi)));
+         addInstr(env, PPCInstr_Alu(Palu_OR, tmp, lo, PPCRH_Reg(hi)));
          addInstr(env, PPCInstr_Cmp(False/*sign*/, True/*32bit cmp*/,
                                     7/*cr*/, tmp,PPCRH_Imm(False,0)));
          return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
@@ -2501,8 +2554,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
             addInstr(env, PPCInstr_Load(4, tLo, four_r1, False/*mode32*/));
             add_to_sp( env, 16 );
 
-            /* Restore default FPU rounding. */
-            set_FPU_rounding_default( env );
+            ///* Restore default FPU rounding. */
+            //set_FPU_rounding_default( env );
             *rHi = tHi;
             *rLo = tLo;
             return;
@@ -2681,25 +2734,56 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       return r_dst;
    }
 
-   if (e->tag == Iex_Binop
-       && e->Iex.Binop.op == Iop_F64toF32) {
-      /* Although the result is still held in a standard FPU register,
-         we need to round it to reflect the loss of accuracy/range
-         entailed in casting it to a 32-bit float. */
-      HReg r_dst = newVRegF(env);
-      HReg r_src = iselDblExpr(env, e->Iex.Binop.arg2);
-      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
-      addInstr(env, PPCInstr_FpRSP(r_dst, r_src));
-      set_FPU_rounding_default( env );
-      return r_dst;
-   }
-
    if (e->tag == Iex_Get) {
       HReg r_dst = newVRegF(env);
       PPCAMode* am_addr = PPCAMode_IR( e->Iex.Get.offset,
                                        GuestStatePtr(env->mode64) );
       addInstr(env, PPCInstr_FpLdSt( True/*load*/, 4, r_dst, am_addr ));
       return r_dst;
+   }
+
+   if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_TruncF64asF32) {
+      /* This is quite subtle.  The only way to do the relevant
+         truncation is to do a single-precision store and then a
+         double precision load to get it back into a register.  The
+         problem is, if the data is then written to memory a second
+         time, as in
+
+            STbe(...) = TruncF64asF32(...)
+
+         then will the second truncation further alter the value?  The
+         answer is no: flds (as generated here) followed by fsts
+         (generated for the STbe) is the identity function on 32-bit
+         floats, so we are safe.
+
+         Another upshot of this is that if iselStmt can see the
+         entirety of
+
+            STbe(...) = TruncF64asF32(arg)
+
+         then it can short circuit having to deal with TruncF64asF32
+         individually; instead just compute arg into a 64-bit FP
+         register and do 'fsts' (since that itself does the
+         truncation).
+
+         We generate pretty poor code here (should be ok both for
+         32-bit and 64-bit mode); but it is expected that for the most
+         part the latter optimisation will apply and hence this code
+         will not often be used.
+      */
+      HReg      fsrc    = iselDblExpr(env, e->Iex.Unop.arg);
+      HReg      fdst    = newVRegF(env);
+      PPCAMode* zero_r1 = PPCAMode_IR( 0, StackFramePtr(env->mode64) );
+
+      sub_from_sp( env, 16 );
+      // store as F32, hence truncating
+      addInstr(env, PPCInstr_FpLdSt( False/*store*/, 4,
+                                     fsrc, zero_r1 ));
+      // and reload.  Good huh?! (sigh)
+      addInstr(env, PPCInstr_FpLdSt( True/*load*/, 4,
+                                     fdst, zero_r1 ));
+      add_to_sp( env, 16 );
+      return fdst;
    }
 
    vex_printf("iselFltExpr(ppc): No such tag(%u)\n", e->tag);
@@ -2805,20 +2889,37 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return r_dst;
    }
 
-   if (e->tag == Iex_Binop) {
+   if (e->tag == Iex_Triop) {
       PPCFpOp fpop = Pfp_INVALID;
-      switch (e->Iex.Binop.op) {
-      case Iop_AddF64:    fpop = Pfp_ADD; break;
-      case Iop_SubF64:    fpop = Pfp_SUB; break;
-      case Iop_MulF64:    fpop = Pfp_MUL; break;
-      case Iop_DivF64:    fpop = Pfp_DIV; break;
-      default: break;
+      switch (e->Iex.Triop.op) {
+         case Iop_AddF64:    fpop = Pfp_ADDD; break;
+         case Iop_SubF64:    fpop = Pfp_SUBD; break;
+         case Iop_MulF64:    fpop = Pfp_MULD; break;
+         case Iop_DivF64:    fpop = Pfp_DIVD; break;
+         case Iop_AddF64r32: fpop = Pfp_ADDS; break;
+         case Iop_SubF64r32: fpop = Pfp_SUBS; break;
+         case Iop_MulF64r32: fpop = Pfp_MULS; break;
+         case Iop_DivF64r32: fpop = Pfp_DIVS; break;
+         default: break;
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst  = newVRegF(env);
-         HReg r_srcL = iselDblExpr(env, e->Iex.Binop.arg1);
-         HReg r_srcR = iselDblExpr(env, e->Iex.Binop.arg2);
+         HReg r_srcL = iselDblExpr(env, e->Iex.Triop.arg2);
+         HReg r_srcR = iselDblExpr(env, e->Iex.Triop.arg3);
+         set_FPU_rounding_mode( env, e->Iex.Triop.arg1 );
          addInstr(env, PPCInstr_FpBinary(fpop, r_dst, r_srcL, r_srcR));
+         return r_dst;
+      }
+   }
+
+   if (e->tag == Iex_Binop) {
+
+      if (e->Iex.Binop.op == Iop_RoundF64toF32) {
+         HReg r_dst = newVRegF(env);
+         HReg r_src = iselDblExpr(env, e->Iex.Binop.arg2);
+         set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+         addInstr(env, PPCInstr_FpRSP(r_dst, r_src));
+         //set_FPU_rounding_default( env );
          return r_dst;
       }
 
@@ -2841,8 +2942,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 
             add_to_sp( env, 16 );
 
-            /* Restore default FPU rounding. */
-            set_FPU_rounding_default( env );
+            ///* Restore default FPU rounding. */
+            //set_FPU_rounding_default( env );
             return fdst;
          } else {
             /* 32-bit mode */
@@ -2867,11 +2968,12 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 
             add_to_sp( env, 16 );
 
-            /* Restore default FPU rounding. */
-            set_FPU_rounding_default( env );
+            ///* Restore default FPU rounding. */
+            //set_FPU_rounding_default( env );
             return fdst;
          }
       }
+
    }
 
    if (e->tag == Iex_Unop) {
@@ -2880,7 +2982,6 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_NegF64:     fpop = Pfp_NEG; break;
          case Iop_AbsF64:     fpop = Pfp_ABS; break;
          case Iop_SqrtF64:    fpop = Pfp_SQRT; break;
-         case Iop_Est8FRecip: fpop = Pfp_RES; break;
          case Iop_Est5FRSqrt: fpop = Pfp_RSQRTE; break;
          default: break;
       }
@@ -3688,7 +3789,8 @@ HInstrArray* iselBB_PPC ( IRBB* bb, VexArchInfo* archinfo_host )
    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
 
    /* and finally ... */
-   env->hwcaps = hwcaps_host;
+   env->hwcaps      = hwcaps_host;
+   env->previous_rm = NULL;
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */

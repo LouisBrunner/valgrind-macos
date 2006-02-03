@@ -612,10 +612,14 @@ HChar* showPPCShftOp ( PPCShftOp op, Bool immR, Bool sz32 ) {
 
 HChar* showPPCFpOp ( PPCFpOp op ) {
    switch (op) {
-      case Pfp_ADD:    return "fadd";
-      case Pfp_SUB:    return "fsub";
-      case Pfp_MUL:    return "fmul";
-      case Pfp_DIV:    return "fdiv";
+      case Pfp_ADDD:   return "fadd";
+      case Pfp_SUBD:   return "fsub";
+      case Pfp_MULD:   return "fmul";
+      case Pfp_DIVD:   return "fdiv";
+      case Pfp_ADDS:   return "fadds";
+      case Pfp_SUBS:   return "fsubs";
+      case Pfp_MULS:   return "fmuls";
+      case Pfp_DIVS:   return "fdivs";
       case Pfp_SQRT:   return "fsqrt";
       case Pfp_ABS:    return "fabs";
       case Pfp_NEG:    return "fneg";
@@ -3155,17 +3159,29 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
       UInt fr_srcL = fregNo(i->Pin.FpBinary.srcL);
       UInt fr_srcR = fregNo(i->Pin.FpBinary.srcR);
       switch (i->Pin.FpBinary.op) {
-      case Pfp_ADD:   // fadd, PPC32 p400
+      case Pfp_ADDD:   // fadd, PPC32 p400
          p = mkFormA( p, 63, fr_dst, fr_srcL, fr_srcR, 0, 21, 0 );
          break;
-      case Pfp_SUB:   // fsub, PPC32 p429
+      case Pfp_ADDS:   // fadds, PPC32 p401
+         p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 21, 0 );
+         break;
+      case Pfp_SUBD:   // fsub, PPC32 p429
          p = mkFormA( p, 63, fr_dst, fr_srcL, fr_srcR, 0, 20, 0 );
          break;
-      case Pfp_MUL:   // fmul, PPC32 p413
+      case Pfp_SUBS:   // fsubs, PPC32 p430
+         p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 20, 0 );
+         break;
+      case Pfp_MULD:   // fmul, PPC32 p413
          p = mkFormA( p, 63, fr_dst, fr_srcL, 0, fr_srcR, 25, 0 );
          break;
-      case Pfp_DIV:   // fdiv, PPC32 p406
+      case Pfp_MULS:   // fmuls, PPC32 p414
+         p = mkFormA( p, 59, fr_dst, fr_srcL, 0, fr_srcR, 25, 0 );
+         break;
+      case Pfp_DIVD:   // fdiv, PPC32 p406
          p = mkFormA( p, 63, fr_dst, fr_srcL, fr_srcR, 0, 18, 0 );
+         break;
+      case Pfp_DIVS:   // fdivs, PPC32 p407
+         p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 18, 0 );
          break;
       default:
          goto bad;

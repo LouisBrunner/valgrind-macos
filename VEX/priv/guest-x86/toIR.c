@@ -3992,7 +3992,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
             case 0xFC: /* FRNDINT */
                DIP("frndint\n");
                put_ST_UNCHECKED(0,
-                  binop(Iop_RoundF64, get_roundingmode(), get_ST(0)) );
+                  binop(Iop_RoundF64toInt, get_roundingmode(), get_ST(0)) );
                break;
 
             case 0xFD: /* FSCALE */

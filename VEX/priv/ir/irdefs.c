@@ -245,6 +245,10 @@ void ppIROp ( IROp op )
       case Iop_SubF64:    vex_printf("SubF64"); return;
       case Iop_MulF64:    vex_printf("MulF64"); return;
       case Iop_DivF64:    vex_printf("DivF64"); return;
+      case Iop_AddF64r32: vex_printf("AddF64r32"); return;
+      case Iop_SubF64r32: vex_printf("SubF64r32"); return;
+      case Iop_MulF64r32: vex_printf("MulF64r32"); return;
+      case Iop_DivF64r32: vex_printf("DivF64r32"); return;
 
       case Iop_ScaleF64:      vex_printf("ScaleF64"); return;
       case Iop_AtanF64:       vex_printf("AtanF64"); return;
@@ -263,8 +267,8 @@ void ppIROp ( IROp op )
       case Iop_TanF64:    vex_printf("TanF64"); return;
       case Iop_2xm1F64:   vex_printf("2xm1F64"); return;
 
-      case Iop_Est8FRecip: vex_printf("Est8FRecip"); return;
       case Iop_Est5FRSqrt: vex_printf("Est5FRSqrt"); return;
+      case Iop_TruncF64asF32: vex_printf("TruncF64asF32"); return;
 
       case Iop_CmpF64:    vex_printf("CmpF64"); return;
 
@@ -279,11 +283,11 @@ void ppIROp ( IROp op )
       case Iop_F32toF64: vex_printf("F32toF64"); return;
       case Iop_F64toF32: vex_printf("F64toF32"); return;
 
-      case Iop_RoundF64: vex_printf("RoundF64"); return;
+      case Iop_RoundF64toInt: vex_printf("RoundF64toInt"); return;
+      case Iop_RoundF64toF32: vex_printf("RoundF64toF32"); return;
 
       case Iop_ReinterpF64asI64: vex_printf("ReinterpF64asI64"); return;
       case Iop_ReinterpI64asF64: vex_printf("ReinterpI64asF64"); return;
-      case Iop_ReinterpF32asI32: vex_printf("ReinterpF32asI32"); return;
       case Iop_ReinterpI32asF32: vex_printf("ReinterpI32asF32"); return;
 
       case Iop_I32UtoFx4: vex_printf("Iop_I32UtoFx4"); return;
@@ -579,6 +583,16 @@ void ppIRExpr ( IRExpr* e )
       break;
     case Iex_Tmp:
       ppIRTemp(e->Iex.Tmp.tmp);
+      break;
+    case Iex_Triop:
+      ppIROp(e->Iex.Triop.op);
+      vex_printf( "(" );
+      ppIRExpr(e->Iex.Triop.arg1);
+      vex_printf( "," );
+      ppIRExpr(e->Iex.Triop.arg2);
+      vex_printf( "," );
+      ppIRExpr(e->Iex.Triop.arg3);
+      vex_printf( ")" );
       break;
     case Iex_Binop:
       ppIROp(e->Iex.Binop.op);
@@ -920,6 +934,16 @@ IRExpr* IRExpr_Tmp ( IRTemp tmp ) {
    e->Iex.Tmp.tmp = tmp;
    return e;
 }
+IRExpr* IRExpr_Triop  ( IROp op, IRExpr* arg1, 
+                                 IRExpr* arg2, IRExpr* arg3 ) {
+   IRExpr* e         = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag            = Iex_Triop;
+   e->Iex.Triop.op   = op;
+   e->Iex.Triop.arg1 = arg1;
+   e->Iex.Triop.arg2 = arg2;
+   e->Iex.Triop.arg3 = arg3;
+   return e;
+}
 IRExpr* IRExpr_Binop ( IROp op, IRExpr* arg1, IRExpr* arg2 ) {
    IRExpr* e         = LibVEX_Alloc(sizeof(IRExpr));
    e->tag            = Iex_Binop;
@@ -1218,6 +1242,11 @@ IRExpr* dopyIRExpr ( IRExpr* e )
                             e->Iex.GetI.bias);
       case Iex_Tmp: 
          return IRExpr_Tmp(e->Iex.Tmp.tmp);
+      case Iex_Triop: 
+         return IRExpr_Triop(e->Iex.Triop.op,
+                             dopyIRExpr(e->Iex.Triop.arg1),
+                             dopyIRExpr(e->Iex.Triop.arg2),
+                             dopyIRExpr(e->Iex.Triop.arg3));
       case Iex_Binop: 
          return IRExpr_Binop(e->Iex.Binop.op,
                              dopyIRExpr(e->Iex.Binop.arg1),
@@ -1335,38 +1364,48 @@ IRBB* dopyIRBB ( IRBB* bb )
 /*---------------------------------------------------------------*/
 
 static
-void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
+void typeOfPrimop ( IROp op, 
+                    /*OUTs*/
+                    IRType* t_dst, 
+                    IRType* t_arg1, IRType* t_arg2, IRType* t_arg3 )
 {
-#  define UNARY(_td,_ta1)         \
+#  define UNARY(_ta1,_td)                                      \
       *t_dst = (_td); *t_arg1 = (_ta1); break
-#  define BINARY(_td,_ta1,_ta2)   \
+#  define BINARY(_ta1,_ta2,_td)                                \
      *t_dst = (_td); *t_arg1 = (_ta1); *t_arg2 = (_ta2); break
-#  define COMPARISON(_ta)         \
+#  define TERNARY(_ta1,_ta2,_ta3,_td)                          \
+     *t_dst = (_td); *t_arg1 = (_ta1);                         \
+     *t_arg2 = (_ta2); *t_arg3 = (_ta3); break
+#  define COMPARISON(_ta)                                      \
      *t_dst = Ity_I1; *t_arg1 = *t_arg2 = (_ta); break;
-#  define UNARY_COMPARISON(_ta)         \
+#  define UNARY_COMPARISON(_ta)                                \
      *t_dst = Ity_I1; *t_arg1 = (_ta); break;
+
+   /* Rounding mode values are always Ity_I32, encoded as per
+      IRRoundingMode */
+   const IRType ity_RMode = Ity_I32;
 
    *t_dst  = Ity_INVALID;
    *t_arg1 = Ity_INVALID;
    *t_arg2 = Ity_INVALID;
+   *t_arg3 = Ity_INVALID;
    switch (op) {
       case Iop_Add8: case Iop_Sub8: case Iop_Mul8: 
       case Iop_Or8:  case Iop_And8: case Iop_Xor8:
-         BINARY(Ity_I8, Ity_I8,Ity_I8);
+         BINARY(Ity_I8,Ity_I8, Ity_I8);
 
       case Iop_Add16: case Iop_Sub16: case Iop_Mul16:
       case Iop_Or16:  case Iop_And16: case Iop_Xor16:
-         BINARY(Ity_I16, Ity_I16,Ity_I16);
+         BINARY(Ity_I16,Ity_I16, Ity_I16);
 
       case Iop_CmpORD32U:
       case Iop_CmpORD32S:
       case Iop_Add32: case Iop_Sub32: case Iop_Mul32:
       case Iop_Or32:  case Iop_And32: case Iop_Xor32:
-         BINARY(Ity_I32, Ity_I32,Ity_I32);
+         BINARY(Ity_I32,Ity_I32, Ity_I32);
 
       case Iop_Add64: case Iop_Sub64: case Iop_Mul64:
       case Iop_Or64:  case Iop_And64: case Iop_Xor64:
-
       case Iop_CmpORD64U:
       case Iop_CmpORD64S:
       case Iop_Avg8Ux8: case Iop_Avg16Ux4:
@@ -1386,33 +1425,33 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_Sub8x8: case Iop_Sub16x4: case Iop_Sub32x2:
       case Iop_QSub8Sx8: case Iop_QSub16Sx4:
       case Iop_QSub8Ux8: case Iop_QSub16Ux4:
-         BINARY(Ity_I64, Ity_I64,Ity_I64);
+         BINARY(Ity_I64,Ity_I64, Ity_I64);
 
       case Iop_ShlN32x2: case Iop_ShlN16x4:
       case Iop_ShrN32x2: case Iop_ShrN16x4:
       case Iop_SarN32x2: case Iop_SarN16x4:
-         BINARY(Ity_I64, Ity_I64,Ity_I8);
+         BINARY(Ity_I64,Ity_I8, Ity_I64);
 
       case Iop_Shl8: case Iop_Shr8: case Iop_Sar8:
-         BINARY(Ity_I8, Ity_I8,Ity_I8);
+         BINARY(Ity_I8,Ity_I8, Ity_I8);
       case Iop_Shl16: case Iop_Shr16: case Iop_Sar16:
-         BINARY(Ity_I16, Ity_I16,Ity_I8);
+         BINARY(Ity_I16,Ity_I8, Ity_I16);
       case Iop_Shl32: case Iop_Shr32: case Iop_Sar32:
-         BINARY(Ity_I32, Ity_I32,Ity_I8);
+         BINARY(Ity_I32,Ity_I8, Ity_I32);
       case Iop_Shl64: case Iop_Shr64: case Iop_Sar64:
-         BINARY(Ity_I64, Ity_I64,Ity_I8);
+         BINARY(Ity_I64,Ity_I8, Ity_I64);
 
       case Iop_Not8: case Iop_Neg8:
-         UNARY(Ity_I8,Ity_I8);
+         UNARY(Ity_I8, Ity_I8);
       case Iop_Not16: case Iop_Neg16:
-         UNARY(Ity_I16,Ity_I16);
+         UNARY(Ity_I16, Ity_I16);
       case Iop_Not32: case Iop_Neg32:
-         UNARY(Ity_I32,Ity_I32);
+         UNARY(Ity_I32, Ity_I32);
 
       case Iop_Neg64:
       case Iop_Not64:
       case Iop_CmpNEZ32x2: case Iop_CmpNEZ16x4: case Iop_CmpNEZ8x8:
-         UNARY(Ity_I64,Ity_I64);
+         UNARY(Ity_I64, Ity_I64);
 
       case Iop_CmpEQ8: case Iop_CmpNE8:
          COMPARISON(Ity_I8);
@@ -1433,113 +1472,134 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_CmpNEZ64: UNARY_COMPARISON(Ity_I64);
 
       case Iop_MullU8: case Iop_MullS8:
-         BINARY(Ity_I16, Ity_I8,Ity_I8);
+         BINARY(Ity_I8,Ity_I8, Ity_I16);
       case Iop_MullU16: case Iop_MullS16:
-         BINARY(Ity_I32, Ity_I16,Ity_I16);
+         BINARY(Ity_I16,Ity_I16, Ity_I32);
       case Iop_MullU32: case Iop_MullS32:
-         BINARY(Ity_I64, Ity_I32,Ity_I32);
+         BINARY(Ity_I32,Ity_I32, Ity_I64);
       case Iop_MullU64: case Iop_MullS64:
-         BINARY(Ity_I128, Ity_I64,Ity_I64);
+         BINARY(Ity_I64,Ity_I64, Ity_I128);
 
       case Iop_Clz32: case Iop_Ctz32:
-         UNARY(Ity_I32,Ity_I32);
+         UNARY(Ity_I32, Ity_I32);
 
       case Iop_Clz64: case Iop_Ctz64:
-         UNARY(Ity_I64,Ity_I64);
+         UNARY(Ity_I64, Ity_I64);
 
       case Iop_DivU32: case Iop_DivS32:
-         BINARY(Ity_I32, Ity_I32,Ity_I32);
+         BINARY(Ity_I32,Ity_I32, Ity_I32);
 
       case Iop_DivU64: case Iop_DivS64:
-         BINARY(Ity_I64, Ity_I64, Ity_I64);
+         BINARY(Ity_I64,Ity_I64, Ity_I64);
 
       case Iop_DivModU64to32: case Iop_DivModS64to32:
-         BINARY(Ity_I64, Ity_I64,Ity_I32);
+         BINARY(Ity_I64,Ity_I32, Ity_I64);
 
       case Iop_DivModU128to64: case Iop_DivModS128to64:
-         BINARY(Ity_I128, Ity_I128,Ity_I64);
+         BINARY(Ity_I128,Ity_I64, Ity_I128);
 
       case Iop_16HIto8: case Iop_16to8:
-         UNARY(Ity_I8,Ity_I16);
+         UNARY(Ity_I16, Ity_I8);
       case Iop_8HLto16:
-         BINARY(Ity_I16, Ity_I8,Ity_I8);
+         BINARY(Ity_I8,Ity_I8, Ity_I16);
 
       case Iop_32HIto16: case Iop_32to16:
-         UNARY(Ity_I16,Ity_I32);
+         UNARY(Ity_I32, Ity_I16);
       case Iop_16HLto32:
-         BINARY(Ity_I32, Ity_I16,Ity_I16);
+         BINARY(Ity_I16,Ity_I16, Ity_I32);
 
       case Iop_64HIto32: case Iop_64to32:
-         UNARY(Ity_I32, Ity_I64);
+         UNARY(Ity_I64, Ity_I32);
       case Iop_32HLto64:
-         BINARY(Ity_I64, Ity_I32,Ity_I32);
+         BINARY(Ity_I32,Ity_I32, Ity_I64);
 
       case Iop_128HIto64: case Iop_128to64:
-         UNARY(Ity_I64, Ity_I128);
+         UNARY(Ity_I128, Ity_I64);
       case Iop_64HLto128:
-         BINARY(Ity_I128, Ity_I64,Ity_I64);
+         BINARY(Ity_I64,Ity_I64, Ity_I128);
 
-      case Iop_Not1:   UNARY(Ity_I1,Ity_I1);
-      case Iop_1Uto8:  UNARY(Ity_I8,Ity_I1);
-      case Iop_1Sto8:  UNARY(Ity_I8,Ity_I1);
-      case Iop_1Sto16: UNARY(Ity_I16,Ity_I1);
-      case Iop_1Uto32: case Iop_1Sto32: UNARY(Ity_I32,Ity_I1);
-      case Iop_1Sto64: case Iop_1Uto64: UNARY(Ity_I64,Ity_I1);
-      case Iop_32to1:  UNARY(Ity_I1,Ity_I32);
-      case Iop_64to1:  UNARY(Ity_I1,Ity_I64);
+      case Iop_Not1:   UNARY(Ity_I1, Ity_I1);
+      case Iop_1Uto8:  UNARY(Ity_I1, Ity_I8);
+      case Iop_1Sto8:  UNARY(Ity_I1, Ity_I8);
+      case Iop_1Sto16: UNARY(Ity_I1, Ity_I16);
+      case Iop_1Uto32: case Iop_1Sto32: UNARY(Ity_I1, Ity_I32);
+      case Iop_1Sto64: case Iop_1Uto64: UNARY(Ity_I1, Ity_I64);
+      case Iop_32to1:  UNARY(Ity_I32, Ity_I1);
+      case Iop_64to1:  UNARY(Ity_I64, Ity_I1);
 
       case Iop_8Uto32: case Iop_8Sto32:
-         UNARY(Ity_I32,Ity_I8);
+         UNARY(Ity_I8, Ity_I32);
 
       case Iop_8Uto16: case Iop_8Sto16:
-         UNARY(Ity_I16,Ity_I8);
+         UNARY(Ity_I8, Ity_I16);
 
       case Iop_16Uto32: case Iop_16Sto32: 
-         UNARY(Ity_I32,Ity_I16);
+         UNARY(Ity_I16, Ity_I32);
 
       case Iop_32Sto64: case Iop_32Uto64:
-         UNARY(Ity_I64,Ity_I32);
+         UNARY(Ity_I32, Ity_I64);
 
       case Iop_8Uto64: case Iop_8Sto64:
-         UNARY(Ity_I64,Ity_I8);
+         UNARY(Ity_I8, Ity_I64);
 
       case Iop_16Uto64: case Iop_16Sto64:
-         UNARY(Ity_I64,Ity_I16);
-      case Iop_64to16:
          UNARY(Ity_I16, Ity_I64);
+      case Iop_64to16:
+         UNARY(Ity_I64, Ity_I16);
 
-      case Iop_32to8: UNARY(Ity_I8,Ity_I32);
-      case Iop_64to8: UNARY(Ity_I8,Ity_I64);
+      case Iop_32to8: UNARY(Ity_I32, Ity_I8);
+      case Iop_64to8: UNARY(Ity_I64, Ity_I8);
 
-      case Iop_ScaleF64: case Iop_PRemF64: case Iop_PRem1F64:
-      case Iop_AtanF64: case Iop_Yl2xF64:  case Iop_Yl2xp1F64: 
-      case Iop_AddF64: case Iop_SubF64: case Iop_MulF64: case Iop_DivF64:
-         BINARY(Ity_F64,Ity_F64,Ity_F64);
-      case Iop_PRemC3210F64: case Iop_PRem1C3210F64:
+      case Iop_AddF64:    case Iop_SubF64: 
+      case Iop_MulF64:    case Iop_DivF64:
+      case Iop_AddF64r32: case Iop_SubF64r32: 
+      case Iop_MulF64r32: case Iop_DivF64r32:
+         TERNARY(ity_RMode,Ity_F64,Ity_F64, Ity_F64);
+
+      case Iop_NegF64: case Iop_AbsF64: 
+         UNARY(Ity_F64, Ity_F64);
+
+      case Iop_SqrtF64:
+      case Iop_SqrtF64r32:
+         BINARY(ity_RMode,Ity_F64, Ity_F64);
+
       case Iop_CmpF64:
-         BINARY(Ity_I32,Ity_F64,Ity_F64);
-      case Iop_NegF64: case Iop_AbsF64: case Iop_SqrtF64:
-      case Iop_SinF64: case Iop_CosF64: case Iop_TanF64: case Iop_2xm1F64:
-      case Iop_Est8FRecip: case Iop_Est5FRSqrt:
-         UNARY(Ity_F64,Ity_F64);
+         BINARY(Ity_F64,Ity_F64, Ity_I32);
 
-      case Iop_ReinterpI64asF64: UNARY(Ity_F64, Ity_I64);
-      case Iop_ReinterpF64asI64: UNARY(Ity_I64, Ity_F64);
-      case Iop_ReinterpI32asF32: UNARY(Ity_F32, Ity_I32);
-      case Iop_ReinterpF32asI32: UNARY(Ity_I32, Ity_F32);
+      case Iop_F64toI16: BINARY(ity_RMode,Ity_F64, Ity_I16);
+      case Iop_F64toI32: BINARY(ity_RMode,Ity_F64, Ity_I32);
+      case Iop_F64toI64: BINARY(ity_RMode,Ity_F64, Ity_I64);
 
-      case Iop_F64toI16: BINARY(Ity_I16, Ity_I32,Ity_F64);
-      case Iop_F64toI32: BINARY(Ity_I32, Ity_I32,Ity_F64);
-      case Iop_F64toI64: BINARY(Ity_I64, Ity_I32,Ity_F64);
+      case Iop_I16toF64: UNARY(Ity_I16, Ity_F64);
+      case Iop_I32toF64: UNARY(Ity_I32, Ity_F64);
+      case Iop_I64toF64: BINARY(ity_RMode,Ity_I64, Ity_F64);
 
-      case Iop_I16toF64: UNARY(Ity_F64, Ity_I16);
-      case Iop_I32toF64: UNARY(Ity_F64, Ity_I32);
-      case Iop_I64toF64: BINARY(Ity_F64, Ity_I32,Ity_I64);
+      case Iop_F32toF64: UNARY(Ity_F32, Ity_F64);
+      case Iop_F64toF32: BINARY(ity_RMode,Ity_F64, Ity_F32);
 
-      case Iop_F32toF64: UNARY(Ity_F64, Ity_F32);
-      case Iop_F64toF32: BINARY(Ity_F32, Ity_I32,Ity_F64);
+      case Iop_ReinterpI64asF64: UNARY(Ity_I64, Ity_F64);
+      case Iop_ReinterpF64asI64: UNARY(Ity_F64, Ity_I64);
+      case Iop_ReinterpI32asF32: UNARY(Ity_I32, Ity_F32);
 
-      case Iop_RoundF64: BINARY(Ity_F64, Ity_I32,Ity_F64);
+      case Iop_AtanF64: case Iop_Yl2xF64:  case Iop_Yl2xp1F64: 
+      case Iop_ScaleF64: case Iop_PRemF64: case Iop_PRem1F64:
+         TERNARY(ity_RMode,Ity_F64,Ity_F64, Ity_F64);
+
+      case Iop_PRemC3210F64: case Iop_PRem1C3210F64:
+         TERNARY(ity_RMode,Ity_F64,Ity_F64, Ity_I32);
+
+      case Iop_SinF64: case Iop_CosF64: case Iop_TanF64: 
+      case Iop_2xm1F64:
+      case Iop_RoundF64toInt: BINARY(ity_RMode,Ity_F64, Ity_F64);
+
+      case Iop_Est5FRSqrt:
+         UNARY(Ity_F64, Ity_F64);
+      case Iop_RoundF64toF32:
+         BINARY(ity_RMode,Ity_F64, Ity_F64);
+      case Iop_CalcFPRF:
+         UNARY(Ity_F64, Ity_I32);
+      case Iop_TruncF64asF32:
+         UNARY(Ity_F64, Ity_F32);
 
       case Iop_I32UtoFx4:
       case Iop_I32StoFx4:
@@ -1551,19 +1611,19 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_RoundF32x4_RZ:
          UNARY(Ity_V128, Ity_V128);
 
-      case Iop_64HLtoV128: BINARY(Ity_V128, Ity_I64,Ity_I64);
+      case Iop_64HLtoV128: BINARY(Ity_I64,Ity_I64, Ity_V128);
       case Iop_V128to64: case Iop_V128HIto64: 
-         UNARY(Ity_I64, Ity_V128);
+         UNARY(Ity_V128, Ity_I64);
 
-      case Iop_V128to32:    UNARY(Ity_I32, Ity_V128);
-      case Iop_32UtoV128:   UNARY(Ity_V128, Ity_I32);
-      case Iop_64UtoV128:   UNARY(Ity_V128, Ity_I64);
-      case Iop_SetV128lo32: BINARY(Ity_V128, Ity_V128,Ity_I32);
-      case Iop_SetV128lo64: BINARY(Ity_V128, Ity_V128,Ity_I64);
+      case Iop_V128to32:    UNARY(Ity_V128, Ity_I32);
+      case Iop_32UtoV128:   UNARY(Ity_I32, Ity_V128);
+      case Iop_64UtoV128:   UNARY(Ity_I64, Ity_V128);
+      case Iop_SetV128lo32: BINARY(Ity_V128,Ity_I32, Ity_V128);
+      case Iop_SetV128lo64: BINARY(Ity_V128,Ity_I64, Ity_V128);
 
-      case Iop_Dup8x16: UNARY(Ity_V128, Ity_I8);
-      case Iop_Dup16x8: UNARY(Ity_V128, Ity_I16);
-      case Iop_Dup32x4: UNARY(Ity_V128, Ity_I32);
+      case Iop_Dup8x16: UNARY(Ity_I8, Ity_V128);
+      case Iop_Dup16x8: UNARY(Ity_I16, Ity_V128);
+      case Iop_Dup32x4: UNARY(Ity_I32, Ity_V128);
 
       case Iop_CmpEQ32Fx4: case Iop_CmpLT32Fx4:
       case Iop_CmpEQ64Fx2: case Iop_CmpLT64Fx2:
@@ -1621,7 +1681,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_InterleaveLO8x16: case Iop_InterleaveLO16x8: 
       case Iop_InterleaveLO32x4: case Iop_InterleaveLO64x2:
       case Iop_Perm8x16:
-         BINARY(Ity_V128, Ity_V128,Ity_V128);
+         BINARY(Ity_V128,Ity_V128, Ity_V128);
 
       case Iop_NotV128:
       case Iop_Recip32Fx4: case Iop_Recip32F0x4:
@@ -1635,10 +1695,12 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
          UNARY(Ity_V128, Ity_V128);
 
       case Iop_ShlV128: case Iop_ShrV128:
-      case Iop_ShlN8x16: case Iop_ShlN16x8: case Iop_ShlN32x4: case Iop_ShlN64x2:
-      case Iop_ShrN8x16: case Iop_ShrN16x8: case Iop_ShrN32x4: case Iop_ShrN64x2:
+      case Iop_ShlN8x16: case Iop_ShlN16x8: 
+      case Iop_ShlN32x4: case Iop_ShlN64x2:
+      case Iop_ShrN8x16: case Iop_ShrN16x8: 
+      case Iop_ShrN32x4: case Iop_ShrN64x2:
       case Iop_SarN8x16: case Iop_SarN16x8: case Iop_SarN32x4:
-         BINARY(Ity_V128, Ity_V128, Ity_I8);
+         BINARY(Ity_V128,Ity_I8, Ity_V128);
 
       default:
          ppIROp(op);
@@ -1646,6 +1708,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
    }
 #  undef UNARY
 #  undef BINARY
+#  undef TERNARY
 #  undef COMPARISON
 #  undef UNARY_COMPARISON
 }
@@ -1730,7 +1793,7 @@ IRType typeOfIRConst ( IRConst* con )
 
 IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
 {
-   IRType t_dst, t_arg1, t_arg2;
+   IRType t_dst, t_arg1, t_arg2, t_arg3;
  start:
    switch (e->tag) {
       case Iex_Load:
@@ -1743,11 +1806,14 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          return typeOfIRTemp(tyenv, e->Iex.Tmp.tmp);
       case Iex_Const:
          return typeOfIRConst(e->Iex.Const.con);
+      case Iex_Triop:
+         typeOfPrimop(e->Iex.Triop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         return t_dst;
       case Iex_Binop:
-         typeOfPrimop(e->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
+         typeOfPrimop(e->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
          return t_dst;
       case Iex_Unop:
-         typeOfPrimop(e->Iex.Unop.op, &t_dst, &t_arg1, &t_arg2);
+         typeOfPrimop(e->Iex.Unop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
          return t_dst;
       case Iex_CCall:
          return e->Iex.CCall.retty;
@@ -1817,6 +1883,10 @@ Bool isFlatIRStmt ( IRStmt* st )
             case Iex_Get:    return True;
             case Iex_GetI:   return isIRAtom(e->Iex.GetI.ix);
             case Iex_Tmp:    return True;
+            case Iex_Triop:  return toBool(
+                                    isIRAtom(e->Iex.Triop.arg1) 
+                                    && isIRAtom(e->Iex.Triop.arg2)
+                                    && isIRAtom(e->Iex.Triop.arg3));
             case Iex_Binop:  return toBool(
                                     isIRAtom(e->Iex.Binop.arg1) 
                                     && isIRAtom(e->Iex.Binop.arg2));
@@ -1955,6 +2025,11 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
       case Iex_Tmp:
          useBeforeDef_Temp(bb,stmt,expr->Iex.Tmp.tmp,def_counts);
          break;
+      case Iex_Triop:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Triop.arg1,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Triop.arg2,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Triop.arg3,def_counts);
+         break;
       case Iex_Binop:
          useBeforeDef_Expr(bb,stmt,expr->Iex.Binop.arg1,def_counts);
          useBeforeDef_Expr(bb,stmt,expr->Iex.Binop.arg2,def_counts);
@@ -2028,7 +2103,7 @@ static
 void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
 {
    Int        i;
-   IRType     t_dst, t_arg1, t_arg2;
+   IRType     t_dst, t_arg1, t_arg2, t_arg3;
    IRTypeEnv* tyenv = bb->tyenv;
    switch (expr->tag) {
       case Iex_Get:
@@ -2041,12 +2116,56 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          if (!saneIRArray(expr->Iex.GetI.descr))
             sanityCheckFail(bb,stmt,"IRExpr.GetI.descr: invalid descr");
          break;
+      case Iex_Triop: {
+         IRType ttarg1, ttarg2, ttarg3;
+         tcExpr(bb,stmt, expr->Iex.Triop.arg1, gWordTy );
+         tcExpr(bb,stmt, expr->Iex.Triop.arg2, gWordTy );
+         tcExpr(bb,stmt, expr->Iex.Triop.arg3, gWordTy );
+         typeOfPrimop(expr->Iex.Triop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID 
+                                   || t_arg3 == Ity_INVALID) {
+            vex_printf(" op name: " );
+            ppIROp(expr->Iex.Triop.op);
+            vex_printf("\n");
+            sanityCheckFail(bb,stmt,
+               "Iex.Triop: wrong arity op\n"
+               "... name of op precedes BB printout\n");
+         }
+         ttarg1 = typeOfIRExpr(tyenv, expr->Iex.Triop.arg1);
+         ttarg2 = typeOfIRExpr(tyenv, expr->Iex.Triop.arg2);
+         ttarg3 = typeOfIRExpr(tyenv, expr->Iex.Triop.arg3);
+         if (t_arg1 != ttarg1 || t_arg2 != ttarg2 || t_arg3 != ttarg3) {
+            vex_printf(" op name: ");
+            ppIROp(expr->Iex.Triop.op);
+            vex_printf("\n");
+            vex_printf(" op type is (");
+            ppIRType(t_arg1);
+            vex_printf(",");
+            ppIRType(t_arg2);
+            vex_printf(",");
+            ppIRType(t_arg3);
+            vex_printf(") -> ");
+            ppIRType (t_dst);
+            vex_printf("\narg tys are (");
+            ppIRType(ttarg1);
+            vex_printf(",");
+            ppIRType(ttarg2);
+            vex_printf(",");
+            ppIRType(ttarg3);
+            vex_printf(")\n");
+            sanityCheckFail(bb,stmt,
+               "Iex.Triop: arg tys don't match op tys\n"
+               "... additional details precede BB printout\n");
+         }
+         break;
+      }
       case Iex_Binop: {
          IRType ttarg1, ttarg2;
          tcExpr(bb,stmt, expr->Iex.Binop.arg1, gWordTy );
          tcExpr(bb,stmt, expr->Iex.Binop.arg2, gWordTy );
-         typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
-         if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID) {
+         typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID 
+                                   || t_arg3 != Ity_INVALID) {
             vex_printf(" op name: " );
             ppIROp(expr->Iex.Binop.op);
             vex_printf("\n");
@@ -2079,8 +2198,9 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
       }
       case Iex_Unop:
          tcExpr(bb,stmt, expr->Iex.Unop.arg, gWordTy );
-         typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
-         if (t_arg1 == Ity_INVALID || t_arg2 != Ity_INVALID)
+         typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         if (t_arg1 == Ity_INVALID || t_arg2 != Ity_INVALID
+                                   || t_arg3 != Ity_INVALID)
             sanityCheckFail(bb,stmt,"Iex.Unop: wrong arity op");
          if (t_arg1 != typeOfIRExpr(tyenv, expr->Iex.Unop.arg))
             sanityCheckFail(bb,stmt,"Iex.Unop: arg ty doesn't match op ty");

@@ -2850,7 +2850,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       }
 //..    }
 
-   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64) {
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64toInt) {
       AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
       HReg        arg    = iselDblExpr(env, e->Iex.Binop.arg2);
       HReg        dst    = newVRegV(env);

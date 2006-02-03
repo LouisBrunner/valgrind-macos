@@ -54,12 +54,6 @@
    - lvxl,stvxl: load/store with 'least recently used' hint
    - vexptefp, vlogefp
 
-   Floating Point
-   - Single precision stores are rounded twice - once by F64toF32,
-     and then again by the backend for storeBE( F32 ), giving a loss
-     of precision.
-
-
    LIMITATIONS:
 
    Various, including:
@@ -71,6 +65,7 @@
      - All exceptions disabled in FPSCR
      - condition codes not set in FPSCR
      - some error in accuracy
+     - flt->int conversions are dubious in overflow cases
 
    - Altivec floating point:
      - vmaddfp, vnmsubfp
@@ -481,6 +476,11 @@ static IRExpr* unop ( IROp op, IRExpr* a )
 static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 {
    return IRExpr_Binop(op, a1, a2);
+}
+
+static IRExpr* triop ( IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3 )
+{
+   return IRExpr_Triop(op, a1, a2, a3);
 }
 
 static IRExpr* mkexpr ( IRTemp tmp )
@@ -2250,8 +2250,22 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
    case PPC_GST_FPSCR: {
       /* Allow writes to Rounding Mode */
       if (mask & 0x3) {
-         stmt( IRStmt_Put( OFFB_FPROUND,
-                           binop(Iop_And32, src, mkU32(0x3)) ));
+         /* construct new fpround from new and old values as per mask:
+            new fpround = (src & (3 & mask)) | (fpround & (3 & ~mask)) */
+         stmt( 
+            IRStmt_Put( 
+               OFFB_FPROUND,
+               binop(
+                  Iop_Or32, 
+                  binop(Iop_And32, src, mkU32(3 & mask)),
+                  binop(
+                     Iop_And32, 
+                     IRExpr_Get(OFFB_FPROUND,Ity_I32),
+                     mkU32(3 & ~mask)
+                  )
+               )
+            )
+         );
       }
 
       /* Give EmWarn for attempted writes to:
@@ -5355,7 +5369,7 @@ static Bool dis_cache_manage ( UInt         theInstr,
    IRRoundingMode.  PPCRoundingMode encoding is different to
    IRRoundingMode, so need to map it.
 */
-static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
+static IRExpr* /* :: Ity_I32 */ get_IR_roundingmode ( void )
 {
 /* 
    rounding mode | PPC | IR
@@ -5369,17 +5383,11 @@ static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
    assign( rm_PPC32, getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN ) );
 
    // rm_IR = XOR( rm_PPC32, (rm_PPC32 << 1) & 2)
-   return binop(Iop_Xor32, mkexpr(rm_PPC32),
-                binop(Iop_And32, mkU32(2),
-                      binop(Iop_Shl32, mkexpr(rm_PPC32), mkU8(1))));
-}
-
-/* Round float to single precision
- - returns type Ity_F64 */
-static IRExpr* roundToSgl ( IRExpr* src )
-{
-   return unop(Iop_F32toF64,
-               binop(Iop_F64toF32, get_roundingmode(), src));
+   return binop( Iop_Xor32, 
+                 mkexpr(rm_PPC32),
+                 binop( Iop_And32, 
+                        binop(Iop_Shl32, mkexpr(rm_PPC32), mkU8(1)),
+                        mkU32(2) ));
 }
 
 
@@ -5410,8 +5418,11 @@ static Bool dis_fp_load ( UInt theInstr )
    assign( rA, getIReg(rA_addr) );
    assign( rB, getIReg(rB_addr) );
 
+   /* These are completely straightforward from a rounding and status
+      bits perspective: no rounding involved and no funny status or CR
+      bits affected. */
 
-   switch(opc1) {
+   switch (opc1) {
    case 0x30: // lfs (Load Float Single, PPC32 p441)
       DIP("lfs fr%u,%d(r%u)\n", frD_addr, simm16, rA_addr);
       assign( EA, ea_rAor0_simm(rA_addr, simm16) );
@@ -5420,10 +5431,8 @@ static Bool dis_fp_load ( UInt theInstr )
       break;
 
    case 0x31: // lfsu (Load Float Single, Update, PPC32 p442)
-      if (rA_addr == 0) {
-         vex_printf("dis_fp_load(ppc)(instr,lfsu)\n");
+      if (rA_addr == 0)
          return False;
-      }
       DIP("lfsu fr%u,%d(r%u)\n", frD_addr, simm16, rA_addr);
       assign( EA, ea_rA_simm(rA_addr, simm16) );
       putFReg( frD_addr,
@@ -5438,10 +5447,8 @@ static Bool dis_fp_load ( UInt theInstr )
       break;
 
    case 0x33: // lfdu (Load Float Double, Update, PPC32 p438)
-      if (rA_addr == 0) {
-         vex_printf("dis_fp_load(ppc)(instr,lfdu)\n");
+      if (rA_addr == 0)
          return False;
-      }
       DIP("lfdu fr%u,%d(r%u)\n", frD_addr, simm16, rA_addr);
       assign( EA, ea_rA_simm(rA_addr, simm16) );
       putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
@@ -5463,10 +5470,8 @@ static Bool dis_fp_load ( UInt theInstr )
          break;
          
       case 0x237: // lfsux (Load Float Single, Update Indxd, PPC32 p443)
-         if (rA_addr == 0) {
-            vex_printf("dis_fp_load(ppc)(instr,lfsux)\n");
+         if (rA_addr == 0)
             return False;
-         }
          DIP("lfsux fr%u,r%u,r%u\n", frD_addr, rA_addr, rB_addr);
          assign( EA, ea_rA_idxd(rA_addr, rB_addr) );
          putFReg( frD_addr,
@@ -5481,10 +5486,8 @@ static Bool dis_fp_load ( UInt theInstr )
          break;
          
       case 0x277: // lfdux (Load Float Double, Update Indxd, PPC32 p439)
-         if (rA_addr == 0) {
-            vex_printf("dis_fp_load(ppc)(instr,lfdux)\n");
+         if (rA_addr == 0)
             return False;
-         }
          DIP("lfdux fr%u,r%u,r%u\n", frD_addr, rA_addr, rB_addr);
          assign( EA, ea_rA_idxd(rA_addr, rB_addr) );
          putFReg( frD_addr, loadBE(Ity_F64, mkexpr(EA)) );
@@ -5531,29 +5534,31 @@ static Bool dis_fp_store ( UInt theInstr )
    assign( rA,  getIReg(rA_addr) );
    assign( rB,  getIReg(rB_addr) );
 
-   switch(opc1) {
+   /* These are straightforward from a status bits perspective: no
+      funny status or CR bits affected.  For single precision stores,
+      the values are truncated and denormalised (not rounded) to turn
+      them into single precision values. */
+
+   switch (opc1) {
 
    case 0x34: // stfs (Store Float Single, PPC32 p518)
       DIP("stfs fr%u,%d(r%u)\n", frS_addr, simm16, rA_addr);
       assign( EA, ea_rAor0_simm(rA_addr, simm16) );
-      /* TODO
-         This implementation ends up rounding twice, losing accuracy.
-         - first via F64toF32, and then by the backend fp store (stfs)
-      */
+      /* Use Iop_TruncF64asF32 to truncate and possible denormalise
+         the value to be stored in the correct way, without any
+         rounding. */
       storeBE( mkexpr(EA),
-               binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
+               unop(Iop_TruncF64asF32, mkexpr(frS)) );
       break;
 
    case 0x35: // stfsu (Store Float Single, Update, PPC32 p519)
-      if (rA_addr == 0) {
-         vex_printf("dis_fp_store(ppc)(instr,stfsu)\n");
+      if (rA_addr == 0)
          return False;
-      }
       DIP("stfsu fr%u,%d(r%u)\n", frS_addr, simm16, rA_addr);
       assign( EA, ea_rA_simm(rA_addr, simm16) );
-      /* This implementation loses accuracy - see note for stfs */
+      /* See comment for stfs */
       storeBE( mkexpr(EA),
-               binop(Iop_F64toF32, get_roundingmode(), mkexpr(frS)) );
+               unop(Iop_TruncF64asF32, mkexpr(frS)) );
       putIReg( rA_addr, mkexpr(EA) );
       break;
 
@@ -5564,10 +5569,8 @@ static Bool dis_fp_store ( UInt theInstr )
       break;
 
    case 0x37: // stfdu (Store Float Double, Update, PPC32 p514)
-      if (rA_addr == 0) {
-         vex_printf("dis_fp_store(ppc)(instr,stfdu)\n");
+      if (rA_addr == 0)
          return False;
-      }
       DIP("stfdu fr%u,%d(r%u)\n", frS_addr, simm16, rA_addr);
       assign( EA, ea_rA_simm(rA_addr, simm16) );
       storeBE( mkexpr(EA), mkexpr(frS) );
@@ -5579,26 +5582,23 @@ static Bool dis_fp_store ( UInt theInstr )
          vex_printf("dis_fp_store(ppc)(instr,b0)\n");
          return False;
       }
-
       switch(opc2) {
       case 0x297: // stfsx (Store Float Single Indexed, PPC32 p521)
          DIP("stfsx fr%u,r%u,r%u\n", frS_addr, rA_addr, rB_addr);
          assign( EA, ea_rAor0_idxd(rA_addr, rB_addr) );
-         /* This implementation loses accuracy - see note for stfs */
-         storeBE( mkexpr(EA), binop(Iop_F64toF32,
-                                    get_roundingmode(), mkexpr(frS)) );
+         /* See note for stfs */
+         storeBE( mkexpr(EA), 
+                  unop(Iop_TruncF64asF32, mkexpr(frS)) );
          break;
          
       case 0x2B7: // stfsux (Store Float Sgl, Update Indxd, PPC32 p520)
-         if (rA_addr == 0) {
-            vex_printf("dis_fp_store(ppc)(instr,stfsux)\n");
+         if (rA_addr == 0)
             return False;
-         }
          DIP("stfsux fr%u,r%u,r%u\n", frS_addr, rA_addr, rB_addr);
          assign( EA, ea_rA_idxd(rA_addr, rB_addr) );
-         /* This implementation loses accuracy - see note for stfs */
-         storeBE( mkexpr(EA), binop(Iop_F64toF32,
-                                    get_roundingmode(), mkexpr(frS)) );
+         /* See note for stfs */
+         storeBE( mkexpr(EA), 
+                  unop(Iop_TruncF64asF32, mkexpr(frS)) );
          putIReg( rA_addr, mkexpr(EA) );
          break;
 
@@ -5609,10 +5609,8 @@ static Bool dis_fp_store ( UInt theInstr )
          break;
          
       case 0x2F7: // stfdux (Store Float Dbl, Update Indxd, PPC32 p515)
-         if (rA_addr == 0) {
-            vex_printf("dis_fp_store(ppc)(instr,stfdux)\n");
+         if (rA_addr == 0)
             return False;
-         }
          DIP("stfdux fr%u,r%u,r%u\n", frS_addr, rA_addr, rB_addr);
          assign( EA, ea_rA_idxd(rA_addr, rB_addr) );
          storeBE( mkexpr(EA), mkexpr(frS) );
@@ -5655,12 +5653,23 @@ static Bool dis_fp_arith ( UInt theInstr )
    UChar frC_addr = ifieldRegC(theInstr);
    UChar opc2     = ifieldOPClo5(theInstr);
    UChar flag_rC  = ifieldBIT0(theInstr);
-   // Note: flag_rC ignored as fp exceptions not supported.
 
-   IRTemp frD = newTemp(Ity_F64);
-   IRTemp frA = newTemp(Ity_F64);
-   IRTemp frB = newTemp(Ity_F64);
-   IRTemp frC = newTemp(Ity_F64);
+   IRTemp  frD = newTemp(Ity_F64);
+   IRTemp  frA = newTemp(Ity_F64);
+   IRTemp  frB = newTemp(Ity_F64);
+   IRTemp  frC = newTemp(Ity_F64);
+   IRExpr* rm  = get_IR_roundingmode();
+
+   /* By default, we will examine the results of the operation and set
+      fpscr[FPRF] accordingly. */
+   Bool set_FPRF = True;
+
+   /* By default, if flag_RC is set, we will clear cr1 after the
+      operation.  In reality we should set cr1 to indicate the
+      exception status of the operation, but since we're not
+      simulating exceptions, the exception status will appear to be
+      zero.  Hence cr1 should be cleared if this is a . form insn. */
+   Bool clear_CR1 = True;
 
    assign( frA, getFReg(frA_addr));
    assign( frB, getFReg(frB_addr));
@@ -5670,84 +5679,71 @@ static Bool dis_fp_arith ( UInt theInstr )
    case 0x3B:
       switch (opc2) {
       case 0x12: // fdivs (Floating Divide Single, PPC32 p407)
-         if (frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fdivs)\n");
+         if (frC_addr != 0)
             return False;
-         }
          DIP("fdivs%s fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frB_addr);
-         assign( frD, roundToSgl( binop(Iop_DivF64,
-                                        mkexpr(frA), mkexpr(frB)) ));
+         assign( frD, triop( Iop_DivF64r32, 
+                             rm, mkexpr(frA), mkexpr(frB) ));
          break;
 
       case 0x14: // fsubs (Floating Subtract Single, PPC32 p430)
-         if (frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fsubs)\n");
+         if (frC_addr != 0)
             return False;
-         }
          DIP("fsubs%s fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frB_addr);
-         assign( frD, roundToSgl( 
-                         binop(Iop_SubF64, mkexpr(frA), mkexpr(frB)) ));
+         assign( frD, triop( Iop_SubF64r32, 
+                             rm, mkexpr(frA), mkexpr(frB) ));
          break;
 
       case 0x15: // fadds (Floating Add Single, PPC32 p401)
-         if (frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fadds)\n");
+         if (frC_addr != 0)
             return False;
-         }
          DIP("fadds%s fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frB_addr);
-         assign( frD, roundToSgl( 
-                         binop(Iop_AddF64, mkexpr(frA), mkexpr(frB)) ));
+         assign( frD, triop( Iop_AddF64r32, 
+                             rm, mkexpr(frA), mkexpr(frB) ));
          break;
 
       case 0x16: // fsqrts (Floating SqRt (Single-Precision), PPC32 p428)
          // NOTE: POWERPC OPTIONAL, "General-Purpose Group" (PPC32_FX)
-         if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fsqrts)\n");
+         if (frA_addr != 0 || frC_addr != 0)
             return False;
-         }
          DIP("fsqrts%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
          // however illogically, on ppc970 this insn behaves identically
-         // to fsqrt (double-precision).  So don't do round-to-single.
-         assign( frD, unop(Iop_SqrtF64, mkexpr(frB)) );
+         // to fsqrt (double-precision).  So use SqrtF64, not SqrtF64r32.
+         assign( frD, binop( Iop_SqrtF64, rm, mkexpr(frB) ));
          break;
 
       case 0x18: // fres (Floating Reciprocal Estimate Single, PPC32 p421)
          // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
-         if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fres)\n");
+         if (frA_addr != 0 || frC_addr != 0)
             return False;
-         }
          DIP("fres%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
-         //assign( frD, unop(Iop_Est8FRecip, mkexpr(frB)) );
          { IRExpr* ieee_one
               = IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL));
-           assign( frD, roundToSgl(binop(Iop_DivF64, ieee_one, mkexpr(frB))) );
+           assign( frD, triop( Iop_DivF64r32, 
+                               rm,
+                               ieee_one, mkexpr(frB) ));
          }
          break;
 
       case 0x19: // fmuls (Floating Multiply Single, PPC32 p414)
-         if (frB_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fmuls)\n");
+         if (frB_addr != 0)
             return False;
-         }
          DIP("fmuls%s fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr);
-         assign( frD, roundToSgl( binop(Iop_MulF64,
-                                        mkexpr(frA), mkexpr(frC)) ));
+         assign( frD, triop( Iop_MulF64r32,
+                             rm, mkexpr(frA), mkexpr(frC) ));
          break;
 
       case 0x1A: // frsqrtes (Floating Recip SqRt Est Single)
          // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
          // Undocumented instruction?
-         if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,frsqrte)\n");
+         if (frA_addr != 0 || frC_addr != 0)
             return False;
-         }
          DIP("frsqrtes%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
          assign( frD, unop(Iop_Est5FRSqrt, mkexpr(frB)) );
@@ -5762,44 +5758,36 @@ static Bool dis_fp_arith ( UInt theInstr )
    case 0x3F:
       switch (opc2) {           
       case 0x12: // fdiv (Floating Div (Double-Precision), PPC32 p406)
-         if (frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fdiv)\n");
+         if (frC_addr != 0)
             return False;
-         }
          DIP("fdiv%s fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frB_addr);
-         assign( frD, binop( Iop_DivF64, mkexpr(frA), mkexpr(frB) ) );
+         assign( frD, triop(Iop_DivF64, rm, mkexpr(frA), mkexpr(frB)) );
          break;
 
       case 0x14: // fsub (Floating Sub (Double-Precision), PPC32 p429)
-         if (frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fsub)\n");
+         if (frC_addr != 0)
             return False;
-         }
          DIP("fsub%s fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frB_addr);
-         assign( frD, binop( Iop_SubF64, mkexpr(frA), mkexpr(frB) ) );
+         assign( frD, triop(Iop_SubF64, rm, mkexpr(frA), mkexpr(frB)) );
          break;
 
       case 0x15: // fadd (Floating Add (Double-Precision), PPC32 p400)
-         if (frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fadd)\n");
+         if (frC_addr != 0)
             return False;
-         }
          DIP("fadd%s fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frB_addr);
-         assign( frD, binop( Iop_AddF64, mkexpr(frA), mkexpr(frB) ) );
+         assign( frD, triop(Iop_AddF64, rm, mkexpr(frA), mkexpr(frB)) );
          break;
 
       case 0x16: // fsqrt (Floating SqRt (Double-Precision), PPC32 p427)
          // NOTE: POWERPC OPTIONAL, "General-Purpose Group" (PPC32_FX)
-         if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fsqrt)\n");
+         if (frA_addr != 0 || frC_addr != 0)
             return False;
-         }
          DIP("fsqrt%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
-         assign( frD, unop( Iop_SqrtF64, mkexpr(frB) ) );
+         assign( frD, binop(Iop_SqrtF64, rm, mkexpr(frB)) );
          break;
 
       case 0x17: { // fsel (Floating Select, PPC32 p426)
@@ -5824,6 +5812,9 @@ static Bool dis_fp_arith ( UInt theInstr )
                          binop(Iop_CmpEQ32, mkexpr(cc_b0), mkU32(0))),
                     mkexpr(frB),
                     mkexpr(frC) ));
+
+         /* One of the rare ones which don't mess with FPRF */
+         set_FPRF = False;
          break;
       }
 
@@ -5831,35 +5822,32 @@ static Bool dis_fp_arith ( UInt theInstr )
          // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
          // Note: unclear whether this insn really exists or not
          // ppc970 doesn't have it, but POWER5 does
-         if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,fres)\n");
+         if (frA_addr != 0 || frC_addr != 0)
             return False;
-         }
          DIP("fre%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
-         //assign( frD, unop(Iop_Est8FRecip, mkexpr(frB)) );
          { IRExpr* ieee_one
               = IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL));
-           assign( frD, binop(Iop_DivF64, ieee_one, mkexpr(frB)) );
+           /* Does this really depend on the rounding mode?  Play safe
+              and use the default. */
+           assign( frD, triop( Iop_DivF64, 
+                               mkU32(Irrm_NEAREST), 
+                               ieee_one, mkexpr(frB) ));
          }
          break;
 
       case 0x19: // fmul (Floating Mult (Double Precision), PPC32 p413)
-         if (frB_addr != 0) {
+         if (frB_addr != 0)
             vex_printf("dis_fp_arith(ppc)(instr,fmul)\n");
-            return False;
-         }
          DIP("fmul%s fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr);
-         assign( frD, binop( Iop_MulF64, mkexpr(frA), mkexpr(frC) ) );
+         assign( frD, triop(Iop_MulF64, rm, mkexpr(frA), mkexpr(frC)) );
          break;
 
       case 0x1A: // frsqrte (Floating Recip SqRt Est., PPC32 p424)
          // NOTE: POWERPC OPTIONAL, "Graphics Group" (PPC32_GX)
-         if (frA_addr != 0 || frC_addr != 0) {
-            vex_printf("dis_fp_arith(ppc)(instr,frsqrte)\n");
+         if (frA_addr != 0 || frC_addr != 0)
             return False;
-         }
          DIP("frsqrte%s fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frB_addr);
          assign( frD, unop(Iop_Est5FRSqrt, mkexpr(frB)) );
@@ -5877,6 +5865,17 @@ static Bool dis_fp_arith ( UInt theInstr )
    }
 
    putFReg( frD_addr, mkexpr(frD) );
+
+   if (set_FPRF) {
+      // XXX XXX XXX FIXME
+      // set FPRF from frD
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8(0) );
+      putCR0( 1, mkU8(0) );
+   }
+
    return True;
 }
 
@@ -5896,14 +5895,41 @@ static Bool dis_fp_multadd ( UInt theInstr )
    UChar opc2     = ifieldOPClo5(theInstr);
    UChar flag_rC  = ifieldBIT0(theInstr);
 
-   IRTemp frD = newTemp(Ity_F64);
-   IRTemp frA = newTemp(Ity_F64);
-   IRTemp frB = newTemp(Ity_F64);
-   IRTemp frC = newTemp(Ity_F64);
+   IRTemp  frD = newTemp(Ity_F64);
+   IRTemp  frA = newTemp(Ity_F64);
+   IRTemp  frB = newTemp(Ity_F64);
+   IRTemp  frC = newTemp(Ity_F64);
+   IRTemp  rmt = newTemp(Ity_I32);
+   IRExpr* rm;
+
+   /* By default, we will examine the results of the operation and set
+      fpscr[FPRF] accordingly. */
+   Bool set_FPRF = True;
+
+   /* By default, if flag_RC is set, we will clear cr1 after the
+      operation.  In reality we should set cr1 to indicate the
+      exception status of the operation, but since we're not
+      simulating exceptions, the exception status will appear to be
+      zero.  Hence cr1 should be cleared if this is a . form insn. */
+   Bool clear_CR1 = True;
+
+   /* Bind the rounding mode expression to a temp; there's no
+      point in creating gratuitous CSEs, as we know we'll need 
+      to use it twice. */
+   assign( rmt, get_IR_roundingmode() );
+   rm = mkexpr(rmt);
 
    assign( frA, getFReg(frA_addr));
    assign( frB, getFReg(frB_addr));
    assign( frC, getFReg(frC_addr));
+
+   /* The rounding in this is all a bit dodgy.  The idea is to only do
+      one rounding.  That clearly isn't achieveable without dedicated
+      four-input IR primops, although in the single precision case we
+      can sort-of simulate it by doing the inner multiply in double
+      precision. 
+
+      In the negated cases, the negation happens after rounding. */
 
    switch (opc1) {
    case 0x3B:
@@ -5911,41 +5937,39 @@ static Bool dis_fp_multadd ( UInt theInstr )
       case 0x1C: // fmsubs (Floating Mult-Subtr Single, PPC32 p412)
          DIP("fmsubs%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, roundToSgl( binop( Iop_SubF64,
-                                         binop(Iop_MulF64, mkexpr(frA),
-                                                           mkexpr(frC)),
-                                         mkexpr(frB)) ));
-          break;
+         assign( frD, triop( Iop_SubF64r32, rm,
+                             triop( Iop_MulF64, rm, mkexpr(frA),
+                                                    mkexpr(frC) ),
+                             mkexpr(frB) ));
+         break;
 
       case 0x1D: // fmadds (Floating Mult-Add Single, PPC32 p409)
          DIP("fmadds%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, roundToSgl( binop( Iop_AddF64,
-                                         binop(Iop_MulF64, mkexpr(frA),
-                                                           mkexpr(frC)),
-                                         mkexpr(frB)) ));
+         assign( frD, triop( Iop_AddF64r32, rm,
+                             triop( Iop_MulF64, rm, mkexpr(frA),
+                                                    mkexpr(frC) ),
+                             mkexpr(frB) ));
          break;
 
       case 0x1E: // fnmsubs (Float Neg Mult-Subtr Single, PPC32 p420)
          DIP("fnmsubs%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, roundToSgl(
-                            unop(Iop_NegF64,
-                                 binop(Iop_SubF64,
-                                       binop(Iop_MulF64, mkexpr(frA),
-                                                         mkexpr(frC)),
-                                       mkexpr(frB))) ));
+         assign( frD, unop( Iop_NegF64,
+                      triop( Iop_SubF64r32, rm,
+                             triop( Iop_MulF64, rm, mkexpr(frA),
+                                                    mkexpr(frC) ),
+                             mkexpr(frB) )));
          break;
 
       case 0x1F: // fnmadds (Floating Negative Multiply-Add Single, PPC32 p418)
          DIP("fnmadds%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, roundToSgl(
-                            unop(Iop_NegF64,
-                                 binop(Iop_AddF64,
-                                       binop(Iop_MulF64, mkexpr(frA),
-                                                         mkexpr(frC)),
-                                       mkexpr(frB))) ));
+         assign( frD, unop( Iop_NegF64,
+                      triop( Iop_AddF64r32, rm,
+                             triop( Iop_MulF64, rm, mkexpr(frA),
+                                                    mkexpr(frC) ),
+                             mkexpr(frB) )));
          break;
 
       default:
@@ -5959,18 +5983,18 @@ static Bool dis_fp_multadd ( UInt theInstr )
       case 0x1C: // fmsub (Float Mult-Sub (Dbl Precision), PPC32 p411)
          DIP("fmsub%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, binop( Iop_SubF64,
-                             binop( Iop_MulF64, mkexpr(frA),
-                                                mkexpr(frC) ),
+         assign( frD, triop( Iop_SubF64, rm,
+                             triop( Iop_MulF64, rm, mkexpr(frA),
+                                                    mkexpr(frC) ),
                              mkexpr(frB) ));
          break;
 
       case 0x1D: // fmadd (Float Mult-Add (Dbl Precision), PPC32 p408)
          DIP("fmadd%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, binop( Iop_AddF64,
-                             binop( Iop_MulF64, mkexpr(frA),
-                                                mkexpr(frC) ),
+         assign( frD, triop( Iop_AddF64, rm,
+                             triop( Iop_MulF64, rm, mkexpr(frA),
+                                                    mkexpr(frC) ),
                              mkexpr(frB) ));
          break;
 
@@ -5978,20 +6002,20 @@ static Bool dis_fp_multadd ( UInt theInstr )
          DIP("fnmsub%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
          assign( frD, unop( Iop_NegF64,
-                            binop( Iop_SubF64,
-                                   binop( Iop_MulF64, mkexpr(frA),
-                                                      mkexpr(frC) ),
-                                   mkexpr(frB) )));
+                      triop( Iop_SubF64, rm,
+                             triop( Iop_MulF64, rm, mkexpr(frA),
+                                                    mkexpr(frC) ),
+                             mkexpr(frB) )));
          break;
 
       case 0x1F: // fnmadd (Float Neg Mult-Add (Dbl Precision), PPC32 p417)
          DIP("fnmadd%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
          assign( frD, unop( Iop_NegF64,
-                            binop( Iop_AddF64,
-                                   binop( Iop_MulF64, mkexpr(frA),
-                                                      mkexpr(frC) ),
-                                   mkexpr(frB) )));
+                      triop( Iop_AddF64, rm,
+                             triop( Iop_MulF64, rm, mkexpr(frA),
+                                                    mkexpr(frC) ),
+                             mkexpr(frB) )));
          break;
 
       default:
@@ -6006,6 +6030,17 @@ static Bool dis_fp_multadd ( UInt theInstr )
    }
 
    putFReg( frD_addr, mkexpr(frD) );
+
+   if (set_FPRF) {
+      // XXX XXX XXX FIXME
+      // set FPRF from frD
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8(0) );
+      putCR0( 1, mkU8(0) );
+   }
+
    return True;
 }
 
@@ -6051,18 +6086,37 @@ static Bool dis_fp_cmp ( UInt theInstr )
      LT            | 0x8 | 0x01
    */
 
-   // ccPPC32 = Shl(1, (0x2 & ~(ccIR>>5)) || (0x1 & (XOR(ccIR, ccIR>>6))))
+   // ccPPC32 = Shl(1, (~(ccIR>>5) & 2) 
+   //                    | ((ccIR ^ (ccIR>>6)) & 1)
    assign(
       ccPPC32,
-      binop(Iop_Shl32, mkU32(1),
-            unop(Iop_32to8, 
-                 binop(Iop_Or32,
-                       binop(Iop_And32, mkU32(2),
-                             unop(Iop_Not32,
-                                  binop(Iop_Shr32, mkexpr(ccIR), mkU8(5)))),
-                       binop(Iop_And32, mkU32(1),
-                             binop(Iop_Xor32, mkexpr(ccIR),
-                                   binop(Iop_Shr32, mkexpr(ccIR), mkU8(6)))))))
+      binop(
+         Iop_Shl32, 
+         mkU32(1),
+         unop(
+            Iop_32to8, 
+            binop(
+               Iop_Or32,
+               binop(
+                  Iop_And32, 
+                  unop(
+                     Iop_Not32,
+                     binop(Iop_Shr32, mkexpr(ccIR), mkU8(5))
+                  ),
+                  mkU32(2)
+               ),
+               binop(
+                  Iop_And32, 
+                  binop(
+                     Iop_Xor32, 
+                     mkexpr(ccIR),
+                     binop(Iop_Shr32, mkexpr(ccIR), mkU8(6))
+                  ),
+                  mkU32(1)
+               )
+            )
+         )
+      )
    );
 
    putGST_field( PPC_GST_CR, mkexpr(ccPPC32), crfD );
@@ -6070,6 +6124,8 @@ static Bool dis_fp_cmp ( UInt theInstr )
    /* CAB: TODO?: Support writing cc to FPSCR->FPCC ?
       putGST_field( PPC_GST_FPSCR, mkexpr(ccPPC32), 4 );
    */
+   // XXX XXX XXX FIXME
+   // Also write the result into FPRF (it's not entirely clear how)
 
    /* Note: Differences between fcmpu and fcmpo are only in exception
       flag settings, which aren't supported anyway. */
@@ -6102,11 +6158,23 @@ static Bool dis_fp_round ( UInt theInstr )
    UInt  opc2     = ifieldOPClo10(theInstr);
    UChar flag_rC  = ifieldBIT0(theInstr);
 
-   IRTemp frD = newTemp(Ity_F64);
-   IRTemp frB = newTemp(Ity_F64);
-   IRTemp r_tmp32 = newTemp(Ity_I32);
-   IRTemp r_tmp64 = newTemp(Ity_I64);
+   IRTemp  frD     = newTemp(Ity_F64);
+   IRTemp  frB     = newTemp(Ity_F64);
+   IRTemp  r_tmp32 = newTemp(Ity_I32);
+   IRTemp  r_tmp64 = newTemp(Ity_I64);
+   IRExpr* rm      = get_IR_roundingmode();
 
+   /* By default, we will examine the results of the operation and set
+      fpscr[FPRF] accordingly. */
+   Bool set_FPRF = True;
+
+   /* By default, if flag_RC is set, we will clear cr1 after the
+      operation.  In reality we should set cr1 to indicate the
+      exception status of the operation, but since we're not
+      simulating exceptions, the exception status will appear to be
+      zero.  Hence cr1 should be cleared if this is a . form insn. */
+   Bool clear_CR1 = True;
+   
    if (opc1 != 0x3F || b16to20 != 0) {
       vex_printf("dis_fp_round(ppc)(instr)\n");
       return False;
@@ -6117,42 +6185,52 @@ static Bool dis_fp_round ( UInt theInstr )
    switch (opc2) {
    case 0x00C: // frsp (Float Round to Single, PPC32 p423)
       DIP("frsp%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
-      assign( frD, roundToSgl( mkexpr(frB) ));
+      assign( frD, binop( Iop_RoundF64toF32, rm, mkexpr(frB) ));
       break;
       
    case 0x00E: // fctiw (Float Conv to Int, PPC32 p404)
       DIP("fctiw%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
       assign( r_tmp32,
-              binop(Iop_F64toI32, get_roundingmode(), mkexpr(frB)) );
+              binop(Iop_F64toI32, rm, mkexpr(frB)) );
       assign( frD, unop( Iop_ReinterpI64asF64,
                          unop( Iop_32Uto64, mkexpr(r_tmp32))));
+      /* FPRF is undefined after fctiw.  Leave unchanged. */
+      set_FPRF = False;
       break;
       
    case 0x00F: // fctiwz (Float Conv to Int, Round to Zero, PPC32 p405)
       DIP("fctiwz%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
-      assign( r_tmp32, binop(Iop_F64toI32, mkU32(Irrm_ZERO), mkexpr(frB)) );
+      assign( r_tmp32, 
+              binop(Iop_F64toI32, mkU32(Irrm_ZERO), mkexpr(frB) ));
       assign( frD, unop( Iop_ReinterpI64asF64,
                          unop( Iop_32Uto64, mkexpr(r_tmp32))));
+      /* FPRF is undefined after fctiwz.  Leave unchanged. */
+      set_FPRF = False;
       break;
 
    case 0x32E: // fctid (Float Conv to Int DWord, PPC64 p437)
       DIP("fctid%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
       assign( r_tmp64,
-              binop(Iop_F64toI64, get_roundingmode(), mkexpr(frB)) );
+              binop(Iop_F64toI64, rm, mkexpr(frB)) );
       assign( frD, unop( Iop_ReinterpI64asF64, mkexpr(r_tmp64)) );
+      /* FPRF is undefined after fctid.  Leave unchanged. */
+      set_FPRF = False;
       break;
 
    case 0x32F: // fctidz (Float Conv to Int DWord, Round to Zero, PPC64 p437)
       DIP("fctidz%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
-      assign( r_tmp64, binop(Iop_F64toI64, mkU32(Irrm_ZERO), mkexpr(frB)) );
+      assign( r_tmp64, 
+              binop(Iop_F64toI64, mkU32(Irrm_ZERO), mkexpr(frB)) );
       assign( frD, unop( Iop_ReinterpI64asF64, mkexpr(r_tmp64)) );
+      /* FPRF is undefined after fctidz.  Leave unchanged. */
+      set_FPRF = False;
       break;
 
    case 0x34E: // fcfid (Float Conv from Int DWord, PPC64 p434)
       DIP("fcfid%s fr%u,fr%u\n", flag_rC ? ".":"", frD_addr, frB_addr);
       assign( r_tmp64, unop( Iop_ReinterpF64asI64, mkexpr(frB)) );
-      assign( frD, binop(Iop_I64toF64, get_roundingmode(),
-                                       mkexpr(r_tmp64)) );
+      assign( frD, 
+              binop(Iop_I64toF64, rm, mkexpr(r_tmp64)) );
       break;
 
    default:
@@ -6161,6 +6239,17 @@ static Bool dis_fp_round ( UInt theInstr )
    }
 
    putFReg( frD_addr, mkexpr(frD) );
+
+   if (set_FPRF) {
+      // XXX XXX XXX FIXME
+      // set FPRF from frD
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8(0) );
+      putCR0( 1, mkU8(0) );
+   }
+
    return True;
 }
 
@@ -6216,6 +6305,15 @@ static Bool dis_fp_move ( UInt theInstr )
    }
 
    putFReg( frD_addr, mkexpr(frD) );
+
+   /* None of these change FPRF.  cr1 is set in the usual way though,
+      if flag_rC is set. */
+
+   if (flag_rC) {
+      putCR321( 1, mkU8(0) );
+      putCR0( 1, mkU8(0) );
+   }
+
    return True;
 }
 
@@ -9160,7 +9258,7 @@ DisResult disInstr_PPC_WRK (
    decode_noFX:
       vassert(!allow_FX);
       vex_printf("disInstr(ppc): "
-                 "declined to decode an GeneralPurpose-Optional insn.\n");
+                 "declined to decode a GeneralPurpose-Optional insn.\n");
       goto decode_failure;
    decode_noGX:
       vassert(!allow_GX);

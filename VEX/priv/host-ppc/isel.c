@@ -136,13 +136,6 @@ static IRExpr* unop ( IROp op, IRExpr* a )
    return IRExpr_Unop(op, a);
 }
 
-#if 0
-static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
-{
-   return IRExpr_Binop(op, a1, a2);
-}
-#endif
-
 static IRExpr* mkU32 ( UInt i )
 {
    return IRExpr_Const(IRConst_U32(i));
@@ -2913,6 +2906,21 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Binop) {
+      PPCFpOp fpop = Pfp_INVALID;
+      switch (e->Iex.Binop.op) {
+         case Iop_SqrtF64: fpop = Pfp_SQRT; break;
+         default: break;
+      }
+      if (fpop != Pfp_INVALID) {
+         HReg fr_dst = newVRegF(env);
+         HReg fr_src = iselDblExpr(env, e->Iex.Binop.arg2);
+         set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+         addInstr(env, PPCInstr_FpUnary(fpop, fr_dst, fr_src));
+         return fr_dst;
+      }
+   }
+
+   if (e->tag == Iex_Binop) {
 
       if (e->Iex.Binop.op == Iop_RoundF64toF32) {
          HReg r_dst = newVRegF(env);
@@ -2981,7 +2989,6 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Unop.op) {
          case Iop_NegF64:     fpop = Pfp_NEG; break;
          case Iop_AbsF64:     fpop = Pfp_ABS; break;
-         case Iop_SqrtF64:    fpop = Pfp_SQRT; break;
          case Iop_Est5FRSqrt: fpop = Pfp_RSQRTE; break;
          default: break;
       }

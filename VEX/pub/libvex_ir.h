@@ -658,9 +658,16 @@ extern void ppIROp ( IROp );
 
 
 /* Encoding of IEEE754-specified rounding modes.  This is the same as
-   the encoding used by Intel IA32 to indicate x87 rounding mode. */
+   the encoding used by Intel IA32 to indicate x87 rounding mode.
+   Note, various front and back ends rely on the actual numerical
+   values of these, so do not change them. */
 typedef
-   enum { Irrm_NEAREST=0, Irrm_NegINF=1, Irrm_PosINF=2, Irrm_ZERO=3 }
+   enum { 
+      Irrm_NEAREST = 0, 
+      Irrm_NegINF  = 1, 
+      Irrm_PosINF  = 2, 
+      Irrm_ZERO    = 3 
+   }
    IRRoundingMode;
 
 /* Floating point comparison result values, as created by Iop_CmpF64.

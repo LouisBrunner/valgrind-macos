@@ -661,14 +661,14 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
 static HReg do_sse_Not128 ( ISelEnv* env, HReg src )
 {
    HReg dst = newVRegV(env);
-   /* Set dst to zero.  Not strictly necessary, but the idea of doing
-      a FP comparison on whatever junk happens to be floating around
-      in it is just too scary. */
+   /* Set dst to zero.  If dst contains a NaN then all hell might
+      break loose after the comparison.  So, first zero it. */
    addInstr(env, X86Instr_SseReRg(Xsse_XOR, dst, dst));
    /* And now make it all 1s ... */
    addInstr(env, X86Instr_Sse32Fx4(Xsse_CMPEQF, dst, dst));
    /* Finally, xor 'src' into it. */
    addInstr(env, X86Instr_SseReRg(Xsse_XOR, src, dst));
+   /* Doesn't that just totally suck? */
    return dst;
 }
 
@@ -2604,17 +2604,36 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
-   if (e->tag == Iex_Binop) {
+   if (e->tag == Iex_Triop) {
       X86FpOp fpop = Xfp_INVALID;
-      switch (e->Iex.Binop.op) {
+      switch (e->Iex.Triop.op) {
          case Iop_AddF64:    fpop = Xfp_ADD; break;
          case Iop_SubF64:    fpop = Xfp_SUB; break;
          case Iop_MulF64:    fpop = Xfp_MUL; break;
          case Iop_DivF64:    fpop = Xfp_DIV; break;
          case Iop_ScaleF64:  fpop = Xfp_SCALE; break;
-         case Iop_AtanF64:   fpop = Xfp_ATAN; break;
          case Iop_Yl2xF64:   fpop = Xfp_YL2X; break;
          case Iop_Yl2xp1F64: fpop = Xfp_YL2XP1; break;
+         case Iop_AtanF64:   fpop = Xfp_ATAN; break;
+         default: break;
+      }
+      if (fpop != Xfp_INVALID) {
+         HReg res  = newVRegF(env);
+         HReg srcL = iselDblExpr(env, e->Iex.Triop.arg2);
+         HReg srcR = iselDblExpr(env, e->Iex.Triop.arg3);
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, X86Instr_FpBinary(fpop,srcL,srcR,res));
+	 if (fpop != Xfp_ADD && fpop != Xfp_SUB 
+	     && fpop != Xfp_MUL && fpop != Xfp_DIV)
+            roundToF64(env, res);
+         return res;
+      }
+   }
+
+   if (e->tag == Iex_Binop) {
+      X86FpOp fpop = Xfp_INVALID;
+      switch (e->Iex.Binop.op) {
          case Iop_PRemF64:   fpop = Xfp_PREM; break;
          case Iop_PRem1F64:  fpop = Xfp_PREM1; break;
          default: break;
@@ -2671,24 +2690,41 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
+   if (e->tag == Iex_Binop) {
+      X86FpOp fpop = Xfp_INVALID;
+      switch (e->Iex.Binop.op) {
+         case Iop_SinF64:  fpop = Xfp_SIN; break;
+         case Iop_CosF64:  fpop = Xfp_COS; break;
+         case Iop_TanF64:  fpop = Xfp_TAN; break;
+         case Iop_2xm1F64: fpop = Xfp_2XM1; break;
+         case Iop_SqrtF64: fpop = Xfp_SQRT; break;
+         default: break;
+      }
+      if (fpop != Xfp_INVALID) {
+         HReg res = newVRegF(env);
+         HReg src = iselDblExpr(env, e->Iex.Binop.arg2);
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, X86Instr_FpUnary(fpop,src,res));
+	 if (fpop != Xfp_SQRT
+             && fpop != Xfp_NEG && fpop != Xfp_ABS)
+            roundToF64(env, res);
+         return res;
+      }
+   }
+
    if (e->tag == Iex_Unop) {
       X86FpOp fpop = Xfp_INVALID;
       switch (e->Iex.Unop.op) {
          case Iop_NegF64:  fpop = Xfp_NEG; break;
          case Iop_AbsF64:  fpop = Xfp_ABS; break;
-         case Iop_SqrtF64: fpop = Xfp_SQRT; break;
-         case Iop_SinF64:  fpop = Xfp_SIN; break;
-         case Iop_CosF64:  fpop = Xfp_COS; break;
-         case Iop_TanF64:  fpop = Xfp_TAN; break;
-         case Iop_2xm1F64: fpop = Xfp_2XM1; break;
          default: break;
       }
       if (fpop != Xfp_INVALID) {
          HReg res = newVRegF(env);
          HReg src = iselDblExpr(env, e->Iex.Unop.arg);
          addInstr(env, X86Instr_FpUnary(fpop,src,res));
-	 if (fpop != Xfp_SQRT
-             && fpop != Xfp_NEG && fpop != Xfp_ABS)
+	 if (fpop != Xfp_NEG && fpop != Xfp_ABS)
             roundToF64(env, res);
          return res;
       }

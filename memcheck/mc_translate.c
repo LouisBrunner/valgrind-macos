@@ -1650,11 +1650,6 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
                            IROp op,
                            IRAtom* atom1, IRAtom* atom2, IRAtom* atom3 )
 {
-   IRType  and_or_ty;
-   IRAtom* (*uifu)    (MCEnv*, IRAtom*, IRAtom*);
-   IRAtom* (*difd)    (MCEnv*, IRAtom*, IRAtom*);
-   IRAtom* (*improve) (MCEnv*, IRAtom*, IRAtom*);
-
    IRAtom* vatom1 = expr2vbits( mce, atom1 );
    IRAtom* vatom2 = expr2vbits( mce, atom2 );
    IRAtom* vatom3 = expr2vbits( mce, atom3 );
@@ -1681,8 +1676,14 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_Yl2xF64:
       case Iop_Yl2xp1F64:
       case Iop_AtanF64:
+      case Iop_PRemF64:
+      case Iop_PRem1F64:
          /* I32(rm) x F64 x F64 -> F64 */
          return mkLazy3(mce, Ity_I64, vatom1, vatom2, vatom3);
+      case Iop_PRemC3210F64:
+      case Iop_PRem1C3210F64:
+         /* I32(rm) x F64 x F64 -> I32 */
+         return mkLazy3(mce, Ity_I32, vatom1, vatom2, vatom3);
       default:
          ppIROp(op);
          VG_(tool_panic)("memcheck:expr2vbits_Triop");
@@ -2018,8 +2019,6 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* I32(rm) x I64/F64 -> I64/F64 */
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
-      case Iop_PRemC3210F64: case Iop_PRem1C3210F64:
-         /* Takes two F64 args. */
       case Iop_F64toI32:
       case Iop_F64toF32:
          /* First arg is I32 (rounding mode), second is F64 (data). */
@@ -2028,10 +2027,6 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_F64toI16:
          /* First arg is I32 (rounding mode), second is F64 (data). */
          return mkLazy2(mce, Ity_I16, vatom1, vatom2);
-
-      case Iop_PRemF64:
-      case Iop_PRem1F64:
-         return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_CmpF64:
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);

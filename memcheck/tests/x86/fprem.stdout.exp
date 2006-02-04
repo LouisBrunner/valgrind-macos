@@ -1,2 +1,3 @@
-fprem  0.693147
-fprem1 0.693147
+fprem   0.693147
+fprem1  0.693147
+fsincos 0.130278

@@ -1,5 +1,6 @@
 
-/* Marginally test fprem/fprem1; these are hard to check otherwise */
+/* Marginally test fprem/fprem1/fsincos; these are hard to check
+   otherwise since compilers hardly ever generate them. */
 
 #include <stdio.h>
 
@@ -33,10 +34,24 @@ double do_fprem1 ( void )
   return res;
 }
 
+double do_fsincos ( void )
+{
+  double res;
+  __asm__ __volatile__(
+    "fldln2\n\t"
+    "fsincos\n\t"
+    "fsub %%st(1)\n\t"
+    "fstpl 0(%0)"
+    : : "r"(&res)  
+  );
+  return res;
+}
+
 int main ( void )
 {
   __asm__ __volatile__("finit");
-  printf("fprem  %f\n", do_fprem());
-  printf("fprem1 %f\n", do_fprem1());
+  printf("fprem   %f\n", do_fprem());
+  printf("fprem1  %f\n", do_fprem1());
+  printf("fsincos %f\n", do_fsincos());
   return 0;
 }

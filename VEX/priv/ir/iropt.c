@@ -2030,6 +2030,119 @@ IRBB* spec_helpers_BB ( IRBB* bb,
 
 
 /*---------------------------------------------------------------*/
+/*--- Determination of guest state aliasing relationships     ---*/
+/*---------------------------------------------------------------*/
+
+/* These are helper functions for CSE and GetI/PutI transformations.
+
+   Determine, to the extent possible, the relationship between two
+   guest state accesses.  The possible outcomes are:
+
+   * Exact alias.  These two accesses denote precisely the same
+     piece of the guest state.
+
+   * Definitely no alias.  These two accesses are guaranteed not to
+     overlap any part of the guest state.
+
+   * Unknown -- if neither of the above can be established.
+
+   If in doubt, return Unknown.  */
+
+typedef
+   enum { ExactAlias, NoAlias, UnknownAlias }
+   GSAliasing;
+
+
+/* Produces the alias relation between an indexed guest
+   state access and a non-indexed access. */
+
+static
+GSAliasing getAliasingRelation_IC ( IRArray* descr1, IRExpr* ix1,
+                                    Int offset2, IRType ty2 )
+{
+   UInt minoff1, maxoff1, minoff2, maxoff2;
+
+   getArrayBounds( descr1, &minoff1, &maxoff1 );
+   minoff2 = offset2;
+   maxoff2 = minoff2 + sizeofIRType(ty2) - 1;
+
+   if (maxoff1 < minoff2 || maxoff2 < minoff1)
+      return NoAlias;
+
+   /* Could probably do better here if required.  For the moment
+      however just claim not to know anything more. */
+   return UnknownAlias;
+}
+
+
+/* Produces the alias relation between two indexed guest state
+   accesses. */
+
+static
+GSAliasing getAliasingRelation_II ( 
+              IRArray* descr1, IRExpr* ix1, Int bias1,
+              IRArray* descr2, IRExpr* ix2, Int bias2
+           )
+{
+   UInt minoff1, maxoff1, minoff2, maxoff2;
+   Int  iters;
+
+   /* First try hard to show they don't alias. */
+   getArrayBounds( descr1, &minoff1, &maxoff1 );
+   getArrayBounds( descr2, &minoff2, &maxoff2 );
+   if (maxoff1 < minoff2 || maxoff2 < minoff1)
+      return NoAlias;
+
+   /* So the two arrays at least partially overlap.  To get any
+      further we'll have to be sure that the descriptors are
+      identical. */
+   if (!eqIRArray(descr1, descr2))
+      return UnknownAlias;
+
+   /* The descriptors are identical.  Now the only difference can be
+      in the index expressions.  If they cannot be shown to be
+      identical, we have to say we don't know what the aliasing
+      relation will be.  Now, since the IR is flattened, the index
+      expressions should be atoms -- either consts or tmps.  So that
+      makes the comparison simple. */
+   vassert(isIRAtom(ix1));
+   vassert(isIRAtom(ix2));
+   if (!eqIRAtom(ix1,ix2))
+      return UnknownAlias;
+
+   /* Ok, the index expressions are identical.  So now the only way
+      they can be different is in the bias.  Normalise this
+      paranoidly, to reliably establish equality/non-equality. */
+
+   /* So now we know that the GetI and PutI index the same array
+      with the same base.  Are the offsets the same, modulo the
+      array size?  Do this paranoidly. */
+   vassert(descr1->nElems == descr2->nElems);
+   vassert(descr1->elemTy == descr2->elemTy);
+   vassert(descr1->base   == descr2->base);
+   iters = 0;
+   while (bias1 < 0 || bias2 < 0) {
+      bias1 += descr1->nElems;
+      bias2 += descr1->nElems;
+      iters++;
+      if (iters > 10)
+         vpanic("getAliasingRelation: iters");
+   }
+   vassert(bias1 >= 0 && bias2 >= 0);
+   bias1 %= descr1->nElems;
+   bias2 %= descr1->nElems;
+   vassert(bias1 >= 0 && bias1 < descr1->nElems);
+   vassert(bias2 >= 0 && bias2 < descr1->nElems);
+
+   /* Finally, biasP and biasG are normalised into the range 
+      0 .. descrP/G->nElems - 1.  And so we can establish
+      equality/non-equality. */
+
+   return bias1==bias2 ? ExactAlias : NoAlias;
+}
+
+
+/*---------------------------------------------------------------*/
 /*--- Common Subexpression Elimination                        ---*/
 /*---------------------------------------------------------------*/
 
@@ -2042,7 +2155,7 @@ IRBB* spec_helpers_BB ( IRBB* bb,
 
 typedef
    struct {
-      enum { Ut, Btt, Btc, Bct, Cf64i } tag;
+      enum { Ut, Btt, Btc, Bct, Cf64i, Mttt, GetIt } tag;
       union {
          /* unop(tmp) */
          struct {
@@ -2071,6 +2184,18 @@ typedef
          struct {
             ULong f64i;
          } Cf64i;
+         /* Mux0X(tmp,tmp,tmp) */
+         struct {
+            IRTemp co;
+            IRTemp e0;
+            IRTemp eX;
+         } Mttt;
+         /* GetI(descr,tmp,bias)*/
+         struct {
+            IRArray* descr;
+            IRTemp ix;
+            Int bias;
+         } GetIt;
       } u;
    }
    AvailExpr;
@@ -2101,6 +2226,14 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
                 && eqIRConst(&a1->u.Bct.con1, &a2->u.Bct.con1));
       case Cf64i: 
          return toBool(a1->u.Cf64i.f64i == a2->u.Cf64i.f64i);
+      case Mttt:
+         return toBool(a1->u.Mttt.co == a2->u.Mttt.co
+                       && a1->u.Mttt.e0 == a2->u.Mttt.e0
+                       && a1->u.Mttt.eX == a2->u.Mttt.eX);
+      case GetIt:
+         return toBool(eqIRArray(a1->u.GetIt.descr, a2->u.GetIt.descr) 
+                       && a1->u.GetIt.ix == a2->u.GetIt.ix
+                       && a1->u.GetIt.bias == a2->u.GetIt.bias);
       default: vpanic("eq_AvailExpr");
    }
 }
@@ -2127,6 +2260,14 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
                               IRExpr_Const(con), IRExpr_Tmp(ae->u.Bct.arg2) );
       case Cf64i:
          return IRExpr_Const(IRConst_F64i(ae->u.Cf64i.f64i));
+      case Mttt:
+         return IRExpr_Mux0X(IRExpr_Tmp(ae->u.Mttt.co), 
+                             IRExpr_Tmp(ae->u.Mttt.e0), 
+                             IRExpr_Tmp(ae->u.Mttt.eX));
+      case GetIt:
+         return IRExpr_GetI(ae->u.GetIt.descr,
+                            IRExpr_Tmp(ae->u.GetIt.ix),
+                            ae->u.GetIt.bias);
       default:
          vpanic("availExpr_to_IRExpr");
    }
@@ -2161,6 +2302,14 @@ static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
          ae->u.Bct.arg2 = subst_AvailExpr_Temp( env, ae->u.Bct.arg2 );
          break;
       case Cf64i:
+         break;
+      case Mttt:
+         ae->u.Mttt.co = subst_AvailExpr_Temp( env, ae->u.Mttt.co );
+         ae->u.Mttt.e0 = subst_AvailExpr_Temp( env, ae->u.Mttt.e0 );
+         ae->u.Mttt.eX = subst_AvailExpr_Temp( env, ae->u.Mttt.eX );
+         break;
+      case GetIt:
+         ae->u.GetIt.ix = subst_AvailExpr_Temp( env, ae->u.GetIt.ix );
          break;
       default: 
          vpanic("subst_AvailExpr");
@@ -2221,18 +2370,44 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
       return ae;
    }
 
+   if (e->tag == Iex_Mux0X
+       && e->Iex.Mux0X.cond->tag == Iex_Tmp
+       && e->Iex.Mux0X.expr0->tag == Iex_Tmp
+       && e->Iex.Mux0X.exprX->tag == Iex_Tmp) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag       = Mttt;
+      ae->u.Mttt.co = e->Iex.Mux0X.cond->Iex.Tmp.tmp;
+      ae->u.Mttt.e0 = e->Iex.Mux0X.expr0->Iex.Tmp.tmp;
+      ae->u.Mttt.eX = e->Iex.Mux0X.exprX->Iex.Tmp.tmp;
+      return ae;
+   }
+
+   if (e->tag == Iex_GetI
+       && e->Iex.GetI.ix->tag == Iex_Tmp) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag           = GetIt;
+      ae->u.GetIt.descr = e->Iex.GetI.descr;
+      ae->u.GetIt.ix    = e->Iex.GetI.ix->Iex.Tmp.tmp;
+      ae->u.GetIt.bias  = e->Iex.GetI.bias;
+      return ae;
+   }
+
    return NULL;
 }
 
 
-/* The BB is modified in-place. */
+/* The BB is modified in-place.  Returns True if any changes were
+   made. */
 
-void do_cse_BB ( IRBB* bb )
+static Bool do_cse_BB ( IRBB* bb )
 {
-   Int        i, j;
+   Int        i, j, paranoia;
    IRTemp     t, q;
    IRStmt*    st;
    AvailExpr* eprime;
+   AvailExpr* ae;
+   Bool       invalidate;
+   Bool       anyDone = False;
 
    HashHW* tenv = newHHW(); /* :: IRTemp -> IRTemp */
    HashHW* aenv = newHHW(); /* :: AvailExpr* -> IRTemp */
@@ -2251,10 +2426,81 @@ void do_cse_BB ( IRBB* bb )
             else
                add binding E' -> t to aenv
                replace this stmt by "t = E'"
-      Ignore any other kind of stmt.
+
+      Other statements are only interesting to the extent that they
+      might invalidate some of the expressions in aenv.  So there is
+      an invalidate-bindings check for each statement seen.
    */
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
+
+      /* ------ BEGIN invalidate aenv bindings ------ */
+      /* This is critical: remove from aenv any E' -> .. bindings
+         which might be invalidated by this statement.  The only
+         vulnerable kind of bindings are the GetIt kind.
+            Dirty call - dump (paranoia level -> 2) 
+            Store      - dump (ditto) 
+            Put, PutI  - dump unless no-overlap is proven (.. -> 1)
+         Uses getAliasingRelation_IC and getAliasingRelation_II
+         to do the no-overlap assessments needed for Put/PutI.
+      */
+      switch (st->tag) {
+         case Ist_Dirty: case Ist_Store: 
+            paranoia = 2; break;
+         case Ist_Put: case Ist_PutI: 
+            paranoia = 1; break;
+         case Ist_NoOp: case Ist_IMark: case Ist_AbiHint: 
+         case Ist_Tmp: case Ist_MFence: case Ist_Exit: 
+            paranoia = 0; break;
+         default: 
+            vpanic("do_cse_BB(1)");
+      }
+
+      if (paranoia > 0) {
+         for (j = 0; j < aenv->used; j++) {
+            if (!aenv->inuse[j])
+               continue;
+            ae = (AvailExpr*)aenv->key[j];
+            if (ae->tag != GetIt) 
+               continue;
+            invalidate = False;
+            if (paranoia >= 2) {
+               invalidate = True;
+            } else {
+               vassert(paranoia == 1);
+               if (st->tag == Ist_Put) {
+                  if (getAliasingRelation_IC(
+                         ae->u.GetIt.descr, 
+                         IRExpr_Tmp(ae->u.GetIt.ix), 
+                         st->Ist.Put.offset, 
+                         typeOfIRExpr(bb->tyenv,st->Ist.Put.data) 
+                      ) != NoAlias) 
+                     invalidate = True;
+               }
+               else 
+               if (st->tag == Ist_PutI) {
+                  if (getAliasingRelation_II(
+                         ae->u.GetIt.descr, 
+                         IRExpr_Tmp(ae->u.GetIt.ix), 
+                         ae->u.GetIt.bias,
+                         st->Ist.PutI.descr,
+                         st->Ist.PutI.ix,
+                         st->Ist.PutI.bias
+                      ) != NoAlias)
+                     invalidate = True;
+               }
+               else 
+                  vpanic("do_cse_BB(2)");
+            }
+
+            if (invalidate) {
+               aenv->inuse[j] = False;
+               aenv->key[j]   = (HWord)NULL;  /* be sure */
+            }
+         } /* for j */
+      } /* paranoia > 0 */
+
+      /* ------ ENV invalidate aenv bindings ------ */
 
       /* ignore not-interestings */
       if (st->tag != Ist_Tmp)
@@ -2283,6 +2529,7 @@ void do_cse_BB ( IRBB* bb )
          q = (IRTemp)aenv->val[j];
          bb->stmts[i] = IRStmt_Tmp( t, IRExpr_Tmp(q) );
          addToHHW( tenv, (HWord)t, (HWord)q );
+         anyDone = True;
       } else {
          /* No binding was found, so instead we add E' -> t to our
             collection of available expressions, replace this stmt
@@ -2297,6 +2544,7 @@ void do_cse_BB ( IRBB* bb )
    sanityCheckIRBB(bb, Ity_I32);
    vex_printf("\n\n");
    */
+   return anyDone;
 }
 
 
@@ -2478,115 +2726,6 @@ static void collapse_AddSub_chains_BB ( IRBB* bb )
 /*---------------------------------------------------------------*/
 /*--- PutI/GetI transformations                               ---*/
 /*---------------------------------------------------------------*/
-
-/* ------- Helper functions for PutI/GetI transformations ------ */
-
-/* Determine, to the extent possible, the relationship between two
-   guest state accesses.  The possible outcomes are:
-
-   * Exact alias.  These two accesses denote precisely the same
-     piece of the guest state.
-
-   * Definitely no alias.  These two accesses are guaranteed not to
-     overlap any part of the guest state.
-
-   * Unknown -- if neither of the above can be established.
-
-   If in doubt, return Unknown.  */
-
-typedef
-   enum { ExactAlias, NoAlias, UnknownAlias }
-   GSAliasing;
-
-
-/* Produces the alias relation between an indexed guest
-   state access and a non-indexed access. */
-
-static
-GSAliasing getAliasingRelation_IC ( IRArray* descr1, IRExpr* ix1,
-                                    Int offset2, IRType ty2 )
-{
-   UInt minoff1, maxoff1, minoff2, maxoff2;
-
-   getArrayBounds( descr1, &minoff1, &maxoff1 );
-   minoff2 = offset2;
-   maxoff2 = minoff2 + sizeofIRType(ty2) - 1;
-
-   if (maxoff1 < minoff2 || maxoff2 < minoff1)
-      return NoAlias;
-
-   /* Could probably do better here if required.  For the moment
-      however just claim not to know anything more. */
-   return UnknownAlias;
-}
-
-
-/* Produces the alias relation between two indexed guest state
-   accesses. */
-
-static
-GSAliasing getAliasingRelation_II ( 
-              IRArray* descr1, IRExpr* ix1, Int bias1,
-              IRArray* descr2, IRExpr* ix2, Int bias2
-           )
-{
-   UInt minoff1, maxoff1, minoff2, maxoff2;
-   Int  iters;
-
-   /* First try hard to show they don't alias. */
-   getArrayBounds( descr1, &minoff1, &maxoff1 );
-   getArrayBounds( descr2, &minoff2, &maxoff2 );
-   if (maxoff1 < minoff2 || maxoff2 < minoff1)
-      return NoAlias;
-
-   /* So the two arrays at least partially overlap.  To get any
-      further we'll have to be sure that the descriptors are
-      identical. */
-   if (!eqIRArray(descr1, descr2))
-      return UnknownAlias;
-
-   /* The descriptors are identical.  Now the only difference can be
-      in the index expressions.  If they cannot be shown to be
-      identical, we have to say we don't know what the aliasing
-      relation will be.  Now, since the IR is flattened, the index
-      expressions should be atoms -- either consts or tmps.  So that
-      makes the comparison simple. */
-   vassert(isIRAtom(ix1));
-   vassert(isIRAtom(ix2));
-   if (!eqIRAtom(ix1,ix2))
-      return UnknownAlias;
-
-   /* Ok, the index expressions are identical.  So now the only way
-      they can be different is in the bias.  Normalise this
-      paranoidly, to reliably establish equality/non-equality. */
-
-   /* So now we know that the GetI and PutI index the same array
-      with the same base.  Are the offsets the same, modulo the
-      array size?  Do this paranoidly. */
-   vassert(descr1->nElems == descr2->nElems);
-   vassert(descr1->elemTy == descr2->elemTy);
-   vassert(descr1->base   == descr2->base);
-   iters = 0;
-   while (bias1 < 0 || bias2 < 0) {
-      bias1 += descr1->nElems;
-      bias2 += descr1->nElems;
-      iters++;
-      if (iters > 10)
-         vpanic("getAliasingRelation: iters");
-   }
-   vassert(bias1 >= 0 && bias2 >= 0);
-   bias1 %= descr1->nElems;
-   bias2 %= descr1->nElems;
-   vassert(bias1 >= 0 && bias1 < descr1->nElems);
-   vassert(bias2 >= 0 && bias2 < descr1->nElems);
-
-   /* Finally, biasP and biasG are normalised into the range 
-      0 .. descrP/G->nElems - 1.  And so we can establish
-      equality/non-equality. */
-
-   return bias1==bias2 ? ExactAlias : NoAlias;
-}
-
 
 /* Given the parts (descr, tmp, bias) for a GetI, scan backwards from
    the given starting point to find, if any, a PutI which writes
@@ -3846,7 +3985,7 @@ IRBB* cheap_transformations (
 static
 IRBB* expensive_transformations( IRBB* bb )
 {
-   do_cse_BB( bb );
+   (void)do_cse_BB( bb );
    collapse_AddSub_chains_BB( bb );
    do_redundant_GetI_elimination( bb );
    do_redundant_PutI_elimination( bb );
@@ -3977,20 +4116,27 @@ IRBB* do_iropt_BB ( IRBB* bb0,
          at it. */
       considerExpensives( &hasGetIorPutI, &hasVorFtemps, bb );
 
-      if (hasVorFtemps) {
+      if (hasVorFtemps && !hasGetIorPutI) {
          /* If any evidence of FP or Vector activity, CSE, as that
             tends to mop up all manner of lardy code to do with
-            rounding modes. */
-         do_cse_BB( bb );
+            rounding modes.  Don't bother if hasGetIorPutI since that
+            case leads into the expensive transformations, which do
+            CSE anyway. */
+         (void)do_cse_BB( bb );
          do_deadcode_BB( bb );
       }
 
       if (hasGetIorPutI) {
+         Bool cses;
          n_expensive++;
          if (DEBUG_IROPT)
             vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
          bb = expensive_transformations( bb );
          bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
+         /* Potentially common up GetIs */
+         cses = do_cse_BB( bb );
+         if (cses)
+            bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
       }
 
       /* Now have a go at unrolling simple (single-BB) loops.  If

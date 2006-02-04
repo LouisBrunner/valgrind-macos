@@ -67,10 +67,6 @@ IRBB* cprop_BB ( IRBB* );
 extern
 void do_deadcode_BB ( IRBB* bb );
 
-/* Do a CSE pass.  bb is destructively modified. */
-extern
-void do_cse_BB ( IRBB* bb );
-
 /* The tree-builder.  Make (approximately) maximal safe trees.  bb is
    destructively modified. */
 extern

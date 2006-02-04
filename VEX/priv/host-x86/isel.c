@@ -760,6 +760,34 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       break;
    }
 
+   /* --------- TERNARY OP --------- */
+   case Iex_Triop: {
+      /* C3210 flags following FPU partial remainder (fprem), both
+         IEEE compliant (PREM1) and non-IEEE compliant (PREM). */
+      if (e->Iex.Triop.op == Iop_PRemC3210F64
+          || e->Iex.Triop.op == Iop_PRem1C3210F64) {
+         HReg junk = newVRegF(env);
+         HReg dst  = newVRegI(env);
+         HReg srcL = iselDblExpr(env, e->Iex.Triop.arg2);
+         HReg srcR = iselDblExpr(env, e->Iex.Triop.arg3);
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, X86Instr_FpBinary(
+                           e->Iex.Binop.op==Iop_PRemC3210F64 
+                              ? Xfp_PREM : Xfp_PREM1,
+                           srcL,srcR,junk
+                 ));
+         /* The previous pseudo-insn will have left the FPU's C3210
+            flags set correctly.  So bag them. */
+         addInstr(env, X86Instr_FpStSW_AX());
+         addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), dst));
+         addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0x4700), dst));
+         return dst;
+      }
+
+      break;
+   }
+
    /* --------- BINARY OP --------- */
    case Iex_Binop: {
       X86AluOp   aluOp;
@@ -969,27 +997,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          /* addl $4, %esp */
 	 add_to_esp(env, 4);
-         return dst;
-      }
-
-      /* C3210 flags following FPU partial remainder (fprem), both
-         IEEE compliant (PREM1) and non-IEEE compliant (PREM). */
-      if (e->Iex.Binop.op == Iop_PRemC3210F64
-          || e->Iex.Binop.op == Iop_PRem1C3210F64) {
-         HReg junk = newVRegF(env);
-         HReg dst  = newVRegI(env);
-         HReg srcL = iselDblExpr(env, e->Iex.Binop.arg1);
-         HReg srcR = iselDblExpr(env, e->Iex.Binop.arg2);
-         addInstr(env, X86Instr_FpBinary(
-                           e->Iex.Binop.op==Iop_PRemC3210F64 
-                              ? Xfp_PREM : Xfp_PREM1,
-                           srcL,srcR,junk
-                 ));
-         /* The previous pseudo-insn will have left the FPU's C3210
-            flags set correctly.  So bag them. */
-         addInstr(env, X86Instr_FpStSW_AX());
-         addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), dst));
-	 addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0x4700), dst));
          return dst;
       }
 
@@ -2615,6 +2622,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Yl2xF64:   fpop = Xfp_YL2X; break;
          case Iop_Yl2xp1F64: fpop = Xfp_YL2XP1; break;
          case Iop_AtanF64:   fpop = Xfp_ATAN; break;
+         case Iop_PRemF64:   fpop = Xfp_PREM; break;
+         case Iop_PRem1F64:  fpop = Xfp_PREM1; break;
          default: break;
       }
       if (fpop != Xfp_INVALID) {
@@ -2623,25 +2632,6 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg srcR = iselDblExpr(env, e->Iex.Triop.arg3);
          /* XXXROUNDINGFIXME */
          /* set roundingmode here */
-         addInstr(env, X86Instr_FpBinary(fpop,srcL,srcR,res));
-	 if (fpop != Xfp_ADD && fpop != Xfp_SUB 
-	     && fpop != Xfp_MUL && fpop != Xfp_DIV)
-            roundToF64(env, res);
-         return res;
-      }
-   }
-
-   if (e->tag == Iex_Binop) {
-      X86FpOp fpop = Xfp_INVALID;
-      switch (e->Iex.Binop.op) {
-         case Iop_PRemF64:   fpop = Xfp_PREM; break;
-         case Iop_PRem1F64:  fpop = Xfp_PREM1; break;
-         default: break;
-      }
-      if (fpop != Xfp_INVALID) {
-         HReg res  = newVRegF(env);
-         HReg srcL = iselDblExpr(env, e->Iex.Binop.arg1);
-         HReg srcR = iselDblExpr(env, e->Iex.Binop.arg2);
          addInstr(env, X86Instr_FpBinary(fpop,srcL,srcR,res));
 	 if (fpop != Xfp_ADD && fpop != Xfp_SUB 
 	     && fpop != Xfp_MUL && fpop != Xfp_DIV)

@@ -235,6 +235,11 @@ static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
    return IRExpr_Binop(op, a1, a2);
 }
 
+static IRExpr* triop ( IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3 )
+{
+   return IRExpr_Triop(op, a1, a2, a3);
+}
+
 static IRExpr* mkexpr ( IRTemp tmp )
 {
    return IRExpr_Tmp(tmp);
@@ -4091,6 +4096,11 @@ static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
    return binop( Iop_And32, get_fpround(), mkU32(3) );
 }
 
+static IRExpr* /* :: Ity_I32 */ get_FAKE_roundingmode ( void )
+{
+   return mkU32(Irrm_NEAREST);
+}
+
 
 /* --------- Get/set FP register tag bytes. --------- */
 
@@ -4212,13 +4222,15 @@ void fp_do_op_mem_ST_0 ( IRTemp addr, HChar* op_txt, HChar* dis_buf,
    DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
    if (dbl) {
       put_ST_UNCHECKED(0, 
-         binop( op, 
+         triop( op, 
+                get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                 get_ST(0), 
                 loadLE(Ity_F64,mkexpr(addr))
          ));
    } else {
       put_ST_UNCHECKED(0, 
-         binop( op, 
+         triop( op, 
+                get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                 get_ST(0), 
                 unop(Iop_F32toF64, loadLE(Ity_F32,mkexpr(addr)))
          ));
@@ -4236,13 +4248,15 @@ void fp_do_oprev_mem_ST_0 ( IRTemp addr, HChar* op_txt, HChar* dis_buf,
    DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
    if (dbl) {
       put_ST_UNCHECKED(0, 
-         binop( op, 
+         triop( op, 
+                get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                 loadLE(Ity_F64,mkexpr(addr)),
                 get_ST(0)
          ));
    } else {
       put_ST_UNCHECKED(0, 
-         binop( op, 
+         triop( op, 
+                get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                 unop(Iop_F32toF64, loadLE(Ity_F32,mkexpr(addr))),
                 get_ST(0)
          ));
@@ -4260,7 +4274,10 @@ void fp_do_op_ST_ST ( HChar* op_txt, IROp op, UInt st_src, UInt st_dst,
    DIP("f%s%s st(%u), st(%u)\n", op_txt, pop_after?"p":"", st_src, st_dst );
    put_ST_UNCHECKED( 
       st_dst, 
-      binop(op, get_ST(st_dst), get_ST(st_src) ) 
+      triop( op, 
+             get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+             get_ST(st_dst), 
+             get_ST(st_src) ) 
    );
    if (pop_after)
       fp_pop();
@@ -4276,7 +4293,10 @@ void fp_do_oprev_ST_ST ( HChar* op_txt, IROp op, UInt st_src, UInt st_dst,
    DIP("f%s%s st(%u), st(%u)\n", op_txt, pop_after?"p":"", st_src, st_dst );
    put_ST_UNCHECKED( 
       st_dst, 
-      binop(op, get_ST(st_src), get_ST(st_dst) ) 
+      triop( op, 
+             get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+             get_ST(st_src), 
+             get_ST(st_dst) ) 
    );
    if (pop_after)
       fp_pop();
@@ -4755,19 +4775,28 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 0xF0: /* F2XM1 */
                DIP("f2xm1\n");
-               put_ST_UNCHECKED(0, unop(Iop_2xm1F64, get_ST(0)));
+               put_ST_UNCHECKED(0, 
+                  binop(Iop_2xm1F64, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        get_ST(0)));
                break;
 
             case 0xF1: /* FYL2X */
                DIP("fyl2x\n");
-               put_ST_UNCHECKED(1, binop(Iop_Yl2xF64,
-                                         get_ST(1), get_ST(0)));
+               put_ST_UNCHECKED(1, 
+                  triop(Iop_Yl2xF64,
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        get_ST(1), 
+                        get_ST(0)));
                fp_pop();
                break;
 
             case 0xF2: /* FPTAN */
                DIP("ftan\n");
-               put_ST_UNCHECKED(0, unop(Iop_TanF64, get_ST(0)));
+               put_ST_UNCHECKED(0, 
+                  binop(Iop_TanF64, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        get_ST(0)));
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
                clear_C2(); /* HACK */
@@ -4775,8 +4804,11 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 0xF3: /* FPATAN */
                DIP("fpatan\n");
-               put_ST_UNCHECKED(1, binop(Iop_AtanF64,
-                                         get_ST(1), get_ST(0)));
+               put_ST_UNCHECKED(1, 
+                  triop(Iop_AtanF64,
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        get_ST(1), 
+                        get_ST(0)));
                fp_pop();
                break;
 
@@ -4815,23 +4847,35 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //.. 
             case 0xF9: /* FYL2XP1 */
                DIP("fyl2xp1\n");
-               put_ST_UNCHECKED(1, binop(Iop_Yl2xp1F64,
-                                         get_ST(1), get_ST(0)));
+               put_ST_UNCHECKED(1, 
+                  triop(Iop_Yl2xp1F64,
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        get_ST(1), 
+                        get_ST(0)));
                fp_pop();
                break;
 
             case 0xFA: /* FSQRT */
                DIP("fsqrt\n");
-               put_ST_UNCHECKED(0, unop(Iop_SqrtF64, get_ST(0)));
+               put_ST_UNCHECKED(0, 
+                  binop(Iop_SqrtF64, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        get_ST(0)));
                break;
 
             case 0xFB: { /* FSINCOS */
                IRTemp a1 = newTemp(Ity_F64);
                assign( a1, get_ST(0) );
                DIP("fsincos\n");
-               put_ST_UNCHECKED(0, unop(Iop_SinF64, mkexpr(a1)));
+               put_ST_UNCHECKED(0, 
+                  binop(Iop_SinF64, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        mkexpr(a1)));
                fp_push();
-               put_ST(0, unop(Iop_CosF64, mkexpr(a1)));
+               put_ST(0, 
+                  binop(Iop_CosF64, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        mkexpr(a1)));
                clear_C2(); /* HACK */
                break;
             }
@@ -4844,19 +4888,28 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             case 0xFD: /* FSCALE */
                DIP("fscale\n");
-               put_ST_UNCHECKED(0, binop(Iop_ScaleF64,
-                                         get_ST(0), get_ST(1)));
+               put_ST_UNCHECKED(0, 
+                  triop(Iop_ScaleF64,
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        get_ST(0), 
+                        get_ST(1)));
                break;
 
             case 0xFE: /* FSIN */
                DIP("fsin\n");
-               put_ST_UNCHECKED(0, unop(Iop_SinF64, get_ST(0)));
+               put_ST_UNCHECKED(0, 
+                  binop(Iop_SinF64, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        get_ST(0)));
                clear_C2(); /* HACK */
                break;
 
             case 0xFF: /* FCOS */
                DIP("fcos\n");
-               put_ST_UNCHECKED(0, unop(Iop_CosF64, get_ST(0)));
+               put_ST_UNCHECKED(0, 
+                  binop(Iop_CosF64, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        get_ST(0)));
                clear_C2(); /* HACK */
                break;
 
@@ -4911,7 +4964,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             do_fop_m32:
                put_ST_UNCHECKED(0, 
-                  binop(fop, 
+                  triop(fop, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                         get_ST(0),
                         unop(Iop_I32toF64,
                              loadLE(Ity_I32, mkexpr(addr)))));
@@ -4919,7 +4973,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             do_foprev_m32:
                put_ST_UNCHECKED(0, 
-                  binop(fop, 
+                  triop(fop, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                         unop(Iop_I32toF64,
                              loadLE(Ity_I32, mkexpr(addr))),
                         get_ST(0)));
@@ -5548,7 +5603,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             do_fop_m16:
                put_ST_UNCHECKED(0, 
-                  binop(fop, 
+                  triop(fop, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                         get_ST(0),
                         unop(Iop_I32toF64,
                              unop(Iop_16Sto32, 
@@ -5557,7 +5613,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
             do_foprev_m16:
                put_ST_UNCHECKED(0, 
-                  binop(fop, 
+                  triop(fop, 
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
                         unop(Iop_I32toF64,
                              unop(Iop_16Sto32, 
                                   loadLE(Ity_I16, mkexpr(addr)))),

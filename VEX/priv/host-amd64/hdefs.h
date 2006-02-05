@@ -307,10 +307,9 @@ typedef
    enum {
       Afp_INVALID,
       /* Binary */
-//..       Xfp_ADD, Xfp_SUB, Xfp_MUL, Xfp_DIV, 
-      Afp_SCALE, Afp_ATAN, Afp_YL2X, Afp_YL2XP1, //Xfp_PREM, Xfp_PREM1,
+      Afp_SCALE, Afp_ATAN, Afp_YL2X, Afp_YL2XP1, 
       /* Unary */
-      Afp_SQRT, //Xfp_ABS, Xfp_NEG, Xfp_MOV, 
+      Afp_SQRT,
       Afp_SIN, Afp_COS, Afp_TAN,
       Afp_ROUND, Afp_2XM1
    }
@@ -333,7 +332,6 @@ typedef
       Asse_RCPF, Asse_RSQRTF, Asse_SQRTF, 
       /* Bitwise */
       Asse_AND, Asse_OR, Asse_XOR, Asse_ANDN,
-//..       /* Integer binary */
       Asse_ADD8, Asse_ADD16, Asse_ADD32, Asse_ADD64,
       Asse_QADD8U, Asse_QADD16U,
       Asse_QADD8S, Asse_QADD16S,

@@ -2804,9 +2804,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
-   if (e->tag == Iex_Binop) {
+   if (e->tag == Iex_Triop) {
       AMD64SseOp op = Asse_INVALID;
-      switch (e->Iex.Binop.op) {
+      switch (e->Iex.Triop.op) {
          case Iop_AddF64: op = Asse_ADDF; break;
          case Iop_SubF64: op = Asse_SUBF; break;
          case Iop_MulF64: op = Asse_MULF; break;
@@ -2815,40 +2815,15 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
       if (op != Asse_INVALID) {
          HReg dst  = newVRegV(env);
-         HReg argL = iselDblExpr(env, e->Iex.Binop.arg1);
-         HReg argR = iselDblExpr(env, e->Iex.Binop.arg2);
+         HReg argL = iselDblExpr(env, e->Iex.Triop.arg2);
+         HReg argR = iselDblExpr(env, e->Iex.Triop.arg3);
          addInstr(env, mk_vMOVsd_RR(argL, dst));
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
          addInstr(env, AMD64Instr_Sse64FLo(op, argR, dst));
          return dst;
       }
    }
-
-//..    if (e->tag == Iex_Binop) {
-//..       X86FpOp fpop = Xfp_INVALID;
-//..       switch (e->Iex.Binop.op) {
-//..          case Iop_AddF64:    fpop = Xfp_ADD; break;
-//..          case Iop_SubF64:    fpop = Xfp_SUB; break;
-//..          case Iop_MulF64:    fpop = Xfp_MUL; break;
-//..          case Iop_DivF64:    fpop = Xfp_DIV; break;
-//..          case Iop_ScaleF64:  fpop = Xfp_SCALE; break;
-//..          case Iop_AtanF64:   fpop = Xfp_ATAN; break;
-//..          case Iop_Yl2xF64:   fpop = Xfp_YL2X; break;
-//..          case Iop_Yl2xp1F64: fpop = Xfp_YL2XP1; break;
-//..          case Iop_PRemF64:   fpop = Xfp_PREM; break;
-//..          case Iop_PRem1F64:  fpop = Xfp_PREM1; break;
-//..          default: break;
-//..       }
-//..       if (fpop != Xfp_INVALID) {
-//..          HReg res  = newVRegF(env);
-//..          HReg srcL = iselDblExpr(env, e->Iex.Binop.arg1);
-//..          HReg srcR = iselDblExpr(env, e->Iex.Binop.arg2);
-//..          addInstr(env, X86Instr_FpBinary(fpop,srcL,srcR,res));
-//.. 	 if (fpop != Xfp_ADD && fpop != Xfp_SUB 
-//.. 	     && fpop != Xfp_MUL && fpop != Xfp_DIV)
-//..             roundToF64(env, res);
-//..          return res;
-//..       }
-//..    }
 
    if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64toInt) {
       AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
@@ -2874,17 +2849,17 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-   if (e->tag == Iex_Binop 
-       && (e->Iex.Binop.op == Iop_ScaleF64
-           || e->Iex.Binop.op == Iop_AtanF64
-           || e->Iex.Binop.op == Iop_Yl2xF64
-           || e->Iex.Binop.op == Iop_Yl2xp1F64)
+   if (e->tag == Iex_Triop 
+       && (e->Iex.Triop.op == Iop_ScaleF64
+           || e->Iex.Triop.op == Iop_AtanF64
+           || e->Iex.Triop.op == Iop_Yl2xF64
+           || e->Iex.Triop.op == Iop_Yl2xp1F64)
       ) {
       AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
-      HReg        arg1   = iselDblExpr(env, e->Iex.Binop.arg1);
-      HReg        arg2   = iselDblExpr(env, e->Iex.Binop.arg2);
+      HReg        arg1   = iselDblExpr(env, e->Iex.Triop.arg2);
+      HReg        arg2   = iselDblExpr(env, e->Iex.Triop.arg3);
       HReg        dst    = newVRegV(env);
-      Bool     arg2first = toBool(e->Iex.Binop.op == Iop_ScaleF64);
+      Bool     arg2first = toBool(e->Iex.Triop.op == Iop_ScaleF64);
       addInstr(env, AMD64Instr_A87Free(2));
 
       /* one arg -> top of x87 stack */
@@ -2898,7 +2873,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
 
       /* do it */
-      switch (e->Iex.Binop.op) {
+      /* XXXROUNDINGFIXME */
+      /* set roundingmode here */
+      switch (e->Iex.Triop.op) {
          case Iop_ScaleF64: 
             addInstr(env, AMD64Instr_A87FpOp(Afp_SCALE));
             break;
@@ -2964,11 +2941,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-   if (e->tag == Iex_Unop) {
+   if (e->tag == Iex_Binop) {
       A87FpOp fpop = Afp_INVALID;
-      switch (e->Iex.Unop.op) {
-//..          case Iop_NegF64:  fpop = Xfp_NEG; break;
-//..          case Iop_AbsF64:  fpop = Xfp_ABS; break;
+      switch (e->Iex.Binop.op) {
          case Iop_SqrtF64: fpop = Afp_SQRT; break;
          case Iop_SinF64:  fpop = Afp_SIN;  break;
          case Iop_CosF64:  fpop = Afp_COS;  break;
@@ -2978,14 +2953,16 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
       if (fpop != Afp_INVALID) {
          AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
-         HReg        arg    = iselDblExpr(env, e->Iex.Unop.arg);
+         HReg        arg    = iselDblExpr(env, e->Iex.Binop.arg2);
          HReg        dst    = newVRegV(env);
-         Int     nNeeded    = e->Iex.Unop.op==Iop_TanF64 ? 2 : 1;
+         Int     nNeeded    = e->Iex.Binop.op==Iop_TanF64 ? 2 : 1;
          addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, arg, m8_rsp));
          addInstr(env, AMD64Instr_A87Free(nNeeded));
          addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/));
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
          addInstr(env, AMD64Instr_A87FpOp(fpop));
-         if (e->Iex.Unop.op==Iop_TanF64) {
+         if (e->Iex.Binop.op==Iop_TanF64) {
             /* get rid of the extra 1.0 that fptan pushes */
             addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/));
          }

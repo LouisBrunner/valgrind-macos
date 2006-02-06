@@ -1250,11 +1250,10 @@ void x86g_dirtyhelper_storeF80le ( UInt addrU, ULong f64 )
    otherwise. */
 ULong x86g_calculate_FXTRACT ( ULong arg, UInt getExp )
 {
-   ULong  uSig;
-   Long   sSig;
-   Double dSig, dExp;
+   ULong  uSig, uExp;
+   /* Long   sSig; */
    Int    sExp, i;
-   UInt   sign;
+   UInt   sign, expExp;
 
    /*
     S  7FF    0------0   infinity
@@ -1269,6 +1268,7 @@ ULong x86g_calculate_FXTRACT ( ULong arg, UInt getExp )
    const ULong negZero = 0x8000000000000000ULL;
    const ULong bit51   = 1ULL << 51;
    const ULong bit52   = 1ULL << 52;
+   const ULong sigMask = bit52 - 1;
 
    /* Mimic PIII behaviour for special cases. */
    if (arg == posInf)
@@ -1286,7 +1286,7 @@ ULong x86g_calculate_FXTRACT ( ULong arg, UInt getExp )
    sign = ((UInt)(arg >> 63)) & 1;
 
    /* Mask off exponent & sign. uSig is in range 0 .. 2^52-1. */
-   uSig = arg & (bit52 - 1);
+   uSig = arg & sigMask;
 
    /* Get the exponent. */
    sExp = ((Int)(arg >> 52)) & 0x7FF;
@@ -1310,20 +1310,45 @@ ULong x86g_calculate_FXTRACT ( ULong arg, UInt getExp )
    }
 
    /* Roll in the sign. */
-   sSig = uSig;
-   if (sign) sSig =- sSig;
+   /* sSig = uSig; */
+   /* if (sign) sSig =- sSig; */
 
    /* Convert sig into a double.  This should be an exact conversion.
       Then divide by 2^52, which should give a value in the range 1.0
       to 2.0-epsilon, at least for normalised args. */
-   dSig = (Double)sSig;
-   dSig /= 67108864.0; /* 2^26 */
-   dSig /= 67108864.0; /* 2^26 */
+   /* dSig = (Double)sSig; */
+   /* dSig /= 67108864.0;  */ /* 2^26 */
+   /* dSig /= 67108864.0;  */ /* 2^26 */
+   uSig &= sigMask;
+   uSig |= 0x3FF0000000000000ULL;
+   if (sign)
+      uSig ^= negZero;
 
    /* Convert exp into a double.  Also an exact conversion. */
-   dExp = (Double)(sExp - 1023);
+   /* dExp = (Double)(sExp - 1023); */
+   sExp -= 1023;
+   if (sExp == 0) {
+      uExp = 0;
+   } else {
+      uExp   = sExp < 0 ? -sExp : sExp;
+      expExp = 0x3FF +52;
+      /* 1 <= uExp <= 1074 */
+      /* Skip first 42 iterations of normalisation loop as we know they
+         will always happen */
+      uExp <<= 42;
+      expExp -= 42;
+      for (i = 0; i < 52-42; i++) {
+         if (uExp & bit52)
+            break;
+         uExp <<= 1;
+         expExp--;
+      }
+      uExp &= sigMask;
+      uExp |= ((ULong)expExp) << 52;
+      if (sExp < 0) uExp ^= negZero;
+   }
 
-   return *(ULong*)(getExp ? &dExp : &dSig);
+   return getExp ? uExp : uSig;
 }
 
 
@@ -1442,7 +1467,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
 {
    Int        stno, preg;
    UInt       tag;
-   Double*    vexRegs = (Double*)(&vex_state->guest_FPREG[0]);
+   ULong*     vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
    UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
    Fpu_State* x87     = (Fpu_State*)x87_state;
    UInt       ftop    = (x87->env[FP_ENV_STAT] >> 11) & 7;
@@ -1464,7 +1489,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
             of sync, in that it thinks all FP registers are defined by
             this helper, but in reality some have not been updated. */
          if (moveRegs)
-            vexRegs[preg] = 0.0;
+            vexRegs[preg] = 0; /* IEEE754 64-bit zero */
          vexTags[preg] = 0;
       } else {
          /* register is non-empty */
@@ -1502,7 +1527,7 @@ void do_get_x87 ( /*IN*/VexGuestX86State* vex_state,
 {
    Int        i, stno, preg;
    UInt       tagw;
-   Double*    vexRegs = (Double*)(&vex_state->guest_FPREG[0]);
+   ULong*     vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
    UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
    Fpu_State* x87     = (Fpu_State*)x87_state;
    UInt       ftop    = vex_state->guest_FTOP;

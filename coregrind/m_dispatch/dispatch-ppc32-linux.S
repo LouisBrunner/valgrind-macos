@@ -399,18 +399,14 @@ run_innerloop_exit:
         cmplwi  10,0
         beq     LafterFP8
 
-	/* This check avoidance may be removable if stfiwx is
-	implemented. */
-#	if 0 //!defined(ENABLE_INNER)
-        /* Check FPSCR & 0xFF == 0 (lowest 8bits are controls)  */
-        mffs      4                       /* fpscr -> fpr */
-        li        5,48
-        stfiwx    4,5,1                   /* fpr to stack */
-        lwzx      6,5,1                   /* load to gpr */
-        andi.     6,6,0xFF                /* mask wanted bits */
-        cmplwi    6,0x0                   /* cmp with zero */
-        bne       invariant_violation     /* branch if not zero */
-#	endif
+	/* Set fpscr back to a known state, since vex-generated code
+	   may have messed with fpscr[rm]. */
+        li      5,0
+        addi    1,1,-16
+        stw     5,0(1)
+        lfs     3,0(1)
+        addi    1,1,16
+        mtfsf   0xFF,3   /* fpscr = f3 */
 LafterFP8:
 
 	/* Using r11 - value used again further on, so don't trash! */

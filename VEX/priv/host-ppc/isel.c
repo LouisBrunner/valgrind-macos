@@ -115,14 +115,81 @@
 /*---------------------------------------------------------*/
 /*
   Vex-generated code expects to run with the FPU set as follows: all
-  exceptions masked, round-to-nearest.
-  This corresponds to a FPU control word value of 0x0.
-  
-  %fpscr should have this value on entry to Vex-generated code,
-  and those values should be unchanged at exit.
-  
-  Warning: For simplicity, set_FPU_rounding_* assumes this is 0x0
-  - if this is changed, update those functions.
+  exceptions masked.  The rounding mode is set appropriately before
+  each floating point insn emitted (or left unchanged if known to be
+  correct already).  There are a few fp insns (fmr,fneg,fabs,fnabs),
+  which are unaffected by the rm and so the rounding mode is not set
+  prior to them.  
+
+  At least on MPC7447A (Mac Mini), frsqrte is also not affected by
+  rounding mode.  At some point the ppc docs get sufficiently vague
+  that the only way to find out is to write test programs.
+*/
+/* Notes on the FP instruction set, 6 Feb 06.
+
+What                 exns -> CR1 ?   Sets FPRF ?   Observes RM ?
+-------------------------------------------------------------
+
+fmr[.]                   if .             n             n
+fneg[.]                  if .             n             n
+fabs[.]                  if .             n             n
+fnabs[.]                 if .             n             n
+
+fadd[.]                  if .             y             y
+fadds[.]                 if .             y             y
+fcfid[.] (i64->dbl)      if .             y             y
+fcmpo (cmp, result       n                n             n
+fcmpu  to crfD)          n                n             n
+fctid[.]  (dbl->i64)     if .       ->undef             y
+fctidz[.] (dbl->i64)     if .       ->undef    rounds-to-zero
+fctiw[.]  (dbl->i32)     if .       ->undef             y
+fctiwz[.] (dbl->i32)     if .       ->undef    rounds-to-zero
+fdiv[.]                  if .             y             y
+fdivs[.]                 if .             y             y
+fmadd[.]                 if .             y             y
+fmadds[.]                if .             y             y
+fmsub[.]                 if .             y             y
+fmsubs[.]                if .             y             y
+fmul[.]                  if .             y             y
+fmuls[.]                 if .             y             y
+
+(note: for fnm*, rounding happens before final negation)
+fnmadd[.]                if .             y             y
+fnmadds[.]               if .             y             y
+fnmsub[.]                if .             y             y
+fnmsubs[.]               if .             y             y
+
+fre[.]                   if .             y             y
+fres[.]                  if .             y             y
+
+frsqrte[.]               if .             y       apparently not
+
+fsqrt[.]                 if .             y             y
+fsqrts[.]                if .             y             y
+fsub[.]                  if .             y             y
+fsubs[.]                 if .             y             y
+
+
+fpscr: bits 30-31 (ibm) is RM
+            24-29 (ibm) are exnmasks/non-IEEE bit, all zero
+	    15-19 (ibm) is FPRF: class, <, =, >, UNord
+
+ppc fe(guest) makes fpscr read as all zeros except RM (and maybe FPRF
+in future) 
+
+mcrfs     - move fpscr field to CR field
+mtfsfi[.] - 4 bit imm moved to fpscr field
+mtfsf[.]  - move frS[low 1/2] to fpscr but using 8-bit field mask
+mtfsb1[.] - set given fpscr bit
+mtfsb0[.] - clear given fpscr bit
+mffs[.]   - move all fpscr to frD[low 1/2]
+
+For [.] presumably cr1 is set with exn summary bits, as per 
+main FP insns
+
+A single precision store truncates/denormalises the in-register value,
+but does not round it.  This is so that flds followed by fsts is
+always the identity.
 */
 
 
@@ -3037,7 +3104,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, PPCInstr_Alu(Palu_AND, r_tmp,
                                     r_cond, PPCRH_Imm(False,0xFF)));
          addInstr(env, PPCInstr_FpUnary( Pfp_MOV, fr_dst, frX ));
-         addInstr(env, PPCInstr_Cmp(False/*unsined*/, True/*32bit cmp*/,
+         addInstr(env, PPCInstr_Cmp(False/*unsigned*/, True/*32bit cmp*/,
                                     7/*cr*/, r_tmp, PPCRH_Imm(False,0)));
          addInstr(env, PPCInstr_FpCMov( cc, fr_dst, fr0 ));
          return fr_dst;

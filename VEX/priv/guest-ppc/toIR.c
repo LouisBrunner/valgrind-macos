@@ -5828,10 +5828,8 @@ static Bool dis_fp_arith ( UInt theInstr )
              frD_addr, frB_addr);
          { IRExpr* ieee_one
               = IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL));
-           /* Does this really depend on the rounding mode?  Play safe
-              and use the default. */
            assign( frD, triop( Iop_DivF64, 
-                               mkU32(Irrm_NEAREST), 
+                               rm,
                                ieee_one, mkexpr(frB) ));
          }
          break;

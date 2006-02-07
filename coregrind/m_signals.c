@@ -1352,6 +1352,20 @@ void VG_(synth_sigill)(ThreadId tid, Addr addr)
    deliver_signal(tid, &info);
 }
 
+// Synthesise a SIGTRAP.
+void VG_(synth_sigtrap)(ThreadId tid)
+{
+   vki_siginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   info.si_signo = VKI_SIGTRAP;
+   info.si_code = VKI_TRAP_TRACE; /* jrs: no idea what this should be */
+
+   resume_scheduler(tid);
+   deliver_signal(tid, &info);
+}
+
 /* Make a signal pending for a thread, for later delivery.
    VG_(poll_signals) will arrange for it to be delivered at the right
    time. 

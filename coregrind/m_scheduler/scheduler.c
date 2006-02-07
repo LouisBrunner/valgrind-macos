@@ -950,6 +950,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
       }
 
+      case VEX_TRC_JMP_TRAP:
+         VG_(synth_sigtrap)(tid);
+         break;
+
       case VEX_TRC_JMP_NODECODE:
 #define M(a) VG_(message)(Vg_UserMsg, a);
    M("Your program just tried to execute an instruction that Valgrind" );

@@ -430,6 +430,12 @@ typedef struct vki_siginfo {
 #define VKI_BUS_OBJERR	(__VKI_SI_FAULT|3)	/* object specific hardware error */
 
 /*
+ * SIGTRAP si_codes
+ */
+#define VKI_TRAP_BRKPT      (__VKI_SI_FAULT|1)  /* process breakpoint */
+#define VKI_TRAP_TRACE      (__VKI_SI_FAULT|2)  /* process trace trap */
+
+/*
  * This works because the alignment is ok on all current architectures
  * but we leave open this being overridden in the future
  */

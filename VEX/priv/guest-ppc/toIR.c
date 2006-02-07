@@ -4489,22 +4489,22 @@ static Bool dis_cond_logic ( UInt theInstr )
 
 /* Do the code generation for a trap.  Returned Bool is true iff
    this is an unconditional trap. */
-static Bool do_trap ( IRType ty, UChar TO, 
+static Bool do_trap ( Bool is_twi, UChar TO, 
                       IRExpr* argL0, ULong argR0, Addr64 cia )
 {
    IRTemp argL, argR;
    IRExpr *argLe, *argRe, *cond, *tmp;
 
-   IROp    opAND     = ty==Ity_I32 ? Iop_And32     : Iop_And64;
-   IROp    opOR      = ty==Ity_I32 ? Iop_Or32      : Iop_Or64;
-   IROp    opCMPORDS = ty==Ity_I32 ? Iop_CmpORD32S : Iop_CmpORD64S;
-   IROp    opCMPORDU = ty==Ity_I32 ? Iop_CmpORD32U : Iop_CmpORD64U;
-   IROp    opCMPNE   = ty==Ity_I32 ? Iop_CmpNE32   : Iop_CmpNE64;
-   IROp    opCMPEQ   = ty==Ity_I32 ? Iop_CmpEQ32   : Iop_CmpEQ64;
-   IRExpr* const0    = ty==Ity_I32 ? mkU32(0)      : mkU64(0);
-   IRExpr* const2    = ty==Ity_I32 ? mkU32(2)      : mkU64(2);
-   IRExpr* const4    = ty==Ity_I32 ? mkU32(4)      : mkU64(4);
-   IRExpr* const8    = ty==Ity_I32 ? mkU32(8)      : mkU64(8);
+   IROp    opAND     = is_twi ? Iop_And32     : Iop_And64;
+   IROp    opOR      = is_twi ? Iop_Or32      : Iop_Or64;
+   IROp    opCMPORDS = is_twi ? Iop_CmpORD32S : Iop_CmpORD64S;
+   IROp    opCMPORDU = is_twi ? Iop_CmpORD32U : Iop_CmpORD64U;
+   IROp    opCMPNE   = is_twi ? Iop_CmpNE32   : Iop_CmpNE64;
+   IROp    opCMPEQ   = is_twi ? Iop_CmpEQ32   : Iop_CmpEQ64;
+   IRExpr* const0    = is_twi ? mkU32(0)      : mkU64(0);
+   IRExpr* const2    = is_twi ? mkU32(2)      : mkU64(2);
+   IRExpr* const4    = is_twi ? mkU32(4)      : mkU64(4);
+   IRExpr* const8    = is_twi ? mkU32(8)      : mkU64(8);
 
    const UChar b11100 = 0x1C;
    const UChar b00111 = 0x07;
@@ -4520,16 +4520,16 @@ static Bool do_trap ( IRType ty, UChar TO,
       return True; /* unconditional trap */
    }
 
-   /* ty is the type at which the comparisons are done.  This is not
-      the same as the 32/64-mode-ness. */
-   vassert(ty == Ity_I32 || ty == Ity_I64);
-   argL = newTemp(ty);
-   argR = newTemp(ty);
-   if (ty == Ity_I32) {
-      assign( argL, mkSzNarrow32(Ity_I32, argL0) );
+   if (is_twi) {
+      argL = newTemp(Ity_I32);
+      argR = newTemp(Ity_I32);
+      assign( argL, mode64 ? mkSzNarrow32(Ity_I64,argL0)
+                           : argL0 );
       assign( argR, mkU32( (UInt)argR0 ));
    } else {
       vassert(mode64);
+      argL = newTemp(Ity_I64);
+      argR = newTemp(Ity_I64);
       assign( argL, argL0 );
       assign( argR, mkU64( argR0 ));
    }
@@ -4579,7 +4579,7 @@ static Bool dis_trapi ( UInt theInstr,
 
    switch (opc1) {
    case 0x03: // twi  (Trap Word Immediate, PPC32 p548)
-      uncond = do_trap( Ity_I32, TO, getIReg(rA_addr), simm16, cia );
+      uncond = do_trap( True/*is_twi*/, TO, getIReg(rA_addr), simm16, cia );
       if (TO == 4) {
          DIP("tweqi r%u,%d\n", (UInt)rA_addr, (Int)simm16);
       } else {
@@ -4589,7 +4589,12 @@ static Bool dis_trapi ( UInt theInstr,
    case 0x02: // tdi
       if (!mode64)
          return False;
-      uncond = do_trap( Ity_I64, TO, getIReg(rA_addr), simm16, cia );
+      uncond = do_trap( False/*!is_twi*/, TO, getIReg(rA_addr), simm16, cia );
+      if (TO == 4) {
+         DIP("tdeqi r%u,%d\n", (UInt)rA_addr, (Int)simm16);
+      } else {
+         DIP("td%di r%u,%d\n", (Int)TO, (UInt)rA_addr, (Int)simm16);
+      }
       break;
    default:
       return False;

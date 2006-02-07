@@ -9,10 +9,11 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	test_fx.stderr.exp test_fx.stdout.exp test_fx.vgtest \
 	test_gx.stderr.exp test_gx.stdout.exp test_gx.vgtest \
 	testVMX.stderr.exp  testVMX.stdout.exp  testVMX.vgtest \
+	twi.stderr.exp twi.stdout.exp twi.vgtest \
 	xlc_dbl_u32.stderr.exp xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest
 
 check_PROGRAMS = \
-	lsw jm-insns test_fx test_gx testVMX xlc_dbl_u32
+	lsw jm-insns test_fx test_gx testVMX twi xlc_dbl_u32
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
 		@FLAG_M32@

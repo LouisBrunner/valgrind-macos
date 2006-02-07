@@ -1,0 +1,96 @@
+twi_0_neg100(-150) -> no trap
+twi_0_neg100(-100) -> no trap
+twi_0_neg100( -50) -> no trap
+twi_1_neg100(-150) -> no trap
+twi_1_neg100(-100) -> no trap
+twi_1_neg100( -50) -> TRAP
+twi_2_neg100(-150) -> TRAP
+twi_2_neg100(-100) -> no trap
+twi_2_neg100( -50) -> no trap
+twi_3_neg100(-150) -> TRAP
+twi_3_neg100(-100) -> no trap
+twi_3_neg100( -50) -> TRAP
+twi_4_neg100(-150) -> no trap
+twi_4_neg100(-100) -> TRAP
+twi_4_neg100( -50) -> no trap
+twi_5_neg100(-150) -> no trap
+twi_5_neg100(-100) -> TRAP
+twi_5_neg100( -50) -> TRAP
+twi_6_neg100(-150) -> TRAP
+twi_6_neg100(-100) -> TRAP
+twi_6_neg100( -50) -> no trap
+twi_7_neg100(-150) -> TRAP
+twi_7_neg100(-100) -> TRAP
+twi_7_neg100( -50) -> TRAP
+twi_8_neg100(-150) -> no trap
+twi_8_neg100(-100) -> no trap
+twi_8_neg100( -50) -> TRAP
+twi_9_neg100(-150) -> no trap
+twi_9_neg100(-100) -> no trap
+twi_9_neg100( -50) -> TRAP
+twi_10_neg100(-150) -> TRAP
+twi_10_neg100(-100) -> no trap
+twi_10_neg100( -50) -> TRAP
+twi_11_neg100(-150) -> TRAP
+twi_11_neg100(-100) -> no trap
+twi_11_neg100( -50) -> TRAP
+twi_12_neg100(-150) -> no trap
+twi_12_neg100(-100) -> TRAP
+twi_12_neg100( -50) -> TRAP
+twi_13_neg100(-150) -> no trap
+twi_13_neg100(-100) -> TRAP
+twi_13_neg100( -50) -> TRAP
+twi_14_neg100(-150) -> TRAP
+twi_14_neg100(-100) -> TRAP
+twi_14_neg100( -50) -> TRAP
+twi_15_neg100(-150) -> TRAP
+twi_15_neg100(-100) -> TRAP
+twi_15_neg100( -50) -> TRAP
+twi_16_neg100(-150) -> TRAP
+twi_16_neg100(-100) -> no trap
+twi_16_neg100( -50) -> no trap
+twi_17_neg100(-150) -> TRAP
+twi_17_neg100(-100) -> no trap
+twi_17_neg100( -50) -> TRAP
+twi_18_neg100(-150) -> TRAP
+twi_18_neg100(-100) -> no trap
+twi_18_neg100( -50) -> no trap
+twi_19_neg100(-150) -> TRAP
+twi_19_neg100(-100) -> no trap
+twi_19_neg100( -50) -> TRAP
+twi_20_neg100(-150) -> TRAP
+twi_20_neg100(-100) -> TRAP
+twi_20_neg100( -50) -> no trap
+twi_21_neg100(-150) -> TRAP
+twi_21_neg100(-100) -> TRAP
+twi_21_neg100( -50) -> TRAP
+twi_22_neg100(-150) -> TRAP
+twi_22_neg100(-100) -> TRAP
+twi_22_neg100( -50) -> no trap
+twi_23_neg100(-150) -> TRAP
+twi_23_neg100(-100) -> TRAP
+twi_23_neg100( -50) -> TRAP
+twi_24_neg100(-150) -> TRAP
+twi_24_neg100(-100) -> no trap
+twi_24_neg100( -50) -> TRAP
+twi_25_neg100(-150) -> TRAP
+twi_25_neg100(-100) -> no trap
+twi_25_neg100( -50) -> TRAP
+twi_26_neg100(-150) -> TRAP
+twi_26_neg100(-100) -> no trap
+twi_26_neg100( -50) -> TRAP
+twi_27_neg100(-150) -> TRAP
+twi_27_neg100(-100) -> no trap
+twi_27_neg100( -50) -> TRAP
+twi_28_neg100(-150) -> TRAP
+twi_28_neg100(-100) -> TRAP
+twi_28_neg100( -50) -> TRAP
+twi_29_neg100(-150) -> TRAP
+twi_29_neg100(-100) -> TRAP
+twi_29_neg100( -50) -> TRAP
+twi_30_neg100(-150) -> TRAP
+twi_30_neg100(-100) -> TRAP
+twi_30_neg100( -50) -> TRAP
+twi_31_neg100(-150) -> TRAP
+twi_31_neg100(-100) -> TRAP
+twi_31_neg100( -50) -> TRAP

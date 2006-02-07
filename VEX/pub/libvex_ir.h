@@ -912,6 +912,7 @@ typedef
       Ijk_MapFail,        /* Vex-provided address translation failed */
       Ijk_TInval,         /* Invalidate translations before continuing. */
       Ijk_NoRedir,        /* Jump to un-redirected guest addr */
+      Ijk_Trap,           /* current instruction did a user trap */
       /* Unfortunately, various guest-dependent syscall kinds.  They
 	 all mean: do a syscall before continuing. */
       Ijk_Sys_syscall,    /* amd64 'syscall', ppc 'sc' */

@@ -62,6 +62,8 @@
 #define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
                                       continuing */
 #define VEX_TRC_JMP_NOREDIR    81  /* jump to undirected guest addr */
+#define VEX_TRC_JMP_TRAP       85  /* deliver trap (SIGTRAP?) before
+                                      continuing */
 #define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
                                       continuing */
 #define VEX_TRC_JMP_EMFAIL     83  /* emulation fatal error; abort system */

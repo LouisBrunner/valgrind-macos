@@ -4483,6 +4483,130 @@ static Bool dis_cond_logic ( UInt theInstr )
 }
 
 
+/* 
+  Trap instructions
+*/
+
+/* Do the code generation for a trap.  Returned Bool is true iff
+   this is an unconditional trap. */
+static Bool do_trap ( IRType ty, UChar TO, 
+                      IRExpr* argL0, ULong argR0, Addr64 cia )
+{
+   IRTemp argL, argR;
+   IRExpr *argLe, *argRe, *cond, *tmp;
+
+   IROp    opAND     = ty==Ity_I32 ? Iop_And32     : Iop_And64;
+   IROp    opOR      = ty==Ity_I32 ? Iop_Or32      : Iop_Or64;
+   IROp    opCMPORDS = ty==Ity_I32 ? Iop_CmpORD32S : Iop_CmpORD64S;
+   IROp    opCMPORDU = ty==Ity_I32 ? Iop_CmpORD32U : Iop_CmpORD64U;
+   IROp    opCMPNE   = ty==Ity_I32 ? Iop_CmpNE32   : Iop_CmpNE64;
+   IROp    opCMPEQ   = ty==Ity_I32 ? Iop_CmpEQ32   : Iop_CmpEQ64;
+   IRExpr* const0    = ty==Ity_I32 ? mkU32(0)      : mkU64(0);
+   IRExpr* const2    = ty==Ity_I32 ? mkU32(2)      : mkU64(2);
+   IRExpr* const4    = ty==Ity_I32 ? mkU32(4)      : mkU64(4);
+   IRExpr* const8    = ty==Ity_I32 ? mkU32(8)      : mkU64(8);
+
+   const UChar b11100 = 0x1C;
+   const UChar b00111 = 0x07;
+
+   if ((TO & b11100) == b11100 || (TO & b00111) == b00111) {
+      /* Unconditional trap.  Just do the exit without 
+         testing the arguments. */
+      stmt( IRStmt_Exit( 
+               binop(opCMPEQ, const0, const0), 
+               Ijk_Trap,
+               mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 
+      ));
+      return True; /* unconditional trap */
+   }
+
+   /* ty is the type at which the comparisons are done.  This is not
+      the same as the 32/64-mode-ness. */
+   vassert(ty == Ity_I32 || ty == Ity_I64);
+   argL = newTemp(ty);
+   argR = newTemp(ty);
+   if (ty == Ity_I32) {
+      assign( argL, mkSzNarrow32(Ity_I32, argL0) );
+      assign( argR, mkU32( (UInt)argR0 ));
+   } else {
+      vassert(mode64);
+      assign( argL, argL0 );
+      assign( argR, mkU64( argR0 ));
+   }
+   argLe = mkexpr(argL);
+   argRe = mkexpr(argR);
+   cond = const0;
+   if (TO & 16) { // L <s R
+      tmp = binop(opAND, binop(opCMPORDS, argLe, argRe), const8);
+      cond = binop(opOR, tmp, cond);
+   }
+   if (TO & 8) { // L >s R
+      tmp = binop(opAND, binop(opCMPORDS, argLe, argRe), const4);
+      cond = binop(opOR, tmp, cond);
+   }
+   if (TO & 4) { // L == R
+      tmp = binop(opAND, binop(opCMPORDS, argLe, argRe), const2);
+      cond = binop(opOR, tmp, cond);
+   }
+   if (TO & 2) { // L <u R
+      tmp = binop(opAND, binop(opCMPORDU, argLe, argRe), const8);
+      cond = binop(opOR, tmp, cond);
+   }
+   if (TO & 1) { // L >u R
+      tmp = binop(opAND, binop(opCMPORDU, argLe, argRe), const4);
+      cond = binop(opOR, tmp, cond);
+   }
+   stmt( IRStmt_Exit( 
+            binop(opCMPNE, cond, const0), 
+            Ijk_Trap,
+            mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 
+   ));
+   return False; /* not an unconditional trap */
+}
+
+static Bool dis_trapi ( UInt theInstr,
+                        /*OUT*/DisResult* dres )
+{
+   /* D-Form */
+   UChar  opc1    = ifieldOPC(theInstr);
+   UChar  TO      = ifieldRegDS(theInstr);
+   UChar  rA_addr = ifieldRegA(theInstr);
+   UInt   uimm16  = ifieldUIMM16(theInstr);
+   ULong  simm16  = extend_s_16to64(uimm16);
+   Addr64 cia     = guest_CIA_curr_instr;
+   IRType ty      = mode64 ? Ity_I64 : Ity_I32;
+   Bool   uncond  = False;
+
+   switch (opc1) {
+   case 0x03: // twi  (Trap Word Immediate, PPC32 p548)
+      uncond = do_trap( Ity_I32, TO, getIReg(rA_addr), simm16, cia );
+      if (TO == 4) {
+         DIP("tweqi r%u,%d\n", (UInt)rA_addr, (Int)simm16);
+      } else {
+         DIP("tw%di r%u,%d\n", (Int)TO, (UInt)rA_addr, (Int)simm16);
+      }
+      break;
+   case 0x02: // tdi
+      if (!mode64)
+         return False;
+      uncond = do_trap( Ity_I64, TO, getIReg(rA_addr), simm16, cia );
+      break;
+   default:
+      return False;
+   }
+
+   if (uncond) {
+      /* If the trap shows signs of being unconditional, don't
+         continue decoding past it. */
+      irbb->next     = mkSzImm( ty, nextInsnAddr() );
+      irbb->jumpkind = Ijk_Boring;
+      dres->whatNext = Dis_StopHere;
+   }
+
+   return True;
+}
+
+
 /*
   System Linkage Instructions
 */
@@ -8725,13 +8849,10 @@ DisResult disInstr_PPC_WRK (
       if (dis_syslink(theInstr, &dres)) goto decode_success;
       goto decode_failure;
 
-//zz    /* Trap Instructions */
-//zz    case 0x02: // tdi
-//zz       DIP("trap op (tdi) => not implemented\n");
-//zz       goto decode_failure;
-//zz    case 0x03: // twi
-//zz       DIP("trap op (twi) => not implemented\n");
-//zz       goto decode_failure;
+   /* Trap Instructions */
+   case 0x02: case 0x03: // tdi, twi
+      if (dis_trapi(theInstr, &dres)) goto decode_success;
+      goto decode_failure;
 
    /* Floating Point Load Instructions */
    case 0x30: case 0x31: case 0x32: // lfs, lfsu, lfd

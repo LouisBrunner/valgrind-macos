@@ -487,7 +487,6 @@ int main ( void )
   do_N_unary("fctiwz",  insn_fctiwz,  args, nargs, 0xFFFFFFFF00000000ULL);
   do_N_unary("fctiwz_", insn_fctiwz_, args, nargs, 0xFFFFFFFF00000000ULL);
 
-#if 0
   do_N_ternary("fmadd",    insn_fmadd,    macArgs, nMacArgs, SHOW_ALL);
   do_N_ternary("fmadd_",   insn_fmadd_,   macArgs, nMacArgs, SHOW_ALL);
 
@@ -511,7 +510,6 @@ int main ( void )
 
   do_N_ternary("fnmsubs",  insn_fnmsubs,  macArgs, nMacArgs, SHOW_ALL);
   do_N_ternary("fnmsubs_", insn_fnmsubs_, macArgs, nMacArgs, SHOW_ALL);
-#endif
 
   //do_N_unary(fre, SHOW_ALL);
   //do_N_unary(fre_, SHOW_ALL);

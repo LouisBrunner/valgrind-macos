@@ -616,6 +616,10 @@ HChar* showPPCFpOp ( PPCFpOp op ) {
       case Pfp_SUBD:   return "fsub";
       case Pfp_MULD:   return "fmul";
       case Pfp_DIVD:   return "fdiv";
+      case Pfp_MADDD:  return "fmadd";
+      case Pfp_MSUBD:  return "fmsub";
+      case Pfp_MADDS:  return "fmadds";
+      case Pfp_MSUBS:  return "fmsubs";
       case Pfp_ADDS:   return "fadds";
       case Pfp_SUBS:   return "fsubs";
       case Pfp_MULS:   return "fmuls";
@@ -903,6 +907,18 @@ PPCInstr* PPCInstr_FpBinary ( PPCFpOp op, HReg dst,
    i->Pin.FpBinary.dst  = dst;
    i->Pin.FpBinary.srcL = srcL;
    i->Pin.FpBinary.srcR = srcR;
+   return i;
+}
+PPCInstr* PPCInstr_FpMulAcc ( PPCFpOp op, HReg dst, HReg srcML, 
+                                          HReg srcMR, HReg srcAcc )
+{
+   PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                 = Pin_FpMulAcc;
+   i->Pin.FpMulAcc.op     = op;
+   i->Pin.FpMulAcc.dst    = dst;
+   i->Pin.FpMulAcc.srcML  = srcML;
+   i->Pin.FpMulAcc.srcMR  = srcMR;
+   i->Pin.FpMulAcc.srcAcc = srcAcc;
    return i;
 }
 PPCInstr* PPCInstr_FpLdSt ( Bool isLoad, UChar sz,
@@ -1400,6 +1416,16 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       vex_printf(",");
       ppHRegPPC(i->Pin.FpBinary.srcR);
       return;
+   case Pin_FpMulAcc:
+      vex_printf("%s ", showPPCFpOp(i->Pin.FpMulAcc.op));
+      ppHRegPPC(i->Pin.FpMulAcc.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.FpMulAcc.srcML);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.FpMulAcc.srcMR);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.FpMulAcc.srcAcc);
+      return;
    case Pin_FpLdSt: {
       UChar sz = i->Pin.FpLdSt.sz;
       Bool idxd = toBool(i->Pin.FpLdSt.addr->tag == Pam_RR);
@@ -1774,6 +1800,12 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.FpBinary.srcL);
       addHRegUse(u, HRmRead,  i->Pin.FpBinary.srcR);
       return;
+   case Pin_FpMulAcc:
+      addHRegUse(u, HRmWrite, i->Pin.FpMulAcc.dst);
+      addHRegUse(u, HRmRead,  i->Pin.FpMulAcc.srcML);
+      addHRegUse(u, HRmRead,  i->Pin.FpMulAcc.srcMR);
+      addHRegUse(u, HRmRead,  i->Pin.FpMulAcc.srcAcc);
+      return;
    case Pin_FpLdSt:
       addHRegUse(u, (i->Pin.FpLdSt.isLoad ? HRmWrite : HRmRead),
                  i->Pin.FpLdSt.reg);
@@ -1972,6 +2004,12 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.FpBinary.dst);
       mapReg(m, &i->Pin.FpBinary.srcL);
       mapReg(m, &i->Pin.FpBinary.srcR);
+      return;
+   case Pin_FpMulAcc:
+      mapReg(m, &i->Pin.FpMulAcc.dst);
+      mapReg(m, &i->Pin.FpMulAcc.srcML);
+      mapReg(m, &i->Pin.FpMulAcc.srcMR);
+      mapReg(m, &i->Pin.FpMulAcc.srcAcc);
       return;
    case Pin_FpLdSt:
       mapReg(m, &i->Pin.FpLdSt.reg);
@@ -3183,6 +3221,30 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          break;
       case Pfp_DIVS:   // fdivs, PPC32 p407
          p = mkFormA( p, 59, fr_dst, fr_srcL, fr_srcR, 0, 18, 0 );
+         break;
+      default:
+         goto bad;
+      }
+      goto done;
+   }
+
+   case Pin_FpMulAcc: {
+      UInt fr_dst    = fregNo(i->Pin.FpMulAcc.dst);
+      UInt fr_srcML  = fregNo(i->Pin.FpMulAcc.srcML);
+      UInt fr_srcMR  = fregNo(i->Pin.FpMulAcc.srcMR);
+      UInt fr_srcAcc = fregNo(i->Pin.FpMulAcc.srcAcc);
+      switch (i->Pin.FpMulAcc.op) {
+      case Pfp_MADDD:   // fmadd, PPC32 p408
+         p = mkFormA( p, 63, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 29, 0 );
+         break;
+      case Pfp_MADDS:   // fmadds, PPC32 p409
+         p = mkFormA( p, 59, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 29, 0 );
+         break;
+      case Pfp_MSUBD:   // fmsub, PPC32 p411
+         p = mkFormA( p, 63, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 28, 0 );
+         break;
+      case Pfp_MSUBS:   // fmsubs, PPC32 p412
+         p = mkFormA( p, 59, fr_dst, fr_srcML, fr_srcAcc, fr_srcMR, 28, 0 );
          break;
       default:
          goto bad;

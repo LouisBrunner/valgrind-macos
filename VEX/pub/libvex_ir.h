@@ -217,7 +217,7 @@ extern void ppIRTemp ( IRTemp );
 #define IRTemp_INVALID ((IRTemp)0xFFFFFFFF)
 
 
-/* ------------------ Binary and unary ops ------------------ */
+/* --------------- Primops (arity 1,2,3 and 4) --------------- */
 
 typedef
    enum { 
@@ -431,6 +431,18 @@ typedef
                             as F64) */
 
       /* --- guest ppc32/64 specifics, not mandated by 754. --- */
+
+      /* Ternary operations, with rounding. */
+      /* Fused multiply-add/sub, with 112-bit intermediate
+	 precision */
+      /* :: IRRoundingMode(I32) x F64 x F64 x F64 -> F64 
+            (computes arg2 * arg3 +/- arg4) */ 
+      Iop_MAddF64, Iop_MSubF64,
+
+      /* Variants of the above which produce a 64-bit result but which
+         round their result to a IEEE float range first. */
+      /* :: IRRoundingMode(I32) x F64 x F64 x F64 -> F64 */ 
+      Iop_MAddF64r32, Iop_MSubF64r32,
 
       /* :: F64 -> F64 */
       Iop_Est5FRSqrt,    /* reciprocal square root estimate, 5 good bits */
@@ -760,6 +772,7 @@ typedef
       Iex_Get,     /* read guest state, fixed offset */
       Iex_GetI,    /* read guest state, run-time offset */
       Iex_Tmp,     /* value of temporary */
+      Iex_Qop,     /* quaternary operation */
       Iex_Triop,   /* ternary operation */
       Iex_Binop,   /* binary operation */
       Iex_Unop,    /* unary operation */
@@ -789,6 +802,13 @@ typedef
          struct {
             IRTemp tmp;
          } Tmp;
+         struct {
+            IROp op;
+            struct _IRExpr* arg1;
+            struct _IRExpr* arg2;
+            struct _IRExpr* arg3;
+            struct _IRExpr* arg4;
+         } Qop;
          struct {
             IROp op;
             struct _IRExpr* arg1;
@@ -830,6 +850,8 @@ extern IRExpr* IRExpr_Binder ( Int binder );
 extern IRExpr* IRExpr_Get    ( Int off, IRType ty );
 extern IRExpr* IRExpr_GetI   ( IRArray* descr, IRExpr* ix, Int bias );
 extern IRExpr* IRExpr_Tmp    ( IRTemp tmp );
+extern IRExpr* IRExpr_Qop    ( IROp op, IRExpr* arg1, IRExpr* arg2, 
+                                        IRExpr* arg3, IRExpr* arg4 );
 extern IRExpr* IRExpr_Triop  ( IROp op, IRExpr* arg1, 
                                         IRExpr* arg2, IRExpr* arg3 );
 extern IRExpr* IRExpr_Binop  ( IROp op, IRExpr* arg1, IRExpr* arg2 );

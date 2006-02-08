@@ -2932,6 +2932,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   /* --------- LOAD --------- */
    if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE) {
       HReg r_dst = newVRegF(env);
       PPCAMode* am_addr;
@@ -2941,12 +2942,35 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return r_dst;
    }
 
+   /* --------- GET --------- */
    if (e->tag == Iex_Get) {
       HReg r_dst = newVRegF(env);
       PPCAMode* am_addr = PPCAMode_IR( e->Iex.Get.offset,
                                        GuestStatePtr(mode64) );
       addInstr(env, PPCInstr_FpLdSt( True/*load*/, 8, r_dst, am_addr ));
       return r_dst;
+   }
+
+   /* --------- OPS --------- */
+   if (e->tag == Iex_Qop) {
+      PPCFpOp fpop = Pfp_INVALID;
+      switch (e->Iex.Qop.op) {
+         case Iop_MAddF64:    fpop = Pfp_MADDD; break;
+         case Iop_MAddF64r32: fpop = Pfp_MADDS; break;
+         case Iop_MSubF64:    fpop = Pfp_MSUBD; break;
+         case Iop_MSubF64r32: fpop = Pfp_MSUBS; break;
+         default: break;
+      }
+      if (fpop != Pfp_INVALID) {
+         HReg r_dst  = newVRegF(env);
+         HReg r_srcML  = iselDblExpr(env, e->Iex.Qop.arg2);
+         HReg r_srcMR  = iselDblExpr(env, e->Iex.Qop.arg3);
+         HReg r_srcAcc = iselDblExpr(env, e->Iex.Qop.arg4);
+         set_FPU_rounding_mode( env, e->Iex.Qop.arg1 );
+         addInstr(env, PPCInstr_FpMulAcc(fpop, r_dst, 
+                                               r_srcML, r_srcMR, r_srcAcc));
+         return r_dst;
+      }
    }
 
    if (e->tag == Iex_Triop) {

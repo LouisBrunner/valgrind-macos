@@ -267,8 +267,14 @@ void ppIROp ( IROp op )
       case Iop_TanF64:    vex_printf("TanF64"); return;
       case Iop_2xm1F64:   vex_printf("2xm1F64"); return;
 
-      case Iop_Est5FRSqrt: vex_printf("Est5FRSqrt"); return;
+      case Iop_MAddF64:    vex_printf("MAddF64"); return;
+      case Iop_MSubF64:    vex_printf("MSubF64"); return;
+      case Iop_MAddF64r32: vex_printf("MAddF64r32"); return;
+      case Iop_MSubF64r32: vex_printf("MSubF64r32"); return;
+
+      case Iop_Est5FRSqrt:    vex_printf("Est5FRSqrt"); return;
       case Iop_TruncF64asF32: vex_printf("TruncF64asF32"); return;
+      case Iop_CalcFPRF:      vex_printf("CalcFPRF");
 
       case Iop_CmpF64:    vex_printf("CmpF64"); return;
 
@@ -583,6 +589,18 @@ void ppIRExpr ( IRExpr* e )
       break;
     case Iex_Tmp:
       ppIRTemp(e->Iex.Tmp.tmp);
+      break;
+    case Iex_Qop:
+      ppIROp(e->Iex.Qop.op);
+      vex_printf( "(" );
+      ppIRExpr(e->Iex.Qop.arg1);
+      vex_printf( "," );
+      ppIRExpr(e->Iex.Qop.arg2);
+      vex_printf( "," );
+      ppIRExpr(e->Iex.Qop.arg3);
+      vex_printf( "," );
+      ppIRExpr(e->Iex.Qop.arg4);
+      vex_printf( ")" );
       break;
     case Iex_Triop:
       ppIROp(e->Iex.Triop.op);
@@ -933,6 +951,17 @@ IRExpr* IRExpr_Tmp ( IRTemp tmp ) {
    IRExpr* e      = LibVEX_Alloc(sizeof(IRExpr));
    e->tag         = Iex_Tmp;
    e->Iex.Tmp.tmp = tmp;
+   return e;
+}
+IRExpr* IRExpr_Qop ( IROp op, IRExpr* arg1, IRExpr* arg2, 
+                              IRExpr* arg3, IRExpr* arg4 ) {
+   IRExpr* e       = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag          = Iex_Qop;
+   e->Iex.Qop.op   = op;
+   e->Iex.Qop.arg1 = arg1;
+   e->Iex.Qop.arg2 = arg2;
+   e->Iex.Qop.arg3 = arg3;
+   e->Iex.Qop.arg4 = arg4;
    return e;
 }
 IRExpr* IRExpr_Triop  ( IROp op, IRExpr* arg1, 
@@ -1368,7 +1397,8 @@ static
 void typeOfPrimop ( IROp op, 
                     /*OUTs*/
                     IRType* t_dst, 
-                    IRType* t_arg1, IRType* t_arg2, IRType* t_arg3 )
+                    IRType* t_arg1, IRType* t_arg2, 
+                    IRType* t_arg3, IRType* t_arg4 )
 {
 #  define UNARY(_ta1,_td)                                      \
       *t_dst = (_td); *t_arg1 = (_ta1); break
@@ -1377,6 +1407,10 @@ void typeOfPrimop ( IROp op,
 #  define TERNARY(_ta1,_ta2,_ta3,_td)                          \
      *t_dst = (_td); *t_arg1 = (_ta1);                         \
      *t_arg2 = (_ta2); *t_arg3 = (_ta3); break
+#  define QUATERNARY(_ta1,_ta2,_ta3,_ta4,_td)                  \
+     *t_dst = (_td); *t_arg1 = (_ta1);                         \
+     *t_arg2 = (_ta2); *t_arg3 = (_ta3);                       \
+     *t_arg4 = (_ta4); break
 #  define COMPARISON(_ta)                                      \
      *t_dst = Ity_I1; *t_arg1 = *t_arg2 = (_ta); break;
 #  define UNARY_COMPARISON(_ta)                                \
@@ -1390,6 +1424,7 @@ void typeOfPrimop ( IROp op,
    *t_arg1 = Ity_INVALID;
    *t_arg2 = Ity_INVALID;
    *t_arg3 = Ity_INVALID;
+   *t_arg4 = Ity_INVALID;
    switch (op) {
       case Iop_Add8: case Iop_Sub8: case Iop_Mul8: 
       case Iop_Or8:  case Iop_And8: case Iop_Xor8:
@@ -1593,6 +1628,10 @@ void typeOfPrimop ( IROp op,
       case Iop_2xm1F64:
       case Iop_RoundF64toInt: BINARY(ity_RMode,Ity_F64, Ity_F64);
 
+      case Iop_MAddF64: case Iop_MSubF64:
+      case Iop_MAddF64r32: case Iop_MSubF64r32:
+         QUATERNARY(ity_RMode,Ity_F64,Ity_F64,Ity_F64, Ity_F64);
+
       case Iop_Est5FRSqrt:
          UNARY(Ity_F64, Ity_F64);
       case Iop_RoundF64toF32:
@@ -1794,7 +1833,7 @@ IRType typeOfIRConst ( IRConst* con )
 
 IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
 {
-   IRType t_dst, t_arg1, t_arg2, t_arg3;
+   IRType t_dst, t_arg1, t_arg2, t_arg3, t_arg4;
  start:
    switch (e->tag) {
       case Iex_Load:
@@ -1807,14 +1846,21 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          return typeOfIRTemp(tyenv, e->Iex.Tmp.tmp);
       case Iex_Const:
          return typeOfIRConst(e->Iex.Const.con);
+      case Iex_Qop:
+         typeOfPrimop(e->Iex.Qop.op, 
+                      &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
+         return t_dst;
       case Iex_Triop:
-         typeOfPrimop(e->Iex.Triop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         typeOfPrimop(e->Iex.Triop.op, 
+                      &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
          return t_dst;
       case Iex_Binop:
-         typeOfPrimop(e->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         typeOfPrimop(e->Iex.Binop.op, 
+                      &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
          return t_dst;
       case Iex_Unop:
-         typeOfPrimop(e->Iex.Unop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         typeOfPrimop(e->Iex.Unop.op, 
+                      &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
          return t_dst;
       case Iex_CCall:
          return e->Iex.CCall.retty;
@@ -1884,6 +1930,11 @@ Bool isFlatIRStmt ( IRStmt* st )
             case Iex_Get:    return True;
             case Iex_GetI:   return isIRAtom(e->Iex.GetI.ix);
             case Iex_Tmp:    return True;
+            case Iex_Qop:    return toBool(
+                                    isIRAtom(e->Iex.Qop.arg1) 
+                                    && isIRAtom(e->Iex.Qop.arg2)
+                                    && isIRAtom(e->Iex.Qop.arg3)
+                                    && isIRAtom(e->Iex.Qop.arg4));
             case Iex_Triop:  return toBool(
                                     isIRAtom(e->Iex.Triop.arg1) 
                                     && isIRAtom(e->Iex.Triop.arg2)
@@ -2026,6 +2077,12 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
       case Iex_Tmp:
          useBeforeDef_Temp(bb,stmt,expr->Iex.Tmp.tmp,def_counts);
          break;
+      case Iex_Qop:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Qop.arg1,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Qop.arg2,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Qop.arg3,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Qop.arg4,def_counts);
+         break;
       case Iex_Triop:
          useBeforeDef_Expr(bb,stmt,expr->Iex.Triop.arg1,def_counts);
          useBeforeDef_Expr(bb,stmt,expr->Iex.Triop.arg2,def_counts);
@@ -2104,7 +2161,7 @@ static
 void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
 {
    Int        i;
-   IRType     t_dst, t_arg1, t_arg2, t_arg3;
+   IRType     t_dst, t_arg1, t_arg2, t_arg3, t_arg4;
    IRTypeEnv* tyenv = bb->tyenv;
    switch (expr->tag) {
       case Iex_Get:
@@ -2117,14 +2174,66 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          if (!saneIRArray(expr->Iex.GetI.descr))
             sanityCheckFail(bb,stmt,"IRExpr.GetI.descr: invalid descr");
          break;
+      case Iex_Qop: {
+         IRType ttarg1, ttarg2, ttarg3, ttarg4;
+         tcExpr(bb,stmt, expr->Iex.Qop.arg1, gWordTy );
+         tcExpr(bb,stmt, expr->Iex.Qop.arg2, gWordTy );
+         tcExpr(bb,stmt, expr->Iex.Qop.arg3, gWordTy );
+         tcExpr(bb,stmt, expr->Iex.Qop.arg4, gWordTy );
+         typeOfPrimop(expr->Iex.Qop.op, 
+                      &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
+         if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID 
+             || t_arg3 == Ity_INVALID || t_arg4 == Ity_INVALID) {
+            vex_printf(" op name: " );
+            ppIROp(expr->Iex.Qop.op);
+            vex_printf("\n");
+            sanityCheckFail(bb,stmt,
+               "Iex.Qop: wrong arity op\n"
+               "... name of op precedes BB printout\n");
+         }
+         ttarg1 = typeOfIRExpr(tyenv, expr->Iex.Qop.arg1);
+         ttarg2 = typeOfIRExpr(tyenv, expr->Iex.Qop.arg2);
+         ttarg3 = typeOfIRExpr(tyenv, expr->Iex.Qop.arg3);
+         ttarg4 = typeOfIRExpr(tyenv, expr->Iex.Qop.arg4);
+         if (t_arg1 != ttarg1 || t_arg2 != ttarg2 
+             || t_arg3 != ttarg3 || t_arg4 != ttarg4) {
+            vex_printf(" op name: ");
+            ppIROp(expr->Iex.Qop.op);
+            vex_printf("\n");
+            vex_printf(" op type is (");
+            ppIRType(t_arg1);
+            vex_printf(",");
+            ppIRType(t_arg2);
+            vex_printf(",");
+            ppIRType(t_arg3);
+            vex_printf(",");
+            ppIRType(t_arg4);
+            vex_printf(") -> ");
+            ppIRType (t_dst);
+            vex_printf("\narg tys are (");
+            ppIRType(ttarg1);
+            vex_printf(",");
+            ppIRType(ttarg2);
+            vex_printf(",");
+            ppIRType(ttarg3);
+            vex_printf(",");
+            ppIRType(ttarg4);
+            vex_printf(")\n");
+            sanityCheckFail(bb,stmt,
+               "Iex.Qop: arg tys don't match op tys\n"
+               "... additional details precede BB printout\n");
+         }
+         break;
+      }
       case Iex_Triop: {
          IRType ttarg1, ttarg2, ttarg3;
          tcExpr(bb,stmt, expr->Iex.Triop.arg1, gWordTy );
          tcExpr(bb,stmt, expr->Iex.Triop.arg2, gWordTy );
          tcExpr(bb,stmt, expr->Iex.Triop.arg3, gWordTy );
-         typeOfPrimop(expr->Iex.Triop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         typeOfPrimop(expr->Iex.Triop.op, 
+                      &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
          if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID 
-                                   || t_arg3 == Ity_INVALID) {
+             || t_arg3 == Ity_INVALID || t_arg4 != Ity_INVALID) {
             vex_printf(" op name: " );
             ppIROp(expr->Iex.Triop.op);
             vex_printf("\n");
@@ -2164,9 +2273,10 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          IRType ttarg1, ttarg2;
          tcExpr(bb,stmt, expr->Iex.Binop.arg1, gWordTy );
          tcExpr(bb,stmt, expr->Iex.Binop.arg2, gWordTy );
-         typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         typeOfPrimop(expr->Iex.Binop.op, 
+                      &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
          if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID 
-                                   || t_arg3 != Ity_INVALID) {
+             || t_arg3 != Ity_INVALID || t_arg4 != Ity_INVALID) {
             vex_printf(" op name: " );
             ppIROp(expr->Iex.Binop.op);
             vex_printf("\n");
@@ -2199,9 +2309,10 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
       }
       case Iex_Unop:
          tcExpr(bb,stmt, expr->Iex.Unop.arg, gWordTy );
-         typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2, &t_arg3);
+         typeOfPrimop(expr->Iex.Binop.op, 
+                      &t_dst, &t_arg1, &t_arg2, &t_arg3, &t_arg4);
          if (t_arg1 == Ity_INVALID || t_arg2 != Ity_INVALID
-                                   || t_arg3 != Ity_INVALID)
+             || t_arg3 != Ity_INVALID || t_arg4 != Ity_INVALID)
             sanityCheckFail(bb,stmt,"Iex.Unop: wrong arity op");
          if (t_arg1 != typeOfIRExpr(tyenv, expr->Iex.Unop.arg))
             sanityCheckFail(bb,stmt,"Iex.Unop: arg ty doesn't match op ty");

@@ -64,8 +64,6 @@
    - Floating Point:
      - All exceptions disabled in FPSCR
      - condition codes not set in FPSCR
-     - some error in accuracy
-     - flt->int conversions are dubious in overflow cases
 
    - Altivec floating point:
      - vmaddfp, vnmsubfp
@@ -483,16 +481,16 @@ static IRExpr* triop ( IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3 )
    return IRExpr_Triop(op, a1, a2, a3);
 }
 
+static IRExpr* qop ( IROp op, IRExpr* a1, IRExpr* a2, 
+                              IRExpr* a3, IRExpr* a4 )
+{
+   return IRExpr_Qop(op, a1, a2, a3, a4);
+}
+
 static IRExpr* mkexpr ( IRTemp tmp )
 {
    return IRExpr_Tmp(tmp);
 }
-
-//uu static IRExpr* mkU1 ( UInt i )
-//uu {
-//uu    vassert(i < 2);
-//uu    return IRExpr_Const(IRConst_U1( toBool(i) ));
-//uu }
 
 static IRExpr* mkU8 ( UChar i )
 {
@@ -6064,39 +6062,31 @@ static Bool dis_fp_multadd ( UInt theInstr )
       case 0x1C: // fmsubs (Floating Mult-Subtr Single, PPC32 p412)
          DIP("fmsubs%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, triop( Iop_SubF64r32, rm,
-                             triop( Iop_MulF64, rm, mkexpr(frA),
-                                                    mkexpr(frC) ),
-                             mkexpr(frB) ));
+         assign( frD, qop( Iop_MSubF64r32, rm,
+                           mkexpr(frA), mkexpr(frC), mkexpr(frB) ));
          break;
 
       case 0x1D: // fmadds (Floating Mult-Add Single, PPC32 p409)
          DIP("fmadds%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, triop( Iop_AddF64r32, rm,
-                             triop( Iop_MulF64, rm, mkexpr(frA),
-                                                    mkexpr(frC) ),
-                             mkexpr(frB) ));
+         assign( frD, qop( Iop_MAddF64r32, rm,
+                           mkexpr(frA), mkexpr(frC), mkexpr(frB) ));
          break;
 
       case 0x1E: // fnmsubs (Float Neg Mult-Subtr Single, PPC32 p420)
          DIP("fnmsubs%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
          assign( frD, unop( Iop_NegF64,
-                      triop( Iop_SubF64r32, rm,
-                             triop( Iop_MulF64, rm, mkexpr(frA),
-                                                    mkexpr(frC) ),
-                             mkexpr(frB) )));
+                      qop( Iop_MSubF64r32, rm,
+                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
          break;
 
       case 0x1F: // fnmadds (Floating Negative Multiply-Add Single, PPC32 p418)
          DIP("fnmadds%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
          assign( frD, unop( Iop_NegF64,
-                      triop( Iop_AddF64r32, rm,
-                             triop( Iop_MulF64, rm, mkexpr(frA),
-                                                    mkexpr(frC) ),
-                             mkexpr(frB) )));
+                      qop( Iop_MAddF64r32, rm,
+                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
          break;
 
       default:
@@ -6110,39 +6100,31 @@ static Bool dis_fp_multadd ( UInt theInstr )
       case 0x1C: // fmsub (Float Mult-Sub (Dbl Precision), PPC32 p411)
          DIP("fmsub%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, triop( Iop_SubF64, rm,
-                             triop( Iop_MulF64, rm, mkexpr(frA),
-                                                    mkexpr(frC) ),
-                             mkexpr(frB) ));
+         assign( frD, qop( Iop_MSubF64, rm,
+                           mkexpr(frA), mkexpr(frC), mkexpr(frB) ));
          break;
 
       case 0x1D: // fmadd (Float Mult-Add (Dbl Precision), PPC32 p408)
          DIP("fmadd%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, triop( Iop_AddF64, rm,
-                             triop( Iop_MulF64, rm, mkexpr(frA),
-                                                    mkexpr(frC) ),
-                             mkexpr(frB) ));
+         assign( frD, qop( Iop_MAddF64, rm,
+                           mkexpr(frA), mkexpr(frC), mkexpr(frB) ));
          break;
 
       case 0x1E: // fnmsub (Float Neg Mult-Subtr (Dbl Precision), PPC32 p419)
          DIP("fnmsub%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
          assign( frD, unop( Iop_NegF64,
-                      triop( Iop_SubF64, rm,
-                             triop( Iop_MulF64, rm, mkexpr(frA),
-                                                    mkexpr(frC) ),
-                             mkexpr(frB) )));
+                      qop( Iop_MSubF64, rm,
+                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
          break;
 
       case 0x1F: // fnmadd (Float Neg Mult-Add (Dbl Precision), PPC32 p417)
          DIP("fnmadd%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
              frD_addr, frA_addr, frC_addr, frB_addr);
          assign( frD, unop( Iop_NegF64,
-                      triop( Iop_AddF64, rm,
-                             triop( Iop_MulF64, rm, mkexpr(frA),
-                                                    mkexpr(frC) ),
-                             mkexpr(frB) )));
+                      qop( Iop_MAddF64, rm,
+                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
          break;
 
       default:

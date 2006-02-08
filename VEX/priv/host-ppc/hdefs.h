@@ -367,6 +367,11 @@ HChar* showPPCShftOp ( PPCShftOp,
 typedef
    enum {
       Pfp_INVALID,
+
+      /* Ternary */
+      Pfp_MADDD, Pfp_MSUBD, 
+      Pfp_MADDS, Pfp_MSUBS,
+
       /* Binary */
       Pfp_ADDD, Pfp_SUBD, Pfp_MULD, Pfp_DIVD, 
       Pfp_ADDS, Pfp_SUBS, Pfp_MULS, Pfp_DIVS, 
@@ -460,6 +465,7 @@ typedef
 
       Pin_FpUnary,    /* FP unary op */
       Pin_FpBinary,   /* FP binary op */
+      Pin_FpMulAcc,   /* FP multipy-accumulate style op */
       Pin_FpLdSt,     /* FP load/store */
       Pin_FpSTFIW,    /* stfiwx */
       Pin_FpRSP,      /* FP round IEEE754 double to IEEE754 single */
@@ -631,6 +637,13 @@ typedef
             HReg    srcR;
          } FpBinary;
          struct {
+            PPCFpOp op;
+            HReg    dst;
+            HReg    srcML;
+            HReg    srcMR;
+            HReg    srcAcc;
+         } FpMulAcc;
+         struct {
             Bool      isLoad;
             UChar     sz; /* only 4 (IEEE single) or 8 (IEEE double) */
             HReg      reg;
@@ -785,6 +798,8 @@ extern PPCInstr* PPCInstr_MFence     ( void );
 
 extern PPCInstr* PPCInstr_FpUnary    ( PPCFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_FpBinary   ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_FpMulAcc   ( PPCFpOp op, HReg dst, HReg srcML, 
+                                                   HReg srcMR, HReg srcAcc );
 extern PPCInstr* PPCInstr_FpLdSt     ( Bool isLoad, UChar sz, HReg, PPCAMode* );
 extern PPCInstr* PPCInstr_FpSTFIW    ( HReg addr, HReg data );
 extern PPCInstr* PPCInstr_FpRSP      ( HReg dst, HReg src );

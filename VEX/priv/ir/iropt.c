@@ -297,6 +297,16 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
             IRStmt_Tmp(t1, ex));
          return IRExpr_Tmp(t1);
 
+      case Iex_Qop:
+         t1 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRBB(bb, IRStmt_Tmp(t1, 
+            IRExpr_Qop(ex->Iex.Qop.op,
+                         flatten_Expr(bb, ex->Iex.Qop.arg1),
+                         flatten_Expr(bb, ex->Iex.Qop.arg2),
+                         flatten_Expr(bb, ex->Iex.Qop.arg3),
+                         flatten_Expr(bb, ex->Iex.Qop.arg4))));
+         return IRExpr_Tmp(t1);
+
       case Iex_Triop:
          t1 = newIRTemp(bb->tyenv, ty);
          addStmtToIRBB(bb, IRStmt_Tmp(t1, 
@@ -1524,6 +1534,19 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
             ex->Iex.GetI.bias
          );
 
+      case Iex_Qop:
+         vassert(isIRAtom(ex->Iex.Qop.arg1));
+         vassert(isIRAtom(ex->Iex.Qop.arg2));
+         vassert(isIRAtom(ex->Iex.Qop.arg3));
+         vassert(isIRAtom(ex->Iex.Qop.arg4));
+         return IRExpr_Qop(
+                   ex->Iex.Qop.op,
+                   subst_Expr(env, ex->Iex.Qop.arg1),
+                   subst_Expr(env, ex->Iex.Qop.arg2),
+                   subst_Expr(env, ex->Iex.Qop.arg3),
+                   subst_Expr(env, ex->Iex.Qop.arg4)
+                );
+
       case Iex_Triop:
          vassert(isIRAtom(ex->Iex.Triop.arg1));
          vassert(isIRAtom(ex->Iex.Triop.arg2));
@@ -1813,6 +1836,12 @@ static void addUses_Expr ( Bool* set, IRExpr* e )
          return;
       case Iex_Load:
          addUses_Expr(set, e->Iex.Load.addr);
+         return;
+      case Iex_Qop:
+         addUses_Expr(set, e->Iex.Qop.arg1);
+         addUses_Expr(set, e->Iex.Qop.arg2);
+         addUses_Expr(set, e->Iex.Qop.arg3);
+         addUses_Expr(set, e->Iex.Qop.arg4);
          return;
       case Iex_Triop:
          addUses_Expr(set, e->Iex.Triop.arg1);
@@ -3432,6 +3461,12 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.expr0);
          setHints_Expr(doesLoad, doesGet, e->Iex.Mux0X.exprX);
          return;
+      case Iex_Qop:
+         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.arg1);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.arg2);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.arg3);
+         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.arg4);
+         return;
       case Iex_Triop:
          setHints_Expr(doesLoad, doesGet, e->Iex.Triop.arg1);
          setHints_Expr(doesLoad, doesGet, e->Iex.Triop.arg2);
@@ -3497,6 +3532,13 @@ static void aoccCount_Expr ( UShort* uses, IRExpr* e )
          aoccCount_Expr(uses, e->Iex.Mux0X.cond);
          aoccCount_Expr(uses, e->Iex.Mux0X.expr0);
          aoccCount_Expr(uses, e->Iex.Mux0X.exprX);
+         return;
+
+      case Iex_Qop: 
+         aoccCount_Expr(uses, e->Iex.Qop.arg1);
+         aoccCount_Expr(uses, e->Iex.Qop.arg2);
+         aoccCount_Expr(uses, e->Iex.Qop.arg3);
+         aoccCount_Expr(uses, e->Iex.Qop.arg4);
          return;
 
       case Iex_Triop: 
@@ -3633,6 +3675,14 @@ static IRExpr* atbSubst_Expr ( ATmpInfo* env, IRExpr* e )
                    atbSubst_Expr(env, e->Iex.Mux0X.cond),
                    atbSubst_Expr(env, e->Iex.Mux0X.expr0),
                    atbSubst_Expr(env, e->Iex.Mux0X.exprX)
+                );
+      case Iex_Qop:
+         return IRExpr_Qop(
+                   e->Iex.Qop.op,
+                   atbSubst_Expr(env, e->Iex.Qop.arg1),
+                   atbSubst_Expr(env, e->Iex.Qop.arg2),
+                   atbSubst_Expr(env, e->Iex.Qop.arg3),
+                   atbSubst_Expr(env, e->Iex.Qop.arg4)
                 );
       case Iex_Triop:
          return IRExpr_Triop(

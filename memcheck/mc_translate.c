@@ -1161,6 +1161,61 @@ IRAtom* mkLazy3 ( MCEnv* mce, IRType finalVty,
 }
 
 
+/* 4-arg version of the above. */
+static
+IRAtom* mkLazy4 ( MCEnv* mce, IRType finalVty, 
+                  IRAtom* va1, IRAtom* va2, IRAtom* va3, IRAtom* va4 )
+{
+   IRAtom* at;
+   IRType t1 = typeOfIRExpr(mce->bb->tyenv, va1);
+   IRType t2 = typeOfIRExpr(mce->bb->tyenv, va2);
+   IRType t3 = typeOfIRExpr(mce->bb->tyenv, va3);
+   IRType t4 = typeOfIRExpr(mce->bb->tyenv, va4);
+   tl_assert(isShadowAtom(mce,va1));
+   tl_assert(isShadowAtom(mce,va2));
+   tl_assert(isShadowAtom(mce,va3));
+   tl_assert(isShadowAtom(mce,va4));
+
+   /* The general case is inefficient because PCast is an expensive
+      operation.  Here are some special cases which use PCast only
+      twice rather than three times. */
+
+   /* I32 x I64 x I64 x I64 -> I64 */
+   /* Standard FP idiom: rm x FParg1 x FParg2 x FParg3 -> FPresult */
+   if (t1 == Ity_I32 && t2 == Ity_I64 && t3 == Ity_I64 && t4 == Ity_I64
+       && finalVty == Ity_I64) {
+      if (0) VG_(printf)("mkLazy4: I32 x I64 x I64 x I64 -> I64\n");
+      /* Widen 1st arg to I64.  Since 1st arg is typically a rounding
+         mode indication which is fully defined, this should get
+         folded out later. */
+      at = mkPCastTo(mce, Ity_I64, va1);
+      /* Now fold in 2nd, 3rd, 4th args. */
+      at = mkUifU(mce, Ity_I64, at, va2);
+      at = mkUifU(mce, Ity_I64, at, va3);
+      at = mkUifU(mce, Ity_I64, at, va4);
+      /* and PCast once again. */
+      at = mkPCastTo(mce, Ity_I64, at);
+      return at;
+   }
+
+   if (1) {
+      VG_(printf)("mkLazy4 ");
+      ppIRType(t1);
+      VG_(printf)(" x ");
+      ppIRType(t2);
+      VG_(printf)(" x ");
+      ppIRType(t3);
+      VG_(printf)(" x ");
+      ppIRType(t4);
+      VG_(printf)(" -> ");
+      ppIRType(finalVty);
+      VG_(printf)("\n");
+   }
+
+   tl_assert(0);
+}
+
+
 /* Do the lazy propagation game from a null-terminated vector of
    atoms.  This is presumably the arguments to a helper call, so the
    IRCallee info is also supplied in order that we can know which
@@ -1644,6 +1699,43 @@ IRAtom* binary32Ix2 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
 /*------------------------------------------------------------*/
 /*--- Generate shadow values from all kinds of IRExprs.    ---*/
 /*------------------------------------------------------------*/
+
+static 
+IRAtom* expr2vbits_Qop ( MCEnv* mce,
+                         IROp op,
+                         IRAtom* atom1, IRAtom* atom2, 
+                         IRAtom* atom3, IRAtom* atom4 )
+{
+   IRAtom* vatom1 = expr2vbits( mce, atom1 );
+   IRAtom* vatom2 = expr2vbits( mce, atom2 );
+   IRAtom* vatom3 = expr2vbits( mce, atom3 );
+   IRAtom* vatom4 = expr2vbits( mce, atom4 );
+
+   tl_assert(isOriginalAtom(mce,atom1));
+   tl_assert(isOriginalAtom(mce,atom2));
+   tl_assert(isOriginalAtom(mce,atom3));
+   tl_assert(isOriginalAtom(mce,atom4));
+   tl_assert(isShadowAtom(mce,vatom1));
+   tl_assert(isShadowAtom(mce,vatom2));
+   tl_assert(isShadowAtom(mce,vatom3));
+   tl_assert(isShadowAtom(mce,vatom4));
+   tl_assert(sameKindedAtoms(atom1,vatom1));
+   tl_assert(sameKindedAtoms(atom2,vatom2));
+   tl_assert(sameKindedAtoms(atom3,vatom3));
+   tl_assert(sameKindedAtoms(atom4,vatom4));
+   switch (op) {
+      case Iop_MAddF64:
+      case Iop_MAddF64r32:
+      case Iop_MSubF64:
+      case Iop_MSubF64r32:
+         /* I32(rm) x F64 x F64 x F64 -> F64 */
+         return mkLazy4(mce, Ity_I64, vatom1, vatom2, vatom3, vatom4);
+      default:
+         ppIROp(op);
+         VG_(tool_panic)("memcheck:expr2vbits_Qop");
+   }
+}
+
 
 static 
 IRAtom* expr2vbits_Triop ( MCEnv* mce,
@@ -2515,6 +2607,14 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
       case Iex_Const:
          return definedOfType(shadowType(typeOfIRExpr(mce->bb->tyenv, e)));
 
+      case Iex_Qop:
+         return expr2vbits_Qop(
+                   mce,
+                   e->Iex.Qop.op,
+                   e->Iex.Qop.arg1, e->Iex.Qop.arg2,
+		   e->Iex.Qop.arg3, e->Iex.Qop.arg4
+                );
+
       case Iex_Triop:
          return expr2vbits_Triop(
                    mce,
@@ -3029,6 +3129,11 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
                return isBogusAtom(e->Iex.Triop.arg1)
                       || isBogusAtom(e->Iex.Triop.arg2)
                       || isBogusAtom(e->Iex.Triop.arg3);
+            case Iex_Qop: 
+               return isBogusAtom(e->Iex.Qop.arg1)
+                      || isBogusAtom(e->Iex.Qop.arg2)
+                      || isBogusAtom(e->Iex.Qop.arg3)
+                      || isBogusAtom(e->Iex.Qop.arg4);
             case Iex_Mux0X:
                return isBogusAtom(e->Iex.Mux0X.cond)
                       || isBogusAtom(e->Iex.Mux0X.expr0)

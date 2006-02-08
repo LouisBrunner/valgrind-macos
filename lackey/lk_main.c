@@ -432,6 +432,8 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                      break;
                   case Iex_Unop:
                   case Iex_Binop:
+                  case Iex_Triop:
+                  case Iex_Qop:
                   case Iex_Mux0X:
                      instrument_detail( bb, OpAlu, type );
                      break;

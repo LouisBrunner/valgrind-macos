@@ -757,7 +757,7 @@ void VG_(redir_initialise) ( void )
           (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen)
       );   
       add_hardwired_spec(
-         "soname:ld.so.1", "strcmp",
+         "ld.so.1", "strcmp",
          (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp)
       );
    }

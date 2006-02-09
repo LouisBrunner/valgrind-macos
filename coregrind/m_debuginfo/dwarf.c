@@ -114,32 +114,20 @@ static Word index_WordArray ( WordArray* wa, Int i )
 /*--- Read DWARF2 format line number info.                 ---*/
 /*------------------------------------------------------------*/
 
-/* Structure found in the .debug_line section.  */
+/* Structure holding info extracted from the a .debug_line
+   section.  */
 typedef struct
 {
-  UChar li_length          [4];
-  UChar li_version         [2];
-  UChar li_prologue_length [4];
-  UChar li_min_insn_length [1];
-  UChar li_default_is_stmt [1];
-  UChar li_line_base       [1];
-  UChar li_line_range      [1];
-  UChar li_opcode_base     [1];
-}
-DWARF2_External_LineInfo;
-
-typedef struct
-{
-  UInt   li_length;
+  ULong  li_length;
   UShort li_version;
-  UInt   li_prologue_length;
+  ULong  li_header_length;
   UChar  li_min_insn_length;
   UChar  li_default_is_stmt;
   Int    li_line_base;
   UChar  li_line_range;
   UChar  li_opcode_base;
 }
-DWARF2_Internal_LineInfo;
+DebugLineInfo;
 
 /* Structure holding additional infos found from a .debug_info
  * compilation unit block */
@@ -148,7 +136,8 @@ typedef struct
   /* Feel free to add more members here if you need ! */
   Char* compdir;   /* Compilation directory - points to .debug_info */
   Char* name;      /* Main file name - points to .debug_info */
-  UInt  stmt_list; /* Offset in .debug_line */
+  ULong stmt_list; /* Offset in .debug_line */
+  Bool  dw64;      /* 64-bit Dwarf? */
 } 
 UnitInfo;
 
@@ -245,6 +234,25 @@ static Int read_leb128S( UChar **data )
    UInt val = read_leb128( *data, &len, 1 );
    *data += len;
    return val;
+}
+
+/* Read what the DWARF3 spec calls an "initial length field".  This
+   uses up either 4 or 12 bytes of the input and produces a 32-bit or
+   64-bit number respectively.
+
+   Read 32-bit value from p.  If it is 0xFFFFFFFF, instead read a
+   64-bit bit value from p+4.  This is used in 64-bit dwarf to encode
+   some table lengths. */
+static ULong read_initial_length_field ( UChar* p, /*OUT*/Bool* is64 )
+{
+   UInt w32 = *((UInt*)p);
+   if (w32 == 0xFFFFFFFF) {
+      *is64 = True;
+      return *((ULong*)(p+4));
+   } else {
+      *is64 = False;
+      return (ULong)w32;
+   }
 }
 
 
@@ -375,14 +383,16 @@ void read_dwarf2_lineblock ( SegInfo*  si,
                              UChar*    theBlock, 
                              Int       noLargerThan )
 {
-   DWARF2_External_LineInfo* external;
-   DWARF2_Internal_LineInfo  info;
-   UChar*                    standard_opcodes;
-   UChar*                    data = theBlock;
-   UChar*                    end_of_sequence;
-   WordArray                 filenames;
-   WordArray                 dirnames;
-   WordArray                 fnidx2dir;
+   DebugLineInfo  info;
+   UChar*         standard_opcodes;
+   UChar*         end_of_sequence;
+   Bool           is64;
+   WordArray      filenames;
+   WordArray      dirnames;
+   WordArray      fnidx2dir;
+
+   UChar*         external = theBlock;
+   UChar*         data = theBlock;
 
    /* filenames is an array of file names harvested from the DWARF2
       info.  Entry [0] is NULL and is never referred to by the state
@@ -426,42 +436,34 @@ void read_dwarf2_lineblock ( SegInfo*  si,
 
    addto_WordArray( &fnidx2dir, (Word)0 );  /* compilation dir */
 
-
-   external = (DWARF2_External_LineInfo *) data;
-
-   if (sizeof (external->li_length) > noLargerThan) {
-      ML_(symerr)("DWARF line info appears to be corrupt "
-                  "- the section is too small");
-      goto out;
-   }
-
+   info.li_length = read_initial_length_field( external, &is64 );
+   external += is64 ? 12 : 4;
    /* Check the length of the block.  */
-   info.li_length = * ((UInt *)(external->li_length));
-
-   if (info.li_length == 0xffffffff) {
-      ML_(symerr)("64-bit DWARF line info is not supported yet.");
-      goto out;
-   }
-
-   if (info.li_length + sizeof (external->li_length) > noLargerThan) {
+   if (info.li_length > noLargerThan) {
       ML_(symerr)("DWARF line info appears to be corrupt "
                   "- the section is too small");
       goto out;
    }
 
    /* Check its version number.  */
-   info.li_version = * ((UShort *) (external->li_version));
+   info.li_version = * ((UShort *)external);
+   external += 2;
    if (info.li_version != 2) {
       ML_(symerr)("Only DWARF version 2 line info "
                   "is currently supported.");
       goto out;
    }
 
-   info.li_prologue_length = * ((UInt *) (external->li_prologue_length));
-   info.li_min_insn_length = * ((UChar *)(external->li_min_insn_length));
+   info.li_header_length = ui->dw64 ? *((ULong*)external) 
+                                    : (ULong)(*((UInt*)external));
+   external += ui->dw64 ? 8 : 4;
+
+   info.li_min_insn_length = * ((UChar *)external);
+   external += 1;
 
    info.li_default_is_stmt = True; 
    /* WAS: = * ((UChar *)(external->li_default_is_stmt)); */
+   external += 1;
    /* Josef Weidendorfer (20021021) writes:
 
       It seems to me that the Intel Fortran compiler generates bad
@@ -480,26 +482,28 @@ void read_dwarf2_lineblock ( SegInfo*  si,
    */
 
    /* JRS: changed (UInt*) to (UChar*) */
-   info.li_line_base       = * ((UChar *)(external->li_line_base));
+   info.li_line_base = * ((UChar *)external);
+   info.li_line_base = (Int)(signed char)info.li_line_base;
+   external += 1;
 
-   info.li_line_range      = * ((UChar *)(external->li_line_range));
-   info.li_opcode_base     = * ((UChar *)(external->li_opcode_base)); 
+   info.li_line_range = * ((UChar *)external);
+   external += 1;
+
+   info.li_opcode_base = * ((UChar *)external);
+   external += 1;
 
    if (0) VG_(printf)("dwarf2: line base: %d, range %d, opc base: %d\n",
-                      info.li_line_base, 
-                      info.li_line_range, info.li_opcode_base);
-
-   /* Sign extend the line base field.  */
-   info.li_line_base <<= 24;
-   info.li_line_base >>= 24;
+                      (Int)info.li_line_base, 
+                      (Int)info.li_line_range,
+                      (Int)info.li_opcode_base);
 
    end_of_sequence = data + info.li_length 
-                          + sizeof (external->li_length);
+                          + (is64 ? 12 : 4);
 
    reset_state_machine (info.li_default_is_stmt);
 
    /* Read the contents of the Opcodes table.  */
-   standard_opcodes = data + sizeof (* external);
+   standard_opcodes = external;
 
    /* Read the contents of the Directory table.  */
    data = standard_opcodes + info.li_opcode_base - 1;
@@ -776,23 +780,38 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                                   UChar*    debugabbrev,
                                   UChar*    debugstr )
 {
-   UInt atoffs, acode, abcode, blklen;
-   Int  addr_size, ver, level;
+   UInt   acode, abcode;
+   ULong  atoffs, blklen;
+   Int    level;
+   UShort ver;
 
+   UChar addr_size;
    UChar* p = unitblock;
    UChar* end;
    UChar* abbrev;
 
    VG_(memset)( ui, 0, sizeof( UnitInfo ) );
-   ui->stmt_list = (UInt)-1;
+   ui->stmt_list = -1LL;
    
-   /* Read the compilation unit header in .debug_info section - See p 70 */  
-   blklen    = *((UInt*)p);   p += 4; /* This block length */
-   ver       = *((UShort*)p); p += 2; /* version should be 2 */
-   atoffs    = *((UInt*)p);   p += 4; /* get offset in abbrev */
-   addr_size = *p;            p += 1; /* Address size */
+   /* Read the compilation unit header in .debug_info section - See p 70 */
 
-   end    = unitblock + blklen + 4; /* End of this block */
+   /* This block length */
+   blklen = read_initial_length_field( p, &ui->dw64 );
+   p += ui->dw64 ? 12 : 4;
+
+   /* version should be 2 */
+   ver = *((UShort*)p);
+   p += 2;
+
+   /* get offset in abbrev */
+   atoffs = ui->dw64 ? *((ULong*)p) : (ULong)(*((UInt*)p));
+   p += ui->dw64 ? 8 : 4;
+
+   /* Address size */
+   addr_size = *p;
+   p += 1;
+
+   end    = unitblock + blklen + (ui->dw64 ? 12 : 4); /* End of this block */
    level  = 0;                      /* Level in the abbrev tree */
    abbrev = debugabbrev + atoffs;   /* Abbreviation data for this block */
    
@@ -829,8 +848,8 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
       /* And loop on entries */
       for ( ; ; ) {
          /* Read entry definition */
-         UInt name, form;
-         UInt   cval = -1;   /* Constant value read */
+         UInt  name, form;
+         ULong cval = -1LL;  /* Constant value read */
          Char  *sval = NULL; /* String value read */
          name = read_leb128U( &abbrev );
          form = read_leb128U( &abbrev );
@@ -843,6 +862,11 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             form = read_leb128U( &p );
          /* Decode form. For most kinds, Just skip the amount of data since
             we don't use it for now */
+         /* JRS 9 Feb 06: This now handles 64-bit DWARF too.  In
+            64-bit DWARF, lineptr (and loclistptr,macptr,rangelistptr
+            classes) use FORM_data8, not FORM_data4.  Also,
+            FORM_ref_addr and FORM_strp are 64-bit values, not 32-bit
+            values. */
          switch( form ) {
             /* Those cases extract the data properly */
             case 0x05: /* FORM_data2 */     cval = *((UShort*)p); p +=2; break;
@@ -851,9 +875,11 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                        /* 2006-01-01: only generate a value if
                           debugstr is non-NULL (which means that a
                           debug_str section was found) */
-                                            if (debugstr)
+                                            if (debugstr && !ui->dw64)
                                                sval = debugstr + *((UInt*)p); 
-                                            p += 4; 
+                                            if (debugstr && ui->dw64)
+                                               sval = debugstr + *((ULong*)p); 
+                                            p += ui->dw64 ? 8 : 4; 
                                             break;
             case 0x08: /* FORM_string */    sval = (Char*)p; 
                                             p += VG_(strlen)((Char*)p) + 1; break;
@@ -863,14 +889,15 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             case 0x01: /* FORM_addr */      p += addr_size; break;
             case 0x03: /* FORM_block2 */    p += *((UShort*)p) + 2; break;
             case 0x04: /* FORM_block4 */    p += *((UInt*)p) + 4; break;
-            case 0x07: /* FORM_data8 */     p +=8; break;
+            case 0x07: /* FORM_data8 */     if (ui->dw64) cval = *((ULong*)p);
+                                            p += 8; break;
+                       /* perhaps should assign unconditionally to cval? */
             case 0x09: /* FORM_block */     p += read_leb128U( &p ); break;
             case 0x0a: /* FORM_block1 */    p += *p + 1; break;
             case 0x0c: /* FORM_flag */      p++; break;
             case 0x0d: /* FORM_sdata */     read_leb128S( &p ); break;
             case 0x0f: /* FORM_udata */     read_leb128U( &p ); break;
-            case 0x10: /* FORM_ref_addr */  p += addr_size; break;
-                                            /* TODO Check that !!! */
+            case 0x10: /* FORM_ref_addr */  p += ui->dw64 ? 8 : 4; break;
             case 0x11: /* FORM_ref1 */      p++; break;
             case 0x12: /* FORM_ref2 */      p += 2; break;
             case 0x13: /* FORM_ref4 */      p += 4; break;
@@ -920,10 +947,12 @@ void ML_(read_debuginfo_dwarf2)
           UChar* debugstr )                       /* .debug_str */
 {
    UnitInfo ui;
-   Int      ver;
+   UShort   ver;
    UChar*   block;
    UChar*   end = debuginfo + debug_info_sz;
-   UInt     blklen;
+   ULong    blklen;
+   Bool     blklen_is_64;
+   Int      blklen_len = 0;
 
    /* Make sure we at least have a header for the first block */
    if (debug_info_sz < 4) {
@@ -932,37 +961,39 @@ void ML_(read_debuginfo_dwarf2)
    }
 
    /* Iterate on all the blocks we find in .debug_info */
-   for ( block = debuginfo; block < end - 4; block += blklen + 4 ) {
+   for ( block = debuginfo; block < end - 4; block += blklen + blklen_len ) {
 
       /* Read the compilation unit header in .debug_info section - See
          p 70 */
-      blklen = *((UInt*)block);         /* This block length */
-
-      if ( block + blklen + 4 > end ) {
+      /* This block length */
+      blklen     = read_initial_length_field( block, &blklen_is_64 );
+      blklen_len = blklen_is_64 ? 12 : 4;
+      if ( block + blklen + blklen_len > end ) {
          ML_(symerr)( "Last block truncated in .debug_info; ignoring" );
          return;
       }
-      ver = *((UShort*)(block + 4));    /* version should be 2 */
-      
+
+      /* version should be 2 */
+      ver = *((UShort*)( block + blklen_len ));
       if ( ver != 2 ) {
          ML_(symerr)( "Ignoring non-dwarf2 block in .debug_info" );
          continue;
       }
       
       /* Fill ui with offset in .debug_line and compdir */
-      if ( 0 )
+      if (0)
          VG_(printf)( "Reading UnitInfo at 0x%x.....\n", block - debuginfo );
       read_unitinfo_dwarf2( &ui, block, debugabbrev, debugstr );
-      if ( 0 )
-        VG_(printf)( "   => LINES=0x%x    NAME=%s     DIR=%s\n", 
-                     ui.stmt_list, ui.name, ui.compdir );
+      if (0)
+         VG_(printf)( "   => LINES=0x%llx    NAME=%s     DIR=%s\n", 
+                      ui.stmt_list, ui.name, ui.compdir );
       
       /* Ignore blocks with no .debug_line associated block */
-      if ( ui.stmt_list == (UInt)-1 )
+      if ( ui.stmt_list == -1LL )
          continue;
       
       if (0) 
-         VG_(printf)("debug_line_sz %d, ui.stmt_list %d  %s\n", 
+         VG_(printf)("debug_line_sz %d, ui.stmt_list %lld  %s\n", 
                      debug_line_sz, ui.stmt_list, ui.name );
       /* Read the .debug_line block for this compile unit */
       read_dwarf2_lineblock( si, &ui, debugline + ui.stmt_list, 
@@ -1310,6 +1341,10 @@ void ML_(read_debuginfo_dwarf1) (
 /* Note that we don't support DWARF3 expressions (DW_CFA_expression,
    DW_CFA_def_cfa_expression).  The code just reads over them and
    ignores them. 
+
+   Note also, does not support the 64-bit DWARF format (only known
+   compiler that generates it so far is IBM's xlc/xlC/xlf suite).
+   Only handles 32-bit DWARF.
 */
 
 /* --------------- Decls --------------- */

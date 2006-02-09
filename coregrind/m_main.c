@@ -2156,12 +2156,12 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //--------------------------------------------------------------
    if (!need_help) {
       void* init_sp = argv - 1;
-      SizeT m1 = 1024 * 1024;
-      SizeT m8 = 8 * m1;
+      SizeT m1  = 1024 * 1024;
+      SizeT m16 = 16 * m1;
       VG_(debugLog)(1, "main", "Setup client stack\n");
       clstack_max_size = (SizeT)VG_(client_rlimit_stack).rlim_cur;
-      if (clstack_max_size < m1) clstack_max_size = m1;
-      if (clstack_max_size > m8) clstack_max_size = m8;
+      if (clstack_max_size < m1)  clstack_max_size = m1;
+      if (clstack_max_size > m16) clstack_max_size = m16;
       clstack_max_size = VG_PGROUNDUP(clstack_max_size);
 
       initial_client_SP

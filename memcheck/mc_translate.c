@@ -1140,24 +1140,38 @@ IRAtom* mkLazy3 ( MCEnv* mce, IRType finalVty,
       return at;
    }
 
-   if (0) {
-      VG_(printf)("mkLazy3 ");
+   /* I32 x I64 x I64 -> I32 */
+   if (t1 == Ity_I32 && t2 == Ity_I64 && t3 == Ity_I64 
+       && finalVty == Ity_I32) {
+      if (0) VG_(printf)("mkLazy3: I32 x I64 x I64 -> I64\n");
+      at = mkPCastTo(mce, Ity_I64, va1);
+      at = mkUifU(mce, Ity_I64, at, va2);
+      at = mkUifU(mce, Ity_I64, at, va3);
+      at = mkPCastTo(mce, Ity_I32, at);
+      return at;
+   }
+
+   if (1) {
+      VG_(printf)("mkLazy3: ");
       ppIRType(t1);
-      VG_(printf)("_");
+      VG_(printf)(" x ");
       ppIRType(t2);
-      VG_(printf)("_");
+      VG_(printf)(" x ");
       ppIRType(t3);
-      VG_(printf)("_");
+      VG_(printf)(" -> ");
       ppIRType(finalVty);
       VG_(printf)("\n");
    }
 
+   tl_assert(0);
    /* General case: force everything via 32-bit intermediaries. */
+   /*
    at = mkPCastTo(mce, Ity_I32, va1);
    at = mkUifU(mce, Ity_I32, at, mkPCastTo(mce, Ity_I32, va2));
    at = mkUifU(mce, Ity_I32, at, mkPCastTo(mce, Ity_I32, va3));
    at = mkPCastTo(mce, finalVty, at);
    return at;
+   */
 }
 
 
@@ -1199,7 +1213,7 @@ IRAtom* mkLazy4 ( MCEnv* mce, IRType finalVty,
    }
 
    if (1) {
-      VG_(printf)("mkLazy4 ");
+      VG_(printf)("mkLazy4: ");
       ppIRType(t1);
       VG_(printf)(" x ");
       ppIRType(t2);

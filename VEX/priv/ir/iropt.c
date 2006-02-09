@@ -3091,6 +3091,12 @@ static void deltaIRExpr ( IRExpr* e, Int delta )
       case Iex_GetI:
          deltaIRExpr(e->Iex.GetI.ix, delta);
          break;
+      case Iex_Qop:
+         deltaIRExpr(e->Iex.Qop.arg1, delta);
+         deltaIRExpr(e->Iex.Qop.arg2, delta);
+         deltaIRExpr(e->Iex.Qop.arg3, delta);
+         deltaIRExpr(e->Iex.Qop.arg4, delta);
+         break;
       case Iex_Triop:
          deltaIRExpr(e->Iex.Triop.arg1, delta);
          deltaIRExpr(e->Iex.Triop.arg2, delta);

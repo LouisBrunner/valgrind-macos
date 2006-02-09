@@ -1272,6 +1272,12 @@ IRExpr* dopyIRExpr ( IRExpr* e )
                             e->Iex.GetI.bias);
       case Iex_Tmp: 
          return IRExpr_Tmp(e->Iex.Tmp.tmp);
+      case Iex_Qop: 
+         return IRExpr_Qop(e->Iex.Qop.op,
+                           dopyIRExpr(e->Iex.Qop.arg1),
+                           dopyIRExpr(e->Iex.Qop.arg2),
+                           dopyIRExpr(e->Iex.Qop.arg3),
+                           dopyIRExpr(e->Iex.Qop.arg4));
       case Iex_Triop: 
          return IRExpr_Triop(e->Iex.Triop.op,
                              dopyIRExpr(e->Iex.Triop.arg1),

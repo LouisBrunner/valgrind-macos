@@ -1264,7 +1264,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENX_(__NR_setrlimit,         sys_setrlimit),          //  75
 // _____(__NR_getrlimit,         sys_getrlimit),          //  76
-// _____(__NR_getrusage,         sys_getrusage),          //  77
+   GENXY(__NR_getrusage,         sys_getrusage),          //  77
    GENXY(__NR_gettimeofday,      sys_gettimeofday),       //  78
 // _____(__NR_settimeofday,      sys_settimeofday),       //  79
 

@@ -745,7 +745,6 @@ Bool MAC_(error_matches_suppression)(Error* err, Supp* su)
 
 Char* MAC_(get_error_name) ( Error* err )
 {
-   Char* s;
    switch (VG_(get_error_kind)(err)) {
    case ParamErr:           return "Param";
    case UserErr:            return NULL;  /* Can't suppress User errors */
@@ -777,7 +776,8 @@ Char* MAC_(get_error_name) ( Error* err )
    case LeakErr:            return "Leak";
    default:                 VG_(tool_panic)("get_error_name: unexpected type");
    }
-   VG_(printf)(s);
+   /*NOTREACHED*/
+   return "??get_error_name??";
 }
 
 void MAC_(print_extra_suppression_info) ( Error* err )

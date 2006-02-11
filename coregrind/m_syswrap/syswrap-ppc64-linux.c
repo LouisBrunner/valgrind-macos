@@ -1230,7 +1230,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_setgid,            sys_setgid),             //  46
 // _____(__NR_getgid,            sys_getgid),             //  47
 // _____(__NR_signal,            sys_signal),             //  48
-// _____(__NR_geteuid,           sys_geteuid),            //  49
+   GENX_(__NR_geteuid,           sys_geteuid),            //  49
 
 // _____(__NR_getegid,           sys_getegid),            //  50
 // _____(__NR_acct,              sys_acct),               //  51
@@ -1248,7 +1248,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_chroot,            sys_chroot),             //  61
 // _____(__NR_ustat,             sys_ustat),              //  62
    GENXY(__NR_dup2,              sys_dup2),               //  63
-// _____(__NR_getppid,           sys_getppid),            //  64
+   GENX_(__NR_getppid,           sys_getppid),            //  64
 
 // _____(__NR_getpgrp,           sys_getpgrp),            //  65
 // _____(__NR_setsid,            sys_setsid),             //  66
@@ -1274,7 +1274,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_symlink,           sys_symlink),            //  83
 // _____(__NR_oldlstat,          sys_oldlstat),           //  84
 
-// _____(__NR_readlink,          sys_readlink),           //  85
+   GENX_(__NR_readlink,          sys_readlink),           //  85
 // _____(__NR_uselib,            sys_uselib),             //  86
 // _____(__NR_swapon,            sys_swapon),             //  87
 // _____(__NR_reboot,            sys_reboot),             //  88

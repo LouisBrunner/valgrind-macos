@@ -515,6 +515,9 @@ extern unsigned int __vki_invalid_size_argument_for_IOC;
 #define VKI_TIOCSPTLCK	_VKI_IOW('T',0x31, int)  /* Lock/unlock Pty */
 
 #define VKI_FIOASYNC	0x5452
+#define VKI_TIOCSERGETLSR   0x5459 /* Get line status register */
+
+#define VKI_TIOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/poll.h

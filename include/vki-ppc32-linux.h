@@ -605,14 +605,14 @@ extern unsigned int __VKI_invalid_size_argument_for_IOC;
 //#define VKI_TIOCGLCKTRMIOS	0x5456
 //#define VKI_TIOCSLCKTRMIOS	0x5457
 //#define VKI_TIOCSERGSTRUCT	0x5458 /* For debugging only */
-//#define VKI_TIOCSERGETLSR	0x5459 /* Get line status register */
-//  /* ioctl (fd, VKI_TIOCSERGETLSR, &result) where result may be as below */
+#define VKI_TIOCSERGETLSR	0x5459 /* Get line status register */
+  /* ioctl (fd, VKI_TIOCSERGETLSR, &result) where result may be as below */
 //# define VKI_TIOCSER_TEMT	0x01   /* Transmitter physically empty */
 //#define VKI_TIOCSERGETMULTI	0x545A /* Get multiport config  */
 //#define VKI_TIOCSERSETMULTI	0x545B /* Set multiport config */
 
 //#define VKI_TIOCMIWAIT	0x545C  /* wait for a change on serial input line(s) */
-//#define VKI_TIOCGICOUNT	0x545D  /* read serial port inline interrupt counts */
+#define VKI_TIOCGICOUNT		0x545D  /* read serial port inline interrupt counts */
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-ppc/poll.h

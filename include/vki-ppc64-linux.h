@@ -598,6 +598,8 @@ extern unsigned int __invalid_size_argument_for_IOC;
                             /* Get Pty Number (of pty-mux device) */
 #define VKI_TIOCSPTLCK      _VKI_IOW('T',0x31, int)  /* Lock/unlock Pty */
 #define VKI_FIOASYNC        _VKI_IOW('f', 125, int)
+#define VKI_TIOCSERGETLSR   0x5459 /* Get line status register */
+#define VKI_TIOCGICOUNT	    0x545D /* read serial port inline interrupt counts */
 
 //----------------------------------------------------------------------
 // From linux-2.6.13/include/asm-ppc64/poll.h

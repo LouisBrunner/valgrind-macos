@@ -166,18 +166,26 @@ typedef struct {
    void (*track_die_mem_brk)         (Addr, SizeT);
    void (*track_die_mem_munmap)      (Addr, SizeT);
 
-   void VG_REGPARM(1) (*track_new_mem_stack_4) (Addr);
-   void VG_REGPARM(1) (*track_new_mem_stack_8) (Addr);
-   void VG_REGPARM(1) (*track_new_mem_stack_12)(Addr);
-   void VG_REGPARM(1) (*track_new_mem_stack_16)(Addr);
-   void VG_REGPARM(1) (*track_new_mem_stack_32)(Addr);
+   void VG_REGPARM(1) (*track_new_mem_stack_4)  (Addr);
+   void VG_REGPARM(1) (*track_new_mem_stack_8)  (Addr);
+   void VG_REGPARM(1) (*track_new_mem_stack_12) (Addr);
+   void VG_REGPARM(1) (*track_new_mem_stack_16) (Addr);
+   void VG_REGPARM(1) (*track_new_mem_stack_32) (Addr);
+   void VG_REGPARM(1) (*track_new_mem_stack_112)(Addr);
+   void VG_REGPARM(1) (*track_new_mem_stack_128)(Addr);
+   void VG_REGPARM(1) (*track_new_mem_stack_144)(Addr);
+   void VG_REGPARM(1) (*track_new_mem_stack_160)(Addr);
    void (*track_new_mem_stack)(Addr, SizeT);
 
-   void VG_REGPARM(1) (*track_die_mem_stack_4) (Addr);
-   void VG_REGPARM(1) (*track_die_mem_stack_8) (Addr);
-   void VG_REGPARM(1) (*track_die_mem_stack_12)(Addr);
-   void VG_REGPARM(1) (*track_die_mem_stack_16)(Addr);
-   void VG_REGPARM(1) (*track_die_mem_stack_32)(Addr);
+   void VG_REGPARM(1) (*track_die_mem_stack_4)  (Addr);
+   void VG_REGPARM(1) (*track_die_mem_stack_8)  (Addr);
+   void VG_REGPARM(1) (*track_die_mem_stack_12) (Addr);
+   void VG_REGPARM(1) (*track_die_mem_stack_16) (Addr);
+   void VG_REGPARM(1) (*track_die_mem_stack_32) (Addr);
+   void VG_REGPARM(1) (*track_die_mem_stack_112)(Addr);
+   void VG_REGPARM(1) (*track_die_mem_stack_128)(Addr);
+   void VG_REGPARM(1) (*track_die_mem_stack_144)(Addr);
+   void VG_REGPARM(1) (*track_die_mem_stack_160)(Addr);
    void (*track_die_mem_stack)(Addr, SizeT);
 
    void (*track_ban_mem_stack)(Addr, SizeT);

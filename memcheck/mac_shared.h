@@ -414,16 +414,24 @@ extern void MAC_(do_detect_memory_leaks) (
           Bool (*is_valid_aligned_word)     ( Addr )
        );
 
-extern VG_REGPARM(1) void MAC_(new_mem_stack_4)  ( Addr old_ESP );
-extern VG_REGPARM(1) void MAC_(die_mem_stack_4)  ( Addr old_ESP );
-extern VG_REGPARM(1) void MAC_(new_mem_stack_8)  ( Addr old_ESP );
-extern VG_REGPARM(1) void MAC_(die_mem_stack_8)  ( Addr old_ESP );
-extern VG_REGPARM(1) void MAC_(new_mem_stack_12) ( Addr old_ESP );
-extern VG_REGPARM(1) void MAC_(die_mem_stack_12) ( Addr old_ESP );
-extern VG_REGPARM(1) void MAC_(new_mem_stack_16) ( Addr old_ESP );
-extern VG_REGPARM(1) void MAC_(die_mem_stack_16) ( Addr old_ESP );
-extern VG_REGPARM(1) void MAC_(new_mem_stack_32) ( Addr old_ESP );
-extern VG_REGPARM(1) void MAC_(die_mem_stack_32) ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(new_mem_stack_4)   ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(die_mem_stack_4)   ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(new_mem_stack_8)   ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(die_mem_stack_8)   ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(new_mem_stack_12)  ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(die_mem_stack_12)  ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(new_mem_stack_16)  ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(die_mem_stack_16)  ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(new_mem_stack_32)  ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(die_mem_stack_32)  ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(new_mem_stack_112) ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(die_mem_stack_112) ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(new_mem_stack_128) ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(die_mem_stack_128) ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(new_mem_stack_144) ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(die_mem_stack_144) ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(new_mem_stack_160) ( Addr old_ESP );
+extern VG_REGPARM(1) void MAC_(die_mem_stack_160) ( Addr old_ESP );
 extern               void MAC_(die_mem_stack) ( Addr a, SizeT len);
 extern               void MAC_(new_mem_stack) ( Addr a, SizeT len);
 
@@ -593,6 +601,214 @@ void VG_REGPARM(1) MAC_(die_mem_stack_32)(Addr new_SP)            \
       ALIGNED4_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-4  );        \
    } else {                                                       \
       UNALIGNED_DIE ( -VG_STACK_REDZONE_SZB + new_SP-32, 32 );    \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VG_REGPARM(1) MAC_(new_mem_stack_112)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(114, "new_mem_stack_112");                          \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP     );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+8   );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+16  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+24  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+32  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+40  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+48  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+56  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+64  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+72  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+80  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+88  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+96  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+104 );       \
+   } else {                                                       \
+      UNALIGNED_NEW ( -VG_STACK_REDZONE_SZB + new_SP, 112 );      \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VG_REGPARM(1) MAC_(die_mem_stack_112)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(114, "new_mem_stack_112");                          \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-8   );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-16  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-24  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-32  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-40  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-48  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-56  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-64  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-72  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-80  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-88  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-96  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-104 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-112 );       \
+   } else {                                                       \
+      UNALIGNED_DIE ( -VG_STACK_REDZONE_SZB + new_SP-112, 112 );  \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VG_REGPARM(1) MAC_(new_mem_stack_128)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(114, "new_mem_stack_128");                          \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP     );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+8   );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+16  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+24  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+32  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+40  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+48  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+56  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+64  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+72  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+80  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+88  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+96  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+104 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+112 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+120 );       \
+   } else {                                                       \
+      UNALIGNED_NEW ( -VG_STACK_REDZONE_SZB + new_SP, 128 );      \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VG_REGPARM(1) MAC_(die_mem_stack_128)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(114, "new_mem_stack_128");                          \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-8   );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-16  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-24  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-32  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-40  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-48  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-56  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-64  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-72  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-80  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-88  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-96  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-104 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-112 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-120 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-128 );       \
+   } else {                                                       \
+      UNALIGNED_DIE ( -VG_STACK_REDZONE_SZB + new_SP-128, 128 );  \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VG_REGPARM(1) MAC_(new_mem_stack_144)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(114, "new_mem_stack_144");                          \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP     );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+8   );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+16  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+24  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+32  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+40  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+48  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+56  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+64  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+72  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+80  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+88  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+96  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+104 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+112 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+120 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+128 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+136 );       \
+   } else {                                                       \
+      UNALIGNED_NEW ( -VG_STACK_REDZONE_SZB + new_SP, 144 );      \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VG_REGPARM(1) MAC_(die_mem_stack_144)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(114, "new_mem_stack_144");                          \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-8   );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-16  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-24  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-32  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-40  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-48  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-56  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-64  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-72  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-80  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-88  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-96  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-104 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-112 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-120 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-128 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-136 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-144 );       \
+   } else {                                                       \
+      UNALIGNED_DIE ( -VG_STACK_REDZONE_SZB + new_SP-144, 144 );  \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VG_REGPARM(1) MAC_(new_mem_stack_160)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(114, "new_mem_stack_160");                          \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP     );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+8   );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+16  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+24  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+32  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+40  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+48  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+56  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+64  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+72  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+80  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+88  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+96  );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+104 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+112 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+120 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+128 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+136 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+144 );       \
+      ALIGNED8_NEW  ( -VG_STACK_REDZONE_SZB + new_SP+152 );       \
+   } else {                                                       \
+      UNALIGNED_NEW ( -VG_STACK_REDZONE_SZB + new_SP, 160 );      \
+   }                                                              \
+}                                                                 \
+                                                                  \
+void VG_REGPARM(1) MAC_(die_mem_stack_160)(Addr new_SP)           \
+{                                                                 \
+   PROF_EVENT(114, "new_mem_stack_160");                          \
+   if (VG_IS_8_ALIGNED(new_SP)) {                                 \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-8   );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-16  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-24  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-32  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-40  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-48  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-56  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-64  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-72  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-80  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-88  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-96  );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-104 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-112 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-120 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-128 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-136 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-144 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-152 );       \
+      ALIGNED8_DIE  ( -VG_STACK_REDZONE_SZB + new_SP-160 );       \
+   } else {                                                       \
+      UNALIGNED_DIE ( -VG_STACK_REDZONE_SZB + new_SP-160, 160 );  \
    }                                                              \
 }                                                                 \
                                                                   \

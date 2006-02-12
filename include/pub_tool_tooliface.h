@@ -347,19 +347,27 @@ void VG_(track_die_mem_munmap)      (void(*f)(Addr a, SizeT len));
 
    Nb: all the specialised ones must use the VG_REGPARM(n) attribute.
  */
-void VG_(track_new_mem_stack_4) (VG_REGPARM(1) void(*f)(Addr new_ESP));
-void VG_(track_new_mem_stack_8) (VG_REGPARM(1) void(*f)(Addr new_ESP));
-void VG_(track_new_mem_stack_12)(VG_REGPARM(1) void(*f)(Addr new_ESP));
-void VG_(track_new_mem_stack_16)(VG_REGPARM(1) void(*f)(Addr new_ESP));
-void VG_(track_new_mem_stack_32)(VG_REGPARM(1) void(*f)(Addr new_ESP));
-void VG_(track_new_mem_stack)                 (void(*f)(Addr a, SizeT len));
+void VG_(track_new_mem_stack_4)  (VG_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_8)  (VG_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_12) (VG_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_16) (VG_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_32) (VG_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_112)(VG_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_128)(VG_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_144)(VG_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack_160)(VG_REGPARM(1) void(*f)(Addr new_ESP));
+void VG_(track_new_mem_stack)                  (void(*f)(Addr a, SizeT len));
 
-void VG_(track_die_mem_stack_4) (VG_REGPARM(1) void(*f)(Addr die_ESP));
-void VG_(track_die_mem_stack_8) (VG_REGPARM(1) void(*f)(Addr die_ESP));
-void VG_(track_die_mem_stack_12)(VG_REGPARM(1) void(*f)(Addr die_ESP));
-void VG_(track_die_mem_stack_16)(VG_REGPARM(1) void(*f)(Addr die_ESP));
-void VG_(track_die_mem_stack_32)(VG_REGPARM(1) void(*f)(Addr die_ESP));
-void VG_(track_die_mem_stack)                 (void(*f)(Addr a, SizeT len));
+void VG_(track_die_mem_stack_4)  (VG_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_8)  (VG_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_12) (VG_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_16) (VG_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_32) (VG_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_112)(VG_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_128)(VG_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_144)(VG_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack_160)(VG_REGPARM(1) void(*f)(Addr die_ESP));
+void VG_(track_die_mem_stack)                  (void(*f)(Addr a, SizeT len));
 
 /* Used for redzone at end of thread stacks */
 void VG_(track_ban_mem_stack)      (void(*f)(Addr a, SizeT len));

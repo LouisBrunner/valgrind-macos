@@ -91,18 +91,26 @@ void VG_(print_translation_stats) ( void )
 
 static Bool need_to_handle_SP_assignment(void)
 {
-   return ( VG_(tdict).track_new_mem_stack_4  ||
-            VG_(tdict).track_die_mem_stack_4  ||
-            VG_(tdict).track_new_mem_stack_8  ||
-            VG_(tdict).track_die_mem_stack_8  ||
-            VG_(tdict).track_new_mem_stack_12 ||
-            VG_(tdict).track_die_mem_stack_12 ||
-            VG_(tdict).track_new_mem_stack_16 ||
-            VG_(tdict).track_die_mem_stack_16 ||
-            VG_(tdict).track_new_mem_stack_32 ||
-            VG_(tdict).track_die_mem_stack_32 ||
-            VG_(tdict).track_new_mem_stack    ||
-            VG_(tdict).track_die_mem_stack    );
+   return ( VG_(tdict).track_new_mem_stack_4   ||
+            VG_(tdict).track_die_mem_stack_4   ||
+            VG_(tdict).track_new_mem_stack_8   ||
+            VG_(tdict).track_die_mem_stack_8   ||
+            VG_(tdict).track_new_mem_stack_12  ||
+            VG_(tdict).track_die_mem_stack_12  ||
+            VG_(tdict).track_new_mem_stack_16  ||
+            VG_(tdict).track_die_mem_stack_16  ||
+            VG_(tdict).track_new_mem_stack_32  ||
+            VG_(tdict).track_die_mem_stack_32  ||
+            VG_(tdict).track_new_mem_stack_112 ||
+            VG_(tdict).track_die_mem_stack_112 ||
+            VG_(tdict).track_new_mem_stack_128 ||
+            VG_(tdict).track_die_mem_stack_128 ||
+            VG_(tdict).track_new_mem_stack_144 ||
+            VG_(tdict).track_die_mem_stack_144 ||
+            VG_(tdict).track_new_mem_stack_160 ||
+            VG_(tdict).track_die_mem_stack_160 ||
+            VG_(tdict).track_new_mem_stack     ||
+            VG_(tdict).track_die_mem_stack     );
 }
 
 // - The SP aliases are held in an array which is used as a circular buffer.
@@ -316,17 +324,25 @@ IRBB* vg_SP_update_pass ( void*             closureV,
       if (get_SP_delta(st->Ist.Put.data->Iex.Tmp.tmp, &delta)) {
          IRTemp tttmp = st->Ist.Put.data->Iex.Tmp.tmp;
          switch (delta) {
-            case   0:                     addStmtToIRBB(bb,st); continue;
-            case   4: DO(die, 4,  tttmp); addStmtToIRBB(bb,st); continue;
-            case  -4: DO(new, 4,  tttmp); addStmtToIRBB(bb,st); continue;
-            case   8: DO(die, 8,  tttmp); addStmtToIRBB(bb,st); continue;
-            case  -8: DO(new, 8,  tttmp); addStmtToIRBB(bb,st); continue;
-            case  12: DO(die, 12, tttmp); addStmtToIRBB(bb,st); continue;
-            case -12: DO(new, 12, tttmp); addStmtToIRBB(bb,st); continue;
-            case  16: DO(die, 16, tttmp); addStmtToIRBB(bb,st); continue;
-            case -16: DO(new, 16, tttmp); addStmtToIRBB(bb,st); continue;
-            case  32: DO(die, 32, tttmp); addStmtToIRBB(bb,st); continue;
-            case -32: DO(new, 32, tttmp); addStmtToIRBB(bb,st); continue;
+            case    0:                      addStmtToIRBB(bb,st); continue;
+            case    4: DO(die,  4,  tttmp); addStmtToIRBB(bb,st); continue;
+            case   -4: DO(new,  4,  tttmp); addStmtToIRBB(bb,st); continue;
+            case    8: DO(die,  8,  tttmp); addStmtToIRBB(bb,st); continue;
+            case   -8: DO(new,  8,  tttmp); addStmtToIRBB(bb,st); continue;
+            case   12: DO(die,  12, tttmp); addStmtToIRBB(bb,st); continue;
+            case  -12: DO(new,  12, tttmp); addStmtToIRBB(bb,st); continue;
+            case   16: DO(die,  16, tttmp); addStmtToIRBB(bb,st); continue;
+            case  -16: DO(new,  16, tttmp); addStmtToIRBB(bb,st); continue;
+            case   32: DO(die,  32, tttmp); addStmtToIRBB(bb,st); continue;
+            case  -32: DO(new,  32, tttmp); addStmtToIRBB(bb,st); continue;
+            case  112: DO(die, 112, tttmp); addStmtToIRBB(bb,st); continue;
+            case -112: DO(new, 112, tttmp); addStmtToIRBB(bb,st); continue;
+            case  128: DO(die, 128, tttmp); addStmtToIRBB(bb,st); continue;
+            case -128: DO(new, 128, tttmp); addStmtToIRBB(bb,st); continue;
+            case  144: DO(die, 144, tttmp); addStmtToIRBB(bb,st); continue;
+            case -144: DO(new, 144, tttmp); addStmtToIRBB(bb,st); continue;
+            case  160: DO(die, 160, tttmp); addStmtToIRBB(bb,st); continue;
+            case -160: DO(new, 160, tttmp); addStmtToIRBB(bb,st); continue;
             default:  
                /* common values for ppc64: 144 128 160 112 176 */
                n_SP_updates_generic_known++;

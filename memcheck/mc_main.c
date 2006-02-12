@@ -2713,19 +2713,27 @@ static void mc_pre_clo_init(void)
    VG_(track_die_mem_brk)         ( & mc_make_noaccess );
    VG_(track_die_mem_munmap)      ( & mc_make_noaccess ); 
 
-   VG_(track_new_mem_stack_4)     ( & MAC_(new_mem_stack_4)  );
-   VG_(track_new_mem_stack_8)     ( & MAC_(new_mem_stack_8)  );
-   VG_(track_new_mem_stack_12)    ( & MAC_(new_mem_stack_12) );
-   VG_(track_new_mem_stack_16)    ( & MAC_(new_mem_stack_16) );
-   VG_(track_new_mem_stack_32)    ( & MAC_(new_mem_stack_32) );
-   VG_(track_new_mem_stack)       ( & MAC_(new_mem_stack)    );
+   VG_(track_new_mem_stack_4)     ( & MAC_(new_mem_stack_4)   );
+   VG_(track_new_mem_stack_8)     ( & MAC_(new_mem_stack_8)   );
+   VG_(track_new_mem_stack_12)    ( & MAC_(new_mem_stack_12)  );
+   VG_(track_new_mem_stack_16)    ( & MAC_(new_mem_stack_16)  );
+   VG_(track_new_mem_stack_32)    ( & MAC_(new_mem_stack_32)  );
+   VG_(track_new_mem_stack_112)   ( & MAC_(new_mem_stack_112) );
+   VG_(track_new_mem_stack_128)   ( & MAC_(new_mem_stack_128) );
+   VG_(track_new_mem_stack_144)   ( & MAC_(new_mem_stack_144) );
+   VG_(track_new_mem_stack_160)   ( & MAC_(new_mem_stack_160) );
+   VG_(track_new_mem_stack)       ( & MAC_(new_mem_stack)     );
 
-   VG_(track_die_mem_stack_4)     ( & MAC_(die_mem_stack_4)  );
-   VG_(track_die_mem_stack_8)     ( & MAC_(die_mem_stack_8)  );
-   VG_(track_die_mem_stack_12)    ( & MAC_(die_mem_stack_12) );
-   VG_(track_die_mem_stack_16)    ( & MAC_(die_mem_stack_16) );
-   VG_(track_die_mem_stack_32)    ( & MAC_(die_mem_stack_32) );
-   VG_(track_die_mem_stack)       ( & MAC_(die_mem_stack)    );
+   VG_(track_die_mem_stack_4)     ( & MAC_(die_mem_stack_4)   );
+   VG_(track_die_mem_stack_8)     ( & MAC_(die_mem_stack_8)   );
+   VG_(track_die_mem_stack_12)    ( & MAC_(die_mem_stack_12)  );
+   VG_(track_die_mem_stack_16)    ( & MAC_(die_mem_stack_16)  );
+   VG_(track_die_mem_stack_32)    ( & MAC_(die_mem_stack_32)  );
+   VG_(track_die_mem_stack_112)   ( & MAC_(die_mem_stack_112) );
+   VG_(track_die_mem_stack_128)   ( & MAC_(die_mem_stack_128) );
+   VG_(track_die_mem_stack_144)   ( & MAC_(die_mem_stack_144) );
+   VG_(track_die_mem_stack_160)   ( & MAC_(die_mem_stack_160) );
+   VG_(track_die_mem_stack)       ( & MAC_(die_mem_stack)     );
    
    VG_(track_ban_mem_stack)       ( & mc_make_noaccess );
 

@@ -630,8 +630,7 @@ void restore_sigcontext( ThreadState *tst,
    tst->arch.vex.guest_ESI     = sc->esi;
    tst->arch.vex.guest_EDI     = sc->edi;
 //::    tst->arch.vex.guest_eflags  = sc->eflags;
-//::    tst->arch.vex.guest_EIP     = sc->eip;
-
+   tst->arch.vex.guest_EIP     = sc->eip;
    tst->arch.vex.guest_CS      = sc->cs; 
    tst->arch.vex.guest_SS      = sc->ss;
    tst->arch.vex.guest_DS      = sc->ds;

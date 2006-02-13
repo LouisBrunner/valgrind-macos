@@ -1671,7 +1671,7 @@ crashes, etc.</para>
 programs actually work fine.</para>
 
 <para>Valgrind will run Linux ELF binaries, on a kernel 2.4.X or 2.6.X
-system, on the x86, amd64 and ppc32 architectures, subject to the
+system, on the x86, amd64, ppc32 and ppc64 architectures, subject to the
 following constraints:</para>
 
  <itemizedlist>
@@ -1683,8 +1683,11 @@ following constraints:</para>
    Version 3.1.0 includes limited support for SSE3 on x86.  This could
    be improved if necessary.</para>
 
-   <para>On ppc32, almost all integer, floating point and Altivec
-   instructions are supported.</para>
+   <para>On ppc32 and ppc64, almost all integer, floating point and Altivec
+   instructions are supported.  Specifically: integer and FP insns that are
+   mandatory for PowerPC, the "General-purpose optional" group (fsqrt, fsqrts,
+   stfiwx), the "Graphics optional" group (fre, fres, frsqrte, frsqrtes), and
+   the Altivec (also known as VMX) SIMD instruction set, are supported.</para>
   </listitem>
 
   <listitem>
@@ -1745,7 +1748,7 @@ following constraints:</para>
   <listitem>
    <para>As of version 3.0.0, Valgrind has the following limitations
    in its implementation of x86/AMD64 floating point relative to 
-   the IEEE754 standard.</para>
+   IEEE754.</para>
 
    <para>Precision: There is no support for 80 bit arithmetic.
    Internally, Valgrind represents all such "long double" numbers in 64
@@ -1804,7 +1807,8 @@ following constraints:</para>
    
   <listitem>
    <para>As of version 3.0.0, Valgrind has the following limitations in
-   its implementation of x86/AMD64 SSE2 FP arithmetic.</para>
+   its implementation of x86/AMD64 SSE2 FP arithmetic, relative to 
+   IEEE754.</para>
 
    <para>Essentially the same: no exceptions, and limited observance of
    rounding mode.  Also, SSE2 has control bits which make it treat
@@ -1815,20 +1819,35 @@ following constraints:</para>
   </listitem>
 
   <listitem>
-   <para>As of version 3.1.0, Valgrind has the following limitations
-   in its implementation of PPC32 FP arithmetic, both scalar and
-   Altivec.</para>
+   <para>As of version 3.2.0, Valgrind has the following limitations
+   in its implementation of PPC32 and PPC64 floating point 
+   arithmetic, relative to IEEE754.</para>
 
-   <para>Scalar: essentially as with x86/AMD64: no exceptions, 
-   and limited observance of rounding mode.  For Altivec, FP arithmetic
+   <para>Scalar (non-Altivec): Valgrind provides a bit-exact emulation of
+   all floating point instructions, except for "fre" and "fres", which are
+   done more precisely than required by the PowerPC architecture specification.
+   All floating point operations observe the current rounding mode.
+   </para>
+
+   <para>However, fpscr[FPRF] is not set after each operation.  That could
+   be done but would give measurable performance overheads, and so far
+   no need for it has been found.</para>
+
+   <para>As on x86/AMD64, IEEE754 exceptions are not supported: all floating
+   point exceptions are handled using the default IEEE fixup actions.
+   Valgrind detects, ignores, and can warn about, attempts to unmask 
+   the 5 IEEE FP exception kinds by writing to the floating-point status 
+   and control register (fpscr).
+   </para>
+
+   <para>Vector (Altivec, VMX): essentially as with x86/AMD64 SSE/SSE2: 
+   no exceptions, and limited observance of rounding mode.  
+   For Altivec, FP arithmetic
    is done in IEEE/Java mode, which is more accurate than the Linux default
    setting.  "More accurate" means that denormals are handled properly, 
-   rather than simply being flushed to zero.
-   </para>
+   rather than simply being flushed to zero.</para>
   </listitem>
-
  </itemizedlist>
-
 
  <para>Programs which are known not to work are:</para>
  <itemizedlist>

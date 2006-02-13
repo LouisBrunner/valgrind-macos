@@ -2478,7 +2478,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
 	required (VG_STACK_REDZONE_SZB).  setup_client_stack() will
 	have allocated an extra page if a red zone is required, to be on 
         the safe side. */
-     vg_assert(initial_client_SP-1 - VG_STACK_REDZONE_SZB > seg->start);
+     vg_assert(initial_client_SP - VG_STACK_REDZONE_SZB >= seg->start);
      VG_TRACK( die_mem_stack, seg->start, initial_client_SP 
                                           - VG_STACK_REDZONE_SZB - seg->start );
      VG_(debugLog)(2, "main", "mark stack inaccessible %010lx-%010lx\n",

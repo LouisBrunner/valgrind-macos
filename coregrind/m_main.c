@@ -419,6 +419,24 @@ Addr setup_client_stack( void*  init_sp,
      SizeT inner_HACK  = 0;
      Bool  ok;
 
+     /* So far we've only accounted for space requirements down to the
+        stack pointer.  If this target's ABI requires a redzone below
+        the stack pointer, we need to allocate an extra page, to
+        handle the worst case in which the stack pointer is almost at
+        the bottom of a page, and so there is insufficient room left
+        over to put the redzone in.  In this case the simple thing to
+        do is allocate an extra page, by shrinking the reservation by
+        one page and growing the anonymous area by a corresponding
+        page. */
+     vg_assert(VG_STACK_REDZONE_SZB >= 0);
+     vg_assert(VG_STACK_REDZONE_SZB < VKI_PAGE_SIZE);
+     if (VG_STACK_REDZONE_SZB > 0) {
+        vg_assert(resvn_size > VKI_PAGE_SIZE);
+        resvn_size -= VKI_PAGE_SIZE;
+        anon_start -= VKI_PAGE_SIZE;
+        anon_size += VKI_PAGE_SIZE;
+     }
+
      vg_assert(VG_IS_PAGE_ALIGNED(anon_size));
      vg_assert(VG_IS_PAGE_ALIGNED(resvn_size));
      vg_assert(VG_IS_PAGE_ALIGNED(anon_start));
@@ -2455,17 +2473,22 @@ Int main(Int argc, HChar **argv, HChar **envp)
      vg_assert(initial_client_SP >= seg->start);
      vg_assert(initial_client_SP <= seg->end);
 
-     /* Stuff below the initial SP is unaddressable. */
-     /* NB: shouldn't this take into account the VG_STACK_REDZONE_SZB
-        bytes below SP?  */
-     VG_TRACK( die_mem_stack, seg->start, initial_client_SP - seg->start );
+     /* Stuff below the initial SP is unaddressable.  Take into
+	account any ABI-mandated space below the stack pointer that is
+	required (VG_STACK_REDZONE_SZB).  setup_client_stack() will
+	have allocated an extra page if a red zone is required, to be on 
+        the safe side. */
+     vg_assert(initial_client_SP-1 - VG_STACK_REDZONE_SZB > seg->start);
+     VG_TRACK( die_mem_stack, seg->start, initial_client_SP 
+                                          - VG_STACK_REDZONE_SZB - seg->start );
      VG_(debugLog)(2, "main", "mark stack inaccessible %010lx-%010lx\n",
-                      seg->start, initial_client_SP-1 );
+                      seg->start, initial_client_SP-1 - VG_STACK_REDZONE_SZB);
 
      /* Also the assembly helpers. */
      VG_TRACK( new_mem_startup,
                (Addr)&VG_(trampoline_stuff_start),
-               (Addr)&VG_(trampoline_stuff_end) - (Addr)&VG_(trampoline_stuff_start),
+               (Addr)&VG_(trampoline_stuff_end) 
+                  - (Addr)&VG_(trampoline_stuff_start),
                False, /* readable? */
                False, /* writable? */
                True   /* executable? */ );

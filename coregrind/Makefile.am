@@ -111,6 +111,7 @@ noinst_HEADERS = \
 	vki_unistd.h		\
 	vki_unistd-amd64-linux.h\
 	vki_unistd-ppc32-linux.h\
+	vki_unistd-ppc64-linux.h\
 	vki_unistd-x86-linux.h	\
 	m_coredump/priv_elf.h	\
 	m_debuginfo/priv_symtab.h	\

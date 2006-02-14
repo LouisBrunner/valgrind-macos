@@ -2,12 +2,13 @@
 n-i-bz  = not in bugzilla
 pending = is scheduled to be fixed (or at least considered) on this branch
 wontfix = will not fix on this branch
-
+many    = fix composed of many commits
 
 TRUNK    31BRANCH   BUG#     WHAT
 
 v5262     v5446     n-i-bz   fsub 3,3,3 in ppc32 dispatcher doesn't clear NaNs
 v5270     v5447     n-i-bz   ppc32: __NR_{set,get}priority
+v5384     wontfix   117096   Weird errors when --log-fd= has invalid value
 v5470     v5479     117332   missing line info with icc 8.1 (x86)
 pending   pending   117362   partially defined equality
 pending   pending   117366   amd64: 0xDD 0x7C fnstsw
@@ -17,11 +18,14 @@ vx1482    vx1514    117419   ppc32: lfsu f5, -4(r11) (TODO: VERIFY 31BRANCH)
 vx1492    vx1515    117419   ppc32: fsqrt            (TODO: VERIFY 31BRANCH)
 pending   wontfix   n-i-bz   ppc32: jm-insns doesn't do FP tests
 pending   wontfix   117564   __NR_clone param test (w/ partial patch)
-pending   pending   117936   yet another stabs-reader segfault
+v5514     pending   117936   more stabs problems
+                    ==119914
+                    ==120345
 pending   pending   118118   SIGBUS in disInstr_AMD64 after long run
 pending   pending   118239   amd64: 0xF 0xAE 0x3F (clflush)
 pending   pending   118274   amd64: 0xDD #7 (fnsave)
 pending   pending   118466   add %r,%r mishandled by memcheck
+v5635     pending   118939   vm86old system call
 pending   pending   n-i-bz   VALGRIND_COUNT_LEAKS arg types (Olly Betts)
 v5429     v5450     n-i-bz   memcheck/tests/mempool reads freed memory
 v5366/67/70 v5480   n-i-bz   AshleyP's custom-allocator assertion
@@ -29,34 +33,46 @@ vx1501    vx1516    n-i-bz   Dirk strict-aliasing stuff
 v5368     v5448     n-i-bz   More space for debugger cmd line (Dan Thaler)
 v5378/80  v5379/81  n-i-bz   Clarified leak checker output message
 v5382     v5481     n-i-bz   AshleyP's --gen-suppressions output fix
-v5384     wontfix   117096   Weird errors when --log-fd= has invalid value
 v5396     v5449     n-i-bz   cg_annotate's --sort option broken 
                              (TODO: VERIFY 31BRANCH)
 v5427     v5451     n-i-bz   OSet 64-bit fastcmp bug
 v5445     pending   n-i-bz   VG_(getgroups) fix (Shinichi Noda)
 vx1519    pending   n-i-bz   ppc32/64: allocate from callee-saved FP/VMX regs
-vx1521/2  pending   119297   Incorrect error message for sse code
 v5500     pending   n-i-bz   misaligned path word-size bug in mc_main.c
-v5514     pending   117936   more stabs problems
-                    119914
-                    120345
+vx1521/2  pending   119297   Incorrect error message for sse code
+pending   pending   120410   x86: prefetchw (0xF 0xD 0x48 0x4)
 v5633     pending   120728   TIOCSERGETLSR, TIOCGICOUNT, HDIO_GET_DMA ioctls
-v5635     pending   118939   vm86old system call
 vx1419    pending   120658   Build fixes for gcc 2.96
 v5593     pending   120658   Pass -Wdeclaration-after-statement to VEX build
-
-119482: mtfsb1 ppc instruction not implemented
-  fixed (head?) (vx1531, check)
-
-119973 Sun JVM problems
-
-120277 unimplemented PPC floating point instructions: fres, fctid,
-       fctidz, frsqrte
-
+v5616     pending   n-i-bz   memcheck/tests/zeropage de-looping fix
+vx1569    pending   n-i-bz   x86 fxtract doesn't work reliably
+probably-wontfix    121029   std::pow returns different float values
+pending   pending   121617   Assertion 'sizeof(*regs) == sizeof(prs->pr_reg)
+pending   pending   121662   x86: lock xadd (0xF0 0xF 0xC0 0x2)
 v5647     pending   121893   calloc does not always zero memory
+pending   pending   n-i-bz   XML output truncated (users, Jan 26 09:08:34 2006)
 
+(next 3 are ppc32-specific FP problems)
+many      pending   n-i-bz   ppc32 rounding mode problems
+                             Is fixed properly in head
+                             For 31BRANCH copy in r5591 kludge
+many      wontfix   119482   ppc32: mtfsb1
+                             [skip for 3.1.1 unless gcc/glibc requires it]
+many      wontfix   120277   ppc32: fres, fctid, fctidz, frsqrte 
+                             [skip for 3.1.1 unless gcc/glibc requires it]
+
+v5629     pending   n-i-bz   Dave Nomura extra suppression
+
+pending   pending   119973   Sun JVM problems (possible sigcontext problem?)
+                    ==118239
 
 don't forget:
-Dave Nomura extra suppression (dev, Tue Jan 17 00:14:30 2006)
-Control-Z bug
-Sun JVM hangs; possible sigcontext problem
+Control-Z bug (Control-Z is ignored)
+
+Possibly just close:
+                    119404   executing ssh from inside valgrind fails
+
+----
+last trawled 14 Feb 06:
+   bug-mail: Looked at everything up to and including 12 Feb 06.
+   v-userss: Looked at everything up to and including 14 Feb 06.

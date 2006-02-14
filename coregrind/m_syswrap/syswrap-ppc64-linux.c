@@ -1187,7 +1187,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_unlink,            sys_unlink),             //  10
    GENX_(__NR_execve,            sys_execve),             //  11
    GENX_(__NR_chdir,             sys_chdir),              //  12
-// _____(__NR_time,              sys_time),               //  13
+   GENXY(__NR_time,              sys_time),               //  13
 // _____(__NR_mknod,             sys_mknod),              //  14
 
    GENX_(__NR_chmod,             sys_chmod),              //  15
@@ -1290,7 +1290,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_getpriority,       sys_getpriority),        //  96
 // _____(__NR_setpriority,       sys_setpriority),        //  97
 // _____(__NR_profil,            sys_profil),             //  98
-// _____(__NR_statfs,            sys_statfs),             //  99
+   GENXY(__NR_statfs,            sys_statfs),             //  99
 
 // _____(__NR_fstatfs,           sys_fstatfs),            // 100
 // _____(__NR_ioperm,            sys_ioperm),             // 101
@@ -1341,7 +1341,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_setfsgid,          sys_setfsgid),           // 139
 
    LINXY(__NR__llseek,           sys_llseek),             // 140
-// _____(__NR_getdents,          sys_getdents),           // 141
+   GENXY(__NR_getdents,          sys_getdents),           // 141
 // _____(__NR__newselect,        sys__newselect),         // 142
 // _____(__NR_flock,             sys_flock),              // 143
 // _____(__NR_msync,             sys_msync),              // 144

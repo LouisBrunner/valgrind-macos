@@ -53,7 +53,7 @@ v5593     pending   120658   Pass -Wdeclaration-after-statement to VEX build
 120277 unimplemented PPC floating point instructions: fres, fctid,
        fctidz, frsqrte
 
-
+v5647     pending   121893   calloc does not always zero memory
 
 
 don't forget:

@@ -1204,7 +1204,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_lremovexattr,      sys_lremovexattr),   // 198 
    LINX_(__NR_fremovexattr,      sys_fremovexattr),   // 199 
 
-   //   (__NR_tkill,             sys_tkill),             // 200 
+   LINXY(__NR_tkill,             sys_tkill),             // 200 
    GENXY(__NR_time,              sys_time), /*was sys_time64*/ // 201 
    LINXY(__NR_futex,             sys_futex),             // 202 
    LINX_(__NR_sched_setaffinity, sys_sched_setaffinity), // 203 

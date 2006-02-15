@@ -867,29 +867,46 @@ PRE(sys_set_tid_address)
    PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
 }
 
-//zz PRE(sys_tkill, Special)
-//zz {
-//zz    /* int tkill(pid_t tid, int sig); */
-//zz    PRINT("sys_tkill ( %d, %d )", ARG1,ARG2);
-//zz    PRE_REG_READ2(long, "tkill", int, tid, int, sig);
-//zz    if (!ML_(client_signal_OK)(ARG2)) {
-//zz       SET_STATUS_( -VKI_EINVAL );
-//zz       return;
-//zz    }
-//zz 
-//zz    /* If we're sending SIGKILL, check to see if the target is one of
-//zz       our threads and handle it specially. */
-//zz    if (ARG2 == VKI_SIGKILL && ML_(do_sigkill)(ARG1, -1))
-//zz       SET_STATUS_(0);
-//zz    else
-//zz       SET_STATUS_(VG_(do_syscall2)(SYSNO, ARG1, ARG2));
-//zz 
-//zz    if (VG_(clo_trace_signals))
-//zz       VG_(message)(Vg_DebugMsg, "tkill: sent signal %d to pid %d",
-//zz 		   ARG2, ARG1);
-//zz    // Check to see if this kill gave us a pending signal
-//zz    XXX FIXME VG_(poll_signals)(tid);
-//zz }
+PRE(sys_tkill)
+{
+   PRINT("sys_tgkill ( %d, %d )", ARG1,ARG2);
+   PRE_REG_READ2(long, "tkill", int, tid, int, sig);
+   if (!ML_(client_signal_OK)(ARG2)) {
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
+   }
+   
+   /* Check to see if this kill gave us a pending signal */
+   *flags |= SfPollAfter;
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "tkill: sending signal %d to pid %d",
+		   ARG2, ARG1);
+
+   /* If we're sending SIGKILL, check to see if the target is one of
+      our threads and handle it specially. */
+   if (ARG2 == VKI_SIGKILL && ML_(do_sigkill)(ARG1, -1)) {
+      SET_STATUS_Success(0);
+      return;
+   }
+
+   /* Ask to handle this syscall via the slow route, since that's the
+      only one that sets tst->status to VgTs_WaitSys.  If the result
+      of doing the syscall is an immediate run of
+      async_signalhandler() in m_signals, then we need the thread to
+      be properly tidied away.  I have the impression the previous
+      version of this wrapper worked on x86/amd64 only because the
+      kernel did not immediately deliver the async signal to this
+      thread (on ppc it did, which broke the assertion re tst->status
+      at the top of async_signalhandler()). */
+   *flags |= SfMayBlock;
+}
+POST(sys_tkill)
+{
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "tkill: sent signal %d to pid %d",
+                   ARG2, ARG1);
+}
 
 PRE(sys_tgkill)
 {

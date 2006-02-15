@@ -44,6 +44,8 @@ pending   pending   120410   x86: prefetchw (0xF 0xD 0x48 0x4)
 v5633     pending   120728   TIOCSERGETLSR, TIOCGICOUNT, HDIO_GET_DMA ioctls
 vx1419    pending   120658   Build fixes for gcc 2.96
 v5593     pending   120658   Pass -Wdeclaration-after-statement to VEX build
+pending   pending   120732   Generating trapno for sigcontext (x86)
+v5641     pending   120734   Support for changing EIP in signal handler (x86)
 v5616     pending   n-i-bz   memcheck/tests/zeropage de-looping fix
 vx1569    pending   n-i-bz   x86 fxtract doesn't work reliably
 probably-wontfix    121029   std::pow returns different float values
@@ -51,6 +53,8 @@ pending   pending   121617   Assertion 'sizeof(*regs) == sizeof(prs->pr_reg)
 pending   pending   121662   x86: lock xadd (0xF0 0xF 0xC0 0x2)
 v5647     pending   121893   calloc does not always zero memory
 pending   pending   n-i-bz   XML output truncated (users, Jan 26 09:08:34 2006)
+pending   pending   121896   Handling ESP modification in ucontext from signal handlers
+v5651     pending   121901   no support for syscall tkill
 
 (next 3 are ppc32-specific FP problems)
 many      pending   n-i-bz   ppc32 rounding mode problems

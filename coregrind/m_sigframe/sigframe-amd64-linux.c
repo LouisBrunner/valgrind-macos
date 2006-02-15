@@ -565,7 +565,7 @@ void restore_sigcontext( ThreadState *tst,
    tst->arch.vex.guest_R14     = sc->r14;
    tst->arch.vex.guest_R15     = sc->r15;
 //::    tst->arch.vex.guest_rflags  = sc->rflags;
-//::    tst->arch.vex.guest_RIP     = sc->rip;
+   tst->arch.vex.guest_RIP     = sc->rip;
 
 //::    tst->arch.vex.guest_CS      = sc->cs; 
 //::    tst->arch.vex.guest_FS      = sc->fs;

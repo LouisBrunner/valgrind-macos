@@ -75,8 +75,8 @@
 #include <pthread.h>    /* pthread_mutex_{lock,unlock} */
 
 /* Include Valgrind magic macros for writing wrappers. */
-#include "valgrind.h"
-#include "memcheck.h"
+#include "../include/valgrind.h"
+#include "../memcheck/memcheck.h"
 
 
 /*------------------------------------------------------------*/
@@ -134,7 +134,7 @@ static inline void before ( char* fnname )
          opt_verbose = NULL != strstr(options_str, "verbose");
       if (options_str) 
          opt_strict  = NULL != strstr(options_str, "strict");
-      fprintf(stderr, "%s %5d: active for pid %d\n", 
+      fprintf(stderr, "%s %5d: Active for pid %d\n", 
                       preamble, my_pid, my_pid);
       if (opt_help) {
          fprintf(stderr, "\n");
@@ -152,11 +152,12 @@ static inline void before ( char* fnname )
          fprintf(stderr, "%s %5d: exiting now\n", preamble, my_pid );
          exit(1);
       }
-      fprintf(stderr, "%s %5d: try MPIWRAP_DEBUG=help for possible options\n", 
+      fprintf(stderr, "%s %5d: Try MPIWRAP_DEBUG=help for possible options\n", 
                       preamble, my_pid);
-      fprintf(stderr, "%s %5d: selected options: %s %s\n", 
-                      preamble, my_pid, opt_verbose ? "verbose" : "",
-                                        opt_strict  ? "strict"  : "");
+      if (opt_verbose || opt_strict)
+         fprintf(stderr, "%s %5d: Selected options: %s %s\n", 
+                         preamble, my_pid, opt_verbose ? "verbose" : "",
+                                           opt_strict  ? "strict"  : "");
 
    }
    if (opt_verbose)

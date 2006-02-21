@@ -342,22 +342,30 @@ Bool VG_(machine_get_hwcaps)( void )
      struct vki_sigaction saved_act, tmp_act;
 
      volatile Bool have_F, have_V, have_FX, have_GX;
+     Int r;
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
 
-     VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+     r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+     vg_assert(r == 0);
 
-     VG_(sigaction)(VKI_SIGILL, NULL, &saved_act);
+     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_act);
+     vg_assert(r == 0);
      tmp_act = saved_act;
 
+     /* NODEFER: signal handler does not return (from the kernel's point of
+        view), hence if it is to successfully catch a signal more than once,
+        we need the NODEFER flag. */
      tmp_act.sa_flags &= ~VKI_SA_RESETHAND;
      tmp_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_act.sa_flags |=  VKI_SA_NODEFER;
 
      /* standard FP insns */
      have_F = True;
      tmp_act.ksa_handler = handler_sigill;
-     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     vg_assert(r == 0);
      if (__builtin_setjmp(env_sigill)) {
         have_F = False;
      } else {
@@ -367,7 +375,8 @@ Bool VG_(machine_get_hwcaps)( void )
      /* Altivec insns */
      have_V = True;
      tmp_act.ksa_handler = handler_sigill;
-     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     vg_assert(r == 0);
      if (__builtin_setjmp(env_sigill)) {
         have_V = False;
      } else {
@@ -377,7 +386,8 @@ Bool VG_(machine_get_hwcaps)( void )
      /* General-Purpose optional (fsqrt, fsqrts) */
      have_FX = True;
      tmp_act.ksa_handler = handler_sigill;
-     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     vg_assert(r == 0);
      if (__builtin_setjmp(env_sigill)) {
         have_FX = False;
      } else {
@@ -387,15 +397,18 @@ Bool VG_(machine_get_hwcaps)( void )
      /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
      have_GX = True;
      tmp_act.ksa_handler = handler_sigill;
-     VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);
+     vg_assert(r == 0);
      if (__builtin_setjmp(env_sigill)) {
         have_GX = False;
      } else {
         __asm__ __volatile__("frsqrte 0,0");
      }
 
-     VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
-     VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
+     vg_assert(r == 0);
+     r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+     vg_assert(r == 0);
      /*
         VG_(printf)("F %d V %d FX %d GX %d\n", 
                     (Int)have_F, (Int)have_V, (Int)have_FX, (Int)have_GX);
@@ -439,8 +452,12 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(sigaction)(VKI_SIGILL, NULL, &saved_act);
      tmp_act = saved_act;
 
+     /* NODEFER: signal handler does not return (from the kernel's point of
+        view), hence if it is to successfully catch a signal more than once,
+        we need the NODEFER flag. */
      tmp_act.sa_flags &= ~VKI_SA_RESETHAND;
      tmp_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_act.sa_flags |=  VKI_SA_NODEFER;
 
      /* standard FP insns */
      have_F = True;

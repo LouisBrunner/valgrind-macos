@@ -4419,15 +4419,15 @@ static Bool dis_fp_arith ( UInt theInstr )
          assign( frD, binop( Iop_AddF64, mkexpr(frA), mkexpr(frB) ) );
          break;
 
-//zz       case 0x16: // fsqrt (Floating SqRt (Double-Precision), PPC32 p427)
-//zz          if (frA_addr != 0 || frC_addr != 0) {
-//zz             vex_printf("dis_fp_arith(PPC32)(instr,fsqrt)\n");
-//zz             return False;
-//zz          }
-//zz          DIP("fsqrt%s fr%d,fr%d\n", flag_rC ? "." : "",
-//zz              frD_addr, frB_addr);
-//zz          assign( frD, unop( Iop_SqrtF64, mkexpr(frB) ) );
-//zz          break;
+      case 0x16: // fsqrt (Floating SqRt (Double-Precision), PPC32 p427)
+         if (frA_addr != 0 || frC_addr != 0) {
+            vex_printf("dis_fp_arith(PPC32)(instr,fsqrt)\n");
+            return False;
+         }
+         DIP("fsqrt%s fr%d,fr%d\n", flag_rC ? "." : "",
+              frD_addr, frB_addr);
+         assign( frD, unop( Iop_SqrtF64, mkexpr(frB) ) );
+         break;
 
       case 0x17: { // fsel (Floating Select, PPC32 p426)
          IRTemp cc    = newTemp(Ity_I32);

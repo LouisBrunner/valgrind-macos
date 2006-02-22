@@ -58,6 +58,13 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
    // does leak.  But, we can't do much about it, and it's not a disaster,
    // so we just let it slide without aborting or telling the user.
 
+   // Finally, to reduce the endless nuisance of multiple different names 
+   // for "the frame below main()" screwing up the testsuite, change all
+   // known incarnations of said into a single name, "(below main)".
+   if (0==VG_(strcmp)("__libc_start_main", result)
+       || 0==VG_(strcmp)("generic_start_main", result))
+      VG_(strncpy_safely)(result, "(below main)", 13);
+
    VGP_POPCC(VgpDemangle);
 }
 

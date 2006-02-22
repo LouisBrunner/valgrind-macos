@@ -3163,6 +3163,14 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(FIONREAD)",  ARG3, sizeof(int) );
       break;
 
+   case VKI_TIOCSERGETLSR:
+      PRE_MEM_WRITE( "ioctl(TIOCSERGETLSR)", ARG3, sizeof(int) );
+      break;
+   case VKI_TIOCGICOUNT:
+      PRE_MEM_WRITE( "ioctl(TIOCGICOUNT)", ARG3,
+                     sizeof(struct vki_serial_icounter_struct) );
+      break;
+
    case VKI_SG_SET_COMMAND_Q:
       PRE_MEM_READ( "ioctl(SG_SET_COMMAND_Q)", ARG3, sizeof(int) );
       break;
@@ -3548,6 +3556,9 @@ PRE(sys_ioctl)
       /* Hard disks */
    case VKI_HDIO_GETGEO: /* 0x0301 */
       PRE_MEM_WRITE( "ioctl(HDIO_GETGEO)", ARG3, sizeof(struct vki_hd_geometry));
+      break;
+   case VKI_HDIO_GET_DMA: /* 0x030b */
+      PRE_MEM_WRITE( "ioctl(HDIO_GET_DMA)", ARG3, sizeof(long));
       break;
    case VKI_HDIO_GET_IDENTITY: /* 0x030d */
       PRE_MEM_WRITE( "ioctl(HDIO_GET_IDENTITY)", ARG3,
@@ -3968,6 +3979,13 @@ POST(sys_ioctl)
       POST_MEM_WRITE( ARG3, sizeof(int) );
       break;
 
+   case VKI_TIOCSERGETLSR:
+      POST_MEM_WRITE( ARG3, sizeof(int) );
+      break;
+   case VKI_TIOCGICOUNT:
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_serial_icounter_struct) );
+      break;
+
    case VKI_SG_SET_COMMAND_Q:
       break;
    case VKI_SG_IO:
@@ -4243,6 +4261,9 @@ POST(sys_ioctl)
       /* Hard disks */
    case VKI_HDIO_GETGEO: /* 0x0301 */
       POST_MEM_WRITE(ARG3, sizeof(struct vki_hd_geometry));
+      break;
+   case VKI_HDIO_GET_DMA: /* 0x030b */
+      POST_MEM_WRITE(ARG3, sizeof(long));
       break;
    case VKI_HDIO_GET_IDENTITY: /* 0x030d */
       POST_MEM_WRITE(ARG3, VKI_SIZEOF_STRUCT_HD_DRIVEID );

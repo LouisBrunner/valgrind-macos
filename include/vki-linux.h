@@ -1816,6 +1816,7 @@ struct vki_hd_geometry {
 };
 
 #define VKI_HDIO_GETGEO		0x0301	/* get device geometry */
+#define VKI_HDIO_GET_DMA	0x030b	/* get use-dma flag */
 #define VKI_HDIO_GET_IDENTITY	0x030d	/* get IDE identification info */
 
 // [[Nb: done like this because the original type is a huge struct that will
@@ -2036,6 +2037,18 @@ enum {
 	VKI_SNDRV_TIMER_IOCTL_STOP = _VKI_IO('T', 0xa1),
 	VKI_SNDRV_TIMER_IOCTL_CONTINUE = _VKI_IO('T', 0xa2),
 	VKI_SNDRV_TIMER_IOCTL_PAUSE = _VKI_IO('T', 0xa3),
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.15.4/include/linux/serial.h
+//----------------------------------------------------------------------
+
+struct vki_serial_icounter_struct {
+	int cts, dsr, rng, dcd;
+	int rx, tx;
+	int frame, overrun, parity, brk;
+	int buf_overrun;
+	int reserved[9];
 };
 
 #endif // __VKI_LINUX_H

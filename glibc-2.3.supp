@@ -528,6 +528,14 @@
    fun:_dl_sysdep_start
 }
 
+{
+   index-not-intercepted-early-enough-HACK-4
+   Memcheck:Cond
+   fun:index
+   fun:expand_dynamic_string_token
+}
+
+
 ##----------------------------------------------------------------------##
 ## MontaVista 3.1 on ppc32 integer only
 {

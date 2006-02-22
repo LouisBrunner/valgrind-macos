@@ -435,7 +435,7 @@ struct vki_termios {
 #define VKI_FIOASYNC	0x5452
 #define VKI_TIOCSERGETLSR   0x5459 /* Get line status register */
 
-#define VKI_IOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
+#define VKI_TIOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-x86_64/poll.h

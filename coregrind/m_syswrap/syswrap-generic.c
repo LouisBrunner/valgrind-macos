@@ -947,6 +947,23 @@ static Addr do_brk ( Addr newbrk )
       if (seg && seg->hasT)
          VG_(discard_translations)( newbrk, VG_(brk_limit) - newbrk, 
                                     "do_brk(shrink)" );
+      /* Since we're being lazy and not unmapping pages, we have to
+         zero out the area, so that if the area later comes back into
+         circulation, it will be filled with zeroes, as if it really
+         had been unmapped and later remapped.  Be a bit paranoid and
+         try hard to ensure we're not going to segfault by doing the
+         write - check both ends of the range are in the same segment
+         and that segment is writable. */
+      if (seg) {
+         /* pre: newbrk < VG_(brk_limit) 
+              => newbrk <= VG_(brk_limit)-1 */
+         NSegment* seg2;
+         vg_assert(newbrk < VG_(brk_limit));
+         seg2 = VG_(am_find_nsegment)( VG_(brk_limit)-1 );
+         if (seg2 && seg == seg2 && seg->hasW)
+            VG_(memset)( (void*)newbrk, 0, VG_(brk_limit) - newbrk );
+      }
+
       VG_(brk_limit) = newbrk;
       return newbrk;
    }

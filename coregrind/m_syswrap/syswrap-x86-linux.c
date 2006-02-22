@@ -2050,7 +2050,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_removexattr,       sys_removexattr),    // 235
    LINX_(__NR_lremovexattr,      sys_lremovexattr),   // 236
    LINX_(__NR_fremovexattr,      sys_fremovexattr),   // 237
-//zz    LINX_(__NR_tkill,             sys_tkill),          // 238 */Linux
+   LINXY(__NR_tkill,             sys_tkill),          // 238 */Linux
    LINXY(__NR_sendfile64,        sys_sendfile64),     // 239
 
    LINXY(__NR_futex,             sys_futex),             // 240

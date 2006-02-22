@@ -422,8 +422,15 @@
 # 
 # I don't know why this is needed, but still:
 {
-   glibc-2.3.x-on-SuSE-10.0/10.1-(PPC)-1
+   glibc-2.3.x-on-SuSE-10.0-(PPC)-1
    Memcheck:Cond
+   fun:_dl_start
+   fun:_start
+}
+{
+   glibc-2.3.x-on-SuSE-10.1-(PPC)-1
+   Memcheck:Cond
+   fun:_dl_start_final
    fun:_dl_start
    fun:_start
 }

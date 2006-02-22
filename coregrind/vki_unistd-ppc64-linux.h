@@ -27,7 +27,7 @@
 #ifndef __VKI_UNISTD_PPC64_LINUX_H
 #define __VKI_UNISTD_PPC64_LINUX_H
 
-// From linux-2.6.13/include/asm-ppc64/unistd.h
+// From linux-2.6.16-rc4/include/asm-powerpc/unistd.h
 
 #define __NR_restart_syscall      0
 #define __NR_exit                 1

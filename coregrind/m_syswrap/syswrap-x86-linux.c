@@ -772,6 +772,8 @@ DECL_TEMPLATE(x86_linux, sys_get_thread_area);
 DECL_TEMPLATE(x86_linux, sys_ptrace);
 DECL_TEMPLATE(x86_linux, sys_sigaction);
 DECL_TEMPLATE(x86_linux, old_select);
+DECL_TEMPLATE(x86_linux, sys_vm86old);
+DECL_TEMPLATE(x86_linux, sys_vm86);
 DECL_TEMPLATE(x86_linux, sys_syscall223);
 
 PRE(old_select)
@@ -1677,6 +1679,32 @@ POST(sys_sigaction)
       POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
 }
 
+PRE(sys_vm86old)
+{
+   PRINT("sys_vm86old ( %p )", ARG1);
+   PRE_REG_READ1(int, "vm86old", struct vm86_struct *, info);
+   PRE_MEM_WRITE( "vm86old(info)", ARG1, sizeof(struct vki_vm86_struct));
+}
+
+POST(sys_vm86old)
+{
+   POST_MEM_WRITE( ARG1, sizeof(struct vki_vm86_struct));
+}
+
+PRE(sys_vm86)
+{
+   PRINT("sys_vm86 ( %d, %p )", ARG1,ARG2);
+   PRE_REG_READ2(int, "vm86", unsigned long, fn, struct vm86plus_struct *, v86);
+   if (ARG1 == VKI_VM86_ENTER || ARG1 == VKI_VM86_ENTER_NO_BYPASS)
+      PRE_MEM_WRITE( "vm86(v86)", ARG2, sizeof(struct vki_vm86plus_struct));
+}
+
+POST(sys_vm86)
+{
+   if (ARG1 == VKI_VM86_ENTER || ARG1 == VKI_VM86_ENTER_NO_BYPASS)
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_vm86plus_struct));
+}
+
 
 /* ---------------------------------------------------------------
    PRE/POST wrappers for x86/Linux-variant specific syscalls
@@ -1869,7 +1897,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_iopl,              sys_iopl),           // 110
    LINX_(__NR_vhangup,           sys_vhangup),        // 111
    GENX_(__NR_idle,              sys_ni_syscall),     // 112
-//zz    //   (__NR_vm86old,           sys_vm86old),        // 113 x86/Linux-only
+   PLAXY(__NR_vm86old,           sys_vm86old),        // 113 x86/Linux-only
    GENXY(__NR_wait4,             sys_wait4),          // 114
 //zz 
 //zz    //   (__NR_swapoff,           sys_swapoff),        // 115 */Linux 
@@ -1935,7 +1963,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_setresuid,         sys_setresuid16),    // 164
 
    LINXY(__NR_getresuid,         sys_getresuid16),    // 165
-//zz    //   (__NR_vm86,              sys_vm86),           // 166 x86/Linux-only
+   PLAXY(__NR_vm86,              sys_vm86),           // 166 x86/Linux-only
    GENX_(__NR_query_module,      sys_ni_syscall),     // 167
    GENXY(__NR_poll,              sys_poll),           // 168
 //zz    //   (__NR_nfsservctl,        sys_nfsservctl),     // 169 */Linux

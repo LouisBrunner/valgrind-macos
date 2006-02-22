@@ -783,6 +783,80 @@ struct vki_shminfo64 {
 #define VKI_PTRACE_SETFPXREGS         19
 
 //----------------------------------------------------------------------
+// From linux-2.6.15.4/include/asm-i386/vm86.h
+//----------------------------------------------------------------------
+
+#define VKI_VM86_PLUS_INSTALL_CHECK	0
+#define VKI_VM86_ENTER			1
+#define VKI_VM86_ENTER_NO_BYPASS	2
+#define	VKI_VM86_REQUEST_IRQ		3
+#define VKI_VM86_FREE_IRQ		4
+#define VKI_VM86_GET_IRQ_BITS		5
+#define VKI_VM86_GET_AND_RESET_IRQ	6
+
+struct vki_vm86_regs {
+/*
+ * normal regs, with special meaning for the segment descriptors..
+ */
+	long ebx;
+	long ecx;
+	long edx;
+	long esi;
+	long edi;
+	long ebp;
+	long eax;
+	long __null_ds;
+	long __null_es;
+	long __null_fs;
+	long __null_gs;
+	long orig_eax;
+	long eip;
+	unsigned short cs, __csh;
+	long eflags;
+	long esp;
+	unsigned short ss, __ssh;
+/*
+ * these are specific to v86 mode:
+ */
+	unsigned short es, __esh;
+	unsigned short ds, __dsh;
+	unsigned short fs, __fsh;
+	unsigned short gs, __gsh;
+};
+
+struct vki_revectored_struct {
+	unsigned long __map[8];			/* 256 bits */
+};
+
+struct vki_vm86_struct {
+	struct vki_vm86_regs regs;
+	unsigned long flags;
+	unsigned long screen_bitmap;
+	unsigned long cpu_type;
+	struct vki_revectored_struct int_revectored;
+	struct vki_revectored_struct int21_revectored;
+};
+
+struct vki_vm86plus_info_struct {
+	unsigned long force_return_for_pic:1;
+	unsigned long vm86dbg_active:1;       /* for debugger */
+	unsigned long vm86dbg_TFpendig:1;     /* for debugger */
+	unsigned long unused:28;
+	unsigned long is_vm86pus:1;	      /* for vm86 internal use */
+	unsigned char vm86dbg_intxxtab[32];   /* for debugger */
+};
+
+struct vki_vm86plus_struct {
+	struct vki_vm86_regs regs;
+	unsigned long flags;
+	unsigned long screen_bitmap;
+	unsigned long cpu_type;
+	struct vki_revectored_struct int_revectored;
+	struct vki_revectored_struct int21_revectored;
+	struct vki_vm86plus_info_struct vm86plus;
+};
+
+//----------------------------------------------------------------------
 // And that's it!
 //----------------------------------------------------------------------
 

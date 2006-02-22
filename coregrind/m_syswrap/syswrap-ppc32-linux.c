@@ -1697,7 +1697,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    //   (__NR_pivot_root,        sys_pivot_root),        // 203 */Linux
    GENXY(__NR_fcntl64,           sys_fcntl64),           // 204
    GENX_(__NR_madvise,           sys_madvise),           // 205
-//..    GENXY(__NR_mincore,           sys_mincore),           // 206
+   GENXY(__NR_mincore,           sys_mincore),           // 206
    LINX_(__NR_gettid,            sys_gettid),            // 207
 //..    LINX_(__NR_tkill,             sys_tkill),             // 208 */Linux
 //..    LINX_(__NR_setxattr,          sys_setxattr),          // 209
@@ -1762,8 +1762,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 /* Number 257 is reserved for vserver */
 /* Number 258 is reserved for new sys_remap_file_pages */
 /* Number 259 is reserved for new sys_mbind */
-/* Number 260 is reserved for new sys_get_mempolicy */
-/* Number 261 is reserved for new sys_set_mempolicy */
+   LINXY(__NR_get_mempolicy,     sys_get_mempolicy),          // 260
+   LINX_(__NR_set_mempolicy,     sys_set_mempolicy),          // 261
 
    LINXY(__NR_mq_open,           sys_mq_open),           // 262
    LINX_(__NR_mq_unlink,         sys_mq_unlink),         // 263
@@ -1771,8 +1771,18 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_mq_timedreceive,   sys_mq_timedreceive),   // 265
    LINX_(__NR_mq_notify,         sys_mq_notify),         // 266
    LINXY(__NR_mq_getsetattr,     sys_mq_getsetattr),     // 267
-
 // __NR_kexec_load                                            // 268
+
+/* Number 269 is reserved for sys_add_key */
+/* Number 270 is reserved for sys_request_key */
+/* Number 271 is reserved for sys_keyctl */
+/* Number 272 is reserved for sys_waitid */
+/* Number 273 is reserved for sys_ioprio_set */
+/* Number 274 is reserved for sys_ioprio_get */
+
+   LINX_(__NR_inotify_init,  sys_inotify_init),               // 275
+   LINX_(__NR_inotify_add_watch,  sys_inotify_add_watch),     // 276
+   LINX_(__NR_inotify_rm_watch,   sys_inotify_rm_watch),      // 277
 };
 
 const UInt ML_(syscall_table_size) = 

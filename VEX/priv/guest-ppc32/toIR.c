@@ -1595,8 +1595,22 @@ static void putSPR_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
 
       /* Allow writes to Rounding Mode */
       if (mask & 0x3) {
-         stmt( IRStmt_Put( OFFB_FPROUND,
-                           binop(Iop_And32, src, mkU32(0x3)) ));
+         /* construct new fpround from new and old values as per mask:
+            new fpround = (src & (3 & mask)) | (fpround & (3 & ~mask)) */
+         stmt(
+            IRStmt_Put(
+               OFFB_FPROUND,
+               binop(
+                  Iop_Or32,
+                  binop(Iop_And32, src, mkU32(3 & mask)),
+                  binop(
+                     Iop_And32,
+                     IRExpr_Get(OFFB_FPROUND,Ity_I32),
+                     mkU32(3 & ~mask)
+                  )
+               )
+            )
+         );
       }
 
       /* Give EmWarn for attempted writes to:

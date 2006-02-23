@@ -98,6 +98,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	toobig-allocs.stderr.exp toobig-allocs.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest-HIDING \
+	vcpu_fnfns.stdout.exp vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
 	vgtest_ume.stderr.exp vgtest_ume.disabled \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
 	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp3 \
@@ -131,7 +132,7 @@ check_PROGRAMS = \
 	supp_unknown supp1 supp2 suppfree \
 	trivialleak \
 	mismatches new_override metadata \
-	xml1 \
+	vcpu_fnfns xml1 \
 	writev zeropage
 
 
@@ -149,6 +150,8 @@ str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 supp_unknown_SOURCES	= badjump.c
 supp1_SOURCES		= supp.c
 supp2_SOURCES		= supp.c
+vcpu_fnfns_CFLAGS       = $(AM_CFLAGS) -O2 -g
+vcpu_fnfns_LDADD        = -lm
 
 # C++ tests
 mismatches_SOURCES	= mismatches.cpp

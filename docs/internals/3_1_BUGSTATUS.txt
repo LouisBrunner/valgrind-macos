@@ -37,7 +37,7 @@ v5396     v5449     n-i-bz   cg_annotate's --sort option broken
                              (TODO: VERIFY 31BRANCH)
 v5427     v5451     n-i-bz   OSet 64-bit fastcmp bug
 v5445     v5673     n-i-bz   VG_(getgroups) fix (Shinichi Noda)
-vx1519    pending   n-i-bz   ppc32/64: allocate from callee-saved FP/VMX regs
+vx1519    vx1578    n-i-bz   ppc32/64: allocate from callee-saved FP/VMX regs
 v5500     v5674     n-i-bz   misaligned path word-size bug in mc_main.c
 vx1521/2  pending   119297   Incorrect error message for sse code
 pending   pending   120410   x86: prefetchw (0xF 0xD 0x48 0x4)
@@ -57,11 +57,10 @@ pending   pending   121896   Handling ESP modification in ucontext from signal h
 v5651     v5679     121901   no support for syscall tkill
 
 (next 3 are ppc32-specific FP problems)
-many      pending   n-i-bz   ppc32 rounding mode problems
+many      v5694/5   n-i-bz   ppc32 rounding mode problems
                              Is fixed properly in head
                              For 31BRANCH copy in r5591 kludge
-many      wontfix   119482   ppc32: mtfsb1
-                             [skip for 3.1.1 unless gcc/glibc requires it]
+many      vx1577    119482   ppc32: mtfsb1
 many      wontfix   120277   ppc32: fres, fctid, fctidz, frsqrte 
                              [skip for 3.1.1 unless gcc/glibc requires it]
 

@@ -96,7 +96,7 @@ struct _OSetNode {
    AvlNode* left;
    AvlNode* right;
    Char     balance;
-   Char     padding[sizeof(void*)-3];
+   Char     padding[sizeof(void*)-sizeof(Char)-sizeof(Short)];
    Short    magic;
 };
 

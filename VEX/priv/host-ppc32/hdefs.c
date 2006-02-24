@@ -227,14 +227,16 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
    // GPR30 AltiVec spill reg temporary
    // GPR31 = GuestStatePtr
 
-   (*arr)[i++] = hregPPC32_FPR0();
-   (*arr)[i++] = hregPPC32_FPR1();
-   (*arr)[i++] = hregPPC32_FPR2();
-   (*arr)[i++] = hregPPC32_FPR3();
-   (*arr)[i++] = hregPPC32_FPR4();
-   (*arr)[i++] = hregPPC32_FPR5();
-   (*arr)[i++] = hregPPC32_FPR6();
-   (*arr)[i++] = hregPPC32_FPR7();
+   /* For both ppc32-linux and ppc64-linux, f14-f31 are callee save.
+      So use them. */
+   (*arr)[i++] = hregPPC32_FPR14();
+   (*arr)[i++] = hregPPC32_FPR15();
+   (*arr)[i++] = hregPPC32_FPR16();
+   (*arr)[i++] = hregPPC32_FPR17();
+   (*arr)[i++] = hregPPC32_FPR18();
+   (*arr)[i++] = hregPPC32_FPR19();
+   (*arr)[i++] = hregPPC32_FPR20();
+   (*arr)[i++] = hregPPC32_FPR21();
 /*
    (*arr)[i++] = hregPPC32_FPR8();
    (*arr)[i++] = hregPPC32_FPR9();
@@ -261,14 +263,16 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
    (*arr)[i++] = hregPPC32_FPR30();
    (*arr)[i++] = hregPPC32_FPR31();
 */
-   (*arr)[i++] = hregPPC32_VR0();
-   (*arr)[i++] = hregPPC32_VR1();
-   (*arr)[i++] = hregPPC32_VR2();
-   (*arr)[i++] = hregPPC32_VR3();
-   (*arr)[i++] = hregPPC32_VR4();
-   (*arr)[i++] = hregPPC32_VR5();
-   (*arr)[i++] = hregPPC32_VR6();
-   (*arr)[i++] = hregPPC32_VR7();
+   /* For both ppc32-linux and ppc64-linux, v20-v31 are callee-save.
+      So use them. */
+   (*arr)[i++] = hregPPC32_VR20();
+   (*arr)[i++] = hregPPC32_VR21();
+   (*arr)[i++] = hregPPC32_VR22();
+   (*arr)[i++] = hregPPC32_VR23();
+   (*arr)[i++] = hregPPC32_VR24();
+   (*arr)[i++] = hregPPC32_VR25();
+   (*arr)[i++] = hregPPC32_VR26();
+   (*arr)[i++] = hregPPC32_VR27();
 /*
    (*arr)[i++] = hregPPC32_VR8();
    (*arr)[i++] = hregPPC32_VR9();

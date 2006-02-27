@@ -576,10 +576,10 @@
 {
    Ubuntu-stripped-ld.so
    Memcheck:Cond
-   obj:/lib/ld-2.3.5.so
-   obj:/lib/ld-2.3.5.so
-   obj:/lib/ld-2.3.5.so
-   obj:/lib/ld-2.3.5.so
-   obj:/lib/ld-2.3.5.so
+   obj:/lib/ld-2.3.*.so
+   obj:/lib/ld-2.3.*.so
+   obj:/lib/ld-2.3.*.so
+   obj:/lib/ld-2.3.*.so
+   obj:/lib/ld-2.3.*.so
 }
 

@@ -55,6 +55,7 @@ v5647     v5678     121893   calloc does not always zero memory
 pending   pending   n-i-bz   XML output truncated (users, Jan 26 09:08:34 2006)
 pending   pending   121896   Handling ESP modification in ucontext from signal handlers
 v5651     v5679     121901   no support for syscall tkill
+v5700     v5701     n-i-bz   Suppression update for Debian unstable
 
 (next 3 are ppc32-specific FP problems)
 many      v5694/5   n-i-bz   ppc32 rounding mode problems

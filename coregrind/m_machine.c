@@ -341,8 +341,12 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(sigaction)(VKI_SIGILL, NULL, &saved_act);
      tmp_act = saved_act;
 
+     /* NODEFER: signal handler does not return (from the kernel's
+        point of view), hence if it is to successfully catch a signal
+        more than once, we need the NODEFER flag. */
      tmp_act.sa_flags &= ~VKI_SA_RESETHAND;
      tmp_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_act.sa_flags |=  VKI_SA_NODEFER;
 
      tmp_act.ksa_handler = handler_sigill;
      VG_(sigaction)(VKI_SIGILL, &tmp_act, NULL);

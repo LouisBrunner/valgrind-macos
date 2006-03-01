@@ -5232,16 +5232,26 @@ static Bool dis_proc_ctl ( UInt theInstr )
       break;
    }
       
-   case 0x013: // mfcr (Move from Cond Register, PPC32 p467)
-      if (b11to20 != 0) {
-         vex_printf("dis_proc_ctl(ppc)(mfcr,b11to20)\n");
-         return False;
+   case 0x013: 
+      // b11to20==0:      mfcr (Move from Cond Register, PPC32 p467)
+      // b20==1 & b11==0: mfocrf (Move from One CR Field)
+      // However it seems that the 'mfcr' behaviour is an acceptable
+      // implementation of mfocr (from the 2.02 arch spec)
+      if (b11to20 == 0) {
+         DIP("mfcr r%u\n", rD_addr);
+         putIReg( rD_addr, mkSzWiden32(ty, getGST( PPC_GST_CR ),
+                                       /* Signed */False) );
+         break;
       }
-      DIP("mfcr r%u\n", rD_addr);
-      putIReg( rD_addr, mkSzWiden32(ty, getGST( PPC_GST_CR ),
-                                    /* Signed */False) );
-      break;
-      
+      if (b20 == 1 && b11 == 0) {
+         DIP("mfocrf r%u,%u\n", rD_addr, CRM);
+         putIReg( rD_addr, mkSzWiden32(ty, getGST( PPC_GST_CR ),
+                                       /* Signed */False) );
+         break;
+      }
+      /* not decodable */
+      return False;
+    
    /* XFX-Form */
    case 0x153: // mfspr (Move from Special-Purpose Register, PPC32 p470)
       
@@ -5301,14 +5311,27 @@ static Bool dis_proc_ctl ( UInt theInstr )
       break;
    }
 
-   case 0x090: { // mtcrf (Move to Cond Register Fields, PPC32 p477)
+   case 0x090: { 
+      // b20==0: mtcrf (Move to Cond Register Fields, PPC32 p477)
+      // b20==1: mtocrf (Move to One Cond Reg Field)
       Int   cr;
       UChar shft;
-      if (b11 != 0 || b20 != 0) {
-         vex_printf("dis_proc_ctl(ppc)(mtcrf,b11|b20)\n");
+      if (b11 != 0)
          return False;
+      if (b20 == 1) {
+         /* ppc64 v2.02 spec says mtocrf gives undefined outcome if >
+            1 field is written.  It seems more robust to decline to
+            decode the insn if so. */
+         switch (CRM) {
+            case 0x01: case 0x02: case 0x04: case 0x08:
+            case 0x10: case 0x20: case 0x40: case 0x80:
+               break;
+            default: 
+               return False; 
+         }
       }
-      DIP("mtcrf 0x%x,r%u\n", CRM, rS_addr);
+      DIP("%s 0x%x,r%u\n", b20==1 ? "mtocrf" : "mtcrf", 
+                           CRM, rS_addr);
       /* Write to each field specified by CRM */
       for (cr = 0; cr < 8; cr++) {
          if ((CRM & (1 << (7-cr))) == 0)

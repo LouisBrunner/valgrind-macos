@@ -75,7 +75,6 @@
 #include <pthread.h>    /* pthread_mutex_{lock,unlock} */
 
 /* Include Valgrind magic macros for writing wrappers. */
-#include "../include/valgrind.h"
 #include "../memcheck/memcheck.h"
 
 
@@ -84,7 +83,8 @@
 /*------------------------------------------------------------*/
 
 /* Include headers for whatever MPI implementation the wrappers are to
-   be used with. */
+   be used with.  The configure system will tell us what the path to
+   the chosen MPI implementation is, via -I.. to the compiler. */
 #include "mpi.h"
 
 /* Where are API symbols?

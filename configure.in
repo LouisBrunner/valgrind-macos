@@ -597,7 +597,31 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr semtimedop])
 
 
+# Do we have a useable mpicc (MPI-ised C compiler) ?
+MPI_CC="mpicc"
+AC_ARG_WITH(mpicc,
+   [  --with-mpicc=            Specify name of MPI-ised C compiler],
+   MPI_CC=$withval
+)
+AC_MSG_CHECKING([for usable mpicc])
+saved_CC=$CC
+CC=$MPI_CC
+AC_TRY_COMPILE(, [
+int main ( ) { return 0; }
+],
+[
+ac_have_mpicc=yes
+AC_MSG_RESULT([$MPI_CC])
+], [
+ac_have_mpicc=no
+AC_MSG_RESULT([no])
+])
+CC=$saved_CC
+
+
 # First consider --with-mpi=..., then check for mpi.h
+saved_CC=$CC
+CC=$MPI_CC
 MPI_PREFIX="/usr"
 AC_ARG_WITH(mpi,
    [  --with-mpi=/path/to/mpi/install    Specify location of MPI],
@@ -618,6 +642,7 @@ AC_MSG_RESULT([yes])
 ac_have_mpi_h=no
 AC_MSG_RESULT([no])
 ])
+CC=$saved_CC
 
 #if test x$ac_have_mpi_h = xyes ; then
 #  AC_DEFINE(HAVE_MPI_H, 1, [Define to 1 if mpi.h is available.])
@@ -625,6 +650,7 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(BUILD_MPIWRAP, test x$ac_have_mpi_h = xyes)
 AC_SUBST(MPI_PREFIX)
+AC_SUBST(MPI_CC)
 
 
 # -------------------- ok.  We're done. --------------------

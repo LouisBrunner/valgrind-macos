@@ -352,7 +352,7 @@ static inline UWord byte_offset_w ( UWord wordszB, Bool bigendian,
 
 /* --------------- Fundamental functions --------------- */
 
-static 
+static inline
 void get_abit_and_vbyte ( /*OUT*/UWord* abit, 
                           /*OUT*/UWord* vbyte,
                           Addr a )
@@ -362,7 +362,7 @@ void get_abit_and_vbyte ( /*OUT*/UWord* abit,
    *abit  = read_bit_array(sm->abits, a & 0xFFFF);
 } 
 
-static 
+static inline
 UWord get_abit ( Addr a )
 {
    SecMap* sm = get_secmap_readable(a);

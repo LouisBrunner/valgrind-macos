@@ -45,7 +45,7 @@ noinst_PROGRAMS       = libmpiwrap.so
 #				-I../include -I@MPI_PREFIX@/include
 #libmpiwrap_so_LDFLAGS = $(AM_FLAG_M3264_PRI) -g -shared
 libmpiwrap.so: mpiwrap.c
-	$(MPI_CC) -g -O -fno-omit-frame-pointer -fpic -shared \
+	$(MPI_CC) -g -O -fno-omit-frame-pointer -Wall -fpic -shared \
 		-I../include -I@MPI_PREFIX@/include \
 		$(AM_FLAG_M3264_PRI) \
 		-o libmpiwrap.so mpiwrap.c

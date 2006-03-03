@@ -136,6 +136,12 @@ static inline void before ( char* fnname )
          opt_strict  = NULL != strstr(options_str, "strict");
       fprintf(stderr, "%s %5d: Active for pid %d\n", 
                       preamble, my_pid, my_pid);
+
+      /* Sanity check - that 'long' really is a machine word. */
+      assert(sizeof(long) == sizeof(void*));
+      /* Sanity check - char is byte-sized (else address calculations
+         in walk_type don't work. */
+      assert(sizeof(char) == 1);
       if (opt_help) {
          fprintf(stderr, "\n");
          fprintf(stderr, "Valid options for the MPIWRAP_DEBUG environment"
@@ -224,81 +230,185 @@ Bool eq_MPI_Request ( MPI_Request r1, MPI_Request r2 )
    return r1 == r2;
 }
 
+static long extentOfTy ( MPI_Datatype ty )
+{
+   int      r;
+   MPI_Aint n;
+   r = PMPI_Type_extent(ty, &n);
+   assert(r == MPI_SUCCESS);
+   return (long)n;
+}
+
+/* Free up *ty, if it is not a named type */
+static void maybeFreeTy ( MPI_Datatype* ty )
+{
+   int r, n_ints, n_addrs, n_dtys, tycon;
+
+   r = PMPI_Type_get_envelope( *ty, &n_ints, &n_addrs, &n_dtys, &tycon );
+   assert(r == MPI_SUCCESS);
+
+   if (tycon != MPI_COMBINER_NAMED) {
+      r = MPI_Type_free(ty);
+      assert(r == MPI_SUCCESS);
+   }
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Unpicking datatypes                                  ---*/
+/*------------------------------------------------------------*/
+
+static 
+void walk_type_array ( void(*f)(void*,long), char* base, 
+                       MPI_Datatype ty, long count );
+
+
+/* Walk over all fragments of the object of type 'ty' with base
+   address 'base', and apply 'f' to the start/length of each
+   contiguous fragment. */
+static 
+void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
+{
+   int  r, n_ints, n_addrs, n_dtys, tycon;
+   long ex, count, i;
+   int*          ints  = NULL;
+   MPI_Aint*     addrs = NULL;
+   MPI_Datatype* dtys  = NULL;
+   //   MPI_Datatype  elemTy;
+
+   if (1) { 
+      printf("walk_type %p\n", (void*)ty);
+      if (ty == MPI_DATATYPE_NULL) printf("MPI_DATATYPE_NULL\n");
+      else if (ty == MPI_BYTE) printf("MPI_BYTE\n");
+      else if (ty == MPI_PACKED) printf("MPI_PACKED\n");
+      else if (ty == MPI_CHAR) printf("MPI_CHAR\n");
+      else if (ty == MPI_SHORT) printf("MPI_SHORT\n");
+      else if (ty == MPI_INT) printf("MPI_INT\n");
+      else if (ty == MPI_LONG) printf("MPI_LONG\n");
+      else if (ty == MPI_FLOAT) printf("MPI_FLOAT\n");
+      else if (ty == MPI_DOUBLE) printf("MPI_DOUBLE\n");
+      else if (ty == MPI_LONG_DOUBLE) printf("MPI_LONG_DOUBLE\n");
+      else if (ty == MPI_UNSIGNED_CHAR) printf("MPI_UNSIGNED_CHAR\n");
+      else if (ty == MPI_UNSIGNED_SHORT) printf("MPI_UNSIGNED_SHORT\n");
+      else if (ty == MPI_UNSIGNED_LONG) printf("MPI_UNSIGNED_LONG\n");
+      else if (ty == MPI_UNSIGNED) printf("MPI_UNSIGNED\n");
+      else if (ty == MPI_FLOAT_INT) printf("MPI_FLOAT_INT\n");
+      else if (ty == MPI_DOUBLE_INT) printf("MPI_DOUBLE_INT\n");
+      else if (ty == MPI_LONG_DOUBLE_INT) printf("MPI_LONG_DOUBLE_INT\n");
+      else if (ty == MPI_LONG_INT) printf("MPI_LONG_INT\n");
+      else if (ty == MPI_SHORT_INT) printf("MPI_SHORT_INT\n");
+      else if (ty == MPI_2INT) printf("MPI_2INT\n");
+      else if (ty == MPI_UB) printf("MPI_UB\n");
+      else if (ty == MPI_LB) printf("MPI_LB\n");
+      else if (ty == MPI_WCHAR) printf("MPI_WCHAR\n");
+      else if (ty == MPI_LONG_LONG_INT) printf("MPI_LONG_LONG_INT\n");
+      else if (ty == MPI_LONG_LONG) printf("MPI_LONG_LONG\n");
+      else if (ty == MPI_UNSIGNED_LONG_LONG) printf("MPI_UNSIGNED_LONG_LONG\n");
+      else printf("???\n");
+   }
+   assert(ty != MPI_DATATYPE_NULL);
+
+   r = MPI_Type_get_envelope( ty, &n_ints, &n_addrs, &n_dtys, &tycon );
+   assert(r == MPI_SUCCESS);
+
+   /* Handle the base cases fast(er/ish). */
+   if (tycon == MPI_COMBINER_NAMED) {
+      if (ty == MPI_DOUBLE)   { f(base,sizeof(double)); return; }
+      if (ty == MPI_INT)      { f(base,sizeof(signed int)); return; }
+      if (ty == MPI_CHAR)     { f(base,sizeof(signed char)); return; }
+      if (ty == MPI_UNSIGNED) { f(base,sizeof(unsigned int)); return; }
+      goto unhandled;
+      /*NOTREACHED*/
+   }
+
+   if (1) {
+      ex = extentOfTy(ty);
+      printf("tycon %p %d %d %d (ext %d)\n",
+             (void*)tycon, n_ints, n_addrs, n_dtys, (int)ex );
+   }
+
+   /* Now safe to do MPI_Type_get_contents */
+   assert(n_ints  >= 0);
+   assert(n_addrs >= 0);
+   assert(n_dtys  >= 0);
+
+   if (n_ints  > 0) {
+      ints = malloc(n_ints * sizeof(int));
+      assert(ints);
+   }
+   if (n_addrs > 0) {
+      addrs = malloc(n_addrs * sizeof(MPI_Aint));
+      assert(addrs);
+   }
+   if (n_dtys  > 0) {
+      dtys = malloc(n_dtys * sizeof(MPI_Datatype));
+      assert(dtys);
+   }
+
+   r = MPI_Type_get_contents( ty, n_ints, n_addrs, n_dtys,
+                                  ints, addrs, dtys );
+   assert(r == MPI_SUCCESS);
+
+   switch (tycon) {
+
+      case MPI_COMBINER_CONTIGUOUS:
+         assert(n_ints == 1 && n_addrs == 0 && n_dtys == 1);
+	 walk_type_array( f, base, dtys[0], ints[0] );
+         maybeFreeTy( &dtys[0] );
+         break;
+
+      case MPI_COMBINER_STRUCT:
+         assert(n_addrs == n_ints-1);
+         assert(n_dtys  == n_ints-1);
+	 for (i = 0; i < ints[0]; i++) {
+            printf("struct (elem %d limit %d) off %d copies %d\n", 
+                   (int)i, (int)ints[0], (int)addrs[i], (int)ints[i+1]);
+            walk_type_array( f, base + addrs[i], dtys[i], (long)ints[i+1] );
+            maybeFreeTy( &dtys[i] );
+	 }
+         break;
+
+      default:
+         goto unhandled;
+
+   }
+
+   /* normal exit */
+   if (ints)  free(ints);
+   if (addrs) free(addrs);
+   if (dtys)  free(dtys);
+   return;
+
+  unhandled:
+   if (tycon == MPI_COMBINER_NAMED) {
+      fprintf(stderr, "%s %5d: walk_type: unhandled base type 0x%lx\n",
+                      preamble, my_pid, (long)ty);
+   } else {
+      fprintf(stderr, "%s %5d: walk_type: unhandled combiner 0x%lx\n",
+                      preamble, my_pid, (long)tycon);
+   }
+   if (ints)  free(ints);
+   if (addrs) free(addrs);
+   if (dtys)  free(dtys);
+}
+
+
+/* Same as walk_type but apply 'f' to every element in an array
+   of 'count' items starting at 'base'. */
+static 
+void walk_type_array ( void(*f)(void*,long), char* base, 
+                       MPI_Datatype elemTy, long count )
+{
+   long i, ex;
+   ex = extentOfTy(elemTy);
+   for (i = 0; i < count; i++)
+      walk_type( f, base + i * ex, elemTy );
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Address-range helpers                                ---*/
 /*------------------------------------------------------------*/
-
-/* ----------------
-   Do checks on memory areas defined using the MPI (buffer, count,
-   type) convention.
-   ----------------
-*/
-
-static inline long datasize ( MPI_Datatype datatype )
-{
-   if (datatype == MPI_INT)        return sizeof(signed int);
-   if (datatype == MPI_DOUBLE)     return sizeof(double);
-   if (datatype == MPI_CHAR)       return sizeof(signed char);
-   if (datatype == MPI_UNSIGNED)   return sizeof(unsigned int);
-   fprintf(stderr, "%s %5d: datasize: unhandled PMPI_Datatype %d\n",
-                   preamble, my_pid, (int)datatype);
-   return 0;
-}
-
-
-/* Check that the specified area is both addressible and contains
-   initialised data, and cause V to complain if not. */
-
-static
-void check_readable ( void *buffer, long count, MPI_Datatype datatype )
-{
-   long nbytes = count * datasize(datatype);
-   if (nbytes > 0) {
-      VALGRIND_CHECK_READABLE(buffer, nbytes);
-   }
-}
-
-
-/* Check that the specified area is addressible, and cause V to
-   complain if not. Doesn't matter whether the data there is
-   initialised or not. */
-
-static
-void check_writable ( void *buffer, long count, MPI_Datatype datatype )
-{
-   long nbytes = count * datasize(datatype);
-   if (nbytes > 0) {
-      VALGRIND_CHECK_WRITABLE(buffer, nbytes);
-   }
-}
-
-
-/* Set the specified area to 'addressible and defined' (safe-to-read)
-   state. */
-
-static
-void make_readable ( void *buffer, int count, MPI_Datatype datatype )
-{
-   long nbytes = count * datasize(datatype);
-   if (nbytes > 0) {
-      VALGRIND_MAKE_READABLE(buffer, nbytes);
-   }
-}
-
-static
-void 
-make_readable_if_success ( int err, void *buffer, int count, 
-                                    MPI_Datatype datatype )
-{
-   if (err == MPI_SUCCESS) {
-      long nbytes = count * datasize(datatype);
-      if (nbytes > 0) {
-         VALGRIND_MAKE_READABLE(buffer, nbytes);
-      }
-   }
-}
-
 
 /* ----------------
    Do corresponding checks on memory areas defined using a 
@@ -348,6 +458,52 @@ void make_writable_untyped ( void* buffer, long nbytes )
    if (nbytes > 0) {
       VALGRIND_MAKE_WRITABLE(buffer, nbytes);
    }
+}
+
+
+/* ----------------
+   Do checks on memory areas defined using the MPI (buffer, count,
+   type) convention.
+   ----------------
+*/
+
+/* Check that the specified area is both addressible and contains
+   initialised data, and cause V to complain if not. */
+
+static
+void check_readable ( char* buffer, long count, MPI_Datatype datatype )
+{
+   walk_type_array( check_readable_untyped, buffer, datatype, count );
+}
+
+
+/* Check that the specified area is addressible, and cause V to
+   complain if not. Doesn't matter whether the data there is
+   initialised or not. */
+
+static
+void check_writable ( void *buffer, long count, MPI_Datatype datatype )
+{
+   walk_type_array( check_writable_untyped, buffer, datatype, count );
+}
+
+
+/* Set the specified area to 'addressible and defined' (safe-to-read)
+   state. */
+
+static
+void make_readable ( void *buffer, int count, MPI_Datatype datatype )
+{
+   walk_type_array( make_readable_untyped, buffer, datatype, count );
+}
+
+static
+void 
+make_readable_if_success ( int err, void *buffer, int count, 
+                                    MPI_Datatype datatype )
+{
+   if (err == MPI_SUCCESS)
+      make_readable(buffer, count, datatype);
 }
 
 
@@ -1236,10 +1392,10 @@ NO_OP_WRAPPER(Type_contiguous)
 UNIMPLEMENTED_WRAPPER(Type_count)
 UNIMPLEMENTED_WRAPPER(Type_create_darray)
 UNIMPLEMENTED_WRAPPER(Type_create_subarray)
-UNIMPLEMENTED_WRAPPER(Type_extent)
+NO_OP_WRAPPER(Type_extent)
 UNIMPLEMENTED_WRAPPER(Type_free)
-UNIMPLEMENTED_WRAPPER(Type_get_contents)
-UNIMPLEMENTED_WRAPPER(Type_get_envelope)
+NO_OP_WRAPPER(Type_get_contents)
+NO_OP_WRAPPER(Type_get_envelope)
 UNIMPLEMENTED_WRAPPER(Type_get_name)
 UNIMPLEMENTED_WRAPPER(Type_create_hindexed)
 UNIMPLEMENTED_WRAPPER(Type_create_hvector)
@@ -1250,14 +1406,14 @@ NO_OP_WRAPPER(Type_create_struct)
 UNIMPLEMENTED_WRAPPER(Type_hindexed)
 UNIMPLEMENTED_WRAPPER(Type_hvector)
 UNIMPLEMENTED_WRAPPER(Type_indexed)
-UNIMPLEMENTED_WRAPPER(Type_lb)
+NO_OP_WRAPPER(Type_lb)
 UNIMPLEMENTED_WRAPPER(Type_set_name)
 UNIMPLEMENTED_WRAPPER(Type_size)
 
 //UNIMPLEMENTED_WRAPPER(Type_struct)
 NO_OP_WRAPPER(Type_struct)
 
-UNIMPLEMENTED_WRAPPER(Type_ub)
+NO_OP_WRAPPER(Type_ub)
 UNIMPLEMENTED_WRAPPER(Type_vector)
 UNIMPLEMENTED_WRAPPER(Unpack)
 

@@ -136,7 +136,6 @@ static inline void before ( char* fnname )
          opt_strict  = NULL != strstr(options_str, "strict");
       fprintf(stderr, "%s %5d: Active for pid %d\n", 
                       preamble, my_pid, my_pid);
-
       /* Sanity check - that 'long' really is a machine word. */
       assert(sizeof(long) == sizeof(void*));
       /* Sanity check - char is byte-sized (else address calculations
@@ -248,9 +247,55 @@ static void maybeFreeTy ( MPI_Datatype* ty )
    assert(r == MPI_SUCCESS);
 
    if (tycon != MPI_COMBINER_NAMED) {
-      r = MPI_Type_free(ty);
+      r = PMPI_Type_free(ty);
       assert(r == MPI_SUCCESS);
    }
+}
+
+/* Half-hearted type-showing function (for debugging). */
+static void showTy ( FILE* f, MPI_Datatype ty )
+{
+        if (ty == MPI_DATATYPE_NULL) fprintf(f,"DATATYPE_NULL\n");
+   else if (ty == MPI_BYTE) fprintf(f,"BYTE\n");
+   else if (ty == MPI_PACKED) fprintf(f,"PACKED\n");
+   else if (ty == MPI_CHAR) fprintf(f,"CHAR\n");
+   else if (ty == MPI_SHORT) fprintf(f,"SHORT\n");
+   else if (ty == MPI_INT) fprintf(f,"INT\n");
+   else if (ty == MPI_LONG) fprintf(f,"LONG\n");
+   else if (ty == MPI_FLOAT) fprintf(f,"FLOAT\n");
+   else if (ty == MPI_DOUBLE) fprintf(f,"DOUBLE\n");
+   else if (ty == MPI_LONG_DOUBLE) fprintf(f,"LONG_DOUBLE\n");
+   else if (ty == MPI_UNSIGNED_CHAR) fprintf(f,"UNSIGNED_CHAR\n");
+   else if (ty == MPI_UNSIGNED_SHORT) fprintf(f,"UNSIGNED_SHORT\n");
+   else if (ty == MPI_UNSIGNED_LONG) fprintf(f,"UNSIGNED_LONG\n");
+   else if (ty == MPI_UNSIGNED) fprintf(f,"UNSIGNED\n");
+   else if (ty == MPI_FLOAT_INT) fprintf(f,"FLOAT_INT\n");
+   else if (ty == MPI_DOUBLE_INT) fprintf(f,"DOUBLE_INT\n");
+   else if (ty == MPI_LONG_DOUBLE_INT) fprintf(f,"LONG_DOUBLE_INT\n");
+   else if (ty == MPI_LONG_INT) fprintf(f,"LONG_INT\n");
+   else if (ty == MPI_SHORT_INT) fprintf(f,"SHORT_INT\n");
+   else if (ty == MPI_2INT) fprintf(f,"2INT\n");
+   else if (ty == MPI_UB) fprintf(f,"UB\n");
+   else if (ty == MPI_LB) fprintf(f,"LB\n");
+   else if (ty == MPI_WCHAR) fprintf(f,"WCHAR\n");
+   else if (ty == MPI_LONG_LONG_INT) fprintf(f,"LONG_LONG_INT\n");
+   else if (ty == MPI_LONG_LONG) fprintf(f,"LONG_LONG\n");
+   else if (ty == MPI_UNSIGNED_LONG_LONG) fprintf(f,"UNSIGNED_LONG_LONG\n");
+   else fprintf(f,"showTy:???\n");
+}
+
+/* How big is a "named" (base) type?  Returns 0 if not known. */
+static long sizeofNamedTy ( MPI_Datatype ty )
+{
+   if (ty == MPI_DOUBLE)      return sizeof(double);
+   if (ty == MPI_INT)         return sizeof(signed int);
+   if (ty == MPI_CHAR)        return sizeof(signed char);
+   if (ty == MPI_UNSIGNED)    return sizeof(unsigned int);
+   if (ty == MPI_LONG)        return sizeof(signed long int);
+   if (ty == MPI_LONG_DOUBLE) return sizeof(long double);
+   /* MPI1.1 does not define MPI_LONG_INT, hence the following is a guess */
+   if (ty == MPI_LONG_INT)    return sizeof(signed long int);
+   return 0;
 }
 
 
@@ -270,58 +315,29 @@ static
 void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
 {
    int  r, n_ints, n_addrs, n_dtys, tycon;
-   long ex, count, i;
+   long ex, i;
    int*          ints  = NULL;
    MPI_Aint*     addrs = NULL;
    MPI_Datatype* dtys  = NULL;
    //   MPI_Datatype  elemTy;
 
-   if (1) { 
+   if (0)
       printf("walk_type %p\n", (void*)ty);
-      if (ty == MPI_DATATYPE_NULL) printf("MPI_DATATYPE_NULL\n");
-      else if (ty == MPI_BYTE) printf("MPI_BYTE\n");
-      else if (ty == MPI_PACKED) printf("MPI_PACKED\n");
-      else if (ty == MPI_CHAR) printf("MPI_CHAR\n");
-      else if (ty == MPI_SHORT) printf("MPI_SHORT\n");
-      else if (ty == MPI_INT) printf("MPI_INT\n");
-      else if (ty == MPI_LONG) printf("MPI_LONG\n");
-      else if (ty == MPI_FLOAT) printf("MPI_FLOAT\n");
-      else if (ty == MPI_DOUBLE) printf("MPI_DOUBLE\n");
-      else if (ty == MPI_LONG_DOUBLE) printf("MPI_LONG_DOUBLE\n");
-      else if (ty == MPI_UNSIGNED_CHAR) printf("MPI_UNSIGNED_CHAR\n");
-      else if (ty == MPI_UNSIGNED_SHORT) printf("MPI_UNSIGNED_SHORT\n");
-      else if (ty == MPI_UNSIGNED_LONG) printf("MPI_UNSIGNED_LONG\n");
-      else if (ty == MPI_UNSIGNED) printf("MPI_UNSIGNED\n");
-      else if (ty == MPI_FLOAT_INT) printf("MPI_FLOAT_INT\n");
-      else if (ty == MPI_DOUBLE_INT) printf("MPI_DOUBLE_INT\n");
-      else if (ty == MPI_LONG_DOUBLE_INT) printf("MPI_LONG_DOUBLE_INT\n");
-      else if (ty == MPI_LONG_INT) printf("MPI_LONG_INT\n");
-      else if (ty == MPI_SHORT_INT) printf("MPI_SHORT_INT\n");
-      else if (ty == MPI_2INT) printf("MPI_2INT\n");
-      else if (ty == MPI_UB) printf("MPI_UB\n");
-      else if (ty == MPI_LB) printf("MPI_LB\n");
-      else if (ty == MPI_WCHAR) printf("MPI_WCHAR\n");
-      else if (ty == MPI_LONG_LONG_INT) printf("MPI_LONG_LONG_INT\n");
-      else if (ty == MPI_LONG_LONG) printf("MPI_LONG_LONG\n");
-      else if (ty == MPI_UNSIGNED_LONG_LONG) printf("MPI_UNSIGNED_LONG_LONG\n");
-      else printf("???\n");
-   }
-   assert(ty != MPI_DATATYPE_NULL);
 
    r = MPI_Type_get_envelope( ty, &n_ints, &n_addrs, &n_dtys, &tycon );
    assert(r == MPI_SUCCESS);
 
    /* Handle the base cases fast(er/ish). */
    if (tycon == MPI_COMBINER_NAMED) {
-      if (ty == MPI_DOUBLE)   { f(base,sizeof(double)); return; }
-      if (ty == MPI_INT)      { f(base,sizeof(signed int)); return; }
-      if (ty == MPI_CHAR)     { f(base,sizeof(signed char)); return; }
-      if (ty == MPI_UNSIGNED) { f(base,sizeof(unsigned int)); return; }
-      goto unhandled;
+      long sz = sizeofNamedTy(ty);
+      if (sz == 0) 
+         goto unhandled;
+      f(base,sz);
+      return;
       /*NOTREACHED*/
    }
 
-   if (1) {
+   if (0) {
       ex = extentOfTy(ty);
       printf("tycon %p %d %d %d (ext %d)\n",
              (void*)tycon, n_ints, n_addrs, n_dtys, (int)ex );
@@ -361,6 +377,7 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
          assert(n_addrs == n_ints-1);
          assert(n_dtys  == n_ints-1);
 	 for (i = 0; i < ints[0]; i++) {
+            if (0)
             printf("struct (elem %d limit %d) off %d copies %d\n", 
                    (int)i, (int)ints[0], (int)addrs[i], (int)ints[i+1]);
             walk_type_array( f, base + addrs[i], dtys[i], (long)ints[i+1] );
@@ -381,8 +398,10 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
 
   unhandled:
    if (tycon == MPI_COMBINER_NAMED) {
-      fprintf(stderr, "%s %5d: walk_type: unhandled base type 0x%lx\n",
+      fprintf(stderr, "%s %5d: walk_type: unhandled base type 0x%lx ",
                       preamble, my_pid, (long)ty);
+      showTy(stderr, ty);
+      fprintf(stderr, "\n");
    } else {
       fprintf(stderr, "%s %5d: walk_type: unhandled combiner 0x%lx\n",
                       preamble, my_pid, (long)tycon);
@@ -400,9 +419,32 @@ void walk_type_array ( void(*f)(void*,long), char* base,
                        MPI_Datatype elemTy, long count )
 {
    long i, ex;
-   ex = extentOfTy(elemTy);
-   for (i = 0; i < count; i++)
-      walk_type( f, base + i * ex, elemTy );
+
+   assert(sizeof(unsigned long) == sizeof(char*));
+
+   /* First see if we can do this the fast way. */
+   ex = sizeofNamedTy(elemTy);
+
+   if ( /* ty is a primitive type with power-of-2 size */
+        (ex == 8 || ex == 4 || ex == 2 || ex == 1)
+        && /* base is suitably aligned for ty */
+           ( ((unsigned long)base) & (ex-1)) == 0)  {
+
+      /* We're sure it's contiguous, so just paint/check it in one
+         go. */
+     if (0) printf("walk_type_array fast %ld of size %ld\n", count, ex );
+     f ( base, count * ex );
+
+   } else {
+
+      /* Bad news.  We have to futz with each element individually.
+         This could be very expensive. */
+      ex = extentOfTy(elemTy);
+      if (0) printf("walk_type_array SLOW %ld of size %ld\n", count, ex );
+      for (i = 0; i < count; i++)
+         walk_type( f, base + i * ex, elemTy );
+
+   }
 }
 
 
@@ -1393,7 +1435,7 @@ UNIMPLEMENTED_WRAPPER(Type_count)
 UNIMPLEMENTED_WRAPPER(Type_create_darray)
 UNIMPLEMENTED_WRAPPER(Type_create_subarray)
 NO_OP_WRAPPER(Type_extent)
-UNIMPLEMENTED_WRAPPER(Type_free)
+NO_OP_WRAPPER(Type_free)
 NO_OP_WRAPPER(Type_get_contents)
 NO_OP_WRAPPER(Type_get_envelope)
 UNIMPLEMENTED_WRAPPER(Type_get_name)

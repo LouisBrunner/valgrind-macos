@@ -229,6 +229,9 @@ Bool eq_MPI_Request ( MPI_Request r1, MPI_Request r2 )
    return r1 == r2;
 }
 
+/* Get the 'extent' of a type.  Note, as per the MPI spec this
+   includes whatever padding would be required when using 'ty' in an
+   array. */
 static long extentOfTy ( MPI_Datatype ty )
 {
    int      r;
@@ -284,15 +287,20 @@ static void showTy ( FILE* f, MPI_Datatype ty )
    else fprintf(f,"showTy:???\n");
 }
 
-/* How big is a "named" (base) type?  Returns 0 if not known. */
-static long sizeofNamedTy ( MPI_Datatype ty )
+/* How big is a "named" (base) type?  Returns 0 if not known.  Note.
+   There is a subtlety, which is that this is required to return the
+   exact size of one item of the type, NOT the size of it when padded
+   suitably to make an array of them.  In particular that's why the
+   size of LONG_DOUBLE is 10 and not sizeof(long double), since the
+   latter is 12 at least on x86. */
+static long sizeofOneNamedTy ( MPI_Datatype ty )
 {
    if (ty == MPI_DOUBLE)      return sizeof(double);
    if (ty == MPI_INT)         return sizeof(signed int);
    if (ty == MPI_CHAR)        return sizeof(signed char);
    if (ty == MPI_UNSIGNED)    return sizeof(unsigned int);
    if (ty == MPI_LONG)        return sizeof(signed long int);
-   if (ty == MPI_LONG_DOUBLE) return sizeof(long double);
+   if (ty == MPI_LONG_DOUBLE) return 10; /* NOT: sizeof(long double); */
    /* MPI1.1 does not define MPI_LONG_INT, hence the following is a guess */
    if (ty == MPI_LONG_INT)    return sizeof(signed long int);
    return 0;
@@ -329,7 +337,7 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
 
    /* Handle the base cases fast(er/ish). */
    if (tycon == MPI_COMBINER_NAMED) {
-      long sz = sizeofNamedTy(ty);
+      long sz = sizeofOneNamedTy(ty);
       if (sz == 0) 
          goto unhandled;
       f(base,sz);
@@ -423,7 +431,7 @@ void walk_type_array ( void(*f)(void*,long), char* base,
    assert(sizeof(unsigned long) == sizeof(char*));
 
    /* First see if we can do this the fast way. */
-   ex = sizeofNamedTy(elemTy);
+   ex = sizeofOneNamedTy(elemTy);
 
    if ( /* ty is a primitive type with power-of-2 size */
         (ex == 8 || ex == 4 || ex == 2 || ex == 1)
@@ -438,7 +446,13 @@ void walk_type_array ( void(*f)(void*,long), char* base,
    } else {
 
       /* Bad news.  We have to futz with each element individually.
-         This could be very expensive. */
+         This could be very expensive.
+
+         Note: subtle.  If ty is LONG_DOUBLE then the extent will be
+         12, so the following loop will jump along in steps of 12, but
+         the size painted by walk_type will be 10 since it uses
+         sizeofOneNamedTy to establish the size of base types.  Which
+         is what we need to happen. */
       ex = extentOfTy(elemTy);
       if (0) printf("walk_type_array SLOW %ld of size %ld\n", count, ex );
       for (i = 0; i < count; i++)

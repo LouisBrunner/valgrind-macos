@@ -6299,7 +6299,7 @@ UInt dis_cmov_E_G ( UChar       sorb,
 
 
 static
-UInt dis_xadd_G_E ( UChar sorb, Int sz, Int delta0 )
+UInt dis_xadd_G_E ( UChar sorb, Int sz, Int delta0, Bool* decodeOK )
 {
    Int   len;
    UChar rm = getIByte(delta0);
@@ -6314,7 +6314,9 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, Int delta0 )
    IRTemp tmpt1 = newTemp(ty);
 
    if (epartIsReg(rm)) {
-      unimplemented("x86 xadd instruction with register operand");
+      *decodeOK = False;
+      return delta0;
+      /* Currently we don't handle xadd_G_E with register operand. */
 #if 0
       uInstr2(cb, GET, sz, ArchReg, eregOfRM(rm), TempReg, tmpd);
       uInstr2(cb, GET, sz, ArchReg, gregOfRM(rm), TempReg, tmpt);
@@ -6336,6 +6338,7 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, Int delta0 )
       putIReg(sz, gregOfRM(rm), mkexpr(tmpd));
       DIP("xadd%c %s, %s\n",
           nameISize(sz), nameIReg(sz,gregOfRM(rm)), dis_buf);
+      *decodeOK = True;
       return len+delta0;
    }
 }
@@ -12491,12 +12494,18 @@ DisResult disInstr_X86_WRK (
 
       /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
 
-//--       case 0xC0: /* XADD Gb,Eb */
-//--          eip = dis_xadd_G_E ( cb, sorb, 1, eip );
-//--          break;
-      case 0xC1: /* XADD Gv,Ev */
-         delta = dis_xadd_G_E ( sorb, sz, delta );
+      case 0xC0: { /* XADD Gb,Eb */
+         Bool decodeOK;
+         delta = dis_xadd_G_E ( sorb, 1, delta, &decodeOK );
+         if (!decodeOK) goto decode_failure;
          break;
+      }
+      case 0xC1: { /* XADD Gv,Ev */
+         Bool decodeOK;
+         delta = dis_xadd_G_E ( sorb, sz, delta, &decodeOK );
+         if (!decodeOK) goto decode_failure;
+         break;
+      }
 
       /* =-=-=-=-=-=-=-=-=- MMXery =-=-=-=-=-=-=-=-=-=-= */
 

@@ -4221,7 +4221,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
             case 0xD8 ... 0xDF: /* FCMOVU ST(i), ST(0) */
                r_src = (UInt)modrm - 0xD8;
-               DIP("fcmovnu %%st(%d), %%st(0)\n", (Int)r_src);
+               DIP("fcmovu %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,

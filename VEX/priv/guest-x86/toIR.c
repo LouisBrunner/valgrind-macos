@@ -8101,6 +8101,29 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
+   /* 0F 0D /0 = PREFETCH  m8 -- 3DNow! prefetch */
+   /* 0F 0D /1 = PREFETCHW m8 -- ditto, with some other hint */
+   if (insn[0] == 0x0F && insn[1] == 0x0D
+       && !epartIsReg(insn[2]) 
+       && gregOfRM(insn[2]) >= 0 && gregOfRM(insn[2]) <= 1) {
+      HChar* hintstr = "??";
+
+      modrm = getIByte(delta+2);
+      vassert(!epartIsReg(modrm));
+
+      addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+      delta += 2+alen;
+
+      switch (gregOfRM(modrm)) {
+         case 0: hintstr = ""; break;
+         case 1: hintstr = "w"; break;
+         default: vassert(0); /*NOTREACHED*/
+      }
+
+      DIP("prefetch%s %s\n", hintstr, dis_buf);
+      goto decode_success;
+   }
+
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F F6 = PSADBW -- sum of 8Ux8 absolute differences */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xF6) {

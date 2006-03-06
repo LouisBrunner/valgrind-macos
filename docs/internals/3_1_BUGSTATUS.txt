@@ -67,6 +67,7 @@ many      v5694/5   n-i-bz   ppc32 rounding mode problems
 many      vx1577    119482   ppc32: mtfsb1
 many      wontfix   120277   ppc32: fres, fctid, fctidz, frsqrte 
                              [skip for 3.1.1 unless gcc/glibc requires it]
+vx1579    vx1580    n-i-bz   ppc32/64: mtocrf/mfocrf
 
 v5629     v5680     n-i-bz   Dave Nomura extra suppression
 

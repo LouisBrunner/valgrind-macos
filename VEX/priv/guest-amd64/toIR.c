@@ -5189,6 +5189,20 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                );
                break;
 
+            case 0xD8 ... 0xDF: /* FCMOVNU ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xD8;
+               DIP("fcmovnu %%st(%u), %%st(0)\n", r_src);
+               put_ST_UNCHECKED(
+                  0, 
+                  IRExpr_Mux0X( 
+                     unop(Iop_1Uto8,
+                          mk_amd64g_calculate_condition(AMD64CondNP)), 
+                     get_ST(0), 
+                     get_ST(r_src)
+                  )
+               );
+               break;
+
             case 0xE2:
                DIP("fnclex\n");
                break;

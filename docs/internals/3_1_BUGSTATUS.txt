@@ -11,9 +11,9 @@ v5270     v5447     n-i-bz   ppc32: __NR_{set,get}priority
 v5384     wontfix   117096   Weird errors when --log-fd= has invalid value
 v5470     v5479     117332   missing line info with icc 8.1 (x86)
 pending   pending   117362   partially defined equality
-pending   pending   117366   amd64: 0xDD 0x7C fnstsw
+vx1591    vx1592    117366   amd64: 0xDD 0x7C fnstsw
                     == 118274
-pending   pending   117367   amd64: 0xD9 0xF4 fxtract
+vx1593    vx1594    117367   amd64: 0xD9 0xF4 fxtract
 v5256     v5260     117369   amd64: __NR_getpriority (140)
 vx1482    vx1514    117419   ppc32: lfsu f5, -4(r11)
 vx1492    vx1515    117419   ppc32: fsqrt
@@ -23,7 +23,7 @@ v5514     v5671     117936   more stabs problems
                     ==119914
                     ==120345
 pending   pending   118118   SIGBUS in disInstr_AMD64 after long run
-vx1533    pending   118239   amd64: 0xF 0xAE 0x3F (clflush)
+vx1533    vx1590    118239   amd64: 0xF 0xAE 0x3F (clflush)
 pending   pending   118466   add %r,%r mishandled by memcheck
 v5635     v5672     118939   vm86old system call
 many      wontfix   n-i-bz   VALGRIND_COUNT_LEAKS arg types (Olly Betts)
@@ -40,24 +40,24 @@ v5445     v5673     n-i-bz   VG_(getgroups) fix (Shinichi Noda)
 vx1519    vx1578    n-i-bz   ppc32/64: allocate from callee-saved FP/VMX regs
 v5500     v5674     n-i-bz   misaligned path word-size bug in mc_main.c
 vx1521/2  pending   119297   Incorrect error message for sse code
-pending   pending   120410   x86: prefetchw (0xF 0xD 0x48 0x4)
+vx1585    vx1586    120410   x86: prefetchw (0xF 0xD 0x48 0x4)
 v5633     v5675     120728   TIOCSERGETLSR, TIOCGICOUNT, HDIO_GET_DMA ioctls
-vx1419    pending   120658   Build fixes for gcc 2.96
+vx1419    vx1581    120658   Build fixes for gcc 2.96
 v5593     wontfix   120658   Pass -Wdeclaration-after-statement to VEX build
 pending   pending   120732   Generating trapno for sigcontext (x86)
 v5641     v5676     120734   Support for changing EIP in signal handler (x86)
 v5616     v5677     n-i-bz   memcheck/tests/zeropage de-looping fix
-vx1569    pending   n-i-bz   x86 fxtract doesn't work reliably
+vx1569    vx1582    n-i-bz   x86 fxtract doesn't work reliably
 probably-wontfix    121029   std::pow returns different float values
 pending   pending   121617   Assertion 'sizeof(*regs) == sizeof(prs->pr_reg)
-pending   pending   121662   x86: lock xadd (0xF0 0xF 0xC0 0x2)
+vx1583    vx1584    121662   x86: lock xadd (0xF0 0xF 0xC0 0x2)
 v5647     v5678     121893   calloc does not always zero memory
 pending   pending   n-i-bz   XML output truncated (users, Jan 26 09:08:34 2006)
 pending   pending   121896   ESP modification in ucontext from signal handlers
                              (closed INVALID)
 v5651     v5679     121901   no support for syscall tkill
 v5700     v5701     n-i-bz   Suppression update for Debian unstable
-pending   pending   122067   amd64: fcmovnu (0xDB 0xD9)
+vx1587    vx1589    122067   amd64: fcmovnu (0xDB 0xD9)
 
 (next 4 are ppc32-specific FP problems)
 v5662     v5703     n-i-bz   broken signal handling in ppc32/64 cpuid-ing

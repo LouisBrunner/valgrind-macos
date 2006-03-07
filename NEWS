@@ -1,4 +1,54 @@
 
+Release 3.1.1 (11 March 2006)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.1.1 fixes a bunch of bugs reported in 3.1.0.  There is no new
+functionality.  The fixed bugs are:
+
+(note: "n-i-bz" means "not in bugzilla" -- this bug does not have
+ a bugzilla entry).
+
+n-i-bz   ppc32: fsub 3,3,3 in dispatcher doesn't clear NaNs
+n-i-bz   ppc32: __NR_{set,get}priority
+117332   x86: missing line info with icc 8.1
+117366   amd64: 0xDD 0x7C fnstsw
+== 118274
+117367   amd64: 0xD9 0xF4 fxtract
+117369   amd64: __NR_getpriority (140)
+117419   ppc32: lfsu f5, -4(r11)
+117419   ppc32: fsqrt
+117936   more stabs problems (segfaults while reading debug info)
+==119914
+==120345
+118239   amd64: 0xF 0xAE 0x3F (clflush)
+118939   vm86old system call
+n-i-bz   memcheck/tests/mempool reads freed memory
+n-i-bz   AshleyP's custom-allocator assertion
+n-i-bz   Dirk strict-aliasing stuff
+n-i-bz   More space for debugger cmd line (Dan Thaler)
+n-i-bz   Clarified leak checker output message
+n-i-bz   AshleyP's --gen-suppressions output fix
+n-i-bz   cg_annotate's --sort option broken
+n-i-bz   OSet 64-bit fastcmp bug
+n-i-bz   VG_(getgroups) fix (Shinichi Noda)
+n-i-bz   ppc32: allocate from callee-saved FP/VMX regs
+n-i-bz   misaligned path word-size bug in mc_main.c
+120410   x86: prefetchw (0xF 0xD 0x48 0x4)
+120728   TIOCSERGETLSR, TIOCGICOUNT, HDIO_GET_DMA ioctls
+120658   Build fixes for gcc 2.96
+120734   x86: Support for changing EIP in signal handler
+n-i-bz   memcheck/tests/zeropage de-looping fix
+n-i-bz   x86: fxtract doesn't work reliably
+121662   x86: lock xadd (0xF0 0xF 0xC0 0x2)
+121893   calloc does not always zeroed memory
+121901   no support for syscall tkill
+n-i-bz   Suppression update for Debian unstable
+122067   amd64: fcmovnu (0xDB 0xD9)
+n-i-bz   ppc32: broken signal handling cpu feature detection
+n-i-bz   ppc32: rounding mode problems (improved, partial fix only)
+119482   ppc32: mtfsb1
+n-i-bz   ppc32: mtocrf/mfocrf
+
+
 Release 3.1.0 (25 November 2005)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.1.0 is a feature release with a number of significant improvements:

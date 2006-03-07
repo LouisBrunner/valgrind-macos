@@ -4206,6 +4206,22 @@ static void clear_C2 ( void )
    put_C3210( binop(Iop_And64, get_C3210(), mkU64(~AMD64G_FC_MASK_C2)) );
 }
 
+/* Invent a plausible-looking FPU status word value:
+      ((ftop & 7) << 11) | (c3210 & 0x4700)
+ */
+static IRExpr* get_FPU_sw ( void )
+{
+   return
+      unop(Iop_32to16,
+           binop(Iop_Or32,
+                 binop(Iop_Shl32, 
+                       binop(Iop_And32, get_ftop(), mkU32(7)), 
+                             mkU8(11)),
+                       binop(Iop_And32, unop(Iop_64to32, get_C3210()), 
+                                        mkU32(0x4700))
+      ));
+}
+
 
 /* ------------------------------------------------------- */
 /* Given all that stack-mangling junk, we can now go ahead
@@ -5501,6 +5517,14 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                DIP("fnsave %s\n", dis_buf);
 //..                break;
 //..             }
+
+            case 7: { /* FNSTSW m16 */
+               IRExpr* sw = get_FPU_sw();
+               vassert(typeOfIRExpr(irbb->tyenv, sw) == Ity_I16);
+               storeLE( mkexpr(addr), sw );
+               DIP("fnstsw %s\n", dis_buf);
+               break;
+            }
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));

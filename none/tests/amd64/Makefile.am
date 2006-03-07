@@ -6,6 +6,7 @@ INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	faultstatus.vgtest faultstatus.stderr.exp \
+	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
@@ -16,7 +17,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 
 check_PROGRAMS = \
-	faultstatus $(INSN_TESTS) looper jrcxz smc1 shrld
+	faultstatus fxtract $(INSN_TESTS) looper jrcxz smc1 shrld
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
@@ -32,6 +33,7 @@ insn_sse2_SOURCES	= insn_sse2.def
 insn_sse2_LDADD		= -lm
 insn_fpu_SOURCES	= insn_fpu.def
 insn_fpu_LDADD		= -lm
+fxtract_LDADD		= -lm
 
 .def.c: $(srcdir)/gen_insn_test.pl
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

@@ -105,6 +105,10 @@ typedef
 #define FP_REG(ii)    (10*(7-(ii)))
 
 
+/* Do the computations for x86/amd64 FXTRACT */
+extern ULong x86amd64g_calculate_FXTRACT ( ULong arg, HWord getExp );
+
+
 
 #endif /* ndef __G_GENERIC_X87_H */
 

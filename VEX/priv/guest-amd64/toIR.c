@@ -154,6 +154,7 @@
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
 #include "guest-generic/bb_to_IR.h"
+#include "guest-generic/g_generic_x87.h"
 #include "guest-amd64/gdefs.h"
 
 
@@ -4827,6 +4828,42 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                         get_ST(0)));
                fp_pop();
                break;
+
+            case 0xF4: { /* FXTRACT */
+               IRTemp argF = newTemp(Ity_F64);
+               IRTemp sigF = newTemp(Ity_F64);
+               IRTemp expF = newTemp(Ity_F64);
+               IRTemp argI = newTemp(Ity_I64);
+               IRTemp sigI = newTemp(Ity_I64);
+               IRTemp expI = newTemp(Ity_I64);
+               DIP("fxtract\n");
+               assign( argF, get_ST(0) );
+               assign( argI, unop(Iop_ReinterpF64asI64, mkexpr(argF)));
+               assign( sigI, 
+                       mkIRExprCCall(
+                          Ity_I64, 0/*regparms*/, 
+                          "x86amd64g_calculate_FXTRACT", 
+                          &x86amd64g_calculate_FXTRACT, 
+                          mkIRExprVec_2( mkexpr(argI), 
+                                         mkIRExpr_HWord(0)/*sig*/ )) 
+               );
+               assign( expI, 
+                       mkIRExprCCall(
+                          Ity_I64, 0/*regparms*/, 
+                          "x86amd64g_calculate_FXTRACT", 
+                          &x86amd64g_calculate_FXTRACT, 
+                          mkIRExprVec_2( mkexpr(argI), 
+                                         mkIRExpr_HWord(1)/*exp*/ )) 
+               );
+               assign( sigF, unop(Iop_ReinterpI64asF64, mkexpr(sigI)) );
+               assign( expF, unop(Iop_ReinterpI64asF64, mkexpr(expI)) );
+               /* exponent */
+               put_ST_UNCHECKED(0, mkexpr(expF) );
+               fp_push();
+               /* significand */
+               put_ST(0, mkexpr(sigF) );
+               break;
+            }
 
 //..             case 0xF5: { /* FPREM1 -- IEEE compliant */
 //..                IRTemp a1 = newTemp(Ity_F64);

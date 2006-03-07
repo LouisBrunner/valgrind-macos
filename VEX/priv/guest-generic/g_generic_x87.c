@@ -437,6 +437,115 @@ void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
 }
 
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+/* Extract the signed significand or exponent component as per
+   fxtract.  Arg and result are doubles travelling under the guise of
+   ULongs.  Returns significand when getExp is zero and exponent
+   otherwise. */
+ULong x86amd64g_calculate_FXTRACT ( ULong arg, HWord getExp )
+{
+   ULong  uSig, uExp;
+   /* Long   sSig; */
+   Int    sExp, i;
+   UInt   sign, expExp;
+
+   /*
+    S  7FF    0------0   infinity
+    S  7FF    0X-----X   snan
+    S  7FF    1X-----X   qnan
+   */
+   const ULong posInf  = 0x7FF0000000000000ULL;
+   const ULong negInf  = 0xFFF0000000000000ULL;
+   const ULong nanMask = 0x7FF0000000000000ULL;
+   const ULong qNan    = 0x7FF8000000000000ULL;
+   const ULong posZero = 0x0000000000000000ULL;
+   const ULong negZero = 0x8000000000000000ULL;
+   const ULong bit51   = 1ULL << 51;
+   const ULong bit52   = 1ULL << 52;
+   const ULong sigMask = bit52 - 1;
+
+   /* Mimic PIII behaviour for special cases. */
+   if (arg == posInf)
+      return getExp ? posInf : posInf;
+   if (arg == negInf)
+      return getExp ? posInf : negInf;
+   if ((arg & nanMask) == nanMask)
+      return qNan;
+   if (arg == posZero)
+      return getExp ? negInf : posZero;
+   if (arg == negZero)
+      return getExp ? negInf : negZero;
+
+   /* Split into sign, exponent and significand. */
+   sign = ((UInt)(arg >> 63)) & 1;
+
+   /* Mask off exponent & sign. uSig is in range 0 .. 2^52-1. */
+   uSig = arg & sigMask;
+
+   /* Get the exponent. */
+   sExp = ((Int)(arg >> 52)) & 0x7FF;
+
+   /* Deal with denormals: if the exponent is zero, then the
+      significand cannot possibly be zero (negZero/posZero are handled
+      above).  Shift the significand left until bit 51 of it becomes
+      1, and decrease the exponent accordingly.
+   */
+   if (sExp == 0) {
+      for (i = 0; i < 52; i++) {
+         if (uSig & bit51)
+            break;
+         uSig <<= 1;
+         sExp--;
+      }
+      uSig <<= 1;
+   } else {
+      /* Add the implied leading-1 in the significand. */
+      uSig |= bit52;
+   }
+
+   /* Roll in the sign. */
+   /* sSig = uSig; */
+   /* if (sign) sSig =- sSig; */
+
+   /* Convert sig into a double.  This should be an exact conversion.
+      Then divide by 2^52, which should give a value in the range 1.0
+      to 2.0-epsilon, at least for normalised args. */
+   /* dSig = (Double)sSig; */
+   /* dSig /= 67108864.0;  */ /* 2^26 */
+   /* dSig /= 67108864.0;  */ /* 2^26 */
+   uSig &= sigMask;
+   uSig |= 0x3FF0000000000000ULL;
+   if (sign)
+      uSig ^= negZero;
+
+   /* Convert exp into a double.  Also an exact conversion. */
+   /* dExp = (Double)(sExp - 1023); */
+   sExp -= 1023;
+   if (sExp == 0) {
+      uExp = 0;
+   } else {
+      uExp   = sExp < 0 ? -sExp : sExp;
+      expExp = 0x3FF +52;
+      /* 1 <= uExp <= 1074 */
+      /* Skip first 42 iterations of normalisation loop as we know they
+         will always happen */
+      uExp <<= 42;
+      expExp -= 42;
+      for (i = 0; i < 52-42; i++) {
+         if (uExp & bit52)
+            break;
+         uExp <<= 1;
+         expExp--;
+      }
+      uExp &= sigMask;
+      uExp |= ((ULong)expExp) << 52;
+      if (sExp < 0) uExp ^= negZero;
+   }
+
+   return getExp ? uExp : uSig;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- end                       guest-generic/h_generic_x87.c ---*/
 /*---------------------------------------------------------------*/

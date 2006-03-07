@@ -156,6 +156,7 @@
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
 #include "guest-generic/bb_to_IR.h"
+#include "guest-generic/g_generic_x87.h"
 #include "guest-x86/gdefs.h"
 
 
@@ -3944,17 +3945,21 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                assign( argF, get_ST(0) );
                assign( argI, unop(Iop_ReinterpF64asI64, mkexpr(argF)));
                assign( sigI, 
-                       mkIRExprCCall(Ity_I64, 0/*regparms*/, 
-                                     "x86g_calculate_FXTRACT", 
-                                     &x86g_calculate_FXTRACT, 
-                                     mkIRExprVec_2( mkexpr(argI), 
-                                                    mkU32(0)/*sig*/ )) );
+                       mkIRExprCCall(
+                          Ity_I64, 0/*regparms*/, 
+                          "x86amd64g_calculate_FXTRACT", 
+                          &x86amd64g_calculate_FXTRACT, 
+                          mkIRExprVec_2( mkexpr(argI), 
+                                         mkIRExpr_HWord(0)/*sig*/ )) 
+               );
                assign( expI, 
-                       mkIRExprCCall(Ity_I64, 0/*regparms*/, 
-                                     "x86g_calculate_FXTRACT", 
-                                     &x86g_calculate_FXTRACT, 
-                                     mkIRExprVec_2( mkexpr(argI), 
-                                                    mkU32(1)/*exp*/ )) );
+                       mkIRExprCCall(
+                          Ity_I64, 0/*regparms*/, 
+                          "x86amd64g_calculate_FXTRACT", 
+                          &x86amd64g_calculate_FXTRACT, 
+                          mkIRExprVec_2( mkexpr(argI), 
+                                         mkIRExpr_HWord(1)/*exp*/ )) 
+               );
                assign( sigF, unop(Iop_ReinterpI64asF64, mkexpr(sigI)) );
                assign( expF, unop(Iop_ReinterpI64asF64, mkexpr(expI)) );
                /* exponent */

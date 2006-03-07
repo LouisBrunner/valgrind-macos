@@ -120,8 +120,6 @@ extern ULong x86g_check_ldmxcsr ( UInt mxcsr );
 
 extern UInt  x86g_create_mxcsr ( UInt sseround );
 
-extern ULong x86g_calculate_FXTRACT ( ULong arg, UInt getExp );
-
 
 /* Translate a guest virtual_addr into a guest linear address by
    consulting the supplied LDT/GDT structures.  Their representation

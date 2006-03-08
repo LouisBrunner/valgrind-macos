@@ -1294,6 +1294,7 @@ void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
                                     isUnaddr, s );
          break;
       
+      case Vg_CoreClientReq: /* KLUDGE */
       case Vg_CorePThread:
          MAC_(record_core_mem_error)( tid, isUnaddr, s );
          break;
@@ -2019,77 +2020,78 @@ VG_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
 }
 
 
-//zz /*------------------------------------------------------------*/
-//zz /*--- Metadata get/set functions, for client requests.     ---*/
-//zz /*------------------------------------------------------------*/
-//zz 
-//zz /* Copy Vbits for src into vbits. Returns: 1 == OK, 2 == alignment
-//zz    error, 3 == addressing error. */
-//zz static Int mc_get_or_set_vbits_for_client ( 
-//zz    ThreadId tid,
-//zz    Addr dataV, 
-//zz    Addr vbitsV, 
-//zz    SizeT size, 
-//zz    Bool setting /* True <=> set vbits,  False <=> get vbits */ 
-//zz )
-//zz {
-//zz    Bool addressibleD = True;
-//zz    Bool addressibleV = True;
-//zz    UInt* data  = (UInt*)dataV;
-//zz    UInt* vbits = (UInt*)vbitsV;
-//zz    SizeT szW   = size / 4; /* sigh */
-//zz    SizeT i;
-//zz    UInt* dataP  = NULL; /* bogus init to keep gcc happy */
-//zz    UInt* vbitsP = NULL; /* ditto */
-//zz 
-//zz    /* Check alignment of args. */
-//zz    if (!(VG_IS_4_ALIGNED(data) && VG_IS_4_ALIGNED(vbits)))
-//zz       return 2;
-//zz    if ((size & 3) != 0)
-//zz       return 2;
-//zz   
-//zz    /* Check that arrays are addressible. */
-//zz    for (i = 0; i < szW; i++) {
-//zz       dataP  = &data[i];
-//zz       vbitsP = &vbits[i];
-//zz       if (get_abits4_ALIGNED((Addr)dataP) != VGM_NIBBLE_VALID) {
-//zz          addressibleD = False;
-//zz          break;
-//zz       }
-//zz       if (get_abits4_ALIGNED((Addr)vbitsP) != VGM_NIBBLE_VALID) {
-//zz          addressibleV = False;
-//zz          break;
-//zz       }
-//zz    }
-//zz    if (!addressibleD) {
-//zz       MAC_(record_address_error)( tid, (Addr)dataP, 4, 
-//zz                                   setting ? True : False );
-//zz       return 3;
-//zz    }
-//zz    if (!addressibleV) {
-//zz       MAC_(record_address_error)( tid, (Addr)vbitsP, 4, 
-//zz                                   setting ? False : True );
-//zz       return 3;
-//zz    }
-//zz  
-//zz    /* Do the copy */
-//zz    if (setting) {
-//zz       /* setting */
-//zz       for (i = 0; i < szW; i++) {
-//zz          if (get_vbytes4_ALIGNED( (Addr)&vbits[i] ) != VGM_WORD_VALID)
-//zz             mc_record_value_error(tid, 4);
-//zz          set_vbytes4_ALIGNED( (Addr)&data[i], vbits[i] );
-//zz       }
-//zz    } else {
-//zz       /* getting */
-//zz       for (i = 0; i < szW; i++) {
-//zz          vbits[i] = get_vbytes4_ALIGNED( (Addr)&data[i] );
-//zz          set_vbytes4_ALIGNED( (Addr)&vbits[i], VGM_WORD_VALID );
-//zz       }
-//zz    }
-//zz 
-//zz    return 1;
-//zz }
+/*------------------------------------------------------------*/
+/*--- Metadata get/set functions, for client requests.     ---*/
+/*------------------------------------------------------------*/
+
+/* Copy Vbits for src into vbits. Returns: 1 == OK, 2 == alignment
+   error [no longer used], 3 == addressing error. */
+static Int mc_get_or_set_vbits_for_client ( 
+   ThreadId tid,
+   Addr dataV, 
+   Addr vbitsV, 
+   SizeT size, 
+   Bool setting /* True <=> set vbits,  False <=> get vbits */ 
+)
+{
+   Bool   addressibleD = True;
+   Bool   addressibleV = True;
+   UChar* data         = (UChar*)dataV;
+   UChar* vbits        = (UChar*)vbitsV;
+   UChar* dataP        = NULL; /* bogus init to keep gcc happy */
+   UChar* vbitsP       = NULL; /* ditto */
+   SizeT i;
+
+   if (size < 0)
+      return 2;
+  
+   /* Check that arrays are addressible. */
+   for (i = 0; i < size; i++) {
+      dataP  = &data[i];
+      vbitsP = &vbits[i];
+      if (get_abit((Addr)dataP) != VGM_BIT_VALID) {
+         addressibleD = False;
+         break;
+      }
+      if (get_abit((Addr)vbitsP) != VGM_BIT_VALID) {
+         addressibleV = False;
+         break;
+      }
+   }
+   if (!addressibleD) {
+      MAC_(record_address_error)( tid, (Addr)dataP, 1, 
+                                  setting ? True : False );
+      return 3;
+   }
+   if (!addressibleV) {
+      MAC_(record_address_error)( tid, (Addr)vbitsP, 1, 
+                                  setting ? False : True );
+      return 3;
+   }
+ 
+   /* Do the copy */
+   if (setting) {
+      /* setting */
+      mc_check_is_readable(Vg_CoreClientReq, tid, "SET_VBITS(vbits)",
+                           (Addr)vbits, size);
+      for (i = 0; i < size; i++) {
+         set_vbyte( (Addr)&data[i], vbits[i] );
+      }
+   } else {
+      /* getting */
+      for (i = 0; i < size; i++) {
+         UWord abit, vbyte;
+         get_abit_and_vbyte(&abit, &vbyte, (Addr)&data[i]);
+         /* above checks should ensure this */
+         tl_assert(abit == VGM_BIT_VALID);
+         vbits[i] = (UChar)vbyte;
+      }
+      // The bytes in vbits[] have now been set, so mark them as such.
+      mc_make_readable((Addr)vbits, size);
+  }
+
+   return 1;
+}
 
 
 /*------------------------------------------------------------*/
@@ -2545,21 +2547,21 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          }
          break;
 
-//zz       case VG_USERREQ__GET_VBITS:
-//zz          /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
-//zz             error. */
-//zz          /* VG_(printf)("get_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
-//zz          *ret = mc_get_or_set_vbits_for_client
-//zz                    ( tid, arg[1], arg[2], arg[3], False /* get them */ );
-//zz          break;
-//zz 
-//zz       case VG_USERREQ__SET_VBITS:
-//zz          /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
-//zz             error. */
-//zz          /* VG_(printf)("set_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
-//zz          *ret = mc_get_or_set_vbits_for_client
-//zz                    ( tid, arg[1], arg[2], arg[3], True /* set them */ );
-//zz          break;
+      case VG_USERREQ__GET_VBITS:
+         /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
+            error. */
+         /* VG_(printf)("get_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
+         *ret = mc_get_or_set_vbits_for_client
+                   ( tid, arg[1], arg[2], arg[3], False /* get them */ );
+         break;
+
+      case VG_USERREQ__SET_VBITS:
+         /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
+            error. */
+         /* VG_(printf)("set_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
+         *ret = mc_get_or_set_vbits_for_client
+                   ( tid, arg[1], arg[2], arg[3], True /* set them */ );
+         break;
 
       default:
          if (MAC_(handle_common_client_requests)(tid, arg, ret )) {

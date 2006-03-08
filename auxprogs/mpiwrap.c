@@ -183,6 +183,66 @@ static void barf ( char* msg )
    exit(1);
 }
 
+/* Half-hearted type-showing function (for debugging). */
+static void showTy ( FILE* f, MPI_Datatype ty )
+{
+        if (ty == MPI_DATATYPE_NULL)  fprintf(f,"DATATYPE_NULL");
+   else if (ty == MPI_BYTE)           fprintf(f,"BYTE");
+   else if (ty == MPI_PACKED)         fprintf(f,"PACKED");
+   else if (ty == MPI_CHAR)           fprintf(f,"CHAR");
+   else if (ty == MPI_SHORT)          fprintf(f,"SHORT");
+   else if (ty == MPI_INT)            fprintf(f,"INT");
+   else if (ty == MPI_LONG)           fprintf(f,"LONG");
+   else if (ty == MPI_FLOAT)          fprintf(f,"FLOAT");
+   else if (ty == MPI_DOUBLE)         fprintf(f,"DOUBLE");
+   else if (ty == MPI_LONG_DOUBLE)    fprintf(f,"LONG_DOUBLE");
+   else if (ty == MPI_UNSIGNED_CHAR)  fprintf(f,"UNSIGNED_CHAR");
+   else if (ty == MPI_UNSIGNED_SHORT) fprintf(f,"UNSIGNED_SHORT");
+   else if (ty == MPI_UNSIGNED_LONG)  fprintf(f,"UNSIGNED_LONG");
+   else if (ty == MPI_UNSIGNED)       fprintf(f,"UNSIGNED");
+   else if (ty == MPI_FLOAT_INT)      fprintf(f,"FLOAT_INT");
+   else if (ty == MPI_DOUBLE_INT)     fprintf(f,"DOUBLE_INT");
+   else if (ty == MPI_LONG_DOUBLE_INT) fprintf(f,"LONG_DOUBLE_INT");
+   else if (ty == MPI_LONG_INT)       fprintf(f,"LONG_INT");
+   else if (ty == MPI_SHORT_INT)      fprintf(f,"SHORT_INT");
+   else if (ty == MPI_2INT)           fprintf(f,"2INT");
+   else if (ty == MPI_UB)             fprintf(f,"UB");
+   else if (ty == MPI_LB)             fprintf(f,"LB");
+#  if defined(MPI_WCHAR)
+   else if (ty == MPI_WCHAR)          fprintf(f,"WCHAR");
+#  endif
+   else if (ty == MPI_LONG_LONG_INT)  fprintf(f,"LONG_LONG_INT");
+   else if (ty == MPI_LONG_LONG)      fprintf(f,"LONG_LONG");
+   else if (ty == MPI_UNSIGNED_LONG_LONG) fprintf(f,"UNSIGNED_LONG_LONG");
+   else fprintf(f,"showTy:???");
+}
+
+static void showCombiner ( FILE* f, int combiner )
+{
+   switch (combiner) {
+      case MPI_COMBINER_NAMED:       fprintf(f, "NAMED"); break;
+      case MPI_COMBINER_DUP:         fprintf(f, "DUP"); break;
+      case MPI_COMBINER_CONTIGUOUS:  fprintf(f, "CONTIGUOUS"); break;
+      case MPI_COMBINER_VECTOR:      fprintf(f, "VECTOR"); break;
+      case MPI_COMBINER_HVECTOR_INTEGER: fprintf(f, "HVECTOR_INTEGER"); break;
+      case MPI_COMBINER_HVECTOR:     fprintf(f, "HVECTOR"); break;
+      case MPI_COMBINER_INDEXED:     fprintf(f, "INDEXED"); break;
+      case MPI_COMBINER_HINDEXED_INTEGER: fprintf(f, "HINDEXED_INTEGER"); break;
+      case MPI_COMBINER_HINDEXED:    fprintf(f, "HINDEXED"); break;
+      case MPI_COMBINER_INDEXED_BLOCK: fprintf(f, "INDEXED_BLOCK"); break;
+      case MPI_COMBINER_STRUCT_INTEGER: fprintf(f, "STRUCT_INTEGER"); break;
+      case MPI_COMBINER_STRUCT:      fprintf(f, "STRUCT"); break;
+      case MPI_COMBINER_SUBARRAY:    fprintf(f, "SUBARRAY"); break;
+      case MPI_COMBINER_DARRAY:      fprintf(f, "DARRAY"); break;
+      case MPI_COMBINER_F90_REAL:    fprintf(f, "F90_REAL"); break;
+      case MPI_COMBINER_F90_COMPLEX: fprintf(f, "F90_COMPLEX"); break;
+      case MPI_COMBINER_F90_INTEGER: fprintf(f, "F90_INTEGER"); break;
+      case MPI_COMBINER_RESIZED:     fprintf(f, "RESIZED"); break;
+      default: fprintf(f, "showCombiner:??"); break;
+   }
+}
+
+
 /* ------ Get useful bits of info ------ */
 
 /* Note, PMPI_Comm_rank/size are themselves wrapped.  Should work
@@ -255,40 +315,6 @@ static void maybeFreeTy ( MPI_Datatype* ty )
    }
 }
 
-/* Half-hearted type-showing function (for debugging). */
-static void showTy ( FILE* f, MPI_Datatype ty )
-{
-        if (ty == MPI_DATATYPE_NULL)  fprintf(f,"DATATYPE_NULL");
-   else if (ty == MPI_BYTE)           fprintf(f,"BYTE");
-   else if (ty == MPI_PACKED)         fprintf(f,"PACKED");
-   else if (ty == MPI_CHAR)           fprintf(f,"CHAR");
-   else if (ty == MPI_SHORT)          fprintf(f,"SHORT");
-   else if (ty == MPI_INT)            fprintf(f,"INT");
-   else if (ty == MPI_LONG)           fprintf(f,"LONG");
-   else if (ty == MPI_FLOAT)          fprintf(f,"FLOAT");
-   else if (ty == MPI_DOUBLE)         fprintf(f,"DOUBLE");
-   else if (ty == MPI_LONG_DOUBLE)    fprintf(f,"LONG_DOUBLE");
-   else if (ty == MPI_UNSIGNED_CHAR)  fprintf(f,"UNSIGNED_CHAR");
-   else if (ty == MPI_UNSIGNED_SHORT) fprintf(f,"UNSIGNED_SHORT");
-   else if (ty == MPI_UNSIGNED_LONG)  fprintf(f,"UNSIGNED_LONG");
-   else if (ty == MPI_UNSIGNED)       fprintf(f,"UNSIGNED");
-   else if (ty == MPI_FLOAT_INT)      fprintf(f,"FLOAT_INT");
-   else if (ty == MPI_DOUBLE_INT)     fprintf(f,"DOUBLE_INT");
-   else if (ty == MPI_LONG_DOUBLE_INT) fprintf(f,"LONG_DOUBLE_INT");
-   else if (ty == MPI_LONG_INT)       fprintf(f,"LONG_INT");
-   else if (ty == MPI_SHORT_INT)      fprintf(f,"SHORT_INT");
-   else if (ty == MPI_2INT)           fprintf(f,"2INT");
-   else if (ty == MPI_UB)             fprintf(f,"UB");
-   else if (ty == MPI_LB)             fprintf(f,"LB");
-#if defined(MPI_WCHAR)
-   else if (ty == MPI_WCHAR)          fprintf(f,"WCHAR");
-#endif
-   else if (ty == MPI_LONG_LONG_INT)  fprintf(f,"LONG_LONG_INT");
-   else if (ty == MPI_LONG_LONG)      fprintf(f,"LONG_LONG");
-   else if (ty == MPI_UNSIGNED_LONG_LONG) fprintf(f,"UNSIGNED_LONG_LONG");
-   else fprintf(f,"showTy:???");
-}
-
 /* How big is a "named" (base) type?  Returns 0 if not known.  Note.
    There is a subtlety, which is that this is required to return the
    exact size of one item of the type, NOT the size of it when padded
@@ -334,7 +360,6 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    int*          ints  = NULL;
    MPI_Aint*     addrs = NULL;
    MPI_Datatype* dtys  = NULL;
-   //   MPI_Datatype  elemTy;
 
    if (0)
       printf("walk_type %p\n", (void*)ty);

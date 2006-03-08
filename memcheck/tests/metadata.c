@@ -26,6 +26,10 @@ int main ( void )
   /* Get metadata for a and put it in v. */
   res = VALGRIND_GET_VBITS(a, v, 10*sizeof(int) );
   printf("result of GET is %d (1 for success)\n", res);
+
+  for (i = 0; i < 10; i++)
+     printf("%d 0x%08x\n", i, v[i]);
+
   /* and copy to b. */
   res = VALGRIND_SET_VBITS(b, v, 10*sizeof(int) );
   printf("result of SET is %d (1 for success)\n", res);

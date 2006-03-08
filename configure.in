@@ -597,59 +597,35 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr semtimedop])
 
 
-# Do we have a useable mpicc (MPI-ised C compiler) ?
+# Do we have a useable MPI setup (mpicc, and suitable MPI2 headers?)
 MPI_CC="mpicc"
 AC_ARG_WITH(mpicc,
-   [  --with-mpicc=            Specify name of MPI-ised C compiler],
+   [  --with-mpicc=            Specify name of MPI2-ised C compiler],
    MPI_CC=$withval
 )
-AC_MSG_CHECKING([for usable mpicc])
+AC_MSG_CHECKING([for usable MPI2-compliant mpicc and mpi.h])
 saved_CC=$CC
 CC=$MPI_CC
-AC_TRY_COMPILE(, [
-int main ( ) { return 0; }
-],
-[
-ac_have_mpicc=yes
-AC_MSG_RESULT([$MPI_CC])
-], [
-ac_have_mpicc=no
-AC_MSG_RESULT([no])
-])
-CC=$saved_CC
-
-
-# First consider --with-mpi=..., then check for mpi.h
-saved_CC=$CC
-CC=$MPI_CC
-MPI_PREFIX="/usr"
-AC_ARG_WITH(mpi,
-   [  --with-mpi=/path/to/mpi/install    Specify location of MPI],
-   MPI_PREFIX=$withval
-)
-
-AC_MSG_CHECKING([for $MPI_PREFIX/include/mpi.h])
-
-AC_TRY_COMPILE(, [
-#include "$MPI_PREFIX/include/mpi.h"
+AC_TRY_LINK(, [
+#include <mpi.h>
+#include <stdio.h>
 int main ( int argc, char** argv ) 
-  { int r = MPI_Init(&argc,&argv); return 0 ; }
+{ 
+   int r = MPI_Init(&argc,&argv);
+   r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
+   return r; 
+}
 ],
 [
-ac_have_mpi_h=yes
-AC_MSG_RESULT([yes])
+ac_have_mpi2=yes
+AC_MSG_RESULT([yes, $MPI_CC])
 ], [
-ac_have_mpi_h=no
+ac_have_mpi2=no
 AC_MSG_RESULT([no])
 ])
 CC=$saved_CC
 
-#if test x$ac_have_mpi_h = xyes ; then
-#  AC_DEFINE(HAVE_MPI_H, 1, [Define to 1 if mpi.h is available.])
-#fi
-
-AM_CONDITIONAL(BUILD_MPIWRAP, test x$ac_have_mpi_h = xyes)
-AC_SUBST(MPI_PREFIX)
+AM_CONDITIONAL(BUILD_MPIWRAP, test x$ac_have_mpi2 = xyes)
 AC_SUBST(MPI_CC)
 
 

@@ -106,7 +106,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	suppfree.stderr.exp suppfree.vgtest \
 	toobig-allocs.stderr.exp toobig-allocs.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
-	metadata.stderr.exp metadata.stdout.exp metadata.vgtest-HIDING \
+	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	vcpu_bz2.stdout.exp vcpu_bz2.stderr.exp vcpu_bz2.vgtest \
 	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \

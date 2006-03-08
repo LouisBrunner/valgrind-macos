@@ -221,23 +221,45 @@ static void showCombiner ( FILE* f, int combiner )
 {
    switch (combiner) {
       case MPI_COMBINER_NAMED:       fprintf(f, "NAMED"); break;
+#if   defined(MPI_COMBINER_DUP)
       case MPI_COMBINER_DUP:         fprintf(f, "DUP"); break;
+#     endif
       case MPI_COMBINER_CONTIGUOUS:  fprintf(f, "CONTIGUOUS"); break;
       case MPI_COMBINER_VECTOR:      fprintf(f, "VECTOR"); break;
+#if   defined(MPI_COMBINER_HVECTOR_INTEGER)
       case MPI_COMBINER_HVECTOR_INTEGER: fprintf(f, "HVECTOR_INTEGER"); break;
+#     endif
       case MPI_COMBINER_HVECTOR:     fprintf(f, "HVECTOR"); break;
       case MPI_COMBINER_INDEXED:     fprintf(f, "INDEXED"); break;
+#if   defined(MPI_COMBINER_HINDEXED_INTEGER)
       case MPI_COMBINER_HINDEXED_INTEGER: fprintf(f, "HINDEXED_INTEGER"); break;
+#     endif
       case MPI_COMBINER_HINDEXED:    fprintf(f, "HINDEXED"); break;
+#if   defined(MPI_COMBINER_INDEXED_BLOCK)
       case MPI_COMBINER_INDEXED_BLOCK: fprintf(f, "INDEXED_BLOCK"); break;
+#     endif
+#if   defined(MPI_COMBINER_STRUCT_INTEGER)
       case MPI_COMBINER_STRUCT_INTEGER: fprintf(f, "STRUCT_INTEGER"); break;
+#     endif
       case MPI_COMBINER_STRUCT:      fprintf(f, "STRUCT"); break;
+#if   defined(MPI_COMBINER_SUBARRAY)
       case MPI_COMBINER_SUBARRAY:    fprintf(f, "SUBARRAY"); break;
+#     endif
+#if   defined(MPI_COMBINER_DARRAY)
       case MPI_COMBINER_DARRAY:      fprintf(f, "DARRAY"); break;
+#     endif
+#if   defined(MPI_COMBINER_F90_REAL)
       case MPI_COMBINER_F90_REAL:    fprintf(f, "F90_REAL"); break;
+#     endif
+#if   defined(MPI_COMBINER_F90_COMPLEX)
       case MPI_COMBINER_F90_COMPLEX: fprintf(f, "F90_COMPLEX"); break;
+#     endif
+#if   defined(MPI_COMBINER_F90_INTEGER)
       case MPI_COMBINER_F90_INTEGER: fprintf(f, "F90_INTEGER"); break;
+#     endif
+#if   defined(MPI_COMBINER_RESIZED)
       case MPI_COMBINER_RESIZED:     fprintf(f, "RESIZED"); break;
+#     endif
       default: fprintf(f, "showCombiner:??"); break;
    }
 }
@@ -309,7 +331,20 @@ static void maybeFreeTy ( MPI_Datatype* ty )
    r = PMPI_Type_get_envelope( *ty, &n_ints, &n_addrs, &n_dtys, &tycon );
    assert(r == MPI_SUCCESS);
 
-   if (tycon != MPI_COMBINER_NAMED) {
+   if (tycon != MPI_COMBINER_NAMED
+       /* Don't ask me how ty can be a primitive type and yet not be
+          marked as MPI_COMBINER_NAMED.  It does appear to happen
+          though. */
+       && *ty != MPI_LONG_INT
+      ) {
+      if (0) {
+         /* show me what you're about to free .. */
+         fprintf(stderr, "freeing combiner ");
+         showCombiner(stderr,tycon);
+         fprintf(stderr, " ty= ");
+         showTy(stderr,*ty);
+         fprintf(stderr,"\n");
+      }
       r = PMPI_Type_free(ty);
       assert(r == MPI_SUCCESS);
    }

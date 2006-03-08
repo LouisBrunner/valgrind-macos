@@ -280,7 +280,9 @@ static void showTy ( FILE* f, MPI_Datatype ty )
    else if (ty == MPI_2INT)           fprintf(f,"2INT");
    else if (ty == MPI_UB)             fprintf(f,"UB");
    else if (ty == MPI_LB)             fprintf(f,"LB");
+#if defined(MPI_WCHAR)
    else if (ty == MPI_WCHAR)          fprintf(f,"WCHAR");
+#endif
    else if (ty == MPI_LONG_LONG_INT)  fprintf(f,"LONG_LONG_INT");
    else if (ty == MPI_LONG_LONG)      fprintf(f,"LONG_LONG");
    else if (ty == MPI_UNSIGNED_LONG_LONG) fprintf(f,"UNSIGNED_LONG_LONG");
@@ -1330,6 +1332,29 @@ NO_OP_WRAPPER(Keyval_free)
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
+/*--- Sec 7.3, Error codes and classes                     ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+/* --- Error_string --- */
+int WRAPPER_FOR(PMPI_Error_string)( int errorcode, char* string, int* resultlen )
+{
+   OrigFn fn;
+   int    err;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Error_string");
+   check_writable_untyped(resultlen, sizeof(int));
+   check_writable_untyped(string, MPI_MAX_ERROR_STRING);
+   CALL_FN_W_WWW(err, fn, errorcode,string,resultlen);
+   /* Don't bother to paint the result; we assume the real function
+      will have filled it with defined characters :-) */
+   after("Error_string", err);
+   return err;
+}
+
+
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
 /*--- Sec 7.5, Startup                                     ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
@@ -1442,7 +1467,6 @@ UNIMPLEMENTED_WRAPPER(Errhandler_get)
 NO_OP_WRAPPER(Errhandler_set)
 
 UNIMPLEMENTED_WRAPPER(Error_class)
-UNIMPLEMENTED_WRAPPER(Error_string)
 
 UNIMPLEMENTED_WRAPPER(Finalized)
 

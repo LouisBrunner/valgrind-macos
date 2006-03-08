@@ -258,33 +258,33 @@ static void maybeFreeTy ( MPI_Datatype* ty )
 /* Half-hearted type-showing function (for debugging). */
 static void showTy ( FILE* f, MPI_Datatype ty )
 {
-        if (ty == MPI_DATATYPE_NULL) fprintf(f,"DATATYPE_NULL\n");
-   else if (ty == MPI_BYTE) fprintf(f,"BYTE\n");
-   else if (ty == MPI_PACKED) fprintf(f,"PACKED\n");
-   else if (ty == MPI_CHAR) fprintf(f,"CHAR\n");
-   else if (ty == MPI_SHORT) fprintf(f,"SHORT\n");
-   else if (ty == MPI_INT) fprintf(f,"INT\n");
-   else if (ty == MPI_LONG) fprintf(f,"LONG\n");
-   else if (ty == MPI_FLOAT) fprintf(f,"FLOAT\n");
-   else if (ty == MPI_DOUBLE) fprintf(f,"DOUBLE\n");
-   else if (ty == MPI_LONG_DOUBLE) fprintf(f,"LONG_DOUBLE\n");
-   else if (ty == MPI_UNSIGNED_CHAR) fprintf(f,"UNSIGNED_CHAR\n");
-   else if (ty == MPI_UNSIGNED_SHORT) fprintf(f,"UNSIGNED_SHORT\n");
-   else if (ty == MPI_UNSIGNED_LONG) fprintf(f,"UNSIGNED_LONG\n");
-   else if (ty == MPI_UNSIGNED) fprintf(f,"UNSIGNED\n");
-   else if (ty == MPI_FLOAT_INT) fprintf(f,"FLOAT_INT\n");
-   else if (ty == MPI_DOUBLE_INT) fprintf(f,"DOUBLE_INT\n");
-   else if (ty == MPI_LONG_DOUBLE_INT) fprintf(f,"LONG_DOUBLE_INT\n");
-   else if (ty == MPI_LONG_INT) fprintf(f,"LONG_INT\n");
-   else if (ty == MPI_SHORT_INT) fprintf(f,"SHORT_INT\n");
-   else if (ty == MPI_2INT) fprintf(f,"2INT\n");
-   else if (ty == MPI_UB) fprintf(f,"UB\n");
-   else if (ty == MPI_LB) fprintf(f,"LB\n");
-   else if (ty == MPI_WCHAR) fprintf(f,"WCHAR\n");
-   else if (ty == MPI_LONG_LONG_INT) fprintf(f,"LONG_LONG_INT\n");
-   else if (ty == MPI_LONG_LONG) fprintf(f,"LONG_LONG\n");
-   else if (ty == MPI_UNSIGNED_LONG_LONG) fprintf(f,"UNSIGNED_LONG_LONG\n");
-   else fprintf(f,"showTy:???\n");
+        if (ty == MPI_DATATYPE_NULL)  fprintf(f,"DATATYPE_NULL");
+   else if (ty == MPI_BYTE)           fprintf(f,"BYTE");
+   else if (ty == MPI_PACKED)         fprintf(f,"PACKED");
+   else if (ty == MPI_CHAR)           fprintf(f,"CHAR");
+   else if (ty == MPI_SHORT)          fprintf(f,"SHORT");
+   else if (ty == MPI_INT)            fprintf(f,"INT");
+   else if (ty == MPI_LONG)           fprintf(f,"LONG");
+   else if (ty == MPI_FLOAT)          fprintf(f,"FLOAT");
+   else if (ty == MPI_DOUBLE)         fprintf(f,"DOUBLE");
+   else if (ty == MPI_LONG_DOUBLE)    fprintf(f,"LONG_DOUBLE");
+   else if (ty == MPI_UNSIGNED_CHAR)  fprintf(f,"UNSIGNED_CHAR");
+   else if (ty == MPI_UNSIGNED_SHORT) fprintf(f,"UNSIGNED_SHORT");
+   else if (ty == MPI_UNSIGNED_LONG)  fprintf(f,"UNSIGNED_LONG");
+   else if (ty == MPI_UNSIGNED)       fprintf(f,"UNSIGNED");
+   else if (ty == MPI_FLOAT_INT)      fprintf(f,"FLOAT_INT");
+   else if (ty == MPI_DOUBLE_INT)     fprintf(f,"DOUBLE_INT");
+   else if (ty == MPI_LONG_DOUBLE_INT) fprintf(f,"LONG_DOUBLE_INT");
+   else if (ty == MPI_LONG_INT)       fprintf(f,"LONG_INT");
+   else if (ty == MPI_SHORT_INT)      fprintf(f,"SHORT_INT");
+   else if (ty == MPI_2INT)           fprintf(f,"2INT");
+   else if (ty == MPI_UB)             fprintf(f,"UB");
+   else if (ty == MPI_LB)             fprintf(f,"LB");
+   else if (ty == MPI_WCHAR)          fprintf(f,"WCHAR");
+   else if (ty == MPI_LONG_LONG_INT)  fprintf(f,"LONG_LONG_INT");
+   else if (ty == MPI_LONG_LONG)      fprintf(f,"LONG_LONG");
+   else if (ty == MPI_UNSIGNED_LONG_LONG) fprintf(f,"UNSIGNED_LONG_LONG");
+   else fprintf(f,"showTy:???");
 }
 
 /* How big is a "named" (base) type?  Returns 0 if not known.  Note.
@@ -292,7 +292,7 @@ static void showTy ( FILE* f, MPI_Datatype ty )
    exact size of one item of the type, NOT the size of it when padded
    suitably to make an array of them.  In particular that's why the
    size of LONG_DOUBLE is 10 and not sizeof(long double), since the
-   latter is 12 at least on x86. */
+   latter is 12 at least on x86.  Ref: MPI 1.1 doc p18 */
 static long sizeofOneNamedTy ( MPI_Datatype ty )
 {
    if (ty == MPI_DOUBLE)      return sizeof(double);
@@ -303,6 +303,11 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
    if (ty == MPI_LONG_DOUBLE) return 10; /* NOT: sizeof(long double); */
    /* MPI1.1 does not define MPI_LONG_INT, hence the following is a guess */
    if (ty == MPI_LONG_INT)    return sizeof(signed long int);
+   if (ty == MPI_BYTE)        return 1;
+   if (ty == MPI_FLOAT)       return sizeof(float);
+   if (ty == MPI_SHORT)       return sizeof(signed short int);
+   if (ty == MPI_UNSIGNED_CHAR)  return sizeof(unsigned char);
+   if (ty == MPI_UNSIGNED_SHORT) return sizeof(unsigned short int);
    return 0;
 }
 
@@ -381,12 +386,70 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
          maybeFreeTy( &dtys[0] );
          break;
 
+      case MPI_COMBINER_VECTOR:
+         assert(n_ints == 3 && n_addrs == 0 && n_dtys == 1);
+         ex = extentOfTy(dtys[0]);
+         if (0)
+         printf("vector count %d x (bl %d stride %d)\n", 
+                (int)ints[0], (int)ints[1], (int)ints[2]);
+         for (i = 0; i < ints[0]; i++) {
+            walk_type_array( f, base + i * ints[2]/*stride*/ * ex,
+                                dtys[0], ints[1]/*blocklength*/ );
+         }
+         maybeFreeTy( &dtys[0] );
+         break;
+
+      case MPI_COMBINER_HVECTOR:
+         assert(n_ints == 2 && n_addrs == 1 && n_dtys == 1);
+         ex = extentOfTy(dtys[0]);
+         if (0)
+         printf("hvector count %d x (bl %d hstride %d)\n", 
+                (int)ints[0], (int)ints[1], (int)addrs[0]);
+         for (i = 0; i < ints[0]; i++) {
+            walk_type_array( f, base + i * addrs[0]/*hstride*/,
+                                dtys[0], ints[1]/*blocklength*/ );
+         }
+         maybeFreeTy( &dtys[0] );
+         break;
+
+      case MPI_COMBINER_INDEXED:
+         assert(n_addrs == 0 && n_dtys == 1);
+         assert(n_ints > 0);
+         assert(n_ints == 2 * ints[0] + 1);
+         ex = extentOfTy(dtys[0]);
+         for (i = 0; i < ints[0]; i++) {
+            if (0) 
+            printf("indexed (elem %d) off %d copies %d\n",
+                   (int)i, ints[i+1+ints[0]], ints[i+1] );
+            walk_type_array( f, base + ex * ints[i+1+ints[0]], 
+                                dtys[0], ints[i+1] );
+         }
+         maybeFreeTy( &dtys[0] );
+         break;
+
+      case MPI_COMBINER_HINDEXED:
+         assert(n_ints > 0);
+         assert(n_ints == ints[0] + 1);
+         assert(n_addrs == ints[0] && n_dtys == 1);
+         ex = extentOfTy(dtys[0]);
+         for (i = 0; i < ints[0]; i++) {
+            if (0) 
+            printf("hindexed (elem %d) hoff %d copies %d\n",
+                   (int)i, (int)addrs[i], ints[i+1] );
+            walk_type_array( f, base + addrs[i], 
+                                dtys[0], ints[i+1] );
+         }
+         maybeFreeTy( &dtys[0] );
+         break;
+
       case MPI_COMBINER_STRUCT:
          assert(n_addrs == n_ints-1);
          assert(n_dtys  == n_ints-1);
+         assert(n_ints > 0);
+         assert(n_ints == ints[0] + 1);
 	 for (i = 0; i < ints[0]; i++) {
             if (0)
-            printf("struct (elem %d limit %d) off %d copies %d\n", 
+            printf("struct (elem %d limit %d) hoff %d copies %d\n", 
                    (int)i, (int)ints[0], (int)addrs[i], (int)ints[i+1]);
             walk_type_array( f, base + addrs[i], dtys[i], (long)ints[i+1] );
             maybeFreeTy( &dtys[i] );
@@ -459,6 +522,13 @@ void walk_type_array ( void(*f)(void*,long), char* base,
          walk_type( f, base + i * ex, elemTy );
 
    }
+}
+
+
+void walk_type_EXTERNALLY_VISIBLE
+    ( void(*f)(void*,long), char* base, MPI_Datatype ty )
+{
+   return walk_type(f, base, ty);
 }
 
 
@@ -1358,7 +1428,7 @@ UNIMPLEMENTED_WRAPPER(Comm_get_name)
 NO_OP_WRAPPER(Comm_group)
 
 
-UNIMPLEMENTED_WRAPPER(Comm_split)
+NO_OP_WRAPPER(Comm_split)
 UNIMPLEMENTED_WRAPPER(Comm_test_inter)
 UNIMPLEMENTED_WRAPPER(Dims_create)
 UNIMPLEMENTED_WRAPPER(Errhandler_create)
@@ -1400,7 +1470,7 @@ UNIMPLEMENTED_WRAPPER(Group_range_excl)
 UNIMPLEMENTED_WRAPPER(Group_range_incl)
 UNIMPLEMENTED_WRAPPER(Group_rank)
 UNIMPLEMENTED_WRAPPER(Group_size)
-UNIMPLEMENTED_WRAPPER(Group_translate_ranks)
+NO_OP_WRAPPER(Group_translate_ranks)
 UNIMPLEMENTED_WRAPPER(Group_union)
 
 
@@ -1453,24 +1523,24 @@ NO_OP_WRAPPER(Type_free)
 NO_OP_WRAPPER(Type_get_contents)
 NO_OP_WRAPPER(Type_get_envelope)
 UNIMPLEMENTED_WRAPPER(Type_get_name)
-UNIMPLEMENTED_WRAPPER(Type_create_hindexed)
-UNIMPLEMENTED_WRAPPER(Type_create_hvector)
+NO_OP_WRAPPER(Type_create_hindexed)
+NO_OP_WRAPPER(Type_create_hvector)
 
 //UNIMPLEMENTED_WRAPPER(Type_create_struct)
 NO_OP_WRAPPER(Type_create_struct)
 
-UNIMPLEMENTED_WRAPPER(Type_hindexed)
-UNIMPLEMENTED_WRAPPER(Type_hvector)
-UNIMPLEMENTED_WRAPPER(Type_indexed)
+NO_OP_WRAPPER(Type_hindexed)
+NO_OP_WRAPPER(Type_hvector)
+NO_OP_WRAPPER(Type_indexed)
 NO_OP_WRAPPER(Type_lb)
 UNIMPLEMENTED_WRAPPER(Type_set_name)
-UNIMPLEMENTED_WRAPPER(Type_size)
+NO_OP_WRAPPER(Type_size)
 
 //UNIMPLEMENTED_WRAPPER(Type_struct)
 NO_OP_WRAPPER(Type_struct)
 
 NO_OP_WRAPPER(Type_ub)
-UNIMPLEMENTED_WRAPPER(Type_vector)
+NO_OP_WRAPPER(Type_vector)
 UNIMPLEMENTED_WRAPPER(Unpack)
 
 

@@ -88,7 +88,8 @@
 #include "mpi.h"
 
 /* Where are API symbols?
-   OpenPMPI lib/libmpi.so,  soname = libmpi.so.0
+   Open MPI  lib/libmpi.so,  soname = libmpi.so.0
+   ditto Quadrics MPI
 */
 /* ifdef OpenMPI ... */
 #define I_WRAP_FNNAME_U(_name) I_WRAP_SONAME_FNNAME_ZU(libmpiZdsoZa,_name)
@@ -101,6 +102,12 @@
 typedef  unsigned char  Bool;
 #define False ((Bool)0)
 #define True  ((Bool)1)
+
+/* Word, UWord are machine words - same size as a pointer.  This is
+   checked at startup.  The wrappers below use 'long' to mean a
+   machine word - this too is tested at startup. */
+typedef    signed long  Word;
+typedef  unsigned long  UWord;
 
 
 /*------------------------------------------------------------*/
@@ -116,7 +123,7 @@ static const char* preamble = "valgrind MPI wrappers";
 static pid_t my_pid        = -1;
 static char* options_str   = NULL;
 static int   opt_verbosity = 1;
-static Bool  opt_strict    = False;
+static Bool  opt_missing   = 0; /* 0:silent; 1:warn; 2:abort */
 static Bool  opt_help      = False;
 
 static inline void before ( char* fnname )
@@ -129,18 +136,23 @@ static inline void before ( char* fnname )
       my_pid = getpid();
       options_str = getenv("MPIWRAP_DEBUG");
       if (options_str) {
-         opt_help   = NULL != strstr(options_str, "help");
-         opt_strict = NULL != strstr(options_str, "strict");
+         if (NULL != strstr(options_str, "warn"))
+            opt_missing = 1;
+         if (NULL != strstr(options_str, "strict"))
+            opt_missing = 2;
          if (NULL != strstr(options_str, "verbose"))
             opt_verbosity++;
          if (NULL != strstr(options_str, "quiet"))
             opt_verbosity--;
+         if (NULL != strstr(options_str, "help"))
+            opt_help = True;
       }
       if (opt_verbosity > 0)
          fprintf(stderr, "%s %5d: Active for pid %d\n", 
                          preamble, my_pid, my_pid);
-      /* Sanity check - that 'long' really is a machine word. */
-      assert(sizeof(long) == sizeof(void*));
+      /* Sanity check - that Word/UWord really are machine words. */
+      assert(sizeof(Word)  == sizeof(void*));
+      assert(sizeof(UWord) == sizeof(void*));
       /* Sanity check - char is byte-sized (else address calculations
          in walk_type don't work. */
       assert(sizeof(char) == 1);
@@ -153,10 +165,14 @@ static inline void before ( char* fnname )
          fprintf(stderr, "   verbose    show wrapper entries/exits\n");
          fprintf(stderr, "   strict     abort the program if a function"
                          " with no wrapper is used\n");
+         fprintf(stderr, "   warn       give a warning if a function"
+                         " with no wrapper is used\n");
          fprintf(stderr, "   help       display this message, then exit\n");
          fprintf(stderr, "\n");
          fprintf(stderr, "Multiple options are allowed, eg"
                          " MPIWRAP_DEBUG=strict,verbose\n");
+         fprintf(stderr, "Note: 'warn' generates output even if 'quiet'"
+                         " is also specified\n");
          fprintf(stderr, "\n");
          fprintf(stderr, "%s %5d: exiting now\n", preamble, my_pid );
          exit(1);
@@ -750,10 +766,6 @@ int WRAPPER_FOR(PMPI_Send)(void *buf, int count, MPI_Datatype datatype,
    return err;
 }
 
-UNIMPLEMENTED_WRAPPER(Bsend)
-UNIMPLEMENTED_WRAPPER(Ssend)
-UNIMPLEMENTED_WRAPPER(Rsend)
-
 /* --- Recv --- */
 /* pre:  must be writable: (buf,count,datatype)
          must be writable: status
@@ -777,14 +789,6 @@ int WRAPPER_FOR(PMPI_Recv)(void *buf, int count, MPI_Datatype datatype,
    after("Recv", err);
    return err;
 }
-
-/* PMPI_Get_count is used by this library (no matter, we just need to
-   supply a wrapper).  Since there's nothing much to wrap, supply a
-   no-op wrapper. */
-NO_OP_WRAPPER(Get_count)
-
-UNIMPLEMENTED_WRAPPER(Buffer_attach)
-UNIMPLEMENTED_WRAPPER(Buffer_detach)
 
 
 /*------------------------------------------------------------*/
@@ -997,10 +1001,6 @@ int WRAPPER_FOR(PMPI_Isend)(void *buf, int count, MPI_Datatype datatype,
    return err;
 }
 
-UNIMPLEMENTED_WRAPPER(Ibsend)
-UNIMPLEMENTED_WRAPPER(Issend)
-UNIMPLEMENTED_WRAPPER(Irsend)
-
 /* --- Irecv --- */
 /* pre:  must be writable: (buf,count,datatype), *request
    post: make readable *request
@@ -1026,8 +1026,6 @@ int WRAPPER_FOR(PMPI_Irecv)( void* buf, int count, MPI_Datatype datatype,
    return err;
 }
 
-UNIMPLEMENTED_WRAPPER(Request_free)
-
 /* --- Wait --- */
 int WRAPPER_FOR(PMPI_Wait)( MPI_Request* request,
                             MPI_Status* status )
@@ -1050,11 +1048,6 @@ int WRAPPER_FOR(PMPI_Wait)( MPI_Request* request,
    after("Wait", err);
    return err;
 }
-
-UNIMPLEMENTED_WRAPPER(Test)
-
-UNIMPLEMENTED_WRAPPER(Waitany)
-UNIMPLEMENTED_WRAPPER(Testany)
 
 /* --- Waitall --- */
 int WRAPPER_FOR(PMPI_Waitall)( int count, 
@@ -1089,13 +1082,6 @@ int WRAPPER_FOR(PMPI_Waitall)( int count,
    return err;
 }
 
-UNIMPLEMENTED_WRAPPER(Testall)
-
-UNIMPLEMENTED_WRAPPER(Waitsome)
-UNIMPLEMENTED_WRAPPER(Testsome)
-
-UNIMPLEMENTED_WRAPPER(Probe)
-
 /* --- Iprobe --- */
 /* very unclear about this */
 /* pre:  must-be-writable: *flag, *status */
@@ -1123,9 +1109,6 @@ int WRAPPER_FOR(PMPI_Iprobe)(int source, int tag,
    after("Iprobe", err);
    return err;
 }
-
-UNIMPLEMENTED_WRAPPER(Cancel)
-UNIMPLEMENTED_WRAPPER(Test_cancelled)
 
 
 /*------------------------------------------------------------*/
@@ -1164,8 +1147,6 @@ int WRAPPER_FOR(PMPI_Sendrecv)(
    return err;
 }
 
-UNIMPLEMENTED_WRAPPER(Sendrecv_replace)
-
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
@@ -1175,7 +1156,6 @@ UNIMPLEMENTED_WRAPPER(Sendrecv_replace)
 
 /* --- Address --- */
 /* Does this have anything worth checking? */
-NO_OP_WRAPPER(PMPI_Address)
 
 
 /*------------------------------------------------------------*/
@@ -1354,13 +1334,6 @@ int WRAPPER_FOR(PMPI_Comm_rank)(MPI_Comm comm, int *rank)
    return err;
 }
 
-UNIMPLEMENTED_WRAPPER(Comm_remote_group)
-UNIMPLEMENTED_WRAPPER(Comm_remote_size)
-UNIMPLEMENTED_WRAPPER(Comm_set_errhandler)
-
-/* The MPI 1.1 doc doesn't appear to mention this. */
-NO_OP_WRAPPER(Comm_set_name)
-
 /* --- Comm_size --- */
 /* wr: (size, sizeof(*size)) */
 int WRAPPER_FOR(PMPI_Comm_size)(MPI_Comm comm, int *size)
@@ -1382,14 +1355,6 @@ int WRAPPER_FOR(PMPI_Comm_size)(MPI_Comm comm, int *size)
 /*--- Sec 5.7, Caching                                     ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
-
-/* This messes with a couple of function pointers, an int* and an
-   "extra state" area of indeterminate size.  I don't think there's
-   much we can check here.  Hence: */
-NO_OP_WRAPPER(Keyval_create)
-
-/* Similar comment to Keyval_create */
-NO_OP_WRAPPER(Keyval_free)
 
 
 /*------------------------------------------------------------*/
@@ -1465,178 +1430,461 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
-/*---                                                      ---*/
-/*---                                                      ---*/
-/*------------------------------------------------------------*/
-
-/*------------------------------------------------------------*/
-/*---                                                      ---*/
-/*---                                                      ---*/
+/*--- Default wrappers for all remaining functions         ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
+#define DEFAULT_WRAPPER_PREAMBLE(basename)                        \
+      OrigFn fn;                                                  \
+      UWord  res;                                                 \
+      static int complaints = 3;                                  \
+      VALGRIND_GET_ORIG_FN(fn);                                   \
+      before(#basename);                                          \
+      if (opt_missing >= 2) {                                     \
+         barf("no wrapper for PMPI_" #basename                    \
+              ",\n\t\t\t     and you have "                       \
+              "requested strict checking");                       \
+      }                                                           \
+      if (opt_missing == 1 && complaints > 0) {                   \
+         fprintf(stderr, "%s %5d: warning: no wrapper "           \
+                         "for PMPI_" #basename "\n",              \
+                 preamble, my_pid);                               \
+         complaints--;                                            \
+      }                                                           \
+
+#define DEFAULT_WRAPPER_W_0W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)( void )                     \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_v(res, fn);                                       \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_1W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)( UWord a1 )                 \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_W(res, fn, a1);                                   \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_2W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)( UWord a1, UWord a2 )       \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_WW(res, fn, a1,a2);                               \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_3W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)                             \
+      ( UWord a1, UWord a2, UWord a3 )                            \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_WWW(res, fn, a1,a2,a3);                           \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_4W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)                             \
+      ( UWord a1, UWord a2, UWord a3, UWord a4 )                  \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_WWWW(res, fn, a1,a2,a3,a4);                       \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_5W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)                             \
+      ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5 )        \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_5W(res, fn, a1,a2,a3,a4,a5);                      \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_6W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)                             \
+      ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5,         \
+        UWord a6 )                                                \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_6W(res, fn, a1,a2,a3,a4,a5,a6);                   \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_7W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)                             \
+      ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5,         \
+        UWord a6, UWord a7 )                                      \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_7W(res, fn, a1,a2,a3,a4,a5,a6,a7);                \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_8W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)                             \
+      ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5,         \
+        UWord a6, UWord a7, UWord a8 )                            \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_8W(res, fn, a1,a2,a3,a4,a5,a6,a7,a8);             \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_9W(basename)                            \
+   UWord WRAPPER_FOR(PMPI_##basename)                             \
+      ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5,         \
+        UWord a6, UWord a7, UWord a8, UWord a9 )                  \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_9W(res, fn, a1,a2,a3,a4,a5,a6,a7,a8,a9);          \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_10W(basename)                           \
+   UWord WRAPPER_FOR(PMPI_##basename)                             \
+      ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5,         \
+        UWord a6, UWord a7, UWord a8, UWord a9, UWord a10 )       \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_10W(res, fn, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10);     \
+      return res;                                                 \
+   }
+
+#define DEFAULT_WRAPPER_W_12W(basename)                           \
+   UWord WRAPPER_FOR(PMPI_##basename)                             \
+      ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5,         \
+        UWord a6, UWord a7, UWord a8, UWord a9, UWord a10,        \
+        UWord a11, UWord a12 )                                    \
+   {                                                              \
+      DEFAULT_WRAPPER_PREAMBLE(basename)                          \
+      CALL_FN_W_12W(res, fn, a1,a2,a3,a4,a5,a6,                   \
+                             a7,a8,a9,a10,a11,a12);               \
+      return res;                                                 \
+   }
 
 
-/* Here are the wrappers themselves. */
-UNIMPLEMENTED_WRAPPER(Abort)
+/* Canned summary of MPI-1.1/MPI-2 entry points, as derived from mpi.h
+   from Open MPI svn rev 9191 (somewhere between Open MPI versions
+   1.0.1 and 1.1.0). */
+
+/* If a function is commented out in this list, it's because it has a
+   proper wrapper written elsewhere (above here). */
+
+DEFAULT_WRAPPER_W_2W(Abort)
+DEFAULT_WRAPPER_W_9W(Accumulate)
+DEFAULT_WRAPPER_W_1W(Add_error_class)
+DEFAULT_WRAPPER_W_2W(Add_error_code)
+DEFAULT_WRAPPER_W_2W(Add_error_string)
+DEFAULT_WRAPPER_W_2W(Address)
+DEFAULT_WRAPPER_W_7W(Allgather)
+DEFAULT_WRAPPER_W_8W(Allgatherv)
+DEFAULT_WRAPPER_W_3W(Alloc_mem)
+/* DEFAULT_WRAPPER_W_6W(Allreduce) */
+DEFAULT_WRAPPER_W_7W(Alltoall)
+DEFAULT_WRAPPER_W_9W(Alltoallv)
+DEFAULT_WRAPPER_W_9W(Alltoallw)
+DEFAULT_WRAPPER_W_2W(Attr_delete)
+DEFAULT_WRAPPER_W_4W(Attr_get)
+DEFAULT_WRAPPER_W_3W(Attr_put)
+DEFAULT_WRAPPER_W_1W(Barrier)
+/* DEFAULT_WRAPPER_W_5W(Bcast) */
+DEFAULT_WRAPPER_W_6W(Bsend)
+DEFAULT_WRAPPER_W_7W(Bsend_init)
+DEFAULT_WRAPPER_W_2W(Buffer_attach)
+DEFAULT_WRAPPER_W_2W(Buffer_detach)
+DEFAULT_WRAPPER_W_1W(Cancel)
+DEFAULT_WRAPPER_W_4W(Cart_coords)
+DEFAULT_WRAPPER_W_6W(Cart_create)
+DEFAULT_WRAPPER_W_5W(Cart_get)
+DEFAULT_WRAPPER_W_5W(Cart_map)
+DEFAULT_WRAPPER_W_3W(Cart_rank)
+DEFAULT_WRAPPER_W_5W(Cart_shift)
+DEFAULT_WRAPPER_W_3W(Cart_sub)
+DEFAULT_WRAPPER_W_2W(Cartdim_get)
+DEFAULT_WRAPPER_W_1W(Close_port)
+DEFAULT_WRAPPER_W_5W(Comm_accept)
+DEFAULT_WRAPPER_W_1W(Comm_c2f)
+DEFAULT_WRAPPER_W_2W(Comm_call_errhandler)
+DEFAULT_WRAPPER_W_3W(Comm_compare)
+DEFAULT_WRAPPER_W_5W(Comm_connect)
+DEFAULT_WRAPPER_W_2W(Comm_create_errhandler)
+DEFAULT_WRAPPER_W_4W(Comm_create_keyval)
+DEFAULT_WRAPPER_W_3W(Comm_create)
+DEFAULT_WRAPPER_W_2W(Comm_delete_attr)
+DEFAULT_WRAPPER_W_1W(Comm_disconnect)
+DEFAULT_WRAPPER_W_2W(Comm_dup)
+DEFAULT_WRAPPER_W_1W(Comm_f2c)
+DEFAULT_WRAPPER_W_1W(Comm_free_keyval)
+DEFAULT_WRAPPER_W_1W(Comm_free)
+DEFAULT_WRAPPER_W_4W(Comm_get_attr)
+DEFAULT_WRAPPER_W_2W(Comm_get_errhandler)
+DEFAULT_WRAPPER_W_3W(Comm_get_name)
+DEFAULT_WRAPPER_W_1W(Comm_get_parent)
+DEFAULT_WRAPPER_W_2W(Comm_group)
+DEFAULT_WRAPPER_W_2W(Comm_join)
+/* DEFAULT_WRAPPER_W_2W(Comm_rank) */
+DEFAULT_WRAPPER_W_2W(Comm_remote_group)
+DEFAULT_WRAPPER_W_2W(Comm_remote_size)
+DEFAULT_WRAPPER_W_3W(Comm_set_attr)
+DEFAULT_WRAPPER_W_2W(Comm_set_errhandler)
+DEFAULT_WRAPPER_W_2W(Comm_set_name)
+/* DEFAULT_WRAPPER_W_2W(Comm_size) */
+DEFAULT_WRAPPER_W_8W(Comm_spawn)
+DEFAULT_WRAPPER_W_9W(Comm_spawn_multiple)
+DEFAULT_WRAPPER_W_4W(Comm_split)
+DEFAULT_WRAPPER_W_2W(Comm_test_inter)
+DEFAULT_WRAPPER_W_3W(Dims_create)
+DEFAULT_WRAPPER_W_1W(Errhandler_c2f)
+DEFAULT_WRAPPER_W_2W(Errhandler_create)
+DEFAULT_WRAPPER_W_1W(Errhandler_f2c)
+DEFAULT_WRAPPER_W_1W(Errhandler_free)
+DEFAULT_WRAPPER_W_2W(Errhandler_get)
+DEFAULT_WRAPPER_W_2W(Errhandler_set)
+DEFAULT_WRAPPER_W_2W(Error_class)
+/* DEFAULT_WRAPPER_W_3W(Error_string) */
+DEFAULT_WRAPPER_W_6W(Exscan)
+DEFAULT_WRAPPER_W_1W(File_c2f)
+DEFAULT_WRAPPER_W_1W(File_f2c)
+DEFAULT_WRAPPER_W_2W(File_call_errhandler)
+DEFAULT_WRAPPER_W_2W(File_create_errhandler)
+DEFAULT_WRAPPER_W_2W(File_set_errhandler)
+DEFAULT_WRAPPER_W_2W(File_get_errhandler)
+DEFAULT_WRAPPER_W_5W(File_open)
+DEFAULT_WRAPPER_W_1W(File_close)
+DEFAULT_WRAPPER_W_2W(File_delete)
+DEFAULT_WRAPPER_W_2W(File_set_size)
+DEFAULT_WRAPPER_W_2W(File_preallocate)
+DEFAULT_WRAPPER_W_2W(File_get_size)
+DEFAULT_WRAPPER_W_2W(File_get_group)
+DEFAULT_WRAPPER_W_2W(File_get_amode)
+DEFAULT_WRAPPER_W_2W(File_set_info)
+DEFAULT_WRAPPER_W_2W(File_get_info)
+DEFAULT_WRAPPER_W_6W(File_set_view)
+DEFAULT_WRAPPER_W_5W(File_get_view)
+DEFAULT_WRAPPER_W_6W(File_read_at)
+DEFAULT_WRAPPER_W_6W(File_read_at_all)
+DEFAULT_WRAPPER_W_6W(File_write_at)
+DEFAULT_WRAPPER_W_6W(File_write_at_all)
+DEFAULT_WRAPPER_W_6W(File_iread_at)
+DEFAULT_WRAPPER_W_6W(File_iwrite_at)
+DEFAULT_WRAPPER_W_5W(File_read)
+DEFAULT_WRAPPER_W_5W(File_read_all)
+DEFAULT_WRAPPER_W_5W(File_write)
+DEFAULT_WRAPPER_W_5W(File_write_all)
+DEFAULT_WRAPPER_W_5W(File_iread)
+DEFAULT_WRAPPER_W_5W(File_iwrite)
+DEFAULT_WRAPPER_W_3W(File_seek)
+DEFAULT_WRAPPER_W_2W(File_get_position)
+DEFAULT_WRAPPER_W_3W(File_get_byte_offset)
+DEFAULT_WRAPPER_W_5W(File_read_shared)
+DEFAULT_WRAPPER_W_5W(File_write_shared)
+DEFAULT_WRAPPER_W_5W(File_iread_shared)
+DEFAULT_WRAPPER_W_5W(File_iwrite_shared)
+DEFAULT_WRAPPER_W_5W(File_read_ordered)
+DEFAULT_WRAPPER_W_5W(File_write_ordered)
+DEFAULT_WRAPPER_W_3W(File_seek_shared)
+DEFAULT_WRAPPER_W_2W(File_get_position_shared)
+DEFAULT_WRAPPER_W_5W(File_read_at_all_begin)
+DEFAULT_WRAPPER_W_3W(File_read_at_all_end)
+DEFAULT_WRAPPER_W_5W(File_write_at_all_begin)
+DEFAULT_WRAPPER_W_3W(File_write_at_all_end)
+DEFAULT_WRAPPER_W_4W(File_read_all_begin)
+DEFAULT_WRAPPER_W_3W(File_read_all_end)
+DEFAULT_WRAPPER_W_4W(File_write_all_begin)
+DEFAULT_WRAPPER_W_3W(File_write_all_end)
+DEFAULT_WRAPPER_W_4W(File_read_ordered_begin)
+DEFAULT_WRAPPER_W_3W(File_read_ordered_end)
+DEFAULT_WRAPPER_W_4W(File_write_ordered_begin)
+DEFAULT_WRAPPER_W_3W(File_write_ordered_end)
+DEFAULT_WRAPPER_W_3W(File_get_type_extent)
+DEFAULT_WRAPPER_W_2W(File_set_atomicity)
+DEFAULT_WRAPPER_W_2W(File_get_atomicity)
+DEFAULT_WRAPPER_W_1W(File_sync)
+/* DEFAULT_WRAPPER_W_0W(Finalize) */
+DEFAULT_WRAPPER_W_1W(Finalized)
+DEFAULT_WRAPPER_W_1W(Free_mem)
+/* DEFAULT_WRAPPER_W_8W(Gather) */
+DEFAULT_WRAPPER_W_9W(Gatherv)
+DEFAULT_WRAPPER_W_2W(Get_address)
+DEFAULT_WRAPPER_W_3W(Get_count)
+DEFAULT_WRAPPER_W_3W(Get_elements)
+DEFAULT_WRAPPER_W_8W(Get)
+DEFAULT_WRAPPER_W_2W(Get_processor_name)
+DEFAULT_WRAPPER_W_2W(Get_version)
+DEFAULT_WRAPPER_W_6W(Graph_create)
+DEFAULT_WRAPPER_W_5W(Graph_get)
+DEFAULT_WRAPPER_W_5W(Graph_map)
+DEFAULT_WRAPPER_W_3W(Graph_neighbors_count)
+DEFAULT_WRAPPER_W_4W(Graph_neighbors)
+DEFAULT_WRAPPER_W_3W(Graphdims_get)
+DEFAULT_WRAPPER_W_1W(Grequest_complete)
+DEFAULT_WRAPPER_W_5W(Grequest_start)
+DEFAULT_WRAPPER_W_1W(Group_c2f)
+DEFAULT_WRAPPER_W_3W(Group_compare)
+DEFAULT_WRAPPER_W_3W(Group_difference)
+DEFAULT_WRAPPER_W_4W(Group_excl)
+DEFAULT_WRAPPER_W_1W(Group_f2c)
+DEFAULT_WRAPPER_W_1W(Group_free)
+DEFAULT_WRAPPER_W_4W(Group_incl)
+DEFAULT_WRAPPER_W_3W(Group_intersection)
+DEFAULT_WRAPPER_W_4W(Group_range_excl)
+DEFAULT_WRAPPER_W_4W(Group_range_incl)
+DEFAULT_WRAPPER_W_2W(Group_rank)
+DEFAULT_WRAPPER_W_2W(Group_size)
+DEFAULT_WRAPPER_W_5W(Group_translate_ranks)
+DEFAULT_WRAPPER_W_3W(Group_union)
+DEFAULT_WRAPPER_W_7W(Ibsend)
+DEFAULT_WRAPPER_W_1W(Info_c2f)
+DEFAULT_WRAPPER_W_1W(Info_create)
+DEFAULT_WRAPPER_W_2W(Info_delete)
+DEFAULT_WRAPPER_W_2W(Info_dup)
+DEFAULT_WRAPPER_W_1W(Info_f2c)
+DEFAULT_WRAPPER_W_1W(Info_free)
+DEFAULT_WRAPPER_W_5W(Info_get)
+DEFAULT_WRAPPER_W_2W(Info_get_nkeys)
+DEFAULT_WRAPPER_W_3W(Info_get_nthkey)
+DEFAULT_WRAPPER_W_4W(Info_get_valuelen)
+DEFAULT_WRAPPER_W_3W(Info_set)
+/* DEFAULT_WRAPPER_W_2W(Init) */
+/* DEFAULT_WRAPPER_W_1W(Initialized) */
+DEFAULT_WRAPPER_W_4W(Init_thread)
+DEFAULT_WRAPPER_W_6W(Intercomm_create)
+DEFAULT_WRAPPER_W_3W(Intercomm_merge)
+/* DEFAULT_WRAPPER_W_5W(Iprobe) */
+/* DEFAULT_WRAPPER_W_7W(Irecv) */
+DEFAULT_WRAPPER_W_7W(Irsend)
+/* DEFAULT_WRAPPER_W_7W(Isend) */
+DEFAULT_WRAPPER_W_7W(Issend)
+DEFAULT_WRAPPER_W_1W(Is_thread_main)
+DEFAULT_WRAPPER_W_4W(Keyval_create)
+DEFAULT_WRAPPER_W_1W(Keyval_free)
+DEFAULT_WRAPPER_W_3W(Lookup_name)
+DEFAULT_WRAPPER_W_1W(Op_c2f)
+/* DEFAULT_WRAPPER_W_3W(Op_create) */
+DEFAULT_WRAPPER_W_2W(Open_port)
+DEFAULT_WRAPPER_W_1W(Op_f2c)
+DEFAULT_WRAPPER_W_1W(Op_free)
+DEFAULT_WRAPPER_W_7W(Pack_external)
+DEFAULT_WRAPPER_W_4W(Pack_external_size)
+DEFAULT_WRAPPER_W_7W(Pack)
+DEFAULT_WRAPPER_W_4W(Pack_size)
+/* int MPI_Pcontrol(const int level, ...) */
+DEFAULT_WRAPPER_W_4W(Probe)
+DEFAULT_WRAPPER_W_3W(Publish_name)
+DEFAULT_WRAPPER_W_8W(Put)
+DEFAULT_WRAPPER_W_1W(Query_thread)
+DEFAULT_WRAPPER_W_7W(Recv_init)
+/* DEFAULT_WRAPPER_W_7W(Recv) */
+/* DEFAULT_WRAPPER_W_7W(Reduce) */
+DEFAULT_WRAPPER_W_6W(Reduce_scatter)
+DEFAULT_WRAPPER_W_5W(Register_datarep)
+DEFAULT_WRAPPER_W_1W(Request_c2f)
+DEFAULT_WRAPPER_W_1W(Request_f2c)
+DEFAULT_WRAPPER_W_1W(Request_free)
+DEFAULT_WRAPPER_W_3W(Request_get_status)
+DEFAULT_WRAPPER_W_6W(Rsend)
+DEFAULT_WRAPPER_W_7W(Rsend_init)
+DEFAULT_WRAPPER_W_6W(Scan)
+DEFAULT_WRAPPER_W_8W(Scatter)
+DEFAULT_WRAPPER_W_9W(Scatterv)
+DEFAULT_WRAPPER_W_7W(Send_init)
+/* DEFAULT_WRAPPER_W_6W(Send) */
+/* DEFAULT_WRAPPER_W_12W(Sendrecv) */
+DEFAULT_WRAPPER_W_9W(Sendrecv_replace)
+DEFAULT_WRAPPER_W_7W(Ssend_init)
+DEFAULT_WRAPPER_W_6W(Ssend)
+DEFAULT_WRAPPER_W_1W(Start)
+DEFAULT_WRAPPER_W_2W(Startall)
+DEFAULT_WRAPPER_W_2W(Status_c2f)
+DEFAULT_WRAPPER_W_2W(Status_f2c)
+DEFAULT_WRAPPER_W_2W(Status_set_cancelled)
+DEFAULT_WRAPPER_W_3W(Status_set_elements)
+DEFAULT_WRAPPER_W_4W(Testall)
+DEFAULT_WRAPPER_W_5W(Testany)
+DEFAULT_WRAPPER_W_3W(Test)
+DEFAULT_WRAPPER_W_2W(Test_cancelled)
+DEFAULT_WRAPPER_W_5W(Testsome)
+DEFAULT_WRAPPER_W_2W(Topo_test)
+DEFAULT_WRAPPER_W_1W(Type_c2f)
+DEFAULT_WRAPPER_W_1W(Type_commit)
+DEFAULT_WRAPPER_W_3W(Type_contiguous)
+DEFAULT_WRAPPER_W_10W(Type_create_darray)
+DEFAULT_WRAPPER_W_3W(Type_create_f90_complex)
+DEFAULT_WRAPPER_W_2W(Type_create_f90_integer)
+DEFAULT_WRAPPER_W_3W(Type_create_f90_real)
+DEFAULT_WRAPPER_W_5W(Type_create_hindexed)
+DEFAULT_WRAPPER_W_5W(Type_create_hvector)
+DEFAULT_WRAPPER_W_4W(Type_create_keyval)
+DEFAULT_WRAPPER_W_5W(Type_create_indexed_block)
+DEFAULT_WRAPPER_W_5W(Type_create_struct)
+DEFAULT_WRAPPER_W_7W(Type_create_subarray)
+DEFAULT_WRAPPER_W_4W(Type_create_resized)
+DEFAULT_WRAPPER_W_2W(Type_delete_attr)
+DEFAULT_WRAPPER_W_2W(Type_dup)
+DEFAULT_WRAPPER_W_2W(Type_extent)
+DEFAULT_WRAPPER_W_1W(Type_free)
+DEFAULT_WRAPPER_W_1W(Type_free_keyval)
+DEFAULT_WRAPPER_W_1W(Type_f2c)
+DEFAULT_WRAPPER_W_4W(Type_get_attr)
+DEFAULT_WRAPPER_W_7W(Type_get_contents)
+DEFAULT_WRAPPER_W_5W(Type_get_envelope)
+DEFAULT_WRAPPER_W_3W(Type_get_extent)
+DEFAULT_WRAPPER_W_3W(Type_get_name)
+DEFAULT_WRAPPER_W_3W(Type_get_true_extent)
+DEFAULT_WRAPPER_W_5W(Type_hindexed)
+DEFAULT_WRAPPER_W_5W(Type_hvector)
+DEFAULT_WRAPPER_W_5W(Type_indexed)
+DEFAULT_WRAPPER_W_2W(Type_lb)
+DEFAULT_WRAPPER_W_3W(Type_match_size)
+DEFAULT_WRAPPER_W_3W(Type_set_attr)
+DEFAULT_WRAPPER_W_2W(Type_set_name)
+DEFAULT_WRAPPER_W_2W(Type_size)
+DEFAULT_WRAPPER_W_5W(Type_struct)
+DEFAULT_WRAPPER_W_2W(Type_ub)
+DEFAULT_WRAPPER_W_5W(Type_vector)
+DEFAULT_WRAPPER_W_7W(Unpack)
+DEFAULT_WRAPPER_W_3W(Unpublish_name)
+DEFAULT_WRAPPER_W_7W(Unpack_external)
+/* DEFAULT_WRAPPER_W_3W(Waitall) */
+DEFAULT_WRAPPER_W_4W(Waitany)
+/* DEFAULT_WRAPPER_W_2W(Wait) */
+DEFAULT_WRAPPER_W_5W(Waitsome)
+DEFAULT_WRAPPER_W_1W(Win_c2f)
+DEFAULT_WRAPPER_W_2W(Win_call_errhandler)
+DEFAULT_WRAPPER_W_1W(Win_complete)
+DEFAULT_WRAPPER_W_6W(Win_create)
+DEFAULT_WRAPPER_W_2W(Win_create_errhandler)
+DEFAULT_WRAPPER_W_4W(Win_create_keyval)
+DEFAULT_WRAPPER_W_2W(Win_delete_attr)
+DEFAULT_WRAPPER_W_1W(Win_f2c)
+DEFAULT_WRAPPER_W_2W(Win_fence)
+DEFAULT_WRAPPER_W_1W(Win_free)
+DEFAULT_WRAPPER_W_1W(Win_free_keyval)
+DEFAULT_WRAPPER_W_4W(Win_get_attr)
+DEFAULT_WRAPPER_W_2W(Win_get_errhandler)
+DEFAULT_WRAPPER_W_2W(Win_get_group)
+DEFAULT_WRAPPER_W_3W(Win_get_name)
+DEFAULT_WRAPPER_W_4W(Win_lock)
+DEFAULT_WRAPPER_W_3W(Win_post)
+DEFAULT_WRAPPER_W_3W(Win_set_attr)
+DEFAULT_WRAPPER_W_2W(Win_set_errhandler)
+DEFAULT_WRAPPER_W_2W(Win_set_name)
+DEFAULT_WRAPPER_W_3W(Win_start)
+DEFAULT_WRAPPER_W_2W(Win_test)
+DEFAULT_WRAPPER_W_2W(Win_unlock)
+DEFAULT_WRAPPER_W_1W(Win_wait)
+/* double MPI_Wtick(void) */
+/* double MPI_Wtime(void) */
 
 
-
-UNIMPLEMENTED_WRAPPER(Allgather)
-UNIMPLEMENTED_WRAPPER(Allgatherv)
-
-
-UNIMPLEMENTED_WRAPPER(Alltoall)
-UNIMPLEMENTED_WRAPPER(Alltoallv)
-UNIMPLEMENTED_WRAPPER(Alltoallw)
-UNIMPLEMENTED_WRAPPER(Attr_delete)
-NO_OP_WRAPPER(Attr_get)
-NO_OP_WRAPPER(Attr_put)
-NO_OP_WRAPPER(Barrier)
-
-
-UNIMPLEMENTED_WRAPPER(Bsend_init)
-UNIMPLEMENTED_WRAPPER(Cart_coords)
-UNIMPLEMENTED_WRAPPER(Cart_create)
-UNIMPLEMENTED_WRAPPER(Cart_get)
-UNIMPLEMENTED_WRAPPER(Cart_map)
-UNIMPLEMENTED_WRAPPER(Cart_rank)
-UNIMPLEMENTED_WRAPPER(Cart_shift)
-UNIMPLEMENTED_WRAPPER(Cart_sub)
-UNIMPLEMENTED_WRAPPER(Cartdim_get)
-UNIMPLEMENTED_WRAPPER(Comm_compare)
-NO_OP_WRAPPER(Comm_create)
-UNIMPLEMENTED_WRAPPER(Comm_create_errhandler)
-UNIMPLEMENTED_WRAPPER(Comm_dup)
-NO_OP_WRAPPER(Comm_free)
-UNIMPLEMENTED_WRAPPER(Comm_free_errhandler)
-UNIMPLEMENTED_WRAPPER(Comm_get_errhandler)
-UNIMPLEMENTED_WRAPPER(Comm_get_name)
-NO_OP_WRAPPER(Comm_group)
-
-
-NO_OP_WRAPPER(Comm_split)
-UNIMPLEMENTED_WRAPPER(Comm_test_inter)
-UNIMPLEMENTED_WRAPPER(Dims_create)
-UNIMPLEMENTED_WRAPPER(Errhandler_create)
-
-//UNIMPLEMENTED_WRAPPER(Errhandler_free)
-NO_OP_WRAPPER(Errhandler_free)
-
-UNIMPLEMENTED_WRAPPER(Errhandler_get)
-
-//UNIMPLEMENTED_WRAPPER(Errhandler_set)
-NO_OP_WRAPPER(Errhandler_set)
-
-UNIMPLEMENTED_WRAPPER(Error_class)
-
-UNIMPLEMENTED_WRAPPER(Finalized)
-
-
-UNIMPLEMENTED_WRAPPER(Gatherv)
-UNIMPLEMENTED_WRAPPER(Get_address)
-
-
-UNIMPLEMENTED_WRAPPER(Get_elements)
-NO_OP_WRAPPER(Get_processor_name)
-UNIMPLEMENTED_WRAPPER(Get_version)
-UNIMPLEMENTED_WRAPPER(Graph_create)
-UNIMPLEMENTED_WRAPPER(Graph_get)
-UNIMPLEMENTED_WRAPPER(Graph_map)
-UNIMPLEMENTED_WRAPPER(Graph_neighbors)
-UNIMPLEMENTED_WRAPPER(Graph_neighbors_count)
-UNIMPLEMENTED_WRAPPER(Graphdims_get)
-UNIMPLEMENTED_WRAPPER(Group_compare)
-UNIMPLEMENTED_WRAPPER(Group_difference)
-NO_OP_WRAPPER(Group_excl)
-NO_OP_WRAPPER(Group_free)
-NO_OP_WRAPPER(Group_incl)
-UNIMPLEMENTED_WRAPPER(Group_intersection)
-UNIMPLEMENTED_WRAPPER(Group_range_excl)
-UNIMPLEMENTED_WRAPPER(Group_range_incl)
-UNIMPLEMENTED_WRAPPER(Group_rank)
-UNIMPLEMENTED_WRAPPER(Group_size)
-NO_OP_WRAPPER(Group_translate_ranks)
-UNIMPLEMENTED_WRAPPER(Group_union)
-
-
-UNIMPLEMENTED_WRAPPER(Init_thread)
-
-
-UNIMPLEMENTED_WRAPPER(Intercomm_create)
-UNIMPLEMENTED_WRAPPER(Intercomm_merge)
-
-
-
-NO_OP_WRAPPER(Op_free)
-UNIMPLEMENTED_WRAPPER(Pack)
-UNIMPLEMENTED_WRAPPER(Pack_size)
-UNIMPLEMENTED_WRAPPER(Pcontrol)
-UNIMPLEMENTED_WRAPPER(Query_thread)
-
-
-UNIMPLEMENTED_WRAPPER(Recv_init)
-
-
-UNIMPLEMENTED_WRAPPER(Reduce_scatter)
-UNIMPLEMENTED_WRAPPER(Rsend_init)
-UNIMPLEMENTED_WRAPPER(Scan)
-UNIMPLEMENTED_WRAPPER(Scatter)
-UNIMPLEMENTED_WRAPPER(Scatterv)
-
-
-UNIMPLEMENTED_WRAPPER(Send_init)
-
-
-UNIMPLEMENTED_WRAPPER(Ssend_init)
-UNIMPLEMENTED_WRAPPER(Start)
-UNIMPLEMENTED_WRAPPER(Startall)
-UNIMPLEMENTED_WRAPPER(Status_set_cancelled)
-UNIMPLEMENTED_WRAPPER(Status_set_elements)
-UNIMPLEMENTED_WRAPPER(Topo_test)
-
-//UNIMPLEMENTED_WRAPPER(Type_commit)
-NO_OP_WRAPPER(Type_commit)
-
-//UNIMPLEMENTED_WRAPPER(Type_contiguous)
-NO_OP_WRAPPER(Type_contiguous)
-
-UNIMPLEMENTED_WRAPPER(Type_count)
-UNIMPLEMENTED_WRAPPER(Type_create_darray)
-UNIMPLEMENTED_WRAPPER(Type_create_subarray)
-NO_OP_WRAPPER(Type_extent)
-NO_OP_WRAPPER(Type_free)
-NO_OP_WRAPPER(Type_get_contents)
-NO_OP_WRAPPER(Type_get_envelope)
-UNIMPLEMENTED_WRAPPER(Type_get_name)
-NO_OP_WRAPPER(Type_create_hindexed)
-NO_OP_WRAPPER(Type_create_hvector)
-
-//UNIMPLEMENTED_WRAPPER(Type_create_struct)
-NO_OP_WRAPPER(Type_create_struct)
-
-NO_OP_WRAPPER(Type_hindexed)
-NO_OP_WRAPPER(Type_hvector)
-NO_OP_WRAPPER(Type_indexed)
-NO_OP_WRAPPER(Type_lb)
-UNIMPLEMENTED_WRAPPER(Type_set_name)
-NO_OP_WRAPPER(Type_size)
-
-//UNIMPLEMENTED_WRAPPER(Type_struct)
-NO_OP_WRAPPER(Type_struct)
-
-NO_OP_WRAPPER(Type_ub)
-NO_OP_WRAPPER(Type_vector)
-UNIMPLEMENTED_WRAPPER(Unpack)
-
-
-UNIMPLEMENTED_WRAPPER(Win_create_errhandler)
-UNIMPLEMENTED_WRAPPER(Win_free_errhandler)
-UNIMPLEMENTED_WRAPPER(Win_get_errhandler)
-UNIMPLEMENTED_WRAPPER(Win_set_errhandler)
-NO_OP_WRAPPER(Wtick)
-NO_OP_WRAPPER(Wtime)
-
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*---                                                      ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
 
 /*---------------------------------------------------------------*/
 /*--- end                                           mpiwrap.c ---*/

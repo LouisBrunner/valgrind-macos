@@ -113,11 +113,11 @@ typedef  unsigned char  Bool;
 static const char* preamble = "valgrind MPI wrappers";
 
 /* established at startup */
-static pid_t my_pid      = -1;
-static char* options_str = NULL;
-static Bool  opt_verbose = False;
-static Bool  opt_strict  = False;
-static Bool  opt_help    = False;
+static pid_t my_pid        = -1;
+static char* options_str   = NULL;
+static int   opt_verbosity = 1;
+static Bool  opt_strict    = False;
+static Bool  opt_help      = False;
 
 static inline void before ( char* fnname )
 {
@@ -128,14 +128,17 @@ static inline void before ( char* fnname )
       done = 1;
       my_pid = getpid();
       options_str = getenv("MPIWRAP_DEBUG");
-      if (options_str) 
-         opt_help    = NULL != strstr(options_str, "help");
-      if (options_str) 
-         opt_verbose = NULL != strstr(options_str, "verbose");
-      if (options_str) 
-         opt_strict  = NULL != strstr(options_str, "strict");
-      fprintf(stderr, "%s %5d: Active for pid %d\n", 
-                      preamble, my_pid, my_pid);
+      if (options_str) {
+         opt_help   = NULL != strstr(options_str, "help");
+         opt_strict = NULL != strstr(options_str, "strict");
+         if (NULL != strstr(options_str, "verbose"))
+            opt_verbosity++;
+         if (NULL != strstr(options_str, "quiet"))
+            opt_verbosity--;
+      }
+      if (opt_verbosity > 0)
+         fprintf(stderr, "%s %5d: Active for pid %d\n", 
+                         preamble, my_pid, my_pid);
       /* Sanity check - that 'long' really is a machine word. */
       assert(sizeof(long) == sizeof(void*));
       /* Sanity check - char is byte-sized (else address calculations
@@ -146,6 +149,7 @@ static inline void before ( char* fnname )
          fprintf(stderr, "Valid options for the MPIWRAP_DEBUG environment"
                          " variable are:\n");
          fprintf(stderr, "\n");
+         fprintf(stderr, "   quiet      be silent except for errors\n");
          fprintf(stderr, "   verbose    show wrapper entries/exits\n");
          fprintf(stderr, "   strict     abort the program if a function"
                          " with no wrapper is used\n");
@@ -157,21 +161,19 @@ static inline void before ( char* fnname )
          fprintf(stderr, "%s %5d: exiting now\n", preamble, my_pid );
          exit(1);
       }
-      fprintf(stderr, "%s %5d: Try MPIWRAP_DEBUG=help for possible options\n", 
-                      preamble, my_pid);
-      if (opt_verbose || opt_strict)
-         fprintf(stderr, "%s %5d: Selected options: %s %s\n", 
-                         preamble, my_pid, opt_verbose ? "verbose" : "",
-                                           opt_strict  ? "strict"  : "");
+      if (opt_verbosity > 0)
+         fprintf(stderr, 
+                 "%s %5d: Try MPIWRAP_DEBUG=help for possible options\n", 
+                 preamble, my_pid);
 
    }
-   if (opt_verbose)
+   if (opt_verbosity > 1)
       fprintf(stderr, "%s %5d: enter PMPI_%s\n", preamble,  my_pid, fnname );
 }
 
 static inline void after ( char* fnname, int err )
 {
-   if (opt_verbose)
+   if (opt_verbosity > 1)
       fprintf(stderr, "%s %5d:  exit PMPI_%s (err = %d)\n", 
                       preamble, my_pid, fnname, err );
 }
@@ -918,7 +920,7 @@ void add_shadow_Request( MPI_Request request,
    sReqs[ix].datatype = datatype;
 
    /* UNLOCK */
-   if (opt_verbose)
+   if (opt_verbosity > 1)
       fprintf(stderr, "%s %5d: sReq+ 0x%lx -> b/c/d %p/%d/0x%lx [slot %d]\n",
                       preamble, my_pid, (unsigned long)request, 
                                 buf, count, (long)datatype, ix);
@@ -951,7 +953,7 @@ static void maybe_complete ( Bool         error_in_status,
           buffer, and delete the entry. */
       if (count_from_Status(&recv_count, shadow->datatype, status)) {
          make_readable(shadow->buf, recv_count, shadow->datatype);
-         if (opt_verbose)
+         if (opt_verbosity > 1)
             fprintf(stderr, "%s %5d: sReq- %p (completed)\n", 
                             preamble, my_pid, request_before);
       }

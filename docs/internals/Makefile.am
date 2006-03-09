@@ -4,6 +4,7 @@ EXTRA_DIST = \
 	directory-structure.txt \
 	m_replacemalloc.txt \
 	m_syswrap.txt module-structure.txt notes.txt porting-HOWTO.txt \
+	mpi2entries.txt \
 	porting-to-ARM.txt \
 	register-uses.txt \
 	release-HOWTO.txt roadmap.txt \

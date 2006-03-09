@@ -608,7 +608,7 @@ saved_CC=$CC
 saved_CFLAGS=$CFLAGS
 CC=$MPI_CC
 CFLAGS=
-AC_TRY_COMPILE([
+AC_TRY_LINK([
 #include <mpi.h>
 #include <stdio.h>
 ],[

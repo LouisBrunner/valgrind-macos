@@ -605,18 +605,17 @@ AC_ARG_WITH(mpicc,
 )
 AC_MSG_CHECKING([for usable MPI2-compliant mpicc and mpi.h])
 saved_CC=$CC
+saved_CFLAGS=$CFLAGS
 CC=$MPI_CC
-AC_TRY_LINK(, [
+CFLAGS=
+AC_TRY_COMPILE([
 #include <mpi.h>
 #include <stdio.h>
-int main ( int argc, char** argv ) 
-{ 
-   int r = MPI_Init(&argc,&argv);
-   r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
-   return r; 
-}
-],
-[
+],[
+  int r = MPI_Init(NULL,NULL);
+  r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
+  return r; 
+], [
 ac_have_mpi2=yes
 AC_MSG_RESULT([yes, $MPI_CC])
 ], [
@@ -624,6 +623,7 @@ ac_have_mpi2=no
 AC_MSG_RESULT([no])
 ])
 CC=$saved_CC
+CFLAGS=$saved_CFLAGS
 
 AM_CONDITIONAL(BUILD_MPIWRAP, test x$ac_have_mpi2 = xyes)
 AC_SUBST(MPI_CC)

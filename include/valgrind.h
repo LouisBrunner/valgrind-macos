@@ -688,6 +688,80 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
+#define CALL_FN_W_9W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,   \
+                                 arg7,arg8,arg9)                  \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[10];                         \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)(arg1);                         \
+      _argvec[2] = (unsigned long)(arg2);                         \
+      _argvec[3] = (unsigned long)(arg3);                         \
+      _argvec[4] = (unsigned long)(arg4);                         \
+      _argvec[5] = (unsigned long)(arg5);                         \
+      _argvec[6] = (unsigned long)(arg6);                         \
+      _argvec[7] = (unsigned long)(arg7);                         \
+      _argvec[8] = (unsigned long)(arg8);                         \
+      _argvec[9] = (unsigned long)(arg9);                         \
+      __asm__ volatile(                                           \
+         "pushl 36(%%eax)\n\t"                                    \
+         "pushl 32(%%eax)\n\t"                                    \
+         "pushl 28(%%eax)\n\t"                                    \
+         "pushl 24(%%eax)\n\t"                                    \
+         "pushl 20(%%eax)\n\t"                                    \
+         "pushl 16(%%eax)\n\t"                                    \
+         "pushl 12(%%eax)\n\t"                                    \
+         "pushl 8(%%eax)\n\t"                                     \
+         "pushl 4(%%eax)\n\t"                                     \
+         "movl (%%eax), %%eax\n\t"  /* target->%eax */            \
+         VALGRIND_CALL_NOREDIR_EAX                                \
+         "addl $36, %%esp\n"                                      \
+         : /*out*/   "=a" (_res)                                  \
+         : /*in*/    "a" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_10W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,  \
+                                  arg7,arg8,arg9,arg10)           \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[11];                         \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)(arg1);                         \
+      _argvec[2] = (unsigned long)(arg2);                         \
+      _argvec[3] = (unsigned long)(arg3);                         \
+      _argvec[4] = (unsigned long)(arg4);                         \
+      _argvec[5] = (unsigned long)(arg5);                         \
+      _argvec[6] = (unsigned long)(arg6);                         \
+      _argvec[7] = (unsigned long)(arg7);                         \
+      _argvec[8] = (unsigned long)(arg8);                         \
+      _argvec[9] = (unsigned long)(arg9);                         \
+      _argvec[10] = (unsigned long)(arg10);                       \
+      __asm__ volatile(                                           \
+         "pushl 40(%%eax)\n\t"                                    \
+         "pushl 36(%%eax)\n\t"                                    \
+         "pushl 32(%%eax)\n\t"                                    \
+         "pushl 28(%%eax)\n\t"                                    \
+         "pushl 24(%%eax)\n\t"                                    \
+         "pushl 20(%%eax)\n\t"                                    \
+         "pushl 16(%%eax)\n\t"                                    \
+         "pushl 12(%%eax)\n\t"                                    \
+         "pushl 8(%%eax)\n\t"                                     \
+         "pushl 4(%%eax)\n\t"                                     \
+         "movl (%%eax), %%eax\n\t"  /* target->%eax */            \
+         VALGRIND_CALL_NOREDIR_EAX                                \
+         "addl $40, %%esp\n"                                      \
+         : /*out*/   "=a" (_res)                                  \
+         : /*in*/    "a" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
 #define CALL_FN_W_12W(lval, orig, arg1,arg2,arg3,arg4,arg5,       \
                                   arg6,arg7,arg8,arg9,arg10,      \
                                   arg11,arg12)                    \

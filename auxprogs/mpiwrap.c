@@ -59,11 +59,6 @@
 
 
 /*------------------------------------------------------------*/
-/*---                                                      ---*/
-/*------------------------------------------------------------*/
-
-
-/*------------------------------------------------------------*/
 /*--- includes                                             ---*/
 /*------------------------------------------------------------*/
 
@@ -130,7 +125,7 @@ static int   opt_verbosity = 1;
 static Bool  opt_missing   = 0; /* 0:silent; 1:warn; 2:abort */
 static Bool  opt_help      = False;
 
-static inline void before ( char* fnname )
+static void before ( char* fnname )
 {
    /* This isn't thread-safe wrt 'done' (no locking).  It's not
       critical. */
@@ -438,7 +433,7 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    if (0)
       printf("walk_type %p\n", (void*)ty);
 
-   r = MPI_Type_get_envelope( ty, &n_ints, &n_addrs, &n_dtys, &tycon );
+   r = PMPI_Type_get_envelope( ty, &n_ints, &n_addrs, &n_dtys, &tycon );
    assert(r == MPI_SUCCESS);
 
    /* Handle the base cases fast(er/ish). */
@@ -500,8 +495,8 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
       assert(dtys);
    }
 
-   r = MPI_Type_get_contents( ty, n_ints, n_addrs, n_dtys,
-                                  ints, addrs, dtys );
+   r = PMPI_Type_get_contents( ty, n_ints, n_addrs, n_dtys,
+                                   ints, addrs, dtys );
    assert(r == MPI_SUCCESS);
 
    switch (tycon) {
@@ -773,29 +768,18 @@ make_defined_if_success ( int err, void *buffer, int count,
 /*--- Interface Standard, MPIF, Nov 15 2003" (the MPI 1.1  ---*/
 /*--- spec.  All unimplemented wrappers are listed at the  ---*/
 /*--- end of the file.  The list of function names is      ---*/
-/*--- taken from the headers of lampi-1.5.12.  Hopefully   ---*/
-/*--- it is a complete list of all the MPI 1.1 functions.  ---*/
+/*--- taken from the headers of Open MPI svn r9191.        ---*/
+/*--- Hopefully it is a complete list of all the MPI 2     ---*/
+/*--- functions.                                           ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
 /* Handy abbreviation */
 #define WRAPPER_FOR(name) I_WRAP_FNNAME_U(name)
 
-/* Generates a wrapper which aborts when called. */
-#define UNIMPLEMENTED_WRAPPER(name)                            \
-   void I_WRAP_FNNAME_U(PMPI_##name) ( void )                  \
-   {                                                           \
-      fprintf(stderr, "%s %5d: UNIMPLEMENTED wrapper: "        \
-                              "PMPI_%s\n",                     \
-                      preamble, my_pid, #name);                \
-      fprintf(stderr, "%s %5d: exiting now.\n",                \
-                      preamble, my_pid);                       \
-      exit(1);                                                 \
-   }
-
 /* Generates (conceptually) a wrapper which does nothing.  In
    fact just generate no wrapper at all. */
-#define NO_OP_WRAPPER(name) /* */
+#define HAS_NO_WRAPPER(basename) /* */
 
 
 /*------------------------------------------------------------*/
@@ -804,19 +788,36 @@ make_defined_if_success ( int err, void *buffer, int count,
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-/* --- Send --- */
+/* --- {,B,S,R}Send --- */
 /* pre: rd: (buf,count,datatype) */
-int WRAPPER_FOR(PMPI_Send)(void *buf, int count, MPI_Datatype datatype, 
-                           int dest, int tag, MPI_Comm comm)
+static
+int generic_Send(void *buf, int count, MPI_Datatype datatype, 
+                            int dest, int tag, MPI_Comm comm)
 {
    OrigFn fn;
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
-   before("Send");
+   before("{,B,S,R}Send");
    check_readable(buf, count, datatype);
    CALL_FN_W_6W(err, fn, buf,count,datatype,dest,tag,comm);
-   after("Send", err);
+   after("{,B,S,R}Send", err);
    return err;
+}
+int WRAPPER_FOR(PMPI_Send)(void *buf, int count, MPI_Datatype datatype, 
+                           int dest, int tag, MPI_Comm comm) {
+   return generic_Send(buf,count,datatype, dest,tag,comm);
+}
+int WRAPPER_FOR(PMPI_Bsend)(void *buf, int count, MPI_Datatype datatype, 
+                            int dest, int tag, MPI_Comm comm) {
+   return generic_Send(buf,count,datatype, dest,tag,comm);
+}
+int WRAPPER_FOR(PMPI_Ssend)(void *buf, int count, MPI_Datatype datatype, 
+                            int dest, int tag, MPI_Comm comm) {
+   return generic_Send(buf,count,datatype, dest,tag,comm);
+}
+int WRAPPER_FOR(PMPI_Rsend)(void *buf, int count, MPI_Datatype datatype, 
+                            int dest, int tag, MPI_Comm comm) {
+   return generic_Send(buf,count,datatype, dest,tag,comm);
 }
 
 /* --- Recv --- */
@@ -843,12 +844,51 @@ int WRAPPER_FOR(PMPI_Recv)(void *buf, int count, MPI_Datatype datatype,
    return err;
 }
 
+/* --- Get_count --- */
+/* pre:  must be readable: *status
+   post: make defined: *count -- don't bother, libmpi will surely do this
+*/
+int WRAPPER_FOR(PMPI_Get_count)(MPI_Status* status, 
+                                MPI_Datatype ty, int* count )
+{
+   OrigFn fn;
+   int    err;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Get_count");
+   check_readable_untyped(status, sizeof(*status));
+   CALL_FN_W_WWW(err, fn, status,ty,count);
+   after("Get_count", err);
+   return err;
+}
+
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
 /*--- Sec 3.7, Nonblocking communication                   ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
+
+/* Maintain a table that makes it possible for the wrappers to
+   complete MPI_Irecv successfully.
+
+   The issue is that MPI_Irecv states the recv buffer and returns
+   immediately, giving a handle (MPI_Request) for the transaction.
+   Later the user will have to poll for completion with MPI_Wait etc,
+   and at that point these wrappers have to paint the recv buffer.
+   But the recv buffer details are not presented to MPI_Wait - only
+   the handle is.  We therefore have to use a shadow table
+   (sReqs{,_size,_used,_lock}) which associates uncompleted
+   MPI_Requests with the corresponding buffer address/count/type.
+
+   Only read requests are placed in the table, since there is no need
+   to do any buffer painting following completion of an Isend - all
+   the checks for that are done at the time Isend is called.
+
+   Care has to be take to remove completed requests from the table.
+
+   Access to the table is guarded by sReqs_lock so as to make it
+   thread-safe.
+*/
 
 typedef
    struct {
@@ -993,8 +1033,28 @@ void add_shadow_Request( MPI_Request request,
                                 buf, count, (long)datatype, ix);
 }
 
+static 
+MPI_Request* clone_Request_array ( int count, MPI_Request* orig )
+{
+   MPI_Request* copy;
+   int i;
+   LOCK_SREQS;
+   if (count < 0) 
+      count = 0; /* Hmm.  Call Mulder and Scully. */
+   copy = malloc( count * sizeof(MPI_Request) );
+   if (copy == NULL) {
+      UNLOCK_SREQS;
+      barf("clone_Request_array: malloc failed");
+   }
+   for (i = 0; i < count; i++)
+      copy[i] = orig[i];
+   UNLOCK_SREQS;
+   return copy;
+}
+
 #undef LOCK_SREQS
 #undef UNLOCK_SREQS
+
 
 static void maybe_complete ( Bool         error_in_status,
                              MPI_Request  request_before,
@@ -1031,40 +1091,46 @@ static void maybe_complete ( Bool         error_in_status,
 }
 
 
-static 
-MPI_Request* clone_Request_array ( int count, MPI_Request* orig )
-{
-   MPI_Request* copy;
-   int i;
-   if (count < 0) 
-      count = 0; /* Hmm.  Call Mulder and Scully. */
-   copy = malloc( count * sizeof(MPI_Request) );
-   if (copy == NULL)
-      barf("clone_Request_array: malloc failed");
-   for (i = 0; i < count; i++)
-      copy[i] = orig[i];
-   return copy;
-}
-
-
 /* --- Isend --- */
 /* rd: (buf,count,datatype) */
 /* wr: *request */
-int WRAPPER_FOR(PMPI_Isend)(void *buf, int count, MPI_Datatype datatype, 
-                            int dest, int tag, MPI_Comm comm, 
-                            MPI_Request* request)
+static
+int generic_Isend(void *buf, int count, MPI_Datatype datatype, 
+                             int dest, int tag, MPI_Comm comm, 
+                             MPI_Request* request)
 {
    OrigFn fn;
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
-   before("Isend");
+   before("{,B,S,R}Isend");
    check_readable(buf, count, datatype);
    check_writable_untyped(request, sizeof(*request));
    CALL_FN_W_7W(err, fn, buf,count,datatype,dest,tag,comm,request);
    make_defined_if_success_untyped(err, request, sizeof(*request));
-   after("Isend", err);
+   after("{,B,S,R}Isend", err);
    return err;
 }
+int WRAPPER_FOR(PMPI_Isend)(void *buf, int count, MPI_Datatype datatype, 
+                            int dest, int tag, MPI_Comm comm, 
+                            MPI_Request* request) {
+   return generic_Isend(buf,count,datatype, dest,tag,comm, request);
+}
+int WRAPPER_FOR(PMPI_Ibsend)(void *buf, int count, MPI_Datatype datatype, 
+                             int dest, int tag, MPI_Comm comm, 
+                             MPI_Request* request) {
+   return generic_Isend(buf,count,datatype, dest,tag,comm, request);
+}
+int WRAPPER_FOR(PMPI_Issend)(void *buf, int count, MPI_Datatype datatype, 
+                             int dest, int tag, MPI_Comm comm, 
+                             MPI_Request* request) {
+   return generic_Isend(buf,count,datatype, dest,tag,comm, request);
+}
+int WRAPPER_FOR(PMPI_Irsend)(void *buf, int count, MPI_Datatype datatype, 
+                             int dest, int tag, MPI_Comm comm, 
+                             MPI_Request* request) {
+   return generic_Isend(buf,count,datatype, dest,tag,comm, request);
+}
+
 
 /* --- Irecv --- */
 /* pre:  must be writable: (buf,count,datatype), *request
@@ -1221,6 +1287,42 @@ int WRAPPER_FOR(PMPI_Sendrecv)(
 
 /* --- Address --- */
 /* Does this have anything worth checking? */
+HAS_NO_WRAPPER(Address)
+
+/* --- MPI 2 stuff --- */
+/* Type_extent, Type_get_contents and Type_get_envelope sometimes get
+   used intensively by the type walker (walk_type).  There's no reason
+   why they couldn't be properly wrapped if needed, but doing so slows
+   everything down, so don't bother until needed. */
+HAS_NO_WRAPPER(Type_extent)
+HAS_NO_WRAPPER(Type_get_contents)
+HAS_NO_WRAPPER(Type_get_envelope)
+
+/* --- Type_commit --- */
+int WRAPPER_FOR(PMPI_Type_commit)( MPI_Datatype* ty )
+{
+   OrigFn fn;
+   int    err;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Type_commit");
+   check_readable_untyped(ty, sizeof(*ty));
+   CALL_FN_W_W(err, fn, ty);
+   after("Type_commit", err);
+   return err;
+}
+
+/* --- Type_free --- */
+int WRAPPER_FOR(PMPI_Type_free)( MPI_Datatype* ty )
+{
+   OrigFn fn;
+   int    err;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Type_free");
+   check_readable_untyped(ty, sizeof(*ty));
+   CALL_FN_W_W(err, fn, ty);
+   after("Type_free", err);
+   return err;
+}
 
 
 /*------------------------------------------------------------*/
@@ -1384,6 +1486,46 @@ int WRAPPER_FOR(PMPI_Op_create)( MPI_User_function* function,
 /* Hardly seems worth wrapping Comm_rank and Comm_size, but
    since it's done now .. */
 
+/* --- Comm_create --- */
+/* Let normal memcheck tracking handle this. */
+int WRAPPER_FOR(PMPI_Comm_create)(MPI_Comm comm, MPI_Group group,
+                                  MPI_Comm* newcomm)
+{
+   OrigFn fn;
+   int    err;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Comm_create");
+   CALL_FN_W_WWW(err, fn, comm,group,newcomm);
+   after("Comm_create", err);
+   return err;
+}
+
+/* --- Comm_dup --- */
+/* Let normal memcheck tracking handle this. */
+int WRAPPER_FOR(PMPI_Comm_dup)(MPI_Comm comm, MPI_Comm* newcomm)
+{
+   OrigFn fn;
+   int    err;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Comm_dup");
+   CALL_FN_W_WW(err, fn, comm,newcomm);
+   after("Comm_dup", err);
+   return err;
+}
+
+/* --- Comm_free --- */
+/* Let normal memcheck tracking handle this. */
+int WRAPPER_FOR(PMPI_Comm_free)(MPI_Comm* comm)
+{
+   OrigFn fn;
+   int    err;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Comm_free");
+   CALL_FN_W_W(err, fn, comm);
+   after("Comm_free", err);
+   return err;
+}
+
 /* --- Comm_rank --- */
 /* wr: (rank, sizeof(*rank)) */
 int WRAPPER_FOR(PMPI_Comm_rank)(MPI_Comm comm, int *rank)
@@ -1429,7 +1571,8 @@ int WRAPPER_FOR(PMPI_Comm_size)(MPI_Comm comm, int *size)
 /*------------------------------------------------------------*/
 
 /* --- Error_string --- */
-int WRAPPER_FOR(PMPI_Error_string)( int errorcode, char* string, int* resultlen )
+int WRAPPER_FOR(PMPI_Error_string)( int errorcode, char* string, 
+                                    int* resultlen )
 {
    OrigFn fn;
    int    err;
@@ -1499,6 +1642,7 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
+/* Boilerplate for default wrappers. */
 #define DEFAULT_WRAPPER_PREAMBLE(basename)                        \
       OrigFn fn;                                                  \
       UWord  res;                                                 \
@@ -1643,7 +1787,7 @@ DEFAULT_WRAPPER_W_9W(Accumulate)
 DEFAULT_WRAPPER_W_1W(Add_error_class)
 DEFAULT_WRAPPER_W_2W(Add_error_code)
 DEFAULT_WRAPPER_W_2W(Add_error_string)
-DEFAULT_WRAPPER_W_2W(Address)
+/* DEFAULT_WRAPPER_W_2W(Address) */
 DEFAULT_WRAPPER_W_7W(Allgather)
 DEFAULT_WRAPPER_W_8W(Allgatherv)
 DEFAULT_WRAPPER_W_3W(Alloc_mem)
@@ -1656,7 +1800,7 @@ DEFAULT_WRAPPER_W_4W(Attr_get)
 DEFAULT_WRAPPER_W_3W(Attr_put)
 DEFAULT_WRAPPER_W_1W(Barrier)
 /* DEFAULT_WRAPPER_W_5W(Bcast) */
-DEFAULT_WRAPPER_W_6W(Bsend)
+/* DEFAULT_WRAPPER_W_6W(Bsend) */
 DEFAULT_WRAPPER_W_7W(Bsend_init)
 DEFAULT_WRAPPER_W_2W(Buffer_attach)
 DEFAULT_WRAPPER_W_2W(Buffer_detach)
@@ -1677,13 +1821,13 @@ DEFAULT_WRAPPER_W_3W(Comm_compare)
 DEFAULT_WRAPPER_W_5W(Comm_connect)
 DEFAULT_WRAPPER_W_2W(Comm_create_errhandler)
 DEFAULT_WRAPPER_W_4W(Comm_create_keyval)
-DEFAULT_WRAPPER_W_3W(Comm_create)
+/* DEFAULT_WRAPPER_W_3W(Comm_create) */
 DEFAULT_WRAPPER_W_2W(Comm_delete_attr)
 DEFAULT_WRAPPER_W_1W(Comm_disconnect)
-DEFAULT_WRAPPER_W_2W(Comm_dup)
+/* DEFAULT_WRAPPER_W_2W(Comm_dup) */
 DEFAULT_WRAPPER_W_1W(Comm_f2c)
 DEFAULT_WRAPPER_W_1W(Comm_free_keyval)
-DEFAULT_WRAPPER_W_1W(Comm_free)
+/* DEFAULT_WRAPPER_W_1W(Comm_free) */
 DEFAULT_WRAPPER_W_4W(Comm_get_attr)
 DEFAULT_WRAPPER_W_2W(Comm_get_errhandler)
 DEFAULT_WRAPPER_W_3W(Comm_get_name)
@@ -1774,7 +1918,7 @@ DEFAULT_WRAPPER_W_1W(Free_mem)
 /* DEFAULT_WRAPPER_W_8W(Gather) */
 DEFAULT_WRAPPER_W_9W(Gatherv)
 DEFAULT_WRAPPER_W_2W(Get_address)
-DEFAULT_WRAPPER_W_3W(Get_count)
+/* DEFAULT_WRAPPER_W_3W(Get_count) */
 DEFAULT_WRAPPER_W_3W(Get_elements)
 DEFAULT_WRAPPER_W_8W(Get)
 DEFAULT_WRAPPER_W_2W(Get_processor_name)
@@ -1801,7 +1945,7 @@ DEFAULT_WRAPPER_W_2W(Group_rank)
 DEFAULT_WRAPPER_W_2W(Group_size)
 DEFAULT_WRAPPER_W_5W(Group_translate_ranks)
 DEFAULT_WRAPPER_W_3W(Group_union)
-DEFAULT_WRAPPER_W_7W(Ibsend)
+/* DEFAULT_WRAPPER_W_7W(Ibsend) */
 DEFAULT_WRAPPER_W_1W(Info_c2f)
 DEFAULT_WRAPPER_W_1W(Info_create)
 DEFAULT_WRAPPER_W_2W(Info_delete)
@@ -1820,9 +1964,9 @@ DEFAULT_WRAPPER_W_6W(Intercomm_create)
 DEFAULT_WRAPPER_W_3W(Intercomm_merge)
 /* DEFAULT_WRAPPER_W_5W(Iprobe) */
 /* DEFAULT_WRAPPER_W_7W(Irecv) */
-DEFAULT_WRAPPER_W_7W(Irsend)
+/* DEFAULT_WRAPPER_W_7W(Irsend) */
 /* DEFAULT_WRAPPER_W_7W(Isend) */
-DEFAULT_WRAPPER_W_7W(Issend)
+/* DEFAULT_WRAPPER_W_7W(Issend) */
 DEFAULT_WRAPPER_W_1W(Is_thread_main)
 DEFAULT_WRAPPER_W_4W(Keyval_create)
 DEFAULT_WRAPPER_W_1W(Keyval_free)
@@ -1850,7 +1994,7 @@ DEFAULT_WRAPPER_W_1W(Request_c2f)
 DEFAULT_WRAPPER_W_1W(Request_f2c)
 DEFAULT_WRAPPER_W_1W(Request_free)
 DEFAULT_WRAPPER_W_3W(Request_get_status)
-DEFAULT_WRAPPER_W_6W(Rsend)
+/* DEFAULT_WRAPPER_W_6W(Rsend) */
 DEFAULT_WRAPPER_W_7W(Rsend_init)
 DEFAULT_WRAPPER_W_6W(Scan)
 DEFAULT_WRAPPER_W_8W(Scatter)
@@ -1860,7 +2004,7 @@ DEFAULT_WRAPPER_W_7W(Send_init)
 /* DEFAULT_WRAPPER_W_12W(Sendrecv) */
 DEFAULT_WRAPPER_W_9W(Sendrecv_replace)
 DEFAULT_WRAPPER_W_7W(Ssend_init)
-DEFAULT_WRAPPER_W_6W(Ssend)
+/* DEFAULT_WRAPPER_W_6W(Ssend) */
 DEFAULT_WRAPPER_W_1W(Start)
 DEFAULT_WRAPPER_W_2W(Startall)
 DEFAULT_WRAPPER_W_2W(Status_c2f)
@@ -1874,7 +2018,7 @@ DEFAULT_WRAPPER_W_2W(Test_cancelled)
 DEFAULT_WRAPPER_W_5W(Testsome)
 DEFAULT_WRAPPER_W_2W(Topo_test)
 DEFAULT_WRAPPER_W_1W(Type_c2f)
-DEFAULT_WRAPPER_W_1W(Type_commit)
+/* DEFAULT_WRAPPER_W_1W(Type_commit) */
 DEFAULT_WRAPPER_W_3W(Type_contiguous)
 DEFAULT_WRAPPER_W_10W(Type_create_darray)
 DEFAULT_WRAPPER_W_3W(Type_create_f90_complex)
@@ -1889,13 +2033,13 @@ DEFAULT_WRAPPER_W_7W(Type_create_subarray)
 DEFAULT_WRAPPER_W_4W(Type_create_resized)
 DEFAULT_WRAPPER_W_2W(Type_delete_attr)
 DEFAULT_WRAPPER_W_2W(Type_dup)
-DEFAULT_WRAPPER_W_2W(Type_extent)
-DEFAULT_WRAPPER_W_1W(Type_free)
+/* DEFAULT_WRAPPER_W_2W(Type_extent) */
+/* DEFAULT_WRAPPER_W_1W(Type_free) */
 DEFAULT_WRAPPER_W_1W(Type_free_keyval)
 DEFAULT_WRAPPER_W_1W(Type_f2c)
 DEFAULT_WRAPPER_W_4W(Type_get_attr)
-DEFAULT_WRAPPER_W_7W(Type_get_contents)
-DEFAULT_WRAPPER_W_5W(Type_get_envelope)
+/* DEFAULT_WRAPPER_W_7W(Type_get_contents) */
+/* DEFAULT_WRAPPER_W_5W(Type_get_envelope) */
 DEFAULT_WRAPPER_W_3W(Type_get_extent)
 DEFAULT_WRAPPER_W_3W(Type_get_name)
 DEFAULT_WRAPPER_W_3W(Type_get_true_extent)

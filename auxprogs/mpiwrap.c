@@ -394,8 +394,12 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
    if (ty == MPI_BYTE)           return 1;
    /* MPI_PACKED */
    /* new in MPI2: */
+#  if defined(MPI_WCHAR)
    if (ty == MPI_WCHAR)              return sizeof(wchar_t);
+#  endif
+#  if defined(MPI_SIGNED_CHAR)
    if (ty == MPI_SIGNED_CHAR)        return sizeof(signed char);
+#  endif
    if (ty == MPI_UNSIGNED_LONG_LONG) return sizeof(unsigned long long int);
    if (ty == MPI_LONG_LONG_INT)      return sizeof(signed long long int);
    /* Note: the following are named structs, not named basic types,
@@ -467,6 +471,8 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
          f(base + offsetof(Ty,loc), sizeof(int));
          return;
       }
+      if (ty == MPI_LB || ty == MPI_UB)
+         return; /* have zero size, so nothing needs to be done */
       goto unhandled;
       /*NOTREACHED*/
    }

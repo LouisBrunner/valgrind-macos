@@ -5,7 +5,7 @@ bin_PROGRAMS = valgrind-listener
 
 noinst_SCRIPTS = gen-mdg DotToScc.hs primes.c \
 		gsl16test gsl16-badfree.patch gsl16-wavelet.patch \
-		ppcfround.c ppc64shifts.c mpiwrap.c
+		ppcfround.c ppc64shifts.c mpiwrap.c mpiwrap_type_test.c
 
 EXTRA_DIST = $(noinst_SCRIPTS)
 

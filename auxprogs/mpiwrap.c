@@ -1078,8 +1078,8 @@ static void maybe_complete ( Bool         error_in_status,
        && request_after == MPI_REQUEST_NULL
        && (error_in_status ? status->MPI_ERROR == MPI_SUCCESS : True)
        && ( (shadow=find_shadow_Request(request_before)) != NULL) ) {
-      /* The Irecv detailed in 'shadow' completed.  Make the result
-          buffer, and delete the entry. */
+      /* The Irecv detailed in 'shadow' completed.  Paint the result
+         buffer, and delete the entry. */
       if (count_from_Status(&recv_count, shadow->datatype, status)) {
          make_defined(shadow->buf, recv_count, shadow->datatype);
          if (opt_verbosity > 1)
@@ -1158,6 +1158,11 @@ int WRAPPER_FOR(PMPI_Irecv)( void* buf, int count, MPI_Datatype datatype,
 }
 
 /* --- Wait --- */
+/* The MPI1 spec (imprecisely) defines 3 request states:
+   - "null"     if the request is MPI_REQUEST_NULL
+   - "inactive" if not "null" and not associated with ongoing comms
+   - "active"   if not "null" and is associated with ongoing comms
+*/
 int WRAPPER_FOR(PMPI_Wait)( MPI_Request* request,
                             MPI_Status* status )
 {
@@ -1167,8 +1172,7 @@ int WRAPPER_FOR(PMPI_Wait)( MPI_Request* request,
    VALGRIND_GET_ORIG_FN(fn);
    before("Wait");
    check_writable_untyped(status, sizeof(MPI_Status));
-   if (*request != MPI_REQUEST_NULL)
-      check_readable_untyped(request, sizeof(MPI_Request));
+   check_readable_untyped(request, sizeof(MPI_Request));
    request_before = *request;
    CALL_FN_W_WW(err, fn, request,status);
    if (err == MPI_SUCCESS) {
@@ -1193,8 +1197,7 @@ int WRAPPER_FOR(PMPI_Waitall)( int count,
    if (0) fprintf(stderr, "Waitall: %d\n", count);
    for (i = 0; i < count; i++) {
       check_writable_untyped(&statuses[i], sizeof(MPI_Status));
-      if (requests[i] != MPI_REQUEST_NULL)
-         check_readable_untyped(&requests[i], sizeof(MPI_Request));
+      check_readable_untyped(&requests[i], sizeof(MPI_Request));
    }
    requests_before = clone_Request_array( count, requests );
    CALL_FN_W_WWW(err, fn, count,requests,statuses);
@@ -1213,12 +1216,69 @@ int WRAPPER_FOR(PMPI_Waitall)( int count,
    return err;
 }
 
+/* --- Test --- */
+/* nonblocking version of Wait */
+int WRAPPER_FOR(PMPI_Test)( MPI_Request* request, int* flag, 
+                            MPI_Status* status )
+{
+   MPI_Request  request_before;
+   OrigFn       fn;
+   int          err;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Test");
+   check_writable_untyped(status, sizeof(MPI_Status));
+   check_writable_untyped(flag, sizeof(int));
+   check_readable_untyped(request, sizeof(MPI_Request));
+   request_before = *request;
+   CALL_FN_W_WWW(err, fn, request,flag,status);
+   if (err == MPI_SUCCESS && *flag) {
+      maybe_complete(False/*err in status?*/, 
+                     request_before, *request, status);
+      make_defined_untyped(status, sizeof(MPI_Status));
+   }
+   after("Test", err);
+   return err;
+}
+
+/* --- Testall --- */
+/* nonblocking version of Waitall */
+int WRAPPER_FOR(PMPI_Testall)( int count, MPI_Request* requests,
+                               int* flag, MPI_Status* statuses )
+{
+   MPI_Request* requests_before = NULL;
+   OrigFn       fn;
+   int          err, i;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Testall");
+   if (0) fprintf(stderr, "Testall: %d\n", count);
+   check_writable_untyped(flag, sizeof(int));
+   for (i = 0; i < count; i++) {
+      check_writable_untyped(&statuses[i], sizeof(MPI_Status));
+      check_readable_untyped(&requests[i], sizeof(MPI_Request));
+   }
+   requests_before = clone_Request_array( count, requests );
+   CALL_FN_W_WWWW(err, fn, count,requests,flag,statuses);
+   /* Urk.  Is the following "if (...)" really right?  I don't know. */
+   if (*flag
+       && (err == MPI_SUCCESS /*complete success*/
+           || err == MPI_ERR_IN_STATUS /* partial success */)) {
+      Bool e_i_s = err == MPI_ERR_IN_STATUS;
+      for (i = 0; i < count; i++) {
+         maybe_complete(e_i_s, requests_before[i], requests[i], 
+                               &statuses[i]);
+         make_defined_untyped(&statuses[i], sizeof(MPI_Status));
+      }
+   }
+   if (requests_before)
+      free(requests_before);
+   after("Testall", err);
+   return err;
+}
+
 /* --- Iprobe --- */
-/* very unclear about this */
 /* pre:  must-be-writable: *flag, *status */
 /* post: make-readable *flag
-         if *flag==True  make-readable *status
-         if *flag==False make-uninitialised *status */
+         if *flag==True  make-defined *status */
 int WRAPPER_FOR(PMPI_Iprobe)(int source, int tag, 
                              MPI_Comm comm, 
                              int* flag, MPI_Status* status)
@@ -1234,10 +1294,45 @@ int WRAPPER_FOR(PMPI_Iprobe)(int source, int tag,
       make_defined_untyped(flag, sizeof(*flag));
       if (*flag)
          make_defined_untyped(status, sizeof(*status));
-      else
-         make_writable_untyped(status, sizeof(*status));
    }
    after("Iprobe", err);
+   return err;
+}
+
+/* --- Probe --- */
+/* pre:  must-be-writable *status */
+/* post: make-defined *status */
+int WRAPPER_FOR(PMPI_Probe)(int source, int tag,
+                            MPI_Comm comm, MPI_Status* status)
+{
+   OrigFn fn;
+   int    err;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Probe");
+   check_writable_untyped(status, sizeof(*status));
+   CALL_FN_W_WWWW(err, fn, source,tag,comm,status);
+   make_defined_if_success_untyped(err, status, sizeof(*status));
+   after("Probe", err);
+   return err;
+}
+
+/* --- Cancel --- */
+/* Wrapping PMPI_Cancel is interesting only to the extent that we need
+   to be able to detect when a request should be removed from our
+   shadow table due to cancellation. */
+int WRAPPER_FOR(PMPI_Cancel)(MPI_Request* request)
+{
+   OrigFn      fn;
+   int         err;
+   MPI_Request tmp;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Cancel");
+   check_writable_untyped(request, sizeof(*request));
+   tmp = *request;
+   CALL_FN_W_W(err, fn, request);
+   if (err == MPI_SUCCESS)
+      delete_shadow_Request(tmp);
+   after("Cancel", err);
    return err;
 }
 
@@ -1397,8 +1492,73 @@ int WRAPPER_FOR(PMPI_Gather)(
    CALL_FN_W_8W(err, fn, sendbuf,sendcount,sendtype,
                          recvbuf,recvcount,recvtype,
                          root,comm);
-   make_defined_if_success(err, recvbuf, recvcount * sz, recvtype);
+   if (me == root)
+      make_defined_if_success(err, recvbuf, recvcount * sz, recvtype);
    after("Gather", err);
+   return err;
+}
+
+
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*--- Sec 4.6, Scatter                                     ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+/* pre:  (root only): must be readable: (sendbuf,sendcount * comm_size,sendtype)
+         (all):       must be writable: (recvbuf,recvbuf,recvtype)
+   post: (all):       make defined: (recvbuf,recvbuf,recvtype)
+*/
+int WRAPPER_FOR(PMPI_Scatter)(
+       void* sendbuf, int sendcount, MPI_Datatype sendtype,
+       void* recvbuf, int recvcount, MPI_Datatype recvtype,
+       int root, MPI_Comm comm)
+{
+   OrigFn fn;
+   int    err, me, sz;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Scatter");
+   me = comm_rank(comm);
+   sz = comm_size(comm);
+   check_writable(recvbuf, recvcount, recvtype);
+   if (me == root)
+      check_readable(sendbuf, sendcount * sz, sendtype);
+   CALL_FN_W_8W(err, fn, sendbuf,sendcount,sendtype,
+                         recvbuf,recvcount,recvtype,
+                         root,comm);
+   make_defined_if_success(err, recvbuf, recvcount, recvtype);
+   after("Scatter", err);
+   return err;
+}
+
+
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*--- Sec 4.8, All-to-All Scatter/Gather                   ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+/* pre:  (all) must be readable: (sendbuf,sendcount * comm_size,sendtype)
+         (all) must be writable: (recvbuf,recvcount * comm_size,recvtype)
+   post: (all) make defined:     (recvbuf,recvcount * comm_size,recvtype)
+*/
+int WRAPPER_FOR(PMPI_Alltoall)(
+       void* sendbuf, int sendcount, MPI_Datatype sendtype,
+       void* recvbuf, int recvcount, MPI_Datatype recvtype,
+       MPI_Comm comm)
+{
+   OrigFn fn;
+   int    err, sz;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Alltoall");
+   sz = comm_size(comm);
+   check_readable(sendbuf, sendcount * sz, sendtype);
+   check_writable(recvbuf, recvcount * sz, recvtype);
+   CALL_FN_W_7W(err, fn, sendbuf,sendcount,sendtype,
+                         recvbuf,recvcount,recvtype,
+                         comm);
+   make_defined_if_success(err, recvbuf, recvcount * sz, recvtype);
+   after("Alltoall", err);
    return err;
 }
 
@@ -1792,7 +1952,7 @@ DEFAULT_WRAPPER_W_7W(Allgather)
 DEFAULT_WRAPPER_W_8W(Allgatherv)
 DEFAULT_WRAPPER_W_3W(Alloc_mem)
 /* DEFAULT_WRAPPER_W_6W(Allreduce) */
-DEFAULT_WRAPPER_W_7W(Alltoall)
+/* DEFAULT_WRAPPER_W_7W(Alltoall) */
 DEFAULT_WRAPPER_W_9W(Alltoallv)
 DEFAULT_WRAPPER_W_9W(Alltoallw)
 DEFAULT_WRAPPER_W_2W(Attr_delete)
@@ -1804,7 +1964,7 @@ DEFAULT_WRAPPER_W_1W(Barrier)
 DEFAULT_WRAPPER_W_7W(Bsend_init)
 DEFAULT_WRAPPER_W_2W(Buffer_attach)
 DEFAULT_WRAPPER_W_2W(Buffer_detach)
-DEFAULT_WRAPPER_W_1W(Cancel)
+/* DEFAULT_WRAPPER_W_1W(Cancel) */
 DEFAULT_WRAPPER_W_4W(Cart_coords)
 DEFAULT_WRAPPER_W_6W(Cart_create)
 DEFAULT_WRAPPER_W_5W(Cart_get)
@@ -1981,7 +2141,7 @@ DEFAULT_WRAPPER_W_4W(Pack_external_size)
 DEFAULT_WRAPPER_W_7W(Pack)
 DEFAULT_WRAPPER_W_4W(Pack_size)
 /* int MPI_Pcontrol(const int level, ...) */
-DEFAULT_WRAPPER_W_4W(Probe)
+/* DEFAULT_WRAPPER_W_4W(Probe) */
 DEFAULT_WRAPPER_W_3W(Publish_name)
 DEFAULT_WRAPPER_W_8W(Put)
 DEFAULT_WRAPPER_W_1W(Query_thread)
@@ -1997,7 +2157,7 @@ DEFAULT_WRAPPER_W_3W(Request_get_status)
 /* DEFAULT_WRAPPER_W_6W(Rsend) */
 DEFAULT_WRAPPER_W_7W(Rsend_init)
 DEFAULT_WRAPPER_W_6W(Scan)
-DEFAULT_WRAPPER_W_8W(Scatter)
+/* DEFAULT_WRAPPER_W_8W(Scatter) */
 DEFAULT_WRAPPER_W_9W(Scatterv)
 DEFAULT_WRAPPER_W_7W(Send_init)
 /* DEFAULT_WRAPPER_W_6W(Send) */
@@ -2011,9 +2171,9 @@ DEFAULT_WRAPPER_W_2W(Status_c2f)
 DEFAULT_WRAPPER_W_2W(Status_f2c)
 DEFAULT_WRAPPER_W_2W(Status_set_cancelled)
 DEFAULT_WRAPPER_W_3W(Status_set_elements)
-DEFAULT_WRAPPER_W_4W(Testall)
+/* DEFAULT_WRAPPER_W_4W(Testall) */
 DEFAULT_WRAPPER_W_5W(Testany)
-DEFAULT_WRAPPER_W_3W(Test)
+/* DEFAULT_WRAPPER_W_3W(Test) */
 DEFAULT_WRAPPER_W_2W(Test_cancelled)
 DEFAULT_WRAPPER_W_5W(Testsome)
 DEFAULT_WRAPPER_W_2W(Topo_test)

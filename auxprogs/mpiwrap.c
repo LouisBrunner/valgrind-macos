@@ -451,11 +451,24 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
       /* Hmm.  Perhaps it's a named struct?  Unfortunately we can't
          take them to bits so we have to do a really ugly hack, which
          makes assumptions about how the MPI implementation has laid
-         out these types.
+         out these types.  At least Open MPI 1.0.1 appears to put
+         the 'val' field first.
       */
       if (ty == MPI_LONG_INT) {
-         typedef struct { long dbl; int loc; } Ty;
-         f(base + offsetof(Ty,dbl), sizeof(long));
+         typedef struct { long val; int loc; } Ty;
+         f(base + offsetof(Ty,val), sizeof(long));
+         f(base + offsetof(Ty,loc), sizeof(int));
+         return;
+      }
+      if (ty == MPI_DOUBLE_INT) {
+         typedef struct { double val; int loc; } Ty;
+         f(base + offsetof(Ty,val), sizeof(double));
+         f(base + offsetof(Ty,loc), sizeof(int));
+         return;
+      }
+      if (ty == MPI_SHORT_INT) {
+         typedef struct { short val; int loc; } Ty;
+         f(base + offsetof(Ty,val), sizeof(short));
          f(base + offsetof(Ty,loc), sizeof(int));
          return;
       }
@@ -643,7 +656,9 @@ void walk_type_array ( void(*f)(void*,long), char* base,
 }
 
 
-void walk_type_EXTERNALLY_VISIBLE
+/* Hook so it's visible from outside (can be handy to dlopen/dlsym
+   it) */
+void mpiwrap_walk_type_EXTERNALLY_VISIBLE
     ( void(*f)(void*,long), char* base, MPI_Datatype ty )
 {
    return walk_type(f, base, ty);
@@ -848,7 +863,17 @@ typedef
 static ShadowRequest*  sReqs      = NULL;
 static int             sReqs_size = 0;
 static int             sReqs_used = 0;
-//static pthread_mutex_t sReqs_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t sReqs_lock = PTHREAD_MUTEX_INITIALIZER;
+
+#define LOCK_SREQS                                  \
+  do { int pr = pthread_mutex_lock(&sReqs_lock);    \
+       assert(pr == 0);                             \
+  } while (0)
+
+#define UNLOCK_SREQS                                \
+  do { int pr = pthread_mutex_unlock(&sReqs_lock);  \
+       assert(pr == 0);                             \
+  } while (0)
 
 
 /* Ensure the sReqs expandable array has at least one free slot, by
@@ -862,7 +887,7 @@ static void ensure_sReq_space ( void )
       sReqs_size = sReqs_size==0 ? 2 : 2*sReqs_size;
       sReqs2 = malloc( sReqs_size * sizeof(ShadowRequest) );
       if (sReqs2 == NULL) {
-         /* UNLOCK */
+         UNLOCK_SREQS;
          barf("add_shadow_Request: malloc failed.\n");
       }
       for (i = 0; i < sReqs_used; i++)
@@ -882,14 +907,14 @@ ShadowRequest* find_shadow_Request ( MPI_Request request )
 {
    ShadowRequest* ret = NULL;
    int i;
-   /* LOCK */
+   LOCK_SREQS;
    for (i = 0; i < sReqs_used; i++) {
       if (sReqs[i].inUse && eq_MPI_Request(sReqs[i].key,request)) {
          ret = &sReqs[i];
          break;
       }
    }
-   /* UNLOCK */
+   UNLOCK_SREQS;
    return ret;
 }
 
@@ -899,14 +924,14 @@ ShadowRequest* find_shadow_Request ( MPI_Request request )
 static void delete_shadow_Request ( MPI_Request request )
 {
    int i;
-   /* LOCK */
+   LOCK_SREQS;
    for (i = 0; i < sReqs_used; i++) {
       if (sReqs[i].inUse && eq_MPI_Request(sReqs[i].key,request)) {
          sReqs[i].inUse = False;
          break;
       }
    }
-   /* UNLOCK */
+   UNLOCK_SREQS;
 }
 
 
@@ -918,7 +943,7 @@ void add_shadow_Request( MPI_Request request,
                          MPI_Datatype datatype )
 {
    int i, ix = -1;
-   /* LOCK */
+   LOCK_SREQS;
    assert(sReqs_used >= 0);
    assert(sReqs_size >= 0);
    assert(sReqs_used <= sReqs_size);
@@ -961,13 +986,15 @@ void add_shadow_Request( MPI_Request request,
    sReqs[ix].count    = count;
    sReqs[ix].datatype = datatype;
 
-   /* UNLOCK */
+   UNLOCK_SREQS;
    if (opt_verbosity > 1)
       fprintf(stderr, "%s %5d: sReq+ 0x%lx -> b/c/d %p/%d/0x%lx [slot %d]\n",
                       preamble, my_pid, (unsigned long)request, 
                                 buf, count, (long)datatype, ix);
 }
 
+#undef LOCK_SREQS
+#undef UNLOCK_SREQS
 
 static void maybe_complete ( Bool         error_in_status,
                              MPI_Request  request_before,

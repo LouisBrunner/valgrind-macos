@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <dlfcn.h>
 #include "mpi.h"
-#include "valgrind/memcheck.h"
+#include "../memcheck/memcheck.h"
 
 typedef MPI_Datatype Ty;
 

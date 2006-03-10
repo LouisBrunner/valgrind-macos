@@ -109,6 +109,10 @@ typedef  unsigned char  Bool;
 typedef    signed long  Word;
 typedef  unsigned long  UWord;
 
+#if !defined(offsetof)
+#  define offsetof(type,memb) ((int)&((type*)0)->memb)
+#endif
+
 
 /*------------------------------------------------------------*/
 /*--- Simple helpers                                       ---*/
@@ -341,7 +345,7 @@ static long extentOfTy ( MPI_Datatype ty )
    return (long)n;
 }
 
-/* Free up *ty, if it is not a named type */
+/* Free up *ty, if it is safe to do so */
 static void maybeFreeTy ( MPI_Datatype* ty )
 {
    int r, n_ints, n_addrs, n_dtys, tycon;
@@ -349,23 +353,28 @@ static void maybeFreeTy ( MPI_Datatype* ty )
    r = PMPI_Type_get_envelope( *ty, &n_ints, &n_addrs, &n_dtys, &tycon );
    assert(r == MPI_SUCCESS);
 
-   if (tycon != MPI_COMBINER_NAMED
-       /* Don't ask me how ty can be a primitive type and yet not be
-          marked as MPI_COMBINER_NAMED.  It does appear to happen
-          though. */
-       && *ty != MPI_LONG_INT
-      ) {
-      if (0) {
-         /* show me what you're about to free .. */
-         fprintf(stderr, "freeing combiner ");
-         showCombiner(stderr,tycon);
-         fprintf(stderr, " ty= ");
-         showTy(stderr,*ty);
-         fprintf(stderr,"\n");
-      }
-      r = PMPI_Type_free(ty);
-      assert(r == MPI_SUCCESS);
+   /* can't free named types */
+   if (tycon == MPI_COMBINER_NAMED)
+      return;
+
+   /* some kinds of structs are predefined so we can't free them
+      either. */
+   if (*ty == MPI_FLOAT_INT || *ty == MPI_DOUBLE_INT 
+       || *ty == MPI_LONG_INT || *ty == MPI_2INT 
+       || *ty == MPI_SHORT_INT || *ty == MPI_LONG_DOUBLE_INT)
+      return;
+
+   /* Looks OK - free it. */
+   if (0) {
+      /* show me what you're about to free .. */
+      fprintf(stderr, "freeing combiner ");
+      showCombiner(stderr,tycon);
+      fprintf(stderr, " ty= ");
+      showTy(stderr,*ty);
+      fprintf(stderr,"\n");
    }
+   r = PMPI_Type_free(ty);
+   assert(r == MPI_SUCCESS);
 }
 
 /* How big is a "named" (base) type?  Returns 0 if not known.  Note.
@@ -376,19 +385,31 @@ static void maybeFreeTy ( MPI_Datatype* ty )
    latter is 12 at least on x86.  Ref: MPI 1.1 doc p18 */
 static long sizeofOneNamedTy ( MPI_Datatype ty )
 {
-   if (ty == MPI_DOUBLE)      return sizeof(double);
-   if (ty == MPI_INT)         return sizeof(signed int);
-   if (ty == MPI_CHAR)        return sizeof(signed char);
-   if (ty == MPI_UNSIGNED)    return sizeof(unsigned int);
-   if (ty == MPI_LONG)        return sizeof(signed long int);
-   if (ty == MPI_LONG_DOUBLE) return 10; /* NOT: sizeof(long double); */
-   /* MPI1.1 does not define MPI_LONG_INT, hence the following is a guess */
-   if (ty == MPI_LONG_INT)    return sizeof(signed long int);
-   if (ty == MPI_BYTE)        return 1;
-   if (ty == MPI_FLOAT)       return sizeof(float);
-   if (ty == MPI_SHORT)       return sizeof(signed short int);
+   if (ty == MPI_CHAR)           return sizeof(signed char);
+   if (ty == MPI_SHORT)          return sizeof(signed short int);
+   if (ty == MPI_INT)            return sizeof(signed int);
+   if (ty == MPI_LONG)           return sizeof(signed long int);
    if (ty == MPI_UNSIGNED_CHAR)  return sizeof(unsigned char);
    if (ty == MPI_UNSIGNED_SHORT) return sizeof(unsigned short int);
+   if (ty == MPI_UNSIGNED)       return sizeof(unsigned int);
+   if (ty == MPI_UNSIGNED_LONG)  return sizeof(unsigned long int);
+   if (ty == MPI_FLOAT)          return sizeof(float);
+   if (ty == MPI_DOUBLE)         return sizeof(double);
+   if (ty == MPI_LONG_DOUBLE)    return 10; /* NOT: sizeof(long double); */
+   if (ty == MPI_BYTE)           return 1;
+   /* MPI_PACKED */
+   /* new in MPI2: */
+   if (ty == MPI_WCHAR)              return sizeof(wchar_t);
+   if (ty == MPI_SIGNED_CHAR)        return sizeof(signed char);
+   if (ty == MPI_UNSIGNED_LONG_LONG) return sizeof(unsigned long long int);
+   if (ty == MPI_LONG_LONG_INT)      return sizeof(signed long long int);
+   /* Note: the following are named structs, not named basic types,
+      and so are not handled here:
+         FLOAT_INT DOUBLE_INT LONG_INT 2INT SHORT_INT LONG_DOUBLE_INT
+      My guess is they are probably for doing max-w-index style
+      reductions, the INT carrying the index of the max/min and the
+      other type its actual value.
+   */
    return 0;
 }
 
@@ -423,10 +444,22 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    /* Handle the base cases fast(er/ish). */
    if (tycon == MPI_COMBINER_NAMED) {
       long sz = sizeofOneNamedTy(ty);
-      if (sz == 0) 
-         goto unhandled;
-      f(base,sz);
-      return;
+      if (sz > 0) {
+         f(base, sz);
+         return;
+      }
+      /* Hmm.  Perhaps it's a named struct?  Unfortunately we can't
+         take them to bits so we have to do a really ugly hack, which
+         makes assumptions about how the MPI implementation has laid
+         out these types.
+      */
+      if (ty == MPI_LONG_INT) {
+         typedef struct { long dbl; int loc; } Ty;
+         f(base + offsetof(Ty,dbl), sizeof(long));
+         f(base + offsetof(Ty,loc), sizeof(int));
+         return;
+      }
+      goto unhandled;
       /*NOTREACHED*/
    }
 
@@ -560,11 +593,16 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    if (ints)  free(ints);
    if (addrs) free(addrs);
    if (dtys)  free(dtys);
+   if (opt_missing >= 2)
+      barf("walk_type: unhandled combiner, strict checking selected");
 }
 
 
-/* Same as walk_type but apply 'f' to every element in an array
-   of 'count' items starting at 'base'. */
+/* Same as walk_type but apply 'f' to every element in an array of
+   'count' items starting at 'base'.  The only purpose of pushing this
+   into a different routine is so it can attempt to optimise the case
+   where the array elements are contiguous and packed together without
+   holes. */
 static 
 void walk_type_array ( void(*f)(void*,long), char* base, 
                        MPI_Datatype elemTy, long count )
@@ -639,19 +677,19 @@ void check_writable_untyped ( void* buffer, long nbytes )
 }
 
 static inline
-void make_readable_untyped ( void* buffer, long nbytes )
+void make_defined_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
-      VALGRIND_MAKE_READABLE(buffer, nbytes);
+      VALGRIND_MAKE_DEFINED(buffer, nbytes);
    }
 }
 
 static inline
-void make_readable_if_success_untyped ( int err, 
-                                        void* buffer, long nbytes )
+void make_defined_if_success_untyped ( int err, 
+                                       void* buffer, long nbytes )
 {
    if (err == MPI_SUCCESS && nbytes > 0) {
-      VALGRIND_MAKE_READABLE(buffer, nbytes);
+      VALGRIND_MAKE_DEFINED(buffer, nbytes);
    }
 }
 
@@ -694,22 +732,22 @@ void check_writable ( void *buffer, long count, MPI_Datatype datatype )
 }
 
 
-/* Set the specified area to 'addressible and defined' (safe-to-read)
-   state. */
+/* Set the specified area to 'defined for each byte which is
+   addressible' state. */
 
 static
-void make_readable ( void *buffer, int count, MPI_Datatype datatype )
+void make_defined ( void *buffer, int count, MPI_Datatype datatype )
 {
-   walk_type_array( make_readable_untyped, buffer, datatype, count );
+   walk_type_array( make_defined_untyped, buffer, datatype, count );
 }
 
 static
 void 
-make_readable_if_success ( int err, void *buffer, int count, 
-                                    MPI_Datatype datatype )
+make_defined_if_success ( int err, void *buffer, int count, 
+                                   MPI_Datatype datatype )
 {
    if (err == MPI_SUCCESS)
-      make_readable(buffer, count, datatype);
+      make_defined(buffer, count, datatype);
 }
 
 
@@ -784,7 +822,7 @@ int WRAPPER_FOR(PMPI_Recv)(void *buf, int count, MPI_Datatype datatype,
    check_writable_untyped(status, sizeof(*status));
    CALL_FN_W_7W(err, fn, buf,count,datatype,source,tag,comm,status);
    if (err == MPI_SUCCESS && count_from_Status(&recv_count,datatype,status)) {
-      make_readable(buf, recv_count, datatype);
+      make_defined(buf, recv_count, datatype);
    }
    after("Recv", err);
    return err;
@@ -956,7 +994,7 @@ static void maybe_complete ( Bool         error_in_status,
       /* The Irecv detailed in 'shadow' completed.  Make the result
           buffer, and delete the entry. */
       if (count_from_Status(&recv_count, shadow->datatype, status)) {
-         make_readable(shadow->buf, recv_count, shadow->datatype);
+         make_defined(shadow->buf, recv_count, shadow->datatype);
          if (opt_verbosity > 1)
             fprintf(stderr, "%s %5d: sReq- %p (completed)\n", 
                             preamble, my_pid, request_before);
@@ -996,7 +1034,7 @@ int WRAPPER_FOR(PMPI_Isend)(void *buf, int count, MPI_Datatype datatype,
    check_readable(buf, count, datatype);
    check_writable_untyped(request, sizeof(*request));
    CALL_FN_W_7W(err, fn, buf,count,datatype,dest,tag,comm,request);
-   make_readable_if_success_untyped(err, request, sizeof(*request));
+   make_defined_if_success_untyped(err, request, sizeof(*request));
    after("Isend", err);
    return err;
 }
@@ -1019,7 +1057,7 @@ int WRAPPER_FOR(PMPI_Irecv)( void* buf, int count, MPI_Datatype datatype,
    check_writable_untyped(request, sizeof(*request));
    CALL_FN_W_7W(err, fn, buf,count,datatype,source,tag,comm,request);
    if (err == MPI_SUCCESS) {
-      make_readable_untyped(request, sizeof(*request));
+      make_defined_untyped(request, sizeof(*request));
       add_shadow_Request( *request, buf,count,datatype );
    }
    after("Irecv", err);
@@ -1043,7 +1081,7 @@ int WRAPPER_FOR(PMPI_Wait)( MPI_Request* request,
    if (err == MPI_SUCCESS) {
       maybe_complete(False/*err in status?*/, 
                      request_before, *request, status);
-      make_readable_untyped(status, sizeof(MPI_Status));
+      make_defined_untyped(status, sizeof(MPI_Status));
    }
    after("Wait", err);
    return err;
@@ -1073,7 +1111,7 @@ int WRAPPER_FOR(PMPI_Waitall)( int count,
       for (i = 0; i < count; i++) {
          maybe_complete(e_i_s, requests_before[i], requests[i], 
                                &statuses[i]);
-         make_readable_untyped(&statuses[i], sizeof(MPI_Status));
+         make_defined_untyped(&statuses[i], sizeof(MPI_Status));
       }
    }
    if (requests_before)
@@ -1100,9 +1138,9 @@ int WRAPPER_FOR(PMPI_Iprobe)(int source, int tag,
    check_writable_untyped(status, sizeof(*status));
    CALL_FN_W_5W(err, fn, source,tag,comm,flag,status);
    if (err == MPI_SUCCESS) {
-      make_readable_untyped(flag, sizeof(*flag));
+      make_defined_untyped(flag, sizeof(*flag));
       if (*flag)
-         make_readable_untyped(status, sizeof(*status));
+         make_defined_untyped(status, sizeof(*status));
       else
          make_writable_untyped(status, sizeof(*status));
    }
@@ -1141,7 +1179,7 @@ int WRAPPER_FOR(PMPI_Sendrecv)(
                           comm,status);
    if (err == MPI_SUCCESS 
        && count_from_Status(&recvcount_actual,recvtype,status)) {
-      make_readable(recvbuf, recvcount_actual, recvtype);
+      make_defined(recvbuf, recvcount_actual, recvtype);
    }
    after("Sendrecv", err);
    return err;
@@ -1189,7 +1227,7 @@ int WRAPPER_FOR(PMPI_Bcast)(void *buffer, int count,
       check_writable(buffer, count, datatype);
    }
    CALL_FN_W_5W(err, fn, buffer,count,datatype,root,comm);
-   make_readable_if_success(err, buffer, count, datatype);
+   make_defined_if_success(err, buffer, count, datatype);
    after("Bcast", err);
    return err; 
 }
@@ -1230,7 +1268,7 @@ int WRAPPER_FOR(PMPI_Gather)(
    CALL_FN_W_8W(err, fn, sendbuf,sendcount,sendtype,
                          recvbuf,recvcount,recvtype,
                          root,comm);
-   make_readable_if_success(err, recvbuf, recvcount * sz, recvtype);
+   make_defined_if_success(err, recvbuf, recvcount * sz, recvtype);
    after("Gather", err);
    return err;
 }
@@ -1262,7 +1300,7 @@ int WRAPPER_FOR(PMPI_Reduce)(void *sendbuf, void *recvbuf,
       check_writable(recvbuf, count, datatype);
    CALL_FN_W_7W(err, fn, sendbuf,recvbuf,count,datatype,op,root,comm);
    if (i_am_root)
-      make_readable_if_success(err, recvbuf, count, datatype);
+      make_defined_if_success(err, recvbuf, count, datatype);
    after("Reduce", err);
    return err;
 }
@@ -1284,7 +1322,7 @@ int WRAPPER_FOR(PMPI_Allreduce)(void *sendbuf, void *recvbuf,
    check_readable(sendbuf, count, datatype);
    check_writable(recvbuf, count, datatype);
    CALL_FN_W_6W(err, fn, sendbuf,recvbuf,count,datatype,op,comm);
-   make_readable_if_success(err, recvbuf, count, datatype);
+   make_defined_if_success(err, recvbuf, count, datatype);
    after("Allreduce", err);
    return err;
 }
@@ -1304,7 +1342,7 @@ int WRAPPER_FOR(PMPI_Op_create)( MPI_User_function* function,
    before("Op_create");
    check_writable_untyped(op, sizeof(*op));
    CALL_FN_W_WWW(err, fn, function,commute,op);
-   make_readable_if_success_untyped(err, op, sizeof(*op));
+   make_defined_if_success_untyped(err, op, sizeof(*op));
    after("Op_create", err);
    return err;
 }
@@ -1329,7 +1367,7 @@ int WRAPPER_FOR(PMPI_Comm_rank)(MPI_Comm comm, int *rank)
    before("Comm_rank");
    check_writable_untyped(rank, sizeof(*rank));
    CALL_FN_W_WW(err, fn, comm,rank);
-   make_readable_if_success_untyped(err, rank, sizeof(*rank));
+   make_defined_if_success_untyped(err, rank, sizeof(*rank));
    after("Comm_rank", err);
    return err;
 }
@@ -1344,7 +1382,7 @@ int WRAPPER_FOR(PMPI_Comm_size)(MPI_Comm comm, int *size)
    before("Comm_size");
    check_writable_untyped(size, sizeof(*size));
    CALL_FN_W_WW(err, fn, comm,size);
-   make_readable_if_success_untyped(err, size, sizeof(*size));
+   make_defined_if_success_untyped(err, size, sizeof(*size));
    after("Comm_size", err);
    return err;
 }
@@ -1410,7 +1448,7 @@ int WRAPPER_FOR(PMPI_Initialized)(int* flag)
    before("Initialized");
    check_writable_untyped(flag, sizeof(int));
    CALL_FN_W_W(err, fn, flag);
-   make_readable_if_success_untyped(err, flag, sizeof(int));
+   make_defined_if_success_untyped(err, flag, sizeof(int));
    after("Initialized", err);
    return err;
 }

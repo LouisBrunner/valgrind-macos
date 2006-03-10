@@ -741,6 +741,22 @@ static void mc_make_readable ( Addr a, SizeT len )
    set_address_range_perms ( a, len, VGM_BIT_VALID, VGM_BIT_VALID );
 }
 
+/* For each byte in [a,a+len), if the byte is addressable, make it be
+   defined, but if it isn't addressible, leave it alone.  In other
+   words a version of mc_make_readable that doesn't mess with
+   addressibility.  Low-performance implementation. */
+static void mc_make_defined ( Addr a, SizeT len )
+{
+   SizeT i;
+   UWord abit, vbyte;
+   DEBUG("mc_make_defined(%p, %llu)\n", a, (ULong)len);
+   for (i = 0; i < len; i++) {
+      get_abit_and_vbyte( &abit, &vbyte, a+i );
+      if (EXPECTED_TAKEN(abit == VGM_BIT_VALID))
+         set_vbyte(a+i, VGM_BYTE_VALID);
+   }
+}
+
 
 /* --- Block-copy permissions (needed for implementing realloc() and
        sys_mremap). --- */
@@ -2516,6 +2532,11 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 
       case VG_USERREQ__MAKE_READABLE: /* make readable */
          mc_make_readable ( arg[1], arg[2] );
+         *ret = -1;
+         break;
+
+      case VG_USERREQ__MAKE_DEFINED: /* make defined */
+         mc_make_defined ( arg[1], arg[2] );
          *ret = -1;
          break;
 

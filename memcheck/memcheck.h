@@ -70,6 +70,10 @@
 
 #include "valgrind.h"
 
+/* !! ABIWARNING !! ABIWARNING !! ABIWARNING !! ABIWARNING !! 
+   This enum comprises an ABI exported by Valgrind to programs
+   which use client requests.  DO NOT CHANGE THE ORDER OF THESE
+   ENTRIES, NOT DELETE ANY -- add new ones at the end. */
 typedef
    enum { 
       VG_USERREQ__MAKE_NOACCESS = VG_USERREQ_TOOL_BASE('M','C'),
@@ -85,6 +89,8 @@ typedef
       VG_USERREQ__SET_VBITS,
 
       VG_USERREQ__CREATE_BLOCK,
+
+      VG_USERREQ__MAKE_DEFINED,
 
       /* This is just for memcheck's internal use - don't use it */
       _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR 
@@ -121,6 +127,18 @@ typedef
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
                             VG_USERREQ__MAKE_READABLE,           \
+                            _qzz_addr, _qzz_len, 0, 0, 0);       \
+    _qzz_res;                                                    \
+   }))
+
+/* Similar to mark memory at VALGRIND_MAKE_READABLE except that
+   addressibility is not altered: bytes which are addressible are
+   marked as defined, but those which are not addressible are
+   left unchanged. */
+#define VALGRIND_MAKE_DEFINED(_qzz_addr,_qzz_len)                \
+   (__extension__({unsigned int _qzz_res;                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
+                            VG_USERREQ__MAKE_DEFINED,            \
                             _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))

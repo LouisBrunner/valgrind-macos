@@ -73,7 +73,7 @@
 /* !! ABIWARNING !! ABIWARNING !! ABIWARNING !! ABIWARNING !! 
    This enum comprises an ABI exported by Valgrind to programs
    which use client requests.  DO NOT CHANGE THE ORDER OF THESE
-   ENTRIES, NOT DELETE ANY -- add new ones at the end. */
+   ENTRIES, NOR DELETE ANY -- add new ones at the end. */
 typedef
    enum { 
       VG_USERREQ__MAKE_NOACCESS = VG_USERREQ_TOOL_BASE('M','C'),

@@ -38,6 +38,9 @@
 // Instrumentation", 2004, for details about the few loads and stores that
 // it misses, and other caveats about the accuracy of the address trace.
 //
+// [Actually, the traces aren't quite right because instructions that modify
+// a memory location are treated like a load followed by a store.]
+//
 // If you want to modify how the memory traces are printed/gathered, look at
 // the code that is controlled by the variable 'lk_clo_trace_mem' and the
 // functions 'trace_load()' and 'trace_mem'..  With a bit of effort you

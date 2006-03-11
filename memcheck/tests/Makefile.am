@@ -173,6 +173,7 @@ vcpu_bz2_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fbench_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fnfns_CFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 vcpu_fnfns_LDADD	= -lm
+wrap6_CFLAGS		= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O2 -g
 
 # Don't allow GCC to inline memcpy(), because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy

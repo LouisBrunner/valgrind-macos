@@ -16,3 +16,54 @@ fn_2  wrapper post1 = 201956282
 fn_2  wrapper post2 = 201956282
       ...  201956282
 
+fn_3  ...
+fn_3  wrapper pre ( 42, 43, 44 )
+fn_3  wrapper post1 = -1985342033
+fn_3  wrapper post2 = -1985342033
+      ...  -1985342033
+
+fn_4  ...
+fn_4  wrapper pre ( 42, 43, 44, 45 )
+fn_4  wrapper post1 = 1119208547
+      ...  1119208547
+
+fn_5  ...
+fn_5  wrapper pre ( 42, 43, 44, 45, 46 )
+fn_5  wrapper post1 = -1638411058
+      ...  -1638411058
+
+fn_6  ...
+fn_6  wrapper pre ( 42, 43, 44, 45, 46, 47 )
+fn_6  wrapper post1 = 379190336
+      ...  379190336
+
+fn_7  ...
+fn_7  wrapper pre ( 42, 43, 44, 45, 46, 47, 48 )
+fn_7  wrapper post1 = -1634577206
+      ...  -1634577206
+
+fn_8  ...
+fn_8  wrapper pre ( 42, 43, 44, 45, 46, 47, 48, 49 )
+fn_8  wrapper post1 = 1977785290
+      ...  1977785290
+
+fn_9  ...
+fn_9  wrapper pre ( 42, 43, 44, 45, 46, 47, 48, 49, 50 )
+fn_9  wrapper post1 = -892905021
+      ...  -892905021
+
+fn_10 ...
+fn_10 wrapper pre ( 42, 43, 44, 45, 46, 47, 48, 49, 50, 51 )
+fn_10 wrapper post1 = -726791237
+      ...  -726791237
+
+fn_11 ...
+fn_11 wrapper pre ( 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52 )
+fn_11 wrapper post1 = 951678589
+      ...  951678589
+
+fn_12 ...
+fn_12 wrapper pre ( 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53 )
+fn_12 wrapper post1 = 1071266195
+      ...  1071266195
+

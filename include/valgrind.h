@@ -451,6 +451,10 @@ typedef
    do { volatile unsigned long _junk;                             \
         CALL_FN_W_WW(_junk,fnptr,arg1,arg2); } while (0)
 
+#define CALL_FN_v_WWW(fnptr, arg1,arg2,arg3)                      \
+   do { volatile unsigned long _junk;                             \
+        CALL_FN_W_WWW(_junk,fnptr,arg1,arg2,arg3); } while (0)
+
 /* ---------------------------- x86 ---------------------------- */
 
 #if defined(ARCH_x86)
@@ -755,6 +759,47 @@ typedef
          "movl (%%eax), %%eax\n\t"  /* target->%eax */            \
          VALGRIND_CALL_NOREDIR_EAX                                \
          "addl $40, %%esp\n"                                      \
+         : /*out*/   "=a" (_res)                                  \
+         : /*in*/    "a" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_11W(lval, orig, arg1,arg2,arg3,arg4,arg5,       \
+                                  arg6,arg7,arg8,arg9,arg10,      \
+                                  arg11)                          \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[12];                         \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)(arg1);                         \
+      _argvec[2] = (unsigned long)(arg2);                         \
+      _argvec[3] = (unsigned long)(arg3);                         \
+      _argvec[4] = (unsigned long)(arg4);                         \
+      _argvec[5] = (unsigned long)(arg5);                         \
+      _argvec[6] = (unsigned long)(arg6);                         \
+      _argvec[7] = (unsigned long)(arg7);                         \
+      _argvec[8] = (unsigned long)(arg8);                         \
+      _argvec[9] = (unsigned long)(arg9);                         \
+      _argvec[10] = (unsigned long)(arg10);                       \
+      _argvec[11] = (unsigned long)(arg11);                       \
+      __asm__ volatile(                                           \
+         "pushl 44(%%eax)\n\t"                                    \
+         "pushl 40(%%eax)\n\t"                                    \
+         "pushl 36(%%eax)\n\t"                                    \
+         "pushl 32(%%eax)\n\t"                                    \
+         "pushl 28(%%eax)\n\t"                                    \
+         "pushl 24(%%eax)\n\t"                                    \
+         "pushl 20(%%eax)\n\t"                                    \
+         "pushl 16(%%eax)\n\t"                                    \
+         "pushl 12(%%eax)\n\t"                                    \
+         "pushl 8(%%eax)\n\t"                                     \
+         "pushl 4(%%eax)\n\t"                                     \
+         "movl (%%eax), %%eax\n\t"  /* target->%eax */            \
+         VALGRIND_CALL_NOREDIR_EAX                                \
+         "addl $44, %%esp\n"                                      \
          : /*out*/   "=a" (_res)                                  \
          : /*in*/    "a" (&_argvec[0])                            \
          : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
@@ -1067,6 +1112,10 @@ typedef
 #define VG_IS_TOOL_USERREQ(a, b, v) \
    (VG_USERREQ_TOOL_BASE(a,b) == ((v) & 0xffff0000))
 
+/* !! ABIWARNING !! ABIWARNING !! ABIWARNING !! ABIWARNING !! 
+   This enum comprises an ABI exported by Valgrind to programs
+   which use client requests.  DO NOT CHANGE THE ORDER OF THESE
+   ENTRIES, NOR DELETE ANY -- add new ones at the end. */
 typedef
    enum { VG_USERREQ__RUNNING_ON_VALGRIND  = 0x1001,
           VG_USERREQ__DISCARD_TRANSLATIONS = 0x1002,

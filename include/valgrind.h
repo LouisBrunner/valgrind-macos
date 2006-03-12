@@ -1247,15 +1247,38 @@ typedef
 
 #if defined(ARCH_ppc32)
 
+/* This is useful for finding out about the on-stack stuff:
+
+   extern int f9  ( int,int,int,int,int,int,int,int,int );
+   extern int f10 ( int,int,int,int,int,int,int,int,int,int );
+   extern int f11 ( int,int,int,int,int,int,int,int,int,int,int );
+   extern int f12 ( int,int,int,int,int,int,int,int,int,int,int,int );
+
+   int g9 ( void ) {
+      return f9(11,22,33,44,55,66,77,88,99);
+   }
+   int g10 ( void ) {
+      return f10(11,22,33,44,55,66,77,88,99,110);
+   }
+   int g11 ( void ) {
+      return f11(11,22,33,44,55,66,77,88,99,110,121);
+   }
+   int g12 ( void ) {
+      return f12(11,22,33,44,55,66,77,88,99,110,121,132);
+   }
+*/
+
 /* ARGREGS: r3 r4 r5 r6 r7 r8 r9 r10 (the rest on stack somewhere) */
 
 /* These regs are trashed by the hidden call. */
-#define __CALLER_SAVED_REGS "lr",                                 \
-                            "r0", "r2", "r3", "r4", "r5", "r6",   \
-                            "r7", "r8", "r9", "r10", "r11", "r12"
+#define __CALLER_SAVED_REGS                                       \
+   "lr", "ctr", "xer",                                            \
+   "cr0", "cr1", "cr2", "cr3", "cr4", "cr5", "cr6", "cr7",        \
+   "r0", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",   \
+   "r11", "r12", "r13"
 
-/* These CALL_FN_ macros assume that on ppc32-linux, sizeof(unsigned
-   long) == 4. */
+/* These CALL_FN_ macros assume that on ppc32-linux, 
+   sizeof(unsigned long) == 4. */
 
 #define CALL_FN_W_v(lval, orig)                                   \
    do {                                                           \
@@ -1309,6 +1332,374 @@ typedef
          "lwz 4,8(11)\n\t"                                        \
          "lwz 11,0(11)\n\t"  /* target->r11 */                    \
          VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_WWW(lval, orig, arg1,arg2,arg3)                 \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[4];                          \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_WWWW(lval, orig, arg1,arg2,arg3,arg4)           \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[5];                          \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      _argvec[4] = (unsigned long)arg4;                           \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 6,16(11)\n\t"  /* arg4->r6 */                       \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_5W(lval, orig, arg1,arg2,arg3,arg4,arg5)        \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[6];                          \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      _argvec[4] = (unsigned long)arg4;                           \
+      _argvec[5] = (unsigned long)arg5;                           \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 6,16(11)\n\t"  /* arg4->r6 */                       \
+         "lwz 7,20(11)\n\t"                                       \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_6W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6)   \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[7];                          \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      _argvec[4] = (unsigned long)arg4;                           \
+      _argvec[5] = (unsigned long)arg5;                           \
+      _argvec[6] = (unsigned long)arg6;                           \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 6,16(11)\n\t"  /* arg4->r6 */                       \
+         "lwz 7,20(11)\n\t"                                       \
+         "lwz 8,24(11)\n\t"                                       \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_7W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,   \
+                                 arg7)                            \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[8];                          \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      _argvec[4] = (unsigned long)arg4;                           \
+      _argvec[5] = (unsigned long)arg5;                           \
+      _argvec[6] = (unsigned long)arg6;                           \
+      _argvec[7] = (unsigned long)arg7;                           \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 6,16(11)\n\t"  /* arg4->r6 */                       \
+         "lwz 7,20(11)\n\t"                                       \
+         "lwz 8,24(11)\n\t"                                       \
+         "lwz 9,28(11)\n\t"                                       \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_8W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,   \
+                                 arg7,arg8)                       \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[9];                          \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      _argvec[4] = (unsigned long)arg4;                           \
+      _argvec[5] = (unsigned long)arg5;                           \
+      _argvec[6] = (unsigned long)arg6;                           \
+      _argvec[7] = (unsigned long)arg7;                           \
+      _argvec[8] = (unsigned long)arg8;                           \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 6,16(11)\n\t"  /* arg4->r6 */                       \
+         "lwz 7,20(11)\n\t"                                       \
+         "lwz 8,24(11)\n\t"                                       \
+         "lwz 9,28(11)\n\t"                                       \
+         "lwz 10,32(11)\n\t" /* arg8->r10 */                      \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_9W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,   \
+                                 arg7,arg8,arg9)                  \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[10];                         \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      _argvec[4] = (unsigned long)arg4;                           \
+      _argvec[5] = (unsigned long)arg5;                           \
+      _argvec[6] = (unsigned long)arg6;                           \
+      _argvec[7] = (unsigned long)arg7;                           \
+      _argvec[8] = (unsigned long)arg8;                           \
+      _argvec[9] = (unsigned long)arg9;                           \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "addi 1,1,-16\n\t"                                       \
+         /* arg9 */                                               \
+         "lwz 3,36(11)\n\t"                                       \
+         "stw 3,8(1)\n\t"                                         \
+         /* args1-8 */                                            \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 6,16(11)\n\t"  /* arg4->r6 */                       \
+         "lwz 7,20(11)\n\t"                                       \
+         "lwz 8,24(11)\n\t"                                       \
+         "lwz 9,28(11)\n\t"                                       \
+         "lwz 10,32(11)\n\t" /* arg8->r10 */                      \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "addi 1,1,16\n\t"                                        \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_10W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,  \
+                                  arg7,arg8,arg9,arg10)           \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[11];                         \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      _argvec[4] = (unsigned long)arg4;                           \
+      _argvec[5] = (unsigned long)arg5;                           \
+      _argvec[6] = (unsigned long)arg6;                           \
+      _argvec[7] = (unsigned long)arg7;                           \
+      _argvec[8] = (unsigned long)arg8;                           \
+      _argvec[9] = (unsigned long)arg9;                           \
+      _argvec[10] = (unsigned long)arg10;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "addi 1,1,-16\n\t"                                       \
+         /* arg10 */                                              \
+         "lwz 3,40(11)\n\t"                                       \
+         "stw 3,12(1)\n\t"                                        \
+         /* arg9 */                                               \
+         "lwz 3,36(11)\n\t"                                       \
+         "stw 3,8(1)\n\t"                                         \
+         /* args1-8 */                                            \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 6,16(11)\n\t"  /* arg4->r6 */                       \
+         "lwz 7,20(11)\n\t"                                       \
+         "lwz 8,24(11)\n\t"                                       \
+         "lwz 9,28(11)\n\t"                                       \
+         "lwz 10,32(11)\n\t" /* arg8->r10 */                      \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "addi 1,1,16\n\t"                                        \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_11W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,  \
+                                  arg7,arg8,arg9,arg10,arg11)     \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[12];                         \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      _argvec[4] = (unsigned long)arg4;                           \
+      _argvec[5] = (unsigned long)arg5;                           \
+      _argvec[6] = (unsigned long)arg6;                           \
+      _argvec[7] = (unsigned long)arg7;                           \
+      _argvec[8] = (unsigned long)arg8;                           \
+      _argvec[9] = (unsigned long)arg9;                           \
+      _argvec[10] = (unsigned long)arg10;                         \
+      _argvec[11] = (unsigned long)arg11;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "addi 1,1,-32\n\t"                                       \
+         /* arg11 */                                              \
+         "lwz 3,44(11)\n\t"                                       \
+         "stw 3,16(1)\n\t"                                        \
+         /* arg10 */                                              \
+         "lwz 3,40(11)\n\t"                                       \
+         "stw 3,12(1)\n\t"                                        \
+         /* arg9 */                                               \
+         "lwz 3,36(11)\n\t"                                       \
+         "stw 3,8(1)\n\t"                                         \
+         /* args1-8 */                                            \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 6,16(11)\n\t"  /* arg4->r6 */                       \
+         "lwz 7,20(11)\n\t"                                       \
+         "lwz 8,24(11)\n\t"                                       \
+         "lwz 9,28(11)\n\t"                                       \
+         "lwz 10,32(11)\n\t" /* arg8->r10 */                      \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "addi 1,1,32\n\t"                                        \
+         "mr %0,3"                                                \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_12W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,  \
+                                arg7,arg8,arg9,arg10,arg11,arg12) \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[13];                         \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)arg1;                           \
+      _argvec[2] = (unsigned long)arg2;                           \
+      _argvec[3] = (unsigned long)arg3;                           \
+      _argvec[4] = (unsigned long)arg4;                           \
+      _argvec[5] = (unsigned long)arg5;                           \
+      _argvec[6] = (unsigned long)arg6;                           \
+      _argvec[7] = (unsigned long)arg7;                           \
+      _argvec[8] = (unsigned long)arg8;                           \
+      _argvec[9] = (unsigned long)arg9;                           \
+      _argvec[10] = (unsigned long)arg10;                         \
+      _argvec[11] = (unsigned long)arg11;                         \
+      _argvec[12] = (unsigned long)arg12;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "addi 1,1,-32\n\t"                                       \
+         /* arg12 */                                              \
+         "lwz 3,48(11)\n\t"                                       \
+         "stw 3,20(1)\n\t"                                        \
+         /* arg11 */                                              \
+         "lwz 3,44(11)\n\t"                                       \
+         "stw 3,16(1)\n\t"                                        \
+         /* arg10 */                                              \
+         "lwz 3,40(11)\n\t"                                       \
+         "stw 3,12(1)\n\t"                                        \
+         /* arg9 */                                               \
+         "lwz 3,36(11)\n\t"                                       \
+         "stw 3,8(1)\n\t"                                         \
+         /* args1-8 */                                            \
+         "lwz 3,4(11)\n\t"   /* arg1->r3 */                       \
+         "lwz 4,8(11)\n\t"                                        \
+         "lwz 5,12(11)\n\t"                                       \
+         "lwz 6,16(11)\n\t"  /* arg4->r6 */                       \
+         "lwz 7,20(11)\n\t"                                       \
+         "lwz 8,24(11)\n\t"                                       \
+         "lwz 9,28(11)\n\t"                                       \
+         "lwz 10,32(11)\n\t" /* arg8->r10 */                      \
+         "lwz 11,0(11)\n\t"  /* target->r11 */                    \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "addi 1,1,32\n\t"                                        \
          "mr %0,3"                                                \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "r" (&_argvec[0])                            \

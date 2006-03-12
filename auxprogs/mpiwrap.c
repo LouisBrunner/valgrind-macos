@@ -377,7 +377,10 @@ static void maybeFreeTy ( MPI_Datatype* ty )
    exact size of one item of the type, NOT the size of it when padded
    suitably to make an array of them.  In particular that's why the
    size of LONG_DOUBLE is 10 and not sizeof(long double), since the
-   latter is 12 at least on x86.  Ref: MPI 1.1 doc p18 */
+   latter is 12 at least on x86.  Except if sizeof(long double) is
+   claimed to be 8 then we'd better respect that.
+
+   Ref: MPI 1.1 doc p18 */
 static long sizeofOneNamedTy ( MPI_Datatype ty )
 {
    if (ty == MPI_CHAR)           return sizeof(signed char);
@@ -390,8 +393,10 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
    if (ty == MPI_UNSIGNED_LONG)  return sizeof(unsigned long int);
    if (ty == MPI_FLOAT)          return sizeof(float);
    if (ty == MPI_DOUBLE)         return sizeof(double);
-   if (ty == MPI_LONG_DOUBLE)    return 10; /* NOT: sizeof(long double); */
    if (ty == MPI_BYTE)           return 1;
+   if (ty == MPI_LONG_DOUBLE)
+      return sizeof(long double)==8 
+                ? 8 : 10; /* NOT: sizeof(long double); */
    /* MPI_PACKED */
    /* new in MPI2: */
 #  if defined(MPI_WCHAR)

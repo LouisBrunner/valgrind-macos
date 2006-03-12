@@ -16,7 +16,8 @@ typedef unsigned int  UInt;
 #define TRASH_IREGS(_rlval, _vec) \
    do { \
       register UInt* vec = (_vec);   \
-      /* x86 spills for v > 4, amd64 for v > 12. */   \
+      /* x86 spills for v > 4, amd64 for v > 12.  Getting ppc */ \
+      /* to spill is quite difficult, requiring v > 28 or so. */ \
       register UInt i, sum = 0;   \
       register UInt v1 = vec[1-1];   \
       register UInt v2 = vec[2-1];   \
@@ -30,19 +31,53 @@ typedef unsigned int  UInt;
       register UInt v10 = vec[10-1];   \
       register UInt v11 = vec[11-1];   \
       register UInt v12 = vec[12-1];   \
+      register UInt v13 = vec[13-1];   \
+      register UInt v14 = vec[14-1];   \
+      register UInt v15 = vec[15-1];   \
+      register UInt v16 = vec[16-1];   \
+      register UInt v17 = vec[17-1];   \
+      register UInt v18 = vec[18-1];   \
+      register UInt v19 = vec[19-1];   \
+      register UInt v20 = vec[20-1];   \
+      register UInt v21 = vec[21-1];   \
+      register UInt v22 = vec[22-1];   \
+      register UInt v23 = vec[23-1];   \
+      register UInt v24 = vec[24-1];   \
+      register UInt v25 = vec[25-1];   \
+      register UInt v26 = vec[26-1];   \
+      register UInt v27 = vec[27-1];   \
+      register UInt v28 = vec[28-1];   \
+      register UInt v29 = vec[29-1];   \
       for (i = 0; i < 50; i++) {   \
-         v1 = ROL(v1,1);   \
-         v2 = ROL(v2,2);   \
-         v3 = ROL(v3,3);   \
-         v4 = ROL(v4,4);   \
-         v5 = ROL(v5,5);   \
-         v6 = ROL(v6,6);   \
-         v7 = ROL(v7,7);   \
-         v8 = ROL(v8,8);   \
-         v9 = ROL(v9,9);   \
+         v1  = ROL(v1,1);   \
+         v2  = ROL(v2,2);   \
+         v3  = ROL(v3,3);   \
+         v4  = ROL(v4,4);   \
+         v5  = ROL(v5,5);   \
+         v6  = ROL(v6,6);   \
+         v7  = ROL(v7,7);   \
+         v8  = ROL(v8,8);   \
+         v9  = ROL(v9,9);   \
          v10 = ROL(v10,10);   \
          v11 = ROL(v11,11);   \
          v12 = ROL(v12,12);   \
+         v13 = ROL(v13,13);   \
+         v14 = ROL(v14,14);   \
+         v15 = ROL(v15,15);   \
+         v16 = ROL(v16,16);   \
+         v17 = ROL(v17,17);   \
+         v18 = ROL(v18,18);   \
+         v19 = ROL(v19,19);   \
+         v20 = ROL(v20,20);   \
+         v21 = ROL(v21,21);   \
+         v22 = ROL(v22,22);   \
+         v23 = ROL(v23,23);   \
+         v24 = ROL(v24,24);   \
+         v25 = ROL(v25,25);   \
+         v26 = ROL(v26,26);   \
+         v27 = ROL(v27,27);   \
+         v28 = ROL(v28,28);   \
+         v29 = ROL(v29,29);   \
          sum ^= (v1-v2);   \
          sum ^= (v1-v3);   \
          sum ^= (v1-v4);   \
@@ -54,6 +89,23 @@ typedef unsigned int  UInt;
          sum ^= (v1-v10);   \
          sum ^= (v1-v11);   \
          sum ^= (v1-v12);   \
+         sum ^= (v1-v13);   \
+         sum ^= (v1-v14);   \
+         sum ^= (v1-v15);   \
+         sum ^= (v1-v16);   \
+         sum ^= (v1-v17);   \
+         sum ^= (v1-v18);   \
+         sum ^= (v1-v19);   \
+         sum ^= (v1-v20);   \
+         sum ^= (v1-v21);   \
+         sum ^= (v1-v22);   \
+         sum ^= (v1-v23);   \
+         sum ^= (v1-v24);   \
+         sum ^= (v1-v25);   \
+         sum ^= (v1-v26);   \
+         sum ^= (v1-v27);   \
+         sum ^= (v1-v28);   \
+         sum ^= (v1-v29);   \
       }   \
       _rlval = sum;   \
    } while (0)

@@ -78,6 +78,7 @@ typedef unsigned int  UInt;
          v27 = ROL(v27,27);   \
          v28 = ROL(v28,28);   \
          v29 = ROL(v29,29);   \
+         sum ^= ((0xFFF & v1) * i);   \
          sum ^= (v1-v2);   \
          sum ^= (v1-v3);   \
          sum ^= (v1-v4);   \

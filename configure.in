@@ -568,8 +568,8 @@ fi
 AC_MSG_CHECKING([if ppc32/64 as supports mtocrf/mfocrf])
 
 AC_TRY_COMPILE(, [
-__asm__ __volatile__("mtocrf 0,0");
-__asm__ __volatile__("mfocrf 0,0");
+__asm__ __volatile__("mtocrf 4,0");
+__asm__ __volatile__("mfocrf 0,4");
 ],
 [
 ac_have_as_ppc_mftocrf=yes

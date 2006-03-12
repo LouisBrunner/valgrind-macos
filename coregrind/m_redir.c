@@ -573,11 +573,16 @@ void VG_(redir_notify_delete_SegInfo)( SegInfo* delsi )
               && (act->parent_spec->mark || act->parent_sym->mark);
 
       /* While we're at it, a bit of paranoia: delete any actives
-	 which don't have both feet in valid client executable
-	 areas. */
-      if (!delMe) {
-         if (!is_plausible_guest_addr(act->from_addr)) delMe = True;
-         if (!is_plausible_guest_addr(act->to_addr)) delMe = True;
+         which don't have both feet in valid client executable areas.
+         But don't delete hardwired-at-startup ones; these are denoted
+         by having parent_spec or parent_sym being NULL.  */
+      if ( (!delMe)
+           && act->parent_spec != NULL
+           && act->parent_sym  != NULL ) {
+         if (!is_plausible_guest_addr(act->from_addr))
+            delMe = True;
+         if (!is_plausible_guest_addr(act->to_addr))
+            delMe = True;
       }
 
       if (delMe) {

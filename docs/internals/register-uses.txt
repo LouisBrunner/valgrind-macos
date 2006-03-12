@@ -51,3 +51,41 @@ xmm1       n           fp#2     fp-high retreg       y
 xmm2-7     n           fp#3-8
 xmm8-15    n
 
+
+ppc32-linux
+~~~~~~~~~~~
+
+Reg        Callee      Arg    
+Name       Saves?      Reg?     Comment              Vex-uses?
+-------------------------------------------------------------------
+r0         n           n        sometimes RAZ
+r1         y           n        stack pointer
+r2         n           n
+r3         n           int#1    int[31:0] retreg     y
+r4         n           int#2    also int retreg      y
+r5         n           int#3                         y
+r6         n           int#4                         y
+r7         n           int#5                         y
+r8         n           int#6                         y
+r9         n           int#7                         y
+r10        n           int#8                         y
+r11        n                                         y
+r12        n                                         y
+r13        ?
+r14-28     y                                         y
+r29        y                                reserved for dispatcher
+r30        y                                altivec spill temporary
+r31        y                                         & guest state
+f0         n
+f1         n           fp#1     fp retreg
+f2-8       n           fp#2-8
+f9-13      n
+f14-31     y                                         y (14-21)
+v0-v19     ?
+v20-31     y                                         y (20-27,29)
+cr0-7
+lr         y                    return address
+ctr        n
+xer        n
+fpscr
+

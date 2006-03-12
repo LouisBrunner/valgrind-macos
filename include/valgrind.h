@@ -1717,9 +1717,11 @@ typedef
 /* ARGREGS: r3 r4 r5 r6 r7 r8 r9 r10 (the rest on stack somewhere) */
 
 /* These regs are trashed by the hidden call. */
-#define __CALLER_SAVED_REGS "lr",                                 \
-                            "r0", "r2", "r3", "r4", "r5", "r6",   \
-                            "r7", "r8", "r9", "r10", "r11", "r12"
+#define __CALLER_SAVED_REGS                                       \
+   "lr", "ctr", "xer",                                            \
+   "cr0", "cr1", "cr2", "cr3", "cr4", "cr5", "cr6", "cr7",        \
+   "r0", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",   \
+   "r11", "r12", "r13"
 
 /* These CALL_FN_ macros assume that on ppc64-linux, sizeof(unsigned
    long) == 8. */
@@ -1789,12 +1791,440 @@ typedef
          "std 2,-16(11)\n\t"  /* save tocptr */                   \
          "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
          "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
-         "ld   4, 16(11)\n\t" /* arg1->r4 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
          "ld  11, 0(11)\n\t"  /* target->r11 */                   \
          VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
          "mr 11,%1\n\t"                                           \
          "mr %0,3\n\t"                                            \
          "ld 2,-16(11)" /* restore tocptr */                      \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_WWW(lval, orig, arg1,arg2,arg3)                 \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+3];                        \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)" /* restore tocptr */                      \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_WWWW(lval, orig, arg1,arg2,arg3,arg4)           \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+4];                        \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      _argvec[2+4] = (unsigned long)arg4;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld   6, 32(11)\n\t" /* arg4->r6 */                      \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)" /* restore tocptr */                      \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_5W(lval, orig, arg1,arg2,arg3,arg4,arg5)        \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+5];                        \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      _argvec[2+4] = (unsigned long)arg4;                         \
+      _argvec[2+5] = (unsigned long)arg5;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld   6, 32(11)\n\t" /* arg4->r6 */                      \
+         "ld   7, 40(11)\n\t" /* arg5->r7 */                      \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)" /* restore tocptr */                      \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_6W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6)   \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+6];                        \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      _argvec[2+4] = (unsigned long)arg4;                         \
+      _argvec[2+5] = (unsigned long)arg5;                         \
+      _argvec[2+6] = (unsigned long)arg6;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld   6, 32(11)\n\t" /* arg4->r6 */                      \
+         "ld   7, 40(11)\n\t" /* arg5->r7 */                      \
+         "ld   8, 48(11)\n\t" /* arg6->r8 */                      \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)" /* restore tocptr */                      \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_7W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,   \
+                                 arg7)                            \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+7];                        \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      _argvec[2+4] = (unsigned long)arg4;                         \
+      _argvec[2+5] = (unsigned long)arg5;                         \
+      _argvec[2+6] = (unsigned long)arg6;                         \
+      _argvec[2+7] = (unsigned long)arg7;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld   6, 32(11)\n\t" /* arg4->r6 */                      \
+         "ld   7, 40(11)\n\t" /* arg5->r7 */                      \
+         "ld   8, 48(11)\n\t" /* arg6->r8 */                      \
+         "ld   9, 56(11)\n\t" /* arg7->r9 */                      \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)" /* restore tocptr */                      \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_8W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,   \
+                                 arg7,arg8)                       \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+8];                        \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      _argvec[2+4] = (unsigned long)arg4;                         \
+      _argvec[2+5] = (unsigned long)arg5;                         \
+      _argvec[2+6] = (unsigned long)arg6;                         \
+      _argvec[2+7] = (unsigned long)arg7;                         \
+      _argvec[2+8] = (unsigned long)arg8;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld   6, 32(11)\n\t" /* arg4->r6 */                      \
+         "ld   7, 40(11)\n\t" /* arg5->r7 */                      \
+         "ld   8, 48(11)\n\t" /* arg6->r8 */                      \
+         "ld   9, 56(11)\n\t" /* arg7->r9 */                      \
+         "ld  10, 64(11)\n\t" /* arg8->r10 */                     \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)" /* restore tocptr */                      \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_9W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,   \
+                                 arg7,arg8,arg9)                  \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+9];                        \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      _argvec[2+4] = (unsigned long)arg4;                         \
+      _argvec[2+5] = (unsigned long)arg5;                         \
+      _argvec[2+6] = (unsigned long)arg6;                         \
+      _argvec[2+7] = (unsigned long)arg7;                         \
+      _argvec[2+8] = (unsigned long)arg8;                         \
+      _argvec[2+9] = (unsigned long)arg9;                         \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "addi 1,1,-128\n\t"  /* expand stack frame */            \
+         /* arg9 */                                               \
+         "ld  3,72(11)\n\t"                                       \
+         "std 3,112(1)\n\t"                                       \
+         /* args1-8 */                                            \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld   6, 32(11)\n\t" /* arg4->r6 */                      \
+         "ld   7, 40(11)\n\t" /* arg5->r7 */                      \
+         "ld   8, 48(11)\n\t" /* arg6->r8 */                      \
+         "ld   9, 56(11)\n\t" /* arg7->r9 */                      \
+         "ld  10, 64(11)\n\t" /* arg8->r10 */                     \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)\n\t" /* restore tocptr */                  \
+         "addi 1,1,128"     /* restore frame */                   \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_10W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,  \
+                                  arg7,arg8,arg9,arg10)           \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+10];                       \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      _argvec[2+4] = (unsigned long)arg4;                         \
+      _argvec[2+5] = (unsigned long)arg5;                         \
+      _argvec[2+6] = (unsigned long)arg6;                         \
+      _argvec[2+7] = (unsigned long)arg7;                         \
+      _argvec[2+8] = (unsigned long)arg8;                         \
+      _argvec[2+9] = (unsigned long)arg9;                         \
+      _argvec[2+10] = (unsigned long)arg10;                       \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "addi 1,1,-128\n\t"  /* expand stack frame */            \
+         /* arg10 */                                              \
+         "ld  3,80(11)\n\t"                                       \
+         "std 3,120(1)\n\t"                                       \
+         /* arg9 */                                               \
+         "ld  3,72(11)\n\t"                                       \
+         "std 3,112(1)\n\t"                                       \
+         /* args1-8 */                                            \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld   6, 32(11)\n\t" /* arg4->r6 */                      \
+         "ld   7, 40(11)\n\t" /* arg5->r7 */                      \
+         "ld   8, 48(11)\n\t" /* arg6->r8 */                      \
+         "ld   9, 56(11)\n\t" /* arg7->r9 */                      \
+         "ld  10, 64(11)\n\t" /* arg8->r10 */                     \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)\n\t" /* restore tocptr */                  \
+         "addi 1,1,128"     /* restore frame */                   \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_11W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,  \
+                                  arg7,arg8,arg9,arg10,arg11)     \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+11];                       \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      _argvec[2+4] = (unsigned long)arg4;                         \
+      _argvec[2+5] = (unsigned long)arg5;                         \
+      _argvec[2+6] = (unsigned long)arg6;                         \
+      _argvec[2+7] = (unsigned long)arg7;                         \
+      _argvec[2+8] = (unsigned long)arg8;                         \
+      _argvec[2+9] = (unsigned long)arg9;                         \
+      _argvec[2+10] = (unsigned long)arg10;                       \
+      _argvec[2+11] = (unsigned long)arg11;                       \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "addi 1,1,-144\n\t"  /* expand stack frame */            \
+         /* arg11 */                                              \
+         "ld  3,88(11)\n\t"                                       \
+         "std 3,128(1)\n\t"                                       \
+         /* arg10 */                                              \
+         "ld  3,80(11)\n\t"                                       \
+         "std 3,120(1)\n\t"                                       \
+         /* arg9 */                                               \
+         "ld  3,72(11)\n\t"                                       \
+         "std 3,112(1)\n\t"                                       \
+         /* args1-8 */                                            \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld   6, 32(11)\n\t" /* arg4->r6 */                      \
+         "ld   7, 40(11)\n\t" /* arg5->r7 */                      \
+         "ld   8, 48(11)\n\t" /* arg6->r8 */                      \
+         "ld   9, 56(11)\n\t" /* arg7->r9 */                      \
+         "ld  10, 64(11)\n\t" /* arg8->r10 */                     \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)\n\t" /* restore tocptr */                  \
+         "addi 1,1,144"     /* restore frame */                   \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "r" (&_argvec[2])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
+#define CALL_FN_W_12W(lval, orig, arg1,arg2,arg3,arg4,arg5,arg6,  \
+                                arg7,arg8,arg9,arg10,arg11,arg12) \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[3+12];                       \
+      volatile unsigned long _res;                                \
+      /* _argvec[0] holds current r2 across the call */           \
+      _argvec[1]   = (unsigned long)_orig.r2;                     \
+      _argvec[2]   = (unsigned long)_orig.nraddr;                 \
+      _argvec[2+1] = (unsigned long)arg1;                         \
+      _argvec[2+2] = (unsigned long)arg2;                         \
+      _argvec[2+3] = (unsigned long)arg3;                         \
+      _argvec[2+4] = (unsigned long)arg4;                         \
+      _argvec[2+5] = (unsigned long)arg5;                         \
+      _argvec[2+6] = (unsigned long)arg6;                         \
+      _argvec[2+7] = (unsigned long)arg7;                         \
+      _argvec[2+8] = (unsigned long)arg8;                         \
+      _argvec[2+9] = (unsigned long)arg9;                         \
+      _argvec[2+10] = (unsigned long)arg10;                       \
+      _argvec[2+11] = (unsigned long)arg11;                       \
+      _argvec[2+12] = (unsigned long)arg12;                       \
+      __asm__ volatile(                                           \
+         "mr 11,%1\n\t"                                           \
+         "std 2,-16(11)\n\t"  /* save tocptr */                   \
+         "ld   2,-8(11)\n\t"  /* use nraddr's tocptr */           \
+         "addi 1,1,-144\n\t"  /* expand stack frame */            \
+         /* arg12 */                                              \
+         "ld  3,96(11)\n\t"                                       \
+         "std 3,136(1)\n\t"                                       \
+         /* arg11 */                                              \
+         "ld  3,88(11)\n\t"                                       \
+         "std 3,128(1)\n\t"                                       \
+         /* arg10 */                                              \
+         "ld  3,80(11)\n\t"                                       \
+         "std 3,120(1)\n\t"                                       \
+         /* arg9 */                                               \
+         "ld  3,72(11)\n\t"                                       \
+         "std 3,112(1)\n\t"                                       \
+         /* args1-8 */                                            \
+         "ld   3, 8(11)\n\t"  /* arg1->r3 */                      \
+         "ld   4, 16(11)\n\t" /* arg2->r4 */                      \
+         "ld   5, 24(11)\n\t" /* arg3->r5 */                      \
+         "ld   6, 32(11)\n\t" /* arg4->r6 */                      \
+         "ld   7, 40(11)\n\t" /* arg5->r7 */                      \
+         "ld   8, 48(11)\n\t" /* arg6->r8 */                      \
+         "ld   9, 56(11)\n\t" /* arg7->r9 */                      \
+         "ld  10, 64(11)\n\t" /* arg8->r10 */                     \
+         "ld  11, 0(11)\n\t"  /* target->r11 */                   \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_R11                  \
+         "mr 11,%1\n\t"                                           \
+         "mr %0,3\n\t"                                            \
+         "ld 2,-16(11)\n\t" /* restore tocptr */                  \
+         "addi 1,1,144"     /* restore frame */                   \
          : /*out*/   "=r" (_res)                                  \
          : /*in*/    "r" (&_argvec[2])                            \
          : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS          \

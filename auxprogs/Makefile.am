@@ -5,7 +5,7 @@ bin_PROGRAMS = valgrind-listener
 
 noinst_SCRIPTS = gen-mdg DotToScc.hs primes.c \
 		gsl16test gsl16-badfree.patch gsl16-wavelet.patch \
-		ppcfround.c ppc64shifts.c mpiwrap.c mpiwrap_type_test.c
+		ppcfround.c ppc64shifts.c libmpiwrap.c mpiwrap_type_test.c
 
 EXTRA_DIST = $(noinst_SCRIPTS)
 
@@ -44,11 +44,11 @@ noinst_PROGRAMS       = libmpiwrap.so
 #				-g -O -fpic -fno-omit-frame-pointer \
 #				-I../include -I@MPI_PREFIX@/include
 #libmpiwrap_so_LDFLAGS = $(AM_FLAG_M3264_PRI) -g -shared
-libmpiwrap.so: mpiwrap.c
+libmpiwrap.so: libmpiwrap.c
 	$(MPI_CC) -g -O -fno-omit-frame-pointer -Wall -fpic -shared \
 		-I../include \
 		$(AM_FLAG_M3264_PRI) \
-		-o libmpiwrap.so mpiwrap.c
+		-o libmpiwrap.so libmpiwrap.c
 
 install-exec-local:
 # convert (eg) X86_LINUX to x86-linux

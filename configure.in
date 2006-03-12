@@ -617,8 +617,20 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr semtimedop])
 
 
-# Do we have a useable MPI setup (mpicc, and suitable MPI2 headers?)
+# Do we have a useable MPI setup on the primary target
+# (mpicc, and suitable MPI2 headers?)
+# Note: this is a kludge in that it assumes the specified mpicc 
+# understands '-m32' or '-m64', as established above
 MPI_CC="mpicc"
+mflag_primary=
+if test x$VG_PLATFORM_PRI = xX86_LINUX \
+     -o x$VG_PLATFORM_PRI = xPPC32_LINUX ; then
+  mflag_primary=$FLAG_M32
+elif test x$VG_PLATFORM_PRI = xAMD64_LINUX \
+       -o x$VG_PLATFORM_PRI = xPPC64_LINUX ; then
+  mflag_primary=$FLAG_M64
+fi
+
 AC_ARG_WITH(mpicc,
    [  --with-mpicc=            Specify name of MPI2-ised C compiler],
    MPI_CC=$withval
@@ -627,7 +639,7 @@ AC_MSG_CHECKING([for usable MPI2-compliant mpicc and mpi.h])
 saved_CC=$CC
 saved_CFLAGS=$CFLAGS
 CC=$MPI_CC
-CFLAGS=
+CFLAGS=$mflag_primary
 AC_TRY_LINK([
 #include <mpi.h>
 #include <stdio.h>

@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- A library of wrappers for MPI 1.1 functions.            ---*/
+/*--- A library of wrappers for MPI 2 functions.              ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
@@ -479,8 +479,9 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
 
    if (0) {
       ex = extentOfTy(ty);
-      printf("tycon %p %d %d %d (ext %d)\n",
-             (void*)tycon, n_ints, n_addrs, n_dtys, (int)ex );
+      printf("tycon 0x%llx %d %d %d (ext %d)\n",
+             (unsigned long long int)tycon, 
+             n_ints, n_addrs, n_dtys, (int)ex );
    }
 
    /* Now safe to do MPI_Type_get_contents */

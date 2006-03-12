@@ -1,12 +1,13 @@
 
 #include <stdio.h>
+#include <config.h>
 
 static
 int try_mtocrf ( int x )
 {
   int base = 0x31415927;
   int res;
-
+#ifdef HAVE_AS_PPC_MFTOCRF
   /* pre-set CR */
   __asm__ __volatile__(
      "mtcr %0"
@@ -21,7 +22,9 @@ int try_mtocrf ( int x )
   __asm__ __volatile__(
      "mfcr %0"
      : /*w*/"=b"(res) : /*r*/ );
-
+#else
+  res = 42;
+#endif
   return res;
 }
 
@@ -29,6 +32,7 @@ static
 int try_mfocrf ( int x ) 
 {
    int res;
+#ifdef HAVE_AS_PPC_MFTOCRF
    /* CR = x */
    __asm__ __volatile__(
      "mtcr %0"
@@ -39,7 +43,9 @@ int try_mfocrf ( int x )
      "li %0,0\n\t"
      "mfocrf %0,64"
      : /*w*/"=b"(res) : /*r*/ );
-
+#else
+  res = 42;
+#endif
   return res;
 }
 

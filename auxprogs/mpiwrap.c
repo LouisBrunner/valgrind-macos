@@ -229,7 +229,9 @@ static void showTy ( FILE* f, MPI_Datatype ty )
    else if (ty == MPI_WCHAR)          fprintf(f,"WCHAR");
 #  endif
    else if (ty == MPI_LONG_LONG_INT)  fprintf(f,"LONG_LONG_INT");
+#  if defined(MPI_LONG_LONG)
    else if (ty == MPI_LONG_LONG)      fprintf(f,"LONG_LONG");
+#  endif
    else if (ty == MPI_UNSIGNED_LONG_LONG) fprintf(f,"UNSIGNED_LONG_LONG");
    else fprintf(f,"showTy:???");
 }

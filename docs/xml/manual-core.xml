@@ -1557,6 +1557,339 @@ will create a core dump in the usual way.</para>
 
 
 
+<sect1 id="manual-core.wrapping" xreflabel="Function Wrapping">
+<title>Function wrapping</title>
+
+<para>
+Valgrind versions 3.2.0 and above and can do function wrapping on all
+supported targets.  In function wrapping, calls to some specified
+function are intercepted and rerouted to a different, user-supplied
+function.  This can do whatever it likes, typically examining the
+arguments, calling onwards to the original, and possibly examining the
+result.  Any number of different functions may be wrapped.</para>
+
+<para>
+Function wrapping is useful for instrumenting an API in some way.  For
+example, wrapping functions in the POSIX pthreads API makes it
+possible to notify Valgrind of thread status changes, and wrapping
+functions in the MPI (message-passing) API allows notifying Valgrind
+of memory status changes associated with message arrival/departure.
+Such information is usually passed to Valgrind by using client
+requests in the wrapper functions, although that is not of relevance
+here.</para>
+
+<sect2 id="manual-core.wrapping.example" xreflabel="A Simple Example">
+<title>A Simple Example</title>
+
+<para>Supposing we want to wrap some function</para>
+
+<programlisting><![CDATA[
+int foo ( int x, int y ) { return x + y; }]]></programlisting>
+
+<para>
+A wrapper is a function of identical type, but with a special name
+which identifies it as the wrapper for foo.  Wrappers need to include
+supporting macros from valgrind.h.  Here is a simple wrapper which
+prints the arguments and return value:</para>
+<programlisting><![CDATA[
+  #include <stdio.h>
+  #include "valgrind.h"
+  int I_WRAP_SONAME_FNNAME_ZU(NONE,foo)( int x, int y )
+  {
+     int    result;
+     OrigFn fn;
+     VALGRIND_GET_ORIG_FN(fn);
+     printf("foo's wrapper: args %d %d\n", x, y);
+     CALL_FN_W_WW(result, fn, x,y);
+     printf("foo's wrapper: result %d\n", result);
+     return result;
+  }
+]]></programlisting>
+
+<para>To become active, the wrapper merely needs to be present in a text
+section somewhere in the same process' address space as the function
+it wraps, and for its ELF symbol name to be visible to Valgrind.  In
+practice, this means either compiling to a .o and linking it in, or
+compiling to a .so and LD_PRELOADing it in.  The latter is more
+convenient in that it doesn't require relinking.</para>
+
+<para>All wrappers have approximately the above form.  There are three
+crucial macros:</para>
+
+<para>I_WRAP_SONAME_FNNAME_ZU: this generates the real name of the wrapper.
+This is an encoded name which Valgrind notices when reading symbol
+table information.  What it says is: I am the wrapper for any function
+named "foo" which is found in an ELF shared object with an empty
+("NONE") soname field.  The specification mechanism is powerful in
+that wildcards are allowed for both sonames and function names.  More
+details below.</para>
+
+<para>VALGRIND_GET_ORIG_FN: once in the the wrapper, the first priority is
+to get hold of the address of the original (and any other supporting
+information needed).  This is stored in a value of opaque type OrigFn.
+The information is acquired using VALGRIND_GET_ORIG_FN.  It is crucial
+to make this macro call before calling any other wrapped function
+in the same thread.</para>
+
+<para>CALL_FN_W_WW: eventually we will want to call the function being
+wrapped.  Calling it directly does not work, since that just gets us
+back to the wrapper and tends to kill the program in short order by
+stack overflow.  Instead, the result lvalue, OrigFn and arguments are
+handed to one of a family of macros of the form CALL_FN_*.  These
+cause Valgrind to call the original and avoid recursion back to the
+wrapper.</para>
+</sect2>
+
+<sect2 id="manual-core.wrapping.specs" xreflabel="Wrapping Specifications">
+<title>Wrapping Specifications</title>
+
+<para>This scheme has the advantage of being self-contained.  A library of
+wrappers can be compiled to object code in the normal way, and does
+not rely on an external script telling Valgrind which wrappers pertain
+to which originals.</para>
+
+<para>Each wrapper has a name which, in the most general case says: I am the
+wrapper for any function whose name matches FNPATT and whose ELF
+"soname" matches SOPATT.  Both FNPATT and SOPATT may contain wildcards
+(asterisks) and other characters (spaces, dots, @, etc) which are not 
+generally regarded as valid C identifier names.</para> 
+
+<para>This flexibility is needed to write robust wrappers for POSIX pthread
+functions, where typically we are not completely sure of either the
+function name or the soname, or alternatively we want to wrap a whole
+bunch of functions at once.</para> 
+
+<para>For example, pthread_create() in GNU libpthread's is usually a
+versioned symbol - one whose name ends in, eg, "@GLIBC_2.3".  Hence we
+are not sure what its real name is.  We also want to cover any soname
+of the form "libpthread.so*".  So the header of the wrapper will be</para>
+
+<programlisting><![CDATA[
+int I_WRAP_SONAME_FNNAME_ZZ(libpthreadZdsoZd0,pthreadZucreateZAZa)
+  ( ... formals ... )
+  { ... body ... }
+]]></programlisting>
+
+<para>In order to write unusual characters as valid C function names, a
+Z-encoding scheme is used.  Names are written literally, except that
+a capital Z acts as an escape character, with the following encoding:</para>
+
+<programlisting><![CDATA[
+     Za   encodes    *
+     Zp              +
+     Zc              :
+     Zd              .
+     Zu              _
+     Zh              -
+     Zs              (space)
+     ZA              @
+     ZZ              Z
+]]></programlisting>
+
+<para>Hence libpthreadZdsoZd0 is an encoding of the soname "libpthread.so.0"
+and "pthreadZucreateZAZa" is an encoding of the function name
+"pthread_create@*".</para>
+
+<para>The macro I_WRAP_SONAME_FNNAME_ZZ constructs a wrapper name in which
+both the soname (first component) and function name (second component)
+are Z-encoded.  Encoding the function name can be tiresome and is
+often unnecessary, so a second macro, I_WRAP_SONAME_FNNAME_ZU, can be
+used instead.  The _ZU variant is also useful for writing wrappers for
+C++ functions, in which the function name is usually already mangled
+using some other convention in which Z plays an important role; having
+to encode a second time quickly becomes confusing.</para>
+
+<para>Since the function name field may contain wildcards, it can be
+anything, including just "*".  The same is true for the soname.
+However, some ELF objects - specifically, main executables - do not
+have sonames.  Any object lacking a soname is treated as if its soname
+was "NONE", which is why the original example above had a name
+I_WRAP_SONAME_FNNAME_ZU(NONE,foo).</para>
+</sect2>
+
+<sect2 id="manual-core.wrapping.semantics" xreflabel="Wrapping Semantics">
+<title>Wrapping Semantics</title>
+
+<para>The ability for a wrapper to replace an infinite family of functions
+is powerful but brings complications in situations where ELF objects
+appear and disappear (are dlopen'd and dlclose'd) on the fly.
+Valgrind tries to maintain sensible behaviour in such situations.</para>
+
+<para>For example, suppose a process has dlopened (an ELF object with
+soname) object1.so, which contains function1().  It starts to use
+function1() immediately.</para>
+
+<para>After a while it dlopens wrappers.so, which contains a wrapper
+for function1 in (soname) object1.so.  All subsequent calls to 
+function1() are rerouted to the wrapper.</para>
+
+<para>If wrappers.so is later dlclose'd, calls to function1() are 
+naturally rerouted back to the original.</para>
+
+<para>Alternatively, if object1.so is dlclose'd but wrappers.so remains,
+then the wrapper exported by wrapper.so becomes inactive, since there
+is no way to get to it - there is no original to call any more.  However,
+Valgrind remembers that the wrapper is still present.  If object1.so
+eventually dlopen'd again, the wrapper will become active again.</para>
+
+<para>In short, valgrind inspects all code loading/unloading events to
+ensure that the set of currently active wrappers remains consistent.</para>
+
+<para>A second possible problem is that of conflicting wrappers.  It is 
+easily possible to load two or more wrappers, both of which claim
+to be wrappers for some third function.  In such cases Valgrind will
+complain about conflicting wrappers when the second one appears, and
+will honour only the first one.</para>
+</sect2>
+
+<sect2 id="manual-core.wrapping.debugging" xreflabel="Debugging">
+<title>Debugging</title>
+
+<para>Figuring out what's going on given the dynamic nature of wrapping
+can be difficult.  The --trace-redir=yes flag makes this possible
+by showing the complete state of the redirection subsystem after
+every mmap/munmap event affecting code (text).</para>
+
+<para>There are two central concepts:</para>
+
+<para>- A "redirection specification" is a binding of 
+  a (soname pattern, fnname pattern) pair to a code address.
+  These bindings are created by writing functions with names
+  made with the  I_WRAP_SONAME_FNNAME_{ZZ,_ZU} macros.</para>
+
+<para>- An "active redirection" is code-address to code-address binding
+  currently in effect.</para>
+
+<para>The state of the wrapping-and-redirection subsystem comprises a set of
+specifications and a set of active bindings.  The specifications are
+acquired/discarded by watching all mmap/munmap events on code (text)
+sections.  The active binding set is (conceptually) recomputed from
+the specifications, and all known symbol names, following any change
+to the specification set.</para>
+
+<para>--trace-redir=yes shows the contents of both sets following any such
+event.</para>
+
+<para>-v prints a line of text each time an active specification is 
+used for the first time.</para>
+
+<para>Hence for maximum debugging effectiveness you will need to use both
+flags.</para>
+
+<para>One final comment.  The function-wrapping facility is closely
+tied to Valgrind's ability to replace (redirect) specified
+functions, for example to redirect calls to malloc() to its
+own implementation.  Indeed, a replacement function can be
+regarded as a wrapper function which does not call the original.
+However, to make the implementation more robust, the two kinds
+of interception (wrapping vs replacement) are treated differently.
+</para>
+
+<para>--trace-redir=yes shows specifications and bindings for both
+replacement and wrapper functions.  To differentiate the 
+two, replacement bindings are printed using "R->" whereas 
+wraps are printed using "W->".</para>
+</sect2>
+
+
+<sect2 id="manual-core.wrapping.limitations-cf" 
+       xreflabel="Limitations - control flow">
+<title>Limitations - control flow</title>
+
+<para>For the most part, the function wrapping implementation is robust.
+The only real caveat is that is is crucial, in a wrapper, get hold of
+the OrigFn information using VALGRIND_GET_ORIG_FN before calling any
+other wrapped function.  Once you have the OrigFn, arbitrary
+intercalling, recursion between, and longjumping out of wrappers
+should work correctly.  There is never any interaction between wrapped
+functions and merely replaced functions (eg malloc), so you can call
+malloc etc safely from within wrappers.</para>
+
+<para>The above comments are true for {x86,amd64,ppc32}-linux.  On
+ppc64-linux function wrapping is more fragile due to the (arguably
+poorly designed) ppc64-linux ABI.  This mandates the use of a shadow
+stack which tracks entries/exits of both wrapper and replacment
+functions.  This gives two limitations: firstly, longjumping out of
+wrappers will rapidly lead to disaster, since the shadow stack will
+not get correctly cleared.  Secondly, since the shadow stack has
+finite size, recursion between wrapper/replacement functions is only
+possible to a limited depth, beyond which Valgrind has to abort the
+run.  This depth is currently 16 calls.</para>
+
+<para>For all platforms ({x86,amd64,ppc32,ppc64}-linux) all the above
+comments apply on a per-thread basis.  In other words, wrapping is
+thread-safe: each thread must individually observe the above
+restrictions, but there is no need for any kind of inter-thread
+cooperation.</para>
+</sect2>
+
+
+<sect2 id="manual-core.wrapping.limitations-sigs" 
+       xreflabel="Limitations - original function signatures">
+<title>Limitations - original function signatures</title>
+
+<para>As shown in the above example, to call the original you must use a
+macro of the form CALL_FN_*.  For technical reasons it is impossible
+to create a single macro to deal with all argument types and numbers,
+so a family of macros covering the most common cases is supplied.  In
+what follows, 'W' denotes a machine-word-typed value (a pointer or an
+C 'long'), and 'v' denotes C's "void" type.  The currently available
+macros are:</para>
+
+<programlisting><![CDATA[
+   CALL_FN_v_v       -- call an original of type  void fn ( void )
+   CALL_FN_W_v       -- call an original of type  long fn ( void )
+
+   CALL_FN_v_W       -- void fn ( long )
+   CALL_FN_W_W       -- long fn ( long )
+
+   CALL_FN_v_WW      -- void fn ( long, long )
+   CALL_FN_W_WW      -- long fn ( long, long )
+
+   CALL_FN_v_WWW     -- void fn ( long, long, long )
+   CALL_FN_W_WWW     -- long fn ( long, long, long )
+
+   CALL_FN_W_WWWW    -- long fn ( long, long, long, long )
+   CALL_FN_W_5W      -- long fn ( long, long, long, long, long )
+   CALL_FN_W_6W      -- long fn ( long, long, long, long, long, long )
+   and so on, up to 
+   CALL_FN_W_12W
+]]></programlisting>
+
+<para>The set of supported types can be expanded as needed.  It is
+regrettable that this limitation exists.  Function wrapping has proven
+difficult to implement, with a certain apparently unavoidable level of
+ickyness.  After several implementation attempts, the present
+arrangement appears to be the least-worst tradeoff.  At least it works
+reliably in the presence of dynamic linking and dynamic code
+loading/unloading.</para>
+
+<para>You should not attempt to wrap a function of one type signature with a
+wrapper of a different type signature.  Such trickery will surely lead
+to crashes or strange behaviour.  This is not of course a limitation
+of the function wrapping implementation, merely a reflection of the
+fact that it gives you sweeping powers to shoot yourself in the foot
+if you are not careful.  Imagine the instant havoc you could wreak by
+writing a wrapper which matched any function name in any soname - in
+effect, one which claimed to be a wrapper for all functions in the
+process.</para>
+</sect2>
+
+<sect2 id="manual-core.wrapping.examples" xreflabel="Examples">
+<title>Examples</title>
+
+<para>In the source tree, memcheck/tests/wrap[1-8].c provide a series of
+examples, ranging from very simple to quite advanced.</para>
+
+<para>auxprogs/libmpiwrap.c is an example of wrapping a big, complex API
+(the MPI-2 interface).  This file defines almost 300 different
+wrappers.</para>
+</sect2>
+
+</sect1>
+
+
+
 <sect1 id="manual-core.install" xreflabel="Building and Installing">
 <title>Building and Installing</title>
 

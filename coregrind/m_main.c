@@ -1951,7 +1951,7 @@ Int main(Int argc, HChar **argv, HChar **envp)
    Addr    initial_client_TOC = 0;
    Addr    clstack_top        = 0;
    SizeT   clstack_max_size   = 0;
-   UInt*   client_auxv;
+   UInt*   client_auxv        = NULL;
    Int     loglevel, i;
    Bool    logging_to_fd;
    struct vki_rlimit zero = { 0, 0 };

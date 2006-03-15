@@ -11,14 +11,14 @@ n-i-bz   ppc32: fsub 3,3,3 in dispatcher doesn't clear NaNs
 n-i-bz   ppc32: __NR_{set,get}priority
 117332   x86: missing line info with icc 8.1
 117366   amd64: 0xDD 0x7C fnstsw
-== 118274
+118274   == 117366
 117367   amd64: 0xD9 0xF4 fxtract
 117369   amd64: __NR_getpriority (140)
 117419   ppc32: lfsu f5, -4(r11)
 117419   ppc32: fsqrt
 117936   more stabs problems (segfaults while reading debug info)
-==119914
-==120345
+119914   == 117936
+120345   == 117936
 118239   amd64: 0xF 0xAE 0x3F (clflush)
 118939   vm86old system call
 n-i-bz   memcheck/tests/mempool reads freed memory
@@ -48,6 +48,8 @@ n-i-bz   ppc32: broken signal handling in cpu feature detection
 n-i-bz   ppc32: rounding mode problems (improved, partial fix only)
 119482   ppc32: mtfsb1
 n-i-bz   ppc32: mtocrf/mfocrf
+
+(3.1.1:  15 March 2006, vex r1597, valgrind r5771).
 
 
 Release 3.1.0 (25 November 2005)

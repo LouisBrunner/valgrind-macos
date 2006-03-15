@@ -44,6 +44,15 @@
 }
 
 {
+   Fedora-Core-5-hack2a
+   Memcheck:Cond
+   obj:/lib*/ld-2.4*so
+   obj:/lib*/ld-2.4*so
+   obj:/lib*/ld-2.4*so
+   obj:/lib*/ld-2.4*so
+}
+
+{
    Fedora-Core-5-hack3
    Memcheck:Cond
    obj:/lib*/ld-2.3.90.so

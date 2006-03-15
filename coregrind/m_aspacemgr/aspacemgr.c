@@ -3228,6 +3228,8 @@ static void parse_procselfmaps (
    UWord  maj, min, dev;
    ULong  foffset;
 
+   foffset = ino = 0; /* keep gcc-4.1.0 happy */
+
    read_procselfmaps_into_buf();
 
    aspacem_assert('\0' != procmap_buf[0] && 0 != buf_n_tot);

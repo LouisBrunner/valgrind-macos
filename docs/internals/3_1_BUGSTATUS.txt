@@ -39,7 +39,7 @@ v5427     v5451     n-i-bz   OSet 64-bit fastcmp bug
 v5445     v5673     n-i-bz   VG_(getgroups) fix (Shinichi Noda)
 vx1519    vx1578    n-i-bz   ppc32/64: allocate from callee-saved FP/VMX regs
 v5500     v5674     n-i-bz   misaligned path word-size bug in mc_main.c
-vx1521/2  pending   119297   Incorrect error message for sse code
+vx1521/2  vex1595/6 119297   Incorrect error message for sse code
 vx1585    vx1586    120410   x86: prefetchw (0xF 0xD 0x48 0x4)
 v5633     v5675     120728   TIOCSERGETLSR, TIOCGICOUNT, HDIO_GET_DMA ioctls
 vx1419    vx1581    120658   Build fixes for gcc 2.96

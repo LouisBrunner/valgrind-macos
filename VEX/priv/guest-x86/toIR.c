@@ -6414,7 +6414,7 @@ void dis_push_segreg ( UInt sreg, Int sz )
     putIReg(4, R_ESP, mkexpr(ta));
     storeLE( mkexpr(ta), mkexpr(t1) );
 
-    DIP("pushw %s\n", nameSReg(sreg));
+    DIP("push%c %s\n", sz==2 ? 'w' : 'l', nameSReg(sreg));
 }
 
 static
@@ -6429,7 +6429,7 @@ void dis_pop_segreg ( UInt sreg, Int sz )
 
     putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(ta), mkU32(sz)) );
     putSReg( sreg, mkexpr(t1) );
-    DIP("pop %s\n", nameSReg(sreg));
+    DIP("pop%c %s\n", sz==2 ? 'w' : 'l', nameSReg(sreg));
 }
 
 static
@@ -11499,12 +11499,12 @@ DisResult disInstr_X86_WRK (
        break;
      }
 
-//--    case 0x1F: /* POP %DS */
-//--       dis_pop_segreg( cb, R_DS, sz ); break;
-//--    case 0x07: /* POP %ES */
-//--       dis_pop_segreg( cb, R_ES, sz ); break;
-//--    case 0x17: /* POP %SS */
-//--       dis_pop_segreg( cb, R_SS, sz ); break;
+   case 0x1F: /* POP %DS */
+      dis_pop_segreg( R_DS, sz ); break;
+   case 0x07: /* POP %ES */
+      dis_pop_segreg( R_ES, sz ); break;
+   case 0x17: /* POP %SS */
+      dis_pop_segreg( R_SS, sz ); break;
 
    /* ------------------------ PUSH ----------------------- */
 
@@ -11635,15 +11635,14 @@ DisResult disInstr_X86_WRK (
       DIP("pusha%c\n", nameISize(sz));
       break;
 
-
-//--    case 0x0E: /* PUSH %CS */
-//--       dis_push_segreg( cb, R_CS, sz ); break;
-//--    case 0x1E: /* PUSH %DS */
-//--       dis_push_segreg( cb, R_DS, sz ); break;
-//--    case 0x06: /* PUSH %ES */
-//--       dis_push_segreg( cb, R_ES, sz ); break;
-//--    case 0x16: /* PUSH %SS */
-//--       dis_push_segreg( cb, R_SS, sz ); break;
+   case 0x0E: /* PUSH %CS */
+      dis_push_segreg( R_CS, sz ); break;
+   case 0x1E: /* PUSH %DS */
+      dis_push_segreg( R_DS, sz ); break;
+   case 0x06: /* PUSH %ES */
+      dis_push_segreg( R_ES, sz ); break;
+   case 0x16: /* PUSH %SS */
+      dis_push_segreg( R_SS, sz ); break;
 
    /* ------------------------ SCAS et al ----------------- */
 

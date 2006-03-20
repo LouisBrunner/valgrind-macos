@@ -743,6 +743,28 @@ UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state )
    return eflags;
 }
 
+/* VISIBLE TO LIBVEX CLIENT */
+void
+LibVEX_GuestX86_put_eflag_c ( UInt new_carry_flag,
+                              /*MOD*/VexGuestX86State* vex_state )
+{
+   UInt oszacp = x86g_calculate_eflags_all_WRK(
+                    vex_state->guest_CC_OP,
+                    vex_state->guest_CC_DEP1,
+                    vex_state->guest_CC_DEP2,
+                    vex_state->guest_CC_NDEP
+                 );
+   if (new_carry_flag & 1) {
+      oszacp |= X86G_CC_MASK_C;
+   } else {
+      oszacp &= ~X86G_CC_MASK_C;
+   }
+   vex_state->guest_CC_OP   = X86G_CC_OP_COPY;
+   vex_state->guest_CC_DEP1 = oszacp;
+   vex_state->guest_CC_DEP2 = 0;
+   vex_state->guest_CC_NDEP = 0;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- %eflags translation-time function specialisers.         ---*/

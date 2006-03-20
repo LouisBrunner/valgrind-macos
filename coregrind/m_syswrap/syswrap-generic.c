@@ -5070,8 +5070,8 @@ PRE(sys_setrlimit)
       }
    }
    else if (ARG1 == VKI_RLIMIT_DATA) {
-      if (((struct vki_rlimit *)ARG2)->rlim_cur > ((struct vki_rlimit *)ARG2)->rlim_max ||
-          ((struct vki_rlimit *)ARG2)->rlim_max > ((struct vki_rlimit *)ARG2)->rlim_max) {
+      if (((struct vki_rlimit *)ARG2)->rlim_cur > VG_(client_rlimit_data).rlim_max ||
+          ((struct vki_rlimit *)ARG2)->rlim_max > VG_(client_rlimit_data).rlim_max) {
          SET_STATUS_Failure( VKI_EPERM );
       }
       else {
@@ -5080,8 +5080,8 @@ PRE(sys_setrlimit)
       }
    }
    else if (ARG1 == VKI_RLIMIT_STACK && tid == 1) {
-      if (((struct vki_rlimit *)ARG2)->rlim_cur > ((struct vki_rlimit *)ARG2)->rlim_max ||
-          ((struct vki_rlimit *)ARG2)->rlim_max > ((struct vki_rlimit *)ARG2)->rlim_max) {
+      if (((struct vki_rlimit *)ARG2)->rlim_cur > VG_(client_rlimit_stack).rlim_max ||
+          ((struct vki_rlimit *)ARG2)->rlim_max > VG_(client_rlimit_stack).rlim_max) {
          SET_STATUS_Failure( VKI_EPERM );
       }
       else {

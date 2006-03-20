@@ -1,0 +1,120 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % cl-entities SYSTEM "cl-entities.xml"> %cl-entities; ]>
+
+
+<book id="cl-docs" xreflabel="Callgrind Documentation">
+
+<bookinfo>
+  <title>Callgrind Documentation</title>
+  <subtitle>A call-graph generating Cache Simulator and Profiler</subtitle>
+  <releaseinfo>Release &cl-version; &cl-date;</releaseinfo>
+  <copyright>
+    <year>&cl-lifespan;</year>
+    <holder>
+      <link linkend="dist.authors" endterm="dist.authors.title"></link>
+    </holder>
+  </copyright>
+  <author>
+    <email><ulink url="mailto:&cl-email;">&cl-email;</ulink></email>
+  </author>
+  <legalnotice>
+    <para>Permission is granted to copy, distribute and/or modify this 
+    document under the terms of the GNU Free Documentation License,
+    Version 1.2 or any later version published by the Free Software Foundation; 
+    with no Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+    Texts.  A copy of the license is included in the section entitled 
+    <xref linkend="dist.license-gfdl"/>.</para>
+  </legalnotice>
+</bookinfo>
+
+
+<xi:include href="cl-manual.xml" parse="xml"  
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+<xi:include href="cl-format.xml" parse="xml"  
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+<chapter id="man-annotate" xreflabel="Callgrind Annotate (1)">
+  <title>Callgrind Annotate (1)</title>
+  <xi:include href="man-annotate.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
+
+<chapter id="man-control" xreflabel="Callgrind Control (1)">
+  <title>Callgrind Control (1)</title>
+  <xi:include href="man-control.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
+
+<!-- included for the sake of completeness -->
+<chapter id="man-callgrind" xreflabel="Callgrind (1)">
+  <title>Callgrind (1)</title>
+  <xi:include href="man-callgrind.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
+
+<!-- Because these are all text files, we have to wrap -->
+<!-- them in suitable XML.  Hence the chapter/title stuff  -->
+<chapter id="dist.authors" xreflabel="Authors">
+  <title id="dist.authors.title">AUTHORS</title>
+  <literallayout>
+    <xi:include href="../../AUTHORS" parse="text"  
+        xmlns:xi="http://www.w3.org/2001/XInclude" />
+  </literallayout>
+</chapter>
+
+<chapter id="dist.readme" xreflabel="Readme">
+  <title>README</title>
+  <literallayout>
+    <xi:include href="../../README" parse="text"  
+        xmlns:xi="http://www.w3.org/2001/XInclude" />
+  </literallayout>
+</chapter>
+
+<chapter id="dist.changelog" xreflabel="ChangeLog">
+  <title>ChangeLog</title>
+  <literallayout>
+    <xi:include href="../../ChangeLog" parse="text"  
+        xmlns:xi="http://www.w3.org/2001/XInclude" />
+  </literallayout>
+</chapter>
+
+<!-- NEWS is empty, so comment it out -->
+<!--
+<chapter id="dist.news" xreflabel="News">
+  <title>NEWS</title>
+  <literallayout>
+    <xi:include href="../../NEWS" parse="text"  
+        xmlns:xi="http://www.w3.org/2001/XInclude" />
+  </literallayout>
+</chapter>
+-->
+
+<chapter id="dist.install" xreflabel="Install">
+  <title>INSTALL</title>
+  <literallayout>
+    <xi:include href="../../INSTALL" parse="text"  
+        xmlns:xi="http://www.w3.org/2001/XInclude" />
+  </literallayout>
+</chapter>
+
+<chapter id="dist.license-gpl" xreflabel=" The GNU General Public License">
+  <title>The GNU General Public License</title>
+    <literallayout>
+      <xi:include href="../../COPYING" parse="text"  
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+</chapter>
+
+<chapter id="dist.license-gfdl" xreflabel=" The GNU Free Documentation License">
+  <title>The GNU Free Documentation License</title>
+    <literallayout>
+      <xi:include href="../COPYING.DOCS" parse="text"  
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+</chapter>
+
+
+</book>

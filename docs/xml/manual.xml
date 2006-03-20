@@ -28,6 +28,8 @@
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../cachegrind/docs/cg-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../callgrind/docs/cl-manual.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../massif/docs/ms-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../helgrind/docs/hg-manual.xml" parse="xml"  

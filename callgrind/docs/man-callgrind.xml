@@ -1,0 +1,100 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % cl-entities SYSTEM "cl-entities.xml"> %cl-entities; ]>
+
+
+<refentry id="callgrind">
+<refmeta>
+  <refentrytitle>Callgrind</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo class="source">November 18, 2005</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+  <refname>callgrind</refname>
+  <refpurpose>calls <command>valgrind</command> with the callgrind tool</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+  <cmdsynopsis>
+    <command>callgrind</command>    
+    <arg choice="opt"><replaceable>options</replaceable></arg>
+    <arg choice="plain"><replaceable>progs-and-args</replaceable></arg>
+  </cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="description">
+<title>Description</title>
+
+<para><command>Callgrind</command> is a profiling tool similar to gprof, 
+but by being able to observe a program run in great detail - using 
+Valgrind - it can give much more information. The binary does not have 
+to be prepared for profiling with <command>callgrind</command> in any 
+special way. Still, it is recommended to compile with debug information.</para>
+
+<para><command>Callgrind</command> builds up the call graph of a program 
+while it is running, and optionally does cache simulation. The collected 
+profiling data can be stored into an output file multiple times in a 
+program run, optionally separately for every thread in the case of 
+multithreaded code.  For interactive inspection and control, see
+<command>callgrind_control</command>.  The data produced 
+(callgrind.out.PID) can be analysed with 
+<command>callgrind_annotate</command> or better with the graphical profile 
+visualization <command>KCachegrind</command>.  Further documentation can 
+be found in HTML format either on your filesystem: 
+<filename>&cl-doc-path;</filename> or online at 
+<filename>&cl-doc-url;</filename>.</para>
+
+</refsect1>
+
+
+<refsect1 id="options">
+<title>Options</title>
+
+<para>This program follows the usual GNU command line syntax, with long
+options starting with two dashes ('--').</para>
+
+
+<xi:include href="cl-manual.xml" xpointer="cmd-options"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="see_also">
+<title>See Also</title>
+
+<para><command>callgrind_control</command>, 
+<command>callgrind_annotate</command>, 
+<filename>&cl-doc-path;</filename>
+</para>
+
+</refsect1>
+
+
+<refsect1 id="author">
+<title>Author</title>
+
+<para>This manual page was written by Josef Weidendorfer &lt;&cl-email;&gt;.</para>
+
+
+</refsect1>
+
+
+<refsect1 id="copyright">
+<title>Copyright</title>
+
+<para>Copyright &copy; &cl-lifespan; Josef Weidendorfer</para>
+<para>This is free software; see the source for copying conditions. 
+There is NO warranty; not even for MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE.</para>
+
+</refsect1>
+
+
+
+</refentry>
+

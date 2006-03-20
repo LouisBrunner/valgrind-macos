@@ -77,6 +77,14 @@ leaks.</para>
   </listitem>
 
   <listitem>
+    <para><option>callgrind</option> adds call graph tracing to cachegrind.  It can be
+    used to get call counts and inclusive cost for each call happening in your
+    program. In addition to cachegrind, callgrind can annotate threads separatly,
+    and every instruction of disassembler output of your program with the number of
+    instructions executed and cache misses incurred.</para>
+  </listitem>
+
+  <listitem>
     <para><option>helgrind</option> spots potential race conditions in
     your program.</para>
   </listitem>
@@ -192,6 +200,17 @@ leaks.</para>
 
 <xi:include href="../../cachegrind/docs/cg-manual.xml" 
             xpointer="cg.opts.list"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+
+</refsect1>
+
+
+
+<refsect1 id="callgrind-options">
+<title>Callgrind Options</title>
+
+<xi:include href="../../callgrind/docs/cl-manual.xml" 
+            xpointer="cl.opts.list"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </refsect1>

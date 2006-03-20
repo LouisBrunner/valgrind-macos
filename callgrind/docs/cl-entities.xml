@@ -1,0 +1,22 @@
+<!-- callgrind release + version stuff -->
+<!ENTITY cl-version  "0.10.1">
+<!ENTITY cl-date     "November 25 2005">
+
+<!-- copyright length of years -->
+<!ENTITY cl-lifespan "2000-2005">
+
+<!-- website + email -->
+<!ENTITY cl-email    "Josef.Weidendorfer@gmx.de">
+<!ENTITY cl-url      "http://www.valgrind.org/info/developers.html">
+
+<!-- external urls used in the docs.  kept in here because when  -->
+<!-- they change it's a real pain tracking them down in the docs -->
+<!ENTITY vg-url      "http://www.valgrind.org/">
+<!ENTITY cg-doc-url  "http://www.valgrind.org/docs/manual/cg-manual.html">
+<!ENTITY cg-tool-url "http://www.valgrind.org/info/tools.html#cachegrind">
+<!ENTITY cl-gui      "http://kcachegrind.sourceforge.net/cgi-bin/show.cgi/KcacheGrindIndex">
+
+<!-- path/to/callgrind/docs in valgrind install tree -->
+<!-- only used in the manpages -->
+<!ENTITY cl-doc-path  "/usr/share/doc/valgrind/html/callgrind.html">
+<!ENTITY cl-doc-url   "http://www.valgrind.org/docs/manual/cl-manual.html">

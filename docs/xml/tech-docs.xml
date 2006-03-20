@@ -21,6 +21,8 @@
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../cachegrind/docs/cg-tech-docs.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../callgrind/docs/cl-format.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="writing-tools.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
 

@@ -1,0 +1,132 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % cl-entities SYSTEM "cl-entities.xml"> %cl-entities; ]>
+
+
+<refentry id="callgrind-control">
+<refmeta>
+  <refentrytitle>Callgrind Control</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo class="c-source">October, 2005</refmiscinfo>
+</refmeta>
+
+<refnamediv id="c-name">
+  <refname>callgrind_control</refname>
+  <refpurpose>observe and control applications currently running under 
+  supervision of <command>callgrind</command></refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="c-synopsis">
+  <cmdsynopsis>
+    <command>callgrind_control</command>    
+    <arg choice="opt"><replaceable>options</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>pid/program-name</replaceable></arg>
+  </cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="c-description">
+<title>Description</title>
+
+<para>This manual page documents briefly the 
+<command>callgrind_control</command> command. When not specifying a
+<command>pid/program name</command> argument, all applications run 
+by callgrind on this system will be used for actions given by the 
+specified option(s). The default action is to give short information 
+for the applications run by callgrind.</para>
+
+</refsect1>
+
+
+<refsect1 id="c-options">
+<title>Options</title>
+
+<para>This program follows the usual GNU command line syntax, with long
+options starting with two dashes ("--").  A summary of options is 
+included below.</para>
+
+<variablelist remap="TP">
+
+  <varlistentry>
+    <term><option>-h, --help</option></term>
+    <listitem>
+      <para>Show summary of options.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>--version</option></term>
+    <listitem>
+      <para>Show version of callgrind_control.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-s</option></term>
+    <listitem>
+      <para>Show statistics</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-b</option></term>
+    <listitem>
+      <para>Show stack trace</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-e [A,B,C] [default: all] </option></term>
+    <listitem>
+      <para>Only show figures for events A,B,C</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-z</option></term>
+    <listitem>
+      <para>Zero cost counters</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-d, --dump [hint]</option></term>
+    <listitem>
+      <para>Request the dumping of profile information. Optionally, a 
+      string can be specified which is written into the dump as part of 
+      the Trigger reason. This can be used to distinguish multiple dumps.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-k</option></term>
+    <listitem>
+      <para>Kill</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+
+<refsect1 id="c-see_also">
+<title>See Also</title>
+
+<para><filename>&cl-doc-path;</filename></para>
+
+</refsect1>
+
+
+<refsect1 id="c-author">
+<title>Author</title>
+
+<para>This manual page was written by Josef Weidendorfer &lt;&cl-email;&gt;.</para>
+
+
+</refsect1>
+
+
+</refentry>
+

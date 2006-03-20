@@ -1,0 +1,163 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % cl-entities SYSTEM "cl-entities.xml"> %cl-entities; ]>
+
+
+<refentry id="callgrind-annotate">
+
+<refmeta>
+  <refentrytitle>Callgrind Annotate</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo class="a-source">May 13, 2003</refmiscinfo>
+</refmeta>
+
+<refnamediv id="a-name">
+  <refname>callgrind_annotate</refname>
+  <refpurpose>produces human readable ASCII output from profile 
+  information in <command>cachegrind.out</command> files</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="a-synopsis">
+  <cmdsynopsis>
+    <command>callgrind_annotate</command>    
+    <arg choice="opt"><replaceable>options</replaceable></arg>
+    <arg choice="opt"><replaceable>source-files</replaceable></arg>
+  </cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="a-description">
+<title>Description</title>
+
+<para>This manual page documents briefly the 
+<command>callgrind_annotate</command> command.  This manual page was 
+written for the Debian distribution because the original program does 
+not have a manual page.</para>
+
+</refsect1>
+
+
+<refsect1 id="a-options">
+<title>Options</title>
+
+<para>This program follows the usual GNU command line syntax, with long
+options starting with two dashes ('--').  A summary of options is 
+included below.</para>
+
+<variablelist remap="TP">
+
+  <varlistentry>
+    <term><option>-h, --help</option></term>
+    <listitem>
+      <para>Show summary of options.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>--version</option></term>
+    <listitem>
+      <para>Show version of callgrind_annotate.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option>--show=A,B,C [default: all]</option>
+    </term>
+    <listitem>
+      <para>only show figures for events A,B,C</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option>--sort=A,B,C</option>
+    </term>
+    <listitem>
+      <para>sort columns by events A,B,C [event column order]</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--threshold=<0--100> [default: 99%] ]]></option>
+    </term>
+    <listitem>
+      <para>percentage of counts (of primary sort event) we are 
+      interested in</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--auto=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>annotate all source files containing functions that helped 
+      reach the event count threshold</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option>--context=N [default: 8] </option>
+    </term>
+    <listitem>
+      <para>print N lines of context before and after annotated 
+      lines</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--cumulative=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>add subroutine costs to functions calls</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[--tree=<none|caller|calling|both> [default: none] ]]></option>
+    </term>
+    <listitem>
+      <para>print for each function their callers, the called functions 
+      or both</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
+      <option><![CDATA[-I, --include=<dir> ]]></option>
+    </term>
+    <listitem>
+      <para>add &lt;dir&gt; to the list of directories to search for source 
+      files</para>
+  </listitem>
+  </varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+
+<refsect1 id="a-see_also">
+<title>See Also</title>
+
+<para><filename>&cl-doc-path;</filename></para>
+
+</refsect1>
+
+
+<refsect1 id="a-author">
+<title>Author</title>
+
+<para>This manual page was written by 
+Philipp Frauenfelder &lt;pfrauenf@debian.org&gt;, for the Debian 
+GNU/Linux system (but may be used by others).</para>
+</refsect1>
+
+
+</refentry>

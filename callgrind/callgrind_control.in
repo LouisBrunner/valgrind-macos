@@ -1,0 +1,485 @@
+#! /usr/bin/perl -w
+##--------------------------------------------------------------------##
+##--- Control supervision of applications run with callgrind       ---##
+##---                                            callgrind_control ---##
+##--------------------------------------------------------------------##
+
+#  This file is part of Callgrind, a cache-simulator and call graph
+#  tracer built on Valgrind.
+#
+#  Copyright (C) 2003,2004,2005 Josef Weidendorfer
+#     Josef.Weidendorfer@gmx.de
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+#  02111-1307, USA.
+
+sub getCallgrindPids {
+
+  @pids = ();
+  foreach $f (</tmp/callgrind.info.*>) {
+    ($pid) = ($f =~ /info\.(\d+)/);
+    if ($pid eq "") { next; }
+    $mapfile = "/proc/$pid/maps";
+    if (!-e $mapfile) { next; }
+
+    open MAP, "<$mapfile";
+    $found = 0;
+    while(<MAP>) {
+      # works both for VG 3.0 and VG 3.1
+      if (/callgrind/) { $found = 1; }
+    }
+    close MAP;
+    if ($found == 0) { next; }
+
+    open INFO, "<$f";
+    while(<INFO>) {
+      if (/version: (\d+)/) { $mversion{$pid} = $1; }
+      if (/cmd: (.+)$/) { $cmd{$pid} = $1; }
+      if (/control: (.+)$/) { $control{$pid} = $1; }
+      if (/base: (.+)$/) { $base{$pid} = $1; }
+      if (/result: (.+)$/) { $result{$pid} = $1; }
+    }
+    close INFO;
+
+    if ($mversion{$pid} > 1) {
+      #print " Unsupported Callgrind Major Version $mversion.\n\n";
+      next;
+    }
+
+    push(@pids, $pid);
+  }
+}
+
+sub printHeader {
+  if ($headerPrinted) { return; }
+  $headerPrinted = 1;
+  if ($beQuiet) { return; }
+
+  print "Observe the status and control currently active callgrind runs.\n";
+  print "(C) 2003-2005, Josef Weidendorfer (Josef.Weidendorfer\@gmx.de)\n\n";
+}
+
+sub printVersion {
+  print "callgrind_control-@VERSION@\n";
+  exit;
+}
+
+sub printHelp {
+  printHeader;
+
+  print "Usage: callgrind_control [options] [ <PID>|<Name> ...]\n\n";
+  print "If no PIDs/Names are given, an action is applied to all currently\n";
+  print "active Callgrind runs. Default action is printing short information.\n\n";
+  print "Options:\n";
+  print "  -h         Print this help text\n";
+  print "  -v         Print version\n";
+  print "  -q         Be quiet\n";
+  print "  -l         Print more information\n";
+  print "  -s         Print status information\n";
+  print "  -b         Print backtrace information\n";
+  print "  -e [A,..]  Print event counters for A,.. [default: all]\n";
+  print "  -d [str]   Request a profile dump, include <str> as trigger hint\n";
+  print "  -z         Zero all cost counters\n";
+  print "  -k         Kill\n";
+  print "  -i on/off  Switch instrumentation state on/off\n";
+  print "  -w <dir>   Manually specify the working directory of a callgrind run\n";
+  print "\n";
+  exit;
+}
+
+
+#
+# Parts more or less copied from ct_annotate (author: Nicholas Nethercote)
+#
+
+sub prepareEvents {
+
+  @events = split(/\s+/, $events);
+  %events = ();
+  $n = 0;
+  foreach $event (@events) {
+    $events{$event} = $n;
+    $n++;
+  }
+  if (@show_events) {
+    foreach my $show_event (@show_events) {
+      (defined $events{$show_event}) or
+	print "Warning: Event `$show_event' is not being collected\n";
+    }
+  } else {
+    @show_events = @events;
+  }
+  @show_order = ();
+  foreach my $show_event (@show_events) {
+    push(@show_order, $events{$show_event});
+  }
+}
+
+sub max ($$) 
+{
+    my ($x, $y) = @_;
+    return ($x > $y ? $x : $y);
+}
+
+sub line_to_CC ($)
+{
+    my @CC = (split /\s+/, $_[0]);
+    (@CC <= @events) or die("Line $.: too many event counts\n");
+    return \@CC;
+}
+
+sub commify ($) {
+    my ($val) = @_;
+    1 while ($val =~ s/^(\d+)(\d{3})/$1,$2/);
+    return $val;
+}
+
+sub compute_CC_col_widths (@) 
+{
+    my @CCs = @_;
+    my $CC_col_widths = [];
+
+    # Initialise with minimum widths (from event names)
+    foreach my $event (@events) {
+        push(@$CC_col_widths, length($event));
+    }
+    
+    # Find maximum width count for each column.  @CC_col_width positions
+    # correspond to @CC positions.
+    foreach my $CC (@CCs) {
+        foreach my $i (0 .. scalar(@$CC)-1) {
+            if (defined $CC->[$i]) {
+                # Find length, accounting for commas that will be added
+                my $length = length $CC->[$i];
+                my $clength = $length + int(($length - 1) / 3);
+                $CC_col_widths->[$i] = max($CC_col_widths->[$i], $clength); 
+            }
+        }
+    }
+    return $CC_col_widths;
+}
+
+# Print the CC with each column's size dictated by $CC_col_widths.
+sub print_CC ($$) 
+{
+    my ($CC, $CC_col_widths) = @_;
+
+    foreach my $i (@show_order) {
+        my $count = (defined $CC->[$i] ? commify($CC->[$i]) : ".");
+        my $space = ' ' x ($CC_col_widths->[$i] - length($count));
+        print("$space$count ");
+    }
+}
+
+sub print_events ($)
+{
+    my ($CC_col_widths) = @_;
+
+    foreach my $i (@show_order) { 
+        my $event       = $events[$i];
+        my $event_width = length($event);
+        my $col_width   = $CC_col_widths->[$i];
+        my $space       = ' ' x ($col_width - $event_width);
+        print("$space$event ");
+    }
+}
+
+
+
+#
+# Main
+#
+
+getCallgrindPids;
+
+$requestEvents = 0;
+$requestDump = 0;
+$switchInstr = 0;
+$headerPrinted = 0;
+$beQuiet = 0;
+$dumpHint = "";
+$gotW = 0;
+$workingDir = "";
+
+%spids = ();
+foreach $arg (@ARGV) {
+  if ($arg =~ /^-/) {
+    if ($requestDump == 1) { $requestDump = 2; }
+    if ($requestEvents == 1) { $requestEvents = 2; }
+    if ($gotW == 1) { $gotW = 2; }
+
+    if ($arg =~ /^-?-h/) { printHelp; }
+    if ($arg =~ /^-?-v/) { printVersion; }
+    if ($arg =~ /^-q/) { $beQuiet = 1; next; }
+    if ($arg =~ /^-l/) { $printLong = 1; next; }
+    if ($arg =~ /^-s/) { $printStatus = 1; next; }
+    if ($arg =~ /^-b/) { $printBacktrace = 1; next; }
+    if ($arg =~ /^-d/) { $requestDump = 1; next; }
+    if ($arg =~ /^-z/) { $requestZero = 1; next; }
+    if ($arg =~ /^-k/) { $requestKill = 1; next; }
+    if ($arg =~ /^-e/) { $requestEvents = 1; next; }
+    if ($arg =~ /^-i/) { $switchInstr = 1; next; }
+    if ($arg =~ /^-w/) { $gotW = 1; next; }
+
+    printHeader;
+    print "Unknown option '$arg'.\n\n";
+    printHelp;
+  }
+
+  if ($arg =~ /^[A-Za-z_]/) {
+    # arguments of -d/-e/-i are non-numeric
+    if ($requestDump == 1) {
+      $requestDump = 2;
+      $dumpHint = $arg;
+      next;
+    }
+
+    if ($requestEvents == 1) {
+      $requestEvents = 2;
+      @show_events = split(/,/, $arg);
+      next;
+    }
+
+    if ($switchInstr == 1) {
+      $switchInstr = 2;
+      $switchInstrMode = "+";
+      if (($arg eq "off") || ($arg eq "no")) {
+	$switchInstrMode = "-";
+      }
+      next;
+    }
+  }
+
+  if ($gotW == 1) {
+      $gotW = 2;
+      $workingDir = $arg;
+      if (!-d $workingDir) {
+	  print "Error: directory '$workingDir' does not exist.\n";
+	  printHelp;
+      }
+      next;
+  }
+
+  if (defined $cmd{$arg}) { $spids{$arg} = 1; next; }
+  $nameFound = 0;
+  foreach $p (@pids) {
+    if ($cmd{$p} =~ /^$arg/) {
+      $nameFound = 1;
+      $spids{$p} = 1;
+    }
+  }
+  if ($nameFound) { next; }
+
+  printHeader;
+  print "Non-existent Callgrind task with PID/Name '$arg'.\n\n";
+  printHelp;
+}
+
+if ($workingDir ne "") {
+    # Generate dummy information for dummy pid 0
+    $pid = "0";
+    $mversion{$pid} = "@VERSION@";
+    $cmd{$pid} = "???";
+    $base{$pid} = $workingDir;
+    $control{$pid} = "$workingDir/callgrind.cmd";
+    # do not wait for any result...
+    $result{$pid} = "";
+
+    # Only handle this faked callgrind run
+    @pids = ($pid);
+}
+
+if (scalar @pids == 0) {
+  print "No active callgrind runs detected.\n";
+  #print "Detection fails when /proc/*/maps is not readable.\n";
+  print "[Detection can fail on some systems; to work around this,\n";
+  print " specify the working directory of a callgrind run with '-w']\n";
+  exit;
+}
+
+@spids = keys %spids;
+if (scalar @spids >0) { @pids = @spids; }
+
+$command = "";
+$waitForAnswer = 0;
+if ($requestDump) {
+  $command = "Dump";
+  if ($dumpHint ne "") { $command .= " ".$dumpHint; }
+}
+if ($requestZero) { $command = "Zero"; }
+if ($requestKill) { $command = "Kill"; }
+if ($switchInstr) { $command = $switchInstrMode."Instrumentation"; }
+if ($printStatus || $printBacktrace || $requestEvents) {
+  $command = "Status";
+  $waitForAnswer = 1;
+}
+
+foreach $pid (@pids) {
+  $pidstr = "PID $pid: ";
+  print $pidstr.$cmd{$pid};
+
+  if ($command eq "") {
+    if ($printLong) {
+      #print " " x length $pidstr;
+      print " (in $base{$pid})\n";
+    }
+    else {
+      print "\n";
+    }
+    next;
+  }
+  else {
+    if (! (open CONTROL, ">$control{$pid}")) {
+      print " [sending '$command' failed: permission denied]\n";
+      next;
+    }
+    print " [requesting '$command'...]\n";
+    print CONTROL $command;
+    close CONTROL;
+
+    while(-e $control{$pid}) {
+      # sleep for 250 ms
+      select(undef, undef, undef, 0.25);
+    }
+  }
+
+  if ($result{$pid} eq "") { $waitForAnswer=0; }
+  if (!$waitForAnswer) { print "  OK.\n"; next; }
+
+  if (! (open RESULT, "<$result{$pid}")) {
+    print " Warning: Can't open expected result file $result{$pid}.\n";
+    next;
+  }
+
+  @tids = ();
+  $ctid = 0;
+  %fcount = ();
+  %func = ();
+  %calls = ();
+  %events = ();
+  @events = ();
+  %totals = ();
+
+  $exec_bbs = 0;
+  $dist_bbs = 0;
+  $exec_calls = 0;
+  $dist_calls = 0;
+  $dist_ctxs = 0;
+  $dist_funcs = 0;
+  $threads = 0;
+  $events = "";
+
+  while(<RESULT>) {
+    if (/function-(\d+)-(\d+): (.+)$/) {
+      if ($ctid != $1) {
+	$ctid = $1;
+	push(@tids, $ctid);
+	$fcount{$ctid} = 0;
+      }
+      $fcount{$ctid}++;
+      $func{$ctid,$fcount{$ctid}} = $3;
+    }
+    elsif (/calls-(\d+)-(\d+): (.+)$/) {
+      if ($ctid != $1) { next; }
+      $calls{$ctid,$fcount{$ctid}} = $3;
+    }
+    elsif (/events-(\d+)-(\d+): (.+)$/) {
+      if ($ctid != $1) { next; }
+      $events{$ctid,$fcount{$ctid}} = line_to_CC($3);
+    }
+    elsif (/events-(\d+): (.+)$/) {
+      if (scalar @events == 0) { next; }
+      $totals{$1} = line_to_CC($2);
+    }
+    elsif (/executed-bbs: (\d+)/) { $exec_bbs = $1; }
+    elsif (/distinct-bbs: (\d+)/) { $dist_bbs = $1; }
+    elsif (/executed-calls: (\d+)/) { $exec_calls = $1; }
+    elsif (/distinct-calls: (\d+)/) { $dist_calls = $1; }
+    elsif (/distinct-functions: (\d+)/) { $dist_funcs = $1; }
+    elsif (/distinct-contexts: (\d+)/) { $dist_ctxs = $1; }
+    elsif (/events: (.+)$/) { $events = $1; prepareEvents; }
+    elsif (/threads: (\d+)$/) { $threads = $1; }
+    elsif (/instrumentation: (\w+)$/) { $instrumentation = $1; }
+  }
+
+  unlink $result{$pid};
+
+  if ($instrumentation eq "off") {
+    print "  No information available as instrumentation is switched off.\n\n";
+    exit;
+  }
+
+  if ($printStatus) {
+    if ($requestEvents <1) {
+      print "  Number of threads: $threads\n";
+      print "  Events collected: $events\n";
+    }
+
+    print "  Functions: ".commify($dist_funcs);
+    print " (executed ".commify($exec_calls);
+    print ", contexts ".commify($dist_ctxs).")\n";
+
+    print "  Basic blocks: ".commify($dist_bbs);
+    print " (executed ".commify($exec_bbs);
+    print ", call sites ".commify($dist_calls).")\n";
+  }
+
+  if ($requestEvents >0) {
+    $totals_width = compute_CC_col_widths(values %totals);
+    print "\n  Totals:";
+    print_events($totals_width);
+    print("\n");
+    foreach $tid (@tids) {
+      print "   Th".substr("  ".$tid,-2)."  ";
+      print_CC($totals{$tid}, $totals_width);
+      print("\n");
+    }
+  }
+
+  if ($printBacktrace) {
+
+    if ($requestEvents >0) {
+      $totals_width = compute_CC_col_widths(values %events);
+    }
+
+    foreach $tid (@tids) {
+      print "\n  Frame: ";
+      if ($requestEvents >0) {
+	print_events($totals_width);
+      }
+      print "Backtrace for Thread $tid\n";
+
+      $i = $fcount{$tid};
+      $c = 0;
+      while($i>0 && $c<100) {
+	$fc = substr(" $c",-2);
+	print "   [$fc]  ";
+	if ($requestEvents >0) {
+	  print_CC($events{$tid,$i-1}, $totals_width);
+	}
+	print $func{$tid,$i};
+	if ($i > 1) {
+	  print " (".$calls{$tid,$i-1}." x)";
+	}
+	print "\n";
+	$i--;
+	$c++;
+      }
+      print "\n";
+    }
+  }
+  print "\n";
+}
+	

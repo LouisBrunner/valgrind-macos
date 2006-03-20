@@ -697,6 +697,11 @@ AC_OUTPUT(
    cachegrind/tests/x86/Makefile
    cachegrind/docs/Makefile
    cachegrind/cg_annotate
+   callgrind/Makefile
+   callgrind/callgrind_annotate
+   callgrind/callgrind_control
+   callgrind/tests/Makefile
+   callgrind/docs/Makefile
    helgrind/Makefile
    helgrind/tests/Makefile
    helgrind/docs/Makefile

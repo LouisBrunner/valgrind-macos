@@ -2398,6 +2398,11 @@ detecting errors such as passing undefined data to
 <computeroutput>PMPI_Send</computeroutput>, or receiving data into a
 buffer which is too small.</para>
 
+<para>Unlike the rest of Valgrind, the wrapper library is subject to a
+BSD-style license, so you can link it into any code base you like.
+See the top of <computeroutput>auxprogs/libmpiwrap.c</computeroutput>
+for details.</para>
+
 
 <sect2 id="manual-core.mpiwrap.build" xreflabel="Building MPI Wrappers">
 <title>Building and installing the wrappers</title>

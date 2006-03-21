@@ -33,6 +33,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debuginfo.h"    // VG_(di_notify_*)
 #include "pub_core_transtab.h"     // VG_(discard_translations)
+#include "pub_core_clientstate.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -795,6 +796,66 @@ POST(sys_futex)
          if (VG_(clo_track_fds))
             ML_(record_fd_open_nameless)(tid, RES);
       }
+   }
+}
+
+PRE(sys_pselect6)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_pselect6 ( %d, %p, %p, %p, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRE_REG_READ6(long, "pselect6",
+                 int, n, vki_fd_set *, readfds, vki_fd_set *, writefds,
+                 vki_fd_set *, exceptfds, struct vki_timeval *, timeout,
+                 void *, sig);
+   // XXX: this possibly understates how much memory is read.
+   if (ARG2 != 0)
+      PRE_MEM_READ( "pselect6(readfds)",   
+		     ARG2, ARG1/8 /* __FD_SETSIZE/8 */ );
+   if (ARG3 != 0)
+      PRE_MEM_READ( "pselect6(writefds)",  
+		     ARG3, ARG1/8 /* __FD_SETSIZE/8 */ );
+   if (ARG4 != 0)
+      PRE_MEM_READ( "pselect6(exceptfds)", 
+		     ARG4, ARG1/8 /* __FD_SETSIZE/8 */ );
+   if (ARG5 != 0)
+      PRE_MEM_READ( "pselect6(timeout)", ARG5, sizeof(struct vki_timeval) );
+   if (ARG6 != 0)
+      PRE_MEM_READ( "pselect6(sig)", ARG6, sizeof(void *)+sizeof(vki_size_t) );
+}
+
+PRE(sys_ppoll)
+{
+   UInt i;
+   struct vki_pollfd* ufds = (struct vki_pollfd *)ARG1;
+   *flags |= SfMayBlock;
+   PRINT("sys_ppoll ( %p, %d, %p, %p, %llu )\n", ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "ppoll",
+                 struct vki_pollfd *, ufds, unsigned int, nfds,
+                 struct vki_timespec *, tsp, vki_sigset_t *, sigmask,
+                 vki_size_t, sigsetsize);
+
+   for (i = 0; i < ARG2; i++) {
+      PRE_MEM_READ( "ppoll(ufds.fd)",
+                    (Addr)(&ufds[i].fd), sizeof(ufds[i].fd) );
+      PRE_MEM_READ( "ppoll(ufds.events)",
+                    (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
+      PRE_MEM_WRITE( "ppoll(ufd.reventss)",
+                     (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
+   }
+
+   if (ARG3)
+      PRE_MEM_READ( "ppoll(tsp)", ARG3, sizeof(struct vki_timespec) );
+   if (ARG4)
+      PRE_MEM_READ( "ppoll(sigmask)", ARG4, sizeof(vki_sigset_t) );
+}
+
+POST(sys_ppoll)
+{
+   if (RES > 0) {
+      UInt i;
+      struct vki_pollfd* ufds = (struct vki_pollfd *)ARG1;
+      for (i = 0; i < ARG2; i++)
+	 POST_MEM_WRITE( (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
    }
 }
 
@@ -2213,6 +2274,201 @@ ML_(linux_POST_sys_msgctl) ( ThreadId tid,
       POST_MEM_WRITE( arg2, sizeof(struct vki_msqid64_ds) );
       break;
    }
+}
+
+/* ---------------------------------------------------------------------
+   *at wrappers
+   ------------------------------------------------------------------ */
+
+PRE(sys_openat)
+{
+   HChar  name[30];
+   SysRes sres;
+
+   if (ARG3 & VKI_O_CREAT) {
+      // 4-arg version
+      PRINT("sys_openat ( %d, %p(%s), %d, %d )",ARG1,ARG2,ARG2,ARG3,ARG4);
+      PRE_REG_READ4(long, "openat",
+                    int, dfd, const char *, filename, int, flags, int, mode);
+   } else {
+      // 3-arg version
+      PRINT("sys_openat ( %d, %p(%s), %d )",ARG1,ARG2,ARG2,ARG3);
+      PRE_REG_READ3(long, "openat",
+                    int, dfd, const char *, filename, int, flags);
+   }
+
+   if (!ML_(fd_allowed)(ARG1, "openat", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+   else
+      PRE_MEM_RASCIIZ( "openat(filename)", ARG2 );
+
+   /* Handle the case where the open is of /proc/self/cmdline or
+      /proc/<pid>/cmdline, and just give it a copy of the fd for the
+      fake file we cooked up at startup (in m_main).  Also, seek the
+      cloned fd back to the start. */
+
+   VG_(sprintf)(name, "/proc/%d/cmdline", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)ARG2, 1 )
+       && (VG_(strcmp)((Char *)ARG2, name) == 0 
+           || VG_(strcmp)((Char *)ARG2, "/proc/self/cmdline") == 0)) {
+      sres = VG_(dup)( VG_(cl_cmdline_fd) );
+      SET_STATUS_from_SysRes( sres );
+      if (!sres.isError) {
+         OffT off = VG_(lseek)( sres.val, 0, VKI_SEEK_SET );
+         if (off < 0)
+            SET_STATUS_Failure( VKI_EMFILE );
+      }
+      return;
+   }
+
+   /* Otherwise handle normally */
+   *flags |= SfMayBlock;
+}
+
+POST(sys_openat)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "openat", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (Char*)ARG2);
+   }
+}
+
+PRE(sys_mkdirat)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mkdirat ( %d, %p(%s), %d )", ARG1,ARG2,ARG2,ARG3);
+   PRE_REG_READ3(long, "mkdirat",
+                 int, dfd, const char *, pathname, int, mode);
+   PRE_MEM_RASCIIZ( "mkdirat(pathname)", ARG2 );
+}
+
+PRE(sys_mknodat)
+{
+   PRINT("sys_mknodat ( %d, %p(%s), 0x%x, 0x%x )", ARG1,ARG2,ARG2,ARG3,ARG4 );
+   PRE_REG_READ4(long, "mknodat",
+                 int, dfd, const char *, pathname, int, mode, unsigned, dev);
+   PRE_MEM_RASCIIZ( "mknodat(pathname)", ARG2 );
+}
+
+PRE(sys_fchownat)
+{
+   PRINT("sys_fchownat ( %d, %p(%s), 0x%x, 0x%x )", ARG1,ARG2,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "fchownat",
+                 int, dfd, const char *, path,
+                 vki_uid_t, owner, vki_gid_t, group);
+   PRE_MEM_RASCIIZ( "fchownat(path)", ARG2 );
+}
+
+PRE(sys_futimesat)
+{
+   PRINT("sys_futimesat ( %d, %p(%s), %p )", ARG1,ARG2,ARG2,ARG3);
+   PRE_REG_READ3(long, "futimesat",
+                 int, dfd, char *, filename, struct timeval *, tvp);
+   PRE_MEM_RASCIIZ( "futimesat(filename)", ARG2 );
+   if (ARG3 != 0)
+      PRE_MEM_READ( "futimesat(tvp)", ARG3, sizeof(struct vki_timeval) );
+}
+
+PRE(sys_newfstatat)
+{
+   PRINT("sys_newfstatat ( %d, %p(%s), %p )", ARG1,ARG2,ARG2,ARG3);
+   PRE_REG_READ3(long, "fstatat",
+                 int, dfd, char *, file_name, struct stat *, buf);
+   PRE_MEM_RASCIIZ( "fstatat(file_name)", ARG2 );
+   PRE_MEM_WRITE( "fstatat(buf)", ARG3, sizeof(struct vki_stat) );
+}
+
+POST(sys_newfstatat)
+{
+   POST_MEM_WRITE( ARG3, sizeof(struct vki_stat) );
+}
+
+PRE(sys_unlinkat)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_unlinkat ( %d, %p(%s) )", ARG1,ARG2,ARG2);
+   PRE_REG_READ2(long, "unlinkat", int, dfd, const char *, pathname);
+   PRE_MEM_RASCIIZ( "unlinkat(pathname)", ARG2 );
+}
+
+PRE(sys_renameat)
+{
+   PRINT("sys_renameat ( %d, %p(%s), %p(%s) )", ARG1,ARG2,ARG2,ARG3,ARG3);
+   PRE_REG_READ3(long, "renameat",
+                 int, dfd, const char *, oldpath, const char *, newpath);
+   PRE_MEM_RASCIIZ( "renameat(oldpath)", ARG2 );
+   PRE_MEM_RASCIIZ( "renameat(newpath)", ARG3 );
+}
+
+PRE(sys_linkat)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_linkat ( %d, %p(%s), %p(%s) )", ARG1,ARG2,ARG2,ARG3,ARG3);
+   PRE_REG_READ3(long, "linkat",
+                 int, dfd, const char *, oldpath, const char *, newpath);
+   PRE_MEM_RASCIIZ( "linkat(oldpath)", ARG2);
+   PRE_MEM_RASCIIZ( "linkat(newpath)", ARG3);
+}
+
+PRE(sys_symlinkat)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_symlinkat ( %d, %p(%s), %p(%s) )",ARG1,ARG2,ARG2,ARG3,ARG3);
+   PRE_REG_READ3(long, "symlinkat",
+                 int, dfd, const char *, oldpath, const char *, newpath);
+   PRE_MEM_RASCIIZ( "symlinkat(oldpath)", ARG2 );
+   PRE_MEM_RASCIIZ( "symlinkat(newpath)", ARG3 );
+}
+
+PRE(sys_readlinkat)
+{
+   HChar name[25];
+   Word  saved = SYSNO;
+
+   PRINT("sys_readlinkat ( %d, %p(%s), %p, %llu )", ARG1,ARG2,ARG2,ARG3,(ULong)ARG4);
+   PRE_REG_READ4(long, "readlinkat",
+                 int, dfd, const char *, path, char *, buf, int, bufsiz);
+   PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
+   PRE_MEM_WRITE( "readlinkat(buf)", ARG3,ARG4 );
+
+   /*
+    * Handle the case where readlinkat is looking at /proc/self/exe or
+    * /proc/<pid>/exe.
+    */
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   if (ML_(safe_to_deref)((void*)ARG2, 1)
+       && (VG_(strcmp)((Char *)ARG2, name) == 0 
+           || VG_(strcmp)((Char *)ARG2, "/proc/self/exe") == 0)) {
+      VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_exec_fd));
+      SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, (UWord)name, 
+                                                      ARG3, ARG4));
+   } else {
+      /* Normal case */
+      SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, ARG2, ARG3, ARG4));
+   }
+
+   if (SUCCESS && RES > 0)
+      POST_MEM_WRITE( ARG3, RES );
+}
+
+PRE(sys_fchmodat)
+{
+   PRINT("sys_fchmodat ( %d, %p(%s), %d )", ARG1,ARG2,ARG2,ARG3);
+   PRE_REG_READ3(long, "fchmodat",
+                 int, dfd, const char *, path, vki_mode_t, mode);
+   PRE_MEM_RASCIIZ( "fchmodat(path)", ARG2 );
+}
+
+PRE(sys_faccessat)
+{
+   PRINT("sys_faccessat ( %d, %p(%s), %d )", ARG1,ARG2,ARG2,ARG3);
+   PRE_REG_READ3(long, "faccessat",
+                 int, dfd, const char *, pathname, int, mode);
+   PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
 }
 
 #undef PRE

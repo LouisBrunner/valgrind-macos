@@ -758,6 +758,7 @@ static void setup_child ( /*OUT*/ ThreadArchState *child,
    magic. */
 DECL_TEMPLATE(x86_linux, sys_socketcall);
 DECL_TEMPLATE(x86_linux, sys_stat64);
+DECL_TEMPLATE(x86_linux, sys_fstatat64);
 DECL_TEMPLATE(x86_linux, sys_fstat64);
 DECL_TEMPLATE(x86_linux, sys_lstat64);
 DECL_TEMPLATE(x86_linux, sys_clone);
@@ -1332,7 +1333,7 @@ POST(sys_lstat64)
 
 PRE(sys_stat64)
 {
-   PRINT("sys_stat64 ( %p, %p )",ARG1,ARG2);
+   PRINT("sys_stat64 ( %p(%s), %p )",ARG1,ARG2,ARG2);
    PRE_REG_READ2(long, "stat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "stat64(file_name)", ARG1 );
    PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );
@@ -1341,6 +1342,20 @@ PRE(sys_stat64)
 POST(sys_stat64)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
+}
+
+PRE(sys_fstatat64)
+{
+   PRINT("sys_fstatat64 ( %d, %p(%s), %p )",ARG1,ARG2,ARG2,ARG3);
+   PRE_REG_READ3(long, "fstatat64",
+                 int, dfd, char *, file_name, struct stat64 *, buf);
+   PRE_MEM_RASCIIZ( "fstatat64(file_name)", ARG2 );
+   PRE_MEM_WRITE( "fstatat64(buf)", ARG3, sizeof(struct vki_stat64) );
+}
+
+POST(sys_fstatat64)
+{
+   POST_MEM_WRITE( ARG3, sizeof(struct vki_stat64) );
 }
 
 PRE(sys_fstat64)
@@ -2117,6 +2132,27 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_inotify_init,	 sys_inotify_init),   // 291
    LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 292
    LINX_(__NR_inotify_rm_watch,	 sys_inotify_rm_watch), // 293
+//   LINX_(__NR_migrate_pages,	 sys_migrate_pages),    // 294
+
+   LINXY(__NR_openat,		 sys_openat),           // 295
+   LINX_(__NR_mkdirat,		 sys_mkdirat),          // 296
+   LINX_(__NR_mknodat,		 sys_mknodat),          // 297
+   LINX_(__NR_fchownat,		 sys_fchownat),         // 298
+   LINX_(__NR_futimesat,	 sys_futimesat),        // 299
+
+   PLAXY(__NR_fstatat64,	 sys_fstatat64),        // 300
+   LINX_(__NR_unlinkat,		 sys_unlinkat),         // 301
+   LINX_(__NR_renameat,		 sys_renameat),         // 302
+   LINX_(__NR_linkat,		 sys_linkat),           // 303
+   LINX_(__NR_symlinkat,	 sys_symlinkat),        // 304
+
+   LINX_(__NR_readlinkat,	 sys_readlinkat),       // 305
+   LINX_(__NR_fchmodat,		 sys_fchmodat),         // 306
+   LINX_(__NR_faccessat,	 sys_faccessat),        // 307
+   LINX_(__NR_pselect6,		 sys_pselect6),         // 308
+   LINXY(__NR_ppoll,		 sys_ppoll),            // 309
+
+//   LINX_(__NR_unshare,		 sys_unshare),          // 310
 };
 
 const UInt ML_(syscall_table_size) = 

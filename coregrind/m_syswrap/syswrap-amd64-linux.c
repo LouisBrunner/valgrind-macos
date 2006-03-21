@@ -1271,6 +1271,26 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 254
 
    LINX_(__NR_inotify_rm_watch,	 sys_inotify_rm_watch), // 255
+//   LINX_(__NR_migrate_pages,	 sys_migrate_pages),    // 256
+   LINXY(__NR_openat,		 sys_openat),           // 257
+   LINX_(__NR_mkdirat,		 sys_mkdirat),          // 258
+   LINX_(__NR_mknodat,		 sys_mknodat),          // 259
+
+   LINX_(__NR_fchownat,		 sys_fchownat),         // 260
+   LINX_(__NR_futimesat,	 sys_futimesat),        // 261
+   LINXY(__NR_newfstatat,	 sys_newfstatat),       // 262
+   LINX_(__NR_unlinkat,		 sys_unlinkat),         // 263
+   LINX_(__NR_renameat,		 sys_renameat),         // 264
+
+   LINX_(__NR_linkat,		 sys_linkat),           // 265
+   LINX_(__NR_symlinkat,	 sys_symlinkat),        // 266
+   LINX_(__NR_readlinkat,	 sys_readlinkat),       // 267
+   LINX_(__NR_fchmodat,		 sys_fchmodat),         // 268
+   LINX_(__NR_faccessat,	 sys_faccessat),        // 269
+
+//   LINX_(__NR_pselect6,		 sys_ni_syscall),       // 270
+//   LINXY(__NR_ppoll,		 sys_ni_syscall),       // 271
+//   LINX_(__NR_unshare,		 sys_unshare),          // 272
 };
 
 const UInt ML_(syscall_table_size) = 

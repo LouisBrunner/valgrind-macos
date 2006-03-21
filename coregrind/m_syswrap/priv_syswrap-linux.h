@@ -74,6 +74,8 @@ DECL_TEMPLATE(linux, sys_prctl);
 DECL_TEMPLATE(linux, sys_sendfile);
 DECL_TEMPLATE(linux, sys_sendfile64);
 DECL_TEMPLATE(linux, sys_futex);
+DECL_TEMPLATE(linux, sys_pselect6);
+DECL_TEMPLATE(linux, sys_ppoll);
 
 DECL_TEMPLATE(linux, sys_epoll_create);
 DECL_TEMPLATE(linux, sys_epoll_ctl);
@@ -121,6 +123,20 @@ DECL_TEMPLATE(linux, sys_timer_delete);
 
 DECL_TEMPLATE(linux, sys_capget);
 DECL_TEMPLATE(linux, sys_capset);
+
+DECL_TEMPLATE(linux, sys_openat);
+DECL_TEMPLATE(linux, sys_mkdirat);
+DECL_TEMPLATE(linux, sys_mknodat);
+DECL_TEMPLATE(linux, sys_fchownat);
+DECL_TEMPLATE(linux, sys_futimesat);
+DECL_TEMPLATE(linux, sys_newfstatat);
+DECL_TEMPLATE(linux, sys_unlinkat);
+DECL_TEMPLATE(linux, sys_renameat);
+DECL_TEMPLATE(linux, sys_linkat);
+DECL_TEMPLATE(linux, sys_symlinkat);
+DECL_TEMPLATE(linux, sys_readlinkat);
+DECL_TEMPLATE(linux, sys_fchmodat);
+DECL_TEMPLATE(linux, sys_faccessat);
 
 // These ones have 32-bit generic equivalents, but the 16-bit versions (they
 // use 16-bit gid_t and uid_t types) seem to be Linux-specific.

@@ -2237,7 +2237,7 @@ POST(sys_pread64)
 
 PRE(sys_mknod)
 {
-   PRINT("sys_mknod ( %p, 0x%x, 0x%x )", ARG1, ARG2, ARG3 );
+   PRINT("sys_mknod ( %p(%s), 0x%x, 0x%x )", ARG1, ARG1, ARG2, ARG3 );
    PRE_REG_READ3(long, "mknod",
                  const char *, pathname, int, mode, unsigned, dev);
    PRE_MEM_RASCIIZ( "mknod(pathname)", ARG1 );
@@ -2581,21 +2581,21 @@ PRE(sys_brk)
 
 PRE(sys_chdir)
 {
-   PRINT("sys_chdir ( %p )", ARG1);
+   PRINT("sys_chdir ( %p(%s) )", ARG1,ARG1);
    PRE_REG_READ1(long, "chdir", const char *, path);
    PRE_MEM_RASCIIZ( "chdir(path)", ARG1 );
 }
 
 PRE(sys_chmod)
 {
-   PRINT("sys_chmod ( %p, %d )", ARG1,ARG2);
+   PRINT("sys_chmod ( %p(%s), %d )", ARG1,ARG1,ARG2);
    PRE_REG_READ2(long, "chmod", const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "chmod(path)", ARG1 );
 }
 
 PRE(sys_chown)
 {
-   PRINT("sys_chown ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
+   PRINT("sys_chown ( %p(%s), 0x%x, 0x%x )", ARG1,ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "chown",
                  const char *, path, vki_uid_t, owner, vki_gid_t, group);
    PRE_MEM_RASCIIZ( "chown(path)", ARG1 );
@@ -2603,7 +2603,7 @@ PRE(sys_chown)
 
 PRE(sys_lchown)
 {
-   PRINT("sys_lchown ( %p, 0x%x, 0x%x )", ARG1,ARG2,ARG3);
+   PRINT("sys_lchown ( %p(%s), 0x%x, 0x%x )", ARG1,ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "lchown",
                  const char *, path, vki_uid_t, owner, vki_gid_t, group);
    PRE_MEM_RASCIIZ( "lchown(path)", ARG1 );
@@ -4587,7 +4587,7 @@ PRE(sys_kill)
 PRE(sys_link)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_link ( %p, %p)", ARG1, ARG2);
+   PRINT("sys_link ( %p(%s), %p(%s) )", ARG1,ARG1,ARG2,ARG2);
    PRE_REG_READ2(long, "link", const char *, oldpath, const char *, newpath);
    PRE_MEM_RASCIIZ( "link(oldpath)", ARG1);
    PRE_MEM_RASCIIZ( "link(newpath)", ARG2);
@@ -4612,7 +4612,7 @@ POST(sys_newlstat)
 PRE(sys_mkdir)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_mkdir ( %p, %d )", ARG1,ARG2);
+   PRINT("sys_mkdir ( %p(%s), %d )", ARG1,ARG1,ARG2);
    PRE_REG_READ2(long, "mkdir", const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "mkdir(pathname)", ARG1 );
 }
@@ -4865,7 +4865,6 @@ POST(sys_creat)
    }
 }
 
-// XXX: x86-specific, due to pollfd struct
 PRE(sys_poll)
 {
    /* struct pollfd {
@@ -4880,16 +4879,16 @@ PRE(sys_poll)
    *flags |= SfMayBlock;
    PRINT("sys_poll ( %p, %d, %d )\n", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "poll",
-                 struct pollfd *, ufds, unsigned int, nfds, long, timeout);
-                     
+                 struct vki_pollfd *, ufds, unsigned int, nfds, long, timeout);
+
    for (i = 0; i < ARG2; i++) {
-      // 'fd' and 'events' field are inputs;  'revents' is output.
-      // XXX: this is x86 specific -- the pollfd struct varies across
-      // different architectures.
-      PRE_MEM_READ( "poll(ufds)",
-                    (Addr)(&ufds[i]), sizeof(int) + sizeof(short) );
-      PRE_MEM_WRITE( "poll(ufds)", (Addr)(&ufds[i].revents), sizeof(short) );
-   }  
+      PRE_MEM_READ( "poll(ufds.fd)",
+                    (Addr)(&ufds[i].fd), sizeof(ufds[i].fd) );
+      PRE_MEM_READ( "poll(ufds.events)",
+                    (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
+      PRE_MEM_WRITE( "poll(ufd.reventss)",
+                     (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
+   }
 }
 
 POST(sys_poll)
@@ -4897,9 +4896,8 @@ POST(sys_poll)
    if (RES > 0) {
       UInt i;
       struct vki_pollfd* ufds = (struct vki_pollfd *)ARG1;
-      // XXX: again, this is x86-specific
       for (i = 0; i < ARG2; i++)
-	 POST_MEM_WRITE( (Addr)(&ufds[i].revents), sizeof(Short) );
+	 POST_MEM_WRITE( (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
    }
 }
 
@@ -4908,7 +4906,7 @@ PRE(sys_readlink)
    HChar name[25];
    Word  saved = SYSNO;
 
-   PRINT("sys_readlink ( %p, %p, %llu )", ARG1,ARG2,(ULong)ARG3);
+   PRINT("sys_readlink ( %p(%s), %p, %llu )", ARG1,ARG1,ARG2,(ULong)ARG3);
    PRE_REG_READ3(long, "readlink",
                  const char *, path, char *, buf, int, bufsiz);
    PRE_MEM_RASCIIZ( "readlink(path)", ARG1 );
@@ -4979,7 +4977,7 @@ POST(sys_readv)
 
 PRE(sys_rename)
 {
-   PRINT("sys_rename ( %p, %p )", ARG1, ARG2 );
+   PRINT("sys_rename ( %p(%s), %p(%s) )", ARG1,ARG1,ARG2,ARG2);
    PRE_REG_READ2(long, "rename", const char *, oldpath, const char *, newpath);
    PRE_MEM_RASCIIZ( "rename(oldpath)", ARG1 );
    PRE_MEM_RASCIIZ( "rename(newpath)", ARG2 );
@@ -4988,7 +4986,7 @@ PRE(sys_rename)
 PRE(sys_rmdir)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_rmdir ( %p )", ARG1);
+   PRINT("sys_rmdir ( %p(%s) )", ARG1,ARG1);
    PRE_REG_READ1(long, "rmdir", const char *, pathname);
    PRE_MEM_RASCIIZ( "rmdir(pathname)", ARG1 );
 }
@@ -4999,7 +4997,7 @@ PRE(sys_select)
    PRINT("sys_select ( %d, %p, %p, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "select",
                  int, n, vki_fd_set *, readfds, vki_fd_set *, writefds,
-                 vki_fd_set *, exceptfds, struct timeval *, timeout);
+                 vki_fd_set *, exceptfds, struct vki_timeval *, timeout);
    // XXX: this possibly understates how much memory is read.
    if (ARG2 != 0)
       PRE_MEM_READ( "select(readfds)",   
@@ -5113,7 +5111,7 @@ POST(sys_newstat)
 
 PRE(sys_statfs)
 {
-   PRINT("sys_statfs ( %p, %p )",ARG1,ARG2);
+   PRINT("sys_statfs ( %p(%s), %p )",ARG1,ARG1,ARG2);
    PRE_REG_READ2(long, "statfs", const char *, path, struct statfs *, buf);
    PRE_MEM_RASCIIZ( "statfs(path)", ARG1 );
    PRE_MEM_WRITE( "statfs(buf)", ARG2, sizeof(struct vki_statfs) );
@@ -5125,7 +5123,7 @@ POST(sys_statfs)
 
 PRE(sys_statfs64)
 {
-   PRINT("sys_statfs64 ( %p, %llu, %p )",ARG1,(ULong)ARG2,ARG3);
+   PRINT("sys_statfs64 ( %p(%s), %llu, %p )",ARG1,ARG1,(ULong)ARG2,ARG3);
    PRE_REG_READ3(long, "statfs64",
                  const char *, path, vki_size_t, size, struct statfs64 *, buf);
    PRE_MEM_RASCIIZ( "statfs64(path)", ARG1 );
@@ -5139,7 +5137,7 @@ POST(sys_statfs64)
 PRE(sys_symlink)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_symlink ( %p, %p )",ARG1,ARG2);
+   PRINT("sys_symlink ( %p(%s), %p(%s) )",ARG1,ARG1,ARG2,ARG2);
    PRE_REG_READ2(long, "symlink", const char *, oldpath, const char *, newpath);
    PRE_MEM_RASCIIZ( "symlink(oldpath)", ARG1 );
    PRE_MEM_RASCIIZ( "symlink(newpath)", ARG2 );
@@ -5271,7 +5269,7 @@ PRE(sys_writev)
 
 PRE(sys_utimes)
 {
-   PRINT("sys_utimes ( %p, %p )", ARG1,ARG2);
+   PRINT("sys_utimes ( %p(%s), %p )", ARG1,ARG1,ARG2);
    PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
    PRE_MEM_RASCIIZ( "utimes(filename)", ARG1 );
    if (ARG2 != 0)
@@ -5280,7 +5278,7 @@ PRE(sys_utimes)
 
 PRE(sys_acct)
 {
-   PRINT("sys_acct ( %p )", ARG1);
+   PRINT("sys_acct ( %p(%s) )", ARG1,ARG1);
    PRE_REG_READ1(long, "acct", const char *, filename);
    PRE_MEM_RASCIIZ( "acct(filename)", ARG1 );
 }

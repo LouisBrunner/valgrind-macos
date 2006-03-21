@@ -1606,7 +1606,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //..    GENX_(__NR_get_kernel_syms,   sys_ni_syscall),        // 130
 //..    LINX_(__NR_quotactl,          sys_quotactl),          // 131
    GENX_(__NR_getpgid,           sys_getpgid),           // 132
-//..    GENX_(__NR_fchdir,            sys_fchdir),            // 133
+   GENX_(__NR_fchdir,            sys_fchdir),            // 133
 //..    //   (__NR_bdflush,           sys_bdflush),           // 134 */Linux
 //.. 
 //..    //   (__NR_sysfs,             sys_sysfs),             // 135 SVr4

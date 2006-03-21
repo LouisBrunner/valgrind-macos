@@ -955,6 +955,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
 
       case VEX_TRC_JMP_NODECODE:
+   VG_(message)(Vg_UserMsg,
+      "valgrind: Unrecognised instruction at address %p.", VG_(get_IP)(tid));
 #define M(a) VG_(message)(Vg_UserMsg, a);
    M("Your program just tried to execute an instruction that Valgrind" );
    M("did not recognise.  There are two possible reasons for this."    );
@@ -963,7 +965,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    M("   warning about a bad jump, it's probably your program's fault.");
    M("2. The instruction is legitimate but Valgrind doesn't handle it,");
    M("   i.e. it's Valgrind's fault.  If you think this is the case or");
-   M("   you are not sure, please let us know."                        );
+   M("   you are not sure, please let us know and we'll try to fix it.");
    M("Either way, Valgrind will now raise a SIGILL signal which will"  );
    M("probably kill your program."                                     );
 #undef M

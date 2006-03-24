@@ -752,7 +752,7 @@ void msghdr_foreachfield (
    foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_iovlen, sizeof( msg->msg_iovlen ) );
    foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_control, sizeof( msg->msg_control ) );
    foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_controllen, sizeof( msg->msg_controllen ) );
-   foreach_func ( tid, True, "(msg)", (Addr)&msg->msg_flags, sizeof( msg->msg_flags ) );
+   foreach_func ( tid, False, "(msg)", (Addr)&msg->msg_flags, sizeof( msg->msg_flags ) );
 
    if ( msg->msg_name )
       foreach_func ( tid, False,
@@ -769,7 +769,7 @@ void msghdr_foreachfield (
 
       for ( i = 0; i < msg->msg_iovlen; ++i, ++iov )
          foreach_func ( tid, False,
-                        "(msg.msg_iov[i]", 
+                        "(msg.msg_iov[i])", 
                         (Addr)iov->iov_base, iov->iov_len );
    }
 

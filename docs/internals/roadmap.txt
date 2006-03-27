@@ -18,6 +18,8 @@ In order of increasing speculativeness
 
 * Fold in the V bit compression stuff if it works well (early signs
   are promising) and get rid of Addrcheck.
+  [Done by Nick.  Average speedup of 1.20x, shadow memory size reduction of
+   4.2x.]
 
 * Get function wrapping working again.  [Done by Julian]
   Reinstate basic thread checks.

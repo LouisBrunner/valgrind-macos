@@ -3,7 +3,6 @@ AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2
 
 include $(top_srcdir)/Makefile.all.am 
 
-## addrcheck must come after memcheck, for mac_*.o
 TOOLS =		memcheck \
 		cachegrind \
 		callgrind \
@@ -11,14 +10,11 @@ TOOLS =		memcheck \
 		lackey \
 		none
 
-##		addrcheck \
-
 # Temporary: we want to compile Helgrind, but not regtest it.
-# And we want to include Addrcheck in the distro, but not compile/test it.
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.
 SUBDIRS = include coregrind . tests perf auxprogs $(TOOLS) helgrind docs
-DIST_SUBDIRS  = $(SUBDIRS) addrcheck
+DIST_SUBDIRS  = $(SUBDIRS)
 
 SUPP_FILES = \
 	glibc-2.2.supp glibc-2.3.supp glibc-2.4.supp \

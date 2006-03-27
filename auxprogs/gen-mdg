@@ -54,7 +54,7 @@ my $show_libc    = 1;
 my %hide;
 
 # List of all tools.
-my @tools = ( "addrcheck", "cachegrind", "helgrind",
+my @tools = ( "cachegrind", "helgrind",
               "lackey", "massif", "memcheck", "none" );
 
 my $usage = <<END

@@ -147,6 +147,10 @@ extern Bool VG_(am_is_valid_for_client) ( Addr start, SizeT len,
 /* Really just a wrapper around VG_(am_mmap_anon_float_valgrind). */
 extern void* VG_(am_shadow_alloc)(SizeT size);
 
+/* Unmap the given address range and update the segment array
+   accordingly.  This fails if the range isn't valid for valgrind. */
+extern SysRes VG_(am_munmap_valgrind)( Addr start, SizeT length );
+
 #endif   // __PUB_TOOL_ASPACEMGR_H
 
 /*--------------------------------------------------------------------*/

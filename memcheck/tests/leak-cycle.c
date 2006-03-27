@@ -45,7 +45,7 @@ int main()
 	c2 = mkcycle();
 
 	/* This is to make sure we end up merging cliques; see
-	   mac_leakcheck.c */
+	   mc_leakcheck.c */
 	if (c1 < c2)
 		c2->r = c1;
 	else

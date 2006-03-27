@@ -232,10 +232,6 @@ extern SysRes VG_(am_mmap_file_float_valgrind)
 extern SysRes VG_(am_munmap_client)( /*OUT*/Bool* need_discard,
                                      Addr start, SizeT length );
 
-/* Unmap the given address range and update the segment array
-   accordingly.  This fails if the range isn't valid for valgrind. */
-extern SysRes VG_(am_munmap_valgrind)( Addr start, SizeT length );
-
 /* Let (start,len) denote an area within a single Valgrind-owned
   segment (anon or file).  Change the ownership of [start, start+len)
   to the client instead.  Fails if (start,len) does not denote a

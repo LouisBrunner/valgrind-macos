@@ -47,7 +47,7 @@ static void test2()
 
 	VALGRIND_CHECK_READABLE(&m[pgsz*2], pgsz); /* undefined */
 
-	/* XXX need an memcheck/addrcheck request to test addressability */
+	/* XXX need a memcheck request to test addressability */
 	m[pgsz*2] = 'x';	/* unmapped fault */
 }
 

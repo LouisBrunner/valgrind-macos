@@ -284,7 +284,7 @@ sub do_one_test($$)
     my $tool=determine_tool();
     mysystem("VALGRIND_LIB=$tests_dir/.in_place VALGRIND_LIB_INNER=$tests_dir/.in_place "
            . "$valgrind --command-line-only=yes --memcheck:leak-check=no "
-           . "--addrcheck:leak-check=no --tool=$tool $vgopts "
+           . "--tool=$tool $vgopts "
            . "$prog $args > $name.stdout.out 2> $name.stderr.out");
 
     if (defined $stdout_filter) {

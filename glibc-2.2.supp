@@ -102,13 +102,13 @@
 }
 {
    trecurse/__gconv_release_shlib(Addr4)
-   Addrcheck,Memcheck:Addr4
+   Memcheck:Addr4
    fun:trecurse
    fun:__gconv_release_shlib
 }
 {
    do_release_shlib/trecurse(Addr4)
-   Addrcheck,Memcheck:Addr4
+   Memcheck:Addr4
    fun:do_release_shlib
    fun:trecurse
 }
@@ -146,20 +146,20 @@
 
 {
    __twalk/*(Addr4)
-   Addrcheck,Memcheck:Addr4
+   Memcheck:Addr4
    fun:__twalk
 }
 
 {
    do_release_shlib/__twalk(Addr4)
-   Addrcheck,Memcheck:Addr4
+   Memcheck:Addr4
    fun:do_release_shlib
    fun:__twalk
 }
 
 {
    __libc_freeres/free_mem/free(Free)
-   Addrcheck,Memcheck:Free
+   Memcheck:Free
    fun:free
    fun:free_mem
    fun:__libc_freeres
@@ -328,13 +328,13 @@
 # two:
 {
    __mpn_construct_double/*(Addr4)
-   Addrcheck,Memcheck:Addr4
+   Memcheck:Addr4
    fun:__mpn_construct_double
    fun:*
 }
 {
    __mpn_construct_double/*(Addr8)
-   Addrcheck,Memcheck:Addr8
+   Memcheck:Addr8
    fun:__mpn_construct_double
    fun:*
 }
@@ -342,13 +342,13 @@
 # More of the same (gcc bug, I'm pretty sure)
 {
    __fabs/*(Addr4)
-   Addrcheck,Memcheck:Addr4
+   Memcheck:Addr4
    fun:__fabs
    fun:*
 }
 {
    __fabs/*(Addr8)
-   Addrcheck,Memcheck:Addr8
+   Memcheck:Addr8
    fun:__fabs
    fun:*
 }
@@ -357,7 +357,7 @@
 # Not sure what this is about ... but anyway
 {
    pthread_sighandler/*(Addr4)
-   Addrcheck,Memcheck:Addr4
+   Memcheck:Addr4
    fun:pthread_sighandler
    fun:*
 }
@@ -432,14 +432,14 @@
 #-------------------
 {
    socketcall.connect(serv_addr)/connect/*
-   Addrcheck,Memcheck:Param
+   Memcheck:Param
    socketcall.connect(serv_addr)
    fun:connect
    fun:*
 }
 {
    socketcall.connect(serv_addr)/libc-2.2.4.so/libc-2.2.4.so
-   Addrcheck,Memcheck:Param
+   Memcheck:Param
    socketcall.connect(serv_addr)
    obj:*libc-2.2.?.so
    obj:*libc-2.2.?.so
@@ -448,7 +448,7 @@
 #----------------------
 {
    write(buf)/write/libX11.so.6.2/libX11.so.6.2(Param)
-   Addrcheck,Memcheck:Param
+   Memcheck:Param
    write(buf)
    fun:write
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -456,7 +456,7 @@
 }
 {
    write(buf)/libc-2.2.4.so/libX11.so.6.2/libX11.so.6.2(Param)
-   Addrcheck,Memcheck:Param
+   Memcheck:Param
    write(buf)
    obj:*libc-2.2.?.so
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -473,7 +473,7 @@
 
 {
    writev(vector[...])/__writev/libX11.so.6.2/libX11.so.6.2
-   Addrcheck,Memcheck:Param
+   Memcheck:Param
    writev(vector[...])
    fun:__writev
    obj:/usr/X11R6/lib/libX11.so.6.2

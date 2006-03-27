@@ -64,7 +64,7 @@
 #endif
 
 /* TODO: GIVE THIS A PROPER HOME
-   TODO: MERGE THIS WITH DUPLICATES IN m_main.c and mac_leakcheck.c
+   TODO: MERGE THIS WITH DUPLICATES IN m_main.c and mc_leakcheck.c
    Extract from aspacem a vector of the current segment start
    addresses.  The vector is dynamically allocated and should be freed
    by the caller when done.  REQUIRES m_mallocfree to be running.

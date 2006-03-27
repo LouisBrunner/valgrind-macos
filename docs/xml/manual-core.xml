@@ -285,7 +285,7 @@ further processing, which is why we have chosen this arrangement.</para>
 <sect1 id="manual-core.report" xreflabel="Reporting of errors">
 <title>Reporting of errors</title>
 
-<para>When one of the error-checking tools (Memcheck, Addrcheck,
+<para>When one of the error-checking tools (Memcheck,
 Helgrind) detects something bad happening in the program, an error
 message is written to the commentary.  For example:</para>
 
@@ -317,7 +317,7 @@ counts.  This makes it easy to see which errors have occurred most
 frequently.</para>
 
 <para>Errors are reported before the associated operation actually
-happens.  If you're using a tool (Memcheck, Addrcheck) which does
+happens.  If you're using a tool (Memcheck) which does
 address checking, and your program attempts to read from address zero,
 the tool will emit a message to this effect, and the program will then
 duly die with a segmentation fault.</para>
@@ -548,7 +548,7 @@ categories.</para>
   <listitem id="tool_name">
     <para><option>--tool=&lt;name&gt;</option> [default=memcheck]</para>
     <para>Run the Valgrind tool called <emphasis>name</emphasis>,
-    e.g. Memcheck, Addrcheck, Cachegrind, etc.</para>
+    e.g. Memcheck, Cachegrind, etc.</para>
   </listitem>
 </itemizedlist>
 
@@ -1025,7 +1025,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 <!-- start of xi:include in the manpage -->
 <para id="malloc-related.opts.para">For tools that use their own version of
 <computeroutput>malloc()</computeroutput> (e.g. Memcheck and
-Addrcheck), the following options apply.</para>
+Massif), the following options apply.</para>
 
 <variablelist id="malloc-related.opts.list">
 
@@ -1076,7 +1076,7 @@ need to use these.</para>
       a leak check is done at exit.  In order to avoid this, they
       provided a routine called <function>__libc_freeres</function>
       specifically to make glibc release all memory it has allocated.
-      Memcheck and Addrcheck therefore try and run
+      Memcheck therefore tries to run
       <function>__libc_freeres</function> at exit.</para>
 
       <para>Unfortunately, in some versions of glibc,

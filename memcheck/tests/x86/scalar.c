@@ -11,7 +11,7 @@
 // Occasionally we have to be careful not to cause Valgrind to seg fault in
 // its pre-syscall wrappers;  it does so because it can't know in general
 // when memory is unaddressable, and so tries to dereference it when doing
-// PRE_MEM_READ/PRE_MEM_WRITE calls.  (Note that Memcheck and Addrcheck will
+// PRE_MEM_READ/PRE_MEM_WRITE calls.  (Note that Memcheck will
 // always issue an error message immediately before these seg faults occur).
 
 //#include <asm/ipc.h>

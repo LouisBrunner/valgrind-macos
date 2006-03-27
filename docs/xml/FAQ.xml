@@ -159,7 +159,7 @@
 
     <para>Another possibility is that your program has a bug and
     erroneously jumps to a non-code address, in which case you'll get a
-    SIGILL signal.  Memcheck/Addrcheck may issue a warning just before
+    SIGILL signal.  Memcheck may issue a warning just before
     this happens, but they might not if the jump happens to land in
     addressable memory.</para>
   </answer>
@@ -470,7 +470,7 @@ int main(void)
 
 <qandaentry id="faq.deflost">
   <question id="q-deflost">
-    <para>With Memcheck/Addrcheck's memory leak detector, what's the
+    <para>With Memcheck's memory leak detector, what's the
     difference between "definitely lost", "possibly lost", "still
     reachable", and "suppressed"?</para>
   </question>

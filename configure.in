@@ -679,9 +679,6 @@ AC_OUTPUT(
    include/Makefile 
    auxprogs/Makefile
    coregrind/Makefile 
-   addrcheck/Makefile
-   addrcheck/tests/Makefile
-   addrcheck/docs/Makefile
    memcheck/Makefile
    memcheck/tests/Makefile
    memcheck/tests/amd64/Makefile

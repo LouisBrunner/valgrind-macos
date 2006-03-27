@@ -185,6 +185,21 @@ the following problems:</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.undef-value-errors" xreflabel="--undef-value-errors">
+    <term>
+      <option><![CDATA[--undef-value-errors=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>Controls whether <constant>memcheck</constant> detects
+      dangerous uses of undefined value errors.  When
+      <varname>yes</varname>, Memcheck behaves like Addrcheck, a lightweight
+      memory-checking tool that used to be part of Valgrind, which didn't
+      detect undefined value errors.  Use this option if you don't like
+      seeing undefined value errors.
+      </para>
+    </listitem>
+  </varlistentry>
+
 </variablelist>
 <!-- end of xi:include in the manpage -->
 
@@ -591,10 +606,6 @@ is actually valid.</para>
 <programlisting><![CDATA[
 Memcheck:suppression_type]]></programlisting>
 
-<para>Or, since some of the suppressions are shared with Addrcheck:</para>
-<programlisting><![CDATA[
-Memcheck,Addrcheck:suppression_type]]></programlisting>
-
 <para>The Memcheck suppression types are as follows:</para>
 
 <itemizedlist>
@@ -977,7 +988,7 @@ is:</para>
 <title>Client Requests</title>
 
 <para>The following client requests are defined in
-<filename>memcheck.h</filename>.  They also work for Addrcheck.
+<filename>memcheck.h</filename>.
 See <filename>memcheck.h</filename> for exact details of their
 arguments.</para>
 
@@ -1049,8 +1060,7 @@ arguments.</para>
     V (validity) bits for an address range.  You should probably only
     set V bits that you have got with
     <varname>VALGRIND_GET_VBITS</varname>.  Only for those who really
-    know what they are doing.  Note: currently disabled in Valgrind
-    3.1.0.</para>
+    know what they are doing.</para>
   </listitem>
 
 </itemizedlist>

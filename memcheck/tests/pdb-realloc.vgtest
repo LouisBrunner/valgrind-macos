@@ -1,0 +1,2 @@
+prog: pdb-realloc
+vgopts: -q

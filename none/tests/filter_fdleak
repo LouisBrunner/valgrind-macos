@@ -4,9 +4,6 @@ dir=`dirname $0`
 
 ./filter_stderr                    |
 
-# Anonymise line numbers in mac_replace_strmem.c
-sed "s/mac_replace_strmem.c:[0-9]*/mac_replace_strmem.c:.../"  |
-
 $dir/../../tests/filter_test_paths                      |
 
 sed s/"^Open AF_UNIX socket [0-9]*: <unknown>/Open AF_UNIX socket .: <unknown>/" |

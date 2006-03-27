@@ -155,12 +155,6 @@ interest?  Consider some existing tools:</para>
  </listitem>
 
  <listitem>
-  <para><command>addrcheck</command>: performs lighterweight
-  addressibility checks of every memory reference performed by
-  the program.</para>
- </listitem>
-
- <listitem>
   <para><command>cachegrind</command>: tracks every instruction
   and memory reference to simulate instruction and data caches,
   tracking cache accesses and misses that occur on every line in
@@ -547,10 +541,10 @@ of the code in Valgrind's core.  Although it might be useful sometimes
 to help understand something.</para>
 
 <para>The <filename>pub_tool_*.h</filename> files have a reasonable
-amount of documentation in it that should hopefully be enough to get you
-going.  But ultimately, the tools distributed (Memcheck, Addrcheck,
-Cachegrind, Lackey, etc.) are probably the best documentation of all,
-for the moment.</para>
+amount of documentation in it that should hopefully be enough to get
+you going.  But ultimately, the tools distributed (Memcheck,
+Cachegrind, Lackey, etc.) are probably the best
+documentation of all, for the moment.</para>
 
 <para>Note that the <computeroutput>VG_</computeroutput> macro is used
 heavily.  This just prepends a longer string in front of names to avoid

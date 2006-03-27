@@ -14,7 +14,7 @@ if VG_PPC64_LINUX
 noinst_PROGRAMS += memcheck-ppc64-linux vgpreload_memcheck-ppc64-linux.so
 endif
 
-VGPRELOAD_MEMCHECK_SOURCES_COMMON = mac_replace_strmem.c
+VGPRELOAD_MEMCHECK_SOURCES_COMMON = mc_replace_strmem.c
 
 vgpreload_memcheck_x86_linux_so_SOURCES      = $(VGPRELOAD_MEMCHECK_SOURCES_COMMON)
 vgpreload_memcheck_x86_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_LINUX)
@@ -53,10 +53,9 @@ vgpreload_memcheck_ppc64_linux_so_LDFLAGS      = \
 	$(LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX)
 
 MEMCHECK_SOURCES_COMMON = \
-	mac_leakcheck.c \
-	mac_malloc_wrappers.c \
+	mc_leakcheck.c \
+	mc_malloc_wrappers.c \
 	mc_main.c \
-	mac_shared.c \
 	mc_translate.c
 
 memcheck_x86_linux_SOURCES      = $(MEMCHECK_SOURCES_COMMON)
@@ -97,9 +96,8 @@ mcinclude_HEADERS = \
 	memcheck.h
 
 noinst_HEADERS =	\
-	mac_shared.h	\
 	mc_include.h
 
-mac_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer
+mc_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer
 
 mc_main.o: CFLAGS += -fomit-frame-pointer

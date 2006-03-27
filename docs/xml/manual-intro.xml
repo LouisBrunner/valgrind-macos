@@ -64,35 +64,6 @@ summary, these are:</para>
    </listitem>
  
    <listitem>
-    <para><command>Addrcheck</command> is a lightweight version of
-    Memcheck.  It is identical to Memcheck except for the single detail
-    that it does not do any uninitialised-value checks.  All of the
-    other checks -- primarily the fine-grained address checking -- are
-    still done.  The downside of this is that you don't catch the
-    uninitialised-value errors that Memcheck can find.</para>
-
-    <para>But the upside is significant: programs run about twice as
-    fast as they do on Memcheck, and a lot less memory is used.  It
-    still finds reads/writes of freed memory, memory off the end of
-    blocks and in other invalid places, bugs which you really want to
-    find before release!</para>
-
-    <para>Because Addrcheck is lighter and faster than Memcheck, you can
-    run more programs for longer, and so you may be able to cover more
-    test scenarios.  Addrcheck was created because one of us (Julian)
-    wanted to be able to run a complete KDE desktop session with
-    checking.  As of early November 2002, we have been able to run
-    KDE-3.0.3 on a 1.7 GHz P4 with 512 MB of memory, using Addrcheck.
-    Although the result is not stellar, it's quite usable, and it seems
-    plausible to run KDE for long periods at a time like this,
-    collecting up all the addressing errors that appear.</para>
-
-    <para>NOTE: Addrcheck is not available in Valgrind 3.1.X.  We hope
-    to reinstate its functionality in later releases.  For now, use
-    Memcheck instead.</para>
-   </listitem>
-
-   <listitem>
     <para><command>Cachegrind</command> is a cache profiler.  It
     performs detailed simulation of the I1, D1 and L2 caches in your CPU
     and so can accurately pinpoint the sources of cache misses in your

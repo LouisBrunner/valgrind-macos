@@ -27,7 +27,7 @@
 # Resulting from R H 8.0
 {
    *libc_write/libX11.so.6.2/*X11TransWrite(Param)
-   Addrcheck,Memcheck:Param
+   Memcheck:Param
    write(buf)
    fun:*libc_write
    obj:/usr/X11R6/lib*/libX11.so.6.2

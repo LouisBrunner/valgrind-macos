@@ -66,14 +66,14 @@
 }
 {
    realpath is inefficiently coded
-   Addrcheck,Memcheck:Overlap
+   Memcheck:Overlap
    fun:memcpy
    fun:realpath*
 }
 
 {
    realpath stupidity part II
-   Addrcheck,Memcheck:Overlap
+   Memcheck:Overlap
    fun:strcpy
    fun:realpath*
 }
@@ -214,7 +214,7 @@
 ## in /opt/intel/compiler70/ia32/lib/libcxa.so.3
 {
    Intel compiler70/ia32/lib/libcxa.so.3 below-esp accesses
-   Addrcheck,Memcheck:Addr4
+   Memcheck:Addr4
    obj:/opt/intel/compiler70/ia32/lib/libcxa.so.3
 }
 

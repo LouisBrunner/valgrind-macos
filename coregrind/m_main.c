@@ -1907,7 +1907,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
 
 /* TODO: GIVE THIS A PROPER HOME
-   TODO: MERGE THIS WITH DUPLICATE IN mac_leakcheck.c
+   TODO: MERGE THIS WITH DUPLICATE IN mc_leakcheck.c and coredump-elf.c.
    Extract from aspacem a vector of the current segment start
    addresses.  The vector is dynamically allocated and should be freed
    by the caller when done.  REQUIRES m_mallocfree to be running.

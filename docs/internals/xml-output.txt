@@ -34,7 +34,7 @@ Run with flag --xml=yes.  That`s all.  Note however several
 caveats.
 
 * At the present time only Memcheck is supported.  The scheme extends
-  easily enough to cover Addrcheck and Helgrind if needed.
+  easily enough to cover Helgrind if needed.
 
 * When XML output is selected, various other settings are made.
   This is in order that the output format is more controlled.

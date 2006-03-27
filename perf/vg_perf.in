@@ -294,7 +294,7 @@ sub do_one_test($$)
         printf("%-10s:", $vgdirname);
         
         # Native execution time
-        printf("%4.1fs  ", $tNative);
+        printf("%4.1fs", $tNative);
 
         foreach my $tool (@tools) {
             (defined $toolnames{$tool}) or 
@@ -302,7 +302,7 @@ sub do_one_test($$)
 
             # Do the tool run(s).  Set both VALGRIND_LIB and VALGRIND_LIB_INNER
             # in case this Valgrind was configured with --enable-inner.
-            printf("%s:", $toolnames{$tool});
+            printf("  %s:", $toolnames{$tool});
             my $vgsetup = "VALGRIND_LIB=$vgdir/.in_place "
                         . "VALGRIND_LIB_INNER=$vgdir/.in_place ";
             my $vgcmd   = "$vgdir/coregrind/valgrind "
@@ -319,10 +319,10 @@ sub do_one_test($$)
             # the speedup.
             if (not defined $first_tTool{$tool}) {
                 $first_tTool{$tool} = $tTool;
-                print(" -----)  ");
+                print(" -----)");
             } else {
                 my $speedup = 100 - (100 * $tTool / $first_tTool{$tool});
-                printf("%5.1f%%)  ", $speedup);
+                printf("%5.1f%%)", $speedup);
             }
 
             $num_timings_done++;

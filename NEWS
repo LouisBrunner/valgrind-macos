@@ -1,3 +1,37 @@
+Release 3.2.0 (?? April 2006)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.2.0 is a feature release with a number of significant improvements:
+Performance (especially of Memcheck) is much improved, XXX...
+In detail:
+
+- Performance is much improved:  programs typically run 1.20--1.40 times
+  faster under Memcheck, with an average of about 1.30 for the programs we
+  tested it on.  The improvements for Nulgrind are similar.  We haven't
+  measured Cachegrind and Massif, they should be also be faster, but with a
+  smaller improvement.  We are interested to hear what speed-ups users get.
+
+- Memcheck uses much less memory.  The amount of shadow memory used -- which
+  accounts for a large percentage of all of Memcheck's memory overhead --
+  has been reduced by a factor of more than 4 on most programs.  This means
+  you should be able to run programs that use more memory than before
+  without hitting problems.  This memory size reduction also contributes to
+  the speed improvements.
+
+- Addrcheck has been removed.  It has not worked since version 2.4.0, and
+  with the speed and memory improvements to Memcheck it is no longer worth
+  having around.  If you liked using Addrcheck because it didn't give
+  undefined value errors, you can use the new Memcheck option
+  --undef-value-errors=no to obtain this behaviour.
+
+- Valgrind now works on PPC64/Linux.  [XXX: more details...]
+
+- XXX: others...
+
+BUGS FIXED:
+
+XXX
+
+
 Release 3.1.1 (15 March 2006)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.1.1 fixes a bunch of bugs reported in 3.1.0.  There is no new

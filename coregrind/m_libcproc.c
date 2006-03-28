@@ -225,13 +225,6 @@ Int VG_(waitpid)(Int pid, Int *status, Int options)
    return res.isError ? -1 : res.val;
 }
 
-Int VG_(poll)( struct vki_pollfd *ufds, UInt nfds, Int timeout)
-{
-   SysRes res = VG_(do_syscall3)(__NR_poll, (UWord)ufds, nfds, timeout);
-   /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return res.val;
-}
-
 /* clone the environment */
 Char **VG_(env_clone) ( Char **oldenv )
 {

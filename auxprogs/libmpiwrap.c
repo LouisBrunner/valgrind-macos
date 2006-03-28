@@ -1820,7 +1820,7 @@ int WRAPPER_FOR(PMPI_Finalize)(void)
 #define DEFAULT_WRAPPER_PREAMBLE(basename)                        \
       OrigFn fn;                                                  \
       UWord  res;                                                 \
-      static int complaints = 3;                                  \
+      static int complaints = 1;                                  \
       VALGRIND_GET_ORIG_FN(fn);                                   \
       before(#basename);                                          \
       if (opt_missing >= 2) {                                     \

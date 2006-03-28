@@ -5,10 +5,11 @@ Performance (especially of Memcheck) is much improved, XXX...
 In detail:
 
 - Performance is much improved:  programs typically run 1.20--1.40 times
-  faster under Memcheck, with an average of about 1.30 for the programs we
-  tested it on.  The improvements for Nulgrind are similar.  We haven't
-  measured Cachegrind and Massif, they should be also be faster, but with a
-  smaller improvement.  We are interested to hear what speed-ups users get.
+  faster under Memcheck (much more for some unusual programs) with an
+  average of about 1.30 for the programs we tested it on.  The improvements
+  for Nulgrind are similar.  We haven't measured Cachegrind and Massif, they
+  should be also be faster, but with smaller improvements.  We are
+  interested to hear what speed-ups users get.
 
 - Memcheck uses much less memory.  The amount of shadow memory used -- which
   accounts for a large percentage of all of Memcheck's memory overhead --

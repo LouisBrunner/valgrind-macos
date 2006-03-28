@@ -459,17 +459,17 @@ static SecMap** get_secmap_ptr ( Addr a )
           : get_secmap_high_ptr(a));
 }
 
-static INLINE SecMap* get_secmap_readable_low ( Addr a )
+static INLINE SecMap* get_secmap_for_reading_low ( Addr a )
 {
    return *get_secmap_low_ptr(a);
 }
 
-static INLINE SecMap* get_secmap_readable_high ( Addr a )
+static INLINE SecMap* get_secmap_for_reading_high ( Addr a )
 {
    return *get_secmap_high_ptr(a);
 }
 
-static INLINE SecMap* get_secmap_writable_low(Addr a)
+static INLINE SecMap* get_secmap_for_writing_low(Addr a)
 {
    SecMap** p = get_secmap_low_ptr(a);
    if (EXPECTED_NOT_TAKEN(is_distinguished_sm(*p)))
@@ -477,7 +477,7 @@ static INLINE SecMap* get_secmap_writable_low(Addr a)
    return *p;
 }
 
-static INLINE SecMap* get_secmap_writable_high ( Addr a )
+static INLINE SecMap* get_secmap_for_writing_high ( Addr a )
 {
    SecMap** p = get_secmap_high_ptr(a);
    if (EXPECTED_NOT_TAKEN(is_distinguished_sm(*p)))
@@ -490,11 +490,11 @@ static INLINE SecMap* get_secmap_writable_high ( Addr a )
    secmap may be a distinguished one as the caller will only want to
    be able to read it. 
 */
-static SecMap* get_secmap_readable ( Addr a )
+static SecMap* get_secmap_for_reading ( Addr a )
 {
    return ( a <= MAX_PRIMARY_ADDRESS
-          ? get_secmap_readable_low (a)
-          : get_secmap_readable_high(a) );
+          ? get_secmap_for_reading_low (a)
+          : get_secmap_for_reading_high(a) );
 }
 
 /* Produce the secmap for 'a', either from the primary map or by
@@ -504,11 +504,11 @@ static SecMap* get_secmap_readable ( Addr a )
    writable copy of it, install it, and return the copy instead.  (COW
    semantics).
 */
-static SecMap* get_secmap_writable ( Addr a )
+static SecMap* get_secmap_for_writing ( Addr a )
 {
    return ( a <= MAX_PRIMARY_ADDRESS
-          ? get_secmap_writable_low (a)
-          : get_secmap_writable_high(a) );
+          ? get_secmap_for_writing_low (a)
+          : get_secmap_for_writing_high(a) );
 }
 
 /* If 'a' has a SecMap, produce it.  Else produce NULL.  But don't
@@ -518,7 +518,7 @@ static SecMap* get_secmap_writable ( Addr a )
 static SecMap* maybe_get_secmap_for ( Addr a )
 {
    if (a <= MAX_PRIMARY_ADDRESS) {
-      return get_secmap_readable_low(a);
+      return get_secmap_for_reading_low(a);
    } else {
       AuxMapEnt* am = maybe_find_in_auxmap(a);
       return am ? am->sm : NULL;
@@ -574,7 +574,7 @@ UChar extract_vabits4_from_vabits8 ( Addr a, UChar vabits8 )
 static INLINE
 void set_vabits2 ( Addr a, UChar vabits2 )
 {
-   SecMap* sm       = get_secmap_writable(a);
+   SecMap* sm       = get_secmap_for_writing(a);
    UWord   sm_off   = SM_OFF(a);
    insert_vabits2_into_vabits8( a, vabits2, &(sm->vabits8[sm_off]) );
 }
@@ -582,7 +582,7 @@ void set_vabits2 ( Addr a, UChar vabits2 )
 static INLINE
 UChar get_vabits2 ( Addr a )
 {
-   SecMap* sm       = get_secmap_readable(a);
+   SecMap* sm       = get_secmap_for_reading(a);
    UWord   sm_off   = SM_OFF(a);
    UChar   vabits8  = sm->vabits8[sm_off];
    return extract_vabits2_from_vabits8(a, vabits8);
@@ -1276,7 +1276,7 @@ void make_aligned_word32_writable ( Addr a )
       return;
    }
 
-   sm                  = get_secmap_writable_low(a);
+   sm                  = get_secmap_for_writing_low(a);
    sm_off              = SM_OFF(a);
    sm->vabits8[sm_off] = VA_BITS8_WRITABLE;
 #endif
@@ -1300,7 +1300,7 @@ void make_aligned_word32_noaccess ( Addr a )
       return;
    }
 
-   sm                  = get_secmap_writable_low(a);
+   sm                  = get_secmap_for_writing_low(a);
    sm_off              = SM_OFF(a);
    sm->vabits8[sm_off] = VA_BITS8_NOACCESS;
 #endif
@@ -1325,7 +1325,7 @@ void make_aligned_word64_writable ( Addr a )
       return;
    }
 
-   sm       = get_secmap_writable_low(a);
+   sm       = get_secmap_for_writing_low(a);
    sm_off16 = SM_OFF_16(a);
    ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_WRITABLE;
 #endif
@@ -1349,7 +1349,7 @@ void make_aligned_word64_noaccess ( Addr a )
       return;
    }
 
-   sm       = get_secmap_writable_low(a);
+   sm       = get_secmap_for_writing_low(a);
    sm_off16 = SM_OFF_16(a);
    ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_NOACCESS;
 #endif
@@ -1806,8 +1806,8 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
       tl_assert(a_lo < a_hi);             // paranoia: detect overflow
       if (a_hi < MAX_PRIMARY_ADDRESS) {
          // Now we know the entire range is within the main primary map.
-         SecMap* sm    = get_secmap_writable_low(a_lo);
-         SecMap* sm_hi = get_secmap_writable_low(a_hi);
+         SecMap* sm    = get_secmap_for_writing_low(a_lo);
+         SecMap* sm_hi = get_secmap_for_writing_low(a_hi);
          /* Now we know that the entire address range falls within a
             single secondary map, and that that secondary 'lives' in
             the main primary map. */
@@ -1844,8 +1844,8 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
       tl_assert(a_lo < a_hi);             // paranoia: detect overflow
       if (a_hi < MAX_PRIMARY_ADDRESS) {
          // Now we know the entire range is within the main primary map.
-         SecMap* sm    = get_secmap_writable_low(a_lo);
-         SecMap* sm_hi = get_secmap_writable_low(a_hi);
+         SecMap* sm    = get_secmap_for_writing_low(a_lo);
+         SecMap* sm_hi = get_secmap_for_writing_low(a_hi);
          /* Now we know that the entire address range falls within a
             single secondary map, and that that secondary 'lives' in
             the main primary map. */
@@ -3063,7 +3063,7 @@ ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
       return (ULong)mc_LOADVn_slow( a, 64, isBigEndian );
    }
 
-   sm       = get_secmap_readable_low(a);
+   sm       = get_secmap_for_reading_low(a);
    sm_off16 = SM_OFF_16(a);
    vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
 
@@ -3111,7 +3111,7 @@ void mc_STOREV64 ( Addr a, ULong vbytes, Bool isBigEndian )
       return;
    }
 
-   sm       = get_secmap_readable_low(a);
+   sm       = get_secmap_for_reading_low(a);
    sm_off16 = SM_OFF_16(a);
    vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
 
@@ -3167,7 +3167,7 @@ UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
       return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
    }
 
-   sm      = get_secmap_readable_low(a);
+   sm      = get_secmap_for_reading_low(a);
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
 
@@ -3215,7 +3215,7 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
       return;
    }
 
-   sm      = get_secmap_readable_low(a);
+   sm      = get_secmap_for_reading_low(a);
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
 
@@ -3305,7 +3305,7 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
       return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
    }
 
-   sm      = get_secmap_readable_low(a);
+   sm      = get_secmap_for_reading_low(a);
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
    // Handle common case quickly: a is suitably aligned, is mapped, and is
@@ -3356,7 +3356,7 @@ void mc_STOREV16 ( Addr a, UWord vbytes, Bool isBigEndian )
       return;
    }
 
-   sm      = get_secmap_readable_low(a);
+   sm      = get_secmap_for_reading_low(a);
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
    if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
@@ -3414,7 +3414,7 @@ UWord MC_(helperc_LOADV8) ( Addr a )
       return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
    }
 
-   sm      = get_secmap_readable_low(a);
+   sm      = get_secmap_for_reading_low(a);
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
    // Convert V bits from compact memory form to expanded register form
@@ -3456,7 +3456,7 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbyte )
       return;
    }
 
-   sm      = get_secmap_readable_low(a);
+   sm      = get_secmap_for_reading_low(a);
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
    if (EXPECTED_TAKEN

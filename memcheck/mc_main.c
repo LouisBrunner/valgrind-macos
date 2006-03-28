@@ -860,13 +860,14 @@ static
 #ifndef PERF_FAST_LOADV
 INLINE
 #endif
-ULong mc_LOADVn_slow ( Addr a, SizeT szB, Bool bigendian )
+ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
    /* Make up a 64-bit result V word, which contains the loaded data for
       valid addresses and Defined for invalid addresses.  Iterate over
       the bytes in the word, from the most significant down to the
       least. */
    ULong vbits64     = V_BITS64_UNDEFINED;
+   SizeT szB         = nBits / 8;
    SSizeT i          = szB-1;    // Must be signed
    SizeT n_addrs_bad = 0;
    Addr  ai;
@@ -875,11 +876,11 @@ ULong mc_LOADVn_slow ( Addr a, SizeT szB, Bool bigendian )
    Bool  ok;
 
    PROF_EVENT(30, "mc_LOADVn_slow");
-   tl_assert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
+   tl_assert(nBits == 64 || nBits == 32 || nBits == 16 || nBits == 8);
 
    for (i = szB-1; i >= 0; i--) {
       PROF_EVENT(31, "mc_LOADVn_slow(loop)");
-      ai = a+byte_offset_w(szB,bigendian,i);
+      ai = a + byte_offset_w(szB, bigendian, i);
       ok = get_vbits8(ai, &vbits8);
       if (!ok) n_addrs_bad++;
       vbits64 <<= 8; 
@@ -915,22 +916,23 @@ static
 #ifndef PERF_FAST_STOREV
 INLINE
 #endif
-void mc_STOREVn_slow ( Addr a, SizeT szB, ULong vbytes, Bool bigendian )
+void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
 {
+   SizeT szB = nBits / 8;
    SizeT i, n_addrs_bad = 0;
    UChar vbits8;
    Addr  ai;
    Bool  ok;
 
    PROF_EVENT(35, "mc_STOREVn_slow");
-   tl_assert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
+   tl_assert(nBits == 64 || nBits == 32 || nBits == 16 || nBits == 8);
 
    /* Dump vbytes in memory, iterating from least to most significant
       byte.  At the same time establish addressibility of the
       location. */
    for (i = 0; i < szB; i++) {
       PROF_EVENT(36, "mc_STOREVn_slow(loop)");
-      ai     = a+byte_offset_w(szB,bigendian,i);
+      ai     = a + byte_offset_w(szB, bigendian, i);
       vbits8 = vbytes & 0xff;
       ok     = set_vbits8(ai, vbits8);
       if (!ok) n_addrs_bad++;
@@ -3037,9 +3039,9 @@ static void mc_print_extra_suppression_info ( Error* err )
 */
 
 /* If any part of '_a' indicated by the mask is 1, either
-   '_a' is not naturally '_sz'-aligned, or it exceeds the range
+   '_a' is not naturally '_sz/8'-aligned, or it exceeds the range
    covered by the primary map. */
-#define UNALIGNED_OR_HIGH(_a,_sz)   ((_a) & MASK((_sz)))
+#define UNALIGNED_OR_HIGH(_a,_sz)   ((_a) & MASK((_sz>>3)))
 #define MASK(_sz)   ( ~((0x10000-(_sz)) | ((N_PRIMARY_MAP-1) << 16)) )
 
 
@@ -3054,11 +3056,11 @@ ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
    PROF_EVENT(200, "mc_LOADV64");
 
 #ifndef PERF_FAST_LOADV
-   return mc_LOADVn_slow( a, 8, isBigEndian );
+   return mc_LOADVn_slow( a, 64, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,8) )) {
+   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,64) )) {
       PROF_EVENT(201, "mc_LOADV64-slow1");
-      return (ULong)mc_LOADVn_slow( a, 8, isBigEndian );
+      return (ULong)mc_LOADVn_slow( a, 64, isBigEndian );
    }
 
    sm       = get_secmap_readable_low(a);
@@ -3075,7 +3077,7 @@ ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
    } else {
       /* Slow case: the 8 bytes are not all-readable or all-writable. */
       PROF_EVENT(202, "mc_LOADV64-slow2");
-      return mc_LOADVn_slow( a, 8, isBigEndian );
+      return mc_LOADVn_slow( a, 64, isBigEndian );
    }
 #endif
 }
@@ -3101,11 +3103,11 @@ void mc_STOREV64 ( Addr a, ULong vbytes, Bool isBigEndian )
 #ifndef PERF_FAST_STOREV
    // XXX: this slow case seems to be marginally faster than the fast case!
    // Investigate further.
-   mc_STOREVn_slow( a, 8, vbytes, isBigEndian );
+   mc_STOREVn_slow( a, 64, vbytes, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,8) )) {
+   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,64) )) {
       PROF_EVENT(211, "mc_STOREV64-slow1");
-      mc_STOREVn_slow( a, 8, vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 64, vbytes, isBigEndian );
       return;
    }
 
@@ -3127,12 +3129,12 @@ void mc_STOREV64 ( Addr a, ULong vbytes, Bool isBigEndian )
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(212, "mc_STOREV64-slow2");
-         mc_STOREVn_slow( a, 8, vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 64, vbytes, isBigEndian );
       }
    } else {
       /* Slow but general case. */
       PROF_EVENT(213, "mc_STOREV64-slow3");
-      mc_STOREVn_slow( a, 8, vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 64, vbytes, isBigEndian );
    }
 #endif
 }
@@ -3158,11 +3160,11 @@ UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
    PROF_EVENT(220, "mc_LOADV32");
 
 #ifndef PERF_FAST_LOADV
-   return (UWord)mc_LOADVn_slow( a, 4, isBigEndian );
+   return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,4) )) {
+   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,32) )) {
       PROF_EVENT(221, "mc_LOADV32-slow1");
-      return (UWord)mc_LOADVn_slow( a, 4, isBigEndian );
+      return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
    }
 
    sm      = get_secmap_readable_low(a);
@@ -3181,7 +3183,7 @@ UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
    } else {
       /* Slow case: the 4 bytes are not all-readable or all-writable. */
       PROF_EVENT(222, "mc_LOADV32-slow2");
-      return (UWord)mc_LOADVn_slow( a, 4, isBigEndian );
+      return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
    }
 #endif
 }
@@ -3205,11 +3207,11 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
    PROF_EVENT(230, "mc_STOREV32");
 
 #ifndef PERF_FAST_STOREV
-   mc_STOREVn_slow( a, 4, (ULong)vbytes, isBigEndian );
+   mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,4) )) {
+   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,32) )) {
       PROF_EVENT(231, "mc_STOREV32-slow1");
-      mc_STOREVn_slow( a, 4, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
       return;
    }
 
@@ -3230,7 +3232,7 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
       } else {
          // not readable/writable, or distinguished and changing state
          PROF_EVENT(232, "mc_STOREV32-slow2");
-         mc_STOREVn_slow( a, 4, (ULong)vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
       }
    } else if (V_BITS32_UNDEFINED == vbytes) {
       if (vabits8 == (UInt)VA_BITS8_WRITABLE) {
@@ -3240,12 +3242,12 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
       } else {
          // not readable/writable, or distinguished and changing state
          PROF_EVENT(233, "mc_STOREV32-slow3");
-         mc_STOREVn_slow( a, 4, (ULong)vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
       }
    } else {
       // Partially defined word
       PROF_EVENT(234, "mc_STOREV32-slow4");
-      mc_STOREVn_slow( a, 4, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
    }
 //---------------------------------------------------------------------------
 #else
@@ -3263,12 +3265,12 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(232, "mc_STOREV32-slow2");
-         mc_STOREVn_slow( a, 4, (ULong)vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
       }
    } else {
       /* Slow but general case. */
       PROF_EVENT(233, "mc_STOREV32-slow3");
-      mc_STOREVn_slow( a, 4, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
    }
 #endif
 //---------------------------------------------------------------------------
@@ -3296,11 +3298,11 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
    PROF_EVENT(240, "mc_LOADV16");
 
 #ifndef PERF_FAST_LOADV
-   return (UWord)mc_LOADVn_slow( a, 2, isBigEndian );
+   return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,2) )) {
+   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,16) )) {
       PROF_EVENT(241, "mc_LOADV16-slow1");
-      return (UWord)mc_LOADVn_slow( a, 2, isBigEndian );
+      return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
    }
 
    sm      = get_secmap_readable_low(a);
@@ -3321,7 +3323,7 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
       else {
          /* Slow case: the two bytes are not all-readable or all-writable. */
          PROF_EVENT(242, "mc_LOADV16-slow2");
-         return (UWord)mc_LOADVn_slow( a, 2, isBigEndian );
+         return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
       }
    }
 #endif
@@ -3346,11 +3348,11 @@ void mc_STOREV16 ( Addr a, UWord vbytes, Bool isBigEndian )
    PROF_EVENT(250, "mc_STOREV16");
 
 #ifndef PERF_FAST_STOREV
-   mc_STOREVn_slow( a, 2, (ULong)vbytes, isBigEndian );
+   mc_STOREVn_slow( a, 16, (ULong)vbytes, isBigEndian );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,2) )) {
+   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,16) )) {
       PROF_EVENT(251, "mc_STOREV16-slow1");
-      mc_STOREVn_slow( a, 2, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 16, (ULong)vbytes, isBigEndian );
       return;
    }
 
@@ -3373,12 +3375,12 @@ void mc_STOREV16 ( Addr a, UWord vbytes, Bool isBigEndian )
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(252, "mc_STOREV16-slow2");
-         mc_STOREVn_slow( a, 2, (ULong)vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 16, (ULong)vbytes, isBigEndian );
       }
    } else {
       /* Slow but general case. */
       PROF_EVENT(253, "mc_STOREV16-slow3");
-      mc_STOREVn_slow( a, 2, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 16, (ULong)vbytes, isBigEndian );
    }
 #endif
 }
@@ -3405,11 +3407,11 @@ UWord MC_(helperc_LOADV8) ( Addr a )
    PROF_EVENT(260, "mc_LOADV8");
 
 #ifndef PERF_FAST_LOADV
-   return (UWord)mc_LOADVn_slow( a, 1, False/*irrelevant*/ );
+   return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,1) )) {
+   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,8) )) {
       PROF_EVENT(261, "mc_LOADV8-slow1");
-      return (UWord)mc_LOADVn_slow( a, 1, False/*irrelevant*/ );
+      return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
    }
 
    sm      = get_secmap_readable_low(a);
@@ -3430,7 +3432,7 @@ UWord MC_(helperc_LOADV8) ( Addr a )
       else {
          /* Slow case: the byte is not all-readable or all-writable. */
          PROF_EVENT(262, "mc_LOADV8-slow2");
-         return (UWord)mc_LOADVn_slow( a, 1, False/*irrelevant*/ );
+         return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
       }
    }
 #endif
@@ -3446,11 +3448,11 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbyte )
    PROF_EVENT(270, "mc_STOREV8");
 
 #ifndef PERF_FAST_STOREV
-   mc_STOREVn_slow( a, 1, (ULong)vbyte, False/*irrelevant*/ );
+   mc_STOREVn_slow( a, 8, (ULong)vbyte, False/*irrelevant*/ );
 #else
-   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,1) )) {
+   if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,8) )) {
       PROF_EVENT(271, "mc_STOREV8-slow1");
-      mc_STOREVn_slow( a, 1, (ULong)vbyte, False/*irrelevant*/ );
+      mc_STOREVn_slow( a, 8, (ULong)vbyte, False/*irrelevant*/ );
       return;
    }
 
@@ -3477,12 +3479,12 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbyte )
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(272, "mc_STOREV8-slow2");
-         mc_STOREVn_slow( a, 1, (ULong)vbyte, False/*irrelevant*/ );
+         mc_STOREVn_slow( a, 8, (ULong)vbyte, False/*irrelevant*/ );
       }
    } else {
       /* Slow but general case. */
       PROF_EVENT(273, "mc_STOREV8-slow3");
-      mc_STOREVn_slow( a, 1, (ULong)vbyte, False/*irrelevant*/ );
+      mc_STOREVn_slow( a, 8, (ULong)vbyte, False/*irrelevant*/ );
    }
 #endif
 }

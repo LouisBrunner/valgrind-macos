@@ -163,12 +163,6 @@ Int VG_(sigaction) ( Int signum, const struct vki_sigaction* act,
 }
 
 
-Int VG_(sigaltstack)( const vki_stack_t* ss, vki_stack_t* oss )
-{
-   SysRes res = VG_(do_syscall2)(__NR_sigaltstack, (UWord)ss, (UWord)oss);
-   return res.isError ? -1 : 0;
-}
-
 Int VG_(sigtimedwait)( const vki_sigset_t *set, vki_siginfo_t *info, 
                        const struct vki_timespec *timeout )
 {
@@ -216,20 +210,6 @@ Int VG_(tkill)( ThreadId tid, Int signo )
       res = VG_(do_syscall2)(__NR_kill, tid, signo);
 
    return res.isError ? -1 : 0;
-}
-
-Int VG_(sigpending) ( vki_sigset_t* set )
-{
-// Nb: AMD64/Linux doesn't have __NR_sigpending;  it only provides
-// __NR_rt_sigpending.  This function will have to be abstracted in some
-// way to account for this.  In the meantime, the easy option is to forget
-// about it for AMD64 until it's needed.
-#if defined(VGA_amd64)
-   I_die_here;
-#else
-   SysRes res = VG_(do_syscall1)(__NR_sigpending, (UWord)set);
-   return res.isError ? -1 : 0;
-#endif
 }
 
 /*--------------------------------------------------------------------*/

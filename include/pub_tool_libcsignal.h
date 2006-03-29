@@ -63,11 +63,9 @@ extern Int VG_(sigtimedwait)( const vki_sigset_t *, vki_siginfo_t *,
 			      const struct vki_timespec * );
 
 extern Int VG_(signal)      ( Int signum, void (*sighandler)(Int) );
-extern Int VG_(sigaltstack) ( const vki_stack_t* ss, vki_stack_t* oss );
 
 extern Int VG_(kill)        ( Int pid, Int signo );
 extern Int VG_(tkill)       ( ThreadId tid, Int signo );
-extern Int VG_(sigpending)  ( vki_sigset_t* set );
 
 #endif   // __PUB_TOOL_LIBCBSIGNAL_H
 

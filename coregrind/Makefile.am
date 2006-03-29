@@ -164,7 +164,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_translate.c \
 	m_transtab.c \
 	m_ume.c \
-	m_aspacemgr/read_procselfmaps.c \
 	m_aspacemgr/aspacemgr.c \
 	m_debuginfo/dwarf.c \
 	m_debuginfo/stabs.c \

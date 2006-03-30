@@ -9145,7 +9145,7 @@ void parse_number(const char *p)
         break;
 
 /* return next token without macro substitution */
-static inline void next_nomacro1(void)
+static /*inline*/ void next_nomacro1(void)
 {
     int t, c, is_long;
     TokenSym *ts;
@@ -9833,7 +9833,7 @@ static int macro_subst_tok(TokenString *tok_str,
 
 /* handle the '##' operator. Return NULL if no '##' seen. Otherwise
    return the resulting string (which must be freed). */
-static inline int *macro_twosharps(const int *macro_str)
+static /*inline*/ int *macro_twosharps(const int *macro_str)
 {
     TokenSym *ts;
     const int *macro_ptr1, *start_macro_ptr, *ptr, *saved_macro_ptr;
@@ -11144,6 +11144,12 @@ void gen_opif(int op)
     }
 }
 
+/* return the pointed type of t */
+static inline CType *pointed_type(CType *type)
+{
+    return &type->ref->type;
+}
+
 static int pointed_size(CType *type)
 {
     int align;
@@ -11618,12 +11624,6 @@ static int type_size(CType *type, int *a)
         *a = 1;
         return 1;
     }
-}
-
-/* return the pointed type of t */
-static inline CType *pointed_type(CType *type)
-{
-    return &type->ref->type;
 }
 
 /* modify type so that its it is a pointer to type. */
@@ -20585,7 +20585,7 @@ static int rt_get_caller_pc(unsigned long *paddr,
                             ucontext_t *uc, int level)
 {
     unsigned long fp;
-    int i;
+    //int i;
 
     if (level == 0) {
         *paddr = 12345; //uc->uc_mcontext.gregs[REG_EIP];

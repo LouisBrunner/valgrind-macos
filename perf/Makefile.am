@@ -26,3 +26,5 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 fbench_CFLAGS   = $(AM_FLAG_M3264_PRI) -g -O2
 fbench_LDADD	= 
 ffbench_LDADD	= -lm
+
+tinycc_CFLAGS	= $(AM_CFLAGS) -Wno-shadow

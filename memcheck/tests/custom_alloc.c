@@ -22,7 +22,7 @@ void* get_superblock(void)
    // program to be using it unless its handed out by custom_alloc()
 
    // with redzones, better not to have it
-   VALGRIND_MAKE_NOACCESS(p, SUPERBLOCK_SIZE);
+   VALGRIND_MAKE_MEM_NOACCESS(p, SUPERBLOCK_SIZE);
 
    return p;
 }
@@ -86,7 +86,7 @@ int main(void)
    custom_free(array3); // mismatched free (ok without MALLOCLIKE)
 
    make_leak();
-   return array[0];     // use after free (ok without MALLOCLIKE/MAKE_NOACCESS)
+   return array[0];     // use after free (ok without MALLOCLIKE/MAKE_MEM_NOACCESS)
                         // (nb: initialised because is_zeroed==1 above)
                         // unfortunately not identified as being in a free'd
                         // block because the freeing of the block and shadow

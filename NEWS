@@ -28,6 +28,30 @@ In detail:
 
 - XXX: others...
 
+Other user-visible changes:
+
+- There are some changes to Memcheck's client requests.  Some of them have
+  changed names:
+
+    MAKE_NOACCESS  --> MAKE_MEM_NOACCESS
+    MAKE_WRITABLE  --> MAKE_MEM_UNDEFINED
+    MAKE_READABLE  --> MAKE_MEM_DEFINED
+
+    CHECK_WRITABLE --> CHECK_MEM_IS_ADDRESSABLE
+    CHECK_READABLE --> CHECK_MEM_IS_DEFINED
+    CHECK_DEFINED  --> CHECK_VALUE_IS_DEFINED
+
+  The reason for the change is that the old names are subtly misleading.
+  The old names will still work, but they are deprecated and may be removed
+  in a future release.
+
+  We also added a new client request:
+  
+    MAKE_MEM_DEFINED_IF_ADDRESSABLE(a, len)
+    
+  which is like MAKE_MEM_DEFINED but only affects a byte if the byte is
+  already addressable.
+
 BUGS FIXED:
 
 XXX

@@ -76,12 +76,12 @@
    ENTRIES, NOR DELETE ANY -- add new ones at the end. */
 typedef
    enum { 
-      VG_USERREQ__MAKE_NOACCESS = VG_USERREQ_TOOL_BASE('M','C'),
-      VG_USERREQ__MAKE_WRITABLE,
-      VG_USERREQ__MAKE_READABLE,
+      VG_USERREQ__MAKE_MEM_NOACCESS = VG_USERREQ_TOOL_BASE('M','C'),
+      VG_USERREQ__MAKE_MEM_UNDEFINED,
+      VG_USERREQ__MAKE_MEM_DEFINED,
       VG_USERREQ__DISCARD,
-      VG_USERREQ__CHECK_WRITABLE,
-      VG_USERREQ__CHECK_READABLE,
+      VG_USERREQ__CHECK_MEM_IS_ADDRESSABLE,
+      VG_USERREQ__CHECK_MEM_IS_DEFINED,
       VG_USERREQ__DO_LEAK_CHECK,
       VG_USERREQ__COUNT_LEAKS,
 
@@ -90,7 +90,7 @@ typedef
 
       VG_USERREQ__CREATE_BLOCK,
 
-      VG_USERREQ__MAKE_DEFINED,
+      VG_USERREQ__MAKE_MEM_DEFINED_IF_ADDRESSABLE,
 
       /* This is just for memcheck's internal use - don't use it */
       _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR 
@@ -101,44 +101,54 @@ typedef
 
 /* Client-code macros to manipulate the state of memory. */
 
-/* Mark memory at _qzz_addr as unaddressible and undefined for
-   _qzz_len bytes.   */
-#define VALGRIND_MAKE_NOACCESS(_qzz_addr,_qzz_len)               \
+/* Mark memory at _qzz_addr as unaddressable for _qzz_len bytes. */
+#define VALGRIND_MAKE_MEM_NOACCESS(_qzz_addr,_qzz_len)           \
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
-                            VG_USERREQ__MAKE_NOACCESS,           \
+                            VG_USERREQ__MAKE_MEM_NOACCESS,       \
                             _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))
       
-/* Similarly, mark memory at _qzz_addr as addressible but undefined
+/* Similarly, mark memory at _qzz_addr as addressable but undefined
    for _qzz_len bytes. */
+#define VALGRIND_MAKE_MEM_UNDEFINED(_qzz_addr,_qzz_len)          \
+   (__extension__({unsigned int _qzz_res;                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
+                            VG_USERREQ__MAKE_MEM_UNDEFINED,      \
+                            _qzz_addr, _qzz_len, 0, 0, 0);       \
+    _qzz_res;                                                    \
+   }))
+
+/* Similarly, mark memory at _qzz_addr as addressable and defined
+   for _qzz_len bytes. */
+#define VALGRIND_MAKE_MEM_DEFINED(_qzz_addr,_qzz_len)            \
+   (__extension__({unsigned int _qzz_res;                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
+                            VG_USERREQ__MAKE_MEM_DEFINED,        \
+                            _qzz_addr, _qzz_len, 0, 0, 0);       \
+    _qzz_res;                                                    \
+   }))
+
+/* This is the old name for VALGRIND_MAKE_MEM_NOACCESS.  Deprecated. */
+#define VALGRIND_MAKE_NOACCESS(_qzz_addr,_qzz_len)               \
+   VALGRIND_MAKE_MEM_NOACCESS(_qzz_addr,_qzz_len)
+
+/* This is the old name for VALGRIND_MAKE_MEM_UNDEFINED.  Deprecated. */
 #define VALGRIND_MAKE_WRITABLE(_qzz_addr,_qzz_len)               \
-   (__extension__({unsigned int _qzz_res;                        \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
-                            VG_USERREQ__MAKE_WRITABLE,           \
-                            _qzz_addr, _qzz_len, 0, 0, 0);       \
-    _qzz_res;                                                    \
-   }))
+   VALGRIND_MAKE_MEM_UNDEFINED(_qzz_addr,_qzz_len)
 
-/* Similarly, mark memory at _qzz_addr as addressible and defined
-   for _qzz_len bytes. */
+/* This is the old name for VALGRIND_MAKE_MEM_DEFINED.  Deprecated. */
 #define VALGRIND_MAKE_READABLE(_qzz_addr,_qzz_len)               \
-   (__extension__({unsigned int _qzz_res;                        \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
-                            VG_USERREQ__MAKE_READABLE,           \
-                            _qzz_addr, _qzz_len, 0, 0, 0);       \
-    _qzz_res;                                                    \
-   }))
+   VALGRIND_MAKE_MEM_DEFINED(_qzz_addr,_qzz_len)
 
-/* Similar to mark memory at VALGRIND_MAKE_READABLE except that
-   addressibility is not altered: bytes which are addressible are
-   marked as defined, but those which are not addressible are
-   left unchanged. */
-#define VALGRIND_MAKE_DEFINED(_qzz_addr,_qzz_len)                \
+/* Similar to VALGRIND_MAKE_MEM_DEFINED except that addressability is
+   not altered: bytes which are addressable are marked as defined,
+   but those which are not addressable are left unchanged. */
+#define VALGRIND_MAKE_MEM_DEFINED_IF_ADDRESSABLE(_qzz_addr,_qzz_len) \
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0 /* default return */, \
-                            VG_USERREQ__MAKE_DEFINED,            \
+                            VG_USERREQ__MAKE_MEM_DEFINED_IF_ADDRESSABLE, \
                             _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))
@@ -169,39 +179,52 @@ typedef
 
 /* Client-code macros to check the state of memory. */
 
-/* Check that memory at _qzz_addr is addressible for _qzz_len bytes.
+/* Check that memory at _qzz_addr is addressable for _qzz_len bytes.
    If suitable addressibility is not established, Valgrind prints an
    error message and returns the address of the first offending byte.
    Otherwise it returns zero. */
-#define VALGRIND_CHECK_WRITABLE(_qzz_addr,_qzz_len)              \
+#define VALGRIND_CHECK_MEM_IS_ADDRESSABLE(_qzz_addr,_qzz_len)    \
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
-                            VG_USERREQ__CHECK_WRITABLE,          \
+                            VG_USERREQ__CHECK_MEM_IS_ADDRESSABLE,\
                             _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))
 
-/* Check that memory at _qzz_addr is addressible and defined for
+/* Check that memory at _qzz_addr is addressable and defined for
    _qzz_len bytes.  If suitable addressibility and definedness are not
    established, Valgrind prints an error message and returns the
    address of the first offending byte.  Otherwise it returns zero. */
-#define VALGRIND_CHECK_READABLE(_qzz_addr,_qzz_len)              \
+#define VALGRIND_CHECK_MEM_IS_DEFINED(_qzz_addr,_qzz_len)        \
    (__extension__({unsigned int _qzz_res;                        \
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
-                            VG_USERREQ__CHECK_READABLE,          \
+                            VG_USERREQ__CHECK_MEM_IS_DEFINED,    \
                             _qzz_addr, _qzz_len, 0, 0, 0);       \
     _qzz_res;                                                    \
    }))
 
-/* Use this macro to force the definedness and addressibility of a
-   value to be checked.  If suitable addressibility and definedness
+/* Use this macro to force the definedness and addressibility of an
+   lvalue to be checked.  If suitable addressibility and definedness
    are not established, Valgrind prints an error message and returns
    the address of the first offending byte.  Otherwise it returns
    zero. */
-#define VALGRIND_CHECK_DEFINED(__lvalue)                         \
-   VALGRIND_CHECK_READABLE(                                      \
+#define VALGRIND_CHECK_VALUE_IS_DEFINED(__lvalue)                \
+   VALGRIND_CHECK_MEM_IS_DEFINED(                                \
       (volatile unsigned char *)&(__lvalue),                     \
                       (unsigned int)(sizeof (__lvalue)))
+
+/* This is the old name for VALGRIND_CHECK_MEM_IS_ADDRESSABLE.  Deprecated. */
+#define VALGRIND_CHECK_WRITABLE(_qzz_addr,_qzz_len)              \
+   VALGRIND_CHECK_MEM_IS_ADDRESSABLE(_qzz_addr,_qzz_len)
+
+/* This is the old name for VALGRIND_CHECK_MEM_IS_DEFINED.  Deprecated. */
+#define VALGRIND_CHECK_READABLE(_qzz_addr,_qzz_len)              \
+   VALGRIND_CHECK_MEM_IS_DEFINED(_qzz_addr,_qzz_len)
+
+/* This is the old name for VALGRIND_CHECK_VALUE_IS_DEFINED.  Deprecated. */
+#define VALGRIND_CHECK_DEFINED(__lvalue)                         \
+   VALGRIND_CHECK_VALUE_IS_DEFINED(__lvalue)
+
 
 /* Do a memory leak check mid-execution.  */
 #define VALGRIND_DO_LEAK_CHECK                                   \
@@ -236,7 +259,7 @@ typedef
       0   if not running on valgrind
       1   success
       2   [previously indicated unaligned arrays;  these are now allowed]
-      3   if any parts of zzsrc/zzvbits are not addressible.
+      3   if any parts of zzsrc/zzvbits are not addressable.
    The metadata is not copied in cases 0, 2 or 3 so it should be
    impossible to segfault your system by using this call.
 */
@@ -255,7 +278,7 @@ typedef
       0   if not running on valgrind
       1   success
       2   [previously indicated unaligned arrays;  these are now allowed]
-      3   if any parts of zza/zzvbits are not addressible.
+      3   if any parts of zza/zzvbits are not addressable.
    The metadata is not copied in cases 0, 2 or 3 so it should be
    impossible to segfault your system by using this call.
 */

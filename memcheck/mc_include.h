@@ -96,10 +96,10 @@ extern VgHashTable MC_(malloc_list);
 extern VgHashTable MC_(mempool_list);
 
 /* Shadow memory functions */
-extern Bool MC_(check_noaccess)( Addr a, SizeT len, Addr* bad_addr );
-extern void MC_(make_noaccess) ( Addr a, SizeT len );
-extern void MC_(make_writable) ( Addr a, SizeT len );
-extern void MC_(make_readable) ( Addr a, SizeT len );
+extern Bool MC_(check_mem_is_noaccess)( Addr a, SizeT len, Addr* bad_addr );
+extern void MC_(make_mem_noaccess) ( Addr a, SizeT len );
+extern void MC_(make_mem_undefined)( Addr a, SizeT len );
+extern void MC_(make_mem_defined)  ( Addr a, SizeT len );
 extern void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len );
 
 extern void MC_(print_malloc_stats) ( void );

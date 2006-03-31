@@ -2433,7 +2433,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    
    If you're allocating memory via superblocks, and then handing out small
    chunks of each superblock, if you don't have redzones on your small
-   blocks, it's worth marking the superblock with VALGRIND_MAKE_NOACCESS
+   blocks, it's worth marking the superblock with VALGRIND_MAKE_MEM_NOACCESS
    when it's created, so that block overruns are detected.  But if you can
    put redzones on, it's probably better to not do this, so that messages
    for small overruns are described in terms of the small block rather than

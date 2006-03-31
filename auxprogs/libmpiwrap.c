@@ -685,35 +685,35 @@ void mpiwrap_walk_type_EXTERNALLY_VISIBLE
 */
 
 static inline
-void check_readable_untyped ( void* buffer, long nbytes )
+void check_mem_is_defined_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
-      VALGRIND_CHECK_READABLE(buffer, nbytes);
+      VALGRIND_CHECK_MEM_IS_DEFINED(buffer, nbytes);
    }
 }
 
 static inline
-void check_writable_untyped ( void* buffer, long nbytes )
+void check_mem_is_addressable_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
-      VALGRIND_CHECK_WRITABLE(buffer, nbytes);
+      VALGRIND_CHECK_MEM_IS_ADDRESSABLE(buffer, nbytes);
    }
 }
 
 static inline
-void make_defined_untyped ( void* buffer, long nbytes )
+void make_mem_defined_if_addressable_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
-      VALGRIND_MAKE_DEFINED(buffer, nbytes);
+      VALGRIND_MAKE_MEM_DEFINED_IF_ADDRESSABLE(buffer, nbytes);
    }
 }
 
 static inline
-void make_defined_if_success_untyped ( int err, 
+void make_mem_defined_if_addressable_if_success_untyped ( int err, 
                                        void* buffer, long nbytes )
 {
    if (err == MPI_SUCCESS && nbytes > 0) {
-      VALGRIND_MAKE_DEFINED(buffer, nbytes);
+      VALGRIND_MAKE_MEM_DEFINED_IF_ADDRESSABLE(buffer, nbytes);
    }
 }
 
@@ -721,10 +721,10 @@ void make_defined_if_success_untyped ( int err,
    (safe-to-write) state. */
 
 static inline
-void make_writable_untyped ( void* buffer, long nbytes )
+void make_mem_undefined_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
-      VALGRIND_MAKE_WRITABLE(buffer, nbytes);
+      VALGRIND_MAKE_MEM_UNDEFINED(buffer, nbytes);
    }
 }
 
@@ -739,9 +739,9 @@ void make_writable_untyped ( void* buffer, long nbytes )
    initialised data, and cause V to complain if not. */
 
 static
-void check_readable ( char* buffer, long count, MPI_Datatype datatype )
+void check_mem_is_defined ( char* buffer, long count, MPI_Datatype datatype )
 {
-   walk_type_array( check_readable_untyped, buffer, datatype, count );
+   walk_type_array( check_mem_is_defined_untyped, buffer, datatype, count );
 }
 
 
@@ -750,9 +750,9 @@ void check_readable ( char* buffer, long count, MPI_Datatype datatype )
    initialised or not. */
 
 static
-void check_writable ( void *buffer, long count, MPI_Datatype datatype )
+void check_mem_is_addressable ( void *buffer, long count, MPI_Datatype datatype )
 {
-   walk_type_array( check_writable_untyped, buffer, datatype, count );
+   walk_type_array( check_mem_is_addressable_untyped, buffer, datatype, count );
 }
 
 
@@ -760,18 +760,19 @@ void check_writable ( void *buffer, long count, MPI_Datatype datatype )
    addressible' state. */
 
 static
-void make_defined ( void *buffer, int count, MPI_Datatype datatype )
+void make_mem_defined_if_addressable ( void *buffer, int count, MPI_Datatype datatype )
 {
-   walk_type_array( make_defined_untyped, buffer, datatype, count );
+   walk_type_array( make_mem_defined_if_addressable_untyped,
+                    buffer, datatype, count );
 }
 
 static
 void 
-make_defined_if_success ( int err, void *buffer, int count, 
-                                   MPI_Datatype datatype )
+make_mem_defined_if_addressable_if_success ( int err, void *buffer, int count, 
+                                             MPI_Datatype datatype )
 {
    if (err == MPI_SUCCESS)
-      make_defined(buffer, count, datatype);
+      make_mem_defined_if_addressable(buffer, count, datatype);
 }
 
 
@@ -812,7 +813,7 @@ int generic_Send(void *buf, int count, MPI_Datatype datatype,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("{,B,S,R}Send");
-   check_readable(buf, count, datatype);
+   check_mem_is_defined(buf, count, datatype);
    CALL_FN_W_6W(err, fn, buf,count,datatype,dest,tag,comm);
    after("{,B,S,R}Send", err);
    return err;
@@ -848,11 +849,11 @@ int WRAPPER_FOR(PMPI_Recv)(void *buf, int count, MPI_Datatype datatype,
    int    err, recv_count = 0;
    VALGRIND_GET_ORIG_FN(fn);
    before("Recv");
-   check_writable(buf, count, datatype);
-   check_writable_untyped(status, sizeof(*status));
+   check_mem_is_addressable(buf, count, datatype);
+   check_mem_is_addressable_untyped(status, sizeof(*status));
    CALL_FN_W_7W(err, fn, buf,count,datatype,source,tag,comm,status);
    if (err == MPI_SUCCESS && count_from_Status(&recv_count,datatype,status)) {
-      make_defined(buf, recv_count, datatype);
+      make_mem_defined_if_addressable(buf, recv_count, datatype);
    }
    after("Recv", err);
    return err;
@@ -869,7 +870,7 @@ int WRAPPER_FOR(PMPI_Get_count)(MPI_Status* status,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Get_count");
-   check_readable_untyped(status, sizeof(*status));
+   check_mem_is_defined_untyped(status, sizeof(*status));
    CALL_FN_W_WWW(err, fn, status,ty,count);
    after("Get_count", err);
    return err;
@@ -1095,7 +1096,7 @@ static void maybe_complete ( Bool         error_in_status,
       /* The Irecv detailed in 'shadow' completed.  Paint the result
          buffer, and delete the entry. */
       if (count_from_Status(&recv_count, shadow->datatype, status)) {
-         make_defined(shadow->buf, recv_count, shadow->datatype);
+         make_mem_defined_if_addressable(shadow->buf, recv_count, shadow->datatype);
          if (opt_verbosity > 1)
             fprintf(stderr, "%s %5d: sReq- %p (completed)\n", 
                             preamble, my_pid, request_before);
@@ -1117,10 +1118,10 @@ int generic_Isend(void *buf, int count, MPI_Datatype datatype,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("{,B,S,R}Isend");
-   check_readable(buf, count, datatype);
-   check_writable_untyped(request, sizeof(*request));
+   check_mem_is_defined(buf, count, datatype);
+   check_mem_is_addressable_untyped(request, sizeof(*request));
    CALL_FN_W_7W(err, fn, buf,count,datatype,dest,tag,comm,request);
-   make_defined_if_success_untyped(err, request, sizeof(*request));
+   make_mem_defined_if_addressable_if_success_untyped(err, request, sizeof(*request));
    after("{,B,S,R}Isend", err);
    return err;
 }
@@ -1160,11 +1161,11 @@ int WRAPPER_FOR(PMPI_Irecv)( void* buf, int count, MPI_Datatype datatype,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Irecv");
-   check_writable(buf, count, datatype);
-   check_writable_untyped(request, sizeof(*request));
+   check_mem_is_addressable(buf, count, datatype);
+   check_mem_is_addressable_untyped(request, sizeof(*request));
    CALL_FN_W_7W(err, fn, buf,count,datatype,source,tag,comm,request);
    if (err == MPI_SUCCESS) {
-      make_defined_untyped(request, sizeof(*request));
+      make_mem_defined_if_addressable_untyped(request, sizeof(*request));
       add_shadow_Request( *request, buf,count,datatype );
    }
    after("Irecv", err);
@@ -1185,14 +1186,14 @@ int WRAPPER_FOR(PMPI_Wait)( MPI_Request* request,
    int          err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Wait");
-   check_writable_untyped(status, sizeof(MPI_Status));
-   check_readable_untyped(request, sizeof(MPI_Request));
+   check_mem_is_addressable_untyped(status, sizeof(MPI_Status));
+   check_mem_is_defined_untyped(request, sizeof(MPI_Request));
    request_before = *request;
    CALL_FN_W_WW(err, fn, request,status);
    if (err == MPI_SUCCESS) {
       maybe_complete(False/*err in status?*/, 
                      request_before, *request, status);
-      make_defined_untyped(status, sizeof(MPI_Status));
+      make_mem_defined_if_addressable_untyped(status, sizeof(MPI_Status));
    }
    after("Wait", err);
    return err;
@@ -1210,8 +1211,8 @@ int WRAPPER_FOR(PMPI_Waitall)( int count,
    before("Waitall");
    if (0) fprintf(stderr, "Waitall: %d\n", count);
    for (i = 0; i < count; i++) {
-      check_writable_untyped(&statuses[i], sizeof(MPI_Status));
-      check_readable_untyped(&requests[i], sizeof(MPI_Request));
+      check_mem_is_addressable_untyped(&statuses[i], sizeof(MPI_Status));
+      check_mem_is_defined_untyped(&requests[i], sizeof(MPI_Request));
    }
    requests_before = clone_Request_array( count, requests );
    CALL_FN_W_WWW(err, fn, count,requests,statuses);
@@ -1221,7 +1222,8 @@ int WRAPPER_FOR(PMPI_Waitall)( int count,
       for (i = 0; i < count; i++) {
          maybe_complete(e_i_s, requests_before[i], requests[i], 
                                &statuses[i]);
-         make_defined_untyped(&statuses[i], sizeof(MPI_Status));
+         make_mem_defined_if_addressable_untyped(&statuses[i],
+                                                 sizeof(MPI_Status));
       }
    }
    if (requests_before)
@@ -1240,15 +1242,15 @@ int WRAPPER_FOR(PMPI_Test)( MPI_Request* request, int* flag,
    int          err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Test");
-   check_writable_untyped(status, sizeof(MPI_Status));
-   check_writable_untyped(flag, sizeof(int));
-   check_readable_untyped(request, sizeof(MPI_Request));
+   check_mem_is_addressable_untyped(status, sizeof(MPI_Status));
+   check_mem_is_addressable_untyped(flag, sizeof(int));
+   check_mem_is_defined_untyped(request, sizeof(MPI_Request));
    request_before = *request;
    CALL_FN_W_WWW(err, fn, request,flag,status);
    if (err == MPI_SUCCESS && *flag) {
       maybe_complete(False/*err in status?*/, 
                      request_before, *request, status);
-      make_defined_untyped(status, sizeof(MPI_Status));
+      make_mem_defined_if_addressable_untyped(status, sizeof(MPI_Status));
    }
    after("Test", err);
    return err;
@@ -1265,10 +1267,10 @@ int WRAPPER_FOR(PMPI_Testall)( int count, MPI_Request* requests,
    VALGRIND_GET_ORIG_FN(fn);
    before("Testall");
    if (0) fprintf(stderr, "Testall: %d\n", count);
-   check_writable_untyped(flag, sizeof(int));
+   check_mem_is_addressable_untyped(flag, sizeof(int));
    for (i = 0; i < count; i++) {
-      check_writable_untyped(&statuses[i], sizeof(MPI_Status));
-      check_readable_untyped(&requests[i], sizeof(MPI_Request));
+      check_mem_is_addressable_untyped(&statuses[i], sizeof(MPI_Status));
+      check_mem_is_defined_untyped(&requests[i], sizeof(MPI_Request));
    }
    requests_before = clone_Request_array( count, requests );
    CALL_FN_W_WWWW(err, fn, count,requests,flag,statuses);
@@ -1280,7 +1282,7 @@ int WRAPPER_FOR(PMPI_Testall)( int count, MPI_Request* requests,
       for (i = 0; i < count; i++) {
          maybe_complete(e_i_s, requests_before[i], requests[i], 
                                &statuses[i]);
-         make_defined_untyped(&statuses[i], sizeof(MPI_Status));
+         make_mem_defined_if_addressable_untyped(&statuses[i], sizeof(MPI_Status));
       }
    }
    if (requests_before)
@@ -1301,13 +1303,13 @@ int WRAPPER_FOR(PMPI_Iprobe)(int source, int tag,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Iprobe");
-   check_writable_untyped(flag, sizeof(*flag));
-   check_writable_untyped(status, sizeof(*status));
+   check_mem_is_addressable_untyped(flag, sizeof(*flag));
+   check_mem_is_addressable_untyped(status, sizeof(*status));
    CALL_FN_W_5W(err, fn, source,tag,comm,flag,status);
    if (err == MPI_SUCCESS) {
-      make_defined_untyped(flag, sizeof(*flag));
+      make_mem_defined_if_addressable_untyped(flag, sizeof(*flag));
       if (*flag)
-         make_defined_untyped(status, sizeof(*status));
+         make_mem_defined_if_addressable_untyped(status, sizeof(*status));
    }
    after("Iprobe", err);
    return err;
@@ -1323,9 +1325,9 @@ int WRAPPER_FOR(PMPI_Probe)(int source, int tag,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Probe");
-   check_writable_untyped(status, sizeof(*status));
+   check_mem_is_addressable_untyped(status, sizeof(*status));
    CALL_FN_W_WWWW(err, fn, source,tag,comm,status);
-   make_defined_if_success_untyped(err, status, sizeof(*status));
+   make_mem_defined_if_addressable_if_success_untyped(err, status, sizeof(*status));
    after("Probe", err);
    return err;
 }
@@ -1341,7 +1343,7 @@ int WRAPPER_FOR(PMPI_Cancel)(MPI_Request* request)
    MPI_Request tmp;
    VALGRIND_GET_ORIG_FN(fn);
    before("Cancel");
-   check_writable_untyped(request, sizeof(*request));
+   check_mem_is_addressable_untyped(request, sizeof(*request));
    tmp = *request;
    CALL_FN_W_W(err, fn, request);
    if (err == MPI_SUCCESS)
@@ -1374,14 +1376,14 @@ int WRAPPER_FOR(PMPI_Sendrecv)(
    int    err, recvcount_actual = 0;
    VALGRIND_GET_ORIG_FN(fn);
    before("Sendrecv");
-   check_readable(sendbuf, sendcount, sendtype);
-   check_writable(recvbuf, recvcount, recvtype);
+   check_mem_is_defined(sendbuf, sendcount, sendtype);
+   check_mem_is_addressable(recvbuf, recvcount, recvtype);
    CALL_FN_W_12W(err, fn, sendbuf,sendcount,sendtype,dest,sendtag,
                           recvbuf,recvcount,recvtype,source,recvtag,
                           comm,status);
    if (err == MPI_SUCCESS 
        && count_from_Status(&recvcount_actual,recvtype,status)) {
-      make_defined(recvbuf, recvcount_actual, recvtype);
+      make_mem_defined_if_addressable(recvbuf, recvcount_actual, recvtype);
    }
    after("Sendrecv", err);
    return err;
@@ -1414,7 +1416,7 @@ int WRAPPER_FOR(PMPI_Type_commit)( MPI_Datatype* ty )
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Type_commit");
-   check_readable_untyped(ty, sizeof(*ty));
+   check_mem_is_defined_untyped(ty, sizeof(*ty));
    CALL_FN_W_W(err, fn, ty);
    after("Type_commit", err);
    return err;
@@ -1427,7 +1429,7 @@ int WRAPPER_FOR(PMPI_Type_free)( MPI_Datatype* ty )
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Type_free");
-   check_readable_untyped(ty, sizeof(*ty));
+   check_mem_is_defined_untyped(ty, sizeof(*ty));
    CALL_FN_W_W(err, fn, ty);
    after("Type_free", err);
    return err;
@@ -1460,12 +1462,12 @@ int WRAPPER_FOR(PMPI_Bcast)(void *buffer, int count,
    before("Bcast");
    i_am_sender = root == comm_rank(comm);
    if (i_am_sender) {
-      check_readable(buffer, count, datatype);
+      check_mem_is_defined(buffer, count, datatype);
    } else {
-      check_writable(buffer, count, datatype);
+      check_mem_is_addressable(buffer, count, datatype);
    }
    CALL_FN_W_5W(err, fn, buffer,count,datatype,root,comm);
-   make_defined_if_success(err, buffer, count, datatype);
+   make_mem_defined_if_addressable_if_success(err, buffer, count, datatype);
    after("Bcast", err);
    return err; 
 }
@@ -1500,14 +1502,14 @@ int WRAPPER_FOR(PMPI_Gather)(
    before("Gather");
    me = comm_rank(comm);
    sz = comm_size(comm);
-   check_readable(sendbuf, sendcount, sendtype);
+   check_mem_is_defined(sendbuf, sendcount, sendtype);
    if (me == root)
-      check_writable(recvbuf, recvcount * sz, recvtype);
+      check_mem_is_addressable(recvbuf, recvcount * sz, recvtype);
    CALL_FN_W_8W(err, fn, sendbuf,sendcount,sendtype,
                          recvbuf,recvcount,recvtype,
                          root,comm);
    if (me == root)
-      make_defined_if_success(err, recvbuf, recvcount * sz, recvtype);
+      make_mem_defined_if_addressable_if_success(err, recvbuf, recvcount * sz, recvtype);
    after("Gather", err);
    return err;
 }
@@ -1534,13 +1536,13 @@ int WRAPPER_FOR(PMPI_Scatter)(
    before("Scatter");
    me = comm_rank(comm);
    sz = comm_size(comm);
-   check_writable(recvbuf, recvcount, recvtype);
+   check_mem_is_addressable(recvbuf, recvcount, recvtype);
    if (me == root)
-      check_readable(sendbuf, sendcount * sz, sendtype);
+      check_mem_is_defined(sendbuf, sendcount * sz, sendtype);
    CALL_FN_W_8W(err, fn, sendbuf,sendcount,sendtype,
                          recvbuf,recvcount,recvtype,
                          root,comm);
-   make_defined_if_success(err, recvbuf, recvcount, recvtype);
+   make_mem_defined_if_addressable_if_success(err, recvbuf, recvcount, recvtype);
    after("Scatter", err);
    return err;
 }
@@ -1566,12 +1568,12 @@ int WRAPPER_FOR(PMPI_Alltoall)(
    VALGRIND_GET_ORIG_FN(fn);
    before("Alltoall");
    sz = comm_size(comm);
-   check_readable(sendbuf, sendcount * sz, sendtype);
-   check_writable(recvbuf, recvcount * sz, recvtype);
+   check_mem_is_defined(sendbuf, sendcount * sz, sendtype);
+   check_mem_is_addressable(recvbuf, recvcount * sz, recvtype);
    CALL_FN_W_7W(err, fn, sendbuf,sendcount,sendtype,
                          recvbuf,recvcount,recvtype,
                          comm);
-   make_defined_if_success(err, recvbuf, recvcount * sz, recvtype);
+   make_mem_defined_if_addressable_if_success(err, recvbuf, recvcount * sz, recvtype);
    after("Alltoall", err);
    return err;
 }
@@ -1598,12 +1600,12 @@ int WRAPPER_FOR(PMPI_Reduce)(void *sendbuf, void *recvbuf,
    VALGRIND_GET_ORIG_FN(fn);
    before("Reduce");
    i_am_root = root == comm_rank(comm);
-   check_readable(sendbuf, count, datatype);
+   check_mem_is_defined(sendbuf, count, datatype);
    if (i_am_root)
-      check_writable(recvbuf, count, datatype);
+      check_mem_is_addressable(recvbuf, count, datatype);
    CALL_FN_W_7W(err, fn, sendbuf,recvbuf,count,datatype,op,root,comm);
    if (i_am_root)
-      make_defined_if_success(err, recvbuf, count, datatype);
+      make_mem_defined_if_addressable_if_success(err, recvbuf, count, datatype);
    after("Reduce", err);
    return err;
 }
@@ -1622,10 +1624,10 @@ int WRAPPER_FOR(PMPI_Allreduce)(void *sendbuf, void *recvbuf,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Allreduce");
-   check_readable(sendbuf, count, datatype);
-   check_writable(recvbuf, count, datatype);
+   check_mem_is_defined(sendbuf, count, datatype);
+   check_mem_is_addressable(recvbuf, count, datatype);
    CALL_FN_W_6W(err, fn, sendbuf,recvbuf,count,datatype,op,comm);
-   make_defined_if_success(err, recvbuf, count, datatype);
+   make_mem_defined_if_addressable_if_success(err, recvbuf, count, datatype);
    after("Allreduce", err);
    return err;
 }
@@ -1643,9 +1645,9 @@ int WRAPPER_FOR(PMPI_Op_create)( MPI_User_function* function,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Op_create");
-   check_writable_untyped(op, sizeof(*op));
+   check_mem_is_addressable_untyped(op, sizeof(*op));
    CALL_FN_W_WWW(err, fn, function,commute,op);
-   make_defined_if_success_untyped(err, op, sizeof(*op));
+   make_mem_defined_if_addressable_if_success_untyped(err, op, sizeof(*op));
    after("Op_create", err);
    return err;
 }
@@ -1708,9 +1710,9 @@ int WRAPPER_FOR(PMPI_Comm_rank)(MPI_Comm comm, int *rank)
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Comm_rank");
-   check_writable_untyped(rank, sizeof(*rank));
+   check_mem_is_addressable_untyped(rank, sizeof(*rank));
    CALL_FN_W_WW(err, fn, comm,rank);
-   make_defined_if_success_untyped(err, rank, sizeof(*rank));
+   make_mem_defined_if_addressable_if_success_untyped(err, rank, sizeof(*rank));
    after("Comm_rank", err);
    return err;
 }
@@ -1723,9 +1725,9 @@ int WRAPPER_FOR(PMPI_Comm_size)(MPI_Comm comm, int *size)
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Comm_size");
-   check_writable_untyped(size, sizeof(*size));
+   check_mem_is_addressable_untyped(size, sizeof(*size));
    CALL_FN_W_WW(err, fn, comm,size);
-   make_defined_if_success_untyped(err, size, sizeof(*size));
+   make_mem_defined_if_addressable_if_success_untyped(err, size, sizeof(*size));
    after("Comm_size", err);
    return err;
 }
@@ -1752,8 +1754,8 @@ int WRAPPER_FOR(PMPI_Error_string)( int errorcode, char* string,
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Error_string");
-   check_writable_untyped(resultlen, sizeof(int));
-   check_writable_untyped(string, MPI_MAX_ERROR_STRING);
+   check_mem_is_addressable_untyped(resultlen, sizeof(int));
+   check_mem_is_addressable_untyped(string, MPI_MAX_ERROR_STRING);
    CALL_FN_W_WWW(err, fn, errorcode,string,resultlen);
    /* Don't bother to paint the result; we assume the real function
       will have filled it with defined characters :-) */
@@ -1776,8 +1778,8 @@ int WRAPPER_FOR(PMPI_Init)(int *argc, char ***argv)
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Init");
-   check_readable_untyped(argc, sizeof(int));
-   check_readable_untyped(*argv, *argc * sizeof(char**));
+   check_mem_is_defined_untyped(argc, sizeof(int));
+   check_mem_is_defined_untyped(*argv, *argc * sizeof(char**));
    CALL_FN_W_WW(err, fn, argc,argv);
    after("Init", err);
    return err;
@@ -1790,9 +1792,9 @@ int WRAPPER_FOR(PMPI_Initialized)(int* flag)
    int    err;
    VALGRIND_GET_ORIG_FN(fn);
    before("Initialized");
-   check_writable_untyped(flag, sizeof(int));
+   check_mem_is_addressable_untyped(flag, sizeof(int));
    CALL_FN_W_W(err, fn, flag);
-   make_defined_if_success_untyped(err, flag, sizeof(int));
+   make_mem_defined_if_addressable_if_success_untyped(err, flag, sizeof(int));
    after("Initialized", err);
    return err;
 }

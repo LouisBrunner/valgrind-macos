@@ -133,7 +133,7 @@ MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT size,
       the mc->data field isn't visible to the leak checker.  If memory
       management is working correctly, any pointer returned by VG_(malloc)
       should be noaccess as far as the client is concerned. */
-   if (!MC_(check_noaccess)( (Addr)mc, sizeof(MC_Chunk), NULL )) {
+   if (!MC_(check_mem_is_noaccess)( (Addr)mc, sizeof(MC_Chunk), NULL )) {
       VG_(tool_panic)("create_MC_Chunk: shadow area is accessible");
    } 
    return mc;
@@ -192,9 +192,9 @@ void* MC_(new_block) ( ThreadId tid,
    VG_(HT_add_node)( table, create_MC_Chunk(tid, p, size, kind) );
 
    if (is_zeroed)
-      MC_(make_readable)( p, size );
+      MC_(make_mem_defined)( p, size );
    else
-      MC_(make_writable)( p, size );
+      MC_(make_mem_undefined)( p, size );
 
    return (void*)p;
 }
@@ -259,7 +259,7 @@ void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
 {
    /* Note: make redzones noaccess again -- just in case user made them
       accessible with a client request... */
-   MC_(make_noaccess)( mc->data-rzB, mc->size + 2*rzB );
+   MC_(make_mem_noaccess)( mc->data-rzB, mc->size + 2*rzB );
 
    /* Put it out of harm's way for a while, if not from a client request */
    if (MC_AllocCustom != mc->allockind) {
@@ -345,7 +345,7 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
       
    } else if (old_size > new_size) {
       /* new size is smaller */
-      MC_(make_noaccess)( mc->data+new_size, mc->size-new_size );
+      MC_(make_mem_noaccess)( mc->data+new_size, mc->size-new_size );
       mc->size = new_size;
       mc->where = VG_(record_ExeContext)(tid);
       p_new = p_old;
@@ -357,10 +357,10 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
 
       if (a_new) {
          /* First half kept and copied, second half new, red zones as normal */
-         MC_(make_noaccess)( a_new-MC_MALLOC_REDZONE_SZB, MC_MALLOC_REDZONE_SZB );
+         MC_(make_mem_noaccess)( a_new-MC_MALLOC_REDZONE_SZB, MC_MALLOC_REDZONE_SZB );
          MC_(copy_address_range_state)( (Addr)p_old, a_new, mc->size );
-         MC_(make_writable)( a_new+mc->size, new_size-mc->size );
-         MC_(make_noaccess)( a_new+new_size, MC_MALLOC_REDZONE_SZB );
+         MC_(make_mem_undefined)( a_new+mc->size, new_size-mc->size );
+         MC_(make_mem_noaccess) ( a_new+new_size, MC_MALLOC_REDZONE_SZB );
 
          /* Copy from old to new */
          VG_(memcpy)((void*)a_new, p_old, mc->size);
@@ -403,7 +403,7 @@ void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
       management is working correctly, anything pointer returned by
       VG_(malloc) should be noaccess as far as the client is
       concerned. */
-   if (!MC_(check_noaccess)( (Addr)mp, sizeof(MC_Mempool), NULL )) {
+   if (!MC_(check_mem_is_noaccess)( (Addr)mp, sizeof(MC_Mempool), NULL )) {
       VG_(tool_panic)("MC_(create_mempool): shadow area is accessible");
    } 
 
@@ -428,7 +428,7 @@ void MC_(destroy_mempool)(Addr pool)
    while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
       /* Note: make redzones noaccess again -- just in case user made them
          accessible with a client request... */
-      MC_(make_noaccess)(mc->data-mp->rzB, mc->size + 2*mp->rzB );
+      MC_(make_mem_noaccess)(mc->data-mp->rzB, mc->size + 2*mp->rzB );
    }
    // Destroy the chunk table
    VG_(HT_destruct)(mp->chunks);

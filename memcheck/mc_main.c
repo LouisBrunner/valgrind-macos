@@ -112,15 +112,15 @@
 
    All entries in the primary (top-level) map must point to a valid
    secondary (second-level) map.  Since many of the 64kB chunks will
-   have the same status for every bit -- ie. not mapped at all (for unused
-   address space) or entirely readable (for code segments) -- there are
-   three distinguished secondary maps, which indicate 'noaccess', 'writable'
-   and 'readable'.  For these uniform 64kB chunks, the primary map entry
-   points to the relevant distinguished map.  In practice, typically more
-   than half of the addressable memory is represented with the 'writable' or
-   'readable' distinguished secondary map, so it gives a good saving.  It
-   also lets us set the V+A bits of large address regions quickly in
-   set_address_range_perms().
+   have the same status for every bit -- ie. noaccess (for unused
+   address space) or entirely addressable and defined (for code segments) --
+   there are three distinguished secondary maps, which indicate 'noaccess',
+   'undefined' and 'defined'.  For these uniform 64kB chunks, the primary
+   map entry points to the relevant distinguished map.  In practice,
+   typically more than half of the addressable memory is represented with
+   the 'undefined' or 'defined' distinguished secondary map, so it gives a
+   good saving.  It also lets us set the V+A bits of large address regions
+   quickly in set_address_range_perms().
 
    On 64-bit machines it's more complicated.  If we followed the same basic
    scheme we'd have a four-level table which would require too many memory
@@ -177,13 +177,14 @@
 // compression scheme to reduce the size of shadow memory.  Each byte of
 // memory has 2 bits which indicates its state (ie. V+A bits):
 //
-//   00:  noaccess (unaddressable but treated as fully defined)
-//   01:  writable (addressable and fully undefined)
-//   10:  readable (addressable and fully defined)
-//   11:  other    (addressable and partially defined)
+//   00:  noaccess    (unaddressable but treated as fully defined)
+//   01:  undefined   (addressable and fully undefined)
+//   10:  defined     (addressable and fully defined)
+//   11:  partdefined (addressable and partially defined)
 //
-// In the "other" case, we use a secondary table to store the V bits.  Each
-// entry in the secondary-V-bits table maps a byte address to its 8 V bits.
+// In the "partdefined" case, we use a secondary table to store the V bits.
+// Each entry in the secondary-V-bits table maps a byte address to its 8 V
+// bits.
 //
 // We store the compressed V+A bits in 8-bit chunks, ie. the V+A bits for
 // four bytes (32 bits) of memory are in each chunk.  Hence the name
@@ -215,24 +216,24 @@
 
 // These represent eight bits of memory.
 #define VA_BITS2_NOACCESS     0x0      // 00b
-#define VA_BITS2_WRITABLE     0x1      // 01b
-#define VA_BITS2_READABLE     0x2      // 10b
-#define VA_BITS2_OTHER        0x3      // 11b
+#define VA_BITS2_UNDEFINED    0x1      // 01b
+#define VA_BITS2_DEFINED      0x2      // 10b
+#define VA_BITS2_PARTDEFINED  0x3      // 11b
 
 // These represent 16 bits of memory.
 #define VA_BITS4_NOACCESS     0x0      // 00_00b
-#define VA_BITS4_WRITABLE     0x5      // 01_01b
-#define VA_BITS4_READABLE     0xa      // 10_10b
+#define VA_BITS4_UNDEFINED    0x5      // 01_01b
+#define VA_BITS4_DEFINED      0xa      // 10_10b
 
 // These represent 32 bits of memory.
 #define VA_BITS8_NOACCESS     0x00     // 00_00_00_00b
-#define VA_BITS8_WRITABLE     0x55     // 01_01_01_01b
-#define VA_BITS8_READABLE     0xaa     // 10_10_10_10b
+#define VA_BITS8_UNDEFINED    0x55     // 01_01_01_01b
+#define VA_BITS8_DEFINED      0xaa     // 10_10_10_10b
 
 // These represent 64 bits of memory.
 #define VA_BITS16_NOACCESS    0x0000   // 00_00_00_00b x 2
-#define VA_BITS16_WRITABLE    0x5555   // 01_01_01_01b x 2
-#define VA_BITS16_READABLE    0xaaaa   // 10_10_10_10b x 2
+#define VA_BITS16_UNDEFINED   0x5555   // 01_01_01_01b x 2
+#define VA_BITS16_DEFINED     0xaaaa   // 10_10_10_10b x 2
 
 
 #define SM_CHUNKS             16384
@@ -260,8 +261,8 @@ typedef
 // accessible but undefined, and one for accessible and defined.
 // Distinguished secondaries may never be modified.
 #define SM_DIST_NOACCESS   0
-#define SM_DIST_WRITABLE   1
-#define SM_DIST_READABLE   2
+#define SM_DIST_UNDEFINED  1
+#define SM_DIST_DEFINED    2
 
 static SecMap sm_distinguished[3];
 
@@ -293,16 +294,16 @@ static SecMap* copy_for_writing ( SecMap* dist_sm )
 
 /* --------------- Stats --------------- */
 
-static Int   n_issued_SMs     = 0;
-static Int   n_deissued_SMs   = 0;
-static Int   n_noaccess_SMs   = N_PRIMARY_MAP; // start with many noaccess DSMs
-static Int   n_writable_SMs   = 0;
-static Int   n_readable_SMs   = 0;
-static Int   n_non_DSM_SMs    = 0;
-static Int   max_noaccess_SMs = 0;
-static Int   max_writable_SMs = 0;
-static Int   max_readable_SMs = 0;
-static Int   max_non_DSM_SMs  = 0;
+static Int   n_issued_SMs      = 0;
+static Int   n_deissued_SMs    = 0;
+static Int   n_noaccess_SMs    = N_PRIMARY_MAP; // start with many noaccess DSMs
+static Int   n_undefined_SMs   = 0;
+static Int   n_defined_SMs     = 0;
+static Int   n_non_DSM_SMs     = 0;
+static Int   max_noaccess_SMs  = 0;
+static Int   max_undefined_SMs = 0;
+static Int   max_defined_SMs   = 0;
+static Int   max_non_DSM_SMs   = 0;
 
 static ULong n_auxmap_searches  = 0;
 static ULong n_auxmap_cmps      = 0;
@@ -314,22 +315,22 @@ static Int   max_secVBit_nodes = 0;
 
 static void update_SM_counts(SecMap* oldSM, SecMap* newSM)
 {
-   if      (oldSM == &sm_distinguished[SM_DIST_NOACCESS]) n_noaccess_SMs--;
-   else if (oldSM == &sm_distinguished[SM_DIST_WRITABLE]) n_writable_SMs--;
-   else if (oldSM == &sm_distinguished[SM_DIST_READABLE]) n_readable_SMs--;
-   else                                                 { n_non_DSM_SMs--;
-                                                          n_deissued_SMs++; }
+   if      (oldSM == &sm_distinguished[SM_DIST_NOACCESS ]) n_noaccess_SMs --;
+   else if (oldSM == &sm_distinguished[SM_DIST_UNDEFINED]) n_undefined_SMs--;
+   else if (oldSM == &sm_distinguished[SM_DIST_DEFINED  ]) n_defined_SMs  --;
+   else                                                  { n_non_DSM_SMs  --;
+                                                           n_deissued_SMs ++; }
 
-   if      (newSM == &sm_distinguished[SM_DIST_NOACCESS]) n_noaccess_SMs++;
-   else if (newSM == &sm_distinguished[SM_DIST_WRITABLE]) n_writable_SMs++;
-   else if (newSM == &sm_distinguished[SM_DIST_READABLE]) n_readable_SMs++;
-   else                                                 { n_non_DSM_SMs++;
-                                                          n_issued_SMs++; }
+   if      (newSM == &sm_distinguished[SM_DIST_NOACCESS ]) n_noaccess_SMs ++;
+   else if (newSM == &sm_distinguished[SM_DIST_UNDEFINED]) n_undefined_SMs++;
+   else if (newSM == &sm_distinguished[SM_DIST_DEFINED  ]) n_defined_SMs  ++;
+   else                                                  { n_non_DSM_SMs  ++;
+                                                           n_issued_SMs   ++; }
 
-   if (n_noaccess_SMs > max_noaccess_SMs) max_noaccess_SMs = n_noaccess_SMs;
-   if (n_writable_SMs > max_writable_SMs) max_writable_SMs = n_writable_SMs;
-   if (n_readable_SMs > max_readable_SMs) max_readable_SMs = n_readable_SMs;
-   if (n_non_DSM_SMs  > max_non_DSM_SMs ) max_non_DSM_SMs  = n_non_DSM_SMs;   
+   if (n_noaccess_SMs  > max_noaccess_SMs ) max_noaccess_SMs  = n_noaccess_SMs;
+   if (n_undefined_SMs > max_undefined_SMs) max_undefined_SMs = n_undefined_SMs;
+   if (n_defined_SMs   > max_defined_SMs  ) max_defined_SMs   = n_defined_SMs;
+   if (n_non_DSM_SMs   > max_non_DSM_SMs  ) max_non_DSM_SMs   = n_non_DSM_SMs;   
 }
 
 /* --------------- Primary maps --------------- */
@@ -569,7 +570,7 @@ UChar extract_vabits4_from_vabits8 ( Addr a, UChar vabits8 )
 
 // *** WARNING! ***
 // Any time this function is called, if it is possible that vabits2
-// is equal to VA_BITS2_OTHER, then the corresponding entry in the
+// is equal to VA_BITS2_PARTDEFINED, then the corresponding entry in the
 // sec-V-bits table must also be set!
 static INLINE
 void set_vabits2 ( Addr a, UChar vabits2 )
@@ -602,9 +603,9 @@ Bool set_vbits8 ( Addr a, UChar vbits8 )
       // Addressable.  Convert in-register format to in-memory format.
       // Also remove any existing sec V bit entry for the byte if no
       // longer necessary.
-      if      ( V_BITS8_DEFINED   == vbits8 ) { vabits2 = VA_BITS2_READABLE; }
-      else if ( V_BITS8_UNDEFINED == vbits8 ) { vabits2 = VA_BITS2_WRITABLE; }
-      else                                    { vabits2 = VA_BITS2_OTHER;
+      if      ( V_BITS8_DEFINED   == vbits8 ) { vabits2 = VA_BITS2_DEFINED;   }
+      else if ( V_BITS8_UNDEFINED == vbits8 ) { vabits2 = VA_BITS2_UNDEFINED; }
+      else                                    { vabits2 = VA_BITS2_PARTDEFINED;
                                                 set_sec_vbits8(a, vbits8);  }
       set_vabits2(a, vabits2);
 
@@ -626,13 +627,13 @@ Bool get_vbits8 ( Addr a, UChar* vbits8 )
    UChar vabits2 = get_vabits2(a);
 
    // Convert the in-memory format to in-register format.
-   if      ( VA_BITS2_READABLE == vabits2 ) { *vbits8 = V_BITS8_DEFINED;   }
-   else if ( VA_BITS2_WRITABLE == vabits2 ) { *vbits8 = V_BITS8_UNDEFINED; }
-   else if ( VA_BITS2_NOACCESS == vabits2 ) {
+   if      ( VA_BITS2_DEFINED   == vabits2 ) { *vbits8 = V_BITS8_DEFINED;   }
+   else if ( VA_BITS2_UNDEFINED == vabits2 ) { *vbits8 = V_BITS8_UNDEFINED; }
+   else if ( VA_BITS2_NOACCESS  == vabits2 ) {
       *vbits8 = V_BITS8_DEFINED;    // Make V bits defined!
       ok = False;
    } else {
-      tl_assert( VA_BITS2_OTHER == vabits2 );
+      tl_assert( VA_BITS2_PARTDEFINED == vabits2 );
       *vbits8 = get_sec_vbits8(a);
    }
    return ok;
@@ -642,7 +643,8 @@ Bool get_vbits8 ( Addr a, UChar* vbits8 )
 /* --------------- Secondary V bit table ------------ */
 
 // This table holds the full V bit pattern for partially-defined bytes
-// (PDBs) that are represented by VA_BITS2_OTHER in the main shadow memory.
+// (PDBs) that are represented by VA_BITS2_PARTDEFINED in the main shadow
+// memory.
 //
 // Note: the nodes in this table can become stale.  Eg. if you write a PDB,
 // then overwrite the same address with a fully defined byte, the sec-V-bit
@@ -744,7 +746,7 @@ static void gcSecVBitTable(void)
          // get_vabits2() for the lookup is not very efficient, but I don't
          // think it matters.
          for (i = 0; i < BYTES_PER_SEC_VBIT_NODE; i++) {
-            if (VA_BITS2_OTHER == get_vabits2(n->a + i)) {
+            if (VA_BITS2_PARTDEFINED == get_vabits2(n->a + i)) {
                keep = True;      // Found a non-stale byte, so keep
                break;
             }
@@ -963,13 +965,13 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    PROF_EVENT(150, "set_address_range_perms");
 
    /* Check the V+A bits make sense. */
-   tl_assert(VA_BITS16_NOACCESS == vabits16 ||
-             VA_BITS16_WRITABLE == vabits16 ||
-             VA_BITS16_READABLE == vabits16);
+   tl_assert(VA_BITS16_NOACCESS  == vabits16 ||
+             VA_BITS16_UNDEFINED == vabits16 ||
+             VA_BITS16_DEFINED   == vabits16);
 
    // This code should never write PDBs;  ensure this.  (See comment above
    // set_vabits2().)
-   tl_assert(VA_BITS2_OTHER != vabits2);
+   tl_assert(VA_BITS2_PARTDEFINED != vabits2);
 
    if (lenT == 0)
       return;
@@ -977,9 +979,9 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    if (lenT > 100 * 1000 * 1000) {
       if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
          Char* s = "unknown???";
-         if (vabits16 == VA_BITS16_NOACCESS) s = "noaccess";
-         if (vabits16 == VA_BITS16_WRITABLE) s = "writable";
-         if (vabits16 == VA_BITS16_READABLE) s = "readable";
+         if (vabits16 == VA_BITS16_NOACCESS ) s = "noaccess";
+         if (vabits16 == VA_BITS16_UNDEFINED) s = "undefined";
+         if (vabits16 == VA_BITS16_DEFINED  ) s = "defined";
          VG_(message)(Vg_UserMsg, "Warning: set address range perms: "
                                   "large range %lu (%s)", lenT, s);
       }
@@ -992,7 +994,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
       // the same value.
       // Nb: We don't have to worry about updating the sec-V-bits table
       // after these set_vabits2() calls because this code never writes
-      // VA_BITS2_OTHER values.
+      // VA_BITS2_PARTDEFINED values.
       SizeT i;
       for (i = 0; i < lenT; i++) {
          set_vabits2(a + i, vabits2);
@@ -1180,40 +1182,40 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
 
 /* --- Set permissions for arbitrary address ranges --- */
 
-void MC_(make_noaccess) ( Addr a, SizeT len )
+void MC_(make_mem_noaccess) ( Addr a, SizeT len )
 {
-   PROF_EVENT(40, "MC_(make_noaccess)");
-   DEBUG("MC_(make_noaccess)(%p, %lu)\n", a, len);
+   PROF_EVENT(40, "MC_(make_mem_noaccess)");
+   DEBUG("MC_(make_mem_noaccess)(%p, %lu)\n", a, len);
    set_address_range_perms ( a, len, VA_BITS16_NOACCESS, SM_DIST_NOACCESS );
 }
 
-void MC_(make_writable) ( Addr a, SizeT len )
+void MC_(make_mem_undefined) ( Addr a, SizeT len )
 {
-   PROF_EVENT(41, "MC_(make_writable)");
-   DEBUG("MC_(make_writable)(%p, %lu)\n", a, len);
-   set_address_range_perms ( a, len, VA_BITS16_WRITABLE, SM_DIST_WRITABLE );
+   PROF_EVENT(41, "MC_(make_mem_undefined)");
+   DEBUG("MC_(make_mem_undefined)(%p, %lu)\n", a, len);
+   set_address_range_perms ( a, len, VA_BITS16_UNDEFINED, SM_DIST_UNDEFINED );
 }
 
-void MC_(make_readable) ( Addr a, SizeT len )
+void MC_(make_mem_defined) ( Addr a, SizeT len )
 {
-   PROF_EVENT(42, "MC_(make_readable)");
-   DEBUG("MC_(make_readable)(%p, %lu)\n", a, len);
-   set_address_range_perms ( a, len, VA_BITS16_READABLE, SM_DIST_READABLE );
+   PROF_EVENT(42, "MC_(make_mem_defined)");
+   DEBUG("MC_(make_mem_defined)(%p, %lu)\n", a, len);
+   set_address_range_perms ( a, len, VA_BITS16_DEFINED, SM_DIST_DEFINED );
 }
 
 /* For each byte in [a,a+len), if the byte is addressable, make it be
    defined, but if it isn't addressible, leave it alone.  In other
-   words a version of mc_make_readable that doesn't mess with
+   words a version of MC_(make_mem_defined) that doesn't mess with
    addressibility.  Low-performance implementation. */
-static void mc_make_defined ( Addr a, SizeT len )
+static void make_mem_defined_if_addressable ( Addr a, SizeT len )
 {
    SizeT i;
    UChar vabits2;
-   DEBUG("mc_make_defined(%p, %llu)\n", a, (ULong)len);
+   DEBUG("make_mem_defined_if_addressable(%p, %llu)\n", a, (ULong)len);
    for (i = 0; i < len; i++) {
       vabits2 = get_vabits2( a+i );
       if (EXPECTED_TAKEN(VA_BITS2_NOACCESS != vabits2)) {
-         set_vabits2(a+i, VA_BITS2_READABLE);
+         set_vabits2(a+i, VA_BITS2_DEFINED);
       }
    }
 }
@@ -1238,7 +1240,7 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
          PROF_EVENT(51, "MC_(copy_address_range_state)(loop)");
          vabits2 = get_vabits2( src+j );
          set_vabits2( dst+j, vabits2 );
-         if (VA_BITS2_OTHER == vabits2) {
+         if (VA_BITS2_PARTDEFINED == vabits2) {
             set_sec_vbits8( dst+j, get_sec_vbits8( src+j ) );
          }
       }
@@ -1249,7 +1251,7 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
          PROF_EVENT(52, "MC_(copy_address_range_state)(loop)");
          vabits2 = get_vabits2( src+i );
          set_vabits2( dst+i, vabits2 );
-         if (VA_BITS2_OTHER == vabits2) {
+         if (VA_BITS2_PARTDEFINED == vabits2) {
             set_sec_vbits8( dst+i, get_sec_vbits8( src+i ) );
          }
       }
@@ -1260,25 +1262,25 @@ void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
 /* --- Fast case permission setters, for dealing with stacks. --- */
 
 static INLINE
-void make_aligned_word32_writable ( Addr a )
+void make_aligned_word32_undefined ( Addr a )
 {
    UWord   sm_off;
    SecMap* sm;
 
-   PROF_EVENT(300, "make_aligned_word32_writable");
+   PROF_EVENT(300, "make_aligned_word32_undefined");
 
 #ifndef PERF_FAST_STACK2
-   MC_(make_writable)(a, 4);
+   MC_(make_mem_undefined)(a, 4);
 #else
    if (EXPECTED_NOT_TAKEN(a > MAX_PRIMARY_ADDRESS)) {
-      PROF_EVENT(301, "make_aligned_word32_writable-slow1");
-      MC_(make_writable)(a, 4);
+      PROF_EVENT(301, "make_aligned_word32_undefined-slow1");
+      MC_(make_mem_undefined)(a, 4);
       return;
    }
 
    sm                  = get_secmap_for_writing_low(a);
    sm_off              = SM_OFF(a);
-   sm->vabits8[sm_off] = VA_BITS8_WRITABLE;
+   sm->vabits8[sm_off] = VA_BITS8_UNDEFINED;
 #endif
 }
 
@@ -1292,11 +1294,11 @@ void make_aligned_word32_noaccess ( Addr a )
    PROF_EVENT(310, "make_aligned_word32_noaccess");
 
 #ifndef PERF_FAST_STACK2
-   MC_(make_noaccess)(a, 4);
+   MC_(make_mem_noaccess)(a, 4);
 #else
    if (EXPECTED_NOT_TAKEN(a > MAX_PRIMARY_ADDRESS)) {
       PROF_EVENT(311, "make_aligned_word32_noaccess-slow1");
-      MC_(make_noaccess)(a, 4);
+      MC_(make_mem_noaccess)(a, 4);
       return;
    }
 
@@ -1309,25 +1311,25 @@ void make_aligned_word32_noaccess ( Addr a )
 
 /* Nb: by "aligned" here we mean 8-byte aligned */
 static INLINE
-void make_aligned_word64_writable ( Addr a )
+void make_aligned_word64_undefined ( Addr a )
 {
    UWord   sm_off16;
    SecMap* sm;
 
-   PROF_EVENT(320, "make_aligned_word64_writable");
+   PROF_EVENT(320, "make_aligned_word64_undefined");
 
 #ifndef PERF_FAST_STACK2
-   MC_(make_writable)(a, 8);
+   MC_(make_mem_undefined)(a, 8);
 #else
    if (EXPECTED_NOT_TAKEN(a > MAX_PRIMARY_ADDRESS)) {
-      PROF_EVENT(321, "make_aligned_word64_writable-slow1");
-      MC_(make_writable)(a, 8);
+      PROF_EVENT(321, "make_aligned_word64_undefined-slow1");
+      MC_(make_mem_undefined)(a, 8);
       return;
    }
 
    sm       = get_secmap_for_writing_low(a);
    sm_off16 = SM_OFF_16(a);
-   ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_WRITABLE;
+   ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_UNDEFINED;
 #endif
 }
 
@@ -1341,11 +1343,11 @@ void make_aligned_word64_noaccess ( Addr a )
    PROF_EVENT(330, "make_aligned_word64_noaccess");
 
 #ifndef PERF_FAST_STACK2
-   MC_(make_noaccess)(a, 8);
+   MC_(make_mem_noaccess)(a, 8);
 #else
    if (EXPECTED_NOT_TAKEN(a > MAX_PRIMARY_ADDRESS)) {
       PROF_EVENT(331, "make_aligned_word64_noaccess-slow1");
-      MC_(make_noaccess)(a, 8);
+      MC_(make_mem_noaccess)(a, 8);
       return;
    }
 
@@ -1364,9 +1366,9 @@ static void VG_REGPARM(1) mc_new_mem_stack_4(Addr new_SP)
 {
    PROF_EVENT(110, "new_mem_stack_4");
    if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_writable  ( -VG_STACK_REDZONE_SZB + new_SP );
+      make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
    } else {
-      MC_(make_writable) ( -VG_STACK_REDZONE_SZB + new_SP, 4 );
+      MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 4 );
    }
 }
 
@@ -1374,9 +1376,9 @@ static void VG_REGPARM(1) mc_die_mem_stack_4(Addr new_SP)
 {
    PROF_EVENT(120, "die_mem_stack_4");
    if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-4 );
+      make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4 );
    } else {
-      MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-4, 4 );
+      MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-4, 4 );
    }
 }
 
@@ -1384,12 +1386,12 @@ static void VG_REGPARM(1) mc_new_mem_stack_8(Addr new_SP)
 {
    PROF_EVENT(111, "new_mem_stack_8");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
    } else if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_writable  ( -VG_STACK_REDZONE_SZB + new_SP   );
-      make_aligned_word32_writable  ( -VG_STACK_REDZONE_SZB + new_SP+4 );
+      make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
+      make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4 );
    } else {
-      MC_(make_writable) ( -VG_STACK_REDZONE_SZB + new_SP, 8 );
+      MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 8 );
    }
 }
 
@@ -1397,12 +1399,12 @@ static void VG_REGPARM(1) mc_die_mem_stack_8(Addr new_SP)
 {
    PROF_EVENT(121, "die_mem_stack_8");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-8 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8 );
    } else if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-8 );
-      make_aligned_word32_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-4 );
+      make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8 );
+      make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4 );
    } else {
-      MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-8, 8 );
+      MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-8, 8 );
    }
 }
 
@@ -1410,13 +1412,13 @@ static void VG_REGPARM(1) mc_new_mem_stack_12(Addr new_SP)
 {
    PROF_EVENT(112, "new_mem_stack_12");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP   );
-      make_aligned_word32_writable  ( -VG_STACK_REDZONE_SZB + new_SP+8 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
+      make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
    } else if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_writable  ( -VG_STACK_REDZONE_SZB + new_SP   );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+4 );
+      make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4 );
    } else {
-      MC_(make_writable) ( -VG_STACK_REDZONE_SZB + new_SP, 12 );
+      MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 12 );
    }
 }
 
@@ -1425,13 +1427,13 @@ static void VG_REGPARM(1) mc_die_mem_stack_12(Addr new_SP)
    PROF_EVENT(122, "die_mem_stack_12");
    /* Note the -12 in the test */
    if (VG_IS_8_ALIGNED(new_SP-12)) {
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-12 );
-      make_aligned_word32_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-4  );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
+      make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4  );
    } else if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-12 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-8  );
+      make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8  );
    } else {
-      MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-12, 12 );
+      MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-12, 12 );
    }
 }
 
@@ -1439,14 +1441,14 @@ static void VG_REGPARM(1) mc_new_mem_stack_16(Addr new_SP)
 {
    PROF_EVENT(113, "new_mem_stack_16");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP   );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+8 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
    } else if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_writable  ( -VG_STACK_REDZONE_SZB + new_SP    );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+4  );
-      make_aligned_word32_writable  ( -VG_STACK_REDZONE_SZB + new_SP+12 );
+      make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4  );
+      make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+12 );
    } else {
-      MC_(make_writable) ( -VG_STACK_REDZONE_SZB + new_SP, 16 );
+      MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 16 );
    }
 }
 
@@ -1454,14 +1456,14 @@ static void VG_REGPARM(1) mc_die_mem_stack_16(Addr new_SP)
 {
    PROF_EVENT(123, "die_mem_stack_16");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-16 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-8  );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8  );
    } else if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-16 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-12 );
-      make_aligned_word32_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-4  );
+      make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
+      make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4  );
    } else {
-      MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-16, 16 );
+      MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-16, 16 );
    }
 }
 
@@ -1469,18 +1471,18 @@ static void VG_REGPARM(1) mc_new_mem_stack_32(Addr new_SP)
 {
    PROF_EVENT(114, "new_mem_stack_32");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP    );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+8  );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+16 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+24 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+24 );
    } else if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_writable  ( -VG_STACK_REDZONE_SZB + new_SP    );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+4  );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+12 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+20 );
-      make_aligned_word32_writable  ( -VG_STACK_REDZONE_SZB + new_SP+28 );
+      make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4  );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+12 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+20 );
+      make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+28 );
    } else {
-      MC_(make_writable) ( -VG_STACK_REDZONE_SZB + new_SP, 32 );
+      MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 32 );
    }
 }
 
@@ -1488,18 +1490,18 @@ static void VG_REGPARM(1) mc_die_mem_stack_32(Addr new_SP)
 {
    PROF_EVENT(124, "die_mem_stack_32");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-32 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-24 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-16 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-24 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
    } else if (VG_IS_4_ALIGNED(new_SP)) {
-      make_aligned_word32_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-32 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-28 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-20 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-12 );
-      make_aligned_word32_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-4  );
+      make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-28 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-20 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
+      make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4  );
    } else {
-      MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-32, 32 );
+      MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-32, 32 );
    }
 }
 
@@ -1507,22 +1509,22 @@ static void VG_REGPARM(1) mc_new_mem_stack_112(Addr new_SP)
 {
    PROF_EVENT(115, "new_mem_stack_112");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP    );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+8  );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+16 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+24 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+32 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+40 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+48 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+56 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+64 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+72 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+80 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+88 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+96 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+104);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+24 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+32 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+40 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+48 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+56 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+64 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+72 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+80 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+88 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+96 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+104);
    } else {
-      MC_(make_writable) ( -VG_STACK_REDZONE_SZB + new_SP, 112 );
+      MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 112 );
    }
 }
 
@@ -1530,22 +1532,22 @@ static void VG_REGPARM(1) mc_die_mem_stack_112(Addr new_SP)
 {
    PROF_EVENT(125, "die_mem_stack_112");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-112);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-104);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-96 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-88 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-80 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-72 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-64 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-56 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-48 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-40 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-32 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-24 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-16 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-112);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-104);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-96 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-88 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-80 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-72 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-64 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-56 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-48 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-40 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-24 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
    } else {
-      MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-112, 112 );
+      MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-112, 112 );
    }
 }
 
@@ -1553,24 +1555,24 @@ static void VG_REGPARM(1) mc_new_mem_stack_128(Addr new_SP)
 {
    PROF_EVENT(116, "new_mem_stack_128");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP    );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+8  );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+16 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+24 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+32 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+40 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+48 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+56 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+64 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+72 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+80 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+88 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+96 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+104);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+112);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+120);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+24 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+32 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+40 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+48 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+56 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+64 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+72 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+80 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+88 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+96 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+104);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+112);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+120);
    } else {
-      MC_(make_writable) ( -VG_STACK_REDZONE_SZB + new_SP, 128 );
+      MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 128 );
    }
 }
 
@@ -1578,24 +1580,24 @@ static void VG_REGPARM(1) mc_die_mem_stack_128(Addr new_SP)
 {
    PROF_EVENT(126, "die_mem_stack_128");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-128);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-120);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-112);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-104);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-96 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-88 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-80 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-72 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-64 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-56 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-48 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-40 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-32 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-24 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-16 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-128);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-120);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-112);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-104);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-96 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-88 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-80 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-72 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-64 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-56 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-48 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-40 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-24 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
    } else {
-      MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-128, 128 );
+      MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-128, 128 );
    }
 }
 
@@ -1603,26 +1605,26 @@ static void VG_REGPARM(1) mc_new_mem_stack_144(Addr new_SP)
 {
    PROF_EVENT(117, "new_mem_stack_144");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP    );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+8  );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+16 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+24 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+32 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+40 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+48 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+56 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+64 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+72 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+80 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+88 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+96 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+104);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+112);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+120);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+128);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+136);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+24 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+32 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+40 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+48 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+56 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+64 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+72 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+80 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+88 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+96 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+104);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+112);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+120);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+128);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+136);
    } else {
-      MC_(make_writable) ( -VG_STACK_REDZONE_SZB + new_SP, 144 );
+      MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 144 );
    }
 }
 
@@ -1630,26 +1632,26 @@ static void VG_REGPARM(1) mc_die_mem_stack_144(Addr new_SP)
 {
    PROF_EVENT(127, "die_mem_stack_144");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-144);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-136);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-128);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-120);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-112);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-104);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-96 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-88 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-80 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-72 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-64 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-56 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-48 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-40 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-32 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-24 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-16 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-144);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-136);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-128);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-120);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-112);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-104);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-96 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-88 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-80 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-72 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-64 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-56 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-48 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-40 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-24 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
    } else {
-      MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-144, 144 );
+      MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-144, 144 );
    }
 }
 
@@ -1657,28 +1659,28 @@ static void VG_REGPARM(1) mc_new_mem_stack_160(Addr new_SP)
 {
    PROF_EVENT(118, "new_mem_stack_160");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP    );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+8  );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+16 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+24 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+32 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+40 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+48 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+56 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+64 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+72 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+80 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+88 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+96 );
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+104);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+112);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+120);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+128);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+136);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+144);
-      make_aligned_word64_writable  ( -VG_STACK_REDZONE_SZB + new_SP+152);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+24 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+32 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+40 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+48 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+56 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+64 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+72 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+80 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+88 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+96 );
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+104);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+112);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+120);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+128);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+136);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+144);
+      make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+152);
    } else {
-      MC_(make_writable) ( -VG_STACK_REDZONE_SZB + new_SP, 160 );
+      MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 160 );
    }
 }
 
@@ -1686,41 +1688,41 @@ static void VG_REGPARM(1) mc_die_mem_stack_160(Addr new_SP)
 {
    PROF_EVENT(128, "die_mem_stack_160");
    if (VG_IS_8_ALIGNED(new_SP)) {
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-160);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-152);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-144);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-136);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-128);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-120);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-112);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-104);
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-96 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-88 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-80 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-72 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-64 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-56 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-48 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-40 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-32 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-24 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP-16 );
-      make_aligned_word64_noaccess  ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-160);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-152);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-144);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-136);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-128);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-120);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-112);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-104);
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-96 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-88 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-80 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-72 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-64 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-56 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-48 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-40 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-24 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
+      make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
    } else {
-      MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-160, 160 );
+      MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-160, 160 );
    }
 }
 
 static void mc_new_mem_stack ( Addr a, SizeT len )
 {
    PROF_EVENT(115, "new_mem_stack");
-   MC_(make_writable) ( -VG_STACK_REDZONE_SZB + a, len );
+   MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + a, len );
 }
 
 static void mc_die_mem_stack ( Addr a, SizeT len )
 {
    PROF_EVENT(125, "die_mem_stack");
-   MC_(make_noaccess) ( -VG_STACK_REDZONE_SZB + a, len );
+   MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + a, len );
 }
 
 
@@ -1760,34 +1762,34 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
 
 #  if 0
    /* Really slow version */
-   MC_(make_writable)(base, len);
+   MC_(make_mem_undefined)(base, len);
 #  endif
 
 #  if 0
    /* Slow(ish) version, which is fairly easily seen to be correct.
    */
    if (EXPECTED_TAKEN( VG_IS_8_ALIGNED(base) && len==128 )) {
-      make_aligned_word64_writable(base +   0);
-      make_aligned_word64_writable(base +   8);
-      make_aligned_word64_writable(base +  16);
-      make_aligned_word64_writable(base +  24);
+      make_aligned_word64_undefined(base +   0);
+      make_aligned_word64_undefined(base +   8);
+      make_aligned_word64_undefined(base +  16);
+      make_aligned_word64_undefined(base +  24);
 
-      make_aligned_word64_writable(base +  32);
-      make_aligned_word64_writable(base +  40);
-      make_aligned_word64_writable(base +  48);
-      make_aligned_word64_writable(base +  56);
+      make_aligned_word64_undefined(base +  32);
+      make_aligned_word64_undefined(base +  40);
+      make_aligned_word64_undefined(base +  48);
+      make_aligned_word64_undefined(base +  56);
 
-      make_aligned_word64_writable(base +  64);
-      make_aligned_word64_writable(base +  72);
-      make_aligned_word64_writable(base +  80);
-      make_aligned_word64_writable(base +  88);
+      make_aligned_word64_undefined(base +  64);
+      make_aligned_word64_undefined(base +  72);
+      make_aligned_word64_undefined(base +  80);
+      make_aligned_word64_undefined(base +  88);
 
-      make_aligned_word64_writable(base +  96);
-      make_aligned_word64_writable(base + 104);
-      make_aligned_word64_writable(base + 112);
-      make_aligned_word64_writable(base + 120);
+      make_aligned_word64_undefined(base +  96);
+      make_aligned_word64_undefined(base + 104);
+      make_aligned_word64_undefined(base + 112);
+      make_aligned_word64_undefined(base + 120);
    } else {
-      MC_(make_writable)(base, len);
+      MC_(make_mem_undefined)(base, len);
    }
 #  endif 
 
@@ -1815,22 +1817,22 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
             // Finally, we know that the range is entirely within one secmap.
             UWord   v_off = SM_OFF(a_lo);
             UShort* p     = (UShort*)(&sm->vabits8[v_off]);
-            p[ 0] =  VA_BITS16_WRITABLE;
-            p[ 1] =  VA_BITS16_WRITABLE;
-            p[ 2] =  VA_BITS16_WRITABLE;
-            p[ 3] =  VA_BITS16_WRITABLE;
-            p[ 4] =  VA_BITS16_WRITABLE;
-            p[ 5] =  VA_BITS16_WRITABLE;
-            p[ 6] =  VA_BITS16_WRITABLE;
-            p[ 7] =  VA_BITS16_WRITABLE;
-            p[ 8] =  VA_BITS16_WRITABLE;
-            p[ 9] =  VA_BITS16_WRITABLE;
-            p[10] =  VA_BITS16_WRITABLE;
-            p[11] =  VA_BITS16_WRITABLE;
-            p[12] =  VA_BITS16_WRITABLE;
-            p[13] =  VA_BITS16_WRITABLE;
-            p[14] =  VA_BITS16_WRITABLE;
-            p[15] =  VA_BITS16_WRITABLE;
+            p[ 0] = VA_BITS16_UNDEFINED;
+            p[ 1] = VA_BITS16_UNDEFINED;
+            p[ 2] = VA_BITS16_UNDEFINED;
+            p[ 3] = VA_BITS16_UNDEFINED;
+            p[ 4] = VA_BITS16_UNDEFINED;
+            p[ 5] = VA_BITS16_UNDEFINED;
+            p[ 6] = VA_BITS16_UNDEFINED;
+            p[ 7] = VA_BITS16_UNDEFINED;
+            p[ 8] = VA_BITS16_UNDEFINED;
+            p[ 9] = VA_BITS16_UNDEFINED;
+            p[10] = VA_BITS16_UNDEFINED;
+            p[11] = VA_BITS16_UNDEFINED;
+            p[12] = VA_BITS16_UNDEFINED;
+            p[13] = VA_BITS16_UNDEFINED;
+            p[14] = VA_BITS16_UNDEFINED;
+            p[15] = VA_BITS16_UNDEFINED;
             return;
          }
       }
@@ -1853,49 +1855,49 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
             // Finally, we know that the range is entirely within one secmap.
             UWord   v_off = SM_OFF(a_lo);
             UShort* p     = (UShort*)(&sm->vabits8[v_off]);
-            p[ 0] =  VA_BITS16_WRITABLE;
-            p[ 1] =  VA_BITS16_WRITABLE;
-            p[ 2] =  VA_BITS16_WRITABLE;
-            p[ 3] =  VA_BITS16_WRITABLE;
-            p[ 4] =  VA_BITS16_WRITABLE;
-            p[ 5] =  VA_BITS16_WRITABLE;
-            p[ 6] =  VA_BITS16_WRITABLE;
-            p[ 7] =  VA_BITS16_WRITABLE;
-            p[ 8] =  VA_BITS16_WRITABLE;
-            p[ 9] =  VA_BITS16_WRITABLE;
-            p[10] =  VA_BITS16_WRITABLE;
-            p[11] =  VA_BITS16_WRITABLE;
-            p[12] =  VA_BITS16_WRITABLE;
-            p[13] =  VA_BITS16_WRITABLE;
-            p[14] =  VA_BITS16_WRITABLE;
-            p[15] =  VA_BITS16_WRITABLE;
-            p[16] =  VA_BITS16_WRITABLE;
-            p[17] =  VA_BITS16_WRITABLE;
-            p[18] =  VA_BITS16_WRITABLE;
-            p[19] =  VA_BITS16_WRITABLE;
-            p[20] =  VA_BITS16_WRITABLE;
-            p[21] =  VA_BITS16_WRITABLE;
-            p[22] =  VA_BITS16_WRITABLE;
-            p[23] =  VA_BITS16_WRITABLE;
-            p[24] =  VA_BITS16_WRITABLE;
-            p[25] =  VA_BITS16_WRITABLE;
-            p[26] =  VA_BITS16_WRITABLE;
-            p[27] =  VA_BITS16_WRITABLE;
-            p[28] =  VA_BITS16_WRITABLE;
-            p[29] =  VA_BITS16_WRITABLE;
-            p[30] =  VA_BITS16_WRITABLE;
-            p[31] =  VA_BITS16_WRITABLE;
-            p[32] =  VA_BITS16_WRITABLE;
-            p[33] =  VA_BITS16_WRITABLE;
-            p[34] =  VA_BITS16_WRITABLE;
-            p[35] =  VA_BITS16_WRITABLE;
+            p[ 0] = VA_BITS16_UNDEFINED;
+            p[ 1] = VA_BITS16_UNDEFINED;
+            p[ 2] = VA_BITS16_UNDEFINED;
+            p[ 3] = VA_BITS16_UNDEFINED;
+            p[ 4] = VA_BITS16_UNDEFINED;
+            p[ 5] = VA_BITS16_UNDEFINED;
+            p[ 6] = VA_BITS16_UNDEFINED;
+            p[ 7] = VA_BITS16_UNDEFINED;
+            p[ 8] = VA_BITS16_UNDEFINED;
+            p[ 9] = VA_BITS16_UNDEFINED;
+            p[10] = VA_BITS16_UNDEFINED;
+            p[11] = VA_BITS16_UNDEFINED;
+            p[12] = VA_BITS16_UNDEFINED;
+            p[13] = VA_BITS16_UNDEFINED;
+            p[14] = VA_BITS16_UNDEFINED;
+            p[15] = VA_BITS16_UNDEFINED;
+            p[16] = VA_BITS16_UNDEFINED;
+            p[17] = VA_BITS16_UNDEFINED;
+            p[18] = VA_BITS16_UNDEFINED;
+            p[19] = VA_BITS16_UNDEFINED;
+            p[20] = VA_BITS16_UNDEFINED;
+            p[21] = VA_BITS16_UNDEFINED;
+            p[22] = VA_BITS16_UNDEFINED;
+            p[23] = VA_BITS16_UNDEFINED;
+            p[24] = VA_BITS16_UNDEFINED;
+            p[25] = VA_BITS16_UNDEFINED;
+            p[26] = VA_BITS16_UNDEFINED;
+            p[27] = VA_BITS16_UNDEFINED;
+            p[28] = VA_BITS16_UNDEFINED;
+            p[29] = VA_BITS16_UNDEFINED;
+            p[30] = VA_BITS16_UNDEFINED;
+            p[31] = VA_BITS16_UNDEFINED;
+            p[32] = VA_BITS16_UNDEFINED;
+            p[33] = VA_BITS16_UNDEFINED;
+            p[34] = VA_BITS16_UNDEFINED;
+            p[35] = VA_BITS16_UNDEFINED;
             return;
          }
       }
    }
 
    /* else fall into slow case */
-   MC_(make_writable)(base, len);
+   MC_(make_mem_undefined)(base, len);
 }
 
 
@@ -1920,14 +1922,14 @@ typedef
    returns False, and if bad_addr is non-NULL, sets *bad_addr to
    indicate the lowest failing address.  Functions below are
    similar. */
-Bool MC_(check_noaccess) ( Addr a, SizeT len, Addr* bad_addr )
+Bool MC_(check_mem_is_noaccess) ( Addr a, SizeT len, Addr* bad_addr )
 {
    SizeT i;
    UWord vabits2;
 
-   PROF_EVENT(60, "mc_check_noaccess");
+   PROF_EVENT(60, "check_mem_is_noaccess");
    for (i = 0; i < len; i++) {
-      PROF_EVENT(61, "mc_check_noaccess(loop)");
+      PROF_EVENT(61, "check_mem_is_noaccess(loop)");
       vabits2 = get_vabits2(a);
       if (VA_BITS2_NOACCESS != vabits2) {
          if (bad_addr != NULL) *bad_addr = a;
@@ -1938,15 +1940,14 @@ Bool MC_(check_noaccess) ( Addr a, SizeT len, Addr* bad_addr )
    return True;
 }
 
-// Note that this succeeds also if the memory is readable.
-static Bool mc_check_writable ( Addr a, SizeT len, Addr* bad_addr )
+static Bool is_mem_addressable ( Addr a, SizeT len, Addr* bad_addr )
 {
    SizeT i;
    UWord vabits2;
 
-   PROF_EVENT(62, "mc_check_writable");
+   PROF_EVENT(62, "is_mem_addressable");
    for (i = 0; i < len; i++) {
-      PROF_EVENT(63, "mc_check_writable(loop)");
+      PROF_EVENT(63, "is_mem_addressable(loop)");
       vabits2 = get_vabits2(a);
       if (VA_BITS2_NOACCESS == vabits2) {
          if (bad_addr != NULL) *bad_addr = a;
@@ -1957,17 +1958,17 @@ static Bool mc_check_writable ( Addr a, SizeT len, Addr* bad_addr )
    return True;
 }
 
-static MC_ReadResult mc_check_readable ( Addr a, SizeT len, Addr* bad_addr )
+static MC_ReadResult is_mem_defined ( Addr a, SizeT len, Addr* bad_addr )
 {
    SizeT i;
    UWord vabits2;
 
-   PROF_EVENT(64, "mc_check_readable");
-   DEBUG("mc_check_readable\n");
+   PROF_EVENT(64, "is_mem_defined");
+   DEBUG("is_mem_defined\n");
    for (i = 0; i < len; i++) {
-      PROF_EVENT(65, "mc_check_readable(loop)");
+      PROF_EVENT(65, "is_mem_defined(loop)");
       vabits2 = get_vabits2(a);
-      if (VA_BITS2_READABLE != vabits2) {
+      if (VA_BITS2_DEFINED != vabits2) {
          // Error!  Nb: Report addressability errors in preference to
          // definedness errors.  And don't report definedeness errors unless
          // --undef-value-errors=yes.
@@ -1985,16 +1986,16 @@ static MC_ReadResult mc_check_readable ( Addr a, SizeT len, Addr* bad_addr )
    examine the actual bytes, to find the end, until we're sure it is
    safe to do so. */
 
-static Bool mc_check_readable_asciiz ( Addr a, Addr* bad_addr )
+static Bool mc_is_defined_asciiz ( Addr a, Addr* bad_addr )
 {
    UWord vabits2;
 
-   PROF_EVENT(66, "mc_check_readable_asciiz");
-   DEBUG("mc_check_readable_asciiz\n");
+   PROF_EVENT(66, "mc_is_defined_asciiz");
+   DEBUG("mc_is_defined_asciiz\n");
    while (True) {
-      PROF_EVENT(67, "mc_check_readable_asciiz(loop)");
+      PROF_EVENT(67, "mc_is_defined_asciiz(loop)");
       vabits2 = get_vabits2(a);
-      if (VA_BITS2_READABLE != vabits2) {
+      if (VA_BITS2_DEFINED != vabits2) {
          // Error!  Nb: Report addressability errors in preference to
          // definedness errors.  And don't report definedeness errors unless
          // --undef-value-errors=yes.
@@ -2016,15 +2017,12 @@ static Bool mc_check_readable_asciiz ( Addr a, Addr* bad_addr )
 /*------------------------------------------------------------*/
 
 static
-void mc_check_is_writable ( CorePart part, ThreadId tid, Char* s,
-                            Addr base, SizeT size )
+void check_mem_is_addressable ( CorePart part, ThreadId tid, Char* s,
+                                Addr base, SizeT size )
 {
-   Bool ok;
    Addr bad_addr;
+   Bool ok = is_mem_addressable ( base, size, &bad_addr );
 
-   /* VG_(message)(Vg_DebugMsg,"check is writable: %x .. %x",
-                               base,base+size-1); */
-   ok = mc_check_writable ( base, size, &bad_addr );
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
@@ -2038,23 +2036,17 @@ void mc_check_is_writable ( CorePart part, ThreadId tid, Char* s,
          break;
 
       default:
-         VG_(tool_panic)("mc_check_is_writable: unexpected CorePart");
+         VG_(tool_panic)("check_mem_is_addressable: unexpected CorePart");
       }
    }
 }
 
 static
-void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
+void check_mem_is_defined ( CorePart part, ThreadId tid, Char* s,
                             Addr base, SizeT size )
 {     
    Addr bad_addr;
-   MC_ReadResult res;
-
-   res = mc_check_readable ( base, size, &bad_addr );
-
-   if (0)
-      VG_(printf)("mc_check_is_readable(0x%x, %d, %s) -> %s\n",
-                  (UInt)base, (Int)size, s, res==MC_Ok ? "yes" : "no" );
+   MC_ReadResult res = is_mem_defined ( base, size, &bad_addr );
 
    if (MC_Ok != res) {
       Bool isUnaddr = ( MC_AddrErr == res ? True : False );
@@ -2062,7 +2054,7 @@ void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
       switch (part) {
       case Vg_CoreSysCall:
          mc_record_param_error ( tid, bad_addr, /*isReg*/False,
-                                    isUnaddr, s );
+                                 isUnaddr, s );
          break;
       
       case Vg_CoreClientReq: // Kludge: make this a CoreMemErr
@@ -2077,21 +2069,20 @@ void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
          break;
 
       default:
-         VG_(tool_panic)("mc_check_is_readable: unexpected CorePart");
+         VG_(tool_panic)("check_mem_is_defined: unexpected CorePart");
       }
    }
 }
 
 static
-void mc_check_is_readable_asciiz ( CorePart part, ThreadId tid,
+void check_mem_is_defined_asciiz ( CorePart part, ThreadId tid,
                                    Char* s, Addr str )
 {
    MC_ReadResult res;
    Addr bad_addr = 0;   // shut GCC up
-   /* VG_(message)(Vg_DebugMsg,"check is readable asciiz: 0x%x",str); */
 
    tl_assert(part == Vg_CoreSysCall);
-   res = mc_check_readable_asciiz ( (Addr)str, &bad_addr );
+   res = mc_is_defined_asciiz ( (Addr)str, &bad_addr );
    if (MC_Ok != res) {
       Bool isUnaddr = ( MC_AddrErr == res ? True : False );
       mc_record_param_error ( tid, bad_addr, /*isReg*/False, isUnaddr, s );
@@ -2101,22 +2092,22 @@ void mc_check_is_readable_asciiz ( CorePart part, ThreadId tid,
 static
 void mc_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
 {
-   /* Ignore the permissions, just make it readable.  Seems to work... */
+   /* Ignore the permissions, just make it defined.  Seems to work... */
    DEBUG("mc_new_mem_startup(%p, %llu, rr=%u, ww=%u, xx=%u)\n",
-         a,(ULong)len,rr,ww,xx);
-   MC_(make_readable)(a, len);
+         a, (ULong)len, rr, ww, xx);
+   MC_(make_mem_defined)(a, len);
 }
 
 static
 void mc_new_mem_mmap ( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
 {
-   MC_(make_readable)(a, len);
+   MC_(make_mem_defined)(a, len);
 }
 
 static
 void mc_post_mem_write(CorePart part, ThreadId tid, Addr a, SizeT len)
 {
-   MC_(make_readable)(a, len);
+   MC_(make_mem_defined)(a, len);
 }
 
 
@@ -3070,12 +3061,12 @@ ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
    // Handle common case quickly: a is suitably aligned, is mapped, and
    // addressible.
    // Convert V bits from compact memory form to expanded register form.
-   if (EXPECTED_TAKEN(vabits16 == VA_BITS16_READABLE)) {
+   if (EXPECTED_TAKEN(vabits16 == VA_BITS16_DEFINED)) {
       return V_BITS64_DEFINED;
-   } else if (EXPECTED_TAKEN(vabits16 == VA_BITS16_WRITABLE)) {
+   } else if (EXPECTED_TAKEN(vabits16 == VA_BITS16_UNDEFINED)) {
       return V_BITS64_UNDEFINED;
    } else {
-      /* Slow case: the 8 bytes are not all-readable or all-writable. */
+      /* Slow case: the 8 bytes are not all-defined or all-undefined. */
       PROF_EVENT(202, "mc_LOADV64-slow2");
       return mc_LOADVn_slow( a, 64, isBigEndian );
    }
@@ -3116,16 +3107,16 @@ void mc_STOREV64 ( Addr a, ULong vbytes, Bool isBigEndian )
    vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
 
    if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
-                       (VA_BITS16_READABLE == vabits16 ||
-                        VA_BITS16_WRITABLE == vabits16) ))
+                       (VA_BITS16_DEFINED   == vabits16 ||
+                        VA_BITS16_UNDEFINED == vabits16) ))
    {
       /* Handle common case quickly: a is suitably aligned, */
       /* is mapped, and is addressible. */
       // Convert full V-bits in register to compact 2-bit form.
       if (V_BITS64_DEFINED == vbytes) {
-         ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_READABLE;
+         ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
       } else if (V_BITS64_UNDEFINED == vbytes) {
-         ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_WRITABLE;
+         ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(212, "mc_STOREV64-slow2");
@@ -3176,12 +3167,12 @@ UWord mc_LOADV32 ( Addr a, Bool isBigEndian )
    // Convert V bits from compact memory form to expanded register form.
    // For 64-bit platforms, set the high 32 bits of retval to 1 (undefined).
    // Almost certainly not necessary, but be paranoid.
-   if (EXPECTED_TAKEN(vabits8 == VA_BITS8_READABLE)) {
+   if (EXPECTED_TAKEN(vabits8 == VA_BITS8_DEFINED)) {
       return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_DEFINED);
-   } else if (EXPECTED_TAKEN(vabits8 == VA_BITS8_WRITABLE)) {
+   } else if (EXPECTED_TAKEN(vabits8 == VA_BITS8_UNDEFINED)) {
       return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_UNDEFINED);
    } else {
-      /* Slow case: the 4 bytes are not all-readable or all-writable. */
+      /* Slow case: the 4 bytes are not all-defined or all-undefined. */
       PROF_EVENT(222, "mc_LOADV32-slow2");
       return (UWord)mc_LOADVn_slow( a, 32, isBigEndian );
    }
@@ -3225,22 +3216,22 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
    // all, if we can tell that what we want to write is the same as what is
    // already there.
    if (V_BITS32_DEFINED == vbytes) {
-      if (vabits8 == (UInt)VA_BITS8_READABLE) {
+      if (vabits8 == (UInt)VA_BITS8_DEFINED) {
          return;
-      } else if (!is_distinguished_sm(sm) && VA_BITS8_WRITABLE == vabits8) {
-         sm->vabits8[sm_off] = (UInt)VA_BITS8_READABLE;
+      } else if (!is_distinguished_sm(sm) && VA_BITS8_UNDEFINED == vabits8) {
+         sm->vabits8[sm_off] = (UInt)VA_BITS8_DEFINED;
       } else {
-         // not readable/writable, or distinguished and changing state
+         // not defined/undefined, or distinguished and changing state
          PROF_EVENT(232, "mc_STOREV32-slow2");
          mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
       }
    } else if (V_BITS32_UNDEFINED == vbytes) {
-      if (vabits8 == (UInt)VA_BITS8_WRITABLE) {
+      if (vabits8 == (UInt)VA_BITS8_UNDEFINED) {
          return;
-      } else if (!is_distinguished_sm(sm) && VA_BITS8_READABLE == vabits8) {
-         sm->vabits8[sm_off] = (UInt)VA_BITS8_WRITABLE;
+      } else if (!is_distinguished_sm(sm) && VA_BITS8_DEFINED == vabits8) {
+         sm->vabits8[sm_off] = (UInt)VA_BITS8_UNDEFINED;
       } else {
-         // not readable/writable, or distinguished and changing state
+         // not defined/undefined, or distinguished and changing state
          PROF_EVENT(233, "mc_STOREV32-slow3");
          mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
       }
@@ -3252,16 +3243,16 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
 //---------------------------------------------------------------------------
 #else
    if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
-                       (VA_BITS8_READABLE == vabits8 ||
-                        VA_BITS8_WRITABLE == vabits8) ))
+                       (VA_BITS8_DEFINED   == vabits8 ||
+                        VA_BITS8_UNDEFINED == vabits8) ))
    {
       /* Handle common case quickly: a is suitably aligned, */
       /* is mapped, and is addressible. */
       // Convert full V-bits in register to compact 2-bit form.
       if (V_BITS32_DEFINED == vbytes) {
-         sm->vabits8[sm_off] = VA_BITS8_READABLE;
+         sm->vabits8[sm_off] = VA_BITS8_DEFINED;
       } else if (V_BITS32_UNDEFINED == vbytes) {
-         sm->vabits8[sm_off] = VA_BITS8_WRITABLE;
+         sm->vabits8[sm_off] = VA_BITS8_UNDEFINED;
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(232, "mc_STOREV32-slow2");
@@ -3312,16 +3303,16 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
    // addressible.
    // Convert V bits from compact memory form to expanded register form
    // XXX: set the high 16/48 bits of retval to 1 for 64-bit paranoia?
-   if      (vabits8 == VA_BITS8_READABLE) { return V_BITS16_DEFINED;   }
-   else if (vabits8 == VA_BITS8_WRITABLE) { return V_BITS16_UNDEFINED; }
+   if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS16_DEFINED;   }
+   else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS16_UNDEFINED; }
    else {
-      // The 4 (yes, 4) bytes are not all-readable or all-writable, check
+      // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
       // the two sub-bytes.
       UChar vabits4 = extract_vabits4_from_vabits8(a, vabits8);
-      if      (vabits4 == VA_BITS4_READABLE) { return V_BITS16_DEFINED;   }
-      else if (vabits4 == VA_BITS4_WRITABLE) { return V_BITS16_UNDEFINED; }
+      if      (vabits4 == VA_BITS4_DEFINED  ) { return V_BITS16_DEFINED;   }
+      else if (vabits4 == VA_BITS4_UNDEFINED) { return V_BITS16_UNDEFINED; }
       else {
-         /* Slow case: the two bytes are not all-readable or all-writable. */
+         /* Slow case: the two bytes are not all-defined or all-undefined. */
          PROF_EVENT(242, "mc_LOADV16-slow2");
          return (UWord)mc_LOADVn_slow( a, 16, isBigEndian );
       }
@@ -3360,17 +3351,17 @@ void mc_STOREV16 ( Addr a, UWord vbytes, Bool isBigEndian )
    sm_off  = SM_OFF(a);
    vabits8 = sm->vabits8[sm_off];
    if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
-                       (VA_BITS8_READABLE == vabits8 ||
-                        VA_BITS8_WRITABLE == vabits8) ))
+                       (VA_BITS8_DEFINED   == vabits8 ||
+                        VA_BITS8_UNDEFINED == vabits8) ))
    {
       /* Handle common case quickly: a is suitably aligned, */
       /* is mapped, and is addressible. */
       // Convert full V-bits in register to compact 2-bit form.
       if (V_BITS16_DEFINED == vbytes) {
-         insert_vabits4_into_vabits8( a, VA_BITS4_READABLE,
+         insert_vabits4_into_vabits8( a, VA_BITS4_DEFINED ,
                                       &(sm->vabits8[sm_off]) );
       } else if (V_BITS16_UNDEFINED == vbytes) {
-         insert_vabits4_into_vabits8( a, VA_BITS4_WRITABLE,
+         insert_vabits4_into_vabits8( a, VA_BITS4_UNDEFINED,
                                       &(sm->vabits8[sm_off]) );
       } else {
          /* Slow but general case -- writing partially defined bytes. */
@@ -3421,16 +3412,16 @@ UWord MC_(helperc_LOADV8) ( Addr a )
    // Handle common case quickly: a is mapped, and the entire
    // word32 it lives in is addressible.
    // XXX: set the high 24/56 bits of retval to 1 for 64-bit paranoia?
-   if      (vabits8 == VA_BITS8_READABLE) { return V_BITS8_DEFINED;   }
-   else if (vabits8 == VA_BITS8_WRITABLE) { return V_BITS8_UNDEFINED; }
+   if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS8_DEFINED;   }
+   else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS8_UNDEFINED; }
    else {
-      // The 4 (yes, 4) bytes are not all-readable or all-writable, check
+      // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
       // the single byte.
       UChar vabits2 = extract_vabits2_from_vabits8(a, vabits8);
-      if      (vabits2 == VA_BITS2_READABLE) { return V_BITS8_DEFINED;   }
-      else if (vabits2 == VA_BITS2_WRITABLE) { return V_BITS8_UNDEFINED; }
+      if      (vabits2 == VA_BITS2_DEFINED  ) { return V_BITS8_DEFINED;   }
+      else if (vabits2 == VA_BITS2_UNDEFINED) { return V_BITS8_UNDEFINED; }
       else {
-         /* Slow case: the byte is not all-readable or all-writable. */
+         /* Slow case: the byte is not all-defined or all-undefined. */
          PROF_EVENT(262, "mc_LOADV8-slow2");
          return (UWord)mc_LOADVn_slow( a, 8, False/*irrelevant*/ );
       }
@@ -3461,7 +3452,7 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbyte )
    vabits8 = sm->vabits8[sm_off];
    if (EXPECTED_TAKEN
          ( !is_distinguished_sm(sm) &&
-           ( (VA_BITS8_READABLE == vabits8 || VA_BITS8_WRITABLE == vabits8)
+           ( (VA_BITS8_DEFINED == vabits8 || VA_BITS8_UNDEFINED == vabits8)
           || (VA_BITS2_NOACCESS != extract_vabits2_from_vabits8(a, vabits8))
            )
          )
@@ -3471,10 +3462,10 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbyte )
          lives in is addressible. */
       // Convert full V-bits in register to compact 2-bit form.
       if (V_BITS8_DEFINED == vbyte) {
-         insert_vabits2_into_vabits8( a, VA_BITS2_READABLE,
+         insert_vabits2_into_vabits8( a, VA_BITS2_DEFINED,
                                        &(sm->vabits8[sm_off]) );
       } else if (V_BITS8_UNDEFINED == vbyte) {
-         insert_vabits2_into_vabits8( a, VA_BITS2_WRITABLE,
+         insert_vabits2_into_vabits8( a, VA_BITS2_UNDEFINED,
                                        &(sm->vabits8[sm_off]) );
       } else {
          /* Slow but general case -- writing partially defined bytes. */
@@ -3560,8 +3551,8 @@ static Int mc_get_or_set_vbits_for_client (
 
       // It's actually a tool ClientReq, but Vg_CoreClientReq is the closest
       // thing we have.
-      mc_check_is_readable(Vg_CoreClientReq, tid, "SET_VBITS(vbits)",
-                           vbits, szB);
+      check_mem_is_defined(Vg_CoreClientReq, tid, "SET_VBITS(vbits)",
+                       vbits, szB);
       
       /* setting */
       for (i = 0; i < szB; i++) {
@@ -3579,7 +3570,7 @@ static Int mc_get_or_set_vbits_for_client (
          ((UChar*)vbits)[i] = vbits8;
       }
       // The bytes in vbits[] have now been set, so mark them as such.
-      MC_(make_readable)(vbits, szB);
+      MC_(make_mem_defined)(vbits, szB);
    }
 
    return 1;
@@ -3618,7 +3609,7 @@ Bool mc_is_valid_aligned_word ( Addr a )
    } else {
       tl_assert(VG_IS_8_ALIGNED(a));
    }
-   if (mc_check_readable( a, sizeof(UWord), NULL ) == MC_Ok) {
+   if (is_mem_defined( a, sizeof(UWord), NULL ) == MC_Ok) {
       return True;
    } else {
       return False;
@@ -3658,11 +3649,11 @@ static void init_shadow_memory ( void )
    sm = &sm_distinguished[SM_DIST_NOACCESS];
    for (i = 0; i < SM_CHUNKS; i++) sm->vabits8[i] = VA_BITS8_NOACCESS;
 
-   sm = &sm_distinguished[SM_DIST_WRITABLE];
-   for (i = 0; i < SM_CHUNKS; i++) sm->vabits8[i] = VA_BITS8_WRITABLE;
+   sm = &sm_distinguished[SM_DIST_UNDEFINED];
+   for (i = 0; i < SM_CHUNKS; i++) sm->vabits8[i] = VA_BITS8_UNDEFINED;
 
-   sm = &sm_distinguished[SM_DIST_READABLE];
-   for (i = 0; i < SM_CHUNKS; i++) sm->vabits8[i] = VA_BITS8_READABLE;
+   sm = &sm_distinguished[SM_DIST_DEFINED];
+   for (i = 0; i < SM_CHUNKS; i++) sm->vabits8[i] = VA_BITS8_DEFINED;
 
    /* Set up the primary map. */
    /* These entries gradually get overwritten as the used address
@@ -3701,22 +3692,22 @@ static Bool mc_expensive_sanity_check ( void )
 
    /* Check that the 3 distinguished SMs are still as they should be. */
 
-   /* Check noaccess. */
+   /* Check noaccess DSM. */
    sm = &sm_distinguished[SM_DIST_NOACCESS];
    for (i = 0; i < SM_CHUNKS; i++)
       if (sm->vabits8[i] != VA_BITS8_NOACCESS)
          bad = True;
 
-   /* Check writable. */
-   sm = &sm_distinguished[SM_DIST_WRITABLE];
+   /* Check undefined DSM. */
+   sm = &sm_distinguished[SM_DIST_UNDEFINED];
    for (i = 0; i < SM_CHUNKS; i++)
-      if (sm->vabits8[i] != VA_BITS8_WRITABLE)
+      if (sm->vabits8[i] != VA_BITS8_UNDEFINED)
          bad = True;
 
-   /* Check readable. */
-   sm = &sm_distinguished[SM_DIST_READABLE];
+   /* Check defined DSM. */
+   sm = &sm_distinguished[SM_DIST_DEFINED];
    for (i = 0; i < SM_CHUNKS; i++)
-      if (sm->vabits8[i] != VA_BITS8_READABLE)
+      if (sm->vabits8[i] != VA_BITS8_DEFINED)
          bad = True;
 
    if (bad) {
@@ -3998,17 +3989,17 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       return False;
 
    switch (arg[0]) {
-      case VG_USERREQ__CHECK_WRITABLE: /* check writable */
-         ok = mc_check_writable ( arg[1], arg[2], &bad_addr );
+      case VG_USERREQ__CHECK_MEM_IS_ADDRESSABLE:
+         ok = is_mem_addressable ( arg[1], arg[2], &bad_addr );
          if (!ok)
             mc_record_user_error ( tid, bad_addr, /*isWrite*/True,
                                    /*isUnaddr*/True );
          *ret = ok ? (UWord)NULL : bad_addr;
          break;
 
-      case VG_USERREQ__CHECK_READABLE: { /* check readable */
+      case VG_USERREQ__CHECK_MEM_IS_DEFINED: {
          MC_ReadResult res;
-         res = mc_check_readable ( arg[1], arg[2], &bad_addr );
+         res = is_mem_defined ( arg[1], arg[2], &bad_addr );
          if (MC_AddrErr == res)
             mc_record_user_error ( tid, bad_addr, /*isWrite*/False,
                                    /*isUnaddr*/True );
@@ -4024,23 +4015,23 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          *ret = 0; /* return value is meaningless */
          break;
 
-      case VG_USERREQ__MAKE_NOACCESS: /* make no access */
-         MC_(make_noaccess) ( arg[1], arg[2] );
+      case VG_USERREQ__MAKE_MEM_NOACCESS:
+         MC_(make_mem_noaccess) ( arg[1], arg[2] );
          *ret = -1;
          break;
 
-      case VG_USERREQ__MAKE_WRITABLE: /* make writable */
-         MC_(make_writable) ( arg[1], arg[2] );
+      case VG_USERREQ__MAKE_MEM_UNDEFINED:
+         MC_(make_mem_undefined) ( arg[1], arg[2] );
          *ret = -1;
          break;
 
-      case VG_USERREQ__MAKE_READABLE: /* make readable */
-         MC_(make_readable) ( arg[1], arg[2] );
+      case VG_USERREQ__MAKE_MEM_DEFINED:
+         MC_(make_mem_defined) ( arg[1], arg[2] );
          *ret = -1;
          break;
 
-      case VG_USERREQ__MAKE_DEFINED: /* make defined */
-         mc_make_defined ( arg[1], arg[2] );
+      case VG_USERREQ__MAKE_MEM_DEFINED_IF_ADDRESSABLE:
+         make_mem_defined_if_addressable ( arg[1], arg[2] );
          *ret = -1;
          break;
 
@@ -4098,7 +4089,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          *argp[4] = MC_(bytes_suppressed);
          // there is no argp[5]
          //*argp[5] = MC_(bytes_indirect);
-         // XXX need to make *argp[1-4] readable
+         // XXX need to make *argp[1-4] defined
          *ret = 0;
          return True;
       }
@@ -4273,12 +4264,12 @@ static void mc_fini ( Int exitcode )
          " memcheck: auxmaps: %lld searches, %lld comparisons",
          n_auxmap_searches, n_auxmap_cmps );   
 
-      print_SM_info("n_issued    ", n_issued_SMs);
-      print_SM_info("n_deissued  ", n_deissued_SMs);
-      print_SM_info("max_noaccess", max_noaccess_SMs);
-      print_SM_info("max_writable", max_writable_SMs);
-      print_SM_info("max_readable", max_readable_SMs);
-      print_SM_info("max_non_DSM ", max_non_DSM_SMs);
+      print_SM_info("n_issued     ", n_issued_SMs);
+      print_SM_info("n_deissued   ", n_deissued_SMs);
+      print_SM_info("max_noaccess ", max_noaccess_SMs);
+      print_SM_info("max_undefined", max_undefined_SMs);
+      print_SM_info("max_defined  ", max_defined_SMs);
+      print_SM_info("max_non_DSM  ", max_non_DSM_SMs);
 
       // Three DSMs, plus the non-DSM ones
       max_SMs_szB = (3 + max_non_DSM_SMs) * sizeof(SecMap);
@@ -4352,8 +4343,8 @@ static void mc_pre_clo_init(void)
                                    MC_MALLOC_REDZONE_SZB );
 
    VG_(track_new_mem_startup)     ( mc_new_mem_startup );
-   VG_(track_new_mem_stack_signal)( MC_(make_writable) );
-   VG_(track_new_mem_brk)         ( MC_(make_writable) );
+   VG_(track_new_mem_stack_signal)( MC_(make_mem_undefined) );
+   VG_(track_new_mem_brk)         ( MC_(make_mem_undefined) );
    VG_(track_new_mem_mmap)        ( mc_new_mem_mmap );
    
    VG_(track_copy_mem_remap)      ( MC_(copy_address_range_state) );
@@ -4369,9 +4360,9 @@ static void mc_pre_clo_init(void)
    // distinct from V bits, then we could handle all this properly.
    VG_(track_change_mem_mprotect) ( NULL );
       
-   VG_(track_die_mem_stack_signal)( MC_(make_noaccess) ); 
-   VG_(track_die_mem_brk)         ( MC_(make_noaccess) );
-   VG_(track_die_mem_munmap)      ( MC_(make_noaccess) ); 
+   VG_(track_die_mem_stack_signal)( MC_(make_mem_noaccess) ); 
+   VG_(track_die_mem_brk)         ( MC_(make_mem_noaccess) );
+   VG_(track_die_mem_munmap)      ( MC_(make_mem_noaccess) ); 
 
 #ifdef PERF_FAST_STACK
    VG_(track_new_mem_stack_4)     ( mc_new_mem_stack_4   );
@@ -4399,11 +4390,11 @@ static void mc_pre_clo_init(void)
 #endif
    VG_(track_die_mem_stack)       ( mc_die_mem_stack     );
    
-   VG_(track_ban_mem_stack)       ( MC_(make_noaccess) );
+   VG_(track_ban_mem_stack)       ( MC_(make_mem_noaccess) );
 
-   VG_(track_pre_mem_read)        ( mc_check_is_readable );
-   VG_(track_pre_mem_read_asciiz) ( mc_check_is_readable_asciiz );
-   VG_(track_pre_mem_write)       ( mc_check_is_writable );
+   VG_(track_pre_mem_read)        ( check_mem_is_defined );
+   VG_(track_pre_mem_read_asciiz) ( check_mem_is_defined_asciiz );
+   VG_(track_pre_mem_write)       ( check_mem_is_addressable );
    VG_(track_post_mem_write)      ( mc_post_mem_write );
 
    if (MC_(clo_undef_value_errors))
@@ -4431,4 +4422,6 @@ VG_DETERMINE_INTERFACE_VERSION(mc_pre_clo_init)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+
+
 

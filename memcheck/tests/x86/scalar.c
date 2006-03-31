@@ -821,7 +821,7 @@ int main(void)
       ss.ss_sp     = NULL;
       ss.ss_flags  = 0;
       ss.ss_size   = 0;
-      VALGRIND_MAKE_NOACCESS(& ss, sizeof(struct our_sigaltstack));
+      VALGRIND_MAKE_MEM_NOACCESS(& ss, sizeof(struct our_sigaltstack));
       GO(__NR_sigaltstack, "2s 2m");
       SY(__NR_sigaltstack, x0+&ss, x0+&ss); SUCC;
    }

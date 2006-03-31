@@ -580,7 +580,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
       }
    }
    vg_assert(NULL != sb);
-   //zzVALGRIND_MAKE_WRITABLE(sb, cszB);
+   //zzVALGRIND_MAKE_MEM_UNDEFINED(sb, cszB);
    vg_assert(0 == (Addr)sb % VG_MIN_MALLOC_SZB);
    sb->n_payload_bytes = cszB - sizeof(Superblock);
    a->bytes_mmaped += cszB;
@@ -914,7 +914,7 @@ void mkFreeBlock ( Arena* a, Block* b, SizeT bszB, UInt b_lno )
 {
    SizeT pszB = bszB_to_pszB(a, bszB);
    vg_assert(b_lno == pszB_to_listNo(pszB));
-   //zzVALGRIND_MAKE_WRITABLE(b, bszB);
+   //zzVALGRIND_MAKE_MEM_UNDEFINED(b, bszB);
    // Set the size fields and indicate not-in-use.
    set_bszB(b, mk_free_bszB(bszB));
 
@@ -943,7 +943,7 @@ void mkInuseBlock ( Arena* a, Block* b, SizeT bszB )
 {
    UInt i;
    vg_assert(bszB >= min_useful_bszB(a));
-   //zzVALGRIND_MAKE_WRITABLE(b, bszB);
+   //zzVALGRIND_MAKE_MEM_UNDEFINED(b, bszB);
    set_bszB(b, mk_inuse_bszB(bszB));
    set_prev_b(b, NULL);    // Take off freelist
    set_next_b(b, NULL);    // ditto

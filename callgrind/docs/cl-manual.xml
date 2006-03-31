@@ -235,9 +235,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
       <para><command>Periodic dumping after execution of a specified
       number of basic blocks</command>. For this, use the command line
       option <option><xref linkend="opt.dump-every-bb"/>=count</option>.
-      The resultion of the internal basic block counter of Valgrind is
-      only rough, so you should at least specify a interval of 50000
-      basic blocks.</para>
+      </para>
     </listitem>
 
     <listitem>
@@ -539,7 +537,11 @@ be executed. For interactive control use
       <option><![CDATA[--dump-every-bb=<count> [default: 0, never] ]]></option>
     </term>
     <listitem>
-      <para>Dump profile data each &lt;count&gt; basic blocks</para>
+      <para>Dump profile data every &lt;count&gt; basic blocks.
+      Whether a dump is needed is only checked when Valgrinds internal
+      scheduler is run. Therefore, the minimum setting useful is about 100000.
+      The count is a 64-bit value to make long dump periods possible.
+      </para>
     </listitem>
   </varlistentry>
 

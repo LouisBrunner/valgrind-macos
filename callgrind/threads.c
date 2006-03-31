@@ -182,7 +182,7 @@ void CLG_(run_thread)(ThreadId tid)
 
     if (CLG_(clo).dump_every_bb >0) {
        if (CLG_(stat).bb_executions - bbs_done > CLG_(clo).dump_every_bb) {
-           VG_(sprintf)(buf, "--dump-every-bb=%d", CLG_(clo).dump_every_bb);
+           VG_(sprintf)(buf, "--dump-every-bb=%llu", CLG_(clo).dump_every_bb);
 	   CLG_(dump_profile)(buf, False);
            bbs_done = CLG_(stat).bb_executions;
        }

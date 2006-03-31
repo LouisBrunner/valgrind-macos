@@ -618,7 +618,7 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
        CLG_(clo).dump_bb = False;
 
    else if (0 == VG_(strncmp)(arg, "--dump-every-bb=", 16))
-        CLG_(clo).dump_every_bb = (Int)VG_(atoll)(&arg[16]);
+        CLG_(clo).dump_every_bb = (ULong)VG_(atoll)(&arg[16]);
 
 
    else if (0 == VG_(strcmp)(arg, "--collect-alloc=yes"))

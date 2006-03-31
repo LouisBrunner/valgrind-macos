@@ -70,7 +70,7 @@ struct _CommandLineOptions {
   Bool dump_bbs;         /* Dump basic block information? */
   
   /* Dump generation options */
-  Int dump_every_bb;     /* Dump every xxx BBs. */
+  ULong dump_every_bb;     /* Dump every xxx BBs. */
   
   /* Collection options */
   Bool separate_threads; /* Separate threads in dump? */

@@ -2,9 +2,10 @@
    ----------------------------------------------------------------
 
    Notice that the following BSD-style license applies to this one
-   file (valgrind.h) only.  The entire rest of Valgrind is licensed
-   under the terms of the GNU General Public License, version 2.  See
-   the COPYING file in the source distribution for details.
+   file (valgrind.h) only.  The rest of Valgrind is licensed under the
+   terms of the GNU General Public License, version 2, unless
+   otherwise indicated.  See the COPYING file in the source
+   distribution for details.
 
    ----------------------------------------------------------------
 

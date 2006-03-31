@@ -1281,8 +1281,8 @@ compile with <computeroutput>-DNVALGRIND</computeroutput> (analogous to
 <para>You are encouraged to copy the <filename>valgrind/*.h</filename> headers
 into your project's include directory, so your program doesn't have a
 compile-time dependency on Valgrind being installed.  The Valgrind headers,
-unlike the rest of the code, are under a BSD-style license so you may include
-them without worrying about license incompatibility.</para>
+unlike most of the rest of the code, are under a BSD-style license so you may
+include them without worrying about license incompatibility.</para>
 
 <para>Here is a brief description of the macros available in
 <filename>valgrind.h</filename>, which work with more than one
@@ -2398,7 +2398,7 @@ detecting errors such as passing undefined data to
 <computeroutput>PMPI_Send</computeroutput>, or receiving data into a
 buffer which is too small.</para>
 
-<para>Unlike the rest of Valgrind, the wrapper library is subject to a
+<para>Unlike most of the rest of Valgrind, the wrapper library is subject to a
 BSD-style license, so you can link it into any code base you like.
 See the top of <computeroutput>auxprogs/libmpiwrap.c</computeroutput>
 for details.</para>

@@ -21,23 +21,26 @@ hours of frustrating bug-hunting, making your programs more stable. You can
 also perform detailed profiling, to speed up and reduce memory use of your
 programs.
 
-The Valgrind distribution currently includes five tools: two memory error
-detectors, a thread error detector, a cache profiler and a heap profiler.
+The Valgrind distribution currently includes four tools: a memory error
+detector, a thread error detector, a cache profiler and a heap profiler.
 
 To give you an idea of what Valgrind tools do, when a program is run
-under the supervision of the first memory error detector tool, all reads
-and writes of memory are checked, and calls to malloc/new/free/delete
-are intercepted. As a result, it can detect problems such as:
+under the supervision of Memcheck, the memory error detector tool, all
+reads and writes of memory are checked, and calls to malloc/new/free/delete
+are intercepted.  As a result, Memcheck can detect if your program:
 
-   Use of uninitialised memory
-   Reading/writing memory after it has been free'd
-   Reading/writing off the end of malloc'd blocks
-   Reading/writing inappropriate areas on the stack
-   Memory leaks -- where pointers to malloc'd blocks are lost forever
-   Passing of uninitialised and/or unaddressible memory to system calls
-   Mismatched use of malloc/new/new [] vs free/delete/delete []
-   Overlaps of arguments to strcpy() and related functions
-   Some abuses of the POSIX pthread API
+   - Accesses memory it shouldn't (areas not yet allocated, areas that have
+     been freed, areas past the end of heap blocks, inaccessible areas of
+     the stack).
+
+   - Uses uninitialised values in dangerous ways.
+
+   - Leaks memory.
+
+   - Does bad frees of heap blocks (double frees, mismatched frees).
+
+   - Passes overlapping source and destination memory blocks to memcpy() and
+     related functions.
 
 Problems like these can be difficult to find by other means, often
 lying undetected for long periods, then causing occasional,

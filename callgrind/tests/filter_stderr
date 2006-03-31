@@ -1,0 +1,20 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic                |
+
+# Remove "Callgrind, ..." line and the following copyright line.
+sed "/^Callgrind, a call-graph generating cache profiler./ , /./ d" |
+
+# Remove numbers from I/D/L2 "refs:" lines
+sed "s/\(\(I\|D\|L2\) *refs:\)[ 0-9,()+rdw]*$/\1/"  |
+
+# Remove numbers from I1/D1/L2/L2i/L2d "misses:" and "miss rates:" lines
+sed "s/\(\(I1\|D1\|L2\|L2i\|L2d\) *\(misses\|miss rate\):\)[ 0-9,()+rdw%\.]*$/\1/" |
+
+# Remove CPUID warnings lines for P4s and other machines
+sed "/warning: Pentium 4 with 12 KB micro-op instruction trace cache/d" |
+sed "/Simulating a 16 KB I-cache with 32 B lines/d"   |
+sed "/warning: L3 cache detected but ignored/d" |
+sed "/Warning: Cannot auto-detect cache config on PPC.., using one or more defaults/d"

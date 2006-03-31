@@ -801,7 +801,7 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
    case VG_USERREQ__DUMP_STATS_AT:
      {
        Char buf[512];
-       VG_(sprintf)(buf,"Client Request: %d", args[1]);
+       VG_(sprintf)(buf,"Client Request: %s", args[1]);
        CLG_(dump_profile)(buf, True);
        *ret = 0;                 /* meaningless */
      }
@@ -1042,20 +1042,23 @@ void CLG_(post_clo_init)(void)
 
    CLG_(instrument_state) = CLG_(clo).instrument_atstart;
 
-   VG_(message)(Vg_UserMsg, "");
-   VG_(message)(Vg_UserMsg, "For interactive control, run 'callgrind_control -h'.");
+   if (VG_(clo_verbosity > 0)) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg,
+                   "For interactive control, run 'callgrind_control -h'.");
+   }
 }
 
 static
 void CLG_(pre_clo_init)(void)
 {
     VG_(details_name)            ("Callgrind");
-    VG_(details_version)         (VERSION);
+    VG_(details_version)         (NULL);
     VG_(details_description)     ("a call-graph generating cache profiler");
     VG_(details_copyright_author)("Copyright (C) 2002-2006, and GNU GPL'd, "
-				  "by J.Weidendorfer et al.");
+				  "by Josef Weidendorfer et al.");
     VG_(details_bug_reports_to)  ("Josef.Weidendorfer@gmx.de");
-    VG_(details_avg_translation_sizeB) ( 155 );
+    VG_(details_avg_translation_sizeB) ( 245 );
 
     VG_(basic_tool_funcs)        (CLG_(post_clo_init),
                                   CLG_(instrument),

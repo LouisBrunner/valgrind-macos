@@ -13,7 +13,7 @@
    This file is part of callgrind, a valgrind skin for cache simulation
    and call tree tracing.
 
-   Copyright (C) 2003,2004 Josef Weidendorfer.  All rights reserved.
+   Copyright (C) 2003-2006 Josef Weidendorfer.  All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -61,6 +61,16 @@
 
 #include "valgrind.h"
 
+/* !! ABIWARNING !! ABIWARNING !! ABIWARNING !! ABIWARNING !!
+   This enum comprises an ABI exported by Valgrind to programs
+   which use client requests.  DO NOT CHANGE THE ORDER OF THESE
+   ENTRIES, NOR DELETE ANY -- add new ones at the end.
+
+   The identification ('C','T') for Callgrind has historical
+   reasons: it was called "Calltree" before. Besides, ('C','G') would
+   clash with cachegrind.
+ */
+
 typedef
    enum {
       VG_USERREQ__DUMP_STATS = VG_USERREQ_TOOL_BASE('C','T'),
@@ -69,63 +79,69 @@ typedef
       VG_USERREQ__DUMP_STATS_AT,
       VG_USERREQ__START_INSTRUMENTATION,
       VG_USERREQ__STOP_INSTRUMENTATION
-   } Vg_CalltreeClientRequest;
+   } Vg_CallgrindClientRequest;
 
-/* Dump current state of cost centers.
-   This will also atomically zero the cost centers */
-#define CALLGRIND_DUMP_STATS()                   			\
-   do {									\
-     unsigned int _qzz_res;						\
-     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__DUMP_STATS,	\
-			     0, 0, 0, 0);       			\
-     (void)0;								\
-   } while(0)
+/* Dump current state of cost centers, and zero them afterwards */
+#define CALLGRIND_DUMP_STATS                                            \
+   {unsigned int _qzz_res;                                              \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                             \
+                            VG_USERREQ__DUMP_STATS,                     \
+                            0, 0, 0, 0, 0);                             \
+   }
 
-/* Dump current state of cost centers.
-   This will also atomically zero the cost centers */
-#define CALLGRIND_DUMP_STATS_AT(pos_str)                			\
-   do {									\
-     unsigned int _qzz_res;						\
-     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__DUMP_STATS_AT,	\
-			     pos_str, 0, 0, 0);       			\
-     (void)0;								\
-   } while(0)
+/* Dump current state of cost centers, and zero them afterwards.
+   The argument is appended to a string stating the reason which triggered
+   the dump. This string is written as a description field into the
+   profile data dump. */
+#define CALLGRIND_DUMP_STATS_AT(pos_str)                                \
+   {unsigned int _qzz_res;                                              \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                             \
+                            VG_USERREQ__DUMP_STATS_AT,                  \
+                            pos_str, 0, 0, 0, 0);                       \
+   }
 
 /* Zero cost centers */
-#define CALLGRIND_ZERO_STATS()						\
-   do {									\
-     unsigned int _qzz_res;						\
-     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__ZERO_STATS,	\
-			     0, 0, 0, 0);				\
-     (void)0;								\
-   } while(0)
+#define CALLGRIND_ZERO_STATS                                            \
+   {unsigned int _qzz_res;                                              \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                             \
+                            VG_USERREQ__ZERO_STATS,                     \
+                            0, 0, 0, 0, 0);                             \
+   }
 
-/* Toggle collection state,
- * i.e. if events happening are collected into cost centers */
-#define CALLGRIND_TOGGLE_COLLECT()       				\
-   do {									\
-     unsigned int _qzz_res;						\
-     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__TOGGLE_COLLECT,	\
-			     0, 0, 0, 0);				\
-     (void)0;								\
-   } while(0)
+/* Toggles collection state.
+   The collection state specifies whether the happening of events
+   should be noted or if they are to be ignored. Events are noted
+   by increment of counters in a cost center */
+#define CALLGRIND_TOGGLE_COLLECT                                        \
+   {unsigned int _qzz_res;                                              \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                             \
+                            VG_USERREQ__TOGGLE_COLLECT,                 \
+                            0, 0, 0, 0, 0);                             \
+   }
 
-/* Start instrumentation if not already on */
-#define CALLGRIND_START_INSTRUMENTATION()       				\
-   do {									\
-     unsigned int _qzz_res;						\
-     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__START_INSTRUMENTATION,\
-			     0, 0, 0, 0);				\
-     (void)0;								\
-   } while(0)
+/* Start full callgrind instrumentation if not already switched on.
+   When cache simulation is done, it will flush the simulated cache;
+   this will lead to an artifical cache warmup phase afterwards with
+   cache misses which would not have happened in reality. */
+#define CALLGRIND_START_INSTRUMENTATION                                 \
+   {unsigned int _qzz_res;                                              \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                             \
+                            VG_USERREQ__START_INSTRUMENTATION,          \
+                            0, 0, 0, 0, 0);                             \
+   }
 
-/* Stop instrumentation if not already off */
-#define CALLGRIND_STOP_INSTRUMENTATION()       				\
-   do {									\
-     unsigned int _qzz_res;						\
-     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__STOP_INSTRUMENTATION,\
-			     0, 0, 0, 0);				\
-     (void)0;								\
-   } while(0)
+/* Stop full callgrind instrumentation if not already switched off.
+   This flushes Valgrinds translation cache, and does no additional
+   instrumentation afterwards, which effectivly will run at the same
+   speed as the "none" tool (ie. at minimal slowdown).
+   Use this to bypass Callgrind aggregation for uninteresting code parts.
+   To start Callgrind in this mode to ignore the setup phase, use
+   the option "--instr-atstart=no". */
+#define CALLGRIND_STOP_INSTRUMENTATION                                  \
+   {unsigned int _qzz_res;                                              \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                             \
+                            VG_USERREQ__STOP_INSTRUMENTATION,           \
+                            0, 0, 0, 0, 0);                             \
+   }
 
 #endif /* __CALLGRIND_H */

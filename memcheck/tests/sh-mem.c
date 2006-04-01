@@ -64,17 +64,17 @@ U8 build(int size, U1 byte)
 // Check that all the bytes in a[x..y-1] have their V byte equal to 'byte'.
 // 'str' and 'offset' are only used for printing an error message if
 // something goes wrong.
-void check_all(U4 x, U4 y, U1 byte, char* str, int offset)
+void check_all(U4 x, U4 y, U1 expected_byte, char* str, int offset)
 {
    U1 sh[SZB_OF_a];     // Used for getting a[]'s V bits
    int i;
 
    VALGRIND_GET_VBITS(a, sh, sizeof(a));
    for (i = x; i < y; i++) {
-      if ( byte != sh[i] ) {
+      if ( expected_byte != sh[i] ) {
          fprintf(stderr, "\n\nFAILURE: %s, offset %d, byte %d -- "
                          "is 0x%x, should be 0x%x\n\n",
-                         str, offset, i, sh[i], byte);
+                         str, offset, i, sh[i], expected_byte);
          exit(1);
       }
    }
@@ -83,7 +83,7 @@ void check_all(U4 x, U4 y, U1 byte, char* str, int offset)
 int main(void)
 {
    int h, i, j;
-   U1 *undefA;
+   U1 *undefA, expected_byte;
 
    if (0 == RUNNING_ON_VALGRIND) {
       fprintf(stderr, "error: this program only works when run under Valgrind\n");
@@ -125,7 +125,7 @@ int main(void)
    // will be the same as 'Ty' if 'ITy' is an integer type).  'ITy' is used
    // when doing shifting/masking and stuff like that.
 
-#define DO(NNN, Ty, ITy) \
+#define DO(NNN, Ty, ITy, isF4) \
    fprintf(stderr, "-- NNN: %d %s %s ------------------------\n", NNN, #Ty, #ITy); \
    /* For all of the alignments from (0..NNN-1), eg. if NNN==4, we do */ \
    /* alignments of 0, 1, 2, 3. */ \
@@ -164,16 +164,25 @@ int main(void)
          undefN_Ty = (Ty*)&undefN_ITy; \
          if (0 == j % 32) fprintf(stderr, "%d...", j); /* progress meter */ \
  \
+ \
+         /* A nasty exception: all machines so far (x86/AMD64/PPC32/PPC64)
+          * don't have 32-bit floats.  So 32-bit floats get cast to 64-bit
+          * floats.  Memcheck does a PCast in this case, which means that if
+          * any V bits for the 32-bit float are undefined (ie. 0 != j), all
+          * the V bits in the 64-bit float are undefined.  So account for
+          * this when checking. */ \
+         expected_byte = ( (isF4 && 0 != j) ? 0xff : j ); \
+ \
          /* STOREVn.  Note that we use the first element of the undefN_Ty
           * array, as explained above. */ \
          for (i = 0; i < nN-1; i++) { aNb[i] = undefN_Ty[0]; } \
-         check_all(h, n-NNN+h, j, "STOREVn", h); \
+         check_all(h, n-NNN+h, expected_byte, "STOREVn", h); \
     \
          /* LOADVn -- by copying the values to one place and then back, 
           * we ensure that LOADVn gets exercised. */ \
          for (i = 0; i < nN-1; i++) { bNb[i] = aNb[i]; } \
          for (i = 0; i < nN-1; i++) { aNb[i] = bNb[i]; } \
-         check_all(h, n-NNN+h, j, "LOADVn", h); \
+         check_all(h, n-NNN+h, expected_byte, "LOADVn", h); \
       } \
       fprintf(stderr, "\n"); \
    }
@@ -182,12 +191,12 @@ int main(void)
    // reason being that on 32-bit machines just using integer types never
    // exercises LOADV8/STOREV8 -- for integer types these loads/stores get
    // broken into two 32-bit loads/stores.
-   DO(1, U1, U1);
-   DO(2, U2, U2);
-   DO(4, U4, U4);
-   DO(4, F4, U4);
-   DO(8, U8, U8);
-   DO(8, F8, U8);
+   DO(1, U1, U1, /*isF4*/0);
+   DO(2, U2, U2, /*isF4*/0);
+   DO(4, U4, U4, /*isF4*/0);
+   DO(4, F4, U4, /*isF4*/1);
+   DO(8, U8, U8, /*isF4*/0);
+   DO(8, F8, U8, /*isF4*/0);
    
    return 0;
 }

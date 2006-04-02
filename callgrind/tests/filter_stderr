@@ -7,6 +7,12 @@ $dir/../../tests/filter_stderr_basic                |
 # Remove "Callgrind, ..." line and the following copyright line.
 sed "/^Callgrind, a call-graph generating cache profiler./ , /./ d" |
 
+# Remove pointer to callgrind_control
+sed "/^For interactive control,.*$/d" |
+
+# Remove numbers from "Collected" line
+sed "s/^\(Collected *:\)[ 0-9]*$/\1/" |
+
 # Remove numbers from I/D/L2 "refs:" lines
 sed "s/\(\(I\|D\|L2\) *refs:\)[ 0-9,()+rdw]*$/\1/"  |
 

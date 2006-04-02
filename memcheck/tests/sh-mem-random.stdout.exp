@@ -1,5 +1,4 @@
 -------- testing non-auxmap range --------
--------- arr = 0x415b028
 initialising
 post-initialisation check
 test passed, sum = 38338686 (127.79562 per byte)

@@ -111,7 +111,7 @@ void do_test_at ( U1* arr )
    U4 mv1 = 0, mv2 = 0, mv4 = 0, mv8 = 0, mv4f = 0, mv8f = 0;
 
    /* Fill arr with random bytes whose shadows match them. */
-   printf("-------- arr = %p\n", arr);
+   if (0) printf("-------- arr = %p\n", arr);
 
    printf("initialising\n");
    for (i = 0; i < N_BYTES; i++)

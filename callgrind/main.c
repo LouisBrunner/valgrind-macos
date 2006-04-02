@@ -226,7 +226,8 @@ EventSet* insert_simcall(IRBB* bbOut, InstrInfo* ii, UInt dataSize,
     else
 	VG_(tool_panic)("argc... not 1 or 2 or 3?");
     
-    di = unsafeIRDirty_0_N( argc, helperName, helperAddr, argv);
+    di = unsafeIRDirty_0_N( argc, helperName, 
+                                  VG_(fnptr_to_fnentry)( helperAddr ), argv);
     addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
 
     return es;

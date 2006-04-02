@@ -61,20 +61,23 @@ U8 build(int size, U1 byte)
    return res;
 }
 
-// Check that all the bytes in a[x..y-1] have their V byte equal to 'byte'.
+// Check that all the bytes in a[x..y-1] have their V byte equal 
+// to either 'expected_byte' or 'expected_byte_alt'.
 // 'str' and 'offset' are only used for printing an error message if
 // something goes wrong.
-void check_all(U4 x, U4 y, U1 expected_byte, char* str, int offset)
+void check_all(U4 x, U4 y, U1 expected_byte, U1 expected_byte_alt, 
+                           char* str, int offset)
 {
    U1 sh[SZB_OF_a];     // Used for getting a[]'s V bits
    int i;
 
    VALGRIND_GET_VBITS(a, sh, sizeof(a));
    for (i = x; i < y; i++) {
-      if ( expected_byte != sh[i] ) {
+      if ( expected_byte != sh[i] && expected_byte_alt != sh[i] ) {
          fprintf(stderr, "\n\nFAILURE: %s, offset %d, byte %d -- "
-                         "is 0x%x, should be 0x%x\n\n",
-                         str, offset, i, sh[i], expected_byte);
+                         "is 0x%x, should be 0x%x or 0x%x\n\n",
+                         str, offset, i, sh[i], expected_byte, 
+                         expected_byte_alt);
          exit(1);
       }
    }
@@ -83,7 +86,7 @@ void check_all(U4 x, U4 y, U1 expected_byte, char* str, int offset)
 int main(void)
 {
    int h, i, j;
-   U1 *undefA, expected_byte;
+   U1 *undefA, expected_byte, expected_byte_alt;
 
    if (0 == RUNNING_ON_VALGRIND) {
       fprintf(stderr, "error: this program only works when run under Valgrind\n");
@@ -165,24 +168,33 @@ int main(void)
          if (0 == j % 32) fprintf(stderr, "%d...", j); /* progress meter */ \
  \
  \
-         /* A nasty exception: all machines so far (x86/AMD64/PPC32/PPC64)
+         /* A nasty exception: most machines so far (x86/PPC32/PPC64)
           * don't have 32-bit floats.  So 32-bit floats get cast to 64-bit
           * floats.  Memcheck does a PCast in this case, which means that if
           * any V bits for the 32-bit float are undefined (ie. 0 != j), all
           * the V bits in the 64-bit float are undefined.  So account for
-          * this when checking. */ \
-         expected_byte = ( (isF4 && 0 != j) ? 0xff : j ); \
+          * this when checking.  AMD64 typically does FP arithmetic on
+          * SSE, effectively giving it access to 32-bit FP registers.  So
+          * in short, for floats, we have to allow either 'j' or 0xFF
+          * as an acceptable result.  Sigh. */ \
+         if (isF4) { \
+            expected_byte = j; \
+            expected_byte_alt = 0 != j ? 0xFF : j; \
+         } else { \
+            expected_byte = j; \
+            expected_byte_alt = j; \
+         } \
  \
          /* STOREVn.  Note that we use the first element of the undefN_Ty
           * array, as explained above. */ \
          for (i = 0; i < nN-1; i++) { aNb[i] = undefN_Ty[0]; } \
-         check_all(h, n-NNN+h, expected_byte, "STOREVn", h); \
-    \
+         check_all(h, n-NNN+h, expected_byte, expected_byte_alt, "STOREVn", h); \
+ \
          /* LOADVn -- by copying the values to one place and then back, 
           * we ensure that LOADVn gets exercised. */ \
          for (i = 0; i < nN-1; i++) { bNb[i] = aNb[i]; } \
          for (i = 0; i < nN-1; i++) { aNb[i] = bNb[i]; } \
-         check_all(h, n-NNN+h, expected_byte, "LOADVn", h); \
+         check_all(h, n-NNN+h, expected_byte, expected_byte_alt, "LOADVn", h); \
       } \
       fprintf(stderr, "\n"); \
    }

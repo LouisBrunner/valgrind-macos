@@ -92,6 +92,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
 	sh-mem.stderr.exp sh-mem.vgtest \
+	sh-mem-random.stderr.exp sh-mem-random.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	sigkill.stderr.exp sigkill.stderr.exp2 sigkill.stderr.exp3 sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
@@ -149,7 +150,7 @@ check_PROGRAMS = \
 	pipe pointer-trace \
 	post-syscall \
 	realloc1 realloc2 realloc3 \
-	sh-mem \
+	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask sigkill \
 	stack_changes stack_switch strchr str_tester \
 	supp_unknown supp1 supp2 suppfree \

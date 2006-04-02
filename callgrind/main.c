@@ -564,7 +564,9 @@ IRBB* CLG_(instrument)( VgCallbackClosure* closure,
    // helper call to setup_bbcc, with pointer to basic block info struct as argument
    arg1 = mkIRExpr_HWord( (HWord)bb );
    argv = mkIRExprVec_1(arg1);
-   di = unsafeIRDirty_0_N( 1, "setup_bbcc", & CLG_(setup_bbcc), argv);
+   di = unsafeIRDirty_0_N( 1, "setup_bbcc", 
+                              VG_(fnptr_to_fnentry)( & CLG_(setup_bbcc) ), 
+                              argv);
    addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
 
    instrCount = 0;

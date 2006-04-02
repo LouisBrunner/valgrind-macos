@@ -1,0 +1,16 @@
+-------- testing non-auxmap range --------
+initialising
+post-initialisation check
+test passed, sum = 38338686 (127.79562 per byte)
+doing copies
+final check
+test passed, sum = 38583755 (128.61252 per byte)
+counts 1/2/4/8/F4/F8: 300249 300934 299432 299394 0 299991
+-------- testing auxmap range --------
+initialising
+post-initialisation check
+test passed, sum = 38280859 (127.60286 per byte)
+doing copies
+final check
+test passed, sum = 38383372 (127.94457 per byte)
+counts 1/2/4/8/F4/F8: 300037 299522 300323 299732 0 300386

@@ -106,10 +106,6 @@
 #include "vki_unistd.h"
 
 
-/* Define to give more sanity checking for signals. */
-#define DEBUG_SIGNALS
-
-
 /* ---------------------------------------------------------------------
    Forwards decls.
    ------------------------------------------------------------------ */

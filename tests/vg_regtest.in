@@ -50,6 +50,7 @@
 #   - stdout_filter: <filter to run stdout through> (default: none)
 #   - stderr_filter: <filter to run stderr through> (default: ./filter_stderr)
 #   - prereq: <prerequisite command>                (default: none)
+#   - posttest: <post-test check command>           (default: none)
 #   - cleanup: <post-test cleanup cmd to run>       (default: none)
 #
 # Note that filters are necessary for stderr results to filter out things that
@@ -60,7 +61,8 @@
 # stderr (filtered) is kept in <test>.stderr.exp[0-9]*. 
 #
 # The prerequisite command, if present, must return 0 otherwise the test is
-# skipped.
+# skipped.  The post-test command, if present, must return 0 and its stdout
+# must match the expected stdout which is kept in <test>.posttest.exp[0-9]*.
 #
 # If results don't match, the output can be found in <test>.std<strm>.out,
 # and the diff between expected and actual in <test>.std<strm>.diff[0-9]*.
@@ -86,12 +88,13 @@ my $args;               # test prog args
 my $stdout_filter;      # filter program to run stdout results file through
 my $stderr_filter;      # filter program to run stderr results file through
 my $prereq;             # prerequisite test to satisfy before running test
+my $posttest;           # check command after running test
 my $cleanup;            # cleanup command to run
 
 my @failures;           # List of failed tests
 
 my $num_tests_done      = 0;
-my %num_failures        = (stderr => 0, stdout => 0);
+my %num_failures        = (stderr => 0, stdout => 0, posttest => 0);
 
 # Default valgrind to use is this build tree's (uninstalled) one
 my $valgrind = "./coregrind/valgrind";
@@ -172,8 +175,9 @@ sub read_vgtest_file($)
     my ($f) = @_;
 
     # Defaults.
-    ($vgopts, $prog, $args, $stdout_filter, $stderr_filter, $prereq, $cleanup)
-      = ("", undef, "", undef, undef, undef, undef);
+    ($vgopts, $prog, $args)          = ("", undef, "");
+    ($stdout_filter, $stderr_filter) = (undef, undef);
+    ($prereq, $posttest, $cleanup)   = (undef, undef, undef);
 
     # Every test directory must have a "filter_stderr"
     $stderr_filter = validate_program(".", $default_stderr_filter, 1, 1);
@@ -195,6 +199,8 @@ sub read_vgtest_file($)
             $stderr_filter = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*prereq:\s*(.*)$/) {
             $prereq = $1;
+        } elsif ($line =~ /^\s*posttest:\s*(.*)$/) {
+            $posttest = $1;
         } elsif ($line =~ /^\s*cleanup:\s*(.*)$/) {
             $cleanup = $1;
         } else {
@@ -287,25 +293,36 @@ sub do_one_test($$)
            . "--tool=$tool $vgopts "
            . "$prog $args > $name.stdout.out 2> $name.stderr.out");
 
+    # Filter stdout
     if (defined $stdout_filter) {
         mysystem("$stdout_filter < $name.stdout.out > $tmp");
         rename($tmp, "$name.stdout.out");
     }
-
-    mysystem("$stderr_filter < $name.stderr.out > $tmp");
-    rename($tmp, "$name.stderr.out");
-
-
     # Find all the .stdout.exp files.  If none, use /dev/null.
     my @stdout_exps = <$name.stdout.exp*>;
     @stdout_exps = ( "/dev/null" ) if (0 == scalar @stdout_exps);
+    do_diffs($fullname, $name, "stdout", \@stdout_exps); 
 
+    # Filter stderr
+    mysystem("$stderr_filter < $name.stderr.out > $tmp");
+    rename($tmp, "$name.stderr.out");
     # Find all the .stderr.exp files.  $name.stderr.exp must exist.
     my @stderr_exps = <$name.stderr.exp*>;
     (-r "$name.stderr.exp") or die "Could not read `$name.stderr.exp'\n";
-    
-    do_diffs($fullname, $name, "stdout", \@stdout_exps); 
     do_diffs($fullname, $name, "stderr", \@stderr_exps); 
+
+    # Maybe do post-test check
+    if (defined $posttest) {
+	if (mysystem("$posttest > $name.posttest.out") != 0) {
+	    print("posttest failed: $posttest\n");
+	    $num_failures{"posttest"}++;
+	} else {
+	    # Find all the .posttest.exp files.  If none, use /dev/null.
+	    my @posttest_exps = <$name.posttest.exp*>;
+	    @posttest_exps = ( "/dev/null" ) if (0 == scalar @posttest_exps);
+	    do_diffs($fullname, $name, "posttest", \@posttest_exps);
+	}
+    }
  
     if (defined $cleanup) {
         (system("$cleanup") == 0) or 
@@ -375,10 +392,12 @@ sub summarise_results
 {
     my $x = ( $num_tests_done == 1 ? "test" : "tests" );
     
-    printf("\n== %d test%s, %d stderr failure%s, %d stdout failure%s =================\n", 
+    printf("\n== %d test%s, %d stderr failure%s, %d stdout failure%s, "
+                         . "%d posttest failure%s ==\n", 
            $num_tests_done, plural($num_tests_done),
-           $num_failures{"stderr"}, plural($num_failures{"stderr"}),
-           $num_failures{"stdout"}, plural($num_failures{"stdout"}));
+           $num_failures{"stderr"},   plural($num_failures{"stderr"}),
+           $num_failures{"stdout"},   plural($num_failures{"stdout"}),
+           $num_failures{"posttest"}, plural($num_failures{"posttest"}));
 
     foreach my $failure (@failures) {
         print "$failure\n";
@@ -415,7 +434,9 @@ foreach my $f (@fs) {
 }
 summarise_results();
 
-if (0 == $num_failures{"stdout"} && 0 == $num_failures{"stderr"}) {
+if (0 == $num_failures{"stdout"} &&
+    0 == $num_failures{"stderr"} &&
+    0 == $num_failures{"posttest"}) {
     exit 0;
 } else {
     exit 1;

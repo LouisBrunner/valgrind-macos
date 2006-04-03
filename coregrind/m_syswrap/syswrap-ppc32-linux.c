@@ -392,6 +392,7 @@ DECL_TEMPLATE(ppc32_linux, sys_clone);
 DECL_TEMPLATE(ppc32_linux, sys_sigreturn);
 DECL_TEMPLATE(ppc32_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(ppc32_linux, sys_sigaction);
+DECL_TEMPLATE(ppc32_linux, sys_sigsuspend);
 
 PRE(sys_socketcall)
 {
@@ -1424,6 +1425,20 @@ POST(sys_sigaction)
       POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
 }
 
+PRE(sys_sigsuspend)
+{
+   /* The C library interface to sigsuspend just takes a pointer to
+      a signal mask but this system call only takes the first word of
+      the signal mask as an argument so only 32 signals are supported.
+     
+      In fact glibc normally uses rt_sigsuspend if it is available as
+      that takes a pointer to the signal mask so supports more signals.
+    */
+   *flags |= SfMayBlock;
+   PRINT("sys_sigsuspend ( %d )", ARG1 );
+   PRE_REG_READ1(int, "sigsuspend", vki_old_sigset_t, mask);
+}
+
 
 #undef PRE
 #undef POST
@@ -1461,7 +1476,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_execve,            sys_execve),            // 11
    GENX_(__NR_chdir,             sys_chdir),             // 12
    GENXY(__NR_time,              sys_time),              // 13
-//..    GENX_(__NR_mknod,             sys_mknod),             // 14
+   GENX_(__NR_mknod,             sys_mknod),             // 14
 //.. 
    GENX_(__NR_chmod,             sys_chmod),             // 15
 //..    LINX_(__NR_lchown,            sys_lchown16),          // 16 ## P
@@ -1531,7 +1546,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //.. 
 //..    LINX_(__NR_setreuid,          sys_setreuid16),        // 70
 //..    LINX_(__NR_setregid,          sys_setregid16),        // 71
-//..    GENX_(__NR_sigsuspend,        sys_sigsuspend),        // 72
+   PLAX_(__NR_sigsuspend,        sys_sigsuspend),        // 72
 //..    LINXY(__NR_sigpending,        sys_sigpending),        // 73
 //..    //   (__NR_sethostname,       sys_sethostname),       // 74 */*
 //.. 

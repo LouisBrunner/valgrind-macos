@@ -5290,24 +5290,6 @@ PRE(sys_pause)
    PRE_REG_READ0(long, "pause");
 }
 
-//zz // XXX: x86-specific
-//zz PRE(sys_sigsuspend, SfMayBlock)
-//zz {
-//zz    /* The C library interface to sigsuspend just takes a pointer to
-//zz       a signal mask but this system call has three arguments - the first
-//zz       two don't appear to be used by the kernel and are always passed as
-//zz       zero by glibc and the third is the first word of the signal mask
-//zz       so only 32 signals are supported.
-//zz      
-//zz       In fact glibc normally uses rt_sigsuspend if it is available as
-//zz       that takes a pointer to the signal mask so supports more signals.
-//zz     */
-//zz    PRINT("sys_sigsuspend ( %d, %d, %d )", ARG1,ARG2,ARG3 );
-//zz    PRE_REG_READ3(int, "sigsuspend",
-//zz                  int, history0, int, history1,
-//zz                  vki_old_sigset_t, mask);
-//zz }
-
 // XXX: x86-specific
 PRE(sys_sigaltstack)
 {

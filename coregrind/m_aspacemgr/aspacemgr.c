@@ -1697,10 +1697,8 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
    seg.hasT   = False;
 
    seg.kind = SkAnonV;
-   if (filename) { 
-      seg.kind  = SkFileV;
-      seg.fnIdx = allocate_segname( filename );
-   }
+   if (dev != 0 && ino != 0) seg.kind  = SkFileV;
+   if (filename) seg.fnIdx = allocate_segname( filename );
 
    if (0) show_nsegment( 2,0, &seg );
    add_segment( &seg );

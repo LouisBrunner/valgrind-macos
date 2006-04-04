@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Read DWARF2 debug info.                              dwarf.c ---*/
+/*--- Read DWARF1/2/3 debug info.                      readdwarf.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -27,18 +27,28 @@
 
    The GNU General Public License is contained in the file COPYING.
 */
+/*
+   Stabs reader greatly improved by Nick Nethercote, Apr 02.
+   This module was also extensively hacked on by Jeremy Fitzhardinge
+   and Tom Hughes.
+*/
 
 #include "pub_core_basics.h"
-#include "pub_core_debuginfo.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
+#include "priv_storage.h"
+#include "priv_readdwarf.h"        /* self */
 
-#include "priv_symtypes.h"
-#include "priv_symtab.h"
 
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*--- Read line number and CFI info from DWARF1, DWARF2    ---*/
+/*--- and to some extent DWARF3 sections.                  ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
 
 /*------------------------------------------------------------*/
 /*--- Expanding arrays of words, for holding file name and ---*/
@@ -291,7 +301,7 @@ Char* lookupDir ( Int filename_index,
 /* Handled an extend line op.  Returns true if this is the end
    of sequence.  */
 static 
-Int process_extended_line_op( SegInfo*   si, 
+Int process_extended_line_op( struct _SegInfo* si, 
                               WordArray* filenames, 
                               WordArray* dirnames, 
                               WordArray* fnidx2dir, 
@@ -378,7 +388,7 @@ Int process_extended_line_op( SegInfo*   si,
  * Output: - si debug info structures get updated
  */
 static 
-void read_dwarf2_lineblock ( SegInfo*  si, 
+void read_dwarf2_lineblock ( struct _SegInfo*  si, 
                              UnitInfo* ui, 
                              UChar*    theBlock, 
                              Int       noLargerThan )
@@ -922,8 +932,8 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
          break;
    } /* Loop on each sub block */
 
-   /* This test would be valid if we were not shortcuting the parsing
-   if( level != 0 )
+   /* This test would be valid if we were not shortcutting the parsing
+   if (level != 0)
       VG_(printf)( "#### Exiting debuginfo block at level %d !!!\n", level );
    */
 }
@@ -940,7 +950,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
  * Output: update si to contain all the dwarf2 debug infos
  */
 void ML_(read_debuginfo_dwarf2) 
-        ( SegInfo* si,
+        ( struct _SegInfo* si,
           UChar* debuginfo,   Int debug_info_sz,  /* .debug_info */
           UChar* debugabbrev,                     /* .debug_abbrev */
           UChar* debugline,   Int debug_line_sz,  /* .debug_line */
@@ -1158,7 +1168,7 @@ enum dwarf_attribute {
 /* end of enums taken from gdb-6.0 sources */
 
 void ML_(read_debuginfo_dwarf1) ( 
-        SegInfo* si, 
+        struct _SegInfo* si, 
         UChar* dwarf1d, Int dwarf1d_sz, 
         UChar* dwarf1l, Int dwarf1l_sz )
 {
@@ -1513,42 +1523,7 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
 
 /* ------------ Deal with summary-info records ------------ */
 
-void ML_(ppCfiSI) ( CfiSI* si )
-{
-#  define SHOW_HOW(_how, _off)                   \
-      do {                                       \
-         if (_how == CFIR_UNKNOWN) {             \
-            VG_(printf)("Unknown");              \
-         } else                                  \
-         if (_how == CFIR_SAME) {                \
-            VG_(printf)("Same");                 \
-         } else                                  \
-         if (_how == CFIR_CFAREL) {              \
-            VG_(printf)("cfa+%d", _off);         \
-         } else                                  \
-         if (_how == CFIR_MEMCFAREL) {           \
-            VG_(printf)("*(cfa+%d)", _off);      \
-         } else {                                \
-            VG_(printf)("???");                  \
-         }                                       \
-      } while (0)
-
-   VG_(printf)("[%p .. %p]: ", si->base, 
-                               si->base + (UWord)si->len - 1);
-   VG_(printf)("let cfa=%s+%d", 
-               si->cfa_sprel ? "oldSP" : "oldFP", si->cfa_off);
-   VG_(printf)(" in RA=");
-   SHOW_HOW(si->ra_how, si->ra_off);
-   VG_(printf)(" SP=");
-   SHOW_HOW(si->sp_how, si->sp_off);
-   VG_(printf)(" FP=");
-   SHOW_HOW(si->fp_how, si->fp_off);
-   VG_(printf)("\n");
-
-#  undef SHOW_HOW
-}
-
-static void initCfiSI ( CfiSI* si )
+static void initCfiSI ( DiCfSI* si )
 {
    si->base      = 0;
    si->len       = 0;
@@ -1570,7 +1545,7 @@ static void initCfiSI ( CfiSI* si )
    summary is up to but not including the current loc.  This works
    on both x86 and amd64.
 */
-static Bool summarise_context( /*OUT*/CfiSI* si,
+static Bool summarise_context( /*OUT*/DiCfSI* si,
                                Addr loc_start,
 	                       UnwindContext* ctx )
 {
@@ -2158,12 +2133,12 @@ static void show_CF_instructions ( UChar* instrs, Int ilen )
    reached, or until there is a failure.  Return True iff success. 
 */
 static 
-Bool run_CF_instructions ( SegInfo* si,
+Bool run_CF_instructions ( struct _SegInfo* si,
                            UnwindContext* ctx, UChar* instrs, Int ilen,
                            UWord fde_arange,
                            UnwindContext* restore_ctx )
 {
-   CfiSI cfisi;
+   DiCfSI cfsi;
    Bool summ_ok;
    Int j, i = 0;
    Addr loc_prev;
@@ -2179,11 +2154,11 @@ Bool run_CF_instructions ( SegInfo* si,
       i += j;
       if (0) ppUnwindContext(ctx);
       if (loc_prev != ctx->loc && si) {
-         summ_ok = summarise_context ( &cfisi, loc_prev, ctx );
+         summ_ok = summarise_context ( &cfsi, loc_prev, ctx );
          if (summ_ok) {
-            ML_(addCfiSI)(si, &cfisi);
+            ML_(addDiCfSI)(si, &cfsi);
             if (VG_(clo_trace_cfi))
-               ML_(ppCfiSI)(&cfisi);
+               ML_(ppDiCfSI)(&cfsi);
          }
       }
    }
@@ -2191,11 +2166,11 @@ Bool run_CF_instructions ( SegInfo* si,
       loc_prev = ctx->loc;
       ctx->loc = fde_arange;
       if (si) {
-         summ_ok = summarise_context ( &cfisi, loc_prev, ctx );
+         summ_ok = summarise_context ( &cfsi, loc_prev, ctx );
          if (summ_ok) {
-            ML_(addCfiSI)(si, &cfisi);
+            ML_(addDiCfSI)(si, &cfsi);
             if (VG_(clo_trace_cfi))
-               ML_(ppCfiSI)(&cfisi);
+               ML_(ppDiCfSI)(&cfsi);
          }
       }
    }
@@ -2241,7 +2216,7 @@ static CIE the_CIEs[N_CIEs];
 
 
 void ML_(read_callframe_info_dwarf2) 
-        ( /*OUT*/SegInfo* si, 
+        ( /*OUT*/struct _SegInfo* si, 
           UChar* ehframe, Int ehframe_sz, Addr ehframe_addr )
 {
    Int    nbytes;

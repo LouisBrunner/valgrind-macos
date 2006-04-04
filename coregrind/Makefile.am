@@ -114,8 +114,10 @@ noinst_HEADERS = \
 	vki_unistd-ppc64-linux.h\
 	vki_unistd-x86-linux.h	\
 	m_coredump/priv_elf.h	\
-	m_debuginfo/priv_symtab.h	\
-	m_debuginfo/priv_symtypes.h	\
+	m_debuginfo/priv_storage.h	\
+	m_debuginfo/priv_readstabs.h	\
+	m_debuginfo/priv_readdwarf.h	\
+	m_debuginfo/priv_readelf.h	\
 	m_demangle/ansidecl.h	\
 	m_demangle/dyn-string.h	\
 	m_demangle/demangle.h	\
@@ -165,10 +167,11 @@ COREGRIND_SOURCES_COMMON = \
 	m_transtab.c \
 	m_ume.c \
 	m_aspacemgr/aspacemgr.c \
-	m_debuginfo/dwarf.c \
-	m_debuginfo/stabs.c \
-	m_debuginfo/symtab.c \
-	m_debuginfo/symtypes.c \
+	m_debuginfo/storage.c \
+	m_debuginfo/readdwarf.c \
+	m_debuginfo/readstabs.c \
+	m_debuginfo/readelf.c \
+	m_debuginfo/debuginfo.c \
 	m_demangle/cp-demangle.c \
 	m_demangle/cplus-dem.c \
 	m_demangle/demangle.c \
@@ -301,3 +304,7 @@ all-local:
 	  rm -f $(inplacedir)/$$p/$$n; \
 	  ln -f -s ../../$(subdir)/$$f $(inplacedir)/$$p/$$n; \
 	done
+
+EXTRA_DIST = \
+	m_debuginfo/UNUSED_STABS.txt \
+	m_debuginfo/README.txt

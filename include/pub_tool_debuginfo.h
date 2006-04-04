@@ -87,9 +87,6 @@ extern Bool VG_(get_objname)  ( Addr a, Char* objname,  Int n_objname  );
 */
 extern Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf);
 
-/* Returns a string containing an expression for the given
-   address. String is malloced with VG_(malloc)() */
-Char *VG_(describe_addr)(ThreadId, Addr);
 
 /*====================================================================*/
 /*=== Obtaining segment information                                ===*/

@@ -35,8 +35,6 @@
 // PURPOSE: This module deals with reading debug info and symbol tables
 // to get file and function names, line numbers, variable types, and
 // to help stack unwinding.
-//
-// And its internals are currently a mess.  Its interface is ugly, too.
 //--------------------------------------------------------------------
 
 #include "pub_tool_debuginfo.h"
@@ -53,16 +51,15 @@ extern void VG_(di_notify_munmap)( Addr a, SizeT len );
 
 extern void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot );
 
-extern SegInfo *VG_(read_seg_symbols) ( Addr addr, SizeT len,
-                                        OffT offset, const Char* filename);
+extern Bool VG_(get_fnname_nodemangle)( Addr a, 
+                                        Char* fnname, Int n_fnname );
 
-extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
-
-extern Bool VG_(use_CFI_info) ( /*MOD*/Addr* ipP,
-                                /*MOD*/Addr* spP,
-                                /*MOD*/Addr* fpP,
-                                Addr min_accessible,
-                                Addr max_accessible );
+/* Use DWARF2/3 CFA information to do one step of stack unwinding. */
+extern Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
+                               /*MOD*/Addr* spP,
+                               /*MOD*/Addr* fpP,
+                               Addr min_accessible,
+                               Addr max_accessible );
 
 /* ppc64-linux only: find the TOC pointer (R2 value) that should be in
    force at the entry point address of the function containing

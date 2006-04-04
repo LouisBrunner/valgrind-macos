@@ -2521,7 +2521,9 @@ static void record_race_error ( ThreadId tid, Addr a, Bool is_write,
    err_extra.prevstate = prevstate;
    if (clo_execontext)
       err_extra.lasttouched = getExeContext(a);
-   err_extra.addrinfo.expr = VG_(describe_addr)(tid, a);
+   /* JRS 4 Apr 06: VG_(describe_addr) disappeared from m_debuginfo,
+      at least for the time being. */
+   err_extra.addrinfo.expr = "???"; /* VG_(describe_addr)(tid, a); */
 
    VG_(maybe_record_error)( tid, RaceErr, a, 
                             (is_write ? "writing" : "reading"),

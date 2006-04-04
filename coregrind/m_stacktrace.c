@@ -154,7 +154,7 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
 
       /* That didn't work out, so see if there is any CFI info to hand
          which can be used. */
-      if ( VG_(use_CFI_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+      if ( VG_(use_CF_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
          ips[i++] = ip;
          if (debug)
             VG_(printf)("     ipsC[%d]=%08p\n", i-1, ips[i-1]);
@@ -200,7 +200,7 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
 
       /* First off, see if there is any CFI info to hand which can
          be used. */
-      if ( VG_(use_CFI_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
+      if ( VG_(use_CF_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
          ips[i++] = ip;
          if (debug)
             VG_(printf)("     ipsC[%d]=%08p\n", i-1, ips[i-1]);
@@ -208,7 +208,7 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
          continue;
       }
 
-      /* If VG_(use_CFI_info) fails, it won't modify ip/sp/fp, so
+      /* If VG_(use_CF_info) fails, it won't modify ip/sp/fp, so
          we can safely try the old-fashioned method. */
       /* This bit is supposed to deal with frames resulting from
          functions which begin "pushq %rbp ; movq %rsp, %rbp".

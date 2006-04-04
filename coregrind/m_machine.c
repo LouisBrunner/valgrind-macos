@@ -380,7 +380,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_V = False;
      } else {
-        __asm__ __volatile__("vor 0,0,0");
+        __asm__ __volatile__(".long 0x10000484"); /*vor 0,0,0*/
      }
 
      /* General-Purpose optional (fsqrt, fsqrts) */

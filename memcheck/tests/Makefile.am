@@ -38,6 +38,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
+	deep_templates.vgtest \
+	deep_templates.stdout.exp deep_templates.stderr.exp \
 	describe-block.stderr.exp describe-block.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
@@ -137,6 +139,7 @@ check_PROGRAMS = \
 	badaddrvalue badfree badjump badjump2 \
 	badloop badpoll badrw brk brk2 buflen_check \
 	clientperm custom_alloc \
+	deep_templates \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve execve2 erringfds \
 	fprw fwrite hello inits inline \
@@ -192,6 +195,8 @@ supp2_SOURCES		= supp.c
 mismatches_SOURCES	= mismatches.cpp
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
+deep_templates_SOURCES	= deep_templates.cpp
+deep_templates_CXXFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -gstabs
 
 # Build shared object for wrap7
 wrap7_SOURCES           = wrap7.c

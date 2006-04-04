@@ -380,6 +380,11 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_V = False;
      } else {
+        /* Unfortunately some older assemblers don't speak Altivec (or
+           choose not to), so to be safe we directly emit the 32-bit
+           word corresponding to "vor 0,0,0".  This fixes a build
+           problem that happens on Debian 3.1 (ppc32), and probably
+           various other places. */
         __asm__ __volatile__(".long 0x10000484"); /*vor 0,0,0*/
      }
 

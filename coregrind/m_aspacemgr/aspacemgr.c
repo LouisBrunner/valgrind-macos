@@ -1696,9 +1696,15 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
    seg.hasT   = False;
 
+   /* Don't use the presence of a filename to decide if a segment in
+      the initial /proc/self/maps to decide if the segment is an AnonV
+      or FileV segment as some systems don't report the filename. Use
+      the device and inode numbers instead. Fixes bug #124528. */
    seg.kind = SkAnonV;
-   if (dev != 0 && ino != 0) seg.kind  = SkFileV;
-   if (filename) seg.fnIdx = allocate_segname( filename );
+   if (dev != 0 && ino != 0) 
+      seg.kind = SkFileV;
+   if (filename)
+      seg.fnIdx = allocate_segname( filename );
 
    if (0) show_nsegment( 2,0, &seg );
    add_segment( &seg );

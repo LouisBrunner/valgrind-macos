@@ -448,6 +448,7 @@ void VG_(scheduler_init) ( Addr clstack_end, SizeT clstack_size )
    }
 
    tid_main = VG_(alloc_ThreadState)();
+   vg_assert(tid_main == 1);
 
    VG_(threads)[tid_main].client_stack_highest_word 
       = clstack_end + 1 - sizeof(UWord);

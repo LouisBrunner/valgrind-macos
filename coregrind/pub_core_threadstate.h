@@ -88,6 +88,7 @@ typedef
 #endif
 
 
+/* Architecture-specific thread state */
 typedef 
    struct {
       /* --- BEGIN vex-mandated guest state --- */
@@ -105,24 +106,28 @@ typedef
    } 
    ThreadArchState;
 
+
 /* OS-specific thread state */
-typedef struct {
-   /* who we are */
-   Int	lwpid;			// PID of kernel task
-   Int	threadgroup;		// thread group id
+typedef
+   struct {
+      /* who we are */
+      Int lwpid;        // PID of kernel task
+      Int threadgroup;  // thread group id
 
-   ThreadId parent;		// parent tid (if any)
+      ThreadId parent;  // parent tid (if any)
 
-   /* runtime details */
-   Addr valgrind_stack_base;    // Valgrind's stack (VgStack*)
-   Addr valgrind_stack_init_SP; // starting value for SP
+      /* runtime details */
+      Addr valgrind_stack_base;    // Valgrind's stack (VgStack*)
+      Addr valgrind_stack_init_SP; // starting value for SP
 
-   /* exit details */
-   Int  exitcode;		// in the case of exitgroup, set by someone else
-   Int  fatalsig;		// fatal signal
-} os_thread_t;
+      /* exit details */
+      Int exitcode; // in the case of exitgroup, set by someone else
+      Int fatalsig; // fatal signal
+   }
+   ThreadOSstate;
 
 
+/* Overall thread state */
 typedef struct {
    /* ThreadId == 0 (and hence vg_threads[0]) is NEVER USED.
       The thread identity is simply the index in vg_threads[].
@@ -171,31 +176,26 @@ typedef struct {
       only then is the old one deallocated and a new one
       allocated. 
 
-      For the main thread (threadid == 0), this mechanism doesn't
+      For the main thread (threadid == 1), this mechanism doesn't
       apply.  We don't know the size of the stack since we didn't
       allocate it, and furthermore we never reallocate it. */
 
    /* The allocated size of this thread's stack (permanently zero
-      if this is ThreadId == 0, since we didn't allocate its stack) */
+      if this is ThreadId == 1, since we didn't allocate its stack) */
    SizeT client_stack_szB;
 
    /* Address of the highest legitimate word in this stack.  This is
       used for error messages only -- not critical for execution
       correctness.  Is is set for all stacks, specifically including
-      ThreadId == 0 (the main thread). */
+      ThreadId == 1 (the main thread). */
    Addr client_stack_highest_word;
 
    /* Alternate signal stack */
    vki_stack_t altstack;
 
    /* OS-specific thread state */
-   os_thread_t os_state;
+   ThreadOSstate os_state;
 
-   /* Used in the syscall handlers.  Set to True to indicate that the
-      PRE routine for a syscall has set the syscall result already and
-      so the syscall does not need to be handed to the kernel. */
-   Bool syscall_result_set;
-   
    /* Per-thread jmp_buf to resume scheduler after a signal */
    Bool    sched_jmpbuf_valid;
    jmp_buf sched_jmpbuf;

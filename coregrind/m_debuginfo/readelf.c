@@ -385,7 +385,7 @@ Bool get_elf_symbol_info (
 static
 __attribute__((unused)) /* not referred to on all targets */
 void read_elf_symtab__normal( 
-        struct _SegInfo* si, Char* tab_name,
+        struct _SegInfo* si, UChar* tab_name,
         ElfXX_Sym* o_symtab, UInt o_symtab_sz,
         UChar*     o_strtab, UInt o_strtab_sz,
         UChar*     opd_filea /* ppc64-linux only */ 
@@ -1157,7 +1157,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
       /* Read symbols */
       {
-         void (*read_elf_symtab)(struct _SegInfo*,Char*,ElfXX_Sym*,
+         void (*read_elf_symtab)(struct _SegInfo*,UChar*,ElfXX_Sym*,
                                  UInt,UChar*,UInt,UChar*);
 #        if defined(VGP_ppc64_linux)
          read_elf_symtab = read_elf_symtab__ppc64_linux;

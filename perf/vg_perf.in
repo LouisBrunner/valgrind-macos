@@ -301,9 +301,12 @@ sub do_one_test($$)
                 die "unknown tool $tool, please add to %toolnames\n";
 
             # Do the tool run(s).  Set both VALGRIND_LIB and VALGRIND_LIB_INNER
-            # in case this Valgrind was configured with --enable-inner.
+            # in case this Valgrind was configured with --enable-inner.  And
+            # also VALGRINDLIB, which was the old name for the variable, to
+            # allow comparison against old Valgrind versions (eg. 2.4.X).
             printf("  %s:", $toolnames{$tool});
-            my $vgsetup = "VALGRIND_LIB=$vgdir/.in_place "
+            my $vgsetup = "VALGRINDLIB=$vgdir/.in_place "
+                        . "VALGRIND_LIB=$vgdir/.in_place "
                         . "VALGRIND_LIB_INNER=$vgdir/.in_place ";
             my $vgcmd   = "$vgdir/coregrind/valgrind "
                         . "--command-line-only=yes --tool=$tool -q "

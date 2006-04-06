@@ -41,7 +41,10 @@ Smaller things
 * Expose some of m_redir's functionality to tools so that Memcheck
   can replace strlen/strcmp on PPC32 (remove the 3.1.0 hack for this
   which checked in m_redir.c if the current tool was Memcheck).
-
+  [Won't bother.  The fix is worse than the problem it's trying to solve;
+   the issue is that the replacement functions are in m_trampoline.S and must
+   be between VG_(trampoline_stuff_start) and VG_(trampoline_stuff_end) for
+   arcane reasons and moving them into a tool-visible place is a pain.]
 
 -----------------------------------------------------------------------------
 3.1.1

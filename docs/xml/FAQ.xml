@@ -94,8 +94,21 @@
  </answer>
 </qandaentry>
 
-</qandadiv>
+<qandaentry id="faq.glibc_devel">
+ <question>
+  <para>When I try to build Valgrind, 'make' fails with
+<programlisting>
+/usr/bin/ld: cannot find -lc
+collect2: ld returned 1 exit status
+</programlisting>
+  </para>
+ </question>
+ <answer>
+  <para>You need to install the glibc-static-devel package.</para>
+ </answer>
+</qandaentry>
 
+</qandadiv>
 
 
 <!-- Valgrind aborts unexpectedly -->

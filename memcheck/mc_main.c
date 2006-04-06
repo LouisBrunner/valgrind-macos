@@ -3084,7 +3084,7 @@ VG_REGPARM(1) ULong MC_(helperc_LOADV64le) ( Addr a )
 
 
 static INLINE
-void mc_STOREV64 ( Addr a, ULong vbytes, Bool isBigEndian )
+void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
 {
    UWord   sm_off16, vabits16;
    SecMap* sm;
@@ -3094,11 +3094,11 @@ void mc_STOREV64 ( Addr a, ULong vbytes, Bool isBigEndian )
 #ifndef PERF_FAST_STOREV
    // XXX: this slow case seems to be marginally faster than the fast case!
    // Investigate further.
-   mc_STOREVn_slow( a, 64, vbytes, isBigEndian );
+   mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
 #else
    if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,64) )) {
       PROF_EVENT(211, "mc_STOREV64-slow1");
-      mc_STOREVn_slow( a, 64, vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
       return;
    }
 
@@ -3113,30 +3113,30 @@ void mc_STOREV64 ( Addr a, ULong vbytes, Bool isBigEndian )
       /* Handle common case quickly: a is suitably aligned, */
       /* is mapped, and is addressible. */
       // Convert full V-bits in register to compact 2-bit form.
-      if (V_BITS64_DEFINED == vbytes) {
+      if (V_BITS64_DEFINED == vbits64) {
          ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
-      } else if (V_BITS64_UNDEFINED == vbytes) {
+      } else if (V_BITS64_UNDEFINED == vbits64) {
          ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(212, "mc_STOREV64-slow2");
-         mc_STOREVn_slow( a, 64, vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
       }
    } else {
       /* Slow but general case. */
       PROF_EVENT(213, "mc_STOREV64-slow3");
-      mc_STOREVn_slow( a, 64, vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 64, vbits64, isBigEndian );
    }
 #endif
 }
 
-VG_REGPARM(1) void MC_(helperc_STOREV64be) ( Addr a, ULong vbytes )
+VG_REGPARM(1) void MC_(helperc_STOREV64be) ( Addr a, ULong vbits64 )
 {
-   mc_STOREV64(a, vbytes, True);
+   mc_STOREV64(a, vbits64, True);
 }
-VG_REGPARM(1) void MC_(helperc_STOREV64le) ( Addr a, ULong vbytes )
+VG_REGPARM(1) void MC_(helperc_STOREV64le) ( Addr a, ULong vbits64 )
 {
-   mc_STOREV64(a, vbytes, False);
+   mc_STOREV64(a, vbits64, False);
 }
 
 
@@ -3190,7 +3190,7 @@ VG_REGPARM(1) UWord MC_(helperc_LOADV32le) ( Addr a )
 
 
 static INLINE
-void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
+void mc_STOREV32 ( Addr a, UWord vbits32, Bool isBigEndian )
 {
    UWord   sm_off, vabits8;
    SecMap* sm;
@@ -3198,11 +3198,11 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
    PROF_EVENT(230, "mc_STOREV32");
 
 #ifndef PERF_FAST_STOREV
-   mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
+   mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
 #else
    if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,32) )) {
       PROF_EVENT(231, "mc_STOREV32-slow1");
-      mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
       return;
    }
 
@@ -3215,7 +3215,7 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
    // Cleverness:  sometimes we don't have to write the shadow memory at
    // all, if we can tell that what we want to write is the same as what is
    // already there.
-   if (V_BITS32_DEFINED == vbytes) {
+   if (V_BITS32_DEFINED == vbits32) {
       if (vabits8 == (UInt)VA_BITS8_DEFINED) {
          return;
       } else if (!is_distinguished_sm(sm) && VA_BITS8_UNDEFINED == vabits8) {
@@ -3223,9 +3223,9 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
       } else {
          // not defined/undefined, or distinguished and changing state
          PROF_EVENT(232, "mc_STOREV32-slow2");
-         mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
       }
-   } else if (V_BITS32_UNDEFINED == vbytes) {
+   } else if (V_BITS32_UNDEFINED == vbits32) {
       if (vabits8 == (UInt)VA_BITS8_UNDEFINED) {
          return;
       } else if (!is_distinguished_sm(sm) && VA_BITS8_DEFINED == vabits8) {
@@ -3233,12 +3233,12 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
       } else {
          // not defined/undefined, or distinguished and changing state
          PROF_EVENT(233, "mc_STOREV32-slow3");
-         mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
       }
    } else {
       // Partially defined word
       PROF_EVENT(234, "mc_STOREV32-slow4");
-      mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
    }
 //---------------------------------------------------------------------------
 #else
@@ -3249,32 +3249,32 @@ void mc_STOREV32 ( Addr a, UWord vbytes, Bool isBigEndian )
       /* Handle common case quickly: a is suitably aligned, */
       /* is mapped, and is addressible. */
       // Convert full V-bits in register to compact 2-bit form.
-      if (V_BITS32_DEFINED == vbytes) {
+      if (V_BITS32_DEFINED == vbits32) {
          sm->vabits8[sm_off] = VA_BITS8_DEFINED;
-      } else if (V_BITS32_UNDEFINED == vbytes) {
+      } else if (V_BITS32_UNDEFINED == vbits32) {
          sm->vabits8[sm_off] = VA_BITS8_UNDEFINED;
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(232, "mc_STOREV32-slow2");
-         mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
       }
    } else {
       /* Slow but general case. */
       PROF_EVENT(233, "mc_STOREV32-slow3");
-      mc_STOREVn_slow( a, 32, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 32, (ULong)vbits32, isBigEndian );
    }
 #endif
 //---------------------------------------------------------------------------
 #endif
 }
 
-VG_REGPARM(2) void MC_(helperc_STOREV32be) ( Addr a, UWord vbytes )
+VG_REGPARM(2) void MC_(helperc_STOREV32be) ( Addr a, UWord vbits32 )
 {
-   mc_STOREV32(a, vbytes, True);
+   mc_STOREV32(a, vbits32, True);
 }
-VG_REGPARM(2) void MC_(helperc_STOREV32le) ( Addr a, UWord vbytes )
+VG_REGPARM(2) void MC_(helperc_STOREV32le) ( Addr a, UWord vbits32 )
 {
-   mc_STOREV32(a, vbytes, False);
+   mc_STOREV32(a, vbits32, False);
 }
 
 
@@ -3331,7 +3331,7 @@ VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr a )
 
 
 static INLINE
-void mc_STOREV16 ( Addr a, UWord vbytes, Bool isBigEndian )
+void mc_STOREV16 ( Addr a, UWord vbits16, Bool isBigEndian )
 {
    UWord   sm_off, vabits8;
    SecMap* sm;
@@ -3339,11 +3339,11 @@ void mc_STOREV16 ( Addr a, UWord vbytes, Bool isBigEndian )
    PROF_EVENT(250, "mc_STOREV16");
 
 #ifndef PERF_FAST_STOREV
-   mc_STOREVn_slow( a, 16, (ULong)vbytes, isBigEndian );
+   mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
 #else
    if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,16) )) {
       PROF_EVENT(251, "mc_STOREV16-slow1");
-      mc_STOREVn_slow( a, 16, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
       return;
    }
 
@@ -3357,32 +3357,32 @@ void mc_STOREV16 ( Addr a, UWord vbytes, Bool isBigEndian )
       /* Handle common case quickly: a is suitably aligned, */
       /* is mapped, and is addressible. */
       // Convert full V-bits in register to compact 2-bit form.
-      if (V_BITS16_DEFINED == vbytes) {
+      if (V_BITS16_DEFINED == vbits16) {
          insert_vabits4_into_vabits8( a, VA_BITS4_DEFINED ,
                                       &(sm->vabits8[sm_off]) );
-      } else if (V_BITS16_UNDEFINED == vbytes) {
+      } else if (V_BITS16_UNDEFINED == vbits16) {
          insert_vabits4_into_vabits8( a, VA_BITS4_UNDEFINED,
                                       &(sm->vabits8[sm_off]) );
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(252, "mc_STOREV16-slow2");
-         mc_STOREVn_slow( a, 16, (ULong)vbytes, isBigEndian );
+         mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
       }
    } else {
       /* Slow but general case. */
       PROF_EVENT(253, "mc_STOREV16-slow3");
-      mc_STOREVn_slow( a, 16, (ULong)vbytes, isBigEndian );
+      mc_STOREVn_slow( a, 16, (ULong)vbits16, isBigEndian );
    }
 #endif
 }
 
-VG_REGPARM(2) void MC_(helperc_STOREV16be) ( Addr a, UWord vbytes )
+VG_REGPARM(2) void MC_(helperc_STOREV16be) ( Addr a, UWord vbits16 )
 {
-   mc_STOREV16(a, vbytes, True);
+   mc_STOREV16(a, vbits16, True);
 }
-VG_REGPARM(2) void MC_(helperc_STOREV16le) ( Addr a, UWord vbytes )
+VG_REGPARM(2) void MC_(helperc_STOREV16le) ( Addr a, UWord vbits16 )
 {
-   mc_STOREV16(a, vbytes, False);
+   mc_STOREV16(a, vbits16, False);
 }
 
 
@@ -3431,7 +3431,7 @@ UWord MC_(helperc_LOADV8) ( Addr a )
 
 
 VG_REGPARM(2)
-void MC_(helperc_STOREV8) ( Addr a, UWord vbyte )
+void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
 {
    UWord   sm_off, vabits8;
    SecMap* sm;
@@ -3439,11 +3439,11 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbyte )
    PROF_EVENT(270, "mc_STOREV8");
 
 #ifndef PERF_FAST_STOREV
-   mc_STOREVn_slow( a, 8, (ULong)vbyte, False/*irrelevant*/ );
+   mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
 #else
    if (EXPECTED_NOT_TAKEN( UNALIGNED_OR_HIGH(a,8) )) {
       PROF_EVENT(271, "mc_STOREV8-slow1");
-      mc_STOREVn_slow( a, 8, (ULong)vbyte, False/*irrelevant*/ );
+      mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
       return;
    }
 
@@ -3461,21 +3461,21 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbyte )
       /* Handle common case quickly: a is mapped, the entire word32 it
          lives in is addressible. */
       // Convert full V-bits in register to compact 2-bit form.
-      if (V_BITS8_DEFINED == vbyte) {
+      if (V_BITS8_DEFINED == vbits8) {
          insert_vabits2_into_vabits8( a, VA_BITS2_DEFINED,
                                        &(sm->vabits8[sm_off]) );
-      } else if (V_BITS8_UNDEFINED == vbyte) {
+      } else if (V_BITS8_UNDEFINED == vbits8) {
          insert_vabits2_into_vabits8( a, VA_BITS2_UNDEFINED,
                                        &(sm->vabits8[sm_off]) );
       } else {
          /* Slow but general case -- writing partially defined bytes. */
          PROF_EVENT(272, "mc_STOREV8-slow2");
-         mc_STOREVn_slow( a, 8, (ULong)vbyte, False/*irrelevant*/ );
+         mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
       }
    } else {
       /* Slow but general case. */
       PROF_EVENT(273, "mc_STOREV8-slow3");
-      mc_STOREVn_slow( a, 8, (ULong)vbyte, False/*irrelevant*/ );
+      mc_STOREVn_slow( a, 8, (ULong)vbits8, False/*irrelevant*/ );
    }
 #endif
 }

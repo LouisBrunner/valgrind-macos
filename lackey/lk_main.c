@@ -1,12 +1,11 @@
 
 /*--------------------------------------------------------------------*/
-/*--- An example Valgrind tool.                                    ---*/
-/*---                                                    lk_main.c ---*/
+/*--- An example Valgrind tool.                          lk_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
    This file is part of Lackey, an example Valgrind tool that does
-   some simple program measurement.
+   some simple program measurement and tracing.
 
    Copyright (C) 2002-2005 Nicholas Nethercote
       njn@valgrind.org
@@ -31,22 +30,35 @@
 
 // This tool shows how to do some basic instrumentation.
 //
-// In particular, if you are interested in tracing every load and store a
-// program does, use the --trace-mem=yes option.  Please note that the
-// address trace is good, but not perfect;  see Section 3.3.7 of Nicholas
-// Nethercote's PhD dissertation "Dynamic Binary Analysis and
-// Instrumentation", 2004, for details about the few loads and stores that
-// it misses, and other caveats about the accuracy of the address trace.
+// There are three kinds of instrumentation it can do.  They can be turned
+// on/off independently with command line options:
+//
+// * --basic-counts   : do basic counts, eg. number of instructions
+//                      executed, jumps executed, etc.
+// * --detailed-counts: do more detailed counts:  number of loads, stores
+//                      and ALU operations of different sizes.
+// * --trace-mem=yes:   trace all (data) memory accesses.
+//
+// The code for each kind of instrumentation is guarded by a clo_* variable:
+// clo_basic_counts, clo_detailed_counts and clo_trace_mem.
+//
+// If you want to modify any of the instrumentation code, look for the code
+// that is guarded by the relevant clo_* variable (eg. clo_trace_mem)
+// If you're not interested in the other kinds of instrumentation you can
+// remove them.  If you want to do more complex modifications, please read
+// VEX/pub/libvex_ir.h to understand the intermediate representation.
+//
+//
+// Specific Details about --trace-mem=yes
+// --------------------------------------
+// The address trace produced by --trace-mem=yes is good, but not perfect;
+// see Section 3.3.7 of Nicholas Nethercote's PhD dissertation "Dynamic
+// Binary Analysis and Instrumentation", 2004, for details about the few
+// loads and stores that it misses, and other caveats about the accuracy of
+// the address trace.
 //
 // [Actually, the traces aren't quite right because instructions that modify
 // a memory location are treated like a load followed by a store.]
-//
-// If you want to modify how the memory traces are printed/gathered, look at
-// the code that is controlled by the variable 'lk_clo_trace_mem' and the
-// functions 'trace_load()' and 'trace_mem'..  With a bit of effort you
-// should be able to see which other bits of code can be removed, if that's
-// what you want.  If you want to do more complex modifications, please read
-// VEX/pub/libvex_ir.h to understand the intermediate representation.
 //
 // For further inspiration, you should look at cachegrind/cg_main.c which
 // handles memory accesses in a more sophisticated way -- it groups them
@@ -62,40 +74,44 @@
 #include "pub_tool_options.h"
 #include "pub_tool_machine.h"     // VG_(fnptr_to_fnentry)
 
-/* The name of the function of which the number of calls is to be
- * counted, with default. Override with command line option
- * --fnname. */
-static Char* lk_clo_fnname = "_dl_runtime_resolve";
+/*------------------------------------------------------------*/
+/*--- Command line options                                 ---*/
+/*------------------------------------------------------------*/
 
-/* If true, show statistics about loads, stores and alu ops. Set
- * with command line option --detailed-counts. */
-static Bool lk_clo_detailed_counts = False;
+/* Command line options controlling instrumentation kinds, as described at
+ * the top of this file. */
+static Bool clo_basic_counts    = True;
+static Bool clo_detailed_counts = False;
+static Bool clo_trace_mem       = False;
 
-/* If true, print the trace of loads and stores.  Set with --trace-mem. */
-static Bool lk_clo_trace_mem = False;
-
-/***********************************************************************
- * Implement the needs_command_line_options for Valgrind.
- **********************************************************************/
+/* The name of the function of which the number of calls (under
+ * --basic-counts=yes) is to be counted, with default. Override with command
+ * line option --fnname. */
+static Char* clo_fnname = "_dl_runtime_resolve";
 
 static Bool lk_process_cmd_line_option(Char* arg)
 {
-   VG_STR_CLO(arg, "--fnname", lk_clo_fnname)
-   else VG_BOOL_CLO(arg, "--detailed-counts", lk_clo_detailed_counts)
-   else VG_BOOL_CLO(arg, "--trace-mem",       lk_clo_trace_mem)
+   VG_STR_CLO(arg, "--fnname", clo_fnname)
+   else VG_BOOL_CLO(arg, "--basic-counts",    clo_basic_counts)
+   else VG_BOOL_CLO(arg, "--detailed-counts", clo_detailed_counts)
+   else VG_BOOL_CLO(arg, "--trace-mem",       clo_trace_mem)
    else
       return False;
    
-   tl_assert(lk_clo_fnname);
-   tl_assert(lk_clo_fnname[0]);
+   tl_assert(clo_fnname);
+   tl_assert(clo_fnname[0]);
    return True;
 }
 
 static void lk_print_usage(void)
 {  
    VG_(printf)(
-"    --fnname=<name>           count calls to <name> [_dl_runtime_resolve]\n"
+"    --basic-counts=no|yes     count instructions, jumps, etc. [no]\n"
 "    --detailed-counts=no|yes  count loads, stores and alu ops [no]\n"
+"    --trace-mem=no|yes        trace all loads and stores [no]\n"
+"    --fnname=<name>           count calls to <name> (only used if\n"
+"                              --basic-count=yes)  [_dl_runtime_resolve]\n"
+                           
    );
 }
 
@@ -103,9 +119,9 @@ static void lk_print_debug_usage(void)
 {  
 }
 
-/***********************************************************************
- * Data and helpers related to the default operation of Lackey.
- **********************************************************************/
+/*------------------------------------------------------------*/
+/*--- Data and helpers for --basic-counts                  ---*/
+/*------------------------------------------------------------*/
 
 /* Nb: use ULongs because the numbers can get very big */
 static ULong n_func_calls    = 0;
@@ -151,9 +167,9 @@ static void add_one_Jcc_untaken(void)
    n_Jccs_untaken++;
 }
 
-/***********************************************************************
- * Data and helpers related to --detailed-counts.
- **********************************************************************/
+/*------------------------------------------------------------*/
+/*--- Data and helpers for --detailed-counts               ---*/
+/*------------------------------------------------------------*/
 
 /* --- Operations --- */
 
@@ -248,9 +264,9 @@ static void print_details ( void )
 }
 
 
-/***********************************************************************
- * Data and helpers related to --trace-mem.      
- **********************************************************************/
+/*------------------------------------------------------------*/
+/*--- Data and helpers for --trace-mem                     ---*/
+/*------------------------------------------------------------*/
 
 static VG_REGPARM(2) void trace_load(Addr addr, SizeT size)
 {
@@ -262,17 +278,20 @@ static VG_REGPARM(2) void trace_store(Addr addr, SizeT size)
    VG_(printf)("store: %p, %d\n", addr, size);
 }
 
-/***********************************************************************
- * Implement the basic_tool_funcs for Valgrind.
- **********************************************************************/
+
+/*------------------------------------------------------------*/
+/*--- Basic tool functions                                 ---*/
+/*------------------------------------------------------------*/
 
 static void lk_post_clo_init(void)
 {
    Int op, tyIx;
 
-   for (op = 0; op < N_OPS; op++)
-      for (tyIx = 0; tyIx < N_TYPES; tyIx++)
-         detailCounts[op][tyIx] = 0;
+   if (clo_detailed_counts) {
+      for (op = 0; op < N_OPS; op++)
+         for (tyIx = 0; tyIx < N_TYPES; tyIx++)
+            detailCounts[op][tyIx] = 0;
+   }
 }
 
 static
@@ -309,88 +328,86 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
       i++;
    }
 
-   /* Count this basic block. */
-   di = unsafeIRDirty_0_N( 0, "add_one_BB_entered", 
-                              VG_(fnptr_to_fnentry)( &add_one_BB_entered ),
-                              mkIRExprVec_0() );
-   addStmtToIRBB( bb, IRStmt_Dirty(di) );
+   if (clo_basic_counts) {
+      /* Count this basic block. */
+      di = unsafeIRDirty_0_N( 0, "add_one_BB_entered", 
+                                 VG_(fnptr_to_fnentry)( &add_one_BB_entered ),
+                                 mkIRExprVec_0() );
+      addStmtToIRBB( bb, IRStmt_Dirty(di) );
+   }
 
    for (/*use current i*/; i < bb_in->stmts_used; i++) {
       IRStmt* st = bb_in->stmts[i];
       if (!st || st->tag == Ist_NoOp) continue;
 
-      /* Count one VEX statement. */
-      di = unsafeIRDirty_0_N( 0, "add_one_IRStmt", 
-                                 VG_(fnptr_to_fnentry)( &add_one_IRStmt ), 
-                                 mkIRExprVec_0() );
-      addStmtToIRBB( bb, IRStmt_Dirty(di) );
+      if (clo_basic_counts) {
+         /* Count one VEX statement. */
+         di = unsafeIRDirty_0_N( 0, "add_one_IRStmt", 
+                                    VG_(fnptr_to_fnentry)( &add_one_IRStmt ), 
+                                    mkIRExprVec_0() );
+         addStmtToIRBB( bb, IRStmt_Dirty(di) );
+      }
       
       switch (st->tag) {
          case Ist_IMark:
-            /* Count guest instruction. */
-            di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
-                                       VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
-                                       mkIRExprVec_0() );
-            addStmtToIRBB( bb, IRStmt_Dirty(di) );
-            
-            /* An unconditional branch to a known destination in the
-             * guest's instructions can be represented, in the IRBB to
-             * instrument, by the VEX statements that are the
-             * translation of that known destination. This feature is
-             * called 'BB chasing' and can be influenced by command
-             * line option --vex-guest-chase-thresh.
-             *
-             * To get an accurate count of the calls to a specific
-             * function, taking BB chasing into account, we need to
-             * check for each guest instruction (Ist_IMark) if it is
-             * the entry point of a function.
-             */
-            tl_assert(lk_clo_fnname);
-            tl_assert(lk_clo_fnname[0]);
-            if (VG_(get_fnname_if_entry)(st->Ist.IMark.addr, 
-                                         fnname, sizeof(fnname))
-                && 0 == VG_(strcmp)(fnname, lk_clo_fnname)) {
-               di = unsafeIRDirty_0_N( 
-                       0, "add_one_func_call", 
-                          VG_(fnptr_to_fnentry)( &add_one_func_call ), 
-                          mkIRExprVec_0() );
+            if (clo_basic_counts) {
+               /* Count guest instruction. */
+               di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
+                                          VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
+                                          mkIRExprVec_0() );
                addStmtToIRBB( bb, IRStmt_Dirty(di) );
+
+               /* An unconditional branch to a known destination in the
+                * guest's instructions can be represented, in the IRBB to
+                * instrument, by the VEX statements that are the
+                * translation of that known destination. This feature is
+                * called 'BB chasing' and can be influenced by command
+                * line option --vex-guest-chase-thresh.
+                *
+                * To get an accurate count of the calls to a specific
+                * function, taking BB chasing into account, we need to
+                * check for each guest instruction (Ist_IMark) if it is
+                * the entry point of a function.
+                */
+               tl_assert(clo_fnname);
+               tl_assert(clo_fnname[0]);
+               if (VG_(get_fnname_if_entry)(st->Ist.IMark.addr, 
+                                            fnname, sizeof(fnname))
+                   && 0 == VG_(strcmp)(fnname, clo_fnname)) {
+                  di = unsafeIRDirty_0_N( 
+                          0, "add_one_func_call", 
+                             VG_(fnptr_to_fnentry)( &add_one_func_call ), 
+                             mkIRExprVec_0() );
+                  addStmtToIRBB( bb, IRStmt_Dirty(di) );
+               }
             }
             addStmtToIRBB( bb, st );
             break;
 
          case Ist_Exit:
-            /* Count Jcc */
-            di = unsafeIRDirty_0_N( 0, "add_one_Jcc", 
-                                       VG_(fnptr_to_fnentry)( &add_one_Jcc ), 
-                                       mkIRExprVec_0() );
-            addStmtToIRBB( bb, IRStmt_Dirty(di) );
+            if (clo_basic_counts) {
+               /* Count Jcc */
+               di = unsafeIRDirty_0_N( 0, "add_one_Jcc", 
+                                          VG_(fnptr_to_fnentry)( &add_one_Jcc ), 
+                                          mkIRExprVec_0() );
+               addStmtToIRBB( bb, IRStmt_Dirty(di) );
+            }
 
             addStmtToIRBB( bb, st );
 
-            /* Count non-taken Jcc */
-            di = unsafeIRDirty_0_N( 0, "add_one_Jcc_untaken", 
-                                       VG_(fnptr_to_fnentry)( &add_one_Jcc_untaken ),
-                                       mkIRExprVec_0() );
-            addStmtToIRBB( bb, IRStmt_Dirty(di) );
+            if (clo_basic_counts) {
+               /* Count non-taken Jcc */
+               di = unsafeIRDirty_0_N( 0, "add_one_Jcc_untaken", 
+                                          VG_(fnptr_to_fnentry)(
+                                             &add_one_Jcc_untaken ),
+                                          mkIRExprVec_0() );
+               addStmtToIRBB( bb, IRStmt_Dirty(di) );
+            }
             break;
 
-         /* Someone on the users list asked for something like this
-          * just the other day (Christian Stimming, "Fast profiling in
-          * valgrind?", 25 Oct).  Personally I think it'd be a
-          * valuable addition.
-          *   
-          * Not hard to do either: for stores, examine Ist_Store, and
-          * use typeOfIRExpr(bb->tyenv, st->Ist.Store.data) to get the
-          * store type.  For loads and ALU ops, you only need to look
-          * at Ist_Tmp cases where the Ist.Tmp.data is either Iex_Load
-          * or Iex_{Unop,Binop}.  All statements you will ever
-          * encounter will satisfy isFlatIRStmt which essentially
-          * constrains them to being flat SSA-style.
-          */
          case Ist_Store:
             // Add a call to trace_store() if --trace-mem=yes.
-            if (lk_clo_trace_mem) {
+            if (clo_trace_mem) {
                addr_expr = st->Ist.Store.addr;
                size_expr = mkIRExpr_HWord( 
                              sizeofIRType(
@@ -402,7 +419,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                                        argv );
                addStmtToIRBB( bb, IRStmt_Dirty(di) );
             }
-            if (lk_clo_detailed_counts) {
+            if (clo_detailed_counts) {
                type = typeOfIRExpr(bb->tyenv, st->Ist.Store.data);
                tl_assert(type != Ity_INVALID);
                instrument_detail( bb, OpStore, type );
@@ -412,7 +429,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
 
          case Ist_Tmp:
             // Add a call to trace_load() if --trace-mem=yes.
-            if (lk_clo_trace_mem) {
+            if (clo_trace_mem) {
                IRExpr* data = st->Ist.Tmp.data;
                if (data->tag == Iex_Load) {
                   addr_expr = data->Iex.Load.addr;
@@ -425,7 +442,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                   addStmtToIRBB( bb, IRStmt_Dirty(di) );
                }
             }
-            if (lk_clo_detailed_counts) {
+            if (clo_detailed_counts) {
                IRExpr* expr = st->Ist.Tmp.data;
                type = typeOfIRExpr(bb->tyenv, expr);
                tl_assert(type != Ity_INVALID);
@@ -452,11 +469,13 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
       }
    }
 
-   /* Count this basic block. */
-   di = unsafeIRDirty_0_N( 0, "add_one_BB_completed", 
-                              VG_(fnptr_to_fnentry)( &add_one_BB_completed ), 
-                              mkIRExprVec_0() );
-   addStmtToIRBB( bb, IRStmt_Dirty(di) );
+   if (clo_basic_counts) {
+      /* Count this basic block. */
+      di = unsafeIRDirty_0_N( 0, "add_one_BB_completed", 
+                                 VG_(fnptr_to_fnentry)( &add_one_BB_completed ),
+                                 mkIRExprVec_0() );
+      addStmtToIRBB( bb, IRStmt_Dirty(di) );
+   }
 
    return bb;
 }
@@ -467,45 +486,50 @@ static void lk_fini(Int exitcode)
    const int percentify_size = sizeof(percentify_buf);
    const int percentify_decs = 0;
    
-   tl_assert(lk_clo_fnname);
-   tl_assert(lk_clo_fnname[0]);
-   VG_(message)(Vg_UserMsg,
-      "Counted %,llu calls to %s()", n_func_calls, lk_clo_fnname);
+   tl_assert(clo_fnname);
+   tl_assert(clo_fnname[0]);
 
-   VG_(message)(Vg_UserMsg, "");
-   VG_(message)(Vg_UserMsg, "Jccs:");
-   VG_(message)(Vg_UserMsg, "  total:         %,llu", n_Jccs);
-   VG_(percentify)((n_Jccs - n_Jccs_untaken), (n_Jccs ? n_Jccs : 1),
-      percentify_decs, percentify_size, percentify_buf);
-   VG_(message)(Vg_UserMsg, "  taken:         %,llu (%s)", 
-      (n_Jccs - n_Jccs_untaken), percentify_buf);
-   
-   VG_(message)(Vg_UserMsg, "");
-   VG_(message)(Vg_UserMsg, "Executed:");
-   VG_(message)(Vg_UserMsg, "  BBs entered:   %,llu", n_BBs_entered);
-   VG_(message)(Vg_UserMsg, "  BBs completed: %,llu", n_BBs_completed);
-   VG_(message)(Vg_UserMsg, "  guest instrs:  %,llu", n_guest_instrs);
-   VG_(message)(Vg_UserMsg, "  IRStmts:       %,llu", n_IRStmts);
-   
-   VG_(message)(Vg_UserMsg, "");
-   VG_(message)(Vg_UserMsg, "Ratios:");
-   tl_assert(n_BBs_entered); // Paranoia time.
-   VG_(message)(Vg_UserMsg, "  guest instrs : BB entered  = %3u : 10",
-      10 * n_guest_instrs / n_BBs_entered);
-   VG_(message)(Vg_UserMsg, "       IRStmts : BB entered  = %3u : 10",
-      10 * n_IRStmts / n_BBs_entered);
-   tl_assert(n_guest_instrs); // Paranoia time.
-   VG_(message)(Vg_UserMsg, "       IRStmts : guest instr = %3u : 10",
-      10 * n_IRStmts / n_guest_instrs);
+   if (clo_basic_counts) {
+      VG_(message)(Vg_UserMsg,
+         "Counted %,llu calls to %s()", n_func_calls, clo_fnname);
 
-   if (lk_clo_detailed_counts) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "Jccs:");
+      VG_(message)(Vg_UserMsg, "  total:         %,llu", n_Jccs);
+      VG_(percentify)((n_Jccs - n_Jccs_untaken), (n_Jccs ? n_Jccs : 1),
+         percentify_decs, percentify_size, percentify_buf);
+      VG_(message)(Vg_UserMsg, "  taken:         %,llu (%s)", 
+         (n_Jccs - n_Jccs_untaken), percentify_buf);
+      
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "Executed:");
+      VG_(message)(Vg_UserMsg, "  BBs entered:   %,llu", n_BBs_entered);
+      VG_(message)(Vg_UserMsg, "  BBs completed: %,llu", n_BBs_completed);
+      VG_(message)(Vg_UserMsg, "  guest instrs:  %,llu", n_guest_instrs);
+      VG_(message)(Vg_UserMsg, "  IRStmts:       %,llu", n_IRStmts);
+      
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "Ratios:");
+      tl_assert(n_BBs_entered); // Paranoia time.
+      VG_(message)(Vg_UserMsg, "  guest instrs : BB entered  = %3u : 10",
+         10 * n_guest_instrs / n_BBs_entered);
+      VG_(message)(Vg_UserMsg, "       IRStmts : BB entered  = %3u : 10",
+         10 * n_IRStmts / n_BBs_entered);
+      tl_assert(n_guest_instrs); // Paranoia time.
+      VG_(message)(Vg_UserMsg, "       IRStmts : guest instr = %3u : 10",
+         10 * n_IRStmts / n_guest_instrs);
+   }
+
+   if (clo_detailed_counts) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "IR-level counts by type:");
       print_details();
    }
 
-   VG_(message)(Vg_UserMsg, "");
-   VG_(message)(Vg_UserMsg, "Exit code:       %d", exitcode);
+   if (clo_basic_counts) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "Exit code:       %d", exitcode);
+   }
 }
 
 static void lk_pre_clo_init(void)

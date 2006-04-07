@@ -1334,6 +1334,8 @@ void VG_(add_to_unredir_transtab)( VexGuestExtents* vge,
    for (j = 0; j < code_len; j++)
       dstP[j] = srcP[j];
 
+   invalidate_icache( dstP, code_len );
+
    unredir_tt[i].inUse = True;
    unredir_tt[i].vge   = *vge;
    unredir_tt[i].hcode = (Addr)dstP;

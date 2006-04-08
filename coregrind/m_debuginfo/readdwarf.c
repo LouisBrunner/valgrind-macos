@@ -1349,8 +1349,8 @@ void ML_(read_debuginfo_dwarf1) (
       8 is the return address (EIP) */
 
 /* Note that we don't support DWARF3 expressions (DW_CFA_expression,
-   DW_CFA_def_cfa_expression).  The code just reads over them and
-   ignores them. 
+   DW_CFA_def_cfa_expression, DW_CFA_val_expression).  The code just 
+   reads over them and ignores them. 
 
    Note also, does not support the 64-bit DWARF format (only known
    compiler that generates it so far is IBM's xlc/xlC/xlf suite).
@@ -1411,10 +1411,15 @@ enum dwarf_cfa_secondary_ops
     DW_CFA_def_cfa_expression = 0x0f, /* DWARF3 only */
     DW_CFA_expression         = 0x10, /* DWARF3 only */
     DW_CFA_offset_extended_sf = 0x11, /* DWARF3 only */
+    DW_CFA_def_cfa_sf         = 0x12, /* DWARF3 only */
     DW_CFA_def_cfa_offset_sf  = 0x13, /* DWARF3 only */
+    DW_CFA_val_offset         = 0x14, /* DWARF3 only */
+    DW_CFA_val_offset_sf      = 0x15, /* DWARF3 only */
+    DW_CFA_val_expression     = 0x16, /* DWARF3 only */
     DW_CFA_lo_user            = 0x1c,
     DW_CFA_GNU_window_save    = 0x2d, /* GNU extension */
     DW_CFA_GNU_args_size      = 0x2e, /* GNU extension */
+    DW_CFA_GNU_negative_offset_extended = 0x2f, /* GNU extension */
     DW_CFA_hi_user            = 0x3f
   };
 
@@ -1447,7 +1452,8 @@ enum dwarf_cfa_secondary_ops
 */
 typedef
    struct {
-      enum { RR_Undef, RR_Same, RR_CFAoff, RR_Reg, RR_Arch, RR_Expr } tag;
+      enum { RR_Undef, RR_Same, RR_CFAoff, RR_Reg, RR_Arch, RR_Expr,
+	     RR_CFAValoff, RR_ValExpr } tag;
 
       /* Note, .coff and .reg are never both in use.  Therefore could
          merge them into one. */
@@ -1466,9 +1472,11 @@ static void ppRegRule ( RegRule* reg )
       case RR_Undef:  VG_(printf)("u  "); break;
       case RR_Same:   VG_(printf)("s  "); break;
       case RR_CFAoff: VG_(printf)("c%d ", reg->coff); break;
+      case RR_CFAValoff: VG_(printf)("v%d ", reg->coff); break;
       case RR_Reg:    VG_(printf)("r%d ", reg->reg); break;
       case RR_Arch:   VG_(printf)("a  "); break;
       case RR_Expr:   VG_(printf)("e  "); break;
+      case RR_ValExpr:   VG_(printf)("ve "); break;
       default:        VG_(core_panic)("ppRegRule");
    }
 }
@@ -1576,6 +1584,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
       case RR_Undef:  _how = CFIR_UNKNOWN;   _off = 0; break;            \
       case RR_Same:   _how = CFIR_SAME;      _off = 0; break;            \
       case RR_CFAoff: _how = CFIR_MEMCFAREL; _off = _ctxreg.coff; break; \
+      case RR_CFAValoff: _how = CFIR_CFAREL; _off = _ctxreg.coff; break; \
       default:        { why = 2; goto failed; } /* otherwise give up */  \
    }
 
@@ -1902,6 +1911,17 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          ctx->cfa_offset = off;
          break;
 
+      case DW_CFA_def_cfa_sf:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 1 );
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS)
+            return 0; /* fail */
+         ctx->cfa_reg    = reg;
+         ctx->cfa_offset = off;
+         break;
+
       case DW_CFA_register:
          reg = read_leb128( &instr[i], &nleb, 0);
          i += nleb;
@@ -1915,6 +1935,17 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          ctx->reg[reg].reg = reg2;
          break;
 
+      case DW_CFA_offset_extended:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS)
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_CFAoff;
+         ctx->reg[reg].coff = off * ctx->data_a_f;
+         break;
+
       case DW_CFA_offset_extended_sf:
          reg = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
@@ -1925,6 +1956,49 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          ctx->reg[reg].tag = RR_CFAoff;
          ctx->reg[reg].coff = off * ctx->data_a_f;
          break;         
+
+      case DW_CFA_GNU_negative_offset_extended:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS)
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_CFAoff;
+         ctx->reg[reg].coff = -off * ctx->data_a_f;
+         break;
+
+      case DW_CFA_restore_extended:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS)
+            return 0; /* fail */
+	 if (restore_ctx == NULL)
+	    return 0; /* fail */
+	 ctx->reg[reg] = restore_ctx->reg[reg];
+         break;
+
+      case DW_CFA_val_offset:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS)
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_CFAValoff;
+         ctx->reg[reg].coff = off * ctx->data_a_f;
+         break;
+
+      case DW_CFA_val_offset_sf:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 1 );
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS)
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_CFAValoff;
+         ctx->reg[reg].coff = off * ctx->data_a_f;
+         break;
 
       case DW_CFA_def_cfa_register:
          reg = read_leb128( &instr[i], &nleb, 0);
@@ -1967,6 +2041,22 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          if (reg < 0 || reg >= N_CFI_REGS) 
             return 0; /* fail */
          ctx->reg[reg].tag = RR_Expr;
+         break;
+
+      case DW_CFA_val_expression:
+         /* Too difficult to really handle; just skip over it and say
+            that we don't know what do to with the register. */
+         if (VG_(clo_trace_cfi))
+            VG_(printf)("DWARF2 CFI reader: "
+                        "ignoring DW_CFA_val_expression\n");
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         len = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         i += len;
+         if (reg < 0 || reg >= N_CFI_REGS)
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_ValExpr;
          break;
 
       case DW_CFA_def_cfa_expression:
@@ -2025,7 +2115,7 @@ static Int show_CF_instruction ( UChar* instr )
    }
 
    if (hi2 == DW_CFA_restore) {
-      VG_(printf)("DW_CFA_restore(%d)\n", (Int)lo6);
+      VG_(printf)("DW_CFA_restore(r%d)\n", (Int)lo6);
       return i;
    }
 
@@ -2065,6 +2155,14 @@ static Int show_CF_instruction ( UChar* instr )
          VG_(printf)("DW_CFA_def_cfa(r%d, off %d)\n", reg, off); 
          break;
 
+      case DW_CFA_def_cfa_sf:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 1 );
+         i += nleb;
+         VG_(printf)("DW_CFA_def_cfa_sf(r%d, off %d)\n", reg, off);
+         break;
+
       case DW_CFA_register:
          reg = read_leb128( &instr[i], &nleb, 0);
          i += nleb;
@@ -2083,6 +2181,38 @@ static Int show_CF_instruction ( UChar* instr )
          off = read_leb128( &instr[i], &nleb, 0);
          i += nleb;
          VG_(printf)("DW_CFA_def_cfa_offset(%d)\n", off); 
+         break;
+
+      case DW_CFA_def_cfa_offset_sf:
+         off = read_leb128( &instr[i], &nleb, 1);
+         i += nleb;
+         VG_(printf)("DW_CFA_def_cfa_offset_sf(%d)\n", off);
+         break;
+
+      case DW_CFA_restore_extended:
+         reg = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         VG_(printf)("DW_CFA_restore_extended(r%d)\n", reg);
+         break;
+
+      case DW_CFA_undefined:
+         reg = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         VG_(printf)("DW_CFA_undefined(r%d)\n", reg);
+         break;
+
+      case DW_CFA_same_value:
+         reg = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         VG_(printf)("DW_CFA_same_value(r%d)\n", reg);
+         break;
+
+      case DW_CFA_remember_state:
+         VG_(printf)("DW_CFA_remember_state\n");
+         break;
+
+      case DW_CFA_restore_state:
+         VG_(printf)("DW_CFA_restore_state\n");
          break;
 
       case DW_CFA_GNU_args_size:
@@ -2105,6 +2235,55 @@ static Int show_CF_instruction ( UChar* instr )
          i += nleb;
          i += len;
          VG_(printf)("DW_CFA_expression(r%d, length %d)\n", reg, len);
+         break;
+
+      case DW_CFA_val_expression:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         len = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         i += len;
+         VG_(printf)("DW_CFA_val_expression(r%d, length %d)\n", reg, len);
+         break;
+
+      case DW_CFA_offset_extended:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         VG_(printf)("DW_CFA_offset_extended(r%d, off %d x data_af)\n", reg, off);
+         break;
+
+       case DW_CFA_offset_extended_sf:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 1 );
+         i += nleb;
+         VG_(printf)("DW_CFA_offset_extended_sf(r%d, off %d x data_af)\n", reg, off);
+         break;
+
+      case DW_CFA_GNU_negative_offset_extended:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         VG_(printf)("DW_CFA_GNU_negative_offset_extended(r%d, off %d x data_af)\n", reg, -off);
+         break;
+
+      case DW_CFA_val_offset:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         VG_(printf)("DW_CFA_val_offset(r%d, off %d x data_af)\n", reg, off);
+         break;
+
+       case DW_CFA_val_offset_sf:
+         reg = read_leb128( &instr[i], &nleb, 0 );
+         i += nleb;
+         off = read_leb128( &instr[i], &nleb, 1 );
+         i += nleb;
+         VG_(printf)("DW_CFA_val_offset_sf(r%d, off %d x data_af)\n", reg, off);
          break;
 
       case DW_CFA_GNU_window_save:
@@ -2395,6 +2574,9 @@ void ML_(read_callframe_info_dwarf2)
                case 'P':
                   data += size_of_encoded_Addr( read_UChar(data) );
                   data++;
+                  cie_augmentation++;
+                  break;
+               case 'S':
                   cie_augmentation++;
                   break;
                default:

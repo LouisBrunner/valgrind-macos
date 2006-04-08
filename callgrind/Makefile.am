@@ -57,3 +57,8 @@ callgrind_ppc64_linux_CFLAGS       = $(CALLGRIND_CFLAGS_COMMON) $(AM_CFLAGS_PPC6
 callgrind_ppc64_linux_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_LINUX)
 callgrind_ppc64_linux_LDADD        = $(TOOL_LDADD_PPC64_LINUX)
 callgrind_ppc64_linux_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_LINUX)
+
+clincludedir = $(includedir)/callgrind
+
+clinclude_HEADERS = \
+	callgrind.h

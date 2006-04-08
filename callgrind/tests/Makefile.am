@@ -6,7 +6,8 @@ DIST_SUBDIRS = .
 
 noinst_SCRIPTS = filter_stderr
 
-EXTRA_DIST = clreq.vgtest clreq.stderr.exp \
+EXTRA_DIST = $(noinst_SCRIPTS) \
+             clreq.vgtest clreq.stderr.exp \
              simwork1.vgtest simwork1.stdout.exp simwork1.stderr.exp \
              simwork2.vgtest simwork2.stdout.exp simwork2.stderr.exp \
              simwork3.vgtest simwork3.stdout.exp simwork3.stderr.exp \

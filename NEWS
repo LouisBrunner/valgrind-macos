@@ -30,6 +30,16 @@ In detail:
 
 Other user-visible changes:
 
+- Callgrind has been folded in.  [XXX: more details]
+
+- Valgrind now has the ability to intercept and wrap arbitrary functions.
+
+- MPI support: partial support for debugging distributed applications
+  using the MPI library specification has been added.  Valgrind is 
+  aware of the memory state changes caused by a subset of the MPI
+  functions, and will carefully check data passed to the (P)MPI_
+  interface.
+
 - There are some changes to Memcheck's client requests.  Some of them have
   changed names:
 

@@ -10883,6 +10883,54 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+   /* 66 0F F5 = PMADDWD -- Multiply and add packed integers from
+      E(xmm or mem) to G(xmm) */
+   if (have66noF2noF3(pfx) && sz == 2 
+       && insn[0] == 0x0F && insn[1] == 0xF5) {
+      IRTemp s1V  = newTemp(Ity_V128);
+      IRTemp s2V  = newTemp(Ity_V128);
+      IRTemp dV   = newTemp(Ity_V128);
+      IRTemp s1Hi = newTemp(Ity_I64);
+      IRTemp s1Lo = newTemp(Ity_I64);
+      IRTemp s2Hi = newTemp(Ity_I64);
+      IRTemp s2Lo = newTemp(Ity_I64);
+      IRTemp dHi  = newTemp(Ity_I64);
+      IRTemp dLo  = newTemp(Ity_I64);
+      modrm = insn[2];
+      if (epartIsReg(modrm)) {
+         assign( s1V, getXMMReg(eregOfRexRM(pfx,modrm)) );
+         delta += 2+1;
+         DIP("pmaddwd %s,%s\n", nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                nameXMMReg(gregOfRexRM(pfx,modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         assign( s1V, loadLE(Ity_V128, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("pmaddwd %s,%s\n", dis_buf,
+                                nameXMMReg(gregOfRexRM(pfx,modrm)));
+      }
+      assign( s2V, getXMMReg(gregOfRexRM(pfx,modrm)) );
+      assign( s1Hi, unop(Iop_V128HIto64, mkexpr(s1V)) );
+      assign( s1Lo, unop(Iop_V128to64,   mkexpr(s1V)) );
+      assign( s2Hi, unop(Iop_V128HIto64, mkexpr(s2V)) );
+      assign( s2Lo, unop(Iop_V128to64,   mkexpr(s2V)) );
+      assign( dHi, mkIRExprCCall(
+                      Ity_I64, 0/*regparms*/,
+                      "amd64g_calculate_mmx_pmaddwd", 
+                      &amd64g_calculate_mmx_pmaddwd,
+                      mkIRExprVec_2( mkexpr(s1Hi), mkexpr(s2Hi))
+                   ));
+      assign( dLo, mkIRExprCCall(
+                      Ity_I64, 0/*regparms*/,
+                      "amd64g_calculate_mmx_pmaddwd", 
+                      &amd64g_calculate_mmx_pmaddwd,
+                      mkIRExprVec_2( mkexpr(s1Lo), mkexpr(s2Lo))
+                   ));
+      assign( dV, binop(Iop_64HLtoV128, mkexpr(dHi), mkexpr(dLo))) ;
+      putXMMReg(gregOfRexRM(pfx,modrm), mkexpr(dV));
+      goto decode_success;
+   }
+
    /* 66 0F EE = PMAXSW -- 16x8 signed max */
    if (have66noF2noF3(pfx) && sz == 2 
        && insn[0] == 0x0F && insn[1] == 0xEE) {

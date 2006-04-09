@@ -51,19 +51,86 @@
 //
 // Specific Details about --trace-mem=yes
 // --------------------------------------
-// The address trace produced by --trace-mem=yes is good, but not perfect;
-// see Section 3.3.7 of Nicholas Nethercote's PhD dissertation "Dynamic
-// Binary Analysis and Instrumentation", 2004, for details about the few
-// loads and stores that it misses, and other caveats about the accuracy of
-// the address trace.
+// Lackey's --trace-mem code is a good starting point for building Valgrind
+// tools that act on memory loads and stores.  It also could be used as is,
+// with its output used as input to a post-mortem processing step.  However,
+// because memory traces can be very large, online analysis is generally
+// better.
 //
-// [Actually, the traces aren't quite right because instructions that modify
-// a memory location are treated like a load followed by a store.]
+// It prints memory data access traces that look like this:
+//
+//   instr   : 0x0023C790, 2  # instruction read at 0x0023C790 of size 2
+//   instr   : 0x0023C792, 5
+//     store : 0xBE80199C, 4  # data store at 0xBE80199C of size 4
+//   instr   : 0x0025242B, 3
+//     load  : 0xBE801950, 4  # data load at 0xBE801950 of size 4
+//   instr   : 0x0023D476, 7
+//     modify: 0x0025747C, 1  # data modify at 0x0025747C of size 1
+//   instr   : 0x0023DC20, 2
+//     load  : 0x00254962, 1
+//     load  : 0xBE801FB3, 1
+//   instr   : 0x00252305, 1
+//     load  : 0x00254AEB, 1
+//     store : 0x00257998, 1
+//
+// Every instruction executed has an "instr" event representing it.
+// Instructions that do memory accesses are followed by one or more "load",
+// "store" or "modify" events.  Some instructions do more than one load or
+// store, as in the last two examples in the above trace.
+//
+// Here are some examples of x86 instructions that do different combinations
+// of loads, stores, and modifies.
+//
+//    Instruction          Memory accesses                  Event sequence
+//    -----------          ---------------                  --------------
+//    add %eax, %ebx       No loads or stores               instr
+//
+//    movl (%eax), %ebx    loads (%eax)                     instr, load
+//
+//    movl %eax, (%ebx)    stores (%ebx)                    instr, store
+//
+//    incl (%ecx)          modifies (%ecx)                  instr, modify
+//
+//    cmpsb                loads (%esi), loads(%edi)        instr, load, load
+//
+//    call*l (%edx)        loads (%edx), stores -4(%esp)    instr, load, store
+//    pushl (%edx)         loads (%edx), stores -4(%esp)    instr, load, store
+//    movsw                loads (%esi), stores (%edi)      instr, load, store
+//
+// Instructions using x86 "rep" prefixes are traced as if they are repeated
+// N times.
+//
+// Lackey with --trace-mem gives good traces, but they are not perfect, for
+// the following reasons:
+//
+// - It does not trace into the OS kernel, so system calls and other kernel
+//   operations (eg. some scheduling and signal handling code) are ignored.
+//
+// - Valgrind replaces some code with its own, notably parts of code for
+//   scheduling operations and signal handling.  This code is not traced.
+//
+// - There is no consideration of virtual-to-physical address mapping.
+//   This may not matter for many purposes.
+//
+// - Valgrind modifies the instruction stream in some very minor ways.  For
+//   example, on x86 the bts, btc, btr instructions are incorrectly
+//   considered to always touch memory (this is a consequence of these
+//   instructions being very difficult to simulate).
+//
+// - Valgrind tools layout memory differently to normal programs, so the
+//   addresses you get will not be typical.  Thus Lackey (and all Valgrind
+//   tools) is suitable for getting relative memory traces -- eg. if you
+//   want to analyse locality of memory accesses -- but is not good if
+//   absolute addresses are important.
+//
+// Despite all these warnings, Dullard's results should be good enough for a
+// wide range of purposes.  For example, Cachegrind shares all the above
+// shortcomings and it is still useful.
 //
 // For further inspiration, you should look at cachegrind/cg_main.c which
-// handles memory accesses in a more sophisticated way -- it groups them
-// together for processing into twos and threes so that fewer C calls are
-// made and things run faster.
+// uses the same basic technique for tracing memory accesses, but also groups
+// events together for processing into twos and threes so that fewer C calls
+// are made and things run faster.
 
 #include "pub_tool_basics.h"
 #include "pub_tool_tooliface.h"
@@ -111,23 +178,25 @@ static void lk_print_usage(void)
 "    --trace-mem=no|yes        trace all loads and stores [no]\n"
 "    --fnname=<name>           count calls to <name> (only used if\n"
 "                              --basic-count=yes)  [_dl_runtime_resolve]\n"
-                           
    );
 }
 
 static void lk_print_debug_usage(void)
 {  
+   VG_(printf)(
+"    (none)\n"
+   );
 }
 
 /*------------------------------------------------------------*/
-/*--- Data and helpers for --basic-counts                  ---*/
+/*--- Stuff for --basic-counts                             ---*/
 /*------------------------------------------------------------*/
 
 /* Nb: use ULongs because the numbers can get very big */
 static ULong n_func_calls    = 0;
 static ULong n_BBs_entered   = 0;
 static ULong n_BBs_completed = 0;
-static ULong n_IRStmts      = 0;
+static ULong n_IRStmts       = 0;
 static ULong n_guest_instrs  = 0;
 static ULong n_Jccs          = 0;
 static ULong n_Jccs_untaken  = 0;
@@ -168,7 +237,7 @@ static void add_one_Jcc_untaken(void)
 }
 
 /*------------------------------------------------------------*/
-/*--- Data and helpers for --detailed-counts               ---*/
+/*--- Stuff for --detailed-counts                          ---*/
 /*------------------------------------------------------------*/
 
 /* --- Operations --- */
@@ -244,7 +313,6 @@ static void instrument_detail(IRBB* bb, Op op, IRType type)
 }
 
 /* Summarize and print the details. */
-
 static void print_details ( void )
 {
    Int typeIx;
@@ -265,17 +333,189 @@ static void print_details ( void )
 
 
 /*------------------------------------------------------------*/
-/*--- Data and helpers for --trace-mem                     ---*/
+/*--- Stuff for --trace-mem                                ---*/
 /*------------------------------------------------------------*/
+
+#define MAX_DSIZE    512
+
+typedef
+   IRExpr 
+   IRAtom;
+
+typedef 
+   enum { Event_Ir, Event_Dr, Event_Dw, Event_Dm }
+   EventKind;
+
+typedef
+   struct {
+      EventKind  ekind;
+      IRAtom*    addr;
+      Int        size;
+   }
+   Event;
+
+/* Up to this many unnotified events are allowed.  Must be at least two,
+   so that reads and writes to the same address can be merged into a modify.
+   Beyond that, larger numbers just potentially induce more spilling due to
+   extending live ranges of address temporaries. */
+#define N_EVENTS 4
+
+/* Maintain an ordered list of memory events which are outstanding, in
+   the sense that no IR has yet been generated to do the relevant
+   helper calls.  The BB is scanned top to bottom and memory events
+   are added to the end of the list, merging with the most recent
+   notified event where possible (Dw immediately following Dr and
+   having the same size and EA can be merged).
+
+   This merging is done so that for architectures which have
+   load-op-store instructions (x86, amd64), the instr is treated as if
+   it makes just one memory reference (a modify), rather than two (a
+   read followed by a write at the same address).
+
+   At various points the list will need to be flushed, that is, IR
+   generated from it.  That must happen before any possible exit from
+   the block (the end, or an IRStmt_Exit).  Flushing also takes place
+   when there is no space to add a new event.
+
+   If we require the simulation statistics to be up to date with
+   respect to possible memory exceptions, then the list would have to
+   be flushed before each memory reference.  That's a pain so we don't
+   bother.
+
+   Flushing the list consists of walking it start to end and emitting
+   instrumentation IR for each event, in the order in which they
+   appear. */
+
+static Event events[N_EVENTS];
+static Int   events_used = 0;
+
+
+static VG_REGPARM(2) void trace_instr(Addr addr, SizeT size)
+{
+   VG_(printf)("instr   : %08p, %d\n", addr, size);
+}
 
 static VG_REGPARM(2) void trace_load(Addr addr, SizeT size)
 {
-   VG_(printf)("load : %p, %d\n", addr, size);
+   VG_(printf)("  load  : %08p, %d\n", addr, size);
 }
 
 static VG_REGPARM(2) void trace_store(Addr addr, SizeT size)
 {
-   VG_(printf)("store: %p, %d\n", addr, size);
+   VG_(printf)("  store : %08p, %d\n", addr, size);
+}
+
+static VG_REGPARM(2) void trace_modify(Addr addr, SizeT size)
+{
+   VG_(printf)("  modify: %08p, %d\n", addr, size);
+}
+
+
+static void flushEvents(IRBB* bb)
+{
+   Int        i;
+   Char*      helperName;
+   void*      helperAddr;
+   IRExpr**   argv;
+   IRDirty*   di;
+   Event*     ev;
+
+   for (i = 0; i < events_used; i++) {
+
+      ev = &events[i];
+      
+      // Decide on helper fn to call and args to pass it.
+      switch (ev->ekind) {
+         case Event_Ir: helperName = "trace_instr";
+                        helperAddr =  trace_instr;  break;
+
+         case Event_Dr: helperName = "trace_load";
+                        helperAddr =  trace_load;   break;
+
+         case Event_Dw: helperName = "trace_store";
+                        helperAddr =  trace_store;  break;
+
+         case Event_Dm: helperName = "trace_modify";
+                        helperAddr =  trace_modify; break;
+         default:
+            tl_assert(0);
+      }
+
+      // Add the helper.
+      argv = mkIRExprVec_2( ev->addr, mkIRExpr_HWord( ev->size ) );
+      di   = unsafeIRDirty_0_N( /*regparms*/2, 
+                                helperName, VG_(fnptr_to_fnentry)( helperAddr ),
+                                argv );
+      addStmtToIRBB( bb, IRStmt_Dirty(di) );
+   }
+
+   events_used = 0;
+}
+
+// WARNING:  If you aren't interested in instruction reads, you can omit the
+// code that adds calls to trace_instr() in flushEvents().  However, you
+// must still call this function, addEvent_Ir() -- it is necessary to add
+// the Ir events to the events list so that merging of paired load/store
+// events into modify events works correctly.
+static void addEvent_Ir ( IRBB* bb, IRAtom* iaddr, UInt isize )
+{
+   Event* evt;
+   tl_assert( (VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB)
+            || VG_CLREQ_SZB == isize );
+   if (events_used == N_EVENTS)
+      flushEvents(bb);
+   tl_assert(events_used >= 0 && events_used < N_EVENTS);
+   evt = &events[events_used];
+   evt->ekind = Event_Ir;
+   evt->addr  = iaddr;
+   evt->size  = isize;
+   events_used++;
+}
+
+static
+void addEvent_Dr ( IRBB* bb, IRAtom* daddr, Int dsize )
+{
+   Event* evt;
+   tl_assert(isIRAtom(daddr));
+   tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
+   if (events_used == N_EVENTS)
+      flushEvents(bb);
+   tl_assert(events_used >= 0 && events_used < N_EVENTS);
+   evt = &events[events_used];
+   evt->ekind = Event_Dr;
+   evt->addr  = daddr;
+   evt->size  = dsize;
+   events_used++;
+}
+
+static
+void addEvent_Dw ( IRBB* bb, IRAtom* daddr, Int dsize )
+{
+   Event* lastEvt;
+   Event* evt;
+   tl_assert(isIRAtom(daddr));
+   tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
+
+   // Is it possible to merge this write with the preceding read?
+   lastEvt = &events[events_used-1];
+   if (events_used > 0
+    && lastEvt->ekind == Event_Dr
+    && lastEvt->size  == dsize
+    && eqIRAtom(lastEvt->addr, daddr))
+   {
+      lastEvt->ekind = Event_Dm;
+      return;
+   }
+
+   // No.  Add as normal.
+   if (events_used == N_EVENTS)
+      flushEvents(bb);
+   tl_assert(events_used >= 0 && events_used < N_EVENTS);
+   evt = &events[events_used];
+   evt->ekind = Event_Dw;
+   evt->size  = dsize;
+   evt->addr  = daddr;
+   events_used++;
 }
 
 
@@ -296,19 +536,17 @@ static void lk_post_clo_init(void)
 
 static
 IRBB* lk_instrument ( VgCallbackClosure* closure,
-                      IRBB* bb_in, 
+                      IRBB* bbIn, 
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )
 {
-   IRDirty* di;
-   Int      i;
-   IRBB*    bb;
-   Char     fnname[100];
-   IRType   type;
-   IRExpr** argv;
-   IRExpr*  addr_expr;
-   IRExpr*  size_expr;
+   IRDirty*   di;
+   Int        i;
+   IRBB*      bbOut;
+   Char       fnname[100];
+   IRType     type;
+   IRTypeEnv* tyenv = bbIn->tyenv;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -316,15 +554,15 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
    }
 
    /* Set up BB */
-   bb           = emptyIRBB();
-   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
-   bb->next     = dopyIRExpr(bb_in->next);
-   bb->jumpkind = bb_in->jumpkind;
+   bbOut           = emptyIRBB();
+   bbOut->tyenv    = dopyIRTypeEnv(bbIn->tyenv);
+   bbOut->next     = dopyIRExpr(bbIn->next);
+   bbOut->jumpkind = bbIn->jumpkind;
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;
-   while (i < bb_in->stmts_used && bb_in->stmts[i]->tag != Ist_IMark) {
-      addStmtToIRBB( bb, bb_in->stmts[i] );
+   while (i < bbIn->stmts_used && bbIn->stmts[i]->tag != Ist_IMark) {
+      addStmtToIRBB( bbOut, bbIn->stmts[i] );
       i++;
    }
 
@@ -333,11 +571,15 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
       di = unsafeIRDirty_0_N( 0, "add_one_BB_entered", 
                                  VG_(fnptr_to_fnentry)( &add_one_BB_entered ),
                                  mkIRExprVec_0() );
-      addStmtToIRBB( bb, IRStmt_Dirty(di) );
+      addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
    }
 
-   for (/*use current i*/; i < bb_in->stmts_used; i++) {
-      IRStmt* st = bb_in->stmts[i];
+   if (clo_trace_mem) {
+      events_used = 0;
+   }
+
+   for (/*use current i*/; i < bbIn->stmts_used; i++) {
+      IRStmt* st = bbIn->stmts[i];
       if (!st || st->tag == Ist_NoOp) continue;
 
       if (clo_basic_counts) {
@@ -345,17 +587,25 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
          di = unsafeIRDirty_0_N( 0, "add_one_IRStmt", 
                                     VG_(fnptr_to_fnentry)( &add_one_IRStmt ), 
                                     mkIRExprVec_0() );
-         addStmtToIRBB( bb, IRStmt_Dirty(di) );
+         addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
       }
       
       switch (st->tag) {
+         case Ist_NoOp:
+         case Ist_AbiHint:
+         case Ist_Put:
+         case Ist_PutI:
+         case Ist_MFence:
+            addStmtToIRBB( bbOut, st );
+            break;
+
          case Ist_IMark:
             if (clo_basic_counts) {
                /* Count guest instruction. */
                di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
                                           VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
                                           mkIRExprVec_0() );
-               addStmtToIRBB( bb, IRStmt_Dirty(di) );
+               addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
 
                /* An unconditional branch to a known destination in the
                 * guest's instructions can be represented, in the IRBB to
@@ -378,53 +628,17 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                           0, "add_one_func_call", 
                              VG_(fnptr_to_fnentry)( &add_one_func_call ), 
                              mkIRExprVec_0() );
-                  addStmtToIRBB( bb, IRStmt_Dirty(di) );
+                  addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
                }
             }
-            addStmtToIRBB( bb, st );
-            break;
-
-         case Ist_Exit:
-            if (clo_basic_counts) {
-               /* Count Jcc */
-               di = unsafeIRDirty_0_N( 0, "add_one_Jcc", 
-                                          VG_(fnptr_to_fnentry)( &add_one_Jcc ), 
-                                          mkIRExprVec_0() );
-               addStmtToIRBB( bb, IRStmt_Dirty(di) );
-            }
-
-            addStmtToIRBB( bb, st );
-
-            if (clo_basic_counts) {
-               /* Count non-taken Jcc */
-               di = unsafeIRDirty_0_N( 0, "add_one_Jcc_untaken", 
-                                          VG_(fnptr_to_fnentry)(
-                                             &add_one_Jcc_untaken ),
-                                          mkIRExprVec_0() );
-               addStmtToIRBB( bb, IRStmt_Dirty(di) );
-            }
-            break;
-
-         case Ist_Store:
-            // Add a call to trace_store() if --trace-mem=yes.
             if (clo_trace_mem) {
-               addr_expr = st->Ist.Store.addr;
-               size_expr = mkIRExpr_HWord( 
-                             sizeofIRType(
-                               typeOfIRExpr(bb->tyenv, st->Ist.Store.data)));
-               argv = mkIRExprVec_2( addr_expr, size_expr );
-               di = unsafeIRDirty_0_N( /*regparms*/2, 
-                                       "trace_store",
-                                       VG_(fnptr_to_fnentry)( trace_store ), 
-                                       argv );
-               addStmtToIRBB( bb, IRStmt_Dirty(di) );
+               // WARNING: do not remove this function call, even if you
+               // aren't interested in instruction reads.  See the comment
+               // above the function itself for more detail.
+               addEvent_Ir( bbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
+                            st->Ist.IMark.len );
             }
-            if (clo_detailed_counts) {
-               type = typeOfIRExpr(bb->tyenv, st->Ist.Store.data);
-               tl_assert(type != Ity_INVALID);
-               instrument_detail( bb, OpStore, type );
-            }
-            addStmtToIRBB( bb, st );
+            addStmtToIRBB( bbOut, st );
             break;
 
          case Ist_Tmp:
@@ -432,40 +646,92 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
             if (clo_trace_mem) {
                IRExpr* data = st->Ist.Tmp.data;
                if (data->tag == Iex_Load) {
-                  addr_expr = data->Iex.Load.addr;
-                  size_expr = mkIRExpr_HWord( sizeofIRType(data->Iex.Load.ty) );
-                  argv = mkIRExprVec_2( addr_expr, size_expr );
-                  di = unsafeIRDirty_0_N( /*regparms*/2, 
-                                          "trace_load",
-                                          VG_(fnptr_to_fnentry)( trace_load ), 
-                                          argv );
-                  addStmtToIRBB( bb, IRStmt_Dirty(di) );
+                  addEvent_Dr( bbOut, data->Iex.Load.addr,
+                               sizeofIRType(data->Iex.Load.ty) );
                }
             }
             if (clo_detailed_counts) {
                IRExpr* expr = st->Ist.Tmp.data;
-               type = typeOfIRExpr(bb->tyenv, expr);
+               type = typeOfIRExpr(bbOut->tyenv, expr);
                tl_assert(type != Ity_INVALID);
                switch (expr->tag) {
                   case Iex_Load:
-                     instrument_detail( bb, OpLoad, type );
+                     instrument_detail( bbOut, OpLoad, type );
                      break;
                   case Iex_Unop:
                   case Iex_Binop:
                   case Iex_Triop:
                   case Iex_Qop:
                   case Iex_Mux0X:
-                     instrument_detail( bb, OpAlu, type );
+                     instrument_detail( bbOut, OpAlu, type );
                      break;
                   default:
                      break;
                }
             }
-            addStmtToIRBB( bb, st );
+            addStmtToIRBB( bbOut, st );
+            break;
+
+         case Ist_Store:
+            if (clo_trace_mem) {
+               IRExpr* data  = st->Ist.Store.data;
+               addEvent_Dw( bbOut, st->Ist.Store.addr,
+                            sizeofIRType(typeOfIRExpr(tyenv, data)) );
+            }
+            if (clo_detailed_counts) {
+               type = typeOfIRExpr(bbOut->tyenv, st->Ist.Store.data);
+               tl_assert(type != Ity_INVALID);
+               instrument_detail( bbOut, OpStore, type );
+            }
+            addStmtToIRBB( bbOut, st );
+            break;
+
+         case Ist_Dirty: {
+            Int      dsize;
+            IRDirty* d = st->Ist.Dirty.details;
+            if (d->mFx != Ifx_None) {
+               // This dirty helper accesses memory.  Collect the details.
+               tl_assert(d->mAddr != NULL);
+               tl_assert(d->mSize != 0);
+               dsize = d->mSize;
+               if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
+                  addEvent_Dr( bbOut, d->mAddr, dsize );
+               if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
+                  addEvent_Dw( bbOut, d->mAddr, dsize );
+            } else {
+               tl_assert(d->mAddr == NULL);
+               tl_assert(d->mSize == 0);
+            }
+            addStmtToIRBB( bbOut, st );
+            break;
+         }
+
+         case Ist_Exit:
+            if (clo_basic_counts) {
+               /* Count Jcc */
+               di = unsafeIRDirty_0_N( 0, "add_one_Jcc", 
+                                          VG_(fnptr_to_fnentry)( &add_one_Jcc ), 
+                                          mkIRExprVec_0() );
+               addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+            }
+            if (clo_trace_mem) {
+               flushEvents(bbOut);
+            }
+
+            addStmtToIRBB( bbOut, st );      // Original statement
+
+            if (clo_basic_counts) {
+               /* Count non-taken Jcc */
+               di = unsafeIRDirty_0_N( 0, "add_one_Jcc_untaken", 
+                                          VG_(fnptr_to_fnentry)(
+                                             &add_one_Jcc_untaken ),
+                                          mkIRExprVec_0() );
+               addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+            }
             break;
 
          default:
-            addStmtToIRBB( bb, st );
+            tl_assert(0);
       }
    }
 
@@ -474,10 +740,15 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
       di = unsafeIRDirty_0_N( 0, "add_one_BB_completed", 
                                  VG_(fnptr_to_fnentry)( &add_one_BB_completed ),
                                  mkIRExprVec_0() );
-      addStmtToIRBB( bb, IRStmt_Dirty(di) );
+      addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
    }
 
-   return bb;
+   if (clo_trace_mem) {
+      /* At the end of the bbIn.  Flush outstandings. */
+      flushEvents(bbOut);
+   }
+
+   return bbOut;
 }
 
 static void lk_fini(Int exitcode)

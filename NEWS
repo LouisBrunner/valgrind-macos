@@ -1,22 +1,24 @@
 Release 3.2.0 (?? April 2006)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.2.0 is a feature release with a number of significant improvements:
-Performance (especially of Memcheck) is much improved, XXX...
-In detail:
+Performance (especially of Memcheck) is much improved, Addrcheck has been
+removed, Callgrind has been added, PPC64/Linux support has been added,
+Lackey has been improved, and MPI support has been added.  In detail:
 
 - Performance is much improved:  programs typically run 1.20--1.40 times
   faster under Memcheck (much more for some unusual programs) with an
   average of about 1.30 for the programs we tested it on.  The improvements
   for Nulgrind are similar.  We haven't measured Cachegrind and Massif, they
   should be also be faster, but with smaller improvements.  We are
-  interested to hear what speed-ups users get.
+  interested to hear what improvements users get.
 
-- Memcheck uses much less memory.  The amount of shadow memory used -- which
-  accounts for a large percentage of all of Memcheck's memory overhead --
-  has been reduced by a factor of more than 4 on most programs.  This means
-  you should be able to run programs that use more memory than before
-  without hitting problems.  This memory size reduction also contributes to
-  the speed improvements.
+  Also, Memcheck uses much less memory, due to the introduction of a
+  "compressed V bits" representation for Memcheck's shadow memory.  The
+  amount of shadow memory used -- which accounts for a large percentage of
+  Memcheck's memory overhead -- has been reduced by a factor of more than 4
+  on most programs.  This means you should be able to run programs that use
+  more memory than before without hitting problems.  This change in
+  representation also contributes to the speed improvements.
 
 - Addrcheck has been removed.  It has not worked since version 2.4.0, and
   with the speed and memory improvements to Memcheck it is no longer worth
@@ -24,21 +26,45 @@ In detail:
   undefined value errors, you can use the new Memcheck option
   --undef-value-errors=no to obtain this behaviour.
 
+- Josef Weidendorfer's popular Callgrind tool has been added.  [XXX:
+  more details] [XXX: say something about KCachegrind and why it has not
+  been folded in...  I guess because its development is quite independent]
+
 - Valgrind now works on PPC64/Linux.  [XXX: more details...]
 
-- XXX: others...
+- Lackey, the example tool, has been improved:
 
-Other user-visible changes:
+  * It has a new option --detailed-counts (off by default) which causes
+    it to print out a count of loads, stores and ALU operations done, and
+    their sizes.
 
-- Callgrind has been folded in.  [XXX: more details]
+  * It has a new option --trace-mem (off by default) which causes it to
+    print out a trace of all memory accesses performed by a program.  It's a
+    good starting point for building Valgrind tools that need to track
+    memory accesses.  Read the comments at the top of the file
+    lackey/lk_main.c for details.
 
-- Valgrind now has the ability to intercept and wrap arbitrary functions.
+  * The original instrumentation (counting numbers of instructions, jumps,
+    etc) is now controlled by a new option --basic-counts.  It is on by
+    default.
 
 - MPI support: partial support for debugging distributed applications
   using the MPI library specification has been added.  Valgrind is 
   aware of the memory state changes caused by a subset of the MPI
   functions, and will carefully check data passed to the (P)MPI_
   interface.
+
+- XXX: others...
+
+Please note that Helgrind is still not working.  We have made an important
+step towards making it work again, however, with the addition of function
+wrapping (see below).
+
+Other user-visible changes:
+
+- Valgrind now has the ability to intercept and wrap arbitrary functions.
+  This is a preliminary step towards making Helgrind work again, and
+  was required for MPI support.
 
 - There are some changes to Memcheck's client requests.  Some of them have
   changed names:
@@ -61,6 +87,7 @@ Other user-visible changes:
     
   which is like MAKE_MEM_DEFINED but only affects a byte if the byte is
   already addressable.
+
 
 BUGS FIXED:
 

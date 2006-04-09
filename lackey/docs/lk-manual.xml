@@ -19,30 +19,31 @@ measurement.  It adds quite a lot of simple instrumentation to the
 program's code.  It is primarily intended to be of use as an example
 tool.</para>
 
-<para>It measures and reports:</para>
+<para>It measures and reports various things.</para>
 
 <orderedlist>
 
  <listitem>
-  <para>The number of calls to
-  <computeroutput>_dl_runtime_resolve()</computeroutput>, the
-  function in glibc's dynamic linker that resolves function
-  references to shared objects.</para>
-  <para>You can change the name of the function with command line
-  option <computeroutput>--fnname=&lt;name&gt;</computeroutput>.</para>
- </listitem>
-
- <listitem>
-  <para>The number of conditional branches encountered and the
-  number and proportion of those taken.</para>
- </listitem>
-
- <listitem>
-
-  <para>Statistics about the amount of work done during the execution
-  of the client program:</para>  
+  <para>When command line option
+  <computeroutput>--basic-counts=yes</computeroutput> is specified,
+  it prints the following statistics and information about the execution of
+  the client program:
 
   <orderedlist>
+
+   <listitem>
+    <para>The number of calls to
+    <computeroutput>_dl_runtime_resolve()</computeroutput>, the
+    function in glibc's dynamic linker that resolves function
+    references to shared objects.</para>
+    <para>You can change the name of the function tracekd with command line
+    option <computeroutput>--fnname=&lt;name&gt;</computeroutput>.</para>
+   </listitem>
+
+   <listitem>
+    <para>The number of conditional branches encountered and the
+    number and proportion of those taken.</para>
+   </listitem>
 
    <listitem>
     <para>The number of basic blocks entered and completed by the
@@ -62,31 +63,29 @@ tool.</para>
    </listitem>
 
    <listitem>
-    <para>When command line option
-    <computeroutput>--detailed-counts=yes</computeroutput> is
-    specified, a table is printed with counts of loads, stores and ALU
-    operations for various types of operands.</para>
-
-    <para>The types are identified by their IR name ("I1" ... "I128",
-    "F32", "F64", and "V128").</para>
-   </listitem>
-
-   <listitem>
-    <para>When command line option
-    <computeroutput>--trace-mem=yes</computeroutput> is
-    specified, it prints out the size and address of almost every load and
-    store made by the program.  See Section 3.3.7 of Nicholas Nethercote's
-    PhD dissertation "Dynamic Binary Analysis and Instrumentation", 2004,
-    for details about the few loads and stores that it misses, and other
-    caveats about the accuracy of the address trace.</para>
+    <para>The exit code of the client program.</para>
    </listitem>
 
   </orderedlist>
 
+ <listitem>
+  <para>When command line option
+  <computeroutput>--detailed-counts=yes</computeroutput> is
+  specified, a table is printed with counts of loads, stores and ALU
+  operations for various types of operands.</para>
+
+  <para>The types are identified by their IR name ("I1" ... "I128",
+  "F32", "F64", and "V128").</para>
  </listitem>
 
  <listitem>
-  <para>The exit code of the client program.</para>
+  <para>When command line option
+  <computeroutput>--trace-mem=yes</computeroutput> is
+  specified, it prints out the size and address of almost every load and
+  store made by the program.  See the comments at the top of the file
+  <computeroutput>lackey/lk_main.c</computeroutput> for details about
+  the output format, how it works, and inaccuracies in the address trace.
+  </para>
  </listitem>
 
 </orderedlist>

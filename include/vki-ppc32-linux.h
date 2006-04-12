@@ -289,6 +289,7 @@ struct vki_sigcontext {
 #define VKI_O_TRUNC		01000		/* not fcntl */
 #define VKI_O_APPEND		02000
 #define VKI_O_NONBLOCK		04000
+#define VKI_O_LARGEFILE     0200000
 
 #define VKI_F_DUPFD		 0			/* dup */
 #define VKI_F_GETFD		 1			/* get close_on_exec */

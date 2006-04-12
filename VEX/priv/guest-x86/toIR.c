@@ -11779,11 +11779,12 @@ DisResult disInstr_X86_WRK (
          dis_REP_op ( X86CondAlways, dis_STOS, sz, eip_orig, 
                                      guest_EIP_bbstart+delta, "rep stos" );
          break;
-//-- 
-//--       case 0xAE: sz = 1;   /* REPE SCAS<sz> */
-//--       case 0xAF: 
-//--          dis_REP_op ( cb, CondZ, dis_SCAS, sz, eip_orig, eip, "repe scas" );
-//--          break;
+
+      case 0xAE: sz = 1;   /* REPE SCAS<sz> */
+      case 0xAF: 
+         dis_REP_op ( X86CondZ, dis_SCAS, sz, eip_orig, 
+                                guest_EIP_bbstart+delta, "repe scas" );
+         break;
       
       case 0x90:           /* REP NOP (PAUSE) */
          /* a hint to the P4 re spin-wait loop */

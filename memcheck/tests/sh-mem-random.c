@@ -18,6 +18,8 @@ typedef unsigned long long   U8;
 typedef float                F4;
 typedef double               F8;
 
+typedef unsigned long        UWord;
+
 #define PAGE_SIZE 4096ULL
 
 
@@ -169,7 +171,29 @@ void do_test_at ( U1* arr )
          case 4: { // F8
             if (src+8 >= N_BYTES || dst+8 >= N_BYTES) 
                goto tryagain;
+#if defined(__i386__)
+	    /* Copying via an x87 register causes the test to fail,
+               because (I think) some obscure values that are FP
+               denormals get changed during the copy due to the FPU
+               normalising, or rounding, or whatever, them.  This
+               causes them to no longer bit-for-bit match the
+               accompanying metadata.  Yet we still need to do a
+               genuine 8-byte load/store to test the relevant memcheck
+               {LOADV8,STOREV8} routines.  Hence use the MMX registers
+               instead, as copying through them should be
+               straightforward.. */
+            __asm__ __volatile__(
+               "movq (%1), %%mm2\n\t"
+               "movq %%mm2, (%0)\n\t"
+               "emms"
+               : : "r"(arr+dst), "r"(arr+src) : "memory"
+            );
+#else
+            /* Straightforward.  On amd64, this gives a load/store of
+               the bottom half of an xmm register.  On ppc32/64 this
+               is a straighforward load/store of an FP register. */
             *(F8*)(arr+dst) = *(F8*)(arr+src);
+#endif
 	    mv8f++;
             break;
          }
@@ -208,7 +232,9 @@ int main(void)
       // 64-bit platform.
       int tries;
       int nbytes_p;
-      U1* huge_addr = (U1*)0x6600000000;  // 408GB
+      // (U1*)(UWord)constULL funny casting to keep gcc quiet on
+      // 32-bit platforms
+      U1* huge_addr = (U1*)(UWord)0x6600000000ULL;  // 408GB
       // Note, kernel 2.6.? on Athlon64 refuses fixed mmap requests
       // at above 512GB.
 

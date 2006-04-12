@@ -2338,10 +2338,11 @@ typedef
 
 #else /* NVALGRIND */
 
-int VALGRIND_PRINTF(const char *format, ...)
-   __attribute__((format(__printf__, 1, 2)));
-__attribute__((weak))
-int
+/* Modern GCC will optimize the static routine out if unused,
+   and unused attribute will shut down warnings about it.  */
+static int VALGRIND_PRINTF(const char *format, ...)
+   __attribute__((format(__printf__, 1, 2), __unused__));
+static int
 VALGRIND_PRINTF(const char *format, ...)
 {
    unsigned long _qzz_res;
@@ -2354,10 +2355,9 @@ VALGRIND_PRINTF(const char *format, ...)
    return (int)_qzz_res;
 }
 
-int VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
-   __attribute__((format(__printf__, 1, 2)));
-__attribute__((weak))
-int
+static int VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
+   __attribute__((format(__printf__, 1, 2), __unused__));
+static int
 VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 {
    unsigned long _qzz_res;

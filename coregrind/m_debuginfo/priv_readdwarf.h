@@ -43,7 +43,7 @@
    -------------------- */
 extern
 void ML_(read_debuginfo_dwarf2)
-        ( struct _SegInfo* si,
+        ( struct _SegInfo* si, OffT debug_offset,
           UChar* debuginfo,   Int debug_info_sz,  /* .debug_info */
           UChar* debugabbrev,                     /* .debug_abbrev */
           UChar* debugline,   Int debug_line_sz,  /* .debug_line */

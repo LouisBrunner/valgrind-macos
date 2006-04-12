@@ -192,6 +192,7 @@ Bool get_elf_symbol_info (
         Char*      sym_name,  /* name */
         Addr       sym_addr,  /* declared address */
         UChar*     opd_filea, /* oimage of .opd sec (ppc64-linux only) */
+        OffT       opd_offset, /* base address assumed in oimage */
         /* OUTPUTS */
         Char** sym_name_out,   /* name we should record */
         Addr*  sym_addr_out,   /* addr we should record */
@@ -293,8 +294,8 @@ Bool get_elf_symbol_info (
       Int    offset_in_opd;
       ULong* fn_descr;
 
-      if (0) VG_(printf)("opdXXX: si->offset %p, sym_addr %p\n", 
-                         (void*)(si->offset), (void*)sym_addr);
+      if (0) VG_(printf)("opdXXX: opd_offset %p, sym_addr %p\n", 
+                         (void*)(opd_offset), (void*)sym_addr);
 
       if (!VG_IS_8_ALIGNED(sym_addr)) {
          TRACE_SYMTAB("    ignore -- not 8-aligned: %s\n", sym_name);
@@ -323,17 +324,13 @@ Bool get_elf_symbol_info (
                          offset_in_opd, fn_descr);
       if (0) VG_(printf)("opdXXZ: *fn_descr %p\n", (void*)(fn_descr[0]));
 
-      sym_addr = fn_descr[0];
+      /* opd_offset is the difference between si->start (where the
+         library got mapped) and the address space used for addresses
+         within the library file. */
 
-      /* Hopefully sym_addr is now an offset into the text section.
-         Problem is, where did the text section get mapped?  Well,
-         this SegInfo (si) exists because a text section got mapped,
-         and it got mapped to si->start.  Hence add si->start to the
-         sym_addr to get the real vma. */
-
-      sym_addr += si->offset;
+      sym_addr        = fn_descr[0] + opd_offset;
       *sym_addr_out   = sym_addr;
-      *sym_tocptr_out = fn_descr[1] + si->offset;
+      *sym_tocptr_out = fn_descr[1] + opd_offset;
       *from_opd_out   = True;
       is_in_opd = True;
 
@@ -360,7 +357,9 @@ Bool get_elf_symbol_info (
       ignore it. */
    if (*sym_addr_out + *sym_size_out <= si->start
        || *sym_addr_out >= si->start+si->size) {
-      TRACE_SYMTAB( "   ignore -- outside mapped range\n" );
+      TRACE_SYMTAB( "ignore -- %p .. %p outside mapped range %p .. %p\n",
+                    *sym_addr_out, *sym_addr_out + *sym_size_out,
+                    si->start, si->start+si->size);
       return False;
    }
 
@@ -386,9 +385,9 @@ static
 __attribute__((unused)) /* not referred to on all targets */
 void read_elf_symtab__normal( 
         struct _SegInfo* si, UChar* tab_name,
-        ElfXX_Sym* o_symtab, UInt o_symtab_sz,
+        ElfXX_Sym* o_symtab, UInt o_symtab_sz, OffT o_symtab_offset,
         UChar*     o_strtab, UInt o_strtab_sz,
-        UChar*     opd_filea /* ppc64-linux only */ 
+        UChar*     opd_filea, OffT opd_offset /* ppc64-linux only */ 
      )
 {
    Int        i;
@@ -416,12 +415,13 @@ void read_elf_symtab__normal(
    for (i = 1; i < (Int)(o_symtab_sz/sizeof(ElfXX_Sym)); i++) {
       sym      = & o_symtab[i];
       sym_name = (Char*)(o_strtab + sym->st_name);
-      sym_addr = si->offset + sym->st_value;
+      sym_addr = o_symtab_offset + sym->st_value;
 
       if (VG_(clo_trace_symtab))
          show_raw_elf_symbol(i, sym, sym_name, sym_addr, False);
 
-      if (get_elf_symbol_info(si, sym, sym_name, sym_addr, opd_filea,
+      if (get_elf_symbol_info(si, sym, sym_name, sym_addr,
+                              opd_filea, opd_offset,
                               &sym_name_really, 
                               &sym_addr_really,
                               &sym_size,
@@ -484,9 +484,9 @@ static
 __attribute__((unused)) /* not referred to on all targets */
 void read_elf_symtab__ppc64_linux( 
         struct _SegInfo* si, UChar* tab_name,
-        ElfXX_Sym* o_symtab, UInt o_symtab_sz,
+        ElfXX_Sym* o_symtab, UInt o_symtab_sz, OffT o_symtab_offset,
         UChar*     o_strtab, UInt o_strtab_sz,
-        UChar*     opd_filea /* ppc64-linux only */ 
+        UChar*     opd_filea, OffT opd_offset /* ppc64-linux only */ 
      )
 {
    Int         i, old_size;
@@ -523,12 +523,13 @@ void read_elf_symtab__ppc64_linux(
    for (i = 1; i < (Int)(o_symtab_sz/sizeof(ElfXX_Sym)); i++) {
       sym      = & o_symtab[i];
       sym_name = (Char*)(o_strtab + sym->st_name);
-      sym_addr = si->offset + sym->st_value;
+      sym_addr = o_symtab_offset + sym->st_value;
 
       if (VG_(clo_trace_symtab))
          show_raw_elf_symbol(i, sym, sym_name, sym_addr, True);
 
-      if (get_elf_symbol_info(si, sym, sym_name, sym_addr, opd_filea,
+      if (get_elf_symbol_info(si, sym, sym_name, sym_addr,
+                              opd_filea, opd_offset,
                               &sym_name_really, 
                               &sym_addr_really,
                               &sym_size,
@@ -816,8 +817,10 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
    Bool          ok;
    Addr          oimage;
    UInt          n_oimage;
+   OffT          offset_oimage = 0;
    Addr          dimage = 0;
    UInt          n_dimage = 0;
+   OffT          offset_dimage = 0;
    struct vki_stat stat_buf;
 
    oimage = (Addr)NULL;
@@ -883,8 +886,6 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
       ElfXX_Addr prev_addr = 0;
       Addr baseaddr = 0;
 
-      si->offset = 0;
-
       vg_assert(si->soname == NULL);
 
       for (i = 0; i < ehdr->e_phnum; i++) {
@@ -926,7 +927,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
 	 if (!offset_set) {
 	    offset_set = True;
-	    si->offset = si->start - o_phdr->p_vaddr;
+	    offset_oimage = si->start - o_phdr->p_vaddr;
 	    baseaddr = o_phdr->p_vaddr;
 	 }
 
@@ -938,7 +939,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 	 prev_addr = o_phdr->p_vaddr;
 
          // Get the data and bss start/size if appropriate
-	 mapped = o_phdr->p_vaddr + si->offset;
+	 mapped = o_phdr->p_vaddr + offset_oimage;
 	 mapped_end = mapped + o_phdr->p_memsz;
 	 if (si->data_start_vma == 0 &&
 	     (o_phdr->p_flags & (PF_R|PF_W|PF_X)) == (PF_R|PF_W)) {
@@ -969,6 +970,8 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 	 }
       }
    }
+
+   si->offset = offset_oimage;
 
    /* If, after looking at all the program headers, we still didn't 
       find a soname, add a fake one. */
@@ -1010,6 +1013,11 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
       UChar*     opd_filea    = NULL; /* .opd          (dwarf2, ppc64-linux) */
       UChar*     dummy_filea  = NULL;
 
+      OffT       o_symtab_offset = offset_oimage;
+      OffT       o_dynsym_offset = offset_oimage;
+      OffT       debug_offset    = offset_oimage;
+      OffT       opd_offset      = offset_oimage;
+
       /* Section sizes, in bytes */
       UInt       o_strtab_sz     = 0;
       UInt       o_symtab_sz     = 0;
@@ -1049,7 +1057,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 #        define FIND(sec_name, sec_size, sec_filea, sec_vma) \
          if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
             Bool nobits; \
-            sec_vma   = (Addr)(si->offset + shdr[i].sh_addr); \
+            sec_vma   = (Addr)(offset_oimage + shdr[i].sh_addr); \
             sec_filea = (void*)(oimage + shdr[i].sh_offset); \
             sec_size  = shdr[i].sh_size; \
             nobits = shdr[i].sh_type == SHT_NOBITS; \
@@ -1093,10 +1101,6 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 #        undef FIND
       }
          
-      /* Check some sizes */
-      vg_assert((o_dynsym_sz % sizeof(ElfXX_Sym)) == 0);
-      vg_assert((o_symtab_sz % sizeof(ElfXX_Sym)) == 0);
-
       /* Did we find a debuglink section? */
       if (debuglink != NULL) {
          UInt crc_offset = VG_ROUNDUP(VG_(strlen)(debuglink)+1, 4);
@@ -1112,7 +1116,24 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
             ehdr = (ElfXX_Ehdr*)dimage;
 
             if (n_dimage >= sizeof(ElfXX_Ehdr) 
-                && ML_(is_elf_object_file(ehdr))) {
+                && ML_(is_elf_object_file(ehdr))
+                && ehdr->e_phoff + ehdr->e_phnum*sizeof(ElfXX_Phdr) <= n_dimage
+                && ehdr->e_shoff + ehdr->e_shnum*sizeof(ElfXX_Shdr) <= n_dimage)
+            {
+               Bool need_symtab = (NULL == o_symtab);
+
+               for (i = 0; i < ehdr->e_phnum; i++) {
+                  ElfXX_Phdr *o_phdr = &((ElfXX_Phdr *)(dimage + ehdr->e_phoff))[i];
+                  if (o_phdr->p_type == PT_LOAD) {
+                     offset_dimage = si->start - o_phdr->p_vaddr;
+                     break;
+                  }
+               }
+
+               debug_offset = offset_dimage;
+               if (need_symtab)
+                  o_symtab_offset = offset_dimage;
+
                shdr = (ElfXX_Shdr*)(dimage + ehdr->e_shoff);
                sh_strtab = (UChar*)(dimage + shdr[ehdr->e_shstrndx].sh_offset);
 
@@ -1122,8 +1143,9 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
                /* Find all interesting sections */
                for (i = 0; i < ehdr->e_shnum; i++) {
 
-#                 define FIND(sec_name, sec_size, sec_filea)	\
-                  if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
+#                 define FIND(condition, sec_name, sec_size, sec_filea)	\
+                  if (condition \
+                      && 0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
                      Bool nobits; \
                      if (0 != sec_filea) \
                         VG_(core_panic)("repeated section!\n"); \
@@ -1140,14 +1162,16 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
                      } \
                   }
 
-                  FIND(".stab",         stab_sz,         stab)
-                  FIND(".stabstr",      stabstr_sz,      stabstr)
-                  FIND(".debug_line",   debug_line_sz,   debug_line)
-                  FIND(".debug_info",   debug_info_sz,   debug_info)
-                  FIND(".debug_abbrev", debug_abbv_sz,   debug_abbv)
-                  FIND(".debug_str",    debug_str_sz,    debug_str)
-                  FIND(".debug",        dwarf1d_sz,      dwarf1d)
-                  FIND(".line",         dwarf1l_sz,      dwarf1l)
+                  FIND(need_symtab, ".symtab",       o_symtab_sz,   o_symtab)
+                  FIND(need_symtab, ".strtab",       o_strtab_sz,   o_strtab)
+                  FIND(1,           ".stab",         stab_sz,       stab)
+                  FIND(1,           ".stabstr",      stabstr_sz,    stabstr)
+                  FIND(1,           ".debug_line",   debug_line_sz, debug_line)
+                  FIND(1,           ".debug_info",   debug_info_sz, debug_info)
+                  FIND(1,           ".debug_abbrev", debug_abbv_sz, debug_abbv)
+                  FIND(1,           ".debug_str",    debug_str_sz,  debug_str)
+                  FIND(1,           ".debug",        dwarf1d_sz,    dwarf1d)
+                  FIND(1,           ".line",         dwarf1l_sz,    dwarf1l)
 
 #                 undef FIND
                }
@@ -1155,22 +1179,26 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
          }
       }
 
+      /* Check some sizes */
+      vg_assert((o_dynsym_sz % sizeof(ElfXX_Sym)) == 0);
+      vg_assert((o_symtab_sz % sizeof(ElfXX_Sym)) == 0);
+
       /* Read symbols */
       {
          void (*read_elf_symtab)(struct _SegInfo*,UChar*,ElfXX_Sym*,
-                                 UInt,UChar*,UInt,UChar*);
+                                 UInt,OffT,UChar*,UInt,UChar*,OffT);
 #        if defined(VGP_ppc64_linux)
          read_elf_symtab = read_elf_symtab__ppc64_linux;
 #        else
          read_elf_symtab = read_elf_symtab__normal;
 #        endif
          read_elf_symtab(si, "symbol table",
-                         o_symtab, o_symtab_sz,
-                         o_strtab, o_strtab_sz, opd_filea);
+                         o_symtab, o_symtab_sz, o_symtab_offset,
+                         o_strtab, o_strtab_sz, opd_filea, opd_offset);
 
          read_elf_symtab(si, "dynamic symbol table",
-                         o_dynsym, o_dynsym_sz,
-                         o_dynstr, o_dynstr_sz, opd_filea);
+                         o_dynsym, o_dynsym_sz, o_dynsym_offset,
+                         o_dynstr, o_dynstr_sz, opd_filea, opd_offset);
       }
 
       /* Read .eh_frame (call-frame-info) if any */
@@ -1183,7 +1211,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
          we ignore it. */
 #     if !defined(VGP_amd64_linux)
       if (stab && stabstr) {
-         ML_(read_debuginfo_stabs) ( si, stab, stab_sz, 
+         ML_(read_debuginfo_stabs) ( si, debug_offset, stab, stab_sz, 
                                          stabstr, stabstr_sz );
       }
 #     endif
@@ -1193,7 +1221,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
          read_unitinfo_dwarf2, do check that debugstr is non-NULL
          before using it. */
       if (debug_info && debug_abbv && debug_line /* && debug_str */) {
-         ML_(read_debuginfo_dwarf2) ( si, 
+         ML_(read_debuginfo_dwarf2) ( si, debug_offset, 
                                       debug_info,   debug_info_sz,
                                       debug_abbv,
                                       debug_line,   debug_line_sz,

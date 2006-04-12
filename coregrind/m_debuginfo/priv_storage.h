@@ -170,8 +170,10 @@ struct _SegInfo {
       UChar  strtab[SEGINFO_STRCHUNKSIZE];
    } *strchunks;
 
-   /* 'offset' is what we need to add to symbol table entries to get
-      the location of that symbol in the running image. */
+   /* 'offset' is what needs to be added to an address in the address
+      space of the library as stored on disk (which is not 0-based for
+      executables or prelinked libraries) to get an address in memory
+      for the object loaded at 'start' */
    OffT   offset;
 
    /* Bounds of data, BSS, PLT, GOT and OPD (for ppc64-linux) so that

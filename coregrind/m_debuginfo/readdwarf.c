@@ -301,7 +301,7 @@ Char* lookupDir ( Int filename_index,
 /* Handled an extend line op.  Returns true if this is the end
    of sequence.  */
 static 
-Int process_extended_line_op( struct _SegInfo* si, 
+Int process_extended_line_op( struct _SegInfo* si, OffT debug_offset,
                               WordArray* filenames, 
                               WordArray* dirnames, 
                               WordArray* fnidx2dir, 
@@ -330,7 +330,7 @@ Int process_extended_line_op( struct _SegInfo* si,
    switch (op_code) {
       case DW_LNE_end_sequence:
          if (0) VG_(printf)("1001: si->o %p, smr.a %p\n", 
-                            si->offset, state_machine_regs.address );
+                            debug_offset, state_machine_regs.address );
          /* JRS: added for compliance with spec; is pointless due to
             reset_state_machine below */
          state_machine_regs.end_sequence = 1; 
@@ -343,8 +343,8 @@ Int process_extended_line_op( struct _SegInfo* si,
                                          state_machine_regs.last_file), 
                   lookupDir( state_machine_regs.last_file,
                              fnidx2dir, dirnames ),
-                  si->offset + state_machine_regs.last_address, 
-                  si->offset + state_machine_regs.address, 
+                  debug_offset + state_machine_regs.last_address, 
+                  debug_offset + state_machine_regs.address, 
                   state_machine_regs.last_line, 0
                );
          }
@@ -388,7 +388,7 @@ Int process_extended_line_op( struct _SegInfo* si,
  * Output: - si debug info structures get updated
  */
 static 
-void read_dwarf2_lineblock ( struct _SegInfo*  si, 
+void read_dwarf2_lineblock ( struct _SegInfo*  si, OffT debug_offset,
                              UnitInfo* ui, 
                              UChar*    theBlock, 
                              Int       noLargerThan )
@@ -606,7 +606,7 @@ void read_dwarf2_lineblock ( struct _SegInfo*  si,
          if (0) VG_(printf)("smr.a += %p\n", adv );
          adv = (op_code % info.li_line_range) + info.li_line_base;
          if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
-                            si->offset, state_machine_regs.address );
+                            debug_offset, state_machine_regs.address );
          state_machine_regs.line += adv;
 
          if (state_machine_regs.is_stmt) {
@@ -618,8 +618,8 @@ void read_dwarf2_lineblock ( struct _SegInfo*  si,
                                           state_machine_regs.last_file ),
                   lookupDir( state_machine_regs.last_file,
                              &fnidx2dir, &dirnames ),
-                  si->offset + state_machine_regs.last_address, 
-                  si->offset + state_machine_regs.address, 
+                  debug_offset + state_machine_regs.last_address, 
+                  debug_offset + state_machine_regs.address, 
                   state_machine_regs.last_line, 
                   0
                );
@@ -634,13 +634,13 @@ void read_dwarf2_lineblock ( struct _SegInfo*  si,
       switch (op_code) {
          case DW_LNS_extended_op:
             data += process_extended_line_op (
-                       si, &filenames, &dirnames, &fnidx2dir,
+                       si, debug_offset, &filenames, &dirnames, &fnidx2dir,
                        data, info.li_default_is_stmt);
             break;
 
          case DW_LNS_copy:
             if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
-                               si->offset, state_machine_regs.address );
+                               debug_offset, state_machine_regs.address );
             if (state_machine_regs.is_stmt) {
                /* only add a statement if there was a previous boundary */
                if (state_machine_regs.last_address) 
@@ -650,8 +650,8 @@ void read_dwarf2_lineblock ( struct _SegInfo*  si,
                                              state_machine_regs.last_file ),
                      lookupDir( state_machine_regs.last_file,
                                 &fnidx2dir, &dirnames ),
-                     si->offset + state_machine_regs.last_address, 
-                     si->offset + state_machine_regs.address,
+                     debug_offset + state_machine_regs.last_address, 
+                     debug_offset + state_machine_regs.address,
                      state_machine_regs.last_line, 
                      0
                   );
@@ -950,7 +950,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
  * Output: update si to contain all the dwarf2 debug infos
  */
 void ML_(read_debuginfo_dwarf2) 
-        ( struct _SegInfo* si,
+        ( struct _SegInfo* si, OffT debug_offset,
           UChar* debuginfo,   Int debug_info_sz,  /* .debug_info */
           UChar* debugabbrev,                     /* .debug_abbrev */
           UChar* debugline,   Int debug_line_sz,  /* .debug_line */
@@ -1006,7 +1006,7 @@ void ML_(read_debuginfo_dwarf2)
          VG_(printf)("debug_line_sz %d, ui.stmt_list %lld  %s\n", 
                      debug_line_sz, ui.stmt_list, ui.name );
       /* Read the .debug_line block for this compile unit */
-      read_dwarf2_lineblock( si, &ui, debugline + ui.stmt_list, 
+      read_dwarf2_lineblock( si, debug_offset, &ui, debugline + ui.stmt_list, 
                                       debug_line_sz - ui.stmt_list );
    }
 }

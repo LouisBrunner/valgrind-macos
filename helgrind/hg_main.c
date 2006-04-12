@@ -3394,6 +3394,8 @@ static void hg_pre_clo_init(void)
 "     platforms introduced in Valgrind 3.0.0\n"
 " (b) we need to get thread operation tracking working again after\n"
 "     the changes added in Valgrind 2.4.0\n"
+" If you want to use Helgrind, you'll have to use Valgrind 2.2.0, which is\n"
+" the most recent Valgrind release that contains a working Helgrind.\n"
 "\n"
 "Sorry for the inconvenience.  Let us know if this is a problem for you.\n");
    VG_(exit)(1);

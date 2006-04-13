@@ -8838,8 +8838,12 @@ DisResult disInstr_AMD64_WRK (
 
    /* 0F 50 = MOVMSKPS - move 4 sign bits from 4 x F32 in xmm(E)
       to 4 lowest bits of ireg(G) */
-   if (haveNo66noF2noF3(pfx) && sz == 4 
+   if (haveNo66noF2noF3(pfx) && (sz == 4 || sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x50) {
+      /* sz == 8 is a kludge to handle insns with REX.W redundantly
+         set to 1, which has been known to happen:
+         4c 0f 50 d9             rex64X movmskps %xmm1,%r11d
+      */
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
          Int src;
@@ -10341,8 +10345,12 @@ DisResult disInstr_AMD64_WRK (
 
    /* 66 0F 50 = MOVMSKPD - move 2 sign bits from 2 x F64 in xmm(E) to
       2 lowest bits of ireg(G) */
-   if (have66noF2noF3(pfx) && sz == 2 
+   if (have66noF2noF3(pfx) && (sz == 2 || sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x50) {
+      /* sz == 8 is a kludge to handle insns with REX.W redundantly
+         set to 1, which has been known to happen:
+         66 4c 0f 50 d9          rex64X movmskpd %xmm1,%r11d
+      */
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
          Int src;
@@ -13759,11 +13767,12 @@ DisResult disInstr_AMD64_WRK (
          break;
       }
 
+      case 0x0E: /* FEMMS */
       case 0x77: /* EMMS */
          if (sz != 4)
             goto decode_failure;
          do_EMMS_preamble();
-         DIP("emms\n");
+         DIP("{f}emms\n");
          break;
 
       /* =-=-=-=-=-=-=-=-=- unimp2 =-=-=-=-=-=-=-=-=-=-= */

@@ -232,7 +232,9 @@ static void showTy ( FILE* f, MPI_Datatype ty )
 #  if defined(MPI_LONG_LONG)
    else if (ty == MPI_LONG_LONG)      fprintf(f,"LONG_LONG");
 #  endif
+#  if defined(MPI_UNSIGNED_LONG_LONG)
    else if (ty == MPI_UNSIGNED_LONG_LONG) fprintf(f,"UNSIGNED_LONG_LONG");
+#  endif
    else fprintf(f,"showTy:???");
 }
 
@@ -407,7 +409,9 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
 #  if defined(MPI_SIGNED_CHAR)
    if (ty == MPI_SIGNED_CHAR)        return sizeof(signed char);
 #  endif
+#  if defined(MPI_UNSIGNED_LONG_LONG)
    if (ty == MPI_UNSIGNED_LONG_LONG) return sizeof(unsigned long long int);
+#  endif
    if (ty == MPI_LONG_LONG_INT)      return sizeof(signed long long int);
    /* Note: the following are named structs, not named basic types,
       and so are not handled here:

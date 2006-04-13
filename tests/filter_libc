@@ -18,6 +18,8 @@ while (<>)
     s/\(in \/.*libc.*\)$/(in \/...libc...)/;
     s/\(within \/.*libc.*\)$/(within \/...libc...)/;
 
+    s/\(below main\) \(.+\.[cS]:\d+\)$/(below main) (in \/...libc...)/;
+
     s/($libc_symbols) \(.+\.[cS]:\d+\)$/$1 (in \/...libc...)/;
 
     print;

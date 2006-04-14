@@ -11,8 +11,8 @@ TRUNK     PRIO    BUG#     WHAT
           low     117290   valgrind is sigKILL'd on startup
           high    118903   bash (2.05) doesn't support empty list in for-loop
           ?       119446   LinuxThread error suppressions not working
-          ?       123210   New: strlen from ld-linux on amd64
-          high    123244   DWARF2 CFI reader: unhandled CFI instruction 0:18
+v5847     ?       123210   New: strlen from ld-linux on amd64
+v5838     high    123244   DWARF2 CFI reader: unhandled CFI instruction 0:18
 v5785     fixed   123248   syscalls in glibc-2.4: openat, fstatat, symlinkat
           low     123258   socketcall.recvmsg(msg.msg_iov[i] points to uninit
           low     123535   mremap(new_addr) requires MREMAP_FIXED in 4th arg
@@ -20,15 +20,17 @@ v5785     fixed   123248   syscalls in glibc-2.4: openat, fstatat, symlinkat
           low     123837   semctl syscall: is 4rth argument is optional ?
 v5820/1   fixed   124029   ppc compile failed: `vor' gcc 3.3.5
           low     124039   VKI_[GP]IO_UNIMAP* and VT_* ioctls
-          high    124222   Segfault: @@don't know what type ':' is
-          high    124475   ppc32: crash (syscall?) timer_settime()
+v5823     high    124222   Segfault: @@don't know what type ':' is
+v5849     high    124475   ppc32: crash (syscall?) timer_settime()
           low     124478   memcheck reports uninit'd bytes on timer_create()
-          high    124499   amd64->IR: 0xF 0xE 0x48 0x85 (femms)
+vx1604    high    124499   amd64->IR: 0xF 0xE 0x48 0x85 (femms)
 v5818     fixed   124528   FATAL: aspacem assertion failed: segment_is_sane
-          high    124697   vex x86->IR: 0xF 0x70 0xC9 0x0 (pshufw)
-          high    124892   vex x86->IR: 0xF3 0xAE (REPx SCASB)
-          high    124808   ppc32: sys_sched_getaffinity() not handled
-          high    n-i-bz   Very long stabs strings crash m_debuginfo
+WONTFIX   high    124697   vex x86->IR: 0xF 0x70 0xC9 0x0 (pshufw)
+vx1603 (untested) high    124892   vex x86->IR: 0xF3 0xAE (REPx SCASB)
+v5849     high    124808   ppc32: sys_sched_getaffinity() not handled
+v5823     high    n-i-bz   Very long stabs strings crash m_debuginfo
+vx1602    high    n-i-bz   amd64->IR: 0x66 0xF 0xF5 (pmaddwd)
+v5849     ?       125492   ppc32: support a bunch more syscalls
 
 ------- Bugs reported prior to 3.1.1 ------
 

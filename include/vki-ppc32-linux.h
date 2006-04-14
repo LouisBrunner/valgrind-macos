@@ -198,6 +198,13 @@ struct vki_pt_regs {
         unsigned long dar;              /* Fault registers */
         unsigned long dsisr;            /* on 4xx/Book-E used for ESR */
         unsigned long result;           /* Result of a system call */
+
+        /* Not in kernel's definition, but apparently needed to stop
+           assertion at coredump-elf.c:267 firing.  These padding
+           words make the struct have the same size as a
+           'vki_elf_greg_t'.  See message from Ghassan Hammouri on
+           valgrind-developers on 6 April 06. */
+        unsigned long pad[4];
 };
 
 #define vki_user_regs_struct vki_pt_regs

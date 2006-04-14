@@ -2877,7 +2877,7 @@ PRE(sys_ftruncate64)
 #endif
 
 // XXX: this wrapper is only suitable for 32-bit platforms
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
 PRE(sys_truncate64)
 {
    *flags |= SfMayBlock;

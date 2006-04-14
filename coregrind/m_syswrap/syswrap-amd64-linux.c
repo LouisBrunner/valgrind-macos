@@ -1012,7 +1012,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_setitimer,         sys_setitimer),      // 38 
    GENX_(__NR_getpid,            sys_getpid),         // 39 
 
-   //   (__NR_sendfile,          sys_sendfile64),     // 40 
+   LINXY(__NR_sendfile,          sys_sendfile),       // 40 
    PLAXY(__NR_socket,            sys_socket),         // 41 
    PLAX_(__NR_connect,           sys_connect),        // 42
    PLAXY(__NR_accept,            sys_accept),         // 43 
@@ -1163,7 +1163,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_settimeofday,      sys_settimeofday),   // 164 
 
    LINX_(__NR_mount,             sys_mount),          // 165
-   //   (__NR_umount2,           sys_umount),         // 166 
+   LINX_(__NR_umount2,           sys_umount),         // 166 
    //   (__NR_swapon,            sys_swapon),         // 167 
    //   (__NR_swapoff,           sys_swapoff),        // 168 
    //   (__NR_reboot,            sys_reboot),         // 169 

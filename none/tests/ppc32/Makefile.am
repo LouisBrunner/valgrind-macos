@@ -7,6 +7,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest \
 	jm-vmx.stderr.exp   jm-vmx.stdout.exp   jm-vmx.vgtest \
 	mftocrf.stderr.exp mftocrf.stdout.exp mftocrf.vgtest \
+	round.stderr.exp round.stdout.exp round.vgtest \
 	test_fx.stderr.exp test_fx.stdout.exp test_fx.vgtest \
 	test_gx.stderr.exp test_gx.stdout.exp test_gx.vgtest \
 	testVMX.stderr.exp  testVMX.stdout.exp  testVMX.vgtest \
@@ -14,7 +15,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	xlc_dbl_u32.stderr.exp xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest
 
 check_PROGRAMS = \
-	lsw jm-insns mftocrf test_fx test_gx testVMX twi xlc_dbl_u32
+	lsw jm-insns mftocrf round test_fx test_gx testVMX twi xlc_dbl_u32
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
 		@FLAG_M32@

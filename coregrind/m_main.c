@@ -912,7 +912,7 @@ static void usage_NORETURN ( Bool debug_help )
 "                              handle non-standard kernel variants\n"
 "\n"
 "  user options for Valgrind tools that report errors:\n"
-"    --xml=yes                 all output is in XML (Memcheck/Nulgrind only)\n"
+"    --xml=yes                 all output is in XML (some tools only)\n"
 "    --xml-user-comment=STR    copy STR verbatim to XML output\n"
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <number> callers in stack traces [12]\n"
@@ -1457,11 +1457,10 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
 
    /* Check that the requested tool actually supports XML output. */
-   if (VG_(clo_xml) && !VG_STREQ(toolname, "memcheck")
-                    && !VG_STREQ(toolname, "none")) {
+   if (VG_(clo_xml) && !VG_(needs).xml_output) {
       VG_(clo_xml) = False;
       VG_(message)(Vg_UserMsg, 
-         "Currently only Memcheck|None supports XML output."); 
+         "%s does not support XML output.", VG_(details).name); 
       VG_(bad_option)("--xml=yes");
       /*NOTREACHED*/
    }

@@ -138,9 +138,6 @@ extern void VG_(details_bug_reports_to)   ( Char* bug_reports_to );
 /* ------------------------------------------------------------------ */
 /* Needs */
 
-/* Booleans that decide core behaviour, but don't require extra
-   operations to be defined if `True' */
-
 /* Should __libc_freeres() be run?  Bugs in it can crash the tool. */
 extern void VG_(needs_libc_freeres) ( void );
 
@@ -298,6 +295,11 @@ extern void VG_(needs_malloc_replacement)(
    void* (*prealloc)              ( ThreadId tid, void* p, SizeT new_size ),
    SizeT client_malloc_redzone_szB
 );
+
+/* Can the tool do XML output?  This is a slight misnomer, because the tool
+ * is not requesting the core to do anything, rather saying "I can handle
+ * it". */
+extern void VG_(needs_xml_output)( void );
 
 /* ------------------------------------------------------------------ */
 /* Core events to track */

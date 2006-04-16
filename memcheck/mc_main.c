@@ -4330,7 +4330,6 @@ static void mc_pre_clo_init(void)
    VG_(needs_client_requests)     (mc_handle_client_request);
    VG_(needs_sanity_checks)       (mc_cheap_sanity_check,
                                    mc_expensive_sanity_check);
-
    VG_(needs_malloc_replacement)  (MC_(malloc),
                                    MC_(__builtin_new),
                                    MC_(__builtin_vec_new),
@@ -4341,6 +4340,7 @@ static void mc_pre_clo_init(void)
                                    MC_(__builtin_vec_delete),
                                    MC_(realloc),
                                    MC_MALLOC_REDZONE_SZB );
+   VG_(needs_xml_output)          ();
 
    VG_(track_new_mem_startup)     ( mc_new_mem_startup );
    VG_(track_new_mem_stack_signal)( MC_(make_mem_undefined) );

@@ -90,6 +90,7 @@ typedef
       Bool sanity_checks;
       Bool data_syms;
       Bool malloc_replacement;
+      Bool xml_output;
    } 
    VgNeeds;
 

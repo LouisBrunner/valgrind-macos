@@ -27,7 +27,7 @@ usage: valgrind [options] prog-and-args
                               handle non-standard kernel variants
 
   user options for Valgrind tools that report errors:
-    --xml=yes                 all output is in XML (Memcheck/Nulgrind only)
+    --xml=yes                 all output is in XML (some tools only)
     --xml-user-comment=STR    copy STR verbatim to XML output
     --demangle=no|yes         automatically demangle C++ names? [yes]
     --num-callers=<number>    show <number> callers in stack traces [12]

@@ -93,6 +93,7 @@ VgNeeds VG_(needs) = {
    .sanity_checks        = False,
    .data_syms	         = False,
    .malloc_replacement   = False,
+   .xml_output           = False,
 };
 
 /* static */
@@ -161,6 +162,7 @@ Bool VG_(sanity_check_needs)(Char** failmsg)
 NEEDS(libc_freeres)
 NEEDS(core_errors)
 NEEDS(data_syms)
+NEEDS(xml_output)
 
 void VG_(needs_basic_block_discards)(
    void (*discard)(Addr64, VexGuestExtents)

@@ -1,5 +1,5 @@
-Release 3.2.0 (?? April 2006)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Release 3.2.0 (19 May 2006)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.2.0 is a feature release with a number of significant improvements:
 Performance (especially of Memcheck) is much improved, Addrcheck has been
 removed, Callgrind has been added, PPC64/Linux support has been added,
@@ -30,10 +30,20 @@ Lackey has been improved, and MPI support has been added.  In detail:
   more details] [XXX: say something about KCachegrind and why it has not
   been folded in...  I guess because its development is quite independent]
 
-- Valgrind now works on PPC64/Linux.  [XXX: more details...]
+- Valgrind now works on PPC64/Linux.  As with the AMD64/Linux port,
+  this supports programs using to 32G of address space.  On
+  64-bit capable PPC64/Linux setups, you get a dual architecture
+  build so that both 32-bit and 64-bit executables can be run.
+  Linux on POWER5 is supported, and POWER4 is also believed to
+  work.  Both 32-bit and 64-bit DWARF2 is supported.  This port is
+  known to work well with both gcc-compiled and xlc/xlf-compiled code.
 
-- Floating point accuracy has been improved for PPC32/Linux.  [XXX: more
-  details]
+- Floating point accuracy has been improved for PPC32/Linux.  
+  Specifically, the floating point rounding mode is observed on all
+  FP arithmetic operations, and multiply-accumulate instructions are
+  preserved by the compilation pipeline.  This means you should
+  get FP results which are bit-for-bit identical to a native run.
+  These improvements are also present in the PPC64/Linux port.
 
 - Lackey, the example tool, has been improved:
 

@@ -31,6 +31,13 @@ v5849     fixed   124808   ppc32: sys_sched_getaffinity() not handled
 v5823     fixed   n-i-bz   Very long stabs strings crash m_debuginfo
 vx1602    fixed   n-i-bz   amd64->IR: 0x66 0xF 0xF5 (pmaddwd)
 v5849     fixed   125492   ppc32: support a bunch more syscalls
+v5852     fixed   121617   ppc32: coredumping gives assertion failure
+                           (still broken on ppc64?)
+          ?       121814   Coregrind return error as exitcode patch
+          ?       108528   NPTL pthread cleanup handlers not called 
+          high    125607   amd64->IR: 0x66 0xF 0xA3 0x2 (btw etc)
+          high    125651   amd64->IR: 0xF8 0x49 0xFF 0xE3 (clc?)
+
 
 ------- Bugs reported prior to 3.1.1 ------
 

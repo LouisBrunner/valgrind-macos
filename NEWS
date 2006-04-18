@@ -32,6 +32,9 @@ Lackey has been improved, and MPI support has been added.  In detail:
 
 - Valgrind now works on PPC64/Linux.  [XXX: more details...]
 
+- Floating point accuracy has been improved for PPC32/Linux.  [XXX: more
+  details]
+
 - Lackey, the example tool, has been improved:
 
   * It has a new option --detailed-counts (off by default) which causes

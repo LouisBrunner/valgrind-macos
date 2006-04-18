@@ -1105,7 +1105,7 @@ static UInt ULong_width(ULong n)
 
 static void cg_fini(Int exitcode)
 {
-   static Char buf1[128], buf2[128], buf3[128], fmt [128];
+   static Char buf1[128], buf2[128], buf3[128], buf4[123], fmt[128];
 
    CC D_total;
    ULong L2_total_m, L2_total_mr, L2_total_mw,
@@ -1195,29 +1195,35 @@ static void cg_fini(Int exitcode)
 
    // Various stats
    if (VG_(clo_verbosity) > 1) {
-       Int debug_lookups = full_debugs      + fn_debugs +
-                           file_line_debugs + no_debugs;
+      Int debug_lookups = full_debugs      + fn_debugs +
+                          file_line_debugs + no_debugs;
 
-       VG_(message)(Vg_DebugMsg, "");
-       VG_(message)(Vg_DebugMsg, "cachegrind: distinct files: %d", distinct_files);
-       VG_(message)(Vg_DebugMsg, "cachegrind: distinct fns:   %d", distinct_fns);
-       VG_(message)(Vg_DebugMsg, "cachegrind: distinct lines: %d", distinct_lines);
-       VG_(message)(Vg_DebugMsg, "cachegrind: distinct instrs:%d", distinct_instrs);
-       VG_(message)(Vg_DebugMsg, "cachegrind: debug lookups      : %d", debug_lookups);
-       VG_(message)(Vg_DebugMsg, "cachegrind: with full      info:%3d%% (%d)", 
-                    full_debugs * 100 / debug_lookups, full_debugs);
-       VG_(message)(Vg_DebugMsg, "cachegrind: with file/line info:%3d%% (%d)", 
-                    file_line_debugs * 100 / debug_lookups, file_line_debugs);
-       VG_(message)(Vg_DebugMsg, "cachegrind: with fn name   info:%3d%% (%d)", 
-                    fn_debugs * 100 / debug_lookups, fn_debugs);
-       VG_(message)(Vg_DebugMsg, "cachegrind: with zero      info:%3d%% (%d)", 
-                    no_debugs * 100 / debug_lookups, no_debugs);
-       VG_(message)(Vg_DebugMsg, "cachegrind: string table size: %u",
-                    VG_(OSet_Size)(stringTable));
-       VG_(message)(Vg_DebugMsg, "cachegrind: CC table size: %u",
-                    VG_(OSet_Size)(CC_table));
-       VG_(message)(Vg_DebugMsg, "cachegrind: InstrInfo table size: %u",
-                    VG_(OSet_Size)(instrInfoTable));
+      VG_(message)(Vg_DebugMsg, "");
+      VG_(message)(Vg_DebugMsg, "cachegrind: distinct files: %d", distinct_files);
+      VG_(message)(Vg_DebugMsg, "cachegrind: distinct fns:   %d", distinct_fns);
+      VG_(message)(Vg_DebugMsg, "cachegrind: distinct lines: %d", distinct_lines);
+      VG_(message)(Vg_DebugMsg, "cachegrind: distinct instrs:%d", distinct_instrs);
+      VG_(message)(Vg_DebugMsg, "cachegrind: debug lookups      : %d", debug_lookups);
+      
+      VG_(percentify)(full_debugs,      debug_lookups, 1, 6, buf1);
+      VG_(percentify)(file_line_debugs, debug_lookups, 1, 6, buf2);
+      VG_(percentify)(fn_debugs,        debug_lookups, 1, 6, buf3);
+      VG_(percentify)(no_debugs,        debug_lookups, 1, 6, buf4);
+      VG_(message)(Vg_DebugMsg, "cachegrind: with full      info:%s (%d)", 
+                   buf1, full_debugs);
+      VG_(message)(Vg_DebugMsg, "cachegrind: with file/line info:%s (%d)", 
+                   buf2, file_line_debugs);
+      VG_(message)(Vg_DebugMsg, "cachegrind: with fn name   info:%s (%d)", 
+                   buf3, fn_debugs);
+      VG_(message)(Vg_DebugMsg, "cachegrind: with zero      info:%s (%d)", 
+                   buf4, no_debugs);
+
+      VG_(message)(Vg_DebugMsg, "cachegrind: string table size: %u",
+                   VG_(OSet_Size)(stringTable));
+      VG_(message)(Vg_DebugMsg, "cachegrind: CC table size: %u",
+                   VG_(OSet_Size)(CC_table));
+      VG_(message)(Vg_DebugMsg, "cachegrind: InstrInfo table size: %u",
+                   VG_(OSet_Size)(instrInfoTable));
    }
 }
 

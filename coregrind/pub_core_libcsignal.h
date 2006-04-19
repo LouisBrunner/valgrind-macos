@@ -37,6 +37,43 @@
 
 #include "pub_tool_libcsignal.h"
 
+/* Note that these use the vki_ (kernel) structure
+   definitions, which are different in places from those that glibc
+   defines.  Since we're operating right at the kernel interface, glibc's view
+   of the world is entirely irrelevant. */
+
+/* --- Signal set ops --- */
+extern Int  VG_(sigfillset)  ( vki_sigset_t* set );
+extern Int  VG_(sigemptyset) ( vki_sigset_t* set );
+
+extern Bool VG_(isfullsigset)  ( const vki_sigset_t* set );
+extern Bool VG_(isemptysigset) ( const vki_sigset_t* set );
+extern Bool VG_(iseqsigset)    ( const vki_sigset_t* set1,
+                                 const vki_sigset_t* set2 );
+
+extern Int  VG_(sigaddset)   ( vki_sigset_t* set, Int signum );
+extern Int  VG_(sigdelset)   ( vki_sigset_t* set, Int signum );
+extern Int  VG_(sigismember) ( const vki_sigset_t* set, Int signum );
+
+extern void VG_(sigaddset_from_set) ( vki_sigset_t* dst, vki_sigset_t* src );
+extern void VG_(sigdelset_from_set) ( vki_sigset_t* dst, vki_sigset_t* src );
+
+/* --- Mess with the kernel's sig state --- */
+/* VG_(sigprocmask) is in pub_tool_libcsignal.h. */
+
+extern Int VG_(sigaction)   ( Int signum,
+                              const struct vki_sigaction* act,
+                              struct vki_sigaction* oldact );
+
+extern Int VG_(sigtimedwait)( const vki_sigset_t *, vki_siginfo_t *, 
+			      const struct vki_timespec * );
+
+extern Int VG_(signal)      ( Int signum, void (*sighandler)(Int) );
+
+extern Int VG_(kill)        ( Int pid, Int signo );
+extern Int VG_(tkill)       ( ThreadId tid, Int signo );
+
+
 #endif   // __PUB_CORE_LIBCSIGNAL_H
 
 /*--------------------------------------------------------------------*/

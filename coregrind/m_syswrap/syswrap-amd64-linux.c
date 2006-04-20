@@ -48,6 +48,7 @@
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"   /* for decls of generic wrappers */
 #include "priv_syswrap-linux.h"     /* for decls of linux-ish wrappers */
+#include "priv_syswrap-linux-variants.h" /* decls of linux variant wrappers */
 #include "priv_syswrap-main.h"
 
 #include "vki_unistd.h"              /* for the __NR_* constants */
@@ -362,6 +363,7 @@ DECL_TEMPLATE(amd64_linux, sys_pread64);
 DECL_TEMPLATE(amd64_linux, sys_pwrite64);
 DECL_TEMPLATE(amd64_linux, sys_fadvise64);
 DECL_TEMPLATE(amd64_linux, sys_mmap);
+DECL_TEMPLATE(amd64_linux, sys_syscall184);
 
 
 PRE(sys_clone)
@@ -943,6 +945,41 @@ PRE(sys_mmap)
    SET_STATUS_from_SysRes(r);
 }
 
+
+/* ---------------------------------------------------------------
+   PRE/POST wrappers for AMD64/Linux-variant specific syscalls
+   ------------------------------------------------------------ */
+
+PRE(sys_syscall184)
+{
+   Int err;
+
+   /* 184 is used by sys_bproc.  If we're not on a declared bproc
+      variant, fail in the usual way, since it is otherwise unused. */
+
+   if (!VG_(strstr)(VG_(clo_kernel_variant), "bproc")) {
+      PRINT("non-existent syscall! (syscall 184)");
+      PRE_REG_READ0(long, "ni_syscall(184)");
+      SET_STATUS_Failure( VKI_ENOSYS );
+      return;
+   }
+
+   err = ML_(linux_variant_PRE_sys_bproc)( ARG1, ARG2, ARG3, 
+                                           ARG4, ARG5, ARG6 );
+   if (err) {
+      SET_STATUS_Failure( err );
+      return;
+   }
+   /* Let it go through. */
+   *flags |= SfMayBlock; /* who knows?  play safe. */
+}
+
+POST(sys_syscall184)
+{
+   ML_(linux_variant_POST_sys_bproc)( ARG1, ARG2, ARG3, 
+                                      ARG4, ARG5, ARG6 );
+}
+
 #undef PRE
 #undef POST
 
@@ -1184,7 +1221,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    //   (__NR_getpmsg,           sys_ni_syscall),     // 181
    //   (__NR_putpmsg,           sys_ni_syscall),     // 182
    //   (__NR_afs_syscall,       sys_ni_syscall),     // 183 
-   //   (__NR_tuxcall,           sys_ni_syscall),     // 184
+   PLAXY(184,                    sys_syscall184),     // 184 // sys_bproc?
 
    //   (__NR_security,          sys_ni_syscall),     // 185 
    LINX_(__NR_gettid,            sys_gettid),         // 186 

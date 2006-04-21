@@ -1659,6 +1659,7 @@ void CLG_(init_files)(Char** dir, Char** file)
 	   lastSlash = i;
 	   i++;
        }
+       i = lastSlash;
        base_directory = (Char*) CLG_MALLOC(i+1);
        VG_(strncpy)(base_directory, CLG_(clo).filename_base, i);
        base_directory[i] = 0;

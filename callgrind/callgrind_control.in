@@ -37,7 +37,7 @@ sub getCallgrindPids {
     open MAP, "<$mapfile";
     $found = 0;
     while(<MAP>) {
-      # works both for VG 3.0 and VG 3.1
+      # works both for VG 3.0 and VG 3.1+
       if (/callgrind/) { $found = 1; }
     }
     close MAP;
@@ -54,7 +54,7 @@ sub getCallgrindPids {
     close INFO;
 
     if ($mversion{$pid} > 1) {
-      #print " Unsupported Callgrind Major Version $mversion.\n\n";
+      print " $pid: Unsupported command interface (version $mversion) ?!\n\n";
       next;
     }
 
@@ -290,12 +290,11 @@ foreach $arg (@ARGV) {
 if ($workingDir ne "") {
     # Generate dummy information for dummy pid 0
     $pid = "0";
-    $mversion{$pid} = "@VERSION@";
+    $mversion{$pid} = "1.0";
     $cmd{$pid} = "???";
     $base{$pid} = $workingDir;
     $control{$pid} = "$workingDir/callgrind.cmd";
-    # do not wait for any result...
-    $result{$pid} = "";
+    $result{$pid} = "$workingDir/callgrind.res";
 
     # Only handle this faked callgrind run
     @pids = ($pid);
@@ -328,7 +327,7 @@ if ($printStatus || $printBacktrace || $requestEvents) {
 
 foreach $pid (@pids) {
   $pidstr = "PID $pid: ";
-  print $pidstr.$cmd{$pid};
+  if ($pid >0) { print $pidstr.$cmd{$pid}; }
 
   if ($command eq "") {
     if ($printLong) {
@@ -355,6 +354,7 @@ foreach $pid (@pids) {
     }
   }
 
+  #print "Reading ".$result{$pid}. "...\n";
   if ($result{$pid} eq "") { $waitForAnswer=0; }
   if (!$waitForAnswer) { print "  OK.\n"; next; }
 

@@ -34,11 +34,17 @@
 
 #include <pub_tool_threadstate.h> // VG_N_THREADS
 
+// Version for the syntax in command/result files for interactive control
+#define COMMAND_VERSION "1.0"
+
 static Char outbuf[FILENAME_LEN + FN_NAME_LEN + OBJ_NAME_LEN];
 
 static Char* command_file = 0;
 static Char* command_file2 = 0;
+static Char* current_command_file = 0;
 static Char* result_file = 0;
+static Char* result_file2 = 0;
+static Char* current_result_file = 0;
 static Char* info_file = 0;
 static Char* dump_base = 0;
 
@@ -60,7 +66,6 @@ void CLG_(init_command)(Char* dir, Char* dumps)
   /* This is for compatibility with the "Force Now" Button of current
    * KCachegrind releases, as it doesn't use ".pid" to distinguish
    * different callgrind instances from same base directory.
-   * Should be removed sometimes in the future (29.10.03)
    */
   command_file2 = (char*) CLG_MALLOC(size);
   CLG_ASSERT(command_file2 != 0);
@@ -72,6 +77,14 @@ void CLG_(init_command)(Char* dir, Char* dumps)
   CLG_ASSERT(result_file != 0);
   VG_(sprintf)(result_file, "%s/%s.%d",
 	       dir, DEFAULT_RESULTNAME, VG_(getpid)());
+
+  /* If we get a command from a command file without .pid, use
+   * a result file without .pid suffix
+   */
+  result_file2 = (char*) CLG_MALLOC(size);
+  CLG_ASSERT(result_file2 != 0);
+  VG_(sprintf)(result_file2, "%s/%s",
+               dir, DEFAULT_RESULTNAME);
 
   info_file = (char*) CLG_MALLOC(VG_(strlen)(DEFAULT_INFONAME) + 10);
   CLG_ASSERT(info_file != 0);
@@ -105,15 +118,11 @@ void CLG_(init_command)(Char* dir, Char* dumps)
 		 "# It is used to enable controlling the supervision of\n"
 		 "#  '%s'\n"
 		 "# by external tools.\n\n",
-#if VG_CORE_INTERFACE_VERSION < 9
-		 VG_(client_argv[0])
-#else
 		 VG_(args_the_exename)
-#endif
 	);
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     
-    VG_(sprintf)(buf, "version: " VERSION "\n");
+    VG_(sprintf)(buf, "version: " COMMAND_VERSION "\n");
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     
     VG_(sprintf)(buf, "base: %s\n", dir);
@@ -130,13 +139,6 @@ void CLG_(init_command)(Char* dir, Char* dumps)
     
     VG_(strcpy)(buf, "cmd:");
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-#if VG_CORE_INTERFACE_VERSION < 9
-    for (i = 0; i < VG_(client_argc); i++) {
-	if (!VG_(client_argv[i])) continue;
-	VG_(sprintf)(buf, " %s", VG_(client_argv[i]));
-	VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-    }
-#else
     VG_(sprintf)(buf, " %s", VG_(args_the_exename));
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     for (i = 0; i < VG_(args_for_client).used; i++) {
@@ -144,7 +146,6 @@ void CLG_(init_command)(Char* dir, Char* dumps)
 	VG_(sprintf)(buf, " %s", VG_(args_for_client).strs[i]);
 	VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     }
-#endif
     VG_(write)(fd, "\n", 1);
     VG_(close)(fd);
   }
@@ -166,7 +167,8 @@ static Int createRes(Int fd)
     if (fd > -2) return fd;
 
     /* fd == -2: No error, but we need to create the file */
-    res = VG_(open)(result_file,
+    CLG_ASSERT(current_result_file != 0);
+    res = VG_(open)(current_result_file,
 		   VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC,
 		   VKI_S_IRUSR|VKI_S_IWUSR);
 
@@ -179,7 +181,7 @@ static Int createRes(Int fd)
     return fd;
 }
 
-/* Run Info: Fixed information for a callgrind run */
+/* Run Info: Persistant information of the callgrind run */
 static Int dump_info(Int fd)
 {
     Char* buf = outbuf;
@@ -187,8 +189,12 @@ static Int dump_info(Int fd)
     
     if ( (fd = createRes(fd)) <0) return fd;
 
+    /* creator */
+    VG_(sprintf)(buf, "creator: callgrind-" VERSION "\n");
+    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+
     /* version */
-    VG_(sprintf)(buf, "version: " VERSION "\n");
+    VG_(sprintf)(buf, "version: " COMMAND_VERSION "\n");
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     
     /* "pid:" line */
@@ -202,13 +208,6 @@ static Int dump_info(Int fd)
     /* "cmd:" line */
     VG_(strcpy)(buf, "cmd:");
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-#if VG_CORE_INTERFACE_VERSION < 9
-    for (i = 0; i < VG_(client_argc); i++) {
-	if (!VG_(client_argv[i])) continue;
-	VG_(sprintf)(buf, " %s", VG_(client_argv[i]));
-	VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-    }
-#else
     VG_(sprintf)(buf, " %s", VG_(args_the_exename));
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     for (i = 0; i < VG_(args_for_client).used; i++) {
@@ -216,7 +215,7 @@ static Int dump_info(Int fd)
 	VG_(sprintf)(buf, " %s", VG_(args_for_client).strs[i]);
 	VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     }
-#endif
+    VG_(write)(fd, "\n", 1);
 
     return fd;
 }
@@ -355,17 +354,17 @@ void CLG_(check_command)()
     static Char cmdBuffer[512];
     Char *cmdPos = 0, *cmdNextLine = 0;
     Int fd, bytesRead = 0, do_kill = 0;
-    static Char* cfile = 0;
     SysRes res;
 
     if (!command_inited) return;
 
     /* toggle between 2 command files, with/without ".pid" postfix */
-    cfile = ((cfile == command_file) || (cfile == 0)) ? 
-      command_file2 : command_file;
+    current_command_file = (current_command_file == command_file2) ? 
+                           command_file : command_file2;
+    current_result_file  = (current_command_file == command_file2) ?
+                           result_file2 : result_file;    
     
-    
-    res = VG_(open)(cfile, VKI_O_RDONLY,0);
+    res = VG_(open)(current_command_file, VKI_O_RDONLY,0);
     if (!res.isError) {
 	fd = (Int) res.val;
 	bytesRead = VG_(read)(fd,cmdBuffer,500);
@@ -505,12 +504,12 @@ void CLG_(check_command)()
     }
 
     /* If command executed, delete command file */
-    if (cmdPos) VG_(unlink)(cfile);
+    if (cmdPos) VG_(unlink)(current_command_file);
     if (fd>=0) VG_(close)(fd);	    
 
     if (do_kill) {
       VG_(message)(Vg_UserMsg,
-		   "Killed because of command from %s", cfile);
+		   "Killed because of command from %s", current_command_file);
       CLG_(fini)(0);
       VG_(exit)(1);
     }

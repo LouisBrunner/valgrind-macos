@@ -29,6 +29,9 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+// *** WARNING *** 
+// Helgrind is not 64-bit clean.
+
 // For anyone wanting to understand race conditions better, this paper might
 // be instructive:
 //

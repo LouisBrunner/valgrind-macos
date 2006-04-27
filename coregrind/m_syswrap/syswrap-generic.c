@@ -1694,7 +1694,8 @@ ML_(generic_POST_sys_shmdt) ( ThreadId tid, UWord res, UWord arg0 )
       SizeT s_len   = s->end+1 - s->start;
       Bool  d;
 
-      vg_assert(s->kind == SkShmC && s->start == arg0);
+      vg_assert(s->kind == SkShmC);
+      vg_assert(s->start == arg0);
 
       d = VG_(am_notify_munmap)(s_start, s_len);
       s = NULL; /* s is now invalid */

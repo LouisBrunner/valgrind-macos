@@ -60,23 +60,28 @@
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
-   UInt __res;
+   Int block[2];
+   block[0] = (Int)buf;
+   block[1] = n;
    __asm__ volatile (
-      "pushl %%ebx\n"        // ebx is callee-save
-      "movl  $4, %%eax\n"    /* %eax = __NR_write */
-      "movl  $1, %%ebx\n"    /* %ebx = stderr */
-      "movl  %1, %%ecx\n"    /* %ecx = buf */
-      "movl  %2, %%edx\n"    /* %edx = n */
-      "int   $0x80\n"        /* write(stderr, buf, n) */
-      "movl  %%eax, %0\n"    /* __res = eax */
-      "popl  %%ebx\n"        // restore ebx
-      : "=mr" (__res)
-      : "g" (buf), "g" (n)
-      : "eax", "edi", "ecx", "edx"
+      "pushl %%ebx\n"           /* ebx is callee-save */
+      "movl  %0, %%ebx\n"       /* ebx = &block */
+      "pushl %%ebx\n"           /* save &block */
+      "movl  0(%%ebx), %%ecx\n" /* %ecx = buf */
+      "movl  4(%%ebx), %%edx\n" /* %edx = n */
+      "movl  $4, %%eax\n"       /* %eax = __NR_write */
+      "movl  $1, %%ebx\n"       /* %ebx = stderr */
+      "int   $0x80\n"           /* write(stderr, buf, n) */
+      "popl  %%ebx\n"           /* reestablish &block */
+      "movl  %%eax, 0(%%ebx)\n" /* block[0] = result */
+      "popl  %%ebx\n"           /* restore ebx */
+      : /*wr*/
+      : /*rd*/    "g" (block)
+      : /*trash*/ "eax", "edi", "ecx", "edx", "memory", "cc"
    );
-   if (__res < 0) 
-      __res = -1;
-   return __res;
+   if (block[0] < 0) 
+      block[0] = -1;
+   return block[0];
 }
 
 static UInt local_sys_getpid ( void )

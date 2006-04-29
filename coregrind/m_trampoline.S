@@ -55,7 +55,9 @@ VG_(trampoline_stuff_start):
 .global VG_(x86_linux_SUBST_FOR_sigreturn)
 VG_(x86_linux_SUBST_FOR_sigreturn):
         /* This is a very specific sequence which GDB uses to
-           recognize signal handler frames. */
+           recognize signal handler frames.  Also gcc: see
+           x86_fallback_frame_state() in
+           gcc-4.1.0/gcc/config/i386/linux-unwind.h */
         popl    %eax
         movl    $__NR_sigreturn, %eax
         int     $0x80
@@ -67,12 +69,6 @@ VG_(x86_linux_SUBST_FOR_rt_sigreturn):
         movl    $__NR_rt_sigreturn, %eax
         int     $0x80
         ud2
-
-.global VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80)
-VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80):
-	/* We can point our sysinfo stuff here */
-	int	$0x80
-	ret
 
 /* There's no particular reason that this needs to be handwritten
    assembly, but since that's what this file contains, here's a

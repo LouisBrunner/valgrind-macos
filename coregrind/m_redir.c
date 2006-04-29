@@ -273,7 +273,8 @@ static Bool   is_plausible_guest_addr(Addr);
 static void   show_redir_state ( HChar* who );
 static void   show_active ( HChar* left, Active* act );
 
-static void   handle_maybe_load_notifier( HChar* symbol, Addr addr );
+static void   handle_maybe_load_notifier( const UChar* soname, 
+                                                HChar* symbol, Addr addr );
 
 
 /*------------------------------------------------------------*/
@@ -310,8 +311,11 @@ void VG_(redir_notify_new_SegInfo)( SegInfo* newsi )
    HChar    demangled_sopatt[N_DEMANGLED];
    HChar    demangled_fnpatt[N_DEMANGLED];
 
+   const UChar* newsi_soname;
+
    vg_assert(newsi);
-   vg_assert(VG_(seginfo_soname)(newsi) != NULL);
+   newsi_soname = VG_(seginfo_soname)(newsi);
+   vg_assert(newsi_soname != NULL);
 
    /* stay sane: we don't already have this. */
    for (ts = topSpecs; ts; ts = ts->next)
@@ -330,7 +334,7 @@ void VG_(redir_notify_new_SegInfo)( SegInfo* newsi )
       if (!ok) {
          /* It's not a full-scale redirect, but perhaps it is a load-notify
             fn?  Let the load-notify department see it. */
-         handle_maybe_load_notifier( sym_name, sym_addr );
+         handle_maybe_load_notifier( newsi_soname, sym_name, sym_addr );
          continue; 
       }
       spec = symtab_alloc(sizeof(Spec));
@@ -726,13 +730,6 @@ void VG_(redir_initialise) ( void )
    // The rest of this function just adds initial Specs.   
 
 #  if defined(VGP_x86_linux)
-   /* Redirect _dl_sysinfo_int80, which is glibc's default system call
-      routine, to our copy so that the special sysinfo unwind hack in
-      m_stacktrace.c will kick in. */
-   add_hardwired_spec(
-      "ld-linux.so.2", "_dl_sysinfo_int80",
-      (Addr)&VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80) 
-   );
    /* If we're using memcheck, use this intercept right from the
       start, otherwise ld.so (glibc-2.3.5) makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
@@ -827,8 +824,25 @@ static Bool is_plausible_guest_addr(Addr a)
 /*--- NOTIFY-ON-LOAD FUNCTIONS                             ---*/
 /*------------------------------------------------------------*/
 
-static void handle_maybe_load_notifier( HChar* symbol, Addr addr )
+static 
+void handle_maybe_load_notifier( const UChar* soname, 
+                                       HChar* symbol, Addr addr )
 {
+#  if defined(VGP_x86_linux)
+   /* x86-linux only: if we see _dl_sysinfo_int80, note its address.
+      See comment on declaration of VG_(client__dl_sysinfo_int80) for
+      the reason.  As far as I can tell, the relevant symbol is always
+      in object with soname "ld-linux.so.2". */
+   if (symbol && symbol[0] == '_' 
+              && 0 == VG_(strcmp)(symbol, "_dl_sysinfo_int80")
+              && 0 == VG_(strcmp)(soname, "ld-linux.so.2")) {
+      if (VG_(client__dl_sysinfo_int80) == 0)
+         VG_(client__dl_sysinfo_int80) = addr;
+   }
+#  endif
+
+   /* Normal load-notifier handling after here.  First, ignore all
+      symbols lacking the right prefix. */
    if (0 != VG_(strncmp)(symbol, VG_NOTIFY_ON_LOAD_PREFIX, 
                                  VG_NOTIFY_ON_LOAD_PREFIX_LEN))
       /* Doesn't have the right prefix */
@@ -836,9 +850,6 @@ static void handle_maybe_load_notifier( HChar* symbol, Addr addr )
 
    if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(freeres))) == 0)
       VG_(client___libc_freeres_wrapper) = addr;
-// else
-// if (VG_(strcmp)(symbol, STR(VG_WRAPPER(pthread_startfunc_wrapper))) == 0)
-//    VG_(pthread_startfunc_wrapper)((Addr)(si->offset + sym->st_value));
    else
       vg_assert2(0, "unrecognised load notification function: %s", symbol);
 }

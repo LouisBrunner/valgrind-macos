@@ -91,6 +91,12 @@ Int VG_(fd_hard_limit) = -1;
 /* Where is the __libc_freeres_wrapper routine we made? */
 Addr VG_(client___libc_freeres_wrapper) = 0;
 
+/* x86-linux only: where is glibc's _dl_sysinfo_int80 function?
+   Finding it isn't essential, but knowing where it is does sometimes
+   help produce better back traces.  See big comment in
+   VG_(get_StackTrace) in m_stacktrace.c for further info. */
+Addr VG_(client__dl_sysinfo_int80) = 0;
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

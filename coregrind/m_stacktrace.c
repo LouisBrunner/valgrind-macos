@@ -38,6 +38,7 @@
 #include "pub_core_machine.h"
 #include "pub_core_options.h"
 #include "pub_core_stacktrace.h"
+#include "pub_core_clientstate.h"   // VG_(client__dl_sysinfo_int80)
 #include "pub_core_trampoline.h"
 
 /*------------------------------------------------------------*/
@@ -344,16 +345,26 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
    Addr stack_highest_word = VG_(threads)[tid].client_stack_highest_word;
 
 #  if defined(VGP_x86_linux)
-   /* Nasty little hack to deal with sysinfo syscalls - if libc is
-      using the sysinfo page for syscalls (the TLS version does), then
-      ip will always appear to be in that page when doing a syscall,
-      not the actual libc function doing the syscall.  This check sees
-      if IP is within the syscall code, and pops the return address
-      off the stack so that ip is placed within the library function
-      calling the syscall.  This makes stack backtraces much more
-      useful.  */
-   if (ip >= (Addr)&VG_(trampoline_stuff_start) 
-       && ip < (Addr)&VG_(trampoline_stuff_end)
+   /* Nasty little hack to deal with syscalls - if libc is using its
+      _dl_sysinfo_int80 function for syscalls (the TLS version does),
+      then ip will always appear to be in that function when doing a
+      syscall, not the actual libc function doing the syscall.  This
+      check sees if IP is within that function, and pops the return
+      address off the stack so that ip is placed within the library
+      function calling the syscall.  This makes stack backtraces much
+      more useful.
+
+      The function is assumed to look like this (from glibc-2.3.6 sources):
+         _dl_sysinfo_int80:
+            int $0x80
+            ret
+      That is 3 (2+1) bytes long.  We could be more thorough and check
+      the 3 bytes of the function are as expected, but I can't be
+      bothered.
+   */
+   if (VG_(client__dl_sysinfo_int80) != 0 /* we know its address */
+       && ip >= VG_(client__dl_sysinfo_int80)
+       && ip < VG_(client__dl_sysinfo_int80)+3
        && VG_(am_is_valid_for_client)(sp, sizeof(Addr), VKI_PROT_READ)) {
       ip = *(Addr *)sp;
       sp += sizeof(Addr);

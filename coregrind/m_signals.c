@@ -905,9 +905,11 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
    vg_assert(VG_(is_valid_tid)(tid));
    tst = & VG_(threads)[tid];
 
-   if (VG_(clo_trace_signals))
+   if (VG_(clo_trace_signals)) {
       VG_(message)(Vg_DebugMsg, 
          "push_signal_frame (thread %d): signal %d", tid, sigNo);
+      VG_(get_and_pp_StackTrace)(tid, 10);
+   }
 
    if (/* this signal asked to run on an alt stack */
        (scss.scss_per_sig[sigNo].scss_flags & VKI_SA_ONSTACK )

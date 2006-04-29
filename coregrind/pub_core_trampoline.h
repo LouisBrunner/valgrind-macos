@@ -37,6 +37,15 @@
 // stubs for signal returns.  Note, all the code within runs on the
 // simulated CPU.  The vsyscall stubs are gotten to by use of the 
 // redirect mechanism.
+//
+// Note: generally, putting replacement functions in here is a bad
+// idea, since any Dwarf frame-unwind info attached to them will not
+// be seen by the unwinder in gcc's runtime support.  This means
+// unwinding during exception handling by gcc tends to fail if it
+// encounters one of these replacement functions.  A better place to
+// put them is in one of the .so's preloaded into the client, since
+// the client's ld.so will know about it and so gcc's unwinder
+// (somehow) is able to get hold of it.
 //--------------------------------------------------------------------
 
 /* These two delimit our handwritten assembly code, so we can tell
@@ -50,7 +59,6 @@ extern void VG_(trampoline_stuff_end);
 #if defined(VGP_x86_linux)
 extern void VG_(x86_linux_SUBST_FOR_sigreturn);
 extern void VG_(x86_linux_SUBST_FOR_rt_sigreturn);
-extern void VG_(x86_linux_REDIR_FOR__dl_sysinfo_int80);
 extern Char* VG_(x86_linux_REDIR_FOR_index) ( const Char*, Int );
 #endif
 

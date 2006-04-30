@@ -430,6 +430,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                      vta->guest_bytes_addr,
                      vta->chase_into_ok,
                      host_is_bigendian,
+                     vta->arch_guest,
                      &vta->archinfo_guest,
                      guest_word_type,
                      vta->do_self_check,

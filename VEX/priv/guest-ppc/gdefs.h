@@ -65,6 +65,7 @@ DisResult disInstr_PPC ( IRBB*        irbb,
                          UChar*       guest_code,
                          Long         delta,
                          Addr64       guest_IP,
+                         VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          Bool         host_bigendian );
 

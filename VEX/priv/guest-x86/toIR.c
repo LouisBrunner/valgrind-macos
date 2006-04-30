@@ -12689,12 +12689,14 @@ DisResult disInstr_X86 ( IRBB*        irbb_IN,
                          UChar*       guest_code_IN,
                          Long         delta,
                          Addr64       guest_IP,
+                         VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          Bool         host_bigendian_IN )
 {
    DisResult dres;
 
    /* Set globals (see top of this file) */
+   vassert(guest_arch == VexArchX86);
    guest_code           = guest_code_IN;
    irbb                 = irbb_IN;
    host_is_bigendian    = host_bigendian_IN;

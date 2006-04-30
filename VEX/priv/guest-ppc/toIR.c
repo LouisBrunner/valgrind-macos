@@ -9447,38 +9447,33 @@ DisResult disInstr_PPC ( IRBB*        irbb_IN,
                          UChar*       guest_code_IN,
                          Long         delta,
                          Addr64       guest_IP,
+                         VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          Bool         host_bigendian_IN )
 {
    IRType     ty;
    DisResult  dres;
-   Bool       is32, is64;
    UInt       mask32, mask64;
    UInt hwcaps_guest = archinfo->hwcaps;
 
-   /* global -- ick */
-   mode64 = False;
+   vassert(guest_arch == VexArchPPC32 || guest_arch == VexArchPPC64);
 
-   /* Figure out whether we're being ppc32 or ppc64 today. */
+   /* global -- ick */
+   mode64 = guest_arch == VexArchPPC64;
+   ty = mode64 ? Ity_I64 : Ity_I32;
+
+   /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
             | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX;
-
-   is32 = (hwcaps_guest & mask32) > 0;
 
    mask64 = VEX_HWCAPS_PPC64_V
             | VEX_HWCAPS_PPC64_FX | VEX_HWCAPS_PPC64_GX;
 
-   is64 = (hwcaps_guest & mask64) > 0;
-
-   if (is32 && !is64)
-      mode64 = False;
-   else if (is64 && !is32)
-      mode64 = True;
-   else
-      vpanic("distInstr_PPC: illegal subarch");
-
-
-   ty = mode64 ? Ity_I64 : Ity_I32;
+   if (mode64) {
+      vassert((hwcaps_guest & mask32) == 0);
+   } else {
+      vassert((hwcaps_guest & mask64) == 0);
+   }
 
    /* Set globals (see top of this file) */
    guest_code           = guest_code_IN;

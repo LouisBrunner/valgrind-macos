@@ -96,6 +96,9 @@ At the time of writing the allocator is not annotated with client requests
 so Memcheck is not as useful as it could be.  It also has not been tested
 much, so don't be surprised if you hit problems.
 
+When using self-hosting with an outer callgrind tool, use '--pop-on-jump'
+(on the outer). Otherwise, callgrind has much higher memory requirements. 
+
 
 Printing out problematic blocks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

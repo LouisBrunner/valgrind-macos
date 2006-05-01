@@ -193,7 +193,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    HInstr*      (*genReload)   ( HReg, Int, Bool );
    void         (*ppInstr)     ( HInstr*, Bool );
    void         (*ppReg)       ( HReg );
-   HInstrArray* (*iselBB)      ( IRBB*, VexArchInfo* );
+   HInstrArray* (*iselBB)      ( IRBB*, VexArch, VexArchInfo* );
    Int          (*emit)        ( UChar*, Int, HInstr*, Bool, void* );
    IRExpr*      (*specHelper)  ( HChar*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
@@ -558,7 +558,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                    " Instruction selection "
                    "------------------------\n");
 
-   vcode = iselBB ( irbb, &vta->archinfo_host );
+   vcode = iselBB ( irbb, vta->arch_host, &vta->archinfo_host );
 
    vexAllocSanityCheck();
 

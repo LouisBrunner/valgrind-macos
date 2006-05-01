@@ -3760,7 +3760,8 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire BB to amd64 code. */
 
-HInstrArray* iselBB_AMD64 ( IRBB* bb, VexArchInfo* archinfo_host )
+HInstrArray* iselBB_AMD64 ( IRBB* bb, VexArch arch_host,
+                                      VexArchInfo* archinfo_host )
 {
    Int      i, j;
    HReg     hreg, hregHI;
@@ -3768,6 +3769,7 @@ HInstrArray* iselBB_AMD64 ( IRBB* bb, VexArchInfo* archinfo_host )
    UInt     hwcaps_host = archinfo_host->hwcaps;
 
    /* sanity ... */
+   vassert(arch_host == VexArchAMD64);
    vassert(0 == (hwcaps_host & ~(VEX_HWCAPS_AMD64_SSE3)));
 
    /* Make up an initial environment to use. */

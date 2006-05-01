@@ -3604,7 +3604,8 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire BB to x86 code. */
 
-HInstrArray* iselBB_X86 ( IRBB* bb, VexArchInfo* archinfo_host )
+HInstrArray* iselBB_X86 ( IRBB* bb, VexArch arch_host,
+                                    VexArchInfo* archinfo_host )
 {
    Int      i, j;
    HReg     hreg, hregHI;
@@ -3612,6 +3613,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb, VexArchInfo* archinfo_host )
    UInt     hwcaps_host = archinfo_host->hwcaps;
 
    /* sanity ... */
+   vassert(arch_host == VexArchX86);
    vassert(0 == (hwcaps_host & ~(VEX_HWCAPS_X86_SSE1
                                  |VEX_HWCAPS_X86_SSE2
                                  |VEX_HWCAPS_X86_SSE3)));

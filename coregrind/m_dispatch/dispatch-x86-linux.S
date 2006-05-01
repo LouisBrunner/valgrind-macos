@@ -51,6 +51,7 @@ UWord VG_(run_innerloop) ( void* guest_state, UWord do_profiling );
 */
 .text
 .globl VG_(run_innerloop)
+.type  VG_(run_innerloop), @function
 VG_(run_innerloop):
 	/* 4(%esp) holds guest_state */
 	/* 8(%esp) holds do_profiling */
@@ -251,6 +252,7 @@ run_innerloop_exit_REALLY:
 	popl	%ecx
 	popl	%ebx
 	ret	
+.size VG_(run_innerloop), .-VG_(run_innerloop)
 
 
 /*------------------------------------------------------------*/

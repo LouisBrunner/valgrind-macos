@@ -275,6 +275,7 @@ void VG_(run_a_noredir_translation) ( UWord* argblock );
 */
 .align 16
 .global VG_(run_a_noredir_translation)
+.type VG_(run_a_noredir_translation), @function
 VG_(run_a_noredir_translation):
 	/* Save callee-saves regs */
 	pushl %esi
@@ -300,6 +301,7 @@ VG_(run_a_noredir_translation__return_point):
 	popl %edi
 	popl %esi
 	ret
+.size VG_(run_a_noredir_translation), .-VG_(run_a_noredir_translation)
 
 			
 /* Let the linker know we don't need an executable stack */

@@ -50,6 +50,7 @@ UWord VG_(run_innerloop) ( void* guest_state, UWord do_profiling );
 */
 .text
 .globl  VG_(run_innerloop)
+.type  VG_(run_innerloop), @function
 VG_(run_innerloop):
 	/* r3 holds guest_state */
 	/* r4 holds do_profiling */
@@ -538,6 +539,7 @@ LafterVMX9:
         mtlr    0
         addi    1,1,496   /* stack_size */
         blr
+.size VG_(run_innerloop), .-VG_(run_innerloop)
 
 
 /*------------------------------------------------------------*/
@@ -559,6 +561,7 @@ void VG_(run_a_noredir_translation) ( UWord* argblock );
       3: output: guest state pointer afterwards (== thread return code)
 */
 .global VG_(run_a_noredir_translation)
+.type VG_(run_a_noredir_translation), @function
 VG_(run_a_noredir_translation):
 	/* save callee-save int regs, & lr */
 	stwu 1,-256(1)
@@ -615,6 +618,7 @@ VG_(run_a_noredir_translation):
 	lwz  31,196(1)
 	addi 1,1,256
 	blr
+.size VG_(run_a_noredir_translation), .-VG_(run_a_noredir_translation)
 
 
 /* Let the linker know we don't need an executable stack */

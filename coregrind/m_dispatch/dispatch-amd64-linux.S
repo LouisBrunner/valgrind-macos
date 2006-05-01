@@ -52,6 +52,7 @@ UWord VG_(run_innerloop) ( void* guest_state, UWord do_profiling );
 
 .text
 .globl VG_(run_innerloop)
+.type  VG_(run_innerloop), @function
 VG_(run_innerloop):
 	/* %rdi holds guest_state */
 	/* %rsi holds do_profiling */
@@ -273,6 +274,7 @@ run_innerloop_exit_REALLY:
 	popq	%rcx
 	popq	%rbx
 	ret	
+.size VG_(run_innerloop), .-VG_(run_innerloop)
 
 	
 /*------------------------------------------------------------*/
@@ -295,6 +297,7 @@ void VG_(run_a_noredir_translation) ( UWord* argblock );
 */
 .align 16
 .global VG_(run_a_noredir_translation)
+.type VG_(run_a_noredir_translation), @function
 VG_(run_a_noredir_translation):
 	/* Save callee-saves regs */
 	pushq %rbx
@@ -324,6 +327,7 @@ VG_(run_a_noredir_translation__return_point):
 	popq  %rbp
 	popq  %rbx
 	ret
+.size VG_(run_a_noredir_translation), .-VG_(run_a_noredir_translation)
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits

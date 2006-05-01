@@ -312,6 +312,7 @@ VG_(run_innerloop__dispatch_unprofiled):
 	/* start over */
 	b	.VG_(run_innerloop__dispatch_unprofiled)
 	/*NOTREACHED*/
+        .size VG_(run_innerloop), .-VG_(run_innerloop)
 
 
 /*----------------------------------------------------*/
@@ -389,6 +390,7 @@ VG_(run_innerloop__dispatch_profiled):
 	/* start over */
 	b	.VG_(run_innerloop__dispatch_profiled)
 	/*NOTREACHED*/
+        .size VG_(run_a_noredir_translation), .-VG_(run_a_noredir_translation)
 
 
 /*----------------------------------------------------*/

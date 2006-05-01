@@ -54,7 +54,7 @@ sub getCallgrindPids {
     close INFO;
 
     if ($mversion{$pid} > 1) {
-      print " $pid: Unsupported command interface (version $mversion) ?!\n\n";
+      print " PID $pid: Unsupported command interface (version $mversion{$pid}) ?!\n\n";
       next;
     }
 

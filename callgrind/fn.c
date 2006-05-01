@@ -295,7 +295,7 @@ fn_node* new_fn_node(Char fnname[FILENAME_LEN],
     new->zero_before  = False;
     new->toggle_collect = False;
     new->skip         = False;
-    new->pop_on_jump  = False;
+    new->pop_on_jump  = CLG_(clo).pop_on_jump;
     new->is_malloc    = False;
     new->is_realloc   = False;
     new->is_free      = False;

@@ -89,6 +89,9 @@ struct _CommandLineOptions {
   Bool instrument_atstart;  /* Instrument at start? */
   Bool simulate_cache;      /* Call into cache simulator ? */
 
+  /* Call graph generation */
+  Bool pop_on_jump;       /* Handle a jump between functions as ret+call */
+
 #if CLG_ENABLE_DEBUG
   Int   verbose;
   ULong verbose_start;

@@ -527,7 +527,10 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
    else if (0 == VG_(strncmp)(arg, "--separate-recs=", 16))
         CLG_(clo).separate_recursions = (Int)VG_(atoll)(&arg[16]);
 
-   /* workaround to find runtime_resolve (needs special handling) */
+   /* change handling of a jump between functions to ret+call */
+   else if (0 == VG_(strcmp)(arg, "--pop-on-jump")) {
+        CLG_(clo).pop_on_jump = True;
+   }
    else if (0 == VG_(strncmp)(arg, "--pop-on-jump=", 14)) {
        fn_config* fnc = get_fnc(arg+14);
        fnc->pop_on_jump = CONFIG_TRUE;
@@ -757,6 +760,9 @@ void CLG_(set_clo_defaults)(void)
   /* Instrumentation */
   CLG_(clo).instrument_atstart = True;
   CLG_(clo).simulate_cache = False;
+
+  /* Call graph */
+  CLG_(clo).pop_on_jump = False;
 
 #if CLG_ENABLE_DEBUG
   CLG_(clo).verbose = 0;

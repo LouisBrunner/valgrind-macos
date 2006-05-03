@@ -22,6 +22,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	lahf.stdout.exp lahf.stderr.exp lahf.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
+	movx.stderr.exp movx.stdout.exp movx.vgtest \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
 	seg_override.stderr.exp seg_override.stdout.exp seg_override.vgtest \
@@ -33,7 +34,7 @@ check_PROGRAMS = \
 	badseg bt_everything bt_literal cmpxchg8b cpuid \
 	faultstatus fcmovnu fpu_lazy_eflags fxtract \
 	getseg incdec_alt $(INSN_TESTS) \
-	lahf looper int pushpopseg sbbmisc \
+	lahf looper movx int pushpopseg sbbmisc \
 	seg_override sigcontext smc1 yield
 
 AM_CFLAGS    = $(WERROR) -Winline -Wall -Wshadow \

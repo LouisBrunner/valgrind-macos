@@ -1,0 +1,12 @@
+movzbw_1 0x12340022
+movzbw_2 0x12340099
+movzbl_1 0x00000022
+movzbl_2 0x00000099
+movzwl_1 0x00002222
+movzwl_2 0x00009999
+movsbw_1 0x12340022
+movsbw_2 0x1234ff99
+movsbl_1 0x00000022
+movsbl_2 0xffffff99
+movswl_1 0x00002222
+movswl_2 0xffff9999

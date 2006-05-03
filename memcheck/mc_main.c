@@ -589,6 +589,28 @@ UChar get_vabits2 ( Addr a )
    return extract_vabits2_from_vabits8(a, vabits8);
 }
 
+// *** WARNING! ***
+// Any time this function is called, if it is possible that any of the
+// 4 2-bit fields in vabits8 are equal to VA_BITS2_PARTDEFINED, then the 
+// corresponding entry(s) in the sec-V-bits table must also be set!
+static INLINE
+UChar get_vabits8_for_aligned_word32 ( Addr a )
+{
+   SecMap* sm       = get_secmap_for_reading(a);
+   UWord   sm_off   = SM_OFF(a);
+   UChar   vabits8  = sm->vabits8[sm_off];
+   return vabits8;
+}
+
+static INLINE
+void set_vabits8_for_aligned_word32 ( Addr a, UChar vabits8 )
+{
+   SecMap* sm       = get_secmap_for_writing(a);
+   UWord   sm_off   = SM_OFF(a);
+   sm->vabits8[sm_off] = vabits8;
+}
+
+
 // Forward declarations
 static UWord get_sec_vbits8(Addr a);
 static void  set_sec_vbits8(Addr a, UWord vbits8);
@@ -1227,35 +1249,81 @@ static void make_mem_defined_if_addressable ( Addr a, SizeT len )
 void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len )
 {
    SizeT i, j;
-   UChar vabits2;
+   UChar vabits2, vabits8;
+   Bool  aligned, nooverlap;
 
    DEBUG("MC_(copy_address_range_state)\n");
    PROF_EVENT(50, "MC_(copy_address_range_state)");
 
-   if (len == 0)
+   if (len == 0 || src == dst)
       return;
 
-   if (src < dst) {
-      for (i = 0, j = len-1; i < len; i++, j--) {
-         PROF_EVENT(51, "MC_(copy_address_range_state)(loop)");
-         vabits2 = get_vabits2( src+j );
-         set_vabits2( dst+j, vabits2 );
-         if (VA_BITS2_PARTDEFINED == vabits2) {
-            set_sec_vbits8( dst+j, get_sec_vbits8( src+j ) );
-         }
-      }
-   }
+   aligned   = VG_IS_4_ALIGNED(src) && VG_IS_4_ALIGNED(dst);
+   nooverlap = src+len <= dst || dst+len <= src;
 
-   if (src > dst) {
-      for (i = 0; i < len; i++) {
-         PROF_EVENT(52, "MC_(copy_address_range_state)(loop)");
+   if (nooverlap && aligned) {
+
+      /* Vectorised fast case, when no overlap and suitably aligned */
+      /* vector loop */
+      i = 0;
+      while (len >= 4) {
+         vabits8 = get_vabits8_for_aligned_word32( src+i );
+         set_vabits8_for_aligned_word32( dst+i, vabits8 );
+         if (EXPECTED_TAKEN(VA_BITS8_DEFINED == vabits8 
+                            || VA_BITS8_UNDEFINED == vabits8 
+                            || VA_BITS8_NOACCESS == vabits8)) {
+            /* do nothing */
+         } else {
+            /* have to copy secondary map info */
+            if (VA_BITS2_PARTDEFINED == get_vabits2( src+i+0 ))
+               set_sec_vbits8( dst+i+0, get_sec_vbits8( src+i+0 ) );
+            if (VA_BITS2_PARTDEFINED == get_vabits2( src+i+1 ))
+               set_sec_vbits8( dst+i+1, get_sec_vbits8( src+i+1 ) );
+            if (VA_BITS2_PARTDEFINED == get_vabits2( src+i+2 ))
+               set_sec_vbits8( dst+i+2, get_sec_vbits8( src+i+2 ) );
+            if (VA_BITS2_PARTDEFINED == get_vabits2( src+i+3 ))
+               set_sec_vbits8( dst+i+3, get_sec_vbits8( src+i+3 ) );
+         }
+         i += 4;
+         len -= 4;
+      }
+      /* fixup loop */
+      while (len >= 1) {
          vabits2 = get_vabits2( src+i );
          set_vabits2( dst+i, vabits2 );
          if (VA_BITS2_PARTDEFINED == vabits2) {
             set_sec_vbits8( dst+i, get_sec_vbits8( src+i ) );
          }
+         i++;
+         len--;
+      }
+
+   } else {
+
+      /* We have to do things the slow way */
+      if (src < dst) {
+         for (i = 0, j = len-1; i < len; i++, j--) {
+            PROF_EVENT(51, "MC_(copy_address_range_state)(loop)");
+            vabits2 = get_vabits2( src+j );
+            set_vabits2( dst+j, vabits2 );
+            if (VA_BITS2_PARTDEFINED == vabits2) {
+               set_sec_vbits8( dst+j, get_sec_vbits8( src+j ) );
+            }
+         }
+      }
+
+      if (src > dst) {
+         for (i = 0; i < len; i++) {
+            PROF_EVENT(52, "MC_(copy_address_range_state)(loop)");
+            vabits2 = get_vabits2( src+i );
+            set_vabits2( dst+i, vabits2 );
+            if (VA_BITS2_PARTDEFINED == vabits2) {
+               set_sec_vbits8( dst+i, get_sec_vbits8( src+i ) );
+            }
+         }
       }
    }
+
 }
 
 
@@ -4422,6 +4490,3 @@ VG_DETERMINE_INTERFACE_VERSION(mc_pre_clo_init)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-
-
-

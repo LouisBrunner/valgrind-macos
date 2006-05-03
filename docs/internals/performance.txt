@@ -29,6 +29,10 @@ Post 3.1.0:
 - Nick changed ExeContext gathering to not record/save extra zeroes at the
   end.  Saved 7% on perf/heap with --num-callers=50, and about 1% on
   perf/tinycc.
+- Julian vectorised copy_address_range_perms for common cases, which
+  gives about 40% speedup on artificial programs which just do
+  realloc() and nothing else, and about a 3-4% speedup on starting
+  kpresenter-1.5.0 and loading a 16-slide presentation.
 
 COMPVBITS branch:
 - Nick converted to compress V bits, initial version saved 0--5% on most

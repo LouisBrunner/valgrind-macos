@@ -1392,8 +1392,8 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
                // was some other file error, we give up.
 	       if (sres.val != VKI_EEXIST) {
 		  VG_(message)(Vg_UserMsg, 
-			       "Can't create/open log file '%s.%d'; giving up!", 
-			       VG_(clo_log_name), pid);
+			       "Can't create log file '%s' (%s); giving up!", 
+			       logfilename, VG_(strerror)(sres.val));
 		  VG_(bad_option)(
 		     "--log-file=<file> (didn't work out for some reason.)");
                   /*NOTREACHED*/

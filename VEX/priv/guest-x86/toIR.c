@@ -12340,16 +12340,26 @@ DisResult disInstr_X86_WRK (
       /* =-=-=-=-=-=-=-=-=- MOVZX, MOVSX =-=-=-=-=-=-=-= */
 
       case 0xB6: /* MOVZXb Eb,Gv */
-         delta = dis_movx_E_G ( sorb, delta, 1, 4, False );
+         if (sz != 2 && sz != 4)
+            goto decode_failure;
+         delta = dis_movx_E_G ( sorb, delta, 1, sz, False );
          break;
+
       case 0xB7: /* MOVZXw Ew,Gv */
+         if (sz != 4)
+            goto decode_failure;
          delta = dis_movx_E_G ( sorb, delta, 2, 4, False );
          break;
 
       case 0xBE: /* MOVSXb Eb,Gv */
-         delta = dis_movx_E_G ( sorb, delta, 1, 4, True );
+         if (sz != 2 && sz != 4)
+            goto decode_failure;
+         delta = dis_movx_E_G ( sorb, delta, 1, sz, True );
          break;
+
       case 0xBF: /* MOVSXw Ew,Gv */
+         if (sz != 4)
+            goto decode_failure;
          delta = dis_movx_E_G ( sorb, delta, 2, 4, True );
          break;
 

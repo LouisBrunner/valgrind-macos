@@ -1334,7 +1334,7 @@ POST(sys_lstat64)
 
 PRE(sys_stat64)
 {
-   PRINT("sys_stat64 ( %p(%s), %p )",ARG1,ARG2,ARG2);
+   PRINT("sys_stat64 ( %p(%s), %p )",ARG1,ARG1,ARG2);
    PRE_REG_READ2(long, "stat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "stat64(file_name)", ARG1 );
    PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );

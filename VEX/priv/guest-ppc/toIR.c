@@ -5082,6 +5082,7 @@ static Bool dis_int_shift ( UInt theInstr )
 /*
   Integer Load/Store Reverse Instructions
 */
+/* Generates code to swap the byte order in an Ity_I32. */
 static IRExpr* /* :: Ity_I32 */ gen_byterev32 ( IRTemp t )
 {
    vassert(typeOfIRTemp(irbb->tyenv, t) == Ity_I32);
@@ -5097,6 +5098,20 @@ static IRExpr* /* :: Ity_I32 */ gen_byterev32 ( IRTemp t )
          binop(Iop_And32, binop(Iop_Shr32, mkexpr(t), mkU8(24)),
                           mkU32(0x000000FF) )
       )));
+}
+
+/* Generates code to swap the byte order in the lower half of an Ity_I32,
+   and zeroes the upper half. */
+static IRExpr* /* :: Ity_I32 */ gen_byterev16 ( IRTemp t )
+{
+   vassert(typeOfIRTemp(irbb->tyenv, t) == Ity_I32);
+   return
+      binop(Iop_Or32,
+         binop(Iop_And32, binop(Iop_Shl32, mkexpr(t), mkU8(8)),
+                          mkU32(0x0000FF00)),
+         binop(Iop_And32, binop(Iop_Shr32, mkexpr(t), mkU8(8)),
+                          mkU32(0x000000FF))
+      );
 }
 
 static Bool dis_int_ldst_rev ( UInt theInstr )
@@ -5123,18 +5138,15 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
    assign( EA, ea_rAor0_idxd( rA_addr, rB_addr ) );
    
    switch (opc2) {
-//zz    case 0x316: // lhbrx (Load Half Word Byte-Reverse Indexed, PPC32 p449)
-//zz vassert(0);
-//zz 
-//zz       DIP("lhbrx r%u,r%u,r%u\n", rD_addr, rA_addr, rB_addr);
-//zz       assign( byte0, loadBE(Ity_I8, mkexpr(EA)) );
-//zz       assign( byte1, loadBE(Ity_I8, binop(Iop_Add32, mkexpr(EA),mkU32(1))) );
-//zz       assign( rD, binop(Iop_Or32,
-//zz                         binop(Iop_Shl32, mkexpr(byte1), mkU8(8)),
-//zz                         mkexpr(byte0)) );
-//zz       putIReg( rD_addr, mkexpr(rD));
-//zz       break;
-       
+
+      case 0x316: // lhbrx (Load Halfword Byte-Reverse Indexed, PPC32 p449)
+         DIP("lhbrx r%u,r%u,r%u\n", rD_addr, rA_addr, rB_addr);
+         assign( w1, unop(Iop_16Uto32, loadBE(Ity_I16, mkexpr(EA))) );
+         assign( w2, gen_byterev16(w1) );
+         putIReg( rD_addr, mkSzWiden32(ty, mkexpr(w2),
+                                       /* Signed */False) );
+         break;
+
       case 0x216: // lwbrx (Load Word Byte-Reverse Indexed, PPC32 p459)
          DIP("lwbrx r%u,r%u,r%u\n", rD_addr, rA_addr, rB_addr);
          assign( w1, loadBE(Ity_I32, mkexpr(EA)) );

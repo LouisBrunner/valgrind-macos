@@ -5155,21 +5155,11 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
                                        /* Signed */False) );
          break;
       
-//zz    case 0x396: // sthbrx (Store Half Word Byte-Reverse Indexed, PPC32 p523)
-//zz vassert(0);
-//zz 
-//zz       DIP("sthbrx r%u,r%u,r%u\n", rS_addr, rA_addr, rB_addr);
-//zz       assign( rS, getIReg(rS_addr) );
-//zz       assign( byte0, binop(Iop_And32, mkexpr(rS), mkU32(0x00FF)) );
-//zz       assign( byte1, binop(Iop_And32, mkexpr(rS), mkU32(0xFF00)) );
-//zz       
-//zz       assign( tmp16,
-//zz               unop(Iop_32to16,
-//zz                    binop(Iop_Or32,
-//zz                          binop(Iop_Shl32, mkexpr(byte0), mkU8(8)),
-//zz                          binop(Iop_Shr32, mkexpr(byte1), mkU8(8)))) );
-//zz       storeBE( mkexpr(EA), getIReg(tmp16) );
-//zz       break;
+      case 0x396: // sthbrx (Store Half Word Byte-Reverse Indexed, PPC32 p523)
+         DIP("sthbrx r%u,r%u,r%u\n", rS_addr, rA_addr, rB_addr);
+         assign( w1, mkSzNarrow32(ty, getIReg(rS_addr)) );
+         storeBE( mkexpr(EA), unop(Iop_32to16, gen_byterev16(w1)) );
+         break;
       
       case 0x296: // stwbrx (Store Word Byte-Reverse Indxd, PPC32 p531)
          DIP("stwbrx r%u,r%u,r%u\n", rS_addr, rA_addr, rB_addr);

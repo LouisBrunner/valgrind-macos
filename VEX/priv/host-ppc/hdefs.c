@@ -2468,6 +2468,16 @@ static UChar* mkLoadImm ( UChar* p, UInt r_dst, ULong imm, Bool mode64 )
 {
    vassert(r_dst < 0x20);
 
+   if (!mode64) {
+      /* In 32-bit mode, make sure the top 32 bits of imm are a sign
+         extension of the bottom 32 bits, so that the range tests
+         below work correctly. */
+      UInt u32 = (UInt)imm;
+      Int  s32 = (Int)u32;
+      Long s64 = (Long)s32;
+      imm = (ULong)s64;
+   }
+
    if (imm >= 0xFFFFFFFFFFFF8000ULL || imm < 0x8000) {
       // sign-extendable from 16 bits
 

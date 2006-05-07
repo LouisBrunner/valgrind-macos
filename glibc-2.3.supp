@@ -459,7 +459,14 @@
    fun:mem*cpy
    obj:*lib*2.3.*.so
 }
-
+{
+   glibc-2.3.5-on-SuSE-10.0/10.1-(PPC)-4
+   Memcheck:Addr4
+   fun:bcmp
+   fun:*rpath*
+   fun:*rpath*
+   fun:*rpath*
+}
 
 ##----------------------------------------------------------------------##
 # Hacks pertaining to the fact that our intercept mechanism can't

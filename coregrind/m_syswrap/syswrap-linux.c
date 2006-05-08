@@ -2397,30 +2397,33 @@ PRE(sys_unlinkat)
 
 PRE(sys_renameat)
 {
-   PRINT("sys_renameat ( %d, %p(%s), %p(%s) )", ARG1,ARG2,ARG2,ARG3,ARG3);
-   PRE_REG_READ3(long, "renameat",
-                 int, dfd, const char *, oldpath, const char *, newpath);
+   PRINT("sys_renameat ( %d, %p(%s), %d, %p(%s) )", ARG1,ARG2,ARG2,ARG3,ARG4,ARG4);
+   PRE_REG_READ4(long, "renameat",
+                 int, olddfd, const char *, oldpath,
+                 int, newdfd, const char *, newpath);
    PRE_MEM_RASCIIZ( "renameat(oldpath)", ARG2 );
-   PRE_MEM_RASCIIZ( "renameat(newpath)", ARG3 );
+   PRE_MEM_RASCIIZ( "renameat(newpath)", ARG4 );
 }
 
 PRE(sys_linkat)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_linkat ( %d, %p(%s), %p(%s) )", ARG1,ARG2,ARG2,ARG3,ARG3);
-   PRE_REG_READ3(long, "linkat",
-                 int, dfd, const char *, oldpath, const char *, newpath);
+   PRINT("sys_linkat ( %d, %p(%s), %d, %p(%s), %d )",ARG1,ARG2,ARG2,ARG3,ARG4,ARG4,ARG5);
+   PRE_REG_READ5(long, "linkat",
+                 int, olddfd, const char *, oldpath,
+                 int, newdfd, const char *, newpath,
+                 int, flags);
    PRE_MEM_RASCIIZ( "linkat(oldpath)", ARG2);
-   PRE_MEM_RASCIIZ( "linkat(newpath)", ARG3);
+   PRE_MEM_RASCIIZ( "linkat(newpath)", ARG4);
 }
 
 PRE(sys_symlinkat)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_symlinkat ( %d, %p(%s), %p(%s) )",ARG1,ARG2,ARG2,ARG3,ARG3);
+   PRINT("sys_symlinkat ( %p(%s), %d, %p(%s) )",ARG1,ARG1,ARG2,ARG3,ARG3);
    PRE_REG_READ3(long, "symlinkat",
-                 int, dfd, const char *, oldpath, const char *, newpath);
-   PRE_MEM_RASCIIZ( "symlinkat(oldpath)", ARG2 );
+                 const char *, oldpath, int, newdfd, const char *, newpath);
+   PRE_MEM_RASCIIZ( "symlinkat(oldpath)", ARG1 );
    PRE_MEM_RASCIIZ( "symlinkat(newpath)", ARG3 );
 }
 

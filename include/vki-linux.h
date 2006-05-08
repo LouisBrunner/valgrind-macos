@@ -1620,6 +1620,8 @@ typedef struct vki_sg_scsi_id { /* used by SG_GET_SCSI_ID ioctl() */
                                            if available (struct cdrom_mcn) */
 #define VKI_CDROMVOLREAD	0x5313 /* Get the drive's volume setting
                                           (struct cdrom_volctrl) */
+#define VKI_CDROMREADRAW	0x5314	/* read data in raw mode (2352 Bytes)
+                                           (struct cdrom_read) */
 #define VKI_CDROM_CLEAR_OPTIONS	0x5321  /* Clear behavior options */
 #define VKI_CDROM_DRIVE_STATUS	0x5326  /* Get tray position, etc. */
 

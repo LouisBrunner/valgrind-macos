@@ -3624,6 +3624,10 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(CDROMVOLREAD)", ARG3,
 		     sizeof(struct vki_cdrom_volctrl));
       break;
+   case VKI_CDROMREADRAW: /* 0x5314 */
+      PRE_MEM_READ( "ioctl(CDROMREADRAW)", ARG3, sizeof(struct vki_cdrom_msf));
+      PRE_MEM_WRITE( "ioctl(CDROMREADRAW)", ARG3, VKI_CD_FRAMESIZE_RAW);
+      break;
    case VKI_CDROMREADAUDIO: /* 0x530e */
       PRE_MEM_READ( "ioctl(CDROMREADAUDIO)", ARG3,
 		     sizeof (struct vki_cdrom_read_audio));
@@ -4295,13 +4299,16 @@ POST(sys_ioctl)
       POST_MEM_WRITE(ARG3, sizeof(struct vki_cdrom_tochdr));
       break;
    case VKI_CDROMREADTOCENTRY:
-      POST_MEM_WRITE(ARG3, sizeof(struct vki_cdrom_tochdr));
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_cdrom_tocentry));
       break;
    case VKI_CDROMMULTISESSION:
       POST_MEM_WRITE(ARG3, sizeof(struct vki_cdrom_multisession));
       break;
    case VKI_CDROMVOLREAD:
       POST_MEM_WRITE(ARG3, sizeof(struct vki_cdrom_volctrl));
+      break;
+   case VKI_CDROMREADRAW:
+      POST_MEM_WRITE(ARG3, VKI_CD_FRAMESIZE_RAW);
       break;
    case VKI_CDROMREADAUDIO:
    {

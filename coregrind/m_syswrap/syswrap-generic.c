@@ -2109,12 +2109,20 @@ PRE(sys_mremap)
 {
    // Nb: this is different to the glibc version described in the man pages,
    // which lacks the fifth 'new_address' argument.
-   PRINT("sys_mremap ( %p, %llu, %d, 0x%x, %p )", 
-         ARG1, (ULong)ARG2, ARG3, ARG4, ARG5);
-   PRE_REG_READ5(unsigned long, "mremap",
-                 unsigned long, old_addr, unsigned long, old_size,
-                 unsigned long, new_size, unsigned long, flags,
-                 unsigned long, new_addr);
+   if (ARG4 & VKI_MREMAP_FIXED) {
+      PRINT("sys_mremap ( %p, %llu, %d, 0x%x, %p )", 
+            ARG1, (ULong)ARG2, ARG3, ARG4, ARG5);
+      PRE_REG_READ5(unsigned long, "mremap",
+                    unsigned long, old_addr, unsigned long, old_size,
+                    unsigned long, new_size, unsigned long, flags,
+                    unsigned long, new_addr);
+   } else {
+      PRINT("sys_mremap ( %p, %llu, %d, 0x%x )", 
+            ARG1, (ULong)ARG2, ARG3, ARG4);
+      PRE_REG_READ4(unsigned long, "mremap",
+                    unsigned long, old_addr, unsigned long, old_size,
+                    unsigned long, new_size, unsigned long, flags);
+   }
    SET_STATUS_from_SysRes( 
       do_mremap((Addr)ARG1, ARG2, (Addr)ARG5, ARG3, ARG4, tid) 
    );

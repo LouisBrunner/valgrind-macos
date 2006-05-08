@@ -2,6 +2,7 @@
 noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
+	ldstrev.stderr.exp ldstrev.stdout.exp ldstrev.vgtest \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
 	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest \
@@ -15,7 +16,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	xlc_dbl_u32.stderr.exp xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest
 
 check_PROGRAMS = \
-	lsw jm-insns mftocrf round test_fx test_gx testVMX twi xlc_dbl_u32
+	ldstrev lsw jm-insns mftocrf round test_fx test_gx testVMX \
+	twi xlc_dbl_u32
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
 		@FLAG_M32@

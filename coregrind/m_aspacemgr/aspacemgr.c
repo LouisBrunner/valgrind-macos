@@ -2104,11 +2104,11 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
    seg.kind   = (flags & VKI_MAP_ANONYMOUS) ? SkAnonC : SkFileC;
    seg.start  = a;
    seg.end    = a + len - 1;
-   seg.offset = offset;
    seg.hasR   = toBool(prot & VKI_PROT_READ);
    seg.hasW   = toBool(prot & VKI_PROT_WRITE);
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
    if (!(flags & VKI_MAP_ANONYMOUS)) {
+      seg.offset = offset;
       if (get_inode_for_fd(fd, &dev, &ino, &mode)) {
          seg.dev = dev;
          seg.ino = ino;

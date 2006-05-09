@@ -2108,6 +2108,7 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
    seg.hasW   = toBool(prot & VKI_PROT_WRITE);
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
    if (!(flags & VKI_MAP_ANONYMOUS)) {
+      // Nb: We ignore offset requests in anonymous mmaps (see bug #126722)
       seg.offset = offset;
       if (get_inode_for_fd(fd, &dev, &ino, &mode)) {
          seg.dev = dev;

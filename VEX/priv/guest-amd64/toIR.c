@@ -2779,6 +2779,10 @@ ULong dis_op_imm_A ( Int    size,
       helper_ADC( size, dst1, dst0, src );
    }
    else
+   if (op8 == Iop_Sub8 && carrying) {
+      helper_SBB( size, dst1, dst0, src );
+   }
+   else
       vpanic("dis_op_imm_A(amd64,guest)");
 
    if (keep)
@@ -12297,10 +12301,11 @@ DisResult disInstr_AMD64_WRK (
 //.. //--    case 0x15: /* ADC Iv, eAX */
 //.. //--       delta = dis_op_imm_A( sz, ADC, True, delta, "adc" );
 //.. //--       break;
-//.. //-- 
-//.. //--    case 0x1C: /* SBB Ib, AL */
-//.. //--       delta = dis_op_imm_A( 1, SBB, True, delta, "sbb" );
-//.. //--       break;
+
+   case 0x1C: /* SBB Ib, AL */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A( 1, True, Iop_Sub8, True, delta, "sbb" );
+      break;
 //.. //--    case 0x1D: /* SBB Iv, eAX */
 //.. //--       delta = dis_op_imm_A( sz, SBB, True, delta, "sbb" );
 //.. //--       break;

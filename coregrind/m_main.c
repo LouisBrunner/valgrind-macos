@@ -917,6 +917,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <number> callers in stack traces [12]\n"
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
+"    --error-exitcode=<number> exit code to return if errors found [0=disable]\n"
 "    --show-below-main=no|yes  continue stack traces below main() [no]\n"
 "    --suppressions=<filename> suppress errors described in <filename>\n"
 "    --gen-suppressions=no|yes|all    print suppressions for errors? [no]\n"
@@ -1117,6 +1118,7 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--db-attach",        VG_(clo_db_attach))
       else VG_BOOL_CLO(arg, "--demangle",         VG_(clo_demangle))
       else VG_BOOL_CLO(arg, "--error-limit",      VG_(clo_error_limit))
+      else VG_NUM_CLO (arg, "--error-exitcode",   VG_(clo_error_exitcode))
       else VG_BOOL_CLO(arg, "--show-emwarns",     VG_(clo_show_emwarns))
       else VG_NUM_CLO (arg, "--max-stackframe",   VG_(clo_max_stackframe))
       else VG_BOOL_CLO(arg, "--run-libc-freeres", VG_(clo_run_libc_freeres))
@@ -2685,7 +2687,16 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    switch (tids_schedretcode) {
    case VgSrc_ExitSyscall: /* the normal way out */
-      VG_(exit)( VG_(threads)[tid].os_state.exitcode );
+      /* Change the application return code to user's return code,
+         if an error was found */
+      if (VG_(clo_error_exitcode) > 0 
+          && VG_(get_n_errs_found)() > 0) {
+         VG_(exit)( VG_(clo_error_exitcode) );
+      } else {
+         /* otherwise, return the client's exit code, in the normal
+            way. */
+         VG_(exit)( VG_(threads)[tid].os_state.exitcode );
+      }
       /* NOT ALIVE HERE! */
       VG_(core_panic)("entered the afterlife in main() -- ExitSyscall");
       break; /* what the hell :) */

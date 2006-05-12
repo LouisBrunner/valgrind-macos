@@ -67,6 +67,10 @@ Lackey has been improved, and MPI support has been added.  In detail:
   functions, and will carefully check data passed to the (P)MPI_
   interface.
 
+- A new flag, --error-exitcode=, has been added.  This allows changing the
+  exit code in runs where Valgrind reported errors, which is useful when
+  using Valgrind as part of an automated test suite.
+
 - XXX: others...
 
 Please note that Helgrind is still not working.  We have made an important

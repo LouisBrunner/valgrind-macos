@@ -44,13 +44,17 @@
 
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
+/* Alternative exit code to hand to parent if errors were found.
+   default: 0 (no, return the application's exit code in the normal
+   way. */
+extern Int   VG_(clo_error_exitcode);
 /* Enquire about whether to attach to a debugger at errors?   default: NO */
 extern Bool  VG_(clo_db_attach);
 /* The debugger command?  default: whatever gdb ./configure found */
 extern Char* VG_(clo_db_command);
 /* Generating a suppression for each error?   default: 0 (NO)
    Other values: 1 (yes, but ask user), 2 (yes, don't ask user) */
-extern Int  VG_(clo_gen_suppressions);
+extern Int   VG_(clo_gen_suppressions);
 /* Sanity-check level: 0 = none, 1 (default), > 1 = expensive. */
 extern Int   VG_(clo_sanity_level);
 /* Automatically attempt to demangle C++ names?  default: YES */

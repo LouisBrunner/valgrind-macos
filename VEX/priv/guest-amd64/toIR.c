@@ -13635,15 +13635,15 @@ DisResult disInstr_AMD64_WRK (
 
       /* =-=-=-=-=-=-=-=-=- SHLD/SHRD -=-=-=-=-=-=-=-=-= */
 
-//..       case 0xA4: /* SHLDv imm8,Gv,Ev */
-//..          modrm = getUChar(delta);
-//..          d32   = delta + lengthAMode(delta);
-//..          vex_sprintf(dis_buf, "$%d", delta);
-//..          delta = dis_SHLRD_Gv_Ev ( 
-//..                   sorb, delta, modrm, sz, 
-//..                   mkU8(getUChar(d32)), True, /* literal */
-//..                   dis_buf, True );
-//..          break;
+      case 0xA4: /* SHLDv imm8,Gv,Ev */
+         modrm = getUChar(delta);
+         d64   = delta + lengthAMode(pfx, delta);
+         vex_sprintf(dis_buf, "$%d", (Int)getUChar(d64));
+         delta = dis_SHLRD_Gv_Ev ( 
+                    pfx, delta, modrm, sz, 
+                    mkU8(getUChar(d64)), True, /* literal */
+                    dis_buf, True /* left */ );
+         break;
       case 0xA5: /* SHLDv %cl,Gv,Ev */
          modrm = getUChar(delta);
          delta = dis_SHLRD_Gv_Ev ( 

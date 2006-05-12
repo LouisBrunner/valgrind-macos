@@ -12825,30 +12825,39 @@ DisResult disInstr_AMD64_WRK (
       DIP("std\n");
       break;
 
-//.. //--    case 0xF8: /* CLC */
-//.. //--       uInstr0(cb, CALLM_S, 0);
-//.. //--       uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_CLC));
-//.. //--       uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZAP);
-//.. //--       uInstr0(cb, CALLM_E, 0);
-//.. //--       DIP("clc\n");
-//.. //--       break;
-//.. //-- 
-//.. //--    case 0xF9: /* STC */
-//.. //--       uInstr0(cb, CALLM_S, 0);
-//.. //--       uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_STC));
-//.. //--       uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZAP);
-//.. //--       uInstr0(cb, CALLM_E, 0);
-//.. //--       DIP("stc\n");
-//.. //--       break;
-//.. //-- 
-//.. //--    case 0xF5: /* CMC */
-//.. //--       uInstr0(cb, CALLM_S, 0);
-//.. //--       uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_CMC));
-//.. //--       uFlagsRWU(cb, FlagC, FlagC, FlagsOSZAP);
-//.. //--       uInstr0(cb, CALLM_E, 0);
-//.. //--       DIP("cmc\n");
-//.. //--       break;
-//.. 
+   case 0xF8: /* CLC */
+   case 0xF9: /* STC */
+   case 0xF5: /* CMC */
+      t0 = newTemp(Ity_I64);
+      t1 = newTemp(Ity_I64);
+      assign( t0, mk_amd64g_calculate_rflags_all() );
+      switch (opc) {
+         case 0xF8: 
+            assign( t1, binop(Iop_And64, mkexpr(t0), 
+                                         mkU64(~AMD64G_CC_MASK_C)));
+            DIP("clc\n");
+            break;
+         case 0xF9: 
+            assign( t1, binop(Iop_Or64, mkexpr(t0), 
+                                        mkU64(AMD64G_CC_MASK_C)));
+            DIP("stc\n");
+            break;
+         case 0xF5: 
+            assign( t1, binop(Iop_Xor64, mkexpr(t0), 
+                                         mkU64(AMD64G_CC_MASK_C)));
+            DIP("cmc\n");
+            break;
+         default: 
+            vpanic("disInstr(x64)(clc/stc/cmc)");
+      }
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(t1) ));
+      /* Set NDEP even though it isn't used.  This makes redundant-PUT
+         elimination of previous stores to this field work better. */
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+      break;
+
 //..    /* REPNE prefix insn */
 //..    case 0xF2: { 
 //..       Addr32 eip_orig = guest_eip_bbstart + delta - 1;

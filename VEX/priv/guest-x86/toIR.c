@@ -11467,19 +11467,23 @@ DisResult disInstr_X86_WRK (
       break;
 
    case 0x8F: /* POPL/POPW m32 */
-     { Int len;
-       UChar rm = getIByte(delta);
+     { Int    len;
+       UChar  rm = getIByte(delta);
 
        /* make sure this instruction is correct POP */
-       vassert(!epartIsReg(rm) && (gregOfRM(rm) == 0));
+       if (epartIsReg(rm) || gregOfRM(rm) != 0)
+          goto decode_failure;
        /* and has correct size */
-       vassert(sz == 4);      
-       
-       t1 = newTemp(Ity_I32); t3 = newTemp(Ity_I32);
+       if (sz != 4 && sz != 2)
+          goto decode_failure;
+       ty = szToITy(sz);
+
+       t1 = newTemp(Ity_I32); /* stack address */
+       t3 = newTemp(ty); /* data */
        /* set t1 to ESP: t1 = ESP */
        assign( t1, getIReg(4, R_ESP) );
        /* load M[ESP] to virtual register t3: t3 = M[t1] */
-       assign( t3, loadLE(Ity_I32, mkexpr(t1)) );
+       assign( t3, loadLE(ty, mkexpr(t1)) );
        
        /* increase ESP; must be done before the STORE.  Intel manual says:
             If the ESP register is used as a base register for addressing
@@ -11493,7 +11497,7 @@ DisResult disInstr_X86_WRK (
        addr = disAMode ( &len, sorb, delta, dis_buf);
        storeLE( mkexpr(addr), mkexpr(t3) );
 
-       DIP("popl %s\n", dis_buf);
+       DIP("pop%c %s\n", sz==2 ? 'w' : 'l', dis_buf);
 
        delta += len;
        break;

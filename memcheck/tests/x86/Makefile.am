@@ -10,6 +10,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
+	pushpopmem.stderr.exp pushpopmem.stdout.exp pushpopmem.vgtest \
 	scalar.stderr.exp scalar.stderr.exp2 scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
 	scalar_exit_group.stderr.exp scalar_exit_group.stderr.exp2 \
@@ -25,7 +26,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	scalar_exit_group scalar_fork scalar_supp scalar_vfork \
-	fpeflags pushfpopf scalar sse_memory tronical \
+	fpeflags pushfpopf pushpopmem scalar sse_memory tronical \
 	more_x86_fp fprem
 
 AM_CPPFLAGS  = -I$(top_srcdir)/include

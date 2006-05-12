@@ -6905,7 +6905,11 @@ ULong dis_bt_G_E ( Prefix pfx, Int sz, Long delta, BtOp op )
    /* Move reg operand from stack back to reg */
    if (epartIsReg(modrm)) {
       /* t_esp still points at it. */
-      putIRegE(sz, pfx, modrm, loadLE(szToITy(sz), mkexpr(t_rsp)) );
+      /* only write the reg if actually modifying it; doing otherwise
+         zeroes the top half erroneously when doing btl due to
+         standard zero-extend rule */
+       if (op != BtOpNone)
+         putIRegE(sz, pfx, modrm, loadLE(szToITy(sz), mkexpr(t_rsp)) );
       putIReg64(R_RSP, binop(Iop_Add64, mkexpr(t_rsp), mkU64(sz)) );
    }
 
@@ -13354,22 +13358,22 @@ DisResult disInstr_AMD64_WRK (
 
       case 0xA3: /* BT Gv,Ev */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (sz != 8 && sz != 4) goto decode_failure;
+         if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
          delta = dis_bt_G_E ( pfx, sz, delta, BtOpNone );
          break;
       case 0xB3: /* BTR Gv,Ev */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (sz != 8 && sz != 4) goto decode_failure;
+         if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
          delta = dis_bt_G_E ( pfx, sz, delta, BtOpReset );
          break;
       case 0xAB: /* BTS Gv,Ev */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (sz != 8 && sz != 4) goto decode_failure;
+         if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
          delta = dis_bt_G_E ( pfx, sz, delta, BtOpSet );
          break;
       case 0xBB: /* BTC Gv,Ev */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (sz != 8 && sz != 4) goto decode_failure;
+         if (sz != 8 && sz != 4 && sz != 2) goto decode_failure;
          delta = dis_bt_G_E ( pfx, sz, delta, BtOpComp );
          break;
 

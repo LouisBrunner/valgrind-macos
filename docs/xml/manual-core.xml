@@ -827,7 +827,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <option><![CDATA[--error-limit=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>When enabled, Valgrind stops reporting errors after 100,000
+      <para>When enabled, Valgrind stops reporting errors after 10,000,000
       in total, or 1,000 different ones, have been seen.  This is to
       stop the error tracking machinery from becoming a huge performance
       overhead in programs with many errors.</para>

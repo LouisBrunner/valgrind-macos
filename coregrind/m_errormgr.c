@@ -60,7 +60,7 @@
 
 /* After this many total errors have been observed, stop collecting
    errors at all.  Counterpart to M_COLLECT_NO_ERRORS_AFTER_SHOWN. */
-#define M_COLLECT_NO_ERRORS_AFTER_FOUND 100000
+#define M_COLLECT_NO_ERRORS_AFTER_FOUND 10000000
 
 /* The list of error contexts found, both suppressed and unsuppressed.
    Initially empty, and grows as errors are detected. */

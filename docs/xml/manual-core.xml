@@ -333,10 +333,10 @@ root cause of the problem.</para>
 expensive one and can become a significant performance overhead
 if your program generates huge quantities of errors.  To avoid
 serious problems, Valgrind will simply stop collecting
-errors after 1000 different errors have been seen, or 100000 errors
+errors after 1000 different errors have been seen, or 10000000 errors
 in total have been seen.  In this situation you might as well
 stop your program and fix it, because Valgrind won't tell you
-anything else useful after this.  Note that the 1000/100000 limits
+anything else useful after this.  Note that the 1000/10000000 limits
 apply after suppressed errors are removed.  These limits are
 defined in <filename>m_errormgr.c</filename> and can be increased
 if necessary.</para>

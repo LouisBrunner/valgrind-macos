@@ -70,18 +70,25 @@ static void showV128 ( V128* v )
       printf("%02x", (Int)(*v)[i]);
 }
 
-static void showRR ( char* op, RRArgs* rra )
+static void showMaskedV128 ( V128* v, V128* mask )
+{
+   Int i;
+   for (i = 0; i < 16; i++)
+      printf("%02x", (Int)( ((*v)[i]) & ((*mask)[i]) ));
+}
+
+static void showRR ( char* op, RRArgs* rra, V128* rmask )
 {
    printf("r %10s ", op);
    showV128(&rra->arg1);
    printf(" ");
    showV128(&rra->arg2);
    printf(" ");
-   showV128(&rra->res);
+   showMaskedV128(&rra->res, rmask);
    printf("\n");
 }
 
-static void showRM ( char* op, RMArgs* rra, UChar* mem, Int nMem )
+static void showRM ( char* op, RMArgs* rra, UChar* mem, Int nMem, V128* rmask )
 {
    Int i;
    assert(nMem == 4 || nMem == 8 || nMem == 16 || nMem==0);
@@ -91,7 +98,7 @@ static void showRM ( char* op, RMArgs* rra, UChar* mem, Int nMem )
    printf(" ");
    showV128(&rra->arg1);
    printf(" ");
-   showV128(&rra->res);
+   showMaskedV128(&rra->res, rmask );
    printf("\n");
 }
 
@@ -123,7 +130,7 @@ static void showRM ( char* op, RMArgs* rra, UChar* mem, Int nMem )
    }
 
 
-#define TEST_INSN(mem_size,insn)           \
+#define TEST_INSN(res_mask,mem_size,insn)  \
                                            \
 Wrapper_RegReg(insn)                       \
 Wrapper_RegMem(insn)                       \
@@ -137,17 +144,32 @@ void do_##insn ( void )                    \
    for (i = 0; i < 5; i++) {               \
       randRRArgs(&rargs);                  \
       r_r_##insn(&rargs);                  \
-      showRR(#insn, &rargs);               \
+      showRR(#insn, &rargs, res_mask);     \
    }                                       \
    for (i = 0; i < 5; i++) {               \
       randRMArgs(&margs);                  \
       buf = memalign(16,mem_size);         \
       randomise(buf,mem_size);             \
       r_m_##insn(&margs,buf);              \
-      showRM(#insn, &margs, buf, mem_size);\
+      showRM(#insn, &margs, buf, mem_size, res_mask);\
       free(buf);                           \
    }                                       \
 }
+
+/* Note: these are little endian.  Hence first byte is the least
+   significant byte of lane zero. */
+
+/* Mask for insns where all result bits are non-approximated. */
+static V128 AllMask  = { 0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF, 
+                         0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF };
+
+/* Mark for insns which produce approximated vector short results. */
+static V128 ApproxPS = { 0x00,0x0F,0xFF,0xFF, 0x00,0x0F,0xFF,0xFF, 
+                         0x00,0x0F,0xFF,0xFF, 0x00,0x0F,0xFF,0xFF };
+
+/* Mark for insns which produce approximated scalar short results. */
+static V128 ApproxSS = { 0x00,0x0F,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF,
+                         0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF };
 
 #define PD 16
 #define SD 8
@@ -155,213 +177,213 @@ void do_##insn ( void )                    \
 #define SS 4
 
 /* ------------------------ SSE1 ------------------------ */
-TEST_INSN(PS,addps)
-TEST_INSN(SS,addss)
-TEST_INSN(PS,andnps)
-TEST_INSN(PS,andps)
-TEST_INSN(PS,cmpeqps)
-TEST_INSN(SS,cmpeqss)
-TEST_INSN(PS,cmpleps)
-TEST_INSN(SS,cmpless)
-TEST_INSN(PS,cmpltps)
-TEST_INSN(SS,cmpltss)
-TEST_INSN(PS,cmpneqps)
-TEST_INSN(SS,cmpneqss)
-TEST_INSN(PS,cmpnleps)
-TEST_INSN(SS,cmpnless)
-TEST_INSN(PS,cmpnltps)
-TEST_INSN(SS,cmpnltss)
-TEST_INSN(PS,cmpordps)
-TEST_INSN(SS,cmpordss)
-TEST_INSN(PS,cmpunordps)
-TEST_INSN(SS,cmpunordss)
-TEST_INSN(SS,comiss)
-//TEST_INSN(0,cvtpi2ps)
-//TEST_INSN(0,cvtps2pi)
-//TEST_INSN(0,cvtsi2ss)
-//TEST_INSN(0,cvtss2si)
-//TEST_INSN(0,cvttps2pi)
-//TEST_INSN(0,cvttss2si)
-TEST_INSN(PS,divps)
-TEST_INSN(SS,divss)
-TEST_INSN(PS,maxps)
-TEST_INSN(SS,maxss)
-TEST_INSN(PS,minps)
-TEST_INSN(SS,minss)
-TEST_INSN(16,movaps)
-//TEST_INSN(0,movhlps)
-//TEST_INSN(0,movhps)
-//TEST_INSN(0,movlhps)
-//TEST_INSN(0,movlps)
-//TEST_INSN(0,movmskps)
-//TEST_INSN(0,movntps)
-//TEST_INSN(0,movntq)
-TEST_INSN(4,movss)
-TEST_INSN(16,movups)
-TEST_INSN(PS,mulps)
-TEST_INSN(SS,mulss)
-TEST_INSN(PS,orps)
-//TEST_INSN(0,pavgb) -- dup with sse2?
-//TEST_INSN(0,pavgw) -- dup with sse2?
-//TEST_INSN(0,pextrw)
-//TEST_INSN(0,pinsrw)
-//TEST_INSN(0,pmaxsw) -- dup with sse2?
-//TEST_INSN(0,pmaxub) -- dup with sse2?
-//TEST_INSN(0,pminsw) -- dup with sse2?
-//TEST_INSN(0,pminub) -- dup with sse2?
-//TEST_INSN(0,pmovmskb)
-//TEST_INSN(0,pmulhuw) -- dup with sse2?
-TEST_INSN(16,psadbw) // -- XXXXXXXXXXXXXXXX sse2 (xmm variant) not implemented!
-//TEST_INSN(0,pshufw)
-TEST_INSN(PS,rcpps)
-TEST_INSN(SS,rcpss)
-TEST_INSN(PS,rsqrtps)
-TEST_INSN(SS,rsqrtss)
-//TEST_INSN(PS,shufps)
-TEST_INSN(PS,sqrtps)
-TEST_INSN(SS,sqrtss)
-TEST_INSN(PS,subps)
-TEST_INSN(SS,subss)
-TEST_INSN(SS,ucomiss)
-TEST_INSN(PS,unpckhps)
-TEST_INSN(PS,unpcklps)
-TEST_INSN(PS,xorps)
+TEST_INSN( &AllMask, PS,addps)
+TEST_INSN( &AllMask, SS,addss)
+TEST_INSN( &AllMask, PS,andnps)
+TEST_INSN( &AllMask, PS,andps)
+TEST_INSN( &AllMask, PS,cmpeqps)
+TEST_INSN( &AllMask, SS,cmpeqss)
+TEST_INSN( &AllMask, PS,cmpleps)
+TEST_INSN( &AllMask, SS,cmpless)
+TEST_INSN( &AllMask, PS,cmpltps)
+TEST_INSN( &AllMask, SS,cmpltss)
+TEST_INSN( &AllMask, PS,cmpneqps)
+TEST_INSN( &AllMask, SS,cmpneqss)
+TEST_INSN( &AllMask, PS,cmpnleps)
+TEST_INSN( &AllMask, SS,cmpnless)
+TEST_INSN( &AllMask, PS,cmpnltps)
+TEST_INSN( &AllMask, SS,cmpnltss)
+TEST_INSN( &AllMask, PS,cmpordps)
+TEST_INSN( &AllMask, SS,cmpordss)
+TEST_INSN( &AllMask, PS,cmpunordps)
+TEST_INSN( &AllMask, SS,cmpunordss)
+TEST_INSN( &AllMask, SS,comiss)
+//TEST_INSN( &AllMask, 0,cvtpi2ps)
+//TEST_INSN( &AllMask, 0,cvtps2pi)
+//TEST_INSN( &AllMask, 0,cvtsi2ss)
+//TEST_INSN( &AllMask, 0,cvtss2si)
+//TEST_INSN( &AllMask, 0,cvttps2pi)
+//TEST_INSN( &AllMask, 0,cvttss2si)
+TEST_INSN( &AllMask, PS,divps)
+TEST_INSN( &AllMask, SS,divss)
+TEST_INSN( &AllMask, PS,maxps)
+TEST_INSN( &AllMask, SS,maxss)
+TEST_INSN( &AllMask, PS,minps)
+TEST_INSN( &AllMask, SS,minss)
+TEST_INSN( &AllMask, 16,movaps)
+//TEST_INSN( &AllMask, 0,movhlps)
+//TEST_INSN( &AllMask, 0,movhps)
+//TEST_INSN( &AllMask, 0,movlhps)
+//TEST_INSN( &AllMask, 0,movlps)
+//TEST_INSN( &AllMask, 0,movmskps)
+//TEST_INSN( &AllMask, 0,movntps)
+//TEST_INSN( &AllMask, 0,movntq)
+TEST_INSN( &AllMask, 4,movss)
+TEST_INSN( &AllMask, 16,movups)
+TEST_INSN( &AllMask, PS,mulps)
+TEST_INSN( &AllMask, SS,mulss)
+TEST_INSN( &AllMask, PS,orps)
+//TEST_INSN( &AllMask, 0,pavgb) -- dup with sse2?
+//TEST_INSN( &AllMask, 0,pavgw) -- dup with sse2?
+//TEST_INSN( &AllMask, 0,pextrw)
+//TEST_INSN( &AllMask, 0,pinsrw)
+//TEST_INSN( &AllMask, 0,pmaxsw) -- dup with sse2?
+//TEST_INSN( &AllMask, 0,pmaxub) -- dup with sse2?
+//TEST_INSN( &AllMask, 0,pminsw) -- dup with sse2?
+//TEST_INSN( &AllMask, 0,pminub) -- dup with sse2?
+//TEST_INSN( &AllMask, 0,pmovmskb)
+//TEST_INSN( &AllMask, 0,pmulhuw) -- dup with sse2?
+TEST_INSN( &AllMask, 16,psadbw) // -- XXXXXXXXXXXXXXXX sse2 (xmm variant) not implemented!
+//TEST_INSN( &AllMask, 0,pshufw)
+TEST_INSN(&ApproxPS, PS,rcpps)
+TEST_INSN(&ApproxSS, SS,rcpss)
+TEST_INSN(&ApproxPS, PS,rsqrtps)
+TEST_INSN(&ApproxSS, SS,rsqrtss)
+//TEST_INSN( &AllMask, PS,shufps)
+TEST_INSN( &AllMask, PS,sqrtps)
+TEST_INSN( &AllMask, SS,sqrtss)
+TEST_INSN( &AllMask, PS,subps)
+TEST_INSN( &AllMask, SS,subss)
+TEST_INSN( &AllMask, SS,ucomiss)
+TEST_INSN( &AllMask, PS,unpckhps)
+TEST_INSN( &AllMask, PS,unpcklps)
+TEST_INSN( &AllMask, PS,xorps)
 
 
 /* ------------------------ SSE2 ------------------------ */
-TEST_INSN(PD,addpd)
-TEST_INSN(SD,addsd)
-TEST_INSN(PD,andnpd)
-TEST_INSN(PD,andpd)
-TEST_INSN(PD,cmpeqpd)
-TEST_INSN(SD,cmpeqsd)
-TEST_INSN(PD,cmplepd)
-TEST_INSN(SD,cmplesd)
-TEST_INSN(PD,cmpltpd)
-TEST_INSN(SD,cmpltsd)
-TEST_INSN(PD,cmpneqpd)
-TEST_INSN(SD,cmpneqsd)
-TEST_INSN(PD,cmpnlepd)
-TEST_INSN(SD,cmpnlesd)
-TEST_INSN(PD,cmpnltpd)
-TEST_INSN(SD,cmpnltsd)
-TEST_INSN(PD,cmpordpd)
-TEST_INSN(SD,cmpordsd)
-TEST_INSN(PD,cmpunordpd)
-TEST_INSN(SD,cmpunordsd)
-TEST_INSN(SD,comisd)
-TEST_INSN(8,cvtdq2pd)
-TEST_INSN(16,cvtdq2ps)
-TEST_INSN(16,cvtpd2dq)
-//TEST_INSN(0,cvtpd2pi)
-TEST_INSN(16,cvtpd2ps)   /* reads 16 */
-//TEST_INSN(0,cvtpi2pd)
-TEST_INSN(16,cvtps2dq)  /* reads 16 */
-TEST_INSN(8,cvtps2pd)   /* reads 8 */
-//TEST_INSN(0,cvtsd2si)
-TEST_INSN(SD,cvtsd2ss)   /* reads SD */
-//TEST_INSN(0,cvtsi2sd)
-TEST_INSN(SS,cvtss2sd)   /* reads SS */
-TEST_INSN(16,cvttpd2dq)
-//TEST_INSN(0,cvttpd2pi)
-TEST_INSN(16,cvttps2dq)
-//TEST_INSN(0,cvttsd2si)
-TEST_INSN(PD,divpd)
-TEST_INSN(SD,divsd)
-TEST_INSN(PD,maxpd)
-TEST_INSN(SD,maxsd)
-TEST_INSN(PD,minpd)
-TEST_INSN(SD,minsd)
-TEST_INSN(PD,movapd)
-//TEST_INSN(8,movd)
-//TEST_INSN(0,movdq2q)
-TEST_INSN(16,movdqa)
-TEST_INSN(16,movdqu)
-//TEST_INSN(16,movhpd)
-//TEST_INSN(16,movlpd)
-//TEST_INSN(0,movmskpd)
-//TEST_INSN(0,movntdq)
-//TEST_INSN(0,movnti)
-//TEST_INSN(0,movntpd)
-TEST_INSN(8,movq)
-//TEST_INSN(0,movq2dq)
-TEST_INSN(8,movsd)
-TEST_INSN(16,movupd)
-TEST_INSN(PD,mulpd)
-TEST_INSN(SD,mulsd)
-TEST_INSN(PD,orpd)
-TEST_INSN(16,packssdw)
-TEST_INSN(16,packsswb)
-TEST_INSN(16,packuswb)
-TEST_INSN(16,paddb)
-TEST_INSN(16,paddd)
-TEST_INSN(16,paddq)
-TEST_INSN(16,paddsb)
-TEST_INSN(16,paddsw)
-TEST_INSN(16,paddusb)
-TEST_INSN(16,paddusw)
-TEST_INSN(16,paddw)
-TEST_INSN(16,pand)
-TEST_INSN(16,pandn)
-TEST_INSN(16,pavgb)
-TEST_INSN(16,pavgw)
-TEST_INSN(16,pcmpeqb)
-TEST_INSN(16,pcmpeqd)
-TEST_INSN(16,pcmpeqw)
-TEST_INSN(16,pcmpgtb)
-TEST_INSN(16,pcmpgtd)
-TEST_INSN(16,pcmpgtw)
-//TEST_INSN(16,pextrw)
-//TEST_INSN(16,pinsrw)
-TEST_INSN(16,pmaxsw)
-TEST_INSN(16,pmaxub)
-TEST_INSN(16,pminsw)
-TEST_INSN(16,pminub)
-//TEST_INSN(0,pmovmskb)
-TEST_INSN(16,pmulhuw)
-TEST_INSN(16,pmulhw)
-TEST_INSN(16,pmullw)
-TEST_INSN(16,pmuludq)
-TEST_INSN(16,por)
-//TEST_INSN(16,pshufd)
-//TEST_INSN(16,pshufhw)
-//TEST_INSN(16,pshuflw)
-TEST_INSN(16,pslld)
-//TEST_INSN(16,pslldq)
-TEST_INSN(16,psllq)
-TEST_INSN(16,psllw)
-TEST_INSN(16,psrad)
-TEST_INSN(16,psraw)
-TEST_INSN(16,psrld)
-//TEST_INSN(16,psrldq)
-TEST_INSN(16,psrlq)
-TEST_INSN(16,psrlw)
-TEST_INSN(16,psubb)
-TEST_INSN(16,psubd)
-TEST_INSN(16,psubq)
-TEST_INSN(16,psubsb)
-TEST_INSN(16,psubsw)
-TEST_INSN(16,psubusb)
-TEST_INSN(16,psubusw)
-TEST_INSN(16,psubw)
-TEST_INSN(16,punpckhbw)
-TEST_INSN(16,punpckhdq)
-TEST_INSN(16,punpckhqdq)
-TEST_INSN(16,punpckhwd)
-TEST_INSN(16,punpcklbw)
-TEST_INSN(16,punpckldq)
-TEST_INSN(16,punpcklqdq)
-TEST_INSN(16,punpcklwd)
-TEST_INSN(16,pxor)
-//TEST_INSN(PD,shufpd)
-TEST_INSN(PD,sqrtpd)
-TEST_INSN(SD,sqrtsd)
-TEST_INSN(PD,subpd)
-TEST_INSN(SD,subsd)
-TEST_INSN(SD,ucomisd)
-TEST_INSN(PD,unpckhpd)
-TEST_INSN(PD,unpcklpd)
-TEST_INSN(PD,xorpd)
+TEST_INSN( &AllMask, PD,addpd)
+TEST_INSN( &AllMask, SD,addsd)
+TEST_INSN( &AllMask, PD,andnpd)
+TEST_INSN( &AllMask, PD,andpd)
+TEST_INSN( &AllMask, PD,cmpeqpd)
+TEST_INSN( &AllMask, SD,cmpeqsd)
+TEST_INSN( &AllMask, PD,cmplepd)
+TEST_INSN( &AllMask, SD,cmplesd)
+TEST_INSN( &AllMask, PD,cmpltpd)
+TEST_INSN( &AllMask, SD,cmpltsd)
+TEST_INSN( &AllMask, PD,cmpneqpd)
+TEST_INSN( &AllMask, SD,cmpneqsd)
+TEST_INSN( &AllMask, PD,cmpnlepd)
+TEST_INSN( &AllMask, SD,cmpnlesd)
+TEST_INSN( &AllMask, PD,cmpnltpd)
+TEST_INSN( &AllMask, SD,cmpnltsd)
+TEST_INSN( &AllMask, PD,cmpordpd)
+TEST_INSN( &AllMask, SD,cmpordsd)
+TEST_INSN( &AllMask, PD,cmpunordpd)
+TEST_INSN( &AllMask, SD,cmpunordsd)
+TEST_INSN( &AllMask, SD,comisd)
+TEST_INSN( &AllMask, 8,cvtdq2pd)
+TEST_INSN( &AllMask, 16,cvtdq2ps)
+TEST_INSN( &AllMask, 16,cvtpd2dq)
+//TEST_INSN( &AllMask, 0,cvtpd2pi)
+TEST_INSN( &AllMask, 16,cvtpd2ps)   /* reads 16 */
+//TEST_INSN( &AllMask, 0,cvtpi2pd)
+TEST_INSN( &AllMask, 16,cvtps2dq)  /* reads 16 */
+TEST_INSN( &AllMask, 8,cvtps2pd)   /* reads 8 */
+//TEST_INSN( &AllMask, 0,cvtsd2si)
+TEST_INSN( &AllMask, SD,cvtsd2ss)   /* reads SD */
+//TEST_INSN( &AllMask, 0,cvtsi2sd)
+TEST_INSN( &AllMask, SS,cvtss2sd)   /* reads SS */
+TEST_INSN( &AllMask, 16,cvttpd2dq)
+//TEST_INSN( &AllMask, 0,cvttpd2pi)
+TEST_INSN( &AllMask, 16,cvttps2dq)
+//TEST_INSN( &AllMask, 0,cvttsd2si)
+TEST_INSN( &AllMask, PD,divpd)
+TEST_INSN( &AllMask, SD,divsd)
+TEST_INSN( &AllMask, PD,maxpd)
+TEST_INSN( &AllMask, SD,maxsd)
+TEST_INSN( &AllMask, PD,minpd)
+TEST_INSN( &AllMask, SD,minsd)
+TEST_INSN( &AllMask, PD,movapd)
+//TEST_INSN( &AllMask, 8,movd)
+//TEST_INSN( &AllMask, 0,movdq2q)
+TEST_INSN( &AllMask, 16,movdqa)
+TEST_INSN( &AllMask, 16,movdqu)
+//TEST_INSN( &AllMask, 16,movhpd)
+//TEST_INSN( &AllMask, 16,movlpd)
+//TEST_INSN( &AllMask, 0,movmskpd)
+//TEST_INSN( &AllMask, 0,movntdq)
+//TEST_INSN( &AllMask, 0,movnti)
+//TEST_INSN( &AllMask, 0,movntpd)
+TEST_INSN( &AllMask, 8,movq)
+//TEST_INSN( &AllMask, 0,movq2dq)
+TEST_INSN( &AllMask, 8,movsd)
+TEST_INSN( &AllMask, 16,movupd)
+TEST_INSN( &AllMask, PD,mulpd)
+TEST_INSN( &AllMask, SD,mulsd)
+TEST_INSN( &AllMask, PD,orpd)
+TEST_INSN( &AllMask, 16,packssdw)
+TEST_INSN( &AllMask, 16,packsswb)
+TEST_INSN( &AllMask, 16,packuswb)
+TEST_INSN( &AllMask, 16,paddb)
+TEST_INSN( &AllMask, 16,paddd)
+TEST_INSN( &AllMask, 16,paddq)
+TEST_INSN( &AllMask, 16,paddsb)
+TEST_INSN( &AllMask, 16,paddsw)
+TEST_INSN( &AllMask, 16,paddusb)
+TEST_INSN( &AllMask, 16,paddusw)
+TEST_INSN( &AllMask, 16,paddw)
+TEST_INSN( &AllMask, 16,pand)
+TEST_INSN( &AllMask, 16,pandn)
+TEST_INSN( &AllMask, 16,pavgb)
+TEST_INSN( &AllMask, 16,pavgw)
+TEST_INSN( &AllMask, 16,pcmpeqb)
+TEST_INSN( &AllMask, 16,pcmpeqd)
+TEST_INSN( &AllMask, 16,pcmpeqw)
+TEST_INSN( &AllMask, 16,pcmpgtb)
+TEST_INSN( &AllMask, 16,pcmpgtd)
+TEST_INSN( &AllMask, 16,pcmpgtw)
+//TEST_INSN( &AllMask, 16,pextrw)
+//TEST_INSN( &AllMask, 16,pinsrw)
+TEST_INSN( &AllMask, 16,pmaxsw)
+TEST_INSN( &AllMask, 16,pmaxub)
+TEST_INSN( &AllMask, 16,pminsw)
+TEST_INSN( &AllMask, 16,pminub)
+//TEST_INSN( &AllMask, 0,pmovmskb)
+TEST_INSN( &AllMask, 16,pmulhuw)
+TEST_INSN( &AllMask, 16,pmulhw)
+TEST_INSN( &AllMask, 16,pmullw)
+TEST_INSN( &AllMask, 16,pmuludq)
+TEST_INSN( &AllMask, 16,por)
+//TEST_INSN( &AllMask, 16,pshufd)
+//TEST_INSN( &AllMask, 16,pshufhw)
+//TEST_INSN( &AllMask, 16,pshuflw)
+TEST_INSN( &AllMask, 16,pslld)
+//TEST_INSN( &AllMask, 16,pslldq)
+TEST_INSN( &AllMask, 16,psllq)
+TEST_INSN( &AllMask, 16,psllw)
+TEST_INSN( &AllMask, 16,psrad)
+TEST_INSN( &AllMask, 16,psraw)
+TEST_INSN( &AllMask, 16,psrld)
+//TEST_INSN( &AllMask, 16,psrldq)
+TEST_INSN( &AllMask, 16,psrlq)
+TEST_INSN( &AllMask, 16,psrlw)
+TEST_INSN( &AllMask, 16,psubb)
+TEST_INSN( &AllMask, 16,psubd)
+TEST_INSN( &AllMask, 16,psubq)
+TEST_INSN( &AllMask, 16,psubsb)
+TEST_INSN( &AllMask, 16,psubsw)
+TEST_INSN( &AllMask, 16,psubusb)
+TEST_INSN( &AllMask, 16,psubusw)
+TEST_INSN( &AllMask, 16,psubw)
+TEST_INSN( &AllMask, 16,punpckhbw)
+TEST_INSN( &AllMask, 16,punpckhdq)
+TEST_INSN( &AllMask, 16,punpckhqdq)
+TEST_INSN( &AllMask, 16,punpckhwd)
+TEST_INSN( &AllMask, 16,punpcklbw)
+TEST_INSN( &AllMask, 16,punpckldq)
+TEST_INSN( &AllMask, 16,punpcklqdq)
+TEST_INSN( &AllMask, 16,punpcklwd)
+TEST_INSN( &AllMask, 16,pxor)
+//TEST_INSN( &AllMask, PD,shufpd)
+TEST_INSN( &AllMask, PD,sqrtpd)
+TEST_INSN( &AllMask, SD,sqrtsd)
+TEST_INSN( &AllMask, PD,subpd)
+TEST_INSN( &AllMask, SD,subsd)
+TEST_INSN( &AllMask, SD,ucomisd)
+TEST_INSN( &AllMask, PD,unpckhpd)
+TEST_INSN( &AllMask, PD,unpcklpd)
+TEST_INSN( &AllMask, PD,xorpd)
 
 
 int main ( int argc, char** argv )
@@ -407,12 +429,12 @@ int main ( int argc, char** argv )
       do_cmpunordps();
       do_cmpunordss();
       do_comiss();
-      //TEST_INSN(0,cvtpi2ps)
-      //TEST_INSN(0,cvtps2pi)
-      //TEST_INSN(0,cvtsi2ss)
-      //TEST_INSN(0,cvtss2si)
-      //TEST_INSN(0,cvttps2pi)
-      //TEST_INSN(0,cvttss2si)
+      //TEST_INSN( &AllMask, 0,cvtpi2ps)
+      //TEST_INSN( &AllMask, 0,cvtps2pi)
+      //TEST_INSN( &AllMask, 0,cvtsi2ss)
+      //TEST_INSN( &AllMask, 0,cvtss2si)
+      //TEST_INSN( &AllMask, 0,cvttps2pi)
+      //TEST_INSN( &AllMask, 0,cvttss2si)
       do_divps();
       do_divss();
       do_maxps();
@@ -420,35 +442,35 @@ int main ( int argc, char** argv )
       do_minps();
       do_minss();
       do_movaps();
-      //TEST_INSN(0,movhlps)
-      //TEST_INSN(0,movhps)
-      //TEST_INSN(0,movlhps)
-      //TEST_INSN(0,movlps)
-      //TEST_INSN(0,movmskps)
-      //TEST_INSN(0,movntps)
-      //TEST_INSN(0,movntq)
+      //TEST_INSN( &AllMask, 0,movhlps)
+      //TEST_INSN( &AllMask, 0,movhps)
+      //TEST_INSN( &AllMask, 0,movlhps)
+      //TEST_INSN( &AllMask, 0,movlps)
+      //TEST_INSN( &AllMask, 0,movmskps)
+      //TEST_INSN( &AllMask, 0,movntps)
+      //TEST_INSN( &AllMask, 0,movntq)
       do_movss();
       do_movups();
       do_mulps();
       do_mulss();
       do_orps();
-      //TEST_INSN(0,pavgb) -- dup with sse2?
-      //TEST_INSN(0,pavgw) -- dup with sse2?
-      //TEST_INSN(0,pextrw)
-      //TEST_INSN(0,pinsrw)
-      //TEST_INSN(0,pmaxsw) -- dup with sse2?
-      //TEST_INSN(0,pmaxub) -- dup with sse2?
-      //TEST_INSN(0,pminsw) -- dup with sse2?
-      //TEST_INSN(0,pminub) -- dup with sse2?
-      //TEST_INSN(0,pmovmskb)
-      //TEST_INSN(0,pmulhuw) -- dup with sse2?
+      //TEST_INSN( &AllMask, 0,pavgb) -- dup with sse2?
+      //TEST_INSN( &AllMask, 0,pavgw) -- dup with sse2?
+      //TEST_INSN( &AllMask, 0,pextrw)
+      //TEST_INSN( &AllMask, 0,pinsrw)
+      //TEST_INSN( &AllMask, 0,pmaxsw) -- dup with sse2?
+      //TEST_INSN( &AllMask, 0,pmaxub) -- dup with sse2?
+      //TEST_INSN( &AllMask, 0,pminsw) -- dup with sse2?
+      //TEST_INSN( &AllMask, 0,pminub) -- dup with sse2?
+      //TEST_INSN( &AllMask, 0,pmovmskb)
+      //TEST_INSN( &AllMask, 0,pmulhuw) -- dup with sse2?
       //do_psadbw();  -- XXXXXXXXXXXXXXXX sse2 (xmm variant) not implemented!
-      //TEST_INSN(0,pshufw)
+      //TEST_INSN( &AllMask, 0,pshufw)
       do_rcpps();
       do_rcpss();
       do_rsqrtps();
       do_rsqrtss();
-      //TEST_INSN(PS,shufps)
+      //TEST_INSN( &AllMask, PS,shufps)
       do_sqrtps();
       do_sqrtss();
       do_subps();
@@ -485,19 +507,19 @@ int main ( int argc, char** argv )
       do_cvtdq2pd();
       do_cvtdq2ps();
       do_cvtpd2dq();
-      //TEST_INSN(0,cvtpd2pi)
+      //TEST_INSN( &AllMask, 0,cvtpd2pi)
       do_cvtpd2ps();
-      //TEST_INSN(0,cvtpi2pd)
+      //TEST_INSN( &AllMask, 0,cvtpi2pd)
       do_cvtps2dq();
       do_cvtps2pd();
-      //TEST_INSN(0,cvtsd2si)
+      //TEST_INSN( &AllMask, 0,cvtsd2si)
       do_cvtsd2ss();
-      //TEST_INSN(0,cvtsi2sd)
+      //TEST_INSN( &AllMask, 0,cvtsi2sd)
       do_cvtss2sd();
       do_cvttpd2dq();
-      //TEST_INSN(0,cvttpd2pi)
+      //TEST_INSN( &AllMask, 0,cvttpd2pi)
       do_cvttps2dq();
-      //TEST_INSN(0,cvttsd2si)
+      //TEST_INSN( &AllMask, 0,cvttsd2si)
       do_divpd();
       do_divsd();
       do_maxpd();
@@ -505,18 +527,18 @@ int main ( int argc, char** argv )
       do_minpd();
       do_minsd();
       do_movapd();
-      //TEST_INSN(8,movd)
-      //TEST_INSN(0,movdq2q)
+      //TEST_INSN( &AllMask, 8,movd)
+      //TEST_INSN( &AllMask, 0,movdq2q)
       do_movdqa();
       do_movdqu();
-      //TEST_INSN(16,movhpd)
-      //TEST_INSN(16,movlpd)
-      //TEST_INSN(0,movmskpd)
-      //TEST_INSN(0,movntdq)
-      //TEST_INSN(0,movnti)
-      //TEST_INSN(0,movntpd)
+      //TEST_INSN( &AllMask, 16,movhpd)
+      //TEST_INSN( &AllMask, 16,movlpd)
+      //TEST_INSN( &AllMask, 0,movmskpd)
+      //TEST_INSN( &AllMask, 0,movntdq)
+      //TEST_INSN( &AllMask, 0,movnti)
+      //TEST_INSN( &AllMask, 0,movntpd)
       do_movq();
-      //TEST_INSN(0,movq2dq)
+      //TEST_INSN( &AllMask, 0,movq2dq)
       do_movsd();
       do_movupd();
       do_mulpd();
@@ -543,29 +565,29 @@ int main ( int argc, char** argv )
       do_pcmpgtb();
       do_pcmpgtd();
       do_pcmpgtw();
-      //TEST_INSN(16,pextrw)
-      //TEST_INSN(16,pinsrw)
+      //TEST_INSN( &AllMask, 16,pextrw)
+      //TEST_INSN( &AllMask, 16,pinsrw)
       do_pmaxsw();
       do_pmaxub();
       do_pminsw();
       do_pminub();
-      //TEST_INSN(0,pmovmskb)
+      //TEST_INSN( &AllMask, 0,pmovmskb)
       do_pmulhuw();
       do_pmulhw();
       do_pmullw();
       do_pmuludq();
       do_por();
-      //TEST_INSN(16,pshufd)
-      //TEST_INSN(16,pshufhw)
-      //TEST_INSN(16,pshuflw)
+      //TEST_INSN( &AllMask, 16,pshufd)
+      //TEST_INSN( &AllMask, 16,pshufhw)
+      //TEST_INSN( &AllMask, 16,pshuflw)
       do_pslld();
-      //TEST_INSN(16,pslldq)
+      //TEST_INSN( &AllMask, 16,pslldq)
       do_psllq();
       do_psllw();
       do_psrad();
       do_psraw();
       do_psrld();
-      //TEST_INSN(16,psrldq)
+      //TEST_INSN( &AllMask, 16,psrldq)
       do_psrlq();
       do_psrlw();
       do_psubb();
@@ -585,7 +607,7 @@ int main ( int argc, char** argv )
       do_punpcklqdq();
       do_punpcklwd();
       do_pxor();
-      //TEST_INSN(PD,shufpd)
+      //TEST_INSN( &AllMask, PD,shufpd)
       do_sqrtpd();
       do_sqrtsd();
       do_subpd();

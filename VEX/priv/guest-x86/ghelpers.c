@@ -920,11 +920,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
 
-      if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondS)) {
-         /* long and/or/xor, then S --> test dst <s 0 */
-         return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dep1, mkU32(0)));
-      }
-
       if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondLE)) {
          /* long and/or/xor, then LE
             This is pretty subtle.  LOGIC sets SF and ZF according to the
@@ -944,6 +939,14 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
 
+      if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondS)) {
+         /* see comment below for (LOGICB, CondS) */
+         /* long and/or/xor, then S --> (UInt)result[31] */
+         return binop(Iop_And32,
+                      binop(Iop_Shr32,cc_dep1,mkU8(31)),
+                      mkU32(1));
+      }
+
       /*---------------- LOGICW ----------------*/
 
       if (isU32(cc_op, X86G_CC_OP_LOGICW) && isU32(cond, X86CondZ)) {
@@ -953,6 +956,14 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                                         mkU32(0)));
       }
 
+      if (isU32(cc_op, X86G_CC_OP_LOGICW) && isU32(cond, X86CondS)) {
+         /* see comment below for (LOGICB, CondS) */
+         /* word and/or/xor, then S --> (UInt)result[15] */
+         return binop(Iop_And32,
+                      binop(Iop_Shr32,cc_dep1,mkU8(15)),
+                      mkU32(1));
+      }
+
       /*---------------- LOGICB ----------------*/
 
       if (isU32(cc_op, X86G_CC_OP_LOGICB) && isU32(cond, X86CondZ)) {
@@ -960,6 +971,19 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(255)), 
                                         mkU32(0)));
+      }
+
+      if (isU32(cc_op, X86G_CC_OP_LOGICB) && isU32(cond, X86CondS)) {
+         /* this is an idiom gcc sometimes uses to find out if the top
+            bit of a byte register is set: eg testb %al,%al; js ..
+            Since it just depends on the top bit of the byte, extract
+            that bit and explicitly get rid of all the rest.  This
+            helps memcheck avoid false positives in the case where any
+            of the other bits in the byte are undefined. */
+         /* byte and/or/xor, then S --> (UInt)result[7] */
+         return binop(Iop_And32,
+                      binop(Iop_Shr32,cc_dep1,mkU8(7)),
+                      mkU32(1));
       }
 
       /*---------------- DECL ----------------*/

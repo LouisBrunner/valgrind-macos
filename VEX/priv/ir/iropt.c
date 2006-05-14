@@ -1405,6 +1405,20 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = e->Iex.Binop.arg1;
          } else
 
+         /* Add32(t,t) ==> t << 1.  Memcheck doesn't understand that
+            x+x produces a defined least significant bit, and it seems
+            simplest just to get rid of the problem by rewriting it
+            out, since the opportunity to do so exists. */
+         if (e->Iex.Binop.op == Iop_Add32
+             && e->Iex.Binop.arg1->tag == Iex_Tmp
+             && e->Iex.Binop.arg2->tag == Iex_Tmp
+             && e->Iex.Binop.arg1->Iex.Tmp.tmp 
+                == e->Iex.Binop.arg2->Iex.Tmp.tmp) {
+            e2 = IRExpr_Binop(Iop_Shl32,
+                              e->Iex.Binop.arg1,
+                              IRExpr_Const(IRConst_U8(1)));
+         } else
+
          /* Or64/Add64(x,0) ==> x */
          if ((e->Iex.Binop.op == Iop_Add64 || e->Iex.Binop.op == Iop_Or64)
              && e->Iex.Binop.arg2->tag == Iex_Const

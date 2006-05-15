@@ -52,7 +52,7 @@ static Bool command_inited = False;
 
 void CLG_(init_command)(Char* dir, Char* dumps)
 {
-  Int fd, size;
+  Int fd = -1, size;
   SysRes res;
 
   dump_base = dumps;

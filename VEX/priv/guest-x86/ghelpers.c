@@ -946,6 +946,15 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                       binop(Iop_Shr32,cc_dep1,mkU8(31)),
                       mkU32(1));
       }
+      if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondNS)) {
+         /* see comment below for (LOGICB, CondNS) */
+         /* long and/or/xor, then S --> (UInt) ~ result[31] */
+         return binop(Iop_Xor32,
+                binop(Iop_And32,
+                      binop(Iop_Shr32,cc_dep1,mkU8(31)),
+                      mkU32(1)),
+                mkU32(1));
+      }
 
       /*---------------- LOGICW ----------------*/
 
@@ -963,6 +972,17 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                       binop(Iop_Shr32,cc_dep1,mkU8(15)),
                       mkU32(1));
       }
+      //Probably correct, but no test case for it yet found
+      //if (isU32(cc_op, X86G_CC_OP_LOGICW) && isU32(cond, X86CondNS)) {
+      //   /* see comment below for (LOGICB, CondNS) */
+      //   /* word and/or/xor, then S --> (UInt) ~ result[15] */
+      //   vassert(0+0);
+      //   return binop(Iop_Xor32,
+      //          binop(Iop_And32,
+      //                binop(Iop_Shr32,cc_dep1,mkU8(15)),
+      //                mkU32(1)),
+      //          mkU32(1));
+      //}
 
       /*---------------- LOGICB ----------------*/
 
@@ -970,6 +990,15 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          /* byte and/or/xor, then Z --> test dst==0 */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(255)), 
+                                        mkU32(0)));
+      }
+
+      if (isU32(cc_op, X86G_CC_OP_LOGICB) && isU32(cond, X86CondNZ)) {
+         /* byte and/or/xor, then Z --> test dst!=0 */
+         /* b9ac9:       84 c0                   test   %al,%al
+            b9acb:       75 0d                   jne    b9ada */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpNE32, binop(Iop_And32,cc_dep1,mkU32(255)), 
                                         mkU32(0)));
       }
 
@@ -985,6 +1014,15 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                       binop(Iop_Shr32,cc_dep1,mkU8(7)),
                       mkU32(1));
       }
+      if (isU32(cc_op, X86G_CC_OP_LOGICB) && isU32(cond, X86CondNS)) {
+         /* ditto, for negation-of-S. */
+         /* byte and/or/xor, then S --> (UInt) ~ result[7] */
+         return binop(Iop_Xor32,
+                binop(Iop_And32,
+                      binop(Iop_Shr32,cc_dep1,mkU8(7)),
+                      mkU32(1)),
+                mkU32(1));
+      }
 
       /*---------------- DECL ----------------*/
 
@@ -996,6 +1034,17 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
       if (isU32(cc_op, X86G_CC_OP_DECL) && isU32(cond, X86CondS)) {
          /* dec L, then S --> compare DST <s 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dep1, mkU32(0)));
+      }
+
+      /*---------------- INCW ----------------*/
+
+      if (isU32(cc_op, X86G_CC_OP_INCW) && isU32(cond, X86CondZ)) {
+         /* This rewrite helps memcheck on 'incw %ax ; je ...'. */
+         /* inc W, then Z --> test dst == 0 */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpEQ32, 
+                           binop(Iop_Shl32,cc_dep1,mkU8(16)),
+                           mkU32(0)));
       }
 
       /*---------------- SHRL ----------------*/

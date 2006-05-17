@@ -799,6 +799,37 @@ POST(sys_futex)
    }
 }
 
+PRE(sys_set_robust_list)
+{
+   PRINT("sys_set_robust_list ( %p, %d )", ARG1,ARG2);
+   PRE_REG_READ2(long, "set_robust_list", 
+                 struct vki_robust_list_head *, head, vki_size_t, len);
+
+   /* Just check the robust_list_head structure is readable - don't
+      try and chase the list as the kernel will only read it when
+      the thread exits so the current contents is irrelevant. */
+   if (ARG1 != 0)
+      PRE_MEM_READ("set_robust_list(head)", ARG1, ARG2);
+}
+
+PRE(sys_get_robust_list)
+{
+   PRINT("sys_get_robust_list ( %d, %p, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "get_robust_list",
+                 int, pid,
+                 struct vki_robust_list_head **, head_ptr,
+                 vki_size_t *, len_ptr);
+   PRE_MEM_WRITE("get_robust_list(head_ptr)",
+                 ARG2, sizeof(struct vki_robust_list_head *));
+   PRE_MEM_WRITE("get_robust_list(len_ptr)",
+                 ARG3, sizeof(struct vki_size_t *));
+}
+POST(sys_get_robust_list)
+{
+   POST_MEM_WRITE(ARG2, sizeof(struct vki_robust_list_head *));
+   POST_MEM_WRITE(ARG3, sizeof(struct vki_size_t *));
+}
+
 PRE(sys_pselect6)
 {
    *flags |= SfMayBlock;

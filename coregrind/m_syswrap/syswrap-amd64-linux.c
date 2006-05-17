@@ -1328,6 +1328,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //   LINX_(__NR_pselect6,		 sys_ni_syscall),       // 270
 //   LINXY(__NR_ppoll,		 sys_ni_syscall),       // 271
 //   LINX_(__NR_unshare,		 sys_unshare),          // 272
+   LINX_(__NR_set_robust_list,	 sys_set_robust_list),  // 273
+   LINXY(__NR_get_robust_list,	 sys_get_robust_list),  // 274
 };
 
 const UInt ML_(syscall_table_size) = 

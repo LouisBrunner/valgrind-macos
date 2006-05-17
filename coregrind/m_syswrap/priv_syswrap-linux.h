@@ -74,6 +74,8 @@ DECL_TEMPLATE(linux, sys_prctl);
 DECL_TEMPLATE(linux, sys_sendfile);
 DECL_TEMPLATE(linux, sys_sendfile64);
 DECL_TEMPLATE(linux, sys_futex);
+DECL_TEMPLATE(linux, sys_set_robust_list);
+DECL_TEMPLATE(linux, sys_get_robust_list);
 DECL_TEMPLATE(linux, sys_pselect6);
 DECL_TEMPLATE(linux, sys_ppoll);
 

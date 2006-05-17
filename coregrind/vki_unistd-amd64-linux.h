@@ -349,5 +349,11 @@
 #define __NR_pselect6		270
 #define __NR_ppoll		271
 #define __NR_unshare		272
+#define __NR_set_robust_list	273
+#define __NR_get_robust_list	274
+#define __NR_splice		275
+#define __NR_tee		276
+#define __NR_sync_file_range	277
+#define __NR_vmsplice		278
 
 #endif /* __VKI_UNISTD_AMD64_LINUX_H */

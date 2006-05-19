@@ -775,7 +775,7 @@ LibVEX_GuestX86_put_eflag_c ( UInt new_carry_flag,
 /* Used by the optimiser to try specialisations.  Returns an
    equivalent expression, or NULL if none. */
 
-static Bool isU32 ( IRExpr* e, UInt n )
+static inline Bool isU32 ( IRExpr* e, UInt n )
 {
    return 
       toBool( e->tag == Iex_Const
@@ -911,6 +911,21 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                      binop(Iop_CmpLT32U, 
                            binop(Iop_And32,cc_dep2,mkU32(0xFF)),
 			   binop(Iop_And32,cc_dep1,mkU32(0xFF))));
+      }
+
+      if (isU32(cc_op, X86G_CC_OP_SUBB) && isU32(cond, X86CondS)
+                                        && isU32(cc_dep2, 0)) {
+         /* long sub/cmp, then S --> test (dst-0 <s 0) 
+                                 --> test dst <s 0
+                                 --> (UInt)dst[7] 
+            This is yet another scheme by which gcc figures out if the
+            top bit of a byte is 1 or 0.  See also LOGICB/CondS below. */
+         /* Note: isU32(cc_dep2, 0) is correct, even though this is
+            for an 8-bit comparison, since the args to the helper
+            function are always U32s. */
+         return binop(Iop_And32,
+                      binop(Iop_Shr32,cc_dep1,mkU8(7)),
+                      mkU32(1));
       }
 
       /*---------------- LOGICL ----------------*/

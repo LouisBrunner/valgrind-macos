@@ -27,7 +27,7 @@ tool.</para>
   <para>When command line option
   <computeroutput>--basic-counts=yes</computeroutput> is specified,
   it prints the following statistics and information about the execution of
-  the client program:
+  the client program:</para>
 
   <orderedlist>
 
@@ -67,6 +67,7 @@ tool.</para>
    </listitem>
 
   </orderedlist>
+ </listitem>
 
  <listitem>
   <para>When command line option

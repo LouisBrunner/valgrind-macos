@@ -41,11 +41,14 @@ if BUILD_MPIWRAP
 noinst_PROGRAMS       = libmpiwrap.so
 #libmpiwrap_so_SOURCES = mpiwrap.c
 #libmpiwrap_so_CFLAGS  = $(AM_FLAG_M3264_PRI) \
-#				-g -O -fpic -fno-omit-frame-pointer \
+#				-g -O -fPIC -fno-omit-frame-pointer \
 #				-I../include -I@MPI_PREFIX@/include
 #libmpiwrap_so_LDFLAGS = $(AM_FLAG_M3264_PRI) -g -shared
+#
+# Note re leading '-'s: tells GNU make to keep going even if command fails
+#
 libmpiwrap.so: libmpiwrap.c
-	$(MPI_CC) -g -O -fno-omit-frame-pointer -Wall -fpic -shared \
+	-$(MPI_CC) -g -O -fno-omit-frame-pointer -Wall -fPIC -shared \
 		-I../include \
 		$(AM_FLAG_M3264_PRI) \
 		-o libmpiwrap.so libmpiwrap.c
@@ -54,8 +57,9 @@ install-exec-local:
 # convert (eg) X86_LINUX to x86-linux
 # really should use sed here, rather than assume tr is available
 	pD=`echo @VG_PLATFORM_PRI@ | tr A-Z_ a-z-` ; \
-	$(mkinstalldirs) $(DESTDIR)$(valdir)/$$pD; \
-	$(INSTALL_PROGRAM) ./libmpiwrap.so $(DESTDIR)$(valdir)/$$pD
+		$(mkinstalldirs) $(DESTDIR)$(valdir)/$$pD;
+	-pD=`echo @VG_PLATFORM_PRI@ | tr A-Z_ a-z-` ; \
+		$(INSTALL_PROGRAM) ./libmpiwrap.so $(DESTDIR)$(valdir)/$$pD
 endif
 #
 #----------------------------------------------------------

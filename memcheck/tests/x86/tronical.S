@@ -1,5 +1,12 @@
 /*
 
+2006-05-21: vex r1619 finally causes the x86->IR front end to state
+exactly the %eflags dataflow surrounding 'cmpb $0, ... ;  js ..'
+and so memcheck no longer gives a false positive on this test.
+	
+-----------	
+
+(original comments)
 Assembly derived from the following program compiled with -O2.
 This fools Valgrind, causing it to give a false error.
 

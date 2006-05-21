@@ -193,6 +193,14 @@ struct vki_pt_regs {
   VKI_PPC_REG dar;            /* Fault registers */
   VKI_PPC_REG dsisr;
   VKI_PPC_REG result;         /* Result of a system call */
+
+  /* Not in kernel's definition, but apparently needed to stop
+     assertion at coredump-elf.c:267 firing.  These padding words make
+     the struct have the same size as a 'vki_elf_greg_t'.  See message
+     from Ghassan Hammouri on valgrind-developers on 6 April 06, and
+     also the analogous kludge for ppc32-linux (svn r5852 and bug
+     #121617). */
+  unsigned long pad[4];
 };
 
 /* Kludge?  I don't know where this came from or if it is right. */

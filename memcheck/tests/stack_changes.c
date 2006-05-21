@@ -5,7 +5,7 @@
 
 #include "valgrind.h"
 
-#define STACK_SIZE 4096
+#define STACK_SIZE (10 * 4096)
 
 // This test is checking the libc context calls (setcontext, etc.) and
 // checks that Valgrind notices their stack changes properly.

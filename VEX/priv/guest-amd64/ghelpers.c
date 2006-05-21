@@ -1132,6 +1132,19 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                                         mkU64(0)));
       }
 
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICB) && isU64(cond, AMD64CondS)) {
+         /* this is an idiom gcc sometimes uses to find out if the top
+            bit of a byte register is set: eg testb %al,%al; js ..
+            Since it just depends on the top bit of the byte, extract
+            that bit and explicitly get rid of all the rest.  This
+            helps memcheck avoid false positives in the case where any
+            of the other bits in the byte are undefined. */
+         /* byte and/or/xor, then S --> (UInt)result[7] */
+         return binop(Iop_And64,
+                      binop(Iop_Shr64,cc_dep1,mkU8(7)),
+                      mkU64(1));
+      }
+
       /*---------------- INCB ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_INCB) && isU64(cond, AMD64CondLE)) {

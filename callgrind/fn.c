@@ -53,7 +53,7 @@ static void search_runtime_resolve(obj_node* obj)
      * We use a tuple sequence (offset,length) into the code array for this
      */
 
-#if defined(VGA_x86)
+#if defined(VGP_x86_linux)
     /* Check ranges [0-11], [16-23] */
     static int  code_offsets[] = { 0, 12, 16, 8, 24, 0 };
     static unsigned char code[] = {
@@ -61,7 +61,7 @@ static void search_runtime_resolve(obj_node* obj)
 	/* 8*/ 0x44, 0x24, 0x0c, 0xe8, 0x70, 0x01, 0x00, 0x00,
 	/*16*/ 0x5a, 0x59, 0x87, 0x04, 0x24, 0xc2, 0x08, 0x00 };
 #else
-#if defined(VGA_ppc32)
+#if defined(VGP_ppc32_linux)
     static int  code_offsets[] = {0, 65, 68, 64, 132, 0 };
     static unsigned char code[] = {
 	/* 0*/ 0x94, 0x21, 0xff, 0xc0, 0x90, 0x01, 0x00, 0x0c,
@@ -82,7 +82,7 @@ static void search_runtime_resolve(obj_node* obj)
 	/*120*/0x80, 0x01, 0x00, 0x0c, 0x38, 0x21, 0x00, 0x40,
 	/*128*/0x4e, 0x80, 0x04, 0x20 };
 #else
-#if defined(VGA_amd64)
+#if defined(VGP_amd64_linux)
     /* x86_64 */
     static int  code_offsets[] = {0, 62, 66, 44, 110, 0 };
     static unsigned char code[] = {
@@ -99,7 +99,7 @@ static void search_runtime_resolve(obj_node* obj)
 	/*94*/ 0x48, 0x8b, 0x4c, 0x24, 0x08, 0x48, 0x8b, 0x04, 0x24,
 	/*103*/0x48, 0x83, 0xc4, 0x48, 0x41, 0xff, 0xe3 };
 #else
-    /* Unknown architecture, no check is done */
+    /* Unknown platform, no check is done */
     static int  code_offsets[] = {0, 0 };
     static unsigned char code[] = { 0 };
 #endif

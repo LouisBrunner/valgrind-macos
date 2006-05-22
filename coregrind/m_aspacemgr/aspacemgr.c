@@ -2932,7 +2932,7 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 {
    Int      iLo, iHi;
    SysRes   sres;
-   NSegment seg, oldseg;
+   NSegment seg;
 
    if (old_len == 0 || new_len == 0)
       return False;
@@ -2969,7 +2969,18 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
    *need_discard = any_Ts_in_range( old_addr, old_len )
                    || any_Ts_in_range( new_addr, new_len );
 
-   oldseg = nsegments[iLo];
+   seg = nsegments[iLo];
+
+   /* Mark the new area based on the old seg. */
+   if (seg.kind == SkFileC) {
+      seg.offset += ((ULong)old_addr) - ((ULong)seg.start);
+   } else {
+      aspacem_assert(seg.kind == SkAnonC);
+      aspacem_assert(seg.offset == 0);
+   }
+   seg.start = new_addr;
+   seg.end   = new_addr + new_len - 1;
+   add_segment( &seg );
 
    /* Create a free hole in the old location. */
    init_nsegment( &seg );
@@ -2977,17 +2988,6 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
    seg.start = old_addr;
    seg.end   = old_addr + old_len - 1;
    add_segment( &seg );
-
-   /* Mark the new area based on the old seg. */
-   if (oldseg.kind == SkFileC) {
-      oldseg.offset += ((ULong)old_addr) - ((ULong)oldseg.start);
-   } else {
-      aspacem_assert(oldseg.kind == SkAnonC);
-      aspacem_assert(oldseg.offset == 0);
-   }
-   oldseg.start = new_addr;
-   oldseg.end   = new_addr + new_len - 1;
-   add_segment( &oldseg );
 
    AM_SANITY_CHECK;
    return True;

@@ -976,6 +976,16 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
 /*--- ISEL: vector helpers                              ---*/
 /*---------------------------------------------------------*/
 
+/* Generate all-zeroes into a new vector register.
+*/
+static HReg generate_zeroes_V128 ( ISelEnv* env )
+{
+   HReg dst = newVRegV(env);
+   addInstr(env, PPCInstr_AvBinary(Pav_XOR, dst, dst, dst));
+   return dst;
+}
+
+
 /*
   Generates code for AvSplat
   - takes in IRExpr* of type 8|16|32
@@ -3548,6 +3558,13 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          break;
       } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
+
+   if (e->tag == Iex_Const ) {
+      vassert(e->Iex.Const.con->tag == Ico_V128);
+      if (e->Iex.Const.con->Ico.V128 == 0x0000) {
+         return generate_zeroes_V128(env);
+      }
+   }
 
    vex_printf("iselVecExpr(ppc) (subarch = %s): can't reduce\n",
               LibVEX_ppVexHwCaps(mode64 ? VexArchPPC64 : VexArchPPC32,

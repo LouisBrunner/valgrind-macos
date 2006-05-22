@@ -134,32 +134,42 @@ static UInt local_sys_getpid ( void )
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
-   UInt __res;
+   Int block[2];
+   block[0] = (Int)buf;
+   block[1] = n;
    __asm__ volatile (
-      "li %%r0,4\n\t"      /* set %r0 = __NR_write */
-      "li %%r3,2\n\t"      /* set %r3 = stderr */
-      "mr %%r4,%1\n\t"     /* set %r4 = buf */
-      "mr %%r5,%2\n\t"     /* set %r5 = n */
-      "sc\n\t"             /* write(stderr, buf, n) */
-      "mr %0,%%r3\n"       /* set __res = r3 */
-      : "=mr" (__res)
-      : "g" (buf), "g" (n)
-      : "r0", "r3", "r4", "r5" );
-   if (__res < 0)
-      __res = -1;
-   return __res;
+      "addi 1,1,-256\n\t"
+      "mr   5,%0\n\t"     /* r5 = &block[0] */
+      "stw  5,0(1)\n\t"   /* stash on stack */
+      "li   0,4\n\t"      /* set %r0 = __NR_write (== 4) */
+      "li   3,2\n\t"      /* set %r3 = stderr */
+      "lwz  4,0(5)\n\t"   /* set %r4 = buf */
+      "lwz  5,4(5)\n\t"   /* set %r5 = n */
+      "sc\n\t"            /* write(stderr, buf, n) */
+      "lwz  5,0(1)\n\t"
+      "addi 1,1,256\n\t"
+      "stw  3,0(5)\n"     /* block[0] = result */
+      :
+      : "b" (block)
+      : "cc","memory","cr0","ctr",
+        "r0","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12"
+   );
+   if (block[0] < 0)
+      block[0] = -1;
+   return (UInt)block[0];
 }
 
 static UInt local_sys_getpid ( void )
 {
-   UInt __res;
-   __asm__ volatile (
-      "li %%r0,20\n"       /* set %r0 = __NR_getpid */
-      "\tsc\n"             /* getpid() */
-      "\tmr %0,%%r3\n"     /* set __res = r3 */
-      : "=mr" (__res)
-      :
-      : "r0" );
+   register UInt __res __asm__ ("r3");
+   __asm__ volatile ( 
+      "li 0, %1\n\t"
+      "sc"
+      : "=&r" (__res)
+      : "i" (20) /* == __NR_getpid */
+      : "cc","memory","cr0","ctr",
+        "r0","r2","r4","r5","r6","r7","r8","r9","r10","r11","r12"
+   );
    return __res;
 }
 
@@ -167,33 +177,43 @@ static UInt local_sys_getpid ( void )
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
-   UInt __res;
+   Long block[2];
+   block[0] = (Long)buf;
+   block[1] = (Long)n;
    __asm__ volatile (
-      "li %%r0,4\n\t"      /* set %r0 = __NR_write */
-      "li %%r3,2\n\t"      /* set %r3 = stderr */
-      "mr %%r4,%1\n\t"     /* set %r4 = buf */
-      "mr %%r5,%2\n\t"     /* set %r5 = n */
-      "sc\n\t"             /* write(stderr, buf, n) */
-      "mr %0,%%r3\n"       /* set __res = r3 */
-      : "=mr" (__res)
-      : "g" (buf), "g" (n)
-      : "r0", "r3", "r4", "r5" );
-   if (__res < 0)
-      __res = -1;
-   return __res;
+      "addi 1,1,-256\n\t"
+      "mr   5,%0\n\t"     /* r5 = &block[0] */
+      "std  5,0(1)\n\t"   /* stash on stack */
+      "li   0,4\n\t"      /* set %r0 = __NR_write (== 4) */
+      "li   3,2\n\t"      /* set %r3 = stderr */
+      "ld   4,0(5)\n\t"   /* set %r4 = buf */
+      "ld   5,8(5)\n\t"   /* set %r5 = n */
+      "sc\n\t"            /* write(stderr, buf, n) */
+      "ld   5,0(1)\n\t"
+      "addi 1,1,256\n\t"
+      "std  3,0(5)\n"     /* block[0] = result */
+      :
+      : "b" (block)
+      : "cc","memory","cr0","ctr",
+        "r0","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12"
+   );
+   if (block[0] < 0)
+      block[0] = -1;
+   return (UInt)(Int)block[0];
 }
 
 static UInt local_sys_getpid ( void )
 {
-   UInt __res;
-   __asm__ volatile (
-      "li %%r0,20\n"       /* set %r0 = __NR_getpid */
-      "\tsc\n"             /* getpid() */
-      "\tmr %0,%%r3\n"     /* set __res = r3 */
-      : "=mr" (__res)
-      :
-      : "r0" );
-   return __res;
+   register ULong __res __asm__ ("r3");
+   __asm__ volatile ( 
+      "li 0, %1\n\t"
+      "sc"
+      : "=&r" (__res)
+      : "i" (20) /* == __NR_getpid */
+      : "cc","memory","cr0","ctr",
+        "r0","r2","r4","r5","r6","r7","r8","r9","r10","r11","r12"
+   );
+   return (UInt)__res;
 }
 
 #else

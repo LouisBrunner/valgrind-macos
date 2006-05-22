@@ -2619,7 +2619,7 @@ static void mc_record_param_error ( ThreadId tid, Addr a, Bool isReg,
 {
    MC_Error err_extra;
 
-   tl_assert(MC_(clo_undef_value_errors));
+   if (!isUnaddr) tl_assert(MC_(clo_undef_value_errors));
    tl_assert(VG_INVALID_THREADID != tid);
    if (isUnaddr) tl_assert(!isReg);    // unaddressable register is impossible
    mc_clear_MC_Error( &err_extra );

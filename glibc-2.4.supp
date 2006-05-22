@@ -69,6 +69,22 @@
    obj:/usr/lib64/libX11.so.6.2.0
 }
 
+{
+   Fedora-Core-5-hack3-ld24
+   Memcheck:Cond
+   obj:/lib*/ld-2.4*so*
+   obj:/lib*/ld-2.4*so*
+   obj:/lib*/ld-2.4*so*
+}
+
+{
+   Fedora-Core-5-yet-another-ppc32-hack
+   Memcheck:Addr4
+   fun:_wordcopy_fwd_dest_aligned
+   fun:mempcpy
+   obj:/lib*/libc-2.4*so*
+}
+
 ##----------------------------------------------------------------------##
 {
    glibc-2.3.x-on-SUSE-10.1-(PPC)-1

@@ -119,6 +119,9 @@ static void search_runtime_resolve(obj_node* obj)
 
     end = obj->start + obj->size - range[1];
     addr = obj->start;
+
+    if (range[1] == 0) return;
+
     while(addr < end) {
 	if (VG_(memcmp)( (void*)addr, code, range[1]) == 0) {
 

@@ -932,6 +932,8 @@ static Bool sane_NSegment ( NSegment* s )
       case SkFileC: case SkFileV:
          return 
             s->smode == SmFixed
+            && (s->fnIdx == -1 ||
+                (s->fnIdx >= 0 && s->fnIdx < segnames_used && segnames[s->fnIdx].inUse))
             && !s->isCH;
 
       case SkResvn: 

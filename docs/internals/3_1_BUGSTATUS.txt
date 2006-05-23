@@ -70,6 +70,7 @@ vx1614    fixed   126668  amd64->IR: 0x1C 0xFF (sbb $0xff,%al)
 v5885     fixed   126696  support for CDROMREADRAW ioctl and CDROMREADTOCENTRY fix
 v5888     fixed   126722  assertion: segment_is_sane at m_aspacemgr/aspacemgr.c:1624
 v5884     fixed   126938  bad checking for syscalls linkat, renameat, symlinkat
+vx1554    pending n-i-bz  re-add stfiwx support (PPC32)
 
 mpicc build failures?
 

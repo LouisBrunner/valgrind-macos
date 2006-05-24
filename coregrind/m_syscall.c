@@ -305,6 +305,7 @@ const HChar* VG_(strerror) ( UWord errnum )
       case VKI_EINVAL:      return "Invalid argument";
       case VKI_EMFILE:      return "Too many open files";
       case VKI_ENOSYS:      return "Function not implemented";
+      case VKI_EOVERFLOW:   return "Value too large for defined data type";
       case VKI_ERESTARTSYS: return "ERESTARTSYS";
       default:              return "VG_(strerror): unknown error";
    }

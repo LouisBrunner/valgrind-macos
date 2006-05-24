@@ -792,7 +792,7 @@ static Int do_exec_shell_followup(Int ret, HChar* exe_name,
 
       // Otherwise it was something else.
       } else {
-         VG_(printf)("valgrind: %s\n", exe_name, VG_(strerror)(ret));
+         VG_(printf)("valgrind: %s: %s\n", exe_name, VG_(strerror)(ret));
       }
       // 126 means NOEXEC;  I think this is Posix, and that in some cases we
       // should be returning 127, meaning NOTFOUND.  Oh well.

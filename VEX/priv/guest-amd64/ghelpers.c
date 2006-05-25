@@ -1010,7 +1010,7 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
       }
 
       if (isU64(cc_op, AMD64G_CC_OP_SUBW) && isU64(cond, AMD64CondLE)) {
-         /* 16-bit sub/cmp, then LE (signed less than or equal) 
+         /* word sub/cmp, then LE (signed less than or equal) 
             --> test dst <=s src */
          return unop(Iop_1Uto64,
                      binop(Iop_CmpLE64S, 
@@ -1027,6 +1027,21 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                      binop(Iop_CmpEQ8, 
                            unop(Iop_64to8,cc_dep1),
                            unop(Iop_64to8,cc_dep2)));
+      }
+
+      if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondS)
+                                          && isU64(cc_dep2, 0)) {
+         /* byte sub/cmp of zero, then S --> test (dst-0 <s 0)
+                                         --> test dst <s 0
+                                         --> (ULong)dst[7]
+            This is yet another scheme by which gcc figures out if the
+            top bit of a byte is 1 or 0.  See also LOGICB/CondS below. */
+         /* Note: isU64(cc_dep2, 0) is correct, even though this is
+            for an 8-bit comparison, since the args to the helper
+            function are always U64s. */
+         return binop(Iop_And64,
+                      binop(Iop_Shr64,cc_dep1,mkU8(7)),
+                      mkU64(1));
       }
 
 //      if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondNZ)) {

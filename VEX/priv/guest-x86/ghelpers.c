@@ -935,6 +935,11 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
 
+      if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondNZ)) {
+         /* long and/or/xor, then NZ --> test dst!=0 */
+         return unop(Iop_1Uto32,binop(Iop_CmpNE32, cc_dep1, mkU32(0)));
+      }
+
       if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondLE)) {
          /* long and/or/xor, then LE
             This is pretty subtle.  LOGIC sets SF and ZF according to the

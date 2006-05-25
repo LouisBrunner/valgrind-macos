@@ -194,5 +194,25 @@
    fun:_XSend
 }
 
+# There's something strange about a % 127 in XftFontOpenInfo
+# (hashing) which gcc turns into a multiply by 33818641 and
+# some other guff instead.  I don't understand it enough to
+# know if libXft is broken or if memcheck's value tracking is
+# inadequate here.  Anyway, for the moment, suppress it.
+#
+# Use of uninitialised value of size 8
+#   at 0x71A59F8: XftFontOpenInfo (in /usr/X11R6/lib64/libXft.so.2.1.2)
+#   by 0x71A5F0D: XftFontOpenPattern (in /usr/X11R6/lib64/libXft.so.2.1.2)
+#   by 0x65F166E: loadFontConfigFont(QFontPrivate const*, QFontDef const&, 
+#                 QFont::Script) (qfontdatabase_x11.cpp:1942)
+#   by 0x65F5DE4: QFontDatabase::findFont(QFont::Script, QFontPrivate const*,
+#                 QFontDef const&, int) (qfontdatabase.cpp:996)
+{
+   XftFontOpenInfo-umod-127-strangeness
+   Memcheck:Value8
+   obj:/usr/X11*/lib*/libXft.so*
+   obj:/usr/X11*/lib*/libXft.so*
+}
+
 ##----------------------------------------------------------------------##
 

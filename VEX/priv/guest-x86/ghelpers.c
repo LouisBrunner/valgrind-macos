@@ -878,7 +878,7 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
       /*---------------- SUBW ----------------*/
 
       if (isU32(cc_op, X86G_CC_OP_SUBW) && isU32(cond, X86CondZ)) {
-         /* byte sub/cmp, then Z --> test dst==src */
+         /* word sub/cmp, then Z --> test dst==src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ16, 
                            unop(Iop_32to16,cc_dep1), 
@@ -904,7 +904,7 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
       }
 
       if (isU32(cc_op, X86G_CC_OP_SUBB) && isU32(cond, X86CondNBE)) {
-         /* long sub/cmp, then NBE (unsigned greater than)
+         /* byte sub/cmp, then NBE (unsigned greater than)
             --> test src <u dst */
          /* Note, args are opposite way round from the usual */
          return unop(Iop_1Uto32,
@@ -915,9 +915,9 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
 
       if (isU32(cc_op, X86G_CC_OP_SUBB) && isU32(cond, X86CondS)
                                         && isU32(cc_dep2, 0)) {
-         /* long sub/cmp, then S --> test (dst-0 <s 0) 
-                                 --> test dst <s 0
-                                 --> (UInt)dst[7] 
+         /* byte sub/cmp of zero, then S --> test (dst-0 <s 0) 
+                                         --> test dst <s 0
+                                         --> (UInt)dst[7] 
             This is yet another scheme by which gcc figures out if the
             top bit of a byte is 1 or 0.  See also LOGICB/CondS below. */
          /* Note: isU32(cc_dep2, 0) is correct, even though this is
@@ -979,7 +979,7 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
       /*---------------- LOGICW ----------------*/
 
       if (isU32(cc_op, X86G_CC_OP_LOGICW) && isU32(cond, X86CondZ)) {
-         /* byte and/or/xor, then Z --> test dst==0 */
+         /* word and/or/xor, then Z --> test dst==0 */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(0xFFFF)), 
                                         mkU32(0)));

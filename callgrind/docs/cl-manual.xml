@@ -4,15 +4,16 @@
 [ <!ENTITY % cl-entities SYSTEM "cl-entities.xml"> %cl-entities; ]>
 
 <chapter id="cl-manual" xreflabel="Callgrind Manual">
-<title>Callgrind Manual</title>
+<title>Callgrind: a heavyweight profiler</title>
 
 
 <sect1 id="cl-manual.use" xreflabel="Overview">
 <title>Overview</title>
 
-<para>Callgrind is a Valgrind tool, able to run applications under 
-supervision to generate profiling data. By default, this data consists of
-number of instructions executed on a run, related to source lines, and
+<para>Callgrind is a Valgrind tool for profiling programs.
+The collected data consists of
+the number of instructions executed on a run, their relationship
+to source lines, and
 call relationship among functions together with call counts.
 Optionally, a cache simulator (similar to cachegrind) can produce
 further information about the memory access behavior of the application.
@@ -27,8 +28,10 @@ of the profiling, two command line tools are provided:</para>
   <listitem>
     <para>This command reads in the profile data, and prints a
     sorted lists of functions, optionally with annotation.</para>
+<!--
     <para>You can read the manpage here: <xref
 	      linkend="callgrind-annotate"/>.</para>
+-->
     <para>For graphical visualization of the data, check out
     <ulink url="&cl-gui;">KCachegrind</ulink>.</para>
 
@@ -39,10 +42,13 @@ of the profiling, two command line tools are provided:</para>
   <term><command>callgrind_control</command></term>
   <listitem>
     <para>This command enables you to interactively observe and control 
-    the status of currently running applications supervised. You can 
-    get statistic information, the current stack trace, and request 
-    zeroing of counters, and dumping of profiles.</para>
+    the status of currently running applications, without stopping
+    the application.  You can 
+    get statistics information, the current stack trace, and request 
+    zeroing of counters, and dumping of profiles data.</para>
+<!--
     <para>You can read the manpage here: <xref linkend="callgrind-control"/>.</para>
+-->
   </listitem>
   </varlistentry>
 </variablelist>
@@ -52,7 +58,7 @@ of the profiling, two command line tools are provided:</para>
 command line or use the supplied script 
 <computeroutput>callgrind</computeroutput>.</para>
 
-<para>Callgrinds cache simulation is based on the 
+<para>Callgrind's cache simulation is based on the 
 <ulink url="&cg-tool-url;">Cachegrind tool</ulink> of the 
 <ulink url="&vg-url;">Valgrind</ulink> package.  Read 
 <ulink url="&cg-doc-url;">Cachegrind's documentation</ulink> first; 
@@ -70,10 +76,10 @@ Cachegrind's features.</para>
          xreflabel="Profiling as part of Application Development">
   <title>Profiling as part of Application Development</title>
 
-  <para>With application development, usually, one of the last steps is
-  to improve the runtime performance. To not waste time on
+  <para>With application development, a common step is
+  to improve runtime performance.  To not waste time on
   optimizing functions which are rarely used, one needs to know
-  in which part of the program most of the time is spent.</para>
+  in which parts of the program most of the time is spent.</para>
 
   <para>This is done with a technique called profiling. The program
   is run under control of a profiling tool, which gives the time
@@ -88,25 +94,27 @@ Cachegrind's features.</para>
   <sect2 id="cl-manual.tools" xreflabel="Profiling Tools">
   <title>Profiling Tools</title>
 
-  <para>Most known is the GCC profiling tool <command>GProf</command>:
+  <para>Most widely known is the GCC profiling tool <command>GProf</command>:
   one needs to compile an application with the compiler option 
-  <computeroutput>-pg</computeroutput>; running the program generates
+  <computeroutput>-pg</computeroutput>.  Running the program generates
   a file <computeroutput>gmon.out</computeroutput>, which can be 
   transformed into human readable form with the command line tool 
-  <computeroutput>gprof</computeroutput>.  An disadvantage here is the 
-  required compilation step for preparing the executable; additionally, the
-  application should be statically linked.</para>
+  <computeroutput>gprof</computeroutput>.  A disadvantage here is the 
+  the need to recompile everything, and also the need to statically link the
+  executable.</para>
 
   <para>Another profiling tool is <command>Cachegrind</command>, part
   of <ulink url="&vg-url;">Valgrind</ulink>. It uses the processor
   emulation of Valgrind to run the executable, and catches all memory
-  accesses for the trace. The user program does not need to be
-  recompiled; it can use shared libraries and plugins, and the profile
-  measuring doesn't influence the trace results. The trace includes 
+  accesses, which are used to drive a cache simulator.
+  The program does not need to be
+  recompiled, it can use shared libraries and plugins, and the profile
+  measurement doesn't influence the memory access behaviour. 
+  The trace includes 
   the number of instruction/data memory accesses and 1st/2nd level
   cache misses, and relates it to source lines and functions of the
   run program.  A disadvantage is the slowdown involved in the
-  processor emulation, it's around 50 times slower.</para>
+  processor emulation, around 50 times slower.</para>
 
   <para>Cachegrind can only deliver a flat profile. There is no call 
   relationship among the functions of an application stored.  Thus, 
@@ -151,16 +159,16 @@ Cachegrind's features.</para>
   program among the functions executed, together with events of type
   <command>Instruction Read Accesses</command> (Ir).</para>
 
-  <para>If you are additionally interested in memory accesses of your 
-  program, and if an access can be satisfied by loading from 1st/2nd
-  level cache, use Callgrind with the option
+  <para>If you are additionally interested in measuring the 
+  cache behaviour of your 
+  program, use Callgrind with the option
   <option><xref linkend="opt.simulate-cache"/>=yes.</option>
-  This will further slow down the run approximatly by a factor of 2.</para>
+  This will further slow down the run approximately by a factor of 2.</para>
 
   <para>If the program section you want to profile is somewhere in the
   middle of the run, it is beneficial to 
   <emphasis>fast forward</emphasis> to this section without any 
-  profiling at all, and switch it on later. This is achieved by using
+  profiling at all, and switch it on later.  This is achieved by using
   <option><xref linkend="opt.instr-atstart"/>=no</option> 
   and interactively use 
   <computeroutput>callgrind_control -i on</computeroutput> before the 
@@ -168,8 +176,9 @@ Cachegrind's features.</para>
 
   <para>If you want to be able to see assembler annotation, specify
   <option><xref linkend="opt.dump-instr"/>=yes</option>. This will produce
-  profile data at instruction granularity. Note that this type of annotation
-  is only available with KCachegrind. For assembler annotation, it also is
+  profile data at instruction granularity. Note that the resulting profile
+  data
+  can only be viewed with KCachegrind. For assembler annotation, it also is
   interesting to see more details of the control flow inside of functions,
   ie. (conditional) jumps. This will be collected by further specifying
   <option><xref linkend="opt.collect-jumps"/>=yes</option>.</para>
@@ -179,7 +188,7 @@ Cachegrind's features.</para>
 
   <sect2 id="cl-manual.dumps" 
          xreflabel="Multiple dumps from one program run">
-  <title>Multiple dumps from one program run</title>
+  <title>Multiple profiling dumps from one program run</title>
 
   <para>Often, you aren't interested in time characteristics of a full 
   program run, but only of a small part of it (e.g. execution of one
@@ -187,7 +196,7 @@ Cachegrind's features.</para>
   running with different input data, it's even useful to get different
   profile information for multiple parts of one program run.</para>
 
-  <para>In full detail, a generated profile data files is named
+  <para>Profile data files have names of the form
 <screen>
 callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threadID</emphasis>
 </screen>
@@ -200,8 +209,8 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   threads with <option><xref linkend="opt.separate-threads"/>=yes</option>).</para>
 
   <para>There are different ways to generate multiple profile dumps 
-  while a program is running under Callgrind's supervision.  Still, 
-  all methods trigger the same action, viz. "dump all profile 
+  while a program is running under Callgrind's supervision.  Nevertheless,
+  all methods trigger the same action, which is "dump all profile 
   information since the last dump or program start, and zero cost 
   counters afterwards".  To allow for zeroing cost counters without
   dumping, there is a second action "zero all cost counters now". 
@@ -259,9 +268,9 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
       want a dump to happen. Use 
       <computeroutput>CALLGRIND_ZERO_STATS;</computeroutput> to only 
       zero cost centers.</para>
-      <para>In Valgrind terminology, this way is called "Client
+      <para>In Valgrind terminology, this method is called "Client
       requests".  The given macros generate a special instruction
-      pattern with no effect at all (i.e. a NOP). Only when run under
+      pattern with no effect at all (i.e. a NOP). When run under
       Valgrind, the CPU simulation engine detects the special
       instruction pattern and triggers special actions like the ones
       described above.</para>
@@ -281,20 +290,21 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
 
   <sect2 id="cl-manual.limits" 
          xreflabel="Limiting range of event collection">
-  <title>Limiting range of event collection</title>
+  <title>Limiting the range of collected events</title>
 
   <para>For aggregating events (function enter/leave,
   instruction execution, memory access) into event numbers,
   first, the events must be recognizable by Callgrind, and second,
   the collection state must be switched on.</para>
 
-  <para>Event recognition is only possible if <emphasis>instrumentation</emphasis>
+  <para>Event collection is only possible if <emphasis>instrumentation</emphasis>
   for program code is switched on. This is the default, but for faster
   execution (identical to <computeroutput>valgrind --tool=none</computeroutput>),
-  it can be temporarely switched off until the program reaches parts which
-  are interesting to be profiled. Callgrind can start without instrumentation
+  it can be switched off until the program reaches a state in which
+  you want to start collecting profiling data.  
+  Callgrind can start without instrumentation
   by specifying option <option><xref linkend="opt.instr-atstart"/>=no</option>.
-  The instrumentation state can be switched on interactively
+  Instrumentation can be switched on interactively
   with <screen>callgrind_control -i on</screen>
   and off by specifying "off" instead of "on".
   Furthermore, instrumentation state can be programatically changed with
@@ -302,27 +312,29 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   and <computeroutput>CALLGRIND_STOP_INSTRUMENTATION;</computeroutput>.
   </para>
   
-  <para>In addition to instrumentation, events must be allowed to be collected
-  to be counted. This, too, is by default the case.
-  You can explicitly control for which part of your program you want to
-  collect events by using 
+  <para>In addition to enabling instrumentation, you must also enable
+  event collection for the parts of your program you are interested in.
+  By default, event collection is enabled everywhere.
+  You can limit collection to specific function(s)
+  by using 
   <option><xref linkend="opt.toggle-collect"/>=funcprefix</option>. 
-  This will toggle the collection state on entering and leaving a
-  function.  When specifying this option, the default collection state
-  at program start is "off". Thus, only events happening while running
+  This will toggle the collection state on entering and leaving
+  the specified functions.
+  When this option is in effect, the default collection state
+  at program start is "off".  Only events happening while running
   inside of functions starting with <emphasis>funcprefix</emphasis> will
   be collected. Recursive
   calls of functions with <emphasis>funcprefix</emphasis> do not trigger
   any action.</para>
 
   <para>It is important to note that with instrumentation switched off, the
-  cache simulator can not see any memory access events, and thus, any
+  cache simulator cannot see any memory access events, and thus, any
   simulated cache state will be frozen and wrong without instrumentation.
   Therefore, to get useful cache events (hits/misses) after switching on
   instrumentation, the cache first must warm up,
   probably leading to many <emphasis>cold misses</emphasis>
   which would not have happened in reality. If you do not want to see these,
-  start actual collection a few million instructions after you have switched
+  start event collection a few million instructions after you have switched
   on instrumentation</para>.
 
 
@@ -352,10 +364,10 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   in OO languages like C++), it's quite possible to get large cycles.
   As it is often impossible to say anything about performance behaviour
   inside of cycles, it is useful to introduce some mechanisms to avoid
-  cycles in call graphs at all.  This is done by treating the same
+  cycles in call graphs.  This is done by treating the same
   function in different ways, depending on the current execution
-  context. Either by giving them different names, or by ignoring calls to
-  functions at all.</para>
+  context, either by giving them different names, or by ignoring calls to
+  functions.</para>
 
   <para>There is an option to ignore calls to a function with
   <option><xref linkend="opt.fn-skip"/>=funcprefix</option>.  E.g., you
@@ -383,8 +395,8 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   this "context" to the function name, you get "A &gt; B'A &gt; C'B" 
   and "A &gt; C'A &gt; B'C", and there will be no cycle. Use 
   <option><xref linkend="opt.fn-caller"/>=3</option> to get a 2-caller 
-  dependency for all functions. Again, this will multiplicate the 
-  profile data size.</para>
+  dependency for all functions.  Note that doing this will increase
+  the size of profile data files.</para>
 
   </sect2>
 
@@ -395,7 +407,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
 <title>Command line option reference</title>
 
 <para>
-This reference groups options into classes, and uses the same order as
+In the following, options are grouped into classes, in same order as
 the output as <computeroutput>callgrind --help</computeroutput>.
 </para>
 
@@ -438,7 +450,7 @@ These options influence the name and format of the profile data files.
       <option><![CDATA[--base=<prefix> [default: callgrind.out] ]]></option>
     </term>
     <listitem>
-      <para>Specify another base name for the dump file names. To
+      <para>Specify the base name for the dump file names. To
       distinguish different profile runs of the same application,
       <computeroutput>.&lt;pid&gt;</computeroutput> is appended to the
       base dump file name with
@@ -458,9 +470,10 @@ These options influence the name and format of the profile data files.
       <option><![CDATA[--dump-instr=<no|yes> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>This specifies that event count relation at instruction granularity
-      should be available in the profile data file. This allows assembler
-      annotation, but currently can only be shown with KCachegrind.</para>
+      <para>This specifies that event counting should be performed at
+      per-instruction granularity.
+      This allows for assembler code
+      annotation, but currently the results can only be shown with KCachegrind.</para>
   </listitem>
   </varlistentry>
 
@@ -469,10 +482,9 @@ These options influence the name and format of the profile data files.
       <option><![CDATA[--dump-line=<no|yes> [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>This specifies that event count relation at source line granularity
-      should be available in the profile data file. This allows source
-      annotation for source which was compiled with debug information ("-g").
-      This always should be enabled.</para>
+      <para>This specifies that event counting should be performed at
+      source line granularity. This allows source
+      annotation for sources which are compiled with debug information ("-g").</para>
   </listitem>
   </varlistentry>
 
@@ -484,7 +496,7 @@ These options influence the name and format of the profile data files.
       <para>This option influences the output format of the profile data.
       It specifies whether strings (file and function names) should be
       identified by numbers. This shrinks the file size, but makes it more difficult
-      to be read by humans (which is not recommand either way).</para>
+      for humans to read (which is not recommand either way).</para>
       <para>However, this currently has to be switched off if
       the files are to be read by
       <computeroutput>callgrind_annotate</computeroutput>!</para>
@@ -525,7 +537,7 @@ These options influence the name and format of the profile data files.
 <title>Activity options</title>
 
 <para>
-These options specify when different actions regarding event counts are to
+These options specify when actions relating to event counts are to
 be executed. For interactive control use
 <computeroutput>callgrind_control</computeroutput>.
 </para>
@@ -587,23 +599,25 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
 
   <varlistentry id="opt.instr-atstart" xreflabel="--instr-atstart">
     <term>
-      <option><![CDATA[--instr-atstart=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--instr-atstart=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
       <para>Specify if you want Callgrind to start simulation and
-      profiling from the beginning.  If not, Callgrind will not be able
+      profiling from the beginning of the program.  
+      When set to <computeroutput>no</computeroutput>, 
+      Callgrind will not be able
       to collect any information, including calls, but it will have at
       most a slowdown of around 4, which is the minimum Valgrind
       overhead.  Instrumentation can be interactively switched on via
       <computeroutput>callgrind_control -i on</computeroutput>.</para>
       <para>Note that the resulting call graph will most probably not
-      contain <computeroutput>main</computeroutput>, but all the
+      contain <computeroutput>main</computeroutput>, but will contain all the
       functions executed after instrumentation was switched on.
       Instrumentation can also programatically switched on/off. See the
       Callgrind include file
       <computeroutput>&lt;callgrind.h&gt;</computeroutput> for the macro
       you have to use in your source code.</para> <para>For cache
-      simulation, results will be a little bit off when switching on
+      simulation, results will be less accurate when switching on
       instrumentation later in the program run, as the simulator starts
       with an empty cache at that moment.  Switch on event collection
       later to cope with this error.</para>
@@ -631,17 +645,19 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
           want to profile.</para>
         </listitem>
       </orderedlist>
-      <para>The second option can be used if the programm part you want to
+      <para>The second option can be used if the program part you want to
       profile is called many times. Option 1, i.e. creating a lot of
-      dumps is not practical here.</para> <para>Collection state can be
-      toggled at entering and leaving of a given function with the
-      option <xref linkend="opt.toggle-collect"/>.  For this, collection
+      dumps is not practical here.</para> 
+      <para>Collection state can be
+      toggled at entry and exit of a given function with the
+      option <xref linkend="opt.toggle-collect"/>.  If you use this flag, 
+      collection
       state should be switched off at the beginning.  Note that the
       specification of <computeroutput>--toggle-collect</computeroutput>
       implicitly sets
       <computeroutput>--collect-state=no</computeroutput>.</para>
       <para>Collection state can be toggled also by using a Valgrind
-      User Request in your application.  For this, include
+      Client Request in your application.  For this, include
       <computeroutput>valgrind/callgrind.h</computeroutput> and specify
       the macro
       <computeroutput>CALLGRIND_TOGGLE_COLLECT</computeroutput> at the
@@ -655,7 +671,8 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
       <option><![CDATA[--toggle-collect=<prefix> ]]></option>
     </term>
     <listitem>
-      <para>Toggle collection on enter/leave a function starting with
+      <para>Toggle collection on entry/exit of a function whose name
+      starts with
       &lt;prefix&gt;.</para>
     </listitem>
   </varlistentry>
@@ -666,8 +683,8 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
     </term>
     <listitem>
       <para>This specifies whether information for (conditional) jumps
-      should be collected. Same as above, callgrind_annotate currently is not
-      able to show you the data. You have to use KCachegrind to get jump
+      should be collected.  As above, callgrind_annotate currently is not
+      able to show you the data.  You have to use KCachegrind to get jump
       arrows in the annotated code.</para>
     </listitem>
   </varlistentry>
@@ -680,9 +697,10 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
 <title>Cost entity separation options</title>
 
 <para>
-These options specify how event count relation to execution contexts should be
-done. More specifically, this specifies e.g. if the recursion level or the
-call chain leading to a function should be accounted for, are if the
+These options specify how event counts should be attributed to execution
+contexts.
+More specifically, they specify e.g. if the recursion level or the
+call chain leading to a function should be accounted for, and whether the
 thread ID should be remembered.
 Also see <xref linkend="cl-manual.cycles"/>.</para>
 
@@ -733,7 +751,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       <option><![CDATA[--fn-skip=<function> ]]></option>
     </term>
     <listitem>
-      <para>Ignore calls to/from a given function?  E.g. if you have a
+      <para>Ignore calls to/from a given function.  E.g. if you have a
       call chain A &gt; B &gt; C, and you specify function B to be
       ignored, you will only see A &gt; C.</para>
       <para>This is very convenient to skip functions handling callback
@@ -749,7 +767,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       <option><![CDATA[--fn-group<number>=<function> ]]></option>
     </term>
     <listitem>
-      <para>Put a function into a separation group. This influences the
+      <para>Put a function into a separate group. This influences the
       context name for cycle avoidance. All functions inside of such a
       group are treated as being the same for context name building, which
       resembles the call chain leading to a context. By specifying function
@@ -792,12 +810,8 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       <option><![CDATA[--simulate-cache=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>Specify if you want to do full cache simulation. Disabled by
-      default; only instruction read accesses will be profiled.</para>
-      <para>Note however, that estimating of how much real time your
-      program will need only by using the instruction read counts is
-      impossible. Use it if you want to find out how many times
-      different functions are called and there call relation.</para>
+      <para>Specify if you want to do full cache simulation.  By default,
+      only instruction read accesses will be profiled.</para>
     </listitem>
   </varlistentry>
   
@@ -808,5 +822,3 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
 </sect1>
 
 </chapter>
-
-

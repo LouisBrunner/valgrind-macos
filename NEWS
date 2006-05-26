@@ -5,21 +5,20 @@ Release 3.2.0 (?? May 2006)
 usual collection of bug fixes.  This release supports X86/Linux,
 AMD64/Linux, PPC32/Linux and PPC64/Linux.
 
-Performance, especially of Memcheck, is much improved, Addrcheck has
-been removed, Callgrind has been added, PPC64/Linux support has been
-added, Lackey has been improved, and MPI support has been added.  In
-detail:
+Performance, especially of Memcheck, is improved, Addrcheck has been
+removed, Callgrind has been added, PPC64/Linux support has been added,
+Lackey has been improved, and MPI support has been added.  In detail:
 
 - Memcheck has improved speed and reduced memory use.  Programs
   typically run 20-40% faster, averaging about 30% for SPEC CPU2000.
-  There are smaller but noticeable speed improvements for the other
-  tools.  We are interested to hear what improvements users get.
+  The other tools have smaller but noticeable speed improvments.  We
+  are interested to hear what improvements users get.
 
   Memcheck uses less memory, due to the introduction of a compressed
-  representation for Memcheck's shadow memory.  The space overhead has
-  been reduced by a factor of more than four on most programs.  This
-  means you should be able to run programs that use more memory than
-  before without hitting problems.
+  representation for shadow memory.  The space overhead has been
+  reduced by a factor of up to four, depending on program behaviour.
+  This means you should be able to run programs that use more memory
+  than before without hitting problems.
 
 - Addrcheck has been removed.  It has not worked since version 2.4.0,
   and the speed and memory improvements to Memcheck make it redundant.
@@ -27,13 +26,14 @@ detail:
   errors, you can use the new Memcheck option --undef-value-errors=no
   to get the same behaviour.
 
-- Further reduced rates of incorrectly reported undefined-value-errors
-  in Memcheck (it was already very low).  In particular, efforts have
-  been made to ensure Memcheck works really well with gcc
-  4.0/4.1-generated code on X86/Linux and AMD64/Linux.
+- The number of undefined-value errors incorrectly reported by
+  Memcheck has been reduced (such false reports were already very
+  rare).  In particular, efforts have been made to ensure Memcheck
+  works really well with gcc 4.0/4.1-generated code on X86/Linux and
+  AMD64/Linux.
 
 - Josef Weidendorfer's popular Callgrind tool has been added.  Folding
-  it in is in a logical step given its popularity and usefulness, and
+  it in was a logical step given its popularity and usefulness, and
   makes it easier for us to ensure it works "out of the box" on all
   supported targets.  The associated KDE KCachegrind GUI remains a
   separate project.
@@ -156,7 +156,7 @@ n-i-bz   amd64->IR: 0x66 0xF 0xF5 (pmaddwd)
 126722  assertion: segment_is_sane at m_aspacemgr/aspacemgr.c:1624
 126938  bad checking for syscalls linkat, renameat, symlinkat
 
-(3.2.0: ?? May 2006, vex r??, valgrind r??)
+(3.2.0RC1: 26 May 2006, vex r1626, valgrind r5937).
 
 
 Release 3.1.1 (15 March 2006)

@@ -67,6 +67,12 @@
 # If results don't match, the output can be found in <test>.std<strm>.out,
 # and the diff between expected and actual in <test>.std<strm>.diff[0-9]*.
 #
+# Sometimes it is useful to run all the tests at a high sanity check
+# level or with arbitrary other flags.  To make this simple, extra 
+# options, applied to all tests run, are read from $EXTRA_REGTEST_OPTS,
+# and handed to valgrind prior to any other flags specified by the 
+# .vgtest file.
+#
 # Notes on adding regression tests for a new tool are in
 # coregrind/docs/coregrind_tools.html.
 #----------------------------------------------------------------------------
@@ -272,6 +278,11 @@ sub do_one_test($$)
     my $name = $1;
     my $fullname = "$dir/$name"; 
 
+    # Pull any extra options (for example, --sanity-level=4)
+    # from $EXTRA_REGTEST_OPTS.
+    my $maybe_extraopts = $ENV{"EXTRA_REGTEST_OPTS"};
+    my $extraopts = $maybe_extraopts ?  $maybe_extraopts  : "";
+
     read_vgtest_file($vgtest);
 
     if (defined $prereq) {
@@ -281,7 +292,7 @@ sub do_one_test($$)
         }
     }
 
-    printf("%-16s valgrind $vgopts $prog $args\n", "$name:");
+    printf("%-16s valgrind $extraopts $vgopts $prog $args\n", "$name:");
 
     # Pass the appropriate --tool option for the directory (can be overridden
     # by an "args:" line, though).  Set both VALGRIND_LIB and
@@ -290,7 +301,7 @@ sub do_one_test($$)
     my $tool=determine_tool();
     mysystem("VALGRIND_LIB=$tests_dir/.in_place VALGRIND_LIB_INNER=$tests_dir/.in_place "
            . "$valgrind --command-line-only=yes --memcheck:leak-check=no "
-           . "--tool=$tool $vgopts "
+           . "--tool=$tool $extraopts $vgopts "
            . "$prog $args > $name.stdout.out 2> $name.stderr.out");
 
     # Filter stdout
@@ -408,9 +419,21 @@ sub summarise_results
 #----------------------------------------------------------------------------
 # main(), sort of
 #----------------------------------------------------------------------------
+sub warn_about_EXTRA_REGTEST_OPTS()
+{
+    print "WARNING: \$EXTRA_REGTEST_OPTS is set.  You probably don't want\n";
+    print "to run the regression tests with it set, unless you are doing some\n";
+    print "strange experiment, and/or you really know what you are doing.\n";
+    print "\n";
+}
 
 # nuke VALGRIND_OPTS
 $ENV{"VALGRIND_OPTS"} = "";
+
+if ($ENV{"EXTRA_REGTEST_OPTS"}) {
+    print "\n";
+    warn_about_EXTRA_REGTEST_OPTS();
+}
 
 my @fs = process_command_line();
 foreach my $f (@fs) {
@@ -433,6 +456,10 @@ foreach my $f (@fs) {
     }
 }
 summarise_results();
+
+if ($ENV{"EXTRA_REGTEST_OPTS"}) {
+    warn_about_EXTRA_REGTEST_OPTS();
+}
 
 if (0 == $num_failures{"stdout"} &&
     0 == $num_failures{"stderr"} &&

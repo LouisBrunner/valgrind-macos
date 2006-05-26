@@ -141,7 +141,7 @@ int main(void)
       Ty* aNb   = (Ty*)(((U1*)aN) + h); /* set offset from a[] */ \
       Ty* bNb   = (Ty*)(((U1*)bN) + h); /* set offset from b[] */ \
  \
-      fprintf(stderr, "h = %d (checking %d..%d)   ", h, h, n-NNN+h); \
+      fprintf(stderr, "h = %d (checking %d..%ld)   ", h, h, n-NNN+h); \
  \
       /* For each of the 256 possible V byte values... */ \
       for (j = 0; j < 256; j++) { \

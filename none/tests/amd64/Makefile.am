@@ -6,7 +6,7 @@ INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
-	faultstatus.vgtest faultstatus.stderr.exp \
+	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \

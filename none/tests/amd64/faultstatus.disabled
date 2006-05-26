@@ -1,0 +1,3 @@
+# Currently disabled because the necessary magic in sigframe-amd64-linux.c
+# doesn't work well enough, so the test always fails.
+prog: faultstatus

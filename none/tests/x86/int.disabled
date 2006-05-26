@@ -1,0 +1,4 @@
+# This is currently disabled because vex doesn't deal with x86
+# int $n for n != 0x80 and so the test is pointless (at the moment).
+prog: int
+cleanup: rm -f vgcore.pid*

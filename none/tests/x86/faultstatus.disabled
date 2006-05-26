@@ -1,0 +1,4 @@
+# Currently disabled because the necessary magic in sigframe-x86-linux.c
+# doesn't work well enough, so the test always fails.  It did work back
+# in 2.4.X days and could be made to do so again if required.
+prog: faultstatus

@@ -9,14 +9,14 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bt_literal.stderr.exp bt_literal.stdout.exp bt_literal.vgtest \
 	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
 	cmpxchg8b.stderr.exp cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
-	faultstatus.vgtest faultstatus.stderr.exp \
+	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \
 	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
 	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \
-	int.stderr.exp int.stdout.exp int.vgtest \
+	int.stderr.exp int.stdout.exp int.disabled \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \

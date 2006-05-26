@@ -9,8 +9,8 @@ Performance, especially of Memcheck, is improved, Addrcheck has been
 removed, Callgrind has been added, PPC64/Linux support has been added,
 Lackey has been improved, and MPI support has been added.  In detail:
 
-- Memcheck has improved speed and reduced memory use.  Programs
-  typically run 20-40% faster, averaging about 30% for SPEC CPU2000.
+- Memcheck has improved speed and reduced memory use.  Run times are
+  typically reduced by 15-30%, averaging about 24% for SPEC CPU2000.
   The other tools have smaller but noticeable speed improvments.  We
   are interested to hear what improvements users get.
 
@@ -156,7 +156,7 @@ n-i-bz   amd64->IR: 0x66 0xF 0xF5 (pmaddwd)
 126722  assertion: segment_is_sane at m_aspacemgr/aspacemgr.c:1624
 126938  bad checking for syscalls linkat, renameat, symlinkat
 
-(3.2.0RC1: 26 May 2006, vex r1626, valgrind r5937).
+(3.2.0RC1: 26 May 2006, vex r1626, valgrind r5938).
 
 
 Release 3.1.1 (15 March 2006)

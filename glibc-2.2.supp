@@ -77,7 +77,13 @@
    obj:*-2.2.5.so
    obj:*-2.2.5.so
 }
-
+{
+   Red Hat 7.3 #4
+   Memcheck:Cond
+   fun:strlen
+   fun:dl_main
+   fun:_dl_sysdep_start
+}
 
 #-------- SuSE 8.1 stuff (gcc-3.2, glibc-2.2.5 + SuSE's hacks)
 {

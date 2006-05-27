@@ -973,7 +973,7 @@ static void usage_NORETURN ( Bool debug_help )
 "\n"
 "  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc\n"
 "\n"
-"  Valgrind is Copyright (C) 2000-2005 Julian Seward et al.\n"
+"  Valgrind is Copyright (C) 2000-2006 Julian Seward et al.\n"
 "  and licensed under the GNU General Public License, version 2.\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n"
@@ -1544,13 +1544,13 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
          "%sUsing LibVEX rev %s, a library for dynamic binary translation.%s",
          xpre, LibVEX_Version(), xpost );
       VG_(message)(Vg_UserMsg, 
-         "%sCopyright (C) 2004-2005, and GNU GPL'd, by OpenWorks LLP.%s",
+         "%sCopyright (C) 2004-2006, and GNU GPL'd, by OpenWorks LLP.%s",
          xpre, xpost );
       VG_(message)(Vg_UserMsg,
          "%sUsing valgrind-%s, a dynamic binary instrumentation framework.%s",
          xpre, VERSION, xpost);
       VG_(message)(Vg_UserMsg, 
-         "%sCopyright (C) 2000-2005, and GNU GPL'd, by Julian Seward et al.%s",
+         "%sCopyright (C) 2000-2006, and GNU GPL'd, by Julian Seward et al.%s",
          xpre, xpost );
 
       if (VG_(clo_verbosity) == 1 && !VG_(clo_xml))

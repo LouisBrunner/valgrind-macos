@@ -272,29 +272,44 @@ void endOfInstr(IRBB* bbOut, InstrInfo* ii, Bool bb_seen_before,
    es = insert_simcall(bbOut, ii, dataSize, instrIssued,
 		       loadAddrExpr, storeAddrExpr);
 
+   CLG_DEBUG(5, "  Instr +%2d (Size %d, DSize %d): ESet %s (Size %d)\n",
+	     instr_offset, instrLen, dataSize, 
+	     es ? es->name : (Char*)"(no instrumentation)",
+	     es ? es->size : 0);
+
    if (bb_seen_before) {
+       CLG_DEBUG(5, "   before: Instr +%2d (Size %d, DSize %d)\n",
+		 ii->instr_offset, ii->instr_size, ii->data_size);
+
        CLG_ASSERT(ii->instr_offset == instr_offset);
        CLG_ASSERT(ii->instr_size == instrLen);
-       CLG_ASSERT(ii->data_size == dataSize);
        CLG_ASSERT(ii->cost_offset == *cost_offset);
        CLG_ASSERT(ii->eventset == es);
+
+       /* Only check size if data size >0.
+	* This is needed: e.g. for rep or cmov x86 instructions, the same InstrInfo
+	* is used both for 2 simulator calls: for the pure instruction fetch and
+        * separately for an memory access (which may not happen depending on flags).
+	* If checked always, this triggers an assertion failure on retranslation.
+	*/
+       if (dataSize>0) CLG_ASSERT(ii->data_size == dataSize);
+
    }
    else {
        ii->instr_offset = instr_offset;
        ii->instr_size = instrLen;
-       ii->data_size = dataSize;
        ii->cost_offset = *cost_offset;
        ii->eventset = es;
+       
+       /* data size only relevant if >0 */
+       if (dataSize > 0) ii->data_size = dataSize;
+
 
        CLG_(stat).distinct_instrs++;
    }
 
    *cost_offset += es ? es->size : 0;
 
-   CLG_DEBUG(5, "  Instr +%2d (Size %d, DSize %d): ESet %s (Size %d)\n",
-	     instr_offset, instrLen, dataSize, 
-	     es ? es->name : (Char*)"(no Instr)",
-	     es ? es->size : 0);
 }
 
 #if defined(VG_BIGENDIAN)

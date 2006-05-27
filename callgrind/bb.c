@@ -120,16 +120,17 @@ static BB* new_bb(obj_node* obj, OffT offset,
 		  UInt instr_count, UInt cjmp_count, Bool cjmp_inverted)
 {
    BB* new;
-   UInt new_idx;
+   UInt new_idx, size;
 
    /* check fill degree of bb hash table and resize if needed (>80%) */
    bbs.entries++;
    if (10 * bbs.entries / bbs.size > 8)
        resize_bb_table();
 
-   new = (BB*) CLG_MALLOC(sizeof(BB) +
-			  instr_count * sizeof(InstrInfo) +
-			  (cjmp_count+1) * sizeof(CJmpInfo));
+   size = sizeof(BB) + instr_count * sizeof(InstrInfo)
+                     + (cjmp_count+1) * sizeof(CJmpInfo);
+   new = (BB*) CLG_MALLOC(size);
+   VG_(memset)(new, 0, size);
 
    new->obj        = obj;
    new->offset     = offset;

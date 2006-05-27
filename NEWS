@@ -160,7 +160,7 @@ n-i-bz   amd64->IR: 0x66 0xF 0xF5 (pmaddwd)
 126722  assertion: segment_is_sane at m_aspacemgr/aspacemgr.c:1624
 126938  bad checking for syscalls linkat, renameat, symlinkat
 
-(3.2.0RC1: 26 May 2006, vex r1626, valgrind r5938).
+(3.2.0RC1: 27 May 2006, vex r1626, valgrind r5944).
 
 
 Release 3.1.1 (15 March 2006)

@@ -629,7 +629,7 @@ elif test x$VG_PLATFORM_PRI = xAMD64_LINUX \
 fi
 
 AC_ARG_WITH(mpicc,
-   [  --with-mpicc=            Specify name of MPI2-ised C compiler],
+   [  --with-mpicc=           Specify name of MPI2-ised C compiler],
    MPI_CC=$withval
 )
 AC_MSG_CHECKING([for usable MPI2-compliant mpicc and mpi.h])

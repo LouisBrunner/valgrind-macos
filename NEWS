@@ -86,6 +86,14 @@ Lackey has been improved, and MPI support has been added.  In detail:
   perf/README for details.  "make perf" runs the tests.  There are
   various bells and whistles.
 
+- New configuration flags:
+    --enable-only32bit
+    --enable-only64bit
+  By default, on 64 bit platforms (ppc64-linux, amd64-linux) the build
+  system will attempt to build a Valgrind which supports both 32-bit
+  and 64-bit executables.  This may not be what you want, and you can
+  override the default behaviour using these flags.
+
 Please note that Helgrind is still not working.  We have made an
 important step towards making it work again, however, with the
 addition of function wrapping (see below).
@@ -155,12 +163,12 @@ n-i-bz   amd64->IR: 0x66 0xF 0xF5 (pmaddwd)
 126217   increase # threads
 126243   vex x86->IR: popw mem
 126583   amd64->IR: 0x48 0xF 0xA4 0xC2 (shld $1,%rax,%rdx)
-126668  amd64->IR: 0x1C 0xFF (sbb $0xff,%al)
-126696  support for CDROMREADRAW ioctl and CDROMREADTOCENTRY fix
-126722  assertion: segment_is_sane at m_aspacemgr/aspacemgr.c:1624
-126938  bad checking for syscalls linkat, renameat, symlinkat
+126668   amd64->IR: 0x1C 0xFF (sbb $0xff,%al)
+126696   support for CDROMREADRAW ioctl and CDROMREADTOCENTRY fix
+126722   assertion: segment_is_sane at m_aspacemgr/aspacemgr.c:1624
+126938   bad checking for syscalls linkat, renameat, symlinkat
 
-(3.2.0RC1: 27 May 2006, vex r1626, valgrind r5944).
+(3.2.0RC1: 27 May 2006, vex r1626, valgrind r5945).
 
 
 Release 3.1.1 (15 March 2006)

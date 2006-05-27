@@ -82,6 +82,10 @@ Lackey has been improved, and MPI support has been added.  In detail:
 - Various segfaults when reading old-style "stabs" debug information
   have been fixed.
 
+- A simple performance evaluation suite has been added.  See
+  perf/README for details.  "make perf" runs the tests.  There are
+  various bells and whistles.
+
 Please note that Helgrind is still not working.  We have made an
 important step towards making it work again, however, with the
 addition of function wrapping (see below).

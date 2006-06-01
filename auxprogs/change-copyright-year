@@ -1,0 +1,25 @@
+#! /bin/sh
+#
+# Script updates the copyright year in every file in Valgrind that contains
+# a copyright notice.  Assumes they're all in the same format:
+#
+#     "Copyright (C) 200x-200y"
+#
+# To use:
+# - change the years in the 'sed' command below appropriately.
+# - Run it from the base directory of a Valgrind workspace.  
+# - And check the results look ok by diff'ing against the repository.
+#
+# Note that it will spit out some warnings when it runs;  ignore these.
+#
+# Nb: after 2009, the sed string may have to be changed slightly -- it
+# currently assumes the first year is in the range 2000..2009.
+
+# The find command deliberately skips .svn/ subdirs -- we don't want to
+# change them.
+for i in `find . -name '*' -type f -not -path '*.svn\/*'` ; do
+    echo $i
+    sed "s/Copyright (C) 200\([0-9]\)-2004/Copyright (C) 200\1-2005/" < $i > tmp.$$
+    mv tmp.$$ $i
+done
+

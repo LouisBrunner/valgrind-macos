@@ -963,6 +963,7 @@ static void usage_NORETURN ( Bool debug_help )
 "       0000 0100   show selecting insns\n"
 "       0000 0010   show after reg-alloc\n"
 "       0000 0001   show final assembly\n"
+"      (Nb: you need --trace-notbelow with --trace-flags for full details)\n"
 "\n"
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"

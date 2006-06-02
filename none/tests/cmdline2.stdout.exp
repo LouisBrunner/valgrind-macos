@@ -75,6 +75,7 @@ usage: valgrind [options] prog-and-args
        0000 0100   show selecting insns
        0000 0010   show after reg-alloc
        0000 0001   show final assembly
+      (Nb: you need --trace-notbelow with --trace-flags for full details)
 
   debugging options for Valgrind tools that report errors
     --dump-error=<number>     show translation for basic block associated

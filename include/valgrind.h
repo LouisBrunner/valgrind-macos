@@ -2442,6 +2442,11 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    you could miss an error this way).  See memcheck/tests/custom_alloc.c
    for an example.
 
+   WARNING: if your allocator uses malloc() or 'new' to allocate
+   superblocks, rather than mmap() or brk(), this will not work properly --
+   you'll likely get assertion failures during leak detection.  This is
+   because Valgrind doesn't like seeing overlapping heap blocks.  Sorry.
+
    Nb: block must be freed via a free()-like function specified
    with VALGRIND_FREELIKE_BLOCK or mismatch errors will occur. */
 #define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)    \

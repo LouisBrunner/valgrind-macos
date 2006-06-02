@@ -33,6 +33,30 @@ file.  Eg:
   perl tests/vg_regtest memcheck/tests/badfree
 
 
+Running the performance suite
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To build and run the whole performance suite, run "make [--quiet] perf".
+
+To run a subset of the regression tests, execute:
+
+  perl perf/vg_perf <name>
+
+where <name> is a directory (all tests within will be run) or a single
+.vgperf test file, or the name of a program which has a like-named .vgperf
+file.  Eg:
+
+  perl perf/vg_perf perf/
+  perl perf/vg_perf perf/bz2.vgperf
+  perl perf/vg_perf perf/bz2
+
+To compare multiple versions of Valgrind, use the --vg= options multiple
+times.  For example, if you have two Valgrinds next to each other, one in
+trunk1/ and one in trunk2/, from either trunk1/ or trunk2/ do this to
+compare them on the entire suite:
+
+  perl perf/vg_perf --vg=../trunk1 --vg=../trunk2 perf/
+
+
 Debugging Valgrind with GDB
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To debug the valgrind launcher program (<prefix>/bin/valgrind) just

@@ -83,7 +83,7 @@ Lackey has been improved, and MPI support has been added.  In detail:
   have been fixed.
 
 - A simple performance evaluation suite has been added.  See
-  perf/README for details.  "make perf" runs the tests.  There are
+  perf/README and README_DEVELOPERS for details.  There are
   various bells and whistles.
 
 - New configuration flags:

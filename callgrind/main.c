@@ -8,10 +8,10 @@
    This file is part of Callgrind, a Valgrind tool for call graph
    profiling programs.
 
-   Copyright (C) 2002-2005, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2006, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This skin is derived from and contains code from Cachegrind
-   Copyright (C) 2002-2005 Nicholas Nethercote (njn25@cam.ac.uk)
+   Copyright (C) 2002-2006 Nicholas Nethercote (njn25@cam.ac.uk)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

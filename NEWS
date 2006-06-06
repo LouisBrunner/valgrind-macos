@@ -1,5 +1,5 @@
 
-Release 3.2.0 (?? May 2006)
+Release 3.2.0 (7 June 2006)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.2.0 is a feature release with many significant improvements and the
 usual collection of bug fixes.  This release supports X86/Linux,
@@ -14,7 +14,7 @@ Lackey has been improved, and MPI support has been added.  In detail:
   The other tools have smaller but noticeable speed improvments.  We
   are interested to hear what improvements users get.
 
-  Memcheck uses less memory, due to the introduction of a compressed
+  Memcheck uses less memory due to the introduction of a compressed
   representation for shadow memory.  The space overhead has been
   reduced by a factor of up to four, depending on program behaviour.
   This means you should be able to run programs that use more memory
@@ -37,6 +37,12 @@ Lackey has been improved, and MPI support has been added.  In detail:
   makes it easier for us to ensure it works "out of the box" on all
   supported targets.  The associated KDE KCachegrind GUI remains a
   separate project.
+
+- A new release of the Valkyrie GUI for Memcheck, version 1.2.0,
+  accompanies this release.  Improvements over previous releases
+  include improved robustness, many refinements to the user interface,
+  and use of a standard autoconf/automake build system.  You can get
+  it from http://www.valgrind.org/downloads/guis.html.
 
 - Valgrind now works on PPC64/Linux.  As with the AMD64/Linux port,
   this supports programs using to 32G of address space.  On 64-bit
@@ -126,6 +132,11 @@ Other user-visible changes:
   which is like MAKE_MEM_DEFINED but only affects a byte if the byte is
   already addressable.
 
+- The way client requests are encoded in the instruction stream has
+  changed.  Unfortunately, this means 3.2.0 will not honour client
+  requests compiled into binaries using headers from earlier versions
+  of Valgrind.  We will try to keep the client request encodings more 
+  stable in future.
 
 BUGS FIXED:
 
@@ -155,7 +166,6 @@ n-i-bz   amd64->IR: 0x66 0xF 0xF5 (pmaddwd)
 121617   ppc32/64: coredumping gives assertion failure
 121814   Coregrind return error as exitcode patch
 126517   == 121814
-108528   NPTL pthread cleanup handlers not called 
 125607   amd64->IR: 0x66 0xF 0xA3 0x2 (btw etc)
 125651   amd64->IR: 0xF8 0x49 0xFF 0xE3 (clc?)
 126253   x86 movx is wrong
@@ -168,7 +178,8 @@ n-i-bz   amd64->IR: 0x66 0xF 0xF5 (pmaddwd)
 126722   assertion: segment_is_sane at m_aspacemgr/aspacemgr.c:1624
 126938   bad checking for syscalls linkat, renameat, symlinkat
 
-(3.2.0RC1: 27 May 2006, vex r1626, valgrind r5947).
+(3.2.0RC1: 27 May  2006, vex r1626, valgrind r5947).
+(3.2.0:     7 June 2006, vex r1628, valgrind r5957).
 
 
 Release 3.1.1 (15 March 2006)

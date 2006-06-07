@@ -13,3 +13,4 @@ TRUNK     PRIO    BUG#     WHAT
 TRUNK    32BRANCH   BUG#     WHAT
 
 v5968     pending   117172   FUTEX_WAKE does not use uaddr2
+v5970     pending   124039   Lacks support for VKI_[GP]IO_UNIMAP* and VT_* ioctls

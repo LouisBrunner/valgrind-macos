@@ -81,7 +81,7 @@ TRUNK    31BRANCH   BUG#     WHAT
 v5262     v5446     n-i-bz   fsub 3,3,3 in ppc32 dispatcher doesn't clear NaNs
 v5270     v5447     n-i-bz   ppc32: __NR_{set,get}priority
 v5384     wontfix   117096   Weird errors when --log-fd= has invalid value
-pending   pending   117172   FUTEX_WAKE does not use uaddr2
+v5968     pending   117172   FUTEX_WAKE does not use uaddr2
 v5470     v5479     117332   missing line info with icc 8.1 (x86)
 pending   pending   117362   partially defined equality
 vx1591    vx1592    117366   amd64: 0xDD 0x7C fnstsw

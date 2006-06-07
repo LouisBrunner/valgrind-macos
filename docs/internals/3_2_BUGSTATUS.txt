@@ -1,0 +1,15 @@
+
+n-i-bz  = not in bugzilla
+pending = is scheduled to be fixed (or at least considered) on this branch
+wontfix = will not fix on this branch
+many    = fix composed of many commits
+
+------- Bugs reported after (in) 3.2.0 ------
+
+TRUNK     PRIO    BUG#     WHAT
+
+------- Bugs reported prior to 3.2.0 ------
+
+TRUNK    32BRANCH   BUG#     WHAT
+
+v5968     pending   117172   FUTEX_WAKE does not use uaddr2

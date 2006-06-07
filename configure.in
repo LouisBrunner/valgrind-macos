@@ -238,6 +238,31 @@ case "${host_os}" in
 	;;
 esac
 
+# If we are building on a 64 bit platform test to see if the system
+# supports building 32 bit programs and disable 32 bit support if it
+# does not support building 32 bit programs
+
+case "$VG_ARCH-$VG_OS" in
+     amd64-linux|ppc64-linux)
+        AC_MSG_CHECKING([for 32 bit build support])
+        safe_CFLAGS=$CFLAGS
+        CFLAGS="-m32"
+        AC_TRY_LINK(, [
+        int main () { return 0 ; }
+        ],
+        [
+        AC_MSG_RESULT([yes])
+        ], [
+        vg_cv_only64bit="yes"
+        AC_MSG_RESULT([no])
+        ])
+        CFLAGS=$safe_CFLAGS;;
+esac
+
+if test x$vg_cv_only64bit = xyes -a x$vg_cv_only32bit = xyes; then
+   AC_MSG_ERROR(
+      [--enable-only32bit was specified but system does not support 32 bit builds])
+fi
 
 # Establish VG_PLATFORM_PRI.  This is the primary build target.  The
 # entire system, including regression and performance tests, will be

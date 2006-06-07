@@ -636,7 +636,7 @@ POST(sys_accept)
 PRE(sys_sendto)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_sendto ( %d, %s, %d, %u, %p, %d )",ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRINT("sys_sendto ( %d, %p, %d, %u, %p, %d )",ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
    PRE_REG_READ6(long, "sendto",
                  int, s, const void *, msg, int, len, 
                  unsigned int, flags, 

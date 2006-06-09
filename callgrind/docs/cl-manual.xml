@@ -55,8 +55,7 @@ of the profiling, two command line tools are provided:</para>
 
 <para>To use Callgrind, you must specify 
 <computeroutput>--tool=callgrind</computeroutput> on the Valgrind 
-command line or use the supplied script 
-<computeroutput>callgrind</computeroutput>.</para>
+command line.</para>
 
 <para>Callgrind's cache simulation is based on the 
 <ulink url="&cg-tool-url;">Cachegrind tool</ulink> of the 

@@ -1872,7 +1872,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
    if (EXPECTED_TAKEN( len == 128 && VG_IS_8_ALIGNED(base) )) {
       /* Now we know the address range is suitably sized and aligned. */
       UWord a_lo = (UWord)(base);
-      UWord a_hi = (UWord)(base + 127);
+      UWord a_hi = (UWord)(base + 128 - 1);
       tl_assert(a_lo < a_hi);             // paranoia: detect overflow
       if (a_hi < MAX_PRIMARY_ADDRESS) {
          // Now we know the entire range is within the main primary map.
@@ -1907,10 +1907,10 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
    }
 
    /* 288 bytes (36 ULongs) is the magic value for ELF ppc64. */
-   if (EXPECTED_TAKEN( len == 128 && VG_IS_8_ALIGNED(base) )) {
+   if (EXPECTED_TAKEN( len == 288 && VG_IS_8_ALIGNED(base) )) {
       /* Now we know the address range is suitably sized and aligned. */
       UWord a_lo = (UWord)(base);
-      UWord a_hi = (UWord)(base + 127);
+      UWord a_hi = (UWord)(base + 288 - 1);
       tl_assert(a_lo < a_hi);             // paranoia: detect overflow
       if (a_hi < MAX_PRIMARY_ADDRESS) {
          // Now we know the entire range is within the main primary map.

@@ -8,6 +8,8 @@ many    = fix composed of many commits
 
 TRUNK     PRIO    BUG#     WHAT
 
+v5974             n-i-bz   Expanding brk() into last available page asserts
+
 ------- Bugs reported prior to 3.2.0 ------
 
 TRUNK    32BRANCH   BUG#     WHAT

@@ -989,14 +989,14 @@ static Addr do_brk ( Addr newbrk )
       return newbrk;
    }
 
-   if (newbrk >= rseg->end+1 - VKI_PAGE_SIZE) {
+   if (newbrk > rseg->end+1 - VKI_PAGE_SIZE) {
       /* request is too large -- the resvn would fall below 1 page,
          which isn't allowed. */
       goto bad;
    }
 
    newbrkP = VG_PGROUNDUP(newbrk);
-   vg_assert(newbrkP > rseg->start && newbrkP < rseg->end+1 - VKI_PAGE_SIZE);
+   vg_assert(newbrkP > rseg->start && newbrkP <= rseg->end+1 - VKI_PAGE_SIZE);
    delta = newbrkP - rseg->start;
    vg_assert(delta > 0);
    vg_assert(VG_IS_PAGE_ALIGNED(delta));

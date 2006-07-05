@@ -529,10 +529,20 @@ static Bool match_script(char *hdr, Int len)
    if (0 != VG_(memcmp)(hdr, "#!", 2)) return False;
 
    // Find interpreter name, make sure it's an absolute path (starts with
-   // '/') and has at least one more char.
+   // '/') and has at least one more char.  First, skip over any space
+   // between the #! and the start of the interpreter name
    while (interp < end && VG_(isspace)(*interp)) interp++;
+
+   // overrun?
+   if (interp >= end)   return False;  // can't find start of interp name
+
+   // interp should now point at the /
    if (*interp != '/')  return False;  // absolute path only for interpreter
-   if (interp == end)   return False;  // nothing after the '/'
+
+   // check for something plausible after the /
+   interp++;
+   if (interp >= end)   return False;
+   if (VG_(isspace)(*interp)) return False;
 
    // Here we should get the full interpreter name and check it with
    // check_executable().  See the "EXEC FAILED" failure when running shell
@@ -584,7 +594,7 @@ static Int load_script(Int fd, const HChar* name, ExeInfo* info)
 
    if (!eol && cp < end) {
       /* skip space before arg */
-      while (cp < end && VG_(isspace)(*cp))
+      while (cp < end && VG_(isspace)(*cp) && *cp != '\n')
 	 cp++;
 
       /* arg is from here to eol */

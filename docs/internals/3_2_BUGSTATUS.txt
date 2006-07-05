@@ -19,6 +19,7 @@ pending  pending      106852   x86->IR: fisttp (SSE3)
 pending  pending      129246   JJ: ppc32/ppc64 syscalls, w/ patch
 pending  pending      129358   x86->IR: fisttpl (SSE3)
 pending  pending      129390   ppc?->IR: some kind of VMX prefetch
+v5979    pending      130020   Can't stat .so/.exe error while reading symbols
 
 Signal race condition (users list, 13 June, Johannes Berg)
 Livelocks entire machine (users list, 17 June, Timothy B. Terriberry)

@@ -1,0 +1,149 @@
+Only in posixtestsuite/conformance/interfaces/pthread_spin_lock: 1-1
+diff -U3 -r posixtestsuite.orig/conformance/interfaces/pthread_spin_lock/1-1.c posixtestsuite/conformance/interfaces/pthread_spin_lock/1-1.c
+--- posixtestsuite.orig/conformance/interfaces/pthread_spin_lock/1-1.c	2003-07-10 02:19:34.000000000 +0100
++++ posixtestsuite/conformance/interfaces/pthread_spin_lock/1-1.c	2006-07-05 15:38:27.000000000 +0100
+@@ -39,7 +39,8 @@
+ static void sig_handler()
+ {
+ 	/* Just return */
+-	pthread_exit(0);
++        /* pthread_exit(0); */
++        exit(0);
+ 	return;
+ }
+ 
+diff -U3 -r posixtestsuite.orig/LDFLAGS posixtestsuite/LDFLAGS
+--- posixtestsuite.orig/LDFLAGS	2005-06-03 02:32:42.000000000 +0100
++++ posixtestsuite/LDFLAGS	2006-07-05 13:03:09.000000000 +0100
+@@ -8,7 +8,7 @@
+ #-lpthread -D_GNU_SOURCE
+ #
+ #Recommended flags:
+-#-D_XOPEN_SOURCE=600 -lpthread -lrt -lm
++-D_XOPEN_SOURCE=600 -lpthread -lrt -lm
+ #
+ # For use with Linux, you may try the following flags to
+ # allow for the NPTL-specific compilation (used in some test cases)
+diff -U3 -r posixtestsuite.orig/locate-test posixtestsuite/locate-test
+--- posixtestsuite.orig/locate-test	2005-03-14 13:53:50.000000000 +0000
++++ posixtestsuite/locate-test	2006-07-05 13:16:52.000000000 +0100
+@@ -60,19 +60,19 @@
+           shift;
+           ;;
+       "--fmake")
+-          find functional/ -type f -maxdepth 2 -mindepth 2 -name "Makefile" -exec dirname '{}' ';'
++          find functional/ -maxdepth 2 -mindepth 2 -type f -name "Makefile" -exec dirname '{}' ';'
+           exit 0;
+           ;;
+       "--frun")
+-          find functional/ -type f -maxdepth 2 -mindepth 2 -name "run.sh" -exec dirname '{}' ';' 
++          find functional/ -maxdepth 2 -mindepth 2 -type f -name "run.sh" -exec dirname '{}' ';' 
+           exit 0;
+           ;;
+       "--smake")
+-          find stress/ -type f -maxdepth 2 -mindepth 2 -name "Makefile" -exec dirname '{}' ';'
++          find stress/ -maxdepth 2 -mindepth 2 -type f -name "Makefile" -exec dirname '{}' ';'
+           exit 0;
+           ;;
+       "--srun")
+-          find stress/ -type f -maxdepth 2 -mindepth 2 -name "run.sh" -exec dirname '{}' ';'
++          find stress/ -maxdepth 2 -mindepth 2 -type f -name "run.sh" -exec dirname '{}' ';'
+           exit 0;
+           ;;
+       "--help")
+diff -U3 -r posixtestsuite.orig/Makefile posixtestsuite/Makefile
+--- posixtestsuite.orig/Makefile	2005-03-14 13:53:41.000000000 +0000
++++ posixtestsuite/Makefile	2006-07-05 16:28:57.000000000 +0100
+@@ -19,7 +19,7 @@
+ 
+ # Added tests timeout from Sebastien Decugis (http://nptl.bullopensource.org) 
+ # Expiration delay is 120 seconds
+-TIMEOUT_VAL = 120
++TIMEOUT_VAL = 15
+ # The following value is the shell return value of a timedout application.
+ # with the bash shell, the ret val of a killed application is 128 + signum
+ # and under Linux, SIGALRM=14, so we have (Linux+bash) 142.
+@@ -99,7 +99,8 @@
+ %.run-test: %.test $(top_builddir)/t0
+ 	@COMPLOG=$(LOGFILE).$$$$; \
+ 	[ -f $< ] || exit 0; \
+-	$(TIMEOUT) $< > $$COMPLOG 2>&1; \
++	echo "$(@:.run-test=): GRIND=$(GRIND)" | tee -a $(LOGFILE); \
++	$(TIMEOUT) $(GRIND) $< > $$COMPLOG 2>&1; \
+ 	RESULT=$$?; \
+ 	if [ $$RESULT -eq 1 ]; \
+ 	then \
+@@ -141,11 +142,12 @@
+ 	@echo Building timeout helper files; \
+ 	$(CC) -O2 -o $@ $< ; \
+ 	echo `$(top_builddir)/t0 0; echo $$?` > $(top_builddir)/t0.val
+-	
++
+ %.run-test: %.sh $(top_builddir)/t0
+ 	@COMPLOG=$(LOGFILE).$$$$; \
++	echo "$(@:.run-test=): GRIND=$(GRIND)" | tee -a $(LOGFILE); \
+ 	chmod +x $<; \
+-	$(TIMEOUT) $< > $$COMPLOG 2>&1; \
++	$(TIMEOUT) $(GRIND) $< > $$COMPLOG 2>&1; \
+ 	RESULT=$$?; \
+ 	if [ $$RESULT -eq 0 ]; \
+ 	then \
+diff -U3 -r posixtestsuite.orig/run_tests posixtestsuite/run_tests
+--- posixtestsuite.orig/run_tests	2004-12-16 09:56:18.000000000 +0000
++++ posixtestsuite/run_tests	2006-07-05 19:06:48.000000000 +0100
+@@ -12,11 +12,14 @@
+ usage()
+ {
+     cat <<EOF 
+-Usage: $0 [AIO|MEM|MSG|SEM|SIG|THR|TMR|TPS]
++Usage: $0 [AIO|MEM|MSG|SEM|SIG|THR|TMR|TPS |ALL]
+ 
+ Build and run the tests for POSIX area specified by the 3 letter tag
+ in the POSIX spec
+ 
++Optionally, set env variable GRIND to be the Valgrind and args used
++to run the tests (eg, GRIND="vTRUNK --tool=none").
++
+ EOF
+ }
+ 
+@@ -64,6 +67,39 @@
+ 	runtests "$BASEDIR/m*map"
+ 	runtests "$BASEDIR/shm_*"
+ 	;;
++
++
++  ALL) echo "Executing all tests"
++	echo "Executing asynchronous I/O tests"
++	runtests "$BASEDIR/aio_*"
++	runtests "$BASEDIR/lio_listio"
++	echo "Executing signals tests"
++	runtests "$BASEDIR/sig*"
++	runtests $BASEDIR/raise
++	runtests $BASEDIR/kill
++	runtests $BASEDIR/killpg
++	runtests $BASEDIR/pthread_kill
++	runtests $BASEDIR/pthread_sigmask
++	echo "Executing semaphores tests"
++	runtests "$BASEDIR/sem*"
++	echo "Executing threads tests"
++	runtests "$BASEDIR/pthread_*"
++	echo "Executing timers and clocks tests"
++	runtests "$BASEDIR/time*"
++	runtests "$BASEDIR/*time"
++	runtests "$BASEDIR/clock*"
++	runtests $BASEDIR/nanosleep
++	echo "Executing message queues tests"
++	runtests "$BASEDIR/mq_*"
++	echo "Executing process and thread scheduling tests"
++	runtests "$BASEDIR/*sched*"
++	echo "Executing mapped, process and shared memory tests"
++	runtests "$BASEDIR/m*lock*"
++	runtests "$BASEDIR/m*map"
++	runtests "$BASEDIR/shm_*"
++	;;
++
++
+   *)	usage
+ 	exit 1
+ 	;;

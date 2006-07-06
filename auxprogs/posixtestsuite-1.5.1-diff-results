@@ -1,0 +1,21 @@
+#!/bin/sh
+
+usage()
+{
+    cat <<EOF
+
+Usage: $0 result_file_1 result_file_2
+
+EOF
+}
+
+if [ $# != 2 ]; then
+   usage;
+   exit 1;
+else
+   echo $1 $2;
+   rm -f tmptmp_1 tmptmp_2;
+   grep -v GRIND= $1 > tmptmp_1;
+   grep -v GRIND= $2 > tmptmp_2;
+   diff -U2 tmptmp_1 tmptmp_2;
+fi

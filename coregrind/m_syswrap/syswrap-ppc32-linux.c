@@ -1598,7 +1598,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_fstatfs,           sys_fstatfs),           // 100
 //..    LINX_(__NR_ioperm,            sys_ioperm),            // 101
    PLAXY(__NR_socketcall,        sys_socketcall),        // 102
-//..    LINXY(__NR_syslog,            sys_syslog),            // 103
+   LINXY(__NR_syslog,            sys_syslog),            // 103
    GENXY(__NR_setitimer,         sys_setitimer),         // 104
 //.. 
 //..    GENXY(__NR_getitimer,         sys_getitimer),         // 105
@@ -1614,7 +1614,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_wait4,             sys_wait4),             // 114
 //.. 
 //..    //   (__NR_swapoff,           sys_swapoff),           // 115 */Linux 
-//..    LINXY(__NR_sysinfo,           sys_sysinfo),           // 116
+   LINXY(__NR_sysinfo,           sys_sysinfo),           // 116
    PLAXY(__NR_ipc,               sys_ipc),               // 117
    GENX_(__NR_fsync,             sys_fsync),             // 118
    PLAX_(__NR_sigreturn,         sys_sigreturn),         // 119 ?/Linux

@@ -175,7 +175,7 @@ Int find_shadow_for_OLD ( Addr       ptr,
       PROF_EVENT(71, "find_shadow_for_OLD(loop)");
       a_lo = shadows[i]->data;
       a_hi = ((Addr)shadows[i]->data) + shadows[i]->size;
-      if (a_lo <= ptr && ptr <= a_hi)
+      if (a_lo <= ptr && ptr < a_hi)
          return i;
    }
    return -1;
@@ -206,11 +206,11 @@ Int find_shadow_for ( Addr       ptr,
          hi = mid-1;
          continue;
       } 
-      if (ptr > a_mid_hi) {
+      if (ptr >= a_mid_hi) {
          lo = mid+1;
          continue;
       }
-      tl_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
+      tl_assert(ptr >= a_mid_lo && ptr < a_mid_hi);
       retVal = mid;
       break;
    }
@@ -345,7 +345,8 @@ static void lc_markstack_push_WRK(Addr ptr, Int clique)
       return;
 
    tl_assert(sh_no >= 0 && sh_no < lc_n_shadows);
-   tl_assert(ptr <= lc_shadows[sh_no]->data + lc_shadows[sh_no]->size);
+   tl_assert(ptr >= lc_shadows[sh_no]->data);
+   tl_assert(ptr < lc_shadows[sh_no]->data + lc_shadows[sh_no]->size);
 
    if (lc_markstack[sh_no].state == Unreached) {
       if (0)
@@ -673,6 +674,107 @@ static void make_summary(void)
    }
 }
 
+static MC_Chunk**
+find_active_shadows(UInt* n_shadows)
+{
+   /* Our goal is to construct a set of shadows that includes every
+    * mempool chunk, and every malloc region that *doesn't* contain a
+    * mempool chunk. We do this in several phases.
+    *
+    * First we collect all the malloc chunks into an array and sort it.
+    * We do this because we want to query the chunks by interior
+    * pointers, requiring binary search.
+    *
+    * Second we build an array containing a Bool for each malloc chunk,
+    * indicating whether it contains any mempools.
+    *
+    * Third we loop over the mempool tables. For each chunk in each
+    * pool, we set the entry in the Bool array corresponding to the
+    * malloc chunk containing the mempool chunk.
+    *
+    * Finally we copy the mempool chunks and the non-marked malloc
+    * chunks into a combined array of shadows, free our temporaries,
+    * and return the combined array.
+    */
+
+   MC_Mempool *mp;
+   MC_Chunk **mallocs, **shadows, *mc;
+   UInt n_mallocs, m, s;
+   Bool *malloc_chunk_holds_a_pool_chunk;
+
+   mallocs = (MC_Chunk**) VG_(HT_to_array)( MC_(malloc_list), &n_mallocs );
+
+   if (n_mallocs == 0) {
+      tl_assert(mallocs == NULL);
+      *n_shadows = 0;
+      return NULL;
+   }
+
+   VG_(ssort)((void*)mallocs, n_mallocs, 
+              sizeof(VgHashNode*), lc_compar);
+
+   malloc_chunk_holds_a_pool_chunk = VG_(calloc)( n_mallocs, sizeof(Bool) );
+
+   *n_shadows = n_mallocs;
+
+   VG_(HT_ResetIter)(MC_(mempool_list));
+   while ( (mp = VG_(HT_Next)(MC_(mempool_list))) ) {
+      VG_(HT_ResetIter)(mp->chunks);
+      while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
+
+         /* We'll need a shadow for this chunk. */
+         ++(*n_shadows);
+
+         /* Possibly invalidate the malloc holding the beginning of this chunk. */
+         m = find_shadow_for(mc->data, mallocs, n_mallocs);
+         if (m != -1 && malloc_chunk_holds_a_pool_chunk[m] == False) {
+            tl_assert(*n_shadows > 0);
+            --(*n_shadows);
+            malloc_chunk_holds_a_pool_chunk[m] = True;
+         }
+
+         /* Possibly invalidate the malloc holding the end of this chunk. */
+         if (mc->size > 1) {
+            m = find_shadow_for(mc->data + (mc->size - 1), mallocs, n_mallocs);
+            if (m != -1 && malloc_chunk_holds_a_pool_chunk[m] == False) {
+               tl_assert(*n_shadows > 0);
+               --(*n_shadows);
+               malloc_chunk_holds_a_pool_chunk[m] = True;
+            }
+         }
+      }
+   }
+
+   tl_assert(*n_shadows > 0);
+   shadows = VG_(malloc)(sizeof(VgHashNode*) * (*n_shadows));
+   s = 0;
+
+   /* Copy the mempool chunks into the final array. */
+   VG_(HT_ResetIter)(MC_(mempool_list));
+   while ( (mp = VG_(HT_Next)(MC_(mempool_list))) ) {
+      VG_(HT_ResetIter)(mp->chunks);
+      while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
+         tl_assert(s < *n_shadows);
+         shadows[s++] = mc;
+      }
+   }
+
+   /* Copy the malloc chunks into the final array. */
+   for (m = 0; m < n_mallocs; ++m) {
+      if (!malloc_chunk_holds_a_pool_chunk[m]) {
+         tl_assert(s < *n_shadows);
+         shadows[s++] = mallocs[m];
+      }
+   }
+
+   tl_assert(s == *n_shadows);
+   VG_(free)(mallocs);
+   VG_(free)(malloc_chunk_holds_a_pool_chunk);
+
+   return shadows;
+}
+
+
 /* Top level entry point to leak detector.  Call here, passing in
    suitable address-validating functions (see comment at top of
    scan_all_valid_memory above).  These functions used to encapsulate the
@@ -689,9 +791,7 @@ void MC_(do_detect_memory_leaks) (
    
    tl_assert(mode != LC_Off);
 
-   /* VG_(HT_to_array) allocates storage for shadows */
-   lc_shadows = (MC_Chunk**)VG_(HT_to_array)( MC_(malloc_list),
-                                              &lc_n_shadows );
+   lc_shadows = find_active_shadows(&lc_n_shadows);
 
    /* Sort the array. */
    VG_(ssort)((void*)lc_shadows, lc_n_shadows, sizeof(VgHashNode*), lc_compar);

@@ -763,6 +763,21 @@ void MC_(do_detect_memory_leaks) (
            continue;
         if (seg->isCH)
            continue;
+
+        /* Don't poke around in device segments as this may cause
+           hangs.  Exclude /dev/zero just in case someone allocated
+           memory by explicitly mapping /dev/zero. */
+        if (seg->kind == SkFileC 
+            && (VKI_S_ISCHR(seg->mode) || VKI_S_ISBLK(seg->mode))) {
+           HChar* dev_name = VG_(am_get_filename)( seg );
+           if (dev_name && 0 == VG_(strcmp)(dev_name, "/dev/zero")) {
+              /* don't skip /dev/zero */
+           } else {
+              /* skip this device mapping */
+              continue;
+           }
+        }
+
         if (0)
            VG_(printf)("ACCEPT %2d  %p %p\n", i, seg->start, seg->end);
         lc_scan_memory(seg->start, seg->end+1 - seg->start);

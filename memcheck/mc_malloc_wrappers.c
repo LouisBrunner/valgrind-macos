@@ -469,6 +469,86 @@ void MC_(mempool_free)(Addr pool, Addr addr)
    die_and_free_mem ( tid, mc, mp->rzB );
 }
 
+
+void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
+{
+   MC_Mempool*  mp;
+   MC_Chunk*    mc;
+   ThreadId     tid = VG_(get_running_tid)();
+   UInt         n_shadows, i;
+   VgHashNode** chunks;
+
+   mp = VG_(HT_lookup)(MC_(mempool_list), (UWord)pool);
+   if (mp == NULL) {
+      MC_(record_illegal_mempool_error)(tid, pool);
+      return;
+   }
+
+   chunks = VG_(HT_to_array) ( mp->chunks, &n_shadows );
+   if (n_shadows == 0) {
+     tl_assert(chunks == NULL);
+     return;
+   }
+
+   tl_assert(chunks != NULL);
+   for (i = 0; i < n_shadows; ++i) {
+      mc = (MC_Chunk*) chunks[i];
+
+      if (mc->size == 0)
+         continue;
+
+#define EXTENT_CONTAINS(x) ((addr <= (x)) && ((x) < addr + size))
+
+      if (EXTENT_CONTAINS(mc->data) &&
+          EXTENT_CONTAINS(mc->data + mc->size - 1)) {
+
+         /* The current chunk is entirely within the trim extent: keep
+            it. */
+
+         continue;
+
+      } else if ( (! EXTENT_CONTAINS(mc->data)) &&
+                (! EXTENT_CONTAINS(mc->data + mc->size - 1)) ) {
+
+         /* The current chunk is entirely outside the trim extent:
+            delete it. */
+
+         if (VG_(HT_remove)(mp->chunks, (UWord)mc->data) == NULL) {
+            MC_(record_free_error)(tid, (Addr)mc->data);
+            VG_(free)(chunks);
+            return;
+         }
+         die_and_free_mem ( tid, mc, mp->rzB );  
+
+      } else {
+
+         /* The current chunk intersects the trim extent: remove,
+            trim, and reinsert it. */
+
+         Addr lo, hi;
+         tl_assert(EXTENT_CONTAINS(mc->data) ||
+                   EXTENT_CONTAINS(mc->data + mc->size - 1));
+         if (VG_(HT_remove)(mp->chunks, (UWord)mc->data) == NULL) {
+            MC_(record_free_error)(tid, (Addr)mc->data);
+            VG_(free)(chunks);
+            return;
+         }
+
+         lo = mc->data > addr ? mc->data : addr;
+         hi = mc->data + mc->size < addr + size ? mc->data + mc->size : addr + size;
+
+         tl_assert(lo < hi);
+         mc->data = lo;
+         mc->size = (UInt) (hi - lo);
+         VG_(HT_add_node)( mp->chunks, mc );        
+      }
+
+#undef EXTENT_CONTAINS
+      
+   }
+   VG_(free)(chunks);
+}
+
 /*------------------------------------------------------------*/
 /*--- Statistics printing                                  ---*/
 /*------------------------------------------------------------*/

@@ -2288,6 +2288,7 @@ typedef
           VG_USERREQ__DESTROY_MEMPOOL  = 0x1304,
           VG_USERREQ__MEMPOOL_ALLOC    = 0x1305,
           VG_USERREQ__MEMPOOL_FREE     = 0x1306,
+          VG_USERREQ__MEMPOOL_TRIM     = 0x1307,
 
           /* Allow printfs to valgrind log. */
           VG_USERREQ__PRINTF           = 0x1401,
@@ -2497,6 +2498,14 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
                                VG_USERREQ__MEMPOOL_FREE,          \
                                pool, addr, 0, 0, 0);              \
+   }
+
+/* Disassociate any pieces outside a particular range. */
+#define VALGRIND_MEMPOOL_TRIM(pool, addr, size)                   \
+   {unsigned int _qzz_res;                                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+                               VG_USERREQ__MEMPOOL_TRIM,          \
+                               pool, addr, size, 0, 0);           \
    }
 
 /* Mark a piece of memory as being a stack. Returns a stack id. */

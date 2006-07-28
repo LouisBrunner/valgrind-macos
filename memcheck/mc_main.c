@@ -4053,7 +4053,8 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
     && VG_USERREQ__CREATE_MEMPOOL   != arg[0]
     && VG_USERREQ__DESTROY_MEMPOOL  != arg[0]
     && VG_USERREQ__MEMPOOL_ALLOC    != arg[0]
-    && VG_USERREQ__MEMPOOL_FREE     != arg[0])
+    && VG_USERREQ__MEMPOOL_FREE     != arg[0]
+    && VG_USERREQ__MEMPOOL_TRIM     != arg[0])
       return False;
 
    switch (arg[0]) {
@@ -4216,6 +4217,15 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          Addr addr      = (Addr)arg[2];
 
          MC_(mempool_free) ( pool, addr );
+         return True;
+      }
+
+      case VG_USERREQ__MEMPOOL_TRIM: {
+         Addr pool      = (Addr)arg[1];
+         Addr addr      = (Addr)arg[2];
+         UInt size      =       arg[3];
+
+         MC_(mempool_trim) ( pool, addr, size );
          return True;
       }
 

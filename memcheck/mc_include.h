@@ -86,6 +86,7 @@ extern void MC_(destroy_mempool) ( Addr pool );
 extern void MC_(mempool_alloc)   ( ThreadId tid, Addr pool,
                                    Addr addr, SizeT size );
 extern void MC_(mempool_free)    ( Addr pool, Addr addr );
+extern void MC_(mempool_trim)    ( Addr pool, Addr addr, SizeT size );
 
 extern MC_Chunk* MC_(get_freed_list_head)( void );
 

@@ -12,13 +12,14 @@ v5974    pending      n-i-bz   Expanding brk() into last available page asserts
                                and VT_* ioctls
 v5973    pending      n-i-bz   ppc64-linux stack RZ fast-case snafu
 v5978    pending      n-i-bz   'c' in --gen-supps=yes doesn't work
-pending  pending      n-i-nz   VG_N_SEGMENTS too low (users, 28 June)
+v5986    pending      n-i-nz   VG_N_SEGMENTS too low (users, 28 June)
 pending  pending      106852   x86->IR: fisttp (SSE3)
 v5968    pending      117172   FUTEX_WAKE does not use uaddr2
 v5970    pending      124039   Lacks support for VKI_[GP]IO_UNIMAP*
-pending  pending      127521   amd64->IR: 0xF0 0x48 0xF 0xC7 (cmpxchg16b ?)
-pending  pending      128917   amd64->IR: 0x66 0xF 0xF6 0xC4 (psadbw,SSE2)
-pending  pending      129246   JJ: ppc32/ppc64 syscalls, w/ patch
+pending  pending      127521   amd64->IR: 0xF0 0x48 0xF 0xC7 (cmpxchg8b)
+vx1632/v5987
+         pending      128917   amd64->IR: 0x66 0xF 0xF6 0xC4 (psadbw,SSE2)
+v5988    pending      129246   JJ: ppc32/ppc64 syscalls, w/ patch
 pending  pending      129358   x86->IR: fisttpl (SSE3)
 pending  pending      129390   ppc?->IR: some kind of VMX prefetch (dstt)
 pending  pending      129866   cachegrind/callgrind causes executable to die
@@ -26,8 +27,16 @@ pending  pending      129968   amd64->IR: 0xF 0xAE 0x0 (fxsave)
 v5979    pending      130020   Can't stat .so/.exe error while reading symbols
 wontfix  wontfix      130358   Inconsistent 80-bit floats on x86
 v5983    pending      130388   Valgrind aborts when process calls malloc_trim()
-pending  pending      130638   New: PATCH: ppc32 missing system calls
-pending  pending      130785   vex amd64->IR: unhandled instruction "pushfq"
+v5989    pending      130638   New: PATCH: ppc32 missing system calls
+vx1633   pending      130785   amd64->IR: unhandled instruction "pushfq"
+pending  pending      131298   x86->IR: 0xF 0x1F (???)
+
+v5990    pending      n-i-bz   Livelocks entire machine (users list,
+                               17 June, Timothy B. Terriberry)
+v5991    pending      n-i-bz   Graydon leak checking fix
+                               (need to deal with regtest changes)
+v5992    no           n-i-bz   Graydon mempool trim patch
 
 Signal race condition (users list, 13 June, Johannes Berg)
-Livelocks entire machine (users list, 17 June, Timothy B. Terriberry)
+
+Unrecognised instruction at address 0x70198EC2 (users, 19 July, Bennee)

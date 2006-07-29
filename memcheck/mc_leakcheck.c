@@ -201,6 +201,14 @@ Int find_shadow_for ( Addr       ptr,
       mid      = (lo + hi) / 2;
       a_mid_lo = shadows[mid]->data;
       a_mid_hi = shadows[mid]->data + shadows[mid]->size;
+      /* Extent of block 'mid' is [a_mid_lo .. a_mid_hi).
+         Special-case zero-sized blocks - treat them as if they had
+         size 1.  Not doing so causes them to not cover any address
+         range at all and so will never be identified as the target of
+         any pointer, which causes them to be incorrectly reported as
+         definitely leaked. */
+      if (shadows[mid]->size == 0)
+         a_mid_hi++;
 
       if (ptr < a_mid_lo) {
          hi = mid-1;
@@ -346,7 +354,9 @@ static void lc_markstack_push_WRK(Addr ptr, Int clique)
 
    tl_assert(sh_no >= 0 && sh_no < lc_n_shadows);
    tl_assert(ptr >= lc_shadows[sh_no]->data);
-   tl_assert(ptr < lc_shadows[sh_no]->data + lc_shadows[sh_no]->size);
+   tl_assert(ptr < lc_shadows[sh_no]->data 
+                   + lc_shadows[sh_no]->size
+                   + (lc_shadows[sh_no]->size==0  ? 1  : 0));
 
    if (lc_markstack[sh_no].state == Unreached) {
       if (0)

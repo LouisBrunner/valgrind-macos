@@ -12388,6 +12388,16 @@ DisResult disInstr_X86_WRK (
          delta = dis_mul_E_G ( sorb, sz, delta );
          break;
 
+      /* =-=-=-=-=-=-=-=-=- NOPs =-=-=-=-=-=-=-=-=-=-=-= */
+
+      case 0x1F:
+         modrm = getUChar(delta);
+         if (epartIsReg(modrm)) goto decode_failure;
+         addr = disAMode ( &alen, sorb, delta, dis_buf );
+         delta += alen;
+         DIP("nop%c %s\n", nameISize(sz), dis_buf);
+         break;
+
       /* =-=-=-=-=-=-=-=-=- Jcond d32 -=-=-=-=-=-=-=-=-= */
       case 0x80:
       case 0x81:

@@ -13570,6 +13570,17 @@ DisResult disInstr_AMD64_WRK (
          delta = dis_mul_E_G ( pfx, sz, delta );
          break;
 
+      /* =-=-=-=-=-=-=-=-=- NOPs =-=-=-=-=-=-=-=-=-=-=-= */
+
+      case 0x1F:
+         if (haveF2orF3(pfx)) goto decode_failure;
+         modrm = getUChar(delta);
+         if (epartIsReg(modrm)) goto decode_failure;
+         addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
+         delta += alen;
+         DIP("nop%c %s\n", nameISize(sz), dis_buf);
+         break;
+
       /* =-=-=-=-=-=-=-=-=- Jcond d32 -=-=-=-=-=-=-=-=-= */
       case 0x80:
       case 0x81:

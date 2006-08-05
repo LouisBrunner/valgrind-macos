@@ -1,7 +1,8 @@
 noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
-INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
+INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext \
+		insn_sse insn_sse2 insn_sse3
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	badseg.stderr.exp badseg.stdout.exp badseg.vgtest \
@@ -62,6 +63,8 @@ insn_sse_SOURCES	= insn_sse.def
 insn_sse_LDADD		= -lm
 insn_sse2_SOURCES	= insn_sse2.def
 insn_sse2_LDADD		= -lm
+insn_sse3_SOURCES	= insn_sse3.def
+insn_sse3_LDADD		= -lm
 yield_CFLAGS		= $(AM_CFLAGS) -D__$(VG_ARCH)__
 yield_LDADD		= -lpthread
 

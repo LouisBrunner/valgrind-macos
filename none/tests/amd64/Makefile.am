@@ -2,7 +2,7 @@
 noinst_SCRIPTS = filter_cpuid filter_stderr filter_int gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
-INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
+INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_sse3 insn_fpu
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
@@ -35,6 +35,8 @@ insn_sse_SOURCES	= insn_sse.def
 insn_sse_LDADD		= -lm
 insn_sse2_SOURCES	= insn_sse2.def
 insn_sse2_LDADD		= -lm
+insn_sse3_SOURCES	= insn_sse3.def
+insn_sse3_LDADD		= -lm
 insn_fpu_SOURCES	= insn_fpu.def
 insn_fpu_LDADD		= -lm
 fxtract_LDADD		= -lm

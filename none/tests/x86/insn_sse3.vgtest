@@ -1,0 +1,3 @@
+prog: ../../../none/tests/x86/insn_sse3
+prereq: ../../../tests/cputest x86-sse3
+vgopts: -q

@@ -412,8 +412,8 @@ void VG_(pp_StackTrace) ( StackTrace ips, UInt n_ips )
 void VG_(get_and_pp_StackTrace) ( ThreadId tid, UInt n_ips )
 {
    Addr ips[n_ips];
-   VG_(get_StackTrace)(tid, ips, n_ips);
-   VG_(pp_StackTrace) (     ips, n_ips);
+   UInt n_ips_obtained = VG_(get_StackTrace)(tid, ips, n_ips);
+   VG_(pp_StackTrace)(ips, n_ips_obtained);
 }
 
 

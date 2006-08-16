@@ -14,13 +14,16 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	jrcxz.stderr.exp jrcxz.stdout.exp jrcxz.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
+	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp 
+	nibz_bennee_mmap.vgtest \
         smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
         shrld.stderr.exp shrld.stdout.exp shrld.vgtest
 
 
 check_PROGRAMS = \
 	clc \
-	faultstatus fcmovnu fxtract $(INSN_TESTS) looper jrcxz smc1 shrld
+	faultstatus fcmovnu fxtract $(INSN_TESTS) looper jrcxz smc1 shrld \
+	nibz_bennee_mmap
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 		@FLAG_M64@

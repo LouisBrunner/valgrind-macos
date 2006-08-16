@@ -2992,6 +2992,8 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
    if (sres.isError) {
       AM_SANITY_CHECK;
       return False;
+   } else {
+      aspacem_assert(sres.val == new_addr);
    }
 
    *need_discard = any_Ts_in_range( old_addr, old_len )

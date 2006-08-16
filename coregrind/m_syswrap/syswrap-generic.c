@@ -187,6 +187,8 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
                   old_addr,old_len,new_addr,new_len, 
                   flags & VKI_MREMAP_MAYMOVE ? "MAYMOVE" : "",
                   flags & VKI_MREMAP_FIXED ? "FIXED" : "");
+   if (0)
+      VG_(am_show_nsegments)(0, "do_remap: before");
 
    if (flags & ~(VKI_MREMAP_FIXED | VKI_MREMAP_MAYMOVE))
       goto eINVAL;
@@ -327,6 +329,18 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
       /* VG_(am_get_advisory_client_simple) interprets zero to mean
          non-fixed, which is not what we want */
    advised = VG_(am_get_advisory_client_simple)( needA, needL, &ok );
+   if (ok) {
+      /* VG_(am_get_advisory_client_simple) (first arg == 0, meaning
+         this-or-nothing) is too lenient, and may allow us to trash
+         the next segment along.  So make very sure that the proposed
+         new area really is free.  This is perhaps overly
+         conservative, but it fixes #129866. */
+      NSegment* segLo = VG_(am_find_nsegment)( needA );
+      NSegment* segHi = VG_(am_find_nsegment)( needA + needL - 1 );
+      if (segLo == NULL || segHi == NULL 
+          || segLo != segHi || segLo->kind != SkFree)
+         ok = False;
+   }
    if (ok && advised == needA) {
       ok = VG_(am_extend_map_client)( &d, old_seg, needL );
       if (ok) {
@@ -374,6 +388,17 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
       /* VG_(am_get_advisory_client_simple) interprets zero to mean
          non-fixed, which is not what we want */
    advised = VG_(am_get_advisory_client_simple)( needA, needL, &ok );
+   if (ok) {
+      /* VG_(am_get_advisory_client_simple) (first arg == 0, meaning
+         this-or-nothing) is too lenient, and may allow us to trash
+         the next segment along.  So make very sure that the proposed
+         new area really is free. */
+      NSegment* segLo = VG_(am_find_nsegment)( needA );
+      NSegment* segHi = VG_(am_find_nsegment)( needA + needL - 1 );
+      if (segLo == NULL || segHi == NULL 
+          || segLo != segHi || segLo->kind != SkFree)
+         ok = False;
+   }
    if (!ok || advised != needA)
       goto eNOMEM;
    ok = VG_(am_extend_map_client)( &d, old_seg, needL );

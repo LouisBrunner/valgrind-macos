@@ -2903,6 +2903,9 @@ Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
    NSegment seg_copy = *seg;
    SizeT    seg_old_len = seg->end + 1 - seg->start;
 
+   if (0)
+      VG_(am_show_nsegments)(0, "VG_(am_extend_map_client) BEFORE");
+
    if (seg->kind != SkFileC && seg->kind != SkAnonC)
       return False;
 
@@ -2924,12 +2927,18 @@ Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
    if (sres.isError) {
       AM_SANITY_CHECK;
       return False;
+   } else {
+      /* the area must not have moved */
+      aspacem_assert(sres.val == seg->start);
    }
 
    *need_discard = any_Ts_in_range( seg_copy.end+1, delta );
 
    seg_copy.end += delta;
    add_segment( &seg_copy );
+
+   if (0)
+      VG_(am_show_nsegments)(0, "VG_(am_extend_map_client) AFTER");
 
    AM_SANITY_CHECK;
    return True;

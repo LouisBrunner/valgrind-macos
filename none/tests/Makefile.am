@@ -28,6 +28,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	async-sigs.stderr.exp async-sigs.stdout.exp async-sigs.vgtest \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	blockfault.vgtest blockfault.stderr.exp blockfault.stdout.exp \
+	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
 	closeall.stderr.exp closeall.vgtest \
 	cmdline0.stderr.exp cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
@@ -131,7 +132,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	ansi args \
-	async-sigs bitfield1 blockfault closeall coolo_strlen \
+	async-sigs bitfield1 blockfault \
+	bug129866 \
+	closeall coolo_strlen \
 	discard exec-sigmask execve faultstatus fcntl_setown \
 	fdleak_cmsg fdleak_creat fdleak_dup fdleak_dup2 \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \

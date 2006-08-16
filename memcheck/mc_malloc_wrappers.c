@@ -492,23 +492,25 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
 
    tl_assert(chunks != NULL);
    for (i = 0; i < n_shadows; ++i) {
+
+      Addr lo, hi;
+
       mc = (MC_Chunk*) chunks[i];
 
-      if (mc->size == 0)
-         continue;
+      lo = mc->data;
+      hi = mc->size == 0 ? mc->data : mc->data + mc->size - 1;
 
 #define EXTENT_CONTAINS(x) ((addr <= (x)) && ((x) < addr + size))
 
-      if (EXTENT_CONTAINS(mc->data) &&
-          EXTENT_CONTAINS(mc->data + mc->size - 1)) {
+      if (EXTENT_CONTAINS(lo) && EXTENT_CONTAINS(hi)) {
 
          /* The current chunk is entirely within the trim extent: keep
             it. */
 
          continue;
 
-      } else if ( (! EXTENT_CONTAINS(mc->data)) &&
-                (! EXTENT_CONTAINS(mc->data + mc->size - 1)) ) {
+      } else if ( (! EXTENT_CONTAINS(lo)) &&
+                  (! EXTENT_CONTAINS(hi)) ) {
 
          /* The current chunk is entirely outside the trim extent:
             delete it. */
@@ -525,9 +527,8 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
          /* The current chunk intersects the trim extent: remove,
             trim, and reinsert it. */
 
-         Addr lo, hi;
-         tl_assert(EXTENT_CONTAINS(mc->data) ||
-                   EXTENT_CONTAINS(mc->data + mc->size - 1));
+         tl_assert(EXTENT_CONTAINS(lo) ||
+                   EXTENT_CONTAINS(hi));
          if (VG_(HT_remove)(mp->chunks, (UWord)mc->data) == NULL) {
             MC_(record_free_error)(tid, (Addr)mc->data);
             VG_(free)(chunks);

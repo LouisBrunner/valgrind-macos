@@ -1,0 +1,24 @@
+ Q d:a=0:1 mem=5:4 c:b=3:2 -> z=0 d:a=5:4 mem=5:4
+ Q d:a=0:1 mem=0:1 c:b=3:2 -> z=1 d:a=0:1 mem=3:2
+ Q d:a=0:1 mem=0:4 c:b=3:2 -> z=0 d:a=0:4 mem=0:4
+ Q d:a=0:1 mem=0:0 c:b=3:2 -> z=0 d:a=0:0 mem=0:0
+ Q d:a=0:1 mem=5:0 c:b=3:2 -> z=0 d:a=5:0 mem=5:0
+ Q d:a=0:1 mem=1:1 c:b=3:2 -> z=0 d:a=1:1 mem=1:1
+ Q d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000005:deadbeef00000004 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=5:4 mem=5:4
+ Q d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000000:deadbeef00000001 c:b=deadbeef00000003:deadbeef00000002 -> z=1 d:a=deadbeef00000000:deadbeef00000001 mem=3:2
+ Q d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000000:deadbeef00000004 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=0:4 mem=0:4
+ Q d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000000:deadbeef00000000 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=0:0 mem=0:0
+ Q d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000005:deadbeef00000000 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=5:0 mem=5:0
+ Q d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000001:deadbeef00000001 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=1:1 mem=1:1
+QQ d:a=0:1 mem=5:4 c:b=3:2 -> z=0 d:a=5:4 mem=5:4
+QQ d:a=0:1 mem=0:1 c:b=3:2 -> z=1 d:a=0:1 mem=3:2
+QQ d:a=0:1 mem=0:4 c:b=3:2 -> z=0 d:a=0:4 mem=0:4
+QQ d:a=0:1 mem=0:0 c:b=3:2 -> z=0 d:a=0:0 mem=0:0
+QQ d:a=0:1 mem=5:0 c:b=3:2 -> z=0 d:a=5:0 mem=5:0
+QQ d:a=0:1 mem=1:1 c:b=3:2 -> z=0 d:a=1:1 mem=1:1
+QQ d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000005:deadbeef00000004 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=deadbeef00000005:deadbeef00000004 mem=deadbeef00000005:deadbeef00000004
+QQ d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000000:deadbeef00000001 c:b=deadbeef00000003:deadbeef00000002 -> z=1 d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000003:deadbeef00000002
+QQ d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000000:deadbeef00000004 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=deadbeef00000000:deadbeef00000004 mem=deadbeef00000000:deadbeef00000004
+QQ d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000000:deadbeef00000000 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=deadbeef00000000:deadbeef00000000 mem=deadbeef00000000:deadbeef00000000
+QQ d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000005:deadbeef00000000 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=deadbeef00000005:deadbeef00000000 mem=deadbeef00000005:deadbeef00000000
+QQ d:a=deadbeef00000000:deadbeef00000001 mem=deadbeef00000001:deadbeef00000001 c:b=deadbeef00000003:deadbeef00000002 -> z=0 d:a=deadbeef00000001:deadbeef00000001 mem=deadbeef00000001:deadbeef00000001

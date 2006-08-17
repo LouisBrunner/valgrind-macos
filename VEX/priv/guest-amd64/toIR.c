@@ -7136,9 +7136,10 @@ void codegen_xchg_rAX_Reg ( Prefix pfx, Int sz, UInt regLo3 )
 //.. //-- 
 
 static
-ULong dis_cmpxchg_G_E ( Prefix      pfx,
-                        Int         size, 
-                        Long        delta0 )
+ULong dis_cmpxchg_G_E ( /*OUT*/Bool* ok,
+                        Prefix       pfx,
+                        Int          size, 
+                        Long         delta0 )
 {
    HChar dis_buf[50];
    Int   len;
@@ -7154,7 +7155,9 @@ ULong dis_cmpxchg_G_E ( Prefix      pfx,
    UChar  rm    = getUChar(delta0);
 
    if (epartIsReg(rm)) {
-      vassert(0); /* awaiting test case */
+      *ok = False;
+      return delta0;
+      /* awaiting test case */
       assign( dest, getIRegE(size, pfx, rm) );
       delta0++;
       DIP("cmpxchg%c %s,%s\n", nameISize(size),
@@ -7182,9 +7185,125 @@ ULong dis_cmpxchg_G_E ( Prefix      pfx,
       storeLE( mkexpr(addr), mkexpr(dest2) );
    }
 
+   *ok = True;
    return delta0;
 }
 
+static
+ULong dis_cmpxchg8b ( /*OUT*/Bool* ok,
+                      Prefix       pfx,
+                      Int          sz, 
+                      Long         delta0 )
+{
+   HChar dis_buf[50];
+   Int   len;
+
+   IRType ty    = szToITy(sz);
+   IRTemp eq    = newTemp(Ity_I8);
+   IRTemp olda  = newTemp(ty);
+   IRTemp oldb  = newTemp(ty);
+   IRTemp oldc  = newTemp(ty);
+   IRTemp oldd  = newTemp(ty);
+   IRTemp newa  = newTemp(Ity_I64);
+   IRTemp newd  = newTemp(Ity_I64);
+   IRTemp oldml = newTemp(ty);
+   IRTemp oldmh = newTemp(ty);
+   IRTemp newml = newTemp(ty);
+   IRTemp newmh = newTemp(ty);
+   IRTemp addr  = IRTemp_INVALID;
+   IRTemp oldrf = newTemp(Ity_I64);
+   IRTemp newrf = newTemp(Ity_I64);
+   UChar  rm    = getUChar(delta0);
+   vassert(sz == 4 || sz == 8); /* guaranteed by caller */
+
+   if (epartIsReg(rm)) {
+      *ok = False;
+      return delta0;
+   }
+
+   addr = disAMode ( &len, pfx, delta0, dis_buf, 0 );
+   delta0 += len;
+   DIP("cmpxchg%s %s\n", sz == 4 ? "8" : "16", dis_buf);
+
+   if (sz == 4) {
+      assign( olda,  getIReg32( R_RAX ) );
+      assign( oldb,  getIReg32( R_RBX ) );
+      assign( oldc,  getIReg32( R_RCX ) );
+      assign( oldd,  getIReg32( R_RDX ) );
+      assign( oldml, loadLE( Ity_I32, mkexpr(addr) ));
+      assign( oldmh, loadLE( Ity_I32, 
+                             binop(Iop_Add64,mkexpr(addr),mkU64(4)) ));
+      assign(eq, 
+         unop(Iop_1Uto8,
+              binop(Iop_CmpEQ32, 
+                    binop(Iop_Or32,
+                          binop(Iop_Xor32,mkexpr(olda),mkexpr(oldml)),
+                          binop(Iop_Xor32,mkexpr(oldd),mkexpr(oldmh))),
+                    mkU32(0))));
+      assign( newml, IRExpr_Mux0X(mkexpr(eq),mkexpr(oldml),mkexpr(oldb)) );
+      assign( newmh, IRExpr_Mux0X(mkexpr(eq),mkexpr(oldmh),mkexpr(oldc)) );
+      assign( newa,  IRExpr_Mux0X(mkexpr(eq),
+                                  unop(Iop_32Uto64,mkexpr(oldml)),
+                                  getIRegRAX(8)) );
+      assign( newd,  IRExpr_Mux0X(mkexpr(eq),
+                                  unop(Iop_32Uto64,mkexpr(oldmh)),
+                                  getIRegRDX(8)) );
+
+      storeLE( mkexpr(addr), mkexpr(newml) );
+      storeLE( binop(Iop_Add64,mkexpr(addr),mkU64(4)),
+               mkexpr(newmh) );
+      putIRegRAX( 8, mkexpr(newa) );
+      putIRegRDX( 8, mkexpr(newd) );
+   } else {
+      assign( olda, getIReg64( R_RAX ) );
+      assign( oldb, getIReg64( R_RBX ) );
+      assign( oldc, getIReg64( R_RCX ) );
+      assign( oldd, getIReg64( R_RDX ) );
+      assign( oldml, loadLE( Ity_I64, mkexpr(addr) ));
+      assign( oldmh, loadLE( Ity_I64, 
+                             binop(Iop_Add64,mkexpr(addr),mkU64(8)) ));
+      assign(eq, 
+         unop(Iop_1Uto8,
+              binop(Iop_CmpEQ64, 
+                    binop(Iop_Or64,
+                          binop(Iop_Xor64,mkexpr(olda),mkexpr(oldml)),
+                          binop(Iop_Xor64,mkexpr(oldd),mkexpr(oldmh))),
+                    mkU64(0))));
+      assign( newml, IRExpr_Mux0X(mkexpr(eq),mkexpr(oldml),mkexpr(oldb)) );
+      assign( newmh, IRExpr_Mux0X(mkexpr(eq),mkexpr(oldmh),mkexpr(oldc)) );
+      assign( newa,  IRExpr_Mux0X(mkexpr(eq),mkexpr(oldml),mkexpr(olda)) );
+      assign( newd,  IRExpr_Mux0X(mkexpr(eq),mkexpr(oldmh),mkexpr(oldd)) );
+
+      storeLE( mkexpr(addr), mkexpr(newml) );
+      storeLE( binop(Iop_Add64,mkexpr(addr),mkU64(8)),
+               mkexpr(newmh) );
+      putIRegRAX( 8, mkexpr(newa) );
+      putIRegRDX( 8, mkexpr(newd) );
+   }
+
+   /* And set the flags.  Z is set if original d:a == mem, else
+      cleared.  All others unchanged.  (This is different from normal
+      cmpxchg which just sets them according to SUB.). */
+   assign( oldrf, binop(Iop_And64, 
+                        mk_amd64g_calculate_rflags_all(),
+                        mkU64(~AMD64G_CC_MASK_Z)) );
+   assign( newrf,
+   binop(Iop_Or64,
+	 mkexpr(oldrf),
+   binop(Iop_Shl64, 
+         binop(Iop_And64, unop(Iop_8Uto64, mkexpr(eq)), mkU64(1)),
+         mkU8(AMD64G_CC_SHIFT_Z))
+	 ));
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(newrf) ));
+      /* Set NDEP even though it isn't used.  This makes redundant-PUT
+         elimination of previous stores to this field work better. */
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+
+   *ok = True;
+   return delta0;
+}
 
 //.. //-- static
 //.. //-- Addr dis_cmpxchg8b ( UCodeBlock* cb, 
@@ -13750,14 +13869,22 @@ DisResult disInstr_AMD64_WRK (
 //..       case 0xB0: /* CMPXCHG Gb,Eb */
 //..          delta = dis_cmpxchg_G_E ( sorb, 1, delta );
 //..          break;
-      case 0xB1: /* CMPXCHG Gv,Ev */
+      case 0xB1: { /* CMPXCHG Gv,Ev (allowed in 16,32,64 bit) */
+         Bool ok = True;
          if (haveF2orF3(pfx)) goto decode_failure;
-         delta = dis_cmpxchg_G_E ( pfx, sz, delta );
+         if (sz != 2 && sz != 4 && sz != 8) goto decode_failure;
+         delta = dis_cmpxchg_G_E ( &ok, pfx, sz, delta );
+         if (!ok) goto decode_failure;
          break;
-//.. //--       case 0xC7: /* CMPXCHG8B Gv */
-//.. //--          eip = dis_cmpxchg8b ( cb, sorb, eip );
-//.. //--          break;
-//.. //-- 
+      }
+      case 0xC7: { /* CMPXCHG8B Ev, CMPXCHG16B Ev */
+         Bool ok = True;
+         if (have66orF2orF3(pfx)) goto decode_failure;
+         if (sz != 4 && sz != 8) goto decode_failure;
+         delta = dis_cmpxchg8b ( &ok, pfx, sz, delta );
+         break;
+      }
+
       /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */
 
       case 0xA2: { /* CPUID */

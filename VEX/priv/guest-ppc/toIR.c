@@ -2936,6 +2936,12 @@ static Bool dis_int_cmp ( UInt theInstr )
       switch (opc2) {
       case 0x000: // cmp (Compare, PPC32 p367)
          DIP("cmp cr%u,%u,r%u,r%u\n", crfD, flag_L, rA_addr, rB_addr);
+         /* Comparing a reg with itself produces a result which
+            doesn't depend on the contents of the reg.  Therefore
+            remove the false dependency, which has been known to cause
+            memcheck to produce false errors. */
+	 if (rA_addr == rB_addr)
+            a = b = mode64 ? mkU64(0) : mkU32(0);
          if (flag_L == 1) {
             putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64S, a, b)));
          } else {
@@ -2948,6 +2954,12 @@ static Bool dis_int_cmp ( UInt theInstr )
          
       case 0x020: // cmpl (Compare Logical, PPC32 p369)
          DIP("cmpl cr%u,%u,r%u,r%u\n", crfD, flag_L, rA_addr, rB_addr);
+         /* Comparing a reg with itself produces a result which
+            doesn't depend on the contents of the reg.  Therefore
+            remove the false dependency, which has been known to cause
+            memcheck to produce false errors. */
+	 if (rA_addr == rB_addr)
+            a = b = mode64 ? mkU64(0) : mkU32(0);
          if (flag_L == 1) {
             putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64U, a, b)));
          } else {

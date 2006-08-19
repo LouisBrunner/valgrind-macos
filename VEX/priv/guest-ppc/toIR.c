@@ -2940,8 +2940,9 @@ static Bool dis_int_cmp ( UInt theInstr )
             doesn't depend on the contents of the reg.  Therefore
             remove the false dependency, which has been known to cause
             memcheck to produce false errors. */
-	 if (rA_addr == rB_addr)
-            a = b = mode64 ? mkU64(0) : mkU32(0);
+         if (rA_addr == rB_addr)
+            a = b = typeOfIRExpr(irbb->tyenv,a) == Ity_I64
+                    ? mkU64(0)  : mkU32(0);
          if (flag_L == 1) {
             putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64S, a, b)));
          } else {
@@ -2958,8 +2959,9 @@ static Bool dis_int_cmp ( UInt theInstr )
             doesn't depend on the contents of the reg.  Therefore
             remove the false dependency, which has been known to cause
             memcheck to produce false errors. */
-	 if (rA_addr == rB_addr)
-            a = b = mode64 ? mkU64(0) : mkU32(0);
+         if (rA_addr == rB_addr)
+            a = b = typeOfIRExpr(irbb->tyenv,a) == Ity_I64
+                    ? mkU64(0)  : mkU32(0);
          if (flag_L == 1) {
             putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64U, a, b)));
          } else {

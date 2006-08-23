@@ -83,7 +83,7 @@ void do_cmpxchg16b ( /*OUT*/
         "\tmovq 16(%%r11),%%rcx\n"
         "\tmovq 24(%%r11),%%rbx\n"
         "\tmovq 32(%%r11),%%r10\n"
-        "\tlock cmpxchg16b (%%r10)\n"
+        "\t.byte 0xf0, 0x49, 0x0f, 0xc7, 0x0a\n" /* lock cmpxchg16b (%%r10) */
         "\tmovabsq $0,%%r10\n"
         "\tsetz %%r10b\n"
         "\tmovq %%r10,40(%%r11)\n"

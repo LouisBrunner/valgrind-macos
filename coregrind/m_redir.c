@@ -762,6 +762,10 @@ void VG_(redir_initialise) ( void )
          "ld.so.1", "strcmp",
          (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp)
       );
+      add_hardwired_spec(
+         "ld.so.1", "index",
+         (Addr)&VG_(ppc32_linux_REDIR_FOR_strchr)
+      );
    }
 
 #  elif defined(VGP_ppc64_linux)

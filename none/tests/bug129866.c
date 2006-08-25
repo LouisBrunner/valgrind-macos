@@ -1,5 +1,7 @@
 
 #include <stdlib.h>
+#include <stdio.h>
+
 char * touch_malloc (int size) 
 {
   char * result;

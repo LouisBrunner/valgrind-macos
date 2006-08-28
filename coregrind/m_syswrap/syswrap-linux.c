@@ -755,9 +755,31 @@ PRE(sys_futex)
       ARG6 - int val3				CMP_REQUEUE
     */
    PRINT("sys_futex ( %p, %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
-   PRE_REG_READ6(long, "futex", 
-                 vki_u32 *, futex, int, op, int, val,
-                 struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
+   switch(ARG2) {
+   case VKI_FUTEX_CMP_REQUEUE:
+      PRE_REG_READ6(long, "futex", 
+                    vki_u32 *, futex, int, op, int, val,
+                    struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
+      break;
+   case VKI_FUTEX_REQUEUE:
+      PRE_REG_READ5(long, "futex", 
+                    vki_u32 *, futex, int, op, int, val,
+                    struct timespec *, utime, vki_u32 *, uaddr2);
+      break;
+   case VKI_FUTEX_WAIT:
+      PRE_REG_READ4(long, "futex", 
+                    vki_u32 *, futex, int, op, int, val,
+                    struct timespec *, utime);
+      break;
+   case VKI_FUTEX_WAKE:
+   case VKI_FUTEX_FD:
+      PRE_REG_READ3(long, "futex", 
+                    vki_u32 *, futex, int, op, int, val);
+      break;
+   default:
+      PRE_REG_READ2(long, "futex", vki_u32 *, futex, int, op);
+      break;
+   }
 
    PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
 

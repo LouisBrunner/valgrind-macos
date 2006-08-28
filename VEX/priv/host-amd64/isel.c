@@ -172,7 +172,7 @@ static void addInstr ( ISelEnv* env, AMD64Instr* instr )
 {
    addHInstr(env->code, instr);
    if (vex_traceflags & VEX_TRACE_VCODE) {
-      ppAMD64Instr(instr, False);
+      ppAMD64Instr(instr, True);
       vex_printf("\n");
    }
 }

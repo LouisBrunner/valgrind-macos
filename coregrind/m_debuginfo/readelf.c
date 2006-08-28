@@ -821,7 +821,6 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
    Addr          dimage = 0;
    UInt          n_dimage = 0;
    OffT          offset_dimage = 0;
-   struct vki_stat stat_buf;
 
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
@@ -832,16 +831,16 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
       line number info out of it.  It will be munmapped immediately
       thereafter; it is only aboard transiently. */
 
-   fd = VG_(stat)(si->filename, &stat_buf);
-   if (fd.isError) {
-      ML_(symerr)("Can't stat .so/.exe (to determine its size)?!");
-      return False;
-   }
-   n_oimage = stat_buf.st_size;
-
    fd = VG_(open)(si->filename, VKI_O_RDONLY, 0);
    if (fd.isError) {
       ML_(symerr)("Can't open .so/.exe to read symbols?!");
+      return False;
+   }
+
+   n_oimage = VG_(fsize)(fd.val);
+   if (n_oimage < 0) {
+      ML_(symerr)("Can't stat .so/.exe (to determine its size)?!");
+      VG_(close)(fd.val);
       return False;
    }
 

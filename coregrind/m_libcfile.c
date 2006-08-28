@@ -133,8 +133,13 @@ Int VG_(fstat) ( Int fd, struct vki_stat* buf )
 
 Int VG_(fsize) ( Int fd )
 {
+#ifdef __NR_fstat64
+   struct vki_stat64 buf;
+   SysRes res = VG_(do_syscall2)(__NR_fstat64, fd, (UWord)&buf);
+#else
    struct vki_stat buf;
    SysRes res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)&buf);
+#endif
    return res.isError ? (-1) : buf.st_size;
 }
 

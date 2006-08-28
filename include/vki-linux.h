@@ -1941,7 +1941,7 @@ struct vki_fb_var_screeninfo {
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/linux/kb.h
+// From linux-2.6.9/include/linux/kd.h
 //----------------------------------------------------------------------
 
 #define VKI_GIO_FONT       0x4B60  /* gets font in expanded form */
@@ -1986,8 +1986,21 @@ struct vki_consolefontdesc {
 #define VKI_PIO_UNISCRNMAP 0x4B6A  /* set full Unicode screen mapping */
 
 #define VKI_GIO_UNIMAP     0x4B66  /* get unicode-to-font mapping from kernel */
+struct vki_unipair {
+	unsigned short unicode;
+	unsigned short fontpos;
+};
+struct vki_unimapdesc {
+	unsigned short entry_ct;
+	struct vki_unipair __user *entries;
+};
 #define VKI_PIO_UNIMAP     0x4B67  /* put unicode-to-font mapping in kernel */
 #define VKI_PIO_UNIMAPCLR  0x4B68  /* clear table, possibly advise hash algorithm */
+struct vki_unimapinit {
+	unsigned short advised_hashsize;  /* 0 if no opinion */
+	unsigned short advised_hashstep;  /* 0 if no opinion */
+	unsigned short advised_hashlevel; /* 0 if no opinion */
+};
 
 #define VKI_KDGKBMODE      0x4B44  /* gets current keyboard mode */
 #define VKI_KDSKBMODE      0x4B45  /* sets current keyboard mode */
@@ -2040,6 +2053,19 @@ struct vki_kbd_repeat {
                                     * actually used values are returned */
 
 #define VKI_KDFONTOP       0x4B72  /* font operations */
+
+struct vki_console_font_op {
+	unsigned int op;	/* operation code KD_FONT_OP_* */
+	unsigned int flags;	/* KD_FONT_FLAG_* */
+	unsigned int width, height;	/* font size */
+	unsigned int charcount;
+	unsigned char __user *data;	/* font data with height fixed to 32 */
+};
+
+#define VKI_KD_FONT_OP_SET		0	/* Set font */
+#define VKI_KD_FONT_OP_GET		1	/* Get font */
+#define VKI_KD_FONT_OP_SET_DEFAULT	2	/* Set font to default, data points to name / NULL */
+#define VKI_KD_FONT_OP_COPY		3	/* Copy from another console */
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/linux/kb.h
@@ -2096,6 +2122,55 @@ struct vki_serial_icounter_struct {
 };
 
 #endif // __VKI_LINUX_H
+
+//----------------------------------------------------------------------
+// From linux-2.6.16/include/linux/vt.h
+//----------------------------------------------------------------------
+
+#define VKI_VT_OPENQRY	0x5600	/* find available vt */
+
+struct vki_vt_mode {
+	char mode;		/* vt mode */
+	char waitv;		/* if set, hang on writes if not active */
+	short relsig;		/* signal to raise on release req */
+	short acqsig;		/* signal to raise on acquisition */
+	short frsig;		/* unused (set to 0) */
+};
+#define VKI_VT_GETMODE	0x5601	/* get mode of active vt */
+#define VKI_VT_SETMODE	0x5602	/* set mode of active vt */
+
+struct vki_vt_stat {
+	unsigned short v_active;	/* active vt */
+	unsigned short v_signal;	/* signal to send */
+	unsigned short v_state;		/* vt bitmask */
+};
+#define VKI_VT_GETSTATE	0x5603	/* get global vt state info */
+#define VKI_VT_SENDSIG	0x5604	/* signal to send to bitmask of vts */
+
+#define VKI_VT_RELDISP	0x5605	/* release display */
+
+#define VKI_VT_ACTIVATE	0x5606	/* make vt active */
+#define VKI_VT_WAITACTIVE	0x5607	/* wait for vt active */
+#define VKI_VT_DISALLOCATE	0x5608  /* free memory associated to vt */
+
+struct vki_vt_sizes {
+	unsigned short v_rows;		/* number of rows */
+	unsigned short v_cols;		/* number of columns */
+	unsigned short v_scrollsize;	/* number of lines of scrollback */
+};
+#define VKI_VT_RESIZE	0x5609	/* set kernel's idea of screensize */
+
+struct vki_vt_consize {
+	unsigned short v_rows;	/* number of rows */
+	unsigned short v_cols;	/* number of columns */
+	unsigned short v_vlin;	/* number of pixel rows on screen */
+	unsigned short v_clin;	/* number of pixel rows per character */
+	unsigned short v_vcol;	/* number of pixel columns on screen */
+	unsigned short v_ccol;	/* number of pixel columns per character */
+};
+#define VKI_VT_RESIZEX      0x560A  /* set kernel's idea of screensize + more */
+#define VKI_VT_LOCKSWITCH   0x560B  /* disallow vt switching */
+#define VKI_VT_UNLOCKSWITCH 0x560C  /* allow vt switching */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

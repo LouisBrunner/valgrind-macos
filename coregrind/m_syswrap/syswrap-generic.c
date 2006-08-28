@@ -3815,6 +3815,32 @@ PRE(sys_ioctl)
                     VKI_E_TABSZ * sizeof(unsigned short) );
       break;
 
+   case VKI_GIO_UNIMAP:
+      if ( ARG3 ) {
+         struct vki_unimapdesc *desc = (struct vki_unimapdesc *) ARG3;
+         PRE_MEM_READ( "ioctl(GIO_UNIMAP)", (Addr)&desc->entry_ct,
+                       sizeof(unsigned short));
+         PRE_MEM_READ( "ioctl(GIO_UNIMAP)", (Addr)&desc->entries,
+                       sizeof(struct vki_unipair *));
+         PRE_MEM_WRITE( "ioctl(GIO_UNIMAP).entries", (Addr)desc->entries,
+                        desc->entry_ct * sizeof(struct vki_unipair));
+      }
+      break;
+   case VKI_PIO_UNIMAP:
+      if ( ARG3 ) {
+         struct vki_unimapdesc *desc = (struct vki_unimapdesc *) ARG3;
+         PRE_MEM_READ( "ioctl(GIO_UNIMAP)", (Addr)&desc->entry_ct,
+                       sizeof(unsigned short) );
+         PRE_MEM_READ( "ioctl(GIO_UNIMAP)", (Addr)&desc->entries,
+                       sizeof(struct vki_unipair *) );
+         PRE_MEM_READ( "ioctl(PIO_UNIMAP).entries", (Addr)desc->entries,
+                       desc->entry_ct * sizeof(struct vki_unipair) );
+      }
+      break;
+   case VKI_PIO_UNIMAPCLR:
+      PRE_MEM_READ( "ioctl(GIO_UNIMAP)", ARG3, sizeof(struct vki_unimapinit));
+      break;
+
    case VKI_KDGKBMODE:
       PRE_MEM_WRITE( "ioctl(KDGKBMODE)", ARG3, sizeof(int) );
       break;
@@ -3902,6 +3928,68 @@ PRE(sys_ioctl)
    case VKI_KDKBDREP:
       PRE_MEM_READ( "ioctl(KBKBDREP)", ARG3, sizeof(struct vki_kbd_repeat) );
       break;
+
+   case VKI_KDFONTOP:
+      if ( ARG3 ) {
+         struct vki_console_font_op *op = (struct vki_console_font_op *) ARG3;
+         PRE_MEM_READ( "ioctl(KDFONTOP)", (Addr)op,
+                       sizeof(struct vki_console_font_op) );
+         switch ( op->op ) {
+            case VKI_KD_FONT_OP_SET:
+               PRE_MEM_READ( "ioctl(KDFONTOP,KD_FONT_OP_SET).data",
+                             (Addr)op->data,
+                             (op->width + 7) / 8 * 32 * op->charcount );
+               break;
+            case VKI_KD_FONT_OP_GET:
+               if ( op->data )
+                  PRE_MEM_WRITE( "ioctl(KDFONTOP,KD_FONT_OP_GET).data",
+                                 (Addr)op->data,
+                                 (op->width + 7) / 8 * 32 * op->charcount );
+               break;
+            case VKI_KD_FONT_OP_SET_DEFAULT:
+               if ( op->data )
+                  PRE_MEM_RASCIIZ( "ioctl(KDFONTOP,KD_FONT_OP_SET_DEFAULT).data",
+                                   (Addr)op->data );
+               break;
+            case VKI_KD_FONT_OP_COPY:
+               break;
+         }
+      }
+      break;
+
+   case VKI_VT_OPENQRY:
+      PRE_MEM_WRITE( "ioctl(VT_OPENQRY)", ARG3, sizeof(int) );
+      break;
+   case VKI_VT_GETMODE:
+      PRE_MEM_WRITE( "ioctl(VT_GETMODE)", ARG3, sizeof(struct vki_vt_mode) );
+      break;
+   case VKI_VT_SETMODE:
+      PRE_MEM_READ( "ioctl(VT_SETMODE)", ARG3, sizeof(struct vki_vt_mode) );
+      break;
+   case VKI_VT_GETSTATE:
+      PRE_MEM_READ( "ioctl(VT_GETSTATE)", ARG3, sizeof(struct vki_vt_stat) );
+      PRE_MEM_WRITE( "ioctl(VT_GETSTATE).v_active",
+                     (Addr) &(((struct vki_vt_stat*) ARG3)->v_active),
+                     sizeof(((struct vki_vt_stat*) ARG3)->v_active));
+      PRE_MEM_WRITE( "ioctl(VT_GETSTATE).v_state",
+                     (Addr) &(((struct vki_vt_stat*) ARG3)->v_state),
+                     sizeof(((struct vki_vt_stat*) ARG3)->v_state));
+      break;
+   case VKI_VT_RELDISP:
+   case VKI_VT_ACTIVATE:
+   case VKI_VT_WAITACTIVE:
+   case VKI_VT_DISALLOCATE:
+      break;
+   case VKI_VT_RESIZE:
+      PRE_MEM_READ( "ioctl(VT_RESIZE)", ARG3, sizeof(struct vki_vt_sizes) );
+      break;
+   case VKI_VT_RESIZEX:
+      PRE_MEM_READ( "ioctl(VT_RESIZEX)", ARG3, sizeof(struct vki_vt_consize) );
+      break;
+   case VKI_VT_LOCKSWITCH:
+   case VKI_VT_UNLOCKSWITCH:
+      break;
+
       
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and
@@ -4453,6 +4541,19 @@ POST(sys_ioctl)
    case VKI_PIO_UNISCRNMAP:
       break;
 
+   case VKI_GIO_UNIMAP:
+      if ( ARG3 ) {
+         struct vki_unimapdesc *desc = (struct vki_unimapdesc *) ARG3;
+         POST_MEM_WRITE( (Addr)&desc->entry_ct, sizeof(desc->entry_ct));
+         POST_MEM_WRITE( (Addr)desc->entries,
+      	                 desc->entry_ct * sizeof(struct vki_unipair) );
+      }
+      break;
+   case VKI_PIO_UNIMAP:
+      break;
+   case VKI_PIO_UNIMAPCLR:
+      break;
+
    case VKI_KDGKBMODE:
       POST_MEM_WRITE( ARG3, sizeof(int) );
       break;
@@ -4503,6 +4604,54 @@ POST(sys_ioctl)
 
    case VKI_KDKBDREP:
       break;
+
+   case VKI_KDFONTOP:
+      if ( ARG3 ) {
+         struct vki_console_font_op *op = (struct vki_console_font_op *) ARG3;
+         switch ( op->op ) {
+            case VKI_KD_FONT_OP_SET:
+               break;
+            case VKI_KD_FONT_OP_GET:
+               if ( op->data )
+                  POST_MEM_WRITE( (Addr) op->data,
+                                  (op->width + 7) / 8 * 32 * op->charcount );
+               break;
+            case VKI_KD_FONT_OP_SET_DEFAULT:
+               break;
+            case VKI_KD_FONT_OP_COPY:
+               break;
+         }
+         POST_MEM_WRITE( (Addr) op, sizeof(*op));
+      }
+      break;
+
+   case VKI_VT_OPENQRY:
+      POST_MEM_WRITE( ARG3, sizeof(int) );
+      break;
+   case VKI_VT_GETMODE:
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_vt_mode) );
+      break;
+   case VKI_VT_SETMODE:
+      break;
+   case VKI_VT_GETSTATE:
+      POST_MEM_WRITE( (Addr) &(((struct vki_vt_stat*) ARG3)->v_active),
+                      sizeof(((struct vki_vt_stat*) ARG3)->v_active) );
+      POST_MEM_WRITE( (Addr) &(((struct vki_vt_stat*) ARG3)->v_state),
+                      sizeof(((struct vki_vt_stat*) ARG3)->v_state) );
+      break;
+   case VKI_VT_RELDISP:
+   case VKI_VT_ACTIVATE:
+   case VKI_VT_WAITACTIVE:
+   case VKI_VT_DISALLOCATE:
+      break;
+   case VKI_VT_RESIZE:
+      break;
+   case VKI_VT_RESIZEX:
+      break;
+   case VKI_VT_LOCKSWITCH:
+   case VKI_VT_UNLOCKSWITCH:
+      break;
+      
 
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and

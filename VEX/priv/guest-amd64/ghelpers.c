@@ -958,12 +958,6 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            binop(Iop_Shl64,cc_dep2,mkU8(32))));
       }
 
-//..       if (isU32(cc_op, AMD64G_CC_OP_SUBL) && isU32(cond, X86CondNZ)) {
-//..          /* long sub/cmp, then NZ --> test dst!=src */
-//..          return unop(Iop_1Uto32,
-//..                      binop(Iop_CmpNE32, cc_dep1, cc_dep2));
-//..       }
-
       if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondL)) {
          /* long sub/cmp, then L (signed less than) 
             --> test dst <s src */
@@ -992,12 +986,15 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            binop(Iop_Shl64,cc_dep2,mkU8(32))));
       }
 
-//..       if (isU32(cc_op, AMD64G_CC_OP_SUBL) && isU32(cond, X86CondB)) {
-//..          /* long sub/cmp, then B (unsigned less than)
-//..             --> test dst <u src */
-//..          return unop(Iop_1Uto32,
-//..                      binop(Iop_CmpLT32U, cc_dep1, cc_dep2));
-//..       }
+      if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondNBE)) {
+         /* long sub/cmp, then NBE (unsigned greater than)
+            --> test src <u dst */
+         /* Note, args are opposite way round from the usual */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64U, 
+                           binop(Iop_Shl64,cc_dep2,mkU8(32)),
+                           binop(Iop_Shl64,cc_dep1,mkU8(32))));
+      }
 
       /*---------------- SUBW ----------------*/
 
@@ -1025,6 +1022,14 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
          /* byte sub/cmp, then Z --> test dst==src */
          return unop(Iop_1Uto64,
                      binop(Iop_CmpEQ8, 
+                           unop(Iop_64to8,cc_dep1),
+                           unop(Iop_64to8,cc_dep2)));
+      }
+
+      if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondNZ)) {
+         /* byte sub/cmp, then NZ --> test dst!=src */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE8, 
                            unop(Iop_64to8,cc_dep1),
                            unop(Iop_64to8,cc_dep2)));
       }

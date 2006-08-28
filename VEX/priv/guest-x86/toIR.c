@@ -11728,6 +11728,10 @@ DisResult disInstr_X86_WRK (
       t1 = newTemp(Ity_I32); t2 = newTemp(ty);
       assign( t1, binop(Iop_Sub32,getIReg(4,R_ESP),mkU32(sz)) );
       putIReg(4, R_ESP, mkexpr(t1) );
+      /* stop mkU16 asserting if d32 is a negative 16-bit number
+         (bug #132813) */
+      if (ty == Ity_I16)
+         d32 &= 0xFFFF;
       storeLE( mkexpr(t1), mkU(ty,d32) );
       DIP("push%c $0x%x\n", nameISize(sz), d32);
       break;

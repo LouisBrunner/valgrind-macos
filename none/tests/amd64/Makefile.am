@@ -6,6 +6,8 @@ INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_sse3 insn_fpu
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
+	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
+	bug132813-amd64.stderr.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
@@ -22,7 +24,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 
 check_PROGRAMS = \
-	bug127521-64 \
+	bug127521-64 bug132813-amd64 \
 	clc \
 	faultstatus fcmovnu fxtract $(INSN_TESTS) looper jrcxz smc1 shrld \
 	nibz_bennee_mmap

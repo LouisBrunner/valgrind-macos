@@ -1,0 +1,8 @@
+  pushb_pos: delta 8, top64 0x0000000000000022
+  pushb_neg: delta 8, top64 0xffffffffffffffee
+  pushw_neg: delta 2, top64 0x0000555555553344
+  pushw_pos: delta 2, top64 0x000055555555ddcc
+  pushq_pos: delta 8, top64 0x0000000067675656
+  pushq_neg: delta 8, top64 0x0000000078988787
+66pushb_pos: delta 2, top64 0x0000555555550022
+66pushb_neg: delta 2, top64 0x000055555555ffee

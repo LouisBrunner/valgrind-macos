@@ -13631,7 +13631,7 @@ DisResult disInstr_AMD64_WRK (
                binop(Iop_Or32,
                   binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
                binop(Iop_Or32,
-                  binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)), 
+                  binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)),
                                    mkU32(0x00FF0000)),
                binop(Iop_Or32,
                   binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
@@ -13645,33 +13645,50 @@ DisResult disInstr_AMD64_WRK (
             break;
          }
 	 else if (sz == 8) {
+            IRTemp m8  = newTemp(Ity_I64);
+            IRTemp s8  = newTemp(Ity_I64);
+            IRTemp m16 = newTemp(Ity_I64);
+            IRTemp s16 = newTemp(Ity_I64);
+            IRTemp m32 = newTemp(Ity_I64);
             t1 = newTemp(Ity_I64);
             t2 = newTemp(Ity_I64);
             assign( t1, getIRegRexB(8, pfx, opc-0xC8) );
 
-#           define LANE(_nn)                                          \
-               binop( Iop_Shl64,                                      \
-                      binop( Iop_And64,                               \
-                             binop(Iop_Shr64, mkexpr(t1),             \
-                                              mkU8(8 * (7 - (_nn)))), \
-                             mkU64(0xFF)),                            \
-                      mkU8(8 * (_nn)))
+            assign( m8, mkU64(0xFF00FF00FF00FF00ULL) );
+            assign( s8,
+                    binop(Iop_Or64,
+                          binop(Iop_Shr64,
+                                binop(Iop_And64,mkexpr(t1),mkexpr(m8)),
+                                mkU8(8)),
+                          binop(Iop_And64,
+                                binop(Iop_Shl64,mkexpr(t1),mkU8(8)),
+                                mkexpr(m8))
+                         ) 
+                  );
 
-            assign( 
-               t2,
-               binop(Iop_Or64,
-                     binop(Iop_Or64,
-                           binop(Iop_Or64,LANE(0),LANE(1)),
-                           binop(Iop_Or64,LANE(2),LANE(3))
-                     ),
-                     binop(Iop_Or64,
-                           binop(Iop_Or64,LANE(4),LANE(5)),
-                           binop(Iop_Or64,LANE(6),LANE(7))
-                     )
-               )
-            );
+            assign( m16, mkU64(0xFFFF0000FFFF0000ULL) );
+            assign( s16,
+                    binop(Iop_Or64,
+                          binop(Iop_Shr64,
+                                binop(Iop_And64,mkexpr(s8),mkexpr(m16)),
+                                mkU8(16)),
+                          binop(Iop_And64,
+                                binop(Iop_Shl64,mkexpr(s8),mkU8(16)),
+                                mkexpr(m16))
+                         ) 
+                  );
 
-#           undef LANE
+            assign( m32, mkU64(0xFFFFFFFF00000000ULL) );
+            assign( t2,
+                    binop(Iop_Or64,
+                          binop(Iop_Shr64,
+                                binop(Iop_And64,mkexpr(s16),mkexpr(m32)),
+                                mkU8(32)),
+                          binop(Iop_And64,
+                                binop(Iop_Shl64,mkexpr(s16),mkU8(32)),
+                                mkexpr(m32))
+                         ) 
+                  );
 
             putIRegRexB(8, pfx, opc-0xC8, mkexpr(t2));
             DIP("bswapq %s\n", nameIRegRexB(8, pfx, opc-0xC8));

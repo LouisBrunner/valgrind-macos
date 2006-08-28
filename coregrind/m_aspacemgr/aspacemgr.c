@@ -994,6 +994,12 @@ static Bool maybe_merge_nsegments ( NSegment* s1, NSegment* s2 )
       case SkShmC:
          return False;
 
+      case SkResvn:
+         if (s1->smode == SmFixed && s2->smode == SmFixed) {
+            s1->end = s2->end;
+            return True;
+         }
+
       default:
          break;
    
@@ -2232,9 +2238,22 @@ Bool VG_(am_notify_munmap)( Addr start, SizeT len )
    needDiscard = any_Ts_in_range( start, len );
 
    init_nsegment( &seg );
-   seg.kind  = SkFree;
    seg.start = start;
    seg.end   = start + len - 1;
+
+   /* The segment becomes unused (free).  Segments from above
+      aspacem_maxAddr were originally SkResvn and so we make them so
+      again.  Note, this isn't really right when the segment straddles
+      the aspacem_maxAddr boundary - then really it should be split in
+      two, the lower part marked as SkFree and the upper part as
+      SkResvn.  Ah well. */
+   if (start > aspacem_maxAddr 
+       && /* check previous comparison is meaningful */
+          aspacem_maxAddr < Addr_MAX)
+      seg.kind = SkResvn;
+   else
+      seg.kind = SkFree;
+
    add_segment( &seg );
 
    /* Unmapping could create two adjacent free segments, so a preen is
@@ -2995,9 +3014,17 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 
    /* Create a free hole in the old location. */
    init_nsegment( &seg );
-   seg.kind  = SkFree;
    seg.start = old_addr;
    seg.end   = old_addr + old_len - 1;
+   /* See comments in VG_(am_notify_munmap) about this SkResvn vs
+      SkFree thing. */
+   if (old_addr > aspacem_maxAddr 
+       && /* check previous comparison is meaningful */
+          aspacem_maxAddr < Addr_MAX)
+      seg.kind = SkResvn;
+   else
+      seg.kind = SkFree;
+
    add_segment( &seg );
 
    AM_SANITY_CHECK;

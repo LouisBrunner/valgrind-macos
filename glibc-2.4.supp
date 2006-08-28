@@ -124,3 +124,114 @@
    fun:index
    fun:expand_dynamic_string_token
 }
+
+
+##----------------------------------------------------------------------##
+## Various structure padding things on amd64 SuSE 10.1
+##
+{
+   X11-64bit-padding-1a
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   obj:/usr/X*/libX11.so*
+   obj:/usr/X*/libX11.so*
+   fun:X*
+}
+{
+   X11-64bit-padding-1b
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   obj:/usr/X*/libX11.so*
+   obj:/usr/X*/libX11.so*
+   fun:_X*
+}
+{
+   X11-64bit-padding-1c
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   obj:/usr/X*/libX11.so*
+   obj:/usr/X*/libX11.so*
+   obj:/usr/X*/libX11.so*
+}
+{
+   X11-64bit-padding-1d
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   obj:/usr/X*/libICE.so*
+   obj:/usr/X*/libICE.so*
+   obj:/usr/X*/libICE.so*
+}
+
+
+{
+   X11-64bit-padding-2a
+   Memcheck:Param
+   writev(vector[...])
+   fun:do_writev
+   obj:/usr/X*/libX11.so*
+   obj:/usr/X*/libX11.so*
+   obj:/usr/X*/libX11.so*
+}
+{
+   X11-64bit-padding-2b
+   Memcheck:Param
+   writev(vector[...])
+   fun:do_writev
+   fun:writev
+   obj:/usr/X*/libX11.so*
+   obj:/usr/X*/libX11.so*
+}
+
+{
+   glibc24-64bit-padding-1a
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:send
+   fun:get_mapping
+   fun:__nscd_get_map_ref
+   fun:nscd*
+}
+{
+   glibc24-64bit-padding-1b
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:__sendto_nocancel
+   obj:/*libc-2.4.so
+   obj:/*libc-2.4.so
+   obj:/*libc-2.4.so
+}
+{
+   glibc24-64bit-padding-1c
+   Memcheck:Param
+   socketcall.send(msg)
+   fun:send
+   fun:__nscd_get_map_ref
+   fun:nscd_get*_r
+   fun:*nscd*
+   obj:/*libc-2.4.so
+}
+
+
+{
+   X11-64bit-padding-3a
+   Memcheck:Param
+   write(buf)
+   obj:/*libpthread-2.4.so*
+   obj:/usr/X*/libX11.so*
+   obj:/usr/X*/libX11.so*
+   obj:/usr/X*/libX11.so*
+}
+
+{
+   X11-64bit-padding-4a
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:send
+   obj:/*libc-2.4.so
+   obj:/*libc-2.4.so
+   obj:/*libc-2.4.so
+}

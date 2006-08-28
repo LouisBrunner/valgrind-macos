@@ -278,7 +278,7 @@
 #define VG_N_SEGMENTS 5000
 
 /* Max number of segment file names we can track. */
-#define VG_N_SEGNAMES 400
+#define VG_N_SEGNAMES 1000
 
 /* Max length of a segment file name. */
 #define VG_MAX_SEGNAMELEN 1000

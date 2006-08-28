@@ -12756,8 +12756,10 @@ DisResult disInstr_AMD64_WRK (
    case 0x9C: /* PUSHF */ {
       /* Note.  There is no encoding for a 32-bit pushf in 64-bit
          mode.  So sz==4 actually means sz==8. */
+      /* 24 July 06: has also been seen with a redundant REX prefix,
+         so must also allow sz==8. */
       if (haveF2orF3(pfx)) goto decode_failure;
-      vassert(sz == 2 || sz == 4);
+      vassert(sz == 2 || sz == 4 || sz == 8);
       if (sz == 4) sz = 8;
       if (sz != 8) goto decode_failure; // until we know a sz==2 test case exists
 

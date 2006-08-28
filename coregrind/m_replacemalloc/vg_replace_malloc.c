@@ -358,6 +358,41 @@ VALLOC(m_libc_dot_so_star, valloc);
 MALLOPT(m_libc_dot_so_star, mallopt);
 
 
+// Documentation says:
+//   malloc_trim(size_t pad);
+// 
+//   If possible, gives memory back to the system (via negative arguments to
+//   sbrk) if there is unused memory at the `high' end of the malloc pool.
+//   You can call this after freeing large blocks of memory to potentially
+//   reduce the system-level memory requirements of a program. However, it
+//   cannot guarantee to reduce memory.  Under some allocation patterns,
+//   some large free blocks of memory will be locked between two used
+//   chunks, so they cannot be given back to the system.
+// 
+//   The `pad' argument to malloc_trim represents the amount of free
+//   trailing space to leave untrimmed. If this argument is zero, only the
+//   minimum amount of memory to maintain internal data structures will be
+//   left (one page or less). Non-zero arguments can be supplied to maintain
+//   enough trailing space to service future expected allocations without
+//   having to re-obtain memory from the system.
+// 
+//   Malloc_trim returns 1 if it actually released any memory, else 0. On
+//   systems that do not support "negative sbrks", it will always return 0. 
+//
+// For simplicity, we always return 0.
+#define MALLOC_TRIM(soname, fnname) \
+   \
+   int VG_REPLACE_FUNCTION_ZU(soname, fnname) ( SizeT pad ); \
+   int VG_REPLACE_FUNCTION_ZU(soname, fnname) ( SizeT pad )  \
+   { \
+      /* 0 denotes that malloc_trim() either wasn't able \
+         to do anything, or was not implemented */ \
+      return 0; \
+   }
+
+MALLOC_TRIM(m_libc_dot_so_star, malloc_trim);
+
+
 #define POSIX_MEMALIGN(soname, fnname) \
    \
    int VG_REPLACE_FUNCTION_ZU(soname, fnname) ( void **memptr, \
@@ -427,7 +462,6 @@ static void panic(const char *str)
 
 PANIC(m_libc_dot_so_star, pvalloc);
 PANIC(m_libc_dot_so_star, malloc_stats);
-PANIC(m_libc_dot_so_star, malloc_trim);
 PANIC(m_libc_dot_so_star, malloc_get_state);
 PANIC(m_libc_dot_so_star, malloc_set_state);
 

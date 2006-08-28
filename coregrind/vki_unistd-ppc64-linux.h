@@ -328,6 +328,7 @@
 #define __NR_readlinkat		296
 #define __NR_fchmodat		297
 #define __NR_faccessat		298
-
+#define __NR_get_robust_list	299
+#define __NR_set_robust_list	300
 
 #endif /* __VKI_UNISTD_PPC64_LINUX_H */

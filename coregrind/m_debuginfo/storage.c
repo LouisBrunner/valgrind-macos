@@ -308,7 +308,13 @@ void ML_(addDiCfSI) ( struct _SegInfo* si, DiCfSI* cfsi )
       ML_(ppDiCfSI)(cfsi);
    }
 
-   vg_assert(cfsi->len > 0 && cfsi->len < 2000000);
+   /* sanity */
+   vg_assert(cfsi->len > 0);
+   /* If this fails, the implication is you have a single procedure
+      with more than 5 million bytes of code.  Which is pretty
+      unlikely.  Either that, or the debuginfo reader is somehow
+      broken. */
+   vg_assert(cfsi->len < 5000000);
 
    /* Rule out ones which are completely outside the segment.  These
       probably indicate some kind of bug, but for the meantime ignore

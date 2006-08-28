@@ -4,6 +4,7 @@ pending = is scheduled to be fixed (or at least considered) on this branch
 wontfix = will not fix on this branch
 many    = fix composed of many commits
 sse3fix = fixed by the SSE3 commits
+[W]     = waiting for feedback from bug reporter
 
 ------- Bugs reported after (in) 3.2.0 ------
 
@@ -36,8 +37,12 @@ vx1634   vx1645       131481:  (HINT_NOP) vex x86->IR: 0xF 0x1F 0x0 0xF
                       131298   ==131481
 
 vx1638   vx1648       132146   Programs with long sequences of bswap[l,q]s
-pending  pending      132918   vex amd64->IR: 0xD9 0xF8 (fprem)
-pending  pending      132813   Assertion at priv/guest-x86/toIR.c:652 fails
+
+pending  pending  [W] 132918   vex amd64->IR: 0xD9 0xF8 (fprem)
+vx1652,3 vx1654       132813   Assertion at priv/guest-x86/toIR.c:652 fails
+pending  pending  [W] 133051   'cfsi->len > 0 && cfsi->len < 2000000' failed
+pending  pending  [W] 133054   'make install' fails with syntax errors
+v6036    v6037        132722   valgrind header files are not standard C
 
 v5990    v6023        n-i-bz   Livelocks entire machine (users list,
                                17 June, Timothy B. Terriberry)

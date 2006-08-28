@@ -13134,6 +13134,10 @@ DisResult disInstr_AMD64_WRK (
       t2 = newTemp(ty);
       assign( t1, binop(Iop_Sub64,getIReg64(R_RSP),mkU64(sz)) );
       putIReg64(R_RSP, mkexpr(t1) );
+      /* stop mkU16 asserting if d32 is a negative 16-bit number
+         (bug #132813) */
+      if (ty == Ity_I16)
+         d64 &= 0xFFFF;
       storeLE( mkexpr(t1), mkU(ty,d64) );
       DIP("push%c $%lld\n", nameISize(sz), (Long)d64);
       break;

@@ -275,7 +275,7 @@
 /* ------ start of STATE for the address-space manager ------ */
 
 /* Max number of segments we can track. */
-#define VG_N_SEGMENTS 2000
+#define VG_N_SEGMENTS 5000
 
 /* Max number of segment file names we can track. */
 #define VG_N_SEGNAMES 400

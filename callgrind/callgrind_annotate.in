@@ -100,6 +100,7 @@ my $desc = "";
 my $cmd = "";
 
 # Info on the profiled process.
+my $creator = "";
 my $pid = "";
 my $part = "";
 my $thread = "";
@@ -310,10 +311,12 @@ sub process_cmd_line()
     }
 
     if ($input_file eq "") {
-      $input_file = (<cachegrind.out*>)[0];
+      $input_file = (<callgrind.out*>)[0];
       if (!defined $input_file) {
-	$input_file = "cachegrind.out";
+	  $input_file = (<cachegrind.out*>)[0];
       }
+
+      (defined $input_file) or die($usage);
       print "Reading data from '$input_file'...\n";
     }
 }
@@ -403,6 +406,7 @@ sub read_input_file()
 	else { $desc .= "$dline\n"; }
       }
       elsif (/^cmd:\s+(.*)$/)  { $cmd = $1; }
+      elsif (/^creator:\s+(.*)$/)  { $creator = $1; }
       elsif (/^positions:\s+(.*)$/) {
 	my $positions = $1;
 	$has_line = ($positions =~ /line/);
@@ -669,6 +673,11 @@ sub read_input_file()
 #-----------------------------------------------------------------------------
 sub print_options ()
 {
+    print($fancy);
+    print "Profile data file '$input_file'";
+    if ($creator ne "") { print " (creator: $creator)"; }
+    print "\n";
+
     print($fancy);
     print($desc);
     my $target = $cmd;

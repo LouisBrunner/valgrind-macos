@@ -5,6 +5,7 @@ wontfix = will not fix on this branch
 many    = fix composed of many commits
 sse3fix = fixed by the SSE3 commits
 [W]     = waiting for feedback from bug reporter
+Vfd     = fix has been verified on 3.2.X branch
 
 ------- Bugs reported after (in) 3.2.0 ------
 
@@ -16,16 +17,16 @@ v5973    v6014        n-i-bz   ppc64-linux stack RZ fast-case snafu
 v5978    v6015        n-i-bz   'c' in --gen-supps=yes doesn't work
 v5986    v6016        n-i-bz   VG_N_SEGMENTS too low (users, 28 June)
 v6030    v6031        n-i-bz   VG_N_SEGNAMES too low (Stu Robinson)
-sse3fix  vx1646       106852   x86->IR: fisttp (SSE3)
+sse3fix  vx1646   Vfd 106852   x86->IR: fisttp (SSE3)
 v5968    v6017        117172   FUTEX_WAKE does not use uaddr2
 v5970    v6018        124039   Lacks support for VKI_[GP]IO_UNIMAP*
-vx1639   vx1649       127521   amd64->IR: 0xF0 0x48 0xF 0xC7 (cmpxchg8b)
-vx1632/v5987
+vx1639   vx1649   Vfd 127521   amd64->IR: 0xF0 0x48 0xF 0xC7 (cmpxchg8b)
+vx1632/v5987      Vfd
          vx1643/v6032 128917   amd64->IR: 0x66 0xF 0xF6 0xC4 (psadbw,SSE2)
 v5988    v6019        129246   JJ: ppc32/ppc64 syscalls, w/ patch
-sse3fix  vx1646       129358   x86->IR: fisttpl (SSE3)
+sse3fix  vx1646   Vfd 129358   x86->IR: fisttpl (SSE3)
 pending  pending      129390   ppc?->IR: some kind of VMX prefetch (dstt)
-v6003,4  v6025        129866   cachegrind/callgrind causes executable to die
+v6003,4  v6025    Vfd 129866   cachegrind/callgrind causes executable to die
 pending  pending      129968   amd64->IR: 0xF 0xAE 0x0 (fxsave)
 v5979    v6021        130020   Can't stat .so/.exe error while reading symbols
 wontfix  wontfix      130358   Inconsistent 80-bit floats on x86
@@ -36,11 +37,11 @@ vx1633   vx1644       130785   amd64->IR: unhandled instruction "pushfq"
 vx1634   vx1645       131481:  (HINT_NOP) vex x86->IR: 0xF 0x1F 0x0 0xF
                       131298   ==131481
 
-vx1638   vx1648       132146   Programs with long sequences of bswap[l,q]s
+vx1638   vx1648   Vfd 132146   Programs with long sequences of bswap[l,q]s
 
 pending  pending  [W] 132918   vex amd64->IR: 0xD9 0xF8 (fprem)
-vx1652,3 vx1654       132813   Assertion at priv/guest-x86/toIR.c:652 fails
-pending  pending  [W] 133051   'cfsi->len > 0 && cfsi->len < 2000000' failed
+vx1652,3 vx1654   Vfd 132813   Assertion at priv/guest-x86/toIR.c:652 fails
+v6040    v6041        133051   'cfsi->len > 0 && cfsi->len < 2000000' failed
 pending  pending  [W] 133054   'make install' fails with syntax errors
 v6036    v6037        132722   valgrind header files are not standard C
 
@@ -66,4 +67,6 @@ vx1637   vx1647       n-i-bz   amd64 insn printing fix.
 vx1640,1 vx1650       n-i-bz   ppc cmp reg,reg fix
 vx1642   vx1651       n-i-bz   x86/amd64 iropt e/rflag reduction rules
 
-fix for make install with older bashes.
+pending  wontfix      133154   crash when using client requests to 
+                               register/deregister stack
+supp for suse 10.1 ppc32

@@ -483,6 +483,7 @@ sub read_input_file()
     my $curr_fn;
     my $curr_name;
     my $curr_line_num = 0;
+    my $prev_line_num = 0;
 
     my $curr_cobj = "";
     my $curr_cfile = "";
@@ -496,17 +497,19 @@ sub read_input_file()
 
     # Read body of input file.
     while (<INPUTFILE>) {
+	$prev_line_num = $curr_line_num;
+
         s/#.*$//;   # remove comments
-	s/^\+(\d+)/$curr_line_num+$1/e;
-        s/^\-(\d+)/$curr_line_num-$1/e;
-        s/^\*/$curr_line_num/e;
-        if (s/^(\d+|0x\w+)\s+//) {
+        s/^\+(\d+)/$prev_line_num+$1/e;
+        s/^\-(\d+)/$prev_line_num-$1/e;
+        s/^\*/$prev_line_num/e;
+        if (s/^(-?\d+|0x\w+)\s+//) {
             $curr_line_num = $1;
 	    if ($has_addr) {
 	      if ($has_line) {
-                s/^\+(\d+)/$curr_line_num+$1/e;
-	        s/^\-(\d+)/$curr_line_num-$1/e;
-                s/^\*/$curr_line_num/e;
+                s/^\+(\d+)/$prev_line_num+$1/e;
+	        s/^\-(\d+)/$prev_line_num-$1/e;
+                s/^\*/$prev_line_num/e;
 
 	        if (s/^(\d+)\s+//) { $curr_line_num = $1; }
 	      }

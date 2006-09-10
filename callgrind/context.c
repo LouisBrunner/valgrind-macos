@@ -279,6 +279,11 @@ void CLG_(push_cxt)(fn_node* fn)
   call_stack* cs = &CLG_(current_call_stack);
   Int fn_entries;
 
+  CLG_DEBUG(5, "+ push_cxt(fn '%s'): old ctx %d\n", 
+	    fn ? fn->name : (Char*)"0x0",
+	    CLG_(current_state).cxt ?
+	    CLG_(current_state).cxt->base_number : -1);
+
   /* save old context on stack (even if not changed at all!) */
   CLG_ASSERT(cs->sp < cs->size);
   CLG_ASSERT(cs->entry[cs->sp].cxt == 0);
@@ -321,8 +326,10 @@ void CLG_(push_cxt)(fn_node* fn)
   *(CLG_(current_fn_stack).top) = fn;
   CLG_(current_state).cxt = CLG_(get_cxt)(CLG_(current_fn_stack).top);
 
-  CLG_DEBUG(5, "  push_cxt(fn '%s'): %d\n", 
-	   fn ? fn->name : (Char*)"0x0",
-	   CLG_(current_fn_stack).top - CLG_(current_fn_stack).bottom);
+  CLG_DEBUG(5, "- push_cxt(fn '%s'): new cxt %d, fn_sp %d\n", 
+	    fn ? fn->name : (Char*)"0x0",
+	    CLG_(current_state).cxt ?
+	      CLG_(current_state).cxt->base_number : -1,
+	    CLG_(current_fn_stack).top - CLG_(current_fn_stack).bottom);
 }
 			       

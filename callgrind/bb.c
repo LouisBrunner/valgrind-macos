@@ -306,7 +306,10 @@ void CLG_(delete_bb)(Addr addr)
 	CLG_DEBUG(3, "  delete_bb (Obj %s, off %p): NOT FOUND\n",
 		  obj->name, offset);
 
-	/* we didn't find it.  That's strange. */
+	/* we didn't find it.
+	 * this happens when callgrinds instrumentation mode
+	 * was off at BB translation time, ie. no BB was created.
+	 */
 	return;
     }
 
@@ -334,6 +337,7 @@ void CLG_(delete_bb)(Addr addr)
 	    + (bb->cjmp_count+1) * sizeof(CJmpInfo);
 	VG_(memset)( bb, 0xAA, size );
 	CLG_FREE(bb);
+	return;
     }
     CLG_DEBUG(3, "  delete_bb: BB in use, can not free!\n");
 }

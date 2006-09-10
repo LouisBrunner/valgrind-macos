@@ -771,6 +771,10 @@ void unwind_thread(thread_info* t)
   /* unwind regular call stack */
   while(CLG_(current_call_stack).sp>0)
     CLG_(pop_call_stack)();
+
+  /* reset context and function stack for context generation */
+  CLG_(init_exec_state)( &CLG_(current_state) );
+  CLG_(current_fn_stack).top = CLG_(current_fn_stack).bottom;
 }
 
 /* Ups, this can go wrong... */
@@ -795,11 +799,8 @@ void CLG_(set_instrument_state)(Char* reason, Bool state)
   if (0)
     CLG_(forall_threads)(zero_thread_cost);
 
-  if (!state)
-    CLG_(init_exec_state)( &CLG_(current_state) );
-
   if (VG_(clo_verbosity) > 1)
-    VG_(message)(Vg_DebugMsg, "%s: instrumentation switched %s\n",
+    VG_(message)(Vg_DebugMsg, "%s: instrumentation switched %s",
 		 reason, state ? "ON" : "OFF");
 }
   

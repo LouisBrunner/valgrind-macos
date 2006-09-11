@@ -548,7 +548,7 @@ HChar* showA87FpOp ( A87FpOp op ) {
       case Afp_ATAN:   return "atan";
       case Afp_YL2X:   return "yl2x";
       case Afp_YL2XP1: return "yl2xp1";
-//..       case Xfp_PREM:   return "prem";
+      case Afp_PREM:   return "prem";
 //..       case Xfp_PREM1:  return "prem1";
       case Afp_SQRT:   return "sqrt";
 //..       case Xfp_ABS:    return "abs";
@@ -817,6 +817,13 @@ AMD64Instr* AMD64Instr_A87LdCW ( AMD64AMode* addr )
    AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag              = Ain_A87LdCW;
    i->Ain.A87LdCW.addr = addr;
+   return i;
+}
+AMD64Instr* AMD64Instr_A87StSW ( AMD64AMode* addr )
+{
+   AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag              = Ain_A87StSW;
+   i->Ain.A87StSW.addr = addr;
    return i;
 }
 
@@ -1155,18 +1162,22 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
          vex_printf("mfence" );
          return;
       case Ain_A87Free:
-         vex_printf("ffree %%st(7..%d)\n", 7 - i->Ain.A87Free.nregs );
+         vex_printf("ffree %%st(7..%d)", 8 - i->Ain.A87Free.nregs );
          break;
       case Ain_A87PushPop:
          vex_printf(i->Ain.A87PushPop.isPush ? "fldl " : "fstpl ");
          ppAMD64AMode(i->Ain.A87PushPop.addr);
          break;
       case Ain_A87FpOp:
-         vex_printf("f%s\n", showA87FpOp(i->Ain.A87FpOp.op));
+         vex_printf("f%s", showA87FpOp(i->Ain.A87FpOp.op));
          break;
       case Ain_A87LdCW:
          vex_printf("fldcw ");
          ppAMD64AMode(i->Ain.A87LdCW.addr);
+         break;
+      case Ain_A87StSW:
+         vex_printf("fstsw ");
+         ppAMD64AMode(i->Ain.A87StSW.addr);
          break;
 //..       case Xin_FpUnary:
 //..          vex_printf("g%sD ", showAMD64FpOp(i->Xin.FpUnary.op));
@@ -1493,6 +1504,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
       case Ain_A87LdCW:
          addRegUsage_AMD64AMode(u, i->Ain.A87LdCW.addr);
          return;
+      case Ain_A87StSW:
+         addRegUsage_AMD64AMode(u, i->Ain.A87StSW.addr);
+         return;
 //..       case Xin_FpUnary:
 //..          addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
@@ -1703,6 +1717,9 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          return;
       case Ain_A87LdCW:
          mapRegs_AMD64AMode(m, i->Ain.A87LdCW.addr);
+         return;
+      case Ain_A87StSW:
+         mapRegs_AMD64AMode(m, i->Ain.A87StSW.addr);
          return;
 //..       case Xin_FpUnary:
 //..          mapReg(m, &i->Xin.FpUnary.src);
@@ -2804,6 +2821,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          case Afp_ATAN:   *p++ = 0xD9; *p++ = 0xF3; break;
          case Afp_YL2X:   *p++ = 0xD9; *p++ = 0xF1; break;
          case Afp_YL2XP1: *p++ = 0xD9; *p++ = 0xF9; break;
+         case Afp_PREM:   *p++ = 0xD9; *p++ = 0xF8; break;
          default: goto bad;
       }
       goto done;
@@ -2813,6 +2831,13 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
                 rexAMode_M(fake(5), i->Ain.A87LdCW.addr) );
       *p++ = 0xD9;
       p = doAMode_M(p, fake(5)/*subopcode*/, i->Ain.A87LdCW.addr);
+      goto done;
+
+   case Ain_A87StSW:
+      *p++ = clearWBit(
+                rexAMode_M(fake(7), i->Ain.A87StSW.addr) );
+      *p++ = 0xDD;
+      p = doAMode_M(p, fake(7)/*subopcode*/, i->Ain.A87StSW.addr);
       goto done;
 
    case Ain_Store:

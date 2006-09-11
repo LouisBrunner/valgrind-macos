@@ -307,7 +307,7 @@ typedef
    enum {
       Afp_INVALID,
       /* Binary */
-      Afp_SCALE, Afp_ATAN, Afp_YL2X, Afp_YL2XP1, 
+      Afp_SCALE, Afp_ATAN, Afp_YL2X, Afp_YL2XP1, Afp_PREM,
       /* Unary */
       Afp_SQRT,
       Afp_SIN, Afp_COS, Afp_TAN,
@@ -386,6 +386,7 @@ typedef
       Ain_A87PushPop,  /* x87 loads/stores */
       Ain_A87FpOp,     /* x87 operations */
       Ain_A87LdCW,     /* load x87 control word */
+      Ain_A87StSW,     /* store x87 status word */
 //.. 
 //..       Xin_FpUnary,   /* FP fake unary op */
 //..       Xin_FpBinary,  /* FP fake binary op */
@@ -558,6 +559,11 @@ typedef
             AMD64AMode* addr;
          } A87LdCW;
 
+         /* Store the FPU status word (fstsw m16) */
+         struct {
+            AMD64AMode* addr;
+         } A87StSW;
+
          /* --- SSE --- */
 
          /* Load 32 bits into %mxcsr. */
@@ -680,6 +686,7 @@ extern AMD64Instr* AMD64Instr_A87Free    ( Int nregs );
 extern AMD64Instr* AMD64Instr_A87PushPop ( AMD64AMode* addr, Bool isPush );
 extern AMD64Instr* AMD64Instr_A87FpOp    ( A87FpOp op );
 extern AMD64Instr* AMD64Instr_A87LdCW    ( AMD64AMode* addr );
+extern AMD64Instr* AMD64Instr_A87StSW    ( AMD64AMode* addr );
 //.. 
 //.. extern AMD64Instr* AMD64Instr_FpUnary   ( AMD64FpOp op, HReg src, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_FpBinary  ( AMD64FpOp op, HReg srcL, HReg srcR, HReg dst );

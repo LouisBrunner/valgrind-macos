@@ -235,3 +235,12 @@
    obj:/*libc-2.4.so
    obj:/*libc-2.4.so
 }
+{
+   X11-64bit-padding-4b
+   Memcheck:Param
+   socketcall.send(msg)
+   fun:send
+   obj:/*libc-2.4.so
+   obj:/*libc-2.4.so
+   obj:/*libc-2.4.so
+}

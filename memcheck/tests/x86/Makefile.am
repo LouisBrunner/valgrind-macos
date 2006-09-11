@@ -5,6 +5,7 @@ noinst_HEADERS = scalar.h
 INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
+	bug133694.vgtest bug133694.stderr.exp bug133694.stdout.exp \
 	fpeflags.stderr.exp fpeflags.vgtest \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
@@ -25,6 +26,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fprem.stderr.exp fprem.stdout.exp fprem.vgtest
 
 check_PROGRAMS = \
+	bug133694 \
 	scalar_exit_group scalar_fork scalar_supp scalar_vfork \
 	fpeflags pushfpopf pushpopmem scalar sse_memory tronical \
 	more_x86_fp fprem

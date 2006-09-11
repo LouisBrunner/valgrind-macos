@@ -4887,20 +4887,28 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                put_ftop( binop(Iop_Add32, get_ftop(), mkU32(1)) );
                break;
 
-//..             case 0xF8: { /* FPREM -- not IEEE compliant */
-//..                IRTemp a1 = newTemp(Ity_F64);
-//..                IRTemp a2 = newTemp(Ity_F64);
-//..                DIP("fprem\n");
-//..                /* Do FPREM twice, once to get the remainder, and once
-//..                   to get the C3210 flag values. */
-//..                assign( a1, get_ST(0) );
-//..                assign( a2, get_ST(1) );
-//..                put_ST_UNCHECKED(0, binop(Iop_PRemF64,
-//..                                          mkexpr(a1), mkexpr(a2)));
-//..                put_C3210( binop(Iop_PRemC3210F64, mkexpr(a1), mkexpr(a2)) );
-//..                break;
-//..             }
-//.. 
+            case 0xF8: { /* FPREM -- not IEEE compliant */
+               IRTemp a1 = newTemp(Ity_F64);
+               IRTemp a2 = newTemp(Ity_F64);
+               DIP("fprem\n");
+               /* Do FPREM twice, once to get the remainder, and once
+                  to get the C3210 flag values. */
+               assign( a1, get_ST(0) );
+               assign( a2, get_ST(1) );
+               put_ST_UNCHECKED(0,
+                  triop(Iop_PRemF64,
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        mkexpr(a1),
+                        mkexpr(a2)));
+               put_C3210(
+                  unop(Iop_32Uto64,
+                  triop(Iop_PRemC3210F64,
+                        get_FAKE_roundingmode(), /* XXXROUNDINGFIXME */
+                        mkexpr(a1),
+                        mkexpr(a2)) ));
+               break;
+            }
+
             case 0xF9: /* FYL2XP1 */
                DIP("fyl2xp1\n");
                put_ST_UNCHECKED(1, 

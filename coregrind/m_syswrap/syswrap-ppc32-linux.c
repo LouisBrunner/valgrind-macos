@@ -1760,7 +1760,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //.. 
    LINX_(__NR_set_tid_address,   sys_set_tid_address),   // 232
 
-//..    LINX_(__NR_fadvise64,         sys_fadvise64),         // 233 */(Linux?)
+   LINX_(__NR_fadvise64,         sys_fadvise64),         // 233 */(Linux?)
    LINX_(__NR_exit_group,        sys_exit_group),        // 234
 //..    GENXY(__NR_lookup_dcookie,    sys_lookup_dcookie),    // 235
    LINXY(__NR_epoll_create,      sys_epoll_create),      // 236

@@ -121,6 +121,7 @@ void complain3 ( Char* s, void* dst, const void* src, int n )
 #define  m_ld_linux_so_2         ldZhlinuxZdsoZd2           // ld-linux.so.2
 #define  m_ld_linux_x86_64_so_2  ldZhlinuxZhx86Zh64ZdsoZd2  // ld-linux-x86-64.so.2
 #define  m_ld64_so_1             ld64ZdsoZd1                // ld64.so.1
+#define  m_ld_so_1               ldZdsoZd1                  // ld.so.1
 
 
 #define STRRCHR(soname, fnname) \
@@ -403,6 +404,7 @@ MEMCHR(m_libc_so_star, memchr)
    }
 
 MEMCPY(m_libc_so_star, memcpy)
+MEMCPY(m_ld_so_1,      memcpy) /* ld.so.1 */
    
 
 #define MEMCMP(soname, fnname) \

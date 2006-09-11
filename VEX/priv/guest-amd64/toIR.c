@@ -9159,7 +9159,7 @@ DisResult disInstr_AMD64_WRK (
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F C5 = PEXTRW -- extract 16-bit field from mmx(E) and put 
       zero-extend of it in ireg(G). */
-   if (haveNo66noF2noF3(pfx) && sz == 4
+   if (haveNo66noF2noF3(pfx) && (sz == 4 || sz == 8)
        && insn[0] == 0x0F && insn[1] == 0xC5) {
       modrm = insn[2];
       if (epartIsReg(modrm)) {
@@ -9175,10 +9175,15 @@ DisResult disInstr_AMD64_WRK (
             case 3:  assign(t5, mkexpr(t3)); break;
             default: vassert(0);
          }
-         putIReg32(gregOfRexRM(pfx,modrm), unop(Iop_16Uto32, mkexpr(t5)));
+         if (sz == 8)
+            putIReg64(gregOfRexRM(pfx,modrm), unop(Iop_16Uto64, mkexpr(t5)));
+         else
+            putIReg32(gregOfRexRM(pfx,modrm), unop(Iop_16Uto32, mkexpr(t5)));
          DIP("pextrw $%d,%s,%s\n",
              (Int)insn[3], nameMMXReg(eregLO3ofRM(modrm)),
-                           nameIReg32(gregOfRexRM(pfx,modrm)));
+                           sz==8 ? nameIReg64(gregOfRexRM(pfx,modrm))
+                                 : nameIReg32(gregOfRexRM(pfx,modrm))
+         );
          delta += 4;
          goto decode_success;
       } 

@@ -39,7 +39,7 @@ vx1634   vx1645       131481:  (HINT_NOP) vex x86->IR: 0xF 0x1F 0x0 0xF
 
 vx1638   vx1648   Vfd 132146   Programs with long sequences of bswap[l,q]s
 
-pending  pending  [W] 132918   vex amd64->IR: 0xD9 0xF8 (fprem)
+vx1655   vx1657   Vfd 132918   vex amd64->IR: 0xD9 0xF8 (fprem)
 vx1652,3 vx1654   Vfd 132813   Assertion at priv/guest-x86/toIR.c:652 fails
 v6040    v6041        133051   'cfsi->len > 0 && cfsi->len < 2000000' failed
 pending  pending  [W] 133054   'make install' fails with syntax errors
@@ -69,4 +69,20 @@ vx1642   vx1651       n-i-bz   x86/amd64 iropt e/rflag reduction rules
 
 pending  wontfix      133154   crash when using client requests to 
                                register/deregister stack
-supp for suse 10.1 ppc32
+
+v6051    v6048        n-i-bz   SuSE 10.1 (ppc32) minor fixes
+
+pending  pending      132998   startup fails in when running on UML
+pending  pending      133327   support for voicetronix ioctl (w/patch)
+
+vx1656   vx1658   Vfd 133678   amd64->IR: 0x48 0xF 0xC5 0xC0 (pextrw?)
+vx6049   pending      133694   aspacem assertion: aspacem_minAddr <= holeStart
+
+v6043    pending      n-i-bz   callgrind: fix warning about malformed
+                               creator line 
+v6044    pending      n-i-bz   callgrind: fix annotate script for data 
+                               produced with --dump-instr=yes
+v6045    pending      n-i-bz   callgrind: fix failed assertion when
+                               toggling instrumentation mode
+bartoschek callgrind crash
+

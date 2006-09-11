@@ -2251,6 +2251,10 @@ Bool VG_(am_notify_munmap)( Addr start, SizeT len )
        && /* check previous comparison is meaningful */
           aspacem_maxAddr < Addr_MAX)
       seg.kind = SkResvn;
+   else 
+   /* Ditto for segments from below aspacem_minAddr. */
+   if (seg.end < aspacem_minAddr && aspacem_minAddr > 0)
+      seg.kind = SkResvn;
    else
       seg.kind = SkFree;
 

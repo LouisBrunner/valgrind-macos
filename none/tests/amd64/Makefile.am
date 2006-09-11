@@ -8,6 +8,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
 	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
 	bug132813-amd64.stderr.exp \
+	bug132918.vgtest bug132918.stderr.exp bug132918.stdout.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
@@ -24,7 +25,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 
 check_PROGRAMS = \
-	bug127521-64 bug132813-amd64 \
+	bug127521-64 bug132813-amd64 bug132918 \
 	clc \
 	faultstatus fcmovnu fxtract $(INSN_TESTS) looper jrcxz smc1 shrld \
 	nibz_bennee_mmap
@@ -34,6 +35,7 @@ AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
+bug132918_LDADD		= -lm
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm
 insn_mmx_SOURCES	= insn_mmx.def

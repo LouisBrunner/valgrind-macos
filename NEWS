@@ -1,4 +1,82 @@
 
+Release 3.2.1 (XX Sept 2006)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.2.1 adds SSE3 support for x86 and amd64, further reduces memcheck's
+false error rate on all platforms, adds support for recent binutils
+(in OpenSUSE 10.2 and Fedora Rawhide) and fixes a bunch of bugs in
+3.2.0.  Some of the fixed bugs were causing large programs to segfault
+with --tool=callgrind and --tool=cachegrind, so an upgrade is
+recommended.
+
+In view of the fact that any 3.3.0 release is unlikely to happen until
+well into 1Q07, we intend to keep the 3.2.X line alive for a while
+yet, and so we tentatively plan a 3.2.2 release sometime in December
+06.
+
+The fixed bugs are as follows.  Note that "n-i-bz" stands for "not in
+bugzilla" -- that is, a bug that was reported to us but never got a
+bugzilla entry.
+
+n-i-bz   Expanding brk() into last available page asserts
+n-i-bz   ppc64-linux stack RZ fast-case snafu
+n-i-bz   'c' in --gen-supps=yes doesn't work
+n-i-bz   VG_N_SEGMENTS too low (users, 28 June)
+n-i-bz   VG_N_SEGNAMES too low (Stu Robinson)
+106852   x86->IR: fisttp (SSE3)
+117172   FUTEX_WAKE does not use uaddr2
+124039   Lacks support for VKI_[GP]IO_UNIMAP*
+127521   amd64->IR: 0xF0 0x48 0xF 0xC7 (cmpxchg8b)
+128917   amd64->IR: 0x66 0xF 0xF6 0xC4 (psadbw,SSE2)
+129246   JJ: ppc32/ppc64 syscalls, w/ patch
+129358   x86->IR: fisttpl (SSE3)
+129866   cachegrind/callgrind causes executable to die
+130020   Can't stat .so/.exe error while reading symbols
+130388   Valgrind aborts when process calls malloc_trim()
+130638   PATCH: ppc32 missing system calls
+130785   amd64->IR: unhandled instruction "pushfq"
+131481:  (HINT_NOP) vex x86->IR: 0xF 0x1F 0x0 0xF
+131298   ==131481
+132146   Programs with long sequences of bswap[l,q]s
+132918   vex amd64->IR: 0xD9 0xF8 (fprem)
+132813   Assertion at priv/guest-x86/toIR.c:652 fails
+133051   'cfsi->len > 0 && cfsi->len < 2000000' failed
+132722   valgrind header files are not standard C
+n-i-bz   Livelocks entire machine (users list, Timothy Terriberry)
+n-i-bz   Alex Bennee mmap problem (9 Aug)
+n-i-bz   BartV: Don't print more lines of a stack-trace than were obtained.
+n-i-bz   ppc32 SuSE 10.1 redir
+n-i-bz   amd64 padding suppressions
+n-i-bz   amd64 insn printing fix.
+n-i-bz   ppc cmp reg,reg fix
+n-i-bz   x86/amd64 iropt e/rflag reduction rules
+n-i-bz   SuSE 10.1 (ppc32) minor fixes
+133678   amd64->IR: 0x48 0xF 0xC5 0xC0 (pextrw?)
+133694   aspacem assertion: aspacem_minAddr <= holeStart
+n-i-bz   callgrind: fix warning about malformed creator line 
+n-i-bz   callgrind: fix annotate script for data produced with 
+         --dump-instr=yes
+n-i-bz   callgrind: fix failed assertion when toggling 
+         instrumentation mode
+n-i-bz   docs path hardwired (Dennis Lubert)
+
+The following bugs were not fixed, due primarily to lack of developer
+time, and also because bug reporters did not answer requests for
+feedback in time for the release:
+
+129390   ppc?->IR: some kind of VMX prefetch (dstt)
+129968   amd64->IR: 0xF 0xAE 0x0 (fxsave)
+133054   'make install' fails with syntax errors
+n-i-bz   Signal race condition (users list, 13 June, Johannes Berg)
+n-i-bz   Unrecognised instruction at address 0x70198EC2 (users list,
+         19 July, Bennee)
+132998   startup fails in when running on UML
+
+The following bug was tentatively fixed on the mainline but the fix
+was considered too risky to push into 3.2.X:
+
+133154   crash when using client requests to register/deregister stack
+
+
 Release 3.2.0 (7 June 2006)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.2.0 is a feature release with many significant improvements and the

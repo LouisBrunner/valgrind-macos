@@ -11,6 +11,9 @@
 <!-- '/usr/share/xml/docbook/stylesheet/nwalsh/1.69.0/html/'  -->
 <!-- has been edited to remove 'article' and 'refentry'       -->
 <!-- so that separate titlepages don't get generated for them -->
+<!-- Note [Dec.1 2005, JRS]: ../1.69.0/.. was changed to      -->
+<!-- ../current/.. in docs/Makefile.am, since the latter is a -->
+<!-- symlink to the former, at least on SuSE 10.0.            -->
 
 
 <!-- use 8859-1 encoding -->

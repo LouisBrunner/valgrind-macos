@@ -688,7 +688,8 @@ void CLG_(delete_bb)(Addr addr);
 static __inline__ Addr bb_addr(BB* bb)
  { return bb->offset + bb->obj->offset; }
 static __inline__ Addr bb_jmpaddr(BB* bb)
- { return bb->instr[bb->instr_count-1].instr_offset + bb->offset + bb->obj->offset; }
+ { UInt off = (bb->instr_count > 0) ? bb->instr[bb->instr_count-1].instr_offset : 0;
+   return off + bb->offset + bb->obj->offset; }
 
 /* from fn.c */
 void CLG_(init_fn_array)(fn_array*);

@@ -55,7 +55,7 @@ XSL_HTML_CHUNK_STYLE  = $(mylibdir)/vg-html-chunk.xsl
 XSL_FO_STYLE          = $(mylibdir)/vg-fo.xsl
 XSL_TEXT_STYLE        = $(mylibdir)/vg-faq2txt.xsl
 XSL_WEBSITE_STYLE     = $(mylibdir)/vg-html-website.xsl
-XSL_MAN_STYLE = /usr/share/xml/docbook/stylesheet/nwalsh/1.69.0/manpages/docbook.xsl
+XSL_MAN_STYLE = /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl
 
 all-docs: FAQ.txt man-page html-docs print-docs
 

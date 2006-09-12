@@ -76,13 +76,14 @@ pending  pending      132998   startup fails in when running on UML
 pending  pending      133327   support for voicetronix ioctl (w/patch)
 
 vx1656   vx1658   Vfd 133678   amd64->IR: 0x48 0xF 0xC5 0xC0 (pextrw?)
-vx6049   pending      133694   aspacem assertion: aspacem_minAddr <= holeStart
+v6049    v6054    Vfd 133694   aspacem assertion: aspacem_minAddr <= holeStart
 
-v6043    pending      n-i-bz   callgrind: fix warning about malformed
+v6043    v6055        n-i-bz   callgrind: fix warning about malformed
                                creator line 
-v6044    pending      n-i-bz   callgrind: fix annotate script for data 
+v6044    v6056        n-i-bz   callgrind: fix annotate script for data 
                                produced with --dump-instr=yes
-v6045    pending      n-i-bz   callgrind: fix failed assertion when
-                               toggling instrumentation mode
-bartoschek callgrind crash
+v6045,   v6057        n-i-bz   callgrind: fix failed assertion when
+ v6053                         toggling instrumentation mode
+
+v6059    v6060        n-i-bz   docs path hardwired (Dennis Lubert)
 

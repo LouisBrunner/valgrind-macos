@@ -214,5 +214,14 @@
    obj:/usr/X11*/lib*/libXft.so*
 }
 
+{
+   More X padding stuff
+   Memcheck:Param
+   writev(vector[...])
+   fun:*writev*
+   obj:/usr/X11*/lib*/libX11.so*
+   obj:/usr/X11*/lib*/libX11.so*
+}
+
 ##----------------------------------------------------------------------##
 

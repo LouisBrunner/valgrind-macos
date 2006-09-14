@@ -634,6 +634,16 @@ sub read_input_file()
         } elsif (s/^(jump|jcnd)=//) {
 	  #ignore jump information
 
+        } elsif (s/^jfi=(.*)$//) {
+          # side effect needed: possibly add compression mapping 
+          uncompressed_name("fl",$1);
+          # ignore jump information	
+
+        } elsif (s/^jfn=(.*)$//) {
+          # side effect needed: possibly add compression mapping
+          uncompressed_name("fn",$1);
+          # ignore jump information
+
         } elsif (s/^totals:\s+//) {
 	  #ignore
 

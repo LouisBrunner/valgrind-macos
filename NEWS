@@ -1,12 +1,12 @@
 
 Release 3.2.1 (XX Sept 2006)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-3.2.1 adds SSE3 support for x86 and amd64, further reduces memcheck's
-false error rate on all platforms, adds support for recent binutils
-(in OpenSUSE 10.2 and Fedora Rawhide) and fixes a bunch of bugs in
-3.2.0.  Some of the fixed bugs were causing large programs to segfault
-with --tool=callgrind and --tool=cachegrind, so an upgrade is
-recommended.
+3.2.1 adds x86/amd64 support for all SSE3 instructions except monitor
+and mwait, further reduces memcheck's false error rate on all
+platforms, adds support for recent binutils (in OpenSUSE 10.2 and
+Fedora Rawhide) and fixes a bunch of bugs in 3.2.0.  Some of the fixed
+bugs were causing large programs to segfault with --tool=callgrind and
+--tool=cachegrind, so an upgrade is recommended.
 
 In view of the fact that any 3.3.0 release is unlikely to happen until
 well into 1Q07, we intend to keep the 3.2.X line alive for a while
@@ -57,6 +57,8 @@ n-i-bz   callgrind: fix annotate script for data produced with
          --dump-instr=yes
 n-i-bz   callgrind: fix failed assertion when toggling 
          instrumentation mode
+n-i-bz   callgrind: fix annotate script fix warnings with
+         --collect-jumps=yes
 n-i-bz   docs path hardwired (Dennis Lubert)
 
 The following bugs were not fixed, due primarily to lack of developer

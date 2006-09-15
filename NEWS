@@ -1,5 +1,5 @@
 
-Release 3.2.1 (XX Sept 2006)
+Release 3.2.1 (16 Sept 2006)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.2.1 adds x86/amd64 support for all SSE3 instructions except monitor
 and mwait, further reduces memcheck's false error rate on all
@@ -77,6 +77,8 @@ The following bug was tentatively fixed on the mainline but the fix
 was considered too risky to push into 3.2.X:
 
 133154   crash when using client requests to register/deregister stack
+
+(3.2.1: 16 Sept 2006, vex r1658, valgrind r6070).
 
 
 Release 3.2.0 (7 June 2006)

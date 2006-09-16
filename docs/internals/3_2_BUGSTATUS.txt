@@ -84,7 +84,9 @@ v6044    v6056        n-i-bz   callgrind: fix annotate script for data
                                produced with --dump-instr=yes
 v6045,   v6057        n-i-bz   callgrind: fix failed assertion when
  v6053                         toggling instrumentation mode
-v6064    pending      n-i-bz   callgrind_annotate: fix warnings with
+v6064    v6067        n-i-bz   callgrind_annotate: fix warnings with
                                "--collect-jumps=yes"
 
 v6059    v6060        n-i-bz   docs path hardwired (Dennis Lubert)
+
+v6068    v6066        n-i-bz   Yet another X padding suppression

@@ -7,7 +7,22 @@ sse3fix = fixed by the SSE3 commits
 [W]     = waiting for feedback from bug reporter
 Vfd     = fix has been verified on 3.2.X branch
 
-------- Bugs reported after (in) 3.2.0 ------
+------- Bugs reported after (in) 3.2.1, or       ------
+------- reported in 3.2.0 but not fixed in 3.2.1 ------
+
+pending  pending      129390   ppc?->IR: some kind of VMX prefetch (dstt)
+pending  pending      129968   amd64->IR: 0xF 0xAE 0x0 (fxsave)
+pending  pending  [W] 133054   'make install' fails with syntax errors
+Signal race condition (users list, 13 June, Johannes Berg)
+Unrecognised instruction at address 0x70198EC2 (users, 19 July, Bennee)
+pending  wontfix      133154   crash when using client requests to 
+                               register/deregister stack
+pending  pending      132998   startup fails in when running on UML
+pending  pending      133327   support for voicetronix ioctl (w/patch)
+
+------- Bugs reported and fixed in 3.2.0 ------
+
+SSE3 commits: vx1635,1636, v5997
 
 TRUNK   32BRANCH  PRI   BUG#   WHAT
 
@@ -25,59 +40,34 @@ vx1632/v5987      Vfd
          vx1643/v6032 128917   amd64->IR: 0x66 0xF 0xF6 0xC4 (psadbw,SSE2)
 v5988    v6019        129246   JJ: ppc32/ppc64 syscalls, w/ patch
 sse3fix  vx1646   Vfd 129358   x86->IR: fisttpl (SSE3)
-pending  pending      129390   ppc?->IR: some kind of VMX prefetch (dstt)
 v6003,4  v6025    Vfd 129866   cachegrind/callgrind causes executable to die
-pending  pending      129968   amd64->IR: 0xF 0xAE 0x0 (fxsave)
 v5979    v6021        130020   Can't stat .so/.exe error while reading symbols
 wontfix  wontfix      130358   Inconsistent 80-bit floats on x86
 v5983    v6022        130388   Valgrind aborts when process calls malloc_trim()
 v5989    v6020        130638   PATCH: ppc32 missing system calls
 vx1633   vx1644       130785   amd64->IR: unhandled instruction "pushfq"
-
 vx1634   vx1645       131481:  (HINT_NOP) vex x86->IR: 0xF 0x1F 0x0 0xF
                       131298   ==131481
-
 vx1638   vx1648   Vfd 132146   Programs with long sequences of bswap[l,q]s
-
 vx1655   vx1657   Vfd 132918   vex amd64->IR: 0xD9 0xF8 (fprem)
 vx1652,3 vx1654   Vfd 132813   Assertion at priv/guest-x86/toIR.c:652 fails
 v6040    v6041        133051   'cfsi->len > 0 && cfsi->len < 2000000' failed
-pending  pending  [W] 133054   'make install' fails with syntax errors
 v6036    v6037        132722   valgrind header files are not standard C
-
 v5990    v6023        n-i-bz   Livelocks entire machine (users list,
                                17 June, Timothy B. Terriberry)
 v5991,4,6 v6024       n-i-bz   Graydon leak checking fix
-
 v5992,6006 wontfix    n-i-bz   Graydon mempool trim patch
-
-Signal race condition (users list, 13 June, Johannes Berg)
-
-Unrecognised instruction at address 0x70198EC2 (users, 19 July, Bennee)
-
-SSE3 commits: vx1635,1636, v5997
-
 v6001    v6026        n-i-bz   Alex Bennee mmap problem (9 Aug)
 v5999    v6027        n-i-bz   BartV: Don't print more lines of a
                                stack-trace than were obtained.
 v6010    v6028        n-i-bz   ppc32 SuSE 10.1 redir
 v6011    v6029        n-i-bz   amd64 padding suppressions
-
 vx1637   vx1647       n-i-bz   amd64 insn printing fix.
 vx1640,1 vx1650       n-i-bz   ppc cmp reg,reg fix
 vx1642   vx1651       n-i-bz   x86/amd64 iropt e/rflag reduction rules
-
-pending  wontfix      133154   crash when using client requests to 
-                               register/deregister stack
-
 v6051    v6048        n-i-bz   SuSE 10.1 (ppc32) minor fixes
-
-pending  pending      132998   startup fails in when running on UML
-pending  pending      133327   support for voicetronix ioctl (w/patch)
-
 vx1656   vx1658   Vfd 133678   amd64->IR: 0x48 0xF 0xC5 0xC0 (pextrw?)
 v6049    v6054    Vfd 133694   aspacem assertion: aspacem_minAddr <= holeStart
-
 v6043    v6055        n-i-bz   callgrind: fix warning about malformed
                                creator line 
 v6044    v6056        n-i-bz   callgrind: fix annotate script for data 
@@ -86,7 +76,5 @@ v6045,   v6057        n-i-bz   callgrind: fix failed assertion when
  v6053                         toggling instrumentation mode
 v6064    v6067        n-i-bz   callgrind_annotate: fix warnings with
                                "--collect-jumps=yes"
-
 v6059    v6060        n-i-bz   docs path hardwired (Dennis Lubert)
-
 v6068    v6066        n-i-bz   Yet another X padding suppression

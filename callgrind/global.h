@@ -675,7 +675,7 @@ Int CLG_(get_dump_counter)(void);
 void CLG_(fini)(Int exitcode);
 
 /* from command.c */
-void CLG_(init_command)(Char* dir, Char* dumps);
+void CLG_(init_command)(void);
 void CLG_(check_command)(void);
 void CLG_(finish_command)(void);
 
@@ -761,9 +761,9 @@ void CLG_(run_post_signal_on_call_stack_bottom)(void);
 
 /* from dump.c */
 extern FullCost CLG_(total_cost);
-void CLG_(init_files)(Char** dir, Char** file);
+void CLG_(init_dumps)(void);
 Char* CLG_(get_dump_file_base)(void);
-
+Char* CLG_(get_base_directory)(void);
 
 /*------------------------------------------------------------*/
 /*--- Exported global variables                            ---*/

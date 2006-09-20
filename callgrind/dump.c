@@ -32,15 +32,13 @@
 #include <pub_tool_threadstate.h>
 #include <pub_tool_libcfile.h>
 
-/*------------------------------------------------------------*/
-/*--- Support for signal handlers and multi-threading      ---*/
-/*------------------------------------------------------------*/
 
 /* Dump Part Counter */
 static Int out_counter = 0;
 
 static Char* dump_file_base = 0;
 static Char* base_directory = 0;
+static Bool dumps_initialized = False;
 
 /* Command */
 static Char cmdbuf[BUF_LEN];
@@ -66,7 +64,14 @@ Int CLG_(get_dump_counter)(void)
 
 Char* CLG_(get_dump_file_base)()
 {
-  return dump_file_base;
+    CLG_ASSERT(dumps_initialized);
+    return dump_file_base;
+}
+
+Char* CLG_(get_base_directory)()
+{
+    CLG_ASSERT(dumps_initialized);
+    return base_directory;
 }
 
 /*------------------------------------------------------------*/
@@ -1264,6 +1269,7 @@ static int new_dumpfile(Char buf[BUF_LEN], int tid, Char* trigger)
     FullCost sum = 0;
     SysRes res;
 
+    CLG_ASSERT(dumps_initialized);
     CLG_ASSERT(filename != 0);
 
     if (!CLG_(clo).combine_dumps) {
@@ -1641,10 +1647,20 @@ void init_cmdbuf(void)
   cmdbuf[size] = 0;
 }
 
-void CLG_(init_files)(Char** dir, Char** file)
+/*
+ * Set up file names for dump output: base_directory, dump_file_base
+ * The final filename of a dump is constructed at dump time from
+ * the PID, thread ID and dump counter.
+ *
+ * These always will contain a full absolute path.
+ * If no prefix is given (via option "--base=<prefix>"), the current
+ * working directory at program start is used, otherwise <prefix> can
+ * be relative to cwd or absolute.
+ */
+void CLG_(init_dumps)()
 {
-  Int size;
-  SysRes res;
+   Int size;
+   SysRes res;
 
    if (!CLG_(clo).filename_base)
      CLG_(clo).filename_base = DEFAULT_DUMPNAME;
@@ -1709,8 +1725,7 @@ void CLG_(init_files)(Char** dir, Char** file)
     }
     if (!res.isError) VG_(close)( (Int)res.val );
 
-    *dir  = base_directory;
-    *file = filename;
-
     init_cmdbuf();
+
+    dumps_initialized = True;
 }

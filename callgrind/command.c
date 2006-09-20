@@ -48,20 +48,35 @@ static Char* current_result_file = 0;
 static Char* info_file = 0;
 static Char* dump_base = 0;
 
-static Bool command_inited = False;
+static Int thisPID = 0;
 
-void CLG_(init_command)(Char* dir, Char* dumps)
+/**
+ * Setup for interactive control of a callgrind run
+ */
+static void setup_control(void)
 {
-  Int fd = -1, size;
+  Int fd, size;
   SysRes res;
+  Char* dir, *dump_filename;
 
-  dump_base = dumps;
+  CLG_ASSERT(thisPID != 0);
 
+  fd = -1;
+  dir = CLG_(get_base_directory)();
+  dump_base = CLG_(get_dump_file_base)();
+
+  /* base name of dump files with PID ending */
+  size = VG_(strlen)(dump_base) + 10;
+  dump_filename = (char*) CLG_MALLOC(size);
+  CLG_ASSERT(dump_filename != 0);
+  VG_(sprintf)(dump_filename, "%s.%d", dump_base, thisPID);
+
+  /* name of command file */
   size = VG_(strlen)(dir) + VG_(strlen)(DEFAULT_COMMANDNAME) +10;
   command_file = (char*) CLG_MALLOC(size);
   CLG_ASSERT(command_file != 0);
   VG_(sprintf)(command_file, "%s/%s.%d",
-	       dir, DEFAULT_COMMANDNAME, VG_(getpid)());
+	       dir, DEFAULT_COMMANDNAME, thisPID);
 
   /* This is for compatibility with the "Force Now" Button of current
    * KCachegrind releases, as it doesn't use ".pid" to distinguish
@@ -76,7 +91,7 @@ void CLG_(init_command)(Char* dir, Char* dumps)
   result_file = (char*) CLG_MALLOC(size);
   CLG_ASSERT(result_file != 0);
   VG_(sprintf)(result_file, "%s/%s.%d",
-	       dir, DEFAULT_RESULTNAME, VG_(getpid)());
+	       dir, DEFAULT_RESULTNAME, thisPID);
 
   /* If we get a command from a command file without .pid, use
    * a result file without .pid suffix
@@ -88,9 +103,10 @@ void CLG_(init_command)(Char* dir, Char* dumps)
 
   info_file = (char*) CLG_MALLOC(VG_(strlen)(DEFAULT_INFONAME) + 10);
   CLG_ASSERT(info_file != 0);
-  VG_(sprintf)(info_file, "%s.%d", DEFAULT_INFONAME, VG_(getpid)());
+  VG_(sprintf)(info_file, "%s.%d", DEFAULT_INFONAME, thisPID);
 
-  CLG_DEBUG(1, "  dump file base: '%s'\n", dump_base);
+  CLG_DEBUG(1, "Setup for interactive control (PID: %d):\n", thisPID);
+  CLG_DEBUG(1, "  dump file base: '%s'\n", dump_filename);
   CLG_DEBUG(1, "  command file:   '%s'\n", command_file);
   CLG_DEBUG(1, "  result file:    '%s'\n", result_file);
   CLG_DEBUG(1, "  info file:      '%s'\n", info_file);
@@ -128,7 +144,7 @@ void CLG_(init_command)(Char* dir, Char* dumps)
     VG_(sprintf)(buf, "base: %s\n", dir);
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     
-    VG_(sprintf)(buf, "dumps: %s\n", dump_base);
+    VG_(sprintf)(buf, "dumps: %s\n", dump_filename);
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     
     VG_(sprintf)(buf, "control: %s\n", command_file);
@@ -149,8 +165,12 @@ void CLG_(init_command)(Char* dir, Char* dumps)
     VG_(write)(fd, "\n", 1);
     VG_(close)(fd);
   }
+}
 
-  command_inited = True;
+void CLG_(init_command)()
+{
+  thisPID = VG_(getpid)();
+  setup_control();
 }
 
 void CLG_(finish_command)()
@@ -355,14 +375,31 @@ void CLG_(check_command)()
     Char *cmdPos = 0, *cmdNextLine = 0;
     Int fd, bytesRead = 0, do_kill = 0;
     SysRes res;
+    Int currentPID;
+    static Int check_counter = 0;
 
-    if (!command_inited) return;
+    /* Check for PID change, i.e. whether we run as child after a fork.
+     * If yes, we setup interactive control for the new process
+     */
+    currentPID = VG_(getpid)();
+    if (thisPID != currentPID) {
+	thisPID = currentPID;
+	setup_control();
+    }
 
-    /* toggle between 2 command files, with/without ".pid" postfix */
-    current_command_file = (current_command_file == command_file2) ? 
-                           command_file : command_file2;
-    current_result_file  = (current_command_file == command_file2) ?
-                           result_file2 : result_file;    
+    /* Toggle between 2 command files, with/without ".pid" postfix
+     * (needed for compatibility with KCachegrind, which wants to trigger
+     *  a dump by writing into a command file without the ".pid" postfix)
+     */
+    check_counter++;
+    if (check_counter % 2) {
+	current_command_file = command_file;
+	current_result_file  = result_file;
+    }
+    else {
+	current_command_file = command_file2;
+	current_result_file  = result_file2;
+    }
     
     res = VG_(open)(current_command_file, VKI_O_RDONLY,0);
     if (!res.isError) {

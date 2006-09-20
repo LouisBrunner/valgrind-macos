@@ -1028,8 +1028,6 @@ void CLG_(fini)(Int exitcode)
 static
 void CLG_(post_clo_init)(void)
 {
-   Char *dir = 0, *fname = 0;
-
    VG_(clo_vex_control).iropt_unroll_thresh = 0;
    VG_(clo_vex_control).guest_chase_thresh = 0;
 
@@ -1042,8 +1040,8 @@ void CLG_(post_clo_init)(void)
        CLG_(clo).dump_line = True;
    }
 
-   CLG_(init_files)(&dir,&fname);
-   CLG_(init_command)(dir,fname);
+   CLG_(init_dumps)();
+   CLG_(init_command)();
 
    (*CLG_(cachesim).post_clo_init)();
 

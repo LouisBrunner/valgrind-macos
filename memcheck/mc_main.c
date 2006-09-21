@@ -2161,6 +2161,16 @@ static
 void mc_new_mem_startup( Addr a, SizeT len, Bool rr, Bool ww, Bool xx )
 {
    /* Ignore the permissions, just make it defined.  Seems to work... */
+   // Because code is defined, initialised variables get put in the data
+   // segment and are defined, and uninitialised variables get put in the
+   // bss segment and are auto-zeroed (and so defined).  
+   //
+   // It's possible that there will be padding between global variables.
+   // This will also be auto-zeroed, and marked as defined by Memcheck.  If
+   // a program uses it, Memcheck will not complain.  This is arguably a
+   // false negative, but it's a grey area -- the behaviour is defined (the
+   // padding is zeroed) but it's probably not what the user intended.  And
+   // we can't avoid it.
    DEBUG("mc_new_mem_startup(%p, %llu, rr=%u, ww=%u, xx=%u)\n",
          a, (ULong)len, rr, ww, xx);
    MC_(make_mem_defined)(a, len);

@@ -23,6 +23,11 @@ pending  pending      133962   amd64->IR: 0xF2 0x4C 0xF 0x10
 vx1660   pending      n-i-bz   %eflags rule for SUBL-CondNLE
 Signal race condition (users list, 13 June, Johannes Berg)
 Unrecognised instruction at address 0x70198EC2 (users, 19 July, Bennee)
+pending  pending      133984   unhandled instruction bytes: 0xCC 0x89 0xEC 0x31 (int3)
+pending  pending      134138   Stale default library used after reconfiguring
+pending  pending      134219   Launcher defaults to ppc32-linux even with --enable-only64bit
+pending  pending      134316   Callgrind does not distinguish between parent and child
+v6084    pending      134727   valgrind exits with "Value too large for defined data type"
 
 ------- Bugs reported and fixed in 3.2.0 ------
 

@@ -28,6 +28,7 @@ pending  pending      134138   Stale default library used after reconfiguring
 pending  pending      134219   Launcher defaults to ppc32-linux even with --enable-only64bit
 pending  pending      134316   Callgrind does not distinguish between parent and child
 v6084    pending      134727   valgrind exits with "Value too large for defined data type"
+vx1667   pending      n-i-bz   ppc32/64: support mcrfs
 
 ------- Bugs reported and fixed in 3.2.0 ------
 

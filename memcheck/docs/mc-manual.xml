@@ -1072,4 +1072,202 @@ arguments.</para>
 </itemizedlist>
 
 </sect1>
+
+
+
+
+<sect1 id="mc-manual.mempools" xreflabel="Memory pools">
+<title>Memory Pools: describing and working with custom allocators</title>
+
+<para>Some programs use custom memory allocators, often for performance
+reasons.  There are many different sorts of memory pool, so Memcheck
+attempts to reason about them using a loose, abstract model.  We
+use the following terminology when describing custom allocation
+systems:</para>
+
+<itemizedlist>
+  <listitem>
+    <para>Custom allocation involves a set of independent "memory pools".
+    </para>
+  </listitem>
+  <listitem>
+    <para>Memcheck's notion of a a memory pool consists of a single "anchor
+    address" and a set of non-overlapping "chunks" associated with the
+    anchor address.</para>
+  </listitem>
+  <listitem>
+    <para>Typically a pool's anchor address is the address of a 
+    book-keeping "header" structure.</para>
+  </listitem>
+  <listitem>
+    <para>Typically the pool's chunks are drawn from a contiguous
+    "superblock" acquired through the system malloc() or mmap().</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>Keep in mind that the last two points above say "typically": the
+Valgrind mempool client request API is intentionally vague about the
+exact structure of a mempool. There is no specific mention made of
+headers or superblocks. Nevertheless, the following picture may help
+elucidate the intention of the terms in the API:</para>
+
+<programlisting><![CDATA[
+   "pool"
+   (anchor address)
+   |
+   v
+   +--------+---+
+   | header | o |
+   +--------+-|-+
+              |
+              v                  superblock
+              +------+---+--------------+---+------------------+
+              |      |rzB|  allocation  |rzB|                  |
+              +------+---+--------------+---+------------------+
+                         ^              ^
+                         |              |
+                       "addr"     "addr"+"size"
+]]></programlisting>
+
+<para>
+Note that the header and the superblock may be contiguous or
+discontiguous, and there may be multiple superblocks associated with a
+single header; such variations are opaque to Memcheck. The API
+only requires that your allocation scheme can present sensible values
+of "pool", "addr" and "size".</para>
+
+<para>
+Typically, before making client requests related to mempools, a client
+program will have allocated such a header and superblock for their
+mempool, and marked the superblock NOACCESS using the
+<varname>VALGRIND_MAKE_MEM_NOACCESS</varname> client request.</para>
+
+<para>
+When dealing with mempools, the goal is to maintain a particular
+invariant condition: that Memcheck believes the unallocated portions
+of the pool's superblock (including redzones) are NOACCESS. To
+maintain this invariant, the client program must ensure that the
+superblock starts out in that state; Memcheck cannot make it so, since
+Memcheck never explicitly learns about the superblock of a pool, only
+the allocated chunks within the pool.</para>
+
+<para>
+Once the header and superblock for a pool are established and properly
+marked, there are a number of client requests programs can use to
+inform Memcheck about changes to the state of a mempool:</para>
+
+<itemizedlist>
+
+  <listitem>
+    <para>
+    <varname>VALGRIND_CREATE_MEMPOOL(pool, rzB, is_zeroed)</varname>:
+    This request registers the address "pool" as the anchor address 
+    for a memory pool. It also provides a size "rzB", specifying how 
+    large the redzones placed around chunks allocated from the pool 
+    should be. Finally, it provides an "is_zeroed" flag that specifies 
+    whether the pool's chunks are zeroed (more precisely: defined) 
+    when allocated.
+    </para>
+    <para>
+    Upon completion of this request, no chunks are associated with the
+    pool.  The request simply tells Memcheck that the pool exists, so that
+    subsequent calls can refer to it as a pool.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_DESTROY_MEMPOOL(pool)</varname>:
+    This request tells Memcheck that a pool is being torn down. Memcheck
+    then removes all records of chunks associated with the pool, as well
+    as its record of the pool's existence. While destroying its records of
+    a mempool, Memcheck resets the redzones of any live chunks in the pool
+    to NOACCESS.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_MEMPOOL_ALLOC(pool, addr, size)</varname>:
+    This request informs Memcheck that a "size"-byte chunk has been
+    allocated at "addr", and associates the chunk with the specified
+    "pool". If the pool was created with nonzero "rzB" redzones, Memcheck
+    will mark the "rzB" bytes before and after the chunk as NOACCESS. If
+    the pool was created with the "is_zeroed" flag set, Memcheck will mark
+    the chunk as DEFINED, otherwise Memcheck will mark the chunk as
+    UNDEFINED.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_MEMPOOL_FREE(pool, addr)</varname>:
+    This request informs Memcheck that the chunk at "addr" should no
+    longer be considered allocated. Memcheck will mark the chunk
+    associated with "addr" as NOACCESS, and delete its record of the
+    chunk's existence.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_MEMPOOL_TRIM(pool, addr, size)</varname>:
+    This request "trims" the chunks associated with "pool". The request
+    only operates on chunks associated with "pool". Trimming is formally
+    defined as:</para>
+    <itemizedlist>
+      <listitem>
+        <para> All chunks entirely inside the range [addr,addr+size) are
+        preserved.</para>
+      </listitem>
+      <listitem>
+        <para>All chunks entirely outside the range [addr,addr+size) are
+        discarded, as though <varname>VALGRIND_MEMPOOL_FREE</varname>
+        was called on them. </para>
+      </listitem>
+      <listitem>
+        <para>All other chunks must intersect with the range 
+        [addr,addr+size); areas outside the intersection are marked as 
+        NOACCESS, as though they had been independently freed with 
+        <varname>VALGRIND_MEMPOOL_FREE</varname>.</para>
+      </listitem>
+    </itemizedlist>
+    <para>This is a somewhat rare request, but can be useful in 
+    implementing the type of mass-free operations common in custom 
+    LIFO allocators.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_MOVE_MEMPOOL(poolA, poolB)</varname>:
+    This request informs Memcheck that the pool previously anchored at
+    address "poolA" has moved to anchor address "poolB". This is a rare
+    request, typically only needed if you realloc() the header of 
+    a mempool.</para>
+    <para>No memory-status bits are altered by this request.</para>
+  </listitem>
+
+  <listitem>
+    <para>
+    <varname>VALGRIND_MEMPOOL_CHANGE(pool, addrA, addrB, size)</varname>:
+    This request informs Memcheck that the chunk previously allocated at
+    address "addrA" within "pool" has been moved and/or resized, and should
+    be changed to cover the region [addrB,addrB+size). This is a rare
+    request, typically only needed if you realloc() a superblock or wish
+    to extend a chunk without changing its memory-status bits.
+    </para>
+    <para>No memory-status bits are altered by this request.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_MEMPOOL_EXISTS(pool)</varname>:
+    This request informs the caller whether or not Memcheck is currently 
+    tracking a mempool at anchor address "pool". It evaluates to 1 when 
+    there is a mempool associated with that address, 0 otherwise. This is a 
+    rare request, only useful in circumstances when client code might have 
+    lost track of the set of active mempools.
+    </para>
+  </listitem>
+
+</itemizedlist>
+
+
+</sect1>
 </chapter>

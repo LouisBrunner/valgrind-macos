@@ -41,6 +41,7 @@
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_threadstate.h"
 #include "pub_tool_tooliface.h"     // Needed for mc_include.h
+#include "pub_tool_stacktrace.h"    // For VG_(get_and_pp_StackTrace)
 
 #include "mc_include.h"
 
@@ -52,6 +53,10 @@
 static SizeT cmalloc_n_mallocs  = 0;
 static SizeT cmalloc_n_frees    = 0;
 static SizeT cmalloc_bs_mallocd = 0;
+
+/* For debug printing to do with mempools: what stack trace
+   depth to show. */
+#define MEMPOOL_DEBUG_STACKTRACE_DEPTH 16
 
 
 /*------------------------------------------------------------*/
@@ -392,7 +397,21 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
 
 void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
 {
-   MC_Mempool* mp = VG_(malloc)(sizeof(MC_Mempool));
+   MC_Mempool* mp;
+
+   if (VG_(clo_verbosity) > 2) {
+      VG_(message)(Vg_UserMsg, "create_mempool(%p, %d, %d)", 
+                               pool, rzB, is_zeroed);
+      VG_(get_and_pp_StackTrace)
+         (VG_(get_running_tid)(), MEMPOOL_DEBUG_STACKTRACE_DEPTH);
+   }
+
+   mp = VG_(HT_lookup)(MC_(mempool_list), (UWord)pool);
+   if (mp != NULL) {
+     VG_(tool_panic)("MC_(create_mempool): duplicate pool creation");
+   }
+   
+   mp = VG_(malloc)(sizeof(MC_Mempool));
    mp->pool       = pool;
    mp->rzB        = rzB;
    mp->is_zeroed  = is_zeroed;
@@ -415,6 +434,12 @@ void MC_(destroy_mempool)(Addr pool)
    MC_Chunk*   mc;
    MC_Mempool* mp;
 
+   if (VG_(clo_verbosity) > 2) {
+      VG_(message)(Vg_UserMsg, "destroy_mempool(%p)", pool);
+      VG_(get_and_pp_StackTrace)
+         (VG_(get_running_tid)(), MEMPOOL_DEBUG_STACKTRACE_DEPTH);
+   }
+
    mp = VG_(HT_remove) ( MC_(mempool_list), (UWord)pool );
 
    if (mp == NULL) {
@@ -436,15 +461,106 @@ void MC_(destroy_mempool)(Addr pool)
    VG_(free)(mp);
 }
 
+static Int 
+mp_compar(void* n1, void* n2)
+{
+   MC_Chunk* mc1 = *(MC_Chunk**)n1;
+   MC_Chunk* mc2 = *(MC_Chunk**)n2;
+   return (mc1->data < mc2->data ? -1 : 1);
+}
+
+static void 
+check_mempool_sane(MC_Mempool* mp)
+{
+   UInt n_chunks, i, bad = 0;   
+   static UInt tick = 0;
+
+   MC_Chunk **chunks = (MC_Chunk**) VG_(HT_to_array)( mp->chunks, &n_chunks );
+   if (!chunks)
+      return;
+
+   if (VG_(clo_verbosity) > 1) {
+     if (tick++ >= 10000)
+       {
+	 UInt total_pools = 0, total_chunks = 0;
+	 MC_Mempool* mp2;
+	 
+	 VG_(HT_ResetIter)(MC_(mempool_list));
+	 while ( (mp2 = VG_(HT_Next)(MC_(mempool_list))) ) {
+	   total_pools++;
+	   VG_(HT_ResetIter)(mp2->chunks);
+	   while (VG_(HT_Next)(mp2->chunks)) {
+	     total_chunks++;
+	   }
+	 }
+	 
+	 VG_(message)(Vg_UserMsg, 
+                      "Total mempools active: %d pools, %d chunks\n", 
+		      total_pools, total_chunks);
+	 tick = 0;
+       }
+   }
+
+
+   VG_(ssort)((void*)chunks, n_chunks, sizeof(VgHashNode*), mp_compar);
+         
+   /* Sanity check; assert that the blocks are now in order */
+   for (i = 0; i < n_chunks-1; i++) {
+      if (chunks[i]->data > chunks[i+1]->data) {
+         VG_(message)(Vg_UserMsg, 
+                      "Mempool chunk %d / %d is out of order "
+                      "wrt. its successor", 
+                      i+1, n_chunks);
+         bad = 1;
+      }
+   }
+   
+   /* Sanity check -- make sure they don't overlap */
+   for (i = 0; i < n_chunks-1; i++) {
+      if (chunks[i]->data + chunks[i]->size > chunks[i+1]->data ) {
+         VG_(message)(Vg_UserMsg, 
+                      "Mempool chunk %d / %d overlaps with its successor", 
+                      i+1, n_chunks);
+         bad = 1;
+      }
+   }
+
+   if (bad) {
+         VG_(message)(Vg_UserMsg, 
+                "Bad mempool (%d chunks), dumping chunks for inspection:",
+                      n_chunks);
+         for (i = 0; i < n_chunks; ++i) {
+            VG_(message)(Vg_UserMsg, 
+                         "Mempool chunk %d / %d: %d bytes [%x,%x), allocated:",
+                         i+1, 
+                         n_chunks, 
+                         chunks[i]->size, 
+                         chunks[i]->data, 
+                         chunks[i]->data + chunks[i]->size);
+
+            VG_(pp_ExeContext)(chunks[i]->where);
+         }
+   }
+   VG_(free)(chunks);
+}
+
 void MC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT size)
 {
-   MC_Mempool* mp = VG_(HT_lookup) ( MC_(mempool_list), (UWord)pool );
+   MC_Mempool* mp;
 
+   if (VG_(clo_verbosity) > 2) {     
+      VG_(message)(Vg_UserMsg, "mempool_alloc(%p, %p, %d)", pool, addr, size);
+      VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
+   }
+
+   mp = VG_(HT_lookup) ( MC_(mempool_list), (UWord)pool );
    if (mp == NULL) {
       MC_(record_illegal_mempool_error) ( tid, pool );
    } else {
+      check_mempool_sane(mp);
       MC_(new_block)(tid, addr, size, /*ignored*/0, mp->rzB, mp->is_zeroed,
                      MC_AllocCustom, mp->chunks);
+      check_mempool_sane(mp);
    }
 }
 
@@ -460,13 +576,26 @@ void MC_(mempool_free)(Addr pool, Addr addr)
       return;
    }
 
+   if (VG_(clo_verbosity) > 2) {
+      VG_(message)(Vg_UserMsg, "mempool_free(%p, %p)", pool, addr);
+      VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
+   }
+
+   check_mempool_sane(mp);
    mc = VG_(HT_remove)(mp->chunks, (UWord)addr);
    if (mc == NULL) {
       MC_(record_free_error)(tid, (Addr)addr);
       return;
    }
 
+   if (VG_(clo_verbosity) > 2) {
+      VG_(message)(Vg_UserMsg, 
+		   "mempool_free(%p, %p) freed chunk of %d bytes", 
+		   pool, addr, mc->size);
+   }
+
    die_and_free_mem ( tid, mc, mp->rzB );
+   check_mempool_sane(mp);
 }
 
 
@@ -478,12 +607,18 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
    UInt         n_shadows, i;
    VgHashNode** chunks;
 
+   if (VG_(clo_verbosity) > 2) {
+      VG_(message)(Vg_UserMsg, "mempool_trim(%p, %p, %d)", pool, addr, size);
+      VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
+   }
+
    mp = VG_(HT_lookup)(MC_(mempool_list), (UWord)pool);
    if (mp == NULL) {
       MC_(record_illegal_mempool_error)(tid, pool);
       return;
    }
 
+   check_mempool_sane(mp);
    chunks = VG_(HT_to_array) ( mp->chunks, &n_shadows );
    if (n_shadows == 0) {
      tl_assert(chunks == NULL);
@@ -493,7 +628,7 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
    tl_assert(chunks != NULL);
    for (i = 0; i < n_shadows; ++i) {
 
-      Addr lo, hi;
+      Addr lo, hi, min, max;
 
       mc = (MC_Chunk*) chunks[i];
 
@@ -518,6 +653,7 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
          if (VG_(HT_remove)(mp->chunks, (UWord)mc->data) == NULL) {
             MC_(record_free_error)(tid, (Addr)mc->data);
             VG_(free)(chunks);
+            check_mempool_sane(mp);
             return;
          }
          die_and_free_mem ( tid, mc, mp->rzB );  
@@ -532,13 +668,38 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
          if (VG_(HT_remove)(mp->chunks, (UWord)mc->data) == NULL) {
             MC_(record_free_error)(tid, (Addr)mc->data);
             VG_(free)(chunks);
+            check_mempool_sane(mp);
             return;
          }
 
-         lo = mc->data > addr ? mc->data : addr;
-         hi = mc->data + mc->size < addr + size ? mc->data + mc->size : addr + size;
+         if (mc->data < addr) {
+           min = mc->data;
+           lo = addr;
+         } else {
+           min = addr;
+           lo = mc->data;
+         }
 
+         if (mc->data + size > addr + size) {
+           max = mc->data + size;
+           hi = addr + size;
+         } else {
+           max = addr + size;
+           hi = mc->data + size;
+         }
+
+         tl_assert(min <= lo);
          tl_assert(lo < hi);
+         tl_assert(hi <= max);
+
+         if (min < lo && !EXTENT_CONTAINS(min)) {
+           MC_(make_mem_noaccess)( min, lo - min);
+         }
+
+         if (hi < max && !EXTENT_CONTAINS(max)) {
+           MC_(make_mem_noaccess)( hi, max - hi );
+         }
+
          mc->data = lo;
          mc->size = (UInt) (hi - lo);
          VG_(HT_add_node)( mp->chunks, mc );        
@@ -547,8 +708,76 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
 #undef EXTENT_CONTAINS
       
    }
+   check_mempool_sane(mp);
    VG_(free)(chunks);
 }
+
+void MC_(move_mempool)(Addr poolA, Addr poolB)
+{
+   MC_Mempool* mp;
+
+   if (VG_(clo_verbosity) > 2) {
+      VG_(message)(Vg_UserMsg, "move_mempool(%p, %p)", poolA, poolB);
+      VG_(get_and_pp_StackTrace)
+         (VG_(get_running_tid)(), MEMPOOL_DEBUG_STACKTRACE_DEPTH);
+   }
+
+   mp = VG_(HT_remove) ( MC_(mempool_list), (UWord)poolA );
+
+   if (mp == NULL) {
+      ThreadId tid = VG_(get_running_tid)();
+      MC_(record_illegal_mempool_error) ( tid, poolA );
+      return;
+   }
+
+   mp->pool = poolB;
+   VG_(HT_add_node)( MC_(mempool_list), mp );
+}
+
+void MC_(mempool_change)(Addr pool, Addr addrA, Addr addrB, SizeT size)
+{
+   MC_Mempool*  mp;
+   MC_Chunk*    mc;
+   ThreadId     tid = VG_(get_running_tid)();
+
+   if (VG_(clo_verbosity) > 2) {
+      VG_(message)(Vg_UserMsg, "mempool_change(%p, %p, %p, %d)", 
+                   pool, addrA, addrB, size);
+      VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
+   }
+
+   mp = VG_(HT_lookup)(MC_(mempool_list), (UWord)pool);
+   if (mp == NULL) {
+      MC_(record_illegal_mempool_error)(tid, pool);
+      return;
+   }
+
+   check_mempool_sane(mp);
+
+   mc = VG_(HT_remove)(mp->chunks, (UWord)addrA);
+   if (mc == NULL) {
+      MC_(record_free_error)(tid, (Addr)addrA);
+      return;
+   }
+
+   mc->data = addrB;
+   mc->size = size;
+   VG_(HT_add_node)( mp->chunks, mc );
+
+   check_mempool_sane(mp);
+}
+
+Bool MC_(mempool_exists)(Addr pool)
+{
+   MC_Mempool*  mp;
+
+   mp = VG_(HT_lookup)(MC_(mempool_list), (UWord)pool);
+   if (mp == NULL) {
+       return False;
+   }
+   return True;
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Statistics printing                                  ---*/

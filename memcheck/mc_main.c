@@ -4064,7 +4064,10 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
     && VG_USERREQ__DESTROY_MEMPOOL  != arg[0]
     && VG_USERREQ__MEMPOOL_ALLOC    != arg[0]
     && VG_USERREQ__MEMPOOL_FREE     != arg[0]
-    && VG_USERREQ__MEMPOOL_TRIM     != arg[0])
+    && VG_USERREQ__MEMPOOL_TRIM     != arg[0]
+    && VG_USERREQ__MOVE_MEMPOOL     != arg[0]
+    && VG_USERREQ__MEMPOOL_CHANGE   != arg[0]
+    && VG_USERREQ__MEMPOOL_EXISTS   != arg[0])
       return False;
 
    switch (arg[0]) {
@@ -4238,6 +4241,32 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          MC_(mempool_trim) ( pool, addr, size );
          return True;
       }
+
+      case VG_USERREQ__MOVE_MEMPOOL: {
+         Addr poolA     = (Addr)arg[1];
+         Addr poolB     = (Addr)arg[2];
+
+         MC_(move_mempool) ( poolA, poolB );
+         return True;
+      }
+
+      case VG_USERREQ__MEMPOOL_CHANGE: {
+         Addr pool      = (Addr)arg[1];
+         Addr addrA     = (Addr)arg[2];
+         Addr addrB     = (Addr)arg[3];
+         UInt size      =       arg[4];
+
+         MC_(mempool_change) ( pool, addrA, addrB, size );
+         return True;
+      }
+
+      case VG_USERREQ__MEMPOOL_EXISTS: {
+         Addr pool      = (Addr)arg[1];
+
+         *ret = (UWord) MC_(mempool_exists) ( pool );
+	 return True;
+      }
+
 
       default:
          VG_(message)(Vg_UserMsg, 

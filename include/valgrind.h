@@ -2289,6 +2289,9 @@ typedef
           VG_USERREQ__MEMPOOL_ALLOC    = 0x1305,
           VG_USERREQ__MEMPOOL_FREE     = 0x1306,
           VG_USERREQ__MEMPOOL_TRIM     = 0x1307,
+          VG_USERREQ__MOVE_MEMPOOL     = 0x1308,
+          VG_USERREQ__MEMPOOL_CHANGE   = 0x1309,
+          VG_USERREQ__MEMPOOL_EXISTS   = 0x130a,
 
           /* Allow printfs to valgrind log. */
           VG_USERREQ__PRINTF           = 0x1401,
@@ -2512,6 +2515,31 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
                                VG_USERREQ__MEMPOOL_TRIM,          \
                                pool, addr, size, 0, 0);           \
    }
+
+/* Resize and/or move a piece associated with a memory pool. */
+#define VALGRIND_MOVE_MEMPOOL(poolA, poolB)                       \
+   {unsigned int _qzz_res;                                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+                               VG_USERREQ__MOVE_MEMPOOL,          \
+                               poolA, poolB, 0, 0, 0);            \
+   }
+
+/* Resize and/or move a piece associated with a memory pool. */
+#define VALGRIND_MEMPOOL_CHANGE(pool, addrA, addrB, size)         \
+   {unsigned int _qzz_res;                                        \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+                               VG_USERREQ__MEMPOOL_CHANGE,        \
+                               pool, addrA, addrB, size, 0);      \
+   }
+
+/* Return 1 if a mempool exists, else 0. */
+#define VALGRIND_MEMPOOL_EXISTS(pool)                             \
+   ({unsigned int _qzz_res;                                       \
+    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                       \
+                               VG_USERREQ__MEMPOOL_EXISTS,        \
+                               pool, 0, 0, 0, 0);                 \
+    _qzz_res;                                                     \
+   })
 
 /* Mark a piece of memory as being a stack. Returns a stack id. */
 #define VALGRIND_STACK_REGISTER(start, end)                       \

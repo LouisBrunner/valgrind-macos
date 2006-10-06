@@ -12,7 +12,8 @@ Vfd     = fix has been verified on 3.2.X branch
 
 pending  pending      129390   ppc?->IR: some kind of VMX prefetch (dstt)
 pending  pending      129968   amd64->IR: 0xF 0xAE 0x0 (fxsave)
-pending  pending  [W] 133054   'make install' fails with syntax errors
+                      ==134319
+pending  pending      133054   'make install' fails with syntax errors
 pending  wontfix      133154   crash when using client requests to 
                                register/deregister stack
 pending  pending      132998   startup fails in when running on UML
@@ -20,6 +21,7 @@ pending  pending      133327   support for voicetronix ioctl (w/patch)
 pending  pending      133679   Callgrind does not write path names to 
                                sources with dwarf debug info
 pending  pending      133962   amd64->IR: 0xF2 0x4C 0xF 0x10
+pending  pending      134207   pkg-config output contains @VG_PLATFORM@
 vx1660   pending      n-i-bz   %eflags rule for SUBL-CondNLE
 Signal race condition (users list, 13 June, Johannes Berg)
 Unrecognised instruction at address 0x70198EC2 (users, 19 July, Bennee)
@@ -29,6 +31,9 @@ pending  pending      134219   Launcher defaults to ppc32-linux even with --enab
 pending  pending      134316   Callgrind does not distinguish between parent and child
 v6084    pending      134727   valgrind exits with "Value too large for defined data type"
 vx1667   pending      n-i-bz   ppc32/64: support mcrfs
+
+x86 'int 3'
+
 
 ------- Bugs reported and fixed in 3.2.0 ------
 

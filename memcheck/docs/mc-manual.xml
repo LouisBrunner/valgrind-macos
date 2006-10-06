@@ -1080,7 +1080,13 @@ arguments.</para>
 <title>Memory Pools: describing and working with custom allocators</title>
 
 <para>Some programs use custom memory allocators, often for performance
-reasons.  There are many different sorts of memory pool, so Memcheck
+reasons.  Left to itself, Memcheck is unable to "understand" the
+behaviour of custom allocation schemes and so may miss errors and
+leaks in your program.  What this section describes is a way to give
+Memcheck enough of a description of your custom allocator that it can
+make at least some sense of what is happening.</para>
+
+<para>There are many different sorts of custom allocator, so Memcheck
 attempts to reason about them using a loose, abstract model.  We
 use the following terminology when describing custom allocation
 systems:</para>

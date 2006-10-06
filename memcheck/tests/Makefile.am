@@ -54,6 +54,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
 	leak-0.vgtest leak-0.stderr.exp \
 	leak-cycle.vgtest leak-cycle.stderr.exp leak-cycle.stderr.exp64 \
+	leak-pool-0.vgtest leak-pool-0.stderr.exp \
+	leak-pool-1.vgtest leak-pool-1.stderr.exp \
+	leak-pool-2.vgtest leak-pool-2.stderr.exp \
+	leak-pool-3.vgtest leak-pool-3.stderr.exp \
+	leak-pool-4.vgtest leak-pool-4.stderr.exp \
+	leak-pool-5.vgtest leak-pool-5.stderr.exp \
 	leak-tree.vgtest leak-tree.stderr.exp \
 	leak-tree.stderr.exp2 leak-tree.stderr.exp64 \
 	leak-regroot.vgtest leak-regroot.stderr.exp \
@@ -144,7 +150,7 @@ check_PROGRAMS = \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve execve2 erringfds \
 	fprw fwrite hello inits inline \
-	leak-0 leak-cycle leak-tree leak-regroot leakotron \
+	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \
 	memalign_test memalign2 memcmptest mempool mmaptest \

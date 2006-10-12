@@ -31,6 +31,7 @@ pending  pending      134219   Launcher defaults to ppc32-linux even with --enab
 pending  pending      134316   Callgrind does not distinguish between parent and child
 v6084    pending      134727   valgrind exits with "Value too large for defined data type"
 vx1667   pending      n-i-bz   ppc32/64: support mcrfs
+v6211    pending      n-i-bz   Cachegrind: Update cache parameter detection
 
 x86 'int 3'
 

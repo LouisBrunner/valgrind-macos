@@ -124,7 +124,8 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-generic.h \
 	m_syswrap/priv_syswrap-linux.h \
 	m_syswrap/priv_syswrap-linux-variants.h \
-	m_syswrap/priv_syswrap-main.h
+	m_syswrap/priv_syswrap-main.h \
+	m_aspacemgr/priv_aspacemgr.h
 
 BUILT_SOURCES = 
 CLEANFILES = 
@@ -165,7 +166,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_ume.c \
 	m_vki.c \
 	m_vkiscnums.c \
-	m_aspacemgr/aspacemgr.c \
+	m_aspacemgr/aspacemgr-common.c \
 	m_debuginfo/storage.c \
 	m_debuginfo/readdwarf.c \
 	m_debuginfo/readstabs.c \
@@ -185,7 +186,8 @@ COREGRIND_SOURCES_COMMON = \
 COREGRIND_LINUX_SOURCE = \
 	m_coredump/coredump-elf.c \
 	m_syswrap/syswrap-linux.c \
-	m_syswrap/syswrap-linux-variants.c
+	m_syswrap/syswrap-linux-variants.c \
+	m_aspacemgr/aspacemgr-linux.c
 
 libcoregrind_x86_linux_a_SOURCES = \
 	$(COREGRIND_SOURCES_COMMON) \

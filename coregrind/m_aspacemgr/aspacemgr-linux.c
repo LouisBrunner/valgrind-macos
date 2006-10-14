@@ -2,7 +2,8 @@
 /*--------------------------------------------------------------------*/
 /*--- The address space manager: segment initialisation and        ---*/
 /*--- tracking, stack operations                                   ---*/
-/*---                                                m_aspacemgr.c ---*/
+/*---                                                              ---*/
+/*--- Implementation for Linux                 m_aspacemgr-linux.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,28 +31,13 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* One of the important design goals of the address space manager is
-   to minimise dependence on other modules.  Hence the following
-   minimal set of imports. */
+/* *************************************************************
+   DO NOT INCLUDE ANY OTHER FILES HERE.
+   ADD NEW INCLUDES ONLY TO priv_aspacemgr.h
+   AND THEN ONLY AFTER READING DIRE WARNINGS THERE TOO.
+   ************************************************************* */
 
-#include "pub_core_basics.h"     // types
-#include "pub_core_vki.h"
-
-#include "pub_core_debuglog.h"   // VG_(debugLog)
-
-#include "pub_core_libcbase.h"   // VG_(strlen), VG_(strcmp)
-                                 // VG_IS_PAGE_ALIGNED
-                                 // VG_PGROUNDDN, VG_PGROUNDUP
-
-#include "pub_core_syscall.h"    // VG_(do_syscallN)
-                                 // VG_(mk_SysRes_Error)
-                                 // VG_(mk_SysRes_Success)
-
-#include "pub_core_options.h"    // VG_(clo_sanity_level)
-
-#include "pub_core_vkiscnums.h"  // __NR_* constants
-
-#include "pub_core_aspacemgr.h"  // self
+#include "priv_aspacemgr.h"
 
 
 /* Note: many of the exported functions implemented below are
@@ -339,7 +325,6 @@ static Addr aspacem_vStart = 0;
 /* ------ end of STATE for the address-space manager ------ */
 
 /* ------ Forwards decls ------ */
-static void aspacem_exit      ( Int );
 static Int  find_nsegment_idx ( Addr a );
 
 static void parse_procselfmaps (
@@ -352,230 +337,16 @@ static void parse_procselfmaps (
 
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
-/*--- Stuff to make aspacem almost completely independent of    ---*/
-/*--- the rest of Valgrind.                                     ---*/
+/*--- Functions for finding information about file descriptors. ---*/
 /*---                                                           ---*/
 /*-----------------------------------------------------------------*/
 
-//--------------------------------------------------------------
-// Simple assert and assert-like fns, which avoid dependence on
-// m_libcassert, and hence on the entire debug-info reader swamp
-
-static void aspacem_barf ( HChar* what )
-{
-  VG_(debugLog)(0, "aspacem", "Valgrind: FATAL: %s\n", what);
-  VG_(debugLog)(0, "aspacem", "Exiting now.\n");
-  aspacem_exit(1);
-}
-
-static void aspacem_barf_toolow ( HChar* what )
-{
-  VG_(debugLog)(0, "aspacem", "Valgrind: FATAL: %s is too low.\n", what);
-  VG_(debugLog)(0, "aspacem", "  Increase it and rebuild.  "
-                              "Exiting now.\n");
-  aspacem_exit(1);
-}
-
-static void aspacem_assert_fail( const HChar* expr,
-                                 const Char* file,
-                                 Int line, 
-                                 const Char* fn )
-{
-  VG_(debugLog)(0, "aspacem", "Valgrind: FATAL: aspacem assertion failed:\n");
-  VG_(debugLog)(0, "aspacem", "  %s\n", expr);
-  VG_(debugLog)(0, "aspacem", "  at %s:%d (%s)\n", file,line,fn);
-  VG_(debugLog)(0, "aspacem", "Exiting now.\n");
-  aspacem_exit(1);
-}
-
-#define aspacem_assert(expr)                             \
-  ((void) ((expr) ? 0 :                                  \
-           (aspacem_assert_fail(#expr,                   \
-                                __FILE__, __LINE__,      \
-                                __PRETTY_FUNCTION__))))
-
-
-//--------------------------------------------------------------
-// A simple sprintf implementation, so as to avoid dependence on
-// m_libcprint.
-
-static void add_to_aspacem_sprintf_buf ( HChar c, void *p )
-{
-   HChar** aspacem_sprintf_ptr = p;
-   *(*aspacem_sprintf_ptr)++ = c;
-}
-
-static
-UInt aspacem_vsprintf ( HChar* buf, const HChar *format, va_list vargs )
-{
-   Int ret;
-   Char *aspacem_sprintf_ptr = buf;
-
-   ret = VG_(debugLog_vprintf)
-            ( add_to_aspacem_sprintf_buf, 
-              &aspacem_sprintf_ptr, format, vargs );
-   add_to_aspacem_sprintf_buf('\0', &aspacem_sprintf_ptr);
-
-   return ret;
-}
-
-static
-UInt aspacem_sprintf ( HChar* buf, const HChar *format, ... )
-{
-   UInt ret;
-   va_list vargs;
-
-   va_start(vargs,format);
-   ret = aspacem_vsprintf(buf, format, vargs);
-   va_end(vargs);
-
-   return ret;
-}
-
-
-//--------------------------------------------------------------
-// Direct access to a handful of syscalls.  This avoids dependence on
-// m_libc*.  THESE DO NOT UPDATE THE SEGMENT LIST.  DO NOT USE THEM
-// UNLESS YOU KNOW WHAT YOU ARE DOING.
-
-SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot, 
-                                  UInt flags, UInt fd, Off64T offset)
-{
-   SysRes res;
-   aspacem_assert(VG_IS_PAGE_ALIGNED(offset));
-#  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux)
-   res = VG_(do_syscall6)(__NR_mmap2, (UWord)start, length,
-                          prot, flags, fd, offset / VKI_PAGE_SIZE);
-#  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
-   res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
-                         prot, flags, fd, offset);
-#  else
-#    error Unknown platform
-#  endif
-   return res;
-}
-
-static SysRes do_mprotect_NO_NOTIFY(Addr start, SizeT length, UInt prot)
-{
-   return VG_(do_syscall3)(__NR_mprotect, (UWord)start, length, prot );
-}
-
-static SysRes do_munmap_NO_NOTIFY(Addr start, SizeT length)
-{
-   return VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
-}
-
-static SysRes do_extend_mapping_NO_NOTIFY( Addr  old_addr, SizeT old_len,
-                                           SizeT new_len )
-{
-   /* Extend the mapping old_addr .. old_addr+old_len-1 to have length
-      new_len, WITHOUT moving it.  If it can't be extended in place,
-      fail. */
-   return VG_(do_syscall5)(
-             __NR_mremap, 
-             old_addr, old_len, new_len, 
-             0/*flags, meaning: must be at old_addr, else FAIL */,
-             0/*new_addr, is ignored*/
-          );
-}
-
-static SysRes do_relocate_nooverlap_mapping_NO_NOTIFY( 
-                 Addr old_addr, Addr old_len, 
-                 Addr new_addr, Addr new_len 
-              )
-{
-   /* Move the mapping old_addr .. old_addr+old_len-1 to the new
-      location and with the new length.  Only needs to handle the case
-      where the two areas do not overlap, neither length is zero, and
-      all args are page aligned. */
-   return VG_(do_syscall5)(
-             __NR_mremap, 
-             old_addr, old_len, new_len, 
-             VKI_MREMAP_MAYMOVE|VKI_MREMAP_FIXED/*move-or-fail*/,
-             new_addr
-          );
-}
-
-static Int aspacem_readlink(HChar* path, HChar* buf, UInt bufsiz)
-{
-   SysRes res;
-   res = VG_(do_syscall3)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
-   return res.isError ? -1 : res.val;
-}
-
-static Int aspacem_fstat( Int fd, struct vki_stat* buf )
-{
-   SysRes res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)buf);
-   return res.isError ? (-1) : 0;
-}
-
-#ifdef __NR_fstat64
-static Int aspacem_fstat64( Int fd, struct vki_stat64* buf )
-{
-   SysRes res = VG_(do_syscall2)(__NR_fstat64, fd, (UWord)buf);
-   return res.isError ? (-1) : 0;
-}
-#endif
-
-static void aspacem_exit( Int status )
-{
-   (void)VG_(do_syscall1)(__NR_exit_group, status );
-   (void)VG_(do_syscall1)(__NR_exit, status );
-   /* Why are we still alive here? */
-   /*NOTREACHED*/
-   *(volatile Int *)0 = 'x';
-   aspacem_assert(2+2 == 5);
-}
-
-static SysRes aspacem_open ( const Char* pathname, Int flags, Int mode )
-{  
-   SysRes res = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
-   return res;
-}
-
-static void aspacem_close ( Int fd )
-{
-   (void)VG_(do_syscall1)(__NR_close, fd);
-}
-
-static Int aspacem_read ( Int fd, void* buf, Int count)
-{
-   SysRes res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count);
-   return res.isError ? -1 : res.val;
-}
-
-
-//--------------------------------------------------------------
-// Functions for extracting information about file descriptors.
-
-/* Extract the device and inode numbers for a fd. */
+/* Extract the device, inode and mode numbers for a fd. */
 static 
 Bool get_inode_for_fd ( Int fd, /*OUT*/UWord* dev, 
                                 /*OUT*/UWord* ino, /*OUT*/UInt* mode )
 {
-   struct vki_stat buf;
-   Int r;
-#ifdef __NR_fstat64
-   struct vki_stat64 buf64;
-   /* Try fstat64 first as it can cope with minor and major device
-      numbers outside the 0-255 range and it works properly for x86
-      binaries on amd64 systems where fstat seems to be broken. */
-   r = aspacem_fstat64(fd, &buf64);
-   if (r == 0) {
-      *dev = buf64.st_dev;
-      *ino = buf64.st_ino;
-      *mode = buf64.st_mode;
-      return True;
-   }
-#endif
-   r = aspacem_fstat(fd, &buf);
-   if (r == 0) {
-      *dev = buf.st_dev;
-      *ino = buf.st_ino;
-      *mode = buf.st_mode;
-      return True;
-   }
-   return False;
+   return ML_(am_get_fd_d_i_m)(fd, dev, ino, mode);
 }
 
 /* Given a file descriptor, attempt to deduce its filename.  To do
@@ -587,10 +358,10 @@ Bool get_name_for_fd ( Int fd, /*OUT*/HChar* buf, Int nbuf )
    Int   i;
    HChar tmp[64];
 
-   aspacem_sprintf(tmp, "/proc/self/fd/%d", fd);
+   ML_(am_sprintf)(tmp, "/proc/self/fd/%d", fd);
    for (i = 0; i < nbuf; i++) buf[i] = 0;
    
-   if (aspacem_readlink(tmp, buf, nbuf) > 0 && buf[0] == '/')
+   if (ML_(am_readlink)(tmp, buf, nbuf) > 0 && buf[0] == '/')
       return True;
    else
       return False;
@@ -641,7 +412,7 @@ static Int allocate_segname ( const HChar* name )
          i = segnames_used;
          segnames_used++;
       } else {
-         aspacem_barf_toolow("VG_N_SEGNAMES");
+         ML_(am_barf_toolow)("VG_N_SEGNAMES");
       }
    }
 
@@ -709,7 +480,7 @@ static void show_Addr_concisely ( /*OUT*/HChar* buf, Addr aA )
       fmt = "%6llue";
       a >>= 50;
    }
-   aspacem_sprintf(buf, fmt, a);
+   ML_(am_sprintf)(buf, fmt, a);
 }
 
 
@@ -934,7 +705,8 @@ static Bool sane_NSegment ( NSegment* s )
          return 
             s->smode == SmFixed
             && (s->fnIdx == -1 ||
-                (s->fnIdx >= 0 && s->fnIdx < segnames_used && segnames[s->fnIdx].inUse))
+                (s->fnIdx >= 0 && s->fnIdx < segnames_used 
+                               && segnames[s->fnIdx].inUse))
             && !s->isCH;
 
       case SkResvn: 
@@ -1314,6 +1086,12 @@ Bool VG_(am_do_sync_check) ( const HChar* fn,
    return sync_check_ok;
 }
 
+/* Hook to allow sanity checks to be done from aspacemgr-common.c. */
+void ML_(am_do_sanity_check)( void )
+{
+   AM_SANITY_CHECK;
+}
+
 
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
@@ -1333,7 +1111,7 @@ static Int find_nsegment_idx ( Addr a )
       /* current unsearched space is from lo to hi, inclusive. */
       if (lo > hi) {
          /* Not found.  This can't happen. */
-         aspacem_barf("find_nsegment_idx: not found");
+         ML_(am_barf)("find_nsegment_idx: not found");
       }
       mid      = (lo + hi) / 2;
       a_mid_lo = nsegments[mid].start;
@@ -1564,7 +1342,7 @@ static void split_nsegment_at ( Addr a )
 
    /* else we have to slide the segments upwards to make a hole */
    if (nsegments_used >= VG_N_SEGMENTS)
-      aspacem_barf_toolow("VG_N_SEGMENTS");
+      ML_(am_barf_toolow)("VG_N_SEGMENTS");
    for (j = nsegments_used-1; j > i; j--)
       nsegments[j+1] = nsegments[j];
    nsegments_used++;
@@ -2065,7 +1843,7 @@ Addr VG_(am_get_advisory) ( MapRequest*  req,
    }
 
    /*NOTREACHED*/
-   aspacem_barf("getAdvisory: unknown request kind");
+   ML_(am_barf)("getAdvisory: unknown request kind");
    *ok = False;
    return 0;
 }
@@ -2321,7 +2099,7 @@ SysRes VG_(am_mmap_file_fixed_client)
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)do_munmap_NO_NOTIFY( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2387,7 +2165,7 @@ SysRes VG_(am_mmap_anon_fixed_client) ( Addr start, SizeT length, UInt prot )
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)do_munmap_NO_NOTIFY( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2444,7 +2222,7 @@ SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot )
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)do_munmap_NO_NOTIFY( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2503,7 +2281,7 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)do_munmap_NO_NOTIFY( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2574,7 +2352,7 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)do_munmap_NO_NOTIFY( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2637,7 +2415,7 @@ SysRes am_munmap_both_wrk ( /*OUT*/Bool* need_discard,
 
    d = any_Ts_in_range( start, len );
 
-   sres = do_munmap_NO_NOTIFY( start, len );
+   sres = ML_(am_do_munmap_NO_NOTIFY)( start, len );
    if (sres.isError)
       return sres;
 
@@ -2839,7 +2617,7 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( NSegment* seg,
          return False; /* kernel bug if this happens? */
       if (sres.val != nsegments[segR].start) {
          /* kernel bug if this happens? */
-        (void)do_munmap_NO_NOTIFY( sres.val, delta );
+        (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, delta );
         return False;
       }
 
@@ -2874,7 +2652,7 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( NSegment* seg,
          return False; /* kernel bug if this happens? */
       if (sres.val != nsegments[segA].start-delta) {
          /* kernel bug if this happens? */
-        (void)do_munmap_NO_NOTIFY( sres.val, delta );
+        (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, delta );
         return False;
       }
 
@@ -2926,9 +2704,9 @@ Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
       return False;
 
    AM_SANITY_CHECK;
-   sres = do_extend_mapping_NO_NOTIFY( seg->start, 
-                                       seg_old_len,
-                                       seg_old_len + delta );
+   sres = ML_(am_do_extend_mapping_NO_NOTIFY)( seg->start, 
+                                               seg_old_len,
+                                               seg_old_len + delta );
    if (sres.isError) {
       AM_SANITY_CHECK;
       return False;
@@ -2992,8 +2770,8 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
    if (nsegments[iLo].kind != SkFileC && nsegments[iLo].kind != SkAnonC)
       return False;
 
-   sres = do_relocate_nooverlap_mapping_NO_NOTIFY( old_addr, old_len, 
-                                                   new_addr, new_len );
+   sres = ML_(am_do_relocate_nooverlap_mapping_NO_NOTIFY)
+             ( old_addr, old_len, new_addr, new_len );
    if (sres.isError) {
       AM_SANITY_CHECK;
       return False;
@@ -3034,102 +2812,6 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 
    AM_SANITY_CHECK;
    return True;
-}
-
-
-/*-----------------------------------------------------------------*/
-/*---                                                           ---*/
-/*--- Manage stacks for Valgrind itself.                        ---*/
-/*---                                                           ---*/
-/*-----------------------------------------------------------------*/
-
-/* Allocate and initialise a VgStack (anonymous client space).
-   Protect the stack active area and the guard areas appropriately.
-   Returns NULL on failure, else the address of the bottom of the
-   stack.  On success, also sets *initial_sp to what the stack pointer
-   should be set to. */
-
-VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
-{
-   Int      szB;
-   SysRes   sres;
-   VgStack* stack;
-   UInt*    p;
-   Int      i;
-
-   /* Allocate the stack. */
-   szB = VG_STACK_GUARD_SZB 
-         + VG_STACK_ACTIVE_SZB + VG_STACK_GUARD_SZB;
-
-   sres = VG_(am_mmap_anon_float_valgrind)( szB );
-   if (sres.isError)
-      return NULL;
-
-   stack = (VgStack*)sres.val;
-
-   aspacem_assert(VG_IS_PAGE_ALIGNED(szB));
-   aspacem_assert(VG_IS_PAGE_ALIGNED(stack));
-   
-   /* Protect the guard areas. */
-   sres = do_mprotect_NO_NOTIFY( 
-             (Addr) &stack[0], 
-             VG_STACK_GUARD_SZB, VKI_PROT_NONE 
-          );
-   if (sres.isError) goto protect_failed;
-   VG_(am_notify_mprotect)( 
-      (Addr) &stack->bytes[0], 
-      VG_STACK_GUARD_SZB, VKI_PROT_NONE 
-   );
-
-   sres = do_mprotect_NO_NOTIFY( 
-             (Addr) &stack->bytes[VG_STACK_GUARD_SZB + VG_STACK_ACTIVE_SZB], 
-             VG_STACK_GUARD_SZB, VKI_PROT_NONE 
-          );
-   if (sres.isError) goto protect_failed;
-   VG_(am_notify_mprotect)( 
-      (Addr) &stack->bytes[VG_STACK_GUARD_SZB + VG_STACK_ACTIVE_SZB],
-      VG_STACK_GUARD_SZB, VKI_PROT_NONE 
-   );
-
-   /* Looks good.  Fill the active area with junk so we can later
-      tell how much got used. */
-
-   p = (UInt*)&stack->bytes[VG_STACK_GUARD_SZB];
-   for (i = 0; i < VG_STACK_ACTIVE_SZB/sizeof(UInt); i++)
-      p[i] = 0xDEADBEEF;
-
-   *initial_sp = (Addr)&stack->bytes[VG_STACK_GUARD_SZB + VG_STACK_ACTIVE_SZB];
-   *initial_sp -= 8;
-   *initial_sp &= ~((Addr)0xF);
-
-   VG_(debugLog)( 1,"aspacem","allocated thread stack at 0x%llx size %d\n",
-                  (ULong)(Addr)stack, szB);
-   AM_SANITY_CHECK;
-   return stack;
-
-  protect_failed:
-   /* The stack was allocated, but we can't protect it.  Unmap it and
-      return NULL (failure). */
-   (void)do_munmap_NO_NOTIFY( (Addr)stack, szB );
-   AM_SANITY_CHECK;
-   return NULL;
-}
-
-
-/* Figure out how many bytes of the stack's active area have not
-   been used.  Used for estimating if we are close to overflowing it. */
-
-Int VG_(am_get_VgStack_unused_szB)( VgStack* stack )
-{
-   Int i;
-   UInt* p;
-
-   p = (UInt*)&stack->bytes[VG_STACK_GUARD_SZB];
-   for (i = 0; i < VG_STACK_ACTIVE_SZB/sizeof(UInt); i++)
-      if (p[i] != 0xDEADBEEF)
-         break;
-
-   return i * sizeof(UInt);
 }
 
 
@@ -3220,23 +2902,24 @@ static void read_procselfmaps_into_buf ( void )
    SysRes fd;
    
    /* Read the initial memory mapping from the /proc filesystem. */
-   fd = aspacem_open( "/proc/self/maps", VKI_O_RDONLY, 0 );
+   fd = ML_(am_open)( "/proc/self/maps", VKI_O_RDONLY, 0 );
    if (fd.isError)
-      aspacem_barf("can't open /proc/self/maps");
+      ML_(am_barf)("can't open /proc/self/maps");
 
    buf_n_tot = 0;
    do {
-      n_chunk = aspacem_read( fd.val, &procmap_buf[buf_n_tot],
+      n_chunk = ML_(am_read)( fd.val, &procmap_buf[buf_n_tot],
                               M_PROCMAP_BUF - buf_n_tot );
-      buf_n_tot += n_chunk;
+      if (n_chunk >= 0)
+         buf_n_tot += n_chunk;
    } while ( n_chunk > 0 && buf_n_tot < M_PROCMAP_BUF );
 
-   aspacem_close(fd.val);
+   ML_(am_close)(fd.val);
 
    if (buf_n_tot >= M_PROCMAP_BUF-5)
-      aspacem_barf_toolow("M_PROCMAP_BUF");
+      ML_(am_barf_toolow)("M_PROCMAP_BUF");
    if (buf_n_tot == 0)
-      aspacem_barf("I/O error on /proc/self/maps");
+      ML_(am_barf)("I/O error on /proc/self/maps");
 
    procmap_buf[buf_n_tot] = 0;
 }
@@ -3355,7 +3038,7 @@ static void parse_procselfmaps (
         }
         VG_(debugLog)(0, "procselfmaps", "Last 50 chars: '%s'\n", buf50);
       }
-      aspacem_exit(1);
+      ML_(am_exit)(1);
 
     read_line_ok:
 

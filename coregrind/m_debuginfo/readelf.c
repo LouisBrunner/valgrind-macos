@@ -35,6 +35,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcassert.h"

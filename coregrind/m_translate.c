@@ -30,6 +30,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
 #include "pub_core_aspacemgr.h"
 
 #include "pub_core_machine.h"    // VG_(fnptr_to_fnentry)

@@ -57,6 +57,21 @@
    definitions, which affects some of them.
 */
 
+/* The structure is (aiui, jrs 20060504):
+
+     #include plat-specific posix types (vki-posixtypes-ARCH-linux.h)
+
+     Lots more types, structs, consts, in this file
+
+     #include other plat-specific stuff (vki-ARCH-linux.h)
+
+     Even more types, structs, consts, in this file
+
+   The system call numbers are dealt with by
+   pub_{core,tool}_vkiscnums.h, not via pub_{core,tool}_vki.h, which
+   is what this file is part of.
+*/
+
 #ifndef __VKI_LINUX_H
 #define __VKI_LINUX_H
 
@@ -65,13 +80,13 @@
 //----------------------------------------------------------------------
 
 #if defined(VGA_x86)
-#  include "vki_posixtypes-x86-linux.h"
+#  include "vki-posixtypes-x86-linux.h"
 #elif defined(VGA_amd64)
-#  include "vki_posixtypes-amd64-linux.h"
+#  include "vki-posixtypes-amd64-linux.h"
 #elif defined(VGA_ppc32)
-#  include "vki_posixtypes-ppc32-linux.h"
+#  include "vki-posixtypes-ppc32-linux.h"
 #elif defined(VGA_ppc64)
-#  include "vki_posixtypes-ppc64-linux.h"
+#  include "vki-posixtypes-ppc64-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -2121,8 +2136,6 @@ struct vki_serial_icounter_struct {
 	int reserved[9];
 };
 
-#endif // __VKI_LINUX_H
-
 //----------------------------------------------------------------------
 // From linux-2.6.16/include/linux/vt.h
 //----------------------------------------------------------------------
@@ -2171,6 +2184,8 @@ struct vki_vt_consize {
 #define VKI_VT_RESIZEX      0x560A  /* set kernel's idea of screensize + more */
 #define VKI_VT_LOCKSWITCH   0x560B  /* disallow vt switching */
 #define VKI_VT_UNLOCKSWITCH 0x560C  /* allow vt switching */
+
+#endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

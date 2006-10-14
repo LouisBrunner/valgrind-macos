@@ -30,6 +30,8 @@
 
 #include "libvex_guest_offsets.h"
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
+#include "pub_core_basics.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"

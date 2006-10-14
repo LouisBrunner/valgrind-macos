@@ -35,6 +35,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_debuginfo.h"   /* self */
 #include "pub_core_demangle.h"

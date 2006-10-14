@@ -58,6 +58,8 @@
  */
 
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_clreq.h"         // for VG_USERREQ__*
@@ -81,7 +83,6 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"     // For VG_(translate)()
 #include "pub_core_transtab.h"
-#include "pub_core_vkiscnums.h"
 #include "priv_sema.h"
 
 /* #include "pub_core_debuginfo.h" */   // DEBUGGING HACK ONLY

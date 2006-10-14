@@ -38,6 +38,7 @@
 // included ahead of the glibc ones.  This fix is a kludge;  the right
 // solution is to entirely remove the glibc dependency.
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
 #include "pub_core_aspacemgr.h"   // various mapping fns
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"

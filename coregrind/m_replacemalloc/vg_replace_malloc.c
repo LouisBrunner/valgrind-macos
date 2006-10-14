@@ -45,6 +45,7 @@
    ------------------------------------------------------------------ */
 
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"           // VKI_EINVAL, VKI_ENOMEM, VKI_PAGE_SIZE
 #include "pub_core_clreq.h"         // for VALGRIND_INTERNAL_PRINTF,
                                     //   VALGRIND_NON_SIMD_CALL[12]
 #include "pub_core_debuginfo.h"     // needed for pub_core_redir.h :(

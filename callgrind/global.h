@@ -8,6 +8,7 @@
 #define CLG_GLOBAL
 
 #include "pub_tool_basics.h"
+#include "pub_tool_vki.h"
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"

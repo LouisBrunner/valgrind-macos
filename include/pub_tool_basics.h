@@ -52,13 +52,6 @@
 // For varargs types
 #include <stdarg.h>
 
-// Kernel types.  Might as well have them here, they're used so broadly
-// (eg. in pub_core_threadstate.h).
-#if defined(VGO_linux)
-#  include "vki-linux.h"
-#else
-#  error Unknown OS
-#endif
 
 /* ---------------------------------------------------------------------
    builtin types

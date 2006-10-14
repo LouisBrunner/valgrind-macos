@@ -108,6 +108,7 @@ noinst_HEADERS = \
 	pub_core_transtab.h	\
 	pub_core_transtab_asm.h	\
 	pub_core_ume.h		\
+	pub_core_vki.h		\
 	pub_core_vkiscnums.h	\
 	m_coredump/priv_elf.h	\
 	m_debuginfo/priv_storage.h	\
@@ -162,6 +163,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_translate.c \
 	m_transtab.c \
 	m_ume.c \
+	m_vki.c \
 	m_vkiscnums.c \
 	m_aspacemgr/aspacemgr.c \
 	m_debuginfo/storage.c \

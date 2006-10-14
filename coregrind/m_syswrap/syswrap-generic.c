@@ -29,6 +29,8 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_debuginfo.h"     // VG_(di_notify_*)
 #include "pub_core_aspacemgr.h"
@@ -54,8 +56,6 @@
 
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"
-
-#include "pub_core_vkiscnums.h"     /* for the __NR_* constants */
 
 
 /* Returns True iff address range is something the client can

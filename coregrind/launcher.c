@@ -46,6 +46,8 @@
 #include <unistd.h>
 
 #include "pub_core_debuglog.h"
+#include "pub_core_vki.h"       // Avoids warnings from
+                                // pub_core_libcfile.h
 #include "pub_core_libcproc.h"  // For VALGRIND_LIB, VALGRIND_LAUNCHER
 #include "pub_core_ume.h"
 

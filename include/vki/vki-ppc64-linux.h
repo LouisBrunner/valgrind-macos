@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005 Julian Seward
+   Copyright (C) 2005-2006 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -28,8 +28,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PPC64_LINUX_VKI_ARCH_H
-#define __PPC64_LINUX_VKI_ARCH_H
+#ifndef __VKI_PPC64_LINUX_H
+#define __VKI_PPC64_LINUX_H
 
 // ppc64 is big-endian.
 #define VKI_BIG_ENDIAN  1
@@ -753,7 +753,7 @@ struct vki_shminfo64 {
 // end
 //----------------------------------------------------------------------
 
-#endif // __PPC64_LINUX_VKI_ARCH_H
+#endif // __VKI_PPC64_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

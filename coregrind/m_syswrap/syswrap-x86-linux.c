@@ -34,6 +34,8 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_debuginfo.h"     // VG_(di_notify_mmap)
 #include "pub_core_aspacemgr.h"
@@ -57,8 +59,6 @@
 #include "priv_syswrap-linux.h"      /* for decls of linux-ish wrappers */
 #include "priv_syswrap-linux-variants.h" /* decls of linux variant wrappers */
 #include "priv_syswrap-main.h"
-
-#include "pub_core_vkiscnums.h"      /* for the __NR_* constants */
 
 
 /* ---------------------------------------------------------------------

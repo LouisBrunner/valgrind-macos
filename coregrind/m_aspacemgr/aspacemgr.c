@@ -35,6 +35,7 @@
    minimal set of imports. */
 
 #include "pub_core_basics.h"     // types
+#include "pub_core_vki.h"
 
 #include "pub_core_debuglog.h"   // VG_(debugLog)
 

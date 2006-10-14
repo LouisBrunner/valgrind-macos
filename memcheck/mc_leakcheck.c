@@ -29,6 +29,7 @@
 */
 
 #include "pub_tool_basics.h"
+#include "pub_tool_vki.h"
 #include "pub_tool_aspacemgr.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_hashtable.h"

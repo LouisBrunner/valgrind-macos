@@ -294,7 +294,7 @@ sub do_one_test($$)
         printf("%-10s:", $vgdirname);
         
         # Native execution time
-        printf("%4.1fs", $tNative);
+        printf("%4.2fs", $tNative);
 
         foreach my $tool (@tools) {
             (defined $toolnames{$tool}) or 

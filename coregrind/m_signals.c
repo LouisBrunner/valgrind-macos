@@ -103,7 +103,7 @@
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_coredump.h"
-#include "vki_unistd.h"
+#include "pub_core_vkiscnums.h"
 
 
 /* ---------------------------------------------------------------------

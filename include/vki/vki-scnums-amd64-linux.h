@@ -1,4 +1,9 @@
 
+/*--------------------------------------------------------------------*/
+/*--- System call numbers for amd64-linux.                         ---*/
+/*---                                     vki-scnums-amd64-linux.h ---*/
+/*--------------------------------------------------------------------*/
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
@@ -24,8 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VKI_UNISTD_AMD64_LINUX_H
-#define __VKI_UNISTD_AMD64_LINUX_H
+#ifndef __VKI_SCNUMS_AMD64_LINUX_H
+#define __VKI_SCNUMS_AMD64_LINUX_H
 
 // From linux-2.6.9/include/asm-x86_64/unistd.h
 
@@ -356,4 +361,8 @@
 #define __NR_sync_file_range	277
 #define __NR_vmsplice		278
 
-#endif /* __VKI_UNISTD_AMD64_LINUX_H */
+#endif /* __VKI_SCNUMS_AMD64_LINUX_H */
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

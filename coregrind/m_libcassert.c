@@ -38,7 +38,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"     // For VG_(details).{name,bug_reports_to}
 #include "pub_core_options.h"       // For VG_(clo_xml)
-#include "vki_unistd.h"
+#include "pub_core_vkiscnums.h"
 
 /* ---------------------------------------------------------------------
    Assertery.

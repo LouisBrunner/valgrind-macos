@@ -53,7 +53,7 @@
 #include "priv_syswrap-generic.h"
 #include "priv_syswrap-linux.h"
 
-#include "vki_unistd.h"              /* for the __NR_* constants */
+#include "pub_core_vkiscnums.h"    /* for the __NR_* constants */
 
 // Run a thread from beginning to end and return the thread's
 // scheduler-return-code.

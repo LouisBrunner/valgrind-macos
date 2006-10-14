@@ -1,4 +1,4 @@
-#include "../../../coregrind/vki_unistd-x86-linux.h"
+#include "../../../include/vki/vki-scnums-x86-linux.h"
 
 #include <assert.h>
 #include <errno.h>

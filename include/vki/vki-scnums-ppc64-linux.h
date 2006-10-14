@@ -1,9 +1,14 @@
 
+/*--------------------------------------------------------------------*/
+/*--- System call numbers for ppc64-linux.                         ---*/
+/*---                                     vki-scnums-ppc64-linux.h ---*/
+/*--------------------------------------------------------------------*/
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005 Julian Seward
+   Copyright (C) 2005-2006 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -24,8 +29,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VKI_UNISTD_PPC64_LINUX_H
-#define __VKI_UNISTD_PPC64_LINUX_H
+#ifndef __VKI_SCNUMS_PPC64_LINUX_H
+#define __VKI_SCNUMS_PPC64_LINUX_H
 
 // From linux-2.6.16-rc4/include/asm-powerpc/unistd.h
 
@@ -331,4 +336,8 @@
 #define __NR_get_robust_list	299
 #define __NR_set_robust_list	300
 
-#endif /* __VKI_UNISTD_PPC64_LINUX_H */
+#endif /* __VKI_SCNUMS_PPC64_LINUX_H */
+
+/*--------------------------------------------------------------------*/
+/*--- end                                                          ---*/
+/*--------------------------------------------------------------------*/

@@ -48,7 +48,7 @@
 
 #include "pub_core_options.h"    // VG_(clo_sanity_level)
 
-#include "vki_unistd.h"          // __NR_* constants
+#include "pub_core_vkiscnums.h"  // __NR_* constants
 
 #include "pub_core_aspacemgr.h"  // self
 

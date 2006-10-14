@@ -33,7 +33,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_syscall.h"
-#include "vki_unistd.h"
+#include "pub_core_vkiscnums.h"
 
 /* sigemptyset, sigfullset, sigaddset and sigdelset return 0 on
    success and -1 on error.  */

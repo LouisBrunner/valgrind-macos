@@ -81,7 +81,7 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"     // For VG_(translate)()
 #include "pub_core_transtab.h"
-#include "vki_unistd.h"
+#include "pub_core_vkiscnums.h"
 #include "priv_sema.h"
 
 /* #include "pub_core_debuginfo.h" */   // DEBUGGING HACK ONLY

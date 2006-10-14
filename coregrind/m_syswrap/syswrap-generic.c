@@ -55,7 +55,7 @@
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"
 
-#include "vki_unistd.h"              /* for the __NR_* constants */
+#include "pub_core_vkiscnums.h"     /* for the __NR_* constants */
 
 
 /* Returns True iff address range is something the client can

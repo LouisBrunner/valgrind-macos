@@ -36,7 +36,7 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_syscall.h"
 #include "pub_core_clientstate.h"
-#include "vki_unistd.h"
+#include "pub_core_vkiscnums.h"
 
 /* ---------------------------------------------------------------------
    Command line and environment stuff

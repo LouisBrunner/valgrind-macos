@@ -58,7 +58,7 @@
 #include "priv_syswrap-linux-variants.h" /* decls of linux variant wrappers */
 #include "priv_syswrap-main.h"
 
-#include "vki_unistd.h"              /* for the __NR_* constants */
+#include "pub_core_vkiscnums.h"      /* for the __NR_* constants */
 
 
 /* ---------------------------------------------------------------------

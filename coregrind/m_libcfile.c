@@ -36,7 +36,7 @@
 #include "pub_core_libcproc.h"      // VG_(getpid), VG_(getppid)
 #include "pub_core_clientstate.h"   // VG_(fd_hard_limit)
 #include "pub_core_syscall.h"
-#include "vki_unistd.h"
+#include "pub_core_vkiscnums.h"
 
 /* ---------------------------------------------------------------------
    File stuff

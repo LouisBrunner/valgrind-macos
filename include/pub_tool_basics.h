@@ -131,6 +131,9 @@ SysRes;
 #define VG_STRINGIFZ(__str)  #__str
 #define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
 
+// Where to send bug reports to.
+#define VG_BUGS_TO "www.valgrind.org"
+
 #endif /* __PUB_TOOL_BASICS_H */
 
 /*--------------------------------------------------------------------*/

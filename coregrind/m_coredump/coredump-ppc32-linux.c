@@ -29,6 +29,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
 #include "pub_core_coredump.h"
 #include "pub_core_threadstate.h"
 

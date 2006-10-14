@@ -29,6 +29,8 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debuglog.h"
@@ -50,8 +52,6 @@
 #include "priv_syswrap-linux.h"     /* for decls of linux-ish wrappers */
 #include "priv_syswrap-linux-variants.h" /* decls of linux variant wrappers */
 #include "priv_syswrap-main.h"
-
-#include "vki_unistd.h"              /* for the __NR_* constants */
 
 
 /* ---------------------------------------------------------------------

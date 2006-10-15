@@ -157,6 +157,76 @@ extern void VG_(basic_tool_funcs)(
    // by either Ity_I32 or Ity_I64.  So far we have never built a
    // cross-architecture Valgrind so they should always be the same.
    //
+   /* --- Further comments about the IR that your --- */
+   /* --- instrumentation function will receive. --- */
+   /*
+      In the incoming IRBB, the IR for each instruction begins with an
+      IRStmt_IMark, which states the address and length of the
+      instruction from which this IR came.  This makes it easy for
+      profiling-style tools to know precisely which guest code
+      addresses are being executed.
+
+      However, before the first IRStmt_IMark, there may be other IR
+      statements -- a preamble.  In most cases this preamble is empty,
+      but when it isn't, what it contains is some supporting IR that
+      the JIT uses to ensure control flow works correctly.  This
+      preamble does not modify any architecturally defined guest state
+      (registers or memory) and so does not contain anything that will
+      be of interest to your tool.
+
+      You should therefore 
+
+      (1) copy any IR preceding the first IMark verbatim to the start
+          of the output IRBB.
+
+      (2) not try to instrument it or modify it in any way.
+
+      For the record, stuff that may be in the preamble at
+      present is:
+
+      - A self-modifying-code check has been requested for this block.
+        The preamble will contain instructions to checksum the block,
+        compare against the expected value, and exit the dispatcher
+        requesting a discard (hence forcing a retranslation) if they
+        don't match.
+
+      - This block is known to be the entry point of a wrapper of some
+        function F.  In this case the wrapper contains code to write
+        the address of the original F (the fn being wrapped) into a
+        'hidden' guest state register _NRADDR.  The wrapper can later
+        read this register using a client request and make a
+        non-redirected call to it using another client-request-like
+        magic macro.
+
+      - For platforms that use the AIX ABI (including ppc64-linux), it
+        is necessary to have a preamble even for replacement
+        functions, because it is necessary to switch the R2 register
+        (constant-pool pointer) to a different value when swizzling
+        the program counter.
+
+        Hence the preamble pushes both R2 and LR (the return address)
+        on a small 16-entry stack in the guest state and sets R2 to an
+        appropriate value for the wrapper/replacement fn.  LR is then
+        set so that the wrapper/replacement fn returns to a magic IR
+        stub which restores R2 and LR and returns.
+
+        It's all hugely ugly and fragile.  And it places a stringent
+        requirement on m_debuginfo to find out the correct R2 (toc
+        pointer) value for the wrapper/replacement function.  So much
+        so that m_redir will refuse to honour a redirect-to-me request
+        if it cannot find (by asking m_debuginfo) a plausible R2 value
+        for 'me'.
+
+        Because this mechanism maintains a shadow stack of (R2,LR)
+        pairs in the guest state, it will fail if the
+        wrapper/redirection function, or anything it calls, longjumps
+        out past the wrapper, because then the magic return stub will
+        not be run and so the shadow stack will not be popped.  So it
+        will quickly fill up.  Fortunately none of this applies to
+        {x86,amd64,ppc32}-linux; on those platforms, wrappers can
+        longjump and recurse arbitrarily and everything should work
+        fine.
+   */
    IRBB*(*instrument)(VgCallbackClosure* closure, 
                       IRBB*              bb_in, 
                       VexGuestLayout*    layout, 

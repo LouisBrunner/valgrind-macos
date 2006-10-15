@@ -191,7 +191,7 @@ extern void VG_(basic_tool_funcs)(
         don't match.
 
       - This block is known to be the entry point of a wrapper of some
-        function F.  In this case the wrapper contains code to write
+        function F.  In this case the preamble contains code to write
         the address of the original F (the fn being wrapped) into a
         'hidden' guest state register _NRADDR.  The wrapper can later
         read this register using a client request and make a
@@ -199,10 +199,10 @@ extern void VG_(basic_tool_funcs)(
         magic macro.
 
       - For platforms that use the AIX ABI (including ppc64-linux), it
-        is necessary to have a preamble even for replacement
-        functions, because it is necessary to switch the R2 register
-        (constant-pool pointer) to a different value when swizzling
-        the program counter.
+        is necessary to have a preamble even for replacement functions
+        (not just for wrappers), because it is necessary to switch the
+        R2 register (constant-pool pointer) to a different value when
+        swizzling the program counter.
 
         Hence the preamble pushes both R2 and LR (the return address)
         on a small 16-entry stack in the guest state and sets R2 to an

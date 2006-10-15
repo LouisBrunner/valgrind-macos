@@ -90,6 +90,7 @@ typedef
       /* READONLY: the guest layout.  This indicates which parts of
          the guest state should be regarded as 'always defined'. */
       VexGuestLayout* layout;
+
       /* READONLY: the host word type.  Needed for constructing
          arguments of type 'HWord' to be passed to helper functions.
          Ity_I32 or Ity_I64 only. */

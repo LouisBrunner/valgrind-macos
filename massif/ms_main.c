@@ -298,7 +298,7 @@ static Bool ms_process_cmd_line_option(Char* arg)
       n_alloc_fns++;
       if (n_alloc_fns >= MAX_ALLOC_FNS) {
          VG_(printf)("Too many alloc functions specified, sorry");
-         VG_(bad_option)(arg);
+         VG_(err_bad_option)(arg);
       }
    }
 

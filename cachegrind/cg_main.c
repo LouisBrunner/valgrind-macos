@@ -1288,7 +1288,7 @@ static void parse_cache_opt ( cache_t* cache, Char* opt )
    return;
 
   bad:
-   VG_(bad_option)(opt);
+   VG_(err_bad_option)(opt);
 }
 
 static Bool cg_process_cmd_line_option(Char* arg)

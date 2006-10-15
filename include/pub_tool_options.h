@@ -75,14 +75,23 @@ extern Bool VG_(clo_xml);
    XML output, in between <usercomment> tags. */
 extern HChar* VG_(clo_xml_user_comment);
 
-/* Call this if a recognised option was bad for some reason.
-   Note: don't use it just because an option was unrecognised -- return 'False'
-   from VG_(tdict).tool_process_cmd_line_option) to indicate that. */
-extern void VG_(bad_option) ( Char* opt );
-
 /* Vex iropt control.  Tool-visible so tools can make Vex optimise
    less aggressively if that is needed (callgrind needs this). */
 extern VexControl VG_(clo_vex_control);
+
+/* Call this if a recognised option was bad for some reason.  Note:
+   don't use it just because an option was unrecognised -- return
+   'False' from VG_(tdict).tool_process_cmd_line_option) to indicate
+   that.  This function prints an error message, then shuts down the
+   entire system. */
+extern void VG_(err_bad_option) ( Char* opt );
+
+/* Similarly - complain that the executable is missing, then stop. */
+extern void VG_(err_missing_prog) ( void );
+
+/* Similarly - complain about some config error. */
+extern void VG_(err_config_error) ( Char* msg );
+
 
 #endif   // __PUB_TOOL_OPTIONS_H
 

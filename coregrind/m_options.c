@@ -31,6 +31,8 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_options.h"
+#include "pub_core_libcassert.h"
+#include "pub_core_libcprint.h"
 
 // See pub_{core,tool}_options.h for explanations of all these.
 
@@ -77,6 +79,41 @@ Int    VG_(clo_max_stackframe) = 2000000;
 Bool   VG_(clo_wait_for_gdb)   = False;
 VgSmc  VG_(clo_smc_check)      = Vg_SmcStack;
 HChar* VG_(clo_kernel_variant) = NULL;
+
+
+/*====================================================================*/
+/*=== Command line errors                                          ===*/
+/*====================================================================*/
+
+static void revert_to_stderr ( void )
+{
+   vg_assert( !VG_(logging_to_socket) );
+   VG_(clo_log_fd) = 2; /* stderr */
+}
+
+void VG_(err_bad_option) ( Char* opt )
+{
+   revert_to_stderr();
+   VG_(printf)("valgrind: Bad option '%s'; aborting.\n", opt);
+   VG_(printf)("valgrind: Use --help for more information.\n");
+   VG_(exit)(1);
+}
+
+void VG_(err_missing_prog) ( void  )
+{
+   revert_to_stderr();
+   VG_(printf)("valgrind: no program specified\n");
+   VG_(printf)("valgrind: Use --help for more information.\n");
+   VG_(exit)(1);
+}
+
+void VG_(err_config_error) ( Char* msg )
+{
+   revert_to_stderr();
+   VG_(printf)("valgrind: Startup or configuration error:\n   %s\n", msg);
+   VG_(printf)("valgrind: Unable to start up properly.  Giving up.\n");
+   VG_(exit)(1);
+}
 
 
 /*--------------------------------------------------------------------*/

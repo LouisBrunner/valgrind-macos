@@ -80,6 +80,7 @@ noinst_HEADERS = \
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
 	pub_core_hashtable.h	\
+	pub_core_initimg.h	\
 	pub_core_libcbase.h	\
 	pub_core_libcassert.h	\
 	pub_core_libcfile.h	\
@@ -187,7 +188,8 @@ COREGRIND_LINUX_SOURCE = \
 	m_coredump/coredump-elf.c \
 	m_syswrap/syswrap-linux.c \
 	m_syswrap/syswrap-linux-variants.c \
-	m_aspacemgr/aspacemgr-linux.c
+	m_aspacemgr/aspacemgr-linux.c \
+	m_initimg/initimg-linux.c
 
 libcoregrind_x86_linux_a_SOURCES = \
 	$(COREGRIND_SOURCES_COMMON) \

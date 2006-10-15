@@ -74,7 +74,7 @@ extern const ToolInfo VG_(tool_info);
 /* Basic tool functions */
 
 /* The tool_instrument function is passed as a callback to
-   LibVEX_Translate.  VgInstrumentClosure carries additional info
+   LibVEX_Translate.  VgCallbackClosure carries additional info
    which the instrumenter might like to know, but which is opaque to
    Vex.
 */
@@ -93,14 +93,76 @@ extern void VG_(basic_tool_funcs)(
 
    // Instrument a basic block.  Must be a true function, ie. the same
    // input always results in the same output, because basic blocks
-   // can be retranslated.  Unless you're doing something really
-   // strange...  Note that orig_addr_noredir is not necessarily the
-   // same as the address of the first instruction in the IR, due to
-   // function redirection.
-   IRBB*(*instrument)(VgCallbackClosure*, 
-                      IRBB* bb_in, 
-                      VexGuestLayout*, VexGuestExtents*, 
-                      IRType gWordTy, IRType hWordTy),
+   // can be retranslated, unless you're doing something really
+   // strange.  Anyway, the arguments.  Mostly they are straightforward
+   // except for the distinction between redirected and non-redirected
+   // guest code addresses, which is important to understand.
+   //
+   // VgCallBackClosure* closure contains extra arguments passed
+   // from Valgrind to the instrumenter, which Vex doesn't know about.
+   // You are free to look inside this structure.
+   //
+   // * closure->tid is the ThreadId of the thread requesting the
+   //   translation.  Not sure why this is here; perhaps callgrind
+   //   uses it.
+   //
+   // * closure->nraddr is the non-redirected guest address of the
+   //   start of the translation.  In other words, the translation is
+   //   being constructed because the guest program jumped to 
+   //   closure->nraddr but no translation of it was found.
+   //
+   // * closure->readdr is the redirected guest address, from which
+   //   the translation was really made.
+   //
+   //   To clarify this, consider what happens when, in Memcheck, the
+   //   first call to malloc() happens.  The guest program will be
+   //   trying to jump to malloc() in libc; hence ->nraddr will contain
+   //   that address.  However, Memcheck intercepts and replaces
+   //   malloc, hence ->readdr will be the address of Memcheck's
+   //   malloc replacement in
+   //   coregrind/m_replacemalloc/vg_replacemalloc.c.  It follows
+   //   that the first IMark in the translation will be labelled as
+   //   from ->readdr rather than ->nraddr.
+   //
+   //   Since most functions are not redirected, the majority of the
+   //   time ->nraddr will be the same as ->readdr.  However, you
+   //   cannot assume this: if your tool has metadata associated
+   //   with code addresses it will get into deep trouble if it does
+   //   make this assumption.
+   //
+   // IRBB* bb_in is the incoming bb to be instrumented, in flat IR
+   // form.
+   //
+   // VexGuestLayout* layout contains limited info on the layout of
+   // the guest state: where the stack pointer and program counter
+   // are, and which fields should be regarded as 'always defined'.
+   // Memcheck uses this.
+   //
+   // VexGuestExtents* vge points to a structure which states the
+   // precise byte ranges of original code from which this translation
+   // was made (there may be up to three different ranges involved).
+   // Note again that these are the real addresses from which the code
+   // came.  And so it should be the case that closure->readdr is the
+   // same as vge->base[0]; indeed Cachegrind contains this assertion.
+   //
+   // Tools which associate shadow data with code addresses
+   // (cachegrind, callgrind) need to be particularly clear about
+   // whether they are making the association with redirected or
+   // non-redirected code addresses.  Both approaches are viable
+   // but you do need to understand what's going on.  See comments
+   // below on discard_basic_block_info().
+   //
+   // IRType gWordTy and IRType hWordTy contain the types of native
+   // words on the guest (simulated) and host (real) CPUs.  They will
+   // by either Ity_I32 or Ity_I64.  So far we have never built a
+   // cross-architecture Valgrind so they should always be the same.
+   //
+   IRBB*(*instrument)(VgCallbackClosure* closure, 
+                      IRBB*              bb_in, 
+                      VexGuestLayout*    layout, 
+                      VexGuestExtents*   vge, 
+                      IRType             gWordTy, 
+                      IRType             hWordTy),
 
    // Finish up, print out any results, etc.  `exitcode' is program's exit
    // code.  The shadow can be found with VG_(get_exit_status_shadow)().
@@ -215,9 +277,10 @@ extern void VG_(needs_basic_block_discards) (
    // - If info is being stored at a per-translation level, use orig_addr
    //   to identify which translation is being discarded.  Each translation
    //   will be discarded exactly once.
-   //   This orig_addr will match the orig_addr which was passed to
-   //   to instrument() when this translation was made.  Note that orig_addr
-   //   won't necessarily be the same as the first address in "extents".
+   //   This orig_addr will match the closure->nraddr which was passed to
+   //   to instrument() (see extensive comments above) when this 
+   //   translation was made.  Note that orig_addr won't necessarily be 
+   //   the same as the first address in "extents".
    // - If info is being stored at a per-instruction level, you can get
    //   the address range(s) being discarded by stepping through "extents".
    //   Note that any single instruction may belong to more than one

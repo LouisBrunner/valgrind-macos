@@ -71,6 +71,9 @@ extern void  VG_(core_panic_at)   ( Char* str,
 extern void VG_(unimplemented) ( Char* msg )
             __attribute__((__noreturn__));
 
+/* Show the state of all threads.  Mostly for debugging V. */
+extern void VG_(show_sched_status) ( void );
+
 #endif   // __PUB_CORE_LIBCASSERT_H
 
 /*--------------------------------------------------------------------*/

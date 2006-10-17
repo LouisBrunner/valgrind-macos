@@ -30,6 +30,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -39,7 +40,6 @@
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"     // For VG_(details).{name,bug_reports_to}
 #include "pub_core_options.h"       // For VG_(clo_xml)
-#include "pub_core_vkiscnums.h"
 
 /* ---------------------------------------------------------------------
    Assertery.
@@ -62,7 +62,7 @@
           : "=r" (pc),\
             "=r" (sp),\
             "=r" (fp));
-#elif defined(VGP_ppc32_linux)
+#elif defined(VGP_ppc32_linux) || defined(VGP_ppc32_aix5)
 #  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)                   \
       asm("mflr 0;"                   /* r0 = lr */           \
           "bl m_libcassert_get_ip;"   /* lr = pc */           \
@@ -76,7 +76,7 @@
             "=r" (fp)               \
           : /* reads none */        \
           : "r0" /* trashed */ );
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
 #  define GET_REAL_PC_SP_AND_FP(pc, sp, fp)                   \
       asm("mflr 0;"                   /* r0 = lr */           \
           "bl .m_libcassert_get_ip;"  /* lr = pc */           \
@@ -99,7 +99,9 @@
 /* Pull down the entire world */
 void VG_(exit)( Int status )
 {
+#  if defined(VGO_linux)
    (void)VG_(do_syscall1)(__NR_exit_group, status );
+#  endif
    (void)VG_(do_syscall1)(__NR_exit, status );
    /* Why are we still alive here? */
    /*NOTREACHED*/
@@ -108,7 +110,7 @@ void VG_(exit)( Int status )
 }
 
 // Print the scheduler status.
-static void pp_sched_status ( void )
+void VG_(show_sched_status) ( void )
 {
    Int i; 
    VG_(printf)("\nsched status:\n"); 
@@ -143,11 +145,7 @@ static void report_and_quit ( const Char* report,
                         ips, BACKTRACE_DEPTH, ip, sp, fp, lr, sp, stacktop);
    VG_(pp_StackTrace)  (ips, BACKTRACE_DEPTH);
  
-   // Don't print this, as it's not terribly interesting and avoids a
-   // dependence on m_scheduler/, which would be crazy.
-   //VG_(printf)("\nBasic block ctr is approximately %llu\n", VG_(bbs_done) );
- 
-   pp_sched_status();
+   VG_(show_sched_status)();
    VG_(printf)("\n");
    VG_(printf)("Note: see also the FAQ.txt in the source distribution.\n");
    VG_(printf)("It contains workarounds to several common problems.\n");
@@ -169,7 +167,7 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
 
    static Bool entered = False;
    if (entered) 
-     VG_(exit)(2);
+      VG_(exit)(2);
    entered = True;
 
    va_start(vargs, format);
@@ -251,7 +249,7 @@ void VG_(unimplemented) ( Char* msg )
       "Valgrind has to exit now.  Sorry.  Bye!");
    VG_(message)(Vg_UserMsg,
       "");
-   pp_sched_status();
+   VG_(show_sched_status)();
    VG_(exit)(1);
 }
 

@@ -80,6 +80,7 @@ typedef ULong                 Off64T;     // 64             64
 #  define NULL ((void*)0)
 #endif
 
+
 /* ---------------------------------------------------------------------
    non-builtin types
    ------------------------------------------------------------------ */
@@ -91,14 +92,34 @@ typedef ULong                 Off64T;     // 64             64
 typedef UInt ThreadId;
 
 /* An abstraction of syscall return values.
-   When .isError == False, val holds the return value.
-   When .isError == True,  val holds the error code.
+   Linux:
+      When .isError == False, 
+         res holds the return value, and err is zero.
+      When .isError == True,  
+         err holds the error code, and res is zero.
+
+   AIX:
+      res is the POSIX result of the syscall.
+      err is the corresponding errno value.
+      isError === err==0
+
+      Unlike on Linux, it is possible for 'err' to be nonzero (thus an
+      error has occurred), nevertheless 'res' is also nonzero.  AIX
+      userspace does not appear to consistently inspect 'err' to
+      determine whether or not an error has occurred.  For example,
+      sys_open() will return -1 for 'val' if a file cannot be opened,
+      as well as the relevant errno value in 'err', but AIX userspace
+      then consults 'val' to figure out if the syscall failed, rather
+      than looking at 'err'.  Hence we need to represent them both.
 */
-typedef struct { 
-   UWord val;
-   Bool  isError;
-}
-SysRes;
+typedef
+   struct {
+      UWord res;
+      UWord err;
+      Bool  isError;
+   }
+   SysRes;
+
 
 /* ---------------------------------------------------------------------
    Miscellaneous (word size, endianness, regparmness, stringification)

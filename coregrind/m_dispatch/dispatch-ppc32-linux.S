@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- The core dispatch loop, for jumping to a code address.       ---*/
-/*---                                             dispatch-ppc32.S ---*/
+/*---                                       dispatch-ppc32-linux.S ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -275,10 +275,10 @@ VG_(run_innerloop__dispatch_unprofiled):
         /* Found a match.  Call tce[1], which is 8 bytes along, since
            each tce element is a 64-bit int. */
         addi    8,5,8
-        mtlr    8
+        mtctr   8
 
 	/* run the translation */
-        blrl
+        bctrl
 
         /* On return from guest code:
 	   r3  holds destination (original) address.
@@ -338,10 +338,10 @@ VG_(run_innerloop__dispatch_profiled):
         /* Found a match.  Call tce[1], which is 8 bytes along, since
            each tce element is a 64-bit int. */
         addi    8,5,8
-        mtlr    8
+        mtctr   8
 
 	/* run the translation */
-        blrl
+        bctrl
 
         /* On return from guest code:
 	   r3  holds destination (original) address.

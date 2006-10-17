@@ -1127,8 +1127,9 @@ static Int find_nsegment_idx ( Addr a )
 
 
 /* Finds the segment containing 'a'.  Only returns file/anon/resvn
-   segments. */
-NSegment* VG_(am_find_nsegment) ( Addr a )
+   segments.  This returns a 'NSegment const *' - a pointer to 
+   readonly data. */
+NSegment const * VG_(am_find_nsegment) ( Addr a )
 {
    Int i = find_nsegment_idx(a);
    aspacem_assert(i >= 0 && i < nsegments_used);
@@ -1159,7 +1160,7 @@ static Int segAddr_to_index ( NSegment* seg )
 
 /* Find the next segment along from 'here', if it is a file/anon/resvn
    segment. */
-NSegment* VG_(am_next_nsegment) ( NSegment* here, Bool fwds )
+NSegment const * VG_(am_next_nsegment) ( NSegment* here, Bool fwds )
 {
    Int i = segAddr_to_index(here);
    if (i < 0 || i >= nsegments_used)
@@ -2095,11 +2096,11 @@ SysRes VG_(am_mmap_file_fixed_client)
    if (sres.isError)
       return sres;
 
-   if (sres.val != start) {
+   if (sres.res != start) {
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.res, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2161,11 +2162,11 @@ SysRes VG_(am_mmap_anon_fixed_client) ( Addr start, SizeT length, UInt prot )
    if (sres.isError)
       return sres;
 
-   if (sres.val != start) {
+   if (sres.res != start) {
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.res, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2218,11 +2219,11 @@ SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot )
    if (sres.isError)
       return sres;
 
-   if (sres.val != advised) {
+   if (sres.res != advised) {
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.res, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2238,6 +2239,21 @@ SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot )
 
    AM_SANITY_CHECK;
    return sres;
+}
+
+
+/* Similarly, acquire new address space for the client but with
+   considerable restrictions on what can be done with it: (1) the
+   actual protections may exceed those stated in 'prot', (2) the
+   area's protections cannot be later changed using any form of
+   mprotect, and (3) the area cannot be freed using any form of
+   munmap.  On Linux this behaves the same as
+   VG_(am_mmap_anon_float_client).  On AIX5 this *may* allocate memory
+   by using sbrk, so as to make use of large pages on AIX. */
+
+SysRes VG_(am_sbrk_anon_float_client) ( SizeT length, Int prot )
+{
+   return VG_(am_mmap_anon_float_client) ( length, prot );
 }
 
 
@@ -2277,11 +2293,11 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
    if (sres.isError)
       return sres;
 
-   if (sres.val != advised) {
+   if (sres.res != advised) {
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.res, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2304,9 +2320,16 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
 void* VG_(am_shadow_alloc)(SizeT size)
 {
    SysRes sres = VG_(am_mmap_anon_float_valgrind)( size );
-   return sres.isError ? NULL : (void*)sres.val;
+   return sres.isError ? NULL : (void*)sres.res;
 }
 
+/* Same comments apply as per VG_(am_sbrk_anon_float_client).  On
+   Linux this behaves the same as VG_(am_mmap_anon_float_valgrind). */
+
+SysRes VG_(am_sbrk_anon_float_valgrind)( SizeT cszB )
+{
+   return VG_(am_mmap_anon_float_valgrind)( cszB );
+}
 
 
 /* Map a file at an unconstrained address for V, and update the
@@ -2348,18 +2371,18 @@ SysRes VG_(am_mmap_file_float_valgrind) ( SizeT length, UInt prot,
    if (sres.isError)
       return sres;
 
-   if (sres.val != advised) {
+   if (sres.res != advised) {
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
          repair the damage, then return saying the mapping failed. */
-      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, length );
+      (void)ML_(am_do_munmap_NO_NOTIFY)( sres.res, length );
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
    /* Ok, the mapping succeeded.  Now notify the interval map. */
    init_nsegment( &seg );
    seg.kind   = SkFileV;
-   seg.start  = sres.val;
+   seg.start  = sres.res;
    seg.end    = seg.start + VG_PGROUNDUP(length) - 1;
    seg.offset = offset;
    seg.hasR   = toBool(prot & VKI_PROT_READ);
@@ -2495,6 +2518,35 @@ Bool VG_(am_change_ownership_v_to_c)( Addr start, SizeT len )
    return True;
 }
 
+/* 'seg' must be NULL or have been obtained from
+   VG_(am_find_nsegment), and still valid.  If non-NULL, and if it
+   denotes a SkAnonC (anonymous client mapping) area, set the .isCH
+   (is-client-heap) flag for that area.  Otherwise do nothing.
+   (Bizarre interface so that the same code works for both Linux and
+   AIX and does not impose inefficiencies on the Linux version.) */
+void VG_(am_set_segment_isCH_if_SkAnonC)( NSegment* seg )
+{
+   Int i = segAddr_to_index( seg );
+   aspacem_assert(i >= 0 && i < nsegments_used);
+   if (nsegments[i].kind == SkAnonC) {
+      nsegments[i].isCH = True;
+   } else {
+      aspacem_assert(nsegments[i].isCH == False);
+   }
+}
+
+/* Same idea as VG_(am_set_segment_isCH_if_SkAnonC), except set the
+   segment's hasT bit (has-cached-code) if this is SkFileC or SkAnonC
+   segment. */
+void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( NSegment* seg )
+{
+   Int i = segAddr_to_index( seg );
+   aspacem_assert(i >= 0 && i < nsegments_used);
+   if (nsegments[i].kind == SkAnonC || nsegments[i].kind == SkFileC) {
+      nsegments[i].hasT = True;
+   }
+}
+
 
 /* --- --- --- reservations --- --- --- */
 
@@ -2615,9 +2667,9 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( NSegment* seg,
              );
       if (sres.isError)
          return False; /* kernel bug if this happens? */
-      if (sres.val != nsegments[segR].start) {
+      if (sres.res != nsegments[segR].start) {
          /* kernel bug if this happens? */
-        (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, delta );
+        (void)ML_(am_do_munmap_NO_NOTIFY)( sres.res, delta );
         return False;
       }
 
@@ -2650,9 +2702,9 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( NSegment* seg,
              );
       if (sres.isError)
          return False; /* kernel bug if this happens? */
-      if (sres.val != nsegments[segA].start-delta) {
+      if (sres.res != nsegments[segA].start-delta) {
          /* kernel bug if this happens? */
-        (void)ML_(am_do_munmap_NO_NOTIFY)( sres.val, delta );
+        (void)ML_(am_do_munmap_NO_NOTIFY)( sres.res, delta );
         return False;
       }
 
@@ -2712,7 +2764,7 @@ Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
       return False;
    } else {
       /* the area must not have moved */
-      aspacem_assert(sres.val == seg->start);
+      aspacem_assert(sres.res == seg->start);
    }
 
    *need_discard = any_Ts_in_range( seg_copy.end+1, delta );
@@ -2776,7 +2828,7 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
       AM_SANITY_CHECK;
       return False;
    } else {
-      aspacem_assert(sres.val == new_addr);
+      aspacem_assert(sres.res == new_addr);
    }
 
    *need_discard = any_Ts_in_range( old_addr, old_len )
@@ -2908,13 +2960,13 @@ static void read_procselfmaps_into_buf ( void )
 
    buf_n_tot = 0;
    do {
-      n_chunk = ML_(am_read)( fd.val, &procmap_buf[buf_n_tot],
+      n_chunk = ML_(am_read)( fd.res, &procmap_buf[buf_n_tot],
                               M_PROCMAP_BUF - buf_n_tot );
       if (n_chunk >= 0)
          buf_n_tot += n_chunk;
    } while ( n_chunk > 0 && buf_n_tot < M_PROCMAP_BUF );
 
-   ML_(am_close)(fd.val);
+   ML_(am_close)(fd.res);
 
    if (buf_n_tot >= M_PROCMAP_BUF-5)
       ML_(am_barf_toolow)("M_PROCMAP_BUF");

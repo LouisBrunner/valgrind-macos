@@ -95,7 +95,7 @@ Int ML_(am_getpid)( void )
 {
    SysRes sres = VG_(do_syscall0)(__NR_getpid);
    aspacem_assert(!sres.isError);
-   return sres.val;
+   return sres.res;
 }
 
 
@@ -235,7 +235,7 @@ SysRes ML_(am_open) ( const Char* pathname, Int flags, Int mode )
 Int ML_(am_read) ( Int fd, void* buf, Int count)
 {
    SysRes res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count);
-   return res.isError ? -1 : res.val;
+   return res.isError ? -1 : res.res;
 }
 
 void ML_(am_close) ( Int fd )
@@ -247,7 +247,7 @@ Int ML_(am_readlink)(HChar* path, HChar* buf, UInt bufsiz)
 {
    SysRes res;
    res = VG_(do_syscall3)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
-   return res.isError ? -1 : res.val;
+   return res.isError ? -1 : res.res;
 }
 
 /* Get the dev, inode and mode info for a file descriptor, if
@@ -310,7 +310,7 @@ VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp )
    if (sres.isError)
       return NULL;
 
-   stack = (VgStack*)sres.val;
+   stack = (VgStack*)sres.res;
 
    aspacem_assert(VG_IS_PAGE_ALIGNED(szB));
    aspacem_assert(VG_IS_PAGE_ALIGNED(stack));

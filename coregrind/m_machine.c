@@ -370,7 +370,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_F = False;
      } else {
-        __asm__ __volatile__("fmr 0,0");
+        __asm__ __volatile__(".long 0xFC000090"); /*fmr 0,0 */
      }
 
      /* Altivec insns */
@@ -397,7 +397,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_FX = False;
      } else {
-        __asm__ __volatile__("fsqrt 0,0");
+        __asm__ __volatile__(".long 0xFC00002C"); /*fsqrt 0,0 */
      }
 
      /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
@@ -408,7 +408,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_GX = False;
      } else {
-        __asm__ __volatile__("frsqrte 0,0");
+        __asm__ __volatile__(".long 0xFC000034"); /* frsqrte 0,0 */
      }
 
      r = VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
@@ -482,7 +482,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_V = False;
      } else {
-        __asm__ __volatile__("vor 0,0,0");
+        __asm__ __volatile__(".long 0x10000484"); /*vor 0,0,0*/
      }
 
      /* General-Purpose optional (fsqrt, fsqrts) */
@@ -492,7 +492,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_FX = False;
      } else {
-        __asm__ __volatile__("fsqrt 0,0");
+        __asm__ __volatile__(".long 0xFC00002C"); /*fsqrt 0,0*/
      }
 
      /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
@@ -502,7 +502,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (__builtin_setjmp(env_sigill)) {
         have_GX = False;
      } else {
-        __asm__ __volatile__("frsqrte 0,0");
+        __asm__ __volatile__(".long 0xFC000034"); /*frsqrte 0,0*/
      }
 
      VG_(sigaction)(VKI_SIGILL, &saved_act, NULL);
@@ -582,22 +582,18 @@ void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch* pVa,
 
 
 // Given a pointer to a function as obtained by "& functionname" in C,
-// produce a pointer to the actual entry point for the function.  For
-// most platforms it's the identity function.  Unfortunately, on
-// ppc64-linux it isn't (sigh).
+// produce a pointer to the actual entry point for the function.
 void* VG_(fnptr_to_fnentry)( void* f )
 {
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
+                           || defined(VGP_ppc32_linux)
    return f;
-#elif defined(VGP_amd64_linux)
-   return f;
-#elif defined(VGP_ppc32_linux)
-   return f;
-#elif defined(VGP_ppc64_linux)
-   /* f is a pointer to a 3-word function descriptor, of which
-      the first word is the entry address. */
-   /* Don't ask me.  Really.  I have no idea why. */
-   ULong* descr = (ULong*)f;
+#elif defined(VGP_ppc64_linux) || defined(VGP_ppc32_aix5) \
+                               || defined(VGP_ppc64_aix5)
+   /* All other ppc variants use the AIX scheme, in which f is a
+      pointer to a 3-word function descriptor, of which the first word
+      is the entry address. */
+   UWord* descr = (UWord*)f;
    return (void*)(descr[0]);
 #else
 #  error "Unknown platform"

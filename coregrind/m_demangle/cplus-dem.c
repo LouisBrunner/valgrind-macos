@@ -940,7 +940,7 @@ cplus_demangle_name_to_style (name)
    MANGLED.  */
 
 char *
-VG_(cplus_demangle) (mangled, options)
+ML_(cplus_demangle) (mangled, options)
      const char *mangled;
      int options;
 {
@@ -958,14 +958,14 @@ VG_(cplus_demangle) (mangled, options)
   /* The V3 ABI demangling is implemented elsewhere.  */
   if (GNU_V3_DEMANGLING || AUTO_DEMANGLING)
     {
-      ret = VG_(cplus_demangle_v3) (mangled/*, work->options*/);
+      ret = ML_(cplus_demangle_v3) (mangled/*, work->options*/);
       if (ret || GNU_V3_DEMANGLING)
 	return ret;
     }
 
   if (JAVA_DEMANGLING)
     {
-      ret = VG_(java_demangle_v3) (mangled);
+      ret = ML_(java_demangle_v3) (mangled);
       if (ret)
         return ret;
     }
@@ -2026,7 +2026,7 @@ demangle_template_value_parm (work, mangled, s, tk)
 		 mangled here does not make use of any of the squangling
 		 or type-code information we have built up thus far; it is
 		 mangled independently.  */
-	      q = VG_(cplus_demangle) (p, work->options);
+	      q = ML_(cplus_demangle) (p, work->options);
 	      if (tk == tk_pointer)
 		string_appendn (s, "&", 1);
 	      /* FIXME: Pointer-to-member constants should get a
@@ -3135,7 +3135,7 @@ recursively_demangle(work, mangled, result, namelength)
   memcpy (recurse, *mangled, namelength);
   recurse[namelength] = '\000';
 
-  recurse_dem = VG_(cplus_demangle) (recurse, work->options);
+  recurse_dem = ML_(cplus_demangle) (recurse, work->options);
 
   if (recurse_dem)
     {
@@ -4134,7 +4134,7 @@ do_hpacc_template_literal (work, mangled, result)
   memcpy (recurse, *mangled, literal_len);
   recurse[literal_len] = '\000';
 
-  recurse_dem = VG_(cplus_demangle) (recurse, work->options);
+  recurse_dem = ML_(cplus_demangle) (recurse, work->options);
 
   if (recurse_dem)
     {

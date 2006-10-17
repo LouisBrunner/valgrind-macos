@@ -23,7 +23,7 @@
 
 #include "ansidecl.h"
 
-#define current_demangling_style VG_(current_demangling_style)
+#define current_demangling_style ML_(current_demangling_style)
 
 /* Options passed to cplus_demangle (in 2nd parameter). */
 
@@ -106,7 +106,7 @@ extern const struct demangler_engine
 } libiberty_demanglers[];
 
 extern char *
-VG_(cplus_demangle) PARAMS ((const char *mangled, int options));
+ML_(cplus_demangle) PARAMS ((const char *mangled, int options));
 
 /*
 extern int
@@ -137,10 +137,10 @@ cplus_demangle_name_to_style PARAMS ((const char *name));
 
 /* V3 ABI demangling entry points, defined in cp-demangle.c.  */
 extern char*
-VG_(cplus_demangle_v3) PARAMS ((const char* mangled));
+ML_(cplus_demangle_v3) PARAMS ((const char* mangled));
 
 extern char*
-VG_(java_demangle_v3) PARAMS ((const char* mangled));
+ML_(java_demangle_v3) PARAMS ((const char* mangled));
 
 
 enum gnu_v3_ctor_kinds {

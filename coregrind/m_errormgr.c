@@ -68,7 +68,8 @@
 static Error* errors = NULL;
 
 /* The list of suppression directives, as read from the specified
-   suppressions file. */
+   suppressions file.  Note that the list gets rearranged as a result
+   of the searches done by is_suppressible_error(). */
 static Supp* suppressions = NULL;
 
 /* Running count of unsuppressed errors detected. */
@@ -81,6 +82,20 @@ static UInt n_errs_suppressed = 0;
 static Supp* is_suppressible_error ( Error* err );
 
 static ThreadId last_tid_printed = 1;
+
+/* Stats: number of searches of the error list initiated. */
+static UWord em_errlist_searches = 0;
+
+/* Stats: number of comparisons done during error list
+   searching. */
+static UWord em_errlist_cmps = 0;
+
+/* Stats: number of searches of the suppression list initiated. */
+static UWord em_supplist_searches = 0;
+
+/* Stats: number of comparisons done during suppression list
+   searching. */
+static UWord em_supplist_cmps = 0;
 
 /*------------------------------------------------------------*/
 /*--- Error type                                           ---*/
@@ -532,9 +547,11 @@ void VG_(maybe_record_error) ( ThreadId tid,
    construct_error ( &err, tid, ekind, a, s, extra, NULL );
 
    /* First, see if we've got an error record matching this one. */
-   p      = errors;
-   p_prev = NULL;
+   em_errlist_searches++;
+   p       = errors;
+   p_prev  = NULL;
    while (p != NULL) {
+      em_errlist_cmps++;
       if (eq_Error(exe_res, p, &err)) {
          /* Found it. */
          p->count++;
@@ -692,7 +709,7 @@ static Bool show_used_suppressions ( void )
                       "  </pair>", 
                       su->count, su->sname);
       } else {
-         VG_(message)(Vg_DebugMsg, "supp: %4d %s", su->count, su->sname);
+         VG_(message)(Vg_DebugMsg, "supp: %6d %s", su->count, su->sname);
       }
    }
 
@@ -818,6 +835,34 @@ void VG_(show_error_counts_as_XML) ( void )
 /*--- Standard suppressions                                ---*/
 /*------------------------------------------------------------*/
 
+/* Get the next char from fd into *out_buf.  Returns 1 if success,
+   0 if eof or < 0 if error. */
+
+static Int get_char ( Int fd, Char* out_buf )
+{
+   Int r;
+   static Char buf[64];
+   static Int buf_size = 0;
+   static Int buf_used = 0;
+   vg_assert(buf_size >= 0 && buf_size <= 64);
+   vg_assert(buf_used >= 0 && buf_used <= buf_size);
+   if (buf_used == buf_size) {
+      r = VG_(read)(fd, buf, 64);
+      if (r < 0) return r; /* read failed */
+      vg_assert(r >= 0 && r <= 64);
+      buf_size = r;
+      buf_used = 0;
+   }
+   if (buf_size == 0)
+     return 0; /* eof */
+   vg_assert(buf_size >= 0 && buf_size <= 64);
+   vg_assert(buf_used >= 0 && buf_used < buf_size);
+   *out_buf = buf[buf_used];
+   buf_used++;
+   return 1;
+}
+
+
 /* Get a non-blank, non-comment line of at most nBuf chars from fd.
    Skips leading spaces on the line. Return True if EOF was hit instead. 
 */
@@ -828,17 +873,17 @@ Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf )
    while (True) {
       /* First, read until a non-blank char appears. */
       while (True) {
-         n = VG_(read)(fd, &ch, 1);
+         n = get_char(fd, &ch);
          if (n == 1 && !VG_(isspace)(ch)) break;
-         if (n == 0) return True;
+         if (n <= 0) return True;
       }
 
       /* Now, read the line into buf. */
       i = 0;
       buf[i++] = ch; buf[i] = 0;
       while (True) {
-         n = VG_(read)(fd, &ch, 1);
-         if (n == 0) return False; /* the next call will return True */
+         n = get_char(fd, &ch);
+         if (n <= 0) return False; /* the next call will return True */
          if (ch == '\n') break;
          if (i > 0 && i == nBuf-1) i--;
          buf[i++] = ch; buf[i] = 0;
@@ -920,7 +965,7 @@ static void load_one_suppressions_file ( Char* filename )
                    filename );
       VG_(exit)(1);
    }
-   fd = sres.val;
+   fd = sres.res;
 
 #  define BOMB(S)  { err_str = S;  goto syntax_error; }
 
@@ -1137,16 +1182,43 @@ Bool supp_matches_callers(Error* err, Supp* su)
 static Supp* is_suppressible_error ( Error* err )
 {
    Supp* su;
+   Supp* su_prev;
+
+   /* stats gathering */
+   em_supplist_searches++;
 
    /* See if the error context matches any suppression. */
+   su_prev = NULL;
    for (su = suppressions; su != NULL; su = su->next) {
-      if (supp_matches_error(su, err) &&
-          supp_matches_callers(err, su))
-      {
+      em_supplist_cmps++;
+      if (supp_matches_error(su, err) && supp_matches_callers(err, su)) {
+         /* got a match.  Move this entry to the head of the list
+            in the hope of making future searches cheaper. */
+         if (su_prev) {
+            vg_assert(su_prev->next == su);
+            su_prev->next = su->next;
+            su->next = suppressions;
+            suppressions = su;
+         }
          return su;
       }
+      su_prev = su;
    }
    return NULL;      /* no matches */
+}
+
+/* Show accumulated error-list and suppression-list search stats. 
+*/
+void VG_(print_errormgr_stats) ( void )
+{
+   VG_(message)(Vg_DebugMsg, 
+      " errormgr: %,lu supplist searches, %,lu comparisons during search",
+      em_supplist_searches, em_supplist_cmps
+   );
+   VG_(message)(Vg_DebugMsg, 
+      " errormgr: %,lu errlist searches, %,lu comparisons during search",
+      em_errlist_searches, em_errlist_cmps
+   );
 }
 
 /*--------------------------------------------------------------------*/

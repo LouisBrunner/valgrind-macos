@@ -27,11 +27,25 @@
 #define vgPlain_printf                 printf
 #define vgPlain_memset                 memset
 #define vgPlain_memcpy                 memcpy
-#define vgPlain_random                 random
 
 #include "coregrind/m_oset.c"
 
 #define NN  1000       // Size of OSets being created
+
+
+/* Consistent random number generator, so it produces the
+   same results on all platforms. */
+
+#define random error_do_not_use_libc_random
+
+static UInt seed = 0;
+static UInt myrandom( void )
+{
+  seed = (1103515245 * seed + 12345);
+  return seed;
+}
+
+
 
 //---------------------------------------------------------------------------
 // Word example
@@ -81,8 +95,8 @@ void example1(void)
       *(vs[i]) = 2*i;
    }
    for (i = 0; i < NN; i++) {
-      Word r1  = random() % NN;
-      Word r2  = random() % NN;
+      Word r1  = myrandom() % NN;
+      Word r2  = myrandom() % NN;
       Word* tmp= vs[r1];
       vs[r1]   = vs[r2];
       vs[r2]   = tmp;
@@ -255,8 +269,8 @@ void example2(void)
       vs[i]->b2    = i+1;
    }
    for (i = 0; i < NN; i++) {
-      Int r1  = random() % NN;
-      Int r2  = random() % NN;
+      Int r1  = myrandom() % NN;
+      Int r2  = myrandom() % NN;
       Block* tmp = vs[r1];
       vs[r1]  = vs[r2];
       vs[r2]  = tmp;

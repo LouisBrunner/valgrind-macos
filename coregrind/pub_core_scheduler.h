@@ -43,31 +43,31 @@ extern ThreadId VG_(alloc_ThreadState)(void);
 /* A thread exits.  tid must currently be running. */
 extern void VG_(exit_thread)(ThreadId tid);
 
-/* Kill a thread.  This interrupts whatever a thread is doing, and
-   makes it exit ASAP.  This does not set the exitreason or
-   exitcode. */
-extern void VG_(kill_thread)(ThreadId tid);
+/* If 'tid' is blocked in a syscall, send it SIGVGKILL so as to get it
+   out of the syscall and onto doing the next thing, whatever that is.
+   If it isn't blocked in a syscall, has no effect on the thread. */
+extern void VG_(get_thread_out_of_syscall)(ThreadId tid);
 
 /* Nuke all threads except tid. */
 extern void VG_(nuke_all_threads_except) ( ThreadId me,
                                            VgSchedReturnCode reason );
 
 /* Make a thread the running thread.  The thread must previously been
-   sleeping, and not holding the CPU semaphore. This will set the
+   sleeping, and not holding the CPU lock.  This will set the
    thread state to VgTs_Runnable, and the thread will attempt to take
-   the CPU semaphore.  By the time it returns, tid will be the running
+   the CPU lock.  By the time it returns, tid will be the running
    thread. */
-extern void VG_(set_running) ( ThreadId tid );
+extern void VG_(set_running) ( ThreadId tid, HChar* who );
 
 /* Set a thread into a sleeping state.  Before the call, the thread
-   must be runnable, and holding the CPU semaphore.  When this call
+   must be runnable, and holding the CPU lock.  When this call
    returns, the thread will be set to the specified sleeping state,
-   and will not be holding the CPU semaphore.  Note that another
+   and will not be holding the CPU lock.  Note that another
    thread could be running by the time this call returns, so the
    caller must be careful not to touch any shared state.  It is also
    the caller's responsibility to actually block until the thread is
    ready to run again. */
-extern void VG_(set_sleeping) ( ThreadId tid, ThreadStatus state );
+extern void VG_(set_sleeping) ( ThreadId tid, ThreadStatus state, HChar* who );
 
 /* Yield the CPU for a while */
 extern void VG_(vg_yield)(void);

@@ -177,7 +177,7 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
 #  define MIN_SIZET(_aa,_bb) (_aa) < (_bb) ? (_aa) : (_bb)
 
    Bool      ok, d;
-   NSegment* old_seg;
+   NSegment const* old_seg;
    Addr      advised;
    Bool      f_fixed   = toBool(flags & VKI_MREMAP_FIXED);
    Bool      f_maymove = toBool(flags & VKI_MREMAP_MAYMOVE);
@@ -335,14 +335,14 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
          the next segment along.  So make very sure that the proposed
          new area really is free.  This is perhaps overly
          conservative, but it fixes #129866. */
-      NSegment* segLo = VG_(am_find_nsegment)( needA );
-      NSegment* segHi = VG_(am_find_nsegment)( needA + needL - 1 );
+      NSegment const* segLo = VG_(am_find_nsegment)( needA );
+      NSegment const* segHi = VG_(am_find_nsegment)( needA + needL - 1 );
       if (segLo == NULL || segHi == NULL 
           || segLo != segHi || segLo->kind != SkFree)
          ok = False;
    }
    if (ok && advised == needA) {
-      ok = VG_(am_extend_map_client)( &d, old_seg, needL );
+      ok = VG_(am_extend_map_client)( &d, (NSegment*)old_seg, needL );
       if (ok) {
          VG_TRACK( new_mem_mmap, needA, needL, 
                                  old_seg->hasR, 
@@ -393,15 +393,15 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
          this-or-nothing) is too lenient, and may allow us to trash
          the next segment along.  So make very sure that the proposed
          new area really is free. */
-      NSegment* segLo = VG_(am_find_nsegment)( needA );
-      NSegment* segHi = VG_(am_find_nsegment)( needA + needL - 1 );
+      NSegment const* segLo = VG_(am_find_nsegment)( needA );
+      NSegment const* segHi = VG_(am_find_nsegment)( needA + needL - 1 );
       if (segLo == NULL || segHi == NULL 
           || segLo != segHi || segLo->kind != SkFree)
          ok = False;
    }
    if (!ok || advised != needA)
       goto eNOMEM;
-   ok = VG_(am_extend_map_client)( &d, old_seg, needL );
+   ok = VG_(am_extend_map_client)( &d, (NSegment*)old_seg, needL );
    if (!ok)
       goto eNOMEM;
    VG_TRACK( new_mem_mmap, needA, needL, 
@@ -703,23 +703,23 @@ void VG_(init_preopened_fds)()
       return;
    }
 
-   while ((ret = VG_(getdents)(f.val, &d, sizeof(d))) != 0) {
+   while ((ret = VG_(getdents)(f.res, &d, sizeof(d))) != 0) {
       if (ret == -1)
          goto out;
 
       if (VG_(strcmp)(d.d_name, ".") && VG_(strcmp)(d.d_name, "..")) {
          Int fno = VG_(atoll)(d.d_name);
 
-         if (fno != f.val)
+         if (fno != f.res)
             if (VG_(clo_track_fds))
                record_fd_open_named(-1, fno);
       }
 
-      VG_(lseek)(f.val, d.d_off, VKI_SEEK_SET);
+      VG_(lseek)(f.res, d.d_off, VKI_SEEK_SET);
    }
 
   out:
-   VG_(close)(f.val);
+   VG_(close)(f.res);
 }
 
 static
@@ -947,7 +947,8 @@ void buf_and_len_post_check( ThreadId tid, SysRes res,
 
 static Addr do_brk ( Addr newbrk )
 {
-   NSegment *aseg, *rseg;
+   NSegment const* aseg;
+   NSegment const* rseg;
    Addr newbrkP;
    SizeT delta;
    Bool ok;
@@ -968,7 +969,7 @@ static Addr do_brk ( Addr newbrk )
    if (newbrk >= VG_(brk_base) && newbrk < VG_(brk_limit)) {
       /* shrinking the data segment.  Be lazy and don't munmap the
          excess area. */
-      NSegment* seg = VG_(am_find_nsegment)(newbrk);
+      NSegment const * seg = VG_(am_find_nsegment)(newbrk);
       if (seg && seg->hasT)
          VG_(discard_translations)( newbrk, VG_(brk_limit) - newbrk, 
                                     "do_brk(shrink)" );
@@ -982,7 +983,7 @@ static Addr do_brk ( Addr newbrk )
       if (seg) {
          /* pre: newbrk < VG_(brk_limit) 
               => newbrk <= VG_(brk_limit)-1 */
-         NSegment* seg2;
+         NSegment const * seg2;
          vg_assert(newbrk < VG_(brk_limit));
          seg2 = VG_(am_find_nsegment)( VG_(brk_limit)-1 );
          if (seg2 && seg == seg2 && seg->hasW)
@@ -998,7 +999,7 @@ static Addr do_brk ( Addr newbrk )
       aseg = VG_(am_find_nsegment)( VG_(brk_limit)-1 );
    else
       aseg = VG_(am_find_nsegment)( VG_(brk_limit) );
-   rseg = VG_(am_next_nsegment)( aseg, True/*forwards*/ );
+   rseg = VG_(am_next_nsegment)( (NSegment*)aseg, True/*forwards*/ );
 
    /* These should be assured by setup_client_dataseg in m_main. */
    vg_assert(aseg);
@@ -1026,7 +1027,7 @@ static Addr do_brk ( Addr newbrk )
    vg_assert(delta > 0);
    vg_assert(VG_IS_PAGE_ALIGNED(delta));
    
-   ok = VG_(am_extend_into_adjacent_reservation_client)( aseg, delta );
+   ok = VG_(am_extend_into_adjacent_reservation_client)( (NSegment*)aseg, delta );
    if (!ok) goto bad;
 
    VG_(brk_limit) = newbrk;
@@ -1163,12 +1164,12 @@ ML_(generic_POST_sys_socket) ( ThreadId tid, SysRes res )
 {
    SysRes r = res;
    vg_assert(!res.isError); /* guaranteed by caller */
-   if (!ML_(fd_allowed)(res.val, "socket", tid, True)) {
-      VG_(close)(res.val);
+   if (!ML_(fd_allowed)(res.res, "socket", tid, True)) {
+      VG_(close)(res.res);
       r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open_nameless)(tid, res.val);
+         ML_(record_fd_open_nameless)(tid, res.res);
    }
    return r;
 }
@@ -1209,8 +1210,8 @@ ML_(generic_POST_sys_accept) ( ThreadId tid,
 {
    SysRes r = res;
    vg_assert(!res.isError); /* guaranteed by caller */
-   if (!ML_(fd_allowed)(res.val, "accept", tid, True)) {
-      VG_(close)(res.val);
+   if (!ML_(fd_allowed)(res.res, "accept", tid, True)) {
+      VG_(close)(res.res);
       r = VG_(mk_SysRes_Error)( VKI_EMFILE );
    } else {
       Addr addr_p     = arg1;
@@ -1219,7 +1220,7 @@ ML_(generic_POST_sys_accept) ( ThreadId tid,
          buf_and_len_post_check ( tid, res, addr_p, addrlen_p,
                                   "socketcall.accept(addrlen_out)" );
       if (VG_(clo_track_fds))
-          ML_(record_fd_open_nameless)(tid, res.val);
+          ML_(record_fd_open_nameless)(tid, res.res);
    }
    return r;
 }
@@ -1712,7 +1713,7 @@ ML_(generic_PRE_sys_shmdt) ( ThreadId tid, UWord arg0 )
 void
 ML_(generic_POST_sys_shmdt) ( ThreadId tid, UWord res, UWord arg0 )
 {
-   NSegment* s = VG_(am_find_nsegment)(arg0);
+   NSegment const* s = VG_(am_find_nsegment)(arg0);
 
    if (s != NULL) {
       Addr  s_start = s->start;
@@ -1890,18 +1891,18 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    if (!sres.isError) {
       /* Notify aspacem and the tool. */
       ML_(notify_aspacem_and_tool_of_mmap)( 
-         (Addr)sres.val, /* addr kernel actually assigned */
+         (Addr)sres.res, /* addr kernel actually assigned */
          arg2, arg3, 
          arg4, /* the original flags value */
          arg5, arg6 
       );
       /* Load symbols? */
-      VG_(di_notify_mmap)( (Addr)sres.val, False/*allow_SkFileV*/ );
+      VG_(di_notify_mmap)( (Addr)sres.res, False/*allow_SkFileV*/ );
    }
 
    /* Stay sane */
    if (!sres.isError && (arg4 & VKI_MAP_FIXED))
-      vg_assert(sres.val == arg1);
+      vg_assert(sres.res == arg1);
 
    return sres;
 }
@@ -1961,7 +1962,7 @@ PRE(sys_exit)
    tst = VG_(get_ThreadState)(tid);
    /* Set the thread's status to be exiting, then claim that the
       syscall succeeded. */
-   tst->exitreason = VgSrc_ExitSyscall;
+   tst->exitreason = VgSrc_ExitThread;
    tst->os_state.exitcode = ARG1;
    SET_STATUS_Success(0);
 }
@@ -2370,7 +2371,7 @@ PRE(sys_execve)
    // ok, etc.
    res = VG_(pre_exec_check)((const Char*)ARG1, NULL);
    if (res.isError) {
-      SET_STATUS_Failure( res.val );
+      SET_STATUS_Failure( res.res );
       return;
    }
 
@@ -2390,7 +2391,7 @@ PRE(sys_execve)
    /* Resistance is futile.  Nuke all other threads.  POSIX mandates
       this. (Really, nuke them all, since the new process will make
       its own new thread.) */
-   VG_(nuke_all_threads_except)( tid, VgSrc_ExitSyscall );
+   VG_(nuke_all_threads_except)( tid, VgSrc_ExitThread );
    VG_(reap_threads)(tid);
 
    // Set up the child's exe path.
@@ -2509,7 +2510,6 @@ PRE(sys_execve)
    {
       vki_sigset_t allsigs;
       vki_siginfo_t info;
-      static const struct vki_timespec zero = { 0, 0 };
 
       for (i = 1; i < VG_(max_signal); i++) {
          struct vki_sigaction sa;
@@ -2523,7 +2523,7 @@ PRE(sys_execve)
       }
 
       VG_(sigfillset)(&allsigs);
-      while(VG_(sigtimedwait)(&allsigs, &info, &zero) > 0)
+      while(VG_(sigtimedwait_zero)(&allsigs, &info) > 0)
          ;
 
       VG_(sigprocmask)(VKI_SIG_SETMASK, &tst->sig_mask, NULL);
@@ -2548,7 +2548,7 @@ PRE(sys_execve)
   hosed:
    vg_assert(FAILURE);
    VG_(message)(Vg_UserMsg, "execve(%p(%s), %p, %p) failed, errno %d",
-                ARG1, ARG1, ARG2, ARG3, RES_unchecked);
+                ARG1, ARG1, ARG2, ARG3, ERR);
    VG_(message)(Vg_UserMsg, "EXEC FAILED: I can't recover from "
                             "execve() failing, so I'm dying.");
    VG_(message)(Vg_UserMsg, "Add more stringent tests in PRE(sys_execve), "
@@ -4743,7 +4743,7 @@ Bool ML_(do_sigkill)(Int pid, Int tgid)
       tst->os_state.fatalsig = VKI_SIGKILL;
       
       if (!VG_(is_running_thread)(tid))
-	 VG_(kill_thread)(tid);
+	 VG_(get_thread_out_of_syscall)(tid);
    }
    
    return True;
@@ -4833,13 +4833,13 @@ PRE(sys_mprotect)
          The sanity check provided by the kernel is that the vma must
          have the VM_GROWSDOWN/VM_GROWSUP flag set as appropriate.  */
       UInt grows = ARG3 & (VKI_PROT_GROWSDOWN|VKI_PROT_GROWSUP);
-      NSegment *aseg = VG_(am_find_nsegment)(ARG1);
-      NSegment *rseg;
+      NSegment const *aseg = VG_(am_find_nsegment)(ARG1);
+      NSegment const *rseg;
 
       vg_assert(aseg);
 
       if (grows == VKI_PROT_GROWSDOWN) {
-         rseg = VG_(am_next_nsegment)( aseg, False/*backwards*/ );
+         rseg = VG_(am_next_nsegment)( (NSegment*)aseg, False/*backwards*/ );
          if (rseg &&
              rseg->kind == SkResvn &&
              rseg->smode == SmUpper &&
@@ -4852,7 +4852,7 @@ PRE(sys_mprotect)
             SET_STATUS_Failure( VKI_EINVAL );
          }
       } else if (grows == VKI_PROT_GROWSUP) {
-         rseg = VG_(am_next_nsegment)( aseg, True/*forwards*/ );
+         rseg = VG_(am_next_nsegment)( (NSegment*)aseg, True/*forwards*/ );
          if (rseg &&
              rseg->kind == SkResvn &&
              rseg->smode == SmLower &&
@@ -4940,7 +4940,7 @@ PRE(sys_nanosleep)
 POST(sys_nanosleep)
 {
    vg_assert(SUCCESS || FAILURE);
-   if (ARG2 != 0 && FAILURE && RES_unchecked == VKI_EINTR)
+   if (ARG2 != 0 && FAILURE && ERR == VKI_EINTR)
       POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
@@ -4974,7 +4974,7 @@ PRE(sys_open)
       sres = VG_(dup)( VG_(cl_cmdline_fd) );
       SET_STATUS_from_SysRes( sres );
       if (!sres.isError) {
-         OffT off = VG_(lseek)( sres.val, 0, VKI_SEEK_SET );
+         OffT off = VG_(lseek)( sres.res, 0, VKI_SEEK_SET );
          if (off < 0)
             SET_STATUS_Failure( VKI_EMFILE );
       }

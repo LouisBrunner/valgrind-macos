@@ -57,14 +57,23 @@ typedef
       UWord arg4;
       UWord arg5;
       UWord arg6;
+      UWord arg7;
+      UWord arg8;
    }
    SyscallArgs;
 
 /* Current status of a syscall being done on behalf of the client. */
 typedef
    struct {
-      enum { SsSuccess=1, SsFailure, SsHandToKernel, SsIdle } what;
-      UWord val; /* only meaningful for .what == Success or Failure */
+      enum { 
+         /* call is complete, result is in 'res' */
+         SsComplete=1,
+         /* syscall not yet completed; must be handed to the kernel */
+         SsHandToKernel, 
+         /* not currently handling a syscall for this thread */
+         SsIdle 
+      } what;
+      SysRes sres; /* only meaningful for .what == SsComplete */
    }
    SyscallStatus;
 
@@ -78,6 +87,8 @@ typedef
       Int o_arg4;
       Int o_arg5;
       Int o_arg6;
+      Int o_arg8;
+      Int o_arg7;
       Int o_retval;
    }
    SyscallArgLayout;
@@ -121,13 +132,30 @@ typedef
 */
 
 
-/* These are defined in the relevant platform-specific files --
-   syswrap-arch-os.c */
+#if defined(VGO_linux)
+/* On Linux, finding the wrapper is easy: just look up in fixed,
+   platform-specific tables.  These are defined in the relevant
+   platform-specific files -- syswrap-arch-os.c */
 
 extern const SyscallTableEntry ML_(syscall_table)[];
 
 extern const UInt ML_(syscall_table_size);
-   
+
+#elif defined(VGP_ppc32_aix5)
+/* On AIX5 this is more complex than the simple fixed table lookup on
+   Linux, since the syscalls don't have fixed numbers.  So it's
+   simplest to use a function, which does all the required messing
+   around. */
+extern
+SyscallTableEntry* ML_(get_ppc32_aix5_syscall_entry) ( UInt sysno );
+
+#elif defined(VGP_ppc64_aix5)
+extern
+SyscallTableEntry* ML_(get_ppc64_aix5_syscall_entry) ( UInt sysno );
+
+#else
+#  error Unknown OS
+#endif   
 
 /* ---------------------------------------------------------------------
    Declaring and defining wrappers.
@@ -197,6 +225,11 @@ extern const UInt ML_(syscall_table_size);
    [sysno] = { vgSysWrap_##auxstr##_##name##_before, \
                vgSysWrap_##auxstr##_##name##_after }
 
+#define WRAPPER_PRE_NAME(auxstr, name) \
+    vgSysWrap_##auxstr##_##name##_before
+#define WRAPPER_POST_NAME(auxstr, name) \
+    vgSysWrap_##auxstr##_##name##_after
+
 /* Add a generic wrapper to a syscall table. */
 #define GENX_(sysno, name)    WRAPPER_ENTRY_X_(generic, sysno, name)
 #define GENXY(sysno, name)    WRAPPER_ENTRY_XY(generic, sysno, name)
@@ -206,6 +239,17 @@ extern const UInt ML_(syscall_table_size);
 #define LINX_(sysno, name)    WRAPPER_ENTRY_X_(linux, sysno, name) 
 #define LINXY(sysno, name)    WRAPPER_ENTRY_XY(linux, sysno, name)
 
+/* Add an AIX5-specific, arch-independent wrapper to a syscall
+   table. */
+#define AIXXY(sysno, name)                     \
+   { & sysno,                                  \
+     { & WRAPPER_PRE_NAME(aix5, name),         \
+       & WRAPPER_POST_NAME(aix5, name) }} 
+
+#define AIXX_(sysno, name)                     \
+   { & sysno,                                  \
+     { & WRAPPER_PRE_NAME(aix5, name),         \
+       NULL }} 
 
 
 /* ---------------------------------------------------------------------
@@ -224,57 +268,48 @@ extern const UInt ML_(syscall_table_size);
 #define ARG4   (arrghs->arg4)
 #define ARG5   (arrghs->arg5)
 #define ARG6   (arrghs->arg6)
+#define ARG7   (arrghs->arg7)
+#define ARG8   (arrghs->arg8)
 
-/* Reference to the syscall's current result status/value.  Note that
-   
-   (1) status->val by itself is meaningless -- you have to consider it
-       together with status->what, which is why RES uses a helper
-       function (this also has the desirable effect of turning RES
-       into a non-lvalue).
-
-   (2) post-wrappers will not get called in case of failure (unless
-       PostOnFail is set, which is rare).  This is why the assertion
-       in getRES is viable.
-
-   If you really really want to just get hold of status->val without
-   inspecting status->what, use RES_unchecked.  This is dangerous and
-   therefore discouraged.  
-*/
-#define SUCCESS       (status->what == SsSuccess)
-#define FAILURE       (status->what == SsFailure)
+/* Reference to the syscall's current result status/value.  General
+   paranoia all round. */
+#define SUCCESS       (status->what == SsComplete && !status->sres.isError)
+#define FAILURE       (status->what == SsComplete &&  status->sres.isError)
 #define SWHAT         (status->what)
-#define RES_unchecked (status->val)     /* do not use! */
-#define RES           (getRES(status))  /* use this instead, if possible */
+#define RES           (getRES(status))
+#define ERR           (getERR(status))
 
 static inline UWord getRES ( SyscallStatus* st ) {
-   vg_assert(st->what == SsSuccess);
-   return st->val;
+   vg_assert(st->what == SsComplete);
+   vg_assert(!st->sres.isError);
+   return st->sres.res;
 }
 
+static inline UWord getERR ( SyscallStatus* st ) {
+   vg_assert(st->what == SsComplete);
+   vg_assert(st->sres.isError);
+   return st->sres.err;
+}
 
 
 /* Set the current result status/value in various ways. */
 #define SET_STATUS_Success(zzz)                      \
-   do { status->what = SsSuccess;                    \
-        status->val  = (zzz);                        \
+   do { status->what = SsComplete;                   \
+        status->sres = VG_(mk_SysRes_Success)(zzz);  \
    } while (0)
 
 #define SET_STATUS_Failure(zzz)                      \
    do { Word wzz = (Word)(zzz);                      \
         /* Catch out wildly bogus error values. */   \
         vg_assert(wzz >= 0 && wzz < 10000);          \
-        status->what = SsFailure;                    \
-        status->val  = wzz;                          \
+        status->what = SsComplete;                   \
+        status->sres = VG_(mk_SysRes_Error)(wzz);    \
    } while (0)
 
 #define SET_STATUS_from_SysRes(zzz)                  \
    do {                                              \
-      SysRes zres = (zzz);                           \
-      if (zres.isError) {                            \
-         SET_STATUS_Failure(zres.val);               \
-      } else {                                       \
-         SET_STATUS_Success(zres.val);               \
-      }                                              \
+     status->what = SsComplete;                      \
+     status->sres = (zzz);                           \
    } while (0)
 
 /* A lamentable kludge */
@@ -282,16 +317,6 @@ static inline UWord getRES ( SyscallStatus* st ) {
    do { Word wzz = (Word)(zzz);                      \
         status->what = SsFailure;                    \
         status->val  = wzz;                          \
-   } while (0)
-
-#define SET_STATUS_from_SysRes_NO_SANITY_CHECK(zzz)  \
-   do {                                              \
-      SysRes zres = (zzz);                           \
-      if (zres.isError) {                            \
-         SET_STATUS_Failure_NO_SANITY_CHECK(zres.val); \
-      } else {                                       \
-         SET_STATUS_Success(zres.val);               \
-      }                                              \
    } while (0)
 
 
@@ -329,6 +354,7 @@ static inline UWord getRES ( SyscallStatus* st ) {
     do {                                             \
        Int here = layout->o_arg##n;                  \
        vg_assert(sizeof(t) <= sizeof(UWord));        \
+       vg_assert(here >= 0);                         \
        VG_(tdict).track_pre_reg_read(                \
           Vg_CoreSysCall, tid, s"("#a")",            \
           here, sizeof(t)                            \
@@ -343,8 +369,10 @@ static inline UWord getRES ( SyscallStatus* st ) {
 */
 #define PRRAn_BE(n,s,t,a)                            \
     do {                                             \
+       Int here = layout->o_arg##n;                  \
        Int next = layout->o_arg##n + sizeof(UWord);  \
        vg_assert(sizeof(t) <= sizeof(UWord));        \
+       vg_assert(here >= 0);                         \
        VG_(tdict).track_pre_reg_read(                \
           Vg_CoreSysCall, tid, s"("#a")",            \
           next-sizeof(t), sizeof(t)                  \

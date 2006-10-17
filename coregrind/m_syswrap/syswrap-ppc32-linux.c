@@ -239,7 +239,7 @@ static SysRes do_clone ( ThreadId ptid,
    ThreadState* ctst = VG_(get_ThreadState)(ctid);
    ULong        word64;
    UWord*       stack;
-   NSegment*    seg;
+   NSegment const* seg;
    SysRes       res;
    vki_sigset_t blockall, savedmask;
 
@@ -1060,7 +1060,7 @@ PRE(sys_sigreturn)
       It's a conceptual copy-n-paste from the x86 equivalent, but I'm 
       equally unclear as to whether it is needed there either.
    */
-   SET_STATUS_from_SysRes_NO_SANITY_CHECK(
+   SET_STATUS_from_SysRes(
       VG_(mk_SysRes_ppc32_linux)( 
          tst->arch.vex.guest_GPR3,
          /* get CR0.SO */
@@ -1095,7 +1095,7 @@ PRE(sys_rt_sigreturn)
    VG_(sigframe_destroy)(tid, True);
 
    /* See comments above in PRE(sys_sigreturn) about this. */
-   SET_STATUS_from_SysRes_NO_SANITY_CHECK(
+   SET_STATUS_from_SysRes(
       VG_(mk_SysRes_ppc32_linux)( 
          tst->arch.vex.guest_GPR3,
          /* get CR0.SO */

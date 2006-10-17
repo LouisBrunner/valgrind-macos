@@ -71,7 +71,7 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    vg_assert(tst->status == VgTs_Init);
 
    /* make sure we get the CPU lock before doing anything significant */
-   VG_(set_running)(tid);
+   VG_(set_running)(tid, "thread_wrapper(starting new thread)");
 
    if (0)
       VG_(printf)("thread tid %d started: stack = %p\n",
@@ -325,7 +325,7 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
 # error Unknown platform
 #endif
 
-   if (!res.isError && res.val == 0) {
+   if (!res.isError && res.res == 0) {
       /* child */
       VG_(do_atfork_child)(tid);
 
@@ -333,11 +333,11 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
    } 
    else 
-   if (!res.isError && res.val > 0) {
+   if (!res.isError && res.res > 0) {
       /* parent */
       if (VG_(clo_trace_syscalls))
 	  VG_(printf)("   clone(fork): process %d created child %d\n", 
-                      VG_(getpid)(), res.val);
+                      VG_(getpid)(), res.res);
 
       /* restore signal mask */
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
@@ -553,11 +553,11 @@ PRE(sys_exit_group)
          )
          continue;
 
-      VG_(threads)[t].exitreason = VgSrc_ExitSyscall;
+      VG_(threads)[t].exitreason = VgSrc_ExitThread;
       VG_(threads)[t].os_state.exitcode = ARG1;
 
       if (t != tid)
-	 VG_(kill_thread)(t);	/* unblock it, if blocked */
+	 VG_(get_thread_out_of_syscall)(t); /* unblock it, if blocked */
    }
 
    /* We have to claim the syscall already succeeded. */
@@ -1498,7 +1498,7 @@ PRE(sys_clock_nanosleep)
 }
 POST(sys_clock_nanosleep)
 {
-   if (ARG4 != 0 && FAILURE && RES_unchecked == VKI_EINTR)
+   if (ARG4 != 0 && FAILURE && ERR == VKI_EINTR)
       POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec) );
 }
 
@@ -2368,7 +2368,7 @@ PRE(sys_openat)
       sres = VG_(dup)( VG_(cl_cmdline_fd) );
       SET_STATUS_from_SysRes( sres );
       if (!sres.isError) {
-         OffT off = VG_(lseek)( sres.val, 0, VKI_SEEK_SET );
+         OffT off = VG_(lseek)( sres.res, 0, VKI_SEEK_SET );
          if (off < 0)
             SET_STATUS_Failure( VKI_EMFILE );
       }

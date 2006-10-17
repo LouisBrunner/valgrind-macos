@@ -205,7 +205,7 @@ static SysRes do_clone ( ThreadId ptid,
    ThreadState* ptst = VG_(get_ThreadState)(ptid);
    ThreadState* ctst = VG_(get_ThreadState)(ctid);
    UWord*       stack;
-   NSegment*    seg;
+   NSegment const* seg;
    SysRes       res;
    Long         rax;
    vki_sigset_t blockall, savedmask;

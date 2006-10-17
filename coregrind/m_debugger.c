@@ -46,7 +46,7 @@
 
 static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 {
-#if defined(VGA_x86)
+#if defined(VGP_x86_linux)
    struct vki_user_regs_struct regs;
    regs.cs     = vex->guest_CS;
    regs.ss     = vex->guest_SS;
@@ -66,7 +66,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    regs.eip    = vex->guest_EIP;
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
 
-#elif defined(VGA_amd64)
+#elif defined(VGP_amd64_linux)
    struct vki_user_regs_struct regs;
    regs.rax    = vex->guest_RAX;
    regs.rbx    = vex->guest_RBX;
@@ -88,7 +88,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    regs.rip    = vex->guest_RIP;
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
 
-#elif defined(VGA_ppc32)
+#elif defined(VGP_ppc32_linux)
    Int rc = 0;
    /* apparently the casting to void* is the Right Thing To Do */
    rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R0  * 4), (void*)vex->guest_GPR0);
@@ -132,7 +132,13 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
                      (void*)LibVEX_GuestPPC32_get_XER(vex));
    return rc;
 
-#elif defined(VGA_ppc64)
+#elif defined(VGP_ppc64_linux)
+   I_die_here;
+
+#elif defined(VGP_ppc32_aix5)
+   I_die_here;
+
+#elif defined(VGP_ppc64_aix5)
    I_die_here;
 
 #else

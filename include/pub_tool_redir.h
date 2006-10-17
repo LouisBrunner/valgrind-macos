@@ -136,8 +136,10 @@
      _         -->  Zu    (underscore)
      -         -->  Zh    (hyphen)
      (space)   -->  Zs    (space)
-     @         ->   ZA    (at)
+     @         -->  ZA    (at)
      Z         -->  ZZ    (Z)
+     (         -->  ZL    (left)
+     )         -->  ZR    (right)
 
    Everything else is left unchanged.
 */
@@ -146,11 +148,16 @@
    changed accordingly.  NOTE: duplicates
    I_{WRAP,REPLACE}_SONAME_FNNAME_Z{U,Z} in valgrind.h. */
 
-#define VG_REPLACE_FUNCTION_ZU(soname,fnname) _vgrZU_##soname##_##fnname
-#define VG_REPLACE_FUNCTION_ZZ(soname,fnname) _vgrZZ_##soname##_##fnname
+/* Use an extra level of macroisation so as to ensure the soname/fnname
+   args are fully macro-expanded before pasting them together. */
+#define VG_CONCAT4(_aa,_bb,_cc,_dd) _aa##_bb##_cc##_dd
 
-#define VG_WRAP_FUNCTION_ZU(soname,fnname) _vgwZU_##soname##_##fnname
-#define VG_WRAP_FUNCTION_ZZ(soname,fnname) _vgwZZ_##soname##_##fnname
+#define VG_REPLACE_FUNCTION_ZU(soname,fnname) VG_CONCAT4(_vgrZU_,soname,_,fnname)
+#define VG_REPLACE_FUNCTION_ZZ(soname,fnname) VG_CONCAT4(_vgrZZ_,soname,_,fnname)
+
+#define VG_WRAP_FUNCTION_ZU(soname,fnname) VG_CONCAT4(_vgwZU_,soname,_,fnname)
+#define VG_WRAP_FUNCTION_ZZ(soname,fnname) VG_CONCAT4(_vgwZZ_,soname,_,fnname)
+
 
 #endif   // __PUB_TOOL_REDIR_H
 

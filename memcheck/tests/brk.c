@@ -37,7 +37,7 @@ int main(void)
    assert( 0 == brk(orig_ds) );  // libc brk()
 
    for (i = 0; EOL != vals[i]; i++) {
-      res = (void*)brk(vals[i]);
+      res = (void*)(long)brk(vals[i]);
    }
 
    return 0;

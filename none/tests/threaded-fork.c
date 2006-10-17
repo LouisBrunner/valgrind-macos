@@ -8,7 +8,7 @@
 
 static void *threadmain( void *dummy )
 {
-	sleep( (int)dummy );
+	sleep( (unsigned long)dummy );
 	return NULL;
 }
 

@@ -20,7 +20,7 @@ int main(void)
    fprintf(stderr, "Attempting too-big mmap()...\n");
    p = mmap( 0, size, PROT_READ|PROT_WRITE|PROT_EXEC,
              MAP_PRIVATE|MAP_ANON, -1, 0 );
-   if (-1 != (int)p)
+   if (-1 != (long)p)
       fprintf(stderr, "huge mmap() succeeded??\n");
 
    return 0;

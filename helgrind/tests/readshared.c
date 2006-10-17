@@ -7,12 +7,12 @@ static int shared;
 
 static void *t1(void *v)
 {
-	return (void *)(shared + 44);
+	return (void *)(long)(shared + 44);
 }
 
 static void *t2(void *v)
 {
-	return (void *)(shared + 55);
+	return (void *)(long)(shared + 55);
 }
 
 int main()

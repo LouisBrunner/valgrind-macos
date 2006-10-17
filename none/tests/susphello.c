@@ -46,7 +46,7 @@ ptiSrSigHandler(int sig, siginfo_t *sip, void *arg)
 {
    //ucontext_t *ucontext = (ucontext_t *)arg;
    
-   int mypos = (int) pthread_getspecific(pKey);
+   long mypos = (long) pthread_getspecific(pKey);
    
    
 //   int threadPos = (int)pthread_getspecific(srThreadKey);
@@ -185,8 +185,8 @@ void takedown_altstack(void* stack) {
 }
 
 void *threadfunc(void *arg) {
-   int mypos = (int)arg;
-   int i;
+   long mypos = (long)arg;
+   long i;
    long square = 1;
    void* altstack = setup_altstack();
    
@@ -217,10 +217,10 @@ void *threadfunc(void *arg) {
 int main(int argc, char ** argv) {
   pthread_t threads[THREAD_COUNT];
   pthread_attr_t attr;
-  int result;
-  int i;
-  int iteration;
-  int finished;
+  long result;
+  long i;
+  long iteration;
+  long finished;
 
   initSignalling();
   

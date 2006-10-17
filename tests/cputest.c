@@ -23,7 +23,7 @@ char* all_archs[] = {
    NULL
 };
 
-#if defined(__powerpc__) && !defined(__powerpc64__)
+#if !defined(_AIX) && defined(__powerpc__) && !defined(__powerpc64__)
 static Bool go(char* cpu)
 {
    if ( strcmp( cpu, "ppc32" ) == 0 )
@@ -32,7 +32,7 @@ static Bool go(char* cpu)
 }
 #endif // __powerpc__ (32)
 
-#if defined(__powerpc__) && defined(__powerpc64__)
+#if !defined(_AIX) && defined(__powerpc__) && defined(__powerpc64__)
 static Bool go(char* cpu)
 {
    if ( strcmp( cpu, "ppc64" ) == 0 )
@@ -43,7 +43,24 @@ static Bool go(char* cpu)
 }
 #endif // __powerpc__ (64)
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(_AIX)
+static Bool go(char* cpu)
+{
+   if (sizeof(void*) == 8) {
+      /* cpu is in 64-bit mode */
+      if ( strcmp( cpu, "ppc64" ) == 0 )
+         return True;
+      if ( strcmp( cpu, "ppc32" ) == 0 )
+         return True;
+   } else {
+      if ( strcmp( cpu, "ppc32" ) == 0 )
+         return True;
+   }
+   return False;
+}
+#endif // _AIX
+
+#if !defined(_AIX) && (defined(__i386__) || defined(__x86_64__))
 static void cpuid ( unsigned int n,
                     unsigned int* a, unsigned int* b,
                     unsigned int* c, unsigned int* d )
@@ -106,7 +123,7 @@ static Bool go(char* cpu)
    }
    return False;
 }
-#endif // __i386__ || __x86_64__
+#endif // !_AIX && (__i386__ || __x86_64__)
 
 
 int main(int argc, char **argv)

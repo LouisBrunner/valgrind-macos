@@ -30,14 +30,15 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
+#include "pub_core_libcsignal.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_syscall.h"
 #include "pub_core_clientstate.h"
-#include "pub_core_vkiscnums.h"
 
 /* ---------------------------------------------------------------------
    Command line and environment stuff
@@ -222,8 +223,20 @@ void VG_(env_remove_valgrind_env_stuff)(Char** envp)
 
 Int VG_(waitpid)(Int pid, Int *status, Int options)
 {
+#  if defined(VGO_linux)
    SysRes res = VG_(do_syscall4)(__NR_wait4, pid, (UWord)status, options, 0);
-   return res.isError ? -1 : res.val;
+   return res.isError ? -1 : res.res;
+#  elif defined(VGO_aix5)
+   /* magic number 4 obtained by truss-ing a C program doing
+      'waitpid'.  Note status and pid args opposite way round from
+      POSIX. */
+   SysRes res = VG_(do_syscall5)(__NR_AIX5_kwaitpid, 
+                                 (UWord)status, pid, 4 | options,0,0);
+   if (0) VG_(printf)("waitpid: got 0x%x 0x%x\n", res.res, res.err);
+   return res.isError ? -1 : res.res;
+#  else
+#    error Unknown OS
+#  endif
 }
 
 /* clone the environment */
@@ -263,7 +276,7 @@ Int VG_(system) ( Char* cmd )
    res = VG_(do_syscall0)(__NR_fork);
    if (res.isError)
       return -1;
-   pid = res.val;
+   pid = res.res;
    if (pid == 0) {
       /* child */
       static Char** envp = NULL;
@@ -287,7 +300,32 @@ Int VG_(system) ( Char* cmd )
       VG_(exit)(1);
    } else {
       /* parent */
-      Int zzz = VG_(waitpid)(pid, NULL, 0);
+      Int ir, zzz;
+      /* We have to set SIGCHLD to its default behaviour in order that
+         VG_(waitpid) works (at least on AIX).  According to the Linux
+         man page for waitpid:
+
+         POSIX.1-2001 specifies that if the disposition of SIGCHLD is
+         set to SIG_IGN or the SA_NOCLDWAIT flag is set for SIGCHLD
+         (see sigaction(2)), then children that terminate do not
+         become zombies and a call to wait() or waitpid() will block
+         until all children have terminated, and then fail with errno
+         set to ECHILD.  (The original POSIX standard left the
+         behaviour of setting SIGCHLD to SIG_IGN unspecified.)
+      */
+      struct vki_sigaction sa, saved_sa;
+      VG_(memset)( &sa, 0, sizeof(struct vki_sigaction) );
+      VG_(sigemptyset)(&sa.sa_mask);
+      sa.ksa_handler = VKI_SIG_DFL;
+      sa.sa_flags    = 0;
+      ir = VG_(sigaction)(VKI_SIGCHLD, &sa, &saved_sa);
+      vg_assert(ir == 0);
+
+      zzz = VG_(waitpid)(pid, NULL, 0);
+
+      ir = VG_(sigaction)(VKI_SIGCHLD, &saved_sa, NULL);
+      vg_assert(ir == 0);
+
       return zzz == -1 ? -1 : 0;
    }
 }
@@ -304,9 +342,9 @@ Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
 #  ifdef __NR_ugetrlimit
    res = VG_(do_syscall2)(__NR_ugetrlimit, resource, (UWord)rlim);
 #  endif
-   if (res.isError && res.val == VKI_ENOSYS)
+   if (res.isError && res.err == VKI_ENOSYS)
       res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
-   return res.isError ? -1 : res.val;
+   return res.isError ? -1 : res.res;
 }
 
 
@@ -316,7 +354,7 @@ Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
    SysRes res;
    /* res = setrlimit( resource, rlim ); */
    res = VG_(do_syscall2)(__NR_setrlimit, resource, (UWord)rlim);
-   return res.isError ? -1 : res.val;
+   return res.isError ? -1 : res.res;
 }
 
 /* ---------------------------------------------------------------------
@@ -325,9 +363,18 @@ Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
 
 Int VG_(gettid)(void)
 {
+#  if defined(VGO_aix5)
+   SysRes res;
+   Int    r;
+   vg_assert(__NR_AIX5__thread_self != __NR_AIX5_UNKNOWN);
+   res = VG_(do_syscall0)(__NR_AIX5__thread_self);
+   r = res.res;
+   return r;
+
+#  else
    SysRes res = VG_(do_syscall0)(__NR_gettid);
 
-   if (res.isError && res.val == VKI_ENOSYS) {
+   if (res.isError && res.res == VKI_ENOSYS) {
       Char pid[16];      
       /*
        * The gettid system call does not exist. The obvious assumption
@@ -345,44 +392,53 @@ Int VG_(gettid)(void)
 
       res = VG_(do_syscall3)(__NR_readlink, (UWord)"/proc/self",
                              (UWord)pid, sizeof(pid));
-      if (!res.isError && res.val > 0) {
-         pid[res.val] = '\0';
-         res.val = VG_(atoll)(pid);
+      if (!res.isError && res.res > 0) {
+         pid[res.res] = '\0';
+         res.res = VG_(atoll)(pid);
       }
    }
 
-   return res.val;
+   return res.res;
+#  endif
 }
 
 /* You'd be amazed how many places need to know the current pid. */
 Int VG_(getpid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return VG_(do_syscall0)(__NR_getpid) . val;
+   return VG_(do_syscall0)(__NR_getpid) . res;
 }
 
 Int VG_(getpgrp) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return VG_(do_syscall0)(__NR_getpgrp) . val;
+   return VG_(do_syscall0)(__NR_getpgrp) . res;
 }
 
 Int VG_(getppid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return VG_(do_syscall0)(__NR_getppid) . val;
+   return VG_(do_syscall0)(__NR_getppid) . res;
 }
 
 Int VG_(geteuid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return VG_(do_syscall0)(__NR_geteuid) . val;
+#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+   return VG_(do_syscall1)(__NR_AIX5_getuidx, 1) . res;
+#  else
+   return VG_(do_syscall0)(__NR_geteuid) . res;
+#  endif
 }
 
 Int VG_(getegid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-   return VG_(do_syscall0)(__NR_getegid) . val;
+#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+   return VG_(do_syscall1)(__NR_AIX5_getgidx, 1) . res;
+#  else
+   return VG_(do_syscall0)(__NR_getegid) . res;
+#  endif
 }
 
 /* Get supplementary groups into list[0 .. size-1].  Returns the
@@ -400,18 +456,19 @@ Int VG_(getgroups)( Int size, UInt* list )
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list16);
    if (sres.isError)
       return -1;
-   if (sres.val > size)
+   if (sres.res > size)
       return -1;
-   for (i = 0; i < sres.val; i++)
+   for (i = 0; i < sres.res; i++)
       list[i] = (UInt)list16[i];
-   return sres.val;
+   return sres.res;
 
-#  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
+#  elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux) \
+        || defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
    if (sres.isError)
       return -1;
-   return sres.val;
+   return sres.res;
 
 #  else
 #     error "VG_(getgroups): needs implementation on this platform"
@@ -428,7 +485,7 @@ Int VG_(ptrace) ( Int request, Int pid, void *addr, void *data )
    res = VG_(do_syscall4)(__NR_ptrace, request, pid, (UWord)addr, (UWord)data);
    if (res.isError)
       return -1;
-   return res.val;
+   return res.res;
 }
 
 /* ---------------------------------------------------------------------
@@ -441,7 +498,7 @@ Int VG_(fork) ( void )
    res = VG_(do_syscall0)(__NR_fork);
    if (res.isError)
       return -1;
-   return res.val;
+   return res.res;
 }
 
 /* ---------------------------------------------------------------------
@@ -450,25 +507,40 @@ Int VG_(fork) ( void )
 
 UInt VG_(read_millisecond_timer) ( void )
 {
+   /* 'now' and 'base' are in microseconds */
    static ULong base = 0;
-   struct vki_timeval tv_now;
    ULong  now;
-   SysRes res;
 
+#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+   /* AIX requires a totally different implementation since
+      sys_gettimeofday doesn't exist.  We use the POWER real-time
+      register facility.  This will SIGILL on PowerPC 970 on AIX,
+      since PowerPC doesn't support these instructions. */
+   UWord nsec, sec1, sec2;
+   while (1) {
+      __asm__ __volatile__ ("\n"
+         "\tmfspr %0,4\n" /* 4==RTCU */
+         "\tmfspr %1,5\n" /* 5==RTCL */
+         "\tmfspr %2,4\n" /* 4==RTCU */
+         : "=b" (sec1), "=b" (nsec), "=b" (sec2)
+      );
+      if (sec1 == sec2) break;
+   }
+   vg_assert(nsec < 1000*1000*1000);
+   now  = ((ULong)sec1) * 1000000ULL;
+   now += (ULong)(nsec / 1000);
+#  else
+
+   struct vki_timeval tv_now;
+   SysRes res;
    res = VG_(do_syscall2)(__NR_gettimeofday, (UWord)&tv_now, (UWord)NULL);
-   
    now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
+#  endif
    
    if (base == 0)
       base = now;
 
    return (now - base) / 1000;
-}
-
-
-void VG_(nanosleep)(struct vki_timespec *ts)
-{
-   (void)VG_(do_syscall2)(__NR_nanosleep, (UWord)ts, (UWord)NULL);
 }
 
 /* ---------------------------------------------------------------------

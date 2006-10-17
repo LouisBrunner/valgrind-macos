@@ -76,7 +76,6 @@ extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env );
 extern Char **VG_(env_clone)    ( Char **env_clone );
 
 // misc
-extern void VG_(nanosleep) ( struct vki_timespec * );
 extern Int  VG_(getgroups)( Int size, UInt* list );
 extern Int  VG_(ptrace)( Int request, Int pid, void *addr, void *data );
 extern Int  VG_(fork)( void );

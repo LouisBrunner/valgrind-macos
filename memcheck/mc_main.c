@@ -43,6 +43,7 @@
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_threadstate.h"
+#include "pub_tool_oset.h"
 
 #include "mc_include.h"
 #include "memcheck.h"   /* for client requests */
@@ -305,8 +306,14 @@ static Int   max_undefined_SMs = 0;
 static Int   max_defined_SMs   = 0;
 static Int   max_non_DSM_SMs   = 0;
 
-static ULong n_auxmap_searches  = 0;
-static ULong n_auxmap_cmps      = 0;
+/* # searches initiated in auxmap_L1, and # base cmps required */
+static ULong n_auxmap_L1_searches  = 0;
+static ULong n_auxmap_L1_cmps      = 0;
+/* # of searches that missed in auxmap_L1 and therefore had to
+   be handed to auxmap_L2. And the number of nodes inserted. */
+static ULong n_auxmap_L2_searches  = 0;
+static ULong n_auxmap_L2_nodes     = 0;
+
 static Int   n_sanity_cheap     = 0;
 static Int   n_sanity_expensive = 0;
 
@@ -345,7 +352,8 @@ static SecMap* primary_map[N_PRIMARY_MAP];
 /* An entry in the auxiliary primary map.  base must be a 64k-aligned
    value, and sm points at the relevant secondary map.  As with the
    main primary map, the secondary may be either a real secondary, or
-   one of the three distinguished secondaries.
+   one of the three distinguished secondaries.  DO NOT CHANGE THIS
+   LAYOUT: the first word has to be the key for OSet fast lookups.
 */
 typedef
    struct { 
@@ -354,83 +362,215 @@ typedef
    }
    AuxMapEnt;
 
-/* An expanding array of AuxMapEnts. */
-#define N_AUXMAPS 20000 /* HACK */
-static AuxMapEnt  hacky_auxmaps[N_AUXMAPS];
-static Int        auxmap_size = N_AUXMAPS;
-static Int        auxmap_used = 0;
-static AuxMapEnt* auxmap      = &hacky_auxmaps[0];
+/* Tunable parameter: How big is the L1 queue? */
+#define N_AUXMAP_L1 24
 
+/* Tunable parameter: How far along the L1 queue to insert
+   entries resulting from L2 lookups? */
+#define AUXMAP_L1_INSERT_IX 12
 
-/* Find an entry in the auxiliary map.  If an entry is found, move it
-   one step closer to the front of the array, then return its address.
-   If an entry is not found, return NULL.  Note carefully that
-   because a each call potentially rearranges the entries, each call
-   to this function invalidates ALL AuxMapEnt*s previously obtained by
-   calling this fn.  
-*/
-static AuxMapEnt* maybe_find_in_auxmap ( Addr a )
+static struct {
+          Addr       base;
+          AuxMapEnt* ent; // pointer to the matching auxmap_L2 node
+       } 
+       auxmap_L1[N_AUXMAP_L1];
+
+static OSet* auxmap_L2 = NULL;
+
+static void init_auxmap_L1_L2 ( void )
 {
-   UWord i;
-   tl_assert(a > MAX_PRIMARY_ADDRESS);
-
-   a &= ~(Addr)0xFFFF;
-
-   /* Search .. */
-   n_auxmap_searches++;
-   for (i = 0; i < auxmap_used; i++) {
-      if (auxmap[i].base == a)
-         break;
-   }
-   n_auxmap_cmps += (ULong)(i+1);
-
-   if (i < auxmap_used) {
-      /* Found it.  Nudge it a bit closer to the front. */
-      if (i > 0) {
-         AuxMapEnt tmp = auxmap[i-1];
-         auxmap[i-1] = auxmap[i];
-         auxmap[i] = tmp;
-         i--;
-      }
-      return &auxmap[i];
+   Int i;
+   for (i = 0; i < N_AUXMAP_L1; i++) {
+      auxmap_L1[i].base = 0;
+      auxmap_L1[i].ent  = NULL;
    }
 
-   return NULL;
+   tl_assert(0 == offsetof(AuxMapEnt,base));
+   tl_assert(sizeof(Addr) == sizeof(void*));
+   auxmap_L2 = VG_(OSet_Create)( /*keyOff*/  offsetof(AuxMapEnt,base),
+                                 /*fastCmp*/ NULL,
+                                 VG_(malloc), VG_(free) );
 }
 
+/* Check representation invariants; if OK return NULL; else a
+   descriptive bit of text.  Also return the number of
+   non-distinguished secondary maps referred to from the auxiliary
+   primary maps. */
 
-/* Find an entry in the auxiliary map.  If an entry is found, move it
-   one step closer to the front of the array, then return its address.
-   If an entry is not found, allocate one.  Note carefully that
-   because a each call potentially rearranges the entries, each call
-   to this function invalidates ALL AuxMapEnt*s previously obtained by
-   calling this fn.  
-*/
-static AuxMapEnt* find_or_alloc_in_auxmap ( Addr a )
+static HChar* check_auxmap_L1_L2_sanity ( Word* n_secmaps_found )
 {
-   AuxMapEnt* am = maybe_find_in_auxmap(a);
-   if (am)
-      return am;
+   Word i, j;
+   /* On a 32-bit platform, the L2 and L1 tables should
+      both remain empty forever.
 
-   /* We didn't find it.  Hmm.  This is a new piece of address space.
-      We'll need to allocate a new AuxMap entry for it. */
-   if (auxmap_used >= auxmap_size) {
-      tl_assert(auxmap_used == auxmap_size);
-      /* Out of auxmap entries. */
-      tl_assert2(0, "failed to expand the auxmap table");
+      On a 64-bit platform:
+      In the L2 table:
+       all .base & 0xFFFF == 0
+       all .base > MAX_PRIMARY_ADDRESS
+      In the L1 table:
+       all .base & 0xFFFF == 0
+       all (.base > MAX_PRIMARY_ADDRESS
+            .base & 0xFFFF == 0
+            and .ent points to an AuxMapEnt with the same .base)
+           or
+           (.base == 0 and .ent == NULL)
+   */
+   *n_secmaps_found = 0;
+   if (sizeof(void*) == 4) {
+      /* 32-bit platform */
+      if (VG_(OSet_Size)(auxmap_L2) != 0)
+         return "32-bit: auxmap_L2 is non-empty";
+      for (i = 0; i < N_AUXMAP_L1; i++) 
+        if (auxmap_L1[i].base != 0 || auxmap_L1[i].ent != NULL)
+      return "32-bit: auxmap_L1 is non-empty";
+   } else {
+      /* 64-bit platform */
+      UWord elems_seen = 0;
+      AuxMapEnt *elem, *res;
+      AuxMapEnt key;
+      /* L2 table */
+      VG_(OSet_ResetIter)(auxmap_L2);
+      while ( (elem = VG_(OSet_Next)(auxmap_L2)) ) {
+         elems_seen++;
+         if (0 != (elem->base & (Addr)0xFFFF))
+            return "64-bit: nonzero .base & 0xFFFF in auxmap_L2";
+         if (elem->base <= MAX_PRIMARY_ADDRESS)
+            return "64-bit: .base <= MAX_PRIMARY_ADDRESS in auxmap_L2";
+         if (elem->sm == NULL)
+            return "64-bit: .sm in _L2 is NULL";
+         if (!is_distinguished_sm(elem->sm))
+            (*n_secmaps_found)++;
+      }
+      if (elems_seen != n_auxmap_L2_nodes)
+         return "64-bit: disagreement on number of elems in _L2";
+      /* Check L1-L2 correspondence */
+      for (i = 0; i < N_AUXMAP_L1; i++) {
+         if (auxmap_L1[i].base == 0 && auxmap_L1[i].ent == NULL)
+            continue;
+         if (0 != (auxmap_L1[i].base & (Addr)0xFFFF))
+            return "64-bit: nonzero .base & 0xFFFF in auxmap_L1";
+         if (auxmap_L1[i].base <= MAX_PRIMARY_ADDRESS)
+            return "64-bit: .base <= MAX_PRIMARY_ADDRESS in auxmap_L1";
+         if (auxmap_L1[i].ent == NULL)
+            return "64-bit: .ent is NULL in auxmap_L1";
+         if (auxmap_L1[i].ent->base != auxmap_L1[i].base)
+            return "64-bit: _L1 and _L2 bases are inconsistent";
+         /* Look it up in auxmap_L2. */
+         key.base = auxmap_L1[i].base;
+         key.sm   = 0;
+         res = VG_(OSet_Lookup)(auxmap_L2, &key);
+         if (res == NULL)
+            return "64-bit: _L1 .base not found in _L2";
+         if (res != auxmap_L1[i].ent)
+            return "64-bit: _L1 .ent disagrees with _L2 entry";
+      }
+      /* Check L1 contains no duplicates */
+      for (i = 0; i < N_AUXMAP_L1; i++) {
+         if (auxmap_L1[i].base == 0)
+            continue;
+	 for (j = i+1; j < N_AUXMAP_L1; j++) {
+            if (auxmap_L1[j].base == 0)
+               continue;
+            if (auxmap_L1[j].base == auxmap_L1[i].base)
+               return "64-bit: duplicate _L1 .base entries";
+         }
+      }
+   }
+   return NULL; /* ok */
+}
+
+static void insert_into_auxmap_L1_at ( Word rank, AuxMapEnt* ent )
+{
+   Word i;
+   tl_assert(ent);
+   tl_assert(rank >= 0 && rank < N_AUXMAP_L1);
+   for (i = N_AUXMAP_L1-1; i > rank; i--)
+      auxmap_L1[i] = auxmap_L1[i-1];
+   auxmap_L1[rank].base = ent->base;
+   auxmap_L1[rank].ent  = ent;
+}
+
+static INLINE AuxMapEnt* maybe_find_in_auxmap ( Addr a )
+{
+   AuxMapEnt  key;
+   AuxMapEnt* res;
+   Word       i;
+
+   tl_assert(a > MAX_PRIMARY_ADDRESS);
+   a &= ~(Addr)0xFFFF;
+
+   /* First search the front-cache, which is a self-organising
+      list containing the most popular entries. */
+
+   if (EXPECTED_TAKEN(auxmap_L1[0].base == a))
+      return auxmap_L1[0].ent;
+   if (EXPECTED_TAKEN(auxmap_L1[1].base == a)) {
+      Addr       t_base = auxmap_L1[0].base;
+      AuxMapEnt* t_ent  = auxmap_L1[0].ent;
+      auxmap_L1[0].base = auxmap_L1[1].base;
+      auxmap_L1[0].ent  = auxmap_L1[1].ent;
+      auxmap_L1[1].base = t_base;
+      auxmap_L1[1].ent  = t_ent;
+      return auxmap_L1[0].ent;
    }
 
-   tl_assert(auxmap_used < auxmap_size);
+   n_auxmap_L1_searches++;
 
-   auxmap[auxmap_used].base = a & ~(Addr)0xFFFF;
-   auxmap[auxmap_used].sm   = &sm_distinguished[SM_DIST_NOACCESS];
+   for (i = 0; i < N_AUXMAP_L1; i++) {
+      if (auxmap_L1[i].base == a) {
+         break;
+      }
+   }
+   tl_assert(i >= 0 && i <= N_AUXMAP_L1);
 
-   if (0)
-      VG_(printf)("new auxmap, base = 0x%llx\n", 
-                  (ULong)auxmap[auxmap_used].base );
+   n_auxmap_L1_cmps += (ULong)(i+1);
 
-   auxmap_used++;
-   return &auxmap[auxmap_used-1];
+   if (i < N_AUXMAP_L1) {
+      if (i > 0) {
+         Addr       t_base = auxmap_L1[i-1].base;
+         AuxMapEnt* t_ent  = auxmap_L1[i-1].ent;
+         auxmap_L1[i-1].base = auxmap_L1[i-0].base;
+         auxmap_L1[i-1].ent  = auxmap_L1[i-0].ent;
+         auxmap_L1[i-0].base = t_base;
+         auxmap_L1[i-0].ent  = t_ent;
+         i--;
+      }
+      return auxmap_L1[i].ent;
+   }
+
+   n_auxmap_L2_searches++;
+
+   /* First see if we already have it. */
+   key.base = a;
+   key.sm   = 0;
+
+   res = VG_(OSet_Lookup)(auxmap_L2, &key);
+   if (res)
+      insert_into_auxmap_L1_at( AUXMAP_L1_INSERT_IX, res );
+   return res;
+}
+
+static AuxMapEnt* find_or_alloc_in_auxmap ( Addr a )
+{
+   AuxMapEnt *nyu, *res;
+
+   /* First see if we already have it. */
+   res = maybe_find_in_auxmap( a );
+   if (EXPECTED_TAKEN(res))
+      return res;
+
+   /* Ok, there's no entry in the secondary map, so we'll have
+      to allocate one. */
+   a &= ~(Addr)0xFFFF;
+
+   nyu = (AuxMapEnt*) VG_(OSet_AllocNode)( auxmap_L2, sizeof(AuxMapEnt) );
+   tl_assert(nyu);
+   nyu->base = a;
+   nyu->sm   = &sm_distinguished[SM_DIST_NOACCESS];
+   VG_(OSet_Insert)( auxmap_L2, nyu );
+   insert_into_auxmap_L1_at( AUXMAP_L1_INSERT_IX, nyu );
+   n_auxmap_L2_nodes++;
+   return nyu;
 }
 
 /* --------------- SecMap fundamentals --------------- */
@@ -491,7 +631,7 @@ static INLINE SecMap* get_secmap_for_writing_high ( Addr a )
    secmap may be a distinguished one as the caller will only want to
    be able to read it. 
 */
-static SecMap* get_secmap_for_reading ( Addr a )
+static INLINE SecMap* get_secmap_for_reading ( Addr a )
 {
    return ( a <= MAX_PRIMARY_ADDRESS
           ? get_secmap_for_reading_low (a)
@@ -870,6 +1010,129 @@ static INLINE UWord byte_offset_w ( UWord wordszB, Bool bigendian,
    return bigendian ? (wordszB-1-byteno) : byteno;
 }
 
+
+/* --------------- Ignored address ranges --------------- */
+
+#define M_IGNORE_RANGES 4
+
+typedef
+   struct {
+      Int  used;
+      Addr start[M_IGNORE_RANGES];
+      Addr end[M_IGNORE_RANGES];
+   }
+   IgnoreRanges;
+
+static IgnoreRanges ignoreRanges;
+
+static INLINE Bool in_ignored_range ( Addr a )
+{
+   Int i;
+   if (EXPECTED_TAKEN(ignoreRanges.used == 0))
+      return False;
+   for (i = 0; i < ignoreRanges.used; i++) {
+      if (a >= ignoreRanges.start[i] && a < ignoreRanges.end[i])
+         return True;
+   }
+   return False;
+}
+
+
+/* Parse a 32- or 64-bit hex number, including leading 0x, from string
+   starting at *ppc, putting result in *result, and return True.  Or
+   fail, in which case *ppc and *result are undefined, and return
+   False. */
+
+static Bool isHex ( UChar c )
+{
+  return ((c >= '0' && c <= '9')
+	  || (c >= 'a' && c <= 'f')
+	  || (c >= 'A' && c <= 'F'));
+}
+
+static UInt fromHex ( UChar c )
+{
+   if (c >= '0' && c <= '9')
+      return (UInt)c - (UInt)'0';
+   if (c >= 'a' && c <= 'f')
+      return 10 +  (UInt)c - (UInt)'a';
+   if (c >= 'A' && c <= 'F')
+      return 10 +  (UInt)c - (UInt)'A';
+   /*NOTREACHED*/
+   tl_assert(0);
+   return 0;
+}
+
+static Bool parse_Addr ( UChar** ppc, Addr* result )
+{
+   Int used, limit = 2 * sizeof(Addr);
+   if (**ppc != '0')
+      return False;
+   (*ppc)++;
+   if (**ppc != 'x')
+      return False;
+   (*ppc)++;
+   *result = 0;
+   used = 0;
+   while (isHex(**ppc)) {
+      UInt d = fromHex(**ppc);
+      tl_assert(d < 16);
+      *result = ((*result) << 4) | fromHex(**ppc);
+      (*ppc)++;
+      used++;
+      if (used > limit) return False;
+   }
+   if (used == 0)
+      return False;
+   return True;
+}
+
+/* Parse two such numbers separated by a dash, or fail. */
+
+static Bool parse_range ( UChar** ppc, Addr* result1, Addr* result2 )
+{
+   Bool ok = parse_Addr(ppc, result1);
+   if (!ok)
+      return False;
+   if (**ppc != '-')
+      return False;
+   (*ppc)++;
+   ok = parse_Addr(ppc, result2);
+   if (!ok)
+      return False;
+   return True;
+}
+
+/* Parse a set of ranges separated by commas into 'ignoreRanges', or
+   fail. */
+
+static Bool parse_ignore_ranges ( UChar* str0 )
+{
+   Addr start, end;
+   Bool ok;
+   UChar*  str = str0;
+   UChar** ppc = &str;
+   ignoreRanges.used = 0;
+   while (1) {
+      ok = parse_range(ppc, &start, &end);
+      if (!ok)
+         return False;
+      if (ignoreRanges.used >= M_IGNORE_RANGES)
+         return False;
+      ignoreRanges.start[ignoreRanges.used] = start;
+      ignoreRanges.end[ignoreRanges.used] = end;
+      ignoreRanges.used++;
+      if (**ppc == 0)
+         return True;
+      if (**ppc != ',')
+         return False;
+      (*ppc)++;
+   }
+   /*NOTREACHED*/
+   return False;
+}
+
+
 /* --------------- Load/store slow cases. --------------- */
 
 // Forward declarations
@@ -900,6 +1163,39 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
    Bool  ok;
 
    PROF_EVENT(30, "mc_LOADVn_slow");
+
+   /* ------------ BEGIN semi-fast cases ------------ */
+   /* These deal quickly-ish with the common auxiliary primary map
+      cases on 64-bit platforms.  Are merely a speedup hack; can be
+      omitted without loss of correctness/functionality.  Note that in
+      both cases the "sizeof(void*) == 8" causes these cases to be
+      folded out by compilers on 32-bit platforms.  These are derived
+      from LOADV64 and LOADV32.
+   */
+   if (EXPECTED_TAKEN(sizeof(void*) == 8 
+                      && nBits == 64 && VG_IS_8_ALIGNED(a))) {
+      SecMap* sm       = get_secmap_for_reading(a);
+      UWord   sm_off16 = SM_OFF_16(a);
+      UWord   vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+      if (EXPECTED_TAKEN(vabits16 == VA_BITS16_DEFINED))
+         return V_BITS64_DEFINED;
+      if (EXPECTED_TAKEN(vabits16 == VA_BITS16_UNDEFINED))
+         return V_BITS64_UNDEFINED;
+      /* else fall into the slow case */
+   }
+   if (EXPECTED_TAKEN(sizeof(void*) == 8 
+                      && nBits == 32 && VG_IS_4_ALIGNED(a))) {
+      SecMap* sm = get_secmap_for_reading(a);
+      UWord sm_off = SM_OFF(a);
+      UWord vabits8 = sm->vabits8[sm_off];
+      if (EXPECTED_TAKEN(vabits8 == VA_BITS8_DEFINED))
+         return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_DEFINED);
+      if (EXPECTED_TAKEN(vabits8 == VA_BITS8_UNDEFINED))
+         return ((UWord)0xFFFFFFFF00000000ULL | (UWord)V_BITS32_UNDEFINED);
+      /* else fall into slow case */
+   }
+   /* ------------ END semi-fast cases ------------ */
+
    tl_assert(nBits == 64 || nBits == 32 || nBits == 16 || nBits == 8);
 
    for (i = szB-1; i >= 0; i--) {
@@ -949,6 +1245,61 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
    Bool  ok;
 
    PROF_EVENT(35, "mc_STOREVn_slow");
+
+   /* ------------ BEGIN semi-fast cases ------------ */
+   /* These deal quickly-ish with the common auxiliary primary map
+      cases on 64-bit platforms.  Are merely a speedup hack; can be
+      omitted without loss of correctness/functionality.  Note that in
+      both cases the "sizeof(void*) == 8" causes these cases to be
+      folded out by compilers on 32-bit platforms.  These are derived
+      from STOREV64 and STOREV32.
+   */
+   if (EXPECTED_TAKEN(sizeof(void*) == 8 
+                      && nBits == 64 && VG_IS_8_ALIGNED(a))) {
+      SecMap* sm       = get_secmap_for_reading(a);
+      UWord   sm_off16 = SM_OFF_16(a);
+      UWord   vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+      if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
+                          (VA_BITS16_DEFINED   == vabits16 ||
+                           VA_BITS16_UNDEFINED == vabits16) )) {
+         /* Handle common case quickly: a is suitably aligned, */
+         /* is mapped, and is addressible. */
+         // Convert full V-bits in register to compact 2-bit form.
+         if (EXPECTED_TAKEN(V_BITS64_DEFINED == vbytes)) {
+            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
+            return;
+         } else if (V_BITS64_UNDEFINED == vbytes) {
+            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
+            return;
+         }
+         /* else fall into the slow case */
+      }
+      /* else fall into the slow case */
+   }
+   if (EXPECTED_TAKEN(sizeof(void*) == 8
+                      && nBits == 32 && VG_IS_4_ALIGNED(a))) {
+      SecMap* sm      = get_secmap_for_reading(a);
+      UWord   sm_off  = SM_OFF(a);
+      UWord   vabits8 = sm->vabits8[sm_off];
+      if (EXPECTED_TAKEN( !is_distinguished_sm(sm) && 
+                          (VA_BITS8_DEFINED   == vabits8 ||
+                           VA_BITS8_UNDEFINED == vabits8) )) {
+         /* Handle common case quickly: a is suitably aligned, */
+         /* is mapped, and is addressible. */
+         // Convert full V-bits in register to compact 2-bit form.
+         if (EXPECTED_TAKEN(V_BITS32_DEFINED == (vbytes & 0xFFFFFFFF))) {
+            sm->vabits8[sm_off] = VA_BITS8_DEFINED;
+            return;
+         } else if (V_BITS32_UNDEFINED == (vbytes & 0xFFFFFFFF)) {
+            sm->vabits8[sm_off] = VA_BITS8_UNDEFINED;
+            return;
+         }
+         /* else fall into the slow case */
+      }
+      /* else fall into the slow case */
+   }
+   /* ------------ END semi-fast cases ------------ */
+
    tl_assert(nBits == 64 || nBits == 32 || nBits == 16 || nBits == 8);
 
    /* Dump vbytes in memory, iterating from least to most significant
@@ -1433,7 +1784,7 @@ void make_aligned_word64_noaccess ( Addr a )
 static void VG_REGPARM(1) mc_new_mem_stack_4(Addr new_SP)
 {
    PROF_EVENT(110, "new_mem_stack_4");
-   if (VG_IS_4_ALIGNED(new_SP)) {
+   if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
    } else {
       MC_(make_mem_undefined) ( -VG_STACK_REDZONE_SZB + new_SP, 4 );
@@ -1443,7 +1794,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_4(Addr new_SP)
 static void VG_REGPARM(1) mc_die_mem_stack_4(Addr new_SP)
 {
    PROF_EVENT(120, "die_mem_stack_4");
-   if (VG_IS_4_ALIGNED(new_SP)) {
+   if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4 );
    } else {
       MC_(make_mem_noaccess) ( -VG_STACK_REDZONE_SZB + new_SP-4, 4 );
@@ -1453,9 +1804,9 @@ static void VG_REGPARM(1) mc_die_mem_stack_4(Addr new_SP)
 static void VG_REGPARM(1) mc_new_mem_stack_8(Addr new_SP)
 {
    PROF_EVENT(111, "new_mem_stack_8");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP );
-   } else if (VG_IS_4_ALIGNED(new_SP)) {
+   } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4 );
    } else {
@@ -1466,9 +1817,9 @@ static void VG_REGPARM(1) mc_new_mem_stack_8(Addr new_SP)
 static void VG_REGPARM(1) mc_die_mem_stack_8(Addr new_SP)
 {
    PROF_EVENT(121, "die_mem_stack_8");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8 );
-   } else if (VG_IS_4_ALIGNED(new_SP)) {
+   } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8 );
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4 );
    } else {
@@ -1479,10 +1830,10 @@ static void VG_REGPARM(1) mc_die_mem_stack_8(Addr new_SP)
 static void VG_REGPARM(1) mc_new_mem_stack_12(Addr new_SP)
 {
    PROF_EVENT(112, "new_mem_stack_12");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
-   } else if (VG_IS_4_ALIGNED(new_SP)) {
+   } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4 );
    } else {
@@ -1497,7 +1848,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_12(Addr new_SP)
    if (VG_IS_8_ALIGNED(new_SP-12)) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4  );
-   } else if (VG_IS_4_ALIGNED(new_SP)) {
+   } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8  );
    } else {
@@ -1508,10 +1859,10 @@ static void VG_REGPARM(1) mc_die_mem_stack_12(Addr new_SP)
 static void VG_REGPARM(1) mc_new_mem_stack_16(Addr new_SP)
 {
    PROF_EVENT(113, "new_mem_stack_16");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
-   } else if (VG_IS_4_ALIGNED(new_SP)) {
+   } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4  );
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+12 );
@@ -1523,10 +1874,10 @@ static void VG_REGPARM(1) mc_new_mem_stack_16(Addr new_SP)
 static void VG_REGPARM(1) mc_die_mem_stack_16(Addr new_SP)
 {
    PROF_EVENT(123, "die_mem_stack_16");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8  );
-   } else if (VG_IS_4_ALIGNED(new_SP)) {
+   } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4  );
@@ -1538,12 +1889,12 @@ static void VG_REGPARM(1) mc_die_mem_stack_16(Addr new_SP)
 static void VG_REGPARM(1) mc_new_mem_stack_32(Addr new_SP)
 {
    PROF_EVENT(114, "new_mem_stack_32");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+24 );
-   } else if (VG_IS_4_ALIGNED(new_SP)) {
+   } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4  );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+12 );
@@ -1557,12 +1908,12 @@ static void VG_REGPARM(1) mc_new_mem_stack_32(Addr new_SP)
 static void VG_REGPARM(1) mc_die_mem_stack_32(Addr new_SP)
 {
    PROF_EVENT(124, "die_mem_stack_32");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-24 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
-   } else if (VG_IS_4_ALIGNED(new_SP)) {
+   } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-28 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-20 );
@@ -1576,7 +1927,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_32(Addr new_SP)
 static void VG_REGPARM(1) mc_new_mem_stack_112(Addr new_SP)
 {
    PROF_EVENT(115, "new_mem_stack_112");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
@@ -1599,7 +1950,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_112(Addr new_SP)
 static void VG_REGPARM(1) mc_die_mem_stack_112(Addr new_SP)
 {
    PROF_EVENT(125, "die_mem_stack_112");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-112);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-104);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-96 );
@@ -1622,7 +1973,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_112(Addr new_SP)
 static void VG_REGPARM(1) mc_new_mem_stack_128(Addr new_SP)
 {
    PROF_EVENT(116, "new_mem_stack_128");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
@@ -1647,7 +1998,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_128(Addr new_SP)
 static void VG_REGPARM(1) mc_die_mem_stack_128(Addr new_SP)
 {
    PROF_EVENT(126, "die_mem_stack_128");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-128);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-120);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-112);
@@ -1672,7 +2023,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_128(Addr new_SP)
 static void VG_REGPARM(1) mc_new_mem_stack_144(Addr new_SP)
 {
    PROF_EVENT(117, "new_mem_stack_144");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
@@ -1699,7 +2050,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_144(Addr new_SP)
 static void VG_REGPARM(1) mc_die_mem_stack_144(Addr new_SP)
 {
    PROF_EVENT(127, "die_mem_stack_144");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-144);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-136);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-128);
@@ -1726,7 +2077,7 @@ static void VG_REGPARM(1) mc_die_mem_stack_144(Addr new_SP)
 static void VG_REGPARM(1) mc_new_mem_stack_160(Addr new_SP)
 {
    PROF_EVENT(118, "new_mem_stack_160");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
@@ -1755,7 +2106,7 @@ static void VG_REGPARM(1) mc_new_mem_stack_160(Addr new_SP)
 static void VG_REGPARM(1) mc_die_mem_stack_160(Addr new_SP)
 {
    PROF_EVENT(128, "die_mem_stack_160");
-   if (VG_IS_8_ALIGNED(new_SP)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-160);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-152);
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-144);
@@ -2201,7 +2552,7 @@ void mc_post_mem_write(CorePart part, ThreadId tid, Addr a, SizeT len)
 static void mc_post_reg_write ( CorePart part, ThreadId tid, 
                                 OffT offset, SizeT size)
 {
-#  define MAX_REG_WRITE_SIZE 1392
+#  define MAX_REG_WRITE_SIZE 1408
    UChar area[MAX_REG_WRITE_SIZE];
    tl_assert(size <= MAX_REG_WRITE_SIZE);
    VG_(memset)(area, V_BITS8_DEFINED, size);
@@ -2589,7 +2940,39 @@ static void mc_record_address_error ( ThreadId tid, Addr a, Int size,
                                       Bool isWrite )
 {
    MC_Error err_extra;
-   Bool      just_below_esp;
+   Bool     just_below_esp;
+
+   if (in_ignored_range(a)) 
+      return;
+
+#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+   /* AIX zero-page handling.  On AIX, reads from page zero are,
+      bizarrely enough, legitimate.  Writes to page zero aren't,
+      though.  Since memcheck can't distinguish reads from writes, the
+      best we can do is to 'act normal' and mark the A bits in the
+      normal way as noaccess, but then hide any reads from that page
+      that get reported here. */
+   if ((!isWrite) && a >= 0 && a+size <= 4096) 
+      return;
+
+   /* Appalling AIX hack.  It suppresses reads done by glink
+      fragments.  Getting rid of this would require figuring out
+      somehow where the referenced data areas are (and their
+      sizes). */
+   if ((!isWrite) && size == sizeof(Word)) { 
+      UInt i1, i2;
+      UInt* pc = (UInt*)VG_(get_IP)(tid);
+      if (sizeof(Word) == 4) {
+         i1 = 0x800c0000; /* lwz r0,0(r12) */
+         i2 = 0x804c0004; /* lwz r2,4(r12) */
+      } else {
+         i1 = 0xe80c0000; /* ld  r0,0(r12) */
+         i2 = 0xe84c0008; /* ld  r2,8(r12) */
+      }
+      if (pc[0] == i1 && pc[1] == i2) return;
+      if (pc[0] == i2 && pc[-1] == i1) return;
+   }
+#  endif
 
    just_below_esp = is_just_below_ESP( VG_(get_SP)(tid), a );
 
@@ -3667,7 +4050,8 @@ static
 Bool mc_is_within_valid_secondary ( Addr a )
 {
    SecMap* sm = maybe_get_secmap_for ( a );
-   if (sm == NULL || sm == &sm_distinguished[SM_DIST_NOACCESS]) {
+   if (sm == NULL || sm == &sm_distinguished[SM_DIST_NOACCESS]
+       || in_ignored_range(a)) {
       /* Definitely not in use. */
       return False;
    } else {
@@ -3687,7 +4071,8 @@ Bool mc_is_valid_aligned_word ( Addr a )
    } else {
       tl_assert(VG_IS_8_ALIGNED(a));
    }
-   if (is_mem_defined( a, sizeof(UWord), NULL ) == MC_Ok) {
+   if (is_mem_defined( a, sizeof(UWord), NULL ) == MC_Ok
+       && !in_ignored_range(a)) {
       return True;
    } else {
       return False;
@@ -3739,6 +4124,9 @@ static void init_shadow_memory ( void )
    for (i = 0; i < N_PRIMARY_MAP; i++)
       primary_map[i] = &sm_distinguished[SM_DIST_NOACCESS];
 
+   /* Auxiliary primary maps */
+   init_auxmap_L1_L2();
+
    /* auxmap_size = auxmap_used = 0; 
       no ... these are statically initialised */
 
@@ -3761,9 +4149,14 @@ static Bool mc_cheap_sanity_check ( void )
 
 static Bool mc_expensive_sanity_check ( void )
 {
-   Int     i, n_secmaps_found;
+   Int     i;
+   Word    n_secmaps_found;
    SecMap* sm;
+   HChar*  errmsg;
    Bool    bad = False;
+
+   if (0) VG_(printf)("expensive sanity check\n");
+   if (0) return True;
 
    n_sanity_expensive++;
    PROF_EVENT(491, "expensive_sanity_check");
@@ -3801,37 +4194,28 @@ static Bool mc_expensive_sanity_check ( void )
          return False;
    }
 
-   /* check nonsensical auxmap sizing */
-   if (auxmap_used > auxmap_size)
-       bad = True;
-
-   if (bad) {
-      VG_(printf)("memcheck expensive sanity: "
-                  "nonsensical auxmap sizing\n");
+   /* check the auxiliary maps, very thoroughly */
+   n_secmaps_found = 0;
+   errmsg = check_auxmap_L1_L2_sanity( &n_secmaps_found );
+   if (errmsg) {
+      VG_(printf)("memcheck expensive sanity, auxmaps:\n\t%s", errmsg);
       return False;
    }
 
-   /* check that the number of secmaps issued matches the number that
-      are reachable (iow, no secmap leaks) */
-   n_secmaps_found = 0;
+   /* n_secmaps_found is now the number referred to by the auxiliary
+      primary map.  Now add on the ones referred to by the main
+      primary map. */
    for (i = 0; i < N_PRIMARY_MAP; i++) {
-     if (primary_map[i] == NULL) {
-       bad = True;
-     } else {
-     if (!is_distinguished_sm(primary_map[i]))
-       n_secmaps_found++;
-     }
-   }
-
-   for (i = 0; i < auxmap_used; i++) {
-      if (auxmap[i].sm == NULL) {
+      if (primary_map[i] == NULL) {
          bad = True;
       } else {
-         if (!is_distinguished_sm(auxmap[i].sm))
+         if (!is_distinguished_sm(primary_map[i]))
             n_secmaps_found++;
       }
    }
 
+   /* check that the number of secmaps issued matches the number that
+      are reachable (iow, no secmap leaks) */
    if (n_secmaps_found != (n_issued_SMs - n_deissued_SMs))
       bad = True;
 
@@ -3840,12 +4224,6 @@ static Bool mc_expensive_sanity_check ( void )
                   "apparent secmap leakage\n");
       return False;
    }
-
-   /* check that auxmap only covers address space that the primary doesn't */
-   
-   for (i = 0; i < auxmap_used; i++)
-      if (auxmap[i].base <= MAX_PRIMARY_ADDRESS)
-         bad = True;
 
    if (bad) {
       VG_(printf)("memcheck expensive sanity: "
@@ -3895,6 +4273,35 @@ static Bool mc_process_cmd_line_options(Char* arg)
    else if (VG_CLO_STREQ(arg, "--leak-resolution=high"))
       MC_(clo_leak_resolution) = Vg_HighRes;
 
+   else if (VG_CLO_STREQN(16,arg,"--ignore-ranges=")) {
+      Int    i;
+      UChar* txt = (UChar*)(arg+16);
+      Bool   ok  = parse_ignore_ranges(txt);
+      if (!ok)
+        return False;
+      tl_assert(ignoreRanges.used >= 0);
+      tl_assert(ignoreRanges.used < M_IGNORE_RANGES);
+      for (i = 0; i < ignoreRanges.used; i++) {
+         Addr s = ignoreRanges.start[i];
+         Addr e = ignoreRanges.end[i];
+         Addr limit = 0x4000000; /* 64M - entirely arbitrary limit */
+         if (e <= s) {
+            VG_(message)(Vg_DebugMsg, 
+               "ERROR: --ignore-ranges: end <= start in range:");
+            VG_(message)(Vg_DebugMsg, 
+               "       0x%lx-0x%lx", s, e);
+            return False;
+         }
+         if (e - s > limit) {
+            VG_(message)(Vg_DebugMsg, 
+               "ERROR: --ignore-ranges: suspiciously large range:");
+            VG_(message)(Vg_DebugMsg, 
+               "       0x%lx-0x%lx (size %ld)", s, e, (UWord)(e-s));
+            return False;
+	 }
+      }
+   }
+
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -3911,6 +4318,7 @@ static void mc_print_usage(void)
 "    --partial-loads-ok=no|yes        too hard to explain here; see manual [no]\n"
 "    --freelist-vol=<number>          volume of freed blocks queue [5000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
+"    --ignore-ranges=0xPP-0xQQ[,0xRR-0xSS]   assume given addresses are OK\n"
    );
    VG_(replacement_malloc_print_usage)();
 }
@@ -4374,12 +4782,19 @@ static void mc_fini ( Int exitcode )
          n_sanity_cheap, n_sanity_expensive );
       VG_(message)(Vg_DebugMsg,
          " memcheck: auxmaps: %d auxmap entries (%dk, %dM) in use",
-         auxmap_used, 
-         auxmap_used * 64, 
-         auxmap_used / 16 );
+         n_auxmap_L2_nodes, 
+         n_auxmap_L2_nodes * 64, 
+         n_auxmap_L2_nodes / 16 );
       VG_(message)(Vg_DebugMsg,
-         " memcheck: auxmaps: %lld searches, %lld comparisons",
-         n_auxmap_searches, n_auxmap_cmps );   
+         " memcheck: auxmaps_L1: %lld searches, %lld cmps, ratio %lld:10",
+         n_auxmap_L1_searches, n_auxmap_L1_cmps,
+         (10ULL * n_auxmap_L1_cmps) 
+            / (n_auxmap_L1_searches ? n_auxmap_L1_searches : 1) 
+      );   
+      VG_(message)(Vg_DebugMsg,
+         " memcheck: auxmaps_L2: %lld searches, %lld nodes",
+         n_auxmap_L2_searches, n_auxmap_L2_nodes
+      );   
 
       print_SM_info("n_issued     ", n_issued_SMs);
       print_SM_info("n_deissued   ", n_deissued_SMs);
@@ -4425,7 +4840,7 @@ static void mc_pre_clo_init(void)
    VG_(details_copyright_author)(
       "Copyright (C) 2002-2006, and GNU GPL'd, by Julian Seward et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
-   VG_(details_avg_translation_sizeB) ( 370 );
+   VG_(details_avg_translation_sizeB) ( 556 );
 
    VG_(basic_tool_funcs)          (mc_post_clo_init,
                                    MC_(instrument),
@@ -4529,6 +4944,8 @@ static void mc_pre_clo_init(void)
 
    // {LOADV,STOREV}[8421] will all fail horribly if this isn't true.
    tl_assert(sizeof(UWord) == sizeof(Addr));
+   // Call me paranoid.  I don't care.
+   tl_assert(sizeof(void*) == sizeof(Addr));
 
    // BYTES_PER_SEC_VBIT_NODE must be a power of two.
    tl_assert(-1 != VG_(log2)(BYTES_PER_SEC_VBIT_NODE));

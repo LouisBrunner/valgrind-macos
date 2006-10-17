@@ -613,7 +613,7 @@ static void setFastCacheEntry ( Addr64 key, ULong* tce, UInt* count )
 {
    UInt cno = (UInt)VG_TT_FAST_HASH(key);
    VG_(tt_fast)[cno]  = tce;
-   VG_(tt_fastN)[cno] = count;
+   VG_(tt_fastN)[cno] = VG_(clo_profile_flags) > 0  ? count  : NULL;
    n_fast_updates++;
 }
 

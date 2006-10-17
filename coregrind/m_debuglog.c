@@ -47,6 +47,7 @@
    stage1 and stage2. */
 
 #include "pub_core_basics.h"     /* basic types */
+#include "pub_core_vkiscnums.h"  /* for syscall numbers */
 #include "pub_core_debuglog.h"   /* our own iface */
 #include "valgrind.h"            /* for RUNNING_ON_VALGRIND */
 
@@ -60,7 +61,7 @@
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
-   Int block[2];
+   volatile Int block[2];
    block[0] = (Int)buf;
    block[1] = n;
    __asm__ volatile (
@@ -69,7 +70,7 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "pushl %%ebx\n"           /* save &block */
       "movl  0(%%ebx), %%ecx\n" /* %ecx = buf */
       "movl  4(%%ebx), %%edx\n" /* %edx = n */
-      "movl  $4, %%eax\n"       /* %eax = __NR_write */
+      "movl  $"VG_STRINGIFY(__NR_write)", %%eax\n" /* %eax = __NR_write */
       "movl  $1, %%ebx\n"       /* %ebx = stderr */
       "int   $0x80\n"           /* write(stderr, buf, n) */
       "popl  %%ebx\n"           /* reestablish &block */
@@ -88,7 +89,7 @@ static UInt local_sys_getpid ( void )
 {
    UInt __res;
    __asm__ volatile (
-      "movl $20, %%eax\n"  /* set %eax = __NR_getpid */
+      "movl $"VG_STRINGIFY(__NR_getpid)", %%eax\n" /* %eax = __NR_getpid */
       "int  $0x80\n"       /* getpid() */
       "movl %%eax, %0\n"   /* set __res = eax */
       : "=mr" (__res)
@@ -101,7 +102,7 @@ static UInt local_sys_getpid ( void )
 __attribute__((noinline))
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
-   Long block[2];
+   volatile Long block[2];
    block[0] = (Long)buf;
    block[1] = n;
    __asm__ volatile (
@@ -109,7 +110,7 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "pushq %%r15\n"           /* r15 is callee-save */
       "movq  %0, %%r15\n"       /* r15 = &block */
       "pushq %%r15\n"           /* save &block */
-      "movq  $1, %%rax\n"       /* rax = __NR_write */
+      "movq  $"VG_STRINGIFY(__NR_write)", %%rax\n" /* rax = __NR_write */
       "movq  $2, %%rdi\n"       /* rdi = stderr */
       "movq  0(%%r15), %%rsi\n" /* rsi = buf */
       "movq  8(%%r15), %%rdx\n" /* rdx = n */
@@ -131,7 +132,7 @@ static UInt local_sys_getpid ( void )
 {
    UInt __res;
    __asm__ volatile (
-      "movq $39, %%rax\n"  /* set %rax = __NR_getpid */
+      "movq $"VG_STRINGIFY(__NR_getpid)", %%rax\n" /* %rax = __NR_getpid */
       "syscall\n"          /* getpid() */
       "movl %%eax, %0\n"   /* set __res = %eax */
       : "=mr" (__res)
@@ -144,14 +145,14 @@ static UInt local_sys_getpid ( void )
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
-   Int block[2];
+   volatile Int block[2];
    block[0] = (Int)buf;
    block[1] = n;
    __asm__ volatile (
       "addi 1,1,-256\n\t"
       "mr   5,%0\n\t"     /* r5 = &block[0] */
       "stw  5,0(1)\n\t"   /* stash on stack */
-      "li   0,4\n\t"      /* set %r0 = __NR_write (== 4) */
+      "li   0,"VG_STRINGIFY(__NR_write)"\n\t" /* set %r0 = __NR_write */
       "li   3,2\n\t"      /* set %r3 = stderr */
       "lwz  4,0(5)\n\t"   /* set %r4 = buf */
       "lwz  5,4(5)\n\t"   /* set %r5 = n */
@@ -176,7 +177,7 @@ static UInt local_sys_getpid ( void )
       "li 0, %1\n\t"
       "sc"
       : "=&r" (__res)
-      : "i" (20) /* == __NR_getpid */
+      : "i" (__NR_getpid)
       : "cc","memory","cr0","ctr",
         "r0","r2","r4","r5","r6","r7","r8","r9","r10","r11","r12"
    );
@@ -187,14 +188,14 @@ static UInt local_sys_getpid ( void )
 
 static UInt local_sys_write_stderr ( HChar* buf, Int n )
 {
-   Long block[2];
+   volatile Long block[2];
    block[0] = (Long)buf;
    block[1] = (Long)n;
    __asm__ volatile (
       "addi 1,1,-256\n\t"
       "mr   5,%0\n\t"     /* r5 = &block[0] */
       "std  5,0(1)\n\t"   /* stash on stack */
-      "li   0,4\n\t"      /* set %r0 = __NR_write (== 4) */
+      "li   0,"VG_STRINGIFY(__NR_write)"\n\t" /* %r0 = __NR_write */
       "li   3,2\n\t"      /* set %r3 = stderr */
       "ld   4,0(5)\n\t"   /* set %r4 = buf */
       "ld   5,8(5)\n\t"   /* set %r5 = n */
@@ -219,11 +220,177 @@ static UInt local_sys_getpid ( void )
       "li 0, %1\n\t"
       "sc"
       : "=&r" (__res)
-      : "i" (20) /* == __NR_getpid */
+      : "i" (__NR_getpid)
       : "cc","memory","cr0","ctr",
         "r0","r2","r4","r5","r6","r7","r8","r9","r10","r11","r12"
    );
    return (UInt)__res;
+}
+
+#elif defined(VGP_ppc32_aix5)
+
+static UInt local_sys_write_stderr ( HChar* buf, Int n )
+{
+   /* For some reason gcc-3.3.2 doesn't preserve r31 across the asm
+      even though we state it to be trashed.  So use r27 instead. */
+   volatile UInt block[3];
+   block[0] = (UInt)buf;
+   block[1] = n;
+   block[2] = __NR_write;
+   __asm__ __volatile__ (
+      "mr    28,%0\n\t"      /* establish base ptr */
+      "mr    27,2\n\t"       /* save r2 in r27 */
+      "mflr  30\n\t"         /* save lr in r30 */
+
+      "lwz 2,8(28)\n\t"      /* set %r2 = __NR_write */
+      "li  3,2\n\t"          /* set %r3 = stderr */
+      "lwz 4,0(28)\n\t"      /* set %r4 = buf */
+      "lwz 5,4(28)\n\t"      /* set %r5 = n */
+
+      ".long 0x48000005\n\t" /* bl .+4 */
+      "mflr  29\n\t"
+      "addi  29,29,20\n\t"
+      "mtlr  29\n\t"
+      "crorc 6,6,6\n\t"
+      "sc\n\t"               /* write() */
+
+      "stw 3,0(28)\n\t"      /* result */
+      "stw 4,4(28)\n\t"      /* error? */
+
+      "mr   2,27\n\t"        /* restore r2 */
+      "mtlr 30"              /* restore lr */
+
+      : /*out*/
+      : /*in*/  "b" (&block[0])
+      : /*trash*/
+           /*temps*/    "r31","r30","r29","r28","r27",
+           /*args*/     "r3","r4","r5","r6","r7","r8","r9","r10",
+           /*paranoia*/ "memory","cc","r0","r1","r11","r12","r13",
+                        "xer","ctr","cr0","cr1","cr2","cr3",
+                        "cr4","cr5","cr6","cr7"
+   );
+   if (block[1] != 0)
+      return -1;
+   else
+      return block[0];
+}
+
+static UInt local_sys_getpid ( void )
+{
+   /* For some reason gcc-3.3.2 doesn't preserve r31 across the asm
+      even though we state it to be trashed.  So use r27 instead. */
+   volatile UInt block[1];
+   block[0] = __NR_getpid;
+   __asm__ __volatile__ (
+      "mr    28,%0\n\t"      /* establish base ptr */
+      "mr    27,2\n\t"       /* save r2 in r27 */
+      "mflr  30\n\t"         /* save lr in r30 */
+
+      "lwz   2,0(28)\n\t"    /* set %r2 = __NR_getpid */
+
+      ".long 0x48000005\n\t" /* bl .+4 */
+      "mflr  29\n\t"
+      "addi  29,29,20\n\t"
+      "mtlr  29\n\t"
+      "crorc 6,6,6\n\t"
+      "sc\n\t"               /* getpid() */
+
+      "stw   3,0(28)\n\t"    /* result -> block[0] */
+
+      "mr   2,27\n\t"        /* restore r2 */
+      "mtlr 30"              /* restore lr */
+
+      : /*out*/
+      : /*in*/  "b" (&block[0])
+      : /*trash*/
+           /*temps*/    "r31","r30","r29","r28","r27",
+           /*args*/     "r3","r4","r5","r6","r7","r8","r9","r10",
+           /*paranoia*/ "memory","cc","r0","r1","r11","r12","r13",
+                        "xer","ctr","cr0","cr1","cr2","cr3",
+                        "cr4","cr5","cr6","cr7"
+   );
+   return block[0];
+}
+
+#elif defined(VGP_ppc64_aix5)
+
+static UInt local_sys_write_stderr ( HChar* buf, Int n )
+{
+   volatile ULong block[3];
+   block[0] = (ULong)buf;
+   block[1] = n;
+   block[2] = (ULong)__NR_write;
+   __asm__ __volatile__ (
+      "mr    28,%0\n\t"      /* establish base ptr */
+      "mr    27,2\n\t"       /* save r2 in r27 */
+      "mflr  30\n\t"         /* save lr in r30 */
+
+      "ld  2,16(28)\n\t"     /* set %r2 = __NR_write */
+      "li  3,2\n\t"          /* set %r3 = stderr */
+      "ld  4,0(28)\n\t"      /* set %r4 = buf */
+      "ld  5,8(28)\n\t"      /* set %r5 = n */
+
+      ".long 0x48000005\n\t" /* bl .+4 */
+      "mflr  29\n\t"
+      "addi  29,29,20\n\t"
+      "mtlr  29\n\t"
+      "crorc 6,6,6\n\t"
+      "sc\n\t"               /* write() */
+
+      "std 3,0(28)\n\t"      /* result */
+      "std 4,8(28)\n\t"      /* error? */
+
+      "mr   2,27\n\t"        /* restore r2 */
+      "mtlr 30"              /* restore lr */
+
+      : /*out*/
+      : /*in*/  "b" (&block[0])
+      : /*trash*/
+           /*temps*/    "r31","r30","r29","r28","r27",
+           /*args*/     "r3","r4","r5","r6","r7","r8","r9","r10",
+           /*paranoia*/ "memory","cc","r0","r1","r11","r12","r13",
+                        "xer","ctr","cr0","cr1","cr2","cr3",
+                        "cr4","cr5","cr6","cr7"
+   );
+   if (block[1] != 0)
+      return (UInt)-1;
+   else
+      return (UInt)block[0];
+}
+
+static UInt local_sys_getpid ( void )
+{
+   volatile ULong block[1];
+   block[0] = __NR_getpid;
+   __asm__ __volatile__ (
+      "mr    28,%0\n\t"      /* establish base ptr */
+      "mr    27,2\n\t"       /* save r2 in r27 */
+      "mflr  30\n\t"         /* save lr in r30 */
+
+      "ld    2,0(28)\n\t"    /* set %r2 = __NR_getpid */
+
+      ".long 0x48000005\n\t" /* bl .+4 */
+      "mflr  29\n\t"
+      "addi  29,29,20\n\t"
+      "mtlr  29\n\t"
+      "crorc 6,6,6\n\t"
+      "sc\n\t"               /* getpid() */
+
+      "std  3,0(28)\n\t"     /* result -> block[0] */
+
+      "mr   2,27\n\t"        /* restore r2 */
+      "mtlr 30"              /* restore lr */
+
+      : /*out*/
+      : /*in*/  "b" (&block[0])
+      : /*trash*/
+           /*temps*/    "r31","r30","r29","r28","r27",
+           /*args*/     "r3","r4","r5","r6","r7","r8","r9","r10",
+           /*paranoia*/ "memory","cc","r0","r1","r11","r12","r13",
+                        "xer","ctr","cr0","cr1","cr2","cr3",
+                        "cr4","cr5","cr6","cr7"
+   );
+   return (UInt)block[0];
 }
 
 #else

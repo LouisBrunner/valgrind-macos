@@ -30,6 +30,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 #include "pub_core_syscall.h"
 
 /* ---------------------------------------------------------------------
@@ -58,7 +59,13 @@
 SysRes VG_(mk_SysRes_x86_linux) ( UInt val ) {
    SysRes res;
    res.isError = val >= -4095 && val <= -1;
-   res.val     = res.isError ? -val : val;
+   if (res.isError) {
+      res.err = -val;
+      res.res = 0;
+   } else {
+      res.err = 0;
+      res.res = val;
+   }
    return res;
 }
 
@@ -66,16 +73,28 @@ SysRes VG_(mk_SysRes_x86_linux) ( UInt val ) {
 SysRes VG_(mk_SysRes_amd64_linux) ( ULong val ) {
    SysRes res;
    res.isError = val >= -4095 && val <= -1;
-   res.val     = res.isError ? -val : val;
+   if (res.isError) {
+      res.err = -val;
+      res.res = 0;
+   } else {
+      res.err = 0;
+      res.res = val;
+   }
    return res;
 }
 
-/* PPC uses the CR7.SO bit to flag an error (CR0 in IBM-speke) */
+/* PPC uses the CR7.SO bit to flag an error (CR0 in IBM-speak) */
 /* Note this must be in the bottom bit of the second arg */
 SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
    SysRes res;
    res.isError = (cr0so & 1) != 0;
-   res.val     = val;
+   if (res.isError) {
+      res.err = val;
+      res.res = 0;
+   } else {
+      res.err = 0;
+      res.res = val;
+   }
    return res;
 }
 
@@ -83,18 +102,50 @@ SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
 SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
    SysRes res;
    res.isError = (cr0so & 1) != 0;
-   res.val     = val;
+   if (res.isError) {
+      res.err = val;
+      res.res = 0;
+   } else {
+      res.err = 0;
+      res.res = val;
+   }
    return res;
 }
 
-
-SysRes VG_(mk_SysRes_Error) ( UWord val ) {
-   SysRes r = { val, True };
+/* AIX scheme: we have to record both 'res' (r3) and 'err' (r4).  If
+   'err' is nonzero then the call has failed, but it could still be
+   that AIX userspace will ignore 'err' and instead consult 'res' to
+   determine if the call failed.  So we have to record both. */
+SysRes VG_(mk_SysRes_ppc32_aix5) ( UInt res, UInt err ) {
+   SysRes r;
+   r.res     = res;
+   r.err     = err;
+   r.isError = r.err != 0;
    return r;
 }
 
-SysRes VG_(mk_SysRes_Success) ( UWord val ) {
-   SysRes r = { val, False };
+SysRes VG_(mk_SysRes_ppc64_aix5) ( ULong res, ULong err ) {
+   SysRes r;
+   r.res     = res;
+   r.err     = err;
+   r.isError = r.err != 0;
+   return r;
+}
+
+/* Generic constructors. */
+SysRes VG_(mk_SysRes_Error) ( UWord err ) {
+   SysRes r;
+   r.res     = 0;
+   r.err     = err;
+   r.isError = True;
+   return r;
+}
+
+SysRes VG_(mk_SysRes_Success) ( UWord res ) {
+   SysRes r;
+   r.res     = res;
+   r.err     = 0;
+   r.isError = False;
    return r;
 }
 
@@ -247,24 +298,181 @@ asm(
 "        std  3,8(5)\n"    /* argblock[1] = cr0.s0 & 1 */
 "        blr\n"
 );
+
+#elif defined(VGP_ppc32_aix5)
+static void do_syscall_WRK ( UWord* res_r3, UWord* res_r4,
+                             UWord sysno, 
+                             UWord a1, UWord a2, UWord a3,
+                             UWord a4, UWord a5, UWord a6,
+                             UWord a7, UWord a8 )
+{
+   /* Syscalls on AIX are very similar to function calls:
+      - up to 8 args in r3-r10
+      - syscall number in r2
+      - kernel resumes at 'lr', so must set it appropriately beforehand
+      - r3 holds the result and r4 any applicable error code
+      See http://www.cs.utexas.edu/users/cart/publications/tr00-04.ps
+      and also 'man truss'.
+   */
+   /* For some reason gcc-3.3.2 doesn't preserve r31 across the asm
+      even though we state it to be trashed.  So use r27 instead. */
+   UWord args[9];
+   args[0] = sysno;
+   args[1] = a1; args[2] = a2;
+   args[3] = a3; args[4] = a4;
+   args[5] = a5; args[6] = a6;
+   args[7] = a7; args[8] = a8;
+
+   __asm__ __volatile__(
+
+      // establish base ptr
+      "mr   28,%0\n\t"
+
+      // save r2, lr
+      "mr   27,2\n\t" // save r2 in r27
+      "mflr 30\n\t"   // save lr in r30
+
+      // set syscall number and args
+      "lwz   2,  0(28)\n\t"
+      "lwz   3,  4(28)\n\t"
+      "lwz   4,  8(28)\n\t"
+      "lwz   5, 12(28)\n\t"
+      "lwz   6, 16(28)\n\t"
+      "lwz   7, 20(28)\n\t"
+      "lwz   8, 24(28)\n\t"
+      "lwz   9, 28(28)\n\t"
+      "lwz  10, 32(28)\n\t"
+
+      // set up LR to point just after the sc insn
+      ".long 0x48000005\n\t" // "bl here+4" -- lr := & next insn
+      "mflr 29\n\t"
+      "addi 29,29,20\n\t"
+      "mtlr 29\n\t"
+
+      // set bit 3 of CR1 otherwise AIX 5.1 returns to the
+      // wrong address after the sc instruction
+      "crorc 6,6,6\n\t"
+
+      // do it!
+      "sc\n\t"
+
+      // result is now in r3; save it in args[0]
+      "stw  3,0(28)\n\t"
+      // error code in r4; save it in args[1]
+      "stw  4,4(28)\n\t"
+
+      // restore
+      "mr   2,27\n\t"
+      "mtlr 30\n\t"
+
+      : /*out*/
+      : /*in*/  "b" (&args[0])
+      : /*trash*/
+           /*temps*/    "r31","r30","r29","r28","r27",
+           /*args*/     "r3","r4","r5","r6","r7","r8","r9","r10",
+           /*paranoia*/ "memory","cc","r0","r1","r11","r12","r13",
+                        "xer","ctr","cr0","cr1","cr2","cr3",
+                        "cr4","cr5","cr6","cr7"
+   );
+
+   *res_r3 = args[0];
+   *res_r4 = args[1];
+}
+
+#elif defined(VGP_ppc64_aix5)
+static void do_syscall_WRK ( UWord* res_r3, UWord* res_r4,
+                             UWord sysno, 
+                             UWord a1, UWord a2, UWord a3,
+                             UWord a4, UWord a5, UWord a6,
+                             UWord a7, UWord a8 )
+{
+   /* Same scheme as ppc32-aix5. */
+   UWord args[9];
+   args[0] = sysno;
+   args[1] = a1; args[2] = a2;
+   args[3] = a3; args[4] = a4;
+   args[5] = a5; args[6] = a6;
+   args[7] = a7; args[8] = a8;
+
+   __asm__ __volatile__(
+
+      // establish base ptr
+      "mr   28,%0\n\t"
+
+      // save r2, lr
+      "mr   27,2\n\t" // save r2 in r27
+      "mflr 30\n\t"   // save lr in r30
+
+      // set syscall number and args
+      "ld    2,  0(28)\n\t"
+      "ld    3,  8(28)\n\t"
+      "ld    4, 16(28)\n\t"
+      "ld    5, 24(28)\n\t"
+      "ld    6, 32(28)\n\t"
+      "ld    7, 40(28)\n\t"
+      "ld    8, 48(28)\n\t"
+      "ld    9, 56(28)\n\t"
+      "ld   10, 64(28)\n\t"
+
+      // set up LR to point just after the sc insn
+      ".long 0x48000005\n\t" // "bl here+4" -- lr := & next insn
+      "mflr 29\n\t"
+      "addi 29,29,20\n\t"
+      "mtlr 29\n\t"
+
+      // set bit 3 of CR1 otherwise AIX 5.1 returns to the
+      // wrong address after the sc instruction
+      "crorc 6,6,6\n\t"
+
+      // do it!
+      "sc\n\t"
+
+      // result is now in r3; save it in args[0]
+      "std  3,0(28)\n\t"
+      // error code in r4; save it in args[1]
+      "std  4,8(28)\n\t"
+
+      // restore
+      "mr   2,27\n\t"
+      "mtlr 30\n\t"
+
+      : /*out*/
+      : /*in*/  "b" (&args[0])
+      : /*trash*/
+           /*temps*/    "r31","r30","r29","r28","r27",
+           /*args*/     "r3","r4","r5","r6","r7","r8","r9","r10",
+           /*paranoia*/ "memory","cc","r0","r1","r11","r12","r13",
+                        "xer","ctr","cr0","cr1","cr2","cr3",
+                        "cr4","cr5","cr6","cr7"
+   );
+
+   *res_r3 = args[0];
+   *res_r4 = args[1];
+}
+
 #else
 #  error Unknown platform
 #endif
 
+
 SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
-                                      UWord a4, UWord a5, UWord a6 )
+                                      UWord a4, UWord a5, UWord a6,
+                                      UWord a7, UWord a8 )
 {
 #if defined(VGP_x86_linux)
   UWord val = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
   return VG_(mk_SysRes_x86_linux)( val );
+
 #elif defined(VGP_amd64_linux)
   UWord val = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
   return VG_(mk_SysRes_amd64_linux)( val );
+
 #elif defined(VGP_ppc32_linux)
   ULong ret     = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
   UInt  val     = (UInt)(ret>>32);
   UInt  cr0so   = (UInt)(ret);
   return VG_(mk_SysRes_ppc32_linux)( val, cr0so );
+
 #elif defined(VGP_ppc64_linux)
   ULong argblock[7];
   argblock[0] = sysno;
@@ -276,6 +484,47 @@ SysRes VG_(do_syscall) ( UWord sysno, UWord a1, UWord a2, UWord a3,
   argblock[6] = a6;
   do_syscall_WRK( &argblock[0] );
   return VG_(mk_SysRes_ppc64_linux)( argblock[0], argblock[1] );
+
+#elif defined(VGP_ppc32_aix5)
+   UWord res;
+   UWord err;
+   do_syscall_WRK( &res, &err, 
+		   sysno, a1, a2, a3, a4, a5, a6, a7, a8);
+   /* Try to set the error number to zero if the syscall hasn't
+      really failed. */
+   if (sysno == __NR_AIX5_kread
+       || sysno == __NR_AIX5_kwrite) {
+      if (res != (UWord)-1L)
+         err = 0;
+   }
+   else if (sysno == __NR_AIX5_sigprocmask
+            || sysno == __NR_AIX5__sigpending) {
+      if (res == 0)
+         err = 0;
+   }
+
+   return VG_(mk_SysRes_ppc32_aix5)( res, err );
+
+#elif defined(VGP_ppc64_aix5)
+   UWord res;
+   UWord err;
+   do_syscall_WRK( &res, &err, 
+		   sysno, a1, a2, a3, a4, a5, a6, a7, a8);
+   /* Try to set the error number to zero if the syscall hasn't
+      really failed. */
+   if (sysno == __NR_AIX5_kread
+       || sysno == __NR_AIX5_kwrite) {
+      if (res != (UWord)-1L)
+         err = 0;
+   }
+   else if (sysno == __NR_AIX5_sigprocmask
+            || sysno == __NR_AIX5__sigpending) {
+      if (res == 0)
+         err = 0;
+   }
+
+   return VG_(mk_SysRes_ppc64_aix5)( res, err );
+
 #else
 #  error Unknown platform
 #endif

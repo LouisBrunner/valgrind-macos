@@ -1834,6 +1834,9 @@ static void VG_REGPARM(1) mc_new_mem_stack_12(Addr new_SP)
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
    } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* from previous test we don't have 8-alignment at offset +0,
+         hence must have 8 alignment at offsets +4/-4.  Hence safe to
+         do 4 at +0 and then 8 at +4/. */
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4 );
    } else {
@@ -1845,10 +1848,15 @@ static void VG_REGPARM(1) mc_die_mem_stack_12(Addr new_SP)
 {
    PROF_EVENT(122, "die_mem_stack_12");
    /* Note the -12 in the test */
-   if (VG_IS_8_ALIGNED(new_SP-12)) {
+   if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP-12 )) {
+      /* We have 8-alignment at -12, hence ok to do 8 at -12 and 4 at
+         -4. */
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4  );
    } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* We have 4-alignment at +0, but we don't have 8-alignment at
+         -12.  So we must have 8-alignment at -8.  Hence do 4 at -12
+         and then 8 at -8. */
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8  );
    } else {
@@ -1860,9 +1868,12 @@ static void VG_REGPARM(1) mc_new_mem_stack_16(Addr new_SP)
 {
    PROF_EVENT(113, "new_mem_stack_16");
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* Have 8-alignment at +0, hence do 8 at +0 and 8 at +8. */
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP   );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8 );
    } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* Have 4 alignment at +0 but not 8; hence 8 must be at +4.
+         Hence do 4 at +0, 8 at +4, 4 at +12. */
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4  );
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP+12 );
@@ -1875,9 +1886,11 @@ static void VG_REGPARM(1) mc_die_mem_stack_16(Addr new_SP)
 {
    PROF_EVENT(123, "die_mem_stack_16");
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* Have 8-alignment at +0, hence do 8 at -16 and 8 at -8. */
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-8  );
    } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* 8 alignment must be at -12.  Do 4 at -16, 8 at -12, 4 at -4. */
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-12 );
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-4  );
@@ -1890,11 +1903,14 @@ static void VG_REGPARM(1) mc_new_mem_stack_32(Addr new_SP)
 {
    PROF_EVENT(114, "new_mem_stack_32");
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* Straightforward */
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+8  );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+16 );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+24 );
    } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* 8 alignment must be at +4.  Hence do 8 at +4,+12,+20 and 4 at
+         +0,+28. */
       make_aligned_word32_undefined ( -VG_STACK_REDZONE_SZB + new_SP    );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+4  );
       make_aligned_word64_undefined ( -VG_STACK_REDZONE_SZB + new_SP+12 );
@@ -1909,11 +1925,14 @@ static void VG_REGPARM(1) mc_die_mem_stack_32(Addr new_SP)
 {
    PROF_EVENT(124, "die_mem_stack_32");
    if (VG_IS_8_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* Straightforward */
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-24 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-16 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP- 8 );
    } else if (VG_IS_4_ALIGNED( -VG_STACK_REDZONE_SZB + new_SP )) {
+      /* 8 alignment must be at -4 etc.  Hence do 8 at -12,-20,-28 and
+         4 at -32,-4. */
       make_aligned_word32_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-32 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-28 );
       make_aligned_word64_noaccess ( -VG_STACK_REDZONE_SZB + new_SP-20 );

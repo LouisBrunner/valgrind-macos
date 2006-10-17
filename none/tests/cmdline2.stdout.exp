@@ -57,6 +57,7 @@ usage: valgrind [options] prog-and-args
     --trace-redir=no|yes      show redirection details? [no]
     --trace-sched=no|yes      show thread scheduler details? [no]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
+    --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]
     --command-line-only=no|yes  only use command line options [no]
 
     --vex-iropt-verbosity             0 .. 9 [0]

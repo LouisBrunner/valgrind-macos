@@ -80,6 +80,7 @@ static void print_all_stats ( void )
    VG_(print_tt_tc_stats)();
    VG_(print_scheduler_stats)();
    VG_(print_ExeContext_stats)();
+   VG_(print_errormgr_stats)();
 
    // Memory stats
    if (VG_(clo_verbosity) > 2) {
@@ -360,6 +361,7 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
       else VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command))
       else VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints))
+      else VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets))
 
       else VG_NUM_CLO (arg, "--dump-error",       VG_(clo_dump_error))
       else VG_NUM_CLO (arg, "--input-fd",         VG_(clo_input_fd))
@@ -609,15 +611,15 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
                              VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
                              VKI_S_IRUSR|VKI_S_IWUSR);
 	    if (!sres.isError) {
-               tmp_log_fd = sres.val;
+               tmp_log_fd = sres.res;
 	       break; /* for (;;) */
 	    } else {
                // If the file already existed, we try the next name.  If it
                // was some other file error, we give up.
-	       if (sres.val != VKI_EEXIST) {
+	       if (sres.err != VKI_EEXIST) {
 		  VG_(message)(Vg_UserMsg, 
 			       "Can't create log file '%s' (%s); giving up!", 
-			       logfilename, VG_(strerror)(sres.val));
+			       logfilename, VG_(strerror)(sres.err));
 		  VG_(err_bad_option)(
 		     "--log-file=<file> (didn't work out for some reason.)");
                   /*NOTREACHED*/
@@ -635,7 +637,7 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
                           VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
                           VKI_S_IRUSR|VKI_S_IWUSR);
          if (!sres.isError) {
-            tmp_log_fd = sres.val;
+            tmp_log_fd = sres.res;
          } else {
             VG_(message)(Vg_UserMsg, 
                          "Can't create/open log file '%s'; giving up!", 
@@ -874,7 +876,7 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       } else {
 #        define BUF_LEN    256
          Char version_buf[BUF_LEN];
-         Int n = VG_(read) ( fd.val, version_buf, BUF_LEN );
+         Int n = VG_(read) ( fd.res, version_buf, BUF_LEN );
          vg_assert(n <= BUF_LEN);
          if (n > 0) {
             version_buf[n-1] = '\0';
@@ -882,7 +884,7 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
          } else {
             VG_(message)(Vg_DebugMsg, "  (empty?)");
          }
-         VG_(close)(fd.val);
+         VG_(close)(fd.res);
 #        undef BUF_LEN
       }
 
@@ -1657,7 +1659,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
 
      /* show interesting ones to the tool */
      for (i = 0; i < n_seg_starts; i++) {
-        NSegment const*const seg 
+        NSegment const* seg 
            = VG_(am_find_nsegment)( seg_starts[i] );
         vg_assert(seg);
         if (seg->kind == SkFileC || seg->kind == SkAnonC) {
@@ -1675,7 +1677,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
      VG_(free)( seg_starts );
 
      /* Also do the initial stack permissions. */
-     { NSegment const*const seg 
+     { NSegment const* seg 
           = VG_(am_find_nsegment)( ciii.initial_client_SP );
        vg_assert(seg);
        vg_assert(seg->kind == SkAnonC);
@@ -1717,7 +1719,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
    //   p: setup_client_stack
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise scheduler\n");
-   { NSegment const*const seg 
+   { NSegment const* seg 
         = VG_(am_find_nsegment)( ciii.initial_client_SP );
      vg_assert(seg);
      vg_assert(seg->kind == SkAnonC);
@@ -1837,12 +1839,11 @@ void shutdown_actions_NORETURN( ThreadId tid,
 
    vg_assert(VG_(is_running_thread)(tid));
 
-   // XXXXXXXXX REINSTATE
-   //vg_assert(tids_schedretcode == VgSrc_ExitThread
-   //          || tids_schedretcode == VgSrc_ExitProcess
-   //          || tids_schedretcode == VgSrc_FatalSig );
+   vg_assert(tids_schedretcode == VgSrc_ExitThread
+	     || tids_schedretcode == VgSrc_ExitProcess
+             || tids_schedretcode == VgSrc_FatalSig );
 
-   if (1 /*tids_schedretcode == VgSrc_ExitThread*/) {
+   if (tids_schedretcode == VgSrc_ExitThread) {
 
       // We are the last surviving thread.  Right?
       vg_assert( VG_(count_living_threads)() == 1 );
@@ -1943,8 +1944,8 @@ void shutdown_actions_NORETURN( ThreadId tid,
                     "VG_(terminate_NORETURN)(tid=%lld)\n", (ULong)tid);
 
    switch (tids_schedretcode) {
-   case /*VgSrc_ExitThread*/ VgSrc_ExitSyscall:  /* the normal way out (Linux) */
-   //   case VgSrc_ExitProcess: /* the normal way out (AIX) */
+   case VgSrc_ExitThread:  /* the normal way out (Linux) */
+   case VgSrc_ExitProcess: /* the normal way out (AIX) */
       /* Change the application return code to user's return code,
          if an error was found */
       if (VG_(clo_error_exitcode) > 0 

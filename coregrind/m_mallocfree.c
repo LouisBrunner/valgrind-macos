@@ -454,6 +454,7 @@ void ensure_mm_init ( ArenaId aid )
       larger prev/next ptr.
    */
    if (VG_AR_CLIENT == aid) {
+      Int ar_client_sbszB;
       if (client_inited) {
          // This assertion ensures that a tool cannot try to change the client
          // redzone size with VG_(needs_malloc_replacement)() after this module
@@ -474,8 +475,17 @@ void ensure_mm_init ( ArenaId aid )
             VG_(exit)(1);
          }
       }
-      // Initialise the client arena
-      arena_init ( VG_AR_CLIENT,    "client",   client_rz_szB, 1048576 );
+      // Initialise the client arena.  On AIX it's important to have
+      // relatively large client blocks so as not to cause excessively
+      // fine-grained interleaving of V and C address space.  On Linux
+      // this is irrelevant since aspacem can keep the two spaces
+      // well apart, but not so on AIX.
+#     if defined(VGO_aix5)
+      ar_client_sbszB = 16777216;
+#     else
+      ar_client_sbszB = 1048576;
+#     endif
+      arena_init ( VG_AR_CLIENT,    "client",   client_rz_szB, ar_client_sbszB );
       client_inited = True;
 
    } else {
@@ -548,7 +558,6 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
 {
    Superblock* sb;
    SysRes      sres;
-   NSegment*   seg;
 
    // Take into account admin bytes in the Superblock.
    cszB += sizeof(Superblock);
@@ -558,26 +567,26 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
 
    if (a->clientmem) {
       // client allocation -- return 0 to client if it fails
-      sres = VG_(am_mmap_anon_float_client)
+      sres = VG_(am_sbrk_anon_float_client)
                 ( cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC );
       if (sres.isError)
          return 0;
-      sb = (Superblock*)sres.val;
+      sb = (Superblock*)sres.res;
       // Mark this segment as containing client heap.  The leak
       // checker needs to be able to identify such segments so as not
       // to use them as sources of roots during leak checks.
-      seg = VG_(am_find_nsegment)( (Addr)sb );
-      vg_assert(seg && seg->kind == SkAnonC);
-      seg->isCH = True;
+      VG_(am_set_segment_isCH_if_SkAnonC)( 
+         (NSegment*) VG_(am_find_nsegment)( (Addr)sb )
+      );
    } else {
       // non-client allocation -- abort if it fails
-      sres = VG_(am_mmap_anon_float_valgrind)( cszB );
+      sres = VG_(am_sbrk_anon_float_valgrind)( cszB );
       if (sres.isError) {
          VG_(out_of_memory_NORETURN)("newSuperblock", cszB);
          /* NOTREACHED */
          sb = NULL; /* keep gcc happy */
       } else {
-         sb = (Superblock*)sres.val;
+         sb = (Superblock*)sres.res;
       }
    }
    vg_assert(NULL != sb);

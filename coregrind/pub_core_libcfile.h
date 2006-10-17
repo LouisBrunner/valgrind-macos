@@ -34,6 +34,7 @@
 //--------------------------------------------------------------------
 // PURPOSE: This module contains all the libc code that relates to
 // files and sockets:  opening, reading, writing, etc.
+// To use, you must first include: pub_core_vki.h
 //--------------------------------------------------------------------
 
 #include "pub_tool_libcfile.h"

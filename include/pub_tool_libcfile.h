@@ -35,6 +35,8 @@
    File-related functions.
    ------------------------------------------------------------------ */
 
+/* To use this file you must first include pub_tool_vki.h. */
+
 extern SysRes VG_(open)   ( const Char* pathname, Int flags, Int mode );
 extern void   VG_(close)  ( Int fd );
 extern Int    VG_(read)   ( Int fd, void* buf, Int count);

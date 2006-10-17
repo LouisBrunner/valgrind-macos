@@ -187,7 +187,7 @@ static void load_client ( /*OUT*/ExeInfo* info,
       executable.  This is needed for attaching to GDB. */
    res = VG_(open)(exe_name, VKI_O_RDONLY, VKI_S_IRUSR);
    if (!res.isError)
-      VG_(cl_exec_fd) = res.val;
+      VG_(cl_exec_fd) = res.res;
 
    /* Copy necessary bits of 'info' that were filled in */
    *client_ip  = info->init_ip;
@@ -809,7 +809,7 @@ static void setup_client_dataseg ( SizeT max_size )
              VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC
           );
    vg_assert(!sres.isError);
-   vg_assert(sres.val == anon_start);
+   vg_assert(sres.res == anon_start);
 }
 
 

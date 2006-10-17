@@ -33,40 +33,8 @@
 
 //--------------------------------------------------------------------
 // PURPOSE: This module implements user-mode execve, ie. program loading
-// and exec'ing.  It is shared between stage1 and stage2.
+// and exec'ing.
 //--------------------------------------------------------------------
-
-#include <elf.h>
-#include <sys/types.h>
-
-/*------------------------------------------------------------*/
-/*--- General stuff                                        ---*/
-/*------------------------------------------------------------*/
-
-/* This is only here so it can be shared between stage1 and stage2 */
-
-/* JRS 9 Aug 05: both of these are apparently unused, except by
-   memcheck/tests/vgtest_ume.c. */
-//zz extern
-//zz void VG_(foreach_map)(int (*fn)(char *start, char *end,
-//zz 			        const char *perm, off_t offset,
-//zz 			        int maj, int min, int ino, void* extra),
-//zz                       void* extra);
-//zz 
-//zz /* Jump to 'dst', but first set the stack pointer to 'stack'.  Also,
-//zz    clear all the integer registers before entering 'dst'.  It's
-//zz    important that the stack pointer is set to exactly 'stack' and not
-//zz    (eg) stack - apparently_harmless_looking_small_offset.  Basically
-//zz    because the code at 'dst' might be wanting to scan the area above
-//zz    'stack' (viz, the auxv array), and putting spurious words on the
-//zz    stack confuses it.
-//zz 
-//zz    This is only exported so that vgtest_ume.c can use it.
-//zz */
-//zz extern
-//zz __attribute__((noreturn))
-//zz void VG_(jump_and_switch_stacks) ( Addr stack, Addr dst );
-
 
 /*------------------------------------------------------------*/
 /*--- Loading ELF files                                    ---*/

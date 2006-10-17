@@ -127,6 +127,8 @@ extern Int   VG_(clo_dump_error);
 extern Int   VG_(clo_backtrace_size);
 /* Engage miscellaneous weird hacks needed for some progs. */
 extern Char* VG_(clo_sim_hints);
+/* Show symbols in the form 'name+offset' ?  Default: NO */
+extern Bool VG_(clo_sym_offsets);
 
 /* Track open file descriptors? */
 extern Bool  VG_(clo_track_fds);

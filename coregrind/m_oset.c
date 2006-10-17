@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005 Nicholas Nethercote
+   Copyright (C) 2005-2006 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -236,7 +236,7 @@ static void stackClear(AvlTree* t)
 }
 
 // Push onto the iterator stack.
-static void stackPush(AvlTree* t, AvlNode* n, Int i)
+static inline void stackPush(AvlTree* t, AvlNode* n, Int i)
 {
    vg_assert(t->stackTop < STACK_MAX);
    vg_assert(1 <= i && i <= 3);
@@ -246,7 +246,7 @@ static void stackPush(AvlTree* t, AvlNode* n, Int i)
 }
 
 // Pop from the iterator stack.
-static Bool stackPop(AvlTree* t, AvlNode** n, Int* i)
+static inline Bool stackPop(AvlTree* t, AvlNode** n, Int* i)
 {
    vg_assert(t->stackTop <= STACK_MAX);
 
@@ -296,8 +296,8 @@ AvlTree* VG_(OSet_Create)(OffT _keyOff, OSetCmp_t _cmp,
 // Destructor, frees up all memory held by remaining nodes.
 void VG_(OSet_Destroy)(AvlTree* t, OSetNodeDestroy_t destroyNode)
 {
-   AvlNode* n;
-   Int i, sz = 0;
+   AvlNode* n = NULL;
+   Int i = 0, sz = 0;
    
    vg_assert(t);
    stackClear(t);
@@ -682,8 +682,8 @@ void VG_(OSet_ResetIter)(AvlTree* t)
 
 void* VG_(OSet_Next)(AvlTree* t)
 {
-   Int i;
-   OSetNode* n;
+   Int i = 0;
+   OSetNode* n = NULL;
    
    vg_assert(t);
 

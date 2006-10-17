@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <dlfcn.h>
 #include "mpi.h"
 #include "../memcheck/memcheck.h"
 
@@ -18,6 +17,8 @@ typedef MPI_Datatype Ty;
 typedef  unsigned char  Bool;
 #define False ((Bool)0)
 #define True  ((Bool)1)
+
+void* walk_type_fn = NULL;
 
 static Ty tycon_Contiguous ( int count, Ty t )
 {
@@ -96,7 +97,7 @@ static Ty tycon_HIndexed2 ( MPI_Aint d1, int copies1,
    return tres;
 }
 
-//////////////////////////////////////
+/* ------------------------------ */
 
 char characterise ( unsigned char b )
 {
@@ -125,23 +126,14 @@ void sendToMyself ( Bool commit_free, Ty* tyP, char* name )
    char* rbuf_walk;
    int r;
 
-   void* dl_handle = NULL;
-
    /* C: what a fabulous functional programming language :-) */
-   void(*dl_walk_type)(void(*)(void*,long),char*,MPI_Datatype) = NULL;
-
-   /* NULL: gives a handle which is RTLD_GLOBAL syms in current
-      process image */
-   dl_handle = dlopen(NULL, RTLD_LAZY);
-   if (!dl_handle) {
-      printf("sendToMyself: can't dlopen current process image\n");
-      return;
-   }
-   dl_walk_type = dlsym(dl_handle, "mpiwrap_walk_type_EXTERNALLY_VISIBLE");
+   void(*dl_walk_type)(void(*)(void*,long),char*,MPI_Datatype) 
+     = (void(*)(void(*)(void*,long),char*,MPI_Datatype))
+       walk_type_fn;
+  
    if (!dl_walk_type) {
       printf("sendToMyself: can't find mpiwrap_walk_type_EXTERNALLY_VISIBLE"
              " in current process image\n");
-      dlclose(dl_handle);
       return;
    }
 
@@ -192,7 +184,6 @@ void sendToMyself ( Bool commit_free, Ty* tyP, char* name )
 
    dl_walk_type( sendToMyself_callback, rbuf_walk, *tyP );
 
-   dlclose(dl_handle);
    if (commit_free) {
       r = MPI_Type_free( tyP );
       assert(r == MPI_SUCCESS);
@@ -225,13 +216,22 @@ typedef  char*  Nm;
 int main ( int argc, char** argv )
 {
     int rank, size;
+    char* opts;
 
     if (!RUNNING_ON_VALGRIND) {
        printf("error: this program must be run on valgrind\n");
        return 1;
     }
+    opts = getenv("MPIWRAP_DEBUG");
+    if ((!opts) || NULL==strstr(opts, "initkludge")) {
+       printf("error: program requires MPIWRAP_DEBUG=initkludge\n");
+       return 1;
+    }
 
-    MPI_Init( &argc, &argv );
+    walk_type_fn = (void*)(long) MPI_Init( &argc, &argv );
+    printf("mpiwrap_type_test: walk_type_fn = %p\n", walk_type_fn);
+    assert(walk_type_fn);
+
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 

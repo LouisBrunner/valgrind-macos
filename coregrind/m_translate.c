@@ -54,7 +54,7 @@
                                // VG_(run_a_noredir_translation__return_point)
 
 #include "pub_core_threadstate.h"  // VexGuestArchState
-#include "pub_core_trampoline.h"   // VG_(ppc64_linux_magic_redirect_return_stub)
+#include "pub_core_trampoline.h"   // VG_(ppctoc_magic_redirect_return_stub)
 
 
 /*------------------------------------------------------------*/
@@ -474,7 +474,9 @@ IRBB* vg_SP_update_pass ( void*             closureV,
 
 /* Vex dumps the final code in here.  Then we can copy it off
    wherever we like. */
-#define N_TMPBUF 20000
+/* 60000: should agree with assertion in VG_(add_to_transtab) in
+   m_transtab.c. */
+#define N_TMPBUF 60000
 static UChar tmpbuf[N_TMPBUF];
 
 
@@ -504,7 +506,7 @@ void log_bytes ( HChar* bytes, Int nbytes )
 /* Look for reasons to disallow making translations from the given
    segment. */
 
-static Bool translations_allowable_from_seg ( NSegment* seg )
+static Bool translations_allowable_from_seg ( NSegment const* seg )
 {
 #  if defined(VGA_x86)
    Bool allowR = True;
@@ -520,7 +522,7 @@ static Bool translations_allowable_from_seg ( NSegment* seg )
 /* Is a self-check required for a translation of a guest address
    inside segment SEG when requested by thread TID ? */
 
-static Bool self_check_required ( NSegment* seg, ThreadId tid )
+static Bool self_check_required ( NSegment const* seg, ThreadId tid )
 {
    switch (VG_(clo_smc_check)) {
       case Vg_SmcNone:  return False;
@@ -548,7 +550,7 @@ static Bool self_check_required ( NSegment* seg, ThreadId tid )
 static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 {
    Addr               addr    = (Addr)addr64;
-   NSegment*          seg     = VG_(am_find_nsegment)(addr);
+   NSegment const*    seg     = VG_(am_find_nsegment)(addr);
    VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
 
    /* Work through a list of possibilities why we might not want to
@@ -566,9 +568,12 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
    if (addr != VG_(redir_do_lookup)(addr, NULL))
       goto dontchase;
 
-#  if defined(VGP_ppc64_linux)
-   /* This needs to be at the start of its own block.  Don't chase. */
-   if (addr64 == (Addr64)&VG_(ppc64_linux_magic_redirect_return_stub))
+#  if defined(VG_PLAT_USES_PPCTOC)
+   /* This needs to be at the start of its own block.  Don't chase. Re
+      ULong_to_Ptr, be careful to ensure we only compare 32 bits on a
+      32-bit target.*/
+   if (ULong_to_Ptr(addr64)
+       == (void*)&VG_(ppctoc_magic_redirect_return_stub))
       goto dontchase;
 #  endif
 
@@ -584,7 +589,9 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 }
 
 
-/* --------------- ppc64-linux specific helpers --------------- */
+/* --------------- helpers for with-TOC platforms --------------- */
+
+/* NOTE: with-TOC platforms are: ppc64-linux, ppc32-aix5, ppc64-aix5. */
 
 static IRExpr* mkU64 ( ULong n ) {
    return IRExpr_Const(IRConst_U64(n));
@@ -592,28 +599,74 @@ static IRExpr* mkU64 ( ULong n ) {
 static IRExpr* mkU32 ( UInt n ) {
    return IRExpr_Const(IRConst_U32(n));
 }
-#if defined(VGP_ppc64_linux)
+
+#if defined(VG_PLAT_USES_PPCTOC)
 static IRExpr* mkU8 ( UChar n ) {
    return IRExpr_Const(IRConst_U8(n));
 }
+static IRExpr* narrowTo32 ( IRTypeEnv* tyenv, IRExpr* e ) {
+   if (typeOfIRExpr(tyenv, e) == Ity_I32) {
+      return e;
+   } else {
+      vg_assert(typeOfIRExpr(tyenv, e) == Ity_I64);
+      return IRExpr_Unop(Iop_64to32, e);
+   }
+}
+
+/* Generate code to push word-typed expression 'e' onto this thread's
+   redir stack, checking for stack overflow and generating code to
+   bomb out if so. */
 
 static void gen_PUSH ( IRBB* bb, IRExpr* e )
 {
-   Int stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
-   Int offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
-   Int offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
-   Int offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   IRArray* descr;
+   IRTemp   t1;
+   IRExpr*  one;
 
-   IRArray* descr = mkIRArray( offB_REDIR_STACK, Ity_I64, stack_size );
-   IRTemp   t1    = newIRTemp( bb->tyenv, Ity_I64 );
-   IRExpr*  one   = mkU64(1);
+#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+   Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
+   Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
+   Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
+   Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Bool   is64             = True;
+   IRType ty_Word          = Ity_I64;
+   IROp   op_CmpNE         = Iop_CmpNE64;
+   IROp   op_Sar           = Iop_Sar64;
+   IROp   op_Sub           = Iop_Sub64;
+   IROp   op_Add           = Iop_Add64;
+   IRExpr*(*mkU)(ULong)    = mkU64;
+   vg_assert(VG_WORDSIZE == 8);
+#  else
+   Int    stack_size       = VEX_GUEST_PPC32_REDIR_STACK_SIZE;
+   Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
+   Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
+   Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Bool   is64             = False;
+   IRType ty_Word          = Ity_I32;
+   IROp   op_CmpNE         = Iop_CmpNE32;
+   IROp   op_Sar           = Iop_Sar32;
+   IROp   op_Sub           = Iop_Sub32;
+   IROp   op_Add           = Iop_Add32;
+   IRExpr*(*mkU)(UInt)     = mkU32;
+   vg_assert(VG_WORDSIZE == 4);
+#  endif
+
+   vg_assert(sizeof(void*) == VG_WORDSIZE);
+   vg_assert(sizeof(Word)  == VG_WORDSIZE);
+   vg_assert(sizeof(Addr)  == VG_WORDSIZE);
+
+   descr = mkIRArray( offB_REDIR_STACK, ty_Word, stack_size );
+   t1    = newIRTemp( bb->tyenv, ty_Word );
+   one   = mkU(1);
+
+   vg_assert(typeOfIRExpr(bb->tyenv, e) == ty_Word);
 
    /* t1 = guest_REDIR_SP + 1 */
    addStmtToIRBB(
       bb, 
       IRStmt_Tmp(
          t1, 
-         IRExpr_Binop(Iop_Add64, IRExpr_Get( offB_REDIR_SP, Ity_I64 ), one)
+         IRExpr_Binop(op_Add, IRExpr_Get( offB_REDIR_SP, ty_Word ), one)
       )
    );
 
@@ -630,16 +683,16 @@ static void gen_PUSH ( IRBB* bb, IRExpr* e )
       bb,
       IRStmt_Exit(
          IRExpr_Binop(
-            Iop_CmpNE64,
+            op_CmpNE,
             IRExpr_Binop(
-               Iop_Sar64,
-               IRExpr_Binop(Iop_Sub64,mkU64(stack_size-1),IRExpr_Tmp(t1)),
-               mkU8(63)
+               op_Sar,
+               IRExpr_Binop(op_Sub,mkU(stack_size-1),IRExpr_Tmp(t1)),
+               mkU8(8 * VG_WORDSIZE - 1)
             ),
-            mkU64(0)
+            mkU(0)
          ),
          Ijk_EmFail,
-         IRConst_U64(0)
+         is64 ? IRConst_U64(0) : IRConst_U32(0)
       )
    );
 
@@ -647,28 +700,57 @@ static void gen_PUSH ( IRBB* bb, IRExpr* e )
    addStmtToIRBB(bb, IRStmt_Put(offB_REDIR_SP, IRExpr_Tmp(t1)));
 
    /* guest_REDIR_STACK[t1+0] = e */
+   /* PutI/GetI have I32-typed indexes regardless of guest word size */
    addStmtToIRBB(
       bb, 
-      IRStmt_PutI(descr, IRExpr_Unop(Iop_64to32,IRExpr_Tmp(t1)), 0, e)
+      IRStmt_PutI(descr, narrowTo32(bb->tyenv,IRExpr_Tmp(t1)), 0, e)
    );
 }
 
+
+/* Generate code to pop a word-sized value from this thread's redir
+   stack, binding it to a new temporary, which is returned.  As with
+   gen_PUSH, an overflow check is also performed. */
+
 static IRTemp gen_POP ( IRBB* bb )
 {
-   Int stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
-   Int offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
-   Int offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
-   Int offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+   Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
+   Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
+   Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
+   Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Bool   is64             = True;
+   IRType ty_Word          = Ity_I64;
+   IROp   op_CmpNE         = Iop_CmpNE64;
+   IROp   op_Sar           = Iop_Sar64;
+   IROp   op_Sub           = Iop_Sub64;
+   IRExpr*(*mkU)(ULong)    = mkU64;
+#  else
+   Int    stack_size       = VEX_GUEST_PPC32_REDIR_STACK_SIZE;
+   Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
+   Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
+   Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Bool   is64             = False;
+   IRType ty_Word          = Ity_I32;
+   IROp   op_CmpNE         = Iop_CmpNE32;
+   IROp   op_Sar           = Iop_Sar32;
+   IROp   op_Sub           = Iop_Sub32;
+   IRExpr*(*mkU)(UInt)     = mkU32;
+#  endif
 
-   IRArray* descr = mkIRArray( offB_REDIR_STACK, Ity_I64, stack_size );
-   IRTemp   t1    = newIRTemp( bb->tyenv, Ity_I64 );
-   IRTemp   res   = newIRTemp( bb->tyenv, Ity_I64 );
-   IRExpr*  one   = mkU64(1);
+   IRArray* descr = mkIRArray( offB_REDIR_STACK, ty_Word, stack_size );
+   IRTemp   t1    = newIRTemp( bb->tyenv, ty_Word );
+   IRTemp   res   = newIRTemp( bb->tyenv, ty_Word );
+   IRExpr*  one   = mkU(1);
+
+   vg_assert(sizeof(void*) == VG_WORDSIZE);
+   vg_assert(sizeof(Word)  == VG_WORDSIZE);
+   vg_assert(sizeof(Addr)  == VG_WORDSIZE);
 
    /* t1 = guest_REDIR_SP */
    addStmtToIRBB(
       bb, 
-      IRStmt_Tmp( t1, IRExpr_Get( offB_REDIR_SP, Ity_I64 ) )
+      IRStmt_Tmp( t1, IRExpr_Get( offB_REDIR_SP, ty_Word ) )
    );
 
    /* Bomb out if t1 < 0.  Same comments as gen_PUSH apply. */
@@ -680,54 +762,77 @@ static IRTemp gen_POP ( IRBB* bb )
       bb,
       IRStmt_Exit(
          IRExpr_Binop(
-            Iop_CmpNE64,
+            op_CmpNE,
             IRExpr_Binop(
-               Iop_Sar64,
+               op_Sar,
                IRExpr_Tmp(t1),
-               mkU8(63)
+               mkU8(8 * VG_WORDSIZE - 1)
             ),
-            mkU64(0)
+            mkU(0)
          ),
          Ijk_EmFail,
-         IRConst_U64(0)
+         is64 ? IRConst_U64(0) : IRConst_U32(0)
       )
    );
 
    /* res = guest_REDIR_STACK[t1+0] */
+   /* PutI/GetI have I32-typed indexes regardless of guest word size */
    addStmtToIRBB(
       bb,
       IRStmt_Tmp(
          res, 
-         IRExpr_GetI(descr, IRExpr_Unop(Iop_64to32,IRExpr_Tmp(t1)), 0)
+         IRExpr_GetI(descr, narrowTo32(bb->tyenv,IRExpr_Tmp(t1)), 0)
       )
    );
 
    /* guest_REDIR_SP = t1-1 */
    addStmtToIRBB(
       bb, 
-      IRStmt_Put(offB_REDIR_SP, IRExpr_Binop(Iop_Sub64, IRExpr_Tmp(t1), one))
+      IRStmt_Put(offB_REDIR_SP, IRExpr_Binop(op_Sub, IRExpr_Tmp(t1), one))
    );
 
    return res;
 }
 
+/* Generate code to push LR and R2 onto this thread's redir stack,
+   then set R2 to the new value (which is the TOC pointer to be used
+   for the duration of the replacement function, as determined by
+   m_debuginfo), and set LR to the magic return stub, so we get to
+   intercept the return and restore R2 and L2 to the values saved
+   here. */
+
 static void gen_push_and_set_LR_R2 ( IRBB* bb, Addr64 new_R2_value )
 {
-   Addr64 bogus_RA = (Addr64)&VG_(ppc64_linux_magic_redirect_return_stub);
-   Int offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
-   Int offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
+#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+   Addr64 bogus_RA  = (Addr64)&VG_(ppctoc_magic_redirect_return_stub);
+   Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
+   Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
    gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I64) );
    gen_PUSH( bb, IRExpr_Get(offB_GPR2, Ity_I64) );
    addStmtToIRBB( bb, IRStmt_Put( offB_LR,   mkU64( bogus_RA )) );
    addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, mkU64( new_R2_value )) );
+
+#  elif defined(VGP_ppc32_aix5)
+   Addr32 bogus_RA  = (Addr32)&VG_(ppctoc_magic_redirect_return_stub);
+   Int    offB_GPR2 = offsetof(VexGuestPPC32State,guest_GPR2);
+   Int    offB_LR   = offsetof(VexGuestPPC32State,guest_LR);
+   gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I32) );
+   gen_PUSH( bb, IRExpr_Get(offB_GPR2, Ity_I32) );
+   addStmtToIRBB( bb, IRStmt_Put( offB_LR,   mkU32( bogus_RA )) );
+   addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, mkU32( new_R2_value )) );
+
+#  else
+#    error Platform is not TOC-afflicted, fortunately
+#  endif
 }
 
 static void gen_pop_R2_LR_then_bLR ( IRBB* bb )
 {
-   Int offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
-   Int offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
-   IRTemp old_R2 = newIRTemp( bb->tyenv, Ity_I64 );
-   IRTemp old_LR = newIRTemp( bb->tyenv, Ity_I64 );
+#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+   Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
+   Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
+   IRTemp old_R2    = newIRTemp( bb->tyenv, Ity_I64 );
+   IRTemp old_LR    = newIRTemp( bb->tyenv, Ity_I64 );
    /* Restore R2 */
    old_R2 = gen_POP( bb );
    addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, IRExpr_Tmp(old_R2)) );
@@ -737,13 +842,36 @@ static void gen_pop_R2_LR_then_bLR ( IRBB* bb )
    /* Branch to LR */
    /* re boring, we arrived here precisely because a wrapped fn did a
       blr (hence Ijk_Ret); so we should just mark this jump as Boring,
-      else one _Call will have resulted in to _Rets. */
+      else one _Call will have resulted in two _Rets. */
    bb->jumpkind = Ijk_Boring;
    bb->next = IRExpr_Binop(Iop_And64, IRExpr_Tmp(old_LR), mkU64(~(3ULL)));
+
+#  elif defined(VGP_ppc32_aix5)
+   Int    offB_GPR2 = offsetof(VexGuestPPC32State,guest_GPR2);
+   Int    offB_LR   = offsetof(VexGuestPPC32State,guest_LR);
+   IRTemp old_R2    = newIRTemp( bb->tyenv, Ity_I32 );
+   IRTemp old_LR    = newIRTemp( bb->tyenv, Ity_I32 );
+   /* Restore R2 */
+   old_R2 = gen_POP( bb );
+   addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, IRExpr_Tmp(old_R2)) );
+   /* Restore LR */
+   old_LR = gen_POP( bb );
+   addStmtToIRBB( bb, IRStmt_Put( offB_LR, IRExpr_Tmp(old_LR)) );
+
+   /* Branch to LR */
+   /* re boring, we arrived here precisely because a wrapped fn did a
+      blr (hence Ijk_Ret); so we should just mark this jump as Boring,
+      else one _Call will have resulted in two _Rets. */
+   bb->jumpkind = Ijk_Boring;
+   bb->next = IRExpr_Binop(Iop_And32, IRExpr_Tmp(old_LR), mkU32(~3));
+
+#  else
+#    error Platform is not TOC-afflicted, fortunately
+#  endif
 }
 
 static
-Bool mk_preamble__ppc64_magic_return_stub ( void* closureV, IRBB* bb )
+Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRBB* bb )
 {
    VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
    /* Since we're creating the entire IRBB right here, give it a
@@ -762,21 +890,22 @@ Bool mk_preamble__ppc64_magic_return_stub ( void* closureV, IRBB* bb )
 }
 #endif
 
-/* --------------- END ppc64-linux specific helpers --------------- */
+/* --------------- END helpers for with-TOC platforms --------------- */
 
-/* This is an the IR preamble generators used for replacement
+
+/* This is the IR preamble generator used for replacement
    functions.  It adds code to set the guest_NRADDR{_GPR2} to zero
    (technically not necessary, but facilitates detecting mixups in
    which a replacement function has been erroneously declared using
    VG_REPLACE_FUNCTION_Z{U,Z} when instead it should have been written
    using VG_WRAP_FUNCTION_Z{U,Z}).
 
-   On ppc64-linux the follow hacks are also done: LR and R2 are pushed
-   onto a hidden stack, sets R2 to the correct value for the
-   replacement function, and sets LR to point at the magic return-stub
-   address.  Setting LR causes the return of the wrapped/redirected
-   function to lead to our magic return stub, which restores LR and R2
-   from said stack and returns for real.
+   On with-TOC platforms the follow hacks are also done: LR and R2 are
+   pushed onto a hidden stack, R2 is set to the correct value for the
+   replacement function, and LR is set to point at the magic
+   return-stub address.  Setting LR causes the return of the
+   wrapped/redirected function to lead to our magic return stub, which
+   restores LR and R2 from said stack and returns for real.
 
    VG_(get_StackTrace2) understands that the LR value may point to the
    return stub address, and that in that case it can get the real LR
@@ -787,6 +916,7 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
    Int nraddr_szB
       = sizeof(((VexGuestArchState*)0)->guest_NRADDR);
    vg_assert(nraddr_szB == 4 || nraddr_szB == 8);
+   vg_assert(nraddr_szB == VG_WORDSIZE);
    addStmtToIRBB( 
       bb,
       IRStmt_Put( 
@@ -794,13 +924,13 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
          nraddr_szB == 8 ? mkU64(0) : mkU32(0)
       )
    );
-#  if defined(VGP_ppc64_linux)
+#  if defined(VG_PLAT_USES_PPCTOC)
    { VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
      addStmtToIRBB(
         bb,
         IRStmt_Put(
            offsetof(VexGuestArchState,guest_NRADDR_GPR2),
-           mkU64(0)
+           VG_WORDSIZE==8 ? mkU64(0) : mkU32(0)
         )
      );
      gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
@@ -812,7 +942,7 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
 /* Ditto, except set guest_NRADDR to nraddr (the un-redirected guest
    address).  This is needed for function wrapping - so the wrapper
    can read _NRADDR and find the address of the function being
-   wrapped. */
+   wrapped.  On toc-afflicted platforms we must also snarf r2. */
 static 
 Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRBB* bb )
 {
@@ -820,6 +950,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRBB* bb )
    Int nraddr_szB
       = sizeof(((VexGuestArchState*)0)->guest_NRADDR);
    vg_assert(nraddr_szB == 4 || nraddr_szB == 8);
+   vg_assert(nraddr_szB == VG_WORDSIZE);
    addStmtToIRBB( 
       bb,
       IRStmt_Put( 
@@ -829,13 +960,14 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRBB* bb )
             : IRExpr_Const(IRConst_U32( (UInt)closure->nraddr ))
       )
    );
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64_linux) || defined(VGP_ppc32_aix5) \
+                               || defined(VGP_ppc64_aix5)
    addStmtToIRBB( 
       bb,
       IRStmt_Put( 
          offsetof(VexGuestArchState,guest_NRADDR_GPR2),
          IRExpr_Get(offsetof(VexGuestArchState,guest_GPR2), 
-                    Ity_I64)
+                    VG_WORDSIZE==8 ? Ity_I64 : Ity_I32)
       )
    );
    gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
@@ -843,6 +975,55 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRBB* bb )
    return False;
 }
 
+/* --- Helpers to do with PPC related stack redzones. --- */
+
+__attribute__((unused))
+static Bool const_True ( Addr64 guest_addr )
+{
+   return True;
+}
+
+__attribute__((unused))
+static Bool bl_RZ_zap_ok_for_AIX ( Addr64 bl_target )
+{
+   /* paranoia */
+   if (sizeof(void*) == 4)
+      bl_target &= 0xFFFFFFFFULL;
+
+   /* don't zap the redzone for calls to millicode. */
+   if (bl_target < 0x10000ULL)
+      return False;
+
+   /* don't zap the redzone for calls to .$SAVEF14 .. .$SAVEF31.
+      First we need to be reasonably sure we won't segfault by looking
+      at the branch target. */
+   { NSegment const*const seg = VG_(am_find_nsegment)( (Addr)bl_target );
+     if (seg && seg->hasR) {
+        switch ( *(UInt*)(Addr)bl_target ) {
+           case 0xd9c1ff70: /* stfd f14,-144(r1) */
+           case 0xd9e1ff78: /* stfd f15,-136(r1) */
+           case 0xda01ff80: /* stfd f16,-128(r1) */
+           case 0xda21ff88: /* stfd f17,-120(r1) */
+           case 0xda41ff90: /* stfd f18,-112(r1) */
+           case 0xda61ff98: /* stfd f19,-104(r1) */
+           case 0xda81ffa0: /* stfd f20,-96(r1) */
+           case 0xdaa1ffa8: /* stfd f21,-88(r1) */
+           case 0xdac1ffb0: /* stfd f22,-80(r1) */
+           case 0xdae1ffb8: /* stfd f23,-72(r1) */
+           case 0xdb01ffc0: /* stfd f24,-64(r1) */
+           case 0xdb21ffc8: /* stfd f25,-56(r1) */
+           case 0xdb41ffd0: /* stfd f26,-48(r1) */
+           case 0xdb61ffd8: /* stfd f27,-40(r1) */
+           case 0xdb81ffe0: /* stfd f28,-32(r1) */
+           case 0xdba1ffe8: /* stfd f29,-24(r1) */
+           case 0xdbc1fff0: /* stfd f30,-16(r1) */
+           case 0xdbe1fff8: /* stfd f31,-8(r1) */
+              return False;
+        }
+     }
+   }
+   return True;
+}
 
 /* --------------- main translation function --------------- */
 
@@ -886,10 +1067,10 @@ Bool VG_(translate) ( ThreadId tid,
    Int                tmpbuf_used, verbosity, i;
    Bool               notrace_until_done, do_self_check;
    UInt               notrace_until_limit = 0;
-   NSegment*          seg;
    Bool (*preamble_fn)(void*,IRBB*);
    VexArch            vex_arch;
    VexArchInfo        vex_archinfo;
+   VexMiscInfo        vex_miscinfo;
    VexGuestExtents    vge;
    VexTranslateArgs   vta;
    VexTranslateResult tres;
@@ -971,9 +1152,13 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* Are we allowed to translate here? */
 
-   seg = VG_(am_find_nsegment)(addr);
+   { /* BEGIN new scope specially for 'seg' */
+   NSegment const* seg = VG_(am_find_nsegment)(addr);
 
    if (!translations_allowable_from_seg(seg)) {
+      if (VG_(clo_trace_signals))
+         VG_(message)(Vg_DebugMsg, "translations not allowed here "
+                                   "- throwing SEGV");
       /* U R busted, sonny.  Place your hands on your head and step
          away from the orig_addr. */
       /* Code address is bad - deliver a signal instead */
@@ -1010,8 +1195,10 @@ Bool VG_(translate) ( ThreadId tid,
    else 
    if (kind == T_Redir_Wrap)
       preamble_fn = mk_preamble__set_NRADDR_to_nraddr;
-#  if defined(VGP_ppc64_linux)
-   if (nraddr == (Addr64)&VG_(ppc64_linux_magic_redirect_return_stub)) {
+
+#  if defined(VG_PLAT_USES_PPCTOC)
+   if (ULong_to_Ptr(nraddr)
+       == (void*)&VG_(ppctoc_magic_redirect_return_stub)) {
       /* If entering the special return stub, this means a wrapped or
          redirected function is returning.  Make this translation one
          which restores R2 and LR from the thread's hidden redir
@@ -1019,8 +1206,8 @@ Bool VG_(translate) ( ThreadId tid,
          really causing the function to return. */
       vg_assert(kind == T_Normal);
       vg_assert(nraddr == addr);
-      preamble_fn = mk_preamble__ppc64_magic_return_stub;
-    }
+      preamble_fn = mk_preamble__ppctoc_magic_return_stub;
+   }
 #  endif
 
    /* ------ Actually do the translation. ------ */
@@ -1029,6 +1216,29 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* Get the CPU info established at startup. */
    VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
+
+   /* Set up 'misc info' structure with stuff Vex needs to know about
+      the guest and host ABIs. */
+
+   LibVEX_default_VexMiscInfo( &vex_miscinfo );
+   vex_miscinfo.guest_stack_redzone_size = VG_STACK_REDZONE_SZB;
+
+#  if defined(VGP_ppc32_linux)
+   vex_miscinfo.guest_ppc_zap_RZ_at_blr        = False;
+   vex_miscinfo.guest_ppc_zap_RZ_at_bl         = NULL;
+   vex_miscinfo.host_ppc32_regalign_int64_args = True;
+#  endif
+#  if defined(VGP_ppc64_linux)
+   vex_miscinfo.guest_ppc_zap_RZ_at_blr        = True;
+   vex_miscinfo.guest_ppc_zap_RZ_at_bl         = const_True;
+   vex_miscinfo.host_ppc_calls_use_fndescrs    = True;
+#  endif
+#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+   vex_miscinfo.guest_ppc_zap_RZ_at_blr        = False;
+   vex_miscinfo.guest_ppc_zap_RZ_at_bl         = bl_RZ_zap_ok_for_AIX;
+   vex_miscinfo.guest_ppc_sc_continues_at_LR   = True;
+   vex_miscinfo.host_ppc_calls_use_fndescrs    = True;
+#  endif
 
    /* Set up closure args. */
    closure.tid    = tid;
@@ -1040,6 +1250,7 @@ Bool VG_(translate) ( ThreadId tid,
    vta.archinfo_guest   = vex_archinfo;
    vta.arch_host        = vex_arch;
    vta.archinfo_host    = vex_archinfo;
+   vta.miscinfo_both    = vex_miscinfo;
    vta.guest_bytes      = (UChar*)ULong_to_Ptr(addr);
    vta.guest_bytes_addr = (Addr64)addr;
    vta.callback_opaque  = (void*)&closure;
@@ -1106,13 +1317,15 @@ Bool VG_(translate) ( ThreadId tid,
       should already point to it. */
 
    vg_assert( vge.base[0] == (Addr64)addr );
-   if (seg->kind == SkFileC || seg->kind == SkAnonC)
-      seg->hasT = True; /* has cached code */
+   /* set 'translations taken from this segment' flag */
+   VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( (NSegment*)seg );
+   } /* END new scope specially for 'seg' */
 
    for (i = 1; i < vge.n_used; i++) {
-      seg = VG_(am_find_nsegment)( vge.base[i] );
-      if (seg->kind == SkFileC || seg->kind == SkAnonC)
-         seg->hasT = True; /* has cached code */
+      NSegment const* seg 
+         = VG_(am_find_nsegment)( vge.base[i] );
+      /* set 'translations taken from this segment' flag */
+      VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( (NSegment*)seg );
    }
 
    /* Copy data at trans_addr into the translation cache. */

@@ -65,14 +65,19 @@ extern Int VG_(sigaction)   ( Int signum,
                               const struct vki_sigaction* act,
                               struct vki_sigaction* oldact );
 
-extern Int VG_(sigtimedwait)( const vki_sigset_t *, vki_siginfo_t *, 
-			      const struct vki_timespec * );
-
-extern Int VG_(signal)      ( Int signum, void (*sighandler)(Int) );
-
 extern Int VG_(kill)        ( Int pid, Int signo );
 extern Int VG_(tkill)       ( ThreadId tid, Int signo );
 
+/* A cut-down version of POSIX sigtimedwait: poll for pending signals
+   mentioned in the sigset_t, and if any are present, select one
+   arbitrarily, return its number (which must be > 0), and put
+   auxiliary info about it in the siginfo_t, and make it
+   not-pending-any-more.  If none are pending, return zero.  The _zero
+   refers to the fact that there is zero timeout, so if no signals are
+   pending it returns immediately.  Perhaps a better name would be
+   'sigpoll'.  Returns -1 on error, 0 if no signals pending, and n > 0
+   if signal n was selected. */
+extern Int VG_(sigtimedwait_zero)( const vki_sigset_t *, vki_siginfo_t * );
 
 #endif   // __PUB_CORE_LIBCSIGNAL_H
 

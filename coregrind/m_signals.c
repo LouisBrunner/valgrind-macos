@@ -81,6 +81,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_clientstate.h"
@@ -104,7 +105,6 @@
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_coredump.h"
-#include "pub_core_vkiscnums.h"
 
 
 /* ---------------------------------------------------------------------
@@ -113,7 +113,7 @@
 
 static void sync_signalhandler  ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
 static void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
-static void sigvgkill_handler	   ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
+static void sigvgkill_handler	( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
 
 static const Char *signame(Int sigNo);
 
@@ -126,6 +126,8 @@ typedef struct SigQueue {
    Int	next;
    vki_siginfo_t sigs[N_QUEUED_SIGNALS];
 } SigQueue;
+
+/* ------ Macros for pulling stuff out of ucontexts ------ */
 
 #if defined(VGP_x86_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.eip)
@@ -209,14 +211,6 @@ typedef struct SigQueue {
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.gp_regs[VKI_PT_R1])
 #  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.gp_regs[VKI_PT_R1])
 #  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.gp_regs[VKI_PT_R0])
-#if 0
-#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                            \
-      /* Convert the values in uc_mcontext r3,cr into a SysRes. */  \
-      VG_(mk_SysRes_ppc64_linux)(                                   \
-         (uc)->uc_mcontext.gp_regs[VKI_PT_R3],                      \
-         (((uc)->uc_mcontext.gp_regs[VKI_PT_CCR] >> 28) & 1)        \
-      )
-#else
    /* Dubious hack: if there is an error, only consider the lowest 8
       bits of r3.  memcheck/tests/post-syscall shows a case where an
       interrupted syscall should have produced a ucontext with 0x4
@@ -231,12 +225,105 @@ typedef struct SigQueue {
       if (err) r3 &= 0xFF;
       return VG_(mk_SysRes_ppc64_linux)( r3, err );
    }
-#endif
 #  define VG_UCONTEXT_LINK_REG(uc)        ((uc)->uc_mcontext.gp_regs[VKI_PT_LNK]) 
 
-#else
+#elif defined(VGP_ppc32_aix5)
+
+   /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
+#  include <ucontext.h>
+   /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
+   static inline Addr VG_UCONTEXT_INSTR_PTR( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct mstsave* jc = &mc->jmp_context;
+      return jc->iar;
+   }
+   static inline Addr VG_UCONTEXT_STACK_PTR( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct mstsave* jc = &mc->jmp_context;
+      return jc->gpr[1];
+   }
+   static inline Addr VG_UCONTEXT_SYSCALL_NUM( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct mstsave* jc = &mc->jmp_context;
+      return jc->gpr[2];
+   }
+   static inline SysRes VG_UCONTEXT_SYSCALL_SYSRES( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct mstsave* jc = &mc->jmp_context;
+      return VG_(mk_SysRes_ppc32_aix5)( jc->gpr[3], jc->gpr[4] );
+   }
+   static inline Addr VG_UCONTEXT_LINK_REG( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct mstsave* jc = &mc->jmp_context;
+      return jc->lr;
+   }
+   static inline Addr VG_UCONTEXT_FRAME_PTR( void* ucV ) {
+      return VG_UCONTEXT_STACK_PTR(ucV);
+   }
+
+#elif defined(VGP_ppc64_aix5)
+
+   /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
+#  include <ucontext.h>
+   /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
+   static inline Addr VG_UCONTEXT_INSTR_PTR( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct __context64* jc = &mc->jmp_context;
+      return jc->iar;
+   }
+   static inline Addr VG_UCONTEXT_STACK_PTR( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct __context64* jc = &mc->jmp_context;
+      return jc->gpr[1];
+   }
+   static inline Addr VG_UCONTEXT_SYSCALL_NUM( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct __context64* jc = &mc->jmp_context;
+      return jc->gpr[2];
+   }
+   static inline SysRes VG_UCONTEXT_SYSCALL_SYSRES( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct __context64* jc = &mc->jmp_context;
+      return VG_(mk_SysRes_ppc32_aix5)( jc->gpr[3], jc->gpr[4] );
+   }
+   static inline Addr VG_UCONTEXT_LINK_REG( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __jmpbuf* mc = &(uc->uc_mcontext);
+      struct __context64* jc = &mc->jmp_context;
+      return jc->lr;
+   }
+   static inline Addr VG_UCONTEXT_FRAME_PTR( void* ucV ) {
+      return VG_UCONTEXT_STACK_PTR(ucV);
+   }
+
+#else 
 #  error Unknown platform
 #endif
+
+
+/* ------ Macros for pulling stuff out of siginfos ------ */
+
+/* These macros allow use of uniform names when working with
+   both the Linux and AIX vki definitions. */
+#if defined(VGO_linux)
+#  define VKI_SIGINFO_si_addr  _sifields._sigfault._addr
+#  define VKI_SIGINFO_si_pid   _sifields._kill._pid
+#elif defined(VGO_aix5)
+#  define VKI_SIGINFO_si_addr  si_addr
+#  define VKI_SIGINFO_si_pid   si_pid
+#else
+#  error Unknown OS
+#endif
+
 
 /* ---------------------------------------------------------------------
    HIGH LEVEL STUFF TO DO WITH SIGNALS: POLICY (MOSTLY)
@@ -503,6 +590,16 @@ extern void my_sigreturn(void);
    ".my_sigreturn:\n" \
    "	li	0, " #name "\n" \
    "	sc\n"
+#elif defined(VGP_ppc32_aix5)
+#  define _MYSIG(name) \
+   ".globl my_sigreturn\n" \
+   "my_sigreturn:\n" \
+   ".long 0\n"
+#elif defined(VGP_ppc64_aix5)
+#  define _MYSIG(name) \
+   ".globl my_sigreturn\n" \
+   "my_sigreturn:\n" \
+   ".long 0\n"
 #else
 #  error Unknown platform
 #endif
@@ -543,7 +640,8 @@ static void handle_SCSS_change ( Bool force_update )
 
       ksa.ksa_handler = skss.skss_per_sig[sig].skss_handler;
       ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
-#     if !defined(VGP_ppc32_linux)
+#     if !defined(VGP_ppc32_linux) && !defined(VGP_ppc32_aix5) \
+                                   && !defined(VGP_ppc64_aix5)
       ksa.sa_restorer = my_sigreturn;
 #     endif
       /* Re above ifdef (also the assertion below), PaulM says:
@@ -577,7 +675,8 @@ static void handle_SCSS_change ( Bool force_update )
                    == skss_old.skss_per_sig[sig].skss_handler);
          vg_assert(ksa_old.sa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
-#        if !defined(VGP_ppc32_linux)
+#        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc32_aix5) \
+                                      && !defined(VGP_ppc64_aix5)
          vg_assert(ksa_old.sa_restorer 
                    == my_sigreturn);
 #        endif
@@ -695,7 +794,9 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
       old_act->ksa_handler = scss.scss_per_sig[signo].scss_handler;
       old_act->sa_flags    = scss.scss_per_sig[signo].scss_flags;
       old_act->sa_mask     = scss.scss_per_sig[signo].scss_mask;
+#     if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
       old_act->sa_restorer = scss.scss_per_sig[signo].scss_restorer;
+#     endif
    }
 
    /* And now copy new SCSS entry from new_act. */
@@ -703,7 +804,11 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
       scss.scss_per_sig[signo].scss_handler  = new_act->ksa_handler;
       scss.scss_per_sig[signo].scss_flags    = new_act->sa_flags;
       scss.scss_per_sig[signo].scss_mask     = new_act->sa_mask;
+
+      scss.scss_per_sig[signo].scss_restorer = 0;
+#     if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
       scss.scss_per_sig[signo].scss_restorer = new_act->sa_restorer;
+#     endif
 
       VG_(sigdelset)(&scss.scss_per_sig[signo].scss_mask, VKI_SIGKILL);
       VG_(sigdelset)(&scss.scss_per_sig[signo].scss_mask, VKI_SIGSTOP);
@@ -958,39 +1063,41 @@ static const Char *signame(Int sigNo)
    static Char buf[10];
 
    switch(sigNo) {
-#define S(x)	case VKI_##x: return #x
-      S(SIGHUP);
-      S(SIGINT);
-      S(SIGQUIT);
-      S(SIGILL);
-      S(SIGTRAP);
-      S(SIGABRT);
-      S(SIGBUS);
-      S(SIGFPE);
-      S(SIGKILL);
-      S(SIGUSR1);
-      S(SIGUSR2);
-      S(SIGSEGV);
-      S(SIGPIPE);
-      S(SIGALRM);
-      S(SIGTERM);
-      S(SIGSTKFLT);
-      S(SIGCHLD);
-      S(SIGCONT);
-      S(SIGSTOP);
-      S(SIGTSTP);
-      S(SIGTTIN);
-      S(SIGTTOU);
-      S(SIGURG);
-      S(SIGXCPU);
-      S(SIGXFSZ);
-      S(SIGVTALRM);
-      S(SIGPROF);
-      S(SIGWINCH);
-      S(SIGIO);
-      S(SIGPWR);
-      S(SIGUNUSED);
-#undef S
+      case VKI_SIGHUP:    return "SIGHUP";
+      case VKI_SIGINT:    return "SIGINT";
+      case VKI_SIGQUIT:   return "SIGQUIT";
+      case VKI_SIGILL:    return "SIGILL";
+      case VKI_SIGTRAP:   return "SIGTRAP";
+      case VKI_SIGABRT:   return "SIGABRT";
+      case VKI_SIGBUS:    return "SIGBUS";
+      case VKI_SIGFPE:    return "SIGFPE";
+      case VKI_SIGKILL:   return "SIGKILL";
+      case VKI_SIGUSR1:   return "SIGUSR1";
+      case VKI_SIGUSR2:   return "SIGUSR2";
+      case VKI_SIGSEGV:   return "SIGSEGV";
+      case VKI_SIGPIPE:   return "SIGPIPE";
+      case VKI_SIGALRM:   return "SIGALRM";
+      case VKI_SIGTERM:   return "SIGTERM";
+#     if defined(VKI_SIGSTKFLT)
+      case VKI_SIGSTKFLT: return "SIGSTKFLT";
+#     endif
+      case VKI_SIGCHLD:   return "SIGCHLD";
+      case VKI_SIGCONT:   return "SIGCONT";
+      case VKI_SIGSTOP:   return "SIGSTOP";
+      case VKI_SIGTSTP:   return "SIGTSTP";
+      case VKI_SIGTTIN:   return "SIGTTIN";
+      case VKI_SIGTTOU:   return "SIGTTOU";
+      case VKI_SIGURG:    return "SIGURG";
+      case VKI_SIGXCPU:   return "SIGXCPU";
+      case VKI_SIGXFSZ:   return "SIGXFSZ";
+      case VKI_SIGVTALRM: return "SIGVTALRM";
+      case VKI_SIGPROF:   return "SIGPROF";
+      case VKI_SIGWINCH:  return "SIGWINCH";
+      case VKI_SIGIO:     return "SIGIO";
+      case VKI_SIGPWR:    return "SIGPWR";
+#     if defined(VKI_SIGUNUSED)
+      case VKI_SIGUNUSED: return "SIGUNUSED";
+#     endif
 
    case VKI_SIGRTMIN ... VKI_SIGRTMAX:
       VG_(sprintf)(buf, "SIGRT%d", sigNo-VKI_SIGRTMIN);
@@ -1010,7 +1117,9 @@ void VG_(kill_self)(Int sigNo)
 
    sa.ksa_handler = VKI_SIG_DFL;
    sa.sa_flags = 0;
+#  if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
    sa.sa_restorer = 0;
+#  endif
    VG_(sigemptyset)(&sa.sa_mask);
       
    VG_(sigaction)(sigNo, &sa, &origsa);
@@ -1169,7 +1278,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	 if (event != NULL) {
 	    if (haveaddr)
 	       VG_(message)(Vg_UserMsg, " %s at address %p", 
-			    event, info->_sifields._sigfault._addr);
+			    event, info->VKI_SIGINFO_si_addr);
 	    else
 	       VG_(message)(Vg_UserMsg, " %s", event);
 	 }
@@ -1308,7 +1417,7 @@ static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
 
    info.si_signo = VKI_SIGSEGV;
    info.si_code = si_code;
-   info._sifields._sigfault._addr = (void*)addr;
+   info.VKI_SIGINFO_si_addr = (void*)addr;
 
    /* If they're trying to block the signal, force it to be delivered */
    if (VG_(sigismember)(&VG_(threads)[tid].sig_mask, VKI_SIGSEGV))
@@ -1344,8 +1453,8 @@ void VG_(synth_sigill)(ThreadId tid, Addr addr)
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
    info.si_signo = VKI_SIGILL;
-   info.si_code = VKI_ILL_ILLOPC; /* jrs: no idea what this should be */
-   info._sifields._sigfault._addr = (void*)addr;
+   info.si_code  = VKI_ILL_ILLOPC; /* jrs: no idea what this should be */
+   info.VKI_SIGINFO_si_addr = (void*)addr;
 
    resume_scheduler(tid);
    deliver_signal(tid, &info);
@@ -1446,7 +1555,7 @@ static vki_siginfo_t *next_queued(ThreadId tid, const vki_sigset_t *set)
       idx = (idx + 1) % N_QUEUED_SIGNALS;
    } while(idx != sq->next);
   out:   
-   return ret;   
+   return ret;
 }
 
 /* 
@@ -1461,8 +1570,6 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
    ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
-   vg_assert(tst->status == VgTs_WaitSys);
-
 #ifdef VGO_linux
    /* The linux kernel uses the top 16 bits of si_code for it's own
       use and only exports the bottom 16 bits to user space - at least
@@ -1475,12 +1582,14 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
    info->si_code = (Short)info->si_code;
 #endif
 
-   /* The thread isn't currently running, make it so before going on */
-   VG_(set_running)(tid);
-
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "Async handler got signal %d for tid %d info %d",
 		   sigNo, tid, info->si_code);
+
+   vg_assert(tst->status == VgTs_WaitSys);
+
+   /* The thread isn't currently running, make it so before going on */
+   VG_(set_running)(tid, "async_signalhandler");
 
    /* Update thread state properly */
    VG_(fixup_guest_state_after_syscall_interrupted)(
@@ -1518,9 +1627,11 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
    SizeT udelta;
 
    /* Find the next Segment above addr */
-   NSegment* seg      = VG_(am_find_nsegment)(addr);
-   NSegment* seg_next = seg ? VG_(am_next_nsegment)( seg, True/*fwds*/ )
-                            : NULL;
+   NSegment const* seg
+      = VG_(am_find_nsegment)(addr);
+   NSegment const* seg_next 
+      = seg ? VG_(am_next_nsegment)( (NSegment*)seg, True/*fwds*/ )
+            : NULL;
 
    if (seg && seg->kind == SkAnonC)
       /* addr is already mapped.  Nothing to do. */
@@ -1542,7 +1653,7 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
                     "extending a stack base 0x%llx down by %lld\n",
                     (ULong)seg_next->start, (ULong)udelta);
    if (! VG_(am_extend_into_adjacent_reservation_client)
-            ( seg_next, -(SSizeT)udelta )) {
+            ( (NSegment*)seg_next, -(SSizeT)udelta )) {
       VG_(debugLog)(1, "signals", "extending a stack base: FAILED\n");
       return False;
    }
@@ -1557,10 +1668,12 @@ Bool VG_(extend_stack)(Addr addr, UInt maxsize)
    return True;
 }
 
-static void (*fault_catcher)(Int sig, Addr addr);
+static void (*fault_catcher)(Int sig, Addr addr) = NULL;
 
 void VG_(set_fault_catcher)(void (*catcher)(Int, Addr))
 {
+   if (0)
+      VG_(debugLog)(0, "signals", "set fault catcher to %p\n", catcher);
    vg_assert2(NULL == catcher || NULL == fault_catcher,
               "Fault catcher is already registered");
 
@@ -1617,7 +1730,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 VG_(core_panic)("async_signalhandler returned!?\n");
       }
 
-      if (info->_sifields._kill._pid == 0) {
+      if (info->VKI_SIGINFO_si_pid == 0) {
 	 /* There's a per-user limit of pending siginfo signals.  If
 	    you exceed this, by having more than that number of
 	    pending signals with siginfo, then new signals are
@@ -1674,15 +1787,30 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
    }
    vg_assert(sigNo >= 1 && sigNo <= VG_(max_signal));
 
+   /* Check to see if someone is interested in faults.  The fault
+      catcher should never be set whilst we're in generated code, so
+      check for that.  AFAIK the only use of the catcher right now is
+      memcheck's leak detector.
+   */
+   if (fault_catcher) {
+      vg_assert(VG_(in_generated_code) == False);
+
+      (*fault_catcher)(sigNo, (Addr)info->VKI_SIGINFO_si_addr);
+      /* If the catcher returns, then it didn't handle the fault,
+         so carry on panicing. */
+   }
+
    /* Special fault-handling case. We can now get signals which can
       act upon and immediately restart the faulting instruction.
     */
    if (info->si_signo == VKI_SIGSEGV) {
-      Addr fault = (Addr)info->_sifields._sigfault._addr;
+      Addr fault = (Addr)info->VKI_SIGINFO_si_addr;
       Addr esp   =  VG_(get_SP)(tid);
-      NSegment* seg      = VG_(am_find_nsegment)(fault);
-      NSegment* seg_next = seg ? VG_(am_next_nsegment)( seg, True/*fwds*/ )
-                               : NULL;
+      NSegment const* seg
+         = VG_(am_find_nsegment)(fault);
+      NSegment const* seg_next 
+         = seg ? VG_(am_next_nsegment)( (NSegment*)seg, True/*fwds*/ )
+               : NULL;
 
       if (VG_(clo_trace_signals)) {
 	 if (seg == NULL)
@@ -1743,14 +1871,6 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 	 resume_scheduler(tid);
       }
 
-      /* Check to see if someone is interested in faults. */
-      if (fault_catcher) {
-	 (*fault_catcher)(sigNo, (Addr)info->_sifields._sigfault._addr);
-
-	 /* If the catcher returns, then it didn't handle the fault,
-	    so carry on panicing. */
-      }
-
       /* If resume_scheduler returns or its our fault, it means we
 	 don't have longjmp set up, implying that we weren't running
 	 client code, and therefore it was actually generated by
@@ -1762,7 +1882,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
 
       VG_(message)(Vg_DebugMsg, 
 		   "si_code=%x;  Faulting address: %p;  sp: %p",
-		   info->si_code, info->_sifields._sigfault._addr,
+		   info->si_code, info->VKI_SIGINFO_si_addr,
                    VG_UCONTEXT_STACK_PTR(uc));
 
       if (0)
@@ -1788,17 +1908,31 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
  */
 static void sigvgkill_handler(int signo, vki_siginfo_t *si, struct vki_ucontext *uc)
 {
-   ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
+   ThreadId     tid = VG_(get_lwp_tid)(VG_(gettid)());
+   ThreadStatus at_signal = VG_(threads)[tid].status;
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "sigvgkill for lwp %d tid %d", VG_(gettid)(), tid);
+      VG_(message)(Vg_DebugMsg, 
+                   "sigvgkill for lwp %d tid %d", VG_(gettid)(), tid);
+
+   VG_(set_running)(tid, "sigvgkill_handler");
 
    vg_assert(signo == VG_SIGVGKILL);
    vg_assert(si->si_signo == signo);
-   vg_assert(VG_(threads)[tid].status == VgTs_WaitSys);
 
-   VG_(set_running)(tid);
-   VG_(post_syscall)(tid);
+   /* jrs 2006 August 3: the following assertion seems incorrect to
+      me, and fails on AIX.  sigvgkill could be sent to a thread which
+      is runnable - see VG_(nuke_all_threads_except) in the scheduler.
+      Hence comment these out ..  
+
+      vg_assert(VG_(threads)[tid].status == VgTs_WaitSys);
+      VG_(post_syscall)(tid);
+
+      and instead do:
+   */
+   if (at_signal == VgTs_WaitSys)
+      VG_(post_syscall)(tid);
+   /* jrs 2006 August 3 ends */
 
    resume_scheduler(tid);
 
@@ -1810,7 +1944,14 @@ void pp_ksigaction ( struct vki_sigaction* sa )
 {
    Int i;
    VG_(printf)("pp_ksigaction: handler %p, flags 0x%x, restorer %p\n", 
-               sa->ksa_handler, (UInt)sa->sa_flags, sa->sa_restorer);
+               sa->ksa_handler, 
+               (UInt)sa->sa_flags, 
+#              if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
+                  sa->sa_restorer
+#              else
+                  0
+#              endif
+              );
    VG_(printf)("pp_ksigaction: { ");
    for (i = 1; i <= VG_(max_signal); i++)
       if (VG_(sigismember(&(sa->sa_mask),i)))
@@ -1827,7 +1968,9 @@ void VG_(set_default_handler)(Int signo)
 
    sa.ksa_handler = VKI_SIG_DFL;
    sa.sa_flags = 0;
+#  if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
    sa.sa_restorer = 0;
+#  endif
    VG_(sigemptyset)(&sa.sa_mask);
       
    VG_(do_sys_sigaction)(signo, &sa, NULL);
@@ -1838,7 +1981,6 @@ void VG_(set_default_handler)(Int signo)
  */
 void VG_(poll_signals)(ThreadId tid)
 {
-   static const struct vki_timespec zero = { 0, 0 };
    vki_siginfo_t si, *sip;
    vki_sigset_t pollset;
    ThreadState *tst = VG_(get_ThreadState)(tid);
@@ -1860,7 +2002,7 @@ void VG_(poll_signals)(ThreadId tid)
       sip = next_queued(0, &pollset); /* process-wide */
 
    /* If there was nothing queued, ask the kernel for a pending signal */
-   if (sip == NULL && VG_(sigtimedwait)(&pollset, &si, &zero) > 0) {
+   if (sip == NULL && VG_(sigtimedwait_zero)(&pollset, &si) > 0) {
       if (VG_(clo_trace_signals))
 	 VG_(message)(Vg_DebugMsg, "poll_signals: got signal %d "
                                    "for thread %d", si.si_signo, tid);
@@ -1915,7 +2057,9 @@ void VG_(sigstartup_actions) ( void )
 
 	 tsa.ksa_handler = (void *)sync_signalhandler;
 	 tsa.sa_flags = VKI_SA_SIGINFO;
+#        if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
 	 tsa.sa_restorer = 0;
+#        endif
 	 VG_(sigfillset)(&tsa.sa_mask);
 
 	 /* try setting it to some arbitrary handler */
@@ -1937,7 +2081,10 @@ void VG_(sigstartup_actions) ( void )
       scss.scss_per_sig[i].scss_handler  = sa.ksa_handler;
       scss.scss_per_sig[i].scss_flags    = sa.sa_flags;
       scss.scss_per_sig[i].scss_mask     = sa.sa_mask;
+      scss.scss_per_sig[i].scss_restorer = 0;
+#     if !defined(VGP_ppc32_aix5) && !defined(VGP_ppc64_aix5)
       scss.scss_per_sig[i].scss_restorer = sa.sa_restorer;
+#     endif
    }
 
    if (VG_(clo_trace_signals))

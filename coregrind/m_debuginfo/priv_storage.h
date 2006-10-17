@@ -142,6 +142,7 @@ struct _SegInfo {
    Addr   start;
    UInt   size;
    UChar* filename; /* in mallocville */
+   UChar* memname;  /* malloc'd.  AIX5 only: .a member name */
    OffT   foffset;
    UChar* soname;
 

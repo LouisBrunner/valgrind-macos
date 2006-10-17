@@ -562,7 +562,7 @@ static void canonicaliseSymtab ( struct _SegInfo* si )
    ranges do not overlap.  This facilitates using binary search to map
    addresses to locations when we come to query the table.
 */
-static Int compare_RiLoc ( void* va, void* vb ) 
+static Int compare_DiLoc ( void* va, void* vb ) 
 {
    DiLoc* a = (DiLoc*)va;
    DiLoc* b = (DiLoc*)vb;
@@ -583,7 +583,7 @@ static void canonicaliseLoctab ( struct _SegInfo* si )
 
    /* Sort by start address. */
    VG_(ssort)(si->loctab, si->loctab_used, 
-                          sizeof(*si->loctab), compare_RiLoc);
+                          sizeof(*si->loctab), compare_DiLoc);
 
    /* If two adjacent entries overlap, truncate the first. */
    for (i = 0; i < ((Int)si->loctab_used)-1; i++) {

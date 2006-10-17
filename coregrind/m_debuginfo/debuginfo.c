@@ -46,11 +46,18 @@
 #include "pub_core_options.h"
 #include "pub_core_redir.h"       // VG_(redir_notify_{new,delete}_SegInfo)
 #include "pub_core_aspacemgr.h"
+#include "pub_core_machine.h"     // VG_PLAT_USES_PPCTOC
 #include "priv_storage.h"
 #include "priv_readdwarf.h"
 #include "priv_readstabs.h"
-#include "priv_readelf.h"
-
+#if defined(VGO_linux)
+# include "priv_readelf.h"
+#elif defined(VGO_aix5)
+# include "pub_core_debuglog.h"
+# include "pub_core_libcproc.h"
+# include "pub_core_libcfile.h"
+# include "priv_readxcoff.h"
+#endif
 
 /*------------------------------------------------------------*/
 /*--- Root structure                                       ---*/
@@ -72,7 +79,8 @@ static SegInfo* segInfo_list = NULL;
 /* Allocate and zero out a new SegInfo record. */
 static 
 SegInfo* alloc_SegInfo(Addr start, SizeT size, OffT foffset, 
-                       const HChar* filename)
+                       const UChar* filename,
+                       const UChar* memname)
 {
    SegInfo* si = VG_(arena_calloc)(VG_AR_SYMTAB, 1, sizeof(SegInfo));
 
@@ -80,6 +88,8 @@ SegInfo* alloc_SegInfo(Addr start, SizeT size, OffT foffset,
    si->size     = size;
    si->foffset  = foffset;
    si->filename = VG_(arena_strdup)(VG_AR_SYMTAB, filename);
+   si->memname  = memname ?  VG_(arena_strdup)(VG_AR_SYMTAB, memname)
+                          :  NULL;
 
    // Everything else -- pointers, sizes, arrays -- is zeroed by calloc.
    return si;
@@ -110,6 +120,14 @@ static void free_SegInfo ( SegInfo* si )
 */
 static void discard_SegInfo ( SegInfo* si )
 {
+#  if defined(VGP_ppc32_aix5)
+   HChar* reason = "__unload";
+#  elif defined(VGP_ppc64_aix5)
+   HChar* reason = "kunload64";
+#  else
+   HChar* reason = "munmap";
+#  endif
+
    SegInfo** prev_next_ptr = &segInfo_list;
    SegInfo*  curr          =  segInfo_list;
 
@@ -118,9 +136,10 @@ static void discard_SegInfo ( SegInfo* si )
          // Found it;  remove from list and free it.
          if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
             VG_(message)(Vg_DebugMsg, 
-                         "Discarding syms at %p-%p in %s due to munmap()", 
+                         "Discarding syms at %p-%p in %s due to %s()", 
                          si->start, si->start + si->size,
-                         curr->filename ? curr->filename : (UChar*)"???");
+                         curr->filename ? curr->filename : (UChar*)"???",
+                         reason);
          vg_assert(*prev_next_ptr == curr);
          *prev_next_ptr = curr->next;
          VG_(redir_notify_delete_SegInfo)( curr );
@@ -170,12 +189,29 @@ static void discard_syms_in_range ( Addr start, SizeT length )
 /* Create a new SegInfo with the specific address/length/vma offset,
    then snarf whatever info we can from the given filename into it. */
 static
-SegInfo* acquire_syms_for_range( Addr seg_addr, SizeT seg_len,
-                                 OffT seg_offset, const Char* seg_filename)
+SegInfo* acquire_syms_for_range( 
+            /* ALL        */ Addr  seg_addr, 
+            /* ALL        */ SizeT seg_len,
+            /* ELF only   */ OffT  seg_offset, 
+            /* ALL        */ const UChar* seg_filename,
+            /* XCOFF only */ const UChar* seg_memname,
+	    /* XCOFF only */ Addr  data_addr,
+	    /* XCOFF only */ SizeT data_len,
+	    /* XCOFF only */ Bool  is_mainexe
+         )
 {
-   SegInfo* si = alloc_SegInfo(seg_addr, seg_len, seg_offset, seg_filename);
+   Bool     ok;
+   SegInfo* si = alloc_SegInfo(seg_addr, seg_len, seg_offset, 
+                               seg_filename, seg_memname);
+#  if defined(VGO_linux)
+   ok = ML_(read_elf_debug_info) ( si );
+#  elif defined(VGO_aix5)
+   ok = ML_(read_xcoff_debug_info) ( si, data_addr, data_len, is_mainexe );
+#  else
+#    error Unknown OS
+#  endif
 
-   if (! ML_(read_elf_debug_info) ( si )) {
+   if (!ok) {
       // Something went wrong (eg. bad ELF file).
       free_SegInfo( si );
       si = NULL;
@@ -195,11 +231,13 @@ SegInfo* acquire_syms_for_range( Addr seg_addr, SizeT seg_len,
 }
 
 
-/*------------------------------------------------------------*/
-/*---                                                      ---*/
-/*--- TOP LEVEL: NOTIFICATION (ACQUIRE/DISCARD INFO)       ---*/
-/*---                                                      ---*/
-/*------------------------------------------------------------*/
+/*--------------------------------------------------------------*/
+/*---                                                        ---*/
+/*--- TOP LEVEL: NOTIFICATION (ACQUIRE/DISCARD INFO) (LINUX) ---*/
+/*---                                                        ---*/
+/*--------------------------------------------------------------*/
+
+#if defined(VGO_linux)
 
 /* The debug info system is driven by notifications that a text
    segment has been mapped in, or unmapped.  When that happens it
@@ -216,7 +254,7 @@ SegInfo* acquire_syms_for_range( Addr seg_addr, SizeT seg_len,
 
 void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 {
-   NSegment* seg;
+   NSegment const * seg;
    HChar*    filename;
    Bool      ok;
 
@@ -260,7 +298,7 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    seg = VG_(am_find_nsegment)(a);
    vg_assert(seg);
 
-   filename = VG_(am_get_filename)( seg );
+   filename = VG_(am_get_filename)( (NSegment*)seg );
    if (!filename)
       return;
 
@@ -284,7 +322,8 @@ void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    /* .. and acquire new info. */
    acquire_syms_for_range( seg->start, seg->end + 1 - seg->start, 
-                           seg->offset, filename );
+                           seg->offset, filename,
+                           /* XCOFF only */ NULL, 0, 0, False );
 
    /* acquire_syms_for_range makes its own copy of filename, so is
       safe to free it. */
@@ -313,6 +352,70 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
    if (0 && !exe_ok)
       discard_syms_in_range(a, len);
 }
+
+#endif /* defined(VGO_linux) */
+
+
+/*-------------------------------------------------------------*/
+/*---                                                       ---*/
+/*--- TOP LEVEL: NOTIFICATION (ACQUIRE/DISCARD INFO) (AIX5) ---*/
+/*---                                                       ---*/
+/*-------------------------------------------------------------*/
+
+#if defined(VGO_aix5)
+
+/* The supplied parameters describe a code segment and its associated
+   data segment, that have recently been mapped in -- so we need to
+   read debug info for it -- or conversely, have recently been dumped,
+   in which case the relevant debug info has to be unloaded. */
+
+void VG_(di_aix5_notify_segchange)( 
+               Addr   code_start,
+               Word   code_len,
+               Addr   data_start,
+               Word   data_len,
+               UChar* file_name,
+               UChar* mem_name,
+               Bool   is_mainexe,
+               Bool   acquire )
+{
+   SegInfo* si;
+
+   if (acquire) {
+
+      acquire_syms_for_range(
+         /* ALL        */ code_start, 
+         /* ALL        */ code_len,
+         /* ELF only   */ 0,
+         /* ALL        */ file_name,
+         /* XCOFF only */ mem_name,
+         /* XCOFF only */ data_start,
+         /* XCOFF only */ data_len,
+         /* XCOFF only */ is_mainexe 
+      );
+
+   } else {
+
+      /* Dump all the segInfos which intersect code_start/code_len. */
+      while (True) {
+         for (si = segInfo_list; si; si = si->next) {
+            if (code_start + code_len <= si->start
+                || si->start + si->size <= code_start)
+               continue; /* no overlap */
+            else 
+               break;
+         }
+         if (si == NULL)
+            break;
+         /* Need to delete 'si' */
+         discard_SegInfo(si);
+      }
+
+   }
+}
+        
+
+#endif /* defined(VGO_aix5) */
 
 
 /*------------------------------------------------------------*/
@@ -499,11 +602,25 @@ Bool VG_(get_fnname_Z_demangle_only) ( Addr a, Char* buf, Int nbuf )
    Caller supplies buf and nbuf. */
 Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 {
+   Int used;
    SegInfo* si;
 
+   vg_assert(nbuf > 0);
    for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->start <= a && a < si->start+si->size) {
          VG_(strncpy_safely)(buf, si->filename, nbuf);
+         if (si->memname) {
+            used = VG_(strlen)(buf);
+            if (used < nbuf) 
+               VG_(strncpy_safely)(&buf[used], "(", nbuf-used);
+            used = VG_(strlen)(buf);
+            if (used < nbuf) 
+               VG_(strncpy_safely)(&buf[used], si->memname, nbuf-used);
+            used = VG_(strlen)(buf);
+            if (used < nbuf) 
+               VG_(strncpy_safely)(&buf[used], ")", nbuf-used);
+         }
+         buf[nbuf-1] = 0;
          return True;
       }
    }
@@ -590,6 +707,43 @@ Bool VG_(get_filename_linenum) ( Addr a,
 }
 
 
+/* Map a function name to its entry point and toc pointer.  Is done by
+   sequential search of all symbol tables, so is very slow.  To
+   mitigate the worst performance effects, you may specify a soname
+   pattern, and only objects matching that pattern are searched.
+   Therefore specify "*" to search all the objects.  On TOC-afflicted
+   platforms, a symbol is deemed to be found only if it has a nonzero
+   TOC pointer.  */
+Bool VG_(lookup_symbol_SLOW)(UChar* sopatt, UChar* name, Addr* pEnt, Addr* pToc)
+{
+   Bool     require_pToc = False;
+   Int      i;
+   SegInfo* si;
+   Bool     debug = False;
+#  if defined(VG_PLAT_USES_PPCTOC)
+   require_pToc = True;
+#  endif
+   for (si = segInfo_list; si; si = si->next) {
+      if (debug)
+         VG_(printf)("lookup_symbol_SLOW: considering %s\n", si->soname);
+      if (!VG_(string_match)(sopatt, si->soname)) {
+         if (debug)
+            VG_(printf)(" ... skip\n");
+         continue;
+      }
+      for (i = 0; i < si->symtab_used; i++) {
+         if (0==VG_(strcmp)(name, si->symtab[i].name)
+             && (require_pToc ? si->symtab[i].tocptr : True)) {
+            *pEnt = si->symtab[i].addr;
+            *pToc = si->symtab[i].tocptr;
+            return True;
+         }
+      }
+   }
+   return False;
+}
+
+
 /* Print into buf info on code address, function name and filename */
 
 static Int putStr ( Int n, Int n_buf, Char* buf, Char* str ) 
@@ -632,7 +786,9 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
    static UChar buf_srcloc[BUF_LEN];
    static UChar buf_dirname[BUF_LEN];
    Bool  know_dirinfo = False;
-   Bool  know_fnname  = VG_(get_fnname) (eip, buf_fn,  BUF_LEN);
+   Bool  know_fnname  = VG_(clo_sym_offsets)
+                        ? VG_(get_fnname_w_offset) (eip, buf_fn, BUF_LEN)
+                        : VG_(get_fnname) (eip, buf_fn, BUF_LEN);
    Bool  know_objname = VG_(get_objname)(eip, buf_obj, BUF_LEN);
    Bool  know_srcloc  = VG_(get_filename_linenum)(
                            eip, 
@@ -921,13 +1077,15 @@ Int VG_(seginfo_syms_howmany) ( const SegInfo *si )
 void VG_(seginfo_syms_getidx) ( const SegInfo *si, 
                                       Int idx,
                                /*OUT*/Addr*   addr,
+                               /*OUT*/Addr*   tocptr,
                                /*OUT*/UInt*   size,
                                /*OUT*/HChar** name )
 {
    vg_assert(idx >= 0 && idx < si->symtab_used);
-   if (addr) *addr = si->symtab[idx].addr;
-   if (size) *size = si->symtab[idx].size;
-   if (name) *name = (HChar*)si->symtab[idx].name;
+   if (addr)   *addr   = si->symtab[idx].addr;
+   if (tocptr) *tocptr = si->symtab[idx].tocptr;
+   if (size)   *size   = si->symtab[idx].size;
+   if (name)   *name   = (HChar*)si->symtab[idx].name;
 }
 
 

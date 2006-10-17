@@ -66,13 +66,14 @@ extern Addr VG_(am_startup) ( Addr sp_at_startup );
 // Querying current status
 
 /* Finds the segment containing 'a'.  Only returns file/anon/resvn
-   segments. */
+   segments.  This returns a 'NSegment const *' - a pointer to
+   readonly data. */
 // Is in tool-visible header file.
-// extern NSegment* VG_(am_find_nsegment) ( Addr a );
+// extern NSegment const * VG_(am_find_nsegment) ( Addr a );
 
 /* Find the next segment along from 'here', if it is a file/anon/resvn
    segment. */
-extern NSegment* VG_(am_next_nsegment) ( NSegment* here, Bool fwds );
+extern NSegment const* VG_(am_next_nsegment) ( NSegment* here, Bool fwds );
 
 /* Is the area [start .. start+len-1] validly accessible by the 
    client with at least the permissions 'prot' ?  To find out
@@ -181,7 +182,6 @@ extern Bool VG_(am_notify_mprotect)( Addr start, SizeT len, UInt prot );
    address range. */
 extern Bool VG_(am_notify_munmap)( Addr start, SizeT len );
 
-
 /* Hand a raw mmap to the kernel, without aspacem updating the segment
    array.  THIS FUNCTION IS DANGEROUS -- it will cause aspacem's view
    of the address space to diverge from that of the kernel.  DO NOT
@@ -189,6 +189,51 @@ extern Bool VG_(am_notify_munmap)( Addr start, SizeT len );
    aspacem.  In short, DO NOT USE THIS FUNCTION. */
 extern SysRes VG_(am_do_mmap_NO_NOTIFY)
    ( Addr start, SizeT length, UInt prot, UInt flags, UInt fd, Off64T offset);
+
+
+//--------------------------------------------------------------
+// Functions pertaining to AIX5-specific notifications.
+
+/* Describes followup actions that need to be done following a call to
+   VG_(am_aix5_reread_procmap).  When acquire==True, the specified
+   code and data segments have been mapped into the process, and so
+   m_debuginfo needs to read info for it; also m_redir needs to know,
+   and the tool needs to be told.  When acquire==False, the specified
+   segments have been unloaded and m_debuginfo, m_redir and the tool
+   (and m_transtab?) need to notified appropriately. */
+typedef
+   struct {
+      Addr   code_start;
+      Word   code_len;
+      Addr   data_start;
+      Word   data_len;
+      UChar* file_name;
+      UChar* mem_name;
+      Bool   is_mainexe;
+      Bool   acquire;
+   }
+   AixCodeSegChange;
+
+/* Tell aspacem that /proc/<pid>/map may have changed (eg following
+   __loadx) and so it should be re-read, and the code/data segment
+   list updated accordingly.  The resulting array of AixCodeChangeSeg
+   directives are written to 'directives', and the number of entries
+   to *ndirectives. */
+extern void VG_(am_aix5_reread_procmap)
+   ( /*OUT*/AixCodeSegChange* directives, /*OUT*/Int* ndirectives );
+
+/* Find out the size of the AixCodeSegChange that must be
+   presented to VG_(am_aix5_reread_procmap). */
+extern Int VG_(am_aix5_reread_procmap_howmany_directives)(void);
+
+/* Tell aspacem where the initial client stack is, so that it
+   can later produce a faked-up NSegment in response to
+   VG_(am_find_nsegment) for athat address, if asked. */
+extern void VG_(am_aix5_set_initial_client_sp)( Addr );
+
+/* The AIX5 aspacem implementation needs to be told when it is and
+   isn't allowed to use sbrk to allocate memory.  Hence: */
+extern Bool VG_(am_aix5_sbrk_allowed);
 
 
 //--------------------------------------------------------------
@@ -209,14 +254,31 @@ extern SysRes VG_(am_mmap_file_fixed_client)
 extern SysRes VG_(am_mmap_anon_fixed_client)
    ( Addr start, SizeT length, UInt prot );
 
+
 /* Map anonymously at an unconstrained address for the client, and
    update the segment array accordingly.  */
 extern SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot );
+
+/* Similarly, acquire new address space for the client but with
+   considerable restrictions on what can be done with it: (1) the
+   actual protections may exceed those stated in 'prot', (2) the
+   area's protections cannot be later changed using any form of
+   mprotect, and (3) the area cannot be freed using any form of
+   munmap.  On Linux this behaves the same as
+   VG_(am_mmap_anon_float_client).  On AIX5 this *may* allocate memory
+   by using sbrk, so as to make use of large pages on AIX. */
+extern SysRes VG_(am_sbrk_anon_float_client) ( SizeT length, Int prot );
+
 
 /* Map anonymously at an unconstrained address for V, and update the
    segment array accordingly.  This is fundamentally how V allocates
    itself more address space when needed. */
 extern SysRes VG_(am_mmap_anon_float_valgrind)( SizeT cszB );
+
+/* Same comments apply as per VG_(am_sbrk_anon_float_client).  On
+   Linux this behaves the same as VG_(am_mmap_anon_float_valgrind). */
+extern SysRes VG_(am_sbrk_anon_float_valgrind)( SizeT cszB );
+
 
 /* Map a file at an unconstrained address for V, and update the
    segment array accordingly.  This is used by V for transiently
@@ -237,6 +299,19 @@ extern SysRes VG_(am_munmap_client)( /*OUT*/Bool* need_discard,
   to the client instead.  Fails if (start,len) does not denote a
   suitable segment. */
 extern Bool VG_(am_change_ownership_v_to_c)( Addr start, SizeT len );
+
+/* 'seg' must be NULL or have been obtained from
+   VG_(am_find_nsegment), and still valid.  If non-NULL, and if it
+   denotes a SkAnonC (anonymous client mapping) area, set the .isCH
+   (is-client-heap) flag for that area.  Otherwise do nothing.
+   (Bizarre interface so that the same code works for both Linux and
+   AIX and does not impose inefficiencies on the Linux version.) */
+extern void VG_(am_set_segment_isCH_if_SkAnonC)( NSegment* seg );
+
+/* Same idea as VG_(am_set_segment_isCH_if_SkAnonC), except set the
+   segment's hasT bit (has-cached-code) if this is SkFileC or SkAnonC
+   segment. */
+extern void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( NSegment* );
 
 /* --- --- --- reservations --- --- --- */
 

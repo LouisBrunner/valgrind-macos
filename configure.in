@@ -108,7 +108,11 @@ case "${gcc_version}" in
 esac
 
 
-# Checks for the platform
+# Checks for the platform, with the aim of setting VG_ARCH.  Note
+# that VG_ARCH must be set to reflect the most that this CPU can
+# do: for example if it is a 64-bit capable PowerPC, then it must
+# be set to ppc64 and not ppc32.  Ditto for amd64.
+
 AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([for a supported CPU])
@@ -135,6 +139,7 @@ case "${host_cpu}" in
         ;;
 
      powerpc64)
+#       This value can only happen on Linux, not on AIX
         AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="ppc64"
         valt_load_address_normal="0x38000000"
@@ -142,8 +147,17 @@ case "${host_cpu}" in
         ;;
 
      powerpc)
+#       Complexity.  'powerpc' on AIX implies a 64-bit capable CPU.
+#       Whereas in Linux that means only a 32-bit capable CPU.
         AC_MSG_RESULT([ok (${host_cpu})])
-        VG_ARCH="ppc32"
+	case "${host_os}" in
+	   aix5.*)
+	      VG_ARCH="ppc64"
+              ;;
+           *)
+              VG_ARCH="ppc32"
+              ;;
+        esac
         valt_load_address_normal="0x38000000"
         valt_load_address_inner="0x28000000"
         ;;
@@ -227,6 +241,19 @@ case "${host_os}" in
 
         ;;
 
+     aix5.1.*)
+        AC_MSG_RESULT([ok (${host_os})])
+        VG_OS="aix5"
+        ;;
+     aix5.2.*)
+        AC_MSG_RESULT([ok (${host_os})])
+        VG_OS="aix5"
+        ;;       
+     aix5.3.*)
+        AC_MSG_RESULT([ok (${host_os})])
+        VG_OS="aix5"
+        ;;       
+
      *freebsd*)
         AC_MSG_RESULT([ok (${host_os})])
         VG_OS="freebsd"
@@ -301,6 +328,19 @@ case "$VG_ARCH-$VG_OS" in
 	VG_PLATFORM_SEC=""
         AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
 	;;
+     ppc64-aix5)
+	if test x$vg_cv_only64bit = xyes; then
+	   VG_PLATFORM_PRI="PPC64_AIX5"
+	   VG_PLATFORM_SEC=""
+	elif test x$vg_cv_only32bit = xyes; then
+	   VG_PLATFORM_PRI="PPC32_AIX5"
+	   VG_PLATFORM_SEC=""
+	else
+	   VG_PLATFORM_PRI="PPC64_AIX5"
+	   VG_PLATFORM_SEC="PPC32_AIX5"
+	fi
+        AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
+	;;
      ppc64-linux)
 	if test x$vg_cv_only64bit = xyes; then
 	   VG_PLATFORM_PRI="PPC64_LINUX"
@@ -322,18 +362,43 @@ case "$VG_ARCH-$VG_OS" in
         ;;
 esac
 
-# Set up VG_<platform>.  Either one or two of these become defined.
+# Set up VGP_<platform>.  Either one or two of these become defined.
 #
-AM_CONDITIONAL(VG_X86_LINUX,   
+AM_CONDITIONAL(VGP_X86_LINUX,   
                test x$VG_PLATFORM_PRI = xX86_LINUX \
                  -o x$VG_PLATFORM_SEC = xX86_LINUX)
-AM_CONDITIONAL(VG_AMD64_LINUX, 
+AM_CONDITIONAL(VGP_AMD64_LINUX, 
                test x$VG_PLATFORM_PRI = xAMD64_LINUX)
-AM_CONDITIONAL(VG_PPC32_LINUX, 
+AM_CONDITIONAL(VGP_PPC32_LINUX, 
                test x$VG_PLATFORM_PRI = xPPC32_LINUX \ 
                  -o x$VG_PLATFORM_SEC = xPPC32_LINUX)
-AM_CONDITIONAL(VG_PPC64_LINUX, 
+AM_CONDITIONAL(VGP_PPC64_LINUX, 
                test x$VG_PLATFORM_PRI = xPPC64_LINUX)
+AM_CONDITIONAL(VGP_PPC32_AIX5, 
+               test x$VG_PLATFORM_PRI = xPPC32_AIX5 \ 
+                 -o x$VG_PLATFORM_SEC = xPPC32_AIX5)
+AM_CONDITIONAL(VGP_PPC64_AIX5, 
+               test x$VG_PLATFORM_PRI = xPPC64_AIX5)
+
+# Similarly, set up VGO_<os>.  Exactly one of these becomes defined.
+# Relies on the assumption that the primary and secondary targets are 
+# for the same OS, so therefore only necessary to test the primary.
+#
+AM_CONDITIONAL(VGO_LINUX,
+               test x$VG_PLATFORM_PRI = xX86_LINUX \
+                 -o x$VG_PLATFORM_PRI = xAMD64_LINUX \
+                 -o x$VG_PLATFORM_PRI = xPPC32_LINUX \
+                 -o x$VG_PLATFORM_PRI = xPPC64_LINUX)
+AM_CONDITIONAL(VGO_AIX5,
+               test x$VG_PLATFORM_PRI = xPPC32_AIX5 \
+                 -o x$VG_PLATFORM_PRI = xPPC64_AIX5)
+
+
+# Sometimes, in the Makefile.am-s, it's useful to know
+# whether or not there is a secondary target.
+#
+AM_CONDITIONAL(VGP_HAVE_SECONDARY,
+               test x$VG_PLATFORM_SEC != x)
 
 
 # This variable will collect the individual suppression files
@@ -342,7 +407,7 @@ DEFAULT_SUPP=""
 AC_SUBST(DEFAULT_SUPP)
 
 
-glibc=""
+libc=""
 
 AC_EGREP_CPP([GLIBC_22], [
 #include <features.h>
@@ -352,7 +417,7 @@ AC_EGREP_CPP([GLIBC_22], [
  #endif
 #endif
 ],
-glibc="2.2")
+libc="2.2")
 
 AC_EGREP_CPP([GLIBC_23], [
 #include <features.h>
@@ -362,7 +427,7 @@ AC_EGREP_CPP([GLIBC_23], [
  #endif
 #endif
 ],
-glibc="2.3")
+libc="2.3")
 
 AC_EGREP_CPP([GLIBC_24], [
 #include <features.h>
@@ -372,7 +437,7 @@ AC_EGREP_CPP([GLIBC_24], [
  #endif
 #endif
 ],
-glibc="2.4")
+libc="2.4")
 
 AC_EGREP_CPP([GLIBC_25], [
 #include <features.h>
@@ -382,11 +447,19 @@ AC_EGREP_CPP([GLIBC_25], [
  #endif
 #endif
 ],
-glibc="2.5")
+libc="2.5")
 
-AC_MSG_CHECKING([the glibc version])
+AC_EGREP_CPP([AIX5_LIBC], [
+#include <standards.h>
+#if defined(_AIXVERSION_510) || defined(_AIXVERSION_520) || defined(_AIXVERSION_530)
+  AIX5_LIBC
+#endif
+],
+libc="aix5")
 
-case "${glibc}" in
+AC_MSG_CHECKING([the libc version])
+
+case "${libc}" in
      2.2)
 	AC_MSG_RESULT(2.2 family)
 	AC_DEFINE([GLIBC_2_2], 1, [Define to 1 if you're using glibc 2.2.x])
@@ -410,16 +483,23 @@ case "${glibc}" in
 	AC_DEFINE([GLIBC_2_5], 1, [Define to 1 if you're using glibc 2.5.x])
 	DEFAULT_SUPP="glibc-2.5.supp ${DEFAULT_SUPP}"
 	;;
+	
+     aix5)
+	AC_MSG_RESULT(AIX 5.1, 5.2 or 5.3)
+	AC_DEFINE([AIX5_LIBC], 1, [Define to 1 if you're using AIX 5.1, 5.2 or 5.3])
+	DEFAULT_SUPP="aix5libc.supp ${DEFAULT_SUPP}"
+	;;
 
      *)
 	AC_MSG_RESULT(unsupported version)
 	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.5])
+	AC_MSG_ERROR([or AIX 5.2/5.3 libc])
 	;;
 esac
 
 
 # We don't know how to detect the X client library version
-# (detecting the server version is easy, bu no help).  So we
+# (detecting the server version is easy, but no help).  So we
 # just use a hack: always include the suppressions for both
 # versions 3 and 4.
 AC_PATH_X
@@ -450,6 +530,27 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_M32)
 
 
+# does this compiler support -maix32 ?
+AC_MSG_CHECKING([if gcc accepts -maix32])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-maix32"
+
+AC_TRY_COMPILE(, [
+int main () { return 0 ; }
+],
+[
+FLAG_MAIX32="-maix32"
+AC_MSG_RESULT([yes])
+], [
+FLAG_MAIX32=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_MAIX32)
+
+
 # does this compiler support -m64 ?
 AC_MSG_CHECKING([if gcc accepts -m64])
 
@@ -469,6 +570,27 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_M64)
+
+
+# does this compiler support -maix64 ?
+AC_MSG_CHECKING([if gcc accepts -maix64])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-maix64"
+
+AC_TRY_COMPILE(, [
+int main () { return 0 ; }
+],
+[
+FLAG_MAIX64="-maix64"
+AC_MSG_RESULT([yes])
+], [
+FLAG_MAIX64=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_MAIX64)
 
 
 # does this compiler support -mmmx ?
@@ -655,11 +777,18 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr semtimedop])
 
 
-# Do we have a useable MPI setup on the primary target
-# (mpicc, and suitable MPI2 headers?)
+# Do we have a useable MPI setup on the primary and/or secondary targets?
+# On Linux, by default, assumes mpicc and -m32/-m64
+# On AIX, by default, assumes mpxlc and -q32/-q64
 # Note: this is a kludge in that it assumes the specified mpicc 
-# understands '-m32' or '-m64', as established above
+# understands -m32/-m64/-q32/-q64 regardless of what is specified using
+# --with-mpicc=.
 MPI_CC="mpicc"
+if test x$VG_PLATFORM_PRI = xPPC32_AIX5 \
+     -o x$VG_PLATFORM_PRI = xPPC64_AIX5 ; then
+  MPI_CC="mpxlc"
+fi
+
 mflag_primary=
 if test x$VG_PLATFORM_PRI = xX86_LINUX \
      -o x$VG_PLATFORM_PRI = xPPC32_LINUX ; then
@@ -667,13 +796,30 @@ if test x$VG_PLATFORM_PRI = xX86_LINUX \
 elif test x$VG_PLATFORM_PRI = xAMD64_LINUX \
        -o x$VG_PLATFORM_PRI = xPPC64_LINUX ; then
   mflag_primary=$FLAG_M64
+elif test x$VG_PLATFORM_PRI = xPPC32_AIX5 ; then
+  mflag_primary=-q32
+elif test x$VG_PLATFORM_PRI = xPPC64_AIX5 ; then
+  mflag_primary=-q64
 fi
+
+mflag_secondary=
+if test x$VG_PLATFORM_SEC = xX86_LINUX \
+     -o x$VG_PLATFORM_SEC = xPPC32_LINUX ; then
+  mflag_secondary=$FLAG_M32
+elif test x$VG_PLATFORM_SEC = xPPC32_AIX5 ; then
+  mflag_secondary=-q32
+fi
+
 
 AC_ARG_WITH(mpicc,
    [  --with-mpicc=           Specify name of MPI2-ised C compiler],
    MPI_CC=$withval
 )
-AC_MSG_CHECKING([for usable MPI2-compliant mpicc and mpi.h])
+AC_SUBST(MPI_CC)
+
+## See if MPI_CC works for the primary target
+##
+AC_MSG_CHECKING([primary target for usable MPI2-compliant C compiler and mpi.h])
 saved_CC=$CC
 saved_CFLAGS=$CFLAGS
 CC=$MPI_CC
@@ -686,17 +832,47 @@ AC_TRY_LINK([
   r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
   return r; 
 ], [
-ac_have_mpi2=yes
+ac_have_mpi2_pri=yes
 AC_MSG_RESULT([yes, $MPI_CC])
 ], [
-ac_have_mpi2=no
+ac_have_mpi2_pri=no
 AC_MSG_RESULT([no])
 ])
 CC=$saved_CC
 CFLAGS=$saved_CFLAGS
+AM_CONDITIONAL(BUILD_MPIWRAP_PRI, test x$ac_have_mpi2_pri = xyes)
 
-AM_CONDITIONAL(BUILD_MPIWRAP, test x$ac_have_mpi2 = xyes)
-AC_SUBST(MPI_CC)
+## See if MPI_CC works for the secondary target.  Complication: what if
+## there is no secondary target?  We need this to then fail.
+## Kludge this by making MPI_CC something which will surely fail in
+## such a case.
+##
+AC_MSG_CHECKING([secondary target for usable MPI2-compliant C compiler and mpi.h])
+saved_CC=$CC
+saved_CFLAGS=$CFLAGS
+if test x$VG_PLATFORM_SEC = x ; then
+  CC="$MPI_CC this will surely fail"
+else
+  CC=$MPI_CC
+fi
+CFLAGS=$mflag_secondary
+AC_TRY_LINK([
+#include <mpi.h>
+#include <stdio.h>
+],[
+  int r = MPI_Init(NULL,NULL);
+  r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
+  return r; 
+], [
+ac_have_mpi2_sec=yes
+AC_MSG_RESULT([yes, $MPI_CC])
+], [
+ac_have_mpi2_sec=no
+AC_MSG_RESULT([no])
+])
+CC=$saved_CC
+CFLAGS=$saved_CFLAGS
+AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
 
 
 # -------------------- ok.  We're done. --------------------

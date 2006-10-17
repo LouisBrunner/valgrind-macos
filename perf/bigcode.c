@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 
    char* a = mmap(0, FN_SIZE * N_LOOPS, 
                      PROT_EXEC|PROT_WRITE, 
-                     MAP_PRIVATE|MAP_ANONYMOUS, 0,0);
+                     MAP_PRIVATE|MAP_ANONYMOUS, -1,0);
    assert(a != (char*)MAP_FAILED);
 
    if (argc <= 1) {

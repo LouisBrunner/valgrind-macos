@@ -36,6 +36,10 @@ CALLGRIND_SOURCES_PPC64 = ../cachegrind/cg-ppc64.c
 
 CALLGRIND_CFLAGS_COMMON = -I../cachegrind
 
+clincludedir = $(includedir)/valgrind
+clinclude_HEADERS = \
+	callgrind.h
+
 callgrind_x86_linux_SOURCES      = $(CALLGRIND_SOURCES_COMMON) $(CALLGRIND_SOURCES_X86)
 callgrind_x86_linux_CPPFLAGS     = $(AM_CPPFLAGS_X86_LINUX)
 callgrind_x86_linux_CFLAGS       = $(CALLGRIND_CFLAGS_COMMON) $(AM_CFLAGS_X86_LINUX)
@@ -65,7 +69,6 @@ callgrind_ppc64_linux_LDADD        = $(TOOL_LDADD_PPC64_LINUX)
 callgrind_ppc64_linux_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_LINUX)
 
 callgrind_ppc32_aix5_SOURCES      = $(CALLGRIND_SOURCES_COMMON) $(CALLGRIND_SOURCES_PPC32)
-clincludedir = $(includedir)/valgrind
 callgrind_ppc32_aix5_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_AIX5)
 callgrind_ppc32_aix5_CFLAGS       = $(CALLGRIND_CFLAGS_COMMON) $(AM_CFLAGS_PPC32_AIX5)
 callgrind_ppc32_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC32_AIX5)
@@ -74,8 +77,6 @@ callgrind_ppc32_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC32_AIX5)
 
 callgrind_ppc64_aix5_SOURCES      = $(CALLGRIND_SOURCES_COMMON) $(CALLGRIND_SOURCES_PPC64)
 callgrind_ppc64_aix5_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_AIX5)
-clinclude_HEADERS = \
-	callgrind.h
 callgrind_ppc64_aix5_CFLAGS       = $(CALLGRIND_CFLAGS_COMMON) $(AM_CFLAGS_PPC64_AIX5)
 callgrind_ppc64_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_AIX5)
 callgrind_ppc64_aix5_LDADD        = $(TOOL_LDADD_PPC64_AIX5)

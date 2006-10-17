@@ -72,6 +72,7 @@ static void test(int block, int caughtsig, int fatalsig)
 	}
 
 	if (pid == 0) {
+	  alarm(10); /* if something breaks, don't spin forever */
 		signal(caughtsig, handler);
 
 		for(;;)

@@ -1,6 +1,26 @@
+
+/* On AIX 5.2, _LINUX_SOURCE_COMPAT needs to be defined when reading
+   sys/socket.h in order to make CMSG_SPACE and CMSG_LEN visible. */
+
+#if defined(_AIX)
+#define _LINUX_SOURCE_COMPAT 1
+#endif
+
+#include <sys/socket.h>
+
+#if defined(_AIX)
+#undef _LINUX_SOURCE_COMPAT
+#endif
+
+
+/* Needed for 'memset' on AIX 5.2 */
+#if defined(_AIX)
+# include <memory.h>
+#endif
+
+
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/socket.h>
 #include <sys/un.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -8,12 +28,13 @@
 #include <stdlib.h>
 #include <errno.h>
 
+
 char filea[24];
 char fileb[24];
 char sock[24];
 
 void
-server ()
+server (void)
 {
    int s, fd1, fd2;
    struct sockaddr_un addr;
@@ -90,7 +111,7 @@ server ()
 }
 
 void
-client ()
+client (void)
 {
    int s, fd1 = -1, fd2 = -1, size, count = 0, ret;
    struct sockaddr_un addr;

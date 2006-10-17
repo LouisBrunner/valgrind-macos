@@ -5,7 +5,7 @@
 
 static void thread_cleanup(void *arg)
 {
-  printf("cleaning up %p\n", arg);
+  printf("cleaning up 0x%lx\n", (long)arg);
 
   return;
 }

@@ -4,6 +4,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#if defined(_AIX) && !defined(SA_NOMASK)
+# define SA_NOMASK 0
+#endif
+
 static char *deep;
 
 #define SIZE	(4*1024*1024)

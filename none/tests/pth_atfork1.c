@@ -18,12 +18,27 @@
    Boston, MA 02111-1307, USA.  */
 
 #include <errno.h>
-#include <error.h>
+#if !defined(_AIX)
+# include <error.h>
+#endif
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdio.h>
+
+#if defined(_AIX)
+#include <string.h>  /* strerror */
+static void error (int status, int errnum, char* msg)
+{
+   fprintf(stderr, "%s%s%s\n",
+           msg,
+           errnum ? ": " : "",
+           errnum ? strerror(errnum) : "");
+   if (errnum)
+      exit(errnum);
+}
+#endif
 
 enum
 {

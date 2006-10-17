@@ -18,7 +18,6 @@
 #include <string.h>
 #include <sys/resource.h>
 #include <unistd.h>
-#include <sys/syscall.h>
 #include <dlfcn.h>
 
 
@@ -132,7 +131,12 @@ initSignalling(void)
    sa.sa_flags = SA_RESTART | SA_SIGINFO | SA_ONSTACK;
    sa.sa_sigaction = ptiSrSigHandler;
    sigfillset(&sa.sa_mask);
+
+#  if !defined(_AIX)
+   /* jrs 20060615: is this important?  I don't know. */
    sigdelset(&sa.sa_mask, (__SIGRTMIN+1));
+#  endif
+
    if (sigaction(srSignal, &sa, 0) == -1) {
       perror("sigaction");
       exit(1);
@@ -163,7 +167,11 @@ void* setup_altstack(void) {
 }
 
 void takedown_altstack(void* stack) {
+#  if defined(_AIX)
+   stack_t ss;
+#  else
    struct sigaltstack ss;
+#  endif
    int result;
    
    ss.ss_flags = SS_DISABLE;

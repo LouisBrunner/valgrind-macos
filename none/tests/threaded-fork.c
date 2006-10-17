@@ -14,6 +14,7 @@ static void *threadmain( void *dummy )
 
 int main( int argc, char **argv )
 {
+        int ctr;
 	pid_t childpid;
 	pthread_t childthread;
 	void *res;
@@ -36,8 +37,15 @@ int main( int argc, char **argv )
 	}
 
 	pthread_join( childthread, &res );
-	while(waitpid(childpid, &status, 0) != childpid)
-		;
+	ctr = 0;
+	while(waitpid(childpid, &status, 0) != childpid) {
+		sleep(1);
+		ctr++;
+		if (ctr >= 10) {
+		  printf("FAILED - timeout waiting for child\n");
+		  return 0;
+		}
+	}
 
 	printf("PASS\n");
 

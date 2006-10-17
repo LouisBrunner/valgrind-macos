@@ -13,6 +13,10 @@ static void handler(int sig, siginfo_t *info, void *v)
    the default handler */
 int main()
 {
+#if defined(_AIX)
+  printf("this test hangs when run (even natively) on AIX\n");
+  return 0;
+#endif
 	struct sigaction sa;
 	sigset_t mask;
 
@@ -25,7 +29,7 @@ int main()
 	sigfillset(&mask);
 	sigprocmask(SIG_BLOCK, &mask, NULL);
 
-	*(volatile int *)1234 = 213;
+	*(volatile int *)12345 = 213;
 
 	return 0;
 }

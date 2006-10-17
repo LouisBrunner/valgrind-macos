@@ -5946,7 +5946,6 @@ const char * BZ_API(BZ2_bzerror) (BZFILE *b, int *errnum)
 
 #define M_BLOCK 1000000
 
-typedef unsigned char uchar;
 
 #define M_BLOCK_OUT (M_BLOCK + 1000000)
  char inbuf[M_BLOCK];
@@ -5981,7 +5980,7 @@ void flip_bit ( int bit )
 {
    int byteno = bit / 8;
    int bitno  = bit % 8;
-   uchar mask = 1 << bitno;
+   UChar mask = 1 << bitno;
    //fprintf ( stderr, "(byte %d  bit %d  mask %d)",
    //          byteno, bitno, (int)mask );
    zbuf[byteno] ^= mask;

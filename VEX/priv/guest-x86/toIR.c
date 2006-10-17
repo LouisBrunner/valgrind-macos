@@ -12902,6 +12902,7 @@ DisResult disInstr_X86 ( IRBB*        irbb_IN,
                          Addr64       guest_IP,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
+                         VexMiscInfo* miscinfo,
                          Bool         host_bigendian_IN )
 {
    DisResult dres;

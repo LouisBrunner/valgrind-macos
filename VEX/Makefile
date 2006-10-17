@@ -137,6 +137,18 @@ TAG_ppc64_linux:
 	if [ ! -f TAG_ppc64_linux ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
 	touch TAG_ppc64_linux
 
+libvex_ppc32_aix5.a: TAG_ppc32_aix5 libvex.a
+	mv -f libvex.a libvex_ppc32_aix5.a
+TAG_ppc32_aix5:
+	if [ ! -f TAG_ppc32_aix5 ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
+	touch TAG_ppc32_aix5
+
+libvex_ppc64_aix5.a: TAG_ppc64_aix5 libvex.a
+	mv -f libvex.a libvex_ppc64_aix5.a
+TAG_ppc64_aix5:
+	if [ ! -f TAG_ppc64_aix5 ] ; then rm -f $(LIB_OBJS) TAG_* libvex.a ; fi
+	touch TAG_ppc64_aix5
+
 
 # This doesn't get rid of priv/main/vex_svnversion.h, because
 # that can't be regenerated in the final Valgrind tarball, and
@@ -148,9 +160,10 @@ clean:
 
 version:
 	rm -f priv/main/vex_svnversion.h
-	echo -n "\""  > priv/main/vex_svnversion.h
+	cat quote.txt   >> priv/main/vex_svnversion.h
 	svnversion -n . >> priv/main/vex_svnversion.h
-	echo "\""  >> priv/main/vex_svnversion.h
+	cat quote.txt   >> priv/main/vex_svnversion.h
+	cat newline.txt >> priv/main/vex_svnversion.h
 
 minidist: version
 	rm -f vex--minidist-2005MMDD.tar

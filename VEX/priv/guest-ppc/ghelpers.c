@@ -78,7 +78,7 @@
 /* Reads a complete, consistent 64-bit TB value. */
 ULong ppcg_dirtyhelper_MFTB ( void )
 {
-#  if defined(__powerpc__)
+#  if defined(__powerpc__) || defined(_AIX)
    ULong res;
    UInt  lo, hi1, hi2;
    while (1) {
@@ -320,6 +320,7 @@ void LibVEX_GuestPPC64_put_XER ( UInt xer_native,
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 {
+   Int i;
    vex_state->guest_GPR0  = 0;
    vex_state->guest_GPR1  = 0;
    vex_state->guest_GPR2  = 0;
@@ -464,6 +465,14 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_TILEN   = 0;
 
    vex_state->guest_NRADDR = 0;
+   vex_state->guest_NRADDR_GPR2 = 0;
+
+   vex_state->guest_REDIR_SP = -1;
+   for (i = 0; i < VEX_GUEST_PPC32_REDIR_STACK_SIZE; i++)
+      vex_state->guest_REDIR_STACK[i] = 0;
+
+   vex_state->guest_CIA_AT_SC = 0;
+   vex_state->guest_SPRG3_RO = 0;
 }
 
 
@@ -620,6 +629,9 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_REDIR_SP = -1;
    for (i = 0; i < VEX_GUEST_PPC64_REDIR_STACK_SIZE; i++)
       vex_state->guest_REDIR_STACK[i] = 0;
+
+   vex_state->guest_CIA_AT_SC = 0;
+   vex_state->guest_SPRG3_RO = 0;
 }
 
 
@@ -733,7 +745,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 8,
+          .n_alwaysDefd = 12,
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD32(guest_CIA),
@@ -743,7 +755,11 @@ VexGuestLayout
 	      /*  4 */ ALWAYSDEFD32(guest_VSCR),
 	      /*  5 */ ALWAYSDEFD32(guest_FPROUND),
 	      /*  6 */ ALWAYSDEFD32(guest_RESVN),
-	      /*  7 */ ALWAYSDEFD32(guest_NRADDR)
+              /*  7 */ ALWAYSDEFD32(guest_NRADDR),
+	      /*  8 */ ALWAYSDEFD32(guest_NRADDR_GPR2),
+	      /*  9 */ ALWAYSDEFD32(guest_REDIR_SP),
+	      /* 10 */ ALWAYSDEFD32(guest_REDIR_STACK),
+	      /* 11 */ ALWAYSDEFD32(guest_CIA_AT_SC)
             }
         };
 
@@ -767,7 +783,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 11,
+          .n_alwaysDefd = 12,
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD64(guest_CIA),
@@ -780,7 +796,8 @@ VexGuestLayout
 	      /*  7 */ ALWAYSDEFD64(guest_NRADDR),
 	      /*  8 */ ALWAYSDEFD64(guest_NRADDR_GPR2),
 	      /*  9 */ ALWAYSDEFD64(guest_REDIR_SP),
-	      /* 10 */ ALWAYSDEFD64(guest_REDIR_STACK)
+	      /* 10 */ ALWAYSDEFD64(guest_REDIR_STACK),
+	      /* 11 */ ALWAYSDEFD64(guest_CIA_AT_SC)
             }
         };
 

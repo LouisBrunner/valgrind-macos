@@ -75,7 +75,7 @@
        Non-Java mode would give us more inaccuracy, as our intermediate
        results would then be zeroed, too.
 
-   - 64-bit mode: AbiHints for the stack red zone are only emitted for
+   - AbiHints for the stack red zone are only emitted for
        unconditional calls and returns (bl, blr).  They should also be
        emitted for conditional calls and returns, but we don't have a 
        way to express that right now.  Ah well.
@@ -102,7 +102,7 @@
       7C210B78 (or 1,1,1)   %R3 = client_request ( %R4 )
       7C421378 (or 2,2,2)   %R3 = guest_NRADDR
       7C631B78 (or 3,3,3)   branch-and-link-to-noredir %R11
-      7C842378 (or 4,4,4)   %R3 = guest_NRADDR_GPR2 (64-bit mode only)
+      7C842378 (or 4,4,4)   %R3 = guest_NRADDR_GPR2
 
    Any other bytes following the 16-byte preamble are illegal and
    constitute a failure in instruction decoding.  This all assumes
@@ -178,17 +178,21 @@ static Bool mode64 = False;
 // Given a pointer to a function as obtained by "& functionname" in C,
 // produce a pointer to the actual entry point for the function.  For
 // most platforms it's the identity function.  Unfortunately, on
-// ppc64-linux it isn't (sigh).
-static void* fnptr_to_fnentry( void* f )
+// ppc64-linux it isn't (sigh) and ditto for ppc32-aix5 and
+// ppc64-aix5.
+static void* fnptr_to_fnentry( VexMiscInfo* vmi, void* f )
 {
-#if defined(__powerpc64__)
-   /* f is a pointer to a 3-word function descriptor, of which
-      the first word is the entry address. */
-   ULong* fdescr = (ULong*)f;
-   return (void*)(fdescr[0]);
-#else
-   return f;
-#endif
+   if (vmi->host_ppc_calls_use_fndescrs) {
+      /* f is a pointer to a 3-word function descriptor, of which the
+         first word is the entry address. */
+      /* note, this is correct even with cross-jitting, since this is
+         purely a host issue, not a guest one. */
+      HWord* fdescr = (HWord*)f;
+      return (void*)(fdescr[0]);
+   } else {
+      /* Simple; "& f" points directly at the code for f. */
+      return f;
+   }
 }
 
 
@@ -213,25 +217,24 @@ static void* fnptr_to_fnentry( void* f )
    (mode64 ? offsetof(VexGuestPPC64State, _x) : \
              offsetof(VexGuestPPC32State, _x))
 
-#define OFFB_CIA        offsetofPPCGuestState(guest_CIA)
-#define OFFB_LR         offsetofPPCGuestState(guest_LR)
-#define OFFB_CTR        offsetofPPCGuestState(guest_CTR)
-#define OFFB_XER_SO     offsetofPPCGuestState(guest_XER_SO)
-#define OFFB_XER_OV     offsetofPPCGuestState(guest_XER_OV)
-#define OFFB_XER_CA     offsetofPPCGuestState(guest_XER_CA)
-#define OFFB_XER_BC     offsetofPPCGuestState(guest_XER_BC)
-#define OFFB_FPROUND    offsetofPPCGuestState(guest_FPROUND)
-#define OFFB_VRSAVE     offsetofPPCGuestState(guest_VRSAVE)
-#define OFFB_VSCR       offsetofPPCGuestState(guest_VSCR)
-#define OFFB_EMWARN     offsetofPPCGuestState(guest_EMWARN)
-#define OFFB_TISTART    offsetofPPCGuestState(guest_TISTART)
-#define OFFB_TILEN      offsetofPPCGuestState(guest_TILEN)
-#define OFFB_RESVN      offsetofPPCGuestState(guest_RESVN)
-#define OFFB_NRADDR     offsetofPPCGuestState(guest_NRADDR)
-
-/* This only exists in the 64-bit guest state */
-#define OFFB64_NRADDR_GPR2 \
-                        offsetof(VexGuestPPC64State,guest_NRADDR_GPR2)
+#define OFFB_CIA         offsetofPPCGuestState(guest_CIA)
+#define OFFB_CIA_AT_SC   offsetofPPCGuestState(guest_CIA_AT_SC)
+#define OFFB_SPRG3_RO    offsetofPPCGuestState(guest_SPRG3_RO)
+#define OFFB_LR          offsetofPPCGuestState(guest_LR)
+#define OFFB_CTR         offsetofPPCGuestState(guest_CTR)
+#define OFFB_XER_SO      offsetofPPCGuestState(guest_XER_SO)
+#define OFFB_XER_OV      offsetofPPCGuestState(guest_XER_OV)
+#define OFFB_XER_CA      offsetofPPCGuestState(guest_XER_CA)
+#define OFFB_XER_BC      offsetofPPCGuestState(guest_XER_BC)
+#define OFFB_FPROUND     offsetofPPCGuestState(guest_FPROUND)
+#define OFFB_VRSAVE      offsetofPPCGuestState(guest_VRSAVE)
+#define OFFB_VSCR        offsetofPPCGuestState(guest_VSCR)
+#define OFFB_EMWARN      offsetofPPCGuestState(guest_EMWARN)
+#define OFFB_TISTART     offsetofPPCGuestState(guest_TISTART)
+#define OFFB_TILEN       offsetofPPCGuestState(guest_TILEN)
+#define OFFB_RESVN       offsetofPPCGuestState(guest_RESVN)
+#define OFFB_NRADDR      offsetofPPCGuestState(guest_NRADDR)
+#define OFFB_NRADDR_GPR2 offsetofPPCGuestState(guest_NRADDR_GPR2)
 
 
 /*------------------------------------------------------------*/
@@ -324,6 +327,8 @@ typedef enum {
     PPC_GST_TISTART,// For icbi: start of area to invalidate
     PPC_GST_TILEN,  // For icbi: length of area to invalidate
     PPC_GST_RESVN,  // For lwarx/stwcx.
+    PPC_GST_CIA_AT_SC, // the CIA of the most recently executed SC insn
+    PPC_GST_SPRG3_RO, // SPRG3
     PPC_GST_MAX
 } PPC_GST;
 
@@ -1203,19 +1208,28 @@ static IRExpr* addr_align( IRExpr* addr, UChar align )
 }
 
 
-/* Generate AbiHints which mark points at which the ELF ppc64 ABI says
-   that the stack red zone (viz, -288(r1) .. -1(r1)) becomes
-   undefined.  That is at function calls and returns.  Only in 64-bit
-   mode - ELF ppc32 doesn't have this "feature".
+/* Generate AbiHints which mark points at which the ELF or PowerOpen
+   ABIs say that the stack red zone (viz, -N(r1) .. -1(r1), for some
+   N) becomes undefined.  That is at function calls and returns.  ELF
+   ppc32 doesn't have this "feature" (how fortunate for it).
 */
-static void make_redzone_AbiHint ( HChar* who )
+static void make_redzone_AbiHint ( VexMiscInfo* vmi, HChar* who )
 {
+   Int szB = vmi->guest_stack_redzone_size;
    if (0) vex_printf("AbiHint: %s\n", who);
-   vassert(mode64);
-   stmt( IRStmt_AbiHint( 
-            binop(Iop_Sub64, getIReg(1), mkU64(288)), 
-            288 
-   ));
+   vassert(szB >= 0);
+   if (szB > 0) {
+      if (mode64)
+         stmt( IRStmt_AbiHint( 
+                  binop(Iop_Sub64, getIReg(1), mkU64(szB)), 
+                  szB
+         ));
+      else
+         stmt( IRStmt_AbiHint( 
+                  binop(Iop_Sub32, getIReg(1), mkU32(szB)), 
+                  szB
+         ));
+   }
 }
 
 
@@ -2051,6 +2065,12 @@ static IRExpr* /* :: Ity_I32/64 */ getGST ( PPC_GST reg )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    switch (reg) {
+   case PPC_GST_SPRG3_RO:
+      return IRExpr_Get( OFFB_SPRG3_RO, ty );
+
+   case PPC_GST_CIA: 
+      return IRExpr_Get( OFFB_CIA, ty );
+
    case PPC_GST_LR: 
       return IRExpr_Get( OFFB_LR, ty );
 
@@ -2181,6 +2201,10 @@ static void putGST ( PPC_GST reg, IRExpr* src )
    IRType ty_src = typeOfIRExpr(irbb->tyenv,src );
    vassert( reg < PPC_GST_MAX );
    switch (reg) {
+   case PPC_GST_CIA_AT_SC: 
+      vassert( ty_src == ty );
+      stmt( IRStmt_Put( OFFB_CIA_AT_SC, src ) );
+      break;
    case PPC_GST_CIA: 
       vassert( ty_src == ty );
       stmt( IRStmt_Put( OFFB_CIA, src ) );
@@ -3714,7 +3738,7 @@ static Bool dis_int_load ( UInt theInstr )
 /*
   Integer Store Instructions
 */
-static Bool dis_int_store ( UInt theInstr )
+static Bool dis_int_store ( UInt theInstr, VexMiscInfo* vmi )
 {
    /* D-Form, X-Form, DS-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -4211,6 +4235,7 @@ static IRExpr* /* :: Ity_I32 */ branch_cond_ok( UInt BO, UInt BI )
   Integer Branch Instructions
 */
 static Bool dis_branch ( UInt theInstr, 
+                         VexMiscInfo* vmi,
                          /*OUT*/DisResult* dres,
                          Bool (*resteerOkFn)(void*,Addr64),
                          void* callback_opaque )
@@ -4263,8 +4288,10 @@ static Bool dis_branch ( UInt theInstr,
 
       if (flag_LK) {
          putGST( PPC_GST_LR, e_nia );
-         if (mode64)
-            make_redzone_AbiHint( "branch-and-link (unconditional call)" );
+         if (vmi->guest_ppc_zap_RZ_at_bl
+             && vmi->guest_ppc_zap_RZ_at_bl( (ULong)tgt) )
+            make_redzone_AbiHint( vmi, 
+                                  "branch-and-link (unconditional call)" );
       }
 
       if (resteerOkFn( callback_opaque, tgt )) {
@@ -4378,8 +4405,8 @@ static Bool dis_branch ( UInt theInstr,
                   Ijk_Boring,
                   c_nia ));
 
-	 if (vanilla_return && mode64)
-            make_redzone_AbiHint( "branch-to-lr (unconditional return)" );
+	 if (vanilla_return && vmi->guest_ppc_zap_RZ_at_blr)
+            make_redzone_AbiHint( vmi, "branch-to-lr (unconditional return)" );
 
          /* blrl is pretty strange; it's like a return that sets the
             return address of its caller to the insn following this
@@ -4627,7 +4654,8 @@ static Bool dis_trapi ( UInt theInstr,
 /*
   System Linkage Instructions
 */
-static Bool dis_syslink ( UInt theInstr, DisResult* dres )
+static Bool dis_syslink ( UInt theInstr, 
+                          VexMiscInfo* miscinfo, DisResult* dres )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
 
@@ -4638,11 +4666,22 @@ static Bool dis_syslink ( UInt theInstr, DisResult* dres )
 
    // sc  (System Call, PPC32 p504)
    DIP("sc\n");
-   
+
+   /* Copy CIA into the CIA_AT_SC pseudo-register, so that on AIX
+      Valgrind can back the guest up to this instruction if it needs
+      to restart the syscall. */
+   putGST( PPC_GST_CIA_AT_SC, getGST( PPC_GST_CIA ) );
+
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
       forces any TempRegs caching ArchRegs to be flushed. */
-   irbb->next     = mkSzImm( ty, nextInsnAddr() );
+   /* At this point, AIX's behaviour differs from Linux's: AIX resumes
+      after the syscall at %lr, whereas Linux does the obvious thing
+      and resumes at the next instruction.  Hence we need to encode
+      that into the generated IR. */
+   irbb->next     = miscinfo->guest_ppc_sc_continues_at_LR
+                       ? /*AIXishly*/getGST( PPC_GST_LR )
+                       : /*Linuxfully*/mkSzImm( ty, nextInsnAddr() );
    irbb->jumpkind = Ijk_Sys_syscall;
 
    dres->whatNext = Dis_StopHere;
@@ -5193,7 +5232,7 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 /*
   Processor Control Instructions
 */
-static Bool dis_proc_ctl ( UInt theInstr )
+static Bool dis_proc_ctl ( VexMiscInfo* vmi, UInt theInstr )
 {
    UChar opc1     = ifieldOPC(theInstr);
    
@@ -5290,7 +5329,12 @@ static Bool dis_proc_ctl ( UInt theInstr )
          putIReg( rD_addr, mkSzWiden32(ty, getGST( PPC_GST_VRSAVE ),
                                        /* Signed */False) );
          break;
-         
+
+      case 0x103:
+         DIP("mfspr r%u, SPRG3(readonly)\n", rD_addr);
+         putIReg( rD_addr, getGST( PPC_GST_SPRG3_RO ) );
+         break;
+
       default:
          vex_printf("dis_proc_ctl(ppc)(mfspr,SPR)(0x%x)\n", SPR);
          return False;
@@ -5304,7 +5348,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
                               val, 
                               0/*regparms*/, 
                               "ppcg_dirtyhelper_MFTB", 
-                              fnptr_to_fnentry(&ppcg_dirtyhelper_MFTB), 
+                              fnptr_to_fnentry(vmi, &ppcg_dirtyhelper_MFTB), 
                               args );
       /* execute the dirty call, dumping the result in val. */
       stmt( IRStmt_Dirty(d) );
@@ -6708,7 +6752,7 @@ static Bool dis_av_procctl ( UInt theInstr )
 /*
   AltiVec Load Instructions
 */
-static Bool dis_av_load ( UInt theInstr )
+static Bool dis_av_load ( VexMiscInfo* vmi, UInt theInstr )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -6744,13 +6788,13 @@ static Bool dis_av_load ( UInt theInstr )
          d = unsafeIRDirty_0_N (
                         0/*regparms*/, 
                         "ppc32g_dirtyhelper_LVS",
-                        fnptr_to_fnentry(&ppc32g_dirtyhelper_LVS),
+                        fnptr_to_fnentry(vmi, &ppc32g_dirtyhelper_LVS),
                         args );
       } else {
          d = unsafeIRDirty_0_N (
                         0/*regparms*/, 
                         "ppc64g_dirtyhelper_LVS",
-                        fnptr_to_fnentry(&ppc64g_dirtyhelper_LVS),
+                        fnptr_to_fnentry(vmi, &ppc64g_dirtyhelper_LVS),
                         args );
       }
       DIP("lvsl v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
@@ -6777,13 +6821,13 @@ static Bool dis_av_load ( UInt theInstr )
          d = unsafeIRDirty_0_N (
                         0/*regparms*/, 
                         "ppc32g_dirtyhelper_LVS",
-                        fnptr_to_fnentry(&ppc32g_dirtyhelper_LVS),
+                        fnptr_to_fnentry(vmi, &ppc32g_dirtyhelper_LVS),
                         args );
       } else {
          d = unsafeIRDirty_0_N (
                         0/*regparms*/, 
                         "ppc64g_dirtyhelper_LVS",
-                        fnptr_to_fnentry(&ppc64g_dirtyhelper_LVS),
+                        fnptr_to_fnentry(vmi, &ppc64g_dirtyhelper_LVS),
                         args );
       }
       DIP("lvsr v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
@@ -8694,7 +8738,8 @@ DisResult disInstr_PPC_WRK (
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
              void*        callback_opaque,
              Long         delta64,
-             VexArchInfo* archinfo 
+             VexArchInfo* archinfo,
+             VexMiscInfo* miscinfo
           )
 {
    UChar     opc1;
@@ -8797,14 +8842,12 @@ DisResult disInstr_PPC_WRK (
             goto decode_success;
          }
          else
-         if (mode64 
-             && getUIntBigendianly(code+16) == 0x7C842378 /* or 4,4,4 */) {
+         if (getUIntBigendianly(code+16) == 0x7C842378 /* or 4,4,4 */) {
             /* %R3 = guest_NRADDR_GPR2 */
             DIP("r3 = guest_NRADDR_GPR2\n");
             delta += 20;
             dres.len = 20;
-            vassert(ty == Ity_I64);
-            putIReg(3, IRExpr_Get( OFFB64_NRADDR_GPR2, ty ));
+            putIReg(3, IRExpr_Get( OFFB_NRADDR_GPR2, ty ));
             goto decode_success;
          }
          /* We don't know what it is.  Set opc1/opc2 so decode_failure
@@ -8860,7 +8903,7 @@ DisResult disInstr_PPC_WRK (
    /* Integer Store Instructions */
    case 0x26: case 0x27: case 0x2C: // stb,  stbu, sth
    case 0x2D: case 0x24: case 0x25: // sthu, stw,  stwu
-      if (dis_int_store( theInstr )) goto decode_success;
+      if (dis_int_store( theInstr, miscinfo )) goto decode_success;
       goto decode_failure;
 
    /* Integer Load and Store Multiple Instructions */
@@ -8870,13 +8913,14 @@ DisResult disInstr_PPC_WRK (
 
    /* Branch Instructions */
    case 0x12: case 0x10: // b, bc
-      if (dis_branch(theInstr, &dres, resteerOkFn, callback_opaque)) 
+      if (dis_branch(theInstr, miscinfo, &dres, 
+                               resteerOkFn, callback_opaque)) 
          goto decode_success;
       goto decode_failure;
 
    /* System Linkage Instructions */
    case 0x11: // sc
-      if (dis_syslink(theInstr, &dres)) goto decode_success;
+      if (dis_syslink(theInstr, miscinfo, &dres)) goto decode_success;
       goto decode_failure;
 
    /* Trap Instructions */
@@ -8941,7 +8985,7 @@ DisResult disInstr_PPC_WRK (
    /* 64bit Integer Stores */
    case 0x3E:  // std, stdu
       if (!mode64) goto decode_failure;
-      if (dis_int_store( theInstr )) goto decode_success;
+      if (dis_int_store( theInstr, miscinfo )) goto decode_success;
       goto decode_failure;
 
    case 0x3F:
@@ -9033,7 +9077,8 @@ DisResult disInstr_PPC_WRK (
          
       /* Branch Instructions */
       case 0x210: case 0x010: // bcctr, bclr
-         if (dis_branch(theInstr, &dres, resteerOkFn, callback_opaque)) 
+         if (dis_branch(theInstr, miscinfo, &dres, 
+                                  resteerOkFn, callback_opaque)) 
             goto decode_success;
          goto decode_failure;
          
@@ -9129,13 +9174,13 @@ DisResult disInstr_PPC_WRK (
       /* Integer Store Instructions */
       case 0x0F7: case 0x0D7: case 0x1B7: // stbux, stbx,  sthux
       case 0x197: case 0x0B7: case 0x097: // sthx,  stwux, stwx
-         if (dis_int_store( theInstr )) goto decode_success;
+         if (dis_int_store( theInstr, miscinfo )) goto decode_success;
          goto decode_failure;
 
       /* 64bit Integer Store Instructions */
       case 0x0B5: case 0x095: // stdux, stdx
          if (!mode64) goto decode_failure;
-         if (dis_int_store( theInstr )) goto decode_success;
+         if (dis_int_store( theInstr, miscinfo )) goto decode_success;
          goto decode_failure;
 
       /* Integer Load and Store with Byte Reverse Instructions */
@@ -9173,7 +9218,7 @@ DisResult disInstr_PPC_WRK (
       /* Processor Control Instructions */
       case 0x200: case 0x013: case 0x153: // mcrxr, mfcr,  mfspr
       case 0x173: case 0x090: case 0x1D3: // mftb,  mtcrf, mtspr
-         if (dis_proc_ctl( theInstr )) goto decode_success;
+         if (dis_proc_ctl( miscinfo, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Cache Management Instructions */
@@ -9229,7 +9274,7 @@ DisResult disInstr_PPC_WRK (
       case 0x007: case 0x027: case 0x047: // lvebx, lvehx, lvewx
       case 0x067: case 0x167:             // lvx, lvxl
          if (!allow_V) goto decode_noV;
-         if (dis_av_load( theInstr )) goto decode_success;
+         if (dis_av_load( miscinfo, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Store */
@@ -9469,6 +9514,7 @@ DisResult disInstr_PPC ( IRBB*        irbb_IN,
                          Addr64       guest_IP,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
+                         VexMiscInfo* miscinfo,
                          Bool         host_bigendian_IN )
 {
    IRType     ty;
@@ -9504,7 +9550,7 @@ DisResult disInstr_PPC ( IRBB*        irbb_IN,
    guest_CIA_bbstart    = mkSzAddr(ty, guest_IP - delta);
 
    dres = disInstr_PPC_WRK ( put_IP, resteerOkFn, callback_opaque,
-                             delta, archinfo );
+                             delta, archinfo, miscinfo );
 
    return dres;
 }

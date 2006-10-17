@@ -101,6 +101,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                  /*IN*/ Bool             host_bigendian,
                  /*IN*/ VexArch          arch_guest,
                  /*IN*/ VexArchInfo*     archinfo_guest,
+                 /*IN*/ VexMiscInfo*     miscinfo_both,
                  /*IN*/ IRType           guest_word_type,
                  /*IN*/ Bool             do_self_check,
                  /*IN*/ Bool             (*preamble_function)(void*,IRBB*),
@@ -234,6 +235,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                             guest_IP_curr_instr,
                             arch_guest,
                             archinfo_guest,
+                            miscinfo_both,
                             host_bigendian );
 
       /* stay sane ... */
@@ -342,6 +344,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
 
       UInt     len2check, adler32;
       IRTemp   tistart_tmp, tilen_tmp;
+      HWord    p_adler_helper;
 
       vassert(vge->n_used == 1);
       len2check = vge->len[0];
@@ -373,6 +376,10 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
      irbb->stmts[selfcheck_idx+3]
         = IRStmt_Put( offB_TILEN, IRExpr_Tmp(tilen_tmp) );
 
+     p_adler_helper = miscinfo_both->host_ppc_calls_use_fndescrs
+                      ? ((HWord*)(&genericg_compute_adler32))[0]
+                      : (HWord)&genericg_compute_adler32;
+
      irbb->stmts[selfcheck_idx+4]
         = IRStmt_Exit( 
              IRExpr_Binop( 
@@ -381,11 +388,7 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                    Ity_I32, 
                    2/*regparms*/, 
                    "genericg_compute_adler32",
-#if defined(__powerpc__) && defined(__powerpc64__)
-                   (void*)((ULong*)(&genericg_compute_adler32))[0],
-#else
-                   &genericg_compute_adler32,
-#endif
+                   (void*)p_adler_helper,
                    mkIRExprVec_2( 
                       mkIRExpr_HWord( (HWord)guest_code ), 
                       mkIRExpr_HWord( (HWord)len2check )

@@ -1931,14 +1931,24 @@ void jcc_01 ( AMD64Condcode cond, Addr64 d64_false, Addr64 d64_true )
    generates an AbiHint to say that -128(%rsp) .. -1(%rsp) should now
    be regarded as uninitialised.
 */
-static void make_redzone_AbiHint ( IRTemp new_rsp, HChar* who )
+static 
+void make_redzone_AbiHint ( VexMiscInfo* vmi, IRTemp new_rsp, HChar* who )
 {
+   Int szB = vmi->guest_stack_redzone_size;
+   vassert(szB >= 0);
+
+   /* A bit of a kludge.  Currently the only AbI we've guested AMD64
+      for is ELF.  So just check it's the expected 128 value
+      (paranoia). */
+   vassert(szB == 128);
+
    if (0) vex_printf("AbiHint: %s\n", who);
    vassert(typeOfIRTemp(irbb->tyenv, new_rsp) == Ity_I64);
-   stmt( IRStmt_AbiHint( 
-            binop(Iop_Sub64, mkexpr(new_rsp), mkU64(128)), 
-            128 
-         ));
+   if (szB > 0)
+      stmt( IRStmt_AbiHint( 
+               binop(Iop_Sub64, mkexpr(new_rsp), mkU64(szB)), 
+               szB
+            ));
 }
 
 
@@ -3626,7 +3636,8 @@ ULong dis_Grp4 ( Prefix pfx, Long delta )
 
 /* Group 5 extended opcodes. */
 static
-ULong dis_Grp5 ( Prefix pfx, Int sz, Long delta, DisResult* dres )
+ULong dis_Grp5 ( VexMiscInfo* vmi,
+                 Prefix pfx, Int sz, Long delta, DisResult* dres )
 {
    Int     len;
    UChar   modrm;
@@ -3666,7 +3677,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, Long delta, DisResult* dres )
             assign(t2, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
             putIReg64(R_RSP, mkexpr(t2));
             storeLE( mkexpr(t2), mkU64(guest_RIP_bbstart+delta+1));
-            make_redzone_AbiHint(t2, "call-Ev(reg)");
+            make_redzone_AbiHint(vmi, t2, "call-Ev(reg)");
             jmp_treg(Ijk_Call,t3);
             dres->whatNext = Dis_StopHere;
             showSz = False;
@@ -3721,7 +3732,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, Long delta, DisResult* dres )
             assign(t2, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
             putIReg64(R_RSP, mkexpr(t2));
             storeLE( mkexpr(t2), mkU64(guest_RIP_bbstart+delta+len));
-            make_redzone_AbiHint(t2, "call-Ev(mem)");
+            make_redzone_AbiHint(vmi, t2, "call-Ev(mem)");
             jmp_treg(Ijk_Call,t3);
             dres->whatNext = Dis_StopHere;
             showSz = False;
@@ -7565,7 +7576,7 @@ ULong dis_xadd_G_E ( /*OUT*/Bool* decode_ok,
 //.. }
 
 static
-void dis_ret ( ULong d64 )
+void dis_ret ( VexMiscInfo* vmi, ULong d64 )
 {
    IRTemp t1 = newTemp(Ity_I64); 
    IRTemp t2 = newTemp(Ity_I64);
@@ -7574,7 +7585,7 @@ void dis_ret ( ULong d64 )
    assign(t2, loadLE(Ity_I64,mkexpr(t1)));
    assign(t3, binop(Iop_Add64, mkexpr(t1), mkU64(8+d64)));
    putIReg64(R_RSP, mkexpr(t3));
-   make_redzone_AbiHint(t3, "ret");
+   make_redzone_AbiHint(vmi, t3, "ret");
    jmp_treg(Ijk_Ret,t2);
 }
 
@@ -8218,7 +8229,8 @@ DisResult disInstr_AMD64_WRK (
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
              void*        callback_opaque,
              Long         delta64,
-             VexArchInfo* archinfo 
+             VexArchInfo* archinfo,
+             VexMiscInfo* vmi
           )
 {
    IRType    ty;
@@ -12170,7 +12182,7 @@ DisResult disInstr_AMD64_WRK (
    case 0xC3: /* RET */
       if (haveF2(pfx)) goto decode_failure;
       /* F3 is acceptable on AMD. */
-      dis_ret(0);
+      dis_ret(vmi, 0);
       dres.whatNext = Dis_StopHere;
       DIP(haveF3(pfx) ? "rep ; ret\n" : "ret\n");
       break;
@@ -12184,7 +12196,7 @@ DisResult disInstr_AMD64_WRK (
       assign(t1, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(8)));
       putIReg64(R_RSP, mkexpr(t1));
       storeLE( mkexpr(t1), mkU64(guest_RIP_bbstart+delta));
-      make_redzone_AbiHint(t1, "call-d32");
+      make_redzone_AbiHint(vmi, t1, "call-d32");
       if (resteerOkFn( callback_opaque, (Addr64)d64) ) {
          /* follow into the call target. */
          dres.whatNext   = Dis_Resteer;
@@ -13711,7 +13723,7 @@ DisResult disInstr_AMD64_WRK (
 
    case 0xFF: /* Grp5 Ev */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_Grp5 ( pfx, sz, delta, &dres );
+      delta = dis_Grp5 ( vmi, pfx, sz, delta, &dres );
       break;
 
    /* ------------------------ Escapes to 2-byte opcodes -- */
@@ -14340,6 +14352,7 @@ DisResult disInstr_AMD64 ( IRBB*        irbb_IN,
                            Addr64       guest_IP,
                            VexArch      guest_arch,
                            VexArchInfo* archinfo,
+                           VexMiscInfo* miscinfo,
                            Bool         host_bigendian_IN )
 {
    DisResult dres;
@@ -14357,7 +14370,7 @@ DisResult disInstr_AMD64 ( IRBB*        irbb_IN,
    guest_RIP_next_mustcheck = False;
 
    dres = disInstr_AMD64_WRK ( put_IP, resteerOkFn, callback_opaque,
-                               delta, archinfo );
+                               delta, archinfo, miscinfo );
 
    /* If disInstr_AMD64_WRK tried to figure out the next rip, check it
       got it right.  Failure of this assertion is serious and denotes

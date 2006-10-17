@@ -135,6 +135,7 @@ typedef  unsigned long HWord;
 
 #undef VEX_HOST_WORDSIZE
 
+/* The following 4 work OK for Linux. */
 #if defined(__x86_64__)
 #   define VEX_HOST_WORDSIZE 8
 #elif defined(__i386__)
@@ -143,6 +144,12 @@ typedef  unsigned long HWord;
 #   define VEX_HOST_WORDSIZE 8
 #elif defined(__powerpc__) && !defined(__powerpc64__)
 #   define VEX_HOST_WORDSIZE 4
+
+#elif defined(_AIX) && !defined(__64BIT__)
+#   define VEX_HOST_WORDSIZE 4
+#elif defined(_AIX) && defined(__64BIT__)
+#   define VEX_HOST_WORDSIZE 8
+
 #else
 #   error "Vex: Fatal: Can't establish the host architecture"
 #endif

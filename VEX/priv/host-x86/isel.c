@@ -3604,8 +3604,9 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire BB to x86 code. */
 
-HInstrArray* iselBB_X86 ( IRBB* bb, VexArch arch_host,
-                                    VexArchInfo* archinfo_host )
+HInstrArray* iselBB_X86 ( IRBB* bb, VexArch      arch_host,
+                                    VexArchInfo* archinfo_host,
+                                    VexMiscInfo* vmi/*UNUSED*/ )
 {
    Int      i, j;
    HReg     hreg, hregHI;

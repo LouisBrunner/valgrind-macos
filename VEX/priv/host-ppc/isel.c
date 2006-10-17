@@ -253,6 +253,9 @@ static IRExpr* bind ( Int binder )
       was most recently set.  Setting to NULL is always safe.  Used to
       avoid redundant settings of the FPU's rounding mode, as
       described in set_FPU_rounding_mode below.
+
+    - A VexMiscInfo*, needed for knowing how to generate
+      function calls for this target
 */
  
 typedef
@@ -275,6 +278,8 @@ typedef
       Bool         mode64;
 
       IRExpr*      previous_rm;
+
+      VexMiscInfo* vmi;
    }
    ISelEnv;
  
@@ -532,7 +537,7 @@ static PPCAMode* advance4 ( ISelEnv* env, PPCAMode* am )
 
 /* Given a guest-state array descriptor, an index expression and a
    bias, generate a PPCAMode pointing at the relevant piece of 
-   guest state.  Only needed in 64-bit mode. */
+   guest state.  */
 static
 PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
                                 IRExpr* off, Int bias )
@@ -542,23 +547,22 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
    Int  nElems = descr->nElems;
    Int  shift  = 0;
 
-   vassert(env->mode64);
-
    /* Throw out any cases we don't need.  In theory there might be a
       day where we need to handle others, but not today. */
 
    if (nElems != 16 && nElems != 32)
-      vpanic("genGuestArrayOffset(ppc64 host)(1)");
+      vpanic("genGuestArrayOffset(ppc host)(1)");
 
    switch (elemSz) {
+      case 4:  shift = 2; break;
       case 8:  shift = 3; break;
-      default: vpanic("genGuestArrayOffset(ppc64 host)(2)");
+      default: vpanic("genGuestArrayOffset(ppc host)(2)");
    }
 
    if (bias < -100 || bias > 100) /* somewhat arbitrarily */
-      vpanic("genGuestArrayOffset(ppc64 host)(3)");
+      vpanic("genGuestArrayOffset(ppc host)(3)");
    if (descr->base < 0 || descr->base > 2000) /* somewhat arbitrarily */
-     vpanic("genGuestArrayOffset(ppc64 host)(4)");
+     vpanic("genGuestArrayOffset(ppc host)(4)");
 
    /* Compute off into a reg, %off.  Then return:
 
@@ -580,7 +584,7 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
                     PPCRH_Imm(False/*signed*/, toUShort(nElems-1))));
    addInstr(env, PPCInstr_Shft(
                     Pshft_SHL, 
-                    False/*64-bit shift*/,
+                    env->mode64 ? False : True/*F:64-bit, T:32-bit shift*/,
                     rtmp, rtmp, 
                     PPCRH_Imm(False/*unsigned*/, toUShort(shift))));
    addInstr(env, PPCInstr_Alu(
@@ -630,6 +634,11 @@ void doHelperCall ( ISelEnv* env,
    UInt        argiregs;
    ULong       target;
    Bool        mode64 = env->mode64;
+
+   /* Do we need to force use of an odd-even reg pair for 64-bit
+      args? */
+   Bool regalign_int64s
+      = (!mode64) && env->vmi->host_ppc32_regalign_int64_args;
 
    /* Marshal args for a call and do the call.
 
@@ -756,8 +765,9 @@ void doHelperCall ( ISelEnv* env,
                                       iselWordExpr_R(env, args[i]) ));
             } else { // Ity_I64
                HReg rHi, rLo;
-               if (argreg%2 == 1) // ppc32 abi spec for passing LONG_LONG
-                  argreg++;       // XXX: odd argreg => even rN
+               if (regalign_int64s && (argreg%2) == 1) 
+                              // ppc32 ELF abi spec for passing LONG_LONG
+                  argreg++;   // XXX: odd argreg => even rN
                vassert(argreg < PPC_N_REGPARMS-1);
                iselInt64Expr(&rHi,&rLo, env, args[i]);
                argiregs |= (1 << (argreg+3));
@@ -799,8 +809,9 @@ void doHelperCall ( ISelEnv* env,
                tmpregs[argreg] = iselWordExpr_R(env, args[i]);
             } else { // Ity_I64
                HReg rHi, rLo;
-               if (argreg%2 == 1) // ppc32 abi spec for passing LONG_LONG
-                  argreg++;       // XXX: odd argreg => even rN
+               if (regalign_int64s && (argreg%2) == 1)
+                             // ppc32 ELF abi spec for passing LONG_LONG
+                  argreg++;  // XXX: odd argreg => even rN
                vassert(argreg < PPC_N_REGPARMS-1);
                iselInt64Expr(&rHi,&rLo, env, args[i]);
                tmpregs[argreg++] = rHi;
@@ -1788,17 +1799,23 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       break;
    }
 
-   case Iex_GetI: 
+   case Iex_GetI: {
+      PPCAMode* src_am
+         = genGuestArrayOffset( env, e->Iex.GetI.descr,
+                                     e->Iex.GetI.ix, e->Iex.GetI.bias );
+      HReg r_dst = newVRegI(env);
       if (mode64 && ty == Ity_I64) {
-         PPCAMode* src_am
-            = genGuestArrayOffset( env, e->Iex.GetI.descr,
-                                        e->Iex.GetI.ix, e->Iex.GetI.bias );
-         HReg r_dst = newVRegI(env);
          addInstr(env, PPCInstr_Load( toUChar(8),
                                       r_dst, src_am, mode64 ));
          return r_dst;
       }
+      if ((!mode64) && ty == Ity_I32) {
+         addInstr(env, PPCInstr_Load( toUChar(4),
+                                      r_dst, src_am, mode64 ));
+         return r_dst;
+      }
       break;
+   }
 
    /* --------- CCALL --------- */
    case Iex_CCall: {
@@ -2485,8 +2502,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
       HReg  tLo = newVRegI(env);
       HReg  tHi = newVRegI(env);
       vassert(e->Iex.Const.con->tag == Ico_U64);
-      addInstr(env, PPCInstr_LI(tHi, wHi, False/*mode32*/));
-      addInstr(env, PPCInstr_LI(tLo, wLo, False/*mode32*/));
+      addInstr(env, PPCInstr_LI(tHi, (Long)(Int)wHi, False/*mode32*/));
+      addInstr(env, PPCInstr_LI(tLo, (Long)(Int)wLo, False/*mode32*/));
       *rHi = tHi;
       *rLo = tLo;
       return;
@@ -3674,21 +3691,26 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    }
       
    /* --------- Indexed PUT --------- */
-   case Ist_PutI:
-      if (mode64) {
-         PPCAMode* dst_am
-            = genGuestArrayOffset(
-                 env, stmt->Ist.PutI.descr, 
-                      stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
-         IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
-         if (ty == Ity_I64) {
-            HReg r_src = iselWordExpr_R(env, stmt->Ist.PutI.data);
-            addInstr(env, PPCInstr_Store( toUChar(8),
-                                          dst_am, r_src, mode64 ));
-            return;
-         }
+   case Ist_PutI: {
+      PPCAMode* dst_am
+         = genGuestArrayOffset(
+              env, stmt->Ist.PutI.descr, 
+                   stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
+      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
+      if (mode64 && ty == Ity_I64) {
+         HReg r_src = iselWordExpr_R(env, stmt->Ist.PutI.data);
+         addInstr(env, PPCInstr_Store( toUChar(8),
+                                       dst_am, r_src, mode64 ));
+         return;
+      }
+      if ((!mode64) && ty == Ity_I32) {
+         HReg r_src = iselWordExpr_R(env, stmt->Ist.PutI.data);
+         addInstr(env, PPCInstr_Store( toUChar(4),
+                                       dst_am, r_src, mode64 ));
+         return;
       }
       break;
+   }
 
    /* --------- TMP --------- */
    case Ist_Tmp: {
@@ -3856,8 +3878,9 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire BB to ppc code. */
 
-HInstrArray* iselBB_PPC ( IRBB* bb, VexArch arch_host,
-                                    VexArchInfo* archinfo_host )
+HInstrArray* iselBB_PPC ( IRBB* bb, VexArch      arch_host,
+                                    VexArchInfo* archinfo_host,
+                                    VexMiscInfo* vmi )
 {
    Int      i, j;
    HReg     hreg, hregHI;
@@ -3904,6 +3927,7 @@ HInstrArray* iselBB_PPC ( IRBB* bb, VexArch arch_host,
    /* and finally ... */
    env->hwcaps      = hwcaps_host;
    env->previous_rm = NULL;
+   env->vmi         = vmi;
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */

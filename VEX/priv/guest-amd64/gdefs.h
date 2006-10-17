@@ -66,6 +66,7 @@ DisResult disInstr_AMD64 ( IRBB*        irbb,
                            Addr64       guest_IP,
                            VexArch      guest_arch,
                            VexArchInfo* archinfo,
+                           VexMiscInfo* miscinfo,
                            Bool         host_bigendian );
 
 /* Used by the optimiser to specialise calls to helpers. */

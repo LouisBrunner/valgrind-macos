@@ -67,6 +67,7 @@ int main ( int argc, char** argv )
    VexControl vcon;
    VexGuestExtents vge;
    VexArchInfo vai_x86, vai_amd64, vai_ppc32;
+   VexMiscInfo vmi;
    VexTranslateArgs vta;
 
    if (argc != 2) {
@@ -135,6 +136,8 @@ int main ( int argc, char** argv )
       vai_ppc32.hwcaps = 0;
       vai_ppc32.ppc_cache_line_szB = 128;
 
+      LibVEX_default_VexMiscInfo(&vmi);
+
       /* ----- Set up args for LibVEX_Translate ----- */
 #if 1 /* ppc32 -> ppc32 */
       vta.arch_guest     = VexArchPPC32;
@@ -154,6 +157,7 @@ int main ( int argc, char** argv )
       vta.arch_host      = VexArchX86;
       vta.archinfo_host  = vai_x86;
 #endif
+      vta.miscinfo_both   = vmi;
       vta.guest_bytes     = origbuf;
       vta.guest_bytes_addr = (Addr64)orig_addr;
       vta.callback_opaque = NULL;

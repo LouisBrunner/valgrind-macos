@@ -266,6 +266,14 @@ typedef
       /* 1128 */ ULong guest_REDIR_SP;
       /* 1136 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
 
+      /* Needed for AIX: CIA at the last SC insn.  Used when backing up
+         to restart a syscall that has been interrupted by a signal. */
+      /* ???? */ ULong guest_CIA_AT_SC; 
+
+      /* SPRG3, which AIUI is readonly in user space.  Needed for
+         threading on AIX. */
+      /* ???? */ ULong guest_SPRG3_RO;
+
       /* Padding to make it have an 8-aligned size */
       /* UInt  padding; */
    }

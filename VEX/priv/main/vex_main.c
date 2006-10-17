@@ -193,7 +193,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    HInstr*      (*genReload)   ( HReg, Int, Bool );
    void         (*ppInstr)     ( HInstr*, Bool );
    void         (*ppReg)       ( HReg );
-   HInstrArray* (*iselBB)      ( IRBB*, VexArch, VexArchInfo* );
+   HInstrArray* (*iselBB)      ( IRBB*, VexArch, VexArchInfo*, 
+                                                 VexMiscInfo* );
    Int          (*emit)        ( UChar*, Int, HInstr*, Bool, void* );
    IRExpr*      (*specHelper)  ( HChar*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
@@ -432,6 +433,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                      host_is_bigendian,
                      vta->arch_guest,
                      &vta->archinfo_guest,
+                     &vta->miscinfo_both,
                      guest_word_type,
                      vta->do_self_check,
                      vta->preamble_function,
@@ -558,7 +560,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
                    " Instruction selection "
                    "------------------------\n");
 
-   vcode = iselBB ( irbb, vta->arch_host, &vta->archinfo_host );
+   vcode = iselBB ( irbb, vta->arch_host, &vta->archinfo_host, 
+                                          &vta->miscinfo_both );
 
    vexAllocSanityCheck();
 
@@ -695,12 +698,22 @@ const HChar* LibVEX_ppVexHwCaps ( VexArch arch, UInt hwcaps )
 }
 
 
-
 /* Write default settings info *vai. */
 void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
 {
    vai->hwcaps             = 0;
    vai->ppc_cache_line_szB = 0;
+}
+
+/* Write default settings info *vmi. */
+void LibVEX_default_VexMiscInfo ( /*OUT*/VexMiscInfo* vmi )
+{
+   vmi->guest_stack_redzone_size       = 0;
+   vmi->guest_ppc_zap_RZ_at_blr        = False;
+   vmi->guest_ppc_zap_RZ_at_bl         = NULL;
+   vmi->guest_ppc_sc_continues_at_LR   = False;
+   vmi->host_ppc_calls_use_fndescrs    = False;
+   vmi->host_ppc32_regalign_int64_args = False;
 }
 
 

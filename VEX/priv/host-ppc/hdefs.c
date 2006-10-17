@@ -1123,67 +1123,13 @@ PPCInstr* PPCInstr_AvLdVSCR ( HReg src ) {
 
 /* Pretty Print instructions */
 static void ppLoadImm ( HReg dst, ULong imm, Bool mode64 ) {
-#if 1
    vex_printf("li_word ");
    ppHRegPPC(dst);
    if (!mode64) {
-      vassert(imm == (ULong)(Long)(Int)(UInt)imm);
       vex_printf(",0x%08x", (UInt)imm);
    } else {
       vex_printf(",0x%016llx", imm);
    }
-#else
-   if (imm >= 0xFFFFFFFFFFFF8000ULL || imm < 0x8000) {
-      // sign-extendable from 16 bits
-      vex_printf("li ");
-      ppHRegPPC(dst);
-      vex_printf(",0x%x", (UInt)imm);
-   } else {
-      if (imm >= 0xFFFFFFFF80000000ULL || imm < 0x80000000ULL) {
-         // sign-extendable from 32 bits
-         vex_printf("lis ");
-         ppHRegPPC(dst);
-         vex_printf(",0x%x ; ", (UInt)(imm >> 16));
-         vex_printf("ori ");
-         ppHRegPPC(dst);
-         vex_printf(",");
-         ppHRegPPC(dst);
-         vex_printf(",0x%x", (UInt)(imm & 0xFFFF));
-      } else {
-         // full 64bit immediate load: 5 (five!) insns.
-         vassert(mode64);
-
-         // load high word
-         vex_printf("lis ");
-         ppHRegPPC(dst);
-         vex_printf(",0x%x ; ", (UInt)(imm >> 48) & 0xFFFF);
-         vex_printf("ori ");
-         ppHRegPPC(dst);
-         vex_printf(",");
-         ppHRegPPC(dst);
-         vex_printf(",0x%x ; ", (UInt)(imm >> 32) & 0xFFFF);
-         
-         // shift r_dst low word to high word => rldicr
-         vex_printf("rldicr ");
-         ppHRegPPC(dst);
-         vex_printf(",");
-         ppHRegPPC(dst);
-         vex_printf(",32,31 ; ");
-
-         // load low word
-         vex_printf("oris ");
-         ppHRegPPC(dst);
-         vex_printf(",");
-         ppHRegPPC(dst);
-         vex_printf(",0x%x ; ", (UInt)(imm >> 16) & 0xFFFF);
-         vex_printf("ori ");
-         ppHRegPPC(dst);
-         vex_printf(",");
-         ppHRegPPC(dst);
-         vex_printf(",0x%x", (UInt)(imm >>  0) & 0xFFFF);
-      }
-   }
-#endif
 }
 
 static void ppMovReg ( HReg dst, HReg src ) {
@@ -2496,19 +2442,26 @@ static UChar* mkLoadImm ( UChar* p, UInt r_dst, ULong imm, Bool mode64 )
          vassert(mode64);
 
          // load high word
+
          // lis r_dst, (imm>>48) & 0xFFFF
          p = mkFormD(p, 15, r_dst, 0, (imm>>48) & 0xFFFF);
+
          // ori r_dst, r_dst, (imm>>32) & 0xFFFF
-         p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF);
+         if ((imm>>32) & 0xFFFF)
+            p = mkFormD(p, 24, r_dst, r_dst, (imm>>32) & 0xFFFF);
          
          // shift r_dst low word to high word => rldicr
          p = mkFormMD(p, 30, r_dst, r_dst, 32, 31, 1);
 
          // load low word
+
          // oris r_dst, r_dst, (imm>>16) & 0xFFFF
-         p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF);
+         if ((imm>>16) & 0xFFFF)
+            p = mkFormD(p, 25, r_dst, r_dst, (imm>>16) & 0xFFFF);
+
          // ori r_dst, r_dst, (imm) & 0xFFFF
-         p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
+         if (imm & 0xFFFF)
+            p = mkFormD(p, 24, r_dst, r_dst, imm & 0xFFFF);
       }
    }
    return p;

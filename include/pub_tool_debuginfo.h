@@ -119,6 +119,7 @@ extern Int  VG_(seginfo_syms_howmany) ( const SegInfo *si );
 extern void VG_(seginfo_syms_getidx)  ( const SegInfo *si, 
                                         Int idx,
                                         /*OUT*/Addr*   addr,
+                                        /*OUT*/Addr*   tocptr,
                                         /*OUT*/UInt*   size,
                                         /*OUT*/HChar** name );
 

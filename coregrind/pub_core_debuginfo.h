@@ -39,17 +39,38 @@
 
 #include "pub_tool_debuginfo.h"
 
-/* Notify the debuginfo system about a new mapping.  This is the way
-   new debug information gets loaded.  If allow_SkFileV is True, it
-   will try load debug info if the mapping at 'a' belongs to Valgrind;
-   whereas normally (False) it will not do that.  This allows us to
-   carefully control when the thing will read symbols from the
-   Valgrind executable itself. */
+/* LINUX: Notify the debuginfo system about a new mapping, or the
+   disappearance of such, or a permissions change on an existing
+   mapping.  This is the way new debug information gets loaded.  If
+   allow_SkFileV is True, it will try load debug info if the mapping
+   at 'a' belongs to Valgrind; whereas normally (False) it will not do
+   that.  This allows us to carefully control when the thing will read
+   symbols from the Valgrind executable itself. */
+#if defined(VGO_linux)
 extern void VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV );
 
 extern void VG_(di_notify_munmap)( Addr a, SizeT len );
 
 extern void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot );
+#endif
+
+#if defined(VGO_aix5)
+/* AIX5: Very similar, except packaged more neatly.  The supplied
+   parameters describe a code segment and its associated data segment,
+   that have recently been mapped in -- so we need to read debug info
+   for it -- or conversely, have recently been dumped, in which case
+   the relevant debug info has to be unloaded. */
+extern void VG_(di_aix5_notify_segchange)( 
+               Addr   code_start,
+               Word   code_len,
+               Addr   data_start,
+               Word   data_len,
+               UChar* file_name,
+               UChar* mem_name,
+               Bool   is_mainexe,
+               Bool   acquire
+            );
+#endif
 
 extern Bool VG_(get_fnname_nodemangle)( Addr a, 
                                         Char* fnname, Int n_fnname );
@@ -71,6 +92,16 @@ extern Addr VG_(get_tocptr) ( Addr guest_code_addr );
    offsets. */
 extern
 Bool VG_(get_fnname_Z_demangle_only) ( Addr a, Char* buf, Int nbuf );
+
+/* Map a function name to its entry point and toc pointer.  Is done by
+   sequential search of all symbol tables, so is very slow.  To
+   mitigate the worst performance effects, you may specify a soname
+   pattern, and only objects matching that pattern are searched.
+   Therefore specify "*" to search all the objects.  On TOC-afflicted
+   platforms, a symbol is deemed to be found only if it has a nonzero
+   TOC pointer.  */
+extern
+Bool VG_(lookup_symbol_SLOW)(UChar* sopatt, UChar* name, Addr* pEnt, Addr* pToc);
 
 #endif   // __PUB_CORE_DEBUGINFO_H
 

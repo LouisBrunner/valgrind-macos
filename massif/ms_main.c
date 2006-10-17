@@ -1288,7 +1288,7 @@ static void write_hp_file(void)
       file_err( hp_file );
       return;
    } else {
-      fd = sres.val;
+      fd = sres.res;
    }
 
    // File header, including command line
@@ -1601,7 +1601,7 @@ write_text_file(ULong total_ST, ULong heap_ST)
       file_err( text_file );
       return;
    } else {
-      fd = sres.val;
+      fd = sres.res;
    }
 
    // Header

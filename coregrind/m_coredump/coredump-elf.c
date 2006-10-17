@@ -290,7 +290,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
    Char *coreext = "";
    Int seq = 0;
    Int core_fd;
-   NSegment *seg;
+   NSegment const * seg;
    ESZ(Ehdr) ehdr;
    ESZ(Phdr) *phdrs;
    Int num_phdrs;
@@ -323,11 +323,11 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
                        VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
                        VKI_S_IRUSR|VKI_S_IWUSR);
       if (!sres.isError) {
-         core_fd = sres.val;
+         core_fd = sres.res;
 	 break;
       }
 
-      if (sres.isError && sres.val != VKI_EEXIST)
+      if (sres.isError && sres.err != VKI_EEXIST)
 	 return;		/* can't create file */
    }
 

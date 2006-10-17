@@ -667,7 +667,7 @@ static void initialiseSector ( Int sno )
                                      8 * tc_sector_szQ );
 	 /*NOTREACHED*/
       }
-      sec->tc = (ULong*)sres.val;
+      sec->tc = (ULong*)sres.res;
 
       sres = VG_(am_mmap_anon_float_valgrind)
                 ( N_TTES_PER_SECTOR * sizeof(TTEntry) );
@@ -676,7 +676,7 @@ static void initialiseSector ( Int sno )
                                      N_TTES_PER_SECTOR * sizeof(TTEntry) );
 	 /*NOTREACHED*/
       }
-      sec->tt = (TTEntry*)sres.val;
+      sec->tt = (TTEntry*)sres.res;
 
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
          sec->tt[i].status   = Empty;
@@ -791,7 +791,9 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
 
    vg_assert(init_done);
    vg_assert(vge->n_used >= 1 && vge->n_used <= 3);
-   vg_assert(code_len > 0 && code_len < 20000);
+
+   /* 60000: should agree with N_TMPBUF in m_translate.c. */
+   vg_assert(code_len > 0 && code_len < 60000);
 
    if (0)
       VG_(printf)("add_to_transtab(entry = 0x%llx, len = %d)\n",
@@ -1262,7 +1264,7 @@ static void init_unredir_tt_tc ( void )
          VG_(out_of_memory_NORETURN)("init_unredir_tt_tc", N_UNREDIR_TT * UNREDIR_SZB);
          /*NOTREACHED*/
       }
-      unredir_tc = (ULong *)sres.val;
+      unredir_tc = (ULong *)sres.res;
    }
    unredir_tc_used = 0;
    for (i = 0; i < N_UNREDIR_TT; i++)
@@ -1402,7 +1404,7 @@ void VG_(init_tt_tc) ( void )
 
    /* Ensure the calculated value is not way crazy. */
    vg_assert(tc_sector_szQ >= 2 * N_TTES_PER_SECTOR_USABLE);
-   vg_assert(tc_sector_szQ <= 50 * N_TTES_PER_SECTOR_USABLE);
+   vg_assert(tc_sector_szQ <= 80 * N_TTES_PER_SECTOR_USABLE);
 
    /* Initialise the sectors */
    youngest_sector = 0;

@@ -240,7 +240,8 @@ sub mysystem($)
     }
 }
 
-# Run program N times, return the best user time.
+# Run program N times, return the best user time.  Use the POSIX
+# -p flag on /usr/bin/time so as to get something parseable on AIX.
 sub time_prog($$)
 {
     my ($cmd, $n) = @_;
@@ -252,9 +253,9 @@ sub time_prog($$)
             die "\n*** Command returned non-zero ($retval)"
               . "\n*** See perf.{cmd,stdout,stderr} to determine what went wrong.\n";
         my $out = `cat perf.stderr`;
-        ($out =~ /usertime: ([\d\.]+)s/) or 
+        ($out =~ /[Uu]ser([ ]+)([\d\.]+)/) or 
             die "\n*** missing usertime in perf.stderr\n";
-        $tmin = $1 if ($1 < $tmin);
+        $tmin = $2 if ($2 < $tmin);
     }
     # Avoid divisions by zero!
     return (0 == $tmin ? 0.01 : $tmin);
@@ -277,7 +278,7 @@ sub do_one_test($$)
         }
     }
 
-    my $timecmd = "/usr/bin/time -f 'usertime: %Us'";
+    my $timecmd = "/usr/bin/time -p";
 
     # Do the native run(s).
     printf("-- $name --\n") if (@vgdirs > 1);

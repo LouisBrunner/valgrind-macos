@@ -111,6 +111,19 @@ Int VG_(count_living_threads)(void)
    return count;
 }
 
+/* Return the number of threads in VgTs_Runnable state */
+Int VG_(count_runnable_threads)(void)
+{
+   Int count = 0;
+   ThreadId tid;
+
+   for(tid = 1; tid < VG_N_THREADS; tid++)
+      if (VG_(threads)[tid].status == VgTs_Runnable)
+	 count++;
+
+   return count;
+}
+
 /* Given an LWP id (ie, real kernel thread id), find the corresponding
    ThreadId */
 ThreadId VG_(get_lwp_tid)(Int lwp)
@@ -118,7 +131,8 @@ ThreadId VG_(get_lwp_tid)(Int lwp)
    ThreadId tid;
    
    for(tid = 1; tid < VG_N_THREADS; tid++)
-      if (VG_(threads)[tid].status != VgTs_Empty && VG_(threads)[tid].os_state.lwpid == lwp)
+      if (VG_(threads)[tid].status != VgTs_Empty 
+          && VG_(threads)[tid].os_state.lwpid == lwp)
 	 return tid;
 
    return VG_INVALID_THREADID;

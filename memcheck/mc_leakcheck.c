@@ -859,14 +859,13 @@ void MC_(do_detect_memory_leaks) (
       categorisation, which [if the users ever manage to understand it]
       is really useful for detecting lost cycles.
    */
-   { NSegment* seg;
-     Addr*     seg_starts;
+   { Addr*     seg_starts;
      Int       n_seg_starts;
      seg_starts = get_seg_starts( &n_seg_starts );
      tl_assert(seg_starts && n_seg_starts > 0);
      /* VG_(am_show_nsegments)( 0,"leakcheck"); */
      for (i = 0; i < n_seg_starts; i++) {
-        seg = VG_(am_find_nsegment)( seg_starts[i] );
+        NSegment const* seg = VG_(am_find_nsegment)( seg_starts[i] );
         tl_assert(seg);
         if (seg->kind != SkFileC && seg->kind != SkAnonC) 
            continue;
@@ -880,7 +879,7 @@ void MC_(do_detect_memory_leaks) (
            memory by explicitly mapping /dev/zero. */
         if (seg->kind == SkFileC 
             && (VKI_S_ISCHR(seg->mode) || VKI_S_ISBLK(seg->mode))) {
-           HChar* dev_name = VG_(am_get_filename)( seg );
+           HChar* dev_name = VG_(am_get_filename)( (NSegment*)seg );
            if (dev_name && 0 == VG_(strcmp)(dev_name, "/dev/zero")) {
               /* don't skip /dev/zero */
            } else {

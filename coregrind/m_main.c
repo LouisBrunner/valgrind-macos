@@ -1926,7 +1926,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
       print_all_stats();
 
    if (VG_(clo_profile_flags) > 0) {
-      #define N_MAX 100
+      #define N_MAX 200
       BBProfEntry tops[N_MAX];
       ULong score_total = VG_(get_BB_profile) (tops, N_MAX);
       show_BB_profile(tops, N_MAX, score_total);

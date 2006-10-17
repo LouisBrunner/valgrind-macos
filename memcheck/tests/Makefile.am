@@ -3,16 +3,16 @@
 include $(top_srcdir)/Makefile.flags.am
 
 SUBDIRS = .
-if VG_X86_LINUX
+if VGP_X86_LINUX
 SUBDIRS += x86
 endif
-if VG_AMD64_LINUX
+if VGP_AMD64_LINUX
 SUBDIRS += amd64
 endif
-if VG_PPC32_LINUX
+if VGP_PPC32_LINUX
 SUBDIRS += ppc32
 endif
-if VG_PPC64_LINUX
+if VGP_PPC64_LINUX
 SUBDIRS += ppc64
 endif
 
@@ -133,6 +133,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	wrap7.vgtest wrap7.stdout.exp wrap7.stderr.exp \
 	wrap8.vgtest wrap8.stdout.exp wrap8.stderr.exp \
 	wrap8.stdout.exp2 wrap8.stderr.exp2 \
+	wrap8.stdout.exp3 wrap8.stderr.exp3 \
 	writev.stderr.exp writev.stderr.exp2 writev.stderr.exp3 writev.vgtest \
 	xml1.stderr.exp xml1.stderr.exp2 xml1.stderr.exp3 \
 	xml1.stderr.exp64 xml1.stderr.exp64_2 xml1.stdout.exp \
@@ -205,18 +206,55 @@ new_override_SOURCES 	= new_override.cpp
 deep_templates_SOURCES	= deep_templates.cpp
 deep_templates_CXXFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -gstabs
 
+if VGP_PPC32_AIX5
+if VGP_PPC64_AIX5
+else
+ # persuade the AIX linker not to junk apparently unused
+ # function descriptors.  Unfortunately -Wl,-G -Wl,-bnogc
+ # produces a link error on 64-bit AIX, hence only 32-bit
+ # gets these flags.
+ wrap1_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap2_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap3_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap4_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap5_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap6_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+ wrap8_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+endif
+endif
+
 # Build shared object for wrap7
 wrap7_SOURCES           = wrap7.c
 wrap7_DEPENDENCIES      = wrap7so.so
-wrap7_LDFLAGS           = $(AM_FLAG_M3264_PRI) \
+if VGP_PPC64_AIX5 
+ wrap7_LDADD            = `pwd`/wrap7so.so
+ wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI)
+else
+if VGP_PPC32_AIX5
+ wrap7_LDADD            = `pwd`/wrap7so.so
+ wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+else
+ wrap7_LDADD            = wrap7so.so
+ wrap7_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
 				-Wl,-rpath,$(top_builddir)/memcheck/tests
-wrap7_LDADD             = wrap7so.so
+endif
+endif
+
 wrap7so_so_SOURCES      = wrap7so.c
 wrap7so_so_LDADD        = 
 wrap7so_so_DEPENDENCIES = 
-wrap7so_so_LDFLAGS      = -fpic $(AM_FLAG_M3264_PRI) \
-				-Wl,-soname -Wl,wrap7so.so -shared
 wrap7so_so_CFLAGS       = -fpic $(AM_FLAG_M3264_PRI)
+if VGP_PPC64_AIX5
+ wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared
+else
+if VGP_PPC32_AIX5
+ wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
+				-Wl,-G -Wl,-bnogc
+else
+ wrap7so_so_LDFLAGS     = -fpic $(AM_FLAG_M3264_PRI) -shared \
+				-Wl,-soname -Wl,wrap7so.so
+endif
+endif
 
 # Valgrind unit self-tests
 #hello_LDFLAGS		= -Wl,-defsym,valt_load_address=0x50000000 \

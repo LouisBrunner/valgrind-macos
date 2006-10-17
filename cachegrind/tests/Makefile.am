@@ -3,16 +3,16 @@
 include $(top_srcdir)/Makefile.flags.am
 
 SUBDIRS = .
-if VG_X86_LINUX
+if VGP_X86_LINUX
 SUBDIRS += x86
 endif
-if VG_AMD64_LINUX
+if VGP_AMD64_LINUX
 SUBDIRS += amd64
 endif
-if VG_PPC32_LINUX
+if VGP_PPC32_LINUX
 SUBDIRS += ppc32
 endif
-if VG_PPC64_LINUX
+if VGP_PPC64_LINUX
 SUBDIRS += ppc64
 endif
 
@@ -37,3 +37,14 @@ dlclose_LDADD		= -ldl
 myprint_so_SOURCES	= myprint.c
 myprint_so_LDFLAGS	= $(AM_FLAG_M3264_PRI) -shared -fPIC
 myprint_so_CFLAGS	= $(AM_FLAG_M3264_PRI) -fPIC
+
+if VGP_PPC32_AIX5
+if VGP_PPC64_AIX5
+else
+ # persuade the AIX linker not to junk apparently unused
+ # function descriptors.  Unfortunately -Wl,-G -Wl,-bnogc
+ # produces a link error on 64-bit AIX, hence only 32-bit
+ # gets these flags.
+ wrap5_LDFLAGS		= $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
+endif
+endif

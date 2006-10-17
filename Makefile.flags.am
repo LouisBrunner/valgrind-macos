@@ -15,8 +15,8 @@ AM_CCASFLAGS_X86_LINUX    = $(add_includes_x86_linux) @FLAG_M32@ -g
 AM_FLAG_M3264_AMD64_LINUX = @FLAG_M64@
 AM_CPPFLAGS_AMD64_LINUX   = $(add_includes_amd64_linux)
 AM_CFLAGS_AMD64_LINUX     = $(WERROR) @FLAG_M64@ -fomit-frame-pointer \
-				 @PREFERRED_STACK_BOUNDARY@ $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_AMD64_LINUX  = $(add_includes_amd64_linux) -m64 -g
+				@PREFERRED_STACK_BOUNDARY@ $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_AMD64_LINUX  = $(add_includes_amd64_linux) @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC32_LINUX = @FLAG_M32@
 AM_CPPFLAGS_PPC32_LINUX   = $(add_includes_ppc32_linux)
@@ -26,7 +26,19 @@ AM_CCASFLAGS_PPC32_LINUX  = $(add_includes_ppc32_linux) -Wa,-maltivec @FLAG_M32@
 AM_FLAG_M3264_PPC64_LINUX = @FLAG_M64@
 AM_CPPFLAGS_PPC64_LINUX   = $(add_includes_ppc64_linux)
 AM_CFLAGS_PPC64_LINUX     = $(WERROR) @FLAG_M64@ $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC64_LINUX  = $(add_includes_ppc64_linux) -Wa,-maltivec -m64 -g
+AM_CCASFLAGS_PPC64_LINUX  = $(add_includes_ppc64_linux) -Wa,-maltivec @FLAG_M64@ -g
+
+AM_FLAG_M3264_PPC32_AIX5  = @FLAG_MAIX32@
+AM_CPPFLAGS_PPC32_AIX5    = $(add_includes_ppc32_aix5)
+AM_CFLAGS_PPC32_AIX5      = $(WERROR) @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_PPC32_AIX5   = $(add_includes_ppc32_aix5) \
+				@FLAG_MAIX32@ -mcpu=powerpc -g
+
+AM_FLAG_M3264_PPC64_AIX5  = @FLAG_MAIX64@
+AM_CPPFLAGS_PPC64_AIX5    = $(add_includes_ppc64_aix5)
+AM_CFLAGS_PPC64_AIX5      = $(WERROR) @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
+AM_CCASFLAGS_PPC64_AIX5   = $(add_includes_ppc64_aix5) \
+				@FLAG_MAIX64@ -mcpu=powerpc64 -g
 
 # Flags for the primary target.  These must be used to build the
 # regtests and performance tests.  In fact, these must be used to
@@ -36,3 +48,21 @@ AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_@VG_PLATFORM_PRI@)
 AM_CPPFLAGS_PRI   = $(AM_CPPFLAGS_@VG_PLATFORM_PRI@)
 AM_CFLAGS_PRI     = $(AM_CFLAGS_@VG_PLATFORM_PRI@)
 AM_CCASFLAGS_PRI  = $(AM_CCASFLAGS_@VG_PLATFORM_PRI@)
+
+if VGP_HAVE_SECONDARY
+ AM_FLAG_M3264_SEC = $(AM_FLAG_M3264_@VG_PLATFORM_SEC@)
+else
+ AM_FLAG_M3264_SEC = 
+endif
+
+
+# Baseline link flags for making dynamic shared objects.
+#
+PRELOAD_LDFLAGS_COMMON_LINUX = -nostdlib -shared -Wl,-z,interpose,-z,initfirst
+PRELOAD_LDFLAGS_COMMON_AIX5  = -nostdlib -shared -Wl,-G -Wl,-bnogc
+PRELOAD_LDFLAGS_X86_LINUX   = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
+PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
+PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
+PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
+PRELOAD_LDFLAGS_PPC32_AIX5  = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX32@
+PRELOAD_LDFLAGS_PPC64_AIX5  = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX64@

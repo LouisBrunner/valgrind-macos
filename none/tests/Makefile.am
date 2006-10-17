@@ -3,16 +3,16 @@
 include $(top_srcdir)/Makefile.flags.am
 
 SUBDIRS = .
-if VG_X86_LINUX
+if VGP_X86_LINUX
 SUBDIRS += x86
 endif
-if VG_AMD64_LINUX
+if VGP_AMD64_LINUX
 SUBDIRS += amd64
 endif
-if VG_PPC32_LINUX
+if VGP_PPC32_LINUX
 SUBDIRS += ppc32
 endif
-if VG_PPC64_LINUX
+if VGP_PPC64_LINUX
 SUBDIRS += ppc64
 endif
 
@@ -175,7 +175,11 @@ pth_mutexspeed_LDADD	= -lpthread
 pth_once_LDADD		= -lpthread
 pth_rwlock_LDADD	= -lpthread
 pth_stackalign_LDADD	= -lpthread
-res_search_LDADD        = -lresolv -lpthread
+if VGP_PPC32_AIX5
+ res_search_LDADD       = -lpthread
+else
+ res_search_LDADD       = -lresolv -lpthread
+endif
 semlimit_LDADD		= -lpthread
 susphello_LDADD		= -lpthread
 thread_exits_LDADD	= -lpthread
@@ -183,12 +187,21 @@ threaded_fork_LDADD	= -lpthread
 threadederrno_LDADD	= -lpthread
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so
-tls_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests
+if VGP_PPC32_AIX5
+ tls_LDFLAGS		= 
+else
+ tls_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests
+endif
 tls_LDADD		= tls.so -lpthread
 tls_so_SOURCES		= tls_so.c
-tls_so_LDADD		= tls2.so
 tls_so_DEPENDENCIES	= tls2.so
-tls_so_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
+if VGP_PPC32_AIX5
+ tls_so_LDFLAGS		= -shared -fPIC
+ tls_so_LDADD		= `pwd`/tls2.so
+else
+ tls_so_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
+ tls_so_LDADD		= tls2.so
+endif
 tls_so_CFLAGS		= $(AM_FLAG_M3264_PRI) -fPIC
 tls2_so_SOURCES		= tls2_so.c
 tls2_so_LDFLAGS		= -shared

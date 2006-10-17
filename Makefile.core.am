@@ -46,10 +46,28 @@ add_includes_ppc64_linux = -I$(top_srcdir)/coregrind \
 		-DVGO_linux=1 \
 		-DVGP_ppc64_linux=1
 
-include $(top_srcdir)/Makefile.flags.am
+add_includes_ppc32_aix5 = -I$(top_srcdir)/coregrind \
+		-I$(top_srcdir) \
+		-I$(top_srcdir)/coregrind/ppc32 \
+		-I$(top_srcdir)/coregrind/aix5 \
+		-I$(top_srcdir)/coregrind/ppc32-aix5 \
+		-I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub \
+		-DVG_PLATFORM="\"ppc32-aix5\"" \
+		-DVGA_ppc32=1 \
+		-DVGO_aix5=1 \
+		-DVGP_ppc32_aix5=1
 
-PRELOAD_LDFLAGS_COMMON = -nostdlib -shared -Wl,-z,interpose,-z,initfirst
-PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON) @FLAG_M32@
-PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON) -m64
-PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON) @FLAG_M32@
-PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON) -m64
+add_includes_ppc64_aix5 = -I$(top_srcdir)/coregrind \
+		-I$(top_srcdir) \
+		-I$(top_srcdir)/coregrind/ppc64 \
+		-I$(top_srcdir)/coregrind/aix5 \
+		-I$(top_srcdir)/coregrind/ppc64-aix5 \
+		-I$(top_srcdir)/include \
+		-I@VEX_DIR@/pub \
+		-DVG_PLATFORM="\"ppc64-aix5\"" \
+		-DVGA_ppc64=1 \
+		-DVGO_aix5=1 \
+		-DVGP_ppc64_aix5=1
+
+include $(top_srcdir)/Makefile.flags.am

@@ -18,6 +18,12 @@ LIBREPLACEMALLOC_PPC32_LINUX = \
 LIBREPLACEMALLOC_PPC64_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc64_linux.a
 
+LIBREPLACEMALLOC_PPC32_AIX5 = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc32_aix5.a
+
+LIBREPLACEMALLOC_PPC64_AIX5 = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload_ppc64_aix5.a
+
 COREGRIND_LIBS_X86_LINUX = \
 	$(top_builddir)/coregrind/libcoregrind_x86_linux.a \
 	@VEX_DIR@/libvex_x86_linux.a
@@ -34,57 +40,83 @@ COREGRIND_LIBS_PPC64_LINUX = \
 	$(top_builddir)/coregrind/libcoregrind_ppc64_linux.a \
 	@VEX_DIR@/libvex_ppc64_linux.a
 
+COREGRIND_LIBS_PPC32_AIX5 = \
+	$(top_builddir)/coregrind/libcoregrind_ppc32_aix5.a \
+	@VEX_DIR@/libvex_ppc32_aix5.a
+
+COREGRIND_LIBS_PPC64_AIX5 = \
+	$(top_builddir)/coregrind/libcoregrind_ppc64_aix5.a \
+	@VEX_DIR@/libvex_ppc64_aix5.a
+
 ##.PHONY:  @VEX_DIR@/libvex.a
 
 @VEX_DIR@/libvex_x86_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" libvex_x86_linux.a \
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
+	libvex_x86_linux.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_X86_LINUX) @FLAG_WDECL_AFTER_STMT@"
 
 @VEX_DIR@/libvex_amd64_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" libvex_amd64_linux.a \
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
+	libvex_amd64_linux.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_AMD64_LINUX) @FLAG_WDECL_AFTER_STMT@"
 
 @VEX_DIR@/libvex_ppc32_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" libvex_ppc32_linux.a \
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
+	libvex_ppc32_linux.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_PPC32_LINUX) @FLAG_WDECL_AFTER_STMT@"
 
 @VEX_DIR@/libvex_ppc64_linux.a: @VEX_DIR@/priv/main/vex_svnversion.h
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" libvex_ppc64_linux.a \
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" \
+	libvex_ppc64_linux.a \
 	EXTRA_CFLAGS="$(AM_CFLAGS_PPC64_LINUX) @FLAG_WDECL_AFTER_STMT@"
+
+@VEX_DIR@/libvex_ppc32_aix5.a: @VEX_DIR@/priv/main/vex_svnversion.h
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR) -X32" \
+	libvex_ppc32_aix5.a \
+	EXTRA_CFLAGS="$(AM_CFLAGS_PPC32_AIX5) @FLAG_WDECL_AFTER_STMT@"
+
+@VEX_DIR@/libvex_ppc64_aix5.a: @VEX_DIR@/priv/main/vex_svnversion.h
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR) -X64" \
+	libvex_ppc64_aix5.a \
+	EXTRA_CFLAGS="$(AM_CFLAGS_PPC64_AIX5) @FLAG_WDECL_AFTER_STMT@"
 
 @VEX_DIR@/priv/main/vex_svnversion.h:
 	$(MAKE) -C @VEX_DIR@ CC="$(CC)" version
 
 TOOL_LDADD_COMMON = -lgcc
-TOOL_LDFLAGS_COMMON = -static \
+TOOL_LDFLAGS_COMMON_LINUX = -static \
 	-Wl,-defsym,valt_load_address=@VALT_LOAD_ADDRESS@ \
 	-nodefaultlibs -nostartfiles -u _start
+TOOL_LDFLAGS_COMMON_AIX5 = -static -Wl,-e_start_valgrind
+
 
 TOOL_LDADD_X86_LINUX = $(COREGRIND_LIBS_X86_LINUX) $(TOOL_LDADD_COMMON)
 TOOL_LDFLAGS_X86_LINUX = \
-	$(TOOL_LDFLAGS_COMMON) @FLAG_M32@ \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@ \
 	-Wl,-T,$(top_builddir)/valt_load_address_x86_linux.lds
 
 TOOL_LDADD_AMD64_LINUX = $(COREGRIND_LIBS_AMD64_LINUX) $(TOOL_LDADD_COMMON)
 TOOL_LDFLAGS_AMD64_LINUX = \
-	$(TOOL_LDFLAGS_COMMON) -m64 \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@ \
 	-Wl,-T,$(top_builddir)/valt_load_address_amd64_linux.lds
 
 TOOL_LDADD_PPC32_LINUX = $(COREGRIND_LIBS_PPC32_LINUX) $(TOOL_LDADD_COMMON)
 TOOL_LDFLAGS_PPC32_LINUX = \
-	$(TOOL_LDFLAGS_COMMON) @FLAG_M32@ \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M32@ \
 	-Wl,-T,$(top_builddir)/valt_load_address_ppc32_linux.lds
 
 TOOL_LDADD_PPC64_LINUX = $(COREGRIND_LIBS_PPC64_LINUX) $(TOOL_LDADD_COMMON)
 TOOL_LDFLAGS_PPC64_LINUX = \
-	$(TOOL_LDFLAGS_COMMON) -m64 \
+	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@ \
 	-Wl,-T,$(top_builddir)/valt_load_address_ppc64_linux.lds
 
-PRELOAD_LDFLAGS_COMMON = -nostdlib -shared -Wl,-z,interpose,-z,initfirst
-PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON) @FLAG_M32@
-PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON) -m64
-PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON) @FLAG_M32@
-PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON) -m64
+TOOL_LDADD_PPC32_AIX5 = $(COREGRIND_LIBS_PPC32_AIX5) $(TOOL_LDADD_COMMON)
+TOOL_LDFLAGS_PPC32_AIX5 = \
+	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX32@
+
+TOOL_LDADD_PPC64_AIX5 = $(COREGRIND_LIBS_PPC64_AIX5) $(TOOL_LDADD_COMMON)
+TOOL_LDFLAGS_PPC64_AIX5 = \
+	$(TOOL_LDFLAGS_COMMON_AIX5) @FLAG_MAIX64@ -Wl,-bbigtoc
 
 LIBREPLACEMALLOC_LDFLAGS_X86_LINUX = \
 	-Wl,--whole-archive \
@@ -102,3 +134,7 @@ LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_PPC64_LINUX) \
 	-Wl,--no-whole-archive
+LIBREPLACEMALLOC_LDFLAGS_PPC32_AIX5 = \
+	$(LIBREPLACEMALLOC_PPC32_AIX5)
+LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5 = \
+	$(LIBREPLACEMALLOC_PPC64_AIX5)

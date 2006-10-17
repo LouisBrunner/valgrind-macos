@@ -12,22 +12,30 @@ AM_CPPFLAGS_X86_LINUX   += -DVG_LIBDIR="\"$(valdir)"\"
 AM_CPPFLAGS_AMD64_LINUX += -DVG_LIBDIR="\"$(valdir)"\"
 AM_CPPFLAGS_PPC32_LINUX += -DVG_LIBDIR="\"$(valdir)"\"
 AM_CPPFLAGS_PPC64_LINUX += -DVG_LIBDIR="\"$(valdir)"\"
+AM_CPPFLAGS_PPC32_AIX5  += -DVG_LIBDIR="\"$(valdir)"\"
+AM_CPPFLAGS_PPC64_AIX5  += -DVG_LIBDIR="\"$(valdir)"\"
 
 
 default.supp: $(SUPP_FILES)
 
 noinst_LIBRARIES =
-if VG_X86_LINUX
+if VGP_X86_LINUX
 noinst_LIBRARIES += libcoregrind_x86_linux.a libreplacemalloc_toolpreload_x86_linux.a
 endif
-if VG_AMD64_LINUX
+if VGP_AMD64_LINUX
 noinst_LIBRARIES += libcoregrind_amd64_linux.a libreplacemalloc_toolpreload_amd64_linux.a
 endif
-if VG_PPC32_LINUX
+if VGP_PPC32_LINUX
 noinst_LIBRARIES += libcoregrind_ppc32_linux.a libreplacemalloc_toolpreload_ppc32_linux.a
 endif
-if VG_PPC64_LINUX
+if VGP_PPC64_LINUX
 noinst_LIBRARIES += libcoregrind_ppc64_linux.a libreplacemalloc_toolpreload_ppc64_linux.a
+endif
+if VGP_PPC32_AIX5
+noinst_LIBRARIES += libcoregrind_ppc32_aix5.a libreplacemalloc_toolpreload_ppc32_aix5.a
+endif
+if VGP_PPC64_AIX5
+noinst_LIBRARIES += libcoregrind_ppc64_aix5.a libreplacemalloc_toolpreload_ppc64_aix5.a
 endif
 
 #------------------------- launcher -----------------------
@@ -36,9 +44,16 @@ endif
 bin_PROGRAMS = \
 	valgrind
 
+if VGO_AIX5
 valgrind_SOURCES = \
-	launcher.c \
+	launcher-aix5.c \
+	m_debuglog.c \
+	m_vkiscnums.c
+else
+valgrind_SOURCES = \
+	launcher-linux.c \
 	m_debuglog.c
+endif
 
 valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
@@ -49,17 +64,23 @@ valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
 
 
 noinst_PROGRAMS =
-if VG_X86_LINUX
+if VGP_X86_LINUX
 noinst_PROGRAMS += vgpreload_core-x86-linux.so
 endif
-if VG_AMD64_LINUX
+if VGP_AMD64_LINUX
 noinst_PROGRAMS += vgpreload_core-amd64-linux.so
 endif
-if VG_PPC32_LINUX
+if VGP_PPC32_LINUX
 noinst_PROGRAMS += vgpreload_core-ppc32-linux.so
 endif
-if VG_PPC64_LINUX
+if VGP_PPC64_LINUX
 noinst_PROGRAMS += vgpreload_core-ppc64-linux.so
+endif
+if VGP_PPC32_AIX5
+noinst_PROGRAMS += vgpreload_core-ppc32-aix5.so
+endif
+if VGP_PPC64_AIX5
+noinst_PROGRAMS += vgpreload_core-ppc64-aix5.so
 endif
 
 noinst_HEADERS = \
@@ -116,6 +137,7 @@ noinst_HEADERS = \
 	m_debuginfo/priv_readstabs.h	\
 	m_debuginfo/priv_readdwarf.h	\
 	m_debuginfo/priv_readelf.h	\
+	m_debuginfo/priv_readxcoff.h	\
 	m_demangle/ansidecl.h	\
 	m_demangle/dyn-string.h	\
 	m_demangle/demangle.h	\
@@ -125,8 +147,11 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-generic.h \
 	m_syswrap/priv_syswrap-linux.h \
 	m_syswrap/priv_syswrap-linux-variants.h \
+	m_syswrap/priv_syswrap-aix5.h \
 	m_syswrap/priv_syswrap-main.h \
-	m_aspacemgr/priv_aspacemgr.h
+	m_aspacemgr/priv_aspacemgr.h \
+	launcher-aix5-bootblock.h \
+	m_initimg/simple_huffman.c
 
 BUILT_SOURCES = 
 CLEANFILES = 
@@ -169,9 +194,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_vkiscnums.c \
 	m_aspacemgr/aspacemgr-common.c \
 	m_debuginfo/storage.c \
-	m_debuginfo/readdwarf.c \
-	m_debuginfo/readstabs.c \
-	m_debuginfo/readelf.c \
 	m_debuginfo/debuginfo.c \
 	m_demangle/cp-demangle.c \
 	m_demangle/cplus-dem.c \
@@ -181,7 +203,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_replacemalloc/replacemalloc_core.c \
 	m_scheduler/scheduler.c \
 	m_scheduler/sema.c \
-	m_syswrap/syswrap-generic.c \
 	m_syswrap/syswrap-main.c
 
 COREGRIND_LINUX_SOURCE = \
@@ -189,7 +210,17 @@ COREGRIND_LINUX_SOURCE = \
 	m_syswrap/syswrap-linux.c \
 	m_syswrap/syswrap-linux-variants.c \
 	m_aspacemgr/aspacemgr-linux.c \
-	m_initimg/initimg-linux.c
+	m_initimg/initimg-linux.c \
+	m_debuginfo/readelf.c \
+	m_debuginfo/readdwarf.c \
+	m_debuginfo/readstabs.c \
+	m_syswrap/syswrap-generic.c
+
+COREGRIND_AIX5_SOURCE = \
+	m_aspacemgr/aspacemgr-aix5.c \
+	m_initimg/initimg-aix5.c \
+	m_debuginfo/readxcoff.c \
+	m_syswrap/syswrap-aix5.c
 
 libcoregrind_x86_linux_a_SOURCES = \
 	$(COREGRIND_SOURCES_COMMON) \
@@ -243,6 +274,35 @@ libcoregrind_ppc64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_LINUX)
 libcoregrind_ppc64_linux_a_CFLAGS = $(AM_CFLAGS_PPC64_LINUX)
 libcoregrind_ppc64_linux_a_CCASFLAGS = $(AM_CCASFLAGS_PPC64_LINUX)
 
+libcoregrind_ppc32_aix5_a_SOURCES = \
+	$(COREGRIND_SOURCES_COMMON) \
+	$(COREGRIND_AIX5_SOURCE) \
+	m_coredump/coredump-ppc32-aix5.c \
+	m_dispatch/dispatch-ppc32-aix5.S \
+	m_sigframe/sigframe-ppc32-aix5.c \
+	m_syswrap/syscall-ppc32-aix5.S \
+	m_syswrap/syswrap-ppc32-aix5.c
+
+libcoregrind_ppc32_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_AIX5)
+libcoregrind_ppc32_aix5_a_CFLAGS = $(AM_CFLAGS_PPC32_AIX5)
+libcoregrind_ppc32_aix5_a_CCASFLAGS = $(AM_CCASFLAGS_PPC32_AIX5)
+libcoregrind_ppc32_aix5_a_AR = $(AR) -X32 cru
+
+libcoregrind_ppc64_aix5_a_SOURCES = \
+	$(COREGRIND_SOURCES_COMMON) \
+	$(COREGRIND_AIX5_SOURCE) \
+	m_coredump/coredump-ppc64-aix5.c \
+	m_dispatch/dispatch-ppc64-aix5.S \
+	m_sigframe/sigframe-ppc64-aix5.c \
+	m_syswrap/syscall-ppc64-aix5.S \
+	m_syswrap/syswrap-ppc64-aix5.c
+
+libcoregrind_ppc64_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
+libcoregrind_ppc64_aix5_a_CFLAGS = $(AM_CFLAGS_PPC64_AIX5)
+libcoregrind_ppc64_aix5_a_CCASFLAGS = $(AM_CCASFLAGS_PPC64_AIX5)
+libcoregrind_ppc64_aix5_a_AR = $(AR) -X64 cru
+
+
 libreplacemalloc_toolpreload_x86_linux_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
 libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS = $(AM_CPPFLAGS_X86_LINUX)
 libreplacemalloc_toolpreload_x86_linux_a_CFLAGS = $(AM_CFLAGS_X86_LINUX) -fpic -fno-omit-frame-pointer
@@ -259,14 +319,28 @@ libreplacemalloc_toolpreload_ppc64_linux_a_SOURCES = m_replacemalloc/vg_replace_
 libreplacemalloc_toolpreload_ppc64_linux_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_LINUX)
 libreplacemalloc_toolpreload_ppc64_linux_a_CFLAGS = $(AM_CFLAGS_PPC64_LINUX) -fpic -fno-omit-frame-pointer
 
+libreplacemalloc_toolpreload_ppc32_aix5_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_ppc32_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC32_AIX5)
+libreplacemalloc_toolpreload_ppc32_aix5_a_CFLAGS = $(AM_CFLAGS_PPC32_AIX5) -fpic -fno-omit-frame-pointer
+libreplacemalloc_toolpreload_ppc32_aix5_a_AR = $(AR) -X32 cru
+
+libreplacemalloc_toolpreload_ppc64_aix5_a_SOURCES = m_replacemalloc/vg_replace_malloc.c
+libreplacemalloc_toolpreload_ppc64_aix5_a_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
+libreplacemalloc_toolpreload_ppc64_aix5_a_CFLAGS = $(AM_CFLAGS_PPC64_AIX5) -fpic -fno-omit-frame-pointer
+libreplacemalloc_toolpreload_ppc64_aix5_a_AR = $(AR) -X64 cru
+
 m_dispatch/dispatch-x86-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-amd64-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-ppc32-linux.S:	 libvex_guest_offsets.h
 m_dispatch/dispatch-ppc64-linux.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-ppc32-aix5.S:	 libvex_guest_offsets.h
+m_dispatch/dispatch-ppc64-aix5.S:	 libvex_guest_offsets.h
 m_syswrap/syscall-x86-linux.S:		 libvex_guest_offsets.h
 m_syswrap/syscall-amd64-linux.S:	 libvex_guest_offsets.h
 m_syswrap/syscall-ppc32-linux.S:	 libvex_guest_offsets.h
 m_syswrap/syscall-ppc64-linux.S:	 libvex_guest_offsets.h
+m_syswrap/syscall-ppc32-aix5.S:		 libvex_guest_offsets.h
+m_syswrap/syscall-ppc64-aix5.S:		 libvex_guest_offsets.h
 m_syswrap/syswrap-main.c: 		 libvex_guest_offsets.h
 
 libvex_guest_offsets.h:
@@ -294,8 +368,18 @@ vgpreload_core_ppc64_linux_so_CPPFLAGS = $(AM_CPPFLAGS_PPC64_LINUX)
 vgpreload_core_ppc64_linux_so_CFLAGS = $(AM_CFLAGS_PPC64_LINUX) $(AM_CFLAGS_PIC)
 vgpreload_core_ppc64_linux_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC64_LINUX)
 
+vgpreload_core_ppc32_aix5_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_ppc32_aix5_so_CPPFLAGS = $(AM_CPPFLAGS_PPC32_AIX5)
+vgpreload_core_ppc32_aix5_so_CFLAGS = $(AM_CFLAGS_PPC32_AIX5) $(AM_CFLAGS_PIC)
+vgpreload_core_ppc32_aix5_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC32_AIX5)
+
+vgpreload_core_ppc64_aix5_so_SOURCES = $(VGPRELOAD_CORE_SOURCES_COMMON)
+vgpreload_core_ppc64_aix5_so_CPPFLAGS = $(AM_CPPFLAGS_PPC64_AIX5)
+vgpreload_core_ppc64_aix5_so_CFLAGS = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
+vgpreload_core_ppc64_aix5_so_LDFLAGS = $(PRELOAD_LDFLAGS_PPC64_AIX5)
+
 clean-local:
-	$(MAKE) -C @VEX_DIR@ CC="$(CC)" clean
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" clean
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS)
 

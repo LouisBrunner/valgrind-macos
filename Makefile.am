@@ -18,6 +18,7 @@ DIST_SUBDIRS  = $(SUBDIRS)
 
 SUPP_FILES = \
 	glibc-2.2.supp glibc-2.3.supp glibc-2.4.supp glibc-2.5.supp \
+	aix5libc.supp \
 	xfree-3.supp xfree-4.supp
 
 dist_val_DATA = $(SUPP_FILES) default.supp
@@ -32,21 +33,29 @@ BUILT_SOURCES  = default.supp valgrind.pc
 CLEANFILES     = 
 DISTCLEANFILES = default.supp
 
-if VG_X86_LINUX
+if VGP_X86_LINUX
 BUILT_SOURCES += valt_load_address_x86_linux.lds
 CLEANFILES += valt_load_address_x86_linux.lds
 endif
-if VG_AMD64_LINUX
+if VGP_AMD64_LINUX
 BUILT_SOURCES += valt_load_address_amd64_linux.lds
 CLEANFILES += valt_load_address_amd64_linux.lds
 endif
-if VG_PPC32_LINUX
+if VGP_PPC32_LINUX
 BUILT_SOURCES += valt_load_address_ppc32_linux.lds
 CLEANFILES += valt_load_address_ppc32_linux.lds
 endif
-if VG_PPC64_LINUX
+if VGP_PPC64_LINUX
 BUILT_SOURCES += valt_load_address_ppc64_linux.lds
 CLEANFILES += valt_load_address_ppc64_linux.lds
+endif
+if VGP_PPC32_AIX5
+# No need to generate valt_load_address*.lds; the final executables
+# can be linked to be at any address.  They will be relocated by
+# AIX kernel when they are loaded.
+endif
+if VGP_PPC64_AIX5
+# Ditto
 endif
 
 default.supp: $(SUPP_FILES)
@@ -99,6 +108,8 @@ VEX_PUBLIC_HDRS = \
 # These list the bits of vex we need to copy into the tarball
 
 VEX_PRIMARY_SOURCES = \
+	VEX/quote.txt \
+	VEX/newline.txt \
 	VEX/HACKING.README \
 	VEX/LICENSE.README \
 	VEX/LICENSE.GPL \

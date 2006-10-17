@@ -1,17 +1,23 @@
 include $(top_srcdir)/Makefile.tool.am
 
 noinst_PROGRAMS = 
-if VG_X86_LINUX
+if VGP_X86_LINUX
 noinst_PROGRAMS += lackey-x86-linux
 endif
-if VG_AMD64_LINUX
+if VGP_AMD64_LINUX
 noinst_PROGRAMS += lackey-amd64-linux
 endif
-if VG_PPC32_LINUX
+if VGP_PPC32_LINUX
 noinst_PROGRAMS += lackey-ppc32-linux
 endif
-if VG_PPC64_LINUX
+if VGP_PPC64_LINUX
 noinst_PROGRAMS += lackey-ppc64-linux
+endif
+if VGP_PPC32_AIX5
+noinst_PROGRAMS += lackey-ppc32-aix5
+endif
+if VGP_PPC64_AIX5
+noinst_PROGRAMS += lackey-ppc64-aix5
 endif
 
 LACKEY_SOURCES_COMMON = lk_main.c
@@ -43,3 +49,17 @@ lackey_ppc64_linux_CFLAGS       = $(AM_CFLAGS_PPC64_LINUX)
 lackey_ppc64_linux_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_LINUX)
 lackey_ppc64_linux_LDADD        = $(TOOL_LDADD_PPC64_LINUX)
 lackey_ppc64_linux_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_LINUX)
+
+lackey_ppc32_aix5_SOURCES      = $(LACKEY_SOURCES_COMMON)
+lackey_ppc32_aix5_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_AIX5)
+lackey_ppc32_aix5_CFLAGS       = $(AM_CFLAGS_PPC32_AIX5)
+lackey_ppc32_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC32_AIX5)
+lackey_ppc32_aix5_LDADD        = $(TOOL_LDADD_PPC32_AIX5)
+lackey_ppc32_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC32_AIX5)
+
+lackey_ppc64_aix5_SOURCES      = $(LACKEY_SOURCES_COMMON)
+lackey_ppc64_aix5_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_AIX5)
+lackey_ppc64_aix5_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5)
+lackey_ppc64_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_AIX5)
+lackey_ppc64_aix5_LDADD        = $(TOOL_LDADD_PPC64_AIX5)
+lackey_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)

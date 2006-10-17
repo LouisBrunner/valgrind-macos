@@ -244,7 +244,7 @@ extern void VG_(basic_tool_funcs)(
 
 /* Default value for avg_translations_sizeB (in bytes), indicating typical
    code expansion of about 6:1. */
-#define VG_DEFAULT_TRANS_SIZEB   100
+#define VG_DEFAULT_TRANS_SIZEB   172
 
 /* Information used in the startup message.  `name' also determines the
    string used for identifying suppressions in a suppression file as

@@ -1,7 +1,9 @@
 
 #include <signal.h>
 #include <stdio.h>
-#include <sys/syscall.h>
+#if !defined(_AIX)
+# include <sys/syscall.h>
+#endif
 #include <unistd.h>
 
 // Reg test for bug #93328: we were using too-big sigset types, and thus
@@ -11,7 +13,7 @@ int main(void)
 {
    int x[6], *s, *os, i;
 
-#if defined(__NR_sigprocmask) && !defined(__powerpc64__)
+#if defined(__NR_sigprocmask) && !defined(__powerpc64__) && !defined(_AIX)
 
    x[0] = 0x11111111;
    x[1] = 0x89abcdef;

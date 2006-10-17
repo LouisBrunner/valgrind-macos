@@ -463,6 +463,7 @@ test_strchr (void)
    }
 }
 
+#if !defined(_AIX)
 static void
 test_strchrnul (void)
 {
@@ -496,7 +497,9 @@ test_strchrnul (void)
       }
    }
 }
+#endif /* !defined(_AIX) */
 
+#if !defined(_AIX)
 static void
 test_rawmemchr (void)
 {
@@ -523,6 +526,7 @@ test_rawmemchr (void)
       }
    }
 }
+#endif /* !defined(_AIX) */
 
 static void
 test_index (void)
@@ -570,6 +574,7 @@ test_strrchr (void)
    }
 }
 
+#if !defined(_AIX)
 static void
 test_memrchr (void)
 {
@@ -615,6 +620,7 @@ test_memrchr (void)
     }
   }
 }
+#endif /* !defined(_AIX) */
 
 static void
 test_rindex (void)
@@ -890,6 +896,7 @@ test_strsep (void)
   equal(one+4, "c", 50);
 
   {
+#   if !defined(_AIX)
     char text[] = "This,is,a,test";
     char *list = strdupa (text);
     equal (strsep (&list, ","), "This", 51);
@@ -897,6 +904,7 @@ test_strsep (void)
     equal (strsep (&list, ","), "a", 53);
     equal (strsep (&list, ","), "test", 54);
     check (strsep (&list, ",") == NULL, 55);
+#   endif
   }
 
   cp = strcpy(one, "a,b, c,, ,d,");
@@ -1049,6 +1057,7 @@ test_memcpy (void)
     }
 }
 
+#if !defined(_AIX)
 static void
 test_mempcpy (void)
 {
@@ -1085,6 +1094,7 @@ test_mempcpy (void)
       equal (two, "hi there", 12 + (i * 6));
     }
 }
+#endif /* !defined(_AIX) */
 
 static void
 test_memmove (void)
@@ -1390,11 +1400,15 @@ main (void)
   /* strchr.  */
   test_strchr ();
 
+# if !defined(_AIX)
   /* strchrnul.  */
   test_strchrnul ();
+# endif
 
+# if !defined(_AIX)
   /* rawmemchr.  */
   test_rawmemchr ();
+# endif
 
   /* index - just like strchr.  */
   test_index ();
@@ -1402,8 +1416,10 @@ main (void)
   /* strrchr.  */
   test_strrchr ();
 
+# if !defined(_AIX)
   /* memrchr.  */
   test_memrchr ();
+# endif
 
   /* rindex - just like strrchr.  */
   test_rindex ();
@@ -1441,8 +1457,10 @@ main (void)
   /* memmove - must work on overlap.  */
   test_memmove ();
 
+# if !defined(_AIX)
   /* mempcpy */
   test_mempcpy ();
+# endif
 
   /* memccpy.  */
   test_memccpy ();
@@ -1479,7 +1497,7 @@ main (void)
   else
     {
       status = EXIT_FAILURE;
-      printf("%Zd errors.\n", errors);
+      printf("%d errors.\n", (int)errors);
     }
 
   return status;

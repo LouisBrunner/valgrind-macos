@@ -9,6 +9,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#if !defined(MAP_NORESERVE)
+#  define MAP_NORESERVE 0
+#endif
+
 int main()
 {
 	char **volatile ptrs;

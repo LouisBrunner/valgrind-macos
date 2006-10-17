@@ -24,7 +24,9 @@ int main(void)
    /* Install own SIGSEGV handler */
    sigsegv_new.sa_handler  = SIGSEGV_handler;
    sigsegv_new.sa_flags    = 0;
+#if !defined(_AIX)
    sigsegv_new.sa_restorer = NULL;
+#endif
    res = sigemptyset( &sigsegv_new.sa_mask );
    assert(res == 0);
 
@@ -33,8 +35,8 @@ int main(void)
 
    if (__builtin_setjmp(myjmpbuf) == 0) {
       // Jump to zero; will cause seg fault
-#if defined(__powerpc64__)
-      unsigned long long int fake_fndescr[3];
+#if defined(__powerpc64__) || defined(_AIX)
+      unsigned long int fake_fndescr[3];
       fake_fndescr[0] = 0;
       fake_fndescr[1] = 0;
       fake_fndescr[2] = 0;

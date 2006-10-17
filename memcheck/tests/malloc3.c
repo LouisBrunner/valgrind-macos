@@ -9,23 +9,23 @@ int main ( void )
   char* p;
 
   p = malloc(0);
-  printf("malloc(0) = %p\n", p);
+  printf("malloc(0) = 0x%lx\n", (unsigned long)p);
   free(p);
 
   p = malloc(-1);
-  printf("malloc(-1) = %p\n", p);
+  printf("malloc(-1) = 0x%lx\n", (unsigned long)p);
   free(p);
 
   p = calloc(0,1);
-  printf("calloc(0,1) = %p\n", p);
+  printf("calloc(0,1) = 0x%lx\n", (unsigned long)p);
   free(p);
 
   p = calloc(0,-1);
-  printf("calloc(0,-1) = %p\n", p);
+  printf("calloc(0,-1) = 0x%lx\n", (unsigned long)p);
   free(p);
 
   p = calloc(-1,-1);
-  printf("calloc(-1,-1) = %p\n", p);
+  printf("calloc(-1,-1) = 0x%lx\n", (unsigned long)p);
   free(p);
 
   return 0;

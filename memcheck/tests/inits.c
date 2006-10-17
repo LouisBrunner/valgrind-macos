@@ -11,10 +11,10 @@ int main(void)
    int        l;
    static int ls;
    
-   if (gs == 0xDEADBEEF) printf("1!\n");
-   if (g  == 0xDEADBEEF) printf("2!\n");
-   if (ls == 0xDEADBEEF) printf("3!\n");
-   if (l  == 0xDEADBEEF) printf("4!\n");  // complains
+   if (gs == 0xCAFEBABE) printf("1!\n");
+   if (g  == 0xCAFEBABE) printf("2!\n");
+   if (ls == 0xCAFEBABE) printf("3!\n");
+   if (l  == 0xCAFEBABE) printf("4!\n");  // complains
    
    return 0;
 }

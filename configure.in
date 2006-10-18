@@ -891,6 +891,7 @@ AC_OUTPUT(
    perf/Makefile 
    perf/vg_perf
    include/Makefile 
+   include/vki/Makefile 
    auxprogs/Makefile
    coregrind/Makefile 
    memcheck/Makefile

@@ -317,7 +317,7 @@ Int VG_(check_executable)(HChar* f)
       if (!(st.st_mode & VKI_S_IXUSR))
          return VKI_EACCES;
    } else {
-      int grpmatch = 0;
+      Int grpmatch = 0;
 
       if (VG_(getegid)() == st.st_gid)
 	 grpmatch = 1;

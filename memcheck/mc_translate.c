@@ -3300,9 +3300,27 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
 
    mce.bogusLiterals = bogus;
 
-   /* Iterate over the stmts to generate instrumentation. */
+   /* Copy verbatim any IR preamble preceding the first IMark */
 
-   for (i = 0; i <  bb_in->stmts_used; i++) {
+   i = 0;
+   while (i < bb_in->stmts_used && bb_in->stmts[i]->tag != Ist_IMark) {
+
+      st = bb_in->stmts[i];
+      tl_assert(st);
+      tl_assert(isFlatIRStmt(st));
+
+      addStmtToIRBB( bb, bb_in->stmts[i] );
+      i++;
+   }
+
+   /* Iterate over the remaining stmts to generate instrumentation. */
+
+   tl_assert(bb_in->stmts_used > 0);
+   tl_assert(i >= 0);
+   tl_assert(i < bb_in->stmts_used);
+   tl_assert(bb_in->stmts[i]->tag == Ist_IMark);
+
+   for (/* use current i*/; i <  bb_in->stmts_used; i++) {
 
       st = bb_in->stmts[i];
       first_stmt = bb->stmts_used;

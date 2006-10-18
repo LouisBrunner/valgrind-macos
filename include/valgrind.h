@@ -3715,15 +3715,15 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    for calloc().  Put it immediately after the point where a block is
    allocated. 
    
-   If you're allocating memory via superblocks, and then handing out small
-   chunks of each superblock, if you don't have redzones on your small
-   blocks, it's worth marking the superblock with VALGRIND_MAKE_MEM_NOACCESS
-   when it's created, so that block overruns are detected.  But if you can
-   put redzones on, it's probably better to not do this, so that messages
-   for small overruns are described in terms of the small block rather than
-   the superblock (but if you have a big overrun that skips over a redzone,
-   you could miss an error this way).  See memcheck/tests/custom_alloc.c
-   for an example.
+   If you're using Memcheck: If you're allocating memory via superblocks,
+   and then handing out small chunks of each superblock, if you don't have
+   redzones on your small blocks, it's worth marking the superblock with
+   VALGRIND_MAKE_MEM_NOACCESS when it's created, so that block overruns are
+   detected.  But if you can put redzones on, it's probably better to not do
+   this, so that messages for small overruns are described in terms of the
+   small block rather than the superblock (but if you have a big overrun
+   that skips over a redzone, you could miss an error this way).  See
+   memcheck/tests/custom_alloc.c for an example.
 
    WARNING: if your allocator uses malloc() or 'new' to allocate
    superblocks, rather than mmap() or brk(), this will not work properly --

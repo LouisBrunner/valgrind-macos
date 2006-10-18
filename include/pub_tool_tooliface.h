@@ -32,7 +32,7 @@
 #define __PUB_TOOL_TOOLIFACE_H
 
 #include "pub_tool_errormgr.h"   // for Error, Supp
-#include "libvex.h"              // for VexGuestLayout
+#include "libvex.h"              // for all Vex stuff
 
 /* ------------------------------------------------------------------ */
 /* The interface version */

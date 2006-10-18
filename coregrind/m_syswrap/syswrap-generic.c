@@ -2371,7 +2371,7 @@ PRE(sys_execve)
    // ok, etc.
    res = VG_(pre_exec_check)((const Char*)ARG1, NULL);
    if (res.isError) {
-      SET_STATUS_Failure( res.res );
+      SET_STATUS_Failure( res.err );
       return;
    }
 

@@ -86,12 +86,6 @@ extern VexControl VG_(clo_vex_control);
    entire system. */
 extern void VG_(err_bad_option) ( Char* opt );
 
-/* Similarly - complain that the executable is missing, then stop. */
-extern void VG_(err_missing_prog) ( void );
-
-/* Similarly - complain about some config error. */
-extern void VG_(err_config_error) ( Char* msg );
-
 
 #endif   // __PUB_TOOL_OPTIONS_H
 

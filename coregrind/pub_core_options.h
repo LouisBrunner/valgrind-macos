@@ -174,6 +174,17 @@ extern VgSmc VG_(clo_smc_check);
    so they can be properly handled by m_syswrap. */
 extern HChar* VG_(clo_kernel_variant);
 
+/* --------- Functions --------- */
+
+/* Call this if the executable is missing.  This function prints an
+   error message, then shuts down the entire system. */
+extern void VG_(err_missing_prog) ( void );
+
+/* Similarly - complain and stop if there is some kind of config
+   error. */
+extern void VG_(err_config_error) ( Char* msg );
+
+
 #endif   // __PUB_CORE_OPTIONS_H
 
 /*--------------------------------------------------------------------*/

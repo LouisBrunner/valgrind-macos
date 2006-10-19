@@ -3335,7 +3335,7 @@ static Bool dis_int_rot ( UInt theInstr )
             /* Special-case the ,32-n,n,31 form as that is just n-bit
                unsigned shift right, PPC32 p501 */
             DIP("srwi%s r%u,r%u,%d\n", flag_rC ? ".":"",
-                rA_addr, rS_addr, sh_imm);
+                rA_addr, rS_addr, MaskBeg);
             assign( rA, binop(Iop_Shr32, mkexpr(rS), mkU8(MaskBeg)) );
          }
          else {
@@ -3379,7 +3379,6 @@ static Bool dis_int_rot ( UInt theInstr )
       }
       break;
    }
-
 
    /* 64bit Integer Rotates */
    case 0x1E: {
@@ -3426,24 +3425,38 @@ static Bool dis_int_rot ( UInt theInstr )
          */
          
       case 0x0: // rldicl (Rotl DWord Imm, Clear Left, PPC64 p558)
-         DIP("rldicl%s r%u,r%u,%u,%u\n", flag_rC ? ".":"",
-             rA_addr, rS_addr, sh_imm, msk_imm);
-         r = ROTL(mkexpr(rS), mkU8(sh_imm));
-         mask64 = MASK64(0, 63-msk_imm);
-         assign( rA, binop(Iop_And64, r, mkU64(mask64)) );
+         if (mode64
+             && sh_imm + msk_imm == 64 && msk_imm >= 1 && msk_imm <= 63) {
+            /* special-case the ,64-n,n form as that is just
+               unsigned shift-right by n */
+            DIP("srdi%s r%u,r%u,%u\n",
+                flag_rC ? ".":"", rA_addr, rS_addr, msk_imm);
+            assign( rA, binop(Iop_Shr64, mkexpr(rS), mkU8(msk_imm)) );
+         } else {
+            DIP("rldicl%s r%u,r%u,%u,%u\n", flag_rC ? ".":"",
+                rA_addr, rS_addr, sh_imm, msk_imm);
+            r = ROTL(mkexpr(rS), mkU8(sh_imm));
+            mask64 = MASK64(0, 63-msk_imm);
+            assign( rA, binop(Iop_And64, r, mkU64(mask64)) );
+         }
          break;
-         /* later: deal with special case:
-            (msk_imm + sh_imm == 63) => SHR(63 - sh_imm) */
          
       case 0x1: // rldicr (Rotl DWord Imm, Clear Right, PPC64 p559)
-         DIP("rldicr%s r%u,r%u,%u,%u\n", flag_rC ? ".":"",
-             rA_addr, rS_addr, sh_imm, msk_imm);
-         r = ROTL(mkexpr(rS), mkU8(sh_imm));
-         mask64 = MASK64(63-msk_imm, 63);
-         assign( rA, binop(Iop_And64, r, mkU64(mask64)) );
+         if (mode64 
+             && sh_imm + msk_imm == 63 && sh_imm >= 1 && sh_imm <= 63) {
+            /* special-case the ,n,63-n form as that is just
+               shift-left by n */
+            DIP("sldi%s r%u,r%u,%u\n",
+                flag_rC ? ".":"", rA_addr, rS_addr, sh_imm);
+            assign( rA, binop(Iop_Shl64, mkexpr(rS), mkU8(sh_imm)) );
+         } else {
+            DIP("rldicr%s r%u,r%u,%u,%u\n", flag_rC ? ".":"",
+                rA_addr, rS_addr, sh_imm, msk_imm);
+            r = ROTL(mkexpr(rS), mkU8(sh_imm));
+            mask64 = MASK64(63-msk_imm, 63);
+            assign( rA, binop(Iop_And64, r, mkU64(mask64)) );
+         }
          break;
-         /* later: deal with special case:
-            (msk_imm == sh_imm) => SHL(sh_imm) */
          
       case 0x3: { // rldimi (Rotl DWord Imm, Mask Insert, PPC64 p560)
          IRTemp rA_orig = newTemp(ty);

@@ -3312,6 +3312,7 @@ static Bool dis_int_rot ( UInt theInstr )
       vassert(sh_imm  < 32);
 
       if (mode64) {
+         IRTemp rTmp = newTemp(Ity_I64);
          mask64 = MASK64(31-MaskEnd, 31-MaskBeg);
          DIP("rlwinm%s r%u,r%u,%d,%d,%d\n", flag_rC ? ".":"",
              rA_addr, rS_addr, sh_imm, MaskBeg, MaskEnd);
@@ -3319,8 +3320,10 @@ static Bool dis_int_rot ( UInt theInstr )
          // rA = ((tmp32 || tmp32) & mask64)
          r = ROTL( unop(Iop_64to32, mkexpr(rS) ), mkU8(sh_imm) );
          r = unop(Iop_32Uto64, r);
-         assign( rot, binop(Iop_Or64, r,
-                            binop(Iop_Shl64, r, mkU8(32))) );
+         assign( rTmp, r );
+         r = NULL;
+         assign( rot, binop(Iop_Or64, mkexpr(rTmp),
+                            binop(Iop_Shl64, mkexpr(rTmp), mkU8(32))) );
          assign( rA, binop(Iop_And64, mkexpr(rot), mkU64(mask64)) );
       }
       else {

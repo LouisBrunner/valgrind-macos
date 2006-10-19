@@ -226,6 +226,11 @@ extern void VG_(basic_tool_funcs)(
         {x86,amd64,ppc32}-linux; on those platforms, wrappers can
         longjump and recurse arbitrarily and everything should work
         fine.
+
+      Note that copying the preamble verbatim may cause complications
+      for your instrumenter if you shadow IR temporaries.  See big
+      comment in MC_(instrument) in memcheck/mc_translate.c for
+      details.
    */
    IRBB*(*instrument)(VgCallbackClosure* closure, 
                       IRBB*              bb_in, 

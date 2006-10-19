@@ -117,7 +117,7 @@ typedef
    that, and the tmpMap is updated to reflect the new binding.
 
    A corollary is that if the tmpMap maps a given tmp to
-   INVALID_IRTEMP and we are hoping to read that shadow tmp, it means
+   IRTemp_INVALID and we are hoping to read that shadow tmp, it means
    there's a read-before-write error in the original tmps.  The IR
    sanity checker should catch all such anomalies, however.  
 */
@@ -233,7 +233,7 @@ static IRExpr* definedOfType ( IRType ty ) {
       case Ity_I32:  return IRExpr_Const(IRConst_U32(0));
       case Ity_I64:  return IRExpr_Const(IRConst_U64(0));
       case Ity_V128: return IRExpr_Const(IRConst_V128(0x0000));
-      default:      VG_(tool_panic)("memcheck:definedOfType");
+      default:       VG_(tool_panic)("memcheck:definedOfType");
    }
 }
 
@@ -3281,7 +3281,7 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
 
    bogus = False;
 
-   for (i = 0; i <  bb_in->stmts_used; i++) {
+   for (i = 0; i < bb_in->stmts_used; i++) {
 
       st = bb_in->stmts[i];
       tl_assert(st);
@@ -3302,6 +3302,8 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
 
    /* Copy verbatim any IR preamble preceding the first IMark */
 
+   tl_assert(mce.bb == bb);
+
    i = 0;
    while (i < bb_in->stmts_used && bb_in->stmts[i]->tag != Ist_IMark) {
 
@@ -3311,6 +3313,40 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
 
       addStmtToIRBB( bb, bb_in->stmts[i] );
       i++;
+   }
+
+   /* Nasty problem.  IR optimisation of the pre-instrumented IR may
+      cause the IR following the preamble to contain references to IR
+      temporaries defined in the preamble.  Because the preamble isn't
+      instrumented, these temporaries don't have any shadows.
+      Nevertheless uses of them following the preamble will cause
+      memcheck to generate references to their shadows.  End effect is
+      to cause IR sanity check failures, due to references to
+      non-existent shadows.  This is only evident for the complex
+      preambles used for function wrapping on TOC-afflicted platforms
+      (ppc64-linux, ppc32-aix5, ppc64-aix5).
+
+      The following loop therefore scans the preamble looking for
+      assignments to temporaries.  For each one found it creates an
+      assignment to the corresponding shadow temp, marking it as
+      'defined'.  This is the same resulting IR as if the main
+      instrumentation loop before had been applied to the statement
+      'tmp = CONSTANT'.
+   */
+   for (j = 0; j < i; j++) {
+      if (bb_in->stmts[j]->tag == Ist_Tmp) {
+         /* findShadowTmp checks its arg is an original tmp;
+            no need to assert that here. */
+         IRTemp tmp_o = bb_in->stmts[j]->Ist.Tmp.tmp;
+         IRTemp tmp_s = findShadowTmp(&mce, tmp_o);
+         IRType ty_s  = typeOfIRTemp(bb->tyenv, tmp_s);
+         assign( bb, tmp_s, definedOfType( ty_s ) );
+         if (0) {
+            VG_(printf)("create shadow tmp for preamble tmp [%d] ty ", j);
+            ppIRType( ty_s );
+            VG_(printf)("\n");
+         }
+      }
    }
 
    /* Iterate over the remaining stmts to generate instrumentation. */

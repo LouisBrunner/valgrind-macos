@@ -29,7 +29,6 @@
 */
 
 #include "pub_tool_basics.h"
-#include "pub_tool_libcassert.h"
 #include "pub_tool_tooliface.h"
 
 static void nl_post_clo_init(void)

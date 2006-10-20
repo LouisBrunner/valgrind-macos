@@ -517,6 +517,36 @@ int main(void)
   </answer>
 </qandaentry>
 
+<qandaentry id="faq.undeferrors">
+  <question id="q-undeferrors">
+    <para>Memcheck's uninitialised value errors are hard to track down,
+    because they are often reported some time after they are caused.  Could 
+    Memcheck record a trail of operations to better link the cause to the
+    effect?  Or maybe just eagerly report any copies of uninitialised
+    memory values?</para>
+  </question>
+  <answer id="a-undeferrors">
+    <para>We'd love to improve these errors, but we don't know how to do it
+    without huge performance penalties.</para>
+
+    <para>You can use the client request
+    <computeroutput>VALGRIND_CHECK_VALUE_IS_DEFINED</computeroutput> to help
+    track these errors down -- work backwards from the point where the
+    uninitialised error occurs, checking suspect values until you find the
+    cause.  This requires editing, compiling and re-running your program
+    multiple times, which is a pain, but still easier than debugging the
+    problem without Memcheck's help.</para>
+
+    <para>As for eager reporting of copies of uninitialised memory values,
+    this has been suggested multiple times.  Unfortunately, almost all
+    programs legitimately copy uninitialise memory values around (because
+    compilers pad structs to preserve alignment) and eager checking leads to
+    hundreds of false positives.  Therefore Memcheck does not support eager
+    checking at this time.</para>
+  </answer>
+</qandaentry>
+
+
 </qandadiv>
 
 

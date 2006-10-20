@@ -106,8 +106,14 @@
 // - It does not trace into the OS kernel, so system calls and other kernel
 //   operations (eg. some scheduling and signal handling code) are ignored.
 //
-// - Valgrind replaces some code with its own, notably parts of code for
-//   scheduling operations and signal handling.  This code is not traced.
+// - It could model loads and stores done at the system call boundary using
+//   the pre_mem_read/post_mem_write events.  For example, if you call
+//   fstat() you know that the passed in buffer has been written.  But it
+//   currently does not do this.
+//
+// - Valgrind replaces some code (not much) with its own, notably parts of
+//   code for scheduling operations and signal handling.  This code is not
+//   traced.
 //
 // - There is no consideration of virtual-to-physical address mapping.
 //   This may not matter for many purposes.
@@ -811,7 +817,7 @@ static void lk_pre_clo_init(void)
    VG_(details_copyright_author)(
       "Copyright (C) 2002-2006, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
-   VG_(details_avg_translation_sizeB) ( 175 );
+   VG_(details_avg_translation_sizeB) ( 200 );
 
    VG_(basic_tool_funcs)          (lk_post_clo_init,
                                    lk_instrument,

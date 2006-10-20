@@ -34,6 +34,8 @@ vx1667   pending      n-i-bz   ppc32/64: support mcrfs
 v6211    pending      n-i-bz   Cachegrind: Update cache parameter detection
 
 x86 'int 3'
+expr_wont_match_me hack -> stable
+amd64 INCW-CondZ (André Wöbbeking, users, Oct 19)
 
 
 ------- Bugs reported and fixed in 3.2.0 ------

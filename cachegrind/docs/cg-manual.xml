@@ -1023,7 +1023,8 @@ use Cachegrind, but may be of interest to some people.
 <title>How Cachegrind works</title>
 <para>The best reference for understanding how Cachegrind works is chapter 3 of
 "Dynamic Binary Analysis and Instrumentation", by Nicholas Nethercote.  It
-is available on the publications page of the Valgrind website.</para>
+is available on the <ulink url="&vg-pubs;">Valgrind publications
+page</ulink>.</para>
 </sect2>
 
 <sect2>

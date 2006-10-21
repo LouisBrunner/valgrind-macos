@@ -36,7 +36,7 @@
 #   cmd_line     ::= "cmd:" ws? cmd
 #   events_line  ::= "events:" ws? (event ws)+
 #   data_line    ::= file_line | fn_line | count_line
-#   file_line    ::= ("fl=" | "fi=" | "fe=") filename
+#   file_line    ::= "fl=" filename
 #   fn_line      ::= "fn=" fn_name
 #   count_line   ::= line_num ws? (count ws)+
 #   summary_line ::= "summary:" ws? (count ws)+
@@ -54,8 +54,10 @@
 # specific information, eg. for giving the cache configuration for
 # cache simulation.
 # 
-# Counts can be "." to represent "N/A", eg. the number of write misses for an
-# instruction that doesn't write to memory.
+# More than one line of info can be presented for each file/fn/line number.
+# In such cases, the counts for the named events will be accumulated.
+#
+# Counts can be "." to represent zero.  This makes the files easier to read.
 # 
 # The number of counts in each 'line' and the 'summary_line' should not exceed
 # the number of events in the 'event_line'.  If the number in each 'line' is
@@ -66,13 +68,8 @@
 # current filename/fn_name.  A 'file_line' and a 'fn_line' must appear
 # before any 'count_line's to give the context of the first 'count_line'.
 # 
-# Each 'file_line' should be immediately followed by a 'fn_line'.  "fi="
-# 'file_lines' are used to switch filenames for inlined functions; "fe="
-# 'file_lines' are similar, but are put at the end of a basic block in which
-# the file name hasn't been switched back to the original file name.  (fi
-# and fe lines behave the same, they are only distinguished to help
-# debugging.)  [Nb: "fi=" and "fe=" have not been produced by Cachegrind for
-# some time, they are no longer necessary.]
+# Each 'file_line' will normally be immediately followed by a 'fn_line'.
+# But it doesn't have to be.
 
 #----------------------------------------------------------------------------
 # Performance improvements record, using cachegrind.out for cacheprof, doing no
@@ -362,14 +359,14 @@ sub read_input_file()
     }
 
     # Read "cmd:" line (Nb: will already be in $line from "desc:" loop above).
-    ($line =~ s/cmd:\s+//) or die("Line $.: missing command line\n");
+    ($line =~ s/^cmd:\s+//) or die("Line $.: missing command line\n");
     $cmd = $line;
     chomp($cmd);    # Remove newline
 
     # Read "events:" line.  We make a temporary hash in which the Nth event's
     # value is N, which is useful for handling --show/--sort options below.
     $line = <INPUTFILE>;
-    (defined $line && $line =~ s/events:\s+//) 
+    (defined $line && $line =~ s/^events:\s+//) 
         or die("Line $.: missing events line\n");
     @events = split(/\s+/, $line);
     my %events;

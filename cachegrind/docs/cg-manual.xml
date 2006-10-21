@@ -6,12 +6,6 @@
 <chapter id="cg-manual" xreflabel="Cachegrind: a cache-miss profiler">
 <title>Cachegrind: a cache profiler</title>
 
-<para>Detailed technical documentation on how Cachegrind works is
-available in <xref linkend="cg-tech-docs"/>.  If you only want to know
-how to <command>use</command> it, this is the page you need to
-read.</para>
-
-
 <sect1 id="cg-manual.cache" xreflabel="Cache profiling">
 <title>Cache profiling</title>
 
@@ -1018,17 +1012,100 @@ useful.</para>
 
 </sect2>
 
+</sect1>
+
+<sect1>
+<title>Implementation details</title>
+This section talks about details you don't need to know about in order to
+use Cachegrind, but may be of interest to some people.
 
 <sect2>
-<title>Todo</title>
+<title>How Cachegrind works</title>
+<para>The best reference for understanding how Cachegrind works is chapter 3 of
+"Dynamic Binary Analysis and Instrumentation", by Nicholas Nethercote.  It
+is available on the publications page of the Valgrind website.</para>
+</sect2>
 
+<sect2>
+<title>Cachegrind output file format</title>
+<para>The file format is fairly straightforward, basically giving the
+cost centre for every line, grouped by files and
+functions.  Total counts (eg. total cache accesses, total L1
+misses) are calculated when traversing this structure rather than
+during execution, to save time; the cache simulation functions
+are called so often that even one or two extra adds can make a
+sizeable difference.</para>
+
+<para>The file format:</para>
+<programlisting><![CDATA[
+file         ::= desc_line* cmd_line events_line data_line+ summary_line
+desc_line    ::= "desc:" ws? non_nl_string
+cmd_line     ::= "cmd:" ws? cmd
+events_line  ::= "events:" ws? (event ws)+
+data_line    ::= file_line | fn_line | count_line
+file_line    ::= "fl=" filename
+fn_line      ::= "fn=" fn_name
+count_line   ::= line_num ws? (count ws)+
+summary_line ::= "summary:" ws? (count ws)+
+count        ::= num | "."]]></programlisting>
+
+<para>Where:</para>
 <itemizedlist>
   <listitem>
-    <para>Program start-up/shut-down calls a lot of functions
-    that aren't interesting and just complicate the output.
-    Would be nice to exclude these somehow.</para>
+    <para><computeroutput>non_nl_string</computeroutput> is any
+    string not containing a newline.</para>
   </listitem>
-</itemizedlist> 
+  <listitem>
+    <para><computeroutput>cmd</computeroutput> is a string holding the
+    command line of the profiled program.</para>
+  </listitem>
+  <listitem>
+    <para><computeroutput>filename</computeroutput> and
+    <computeroutput>fn_name</computeroutput> are strings.</para>
+  </listitem>
+  <listitem>
+    <para><computeroutput>num</computeroutput> and
+    <computeroutput>line_num</computeroutput> are decimal
+    numbers.</para>
+  </listitem>
+  <listitem>
+    <para><computeroutput>ws</computeroutput> is whitespace.</para>
+  </listitem>
+</itemizedlist>
+
+<para>The contents of the "desc:" lines are printed out at the top
+of the summary.  This is a generic way of providing simulation
+specific information, eg. for giving the cache configuration for
+cache simulation.</para>
+
+<para>More than one line of info can be presented for each file/fn/line number.
+In such cases, the counts for the named events will be accumulated.</para>
+
+<para>Counts can be "." to represent zero.  This makes the files easier to
+read.</para>
+
+<para>The number of counts in each
+<computeroutput>line</computeroutput> and the
+<computeroutput>summary_line</computeroutput> should not exceed
+the number of events in the
+<computeroutput>event_line</computeroutput>.  If the number in
+each <computeroutput>line</computeroutput> is less, cg_annotate
+treats those missing as though they were a "." entry.</para>
+
+<para>A <computeroutput>file_line</computeroutput> changes the
+current file name.  A <computeroutput>fn_line</computeroutput>
+changes the current function name.  A
+<computeroutput>count_line</computeroutput> contains counts that
+pertain to the current filename/fn_name.  A "fn="
+<computeroutput>file_line</computeroutput> and a
+<computeroutput>fn_line</computeroutput> must appear before any
+<computeroutput>count_line</computeroutput>s to give the context
+of the first <computeroutput>count_line</computeroutput>s.</para>
+
+<para>Each <computeroutput>file_line</computeroutput> will normally be
+immediately followed by a <computeroutput>fn_line</computeroutput>.  But it
+doesn't have to be.</para>
+
 
 </sect2>
 

@@ -18,6 +18,7 @@
 <!-- a real pain tracking the links down in the docs            -->
 <!ENTITY vg-developers "http://www.valgrind.org/info/developers.html">
 <!ENTITY vg-svn-repo   "http://www.valgrind.org/downloads/repository.html">
+<!ENTITY vg-pubs       "http://www.valgrind.org/docs/pubs.html">
 <!ENTITY vg-bookset    "http://www.valgrind.org/docs/manual/index.html">
 <!ENTITY vg-dist-docs  "http://www.valgrind.org/docs/manual/dist.html">
 <!ENTITY vg-commentary "http://www.valgrind.org/docs/manual/manual-core.html#manual-core.comment">

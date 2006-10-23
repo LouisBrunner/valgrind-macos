@@ -10,29 +10,14 @@
 <sect1 id="writing-tools.intro" xreflabel="Introduction">
 <title>Introduction</title>
 
-<sect2 id="writing-tools.supexec" xreflabel="Supervised Execution">
-<title>Supervised Execution</title>
-
-<para>Valgrind provides a generic infrastructure for supervising
-the execution of programs.  This is done by providing a way to
-instrument programs in very precise ways, making it relatively
-easy to support activities such as dynamic error detection and
-profiling.</para>
-
-<para>Although writing a tool is not easy, and requires learning
-quite a few things about Valgrind, it is much easier than
-instrumenting a program from scratch yourself.</para>
-
-<para>[Nb: What follows is slightly out of date.]</para>
-
-</sect2>
-
+So you want to write a Valgrind tool?  Here are some instructions that may
+help.  They were last updated for Valgrind 3.2.2.
 
 <sect2 id="writing-tools.tools" xreflabel="Tools">
 <title>Tools</title>
 
 <para>The key idea behind Valgrind's architecture is the division
-between its "core" and "tools".</para>
+between its "core" and "tool plug-ins".</para>
 
 <para>The core provides the common low-level infrastructure to
 support program instrumentation, including the JIT
@@ -50,87 +35,6 @@ occur.  But the core takes care of all the hard work.</para>
 
 </sect2>
 
-
-<sect2 id="writing-tools.execspaces" xreflabel="Execution Spaces">
-<title>Execution Spaces</title>
-
-<para>An important concept to understand before writing a tool is
-that there are three spaces in which program code executes:</para>
-
-
-<orderedlist>
-
- <listitem>
-  <para>User space: this covers most of the program's execution.
-  The tool is given the code and can instrument it any way it
-  likes, providing (more or less) total control over the
-  code.</para>
-
-  <para>Code executed in user space includes all the program
-  code, almost all of the C library (including things like the
-  dynamic linker), and almost all parts of all other
-  libraries.</para>
- </listitem>
-
-  <listitem>
-   <para>Core space: a small proportion of the program's execution
-   takes place entirely within Valgrind's core.  This includes:</para>
-   <itemizedlist>
-    <listitem>
-      <para>Dynamic memory management 
-      (<computeroutput>malloc()</computeroutput> etc.)</para>
-    </listitem>
-    <listitem>
-     <para>Thread scheduling</para>
-    </listitem>
-    <listitem>
-     <para>Signal handling</para>
-    </listitem>
-   </itemizedlist>
-
-   <para>A tool has no control over these operations; it never
-   "sees" the code doing this work and thus cannot instrument it.
-   However, the core provides hooks so a tool can be notified
-   when certain interesting events happen, for example when
-   dynamic memory is allocated or freed, the stack pointer is
-   changed, or a pthread mutex is locked, etc.</para>
-
-   <para>Note that these hooks only notify tools of events
-   relevant to user space.  For example, when the core allocates
-   some memory for its own use, the tool is not notified of this,
-   because it's not directly part of the supervised program's
-   execution.</para>
-  </listitem>
-
-  <listitem>
-   <para>Kernel space: execution in the kernel.  Two kinds:</para>
-    <orderedlist>
-     <listitem>
-      <para>System calls: can't be directly observed by either
-      the tool or the core.  But the core does have some idea of
-      what happens to the arguments, and it provides hooks for a
-      tool to wrap system calls.</para>
-     </listitem>
-     <listitem>
-      <para>Other: all other kernel activity (e.g. process
-      scheduling) is totally opaque and irrelevant to the
-      program.</para>
-     </listitem>
-    </orderedlist>
-  </listitem>
-
-  <listitem>
-   <para>It should be noted that a tool only has direct control
-   over code executed in user space.  This is the vast majority
-   of code executed, but it is not absolutely all of it, so any
-   profiling information recorded by a tool won't be totally
-   accurate.</para>
-  </listitem>
-
-</orderedlist>
-
-</sect2>
-
 </sect1>
 
 
@@ -138,152 +42,13 @@ that there are three spaces in which program code executes:</para>
 <sect1 id="writing-tools.writingatool" xreflabel="Writing a Tool">
 <title>Writing a Tool</title>
 
-
-<sect2 id="writing-tools.whywriteatool" xreflabel="Why write a tool?">
-<title>Why write a tool?</title>
-
-<para>Before you write a tool, you should have some idea of what
-it should do.  What is it you want to know about your programs of
-interest?  Consider some existing tools:</para>
-
-<itemizedlist>
-
- <listitem>
-  <para><command>memcheck</command>: among other things, performs
-  fine-grained validity and addressibility checks of every memory
-  reference performed by the program.</para>
- </listitem>
-
- <listitem>
-  <para><command>cachegrind</command>: tracks every instruction
-  and memory reference to simulate instruction and data caches,
-  tracking cache accesses and misses that occur on every line in
-  the program.</para>
- </listitem>
-
- <listitem>
-  <para><command>helgrind</command>: tracks every memory access
-  and mutex lock/unlock to determine if a program contains any
-  data races.</para>
- </listitem>
-
- <listitem>
-  <para><command>lackey</command>: does simple counting of
-  various things: the number of calls to a particular function
-  (<computeroutput>_dl_runtime_resolve()</computeroutput>); the
-  number of basic blocks, guest instructions, VEX instructions
-  executed; the number of branches executed and the proportion of
-  them which were taken.</para>
- </listitem>
-</itemizedlist>
-
-<para>These examples give a reasonable idea of what kinds of
-things Valgrind can be used for.  The instrumentation can range
-from very lightweight (e.g. counting the number of times a
-particular function is called) to very intrusive (e.g.
-memcheck's memory checking).</para>
-
-</sect2>
-
-
-<sect2 id="writing-tools.suggestedtools" xreflabel="Suggested tools">
-<title>Suggested tools</title>
-
-<para>Here is a list of ideas we have had for tools that should
-not be too hard to implement.</para>
-
-<itemizedlist>
- <listitem>
-  <para><command>branch profiler</command>: A machine's branch
-  prediction hardware could be simulated, and each branch
-  annotated with the number of predicted and mispredicted
-  branches.  Would be implemented quite similarly to Cachegrind,
-  and could reuse the
-  <computeroutput>cg_annotate</computeroutput> script to annotate
-  source code.</para>
-
-  <para>The biggest difficulty with this is the simulation; the
-  chip-makers are very cagey about how their chips do branch
-  prediction.  But implementing one or more of the basic
-  algorithms could still give good information.</para>
- </listitem>
-
- <listitem>
-  <para><command>coverage tool</command>: Cachegrind can already
-  be used for doing test coverage, but it's massive overkill to
-  use it just for that.</para>
-
-  <para>It would be easy to write a coverage tool that records
-  how many times each basic block was recorded.  Again, the
-  <computeroutput>cg_annotate</computeroutput> script could be
-  used for annotating source code with the gathered information.
-  Although, <computeroutput>cg_annotate</computeroutput> is only
-  designed for working with single program runs.  It could be
-  extended relatively easily to deal with multiple runs of a
-  program, so that the coverage of a whole test suite could be
-  determined.</para>
-
-  <para>In addition to the standard coverage information, such a
-  tool could record extra information that would help a user
-  generate test cases to exercise unexercised paths.  For
-  example, for each conditional branch, the tool could record all
-  inputs to the conditional test, and print these out when
-  annotating.</para>
- </listitem>
-
- <listitem>
-  <para><command>run-time type checking</command>: A nice example
-  of a dynamic checker is given in this paper:</para>
-  <address>Debugging via Run-Time Type Checking
-  Alexey Loginov, Suan Hsi Yong, Susan Horwitz and Thomas Reps
-  Proceedings of Fundamental Approaches to Software Engineering
-  April 2001.
-  </address>
-
-  <para>Similar is the tool described in this paper:</para>
-  <address>Run-Time Type Checking for Binary Programs
-  Michael Burrows, Stephen N. Freund, Janet L. Wiener
-  Proceedings of the 12th International Conference on Compiler Construction (CC 2003)
-  April 2003.
-  </address>
-
-  <para>This approach can find quite a range of bugs,
-  particularly in C and C++ programs, and could be implemented
-  quite nicely as a Valgrind tool.</para>
-
-  <para>Ways to speed up this run-time type checking are
-  described in this paper:</para>
-  <address>Reducing the Overhead of Dynamic Analysis
-  Suan Hsi Yong and Susan Horwitz
-  Proceedings of Runtime Verification '02
-  July 2002.
-  </address>
-
-  <para>Valgrind's client requests could be used to pass
-  information to a tool about which elements need instrumentation
-  and which don't.</para>
- </listitem>
-</itemizedlist>
-
-<para>We would love to hear from anyone who implements these or
-other tools.</para>
-
-</sect2>
-
-
 <sect2 id="writing-tools.howtoolswork" xreflabel="How tools work">
 <title>How tools work</title>
 
-<para>Tools must define various functions for instrumenting programs
-that are called by Valgrind's core. They are then linked against the
-coregrind library (<filename>libcoregrind.a</filename>) that valgrind
-provides as well as the VEX library (<filename>libvex.a</filename>) that
-also comes with valgrind and provides the JIT engine.</para>
-
-<para>Each tool is linked as a statically linked program and placed in
-the valgrind library directory from where valgrind will load it
-automatically when the <option>--tool</option> option is used to select
-it.</para>
+<para>Tool plug-ins must define various functions for instrumenting programs
+that are called by Valgrind's core. They are then linked against
+Valgrind's core to define a complete Valgrind tool which will be used
+when the <option>--tool</option> option is used to select it.</para>
 
 </sect2>
 
@@ -291,10 +56,10 @@ it.</para>
 <sect2 id="writing-tools.gettingcode" xreflabel="Getting the code">
 <title>Getting the code</title>
 
-<para>To write your own tool, you'll need the Valgrind source code.  A
-normal source distribution should do, although you might want to check
-out the latest code from the Subversion repository.  See the information
-about how to do so at <ulink url="&vg-svn-repo;">the Valgrind
+<para>To write your own tool, you'll need the Valgrind source code.  You'll
+need a check-out of the Subversion repository for the automake/autoconf
+build instructions to work.  See the information about how to do check-out
+from the repository at <ulink url="&vg-svn-repo;">the Valgrind
 website</ulink>.</para>
 
 </sect2>
@@ -313,49 +78,59 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
 
 <orderedlist>
  <listitem>
-  <para>Choose a name for the tool, and an abbreviation that can be used
-  as a short prefix.  We'll use <computeroutput>foobar</computeroutput>
-  and <computeroutput>fb</computeroutput> as an example.</para>
+  <para>Choose a name for the tool, and a two-letter abbreviation that can
+  be used as a short prefix.  We'll use
+  <computeroutput>foobar</computeroutput> and
+  <computeroutput>fb</computeroutput> as an example.</para>
  </listitem>
 
  <listitem>
-  <para>Make a new directory <computeroutput>foobar/</computeroutput>
-  which will hold the tool.</para>
+  <para>Make three new directories <filename>foobar/</filename>,
+  <filename>foobar/docs/</filename> and
+  <filename>foobar/tests/</filename>.
+  </para>
+ </listitem>
+
+ <listitem>
+  <para>Create empty files
+  <filename>foobar/docs/Makefile.am</filename> and
+  <filename>foobar/tests/Makefile.am</filename>.
+  </para>
  </listitem>
 
  <listitem>
   <para>Copy <filename>none/Makefile.am</filename> into
-  <computeroutput>foobar/</computeroutput>.  Edit it by replacing all
+  <filename>foobar/</filename>.  Edit it by replacing all
   occurrences of the string <computeroutput>"none"</computeroutput> with
-  <computeroutput>"foobar"</computeroutput> and the one occurrence of
+  <computeroutput>"foobar"</computeroutput>, and all occurrences of
   the string <computeroutput>"nl_"</computeroutput> with
-  <computeroutput>"fb_"</computeroutput>.  It might be worth trying to
-  understand this file, at least a little; you might have to do more
-  complicated things with it later on.  In particular, the name of the
-  <computeroutput>foobar_SOURCES</computeroutput> variable determines
-  the name of the tool, which determines what name must be passed to the
-  <option>--tool</option> option to use the tool.</para>
+  <computeroutput>"fb_"</computeroutput>.</para>
  </listitem>
 
  <listitem>
   <para>Copy <filename>none/nl_main.c</filename> into
   <computeroutput>foobar/</computeroutput>, renaming it as
-  <filename>fb_main.c</filename>.  Edit it by changing the lines in
-  <function>pre_clo_init()</function> to something appropriate for the
+  <filename>fb_main.c</filename>.  Edit it by changing the
+  <computeroutput>details</computeroutput> lines in
+  <function>nl_pre_clo_init()</function> to something appropriate for the
   tool.  These fields are used in the startup message, except for
   <computeroutput>bug_reports_to</computeroutput> which is used if a
-  tool assertion fails.</para>
+  tool assertion fails.  Also replace the string
+  <computeroutput>"nl_"</computeroutput> with  
+  <computeroutput>"fb_"</computeroutput> again.</para>
  </listitem>
 
   <listitem>
    <para>Edit <filename>Makefile.am</filename>, adding the new directory
-   <computeroutput>foobar</computeroutput> to the
-   <computeroutput>SUBDIRS</computeroutput> variable.</para>
+   <filename>foobar</filename> to the
+   <computeroutput>TOOLS</computeroutput> variable.</para>
   </listitem>
 
   <listitem>
    <para>Edit <filename>configure.in</filename>, adding
-   <filename>foobar/Makefile</filename> to the
+   <filename>foobar/Makefile</filename>,
+   <filename>foobar/docs/Makefile</filename> and
+   <filename>foobar/tests/Makefile</filename> to the
    <computeroutput>AC_OUTPUT</computeroutput> list.</para>
   </listitem>
 
@@ -368,8 +143,8 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
 
    <para>It should automake, configure and compile without errors,
    putting copies of the tool in
-   <computeroutput>foobar/</computeroutput> and
-   <computeroutput>inst/lib/valgrind/</computeroutput>.</para>
+   <filename>foobar/</filename> and
+   <filename>inst/lib/valgrind/</filename>.</para>
   </listitem>
 
   <listitem>
@@ -418,16 +193,16 @@ onto the interesting stuff...</para>
   instrument()
   fini()]]></programlisting>
 
-<para>Also, it must use the macro
-<computeroutput>VG_DETERMINE_INTERFACE_VERSION</computeroutput> exactly
-once in its source code.  If it doesn't, you will get a link error
-involving <computeroutput>VG_(tool_interface_version)</computeroutput>.
-This macro is used to ensure the core/tool interface used by the core
-and a plugged-in tool are binary compatible.</para>
+<para>The names can be different to the above, but these are the usual
+names.  The first one is registered using the macro
+<computeroutput>VG_DETERMINE_INTERFACE_VERSION</computeroutput> (which also
+checks that the core/tool interface of the tool matches that of the core).
+The last three are registered using the
+<computeroutput>VG_(basic_tool_funcs)</computeroutput> function.
 
 <para>In addition, if a tool wants to use some of the optional services
 provided by the core, it may have to define other functions and tell the
-code about them.</para>
+core about them.</para>
 
 </sect2>
 
@@ -494,8 +269,8 @@ can be found in
 
 <para><function>instrument()</function> is the interesting one.  It
 allows you to instrument <emphasis>VEX IR</emphasis>, which is
-Valgrind's RISC-like intermediate language.  VEX IR is described in
-<xref linkend="mc-tech-docs.ucode"/>.</para>
+Valgrind's RISC-like intermediate language.  VEX IR is best described in
+the header file <filename>VEX/pub/libvex_ir.h</filename>.</para>
 
 <para>The easiest way to instrument VEX IR is to insert calls to C
 functions when interesting things happen.  See the tool "Lackey"
@@ -526,9 +301,9 @@ complex and not brilliantly documented.  Here are some important points,
 but there are undoubtedly many others that I should note but haven't
 thought of.</para>
 
-<para>The files <filename>include/pub_tool_*.h</filename> contain all
-the types, macros, functions, etc. that a tool should (hopefully) need,
-and are the only <filename>.h</filename> files a tool should need to
+<para>The files <filename>include/pub_tool_*.h</filename> contain all the
+types, macros, functions, etc. that a tool should (hopefully) need, and are
+the only <filename>.h</filename> files a tool should need to
 <computeroutput>#include</computeroutput>.</para>
 
 <para>In particular, you can't use anything from the C library (there
@@ -542,8 +317,11 @@ to help understand something.</para>
 
 <para>The <filename>pub_tool_*.h</filename> files have a reasonable
 amount of documentation in it that should hopefully be enough to get
-you going.  But ultimately, the tools distributed (Memcheck,
-Cachegrind, Lackey, etc.) are probably the best
+you going.  
+Also, <filename>VEX/pub/libvex_basictypes.h</filename> and
+<filename>VEX/pub/libvex_ir.h</filename> have some more details that are
+worth reading, particularly about VEX IR.  But ultimately, the tools
+distributed (Memcheck, Cachegrind, Lackey, etc.) are probably the best
 documentation of all, for the moment.</para>
 
 <para>Note that the <computeroutput>VG_</computeroutput> macro is used
@@ -626,9 +404,9 @@ this to extract useful tracebacks from GDB.</para>
 
 
 <sect3 id="writing-tools.ucode-probs">
-<title>UCode Instrumentation Problems</title>
+<title>IR Instrumentation Problems</title>
 
-<para>If you are having problems with your VEX UIR instrumentation, it's
+<para>If you are having problems with your VEX IR instrumentation, it's
 likely that GDB won't be able to help at all.  In this case, Valgrind's
 <option>--trace-flags</option> option is invaluable for observing the
 results of instrumentation.</para>
@@ -737,8 +515,15 @@ as the example tool name again):</para>
 <orderedlist>
 
   <listitem>
-   <para>Make a directory
-   <computeroutput>valgrind/foobar/docs/</computeroutput>.</para>
+   <para>The docs go in
+   <computeroutput>valgrind/foobar/docs/</computeroutput>, which you will
+   have created when you started writing the tool.</para>
+  </listitem>
+
+  <listitem>
+    <para>Write <filename>foobar/docs/Makefile.am</filename>.  Use
+    <filename>memcheck/docs/Makefile.am</filename> as an
+    example.</para>
   </listitem>
 
   <listitem>
@@ -825,17 +610,8 @@ write regression tests for your tool:</para>
 
 <orderedlist>
   <listitem>
-    <para>Make a directory
-    <computeroutput>foobar/tests/</computeroutput>.  Make sure the name
-    of the directory is <computeroutput>tests/</computeroutput> as the
-    build system assumes that any tests for the tool will be in a
-    directory by that name.</para>
-  </listitem>
-
-  <listitem>
-    <para>Edit <filename>configure.in</filename>, adding
-    <filename>foobar/tests/Makefile</filename> to the
-    <computeroutput>AC_OUTPUT</computeroutput> list.</para>
+    <para>The tests go in <computeroutput>foobar/tests/</computeroutput>,
+    which you will have created when you started writing the tool.</para>
   </listitem>
 
   <listitem>
@@ -877,24 +653,6 @@ write regression tests for your tool:</para>
 <para>To profile a tool, use Cachegrind on it.  Read README_DEVELOPERS for
 details on running Valgrind under Valgrind.</para>
 
-<para>To do simple tick-based profiling of a tool, include the
-line:</para>
-<programlisting><![CDATA[
-  #include "vg_profile.c"]]></programlisting>
-
-<para>in the tool somewhere, and rebuild (you may have to
-<computeroutput>make clean</computeroutput> first).  Then run Valgrind
-with the <option>--profile=yes</option> option.</para>
-
-<para>The profiler is stack-based; you can register a profiling event
-with <function>VG_(register_profile_event)()</function> and then use the
-<computeroutput>VGP_PUSHCC</computeroutput> and
-<computeroutput>VGP_POPCC</computeroutput> macros to record time spent
-doing certain things.  New profiling event numbers must not overlap with
-the core profiling event numbers.  See
-<filename>include/pub_tool_profile.h</filename> for details and Memcheck
-for an example.</para>
-
 </sect2>
 
 
@@ -927,11 +685,10 @@ is use the
 exactly once in its code.  If not, a link error will occur when the tool
 is built.</para>
 
-<para>The interface version number has the form X.Y.  Changes in Y
-indicate binary compatible changes.  Changes in X indicate binary
-incompatible changes.  If the core and tool has the same major version
-number X they should work together.  If X doesn't match, Valgrind will
-abort execution with an explanation of the problem.</para>
+<para>The interface version number is changed when binary incompatible
+changes are made to the interface.  If the core and tool has the same major
+version number X they should work together.  If X doesn't match, Valgrind
+will abort execution with an explanation of the problem.</para>
 
 <para>This approach was chosen so that if the interface changes in the
 future, old tools won't work and the reason will be clearly explained,
@@ -948,50 +705,14 @@ minimising the use of naked structs in the interface.</para>
 <sect1 id="writing-tools.finalwords" xreflabel="Final Words">
 <title>Final Words</title>
 
-<para>This whole core/tool business is under active development,
-although it's slowly maturing.</para>
+<para>The core/tool interface is not fixed.  It's pretty stable these days,
+but it does change.  We deliberately do not provide backward compatibility
+with old interfaces, because it is too difficult and too restrictive.
+The interface checking should catch any incompatibilities.  We view this as
+a good thing -- if we had to be backward compatible with earlier versions,
+many improvements now in the system could not have been added.
+</para>
 
-<para>The first consequence of this is that the core/tool interface will
-continue to change in the future; we have no intention of freezing it
-and then regretting the inevitable stupidities.  Hopefully most of the
-future changes will be to add new features, hooks, functions, etc,
-rather than to change old ones, which should cause a minimum of trouble
-for existing tools, and we've put some effort into future-proofing the
-interface to avoid binary incompatibility.  But we can't guarantee
-anything.  The versioning system should catch any incompatibilities.
-Just something to be aware of.</para>
-
-<para>The second consequence of this is that we'd love to hear your
-feedback about it:</para>
-
-<itemizedlist>
-  <listitem>
-    <para>If you love it or hate it</para>
-  </listitem>
-  <listitem>
-    <para>If you find bugs</para>
-  </listitem>
-  <listitem>
-    <para>If you write a tool</para>
-  </listitem>
-  <listitem>
-    <para>If you have suggestions for new features, needs, trackable
-    events, functions</para>
-  </listitem>
-  <listitem>
-    <para>If you have suggestions for making tools easier to
-    write</para>
-  </listitem>
-  <listitem>
-    <para>If you have suggestions for improving this
-    documentation</para>
-  </listitem>
-  <listitem>
-    <para>If you don't understand something</para>
-  </listitem>
-</itemizedlist>
-
-<para>or anything else!</para>
 
 <para>Happy programming.</para>
 

@@ -31,7 +31,12 @@
 #
 # Options:
 #   --all:      run tests in all subdirs
-#   --valgrind: valgrind to use.  Default is one built from this source tree.
+#   --valgrind: valgrind launcher to use.  Default is ./coregrind/valgrind.
+#               (This option should probably only be used in conjunction with
+#               --valgrind-lib.)
+#   --valgrind-lib: valgrind libraries to use.  Default is $tests_dir/.in_place.
+#               (This option should probably only be used in conjunction with
+#               --valgrind.)
 #
 # The easiest way is to run all tests in valgrind/ with (assuming you installed
 # in $PREFIX):
@@ -83,7 +88,7 @@ use strict;
 #----------------------------------------------------------------------------
 # Global vars
 #----------------------------------------------------------------------------
-my $usage="vg_regtest [--all, --valgrind]\n";
+my $usage="vg_regtest [--all, --valgrind, --valgrind-lib]\n";
 
 my $tmp="vg_regtest.tmp.$$";
 
@@ -106,6 +111,8 @@ my %num_failures        = (stderr => 0, stdout => 0, posttest => 0);
 my $valgrind = "./coregrind/valgrind";
 
 chomp(my $tests_dir = `pwd`);
+
+my $valgrind_lib = "$tests_dir/.in_place";
 
 # default filter is the one named "filter_stderr" in the test's directory
 my $default_stderr_filter = "filter_stderr";
@@ -152,6 +159,8 @@ sub process_command_line()
                 $alldirs = 1;
             } elsif ($arg =~ /^--valgrind=(.*)$/) {
                 $valgrind = $1;
+            } elsif ($arg =~ /^--valgrind-lib=(.*)$/) {
+                $valgrind_lib = $1;
             } else {
                 die $usage;
             }
@@ -299,7 +308,7 @@ sub do_one_test($$)
     # VALGRIND_LIB_INNER in case this Valgrind was configured with
     # --enable-inner.
     my $tool=determine_tool();
-    mysystem("VALGRIND_LIB=$tests_dir/.in_place VALGRIND_LIB_INNER=$tests_dir/.in_place "
+    mysystem("VALGRIND_LIB=$valgrind_lib VALGRIND_LIB_INNER=$valgrind_lib "
            . "$valgrind --command-line-only=yes --memcheck:leak-check=no "
            . "--tool=$tool $extraopts $vgopts "
            . "$prog $args > $name.stdout.out 2> $name.stderr.out");

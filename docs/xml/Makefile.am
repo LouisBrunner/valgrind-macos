@@ -4,8 +4,8 @@ EXTRA_DIST =  \
 	index.xml 		\
 	licenses.xml 		\
 	manual.xml manual-intro.xml manual-core.xml \
+	manual-writing-tools.xml\
 	quick-start-guide.xml	\
-	writing-tools.xml	\
 	tech-docs.xml 		\
 	vg-entities.xml 	\
 	xml_help.txt

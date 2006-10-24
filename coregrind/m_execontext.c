@@ -185,6 +185,13 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
    on the returned ExeContext* values themselves.  Inspired by Hugs's
    Text type.  
 */
+static inline UWord ROLW ( UWord w, Int n )
+{
+   Int bpw = 8 * sizeof(UWord);
+   w = (w << n) | (w >> (bpw-n));
+   return w;
+}
+
 ExeContext* VG_(record_ExeContext) ( ThreadId tid )
 {
    Int         i;
@@ -194,6 +201,12 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
    ExeContext* new_ec;
    ExeContext* list;
    UInt        n_ips;
+   ExeContext  *prev2, *prev;
+
+   static UInt ctr = 0;
+
+   vg_assert(sizeof(void*) == sizeof(UWord));
+   vg_assert(sizeof(void*) == sizeof(Addr));
 
    init_ExeContext_storage();
    vg_assert(VG_(clo_backtrace_size) >= 1 &&
@@ -208,15 +221,19 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
    hash = 0;
    for (i = 0; i < n_ips; i++) {
       hash ^= ips[i];
-      hash = (hash << 29) | (hash >> 3);
+      hash = ROLW(hash, 19);
    }
+   if (0) VG_(printf)("hash  0x%lx  ", hash);
    hash = hash % N_EC_LISTS;
+   if (0) VG_(printf)("%lu\n", hash);
 
    /* And (the expensive bit) look a matching entry in the list. */
 
    ec_searchreqs++;
 
-   list = ec_list[hash];
+   prev2 = NULL;
+   prev  = NULL;
+   list  = ec_list[hash];
 
    while (True) {
       if (list == NULL) break;
@@ -229,11 +246,22 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
          }
       }
       if (same) break;
-      list = list->next;
+      prev2 = prev;
+      prev  = list;
+      list  = list->next;
    }
 
    if (list != NULL) {
-      /* Yay!  We found it.  */
+      /* Yay!  We found it.  Once every 8 searches, move it one step
+         closer to the start of the list to make future searches
+         cheaper. */
+      if (prev2 && prev && 0 == ((ctr++) & 7))  {
+         vg_assert(prev2->next == prev);
+         vg_assert(prev->next  == list);
+         prev2->next = list;
+         prev->next  = list->next;
+         list->next  = prev;
+      }
       return list;
    }
 

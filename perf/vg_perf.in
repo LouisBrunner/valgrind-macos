@@ -311,7 +311,8 @@ sub do_one_test($$)
                         . "VALGRIND_LIB_INNER=$vgdir/.in_place ";
             my $vgcmd   = "$vgdir/coregrind/valgrind "
                         . "--command-line-only=yes --tool=$tool -q "
-                        . "--memcheck:leak-check=no --addrcheck:leak-check=no "
+                        . "--memcheck:leak-check=no "
+                        . "--trace-children=yes "
                         . "$vgopts ";
             my $cmd     = "$vgsetup $timecmd $vgcmd $prog $args";
             my $tTool   = time_prog($cmd, $n_reps);

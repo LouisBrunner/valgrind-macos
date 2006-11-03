@@ -78,14 +78,6 @@ my $prereq;             # prerequisite test to satisfy before running test
 my $cleanup;            # cleanup command to run
 my @tools;              # which tools are we measuring the program with
 
-# Abbreviations used in output
-my %toolnames = ( 
-    none        => "nl",
-    memcheck    => "mc",
-    cachegrind  => "cg",
-    massif      => "ms"
-);
-
 # Command line options
 my $n_reps = 1;     # Run each program $n_reps times and choose the best one.
 my @vgdirs;         # Dirs of the various Valgrinds being measured.
@@ -298,14 +290,15 @@ sub do_one_test($$)
         printf("%4.2fs", $tNative);
 
         foreach my $tool (@tools) {
-            (defined $toolnames{$tool}) or 
-                die "unknown tool $tool, please add to %toolnames\n";
+            # First two chars of toolname for abbreviation
+            my $tool_abbrev = $tool;
+            $tool_abbrev =~ s/(..).*/$1/;
 
             # Do the tool run(s).  Set both VALGRIND_LIB and VALGRIND_LIB_INNER
             # in case this Valgrind was configured with --enable-inner.  And
             # also VALGRINDLIB, which was the old name for the variable, to
             # allow comparison against old Valgrind versions (eg. 2.4.X).
-            printf("  %s:", $toolnames{$tool});
+            printf("  %s:", $tool_abbrev);
             my $vgsetup = "VALGRINDLIB=$vgdir/.in_place "
                         . "VALGRIND_LIB=$vgdir/.in_place "
                         . "VALGRIND_LIB_INNER=$vgdir/.in_place ";

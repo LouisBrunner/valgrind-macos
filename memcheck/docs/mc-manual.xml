@@ -191,11 +191,10 @@ the following problems:</para>
     </term>
     <listitem>
       <para>Controls whether <constant>memcheck</constant> detects
-      dangerous uses of undefined value errors.  When
-      <varname>yes</varname>, Memcheck behaves like Addrcheck, a lightweight
-      memory-checking tool that used to be part of Valgrind, which didn't
-      detect undefined value errors.  Use this option if you don't like
-      seeing undefined value errors.
+      dangerous uses of undefined value errors.  Set this to
+      <varname>no</varname> if you don't like seeing undefined value
+      errors; it also has the side effect of speeding
+      <constant>memcheck</constant> up somewhat.
       </para>
     </listitem>
   </varlistentry>

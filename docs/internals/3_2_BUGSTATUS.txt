@@ -33,9 +33,28 @@ v6084    pending      134727   valgrind exits with "Value too large for defined 
 vx1667   pending      n-i-bz   ppc32/64: support mcrfs
 v6211    pending      n-i-bz   Cachegrind: Update cache parameter detection
 
+135012 x86->IR: 0xD7 0x8A 0xE0 0xD0
+135023 amd64->IR: 0x49 0xDD 0x86 0xE0
+135026 valgrind incorrectly complain that shm_nattch is uninitialized
+135264 dcbzl instruction missing
+126147 unhandled instruction bytes: 0xF2 0xA5 0xF 0x77 (repne movsw) w/test
+135421 unhandled Grp5(R) case 6
+136059 patch to add better support for some USB ioctls
+136300 valgrind doesn't work on ppc{,64} with 64K pages
+136401 off-by-one in ESP checking
+118903 old bash (2.05) doesn't support empty list in for-loop
+136529 Unhandled instruction error for legal instruction
+136650 vex amd64->IR: unhandled instruction bytes: 0xC2 0x8 0x0
+
 x86 'int 3'
-expr_wont_match_me hack -> stable
-amd64 INCW-CondZ (André Wöbbeking, users, Oct 19)
+expr_wont_match_me hack -> stable (118903)
+amd64 INCW-CondZ (André Wöbbeking, users, Oct 19) (== Espindola #1)
+ExeContext hashing fix (r6341) if it causes no problems
+x86 COPY-CondP (Rafael Espindola #2, users, Nov 1)
+ppc32/64 dispatcher speedups -> stable
+ppc64 vex fe/be improvements -> stable?
+check gcc-4.2 build
+ppc64 bigpage stuff
 
 
 ------- Bugs reported and fixed in 3.2.0 ------

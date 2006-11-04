@@ -854,7 +854,7 @@ PRE(sys_execve)
 
    // Do the important checks:  it is a file, is executable, permissions are
    // ok, etc.
-   res = simple_pre_exec_check((const Char*)ARG1);
+   res = simple_pre_exec_check((const HChar*)ARG1);
    if (res.isError) {
       SET_STATUS_Failure( res.err );
       return;

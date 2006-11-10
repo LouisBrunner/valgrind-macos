@@ -247,11 +247,11 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "lwz 4,0(28)\n\t"      /* set %r4 = buf */
       "lwz 5,4(28)\n\t"      /* set %r5 = n */
 
+      "crorc 6,6,6\n\t"
       ".long 0x48000005\n\t" /* bl .+4 */
       "mflr  29\n\t"
-      "addi  29,29,20\n\t"
+      "addi  29,29,16\n\t"
       "mtlr  29\n\t"
-      "crorc 6,6,6\n\t"
       "sc\n\t"               /* write() */
 
       "stw 3,0(28)\n\t"      /* result */
@@ -288,11 +288,11 @@ static UInt local_sys_getpid ( void )
 
       "lwz   2,0(28)\n\t"    /* set %r2 = __NR_getpid */
 
+      "crorc 6,6,6\n\t"
       ".long 0x48000005\n\t" /* bl .+4 */
       "mflr  29\n\t"
-      "addi  29,29,20\n\t"
+      "addi  29,29,16\n\t"
       "mtlr  29\n\t"
-      "crorc 6,6,6\n\t"
       "sc\n\t"               /* getpid() */
 
       "stw   3,0(28)\n\t"    /* result -> block[0] */
@@ -330,11 +330,11 @@ static UInt local_sys_write_stderr ( HChar* buf, Int n )
       "ld  4,0(28)\n\t"      /* set %r4 = buf */
       "ld  5,8(28)\n\t"      /* set %r5 = n */
 
+      "crorc 6,6,6\n\t"
       ".long 0x48000005\n\t" /* bl .+4 */
       "mflr  29\n\t"
-      "addi  29,29,20\n\t"
+      "addi  29,29,16\n\t"
       "mtlr  29\n\t"
-      "crorc 6,6,6\n\t"
       "sc\n\t"               /* write() */
 
       "std 3,0(28)\n\t"      /* result */
@@ -369,11 +369,11 @@ static UInt local_sys_getpid ( void )
 
       "ld    2,0(28)\n\t"    /* set %r2 = __NR_getpid */
 
+      "crorc 6,6,6\n\t"
       ".long 0x48000005\n\t" /* bl .+4 */
       "mflr  29\n\t"
-      "addi  29,29,20\n\t"
+      "addi  29,29,16\n\t"
       "mtlr  29\n\t"
-      "crorc 6,6,6\n\t"
       "sc\n\t"               /* getpid() */
 
       "std  3,0(28)\n\t"     /* result -> block[0] */

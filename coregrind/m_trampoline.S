@@ -9,7 +9,9 @@
 
   Copyright (C) 2000-2006 Julian Seward 
      jseward@acm.org
-
+  Copyright (C) 2006-2006 OpenWorks LLP
+     info@open-works.co.uk
+	
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
   published by the Free Software Foundation; either version 2 of the
@@ -416,7 +418,9 @@ VG_(ppc32_aix5_do_preloads_then_start_client):
 	lwz	2,0(3)		/* r2 = __NR___loadx */
 	lwz	5,20(3)		/* r5 = off_preloadcorename */
 	add	6,3,5		/* r6 = preloadcorename */
+	addis	1,1,-4
 	bl	do___loadx
+	addis	1,1,4
 	cmpwi	0,3,0
 	beq	.Lfailed
 
@@ -427,7 +431,9 @@ VG_(ppc32_aix5_do_preloads_then_start_client):
 	cmpwi	0,5,0		/* skip tool preload if */
 	beq	.Ltry_preload	/* name not present */
 	add	6,3,5		/* r6 = preloadtoolname */
+	addis	1,1,-4
 	bl	do___loadx
+	addis	1,1,4
 	cmpwi	0,3,0
 	beq	.Lfailed
 
@@ -439,7 +445,9 @@ VG_(ppc32_aix5_do_preloads_then_start_client):
 	cmpwi	0,5,0		/* skip ld_preload if */
 	beq	.Lstart_client	/* name not present */
 	add	6,3,5		/* r6 = ld_preloadname */
+	addis	1,1,-4
 	bl	do___loadx
+	addis	1,1,4
 	cmpwi	0,3,0
 	beq	.Lfailed
 	
@@ -494,14 +502,16 @@ do___loadx:
 	/* On entry: r2 = __NR___loadx,	r6 = name of module */
 	li	3,1
 	slwi	3,3,24	/* r3 = 0x1000000 = VKI_DL_LOAD */
-	li	4,0
-	li	5,0
+	mr	4,1
+	lis	5,3
 	li	7,0
 	li	8,0
 	li	9,0
 	li	10,0
 do_syscall:
+	crorc	6,6,6
 	sc
+	trap
 	/* sc continues at 'lr', hence this 
 	constitutes an automatic return */
 
@@ -635,6 +645,7 @@ do_kload:
 	li	9,0
 	li	10,0
 do_syscall:
+	crorc	6,6,6
 	sc
 	/* sc continues at 'lr', hence this 
 	constitutes an automatic return */

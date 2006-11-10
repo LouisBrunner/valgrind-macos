@@ -117,6 +117,7 @@ Lvg1:   /* Even though we can't take a signal until the sigprocmask
 	mr	6,7	/* nsigwords -- needed on AIX ? */
 
 	/* actually do the sigprocmask */
+	crorc	6,6,6
 	.long 0x48000005 /* bl here+4 */
 	mflr	26
 	addi	26,26,16
@@ -138,6 +139,7 @@ Lvg1:   /* Even though we can't take a signal until the sigprocmask
         lwz     10,OFFSET_ppc32_GPR10(30)
         mr      2,31            /* syscall number */
 
+	crorc	6,6,6
 	.long 0x48000005 /* bl here+4 */
 	mflr	26
 	addi	26,26,16
@@ -165,6 +167,7 @@ Lvg4:   mr	2,27
         mr      6,28	/* nsigwords -- needed on AIX ? */
 
 	/* actually do the sigprocmask */
+	crorc	6,6,6
 	.long 0x48000005 /* bl here+4 */
 	mflr	26
 	addi	26,26,16

@@ -467,6 +467,10 @@ static UInt gen_addi_rd_rs_N ( UInt rd, UInt rs, UInt N ) {
    assert(rs != 0);
    return mkFormD(14, rd, rs, N & 0xFFFF); /* addi rd,rs,N */
 }
+static UInt gen_addis_rd_rs_N ( UInt rd, UInt rs, UInt N ) {
+   assert(rs != 0);
+   return mkFormD(15, rd, rs, N & 0xFFFF); /* addis rd,rs,N */
+}
 static UInt gen_crorc_6_6_6 ( void ) {
    return 0x4CC63342; /* crorc 6,6,6 */
 }
@@ -521,7 +525,8 @@ static Int emit_insn ( UInt* code, Int ix, UInt insn ) {
 }
 static Int emit_li32 ( UInt* code, Int ix, UInt rd, UInt imm32 ) {
    code[ix++] = gen_lis_r_N(rd, imm32 >> 16);
-   code[ix++] = gen_ori_r_r_N(rd, imm32 & 0xFFFF);
+   if (imm32 & 0xFFFF)
+      code[ix++] = gen_ori_r_r_N(rd, imm32 & 0xFFFF);
    return ix;
 }
 static Int emit_dosc ( UInt* code, Int ix ) {
@@ -836,16 +841,18 @@ static char* write_bootstrap_loader_into_child
 
    /* So, the code.  First, prepare for and do a _loadx syscall, to
       get the tool aboard:
+         addis 1, 1, -4
          imm  2, __NR__loadx
          imm  3, VKI_DL_LOAD
-         imm  4, 0
-         mr   5, 4
+         mr   4, 1
+         imm  5, 3<<16
          addi 6, 31, offset_of_toolfile
          mr   7, 4
          mr   8, 4
          mr   9, 4
          mr   10,4
          SYSCALL_SEQUENCE
+         addis 1, 1, 4
 
       If the syscall failed, r4 will be nonzero.  Branch elsewhere if so.
          cmpi 4, 0
@@ -985,17 +992,21 @@ static char* write_bootstrap_loader_into_child
    } else {
 
       /* 32-bit sequence */
+      ix = emit_insn( &block.code[0],ix,
+                      gen_addis_rd_rs_N(1,1,-4) );
       ix = emit_li32( &block.code[0],ix, 2, __nr___loadx );
       ix = emit_li32( &block.code[0],ix, 3, VKI_DL_LOAD );
-      ix = emit_li32( &block.code[0],ix, 4, 0 );
-      ix = emit_insn( &block.code[0],ix, gen_mr_rd_rs(5,4) );
+      ix = emit_insn( &block.code[0],ix, gen_mr_rd_rs(4,1) );
+      ix = emit_li32( &block.code[0],ix, 5, 3<<16 );
       ix = emit_insn( &block.code[0],ix, 
                       gen_addi_rd_rs_N(6,31,offsetof(AIX5Bootblock,toolfile)));
-      ix = emit_insn( &block.code[0],ix, gen_mr_rd_rs(7,4) );
-      ix = emit_insn( &block.code[0],ix, gen_mr_rd_rs(8,4) );
-      ix = emit_insn( &block.code[0],ix, gen_mr_rd_rs(9,4) );
-      ix = emit_insn( &block.code[0],ix, gen_mr_rd_rs(10,4) );
+      ix = emit_li32( &block.code[0],ix, 7, 0);
+      ix = emit_insn( &block.code[0],ix, gen_mr_rd_rs(8,7) );
+      ix = emit_insn( &block.code[0],ix, gen_mr_rd_rs(9,7) );
+      ix = emit_insn( &block.code[0],ix, gen_mr_rd_rs(10,7) );
       ix = emit_dosc( &block.code[0],ix );
+      ix = emit_insn( &block.code[0],ix,
+		      gen_addis_rd_rs_N(1,1,4) );
       ix = emit_insn( &block.code[0],ix, gen_cmpli_cr7_r_N(4,0) );
       Int ix_bne = ix; /* Patch this later */
       ix = emit_insn( &block.code[0],ix, 0 );

@@ -205,6 +205,7 @@ static void run_a_thread_NORETURN ( Word tidW )
           "mr 2,23\n\t"            /* r2 = __NR_exit */
           "mr 3,22\n\t"            /* set r3 = tst->os_state.exitcode */
           /* set up for syscall */
+          "crorc 6,6,6\n\t"
           ".long 0x48000005\n\t"   /* "bl here+4" */
           "mflr 29\n\t"
           "addi 29,29,16\n\t"

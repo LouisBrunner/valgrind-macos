@@ -12041,22 +12041,22 @@ DisResult disInstr_X86_WRK (
       codegen_xchg_eAX_Reg ( sz, opc - 0x90 );
       break;
 
-//--    /* ------------------------ XLAT ----------------------- */
-//-- 
-//--    case 0xD7: /* XLAT */
-//--       t1 = newTemp(cb); t2 = newTemp(cb);
-//--       uInstr2(cb, GET, sz, ArchReg, R_EBX, TempReg, t1); /* get eBX */
-//--       handleSegOverride( cb, sorb, t1 );               /* make t1 DS:eBX */
-//--       uInstr2(cb, GET, 1, ArchReg, R_AL, TempReg, t2); /* get AL */
-//--       /* Widen %AL to 32 bits, so it's all defined when we add it. */
-//--       uInstr1(cb, WIDEN, 4, TempReg, t2);
-//--       uWiden(cb, 1, False);
-//--       uInstr2(cb, ADD, sz, TempReg, t2, TempReg, t1);  /* add AL to eBX */
-//--       uInstr2(cb, LOAD, 1, TempReg, t1,  TempReg, t2); /* get byte at t1 into t2 */
-//--       uInstr2(cb, PUT, 1, TempReg, t2, ArchReg, R_AL); /* put byte into AL */
-//-- 
-//--       DIP("xlat%c [ebx]\n", nameISize(sz));
-//--       break;
+   /* ------------------------ XLAT ----------------------- */
+
+   case 0xD7: /* XLAT */
+      if (sz != 4) goto decode_failure; /* sz == 2 is also allowed (0x66) */
+      putIReg( 
+         1, 
+         R_EAX/*AL*/,
+         loadLE(Ity_I8, 
+                handleSegOverride( 
+                   sorb, 
+                   binop(Iop_Add32, 
+                         getIReg(4, R_EBX), 
+                         unop(Iop_8Uto32, getIReg(1, R_EAX/*AL*/))))));
+
+      DIP("xlat%c [ebx]\n", nameISize(sz));
+      break;
 
    /* ------------------------ IN / OUT ----------------------- */
 

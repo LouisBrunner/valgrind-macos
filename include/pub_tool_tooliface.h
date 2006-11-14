@@ -40,7 +40,7 @@
 /* The version number indicates binary-incompatible changes to the
    interface;  if the core and tool versions don't match, Valgrind
    will abort.  */
-#define VG_CORE_INTERFACE_VERSION   9
+#define VG_CORE_INTERFACE_VERSION   10
 
 typedef struct _ToolInfo {
    Int	sizeof_ToolInfo;
@@ -553,15 +553,15 @@ void VG_(track_post_thread_join)  (void(*f)(ThreadId joiner, ThreadId joinee));
 
    Called before a thread can block while waiting for a mutex (called
    regardless of whether the thread will block or not).  */
-void VG_(track_pre_mutex_lock)(void(*f)(ThreadId tid, void* mutex));
+void VG_(track_pre_mutex_lock)(void(*f)(ThreadId tid, Addr mutex));
 
 /* Called once the thread actually holds the mutex (always paired with
    pre_mutex_lock).  */
-void VG_(track_post_mutex_lock)(void(*f)(ThreadId tid, void* mutex));
+void VG_(track_post_mutex_lock)(void(*f)(ThreadId tid, Addr mutex));
 
 /* Called after a thread has released a mutex (no need for a corresponding
    pre_mutex_unlock, because unlocking can't block).  */
-void VG_(track_post_mutex_unlock)(void(*f)(ThreadId tid, void* mutex));
+void VG_(track_post_mutex_unlock)(void(*f)(ThreadId tid, Addr mutex));
 
 /* Signal events (not exhaustive)
 

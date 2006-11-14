@@ -205,9 +205,9 @@ typedef struct {
    void (*track_post_thread_create)(ThreadId, ThreadId);
    void (*track_post_thread_join)  (ThreadId, ThreadId);
 
-   void (*track_pre_mutex_lock)   (ThreadId, void*);
-   void (*track_post_mutex_lock)  (ThreadId, void*);
-   void (*track_post_mutex_unlock)(ThreadId, void*);
+   void (*track_pre_mutex_lock)   (ThreadId, Addr);
+   void (*track_post_mutex_lock)  (ThreadId, Addr);
+   void (*track_post_mutex_unlock)(ThreadId, Addr);
 
    void (*track_pre_deliver_signal) (ThreadId, Int sigNo, Bool);
    void (*track_post_deliver_signal)(ThreadId, Int sigNo);

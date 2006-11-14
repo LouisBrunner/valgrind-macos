@@ -2858,17 +2858,17 @@ static void hg_print_extra_suppression_info ( Error* err )
    /* Do nothing */
 }
 
-static void hg_pre_mutex_lock(ThreadId tid, void* void_mutex)
+static void hg_pre_mutex_lock(ThreadId tid, Addr client_mutex)
 {
-   Mutex *mutex = get_mutex((Addr)void_mutex);
+   Mutex *mutex = get_mutex(client_mutex);
 
    test_mutex_state(mutex, MxLocked, tid);
 }
 
-static void hg_post_mutex_lock(ThreadId tid, void* void_mutex)
+static void hg_post_mutex_lock(ThreadId tid, Addr client_mutex)
 {
    static const Bool debug = False;
-   Mutex *mutex = get_mutex((Addr)void_mutex);
+   Mutex *mutex = get_mutex(client_mutex);
    const LockSet*  ls;
 
    set_mutex_state(mutex, MxLocked, tid);
@@ -2899,11 +2899,11 @@ static void hg_post_mutex_lock(ThreadId tid, void* void_mutex)
 }
 
 
-static void hg_post_mutex_unlock(ThreadId tid, void* void_mutex)
+static void hg_post_mutex_unlock(ThreadId tid, Addr client_mutex)
 {
    static const Bool debug = False;
    Int i = 0;
-   Mutex *mutex = get_mutex((Addr)void_mutex);
+   Mutex *mutex = get_mutex(client_mutex);
    const LockSet *ls;
 
    test_mutex_state(mutex, MxUnlocked, tid);
@@ -3260,14 +3260,14 @@ static Int __BUS_HARDWARE_LOCK__;
 static void bus_lock(void)
 {
    ThreadId tid = VG_(get_running_tid)();
-   hg_pre_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
-   hg_post_mutex_lock(tid, &__BUS_HARDWARE_LOCK__);
+   hg_pre_mutex_lock(tid, (Addr)&__BUS_HARDWARE_LOCK__);
+   hg_post_mutex_lock(tid, (Addr)&__BUS_HARDWARE_LOCK__);
 }
 
 static void bus_unlock(void)
 {
    ThreadId tid = VG_(get_running_tid)();
-   hg_post_mutex_unlock(tid, &__BUS_HARDWARE_LOCK__);
+   hg_post_mutex_unlock(tid, (Addr)&__BUS_HARDWARE_LOCK__);
 }
 
 /*--------------------------------------------------------------------*/

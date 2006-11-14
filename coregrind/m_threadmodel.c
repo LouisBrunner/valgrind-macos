@@ -808,7 +808,7 @@ void VG_(tm_mutex_trylock)(ThreadId tid, Addr mutexp)
    if (mx->state == MX_Locked && mx->owner == tid) /* deadlock */
       mutex_report(tid, mutexp, MXE_Deadlock, "trylocking");
 
-   VG_TRACK( pre_mutex_lock, tid, (void *)mutexp );
+   VG_TRACK( pre_mutex_lock, tid, mutexp );
 }
 
 /* Give up waiting for a mutex.  Fails if:
@@ -835,7 +835,7 @@ void VG_(tm_mutex_acquire)(ThreadId tid, Addr mutexp)
    
    switch(mx->state) {
    case MX_Unlocking:		/* ownership transfer or relock */
-      VG_TRACK( post_mutex_unlock, mx->owner, (void *)mutexp );
+      VG_TRACK( post_mutex_unlock, mx->owner, mutexp );
       if (mx->owner != tid)
 	 thread_unblock_mutex(tid, mx, "acquiring mutex");
       break;
@@ -847,7 +847,7 @@ void VG_(tm_mutex_acquire)(ThreadId tid, Addr mutexp)
    case MX_Locked:
       if (debug_mutex)
 	 VG_(printf)("mutex=%p mx->state=%s\n", mutexp, pp_mutexstate(mx));
-      VG_TRACK( post_mutex_unlock, mx->owner, (void *)mutexp );
+      VG_TRACK( post_mutex_unlock, mx->owner, mutexp );
       mutex_report(tid, mutexp, MXE_Locked, "acquiring");
       thread_unblock_mutex(tid, mx, "acquiring mutex");
       break;
@@ -860,7 +860,7 @@ void VG_(tm_mutex_acquire)(ThreadId tid, Addr mutexp)
    mx->owner = tid;
    mutex_setstate(tid, mx, MX_Locked);
 
-   VG_TRACK( post_mutex_lock, tid, (void *)mutexp );
+   VG_TRACK( post_mutex_lock, tid, mutexp );
 }
 
 /* Try unlocking a lock.  This will move it into a state where it can
@@ -969,7 +969,7 @@ void VG_(tm_mutex_unlock)(ThreadId tid, Addr mutexp)
 
    case MX_Unlocking:
       /* OK - we need to complete the unlock */
-      VG_TRACK( post_mutex_unlock, tid, (void *)mutexp );
+      VG_TRACK( post_mutex_unlock, tid, mutexp );
       mutex_setstate(tid, mx, MX_Free);
       break;
 

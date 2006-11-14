@@ -514,13 +514,13 @@ static UChar getUChar ( Long delta )
    return v;
 }
 
-//.. static UInt getUDisp16 ( Long delta )
-//.. {
-//..    UInt v = guest_code[delta+1]; v <<= 8;
-//..    v |= guest_code[delta+0];
-//..    return v & 0xFFFF;
-//.. }
-//.. 
+static UInt getUDisp16 ( Long delta )
+{
+   UInt v = guest_code[delta+1]; v <<= 8;
+   v |= guest_code[delta+0];
+   return v & 0xFFFF;
+}
+
 //.. static UInt getUDisp ( Int size, Long delta )
 //.. {
 //..    switch (size) {
@@ -731,6 +731,12 @@ static Bool haveNo66noF2noF3 ( Prefix pfx )
 static Bool have66orF2orF3 ( Prefix pfx )
 {
   return toBool( ! haveNo66noF2noF3(pfx) );
+}
+
+/* Return True iff pfx has 66 or F2 set */
+static Bool have66orF2 ( Prefix pfx )
+{
+   return toBool((pfx & (PFX_66|PFX_F2)) > 0);
 }
 
 /* Clear all the segment-override bits in a prefix. */
@@ -12172,15 +12178,17 @@ DisResult disInstr_AMD64_WRK (
 
    /* ------------------------ Control flow --------------- */
 
-//..    case 0xC2: /* RET imm16 */
-//..       d32 = getUDisp16(delta); 
-//..       delta += 2;
-//..       dis_ret(d32);
-//..       whatNext = Dis_StopHere;
-//..       DIP("ret %d\n", d32);
-//..       break;
+   case 0xC2: /* RET imm16 */
+      if (have66orF2orF3(pfx)) goto decode_failure;
+      d64 = getUDisp16(delta); 
+      delta += 2;
+      dis_ret(vmi, d64);
+      dres.whatNext = Dis_StopHere;
+      DIP("ret %lld\n", d64);
+      break;
+
    case 0xC3: /* RET */
-      if (haveF2(pfx)) goto decode_failure;
+      if (have66orF2(pfx)) goto decode_failure;
       /* F3 is acceptable on AMD. */
       dis_ret(vmi, 0);
       dres.whatNext = Dis_StopHere;

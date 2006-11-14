@@ -1161,6 +1161,23 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
             );
       }
 
+      if (isU32(cc_op, X86G_CC_OP_COPY) && isU32(cond, X86CondP)) {
+         /* COPY, then P --> extract P from dep1, and test (P == 1). */
+         return
+            unop(
+               Iop_1Uto32,
+               binop(
+                  Iop_CmpNE32,
+                  binop(
+                     Iop_And32,
+                     binop(Iop_Shr32, cc_dep1, mkU8(X86G_CC_SHIFT_P)),
+                     mkU32(1)
+                  ),
+                  mkU32(0)
+               )
+            );
+      }
+
       return NULL;
    }
 

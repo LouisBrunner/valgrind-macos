@@ -11,40 +11,75 @@ Vfd     = fix has been verified on 3.2.X branch
 ------- reported in 3.2.0 but not fixed in 3.2.1 ------
 
 pending  pending      129390   ppc?->IR: some kind of VMX prefetch (dstt)
+
 pending  pending      129968   amd64->IR: 0xF 0xAE 0x0 (fxsave)
                       ==134319
+
 pending  pending      133054   'make install' fails with syntax errors
+
 pending  wontfix      133154   crash when using client requests to 
                                register/deregister stack
+
 pending  pending      132998   startup fails in when running on UML
+
 pending  pending      133327   support for voicetronix ioctl (w/patch)
+
 pending  pending      133679   Callgrind does not write path names to 
                                sources with dwarf debug info
-pending  pending      133962   amd64->IR: 0xF2 0x4C 0xF 0x10
+
+pending  pending [W]  133962   amd64->IR: 0xF2 0x4C 0xF 0x10 (rex64X ...)
+
 pending  pending      134207   pkg-config output contains @VG_PLATFORM@
+
 vx1660   pending      n-i-bz   %eflags rule for SUBL-CondNLE
+
 Signal race condition (users list, 13 June, Johannes Berg)
+
 Unrecognised instruction at address 0x70198EC2 (users, 19 July, Bennee)
-pending  pending      133984   unhandled instruction bytes: 0xCC 0x89 0xEC 0x31 (int3)
+
+pending  pending      133984   unhandled instruction bytes: 
+                               0xCC 0x89 0xEC 0x31 (int3)
+
 pending  pending      134138   Stale default library used after reconfiguring
-pending  pending      134219   Launcher defaults to ppc32-linux even with --enable-only64bit
-pending  pending      134316   Callgrind does not distinguish between parent and child
-v6084    pending      134727   valgrind exits with "Value too large for defined data type"
+
+pending  pending      134219   Launcher defaults to ppc32-linux even
+                               with --enable-only64bit
+
+pending  pending      134316   Callgrind does not distinguish between
+                               parent and child
+
+v6084    pending      134727   valgrind exits with "Value too large
+                               for defined data type"
+
 vx1667   pending      n-i-bz   ppc32/64: support mcrfs
+
 v6211    pending      n-i-bz   Cachegrind: Update cache parameter detection
 
-135012 x86->IR: 0xD7 0x8A 0xE0 0xD0
-135023 amd64->IR: 0x49 0xDD 0x86 0xE0
+vx1672   pending      135012   x86->IR: 0xD7 0x8A 0xE0 0xD0 (xlat)
+                      ==125959
+
+pending  pending [W]  135023   amd64->IR: 0x49 0xDD 0x86 0xE0 
+                               (rex64Z fldl 0xe0(%r14))
+
+vx1673/4 pending [W]  126147   x86->IR 0xF2 0xA5 0xF 0x77 (repne
+                               movsw) w/test
+
+pending  pending [W]  136650   amd64->IR: 0xC2 0x8 0x0
+
+pending  pending      135421   x86->IR: unhandled Grp5(R) case 6 [ok]
+
+
 135026 valgrind incorrectly complain that shm_nattch is uninitialized
 135264 dcbzl instruction missing
-126147 unhandled instruction bytes: 0xF2 0xA5 0xF 0x77 (repne movsw) w/test
-135421 unhandled Grp5(R) case 6
 136059 patch to add better support for some USB ioctls
 136300 valgrind doesn't work on ppc{,64} with 64K pages
 136401 off-by-one in ESP checking
 118903 old bash (2.05) doesn't support empty list in for-loop
 136529 Unhandled instruction error for legal instruction
-136650 vex amd64->IR: unhandled instruction bytes: 0xC2 0x8 0x0
+Drepper cachegrind bug (also callgrind?) (users, Nov 7)
+Drepper Core 2 stuff (also callgrind?) (users, Nov 7)
+Espindola #3 (dev, Nov 7)
+Dwarf CFI 0:24 0:32 0:48 0:7 (Nov 8)
 
 x86 'int 3'
 expr_wont_match_me hack -> stable (118903)

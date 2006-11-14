@@ -8,6 +8,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	badseg.stderr.exp badseg.stdout.exp badseg.vgtest \
 	bt_everything.stderr.exp bt_everything.stdout.exp bt_everything.vgtest \
 	bt_literal.stderr.exp bt_literal.stdout.exp bt_literal.vgtest \
+	bug125959-x86.stderr.exp bug125959-x86.stdout.exp bug125959-x86.vgtest \
 	bug132813-x86.stderr.exp bug132813-x86.stdout.exp bug132813-x86.vgtest \
 	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
 	cmpxchg8b.stderr.exp cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
@@ -34,6 +35,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	badseg bt_everything bt_literal \
+	bug125959-x86 \
 	bug132813-x86 \
 	cmpxchg8b cpuid \
 	faultstatus fcmovnu fpu_lazy_eflags fxtract \

@@ -49,7 +49,156 @@
 
 #include "libvex_basictypes.h"
 
+   
+// Possible name changes?
+// - Tmp     -> AssignTmp  (Tmp statements only, not Tmp expressions)
+// - IRBB    -> IRSB (superblock)?  IRB?  IRCB (code block)?
+// - dopyFoo -> copyFoo
+// - sopyFoo -> shallowCopyFoo (there's only one sopyFoo function)
 
+
+/*---------------------------------------------------------------*/
+/*--- High-level IR description                               ---*/
+/*---------------------------------------------------------------*/
+
+/* Vex IR is an architecture-neutral intermediate representation.
+   Unlike some IRs in systems similar to Vex, it is not like assembly
+   language (ie. a list of instructions).  Rather, it is more like the
+   IR that might be used in a compiler.
+
+   Code blocks
+   ~~~~~~~~~~~
+   The code is broken into small code blocks (type: 'IRBB').  Each
+   code block typically represents from 1 to perhaps 50 instructions.
+   IRBBs are single-entry, multiple-exit code blocks.  Each IRBB
+   contains three things:
+   - a type environment, which indicates the type of each temporary
+     value present in the IRBB
+   - a list of statements, which represent code
+   - a jump that exits from the end the IRBB
+   Because the blocks are multiple-exit, there can be additional
+   conditional exit statements that cause control to leave the IRBB
+   before the final exit.
+
+   Statements and expressions
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~
+   Statements (type 'IRStmt') represent operations with side-effects,
+   eg.  guest register writes, stores, and assignments to temporaries.
+   Expressions (type 'IRExpr') represent operations without
+   side-effects, eg. arithmetic operations, loads, constants.
+   Expressions can contain sub-expressions, forming expression trees,
+   eg. (3 + (4 * load(addr1)).
+
+   Storage of guest state
+   ~~~~~~~~~~~~~~~~~~~~~~
+   The "guest state" contains the guest registers of the guest machine
+   (ie.  the machine that we are simulating).  It is stored by default
+   in a block of memory supplied by the user of the VEX library,
+   generally referred to as the guest state (area).  To operate on
+   these registers, one must first read ("Get") them from the guest
+   state into a temporary value.  Afterwards, one can write ("Put")
+   them back into the guest state.
+
+   Get and Put are characterised by a byte offset into the guest
+   state, a small integer which effectively gives the identity of the
+   referenced guest register, and a type, which indicates the size of
+   the value to be transferred.
+
+   The basic "Get" and "Put" operations are sufficient to model normal
+   fixed registers on the guest.  Selected areas of the guest state
+   can be treated as a circular array of registers (type: 'IRArray'),
+   which can be indexed at run-time.  This is done with the "GetI" and
+   "PutI" primitives.  This is necessary to describe rotating register
+   files, for example the x87 FPU stack, SPARC register windows, and
+   the Itanium register files.
+
+   Examples, and flattened vs. unflattened code
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   For example, consider this x86 instruction:
+     
+     addl %eax, %ebx
+
+   One Vex IR translation for this code would be this:
+
+     ------ IMark(0x24F275, 7) ------
+     t3 = GET:I32(0)             # get %eax, a 32-bit integer
+     t2 = GET:I32(12)            # get %ebx, a 32-bit integer
+     t1 = Add32(t3,t2)           # addl
+     PUT(0) = t1                 # put %eax
+
+   (For simplicity, this ignores the effects on the condition codes, and
+   the update of the instruction pointer.)
+
+   The "IMark" is an IR statement that doesn't represent actual code.
+   Instead it indicates the address and length of the original
+   instruction.  The numbers 0 and 12 are offsets into the guest state
+   for %eax and %ebx.  The full list of offsets for an architecture
+   <ARCH> can be found in the type VexGuest<ARCH>State in the file
+   VEX/pub/libvex_guest_<ARCH>.h.
+
+   The five statements in this example are:
+   - the IMark
+   - three assignments to temporaries
+   - one register write (put)
+
+   The six expressions in this example are:
+   - two register reads (gets)
+   - one arithmetic (add) operation
+   - three temporaries (two nested within the Add32, one in the PUT)
+
+   The above IR is "flattened", ie. all sub-expressions are "atoms",
+   either constants or temporaries.  An equivalent, unflattened version
+   would be:
+   
+     PUT(0) = Add32(GET:I32(0), GET:I32(12))
+
+   IR is guaranteed to be flattened at instrumentation-time.  This makes
+   instrumentation easier.  Equivalent flattened and unflattened IR
+   typically results in the same generated code.
+
+   Another example, this one showing loads and stores:
+
+     addl %edx,4(%eax)
+
+   This becomes (again ignoring condition code and instruction pointer
+   updates):
+
+     ------ IMark(0x4000ABA, 3) ------
+     t3 = Add32(GET:I32(0),0x4:I32)
+     t2 = LDle:I32(t3)
+     t1 = GET:I32(8)
+     t0 = Add32(t2,t1)
+     STle(t3) = t0
+
+   The "le" in "LDle" and "STle" is short for "little-endian".
+
+   No need for deallocations
+   ~~~~~~~~~~~~~~~~~~~~~~~~~
+   Although there are allocation functions for various data structures
+   in this file, there are no deallocation functions.  This is because
+   Vex uses a memory allocation scheme that automatically reclaims the
+   memory used by allocated structures once translation is completed.
+   This makes things easier for tools that instruments/transforms code
+   blocks.
+
+   SSAness and typing
+   ~~~~~~~~~~~~~~~~~~
+   The IR is fully typed.  For every IRBB (IR block) it is possible to
+   say unambiguously whether or not it is correctly typed.
+   Incorrectly typed IR has no meaning and the VEX will refuse to
+   process it.  At various points during processing VEX typechecks the
+   IR and aborts if any violations are found.  This seems overkill but
+   makes it a great deal easier to build a reliable JIT.
+
+   IR also has the SSA property.  SSA stands for Static Single
+   Assignment, and what it means is that each IR temporary may be
+   assigned to only once.  This idea became widely used in compiler
+   construction in the mid to late 90s.  It makes many IR-level
+   transformations/code improvements easier, simpler and faster.
+   Whenever it typechecks an IR block, VEX also checks the SSA
+   property holds, and will abort if not so.  So SSAness is
+   mechanically and rigidly enforced.
+*/
 
 /*---------------------------------------------------------------*/
 /*--- Type definitions for the IR                             ---*/
@@ -79,6 +228,8 @@
 
 /* ------------------ Types ------------------ */
 
+/* A type indicates the size of a value, and whether it's an integer, a
+   float, or a vector (SIMD) value. */
 typedef 
    enum { 
       Ity_INVALID=0x10FFF,
@@ -94,22 +245,29 @@ typedef
    }
    IRType;
 
+/* Pretty-print an IRType */
 extern void ppIRType ( IRType );
-extern Int  sizeofIRType ( IRType );
+
+/* Get the size (in bytes) of an IRType */ 
+extern Int sizeofIRType ( IRType );
 
 
 /* ------------------ Endianness ------------------ */
 
+/* IREndness is used in load IRExprs and store IRStmts. */
 typedef
    enum { 
       Iend_LE=22, /* little endian */
-      Iend_BE=33 /* big endian */
+      Iend_BE=33  /* big endian */
    }
    IREndness;
 
 
 /* ------------------ Constants ------------------ */
 
+/* IRConsts are used within 'Const' and 'Exit' IRExprs. */
+
+/* The various kinds of constant. */
 typedef
    enum { 
       Ico_U1=0x12000,
@@ -120,11 +278,15 @@ typedef
       Ico_F64,   /* 64-bit IEEE754 floating */
       Ico_F64i,  /* 64-bit unsigned int to be interpreted literally
                     as a IEEE754 double value. */
-      Ico_V128   /* 128-bit restricted vector constant, with 1 bit for
-                    each of 16 byte lanes */
+      Ico_V128   /* 128-bit restricted vector constant, with 1 bit
+                    (repeated 8 times) for each of the 16 x 1-byte lanes */
    }
    IRConstTag;
 
+/* A constant.  Stored as a tagged union.  'tag' indicates what kind of
+   constant this is.  'Ico' is the union that holds the fields.  If an
+   IRConst 'c' has c.tag equal to Ico_U32, then it's a 32-bit constant,
+   and its value can be accessed with 'c.Ico.U32'. */
 typedef
    struct _IRConst {
       IRConstTag tag;
@@ -136,11 +298,12 @@ typedef
          ULong  U64;
          Double F64;
          ULong  F64i;
-         UShort V128;
+         UShort V128;   /* 16-bit value; see Ico_V128 comment above */
       } Ico;
    }
    IRConst;
 
+/* IRConst constructors */
 extern IRConst* IRConst_U1   ( Bool );
 extern IRConst* IRConst_U8   ( UChar );
 extern IRConst* IRConst_U16  ( UShort );
@@ -150,9 +313,13 @@ extern IRConst* IRConst_F64  ( Double );
 extern IRConst* IRConst_F64i ( ULong );
 extern IRConst* IRConst_V128 ( UShort );
 
+/* Deep-copy an IRConst */
 extern IRConst* dopyIRConst ( IRConst* );
 
+/* Pretty-print an IRConst */
 extern void ppIRConst ( IRConst* );
+
+/* Compare two IRConsts for equality */
 extern Bool eqIRConst ( IRConst*, IRConst* );
 
 
@@ -181,20 +348,26 @@ typedef
    }
    IRCallee;
 
+/* Create an IRCallee. */
 extern IRCallee* mkIRCallee ( Int regparms, HChar* name, void* addr );
 
+/* Deep-copy an IRCallee. */
 extern IRCallee* dopyIRCallee ( IRCallee* );
 
+/* Pretty-print an IRCallee. */
 extern void ppIRCallee ( IRCallee* );
 
 
 /* ------------------ Guest state arrays ------------------ */
 
+/* This describes a section of the guest state that we want to
+   be able to index at run time, so as to be able to describe 
+   indexed or rotating register files on the guest. */
 typedef
    struct {
-      Int    base;
-      IRType elemTy;
-      Int    nElems;
+      Int    base;   /* guest state offset of start of indexed area */
+      IRType elemTy; /* type of each element in the indexed area */
+      Int    nElems; /* number of elements in the indexed area */
    }
    IRArray;
 
@@ -208,10 +381,12 @@ extern Bool eqIRArray ( IRArray*, IRArray* );
 
 /* ------------------ Temporaries ------------------ */
 
-/* The IR optimiser relies on the fact that IRTemps are 32-bit
-   ints.  Do not change them to be ints of any other size. */
+/* This represents a temporary, eg. t1.  The IR optimiser relies on the
+   fact that IRTemps are 32-bit ints.  Do not change them to be ints of
+   any other size. */
 typedef UInt IRTemp;
 
+/* Pretty-print an IRTemp. */
 extern void ppIRTemp ( IRTemp );
 
 #define IRTemp_INVALID ((IRTemp)0xFFFFFFFF)
@@ -219,6 +394,16 @@ extern void ppIRTemp ( IRTemp );
 
 /* --------------- Primops (arity 1,2,3 and 4) --------------- */
 
+/* Primitive operations that are used in Unop, Binop, Triop and Qop
+   IRExprs.  Once we take into account integer, floating point and SIMD
+   operations of all the different sizes, there are quite a lot of them.
+   Most instructions supported by the architectures that Vex supports
+   (x86, PPC, etc) are represented.  Some more obscure ones (eg. cpuid)
+   are not;  they are instead handled with dirty helpers that emulate
+   their functionality.  Such obscure ones are thus not directly visible
+   in the IR, but their effects on guest state (memory and registers) 
+   are made visible via the annotations in IRDirty structures.
+*/
 typedef
    enum { 
       /* -- Do not change this ordering.  The IR generators rely on
@@ -264,8 +449,8 @@ typedef
       /* As a sop to Valgrind-Memcheck, the following are useful. */
       Iop_CmpNEZ8, Iop_CmpNEZ16,  Iop_CmpNEZ32,  Iop_CmpNEZ64,
 
-      /* PowerPC-style 3-way integer comparisons.  Without them it is difficult
-         to simulate PPC efficiently.
+      /* PowerPC-style 3-way integer comparisons.  Without them it is
+         difficult to simulate PPC efficiently.
          op(x,y) | x < y  = 0x8 else 
                  | x > y  = 0x4 else
                  | x == y = 0x2
@@ -666,6 +851,7 @@ typedef
    }
    IROp;
 
+/* Pretty-print an op. */
 extern void ppIROp ( IROp );
 
 
@@ -695,157 +881,222 @@ typedef
 
 
 /* ------------------ Expressions ------------------ */
-/* 
-   Some details of expression semantics:
 
-   IRExpr_GetI (also IRStmt_PutI)
-   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   These allow circular indexing into parts of the guest state, which
-   is essential for modelling situations where the identity of guest
-   registers is not known until run time.  One example is the x87 FP
-   register stack.
-
-   The part of the guest state to be treated as a circular array is
-   described in an IRArray structure attached to the GetI/PutI.
-   IRArray holds the offset of the first element in the array, the
-   type of each element, and the number of elements.
-
-   The array index is indicated rather indirectly, in a way which
-   makes optimisation easy: as the sum of variable part (the 'ix'
-   field) and a constant offset (the 'bias' field).
-
-   Since the indexing is circular, the actual array index to use
-   is computed as (ix + bias) % number-of-elements-in-the-array.
-
-   Here's an example.  The description
-
-      (96:8xF64)[t39,-7]
-
-   describes an array of 8 F64-typed values, the guest-state-offset
-   of the first being 96.  This array is being indexed at
-   (t39 - 7) % 8.
-
-   It is important to get the array size/type exactly correct since IR
-   optimisation looks closely at such info in order to establish
-   aliasing/non-aliasing between seperate GetI and PutI events, which
-   is used to establish when they can be reordered, etc.  Putting
-   incorrect info in will lead to obscure IR optimisation bugs.
-
-   IRExpr_CCall
-   ~~~~~~~~~~~~
-   The name is the C helper function; the backends will call back to
-   the front ends to get the address of a host-code helper function to
-   be called.
-
-   The args are a NULL-terminated array of arguments.  The stated
-   return IRType, and the implied argument types, must match that of
-   the function being called well enough so that the back end can
-   actually generate correct code for the call.
-
-   The called function **must** satisfy the following:
-
-   * no side effects -- must be a pure function, the result of which
-     depends only on the passed parameters.
-
-   * it may not look at, nor modify, any of the guest state since that
-     would hide guest state transitions from instrumenters
-
-   * it may not access guest memory, since that would hide guest
-     memory transactions from the instrumenters
-
-   This is restrictive, but makes the semantics clean, and does
-   not interfere with IR optimisation.
-
-   If you want to call a helper which can mess with guest state and/or
-   memory, instead use IRStmt_Dirty.  This is a lot more flexible, but
-   you pay for that flexibility in that you have to give a bunch of
-   details about what the helper does (and you better be telling the
-   truth, otherwise any derived instrumentation will be wrong).  Also
-   IRStmt_Dirty inhibits various IR optimisations and so can cause
-   quite poor code to be generated.  Try to avoid it.  */
-
-/* The possible kinds of expressions are as follows: */
+/* The different kinds of expressions.  Their meaning is explained below
+   in the comments for IRExpr. */
 typedef
    enum { 
-      Iex_Binder,  /* Used only in pattern matching.  
-                      Not an expression. */
-      Iex_Get,     /* read guest state, fixed offset */
-      Iex_GetI,    /* read guest state, run-time offset */
-      Iex_Tmp,     /* value of temporary */
-      Iex_Qop,     /* quaternary operation */
-      Iex_Triop,   /* ternary operation */
-      Iex_Binop,   /* binary operation */
-      Iex_Unop,    /* unary operation */
-      Iex_Load,    /* read from memory */ 
-      Iex_Const,   /* constant-valued expression */
-      Iex_Mux0X,   /* ternary if-then-else operator (STRICT) */
-      Iex_CCall    /* call to pure (side-effect-free) helper fn */
+      Iex_Binder,
+      Iex_Get,
+      Iex_GetI,
+      Iex_Tmp,
+      Iex_Qop,
+      Iex_Triop,
+      Iex_Binop,
+      Iex_Unop,
+      Iex_Load,
+      Iex_Const,
+      Iex_Mux0X,
+      Iex_CCall
    }
    IRExprTag;
 
-typedef 
-   struct _IRExpr {
-      IRExprTag tag;
-      union {
-         struct {
-            Int binder;
-         } Binder;
-         struct {
-            Int    offset;
-            IRType ty;
-         } Get;
-         struct {
-            IRArray* descr;
-            struct _IRExpr* ix;
-            Int bias;
-         } GetI;
-         struct {
-            IRTemp tmp;
-         } Tmp;
-         struct {
-            IROp op;
-            struct _IRExpr* arg1;
-            struct _IRExpr* arg2;
-            struct _IRExpr* arg3;
-            struct _IRExpr* arg4;
-         } Qop;
-         struct {
-            IROp op;
-            struct _IRExpr* arg1;
-            struct _IRExpr* arg2;
-            struct _IRExpr* arg3;
-         } Triop;
-         struct {
-            IROp op;
-            struct _IRExpr* arg1;
-            struct _IRExpr* arg2;
-         } Binop;
-         struct {
-            IROp op;
-            struct _IRExpr* arg;
-         } Unop;
-         struct {
-            IREndness end;
-            IRType ty;
-            struct _IRExpr* addr;
-         } Load;
-         struct {
-            IRConst* con;
-         } Const;
-         struct {
-            IRCallee* cee;
-            IRType    retty;
-            struct _IRExpr** args;
-         }  CCall;
-         struct {
-            struct _IRExpr* cond;
-            struct _IRExpr* expr0;
-            struct _IRExpr* exprX;
-         } Mux0X;
-      } Iex;
-   }
+/* An expression.  Stored as a tagged union.  'tag' indicates what kind
+   of expression this is.  'Iex' is the union that holds the fields.  If
+   an IRExpr 'e' has e.tag equal to Iex_Load, then it's a load
+   expression, and the fields can be accessed with
+   'e.Iex.Load.<fieldname>'.
+
+   For each kind of expression, we show what it looks like when
+   pretty-printed with ppIRExpr().
+*/
+typedef
+   struct _IRExpr
    IRExpr;
 
+struct _IRExpr {
+   IRExprTag tag;
+   union {
+      /* Used only in pattern matching within Vex.  Should not be seen
+         outside of Vex. */
+      struct {
+         Int binder;
+      } Binder;
+
+      /* Read a guest register, at a fixed offset in the guest state.
+         ppIRExpr output: GET:<ty>(<offset>), eg. GET:I32(0)
+      */
+      struct {
+         Int    offset;    /* Offset into the guest state */
+         IRType ty;        /* Type of the value being read */
+      } Get;
+
+      /* Read a guest register at a non-fixed offset in the guest
+         state.  This allows circular indexing into parts of the guest
+         state, which is essential for modelling situations where the
+         identity of guest registers is not known until run time.  One
+         example is the x87 FP register stack.
+
+         The part of the guest state to be treated as a circular array
+         is described in the IRArray 'descr' field.  It holds the
+         offset of the first element in the array, the type of each
+         element, and the number of elements.
+
+         The array index is indicated rather indirectly, in a way
+         which makes optimisation easy: as the sum of variable part
+         (the 'ix' field) and a constant offset (the 'bias' field).
+
+         Since the indexing is circular, the actual array index to use
+         is computed as (ix + bias) % num-of-elems-in-the-array.
+
+         Here's an example.  The description
+
+            (96:8xF64)[t39,-7]
+
+         describes an array of 8 F64-typed values, the
+         guest-state-offset of the first being 96.  This array is
+         being indexed at (t39 - 7) % 8.
+
+         It is important to get the array size/type exactly correct
+         since IR optimisation looks closely at such info in order to
+         establish aliasing/non-aliasing between seperate GetI and
+         PutI events, which is used to establish when they can be
+         reordered, etc.  Putting incorrect info in will lead to
+         obscure IR optimisation bugs.
+
+            ppIRExpr output: GETI<descr>[<ix>,<bias]
+                         eg. GETI(128:8xI8)[t1,0]
+      */
+      struct {
+         IRArray* descr;   /* Part of guest state treated as circular */
+         IRExpr*  ix;      /* Variable part of index into array */
+         Int      bias;    /* Constant offset part of index into array */
+      } GetI;
+
+      /* The value held by a temporary.
+         ppIRExpr output: t<tmp>, eg. t1
+      */
+      struct {
+         IRTemp tmp;       /* The temporary number */
+      } Tmp;
+
+      /* A quaternary operation.
+         ppIRExpr output: <op>(<arg1>, <arg2>, <arg3>, <arg4>),
+                      eg. MAddF64r32(t1, t2, t3, t4)
+      */
+      struct {
+         IROp op;          /* op-code   */
+         IRExpr* arg1;     /* operand 1 */
+         IRExpr* arg2;     /* operand 2 */
+         IRExpr* arg3;     /* operand 3 */
+         IRExpr* arg4;     /* operand 4 */
+      } Qop;
+
+      /* A ternary operation.
+         ppIRExpr output: <op>(<arg1>, <arg2>, <arg3>),
+                      eg. MulF64(1, 2.0, 3.0)
+      */
+      struct {
+         IROp op;          /* op-code   */
+         IRExpr* arg1;     /* operand 1 */
+         IRExpr* arg2;     /* operand 2 */
+         IRExpr* arg3;     /* operand 3 */
+      } Triop;
+
+      /* A binary operation.
+         ppIRExpr output: <op>(<arg1>, <arg2>), eg. Add32(t1,t2)
+      */
+      struct {
+         IROp op;          /* op-code   */
+         IRExpr* arg1;     /* operand 1 */
+         IRExpr* arg2;     /* operand 2 */
+      } Binop;
+
+      /* A unary operation.
+         ppIRExpr output: <op>(<arg>), eg. Neg8(t1)
+      */
+      struct {
+         IROp    op;       /* op-code */
+         IRExpr* arg;      /* operand */
+      } Unop;
+
+      /* A load from memory.
+         ppIRExpr output: LD<end>:<ty>(<addr>), eg. LDle:I32(t1)
+      */
+      struct {
+         IREndness end;    /* Endian-ness of the load */
+         IRType    ty;     /* Type of the loaded value */
+         IRExpr*   addr;   /* Address being loaded from */
+      } Load;
+
+      /* A constant-valued expression.
+         ppIRExpr output: <con>, eg. 0x4:I32
+      */
+      struct {
+         IRConst* con;     /* The constant itself */
+      } Const;
+
+      /* A call to a pure (no side-effects) helper C function.
+
+         With the 'cee' field, 'name' is the function's name.  It is
+         only used for pretty-printing purposes.  The address to call
+         (host address, of course) is stored in the 'addr' field
+         inside 'cee'.
+
+         The 'args' field is a NULL-terminated array of arguments.
+         The stated return IRType, and the implied argument types,
+         must match that of the function being called well enough so
+         that the back end can actually generate correct code for the
+         call.
+
+         The called function **must** satisfy the following:
+
+         * no side effects -- must be a pure function, the result of
+           which depends only on the passed parameters.
+
+         * it may not look at, nor modify, any of the guest state
+           since that would hide guest state transitions from
+           instrumenters
+
+         * it may not access guest memory, since that would hide
+           guest memory transactions from the instrumenters
+
+         This is restrictive, but makes the semantics clean, and does
+         not interfere with IR optimisation.
+
+         If you want to call a helper which can mess with guest state
+         and/or memory, instead use Ist_Dirty.  This is a lot more
+         flexible, but you have to give a bunch of details about what
+         the helper does (and you better be telling the truth,
+         otherwise any derived instrumentation will be wrong).  Also
+         Ist_Dirty inhibits various IR optimisations and so can cause
+         quite poor code to be generated.  Try to avoid it.
+
+         ppIRExpr output: <cee>(<args>):<retty>
+                      eg. foo{0x80489304}(t1, t2):I32
+      */
+      struct {
+         IRCallee* cee;    /* Function to call. */
+         IRType    retty;  /* Type of return value. */
+         IRExpr**  args;   /* Vector of argument expressions. */
+      }  CCall;
+
+      /* A ternary if-then-else operator.  It returns expr0 if cond is
+         zero, exprX otherwise.  Note that it is STRICT, ie. both
+         expr0 and exprX are evaluated in all cases.
+
+         ppIRExpr output: Mux0X(<cond>,<expr0>,<exprX>),
+                         eg. Mux0X(t6,t7,t8)
+      */
+      struct {
+         IRExpr* cond;     /* Condition */
+         IRExpr* expr0;    /* True expression */
+         IRExpr* exprX;    /* False expression */
+      } Mux0X;
+   } Iex;
+};
+
+/* Expression constructors. */
 extern IRExpr* IRExpr_Binder ( Int binder );
 extern IRExpr* IRExpr_Get    ( Int off, IRType ty );
 extern IRExpr* IRExpr_GetI   ( IRArray* descr, IRExpr* ix, Int bias );
@@ -861,13 +1112,14 @@ extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 
+/* Deep-copy an IRExpr. */
 extern IRExpr* dopyIRExpr ( IRExpr* );
 
+/* Pretty-print an IRExpr. */
 extern void ppIRExpr ( IRExpr* );
 
-/* NULL-terminated IRExpr expression vectors, suitable for use as arg
-   lists in clean/dirty helper calls. */
-
+/* NULL-terminated IRExpr vector constructors, suitable for
+   use as arg lists in clean/dirty helper calls. */
 extern IRExpr** mkIRExprVec_0 ( void );
 extern IRExpr** mkIRExprVec_1 ( IRExpr* );
 extern IRExpr** mkIRExprVec_2 ( IRExpr*, IRExpr* );
@@ -876,11 +1128,15 @@ extern IRExpr** mkIRExprVec_4 ( IRExpr*, IRExpr*, IRExpr*, IRExpr* );
 extern IRExpr** mkIRExprVec_5 ( IRExpr*, IRExpr*, 
                                 IRExpr*, IRExpr*, IRExpr* );
 
+/* IRExpr copiers:
+   - sopy: shallow-copy (ie. create a new vector that shares the
+     elements with the original).
+   - dopy: deep-copy (ie. create a completely new vector). */
 extern IRExpr** sopyIRExprVec ( IRExpr** );
 extern IRExpr** dopyIRExprVec ( IRExpr** );
 
 /* Make a constant expression from the given host word taking into
-   account of course the host word size. */
+   account (of course) the host word size. */
 extern IRExpr* mkIRExpr_HWord ( HWord );
 
 /* Convenience function for constructing clean helper calls. */
@@ -890,8 +1146,8 @@ IRExpr* mkIRExprCCall ( IRType retty,
                         IRExpr** args );
 
 
-/* Convenience functions for atoms, that is, IRExprs which
-   are either Iex_Tmp or Iex_Const. */
+/* Convenience functions for atoms (IRExprs which are either Iex_Tmp or
+ * Iex_Const). */
 static inline Bool isIRAtom ( IRExpr* e ) {
    return toBool(e->tag == Iex_Tmp || e->tag == Iex_Const);
 }
@@ -906,17 +1162,17 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
 /* This describes hints which can be passed to the dispatcher at guest
    control-flow transfer points.
 
-   Re Ijk_Invalidate: the guest state _must_ have two
-   pseudo-registers, guest_TISTART and guest_TILEN, which specify the
-   start and length of the region to be invalidated.  These are both
-   the size of a guest word. It is the responsibility of the relevant
-   toIR.c to ensure that these are filled in with suitable values
-   before issuing a jump of kind Ijk_TInval.  
+   Re Ijk_TInval: the guest state _must_ have two pseudo-registers,
+   guest_TISTART and guest_TILEN, which specify the start and length
+   of the region to be invalidated.  These are both the size of a
+   guest word.  It is the responsibility of the relevant toIR.c to
+   ensure that these are filled in with suitable values before issuing
+   a jump of kind Ijk_TInval.
 
    Re Ijk_EmWarn and Ijk_EmFail: the guest state must have a
-   pseudo-register guest_EMWARN, which is 32-bits regardless of
-   the host or guest word size.  That register should be made
-   to hold an EmWarn_* value to indicate the reason for the exit.
+   pseudo-register guest_EMWARN, which is 32-bits regardless of the
+   host or guest word size.  That register should be made to hold an
+   EmWarn_* value to indicate the reason for the exit.
 
    In the case of Ijk_EmFail, the exit is fatal (Vex-generated code
    cannot continue) and so the jump destination can be anything.
@@ -950,24 +1206,25 @@ extern void ppIRJumpKind ( IRJumpKind );
 
 /* ------------------ Dirty helper calls ------------------ */
 
-/* A dirty call is a flexible mechanism for calling a helper function
-   or procedure.  The helper function may read, write or modify client
-   memory, and may read, write or modify client state.  It can take
-   arguments and optionally return a value.  It may return different
-   results and/or do different things when called repeated with the
-   same arguments, by means of storing private state.
+/* A dirty call is a flexible mechanism for calling (possibly
+   conditionally) a helper function or procedure.  The helper function
+   may read, write or modify client memory, and may read, write or
+   modify client state.  It can take arguments and optionally return a
+   value.  It may return different results and/or do different things
+   when called repeatedly with the same arguments, by means of storing
+   private state.
 
    If a value is returned, it is assigned to the nominated return
    temporary.
 
    Dirty calls are statements rather than expressions for obvious
-   reasons.  If a dirty call is stated as writing guest state, any
+   reasons.  If a dirty call is marked as writing guest state, any
    values derived from the written parts of the guest state are
    invalid.  Similarly, if the dirty call is stated as writing
    memory, any loaded values are invalidated by it.
 
    In order that instrumentation is possible, the call must state, and
-   state correctly
+   state correctly:
 
    * whether it reads, writes or modifies memory, and if so where
      (only one chunk can be stated)
@@ -991,6 +1248,7 @@ extern void ppIRJumpKind ( IRJumpKind );
 
 #define VEX_N_FXSTATE  7   /* enough for FXSAVE/FXRSTOR on x86 */
 
+/* Effects on resources (eg. registers, memory locations) */
 typedef
    enum {
       Ifx_None = 0x15000,   /* no effect */
@@ -1000,6 +1258,7 @@ typedef
    }
    IREffect;
 
+/* Pretty-print an IREffect */
 extern void ppIREffect ( IREffect );
 
 
@@ -1027,16 +1286,20 @@ typedef
    }
    IRDirty;
 
+/* Pretty-print a dirty call */
 extern void     ppIRDirty ( IRDirty* );
+
+/* Allocate an uninitialised dirty call */
 extern IRDirty* emptyIRDirty ( void );
 
+/* Deep-copy a dirty call */
 extern IRDirty* dopyIRDirty ( IRDirty* );
 
 /* A handy function which takes some of the tedium out of constructing
    dirty helper calls.  The called function impliedly does not return
    any value and has a constant-True guard.  The call is marked as
    accessing neither guest state nor memory (hence the "unsafe"
-   designation) -- you can mess with this later if need be.  A
+   designation) -- you can change this marking later if need be.  A
    suitable IRCallee is constructed from the supplied bits. */
 extern 
 IRDirty* unsafeIRDirty_0_N ( Int regparms, HChar* name, void* addr, 
@@ -1052,83 +1315,159 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 
 /* ------------------ Statements ------------------ */
 
-/* The possible kinds of statements are as follows.  Those marked
-   OPTIONAL are hints of one kind or another, and as such do not
-   denote any change in the guest state or of IR temporaries.  They
-   can therefore be omitted without changing the meaning denoted by
-   the IR. 
+/* The different kinds of statements.  Their meaning is explained
+   below in the comments for IRStmt.
 
-   At the moment, the only AbiHint is one which indicates that a given
-   chunk of address space has become undefined.  This is used on
-   amd64-linux to pass stack-redzoning hints to whoever wants to see
-   them.
+   Those marked META do not represent code, but rather extra
+   information about the code.  These statements can be removed
+   without affecting the functional behaviour of the code, however
+   they are required by some IR consumers such as tools that
+   instrument the code.
 */
 typedef 
    enum {
-      Ist_NoOp,    /* OPTIONAL: no-op (usually resulting from IR
-                      optimisation) */
-      Ist_IMark,   /* OPTIONAL: instruction mark: describe addr/len of
-                      guest insn whose IR follows.  */
-      Ist_AbiHint, /* OPTIONAL: tell me something about this
-                      platform's ABI */
-      Ist_Put,     /* write guest state, fixed offset */
-      Ist_PutI,    /* write guest state, run-time offset */
-      Ist_Tmp,     /* assign value to temporary */
-      Ist_Store,   /* write to memory */
-      Ist_Dirty,   /* call complex ("dirty") helper function */
-      Ist_MFence,  /* memory fence */
-      Ist_Exit     /* conditional exit from BB */
+      Ist_NoOp,
+      Ist_IMark,     /* META */
+      Ist_AbiHint,   /* META */
+      Ist_Put,
+      Ist_PutI,
+      Ist_Tmp,
+      Ist_Store,
+      Ist_Dirty,
+      Ist_MFence,
+      Ist_Exit
    } 
    IRStmtTag;
 
+/* A statement.  Stored as a tagged union.  'tag' indicates what kind
+   of expression this is.  'Ist' is the union that holds the fields.
+   If an IRStmt 'st' has st.tag equal to Iex_Store, then it's a store
+   statement, and the fields can be accessed with
+   'st.Ist.Store.<fieldname>'.
+
+   For each kind of statement, we show what it looks like when
+   pretty-printed with ppIRExpr().
+*/
 typedef
    struct _IRStmt {
       IRStmtTag tag;
       union {
+         /* A no-op (usually resulting from IR optimisation).  Can be
+            omitted without any effect.
+
+            ppIRExpr output: IR-NoOp
+         */
          struct {
 	 } NoOp;
+
+         /* META: instruction mark.  Marks the start of the statements
+            that represent a single machine instruction (the end of
+            those statements is marked by the next IMark or the end of
+            the IRBB).  Contains the address and length of the
+            instruction.
+
+            ppIRExpr output: ------ IMark(<addr>, <len>) ------,
+                         eg. ------ IMark(0x4000792, 5) ------,
+         */
          struct {
-            Addr64 addr;
-            Int    len;
+            Addr64 addr;   /* instruction address */
+            Int    len;    /* instruction length */
          } IMark;
+
+         /* META: An ABI hint, which says something about this
+            platform's ABI.
+
+            At the moment, the only AbiHint is one which indicates
+            that a given chunk of address space, [base .. base+len-1],
+            has become undefined.  This is used on amd64-linux and
+            some ppc variants to pass stack-redzoning hints to whoever
+            wants to see them.
+
+            ppIRExpr output: ====== AbiHint(<base>, <len>) ======
+                         eg. ====== AbiHint(t1, 16) ======
+         */
          struct {
-            /* [base .. base+len-1] has become uninitialised */
-            IRExpr* base;
-            Int     len;
+            IRExpr* base;     /* Start  of undefined chunk */
+            Int     len;      /* Length of undefined chunk */
          } AbiHint;
+
+         /* Write a guest register, at a fixed offset in the guest state.
+            ppIRExpr output: PUT(<offset>) = <data>, eg. PUT(60) = t1
+         */
          struct {
-            Int     offset;
-            IRExpr* data;
+            Int     offset;   /* Offset into the guest state */
+            IRExpr* data;     /* The value to write */
          } Put;
+
+         /* Write a guest register, at a non-fixed offset in the guest
+            state.  See the comment for GetI expressions for more
+            information.
+
+            ppIRExpr output: PUTI<descr>[<ix>,<bias>] = <data>,
+                         eg. PUTI(64:8xF64)[t5,0] = t1
+         */
          struct {
-            IRArray* descr;
-            IRExpr*  ix;
-            Int      bias;
-            IRExpr*  data;
+            IRArray* descr;   /* Part of guest state treated as circular */
+            IRExpr*  ix;      /* Variable part of index into array */
+            Int      bias;    /* Constant offset part of index into array */
+            IRExpr*  data;    /* The value to write */
          } PutI;
+
+         /* Assign a value to a temporary.  ("Tmp" is not a very good
+            name for this, particularly because there is also a Tmp
+            expression kind.)
+
+            ppIRExpr output: t<tmp> = <data>, eg. t1 = 3
+         */
          struct {
-            IRTemp  tmp;
-            IRExpr* data;
+            IRTemp  tmp;   /* Temporary  (LHS of assignment) */
+            IRExpr* data;  /* Expression (RHS of assignment) */
          } Tmp;
+
+         /* Write a value to memory.
+            ppIRExpr output: ST<end>(<addr>) = <data>, eg. STle(t1) = t2
+         */
          struct {
-            IREndness end;
-            IRExpr*   addr;
-            IRExpr*   data;
+            IREndness end;    /* Endianness of the store */
+            IRExpr*   addr;   /* store address */
+            IRExpr*   data;   /* value to write */
          } Store;
+
+         /* Call (possibly conditionally) a C function that has side
+            effects (ie. is "dirty").  See the comments above the
+            IRDirty type declaration for more information.
+
+            ppIRExpr output:
+               t<tmp> = DIRTY <guard> <effects> 
+                  ::: <callee>(<args>)
+            eg.
+               t1 = DIRTY t27 RdFX-gst(16,4) RdFX-gst(60,4)
+                     ::: foo{0x380035f4}(t2)
+         */       
          struct {
             IRDirty* details;
          } Dirty;
+
+         /* A memory fence.
+            ppIRExpr output: IR-MFence
+         */
          struct {
          } MFence;
+
+         /* Conditional exit from the middle of an IRBB.
+            ppIRExpr output: if (<guard>) goto {<jk>} <dst>
+                         eg. if (t69) goto {Boring} 0x4000AAA:I32
+         */
          struct {
-            IRExpr*    guard;
-            IRJumpKind jk;
-            IRConst*   dst;
+            IRExpr*    guard;    /* Conditional expression */
+            IRJumpKind jk;       /* Jump kind */
+            IRConst*   dst;      /* Jump target (constant only) */
          } Exit;
       } Ist;
    }
    IRStmt;
 
+/* Statement constructors. */
 extern IRStmt* IRStmt_NoOp    ( void );
 extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len );
 extern IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len );
@@ -1141,17 +1480,20 @@ extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MFence  ( void );
 extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
 
+/* Deep-copy an IRStmt. */
 extern IRStmt* dopyIRStmt ( IRStmt* );
 
+/* Pretty-print an IRStmt. */
 extern void ppIRStmt ( IRStmt* );
 
 
 /* ------------------ Basic Blocks ------------------ */
 
-/* A bunch of statements, expressions, etc, are incomplete without an
-   environment indicating the type of each IRTemp.  So this provides
-   one.  IR temporaries are really just unsigned ints and so this
-   provides an array, 0 .. n_types_used-1 of them.
+/* Type environments: a bunch of statements, expressions, etc, are
+   incomplete without an environment indicating the type of each
+   IRTemp.  So this provides one.  IR temporaries are really just
+   unsigned ints and so this provides an array, 0 .. n_types_used-1 of
+   them.
 */
 typedef
    struct {
@@ -1161,22 +1503,29 @@ typedef
    }
    IRTypeEnv;
 
-extern IRTemp     newIRTemp     ( IRTypeEnv*, IRType );
+/* Obtain a new IRTemp */
+extern IRTemp newIRTemp ( IRTypeEnv*, IRType );
+
+/* Deep-copy a type environment */
 extern IRTypeEnv* dopyIRTypeEnv ( IRTypeEnv* );
 
+/* Pretty-print a type environment */
 extern void ppIRTypeEnv ( IRTypeEnv* );
 
 
-/* Basic blocks contain:
-   - A table giving a type for each temp
+/* Code blocks contain:
+   - A table giving a type for each temp (the "type environment")
    - An expandable array of statements
    - An expression of type 32 or 64 bits, depending on the
      guest's word size, indicating the next destination.
    - An indication of any special actions (JumpKind) needed
      for this final jump.
+   
+   The "BB" is short for "basic block", but this is a misnomer, as an
+   IRBB can contain multiple exits.
 */
 typedef
-   struct _IRBB {
+   struct {
       IRTypeEnv* tyenv;
       IRStmt**   stmts;
       Int        stmts_size;
@@ -1186,12 +1535,19 @@ typedef
    }
    IRBB;
 
+/* Allocate a new, uninitialised IRBB */
 extern IRBB* emptyIRBB ( void );
 
+/* Deep-copy an IRBB */
 extern IRBB* dopyIRBB ( IRBB* );
 
+/* Deep-copy an IRBB, except for the statements list. */
+extern IRBB* dopyIRBBExceptStmts ( IRBB* );
+
+/* Pretty-print an IRBB */
 extern void ppIRBB ( IRBB* );
 
+/* Append an IRStmt to an IRBB */
 extern void addStmtToIRBB ( IRBB*, IRStmt* );
 
 

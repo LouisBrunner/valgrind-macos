@@ -24,6 +24,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	jcxz.stdout.exp jcxz.stderr.exp jcxz.vgtest \
 	lahf.stdout.exp lahf.stderr.exp lahf.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
 	movx.stderr.exp movx.stdout.exp movx.vgtest \
@@ -42,6 +43,7 @@ check_PROGRAMS = \
 	cmpxchg8b cpuid \
 	faultstatus fcmovnu fpu_lazy_eflags fxtract \
 	getseg incdec_alt $(INSN_TESTS) \
+	jcxz \
 	lahf looper movx int pushpopseg sbbmisc \
 	seg_override sigcontext smc1 yield
 

@@ -10827,6 +10827,28 @@ DisResult disInstr_X86_WRK (
 
    after_sse_decoders:
 
+   /* ---------------------------------------------------- */
+   /* --- deal with misc 0x67 pfxs (addr size override) -- */
+   /* ---------------------------------------------------- */
+
+   /* 67 E3 = JCXZ (for JECXZ see below) */
+   if (insn[0] == 0x67 && insn[1] == 0xE3 && sz == 4) {
+      delta += 2;
+      d32 = (((Addr32)guest_EIP_bbstart)+delta+1) + getSDisp8(delta);
+      delta ++;
+      stmt( IRStmt_Exit(
+               binop(Iop_CmpEQ16, getIReg(2,R_ECX), mkU16(0)),
+               Ijk_Boring,
+               IRConst_U32(d32)
+            ));
+       DIP("jcxz 0x%x\n", d32);
+       goto decode_success;
+   }
+
+   /* ---------------------------------------------------- */
+   /* --- start of the baseline insn decoder            -- */
+   /* ---------------------------------------------------- */
+
    /* Get the primary opcode. */
    opc = getIByte(delta); delta++;
 
@@ -11157,21 +11179,16 @@ DisResult disInstr_X86_WRK (
       DIP("j%s-8 0x%x\n", name_X86Condcode(opc - 0x70), d32);
       break;
 
-   case 0xE3: /* JECXZ or perhaps JCXZ, depending on OSO ?  Intel
-                 manual says it depends on address size override. */
+   case 0xE3: /* JECXZ (for JCXZ see above) */
       if (sz != 4) goto decode_failure;
       d32 = (((Addr32)guest_EIP_bbstart)+delta+1) + getSDisp8(delta);
-      delta++;
-      ty = szToITy(sz);
+      delta ++;
       stmt( IRStmt_Exit(
-               binop(mkSizedOp(ty,Iop_CmpEQ8),
-                     getIReg(sz,R_ECX),
-                     mkU(ty,0)),
+               binop(Iop_CmpEQ32, getIReg(4,R_ECX), mkU32(0)),
             Ijk_Boring,
-            IRConst_U32(d32)) 
-          );
-
-      DIP("j%sz 0x%x\n", nameIReg(sz, R_ECX), d32);
+            IRConst_U32(d32)
+          ));
+      DIP("jecxz 0x%x\n", d32);
       break;
 
    case 0xE0: /* LOOPNE disp8: decrement count, jump if count != 0 && ZF==0 */

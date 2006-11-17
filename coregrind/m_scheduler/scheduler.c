@@ -58,6 +58,7 @@
  */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"    // __NR_sched_yield
 #include "pub_core_threadstate.h"
@@ -449,6 +450,9 @@ void VG_(scheduler_init) ( Addr clstack_end, SizeT clstack_size )
 {
    Int i;
    ThreadId tid_main;
+
+   VG_(debugLog)(1,"sched","sched_init: cls_end=0x%lx, cls_sz=%ld\n",
+                   clstack_end, clstack_size);
 
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_size));

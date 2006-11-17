@@ -61,17 +61,8 @@ static void diagnose_load_failure ( void );
 
 /* --- Create the client's initial memory image. --- */
 
-ClientInitImgInfo
-   VG_(setup_client_initial_image)(
-      /*IN*/ HChar** argv,
-      /*IN*/ HChar** envp,
-      /*IN*/ HChar*  toolname,
-      /*IN*/ Addr    clstack_top,
-      /*IN*/ SizeT   clstack_max_size
-   )
+IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
 {
-   ClientInitImgInfo ciii;
-
    /* Set up an AIX5PreloadPage structure with the names of
 
          $VALGRIND_LIB/PLATFORM/vgpreload_core.so
@@ -101,13 +92,16 @@ ClientInitImgInfo
    Int              szB, szPG;
    SysRes           sres;
 
-   vg_assert( toolname );
+   IIFinaliseImageInfo iifii;
+   VG_(memset)( &iifii, 0, sizeof(iifii) );
+
+   vg_assert( iicii.toolname );
    pltool_len = VG_(strlen)( VG_(libdir) ) 
                 + 1 /*slash*/
                 + VG_(strlen)(VG_PLATFORM)
                 + 1 /*slash*/
                 + VG_(strlen)( vgpreload_ )
-                + VG_(strlen)( toolname )
+                + VG_(strlen)( iicii.toolname )
                 + VG_(strlen)( _so )
                 + 1 /*NUL*/;
    vg_assert(pltool_len > 0);
@@ -118,7 +112,7 @@ ClientInitImgInfo
    VG_(strcat)( pltool_str, VG_PLATFORM );
    VG_(strcat)( pltool_str, "/" );
    VG_(strcat)( pltool_str, vgpreload_ );
-   VG_(strcat)( pltool_str, toolname );
+   VG_(strcat)( pltool_str, iicii.toolname );
    VG_(strcat)( pltool_str, _so );
    vg_assert( pltool_str[pltool_len-1] == 0);
    vg_assert( VG_(strlen)(pltool_str) == pltool_len-1 );
@@ -178,7 +172,8 @@ ClientInitImgInfo
                                  + (have_ld_pre ? ld_pre_len : 0)
                                  + errmsg_len;
    szPG = VG_PGROUNDUP(szB+1) / VKI_PAGE_SIZE;
-   VG_(debugLog)(2, "initimg", "preload page size: %d bytes, %d pages\n", szB, szPG);
+   VG_(debugLog)(2, "initimg", 
+                    "preload page size: %d bytes, %d pages\n", szB, szPG);
 
    vg_assert(szB > 0);
    vg_assert(szB < szPG * VKI_PAGE_SIZE);
@@ -239,9 +234,13 @@ ClientInitImgInfo
 
    pp->p_diagnose_load_failure = &diagnose_load_failure;
 
-   ciii.preloadpage = pp;
-   ciii.intregs37 = 0; /* filled in in m_main.c */
-   return ciii;
+   iifii.preloadpage       = pp;
+   iifii.intregs37         = iicii.intregs37;
+   iifii.initial_client_SP = iicii.intregs37[1]; /* r1 */
+   iifii.compressed_page   = VG_PGROUNDDN((Addr)iicii.bootblock);
+   iifii.adler32_exp       = iicii.adler32_exp;
+   iifii.clstack_max_size  = 0; /* we don't know yet */
+   return iifii;
 }
 
 
@@ -265,14 +264,21 @@ static UInt compute_adler32 ( void* addr, UWord len )
    return (s2 << 16) + s1;
 }
 
-void VG_(finalise_thread1state)( /*MOD*/ThreadArchState* arch,
-                                 ClientInitImgInfo ciii )
+/* Just before starting the client, we may need to make final
+   adjustments to its initial image.  Also we need to set up the VEX
+   guest state for thread 1 (the root thread) and copy in essential
+   starting values.  This is handed the IIFinaliseImageInfo created by
+   VG_(ii_create_image).
+*/
+void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
 {
-  UInt adler32_act;
+   UInt   adler32_act;
    SysRes sres;
    /* On AIX we get a block of 37 words telling us the initial state
       for (GPR0 .. GPR31, PC, CR, LR, CTR, XER), and we start with all
       the other registers zeroed. */
+
+   ThreadArchState* arch = &VG_(threads)[1].arch;
 
 #  if defined(VGP_ppc32_aix5)
 
@@ -298,61 +304,61 @@ void VG_(finalise_thread1state)( /*MOD*/ThreadArchState* arch,
 
 #  endif
 
-   /* ciii.intregs37 contains the integer register state as it needs
+   /* iifii.intregs37 contains the integer register state as it needs
       to be at client startup.  These values are supplied by the
       launcher.  The 37 regs are:initial values from launcher for:
       GPR0 .. GPR31, PC, CR, LR, CTR, XER. */
 
    /* Put essential stuff into the new state. */
-   arch->vex.guest_GPR0  =  (UWord)ciii.intregs37[0];
-   arch->vex.guest_GPR1  =  (UWord)ciii.intregs37[1];
-   arch->vex.guest_GPR2  =  (UWord)ciii.intregs37[2];
-   arch->vex.guest_GPR3  =  (UWord)ciii.intregs37[3];
-   arch->vex.guest_GPR4  =  (UWord)ciii.intregs37[4];
-   arch->vex.guest_GPR5  =  (UWord)ciii.intregs37[5];
-   arch->vex.guest_GPR6  =  (UWord)ciii.intregs37[6];
-   arch->vex.guest_GPR7  =  (UWord)ciii.intregs37[7];
-   arch->vex.guest_GPR8  =  (UWord)ciii.intregs37[8];
-   arch->vex.guest_GPR9  =  (UWord)ciii.intregs37[9];
-   arch->vex.guest_GPR10 =  (UWord)ciii.intregs37[10];
-   arch->vex.guest_GPR11 =  (UWord)ciii.intregs37[11];
-   arch->vex.guest_GPR12 =  (UWord)ciii.intregs37[12];
-   arch->vex.guest_GPR13 =  (UWord)ciii.intregs37[13];
-   arch->vex.guest_GPR14 =  (UWord)ciii.intregs37[14];
-   arch->vex.guest_GPR15 =  (UWord)ciii.intregs37[15];
-   arch->vex.guest_GPR16 =  (UWord)ciii.intregs37[16];
-   arch->vex.guest_GPR17 =  (UWord)ciii.intregs37[17];
-   arch->vex.guest_GPR18 =  (UWord)ciii.intregs37[18];
-   arch->vex.guest_GPR19 =  (UWord)ciii.intregs37[19];
-   arch->vex.guest_GPR20 =  (UWord)ciii.intregs37[20];
-   arch->vex.guest_GPR21 =  (UWord)ciii.intregs37[21];
-   arch->vex.guest_GPR22 =  (UWord)ciii.intregs37[22];
-   arch->vex.guest_GPR23 =  (UWord)ciii.intregs37[23];
-   arch->vex.guest_GPR24 =  (UWord)ciii.intregs37[24];
-   arch->vex.guest_GPR25 =  (UWord)ciii.intregs37[25];
-   arch->vex.guest_GPR26 =  (UWord)ciii.intregs37[26];
-   arch->vex.guest_GPR27 =  (UWord)ciii.intregs37[27];
-   arch->vex.guest_GPR28 =  (UWord)ciii.intregs37[28];
-   arch->vex.guest_GPR29 =  (UWord)ciii.intregs37[29];
-   arch->vex.guest_GPR30 =  (UWord)ciii.intregs37[30];
-   arch->vex.guest_GPR31 =  (UWord)ciii.intregs37[31];
+   arch->vex.guest_GPR0  =  (UWord)iifii.intregs37[0];
+   arch->vex.guest_GPR1  =  (UWord)iifii.intregs37[1];
+   arch->vex.guest_GPR2  =  (UWord)iifii.intregs37[2];
+   arch->vex.guest_GPR3  =  (UWord)iifii.intregs37[3];
+   arch->vex.guest_GPR4  =  (UWord)iifii.intregs37[4];
+   arch->vex.guest_GPR5  =  (UWord)iifii.intregs37[5];
+   arch->vex.guest_GPR6  =  (UWord)iifii.intregs37[6];
+   arch->vex.guest_GPR7  =  (UWord)iifii.intregs37[7];
+   arch->vex.guest_GPR8  =  (UWord)iifii.intregs37[8];
+   arch->vex.guest_GPR9  =  (UWord)iifii.intregs37[9];
+   arch->vex.guest_GPR10 =  (UWord)iifii.intregs37[10];
+   arch->vex.guest_GPR11 =  (UWord)iifii.intregs37[11];
+   arch->vex.guest_GPR12 =  (UWord)iifii.intregs37[12];
+   arch->vex.guest_GPR13 =  (UWord)iifii.intregs37[13];
+   arch->vex.guest_GPR14 =  (UWord)iifii.intregs37[14];
+   arch->vex.guest_GPR15 =  (UWord)iifii.intregs37[15];
+   arch->vex.guest_GPR16 =  (UWord)iifii.intregs37[16];
+   arch->vex.guest_GPR17 =  (UWord)iifii.intregs37[17];
+   arch->vex.guest_GPR18 =  (UWord)iifii.intregs37[18];
+   arch->vex.guest_GPR19 =  (UWord)iifii.intregs37[19];
+   arch->vex.guest_GPR20 =  (UWord)iifii.intregs37[20];
+   arch->vex.guest_GPR21 =  (UWord)iifii.intregs37[21];
+   arch->vex.guest_GPR22 =  (UWord)iifii.intregs37[22];
+   arch->vex.guest_GPR23 =  (UWord)iifii.intregs37[23];
+   arch->vex.guest_GPR24 =  (UWord)iifii.intregs37[24];
+   arch->vex.guest_GPR25 =  (UWord)iifii.intregs37[25];
+   arch->vex.guest_GPR26 =  (UWord)iifii.intregs37[26];
+   arch->vex.guest_GPR27 =  (UWord)iifii.intregs37[27];
+   arch->vex.guest_GPR28 =  (UWord)iifii.intregs37[28];
+   arch->vex.guest_GPR29 =  (UWord)iifii.intregs37[29];
+   arch->vex.guest_GPR30 =  (UWord)iifii.intregs37[30];
+   arch->vex.guest_GPR31 =  (UWord)iifii.intregs37[31];
 
-   arch->vex.guest_CIA      = (UWord)ciii.intregs37[32+0];
-   arch->vex.guest_LR       = (UWord)ciii.intregs37[32+2];
-   arch->vex.guest_CTR      = (UWord)ciii.intregs37[32+3];
+   arch->vex.guest_CIA      = (UWord)iifii.intregs37[32+0];
+   arch->vex.guest_LR       = (UWord)iifii.intregs37[32+2];
+   arch->vex.guest_CTR      = (UWord)iifii.intregs37[32+3];
 
 #  if defined(VGP_ppc32_aix5)
 
-   LibVEX_GuestPPC32_put_CR(  (UWord)ciii.intregs37[32+1], &arch->vex );
-   LibVEX_GuestPPC32_put_XER( (UWord)ciii.intregs37[32+4], &arch->vex );
+   LibVEX_GuestPPC32_put_CR(  (UWord)iifii.intregs37[32+1], &arch->vex );
+   LibVEX_GuestPPC32_put_XER( (UWord)iifii.intregs37[32+4], &arch->vex );
 
    /* Set the cache line size (KLUDGE) */
    VG_(machine_ppc32_set_clszB)( 128 );
 
 #  else /* defined(VGP_ppc64_aix5) */
 
-   LibVEX_GuestPPC64_put_CR(  (UWord)ciii.intregs37[32+1], &arch->vex );
-   LibVEX_GuestPPC64_put_XER( (UWord)ciii.intregs37[32+4], &arch->vex );
+   LibVEX_GuestPPC64_put_CR(  (UWord)iifii.intregs37[32+1], &arch->vex );
+   LibVEX_GuestPPC64_put_XER( (UWord)iifii.intregs37[32+4], &arch->vex );
 
    /* Set the cache line size (KLUDGE) */
    VG_(machine_ppc64_set_clszB)( 128 );
@@ -382,22 +388,22 @@ void VG_(finalise_thread1state)( /*MOD*/ThreadArchState* arch,
 
    /* At this point the guest register state is correct for client
       startup.  However, that's not where we want to start; in fact we
-      want to start at VG_(ppc{3,64}2_aix5_do_preloads_then_start_client),
-      passing it ciii.preloadpage in r3.  This will load the core/tool
+      want to start at VG_(ppc{32,64}_aix5_do_preloads_then_start_client),
+      passing it iifii.preloadpage in r3.  This will load the core/tool
       preload .so's, then restore r2-r10 from what's stashed in the
       preloadpage, and then start the client really.  Hence: */
 
    /* Save r2-r10 and the client start point in preloadpage */
-   ciii.preloadpage->r2  = (ULong)arch->vex.guest_GPR2;
-   ciii.preloadpage->r3  = (ULong)arch->vex.guest_GPR3;
-   ciii.preloadpage->r4  = (ULong)arch->vex.guest_GPR4;
-   ciii.preloadpage->r5  = (ULong)arch->vex.guest_GPR5;
-   ciii.preloadpage->r6  = (ULong)arch->vex.guest_GPR6;
-   ciii.preloadpage->r7  = (ULong)arch->vex.guest_GPR7;
-   ciii.preloadpage->r8  = (ULong)arch->vex.guest_GPR8;
-   ciii.preloadpage->r9  = (ULong)arch->vex.guest_GPR9;
-   ciii.preloadpage->r10 = (ULong)arch->vex.guest_GPR10;
-   ciii.preloadpage->client_start = (ULong)arch->vex.guest_CIA;
+   iifii.preloadpage->r2  = (ULong)arch->vex.guest_GPR2;
+   iifii.preloadpage->r3  = (ULong)arch->vex.guest_GPR3;
+   iifii.preloadpage->r4  = (ULong)arch->vex.guest_GPR4;
+   iifii.preloadpage->r5  = (ULong)arch->vex.guest_GPR5;
+   iifii.preloadpage->r6  = (ULong)arch->vex.guest_GPR6;
+   iifii.preloadpage->r7  = (ULong)arch->vex.guest_GPR7;
+   iifii.preloadpage->r8  = (ULong)arch->vex.guest_GPR8;
+   iifii.preloadpage->r9  = (ULong)arch->vex.guest_GPR9;
+   iifii.preloadpage->r10 = (ULong)arch->vex.guest_GPR10;
+   iifii.preloadpage->client_start = (ULong)arch->vex.guest_CIA;
 
 
 #  if defined(VGP_ppc32_aix5)
@@ -412,29 +418,29 @@ void VG_(finalise_thread1state)( /*MOD*/ThreadArchState* arch,
 
 #  endif
 
-   arch->vex.guest_GPR3 = (UWord)ciii.preloadpage;
+   arch->vex.guest_GPR3 = (UWord)iifii.preloadpage;
 
    /* The rest of the preloadpage fields will already have been filled
       in by VG_(setup_client_initial_image).  So we're done. */
 
    /* Finally, decompress the page compressed by the launcher.  We
       can't do this any earlier, because the page is (effectively)
-      decompressed in place, which trashes ciii.intregs37.  So we have
-      to wait till this point, at which we're done with ciii.intregs37
+      decompressed in place, which trashes iifii.intregs37.  So we have
+      to wait till this point, at which we're done with iifii.intregs37
       (to be precise, with what it points at). */
    VG_(debugLog)(1, "initimg", "decompressing page at %p\n", 
-                    (void*)ciii.compressed_page);
-   vg_assert(VG_IS_PAGE_ALIGNED(ciii.compressed_page));
+                    (void*)iifii.compressed_page);
+   vg_assert(VG_IS_PAGE_ALIGNED(iifii.compressed_page));
 
-   Huffman_Uncompress( (void*)ciii.compressed_page, unz_page,
+   Huffman_Uncompress( (void*)iifii.compressed_page, unz_page,
                        VKI_PAGE_SIZE, VKI_PAGE_SIZE );
    adler32_act = compute_adler32(unz_page, VKI_PAGE_SIZE);
 
    VG_(debugLog)(1, "initimg", 
                     "decompress done, adler32s: act 0x%x, exp 0x%x\n",
-                    adler32_act, ciii.adler32_exp );
+                    adler32_act, iifii.adler32_exp );
 
-   VG_(memcpy)((void*)ciii.compressed_page, unz_page, VKI_PAGE_SIZE);
+   VG_(memcpy)((void*)iifii.compressed_page, unz_page, VKI_PAGE_SIZE);
 
    VG_(debugLog)(1, "initimg", "copy back done\n");
 

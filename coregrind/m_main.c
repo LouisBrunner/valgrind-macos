@@ -1048,14 +1048,25 @@ void show_BB_profile ( BBProfEntry tops[], UInt n_tops, ULong score_total )
 
 /*static*/ VgStack VG_(interim_stack);
 
-/* This should get some address inside the stack on which we gained
+/* These are the structures used to hold info for creating the initial
+   client image.
+
+   'iicii' mostly holds important register state present at system
+   startup (_start_valgrind).  valgrind_main() then fills in the rest
+   of it and passes it to VG_(ii_create_image)().  That produces
+   'iifii', which is later handed to VG_(ii_finalise_image). */
+
+/* In all OS-instantiations, the_iicii has a field .sp_at_startup.
+   This should get some address inside the stack on which we gained
    control (eg, it could be the SP at startup).  It doesn't matter
    exactly where in the stack it is.  This value is passed to the
-   address space manager at startup, which uses it to identify the
-   initial stack segment and hence the upper end of the usable address
-   space. */
+   address space manager at startup.  On Linux, aspacem then uses it
+   to identify the initial stack segment and hence the upper end of
+   the usable address space. */
 
-static Addr sp_at_startup = 0;
+static IICreateImageInfo   the_iicii;
+static IIFinaliseImageInfo the_iifii;
+
 
 /* --- Forwards decls to do with shutdown --- */
 
@@ -1103,23 +1114,19 @@ static Addr* get_seg_starts ( /*OUT*/Int* n_acquired )
 }
 
 
+/* By the time we get to valgrind_main, the_iicii should already have
+   been filled in with any important details as required by whatever
+   OS we have been built for.
+*/
 static
-Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
-                    ULong* ppc_aix_initial_client_intregs37,
-                    void*  ppc_aix_bootblock,
-                    UInt   ppc_aix_adler32_for_compressed_page )
+Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 {
    HChar*  toolname           = "memcheck";    // default to Memcheck
    Int     need_help          = 0; // 0 = no, 1 = --help, 2 = --help-debug
-   Addr    clstack_top        = 0;
-   SizeT   clstack_max_size   = 0;
    UInt*   client_auxv        = NULL;
    Int     loglevel, i;
    Bool    logging_to_fd;
    struct vki_rlimit zero = { 0, 0 };
-
-   ClientInitImgInfo ciii;
-   VG_(memset)(&ciii, 0, sizeof(ClientInitImgInfo));
 
    //============================================================
    //
@@ -1236,7 +1243,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
    //   p: logging
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Checking initial stack was noted\n");
-   if (sp_at_startup == 0) {
+   if (the_iicii.sp_at_startup == 0) {
       VG_(debugLog)(0, "main", "Valgrind: FATAL: "
                                "Initial stack was not noted.\n");
       VG_(debugLog)(0, "main", "   Cannot continue.  Sorry.\n");
@@ -1249,7 +1256,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
    //   p: logging, plausible-stack
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Starting the address space manager\n");
-   clstack_top = VG_(am_startup)( sp_at_startup );
+   the_iicii.clstack_top = VG_(am_startup)( the_iicii.sp_at_startup );
    VG_(debugLog)(1, "main", "Address space manager is running\n");
 
    //--------------------------------------------------------------
@@ -1377,22 +1384,45 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
    // Setup client data (brk) segment.  Initially a 1-page segment
    // which abuts a shrinkable reservation. 
    //     p: load_client()     [for 'info' and hence VG_(brk_base)]
+   //
+   // p: _start_in_C (for zeroing out the_iicii and putting some
+   //    initial values into it)
    //--------------------------------------------------------------
    if (!need_help) {
-      VG_(debugLog)(1, "main", "Setting up initial image\n");
-      ciii = VG_(setup_client_initial_image)( 
-                argv, envp, toolname, 
-                clstack_top, clstack_max_size 
-             );
+      VG_(debugLog)(1, "main", "Create initial image\n");
+
+#     if defined(VGO_linux)
+      the_iicii.argv              = argv;
+      the_iicii.envp              = envp;
+      the_iicii.toolname          = toolname;
+#     elif defined(VGO_aix5)
+      /* the_iicii.intregs37      already set up */
+      /* the_iicii.bootblock      already set up */
+      /* the_iicii.adler32_exp    already set up */
+      /* the_iicii.sp_at_startup  is irrelevant */
+      /* the_iicii.clstack_top    is irrelevant */
+      the_iicii.toolname          = toolname;
+#     else
+#       error "Uknown platform"
+#     endif
+
+      the_iifii = VG_(ii_create_image)( the_iicii );
+
 #     if defined(VGO_aix5)
-      ciii.adler32_exp       = ppc_aix_adler32_for_compressed_page;
-      ciii.compressed_page   = VG_PGROUNDDN((Addr)ppc_aix_bootblock);
-      ciii.intregs37         = ppc_aix_initial_client_intregs37;
-      ciii.initial_client_SP = ciii.intregs37[1]; /* r1 */
       /* Tell aspacem where the initial client stack is, so that it
          can later produce a faked-up NSegment in response to
          VG_(am_find_nsegment) for that address range, if asked. */
-      VG_(am_aix5_set_initial_client_sp)( ciii.initial_client_SP );
+      VG_(am_aix5_set_initial_client_sp)( the_iifii.initial_client_SP );
+      /* Now have a look at said fake segment, so we can find out
+         the size of it. */
+      { SizeT sz;
+        NSegment const* seg 
+           = VG_(am_find_nsegment)( the_iifii.initial_client_SP );
+        vg_assert(seg);
+        sz = seg->end - seg->start + 1;
+        vg_assert(sz >= 0 && sz <= 64*1024*1024); /* stay sane */
+        the_iifii.clstack_max_size = sz;
+      }
 #     endif
    }
 
@@ -1678,11 +1708,11 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
 
      /* Also do the initial stack permissions. */
      { NSegment const* seg 
-          = VG_(am_find_nsegment)( ciii.initial_client_SP );
+          = VG_(am_find_nsegment)( the_iifii.initial_client_SP );
        vg_assert(seg);
        vg_assert(seg->kind == SkAnonC);
-       vg_assert(ciii.initial_client_SP >= seg->start);
-       vg_assert(ciii.initial_client_SP <= seg->end);
+       vg_assert(the_iifii.initial_client_SP >= seg->start);
+       vg_assert(the_iifii.initial_client_SP <= seg->end);
 #      if defined(VGO_aix5)
        VG_(clstk_base) = seg->start;
        VG_(clstk_end) = seg->end;
@@ -1693,14 +1723,15 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
 	  is required (VG_STACK_REDZONE_SZB).  setup_client_stack()
 	  will have allocated an extra page if a red zone is required,
 	  to be on the safe side. */
-       vg_assert(ciii.initial_client_SP - VG_STACK_REDZONE_SZB >= seg->start);
+       vg_assert(the_iifii.initial_client_SP - VG_STACK_REDZONE_SZB 
+                 >= seg->start);
        VG_TRACK( die_mem_stack, 
                  seg->start, 
-                 ciii.initial_client_SP - VG_STACK_REDZONE_SZB 
-                                        - seg->start );
+                 the_iifii.initial_client_SP - VG_STACK_REDZONE_SZB 
+                                             - seg->start );
        VG_(debugLog)(2, "main", "mark stack inaccessible %010lx-%010lx\n",
                         seg->start, 
-                        ciii.initial_client_SP-1 - VG_STACK_REDZONE_SZB);
+                        the_iifii.initial_client_SP-1 - VG_STACK_REDZONE_SZB);
      }
 
      /* Also the assembly helpers. */
@@ -1720,23 +1751,22 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp,
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise scheduler\n");
    { NSegment const* seg 
-        = VG_(am_find_nsegment)( ciii.initial_client_SP );
+        = VG_(am_find_nsegment)( the_iifii.initial_client_SP );
      vg_assert(seg);
      vg_assert(seg->kind == SkAnonC);
-     vg_assert(ciii.initial_client_SP >= seg->start);
-     vg_assert(ciii.initial_client_SP <= seg->end);
-     VG_(scheduler_init)( seg->end, clstack_max_size );
+     vg_assert(the_iifii.initial_client_SP >= seg->start);
+     vg_assert(the_iifii.initial_client_SP <= seg->end);
+     VG_(scheduler_init)( seg->end, the_iifii.clstack_max_size );
    }
 
    //--------------------------------------------------------------
    // Set up state for the root thread
    //   p: ?
    //      setup_scheduler()      [for sched-specific thread 1 stuff]
-   //      VG_(setup_client_initial_image)
-   //                             [for 'ciii' initial layout info]
+   //      VG_(ii_create_image)   [for 'the_iicii' initial info]
    //--------------------------------------------------------------
-   VG_(debugLog)(1, "main", "Finalise thread 1's state\n");
-   VG_(finalise_thread1state)( &VG_(threads)[1].arch, ciii );
+   VG_(debugLog)(1, "main", "Finalise initial image\n");
+   VG_(ii_finalise_image)( the_iifii );
 
    //--------------------------------------------------------------
    // Initialise the pthread model
@@ -2228,11 +2258,13 @@ void _start_in_C_linux ( UWord* pArgc )
    Word    argc = pArgc[0];
    HChar** argv = (HChar**)&pArgc[1];
    HChar** envp = (HChar**)&pArgc[1+argc+1];
-   sp_at_startup = (Addr)pArgc;
-   r = valgrind_main( (Int)argc, argv, envp, 
-                      NULL/*aix5-specific stuff*/,
-                      NULL/*aix5-specific stuff*/,
-                      0/*aix5-specific stuff*/ );
+
+   VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
+   VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
+
+   the_iicii.sp_at_startup = (Addr)pArgc;
+
+   r = valgrind_main( (Int)argc, argv, envp );
    /* NOTREACHED */
    VG_(exit)(r);
 }
@@ -2293,7 +2325,18 @@ void _start_in_C_aix5 ( AIX5Bootblock* bootblock )
    __NR_open   = bootblock->__NR_open;
    __NR_read   = bootblock->__NR_read;
    __NR_close  = bootblock->__NR_close;
+
+   VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
+   VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
+
    intregs37 = &bootblock->iregs_pc_cr_lr_ctr_xer[0];
+   the_iicii.intregs37   = intregs37;
+   the_iicii.bootblock   = (void*)bootblock;
+   the_iicii.adler32_exp = bootblock->adler32;
+
+   /* Not important on AIX. */
+   the_iicii.sp_at_startup = (Addr)0x31415927ULL;
+
 #  if defined(VGP_ppc32_aix5)
    argc = (UWord)intregs37[3];  /* client's r3 == argc */
    argv = (UWord)intregs37[4];
@@ -2303,11 +2346,9 @@ void _start_in_C_aix5 ( AIX5Bootblock* bootblock )
    argv = (UWord)intregs37[15];
    envp = (UWord)intregs37[16];
 #  endif
-   sp_at_startup = (Addr)0xDeadBeefDeadBeefULL; /* Not important on AIX. */
-   r = valgrind_main( (Int)argc, (HChar**)argv, (HChar**)envp, 
-                      intregs37, 
-                      (void*)bootblock,
-                      bootblock->adler32 );
+
+   r = valgrind_main( (Int)argc, (HChar**)argv, (HChar**)envp );
+
    /* NOTREACHED */
    VG_(exit)(r);
 }

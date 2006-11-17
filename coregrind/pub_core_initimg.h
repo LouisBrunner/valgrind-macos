@@ -32,6 +32,7 @@
 #ifndef __PUB_CORE_INITIMG_H
 #define __PUB_CORE_INITIMG_H
 
+
 //--------------------------------------------------------------------
 // PURPOSE: Map the client executable into memory, then set up its
 // stack, environment and data section, ready for execution.  Quite a
@@ -39,17 +40,61 @@
 // the AIX kernel does most of the work for us.
 //--------------------------------------------------------------------
 
+/* These are OS-specific and defined below. */
+typedef  struct _IICreateImageInfo    IICreateImageInfo;
+typedef  struct _IIFinaliseImageInfo  IIFinaliseImageInfo;
+
+/* This is a two stage process.  The first stage, which is most of the
+   work, creates the initial image in memory to the extent possible.
+   To do this it takes a bundle of information in an IICreateImageInfo
+   structure, which is gathered in an OS-specific way at startup.
+   This returns an IIFinaliseImageInfo structure: */
+extern 
+IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo );
+
+/* Just before starting the client, we may need to make final
+   adjustments to its initial image.  Also we need to set up the VEX
+   guest state for thread 1 (the root thread) and copy in essential
+   starting values.  This is handed the IIFinaliseImageInfo created by
+   VG_(ii_create_image). */
+extern 
+void VG_(ii_finalise_image)( IIFinaliseImageInfo );
+
+
+/* Note that both IICreateImageInfo and IIFinaliseImageInfo are
+   OS-specific.  We now go on to give instantiations of them
+   for supported OSes. */
+
+/* ------------------------- Linux ------------------------- */
+
 #if defined(VGO_linux)
-typedef
-   struct {
-      Addr  initial_client_SP;
-      Addr  initial_client_IP;
-      Addr  initial_client_TOC;
-      UInt* client_auxv;
-   }
-   ClientInitImgInfo;
+
+struct _IICreateImageInfo {
+   /* ------ Mandatory fields ------ */
+   HChar*  toolname;
+   Addr    sp_at_startup;
+   Addr    clstack_top;
+   /* ------ Per-OS fields ------ */
+   HChar** argv;
+   HChar** envp;
+};
+
+struct _IIFinaliseImageInfo {
+   /* ------ Mandatory fields ------ */
+   SizeT clstack_max_size;
+   /* ------ Per-OS fields ------ */
+   Addr  initial_client_SP;
+   Addr  initial_client_IP;
+   Addr  initial_client_TOC;
+   UInt* client_auxv;
+};
+
+
+/* ------------------------- AIX5 ------------------------- */
 
 #elif defined(VGO_aix5)
+
+/* First we need to define this auxiliary structure. */
 typedef
    struct {
       /* NOTE: VG_(ppc32/64_aix5_do_preloads_then_start_client) has
@@ -85,52 +130,49 @@ typedef
       /* If the loading fails, we'll want to call a diagnostic
          function in C to figure out what happened.  Here's it's
          function descriptor.  Note, this runs on the simd cpu
-         (another nasty AIX kludge) */
+         (a kludge, and will segfault in 64-bit mode). */
       /* 112 */ void* p_diagnose_load_failure;
    }
    AIX5PreloadPage;
 
-typedef
-   struct {
-      /* Pointer to the preload page.  This is set up by
-         VG_(setup_client_initial_image). */
-      AIX5PreloadPage* preloadpage;
-      /* Initial values for guest int registers (GPR0 .. GPR31, PC,
-         CR, LR, CTR, XER).  Passed to us from the launcher. */
-      ULong* intregs37;
-      /* Initial value for SP (which is merely a copy of r1's value,
-         intregs37[1]). */
-      Addr initial_client_SP;
-      /* Address of the page compressed by the launcher. */
-      Addr compressed_page;
-      /* Adler32 checksum of uncompressed data of said page. */
-      UInt adler32_exp;
-   }
-   ClientInitImgInfo;
+struct _IICreateImageInfo {
+   /* ------ Mandatory fields ------ */
+   HChar* toolname; 
+   Addr   sp_at_startup; /* Not used on AIX. */
+   Addr   clstack_top;   /* Not used on AIX. */
+   /* ------ Per-OS fields ------ */
+   /* Initial values for guest int registers (GPR0 .. GPR31, PC, CR,
+      LR, CTR, XER).  Passed to us from the launcher. */
+   ULong* intregs37;
+   /* AIX5Bootblock*, really */
+   void* bootblock;
+   /* Adler32 checksum of uncompressed data of compressed page. */
+   UInt adler32_exp;
+};
+
+struct _IIFinaliseImageInfo {
+   /* ------ Mandatory fields ------ */
+   SizeT clstack_max_size;
+   /* ------ Per-OS fields ------ */
+   /* Pointer to the preload page.  The preload page and this pointer
+      to it are set up by VG_(ii_create_image). */
+   AIX5PreloadPage* preloadpage;
+   /* Initial values for guest int registers (GPR0 .. GPR31, PC,
+      CR, LR, CTR, XER).  Copied from the CII. */
+   ULong* intregs37;
+   /* Initial value for SP (which is merely a copy of r1's value,
+      intregs37[1]). */
+   Addr initial_client_SP;
+   /* Address of the page compressed by the launcher. */
+   Addr compressed_page;
+   /* Adler32 checksum of uncompressed data of said page. */
+   UInt adler32_exp;
+};
 
 #else
-#  error Unknown OS
+#  error "Unknown OS"
 #endif
 
-/* Load the client, create the initial image (stack, etc), and
-   return a bundle of info in a ClientInitImgInfo. */
-extern ClientInitImgInfo
-          VG_(setup_client_initial_image)(
-             /*IN*/ HChar** argv,
-             /*IN*/ HChar** envp,
-             /*IN*/ HChar*  toolname,
-             /*IN*/ Addr    clstack_top,
-             /*IN*/ SizeT   clstack_max_size
-          );
-
-/* Make final adjustments to the initial image.  Also, initialise the
-   VEX guest state for thread 1 (the root thread) and copy in
-   essential starting values.  Is handed the ClientInitImgInfo created
-   by VG_(setup_client_initial_image).  Upon return, the client's
-   memory and register state should be ready to start the JIT. */
-extern 
-void VG_(finalise_thread1state)( /*MOD*/ThreadArchState* arch,
-                                 ClientInitImgInfo ciii );
 
 #endif   // __PUB_CORE_INITIMG_H
 

@@ -82,8 +82,8 @@ struct _IICreateImageInfo {
 struct _IIFinaliseImageInfo {
    /* ------ Mandatory fields ------ */
    SizeT clstack_max_size;
-   /* ------ Per-OS fields ------ */
    Addr  initial_client_SP;
+   /* ------ Per-OS fields ------ */
    Addr  initial_client_IP;
    Addr  initial_client_TOC;
    UInt* client_auxv;
@@ -153,6 +153,9 @@ struct _IICreateImageInfo {
 struct _IIFinaliseImageInfo {
    /* ------ Mandatory fields ------ */
    SizeT clstack_max_size;
+   /* Initial value for SP (which is merely a copy of r1's value,
+      intregs37[1]). */
+   Addr initial_client_SP;
    /* ------ Per-OS fields ------ */
    /* Pointer to the preload page.  The preload page and this pointer
       to it are set up by VG_(ii_create_image). */
@@ -160,9 +163,6 @@ struct _IIFinaliseImageInfo {
    /* Initial values for guest int registers (GPR0 .. GPR31, PC,
       CR, LR, CTR, XER).  Copied from the CII. */
    ULong* intregs37;
-   /* Initial value for SP (which is merely a copy of r1's value,
-      intregs37[1]). */
-   Addr initial_client_SP;
    /* Address of the page compressed by the launcher. */
    Addr compressed_page;
    /* Adler32 checksum of uncompressed data of said page. */

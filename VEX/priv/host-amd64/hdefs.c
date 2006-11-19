@@ -168,7 +168,7 @@ void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
    (*arr)[ 5] = hregAMD64_XMM9();
 #endif
 #if 1
-   *nregs = 19;
+   *nregs = 20;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    (*arr)[ 0] = hregAMD64_RSI();
    (*arr)[ 1] = hregAMD64_RDI();
@@ -190,7 +190,7 @@ void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
    (*arr)[16] = hregAMD64_XMM10();
    (*arr)[17] = hregAMD64_XMM11();
    (*arr)[18] = hregAMD64_XMM12();
-
+   (*arr)[19] = hregAMD64_R10();
 #endif
 }
 

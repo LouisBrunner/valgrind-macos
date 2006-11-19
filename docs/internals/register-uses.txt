@@ -31,25 +31,25 @@ amd64-linux
 Reg        Callee      Arg    
 Name       Saves?      Reg?     Comment              Vex-uses?
 -------------------------------------------------------------------
-rax        n           n        int[63:0] retreg     y
+rax        n           n        int[63:0] retreg
 rbx        y           n                             y
-rcx        n           int#4                         y
-rdx        n           int#3    int[127:64] retreg   y
+rcx        n           int#4
+rdx        n           int#3    int[127:64] retreg
 rsi        n           int#2                         y
 rdi        n           int#1                         y
 rbp        y           n                             & guest state
 rsp        reserved    n/a                           n/a
-r8         n           int#5
-r9         n           int#6
+r8         n           int#5                         y
+r9         n           int#6                         y
 r10        n ?
-r11        n
-r12-15     y
+r11        n                                         jmp temporary
+r12-15     y                                         y
 eflags     n           n/a                           y
 st0-7      n           n        long double retreg   y
-xmm0       n           fp#1     fp retreg            y
-xmm1       n           fp#2     fp-high retreg       y
-xmm2-7     n           fp#3-8
-xmm8-15    n
+xmm0       n           fp#1     fp retreg
+xmm1       n           fp#2     fp-high retreg
+xmm2-7     n           fp#3-8                        y (3-7)
+xmm8-15    n                                         y (8-12)
 
 
 ppc32-linux

@@ -3652,7 +3652,19 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 
 
 /* These requests allow control to move from the simulated CPU to the
-   real CPU, calling an arbitary function */
+   real CPU, calling an arbitary function.
+   
+   Note that the current ThreadId is inserted as the first argument.
+   So this call:
+
+     VALGRIND_NON_SIMD_CALL2(f, arg1, arg2)
+
+   requires f to have this signature:
+
+     Word f(Word tid, Word arg1, Word arg2)
+
+   where "Word" is a word-sized type.
+*/
 #define VALGRIND_NON_SIMD_CALL0(_qyy_fn)                          \
    __extension__                                                  \
    ({unsigned long _qyy_res;                                      \

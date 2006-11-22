@@ -1,3 +1,2 @@
 prog: bigcode
 args: 0
-tools: none memcheck

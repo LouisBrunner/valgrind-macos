@@ -41,7 +41,6 @@
 # Each test is defined in a file <test>.vgperf, containing one or more of the
 # following lines, in any order:
 #   - prog:   <prog to run>                         (compulsory)
-#   - tools:  <Valgrind tools>                      (compulsory)
 #   - args:   <args for prog>                       (default: none)
 #   - vgopts: <Valgrind options>                    (default: none)
 #   - prereq: <prerequisite command>                (default: none)
@@ -64,10 +63,13 @@ usage: vg_perf [options] [files or dirs]
     -h --help             show this message
     --all                 run all tests under this directory
     --reps=<n>            number of repeats for each program [1]
-    --tools=<t1,t2,t3>    tools to run (overrides .vgperf "tools" line)
+    --tools=<t1,t2,t3>    tools to run [Nulgrind and Memcheck]
     --vg                  Valgrind(s) to measure (can be specified multiple
                             times).  The "in-place" build is used.
                             [Valgrind in the current directory]
+
+  Any tools named in --tools must be present in all directories specified
+  with --vg.  (This is not checked.)
 END
 ;
 
@@ -77,12 +79,11 @@ my $prog;               # test prog
 my $args;               # test prog args
 my $prereq;             # prerequisite test to satisfy before running test
 my $cleanup;            # cleanup command to run
-my @tools;              # which tools are we measuring the program with
 
 # Command line options
 my $n_reps = 1;         # Run each test $n_reps times and choose the best one.
 my @vgdirs;             # Dirs of the various Valgrinds being measured.
-my $tools_specified = 0; # Indicates if --tools was given.
+my @tools = ("none", "memcheck");   # tools being measured
 
 my $num_tests_done   = 0;
 my $num_timings_done = 0;
@@ -120,14 +121,6 @@ sub validate_program ($$$$)
     return $prog;
 }
 
-sub validate_tools($)
-{
-    # XXX: should check they exist!
-    my ($toolnames) = @_;
-    my @t = split(/\s+/, $toolnames);
-    return @t;
-}
-
 sub add_vgdir($)
 {
     my ($vgdir) = @_;
@@ -153,7 +146,6 @@ sub process_command_line()
                 add_vgdir($1);
             } elsif ($arg =~ /^--tools=(.+)$/) {
                 @tools = split(/,/, $1);
-                $tools_specified = 1
             } else {
                 die $usage;
             }
@@ -199,11 +191,6 @@ sub read_vgperf_file($)
             $vgopts = $1;
         } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
             $prog = validate_program(".", $1, 1, 1);
-        } elsif ($line =~ /^\s*tools:\s*(.*)$/) {
-            # Only use the "tools:" line if --tools wasn't specified.
-            if ($tools_specified == 0) {
-                @tools = validate_tools($1);
-            }
         } elsif ($line =~ /^\s*args:\s*(.*)$/) {
             $args = $1;
         } elsif ($line =~ /^\s*prereq:\s*(.*)$/) {

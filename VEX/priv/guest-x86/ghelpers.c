@@ -885,6 +885,16 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                            mkU32(0)));
       }
 
+      if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondNS)) {
+         /* long sub/cmp, then S 
+            --> test !(dst-src <s 0) 
+            --> test 0 <=s (dst-src) */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLE32S,
+                           mkU32(0),
+                           binop(Iop_Sub32, cc_dep1, cc_dep2)));
+      }
+
       /*---------------- SUBW ----------------*/
 
       if (isU32(cc_op, X86G_CC_OP_SUBW) && isU32(cond, X86CondZ)) {
@@ -1124,8 +1134,8 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
             );
       }
       
-      if (isU32(cc_op, X86G_CC_OP_COPY) && 
-          (isU32(cond, X86CondB) || isU32(cond, X86CondNB))) {
+      if (isU32(cc_op, X86G_CC_OP_COPY) 
+          && (isU32(cond, X86CondB) || isU32(cond, X86CondNB))) {
          /* COPY, then B --> extract C from dep1, and test (C == 1). */
          /* COPY, then NB --> extract C from dep1, and test (C == 0). */
          UInt nnn = isU32(cond, X86CondB) ? 1 : 0;
@@ -1144,19 +1154,22 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
             );
       }
 
-      if (isU32(cc_op, X86G_CC_OP_COPY) && isU32(cond, X86CondZ)) {
+      if (isU32(cc_op, X86G_CC_OP_COPY) 
+          && (isU32(cond, X86CondZ) || isU32(cond, X86CondNZ))) {
          /* COPY, then Z --> extract Z from dep1, and test (Z == 1). */
+         /* COPY, then NZ --> extract Z from dep1, and test (Z == 0). */
+         UInt nnn = isU32(cond, X86CondZ) ? 1 : 0;
          return
             unop(
                Iop_1Uto32,
                binop(
-                  Iop_CmpNE32,
+                  Iop_CmpEQ32,
                   binop(
                      Iop_And32,
                      binop(Iop_Shr32, cc_dep1, mkU8(X86G_CC_SHIFT_Z)),
                      mkU32(1)
                   ),
-                  mkU32(0)
+                  mkU32(nnn)
                )
             );
       }

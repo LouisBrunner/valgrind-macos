@@ -63,7 +63,8 @@ usage: vg_perf [options] [files or dirs]
   options for the user, with defaults in [ ], are:
     -h --help             show this message
     --all                 run all tests under this directory
-    --reps                number of repeats for each program [3]
+    --reps=<n>            number of repeats for each program [1]
+    --tools=<t1,t2,t3>    tools to run (overrides .vgperf "tools" line)
     --vg                  Valgrind(s) to measure (can be specified multiple
                             times).  The "in-place" build is used.
                             [Valgrind in the current directory]
@@ -79,8 +80,9 @@ my $cleanup;            # cleanup command to run
 my @tools;              # which tools are we measuring the program with
 
 # Command line options
-my $n_reps = 1;     # Run each program $n_reps times and choose the best one.
-my @vgdirs;         # Dirs of the various Valgrinds being measured.
+my $n_reps = 1;         # Run each test $n_reps times and choose the best one.
+my @vgdirs;             # Dirs of the various Valgrinds being measured.
+my $tools_specified = 0; # Indicates if --tools was given.
 
 my $num_tests_done   = 0;
 my $num_timings_done = 0;
@@ -149,6 +151,9 @@ sub process_command_line()
             } elsif ($arg =~ /^--vg=(.+)$/) {
                 # Make dir absolute if not already
                 add_vgdir($1);
+            } elsif ($arg =~ /^--tools=(.+)$/) {
+                @tools = split(/,/, $1);
+                $tools_specified = 1
             } else {
                 die $usage;
             }
@@ -195,7 +200,10 @@ sub read_vgperf_file($)
         } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
             $prog = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*tools:\s*(.*)$/) {
-            @tools = validate_tools($1);
+            # Only use the "tools:" line if --tools wasn't specified.
+            if ($tools_specified == 0) {
+                @tools = validate_tools($1);
+            }
         } elsif ($line =~ /^\s*args:\s*(.*)$/) {
             $args = $1;
         } elsif ($line =~ /^\s*prereq:\s*(.*)$/) {

@@ -1263,6 +1263,13 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                mkU32(1)
             );
       }
+      if (isU32(cc_op, X86G_CC_OP_ADDL)) {
+         /* C after add denotes sum <u either arg */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32U, 
+                           binop(Iop_Add32, cc_dep1, cc_dep2), 
+                           cc_dep1));
+      }
 #     if 0
       if (cc_op->tag == Iex_Const) {
          vex_printf("CFLAG "); ppIRExpr(cc_op); vex_printf("\n");

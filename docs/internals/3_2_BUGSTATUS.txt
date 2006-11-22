@@ -81,6 +81,9 @@ r6341    pending      n-i-bz   ExeContext hashing fix
 
 r6356    pending      n-i-bz   Dwarf CFI 0:24 0:32 0:48 0:7 (Nov 8)
 
+r6365    pending      n-i-bz   Drepper: obscure Cachegrind simulation bug
+                                [still to be done for Callgrind]
+
 135026 valgrind incorrectly complain that shm_nattch is uninitialized
 135264 dcbzl instruction missing
 136059 patch to add better support for some USB ioctls
@@ -88,8 +91,6 @@ r6356    pending      n-i-bz   Dwarf CFI 0:24 0:32 0:48 0:7 (Nov 8)
 136401 off-by-one in ESP checking
 118903 old bash (2.05) doesn't support empty list in for-loop
 136529 Unhandled instruction error for legal instruction
-Drepper cachegrind bug (also callgrind?) (users, Nov 7)
-Drepper Core 2 stuff (also callgrind?) (users, Nov 7)
 Espindola #3 (dev, Nov 7)
 OOo folks want full pathnames
 

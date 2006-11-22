@@ -300,10 +300,11 @@ static CacheResult cachesim_ref(cache_t2* c, Addr a, UChar size)
     /* Access straddles two lines. */
     /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
     else if (((set1 + 1) & (c->sets-1)) == set2) {
+	UWord tag2  = (a+size-1) >> c->tag_shift;
 
 	/* the call updates cache structures as side effect */
 	CacheResult res1 =  cachesim_setref(c, set1, tag);
-	CacheResult res2 =  cachesim_setref(c, set2, tag);
+	CacheResult res2 =  cachesim_setref(c, set2, tag2);
 	return ((res1 == Miss) || (res2 == Miss)) ? Miss : Hit;
 
    } else {
@@ -404,10 +405,11 @@ CacheResult cachesim_ref_wb(cache_t2* c, RefType ref, Addr a, UChar size)
     /* Access straddles two lines. */
     /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
     else if (((set1 + 1) & (c->sets-1)) == set2) {
+	UWord tag2  = (a+size-1) >> c->tag_shift;
 
 	/* the call updates cache structures as side effect */
 	CacheResult res1 =  cachesim_setref_wb(c, ref, set1, tag);
-	CacheResult res2 =  cachesim_setref_wb(c, ref, set2, tag);
+	CacheResult res2 =  cachesim_setref_wb(c, ref, set2, tag2);
 
 	if ((res1 == MissDirty) || (res2 == MissDirty)) return MissDirty;
 	return ((res1 == Miss) || (res2 == Miss)) ? Miss : Hit;
@@ -758,10 +760,11 @@ static CacheResult cacheuse_ref(cache_t2* c, Addr a, UChar size)
     /* Access straddles two lines. */
     /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
     else if (((set1 + 1) & (c->sets-1)) == set2) {
+	UWord tag2  = a >> c->tag_shift;
 
 	/* the call updates cache structures as side effect */
 	CacheResult res1 =  cacheuse_isMiss(c, set1, tag);
-	CacheResult res2 =  cacheuse_isMiss(c, set2, tag);
+	CacheResult res2 =  cacheuse_isMiss(c, set2, tag2);
 	return ((res1 == Miss) || (res2 == Miss)) ? Miss : Hit;
 
    } else {
@@ -778,9 +781,10 @@ static CacheResult cacheuse_ref(cache_t2* c, Addr a, UChar size)
                                                                             \
 static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
 {                                                                           \
-   register UInt set1 = ( a         >> L.line_size_bits) & (L.sets_min_1);  \
-   register UInt set2 = ((a+size-1) >> L.line_size_bits) & (L.sets_min_1);  \
-   register UWord tag  = a & L.tag_mask;                                    \
+   UInt set1 = ( a         >> L.line_size_bits) & (L.sets_min_1);           \
+   UInt set2 = ((a+size-1) >> L.line_size_bits) & (L.sets_min_1);           \
+   UWord tag  = a & L.tag_mask;                                             \
+   UWord tag2;                                                              \
    int i, j, idx;                                                           \
    UWord *set, tmp_tag; 						    \
    UInt use_mask;							    \
@@ -879,7 +883,8 @@ static CacheModelResult cacheuse##_##L##_doRead(Addr a, UChar size)         \
 block2:                                                                     \
       set = &(L.tags[set2 << L.assoc_bits]);                                \
       use_mask = L.line_end_mask[(a+size-1) & L.line_size_mask];  	    \
-      if (tag == (set[0] & L.tag_mask)) {                                   \
+      tag2  = (a+size-1) & L.tag_mask;                                      \
+      if (tag2 == (set[0] & L.tag_mask)) {                                  \
          idx = (set2 << L.assoc_bits) | (set[0] & ~L.tag_mask);             \
          L.use[idx].count ++;                                               \
          L.use[idx].mask |= use_mask;                                       \
@@ -889,7 +894,7 @@ block2:                                                                     \
          return miss1;                                                      \
       }                                                                     \
       for (i = 1; i < L.assoc; i++) {                                       \
-	 if (tag == (set[i] & L.tag_mask)) {			            \
+	 if (tag2 == (set[i] & L.tag_mask)) {			            \
   	    tmp_tag = set[i];                                               \
             for (j = i; j > 0; j--) {                                       \
                set[j] = set[j - 1];                                         \
@@ -908,7 +913,7 @@ block2:                                                                     \
       for (j = L.assoc - 1; j > 0; j--) {                                   \
          set[j] = set[j - 1];                                               \
       }                                                                     \
-      set[0] = tag | tmp_tag;                                               \
+      set[0] = tag2 | tmp_tag;                                              \
       idx = (set2 << L.assoc_bits) | tmp_tag;                               \
       miss2 = update_##L##_use(&L, idx,			                    \
 		       use_mask, (a+size-1) &~ L.line_size_mask);	    \

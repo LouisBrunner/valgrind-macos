@@ -82,7 +82,7 @@ r6341    pending      n-i-bz   ExeContext hashing fix
 r6356    pending      n-i-bz   Dwarf CFI 0:24 0:32 0:48 0:7 (Nov 8)
 
 r6365    pending      n-i-bz   Drepper: obscure Cachegrind simulation bug
-                                [still to be done for Callgrind]
+r6367    pending      n-i-bz   Same fix as r6365, but for Callgrind simulation.
 
 135026 valgrind incorrectly complain that shm_nattch is uninitialized
 135264 dcbzl instruction missing

@@ -52,11 +52,16 @@ static void micro_ops_warn(Int actual_size, Int used_size, Int line_size)
 
 /* Intel method is truly wretched.  We have to do an insane indexing into an
  * array of pre-defined configurations for various parts of the memory
- * hierarchy. 
+ * hierarchy.
+ * According to Intel Processor Identification, App Note 485.
  */
 static
 Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
+   Int cpuid1_eax;
+   Int cpuid1_ignore;
+   Int family;
+   Int model;
    UChar info[16];
    Int   i, trials;
    Bool  L2_found = False;
@@ -67,6 +72,12 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
          level);
       return -1;
    }
+
+   /* family/model needed to distinguish code reuse (currently 0x49) */
+   VG_(cpuid)(1, &cpuid1_eax, &cpuid1_ignore,
+	      &cpuid1_ignore, &cpuid1_ignore);
+   family = (((cpuid1_eax >> 20) & 0xff) << 4) + ((cpuid1_eax >> 8) & 0xf);
+   model =  (((cpuid1_eax >> 16) & 0xf) << 4) + ((cpuid1_eax >> 4) & 0xf);
 
    VG_(cpuid)(2, (Int*)&info[0], (Int*)&info[4], 
                  (Int*)&info[8], (Int*)&info[12]);
@@ -109,7 +120,8 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
          VG_(tool_panic)("IA-64 cache detected?!");
 
       case 0x22: case 0x23: case 0x25: case 0x29: case 0x46: case 0x47:
-          VG_(message)(Vg_DebugMsg, "warning: L3 cache detected but ignored");
+          VG_(message)(Vg_DebugMsg,
+             "warning: L3 cache detected but ignored");
           break;
 
       /* These are sectored, whatever that means */
@@ -128,7 +140,14 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x43: *L2c = (cache_t) {  512, 4, 32 }; L2_found = True; break;
       case 0x44: *L2c = (cache_t) { 1024, 4, 32 }; L2_found = True; break;
       case 0x45: *L2c = (cache_t) { 2048, 4, 32 }; L2_found = True; break;
-      case 0x49: *L2c = (cache_t) { 4096,16, 64 }; L2_found = True; break;
+      case 0x49:
+	  if ((family == 15) && (model == 6))
+	      /* On Xeon MP (family F, model 6), this is for L3 */
+	      VG_(message)(Vg_DebugMsg, 
+			   "warning: L3 cache detected but ignored\n");
+	  else
+	      *L2c = (cache_t) { 4096, 16, 64 }; L2_found = True;
+	  break;
 
       /* These are sectored, whatever that means */
       case 0x60: *D1c = (cache_t) { 16, 8, 64 };  break;      /* sectored */

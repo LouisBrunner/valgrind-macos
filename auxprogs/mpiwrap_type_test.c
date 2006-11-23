@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include "mpi.h"
 #include "../memcheck/memcheck.h"
@@ -208,6 +209,10 @@ void sendToMyself ( Bool commit_free, Ty* tyP, char* name )
    for (i = 0; i < ub; i++)
       printf("%c", characterise(rbuf[i]));
    printf("\n");
+
+   free(sbuf);
+   free(rbuf);
+   free(rbuf_walk);
 }
 
 

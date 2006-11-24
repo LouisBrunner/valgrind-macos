@@ -1541,7 +1541,8 @@ extern IRBB* emptyIRBB ( void );
 /* Deep-copy an IRBB */
 extern IRBB* dopyIRBB ( IRBB* );
 
-/* Deep-copy an IRBB, except for the statements list. */
+/* Deep-copy an IRBB, except for the statements list, which set to be
+   a new, empty, list of statements. */
 extern IRBB* dopyIRBBExceptStmts ( IRBB* );
 
 /* Pretty-print an IRBB */

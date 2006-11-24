@@ -1382,13 +1382,19 @@ IRBB* dopyIRBB ( IRBB* bb )
 {
    Int      i;
    IRStmt** sts2;
-   IRBB* bb2 = emptyIRBB();
-   bb2->tyenv = dopyIRTypeEnv(bb->tyenv);
+   IRBB* bb2 = dopyIRBBExceptStmts(bb);
    bb2->stmts_used = bb2->stmts_size = bb->stmts_used;
    sts2 = LibVEX_Alloc(bb2->stmts_used * sizeof(IRStmt*));
    for (i = 0; i < bb2->stmts_used; i++)
       sts2[i] = dopyIRStmt(bb->stmts[i]);
    bb2->stmts    = sts2;
+   return bb2;
+}
+
+IRBB* dopyIRBBExceptStmts ( IRBB* bb )
+{
+   IRBB* bb2     = emptyIRBB();
+   bb2->tyenv    = dopyIRTypeEnv(bb->tyenv);
    bb2->next     = dopyIRExpr(bb->next);
    bb2->jumpkind = bb->jumpkind;
    return bb2;

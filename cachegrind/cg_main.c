@@ -724,12 +724,8 @@ IRBB* cg_instrument ( VgCallbackClosure* closure,
       VG_(tool_panic)("host/guest word size mismatch");
    }
 
-   /* Set up BB, including copying of the where-next stuff. */
-   cgs.bbOut           = emptyIRBB();
-   cgs.bbOut->tyenv    = dopyIRTypeEnv(tyenv);
-   tl_assert( isIRAtom(bbIn->next) );
-   cgs.bbOut->next     = dopyIRExpr(bbIn->next);
-   cgs.bbOut->jumpkind = bbIn->jumpkind;
+   // Set up new BB
+   cgs.bbOut = dopyIRBBExceptStmts(bbIn);
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;

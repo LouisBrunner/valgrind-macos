@@ -3257,10 +3257,7 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
    tl_assert(sizeof(Int)   == 4);
 
    /* Set up BB */
-   bb           = emptyIRBB();
-   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
-   bb->next     = dopyIRExpr(bb_in->next);
-   bb->jumpkind = bb_in->jumpkind;
+   bb = dopyIRBBExceptStmts(bb_in);
 
    /* Set up the running environment.  Only .bb is modified as we go
       along. */

@@ -530,10 +530,7 @@ IRBB* CLG_(instrument)( VgCallbackClosure* closure,
    CLG_DEBUG(3, "+ instrument(BB %p)\n", (Addr)closure->readdr);
 
    /* Set up BB for instrumented IR */
-   bbOut           = emptyIRBB();
-   bbOut->tyenv    = dopyIRTypeEnv(bbIn->tyenv);
-   bbOut->next     = dopyIRExpr(bbIn->next);
-   bbOut->jumpkind = bbIn->jumpkind;
+   bbOut = dopyIRBBExceptStmts(bbIn);
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;

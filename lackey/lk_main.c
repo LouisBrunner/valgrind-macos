@@ -560,10 +560,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
    }
 
    /* Set up BB */
-   bbOut           = emptyIRBB();
-   bbOut->tyenv    = dopyIRTypeEnv(bbIn->tyenv);
-   bbOut->next     = dopyIRExpr(bbIn->next);
-   bbOut->jumpkind = bbIn->jumpkind;
+   bbOut = dopyIRBBExceptStmts(bbIn);
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;

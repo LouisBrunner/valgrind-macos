@@ -78,8 +78,8 @@
 # and handed to valgrind prior to any other flags specified by the 
 # .vgtest file.
 #
-# Notes on adding regression tests for a new tool are in
-# coregrind/docs/coregrind_tools.html.
+# Some more notes on adding regression tests for a new tool are in
+# docs/xml/manual-writing-tools.xml.
 #----------------------------------------------------------------------------
 
 use warnings;

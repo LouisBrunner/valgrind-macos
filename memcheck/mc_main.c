@@ -2648,6 +2648,7 @@ typedef
 typedef 
    enum { 
       ParamSupp,     // Bad syscall params
+      UserSupp,      // Errors arising from client-request checks
       CoreMemSupp,   // Memory errors in core (pthread ops, signal handling)
 
       // Use of invalid values of given size (MemCheck only)
@@ -3357,6 +3358,7 @@ static Bool mc_recognised_suppression ( Char* name, Supp* su )
    SuppKind skind;
 
    if      (VG_STREQ(name, "Param"))   skind = ParamSupp;
+   else if (VG_STREQ(name, "User"))    skind = UserSupp;
    else if (VG_STREQ(name, "CoreMem")) skind = CoreMemSupp;
    else if (VG_STREQ(name, "Addr1"))   skind = Addr1Supp;
    else if (VG_STREQ(name, "Addr2"))   skind = Addr2Supp;
@@ -3406,6 +3408,9 @@ static Bool mc_error_matches_suppression(Error* err, Supp* su)
               && VG_STREQ(VG_(get_error_string)(err), 
                           VG_(get_supp_string)(su)));
 
+      case UserSupp:
+         return (ekind == UserErr);
+
       case CoreMemSupp:
          return (ekind == CoreMemErr
               && VG_STREQ(VG_(get_error_string)(err),
@@ -3454,7 +3459,7 @@ static Char* mc_get_error_name ( Error* err )
    Char* s;
    switch (VG_(get_error_kind)(err)) {
    case ParamErr:           return "Param";
-   case UserErr:            return NULL;  /* Can't suppress User errors */
+   case UserErr:            return "User";
    case FreeMismatchErr:    return "Free";
    case IllegalMempoolErr:  return "Mempool";
    case FreeErr:            return "Free";

@@ -68,7 +68,7 @@ vx1673/4 pending [W]  126147   x86->IR: 0xF2 0xA5 0xF 0x77 (repne
 
 vx1676   pending [W]  136650   amd64->IR: 0xC2 0x8 0x0
 
-pending  pending      135421   x86->IR: unhandled Grp5(R) case 6 [ok]
+vx1679   pending      135421   x86->IR: unhandled Grp5(R) case 6 [ok]
 
 vx1675   pending      n-i-bz   x86 COPY-CondP (Espindola #2, users, Nov 1)
                                (NEEDS VERIFICATION; regtest = espindola2.c)
@@ -83,6 +83,16 @@ r6356    pending      n-i-bz   Dwarf CFI 0:24 0:32 0:48 0:7 (Nov 8)
 
 r6365    pending      n-i-bz   Drepper: obscure Cachegrind simulation bug
 r6367    pending      n-i-bz   Same fix as r6365, but for Callgrind simulation.
+XXX: check status of Core2 cpuid code
+
+r6371    pending      n-i-bz   libmpiwrap.c: fix handling of MPI_LONG_DOUBLE
+
+r6374    pending      n-i-bz   make User errors suppressible (XXX: DOCS!)
+
+r6377/8  pending      136844   corrupted malloc line when using 
+                               --gen-suppressions=yes
+
+vx1686   pending      n-i-bz   Reg-alloc speedups
 
 135026 valgrind incorrectly complain that shm_nattch is uninitialized
 135264 dcbzl instruction missing
@@ -102,8 +112,8 @@ ppc32/64 dispatcher speedups -> stable
 ppc64 vex fe/be improvements -> stable?
 check gcc-4.2 build
 ppc64 bigpage stuff
+lackey trace-mem patch ?  (6 dec, dev)
 
-Floyd overlap suppression, users 15 Nov
 
 ------- Bugs reported and fixed in 3.2.0 ------
 

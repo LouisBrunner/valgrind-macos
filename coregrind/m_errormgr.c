@@ -402,7 +402,7 @@ static void printSuppForIp(UInt n, Addr ip)
 {
    static UChar buf[ERRTXT_LEN];
 
-   if ( VG_(get_fnname_nodemangle) (ip, buf,  ERRTXT_LEN) ) {
+   if ( VG_(get_fnname_Z_demangle_only) (ip, buf,  ERRTXT_LEN) ) {
       VG_(printf)("   fun:%s\n", buf);
    } else if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
       VG_(printf)("   obj:%s\n", buf);

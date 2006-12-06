@@ -3437,7 +3437,7 @@ static Bool mc_error_matches_suppression(Error* err, Supp* su)
          return (ekind == FreeErr || ekind == FreeMismatchErr);
 
       case OverlapSupp:
-         return (ekind = OverlapErr);
+         return (ekind == OverlapErr);
 
       case LeakSupp:
          return (ekind == LeakErr);

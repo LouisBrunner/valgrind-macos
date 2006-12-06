@@ -95,6 +95,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pth_rwlock.stderr.exp pth_rwlock.vgtest \
 	pth_stackalign.stderr.exp \
 	pth_stackalign.stdout.exp pth_stackalign.vgtest \
+	pth_detached.stderr.exp \
+	pth_detached.stdout.exp pth_detached.vgtest \
 	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
 	readline1.stderr.exp readline1.stdout.exp \
 	readline1.vgtest \
@@ -146,6 +148,7 @@ check_PROGRAMS = \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
 	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
 	pth_stackalign \
+	pth_detached \
 	rcrl readline1 res_search resolv \
 	rlimit_nofile selfrun sem semlimit sha1_test \
 	shortpush shorts stackgrowth sigstackgrowth susphello \
@@ -175,6 +178,7 @@ pth_mutexspeed_LDADD	= -lpthread
 pth_once_LDADD		= -lpthread
 pth_rwlock_LDADD	= -lpthread
 pth_stackalign_LDADD	= -lpthread
+pth_detached_LDADD      = -lpthread
 if VGP_PPC32_AIX5
  res_search_LDADD       = -lpthread
 else

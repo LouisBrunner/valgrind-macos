@@ -928,14 +928,17 @@ void MC_(do_detect_memory_leaks) (
                                MC_(bytes_reachable), blocks_reachable );
       VG_(message)(Vg_UserMsg, "        suppressed: %,lu bytes in %,lu blocks.",
                                MC_(bytes_suppressed), blocks_suppressed );
-      if (mode == LC_Summary && blocks_leaked > 0)
-	 VG_(message)(Vg_UserMsg,
-		      "Use --leak-check=full to see details of leaked memory.");
-      else if (!MC_(clo_show_reachable)) {
+      if (mode == LC_Summary 
+          && (blocks_leaked + blocks_indirect 
+              + blocks_dubious + blocks_reachable) > 0) {
+         VG_(message)(Vg_UserMsg,
+                      "Rerun with --leak-check=full to see details of leaked memory.");
+      }
+      if (blocks_reachable > 0 && !MC_(clo_show_reachable) && mode == LC_Full) {
          VG_(message)(Vg_UserMsg, 
            "Reachable blocks (those to which a pointer was found) are not shown.");
          VG_(message)(Vg_UserMsg, 
-            "To see them, rerun with: --show-reachable=yes");
+            "To see them, rerun with: --leak-check=full --show-reachable=yes");
       }
    }
 

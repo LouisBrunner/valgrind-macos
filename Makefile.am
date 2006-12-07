@@ -76,7 +76,7 @@ EXTRA_DIST = \
 	valgrind.spec.in valgrind.pc.in \
 	Makefile.all.am Makefile.tool.am Makefile.core.am \
 	Makefile.tool-inplace.am \
-	$(VEX_PRIMARY_SOURCES)
+	$(vex_primary_sources)
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)
@@ -107,7 +107,7 @@ VEX_PUBLIC_HDRS = \
 
 # These list the bits of vex we need to copy into the tarball
 
-VEX_PRIMARY_SOURCES = \
+vex_primary_sources = \
 	VEX/quote.txt \
 	VEX/newline.txt \
 	VEX/HACKING.README \

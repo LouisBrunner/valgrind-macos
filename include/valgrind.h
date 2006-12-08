@@ -299,8 +299,8 @@ typedef
         _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4, _zzq_arg5)    \
                                                                   \
   {          unsigned int  _zzq_args[6];                          \
-    register unsigned int  _zzq_result __asm__("r3");             \
-    register unsigned int* _zzq_ptr __asm__("r4");                \
+             unsigned int  _zzq_result;                           \
+             unsigned int* _zzq_ptr;                              \
     _zzq_args[0] = (unsigned int)(_zzq_request);                  \
     _zzq_args[1] = (unsigned int)(_zzq_arg1);                     \
     _zzq_args[2] = (unsigned int)(_zzq_arg2);                     \
@@ -308,24 +308,28 @@ typedef
     _zzq_args[4] = (unsigned int)(_zzq_arg4);                     \
     _zzq_args[5] = (unsigned int)(_zzq_arg5);                     \
     _zzq_ptr = _zzq_args;                                         \
-    __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
+    __asm__ volatile("mr 3,%1\n\t" /*default*/                    \
+                     "mr 4,%2\n\t" /*ptr*/                        \
+                     __SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %R3 = client_request ( %R4 ) */           \
-                     "or 1,1,1"                                   \
-                     : "=r" (_zzq_result)                         \
-                     : "0" (_zzq_default), "r" (_zzq_ptr)         \
-                     : "cc", "memory");                           \
+                     "or 1,1,1\n\t"                               \
+                     "mr %0,3"     /*result*/                     \
+                     : "=b" (_zzq_result)                         \
+                     : "b" (_zzq_default), "b" (_zzq_ptr)         \
+                     : "cc", "memory", "r3", "r4");               \
     _zzq_rlval = _zzq_result;                                     \
   }
 
 #define VALGRIND_GET_NR_CONTEXT(_zzq_rlval)                       \
   { volatile OrigFn* _zzq_orig = &(_zzq_rlval);                   \
-    register unsigned int __addr __asm__("r3");                   \
+    unsigned int __addr;                                          \
     __asm__ volatile(__SPECIAL_INSTRUCTION_PREAMBLE               \
                      /* %R3 = guest_NRADDR */                     \
-                     "or 2,2,2"                                   \
-                     : "=r" (__addr)                              \
+                     "or 2,2,2\n\t"                               \
+                     "mr %0,3"                                    \
+                     : "=b" (__addr)                              \
                      :                                            \
-                     : "cc", "memory"                             \
+                     : "cc", "memory", "r3"                       \
                     );                                            \
     _zzq_orig->nraddr = __addr;                                   \
   }

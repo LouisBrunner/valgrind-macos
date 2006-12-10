@@ -119,6 +119,15 @@ Catalog/Stylesheet Location
 in recent distros.
 
 
+Notes [Dec. 2006]
+-----------------
+pdfxmltex still bombs when building the print docs.  On SuSE 10.1 I
+edited /etc/texmf/web2c/texmf.cnf and changed
+  pool_size.pdfxmltex = 500000
+to
+  pool_size.pdfxmltex = 1500000
+and that fixes it.
+
 
 Notes [Nov. 2005]
 -----------------

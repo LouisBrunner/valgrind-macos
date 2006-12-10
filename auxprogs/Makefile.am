@@ -87,7 +87,7 @@ if BUILD_MPIWRAP_PRI
 # convert (eg) X86_LINUX to x86-linux
 # really should use sed here, rather than assume tr is available
 	pD=`echo @VG_PLATFORM_PRI@ | tr A-Z_ a-z-` ; \
-		$(mkinstalldirs) $(DESTDIR)$(valdir)/$$pD;
+		$(mkinstalldirs) $(DESTDIR)$(valdir)/$$pD; \
 	rm -f ./libmpiwrap.so; \
 	cp ./libmpiwrap-@VG_PLATFORM_PRI@.so ./libmpiwrap.so; \
 	$(INSTALL_PROGRAM) ./libmpiwrap.so \

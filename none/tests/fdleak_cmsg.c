@@ -184,7 +184,7 @@ main (int argc, char **argv)
     * now to get consistent results across different releases.
     */
 
-   close(10);
+   close(10);  close(4);
 
    pid = getpid();
    sprintf(filea, "/tmp/data1.%d", pid);

@@ -8,7 +8,7 @@ main (int argc, char **argv)
     * now to get consistent results across different releases.
     */
 
-   close(10);
+   close(10);  close(4);
 
    open("/dev/null", O_RDONLY);
    return 0;

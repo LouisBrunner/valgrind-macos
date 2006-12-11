@@ -10,7 +10,7 @@ main (int argc, char **argv)
     * now to get consistent results across different releases.
     */
 
-   close(10);
+   close(10);  close(4);
 
    socketpair(AF_UNIX, SOCK_STREAM, PF_UNIX, fds);
    return 0;

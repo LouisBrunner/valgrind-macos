@@ -11,7 +11,7 @@ main (int argc, char **argv)
     * now to get consistent results across different releases.
     */
 
-   close(10);
+   close(10);  close(4);
 
    s = open("/dev/null", O_RDONLY);
    dup(s);

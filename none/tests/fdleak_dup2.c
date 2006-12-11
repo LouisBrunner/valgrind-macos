@@ -12,7 +12,7 @@ main (int argc, char **argv)
     * now to get consistent results across different releases.
     */
 
-   close(10);
+   close(10);  close(4);
 
    s1 = open("/dev/null", O_RDONLY);
    s2 = open("/dev/null", O_RDONLY);

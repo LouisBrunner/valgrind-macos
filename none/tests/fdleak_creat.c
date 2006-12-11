@@ -12,7 +12,7 @@ main (int argc, char **argv)
     * now to get consistent results across different releases.
     */
 
-   close(10);
+   close(10);  close(4);
 
    sprintf(filename, "/tmp/file.%d\n", getpid());
    creat(filename, 0);

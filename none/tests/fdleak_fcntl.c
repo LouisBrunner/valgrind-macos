@@ -12,7 +12,7 @@ main (int argc, char **argv)
     * now to get consistent results across different releases.
     */
 
-   close(10);
+   close(10);  close(4);
 
    s1 = open("/dev/null", O_RDONLY);
    if(fcntl(s1, F_DUPFD, s1) == -1) perror("fcntl");

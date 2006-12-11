@@ -35,8 +35,6 @@ LEAK SUMMARY:
      possibly lost: 0 bytes in 0 blocks.
    still reachable: 0 bytes in 0 blocks.
         suppressed: 0 bytes in 0 blocks.
-Reachable blocks (those to which a pointer was found) are not shown.
-To see them, rerun with: --show-reachable=yes
 
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 144 bytes in 18 blocks.

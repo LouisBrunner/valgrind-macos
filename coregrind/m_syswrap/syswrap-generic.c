@@ -452,7 +452,7 @@ typedef struct OpenFd
 } OpenFd;
 
 /* List of allocated file descriptors. */
-static OpenFd *allocated_fds;
+static OpenFd *allocated_fds = NULL;
 
 /* Count of open file descriptors. */
 static Int fd_count = 0;
@@ -627,7 +627,7 @@ getsockdetails(Int fd)
 
 
 /* Dump out a summary, and a more detailed list, of open file descriptors. */
-void VG_(show_open_fds) ()
+void VG_(show_open_fds) (void)
 {
    OpenFd *i = allocated_fds;
 
@@ -691,7 +691,7 @@ void do_hacky_preopened(void)
 /* Initialize the list of open file descriptors with the file descriptors
    we inherited from out parent process. */
 
-void VG_(init_preopened_fds)()
+void VG_(init_preopened_fds)(void)
 {
    Int ret;
    struct vki_dirent d;

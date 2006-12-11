@@ -54,12 +54,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
 	leak-0.vgtest leak-0.stderr.exp \
 	leak-cycle.vgtest leak-cycle.stderr.exp leak-cycle.stderr.exp64 \
-	leak-pool-0.vgtest leak-pool-0.stderr.exp \
-	leak-pool-1.vgtest leak-pool-1.stderr.exp \
-	leak-pool-2.vgtest leak-pool-2.stderr.exp \
-	leak-pool-3.vgtest leak-pool-3.stderr.exp \
-	leak-pool-4.vgtest leak-pool-4.stderr.exp \
-	leak-pool-5.vgtest leak-pool-5.stderr.exp \
+	leak-pool-0.vgtest leak-pool-0.stderr.exp leak-pool-0.stderr.exp64 \
+	leak-pool-1.vgtest leak-pool-1.stderr.exp leak-pool-1.stderr.exp64 \
+	leak-pool-2.vgtest leak-pool-2.stderr.exp leak-pool-2.stderr.exp64 \
+	leak-pool-3.vgtest leak-pool-3.stderr.exp leak-pool-3.stderr.exp64 \
+	leak-pool-4.vgtest leak-pool-4.stderr.exp leak-pool-4.stderr.exp64 \
+	leak-pool-5.vgtest leak-pool-5.stderr.exp leak-pool-5.stderr.exp64 \
 	leak-tree.vgtest leak-tree.stderr.exp \
 	leak-tree.stderr.exp2 leak-tree.stderr.exp64 \
 	leak-regroot.vgtest leak-regroot.stderr.exp \

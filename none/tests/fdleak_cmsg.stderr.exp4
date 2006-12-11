@@ -3,23 +3,23 @@
 FILE DESCRIPTORS: 7 open at exit.
 Open AF_UNIX socket .: /tmp/sock
    at 0x........: accept (in /...libc...)
-   by 0x........: server (fdleak_cmsg.c:64)
-   by 0x........: main (fdleak_cmsg.c:174)
+   by 0x........: server (fdleak_cmsg.c:85)
+   by 0x........: main (fdleak_cmsg.c:195)
 
 Open AF_UNIX socket .: /tmp/sock
    at 0x........: socket (in /...libc...)
-   by 0x........: server (fdleak_cmsg.c:33)
-   by 0x........: main (fdleak_cmsg.c:174)
+   by 0x........: server (fdleak_cmsg.c:54)
+   by 0x........: main (fdleak_cmsg.c:195)
 
 Open file descriptor .: /tmp/data2
    at 0x........: open (in /...libc...)
-   by 0x........: server (fdleak_cmsg.c:27)
-   by 0x........: (below main) (in /...libc...)
+   by 0x........: server (fdleak_cmsg.c:48)
+   by 0x........: main (fdleak_cmsg.c:195)
 
 Open file descriptor .: /tmp/data1
    at 0x........: open (in /...libc...)
-   by 0x........: server (fdleak_cmsg.c:21)
-   by 0x........: (below main) (in /...libc...)
+   by 0x........: server (fdleak_cmsg.c:42)
+   by 0x........: main (fdleak_cmsg.c:195)
 
 Open file descriptor .: .
    <inherited from parent>
@@ -35,18 +35,18 @@ Open file descriptor .: /dev/null
 FILE DESCRIPTORS: 6 open at exit.
 Open file descriptor .: /tmp/data2
    at 0x........: recvmsg (in /...libc...)
-   by 0x........: client (fdleak_cmsg.c:131)
-   by 0x........: main (fdleak_cmsg.c:178)
+   by 0x........: client (fdleak_cmsg.c:152)
+   by 0x........: main (fdleak_cmsg.c:199)
 
 Open file descriptor .: /tmp/data1
    at 0x........: recvmsg (in /...libc...)
-   by 0x........: client (fdleak_cmsg.c:131)
-   by 0x........: main (fdleak_cmsg.c:178)
+   by 0x........: client (fdleak_cmsg.c:152)
+   by 0x........: main (fdleak_cmsg.c:199)
 
 Open AF_UNIX socket .: <unknown>
    at 0x........: socket (in /...libc...)
-   by 0x........: client (fdleak_cmsg.c:110)
-   by 0x........: main (fdleak_cmsg.c:178)
+   by 0x........: client (fdleak_cmsg.c:131)
+   by 0x........: main (fdleak_cmsg.c:199)
 
 Open file descriptor .: .
    <inherited from parent>

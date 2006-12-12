@@ -28,6 +28,14 @@
    fun:pthread_init
 }
 {
+   AIX-thread_setmystate-padding-kludge-1a
+   Memcheck:Param
+   thread_setmystate(arg1)
+   fun:_set_pthread
+   fun:_alloc_initial_pthread
+   fun:__pth_init
+}
+{
    AIX-thread_setmystate-padding-kludge-2
    Memcheck:Param
    thread_setmystate(arg1)
@@ -655,7 +663,6 @@
    AIX64-uu-sz4
    Memcheck:Addr4
    obj:/usr/ccs/bin/usla64
-   obj:/usr/ccs/bin/usla64
 }
 {
    AIX64-uu-sz2
@@ -782,7 +789,7 @@
    AIX64-__loadx-pthread_init-sz8
    Memcheck:Addr8
    fun:__loadx
-   fun:pthread_init
+   fun:*pth*_init
 }
 
 {
@@ -804,4 +811,23 @@
    Memcheck:Addr8
    fun:load
    obj:*/libppe*.a(*.o)
+}
+
+#####
+
+{
+   AIX-libodm_tsd_destroy-free
+   Memcheck:Free
+   fun:free
+   fun:libodm_tsd_destroy
+   fun:__odm_initfini_fini
+}
+
+{
+   AIX64-usl-resolve-sz1
+   Memcheck:Addr1
+   obj:*
+   fun:usl_resolve
+   fun:uload
+   fun:load
 }

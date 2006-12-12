@@ -179,7 +179,7 @@ pth_once_LDADD		= -lpthread
 pth_rwlock_LDADD	= -lpthread
 pth_stackalign_LDADD	= -lpthread
 pth_detached_LDADD      = -lpthread
-if VGP_PPC32_AIX5
+if VGO_AIX5
  res_search_LDADD       = -lpthread
 else
  res_search_LDADD       = -lresolv -lpthread
@@ -191,7 +191,7 @@ threaded_fork_LDADD	= -lpthread
 threadederrno_LDADD	= -lpthread
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so
-if VGP_PPC32_AIX5
+if VGO_AIX5
  tls_LDFLAGS		= 
 else
  tls_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests
@@ -199,7 +199,7 @@ endif
 tls_LDADD		= tls.so -lpthread
 tls_so_SOURCES		= tls_so.c
 tls_so_DEPENDENCIES	= tls2.so
-if VGP_PPC32_AIX5
+if VGO_AIX5
  tls_so_LDFLAGS		= -shared -fPIC
  tls_so_LDADD		= `pwd`/tls2.so
 else

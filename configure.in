@@ -485,15 +485,15 @@ case "${libc}" in
 	;;
 	
      aix5)
-	AC_MSG_RESULT(AIX 5.1, 5.2 or 5.3)
-	AC_DEFINE([AIX5_LIBC], 1, [Define to 1 if you're using AIX 5.1, 5.2 or 5.3])
+	AC_MSG_RESULT(AIX 5.1 or 5.2 or 5.3)
+	AC_DEFINE([AIX5_LIBC], 1, [Define to 1 if you're using AIX 5.1 or 5.2 or 5.3])
 	DEFAULT_SUPP="aix5libc.supp ${DEFAULT_SUPP}"
 	;;
 
      *)
 	AC_MSG_RESULT(unsupported version)
 	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.5])
-	AC_MSG_ERROR([or AIX 5.2/5.3 libc])
+	AC_MSG_ERROR([or AIX 5.1 or 5.2 or 5.3 libc])
 	;;
 esac
 

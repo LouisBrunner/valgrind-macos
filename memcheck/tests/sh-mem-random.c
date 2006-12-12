@@ -244,7 +244,7 @@ int main(void)
 
       for (tries = 0; tries < 10; tries++) {
          arr = mmap(huge_addr, nbytes_p, PROT_READ|PROT_WRITE, 
-                    MAP_FIXED|MAP_PRIVATE|MAP_ANONYMOUS, 0,0);
+                    MAP_FIXED|MAP_PRIVATE|MAP_ANONYMOUS, -1,0);
 	 if (arr != MAP_FAILED)
             break;
 	 // hmm. fudge the address and try again.

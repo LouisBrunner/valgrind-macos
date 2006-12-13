@@ -2972,7 +2972,7 @@ static void mc_record_address_error ( ThreadId tid, Addr a, Int size,
       best we can do is to 'act normal' and mark the A bits in the
       normal way as noaccess, but then hide any reads from that page
       that get reported here. */
-   if ((!isWrite) && a >= 0 && a+size <= 4096) 
+   if ((!isWrite) && a >= 0 && a < 4096 && a+size <= 4096) 
       return;
 
    /* Appalling AIX hack.  It suppresses reads done by glink

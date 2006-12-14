@@ -50,8 +50,8 @@ extern Long  VG_(atoll36) ( Char* str );     // base 36
    ------------------------------------------------------------------ */
 
 /* Use this for normal null-termination-style string comparison */
-#define VG_STREQ(s1,s2) (s1 != NULL && s2 != NULL \
-                         && VG_(strcmp)((s1),(s2))==0)
+#define VG_STREQ(s1,s2) ( (s1 != NULL && s2 != NULL \
+                           && VG_(strcmp)((s1),(s2))==0) ? True : False )
 
 extern Int   VG_(strlen)         ( const Char* str );
 extern Char* VG_(strcat)         ( Char* dest, const Char* src );

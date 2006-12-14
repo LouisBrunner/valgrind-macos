@@ -22,7 +22,6 @@
 #
 # and the optional extra info is:
 #     if Param: name of system call param
-#     if Free: name of free-ing fn)
 
 ##----------------------------------------------------------------------##
 ## Suppressions for Fedora Core 5 on ppc32/amd64 (glibc-2.3.90)

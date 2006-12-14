@@ -22,7 +22,6 @@
 #
 # and the optional extra info is:
 #     if Param: name of system call param
-#     if Free: name of free-ing fn)
 
 {
    dl-hack1

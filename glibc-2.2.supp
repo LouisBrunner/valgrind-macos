@@ -22,7 +22,6 @@
 #
 # and the optional extra info is:
 #     if Param: name of system call param
-#     if Free: name of free-ing fn)
 
 #-------- For SuSE 8.2 (gcc 3.3, glibc 2.3.2)
 {

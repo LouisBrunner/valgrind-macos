@@ -183,31 +183,6 @@
    fun:__libc_start_main
 }
 
-#-------- Threading bugs?
-# glibc 'knows' that destroying a locked mutex will unlock it
-{
-   pthread_error/pthread_mutex_destroy/__closedir
-   core:PThread
-   fun:pthread_error
-   fun:pthread_mutex_destroy
-   fun:__closedir
-}
-
-{
-   pthread_error/pthread_mutex_destroy/_IO_default_finish
-   core:PThread
-   fun:pthread_error
-   fun:pthread_mutex_destroy
-   fun:_IO_default_finish*
-}
-
-{
-   pthread_mutex_unlock/_IO_funlockfile
-   core:PThread
-   fun:pthread_mutex_unlock
-   fun:_IO_funlockfile
-}
-
 ##----------------------------------------------------------------------##
 ## Bugs in helper library supplied with Intel Icc 7.0 (65)
 ## in /opt/intel/compiler70/ia32/lib/libcxa.so.3

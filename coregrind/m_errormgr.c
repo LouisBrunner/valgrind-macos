@@ -170,7 +170,10 @@ UInt VG_(get_n_errs_found)( void )
  * effectively extend it by defining their own enums in the (0..) range. */
 typedef
    enum {
-      PThreadSupp = -1,    /* Matches PThreadErr */
+      // Nb: thread errors are a relic of the time when Valgrind's core
+      // could detect them.  This example is left commented-out as an
+      // example should new core errors ever be added.
+      ThreadSupp = -1,    /* Matches ThreadErr */
    }
    CoreSuppKind;
 
@@ -269,10 +272,10 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
       return False;
 
    switch (e1->ekind) {
-     //      case ThreadErr:
-     //      case MutexErr:
-     //         vg_assert(VG_(needs).core_errors);
-     //         return VG_(tm_error_equal)(res, e1, e2);
+      //(example code, see comment on CoreSuppKind above)
+      //case ThreadErr:
+      //   vg_assert(VG_(needs).core_errors);
+      //   return <something>
       default: 
          if (VG_(needs).tool_errors) {
             return VG_TDICT_CALL(tool_eq_Error, res, e1, e2);
@@ -302,11 +305,11 @@ static void pp_Error ( Error* err )
    }
 
    switch (err->ekind) {
-     //      case ThreadErr:
-     //      case MutexErr:
-     //         vg_assert(VG_(needs).core_errors);
-     //         VG_(tm_error_print)(err);
-     //         break;
+      //(example code, see comment on CoreSuppKind above)
+      //case ThreadErr:
+      //   vg_assert(VG_(needs).core_errors);
+      //   VG_(tm_error_print)(err);
+      //   break;
       default: 
          if (VG_(needs).tool_errors)
             VG_TDICT_CALL( tool_pp_Error, err );
@@ -420,10 +423,12 @@ static void gen_suppression(Error* err)
    if (stop_at > VG_MAX_SUPP_CALLERS) stop_at = VG_MAX_SUPP_CALLERS;
    vg_assert(stop_at > 0);
 
-   if (ThreadErr == err->ekind || MutexErr == err->ekind) {
-      VG_(printf)("{\n");
-      VG_(printf)("   <insert a suppression name here>\n");
-      VG_(printf)("   core:PThread\n");
+      //(example code, see comment on CoreSuppKind above)
+   if (0) {    
+   //if (0) ThreadErr == err->ekind) {
+   //   VG_(printf)("{\n");
+   //   VG_(printf)("   <insert a suppression name here>\n");
+   //   VG_(printf)("   core:Thread\n");
 
    } else {
       Char* name = VG_TDICT_CALL(tool_get_error_name, err);
@@ -601,11 +606,11 @@ void VG_(maybe_record_error) ( ThreadId tid,
 
    /* update 'extra' */
    switch (ekind) {
-     //      case ThreadErr:
-     //      case MutexErr:
-     //         vg_assert(VG_(needs).core_errors);
-     //         extra_size = VG_(tm_error_update_extra)(p);
-     //         break;
+      //(example code, see comment on CoreSuppKind above)
+      //case ThreadErr:
+      //   vg_assert(VG_(needs).core_errors);
+      //   extra_size = <something>
+      //   break;
       default:
          vg_assert(VG_(needs).tool_errors);
          extra_size = VG_TDICT_CALL(tool_update_extra, p);
@@ -1013,9 +1018,10 @@ static void load_one_suppressions_file ( Char* filename )
       if (VG_(needs).core_errors && tool_name_present("core", tool_names))
       {
          // A core suppression
-         if (VG_STREQ(supp_name, "PThread"))
-            supp->skind = PThreadSupp;
-         else
+         //(example code, see comment on CoreSuppKind above)
+         //if (VG_STREQ(supp_name, "Thread"))
+         //   supp->skind = ThreadSupp;
+         //else
             BOMB("unknown core suppression type");
       }
       else if (VG_(needs).tool_errors && 
@@ -1120,8 +1126,9 @@ static
 Bool supp_matches_error(Supp* su, Error* err)
 {
    switch (su->skind) {
-      case PThreadSupp:
-         return (err->ekind == ThreadErr || err->ekind == MutexErr);
+      //(example code, see comment on CoreSuppKind above)
+      //case ThreadSupp:
+      //   return (err->ekind == ThreadErr);
       default:
          if (VG_(needs).tool_errors) {
             return VG_TDICT_CALL(tool_error_matches_suppression, err, su);

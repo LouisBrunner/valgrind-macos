@@ -39,12 +39,13 @@
 
 #include "pub_tool_errormgr.h"
 
-// XXX: should this be in pthreadmodel.c?
 // These must be negative, so as to not overlap with tool error kinds.
 typedef
    enum { 
-      ThreadErr      = -1,   // Thread error
-      MutexErr       = -2,   // Mutex error
+      // Nb: thread errors are a relic of the time when Valgrind's core
+      // could detect them.  This example is left as an example should new
+      // core errors ever be added.
+      ThreadErr = -1,
    }
    CoreErrorKind;
 

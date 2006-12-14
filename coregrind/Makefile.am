@@ -112,7 +112,6 @@ noinst_HEADERS = \
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
 	pub_core_oset.h		\
-	pub_core_pthreadmodel.h	\
 	pub_core_redir.h	\
 	pub_core_replacemalloc.h\
 	pub_core_scheduler.h	\
@@ -122,7 +121,6 @@ noinst_HEADERS = \
 	pub_core_stacktrace.h	\
 	pub_core_syscall.h	\
 	pub_core_syswrap.h	\
-	pub_core_threadmodel.h	\
 	pub_core_threadstate.h	\
 	pub_core_tooliface.h	\
 	pub_core_trampoline.h	\
@@ -177,13 +175,11 @@ COREGRIND_SOURCES_COMMON = \
 	m_mallocfree.c \
 	m_options.c \
 	m_oset.c \
-	m_pthreadmodel.c \
 	m_redir.c \
 	m_signals.c \
 	m_stacks.c \
 	m_stacktrace.c \
 	m_syscall.c \
-	m_threadmodel.c \
 	m_threadstate.c \
 	m_tooliface.c \
 	m_trampoline.S \

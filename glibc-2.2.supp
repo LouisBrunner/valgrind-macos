@@ -229,31 +229,6 @@
    fun:_dl_open
 }
 
-#-------- Threading bugs?
-# glibc 'knows' that destroying a locked mutex will unlock it
-{
-   pthread_error/pthread_mutex_destroy/__closedir
-   core:PThread
-   fun:pthread_error
-   fun:pthread_mutex_destroy
-   fun:__closedir
-}
-
-{
-   pthread_error/pthread_mutex_destroy/_IO_default_finish
-   core:PThread
-   fun:pthread_error
-   fun:pthread_mutex_destroy
-   fun:_IO_default_finish*
-}
-
-{
-   pthread_mutex_unlock/_IO_funlockfile
-   core:PThread
-   fun:pthread_mutex_unlock
-   fun:_IO_funlockfile
-}
-
 # even more glibc suppressions ?
 {
    libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Cond)

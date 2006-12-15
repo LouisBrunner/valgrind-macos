@@ -2468,7 +2468,6 @@ void check_mem_is_addressable ( CorePart part, ThreadId tid, Char* s,
                                     /*isUnaddr*/True, s );
          break;
 
-      case Vg_CorePThread:
       case Vg_CoreSignal:
          mc_record_core_mem_error( tid, /*isUnaddr*/True, s );
          break;
@@ -2496,7 +2495,6 @@ void check_mem_is_defined ( CorePart part, ThreadId tid, Char* s,
          break;
       
       case Vg_CoreClientReq: // Kludge: make this a CoreMemErr
-      case Vg_CorePThread:
          mc_record_core_mem_error( tid, isUnaddr, s );
          break;
 

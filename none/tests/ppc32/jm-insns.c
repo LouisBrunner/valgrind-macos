@@ -5115,7 +5115,7 @@ static void rldc_cb (const char* name, test_func_t func_IN,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, k, arg_step;
    
    arg_step = (arg_list_size == 0) ? 7 : 3;
@@ -5130,28 +5130,10 @@ static void rldc_cb (const char* name, test_func_t func_IN,
             r14 = iargs[i];
             r15 = iargs[j];
 
-            /* Save flags */
-            __asm__ __volatile__ ("mfcr 18");
-            tmpcr = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            tmpxer = r18;
-
-            /* Set up flags for test */
-            r18 = 0;
-            __asm__ __volatile__ ("mtcr 18");
-            __asm__ __volatile__ ("mtxer 18");
+            SET_CR_XER_ZERO;
             (*func)();
-            __asm__ __volatile__ ("mfcr 18");
-            flags = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            xer = r18;
+            GET_CR_XER(flags,xer);
             res = r17;
-
-            /* Restore flags */
-            r18 = tmpcr;
-            __asm__ __volatile__ ("mtcr 18");
-            r18 = tmpxer;
-            __asm__ __volatile__ ("mtxer 18");
 
             printf("%s %016lx, %016lx, %2d => %016lx (%08x %08x)\n",
                    name, iargs[i], iargs[j], k, res, flags, xer);
@@ -5167,7 +5149,7 @@ static void rldi_cb (const char* name, test_func_t func_IN,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, k, arg_step;
    
    arg_step = (arg_list_size == 0) ? 7 : 3;
@@ -5183,28 +5165,10 @@ static void rldi_cb (const char* name, test_func_t func_IN,
             
             r14 = iargs[i];
 
-            /* Save flags */
-            __asm__ __volatile__ ("mfcr 18");
-            tmpcr = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            tmpxer = r18;
-
-            /* Set up flags for test */
-            r18 = 0;
-            __asm__ __volatile__ ("mtcr 18");
-            __asm__ __volatile__ ("mtxer 18");
+            SET_CR_XER_ZERO;
             (*func)();
-            __asm__ __volatile__ ("mfcr 18");
-            flags = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            xer = r18;
+            GET_CR_XER(flags,xer);
             res = r17;
-
-            /* Restore flags */
-            r18 = tmpcr;
-            __asm__ __volatile__ ("mtcr 18");
-            r18 = tmpxer;
-            __asm__ __volatile__ ("mtxer 18");
 
             printf("%s %016lx, %2d, %2d => %016lx (%08x %08x)\n",
                    name, iargs[i], j, k, res, flags, xer);
@@ -5220,7 +5184,7 @@ static void sradi_cb (const char* name, test_func_t func_IN,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, arg_step;
    
    arg_step = (arg_list_size == 0) ? 7 : 3;
@@ -5234,28 +5198,10 @@ static void sradi_cb (const char* name, test_func_t func_IN,
             
          r14 = iargs[i];
 
-         /* Save flags */
-         __asm__ __volatile__ ("mfcr 18");
-         tmpcr = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         tmpxer = r18;
-
-         /* Set up flags for test */
-         r18 = 0;
-         __asm__ __volatile__ ("mtcr 18");
-         __asm__ __volatile__ ("mtxer 18");
+         SET_CR_XER_ZERO;
          (*func)();
-         __asm__ __volatile__ ("mfcr 18");
-         flags = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         xer = r18;
+         GET_CR_XER(flags,xer);
          res = r17;
-
-         /* Restore flags */
-         r18 = tmpcr;
-         __asm__ __volatile__ ("mtcr 18");
-         r18 = tmpxer;
-         __asm__ __volatile__ ("mtxer 18");
 
          printf("%s %016lx, %2d => %016lx (%08x %08x)\n",
                 name, iargs[i], j, res, flags, xer);
@@ -7449,6 +7395,7 @@ static void usage (void)
            "\t-i: test integer instructions (default)\n"
            "\t-f: test floating point instructions\n"
            "\t-a: test altivec instructions\n"
+           "\t-A: test all (int, fp, altivec) instructions\n"
            "\t-v: be verbose\n"
            "\t-h: display this help and exit\n"
            );
@@ -7464,6 +7411,9 @@ int main (int argc, char **argv)
    unsigned char *tmp, *filter = NULL;
    insn_sel_flags_t flags;
    int c;
+
+   // check HWord_t really is a host word
+   assert(sizeof(void*) == sizeof(HWord_t));
 
    flags.one_arg    = 0;
    flags.two_args   = 0;
@@ -7591,6 +7541,7 @@ int main (int argc, char **argv)
       ./jm-insns -i   => int insns
       ./jm-insns -f   => fp  insns
       ./jm-insns -a   => av  insns
+      ./jm-insns -A   => int, fp and avinsns
    */
    char *filter = NULL;
    insn_sel_flags_t flags;
@@ -7614,7 +7565,7 @@ int main (int argc, char **argv)
    // Flags
    flags.cr         = 2;
 
-   while ((c = getopt(argc, argv, "ifahv")) != -1) {
+   while ((c = getopt(argc, argv, "ifahvA")) != -1) {
       switch (c) {
       case 'i':
          flags.integer  = 1;
@@ -7623,6 +7574,12 @@ int main (int argc, char **argv)
          flags.floats   = 1;
          break;
       case 'a':
+         flags.altivec  = 1;
+         flags.faltivec = 1;
+         break;
+      case 'A':
+         flags.integer  = 1;
+         flags.floats   = 1;
          flags.altivec  = 1;
          flags.faltivec = 1;
          break;

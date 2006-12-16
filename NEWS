@@ -1,9 +1,9 @@
-Release 3.2.0 (XX XXX 2007)
+Release 3.3.0 (XX XXX 2007)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-3.2.0 is a feature release with ...
+3.3.0 is a feature release with ...
 
 XXX:
-* Note in NEWS that behaviour of GET_VBITS and SET_BBITS have changed --
+* Note in NEWS that behaviour of GET_VBITS and SET_VBITS have changed --
   they no longer issue addressability errors if either array is partially
   unaddressable, they just return 3.  Also, SET_VBITS doesn't report
   definedness errors if any of the V bits are undefined.

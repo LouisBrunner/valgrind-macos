@@ -1,7 +1,7 @@
 # This contains a match against a "???" entry
 {
    <insert a suppression name here>
-   Memcheck:Addr1
+   Memcheck:Jump
    obj:*
    fun:(below main)
 }

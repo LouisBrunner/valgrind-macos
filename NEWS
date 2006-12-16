@@ -1,3 +1,24 @@
+Release 3.2.0 (XX XXX 2007)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.2.0 is a feature release with ...
+
+XXX:
+* Note in NEWS that behaviour of GET_VBITS and SET_BBITS have changed --
+  they no longer issue addressability errors if either array is partially
+  unaddressable, they just return 3.  Also, SET_VBITS doesn't report
+  definedness errors if any of the V bits are undefined.
+
+Other user-visible changes:
+
+- A new suppression kind has been introduced: "Jump".  This is for
+  suppressing jump-to-invalid-address errors.  Previously you had to use an
+  "Addr1" suppression, which didn't make much sense.
+
+- The behaviour of Memcheck's client requests VALGRIND_GET_VBITS and
+  VALGRIND_SET_VBITS have changed slightly.  They no longer issue
+  addressability errors -- if either array is partially unaddressable,
+  they just return 3 (as before).  Also, SET_VBITS doesn't report
+  definedness errors if any of the V bits are undefined.
 
 Release 3.2.1 (16 Sept 2006)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -82,12 +82,12 @@ static void add_to_freed_queue ( MC_Chunk* mc )
    if (freed_list_end == NULL) {
       tl_assert(freed_list_start == NULL);
       freed_list_end    = freed_list_start = mc;
-      freed_list_volume = mc->size;
+      freed_list_volume = mc->szB;
    } else {
       tl_assert(freed_list_end->next == NULL);
       freed_list_end->next = mc;
       freed_list_end       = mc;
-      freed_list_volume += mc->size;
+      freed_list_volume += mc->szB;
    }
    mc->next = NULL;
 
@@ -101,7 +101,7 @@ static void add_to_freed_queue ( MC_Chunk* mc )
       tl_assert(freed_list_end != NULL);
 
       mc1 = freed_list_start;
-      freed_list_volume -= mc1->size;
+      freed_list_volume -= mc1->szB;
       /* VG_(printf)("volume now %d\n", freed_list_volume); */
       tl_assert(freed_list_volume >= 0);
 
@@ -125,12 +125,12 @@ MC_Chunk* MC_(get_freed_list_head)(void)
 
 /* Allocate its shadow chunk, put it on the appropriate list. */
 static
-MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT size,
+MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT szB,
                             MC_AllocKind kind)
 {
    MC_Chunk* mc  = VG_(malloc)(sizeof(MC_Chunk));
    mc->data      = p;
-   mc->size      = size;
+   mc->szB       = szB;
    mc->allockind = kind;
    mc->where     = VG_(record_ExeContext)(tid);
 
@@ -174,7 +174,7 @@ static Bool complain_about_silly_args2(SizeT n, SizeT sizeB)
 /* Allocate memory and note change in memory available */
 __inline__
 void* MC_(new_block) ( ThreadId tid,
-                        Addr p, SizeT size, SizeT align, UInt rzB,
+                        Addr p, SizeT szB, SizeT alignB, UInt rzB,
                         Bool is_zeroed, MC_AllocKind kind, VgHashTable table)
 {
    cmalloc_n_mallocs ++;
@@ -184,22 +184,22 @@ void* MC_(new_block) ( ThreadId tid,
       tl_assert(MC_AllocCustom == kind);
    } else {
       tl_assert(MC_AllocCustom != kind);
-      p = (Addr)VG_(cli_malloc)( align, size );
+      p = (Addr)VG_(cli_malloc)( alignB, szB );
       if (!p) {
          return NULL;
       }
-      if (is_zeroed) VG_(memset)((void*)p, 0, size);
+      if (is_zeroed) VG_(memset)((void*)p, 0, szB);
    }
 
    // Only update this stat if allocation succeeded.
-   cmalloc_bs_mallocd += size;
+   cmalloc_bs_mallocd += szB;
 
-   VG_(HT_add_node)( table, create_MC_Chunk(tid, p, size, kind) );
+   VG_(HT_add_node)( table, create_MC_Chunk(tid, p, szB, kind) );
 
    if (is_zeroed)
-      MC_(make_mem_defined)( p, size );
+      MC_(make_mem_defined)( p, szB );
    else
-      MC_(make_mem_undefined)( p, size );
+      MC_(make_mem_undefined)( p, szB );
 
    return (void*)p;
 }
@@ -237,12 +237,12 @@ void* MC_(__builtin_vec_new) ( ThreadId tid, SizeT n )
    }
 }
 
-void* MC_(memalign) ( ThreadId tid, SizeT align, SizeT n )
+void* MC_(memalign) ( ThreadId tid, SizeT alignB, SizeT n )
 {
    if (complain_about_silly_args(n, "memalign")) {
       return NULL;
    } else {
-      return MC_(new_block) ( tid, 0, n, align, 
+      return MC_(new_block) ( tid, 0, n, alignB, 
          MC_MALLOC_REDZONE_SZB, /*is_zeroed*/False, MC_AllocMalloc,
          MC_(malloc_list));
    }
@@ -264,7 +264,7 @@ void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
 {
    /* Note: make redzones noaccess again -- just in case user made them
       accessible with a client request... */
-   MC_(make_mem_noaccess)( mc->data-rzB, mc->size + 2*rzB );
+   MC_(make_mem_noaccess)( mc->data-rzB, mc->szB + 2*rzB );
 
    /* Put it out of harm's way for a while, if not from a client request */
    if (MC_AllocCustom != mc->allockind) {
@@ -289,7 +289,8 @@ void MC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MC_AllocKind kind )
    } else {
       /* check if it is a matching free() / delete / delete [] */
       if (kind != mc->allockind) {
-         MC_(record_freemismatch_error) ( tid, p, mc );
+         tl_assert(p == mc->data);
+         MC_(record_freemismatch_error) ( tid, mc );
       }
       die_and_free_mem ( tid, mc, rzB );
    }
@@ -313,17 +314,17 @@ void MC_(__builtin_vec_delete) ( ThreadId tid, void* p )
       tid, (Addr)p, MC_MALLOC_REDZONE_SZB, MC_AllocNewVec);
 }
 
-void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
+void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
 {
    MC_Chunk* mc;
    void*     p_new;
-   SizeT     old_size;
+   SizeT     old_szB;
 
    cmalloc_n_frees ++;
    cmalloc_n_mallocs ++;
-   cmalloc_bs_mallocd += new_size;
+   cmalloc_bs_mallocd += new_szB;
 
-   if (complain_about_silly_args(new_size, "realloc")) 
+   if (complain_about_silly_args(new_szB, "realloc")) 
       return NULL;
 
    /* Remove the old block */
@@ -337,38 +338,39 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
    /* check if its a matching free() / delete / delete [] */
    if (MC_AllocMalloc != mc->allockind) {
       /* can not realloc a range that was allocated with new or new [] */
-      MC_(record_freemismatch_error) ( tid, (Addr)p_old, mc );
+      tl_assert((Addr)p_old == mc->data);
+      MC_(record_freemismatch_error) ( tid, mc );
       /* but keep going anyway */
    }
 
-   old_size = mc->size;
+   old_szB = mc->szB;
 
-   if (old_size == new_size) {
+   if (old_szB == new_szB) {
       /* size unchanged */
       mc->where = VG_(record_ExeContext)(tid);
       p_new = p_old;
       
-   } else if (old_size > new_size) {
+   } else if (old_szB > new_szB) {
       /* new size is smaller */
-      MC_(make_mem_noaccess)( mc->data+new_size, mc->size-new_size );
-      mc->size = new_size;
+      MC_(make_mem_noaccess)( mc->data+new_szB, mc->szB-new_szB );
+      mc->szB = new_szB;
       mc->where = VG_(record_ExeContext)(tid);
       p_new = p_old;
 
    } else {
       /* new size is bigger */
       /* Get new memory */
-      Addr a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
+      Addr a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_szB);
 
       if (a_new) {
          /* First half kept and copied, second half new, red zones as normal */
          MC_(make_mem_noaccess)( a_new-MC_MALLOC_REDZONE_SZB, MC_MALLOC_REDZONE_SZB );
-         MC_(copy_address_range_state)( (Addr)p_old, a_new, mc->size );
-         MC_(make_mem_undefined)( a_new+mc->size, new_size-mc->size );
-         MC_(make_mem_noaccess) ( a_new+new_size, MC_MALLOC_REDZONE_SZB );
+         MC_(copy_address_range_state)( (Addr)p_old, a_new, mc->szB );
+         MC_(make_mem_undefined)( a_new+mc->szB, new_szB-mc->szB );
+         MC_(make_mem_noaccess) ( a_new+new_szB, MC_MALLOC_REDZONE_SZB );
 
          /* Copy from old to new */
-         VG_(memcpy)((void*)a_new, p_old, mc->size);
+         VG_(memcpy)((void*)a_new, p_old, mc->szB);
 
          /* Free old memory */
          /* Nb: we have to allocate a new MC_Chunk for the new memory rather
@@ -377,7 +379,7 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
          die_and_free_mem ( tid, mc, MC_MALLOC_REDZONE_SZB );
 
          // Allocate a new chunk.
-         mc = create_MC_Chunk( tid, a_new, new_size, MC_AllocMalloc );
+         mc = create_MC_Chunk( tid, a_new, new_szB, MC_AllocMalloc );
       }
 
       p_new = (void*)a_new;
@@ -453,7 +455,7 @@ void MC_(destroy_mempool)(Addr pool)
    while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
       /* Note: make redzones noaccess again -- just in case user made them
          accessible with a client request... */
-      MC_(make_mem_noaccess)(mc->data-mp->rzB, mc->size + 2*mp->rzB );
+      MC_(make_mem_noaccess)(mc->data-mp->rzB, mc->szB + 2*mp->rzB );
    }
    // Destroy the chunk table
    VG_(HT_destruct)(mp->chunks);
@@ -517,7 +519,7 @@ check_mempool_sane(MC_Mempool* mp)
    
    /* Sanity check -- make sure they don't overlap */
    for (i = 0; i < n_chunks-1; i++) {
-      if (chunks[i]->data + chunks[i]->size > chunks[i+1]->data ) {
+      if (chunks[i]->data + chunks[i]->szB > chunks[i+1]->data ) {
          VG_(message)(Vg_UserMsg, 
                       "Mempool chunk %d / %d overlaps with its successor", 
                       i+1, n_chunks);
@@ -534,9 +536,9 @@ check_mempool_sane(MC_Mempool* mp)
                          "Mempool chunk %d / %d: %d bytes [%x,%x), allocated:",
                          i+1, 
                          n_chunks, 
-                         chunks[i]->size, 
+                         chunks[i]->szB, 
                          chunks[i]->data, 
-                         chunks[i]->data + chunks[i]->size);
+                         chunks[i]->data + chunks[i]->szB);
 
             VG_(pp_ExeContext)(chunks[i]->where);
          }
@@ -544,12 +546,12 @@ check_mempool_sane(MC_Mempool* mp)
    VG_(free)(chunks);
 }
 
-void MC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT size)
+void MC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT szB)
 {
    MC_Mempool* mp;
 
    if (VG_(clo_verbosity) > 2) {     
-      VG_(message)(Vg_UserMsg, "mempool_alloc(%p, %p, %d)", pool, addr, size);
+      VG_(message)(Vg_UserMsg, "mempool_alloc(%p, %p, %d)", pool, addr, szB);
       VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
 
@@ -558,7 +560,7 @@ void MC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT size)
       MC_(record_illegal_mempool_error) ( tid, pool );
    } else {
       check_mempool_sane(mp);
-      MC_(new_block)(tid, addr, size, /*ignored*/0, mp->rzB, mp->is_zeroed,
+      MC_(new_block)(tid, addr, szB, /*ignored*/0, mp->rzB, mp->is_zeroed,
                      MC_AllocCustom, mp->chunks);
       check_mempool_sane(mp);
    }
@@ -591,7 +593,7 @@ void MC_(mempool_free)(Addr pool, Addr addr)
    if (VG_(clo_verbosity) > 2) {
       VG_(message)(Vg_UserMsg, 
 		   "mempool_free(%p, %p) freed chunk of %d bytes", 
-		   pool, addr, mc->size);
+		   pool, addr, mc->szB);
    }
 
    die_and_free_mem ( tid, mc, mp->rzB );
@@ -599,7 +601,7 @@ void MC_(mempool_free)(Addr pool, Addr addr)
 }
 
 
-void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
+void MC_(mempool_trim)(Addr pool, Addr addr, SizeT szB)
 {
    MC_Mempool*  mp;
    MC_Chunk*    mc;
@@ -608,7 +610,7 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
    VgHashNode** chunks;
 
    if (VG_(clo_verbosity) > 2) {
-      VG_(message)(Vg_UserMsg, "mempool_trim(%p, %p, %d)", pool, addr, size);
+      VG_(message)(Vg_UserMsg, "mempool_trim(%p, %p, %d)", pool, addr, szB);
       VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
 
@@ -633,9 +635,9 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
       mc = (MC_Chunk*) chunks[i];
 
       lo = mc->data;
-      hi = mc->size == 0 ? mc->data : mc->data + mc->size - 1;
+      hi = mc->szB == 0 ? mc->data : mc->data + mc->szB - 1;
 
-#define EXTENT_CONTAINS(x) ((addr <= (x)) && ((x) < addr + size))
+#define EXTENT_CONTAINS(x) ((addr <= (x)) && ((x) < addr + szB))
 
       if (EXTENT_CONTAINS(lo) && EXTENT_CONTAINS(hi)) {
 
@@ -680,12 +682,12 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
            lo = mc->data;
          }
 
-         if (mc->data + size > addr + size) {
-           max = mc->data + size;
-           hi = addr + size;
+         if (mc->data + szB > addr + szB) {
+           max = mc->data + szB;
+           hi = addr + szB;
          } else {
-           max = addr + size;
-           hi = mc->data + size;
+           max = addr + szB;
+           hi = mc->data + szB;
          }
 
          tl_assert(min <= lo);
@@ -701,7 +703,7 @@ void MC_(mempool_trim)(Addr pool, Addr addr, SizeT size)
          }
 
          mc->data = lo;
-         mc->size = (UInt) (hi - lo);
+         mc->szB = (UInt) (hi - lo);
          VG_(HT_add_node)( mp->chunks, mc );        
       }
 
@@ -734,7 +736,7 @@ void MC_(move_mempool)(Addr poolA, Addr poolB)
    VG_(HT_add_node)( MC_(mempool_list), mp );
 }
 
-void MC_(mempool_change)(Addr pool, Addr addrA, Addr addrB, SizeT size)
+void MC_(mempool_change)(Addr pool, Addr addrA, Addr addrB, SizeT szB)
 {
    MC_Mempool*  mp;
    MC_Chunk*    mc;
@@ -742,7 +744,7 @@ void MC_(mempool_change)(Addr pool, Addr addrA, Addr addrB, SizeT size)
 
    if (VG_(clo_verbosity) > 2) {
       VG_(message)(Vg_UserMsg, "mempool_change(%p, %p, %p, %d)", 
-                   pool, addrA, addrB, size);
+                   pool, addrA, addrB, szB);
       VG_(get_and_pp_StackTrace) (tid, MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
 
@@ -761,7 +763,7 @@ void MC_(mempool_change)(Addr pool, Addr addrA, Addr addrB, SizeT size)
    }
 
    mc->data = addrB;
-   mc->size = size;
+   mc->szB  = szB;
    VG_(HT_add_node)( mp->chunks, mc );
 
    check_mempool_sane(mp);
@@ -798,7 +800,7 @@ void MC_(print_malloc_stats) ( void )
    VG_(HT_ResetIter)(MC_(malloc_list));
    while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
       nblocks++;
-      nbytes += mc->size;
+      nbytes += mc->szB;
    }
 
    VG_(message)(Vg_UserMsg, 

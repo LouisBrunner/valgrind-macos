@@ -89,31 +89,12 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
 
 // This is a macro rather than a function because we don't want to have an
 // extra function in the stack trace.
-#define RECORD_OVERLAP_ERROR(s, p_extra) \
+#define RECORD_OVERLAP_ERROR(s, src, dst, len) \
 { \
    Word unused_res; \
    VALGRIND_DO_CLIENT_REQUEST(unused_res, 0, \
 			      _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR, \
-			      s, p_extra, 0, 0, 0); \
-}
-
-static __inline__
-void complain2 ( Char* s, char* dst, const char* src )
-{
-   OverlapExtra extra = {
-      .src = (Addr)src, .dst = (Addr)dst, .len = -1,
-   };
-   RECORD_OVERLAP_ERROR( s, &extra );
-}
-
-static __inline__
-void complain3 ( Char* s, void* dst, const void* src, int n )
-{
-   /* Must wrap it up here, because we cannot pass 4 args to core */
-   OverlapExtra extra = {
-      .src = (Addr)src, .dst = (Addr)dst, .len = n,
-   };
-   RECORD_OVERLAP_ERROR( s, &extra );
+			      s, src, dst, len, 0); \
 }
 
 /* --------- Some handy Z-encoded names. --------- */
@@ -197,7 +178,7 @@ STRCHR(m_ld_linux_x86_64_so_2, index)
                      src_orig,  \
                      (Addr)dst-(Addr)dst_orig+1,  \
                      (Addr)src-(Addr)src_orig+1)) \
-         complain2("strcat", dst_orig, src_orig); \
+         RECORD_OVERLAP_ERROR("strcat", dst_orig, src_orig, 0); \
  \
       return dst_orig; \
    }
@@ -225,7 +206,7 @@ STRCAT(m_libc_soname, strcat)
                      src_orig,  \
                      (Addr)dst-(Addr)dst_orig+1,  \
                      (Addr)src-(Addr)src_orig+1)) \
-         complain3("strncat", dst_orig, src_orig, n); \
+         RECORD_OVERLAP_ERROR("strncat", dst_orig, src_orig, n); \
  \
       return dst_orig; \
    }
@@ -279,7 +260,7 @@ STRLEN(m_ld_linux_x86_64_so_2, strlen)
                      src_orig,  \
                      (Addr)dst-(Addr)dst_orig+1,  \
                      (Addr)src-(Addr)src_orig+1)) \
-         complain2("strcpy", dst_orig, src_orig); \
+         RECORD_OVERLAP_ERROR("strcpy", dst_orig, src_orig, 0); \
  \
       return dst_orig; \
    }
@@ -301,7 +282,7 @@ STRCPY(m_libc_soname, strcpy)
       /* Check for overlap after copying; all n bytes of dst are relevant, */ \
       /* but only m+1 bytes of src if terminator was found */ \
       if (is_overlap(dst_orig, src_orig, n, (m < n) ? m+1 : n)) \
-         complain3("strncpy", dst, src, n); \
+         RECORD_OVERLAP_ERROR("strncpy", dst, src, n); \
       while (m++ < n) *dst++ = 0;         /* must pad remainder with nulls */ \
  \
       return dst_orig; \
@@ -386,7 +367,7 @@ MEMCHR(m_libc_soname, memchr)
          return dst; \
  \
       if (is_overlap(dst, src, len, len)) \
-         complain3("memcpy", dst, src, len); \
+         RECORD_OVERLAP_ERROR("memcpy", dst, src, len); \
  \
       if ( dst > src ) { \
          d = (char *)dst + len - 1; \
@@ -469,7 +450,7 @@ MEMCMP(m_libc_soname, bcmp)
                      src_orig,  \
                      (Addr)dst-(Addr)dst_orig+1,  \
                      (Addr)src-(Addr)src_orig+1)) \
-         complain2("stpcpy", dst_orig, src_orig); \
+         RECORD_OVERLAP_ERROR("stpcpy", dst_orig, src_orig, 0); \
  \
       return dst; \
    }

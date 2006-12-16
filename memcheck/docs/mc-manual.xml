@@ -635,6 +635,11 @@ Memcheck:suppression_type]]></programlisting>
   </listitem>
 
   <listitem>
+    <para>Or: <varname>Jump</varname>, meaning an
+    jump to an unaddressable location error.</para>
+  </listitem>
+
+  <listitem>
     <para>Or: <varname>Param</varname>, meaning an
     invalid system call parameter error.</para>
   </listitem>

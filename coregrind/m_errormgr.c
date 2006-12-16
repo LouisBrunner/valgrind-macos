@@ -101,9 +101,6 @@ static UWord em_supplist_cmps = 0;
 /*--- Error type                                           ---*/
 /*------------------------------------------------------------*/
 
-/* Note: it is imperative this doesn't overlap with (0..) at all, as tools
- * effectively extend it by defining their own enums in the (0..) range. */
-
 /* Errors.  Extensible (via the 'extra' field).  Tools can use a normal
    enum (with element values in the normal range (0..)) for 'ekind'. 
    Functions for getting/setting the tool-relevant fields are in

@@ -56,7 +56,7 @@ typedef
    struct _MC_Chunk {
       struct _MC_Chunk* next;
       Addr         data;            // ptr to actual block
-      SizeT        size : (sizeof(UWord)*8)-2; // size requested; 30 or 62 bits
+      SizeT        szB : (sizeof(UWord)*8)-2; // size requested; 30 or 62 bits
       MC_AllocKind allockind : 2;   // which wrapper did the allocation
       ExeContext*  where;           // where it was allocated
    }
@@ -120,28 +120,6 @@ extern void* MC_(realloc)              ( ThreadId tid, void* p, SizeT new_size )
 
 
 /*------------------------------------------------------------*/
-/*--- Errors and suppressions                              ---*/
-/*------------------------------------------------------------*/
-
-/* Extra info for overlap errors */
-typedef
-   struct {
-      Addr src;
-      Addr dst;
-      Int  len;   // -1 if unused
-   }
-   OverlapExtra;
-
-extern void MC_(record_free_error)            ( ThreadId tid, Addr a ); 
-extern void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a );
-extern void MC_(record_freemismatch_error)    ( ThreadId tid, Addr a,
-                                                MC_Chunk* mc );
-extern Bool MC_(record_leak_error)            ( ThreadId tid, 
-                                                void* leak_extra,
-                                                ExeContext* where,
-                                                Bool print_record );
-
-/*------------------------------------------------------------*/
 /*--- Profiling of memory events                           ---*/
 /*------------------------------------------------------------*/
 
@@ -201,6 +179,21 @@ extern HChar* MC_(event_ctr_name)[N_PROF_EVENTS];
 /*--- Leak checking                                        ---*/
 /*------------------------------------------------------------*/
 
+/* A block is either 
+   -- Proper-ly reached; a pointer to its start has been found
+   -- Interior-ly reached; only an interior pointer to it has been found
+   -- Unreached; so far, no pointers to any part of it have been found. 
+   -- IndirectLeak; leaked, but referred to by another leaked block
+*/
+typedef 
+   enum { 
+      Unreached    =0, 
+      IndirectLeak =1,
+      Interior     =2, 
+      Proper       =3
+  }
+  Reachedness;
+
 /* For VALGRIND_COUNT_LEAKS client request */
 extern SizeT MC_(bytes_leaked);
 extern SizeT MC_(bytes_indirect);
@@ -208,9 +201,6 @@ extern SizeT MC_(bytes_dubious);
 extern SizeT MC_(bytes_reachable);
 extern SizeT MC_(bytes_suppressed);
 
-/* For leak checking */
-extern void MC_(pp_LeakError)(void* extra);
-                           
 typedef
    enum {
       LC_Off,
@@ -219,11 +209,43 @@ typedef
    }
    LeakCheckMode;
 
+/* A block record, used for generating err msgs. */
+typedef
+   struct _LossRecord {
+      struct _LossRecord* next;
+      /* Where these lost blocks were allocated. */
+      ExeContext*  allocated_at;
+      /* Their reachability. */
+      Reachedness  loss_mode;
+      /* Number of blocks and total # bytes involved. */
+      SizeT        total_bytes;
+      SizeT        indirect_bytes;
+      UInt         num_blocks;
+   }
+   LossRecord;
+
 extern void MC_(do_detect_memory_leaks) (
           ThreadId tid, LeakCheckMode mode,
           Bool (*is_within_valid_secondary) ( Addr ),
           Bool (*is_valid_aligned_word)     ( Addr )
        );
+
+extern void MC_(pp_LeakError)(UInt n_this_record, UInt n_total_records,
+                              LossRecord* l);
+                          
+
+/*------------------------------------------------------------*/
+/*--- Errors and suppressions                              ---*/
+/*------------------------------------------------------------*/
+
+extern void MC_(record_free_error)            ( ThreadId tid, Addr a ); 
+extern void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a );
+extern void MC_(record_freemismatch_error)    ( ThreadId tid, MC_Chunk* mc );
+extern Bool MC_(record_leak_error)            ( ThreadId tid,
+                                                UInt n_this_record,
+                                                UInt n_total_records,
+                                                LossRecord* lossRecord,
+                                                Bool print_record );
 
 /*------------------------------------------------------------*/
 /*--- Command line options + defaults                      ---*/

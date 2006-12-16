@@ -16,7 +16,7 @@
 #
 # For Memcheck, the supp_kinds are:
 #
-#     Param Value1 Value2 Value4 Value8 Value16
+#     Param Value1 Value2 Value4 Value8 Value16 Jump
 #     Free Addr1 Addr2 Addr4 Addr8 Addr16
 #     Cond (previously known as Value0)
 #

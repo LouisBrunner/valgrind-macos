@@ -1138,9 +1138,10 @@ static Bool parse_ignore_ranges ( UChar* str0 )
 // Forward declarations
 static void mc_record_address_error  ( ThreadId tid, Addr a,
                                        Int size, Bool isWrite );
-static void mc_record_core_mem_error ( ThreadId tid, Bool isUnaddr, Char* s );
-static void mc_record_param_error    ( ThreadId tid, Addr a, Bool isReg,
-                                       Bool isUnaddr, Char* msg );
+static void mc_record_core_mem_error ( ThreadId tid, Bool isAddrErr, Char* s );
+static void mc_record_regparam_error ( ThreadId tid, Char* msg );
+static void mc_record_memparam_error ( ThreadId tid, Addr a,
+                                       Bool isAddrErr, Char* msg );
 static void mc_record_jump_error     ( ThreadId tid, Addr a );
 
 static
@@ -1303,8 +1304,7 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
    tl_assert(nBits == 64 || nBits == 32 || nBits == 16 || nBits == 8);
 
    /* Dump vbytes in memory, iterating from least to most significant
-      byte.  At the same time establish addressibility of the
-      location. */
+      byte.  At the same time establish addressibility of the location. */
    for (i = 0; i < szB; i++) {
       PROF_EVENT(36, "mc_STOREVn_slow(loop)");
       ai     = a + byte_offset_w(szB, bigendian, i);
@@ -2464,12 +2464,11 @@ void check_mem_is_addressable ( CorePart part, ThreadId tid, Char* s,
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         mc_record_param_error ( tid, bad_addr, /*isReg*/False,
-                                    /*isUnaddr*/True, s );
+         mc_record_memparam_error ( tid, bad_addr, /*isAddrErr*/True, s );
          break;
 
       case Vg_CoreSignal:
-         mc_record_core_mem_error( tid, /*isUnaddr*/True, s );
+         mc_record_core_mem_error( tid, /*isAddrErr*/True, s );
          break;
 
       default:
@@ -2486,18 +2485,13 @@ void check_mem_is_defined ( CorePart part, ThreadId tid, Char* s,
    MC_ReadResult res = is_mem_defined ( base, size, &bad_addr );
 
    if (MC_Ok != res) {
-      Bool isUnaddr = ( MC_AddrErr == res ? True : False );
+      Bool isAddrErr = ( MC_AddrErr == res ? True : False );
 
       switch (part) {
       case Vg_CoreSysCall:
-         mc_record_param_error ( tid, bad_addr, /*isReg*/False,
-                                 isUnaddr, s );
+         mc_record_memparam_error ( tid, bad_addr, isAddrErr, s );
          break;
       
-      case Vg_CoreClientReq: // Kludge: make this a CoreMemErr
-         mc_record_core_mem_error( tid, isUnaddr, s );
-         break;
-
       /* If we're being asked to jump to a silly address, record an error 
          message before potentially crashing the entire system. */
       case Vg_CoreTranslate:
@@ -2520,8 +2514,8 @@ void check_mem_is_defined_asciiz ( CorePart part, ThreadId tid,
    tl_assert(part == Vg_CoreSysCall);
    res = mc_is_defined_asciiz ( (Addr)str, &bad_addr );
    if (MC_Ok != res) {
-      Bool isUnaddr = ( MC_AddrErr == res ? True : False );
-      mc_record_param_error ( tid, bad_addr, /*isReg*/False, isUnaddr, s );
+      Bool isAddrErr = ( MC_AddrErr == res ? True : False );
+      mc_record_memparam_error ( tid, bad_addr, isAddrErr, s );
    }
 }
 
@@ -2609,104 +2603,188 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, Char* s,
    }
 
    if (bad)
-      mc_record_param_error ( tid, 0, /*isReg*/True, /*isUnaddr*/False, s );
+      mc_record_regparam_error ( tid, s );
 }
 
 
 /*------------------------------------------------------------*/
-/*--- Error and suppression types                          ---*/
+/*--- Error types                                          ---*/
 /*------------------------------------------------------------*/
+
+// Different kinds of blocks.
+typedef enum {
+   Block_Mallocd = 111,
+   Block_Freed,
+   Block_Mempool,
+   Block_MempoolChunk,
+   Block_UserG
+} BlockKind;
+
+/* ------------------ Addresses -------------------- */
 
 /* The classification of a faulting address. */
 typedef 
    enum { 
-      Undescribed,   // as-yet unclassified
-      Stack, 
-      Unknown,       // classification yielded nothing useful
-      Freed, Mallocd, 
-      UserG,         // in a user-defined block
-      Mempool,       // in a mempool
-      Register,      // in a register;  for Param errors only
+      Addr_Undescribed,   // as-yet unclassified
+      Addr_Unknown,       // classification yielded nothing useful
+      Addr_Stack,          
+      Addr_Block,
    }
-   AddrKind;
+   AddrTag;
 
-/* Records info about a faulting address. */
 typedef
-   struct {                   // Used by:
-      AddrKind akind;         //   ALL
-      SizeT blksize;          //   Freed, Mallocd
-      OffT rwoffset;          //   Freed, Mallocd
-      ExeContext* lastchange; //   Freed, Mallocd
-      ThreadId stack_tid;     //   Stack
-      const Char *desc;	      //   UserG
-      Bool maybe_gcc;         // True if just below %esp -- could be a gcc bug.
-   }
+   struct _AddrInfo
    AddrInfo;
 
-typedef 
-   enum { 
-      ParamSupp,     // Bad syscall params
-      UserSupp,      // Errors arising from client-request checks
-      CoreMemSupp,   // Memory errors in core (pthread ops, signal handling)
+struct _AddrInfo {
+   AddrTag tag;
+   union {
+      // As-yet unclassified.
+      struct { } Undescribed;
 
-      // Use of invalid values of given size (MemCheck only)
-      Value0Supp, Value1Supp, Value2Supp, Value4Supp, Value8Supp, Value16Supp,
+      // On a stack.
+      struct {
+         ThreadId tid;        // Which thread's stack?
+      } Stack;
 
-      // Invalid read/write attempt at given size
-      Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp, Addr16Supp,
+      // This covers heap blocks (normal and from mempools) and user-defined
+      // blocks.
+      struct {
+         BlockKind   block_kind;
+         Char*       block_desc;    // "block", "mempool" or user-defined
+         SizeT       block_szB;
+         OffT        rwoffset;
+         ExeContext* lastchange;
+      } Block;
 
-      FreeSupp,      // Invalid or mismatching free
-      OverlapSupp,   // Overlapping blocks in memcpy(), strcpy(), etc
-      LeakSupp,      // Something to be suppressed in a leak check.
-      MempoolSupp,   // Memory pool suppression.
-   } 
-   MC_SuppKind;
+      // Classification yielded nothing useful.
+      struct { } Unknown;
+
+   } Addr;
+};
+
+/* ------------------ Errors ----------------------- */
 
 /* What kind of error it is. */
 typedef 
-   enum { ValueErr,
-          CoreMemErr,   // Error in core op (pthread, signals) or client req
-          AddrErr, 
-          ParamErr, UserErr,  /* behaves like an anonymous ParamErr */
-          FreeErr, FreeMismatchErr,
-          OverlapErr,
-          LeakErr,
-          IllegalMempoolErr,
+   enum { 
+      Err_Value,
+      Err_Cond,
+      Err_CoreMem,
+      Err_Addr, 
+      Err_Jump, 
+      Err_RegParam,
+      Err_MemParam,
+      Err_User,
+      Err_Free,
+      Err_FreeMismatch,
+      Err_Overlap,
+      Err_Leak,
+      Err_IllegalMempool,
    }
-   MC_ErrorKind;
+   MC_ErrorTag;
 
-/* What kind of memory access is involved in the error? */
-typedef
-   enum { ReadAxs, WriteAxs, ExecAxs }
-   AxsKind;
 
-/* Extra context for memory errors */
-typedef
-   struct {                // Used by:
-      AxsKind axskind;     //   AddrErr
-      Int size;            //   AddrErr, ValueErr
-      AddrInfo addrinfo;   //   {Addr,Free,FreeMismatch,Param,User}Err
-      Bool isUnaddr;       //   {CoreMem,Param,User}Err
-   }
-   MC_Error;
+typedef struct _MC_Error MC_Error;
+
+struct _MC_Error {
+   // Nb: we don't need the tag here, as it's stored in the Error type! Yuk.
+   //MC_ErrorTag tag;
+
+   union {
+      // Use of an undefined value:
+      // - as a pointer in a load or store
+      // - as a jump target
+      struct {
+         SizeT szB;     // size of value in bytes
+      } Value;
+
+      // Use of an undefined value in a conditional branch or move.
+      struct {
+      } Cond;
+
+      // Addressability error in core (signal-handling) operation.
+      // It would be good to get rid of this error kind, merge it with
+      // another one somehow.
+      struct {
+      } CoreMem;
+
+      // Use of an unaddressable memory location in a load or store.
+      struct {
+         Bool     isWrite;    // read or write?
+         SizeT    szB;        // not used for exec (jump) errors
+         Bool     maybe_gcc;  // True if just below %esp -- could be a gcc bug
+         AddrInfo ai;
+      } Addr;
+
+      // Jump to an unaddressable memory location.
+      struct {
+         AddrInfo ai;
+      } Jump;
+
+      // System call register input contains undefined bytes.
+      struct {
+      } RegParam;
+
+      // System call memory input contains undefined/unaddressable bytes
+      struct {
+         Bool     isAddrErr;  // Addressability or definedness error?
+         AddrInfo ai;
+      } MemParam;
+
+      // Problem found from a client request like CHECK_MEM_IS_ADDRESSABLE.
+      struct {
+         Bool     isAddrErr;  // Addressability or definedness error?
+         AddrInfo ai;
+      } User;
+
+      // Program tried to free() something that's not a heap block (this
+      // covers double-frees). */
+      struct {
+         AddrInfo ai;
+      } Free;
+
+      // Program allocates heap block with one function
+      // (malloc/new/new[]/custom) and deallocates with not the matching one.
+      struct {
+         AddrInfo ai;
+      } FreeMismatch;
+
+      // Call to strcpy, memcpy, etc, with overlapping blocks.
+      struct {
+         Addr src;   // Source block
+         Addr dst;   // Destination block
+         Int  szB;   // Size in bytes;  0 if unused.
+      } Overlap;
+
+      // A memory leak.
+      struct {
+         UInt        n_this_record;
+         UInt        n_total_records;
+         LossRecord* lossRecord;
+      } Leak;
+
+      // A memory pool error.
+      struct {
+         AddrInfo ai;
+      } IllegalMempool;
+
+   } Err;
+};
+
 
 /*------------------------------------------------------------*/
 /*--- Printing errors                                      ---*/
 /*------------------------------------------------------------*/
 
-static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai )
+static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
 {
    HChar* xpre  = VG_(clo_xml) ? "  <auxwhat>" : " ";
    HChar* xpost = VG_(clo_xml) ? "</auxwhat>"  : "";
 
-   switch (ai->akind) {
-      case Stack: 
-         VG_(message)(Vg_UserMsg, 
-                      "%sAddress 0x%llx is on thread %d's stack%s", 
-                      xpre, (ULong)a, ai->stack_tid, xpost);
-         break;
-      case Unknown:
-         if (ai->maybe_gcc) {
+   switch (ai->tag) {
+      case Addr_Unknown:
+         if (maybe_gcc) {
             VG_(message)(Vg_UserMsg, 
                "%sAddress 0x%llx is just below the stack ptr.  "
                "To suppress, use: --workaround-gcc296-bugs=yes%s",
@@ -2719,200 +2797,246 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai )
                xpre, (ULong)a, xpost);
          }
          break;
-      case Freed: case Mallocd: case UserG: case Mempool: {
+
+      case Addr_Stack: 
+         VG_(message)(Vg_UserMsg, 
+                      "%sAddress 0x%llx is on thread %d's stack%s", 
+                      xpre, (ULong)a, ai->Addr.Stack.tid, xpost);
+         break;
+
+      case Addr_Block: {
+         SizeT block_szB  = ai->Addr.Block.block_szB;
+         OffT  rwoffset   = ai->Addr.Block.rwoffset;
          SizeT delta;
          const Char* relative;
-         const Char* kind;
-         if (ai->akind == Mempool) {
-            kind = "mempool";
-         } else {
-            kind = "block";
-         }
-	 if (ai->desc != NULL)
-	    kind = ai->desc;
 
-         if (ai->rwoffset < 0) {
-            delta    = (SizeT)(- ai->rwoffset);
+         if (rwoffset < 0) {
+            delta    = (SizeT)(-rwoffset);
             relative = "before";
-         } else if (ai->rwoffset >= ai->blksize) {
-            delta    = ai->rwoffset - ai->blksize;
+         } else if (rwoffset >= block_szB) {
+            delta    = rwoffset - block_szB;
             relative = "after";
          } else {
-            delta    = ai->rwoffset;
+            delta    = rwoffset;
             relative = "inside";
          }
          VG_(message)(Vg_UserMsg, 
             "%sAddress 0x%lx is %,lu bytes %s a %s of size %,lu %s%s",
             xpre,
-            a, delta, relative, kind,
-            ai->blksize,
-            ai->akind==Mallocd ? "alloc'd" 
-               : ai->akind==Freed ? "free'd" 
-                                  : "client-defined",
+            a, delta, relative, ai->Addr.Block.block_desc,
+            block_szB,
+            ai->Addr.Block.block_kind==Block_Mallocd ? "alloc'd" 
+            : ai->Addr.Block.block_kind==Block_Freed ? "free'd" 
+                                                     : "client-defined",
             xpost);
-         VG_(pp_ExeContext)(ai->lastchange);
+         VG_(pp_ExeContext)(ai->Addr.Block.lastchange);
          break;
       }
-      case Register:
-         // print nothing
-         tl_assert(0 == a);
-         break;
+
       default:
          VG_(tool_panic)("mc_pp_AddrInfo");
    }
 }
 
-static void mc_pp_Error ( Error* err )
+static const HChar* str_leak_lossmode ( Reachedness lossmode )
 {
-   MC_Error* err_extra = VG_(get_error_extra)(err);
+   const HChar *loss = "?";
+   switch (lossmode) {
+      case Unreached:    loss = "definitely lost"; break;
+      case IndirectLeak: loss = "indirectly lost"; break;
+      case Interior:     loss = "possibly lost"; break;
+      case Proper:       loss = "still reachable"; break;
+   }
+   return loss;
+}
 
+static const HChar* xml_leak_kind ( Reachedness lossmode )
+{
+   const HChar *loss = "?";
+   switch (lossmode) {
+      case Unreached:    loss = "Leak_DefinitelyLost"; break;
+      case IndirectLeak: loss = "Leak_IndirectlyLost"; break;
+      case Interior:     loss = "Leak_PossiblyLost"; break;
+      case Proper:       loss = "Leak_StillReachable"; break;
+   }
+   return loss;
+}
+
+static void mc_pp_msg( Char* xml_name, Error* err, const HChar* format, ... )
+{
    HChar* xpre  = VG_(clo_xml) ? "  <what>" : "";
    HChar* xpost = VG_(clo_xml) ? "</what>"  : "";
+   Char buf[256];
+   va_list vargs;
+
+   if (VG_(clo_xml))
+      VG_(message)(Vg_UserMsg, "  <kind>%s</kind>", xml_name);
+   // Stick xpre and xpost on the front and back of the format string.
+   VG_(snprintf)(buf, 256, "%s%s%s", xpre, format, xpost);
+   va_start(vargs, format);
+   VG_(vmessage) ( Vg_UserMsg, buf, vargs );
+   va_end(vargs);
+   VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+}
+
+static void mc_pp_Error ( Error* err )
+{
+   MC_Error* extra = VG_(get_error_extra)(err);
 
    switch (VG_(get_error_kind)(err)) {
-      case CoreMemErr: {
-         Char* s = ( err_extra->isUnaddr ? "unaddressable" : "uninitialised" );
-         if (VG_(clo_xml))
-            VG_(message)(Vg_UserMsg, "  <kind>CoreMemError</kind>");
-            /* What the hell *is* a CoreMemError? jrs 2005-May-18 */
-         VG_(message)(Vg_UserMsg, "%s%s contains %s byte(s)%s", 
-                      xpre, VG_(get_error_string)(err), s, xpost);
-
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+      case Err_CoreMem: {
+         /* What the hell *is* a CoreMemError? jrs 2005-May-18 */
+         /* As of 2006-Dec-14, it's caused by unaddressable bytes in a
+            signal handler frame.  --njn */
+         mc_pp_msg("CoreMemError", err,
+                   "%s contains unaddressable byte(s)", 
+                   VG_(get_error_string)(err));
          break;
-      
       } 
       
-      case ValueErr:
-         if (err_extra->size == 0) {
-            if (VG_(clo_xml))
-               VG_(message)(Vg_UserMsg, "  <kind>UninitCondition</kind>");
-            VG_(message)(Vg_UserMsg, "%sConditional jump or move depends"
-                                     " on uninitialised value(s)%s", 
-                                     xpre, xpost);
+      case Err_Value:
+         mc_pp_msg("UninitValue", err,
+                   "Use of uninitialised value of size %d",
+                   extra->Err.Value.szB);
+         break;
+
+      case Err_Cond:
+         mc_pp_msg("UninitCondition", err,
+                   "Conditional jump or move depends"
+                   " on uninitialised value(s)");
+         break;
+
+      case Err_RegParam:
+         mc_pp_msg("SyscallParam", err,
+                   "Syscall param %s contains uninitialised byte(s)",
+                   VG_(get_error_string)(err));
+         break;
+
+      case Err_MemParam:
+         mc_pp_msg("SyscallParam", err,
+                   "Syscall param %s points to %s byte(s)",
+                   VG_(get_error_string)(err),
+                   ( extra->Err.MemParam.isAddrErr 
+                     ? "unaddressable" : "uninitialised" ));
+         mc_pp_AddrInfo(VG_(get_error_address)(err),
+                        &extra->Err.MemParam.ai, False);
+         break;
+
+      case Err_User:
+         mc_pp_msg("ClientCheck", err,
+                   "%s byte(s) found during client check request", 
+                   ( extra->Err.User.isAddrErr
+                     ? "Unaddressable" : "Uninitialised" ));
+         mc_pp_AddrInfo(VG_(get_error_address)(err), &extra->Err.User.ai,
+                        False);
+         break;
+
+      case Err_Free:
+         mc_pp_msg("InvalidFree", err,
+                   "Invalid free() / delete / delete[]");
+         mc_pp_AddrInfo(VG_(get_error_address)(err),
+                        &extra->Err.Free.ai, False);
+         break;
+
+      case Err_FreeMismatch:
+         mc_pp_msg("MismatchedFree", err,
+                   "Mismatched free() / delete / delete []");
+         mc_pp_AddrInfo(VG_(get_error_address)(err),
+                        &extra->Err.FreeMismatch.ai, False);
+         break;
+
+      case Err_Addr:
+         if (extra->Err.Addr.isWrite) {
+            mc_pp_msg("InvalidWrite", err,
+                      "Invalid write of size %d", 
+                      extra->Err.Addr.szB); 
          } else {
-            if (VG_(clo_xml))
-               VG_(message)(Vg_UserMsg, "  <kind>UninitValue</kind>");
-            VG_(message)(Vg_UserMsg,
-                         "%sUse of uninitialised value of size %d%s",
-                         xpre, err_extra->size, xpost);
+            mc_pp_msg("InvalidRead", err,
+                      "Invalid read of size %d", 
+                      extra->Err.Addr.szB); 
          }
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         mc_pp_AddrInfo(VG_(get_error_address)(err), &extra->Err.Addr.ai,
+                        extra->Err.Addr.maybe_gcc);
          break;
 
-      case ParamErr: {
-         Bool isReg = ( Register == err_extra->addrinfo.akind );
-         Char* s1 = ( isReg ? "contains" : "points to" );
-         Char* s2 = ( err_extra->isUnaddr ? "unaddressable" : "uninitialised" );
-         if (isReg) tl_assert(!err_extra->isUnaddr);
-
-         if (VG_(clo_xml))
-            VG_(message)(Vg_UserMsg, "  <kind>SyscallParam</kind>");
-         VG_(message)(Vg_UserMsg, "%sSyscall param %s %s %s byte(s)%s",
-                      xpre, VG_(get_error_string)(err), s1, s2, xpost);
-
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         mc_pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
-         break;
-      }
-      case UserErr: {
-         Char* s = ( err_extra->isUnaddr ? "Unaddressable" : "Uninitialised" );
-
-         if (VG_(clo_xml))
-            VG_(message)(Vg_UserMsg, "  <kind>ClientCheck</kind>");
-         VG_(message)(Vg_UserMsg, 
-            "%s%s byte(s) found during client check request%s", 
-            xpre, s, xpost);
-
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         mc_pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
-         break;
-      }
-      case FreeErr:
-         if (VG_(clo_xml))
-            VG_(message)(Vg_UserMsg, "  <kind>InvalidFree</kind>");
-         VG_(message)(Vg_UserMsg, 
-                      "%sInvalid free() / delete / delete[]%s",
-                      xpre, xpost);
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         mc_pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
+      case Err_Jump:
+         mc_pp_msg("InvalidJump", err,
+                   "Jump to the invalid address stated on the next line");
+         mc_pp_AddrInfo(VG_(get_error_address)(err), &extra->Err.Jump.ai,
+                        False);
          break;
 
-      case FreeMismatchErr:
-         if (VG_(clo_xml))
-            VG_(message)(Vg_UserMsg, "  <kind>MismatchedFree</kind>");
-         VG_(message)(Vg_UserMsg, 
-                      "%sMismatched free() / delete / delete []%s",
-                      xpre, xpost);
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         mc_pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
-         break;
-
-      case AddrErr:
-         switch (err_extra->axskind) {
-            case ReadAxs:
-               if (VG_(clo_xml))
-                  VG_(message)(Vg_UserMsg, "  <kind>InvalidRead</kind>");
-               VG_(message)(Vg_UserMsg,
-                            "%sInvalid read of size %d%s", 
-                            xpre, err_extra->size, xpost ); 
-               break;
-            case WriteAxs:
-               if (VG_(clo_xml))
-                  VG_(message)(Vg_UserMsg, "  <kind>InvalidWrite</kind>");
-               VG_(message)(Vg_UserMsg, 
-                           "%sInvalid write of size %d%s", 
-                           xpre, err_extra->size, xpost ); 
-               break;
-            case ExecAxs:
-               if (VG_(clo_xml))
-                  VG_(message)(Vg_UserMsg, "  <kind>InvalidJump</kind>");
-               VG_(message)(Vg_UserMsg, 
-                            "%sJump to the invalid address "
-                            "stated on the next line%s",
-                            xpre, xpost);
-               break;
-            default: 
-               VG_(tool_panic)("mc_pp_Error(axskind)");
-         }
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         mc_pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
-         break;
-
-      case OverlapErr: {
-         OverlapExtra* ov_extra = (OverlapExtra*)VG_(get_error_extra)(err);
-         if (VG_(clo_xml))
-            VG_(message)(Vg_UserMsg, "  <kind>Overlap</kind>");
-         if (ov_extra->len == -1)
-            VG_(message)(Vg_UserMsg,
-                         "%sSource and destination overlap in %s(%p, %p)%s",
-                         xpre,
-                         VG_(get_error_string)(err),
-                         ov_extra->dst, ov_extra->src,
-                         xpost);
+      case Err_Overlap:
+         if (extra->Err.Overlap.szB == 0)
+            mc_pp_msg("Overlap", err,
+                      "Source and destination overlap in %s(%p, %p)",
+                      VG_(get_error_string)(err),
+                      extra->Err.Overlap.dst, extra->Err.Overlap.src);
          else
-            VG_(message)(Vg_UserMsg,
-                         "%sSource and destination overlap in %s(%p, %p, %d)%s",
-                         xpre,
-                         VG_(get_error_string)(err),
-                         ov_extra->dst, ov_extra->src, ov_extra->len,
-                         xpost);
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            mc_pp_msg("Overlap", err,
+                      "Source and destination overlap in %s(%p, %p, %d)",
+                      VG_(get_error_string)(err),
+                      extra->Err.Overlap.dst, extra->Err.Overlap.src,
+                      extra->Err.Overlap.szB);
          break;
-      }
-      case LeakErr: {
-         MC_(pp_LeakError)(err_extra);
-         break;
-      }
 
-      case IllegalMempoolErr:
-         if (VG_(clo_xml))
-            VG_(message)(Vg_UserMsg, "  <kind>InvalidMemPool</kind>");
-         VG_(message)(Vg_UserMsg, "%sIllegal memory pool address%s",
-                                  xpre, xpost);
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         mc_pp_AddrInfo(VG_(get_error_address)(err), &err_extra->addrinfo);
+      case Err_IllegalMempool:
+         mc_pp_msg("InvalidMemPool", err,
+                   "Illegal memory pool address");
+         mc_pp_AddrInfo(VG_(get_error_address)(err),
+                        &extra->Err.IllegalMempool.ai, False);
          break;
+
+      case Err_Leak: {
+         HChar*      xpre  = VG_(clo_xml) ? "  <what>" : "";
+         HChar*      xpost = VG_(clo_xml) ? "</what>"  : "";
+         UInt        n_this_record   = extra->Err.Leak.n_this_record;
+         UInt        n_total_records = extra->Err.Leak.n_total_records;
+         LossRecord* l               = extra->Err.Leak.lossRecord;
+
+         if (VG_(clo_xml)) {
+            VG_(message)(Vg_UserMsg, "  <kind>%t</kind>",
+                         xml_leak_kind(l->loss_mode));
+         } else {
+            VG_(message)(Vg_UserMsg, "");
+         }
+
+         if (l->indirect_bytes) {
+            VG_(message)(Vg_UserMsg, 
+               "%s%,lu (%,lu direct, %,lu indirect) bytes in %,u blocks"
+               " are %s in loss record %,u of %,u%s",
+               xpre,
+               l->total_bytes + l->indirect_bytes, 
+               l->total_bytes, l->indirect_bytes, l->num_blocks,
+               str_leak_lossmode(l->loss_mode), n_this_record, n_total_records,
+               xpost
+            );
+            if (VG_(clo_xml)) {
+               // Nb: don't put commas in these XML numbers 
+               VG_(message)(Vg_UserMsg, "  <leakedbytes>%lu</leakedbytes>", 
+                                        l->total_bytes + l->indirect_bytes);
+               VG_(message)(Vg_UserMsg, "  <leakedblocks>%u</leakedblocks>", 
+                                        l->num_blocks);
+            }
+         } else {
+            VG_(message)(
+               Vg_UserMsg, 
+               "%s%,lu bytes in %,u blocks are %s in loss record %,u of %,u%s",
+               xpre,
+               l->total_bytes, l->num_blocks,
+               str_leak_lossmode(l->loss_mode), n_this_record, n_total_records,
+               xpost
+            );
+            if (VG_(clo_xml)) {
+               VG_(message)(Vg_UserMsg, "  <leakedbytes>%d</leakedbytes>", 
+                                        l->total_bytes);
+               VG_(message)(Vg_UserMsg, "  <leakedblocks>%d</leakedblocks>", 
+                                        l->num_blocks);
+            }
+         }
+         VG_(pp_ExeContext)(l->allocated_at);
+         break;
+      }
 
       default: 
          VG_(printf)("Error:\n  unknown Memcheck error code %d\n",
@@ -2939,25 +3063,12 @@ static Bool is_just_below_ESP( Addr esp, Addr aa )
       return False;
 }
 
-static void mc_clear_MC_Error ( MC_Error* err_extra )
-{
-   err_extra->axskind             = ReadAxs;
-   err_extra->size                = 0;
-   err_extra->isUnaddr            = True;
-   err_extra->addrinfo.akind      = Unknown;
-   err_extra->addrinfo.blksize    = 0;
-   err_extra->addrinfo.rwoffset   = 0;
-   err_extra->addrinfo.lastchange = NULL;
-   err_extra->addrinfo.stack_tid  = VG_INVALID_THREADID;
-   err_extra->addrinfo.maybe_gcc  = False;
-   err_extra->addrinfo.desc       = NULL;
-}
+/* --- Called from generated and non-generated code --- */
 
-/* This one called from generated code and non-generated code. */
-static void mc_record_address_error ( ThreadId tid, Addr a, Int size,
+static void mc_record_address_error ( ThreadId tid, Addr a, Int szB,
                                       Bool isWrite )
 {
-   MC_Error err_extra;
+   MC_Error extra;
    Bool     just_below_esp;
 
    if (in_ignored_range(a)) 
@@ -2970,14 +3081,14 @@ static void mc_record_address_error ( ThreadId tid, Addr a, Int size,
       best we can do is to 'act normal' and mark the A bits in the
       normal way as noaccess, but then hide any reads from that page
       that get reported here. */
-   if ((!isWrite) && a >= 0 && a < 4096 && a+size <= 4096) 
+   if ((!isWrite) && a >= 0 && a < 4096 && a+szB <= 4096) 
       return;
 
    /* Appalling AIX hack.  It suppresses reads done by glink
       fragments.  Getting rid of this would require figuring out
       somehow where the referenced data areas are (and their
       sizes). */
-   if ((!isWrite) && size == sizeof(Word)) { 
+   if ((!isWrite) && szB == sizeof(Word)) { 
       UInt i1, i2;
       UInt* pc = (UInt*)VG_(get_IP)(tid);
       if (sizeof(Word) == 4) {
@@ -2999,175 +3110,156 @@ static void mc_record_address_error ( ThreadId tid, Addr a, Int size,
    if (MC_(clo_workaround_gcc296_bugs) && just_below_esp)
       return;
 
-   mc_clear_MC_Error( &err_extra );
-   err_extra.axskind = isWrite ? WriteAxs : ReadAxs;
-   err_extra.size    = size;
-   err_extra.addrinfo.akind     = Undescribed;
-   err_extra.addrinfo.maybe_gcc = just_below_esp;
-   VG_(maybe_record_error)( tid, AddrErr, a, /*s*/NULL, &err_extra );
+   extra.Err.Addr.isWrite   = isWrite;
+   extra.Err.Addr.szB       = szB;
+   extra.Err.Addr.maybe_gcc = just_below_esp;
+   extra.Err.Addr.ai.tag    = Addr_Undescribed;
+   VG_(maybe_record_error)( tid, Err_Addr, a, /*s*/NULL, &extra );
 }
 
-/* These ones are called from non-generated code */
+static void mc_record_value_error ( ThreadId tid, Int szB )
+{
+   MC_Error extra;
+   tl_assert(MC_(clo_undef_value_errors));
+   extra.Err.Value.szB = szB;
+   VG_(maybe_record_error)( tid, Err_Value, /*addr*/0, /*s*/NULL, &extra );
+}
+
+static void mc_record_cond_error ( ThreadId tid )
+{
+   tl_assert(MC_(clo_undef_value_errors));
+   VG_(maybe_record_error)( tid, Err_Cond, /*addr*/0, /*s*/NULL, /*extra*/NULL);
+}
+
+/* --- Called from non-generated code --- */
 
 /* This is for memory errors in pthread functions, as opposed to pthread API
    errors which are found by the core. */
-static void mc_record_core_mem_error ( ThreadId tid, Bool isUnaddr, Char* msg )
+static void mc_record_core_mem_error ( ThreadId tid, Bool isAddrErr, Char* msg )
 {
-   MC_Error err_extra;
-
-   mc_clear_MC_Error( &err_extra );
-   err_extra.isUnaddr = isUnaddr;
-   VG_(maybe_record_error)( tid, CoreMemErr, /*addr*/0, msg, &err_extra );
+   VG_(maybe_record_error)( tid, Err_CoreMem, /*addr*/0, msg, /*extra*/NULL );
 }
 
-// Three kinds of param errors:
-// - register arg contains undefined bytes
-// - memory arg is unaddressable
-// - memory arg contains undefined bytes
-// 'isReg' and 'isUnaddr' dictate which of these it is.
-static void mc_record_param_error ( ThreadId tid, Addr a, Bool isReg,
-                                    Bool isUnaddr, Char* msg )
+static void mc_record_regparam_error ( ThreadId tid, Char* msg )
 {
-   MC_Error err_extra;
-
-   if (!isUnaddr) tl_assert(MC_(clo_undef_value_errors));
    tl_assert(VG_INVALID_THREADID != tid);
-   if (isUnaddr) tl_assert(!isReg);    // unaddressable register is impossible
-   mc_clear_MC_Error( &err_extra );
-   err_extra.addrinfo.akind = ( isReg ? Register : Undescribed );
-   err_extra.isUnaddr = isUnaddr;
-   VG_(maybe_record_error)( tid, ParamErr, a, msg, &err_extra );
+   VG_(maybe_record_error)( tid, Err_RegParam, /*addr*/0, msg, /*extra*/NULL );
+}
+
+static void mc_record_memparam_error ( ThreadId tid, Addr a, 
+                                       Bool isAddrErr, Char* msg )
+{
+   MC_Error extra;
+   tl_assert(VG_INVALID_THREADID != tid);
+   if (!isAddrErr) 
+      tl_assert(MC_(clo_undef_value_errors));
+   extra.Err.MemParam.isAddrErr = isAddrErr;
+   extra.Err.MemParam.ai.tag    = Addr_Undescribed;
+   VG_(maybe_record_error)( tid, Err_MemParam, a, msg, &extra );
 }
 
 static void mc_record_jump_error ( ThreadId tid, Addr a )
 {
-   MC_Error err_extra;
-
+   MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
-   mc_clear_MC_Error( &err_extra );
-   err_extra.axskind = ExecAxs;
-   err_extra.size    = 1;     // size only used for suppressions
-   err_extra.addrinfo.akind = Undescribed;
-   VG_(maybe_record_error)( tid, AddrErr, a, /*s*/NULL, &err_extra );
+   extra.Err.Jump.ai.tag = Addr_Undescribed;
+   VG_(maybe_record_error)( tid, Err_Jump, a, /*s*/NULL, &extra );
 }
 
 void MC_(record_free_error) ( ThreadId tid, Addr a ) 
 {
-   MC_Error err_extra;
-
+   MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
-   mc_clear_MC_Error( &err_extra );
-   err_extra.addrinfo.akind = Undescribed;
-   VG_(maybe_record_error)( tid, FreeErr, a, /*s*/NULL, &err_extra );
+   extra.Err.Free.ai.tag = Addr_Undescribed;
+   VG_(maybe_record_error)( tid, Err_Free, a, /*s*/NULL, &extra );
+}
+
+void MC_(record_freemismatch_error) ( ThreadId tid, MC_Chunk* mc )
+{
+   MC_Error extra;
+   AddrInfo* ai = &extra.Err.FreeMismatch.ai;
+   tl_assert(VG_INVALID_THREADID != tid);
+   ai->tag = Addr_Block;
+   ai->Addr.Block.block_kind = Block_Mallocd;  // Nb: Not 'Block_Freed'
+   ai->Addr.Block.block_desc = "block";
+   ai->Addr.Block.block_szB  = mc->szB;
+   ai->Addr.Block.rwoffset   = 0;
+   ai->Addr.Block.lastchange = mc->where;
+   VG_(maybe_record_error)( tid, Err_FreeMismatch, mc->data, /*s*/NULL,
+                            &extra );
 }
 
 void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a ) 
 {
-   MC_Error err_extra;
-
+   MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
-   mc_clear_MC_Error( &err_extra );
-   err_extra.addrinfo.akind = Undescribed;
-   VG_(maybe_record_error)( tid, IllegalMempoolErr, a, /*s*/NULL, &err_extra );
+   extra.Err.IllegalMempool.ai.tag = Addr_Undescribed;
+   VG_(maybe_record_error)( tid, Err_IllegalMempool, a, /*s*/NULL, &extra );
 }
 
-void MC_(record_freemismatch_error) ( ThreadId tid, Addr a, MC_Chunk* mc )
+static void mc_record_overlap_error ( ThreadId tid, Char* function,
+                                      Addr src, Addr dst, SizeT szB )
 {
-   MC_Error err_extra;
-   AddrInfo* ai;
-
+   MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
-   mc_clear_MC_Error( &err_extra );
-   ai = &err_extra.addrinfo;
-   ai->akind      = Mallocd;     // Nb: not 'Freed'
-   ai->blksize    = mc->size;
-   ai->rwoffset   = (Int)a - (Int)mc->data;
-   ai->lastchange = mc->where;
-   VG_(maybe_record_error)( tid, FreeMismatchErr, a, /*s*/NULL, &err_extra );
-}
-
-static void mc_record_overlap_error ( ThreadId tid, 
-                                      Char* function, OverlapExtra* ov_extra )
-{
+   extra.Err.Overlap.src = src;
+   extra.Err.Overlap.dst = dst;
+   extra.Err.Overlap.szB = szB;
    VG_(maybe_record_error)( 
-      tid, OverlapErr, /*addr*/0, /*s*/function, ov_extra );
+      tid, Err_Overlap, /*addr*/0, /*s*/function, &extra );
 }
 
-Bool MC_(record_leak_error) ( ThreadId tid, /*LeakExtra*/void* leak_extra,
-                              ExeContext* where, Bool print_record )
+Bool MC_(record_leak_error) ( ThreadId tid, UInt n_this_record,
+                              UInt n_total_records, LossRecord* lossRecord,
+                              Bool print_record )
 {
+   MC_Error extra;
+   extra.Err.Leak.n_this_record   = n_this_record;
+   extra.Err.Leak.n_total_records = n_total_records;
+   extra.Err.Leak.lossRecord      = lossRecord;
    return
-   VG_(unique_error) ( tid, LeakErr, /*Addr*/0, /*s*/NULL,
-                       /*extra*/leak_extra, where, print_record,
+   VG_(unique_error) ( tid, Err_Leak, /*Addr*/0, /*s*/NULL, &extra,
+                       lossRecord->allocated_at, print_record,
                        /*allow_GDB_attach*/False, /*count_error*/False );
 }
 
-
-/* Creates a copy of the 'extra' part, updates the copy with address info if
-   necessary, and returns the copy. */
-/* This one called from generated code and non-generated code. */
-static void mc_record_value_error ( ThreadId tid, Int size )
+static void mc_record_user_error ( ThreadId tid, Addr a, Bool isAddrErr )
 {
-   MC_Error err_extra;
-
-   tl_assert(MC_(clo_undef_value_errors));
-   mc_clear_MC_Error( &err_extra );
-   err_extra.size     = size;
-   err_extra.isUnaddr = False;
-   VG_(maybe_record_error)( tid, ValueErr, /*addr*/0, /*s*/NULL, &err_extra );
-}
-
-/* This called from non-generated code */
-
-static void mc_record_user_error ( ThreadId tid, Addr a, Bool isWrite,
-                                   Bool isUnaddr )
-{
-   MC_Error err_extra;
+   MC_Error extra;
 
    tl_assert(VG_INVALID_THREADID != tid);
-   mc_clear_MC_Error( &err_extra );
-   err_extra.addrinfo.akind = Undescribed;
-   err_extra.isUnaddr       = isUnaddr;
-   VG_(maybe_record_error)( tid, UserErr, a, /*s*/NULL, &err_extra );
+   extra.Err.User.isAddrErr = isAddrErr;
+   extra.Err.User.ai.tag    = Addr_Undescribed;
+   VG_(maybe_record_error)( tid, Err_User, a, /*s*/NULL, &extra );
 }
 
-__attribute__ ((unused))
-static Bool eq_AddrInfo ( VgRes res, AddrInfo* ai1, AddrInfo* ai2 )
-{
-   if (ai1->akind != Undescribed 
-       && ai2->akind != Undescribed
-       && ai1->akind != ai2->akind) 
-      return False;
-   if (ai1->akind == Freed || ai1->akind == Mallocd) {
-      if (ai1->blksize != ai2->blksize)
-         return False;
-      if (!VG_(eq_ExeContext)(res, ai1->lastchange, ai2->lastchange))
-         return False;
-   }
-   return True;
-}
+/*------------------------------------------------------------*/
+/*--- Other error operations                               ---*/
+/*------------------------------------------------------------*/
 
 /* Compare error contexts, to detect duplicates.  Note that if they
    are otherwise the same, the faulting addrs and associated rwoffsets
    are allowed to be different.  */
 static Bool mc_eq_Error ( VgRes res, Error* e1, Error* e2 )
 {
-   MC_Error* e1_extra = VG_(get_error_extra)(e1);
-   MC_Error* e2_extra = VG_(get_error_extra)(e2);
+   MC_Error* extra1 = VG_(get_error_extra)(e1);
+   MC_Error* extra2 = VG_(get_error_extra)(e2);
 
    /* Guaranteed by calling function */
    tl_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
    
    switch (VG_(get_error_kind)(e1)) {
-      case CoreMemErr: {
+      case Err_CoreMem: {
          Char *e1s, *e2s;
-         if (e1_extra->isUnaddr != e2_extra->isUnaddr) return False;
          e1s = VG_(get_error_string)(e1);
          e2s = VG_(get_error_string)(e2);
-         if (e1s == e2s)                               return True;
-         if (0 == VG_(strcmp)(e1s, e2s))               return True;
+         if (e1s == e2s)                   return True;
+         if (VG_STREQ(e1s, e2s))           return True;
          return False;
       }
+
+      case Err_RegParam:
+         return VG_STREQ(VG_(get_error_string)(e1), VG_(get_error_string)(e2));
 
       // Perhaps we should also check the addrinfo.akinds for equality.
       // That would result in more error reports, but only in cases where
@@ -3175,48 +3267,33 @@ static Bool mc_eq_Error ( VgRes res, Error* e1, Error* e2 )
       // containing uninitialised bytes.  Currently, the 2nd of those to be
       // detected won't be reported.  That is (nearly?) always the memory
       // error, which is good.
-      case ParamErr:
-         if (0 != VG_(strcmp)(VG_(get_error_string)(e1),
-                              VG_(get_error_string)(e2)))   return False;
+      case Err_MemParam:
+         if (!VG_STREQ(VG_(get_error_string)(e1),
+                       VG_(get_error_string)(e2))) return False;
          // fall through
-      case UserErr:
-         if (e1_extra->isUnaddr != e2_extra->isUnaddr)      return False;
+      case Err_User:
+         return ( extra1->Err.User.isAddrErr == extra2->Err.User.isAddrErr
+                ? True : False );
+
+      case Err_Free:
+      case Err_FreeMismatch:
+      case Err_Jump:
+      case Err_IllegalMempool:
+      case Err_Overlap:
+      case Err_Cond:
          return True;
 
-      case FreeErr:
-      case FreeMismatchErr:
-         /* JRS 2002-Aug-26: comparing addrs seems overkill and can
-            cause excessive duplication of errors.  Not even AddrErr
-            below does that.  So don't compare either the .addr field
-            or the .addrinfo fields. */
-         /* if (e1->addr != e2->addr) return False; */
-         /* if (!eq_AddrInfo(res, &e1_extra->addrinfo, &e2_extra->addrinfo)) 
-               return False;
-         */
-         return True;
+      case Err_Addr:
+         return ( extra1->Err.Addr.szB == extra2->Err.Addr.szB
+                ? True : False );
 
-      case AddrErr:
-         /* if (e1_extra->axskind != e2_extra->axskind) return False; */
-         if (e1_extra->size != e2_extra->size) return False;
-         /*
-         if (!eq_AddrInfo(res, &e1_extra->addrinfo, &e2_extra->addrinfo)) 
-            return False;
-         */
-         return True;
+      case Err_Value:
+         return ( extra1->Err.Value.szB == extra2->Err.Value.szB
+                ? True : False );
 
-      case ValueErr:
-         if (e1_extra->size != e2_extra->size) return False;
-         return True;
-
-      case OverlapErr:
-         return True;
-
-      case LeakErr:
-         VG_(tool_panic)("Shouldn't get LeakErr in mc_eq_Error,\n"
+      case Err_Leak:
+         VG_(tool_panic)("Shouldn't get Err_Leak in mc_eq_Error,\n"
                          "since it's handled with VG_(unique_error)()!");
-
-      case IllegalMempoolErr:
-         return True;
 
       default: 
          VG_(printf)("Error:\n  unknown error code %d\n",
@@ -3234,20 +3311,23 @@ static Bool addr_is_in_MC_Chunk(MC_Chunk* mc, Addr a)
    // in some cases this could result in an incorrect description (eg.
    // saying "12 bytes after block A" when really it's within block B.
    // Fixing would require adding redzone size to MC_Chunks, though.
-   return VG_(addr_is_in_block)( a, mc->data, mc->size,
+   return VG_(addr_is_in_block)( a, mc->data, mc->szB,
                                  MC_MALLOC_REDZONE_SZB );
 }
 
 // Forward declaration
 static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai );
 
+
 /* Describe an address as best you can, for error messages,
    putting the result in ai. */
 static void describe_addr ( Addr a, AddrInfo* ai )
 {
    MC_Chunk* mc;
-   ThreadId   tid;
-   Addr       stack_min, stack_max;
+   ThreadId  tid;
+   Addr      stack_min, stack_max;
+
+   tl_assert(Addr_Undescribed == ai->tag);
 
    /* Perhaps it's a user-def'd block? */
    if (client_perm_maybe_describe( a, ai ))
@@ -3257,8 +3337,8 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    VG_(thread_stack_reset_iter)();
    while ( VG_(thread_stack_next)(&tid, &stack_min, &stack_max) ) {
       if (stack_min <= a && a <= stack_max) {
-         ai->akind     = Stack;
-         ai->stack_tid = tid;
+         ai->tag            = Addr_Stack;
+         ai->Addr.Stack.tid = tid;
          return;
       }
    }
@@ -3266,10 +3346,12 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    mc = MC_(get_freed_list_head)();
    while (mc) {
       if (addr_is_in_MC_Chunk(mc, a)) {
-         ai->akind      = Freed;
-         ai->blksize    = mc->size;
-         ai->rwoffset   = (Int)a - (Int)mc->data;
-         ai->lastchange = mc->where;
+         ai->tag = Addr_Block;
+         ai->Addr.Block.block_kind = Block_Freed;
+         ai->Addr.Block.block_desc = "block";
+         ai->Addr.Block.block_szB  = mc->szB;
+         ai->Addr.Block.rwoffset   = (Int)a - (Int)mc->data;
+         ai->Addr.Block.lastchange = mc->where;
          return;
       }
       mc = mc->next; 
@@ -3278,70 +3360,71 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    VG_(HT_ResetIter)(MC_(malloc_list));
    while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
       if (addr_is_in_MC_Chunk(mc, a)) {
-         ai->akind      = Mallocd;
-         ai->blksize    = mc->size;
-         ai->rwoffset   = (Int)(a) - (Int)mc->data;
-         ai->lastchange = mc->where;
+         ai->tag = Addr_Block;
+         ai->Addr.Block.block_kind = Block_Mallocd;
+         ai->Addr.Block.block_desc = "block";
+         ai->Addr.Block.block_szB  = mc->szB;
+         ai->Addr.Block.rwoffset   = (Int)a - (Int)mc->data;
+         ai->Addr.Block.lastchange = mc->where;
          return;
       }
    }
    /* Clueless ... */
-   ai->akind = Unknown;
+   ai->tag = Addr_Unknown;
    return;
 }
 
 /* Updates the copy with address info if necessary (but not for all errors). */
 static UInt mc_update_extra( Error* err )
 {
+   MC_Error* extra = VG_(get_error_extra)(err);
+
    switch (VG_(get_error_kind)(err)) {
-   // These two don't have addresses associated with them, and so don't
+   // These ones don't have addresses associated with them, and so don't
    // need any updating.
-   case CoreMemErr:
-   case ValueErr: {
-      MC_Error* extra = VG_(get_error_extra)(err);
-      tl_assert(Unknown == extra->addrinfo.akind);
+   case Err_CoreMem:
+   case Err_Value:
+   case Err_Cond:
+   case Err_Overlap:
+   case Err_RegParam:
+   // For Err_Leaks the returned size does not matter -- they are always
+   // shown with VG_(unique_error)() so they 'extra' not copied.  But we make it
+   // consistent with the others.
+   case Err_Leak:
       return sizeof(MC_Error);
-   }
 
-   // ParamErrs sometimes involve a memory address; call describe_addr() in
-   // this case.
-   case ParamErr: {
-      MC_Error* extra = VG_(get_error_extra)(err);
-      tl_assert(Undescribed == extra->addrinfo.akind ||
-                Register    == extra->addrinfo.akind);
-      if (Undescribed == extra->addrinfo.akind)
-         describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
+   // These ones always involve a memory address.
+   case Err_Addr:
+      describe_addr ( VG_(get_error_address)(err), &extra->Err.Addr.ai );
       return sizeof(MC_Error);
-   }
-
-   // These four always involve a memory address.
-   case AddrErr: 
-   case UserErr:
-   case FreeErr:
-   case IllegalMempoolErr: {
-      MC_Error* extra = VG_(get_error_extra)(err);
-      tl_assert(Undescribed == extra->addrinfo.akind);
-      describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
+   case Err_MemParam:
+      describe_addr ( VG_(get_error_address)(err), &extra->Err.MemParam.ai );
       return sizeof(MC_Error);
-   }
+   case Err_Jump:
+      describe_addr ( VG_(get_error_address)(err), &extra->Err.Jump.ai );
+      return sizeof(MC_Error);
+   case Err_User:
+      describe_addr ( VG_(get_error_address)(err), &extra->Err.User.ai );
+      return sizeof(MC_Error);
+   case Err_Free:
+      describe_addr ( VG_(get_error_address)(err), &extra->Err.Free.ai );
+      return sizeof(MC_Error);
+   case Err_IllegalMempool:
+      describe_addr ( VG_(get_error_address)(err),
+                      &extra->Err.IllegalMempool.ai );
+      return sizeof(MC_Error);
 
-   // FreeMismatchErrs have already had their address described;  this is
+   // Err_FreeMismatches have already had their address described;  this is
    // possible because we have the MC_Chunk on hand when the error is
    // detected.  However, the address may be part of a user block, and if so
    // we override the pre-determined description with a user block one.
-   case FreeMismatchErr: {
-      MC_Error* extra = VG_(get_error_extra)(err);
-      tl_assert(extra && Mallocd == extra->addrinfo.akind);
+   case Err_FreeMismatch: {
+      tl_assert(extra && Block_Mallocd ==
+                extra->Err.FreeMismatch.ai.Addr.Block.block_kind);
       (void)client_perm_maybe_describe( VG_(get_error_address)(err), 
-                                        &(extra->addrinfo) );
+                                        &extra->Err.FreeMismatch.ai );
       return sizeof(MC_Error);
    }
-
-   // No memory address involved with these ones.  Nb:  for LeakErrs the
-   // returned size does not matter -- LeakErrs are always shown with
-   // VG_(unique_error)() so they're not copied.
-   case LeakErr:     return 0;
-   case OverlapErr:  return sizeof(OverlapExtra);
 
    default: VG_(tool_panic)("mc_update_extra: bad errkind");
    }
@@ -3350,6 +3433,29 @@ static UInt mc_update_extra( Error* err )
 /*------------------------------------------------------------*/
 /*--- Suppressions                                         ---*/
 /*------------------------------------------------------------*/
+
+typedef 
+   enum { 
+      ParamSupp,     // Bad syscall params
+      UserSupp,      // Errors arising from client-request checks
+      CoreMemSupp,   // Memory errors in core (pthread ops, signal handling)
+
+      // Undefined value errors of given size
+      Value1Supp, Value2Supp, Value4Supp, Value8Supp, Value16Supp,
+
+      // Undefined value error in conditional.
+      CondSupp,
+
+      // Unaddressable read/write attempt at given size
+      Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp, Addr16Supp,
+
+      JumpSupp,      // Jump to unaddressable target
+      FreeSupp,      // Invalid or mismatching free
+      OverlapSupp,   // Overlapping blocks in memcpy(), strcpy(), etc
+      LeakSupp,      // Something to be suppressed in a leak check.
+      MempoolSupp,   // Memory pool suppression.
+   } 
+   MC_SuppKind;
 
 static Bool mc_recognised_suppression ( Char* name, Supp* su )
 {
@@ -3363,12 +3469,13 @@ static Bool mc_recognised_suppression ( Char* name, Supp* su )
    else if (VG_STREQ(name, "Addr4"))   skind = Addr4Supp;
    else if (VG_STREQ(name, "Addr8"))   skind = Addr8Supp;
    else if (VG_STREQ(name, "Addr16"))  skind = Addr16Supp;
+   else if (VG_STREQ(name, "Jump"))    skind = JumpSupp;
    else if (VG_STREQ(name, "Free"))    skind = FreeSupp;
    else if (VG_STREQ(name, "Leak"))    skind = LeakSupp;
    else if (VG_STREQ(name, "Overlap")) skind = OverlapSupp;
    else if (VG_STREQ(name, "Mempool")) skind = MempoolSupp;
-   else if (VG_STREQ(name, "Cond"))    skind = Value0Supp;
-   else if (VG_STREQ(name, "Value0"))  skind = Value0Supp;/* backwards compat */
+   else if (VG_STREQ(name, "Cond"))    skind = CondSupp;
+   else if (VG_STREQ(name, "Value0"))  skind = CondSupp; /* backwards compat */
    else if (VG_STREQ(name, "Value1"))  skind = Value1Supp;
    else if (VG_STREQ(name, "Value2"))  skind = Value2Supp;
    else if (VG_STREQ(name, "Value4"))  skind = Value4Supp;
@@ -3396,52 +3503,57 @@ Bool mc_read_extra_suppression_info ( Int fd, Char* buf, Int nBuf, Supp *su )
 
 static Bool mc_error_matches_suppression(Error* err, Supp* su)
 {
-   Int        su_size;
-   MC_Error* err_extra = VG_(get_error_extra)(err);
-   ErrorKind  ekind     = VG_(get_error_kind )(err);
+   Int       su_szB;
+   MC_Error* extra = VG_(get_error_extra)(err);
+   ErrorKind ekind = VG_(get_error_kind )(err);
 
    switch (VG_(get_supp_kind)(su)) {
       case ParamSupp:
-         return (ekind == ParamErr 
+         return ((ekind == Err_RegParam || ekind == Err_MemParam)
               && VG_STREQ(VG_(get_error_string)(err), 
                           VG_(get_supp_string)(su)));
 
       case UserSupp:
-         return (ekind == UserErr);
+         return (ekind == Err_User);
 
       case CoreMemSupp:
-         return (ekind == CoreMemErr
+         return (ekind == Err_CoreMem
               && VG_STREQ(VG_(get_error_string)(err),
                           VG_(get_supp_string)(su)));
 
-      case Value0Supp: su_size = 0; goto value_case;
-      case Value1Supp: su_size = 1; goto value_case;
-      case Value2Supp: su_size = 2; goto value_case;
-      case Value4Supp: su_size = 4; goto value_case;
-      case Value8Supp: su_size = 8; goto value_case;
-      case Value16Supp:su_size =16; goto value_case;
+      case Value1Supp: su_szB = 1; goto value_case;
+      case Value2Supp: su_szB = 2; goto value_case;
+      case Value4Supp: su_szB = 4; goto value_case;
+      case Value8Supp: su_szB = 8; goto value_case;
+      case Value16Supp:su_szB =16; goto value_case;
       value_case:
-         return (ekind == ValueErr && err_extra->size == su_size);
+         return (ekind == Err_Value && extra->Err.Value.szB == su_szB);
 
-      case Addr1Supp: su_size = 1; goto addr_case;
-      case Addr2Supp: su_size = 2; goto addr_case;
-      case Addr4Supp: su_size = 4; goto addr_case;
-      case Addr8Supp: su_size = 8; goto addr_case;
-      case Addr16Supp:su_size =16; goto addr_case;
+      case CondSupp:
+         return (ekind == Err_Cond);
+
+      case Addr1Supp: su_szB = 1; goto addr_case;
+      case Addr2Supp: su_szB = 2; goto addr_case;
+      case Addr4Supp: su_szB = 4; goto addr_case;
+      case Addr8Supp: su_szB = 8; goto addr_case;
+      case Addr16Supp:su_szB =16; goto addr_case;
       addr_case:
-         return (ekind == AddrErr && err_extra->size == su_size);
+         return (ekind == Err_Addr && extra->Err.Addr.szB == su_szB);
+
+      case JumpSupp:
+         return (ekind == Err_Jump);
 
       case FreeSupp:
-         return (ekind == FreeErr || ekind == FreeMismatchErr);
+         return (ekind == Err_Free || ekind == Err_FreeMismatch);
 
       case OverlapSupp:
-         return (ekind == OverlapErr);
+         return (ekind == Err_Overlap);
 
       case LeakSupp:
-         return (ekind == LeakErr);
+         return (ekind == Err_Leak);
 
       case MempoolSupp:
-         return (ekind == IllegalMempoolErr);
+         return (ekind == Err_IllegalMempool);
 
       default:
          VG_(printf)("Error:\n"
@@ -3456,13 +3568,20 @@ static Char* mc_get_error_name ( Error* err )
 {
    Char* s;
    switch (VG_(get_error_kind)(err)) {
-   case ParamErr:           return "Param";
-   case UserErr:            return "User";
-   case FreeMismatchErr:    return "Free";
-   case IllegalMempoolErr:  return "Mempool";
-   case FreeErr:            return "Free";
-   case AddrErr:            
-      switch ( ((MC_Error*)VG_(get_error_extra)(err))->size ) {
+   case Err_RegParam:       return "Param";
+   case Err_MemParam:       return "Param";
+   case Err_User:           return "User";
+   case Err_FreeMismatch:   return "Free";
+   case Err_IllegalMempool: return "Mempool";
+   case Err_Free:           return "Free";
+   case Err_Jump:           return "Jump";
+   case Err_CoreMem:        return "CoreMem";
+   case Err_Overlap:        return "Overlap";
+   case Err_Leak:           return "Leak";
+   case Err_Cond:           return "Cond";
+   case Err_Addr: {
+      MC_Error* extra = VG_(get_error_extra)(err);
+      switch ( extra->Err.Addr.szB ) {
       case 1:               return "Addr1";
       case 2:               return "Addr2";
       case 4:               return "Addr4";
@@ -3470,10 +3589,10 @@ static Char* mc_get_error_name ( Error* err )
       case 16:              return "Addr16";
       default:              VG_(tool_panic)("unexpected size for Addr");
       }
-     
-   case ValueErr:
-      switch ( ((MC_Error*)VG_(get_error_extra)(err))->size ) {
-      case 0:               return "Cond";
+   }
+   case Err_Value: {
+      MC_Error* extra = VG_(get_error_extra)(err);
+      switch ( extra->Err.Value.szB ) {
       case 1:               return "Value1";
       case 2:               return "Value2";
       case 4:               return "Value4";
@@ -3481,9 +3600,7 @@ static Char* mc_get_error_name ( Error* err )
       case 16:              return "Value16";
       default:              VG_(tool_panic)("unexpected size for Value");
       }
-   case CoreMemErr:         return "CoreMem";
-   case OverlapErr:         return "Overlap";
-   case LeakErr:            return "Leak";
+   }
    default:                 VG_(tool_panic)("get_error_name: unexpected type");
    }
    VG_(printf)(s);
@@ -3491,7 +3608,8 @@ static Char* mc_get_error_name ( Error* err )
 
 static void mc_print_extra_suppression_info ( Error* err )
 {
-   if (ParamErr == VG_(get_error_kind)(err)) {
+   ErrorKind ekind = VG_(get_error_kind )(err);
+   if (Err_RegParam == ekind || Err_MemParam == ekind) {
       VG_(printf)("   %s\n", VG_(get_error_string)(err));
    }
 }
@@ -3785,7 +3903,6 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
    // Handle common case quickly: a is suitably aligned, is mapped, and is
    // addressible.
    // Convert V bits from compact memory form to expanded register form
-   // XXX: set the high 16/48 bits of retval to 1 for 64-bit paranoia?
    if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS16_DEFINED;   }
    else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS16_UNDEFINED; }
    else {
@@ -3894,7 +4011,6 @@ UWord MC_(helperc_LOADV8) ( Addr a )
    // Convert V bits from compact memory form to expanded register form
    // Handle common case quickly: a is mapped, and the entire
    // word32 it lives in is addressible.
-   // XXX: set the high 24/56 bits of retval to 1 for 64-bit paranoia?
    if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS8_DEFINED;   }
    else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS8_UNDEFINED; }
    else {
@@ -3971,7 +4087,7 @@ void MC_(helperc_STOREV8) ( Addr a, UWord vbits8 )
 
 void MC_(helperc_value_check0_fail) ( void )
 {
-   mc_record_value_error ( VG_(get_running_tid)(), 0 );
+   mc_record_cond_error ( VG_(get_running_tid)() );
 }
 
 void MC_(helperc_value_check1_fail) ( void )
@@ -4005,6 +4121,9 @@ VG_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
 
 /* Copy Vbits from/to address 'a'. Returns: 1 == OK, 2 == alignment
    error [no longer used], 3 == addressing error. */
+/* Nb: We used to issue various definedness/addressability errors from here,
+   but we took them out because they ranged from not-very-helpful to
+   downright annoying, and they complicated the error data structures. */
 static Int mc_get_or_set_vbits_for_client ( 
    ThreadId tid,
    Addr a, 
@@ -4019,24 +4138,14 @@ static Int mc_get_or_set_vbits_for_client (
 
    /* Check that arrays are addressible before doing any getting/setting. */
    for (i = 0; i < szB; i++) {
-      if (VA_BITS2_NOACCESS == get_vabits2(a + i)) {
-         mc_record_address_error( tid, a + i,     1, setting ? True : False );
-         return 3;
-      }
-      if (VA_BITS2_NOACCESS == get_vabits2(vbits + i)) {
-         mc_record_address_error( tid, vbits + i, 1, setting ? False : True );
+      if (VA_BITS2_NOACCESS == get_vabits2(a + i) ||
+          VA_BITS2_NOACCESS == get_vabits2(vbits + i)) {
          return 3;
       }
    }
 
    /* Do the copy */
    if (setting) {
-
-      // It's actually a tool ClientReq, but Vg_CoreClientReq is the closest
-      // thing we have.
-      check_mem_is_defined(Vg_CoreClientReq, tid, "SET_VBITS(vbits)",
-                       vbits, szB);
-      
       /* setting */
       for (i = 0; i < szB; i++) {
          ok = set_vbits8(a + i, ((UChar*)vbits)[i]);
@@ -4047,9 +4156,6 @@ static Int mc_get_or_set_vbits_for_client (
       for (i = 0; i < szB; i++) {
          ok = get_vbits8(a + i, &vbits8);
          tl_assert(ok);
-// XXX: used to do this, but it's a pain
-//         if (V_BITS8_DEFINED != vbits8)
-//            mc_record_value_error(tid, 1);
          ((UChar*)vbits)[i] = vbits8;
       }
       // The bytes in vbits[] have now been set, so mark them as such.
@@ -4439,7 +4545,6 @@ static void show_client_block_stats ( void )
 static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
 {
    UInt i;
-   /* VG_(printf)("try to identify %d\n", a); */
 
    /* Perhaps it's a general block ? */
    for (i = 0; i < cgb_used; i++) {
@@ -4456,25 +4561,30 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
                VG_(HT_ResetIter)(mp->chunks);
                while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
                   if (addr_is_in_MC_Chunk(mc, a)) {
-                     ai->akind      = UserG;
-                     ai->blksize    = mc->size;
-                     ai->rwoffset   = (Int)(a) - (Int)mc->data;
-                     ai->lastchange = mc->where;
+                     ai->tag = Addr_Block;
+                     ai->Addr.Block.block_kind = Block_MempoolChunk;
+                     ai->Addr.Block.block_desc = "block";
+                     ai->Addr.Block.block_szB  = mc->szB;
+                     ai->Addr.Block.rwoffset   = (Int)a - (Int)mc->data;
+                     ai->Addr.Block.lastchange = mc->where;
                      return True;
                   }
                }
             }
-            ai->akind      = Mempool;
-            ai->blksize    = cgbs[i].size;
-            ai->rwoffset   = (Int)(a) - (Int)(cgbs[i].start);
-            ai->lastchange = cgbs[i].where;
+            ai->tag = Addr_Block;
+            ai->Addr.Block.block_kind = Block_Mempool;
+            ai->Addr.Block.block_desc = "mempool";
+            ai->Addr.Block.block_szB  = cgbs[i].size;
+            ai->Addr.Block.rwoffset   = (Int)(a) - (Int)(cgbs[i].start);
+            ai->Addr.Block.lastchange = cgbs[i].where;
             return True;
          }
-         ai->akind      = UserG;
-         ai->blksize    = cgbs[i].size;
-         ai->rwoffset   = (Int)(a) - (Int)(cgbs[i].start);
-         ai->lastchange = cgbs[i].where;
-         ai->desc       = cgbs[i].desc;
+         ai->tag = Addr_Block;
+         ai->Addr.Block.block_kind = Block_UserG;
+         ai->Addr.Block.block_desc = cgbs[i].desc;
+         ai->Addr.Block.block_szB  = cgbs[i].size;
+         ai->Addr.Block.rwoffset   = (Int)(a) - (Int)(cgbs[i].start);
+         ai->Addr.Block.lastchange = cgbs[i].where;
          return True;
       }
    }
@@ -4504,8 +4614,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       case VG_USERREQ__CHECK_MEM_IS_ADDRESSABLE:
          ok = is_mem_addressable ( arg[1], arg[2], &bad_addr );
          if (!ok)
-            mc_record_user_error ( tid, bad_addr, /*isWrite*/True,
-                                   /*isUnaddr*/True );
+            mc_record_user_error ( tid, bad_addr, /*isAddrErr*/True );
          *ret = ok ? (UWord)NULL : bad_addr;
          break;
 
@@ -4513,11 +4622,9 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          MC_ReadResult res;
          res = is_mem_defined ( arg[1], arg[2], &bad_addr );
          if (MC_AddrErr == res)
-            mc_record_user_error ( tid, bad_addr, /*isWrite*/False,
-                                   /*isUnaddr*/True );
+            mc_record_user_error ( tid, bad_addr, /*isAddrErr*/True );
          else if (MC_ValueErr == res)
-            mc_record_user_error ( tid, bad_addr, /*isWrite*/False,
-                                   /*isUnaddr*/False );
+            mc_record_user_error ( tid, bad_addr, /*isAddrErr*/False );
          *ret = ( res==MC_Ok ? (UWord)NULL : bad_addr );
          break;
       }
@@ -4576,17 +4683,11 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          break;
 
       case VG_USERREQ__GET_VBITS:
-         /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
-            error. */
-         /* VG_(printf)("get_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
          *ret = mc_get_or_set_vbits_for_client
                    ( tid, arg[1], arg[2], arg[3], False /* get them */ );
          break;
 
       case VG_USERREQ__SET_VBITS:
-         /* Returns: 1 == OK, 2 == alignment error, 3 == addressing
-            error. */
-         /* VG_(printf)("set_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
          *ret = mc_get_or_set_vbits_for_client
                    ( tid, arg[1], arg[2], arg[3], True /* set them */ );
          break;
@@ -4624,9 +4725,11 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       }
 
       case _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR: {
-         Char*         s     = (Char*)        arg[1];
-         OverlapExtra* extra = (OverlapExtra*)arg[2];
-         mc_record_overlap_error(tid, s, extra);
+         Char* s   = (Char*)arg[1];
+         Addr  dst = (Addr) arg[2];
+         Addr  src = (Addr) arg[3];
+         SizeT len = (SizeT)arg[4];
+         mc_record_overlap_error(tid, s, src, dst, len);
          return True;
       }
 

@@ -38,7 +38,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"      // For VG_(getpid)()
 #include "pub_core_libcsignal.h"
-#include "pub_core_scheduler.h"     // For VG_(set_sleeping), VG_(set_running),
+#include "pub_core_scheduler.h"     // For VG_({acquire,release}_BigLock),
                                     //   and VG_(vg_yield)
 #include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
 #include "pub_core_tooliface.h"
@@ -915,7 +915,7 @@ void VG_(client_syscall) ( ThreadId tid )
          putSyscallArgsIntoGuestState( &sci->args, &tst->arch.vex );
 
          /* Drop the lock */
-         VG_(set_sleeping)(tid, VgTs_WaitSys, "VG_(client_syscall)[async]");
+         VG_(release_BigLock)(tid, VgTs_WaitSys, "VG_(client_syscall)[async]");
 
          /* Do the call, which operates directly on the guest state,
             not on our abstracted copies of the args/result. */
@@ -930,7 +930,7 @@ void VG_(client_syscall) ( ThreadId tid )
             to the scheduler.  */
 
          /* Reacquire the lock */
-         VG_(set_running)(tid, "VG_(client_syscall)[async]");
+         VG_(acquire_BigLock)(tid, "VG_(client_syscall)[async]");
 
          /* Even more impedance matching.  Extract the syscall status
             from the guest state. */

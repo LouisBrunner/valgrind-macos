@@ -57,7 +57,7 @@ extern void VG_(nuke_all_threads_except) ( ThreadId me,
    thread state to VgTs_Runnable, and the thread will attempt to take
    the CPU lock.  By the time it returns, tid will be the running
    thread. */
-extern void VG_(set_running) ( ThreadId tid, HChar* who );
+extern void VG_(acquire_BigLock) ( ThreadId tid, HChar* who );
 
 /* Set a thread into a sleeping state.  Before the call, the thread
    must be runnable, and holding the CPU lock.  When this call
@@ -67,7 +67,7 @@ extern void VG_(set_running) ( ThreadId tid, HChar* who );
    caller must be careful not to touch any shared state.  It is also
    the caller's responsibility to actually block until the thread is
    ready to run again. */
-extern void VG_(set_sleeping) ( ThreadId tid, ThreadStatus state, HChar* who );
+extern void VG_(release_BigLock) ( ThreadId tid, ThreadStatus state, HChar* who );
 
 /* Yield the CPU for a while */
 extern void VG_(vg_yield)(void);

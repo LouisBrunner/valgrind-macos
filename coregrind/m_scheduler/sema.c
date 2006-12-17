@@ -65,7 +65,7 @@ void ML_(sema_init)(vg_sema_t *sema)
                                                  sema->pipe[1]);
    vg_assert(sema->pipe[0] != sema->pipe[1]);
 
-   sema->owner_thread = -1;
+   sema->owner_lwpid = -1;
 
    /* create initial token */
    sema_char = 'A';
@@ -78,12 +78,12 @@ void ML_(sema_init)(vg_sema_t *sema)
 
 void ML_(sema_deinit)(vg_sema_t *sema)
 {
-   vg_assert(sema->owner_thread != -1); /* must be initialised */
+   vg_assert(sema->owner_lwpid != -1); /* must be initialised */
    vg_assert(sema->pipe[0] != sema->pipe[1]);
    VG_(close)(sema->pipe[0]);
    VG_(close)(sema->pipe[1]);
    sema->pipe[0] = sema->pipe[1] = -1;
-   sema->owner_thread = -1;
+   sema->owner_lwpid = -1;
 }
 
 /* get a token */
@@ -93,7 +93,7 @@ void ML_(sema_down)(vg_sema_t *sema)
    Int ret;
    Int lwpid = VG_(gettid)();
 
-   vg_assert(sema->owner_thread != lwpid); /* can't have it already */
+   vg_assert(sema->owner_lwpid != lwpid); /* can't have it already */
    vg_assert(sema->pipe[0] != sema->pipe[1]);
 
   again:
@@ -113,7 +113,7 @@ void ML_(sema_down)(vg_sema_t *sema)
 
    if (sema_char == 'Z') sema_char = 'A'; else sema_char++;
 
-   sema->owner_thread = lwpid;
+   sema->owner_lwpid = lwpid;
 }
 
 /* put token back */
@@ -123,11 +123,11 @@ void ML_(sema_up)(vg_sema_t *sema)
    Char buf[2];
    buf[0] = sema_char; 
    buf[1] = 0;
-   vg_assert(sema->owner_thread != -1); /* must be initialised */
+   vg_assert(sema->owner_lwpid != -1); /* must be initialised */
    vg_assert(sema->pipe[0] != sema->pipe[1]);
-   vg_assert(sema->owner_thread == VG_(gettid)()); /* must have it */
+   vg_assert(sema->owner_lwpid == VG_(gettid)()); /* must have it */
 
-   sema->owner_thread = 0;
+   sema->owner_lwpid = 0;
 
    ret = VG_(write)(sema->pipe[1], buf, 1);
 

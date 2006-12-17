@@ -32,10 +32,9 @@
 #define __PRIV_SEMA_H
 
 /* Not really a semaphore, but use a pipe for a token-passing scheme */
-/* Not really a semaphore, but use a pipe for a token-passing scheme */
 typedef struct {
    Int pipe[2];
-   Int owner_thread;		/* who currently has it */
+   Int owner_lwpid;		/* who currently has it */
 } vg_sema_t;
 
 // Nb: this may be OS-specific, but let's not factor it out until we

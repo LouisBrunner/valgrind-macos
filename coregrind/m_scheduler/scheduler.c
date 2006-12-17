@@ -38,13 +38,13 @@
    There are no extra threads.
 
    The main difference is that Valgrind only allows one client thread
-   to run at once.  This is controlled with the VCPU semaphore,
-   "run_sema".  Any time a thread wants to run client code or
+   to run at once.  This is controlled with the CPU Big Lock,
+   "the_BigLock".  Any time a thread wants to run client code or
    manipulate any shared state (which is anything other than its own
-   ThreadState entry), it must hold the run_sema.
+   ThreadState entry), it must hold the_BigLock.
 
    When a thread is about to block in a blocking syscall, it releases
-   run_sema, and re-takes it when it becomes runnable again (either
+   the_BigLock, and re-takes it when it becomes runnable again (either
    because the syscall finished, or we took a signal).
 
    VG_(scheduler) therefore runs in each thread.  It returns only when
@@ -135,7 +135,7 @@ void VG_(print_scheduler_stats)(void)
 }
 
 /* CPU semaphore, so that threads can run exclusively */
-static vg_sema_t run_sema;
+static vg_sema_t the_BigLock;
 
 
 /* ---------------------------------------------------------------------
@@ -189,14 +189,14 @@ ThreadId VG_(alloc_ThreadState) ( void )
 }
 
 /* 
-   Mark a thread as Runnable.  This will block until the run_sema is
+   Mark a thread as Runnable.  This will block until the_BigLock is
    available, so that we get exclusive access to all the shared
-   structures and the CPU.  Up until we get the sema, we must not
+   structures and the CPU.  Up until we get the_BigLock, we must not
    touch any shared state.
 
    When this returns, we'll actually be running.
  */
-void VG_(set_running)(ThreadId tid, HChar* who)
+void VG_(acquire_BigLock)(ThreadId tid, HChar* who)
 {
    ThreadState *tst;
 
@@ -209,10 +209,10 @@ void VG_(set_running)(ThreadId tid, HChar* who)
    }
 #endif
 
-   /* First, acquire the lock.  We can't do anything else safely prior
-      to this point.  Even doing debug printing prior to this point
-      is, technically, wrong. */
-   ML_(sema_down)(&run_sema);
+   /* First, acquire the_BigLock.  We can't do anything else safely
+      prior to this point.  Even doing debug printing prior to this
+      point is, technically, wrong. */
+   ML_(sema_down)(&the_BigLock);
 
    tst = VG_(get_ThreadState)(tid);
 
@@ -246,7 +246,7 @@ void VG_(set_running)(ThreadId tid, HChar* who)
    but it may mean that we remain in a Runnable state and we're just
    yielding the CPU to another thread).
  */
-void VG_(set_sleeping)(ThreadId tid, ThreadStatus sleepstate, HChar* who)
+void VG_(release_BigLock)(ThreadId tid, ThreadStatus sleepstate, HChar* who)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
@@ -268,9 +268,9 @@ void VG_(set_sleeping)(ThreadId tid, ThreadStatus sleepstate, HChar* who)
       print_sched_event(tid, buf);
    }
 
-   /* Release the run_sema; this will reschedule any runnable
+   /* Release the_BigLock; this will reschedule any runnable
       thread. */
-   ML_(sema_up)(&run_sema);
+   ML_(sema_up)(&the_BigLock);
 }
 
 /* Clear out the ThreadState and release the semaphore. Leaves the
@@ -291,7 +291,7 @@ void VG_(exit_thread)(ThreadId tid)
    if (VG_(clo_trace_sched))
       print_sched_event(tid, "release lock in VG_(exit_thread)");
 
-   ML_(sema_up)(&run_sema);
+   ML_(sema_up)(&the_BigLock);
 }
 
 /* If 'tid' is blocked in a syscall, send it SIGVGKILL so as to get it
@@ -321,14 +321,14 @@ void VG_(vg_yield)(void)
    vg_assert(tid != VG_INVALID_THREADID);
    vg_assert(VG_(threads)[tid].os_state.lwpid == VG_(gettid)());
 
-   VG_(set_sleeping)(tid, VgTs_Yielding, "VG_(vg_yield)");
+   VG_(release_BigLock)(tid, VgTs_Yielding, "VG_(vg_yield)");
 
    /* 
       Tell the kernel we're yielding.
     */
    VG_(do_syscall0)(__NR_sched_yield);
 
-   VG_(set_running)(tid, "VG_(vg_yield)");
+   VG_(acquire_BigLock)(tid, "VG_(vg_yield)");
 }
 
 
@@ -413,9 +413,9 @@ void mostly_clear_thread_record ( ThreadId tid )
    would be too hard to try to re-number the thread and relocate the           
    thread state down to VG_(threads)[1].                                       
                                                                                
-   This function also needs to reinitialize the run_sema, since                
-   otherwise we may end up sharing its state with the parent, which            
-   would be deeply confusing.                                                  
+   This function also needs to reinitialize the_BigLock, since
+   otherwise we may end up sharing its state with the parent, which
+   would be deeply confusing.
 */                                          
 static void sched_fork_cleanup(ThreadId me)
 {
@@ -435,9 +435,9 @@ static void sched_fork_cleanup(ThreadId me)
    }
 
    /* re-init and take the sema */
-   ML_(sema_deinit)(&run_sema);
-   ML_(sema_init)(&run_sema);
-   ML_(sema_down)(&run_sema);
+   ML_(sema_deinit)(&the_BigLock);
+   ML_(sema_init)(&the_BigLock);
+   ML_(sema_down)(&the_BigLock);
 }
 
 
@@ -457,7 +457,7 @@ void VG_(scheduler_init) ( Addr clstack_end, SizeT clstack_size )
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_size));
 
-   ML_(sema_init)(&run_sema);
+   ML_(sema_init)(&the_BigLock);
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
       /* Paranoia .. completely zero it out. */
@@ -813,7 +813,7 @@ static UInt/*trc*/ handle_noredir_jump ( ThreadId tid )
 /* 
    Run a thread until it wants to exit.
    
-   We assume that the caller has already called VG_(set_running) for
+   We assume that the caller has already called VG_(acquire_BigLock) for
    us, so we own the VCPU.  Also, all signals are blocked.
  */
 VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
@@ -860,8 +860,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 /* 3 Aug 06: doing sys__nsleep works but crashes some apps.
             sys_yield also helps the problem, whilst not crashing apps. */
 
-	 VG_(set_sleeping)(tid, VgTs_Yielding, 
-                                "VG_(scheduler):timeslice");
+	 VG_(release_BigLock)(tid, VgTs_Yielding, 
+                                   "VG_(scheduler):timeslice");
 	 /* ------------ now we don't have The Lock ------------ */
 
 #        if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
@@ -878,7 +878,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          }
 #        endif
 
-	 VG_(set_running)(tid, "VG_(scheduler):timeslice");
+	 VG_(acquire_BigLock)(tid, "VG_(scheduler):timeslice");
 	 /* ------------ now we do have The Lock ------------ */
 
 	 /* OK, do some relatively expensive housekeeping stuff */
@@ -1387,7 +1387,7 @@ void scheduler_sanity ( ThreadId tid )
    if (!VG_(is_running_thread)(tid)) {
       VG_(message)(Vg_DebugMsg,
 		   "Thread %d is supposed to be running, "
-                   "but doesn't own run_sema (owned by %d)\n", 
+                   "but doesn't own the_BigLock (owned by %d)\n", 
 		   tid, VG_(running_tid));
       bad = True;
    }
@@ -1399,9 +1399,9 @@ void scheduler_sanity ( ThreadId tid )
       bad = True;
    }
 
-   if (lwpid != run_sema.owner_thread) {
+   if (lwpid != the_BigLock.owner_lwpid) {
       VG_(message)(Vg_DebugMsg,
-                   "Thread %d doesn't own the run_sema\n",
+                   "Thread (LWPID) %d doesn't own the_BigLock\n",
                    tid);
       bad = True;
    }

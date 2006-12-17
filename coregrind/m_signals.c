@@ -1589,7 +1589,7 @@ void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *
    vg_assert(tst->status == VgTs_WaitSys);
 
    /* The thread isn't currently running, make it so before going on */
-   VG_(set_running)(tid, "async_signalhandler");
+   VG_(acquire_BigLock)(tid, "async_signalhandler");
 
    /* Update thread state properly */
    VG_(fixup_guest_state_after_syscall_interrupted)(
@@ -1915,7 +1915,7 @@ static void sigvgkill_handler(int signo, vki_siginfo_t *si, struct vki_ucontext 
       VG_(message)(Vg_DebugMsg, 
                    "sigvgkill for lwp %d tid %d", VG_(gettid)(), tid);
 
-   VG_(set_running)(tid, "sigvgkill_handler");
+   VG_(acquire_BigLock)(tid, "sigvgkill_handler");
 
    vg_assert(signo == VG_SIGVGKILL);
    vg_assert(si->si_signo == signo);

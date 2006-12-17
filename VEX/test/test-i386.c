@@ -32,7 +32,7 @@
 
 /* Setting this to 1 creates a very comprehensive test of
    integer condition codes. */
-#define TEST_INTEGER_VERBOSE 0
+#define TEST_INTEGER_VERBOSE 1
 
 
 //#define LINUX_VM86_IOPL_FIX
@@ -261,12 +261,12 @@ void test_lea(void)
         : "=r" (res)\
         : "r" (v1), "r" (v2));\
     printf("%-10s %d\n", "set" JCC, res);\
- {\
+ {  int one = 1; \
     asm("movl $0x12345678, %0\n\t"\
         "cmpl %2, %1\n\t"\
         "cmov" JCC "l %3, %0\n\t"\
         : "=r" (res)\
-        : "r" (v1), "r" (v2), "m" (1));\
+        : "r" (v1), "r" (v2), "m" (one));\
         printf("%-10s R=0x%08x\n", "cmov" JCC "l", res);\
     asm("movl $0x12345678, %0\n\t"\
         "cmpl %2, %1\n\t"\
@@ -506,11 +506,12 @@ void test_mul(void)
 {\
     int res, val, resz;\
     val = op0;\
-    asm("xorl %1, %1\n"\
-        "movl $0x12345678, %0\n"\
-        #op " %" size "2, %" size "0 ; setz %b1" \
+    asm("xorl %1, %1\n\t"\
+        "movl $0x12345678, %0\n\t"\
+        #op " %" size "2, %" size "0\n\t" \
+        "setz %b1" \
         : "=r" (res), "=q" (resz)\
-        : "g" (val));\
+        : "r" (val));\
     printf("%-10s A=%08x R=%08x %d\n", #op, val, res, resz);\
 }
 
@@ -594,7 +595,8 @@ void test_fcvt(double a)
     /* test all roundings */
     asm volatile ("fstcw %0" : "=m" (fpuc));
     for(i=0;i<4;i++) {
-        asm volatile ("fldcw %0" : : "m" ((fpuc & ~0x0c00) | (i << 10)));
+        int16_t tmp = (fpuc & ~0x0c00) | (i << 10);
+        asm volatile ("fldcw %0" : : "m" (tmp));
         asm volatile ("fist %0" : "=m" (wa) : "t" (a));
         asm volatile ("fistl %0" : "=m" (ia) : "t" (a));
         asm volatile ("fistpll %0" : "=m" (lla) : "t" (a) : "st");

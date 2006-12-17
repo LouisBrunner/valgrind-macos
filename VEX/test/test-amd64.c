@@ -41,7 +41,7 @@
 
 /* Setting this to 1 creates a very comprehensive test of
    integer condition codes. */
-#define TEST_INTEGER_VERBOSE 0
+#define TEST_INTEGER_VERBOSE 1
 
 typedef  long long int  int64;
 
@@ -551,7 +551,7 @@ void test_mul(void)
         "movl $0x12345678, %0\n"\
         #op " %" size "2, %" size "0 ; setz %b1" \
         : "=r" (res), "=q" (resz)\
-        : "g" (val));\
+        : "r" (val));\
     printf("%-10s A=%08x R=%08x %d\n", #op, val, res, resz);\
 }
 

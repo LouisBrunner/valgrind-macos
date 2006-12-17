@@ -8,20 +8,37 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-static int s_finished_count;
+static int s_finished_count = 0;
+static pthread_spinlock_t s_spinlock;
+
+void increment_finished_count()
+{
+  pthread_spin_lock(&s_spinlock);
+  s_finished_count++;
+  pthread_spin_unlock(&s_spinlock);
+}
+
+int get_finished_count()
+{
+  int result;
+  pthread_spin_lock(&s_spinlock);
+  result = s_finished_count;
+  pthread_spin_unlock(&s_spinlock);
+  return result;
+}
 
 static void* thread_func1(void* arg)
 {
   write(STDOUT_FILENO, ".", 1);
-  s_finished_count++;
+  increment_finished_count();
   return 0;
 }
 
 static void* thread_func2(void* arg)
 {
   pthread_detach(pthread_self());
-  write(STDOUT_FILENO, "*", 1);
-  s_finished_count++;
+  write(STDOUT_FILENO, ".", 1);
+  increment_finished_count();
   return 0;
 }
 
@@ -32,7 +49,9 @@ int main(int argc, char** argv)
   int i;
   int detachstate;
   pthread_attr_t attr;
-  
+
+  pthread_spin_init(&s_spinlock, 0);
+
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   assert(pthread_attr_getdetachstate(&attr, &detachstate) == 0);
@@ -57,12 +76,15 @@ int main(int argc, char** argv)
   pthread_attr_destroy(&attr);
 
   // Wait until all detached threads have written their output to stdout.
-  while (s_finished_count < count1 + count2)
+  while (get_finished_count() < count1 + count2)
   {
     struct timespec delay = { 0, 1 * 1000 * 1000 };
     nanosleep(&delay, 0);
   }
 
   printf("\n");
+
+  pthread_spin_destroy(&s_spinlock);
+
   return 0;
 }

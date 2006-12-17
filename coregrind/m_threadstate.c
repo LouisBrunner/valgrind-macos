@@ -126,7 +126,7 @@ Int VG_(count_runnable_threads)(void)
 
 /* Given an LWP id (ie, real kernel thread id), find the corresponding
    ThreadId */
-ThreadId VG_(get_lwp_tid)(Int lwp)
+ThreadId VG_(lwpid_to_vgtid)(Int lwp)
 {
    ThreadId tid;
    

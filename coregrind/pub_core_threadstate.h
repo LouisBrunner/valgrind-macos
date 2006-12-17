@@ -257,7 +257,7 @@ extern Int VG_(count_runnable_threads)(void);
 
 /* Given an LWP id (ie, real kernel thread id), find the corresponding
    ThreadId */
-extern ThreadId VG_(get_lwp_tid)(Int lwpid);
+extern ThreadId VG_(lwpid_to_vgtid)(Int lwpid);
 
 #endif   // __PUB_CORE_THREADSTATE_H
 

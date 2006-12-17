@@ -130,7 +130,8 @@ static void report_and_quit ( const Char* report,
 {
    Addr stacktop;
    Addr ips[BACKTRACE_DEPTH];
-   ThreadState *tst = VG_(get_ThreadState)( VG_(get_lwp_tid)(VG_(gettid)()) );
+   ThreadState *tst 
+      = VG_(get_ThreadState)( VG_(lwpid_to_vgtid)( VG_(gettid)() ) );
  
    // If necessary, fake up an ExeContext which is of our actual real CPU
    // state.  Could cause problems if we got the panic/exception within the

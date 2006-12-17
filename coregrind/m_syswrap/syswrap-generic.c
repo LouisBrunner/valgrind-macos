@@ -4722,7 +4722,7 @@ Bool ML_(do_sigkill)(Int pid, Int tgid)
    if (pid <= 0)
       return False;
 
-   tid = VG_(get_lwp_tid)(pid);
+   tid = VG_(lwpid_to_vgtid)(pid);
    if (tid == VG_INVALID_THREADID)
       return False;		/* none of our threads */
 

@@ -1567,7 +1567,7 @@ static vki_siginfo_t *next_queued(ThreadId tid, const vki_sigset_t *set)
 static 
 void async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
 {
-   ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
+   ThreadId tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
 #ifdef VGO_linux
@@ -1687,7 +1687,7 @@ void VG_(set_fault_catcher)(void (*catcher)(Int, Addr))
 static
 void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
 {
-   ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
+   ThreadId tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
 
    vg_assert(info != NULL);
    vg_assert(info->si_signo == sigNo);
@@ -1857,7 +1857,8 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
       from the client's code, then we can jump back into the scheduler
       and have it delivered.  Otherwise it's a Valgrind bug. */
    {   
-      ThreadState *tst = VG_(get_ThreadState)(VG_(get_lwp_tid)(VG_(gettid)()));
+      ThreadState *tst 
+         = VG_(get_ThreadState)(VG_(lwpid_to_vgtid)(VG_(gettid)()));
 
       if (VG_(sigismember)(&tst->sig_mask, sigNo)) {
 	 /* signal is blocked, but they're not allowed to block faults */
@@ -1908,7 +1909,7 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
  */
 static void sigvgkill_handler(int signo, vki_siginfo_t *si, struct vki_ucontext *uc)
 {
-   ThreadId     tid = VG_(get_lwp_tid)(VG_(gettid)());
+   ThreadId     tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
    ThreadStatus at_signal = VG_(threads)[tid].status;
 
    if (VG_(clo_trace_signals))

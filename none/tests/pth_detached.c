@@ -9,21 +9,21 @@
 #include <unistd.h>
 
 static int s_finished_count = 0;
-static pthread_spinlock_t s_spinlock;
+static pthread_mutex_t s_mutex;
 
 void increment_finished_count()
 {
-  pthread_spin_lock(&s_spinlock);
+  pthread_mutex_lock(&s_mutex);
   s_finished_count++;
-  pthread_spin_unlock(&s_spinlock);
+  pthread_mutex_unlock(&s_mutex);
 }
 
 int get_finished_count()
 {
   int result;
-  pthread_spin_lock(&s_spinlock);
+  pthread_mutex_lock(&s_mutex);
   result = s_finished_count;
-  pthread_spin_unlock(&s_spinlock);
+  pthread_mutex_unlock(&s_mutex);
   return result;
 }
 
@@ -50,7 +50,7 @@ int main(int argc, char** argv)
   int detachstate;
   pthread_attr_t attr;
 
-  pthread_spin_init(&s_spinlock, 0);
+  pthread_mutex_init(&s_mutex, 0);
 
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
 
   printf("\n");
 
-  pthread_spin_destroy(&s_spinlock);
+  pthread_mutex_destroy(&s_mutex);
 
   return 0;
 }

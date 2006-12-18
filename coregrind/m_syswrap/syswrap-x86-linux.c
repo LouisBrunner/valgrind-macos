@@ -2004,7 +2004,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 //zz 
    LINX_(__NR_setresgid,         sys_setresgid16),    // 170
    LINXY(__NR_getresgid,         sys_getresgid16),    // 171
-   LINX_(__NR_prctl,             sys_prctl),          // 172
+   LINXY(__NR_prctl,             sys_prctl),          // 172
    PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 173 x86/Linux only?
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 174
 

@@ -1026,13 +1026,19 @@ static void clg_thread_runstate_callback ( ThreadId tid,
                                            Bool is_running, 
                                            ULong blocks_done )
 {
+   static ULong last_blocks_done = 0;
+
    if (0)
       VG_(printf)("%d %c %llu\n", 
                   (Int)tid, is_running ? 'R' : 's', blocks_done);
-   /* Simply call onwards to CLG_(run_thread).  Maybe this can be
-      simplified later? */
-   if (is_running)
-      CLG_(run_thread)( tid );
+
+   if (!is_running) return;
+
+   /* throttle calls to CLG_(run_thread) by number of BBs executed */
+   if (blocks_done - last_blocks_done < 5000) return;
+   last_blocks_done = blocks_done;
+
+   CLG_(run_thread)( tid );
 }
 
 static

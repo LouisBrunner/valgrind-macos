@@ -233,10 +233,6 @@ void VG_(acquire_BigLock)(ThreadId tid, HChar* who)
       VG_(sprintf)(buf, " acquired lock (%s)", who);
       print_sched_event(tid, buf);
    }
-
-   // While thre modeling is disable, issue thread_run events here
-   // VG_(tm_thread_switchto)(tid);
-   VG_TRACK( thread_run, tid );
 }
 
 /* 
@@ -616,6 +612,9 @@ static UInt run_thread_for_a_while ( ThreadId tid )
       VG_(printf)("\n");
    }
 
+   // Tell the tool this thread is about to run client code
+   VG_TRACK( thread_runstate, tid, True, bbs_done );
+
    vg_assert(VG_(in_generated_code) == False);
    VG_(in_generated_code) = True;
 
@@ -641,6 +640,9 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(done_this_time >= 0);
    bbs_done += (ULong)done_this_time;
 
+   // Tell the tool this thread has stopped running client code
+   VG_TRACK( thread_runstate, tid, False, bbs_done );
+
    return trc;
 }
 
@@ -652,6 +654,7 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    volatile Int          jumped;
    volatile ThreadState* tst; 
    volatile UWord        argblock[4];
+   volatile UInt         retval;
 
    /* Paranoia */
    vg_assert(VG_(is_valid_tid)(tid));
@@ -686,6 +689,9 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    argblock[2] = 0; /* next guest IP is written here */
    argblock[3] = 0; /* guest state ptr afterwards is written here */
 
+   // Tell the tool this thread is about to run client code
+   VG_TRACK( thread_runstate, tid, True, bbs_done );
+
    vg_assert(VG_(in_generated_code) == False);
    VG_(in_generated_code) = True;
 
@@ -703,16 +709,23 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
       vg_assert(argblock[2] == 0); /* next guest IP was not written */
       vg_assert(argblock[3] == 0); /* trc was not written */
       block_signals(tid);
-      return VG_TRC_FAULT_SIGNAL;
+      retval = VG_TRC_FAULT_SIGNAL;
    } else {
       /* store away the guest program counter */
       VG_(set_IP)( tid, argblock[2] );
       if (argblock[3] == argblock[1])
          /* the guest state pointer afterwards was unchanged */
-         return VG_TRC_BORING;
+         retval = VG_TRC_BORING;
       else
-         return (UInt)argblock[3];
+         retval = (UInt)argblock[3];
    }
+
+   bbs_done++;
+
+   // Tell the tool this thread has stopped running client code
+   VG_TRACK( thread_runstate, tid, False, bbs_done );
+
+   return retval;
 }
 
 

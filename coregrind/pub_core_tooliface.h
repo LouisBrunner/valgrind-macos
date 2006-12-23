@@ -200,7 +200,7 @@ typedef struct {
    void (*track_post_reg_write)(CorePart, ThreadId,        OffT, SizeT);
    void (*track_post_reg_write_clientcall_return)(ThreadId, OffT, SizeT, Addr);
 
-   void (*track_thread_run)(ThreadId);
+   void (*track_thread_runstate)(ThreadId, Bool, ULong);
 
    void (*track_post_thread_create)(ThreadId, ThreadId);
    void (*track_post_thread_join)  (ThreadId, ThreadId);

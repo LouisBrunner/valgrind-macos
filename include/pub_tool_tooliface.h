@@ -537,7 +537,19 @@ void VG_(track_post_reg_write_clientcall_return)(
 
 
 /* Scheduler events (not exhaustive) */
-void VG_(track_thread_run)(void(*f)(ThreadId tid));
+
+/* Called when 'tid' starts or stops running client code blocks.
+   Gives the total dispatched block count at that event.  Note, this
+   is not the same as 'tid' holding the BigLock: a thread can hold the
+   lock for other purposes (making translations, etc) yet not be
+   running client blocks.  Obviously though, a thread must hold the
+   lock in order to run client code blocks, so the times bracketed by
+   thread_runstate(tid, True, ..) .. thread_runstate(tid, False, ..)
+   are a subset of the times when 'tid' holds the cpu lock.
+*/
+void VG_(track_thread_runstate)(
+        void(*f)(ThreadId tid, Bool running, ULong blocks_dispatched)
+     );
 
 
 /* Thread events (not exhaustive)

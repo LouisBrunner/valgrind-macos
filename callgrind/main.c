@@ -1022,17 +1022,12 @@ void CLG_(fini)(Int exitcode)
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
-static void clg_thread_runstate_callback ( ThreadId tid,
-                                           Bool is_running, 
-                                           ULong blocks_done )
+static void clg_start_client_code_callback ( ThreadId tid, ULong blocks_done )
 {
    static ULong last_blocks_done = 0;
 
    if (0)
-      VG_(printf)("%d %c %llu\n", 
-                  (Int)tid, is_running ? 'R' : 's', blocks_done);
-
-   if (!is_running) return;
+      VG_(printf)("%d R %llu\n", (Int)tid, blocks_done);
 
    /* throttle calls to CLG_(run_thread) by number of BBs executed */
    if (blocks_done - last_blocks_done < 5000) return;
@@ -1107,9 +1102,9 @@ void CLG_(pre_clo_init)(void)
     VG_(needs_syscall_wrapper)(CLG_(pre_syscalltime),
 			       CLG_(post_syscalltime));
 
-    VG_(track_thread_runstate) ( & clg_thread_runstate_callback );
-    VG_(track_pre_deliver_signal)  ( & CLG_(pre_signal) );
-    VG_(track_post_deliver_signal)  ( & CLG_(post_signal) );
+    VG_(track_start_client_code)  ( & clg_start_client_code_callback );
+    VG_(track_pre_deliver_signal) ( & CLG_(pre_signal) );
+    VG_(track_post_deliver_signal)( & CLG_(post_signal) );
 
     CLG_(set_clo_defaults)();
 }

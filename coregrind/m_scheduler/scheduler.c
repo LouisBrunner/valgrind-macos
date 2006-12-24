@@ -613,7 +613,7 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    }
 
    // Tell the tool this thread is about to run client code
-   VG_TRACK( thread_runstate, tid, True, bbs_done );
+   VG_TRACK( start_client_code, tid, bbs_done );
 
    vg_assert(VG_(in_generated_code) == False);
    VG_(in_generated_code) = True;
@@ -641,7 +641,7 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    bbs_done += (ULong)done_this_time;
 
    // Tell the tool this thread has stopped running client code
-   VG_TRACK( thread_runstate, tid, False, bbs_done );
+   VG_TRACK( stop_client_code, tid, bbs_done );
 
    return trc;
 }
@@ -690,7 +690,7 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    argblock[3] = 0; /* guest state ptr afterwards is written here */
 
    // Tell the tool this thread is about to run client code
-   VG_TRACK( thread_runstate, tid, True, bbs_done );
+   VG_TRACK( start_client_code, tid, bbs_done );
 
    vg_assert(VG_(in_generated_code) == False);
    VG_(in_generated_code) = True;
@@ -723,7 +723,7 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    bbs_done++;
 
    // Tell the tool this thread has stopped running client code
-   VG_TRACK( thread_runstate, tid, False, bbs_done );
+   VG_TRACK( stop_client_code, tid, bbs_done );
 
    return retval;
 }

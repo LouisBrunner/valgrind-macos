@@ -321,7 +321,8 @@ DEF(track_post_reg_write,        CorePart, ThreadId,        OffT, SizeT)
 
 DEF(track_post_reg_write_clientcall_return, ThreadId, OffT, SizeT, Addr)
 
-DEF(track_thread_runstate,       ThreadId, Bool, ULong)
+DEF(track_start_client_code,     ThreadId, ULong)
+DEF(track_stop_client_code,      ThreadId, ULong)
 
 DEF(track_post_thread_create,    ThreadId, ThreadId)
 DEF(track_post_thread_join,      ThreadId, ThreadId)

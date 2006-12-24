@@ -169,6 +169,8 @@ static void add_to_vg_snprintf_buf ( HChar c, void* p )
       b->buf[b->buf_used++] = c;
       if (b->buf_used < b->buf_size)
          b->buf[b->buf_used] = 0;
+      else
+         b->buf[b->buf_size-1] = 0; /* pre: b->buf_size > 0 */
    } 
 }
 

@@ -90,9 +90,14 @@ r6371    pending      n-i-bz   libmpiwrap.c: fix handling of MPI_LONG_DOUBLE
 r6374    pending      n-i-bz   make User errors suppressible (XXX: DOCS!)
 
 r6377/8  pending      136844   corrupted malloc line when using 
-                               --gen-suppressions=yes
+                    ==138507   --gen-suppressions=yes
 
 vx1686   pending      n-i-bz   Reg-alloc speedups
+
+r6382/3  pending      n-i-bz   Fix confusing leak-checker flag hints
+
+r6384    r6385        n-i-bz   Support recent autoswamp versions
+
 
 135026 valgrind incorrectly complain that shm_nattch is uninitialized
 135264 dcbzl instruction missing
@@ -113,6 +118,8 @@ ppc64 vex fe/be improvements -> stable?
 check gcc-4.2 build
 ppc64 bigpage stuff
 lackey trace-mem patch ?  (6 dec, dev)
+
+jm-insns fixes (r6404/5) -> stable
 
 
 ------- Bugs reported and fixed in 3.2.0 ------

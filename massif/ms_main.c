@@ -1096,8 +1096,8 @@ static Bool ms_handle_client_request ( ThreadId tid, UWord* argv, UWord* ret )
 /*------------------------------------------------------------*/
 
 static
-IRBB* ms_instrument ( VgCallbackClosure* closure,
-                      IRBB* bb_in, 
+IRSB* ms_instrument ( VgCallbackClosure* closure,
+                      IRSB* bb_in, 
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )

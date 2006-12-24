@@ -69,8 +69,9 @@ static IRExpr* expr2vbits ( struct _MCEnv* mce, IRExpr* e );
 /* Carries around state during memcheck instrumentation. */
 typedef
    struct _MCEnv {
-      /* MODIFIED: the bb being constructed.  IRStmts are added. */
-      IRBB* bb;
+      /* MODIFIED: the superblock being constructed.  IRStmts are
+         added. */
+      IRSB* bb;
 
       /* MODIFIED: a table [0 .. #temps_in_original_bb-1] which maps
          original temps to their current their current shadow temp.
@@ -169,7 +170,7 @@ static Bool isOriginalAtom ( MCEnv* mce, IRAtom* a1 )
 {
    if (a1->tag == Iex_Const)
       return True;
-   if (a1->tag == Iex_Tmp && a1->Iex.Tmp.tmp < mce->n_originalTmps)
+   if (a1->tag == Iex_RdTmp && a1->Iex.RdTmp.tmp < mce->n_originalTmps)
       return True;
    return False;
 }
@@ -180,7 +181,7 @@ static Bool isShadowAtom ( MCEnv* mce, IRAtom* a1 )
 {
    if (a1->tag == Iex_Const)
       return True;
-   if (a1->tag == Iex_Tmp && a1->Iex.Tmp.tmp >= mce->n_originalTmps)
+   if (a1->tag == Iex_RdTmp && a1->Iex.RdTmp.tmp >= mce->n_originalTmps)
       return True;
    return False;
 }
@@ -189,7 +190,7 @@ static Bool isShadowAtom ( MCEnv* mce, IRAtom* a1 )
    are identically-kinded. */
 static Bool sameKindedAtoms ( IRAtom* a1, IRAtom* a2 )
 {
-   if (a1->tag == Iex_Tmp && a2->tag == Iex_Tmp)
+   if (a1->tag == Iex_RdTmp && a2->tag == Iex_RdTmp)
       return True;
    if (a1->tag == Iex_Const && a2->tag == Iex_Const)
       return True;
@@ -244,11 +245,11 @@ static IRExpr* definedOfType ( IRType ty ) {
 
 /* assign value to tmp */
 #define assign(_bb,_tmp,_expr)   \
-   addStmtToIRBB((_bb), IRStmt_Tmp((_tmp),(_expr)))
+   addStmtToIRSB((_bb), IRStmt_WrTmp((_tmp),(_expr)))
 
 /* add stmt to a bb */
 #define stmt(_bb,_stmt)    \
-   addStmtToIRBB((_bb), (_stmt))
+   addStmtToIRSB((_bb), (_stmt))
 
 /* build various kinds of expressions */
 #define binop(_op, _arg1, _arg2) IRExpr_Binop((_op),(_arg1),(_arg2))
@@ -258,7 +259,7 @@ static IRExpr* definedOfType ( IRType ty ) {
 #define mkU32(_n)                IRExpr_Const(IRConst_U32(_n))
 #define mkU64(_n)                IRExpr_Const(IRConst_U64(_n))
 #define mkV128(_n)               IRExpr_Const(IRConst_V128(_n))
-#define mkexpr(_tmp)             IRExpr_Tmp((_tmp))
+#define mkexpr(_tmp)             IRExpr_RdTmp((_tmp))
 
 /* bind the given expression to a new temporary, and return the
    temporary.  This effectively converts an arbitrary expression into
@@ -900,10 +901,10 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
       getting a new value. */
    tl_assert(isIRAtom(vatom));
    /* sameKindedAtoms ... */
-   if (vatom->tag == Iex_Tmp) {
-      tl_assert(atom->tag == Iex_Tmp);
-      newShadowTmp(mce, atom->Iex.Tmp.tmp);
-      assign(mce->bb, findShadowTmp(mce, atom->Iex.Tmp.tmp), 
+   if (vatom->tag == Iex_RdTmp) {
+      tl_assert(atom->tag == Iex_RdTmp);
+      newShadowTmp(mce, atom->Iex.RdTmp.tmp);
+      assign(mce->bb, findShadowTmp(mce, atom->Iex.RdTmp.tmp), 
                       definedOfType(ty));
    }
 }
@@ -988,7 +989,8 @@ void do_shadow_PUT ( MCEnv* mce,  Int offset,
 */
 static
 void do_shadow_PUTI ( MCEnv* mce, 
-                      IRArray* descr, IRAtom* ix, Int bias, IRAtom* atom )
+                      IRRegArray* descr, 
+                      IRAtom* ix, Int bias, IRAtom* atom )
 {
    IRAtom* vatom;
    IRType  ty, tyS;
@@ -1016,9 +1018,9 @@ void do_shadow_PUTI ( MCEnv* mce,
    } else {
       /* Do a cloned version of the Put that refers to the shadow
          area. */
-      IRArray* new_descr 
-         = mkIRArray( descr->base + mce->layout->total_sizeB, 
-                      tyS, descr->nElems);
+      IRRegArray* new_descr 
+         = mkIRRegArray( descr->base + mce->layout->total_sizeB, 
+                         tyS, descr->nElems);
       stmt( mce->bb, IRStmt_PutI( new_descr, ix, bias, vatom ));
    }
 }
@@ -1047,7 +1049,8 @@ IRExpr* shadow_GET ( MCEnv* mce, Int offset, IRType ty )
    given GETI (passed in in pieces). 
 */
 static
-IRExpr* shadow_GETI ( MCEnv* mce, IRArray* descr, IRAtom* ix, Int bias )
+IRExpr* shadow_GETI ( MCEnv* mce, 
+                      IRRegArray* descr, IRAtom* ix, Int bias )
 {
    IRType ty   = descr->elemTy;
    IRType tyS  = shadowType(ty);
@@ -1061,9 +1064,9 @@ IRExpr* shadow_GETI ( MCEnv* mce, IRArray* descr, IRAtom* ix, Int bias )
    } else {
       /* return a cloned version of the Get that refers to the shadow
          area. */
-      IRArray* new_descr 
-         = mkIRArray( descr->base + mce->layout->total_sizeB, 
-                      tyS, descr->nElems);
+      IRRegArray* new_descr 
+         = mkIRRegArray( descr->base + mce->layout->total_sizeB, 
+                         tyS, descr->nElems);
       return IRExpr_GetI( new_descr, ix, bias );
    }
 }
@@ -2634,8 +2637,8 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
          return shadow_GETI( mce, e->Iex.GetI.descr, 
                                   e->Iex.GetI.ix, e->Iex.GetI.bias );
 
-      case Iex_Tmp:
-         return IRExpr_Tmp( findShadowTmp(mce, e->Iex.Tmp.tmp) );
+      case Iex_RdTmp:
+         return IRExpr_RdTmp( findShadowTmp(mce, e->Iex.RdTmp.tmp) );
 
       case Iex_Const:
          return definedOfType(shadowType(typeOfIRExpr(mce->bb->tyenv, e)));
@@ -3127,7 +3130,7 @@ static Bool isBogusAtom ( IRAtom* at )
    ULong n = 0;
    IRConst* con;
    tl_assert(isIRAtom(at));
-   if (at->tag == Iex_Tmp)
+   if (at->tag == Iex_RdTmp)
       return False;
    tl_assert(at->tag == Iex_Const);
    con = at->Iex.Const.con;
@@ -3159,11 +3162,11 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
    IRExpr*  e;
    IRDirty* d;
    switch (st->tag) {
-      case Ist_Tmp:
-         e = st->Ist.Tmp.data;
+      case Ist_WrTmp:
+         e = st->Ist.WrTmp.data;
          switch (e->tag) {
             case Iex_Get:
-            case Iex_Tmp:
+            case Iex_RdTmp:
                return False;
             case Iex_Const:
                return isBogusAtom(e);
@@ -3231,8 +3234,8 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 }
 
 
-IRBB* MC_(instrument) ( VgCallbackClosure* closure,
-                        IRBB* bb_in, 
+IRSB* MC_(instrument) ( VgCallbackClosure* closure,
+                        IRSB* bb_in, 
                         VexGuestLayout* layout, 
                         VexGuestExtents* vge,
                         IRType gWordTy, IRType hWordTy )
@@ -3242,7 +3245,7 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
    Int     i, j, first_stmt;
    IRStmt* st;
    MCEnv   mce;
-   IRBB*   bb;
+   IRSB*   bb;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -3257,8 +3260,8 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
    tl_assert(sizeof(UInt)  == 4);
    tl_assert(sizeof(Int)   == 4);
 
-   /* Set up BB */
-   bb = dopyIRBBExceptStmts(bb_in);
+   /* Set up SB */
+   bb = deepCopyIRSBExceptStmts(bb_in);
 
    /* Set up the running environment.  Only .bb is modified as we go
       along. */
@@ -3309,7 +3312,7 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
       tl_assert(st);
       tl_assert(isFlatIRStmt(st));
 
-      addStmtToIRBB( bb, bb_in->stmts[i] );
+      addStmtToIRSB( bb, bb_in->stmts[i] );
       i++;
    }
 
@@ -3332,10 +3335,10 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
       'tmp = CONSTANT'.
    */
    for (j = 0; j < i; j++) {
-      if (bb_in->stmts[j]->tag == Ist_Tmp) {
+      if (bb_in->stmts[j]->tag == Ist_WrTmp) {
          /* findShadowTmp checks its arg is an original tmp;
             no need to assert that here. */
-         IRTemp tmp_o = bb_in->stmts[j]->Ist.Tmp.tmp;
+         IRTemp tmp_o = bb_in->stmts[j]->Ist.WrTmp.tmp;
          IRTemp tmp_s = findShadowTmp(&mce, tmp_o);
          IRType ty_s  = typeOfIRTemp(bb->tyenv, tmp_s);
          assign( bb, tmp_s, definedOfType( ty_s ) );
@@ -3368,9 +3371,9 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
 
       switch (st->tag) {
 
-         case Ist_Tmp:
-            assign( bb, findShadowTmp(&mce, st->Ist.Tmp.tmp), 
-                        expr2vbits( &mce, st->Ist.Tmp.data) );
+         case Ist_WrTmp:
+            assign( bb, findShadowTmp(&mce, st->Ist.WrTmp.tmp), 
+                        expr2vbits( &mce, st->Ist.WrTmp.data) );
             break;
 
          case Ist_Put:
@@ -3430,7 +3433,7 @@ IRBB* MC_(instrument) ( VgCallbackClosure* closure,
       }
 
       /* ... and finally copy the stmt itself to the output. */
-      addStmtToIRBB(bb, st);
+      addStmtToIRSB(bb, st);
 
    }
 

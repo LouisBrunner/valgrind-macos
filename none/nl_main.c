@@ -36,8 +36,8 @@ static void nl_post_clo_init(void)
 }
 
 static
-IRBB* nl_instrument ( VgCallbackClosure* closure,
-                      IRBB* bb,
+IRSB* nl_instrument ( VgCallbackClosure* closure,
+                      IRSB* bb,
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )

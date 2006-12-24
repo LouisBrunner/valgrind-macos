@@ -302,7 +302,7 @@ void increment_detail(ULong* detail)
 }
 
 /* A helper that adds the instrumentation for a detail. */
-static void instrument_detail(IRBB* bb, Op op, IRType type)
+static void instrument_detail(IRSB* bb, Op op, IRType type)
 {
    IRDirty* di;
    IRExpr** argv;
@@ -315,7 +315,7 @@ static void instrument_detail(IRBB* bb, Op op, IRType type)
    di = unsafeIRDirty_0_N( 1, "increment_detail",
                               VG_(fnptr_to_fnentry)( &increment_detail ), 
                               argv);
-   addStmtToIRBB( bb, IRStmt_Dirty(di) );
+   addStmtToIRSB( bb, IRStmt_Dirty(di) );
 }
 
 /* Summarize and print the details. */
@@ -417,7 +417,7 @@ static VG_REGPARM(2) void trace_modify(Addr addr, SizeT size)
 }
 
 
-static void flushEvents(IRBB* bb)
+static void flushEvents(IRSB* bb)
 {
    Int        i;
    Char*      helperName;
@@ -452,7 +452,7 @@ static void flushEvents(IRBB* bb)
       di   = unsafeIRDirty_0_N( /*regparms*/2, 
                                 helperName, VG_(fnptr_to_fnentry)( helperAddr ),
                                 argv );
-      addStmtToIRBB( bb, IRStmt_Dirty(di) );
+      addStmtToIRSB( bb, IRStmt_Dirty(di) );
    }
 
    events_used = 0;
@@ -463,7 +463,7 @@ static void flushEvents(IRBB* bb)
 // must still call this function, addEvent_Ir() -- it is necessary to add
 // the Ir events to the events list so that merging of paired load/store
 // events into modify events works correctly.
-static void addEvent_Ir ( IRBB* bb, IRAtom* iaddr, UInt isize )
+static void addEvent_Ir ( IRSB* bb, IRAtom* iaddr, UInt isize )
 {
    Event* evt;
    tl_assert( (VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB)
@@ -479,7 +479,7 @@ static void addEvent_Ir ( IRBB* bb, IRAtom* iaddr, UInt isize )
 }
 
 static
-void addEvent_Dr ( IRBB* bb, IRAtom* daddr, Int dsize )
+void addEvent_Dr ( IRSB* bb, IRAtom* daddr, Int dsize )
 {
    Event* evt;
    tl_assert(isIRAtom(daddr));
@@ -495,7 +495,7 @@ void addEvent_Dr ( IRBB* bb, IRAtom* daddr, Int dsize )
 }
 
 static
-void addEvent_Dw ( IRBB* bb, IRAtom* daddr, Int dsize )
+void addEvent_Dw ( IRSB* bb, IRAtom* daddr, Int dsize )
 {
    Event* lastEvt;
    Event* evt;
@@ -541,15 +541,15 @@ static void lk_post_clo_init(void)
 }
 
 static
-IRBB* lk_instrument ( VgCallbackClosure* closure,
-                      IRBB* bbIn, 
+IRSB* lk_instrument ( VgCallbackClosure* closure,
+                      IRSB* bbIn, 
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )
 {
    IRDirty*   di;
    Int        i;
-   IRBB*      bbOut;
+   IRSB*      bbOut;
    Char       fnname[100];
    IRType     type;
    IRTypeEnv* tyenv = bbIn->tyenv;
@@ -560,12 +560,12 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
    }
 
    /* Set up BB */
-   bbOut = dopyIRBBExceptStmts(bbIn);
+   bbOut = deepCopyIRSBExceptStmts(bbIn);
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;
    while (i < bbIn->stmts_used && bbIn->stmts[i]->tag != Ist_IMark) {
-      addStmtToIRBB( bbOut, bbIn->stmts[i] );
+      addStmtToIRSB( bbOut, bbIn->stmts[i] );
       i++;
    }
 
@@ -574,7 +574,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
       di = unsafeIRDirty_0_N( 0, "add_one_BB_entered", 
                                  VG_(fnptr_to_fnentry)( &add_one_BB_entered ),
                                  mkIRExprVec_0() );
-      addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+      addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
    }
 
    if (clo_trace_mem) {
@@ -590,7 +590,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
          di = unsafeIRDirty_0_N( 0, "add_one_IRStmt", 
                                     VG_(fnptr_to_fnentry)( &add_one_IRStmt ), 
                                     mkIRExprVec_0() );
-         addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+         addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
       }
       
       switch (st->tag) {
@@ -599,7 +599,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
          case Ist_Put:
          case Ist_PutI:
          case Ist_MFence:
-            addStmtToIRBB( bbOut, st );
+            addStmtToIRSB( bbOut, st );
             break;
 
          case Ist_IMark:
@@ -608,10 +608,10 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
                                           VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
                                           mkIRExprVec_0() );
-               addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+               addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
 
                /* An unconditional branch to a known destination in the
-                * guest's instructions can be represented, in the IRBB to
+                * guest's instructions can be represented, in the IRSB to
                 * instrument, by the VEX statements that are the
                 * translation of that known destination. This feature is
                 * called 'BB chasing' and can be influenced by command
@@ -631,7 +631,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                           0, "add_one_func_call", 
                              VG_(fnptr_to_fnentry)( &add_one_func_call ), 
                              mkIRExprVec_0() );
-                  addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+                  addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
                }
             }
             if (clo_trace_mem) {
@@ -641,20 +641,20 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                addEvent_Ir( bbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
                             st->Ist.IMark.len );
             }
-            addStmtToIRBB( bbOut, st );
+            addStmtToIRSB( bbOut, st );
             break;
 
-         case Ist_Tmp:
+         case Ist_WrTmp:
             // Add a call to trace_load() if --trace-mem=yes.
             if (clo_trace_mem) {
-               IRExpr* data = st->Ist.Tmp.data;
+               IRExpr* data = st->Ist.WrTmp.data;
                if (data->tag == Iex_Load) {
                   addEvent_Dr( bbOut, data->Iex.Load.addr,
                                sizeofIRType(data->Iex.Load.ty) );
                }
             }
             if (clo_detailed_counts) {
-               IRExpr* expr = st->Ist.Tmp.data;
+               IRExpr* expr = st->Ist.WrTmp.data;
                type = typeOfIRExpr(bbOut->tyenv, expr);
                tl_assert(type != Ity_INVALID);
                switch (expr->tag) {
@@ -672,7 +672,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                      break;
                }
             }
-            addStmtToIRBB( bbOut, st );
+            addStmtToIRSB( bbOut, st );
             break;
 
          case Ist_Store:
@@ -686,7 +686,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                tl_assert(type != Ity_INVALID);
                instrument_detail( bbOut, OpStore, type );
             }
-            addStmtToIRBB( bbOut, st );
+            addStmtToIRSB( bbOut, st );
             break;
 
          case Ist_Dirty: {
@@ -705,7 +705,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                tl_assert(d->mAddr == NULL);
                tl_assert(d->mSize == 0);
             }
-            addStmtToIRBB( bbOut, st );
+            addStmtToIRSB( bbOut, st );
             break;
          }
 
@@ -715,13 +715,13 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                di = unsafeIRDirty_0_N( 0, "add_one_Jcc", 
                                           VG_(fnptr_to_fnentry)( &add_one_Jcc ), 
                                           mkIRExprVec_0() );
-               addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+               addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
             }
             if (clo_trace_mem) {
                flushEvents(bbOut);
             }
 
-            addStmtToIRBB( bbOut, st );      // Original statement
+            addStmtToIRSB( bbOut, st );      // Original statement
 
             if (clo_basic_counts) {
                /* Count non-taken Jcc */
@@ -729,7 +729,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
                                           VG_(fnptr_to_fnentry)(
                                              &add_one_Jcc_untaken ),
                                           mkIRExprVec_0() );
-               addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+               addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
             }
             break;
 
@@ -743,7 +743,7 @@ IRBB* lk_instrument ( VgCallbackClosure* closure,
       di = unsafeIRDirty_0_N( 0, "add_one_BB_completed", 
                                  VG_(fnptr_to_fnentry)( &add_one_BB_completed ),
                                  mkIRExprVec_0() );
-      addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+      addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
    }
 
    if (clo_trace_mem) {

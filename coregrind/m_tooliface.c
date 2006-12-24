@@ -40,7 +40,7 @@ VgToolInterface VG_(tdict);
 
 void VG_(basic_tool_funcs)(
    void(*post_clo_init)(void),
-   IRBB*(*instrument)(VgCallbackClosure*, IRBB*, 
+   IRSB*(*instrument)(VgCallbackClosure*, IRSB*, 
                       VexGuestLayout*, VexGuestExtents*, IRType, IRType),
    void(*fini)(Int)
 )
@@ -86,7 +86,7 @@ VgNeeds VG_(needs) = {
    .core_errors          = False,
    .tool_errors          = False,
    .libc_freeres         = False,
-   .basic_block_discards = False,
+   .superblock_discards  = False,
    .command_line_options = False,
    .client_requests      = False,
    .syscall_wrapper      = False,
@@ -164,12 +164,12 @@ NEEDS(core_errors)
 NEEDS(data_syms)
 NEEDS(xml_output)
 
-void VG_(needs_basic_block_discards)(
+void VG_(needs_superblock_discards)(
    void (*discard)(Addr64, VexGuestExtents)
 )
 {
-   VG_(needs).basic_block_discards = True;
-   VG_(tdict).tool_discard_basic_block_info = discard;
+   VG_(needs).superblock_discards = True;
+   VG_(tdict).tool_discard_superblock_info = discard;
 }
 
 void VG_(needs_tool_errors)(

@@ -208,26 +208,26 @@ static void update_SP_aliases(Long delta)
    we fall back to the case that handles an unknown SP change.
 */
 static
-IRBB* vg_SP_update_pass ( void*             closureV,
-                          IRBB*             bb_in, 
+IRSB* vg_SP_update_pass ( void*             closureV,
+                          IRSB*             sb_in, 
                           VexGuestLayout*   layout, 
                           VexGuestExtents*  vge,
                           IRType            gWordTy, 
                           IRType            hWordTy )
 {
-   Int      i, j, minoff_ST, maxoff_ST, sizeof_SP, offset_SP;
-   IRDirty  *dcall, *d;
-   IRStmt*  st;
-   IRExpr*  e;
-   IRArray* descr;
-   IRType   typeof_SP;
-   Long     delta, con;
+   Int         i, j, minoff_ST, maxoff_ST, sizeof_SP, offset_SP;
+   IRDirty     *dcall, *d;
+   IRStmt*     st;
+   IRExpr*     e;
+   IRRegArray* descr;
+   IRType      typeof_SP;
+   Long        delta, con;
 
    /* Set up BB */
-   IRBB* bb     = emptyIRBB();
-   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
-   bb->next     = dopyIRExpr(bb_in->next);
-   bb->jumpkind = bb_in->jumpkind;
+   IRSB* bb     = emptyIRSB();
+   bb->tyenv    = deepCopyIRTypeEnv(sb_in->tyenv);
+   bb->next     = deepCopyIRExpr(sb_in->next);
+   bb->jumpkind = sb_in->jumpkind;
 
    delta = 0;
 
@@ -258,14 +258,14 @@ IRBB* vg_SP_update_pass ( void*             closureV,
                     "track_" #kind "_mem_stack_" #syze,                 \
                     VG_(fnptr_to_fnentry)(                              \
                        VG_(tdict).track_##kind##_mem_stack_##syze ),    \
-                    mkIRExprVec_1(IRExpr_Tmp(tmpp))                     \
+                    mkIRExprVec_1(IRExpr_RdTmp(tmpp))                   \
                  );                                                     \
          dcall->nFxState = 1;                                           \
          dcall->fxState[0].fx     = Ifx_Read;                           \
          dcall->fxState[0].offset = layout->offset_SP;                  \
          dcall->fxState[0].size   = layout->sizeof_SP;                  \
                                                                         \
-         addStmtToIRBB( bb, IRStmt_Dirty(dcall) );                      \
+         addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                      \
                                                                         \
          update_SP_aliases(-delta);                                     \
                                                                         \
@@ -275,75 +275,75 @@ IRBB* vg_SP_update_pass ( void*             closureV,
 
    clear_SP_aliases();
 
-   for (i = 0; i <  bb_in->stmts_used; i++) {
+   for (i = 0; i <  sb_in->stmts_used; i++) {
 
-      st = bb_in->stmts[i];
+      st = sb_in->stmts[i];
 
       /* t = Get(sp):   curr = t, delta = 0 */
-      if (st->tag != Ist_Tmp) goto case2;
-      e = st->Ist.Tmp.data;
+      if (st->tag != Ist_WrTmp) goto case2;
+      e = st->Ist.WrTmp.data;
       if (e->tag != Iex_Get)              goto case2;
       if (e->Iex.Get.offset != offset_SP) goto case2;
       if (e->Iex.Get.ty != typeof_SP)     goto case2;
-      add_SP_alias(st->Ist.Tmp.tmp, 0);
-      addStmtToIRBB( bb, st );
+      add_SP_alias(st->Ist.WrTmp.tmp, 0);
+      addStmtToIRSB( bb, st );
       continue;
 
      case2:
       /* t' = curr +/- const:   curr = t',  delta +=/-= const */
-      if (st->tag != Ist_Tmp) goto case3;
-      e = st->Ist.Tmp.data;
+      if (st->tag != Ist_WrTmp) goto case3;
+      e = st->Ist.WrTmp.data;
       if (e->tag != Iex_Binop) goto case3;
-      if (e->Iex.Binop.arg1->tag != Iex_Tmp) goto case3;
-      if (!get_SP_delta(e->Iex.Binop.arg1->Iex.Tmp.tmp, &delta)) goto case3;
+      if (e->Iex.Binop.arg1->tag != Iex_RdTmp) goto case3;
+      if (!get_SP_delta(e->Iex.Binop.arg1->Iex.RdTmp.tmp, &delta)) goto case3;
       if (e->Iex.Binop.arg2->tag != Iex_Const) goto case3;
       if (!IS_ADD_OR_SUB(e->Iex.Binop.op)) goto case3;
       con = GET_CONST(e->Iex.Binop.arg2->Iex.Const.con);
       if (IS_ADD(e->Iex.Binop.op)) {
-         add_SP_alias(st->Ist.Tmp.tmp, delta + con);
+         add_SP_alias(st->Ist.WrTmp.tmp, delta + con);
       } else {
-         add_SP_alias(st->Ist.Tmp.tmp, delta - con);
+         add_SP_alias(st->Ist.WrTmp.tmp, delta - con);
       }
-      addStmtToIRBB( bb, st );
+      addStmtToIRSB( bb, st );
       continue;
 
      case3:
       /* t' = curr:   curr = t' */
-      if (st->tag != Ist_Tmp) goto case4;
-      e = st->Ist.Tmp.data;
-      if (e->tag != Iex_Tmp) goto case4;
-      if (!get_SP_delta(e->Iex.Tmp.tmp, &delta)) goto case4;
-      add_SP_alias(st->Ist.Tmp.tmp, delta);
-      addStmtToIRBB( bb, st );
+      if (st->tag != Ist_WrTmp) goto case4;
+      e = st->Ist.WrTmp.data;
+      if (e->tag != Iex_RdTmp) goto case4;
+      if (!get_SP_delta(e->Iex.RdTmp.tmp, &delta)) goto case4;
+      add_SP_alias(st->Ist.WrTmp.tmp, delta);
+      addStmtToIRSB( bb, st );
       continue;
 
      case4:
       /* Put(sp) = curr */
       if (st->tag != Ist_Put) goto case5;
       if (st->Ist.Put.offset != offset_SP) goto case5;
-      if (st->Ist.Put.data->tag != Iex_Tmp) goto case5;
-      if (get_SP_delta(st->Ist.Put.data->Iex.Tmp.tmp, &delta)) {
-         IRTemp tttmp = st->Ist.Put.data->Iex.Tmp.tmp;
+      if (st->Ist.Put.data->tag != Iex_RdTmp) goto case5;
+      if (get_SP_delta(st->Ist.Put.data->Iex.RdTmp.tmp, &delta)) {
+         IRTemp tttmp = st->Ist.Put.data->Iex.RdTmp.tmp;
          switch (delta) {
-            case    0:                      addStmtToIRBB(bb,st); continue;
-            case    4: DO(die,  4,  tttmp); addStmtToIRBB(bb,st); continue;
-            case   -4: DO(new,  4,  tttmp); addStmtToIRBB(bb,st); continue;
-            case    8: DO(die,  8,  tttmp); addStmtToIRBB(bb,st); continue;
-            case   -8: DO(new,  8,  tttmp); addStmtToIRBB(bb,st); continue;
-            case   12: DO(die,  12, tttmp); addStmtToIRBB(bb,st); continue;
-            case  -12: DO(new,  12, tttmp); addStmtToIRBB(bb,st); continue;
-            case   16: DO(die,  16, tttmp); addStmtToIRBB(bb,st); continue;
-            case  -16: DO(new,  16, tttmp); addStmtToIRBB(bb,st); continue;
-            case   32: DO(die,  32, tttmp); addStmtToIRBB(bb,st); continue;
-            case  -32: DO(new,  32, tttmp); addStmtToIRBB(bb,st); continue;
-            case  112: DO(die, 112, tttmp); addStmtToIRBB(bb,st); continue;
-            case -112: DO(new, 112, tttmp); addStmtToIRBB(bb,st); continue;
-            case  128: DO(die, 128, tttmp); addStmtToIRBB(bb,st); continue;
-            case -128: DO(new, 128, tttmp); addStmtToIRBB(bb,st); continue;
-            case  144: DO(die, 144, tttmp); addStmtToIRBB(bb,st); continue;
-            case -144: DO(new, 144, tttmp); addStmtToIRBB(bb,st); continue;
-            case  160: DO(die, 160, tttmp); addStmtToIRBB(bb,st); continue;
-            case -160: DO(new, 160, tttmp); addStmtToIRBB(bb,st); continue;
+            case    0:                      addStmtToIRSB(bb,st); continue;
+            case    4: DO(die,  4,  tttmp); addStmtToIRSB(bb,st); continue;
+            case   -4: DO(new,  4,  tttmp); addStmtToIRSB(bb,st); continue;
+            case    8: DO(die,  8,  tttmp); addStmtToIRSB(bb,st); continue;
+            case   -8: DO(new,  8,  tttmp); addStmtToIRSB(bb,st); continue;
+            case   12: DO(die,  12, tttmp); addStmtToIRSB(bb,st); continue;
+            case  -12: DO(new,  12, tttmp); addStmtToIRSB(bb,st); continue;
+            case   16: DO(die,  16, tttmp); addStmtToIRSB(bb,st); continue;
+            case  -16: DO(new,  16, tttmp); addStmtToIRSB(bb,st); continue;
+            case   32: DO(die,  32, tttmp); addStmtToIRSB(bb,st); continue;
+            case  -32: DO(new,  32, tttmp); addStmtToIRSB(bb,st); continue;
+            case  112: DO(die, 112, tttmp); addStmtToIRSB(bb,st); continue;
+            case -112: DO(new, 112, tttmp); addStmtToIRSB(bb,st); continue;
+            case  128: DO(die, 128, tttmp); addStmtToIRSB(bb,st); continue;
+            case -128: DO(new, 128, tttmp); addStmtToIRSB(bb,st); continue;
+            case  144: DO(die, 144, tttmp); addStmtToIRSB(bb,st); continue;
+            case -144: DO(new, 144, tttmp); addStmtToIRSB(bb,st); continue;
+            case  160: DO(die, 160, tttmp); addStmtToIRSB(bb,st); continue;
+            case -160: DO(new, 160, tttmp); addStmtToIRSB(bb,st); continue;
             default:  
                /* common values for ppc64: 144 128 160 112 176 */
                n_SP_updates_generic_known++;
@@ -359,23 +359,23 @@ IRBB* vg_SP_update_pass ( void*             closureV,
         generic:
          /* Pass both the old and new SP values to this helper. */
          old_SP = newIRTemp(bb->tyenv, typeof_SP);
-         addStmtToIRBB( 
+         addStmtToIRSB( 
             bb,
-            IRStmt_Tmp( old_SP, IRExpr_Get(offset_SP, typeof_SP) ) 
+            IRStmt_WrTmp( old_SP, IRExpr_Get(offset_SP, typeof_SP) ) 
          );
 
          dcall = unsafeIRDirty_0_N( 
                     2/*regparms*/, 
                     "VG_(unknown_SP_update)", 
                     VG_(fnptr_to_fnentry)( &VG_(unknown_SP_update) ),
-                    mkIRExprVec_2( IRExpr_Tmp(old_SP), st->Ist.Put.data ) 
+                    mkIRExprVec_2( IRExpr_RdTmp(old_SP), st->Ist.Put.data ) 
                  );
-         addStmtToIRBB( bb, IRStmt_Dirty(dcall) );
+         addStmtToIRSB( bb, IRStmt_Dirty(dcall) );
 
-         addStmtToIRBB( bb, st );
+         addStmtToIRSB( bb, st );
 
          clear_SP_aliases();
-         add_SP_alias(st->Ist.Put.data->Iex.Tmp.tmp, 0);
+         add_SP_alias(st->Ist.Put.data->Iex.RdTmp.tmp, 0);
          continue;
       }
 
@@ -403,9 +403,9 @@ IRBB* vg_SP_update_pass ( void*             closureV,
       }
 
       /* well, not interesting.  Just copy and keep going. */
-      addStmtToIRBB( bb, st );
+      addStmtToIRSB( bb, st );
 
-   } /* for (i = 0; i <  bb_in->stmts_used; i++) */
+   } /* for (i = 0; i < sb_in->stmts_used; i++) */
 
    return bb;
 
@@ -617,11 +617,11 @@ static IRExpr* narrowTo32 ( IRTypeEnv* tyenv, IRExpr* e ) {
    redir stack, checking for stack overflow and generating code to
    bomb out if so. */
 
-static void gen_PUSH ( IRBB* bb, IRExpr* e )
+static void gen_PUSH ( IRSB* bb, IRExpr* e )
 {
-   IRArray* descr;
-   IRTemp   t1;
-   IRExpr*  one;
+   IRRegArray* descr;
+   IRTemp      t1;
+   IRExpr*     one;
 
 #  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
@@ -655,16 +655,16 @@ static void gen_PUSH ( IRBB* bb, IRExpr* e )
    vg_assert(sizeof(Word)  == VG_WORDSIZE);
    vg_assert(sizeof(Addr)  == VG_WORDSIZE);
 
-   descr = mkIRArray( offB_REDIR_STACK, ty_Word, stack_size );
+   descr = mkIRRegArray( offB_REDIR_STACK, ty_Word, stack_size );
    t1    = newIRTemp( bb->tyenv, ty_Word );
    one   = mkU(1);
 
    vg_assert(typeOfIRExpr(bb->tyenv, e) == ty_Word);
 
    /* t1 = guest_REDIR_SP + 1 */
-   addStmtToIRBB(
+   addStmtToIRSB(
       bb, 
-      IRStmt_Tmp(
+      IRStmt_WrTmp(
          t1, 
          IRExpr_Binop(op_Add, IRExpr_Get( offB_REDIR_SP, ty_Word ), one)
       )
@@ -675,18 +675,18 @@ static void gen_PUSH ( IRBB* bb, IRExpr* e )
       this is an unrecoverable error and will lead to Valgrind
       shutting down.  _EMWARN is set regardless - that's harmless
       since is only has a meaning if the exit is taken. */
-   addStmtToIRBB(
+   addStmtToIRSB(
       bb,
       IRStmt_Put(offB_EMWARN, mkU32(EmWarn_PPC64_redir_overflow))
    );
-   addStmtToIRBB(
+   addStmtToIRSB(
       bb,
       IRStmt_Exit(
          IRExpr_Binop(
             op_CmpNE,
             IRExpr_Binop(
                op_Sar,
-               IRExpr_Binop(op_Sub,mkU(stack_size-1),IRExpr_Tmp(t1)),
+               IRExpr_Binop(op_Sub,mkU(stack_size-1),IRExpr_RdTmp(t1)),
                mkU8(8 * VG_WORDSIZE - 1)
             ),
             mkU(0)
@@ -697,13 +697,13 @@ static void gen_PUSH ( IRBB* bb, IRExpr* e )
    );
 
    /* guest_REDIR_SP = t1 */
-   addStmtToIRBB(bb, IRStmt_Put(offB_REDIR_SP, IRExpr_Tmp(t1)));
+   addStmtToIRSB(bb, IRStmt_Put(offB_REDIR_SP, IRExpr_RdTmp(t1)));
 
    /* guest_REDIR_STACK[t1+0] = e */
    /* PutI/GetI have I32-typed indexes regardless of guest word size */
-   addStmtToIRBB(
+   addStmtToIRSB(
       bb, 
-      IRStmt_PutI(descr, narrowTo32(bb->tyenv,IRExpr_Tmp(t1)), 0, e)
+      IRStmt_PutI(descr, narrowTo32(bb->tyenv,IRExpr_RdTmp(t1)), 0, e)
    );
 }
 
@@ -712,7 +712,7 @@ static void gen_PUSH ( IRBB* bb, IRExpr* e )
    stack, binding it to a new temporary, which is returned.  As with
    gen_PUSH, an overflow check is also performed. */
 
-static IRTemp gen_POP ( IRBB* bb )
+static IRTemp gen_POP ( IRSB* bb )
 {
 #  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
@@ -738,34 +738,34 @@ static IRTemp gen_POP ( IRBB* bb )
    IRExpr*(*mkU)(UInt)     = mkU32;
 #  endif
 
-   IRArray* descr = mkIRArray( offB_REDIR_STACK, ty_Word, stack_size );
-   IRTemp   t1    = newIRTemp( bb->tyenv, ty_Word );
-   IRTemp   res   = newIRTemp( bb->tyenv, ty_Word );
-   IRExpr*  one   = mkU(1);
+   IRRegArray* descr = mkIRRegArray( offB_REDIR_STACK, ty_Word, stack_size );
+   IRTemp      t1    = newIRTemp( bb->tyenv, ty_Word );
+   IRTemp      res   = newIRTemp( bb->tyenv, ty_Word );
+   IRExpr*     one   = mkU(1);
 
    vg_assert(sizeof(void*) == VG_WORDSIZE);
    vg_assert(sizeof(Word)  == VG_WORDSIZE);
    vg_assert(sizeof(Addr)  == VG_WORDSIZE);
 
    /* t1 = guest_REDIR_SP */
-   addStmtToIRBB(
+   addStmtToIRSB(
       bb, 
-      IRStmt_Tmp( t1, IRExpr_Get( offB_REDIR_SP, ty_Word ) )
+      IRStmt_WrTmp( t1, IRExpr_Get( offB_REDIR_SP, ty_Word ) )
    );
 
    /* Bomb out if t1 < 0.  Same comments as gen_PUSH apply. */
-   addStmtToIRBB(
+   addStmtToIRSB(
       bb,
       IRStmt_Put(offB_EMWARN, mkU32(EmWarn_PPC64_redir_underflow))
    );
-   addStmtToIRBB(
+   addStmtToIRSB(
       bb,
       IRStmt_Exit(
          IRExpr_Binop(
             op_CmpNE,
             IRExpr_Binop(
                op_Sar,
-               IRExpr_Tmp(t1),
+               IRExpr_RdTmp(t1),
                mkU8(8 * VG_WORDSIZE - 1)
             ),
             mkU(0)
@@ -777,18 +777,18 @@ static IRTemp gen_POP ( IRBB* bb )
 
    /* res = guest_REDIR_STACK[t1+0] */
    /* PutI/GetI have I32-typed indexes regardless of guest word size */
-   addStmtToIRBB(
+   addStmtToIRSB(
       bb,
-      IRStmt_Tmp(
+      IRStmt_WrTmp(
          res, 
-         IRExpr_GetI(descr, narrowTo32(bb->tyenv,IRExpr_Tmp(t1)), 0)
+         IRExpr_GetI(descr, narrowTo32(bb->tyenv,IRExpr_RdTmp(t1)), 0)
       )
    );
 
    /* guest_REDIR_SP = t1-1 */
-   addStmtToIRBB(
+   addStmtToIRSB(
       bb, 
-      IRStmt_Put(offB_REDIR_SP, IRExpr_Binop(op_Sub, IRExpr_Tmp(t1), one))
+      IRStmt_Put(offB_REDIR_SP, IRExpr_Binop(op_Sub, IRExpr_RdTmp(t1), one))
    );
 
    return res;
@@ -801,7 +801,7 @@ static IRTemp gen_POP ( IRBB* bb )
    intercept the return and restore R2 and L2 to the values saved
    here. */
 
-static void gen_push_and_set_LR_R2 ( IRBB* bb, Addr64 new_R2_value )
+static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
 {
 #  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
    Addr64 bogus_RA  = (Addr64)&VG_(ppctoc_magic_redirect_return_stub);
@@ -809,8 +809,8 @@ static void gen_push_and_set_LR_R2 ( IRBB* bb, Addr64 new_R2_value )
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
    gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I64) );
    gen_PUSH( bb, IRExpr_Get(offB_GPR2, Ity_I64) );
-   addStmtToIRBB( bb, IRStmt_Put( offB_LR,   mkU64( bogus_RA )) );
-   addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, mkU64( new_R2_value )) );
+   addStmtToIRSB( bb, IRStmt_Put( offB_LR,   mkU64( bogus_RA )) );
+   addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, mkU64( new_R2_value )) );
 
 #  elif defined(VGP_ppc32_aix5)
    Addr32 bogus_RA  = (Addr32)&VG_(ppctoc_magic_redirect_return_stub);
@@ -818,15 +818,15 @@ static void gen_push_and_set_LR_R2 ( IRBB* bb, Addr64 new_R2_value )
    Int    offB_LR   = offsetof(VexGuestPPC32State,guest_LR);
    gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I32) );
    gen_PUSH( bb, IRExpr_Get(offB_GPR2, Ity_I32) );
-   addStmtToIRBB( bb, IRStmt_Put( offB_LR,   mkU32( bogus_RA )) );
-   addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, mkU32( new_R2_value )) );
+   addStmtToIRSB( bb, IRStmt_Put( offB_LR,   mkU32( bogus_RA )) );
+   addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, mkU32( new_R2_value )) );
 
 #  else
 #    error Platform is not TOC-afflicted, fortunately
 #  endif
 }
 
-static void gen_pop_R2_LR_then_bLR ( IRBB* bb )
+static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
 {
 #  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
@@ -835,16 +835,16 @@ static void gen_pop_R2_LR_then_bLR ( IRBB* bb )
    IRTemp old_LR    = newIRTemp( bb->tyenv, Ity_I64 );
    /* Restore R2 */
    old_R2 = gen_POP( bb );
-   addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, IRExpr_Tmp(old_R2)) );
+   addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, IRExpr_RdTmp(old_R2)) );
    /* Restore LR */
    old_LR = gen_POP( bb );
-   addStmtToIRBB( bb, IRStmt_Put( offB_LR, IRExpr_Tmp(old_LR)) );
+   addStmtToIRSB( bb, IRStmt_Put( offB_LR, IRExpr_RdTmp(old_LR)) );
    /* Branch to LR */
    /* re boring, we arrived here precisely because a wrapped fn did a
       blr (hence Ijk_Ret); so we should just mark this jump as Boring,
       else one _Call will have resulted in two _Rets. */
    bb->jumpkind = Ijk_Boring;
-   bb->next = IRExpr_Binop(Iop_And64, IRExpr_Tmp(old_LR), mkU64(~(3ULL)));
+   bb->next = IRExpr_Binop(Iop_And64, IRExpr_RdTmp(old_LR), mkU64(~(3ULL)));
 
 #  elif defined(VGP_ppc32_aix5)
    Int    offB_GPR2 = offsetof(VexGuestPPC32State,guest_GPR2);
@@ -853,17 +853,17 @@ static void gen_pop_R2_LR_then_bLR ( IRBB* bb )
    IRTemp old_LR    = newIRTemp( bb->tyenv, Ity_I32 );
    /* Restore R2 */
    old_R2 = gen_POP( bb );
-   addStmtToIRBB( bb, IRStmt_Put( offB_GPR2, IRExpr_Tmp(old_R2)) );
+   addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, IRExpr_RdTmp(old_R2)) );
    /* Restore LR */
    old_LR = gen_POP( bb );
-   addStmtToIRBB( bb, IRStmt_Put( offB_LR, IRExpr_Tmp(old_LR)) );
+   addStmtToIRSB( bb, IRStmt_Put( offB_LR, IRExpr_RdTmp(old_LR)) );
 
    /* Branch to LR */
    /* re boring, we arrived here precisely because a wrapped fn did a
       blr (hence Ijk_Ret); so we should just mark this jump as Boring,
       else one _Call will have resulted in two _Rets. */
    bb->jumpkind = Ijk_Boring;
-   bb->next = IRExpr_Binop(Iop_And32, IRExpr_Tmp(old_LR), mkU32(~3));
+   bb->next = IRExpr_Binop(Iop_And32, IRExpr_RdTmp(old_LR), mkU32(~3));
 
 #  else
 #    error Platform is not TOC-afflicted, fortunately
@@ -871,13 +871,13 @@ static void gen_pop_R2_LR_then_bLR ( IRBB* bb )
 }
 
 static
-Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRBB* bb )
+Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRSB* bb )
 {
    VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
-   /* Since we're creating the entire IRBB right here, give it a
+   /* Since we're creating the entire IRSB right here, give it a
       proper IMark, as it won't get one any other way, and cachegrind
       will barf if it doesn't have one (fair enough really). */
-   addStmtToIRBB( bb, IRStmt_IMark( closure->readdr, 4 ) );
+   addStmtToIRSB( bb, IRStmt_IMark( closure->readdr, 4 ) );
    /* Generate the magic sequence:
          pop R2 from hidden stack
          pop LR from hidden stack
@@ -911,13 +911,13 @@ Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRBB* bb )
    return stub address, and that in that case it can get the real LR
    value from the hidden stack instead. */
 static 
-Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
+Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRSB* bb )
 {
    Int nraddr_szB
       = sizeof(((VexGuestArchState*)0)->guest_NRADDR);
    vg_assert(nraddr_szB == 4 || nraddr_szB == 8);
    vg_assert(nraddr_szB == VG_WORDSIZE);
-   addStmtToIRBB( 
+   addStmtToIRSB( 
       bb,
       IRStmt_Put( 
          offsetof(VexGuestArchState,guest_NRADDR),
@@ -926,7 +926,7 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
    );
 #  if defined(VG_PLAT_USES_PPCTOC)
    { VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
-     addStmtToIRBB(
+     addStmtToIRSB(
         bb,
         IRStmt_Put(
            offsetof(VexGuestArchState,guest_NRADDR_GPR2),
@@ -944,14 +944,14 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRBB* bb )
    can read _NRADDR and find the address of the function being
    wrapped.  On toc-afflicted platforms we must also snarf r2. */
 static 
-Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRBB* bb )
+Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
 {
    VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
    Int nraddr_szB
       = sizeof(((VexGuestArchState*)0)->guest_NRADDR);
    vg_assert(nraddr_szB == 4 || nraddr_szB == 8);
    vg_assert(nraddr_szB == VG_WORDSIZE);
-   addStmtToIRBB( 
+   addStmtToIRSB( 
       bb,
       IRStmt_Put( 
          offsetof(VexGuestArchState,guest_NRADDR),
@@ -962,7 +962,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRBB* bb )
    );
 #  if defined(VGP_ppc64_linux) || defined(VGP_ppc32_aix5) \
                                || defined(VGP_ppc64_aix5)
-   addStmtToIRBB( 
+   addStmtToIRSB( 
       bb,
       IRStmt_Put( 
          offsetof(VexGuestArchState,guest_NRADDR_GPR2),
@@ -1067,10 +1067,10 @@ Bool VG_(translate) ( ThreadId tid,
    Int                tmpbuf_used, verbosity, i;
    Bool               notrace_until_done, do_self_check;
    UInt               notrace_until_limit = 0;
-   Bool (*preamble_fn)(void*,IRBB*);
+   Bool (*preamble_fn)(void*,IRSB*);
    VexArch            vex_arch;
    VexArchInfo        vex_archinfo;
-   VexMiscInfo        vex_miscinfo;
+   VexAbiInfo         vex_abiinfo;
    VexGuestExtents    vge;
    VexTranslateArgs   vta;
    VexTranslateResult tres;
@@ -1217,27 +1217,27 @@ Bool VG_(translate) ( ThreadId tid,
    /* Get the CPU info established at startup. */
    VG_(machine_get_VexArchInfo)( &vex_arch, &vex_archinfo );
 
-   /* Set up 'misc info' structure with stuff Vex needs to know about
+   /* Set up 'abiinfo' structure with stuff Vex needs to know about
       the guest and host ABIs. */
 
-   LibVEX_default_VexMiscInfo( &vex_miscinfo );
-   vex_miscinfo.guest_stack_redzone_size = VG_STACK_REDZONE_SZB;
+   LibVEX_default_VexAbiInfo( &vex_abiinfo );
+   vex_abiinfo.guest_stack_redzone_size = VG_STACK_REDZONE_SZB;
 
 #  if defined(VGP_ppc32_linux)
-   vex_miscinfo.guest_ppc_zap_RZ_at_blr        = False;
-   vex_miscinfo.guest_ppc_zap_RZ_at_bl         = NULL;
-   vex_miscinfo.host_ppc32_regalign_int64_args = True;
+   vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;
+   vex_abiinfo.guest_ppc_zap_RZ_at_bl         = NULL;
+   vex_abiinfo.host_ppc32_regalign_int64_args = True;
 #  endif
 #  if defined(VGP_ppc64_linux)
-   vex_miscinfo.guest_ppc_zap_RZ_at_blr        = True;
-   vex_miscinfo.guest_ppc_zap_RZ_at_bl         = const_True;
-   vex_miscinfo.host_ppc_calls_use_fndescrs    = True;
+   vex_abiinfo.guest_ppc_zap_RZ_at_blr        = True;
+   vex_abiinfo.guest_ppc_zap_RZ_at_bl         = const_True;
+   vex_abiinfo.host_ppc_calls_use_fndescrs    = True;
 #  endif
 #  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   vex_miscinfo.guest_ppc_zap_RZ_at_blr        = False;
-   vex_miscinfo.guest_ppc_zap_RZ_at_bl         = bl_RZ_zap_ok_for_AIX;
-   vex_miscinfo.guest_ppc_sc_continues_at_LR   = True;
-   vex_miscinfo.host_ppc_calls_use_fndescrs    = True;
+   vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;
+   vex_abiinfo.guest_ppc_zap_RZ_at_bl         = bl_RZ_zap_ok_for_AIX;
+   vex_abiinfo.guest_ppc_sc_continues_at_LR   = True;
+   vex_abiinfo.host_ppc_calls_use_fndescrs    = True;
 #  endif
 
    /* Set up closure args. */
@@ -1250,7 +1250,7 @@ Bool VG_(translate) ( ThreadId tid,
    vta.archinfo_guest   = vex_archinfo;
    vta.arch_host        = vex_arch;
    vta.archinfo_host    = vex_archinfo;
-   vta.miscinfo_both    = vex_miscinfo;
+   vta.abiinfo_both     = vex_abiinfo;
    vta.guest_bytes      = (UChar*)ULong_to_Ptr(addr);
    vta.guest_bytes_addr = (Addr64)addr;
    vta.callback_opaque  = (void*)&closure;
@@ -1266,14 +1266,14 @@ Bool VG_(translate) ( ThreadId tid,
         VgCallbackClosure*.  Hence the following longwinded casts.
         They are entirely legal but longwinded so as to maximise the
         chance of the C typechecker picking up any type snafus. */
-     IRBB*(*f)(VgCallbackClosure*,
-               IRBB*,VexGuestLayout*,VexGuestExtents*,
+     IRSB*(*f)(VgCallbackClosure*,
+               IRSB*,VexGuestLayout*,VexGuestExtents*,
                IRType,IRType)
        = VG_(tdict).tool_instrument;
-     IRBB*(*g)(void*,
-               IRBB*,VexGuestLayout*,VexGuestExtents*,
+     IRSB*(*g)(void*,
+               IRSB*,VexGuestLayout*,VexGuestExtents*,
                IRType,IRType)
-       = (IRBB*(*)(void*,IRBB*,VexGuestLayout*,VexGuestExtents*,IRType,IRType))f;
+       = (IRSB*(*)(void*,IRSB*,VexGuestLayout*,VexGuestExtents*,IRType,IRType))f;
      vta.instrument1    = g;
    }
    /* No need for type kludgery here. */

@@ -235,7 +235,7 @@ obj_node* obj_of_address(Addr addr)
  * bbIn==0 is possible for artifical BB without real code.
  * Such a BB is created when returning to an unknown function.
  */
-BB* CLG_(get_bb)(Addr addr, IRBB* bbIn, /*OUT*/ Bool *seen_before)
+BB* CLG_(get_bb)(Addr addr, IRSB* bbIn, /*OUT*/ Bool *seen_before)
 {
   BB*   bb;
   obj_node* obj;

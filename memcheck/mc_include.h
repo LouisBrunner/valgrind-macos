@@ -314,8 +314,8 @@ extern void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len );
 
 /* Functions defined in mc_translate.c */
 extern
-IRBB* MC_(instrument) ( VgCallbackClosure* closure,
-                        IRBB* bb_in, 
+IRSB* MC_(instrument) ( VgCallbackClosure* closure,
+                        IRSB* bb_in, 
                         VexGuestLayout* layout, 
                         VexGuestExtents* vge,
                         IRType gWordTy, IRType hWordTy );

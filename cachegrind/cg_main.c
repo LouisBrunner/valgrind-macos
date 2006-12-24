@@ -115,11 +115,11 @@ static OSet* CC_table;
 //------------------------------------------------------------
 // Primary data structure #2: InstrInfo table
 // - Holds the cached info about each instr that is used for simulation.
-// - table(BB_start_addr, list(InstrInfo))
-// - For each BB, each InstrInfo in the list holds info about the
+// - table(SB_start_addr, list(InstrInfo))
+// - For each SB, each InstrInfo in the list holds info about the
 //   instruction (instrLen, instrAddr, etc), plus a pointer to its line
 //   CC.  This node is what's passed to the simulation function.
-// - When BBs are discarded the relevant list(instr_details) is freed.
+// - When SBs are discarded the relevant list(instr_details) is freed.
 
 typedef struct _InstrInfo InstrInfo;
 struct _InstrInfo {
@@ -128,9 +128,9 @@ struct _InstrInfo {
    LineCC* parent;         // parent line-CC
 };
 
-typedef struct _BB_info BB_info;
-struct _BB_info {
-   Addr      BB_addr;      // key;  MUST BE FIRST
+typedef struct _SB_info SB_info;
+struct _SB_info {
+   Addr      SB_addr;      // key;  MUST BE FIRST
    Int       n_instrs;
    InstrInfo instrs[0];
 };
@@ -407,13 +407,13 @@ typedef
       Int   events_used;
 
       /* The array of InstrInfo bins for the BB. */
-      BB_info* bbInfo;
+      SB_info* sbInfo;
 
       /* Number InstrInfo bins 'used' so far. */
-      Int bbInfo_i;
+      Int sbInfo_i;
 
-      /* The output BB being constructed. */
-      IRBB* bbOut;
+      /* The output SB being constructed. */
+      IRSB* sbOut;
    }
    CgState;
 
@@ -425,16 +425,16 @@ typedef
 // Note that origAddr is the real origAddr, not the address of the first
 // instruction in the block (they can be different due to redirection).
 static
-BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
+SB_info* get_SB_info(IRSB* sbIn, Addr origAddr)
 {
    Int      i, n_instrs;
    IRStmt*  st;
-   BB_info* bbInfo;
+   SB_info* sbInfo;
 
-   // Count number of original instrs in BB
+   // Count number of original instrs in SB
    n_instrs = 0;
-   for (i = 0; i < bbIn->stmts_used; i++) {
-      st = bbIn->stmts[i];
+   for (i = 0; i < sbIn->stmts_used; i++) {
+      st = sbIn->stmts[i];
       if (Ist_IMark == st->tag) n_instrs++;
    }
 
@@ -442,19 +442,19 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr)
    // If this assertion fails, there has been some screwup:  some
    // translations must have been discarded but Cachegrind hasn't discarded
    // the corresponding entries in the instr-info table.
-   bbInfo = VG_(OSet_Lookup)(instrInfoTable, &origAddr);
-   tl_assert(NULL == bbInfo);
+   sbInfo = VG_(OSet_Lookup)(instrInfoTable, &origAddr);
+   tl_assert(NULL == sbInfo);
 
    // BB never translated before (at this address, at least;  could have
    // been unloaded and then reloaded elsewhere in memory)
-   bbInfo = VG_(OSet_AllocNode)(instrInfoTable,
-                                sizeof(BB_info) + n_instrs*sizeof(InstrInfo)); 
-   bbInfo->BB_addr  = origAddr;
-   bbInfo->n_instrs = n_instrs;
-   VG_(OSet_Insert)( instrInfoTable, bbInfo );
+   sbInfo = VG_(OSet_AllocNode)(instrInfoTable,
+                                sizeof(SB_info) + n_instrs*sizeof(InstrInfo)); 
+   sbInfo->SB_addr  = origAddr;
+   sbInfo->n_instrs = n_instrs;
+   VG_(OSet_Insert)( instrInfoTable, sbInfo );
    distinct_instrs++;
 
-   return bbInfo;
+   return sbInfo;
 }
 
 
@@ -490,20 +490,20 @@ static
 InstrInfo* setup_InstrInfo ( CgState* cgs, Addr instr_addr, UInt instr_len )
 {
    InstrInfo* i_node;
-   tl_assert(cgs->bbInfo_i >= 0);
-   tl_assert(cgs->bbInfo_i < cgs->bbInfo->n_instrs);
-   i_node = &cgs->bbInfo->instrs[ cgs->bbInfo_i ];
+   tl_assert(cgs->sbInfo_i >= 0);
+   tl_assert(cgs->sbInfo_i < cgs->sbInfo->n_instrs);
+   i_node = &cgs->sbInfo->instrs[ cgs->sbInfo_i ];
    i_node->instr_addr = instr_addr;
    i_node->instr_len  = instr_len;
    i_node->parent     = get_lineCC(instr_addr);
-   cgs->bbInfo_i++;
+   cgs->sbInfo_i++;
    return i_node;
 }
 
 
 /* Generate code for all outstanding memory events, and mark the queue
    empty.  Code is generated into cgs->bbOut, and this activity
-   'consumes' slots in cgs->bbInfo. */
+   'consumes' slots in cgs->sbInfo. */
 
 static void flushEvents ( CgState* cgs )
 {
@@ -632,7 +632,7 @@ static void flushEvents ( CgState* cgs )
       di = unsafeIRDirty_0_N( regparms, 
                               helperName, VG_(fnptr_to_fnentry)( helperAddr ), 
                               argv );
-      addStmtToIRBB( cgs->bbOut, IRStmt_Dirty(di) );
+      addStmtToIRSB( cgs->sbOut, IRStmt_Dirty(di) );
    }
 
    cgs->events_used = 0;
@@ -706,8 +706,8 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 
 
 static
-IRBB* cg_instrument ( VgCallbackClosure* closure,
-                      IRBB* bbIn, 
+IRSB* cg_instrument ( VgCallbackClosure* closure,
+                      IRSB* sbIn, 
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )
@@ -716,7 +716,7 @@ IRBB* cg_instrument ( VgCallbackClosure* closure,
    IRStmt*    st;
    Addr64     cia; /* address of current insn */
    CgState    cgs;
-   IRTypeEnv* tyenv = bbIn->tyenv;
+   IRTypeEnv* tyenv = sbIn->tyenv;
    InstrInfo* curr_inode = NULL;
 
    if (gWordTy != hWordTy) {
@@ -724,37 +724,37 @@ IRBB* cg_instrument ( VgCallbackClosure* closure,
       VG_(tool_panic)("host/guest word size mismatch");
    }
 
-   // Set up new BB
-   cgs.bbOut = dopyIRBBExceptStmts(bbIn);
+   // Set up new SB
+   cgs.sbOut = deepCopyIRSBExceptStmts(sbIn);
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;
-   while (i < bbIn->stmts_used && bbIn->stmts[i]->tag != Ist_IMark) {
-      addStmtToIRBB( cgs.bbOut, bbIn->stmts[i] );
+   while (i < sbIn->stmts_used && sbIn->stmts[i]->tag != Ist_IMark) {
+      addStmtToIRSB( cgs.sbOut, sbIn->stmts[i] );
       i++;
    }
 
    // Get the first statement, and initial cia from it
-   tl_assert(bbIn->stmts_used > 0);
-   tl_assert(i < bbIn->stmts_used);
-   st = bbIn->stmts[i];
+   tl_assert(sbIn->stmts_used > 0);
+   tl_assert(i < sbIn->stmts_used);
+   st = sbIn->stmts[i];
    tl_assert(Ist_IMark == st->tag);
    cia = st->Ist.IMark.addr;
 
    // Set up running state and get block info
    tl_assert(closure->readdr == vge->base[0]);
    cgs.events_used = 0;
-   cgs.bbInfo      = get_BB_info(bbIn, (Addr)closure->readdr);
-   cgs.bbInfo_i    = 0;
+   cgs.sbInfo      = get_SB_info(sbIn, (Addr)closure->readdr);
+   cgs.sbInfo_i    = 0;
 
    if (DEBUG_CG)
       VG_(printf)("\n\n---------- cg_instrument ----------\n");
 
    // Traverse the block, initialising inodes, adding events and flushing as
    // necessary.
-   for (/*use current i*/; i < bbIn->stmts_used; i++) {
+   for (/*use current i*/; i < sbIn->stmts_used; i++) {
 
-      st = bbIn->stmts[i];
+      st = sbIn->stmts[i];
       tl_assert(isFlatIRStmt(st));
 
       switch (st->tag) {
@@ -785,8 +785,8 @@ IRBB* cg_instrument ( VgCallbackClosure* closure,
             addEvent_Ir( &cgs, curr_inode );
             break;
 
-         case Ist_Tmp: {
-            IRExpr* data = st->Ist.Tmp.data;
+         case Ist_WrTmp: {
+            IRExpr* data = st->Ist.WrTmp.data;
             if (data->tag == Iex_Load) {
                IRExpr* aexpr = data->Iex.Load.addr;
                // Note also, endianness info is ignored.  I guess
@@ -842,7 +842,7 @@ IRBB* cg_instrument ( VgCallbackClosure* closure,
       }
 
       /* Copy the original statement */
-      addStmtToIRBB( cgs.bbOut, st );
+      addStmtToIRSB( cgs.sbOut, st );
 
       if (DEBUG_CG) {
          ppIRStmt(st);
@@ -854,17 +854,17 @@ IRBB* cg_instrument ( VgCallbackClosure* closure,
    flushEvents( &cgs );
 
    /* done.  stay sane ... */
-   tl_assert(cgs.bbInfo_i == cgs.bbInfo->n_instrs);
+   tl_assert(cgs.sbInfo_i == cgs.sbInfo->n_instrs);
 
    if (DEBUG_CG) {
       VG_(printf)( "goto {");
-      ppIRJumpKind(bbIn->jumpkind);
+      ppIRJumpKind(sbIn->jumpkind);
       VG_(printf)( "} ");
-      ppIRExpr( bbIn->next );
+      ppIRExpr( sbIn->next );
       VG_(printf)( "}\n");
    }
 
-   return cgs.bbOut;
+   return cgs.sbOut;
 }
 
 /*------------------------------------------------------------*/
@@ -1232,9 +1232,9 @@ static void cg_fini(Int exitcode)
 // any reason at all: to free up space, because the guest code was
 // unmapped or modified, or for any arbitrary reason.
 static
-void cg_discard_basic_block_info ( Addr64 orig_addr64, VexGuestExtents vge )
+void cg_discard_superblock_info ( Addr64 orig_addr64, VexGuestExtents vge )
 {
-   BB_info* bbInfo;
+   SB_info* sbInfo;
    Addr     orig_addr = (Addr)vge.base[0];
 
    tl_assert(vge.n_used > 0);
@@ -1246,9 +1246,9 @@ void cg_discard_basic_block_info ( Addr64 orig_addr64, VexGuestExtents vge )
 
    // Get BB info, remove from table, free BB info.  Simple!  Note that we
    // use orig_addr, not the first instruction address in vge.
-   bbInfo = VG_(OSet_Remove)(instrInfoTable, &orig_addr);
-   tl_assert(NULL != bbInfo);
-   VG_(OSet_FreeNode)(instrInfoTable, bbInfo);
+   sbInfo = VG_(OSet_Remove)(instrInfoTable, &orig_addr);
+   tl_assert(NULL != sbInfo);
+   VG_(OSet_FreeNode)(instrInfoTable, sbInfo);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1349,7 +1349,7 @@ static void cg_pre_clo_init(void)
                                    cg_instrument,
                                    cg_fini);
 
-   VG_(needs_basic_block_discards)(cg_discard_basic_block_info);
+   VG_(needs_superblock_discards)(cg_discard_superblock_info);
    VG_(needs_command_line_options)(cg_process_cmd_line_option,
                                    cg_print_usage,
                                    cg_print_debug_usage);

@@ -668,7 +668,7 @@ void CLG_(init_eventsets)(Int user);
 /* from main.c */
 Bool CLG_(get_debug_info)(Addr, Char filename[FILENAME_LEN],
 			 Char fn_name[FN_NAME_LEN], UInt*, SegInfo**);
-void CLG_(collectBlockInfo)(IRBB* bbIn, UInt*, UInt*, Bool*);
+void CLG_(collectBlockInfo)(IRSB* bbIn, UInt*, UInt*, Bool*);
 void CLG_(set_instrument_state)(Char*,Bool);
 void CLG_(dump_profile)(Char* trigger,Bool only_current_thread);
 void CLG_(zero_all_cost)(Bool only_current_thread);
@@ -683,7 +683,7 @@ void CLG_(finish_command)(void);
 /* from bb.c */
 void CLG_(init_bb_hash)(void);
 bb_hash* CLG_(get_bb_hash)(void);
-BB*  CLG_(get_bb)(Addr addr, IRBB* bb_in, Bool *seen_before);
+BB*  CLG_(get_bb)(Addr addr, IRSB* bb_in, Bool *seen_before);
 void CLG_(delete_bb)(Addr addr);
 
 static __inline__ Addr bb_addr(BB* bb)

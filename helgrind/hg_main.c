@@ -2297,8 +2297,8 @@ UCodeBlock* TL_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 }
 #endif
 static
-IRBB* hg_instrument ( VgCallbackClosure* closure,
-                      IRBB* bb,
+IRSB* hg_instrument ( VgCallbackClosure* closure,
+                      IRSB* bb,
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )

@@ -112,7 +112,7 @@ static Bool loadStoreAddrsMatch(IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
 }
 
 static
-EventSet* insert_simcall(IRBB* bbOut, InstrInfo* ii, UInt dataSize,
+EventSet* insert_simcall(IRSB* bbOut, InstrInfo* ii, UInt dataSize,
 			 Bool instrIssued,
 			 IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
 {
@@ -228,7 +228,7 @@ EventSet* insert_simcall(IRBB* bbOut, InstrInfo* ii, UInt dataSize,
     
     di = unsafeIRDirty_0_N( argc, helperName, 
                                   VG_(fnptr_to_fnentry)( helperAddr ), argv);
-    addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+    addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
 
     return es;
 }
@@ -239,7 +239,7 @@ EventSet* insert_simcall(IRBB* bbOut, InstrInfo* ii, UInt dataSize,
  * Fills the InstrInfo struct if not seen before
  */
 static
-void endOfInstr(IRBB* bbOut, InstrInfo* ii, Bool bb_seen_before,
+void endOfInstr(IRSB* bbOut, InstrInfo* ii, Bool bb_seen_before,
 		UInt instr_offset, UInt instrLen, UInt dataSize, 
 		UInt* cost_offset, Bool instrIssued,
 		IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
@@ -344,7 +344,7 @@ Addr IRConst2Addr(IRConst* con)
  *
  * Called from CLG_(get_bb)
  */
-void CLG_(collectBlockInfo)(IRBB* bbIn,
+void CLG_(collectBlockInfo)(IRSB* bbIn,
 			    /*INOUT*/ UInt* instrs,
 			    /*INOUT*/ UInt* cjmps,
 			    /*INOUT*/ Bool* cjmp_inverted)
@@ -389,7 +389,7 @@ void CLG_(collectBlockInfo)(IRBB* bbIn,
 }
 
 static
-void collectStatementInfo(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
+void collectStatementInfo(IRTypeEnv* tyenv, IRSB* bbOut, IRStmt* st,
 			  Addr* instrAddr, UInt* instrLen,
 			  IRExpr** loadAddrExpr, IRExpr** storeAddrExpr,
 			  UInt* dataSize, IRType hWordTy)
@@ -419,8 +419,8 @@ void collectStatementInfo(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
       *instrLen =        st->Ist.IMark.len;
       break;
 
-   case Ist_Tmp: {
-      IRExpr* data = st->Ist.Tmp.data;
+   case Ist_WrTmp: {
+      IRExpr* data = st->Ist.WrTmp.data;
       if (data->tag == Iex_Load) {
          IRExpr* aexpr = data->Iex.Load.addr;
          CLG_ASSERT( isIRAtom(aexpr) );
@@ -481,9 +481,9 @@ void collectStatementInfo(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
 }
 
 static
-void addConstMemStoreStmt( IRBB* bbOut, UWord addr, UInt val, IRType hWordTy)
+void addConstMemStoreStmt( IRSB* bbOut, UWord addr, UInt val, IRType hWordTy)
 {
-    addStmtToIRBB( bbOut,
+    addStmtToIRSB( bbOut,
 		   IRStmt_Store(CLGEndness,
 				IRExpr_Const(hWordTy == Ity_I32 ?
 					     IRConst_U32( addr ) :
@@ -492,14 +492,14 @@ void addConstMemStoreStmt( IRBB* bbOut, UWord addr, UInt val, IRType hWordTy)
 }   
 
 static
-IRBB* CLG_(instrument)( VgCallbackClosure* closure,
-			IRBB* bbIn,
+IRSB* CLG_(instrument)( VgCallbackClosure* closure,
+			IRSB* bbIn,
 			VexGuestLayout* layout,
 			VexGuestExtents* vge,
 			IRType gWordTy, IRType hWordTy )
 {
    Int      i;
-   IRBB*    bbOut;
+   IRSB*    bbOut;
    IRStmt*  st, *stnext;
    Addr     instrAddr, origAddr;
    UInt     instrLen = 0, dataSize;
@@ -529,13 +529,13 @@ IRBB* CLG_(instrument)( VgCallbackClosure* closure,
 
    CLG_DEBUG(3, "+ instrument(BB %p)\n", (Addr)closure->readdr);
 
-   /* Set up BB for instrumented IR */
-   bbOut = dopyIRBBExceptStmts(bbIn);
+   /* Set up SB for instrumented IR */
+   bbOut = deepCopyIRSBExceptStmts(bbIn);
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;
    while (i < bbIn->stmts_used && bbIn->stmts[i]->tag != Ist_IMark) {
-      addStmtToIRBB( bbOut, bbIn->stmts[i] );
+      addStmtToIRSB( bbOut, bbIn->stmts[i] );
       i++;
    }
 
@@ -580,7 +580,7 @@ IRBB* CLG_(instrument)( VgCallbackClosure* closure,
    di = unsafeIRDirty_0_N( 1, "setup_bbcc", 
                               VG_(fnptr_to_fnentry)( & CLG_(setup_bbcc) ), 
                               argv);
-   addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
+   addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
 
    instrCount = 0;
    costOffset = 0;
@@ -640,7 +640,7 @@ IRBB* CLG_(instrument)( VgCallbackClosure* closure,
 	      cJumps++;
 	  }
 
-	  addStmtToIRBB( bbOut, st );
+	  addStmtToIRSB( bbOut, st );
 	  st = stnext;
       } 
       while (!beforeIBoundary);
@@ -701,14 +701,14 @@ IRBB* CLG_(instrument)( VgCallbackClosure* closure,
 // any reason at all: to free up space, because the guest code was
 // unmapped or modified, or for any arbitrary reason.
 static
-void clg_discard_basic_block_info ( Addr64 orig_addr64, VexGuestExtents vge )
+void clg_discard_superblock_info ( Addr64 orig_addr64, VexGuestExtents vge )
 {
     Addr orig_addr = (Addr)orig_addr64;
 
     tl_assert(vge.n_used > 0);
 
    if (0)
-      VG_(printf)( "discard_basic_block_info: %p, %p, %llu\n",
+      VG_(printf)( "discard_superblock_info: %p, %p, %llu\n",
                    (void*)(Addr)orig_addr,
                    (void*)(Addr)vge.base[0], (ULong)vge.len[0]);
 
@@ -1096,7 +1096,7 @@ void CLG_(pre_clo_init)(void)
                                   CLG_(instrument),
                                   CLG_(fini));
 
-    VG_(needs_basic_block_discards)(clg_discard_basic_block_info);
+    VG_(needs_superblock_discards)(clg_discard_superblock_info);
 
 
     VG_(needs_command_line_options)(CLG_(process_cmd_line_option),

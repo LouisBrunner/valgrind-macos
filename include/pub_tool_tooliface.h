@@ -130,8 +130,8 @@ extern void VG_(basic_tool_funcs)(
    //   with code addresses it will get into deep trouble if it does
    //   make this assumption.
    //
-   // IRBB* bb_in is the incoming bb to be instrumented, in flat IR
-   // form.
+   // IRSB* sb_in is the incoming superblock to be instrumented,
+   // in flat IR form.
    //
    // VexGuestLayout* layout contains limited info on the layout of
    // the guest state: where the stack pointer and program counter
@@ -232,8 +232,8 @@ extern void VG_(basic_tool_funcs)(
       comment in MC_(instrument) in memcheck/mc_translate.c for
       details.
    */
-   IRBB*(*instrument)(VgCallbackClosure* closure, 
-                      IRBB*              bb_in, 
+   IRSB*(*instrument)(VgCallbackClosure* closure, 
+                      IRSB*              sb_in, 
                       VexGuestLayout*    layout, 
                       VexGuestExtents*   vge, 
                       IRType             gWordTy, 
@@ -345,7 +345,7 @@ extern void VG_(needs_tool_errors) (
    .so unloading, or otherwise at the discretion of m_transtab, eg
    when the table becomes too full) to avoid stale information being
    reused for new translations. */
-extern void VG_(needs_basic_block_discards) (
+extern void VG_(needs_superblock_discards) (
    // Discard any information that pertains to specific translations
    // or instructions within the address range given.  There are two
    // possible approaches.
@@ -362,7 +362,7 @@ extern void VG_(needs_basic_block_discards) (
    //   translation, and so could be covered by the "extents" of more than
    //   one call to this function.
    // Doing it the first way (as eg. Cachegrind does) is probably easier.
-   void (*discard_basic_block_info)(Addr64 orig_addr, VexGuestExtents extents)
+   void (*discard_superblock_info)(Addr64 orig_addr, VexGuestExtents extents)
 );
 
 /* Tool defines its own command line options? */

@@ -83,7 +83,7 @@ typedef
       Bool libc_freeres;
       Bool core_errors;
       Bool tool_errors;
-      Bool basic_block_discards;
+      Bool superblock_discards;
       Bool command_line_options;
       Bool client_requests;
       Bool syscall_wrapper;
@@ -105,8 +105,8 @@ typedef struct {
    // Basic functions
    void  (*tool_pre_clo_init) (void);
    void  (*tool_post_clo_init)(void);
-   IRBB* (*tool_instrument)   (VgCallbackClosure*,
-                               IRBB*, 
+   IRSB* (*tool_instrument)   (VgCallbackClosure*,
+                               IRSB*, 
                                VexGuestLayout*, VexGuestExtents*, 
                                IRType, IRType);
    void  (*tool_fini)         (Int);
@@ -124,8 +124,8 @@ typedef struct {
    Char* (*tool_get_error_name)              (Error*);
    void  (*tool_print_extra_suppression_info)(Error*);
 
-   // VG_(needs).basic_block_discards
-   void (*tool_discard_basic_block_info)(Addr64, VexGuestExtents);
+   // VG_(needs).superblock_discards
+   void (*tool_discard_superblock_info)(Addr64, VexGuestExtents);
 
    // VG_(needs).command_line_options
    Bool (*tool_process_cmd_line_option)(Char*);

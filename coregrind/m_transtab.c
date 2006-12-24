@@ -701,8 +701,8 @@ static void initialiseSector ( Int sno )
             vg_assert(sec->tt[i].n_tte2ec <= 3);
             n_dump_osize += vge_osize(&sec->tt[i].vge);
             /* Tell the tool too. */
-            if (VG_(needs).basic_block_discards) {
-               VG_TDICT_CALL( tool_discard_basic_block_info,
+            if (VG_(needs).superblock_discards) {
+               VG_TDICT_CALL( tool_discard_superblock_info,
                               sec->tt[i].entry,
                               sec->tt[i].vge );
             }
@@ -1034,8 +1034,8 @@ static void delete_tte ( /*MOD*/Sector* sec, Int tteno )
    n_disc_osize += vge_osize(&tte->vge);
 
    /* Tell the tool too. */
-   if (VG_(needs).basic_block_discards) {
-      VG_TDICT_CALL( tool_discard_basic_block_info,
+   if (VG_(needs).superblock_discards) {
+      VG_TDICT_CALL( tool_discard_superblock_info,
                      tte->entry,
                      tte->vge );
    }

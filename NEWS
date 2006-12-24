@@ -20,6 +20,15 @@ Other user-visible changes:
   they just return 3 (as before).  Also, SET_VBITS doesn't report
   definedness errors if any of the V bits are undefined.
 
+Developer-visible changes:
+
+- The names of some functions and types within the Vex IR have changed.
+  So any existing tools will have to be updated to reflect these
+  changes.  The new names should be clearer.  The file
+  VEX/pub/libvex_ir.h is also much better commented, and serves as the
+  best documentation about Vex.
+
+
 Release 3.2.1 (16 Sept 2006)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.2.1 adds x86/amd64 support for all SSE3 instructions except monitor

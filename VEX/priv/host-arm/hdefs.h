@@ -451,7 +451,7 @@ extern Int          emit_ARMInstr        ( UChar* buf, Int nbuf, ARMInstr* );
 extern ARMInstr*    genSpill_ARM         ( HReg rreg, Int offset );
 extern ARMInstr*    genReload_ARM        ( HReg rreg, Int offset );
 extern void         getAllocableRegs_ARM ( Int*, HReg** );
-extern HInstrArray* iselBB_ARM           ( IRBB* );
+extern HInstrArray* iselSB_ARM           ( IRSB* );
 
 #endif /* ndef __LIBVEX_ARMH_DEFS_H */
 

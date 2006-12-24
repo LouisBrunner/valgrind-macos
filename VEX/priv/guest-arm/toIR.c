@@ -77,8 +77,8 @@ static UChar* guest_code;
 /* CONST */
 static Addr32 guest_pc_bbstart;
 
-/* The IRBB* into which we're generating code. */
-static IRBB* irbb;
+/* The IRSB* into which we're generating code. */
+static IRSB* irsb;
 
 
 /*------------------------------------------------------------*/
@@ -169,10 +169,10 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 /* This is the main (only, in fact) entry point for this module. */
 
 /* Disassemble a complete basic block, starting at guest_pc_start, and
-   dumping the IR into global irbb.  Returns the size, in bytes, of
+   dumping the IR into global irsb.  Returns the size, in bytes, of
    the basic block.  
 */
-IRBB* bbToIR_ARM ( UChar*           armCode, 
+IRSB* bbToIR_ARM ( UChar*           armCode, 
                    Addr64           guest_pc_start, 
                    VexGuestExtents* vge,
                    Bool             (*byte_accessible)(Addr64),
@@ -205,7 +205,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
    host_is_bigendian = host_bigendian;
    guest_code        = armCode;
    guest_pc_bbstart  = (Addr32)guest_pc_start;
-   irbb              = emptyIRBB();
+   irsb              = emptyIRSB();
 
    vassert((guest_pc_start >> 32) == 0);
 
@@ -219,7 +219,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
 
       guest_next = 0;
       resteerOK = toBool(n_instrs < vex_control.guest_chase_thresh);
-      first_stmt_idx = irbb->stmts_used;
+      first_stmt_idx = irsb->stmts_used;
 
       if (n_instrs > 0) {
          /* for the first insn, the dispatch loop will have set
@@ -232,21 +232,21 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
 
       /* Print the resulting IR, if needed. */
       if (vex_traceflags & VEX_TRACE_FE) {
-         for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
+         for (i = first_stmt_idx; i < irsb->stmts_used; i++) {
             vex_printf("              ");
-            ppIRStmt(irbb->stmts[i]);
+            ppIRStmt(irsb->stmts[i]);
             vex_printf("\n");
          }
       }
    
       if (dres == Dis_StopHere) {
-         vassert(irbb->next != NULL);
+         vassert(irsb->next != NULL);
          if (vex_traceflags & VEX_TRACE_FE) {
             vex_printf("              ");
             vex_printf( "goto {");
-            ppIRJumpKind(irbb->jumpkind);
+            ppIRJumpKind(irsb->jumpkind);
             vex_printf( "} ");
-            ppIRExpr( irbb->next );
+            ppIRExpr( irsb->next );
             vex_printf( "\n");
          }
       }
@@ -264,21 +264,21 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
 
       switch (dres) {
       case Dis_Continue:
-         vassert(irbb->next == NULL);
+         vassert(irsb->next == NULL);
          if (n_instrs < vex_control.guest_max_insns) {
             /* keep going */
          } else {
-            irbb->next = mkU32(toUInt(guest_pc_start+delta));
-            return irbb;
+            irsb->next = mkU32(toUInt(guest_pc_start+delta));
+            return irsb;
          }
          break;
       case Dis_StopHere:
-         vassert(irbb->next != NULL);
-         return irbb;
+         vassert(irsb->next != NULL);
+         return irsb;
       case Dis_Resteer:
          vpanic("bbToIR_ARM: Dis_Resteer: fixme");
          /* need to add code here to start a new extent ... */
-         vassert(irbb->next == NULL);
+         vassert(irsb->next == NULL);
          /* figure out a new delta to continue at. */
          vassert(chase_into_ok(guest_next));
          delta = guest_next - guest_pc_start;
@@ -299,17 +299,17 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
 /*--- ARM insn stream.                                     ---*/
 /*------------------------------------------------------------*/
 
-/* Add a statement to the list held by "irbb". */
+/* Add a statement to the list held by "irsb". */
 static void stmt ( IRStmt* st )
 {
-   addStmtToIRBB( irbb, st );
+   addStmtToIRSB( irsb, st );
 }
 
 /* Generate a new temporary of the given type. */
 static IRTemp newTemp ( IRType ty )
 {
    vassert(isPlausibleIRType(ty));
-   return newIRTemp( irbb->tyenv, ty );
+   return newIRTemp( irsb->tyenv, ty );
 }
 
 #if 0
@@ -490,7 +490,7 @@ static void putIReg ( UInt archreg, IRExpr* e )
 
 static void assign ( IRTemp dst, IRExpr* e )
 {
-   stmt( IRStmt_Tmp(dst, e) );
+   stmt( IRStmt_WrTmp(dst, e) );
 }
 
 static void storeLE ( IRExpr* addr, IRExpr* data )
@@ -510,7 +510,7 @@ static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 
 static IRExpr* mkexpr ( IRTemp tmp )
 {
-   return IRExpr_Tmp(tmp);
+   return IRExpr_RdTmp(tmp);
 }
 
 static IRExpr* mkU8 ( UChar i )
@@ -700,7 +700,7 @@ static Bool isLogic ( IROp op8 )
 /* U-widen 8/16/32 bit int expr to 32. */
 static IRExpr* widenUto32 ( IRExpr* e )
 {
-   switch (typeOfIRExpr(irbb->tyenv,e)) {
+   switch (typeOfIRExpr(irsb->tyenv,e)) {
    case Ity_I32: return e;
    case Ity_I16: return unop(Iop_16Uto32,e);
    case Ity_I8:  return unop(Iop_8Uto32,e);
@@ -712,7 +712,7 @@ static IRExpr* widenUto32 ( IRExpr* e )
 /* S-widen 8/16/32 bit int expr to 32. */
 static IRExpr* widenSto32 ( IRExpr* e )
 {
-   switch (typeOfIRExpr(irbb->tyenv,e)) {
+   switch (typeOfIRExpr(irsb->tyenv,e)) {
    case Ity_I32: return e;
    case Ity_I16: return unop(Iop_16Sto32,e);
    case Ity_I8:  return unop(Iop_8Sto32,e);
@@ -725,7 +725,7 @@ static IRExpr* widenSto32 ( IRExpr* e )
    of these combinations make sense. */
 static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
 {
-   IRType src_ty = typeOfIRExpr(irbb->tyenv,e);
+   IRType src_ty = typeOfIRExpr(irsb->tyenv,e);
    if (src_ty == dst_ty)
       return e;
    if (src_ty == Ity_I32 && dst_ty == Ity_I16)
@@ -1344,8 +1344,8 @@ Bool dis_loadstore_w_ub ( UInt theInstr )
             putIReg( Rd_addr, binop(Iop_And32, mkexpr(value), mkU32(0xFFFFFFFC)) );
             
             // CAB: Need to tell vex we're doing a jump here?
-            // irbb->jumpkind = Ijk_Boring;
-            // irbb->next     = mkexpr(value);
+            // irsb->jumpkind = Ijk_Boring;
+            // irsb->next     = mkexpr(value);
          } else {
             putIReg( Rd_addr, mkexpr(value) );
          }
@@ -1863,8 +1863,8 @@ void dis_branch ( UInt theInstr )
    branch_offset = extend_s_24to32( signed_immed_24 ) << 2;
    assign( dest, binop(Iop_Add32, getIReg(15), mkU32(branch_offset)) );
    
-   irbb->jumpkind = link ? Ijk_Call : Ijk_Boring;
-   irbb->next     = mkexpr(dest);
+   irsb->jumpkind = link ? Ijk_Call : Ijk_Boring;
+   irsb->next     = mkexpr(dest);
    
    // Note: Not actually writing to R15 - let the IR stuff do that.
    
@@ -1964,8 +1964,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          
          *size = 24;
          
-         irbb->next     = mkU32(toUInt(guest_pc_bbstart+delta));
-         irbb->jumpkind = Ijk_ClientReq;
+         irsb->next     = mkU32(toUInt(guest_pc_bbstart+delta));
+         irsb->jumpkind = Ijk_ClientReq;
          
          whatNext = Dis_StopHere;
          goto decode_success;
@@ -1995,8 +1995,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       stmt( IRStmt_Exit( mk_armg_calculate_condition(cond),
                          Ijk_Boring,
                          IRConst_U32(toUInt(guest_pc_bbstart+delta+4)) ) );
-      //irbb->next     = mkU32(guest_pc_bbstart+delta+4);
-      //irbb->jumpkind = Ijk_Boring;
+      //irsb->next     = mkU32(guest_pc_bbstart+delta+4);
+      //irsb->jumpkind = Ijk_Boring;
    }
    
 

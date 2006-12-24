@@ -183,8 +183,8 @@ static Addr32 guest_EIP_bbstart;
    translated. */
 static Addr32 guest_EIP_curr_instr;
 
-/* The IRBB* into which we're generating code. */
-static IRBB* irbb;
+/* The IRSB* into which we're generating code. */
+static IRSB* irsb;
 
 
 /*------------------------------------------------------------*/
@@ -285,14 +285,14 @@ static IRBB* irbb;
 /* Add a statement to the list held by "irbb". */
 static void stmt ( IRStmt* st )
 {
-   addStmtToIRBB( irbb, st );
+   addStmtToIRSB( irsb, st );
 }
 
 /* Generate a new temporary of the given type. */
 static IRTemp newTemp ( IRType ty )
 {
    vassert(isPlausibleIRType(ty));
-   return newIRTemp( irbb->tyenv, ty );
+   return newIRTemp( irsb->tyenv, ty );
 }
 
 /* Bomb out if we can't handle something. */
@@ -528,7 +528,7 @@ static IRExpr* getIReg ( Int sz, UInt archreg )
 /* Ditto, but write to a reg instead. */
 static void putIReg ( Int sz, UInt archreg, IRExpr* e )
 {
-   IRType ty = typeOfIRExpr(irbb->tyenv, e);
+   IRType ty = typeOfIRExpr(irsb->tyenv, e);
    switch (sz) {
       case 1: vassert(ty == Ity_I8); break;
       case 2: vassert(ty == Ity_I16); break;
@@ -546,7 +546,7 @@ static IRExpr* getSReg ( UInt sreg )
 
 static void putSReg ( UInt sreg, IRExpr* e )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I16);
+   vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_I16);
    stmt( IRStmt_Put( segmentGuestRegOffset(sreg), e ) );
 }
 
@@ -577,43 +577,43 @@ static IRExpr* getXMMRegLane32F ( UInt xmmreg, Int laneno )
 
 static void putXMMReg ( UInt xmmreg, IRExpr* e )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_V128);
+   vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_V128);
    stmt( IRStmt_Put( xmmGuestRegOffset(xmmreg), e ) );
 }
 
 static void putXMMRegLane64 ( UInt xmmreg, Int laneno, IRExpr* e )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_I64);
    stmt( IRStmt_Put( xmmGuestRegLane64offset(xmmreg,laneno), e ) );
 }
 
 static void putXMMRegLane64F ( UInt xmmreg, Int laneno, IRExpr* e )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_F64);
+   vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_F64);
    stmt( IRStmt_Put( xmmGuestRegLane64offset(xmmreg,laneno), e ) );
 }
 
 static void putXMMRegLane32F ( UInt xmmreg, Int laneno, IRExpr* e )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_F32);
+   vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_F32);
    stmt( IRStmt_Put( xmmGuestRegLane32offset(xmmreg,laneno), e ) );
 }
 
 static void putXMMRegLane32 ( UInt xmmreg, Int laneno, IRExpr* e )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_I32);
    stmt( IRStmt_Put( xmmGuestRegLane32offset(xmmreg,laneno), e ) );
 }
 
 static void putXMMRegLane16 ( UInt xmmreg, Int laneno, IRExpr* e )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I16);
+   vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_I16);
    stmt( IRStmt_Put( xmmGuestRegLane16offset(xmmreg,laneno), e ) );
 }
 
 static void assign ( IRTemp dst, IRExpr* e )
 {
-   stmt( IRStmt_Tmp(dst, e) );
+   stmt( IRStmt_WrTmp(dst, e) );
 }
 
 static void storeLE ( IRExpr* addr, IRExpr* data )
@@ -638,7 +638,7 @@ static IRExpr* triop ( IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3 )
 
 static IRExpr* mkexpr ( IRTemp tmp )
 {
-   return IRExpr_Tmp(tmp);
+   return IRExpr_RdTmp(tmp);
 }
 
 static IRExpr* mkU8 ( UInt i )
@@ -713,8 +713,8 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
 
 static IRExpr* mkAnd1 ( IRExpr* x, IRExpr* y )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,x) == Ity_I1);
-   vassert(typeOfIRExpr(irbb->tyenv,y) == Ity_I1);
+   vassert(typeOfIRExpr(irsb->tyenv,x) == Ity_I1);
+   vassert(typeOfIRExpr(irsb->tyenv,y) == Ity_I1);
    return unop(Iop_32to1, 
                binop(Iop_And32, 
                      unop(Iop_1Uto32,x), 
@@ -817,7 +817,7 @@ static Bool isLogic ( IROp op8 )
 /* U-widen 8/16/32 bit int expr to 32. */
 static IRExpr* widenUto32 ( IRExpr* e )
 {
-   switch (typeOfIRExpr(irbb->tyenv,e)) {
+   switch (typeOfIRExpr(irsb->tyenv,e)) {
       case Ity_I32: return e;
       case Ity_I16: return unop(Iop_16Uto32,e);
       case Ity_I8:  return unop(Iop_8Uto32,e);
@@ -828,7 +828,7 @@ static IRExpr* widenUto32 ( IRExpr* e )
 /* S-widen 8/16/32 bit int expr to 32. */
 static IRExpr* widenSto32 ( IRExpr* e )
 {
-   switch (typeOfIRExpr(irbb->tyenv,e)) {
+   switch (typeOfIRExpr(irsb->tyenv,e)) {
       case Ity_I32: return e;
       case Ity_I16: return unop(Iop_16Sto32,e);
       case Ity_I8:  return unop(Iop_8Sto32,e);
@@ -840,7 +840,7 @@ static IRExpr* widenSto32 ( IRExpr* e )
    of these combinations make sense. */
 static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
 {
-   IRType src_ty = typeOfIRExpr(irbb->tyenv,e);
+   IRType src_ty = typeOfIRExpr(irsb->tyenv,e);
    if (src_ty == dst_ty)
       return e;
    if (src_ty == Ity_I32 && dst_ty == Ity_I16)
@@ -1236,14 +1236,14 @@ static HChar nameISize ( Int size )
 
 static void jmp_lit( IRJumpKind kind, Addr32 d32 )
 {
-  irbb->next     = mkU32(d32);
-  irbb->jumpkind = kind;
+   irsb->next     = mkU32(d32);
+   irsb->jumpkind = kind;
 }
 
 static void jmp_treg( IRJumpKind kind, IRTemp t )
 {
-   irbb->next = mkexpr(t);
-   irbb->jumpkind = kind;
+   irsb->next = mkexpr(t);
+   irsb->jumpkind = kind;
 }
 
 static 
@@ -1256,14 +1256,14 @@ void jcc_01( X86Condcode cond, Addr32 d32_false, Addr32 d32_true )
       stmt( IRStmt_Exit( mk_x86g_calculate_condition(condPos),
                          Ijk_Boring,
                          IRConst_U32(d32_false) ) );
-      irbb->next     = mkU32(d32_true);
-      irbb->jumpkind = Ijk_Boring;
+      irsb->next     = mkU32(d32_true);
+      irsb->jumpkind = Ijk_Boring;
    } else {
       stmt( IRStmt_Exit( mk_x86g_calculate_condition(condPos),
                          Ijk_Boring,
                          IRConst_U32(d32_true) ) );
-      irbb->next     = mkU32(d32_false);
-      irbb->jumpkind = Ijk_Boring;
+      irsb->next     = mkU32(d32_false);
+      irsb->jumpkind = Ijk_Boring;
    }
 }
 
@@ -3131,7 +3131,7 @@ UInt dis_imul_I_E_G ( UChar       sorb,
 
 static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
    stmt( IRStmt_Put( OFFB_EMWARN, e ) );
 }
 
@@ -3155,7 +3155,7 @@ static IRExpr* get_ftop ( void )
 
 static void put_ftop ( IRExpr* e )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
    stmt( IRStmt_Put( OFFB_FTOP, e ) );
 }
 
@@ -3206,9 +3206,9 @@ static IRExpr* /* :: Ity_I32 */ get_FAKE_roundingmode ( void )
 
 static void put_ST_TAG ( Int i, IRExpr* value )
 {
-   IRArray* descr;
-   vassert(typeOfIRExpr(irbb->tyenv, value) == Ity_I8);
-   descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
+   IRRegArray* descr;
+   vassert(typeOfIRExpr(irsb->tyenv, value) == Ity_I8);
+   descr = mkIRRegArray( OFFB_FPTAGS, Ity_I8, 8 );
    stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
 }
 
@@ -3217,7 +3217,7 @@ static void put_ST_TAG ( Int i, IRExpr* value )
 
 static IRExpr* get_ST_TAG ( Int i )
 {
-   IRArray* descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
+   IRRegArray* descr = mkIRRegArray( OFFB_FPTAGS, Ity_I8, 8 );
    return IRExpr_GetI( descr, get_ftop(), i );
 }
 
@@ -3230,9 +3230,9 @@ static IRExpr* get_ST_TAG ( Int i )
 
 static void put_ST_UNCHECKED ( Int i, IRExpr* value )
 {
-   IRArray* descr;
-   vassert(typeOfIRExpr(irbb->tyenv, value) == Ity_F64);
-   descr = mkIRArray( OFFB_FPREGS, Ity_F64, 8 );
+   IRRegArray* descr;
+   vassert(typeOfIRExpr(irsb->tyenv, value) == Ity_F64);
+   descr = mkIRRegArray( OFFB_FPREGS, Ity_F64, 8 );
    stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
    /* Mark the register as in-use. */
    put_ST_TAG(i, mkU8(1));
@@ -3260,7 +3260,7 @@ static void put_ST ( Int i, IRExpr* value )
 
 static IRExpr* get_ST_UNCHECKED ( Int i )
 {
-   IRArray* descr = mkIRArray( OFFB_FPREGS, Ity_F64, 8 );
+   IRRegArray* descr = mkIRRegArray( OFFB_FPREGS, Ity_F64, 8 );
    return IRExpr_GetI( descr, get_ftop(), i );
 }
 
@@ -4713,7 +4713,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
             case 7: { /* FNSTSW m16 */
                IRExpr* sw = get_FPU_sw();
-               vassert(typeOfIRExpr(irbb->tyenv, sw) == Ity_I16);
+               vassert(typeOfIRExpr(irsb->tyenv, sw) == Ity_I16);
                storeLE( mkexpr(addr), sw );
                DIP("fnstsw %s\n", dis_buf);
                break;
@@ -5066,10 +5066,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
 static void do_MMX_preamble ( void )
 {
-   Int      i;
-   IRArray* descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
-   IRExpr*  zero  = mkU32(0);
-   IRExpr*  tag1  = mkU8(1);
+   Int         i;
+   IRRegArray* descr = mkIRRegArray( OFFB_FPTAGS, Ity_I8, 8 );
+   IRExpr*     zero  = mkU32(0);
+   IRExpr*     tag1  = mkU8(1);
    put_ftop(zero);
    for (i = 0; i < 8; i++)
       stmt( IRStmt_PutI( descr, zero, i, tag1 ) );
@@ -5077,10 +5077,10 @@ static void do_MMX_preamble ( void )
 
 static void do_EMMS_preamble ( void )
 {
-   Int      i;
-   IRArray* descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
-   IRExpr*  zero  = mkU32(0);
-   IRExpr*  tag0  = mkU8(0);
+   Int         i;
+   IRRegArray* descr = mkIRRegArray( OFFB_FPTAGS, Ity_I8, 8 );
+   IRExpr*     zero  = mkU32(0);
+   IRExpr*     tag0  = mkU8(0);
    put_ftop(zero);
    for (i = 0; i < 8; i++)
       stmt( IRStmt_PutI( descr, zero, i, tag0 ) );
@@ -5097,7 +5097,7 @@ static IRExpr* getMMXReg ( UInt archreg )
 static void putMMXReg ( UInt archreg, IRExpr* e )
 {
    vassert(archreg < 8);
-   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_I64);
    stmt( IRStmt_Put( OFFB_FPREGS + 8 * archreg, e ) );
 }
 
@@ -7008,7 +7008,7 @@ static IRExpr* /* :: Ity_I32 */ get_sse_roundingmode ( void )
 
 static void put_sse_roundingmode ( IRExpr* sseround )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, sseround) == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv, sseround) == Ity_I32);
    stmt( IRStmt_Put( OFFB_SSEROUND, sseround ) );
 }
 
@@ -10570,8 +10570,8 @@ DisResult disInstr_X86_WRK (
 
       stmt( IRStmt_Put(OFFB_TILEN, mkU32(lineszB) ) );
 
-      irbb->jumpkind = Ijk_TInval;
-      irbb->next     = mkU32(guest_EIP_bbstart+delta);
+      irsb->jumpkind = Ijk_TInval;
+      irsb->next     = mkU32(guest_EIP_bbstart+delta);
       dres.whatNext  = Dis_StopHere;
 
       DIP("clflush %s\n", dis_buf);
@@ -12922,7 +12922,7 @@ DisResult disInstr_X86_WRK (
 /* Disassemble a single instruction into IR.  The instruction
    is located in host memory at &guest_code[delta]. */
 
-DisResult disInstr_X86 ( IRBB*        irbb_IN,
+DisResult disInstr_X86 ( IRSB*        irsb_IN,
                          Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
                          void*        callback_opaque,
@@ -12931,7 +12931,7 @@ DisResult disInstr_X86 ( IRBB*        irbb_IN,
                          Addr64       guest_IP,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
-                         VexMiscInfo* miscinfo,
+                         VexAbiInfo*  abiinfo,
                          Bool         host_bigendian_IN )
 {
    DisResult dres;
@@ -12939,7 +12939,7 @@ DisResult disInstr_X86 ( IRBB*        irbb_IN,
    /* Set globals (see top of this file) */
    vassert(guest_arch == VexArchX86);
    guest_code           = guest_code_IN;
-   irbb                 = irbb_IN;
+   irsb                 = irsb_IN;
    host_is_bigendian    = host_bigendian_IN;
    guest_EIP_curr_instr = (Addr32)guest_IP;
    guest_EIP_bbstart    = (Addr32)toUInt(guest_IP - delta);

@@ -116,8 +116,8 @@ typedef
 
    DisResult (*DisOneInstrFn) ( 
 
-      /* This is the IRBB to which the resulting IR is to be appended. */
-      /*OUT*/ IRBB*        irbb,
+      /* This is the IRSB to which the resulting IR is to be appended. */
+      /*OUT*/ IRSB*        irbb,
 
       /* Do we need to generate IR to set the guest IP for this insn,
          or not? */
@@ -143,8 +143,8 @@ typedef
       /*IN*/  VexArch      guest_arch,
       /*IN*/  VexArchInfo* archinfo,
 
-      /* Misc info about guest and host */
-      /*IN*/  VexMiscInfo* miscinfo,
+      /* ABI info for both guest and host */
+      /*IN*/  VexAbiInfo*  abiinfo,
 
       /* Is the host bigendian? */
       /*IN*/  Bool         host_bigendian
@@ -158,7 +158,7 @@ typedef
 
 /* See detailed comment in bb_to_IR.c. */
 extern
-IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
+IRSB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                  /*IN*/ void*            closure_opaque,
                  /*IN*/ DisOneInstrFn    dis_instr_fn,
                  /*IN*/ UChar*           guest_code,
@@ -167,10 +167,10 @@ IRBB* bb_to_IR ( /*OUT*/VexGuestExtents* vge,
                  /*IN*/ Bool             host_bigendian,
                  /*IN*/ VexArch          arch_guest,
                  /*IN*/ VexArchInfo*     archinfo_guest,
-                 /*IN*/ VexMiscInfo*     miscinfo_both,
+                 /*IN*/ VexAbiInfo*      abiinfo_both,
                  /*IN*/ IRType           guest_word_type,
                  /*IN*/ Bool             do_self_check,
-                 /*IN*/ Bool             (*preamble_function)(void*,IRBB*),
+                 /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
                  /*IN*/ Int              offB_TISTART,
                  /*IN*/ Int              offB_TILEN );
 

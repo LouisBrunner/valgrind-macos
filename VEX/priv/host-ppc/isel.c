@@ -279,7 +279,7 @@ typedef
 
       IRExpr*      previous_rm;
 
-      VexMiscInfo* vmi;
+      VexAbiInfo*  vbi;
    }
    ISelEnv;
  
@@ -539,7 +539,7 @@ static PPCAMode* advance4 ( ISelEnv* env, PPCAMode* am )
    bias, generate a PPCAMode pointing at the relevant piece of 
    guest state.  */
 static
-PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
+PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr,
                                 IRExpr* off, Int bias )
 {
    HReg rtmp, roff;
@@ -609,7 +609,7 @@ static
 Bool mightRequireFixedRegs ( IRExpr* e )
 {
    switch (e->tag) {
-   case Iex_Tmp: case Iex_Const: case Iex_Get: 
+   case Iex_RdTmp: case Iex_Const: case Iex_Get: 
       return False;
    default:
       return True;
@@ -638,7 +638,7 @@ void doHelperCall ( ISelEnv* env,
    /* Do we need to force use of an odd-even reg pair for 64-bit
       args? */
    Bool regalign_int64s
-      = (!mode64) && env->vmi->host_ppc32_regalign_int64_args;
+      = (!mode64) && env->vbi->host_ppc32_regalign_int64_args;
 
    /* Marshal args for a call and do the call.
 
@@ -955,9 +955,9 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
    
    /* Do we need to do anything? */
    if (env->previous_rm
-       && env->previous_rm->tag == Iex_Tmp
-       && mode->tag == Iex_Tmp
-       && env->previous_rm->Iex.Tmp.tmp == mode->Iex.Tmp.tmp) {
+       && env->previous_rm->tag == Iex_RdTmp
+       && mode->tag == Iex_RdTmp
+       && env->previous_rm->Iex.RdTmp.tmp == mode->Iex.RdTmp.tmp) {
       /* no - setting it to what it was before.  */
       vassert(typeOfIRExpr(env->type_env, env->previous_rm) == Ity_I32);
       return;
@@ -1155,8 +1155,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    switch (e->tag) {
 
    /* --------- TEMP --------- */
-   case Iex_Tmp:
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   case Iex_RdTmp:
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
 
    /* --------- LOAD --------- */
    case Iex_Load: {
@@ -2360,8 +2360,8 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* var */
-   if (e->tag == Iex_Tmp) {
-      HReg r_src      = lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      HReg r_src      = lookupIRTemp(env, e->Iex.RdTmp.tmp);
       HReg src_masked = newVRegI(env);
       addInstr(env,
                PPCInstr_Alu(Palu_AND, src_masked,
@@ -2410,8 +2410,8 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I128);
 
    /* read 128-bit IRTemp */
-   if (e->tag == Iex_Tmp) {
-      lookupIRTempPair( rHi, rLo, env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      lookupIRTempPair( rHi, rLo, env, e->Iex.RdTmp.tmp);
       return;
    }
 
@@ -2510,8 +2510,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
    }
 
    /* read 64-bit IRTemp */
-   if (e->tag == Iex_Tmp) {
-      lookupIRTempPair( rHi, rLo, env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      lookupIRTempPair( rHi, rLo, env, e->Iex.RdTmp.tmp);
       return;
    }
 
@@ -2808,8 +2808,8 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_F32);
 
-   if (e->tag == Iex_Tmp) {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    if (e->tag == Iex_Load && e->Iex.Load.end == Iend_BE) {
@@ -2925,8 +2925,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(ty == Ity_F64);
 
-   if (e->tag == Iex_Tmp) {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    /* --------- LITERAL --------- */
@@ -3192,8 +3192,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(ty == Ity_V128);
 
-   if (e->tag == Iex_Tmp) {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    if (e->tag == Iex_Get) {
@@ -3713,19 +3713,19 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    }
 
    /* --------- TMP --------- */
-   case Ist_Tmp: {
-      IRTemp tmp = stmt->Ist.Tmp.tmp;
+   case Ist_WrTmp: {
+      IRTemp tmp = stmt->Ist.WrTmp.tmp;
       IRType ty = typeOfIRTemp(env->type_env, tmp);
       if (ty == Ity_I8  || ty == Ity_I16 ||
           ty == Ity_I32 || ((ty == Ity_I64) && mode64)) {
          HReg r_dst = lookupIRTemp(env, tmp);
-         HReg r_src = iselWordExpr_R(env, stmt->Ist.Tmp.data);
+         HReg r_src = iselWordExpr_R(env, stmt->Ist.WrTmp.data);
          addInstr(env, mk_iMOVds_RR( r_dst, r_src ));
          return;
       }
       if (!mode64 && ty == Ity_I64) {
          HReg r_srcHi, r_srcLo, r_dstHi, r_dstLo;
-         iselInt64Expr(&r_srcHi,&r_srcLo, env, stmt->Ist.Tmp.data);
+         iselInt64Expr(&r_srcHi,&r_srcLo, env, stmt->Ist.WrTmp.data);
          lookupIRTempPair( &r_dstHi, &r_dstLo, env, tmp);
          addInstr(env, mk_iMOVds_RR(r_dstHi, r_srcHi) );
          addInstr(env, mk_iMOVds_RR(r_dstLo, r_srcLo) );
@@ -3733,33 +3733,33 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       }
       if (mode64 && ty == Ity_I128) {
          HReg r_srcHi, r_srcLo, r_dstHi, r_dstLo;
-         iselInt128Expr(&r_srcHi,&r_srcLo, env, stmt->Ist.Tmp.data);
+         iselInt128Expr(&r_srcHi,&r_srcLo, env, stmt->Ist.WrTmp.data);
          lookupIRTempPair( &r_dstHi, &r_dstLo, env, tmp);
          addInstr(env, mk_iMOVds_RR(r_dstHi, r_srcHi) );
          addInstr(env, mk_iMOVds_RR(r_dstLo, r_srcLo) );
          return;
       }
       if (ty == Ity_I1) {
-         PPCCondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
+         PPCCondCode cond = iselCondCode(env, stmt->Ist.WrTmp.data);
          HReg r_dst = lookupIRTemp(env, tmp);
          addInstr(env, PPCInstr_Set(cond, r_dst));
          return;
       }
       if (ty == Ity_F64) {
          HReg fr_dst = lookupIRTemp(env, tmp);
-         HReg fr_src = iselDblExpr(env, stmt->Ist.Tmp.data);
+         HReg fr_src = iselDblExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, PPCInstr_FpUnary(Pfp_MOV, fr_dst, fr_src));
          return;
       }
       if (ty == Ity_F32) {
          HReg fr_dst = lookupIRTemp(env, tmp);
-         HReg fr_src = iselFltExpr(env, stmt->Ist.Tmp.data);
+         HReg fr_src = iselFltExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, PPCInstr_FpUnary(Pfp_MOV, fr_dst, fr_src));
          return;
       }
       if (ty == Ity_V128) {
          HReg v_dst = lookupIRTemp(env, tmp);
-         HReg v_src = iselVecExpr(env, stmt->Ist.Tmp.data);
+         HReg v_src = iselVecExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, PPCInstr_AvUnary(Pav_MOV, v_dst, v_src));
          return;
       }
@@ -3876,11 +3876,11 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 /*--- Insn selector top-level                           ---*/
 /*---------------------------------------------------------*/
 
-/* Translate an entire BB to ppc code. */
+/* Translate an entire BS to ppc code. */
 
-HInstrArray* iselBB_PPC ( IRBB* bb, VexArch      arch_host,
+HInstrArray* iselSB_PPC ( IRSB* bb, VexArch      arch_host,
                                     VexArchInfo* archinfo_host,
-                                    VexMiscInfo* vmi )
+                                    VexAbiInfo*  vbi )
 {
    Int      i, j;
    HReg     hreg, hregHI;
@@ -3927,7 +3927,7 @@ HInstrArray* iselBB_PPC ( IRBB* bb, VexArch      arch_host,
    /* and finally ... */
    env->hwcaps      = hwcaps_host;
    env->previous_rm = NULL;
-   env->vmi         = vmi;
+   env->vbi         = vbi;
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */

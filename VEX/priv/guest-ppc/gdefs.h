@@ -58,7 +58,7 @@
 /* Convert one ppc insn to IR.  See the type DisOneInstrFn in
    bb_to_IR.h. */
 extern
-DisResult disInstr_PPC ( IRBB*        irbb,
+DisResult disInstr_PPC ( IRSB*        irbb,
                          Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
                          void*        callback_opaque,
@@ -67,7 +67,7 @@ DisResult disInstr_PPC ( IRBB*        irbb,
                          Addr64       guest_IP,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
-                         VexMiscInfo* miscinfo,
+                         VexAbiInfo*  abiinfo,
                          Bool         host_bigendian );
 
 /* Used by the optimiser to specialise calls to helpers. */

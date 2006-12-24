@@ -374,7 +374,7 @@ static
 Bool mightRequireFixedRegs ( IRExpr* e )
 {
    switch (e->tag) {
-      case Iex_Tmp: case Iex_Const: case Iex_Get: 
+      case Iex_RdTmp: case Iex_Const: case Iex_Get: 
          return False;
       default:
          return True;
@@ -576,7 +576,7 @@ void doHelperCall ( ISelEnv* env,
    offset. */
 
 static
-AMD64AMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr, 
+AMD64AMode* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr, 
                                   IRExpr* off, Int bias )
 {
    HReg tmp, roff;
@@ -804,8 +804,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    switch (e->tag) {
 
    /* --------- TEMP --------- */
-   case Iex_Tmp: {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   case Iex_RdTmp: {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    /* --------- LOAD --------- */
@@ -1974,8 +1974,8 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
 
    /* var */
-   if (e->tag == Iex_Tmp) {
-      HReg r64 = lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      HReg r64 = lookupIRTemp(env, e->Iex.RdTmp.tmp);
       HReg dst = newVRegI(env);
       addInstr(env, mk_iMOVsd_RR(r64,dst));
       addInstr(env, AMD64Instr_Alu64R(Aalu_AND,AMD64RMI_Imm(1),dst));
@@ -2266,8 +2266,8 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
 //..    }
 
    /* read 128-bit IRTemp */
-   if (e->tag == Iex_Tmp) {
-      lookupIRTemp128( rHi, rLo, env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      lookupIRTemp128( rHi, rLo, env, e->Iex.RdTmp.tmp);
       return;
    }
  
@@ -2685,8 +2685,8 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_F32);
 
-   if (e->tag == Iex_Tmp) {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE) {
@@ -2782,8 +2782,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(ty == Ity_F64);
 
-   if (e->tag == Iex_Tmp) {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    if (e->tag == Iex_Const) {
@@ -3097,8 +3097,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(ty == Ity_V128);
 
-   if (e->tag == Iex_Tmp) {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    if (e->tag == Iex_Get) {
@@ -3660,45 +3660,45 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    }
 
    /* --------- TMP --------- */
-   case Ist_Tmp: {
-      IRTemp tmp = stmt->Ist.Tmp.tmp;
+   case Ist_WrTmp: {
+      IRTemp tmp = stmt->Ist.WrTmp.tmp;
       IRType ty = typeOfIRTemp(env->type_env, tmp);
       if (ty == Ity_I64 || ty == Ity_I32 
           || ty == Ity_I16 || ty == Ity_I8) {
-         AMD64RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.data);
+         AMD64RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.WrTmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, AMD64Instr_Alu64R(Aalu_MOV,rmi,dst));
          return;
       }
       if (ty == Ity_I128) {
          HReg rHi, rLo, dstHi, dstLo;
-         iselInt128Expr(&rHi,&rLo, env, stmt->Ist.Tmp.data);
+         iselInt128Expr(&rHi,&rLo, env, stmt->Ist.WrTmp.data);
          lookupIRTemp128( &dstHi, &dstLo, env, tmp);
          addInstr(env, mk_iMOVsd_RR(rHi,dstHi) );
          addInstr(env, mk_iMOVsd_RR(rLo,dstLo) );
          return;
       }
       if (ty == Ity_I1) {
-         AMD64CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
+         AMD64CondCode cond = iselCondCode(env, stmt->Ist.WrTmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, AMD64Instr_Set64(cond, dst));
          return;
       }
       if (ty == Ity_F64) {
          HReg dst = lookupIRTemp(env, tmp);
-         HReg src = iselDblExpr(env, stmt->Ist.Tmp.data);
+         HReg src = iselDblExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, mk_vMOVsd_RR(src, dst));
          return;
       }
       if (ty == Ity_F32) {
          HReg dst = lookupIRTemp(env, tmp);
-         HReg src = iselFltExpr(env, stmt->Ist.Tmp.data);
+         HReg src = iselFltExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, mk_vMOVsd_RR(src, dst));
          return;
       }
       if (ty == Ity_V128) {
          HReg dst = lookupIRTemp(env, tmp);
-         HReg src = iselVecExpr(env, stmt->Ist.Tmp.data);
+         HReg src = iselVecExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, mk_vMOVsd_RR(src, dst));
          return;
       }
@@ -3799,11 +3799,11 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 /*--- Insn selector top-level                           ---*/
 /*---------------------------------------------------------*/
 
-/* Translate an entire BB to amd64 code. */
+/* Translate an entire SB to amd64 code. */
 
-HInstrArray* iselBB_AMD64 ( IRBB* bb, VexArch      arch_host,
+HInstrArray* iselSB_AMD64 ( IRSB* bb, VexArch      arch_host,
                                       VexArchInfo* archinfo_host,
-                                      VexMiscInfo* vmi/*UNUSED*/ )
+                                      VexAbiInfo*  vbi/*UNUSED*/ )
 {
    Int      i, j;
    HReg     hreg, hregHI;

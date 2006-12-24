@@ -838,9 +838,9 @@ extern Int          emit_PPCInstr        ( UChar* buf, Int nbuf, PPCInstr*,
 extern PPCInstr*    genSpill_PPC         ( HReg rreg, UShort offsetB, Bool mode64 );
 extern PPCInstr*    genReload_PPC        ( HReg rreg, UShort offsetB, Bool mode64 );
 extern void         getAllocableRegs_PPC ( Int*, HReg**, Bool mode64 );
-extern HInstrArray* iselBB_PPC           ( IRBB*, VexArch,
+extern HInstrArray* iselSB_PPC           ( IRSB*, VexArch,
                                                   VexArchInfo*,
-                                                  VexMiscInfo* );
+                                                  VexAbiInfo* );
 
 #endif /* ndef __LIBVEX_HOST_PPC_HDEFS_H */
 

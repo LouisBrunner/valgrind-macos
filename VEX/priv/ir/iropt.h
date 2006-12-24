@@ -54,23 +54,23 @@
 /* Top level optimiser entry point.  Returns a new BB.  Operates
    under the control of the global "vex_control" struct. */
 extern 
-IRBB* do_iropt_BB ( IRBB* bb,
+IRSB* do_iropt_BB ( IRSB* bb,
                     IRExpr* (*specHelper) (HChar*, IRExpr**),
                     Bool (*preciseMemExnsFn)(Int,Int),
                     Addr64 guest_addr );
 
 /* Do a constant folding/propagation pass. */
 extern
-IRBB* cprop_BB ( IRBB* );
+IRSB* cprop_BB ( IRSB* );
 
 /* Do a dead-code removal pass.  bb is destructively modified. */
 extern
-void do_deadcode_BB ( IRBB* bb );
+void do_deadcode_BB ( IRSB* bb );
 
 /* The tree-builder.  Make (approximately) maximal safe trees.  bb is
    destructively modified. */
 extern
-void ado_treebuild_BB ( IRBB* bb );
+void ado_treebuild_BB ( IRSB* bb );
 
 #endif /* ndef __LIBVEX_IROPT_H */
 

@@ -204,11 +204,11 @@ typedef
          reg if it is even-numbered?  True => yes, False => no. */
       Bool host_ppc32_regalign_int64_args;
    }
-   VexMiscInfo;
+   VexAbiInfo;
 
-/* Write default settings info *vmi. */
+/* Write default settings info *vbi. */
 extern 
-void LibVEX_default_VexMiscInfo ( /*OUT*/VexMiscInfo* vmi );
+void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi );
 
 
 /*-------------------------------------------------------*/
@@ -410,7 +410,7 @@ typedef
       VexArchInfo  archinfo_guest;
       VexArch      arch_host;
       VexArchInfo  archinfo_host;
-      VexMiscInfo  miscinfo_both;
+      VexAbiInfo   abiinfo_both;
 
       /* IN: an opaque value which is passed as the first arg to all
          callback functions supplied in this struct.  Vex has no idea
@@ -441,13 +441,13 @@ typedef
 
       /* IN: optionally, two instrumentation functions.  May be
 	 NULL. */
-      IRBB*   (*instrument1) ( /*callback_opaque*/void*, 
-                               IRBB*, 
+      IRSB*   (*instrument1) ( /*callback_opaque*/void*, 
+                               IRSB*, 
                                VexGuestLayout*, 
                                VexGuestExtents*,
                                IRType gWordTy, IRType hWordTy );
-      IRBB*   (*instrument2) ( /*callback_opaque*/void*, 
-                               IRBB*, 
+      IRSB*   (*instrument2) ( /*callback_opaque*/void*, 
+                               IRSB*, 
                                VexGuestLayout*, 
                                VexGuestExtents*,
                                IRType gWordTy, IRType hWordTy );
@@ -464,7 +464,7 @@ typedef
          disassemble any instructions into it; this is indicated by
          the callback returning True.
       */
-      Bool    (*preamble_function)(/*callback_opaque*/void*, IRBB*);
+      Bool    (*preamble_function)(/*callback_opaque*/void*, IRSB*);
 
       /* IN: debug: trace vex activity at various points */
       Int     traceflags;

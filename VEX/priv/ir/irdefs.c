@@ -102,7 +102,7 @@ void ppIRCallee ( IRCallee* ce )
    vex_printf("{%p}", (void*)ce->addr);
 }
 
-void ppIRArray ( IRArray* arr )
+void ppIRRegArray ( IRRegArray* arr )
 {
    vex_printf("(%d:%dx", arr->base, arr->nElems);
    ppIRType(arr->elemTy);
@@ -582,13 +582,13 @@ void ppIRExpr ( IRExpr* e )
       break;
     case Iex_GetI:
       vex_printf( "GETI" );
-      ppIRArray(e->Iex.GetI.descr);
+      ppIRRegArray(e->Iex.GetI.descr);
       vex_printf("[");
       ppIRExpr(e->Iex.GetI.ix);
       vex_printf(",%d]", e->Iex.GetI.bias);
       break;
-    case Iex_Tmp:
-      ppIRTemp(e->Iex.Tmp.tmp);
+    case Iex_RdTmp:
+      ppIRTemp(e->Iex.RdTmp.tmp);
       break;
     case Iex_Qop:
       ppIROp(e->Iex.Qop.op);
@@ -755,16 +755,16 @@ void ppIRStmt ( IRStmt* s )
          break;
       case Ist_PutI:
          vex_printf( "PUTI" );
-         ppIRArray(s->Ist.PutI.descr);
+         ppIRRegArray(s->Ist.PutI.descr);
          vex_printf("[");
          ppIRExpr(s->Ist.PutI.ix);
          vex_printf(",%d] = ", s->Ist.PutI.bias);
          ppIRExpr(s->Ist.PutI.data);
          break;
-      case Ist_Tmp:
-         ppIRTemp(s->Ist.Tmp.tmp);
+      case Ist_WrTmp:
+         ppIRTemp(s->Ist.WrTmp.tmp);
          vex_printf( " = " );
-         ppIRExpr(s->Ist.Tmp.data);
+         ppIRExpr(s->Ist.WrTmp.data);
          break;
       case Ist_Store:
          vex_printf( "ST%s(", s->Ist.Store.end==Iend_LE ? "le" : "be" );
@@ -808,10 +808,10 @@ void ppIRTypeEnv ( IRTypeEnv* env ) {
       vex_printf( "\n"); 
 }
 
-void ppIRBB ( IRBB* bb )
+void ppIRSB ( IRSB* bb )
 {
    Int i;
-   vex_printf("IRBB {\n");
+   vex_printf("IRSB {\n");
    ppIRTypeEnv(bb->tyenv);
    vex_printf("\n");
    for (i = 0; i < bb->stmts_used; i++) {
@@ -909,14 +909,14 @@ IRCallee* mkIRCallee ( Int regparms, HChar* name, void* addr )
 }
 
 
-/* Constructors -- IRArray */
+/* Constructors -- IRRegArray */
 
-IRArray* mkIRArray ( Int base, IRType elemTy, Int nElems )
+IRRegArray* mkIRRegArray ( Int base, IRType elemTy, Int nElems )
 {
-   IRArray* arr = LibVEX_Alloc(sizeof(IRArray));
-   arr->base    = base;
-   arr->elemTy  = elemTy;
-   arr->nElems  = nElems;
+   IRRegArray* arr = LibVEX_Alloc(sizeof(IRRegArray));
+   arr->base       = base;
+   arr->elemTy     = elemTy;
+   arr->nElems     = nElems;
    vassert(!(arr->base < 0 || arr->base > 10000 /* somewhat arbitrary */));
    vassert(!(arr->elemTy == Ity_I1));
    vassert(!(arr->nElems <= 0 || arr->nElems > 500 /* somewhat arbitrary */));
@@ -939,7 +939,7 @@ IRExpr* IRExpr_Get ( Int off, IRType ty ) {
    e->Iex.Get.ty     = ty;
    return e;
 }
-IRExpr* IRExpr_GetI ( IRArray* descr, IRExpr* ix, Int bias ) {
+IRExpr* IRExpr_GetI ( IRRegArray* descr, IRExpr* ix, Int bias ) {
    IRExpr* e         = LibVEX_Alloc(sizeof(IRExpr));
    e->tag            = Iex_GetI;
    e->Iex.GetI.descr = descr;
@@ -947,10 +947,10 @@ IRExpr* IRExpr_GetI ( IRArray* descr, IRExpr* ix, Int bias ) {
    e->Iex.GetI.bias  = bias;
    return e;
 }
-IRExpr* IRExpr_Tmp ( IRTemp tmp ) {
-   IRExpr* e      = LibVEX_Alloc(sizeof(IRExpr));
-   e->tag         = Iex_Tmp;
-   e->Iex.Tmp.tmp = tmp;
+IRExpr* IRExpr_RdTmp ( IRTemp tmp ) {
+   IRExpr* e        = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag           = Iex_RdTmp;
+   e->Iex.RdTmp.tmp = tmp;
    return e;
 }
 IRExpr* IRExpr_Qop ( IROp op, IRExpr* arg1, IRExpr* arg2, 
@@ -1121,7 +1121,7 @@ IRStmt* IRStmt_Put ( Int off, IRExpr* data ) {
    s->Ist.Put.data   = data;
    return s;
 }
-IRStmt* IRStmt_PutI ( IRArray* descr, IRExpr* ix,
+IRStmt* IRStmt_PutI ( IRRegArray* descr, IRExpr* ix,
                       Int bias, IRExpr* data ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_PutI;
@@ -1131,11 +1131,11 @@ IRStmt* IRStmt_PutI ( IRArray* descr, IRExpr* ix,
    s->Ist.PutI.data  = data;
    return s;
 }
-IRStmt* IRStmt_Tmp ( IRTemp tmp, IRExpr* data ) {
-   IRStmt* s       = LibVEX_Alloc(sizeof(IRStmt));
-   s->tag          = Ist_Tmp;
-   s->Ist.Tmp.tmp  = tmp;
-   s->Ist.Tmp.data = data;
+IRStmt* IRStmt_WrTmp ( IRTemp tmp, IRExpr* data ) {
+   IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag            = Ist_WrTmp;
+   s->Ist.WrTmp.tmp  = tmp;
+   s->Ist.WrTmp.data = data;
    return s;
 }
 IRStmt* IRStmt_Store ( IREndness end, IRExpr* addr, IRExpr* data ) {
@@ -1183,11 +1183,11 @@ IRTypeEnv* emptyIRTypeEnv ( void )
 }
 
 
-/* Constructors -- IRBB */
+/* Constructors -- IRSB */
 
-IRBB* emptyIRBB ( void )
+IRSB* emptyIRSB ( void )
 {
-   IRBB* bb       = LibVEX_Alloc(sizeof(IRBB));
+   IRSB* bb       = LibVEX_Alloc(sizeof(IRSB));
    bb->tyenv      = emptyIRTypeEnv();
    bb->stmts_used = 0;
    bb->stmts_size = 8;
@@ -1208,7 +1208,7 @@ IRBB* emptyIRBB ( void )
 
 /* Shallow copy of an IRExpr vector */
 
-IRExpr** sopyIRExprVec ( IRExpr** vec )
+IRExpr** shallowCopyIRExprVec ( IRExpr** vec )
 {
    Int      i;
    IRExpr** newvec;
@@ -1223,18 +1223,18 @@ IRExpr** sopyIRExprVec ( IRExpr** vec )
 
 /* Deep copy of an IRExpr vector */
 
-IRExpr** dopyIRExprVec ( IRExpr** vec )
+IRExpr** deepCopyIRExprVec ( IRExpr** vec )
 {
    Int      i;
-   IRExpr** newvec = sopyIRExprVec( vec );
+   IRExpr** newvec = shallowCopyIRExprVec( vec );
    for (i = 0; newvec[i]; i++)
-      newvec[i] = dopyIRExpr(newvec[i]);
+      newvec[i] = deepCopyIRExpr(newvec[i]);
    return newvec;
 }
 
 /* Deep copy constructors for all heap-allocated IR types follow. */
 
-IRConst* dopyIRConst ( IRConst* c )
+IRConst* deepCopyIRConst ( IRConst* c )
 {
    switch (c->tag) {
       case Ico_U1:   return IRConst_U1(c->Ico.U1);
@@ -1245,81 +1245,81 @@ IRConst* dopyIRConst ( IRConst* c )
       case Ico_F64:  return IRConst_F64(c->Ico.F64);
       case Ico_F64i: return IRConst_F64i(c->Ico.F64i);
       case Ico_V128: return IRConst_V128(c->Ico.V128);
-      default: vpanic("dopyIRConst");
+      default: vpanic("deepCopyIRConst");
    }
 }
 
-IRCallee* dopyIRCallee ( IRCallee* ce )
+IRCallee* deepCopyIRCallee ( IRCallee* ce )
 {
    IRCallee* ce2 = mkIRCallee(ce->regparms, ce->name, ce->addr);
    ce2->mcx_mask = ce->mcx_mask;
    return ce2;
 }
 
-IRArray* dopyIRArray ( IRArray* d )
+IRRegArray* deepCopyIRRegArray ( IRRegArray* d )
 {
-   return mkIRArray(d->base, d->elemTy, d->nElems);
+   return mkIRRegArray(d->base, d->elemTy, d->nElems);
 }
 
-IRExpr* dopyIRExpr ( IRExpr* e )
+IRExpr* deepCopyIRExpr ( IRExpr* e )
 {
    switch (e->tag) {
       case Iex_Get: 
          return IRExpr_Get(e->Iex.Get.offset, e->Iex.Get.ty);
       case Iex_GetI: 
-         return IRExpr_GetI(dopyIRArray(e->Iex.GetI.descr), 
-                            dopyIRExpr(e->Iex.GetI.ix),
+         return IRExpr_GetI(deepCopyIRRegArray(e->Iex.GetI.descr), 
+                            deepCopyIRExpr(e->Iex.GetI.ix),
                             e->Iex.GetI.bias);
-      case Iex_Tmp: 
-         return IRExpr_Tmp(e->Iex.Tmp.tmp);
+      case Iex_RdTmp: 
+         return IRExpr_RdTmp(e->Iex.RdTmp.tmp);
       case Iex_Qop: 
          return IRExpr_Qop(e->Iex.Qop.op,
-                           dopyIRExpr(e->Iex.Qop.arg1),
-                           dopyIRExpr(e->Iex.Qop.arg2),
-                           dopyIRExpr(e->Iex.Qop.arg3),
-                           dopyIRExpr(e->Iex.Qop.arg4));
+                           deepCopyIRExpr(e->Iex.Qop.arg1),
+                           deepCopyIRExpr(e->Iex.Qop.arg2),
+                           deepCopyIRExpr(e->Iex.Qop.arg3),
+                           deepCopyIRExpr(e->Iex.Qop.arg4));
       case Iex_Triop: 
          return IRExpr_Triop(e->Iex.Triop.op,
-                             dopyIRExpr(e->Iex.Triop.arg1),
-                             dopyIRExpr(e->Iex.Triop.arg2),
-                             dopyIRExpr(e->Iex.Triop.arg3));
+                             deepCopyIRExpr(e->Iex.Triop.arg1),
+                             deepCopyIRExpr(e->Iex.Triop.arg2),
+                             deepCopyIRExpr(e->Iex.Triop.arg3));
       case Iex_Binop: 
          return IRExpr_Binop(e->Iex.Binop.op,
-                             dopyIRExpr(e->Iex.Binop.arg1),
-                             dopyIRExpr(e->Iex.Binop.arg2));
+                             deepCopyIRExpr(e->Iex.Binop.arg1),
+                             deepCopyIRExpr(e->Iex.Binop.arg2));
       case Iex_Unop: 
          return IRExpr_Unop(e->Iex.Unop.op,
-                            dopyIRExpr(e->Iex.Unop.arg));
+                            deepCopyIRExpr(e->Iex.Unop.arg));
       case Iex_Load: 
          return IRExpr_Load(e->Iex.Load.end,
                             e->Iex.Load.ty,
-                            dopyIRExpr(e->Iex.Load.addr));
+                            deepCopyIRExpr(e->Iex.Load.addr));
       case Iex_Const: 
-         return IRExpr_Const(dopyIRConst(e->Iex.Const.con));
+         return IRExpr_Const(deepCopyIRConst(e->Iex.Const.con));
       case Iex_CCall:
-         return IRExpr_CCall(dopyIRCallee(e->Iex.CCall.cee),
+         return IRExpr_CCall(deepCopyIRCallee(e->Iex.CCall.cee),
                              e->Iex.CCall.retty,
-                             dopyIRExprVec(e->Iex.CCall.args));
+                             deepCopyIRExprVec(e->Iex.CCall.args));
 
       case Iex_Mux0X: 
-         return IRExpr_Mux0X(dopyIRExpr(e->Iex.Mux0X.cond),
-                             dopyIRExpr(e->Iex.Mux0X.expr0),
-                             dopyIRExpr(e->Iex.Mux0X.exprX));
+         return IRExpr_Mux0X(deepCopyIRExpr(e->Iex.Mux0X.cond),
+                             deepCopyIRExpr(e->Iex.Mux0X.expr0),
+                             deepCopyIRExpr(e->Iex.Mux0X.exprX));
       default:
-         vpanic("dopyIRExpr");
+         vpanic("deepCopyIRExpr");
    }
 }
 
-IRDirty* dopyIRDirty ( IRDirty* d )
+IRDirty* deepCopyIRDirty ( IRDirty* d )
 {
    Int      i;
    IRDirty* d2 = emptyIRDirty();
-   d2->cee   = dopyIRCallee(d->cee);
-   d2->guard = dopyIRExpr(d->guard);
-   d2->args  = dopyIRExprVec(d->args);
+   d2->cee   = deepCopyIRCallee(d->cee);
+   d2->guard = deepCopyIRExpr(d->guard);
+   d2->args  = deepCopyIRExprVec(d->args);
    d2->tmp   = d->tmp;
    d2->mFx   = d->mFx;
-   d2->mAddr = d->mAddr==NULL ? NULL : dopyIRExpr(d->mAddr);
+   d2->mAddr = d->mAddr==NULL ? NULL : deepCopyIRExpr(d->mAddr);
    d2->mSize = d->mSize;
    d2->needsBBP = d->needsBBP;
    d2->nFxState = d->nFxState;
@@ -1328,45 +1328,45 @@ IRDirty* dopyIRDirty ( IRDirty* d )
    return d2;
 }
 
-IRStmt* dopyIRStmt ( IRStmt* s )
+IRStmt* deepCopyIRStmt ( IRStmt* s )
 {
    switch (s->tag) {
       case Ist_NoOp:
          return IRStmt_NoOp();
       case Ist_AbiHint:
-         return IRStmt_AbiHint(dopyIRExpr(s->Ist.AbiHint.base),
+         return IRStmt_AbiHint(deepCopyIRExpr(s->Ist.AbiHint.base),
                                s->Ist.AbiHint.len);
       case Ist_IMark:
          return IRStmt_IMark(s->Ist.IMark.addr, s->Ist.IMark.len);
       case Ist_Put: 
          return IRStmt_Put(s->Ist.Put.offset, 
-                           dopyIRExpr(s->Ist.Put.data));
+                           deepCopyIRExpr(s->Ist.Put.data));
       case Ist_PutI: 
-         return IRStmt_PutI(dopyIRArray(s->Ist.PutI.descr),
-                            dopyIRExpr(s->Ist.PutI.ix),
+         return IRStmt_PutI(deepCopyIRRegArray(s->Ist.PutI.descr),
+                            deepCopyIRExpr(s->Ist.PutI.ix),
                             s->Ist.PutI.bias, 
-                            dopyIRExpr(s->Ist.PutI.data));
-      case Ist_Tmp:
-         return IRStmt_Tmp(s->Ist.Tmp.tmp,
-                           dopyIRExpr(s->Ist.Tmp.data));
+                            deepCopyIRExpr(s->Ist.PutI.data));
+      case Ist_WrTmp:
+         return IRStmt_WrTmp(s->Ist.WrTmp.tmp,
+                             deepCopyIRExpr(s->Ist.WrTmp.data));
       case Ist_Store: 
          return IRStmt_Store(s->Ist.Store.end,
-                             dopyIRExpr(s->Ist.Store.addr),
-                             dopyIRExpr(s->Ist.Store.data));
+                             deepCopyIRExpr(s->Ist.Store.addr),
+                             deepCopyIRExpr(s->Ist.Store.data));
       case Ist_Dirty: 
-         return IRStmt_Dirty(dopyIRDirty(s->Ist.Dirty.details));
+         return IRStmt_Dirty(deepCopyIRDirty(s->Ist.Dirty.details));
       case Ist_MFence:
          return IRStmt_MFence();
       case Ist_Exit: 
-         return IRStmt_Exit(dopyIRExpr(s->Ist.Exit.guard),
+         return IRStmt_Exit(deepCopyIRExpr(s->Ist.Exit.guard),
                             s->Ist.Exit.jk,
-                            dopyIRConst(s->Ist.Exit.dst));
+                            deepCopyIRConst(s->Ist.Exit.dst));
       default: 
-         vpanic("dopyIRStmt");
+         vpanic("deepCopyIRStmt");
    }
 }
 
-IRTypeEnv* dopyIRTypeEnv ( IRTypeEnv* src )
+IRTypeEnv* deepCopyIRTypeEnv ( IRTypeEnv* src )
 {
    Int        i;
    IRTypeEnv* dst = LibVEX_Alloc(sizeof(IRTypeEnv));
@@ -1378,24 +1378,24 @@ IRTypeEnv* dopyIRTypeEnv ( IRTypeEnv* src )
    return dst;
 }
 
-IRBB* dopyIRBB ( IRBB* bb )
+IRSB* deepCopyIRSB ( IRSB* bb )
 {
    Int      i;
    IRStmt** sts2;
-   IRBB* bb2 = dopyIRBBExceptStmts(bb);
+   IRSB* bb2 = deepCopyIRSBExceptStmts(bb);
    bb2->stmts_used = bb2->stmts_size = bb->stmts_used;
    sts2 = LibVEX_Alloc(bb2->stmts_used * sizeof(IRStmt*));
    for (i = 0; i < bb2->stmts_used; i++)
-      sts2[i] = dopyIRStmt(bb->stmts[i]);
+      sts2[i] = deepCopyIRStmt(bb->stmts[i]);
    bb2->stmts    = sts2;
    return bb2;
 }
 
-IRBB* dopyIRBBExceptStmts ( IRBB* bb )
+IRSB* deepCopyIRSBExceptStmts ( IRSB* bb )
 {
-   IRBB* bb2     = emptyIRBB();
-   bb2->tyenv    = dopyIRTypeEnv(bb->tyenv);
-   bb2->next     = dopyIRExpr(bb->next);
+   IRSB* bb2     = emptyIRSB();
+   bb2->tyenv    = deepCopyIRTypeEnv(bb->tyenv);
+   bb2->next     = deepCopyIRExpr(bb->next);
    bb2->jumpkind = bb->jumpkind;
    return bb2;
 }
@@ -1770,7 +1770,7 @@ void typeOfPrimop ( IROp op,
 /*--- Helper functions for the IR -- IR Basic Blocks          ---*/
 /*---------------------------------------------------------------*/
 
-void addStmtToIRBB ( IRBB* bb, IRStmt* st )
+void addStmtToIRSB ( IRSB* bb, IRStmt* st )
 {
    Int i;
    if (bb->stmts_used == bb->stmts_size) {
@@ -1854,8 +1854,8 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          return e->Iex.Get.ty;
       case Iex_GetI:
          return e->Iex.GetI.descr->elemTy;
-      case Iex_Tmp:
-         return typeOfIRTemp(tyenv, e->Iex.Tmp.tmp);
+      case Iex_RdTmp:
+         return typeOfIRTemp(tyenv, e->Iex.RdTmp.tmp);
       case Iex_Const:
          return typeOfIRConst(e->Iex.Const.con);
       case Iex_Qop:
@@ -1914,7 +1914,7 @@ Bool isPlausibleIRType ( IRType ty )
 
 /* Relies on:
    inline static Bool isAtom ( IRExpr* e ) {
-      return e->tag == Iex_Tmp || e->tag == Iex_Const;
+      return e->tag == Iex_RdTmp || e->tag == Iex_Const;
    }
 */
 
@@ -1932,16 +1932,16 @@ Bool isFlatIRStmt ( IRStmt* st )
       case Ist_PutI:
          return toBool( isIRAtom(st->Ist.PutI.ix) 
                         && isIRAtom(st->Ist.PutI.data) );
-      case Ist_Tmp:
+      case Ist_WrTmp:
          /* This is the only interesting case.  The RHS can be any
             expression, *but* all its subexpressions *must* be
             atoms. */
-         e = st->Ist.Tmp.data;
+         e = st->Ist.WrTmp.data;
          switch (e->tag) {
             case Iex_Binder: return True;
             case Iex_Get:    return True;
             case Iex_GetI:   return isIRAtom(e->Iex.GetI.ix);
-            case Iex_Tmp:    return True;
+            case Iex_RdTmp:  return True;
             case Iex_Qop:    return toBool(
                                     isIRAtom(e->Iex.Qop.arg1) 
                                     && isIRAtom(e->Iex.Qop.arg2)
@@ -2017,10 +2017,10 @@ static inline Int countArgs ( IRExpr** args )
 
 static
 __attribute((noreturn))
-void sanityCheckFail ( IRBB* bb, IRStmt* stmt, HChar* what )
+void sanityCheckFail ( IRSB* bb, IRStmt* stmt, HChar* what )
 {
    vex_printf("\nIR SANITY CHECK FAILURE\n\n");
-   ppIRBB(bb);
+   ppIRSB(bb);
    if (stmt) {
       vex_printf("\nIN STATEMENT:\n\n");
       ppIRStmt(stmt);
@@ -2029,7 +2029,7 @@ void sanityCheckFail ( IRBB* bb, IRStmt* stmt, HChar* what )
    vpanic("sanityCheckFail: exiting due to bad IR");
 }
 
-static Bool saneIRArray ( IRArray* arr )
+static Bool saneIRRegArray ( IRRegArray* arr )
 {
    if (arr->base < 0 || arr->base > 10000 /* somewhat arbitrary */)
       return False;
@@ -2068,7 +2068,7 @@ static Bool saneIRConst ( IRConst* con )
    def_count is zero. */
 
 static
-void useBeforeDef_Temp ( IRBB* bb, IRStmt* stmt, IRTemp tmp, Int* def_counts )
+void useBeforeDef_Temp ( IRSB* bb, IRStmt* stmt, IRTemp tmp, Int* def_counts )
 {
    if (tmp < 0 || tmp >= bb->tyenv->types_used)
       sanityCheckFail(bb,stmt, "out of range Temp in IRExpr");
@@ -2077,7 +2077,7 @@ void useBeforeDef_Temp ( IRBB* bb, IRStmt* stmt, IRTemp tmp, Int* def_counts )
 }
 
 static
-void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
+void useBeforeDef_Expr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
 {
    Int i;
    switch (expr->tag) {
@@ -2086,8 +2086,8 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
       case Iex_GetI:
          useBeforeDef_Expr(bb,stmt,expr->Iex.GetI.ix,def_counts);
          break;
-      case Iex_Tmp:
-         useBeforeDef_Temp(bb,stmt,expr->Iex.Tmp.tmp,def_counts);
+      case Iex_RdTmp:
+         useBeforeDef_Temp(bb,stmt,expr->Iex.RdTmp.tmp,def_counts);
          break;
       case Iex_Qop:
          useBeforeDef_Expr(bb,stmt,expr->Iex.Qop.arg1,def_counts);
@@ -2127,7 +2127,7 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
 }
 
 static
-void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
+void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
 {
    Int      i;
    IRDirty* d;
@@ -2144,8 +2144,8 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
          useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.ix,def_counts);
          useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.data,def_counts);
          break;
-      case Ist_Tmp:
-         useBeforeDef_Expr(bb,stmt,stmt->Ist.Tmp.data,def_counts);
+      case Ist_WrTmp:
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.WrTmp.data,def_counts);
          break;
       case Ist_Store:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Store.addr,def_counts);
@@ -2170,20 +2170,20 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
 }
 
 static
-void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
+void tcExpr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
 {
    Int        i;
    IRType     t_dst, t_arg1, t_arg2, t_arg3, t_arg4;
    IRTypeEnv* tyenv = bb->tyenv;
    switch (expr->tag) {
       case Iex_Get:
-      case Iex_Tmp:
+      case Iex_RdTmp:
          break;
       case Iex_GetI:
          tcExpr(bb,stmt, expr->Iex.GetI.ix, gWordTy );
          if (typeOfIRExpr(tyenv,expr->Iex.GetI.ix) != Ity_I32)
             sanityCheckFail(bb,stmt,"IRExpr.GetI.ix: not :: Ity_I32");
-         if (!saneIRArray(expr->Iex.GetI.descr))
+         if (!saneIRRegArray(expr->Iex.GetI.descr))
             sanityCheckFail(bb,stmt,"IRExpr.GetI.descr: invalid descr");
          break;
       case Iex_Qop: {
@@ -2373,7 +2373,7 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
 
 
 static
-void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
+void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
 {
    Int        i;
    IRDirty*   d;
@@ -2405,13 +2405,13 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
             sanityCheckFail(bb,stmt,"IRStmt.PutI.data: data ty != elem ty");
          if (typeOfIRExpr(tyenv,stmt->Ist.PutI.ix) != Ity_I32)
             sanityCheckFail(bb,stmt,"IRStmt.PutI.ix: not :: Ity_I32");
-         if (!saneIRArray(stmt->Ist.PutI.descr))
+         if (!saneIRRegArray(stmt->Ist.PutI.descr))
             sanityCheckFail(bb,stmt,"IRStmt.PutI.descr: invalid descr");
          break;
-      case Ist_Tmp:
-         tcExpr( bb, stmt, stmt->Ist.Tmp.data, gWordTy );
-         if (typeOfIRTemp(tyenv, stmt->Ist.Tmp.tmp)
-             != typeOfIRExpr(tyenv, stmt->Ist.Tmp.data))
+      case Ist_WrTmp:
+         tcExpr( bb, stmt, stmt->Ist.WrTmp.data, gWordTy );
+         if (typeOfIRTemp(tyenv, stmt->Ist.WrTmp.tmp)
+             != typeOfIRExpr(tyenv, stmt->Ist.WrTmp.data))
             sanityCheckFail(bb,stmt,"IRStmt.Put.Tmp: tmp and expr do not match");
          break;
       case Ist_Store:
@@ -2479,7 +2479,7 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
    }
 }
 
-void sanityCheckIRBB ( IRBB* bb,          HChar* caller,
+void sanityCheckIRSB ( IRSB* bb,          HChar* caller,
                        Bool require_flat, IRType guest_word_size )
 {
    Int     i;
@@ -2496,7 +2496,7 @@ void sanityCheckIRBB ( IRBB* bb,          HChar* caller,
    if (bb->stmts_used < 0 || bb->stmts_size < 8
        || bb->stmts_used > bb->stmts_size)
       /* this BB is so strange we can't even print it */
-      vpanic("sanityCheckIRBB: stmts array limits wierd");
+      vpanic("sanityCheckIRSB: stmts array limits wierd");
 
    /* Ensure each temp has a plausible type. */
    for (i = 0; i < n_temps; i++) {
@@ -2531,12 +2531,12 @@ void sanityCheckIRBB ( IRBB* bb,          HChar* caller,
       stmt = bb->stmts[i];
       useBeforeDef_Stmt(bb,stmt,def_counts);
 
-      if (stmt->tag == Ist_Tmp) {
-         if (stmt->Ist.Tmp.tmp < 0 || stmt->Ist.Tmp.tmp >= n_temps)
+      if (stmt->tag == Ist_WrTmp) {
+         if (stmt->Ist.WrTmp.tmp < 0 || stmt->Ist.WrTmp.tmp >= n_temps)
             sanityCheckFail(bb, stmt, 
                "IRStmt.Tmp: destination tmp is out of range");
-         def_counts[stmt->Ist.Tmp.tmp]++;
-         if (def_counts[stmt->Ist.Tmp.tmp] > 1)
+         def_counts[stmt->Ist.WrTmp.tmp]++;
+         if (def_counts[stmt->Ist.WrTmp.tmp] > 1)
             sanityCheckFail(bb, stmt, 
                "IRStmt.Tmp: destination tmp is assigned more than once");
       }
@@ -2582,7 +2582,7 @@ Bool eqIRConst ( IRConst* c1, IRConst* c2 )
    }
 }
 
-Bool eqIRArray ( IRArray* descr1, IRArray* descr2 )
+Bool eqIRRegArray ( IRRegArray* descr1, IRRegArray* descr2 )
 {
    return toBool( descr1->base == descr2->base 
                   && descr1->elemTy == descr2->elemTy
@@ -2648,8 +2648,8 @@ Bool eqIRAtom ( IRExpr* a1, IRExpr* a2 )
 {
    vassert(isIRAtom(a1));
    vassert(isIRAtom(a2));
-   if (a1->tag == Iex_Tmp && a2->tag == Iex_Tmp)
-      return toBool(a1->Iex.Tmp.tmp == a2->Iex.Tmp.tmp);
+   if (a1->tag == Iex_RdTmp && a2->tag == Iex_RdTmp)
+      return toBool(a1->Iex.RdTmp.tmp == a2->Iex.RdTmp.tmp);
    if (a1->tag == Iex_Const && a2->tag == Iex_Const)
       return eqIRConst(a1->Iex.Const.con, a2->Iex.Const.con);
    return False;

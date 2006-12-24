@@ -68,17 +68,19 @@
 
    Code blocks
    ~~~~~~~~~~~
-   The code is broken into small code blocks (type: 'IRBB').  Each
-   code block typically represents from 1 to perhaps 50 instructions.
-   IRBBs are single-entry, multiple-exit code blocks.  Each IRBB
-   contains three things:
+   The code is broken into small code blocks ("superblocks", type:
+   'IRSB').  Each code block typically represents from 1 to perhaps 50
+   instructions.  IRSBs are single-entry, multiple-exit code blocks.
+   Each IRSB contains three things:
    - a type environment, which indicates the type of each temporary
-     value present in the IRBB
+     value present in the IRSB
    - a list of statements, which represent code
-   - a jump that exits from the end the IRBB
+   - a jump that exits from the end the IRSB
    Because the blocks are multiple-exit, there can be additional
-   conditional exit statements that cause control to leave the IRBB
-   before the final exit.
+   conditional exit statements that cause control to leave the IRSB
+   before the final exit.  Also because of this, IRSBs can cover
+   multiple non-consecutive sequences of code (up to 3).  These are
+   recorded in the type VexGuestExtents (see libvex.h).
 
    Statements and expressions
    ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,11 +108,11 @@
 
    The basic "Get" and "Put" operations are sufficient to model normal
    fixed registers on the guest.  Selected areas of the guest state
-   can be treated as a circular array of registers (type: 'IRArray'),
-   which can be indexed at run-time.  This is done with the "GetI" and
-   "PutI" primitives.  This is necessary to describe rotating register
-   files, for example the x87 FPU stack, SPARC register windows, and
-   the Itanium register files.
+   can be treated as a circular array of registers (type:
+   'IRRegArray'), which can be indexed at run-time.  This is done with
+   the "GetI" and "PutI" primitives.  This is necessary to describe
+   rotating register files, for example the x87 FPU stack, SPARC
+   register windows, and the Itanium register files.
 
    Examples, and flattened vs. unflattened code
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -183,7 +185,7 @@
 
    SSAness and typing
    ~~~~~~~~~~~~~~~~~~
-   The IR is fully typed.  For every IRBB (IR block) it is possible to
+   The IR is fully typed.  For every IRSB (IR block) it is possible to
    say unambiguously whether or not it is correctly typed.
    Incorrectly typed IR has no meaning and the VEX will refuse to
    process it.  At various points during processing VEX typechecks the
@@ -217,11 +219,11 @@
 
    - eqIRFoo is a structural equality predicate for IRFoos.
 
-   - dopyIRFoo is a deep copy constructor for IRFoos. 
+   - deepCopyIRFoo is a deep copy constructor for IRFoos. 
      It recursively traverses the entire argument tree and
      produces a complete new tree.
 
-   - sopyIRFoo is the shallow copy constructor for IRFoos.
+   - shallowCopyIRFoo is the shallow copy constructor for IRFoos.
      It creates a new top-level copy of the supplied object,
      but does not copy any sub-objects.
 */
@@ -314,7 +316,7 @@ extern IRConst* IRConst_F64i ( ULong );
 extern IRConst* IRConst_V128 ( UShort );
 
 /* Deep-copy an IRConst */
-extern IRConst* dopyIRConst ( IRConst* );
+extern IRConst* deepCopyIRConst ( IRConst* );
 
 /* Pretty-print an IRConst */
 extern void ppIRConst ( IRConst* );
@@ -352,7 +354,7 @@ typedef
 extern IRCallee* mkIRCallee ( Int regparms, HChar* name, void* addr );
 
 /* Deep-copy an IRCallee. */
-extern IRCallee* dopyIRCallee ( IRCallee* );
+extern IRCallee* deepCopyIRCallee ( IRCallee* );
 
 /* Pretty-print an IRCallee. */
 extern void ppIRCallee ( IRCallee* );
@@ -369,14 +371,14 @@ typedef
       IRType elemTy; /* type of each element in the indexed area */
       Int    nElems; /* number of elements in the indexed area */
    }
-   IRArray;
+   IRRegArray;
 
-extern IRArray* mkIRArray ( Int, IRType, Int );
+extern IRRegArray* mkIRRegArray ( Int, IRType, Int );
 
-extern IRArray* dopyIRArray ( IRArray* );
+extern IRRegArray* deepCopyIRRegArray ( IRRegArray* );
 
-extern void ppIRArray ( IRArray* );
-extern Bool eqIRArray ( IRArray*, IRArray* );
+extern void ppIRRegArray ( IRRegArray* );
+extern Bool eqIRRegArray ( IRRegArray*, IRRegArray* );
 
 
 /* ------------------ Temporaries ------------------ */
@@ -889,7 +891,7 @@ typedef
       Iex_Binder,
       Iex_Get,
       Iex_GetI,
-      Iex_Tmp,
+      Iex_RdTmp,
       Iex_Qop,
       Iex_Triop,
       Iex_Binop,
@@ -938,7 +940,7 @@ struct _IRExpr {
          example is the x87 FP register stack.
 
          The part of the guest state to be treated as a circular array
-         is described in the IRArray 'descr' field.  It holds the
+         is described in the IRRegArray 'descr' field.  It holds the
          offset of the first element in the array, the type of each
          element, and the number of elements.
 
@@ -968,9 +970,9 @@ struct _IRExpr {
                          eg. GETI(128:8xI8)[t1,0]
       */
       struct {
-         IRArray* descr;   /* Part of guest state treated as circular */
-         IRExpr*  ix;      /* Variable part of index into array */
-         Int      bias;    /* Constant offset part of index into array */
+         IRRegArray* descr; /* Part of guest state treated as circular */
+         IRExpr*     ix;    /* Variable part of index into array */
+         Int         bias;  /* Constant offset part of index into array */
       } GetI;
 
       /* The value held by a temporary.
@@ -978,7 +980,7 @@ struct _IRExpr {
       */
       struct {
          IRTemp tmp;       /* The temporary number */
-      } Tmp;
+      } RdTmp;
 
       /* A quaternary operation.
          ppIRExpr output: <op>(<arg1>, <arg2>, <arg3>, <arg4>),
@@ -1099,8 +1101,8 @@ struct _IRExpr {
 /* Expression constructors. */
 extern IRExpr* IRExpr_Binder ( Int binder );
 extern IRExpr* IRExpr_Get    ( Int off, IRType ty );
-extern IRExpr* IRExpr_GetI   ( IRArray* descr, IRExpr* ix, Int bias );
-extern IRExpr* IRExpr_Tmp    ( IRTemp tmp );
+extern IRExpr* IRExpr_GetI   ( IRRegArray* descr, IRExpr* ix, Int bias );
+extern IRExpr* IRExpr_RdTmp  ( IRTemp tmp );
 extern IRExpr* IRExpr_Qop    ( IROp op, IRExpr* arg1, IRExpr* arg2, 
                                         IRExpr* arg3, IRExpr* arg4 );
 extern IRExpr* IRExpr_Triop  ( IROp op, IRExpr* arg1, 
@@ -1113,7 +1115,7 @@ extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 
 /* Deep-copy an IRExpr. */
-extern IRExpr* dopyIRExpr ( IRExpr* );
+extern IRExpr* deepCopyIRExpr ( IRExpr* );
 
 /* Pretty-print an IRExpr. */
 extern void ppIRExpr ( IRExpr* );
@@ -1129,11 +1131,11 @@ extern IRExpr** mkIRExprVec_5 ( IRExpr*, IRExpr*,
                                 IRExpr*, IRExpr*, IRExpr* );
 
 /* IRExpr copiers:
-   - sopy: shallow-copy (ie. create a new vector that shares the
+   - shallowCopy: shallow-copy (ie. create a new vector that shares the
      elements with the original).
-   - dopy: deep-copy (ie. create a completely new vector). */
-extern IRExpr** sopyIRExprVec ( IRExpr** );
-extern IRExpr** dopyIRExprVec ( IRExpr** );
+   - deepCopy: deep-copy (ie. create a completely new vector). */
+extern IRExpr** shallowCopyIRExprVec ( IRExpr** );
+extern IRExpr** deepCopyIRExprVec ( IRExpr** );
 
 /* Make a constant expression from the given host word taking into
    account (of course) the host word size. */
@@ -1149,7 +1151,7 @@ IRExpr* mkIRExprCCall ( IRType retty,
 /* Convenience functions for atoms (IRExprs which are either Iex_Tmp or
  * Iex_Const). */
 static inline Bool isIRAtom ( IRExpr* e ) {
-   return toBool(e->tag == Iex_Tmp || e->tag == Iex_Const);
+   return toBool(e->tag == Iex_RdTmp || e->tag == Iex_Const);
 }
 
 /* Are these two IR atoms identical?  Causes an assertion
@@ -1293,7 +1295,7 @@ extern void     ppIRDirty ( IRDirty* );
 extern IRDirty* emptyIRDirty ( void );
 
 /* Deep-copy a dirty call */
-extern IRDirty* dopyIRDirty ( IRDirty* );
+extern IRDirty* deepCopyIRDirty ( IRDirty* );
 
 /* A handy function which takes some of the tedium out of constructing
    dirty helper calls.  The called function impliedly does not return
@@ -1331,7 +1333,7 @@ typedef
       Ist_AbiHint,   /* META */
       Ist_Put,
       Ist_PutI,
-      Ist_Tmp,
+      Ist_WrTmp,
       Ist_Store,
       Ist_Dirty,
       Ist_MFence,
@@ -1363,7 +1365,7 @@ typedef
          /* META: instruction mark.  Marks the start of the statements
             that represent a single machine instruction (the end of
             those statements is marked by the next IMark or the end of
-            the IRBB).  Contains the address and length of the
+            the IRSB).  Contains the address and length of the
             instruction.
 
             ppIRExpr output: ------ IMark(<addr>, <len>) ------,
@@ -1407,22 +1409,23 @@ typedef
                          eg. PUTI(64:8xF64)[t5,0] = t1
          */
          struct {
-            IRArray* descr;   /* Part of guest state treated as circular */
-            IRExpr*  ix;      /* Variable part of index into array */
-            Int      bias;    /* Constant offset part of index into array */
-            IRExpr*  data;    /* The value to write */
+            IRRegArray* descr; /* Part of guest state treated as circular */
+            IRExpr*     ix;    /* Variable part of index into array */
+            Int         bias;  /* Constant offset part of index into array */
+            IRExpr*     data;  /* The value to write */
          } PutI;
 
-         /* Assign a value to a temporary.  ("Tmp" is not a very good
-            name for this, particularly because there is also a Tmp
-            expression kind.)
+         /* Assign a value to a temporary.  Note that SSA rules require
+            each tmp is only assigned to once.  IR sanity checking will
+            reject any block containing a temporary which is not assigned
+            to exactly once.
 
             ppIRExpr output: t<tmp> = <data>, eg. t1 = 3
          */
          struct {
             IRTemp  tmp;   /* Temporary  (LHS of assignment) */
             IRExpr* data;  /* Expression (RHS of assignment) */
-         } Tmp;
+         } WrTmp;
 
          /* Write a value to memory.
             ppIRExpr output: ST<end>(<addr>) = <data>, eg. STle(t1) = t2
@@ -1454,7 +1457,7 @@ typedef
          struct {
          } MFence;
 
-         /* Conditional exit from the middle of an IRBB.
+         /* Conditional exit from the middle of an IRSB.
             ppIRExpr output: if (<guard>) goto {<jk>} <dst>
                          eg. if (t69) goto {Boring} 0x4000AAA:I32
          */
@@ -1472,16 +1475,16 @@ extern IRStmt* IRStmt_NoOp    ( void );
 extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len );
 extern IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len );
 extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
-extern IRStmt* IRStmt_PutI    ( IRArray* descr, IRExpr* ix, Int bias, 
+extern IRStmt* IRStmt_PutI    ( IRRegArray* descr, IRExpr* ix, Int bias, 
                                 IRExpr* data );
-extern IRStmt* IRStmt_Tmp     ( IRTemp tmp, IRExpr* data );
+extern IRStmt* IRStmt_WrTmp   ( IRTemp tmp, IRExpr* data );
 extern IRStmt* IRStmt_Store   ( IREndness end, IRExpr* addr, IRExpr* data );
 extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MFence  ( void );
 extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
 
 /* Deep-copy an IRStmt. */
-extern IRStmt* dopyIRStmt ( IRStmt* );
+extern IRStmt* deepCopyIRStmt ( IRStmt* );
 
 /* Pretty-print an IRStmt. */
 extern void ppIRStmt ( IRStmt* );
@@ -1507,22 +1510,24 @@ typedef
 extern IRTemp newIRTemp ( IRTypeEnv*, IRType );
 
 /* Deep-copy a type environment */
-extern IRTypeEnv* dopyIRTypeEnv ( IRTypeEnv* );
+extern IRTypeEnv* deepCopyIRTypeEnv ( IRTypeEnv* );
 
 /* Pretty-print a type environment */
 extern void ppIRTypeEnv ( IRTypeEnv* );
 
 
-/* Code blocks contain:
+/* Code blocks, which in proper compiler terminology are superblocks
+   (single entry, multiple exit code sequences) contain:
+
    - A table giving a type for each temp (the "type environment")
    - An expandable array of statements
    - An expression of type 32 or 64 bits, depending on the
-     guest's word size, indicating the next destination.
+     guest's word size, indicating the next destination if the block 
+     executes all the way to the end, without a side exit
    - An indication of any special actions (JumpKind) needed
      for this final jump.
    
-   The "BB" is short for "basic block", but this is a misnomer, as an
-   IRBB can contain multiple exits.
+   "IRSB" stands for "IR Super Block".
 */
 typedef
    struct {
@@ -1533,23 +1538,23 @@ typedef
       IRExpr*    next;
       IRJumpKind jumpkind;
    }
-   IRBB;
+   IRSB;
 
-/* Allocate a new, uninitialised IRBB */
-extern IRBB* emptyIRBB ( void );
+/* Allocate a new, uninitialised IRSB */
+extern IRSB* emptyIRSB ( void );
 
-/* Deep-copy an IRBB */
-extern IRBB* dopyIRBB ( IRBB* );
+/* Deep-copy an IRSB */
+extern IRSB* deepCopyIRSB ( IRSB* );
 
-/* Deep-copy an IRBB, except for the statements list, which set to be
+/* Deep-copy an IRSB, except for the statements list, which set to be
    a new, empty, list of statements. */
-extern IRBB* dopyIRBBExceptStmts ( IRBB* );
+extern IRSB* deepCopyIRSBExceptStmts ( IRSB* );
 
-/* Pretty-print an IRBB */
-extern void ppIRBB ( IRBB* );
+/* Pretty-print an IRSB */
+extern void ppIRSB ( IRSB* );
 
-/* Append an IRStmt to an IRBB */
-extern void addStmtToIRBB ( IRBB*, IRStmt* );
+/* Append an IRStmt to an IRSB */
+extern void addStmtToIRSB ( IRSB*, IRStmt* );
 
 
 /*---------------------------------------------------------------*/
@@ -1565,7 +1570,7 @@ extern IRType typeOfIRTemp  ( IRTypeEnv*, IRTemp );
 extern IRType typeOfIRExpr  ( IRTypeEnv*, IRExpr* );
 
 /* Sanity check a BB of IR */
-extern void sanityCheckIRBB ( IRBB*  bb, 
+extern void sanityCheckIRSB ( IRSB*  bb, 
                               HChar* caller,
                               Bool   require_flatness, 
                               IRType guest_word_size );

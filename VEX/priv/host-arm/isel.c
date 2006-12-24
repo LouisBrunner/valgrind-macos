@@ -487,7 +487,7 @@ void doHelperCall ( ISelEnv* env,
    offset. */
 
 static
-ARMAMode2* genGuestArrayOffset ( ISelEnv* env, IRArray* descr, 
+ARMAMode2* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr, 
 				 IRExpr* off, Int bias )
 {
    HReg tmp, tmp2, roff;
@@ -824,12 +824,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- TMP --------- */
    /* assign value to temporary */
-   case Ist_Tmp: {
-      IRTemp tmp = stmt->Ist.Tmp.tmp;
+   case Ist_WrTmp: {
+      IRTemp tmp = stmt->Ist.WrTmp.tmp;
       IRType ty = typeOfIRTemp(env->type_env, tmp);
 
       if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
-         ARMAMode1* am = iselIntExpr_AMode1(env, stmt->Ist.Tmp.data);
+         ARMAMode1* am = iselIntExpr_AMode1(env, stmt->Ist.WrTmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, ARMInstr_DPInstr1(ARMalu_MOV,dst,am));
          return;
@@ -927,9 +927,9 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 /*--- Insn selector top-level                           ---*/
 /*---------------------------------------------------------*/
 
-/* Translate an entire BB to arm code. */
+/* Translate an entire SB to arm code. */
 
-HInstrArray* iselBB_ARM ( IRBB* bb )
+HInstrArray* iselSB_ARM ( IRSB* bb )
 {
     Int     i, j;
 

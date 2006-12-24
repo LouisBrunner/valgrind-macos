@@ -55,7 +55,7 @@
 /*---------------------------------------------------------*/
 
 extern
-IRBB* bbToIR_ARM ( UChar*           armCode, 
+IRSB* bbToIR_ARM ( UChar*           armCode, 
                    Addr64           eip, 
                    VexGuestExtents* vge,
                    Bool             (*byte_accessible)(Addr64),

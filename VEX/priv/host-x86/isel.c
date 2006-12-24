@@ -362,7 +362,7 @@ static
 Bool mightRequireFixedRegs ( IRExpr* e )
 {
    switch (e->tag) {
-      case Iex_Tmp: case Iex_Const: case Iex_Get: 
+      case Iex_RdTmp: case Iex_Const: case Iex_Get: 
          return False;
       default:
          return True;
@@ -565,7 +565,7 @@ void doHelperCall ( ISelEnv* env,
    offset. */
 
 static
-X86AMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr, 
+X86AMode* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr, 
                                 IRExpr* off, Int bias )
 {
    HReg tmp, roff;
@@ -732,8 +732,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    switch (e->tag) {
 
    /* --------- TEMP --------- */
-   case Iex_Tmp: {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   case Iex_RdTmp: {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    /* --------- LOAD --------- */
@@ -1502,8 +1502,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
 
    /* var */
-   if (e->tag == Iex_Tmp) {
-      HReg r32 = lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      HReg r32 = lookupIRTemp(env, e->Iex.RdTmp.tmp);
       /* Test32 doesn't modify r32; so this is OK. */
       addInstr(env, X86Instr_Test32(1,r32));
       return Xcc_NZ;
@@ -1803,8 +1803,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
    }
 
    /* read 64-bit IRTemp */
-   if (e->tag == Iex_Tmp) {
-      lookupIRTemp64( rHi, rLo, env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      lookupIRTemp64( rHi, rLo, env, e->Iex.RdTmp.tmp);
       return;
    }
 
@@ -2456,8 +2456,8 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_F32);
 
-   if (e->tag == Iex_Tmp) {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE) {
@@ -2555,8 +2555,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(ty == Ity_F64);
 
-   if (e->tag == Iex_Tmp) {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    if (e->tag == Iex_Const) {
@@ -2821,8 +2821,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    REQUIRE_SSE1;
 
-   if (e->tag == Iex_Tmp) {
-      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
    if (e->tag == Iex_Get) {
@@ -3461,44 +3461,44 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    }
 
    /* --------- TMP --------- */
-   case Ist_Tmp: {
-      IRTemp tmp = stmt->Ist.Tmp.tmp;
+   case Ist_WrTmp: {
+      IRTemp tmp = stmt->Ist.WrTmp.tmp;
       IRType ty = typeOfIRTemp(env->type_env, tmp);
       if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
-         X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.data);
+         X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.WrTmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, X86Instr_Alu32R(Xalu_MOV,rmi,dst));
          return;
       }
       if (ty == Ity_I64) {
          HReg rHi, rLo, dstHi, dstLo;
-         iselInt64Expr(&rHi,&rLo, env, stmt->Ist.Tmp.data);
+         iselInt64Expr(&rHi,&rLo, env, stmt->Ist.WrTmp.data);
          lookupIRTemp64( &dstHi, &dstLo, env, tmp);
          addInstr(env, mk_iMOVsd_RR(rHi,dstHi) );
          addInstr(env, mk_iMOVsd_RR(rLo,dstLo) );
          return;
       }
       if (ty == Ity_I1) {
-         X86CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
+         X86CondCode cond = iselCondCode(env, stmt->Ist.WrTmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, X86Instr_Set32(cond, dst));
          return;
       }
       if (ty == Ity_F64) {
          HReg dst = lookupIRTemp(env, tmp);
-         HReg src = iselDblExpr(env, stmt->Ist.Tmp.data);
+         HReg src = iselDblExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, X86Instr_FpUnary(Xfp_MOV,src,dst));
          return;
       }
       if (ty == Ity_F32) {
          HReg dst = lookupIRTemp(env, tmp);
-         HReg src = iselFltExpr(env, stmt->Ist.Tmp.data);
+         HReg src = iselFltExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, X86Instr_FpUnary(Xfp_MOV,src,dst));
          return;
       }
       if (ty == Ity_V128) {
          HReg dst = lookupIRTemp(env, tmp);
-         HReg src = iselVecExpr(env, stmt->Ist.Tmp.data);
+         HReg src = iselVecExpr(env, stmt->Ist.WrTmp.data);
          addInstr(env, mk_vMOVsd_RR(src,dst));
          return;
       }
@@ -3602,11 +3602,11 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 /*--- Insn selector top-level                           ---*/
 /*---------------------------------------------------------*/
 
-/* Translate an entire BB to x86 code. */
+/* Translate an entire SB to x86 code. */
 
-HInstrArray* iselBB_X86 ( IRBB* bb, VexArch      arch_host,
+HInstrArray* iselSB_X86 ( IRSB* bb, VexArch      arch_host,
                                     VexArchInfo* archinfo_host,
-                                    VexMiscInfo* vmi/*UNUSED*/ )
+                                    VexAbiInfo*  vbi/*UNUSED*/ )
 {
    Int      i, j;
    HReg     hreg, hregHI;

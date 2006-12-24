@@ -168,8 +168,8 @@ static Addr64 guest_CIA_bbstart;
    translated. */
 static Addr64 guest_CIA_curr_instr;
 
-/* The IRBB* into which we're generating code. */
-static IRBB* irbb;
+/* The IRSB* into which we're generating code. */
+static IRSB* irsb;
 
 /* Is our guest binary 32 or 64bit?  Set at each call to
    disInstr_PPC below. */
@@ -180,9 +180,9 @@ static Bool mode64 = False;
 // most platforms it's the identity function.  Unfortunately, on
 // ppc64-linux it isn't (sigh) and ditto for ppc32-aix5 and
 // ppc64-aix5.
-static void* fnptr_to_fnentry( VexMiscInfo* vmi, void* f )
+static void* fnptr_to_fnentry( VexAbiInfo* vbi, void* f )
 {
-   if (vmi->host_ppc_calls_use_fndescrs) {
+   if (vbi->host_ppc_calls_use_fndescrs) {
       /* f is a pointer to a 3-word function descriptor, of which the
          first word is the entry address. */
       /* note, this is correct even with cross-jitting, since this is
@@ -397,17 +397,17 @@ static Addr64 nextInsnAddr( void )
 /*--- ppc32/64 insn stream.                                ---*/
 /*------------------------------------------------------------*/
 
-/* Add a statement to the list held by "irbb". */
+/* Add a statement to the list held by "irsb". */
 static void stmt ( IRStmt* st )
 {
-   addStmtToIRBB( irbb, st );
+   addStmtToIRSB( irsb, st );
 }
 
 /* Generate a new temporary of the given type. */
 static IRTemp newTemp ( IRType ty )
 {
    vassert(isPlausibleIRType(ty));
-   return newIRTemp( irbb->tyenv, ty );
+   return newIRTemp( irsb->tyenv, ty );
 }
 
 /* Various simple conversions */
@@ -461,13 +461,13 @@ static UInt getUIntBigendianly ( UChar* p )
 
 static void assign ( IRTemp dst, IRExpr* e )
 {
-   stmt( IRStmt_Tmp(dst, e) );
+   stmt( IRStmt_WrTmp(dst, e) );
 }
 
 static void storeBE ( IRExpr* addr, IRExpr* data )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, addr) == Ity_I32 ||
-           typeOfIRExpr(irbb->tyenv, addr) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, addr) == Ity_I32 ||
+           typeOfIRExpr(irsb->tyenv, addr) == Ity_I64);
    stmt( IRStmt_Store(Iend_BE,addr,data) );
 }
 
@@ -494,7 +494,7 @@ static IRExpr* qop ( IROp op, IRExpr* a1, IRExpr* a2,
 
 static IRExpr* mkexpr ( IRTemp tmp )
 {
-   return IRExpr_Tmp(tmp);
+   return IRExpr_RdTmp(tmp);
 }
 
 static IRExpr* mkU8 ( UChar i )
@@ -524,16 +524,16 @@ static IRExpr* loadBE ( IRType ty, IRExpr* data )
 
 static IRExpr* mkOR1 ( IRExpr* arg1, IRExpr* arg2 )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, arg1) == Ity_I1);
-   vassert(typeOfIRExpr(irbb->tyenv, arg2) == Ity_I1);
+   vassert(typeOfIRExpr(irsb->tyenv, arg1) == Ity_I1);
+   vassert(typeOfIRExpr(irsb->tyenv, arg2) == Ity_I1);
    return unop(Iop_32to1, binop(Iop_Or32, unop(Iop_1Uto32, arg1), 
                                           unop(Iop_1Uto32, arg2)));
 }
 
 static IRExpr* mkAND1 ( IRExpr* arg1, IRExpr* arg2 )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, arg1) == Ity_I1);
-   vassert(typeOfIRExpr(irbb->tyenv, arg2) == Ity_I1);
+   vassert(typeOfIRExpr(irsb->tyenv, arg1) == Ity_I1);
+   vassert(typeOfIRExpr(irsb->tyenv, arg2) == Ity_I1);
    return unop(Iop_32to1, binop(Iop_And32, unop(Iop_1Uto32, arg1), 
                                            unop(Iop_1Uto32, arg2)));
 }
@@ -544,7 +544,7 @@ static void expand8Ux16( IRExpr* vIn,
 {
    IRTemp ones8x16 = newTemp(Ity_V128);
 
-   vassert(typeOfIRExpr(irbb->tyenv, vIn) == Ity_V128);
+   vassert(typeOfIRExpr(irsb->tyenv, vIn) == Ity_V128);
    vassert(vEvn && *vEvn == IRTemp_INVALID);
    vassert(vOdd && *vOdd == IRTemp_INVALID);
    *vEvn = newTemp(Ity_V128);
@@ -562,7 +562,7 @@ static void expand8Sx16( IRExpr* vIn,
 {
    IRTemp ones8x16 = newTemp(Ity_V128);
 
-   vassert(typeOfIRExpr(irbb->tyenv, vIn) == Ity_V128);
+   vassert(typeOfIRExpr(irsb->tyenv, vIn) == Ity_V128);
    vassert(vEvn && *vEvn == IRTemp_INVALID);
    vassert(vOdd && *vOdd == IRTemp_INVALID);
    *vEvn = newTemp(Ity_V128);
@@ -580,7 +580,7 @@ static void expand16Ux8( IRExpr* vIn,
 {
    IRTemp ones16x8 = newTemp(Ity_V128);
 
-   vassert(typeOfIRExpr(irbb->tyenv, vIn) == Ity_V128);
+   vassert(typeOfIRExpr(irsb->tyenv, vIn) == Ity_V128);
    vassert(vEvn && *vEvn == IRTemp_INVALID);
    vassert(vOdd && *vOdd == IRTemp_INVALID);
    *vEvn = newTemp(Ity_V128);
@@ -598,7 +598,7 @@ static void expand16Sx8( IRExpr* vIn,
 {
    IRTemp ones16x8 = newTemp(Ity_V128);
 
-   vassert(typeOfIRExpr(irbb->tyenv, vIn) == Ity_V128);
+   vassert(typeOfIRExpr(irsb->tyenv, vIn) == Ity_V128);
    vassert(vEvn && *vEvn == IRTemp_INVALID);
    vassert(vOdd && *vOdd == IRTemp_INVALID);
    *vEvn = newTemp(Ity_V128);
@@ -619,7 +619,7 @@ static void breakV128to4x64S( IRExpr* t128,
    IRTemp hi64 = newTemp(Ity_I64);
    IRTemp lo64 = newTemp(Ity_I64);
 
-   vassert(typeOfIRExpr(irbb->tyenv, t128) == Ity_V128);
+   vassert(typeOfIRExpr(irsb->tyenv, t128) == Ity_V128);
    vassert(t0 && *t0 == IRTemp_INVALID);
    vassert(t1 && *t1 == IRTemp_INVALID);
    vassert(t2 && *t2 == IRTemp_INVALID);
@@ -646,7 +646,7 @@ static void breakV128to4x64U ( IRExpr* t128,
    IRTemp hi64 = newTemp(Ity_I64);
    IRTemp lo64 = newTemp(Ity_I64);
 
-   vassert(typeOfIRExpr(irbb->tyenv, t128) == Ity_V128);
+   vassert(typeOfIRExpr(irsb->tyenv, t128) == Ity_V128);
    vassert(t0 && *t0 == IRTemp_INVALID);
    vassert(t1 && *t1 == IRTemp_INVALID);
    vassert(t2 && *t2 == IRTemp_INVALID);
@@ -670,7 +670,7 @@ static IRExpr* mkQNarrow64Sto32 ( IRExpr* t64 )
    IRTemp hi32 = newTemp(Ity_I32);
    IRTemp lo32 = newTemp(Ity_I32);
 
-   vassert(typeOfIRExpr(irbb->tyenv, t64) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t64) == Ity_I64);
 
    assign( hi32, unop(Iop_64HIto32, t64));
    assign( lo32, unop(Iop_64to32,   t64));
@@ -693,7 +693,7 @@ static IRExpr* mkQNarrow64Uto32 ( IRExpr* t64 )
    IRTemp hi32 = newTemp(Ity_I32);
    IRTemp lo32 = newTemp(Ity_I32);
 
-   vassert(typeOfIRExpr(irbb->tyenv, t64) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t64) == Ity_I64);
 
    assign( hi32, unop(Iop_64HIto32, t64));
    assign( lo32, unop(Iop_64to32,   t64));
@@ -711,10 +711,10 @@ static IRExpr* mkQNarrow64Uto32 ( IRExpr* t64 )
 static IRExpr* mkV128from4x64S ( IRExpr* t3, IRExpr* t2,
                                  IRExpr* t1, IRExpr* t0 )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, t3) == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv, t2) == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv, t1) == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv, t0) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t3) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t2) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t1) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t0) == Ity_I64);
    return binop(Iop_64HLtoV128,
                 binop(Iop_32HLto64,
                       mkQNarrow64Sto32( t3 ),
@@ -728,10 +728,10 @@ static IRExpr* mkV128from4x64S ( IRExpr* t3, IRExpr* t2,
 static IRExpr* mkV128from4x64U ( IRExpr* t3, IRExpr* t2,
                                  IRExpr* t1, IRExpr* t0 )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, t3) == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv, t2) == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv, t1) == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv, t0) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t3) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t2) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t1) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, t0) == Ity_I64);
    return binop(Iop_64HLtoV128,
                 binop(Iop_32HLto64,
                       mkQNarrow64Uto32( t3 ),
@@ -764,13 +764,13 @@ static IRExpr* mkV128from4x64U ( IRExpr* t3, IRExpr* t2,
 
 static IRExpr* /* :: Ity_I64 */ mk64lo32Sto64 ( IRExpr* src )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, src) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, src) == Ity_I64);
    return unop(Iop_32Sto64, unop(Iop_64to32, src));
 }
 
 static IRExpr* /* :: Ity_I64 */ mk64lo32Uto64 ( IRExpr* src )
 {
-   vassert(typeOfIRExpr(irbb->tyenv, src) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv, src) == Ity_I64);
    return unop(Iop_32Uto64, unop(Iop_64to32, src));
 }
 
@@ -937,7 +937,7 @@ static void putIReg ( UInt archreg, IRExpr* e )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    vassert(archreg < 32);
-   vassert(typeOfIRExpr(irbb->tyenv, e) == ty );
+   vassert(typeOfIRExpr(irsb->tyenv, e) == ty );
    stmt( IRStmt_Put(integerGuestRegOffset(archreg), e) );
 }
 
@@ -994,7 +994,7 @@ static IRExpr* getFReg ( UInt archreg )
 static void putFReg ( UInt archreg, IRExpr* e )
 {
    vassert(archreg < 32);
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_F64);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_F64);
    stmt( IRStmt_Put(floatGuestRegOffset(archreg), e) );
 }
 
@@ -1051,7 +1051,7 @@ static IRExpr* getVReg ( UInt archreg )
 static void putVReg ( UInt archreg, IRExpr* e )
 {
    vassert(archreg < 32);
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_V128);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_V128);
    stmt( IRStmt_Put(vectorGuestRegOffset(archreg), e) );
 }
 
@@ -1090,9 +1090,9 @@ static IRExpr* /* :: Ity_I32/64 */ ROTL ( IRExpr* src,
                                           IRExpr* rot_amt )
 {
    IRExpr *mask, *rot;
-   vassert(typeOfIRExpr(irbb->tyenv,rot_amt) == Ity_I8);
+   vassert(typeOfIRExpr(irsb->tyenv,rot_amt) == Ity_I8);
 
-   if (typeOfIRExpr(irbb->tyenv,src) == Ity_I64) {
+   if (typeOfIRExpr(irsb->tyenv,src) == Ity_I64) {
       // rot = (src << rot_amt) | (src >> (64-rot_amt))
       mask = binop(Iop_And8, rot_amt, mkU8(63));
       rot  = binop(Iop_Or64,
@@ -1124,8 +1124,8 @@ static IRExpr* /* :: Ity_I64 */ ROTL32_64 ( IRExpr* src64,
 {
    IRExpr *mask, *rot32;
    vassert(mode64);       // used only in 64bit mode
-   vassert(typeOfIRExpr(irbb->tyenv,src64) == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv,rot_amt) == Ity_I8);
+   vassert(typeOfIRExpr(irsb->tyenv,src64) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,rot_amt) == Ity_I8);
 
    mask  = binop(Iop_And8, rot_amt, mkU8(31));
    rot32 = ROTL( unop(Iop_64to32, src64), rot_amt );
@@ -1203,7 +1203,7 @@ static IRExpr* addr_align( IRExpr* addr, UChar align )
       vpanic("addr_align(ppc)");
    }
 
-   vassert(typeOfIRExpr(irbb->tyenv,addr) == ty);
+   vassert(typeOfIRExpr(irsb->tyenv,addr) == ty);
    return binop( mkSzOp(ty, Iop_And8), addr, mkSzImm(ty, mask) );
 }
 
@@ -1213,9 +1213,9 @@ static IRExpr* addr_align( IRExpr* addr, UChar align )
    N) becomes undefined.  That is at function calls and returns.  ELF
    ppc32 doesn't have this "feature" (how fortunate for it).
 */
-static void make_redzone_AbiHint ( VexMiscInfo* vmi, HChar* who )
+static void make_redzone_AbiHint ( VexAbiInfo* vbi, HChar* who )
 {
-   Int szB = vmi->guest_stack_redzone_size;
+   Int szB = vbi->guest_stack_redzone_size;
    if (0) vex_printf("AbiHint: %s\n", who);
    vassert(szB >= 0);
    if (szB > 0) {
@@ -1270,14 +1270,14 @@ static void make_redzone_AbiHint ( VexMiscInfo* vmi, HChar* who )
 static void putCR321 ( UInt cr, IRExpr* e )
 {
    vassert(cr < 8);
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
    stmt( IRStmt_Put(guestCR321offset(cr), e) );
 }
 
 static void putCR0 ( UInt cr, IRExpr* e )
 {
    vassert(cr < 8);
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
    stmt( IRStmt_Put(guestCR0offset(cr), e) );
 }
 
@@ -1322,7 +1322,7 @@ static void putCRbit ( UInt bi, IRExpr* bit )
 {
    UInt    n, off;
    IRExpr* safe;
-   vassert(typeOfIRExpr(irbb->tyenv,bit) == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,bit) == Ity_I32);
    safe = binop(Iop_And32, bit, mkU32(1));
    n   = bi / 4;
    off = bi % 4;
@@ -1382,8 +1382,8 @@ IRExpr* /* :: Ity_I32 */ getCRbit_anywhere ( UInt bi, Int* where )
 static IRExpr* getXER_SO ( void );
 static void set_CR0 ( IRExpr* result )
 {
-   vassert(typeOfIRExpr(irbb->tyenv,result) == Ity_I32 ||
-           typeOfIRExpr(irbb->tyenv,result) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,result) == Ity_I32 ||
+           typeOfIRExpr(irsb->tyenv,result) == Ity_I64);
    if (mode64) {
       putCR321( 0, unop(Iop_64to8,
                         binop(Iop_CmpORD64S, result, mkU64(0))) );
@@ -1409,7 +1409,7 @@ static void set_AV_CR6 ( IRExpr* result, Bool test_all_ones )
    IRTemp rOnes  = newTemp(Ity_I8);
    IRTemp rZeros = newTemp(Ity_I8);
 
-   vassert(typeOfIRExpr(irbb->tyenv,result) == Ity_V128);
+   vassert(typeOfIRExpr(irsb->tyenv,result) == Ity_V128);
 
    assign( v0, result );
    assign( v1, binop(Iop_ShrV128, result, mkU8(32)) );
@@ -1451,7 +1451,7 @@ static void set_AV_CR6 ( IRExpr* result, Bool test_all_ones )
 static void putXER_SO ( IRExpr* e )
 {
    IRExpr* so;
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
    so = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( OFFB_XER_SO, so ) );
 }
@@ -1459,7 +1459,7 @@ static void putXER_SO ( IRExpr* e )
 static void putXER_OV ( IRExpr* e )
 {
    IRExpr* ov;
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
    ov = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( OFFB_XER_OV, ov ) );
 }
@@ -1467,7 +1467,7 @@ static void putXER_OV ( IRExpr* e )
 static void putXER_CA ( IRExpr* e )
 {
    IRExpr* ca;
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
    ca = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( OFFB_XER_CA, ca ) );
 }
@@ -1475,7 +1475,7 @@ static void putXER_CA ( IRExpr* e )
 static void putXER_BC ( IRExpr* e )
 {
    IRExpr* bc;
-   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I8);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
    bc = binop(Iop_And8, e, mkU8(0x7F));
    stmt( IRStmt_Put( OFFB_XER_BC, bc ) );
 }
@@ -1527,9 +1527,9 @@ static void set_XER_OV_32( UInt op, IRExpr* res,
    IRTemp  t64;
    IRExpr* xer_ov;
    vassert(op < PPCG_FLAG_OP_NUMBER);
-   vassert(typeOfIRExpr(irbb->tyenv,res)  == Ity_I32);
-   vassert(typeOfIRExpr(irbb->tyenv,argL) == Ity_I32);
-   vassert(typeOfIRExpr(irbb->tyenv,argR) == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,res)  == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,argL) == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,argR) == Ity_I32);
 
 #  define INT32_MIN 0x80000000
 
@@ -1638,9 +1638,9 @@ static void set_XER_OV_64( UInt op, IRExpr* res,
 {
    IRExpr* xer_ov;
    vassert(op < PPCG_FLAG_OP_NUMBER);
-   vassert(typeOfIRExpr(irbb->tyenv,res)  == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv,argL) == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv,argR) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,res)  == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,argL) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,argR) == Ity_I64);
 
 #  define INT64_MIN 0x8000000000000000ULL
 
@@ -1757,10 +1757,10 @@ static void set_XER_CA_32 ( UInt op, IRExpr* res,
 {
    IRExpr* xer_ca;
    vassert(op < PPCG_FLAG_OP_NUMBER);
-   vassert(typeOfIRExpr(irbb->tyenv,res)   == Ity_I32);
-   vassert(typeOfIRExpr(irbb->tyenv,argL)  == Ity_I32);
-   vassert(typeOfIRExpr(irbb->tyenv,argR)  == Ity_I32);
-   vassert(typeOfIRExpr(irbb->tyenv,oldca) == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,res)   == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,argL)  == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,argR)  == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,oldca) == Ity_I32);
 
    /* Incoming oldca is assumed to hold the values 0 or 1 only.  This
       seems reasonable given that it's always generated by
@@ -1875,10 +1875,10 @@ static void set_XER_CA_64 ( UInt op, IRExpr* res,
 {
    IRExpr* xer_ca;
    vassert(op < PPCG_FLAG_OP_NUMBER);
-   vassert(typeOfIRExpr(irbb->tyenv,res)   == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv,argL)  == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv,argR)  == Ity_I64);
-   vassert(typeOfIRExpr(irbb->tyenv,oldca) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,res)   == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,argL)  == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,argR)  == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,oldca) == Ity_I64);
 
    /* Incoming oldca is assumed to hold the values 0 or 1 only.  This
       seems reasonable given that it's always generated by
@@ -2198,7 +2198,7 @@ static IRExpr* /* ::Ity_I32 */ getGST_field ( PPC_GST reg, UInt fld )
 static void putGST ( PPC_GST reg, IRExpr* src )
 {
    IRType ty     = mode64 ? Ity_I64 : Ity_I32;
-   IRType ty_src = typeOfIRExpr(irbb->tyenv,src );
+   IRType ty_src = typeOfIRExpr(irsb->tyenv,src );
    vassert( reg < PPC_GST_MAX );
    switch (reg) {
    case PPC_GST_CIA_AT_SC: 
@@ -2266,7 +2266,7 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    vassert( reg < PPC_GST_MAX );
-   vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
+   vassert( typeOfIRExpr(irsb->tyenv,src ) == Ity_I32 );
    
    switch (reg) {
    case PPC_GST_FPSCR: {
@@ -2324,7 +2324,7 @@ static void putGST_field ( PPC_GST reg, IRExpr* src, UInt fld )
 {
    UInt shft, mask;
 
-   vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
+   vassert( typeOfIRExpr(irsb->tyenv,src ) == Ity_I32 );
    vassert( fld < 8 );
    vassert( reg < PPC_GST_MAX );
    
@@ -2965,7 +2965,7 @@ static Bool dis_int_cmp ( UInt theInstr )
             remove the false dependency, which has been known to cause
             memcheck to produce false errors. */
          if (rA_addr == rB_addr)
-            a = b = typeOfIRExpr(irbb->tyenv,a) == Ity_I64
+            a = b = typeOfIRExpr(irsb->tyenv,a) == Ity_I64
                     ? mkU64(0)  : mkU32(0);
          if (flag_L == 1) {
             putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64S, a, b)));
@@ -2984,7 +2984,7 @@ static Bool dis_int_cmp ( UInt theInstr )
             remove the false dependency, which has been known to cause
             memcheck to produce false errors. */
          if (rA_addr == rB_addr)
-            a = b = typeOfIRExpr(irbb->tyenv,a) == Ity_I64
+            a = b = typeOfIRExpr(irsb->tyenv,a) == Ity_I64
                     ? mkU64(0)  : mkU32(0);
          if (flag_L == 1) {
             putCR321(crfD, unop(Iop_64to8, binop(Iop_CmpORD64U, a, b)));
@@ -3754,7 +3754,7 @@ static Bool dis_int_load ( UInt theInstr )
 /*
   Integer Store Instructions
 */
-static Bool dis_int_store ( UInt theInstr, VexMiscInfo* vmi )
+static Bool dis_int_store ( UInt theInstr, VexAbiInfo* vbi )
 {
    /* D-Form, X-Form, DS-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -4251,7 +4251,7 @@ static IRExpr* /* :: Ity_I32 */ branch_cond_ok( UInt BO, UInt BI )
   Integer Branch Instructions
 */
 static Bool dis_branch ( UInt theInstr, 
-                         VexMiscInfo* vmi,
+                         VexAbiInfo* vbi,
                          /*OUT*/DisResult* dres,
                          Bool (*resteerOkFn)(void*,Addr64),
                          void* callback_opaque )
@@ -4304,9 +4304,9 @@ static Bool dis_branch ( UInt theInstr,
 
       if (flag_LK) {
          putGST( PPC_GST_LR, e_nia );
-         if (vmi->guest_ppc_zap_RZ_at_bl
-             && vmi->guest_ppc_zap_RZ_at_bl( (ULong)tgt) )
-            make_redzone_AbiHint( vmi, 
+         if (vbi->guest_ppc_zap_RZ_at_bl
+             && vbi->guest_ppc_zap_RZ_at_bl( (ULong)tgt) )
+            make_redzone_AbiHint( vbi, 
                                   "branch-and-link (unconditional call)" );
       }
 
@@ -4314,8 +4314,8 @@ static Bool dis_branch ( UInt theInstr,
          dres->whatNext   = Dis_Resteer;
          dres->continueAt = tgt;
       } else {
-         irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
-         irbb->next     = mkSzImm(ty, tgt);
+         irsb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
+         irsb->next     = mkSzImm(ty, tgt);
       }
       break;
       
@@ -4353,8 +4353,8 @@ static Bool dis_branch ( UInt theInstr,
                flag_LK ? Ijk_Call : Ijk_Boring,
                mkSzConst(ty, tgt) ) );
       
-      irbb->jumpkind = Ijk_Boring;
-      irbb->next     = e_nia;
+      irsb->jumpkind = Ijk_Boring;
+      irsb->next     = e_nia;
       break;
       
    case 0x13:
@@ -4386,8 +4386,8 @@ static Bool dis_branch ( UInt theInstr,
                   Ijk_Boring,
                   c_nia ));
          
-         irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
-         irbb->next     = mkexpr(lr_old);
+         irsb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
+         irsb->next     = mkexpr(lr_old);
          break;
          
       case 0x010: { // bclr (Branch Cond. to Link Register, PPC32 p365) 
@@ -4421,14 +4421,14 @@ static Bool dis_branch ( UInt theInstr,
                   Ijk_Boring,
                   c_nia ));
 
-	 if (vanilla_return && vmi->guest_ppc_zap_RZ_at_blr)
-            make_redzone_AbiHint( vmi, "branch-to-lr (unconditional return)" );
+	 if (vanilla_return && vbi->guest_ppc_zap_RZ_at_blr)
+            make_redzone_AbiHint( vbi, "branch-to-lr (unconditional return)" );
 
          /* blrl is pretty strange; it's like a return that sets the
             return address of its caller to the insn following this
             one.  Mark it as a return. */
-         irbb->jumpkind = Ijk_Ret;  /* was flag_LK ? Ijk_Call : Ijk_Ret; */
-         irbb->next     = mkexpr(lr_old);
+         irsb->jumpkind = Ijk_Ret;  /* was flag_LK ? Ijk_Call : Ijk_Ret; */
+         irsb->next     = mkexpr(lr_old);
          break;
       }
       default:
@@ -4658,8 +4658,8 @@ static Bool dis_trapi ( UInt theInstr,
    if (uncond) {
       /* If the trap shows signs of being unconditional, don't
          continue decoding past it. */
-      irbb->next     = mkSzImm( ty, nextInsnAddr() );
-      irbb->jumpkind = Ijk_Boring;
+      irsb->next     = mkSzImm( ty, nextInsnAddr() );
+      irsb->jumpkind = Ijk_Boring;
       dres->whatNext = Dis_StopHere;
    }
 
@@ -4671,7 +4671,7 @@ static Bool dis_trapi ( UInt theInstr,
   System Linkage Instructions
 */
 static Bool dis_syslink ( UInt theInstr, 
-                          VexMiscInfo* miscinfo, DisResult* dres )
+                          VexAbiInfo* abiinfo, DisResult* dres )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
 
@@ -4691,14 +4691,10 @@ static Bool dis_syslink ( UInt theInstr,
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
       forces any TempRegs caching ArchRegs to be flushed. */
-   /* At this point, AIX's behaviour differs from Linux's: AIX resumes
-      after the syscall at %lr, whereas Linux does the obvious thing
-      and resumes at the next instruction.  Hence we need to encode
-      that into the generated IR. */
-   irbb->next     = miscinfo->guest_ppc_sc_continues_at_LR
-                       ? /*AIXishly*/getGST( PPC_GST_LR )
-                       : /*Linuxfully*/mkSzImm( ty, nextInsnAddr() );
-   irbb->jumpkind = Ijk_Sys_syscall;
+   irsb->next     = abiinfo->guest_ppc_sc_continues_at_LR
+                       ? getGST( PPC_GST_LR )
+                       : mkSzImm( ty, nextInsnAddr() );
+   irsb->jumpkind = Ijk_Sys_syscall;
 
    dres->whatNext = Dis_StopHere;
    return True;
@@ -5154,7 +5150,7 @@ static Bool dis_int_shift ( UInt theInstr )
 /* Generates code to swap the byte order in an Ity_I32. */
 static IRExpr* /* :: Ity_I32 */ gen_byterev32 ( IRTemp t )
 {
-   vassert(typeOfIRTemp(irbb->tyenv, t) == Ity_I32);
+   vassert(typeOfIRTemp(irsb->tyenv, t) == Ity_I32);
    return
       binop(Iop_Or32,
          binop(Iop_Shl32, mkexpr(t), mkU8(24)),
@@ -5173,7 +5169,7 @@ static IRExpr* /* :: Ity_I32 */ gen_byterev32 ( IRTemp t )
    and zeroes the upper half. */
 static IRExpr* /* :: Ity_I32 */ gen_byterev16 ( IRTemp t )
 {
-   vassert(typeOfIRTemp(irbb->tyenv, t) == Ity_I32);
+   vassert(typeOfIRTemp(irsb->tyenv, t) == Ity_I32);
    return
       binop(Iop_Or32,
          binop(Iop_And32, binop(Iop_Shl32, mkexpr(t), mkU8(8)),
@@ -5248,7 +5244,7 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 /*
   Processor Control Instructions
 */
-static Bool dis_proc_ctl ( VexMiscInfo* vmi, UInt theInstr )
+static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
 {
    UChar opc1     = ifieldOPC(theInstr);
    
@@ -5364,7 +5360,7 @@ static Bool dis_proc_ctl ( VexMiscInfo* vmi, UInt theInstr )
                               val, 
                               0/*regparms*/, 
                               "ppcg_dirtyhelper_MFTB", 
-                              fnptr_to_fnentry(vmi, &ppcg_dirtyhelper_MFTB), 
+                              fnptr_to_fnentry(vbi, &ppcg_dirtyhelper_MFTB), 
                               args );
       /* execute the dirty call, dumping the result in val. */
       stmt( IRStmt_Dirty(d) );
@@ -5572,8 +5568,8 @@ static Bool dis_cache_manage ( UInt         theInstr,
       /* be paranoid ... */
       stmt( IRStmt_MFence() );
 
-      irbb->jumpkind = Ijk_TInval;
-      irbb->next     = mkSzImm(ty, nextInsnAddr());
+      irsb->jumpkind = Ijk_TInval;
+      irsb->next     = mkSzImm(ty, nextInsnAddr());
       dres->whatNext = Dis_StopHere;
       break;
    }
@@ -6768,7 +6764,7 @@ static Bool dis_av_procctl ( UInt theInstr )
 /*
   AltiVec Load Instructions
 */
-static Bool dis_av_load ( VexMiscInfo* vmi, UInt theInstr )
+static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -6804,13 +6800,13 @@ static Bool dis_av_load ( VexMiscInfo* vmi, UInt theInstr )
          d = unsafeIRDirty_0_N (
                         0/*regparms*/, 
                         "ppc32g_dirtyhelper_LVS",
-                        fnptr_to_fnentry(vmi, &ppc32g_dirtyhelper_LVS),
+                        fnptr_to_fnentry(vbi, &ppc32g_dirtyhelper_LVS),
                         args );
       } else {
          d = unsafeIRDirty_0_N (
                         0/*regparms*/, 
                         "ppc64g_dirtyhelper_LVS",
-                        fnptr_to_fnentry(vmi, &ppc64g_dirtyhelper_LVS),
+                        fnptr_to_fnentry(vbi, &ppc64g_dirtyhelper_LVS),
                         args );
       }
       DIP("lvsl v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
@@ -6837,13 +6833,13 @@ static Bool dis_av_load ( VexMiscInfo* vmi, UInt theInstr )
          d = unsafeIRDirty_0_N (
                         0/*regparms*/, 
                         "ppc32g_dirtyhelper_LVS",
-                        fnptr_to_fnentry(vmi, &ppc32g_dirtyhelper_LVS),
+                        fnptr_to_fnentry(vbi, &ppc32g_dirtyhelper_LVS),
                         args );
       } else {
          d = unsafeIRDirty_0_N (
                         0/*regparms*/, 
                         "ppc64g_dirtyhelper_LVS",
-                        fnptr_to_fnentry(vmi, &ppc64g_dirtyhelper_LVS),
+                        fnptr_to_fnentry(vbi, &ppc64g_dirtyhelper_LVS),
                         args );
       }
       DIP("lvsr v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
@@ -8755,7 +8751,7 @@ DisResult disInstr_PPC_WRK (
              void*        callback_opaque,
              Long         delta64,
              VexArchInfo* archinfo,
-             VexMiscInfo* miscinfo
+             VexAbiInfo*  abiinfo
           )
 {
    UChar     opc1;
@@ -8832,8 +8828,8 @@ DisResult disInstr_PPC_WRK (
             /* %R3 = client_request ( %R4 ) */
             DIP("r3 = client_request ( %%r4 )\n");
             delta += 20;
-            irbb->next     = mkSzImm( ty, guest_CIA_bbstart + delta );
-            irbb->jumpkind = Ijk_ClientReq;
+            irsb->next     = mkSzImm( ty, guest_CIA_bbstart + delta );
+            irsb->jumpkind = Ijk_ClientReq;
             dres.whatNext  = Dis_StopHere;
             goto decode_success;
          }
@@ -8852,8 +8848,8 @@ DisResult disInstr_PPC_WRK (
             DIP("branch-and-link-to-noredir r11\n");
             delta += 20;
             putGST( PPC_GST_LR, mkSzImm(ty, guest_CIA_bbstart + (Long)delta) );
-            irbb->next     = getIReg(11);
-            irbb->jumpkind = Ijk_NoRedir;
+            irsb->next     = getIReg(11);
+            irsb->jumpkind = Ijk_NoRedir;
             dres.whatNext  = Dis_StopHere;
             goto decode_success;
          }
@@ -8919,7 +8915,7 @@ DisResult disInstr_PPC_WRK (
    /* Integer Store Instructions */
    case 0x26: case 0x27: case 0x2C: // stb,  stbu, sth
    case 0x2D: case 0x24: case 0x25: // sthu, stw,  stwu
-      if (dis_int_store( theInstr, miscinfo )) goto decode_success;
+      if (dis_int_store( theInstr, abiinfo )) goto decode_success;
       goto decode_failure;
 
    /* Integer Load and Store Multiple Instructions */
@@ -8929,14 +8925,14 @@ DisResult disInstr_PPC_WRK (
 
    /* Branch Instructions */
    case 0x12: case 0x10: // b, bc
-      if (dis_branch(theInstr, miscinfo, &dres, 
+      if (dis_branch(theInstr, abiinfo, &dres, 
                                resteerOkFn, callback_opaque)) 
          goto decode_success;
       goto decode_failure;
 
    /* System Linkage Instructions */
    case 0x11: // sc
-      if (dis_syslink(theInstr, miscinfo, &dres)) goto decode_success;
+      if (dis_syslink(theInstr, abiinfo, &dres)) goto decode_success;
       goto decode_failure;
 
    /* Trap Instructions */
@@ -9001,7 +8997,7 @@ DisResult disInstr_PPC_WRK (
    /* 64bit Integer Stores */
    case 0x3E:  // std, stdu
       if (!mode64) goto decode_failure;
-      if (dis_int_store( theInstr, miscinfo )) goto decode_success;
+      if (dis_int_store( theInstr, abiinfo )) goto decode_success;
       goto decode_failure;
 
    case 0x3F:
@@ -9093,7 +9089,7 @@ DisResult disInstr_PPC_WRK (
          
       /* Branch Instructions */
       case 0x210: case 0x010: // bcctr, bclr
-         if (dis_branch(theInstr, miscinfo, &dres, 
+         if (dis_branch(theInstr, abiinfo, &dres, 
                                   resteerOkFn, callback_opaque)) 
             goto decode_success;
          goto decode_failure;
@@ -9190,13 +9186,13 @@ DisResult disInstr_PPC_WRK (
       /* Integer Store Instructions */
       case 0x0F7: case 0x0D7: case 0x1B7: // stbux, stbx,  sthux
       case 0x197: case 0x0B7: case 0x097: // sthx,  stwux, stwx
-         if (dis_int_store( theInstr, miscinfo )) goto decode_success;
+         if (dis_int_store( theInstr, abiinfo )) goto decode_success;
          goto decode_failure;
 
       /* 64bit Integer Store Instructions */
       case 0x0B5: case 0x095: // stdux, stdx
          if (!mode64) goto decode_failure;
-         if (dis_int_store( theInstr, miscinfo )) goto decode_success;
+         if (dis_int_store( theInstr, abiinfo )) goto decode_success;
          goto decode_failure;
 
       /* Integer Load and Store with Byte Reverse Instructions */
@@ -9212,8 +9208,8 @@ DisResult disInstr_PPC_WRK (
          Bool ok = dis_int_ldst_str( theInstr, &stopHere );
          if (!ok) goto decode_failure;
          if (stopHere) {
-            irbb->next     = mkSzImm(ty, nextInsnAddr());
-            irbb->jumpkind = Ijk_Boring;
+            irsb->next     = mkSzImm(ty, nextInsnAddr());
+            irsb->jumpkind = Ijk_Boring;
             dres.whatNext  = Dis_StopHere;
          }
          goto decode_success;
@@ -9234,7 +9230,7 @@ DisResult disInstr_PPC_WRK (
       /* Processor Control Instructions */
       case 0x200: case 0x013: case 0x153: // mcrxr, mfcr,  mfspr
       case 0x173: case 0x090: case 0x1D3: // mftb,  mtcrf, mtspr
-         if (dis_proc_ctl( miscinfo, theInstr )) goto decode_success;
+         if (dis_proc_ctl( abiinfo, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Cache Management Instructions */
@@ -9290,7 +9286,7 @@ DisResult disInstr_PPC_WRK (
       case 0x007: case 0x027: case 0x047: // lvebx, lvehx, lvewx
       case 0x067: case 0x167:             // lvx, lvxl
          if (!allow_V) goto decode_noV;
-         if (dis_av_load( miscinfo, theInstr )) goto decode_success;
+         if (dis_av_load( abiinfo, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Store */
@@ -9490,8 +9486,8 @@ DisResult disInstr_PPC_WRK (
       insn, but nevertheless be paranoid and update it again right
       now. */
    putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr) );
-   irbb->next     = mkSzImm(ty, guest_CIA_curr_instr);
-   irbb->jumpkind = Ijk_NoDecode;
+   irsb->next     = mkSzImm(ty, guest_CIA_curr_instr);
+   irsb->jumpkind = Ijk_NoDecode;
    dres.whatNext  = Dis_StopHere;
    dres.len       = 0;
    return dres;
@@ -9521,7 +9517,7 @@ DisResult disInstr_PPC_WRK (
 /* Disassemble a single instruction into IR.  The instruction
    is located in host memory at &guest_code[delta]. */
 
-DisResult disInstr_PPC ( IRBB*        irbb_IN,
+DisResult disInstr_PPC ( IRSB*        irsb_IN,
                          Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
                          void*        callback_opaque,
@@ -9530,7 +9526,7 @@ DisResult disInstr_PPC ( IRBB*        irbb_IN,
                          Addr64       guest_IP,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
-                         VexMiscInfo* miscinfo,
+                         VexAbiInfo*  abiinfo,
                          Bool         host_bigendian_IN )
 {
    IRType     ty;
@@ -9559,14 +9555,14 @@ DisResult disInstr_PPC ( IRBB*        irbb_IN,
 
    /* Set globals (see top of this file) */
    guest_code           = guest_code_IN;
-   irbb                 = irbb_IN;
+   irsb                 = irsb_IN;
    host_is_bigendian    = host_bigendian_IN;
 
    guest_CIA_curr_instr = mkSzAddr(ty, guest_IP);
    guest_CIA_bbstart    = mkSzAddr(ty, guest_IP - delta);
 
    dres = disInstr_PPC_WRK ( put_IP, resteerOkFn, callback_opaque,
-                             delta, archinfo, miscinfo );
+                             delta, archinfo, abiinfo );
 
    return dres;
 }

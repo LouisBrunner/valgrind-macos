@@ -198,7 +198,7 @@ names.  The first one is registered using the macro
 <computeroutput>VG_DETERMINE_INTERFACE_VERSION</computeroutput> (which also
 checks that the core/tool interface of the tool matches that of the core).
 The last three are registered using the
-<computeroutput>VG_(basic_tool_funcs)</computeroutput> function.
+<computeroutput>VG_(basic_tool_funcs)</computeroutput> function.</para>
 
 <para>In addition, if a tool wants to use some of the optional services
 provided by the core, it may have to define other functions and tell the

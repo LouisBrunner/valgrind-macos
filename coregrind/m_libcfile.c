@@ -234,10 +234,14 @@ Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr )
 /* returns: 0 = success, non-0 is failure */
 Int VG_(check_executable)(HChar* f)
 {
+#ifdef __NR_stat64
+   struct vki_stat64 st;
+   SysRes res = VG_(do_syscall2)(__NR_stat64, (UWord)f, (UWord)&st);
+#else
    struct vki_stat st;
-   SysRes res;
+   SysRes res = VG_(do_syscall2)(__NR_stat, (UWord)f, (UWord)&st);
+#endif
 
-   res = VG_(stat)(f, &st);
    if (res.isError) {
       return res.val;
    }

@@ -19,7 +19,7 @@ install-exec-local:
 	  done ; \
 	fi ; \
 	if [ -n "$(noinst_LIBRARIES)" ] ; then \
-	  for f in $(noinst_LIBRARIES); do \
+	  for f in $(noinst_LIBRARIES) expr_wont_match_me; do \
 	    if expr match $$f libcoregrind_ > /dev/null ; then \
 	      pU=`echo $$f | sed -e 's/libcoregrind_//g' -e 's/\.a//g'` ; \
 	      pD=`echo $$pU | sed -e 's/_/-/g'` ; \

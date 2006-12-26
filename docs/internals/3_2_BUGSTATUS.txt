@@ -45,7 +45,7 @@ pending  pending  s93 136529   Unhandled instruction error for legal
 
 pending  pending  32  134207   pkg-config output contains @VG_PLATFORM@
 
-vx1660   pending  32  n-i-bz   %eflags rule for SUBL-CondNLE
+vx1660   vx1690   32  n-i-bz   %eflags rule for SUBL-CondNLE
 
 Signal race condition (users list, 13 June, Johannes Berg)
 
@@ -62,50 +62,49 @@ pending  pending      134219   Launcher defaults to ppc32-linux even
 pending  pending      134316   Callgrind does not distinguish between
                                parent and child
 
-v6084    pending  32  134727   valgrind exits with "Value too large
+v6084    v6421    32  134727   valgrind exits with "Value too large
                                for defined data type"
 
-vx1667   pending  32  n-i-bz   ppc32/64: support mcrfs
+vx1667   vx1691   32  n-i-bz   ppc32/64: support mcrfs
 
-v6211    pending  32  n-i-bz   Cachegrind: Update cache parameter detection
+v6211    v6422    32  n-i-bz   Cachegrind: Update cache parameter detection
 
-vx1672   pending  32  135012   x86->IR: 0xD7 0x8A 0xE0 0xD0 (xlat)
+XXX: check status of Core2 cpuid code
+
+vx1672   vx1692   32  135012   x86->IR: 0xD7 0x8A 0xE0 0xD0 (xlat)
                       ==125959
 
-vx1673/4 pending  32  126147   x86->IR: 0xF2 0xA5 0xF 0x77 (repne
+vx1673/4 vx1693   32  126147   x86->IR: 0xF2 0xA5 0xF 0x77 (repne
                                movsw) w/test
 
-vx1676   pending  32  136650   amd64->IR: 0xC2 0x8 0x0
+vx1676   vx1694/6 32  136650   amd64->IR: 0xC2 0x8 0x0
 
-vx1679   pending  32  135421   x86->IR: unhandled Grp5(R) case 6 [ok]
+vx1679   vx1695   32  135421   x86->IR: unhandled Grp5(R) case 6 [ok]
 
-vx1675   pending  32  n-i-bz   x86 COPY-CondP (Espindola #2, users, Nov 1)
+vx1675   vx1697   32  n-i-bz   x86 COPY-CondP (Espindola #2, users, Nov 1)
                                (NEEDS VERIFICATION; regtest = espindola2.c)
 
 vx1677   pending      n-i-bz   IR comments
 
-vx1678   pending  32  n-i-bz   jcxz (x86) (users, 8 Nov)
+vx1678   vx1698   32  n-i-bz   jcxz (x86) (users, 8 Nov)
 
-r6341    pending  32  n-i-bz   ExeContext hashing fix
+r6341    r6424    32  n-i-bz   ExeContext hashing fix
 
-r6356    pending  32  n-i-bz   Dwarf CFI 0:24 0:32 0:48 0:7 (Nov 8)
+r6356    r6425    32  n-i-bz   Dwarf CFI 0:24 0:32 0:48 0:7 (Nov 8)
 
-r6365    pending  32  n-i-bz   Drepper: obscure Cachegrind simulation bug
+r6365    r6423    32  n-i-bz   Drepper: obscure Cachegrind simulation bug
+r6367    r6423    32  n-i-bz   Same fix as r6365, but for Callgrind simulation.
 
-r6367    pending  32  n-i-bz   Same fix as r6365, but for Callgrind simulation.
+r6371    r6426    32  n-i-bz   libmpiwrap.c: fix handling of MPI_LONG_DOUBLE
 
-XXX: check status of Core2 cpuid code
+r6374    r6427    32  n-i-bz   make User errors suppressible (XXX: DOCS!)
 
-r6371    pending  32  n-i-bz   libmpiwrap.c: fix handling of MPI_LONG_DOUBLE
-
-r6374    pending  32  n-i-bz   make User errors suppressible (XXX: DOCS!)
-
-r6377/8  pending  32  136844   corrupted malloc line when using 
+r6377/8  r6428    32  136844   corrupted malloc line when using 
                     ==138507   --gen-suppressions=yes
 
-vx1686   pending  32  n-i-bz   Reg-alloc speedups
+vx1686   vx1701   32  n-i-bz   Reg-alloc speedups
 
-r6382/3  pending  32  n-i-bz   Fix confusing leak-checker flag hints
+r6382/3  r6429    32  n-i-bz   Fix confusing leak-checker flag hints
 
 r6384    r6385    32  n-i-bz   Support recent autoswamp versions
 
@@ -119,16 +118,16 @@ pending  pending  ?   136401   off-by-one in ESP checking
 pending  pending  32  n-i-bz   amd64 INCW-CondZ (André Wöbbeking, 
                                users, Oct 19) (== Espindola #1)
 
-r6291    pending  32  n-i-bz   ppc32/64 dispatcher speedups
+r6291    r6430    32  n-i-bz   ppc32/64 dispatcher speedups
 
-r1670/1  pending  32  n-i-bz   ppc64 fe rld/rlw improvements
+vx1670/1 vx1699   32  n-i-bz   ppc64 fe rld/rlw improvements
 
-r1669    pending  32  n-i-bz   ppc64 be imm64 improvement (hdefs.c only)
+vx1669   vx1700   32  n-i-bz   ppc64 be imm64 improvement (hdefs.c only)
 
 pending  pending  32  136300   support 64K pages on ppc64-linux
                       == 139124
 
-r6404/5  pending  32  n-i-bz   fix ppc insn set tests for gcc >= 4.1
+r6404/5  r6431    32  n-i-bz   fix ppc insn set tests for gcc >= 4.1
 
 pending  pending  32  137493   x86->IR: recent binutils no-ops
 
@@ -142,12 +141,12 @@ pending  pending  32  138424   "failed in UME with error 22"
                                 (at least produce a better error msg)
                       == 138856
 
-r6410    pending  32  138627   Enhancement of prctl ioctl
+r6410    r6432    32  138627   Enhancement of prctl ioctl
 
 pending  pending  32  138702   amd64->IR: 0xF0 0xF 0xC0 0x90
                                (lock xadd %dl,0xb5(%rax))
 
-r6411    pending  32  138896   usb ioctl handling
+r6411    r6433    32  138896   usb ioctl handling
                       == 136059  
 
 pending  pending  32  139050   ppc32->IR: mftb/mftbu instructions not handled
@@ -155,6 +154,7 @@ pending  pending  32  139050   ppc32->IR: mftb/mftbu instructions not handled
 pending  pending  32  139076   valgrind VT_GETSTATE error
 
 Test/make run cleanly on SuSE 10.2 x86/amd64/ppc32 and FC6 ditto
+Last update was 25 Dec 06
 
 
 ------- Bugs reported and fixed in 3.2.0 ------

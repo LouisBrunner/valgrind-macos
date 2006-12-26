@@ -4015,7 +4015,80 @@ PRE(sys_ioctl)
    case VKI_VT_UNLOCKSWITCH:
       break;
 
-      
+   case VKI_USBDEVFS_CONTROL:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_ctrltransfer *vkuc = (struct vki_usbdevfs_ctrltransfer *)ARG3;
+         PRE_MEM_READ( "ioctl(USBDEVFS_CONTROL).bRequestType", (Addr)&vkuc->bRequestType, sizeof(vkuc->bRequestType));
+         PRE_MEM_READ( "ioctl(USBDEVFS_CONTROL).bRequest", (Addr)&vkuc->bRequest, sizeof(vkuc->bRequest));
+         PRE_MEM_READ( "ioctl(USBDEVFS_CONTROL).wValue", (Addr)&vkuc->wValue, sizeof(vkuc->wValue));
+         PRE_MEM_READ( "ioctl(USBDEVFS_CONTROL).wIndex", (Addr)&vkuc->wIndex, sizeof(vkuc->wIndex));
+         PRE_MEM_READ( "ioctl(USBDEVFS_CONTROL).wLength", (Addr)&vkuc->wLength, sizeof(vkuc->wLength));
+         PRE_MEM_READ( "ioctl(USBDEVFS_CONTROL).timeout", (Addr)&vkuc->timeout, sizeof(vkuc->timeout));
+         if (vkuc->bRequestType & 0x80)
+            PRE_MEM_WRITE( "ioctl(USBDEVFS_CONTROL).data", (Addr)vkuc->data, vkuc->wLength);
+         else
+            PRE_MEM_READ( "ioctl(USBDEVFS_CONTROL).data", (Addr)vkuc->data, vkuc->wLength);
+      }
+      break;
+   case VKI_USBDEVFS_BULK:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_bulktransfer *vkub = (struct vki_usbdevfs_bulktransfer *)ARG3;
+         PRE_MEM_READ( "ioctl(USBDEVFS_BULK)", ARG3, sizeof(struct vki_usbdevfs_bulktransfer));
+         if (vkub->ep & 0x80)
+            PRE_MEM_WRITE( "ioctl(USBDEVFS_BULK).data", (Addr)vkub->data, vkub->len);
+         else
+            PRE_MEM_READ( "ioctl(USBDEVFS_BULK).data", (Addr)vkub->data, vkub->len);
+         break;
+      }
+   case VKI_USBDEVFS_GETDRIVER:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_getdriver *vkugd = (struct vki_usbdevfs_getdriver *) ARG3;
+         PRE_MEM_WRITE( "ioctl(USBDEVFS_GETDRIVER)", (Addr)&vkugd->driver, sizeof(vkugd->driver));
+         break;
+      }
+   case VKI_USBDEVFS_SUBMITURB:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_urb *vkuu = (struct vki_usbdevfs_urb *)ARG3;
+
+         /* Not the whole struct needs to be initialized */
+         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).ep", (Addr)&vkuu->endpoint, sizeof(vkuu->endpoint));
+         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).type", (Addr)&vkuu->type, sizeof(vkuu->type));
+         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).flags", (Addr)&vkuu->flags, sizeof(vkuu->flags));
+         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer", (Addr)&vkuu->buffer, sizeof(vkuu->buffer));
+         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).buffer_length", (Addr)&vkuu->buffer_length, sizeof(vkuu->buffer_length));
+         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB).usercontext", (Addr)&vkuu->usercontext, sizeof(vkuu->usercontext));
+         if (vkuu->endpoint & 0x80)
+            PRE_MEM_WRITE( "ioctl(USBDEVFS_URB).buffer", (Addr)vkuu->buffer, vkuu->buffer_length);
+         else
+            PRE_MEM_READ( "ioctl(USBDEVFS_URB).buffer", (Addr)vkuu->buffer, vkuu->buffer_length);
+         /* FIXME: Does not handle all cases this ioctl can do, ISOs are missing. */
+         break;
+      }
+   case VKI_USBDEVFS_REAPURB:
+   case VKI_USBDEVFS_REAPURBNDELAY:
+      if ( ARG3 ) {
+         PRE_MEM_READ( "ioctl(USBDEVFS_SUBMITURB)", ARG3, sizeof(struct vki_usbdevfs_urb *));
+         break;
+      }
+   case VKI_USBDEVFS_CONNECTINFO:
+      PRE_MEM_WRITE( "ioctl(USBDEVFS_CONNECTINFO)", ARG3, sizeof(struct vki_usbdevfs_connectinfo));
+      break;
+   case VKI_USBDEVFS_IOCTL:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_ioctl *vkui = (struct vki_usbdevfs_ioctl *)ARG3;
+         UInt dir2, size2;
+         PRE_MEM_READ("ioctl(USBDEVFS_IOCTL)", (Addr)vkui, sizeof(struct vki_usbdevfs_ioctl));
+         dir2  = _VKI_IOC_DIR(vkui->ioctl_code);
+         size2 = _VKI_IOC_SIZE(vkui->ioctl_code);
+         if (size2 > 0) {
+            if (dir2 & _VKI_IOC_WRITE)
+               PRE_MEM_READ("ioctl(USBDEVFS_IOCTL).dataWrite", (Addr)vkui->data, size2);
+            else if (dir2 & _VKI_IOC_READ)
+               PRE_MEM_WRITE("ioctl(USBDEVFS_IOCTL).dataRead", (Addr)vkui->data, size2);
+         }
+      }
+      break;
+
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and
 	 size bits.  The encoding scheme is described in
@@ -4676,7 +4749,53 @@ POST(sys_ioctl)
    case VKI_VT_LOCKSWITCH:
    case VKI_VT_UNLOCKSWITCH:
       break;
-      
+
+   case VKI_USBDEVFS_CONTROL:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_ctrltransfer *vkuc = (struct vki_usbdevfs_ctrltransfer *)ARG3;
+         if (vkuc->bRequestType & 0x80)
+            POST_MEM_WRITE((Addr)vkuc->data, RES);
+         break;
+      }
+   case VKI_USBDEVFS_BULK:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_bulktransfer *vkub = (struct vki_usbdevfs_bulktransfer *)ARG3;
+         if (vkub->ep & 0x80)
+            POST_MEM_WRITE((Addr)vkub->data, RES);
+         break;
+      }
+   case VKI_USBDEVFS_GETDRIVER:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_getdriver *vkugd = (struct vki_usbdevfs_getdriver *)ARG3;
+         POST_MEM_WRITE((Addr)&vkugd->driver, sizeof(vkugd->driver));
+         break;
+      }
+   case VKI_USBDEVFS_REAPURB:
+   case VKI_USBDEVFS_REAPURBNDELAY:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_urb **vkuu = (struct vki_usbdevfs_urb**)ARG3;
+         if (!*vkuu)
+            break;
+         POST_MEM_WRITE((Addr) &((*vkuu)->status),sizeof((*vkuu)->status));
+         if ((*vkuu)->endpoint & 0x80)
+            POST_MEM_WRITE((Addr)(*vkuu)->buffer, (*vkuu)->actual_length);
+         break;
+      }
+   case VKI_USBDEVFS_CONNECTINFO:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_usbdevfs_connectinfo));
+      break;
+   case VKI_USBDEVFS_IOCTL:
+      if ( ARG3 ) {
+         struct vki_usbdevfs_ioctl *vkui = (struct vki_usbdevfs_ioctl *)ARG3;
+         UInt dir2, size2;
+         dir2  = _VKI_IOC_DIR(vkui->ioctl_code);
+         size2 = _VKI_IOC_SIZE(vkui->ioctl_code);
+         if (size2 > 0) {
+            if (dir2 & _VKI_IOC_READ) 
+               POST_MEM_WRITE((Addr)vkui->data, size2);
+         }
+      }
+      break;
 
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and

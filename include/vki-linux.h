@@ -2224,6 +2224,77 @@ struct vki_vt_consize {
 # define VKI_PR_ENDIAN_LITTLE  1       /* True little endian mode */
 # define VKI_PR_ENDIAN_PPC_LITTLE      2       /* "PowerPC" pseudo little endian */
 
+//----------------------------------------------------------------------
+// From linux-2.6.19/include/linux/usbdevice_fs.h
+//----------------------------------------------------------------------
+
+struct vki_usbdevfs_ctrltransfer {
+       __vki_u8 bRequestType;
+       __vki_u8 bRequest;
+       __vki_u16 wValue;
+       __vki_u16 wIndex;
+       __vki_u16 wLength;
+       __vki_u32 timeout;  /* in milliseconds */
+       void __user *data;
+};
+
+struct vki_usbdevfs_bulktransfer {
+       unsigned int ep;
+       unsigned int len;
+       unsigned int timeout; /* in milliseconds */
+       void __user *data;
+};
+
+#define VKI_USBDEVFS_MAXDRIVERNAME 255
+
+struct vki_usbdevfs_getdriver {
+       unsigned int interface;
+       char driver[VKI_USBDEVFS_MAXDRIVERNAME + 1];
+};
+
+struct vki_usbdevfs_connectinfo {
+       unsigned int devnum;
+       unsigned char slow;
+};
+
+struct vki_usbdevfs_iso_packet_desc {
+       unsigned int length;
+       unsigned int actual_length;
+       unsigned int status;
+};
+
+struct vki_usbdevfs_urb {
+       unsigned char type;
+       unsigned char endpoint;
+       int status;
+       unsigned int flags;
+       void __user *buffer;
+       int buffer_length;
+       int actual_length;
+       int start_frame;
+       int number_of_packets;
+       int error_count;
+       unsigned int signr;  /* signal to be sent on error, -1 if none should be sent */
+       void *usercontext;
+       struct vki_usbdevfs_iso_packet_desc iso_frame_desc[0];
+};
+
+struct vki_usbdevfs_ioctl {
+       int     ifno;           /* interface 0..N ; negative numbers reserved */
+       int     ioctl_code;     /* MUST encode size + direction of data so the
+                                * macros in <asm/ioctl.h> give correct values */
+       void __user *data;      /* param buffer (in, or out) */
+};
+
+#define VKI_USBDEVFS_CONTROL          _VKI_IOWR('U', 0, struct vki_usbdevfs_ctrltransfer)
+#define VKI_USBDEVFS_BULK             _VKI_IOWR('U', 2, struct vki_usbdevfs_bulktransfer)
+#define VKI_USBDEVFS_GETDRIVER        _VKI_IOW('U', 8, struct vki_usbdevfs_getdriver)
+#define VKI_USBDEVFS_SUBMITURB        _VKI_IOR('U', 10, struct vki_usbdevfs_urb)
+#define VKI_USBDEVFS_REAPURB          _VKI_IOW('U', 12, void *)
+#define VKI_USBDEVFS_REAPURBNDELAY    _VKI_IOW('U', 13, void *)
+#define VKI_USBDEVFS_CONNECTINFO      _VKI_IOW('U', 17, struct vki_usbdevfs_connectinfo)
+#define VKI_USBDEVFS_IOCTL            _VKI_IOWR('U', 18, struct vki_usbdevfs_ioctl)
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

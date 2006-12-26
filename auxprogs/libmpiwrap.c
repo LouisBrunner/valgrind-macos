@@ -90,6 +90,7 @@
 #define I_WRAP_FNNAME_U(_name) I_WRAP_SONAME_FNNAME_ZU(libmpiZdsoZa,_name)
 
 
+
 /*------------------------------------------------------------*/
 /*--- Decls                                                ---*/
 /*------------------------------------------------------------*/
@@ -107,6 +108,10 @@ typedef  unsigned long  UWord;
 #if !defined(offsetof)
 #  define offsetof(type,memb) ((int)&((type*)0)->memb)
 #endif
+
+/* Find the size of long double image (not 'sizeof(long double)').
+   See comments in sizeofOneNamedTy. */
+static long sizeof_long_double_image ( void );
 
 
 /*------------------------------------------------------------*/
@@ -380,9 +385,13 @@ static void maybeFreeTy ( MPI_Datatype* ty )
    There is a subtlety, which is that this is required to return the
    exact size of one item of the type, NOT the size of it when padded
    suitably to make an array of them.  In particular that's why the
-   size of LONG_DOUBLE is 10 and not sizeof(long double), since the
-   latter is 12 at least on x86.  Except if sizeof(long double) is
-   claimed to be 8 then we'd better respect that.
+   size of LONG_DOUBLE is computed by looking at the result of doing a
+   long double store, rather than just asking what is the sizeof(long
+   double).
+
+   For LONG_DOUBLE on x86-linux and amd64-linux my impression is that
+   the right answer is 10 even though sizeof(long double) says 12 and
+   16 respectively.  On ppc32-linux it appears to be 16.
 
    Ref: MPI 1.1 doc p18 */
 static long sizeofOneNamedTy ( MPI_Datatype ty )
@@ -398,9 +407,8 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
    if (ty == MPI_FLOAT)          return sizeof(float);
    if (ty == MPI_DOUBLE)         return sizeof(double);
    if (ty == MPI_BYTE)           return 1;
-   if (ty == MPI_LONG_DOUBLE)
-      return sizeof(long double)==8 
-                ? 8 : 10; /* NOT: sizeof(long double); */
+   if (ty == MPI_LONG_DOUBLE)    return sizeof_long_double_image();
+
    /* MPI_PACKED */
    /* new in MPI2: */
 #  if defined(MPI_WCHAR)
@@ -421,6 +429,60 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
       other type its actual value.
    */
    return 0;
+}
+
+
+/* Find the size of long double image (not 'sizeof(long double)').
+   See comments in sizeofOneNamedTy. 
+*/
+static long sizeof_long_double_image ( void )
+{
+   long i;
+   unsigned char* p;
+   static long cached_result = 0;
+
+   /* Hopefully we have it already. */
+   if (cached_result != 0) {
+      assert(cached_result == 10 || cached_result == 16 || cached_result == 8);
+      return cached_result;
+   }
+
+   /* No?  Then we'll have to compute it.  This isn't thread-safe but
+      it doesn't really matter since all races to compute it should
+      produce the same answer. */
+   p = malloc(64);
+   assert(p);
+   for (i = 0; i < 64; i++)
+      p[i] = 0x55;
+
+   /* Write a value which isn't known at compile time and therefore
+      must come out of a register.  If we just store a constant here,
+      some compilers write more data than a store from a machine
+      register would.  Therefore we have to force a store from a
+      machine register by storing a value which isn't known at compile
+      time.  Since getpid() will return a value < 1 million, turn it
+      into a zero by dividing by 1e+30. */
+   *(long double*)(&p[16]) = (long double)(1.0e-30 * (double)getpid());
+
+   for (i = 0; i < 16; i++) {
+      assert(p[i] == 0x55);
+      assert(p[i+48] == 0x55);
+   }
+   for (i = 16; i <= 48; i++) {
+      if (p[i] == 0x55)
+         break;
+   }
+
+   assert(i < 48);
+   assert(i > 16);
+   free(p);
+   cached_result = i - 16;
+
+   if (0) 
+      printf("sizeof_long_double_image: computed %d\n", (int)cached_result);
+
+   assert(cached_result == 10 || cached_result == 16 || cached_result == 8);
+   return cached_result;
 }
 
 
@@ -684,11 +746,12 @@ void mpiwrap_walk_type_EXTERNALLY_VISIBLE
 
 /* ----------------
    Do corresponding checks on memory areas defined using a 
-   straightforward (start, length) description.
+   straightforward (start, length) description.  Not inlined
+   so as to make any resulting error tracebacks easier to read.
    ----------------
 */
 
-static inline
+static
 void check_mem_is_defined_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
@@ -696,7 +759,7 @@ void check_mem_is_defined_untyped ( void* buffer, long nbytes )
    }
 }
 
-static inline
+static
 void check_mem_is_addressable_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
@@ -704,7 +767,7 @@ void check_mem_is_addressable_untyped ( void* buffer, long nbytes )
    }
 }
 
-static inline
+static
 void make_mem_defined_if_addressable_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
@@ -712,23 +775,12 @@ void make_mem_defined_if_addressable_untyped ( void* buffer, long nbytes )
    }
 }
 
-static inline
+static
 void make_mem_defined_if_addressable_if_success_untyped ( int err, 
                                        void* buffer, long nbytes )
 {
    if (err == MPI_SUCCESS && nbytes > 0) {
       VALGRIND_MAKE_MEM_DEFINED_IF_ADDRESSABLE(buffer, nbytes);
-   }
-}
-
-/* Set the specified area to 'addressible but undefined'
-   (safe-to-write) state. */
-
-static inline
-void make_mem_undefined_untyped ( void* buffer, long nbytes )
-{
-   if (nbytes > 0) {
-      VALGRIND_MAKE_MEM_UNDEFINED(buffer, nbytes);
    }
 }
 

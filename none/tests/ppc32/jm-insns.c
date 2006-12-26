@@ -177,25 +177,53 @@ typedef uint64_t  HWord_t;
 #endif // #ifndef __powerpc64__
 
 
+#define ALLCR "cr0","cr1","cr2","cr3","cr4","cr5","cr6","cr7"
+
+#define SET_CR(_arg) \
+      __asm__ __volatile__ ("mtcr  %0" : : "b"(_arg) : ALLCR );
+
+#define SET_XER(_arg) \
+      __asm__ __volatile__ ("mtxer %0" : : "b"(_arg) : "xer" );
+
+#define GET_CR(_lval) \
+      __asm__ __volatile__ ("mfcr %0"  : "=b"(_lval) )
+
+#define GET_XER(_lval) \
+      __asm__ __volatile__ ("mfxer %0" : "=b"(_lval) )
+
+#define GET_CR_XER(_lval_cr,_lval_xer) \
+   do { GET_CR(_lval_cr); GET_XER(_lval_xer); } while (0)
+
+#define SET_CR_ZERO \
+      SET_CR(0)
+
+#define SET_XER_ZERO \
+      SET_XER(0)
+
+#define SET_CR_XER_ZERO \
+   do { SET_CR_ZERO; SET_XER_ZERO; } while (0)
+
+#define SET_FPSCR_ZERO \
+   do { double _d = 0.0; \
+        __asm__ __volatile__ ("mtfsf 0xFF, %0" : : "f"(_d) ); \
+   } while (0)
+
+
+/* XXXX these must all be callee-save regs! */
 register double f14 __asm__ ("f14");
 register double f15 __asm__ ("f15");
 register double f16 __asm__ ("f16");
 register double f17 __asm__ ("f17");
-register double f18 __asm__ ("f18");
 register HWord_t r14 __asm__ ("r14");
 register HWord_t r15 __asm__ ("r15");
 register HWord_t r16 __asm__ ("r16");
 register HWord_t r17 __asm__ ("r17");
-register HWord_t r18 __asm__ ("r18");
 
 #if defined (HAS_ALTIVEC)
 #   include <altivec.h>
 #endif
 #include <assert.h>
 #include <ctype.h>     // isspace
-//#include <fcntl.h>
-//#include <fenv.h>
-//#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -4540,7 +4568,7 @@ static void test_int_three_args (const char* name, test_func_t func,
                                  unused uint32_t test_flags)
 {
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, k;
    
    for (i=0; i<nb_iargs; i++) {
@@ -4550,28 +4578,10 @@ static void test_int_three_args (const char* name, test_func_t func,
             r15 = iargs[j];
             r16 = iargs[k];
 
-            /* Save flags */
-            __asm__ __volatile__ ("mfcr 18");
-            tmpcr = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            tmpxer = r18;
-
-            /* Set up flags for test */
-            r18 = 0;
-            __asm__ __volatile__ ("mtcr 18");
-            __asm__ __volatile__ ("mtxer 18");
+	    SET_CR_XER_ZERO;
             (*func)();
-            __asm__ __volatile__ ("mfcr 18");
-            flags = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            xer = r18;
+	    GET_CR_XER(flags,xer);
             res = r17;
-
-            /* Restore flags */
-            r18 = tmpcr;
-            __asm__ __volatile__ ("mtcr 18");
-            r18 = tmpxer;
-            __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
             printf("%s %08x, %08x, %08x => %08x (%08x %08x)\n",
@@ -4589,7 +4599,7 @@ static void test_int_two_args (const char* name, test_func_t func,
                                uint32_t test_flags)
 {
    volatile HWord_t res;
-   volatile uint32_t flags, xer, xer_orig, tmpcr, tmpxer;
+   volatile uint32_t flags, xer, xer_orig;
    int i, j, is_div, zap_hi32;
 
    // catches div, divwu, divo, divwu, divwuo, and . variants
@@ -4601,36 +4611,20 @@ static void test_int_two_args (const char* name, test_func_t func,
  redo:
    for (i=0; i<nb_iargs; i++) {
       for (j=0; j<nb_iargs; j++) {
-         r14 = iargs[i];
-         r15 = iargs[j];
+
          /* result of division by zero is implementation dependent.
             don't test it. */
          if (is_div && iargs[j] == 0)
             continue;
 
-         /* Save flags */
-         __asm__ __volatile__ ("mfcr 18");
-         tmpcr = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         tmpxer = r18;
+         r14 = iargs[i];
+         r15 = iargs[j];
 
-         /* Set up flags for test */
-         r18 = 0;
-         __asm__ __volatile__ ("mtcr 18");
-         r18 = xer_orig;
-         __asm__ __volatile__ ("mtxer 18");
+         SET_XER(xer_orig);
+         SET_CR_ZERO;
          (*func)();
-         __asm__ __volatile__ ("mfcr 18");
-         flags = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         xer = r18;
+         GET_CR_XER(flags,xer);
          res = r17;
-
-         /* Restore flags */
-         r18 = tmpcr;
-         __asm__ __volatile__ ("mtcr 18");
-         r18 = tmpxer;
-         __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
          printf("%s %08x, %08x => %08x (%08x %08x)\n",
@@ -4652,37 +4646,18 @@ static void test_int_one_arg (const char* name, test_func_t func,
                                uint32_t test_flags)
 {
    volatile HWord_t res;
-   volatile uint32_t flags, xer, xer_orig, tmpcr, tmpxer;
+   volatile uint32_t flags, xer, xer_orig;
    int i;
    
    xer_orig = 0x00000000;
  redo:
    for (i=0; i<nb_iargs; i++) {
       r14 = iargs[i];
-
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = xer_orig;
-      __asm__ __volatile__ ("mtxer 18");
+      SET_XER(xer_orig);
+      SET_CR_ZERO;
       (*func)();
       res = r17;
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
+      GET_CR_XER(flags,xer);
 
 #ifndef __powerpc64__
       printf("%s %08x => %08x (%08x %08x)\n",
@@ -4768,7 +4743,7 @@ static void test_int_one_reg_imm16 (const char* name,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j;
 
    for (i=0; i<nb_iargs; i++) {
@@ -4779,28 +4754,10 @@ static void test_int_one_reg_imm16 (const char* name,
 
          r14 = iargs[i];
 
-         /* Save flags */
-         __asm__ __volatile__ ("mfcr 18");
-         tmpcr = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         tmpxer = r18;
-
-         /* Set up flags for test */
-         r18 = 0;
-         __asm__ __volatile__ ("mtcr 18");
-         __asm__ __volatile__ ("mtxer 18");
+         SET_CR_XER_ZERO;
          (*func)();
-         __asm__ __volatile__ ("mfcr 18");
-         flags = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         xer = r18;
+         GET_CR_XER(flags,xer);
          res = r17;
-
-         /* Restore flags */
-         r18 = tmpcr;
-         __asm__ __volatile__ ("mtcr 18");
-         r18 = tmpxer;
-         __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
          printf("%s %08x, %08x => %08x (%08x %08x)\n",
@@ -4843,7 +4800,7 @@ static void rlwi_cb (const char* name, test_func_t func_IN,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, k, l, arg_step;
    
    arg_step = (arg_list_size == 0) ? 31 : 3;
@@ -4862,28 +4819,10 @@ static void rlwi_cb (const char* name, test_func_t func_IN,
 
                r14 = iargs[i];
 
-               /* Save flags */
-               __asm__ __volatile__ ("mfcr 18");
-               tmpcr = r18;
-               __asm__ __volatile__ ("mfxer 18");
-               tmpxer = r18;
-
-               /* Set up flags for test */
-               r18 = 0;
-               __asm__ __volatile__ ("mtcr 18");
-               __asm__ __volatile__ ("mtxer 18");
+               SET_CR_XER_ZERO;
                (*func)();
-               __asm__ __volatile__ ("mfcr 18");
-               flags = r18;
-               __asm__ __volatile__ ("mfxer 18");
-               xer = r18;
+               GET_CR_XER(flags,xer);
                res = r17;
-
-               /* Restore flags */
-               r18 = tmpcr;
-               __asm__ __volatile__ ("mtcr 18");
-               r18 = tmpxer;
-               __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
                printf("%s %08x, %2d, %2d, %2d => %08x (%08x %08x)\n",
@@ -4904,7 +4843,7 @@ static void rlwnm_cb (const char* name, test_func_t func_IN,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, k, l, arg_step;
    
    arg_step = (arg_list_size == 0) ? 31 : 3;
@@ -4921,28 +4860,10 @@ static void rlwnm_cb (const char* name, test_func_t func_IN,
                r14 = iargs[i];
                r15 = iargs[j];
 
-               /* Save flags */
-               __asm__ __volatile__ ("mfcr 18");
-               tmpcr = r18;
-               __asm__ __volatile__ ("mfxer 18");
-               tmpxer = r18;
-
-               /* Set up flags for test */
-               r18 = 0;
-               __asm__ __volatile__ ("mtcr 18");
-               __asm__ __volatile__ ("mtxer 18");
+               SET_CR_XER_ZERO;
                (*func)();
-               __asm__ __volatile__ ("mfcr 18");
-               flags = r18;
-               __asm__ __volatile__ ("mfxer 18");
-               xer = r18;
+               GET_CR_XER(flags,xer);
                res = r17;
-
-               /* Restore flags */
-               r18 = tmpcr;
-               __asm__ __volatile__ ("mtcr 18");
-               r18 = tmpxer;
-               __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
                printf("%s %08x, %08x, %2d, %2d => %08x (%08x %08x)\n",
@@ -4963,7 +4884,7 @@ static void srawi_cb (const char* name, test_func_t func_IN,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, arg_step;
    
    arg_step = (arg_list_size == 0) ? 31 : 1;
@@ -4976,28 +4897,10 @@ static void srawi_cb (const char* name, test_func_t func_IN,
 
          r14 = iargs[i];
 
-         /* Save flags */
-         __asm__ __volatile__ ("mfcr 18");
-         tmpcr = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         tmpxer = r18;
-
-         /* Set up flags for test */
-         r18 = 0;
-         __asm__ __volatile__ ("mtcr 18");
-         __asm__ __volatile__ ("mtxer 18");
+         SET_CR_XER_ZERO;
          (*func)();
-         __asm__ __volatile__ ("mfcr 18");
-         flags = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         xer = r18;
+         GET_CR_XER(flags,xer);
          res = r17;
-
-         /* Restore flags */
-         r18 = tmpcr;
-         __asm__ __volatile__ ("mtcr 18");
-         r18 = tmpxer;
-         __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
          printf("%s %08x, %2d => %08x (%08x %08x)\n",
@@ -5015,7 +4918,7 @@ static void mcrf_cb (const char* name, test_func_t func_IN,
 {
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, k, arg_step;
    
    arg_step = (arg_list_size == 0) ? 7 : 1;
@@ -5030,27 +4933,10 @@ static void mcrf_cb (const char* name, test_func_t func_IN,
 
             r14 = iargs[i];
 
-            /* Save flags */
-            __asm__ __volatile__ ("mfcr 18");
-            tmpcr = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            tmpxer = r18;
-
-            /* Set up flags for test */
-            r18 = 0;
-            __asm__ __volatile__ ("mtcr 14");
-            __asm__ __volatile__ ("mtxer 18");
+            SET_CR(r14);
+            SET_XER_ZERO;
             (*func)();
-            __asm__ __volatile__ ("mfcr 18");
-            flags = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            xer = r18;
-
-            /* Restore flags */
-            r18 = tmpcr;
-            __asm__ __volatile__ ("mtcr 18");
-            r18 = tmpxer;
-            __asm__ __volatile__ ("mtxer 18");
+            GET_CR_XER(flags,xer);
 
 #ifndef __powerpc64__
             printf("%s %d, %d (%08x) => (%08x %08x)\n",
@@ -5064,19 +4950,12 @@ static void mcrf_cb (const char* name, test_func_t func_IN,
    }
 }
 
-#if 0
-static void mcrfs_cb (const char* name, test_func_t func,
-                      unused uint32_t test_flags)
-{}
-#endif
-
-
 static void mcrxr_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, k, arg_step;
    
    arg_step = 1; //(arg_list_size == 0) ? 7 : 1;
@@ -5090,27 +4969,10 @@ static void mcrxr_cb (const char* name, test_func_t func_IN,
 
          r14 = j;
 
-         /* Save flags */
-         __asm__ __volatile__ ("mfcr 18");
-         tmpcr = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         tmpxer = r18;
-
-         /* Set up flags for test */
-         r18 = 0;
-         __asm__ __volatile__ ("mtcr 18");
-         __asm__ __volatile__ ("mtxer 14");
+	 SET_CR_ZERO;
+	 SET_XER(r14);
          (*func)();
-         __asm__ __volatile__ ("mfcr 18");
-         flags = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         xer = r18;
-
-         /* Restore flags */
-         r18 = tmpcr;
-         __asm__ __volatile__ ("mtcr 18");
-         r18 = tmpxer;
-         __asm__ __volatile__ ("mtxer 18");
+         GET_CR_XER(flags,xer);
 
          printf("%s %d (%08x) => (%08x %08x)\n",
                 name, k, j, flags, xer);
@@ -5123,34 +4985,18 @@ static void mfcr_cb (const char* name, test_func_t func,
                      unused uint32_t test_flags)
 {
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i;
    
    for (i=0; i<nb_iargs; i++) {
       r14 = iargs[i];
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
       /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 14");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR(r14);
+      SET_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
+      GET_CR_XER(flags,xer);
       res = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
       printf("%s (%08x) => %08x (%08x %08x)\n",
@@ -5176,7 +5022,7 @@ static void mfspr_cb (const char* name, test_func_t func,
       __asm__ __volatile__(
          "mtxer %1\n"
          "\tmfxer %0"
-         : /*out*/"=r"(res) : /*in*/"r"(j) : /*trashed*/"xer" 
+         : /*out*/"=b"(res) : /*in*/"b"(j) : /*trashed*/"xer" 
       );
       res &= 0xE000007F; /* rest of the bits are undefined */
 
@@ -5194,7 +5040,7 @@ static void mfspr_cb (const char* name, test_func_t func,
       __asm__ __volatile__(
          "mtlr %1\n"
          "\tmflr %0"
-         : /*out*/"=r"(res) : /*in*/"r"(j) : /*trashed*/"lr" 
+         : /*out*/"=b"(res) : /*in*/"b"(j) : /*trashed*/"lr" 
       );
 
 #ifndef __powerpc64__
@@ -5211,7 +5057,7 @@ static void mfspr_cb (const char* name, test_func_t func,
       __asm__ __volatile__(
          "mtctr %1\n"
          "\tmfctr %0"
-         : /*out*/"=r"(res) : /*in*/"r"(j) : /*trashed*/"ctr" 
+         : /*out*/"=b"(res) : /*in*/"b"(j) : /*trashed*/"ctr" 
       );
 
 #ifndef __powerpc64__
@@ -5221,220 +5067,14 @@ static void mfspr_cb (const char* name, test_func_t func,
 #endif
              name, j, res);
    }
-
-#if 0
-   // mfxer
-   j = 1;
-   for (k=0; k<nb_iargs; k++) {
-      r14 = iargs[k];
-
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0;
-      // Only valid bits of xer: 0xE000007F
-      __asm__ __volatile__ ("lis  15,0xE000");
-      __asm__ __volatile__ ("addi 15,15,0x007F");
-      __asm__ __volatile__ ("and  16,15,14");
-      
-      __asm__ __volatile__ ("mtcr  18");
-      __asm__ __volatile__ ("mtxer 16");
-      __asm__ __volatile__ ("mtlr  18");
-      __asm__ __volatile__ ("mtctr 18");
-      
-      __asm__ __volatile__ ("mfspr 17, 1");   // func()
-      
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-      __asm__ __volatile__ ("mfcr  18");
-      flags = r18;
-      __asm__ __volatile__ ("mflr  18");
-      lr = r18;
-      __asm__ __volatile__ ("mfctr 18");
-      ctr = r18;
-      res = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
-
-      printf("%s %d (%08x) => %08x (%08x %08x, %08x, %08x)\n",
-             name, j, iargs[k], res, flags, xer, lr, ctr);
-   }
-   if (verbose) printf("\n");
-   
-   // mflr
-   j = 8;
-   for (k=0; k<nb_iargs; k++) {
-      r14 = iargs[k];
-
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr  18");
-      __asm__ __volatile__ ("mtlr  14");
-      __asm__ __volatile__ ("mtctr 18");
-      __asm__ __volatile__ ("mtxer 18");
-
-      __asm__ __volatile__ ("mfspr 17, 8");   // func()
-      
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-      __asm__ __volatile__ ("mfcr  18");
-      flags = r18;
-      __asm__ __volatile__ ("mflr  18");
-      lr = r18;
-      __asm__ __volatile__ ("mfctr 18");
-      ctr = r18;
-      res = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
-
-      printf("%s %d (%08x) => %08x (%08x %08x, %08x, %08x)\n",
-             name, j, iargs[k], res, flags, xer, lr, ctr);
-   }
-   if (verbose) printf("\n");
-
-   // mfctr
-   j = 9;
-   for (k=0; k<nb_iargs; k++) {
-      r14 = iargs[k];
-
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr  18");
-      __asm__ __volatile__ ("mtctr 14");
-      __asm__ __volatile__ ("mtxer 18");
-      __asm__ __volatile__ ("mtlr  18");
-      
-      __asm__ __volatile__ ("mfspr 17, 9");   // func()
-      
-      __asm__ __volatile__ ("mfcr  18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-      __asm__ __volatile__ ("mflr  18");
-      lr = r18;
-      __asm__ __volatile__ ("mfctr 18");
-      ctr = r18;
-      res = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
-
-      printf("%s %d (%08x) => %08x (%08x %08x, %08x, %08x)\n",
-             name, j, iargs[k], res, flags, xer, lr, ctr);
-   }
-#endif
 }
-
-#if 0
-static void mftb_cb (const char* name, test_func_t func,
-                     unused uint32_t test_flags)
-{
-// How to test this?
-// 1) TBU won't change for a while
-// 2) TBL will have changed every loop iter
-
-   volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
-   int i, j;
-   
-   i = 269;
-   for (j=0; j<16; j++) {
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
-      
-      __asm__ __volatile__ ("mftb 17, 269");  // func
-      
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-      res = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
-
-      printf("%s %d => %08x (%08x %08x)\n",
-             name, i, res, flags, xer);
-   }
-   if (verbose) printf("\n");
-   
-   i = 268;
-   for (j=0; j<16; j++) {
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
-      
-      __asm__ __volatile__ ("mftb 17, 268");  // func
-      
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-      res = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
-
-      printf("%s %d => %08x (%08x %08x)\n",
-             name, i, res, flags, xer);
-   }
-}
-#endif
 
 static void mtcrf_cb (const char* name, test_func_t func_IN,
                       unused uint32_t test_flags)
 {
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, arg_step;
    
    arg_step = (arg_list_size == 0) ? 99 : 1;
@@ -5447,27 +5087,9 @@ static void mtcrf_cb (const char* name, test_func_t func_IN,
 
          r14 = iargs[i];
 
-         /* Save flags */
-         __asm__ __volatile__ ("mfcr 18");
-         tmpcr = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         tmpxer = r18;
-
-         /* Set up flags for test */
-         r18 = 0;
-         __asm__ __volatile__ ("mtcr 18");
-         __asm__ __volatile__ ("mtxer 18");
+         SET_CR_XER_ZERO;
          (*func)();
-         __asm__ __volatile__ ("mfcr 18");
-         flags = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         xer = r18;
-
-         /* Restore flags */
-         r18 = tmpcr;
-         __asm__ __volatile__ ("mtcr 18");
-         r18 = tmpxer;
-         __asm__ __volatile__ ("mtxer 18");
+         GET_CR_XER(flags,xer);
 
 #ifndef __powerpc64__
          printf("%s %3d, %08x => (%08x %08x)\n",
@@ -5484,150 +5106,6 @@ static void mtcrf_cb (const char* name, test_func_t func_IN,
 static void mtspr_cb (const char* name, test_func_t func,
                       unused uint32_t test_flags)
 {
-#if 0
-   volatile HWord_t ctr, lr;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
-   int j, k;
-   func = func; // just to stop compiler complaining
-   
-   // mtxer
-   j = 1;
-   for (k=0; k<nb_iargs; k++) {
-      r14 = iargs[k];
-
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0;
-      
-      // Only valid bits of xer: 0xE000007F
-      // VEX masks these (maybe it shouldn't?), so let's do it first:
-      __asm__ __volatile__ ("lis  15,0xE000");
-      __asm__ __volatile__ ("addi 15,15,0x007F");
-      __asm__ __volatile__ ("and  16,15,14");
-      
-      __asm__ __volatile__ ("mtcr  18");
-      __asm__ __volatile__ ("mtxer 18");
-      __asm__ __volatile__ ("mtlr  18");
-      __asm__ __volatile__ ("mtctr 18");
-      
-      __asm__ __volatile__ ("mtxer 16");   // func()
-      
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-      __asm__ __volatile__ ("mfcr  18");
-      flags = r18;
-      __asm__ __volatile__ ("mflr  18");
-      lr = r18;
-      __asm__ __volatile__ ("mfctr 18");
-      ctr = r18;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
-
-#ifndef __powerpc64__
-      printf("%s %d, %08x => (%08x %08x, %08x, %08x)\n",
-#else
-      printf("%s %d, %016lx => (%08x %08x, %016lx, %016lx)\n",
-#endif
-             name, j, iargs[k], flags, xer, lr, ctr);
-   }
-   if (verbose) printf("\n");
-   
-   // mtlr
-   j = 8;
-   for (k=0; k<nb_iargs; k++) {
-      r14 = iargs[k];
-
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0x0;
-      __asm__ __volatile__ ("mtcr  18");
-      __asm__ __volatile__ ("mtlr  18");
-      __asm__ __volatile__ ("mtctr 18");
-      __asm__ __volatile__ ("mtxer 18");
-      
-      __asm__ __volatile__ ("mtlr  14");   // func()
-      
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-      __asm__ __volatile__ ("mfcr  18");
-      flags = r18;
-      __asm__ __volatile__ ("mflr  18");
-      lr = r18;
-      __asm__ __volatile__ ("mfctr 17");  // CAB: if 18, bashes lr - bad gcc opt?
-      ctr = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
-
-#ifndef __powerpc64__
-      printf("%s %d, %08x => (%08x %08x, %08x, %08x)\n",
-#else
-      printf("%s %d, %016lx => (%08x %08x, %016lx, %016lx)\n",
-#endif
-             name, j, iargs[k], flags, xer, lr, ctr);
-   }
-   if (verbose) printf("\n");
-   
-   // mtctr
-   j = 9;
-   for (k=0; k<nb_iargs; k++) {
-      r14 = iargs[k];
-
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr  18");
-      __asm__ __volatile__ ("mtctr 18");
-      __asm__ __volatile__ ("mtxer 18");
-      __asm__ __volatile__ ("mtlr  18");
-      
-      __asm__ __volatile__ ("mtctr 14");   // func()
-      
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-      __asm__ __volatile__ ("mfcr  18");
-      flags = r18;
-      __asm__ __volatile__ ("mflr  18");
-      lr = r18;
-      __asm__ __volatile__ ("mfctr 17");
-      ctr = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
-
-#ifndef __powerpc64__
-      printf("%s %d, %08x => (%08x %08x, %08x, %08x)\n",
-#else
-      printf("%s %d, %016lx => (%08x %08x, %016lx, %016lx)\n",
-#endif
-             name, j, iargs[k], flags, xer, lr, ctr);
-   }
-#endif
 }
 
 #ifdef __powerpc64__
@@ -5637,7 +5115,7 @@ static void rldc_cb (const char* name, test_func_t func_IN,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, k, arg_step;
    
    arg_step = (arg_list_size == 0) ? 7 : 3;
@@ -5652,28 +5130,10 @@ static void rldc_cb (const char* name, test_func_t func_IN,
             r14 = iargs[i];
             r15 = iargs[j];
 
-            /* Save flags */
-            __asm__ __volatile__ ("mfcr 18");
-            tmpcr = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            tmpxer = r18;
-
-            /* Set up flags for test */
-            r18 = 0;
-            __asm__ __volatile__ ("mtcr 18");
-            __asm__ __volatile__ ("mtxer 18");
+            SET_CR_XER_ZERO;
             (*func)();
-            __asm__ __volatile__ ("mfcr 18");
-            flags = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            xer = r18;
+            GET_CR_XER(flags,xer);
             res = r17;
-
-            /* Restore flags */
-            r18 = tmpcr;
-            __asm__ __volatile__ ("mtcr 18");
-            r18 = tmpxer;
-            __asm__ __volatile__ ("mtxer 18");
 
             printf("%s %016lx, %016lx, %2d => %016lx (%08x %08x)\n",
                    name, iargs[i], iargs[j], k, res, flags, xer);
@@ -5689,7 +5149,7 @@ static void rldi_cb (const char* name, test_func_t func_IN,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, k, arg_step;
    
    arg_step = (arg_list_size == 0) ? 7 : 3;
@@ -5705,28 +5165,10 @@ static void rldi_cb (const char* name, test_func_t func_IN,
             
             r14 = iargs[i];
 
-            /* Save flags */
-            __asm__ __volatile__ ("mfcr 18");
-            tmpcr = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            tmpxer = r18;
-
-            /* Set up flags for test */
-            r18 = 0;
-            __asm__ __volatile__ ("mtcr 18");
-            __asm__ __volatile__ ("mtxer 18");
+            SET_CR_XER_ZERO;
             (*func)();
-            __asm__ __volatile__ ("mfcr 18");
-            flags = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            xer = r18;
+            GET_CR_XER(flags,xer);
             res = r17;
-
-            /* Restore flags */
-            r18 = tmpcr;
-            __asm__ __volatile__ ("mtcr 18");
-            r18 = tmpxer;
-            __asm__ __volatile__ ("mtxer 18");
 
             printf("%s %016lx, %2d, %2d => %016lx (%08x %08x)\n",
                    name, iargs[i], j, k, res, flags, xer);
@@ -5742,7 +5184,7 @@ static void sradi_cb (const char* name, test_func_t func_IN,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, j, arg_step;
    
    arg_step = (arg_list_size == 0) ? 7 : 3;
@@ -5756,28 +5198,10 @@ static void sradi_cb (const char* name, test_func_t func_IN,
             
          r14 = iargs[i];
 
-         /* Save flags */
-         __asm__ __volatile__ ("mfcr 18");
-         tmpcr = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         tmpxer = r18;
-
-         /* Set up flags for test */
-         r18 = 0;
-         __asm__ __volatile__ ("mtcr 18");
-         __asm__ __volatile__ ("mtxer 18");
+         SET_CR_XER_ZERO;
          (*func)();
-         __asm__ __volatile__ ("mfcr 18");
-         flags = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         xer = r18;
+         GET_CR_XER(flags,xer);
          res = r17;
-
-         /* Restore flags */
-         r18 = tmpcr;
-         __asm__ __volatile__ ("mtcr 18");
-         r18 = tmpxer;
-         __asm__ __volatile__ ("mtxer 18");
 
          printf("%s %016lx, %2d => %016lx (%08x %08x)\n",
                 name, iargs[i], j, res, flags, xer);
@@ -5965,7 +5389,7 @@ static void test_int_ld_one_reg_imm16 (const char* name,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    volatile HWord_t res, base;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, offs, is_lwa=0;
 
 #ifdef __powerpc64__
@@ -5986,28 +5410,10 @@ static void test_int_ld_one_reg_imm16 (const char* name,
 
       r14 = base;
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
+      GET_CR_XER(flags,xer);
       res = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
       printf("%s %2d, (%08x) => %08x, %2d (%08x %08x)\n",
@@ -6029,28 +5435,10 @@ static void test_int_ld_one_reg_imm16 (const char* name,
 
       r14 = base;
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
+      GET_CR_XER(flags,xer);
       res = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
       printf("%s %2d, (%08x) => %08x, %2d (%08x %08x)\n",
@@ -6066,7 +5454,7 @@ static void test_int_ld_two_regs (const char* name,
                                   unused uint32_t test_flags)
 {
    volatile HWord_t res, base;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, offs;
    
    // +ve d
@@ -6076,28 +5464,10 @@ static void test_int_ld_two_regs (const char* name,
       r14 = base;
       r15 = offs;
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
+      GET_CR_XER(flags,xer);
       res = r17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
       printf("%s %d (%08x) => %08x, %d (%08x %08x)\n",
@@ -6114,7 +5484,7 @@ static void test_int_st_two_regs_imm16 (const char* name,
 {
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, offs, k;
    HWord_t *iargs_priv, base;
 
@@ -6136,27 +5506,9 @@ static void test_int_st_two_regs_imm16 (const char* name,
       r14 = iargs[i];             // read from iargs
       r15 = base;                 // store to r15 + offs
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
+      GET_CR_XER(flags,xer);
 
 #ifndef __powerpc64__
       printf("%s %08x, %2d => %08x, %2d (%08x %08x)\n",
@@ -6182,27 +5534,9 @@ static void test_int_st_two_regs_imm16 (const char* name,
       r14 = iargs[nb_iargs-1+i];  // read from iargs
       r15 = base;                 // store to r15 + offs
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
+      GET_CR_XER(flags,xer);
 
 #ifndef __powerpc64__
       printf("%s %08x, %2d => %08x, %2d (%08x %08x)\n",
@@ -6219,7 +5553,7 @@ static void test_int_st_three_regs (const char* name,
                                     test_func_t func,
                                     unused uint32_t test_flags)
 {
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    int i, offs, k;
    HWord_t *iargs_priv, base;
 
@@ -6236,27 +5570,9 @@ static void test_int_st_three_regs (const char* name,
       r15 = base;                 // store to r15 + offs
       r16 = offs;
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
+      GET_CR_XER(flags,xer);
 
 #ifndef __powerpc64__
       printf("%s %08x, %d => %08x, %d (%08x %08x)\n",
@@ -6292,7 +5608,7 @@ static void test_float_three_args (const char* name, test_func_t func,
 {
    double res;
    uint64_t u0, u1, u2, ur;
-   volatile uint32_t flags, tmpcr, tmpxer;
+   volatile uint32_t flags;
    int i, j, k;
 
    /* Note: using nb_normal_fargs:
@@ -6309,29 +5625,12 @@ static void test_float_three_args (const char* name, test_func_t func,
             f15 = fargs[j];
             f16 = fargs[k];
 
-            /* Save flags */
-            __asm__ __volatile__ ("mfcr 18");
-            tmpcr = r18;
-            __asm__ __volatile__ ("mfxer 18");
-            tmpxer = r18;
-
-            /* Set up flags for test */
-            r18 = 0;
-            __asm__ __volatile__ ("mtcr 18");
-            __asm__ __volatile__ ("mtxer 18");
-            f18 = +0.0;
-            __asm__ __volatile__ ("mtfsf 0xFF, 18");
+            SET_FPSCR_ZERO;
+            SET_CR_XER_ZERO;
             (*func)();
-            __asm__ __volatile__ ("mfcr 18");
-            flags = r18;
+            GET_CR(flags);
             res = f17;
             ur = *(uint64_t *)(&res);
-
-            /* Restore flags */
-            r18 = tmpcr;
-            __asm__ __volatile__ ("mtcr 18");
-            r18 = tmpxer;
-            __asm__ __volatile__ ("mtxer 18");
 
             /* Note: zapping the bottom byte of the result, 
                as vex's accuracy isn't perfect */
@@ -6358,7 +5657,7 @@ static void test_float_two_args (const char* name, test_func_t func,
 {
    double res;
    uint64_t u0, u1, ur;
-   volatile uint32_t flags, tmpcr, tmpxer;
+   volatile uint32_t flags;
    int i, j;
    
    for (i=0; i<nb_fargs; i+=3) {
@@ -6368,29 +5667,12 @@ static void test_float_two_args (const char* name, test_func_t func,
          f14 = fargs[i];
          f15 = fargs[j];
 
-         /* Save flags */
-         __asm__ __volatile__ ("mfcr 18");
-         tmpcr = r18;
-         __asm__ __volatile__ ("mfxer 18");
-         tmpxer = r18;
-
-         /* Set up flags for test */
-         r18 = 0;
-         __asm__ __volatile__ ("mtcr 18");
-         __asm__ __volatile__ ("mtxer 18");
-         f18 = +0.0;
-         __asm__ __volatile__ ("mtfsf 0xFF, 18");
+         SET_FPSCR_ZERO;
+         SET_CR_XER_ZERO;
          (*func)();
-         __asm__ __volatile__ ("mfcr 18");
-         flags = r18;
+         GET_CR(flags);
          res = f17;
          ur = *(uint64_t *)(&res);
-
-         /* Restore flags */
-         r18 = tmpcr;
-         __asm__ __volatile__ ("mtcr 18");
-         r18 = tmpxer;
-         __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
          printf("%s %016llx, %016llx => %016llx",
@@ -6412,7 +5694,7 @@ static void test_float_one_arg (const char* name, test_func_t func,
 {
    double res;
    uint64_t u0, ur;
-   volatile uint32_t flags, tmpcr, tmpxer;
+   volatile uint32_t flags;
    int i, zap_hi_32bits;
 
    /* if we're testing fctiw or fctiwz, zap the hi 32bits,
@@ -6423,29 +5705,12 @@ static void test_float_one_arg (const char* name, test_func_t func,
       u0 = *(uint64_t *)(&fargs[i]);
       f14 = fargs[i];
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
-      f18 = +0.0;
-      __asm__ __volatile__ ("mtfsf 0xFF, 18");
-      (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      res = f17;
-      ur = *(uint64_t *)(&res);
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
+       SET_FPSCR_ZERO;
+       SET_CR_XER_ZERO;
+       (*func)();
+       GET_CR(flags);
+       res = f17;
+       ur = *(uint64_t *)(&res);
 
       if (zap_hi_32bits)
          ur &= 0xFFFFFFFFULL;
@@ -6531,7 +5796,7 @@ static void test_float_ld_one_reg_imm16 (const char* name,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    uint32_t base;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    volatile double src, res;
    int i, offs;
 
@@ -6553,28 +5818,10 @@ static void test_float_ld_one_reg_imm16 (const char* name,
       // load from fargs[idx] => r14 + offs
       r14 = base;
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
+      GET_CR_XER(flags,xer);
       res = f17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
@@ -6596,7 +5843,7 @@ static void test_float_ld_two_regs (const char* name,
                                     unused uint32_t test_flags)
 {
    volatile HWord_t base;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    volatile double src, res;
    int i, offs;
    
@@ -6614,28 +5861,10 @@ static void test_float_ld_two_regs (const char* name,
       r14 = base;
       r15 = offs;
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
+      GET_CR_XER(flags,xer);
       res = f17;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
 
 #ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
@@ -6658,7 +5887,7 @@ static void test_float_st_two_regs_imm16 (const char* name,
    volatile test_func_t func;
    uint32_t* func_buf = get_rwx_area();
    HWord_t base;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    double src, *p_dst;
    int i, offs;
    double *fargs_priv;
@@ -6701,27 +5930,9 @@ static void test_float_st_two_regs_imm16 (const char* name,
       f14 = src;
       r15 = base;
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
+      GET_CR_XER(flags,xer);
 
 #ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
@@ -6743,7 +5954,7 @@ static void test_float_st_three_regs (const char* name,
                                       unused uint32_t test_flags)
 {
    volatile HWord_t base;
-   volatile uint32_t flags, xer, tmpcr, tmpxer;
+   volatile uint32_t flags, xer;
    double src, *p_dst;
    int i, offs;
    double *fargs_priv;
@@ -6782,27 +5993,9 @@ static void test_float_st_three_regs (const char* name,
       r15  = base;   // store to r15 + offs
       r16  = offs;
 
-      /* Save flags */
-      __asm__ __volatile__ ("mfcr 18");
-      tmpcr = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      tmpxer = r18;
-      
-      /* Set up flags for test */
-      r18 = 0;
-      __asm__ __volatile__ ("mtcr 18");
-      __asm__ __volatile__ ("mtxer 18");
+      SET_CR_XER_ZERO;
       (*func)();
-      __asm__ __volatile__ ("mfcr 18");
-      flags = r18;
-      __asm__ __volatile__ ("mfxer 18");
-      xer = r18;
-
-      /* Restore flags */
-      r18 = tmpcr;
-      __asm__ __volatile__ ("mtcr 18");
-      r18 = tmpxer;
-      __asm__ __volatile__ ("mtxer 18");
+      GET_CR_XER(flags,xer);
 
 #ifndef __powerpc64__
       printf("%s %016llx, %4d => %016llx, %4d",
@@ -8202,6 +7395,7 @@ static void usage (void)
            "\t-i: test integer instructions (default)\n"
            "\t-f: test floating point instructions\n"
            "\t-a: test altivec instructions\n"
+           "\t-A: test all (int, fp, altivec) instructions\n"
            "\t-v: be verbose\n"
            "\t-h: display this help and exit\n"
            );
@@ -8217,6 +7411,9 @@ int main (int argc, char **argv)
    unsigned char *tmp, *filter = NULL;
    insn_sel_flags_t flags;
    int c;
+
+   // check HWord_t really is a host word
+   assert(sizeof(void*) == sizeof(HWord_t));
 
    flags.one_arg    = 0;
    flags.two_args   = 0;
@@ -8344,6 +7541,7 @@ int main (int argc, char **argv)
       ./jm-insns -i   => int insns
       ./jm-insns -f   => fp  insns
       ./jm-insns -a   => av  insns
+      ./jm-insns -A   => int, fp and avinsns
    */
    char *filter = NULL;
    insn_sel_flags_t flags;
@@ -8367,7 +7565,7 @@ int main (int argc, char **argv)
    // Flags
    flags.cr         = 2;
 
-   while ((c = getopt(argc, argv, "ifahv")) != -1) {
+   while ((c = getopt(argc, argv, "ifahvA")) != -1) {
       switch (c) {
       case 'i':
          flags.integer  = 1;
@@ -8376,6 +7574,12 @@ int main (int argc, char **argv)
          flags.floats   = 1;
          break;
       case 'a':
+         flags.altivec  = 1;
+         flags.faltivec = 1;
+         break;
+      case 'A':
+         flags.integer  = 1;
+         flags.floats   = 1;
          flags.altivec  = 1;
          flags.faltivec = 1;
          break;

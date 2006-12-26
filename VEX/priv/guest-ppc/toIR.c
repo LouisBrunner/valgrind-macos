@@ -6497,23 +6497,27 @@ static Bool dis_fp_scr ( UInt theInstr )
       break;
    }
 
-//zz    case 0x040: { // mcrfs (Move to Condition Register from FPSCR, PPC32 p465)
-//zz       UChar crfD    = toUChar( IFIELD( theInstr, 23, 3 ) );
-//zz       UChar b21to22 = toUChar( IFIELD( theInstr, 21, 2 ) );
-//zz       UChar crfS    = toUChar( IFIELD( theInstr, 18, 3 ) );
-//zz       UChar b11to17 = toUChar( IFIELD( theInstr, 11, 7 ) );
-//zz 
-//zz       IRTemp tmp = newTemp(Ity_I32);
-//zz 
-//zz       if (b21to22 != 0 || b11to17 != 0 || flag_rC != 0) {
-//zz          vex_printf("dis_fp_scr(ppc)(instr,mcrfs)\n");
-//zz          return False;
-//zz       }
-//zz       DIP("mcrfs crf%d,crf%d\n", crfD, crfS);
-//zz       assign( tmp, getGST_field( PPC_GST_FPSCR, crfS ) );
-//zz       putGST_field( PPC_GST_CR, mkexpr(tmp), crfD );
-//zz       break;
-//zz    }
+   case 0x040: { // mcrfs (Move to Condition Register from FPSCR, PPC32 p465)
+      UChar   crfD    = toUChar( IFIELD( theInstr, 23, 3 ) );
+      UChar   b21to22 = toUChar( IFIELD( theInstr, 21, 2 ) );
+      UChar   crfS    = toUChar( IFIELD( theInstr, 18, 3 ) );
+      UChar   b11to17 = toUChar( IFIELD( theInstr, 11, 7 ) );
+      IRTemp  tmp     = newTemp(Ity_I32);
+      IRExpr* fpscr_all;
+      if (b21to22 != 0 || b11to17 != 0 || flag_rC != 0) {
+         vex_printf("dis_fp_scr(ppc)(instr,mcrfs)\n");
+         return False;
+      }
+      DIP("mcrfs crf%d,crf%d\n", crfD, crfS);
+      vassert(crfD < 8);
+      vassert(crfS < 8);
+      fpscr_all = getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN );
+      assign( tmp, binop(Iop_And32,
+                         binop(Iop_Shr32,fpscr_all,mkU8(4 * (7-crfS))),
+                        mkU32(0xF)) );
+      putGST_field( PPC_GST_CR, mkexpr(tmp), crfD );
+      break;
+   }
 
    case 0x046: { // mtfsb0 (Move to FPSCR Bit 0, PPC32 p478)
       // Bit crbD of the FPSCR is cleared.
@@ -6545,8 +6549,9 @@ static Bool dis_fp_scr ( UInt theInstr )
    }
 
    case 0x247: { // mffs (Move from FPSCR, PPC32 p468)
-      UChar frD_addr = ifieldRegDS(theInstr);
-      UInt  b11to20  = IFIELD(theInstr, 11, 10);
+      UChar   frD_addr  = ifieldRegDS(theInstr);
+      UInt    b11to20   = IFIELD(theInstr, 11, 10);
+      IRExpr* fpscr_all = getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN );
 
       if (b11to20 != 0) {
          vex_printf("dis_fp_scr(ppc)(instr,mffs)\n");
@@ -6555,8 +6560,7 @@ static Bool dis_fp_scr ( UInt theInstr )
       DIP("mffs%s fr%u\n", flag_rC ? ".":"", frD_addr);
       putFReg( frD_addr,
           unop( Iop_ReinterpI64asF64,
-                unop( Iop_32Uto64, 
-                      getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN ) )));
+                unop( Iop_32Uto64, fpscr_all )));
       break;
    }
 
@@ -9004,7 +9008,7 @@ DisResult disInstr_PPC_WRK (
 
       /* Floating Point Status/Control Register Instructions */         
       case 0x026: // mtfsb1
-      /* case 0x040: // mcrfs */
+      case 0x040: // mcrfs
       case 0x046: // mtfsb0
       case 0x086: // mtfsfi
       case 0x247: // mffs

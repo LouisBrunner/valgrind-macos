@@ -1357,6 +1357,69 @@ void ML_(read_debuginfo_dwarf1) (
    Only handles 32-bit DWARF.
 */
 
+/* Comments re DW_CFA_set_loc, 16 Nov 06.
+
+   JRS:
+   Someone recently sent me a libcrypto.so.0.9.8 as distributed with
+   Ubuntu of some flavour, compiled with gcc 4.1.2 on amd64.  It
+   causes V's CF reader to complain a lot:
+
+   >> --19976-- DWARF2 CFI reader: unhandled CFI instruction 0:24
+   >> --19976-- DWARF2 CFI reader: unhandled CFI instruction 0:24
+   >> --19976-- DWARF2 CFI reader: unhandled CFI instruction 0:24
+   >> --19976-- DWARF2 CFI reader: unhandled CFI instruction 0:24
+   >> --19976-- DWARF2 CFI reader: unhandled CFI instruction 0:48
+   >> --19976-- DWARF2 CFI reader: unhandled CFI instruction 0:24
+
+   After chasing this around a bit it seems that the CF bytecode
+   parser lost sync at a DW_CFA_set_loc, which has a single argument
+   denoting an address.
+
+   As it stands that address is extracted by read_Addr().  On amd64
+   that just fetches 8 bytes regardless of anything else.
+
+   read_encoded_Addr() is more sophisticated.  This appears to take
+   into account some kind of encoding flag.  When I replace the uses
+   of read_Addr by read_encoded_Addr for DW_CFA_set_loc, the
+   complaints go away, there is no loss of sync, and the parsed CF
+   instructions are the same as shown by readelf --debug-dump=frames.
+
+   So it seems a plausible fix.  The problem is I looked in the DWARF3
+   spec and completely failed to figure out whether or not the arg to
+   DW_CFA_set_loc is supposed to be encoded in a way suitable for
+   read_encoded_Addr, nor for that matter any description of what it
+   is that read_encoded_Addr is really decoding.
+
+   TomH:
+   The problem is that the encoding is not standard - the eh_frame
+   section uses the same encoding as the dwarf_frame section except
+   for a few small changes, and this is one of them. So this is not
+   something the DWARF standard covers.
+
+   There is an augmentation string to indicate what is going on though
+   so that programs can recognise it.
+
+   What we are doing seems to match what gdb 6.5 and libdwarf 20060614
+   do though. I'm not sure about readelf though.
+
+   (later): Well dwarfdump barfs on it:
+
+      dwarfdump ERROR:  dwarf_get_fde_info_for_reg:  
+                        DW_DLE_DF_FRAME_DECODING_ERROR(193) (193)
+
+   I've looked at binutils as well now, and the code in readelf agrees
+   with your patch - ie it treats set_loc as having an encoded address
+   if there is a zR augmentation indicating an encoding.
+
+   Quite why gdb and libdwarf don't understand this is an interesting
+   question...
+
+   Final outcome: all uses of read_Addr were replaced by
+   read_encoded_Addr.  A new type AddressDecodingInfo was added to
+   make it relatively clean to plumb through the extra info needed by
+   read_encoded_Addr.
+*/
+
 /* --------------- Decls --------------- */
 
 #if defined(VGP_x86_linux)
@@ -1527,6 +1590,19 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
       ctx->reg[i].reg = 0;
    }
 }
+
+
+/* A structure which holds information needed by read_encoded_Addr().
+   Not sure what these address-like fields are -- really ought to
+   distinguish properly svma/avma/image addresses. 
+*/
+typedef
+   struct {
+      UChar  encoding;
+      UChar* ehframe;
+      Addr   ehframe_addr;
+   }
+   AddressDecodingInfo;
 
 
 /* ------------ Deal with summary-info records ------------ */
@@ -1730,15 +1806,6 @@ static ULong read_ULong ( UChar* data )
    return r;
 }
 
-static Addr read_Addr ( UChar* data )
-{
-#  if VG_WORDSIZE == 4
-   return read_UInt(data);
-#  else
-   return read_ULong(data);
-#  endif
-}
-
 static UChar read_UChar ( UChar* data )
 {
    return data[0];
@@ -1767,11 +1834,15 @@ static UInt size_of_encoded_Addr ( UChar encoding )
    }
 }
 
-static Addr read_encoded_Addr ( UChar* data, UChar encoding, Int *nbytes,
-                                UChar* ehframe, Addr ehframe_addr )
+static Addr read_encoded_Addr ( /*OUT*/Int* nbytes,
+                                AddressDecodingInfo* adi,
+                                UChar* data )
 {
-   Addr base;
-   Int offset;
+   Addr   base;
+   Int    offset;
+   UChar  encoding     = adi->encoding;
+   UChar* ehframe      = adi->ehframe;
+   Addr   ehframe_addr = adi->ehframe_addr;
 
    vg_assert((encoding & DW_EH_PE_indirect) == 0);
 
@@ -1842,7 +1913,8 @@ static Addr read_encoded_Addr ( UChar* data, UChar encoding, Int *nbytes,
 */
 static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx, 
                                 UChar* instr,
-                                UnwindContext* restore_ctx )
+                                UnwindContext* restore_ctx,
+                                AddressDecodingInfo* adi )
 {
    Int   off, reg, reg2, nleb, len;
    UInt  delta;
@@ -1885,7 +1957,11 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
       case DW_CFA_nop: 
          break;
       case DW_CFA_set_loc:
-         ctx->loc = read_Addr(&instr[i]) - ctx->initloc; i+= sizeof(Addr);
+         /* WAS: 
+            ctx->loc = read_Addr(&instr[i]) - ctx->initloc; i+= sizeof(Addr);
+            Was this ever right? */
+         ctx->loc = read_encoded_Addr(&len, adi, &instr[i]);
+         i += len;
          break;
       case DW_CFA_advance_loc1:
          delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
@@ -2087,7 +2163,8 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
 
 /* Show a CFI instruction, and also return its length. */
 
-static Int show_CF_instruction ( UChar* instr )
+static Int show_CF_instruction ( UChar* instr,
+                                 AddressDecodingInfo* adi )
 {
    UInt  delta;
    Int   off, reg, reg2, nleb, len;
@@ -2128,7 +2205,9 @@ static Int show_CF_instruction ( UChar* instr )
          break;
 
       case DW_CFA_set_loc:
-         loc = read_Addr(&instr[i]); i+= sizeof(Addr);
+         /* WAS: loc = read_Addr(&instr[i]); i+= sizeof(Addr); */
+         loc = read_encoded_Addr(&len, adi, &instr[i]);
+         i += len;
          VG_(printf)("DW_CFA_set_loc(%p)\n", loc); 
          break;
 
@@ -2299,12 +2378,13 @@ static Int show_CF_instruction ( UChar* instr )
 }
 
 
-static void show_CF_instructions ( UChar* instrs, Int ilen )
+static void show_CF_instructions ( UChar* instrs, Int ilen,
+                                   AddressDecodingInfo* adi )
 {
    Int i = 0;
    while (True) {
       if (i >= ilen) break;
-      i += show_CF_instruction( &instrs[i] );
+      i += show_CF_instruction( &instrs[i], adi );
    }
 }
 
@@ -2315,7 +2395,8 @@ static
 Bool run_CF_instructions ( struct _SegInfo* si,
                            UnwindContext* ctx, UChar* instrs, Int ilen,
                            UWord fde_arange,
-                           UnwindContext* restore_ctx )
+                           UnwindContext* restore_ctx,
+                           AddressDecodingInfo* adi )
 {
    DiCfSI cfsi;
    Bool summ_ok;
@@ -2326,8 +2407,8 @@ Bool run_CF_instructions ( struct _SegInfo* si,
    while (True) {
       loc_prev = ctx->loc;
       if (i >= ilen) break;
-      if (0) (void)show_CF_instruction( &instrs[i] );
-      j = run_CF_instruction( ctx, &instrs[i], restore_ctx );
+      if (0) (void)show_CF_instruction( &instrs[i], adi );
+      j = run_CF_instruction( ctx, &instrs[i], restore_ctx, adi );
       if (j == 0)
          return False; /* execution failed */
       i += j;
@@ -2403,10 +2484,10 @@ void ML_(read_callframe_info_dwarf2)
    Int    n_CIEs = 0;
    UChar* data = ehframe;
 
-#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
-   // CAB: tmp hack for ppc - no stacktraces for now...
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+   /* These targets don't use CFI-based stack unwinding. */
    return;
-#endif
+#  endif
 
    if (VG_(clo_trace_cfi)) {
       VG_(printf)("\n-----------------------------------------------\n");
@@ -2611,12 +2692,18 @@ void ML_(read_callframe_info_dwarf2)
 
          data += the_CIEs[this_CIE].ilen;
 
-         if (VG_(clo_trace_cfi)) 
+         if (VG_(clo_trace_cfi)) {
+            AddressDecodingInfo adi;
+            adi.encoding     = the_CIEs[this_CIE].address_encoding;
+            adi.ehframe      = ehframe;
+            adi.ehframe_addr = ehframe_addr;
             show_CF_instructions(the_CIEs[this_CIE].instrs, 
-                                 the_CIEs[this_CIE].ilen);
+                                 the_CIEs[this_CIE].ilen, &adi );
+         }
 
       } else {
 
+         AddressDecodingInfo adi;
          UnwindContext ctx, restore_ctx;
          Int    cie;
          UInt   look_for;
@@ -2647,16 +2734,18 @@ void ML_(read_callframe_info_dwarf2)
             goto bad;
 	 }
 
-         fde_initloc 
-            = read_encoded_Addr(data, the_CIEs[cie].address_encoding,
-                                &nbytes, ehframe, ehframe_addr);
+         adi.encoding     = the_CIEs[cie].address_encoding;
+         adi.ehframe      = ehframe;
+         adi.ehframe_addr = ehframe_addr;
+         fde_initloc = read_encoded_Addr(&nbytes, &adi, data);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
 
-         fde_arange 
-            = read_encoded_Addr(data, the_CIEs[cie].address_encoding & 0xf,
-                                &nbytes, ehframe, ehframe_addr);
+         adi.encoding     = the_CIEs[cie].address_encoding & 0xf;
+         adi.ehframe      = ehframe;
+         adi.ehframe_addr = ehframe_addr;
+         fde_arange = read_encoded_Addr(&nbytes, &adi, data);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
@@ -2680,8 +2769,12 @@ void ML_(read_callframe_info_dwarf2)
 
 	 data += fde_ilen;
 
-         if (VG_(clo_trace_cfi)) 
-            show_CF_instructions(fde_instrs, fde_ilen);
+         adi.encoding     = the_CIEs[cie].address_encoding;
+         adi.ehframe      = ehframe;
+         adi.ehframe_addr = ehframe_addr;
+
+         if (VG_(clo_trace_cfi))
+            show_CF_instructions(fde_instrs, fde_ilen, &adi);
 
 	 initUnwindContext(&ctx);
          ctx.code_a_f = the_CIEs[cie].code_a_f;
@@ -2693,12 +2786,14 @@ void ML_(read_callframe_info_dwarf2)
 
 	 ok = run_CF_instructions(
                  NULL, &ctx, the_CIEs[cie].instrs, 
-                             the_CIEs[cie].ilen, 0, NULL);
+                 the_CIEs[cie].ilen, 0, NULL, &adi
+              );
          if (ok) {
             restore_ctx = ctx;
 	    ok = run_CF_instructions(
                     si, &ctx, fde_instrs, fde_ilen, fde_arange, 
-                    &restore_ctx);
+                    &restore_ctx, &adi
+                 );
 	 }
       }
    }

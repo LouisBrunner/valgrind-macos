@@ -12170,7 +12170,7 @@ DisResult disInstr_AMD64_WRK (
       if (have66orF2orF3(pfx)) goto decode_failure;
       d64 = getUDisp16(delta); 
       delta += 2;
-      dis_ret(vmi, d64);
+      dis_ret(d64);
       dres.whatNext = Dis_StopHere;
       DIP("ret %lld\n", d64);
       break;

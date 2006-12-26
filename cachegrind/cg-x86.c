@@ -88,9 +88,10 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
           break;
           
       /* TLB info, ignore */
-      case 0x01: case 0x02: case 0x03: case 0x04:
-      case 0x50: case 0x51: case 0x52: case 0x5b: case 0x5c: case 0x5d:
-      case 0xb0: case 0xb3:
+      case 0x01: case 0x02: case 0x03: case 0x04: case 0x05:
+      case 0x50: case 0x51: case 0x52: case 0x56: case 0x57:
+      case 0x5b: case 0x5c: case 0x5d:
+      case 0xb0: case 0xb1: case 0xb3: case 0xb4:
           break;      
 
       case 0x06: *I1c = (cache_t) {  8, 4, 32 }; break;
@@ -107,7 +108,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x90: case 0x96: case 0x9b:
          VG_(tool_panic)("IA-64 cache detected?!");
 
-      case 0x22: case 0x23: case 0x25: case 0x29: 
+      case 0x22: case 0x23: case 0x25: case 0x29: case 0x46: case 0x47:
           VG_(message)(Vg_DebugMsg, "warning: L3 cache detected but ignored");
           break;
 
@@ -127,6 +128,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x43: *L2c = (cache_t) {  512, 4, 32 }; L2_found = True; break;
       case 0x44: *L2c = (cache_t) { 1024, 4, 32 }; L2_found = True; break;
       case 0x45: *L2c = (cache_t) { 2048, 4, 32 }; L2_found = True; break;
+      case 0x49: *L2c = (cache_t) { 4096,16, 64 }; L2_found = True; break;
 
       /* These are sectored, whatever that means */
       case 0x60: *D1c = (cache_t) { 16, 8, 64 };  break;      /* sectored */

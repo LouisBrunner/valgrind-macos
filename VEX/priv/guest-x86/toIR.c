@@ -2815,6 +2815,13 @@ UInt dis_Grp5 ( UChar sorb, Int sz, Int delta, DisResult* dres )
             jmp_treg(Ijk_Boring,t1);
             dres->whatNext = Dis_StopHere;
             break;
+         case 6: /* PUSH Ev */
+            vassert(sz == 4 || sz == 2);
+            t2 = newTemp(Ity_I32);
+            assign( t2, binop(Iop_Sub32,getIReg(4,R_ESP),mkU32(sz)) );
+            putIReg(4, R_ESP, mkexpr(t2) );
+            storeLE( mkexpr(t2), mkexpr(t1) );
+            break;
          default: 
             vex_printf(
                "unhandled Grp5(R) case %d\n", (Int)gregOfRM(modrm));

@@ -1189,7 +1189,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    //   (__NR_pivot_root,        sys_pivot_root),     // 155 
    LINXY(__NR__sysctl,           sys_sysctl),         // 156 
-   LINX_(__NR_prctl,             sys_prctl),          // 157 
+   LINXY(__NR_prctl,             sys_prctl),          // 157 
    PLAX_(__NR_arch_prctl,	 sys_arch_prctl),     // 158 
    //   (__NR_adjtimex,          sys_adjtimex),       // 159 
 

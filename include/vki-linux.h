@@ -299,6 +299,8 @@ struct vki_sched_param {
 	int sched_priority;
 };
 
+#define VKI_TASK_COMM_LEN 16
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-generic/siginfo.h
 //----------------------------------------------------------------------
@@ -2121,8 +2123,6 @@ struct vki_serial_icounter_struct {
 	int reserved[9];
 };
 
-#endif // __VKI_LINUX_H
-
 //----------------------------------------------------------------------
 // From linux-2.6.16/include/linux/vt.h
 //----------------------------------------------------------------------
@@ -2171,6 +2171,60 @@ struct vki_vt_consize {
 #define VKI_VT_RESIZEX      0x560A  /* set kernel's idea of screensize + more */
 #define VKI_VT_LOCKSWITCH   0x560B  /* disallow vt switching */
 #define VKI_VT_UNLOCKSWITCH 0x560C  /* allow vt switching */
+
+//----------------------------------------------------------------------
+// From linux-2.6.19/include/linux/prctl.h
+//----------------------------------------------------------------------
+
+#define VKI_PR_SET_PDEATHSIG  1  /* Second arg is a signal */
+#define VKI_PR_GET_PDEATHSIG  2  /* Second arg is a ptr to return the signal */
+
+#define VKI_PR_GET_DUMPABLE   3
+#define VKI_PR_SET_DUMPABLE   4
+
+#define VKI_PR_GET_UNALIGN       5
+#define VKI_PR_SET_UNALIGN       6
+# define VKI_PR_UNALIGN_NOPRINT  1   /* silently fix up unaligned user accesses */
+# define VKI_PR_UNALIGN_SIGBUS 2     /* generate SIGBUS on unaligned user access */
+
+#define VKI_PR_GET_KEEPCAPS   7
+#define VKI_PR_SET_KEEPCAPS   8
+
+#define VKI_PR_GET_FPEMU  9
+#define VKI_PR_SET_FPEMU 10
+# define VKI_PR_FPEMU_NOPRINT  1 /* silently emulate fp operations accesses */
+# define VKI_PR_FPEMU_SIGFPE   2 /* don't emulate fp operations, send SIGFPE instead */
+
+#define VKI_PR_GET_FPEXC       11
+#define VKI_PR_SET_FPEXC       12
+# define VKI_PR_FP_EXC_SW_ENABLE       0x80    /* Use FPEXC for FP exception enables */
+# define VKI_PR_FP_EXC_DIV             0x010000 /* floating point divide by zero */
+# define VKI_PR_FP_EXC_OVF             0x020000 /* floating point overflow */
+# define VKI_PR_FP_EXC_UND             0x040000 /* floating point underflow */
+# define VKI_PR_FP_EXC_RES             0x080000 /* floating point inexact result */
+# define VKI_PR_FP_EXC_INV             0x100000 /* floating point invalid operation */
+# define VKI_PR_FP_EXC_DISABLED        0       /* FP exceptions disabled */
+# define VKI_PR_FP_EXC_NONRECOV        1       /* async non-recoverable exc. mode */
+# define VKI_PR_FP_EXC_ASYNC   2       /* async recoverable exception mode */
+# define VKI_PR_FP_EXC_PRECISE 3       /* precise exception mode */
+
+#define VKI_PR_GET_TIMING   13
+#define VKI_PR_SET_TIMING   14
+# define VKI_PR_TIMING_STATISTICAL  0       /* Normal, traditional,
+                                                   statistical process timing */
+# define VKI_PR_TIMING_TIMESTAMP    1       /* Accurate timestamp based
+                                                   process timing */
+
+#define VKI_PR_SET_NAME    15          /* Set process name */
+#define VKI_PR_GET_NAME    16          /* Get process name */
+
+#define VKI_PR_GET_ENDIAN      19
+#define VKI_PR_SET_ENDIAN      20
+# define VKI_PR_ENDIAN_BIG             0
+# define VKI_PR_ENDIAN_LITTLE  1       /* True little endian mode */
+# define VKI_PR_ENDIAN_PPC_LITTLE      2       /* "PowerPC" pseudo little endian */
+
+#endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -698,14 +698,98 @@ POST(sys_sysctl)
 PRE(sys_prctl)
 {
    *flags |= SfMayBlock;
-   PRINT( "prctl ( %d, %d, %d, %d, %d )", ARG1, ARG2, ARG3, ARG4, ARG5 );
-   // XXX: too simplistic, often not all args are used
-   // Nb: can't use "ARG2".."ARG5" here because that's our own macro...
-   PRE_REG_READ5(long, "prctl",
-                 int, option, unsigned long, arg2, unsigned long, arg3,
-                 unsigned long, arg4, unsigned long, arg5);
-   // XXX: totally wrong... we need to look at the 'option' arg, and do
-   // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
+   PRINT( "sys_prctl ( %d, %d, %d, %d, %d )", ARG1, ARG2, ARG3, ARG4, ARG5 );
+   switch (ARG1) {
+   case VKI_PR_SET_PDEATHSIG:
+      PRE_REG_READ2(int, "prctl", int, option, int, signal);
+      break;
+   case VKI_PR_GET_PDEATHSIG:
+      PRE_REG_READ2(int, "prctl", int, option, int *, signal);
+      PRE_MEM_WRITE("prctl(get-death-signal)", ARG2, sizeof(Int));
+      break;
+   case VKI_PR_GET_DUMPABLE:
+      PRE_REG_READ1(int, "prctl", int, option);
+      break;
+   case VKI_PR_SET_DUMPABLE:
+      PRE_REG_READ2(int, "prctl", int, option, int, dump);
+      break;
+   case VKI_PR_GET_UNALIGN:
+      PRE_REG_READ2(int, "prctl", int, option, int *, value);
+      PRE_MEM_WRITE("prctl(get-unalign)", ARG2, sizeof(Int));
+      break;
+   case VKI_PR_SET_UNALIGN:
+      PRE_REG_READ2(int, "prctl", int, option, int, value);
+      break;
+   case VKI_PR_GET_KEEPCAPS:
+      PRE_REG_READ1(int, "prctl", int, option);
+      break;
+   case VKI_PR_SET_KEEPCAPS:
+      PRE_REG_READ2(int, "prctl", int, option, int, keepcaps);
+      break;
+   case VKI_PR_GET_FPEMU:
+      PRE_REG_READ2(int, "prctl", int, option, int *, value);
+      PRE_MEM_WRITE("prctl(get-fpemu)", ARG2, sizeof(Int));
+      break;
+   case VKI_PR_SET_FPEMU:
+      PRE_REG_READ2(int, "prctl", int, option, int, value);
+      break;
+   case VKI_PR_GET_FPEXC:
+      PRE_REG_READ2(int, "prctl", int, option, int *, value);
+      PRE_MEM_WRITE("prctl(get-fpexc)", ARG2, sizeof(Int));
+      break;
+   case VKI_PR_SET_FPEXC:
+      PRE_REG_READ2(int, "prctl", int, option, int, value);
+      break;
+   case VKI_PR_GET_TIMING:
+      PRE_REG_READ1(int, "prctl", int, option);
+      break;
+   case VKI_PR_SET_TIMING:
+      PRE_REG_READ2(int, "prctl", int, option, int, timing);
+      break;
+   case VKI_PR_SET_NAME:
+      PRE_REG_READ2(int, "prctl", int, option, char *, name);
+      PRE_MEM_RASCIIZ("prctl(set-name)", ARG2);
+      break;
+   case VKI_PR_GET_NAME:
+      PRE_REG_READ2(int, "prctl", int, option, char *, name);
+      PRE_MEM_WRITE("prctl(get-name)", ARG2, VKI_TASK_COMM_LEN);
+      break;
+   case VKI_PR_GET_ENDIAN:
+      PRE_REG_READ2(int, "prctl", int, option, int *, value);
+      PRE_MEM_WRITE("prctl(get-endian)", ARG2, sizeof(Int));
+      break;
+   case VKI_PR_SET_ENDIAN:
+      PRE_REG_READ2(int, "prctl", int, option, int, value);
+      break;
+   default:
+      PRE_REG_READ5(long, "prctl",
+                    int, option, unsigned long, arg2, unsigned long, arg3,
+                    unsigned long, arg4, unsigned long, arg5);
+      break;
+   }
+}
+POST(sys_prctl)
+{
+   switch (ARG1) {
+   case VKI_PR_GET_PDEATHSIG:
+      POST_MEM_WRITE(ARG2, sizeof(Int));
+      break;
+   case VKI_PR_GET_UNALIGN:
+      POST_MEM_WRITE(ARG2, sizeof(Int));
+      break;
+   case VKI_PR_GET_FPEMU:
+      POST_MEM_WRITE(ARG2, sizeof(Int));
+      break;
+   case VKI_PR_GET_FPEXC:
+      POST_MEM_WRITE(ARG2, sizeof(Int));
+      break;
+   case VKI_PR_GET_NAME:
+      POST_MEM_WRITE(ARG2, VKI_TASK_COMM_LEN);
+      break;
+   case VKI_PR_GET_ENDIAN:
+      POST_MEM_WRITE(ARG2, sizeof(Int));
+      break;
+   }
 }
 
 PRE(sys_sendfile)

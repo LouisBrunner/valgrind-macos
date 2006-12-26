@@ -4,13 +4,13 @@ libdir=@libdir@
 includedir=@includedir@/valgrind
 arch=@VG_ARCH@
 os=@VG_OS@
-platform=@VG_PLATFORM@
+platform=@VG_PLATFORM_PRI@
 valt_load_address=@VALT_LOAD_ADDRESS@
 
 Name: Valgrind
 Description: A dynamic binary instrumentation framework
 Version: @VERSION@
 Requires:
-Libs: -L${libdir}/valgrind/@VG_PLATFORM@ -lcoregrind -lvex -lgcc
+Libs: -L${libdir}/valgrind/@VG_PLATFORM_PRI@ -lcoregrind -lvex -lgcc
 Cflags: -I${includedir}
 

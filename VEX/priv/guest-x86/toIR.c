@@ -11919,17 +11919,22 @@ DisResult disInstr_X86_WRK (
       /* According to the Intel manual, "repne movs" should never occur, but
        * in practice it has happened, so allow for it here... */
       case 0xA4: sz = 1;   /* REPNE MOVS<sz> */
-        goto decode_failure;
-//--       case 0xA5: 
-        //         dis_REP_op ( CondNZ, dis_MOVS, sz, eip_orig,
-        //                              guest_eip_bbstart+delta, "repne movs" );
-        //         break;
+      case 0xA5: 
+         dis_REP_op ( X86CondNZ, dis_MOVS, sz, eip_orig,
+                                 guest_EIP_bbstart+delta, "repne movs" );
+         break;
 //-- 
 //--       case 0xA6: sz = 1;   /* REPNE CMPS<sz> */
 //--       case 0xA7:
 //--          dis_REP_op ( cb, CondNZ, dis_CMPS, sz, eip_orig, eip, "repne cmps" );
 //--          break;
 //-- 
+      case 0xAA: sz = 1;   /* REPNE STOS<sz> */
+      case 0xAB:
+         dis_REP_op ( X86CondNZ, dis_STOS, sz, eip_orig, 
+                                 guest_EIP_bbstart+delta, "repne stos" );
+         break;
+
       case 0xAE: sz = 1;   /* REPNE SCAS<sz> */
       case 0xAF:
          dis_REP_op ( X86CondNZ, dis_SCAS, sz, eip_orig,

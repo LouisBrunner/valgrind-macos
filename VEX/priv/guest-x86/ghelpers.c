@@ -853,6 +853,16 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                      binop(Iop_CmpLE32S, cc_dep1, cc_dep2));
       }
 
+      if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondNLE)) {
+         /* long sub/cmp, then LE (signed not less than or equal)
+            --> test dst >s src 
+            --> test !(dst <=s src) */
+         return binop(Iop_Xor32,
+                      unop(Iop_1Uto32,
+                           binop(Iop_CmpLE32S, cc_dep1, cc_dep2)),
+                      mkU32(1));
+      }
+
       if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondBE)) {
          /* long sub/cmp, then BE (unsigned less than or equal)
             --> test dst <=u src */

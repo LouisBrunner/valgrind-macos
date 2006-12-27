@@ -71,8 +71,14 @@ struct elfinfo
 static void check_mmap(SysRes res, Addr base, SizeT len)
 {
    if (res.isError) {
-      VG_(printf)("valgrind: mmap(0x%llx, %lld) failed in UME with error %d.\n", 
-                  (ULong)base, (Long)len, res.val);
+      VG_(printf)("valgrind: mmap(0x%llx, %lld) failed in UME "
+                  "with error %d (%s).\n", 
+                  (ULong)base, (Long)len, 
+                  res.val, VG_(strerror)(res.val) );
+      if (res.val == VKI_EINVAL) {
+         VG_(printf)("valgrind: this can be caused by executables with "
+                     "very large text, data or bss segments.\n");
+      }
       VG_(exit)(1);
    }
 }

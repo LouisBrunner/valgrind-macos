@@ -340,6 +340,7 @@ void ppIROp ( IROp op )
       case Iop_ShlN32x2: vex_printf("ShlN32x2"); return;
       case Iop_ShrN16x4: vex_printf("ShrN16x4"); return;
       case Iop_ShrN32x2: vex_printf("ShrN32x2"); return;
+      case Iop_SarN8x8: vex_printf("SarN8x8"); return;
       case Iop_SarN16x4: vex_printf("SarN16x4"); return;
       case Iop_SarN32x2: vex_printf("SarN32x2"); return;
       case Iop_QNarrow16Ux4: vex_printf("QNarrow16Ux4"); return;
@@ -1477,7 +1478,7 @@ void typeOfPrimop ( IROp op,
 
       case Iop_ShlN32x2: case Iop_ShlN16x4:
       case Iop_ShrN32x2: case Iop_ShrN16x4:
-      case Iop_SarN32x2: case Iop_SarN16x4:
+      case Iop_SarN32x2: case Iop_SarN16x4: case Iop_SarN8x8:
          BINARY(Ity_I64,Ity_I8, Ity_I64);
 
       case Iop_Shl8: case Iop_Shr8: case Iop_Sar8:

@@ -681,9 +681,9 @@ typedef
       Iop_CmpGT8Sx8, Iop_CmpGT16Sx4, Iop_CmpGT32Sx2,
 
       /* VECTOR x SCALAR SHIFT (shift amt :: Ity_I8) */
-      Iop_ShlN16x4, Iop_ShlN32x2,
-      Iop_ShrN16x4, Iop_ShrN32x2,
-      Iop_SarN16x4, Iop_SarN32x2,
+                   Iop_ShlN16x4, Iop_ShlN32x2,
+                   Iop_ShrN16x4, Iop_ShrN32x2,
+      Iop_SarN8x8, Iop_SarN16x4, Iop_SarN32x2,
 
       /* NARROWING -- narrow 2xI64 into 1xI64, hi half from left arg */
       Iop_QNarrow16Ux4,

@@ -6902,10 +6902,9 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
       break;
 
    case 0x167: // lvxl (Load Vector Indexed LRU, AV p128)
-     // XXX: lvxl gives explicit control over cache block replacement
       DIP("lvxl v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
+      putVReg( vD_addr, loadBE(Ity_V128, mkexpr(EA_align16)) );
+      break;
 
    default:
       vex_printf("dis_av_load(ppc)(opc2)\n");
@@ -6990,12 +6989,9 @@ static Bool dis_av_store ( UInt theInstr )
       break;
 
    case 0x1E7: // stvxl (Store Vector Indexed LRU, AV p135)
-     // XXX: stvxl can give explicit control over cache block replacement
       DIP("stvxl v%d,r%u,r%u\n", vS_addr, rA_addr, rB_addr);
-      DIP(" => not implemented\n");
-      return False;
-//      STORE(vS, 16, addr_align( mkexpr(EA), 16 ));
-//      break;
+      storeBE( addr_align( mkexpr(EA), 16 ), mkexpr(vS) );
+      break;
 
    default:
       vex_printf("dis_av_store(ppc)(opc2)\n");

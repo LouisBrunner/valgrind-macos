@@ -100,6 +100,24 @@ ULong ppcg_dirtyhelper_MFTB ( void )
 
 
 /* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially transparent) */
+UInt ppc32g_dirtyhelper_MFSPR_268_269 ( UInt r269 )
+{
+#  if defined(__powerpc__) || defined(_AIX)
+   UInt spr;
+   if (r269) {
+      __asm__ __volatile__("mfspr %0,269" : "=b"(spr));
+   } else {
+      __asm__ __volatile__("mfspr %0,268" : "=b"(spr));
+   }
+   return spr;
+#  else
+   return 0;
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest state, writes guest mem) */
 void ppc32g_dirtyhelper_LVS ( VexGuestPPC32State* gst,
                               UInt vD_off, UInt sh, UInt shift_right )

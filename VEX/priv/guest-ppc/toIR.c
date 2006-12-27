@@ -5347,6 +5347,28 @@ static Bool dis_proc_ctl ( VexAbiInfo* vbi, UInt theInstr )
          putIReg( rD_addr, getGST( PPC_GST_SPRG3_RO ) );
          break;
 
+      /* Even a lowly PPC7400 can run the associated helper, so no
+         obvious need for feature testing at this point. */
+      case 268 /* 0x10C */:
+      case 269 /* 0x10D */: {
+         UInt     arg  = SPR==268 ? 0 : 1;
+         IRTemp   val  = newTemp(Ity_I32);
+         IRExpr** args = mkIRExprVec_1( mkU32(arg) );
+         IRDirty* d    = unsafeIRDirty_1_N(
+                            val,
+                            0/*regparms*/,
+                            "ppc32g_dirtyhelper_MFSPR_268_269",
+                            fnptr_to_fnentry
+                               (vbi, &ppc32g_dirtyhelper_MFSPR_268_269),
+                            args
+                         );
+         /* execute the dirty call, dumping the result in val. */
+         stmt( IRStmt_Dirty(d) );
+         putIReg( rD_addr, mkexpr(val) );
+         DIP("mfspr r%u,%u", rD_addr, (UInt)SPR);
+         break;
+      }
+
       default:
          vex_printf("dis_proc_ctl(ppc)(mfspr,SPR)(0x%x)\n", SPR);
          return False;

@@ -12,6 +12,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bug126147-x86.stderr.exp bug126147-x86.stdout.exp bug126147-x86.vgtest \
 	bug132813-x86.stderr.exp bug132813-x86.stdout.exp bug132813-x86.vgtest \
 	bug135421-x86.stderr.exp bug135421-x86.stdout.exp bug135421-x86.vgtest \
+	bug137714-x86.stderr.exp bug137714-x86.stdout.exp bug137714-x86.vgtest \
 	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
 	cmpxchg8b.stderr.exp cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
 	faultstatus.disabled faultstatus.stderr.exp \
@@ -42,6 +43,7 @@ check_PROGRAMS = \
 	bug126147-x86 \
 	bug132813-x86 \
 	bug135421-x86 \
+	bug137714-x86 \
 	cmpxchg8b cpuid \
 	faultstatus fcmovnu fpu_lazy_eflags fxtract \
 	getseg incdec_alt $(INSN_TESTS) \

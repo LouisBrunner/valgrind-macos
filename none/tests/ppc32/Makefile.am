@@ -2,6 +2,8 @@
 noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
+	bug139050-ppc32.stdout.exp bug139050-ppc32.stderr.exp \
+	bug139050-ppc32.vgtest \
 	ldstrev.stderr.exp ldstrev.stdout.exp ldstrev.vgtest \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
@@ -17,6 +19,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	xlc_dbl_u32.stderr.exp xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest
 
 check_PROGRAMS = \
+	bug139050-ppc32 \
 	ldstrev lsw jm-insns mftocrf mcrfs round test_fx test_gx \
 	testVMX twi xlc_dbl_u32
 

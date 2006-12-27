@@ -1,0 +1,2 @@
+prog: bug139050-ppc32
+vgopts: -q

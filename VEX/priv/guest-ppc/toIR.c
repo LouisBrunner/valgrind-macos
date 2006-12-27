@@ -6708,14 +6708,12 @@ static Bool dis_av_datastream ( UInt theInstr )
    case 0x156: // dst (Data Stream Touch, AV p115)
       DIP("dst%s r%u,r%u,%d\n", flag_T ? "t" : "",
                                 rA_addr, rB_addr, STRM);
-      DIP(" => not implemented\n");
-      return False;
+      break;
 
    case 0x176: // dstst (Data Stream Touch for Store, AV p117)
       DIP("dstst%s r%u,r%u,%d\n", flag_T ? "t" : "",
                                   rA_addr, rB_addr, STRM);
-      DIP(" => not implemented\n");
-      return False;
+      break;
 
    case 0x336: // dss (Data Stream Stop, AV p114)
       if (rA_addr != 0 || rB_addr != 0) {
@@ -6724,12 +6722,10 @@ static Bool dis_av_datastream ( UInt theInstr )
       }
       if (flag_A == 0) {
          DIP("dss %d\n", STRM);
-         DIP(" => not implemented\n");
       } else {
          DIP("dssall\n");
-         DIP(" => not implemented\n");
       }
-      return False;
+      break;
 
    default:
       vex_printf("dis_av_datastream(ppc)(opc2)\n");

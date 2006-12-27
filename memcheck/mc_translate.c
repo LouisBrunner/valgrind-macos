@@ -1839,6 +1839,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_ShrN16x4:
       case Iop_ShrN32x2:
+      case Iop_SarN8x8:
       case Iop_SarN16x4:
       case Iop_SarN32x2:
       case Iop_ShlN16x4:

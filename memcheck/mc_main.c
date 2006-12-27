@@ -3566,7 +3566,6 @@ static Bool mc_error_matches_suppression(Error* err, Supp* su)
 
 static Char* mc_get_error_name ( Error* err )
 {
-   Char* s;
    switch (VG_(get_error_kind)(err)) {
    case Err_RegParam:       return "Param";
    case Err_MemParam:       return "Param";
@@ -3603,7 +3602,6 @@ static Char* mc_get_error_name ( Error* err )
    }
    default:                 VG_(tool_panic)("get_error_name: unexpected type");
    }
-   VG_(printf)(s);
 }
 
 static void mc_print_extra_suppression_info ( Error* err )

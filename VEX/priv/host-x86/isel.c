@@ -2223,6 +2223,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             fn = (HWord)h_generic_calc_SarN32x2; goto shifty;
          case Iop_SarN16x4:
             fn = (HWord)h_generic_calc_SarN16x4; goto shifty;
+         case Iop_SarN8x8:
+            fn = (HWord)h_generic_calc_SarN8x8;  goto shifty;
          shifty: {
             /* Note: the following assumes all helpers are of
                signature 

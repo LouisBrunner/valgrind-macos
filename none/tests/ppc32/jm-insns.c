@@ -3051,11 +3051,17 @@ static void test_lvx (void)
     __asm__ __volatile__ ("lvx          17,14,15");
 }
 
+static void test_lvxl (void)
+{
+    __asm__ __volatile__ ("lvxl         17,14,15");
+}
+
 static test_t tests_ald_ops_two[] = {
     { &test_lvebx           , "       lvebx", },
     { &test_lvehx           , "       lvehx", },
     { &test_lvewx           , "       lvewx", },
     { &test_lvx             , "         lvx", },
+    { &test_lvxl            , "        lvxl", },
     { NULL,                   NULL,           },
 };
 #endif /* defined (HAS_ALTIVEC) */
@@ -3081,11 +3087,17 @@ static void test_stvx (void)
     __asm__ __volatile__ ("stvx         14,15,16");
 }
 
+static void test_stvxl (void)
+{
+    __asm__ __volatile__ ("stvxl        14,15,16");
+}
+
 static test_t tests_ast_ops_three[] = {
     { &test_stvebx          , "      stvebx", },
     { &test_stvehx          , "      stvehx", },
     { &test_stvewx          , "      stvewx", },
     { &test_stvx            , "        stvx", },
+    { &test_stvxl           , "       stvxl", },
     { NULL,                   NULL,           },
 };
 #endif /* defined (HAS_ALTIVEC) */

@@ -1474,6 +1474,13 @@ Altivec load insns with two register args:
          lvx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
          lvx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
 
+        lvxl   0, 01020304 05060708 090a0b0c 0e0d0e0f => 01020304 05060708 090a0b0c 0e0d0e0f (00000000)
+        lvxl   7, 01020304 05060708 090a0b0c 0e0d0e0f => 01020304 05060708 090a0b0c 0e0d0e0f (00000000)
+        lvxl  14, 01020304 05060708 090a0b0c 0e0d0e0f => 01020304 05060708 090a0b0c 0e0d0e0f (00000000)
+        lvxl   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
+        lvxl   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
+        lvxl  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
+
 Altivec store insns with three register args:
       stvebx   0, 01020304 05060708 090a0b0c 0e0d0e0f => 01000000 00000000 00000000 00000000 (00000000)
       stvebx   7, 01020304 05060708 090a0b0c 0e0d0e0f => 01000000 00000008 00000000 00000000 (00000000)
@@ -1502,6 +1509,13 @@ Altivec store insns with three register args:
         stvx   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
         stvx   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
         stvx  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
+
+       stvxl   0, 01020304 05060708 090a0b0c 0e0d0e0f => 01020304 05060708 090a0b0c 0e0d0e0f (00000000)
+       stvxl   7, 01020304 05060708 090a0b0c 0e0d0e0f => 01020304 05060708 090a0b0c 0e0d0e0f (00000000)
+       stvxl  14, 01020304 05060708 090a0b0c 0e0d0e0f => 01020304 05060708 090a0b0c 0e0d0e0f (00000000)
+       stvxl   0, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
+       stvxl   7, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
+       stvxl  14, f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff => f1f2f3f4 f5f6f7f8 f9fafbfc fefdfeff (00000000)
 
 Altivec floating point arith insns with three args:
 Altivec floating point arith insns with two args:
@@ -3019,4 +3033,4 @@ Altivec float special insns:
       vctsxs: ffbfffff (          nan), 18 => 00000000 ( 0.000000e+00) (00000000)
       vctsxs: ffbfffff (          nan), 27 => 00000000 ( 0.000000e+00) (00000000)
 
-All done. Tested 161 different instructions
+All done. Tested 163 different instructions

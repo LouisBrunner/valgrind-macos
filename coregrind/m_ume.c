@@ -77,6 +77,10 @@ static void check_mmap(SysRes res, Addr base, SizeT len)
                   "with error %d (%s).\n", 
                   (ULong)base, (Long)len, 
                   res.err, VG_(strerror)(res.err) );
+      if (res.err == VKI_EINVAL) {
+         VG_(printf)("valgrind: this can be caused by executables with "
+                     "very large text, data or bss segments.\n");
+      }
       VG_(exit)(1);
    }
 }

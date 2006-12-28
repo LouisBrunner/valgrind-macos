@@ -564,21 +564,6 @@ void VG_(track_post_thread_create)(void(*f)(ThreadId tid, ThreadId child));
 void VG_(track_post_thread_join)  (void(*f)(ThreadId joiner, ThreadId joinee));
 
 
-/* Mutex events (not exhaustive)
-   "void *mutex" is really a pthread_mutex *
-
-   Called before a thread can block while waiting for a mutex (called
-   regardless of whether the thread will block or not).  */
-void VG_(track_pre_mutex_lock)(void(*f)(ThreadId tid, Addr mutex));
-
-/* Called once the thread actually holds the mutex (always paired with
-   pre_mutex_lock).  */
-void VG_(track_post_mutex_lock)(void(*f)(ThreadId tid, Addr mutex));
-
-/* Called after a thread has released a mutex (no need for a corresponding
-   pre_mutex_unlock, because unlocking can't block).  */
-void VG_(track_post_mutex_unlock)(void(*f)(ThreadId tid, Addr mutex));
-
 /* Signal events (not exhaustive)
 
    ... pre_send_signal, post_send_signal ...

@@ -327,10 +327,6 @@ DEF(track_stop_client_code,      ThreadId, ULong)
 DEF(track_post_thread_create,    ThreadId, ThreadId)
 DEF(track_post_thread_join,      ThreadId, ThreadId)
 
-DEF(track_pre_mutex_lock,        ThreadId, Addr)
-DEF(track_post_mutex_lock,       ThreadId, Addr)
-DEF(track_post_mutex_unlock,     ThreadId, Addr)
-
 DEF(track_pre_deliver_signal,    ThreadId, Int sigNo, Bool)
 DEF(track_post_deliver_signal,   ThreadId, Int sigNo)
 

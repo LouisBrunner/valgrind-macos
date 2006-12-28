@@ -3456,9 +3456,12 @@ static void hg_pre_clo_init(void)
    VG_(track_post_thread_create)  (& hg_thread_create);
    VG_(track_post_thread_join)    (& hg_thread_join);
 
+   /* The core doesn't provide these events any more */
+   /*
    VG_(track_pre_mutex_lock)      (& hg_pre_mutex_lock);
    VG_(track_post_mutex_lock)     (& hg_post_mutex_lock);
    VG_(track_post_mutex_unlock)   (& hg_post_mutex_unlock);
+   */
 
    for (i = 0; i < LOCKSET_HASH_SZ; i++)
       lockset_hash[i] = NULL;

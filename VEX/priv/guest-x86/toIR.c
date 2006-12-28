@@ -7290,6 +7290,21 @@ DisResult disInstr_X86_WRK (
                break;
             }
          }
+         /* don't barf on recent binutils padding 
+            66 2e 0f 1f 84 00 00 00 00 00   nopw %cs:0x0(%eax,%eax,1)
+         */
+         {
+            UChar* code = (UChar*)(guest_code + delta);
+            if (sz == 2 
+                && code[-1] == 0x66
+                && code[0] == 0x2E && code[1] == 0x0F && code[2] == 0x1F 
+                && code[3] == 0x84 && code[4] == 0x00 && code[5] == 0x00
+                && code[6] == 0x00 && code[7] == 0x00 && code[8] == 0x00 ) {
+               DIP("nopw %%cs:0x0(%%eax,%%eax,1)\n");
+               delta += 9;
+               goto decode_success;
+            }
+         }
          unimplemented("x86 segment override (SEG=CS) prefix");
          /*NOTREACHED*/
          break;

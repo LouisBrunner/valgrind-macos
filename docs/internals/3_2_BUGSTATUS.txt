@@ -15,18 +15,24 @@ PRI: 32  = fix this for 3.2.2
 
 TRUNK   32BRANCH  PRI   BUG#   WHAT
 
-pending  pending      129390   ppc?->IR: some kind of VMX prefetch (dstt)
+pending  pending      124478   memcheck reports uninitialized bytes on 
+                               timer_create()
+
+pending  pending      128359   Please suppress the uninitialized bytes
+                               report on getifaddrs() (glibc 2.3.3)
+
+vx1709   vx1710   32  129390   ppc?->IR: some kind of VMX prefetch (dstt)
 
 pending  pending      129968   amd64->IR: 0xF 0xAE 0x0 (fxsave)
                       ==134319
 
-pending  pending  32  133054   'make install' fails with syntax errors
+r6242?   r6438    32  133054   'make install' fails with syntax errors
                       ==118903
 
 pending  wontfix      133154   crash when using client requests to 
                                register/deregister stack
 
-pending  pending  32  132998   startup fails in when running on UML
+pending  pending  32,w 132998  startup fails in when running on UML
                                (/proc/self/map start==end problem)
 
 pending  pending  32  133327   support for voicetronix ioctl (w/patch)
@@ -43,7 +49,7 @@ pending  pending  s93 135023   amd64->IR: 0x49 0xDD 0x86 0xE0
 pending  pending  s93 136529   Unhandled instruction error for legal
                                instruction
 
-pending  pending  32  134207   pkg-config output contains @VG_PLATFORM@
+r6439    r6440    32  134207   pkg-config output contains @VG_PLATFORM@
 
 vx1660   vx1690   32  n-i-bz   %eflags rule for SUBL-CondNLE
 
@@ -84,7 +90,7 @@ vx1679   vx1695   32  135421   x86->IR: unhandled Grp5(R) case 6 [ok]
 vx1675   vx1697   32  n-i-bz   x86 COPY-CondP (Espindola #2, users, Nov 1)
                                (NEEDS VERIFICATION; regtest = espindola2.c)
 
-vx1677   pending      n-i-bz   IR comments
+vx1677   vx1704   32  n-i-bz   IR comments
 
 vx1678   vx1698   32  n-i-bz   jcxz (x86) (users, 8 Nov)
 
@@ -129,15 +135,18 @@ pending  pending  32  136300   support 64K pages on ppc64-linux
 
 r6404/5  r6431    32  n-i-bz   fix ppc insn set tests for gcc >= 4.1
 
-pending  pending  32  137493   x86->IR: recent binutils no-ops
+vx1711   vx1712   32  137493   x86->IR: recent binutils no-ops
 
-pending  pending  32  137714   x86->IR: 0x66 0xF 0xF7 0xC6 (maskmovdqu)
+vx1702/r6441
+         vx1703/r6442
+                  32  137714   x86->IR: 0x66 0xF 0xF7 0xC6 (maskmovdqu)
 
 pending  pending  32  137830   crash upon delivery of SIGALRM (NPTL)
+                               (can't reproduce)
 
 pending  pending      138019   valgrind memcheck crashes with SIGSEGV
 
-pending  pending  32  138424   "failed in UME with error 22"
+r6444    r6445    32  138424   "failed in UME with error 22"
                                 (at least produce a better error msg)
                       == 138856
 
@@ -149,9 +158,13 @@ pending  pending  32  138702   amd64->IR: 0xF0 0xF 0xC0 0x90
 r6411    r6433    32  138896   usb ioctl handling
                       == 136059  
 
-pending  pending  32  139050   ppc32->IR: mftb/mftbu instructions not handled
+vx1705   vx1706   32  139050   ppc32->IR: mfspr 268/269 instructions not handled
 
 pending  pending  32  139076   valgrind VT_GETSTATE error
+
+vx1707/r6447
+         vx1708/r6448
+                  32  n-i-bz   ppc32->IR: lvxl/stvxl
 
 Test/make run cleanly on SuSE 10.2 x86/amd64/ppc32 and FC6 ditto
 Last update was 25 Dec 06

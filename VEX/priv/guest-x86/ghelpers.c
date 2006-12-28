@@ -832,7 +832,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ32, cc_dep1, cc_dep2));
       }
-
       if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondNZ)) {
          /* long sub/cmp, then NZ --> test dst!=src */
          return unop(Iop_1Uto32,
@@ -845,7 +844,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32S, cc_dep1, cc_dep2));
       }
-
       if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondNL)) {
          /* long sub/cmp, then NL (signed greater than or equal) 
             --> test !(dst <s src) */
@@ -861,9 +859,8 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLE32S, cc_dep1, cc_dep2));
       }
-
       if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondNLE)) {
-         /* long sub/cmp, then LE (signed not less than or equal)
+         /* long sub/cmp, then NLE (signed not less than or equal)
             --> test dst >s src 
             --> test !(dst <=s src) */
          return binop(Iop_Xor32,
@@ -878,7 +875,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLE32U, cc_dep1, cc_dep2));
       }
-
       if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondNBE)) {
          /* long sub/cmp, then BE (unsigned greater than)
             --> test !(dst <=u src) */
@@ -894,7 +890,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32U, cc_dep1, cc_dep2));
       }
-
       if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondNB)) {
          /* long sub/cmp, then NB (unsigned greater than or equal)
             --> test !(dst <u src) */
@@ -911,7 +906,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                            binop(Iop_Sub32, cc_dep1, cc_dep2),
                            mkU32(0)));
       }
-
       if (isU32(cc_op, X86G_CC_OP_SUBL) && isU32(cond, X86CondNS)) {
          /* long sub/cmp, then NS (not negative) --> test !(dst-src <s 0) */
          return binop(Iop_Xor32,
@@ -941,7 +935,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                            unop(Iop_32to8,cc_dep1), 
                            unop(Iop_32to8,cc_dep2)));
       }
-
       if (isU32(cc_op, X86G_CC_OP_SUBB) && isU32(cond, X86CondNZ)) {
          /* byte sub/cmp, then NZ --> test dst!=src */
          return unop(Iop_1Uto32,
@@ -981,7 +974,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
          /* long and/or/xor, then Z --> test dst==0 */
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
-
       if (isU32(cc_op, X86G_CC_OP_LOGICL) && isU32(cond, X86CondNZ)) {
          /* long and/or/xor, then NZ --> test dst!=0 */
          return unop(Iop_1Uto32,binop(Iop_CmpNE32, cc_dep1, mkU32(0)));
@@ -1039,17 +1031,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                       binop(Iop_Shr32,cc_dep1,mkU8(15)),
                       mkU32(1));
       }
-      //Probably correct, but no test case for it yet found
-      //if (isU32(cc_op, X86G_CC_OP_LOGICW) && isU32(cond, X86CondNS)) {
-      //   /* see comment below for (LOGICB, CondNS) */
-      //   /* word and/or/xor, then S --> (UInt) ~ result[15] */
-      //   vassert(0+0);
-      //   return binop(Iop_Xor32,
-      //          binop(Iop_And32,
-      //                binop(Iop_Shr32,cc_dep1,mkU8(15)),
-      //                mkU32(1)),
-      //          mkU32(1));
-      //}
 
       /*---------------- LOGICB ----------------*/
 
@@ -1059,7 +1040,6 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
                      binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(255)), 
                                         mkU32(0)));
       }
-
       if (isU32(cc_op, X86G_CC_OP_LOGICB) && isU32(cond, X86CondNZ)) {
          /* byte and/or/xor, then Z --> test dst!=0 */
          /* b9ac9:       84 c0                   test   %al,%al
@@ -1137,10 +1117,10 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
 
       if (isU32(cc_op, X86G_CC_OP_COPY) && 
           (isU32(cond, X86CondBE) || isU32(cond, X86CondNBE))) {
-         /* COPY, then BE --> extract C and Z from dep1, and test (C
-            or Z == 1). */
-         /* COPY, then NBE --> extract C and Z from dep1, and test (C
-            or Z == 0). */
+         /* COPY, then BE --> extract C and Z from dep1, and test 
+            (C or Z) == 1. */
+         /* COPY, then NBE --> extract C and Z from dep1, and test
+            (C or Z) == 0. */
          UInt nnn = isU32(cond, X86CondBE) ? 1 : 0;
          return
             unop(
@@ -1201,19 +1181,22 @@ IRExpr* guest_x86_spechelper ( HChar* function_name,
             );
       }
 
-      if (isU32(cc_op, X86G_CC_OP_COPY) && isU32(cond, X86CondP)) {
+      if (isU32(cc_op, X86G_CC_OP_COPY) 
+          && (isU32(cond, X86CondP) || isU32(cond, X86CondNP))) {
          /* COPY, then P --> extract P from dep1, and test (P == 1). */
+         /* COPY, then NP --> extract P from dep1, and test (P == 0). */
+         UInt nnn = isU32(cond, X86CondP) ? 1 : 0;
          return
             unop(
                Iop_1Uto32,
                binop(
-                  Iop_CmpNE32,
+                  Iop_CmpEQ32,
                   binop(
                      Iop_And32,
                      binop(Iop_Shr32, cc_dep1, mkU8(X86G_CC_SHIFT_P)),
                      mkU32(1)
                   ),
-                  mkU32(0)
+                  mkU32(nnn)
                )
             );
       }

@@ -1572,7 +1572,7 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_PPC_SECTOFF_HI	35
 #define R_PPC_SECTOFF_HA	36
 /* Keep this the last entry.  */
-#define R_PPC_NUM		37
+#define R_PPC_NUMm		37
 
 /* The remaining relocs are from the Embedded ELF ABI, and are not
    in the SVR4 ELF ABI.  */

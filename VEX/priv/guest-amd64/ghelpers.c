@@ -1044,25 +1044,6 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                       mkU64(1));
       }
 
-//      if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondNZ)) {
-//         /* byte sub/cmp, then NZ --> test dst!=src */
-//         return unop(Iop_32Uto64,
-//                unop(Iop_1Uto32,
-//                     binop(Iop_CmpNE8, 
-//                           unop(Iop_32to8,unop(Iop_64to32,cc_dep1)),
-//                           unop(Iop_32to8,unop(Iop_64to32,cc_dep2)))));
-//      }
-
-//..       if (isU32(cc_op, AMD64G_CC_OP_SUBB) && isU32(cond, X86CondNBE)) {
-//..          /* long sub/cmp, then NBE (unsigned greater than)
-//..             --> test src <u dst */
-//..          /* Note, args are opposite way round from the usual */
-//..          return unop(Iop_1Uto32,
-//..                      binop(Iop_CmpLT32U, 
-//..                            binop(Iop_And32,cc_dep2,mkU32(0xFF)),
-//.. 			   binop(Iop_And32,cc_dep1,mkU32(0xFF))));
-//..       }
-
       /*---------------- LOGICQ ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICQ) && isU64(cond, AMD64CondZ)) {
@@ -1102,11 +1083,6 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            mkU64(0)));
       }
 
-//..       if (isU32(cc_op, AMD64G_CC_OP_LOGICL) && isU32(cond, X86CondS)) {
-//..          /* long and/or/xor, then S --> test dst <s 0 */
-//..          return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dep1, mkU32(0)));
-//..       }
-
       if (isU64(cc_op, AMD64G_CC_OP_LOGICL) && isU64(cond, AMD64CondLE)) {
          /* long and/or/xor, then LE
             This is pretty subtle.  LOGIC sets SF and ZF according to the
@@ -1119,24 +1095,6 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            binop(Iop_Shl64,cc_dep1,mkU8(32)), 
                            mkU64(0)));
       }
-
-//..       if (isU32(cc_op, AMD64G_CC_OP_LOGICL) && isU32(cond, X86CondBE)) {
-//..          /* long and/or/xor, then BE
-//..             LOGIC sets ZF according to the result and makes CF be zero.
-//..             BE computes (CF | ZF), but CF is zero, so this reduces ZF 
-//..             -- which will be 1 iff the result is zero.  Hence ...
-//..          */
-//..          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
-//..       }
-//.. 
-//..       /*---------------- LOGICW ----------------*/
-//.. 
-//..       if (isU32(cc_op, AMD64G_CC_OP_LOGICW) && isU32(cond, X86CondZ)) {
-//..          /* byte and/or/xor, then Z --> test dst==0 */
-//..          return unop(Iop_1Uto32,
-//..                      binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(0xFFFF)), 
-//..                                         mkU32(0)));
-//..       }
 
       /*---------------- LOGICB ----------------*/
 
@@ -1170,6 +1128,16 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            mkU64(0)));
       }
 
+      /*---------------- INCW ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_INCW) && isU64(cond, AMD64CondZ)) {
+         /* 16-bit inc, then Z --> test dst == 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64, 
+                           binop(Iop_Shl64,cc_dep1,mkU8(48)), 
+                           mkU64(0)));
+      }
+
       /*---------------- DECL ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_DECL) && isU64(cond, AMD64CondZ)) {
@@ -1189,25 +1157,6 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                            binop(Iop_Shl64,cc_dep1,mkU8(48)), 
                            mkU64(0)));
       }
-
-//..       /*---------------- DECL ----------------*/
-//.. 
-//..       if (isU32(cc_op, AMD64G_CC_OP_DECL) && isU32(cond, X86CondZ)) {
-//..          /* dec L, then Z --> test dst == 0 */
-//..          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
-//..       }
-//.. 
-//..       if (isU32(cc_op, AMD64G_CC_OP_DECL) && isU32(cond, X86CondS)) {
-//..          /* dec L, then S --> compare DST <s 0 */
-//..          return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dep1, mkU32(0)));
-//..       }
-//.. 
-//..       /*---------------- SHRL ----------------*/
-//.. 
-//..       if (isU32(cc_op, AMD64G_CC_OP_SHRL) && isU32(cond, X86CondZ)) {
-//..          /* SHRL, then Z --> test dep1 == 0 */
-//..          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
-//..       }
 
       /*---------------- COPY ----------------*/
       /* This can happen, as a result of amd64 FP compares: "comisd ... ;
@@ -1340,47 +1289,15 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
          /* If the thunk is dec or inc, the cflag is supplied as CC_NDEP. */
          return cc_ndep;
       }
-//..       if (isU64(cc_op, AMD64G_CC_OP_COPY)) {
-//..          /* cflag after COPY is stored in DEP1. */
-//..          return
-//..             binop(
-//..                Iop_And64,
-//..                binop(Iop_Shr64, cc_dep1, mkU8(AMD64G_CC_SHIFT_C)),
-//..                mkU64(1)
-//..             );
-//..       }
-//.. #     if 0
-//..       if (cc_op->tag == Iex_Const) {
-//..          vex_printf("CFLAG "); ppIRExpr(cc_op); vex_printf("\n");
-//..       }
-//.. #     endif
+
+#     if 0
+      if (cc_op->tag == Iex_Const) {
+         vex_printf("CFLAG "); ppIRExpr(cc_op); vex_printf("\n");
+      }
+#     endif
 
       return NULL;
    }
-
-//..    /* --------- specialising "x86g_calculate_rflags_all" --------- */
-//.. 
-//..    if (vex_streq(function_name, "x86g_calculate_rflags_all")) {
-//..       /* specialise calls to above "calculate_rflags_all" function */
-//..       IRExpr *cc_op, *cc_dep1, *cc_dep2, *cc_ndep;
-//..       vassert(arity == 4);
-//..       cc_op   = args[0];
-//..       cc_dep1 = args[1];
-//..       cc_dep2 = args[2];
-//..       cc_ndep = args[3];
-//.. 
-//..       if (isU32(cc_op, AMD64G_CC_OP_COPY)) {
-//..          /* eflags after COPY are stored in DEP1. */
-//..          return
-//..             binop(
-//..                Iop_And32,
-//..                cc_dep1,
-//..                mkU32(AMD64G_CC_MASK_O | AMD64G_CC_MASK_S | AMD64G_CC_MASK_Z 
-//..                      | AMD64G_CC_MASK_A | AMD64G_CC_MASK_C | AMD64G_CC_MASK_P)
-//..             );
-//..       }
-//..       return NULL;
-//..   }
 
 #  undef unop
 #  undef binop

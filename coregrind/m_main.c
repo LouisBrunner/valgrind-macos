@@ -1672,6 +1672,11 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
          LibVEX_ppVexArch   ( vex_arch ),
          LibVEX_ppVexHwCaps ( vex_arch, vex_archinfo.hwcaps )
       );
+      VG_(message)(
+         Vg_DebugMsg, 
+         "Page sizes: currently %d, max supported %d\n", 
+         (Int)VKI_PAGE_SIZE, (Int)VKI_MAX_PAGE_SIZE
+      );
       VG_(message)(Vg_DebugMsg, "Valgrind library directory: %s", VG_(libdir));
    }
 }
@@ -2033,6 +2038,9 @@ Int main(Int argc, HChar **argv, HChar **envp)
    //   p: logging, plausible-stack
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Starting the address space manager\n");
+   vg_assert(VKI_PAGE_SIZE     == 4096 || VKI_PAGE_SIZE     == 65536);
+   vg_assert(VKI_MAX_PAGE_SIZE == 4096 || VKI_MAX_PAGE_SIZE == 65536);
+   vg_assert(VKI_PAGE_SIZE <= VKI_MAX_PAGE_SIZE);
    clstack_top = VG_(am_startup)( sp_at_startup );
    VG_(debugLog)(1, "main", "Address space manager is running\n");
 
@@ -2956,6 +2964,11 @@ asm("\n"
 #error "_start: needs implementation on this platform"
 #endif
 
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+unsigned long VKI_PAGE_SHIFT = 12;
+unsigned long VKI_PAGE_SIZE  = (1UL << 12);
+#endif
+
 /* Avoid compiler warnings: this fn _is_ used, but labelling it
    'static' causes gcc to complain it isn't. */
 void _start_in_C ( UWord* pArgc );
@@ -2966,6 +2979,24 @@ void _start_in_C ( UWord* pArgc )
    HChar** argv = (HChar**)&pArgc[1];
    HChar** envp = (HChar**)&pArgc[1+argc+1];
    sp_at_startup = (Addr)pArgc;
+
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+   {
+      UWord *sp = &pArgc[1+argc+1];
+      /* ppc/ppc64 can be configured with different page sizes.
+         Determine this early.  */
+      while (*sp++ != 0);
+      for (; *sp != AT_NULL && *sp != AT_PAGESZ; sp += 2);
+      if (*sp == AT_PAGESZ) {
+	 VKI_PAGE_SIZE = sp[1];
+	 for (VKI_PAGE_SHIFT = 12;
+	      VKI_PAGE_SHIFT <= VKI_MAX_PAGE_SHIFT; VKI_PAGE_SHIFT++)
+	    if (VKI_PAGE_SIZE == (1UL << VKI_PAGE_SHIFT))
+	       break;
+      }
+   }
+#  endif
+
    r = main( (Int)argc, argv, envp );
    VG_(exit)(r);
 }

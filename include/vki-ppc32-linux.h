@@ -61,9 +61,11 @@ typedef struct {
 // From linux-2.6.9/include/asm-ppc/page.h
 //----------------------------------------------------------------------
 
-/* PAGE_SHIFT determines the page size */
-#define VKI_PAGE_SHIFT	12
-#define VKI_PAGE_SIZE	(1UL << VKI_PAGE_SHIFT)
+/* PAGE_SHIFT determines the page size, unfortunately
+   page size might vary between 32-bit and 64-bit ppc kernels */
+extern unsigned long VKI_PAGE_SHIFT, VKI_PAGE_SIZE;
+#define VKI_MAX_PAGE_SHIFT	16
+#define VKI_MAX_PAGE_SIZE	(1UL << VKI_PAGE_SHIFT)
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-ppc/signal.h

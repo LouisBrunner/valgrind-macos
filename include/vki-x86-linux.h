@@ -60,6 +60,8 @@ typedef unsigned int vki_u32;
 /* PAGE_SHIFT determines the page size */
 #define VKI_PAGE_SHIFT	12
 #define VKI_PAGE_SIZE	(1UL << VKI_PAGE_SHIFT)
+#define VKI_MAX_PAGE_SHIFT	VKI_PAGE_SHIFT
+#define VKI_MAX_PAGE_SIZE	VKI_PAGE_SIZE
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/signal.h

@@ -701,7 +701,7 @@ PRE(sys_mmap)
 //zz    SysRes r;
 //zz 
 //zz    // Exactly like old_mmap() except:
-//zz    //  - the file offset is specified in pagesize units rather than bytes,
+//zz    //  - the file offset is specified in 4K units rather than bytes,
 //zz    //    so that it can be used for files bigger than 2^32 bytes.
 //zz    PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
 //zz          ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
@@ -711,7 +711,7 @@ PRE(sys_mmap)
 //zz                  unsigned long, fd,    unsigned long, offset);
 //zz 
 //zz    r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
-//zz                                        VKI_PAGE_SIZE * (Off64T)ARG6 );
+//zz                                        4096 * (Off64T)ARG6 );
 //zz    SET_STATUS_from_SysRes(r);
 //zz }
 //zz 

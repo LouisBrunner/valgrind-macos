@@ -337,7 +337,11 @@ MEMALIGN(m_libc_dot_so_star, memalign);
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( SizeT size ); \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( SizeT size )  \
    { \
-      return VG_REPLACE_FUNCTION_ZU(libcZdsoZa,memalign)(VKI_PAGE_SIZE, size); \
+      static int pszB = 0; \
+      extern int getpagesize (void); \
+      if (pszB == 0) \
+         pszB = getpagesize(); \
+      return VG_REPLACE_FUNCTION_ZU(libcZdsoZa,memalign)((SizeT)pszB, size); \
    }
 
 VALLOC(m_libc_dot_so_star, valloc);

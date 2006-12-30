@@ -2041,6 +2041,8 @@ Int main(Int argc, HChar **argv, HChar **envp)
    vg_assert(VKI_PAGE_SIZE     == 4096 || VKI_PAGE_SIZE     == 65536);
    vg_assert(VKI_MAX_PAGE_SIZE == 4096 || VKI_MAX_PAGE_SIZE == 65536);
    vg_assert(VKI_PAGE_SIZE <= VKI_MAX_PAGE_SIZE);
+   vg_assert(VKI_PAGE_SIZE     == (1 << VKI_PAGE_SHIFT));
+   vg_assert(VKI_MAX_PAGE_SIZE == (1 << VKI_MAX_PAGE_SHIFT));
    clstack_top = VG_(am_startup)( sp_at_startup );
    VG_(debugLog)(1, "main", "Address space manager is running\n");
 
@@ -2988,11 +2990,11 @@ void _start_in_C ( UWord* pArgc )
       while (*sp++ != 0);
       for (; *sp != AT_NULL && *sp != AT_PAGESZ; sp += 2);
       if (*sp == AT_PAGESZ) {
-	 VKI_PAGE_SIZE = sp[1];
-	 for (VKI_PAGE_SHIFT = 12;
-	      VKI_PAGE_SHIFT <= VKI_MAX_PAGE_SHIFT; VKI_PAGE_SHIFT++)
-	    if (VKI_PAGE_SIZE == (1UL << VKI_PAGE_SHIFT))
-	       break;
+         VKI_PAGE_SIZE = sp[1];
+         for (VKI_PAGE_SHIFT = 12;
+              VKI_PAGE_SHIFT <= VKI_MAX_PAGE_SHIFT; VKI_PAGE_SHIFT++)
+            if (VKI_PAGE_SIZE == (1UL << VKI_PAGE_SHIFT))
+         break;
       }
    }
 #  endif

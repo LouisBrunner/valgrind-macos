@@ -368,8 +368,13 @@ extern Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 // stacks.  The address space manager provides and suitably
 // protects such stacks.
 
-#define VG_STACK_GUARD_SZB  8192   // 2 pages
-#define VG_STACK_ACTIVE_SZB 65536  // 16 pages
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+# define VG_STACK_GUARD_SZB  65536  // 1 or 16 pages
+# define VG_STACK_ACTIVE_SZB 131072 // 2 or 32 pages
+#else
+# define VG_STACK_GUARD_SZB  8192   // 2 pages
+# define VG_STACK_ACTIVE_SZB 65536  // 16 pages
+#endif
 
 typedef
    struct {

@@ -45,7 +45,7 @@
    ------------------------------------------------------------------ */
 
 #include "pub_core_basics.h"
-#include "pub_core_vki.h"           // VKI_EINVAL, VKI_ENOMEM, VKI_PAGE_SIZE
+#include "pub_core_vki.h"           // VKI_EINVAL, VKI_ENOMEM
 #include "pub_core_clreq.h"         // for VALGRIND_INTERNAL_PRINTF,
                                     //   VALGRIND_NON_SIMD_CALL[12]
 #include "pub_core_debuginfo.h"     // needed for pub_core_redir.h :(
@@ -455,7 +455,12 @@ MEMALIGN(m_libc_soname, memalign);
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( SizeT size ); \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( SizeT size )  \
    { \
-      return VG_REPLACE_FUNCTION_ZU(m_libc_soname,memalign)(VKI_PAGE_SIZE, size); \
+      static int pszB = 0; \
+      extern int getpagesize (void); \
+      if (pszB == 0) \
+         pszB = getpagesize(); \
+      return VG_REPLACE_FUNCTION_ZU(m_libc_soname,memalign) \
+                ((SizeT)pszB, size); \
    }
 
 VALLOC(m_libc_soname, valloc);

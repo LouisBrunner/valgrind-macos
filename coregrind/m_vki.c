@@ -35,7 +35,16 @@
 /* We have pub_{core,tool}_vki.h.  This is the matching implementation
    for that interface.  In fact there is no implementation, as the
    sole purpose of the module is to export types and constants
-   describing the kernel interface, so this file is empty. */
+   describing the kernel interface, so this file is nearly empty. */
+
+
+/* ppc32/64-linux determines page size at startup, hence m_vki is
+   the logical place to store that info. */
+
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+unsigned long VKI_PAGE_SHIFT = 12;
+unsigned long VKI_PAGE_SIZE  = 1UL << 12;
+#endif
 
 
 /*--------------------------------------------------------------------*/

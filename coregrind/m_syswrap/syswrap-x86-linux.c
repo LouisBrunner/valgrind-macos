@@ -1300,6 +1300,9 @@ PRE(sys_mmap2)
    //  - all 6 args are passed in regs, rather than in a memory-block.
    //  - the file offset is specified in pagesize units rather than bytes,
    //    so that it can be used for files bigger than 2^32 bytes.
+   // pagesize or 4K-size units in offset?  For ppc32/64-linux, this is
+   // 4K-sized.  Assert that the page size is 4K here for safety.
+   vg_assert(VKI_PAGE_SIZE == 4096);
    PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
          ARG1, (ULong)ARG2, ARG3, ARG4, ARG5, ARG6 );
    PRE_REG_READ6(long, "mmap2",
@@ -1308,7 +1311,7 @@ PRE(sys_mmap2)
                  unsigned long, fd,    unsigned long, offset);
 
    r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
-                                       VKI_PAGE_SIZE * (Off64T)ARG6 );
+                                       4096 * (Off64T)ARG6 );
    SET_STATUS_from_SysRes(r);
 }
 

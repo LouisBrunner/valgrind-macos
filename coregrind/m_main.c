@@ -895,6 +895,11 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
          LibVEX_ppVexArch   ( vex_arch ),
          LibVEX_ppVexHwCaps ( vex_arch, vex_archinfo.hwcaps )
       );
+      VG_(message)(
+         Vg_DebugMsg, 
+         "Page sizes: currently %d, max supported %d\n", 
+         (Int)VKI_PAGE_SIZE, (Int)VKI_MAX_PAGE_SIZE
+      );
       VG_(message)(Vg_DebugMsg, "Valgrind library directory: %s", VG_(libdir));
    }
 }
@@ -1256,6 +1261,11 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //   p: logging, plausible-stack
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Starting the address space manager\n");
+   vg_assert(VKI_PAGE_SIZE     == 4096 || VKI_PAGE_SIZE     == 65536);
+   vg_assert(VKI_MAX_PAGE_SIZE == 4096 || VKI_MAX_PAGE_SIZE == 65536);
+   vg_assert(VKI_PAGE_SIZE <= VKI_MAX_PAGE_SIZE);
+   vg_assert(VKI_PAGE_SIZE     == (1 << VKI_PAGE_SHIFT));
+   vg_assert(VKI_MAX_PAGE_SIZE == (1 << VKI_MAX_PAGE_SHIFT));
    the_iicii.clstack_top = VG_(am_startup)( the_iicii.sp_at_startup );
    VG_(debugLog)(1, "main", "Address space manager is running\n");
 
@@ -2249,6 +2259,13 @@ asm("\n"
 #error "_start: needs implementation on this platform"
 #endif
 
+/* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
+#define _GNU_SOURCE
+#define _FILE_OFFSET_BITS 64
+/* This is in order to get AT_NULL and AT_PAGESIZE. */
+#include <elf.h>
+/* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
+
 /* Avoid compiler warnings: this fn _is_ used, but labelling it
    'static' causes gcc to complain it isn't. */
 void _start_in_C_linux ( UWord* pArgc );
@@ -2263,6 +2280,25 @@ void _start_in_C_linux ( UWord* pArgc )
    VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
 
    the_iicii.sp_at_startup = (Addr)pArgc;
+
+#  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+   {
+      /* ppc/ppc64 can be configured with different page sizes.
+         Determine this early.  This is an ugly hack and really should
+         be moved into valgrind_main. */
+      UWord *sp = &pArgc[1+argc+1];
+      while (*sp++ != 0)
+         ;
+      for (; *sp != AT_NULL && *sp != AT_PAGESZ; sp += 2);
+      if (*sp == AT_PAGESZ) {
+         VKI_PAGE_SIZE = sp[1];
+         for (VKI_PAGE_SHIFT = 12;
+              VKI_PAGE_SHIFT <= VKI_MAX_PAGE_SHIFT; VKI_PAGE_SHIFT++)
+            if (VKI_PAGE_SIZE == (1UL << VKI_PAGE_SHIFT))
+         break;
+      }
+   }
+#  endif
 
    r = valgrind_main( (Int)argc, argv, envp );
    /* NOTREACHED */

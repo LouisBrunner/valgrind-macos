@@ -897,7 +897,7 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       );
       VG_(message)(
          Vg_DebugMsg, 
-         "Page sizes: currently %d, max supported %d\n", 
+         "Page sizes: currently %d, max supported %d", 
          (Int)VKI_PAGE_SIZE, (Int)VKI_MAX_PAGE_SIZE
       );
       VG_(message)(Vg_DebugMsg, "Valgrind library directory: %s", VG_(libdir));

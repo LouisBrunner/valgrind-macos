@@ -562,6 +562,42 @@ GLIBC232_RAWMEMCHR(m_libc_so_star, rawmemchr)
 GLIBC25___STRCPY_CHK(m_libc_so_star, __strcpy_chk)
 
 
+/* mempcpy */
+#define GLIBC25_MEMPCPY(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            ( void *dst, const void *src, SizeT len ); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            ( void *dst, const void *src, SizeT len ) \
+   { \
+      register char *d; \
+      register char *s; \
+      SizeT len_saved = len; \
+      \
+      if (len == 0) \
+         return dst; \
+      \
+      if (is_overlap(dst, src, len, len)) \
+         complain3("mempcpy", dst, src, len); \
+      \
+      if ( dst > src ) { \
+         d = (char *)dst + len - 1; \
+         s = (char *)src + len - 1; \
+         while ( len-- ) { \
+            *d-- = *s--; \
+         } \
+      } else if ( dst < src ) { \
+         d = (char *)dst; \
+         s = (char *)src; \
+         while ( len-- ) { \
+            *d++ = *s++; \
+         } \
+      } \
+      return (void*)( ((char*)dst) + len_saved ); \
+   }
+
+GLIBC25_MEMPCPY(m_libc_so_star, mempcpy)
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

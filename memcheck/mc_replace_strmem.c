@@ -532,6 +532,32 @@ GLIBC232_STRCHRNUL(m_libc_soname, strchrnul)
 GLIBC232_RAWMEMCHR(m_libc_soname, rawmemchr)
 
 
+/* glibc variant of strcpy that checks the dest is big enough. */
+#define GLIBC25___STRCPY_CHK(soname,fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+                               (char* dst, const char* src, SizeT len); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+                               (char* dst, const char* src, SizeT len) \
+   { \
+      extern void _exit(int status); \
+      char* ret = dst; \
+      if (! len) \
+         goto badness; \
+      while ((*dst++ = *src++) != '\0') \
+         if (--len == 0) \
+            goto badness; \
+      return ret; \
+     badness: \
+      VALGRIND_PRINTF_BACKTRACE( \
+         "***buffer overflow detected ***: program terminated"); \
+     _exit(127); \
+     /*NOTREACHED*/ \
+     return NULL; \
+   }
+
+GLIBC25___STRCPY_CHK(m_libc_soname, __strcpy_chk)
+
+
 /*------------------------------------------------------------*/
 /*--- AIX stuff only after this point                      ---*/
 /*------------------------------------------------------------*/

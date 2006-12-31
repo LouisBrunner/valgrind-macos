@@ -212,6 +212,12 @@
    obj:/usr/X11*/lib*/libXft.so*
    obj:/usr/X11*/lib*/libXft.so*
 }
+{
+   XftFontOpenInfo-umod-127-strangeness-a-la-xorg
+   Memcheck:Value8
+   obj:/usr/lib*/libXft.so*
+   obj:/usr/lib*/libXft.so*
+}
 
 {
    More X padding stuff

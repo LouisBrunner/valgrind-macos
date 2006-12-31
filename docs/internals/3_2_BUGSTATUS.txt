@@ -87,8 +87,7 @@ vx1676   vx1694/6 32  136650   amd64->IR: 0xC2 0x8 0x0
 
 vx1679   vx1695   32  135421   x86->IR: unhandled Grp5(R) case 6 [ok]
 
-vx1675   vx1697   32  n-i-bz   x86 COPY-CondP (Espindola #2, users, Nov 1)
-                               (NEEDS VERIFICATION; regtest = espindola2.c)
+vx1675   vx1697   32  n-i-bz   x86 COPY-CondP (Espindola #2, dev, Nov 1)
 
 vx1677   vx1704   32  n-i-bz   IR comments
 
@@ -130,7 +129,9 @@ vx1670/1 vx1699   32  n-i-bz   ppc64 fe rld/rlw improvements
 
 vx1669   vx1700   32  n-i-bz   ppc64 be imm64 improvement (hdefs.c only)
 
-pending  pending  32  136300   support 64K pages on ppc64-linux
+r6459/61
+         r6457/8/60
+                  32  136300   support 64K pages on ppc64-linux
                       == 139124
 
 r6404/5  r6431    32  n-i-bz   fix ppc insn set tests for gcc >= 4.1
@@ -168,6 +169,8 @@ vx1707/r6447
 
 Test/make run cleanly on SuSE 10.2 x86/amd64/ppc32 and FC6 ditto
 Last update was 25 Dec 06
+
+r6462/3  r6464/5  32  n-i-bz   glibc-2.5 support
 
 
 ------- Bugs reported and fixed in 3.2.0 ------

@@ -1,4 +1,4 @@
-
+#include <unistd.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -13,15 +13,15 @@
    Hence this test has two expected outcomes:
    - on ppc64-linux, a stack overflow is caught, and V aborts.
    - on everything else, it runs successfully to completion.
+   Note, pre() and post() used so as to avoid printf, which messes
+   up the call stacks on ppc64-linux due to intercept of mempcpy.
 */
-
 typedef 
    struct _Lard {
       struct _Lard* next; 
       char stuff[999]; 
    }
    Lard;
-
 Lard* lard = NULL;
 static int ctr = 0;
 
@@ -35,8 +35,8 @@ void addMoreLard ( void )
       lard = p;
    }
 }
-
-
+static void post ( char* s, int n, int r );
+static void pre ( char* s, int n );
 static int fact1 ( int n );
 static int fact2 ( int n );
 
@@ -61,11 +61,11 @@ int I_WRAP_SONAME_FNNAME_ZU(NONE,fact1) ( int n )
    int    r;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   printf("in wrapper1-pre:  fact(%d)\n", n); fflush(stdout);
+   pre("wrapper1", n);
    addMoreLard();
    CALL_FN_W_W(r, fn, n);
    addMoreLard();
-   printf("in wrapper1-post: fact(%d) = %d\n", n, r); fflush(stdout);
+   post("wrapper1", n, r);
    if (n >= 3) r += fact2(2);
    return r;
 }
@@ -75,11 +75,11 @@ int I_WRAP_SONAME_FNNAME_ZU(NONE,fact2) ( int n )
    int    r;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   printf("in wrapper2-pre:  fact(%d)\n", n); fflush(stdout);
+   pre("wrapper2", n);
    addMoreLard();
    CALL_FN_W_W(r, fn, n);
    addMoreLard();
-   printf("in wrapper2-post: fact(%d) = %d\n", n, r); fflush(stdout);
+   post("wrapper2", n, r);
    return r;
 }
 
@@ -100,4 +100,41 @@ int main ( void )
    }
 
    return 0;
+}
+
+static void send ( char* s )
+{
+  while (*s) {
+    write(1, s, 1);
+    s++;
+  }
+}
+
+static void pre ( char* s, int n )
+{
+  char buf[50];
+  fflush(stdout);
+  sprintf(buf,"%d", n);
+  send("in ");
+  send(s);
+  send("-pre:  fact(");
+  send(buf);
+  send(")\n");
+  fflush(stdout);
+}
+
+static void post ( char* s, int n, int r )
+{
+  char buf[50];
+  fflush(stdout);
+  sprintf(buf,"%d", n);
+  send("in ");
+  send(s);
+  send("-post: fact(");
+  send(buf);
+  send(") = ");
+  sprintf(buf,"%d", r);
+  send(buf);
+  send("\n");
+  fflush(stdout);
 }

@@ -64,10 +64,10 @@ PUB_INCLUDES = -Ipub
 PRIV_INCLUDES = -Ipriv
 
 
-ifndef $(CC)
+ifndef CC
    CC = gcc 
 endif 
-ifndef $(AR)
+ifndef AR
    AR = ar 
 endif
 

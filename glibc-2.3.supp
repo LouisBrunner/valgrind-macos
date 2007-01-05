@@ -564,3 +564,18 @@
    obj:/lib/ld-2.3.*.so
 }
 
+##----------------------------------------------------------------------##
+# MontaVista Linux 4.0.1 on ppc32
+{
+    MVL-401-linuxthreads-pthread_create
+    Memcheck:Param
+    write(buf)
+    fun:pthread_create
+}
+{
+   MVL-401-linuxthreads-pthread_create
+   Memcheck:Param
+   write(buf)
+   obj:/lib/libpthread-0.10.so
+   fun:pthread_create
+}

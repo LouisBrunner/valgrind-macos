@@ -83,12 +83,14 @@
 #include "mpi.h"
 
 /* Where are API symbols?
-   Open MPI  lib/libmpi.so,  soname = libmpi.so.0
-   ditto Quadrics MPI
+   Open MPI      lib/libmpi.so,   soname = libmpi.so.0
+   Quadrics MPI  lib/libmpi.so,   soname = libmpi.so.0
+   MPICH         libmpich.so.1.0, soname = libmpich.so.1.0
+
+   So a suitable soname to match with is "libmpi*.so*".
 */
 /* ifdef OpenMPI ... */
-#define I_WRAP_FNNAME_U(_name) I_WRAP_SONAME_FNNAME_ZU(libmpiZdsoZa,_name)
-
+#define I_WRAP_FNNAME_U(_name) I_WRAP_SONAME_FNNAME_ZU(libmpiZaZdsoZa,_name)
 
 
 /*------------------------------------------------------------*/
@@ -508,7 +510,7 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    MPI_Datatype* dtys  = NULL;
 
    if (0)
-      printf("walk_type %p\n", (void*)ty);
+      printf("walk_type %p\n", (void*)(unsigned long)ty);
 
    r = PMPI_Type_get_envelope( ty, &n_ints, &n_addrs, &n_dtys, &tycon );
    assert(r == MPI_SUCCESS);

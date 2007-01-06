@@ -267,7 +267,7 @@ m_syswrap/syscall-ppc64-linux.S:	 libvex_guest_offsets.h
 m_syswrap/syswrap-main.c: 		 libvex_guest_offsets.h
 
 libvex_guest_offsets.h:
-	$(MAKE) -C @VEX_DIR@ pub/libvex_guest_offsets.h
+	$(MAKE) -C @VEX_DIR@ CC="$(CC)" AR="$(AR)" pub/libvex_guest_offsets.h
 
 VGPRELOAD_CORE_SOURCES_COMMON = vg_preloaded.c
 

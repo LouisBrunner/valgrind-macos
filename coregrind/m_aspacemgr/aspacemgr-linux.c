@@ -3150,9 +3150,10 @@ static void parse_procselfmaps (
       if (record_gap && gapStart < start)
          (*record_gap) ( gapStart, start-gapStart );
 
-      (*record_mapping) ( start, endPlusOne-start, 
-                          prot, dev, ino,
-                          foffset, filename );
+      if (record_mapping && start < endPlusOne)
+         (*record_mapping) ( start, endPlusOne-start,
+                             prot, dev, ino,
+                             foffset, filename );
 
       if ('\0' != tmp) {
          filename[i_eol - i] = tmp;

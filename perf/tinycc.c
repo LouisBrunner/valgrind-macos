@@ -2171,9 +2171,9 @@ typedef struct SValue {
 
 /* symbol management */
 typedef struct Sym {
-    int v;    /* symbol token */
-    int r;    /* associated register */
-    int c;    /* associated number */
+    long v;    /* symbol token */
+    long r;    /* associated register */
+    long c;    /* associated number */
     CType type;    /* associated type */
     struct Sym *next; /* next related symbol */
     struct Sym *prev; /* prev symbol in stack */
@@ -2341,7 +2341,7 @@ static Section *stab_section, *stabstr_section;
    rsym: return symbol
    anon_sym: anonymous symbol index
 */
-static int rsym, anon_sym, ind, loc;
+static long rsym, anon_sym, ind, loc;
 /* expression generation modifiers */
 static int const_wanted; /* true if constant wanted */
 static int nocode_wanted; /* true if no code generation wanted for an expression */
@@ -2350,7 +2350,7 @@ static int global_expr;  /* true if compound literals must be allocated
 static CType func_vt; /* current function return type (used by return
                          instruction) */
 static int func_vc;
-static int last_line_num, last_ind, func_ind; /* debug last line number and pc */
+static long last_line_num, last_ind, func_ind; /* debug last line number and pc */
 static int tok_ident;
 static TokenSym **table_ident;
 static TokenSym *hash_ident[TOK_HASH_SIZE];
@@ -6084,7 +6084,7 @@ void gfunc_epilog(void)
 }
 
 /* generate a jump to a label */
-int gjmp(int t)
+long gjmp(int t)
 {
     return psym(0xe9, t);
 }
@@ -7372,7 +7372,7 @@ char *get_tok_str(int v, CValue *cv)
 }
 
 /* push, without hashing */
-static Sym *sym_push2(Sym **ps, int v, int t, int c)
+static Sym *sym_push2(Sym **ps, long v, long t, long c)
 {
     Sym *s;
     s = sym_malloc();
@@ -8148,7 +8148,7 @@ static inline void define_push(int v, int macro_type, int *str, Sym *first_arg)
 {
     Sym *s;
 
-    s = sym_push2(&define_stack, v, macro_type, (int)str);
+    s = sym_push2(&define_stack, v, macro_type, (long)str);
     s->next = first_arg;
     table_ident[v - TOK_IDENT]->sym_define = s;
 }
@@ -9788,7 +9788,7 @@ static int macro_subst_tok(TokenString *tok_str,
                     next_nomacro();
                 }
                 tok_str_add(&str, 0);
-                sym_push2(&args, sa->v & ~SYM_FIELD, sa->type.t, (int)str.str);
+                sym_push2(&args, sa->v & ~SYM_FIELD, sa->type.t, (long)str.str);
                 sa = sa->next;
                 if (tok == ')') {
                     /* special case for gcc var args: add an empty
@@ -14740,7 +14740,7 @@ static void decl(int l)
                     }
                     tok_str_add(&func_str, -1);
                     tok_str_add(&func_str, 0);
-                    sym->r = (int)func_str.str;
+                    sym->r = (long)func_str.str;
                 } else {
                     /* compute text section */
                     cur_text_section = ad.section;
@@ -17330,7 +17330,7 @@ static int asm_int_expr(TCCState *s1)
 /* NOTE: the same name space as C labels is used to avoid using too
    much memory when storing labels in TokenStrings */
 static void asm_new_label1(TCCState *s1, int label, int is_local,
-                           int sh_num, int value)
+                           int sh_num, long value)
 {
     Sym *sym;
 

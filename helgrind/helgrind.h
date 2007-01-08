@@ -12,7 +12,7 @@
    This file is part of helgrind, a Valgrind tool for detecting
    data races in threaded programs.
 
-   Copyright (C) 2002-2006 Nicholas Nethercote.  All rights reserved.
+   Copyright (C) 2002-2007 Nicholas Nethercote.  All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

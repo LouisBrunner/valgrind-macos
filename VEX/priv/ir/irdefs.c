@@ -1052,8 +1052,8 @@ IRExpr** mkIRExprVec_3 ( IRExpr* arg1, IRExpr* arg2, IRExpr* arg3 ) {
    vec[3] = NULL;
    return vec;
 }
-IRExpr** mkIRExprVec_4 ( IRExpr* arg1, IRExpr* arg2, 
-                         IRExpr* arg3, IRExpr* arg4 ) {
+IRExpr** mkIRExprVec_4 ( IRExpr* arg1, IRExpr* arg2, IRExpr* arg3,
+                         IRExpr* arg4 ) {
    IRExpr** vec = LibVEX_Alloc(5 * sizeof(IRExpr*));
    vec[0] = arg1;
    vec[1] = arg2;
@@ -1062,8 +1062,8 @@ IRExpr** mkIRExprVec_4 ( IRExpr* arg1, IRExpr* arg2,
    vec[4] = NULL;
    return vec;
 }
-IRExpr** mkIRExprVec_5 ( IRExpr* arg1, IRExpr* arg2, 
-                         IRExpr* arg3, IRExpr* arg4, IRExpr* arg5 ) {
+IRExpr** mkIRExprVec_5 ( IRExpr* arg1, IRExpr* arg2, IRExpr* arg3,
+                         IRExpr* arg4, IRExpr* arg5 ) {
    IRExpr** vec = LibVEX_Alloc(6 * sizeof(IRExpr*));
    vec[0] = arg1;
    vec[1] = arg2;
@@ -1071,6 +1071,32 @@ IRExpr** mkIRExprVec_5 ( IRExpr* arg1, IRExpr* arg2,
    vec[3] = arg4;
    vec[4] = arg5;
    vec[5] = NULL;
+   return vec;
+}
+IRExpr** mkIRExprVec_6 ( IRExpr* arg1, IRExpr* arg2, IRExpr* arg3,
+                         IRExpr* arg4, IRExpr* arg5, IRExpr* arg6 ) {
+   IRExpr** vec = LibVEX_Alloc(7 * sizeof(IRExpr*));
+   vec[0] = arg1;
+   vec[1] = arg2;
+   vec[2] = arg3;
+   vec[3] = arg4;
+   vec[4] = arg5;
+   vec[5] = arg6;
+   vec[6] = NULL;
+   return vec;
+}
+IRExpr** mkIRExprVec_7 ( IRExpr* arg1, IRExpr* arg2, IRExpr* arg3,
+                         IRExpr* arg4, IRExpr* arg5, IRExpr* arg6,
+                         IRExpr* arg7 ) {
+   IRExpr** vec = LibVEX_Alloc(8 * sizeof(IRExpr*));
+   vec[0] = arg1;
+   vec[1] = arg2;
+   vec[2] = arg3;
+   vec[3] = arg4;
+   vec[4] = arg5;
+   vec[5] = arg6;
+   vec[6] = arg7;
+   vec[7] = NULL;
    return vec;
 }
 

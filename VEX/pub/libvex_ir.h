@@ -1127,7 +1127,11 @@ extern IRExpr** mkIRExprVec_1 ( IRExpr* );
 extern IRExpr** mkIRExprVec_2 ( IRExpr*, IRExpr* );
 extern IRExpr** mkIRExprVec_3 ( IRExpr*, IRExpr*, IRExpr* );
 extern IRExpr** mkIRExprVec_4 ( IRExpr*, IRExpr*, IRExpr*, IRExpr* );
-extern IRExpr** mkIRExprVec_5 ( IRExpr*, IRExpr*, 
+extern IRExpr** mkIRExprVec_5 ( IRExpr*, IRExpr*, IRExpr*, IRExpr*,
+                                IRExpr* );
+extern IRExpr** mkIRExprVec_6 ( IRExpr*, IRExpr*, IRExpr*, IRExpr*,
+                                IRExpr*, IRExpr* );
+extern IRExpr** mkIRExprVec_7 ( IRExpr*, IRExpr*, IRExpr*, IRExpr*,
                                 IRExpr*, IRExpr*, IRExpr* );
 
 /* IRExpr copiers:

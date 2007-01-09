@@ -1143,6 +1143,29 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return dst;
          }
 
+         /* ReinterpF32asI32(e) */
+         /* Given an IEEE754 single, produce an I32 with the same bit
+            pattern.  Keep stack 8-aligned even though only using 4
+            bytes. */
+         case Iop_ReinterpF32asI32: {
+            HReg rf   = iselFltExpr(env, e->Iex.Unop.arg);
+            HReg dst  = newVRegI(env);
+            X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+            /* paranoia */
+            set_FPU_rounding_default(env);
+            /* subl $8, %esp */
+            sub_from_esp(env, 8);
+            /* gstF %rf, 0(%esp) */
+            addInstr(env,
+                     X86Instr_FpLdSt(False/*store*/, 4, rf, zero_esp));
+            /* movl 0(%esp), %dst */
+            addInstr(env, 
+                     X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(zero_esp), dst));
+            /* addl $8, %esp */
+            add_to_esp(env, 8);
+            return dst;
+         }
+
          case Iop_16to8:
          case Iop_32to8:
          case Iop_32to16:

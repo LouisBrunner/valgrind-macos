@@ -1887,6 +1887,25 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
                                     arg4 | VKI_MAP_FIXED,
                                     arg5, arg6);
 
+   /* A refinement: it may be that the kernel refused aspacem's choice
+      of address.  If we were originally asked for a hinted mapping,
+      there is still a last chance: try again at any address.
+      Hence: */
+   if (mreq.rkind == MHint && sres.isError) {
+      mreq.start = 0;
+      mreq.len   = arg2;
+      mreq.rkind = MAny;
+      advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
+      if (!mreq_ok) {
+         /* Our request was bounced, so we'd better fail. */
+         return VG_(mk_SysRes_Error)( VKI_EINVAL );
+      }
+      /* and try again with the kernel */
+      sres = VG_(am_do_mmap_NO_NOTIFY)(advised, arg2, arg3,
+                                       arg4 | VKI_MAP_FIXED,
+                                       arg5, arg6);
+   }
+
    if (!sres.isError) {
       /* Notify aspacem and the tool. */
       ML_(notify_aspacem_and_tool_of_mmap)( 

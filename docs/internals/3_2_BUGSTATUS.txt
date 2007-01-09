@@ -32,7 +32,7 @@ r6242?   r6438    32  133054   'make install' fails with syntax errors
 pending  wontfix      133154   crash when using client requests to 
                                register/deregister stack
 
-pending  r6480    32,w 132998  startup fails in when running on UML
+r6481    r6480    32  132998   startup fails in when running on UML
                                (/proc/self/map start==end problem)
 
 pending  pending  32  133327   support for voicetronix ioctl (w/patch)
@@ -171,7 +171,24 @@ Test/make run cleanly on SuSE 10.2 x86/amd64/ppc32 and FC6 ditto
 Last update was 25 Dec 06
 
 r6462/3  r6464/5  32  n-i-bz   glibc-2.5 support
-r6469
+
+r6469    r6470    32  n-i-bz   memcheck: provide replacement for mempcpy
+
+r6479    pending  32  n-i-bz   memcheck: replace bcmp in ld.so
+
+vx1716/r6475
+         vx1717/r6476
+                  32  n-i-bz   Use 'ifndef' in VEX's Makefile correctly
+
+r6473    r6474    32  n-i-bz   Supps for MVL 4.0.1 on ppc32-linux
+
+r6477    r6478    32  n-i-bz   libmpiwrap.c: Fixes for MPICH
+
+r6495    pending  32  n-i-bz   More robust handling of hinted client mmaps
+
+?        ?        ?   139776   Invalid read in unaligned memcpy with 
+                               Intel compiler v9
+
 
 ------- Bugs reported and fixed in 3.2.0 ------
 

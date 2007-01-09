@@ -434,6 +434,7 @@ MEMCPY(m_ld_so_1,      memcpy) /* ld.so.1 */
 
 MEMCMP(m_libc_so_star, memcmp)
 MEMCMP(m_libc_so_star, bcmp)
+MEMCMP(m_ld_so_1, bcmp)
 
 
 /* Copy SRC to DEST, returning the address of the terminating '\0' in

@@ -1391,6 +1391,162 @@ ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl )
 }
 
 
+/* Create an x87 FPU state from the guest state, as close as
+   we can approximate it. */
+static
+void do_get_x87 ( /*IN*/VexGuestAMD64State* vex_state,
+                  /*OUT*/UChar* x87_state )
+{
+   Int        i, stno, preg;
+   UInt       tagw;
+   ULong*     vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
+   UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
+   Fpu_State* x87     = (Fpu_State*)x87_state;
+   UInt       ftop    = vex_state->guest_FTOP;
+   UInt       c3210   = vex_state->guest_FC3210;
+
+   for (i = 0; i < 14; i++)
+      x87->env[i] = 0;
+
+   x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
+   x87->env[FP_ENV_STAT] 
+      = toUShort(((ftop & 7) << 11) | (c3210 & 0x4700));
+   x87->env[FP_ENV_CTRL] 
+      = toUShort(amd64g_create_fpucw( vex_state->guest_FPROUND ));
+
+   /* Dump the register stack in ST order. */
+   tagw = 0;
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      if (vexTags[preg] == 0) {
+         /* register is empty */
+         tagw |= (3 << (2*preg));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
+                                 &x87->reg[10*stno] );
+      } else {
+         /* register is full. */
+         tagw |= (0 << (2*preg));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
+                                 &x87->reg[10*stno] );
+      }
+   }
+   x87->env[FP_ENV_TAG] = toUShort(tagw);
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (reads guest state, writes guest mem) */
+/* NOTE: only handles 32-bit format (no REX.W on the insn) */
+void amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State* gst, HWord addr )
+{
+   /* Derived from values obtained from
+      vendor_id       : AuthenticAMD
+      cpu family      : 15
+      model           : 12
+      model name      : AMD Athlon(tm) 64 Processor 3200+
+      stepping        : 0
+      cpu MHz         : 2200.000
+      cache size      : 512 KB
+   */
+   /* Somewhat roundabout, but at least it's simple. */
+   Fpu_State tmp;
+   UShort*   addrS = (UShort*)addr;
+   UChar*    addrC = (UChar*)addr;
+   U128*     xmm   = (U128*)(addr + 160);
+   UInt      mxcsr;
+   UShort    fp_tags;
+   UInt      summary_tags;
+   Int       r, stno;
+   UShort    *srcS, *dstS;
+
+   do_get_x87( gst, (UChar*)&tmp );
+   mxcsr = amd64g_create_mxcsr( gst->guest_SSEROUND );
+
+   /* Now build the proper fxsave image from the x87 image we just
+      made. */
+
+   addrS[0]  = tmp.env[FP_ENV_CTRL]; /* FCW: fpu control word */
+   addrS[1]  = tmp.env[FP_ENV_STAT]; /* FCW: fpu status word */
+
+   /* set addrS[2] in an endian-independent way */
+   summary_tags = 0;
+   fp_tags = tmp.env[FP_ENV_TAG];
+   for (r = 0; r < 8; r++) {
+      if ( ((fp_tags >> (2*r)) & 3) != 3 )
+         summary_tags |= (1 << r);
+   }
+   addrC[4]  = toUChar(summary_tags); /* FTW: tag summary byte */
+   addrC[5]  = 0; /* pad */
+
+   /* FOP: faulting fpu opcode.  From experimentation, the real CPU
+      does not write this field. (?!) */
+   addrS[3]  = 0; /* BOGUS */
+
+   /* RIP (Last x87 instruction pointer).  From experimentation, the
+      real CPU does not write this field. (?!) */
+   addrS[4]  = 0; /* BOGUS */
+   addrS[5]  = 0; /* BOGUS */
+   addrS[6]  = 0; /* BOGUS */
+   addrS[7]  = 0; /* BOGUS */
+
+   /* RDP (Last x87 data pointer).  From experimentation, the real CPU
+      does not write this field. (?!) */
+   addrS[8]  = 0; /* BOGUS */
+   addrS[9]  = 0; /* BOGUS */
+   addrS[10] = 0; /* BOGUS */
+   addrS[11] = 0; /* BOGUS */
+
+   addrS[12] = toUShort(mxcsr);  /* MXCSR */
+   addrS[13] = toUShort(mxcsr >> 16);
+
+   addrS[14] = 0xFFFF; /* MXCSR mask (lo16) */
+   addrS[15] = 0x0000; /* MXCSR mask (hi16) */
+
+   /* Copy in the FP registers, in ST order. */
+   for (stno = 0; stno < 8; stno++) {
+      srcS = (UShort*)(&tmp.reg[10*stno]);
+      dstS = (UShort*)(&addrS[16 + 8*stno]);
+      dstS[0] = srcS[0];
+      dstS[1] = srcS[1];
+      dstS[2] = srcS[2];
+      dstS[3] = srcS[3];
+      dstS[4] = srcS[4];
+      dstS[5] = 0;
+      dstS[6] = 0;
+      dstS[7] = 0;
+   }
+
+   /* That's the first 160 bytes of the image done.  Now only %xmm0
+      .. %xmm15 remain to be copied.  If the host is big-endian, these
+      need to be byte-swapped. */
+   vassert(host_is_little_endian());
+
+#  define COPY_U128(_dst,_src)                       \
+      do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
+           _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
+      while (0)
+
+   COPY_U128( xmm[0],  gst->guest_XMM0 );
+   COPY_U128( xmm[1],  gst->guest_XMM1 );
+   COPY_U128( xmm[2],  gst->guest_XMM2 );
+   COPY_U128( xmm[3],  gst->guest_XMM3 );
+   COPY_U128( xmm[4],  gst->guest_XMM4 );
+   COPY_U128( xmm[5],  gst->guest_XMM5 );
+   COPY_U128( xmm[6],  gst->guest_XMM6 );
+   COPY_U128( xmm[7],  gst->guest_XMM7 );
+   COPY_U128( xmm[8],  gst->guest_XMM8 );
+   COPY_U128( xmm[9],  gst->guest_XMM9 );
+   COPY_U128( xmm[10], gst->guest_XMM10 );
+   COPY_U128( xmm[11], gst->guest_XMM11 );
+   COPY_U128( xmm[12], gst->guest_XMM12 );
+   COPY_U128( xmm[13], gst->guest_XMM13 );
+   COPY_U128( xmm[14], gst->guest_XMM14 );
+   COPY_U128( xmm[15], gst->guest_XMM15 );
+
+#  undef COPY_U128
+}
+
+
 /* DIRTY HELPER (writes guest state) */
 /* Initialise the x87 FPU state as per 'finit'. */
 void amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* gst )

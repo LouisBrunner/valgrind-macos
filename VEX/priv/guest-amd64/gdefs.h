@@ -150,6 +150,8 @@ extern void  amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st );
 
 extern void  amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* );
 
+extern void  amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State*, HWord );
+
 extern ULong amd64g_dirtyhelper_RDTSC ( void );
 
 //extern void  amd64g_dirtyhelper_CPUID_sse0 ( VexGuestAMD64State* );
@@ -166,7 +168,6 @@ extern ULong amd64g_dirtyhelper_RDTSC ( void );
 //extern VexEmWarn 
 //            amd64g_dirtyhelper_FLDENV ( VexGuestAMD64State*, HWord );
 
-//extern void  amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State*, HWord );
 
 
 /*---------------------------------------------------------*/

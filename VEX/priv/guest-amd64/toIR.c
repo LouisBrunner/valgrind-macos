@@ -8427,89 +8427,86 @@ DisResult disInstr_AMD64_WRK (
 
    insn = (UChar*)&guest_code[delta];
 
-//..    /* Treat fxsave specially.  It should be doable even on an SSE0
-//..       (Pentium-II class) CPU.  Hence be prepared to handle it on
-//..       any subarchitecture variant.
-//..    */
-//.. 
-//..    /* 0F AE /0 = FXSAVE m512 -- write x87 and SSE state to memory */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xAE
-//..        && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 0) {
-//..       modrm = getUChar(delta+2);
-//..       vassert(sz == 4);
-//..       vassert(!epartIsReg(modrm));
-//.. 
-//..       addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..       delta += 2+alen;
-//.. 
-//..       DIP("fxsave %s\n", dis_buf);
-//.. 
-//..       /* Uses dirty helper: 
-//..             void x86g_do_FXSAVE ( VexGuestX86State*, UInt ) */
-//..       IRDirty* d = unsafeIRDirty_0_N ( 
-//..                       0/*regparms*/, 
-//..                       "x86g_dirtyhelper_FXSAVE", 
-//..                       &x86g_dirtyhelper_FXSAVE,
-//..                       mkIRExprVec_1( mkexpr(addr) )
-//..                    );
-//..       d->needsBBP = True;
-//.. 
-//..       /* declare we're writing memory */
-//..       d->mFx   = Ifx_Write;
-//..       d->mAddr = mkexpr(addr);
-//..       d->mSize = 512;
-//.. 
-//..       /* declare we're reading guest state */
-//..       d->nFxState = 7;
-//.. 
-//..       d->fxState[0].fx     = Ifx_Read;
-//..       d->fxState[0].offset = OFFB_FTOP;
-//..       d->fxState[0].size   = sizeof(UInt);
-//.. 
-//..       d->fxState[1].fx     = Ifx_Read;
-//..       d->fxState[1].offset = OFFB_FPREGS;
-//..       d->fxState[1].size   = 8 * sizeof(ULong);
-//.. 
-//..       d->fxState[2].fx     = Ifx_Read;
-//..       d->fxState[2].offset = OFFB_FPTAGS;
-//..       d->fxState[2].size   = 8 * sizeof(UChar);
-//.. 
-//..       d->fxState[3].fx     = Ifx_Read;
-//..       d->fxState[3].offset = OFFB_FPROUND;
-//..       d->fxState[3].size   = sizeof(UInt);
-//.. 
-//..       d->fxState[4].fx     = Ifx_Read;
-//..       d->fxState[4].offset = OFFB_FC3210;
-//..       d->fxState[4].size   = sizeof(UInt);
-//.. 
-//..       d->fxState[5].fx     = Ifx_Read;
-//..       d->fxState[5].offset = OFFB_XMM0;
-//..       d->fxState[5].size   = 8 * sizeof(U128);
-//.. 
-//..       d->fxState[6].fx     = Ifx_Read;
-//..       d->fxState[6].offset = OFFB_SSEROUND;
-//..       d->fxState[6].size   = sizeof(UInt);
-//.. 
-//..       /* Be paranoid ... this assertion tries to ensure the 8 %xmm
-//.. 	 images are packed back-to-back.  If not, the value of
-//.. 	 d->fxState[5].size is wrong. */
-//..       vassert(16 == sizeof(U128));
-//..       vassert(OFFB_XMM7 == (OFFB_XMM0 + 7 * 16));
-//.. 
-//..       stmt( IRStmt_Dirty(d) );
-//.. 
-//..       goto decode_success;
-//..    }
-//.. 
-//..    /* ------ SSE decoder main ------ */
-//.. 
-//..    /* Skip parts of the decoder which don't apply given the stated
-//..       guest subarchitecture. */
-//..    if (subarch == VexSubArchX86_sse0)
-//..       goto after_sse_decoders;
-//..    
-//..    /* Otherwise we must be doing sse1 or sse2, so we can at least try
-//..       for SSE1 here. */
+   /* FXSAVE is spuriously at the start here only because it is
+      thusly placed in guest-x86/toIR.c. */
+
+   /* 0F AE /0 = FXSAVE m512 -- write x87 and SSE state to memory.
+      Note that REX.W 0F AE /0 writes a slightly different format and
+      we don't handle that here. */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0xAE
+       && !epartIsReg(insn[2]) && gregOfRexRM(pfx,insn[2]) == 0) {
+       IRDirty* d;
+      modrm = getUChar(delta+2);
+      vassert(sz == 4);
+      vassert(!epartIsReg(modrm));
+      /* REX.W must not be set.  That should be assured us by sz == 4
+         above. */
+      vassert(!(pfx & PFX_REXW));
+
+      addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+      delta += 2+alen;
+
+      DIP("fxsave %s\n", dis_buf);
+
+      /* Uses dirty helper: 
+            void amd64g_do_FXSAVE ( VexGuestAMD64State*, UInt ) */
+      d = unsafeIRDirty_0_N ( 
+             0/*regparms*/, 
+             "amd64g_dirtyhelper_FXSAVE", 
+             &amd64g_dirtyhelper_FXSAVE,
+             mkIRExprVec_1( mkexpr(addr) )
+          );
+      d->needsBBP = True;
+
+      /* declare we're writing memory */
+      d->mFx   = Ifx_Write;
+      d->mAddr = mkexpr(addr);
+      d->mSize = 512;
+
+      /* declare we're reading guest state */
+      d->nFxState = 7;
+
+      d->fxState[0].fx     = Ifx_Read;
+      d->fxState[0].offset = OFFB_FTOP;
+      d->fxState[0].size   = sizeof(UInt);
+
+      d->fxState[1].fx     = Ifx_Read;
+      d->fxState[1].offset = OFFB_FPREGS;
+      d->fxState[1].size   = 8 * sizeof(ULong);
+
+      d->fxState[2].fx     = Ifx_Read;
+      d->fxState[2].offset = OFFB_FPTAGS;
+      d->fxState[2].size   = 8 * sizeof(UChar);
+
+      d->fxState[3].fx     = Ifx_Read;
+      d->fxState[3].offset = OFFB_FPROUND;
+      d->fxState[3].size   = sizeof(ULong);
+
+      d->fxState[4].fx     = Ifx_Read;
+      d->fxState[4].offset = OFFB_FC3210;
+      d->fxState[4].size   = sizeof(ULong);
+
+      d->fxState[5].fx     = Ifx_Read;
+      d->fxState[5].offset = OFFB_XMM0;
+      d->fxState[5].size   = 16 * sizeof(U128);
+
+      d->fxState[6].fx     = Ifx_Read;
+      d->fxState[6].offset = OFFB_SSEROUND;
+      d->fxState[6].size   = sizeof(ULong);
+
+      /* Be paranoid ... this assertion tries to ensure the 16 %xmm
+	 images are packed back-to-back.  If not, the value of
+	 d->fxState[5].size is wrong. */
+      vassert(16 == sizeof(U128));
+      vassert(OFFB_XMM15 == (OFFB_XMM0 + 15 * 16));
+
+      stmt( IRStmt_Dirty(d) );
+
+      goto decode_success;
+   }
+
+   /* ------ SSE decoder main ------ */
 
    /* 0F 58 = ADDPS -- add 32Fx4 from R/M to R */
    if (haveNo66noF2noF3(pfx) && sz == 4 

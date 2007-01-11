@@ -34,6 +34,9 @@
    This module was also extensively hacked on by Jeremy Fitzhardinge
    and Tom Hughes.
 */
+/* See comment at top of debuginfo.c for explanation of
+   the _svma / _avma / _image / _bias naming scheme.
+*/
 
 #ifndef __PRIV_STORAGE_H
 #define __PRIV_STORAGE_H
@@ -139,7 +142,7 @@ struct _SegInfo {
    struct _SegInfo* next;	/* list of SegInfos */
 
    /* Description of the mapped segment. */
-   Addr   start;
+   Addr   text_start_avma;
    UInt   size;
    UChar* filename; /* in mallocville */
    UChar* memname;  /* malloc'd.  AIX5 only: .a member name */
@@ -180,15 +183,15 @@ struct _SegInfo {
    /* Bounds of data, BSS, PLT, GOT and OPD (for ppc64-linux) so that
       tools can see what section an address is in.  In the running
       image! */
-   Addr	  plt_start_vma;
+   Addr	  plt_start_avma;
    UInt   plt_size;
-   Addr   got_start_vma;
+   Addr   got_start_avma;
    UInt   got_size;
-   Addr   opd_start_vma;
+   Addr   opd_start_avma;
    UInt   opd_size;
-   Addr   data_start_vma;
+   Addr   data_start_avma;
    UInt   data_size;
-   Addr   bss_start_vma;
+   Addr   bss_start_avma;
    UInt   bss_size;
 };
 

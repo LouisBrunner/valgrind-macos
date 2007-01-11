@@ -233,9 +233,9 @@ Bool get_elf_symbol_info (
    if (!plausible
        && ELFXX_ST_TYPE(sym->st_info) == STT_NOTYPE
        && sym->st_size > 0
-       && si->opd_start_vma != 0
-       && sym_addr >= si->opd_start_vma
-       && sym_addr <  si->opd_start_vma + si->opd_size)
+       && si->opd_start_avma != 0
+       && sym_addr >= si->opd_start_avma
+       && sym_addr <  si->opd_start_avma + si->opd_size)
       plausible = True;
 #  endif
 
@@ -262,15 +262,15 @@ Bool get_elf_symbol_info (
 
    /* If it's apparently in a GOT or PLT, it's really a reference to a
       symbol defined elsewhere, so ignore it. */
-   if (si->got_start_vma != 0
-       && sym_addr >= si->got_start_vma 
-       && sym_addr <  si->got_start_vma + si->got_size) {
+   if (si->got_start_avma != 0
+       && sym_addr >= si->got_start_avma 
+       && sym_addr <  si->got_start_avma + si->got_size) {
       TRACE_SYMTAB("    ignore -- in GOT: %s\n", sym_name);
       return False;
    }
-   if (si->plt_start_vma != 0
-       && sym_addr >= si->plt_start_vma
-       && sym_addr <  si->plt_start_vma + si->plt_size) {
+   if (si->plt_start_avma != 0
+       && sym_addr >= si->plt_start_avma
+       && sym_addr <  si->plt_start_avma + si->plt_size) {
       TRACE_SYMTAB("    ignore -- in PLT: %s\n", sym_name);
       return False;
    }
@@ -285,9 +285,9 @@ Bool get_elf_symbol_info (
    */
    is_in_opd = False;
 
-   if (si->opd_start_vma != 0
-       && sym_addr >= si->opd_start_vma
-       && sym_addr <  si->opd_start_vma + si->opd_size) {
+   if (si->opd_start_avma != 0
+       && sym_addr >= si->opd_start_avma
+       && sym_addr <  si->opd_start_avma + si->opd_size) {
 #     if !defined(VGP_ppc64_linux)
       TRACE_SYMTAB("    ignore -- in OPD: %s\n", sym_name);
       return False;
@@ -307,7 +307,7 @@ Bool get_elf_symbol_info (
          the vma of the opd section start, so we can figure out how
          far into the opd section this is. */
 
-      offset_in_opd = (Addr)sym_addr - (Addr)(si->opd_start_vma);
+      offset_in_opd = (Addr)sym_addr - (Addr)(si->opd_start_avma);
       if (offset_in_opd < 0 || offset_in_opd >= si->opd_size) {
          TRACE_SYMTAB("    ignore -- invalid OPD offset: %s\n", sym_name);
          return False;
@@ -346,7 +346,7 @@ Bool get_elf_symbol_info (
    /* Here's yet another ppc64-linux hack.  Get rid of leading dot if
       the symbol is outside .opd. */
 #  if defined(VGP_ppc64_linux)
-   if (si->opd_start_vma != 0
+   if (si->opd_start_avma != 0
        && !is_in_opd
        && sym_name[0] == '.') {
       vg_assert(!(*from_opd_out));
@@ -356,11 +356,11 @@ Bool get_elf_symbol_info (
 
    /* If no part of the symbol falls within the mapped range,
       ignore it. */
-   if (*sym_addr_out + *sym_size_out <= si->start
-       || *sym_addr_out >= si->start+si->size) {
+   if (*sym_addr_out + *sym_size_out <= si->text_start_avma
+       || *sym_addr_out >= si->text_start_avma + si->size) {
       TRACE_SYMTAB( "ignore -- %p .. %p outside mapped range %p .. %p\n",
                     *sym_addr_out, *sym_addr_out + *sym_size_out,
-                    si->start, si->start+si->size);
+                    si->text_start_avma, si->text_start_avma + si->size);
       return False;
    }
 
@@ -369,9 +369,9 @@ Bool get_elf_symbol_info (
       section.  This would completely mess up function redirection and
       intercepting.  This assert ensures that any symbols that make it
       into the symbol table on ppc64-linux don't point into .opd. */
-   if (si->opd_start_vma != 0) {
-      vg_assert(*sym_addr_out + *sym_size_out <= si->opd_start_vma
-                || *sym_addr_out >= si->opd_start_vma + si->opd_size);
+   if (si->opd_start_avma != 0) {
+      vg_assert(*sym_addr_out + *sym_size_out <= si->opd_start_avma
+                || *sym_addr_out >= si->opd_start_avma + si->opd_size);
    }
 #  endif
 
@@ -826,7 +826,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
       VG_(message)(Vg_DebugMsg, "Reading syms from %s (%p)", 
-                                si->filename, si->start );
+                                si->filename, si->text_start_avma );
 
    /* mmap the object image aboard, so that we can read symbols and
       line number info out of it.  It will be munmapped immediately
@@ -857,6 +857,11 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
    }
 
    oimage = sres.res;
+
+   if (0) {
+      VG_(printf)("read_elf_debug_info: OIMAGE = %p - %p\n", 
+                  (void*)oimage, (void*)(oimage + (UWord)n_oimage));
+   }
 
    /* Ok, the object image is safely in oimage[0 .. n_oimage-1]. 
       Now verify that it is a valid ELF .so or executable image.
@@ -927,7 +932,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
 	 if (!offset_set) {
 	    offset_set = True;
-	    offset_oimage = si->start - o_phdr->p_vaddr;
+	    offset_oimage = si->text_start_avma - o_phdr->p_vaddr;
 	    baseaddr = o_phdr->p_vaddr;
 	 }
 
@@ -941,11 +946,11 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
          // Get the data and bss start/size if appropriate
 	 mapped = o_phdr->p_vaddr + offset_oimage;
 	 mapped_end = mapped + o_phdr->p_memsz;
-	 if (si->data_start_vma == 0 &&
+	 if (si->data_start_avma == 0 &&
 	     (o_phdr->p_flags & (PF_R|PF_W|PF_X)) == (PF_R|PF_W)) {
-	    si->data_start_vma = mapped;
-	    si->data_size      = o_phdr->p_filesz;
-	    si->bss_start_vma  = mapped + o_phdr->p_filesz;
+	    si->data_start_avma = mapped;
+	    si->data_size       = o_phdr->p_filesz;
+	    si->bss_start_avma  = mapped + o_phdr->p_filesz;
 	    if (o_phdr->p_memsz > o_phdr->p_filesz)
 	       si->bss_size = o_phdr->p_memsz - o_phdr->p_filesz;
 	    else
@@ -955,15 +960,18 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
          mapped = mapped & ~(VKI_PAGE_SIZE-1);
 	 mapped_end = (mapped_end + VKI_PAGE_SIZE - 1) & ~(VKI_PAGE_SIZE-1);
 
-	 if (VG_(needs).data_syms &&
-	     (mapped >= si->start && mapped <= (si->start+si->size)) &&
-	     (mapped_end > (si->start+si->size))) {
-	    UInt newsz = mapped_end - si->start;
+	 if (VG_(needs).data_syms 
+             && mapped >= si->text_start_avma 
+             && mapped <= (si->text_start_avma + si->size)
+             && mapped_end > (si->text_start_avma + si->size)) {
+	    UInt newsz = mapped_end - si->text_start_avma;
 	    if (newsz > si->size) {
 	       if (0)
 		  VG_(printf)("extending mapping %p..%p %d -> ..%p %d\n", 
-			      si->start, si->start+si->size, si->size,
-			      si->start+newsz, newsz);
+			      si->text_start_avma, 
+                              si->text_start_avma + si->size, 
+                              si->size,
+			      si->text_start_avma + newsz, newsz);
 
 	       si->size = newsz;
 	    }
@@ -995,7 +1003,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
       information */
    {
       /* Pointers to start of sections (in the oimage, not in the
-	 running image) */
+	 running image) -- image addresses */
       UChar*     o_strtab     = NULL; /* .strtab */
       ElfXX_Sym* o_symtab     = NULL; /* .symtab */
       UChar*     o_dynstr     = NULL; /* .dynstr */
@@ -1034,9 +1042,9 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
       UInt       dwarf1l_sz      = 0;
       UInt       ehframe_sz      = 0;
 
-      /* Section virtual addresses */
-      Addr       dummy_vma       = 0;
-      Addr       ehframe_vma     = 0;
+      /* Section actual virtual addresses */
+      Addr       dummy_avma      = 0;
+      Addr       ehframe_avma    = 0;
 
       /* Find all interesting sections */
 
@@ -1074,29 +1082,29 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
          /* Nb: must find where .got and .plt sections will be in the
           * executable image, not in the object image transiently loaded. */
-         /*   NAME              SIZE           ADDR_IN_OIMAGE  ADDR_WHEN_MAPPED */
-         FIND(".dynsym",        o_dynsym_sz,   o_dynsym,       dummy_vma)
-         FIND(".dynstr",        o_dynstr_sz,   o_dynstr,       dummy_vma)
-         FIND(".symtab",        o_symtab_sz,   o_symtab,       dummy_vma)
-         FIND(".strtab",        o_strtab_sz,   o_strtab,       dummy_vma)
+         /*   NAME              SIZE          ADDR_IN_OIMAGE  ADDR_WHEN_MAPPED */
+         FIND(".dynsym",        o_dynsym_sz,   o_dynsym,      dummy_avma)
+         FIND(".dynstr",        o_dynstr_sz,   o_dynstr,      dummy_avma)
+         FIND(".symtab",        o_symtab_sz,   o_symtab,      dummy_avma)
+         FIND(".strtab",        o_strtab_sz,   o_strtab,      dummy_avma)
 
-         FIND(".gnu_debuglink", debuglink_sz,  debuglink,      dummy_vma)
+         FIND(".gnu_debuglink", debuglink_sz,  debuglink,     dummy_avma)
 
-         FIND(".stab",          stab_sz,       stab,           dummy_vma)
-         FIND(".stabstr",       stabstr_sz,    stabstr,        dummy_vma)
+         FIND(".stab",          stab_sz,       stab,          dummy_avma)
+         FIND(".stabstr",       stabstr_sz,    stabstr,       dummy_avma)
 
-         FIND(".debug_line",    debug_line_sz, debug_line,     dummy_vma)
-         FIND(".debug_info",    debug_info_sz, debug_info,     dummy_vma)
-         FIND(".debug_abbrev",  debug_abbv_sz, debug_abbv,     dummy_vma)
-         FIND(".debug_str",     debug_str_sz,  debug_str,      dummy_vma)
+         FIND(".debug_line",    debug_line_sz, debug_line,    dummy_avma)
+         FIND(".debug_info",    debug_info_sz, debug_info,    dummy_avma)
+         FIND(".debug_abbrev",  debug_abbv_sz, debug_abbv,    dummy_avma)
+         FIND(".debug_str",     debug_str_sz,  debug_str,     dummy_avma)
 
-         FIND(".debug",         dwarf1d_sz,    dwarf1d,        dummy_vma)
-         FIND(".line",          dwarf1l_sz,    dwarf1l,        dummy_vma)
-         FIND(".eh_frame",      ehframe_sz,    ehframe,        ehframe_vma)
+         FIND(".debug",         dwarf1d_sz,    dwarf1d,       dummy_avma)
+         FIND(".line",          dwarf1l_sz,    dwarf1l,       dummy_avma)
+         FIND(".eh_frame",      ehframe_sz,    ehframe,       ehframe_avma)
 
-         FIND(".got",           si->got_size,  dummy_filea,    si->got_start_vma)
-         FIND(".plt",           si->plt_size,  dummy_filea,    si->plt_start_vma)
-         FIND(".opd",           si->opd_size,  opd_filea,      si->opd_start_vma)
+         FIND(".got",           si->got_size,  dummy_filea,   si->got_start_avma)
+         FIND(".plt",           si->plt_size,  dummy_filea,   si->plt_start_avma)
+         FIND(".opd",           si->opd_size,  opd_filea,     si->opd_start_avma)
 
 #        undef FIND
       }
@@ -1125,7 +1133,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
                for (i = 0; i < ehdr->e_phnum; i++) {
                   ElfXX_Phdr *o_phdr = &((ElfXX_Phdr *)(dimage + ehdr->e_phoff))[i];
                   if (o_phdr->p_type == PT_LOAD) {
-                     offset_dimage = si->start - o_phdr->p_vaddr;
+                     offset_dimage = si->text_start_avma - o_phdr->p_vaddr;
                      break;
                   }
                }
@@ -1138,7 +1146,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
                sh_strtab = (UChar*)(dimage + shdr[ehdr->e_shstrndx].sh_offset);
 
                /* Same deal as previous FIND, except simpler - doesn't
-                  look for vma, only oimage address. */
+                  look for avma, only oimage address. */
 
                /* Find all interesting sections */
                for (i = 0; i < ehdr->e_shnum; i++) {
@@ -1162,6 +1170,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
                      } \
                   }
 
+                  /*   ??           NAME             SIZE         ADDR_IN_OIMAGE */
                   FIND(need_symtab, ".symtab",       o_symtab_sz,   o_symtab)
                   FIND(need_symtab, ".strtab",       o_strtab_sz,   o_strtab)
                   FIND(1,           ".stab",         stab_sz,       stab)
@@ -1203,7 +1212,8 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
       /* Read .eh_frame (call-frame-info) if any */
       if (ehframe) {
-         ML_(read_callframe_info_dwarf2) ( si, ehframe, ehframe_sz, ehframe_vma );
+         ML_(read_callframe_info_dwarf2)
+            ( si, ehframe/*image*/, ehframe_sz, ehframe_avma );
       }
 
       /* Read the stabs and/or dwarf2 debug information, if any.  It

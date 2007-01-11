@@ -59,6 +59,36 @@
 # include "priv_readxcoff.h"
 #endif
 
+
+/*------------------------------------------------------------*/
+/*--- The _svma / _avma / _image / _bias naming scheme     ---*/
+/*------------------------------------------------------------*/
+
+/* JRS 11 Jan 07: I find the different kinds of addresses involved in
+   debuginfo reading confusing.  Recently I arrived at some
+   terminology which makes it clearer (to me, at least).  There are 3
+   kinds of address used in the debuginfo reading process:
+ 
+   stated VMAs - the address where (eg) a .so says a symbol is, that
+                 is, what it tells you if you consider the .so in
+                 isolation
+ 
+   actual VMAs - the address where (eg) said symbol really wound up
+                 after the .so was mapped into memory
+ 
+   image addresses - pointers into the copy of the .so (etc)
+                     transiently mmaped aboard whilst we read its info
+
+   Additionally I use the term 'bias' to denote the difference
+   between stated and actual VMAs for a given entity.
+
+   This terminology is not used consistently, but a start has been
+   made.  readelf.c and the call-frame info reader in readdwarf.c now
+   use it.  Specifically, various variables and structure fields have
+   been annotated with _avma / _svma / _image / _bias.
+*/
+
+
 /*------------------------------------------------------------*/
 /*--- Root structure                                       ---*/
 /*------------------------------------------------------------*/
@@ -84,12 +114,13 @@ SegInfo* alloc_SegInfo(Addr start, SizeT size, OffT foffset,
 {
    SegInfo* si = VG_(arena_calloc)(VG_AR_SYMTAB, 1, sizeof(SegInfo));
 
-   si->start    = start;
-   si->size     = size;
-   si->foffset  = foffset;
-   si->filename = VG_(arena_strdup)(VG_AR_SYMTAB, filename);
-   si->memname  = memname ?  VG_(arena_strdup)(VG_AR_SYMTAB, memname)
-                          :  NULL;
+   si->text_start_avma = start;
+   si->size            = size;
+   si->foffset         = foffset;
+   si->filename        = VG_(arena_strdup)(VG_AR_SYMTAB, filename);
+   si->memname         = memname 
+                           ?  VG_(arena_strdup)(VG_AR_SYMTAB, memname)
+                           :  NULL;
 
    // Everything else -- pointers, sizes, arrays -- is zeroed by calloc.
    return si;
@@ -137,7 +168,8 @@ static void discard_SegInfo ( SegInfo* si )
          if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
             VG_(message)(Vg_DebugMsg, 
                          "Discarding syms at %p-%p in %s due to %s()", 
-                         si->start, si->start + si->size,
+                         si->text_start_avma, 
+                         si->text_start_avma + si->size,
                          curr->filename ? curr->filename : (UChar*)"???",
                          reason);
          vg_assert(*prev_next_ptr == curr);
@@ -170,8 +202,8 @@ static void discard_syms_in_range ( Addr start, SizeT length )
       while (True) {
          if (curr == NULL)
             break;
-         if (start+length-1 < curr->start 
-             || curr->start+curr->size-1 < start) {
+         if (start+length-1 < curr->text_start_avma 
+             || curr->text_start_avma+curr->size-1 < start) {
             /* no overlap */
 	 } else {
 	    found = True;
@@ -440,7 +472,8 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/SegInfo** psi,
    SegInfo* si;
 
    for (si = segInfo_list; si != NULL; si = si->next) {
-      if (si->start <= ptr && ptr < si->start+si->size) {
+      if (si->text_start_avma <= ptr 
+          && ptr < si->text_start_avma + si->size) {
          sno = ML_(search_one_symtab) ( si, ptr, match_anywhere_in_fun );
          if (sno == -1) goto not_found;
          *symno = sno;
@@ -464,7 +497,8 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/SegInfo** psi,
    SegInfo* si;
 
    for (si = segInfo_list; si != NULL; si = si->next) {
-      if (si->start <= ptr && ptr < si->start+si->size) {
+      if (si->text_start_avma <= ptr 
+          && ptr < si->text_start_avma + si->size) {
          lno = ML_(search_one_loctab) ( si, ptr );
          if (lno == -1) goto not_found;
          *locno = lno;
@@ -607,7 +641,7 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 
    vg_assert(nbuf > 0);
    for (si = segInfo_list; si != NULL; si = si->next) {
-      if (si->start <= a && a < si->start+si->size) {
+      if (si->text_start_avma <= a && a < si->text_start_avma+si->size) {
          VG_(strncpy_safely)(buf, si->filename, nbuf);
          if (si->memname) {
             used = VG_(strlen)(buf);
@@ -634,7 +668,7 @@ SegInfo* VG_(find_seginfo) ( Addr a )
    SegInfo* si;
 
    for (si = segInfo_list; si != NULL; si = si->next) {
-      if (si->start <= a && a < si->start+si->size) {
+      if (si->text_start_avma <= a && a < si->text_start_avma + si->size) {
          return si;
       }
    }
@@ -1050,7 +1084,7 @@ const SegInfo* VG_(next_seginfo)(const SegInfo* si)
 
 Addr VG_(seginfo_start)(const SegInfo* si)
 {
-   return si->start;
+   return si->text_start_avma;
 }
 
 SizeT VG_(seginfo_size)(const SegInfo* si)
@@ -1079,29 +1113,30 @@ VgSectKind VG_(seginfo_sect_kind)(Addr a)
    VgSectKind ret = Vg_SectUnknown;
 
    for(si = segInfo_list; si != NULL; si = si->next) {
-      if (a >= si->start && a < (si->start + si->size)) {
+      if (a >= si->text_start_avma 
+          && a < si->text_start_avma + si->size) {
 
 	 if (0)
 	    VG_(printf)(
                "addr=%p si=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",
                a, si, si->filename, 
-               si->got_start_vma,  si->got_size,
-               si->plt_start_vma,  si->plt_size,
-               si->data_start_vma, si->data_size,
-               si->bss_start_vma,  si->bss_size);
+               si->got_start_avma,  si->got_size,
+               si->plt_start_avma,  si->plt_size,
+               si->data_start_avma, si->data_size,
+               si->bss_start_avma,  si->bss_size);
 
 	 ret = Vg_SectText;
 
-	 if (a >= si->data_start_vma && a < (si->data_start_vma + si->data_size))
+	 if (a >= si->data_start_avma && a < si->data_start_avma + si->data_size)
 	    ret = Vg_SectData;
 	 else 
-         if (a >= si->bss_start_vma && a < (si->bss_start_vma + si->bss_size))
+         if (a >= si->bss_start_avma && a < si->bss_start_avma + si->bss_size)
 	    ret = Vg_SectBSS;
 	 else 
-         if (a >= si->plt_start_vma && a < (si->plt_start_vma + si->plt_size))
+         if (a >= si->plt_start_avma && a < si->plt_start_avma + si->plt_size)
 	    ret = Vg_SectPLT;
 	 else 
-         if (a >= si->got_start_vma && a < (si->got_start_vma + si->got_size))
+         if (a >= si->got_start_avma && a < si->got_start_avma + si->got_size)
 	    ret = Vg_SectGOT;
       }
    }

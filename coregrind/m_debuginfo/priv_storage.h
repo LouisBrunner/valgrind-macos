@@ -146,7 +146,7 @@ struct _SegInfo {
    UInt   size;
    UChar* filename; /* in mallocville */
    UChar* memname;  /* malloc'd.  AIX5 only: .a member name */
-   OffT   foffset;
+   OffT   foffset;  /* file offset for mapped text section - UNUSED */
    UChar* soname;
 
    /* An expandable array of symbols. */
@@ -174,11 +174,12 @@ struct _SegInfo {
       UChar  strtab[SEGINFO_STRCHUNKSIZE];
    } *strchunks;
 
-   /* 'offset' is what needs to be added to an address in the address
-      space of the library as stored on disk (which is not 0-based for
-      executables or prelinked libraries) to get an address in memory
-      for the object loaded at 'start' */
-   OffT   offset;
+   /* 'text_bias' is what needs to be added to an address in the
+      address space of the library as stored on disk [a so-called
+      stated VMA] (which is not 0-based for executables or prelinked
+      libraries) to get an address in memory for the object loaded at
+      'text_start_avma'.  At least for text symbols. */
+   OffT   text_bias;
 
    /* Bounds of data, BSS, PLT, GOT and OPD (for ppc64-linux) so that
       tools can see what section an address is in.  In the running

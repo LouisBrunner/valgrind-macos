@@ -979,7 +979,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
       }
    }
 
-   si->offset = offset_oimage;
+   si->text_bias = offset_oimage;
 
    /* If, after looking at all the program headers, we still didn't 
       find a soname, add a fake one. */

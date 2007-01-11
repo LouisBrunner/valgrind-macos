@@ -1104,7 +1104,7 @@ const UChar* VG_(seginfo_filename)(const SegInfo* si)
 
 ULong VG_(seginfo_sym_offset)(const SegInfo* si)
 {
-   return si->offset;
+   return si->text_bias;
 }
 
 VgSectKind VG_(seginfo_sect_kind)(Addr a)

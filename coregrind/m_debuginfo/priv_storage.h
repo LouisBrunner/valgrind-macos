@@ -143,7 +143,7 @@ struct _SegInfo {
 
    /* Description of the mapped segment. */
    Addr   text_start_avma;
-   UInt   size;
+   UInt   text_size;
    UChar* filename; /* in mallocville */
    UChar* memname;  /* malloc'd.  AIX5 only: .a member name */
    OffT   foffset;  /* file offset for mapped text section - UNUSED */

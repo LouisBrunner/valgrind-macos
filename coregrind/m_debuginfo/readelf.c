@@ -357,10 +357,11 @@ Bool get_elf_symbol_info (
    /* If no part of the symbol falls within the mapped range,
       ignore it. */
    if (*sym_addr_out + *sym_size_out <= si->text_start_avma
-       || *sym_addr_out >= si->text_start_avma + si->size) {
+       || *sym_addr_out >= si->text_start_avma + si->text_size) {
       TRACE_SYMTAB( "ignore -- %p .. %p outside mapped range %p .. %p\n",
                     *sym_addr_out, *sym_addr_out + *sym_size_out,
-                    si->text_start_avma, si->text_start_avma + si->size);
+                    si->text_start_avma,
+                    si->text_start_avma + si->text_size);
       return False;
    }
 
@@ -962,18 +963,23 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
 	 if (VG_(needs).data_syms 
              && mapped >= si->text_start_avma 
-             && mapped <= (si->text_start_avma + si->size)
-             && mapped_end > (si->text_start_avma + si->size)) {
+             && mapped <= (si->text_start_avma + si->text_size)
+             && mapped_end > (si->text_start_avma + si->text_size)) {
+            /* XXX jrs 2007 Jan 11: what's going on here?  If data
+               syms are involved, surely we shouldn't be messing with
+               the segment's text_size unless there is an assumption
+               that the data segment has been mapped immediately after
+               the text segment.  Which doesn't sound good to me. */
 	    UInt newsz = mapped_end - si->text_start_avma;
-	    if (newsz > si->size) {
+	    if (newsz > si->text_size) {
 	       if (0)
 		  VG_(printf)("extending mapping %p..%p %d -> ..%p %d\n", 
 			      si->text_start_avma, 
-                              si->text_start_avma + si->size, 
-                              si->size,
+                              si->text_start_avma + si->text_size, 
+                              si->text_size,
 			      si->text_start_avma + newsz, newsz);
 
-	       si->size = newsz;
+	       si->text_size = newsz;
 	    }
 	 }
       }

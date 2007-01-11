@@ -255,14 +255,14 @@ void ML_(addLineInfo) ( struct _SegInfo* si,
 
    /* vg_assert(this < si->text_start_avma + si->size 
                 && next-1 >= si->text_start_avma); */
-   if (this >= si->text_start_avma + si->size 
+   if (this >= si->text_start_avma + si->text_size 
        || next-1 < si->text_start_avma) {
        if (0)
           VG_(message)(Vg_DebugMsg, 
                        "warning: ignoring line info entry falling "
                        "outside current SegInfo: %p %p %p %p",
                        si->text_start_avma, 
-                       si->text_start_avma + si->size, 
+                       si->text_start_avma + si->text_size, 
                        this, next-1);
        return;
    }
@@ -323,7 +323,7 @@ void ML_(addDiCfSI) ( struct _SegInfo* si, DiCfSI* cfsi )
       probably indicate some kind of bug, but for the meantime ignore
       them. */
    if ( cfsi->base + cfsi->len - 1  <  si->text_start_avma
-        || si->text_start_avma + si->size - 1  <  cfsi->base ) {
+        || si->text_start_avma + si->text_size - 1  <  cfsi->base ) {
       static Int complaints = 3;
       if (VG_(clo_trace_cfi) || complaints > 0) {
          complaints--;
@@ -334,7 +334,7 @@ void ML_(addDiCfSI) ( struct _SegInfo* si, DiCfSI* cfsi )
                cfsi->base, 
                cfsi->base + cfsi->len - 1,
                si->text_start_avma,
-               si->text_start_avma + si->size - 1 
+               si->text_start_avma + si->text_size - 1 
             );
          }
          if (VG_(clo_trace_cfi)) 

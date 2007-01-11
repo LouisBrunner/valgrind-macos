@@ -115,7 +115,7 @@ SegInfo* alloc_SegInfo(Addr start, SizeT size, OffT foffset,
    SegInfo* si = VG_(arena_calloc)(VG_AR_SYMTAB, 1, sizeof(SegInfo));
 
    si->text_start_avma = start;
-   si->size            = size;
+   si->text_size       = size;
    si->foffset         = foffset;
    si->filename        = VG_(arena_strdup)(VG_AR_SYMTAB, filename);
    si->memname         = memname 
@@ -169,7 +169,7 @@ static void discard_SegInfo ( SegInfo* si )
             VG_(message)(Vg_DebugMsg, 
                          "Discarding syms at %p-%p in %s due to %s()", 
                          si->text_start_avma, 
-                         si->text_start_avma + si->size,
+                         si->text_start_avma + si->text_size,
                          curr->filename ? curr->filename : (UChar*)"???",
                          reason);
          vg_assert(*prev_next_ptr == curr);
@@ -202,8 +202,8 @@ static void discard_syms_in_range ( Addr start, SizeT length )
       while (True) {
          if (curr == NULL)
             break;
-         if (start+length-1 < curr->text_start_avma 
-             || curr->text_start_avma+curr->size-1 < start) {
+         if (start+length - 1 < curr->text_start_avma 
+             || curr->text_start_avma + curr->text_size - 1 < start) {
             /* no overlap */
 	 } else {
 	    found = True;
@@ -473,7 +473,7 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/SegInfo** psi,
 
    for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->text_start_avma <= ptr 
-          && ptr < si->text_start_avma + si->size) {
+          && ptr < si->text_start_avma + si->text_size) {
          sno = ML_(search_one_symtab) ( si, ptr, match_anywhere_in_fun );
          if (sno == -1) goto not_found;
          *symno = sno;
@@ -498,7 +498,7 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/SegInfo** psi,
 
    for (si = segInfo_list; si != NULL; si = si->next) {
       if (si->text_start_avma <= ptr 
-          && ptr < si->text_start_avma + si->size) {
+          && ptr < si->text_start_avma + si->text_size) {
          lno = ML_(search_one_loctab) ( si, ptr );
          if (lno == -1) goto not_found;
          *locno = lno;
@@ -641,7 +641,8 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 
    vg_assert(nbuf > 0);
    for (si = segInfo_list; si != NULL; si = si->next) {
-      if (si->text_start_avma <= a && a < si->text_start_avma+si->size) {
+      if (si->text_start_avma <= a 
+          && a < si->text_start_avma + si->text_size) {
          VG_(strncpy_safely)(buf, si->filename, nbuf);
          if (si->memname) {
             used = VG_(strlen)(buf);
@@ -668,7 +669,8 @@ SegInfo* VG_(find_seginfo) ( Addr a )
    SegInfo* si;
 
    for (si = segInfo_list; si != NULL; si = si->next) {
-      if (si->text_start_avma <= a && a < si->text_start_avma + si->size) {
+      if (si->text_start_avma <= a 
+          && a < si->text_start_avma + si->text_size) {
          return si;
       }
    }
@@ -1089,7 +1091,7 @@ Addr VG_(seginfo_start)(const SegInfo* si)
 
 SizeT VG_(seginfo_size)(const SegInfo* si)
 {
-   return si->size;
+   return si->text_size;
 }
 
 const UChar* VG_(seginfo_soname)(const SegInfo* si)
@@ -1114,7 +1116,7 @@ VgSectKind VG_(seginfo_sect_kind)(Addr a)
 
    for(si = segInfo_list; si != NULL; si = si->next) {
       if (a >= si->text_start_avma 
-          && a < si->text_start_avma + si->size) {
+          && a < si->text_start_avma + si->text_size) {
 
 	 if (0)
 	    VG_(printf)(

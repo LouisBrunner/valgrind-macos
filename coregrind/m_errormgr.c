@@ -474,6 +474,8 @@ void do_actions_on_error(Error* err, Bool allow_db_attach)
    just for pretty printing purposes. */
 static Bool is_first_shown_context = True;
 
+static Int  n_errs_shown = 0;
+
 /* Top-level entry point to the error management subsystem.
    All detected errors are notified here; this routine decides if/when the
    user should see the error. */
@@ -487,7 +489,6 @@ void VG_(maybe_record_error) ( ThreadId tid,
           VgRes  exe_res          = Vg_MedRes;
    static Bool   stopping_message = False;
    static Bool   slowdown_message = False;
-   static Int    n_errs_shown     = 0;
 
    /* After M_COLLECT_NO_ERRORS_AFTER_SHOWN different errors have
       been found, or M_COLLECT_NO_ERRORS_AFTER_FOUND total errors
@@ -649,7 +650,8 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
                          void* extra, ExeContext* where, Bool print_error,
                          Bool allow_db_attach, Bool count_error )
 {
-   Error  err;
+   Error err;
+   Supp *su;
 
    /* Build ourselves the error */
    construct_error ( &err, tid, ekind, a, s, extra, where );
@@ -663,7 +665,8 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
       not copying 'extra'. */
    (void)VG_TDICT_CALL(tool_update_extra, &err);
 
-   if (NULL == is_suppressible_error(&err)) {
+   su = is_suppressible_error(&err);
+   if (NULL == su) {
       if (count_error)
          n_errs_found++;
 
@@ -672,13 +675,14 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
             VG_(message)(Vg_UserMsg, "");
          pp_Error(&err);
          is_first_shown_context = False;
+         n_errs_shown++;
+         do_actions_on_error(&err, allow_db_attach);
       }
-      do_actions_on_error(&err, allow_db_attach);
-
       return False;
 
    } else {
       n_errs_suppressed++;
+      su->count++;
       return True;
    }
 }

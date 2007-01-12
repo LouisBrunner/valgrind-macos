@@ -81,6 +81,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	mmaptest.stderr.exp mmaptest.vgtest \
 	nanoleak.stderr.exp nanoleak.vgtest \
 	nanoleak_supp.stderr.exp nanoleak_supp.vgtest nanoleak.supp \
+	nanoleak2.stderr.exp nanoleak2.vgtest \
 	new_nothrow.stderr.exp new_nothrow.vgtest \
 	new_override.stderr.exp new_override.stdout.exp new_override.vgtest \
 	null_socket.stderr.exp null_socket.vgtest \
@@ -155,7 +156,7 @@ check_PROGRAMS = \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \
 	memalign_test memalign2 memcmptest mempool mmaptest \
-	nanoleak new_nothrow \
+	nanoleak nanoleak2 new_nothrow \
 	null_socket oset_test overlap \
 	partiallydefinedeq \
 	partial_load pdb-realloc pdb-realloc2 \

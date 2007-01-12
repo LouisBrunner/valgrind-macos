@@ -1592,15 +1592,13 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
 }
 
 
-/* A structure which holds information needed by read_encoded_Addr().
-   Not sure what these address-like fields are -- really ought to
-   distinguish properly svma/avma/image addresses. 
+/* A structure which holds information needed by read_encoded_Addr(). 
 */
 typedef
    struct {
       UChar  encoding;
-      UChar* ehframe;
-      Addr   ehframe_addr;
+      UChar* ehframe_image;
+      Addr   ehframe_avma;
    }
    AddressDecodingInfo;
 
@@ -1839,10 +1837,10 @@ static Addr read_encoded_Addr ( /*OUT*/Int* nbytes,
                                 UChar* data )
 {
    Addr   base;
-   Int    offset;
-   UChar  encoding     = adi->encoding;
-   UChar* ehframe      = adi->ehframe;
-   Addr   ehframe_addr = adi->ehframe_addr;
+   Word   offset;
+   UChar  encoding      = adi->encoding;
+   UChar* ehframe_image = adi->ehframe_image;
+   Addr   ehframe_avma  = adi->ehframe_avma;
 
    vg_assert((encoding & DW_EH_PE_indirect) == 0);
 
@@ -1853,7 +1851,7 @@ static Addr read_encoded_Addr ( /*OUT*/Int* nbytes,
          base = 0;
          break;
       case DW_EH_PE_pcrel:
-         base = ehframe_addr + ( data - ehframe );
+         base = ehframe_avma + ( data - ehframe_image );
          break;
       case DW_EH_PE_datarel:
          vg_assert(0);
@@ -1868,7 +1866,7 @@ static Addr read_encoded_Addr ( /*OUT*/Int* nbytes,
          break;
       case DW_EH_PE_aligned:
          base = 0;
-         offset = data - ehframe;
+         offset = data - ehframe_image;
          if ((offset % sizeof(Addr)) != 0) {
             *nbytes = sizeof(Addr) - (offset % sizeof(Addr));
             data += *nbytes;
@@ -2477,12 +2475,12 @@ static CIE the_CIEs[N_CIEs];
 
 void ML_(read_callframe_info_dwarf2) 
         ( /*OUT*/struct _SegInfo* si, 
-          UChar* ehframe, Int ehframe_sz, Addr ehframe_addr )
+          UChar* ehframe_image, Int ehframe_sz, Addr ehframe_avma )
 {
    Int    nbytes;
    HChar* how = NULL;
    Int    n_CIEs = 0;
-   UChar* data = ehframe;
+   UChar* data = ehframe_image;
 
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    /* These targets don't use CFI-based stack unwinding. */
@@ -2491,8 +2489,8 @@ void ML_(read_callframe_info_dwarf2)
 
    if (VG_(clo_trace_cfi)) {
       VG_(printf)("\n-----------------------------------------------\n");
-      VG_(printf)("CFI info: ehframe %p, ehframe_sz %d\n",
-	          ehframe, ehframe_sz );
+      VG_(printf)("CFI info: szB %d, _avma %p, _image %p\n",
+	          ehframe_sz, (void*)ehframe_avma, (void*)ehframe_image );
       VG_(printf)("CFI info: name %s\n",
 		  si->filename );
    }
@@ -2524,11 +2522,11 @@ void ML_(read_callframe_info_dwarf2)
       UInt   cie_pointer;
 
       /* Are we done? */
-      if (data == ehframe + ehframe_sz)
+      if (data == ehframe_image + ehframe_sz)
          return;
 
       /* Overshot the end?  Means something is wrong */
-      if (data > ehframe + ehframe_sz) {
+      if (data > ehframe_image + ehframe_sz) {
          how = "overran the end of .eh_frame";
          goto bad;
       }
@@ -2538,8 +2536,8 @@ void ML_(read_callframe_info_dwarf2)
 
       ciefde_start = data;
       if (VG_(clo_trace_cfi)) 
-         VG_(printf)("\ncie/fde.start   = %p (ehframe + 0x%x)\n", 
-                     ciefde_start, ciefde_start - ehframe);
+         VG_(printf)("\ncie/fde.start   = %p (ehframe_image + 0x%x)\n", 
+                     ciefde_start, ciefde_start - ehframe_image);
 
       ciefde_len = read_UInt(data); data += sizeof(UInt);
       if (VG_(clo_trace_cfi)) 
@@ -2549,7 +2547,7 @@ void ML_(read_callframe_info_dwarf2)
          of the sequence.  ?? Neither the DWARF2 spec not the AMD64
          ABI spec say this, though. */
       if (ciefde_len == 0) {
-         if (data == ehframe + ehframe_sz)
+         if (data == ehframe_image + ehframe_sz)
             return;
          how = "zero-sized CIE/FDE but not at section end";
          goto bad;
@@ -2585,7 +2583,7 @@ void ML_(read_callframe_info_dwarf2)
 
 	 /* Record its offset.  This is how we will find it again
             later when looking at an FDE. */
-         the_CIEs[this_CIE].offset = ciefde_start - ehframe;
+         the_CIEs[this_CIE].offset = ciefde_start - ehframe_image;
 
          cie_version = read_UChar(data); data += sizeof(UChar);
          if (VG_(clo_trace_cfi))
@@ -2694,9 +2692,9 @@ void ML_(read_callframe_info_dwarf2)
 
          if (VG_(clo_trace_cfi)) {
             AddressDecodingInfo adi;
-            adi.encoding     = the_CIEs[this_CIE].address_encoding;
-            adi.ehframe      = ehframe;
-            adi.ehframe_addr = ehframe_addr;
+            adi.encoding      = the_CIEs[this_CIE].address_encoding;
+            adi.ehframe_image = ehframe_image;
+            adi.ehframe_avma  = ehframe_avma;
             show_CF_instructions(the_CIEs[this_CIE].instrs, 
                                  the_CIEs[this_CIE].ilen, &adi );
          }
@@ -2720,7 +2718,7 @@ void ML_(read_callframe_info_dwarf2)
 
          /* re sizeof(UInt), matches XXX above.  For 64-bit dwarf this
             will have to be a ULong instead. */
-         look_for = (data - sizeof(UInt) - ehframe) - cie_pointer;
+         look_for = (data - sizeof(UInt) - ehframe_image) - cie_pointer;
 
          for (cie = 0; cie < n_CIEs; cie++) {
             if (0) VG_(printf)("look for %d   %d\n",
@@ -2734,17 +2732,17 @@ void ML_(read_callframe_info_dwarf2)
             goto bad;
 	 }
 
-         adi.encoding     = the_CIEs[cie].address_encoding;
-         adi.ehframe      = ehframe;
-         adi.ehframe_addr = ehframe_addr;
+         adi.encoding      = the_CIEs[cie].address_encoding;
+         adi.ehframe_image = ehframe_image;
+         adi.ehframe_avma  = ehframe_avma;
          fde_initloc = read_encoded_Addr(&nbytes, &adi, data);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
             VG_(printf)("fde.initloc     = %p\n", (void*)fde_initloc);
 
-         adi.encoding     = the_CIEs[cie].address_encoding & 0xf;
-         adi.ehframe      = ehframe;
-         adi.ehframe_addr = ehframe_addr;
+         adi.encoding      = the_CIEs[cie].address_encoding & 0xf;
+         adi.ehframe_image = ehframe_image;
+         adi.ehframe_avma  = ehframe_avma;
          fde_arange = read_encoded_Addr(&nbytes, &adi, data);
          data += nbytes;
          if (VG_(clo_trace_cfi)) 
@@ -2769,9 +2767,9 @@ void ML_(read_callframe_info_dwarf2)
 
 	 data += fde_ilen;
 
-         adi.encoding     = the_CIEs[cie].address_encoding;
-         adi.ehframe      = ehframe;
-         adi.ehframe_addr = ehframe_addr;
+         adi.encoding      = the_CIEs[cie].address_encoding;
+         adi.ehframe_image = ehframe_image;
+         adi.ehframe_avma  = ehframe_avma;
 
          if (VG_(clo_trace_cfi))
             show_CF_instructions(fde_instrs, fde_ilen, &adi);

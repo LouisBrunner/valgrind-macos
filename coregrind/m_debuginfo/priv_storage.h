@@ -34,6 +34,9 @@
    This module was also extensively hacked on by Jeremy Fitzhardinge
    and Tom Hughes.
 */
+/* See comment at top of debuginfo.c for explanation of
+   the _svma / _avma / _image / _bias naming scheme.
+*/
 
 #ifndef __PRIV_STORAGE_H
 #define __PRIV_STORAGE_H
@@ -139,10 +142,10 @@ struct _SegInfo {
    struct _SegInfo* next;	/* list of SegInfos */
 
    /* Description of the mapped segment. */
-   Addr   start;
-   UInt   size;
+   Addr   text_start_avma;
+   UInt   text_size;
    UChar* filename; /* in mallocville */
-   OffT   foffset;
+   OffT   foffset;  /* file offset for mapped text section - UNUSED */
    UChar* soname;
 
    /* An expandable array of symbols. */
@@ -170,24 +173,25 @@ struct _SegInfo {
       UChar  strtab[SEGINFO_STRCHUNKSIZE];
    } *strchunks;
 
-   /* 'offset' is what needs to be added to an address in the address
-      space of the library as stored on disk (which is not 0-based for
-      executables or prelinked libraries) to get an address in memory
-      for the object loaded at 'start' */
-   OffT   offset;
+   /* 'text_bias' is what needs to be added to an address in the
+      address space of the library as stored on disk [a so-called
+      stated VMA] (which is not 0-based for executables or prelinked
+      libraries) to get an address in memory for the object loaded at
+      'text_start_avma'.  At least for text symbols. */
+   OffT   text_bias;
 
    /* Bounds of data, BSS, PLT, GOT and OPD (for ppc64-linux) so that
       tools can see what section an address is in.  In the running
       image! */
-   Addr	  plt_start_vma;
+   Addr	  plt_start_avma;
    UInt   plt_size;
-   Addr   got_start_vma;
+   Addr   got_start_avma;
    UInt   got_size;
-   Addr   opd_start_vma;
+   Addr   opd_start_avma;
    UInt   opd_size;
-   Addr   data_start_vma;
+   Addr   data_start_avma;
    UInt   data_size;
-   Addr   bss_start_vma;
+   Addr   bss_start_avma;
    UInt   bss_size;
 };
 

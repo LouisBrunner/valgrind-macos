@@ -2224,6 +2224,16 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          ctx->cfa_offset = off * ctx->data_a_f;
          break;
 
+      case DW_CFA_undefined:
+         reg = read_leb128( &instr[i], &nleb, 0);
+         i += nleb;
+         if (reg < 0 || reg >= N_CFI_REGS) 
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_Undef;
+         ctx->reg[reg].coff = 0;
+         ctx->reg[reg].reg = 0;
+         break;
+
       case DW_CFA_GNU_args_size:
          /* No idea what is supposed to happen.  gdb-6.3 simply
             ignores these. */

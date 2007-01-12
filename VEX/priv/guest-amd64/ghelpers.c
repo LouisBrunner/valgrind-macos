@@ -1899,6 +1899,72 @@ ULong amd64g_calculate_RCR ( ULong arg,
    return wantRflags ? rflags_in : arg;
 }
 
+ULong amd64g_calculate_RCL ( ULong arg, 
+                             ULong rot_amt, 
+                             ULong rflags_in, 
+                             Long  szIN )
+{
+   Bool  wantRflags = toBool(szIN < 0);
+   ULong sz         = wantRflags ? (-szIN) : szIN;
+   ULong tempCOUNT  = rot_amt & (sz == 8 ? 0x3F : 0x1F);
+   ULong cf=0, of=0, tempcf;
+
+   switch (sz) {
+      case 8:
+         cf = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = (arg >> 63) & 1;
+            arg    = (arg << 1) | (cf & 1);
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         of = ((arg >> 63) ^ cf) & 1;
+         break;
+      case 4:
+         while (tempCOUNT >= 33) tempCOUNT -= 33;
+         cf = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = (arg >> 31) & 1;
+            arg    = 0xFFFFFFFFULL & ((arg << 1) | (cf & 1));
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         of = ((arg >> 31) ^ cf) & 1;
+         break;
+      case 2:
+         while (tempCOUNT >= 17) tempCOUNT -= 17;
+         cf = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = (arg >> 15) & 1;
+            arg    = 0xFFFFULL & ((arg << 1) | (cf & 1));
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         of = ((arg >> 15) ^ cf) & 1;
+         break;
+      case 1:
+         while (tempCOUNT >= 9) tempCOUNT -= 9;
+         cf = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = (arg >> 7) & 1;
+            arg    = 0xFFULL & ((arg << 1) | (cf & 1));
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         of = ((arg >> 7) ^ cf) & 1;
+         break;
+      default: 
+         vpanic("calculate_RCL(amd64g): invalid size");
+   }
+
+   cf &= 1;
+   of &= 1;
+   rflags_in &= ~(AMD64G_CC_MASK_C | AMD64G_CC_MASK_O);
+   rflags_in |= (cf << AMD64G_CC_SHIFT_C) | (of << AMD64G_CC_SHIFT_O);
+
+   return wantRflags ? rflags_in : arg;
+}
+
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */

@@ -3006,7 +3006,7 @@ ULong dis_Grp2 ( Prefix pfx,
    /* delta on entry points at the modrm byte. */
    HChar  dis_buf[50];
    Int    len;
-   Bool   isShift, isRotate, isRotateRC;
+   Bool   isShift, isRotate, isRotateC;
    IRType ty    = szToITy(sz);
    IRTemp dst0  = newTemp(ty);
    IRTemp dst1  = newTemp(ty);
@@ -3030,14 +3030,15 @@ ULong dis_Grp2 ( Prefix pfx,
    isRotate = False;
    switch (gregLO3ofRM(modrm)) { case 0: case 1: isRotate = True; }
 
-   isRotateRC = toBool(gregLO3ofRM(modrm) == 3);
+   isRotateC = False;
+   switch (gregLO3ofRM(modrm)) { case 2: case 3: isRotateC = True; }
 
-   if (!isShift && !isRotate && !isRotateRC) {
+   if (!isShift && !isRotate && !isRotateC) {
       vex_printf("\ncase %d\n", gregLO3ofRM(modrm));
       vpanic("dis_Grp2(Reg): unhandled case(amd64)");
    }
 
-   if (isRotateRC) {
+   if (isRotateC) {
       /* Call a helper; this insn is so ridiculous it does not deserve
          better.  One problem is, the helper has to calculate both the
          new value and the new flags.  This is more than 64 bits, and
@@ -3046,6 +3047,7 @@ ULong dis_Grp2 ( Prefix pfx,
          using the sign of the sz field to indicate whether it is the
          value or rflags result we want.
       */
+      Bool     left = toBool(gregLO3ofRM(modrm) == 2);
       IRExpr** argsVALUE;
       IRExpr** argsRFLAGS;
 
@@ -3064,7 +3066,8 @@ ULong dis_Grp2 ( Prefix pfx,
                  mkIRExprCCall(
                     Ity_I64, 
                     0/*regparm*/, 
-                    "amd64g_calculate_RCR", &amd64g_calculate_RCR,
+                    left ? "amd64g_calculate_RCL" : "amd64g_calculate_RCR",
+                    left ? &amd64g_calculate_RCL  : &amd64g_calculate_RCR,
                     argsVALUE
                  )
             );
@@ -3078,7 +3081,8 @@ ULong dis_Grp2 ( Prefix pfx,
                  mkIRExprCCall(
                     Ity_I64, 
                     0/*regparm*/, 
-                    "amd64g_calculate_RCR", &amd64g_calculate_RCR,
+                    left ? "amd64g_calculate_RCL" : "amd64g_calculate_RCR",
+                    left ? &amd64g_calculate_RCL  : &amd64g_calculate_RCR,
                     argsRFLAGS
                  )
             );

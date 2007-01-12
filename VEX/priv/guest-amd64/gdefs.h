@@ -112,6 +112,10 @@ extern ULong amd64g_calculate_RCR  (
                 ULong arg, ULong rot_amt, ULong rflags_in, Long sz 
              );
 
+extern ULong amd64g_calculate_RCL  ( 
+                ULong arg, ULong rot_amt, ULong rflags_in, Long sz 
+             );
+
 extern ULong amd64g_check_fldcw ( ULong fpucw );
 
 extern ULong amd64g_create_fpucw ( ULong fpround );

@@ -1420,6 +1420,136 @@ void ML_(read_debuginfo_dwarf1) (
    read_encoded_Addr.
 */
 
+/* More badness re address encoding, 12 Jan 07.
+
+   Most gcc provided CIEs have a "zR" augmentation, which means they
+   supply their own address encoding, and that works fine.  However,
+   some icc9 supplied CIEs have no augmentation, which means they use
+   the default_Addr_encoding().  That says to use a machine-word sized
+   value, literally unmodified.
+
+   Since .so's are, in general, relocated when loaded, having absolute
+   addresses in the CFI data makes no sense when read_encoded_Addr is
+   used to find the initial location for a FDE.  The resulting saga:
+
+   TomH:
+   > I'm chasing a stack backtrace failure for an amd64 .so which was 
+   > created I believe by icc 9.1.  After a while I wound up looking at
+   > this: (readdwarf.c)
+   >
+   >   5083        tom static UChar default_Addr_encoding ( void )
+   >   3584        tom {
+   >   3584        tom    switch (sizeof(Addr)) {
+   >   3584        tom       case 4: return DW_EH_PE_udata4;
+   >   3584        tom       case 8: return DW_EH_PE_udata8;
+   >   3584        tom       default: vg_assert(0);
+   >   3584        tom    }
+   >   3584        tom }
+   >
+   > If a CIE does not have an "augmentation string" (typically "zR") then 
+   > addresses are decoded as described by default_Addr_encoding.  If there
+   > is an 'R' in the augmentation string then the encoding to use 
+   > is specified by the CIE itself, which works fine with GCC compiled code
+   > since that always appears to specify zR.
+
+   Correct.
+
+   > Problem is this .so has no augmentation string and so uses the
+   > default encoding, viz DW_EH_PE_udata8.  That appears to mean
+   > "read a 64 bit number" and use that as-is (for the starting value
+   > of the program counter when running the CFA program).
+
+   Strictly speaking the default is DW_EH_PE_absptr, but that amounts
+   to either udata4 or udata8 depending on the platform's pointer size
+   which is a shortcut I used.
+
+   > For this .so that gives nonsense (very small) PCs which are later
+   > rejected by the sanity check which ensures PC ranges fall inside
+   > the mapped text segment.  It seems like the .so expects to have the
+   > start VMA of the text segment added on.  This would correspond to
+   >
+   >   static UChar default_Addr_encoding ( void )
+   >   {
+   >      switch (sizeof(Addr)) {
+   >         case 4: return DW_EH_PE_textrel + DW_EH_PE_udata4;
+   >         case 8: return DW_EH_PE_textrel + DW_EH_PE_udata8;
+   >         default: vg_assert(0);
+   >      }
+   >   }
+
+   The problem you're seeing is that you have absolute pointers inside
+   a shared library, which obviously makes little sense on the face of
+   things as how would the linker know where the library will be
+   loaded?
+
+   The answer of course is that it doesn't, so if it points absolute
+   pointers in the frame unwind data is has to include relocations for
+   them, and I'm betting that if you look at the relocations in the
+   library you will there are some for that data.
+
+   That is fine of course when ld.so maps the library - it will
+   relocate the eh_frame data as it maps it (or prelinking will
+   already have done so) and when the g++ exception code kicks in and
+   unwinds the stack it will see relocated data.
+
+   We of course are mapping the section from the ELF file ourselves
+   and are not applying the relocations, hence the problem you are
+   seeing.
+
+   Strictly speaking we should apply the relocations but the cheap
+   solution is essentially to do what you've done - strictly speaking
+   you should adjust by the difference between the address the library
+   was linked for and the address it has been loaded at, but a shared
+   library will normally be linked for address zero I believe. It's
+   possible that prelinking might change that though?
+
+   JRS:
+   That all syncs with what I am seeing.
+
+   So what I am inclined to do is:
+
+   - Leave default_Addr_encoding as it is
+
+   - Change read_encoded_Addr's handling of "case DW_EH_PE_absptr" so
+     it sets base to, as you say, the difference between the address
+     the library was linked for and the address it has been loaded at
+     (== the SegInfo's text_bias)
+
+   Does that sound sane?  I think it should even handle the prelinked
+   case.
+
+   (JRS, later)
+
+   Hmm.  Plausible as it sounds, it doesn't work.  It now produces
+   bogus backtraces for locations inside the (statically linked)
+   memcheck executable.
+
+   Besides, there are a couple of other places where read_encoded_Addr
+   is used -- one of which is used to establish the length of the
+   address range covered by the current FDE:
+
+         fde_arange = read_encoded_Addr(&nbytes, &adi, data);
+
+   and it doesn't seem to make any sense for read_encoded_Addr to add
+   on the text segment bias in that context.  The DWARF3 spec says
+   that both the initial_location and address_range (length) fields
+   are encoded the same way ("target address"), so it is unclear at
+   what stage in the process it would be appropriate to relocate the
+   former but not the latter.
+
+   One unprincipled kludge that does work is the following: just
+   before handing one of the address range fragments off to
+   ML_(addDiCfSI) for permanent storage, check its start address.  If
+   that is very low (less than 2 M), and is far below the mapped text
+   segment, and adding the text bias would move the fragment entirely
+   inside the mapped text segment, then do so.  A kind of kludged
+   last-minute relocation, if you like.
+
+   12 Jan 07: committing said kludge (see kludge_then_addDiCfSI).  If
+   the situation clarifies, it can easily enough be backed out and
+   replaced by a better fix.
+*/
+
 /* --------------- Decls --------------- */
 
 #if defined(VGP_x86_linux)
@@ -2386,6 +2516,65 @@ static void show_CF_instructions ( UChar* instrs, Int ilen,
    }
 }
 
+
+/* Attempt to add a CFI record to the collection.  Nominally this just
+   hands the record off to ML_(addDiCfSI), which will ignore it if it
+   falls outside the mapped text segment of this SegInfo.  However, a
+   nasty kludge may be pre-applied: if the record's base address is
+   very small, and does not come anywhere near the mapped text
+   segment, then assume we forgot to add the text_bias for some
+   reason, so add it on and then try again. */
+static
+void kludge_then_addDiCfSI ( struct _SegInfo* si, DiCfSI* cfsi )
+{
+#  define IN_TEXT_SEG(_addr) \
+      ((_addr) >= si->text_start_avma \
+       && (_addr) < (si->text_start_avma + si->text_size))
+
+   if ( /* "has implausibly low addr" */
+        cfsi->base < 2 * 1024 * 1024
+        /* "has plausible size" */
+        && cfsi->len > 0
+        && cfsi->len < 50000
+        /* "is well clear of the text segment" */
+        && (2 * (cfsi->base + cfsi->len)) < si->text_start_avma
+        /* "adding text_bias would put the start in the text segment */
+        && IN_TEXT_SEG(si->text_bias + cfsi->base)
+        /* "adding text_bias would put the end in the text segment */
+        && IN_TEXT_SEG(si->text_bias + cfsi->base + cfsi->len - 1)
+        /* XXX and there isn't already a record present */ ) 
+   {
+      static Int complaints = 3;
+
+      /* Oh, well, let's kludge it into the text segment, then. */
+      /* First, though, complain: */
+      if (VG_(clo_trace_cfi) || complaints > 0) {
+         complaints--;
+         if (VG_(clo_verbosity) > 1) {
+            VG_(message)(
+               Vg_DebugMsg,
+               "warning: DiCfSI %p .. %p kludge reloc to %p .. %p",
+               cfsi->base, 
+               cfsi->base + cfsi->len - 1,
+               si->text_bias + cfsi->base, 
+               si->text_bias + cfsi->base + cfsi->len - 1
+            );
+         }
+         if (VG_(clo_trace_cfi)) 
+            ML_(ppDiCfSI)(cfsi);
+      }
+
+      /* last but not least ... */
+      cfsi->base += si->text_bias;
+   }
+
+   /* finished monkeying around, let's add it. */
+   ML_(addDiCfSI)(si, cfsi);
+
+#  undef IN_TEXT_SEG
+}
+
+
 /* Run the CF instructions in instrs[0 .. ilen-1], until the end is
    reached, or until there is a failure.  Return True iff success. 
 */
@@ -2414,7 +2603,7 @@ Bool run_CF_instructions ( struct _SegInfo* si,
       if (loc_prev != ctx->loc && si) {
          summ_ok = summarise_context ( &cfsi, loc_prev, ctx );
          if (summ_ok) {
-            ML_(addDiCfSI)(si, &cfsi);
+            kludge_then_addDiCfSI(si, &cfsi);
             if (VG_(clo_trace_cfi))
                ML_(ppDiCfSI)(&cfsi);
          }
@@ -2426,7 +2615,7 @@ Bool run_CF_instructions ( struct _SegInfo* si,
       if (si) {
          summ_ok = summarise_context ( &cfsi, loc_prev, ctx );
          if (summ_ok) {
-            ML_(addDiCfSI)(si, &cfsi);
+            kludge_then_addDiCfSI(si, &cfsi);
             if (VG_(clo_trace_cfi))
                ML_(ppDiCfSI)(&cfsi);
          }

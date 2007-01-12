@@ -986,6 +986,11 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
    si->text_bias = offset_oimage;
 
+   if (VG_(clo_verbosity) > 2 || VG_(clo_trace_redir))
+      VG_(message)(Vg_DebugMsg, "   svma %010p, avma %010p", 
+                                si->text_start_avma - si->text_bias,
+                                si->text_start_avma );
+
    /* If, after looking at all the program headers, we still didn't 
       find a soname, add a fake one. */
    if (si->soname == NULL) {

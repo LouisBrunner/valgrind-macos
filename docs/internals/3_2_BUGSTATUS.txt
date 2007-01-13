@@ -189,6 +189,8 @@ r6495    pending  32  n-i-bz   More robust handling of hinted client mmaps
 ?        ?        ?   139776   Invalid read in unaligned memcpy with 
                                Intel compiler v9
 
+r6514    r6515    32  n-i-bz   Don't prompt about suppressions for unshown
+                               reachable leaks (tests/nanoleak2.c)
 
 ------- Bugs reported and fixed in 3.2.0 ------
 

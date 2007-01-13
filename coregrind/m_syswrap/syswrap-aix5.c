@@ -764,6 +764,10 @@ PRE(sys_close)
 {
    PRINT("close ( %ld )", ARG1);
    PRE_REG_READ1(void, "close", UInt, fd);
+   /* If doing -d style logging (which is to fd=2), don't allow that
+      to be closed. */
+   if (ARG1 == 2/*stderr*/ && VG_(debugLog_getLevel)() > 0)
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_connext)

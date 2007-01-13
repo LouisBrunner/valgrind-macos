@@ -2668,7 +2668,10 @@ PRE(sys_close)
    PRE_REG_READ1(long, "close", unsigned int, fd);
 
    /* Detect and negate attempts by the client to close Valgrind's log fd */
-   if (!ML_(fd_allowed)(ARG1, "close", tid, False))
+   if ( (!ML_(fd_allowed)(ARG1, "close", tid, False))
+        /* If doing -d style logging (which is to fd=2), don't
+           allow that to be closed either. */
+        || (ARG1 == 2/*stderr*/ && VG_(debugLog_getLevel)() > 0) )
       SET_STATUS_Failure( VKI_EBADF );
 }
 

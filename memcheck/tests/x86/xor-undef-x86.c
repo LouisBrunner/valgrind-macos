@@ -93,7 +93,7 @@ int main ( void )
 
 
    /* --- SSE2 --- */
-
+#if 0
    printf("\nComplain sse2 pxor\n");
    __asm__ __volatile__(
       "movups   0(%0),  %%xmm0\n\t"
@@ -150,7 +150,7 @@ int main ( void )
       JZ_NEXT
       : : "r"(junk) : "esi", "xmm7", "xmm0", "cc", "memory"
    );
-
+#endif
 
    free(junk);
    return 0;

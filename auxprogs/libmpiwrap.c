@@ -506,7 +506,7 @@ static long sizeof_long_double_image ( void )
 /*--- Unpicking datatypes                                  ---*/
 /*------------------------------------------------------------*/
 
-static 
+static __inline__
 void walk_type_array ( void(*f)(void*,long), char* base, 
                        MPI_Datatype ty, long count );
 
@@ -707,7 +707,7 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    into a different routine is so it can attempt to optimise the case
    where the array elements are contiguous and packed together without
    holes. */
-static 
+static __inline__
 void walk_type_array ( void(*f)(void*,long), char* base, 
                        MPI_Datatype elemTy, long count )
 {
@@ -762,12 +762,11 @@ void mpiwrap_walk_type_EXTERNALLY_VISIBLE
 
 /* ----------------
    Do corresponding checks on memory areas defined using a 
-   straightforward (start, length) description.  Not inlined
-   so as to make any resulting error tracebacks easier to read.
+   straightforward (start, length) description.
    ----------------
 */
 
-static
+static __inline__
 void check_mem_is_defined_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
@@ -775,7 +774,7 @@ void check_mem_is_defined_untyped ( void* buffer, long nbytes )
    }
 }
 
-static
+static __inline__
 void check_mem_is_addressable_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
@@ -783,7 +782,7 @@ void check_mem_is_addressable_untyped ( void* buffer, long nbytes )
    }
 }
 
-static
+static __inline__
 void make_mem_defined_if_addressable_untyped ( void* buffer, long nbytes )
 {
    if (nbytes > 0) {
@@ -791,7 +790,7 @@ void make_mem_defined_if_addressable_untyped ( void* buffer, long nbytes )
    }
 }
 
-static
+static __inline__
 void make_mem_defined_if_addressable_if_success_untyped ( int err, 
                                        void* buffer, long nbytes )
 {
@@ -810,7 +809,7 @@ void make_mem_defined_if_addressable_if_success_untyped ( int err,
 /* Check that the specified area is both addressible and contains
    initialised data, and cause V to complain if not. */
 
-static
+static __inline__
 void check_mem_is_defined ( char* buffer, long count, MPI_Datatype datatype )
 {
    walk_type_array( check_mem_is_defined_untyped, buffer, datatype, count );
@@ -821,7 +820,7 @@ void check_mem_is_defined ( char* buffer, long count, MPI_Datatype datatype )
    complain if not. Doesn't matter whether the data there is
    initialised or not. */
 
-static
+static __inline__
 void check_mem_is_addressable ( void *buffer, long count, MPI_Datatype datatype )
 {
    walk_type_array( check_mem_is_addressable_untyped, buffer, datatype, count );
@@ -831,14 +830,14 @@ void check_mem_is_addressable ( void *buffer, long count, MPI_Datatype datatype 
 /* Set the specified area to 'defined for each byte which is
    addressible' state. */
 
-static
+static __inline__
 void make_mem_defined_if_addressable ( void *buffer, int count, MPI_Datatype datatype )
 {
    walk_type_array( make_mem_defined_if_addressable_untyped,
                     buffer, datatype, count );
 }
 
-static
+static __inline__
 void 
 make_mem_defined_if_addressable_if_success ( int err, void *buffer, int count, 
                                              MPI_Datatype datatype )
@@ -1185,7 +1184,7 @@ static void maybe_complete ( Bool         error_in_status,
 /* --- Isend --- */
 /* rd: (buf,count,datatype) */
 /* wr: *request */
-static
+static __inline__
 int generic_Isend(void *buf, int count, MPI_Datatype datatype, 
                              int dest, int tag, MPI_Comm comm, 
                              MPI_Request* request)

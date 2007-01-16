@@ -406,6 +406,16 @@ MEMCHR(m_libc_so_star, memchr)
 MEMCPY(m_libc_so_star, memcpy)
 MEMCPY(m_ld_so_1,      memcpy) /* ld.so.1 */
    
+/* icc9 blats these around all over the place.  Not only in the main
+   executable but various .so's.  They are highly tuned and read
+   memory beyond the source boundary (although work correctly and
+   never go across page boundaries), so give errors when run natively,
+   at least for misaligned source arg.  Just intercepting in the exe
+   only until we understand more about the problem.  See
+   http://bugs.kde.org/show_bug.cgi?id=139776
+ */
+MEMCPY(NONE, _intel_fast_memcpy)
+
 
 #define MEMCMP(soname, fnname) \
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \

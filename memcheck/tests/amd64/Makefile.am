@@ -13,9 +13,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bug132146.vgtest bug132146.stderr.exp bug132146.stdout.exp \
 	fxsave-amd64.vgtest fxsave-amd64.stdout.exp fxsave-amd64.stderr.exp \
 	more_x87_fp.stderr.exp more_x87_fp.stdout.exp more_x87_fp.vgtest \
-	sse_memory.stderr.exp sse_memory.stdout.exp sse_memory.vgtest
+	sse_memory.stderr.exp sse_memory.stdout.exp sse_memory.vgtest \
+	xor-undef-amd64.stderr.exp xor-undef-amd64.stdout.exp \
+	xor-undef-amd64.vgtest
 
-check_PROGRAMS = bt_everything bug132146 fxsave-amd64 more_x87_fp sse_memory
+check_PROGRAMS = bt_everything bug132146 fxsave-amd64 \
+		more_x87_fp sse_memory xor-undef-amd64
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include

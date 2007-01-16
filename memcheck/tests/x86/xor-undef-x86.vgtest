@@ -1,0 +1,2 @@
+prog: xor-undef-x86
+prereq: ../../../tests/cputest x86-sse

@@ -24,14 +24,16 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sse2_memory.stderr.exp sse2_memory.stdout.exp sse2_memory.vgtest \
 	tronical.stderr.exp tronical.vgtest \
 	more_x86_fp.stderr.exp more_x86_fp.stdout.exp more_x86_fp.vgtest \
-	fprem.stderr.exp fprem.stdout.exp fprem.vgtest
+	fprem.stderr.exp fprem.stdout.exp fprem.vgtest \
+	xor-undef-x86.stderr.exp xor-undef-x86.stdout.exp \
+	xor-undef-x86.vgtest
 
 check_PROGRAMS = \
 	bug133694 \
 	espindola2 \
 	scalar_exit_group scalar_fork scalar_supp scalar_vfork \
 	fpeflags pushfpopf pushpopmem scalar sse_memory tronical \
-	more_x86_fp fprem
+	more_x86_fp fprem xor-undef-x86
 
 AM_CPPFLAGS  = -I$(top_srcdir)/include
 AM_CFLAGS    = $(WERROR) @FLAG_M32@ -Winline -Wall -Wshadow -g \

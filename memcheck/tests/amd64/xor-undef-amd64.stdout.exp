@@ -1,0 +1,20 @@
+
+Complain int64
+
+No complain int64
+
+Complain mmx
+
+No complain mmx
+
+Complain sse xorps
+
+No complain sse xorps
+
+Complain sse2 pxor
+
+No complain sse2 pxor
+
+Complain sse2 xorpd
+
+No complain sse2 xorpd

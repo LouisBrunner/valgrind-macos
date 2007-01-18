@@ -186,7 +186,7 @@ r6477    r6478    32  n-i-bz   libmpiwrap.c: Fixes for MPICH
 
 r6495    r6497    32  n-i-bz   More robust handling of hinted client mmaps
 
-?        ?        32,w 139776  Invalid read in unaligned memcpy with 
+r6526    r6528    32  139776   Invalid read in unaligned memcpy with 
                                Intel compiler v9
 
 r6502    r6503    32  n-i-bz   Generate valid XML even for very long
@@ -201,10 +201,15 @@ vx1725   vx1727   32  139910   amd64 rcl is not supported
 
 r6510    r6513    32  n-i-bz   unwinder: DW_CFA_undefined
 
-r6509    r6512    32  n-i-bz   fix stack unwinding w/ icc generated
+r6509    r6512    32  n-i-bz   fix stack unwinding w/ icc9 generated
                                code on amd64
 
-?        ?        ?   n-i-bz   uninit errs in icc9 gsl-1.6
+vx1728   vx1729   32  n-i-bz   fix false uninit-value errs in icc9
+                               generated FP code
+
+r6523    r6527    32  n-i-bz   reduce extraneous frames in libmpiwrap.c
+
+r6530    r6531    32  n-i-bz   support pselect6 on amd64-linux
 
 
 ------- Bugs reported and fixed in 3.2.0 ------

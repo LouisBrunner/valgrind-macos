@@ -76,7 +76,8 @@ n-i-bz   fix false uninit-value errs in icc9 generated FP code
 n-i-bz   reduce extraneous frames in libmpiwrap.c
 n-i-bz   support pselect6 on amd64-linux
 
-(3.2.2: 25 Jan 2007, vex rXXXX, valgrind rXXXX).
+(3.2.2.RC5: 18 Jan 2007, vex r1729, valgrind r6536).
+(3.2.2:     25 Jan 2007, vex rXXXX, valgrind rXXXX).
 
 
 Release 3.2.1 (16 Sept 2006)

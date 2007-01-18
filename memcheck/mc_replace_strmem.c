@@ -607,6 +607,7 @@ GLIBC25___STRCPY_CHK(m_libc_so_star, __strcpy_chk)
    }
 
 GLIBC25_MEMPCPY(m_libc_so_star, mempcpy)
+GLIBC25_MEMPCPY(m_ld_so_1,      mempcpy) /* ld.so.1 */
 
 
 /*--------------------------------------------------------------------*/

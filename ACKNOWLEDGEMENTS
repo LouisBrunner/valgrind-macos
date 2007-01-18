@@ -47,6 +47,11 @@ Robert added file descriptor leakage checking, new library
 interception machinery, support for client allocation pools, and minor
 other tweakage.
 
+Josef Weidendorfer, Josef.Weidendorfer@gmx.de.
+
+Josef wrote Callgrind and the associated KCachegrind GUI.
+
+
 
 Frederic Gobry helped with autoconf and automake.  Daniel Berlin
 modified readelf's dwarf2 source line reader, written by Nick Clifton,

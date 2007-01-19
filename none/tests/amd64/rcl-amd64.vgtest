@@ -1,0 +1,2 @@
+prog: rcl-amd64
+vgopts: -q

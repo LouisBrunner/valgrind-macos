@@ -64,6 +64,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	leak-tree.stderr.exp2 leak-tree.stderr.exp64 \
 	leak-regroot.vgtest leak-regroot.stderr.exp \
 	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
+	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
+	long_namespace_xml.stderr.exp \
 	malloc_usable.stderr.exp malloc_usable.vgtest \
 	malloc1.stderr.exp malloc1.vgtest \
 	malloc2.stderr.exp malloc2.vgtest \
@@ -153,6 +155,7 @@ check_PROGRAMS = \
 	doublefree error_counts errs1 exitprog execve execve2 erringfds \
 	fprw fwrite hello inits inline \
 	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
+	long_namespace_xml \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \
 	memalign_test memalign2 memcmptest mempool mmaptest \
@@ -205,6 +208,7 @@ mismatches_SOURCES	= mismatches.cpp
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
 deep_templates_SOURCES	= deep_templates.cpp
+long_namespace_xml_SOURCES = long_namespace_xml.cpp
 deep_templates_CXXFLAGS	= $(AM_FLAG_M3264_PRI) $(AM_CFLAGS) -O -gstabs
 
 if VGP_PPC32_AIX5

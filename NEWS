@@ -1,21 +1,17 @@
 
-Release 3.2.2 (25 Jan 2007)
+Release 3.2.2 (22 Jan 2007)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 3.2.2 fixes a bunch of bugs in 3.2.1, adds support for glibc-2.5 based
-systems (openSUSE 10.2, Fedora Core 6), improves support for icc-9.X 
-compiled code, and brings modest performance
-improvements in some areas, including amd64 floating point, 
-powerpc support, and startup responsiveness on all targets.
-
-XXX what else did I forget
+systems (openSUSE 10.2, Fedora Core 6), improves support for icc-9.X
+compiled code, and brings modest performance improvements in some
+areas, including amd64 floating point, powerpc support, and startup
+responsiveness on all targets.
 
 The fixed bugs are as follows.  Note that "n-i-bz" stands for "not in
 bugzilla" -- that is, a bug that was reported to us but never got a
 bugzilla entry.  We encourage you to file bugs in bugzilla
 (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than mailing the
 developers (or mailing lists) directly.
-
 
 129390   ppc?->IR: some kind of VMX prefetch (dstt)
 129968   amd64->IR: 0xF 0xAE 0x0 (fxsave)
@@ -76,8 +72,8 @@ n-i-bz   fix false uninit-value errs in icc9 generated FP code
 n-i-bz   reduce extraneous frames in libmpiwrap.c
 n-i-bz   support pselect6 on amd64-linux
 
-(3.2.2.RC5: 18 Jan 2007, vex r1729, valgrind r6536).
-(3.2.2:     25 Jan 2007, vex rXXXX, valgrind rXXXX).
+(3.2.2.RC6: 19 Jan 2007, vex r1729, valgrind r6539).
+(3.2.2:     22 Jan 2007, vex rXXXX, valgrind rXXXX).
 
 
 Release 3.2.1 (16 Sept 2006)

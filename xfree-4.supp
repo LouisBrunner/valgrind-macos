@@ -241,7 +241,14 @@
 # Completely inappropriate place, but ...
 
 {
-   ifort-9.X-on-amd64-#1
+   ifort-9.X-on-i686-1
+   Memcheck:Addr4
+   fun:unaligned_bigint
+   fun:hash
+   fun:for__add_to_lf_table
+}
+{
+   ifort-9.X-on-amd64-1
    Memcheck:Addr8
    fun:unaligned_bigint
    fun:hash

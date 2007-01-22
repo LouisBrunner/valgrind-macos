@@ -2,9 +2,10 @@
 Release 3.2.2 (22 Jan 2007)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.2.2 fixes a bunch of bugs in 3.2.1, adds support for glibc-2.5 based
-systems (openSUSE 10.2, Fedora Core 6), improves support for icc-9.X
-compiled code, and brings modest performance improvements in some
-areas, including amd64 floating point, powerpc support, and startup
+systems (openSUSE 10.2, Fedora Core 6), further reduces memcheck's
+false error rate on x86/amd64, improves support for icc-9.X compiled
+code, and brings modest performance improvements in some areas,
+including amd64 floating point, powerpc support, and startup
 responsiveness on all targets.
 
 The fixed bugs are as follows.  Note that "n-i-bz" stands for "not in
@@ -72,8 +73,7 @@ n-i-bz   fix false uninit-value errs in icc9 generated FP code
 n-i-bz   reduce extraneous frames in libmpiwrap.c
 n-i-bz   support pselect6 on amd64-linux
 
-(3.2.2.RC6: 19 Jan 2007, vex r1729, valgrind r6539).
-(3.2.2:     22 Jan 2007, vex rXXXX, valgrind rXXXX).
+(3.2.2: 22 Jan 2007, vex r1729, valgrind r6545).
 
 
 Release 3.2.1 (16 Sept 2006)

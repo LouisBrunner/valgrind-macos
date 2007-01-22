@@ -1062,6 +1062,10 @@ count        ::= num | "."]]></programlisting>
     command line of the profiled program.</para>
   </listitem>
   <listitem>
+    <para><computeroutput>event</computeroutput> is a string containing
+    no whitespace.</para>
+  </listitem>
+  <listitem>
     <para><computeroutput>filename</computeroutput> and
     <computeroutput>fn_name</computeroutput> are strings.</para>
   </listitem>

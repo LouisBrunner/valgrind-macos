@@ -53,7 +53,6 @@ releases, bug-fix-only releases might not need one):
 - Do pre-release testing:
 
   * Check it builds and regtests on a vanilla gcc-2.96 / RedHat 7.3 distro.
-    Also check that callgrind builds/installs alongside it OK.
 
   * Check standard build and regtest on the following cpus:
        x86, sse2 (P4)

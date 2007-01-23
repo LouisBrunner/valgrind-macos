@@ -2,12 +2,6 @@ Release 3.3.0 (XX XXX 2007)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.3.0 is a feature release with ...
 
-XXX:
-* Note in NEWS that behaviour of GET_VBITS and SET_VBITS have changed --
-  they no longer issue addressability errors if either array is partially
-  unaddressable, they just return 3.  Also, SET_VBITS doesn't report
-  definedness errors if any of the V bits are undefined.
-
 Other user-visible changes:
 
 - A new suppression kind has been introduced: "Jump".  This is for

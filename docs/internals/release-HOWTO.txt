@@ -165,6 +165,8 @@ For the official release:
 
 - Add new entries to docs/internals/roadmap.txt for the next release(s).
 
+- Copy the release notes into the trunk's NEWS file.
+
 - Announce the release:
   - Email valgrind-users, valgrind-developers, and valgrind-announce.
   - Email Linux Weekly News.

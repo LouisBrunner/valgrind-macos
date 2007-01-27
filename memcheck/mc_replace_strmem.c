@@ -568,6 +568,31 @@ GLIBC232_RAWMEMCHR(m_libc_soname, rawmemchr)
 GLIBC25___STRCPY_CHK(m_libc_soname, __strcpy_chk)
 
 
+/* glibc variant of stpcpy that checks the dest is big enough. */
+#define GLIBC25___STPCPY_CHK(soname,fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+                               (char* dst, const char* src, SizeT len); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+                               (char* dst, const char* src, SizeT len) \
+   { \
+      extern void _exit(int status); \
+      do { \
+         if (len-- == 0) \
+            goto badness; \
+         *dst++ = *src; \
+      } while (*src++ != '\0'); \
+      return dst - 1; \
+     badness: \
+      VALGRIND_PRINTF_BACKTRACE( \
+         "***buffer overflow detected ***: program terminated"); \
+     _exit(127); \
+     /*NOTREACHED*/ \
+     return NULL; \
+   }
+
+GLIBC25___STPCPY_CHK(m_libc_soname, __stpcpy_chk)
+
+
 /* mempcpy */
 #define GLIBC25_MEMPCPY(soname, fnname) \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \

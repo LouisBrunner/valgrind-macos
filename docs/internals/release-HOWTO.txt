@@ -50,6 +50,10 @@ First of all:
 For each release candidate (should do release candidates for feature
 releases, bug-fix-only releases might not need one):
 
+- Build.  Don't forget to rebuild the Vex header file that specifies which
+  version of Vex is being used (so that it matches that mentioned in the final
+  release notes).  [This was forgotten for 3.2.2.]
+
 - Do pre-release testing:
 
   * Check it builds and regtests on a vanilla gcc-2.96 / RedHat 7.3 distro.

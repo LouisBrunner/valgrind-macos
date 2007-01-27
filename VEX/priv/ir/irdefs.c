@@ -2607,6 +2607,8 @@ Bool eqIRConst ( IRConst* c1, IRConst* c2 )
       case Ico_U32: return toBool( c1->Ico.U32 == c2->Ico.U32 );
       case Ico_U64: return toBool( c1->Ico.U64 == c2->Ico.U64 );
       case Ico_F64: return toBool( c1->Ico.F64 == c2->Ico.F64 );
+      case Ico_F64i: return toBool( c1->Ico.F64i == c2->Ico.F64i );
+      case Ico_V128: return toBool( c1->Ico.V128 == c2->Ico.V128 );
       default: vpanic("eqIRConst");
    }
 }

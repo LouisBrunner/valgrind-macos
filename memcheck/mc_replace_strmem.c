@@ -542,7 +542,8 @@ GLIBC232_STRCHRNUL(m_libc_soname, strchrnul)
 GLIBC232_RAWMEMCHR(m_libc_soname, rawmemchr)
 
 
-/* glibc variant of strcpy that checks the dest is big enough. */
+/* glibc variant of strcpy that checks the dest is big enough.
+   Copied from glibc-2.5/debug/test-strcpy_chk.c. */
 #define GLIBC25___STRCPY_CHK(soname,fnname) \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
                                (char* dst, const char* src, SizeT len); \
@@ -568,7 +569,8 @@ GLIBC232_RAWMEMCHR(m_libc_soname, rawmemchr)
 GLIBC25___STRCPY_CHK(m_libc_soname, __strcpy_chk)
 
 
-/* glibc variant of stpcpy that checks the dest is big enough. */
+/* glibc variant of stpcpy that checks the dest is big enough.
+   Copied from glibc-2.5/debug/test-stpcpy_chk.c. */
 #define GLIBC25___STPCPY_CHK(soname,fnname) \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
                                (char* dst, const char* src, SizeT len); \
@@ -576,11 +578,11 @@ GLIBC25___STRCPY_CHK(m_libc_soname, __strcpy_chk)
                                (char* dst, const char* src, SizeT len) \
    { \
       extern void _exit(int status); \
-      do { \
-         if (len-- == 0) \
+      if (! len) \
+         goto badness; \
+      while ((*dst++ = *src++) != '\0') \
+         if (--len == 0) \
             goto badness; \
-         *dst++ = *src; \
-      } while (*src++ != '\0'); \
       return dst - 1; \
      badness: \
       VALGRIND_PRINTF_BACKTRACE( \

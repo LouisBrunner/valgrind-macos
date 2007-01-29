@@ -1,4 +1,18 @@
 
+Release 3.2.3 (29 Jan 2007)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unfortunately 3.2.2 introduced a regression which can cause an
+assertion failure ("vex: the `impossible' happened: eqIRConst") when
+running obscure pieces of SSE code.  3.2.3 fixes this and adds one
+more glibc-2.5 intercept.  In all other respects it is identical to
+3.2.2.  Please do not use (or package) 3.2.2; instead use 3.2.3.
+
+n-i-bz   vex: the `impossible' happened: eqIRConst
+n-i-bz   Add an intercept for glibc-2.5 __stpcpy_chk
+
+(3.2.3: 29 Jan 2007, vex r1732, valgrind r6560).
+
+
 Release 3.2.2 (22 Jan 2007)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.2.2 fixes a bunch of bugs in 3.2.1, adds support for glibc-2.5 based

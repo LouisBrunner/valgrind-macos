@@ -1,0 +1,3 @@
+prog: cse_fail
+prereq: ../../../tests/cputest x86-sse
+vgopts: -q

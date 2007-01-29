@@ -15,11 +15,11 @@ PRI: 32  = fix this for 3.2.2
 
 TRUNK   32BRANCH  PRI   BUG#   WHAT
 
-vx1731   pending HIGH n-i-bz   vex: the `impossible' happened:
+vx1731   vx1732  HIGH n-i-bz   vex: the `impossible' happened:
                                eqIRConst (users, 25 Jan 07)
                                [Regression from 3.2.1]
 
-r6553    pending   32 n-i-bz   DirkM __stpcpy_chk / memrcchr intercepts
+r6553,6  r6558     32 n-i-bz   DirkM __stpcpy_chk intercept
 
 
 ---------- Bugs reported prior to, and not fixed in, 3.2.2 ---------

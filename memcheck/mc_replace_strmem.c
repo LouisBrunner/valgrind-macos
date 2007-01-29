@@ -547,7 +547,8 @@ GLIBC232_STRCHRNUL(m_libc_so_star, strchrnul)
 GLIBC232_RAWMEMCHR(m_libc_so_star, rawmemchr)
 
 
-/* glibc variant of strcpy that checks the dest is big enough. */
+/* glibc variant of strcpy that checks the dest is big enough.
+   Copied from glibc-2.5/debug/test-stpcpy_chk.c. */
 #define GLIBC25___STRCPY_CHK(soname,fnname) \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
                                (char* dst, const char* src, SizeT len); \
@@ -571,6 +572,32 @@ GLIBC232_RAWMEMCHR(m_libc_so_star, rawmemchr)
    }
 
 GLIBC25___STRCPY_CHK(m_libc_so_star, __strcpy_chk)
+
+
+/* glibc variant of stpcpy that checks the dest is big enough.
+   Copied from glibc-2.5/debug/test-stpcpy_chk.c. */
+#define GLIBC25___STPCPY_CHK(soname,fnname) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+                               (char* dst, const char* src, SizeT len); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+                               (char* dst, const char* src, SizeT len) \
+   { \
+      extern void _exit(int status); \
+      if (! len) \
+         goto badness; \
+      while ((*dst++ = *src++) != '\0') \
+         if (--len == 0) \
+            goto badness; \
+      return dst - 1; \
+     badness: \
+      VALGRIND_PRINTF_BACKTRACE( \
+         "***buffer overflow detected ***: program terminated"); \
+     _exit(127); \
+     /*NOTREACHED*/ \
+     return NULL; \
+   }
+
+GLIBC25___STPCPY_CHK(m_libc_so_star, __stpcpy_chk)
 
 
 /* mempcpy */

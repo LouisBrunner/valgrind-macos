@@ -30,7 +30,7 @@ int main ( void )
    /* This bombs 3.2.2 w/ V128 non-match in eqIRConst. */
    printf("V128 cse:\n");
    __asm__ __volatile__(
-      "pxor   %%xmm0,%%xmm0\n\t"
+      "xorps  %%xmm0,%%xmm0\n\t"
       "movaps %%xmm1,%%xmm2\n\t"
       "addps  %%xmm0,%%xmm1\n\t"
       "addps  %%xmm0,%%xmm2\n\t"

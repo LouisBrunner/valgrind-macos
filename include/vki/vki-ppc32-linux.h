@@ -301,6 +301,8 @@ struct vki_sigcontext {
 #define VKI_O_NONBLOCK		04000
 #define VKI_O_LARGEFILE     0200000
 
+#define VKI_AT_FDCWD            -100
+
 #define VKI_F_DUPFD		 0			/* dup */
 #define VKI_F_GETFD		 1			/* get close_on_exec */
 #define VKI_F_SETFD		 2			/* set/clear close_on_exec */

@@ -20,6 +20,7 @@ vx1731   vx1732  HIGH n-i-bz   vex: the `impossible' happened:
                                [Regression from 3.2.1]
 
 r6553,6  r6558     32 n-i-bz   DirkM __stpcpy_chk intercept
+r6566    pending      n-i-bz   AT_FDCWD support for openat()
 
 
 ---------- Bugs reported prior to, and not fixed in, 3.2.2 ---------

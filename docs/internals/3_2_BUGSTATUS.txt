@@ -11,19 +11,26 @@ PRI: 32  = fix this for 3.2.2
      s93 = possible SuSE 9.3 amd64 assembler bug
 
 
----------- Bugs reported after (in) 3.2.2 --------------------------
+---------- Bugs reported after (in) 3.2.3 --------------------------
 
 TRUNK   32BRANCH  PRI   BUG#   WHAT
 
-vx1731   vx1732  HIGH n-i-bz   vex: the `impossible' happened:
+r6566    pending   32 n-i-bz   AT_FDCWD support for openat()
+
+pending  pending   32 n-i-bz   walk_type: unhandled base type 0xe PACKED
+
+
+------- Bugs reported and fixed in 3.2.3 ------
+
+TRUNK   32BRANCH  PRI   BUG#   WHAT
+
+vx1731   vx1732    32 n-i-bz   vex: the `impossible' happened:
                                eqIRConst (users, 25 Jan 07)
                                [Regression from 3.2.1]
-
 r6553,6  r6558     32 n-i-bz   DirkM __stpcpy_chk intercept
-r6566    pending      n-i-bz   AT_FDCWD support for openat()
 
 
----------- Bugs reported prior to, and not fixed in, 3.2.2 ---------
+---------- Bugs reported prior to, and not fixed in, 3.2.3 ---------
 
 TRUNK   32BRANCH  PRI   BUG#   WHAT
 
@@ -88,7 +95,7 @@ pending  pending      138702   amd64->IR: 0xF0 0xF 0xC0 0x90
                                (lock xadd %dl,0xb5(%rax))
 
 
-------- Bugs reported and fixed in 3.2.1 ------
+------- Bugs reported and fixed in 3.2.2 ------
 
 TRUNK   32BRANCH  PRI   BUG#   WHAT
 
@@ -174,7 +181,7 @@ r6523    r6527    32  n-i-bz   reduce extraneous frames in libmpiwrap.c
 r6530    r6531    32  n-i-bz   support pselect6 on amd64-linux
 
 
-------- Bugs reported and fixed in 3.2.0 ------
+------- Bugs reported and fixed in 3.2.1 ------
 
 SSE3 commits: vx1635,1636, v5997
 

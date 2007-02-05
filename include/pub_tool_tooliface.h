@@ -160,7 +160,7 @@ extern void VG_(basic_tool_funcs)(
    /* --- Further comments about the IR that your --- */
    /* --- instrumentation function will receive. --- */
    /*
-      In the incoming IRBB, the IR for each instruction begins with an
+      In the incoming IRSB, the IR for each instruction begins with an
       IRStmt_IMark, which states the address and length of the
       instruction from which this IR came.  This makes it easy for
       profiling-style tools to know precisely which guest code
@@ -177,7 +177,7 @@ extern void VG_(basic_tool_funcs)(
       You should therefore 
 
       (1) copy any IR preceding the first IMark verbatim to the start
-          of the output IRBB.
+          of the output IRSB.
 
       (2) not try to instrument it or modify it in any way.
 

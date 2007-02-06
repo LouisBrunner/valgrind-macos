@@ -458,7 +458,7 @@ typedef
       /* IN: optionally, a callback which allows the caller to add its
          own IR preamble following the self-check and any other
          VEX-generated preamble, if any.  May be NULL.  If non-NULL,
-         the IRBB under construction is handed to this function, which
+         the IRSB under construction is handed to this function, which
          presumably adds IR statements to it.  The callback may
          optionally complete the block and direct bb_to_IR not to
          disassemble any instructions into it; this is indicated by

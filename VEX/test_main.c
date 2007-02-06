@@ -49,8 +49,8 @@ static Bool verbose = True;
 
 /* Forwards */
 #if 0 /* UNUSED */
-static IRBB* ac_instrument ( IRBB*, VexGuestLayout*, IRType );
-static IRBB* mc_instrument ( IRBB*, VexGuestLayout*, IRType, IRType );
+static IRSB* ac_instrument ( IRSB*, VexGuestLayout*, IRType );
+static IRSB* mc_instrument ( IRSB*, VexGuestLayout*, IRType, IRType );
 #endif
 
 static Bool chase_into_not_ok ( void* opaque, Addr64 dst ) { return False; }
@@ -230,7 +230,7 @@ void panic ( HChar* s )
 }
 
 static
-IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+IRSB* ac_instrument (IRSB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
 /* Use this rather than eg. -1 because it's a UInt. */
 #define INVALID_DATA_SIZE   999999
@@ -244,7 +244,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
    Bool needSz;
 
    /* Set up BB */
-   IRBB* bb     = emptyIRBB();
+   IRSB* bb     = emptyIRSB();
    bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
    bb->next     = dopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;
@@ -276,7 +276,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
                                                   needSz = True; break;
                }
                if (needSz) {
-                  addStmtToIRBB( 
+                  addStmtToIRSB( 
                      bb,
                      IRStmt_Dirty(
                         unsafeIRDirty_0_N( helper->regparms, 
@@ -284,7 +284,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
                                            mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
                   ));
                } else {
-                  addStmtToIRBB( 
+                  addStmtToIRSB( 
                      bb,
                      IRStmt_Dirty(
                         unsafeIRDirty_0_N( helper->regparms, 
@@ -314,7 +314,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
                                                needSz = True; break;
             }
             if (needSz) {
-               addStmtToIRBB( 
+               addStmtToIRSB( 
                   bb,
                   IRStmt_Dirty(
                      unsafeIRDirty_0_N( helper->regparms, 
@@ -322,7 +322,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
                                         mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
                ));
             } else {
-               addStmtToIRBB( 
+               addStmtToIRSB( 
                   bb,
                   IRStmt_Dirty(
                      unsafeIRDirty_0_N( helper->regparms,
@@ -360,7 +360,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             panic("addrcheck: unhandled IRStmt");
       }
 
-      addStmtToIRBB( bb, dopyIRStmt(st));
+      addStmtToIRSB( bb, dopyIRStmt(st));
    }
 
    return bb;
@@ -463,7 +463,7 @@ static IRExpr* expr2vbits ( struct _MCEnv* mce, IRExpr* e );
 typedef
    struct _MCEnv {
       /* MODIFIED: the bb being constructed.  IRStmts are added. */
-      IRBB* bb;
+      IRSB* bb;
 
       /* MODIFIED: a table [0 .. #temps_in_original_bb-1] which maps
          original temps to their current their current shadow temp.
@@ -631,11 +631,11 @@ static IRExpr* definedOfType ( IRType ty ) {
 
 /* assign value to tmp */
 #define assign(_bb,_tmp,_expr)   \
-   addStmtToIRBB((_bb), IRStmt_Tmp((_tmp),(_expr)))
+   addStmtToIRSB((_bb), IRStmt_Tmp((_tmp),(_expr)))
 
 /* add stmt to a bb */
 #define stmt(_bb,_stmt)    \
-   addStmtToIRBB((_bb), (_stmt))
+   addStmtToIRSB((_bb), (_stmt))
 
 /* build various kinds of expressions */
 #define binop(_op, _arg1, _arg2) IRExpr_Binop((_op),(_arg1),(_arg2))
@@ -2506,7 +2506,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
    }
 }
 
-IRBB* mc_instrument ( IRBB* bb_in, VexGuestLayout* layout, 
+IRSB* mc_instrument ( IRSB* bb_in, VexGuestLayout* layout, 
                       IRType gWordTy, IRType hWordTy )
 {
    Bool verboze = False; //True; 
@@ -2518,7 +2518,7 @@ IRBB* mc_instrument ( IRBB* bb_in, VexGuestLayout* layout,
    MCEnv mce;
 
    /* Set up BB */
-   IRBB* bb     = emptyIRBB();
+   IRSB* bb     = emptyIRSB();
    bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
    bb->next     = dopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;
@@ -2616,7 +2616,7 @@ IRBB* mc_instrument ( IRBB* bb_in, VexGuestLayout* layout,
          VG_(printf)("\n");
       }
 
-      addStmtToIRBB(bb, st);
+      addStmtToIRSB(bb, st);
 
    }
 

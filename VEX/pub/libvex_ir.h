@@ -50,13 +50,6 @@
 #include "libvex_basictypes.h"
 
    
-// Possible name changes?
-// - Tmp     -> AssignTmp  (Tmp statements only, not Tmp expressions)
-// - IRBB    -> IRSB (superblock)?  IRB?  IRCB (code block)?
-// - dopyFoo -> copyFoo
-// - sopyFoo -> shallowCopyFoo (there's only one sopyFoo function)
-
-
 /*---------------------------------------------------------------*/
 /*--- High-level IR description                               ---*/
 /*---------------------------------------------------------------*/
@@ -221,11 +214,13 @@
 
    - deepCopyIRFoo is a deep copy constructor for IRFoos. 
      It recursively traverses the entire argument tree and
-     produces a complete new tree.
+     produces a complete new tree.  All types have a deep copy
+     constructor.
 
    - shallowCopyIRFoo is the shallow copy constructor for IRFoos.
      It creates a new top-level copy of the supplied object,
-     but does not copy any sub-objects.
+     but does not copy any sub-objects.  Only some types have a
+     shallow copy constructor.
 */
 
 /* ------------------ Types ------------------ */

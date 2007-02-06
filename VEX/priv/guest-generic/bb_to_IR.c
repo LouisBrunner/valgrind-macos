@@ -62,7 +62,7 @@ static Bool const_False ( void* callback_opaque, Addr64 a ) {
 }
 
 /* Disassemble a complete basic block, starting at guest_IP_start, 
-   returning a new IRBB.  The disassembler may chase across basic
+   returning a new IRSB.  The disassembler may chase across basic
    block boundaries if it wishes and if chase_into_ok allows it.
    The precise guest address ranges from which code has been taken
    are written into vge.  guest_IP_bbstart is taken to be the IP in
@@ -77,7 +77,7 @@ static Bool const_False ( void* callback_opaque, Addr64 a ) {
 
    preamble_function is a callback which allows the caller to add
    its own IR preamble (following the self-check, if any).  May be
-   NULL.  If non-NULL, the IRBB under construction is handed to 
+   NULL.  If non-NULL, the IRSB under construction is handed to 
    this function, which presumably adds IR statements to it.  The
    callback may optionally complete the block and direct bb_to_IR
    not to disassemble any instructions into it; this is indicated

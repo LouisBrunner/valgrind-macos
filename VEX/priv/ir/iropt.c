@@ -59,7 +59,7 @@
 
 /* What iropt does, 29 Dec 04.
 
-   It takes an IRBB and produces a new one with the same meaning,
+   It takes an IRSB and produces a new one with the same meaning,
    defined thus:
 
    After execution of the new BB, all guest state and guest memory is

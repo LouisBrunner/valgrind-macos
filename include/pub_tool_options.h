@@ -75,6 +75,11 @@ extern Bool VG_(clo_xml);
    XML output, in between <usercomment> tags. */
 extern HChar* VG_(clo_xml_user_comment);
 
+/* Name of an environment variable which, if set, is to be used as
+   part of any output file name.  See pub_core_options.h for
+   details. */
+extern Char* VG_(clo_log_file_qualifier);
+
 /* Vex iropt control.  Tool-visible so tools can make Vex optimise
    less aggressively if that is needed (callgrind needs this). */
 extern VexControl VG_(clo_vex_control);

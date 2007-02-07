@@ -88,7 +88,7 @@ extern Bool  VG_(clo_trace_children);
    (stderr). */
 extern Int   VG_(clo_log_fd);
 extern Char* VG_(clo_log_name);
-extern Char* VG_(clo_log_file_qualifier);
+/* extern Char* VG_(clo_log_file_qualifier); moved to pub_tool_options.h */
 
 /* Add timestamps to log messages?  default: NO */
 extern Bool  VG_(clo_time_stamp);

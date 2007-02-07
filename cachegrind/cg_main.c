@@ -977,7 +977,16 @@ static CC Ir_total;
 static CC Dr_total;
 static CC Dw_total;
 
-static Char* cachegrind_out_file;
+// The output file base name specified by the user using the
+// --cachegrind-out-file switch.  This is combined with the
+// process ID and optional user-supplied qualifier (from 
+// --log-file-qualifier) to produce the name stored in 
+// cachegrind_out_file.
+static Char* cachegrind_out_file_basename = "cachegrind.out";
+
+// The final, completed name for the output file.
+static Char* cachegrind_out_file = NULL;
+
 
 static void fprint_CC_table_and_calc_totals(void)
 {
@@ -1296,6 +1305,9 @@ static Bool cg_process_cmd_line_option(Char* arg)
       parse_cache_opt(&clo_D1_cache, &arg[5]);
    else if (VG_CLO_STREQN(5, arg, "--L2="))
       parse_cache_opt(&clo_L2_cache, &arg[5]);
+   else if (VG_CLO_STREQN(22, arg, "--cachegrind-out-file=")) {
+      cachegrind_out_file_basename = &arg[22];
+   }
    else
       return False;
 
@@ -1308,6 +1320,8 @@ static void cg_print_usage(void)
 "    --I1=<size>,<assoc>,<line_size>  set I1 cache manually\n"
 "    --D1=<size>,<assoc>,<line_size>  set D1 cache manually\n"
 "    --L2=<size>,<assoc>,<line_size>  set L2 cache manually\n"
+"    --cachegrind-out-file=<file>     write profile data to <file>.<pid>\n"
+"                                     [cachegrind.out.<pid>]\n"
    );
 }
 
@@ -1322,18 +1336,9 @@ static void cg_print_debug_usage(void)
 /*--- Setup                                                        ---*/
 /*--------------------------------------------------------------------*/
 
-static void cg_post_clo_init(void)
-{
-   cache_t I1c, D1c, L2c; 
-
-   configure_caches(&I1c, &D1c, &L2c);
-
-   cachesim_I1_initcache(I1c);
-   cachesim_D1_initcache(D1c);
-   cachesim_L2_initcache(L2c);
-}
-
 static Char base_dir[VKI_PATH_MAX];
+
+static void cg_post_clo_init(void); /* just below */
 
 static void cg_pre_clo_init(void)
 {
@@ -1353,14 +1358,49 @@ static void cg_pre_clo_init(void)
    VG_(needs_command_line_options)(cg_process_cmd_line_option,
                                    cg_print_usage,
                                    cg_print_debug_usage);
+}
+
+static void cg_post_clo_init(void)
+{
+   HChar* qual = NULL;
+   cache_t I1c, D1c, L2c; 
+   Int filename_szB;
 
    /* Get working directory */
    tl_assert( VG_(getcwd)(base_dir, VKI_PATH_MAX) );
 
-   /* Block is big enough for dir name + cachegrind.out.<pid> */
-   cachegrind_out_file = VG_(malloc)((VG_(strlen)(base_dir) + 32)*sizeof(Char));
-   VG_(sprintf)(cachegrind_out_file, "%s/cachegrind.out.%d",
-                base_dir, VG_(getpid)());
+   /* Do we have a --log-file-qualifier= to consider? */
+   if (VG_(clo_log_file_qualifier)) {
+      qual = VG_(getenv)(VG_(clo_log_file_qualifier));
+   }
+
+   /* Block is big enough for 
+        dir name ++ cachegrind_out_file_basename
+                 ++ ".<pid>" 
+                 ++ the log file qualifier, if in use */
+   filename_szB 
+      = VG_(strlen)(base_dir) 
+        + 1  /* "/" */
+        + VG_(strlen)(cachegrind_out_file_basename)
+        + 11  /* "." <pid>, assuming sizeof(pid) <= 4 */
+        + (qual  ? (10 + VG_(strlen)(qual))  : 0)
+        + 1; /* to guarantee checkable zero at the end */
+
+   tl_assert(filename_szB > 0);
+   cachegrind_out_file 
+      = VG_(calloc)( sizeof(Char), filename_szB );
+
+   if (qual) {
+      VG_(sprintf)(cachegrind_out_file, "%s/%s.%d.lfq.%s",
+                   base_dir, cachegrind_out_file_basename, 
+                   VG_(getpid)(), qual);
+   } else {
+      VG_(sprintf)(cachegrind_out_file, "%s/%s.%d",
+                   base_dir, cachegrind_out_file_basename, 
+                   VG_(getpid)());
+   }
+
+   tl_assert( cachegrind_out_file[filename_szB-1] == 0 );
 
    CC_table = VG_(OSet_Create)(offsetof(LineCC, loc),
                                cmp_CodeLoc_LineCC,
@@ -1371,6 +1411,12 @@ static void cg_pre_clo_init(void)
    stringTable    = VG_(OSet_Create)(/*keyOff*/0,
                                      stringCmp,
                                      VG_(malloc), VG_(free));
+
+   configure_caches(&I1c, &D1c, &L2c);
+
+   cachesim_I1_initcache(I1c);
+   cachesim_D1_initcache(D1c);
+   cachesim_L2_initcache(L2c);
 }
 
 VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init)

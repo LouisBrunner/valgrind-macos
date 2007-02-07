@@ -257,9 +257,10 @@ follow that.</para>
 <title>Output file</title>
 
 <para>As well as printing summary information, Cachegrind also
-writes line-by-line cache profiling information to a file named
+writes line-by-line cache profiling information to a user-specified
+file.  By default this file is named
 <computeroutput>cachegrind.out.pid</computeroutput>.  This file
-is human-readable, but is best interpreted by the accompanying
+is human-readable, but is intended to be interpreted by the accompanying
 program <computeroutput>cg_annotate</computeroutput>, described
 in the next section.</para>
 
@@ -275,6 +276,15 @@ file:</para>
     in the current directory (but that won't happen very often
     because it takes some time for process ids to be
     recycled).</para>
+    <para>
+    To use a basename other than the default
+    <computeroutput>cachegrind.out.</computeroutput>,
+    use the <computeroutput>--cachegrind-out-file</computeroutput>
+    switch.</para>
+    <para>
+    To add further qualifiers to the output filename you can use 
+    the core's <computeroutput>--log-file-qualifier</computeroutput>
+    flag.</para>
   </listitem>
   <listitem>
     <para>It can be huge: <computeroutput>ls -l</computeroutput>
@@ -341,6 +351,18 @@ configuration, or failing that, via defaults).</para>
     <listitem>
       <para>Specify the size, associativity and line size of the level 2
       cache.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.cachegrind-out-file" xreflabel="--cachegrind-out-file">
+    <term>
+      <option><![CDATA[--cachegrind-out-file=<basename> ]]></option>
+    </term>
+    <listitem>
+      <para>Write the profile data to <![CDATA[<basename>.<pid>]]>
+            rather than to the default output file, 
+            <![CDATA[cachegrind.out.<pid>]]>.
+      </para>
     </listitem>
   </varlistentry>
 

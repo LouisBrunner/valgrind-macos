@@ -90,6 +90,12 @@ be normally run.</para>
 
 </orderedlist>
 
+<para>As an optional intermediate step, you can use the supplied
+<computeroutput>cg_merge</computeroutput> program to sum together the
+outputs of multiple Cachegrind runs, into a single file which you then
+use as the input for
+<computeroutput>cg_annotate</computeroutput>.</para>
+
 <para>The steps are described in detail in the following
 sections.</para>
 
@@ -1046,10 +1052,15 @@ shortcomings:</para>
 
 <para>Another thing worth nothing is that results are very
 sensitive.  Changing the size of the
-<filename>valgrind.so</filename> file, the size of the program
-being profiled, or even the length of its name can perturb the
+the executable being profiled, or the size of the the shared objects
+it uses, or even the length of its name can perturb the
 results.  Variations will be small, but don't expect perfectly
 repeatable results if your program changes at all.</para>
+
+<para>Beware also of address space randomisation, which many Linux
+distros now do by default.  This loads the program and its libraries
+at different randomly chosen address each run, and may also disturb
+the results.</para>
 
 <para>While these factors mean you shouldn't trust the results to
 be super-accurate, hopefully they should be close enough to be
@@ -1058,6 +1069,65 @@ useful.</para>
 </sect2>
 
 </sect1>
+
+
+
+<sect1 id="cg-manual.cg_merge" xreflabel="cg_merge">
+<title>Merging profiles with <computeroutput>cg_merge</computeroutput></title>
+
+<para>
+<computeroutput>cg_merge</computeroutput> is a simple program which
+reads multiple profile files, as created by cachegrind, merges them
+together, and writes the results into another file in the same format.
+You can then examine the merged results using
+<computeroutput>cg_annotate
+--cachegrind-out-file=outputfile</computeroutput>, as
+described above.  The merging functionality might be useful if you
+want to aggregate costs over multiple runs of the same program, or
+from a single parallel run with multiple instances of the same
+program.</para>
+
+<para>
+<computeroutput>cg_merge</computeroutput> is invoked as follows:
+</para>
+
+<programlisting><![CDATA[
+cg_merge -o outputfile file1 file2 file3 ...]]></programlisting>
+
+<para>
+It reads and checks <computeroutput>file1</computeroutput>, then read
+and checks <computeroutput>file2</computeroutput> and merges it into
+the running totals, then the same with
+<computeroutput>file3</computeroutput>, etc.  The final results are
+written to <computeroutput>outputfile</computeroutput>, or to standard
+out if no output file is specified.</para>
+
+<para>
+Costs are summed on a per-function, per-line and per-instruction
+basis.  Because of this, the order in which the input files does not
+matter, although you should take care to only mention each file once,
+since any file mentioned twice will be added in twice.</para>
+
+<para>
+<computeroutput>cg_merge</computeroutput> does not attempt to check
+that the input files come from runs of the same executable.  It will
+happily merge together profile files from completely unrelated
+programs.  It does however check that the
+<computeroutput>Events:</computeroutput> lines of all the inputs are
+identical, so as to ensure that the addition of costs makes sense.
+For example, it would be nonsensical for it to add a number indicating
+D1 read references to a number from a different file indicating L2
+write misses.</para>
+
+<para>
+A number of other syntax and sanity checks are done whilst reading the
+inputs.  <computeroutput>cg_merge</computeroutput> will stop and
+attempt to print a helpful error message if any of the input files
+fail these checks.</para>
+
+</sect1>
+
+
 
 <sect1>
 <title>Implementation details</title>

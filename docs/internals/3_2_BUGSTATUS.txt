@@ -17,8 +17,16 @@ TRUNK   32BRANCH  PRI   BUG#   WHAT
 
 r6566    pending   32 n-i-bz   AT_FDCWD support for openat()
 
-pending  pending   32 n-i-bz   walk_type: unhandled base type 0xe PACKED
+r6575    pending   32 n-i-bz   walk_type: unhandled base type 0xe PACKED
 
+pending  pending      n-i-bz   --track-fds reports leakage of
+                               stdout/in/err and doesn't respect -q
+
+pending  pending      141366   Add sys_vserver support to valgrind (w/ patch)
+
+pending  pending      140522   valgrind 3.2.2 libmpiwrap: MPI_STATUS_IGNORE
+                               and MPI_STATUSES_IGNORE not supported and makes 
+                               a valid MPI program crash.
 
 ------- Bugs reported and fixed in 3.2.3 ------
 

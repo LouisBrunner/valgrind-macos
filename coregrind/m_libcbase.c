@@ -490,10 +490,34 @@ void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
       #undef ASSIGN
       #undef COMPAR
 
+   } else if ( (4*sizeof(UWord)) == size ) {
+      /* special-case 4 word-elements.  This captures a lot of cases
+         from symbol table reading/canonicalisaton, because both DiLoc
+         and DiSym are 4 word structures. */
+      HChar* a = base;
+      HChar  v[size];
+
+      #define ASSIGN(dst, dsti, src, srci) \
+       do { UWord* dP = (UWord*)&dst[size*(dsti)]; \
+            UWord* sP = (UWord*)&src[size*(srci)]; \
+            dP[0] = sP[0]; \
+            dP[1] = sP[1]; \
+            dP[2] = sP[2]; \
+            dP[3] = sP[3]; \
+          } while (0)
+
+      #define COMPAR(dst, dsti, src, srci) \
+      compar( &dst[size*(dsti)], &src[size*(srci)] )
+
+      SORT;
+
+      #undef ASSIGN
+      #undef COMPAR
+
    // General case
    } else {
-      char* a = base;
-      char  v[size];      // will be at least 'size' bytes
+      HChar* a = base;
+      HChar  v[size];      // will be at least 'size' bytes
 
       #define ASSIGN(dst, dsti, src, srci) \
       VG_(memcpy)( &dst[size*(dsti)], &src[size*(srci)], size );

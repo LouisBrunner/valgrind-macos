@@ -424,8 +424,8 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
    if (ty == MPI_DOUBLE)         return sizeof(double);
    if (ty == MPI_BYTE)           return 1;
    if (ty == MPI_LONG_DOUBLE)    return sizeof_long_double_image();
+   if (ty == MPI_PACKED)         return 1;
 
-   /* MPI_PACKED */
    /* new in MPI2: */
 #  if defined(MPI_WCHAR)
    if (ty == MPI_WCHAR)              return sizeof(wchar_t);
@@ -1513,6 +1513,107 @@ int WRAPPER_FOR(PMPI_Type_free)( MPI_Datatype* ty )
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
+/*--- Sec 3.13, Pack and unpack                            ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+/* --- Pack --- */
+/* pre: must be readable: position
+        must be readable: (inbuf,incount,datatype)
+        must be writable: outbuf[0 .. outsize-1]
+        must be writable: outbuf[*position .. 
+                                 *position - 1 
+                                 + however much space PMPI_Pack_size 
+                                   says we will need]
+   post: make readable: outbuf[old *position .. new *position]
+*/
+int WRAPPER_FOR(PMPI_Pack)( void* inbuf, int incount, MPI_Datatype datatype, 
+                            void* outbuf, int outsize, 
+                            int* position, MPI_Comm comm ) 
+{
+   OrigFn fn;
+   int    err, szB = 0;
+   int    position_ORIG = *position;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Pack");
+   /* stay sane */
+   check_mem_is_defined_untyped(position, sizeof(*position));
+   /* check input */
+   check_mem_is_defined(inbuf, incount, datatype);
+   /* check output area's stated bounds make sense */
+   check_mem_is_addressable_untyped(outbuf, outsize);
+   /* check output area's actual used size properly */
+   err = PMPI_Pack_size( incount, datatype, comm, &szB );
+   if (err == MPI_SUCCESS && szB > 0) {
+      check_mem_is_addressable_untyped( 
+         ((char*)outbuf) + position_ORIG, szB
+      );
+   }
+
+   CALL_FN_W_7W(err, fn, inbuf,incount,datatype, outbuf,outsize,position, comm);
+
+   if (err == MPI_SUCCESS && (*position) > position_ORIG) {
+      /* paint output */
+      make_mem_defined_if_addressable_untyped( 
+         ((char*)outbuf) + position_ORIG, *position - position_ORIG
+      );
+   }
+   after("Pack", err);
+   return err;
+}
+
+/* --- Unpack --- */
+/* pre: must be readable: position
+        must be writable: (outbuf,outcount,datatype)
+        must be writable: outbuf[0 .. outsize-1]
+        must be writable: outbuf[*position .. 
+                                 *position - 1 
+                                 + however much space PMPI_Pack_size 
+                                   says we will need]
+   post: make readable: (outbuf,outcount,datatype)
+         and also do a readability check of
+         inbuf[old *position .. new *position]
+*/
+int WRAPPER_FOR(PMPI_Unpack)( void* inbuf, int insize, int* position,
+                              void* outbuf, int outcount, MPI_Datatype datatype, 
+                              MPI_Comm comm )
+{
+   OrigFn fn;
+   int    err, szB = 0;
+   int    position_ORIG = *position;
+   VALGRIND_GET_ORIG_FN(fn);
+   before("Unpack");
+   /* stay sane */
+   check_mem_is_defined_untyped(position, sizeof(*position));
+   /* check output area is accessible */
+   check_mem_is_addressable(outbuf, outcount, datatype);
+   /* check input area's stated bounds make sense */
+   check_mem_is_addressable_untyped(inbuf, insize);
+   /* check input area's actual used size properly */
+   err = PMPI_Pack_size( outcount, datatype, comm, &szB );
+   if (err == MPI_SUCCESS && szB > 0) {
+      check_mem_is_addressable_untyped( 
+         ((char*)inbuf) + position_ORIG, szB
+      );
+   }
+
+   CALL_FN_W_7W(err, fn, inbuf,insize,position, outbuf,outcount,datatype, comm);
+
+   if (err == MPI_SUCCESS && (*position) > position_ORIG) {
+      /* recheck input more carefully */
+      check_mem_is_defined_untyped( 
+         ((char*)inbuf) + position_ORIG, *position - position_ORIG
+      );
+      /* paint output */
+      make_mem_defined_if_addressable( outbuf, outcount, datatype );
+   }
+   after("Unpack", err);
+   return err;
+}
+
+
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
 /*--- Sec 4.4, Broadcast                                   ---*/
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
@@ -2232,7 +2333,7 @@ DEFAULT_WRAPPER_W_1W(Op_f2c)
 DEFAULT_WRAPPER_W_1W(Op_free)
 DEFAULT_WRAPPER_W_7W(Pack_external)
 DEFAULT_WRAPPER_W_4W(Pack_external_size)
-DEFAULT_WRAPPER_W_7W(Pack)
+/* DEFAULT_WRAPPER_W_7W(Pack) */
 DEFAULT_WRAPPER_W_4W(Pack_size)
 /* int MPI_Pcontrol(const int level, ...) */
 /* DEFAULT_WRAPPER_W_4W(Probe) */
@@ -2308,7 +2409,7 @@ DEFAULT_WRAPPER_W_2W(Type_size)
 DEFAULT_WRAPPER_W_5W(Type_struct)
 DEFAULT_WRAPPER_W_2W(Type_ub)
 DEFAULT_WRAPPER_W_5W(Type_vector)
-DEFAULT_WRAPPER_W_7W(Unpack)
+/* DEFAULT_WRAPPER_W_7W(Unpack) */
 DEFAULT_WRAPPER_W_3W(Unpublish_name)
 DEFAULT_WRAPPER_W_7W(Unpack_external)
 /* DEFAULT_WRAPPER_W_3W(Waitall) */

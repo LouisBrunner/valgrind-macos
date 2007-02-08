@@ -278,13 +278,17 @@ file:</para>
     recycled).</para>
     <para>
     To use a basename other than the default
-    <computeroutput>cachegrind.out.</computeroutput>,
+    <computeroutput>cachegrind.out</computeroutput>,
     use the <computeroutput>--cachegrind-out-file</computeroutput>
     switch.</para>
     <para>
     To add further qualifiers to the output filename you can use 
     the core's <computeroutput>--log-file-qualifier</computeroutput>
-    flag.</para>
+    flag.  This extends the file name further with the text
+    <computeroutput>.lfq.</computeroutput>followed by the
+    contents of the environment variable specified by 
+    <computeroutput>--log-file-qualifier</computeroutput>.
+      </para>
   </listitem>
   <listitem>
     <para>It can be huge: <computeroutput>ls -l</computeroutput>
@@ -359,9 +363,10 @@ configuration, or failing that, via defaults).</para>
       <option><![CDATA[--cachegrind-out-file=<basename> ]]></option>
     </term>
     <listitem>
-      <para>Write the profile data to <![CDATA[<basename>.<pid>]]>
+      <para>Write the profile data to 
+            <computeroutput>basename.pid</computeroutput>
             rather than to the default output file, 
-            <![CDATA[cachegrind.out.<pid>]]>.
+            <computeroutput>cachegrind.out.pid</computeroutput>.
       </para>
     </listitem>
   </varlistentry>
@@ -732,9 +737,26 @@ way as for C/C++ programs.</para>
 
   <listitem id="pid">
     <para><computeroutput>--pid</computeroutput></para>
-    <para>Indicates which
-    <computeroutput>cachegrind.out.pid</computeroutput> file to
-    read.  Not actually an option -- it is required.</para>
+    <para>Indicates that profile data should be read from 
+    the file
+    <computeroutput>cachegrind.out.pid</computeroutput>.
+    read.  
+    Note that you must specify either
+    <computeroutput>--pid</computeroutput>
+    or <computeroutput>--cachegrind-out-file=filename</computeroutput>
+    exactly once.
+    </para>
+  </listitem>
+    
+  <listitem id="cachegrind-out-file">
+    <para><computeroutput>--cachegrind-out-file=filename</computeroutput></para>
+    <para>Indicates that profile data
+    should be read from <computeroutput>filename</computeroutput>.
+    Note that you must specify either
+    <computeroutput>--pid</computeroutput>
+    or <computeroutput>--cachegrind-out-file=filename</computeroutput>
+    exactly once.
+    </para>
   </listitem>
     
   <listitem>

@@ -142,11 +142,13 @@ my $version = "@VERSION@";
 
 # Usage message.
 my $usage = <<END
-usage: cg_annotate [options] --<pid> [source-files]
+usage: cg_annotate [options] [source-files]
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message
     -v --version          show version
+    --<pid>               read profile data from cachegrind.out.<pid>
+    --cachegrind-out-file=<file>   read profile data from <file>
     --show=A,B,C          only show figures for events A,B,C [all]
     --sort=A,B,C          sort columns by events A,B,C [event column order]
     --threshold=<0--100>  percentage of counts (of primary sort event) we
@@ -158,8 +160,11 @@ usage: cg_annotate [options] --<pid> [source-files]
     -I<d> --include=<d>   add <d> to list of directories to search for 
                           source files
 
-  Cachegrind is Copyright (C) 2002-2005 Nicholas Nethercote.
-  Both are licensed under the GNU General Public License, version 2.
+  You must use either --<pid> or --cachegrind-out-file exactly once
+  in order that cg_annotate knows what file to read profile data from.
+
+  cg_annotate is Copyright (C) 2002-2007 Nicholas Nethercote.
+  and licensed under the GNU General Public License, version 2.
   Bug reports, feedback, admiration, abuse, etc, to: njn\@valgrind.org.
                                                 
 END
@@ -236,12 +241,23 @@ sub process_cmd_line()
                 $inc =~ s|/$||;         # trim trailing '/'
                 push(@include_dirs, "$inc/");
 
+            # --cachegrind-out-file=<filename>
+            } elsif ($arg =~ /^--cachegrind-out-file=(.*)$/) {
+                if (not defined $input_file) {
+                    $input_file = $1;
+                } else {
+                    die("You may only specify one input file\n" .
+                        "using the --<pid> and --cachegrind-out-file options.\n");
+                }
+
+            # --<pid>
             } elsif ($arg =~ /^--(\d+)$/) {
                 my $pid = $1;
                 if (not defined $input_file) {
                     $input_file = "cachegrind.out.$pid";
                 } else {
-                    die("One cachegrind.out.<pid> file at a time, please\n");
+                    die("You may only specify one input file\n" .
+                        "using the --<pid> and --cachegrind-out-file options.\n");
                 }
 
             } else {            # -h and --help fall under this case
@@ -307,7 +323,8 @@ sub line_to_CC ($)
 
 sub read_input_file() 
 {
-    open(INPUTFILE, "< $input_file") || die "File $input_file not opened\n";
+    open(INPUTFILE, "< $input_file") 
+         || die "Cannot open $input_file for reading\n";
 
     # Read "desc:" lines.
     my $line;

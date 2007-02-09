@@ -101,9 +101,9 @@ extern Int   VG_(clo_n_suppressions);
 extern Char* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
-extern Bool  VG_(clo_trace_flags);
+extern UChar VG_(clo_trace_flags);
 /* DEBUG: do bb profiling?  default: 00000000 ( == NO ) */
-extern Bool  VG_(clo_profile_flags);
+extern UChar VG_(clo_profile_flags);
 /* DEBUG: if tracing codegen, be quiet until after this bb ( 0 ) */
 extern Int   VG_(clo_trace_notbelow);
 /* DEBUG: print system calls?  default: NO */

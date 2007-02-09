@@ -145,7 +145,12 @@ struct vki_iovec {
 
 /* ---------------- MMappery ---------------- */
 
-#define VKI_PAGE_SIZE 4096 /* this is checked by the launcher */
+/* This assumes the page size is 4096.  That assumption is checked
+   by the launcher. */
+#define VKI_PAGE_SHIFT  12
+#define VKI_PAGE_SIZE   (1UL << VKI_PAGE_SHIFT)
+#define VKI_MAX_PAGE_SHIFT      VKI_PAGE_SHIFT
+#define VKI_MAX_PAGE_SIZE       VKI_PAGE_SIZE
 
 #define VKI_PROT_NONE  0x00000000
 #define VKI_PROT_READ  0x00000001

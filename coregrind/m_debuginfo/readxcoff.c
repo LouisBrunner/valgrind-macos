@@ -888,7 +888,8 @@ HChar* read_symbol_table (
             cand.last += text_bias;
             cand.name = name;
 
-            if (cand.last < si->start || cand.first >= si->start+si->size)
+            if (cand.last < si->text_start_avma 
+                || cand.first >= si->text_start_avma+si->text_size)
                continue;
             if (cand.last < cand.first)
                continue;
@@ -942,7 +943,8 @@ HChar* read_symbol_table (
             cand.last += text_bias;
             cand.name = name;
 
-            if (cand.last < si->start || cand.first >= si->start+si->size)
+            if (cand.last < si->text_start_avma 
+                || cand.first >= si->text_start_avma+si->text_size)
                continue;
             if (cand.last < cand.first)
                continue;
@@ -1550,7 +1552,8 @@ HChar* read_symbol_table (
          the actual text segment.  Discard any that don't. */
 
       Addr fndescr_0 = (Addr)fndescr[0];
-      if (fndescr_0 < si->start || fndescr_0 >= si->start+si->size)
+      if (fndescr_0 < si->text_start_avma 
+          || fndescr_0 >= si->text_start_avma+si->text_size)
          continue;
 
       /* Let's suppose that fndescr is the descriptor for a
@@ -1648,7 +1651,8 @@ HChar* read_symbol_table (
             break; /* no space left for a 3-word descriptor */
 
          w = wP[0];
-         if (!(w >= si->start && w < si->start+si->size)) {
+         if (!(w >= si->text_start_avma 
+               && w < si->text_start_avma+si->text_size)) {
             wP++;
             continue; /* entry pointer is not to text segment */
          }
@@ -1723,8 +1727,8 @@ HChar* read_symbol_table (
 
       /* If everything worked right, the symbol should fall within the
          mapped text segment.  Hence .. */
-      Bool  sane = addr >= si->start 
-                   && addr+size <= si->start + si->size;
+      Bool  sane = addr >= si->text_start_avma 
+                   && addr+size <= si->text_start_avma + si->text_size;
 
       if (SHOW && SHOW_SYMS_P6) {
          VG_(printf)("Phase6: %s %3d  0x%08lx-0x%08lx  0x%08lx  ", 
@@ -1905,8 +1909,9 @@ static void show_loader_section ( UChar* oi_start, UWord size )
    The object file from which to read symbols is mapped temporarily at
    [oimage .. oimage + n_oimage).
 
-   The VMA of where the relevant text section really got loaded
-   (the "actual VMA", _avma) is [si->start .. si->start + si->size).  
+   The VMA of where the relevant text section really got loaded (the
+   "actual VMA", _avma) is [si->text_start_avma .. si->text_start_avma
+   + si->text_size).
 
    The VMA of the associated data section really got loaded
    (the "actual VMA", _avma) is [data_avma .. data_avma + data_alen).
@@ -2184,7 +2189,7 @@ Bool read_xcoff_mapped_object ( SegInfo* si,
       .o files.  These have a stated text VMA of zero, and so their
          symbols start from zero and work upwards.  In that case the
          bias is precisely the offset where the text section is 
-         loaded (si->start), that is, the actual text VMA.
+         loaded (si->text_start_avma), that is, the actual text VMA.
 
          Except -- cryptically -- /usr/include/sys/ldr.h says that the
          ld_info.ldinfo_textorg field is "start of loaded program
@@ -2208,15 +2213,15 @@ Bool read_xcoff_mapped_object ( SegInfo* si,
    if (text_svma_known) {
 #if 0
       if (text_svma == 0) {
-         text_bias = si->start;
+         text_bias = si->text_start_avma;
          if (sntext_1based_if_known >= 1 
              && sntext_1based_if_known <= t_filehdr->f_nscns)
             text_bias += t_scnhdr[sntext_1based_if_known - 1].s_scnptr;
       } else {
-         text_bias = si->start - VG_PGROUNDDN(text_svma);
+         text_bias = si->text_start_avma - VG_PGROUNDDN(text_svma);
       }
 #else
-      text_bias = si->start - text_svma;
+      text_bias = si->text_start_avma - text_svma;
       if (sntext_1based_if_known >= 1 
           && sntext_1based_if_known <= t_filehdr->f_nscns)
          text_bias += t_scnhdr[sntext_1based_if_known - 1].s_scnptr;
@@ -2225,7 +2230,7 @@ Bool read_xcoff_mapped_object ( SegInfo* si,
       if (SHOW)
          VG_(printf)("   text section: stated vma 0x%lx, "
                      "actual vma 0x%lx, bias 0x%lx\n", 
-                     text_svma, si->start, text_bias);
+                     text_svma, si->text_start_avma, text_bias);
    } else {
       text_bias = 0;
       if (SHOW)
@@ -2615,10 +2620,10 @@ Bool ML_(read_xcoff_debug_info) ( struct _SegInfo* si,
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir)) {
       if (si->memname) {
          VG_(message)(Vg_DebugMsg, "Reading syms from %s(%s) (%p)",
-                      si->filename, si->memname, si->start);
+                      si->filename, si->memname, si->text_start_avma);
       } else {
          VG_(message)(Vg_DebugMsg, "Reading syms from %s (%p)",
-                      si->filename, si->start);
+                      si->filename, si->text_start_avma);
       }
    }
 
@@ -2627,8 +2632,8 @@ Bool ML_(read_xcoff_debug_info) ( struct _SegInfo* si,
       VG_(printf)("---         file: %s\n",  si->filename);
       VG_(printf)("---          mem: %s\n",  si->memname ? si->memname  
                                                          : (UChar*)"(none)" );
-      VG_(printf)("--- t actual vma: %p\n",  si->start);
-      VG_(printf)("--- t actual len: %ld\n", si->size);
+      VG_(printf)("--- t actual vma: %p\n",  si->text_start_avma);
+      VG_(printf)("--- t actual len: %ld\n", si->text_size);
       VG_(printf)("--- d actual vma: %p\n",  data_avma);
       VG_(printf)("--- d actual len: %ld\n", data_alen);
    }

@@ -428,11 +428,12 @@ void VG_(di_aix5_notify_segchange)(
 
    } else {
 
-      /* Dump all the segInfos which intersect code_start/code_len. */
+      /* Dump all the segInfos whose text segments intersect
+         code_start/code_len. */
       while (True) {
          for (si = segInfo_list; si; si = si->next) {
-            if (code_start + code_len <= si->start
-                || si->start + si->size <= code_start)
+            if (code_start + code_len <= si->text_start_avma
+                || si->text_start_avma + si->text_size <= code_start)
                continue; /* no overlap */
             else 
                break;

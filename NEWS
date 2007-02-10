@@ -2,6 +2,8 @@ Release 3.3.0 (XX XXX 2007)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.3.0 is a feature release with ...
 
+XXX: AIX support (ppc32 and ppc64?)
+
 Other user-visible changes:
 
 - A new suppression kind has been introduced: "Jump".  This is for

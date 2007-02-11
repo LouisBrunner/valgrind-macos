@@ -8,7 +8,7 @@
   This file is part of Valgrind, a dynamic binary instrumentation
   framework.
 
-  Copyright (C) 2005 Cerion Armour-Brown <cerion@open-works.co.uk>
+  Copyright (C) 2005-2007 Cerion Armour-Brown <cerion@open-works.co.uk>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -248,10 +248,13 @@ VG_(run_innerloop__dispatch_unprofiled):
 	   Stack state:
 		44(r1) (=orig guest_state)
 	*/
-
-	/* Has the guest state pointer been messed with?  If yes, exit. */
-        lwz     5,44(1)         /* original guest_state ptr */
-        cmpw    5,31
+	/* Has the guest state pointer been messed with?  If yes, exit.
+           Also set up & VG_(tt_fast) to give the load time to come
+           through. */
+        lwz     9,44(1)              /* original guest_state ptr */
+        lis	5,VG_(tt_fast)@ha
+        addi    5,5,VG_(tt_fast)@l   /* & VG_(tt_fast) */
+        cmpw    9,31
         bne	gsp_changed
 
         /* save the jump address in the guest state */
@@ -264,20 +267,16 @@ VG_(run_innerloop__dispatch_unprofiled):
 
         /* try a fast lookup in the translation cache */
         /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 2 */
-        rlwinm  4,3, 0, 32-2-VG_TT_FAST_BITS, 31-2  
-        addis   5,4,VG_(tt_fast)@ha
-        lwz     5,VG_(tt_fast)@l(5)
-        lwz     6,4(5)   /* big-endian, so comparing 2nd 32bit word */
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
+	rlwinm	4,3,1, 29-VG_TT_FAST_BITS, 28	/* entry# * 8 */
+	add	5,5,4	/* & VG_(tt_fast)[entry#] */
+	lwz	6,0(5)   /* .guest */
+	lwz	7,4(5)   /* .host */
         cmpw    3,6
         bne     fast_lookup_failed
 
-        /* Found a match.  Call tce[1], which is 8 bytes along, since
-           each tce element is a 64-bit int. */
-        addi    8,5,8
-        mtctr   8
-
-	/* run the translation */
+        /* Found a match.  Call .host. */
+        mtctr   7
         bctrl
 
         /* On return from guest code:
@@ -285,7 +284,6 @@ VG_(run_innerloop__dispatch_unprofiled):
            r31 may be unchanged (guest_state), or may indicate further
            details of the control transfer requested to *r3.
         */
-
 	/* start over */
 	b	VG_(run_innerloop__dispatch_unprofiled)
 	/*NOTREACHED*/
@@ -304,10 +302,13 @@ VG_(run_innerloop__dispatch_profiled):
 	   Stack state:
 		44(r1) (=orig guest_state)
 	*/
-
-	/* Has the guest state pointer been messed with?  If yes, exit. */
-        lwz     5,44(1)         /* original guest_state ptr */
-        cmpw    5,31
+	/* Has the guest state pointer been messed with?  If yes, exit.
+           Also set up & VG_(tt_fast) to give the load time to come
+           through. */
+        lwz     9,44(1)              /* original guest_state ptr */
+        lis	5,VG_(tt_fast)@ha
+        addi    5,5,VG_(tt_fast)@l   /* & VG_(tt_fast) */
+        cmpw    9,31
         bne	gsp_changed
 
         /* save the jump address in the guest state */
@@ -320,27 +321,24 @@ VG_(run_innerloop__dispatch_profiled):
 
         /* try a fast lookup in the translation cache */
         /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 2 */
-        rlwinm  4,3, 0, 32-2-VG_TT_FAST_BITS, 31-2 
-        addis   5,4,VG_(tt_fast)@ha
-        lwz     5,VG_(tt_fast)@l(5)
-        lwz     6,4(5)   /* big-endian, so comparing 2nd 32bit word */
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
+	rlwinm	4,3,1, 29-VG_TT_FAST_BITS, 28	/* entry# * 8 */
+	add	5,5,4	/* & VG_(tt_fast)[entry#] */
+	lwz	6,0(5)   /* .guest */
+	lwz	7,4(5)   /* .host */
         cmpw    3,6
         bne     fast_lookup_failed
 
         /* increment bb profile counter */
+	srwi	4,4,1	/* entry# * 4 */
         addis   6,4,VG_(tt_fastN)@ha
-        lwz     7,VG_(tt_fastN)@l(6)
-        lwz     8,0(7)
+        lwz     9,VG_(tt_fastN)@l(6)
+        lwz     8,0(9)
         addi    8,8,1
-        stw     8,0(7)
+        stw     8,0(9)
 
-        /* Found a match.  Call tce[1], which is 8 bytes along, since
-           each tce element is a 64-bit int. */
-        addi    8,5,8
-        mtctr   8
-
-	/* run the translation */
+        /* Found a match.  Call .host. */
+        mtctr   7
         bctrl
 
         /* On return from guest code:
@@ -348,7 +346,6 @@ VG_(run_innerloop__dispatch_profiled):
            r31 may be unchanged (guest_state), or may indicate further
            details of the control transfer requested to *r3.
         */
-
 	/* start over */
 	b	VG_(run_innerloop__dispatch_profiled)
 	/*NOTREACHED*/

@@ -39,9 +39,22 @@
 
 #include "pub_core_transtab_asm.h"
 
-/* The fast-cache for tt-lookup, and for finding counters. */
-extern ULong* VG_(tt_fast) [VG_TT_FAST_SIZE];
-extern UInt*  VG_(tt_fastN)[VG_TT_FAST_SIZE];
+/* The fast-cache for tt-lookup, and for finding counters.  Unused
+   entries are denoted by .guest == 1, which is assumed to be a bogus
+   address for all guest code. */
+typedef
+   struct { 
+      Addr guest;
+      Addr host;
+   }
+   FastCacheEntry;
+
+extern __attribute__((aligned(16)))
+       FastCacheEntry VG_(tt_fast) [VG_TT_FAST_SIZE];
+
+#define TRANSTAB_BOGUS_GUEST_ADDR ((Addr)1)
+
+extern UInt*          VG_(tt_fastN)[VG_TT_FAST_SIZE];
 
 extern void VG_(init_tt_tc)       ( void );
 

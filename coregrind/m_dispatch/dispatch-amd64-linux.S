@@ -119,8 +119,12 @@ VG_(run_innerloop__dispatch_unprofiled):
 	/* AT ENTRY: %rax is next guest addr, %rbp is possibly
            modified guest state ptr */
 
-	/* Has the guest state pointer been messed with?  If yes, exit. */
+	/* Has the guest state pointer been messed with?  If yes, exit.
+           Also, set %rcx to be &VG_(tt_fast), some insns before it is
+           used, in the hope of getting it off the critical path.  This
+           location seems to be optimal on 2.2GHz Athlon64. */
 	cmpq	8(%rsp), %rbp
+	movq	VG_(tt_fast)@GOTPCREL(%rip), %rcx
 	jnz	gsp_changed
 
 	/* save the jump address in the guest state */
@@ -131,17 +135,16 @@ VG_(run_innerloop__dispatch_unprofiled):
 	jz	counter_is_zero
 
 	/* try a fast lookup in the translation cache */
-	movq	VG_(tt_fast)@GOTPCREL(%rip), %rcx
-	movq	%rax, %rbx
-	andq	$VG_TT_FAST_MASK, %rbx
-	movq	(%rcx,%rbx,8), %rcx
-	cmpq	%rax, (%rcx)
+	movq	%rax, %rbx		/* next guest addr */
+	andq	$VG_TT_FAST_MASK, %rbx	/* entry# */
+	shlq	$4, %rbx		/* entry# * sizeof(FastCacheEntry) */
+	movq	0(%rcx,%rbx,1), %r10	/* .guest */
+	movq	8(%rcx,%rbx,1), %r11	/* .host */
+	cmpq	%rax, %r10
 	jnz	fast_lookup_failed
 
-	/* Found a match.  Call tce[1], which is 8 bytes along, since
-           each tce element is a 64-bit int. */
-	addq 	$8, %rcx
-	jmp 	*%rcx
+        /* Found a match.  Jump to .host. */
+	jmp 	*%r11
 	ud2	/* persuade insn decoders not to speculate past here */
 	/* generated code should run, then jump back to
 	   VG_(run_innerloop__dispatch_unprofiled). */
@@ -157,8 +160,12 @@ VG_(run_innerloop__dispatch_profiled):
 	/* AT ENTRY: %rax is next guest addr, %rbp is possibly
            modified guest state ptr */
 
-	/* Has the guest state pointer been messed with?  If yes, exit. */
+	/* Has the guest state pointer been messed with?  If yes, exit.
+           Also, set %rcx to be &VG_(tt_fast), some insns before it is
+           used, in the hope of getting it off the critical path.  This
+           location seems to be optimal on 2.2GHz Athlon64. */
 	cmpq	8(%rsp), %rbp
+	movq	VG_(tt_fast)@GOTPCREL(%rip), %rcx
 	jnz	gsp_changed
 
 	/* save the jump address in the guest state */
@@ -169,22 +176,22 @@ VG_(run_innerloop__dispatch_profiled):
 	jz	counter_is_zero
 
 	/* try a fast lookup in the translation cache */
-	movq	VG_(tt_fast)@GOTPCREL(%rip), %rcx
 	movq	%rax, %rbx
-	andq	$VG_TT_FAST_MASK, %rbx
-	movq	(%rcx,%rbx,8), %rcx
-	cmpq	%rax, (%rcx)
+	andq	$VG_TT_FAST_MASK, %rbx	/* entry# */
+	shlq	$4, %rbx		/* entry# * sizeof(FastCacheEntry) */
+	movq	0(%rcx,%rbx,1), %r10	/* .guest */
+	movq	8(%rcx,%rbx,1), %r11	/* .host */
+	cmpq	%rax, %r10
 	jnz	fast_lookup_failed
 
 	/* increment bb profile counter */
 	movq	VG_(tt_fastN)@GOTPCREL(%rip), %rdx
-	movq	(%rdx,%rbx,8), %rdx
+	shrq	$1, %rbx		/* entry# * sizeof(UInt*) */
+	movq	(%rdx,%rbx,1), %rdx
 	addl	$1, (%rdx)
 
-	/* Found a match.  Call tce[1], which is 8 bytes along, since
-           each tce element is a 64-bit int. */
-	addq 	$8, %rcx
-	jmp 	*%rcx
+        /* Found a match.  Jump to .host. */
+	jmp 	*%r11
 	ud2	/* persuade insn decoders not to speculate past here */
 	/* generated code should run, then jump back to
 	   VG_(run_innerloop__dispatch_profiled). */

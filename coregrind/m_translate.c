@@ -577,6 +577,12 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
       goto dontchase;
 #  endif
 
+   /* overly conservative, but .. don't chase into the distinguished
+      address that m_transtab uses as an empty-slot marker for
+      VG_(tt_fast). */
+   if (addr == TRANSTAB_BOGUS_GUEST_ADDR)
+      goto dontchase;
+
    /* well, ok then.  go on and chase. */
    return True;
 
@@ -1155,7 +1161,8 @@ Bool VG_(translate) ( ThreadId tid,
    { /* BEGIN new scope specially for 'seg' */
    NSegment const* seg = VG_(am_find_nsegment)(addr);
 
-   if (!translations_allowable_from_seg(seg)) {
+   if ( (!translations_allowable_from_seg(seg))
+        || addr == TRANSTAB_BOGUS_GUEST_ADDR ) {
       if (VG_(clo_trace_signals))
          VG_(message)(Vg_DebugMsg, "translations not allowed here "
                                    "- throwing SEGV");

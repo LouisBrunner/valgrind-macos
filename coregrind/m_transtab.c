@@ -84,21 +84,6 @@
 
 /*------------------ TYPES ------------------*/
 
-/* A translation-cache entry is two parts:
-   - The guest address of the first (entry) bb in the translation,
-     as a 64-bit word.
-   - One or more 64-bit words containing the code.
-   It is supposed to be 64-bit aligned.
-*/
-/*
-typedef
-   struct {
-      Addr64 orig_addr;
-      ULong  code[0];
-   }
-   TCEntry;
-*/
-
 /* A translation-table entry.  This indicates precisely which areas of
    guest code are included in the translation, and contains all other
    auxiliary info too.  */
@@ -117,9 +102,10 @@ typedef
          deletion, hence the Deleted state. */
       enum { InUse, Deleted, Empty } status;
 
-      /* Pointer to the corresponding TCEntry (must be in the same
-         sector!) */
-      ULong* tce;
+      /* 64-bit aligned pointer to one or more 64-bit words containing
+         the corresponding host code (must be in the same sector!)
+         This is a pointer into the sector's tc (code) area. */
+      ULong* tcptr;
 
       /* This is the original guest address that purportedly is the
          entry point of the translation.  You might think that .entry
@@ -214,33 +200,48 @@ static Int    youngest_sector = -1;
 static Int    tc_sector_szQ;
 
 
-/* Fast helper for the TC.  A direct-mapped cache which holds a
-   pointer to a TC entry which may or may not be the correct one, but
-   which we hope usually is.  This array is referred to directly from
-   <arch>/dispatch.S.
+/* Fast helper for the TC.  A direct-mapped cache which holds a set of
+   recently used (guest address, host address) pairs.  This array is
+   referred to directly from m_dispatch/dispatch-<platform>.S.
 
-   Entries in tt_fast may point to any valid TC entry, regardless of
+   Entries in tt_fast may refer to any valid TC entry, regardless of
    which sector it's in.  Consequently we must be very careful to
    invalidate this cache when TC entries are changed or disappear.
 
-   A special TCEntry -- bogus_tc_entry -- must be pointed at to cause
-   that cache entry to miss.  This relies on the assumption that no
-   guest code actually has an address of 0x1.
+   A special .guest address - TRANSTAB_BOGUS_GUEST_ADDR -- must be
+   pointed at to cause that cache entry to miss.  This relies on the
+   assumption that no guest code actually has that address, hence a
+   value 0x1 seems good.  m_translate gives the client a synthetic
+   segfault if it tries to execute at this address.
 */
-/*global*/ ULong* VG_(tt_fast)[VG_TT_FAST_SIZE];
-
-static ULong bogus_tc_entry = (Addr64)1;
-
+/*
+typedef
+   struct { 
+      Addr guest;
+      Addr host;
+   }
+   FastCacheEntry;
+*/
+/*global*/ __attribute__((aligned(16)))
+           FastCacheEntry VG_(tt_fast)[VG_TT_FAST_SIZE];
+/*
+#define TRANSTAB_BOGUS_GUEST_ADDR ((Addr)1)
+*/
 
 /* For profiling, we have a parallel array of pointers to .count
    fields in TT entries.  Again, these pointers must be invalidated
    when translations disappear.  A NULL pointer suffices to indicate
    an unused slot.
 
-   tt_fast and tt_fastN change together: if tt_fast[i] points to
-   bogus_tc_entry then the corresponding tt_fastN[i] must be null.  If
-   tt_fast[i] points to some TC entry somewhere, then tt_fastN[i]
-   *must* point to the .count field of the corresponding TT entry.
+   When not profiling (the normal case, VG_(clo_profile_flags) == 0),
+   all tt_fastN entries are set to NULL at startup and never read nor
+   written after that.
+
+   When profiling (VG_(clo_profile_flags) > 0), tt_fast and tt_fastN
+   change together: if tt_fast[i].guest is TRANSTAB_BOGUS_GUEST_ADDR
+   then the corresponding tt_fastN[i] must be null.  If
+   tt_fast[i].guest is any other value, then tt_fastN[i] *must* point
+   to the .count field of the corresponding TT entry.
 
    tt_fast and tt_fastN are referred to from assembly code
    (dispatch.S).
@@ -557,8 +558,9 @@ static Bool sanity_check_eclasses_in_sector ( Sector* sec )
 
 /* Sanity check absolutely everything.  True == check passed. */
 
-/* forward */
+/* forwards */
 static Bool sanity_check_redir_tt_tc ( void );
+static Bool sanity_check_fastcache ( void );
 
 static Bool sanity_check_all_sectors ( void )
 {
@@ -573,7 +575,9 @@ static Bool sanity_check_all_sectors ( void )
       if (!sane)
          return False;
    }
-   if (!sanity_check_redir_tt_tc() )
+   if ( !sanity_check_redir_tt_tc() )
+      return False;
+   if ( !sanity_check_fastcache() )
       return False;
    return True;
 }
@@ -609,14 +613,37 @@ static inline UInt HASH_TT ( Addr64 key )
    return k32 % N_TTES_PER_SECTOR;
 }
 
-static void setFastCacheEntry ( Addr64 key, ULong* tce, UInt* count )
+static void setFastCacheEntry ( Addr64 key, ULong* tcptr, UInt* count )
 {
    UInt cno = (UInt)VG_TT_FAST_HASH(key);
-   VG_(tt_fast)[cno]  = tce;
-   VG_(tt_fastN)[cno] = VG_(clo_profile_flags) > 0  ? count  : NULL;
+   VG_(tt_fast)[cno].guest = (Addr)key;
+   VG_(tt_fast)[cno].host  = (Addr)tcptr;
+   if (VG_(clo_profile_flags) > 0)
+      VG_(tt_fastN)[cno] = count;
    n_fast_updates++;
+   /* This shouldn't fail.  It should be assured by m_translate
+      which should reject any attempt to make translation of code
+      starting at TRANSTAB_BOGUS_GUEST_ADDR. */
+   vg_assert(VG_(tt_fast)[cno].guest != TRANSTAB_BOGUS_GUEST_ADDR);
 }
 
+/* Invalidate the fast cache's counter array, VG_(tt_fastN). */
+static void invalidateFastNCache ( void )
+{
+   UInt j;
+   vg_assert(VG_TT_FAST_SIZE > 0 && (VG_TT_FAST_SIZE % 4) == 0);
+   for (j = 0; j < VG_TT_FAST_SIZE; j += 4) {
+      VG_(tt_fastN)[j+0] = NULL;
+      VG_(tt_fastN)[j+1] = NULL;
+      VG_(tt_fastN)[j+2] = NULL;
+      VG_(tt_fastN)[j+3] = NULL;
+   }
+   vg_assert(j == VG_TT_FAST_SIZE);
+}
+
+/* Invalidate the fast cache VG_(tt_fast).  If profiling, also
+   invalidate the fast cache's counter array VG_(tt_fastN), otherwise
+   don't touch it. */
 static void invalidateFastCache ( void )
 {
    UInt j;
@@ -624,17 +651,41 @@ static void invalidateFastCache ( void )
       bit, at least on ppc32. */
    vg_assert(VG_TT_FAST_SIZE > 0 && (VG_TT_FAST_SIZE % 4) == 0);
    for (j = 0; j < VG_TT_FAST_SIZE; j += 4) {
-      VG_(tt_fast)[j+0]  = &bogus_tc_entry;
-      VG_(tt_fast)[j+1]  = &bogus_tc_entry;
-      VG_(tt_fast)[j+2]  = &bogus_tc_entry;
-      VG_(tt_fast)[j+3]  = &bogus_tc_entry;
-      VG_(tt_fastN)[j+0] = NULL;
-      VG_(tt_fastN)[j+1] = NULL;
-      VG_(tt_fastN)[j+2] = NULL;
-      VG_(tt_fastN)[j+3] = NULL;
+      VG_(tt_fast)[j+0].guest = TRANSTAB_BOGUS_GUEST_ADDR;
+      VG_(tt_fast)[j+1].guest = TRANSTAB_BOGUS_GUEST_ADDR;
+      VG_(tt_fast)[j+2].guest = TRANSTAB_BOGUS_GUEST_ADDR;
+      VG_(tt_fast)[j+3].guest = TRANSTAB_BOGUS_GUEST_ADDR;
    }
+
+   if (VG_(clo_profile_flags) > 0)
+      invalidateFastNCache();
+
    vg_assert(j == VG_TT_FAST_SIZE);
    n_fast_flushes++;
+}
+
+static Bool sanity_check_fastcache ( void )
+{
+   UInt j;
+   if (0) VG_(printf)("sanity check fastcache\n");
+   if (VG_(clo_profile_flags) > 0) {
+      /* profiling */
+      for (j = 0; j < VG_TT_FAST_SIZE; j++) {
+         if (VG_(tt_fastN)[j] == NULL 
+             && VG_(tt_fast)[j].guest != TRANSTAB_BOGUS_GUEST_ADDR)
+            return False;
+         if (VG_(tt_fastN)[j] != NULL 
+             && VG_(tt_fast)[j].guest == TRANSTAB_BOGUS_GUEST_ADDR)
+            return False;
+      }
+   } else {
+      /* not profiling */
+      for (j = 0; j < VG_TT_FAST_SIZE; j++) {
+         if (VG_(tt_fastN)[j] != NULL)
+            return False;
+      }
+   }
+   return True;
 }
 
 static void initialiseSector ( Int sno )
@@ -746,6 +797,9 @@ static void invalidate_icache ( void *ptr, Int nbytes )
    Addr addr;
    VexArchInfo vai;
 
+   if (nbytes == 0) return;
+   vg_assert(nbytes > 0);
+
    VG_(machine_get_VexArchInfo)( NULL, &vai );
    cls = vai.ppc_cache_line_szB;
 
@@ -785,7 +839,7 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
                            Bool             is_self_checking )
 {
    Int    tcAvailQ, reqdQ, y, i;
-   ULong  *tce, *tce2;
+   ULong  *tcptr, *tcptr2;
    UChar* srcP;
    UChar* dstP;
 
@@ -812,7 +866,7 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
       initialiseSector(y);
 
    /* Try putting the translation in this sector. */
-   reqdQ = 1 + ((code_len + 7) >> 3);
+   reqdQ = (code_len + 7) >> 3;
 
    /* Will it fit in tc? */
    tcAvailQ = ((ULong*)(&sectors[y].tc[tc_sector_szQ]))
@@ -852,12 +906,11 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
    vg_assert(sectors[y].tt_n_inuse >= 0);
  
    /* Copy into tc. */
-   tce = sectors[y].tc_next;
-   vg_assert(tce >= &sectors[y].tc[0]);
-   vg_assert(tce <= &sectors[y].tc[tc_sector_szQ]);
+   tcptr = sectors[y].tc_next;
+   vg_assert(tcptr >= &sectors[y].tc[0]);
+   vg_assert(tcptr <= &sectors[y].tc[tc_sector_szQ]);
 
-   tce[0] = entry;
-   dstP = (UChar*)(&tce[1]);
+   dstP = (UChar*)tcptr;
    srcP = (UChar*)code;
    for (i = 0; i < code_len; i++)
       dstP[i] = srcP[i];
@@ -867,9 +920,9 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
    invalidate_icache( dstP, code_len );
 
    /* more paranoia */
-   tce2 = sectors[y].tc_next;
-   vg_assert(tce2 >= &sectors[y].tc[0]);
-   vg_assert(tce2 <= &sectors[y].tc[tc_sector_szQ]);
+   tcptr2 = sectors[y].tc_next;
+   vg_assert(tcptr2 >= &sectors[y].tc[0]);
+   vg_assert(tcptr2 <= &sectors[y].tc[tc_sector_szQ]);
 
    /* Find an empty tt slot, and use it.  There must be such a slot
       since tt is never allowed to get completely full. */
@@ -885,14 +938,14 @@ void VG_(add_to_transtab)( VexGuestExtents* vge,
    }
 
    sectors[y].tt[i].status = InUse;
-   sectors[y].tt[i].tce    = tce;
+   sectors[y].tt[i].tcptr  = tcptr;
    sectors[y].tt[i].count  = 0;
    sectors[y].tt[i].weight = 1;
    sectors[y].tt[i].vge    = *vge;
    sectors[y].tt[i].entry  = entry;
 
    /* Update the fast-cache. */
-   setFastCacheEntry( entry, tce, &sectors[y].tt[i].count );
+   setFastCacheEntry( entry, tcptr, &sectors[y].tt[i].count );
 
    /* Note the eclass numbers for this translation. */
    upd_eclasses_after_add( &sectors[y], i );
@@ -934,10 +987,10 @@ Bool VG_(search_transtab) ( /*OUT*/AddrH* result,
             /* found it */
             if (upd_cache)
                setFastCacheEntry( 
-                  guest_addr, sectors[sno].tt[k].tce, 
+                  guest_addr, sectors[sno].tt[k].tcptr, 
                               &sectors[sno].tt[k].count );
             if (result)
-               *result = sizeof(Addr64) + (AddrH)sectors[sno].tt[k].tce;
+               *result = (AddrH)sectors[sno].tt[k].tcptr;
             return True;
          }
          if (sectors[sno].tt[k].status == Empty)
@@ -1392,6 +1445,14 @@ void VG_(init_tt_tc) ( void )
    /* Otherwise lots of things go wrong... */
    vg_assert(sizeof(ULong) == 8);
    vg_assert(sizeof(Addr64) == 8);
+   /* check fast cache entries really are 2 words long */
+   vg_assert(sizeof(Addr) == sizeof(void*));
+   vg_assert(sizeof(FastCacheEntry) == 2 * sizeof(Addr));
+   /* check fast cache entries are packed back-to-back with no spaces */
+   vg_assert(sizeof( VG_(tt_fast) ) == VG_TT_FAST_SIZE * sizeof(FastCacheEntry));
+   /* check fast cache is aligned as we requested.  Not fatal if it
+      isn't, but we might as well make sure. */
+   vg_assert(VG_IS_16_ALIGNED( ((Addr) & VG_(tt_fast)[0]) ));
 
    if (VG_(clo_verbosity) > 2)
       VG_(message)(Vg_DebugMsg, 
@@ -1420,8 +1481,12 @@ void VG_(init_tt_tc) ( void )
       }
    }
 
-   /* and the fast caches. */
+   /* Initialise the fast caches.  If not profiling (the usual case),
+      we have to explicitly invalidate the fastN cache as
+      invalidateFastCache() won't do that for us. */
    invalidateFastCache();
+   if (VG_(clo_profile_flags) == 0)
+      invalidateFastNCache();
 
    /* and the unredir tt/tc */
    init_unredir_tt_tc();

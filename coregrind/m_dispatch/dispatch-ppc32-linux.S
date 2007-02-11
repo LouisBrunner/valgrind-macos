@@ -249,8 +249,8 @@ VG_(run_innerloop__dispatch_unprofiled):
 		44(r1) (=orig guest_state)
 	*/
 	/* Has the guest state pointer been messed with?  If yes, exit.
-           Also set up & VG_(tt_fast) to give the load time to come
-           through. */
+           Also set up & VG_(tt_fast) early in an attempt at better
+           scheduling. */
         lwz     9,44(1)              /* original guest_state ptr */
         lis	5,VG_(tt_fast)@ha
         addi    5,5,VG_(tt_fast)@l   /* & VG_(tt_fast) */
@@ -266,7 +266,7 @@ VG_(run_innerloop__dispatch_unprofiled):
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
               = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
 	rlwinm	4,3,1, 29-VG_TT_FAST_BITS, 28	/* entry# * 8 */
 	add	5,5,4	/* & VG_(tt_fast)[entry#] */
@@ -303,8 +303,8 @@ VG_(run_innerloop__dispatch_profiled):
 		44(r1) (=orig guest_state)
 	*/
 	/* Has the guest state pointer been messed with?  If yes, exit.
-           Also set up & VG_(tt_fast) to give the load time to come
-           through. */
+           Also set up & VG_(tt_fast) early in an attempt at better
+           scheduling. */
         lwz     9,44(1)              /* original guest_state ptr */
         lis	5,VG_(tt_fast)@ha
         addi    5,5,VG_(tt_fast)@l   /* & VG_(tt_fast) */
@@ -320,7 +320,7 @@ VG_(run_innerloop__dispatch_profiled):
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
               = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
 	rlwinm	4,3,1, 29-VG_TT_FAST_BITS, 28	/* entry# * 8 */
 	add	5,5,4	/* & VG_(tt_fast)[entry#] */
@@ -330,7 +330,7 @@ VG_(run_innerloop__dispatch_profiled):
         bne     fast_lookup_failed
 
         /* increment bb profile counter */
-	srwi	4,4,1	/* entry# * 4 */
+	srwi	4,4,1	/* entry# * sizeof(UInt*) */
         addis   6,4,VG_(tt_fastN)@ha
         lwz     9,VG_(tt_fastN)@l(6)
         lwz     8,0(9)

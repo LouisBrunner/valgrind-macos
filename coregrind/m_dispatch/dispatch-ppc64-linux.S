@@ -8,7 +8,7 @@
   This file is part of Valgrind, a dynamic binary instrumentation
   framework.
 
-  Copyright (C) 2005 Cerion Armour-Brown <cerion@open-works.co.uk>
+  Copyright (C) 2005-2007 Cerion Armour-Brown <cerion@open-works.co.uk>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -269,10 +269,12 @@ VG_(run_innerloop__dispatch_unprofiled):
 		152(r1) (=orig guest_state)
 		144(r1) (=var space for FPSCR[RM])
 	*/
-
-	/* Has the guest state ptr been messed with?  If yes, exit. */
-        ld      5,152(1)        /* original guest_state ptr */
-        cmpd    5,31
+	/* Has the guest state pointer been messed with?  If yes, exit.
+           Also set up & VG_(tt_fast) early in an attempt at better
+           scheduling. */
+        ld      9,152(1)        /* original guest_state ptr */
+	ld	5, .tocent__vgPlain_tt_fast@toc(2) /* &VG_(tt_fast) */
+        cmpd    9,31
         bne	.gsp_changed
 
         /* save the jump address in the guest state */
@@ -284,23 +286,18 @@ VG_(run_innerloop__dispatch_unprofiled):
         beq	.counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
-	rldicl	4,3, 62, 64-VG_TT_FAST_BITS
-	sldi	4,4,3
-
-	ld	5, .tocent__vgPlain_tt_fast@toc(2)
-	ldx	5, 5,4     /* r5 = VG_(tt_fast)[VG_TT_FAST_HASH(addr)] */
-	ld	6, 0(5)    /* r6 = (r5)->orig_addr */
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 4 */
+	rldicl	4,3, 62, 64-VG_TT_FAST_BITS   /* entry# */
+	sldi	4,4,4      /* entry# * sizeof(FastCacheEntry) */
+	add	5,5,4      /* & VG_(tt_fast)[entry#] */
+	ld	6,0(5)     /* .guest */
+	ld	7,8(5)     /* .host */
         cmpd    3,6
         bne     .fast_lookup_failed
 
-        /* Found a match.  Call tce[1], which is 8 bytes along, since
-           each tce element is a 64-bit int. */
-        addi    8,5,8
-        mtctr   8
-
-	/* run the translation */
+        /* Found a match.  Call .host. */
+        mtctr   7
         bctrl
 
         /* On return from guest code:
@@ -308,7 +305,6 @@ VG_(run_innerloop__dispatch_unprofiled):
            r31 may be unchanged (guest_state), or may indicate further
            details of the control transfer requested to *r3.
         */
-
 	/* start over */
 	b	.VG_(run_innerloop__dispatch_unprofiled)
 	/*NOTREACHED*/
@@ -340,10 +336,12 @@ VG_(run_innerloop__dispatch_profiled):
 		152(r1) (=orig guest_state)
 		144(r1) (=var space for FPSCR[RM])
 	*/
-
-	/* Has the guest state ptr been messed with?  If yes, exit. */
-        ld      5,152(1)        /* original guest_state ptr */
-        cmpd    5,31
+	/* Has the guest state pointer been messed with?  If yes, exit.
+           Also set up & VG_(tt_fast) early in an attempt at better
+           scheduling. */
+        ld      9,152(1)        /* original guest_state ptr */
+	ld	5, .tocent__vgPlain_tt_fast@toc(2) /* &VG_(tt_fast) */
+        cmpd    9,31
         bne	.gsp_changed
 
         /* save the jump address in the guest state */
@@ -355,30 +353,26 @@ VG_(run_innerloop__dispatch_profiled):
         beq	.counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
-	rldicl	4,3, 62, 64-VG_TT_FAST_BITS
-	sldi	4,4,3
-
-	ld	5, .tocent__vgPlain_tt_fast@toc(2)
-	ldx	5, 5,4     /* r5 = VG_(tt_fast)[VG_TT_FAST_HASH(addr)] */
-	ld	6, 0(5)    /* r6 = (r5)->orig_addr */
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 4 */
+	rldicl	4,3, 62, 64-VG_TT_FAST_BITS   /* entry# */
+	sldi	4,4,4      /* entry# * sizeof(FastCacheEntry) */
+	add	5,5,4      /* & VG_(tt_fast)[entry#] */
+	ld	6,0(5)     /* .guest */
+	ld	7,8(5)     /* .host */
         cmpd    3,6
         bne     .fast_lookup_failed
 
         /* increment bb profile counter VG_(tt_fastN)[x] (=32bit val) */
-	ld	7, .tocent__vgPlain_tt_fastN@toc(2)
-	ldx	7, 7,4     /* r7 = VG_(tt_fastN)[VG_TT_HASH(addr)] */
-	lwz	6, 0(7)    /* *(UInt*)r7 ++ */
+	ld	9, .tocent__vgPlain_tt_fastN@toc(2)
+	srdi	4, 4,1     /* entry# * sizeof(UInt*) */
+	ldx	9, 9,4     /* r7 = VG_(tt_fastN)[VG_TT_HASH(addr)] */
+	lwz	6, 0(9)    /* *(UInt*)r7 ++ */
 	addi	6, 6,1
-	stw	6, 0(7)
+	stw	6, 0(9)
 
-        /* Found a match.  Call tce[1], which is 8 bytes along, since
-           each tce element is a 64-bit int. */
-        addi    8,5,8
-        mtctr   8
-
-	/* run the translation */
+        /* Found a match.  Call .host. */
+        mtctr   7
         bctrl
 
         /* On return from guest code:
@@ -386,7 +380,6 @@ VG_(run_innerloop__dispatch_profiled):
            r31 may be unchanged (guest_state), or may indicate further
            details of the control transfer requested to *r3.
         */
-
 	/* start over */
 	b	.VG_(run_innerloop__dispatch_profiled)
 	/*NOTREACHED*/

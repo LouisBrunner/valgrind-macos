@@ -63,6 +63,12 @@
       if ((qq_var) > (qq_hi)) (qq_var) = (qq_hi); \
    }
 
+/* Bool arg whose value is denoted by the exact presence of the given string. */
+#define VG_XACT_CLO(qq_arg, qq_option, qq_var) \
+   if (VG_CLO_STREQ(qq_arg, qq_option)) { \
+      (qq_var) = True; \
+   } /* else leave it alone */
+
 /* Verbosity level: 0 = silent, 1 (default), > 1 = more verbose. */
 extern Int  VG_(clo_verbosity);
 

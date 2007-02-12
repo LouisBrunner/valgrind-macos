@@ -159,7 +159,11 @@ static void usage_NORETURN ( Bool debug_help )
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
+"    --trace-symtab-patt=<patt> limit debuginfo tracing to obj name <patt>\n"
 "    --trace-cfi=no|yes        show call-frame-info details? [no]\n"
+"    --debug-dump=syms         mimic /usr/bin/readelf --syms\n"
+"    --debug-dump=line         mimic /usr/bin/readelf --debug-dump=line\n"
+"    --debug-dump=frames       mimic /usr/bin/readelf --debug-dump=frames\n"
 "    --trace-redir=no|yes      show redirection details? [no]\n"
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
@@ -352,12 +356,16 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched))
       else VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals))
       else VG_BOOL_CLO(arg, "--trace-symtab",     VG_(clo_trace_symtab))
+      else VG_STR_CLO (arg, "--trace-symtab-patt", VG_(clo_trace_symtab_patt))
       else VG_BOOL_CLO(arg, "--trace-cfi",        VG_(clo_trace_cfi))
+      else VG_XACT_CLO(arg, "--debug-dump=syms",  VG_(clo_debug_dump_syms))
+      else VG_XACT_CLO(arg, "--debug-dump=line",  VG_(clo_debug_dump_line))
+      else VG_XACT_CLO(arg, "--debug-dump=frames", VG_(clo_debug_dump_frames))
       else VG_BOOL_CLO(arg, "--trace-redir",      VG_(clo_trace_redir))
+
       else VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls))
       else VG_BOOL_CLO(arg, "--trace-pthreads",   VG_(clo_trace_pthreads))
       else VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb))
-
       else VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command))
       else VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints))
       else VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets))

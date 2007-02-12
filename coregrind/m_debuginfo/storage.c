@@ -397,7 +397,7 @@ static Int compare_DiSym ( void* va, void* vb )
    so we can misdescribe memcmp() as bcmp()).  This is hard to avoid.
    It's mentioned in the FAQ file.
  */
-static DiSym* prefersym ( DiSym* a, DiSym* b )
+static DiSym* prefersym ( struct _SegInfo* si, DiSym* a, DiSym* b )
 {
    Int lena, lenb;		/* full length */
    Int vlena, vlenb;		/* length without version */
@@ -476,7 +476,7 @@ static void canonicaliseSymtab ( struct _SegInfo* si )
             n_merged++;
             /* merge the two into one */
 	    si->symtab[si->symtab_used++] 
-               = *prefersym(&si->symtab[i], &si->symtab[i+1]);
+               = *prefersym(si, &si->symtab[i], &si->symtab[i+1]);
             i++;
          } else {
             si->symtab[si->symtab_used++] = si->symtab[i];
@@ -499,7 +499,7 @@ static void canonicaliseSymtab ( struct _SegInfo* si )
          continue;
 
       /* There's an overlap.  Truncate one or the other. */
-      if (VG_(clo_trace_symtab)) {
+      if (si->trace_symtab) {
          VG_(printf)("overlapping address ranges in symbol table\n\t");
          ML_(ppSym)( i, &si->symtab[i] );
          VG_(printf)("\t");
@@ -683,7 +683,7 @@ static void canonicaliseCFI ( struct _SegInfo* si )
          si->cfsi_maxaddr = here_max;
    }
 
-   if (VG_(clo_trace_cfi))
+   if (si->trace_cfi)
       VG_(printf)("canonicaliseCfiSI: %d entries, %p .. %p\n", 
                   si->cfsi_used,
 	          si->cfsi_minaddr, si->cfsi_maxaddr);

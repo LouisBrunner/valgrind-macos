@@ -194,6 +194,16 @@ struct _SegInfo {
    UInt   data_size;
    Addr   bss_start_avma;
    UInt   bss_size;
+
+   /* Used for debugging only - indicate what stuff to dump whilst
+      reading stuff into the seginfo.  Are computed as early in the
+      lifetime of the SegInfo as possible.  Use these when deciding
+      what to spew out; do not use the global VG_(clo_blah) flags. */
+   Bool trace_symtab; /* symbols, our style */
+   Bool trace_cfi;    /* dwarf frame unwind, our style */
+   Bool ddump_syms;   /* mimic /usr/bin/readelf --syms */
+   Bool ddump_line;   /* mimic /usr/bin/readelf --debug-dump=line */
+   Bool ddump_frames; /* mimic /usr/bin/readelf --debug-dump=frames */
 };
 
 /* --------------------- functions --------------------- */
@@ -250,7 +260,7 @@ extern void ML_(ppDiCfSI) ( DiCfSI* si );
 
 
 #define TRACE_SYMTAB(format, args...) \
-   if (VG_(clo_trace_symtab)) { VG_(printf)(format, ## args); }
+   if (si->trace_symtab) { VG_(printf)(format, ## args); }
 
 
 #endif /* ndef __PRIV_STORAGE_H */

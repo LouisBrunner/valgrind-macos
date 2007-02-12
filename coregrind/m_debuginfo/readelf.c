@@ -419,7 +419,7 @@ void read_elf_symtab__normal(
       sym_name = (Char*)(o_strtab + sym->st_name);
       sym_addr = o_symtab_offset + sym->st_value;
 
-      if (VG_(clo_trace_symtab))
+      if (si->trace_symtab)
          show_raw_elf_symbol(i, sym, sym_name, sym_addr, False);
 
       if (get_elf_symbol_info(si, sym, sym_name, sym_addr,
@@ -438,7 +438,7 @@ void read_elf_symtab__normal(
          vg_assert(risym.tocptr == 0); /* has no role except on ppc64-linux */
          ML_(addSym) ( si, &risym );
 
-         if (VG_(clo_trace_symtab)) {
+         if (si->trace_symtab) {
             VG_(printf)("    record [%4d]:          "
                         " val %010p, sz %4d  %s\n",
                         i, (void*)risym.addr, (Int)risym.size, 
@@ -527,7 +527,7 @@ void read_elf_symtab__ppc64_linux(
       sym_name = (Char*)(o_strtab + sym->st_name);
       sym_addr = o_symtab_offset + sym->st_value;
 
-      if (VG_(clo_trace_symtab))
+      if (si->trace_symtab)
          show_raw_elf_symbol(i, sym, sym_name, sym_addr, True);
 
       if (get_elf_symbol_info(si, sym, sym_name, sym_addr,
@@ -580,7 +580,7 @@ void read_elf_symtab__ppc64_linux(
             /* Only one or the other is possible (I think) */
 	    vg_assert(!(modify_size && modify_tocptr));
 
-            if (modify_size && VG_(clo_trace_symtab)) {
+            if (modify_size && si->trace_symtab) {
                VG_(printf)("    modify (old sz %4d)    "
                            " val %010p, toc %010p, sz %4d  %s\n",
                            old_size,
@@ -590,7 +590,7 @@ void read_elf_symtab__ppc64_linux(
                            (HChar*)prev->key.name
                );
             }
-            if (modify_tocptr && VG_(clo_trace_symtab)) {
+            if (modify_tocptr && si->trace_symtab) {
                VG_(printf)("    modify (upd tocptr)     "
                            " val %010p, toc %010p, sz %4d  %s\n",
                             (void*) prev->key.addr, 
@@ -610,7 +610,7 @@ void read_elf_symtab__ppc64_linux(
             elem->size     = sym_size;
             elem->from_opd = from_opd;
             VG_(OSet_Insert)(oset, elem);
-            if (VG_(clo_trace_symtab)) {
+            if (si->trace_symtab) {
                VG_(printf)("   to-oset [%4d]:          "
                            " val %010p, toc %010p, sz %4d  %s\n",
                            i, (void*) elem->key.addr,
@@ -638,7 +638,7 @@ void read_elf_symtab__ppc64_linux(
       vg_assert(risym.name != NULL);
 
       ML_(addSym) ( si, &risym );
-      if (VG_(clo_trace_symtab)) {
+      if (si->trace_symtab) {
          VG_(printf)("    record [%4d]:          "
                      " val %010p, toc %010p, sz %4d  %s\n",
                      i, (void*) risym.addr,
@@ -1013,35 +1013,35 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
    /* Find interesting sections, read the symbol table(s), read any debug
       information */
    {
-      /* Pointers to start of sections (in the oimage, not in the
-	 running image) -- image addresses */
-      UChar*     o_strtab     = NULL; /* .strtab */
-      ElfXX_Sym* o_symtab     = NULL; /* .symtab */
-      UChar*     o_dynstr     = NULL; /* .dynstr */
-      ElfXX_Sym* o_dynsym     = NULL; /* .dynsym */
-      Char*      debuglink    = NULL; /* .gnu_debuglink */
-      UChar*     stab         = NULL; /* .stab         (stabs)  */
-      UChar*     stabstr      = NULL; /* .stabstr      (stabs)  */
-      UChar*     debug_line   = NULL; /* .debug_line   (dwarf2) */
-      UChar*     debug_info   = NULL; /* .debug_info   (dwarf2) */
-      UChar*     debug_abbv   = NULL; /* .debug_abbrev (dwarf2) */
-      UChar*     debug_str    = NULL; /* .debug_str    (dwarf2) */
-      UChar*     dwarf1d      = NULL; /* .debug        (dwarf1) */
-      UChar*     dwarf1l      = NULL; /* .line         (dwarf1) */
-      UChar*     ehframe      = NULL; /* .eh_frame     (dwarf2) */
-      UChar*     opd_filea    = NULL; /* .opd          (dwarf2, ppc64-linux) */
-      UChar*     dummy_filea  = NULL;
+      /* IMAGE addresses: pointers to start of sections (in the
+         oimage, not in the running image) -- image addresses */
+      UChar*     strtab_img      = NULL; /* .strtab */
+      ElfXX_Sym* symtab_img      = NULL; /* .symtab */
+      UChar*     dynstr_img      = NULL; /* .dynstr */
+      ElfXX_Sym* dynsym_img      = NULL; /* .dynsym */
+      Char*      debuglink_img   = NULL; /* .gnu_debuglink */
+      UChar*     stab_img        = NULL; /* .stab         (stabs)  */
+      UChar*     stabstr_img     = NULL; /* .stabstr      (stabs)  */
+      UChar*     debug_line_img  = NULL; /* .debug_line   (dwarf2) */
+      UChar*     debug_info_img  = NULL; /* .debug_info   (dwarf2) */
+      UChar*     debug_abbv_img  = NULL; /* .debug_abbrev (dwarf2) */
+      UChar*     debug_str_img   = NULL; /* .debug_str    (dwarf2) */
+      UChar*     dwarf1d_img     = NULL; /* .debug        (dwarf1) */
+      UChar*     dwarf1l_img     = NULL; /* .line         (dwarf1) */
+      UChar*     ehframe_img     = NULL; /* .eh_frame     (dwarf2) */
+      UChar*     opd_filea_img   = NULL; /* .opd          (dwarf2, ppc64-linux) */
+      UChar*     dummy_filea_img = NULL;
 
-      OffT       o_symtab_offset = offset_oimage;
-      OffT       o_dynsym_offset = offset_oimage;
+      OffT       symtab_offset   = offset_oimage;
+      OffT       dynsym_offset   = offset_oimage;
       OffT       debug_offset    = offset_oimage;
       OffT       opd_offset      = offset_oimage;
 
       /* Section sizes, in bytes */
-      UInt       o_strtab_sz     = 0;
-      UInt       o_symtab_sz     = 0;
-      UInt       o_dynstr_sz     = 0;
-      UInt       o_dynsym_sz     = 0;
+      UInt       strtab_sz       = 0;
+      UInt       symtab_sz       = 0;
+      UInt       dynstr_sz       = 0;
+      UInt       dynsym_sz       = 0;
       UInt       debuglink_sz    = 0;
       UInt       stab_sz         = 0;
       UInt       stabstr_sz      = 0;
@@ -1093,45 +1093,46 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
          /* Nb: must find where .got and .plt sections will be in the
           * executable image, not in the object image transiently loaded. */
-         /*   NAME              SIZE          ADDR_IN_OIMAGE  ADDR_WHEN_MAPPED */
-         FIND(".dynsym",        o_dynsym_sz,   o_dynsym,      dummy_avma)
-         FIND(".dynstr",        o_dynstr_sz,   o_dynstr,      dummy_avma)
-         FIND(".symtab",        o_symtab_sz,   o_symtab,      dummy_avma)
-         FIND(".strtab",        o_strtab_sz,   o_strtab,      dummy_avma)
+         /*   NAME              SIZE           IMAGE addr       AVMA */
+         FIND(".dynsym",        dynsym_sz,     dynsym_img,      dummy_avma)
+         FIND(".dynstr",        dynstr_sz,     dynstr_img,      dummy_avma)
+         FIND(".symtab",        symtab_sz,     symtab_img,      dummy_avma)
+         FIND(".strtab",        strtab_sz,     strtab_img,      dummy_avma)
 
-         FIND(".gnu_debuglink", debuglink_sz,  debuglink,     dummy_avma)
+         FIND(".gnu_debuglink", debuglink_sz,  debuglink_img,   dummy_avma)
 
-         FIND(".stab",          stab_sz,       stab,          dummy_avma)
-         FIND(".stabstr",       stabstr_sz,    stabstr,       dummy_avma)
+         FIND(".stab",          stab_sz,       stab_img,        dummy_avma)
+         FIND(".stabstr",       stabstr_sz,    stabstr_img,     dummy_avma)
 
-         FIND(".debug_line",    debug_line_sz, debug_line,    dummy_avma)
-         FIND(".debug_info",    debug_info_sz, debug_info,    dummy_avma)
-         FIND(".debug_abbrev",  debug_abbv_sz, debug_abbv,    dummy_avma)
-         FIND(".debug_str",     debug_str_sz,  debug_str,     dummy_avma)
+         FIND(".debug_line",    debug_line_sz, debug_line_img,  dummy_avma)
+         FIND(".debug_info",    debug_info_sz, debug_info_img,  dummy_avma)
+         FIND(".debug_abbrev",  debug_abbv_sz, debug_abbv_img,  dummy_avma)
+         FIND(".debug_str",     debug_str_sz,  debug_str_img,   dummy_avma)
 
-         FIND(".debug",         dwarf1d_sz,    dwarf1d,       dummy_avma)
-         FIND(".line",          dwarf1l_sz,    dwarf1l,       dummy_avma)
-         FIND(".eh_frame",      ehframe_sz,    ehframe,       ehframe_avma)
+         FIND(".debug",         dwarf1d_sz,    dwarf1d_img,     dummy_avma)
+         FIND(".line",          dwarf1l_sz,    dwarf1l_img,     dummy_avma)
+         FIND(".eh_frame",      ehframe_sz,    ehframe_img,     ehframe_avma)
 
-         FIND(".got",           si->got_size,  dummy_filea,   si->got_start_avma)
-         FIND(".plt",           si->plt_size,  dummy_filea,   si->plt_start_avma)
-         FIND(".opd",           si->opd_size,  opd_filea,     si->opd_start_avma)
+         FIND(".got",           si->got_size,  dummy_filea_img, si->got_start_avma)
+         FIND(".plt",           si->plt_size,  dummy_filea_img, si->plt_start_avma)
+         FIND(".opd",           si->opd_size,  opd_filea_img,   si->opd_start_avma)
 
 #        undef FIND
       }
          
       /* Did we find a debuglink section? */
-      if (debuglink != NULL) {
-         UInt crc_offset = VG_ROUNDUP(VG_(strlen)(debuglink)+1, 4);
+      if (debuglink_img != NULL) {
+         UInt crc_offset = VG_ROUNDUP(VG_(strlen)(debuglink_img)+1, 4);
          UInt crc;
 
          vg_assert(crc_offset + sizeof(UInt) <= debuglink_sz);
 
          /* Extract the CRC from the debuglink section */
-         crc = *(UInt *)(debuglink + crc_offset);
+         crc = *(UInt *)(debuglink_img + crc_offset);
 
          /* See if we can find a matching debug file */
-         if ((dimage = find_debug_file(si->filename, debuglink, crc, &n_dimage)) != 0) {
+         dimage = find_debug_file(si->filename, debuglink_img, crc, &n_dimage);
+         if (dimage != 0) {
             ehdr = (ElfXX_Ehdr*)dimage;
 
             if (n_dimage >= sizeof(ElfXX_Ehdr) 
@@ -1139,7 +1140,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
                 && ehdr->e_phoff + ehdr->e_phnum*sizeof(ElfXX_Phdr) <= n_dimage
                 && ehdr->e_shoff + ehdr->e_shnum*sizeof(ElfXX_Shdr) <= n_dimage)
             {
-               Bool need_symtab = (NULL == o_symtab);
+               Bool need_symtab = (NULL == symtab_img);
 
                for (i = 0; i < ehdr->e_phnum; i++) {
                   ElfXX_Phdr *o_phdr = &((ElfXX_Phdr *)(dimage + ehdr->e_phoff))[i];
@@ -1151,7 +1152,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
                debug_offset = offset_dimage;
                if (need_symtab)
-                  o_symtab_offset = offset_dimage;
+                  symtab_offset = offset_dimage;
 
                shdr = (ElfXX_Shdr*)(dimage + ehdr->e_shoff);
                sh_strtab = (UChar*)(dimage + shdr[ehdr->e_shstrndx].sh_offset);
@@ -1181,17 +1182,17 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
                      } \
                   }
 
-                  /*   ??           NAME             SIZE         ADDR_IN_OIMAGE */
-                  FIND(need_symtab, ".symtab",       o_symtab_sz,   o_symtab)
-                  FIND(need_symtab, ".strtab",       o_strtab_sz,   o_strtab)
-                  FIND(1,           ".stab",         stab_sz,       stab)
-                  FIND(1,           ".stabstr",      stabstr_sz,    stabstr)
-                  FIND(1,           ".debug_line",   debug_line_sz, debug_line)
-                  FIND(1,           ".debug_info",   debug_info_sz, debug_info)
-                  FIND(1,           ".debug_abbrev", debug_abbv_sz, debug_abbv)
-                  FIND(1,           ".debug_str",    debug_str_sz,  debug_str)
-                  FIND(1,           ".debug",        dwarf1d_sz,    dwarf1d)
-                  FIND(1,           ".line",         dwarf1l_sz,    dwarf1l)
+                  /*   ??           NAME             SIZE           IMAGE addr */
+                  FIND(need_symtab, ".symtab",       symtab_sz,     symtab_img)
+                  FIND(need_symtab, ".strtab",       strtab_sz,     strtab_img)
+                  FIND(1,           ".stab",         stab_sz,       stab_img)
+                  FIND(1,           ".stabstr",      stabstr_sz,    stabstr_img)
+                  FIND(1,           ".debug_line",   debug_line_sz, debug_line_img)
+                  FIND(1,           ".debug_info",   debug_info_sz, debug_info_img)
+                  FIND(1,           ".debug_abbrev", debug_abbv_sz, debug_abbv_img)
+                  FIND(1,           ".debug_str",    debug_str_sz,  debug_str_img)
+                  FIND(1,           ".debug",        dwarf1d_sz,    dwarf1d_img)
+                  FIND(1,           ".line",         dwarf1l_sz,    dwarf1l_img)
 
 #                 undef FIND
                }
@@ -1200,8 +1201,8 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
       }
 
       /* Check some sizes */
-      vg_assert((o_dynsym_sz % sizeof(ElfXX_Sym)) == 0);
-      vg_assert((o_symtab_sz % sizeof(ElfXX_Sym)) == 0);
+      vg_assert((dynsym_sz % sizeof(ElfXX_Sym)) == 0);
+      vg_assert((symtab_sz % sizeof(ElfXX_Sym)) == 0);
 
       /* Read symbols */
       {
@@ -1213,27 +1214,29 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
          read_elf_symtab = read_elf_symtab__normal;
 #        endif
          read_elf_symtab(si, "symbol table",
-                         o_symtab, o_symtab_sz, o_symtab_offset,
-                         o_strtab, o_strtab_sz, opd_filea, opd_offset);
+                         symtab_img, symtab_sz, symtab_offset,
+                         strtab_img, strtab_sz, 
+                         opd_filea_img, opd_offset);
 
          read_elf_symtab(si, "dynamic symbol table",
-                         o_dynsym, o_dynsym_sz, o_dynsym_offset,
-                         o_dynstr, o_dynstr_sz, opd_filea, opd_offset);
+                         dynsym_img, dynsym_sz, dynsym_offset,
+                         dynstr_img, dynstr_sz, 
+                         opd_filea_img, opd_offset);
       }
 
       /* Read .eh_frame (call-frame-info) if any */
-      if (ehframe) {
+      if (ehframe_img) {
          ML_(read_callframe_info_dwarf2)
-            ( si, ehframe/*image*/, ehframe_sz, ehframe_avma );
+            ( si, ehframe_img, ehframe_sz, ehframe_avma );
       }
 
       /* Read the stabs and/or dwarf2 debug information, if any.  It
          appears reading stabs stuff on amd64-linux doesn't work, so
          we ignore it. */
 #     if !defined(VGP_amd64_linux)
-      if (stab && stabstr) {
-         ML_(read_debuginfo_stabs) ( si, debug_offset, stab, stab_sz, 
-                                         stabstr, stabstr_sz );
+      if (stab_img && stabstr_img) {
+         ML_(read_debuginfo_stabs) ( si, debug_offset, stab_img, stab_sz, 
+                                         stabstr_img, stabstr_sz );
       }
 #     endif
       /* jrs 2006-01-01: icc-8.1 has been observed to generate
@@ -1241,16 +1244,17 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
          debuginfo reading for that reason, but, in
          read_unitinfo_dwarf2, do check that debugstr is non-NULL
          before using it. */
-      if (debug_info && debug_abbv && debug_line /* && debug_str */) {
+      if (debug_info_img && debug_abbv_img && debug_line_img
+                                           /* && debug_str_img */) {
          ML_(read_debuginfo_dwarf2) ( si, debug_offset, 
-                                      debug_info,   debug_info_sz,
-                                      debug_abbv,
-                                      debug_line,   debug_line_sz,
-                                      debug_str );
+                                      debug_info_img,   debug_info_sz,
+                                      debug_abbv_img,
+                                      debug_line_img,   debug_line_sz,
+                                      debug_str_img );
       }
-      if (dwarf1d && dwarf1l) {
-         ML_(read_debuginfo_dwarf1) ( si, dwarf1d, dwarf1d_sz, 
-                                          dwarf1l, dwarf1l_sz );
+      if (dwarf1d_img && dwarf1l_img) {
+         ML_(read_debuginfo_dwarf1) ( si, dwarf1d_img, dwarf1d_sz, 
+                                          dwarf1l_img, dwarf1l_sz );
       }
    }
    res = True;

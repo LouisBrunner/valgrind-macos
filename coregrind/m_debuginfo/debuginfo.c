@@ -85,7 +85,8 @@
    This terminology is not used consistently, but a start has been
    made.  readelf.c and the call-frame info reader in readdwarf.c now
    use it.  Specifically, various variables and structure fields have
-   been annotated with _avma / _svma / _image / _bias.
+   been annotated with _avma / _svma / _image / _bias.  In places _img
+   is used instead of _image for the sake of brevity.
 */
 
 
@@ -112,8 +113,12 @@ SegInfo* alloc_SegInfo(Addr start, SizeT size, OffT foffset,
                        const UChar* filename,
                        const UChar* memname)
 {
-   SegInfo* si = VG_(arena_calloc)(VG_AR_SYMTAB, 1, sizeof(SegInfo));
+   Bool     traceme;
+   SegInfo* si;
 
+   vg_assert(filename);
+
+   si = VG_(arena_calloc)(VG_AR_SYMTAB, 1, sizeof(SegInfo));
    si->text_start_avma = start;
    si->text_size       = size;
    si->foffset         = foffset;
@@ -122,7 +127,23 @@ SegInfo* alloc_SegInfo(Addr start, SizeT size, OffT foffset,
                            ?  VG_(arena_strdup)(VG_AR_SYMTAB, memname)
                            :  NULL;
 
-   // Everything else -- pointers, sizes, arrays -- is zeroed by calloc.
+   /* Everything else -- pointers, sizes, arrays -- is zeroed by calloc.
+      Now set up the debugging-output flags. */
+   traceme 
+      = VG_(string_match)( VG_(clo_trace_symtab_patt), filename )
+        || (memname && VG_(string_match)( VG_(clo_trace_symtab_patt), 
+                                          memname ));
+   if (traceme) {
+      si->trace_symtab = VG_(clo_trace_symtab);
+      si->trace_cfi    = VG_(clo_trace_cfi);
+#if 0
+      si->ddump_syms   = VG_(clo_ddump_syms);
+      si->ddump_line   = VG_(clo_ddump_line);
+      si->ddump_frames = VG_(clo_ddump_frames);
+#endif
+   }
+
+
    return si;
 }
 

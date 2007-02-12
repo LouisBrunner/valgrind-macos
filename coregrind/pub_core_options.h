@@ -112,8 +112,16 @@ extern Bool  VG_(clo_trace_syscalls);
 extern Bool  VG_(clo_trace_signals);
 /* DEBUG: print symtab details?  default: NO */
 extern Bool  VG_(clo_trace_symtab);
+/* DEBUG: restrict symtab etc details to object name pattern.  Default: "*" */
+extern HChar* VG_(clo_trace_symtab_patt);
 /* DEBUG: print call-frame-info details?  default: NO */
 extern Bool  VG_(clo_trace_cfi);
+/* DEBUG:  mimic /usr/bin/readelf --syms?  default: NO */
+extern Bool  VG_(clo_debug_dump_syms);
+/* DEBUG: mimic /usr/bin/readelf --debug-dump=line?  default: NO */
+extern Bool  VG_(clo_debug_dump_line);
+/* DEBUG: mimic  /usr/bin/readelf --debug-dump=frames?  default: NO */
+extern Bool  VG_(clo_debug_dump_frames);
 /* DEBUG: print redirection details?  default: NO */
 extern Bool  VG_(clo_trace_redir);
 /* DEBUG: print thread scheduling events?  default: NO */

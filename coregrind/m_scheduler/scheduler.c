@@ -1121,9 +1121,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
    vg_assert(VG_(is_exiting)(tid));
 
-   //if (VG_(clo_model_pthreads))
-   //   VG_(tm_thread_exit)(tid);
-   
    return tst->exitreason;
 }
 

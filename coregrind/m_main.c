@@ -357,7 +357,6 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls))
       else VG_BOOL_CLO(arg, "--trace-pthreads",   VG_(clo_trace_pthreads))
       else VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb))
-      else VG_BOOL_CLO(arg, "--model-pthreads",   VG_(clo_model_pthreads))
 
       else VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command))
       else VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints))
@@ -1779,13 +1778,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    VG_(ii_finalise_image)( the_iifii );
 
    //--------------------------------------------------------------
-   // Initialise the pthread model
-   //   p: ?
-   //--------------------------------------------------------------
-   //if (VG_(clo_model_pthreads))
-   //   VG_(pthread_init)();
-
-   //--------------------------------------------------------------
    // Initialise the signal handling subsystem
    //   p: n/a
    //--------------------------------------------------------------
@@ -1892,8 +1884,6 @@ void shutdown_actions_NORETURN( ThreadId tid,
       // jrs: Huh?  but they surely are already gone
       VG_(reap_threads)(tid);
 
-      VG_(clo_model_pthreads) = False;
-
       // Clean the client up before the final report
       // this causes the libc_freeres function to run
       final_tidyup(tid);
@@ -1909,8 +1899,6 @@ void shutdown_actions_NORETURN( ThreadId tid,
       // and we need to keep hold of it all the way out, in order
       // that none of the other threads ever run again.
       vg_assert( VG_(count_living_threads)() >= 1 );
-
-      VG_(clo_model_pthreads) = False;
 
       // Clean the client up before the final report
       // this causes the libc_freeres function to run

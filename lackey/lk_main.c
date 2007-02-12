@@ -500,6 +500,7 @@ static void flushEvents(IRSB* sb)
 static void addEvent_Ir ( IRSB* sb, IRAtom* iaddr, UInt isize )
 {
    Event* evt;
+   tl_assert(clo_trace_mem);
    tl_assert( (VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB)
             || VG_CLREQ_SZB == isize );
    if (events_used == N_EVENTS)
@@ -516,6 +517,7 @@ static
 void addEvent_Dr ( IRSB* sb, IRAtom* daddr, Int dsize )
 {
    Event* evt;
+   tl_assert(clo_trace_mem);
    tl_assert(isIRAtom(daddr));
    tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
    if (events_used == N_EVENTS)
@@ -533,6 +535,7 @@ void addEvent_Dw ( IRSB* sb, IRAtom* daddr, Int dsize )
 {
    Event* lastEvt;
    Event* evt;
+   tl_assert(clo_trace_mem);
    tl_assert(isIRAtom(daddr));
    tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
 
@@ -744,20 +747,22 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
             break;
 
          case Ist_Dirty: {
-            Int      dsize;
-            IRDirty* d = st->Ist.Dirty.details;
-            if (d->mFx != Ifx_None) {
-               // This dirty helper accesses memory.  Collect the details.
-               tl_assert(d->mAddr != NULL);
-               tl_assert(d->mSize != 0);
-               dsize = d->mSize;
-               if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
-                  addEvent_Dr( sbOut, d->mAddr, dsize );
-               if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
-                  addEvent_Dw( sbOut, d->mAddr, dsize );
-            } else {
-               tl_assert(d->mAddr == NULL);
-               tl_assert(d->mSize == 0);
+            if (clo_trace_mem) {
+               Int      dsize;
+               IRDirty* d = st->Ist.Dirty.details;
+               if (d->mFx != Ifx_None) {
+                  // This dirty helper accesses memory.  Collect the details.
+                  tl_assert(d->mAddr != NULL);
+                  tl_assert(d->mSize != 0);
+                  dsize = d->mSize;
+                  if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
+                     addEvent_Dr( sbOut, d->mAddr, dsize );
+                  if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
+                     addEvent_Dw( sbOut, d->mAddr, dsize );
+               } else {
+                  tl_assert(d->mAddr == NULL);
+                  tl_assert(d->mSize == 0);
+               }
             }
             addStmtToIRSB( sbOut, st );
             break;

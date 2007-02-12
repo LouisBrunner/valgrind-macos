@@ -23,6 +23,8 @@ Other user-visible changes:
 
 Developer-visible changes:
 
+- New debugging command line options: --debug-dump, --trace-symtab-patt...
+
 - The names of some functions and types within the Vex IR have changed.
   So any existing tools will have to be updated to reflect these
   changes.  The new names should be clearer.  The file

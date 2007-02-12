@@ -89,6 +89,17 @@ tool.</para>
   </para>
  </listitem>
 
+ <listitem>
+  <para>When command line option
+  <computeroutput>--trace-superblocks=yes</computeroutput> is
+  specified, it prints out the address of every superblock 
+  (extended basic block) executed by the program.  This is
+  primarily of interest to Valgrind developers.  See the comments at 
+  the top of the file <computeroutput>lackey/lk_main.c</computeroutput>
+  for details about the output format.
+  </para>
+ </listitem>
+
 </orderedlist>
 
 <para>Note that Lackey runs quite slowly, especially when
@@ -97,6 +108,13 @@ It could be made to run a lot faster by doing a slightly more
 sophisticated job of the instrumentation, but that would undermine
 its role as a simple example tool.  Hence we have chosen not to do
 so.</para>
+
+<para>Note also that <computeroutput>--trace-mem=yes</computeroutput>
+and <computeroutput>--trace-superblocks=yes</computeroutput> create
+immense amounts of output.  If you are saving the output in a file,
+you can eat up tens of gigabytes of disk space very quickly.
+As a result of printing out so much stuff, they also cause the program
+to run absolutely utterly unbelievably slowly.</para>
 
 </sect1>
 
@@ -124,6 +142,27 @@ so.</para>
     </term>
     <listitem>
       <para>Count loads, stores and alu ops.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.trace-mem" xreflabel="--trace-mem">
+    <term>
+      <option><![CDATA[--trace-mem=<no|yes> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Print a line of text giving the address and size of each
+            data and instruction memory access done by the program.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.trace-superblocks" xreflabel="--trace-superblocks">
+    <term>
+      <option><![CDATA[--trace-superblocks=<no|yes> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Print a line of text giving the address of each superblock
+            (single entry, multiple exit chunk of code) executed
+            by the program.</para>
     </listitem>
   </varlistentry>
 

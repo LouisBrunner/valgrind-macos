@@ -30,7 +30,7 @@
 
 // This tool shows how to do some basic instrumentation.
 //
-// There are three kinds of instrumentation it can do.  They can be turned
+// There are four kinds of instrumentation it can do.  They can be turned
 // on/off independently with command line options:
 //
 // * --basic-counts   : do basic counts, eg. number of instructions
@@ -38,9 +38,12 @@
 // * --detailed-counts: do more detailed counts:  number of loads, stores
 //                      and ALU operations of different sizes.
 // * --trace-mem=yes:   trace all (data) memory accesses.
+// * --trace-superblocks=yes:   
+//                      trace all superblock entries.  Mostly of interest
+//                      to the Valgrind developers.
 //
 // The code for each kind of instrumentation is guarded by a clo_* variable:
-// clo_basic_counts, clo_detailed_counts and clo_trace_mem.
+// clo_basic_counts, clo_detailed_counts, clo_trace_mem and clo_trace_sbs.
 //
 // If you want to modify any of the instrumentation code, look for the code
 // that is guarded by the relevant clo_* variable (eg. clo_trace_mem)
@@ -59,19 +62,19 @@
 //
 // It prints memory data access traces that look like this:
 //
-//   instr   : 0x0023C790, 2  # instruction read at 0x0023C790 of size 2
-//   instr   : 0x0023C792, 5
-//     store : 0xBE80199C, 4  # data store at 0xBE80199C of size 4
-//   instr   : 0x0025242B, 3
-//     load  : 0xBE801950, 4  # data load at 0xBE801950 of size 4
-//   instr   : 0x0023D476, 7
-//     modify: 0x0025747C, 1  # data modify at 0x0025747C of size 1
-//   instr   : 0x0023DC20, 2
-//     load  : 0x00254962, 1
-//     load  : 0xBE801FB3, 1
-//   instr   : 0x00252305, 1
-//     load  : 0x00254AEB, 1
-//     store : 0x00257998, 1
+//   I  0023C790,2  # instruction read at 0x0023C790 of size 2
+//   I  0023C792,5
+//    S BE80199C,4  # data store at 0xBE80199C of size 4
+//   I  0025242B,3
+//    L BE801950,4  # data load at 0xBE801950 of size 4
+//   I  0023D476,7
+//    M 0025747C,1  # data modify at 0x0025747C of size 1
+//   I  0023DC20,2
+//    L 00254962,1
+//    L BE801FB3,1
+//   I  00252305,1
+//    L 00254AEB,1
+//    S 00257998,1
 //
 // Every instruction executed has an "instr" event representing it.
 // Instructions that do memory accesses are followed by one or more "load",
@@ -137,6 +140,34 @@
 // uses the same basic technique for tracing memory accesses, but also groups
 // events together for processing into twos and threes so that fewer C calls
 // are made and things run faster.
+//
+// Specific Details about --trace-superblocks=yes
+// ----------------------------------------------
+// Valgrind splits code up into single entry, multiple exit blocks
+// known as superblocks.  By itself, --trace-superblocks=yes just
+// prints a message as each superblock is run:
+//
+//  SB 04013170
+//  SB 04013177
+//  SB 04013173
+//  SB 04013177
+//
+// The hex number is the address of the first instruction in the
+// superblock.  You can see the relationship more obviously if you use
+// --trace-superblocks=yes and --trace-mem=yes together.  Then a "SB"
+// message at address X is immediately followed by an "instr:" message
+// for that address, as the first instruction in the block is
+// executed, for example:
+//
+//  SB 04014073
+//  I  04014073,3
+//   L 7FEFFF7F8,8
+//  I  04014076,4
+//  I  0401407A,3
+//  I  0401407D,3
+//  I  04014080,3
+//  I  04014083,6
+
 
 #include "pub_tool_basics.h"
 #include "pub_tool_tooliface.h"
@@ -156,6 +187,7 @@
 static Bool clo_basic_counts    = True;
 static Bool clo_detailed_counts = False;
 static Bool clo_trace_mem       = False;
+static Bool clo_trace_sbs       = False;
 
 /* The name of the function of which the number of calls (under
  * --basic-counts=yes) is to be counted, with default. Override with command
@@ -165,9 +197,10 @@ static Char* clo_fnname = "_dl_runtime_resolve";
 static Bool lk_process_cmd_line_option(Char* arg)
 {
    VG_STR_CLO(arg, "--fnname", clo_fnname)
-   else VG_BOOL_CLO(arg, "--basic-counts",    clo_basic_counts)
-   else VG_BOOL_CLO(arg, "--detailed-counts", clo_detailed_counts)
-   else VG_BOOL_CLO(arg, "--trace-mem",       clo_trace_mem)
+   else VG_BOOL_CLO(arg, "--basic-counts",      clo_basic_counts)
+   else VG_BOOL_CLO(arg, "--detailed-counts",   clo_detailed_counts)
+   else VG_BOOL_CLO(arg, "--trace-mem",         clo_trace_mem)
+   else VG_BOOL_CLO(arg, "--trace-superblocks", clo_trace_sbs)
    else
       return False;
    
@@ -182,6 +215,7 @@ static void lk_print_usage(void)
 "    --basic-counts=no|yes     count instructions, jumps, etc. [no]\n"
 "    --detailed-counts=no|yes  count loads, stores and alu ops [no]\n"
 "    --trace-mem=no|yes        trace all loads and stores [no]\n"
+"    --trace-superblocks=no|yes  trace all superblock entries [no]\n"
 "    --fnname=<name>           count calls to <name> (only used if\n"
 "                              --basic-count=yes)  [_dl_runtime_resolve]\n"
    );
@@ -200,8 +234,8 @@ static void lk_print_debug_usage(void)
 
 /* Nb: use ULongs because the numbers can get very big */
 static ULong n_func_calls    = 0;
-static ULong n_BBs_entered   = 0;
-static ULong n_BBs_completed = 0;
+static ULong n_SBs_entered   = 0;
+static ULong n_SBs_completed = 0;
 static ULong n_IRStmts       = 0;
 static ULong n_guest_instrs  = 0;
 static ULong n_Jccs          = 0;
@@ -212,14 +246,14 @@ static void add_one_func_call(void)
    n_func_calls++;
 }
 
-static void add_one_BB_entered(void)
+static void add_one_SB_entered(void)
 {
-   n_BBs_entered++;
+   n_SBs_entered++;
 }
 
-static void add_one_BB_completed(void)
+static void add_one_SB_completed(void)
 {
-   n_BBs_completed++;
+   n_SBs_completed++;
 }
 
 static void add_one_IRStmt(void)
@@ -302,7 +336,7 @@ void increment_detail(ULong* detail)
 }
 
 /* A helper that adds the instrumentation for a detail. */
-static void instrument_detail(IRSB* bb, Op op, IRType type)
+static void instrument_detail(IRSB* sb, Op op, IRType type)
 {
    IRDirty* di;
    IRExpr** argv;
@@ -315,7 +349,7 @@ static void instrument_detail(IRSB* bb, Op op, IRType type)
    di = unsafeIRDirty_0_N( 1, "increment_detail",
                               VG_(fnptr_to_fnentry)( &increment_detail ), 
                               argv);
-   addStmtToIRSB( bb, IRStmt_Dirty(di) );
+   addStmtToIRSB( sb, IRStmt_Dirty(di) );
 }
 
 /* Summarize and print the details. */
@@ -368,7 +402,7 @@ typedef
 
 /* Maintain an ordered list of memory events which are outstanding, in
    the sense that no IR has yet been generated to do the relevant
-   helper calls.  The BB is scanned top to bottom and memory events
+   helper calls.  The SB is scanned top to bottom and memory events
    are added to the end of the list, merging with the most recent
    notified event where possible (Dw immediately following Dr and
    having the same size and EA can be merged).
@@ -398,26 +432,26 @@ static Int   events_used = 0;
 
 static VG_REGPARM(2) void trace_instr(Addr addr, SizeT size)
 {
-   VG_(printf)("instr   : %08p, %d\n", addr, size);
+   VG_(printf)("I  %08lx,%d\n", addr, size);
 }
 
 static VG_REGPARM(2) void trace_load(Addr addr, SizeT size)
 {
-   VG_(printf)("  load  : %08p, %d\n", addr, size);
+   VG_(printf)(" L %08lx,%d\n", addr, size);
 }
 
 static VG_REGPARM(2) void trace_store(Addr addr, SizeT size)
 {
-   VG_(printf)("  store : %08p, %d\n", addr, size);
+   VG_(printf)(" S %08lx,%d\n", addr, size);
 }
 
 static VG_REGPARM(2) void trace_modify(Addr addr, SizeT size)
 {
-   VG_(printf)("  modify: %08p, %d\n", addr, size);
+   VG_(printf)(" M %08lx,%d\n", addr, size);
 }
 
 
-static void flushEvents(IRSB* bb)
+static void flushEvents(IRSB* sb)
 {
    Int        i;
    Char*      helperName;
@@ -452,7 +486,7 @@ static void flushEvents(IRSB* bb)
       di   = unsafeIRDirty_0_N( /*regparms*/2, 
                                 helperName, VG_(fnptr_to_fnentry)( helperAddr ),
                                 argv );
-      addStmtToIRSB( bb, IRStmt_Dirty(di) );
+      addStmtToIRSB( sb, IRStmt_Dirty(di) );
    }
 
    events_used = 0;
@@ -463,13 +497,13 @@ static void flushEvents(IRSB* bb)
 // must still call this function, addEvent_Ir() -- it is necessary to add
 // the Ir events to the events list so that merging of paired load/store
 // events into modify events works correctly.
-static void addEvent_Ir ( IRSB* bb, IRAtom* iaddr, UInt isize )
+static void addEvent_Ir ( IRSB* sb, IRAtom* iaddr, UInt isize )
 {
    Event* evt;
    tl_assert( (VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB)
             || VG_CLREQ_SZB == isize );
    if (events_used == N_EVENTS)
-      flushEvents(bb);
+      flushEvents(sb);
    tl_assert(events_used >= 0 && events_used < N_EVENTS);
    evt = &events[events_used];
    evt->ekind = Event_Ir;
@@ -479,13 +513,13 @@ static void addEvent_Ir ( IRSB* bb, IRAtom* iaddr, UInt isize )
 }
 
 static
-void addEvent_Dr ( IRSB* bb, IRAtom* daddr, Int dsize )
+void addEvent_Dr ( IRSB* sb, IRAtom* daddr, Int dsize )
 {
    Event* evt;
    tl_assert(isIRAtom(daddr));
    tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
    if (events_used == N_EVENTS)
-      flushEvents(bb);
+      flushEvents(sb);
    tl_assert(events_used >= 0 && events_used < N_EVENTS);
    evt = &events[events_used];
    evt->ekind = Event_Dr;
@@ -495,7 +529,7 @@ void addEvent_Dr ( IRSB* bb, IRAtom* daddr, Int dsize )
 }
 
 static
-void addEvent_Dw ( IRSB* bb, IRAtom* daddr, Int dsize )
+void addEvent_Dw ( IRSB* sb, IRAtom* daddr, Int dsize )
 {
    Event* lastEvt;
    Event* evt;
@@ -515,13 +549,23 @@ void addEvent_Dw ( IRSB* bb, IRAtom* daddr, Int dsize )
 
    // No.  Add as normal.
    if (events_used == N_EVENTS)
-      flushEvents(bb);
+      flushEvents(sb);
    tl_assert(events_used >= 0 && events_used < N_EVENTS);
    evt = &events[events_used];
    evt->ekind = Event_Dw;
    evt->size  = dsize;
    evt->addr  = daddr;
    events_used++;
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Stuff for --trace-superblocks                        ---*/
+/*------------------------------------------------------------*/
+
+static void trace_superblock(Addr addr)
+{
+   VG_(printf)("SB %08lx\n", addr);
 }
 
 
@@ -542,47 +586,57 @@ static void lk_post_clo_init(void)
 
 static
 IRSB* lk_instrument ( VgCallbackClosure* closure,
-                      IRSB* bbIn, 
+                      IRSB* sbIn, 
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )
 {
    IRDirty*   di;
    Int        i;
-   IRSB*      bbOut;
+   IRSB*      sbOut;
    Char       fnname[100];
    IRType     type;
-   IRTypeEnv* tyenv = bbIn->tyenv;
+   IRTypeEnv* tyenv = sbIn->tyenv;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
       VG_(tool_panic)("host/guest word size mismatch");
    }
 
-   /* Set up BB */
-   bbOut = deepCopyIRSBExceptStmts(bbIn);
+   /* Set up SB */
+   sbOut = deepCopyIRSBExceptStmts(sbIn);
 
    // Copy verbatim any IR preamble preceding the first IMark
    i = 0;
-   while (i < bbIn->stmts_used && bbIn->stmts[i]->tag != Ist_IMark) {
-      addStmtToIRSB( bbOut, bbIn->stmts[i] );
+   while (i < sbIn->stmts_used && sbIn->stmts[i]->tag != Ist_IMark) {
+      addStmtToIRSB( sbOut, sbIn->stmts[i] );
       i++;
    }
 
    if (clo_basic_counts) {
-      /* Count this basic block. */
-      di = unsafeIRDirty_0_N( 0, "add_one_BB_entered", 
-                                 VG_(fnptr_to_fnentry)( &add_one_BB_entered ),
+      /* Count this superblock. */
+      di = unsafeIRDirty_0_N( 0, "add_one_SB_entered", 
+                                 VG_(fnptr_to_fnentry)( &add_one_SB_entered ),
                                  mkIRExprVec_0() );
-      addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+      addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+   }
+
+   if (clo_trace_sbs) {
+      /* Print this superblock's address. */
+      di = unsafeIRDirty_0_N( 
+              0, "trace_superblock", 
+              VG_(fnptr_to_fnentry)( &trace_superblock ),
+              mkIRExprVec_1( mkIRExpr_HWord( vge->base[0] ) ) 
+           );
+      addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
    }
 
    if (clo_trace_mem) {
       events_used = 0;
    }
 
-   for (/*use current i*/; i < bbIn->stmts_used; i++) {
-      IRStmt* st = bbIn->stmts[i];
+   for (/*use current i*/; i < sbIn->stmts_used; i++) {
+      IRStmt* st = sbIn->stmts[i];
       if (!st || st->tag == Ist_NoOp) continue;
 
       if (clo_basic_counts) {
@@ -590,7 +644,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
          di = unsafeIRDirty_0_N( 0, "add_one_IRStmt", 
                                     VG_(fnptr_to_fnentry)( &add_one_IRStmt ), 
                                     mkIRExprVec_0() );
-         addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+         addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
       }
       
       switch (st->tag) {
@@ -599,7 +653,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
          case Ist_Put:
          case Ist_PutI:
          case Ist_MFence:
-            addStmtToIRSB( bbOut, st );
+            addStmtToIRSB( sbOut, st );
             break;
 
          case Ist_IMark:
@@ -608,17 +662,17 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
                                           VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
                                           mkIRExprVec_0() );
-               addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+               addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 
                /* An unconditional branch to a known destination in the
                 * guest's instructions can be represented, in the IRSB to
                 * instrument, by the VEX statements that are the
                 * translation of that known destination. This feature is
-                * called 'BB chasing' and can be influenced by command
+                * called 'SB chasing' and can be influenced by command
                 * line option --vex-guest-chase-thresh.
                 *
                 * To get an accurate count of the calls to a specific
-                * function, taking BB chasing into account, we need to
+                * function, taking SB chasing into account, we need to
                 * check for each guest instruction (Ist_IMark) if it is
                 * the entry point of a function.
                 */
@@ -631,17 +685,17 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                           0, "add_one_func_call", 
                              VG_(fnptr_to_fnentry)( &add_one_func_call ), 
                              mkIRExprVec_0() );
-                  addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+                  addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
                }
             }
             if (clo_trace_mem) {
                // WARNING: do not remove this function call, even if you
                // aren't interested in instruction reads.  See the comment
                // above the function itself for more detail.
-               addEvent_Ir( bbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
+               addEvent_Ir( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
                             st->Ist.IMark.len );
             }
-            addStmtToIRSB( bbOut, st );
+            addStmtToIRSB( sbOut, st );
             break;
 
          case Ist_WrTmp:
@@ -649,44 +703,44 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
             if (clo_trace_mem) {
                IRExpr* data = st->Ist.WrTmp.data;
                if (data->tag == Iex_Load) {
-                  addEvent_Dr( bbOut, data->Iex.Load.addr,
+                  addEvent_Dr( sbOut, data->Iex.Load.addr,
                                sizeofIRType(data->Iex.Load.ty) );
                }
             }
             if (clo_detailed_counts) {
                IRExpr* expr = st->Ist.WrTmp.data;
-               type = typeOfIRExpr(bbOut->tyenv, expr);
+               type = typeOfIRExpr(sbOut->tyenv, expr);
                tl_assert(type != Ity_INVALID);
                switch (expr->tag) {
                   case Iex_Load:
-                     instrument_detail( bbOut, OpLoad, type );
+                     instrument_detail( sbOut, OpLoad, type );
                      break;
                   case Iex_Unop:
                   case Iex_Binop:
                   case Iex_Triop:
                   case Iex_Qop:
                   case Iex_Mux0X:
-                     instrument_detail( bbOut, OpAlu, type );
+                     instrument_detail( sbOut, OpAlu, type );
                      break;
                   default:
                      break;
                }
             }
-            addStmtToIRSB( bbOut, st );
+            addStmtToIRSB( sbOut, st );
             break;
 
          case Ist_Store:
             if (clo_trace_mem) {
                IRExpr* data  = st->Ist.Store.data;
-               addEvent_Dw( bbOut, st->Ist.Store.addr,
+               addEvent_Dw( sbOut, st->Ist.Store.addr,
                             sizeofIRType(typeOfIRExpr(tyenv, data)) );
             }
             if (clo_detailed_counts) {
-               type = typeOfIRExpr(bbOut->tyenv, st->Ist.Store.data);
+               type = typeOfIRExpr(sbOut->tyenv, st->Ist.Store.data);
                tl_assert(type != Ity_INVALID);
-               instrument_detail( bbOut, OpStore, type );
+               instrument_detail( sbOut, OpStore, type );
             }
-            addStmtToIRSB( bbOut, st );
+            addStmtToIRSB( sbOut, st );
             break;
 
          case Ist_Dirty: {
@@ -698,14 +752,14 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                tl_assert(d->mSize != 0);
                dsize = d->mSize;
                if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
-                  addEvent_Dr( bbOut, d->mAddr, dsize );
+                  addEvent_Dr( sbOut, d->mAddr, dsize );
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
-                  addEvent_Dw( bbOut, d->mAddr, dsize );
+                  addEvent_Dw( sbOut, d->mAddr, dsize );
             } else {
                tl_assert(d->mAddr == NULL);
                tl_assert(d->mSize == 0);
             }
-            addStmtToIRSB( bbOut, st );
+            addStmtToIRSB( sbOut, st );
             break;
          }
 
@@ -715,13 +769,13 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                di = unsafeIRDirty_0_N( 0, "add_one_Jcc", 
                                           VG_(fnptr_to_fnentry)( &add_one_Jcc ), 
                                           mkIRExprVec_0() );
-               addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+               addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
             }
             if (clo_trace_mem) {
-               flushEvents(bbOut);
+               flushEvents(sbOut);
             }
 
-            addStmtToIRSB( bbOut, st );      // Original statement
+            addStmtToIRSB( sbOut, st );      // Original statement
 
             if (clo_basic_counts) {
                /* Count non-taken Jcc */
@@ -729,7 +783,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                                           VG_(fnptr_to_fnentry)(
                                              &add_one_Jcc_untaken ),
                                           mkIRExprVec_0() );
-               addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+               addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
             }
             break;
 
@@ -740,18 +794,18 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
 
    if (clo_basic_counts) {
       /* Count this basic block. */
-      di = unsafeIRDirty_0_N( 0, "add_one_BB_completed", 
-                                 VG_(fnptr_to_fnentry)( &add_one_BB_completed ),
+      di = unsafeIRDirty_0_N( 0, "add_one_SB_completed", 
+                                 VG_(fnptr_to_fnentry)( &add_one_SB_completed ),
                                  mkIRExprVec_0() );
-      addStmtToIRSB( bbOut, IRStmt_Dirty(di) );
+      addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
    }
 
    if (clo_trace_mem) {
-      /* At the end of the bbIn.  Flush outstandings. */
-      flushEvents(bbOut);
+      /* At the end of the sbIn.  Flush outstandings. */
+      flushEvents(sbOut);
    }
 
-   return bbOut;
+   return sbOut;
 }
 
 static void lk_fini(Int exitcode)
@@ -777,18 +831,18 @@ static void lk_fini(Int exitcode)
       
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Executed:");
-      VG_(message)(Vg_UserMsg, "  BBs entered:   %,llu", n_BBs_entered);
-      VG_(message)(Vg_UserMsg, "  BBs completed: %,llu", n_BBs_completed);
+      VG_(message)(Vg_UserMsg, "  SBs entered:   %,llu", n_SBs_entered);
+      VG_(message)(Vg_UserMsg, "  SBs completed: %,llu", n_SBs_completed);
       VG_(message)(Vg_UserMsg, "  guest instrs:  %,llu", n_guest_instrs);
       VG_(message)(Vg_UserMsg, "  IRStmts:       %,llu", n_IRStmts);
       
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Ratios:");
-      tl_assert(n_BBs_entered); // Paranoia time.
-      VG_(message)(Vg_UserMsg, "  guest instrs : BB entered  = %3u : 10",
-         10 * n_guest_instrs / n_BBs_entered);
-      VG_(message)(Vg_UserMsg, "       IRStmts : BB entered  = %3u : 10",
-         10 * n_IRStmts / n_BBs_entered);
+      tl_assert(n_SBs_entered); // Paranoia time.
+      VG_(message)(Vg_UserMsg, "  guest instrs : SB entered  = %3u : 10",
+         10 * n_guest_instrs / n_SBs_entered);
+      VG_(message)(Vg_UserMsg, "       IRStmts : SB entered  = %3u : 10",
+         10 * n_IRStmts / n_SBs_entered);
       tl_assert(n_guest_instrs); // Paranoia time.
       VG_(message)(Vg_UserMsg, "       IRStmts : guest instr = %3u : 10",
          10 * n_IRStmts / n_guest_instrs);

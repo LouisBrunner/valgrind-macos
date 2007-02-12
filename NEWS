@@ -16,6 +16,11 @@ Other user-visible changes:
   they just return 3 (as before).  Also, SET_VBITS doesn't report
   definedness errors if any of the V bits are undefined.
 
+- The behaviour of the tool Lackey has changed slightly.  First, the output
+  from --trace-mem has been made more compact, to reduce the size of the
+  traces.  Second, a new option --trace-superblocks has been added, which
+  shows the addresses of superblocks (code blocks) as they are executed.
+
 Developer-visible changes:
 
 - The names of some functions and types within the Vex IR have changed.

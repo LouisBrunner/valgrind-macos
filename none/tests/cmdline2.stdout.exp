@@ -53,7 +53,11 @@ usage: valgrind [options] prog-and-args
     --trace-syscalls=no|yes   show all system calls? [no]
     --trace-signals=no|yes    show signal handling details? [no]
     --trace-symtab=no|yes     show symbol table details? [no]
+    --trace-symtab-patt=<patt> limit debuginfo tracing to obj name <patt>
     --trace-cfi=no|yes        show call-frame-info details? [no]
+    --debug-dump=syms         mimic /usr/bin/readelf --syms
+    --debug-dump=line         mimic /usr/bin/readelf --debug-dump=line
+    --debug-dump=frames       mimic /usr/bin/readelf --debug-dump=frames
     --trace-redir=no|yes      show redirection details? [no]
     --trace-sched=no|yes      show thread scheduler details? [no]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach

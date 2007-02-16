@@ -2211,7 +2211,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          return 0; /* fail */
       ctx->reg[reg] = restore_ctx->reg[reg];
       if (si->ddump_frames)
-         VG_(printf)("  rci:DW_CFA_restore\n");
+         VG_(printf)("  DW_CFA_restore: r%d\n", (Int)reg);
       return i;
    }
 
@@ -2235,19 +2235,22 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
          ctx->loc += delta;
          if (si->ddump_frames)
-            VG_(printf)("  rci:DW_CFA_advance_loc1\n");
+            VG_(printf)("  DW_CFA_advance_loc1: %d to %08lx\n", 
+                        (Int)delta, (Addr)ctx->loc + printing_bias);
          break;
       case DW_CFA_advance_loc2:
          delta = (UInt)read_UShort(&instr[i]); i+= sizeof(UShort);
          ctx->loc += delta;
          if (si->ddump_frames)
-            VG_(printf)("  rci:DW_CFA_advance_loc2\n");
+            VG_(printf)("  DW_CFA_advance_loc2: %d to %08lx\n", 
+                        (Int)delta, (Addr)ctx->loc + printing_bias);
          break;
       case DW_CFA_advance_loc4:
          delta = (UInt)read_UInt(&instr[i]); i+= sizeof(UInt);
          ctx->loc += delta;
          if (si->ddump_frames)
-            VG_(printf)("  rci:DW_CFA_advance_loc4\n");
+            VG_(printf)("  DW_CFA_advance_loc4: %d to %08lx\n", 
+                        (Int)delta, (Addr)ctx->loc + printing_bias);
          break;
 
       case DW_CFA_def_cfa:
@@ -2391,7 +2394,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          ctx->cfa_offset = off * ctx->data_a_f;
          if (si->ddump_frames)
-            VG_(printf)("  rci:DW_CFA_def_cfa_offset_sf\n");
+            VG_(printf)("  DW_CFA_def_cfa_offset_sf: %d\n", ctx->cfa_offset);
          break;
 
       case DW_CFA_undefined:
@@ -2448,7 +2451,8 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
             return 0; /* fail */
          ctx->reg[reg].tag = RR_ValExpr;
          if (si->ddump_frames)
-            VG_(printf)("  rci:DW_CFA_val_expression (ignored)\n");
+            VG_(printf)("  DW_CFA_val_expression: r%d (ignored)\n", 
+                        (Int)reg);
          break;
 
       case DW_CFA_def_cfa_expression:
@@ -3057,9 +3061,9 @@ void ML_(read_callframe_info_dwarf2)
             cie_augmentation++;
             if (si->ddump_frames) {
                UInt i;
-               VG_(printf)("  Augmentation data:     ");
+               VG_(printf)("  Augmentation data:    ");
                for (i = 0; i < length; i++)
-                  VG_(printf)("%02x", (UInt)data[i]);
+                  VG_(printf)(" %02x", (UInt)data[i]);
                VG_(printf)("\n");
             }
          } else {
@@ -3197,8 +3201,16 @@ void ML_(read_callframe_info_dwarf2)
                         ((Addr)fde_initloc) - si->text_start_avma + fde_arange);
 
          if (the_CIEs[cie].saw_z_augmentation) {
-            data += read_leb128( data, &nbytes, 0);
+            UInt length = read_leb128( data, &nbytes, 0);
             data += nbytes;
+            if (si->ddump_frames && (length > 0)) {
+               UInt i;
+               VG_(printf)("  Augmentation data:    ");
+               for (i = 0; i < length; i++)
+                  VG_(printf)(" %02x", (UInt)data[i]);
+               VG_(printf)("\n\n");
+            }
+            data += length;
          }
 
          fde_instrs = data;

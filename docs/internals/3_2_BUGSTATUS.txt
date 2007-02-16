@@ -102,6 +102,8 @@ pending  pending      139076   valgrind VT_GETSTATE error
 pending  pending      138702   amd64->IR: 0xF0 0xF 0xC0 0x90
                                (lock xadd %dl,0xb5(%rax))
 
+r6593    pending      139363   callgrind: fix --collect-systime=yes
+                               with "no instrumentation" mode
 
 ------- Bugs reported and fixed in 3.2.2 ------
 

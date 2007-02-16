@@ -370,6 +370,7 @@ foreach $pid (@pids) {
   %calls = ();
   %events = ();
   @events = ();
+  @threads = ();
   %totals = ();
 
   $exec_bbs = 0;
@@ -378,7 +379,7 @@ foreach $pid (@pids) {
   $dist_calls = 0;
   $dist_ctxs = 0;
   $dist_funcs = 0;
-  $threads = 0;
+  $threads = "";
   $events = "";
 
   while(<RESULT>) {
@@ -410,7 +411,7 @@ foreach $pid (@pids) {
     elsif (/distinct-functions: (\d+)/) { $dist_funcs = $1; }
     elsif (/distinct-contexts: (\d+)/) { $dist_ctxs = $1; }
     elsif (/events: (.+)$/) { $events = $1; prepareEvents; }
-    elsif (/threads: (\d+)$/) { $threads = $1; }
+    elsif (/threads: (.+)$/) { $threads = $1; @threads = split " ", $threads; }
     elsif (/instrumentation: (\w+)$/) { $instrumentation = $1; }
   }
 
@@ -423,7 +424,7 @@ foreach $pid (@pids) {
 
   if ($printStatus) {
     if ($requestEvents <1) {
-      print "  Number of threads: $threads\n";
+      print "  Number of running threads: " .($#threads+1). ", thread IDs: $threads\n";
       print "  Events collected: $events\n";
     }
 

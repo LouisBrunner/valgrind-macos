@@ -2271,7 +2271,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          if (reg < 0 || reg >= N_CFI_REGS)
             return 0; /* fail */
          ctx->cfa_reg    = reg;
-         ctx->cfa_offset = off;
+         ctx->cfa_offset = off * ctx->data_a_f;
          if (si->ddump_frames)
             VG_(printf)("  rci:DW_CFA_def_cfa_sf\n");
          break;
@@ -2566,7 +2566,8 @@ static Int show_CF_instruction ( UChar* instr,
          i += nleb;
          off = read_leb128( &instr[i], &nleb, 1 );
          i += nleb;
-         VG_(printf)("  DW_CFA_def_cfa_sf: r%d ofs %d\n", (Int)reg, (Int)off);
+         VG_(printf)("  DW_CFA_def_cfa_sf: r%d ofs %d\n", 
+                     (Int)reg, (Int)(off * data_a_f));
          break;
 
       case DW_CFA_register:

@@ -240,6 +240,8 @@ static ULong n_IRStmts       = 0;
 static ULong n_guest_instrs  = 0;
 static ULong n_Jccs          = 0;
 static ULong n_Jccs_untaken  = 0;
+static ULong n_IJccs         = 0;
+static ULong n_IJccs_untaken = 0;
 
 static void add_one_func_call(void)
 {
@@ -274,6 +276,16 @@ static void add_one_Jcc(void)
 static void add_one_Jcc_untaken(void)
 {
    n_Jccs_untaken++;
+}
+
+static void add_one_inverted_Jcc(void)
+{
+   n_IJccs++;
+}
+
+static void add_one_inverted_Jcc_untaken(void)
+{
+   n_IJccs_untaken++;
 }
 
 /*------------------------------------------------------------*/
@@ -600,6 +612,9 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
    Char       fnname[100];
    IRType     type;
    IRTypeEnv* tyenv = sbIn->tyenv;
+   Addr       iaddr = 0, dst;
+   UInt       ilen = 0;
+   Bool       condition_inverted = False;
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -661,6 +676,10 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
 
          case Ist_IMark:
             if (clo_basic_counts) {
+               /* Needed to be able to check for inverted condition in Ist_Exit */
+               iaddr = st->Ist.IMark.addr;
+               ilen  = st->Ist.IMark.len;
+
                /* Count guest instruction. */
                di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
                                           VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
@@ -770,10 +789,23 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
 
          case Ist_Exit:
             if (clo_basic_counts) {
+               // The condition of a branch was inverted by VEX if a taken
+               // branch is in fact a fall trough according to client address
+               tl_assert(iaddr != 0);
+               dst = (sizeof(Addr) == 4) ? st->Ist.Exit.dst->Ico.U32 :
+                                           st->Ist.Exit.dst->Ico.U64;
+               condition_inverted = (dst == iaddr + ilen);
+
                /* Count Jcc */
-               di = unsafeIRDirty_0_N( 0, "add_one_Jcc", 
+               if (!condition_inverted)
+                  di = unsafeIRDirty_0_N( 0, "add_one_Jcc", 
                                           VG_(fnptr_to_fnentry)( &add_one_Jcc ), 
                                           mkIRExprVec_0() );
+               else
+                  di = unsafeIRDirty_0_N( 0, "add_one_inverted_Jcc",
+                                          VG_(fnptr_to_fnentry)( &add_one_inverted_Jcc ),
+                                          mkIRExprVec_0() );
+
                addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
             }
             if (clo_trace_mem) {
@@ -784,10 +816,17 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
 
             if (clo_basic_counts) {
                /* Count non-taken Jcc */
-               di = unsafeIRDirty_0_N( 0, "add_one_Jcc_untaken", 
+               if (!condition_inverted)
+                  di = unsafeIRDirty_0_N( 0, "add_one_Jcc_untaken", 
                                           VG_(fnptr_to_fnentry)(
                                              &add_one_Jcc_untaken ),
                                           mkIRExprVec_0() );
+               else
+                  di = unsafeIRDirty_0_N( 0, "add_one_inverted_Jcc_untaken",
+                                          VG_(fnptr_to_fnentry)(
+                                             &add_one_inverted_Jcc_untaken ),
+                                          mkIRExprVec_0() );
+
                addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
             }
             break;
@@ -823,16 +862,19 @@ static void lk_fini(Int exitcode)
    tl_assert(clo_fnname[0]);
 
    if (clo_basic_counts) {
+      ULong total_Jccs = n_Jccs + n_IJccs;
+      ULong taken_Jccs = (n_Jccs - n_Jccs_untaken) + n_IJccs_untaken;
+
       VG_(message)(Vg_UserMsg,
          "Counted %,llu calls to %s()", n_func_calls, clo_fnname);
 
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Jccs:");
-      VG_(message)(Vg_UserMsg, "  total:         %,llu", n_Jccs);
-      VG_(percentify)((n_Jccs - n_Jccs_untaken), (n_Jccs ? n_Jccs : 1),
+      VG_(message)(Vg_UserMsg, "  total:         %,llu", total_Jccs);
+      VG_(percentify)(taken_Jccs, (total_Jccs ? total_Jccs : 1),
          percentify_decs, percentify_size, percentify_buf);
       VG_(message)(Vg_UserMsg, "  taken:         %,llu (%s)", 
-         (n_Jccs - n_Jccs_untaken), percentify_buf);
+         taken_Jccs, percentify_buf);
       
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Executed:");

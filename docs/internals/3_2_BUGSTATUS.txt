@@ -28,6 +28,8 @@ pending  pending      140522   valgrind 3.2.2 libmpiwrap: MPI_STATUS_IGNORE
                                and MPI_STATUSES_IGNORE not supported and makes 
                                a valid MPI program crash.
 
+Ashley logfile qualifiers in coredumps patch
+
 ------- Bugs reported and fixed in 3.2.3 ------
 
 TRUNK   32BRANCH  PRI   BUG#   WHAT

@@ -543,13 +543,14 @@ UInt myvprintf_int64 ( void(*send)(HChar,void*),
                        Int flags, 
                        Int base, 
                        Int width, 
+                       Bool capitalised,
                        ULong p )
 {
    HChar  buf[40];
    Int    ind = 0;
    Int    i, nc = 0;
    Bool   neg = False;
-   HChar* digits = "0123456789ABCDEF";
+   HChar* digits = capitalised ? "0123456789ABCDEF" : "0123456789abcdef";
    UInt   ret = 0;
 
    if (base < 2 || base > 16)
@@ -620,7 +621,7 @@ VG_(debugLog_vprintf) (
    Int  flags;
    Int  width;
    Int  n_ls = 0;
-   Bool is_long;
+   Bool is_long, caps;
 
    /* We assume that vargs has already been initialised by the 
       caller, using va_start, and that the caller will similarly
@@ -686,33 +687,35 @@ VG_(debugLog_vprintf) (
          case 'd': /* %d */
             flags |= VG_MSG_SIGNED;
             if (is_long)
-               ret += myvprintf_int64(send, send_arg2, flags, 10, width, 
+               ret += myvprintf_int64(send, send_arg2, flags, 10, width, False,
                                       (ULong)(va_arg (vargs, Long)));
             else
-               ret += myvprintf_int64(send, send_arg2, flags, 10, width, 
+               ret += myvprintf_int64(send, send_arg2, flags, 10, width, False,
                                       (ULong)(va_arg (vargs, Int)));
             break;
          case 'u': /* %u */
             if (is_long)
-               ret += myvprintf_int64(send, send_arg2, flags, 10, width, 
+               ret += myvprintf_int64(send, send_arg2, flags, 10, width, False,
                                       (ULong)(va_arg (vargs, ULong)));
             else
-               ret += myvprintf_int64(send, send_arg2, flags, 10, width, 
+               ret += myvprintf_int64(send, send_arg2, flags, 10, width, False,
                                       (ULong)(va_arg (vargs, UInt)));
             break;
          case 'p': /* %p */
             ret += 2;
             send('0',send_arg2);
             send('x',send_arg2);
-            ret += myvprintf_int64(send, send_arg2, flags, 16, width, 
+            ret += myvprintf_int64(send, send_arg2, flags, 16, width, True,
                                    (ULong)((UWord)va_arg (vargs, void *)));
             break;
          case 'x': /* %x */
+         case 'X': /* %X */
+            caps = toBool(format[i] == 'X');
             if (is_long)
-               ret += myvprintf_int64(send, send_arg2, flags, 16, width, 
+               ret += myvprintf_int64(send, send_arg2, flags, 16, width, caps,
                                       (ULong)(va_arg (vargs, ULong)));
             else
-               ret += myvprintf_int64(send, send_arg2, flags, 16, width, 
+               ret += myvprintf_int64(send, send_arg2, flags, 16, width, caps,
                                       (ULong)(va_arg (vargs, UInt)));
             break;
          case 'c': /* %c */
@@ -843,9 +846,9 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
    }
    
    (void)myvprintf_str ( add_to_buf, &buf, 0, 2, "--", False );
-   (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 1, (ULong)pid );
+   (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 1, False, (ULong)pid );
    (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ":", False );
-   (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 1, (ULong)level );
+   (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 1, False, (ULong)level );
    (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ":", False );
    (void)myvprintf_str ( add_to_buf, &buf, 0, 8, (HChar*)modulename, False );
    (void)myvprintf_str ( add_to_buf, &buf, 0, indent, "", False );

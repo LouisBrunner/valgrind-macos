@@ -902,7 +902,7 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
          1/10 to the file name, leaving 1/10 for all the fixed-length
          stuff. */
       APPEND("<frame>");
-      VG_(sprintf)(ibuf,"<ip>0x%llx</ip>", (ULong)eip);
+      VG_(sprintf)(ibuf,"<ip>0x%llX</ip>", (ULong)eip);
       APPEND(maybe_newline);
       APPEND(ibuf);
       if (know_objname) {
@@ -940,7 +940,7 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
    } else {
 
       /* Print for humans to read */
-      VG_(sprintf)(ibuf,"0x%llx: ", (ULong)eip);
+      VG_(sprintf)(ibuf,"0x%llX: ", (ULong)eip);
       APPEND(ibuf);
       if (know_fnname) { 
          APPEND(buf_fn);

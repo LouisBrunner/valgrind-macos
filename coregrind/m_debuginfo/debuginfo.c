@@ -136,11 +136,9 @@ SegInfo* alloc_SegInfo(Addr start, SizeT size, OffT foffset,
    if (traceme) {
       si->trace_symtab = VG_(clo_trace_symtab);
       si->trace_cfi    = VG_(clo_trace_cfi);
-#if 0
-      si->ddump_syms   = VG_(clo_ddump_syms);
-      si->ddump_line   = VG_(clo_ddump_line);
-      si->ddump_frames = VG_(clo_ddump_frames);
-#endif
+      si->ddump_syms   = VG_(clo_debug_dump_syms);
+      si->ddump_line   = VG_(clo_debug_dump_line);
+      si->ddump_frames = VG_(clo_debug_dump_frames);
    }
 
 

@@ -1,6 +1,8 @@
 # This ensures it works when invoked from any directory.
 d=`dirname $0`
 
+# We set both VALGRIND_LIB and VALGRIND_LIB_INNER to handle normal and
+# 'inner' builds.
 VALGRIND_LIB=$d/.in_place \
     VALGRIND_LIB_INNER=$d/.in_place \
     $d/coregrind/valgrind "$@"

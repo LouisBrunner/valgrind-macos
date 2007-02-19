@@ -10,6 +10,8 @@ of the source tree (and must be an absolute path).  Eg:
 This allows you to compile and run with "make" instead of "make install",
 saving you time.
 
+Or, you can use the 'vg-in-place' script which does that for you.
+
 I recommend compiling with "make --quiet" to further reduce the amount of
 output spewed out during compilation, letting you actually see any errors,
 warnings, etc.

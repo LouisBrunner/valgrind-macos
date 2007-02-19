@@ -1,0 +1,7 @@
+# This ensures it works when invoked from any directory.
+d=`dirname $0`
+
+VALGRIND_LIB=$d/.in_place \
+    VALGRIND_LIB_INNER=$d/.in_place \
+    $d/coregrind/valgrind "$@"
+

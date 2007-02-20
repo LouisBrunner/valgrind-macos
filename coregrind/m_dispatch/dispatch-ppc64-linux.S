@@ -204,7 +204,7 @@ VG_(run_innerloop):
 
         /* hold dispatch_ctr (=32bit value) in r29 */
 	ld	29,.tocent__vgPlain_dispatch_ctr@toc(2)
-	lwz	29,0(29)
+	lwz	29,0(29)  /* 32-bit zero-extending load */
 
         /* set host FPU control word to the default mode expected 
            by VEX-generated code.  See comments in libvex.h for

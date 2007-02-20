@@ -267,9 +267,12 @@ VG_(run_innerloop__dispatch_unprofiled):
 		128(r1) (=orig guest_state)
 	*/
 
-	/* Has the guest state pointer been messed with?  If yes, exit. */
+	/* Has the guest state pointer been messed with?  If yes, exit.
+	   Also set up & VG_(tt_fast) early in an attempt at better
+           scheduling. */
         lwz     5,128(1)         /* original guest_state ptr */
         cmpw    5,31
+	lwz	5,tocent__vgPlain_tt_fast(2)	/* r5 = &tt_fast */
         bne	gsp_changed
 
         /* save the jump address in the guest state */
@@ -281,24 +284,17 @@ VG_(run_innerloop__dispatch_unprofiled):
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 2 */
-        rlwinm  4,3, 0, 32-2-VG_TT_FAST_BITS, 31-2
-
-	lwz	5,tocent__vgPlain_tt_fast(2)	/* r5 = &tt_fast */
-
-        lwzx    5,5,4	/* r5 = tt_fast[r5] */
-
-        lwz     6,4(5)   /* big-endian, so comparing 2nd 32bit word */
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
+        rlwinm  4,3,1, 29-VG_TT_FAST_BITS, 28   /* entry# * 8 */
+	add     5,5,4	 /* & VG_(tt_fast)[entry#] */
+	lwz     6,0(5)   /* .guest */
+	lwz     7,4(5)   /* .host */
         cmpw    3,6
         bne     fast_lookup_failed
 
-        /* Found a match.  Call tce[1], which is 8 bytes along, since
-           each tce element is a 64-bit int. */
-        addi    8,5,8
-        mtctr   8
-
-	/* run the translation */
+        /* Found a match.  Call .host. */
+        mtctr   7
         bctrl
 
         /* On return from guest code:
@@ -306,7 +302,6 @@ VG_(run_innerloop__dispatch_unprofiled):
            r31 may be unchanged (guest_state), or may indicate further
            details of the control transfer requested to *r3.
         */
-
 	/* start over */
 	b	VG_(run_innerloop__dispatch_unprofiled)
 	/*NOTREACHED*/
@@ -325,10 +320,12 @@ VG_(run_innerloop__dispatch_profiled):
 	   Stack state:
 		128(r1) (=orig guest_state)
 	*/
-
-	/* Has the guest state pointer been messed with?  If yes, exit. */
+	/* Has the guest state pointer been messed with?  If yes, exit.
+	   Also set up & VG_(tt_fast) early in an attempt at better
+           scheduling. */
         lwz     5,128(1)         /* original guest_state ptr */
         cmpw    5,31
+	lwz	5,tocent__vgPlain_tt_fast(2)	/* r5 = &tt_fast */
         bne	gsp_changed
 
         /* save the jump address in the guest state */
@@ -340,31 +337,25 @@ VG_(run_innerloop__dispatch_profiled):
         beq	counter_is_zero
 
         /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(ULong*)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 2 */
-        rlwinm  4,3, 0, 32-2-VG_TT_FAST_BITS, 31-2
-
-	lwz	5,tocent__vgPlain_tt_fast(2)	/* r5 = &tt_fast */
-
-        lwzx    5,5,4	/* r5 = tt_fast[r4] */
-
-        lwz     6,4(5)   /* big-endian, so comparing 2nd 32bit word */
+        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
+              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
+        rlwinm  4,3,1, 29-VG_TT_FAST_BITS, 28   /* entry# * 8 */
+	add     5,5,4	 /* & VG_(tt_fast)[entry#] */
+	lwz     6,0(5)   /* .guest */
+	lwz     7,4(5)   /* .host */
         cmpw    3,6
         bne     fast_lookup_failed
 
         /* increment bb profile counter */
+	srwi	4,4,1   /* entry# * sizeof(UInt*) */
 	lwz	9,tocent__vgPlain_tt_fastN(2)   /* r9 = &tt_fastN */
-        lwzx    7,9,4   /* r7 = tt_fastN[r4] */
-        lwz     10,0(7)
+        lwzx    8,9,4   /* r7 = tt_fastN[r4] */
+        lwz     10,0(8)
         addi    10,10,1
-        stw     10,0(7)
+        stw     10,0(8)
 	
-        /* Found a match.  Call tce[1], which is 8 bytes along, since
-           each tce element is a 64-bit int. */
-        addi    8,5,8
-        mtctr   8
-
-	/* run the translation */
+        /* Found a match.  Call .host. */
+        mtctr   7
         bctrl
 
         /* On return from guest code:
@@ -372,10 +363,10 @@ VG_(run_innerloop__dispatch_profiled):
            r31 may be unchanged (guest_state), or may indicate further
            details of the control transfer requested to *r3.
         */
-
 	/* start over */
-	b	VG_(run_innerloop__dispatch_profiled)
+	b	VG_(run_innerloop__dispatch_unprofiled)
 	/*NOTREACHED*/
+
 
 /*----------------------------------------------------*/
 /*--- exit points                                  ---*/

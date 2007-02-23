@@ -21,6 +21,7 @@ r6575    pending   32 n-i-bz   walk_type: unhandled base type 0xe PACKED
 
 pending  pending      n-i-bz   --track-fds reports leakage of
                                stdout/in/err and doesn't respect -q
+                               XXX where is the patch?
 
 pending  pending      141366   Add sys_vserver support to valgrind (w/ patch)
 
@@ -28,7 +29,14 @@ pending  pending      140522   valgrind 3.2.2 libmpiwrap: MPI_STATUS_IGNORE
                                and MPI_STATUSES_IGNORE not supported and makes 
                                a valid MPI program crash.
 
+vx1735   pending   32 141790   Missing amd64 x87 insns
+
+r6608    pending   32 n-i-bz   intercept for __memmove_chk
+
 Ashley logfile qualifiers in coredumps patch
+RedHat8 needs suppressions
+where did mpi wrappers for Pack/Unpack go? (r6575 ?)
+
 
 ------- Bugs reported and fixed in 3.2.3 ------
 

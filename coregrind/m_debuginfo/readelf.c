@@ -1226,7 +1226,7 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
 
       /* Read .eh_frame (call-frame-info) if any */
       if (ehframe_img) {
-         ML_(read_callframe_info_dwarf2)
+         ML_(read_callframe_info_dwarf3)
             ( si, ehframe_img, ehframe_sz, ehframe_avma );
       }
 

@@ -61,7 +61,7 @@ void ML_(read_debuginfo_dwarf1) ( struct _SegInfo* si,
    CFI reader
    -------------------- */
 extern
-void ML_(read_callframe_info_dwarf2)
+void ML_(read_callframe_info_dwarf3)
     ( /*OUT*/struct _SegInfo* si, 
       UChar* ehframe, Int ehframe_sz, Addr ehframe_addr );
 

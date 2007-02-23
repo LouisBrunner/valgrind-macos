@@ -1439,6 +1439,25 @@ void ML_(read_debuginfo_dwarf1) (
 /*--- Read call-frame info from an .eh_frame section       ---*/
 /*------------------------------------------------------------*/
 
+/* Sources of info:
+
+   The DWARF3 spec, available from http://www.dwarfstd.org/Download.php 
+
+   This describes how to read CFA data from .debug_frame sections.
+   So as to maximise everybody's annoyance and confusion, .eh_frame
+   sections are almost the same as .debug_frame sections, but differ
+   in a few subtle and ill documented but important aspects.
+
+   Generic ELF Specification, sections 7.5 (DWARF Extensions) and 7.6
+   (Exception Frames), available from
+
+   http://www.linux-foundation.org/spec/book/ELF-generic/ELF-generic.html
+
+   This really does describe .eh_frame, at least the aspects that
+   differ from standard DWARF3.  It's better than guessing, and
+   (marginally) more fun than reading the gdb source code.
+*/
+
 /* Useful info ..
 
    In general:
@@ -2843,7 +2862,7 @@ Bool run_CF_instructions ( struct _SegInfo* si,
 typedef
    struct {
       /* This gives the CIE an identity to which FDEs will refer. */
-      UInt   offset;
+      ULong  offset;
       /* Code, data factors. */
       Int    code_a_f;
       Int    data_a_f;
@@ -2875,7 +2894,7 @@ static void init_CIE ( CIE* cie )
 static CIE the_CIEs[N_CIEs];
 
 
-void ML_(read_callframe_info_dwarf2) 
+void ML_(read_callframe_info_dwarf3)
         ( /*OUT*/struct _SegInfo* si, 
           UChar* ehframe_image, Int ehframe_sz, Addr ehframe_avma )
 {
@@ -2920,8 +2939,9 @@ void ML_(read_callframe_info_dwarf2)
    */
    while (True) {
       UChar* ciefde_start;
-      UInt   ciefde_len;
-      UInt   cie_pointer;
+      ULong  ciefde_len;
+      ULong  cie_pointer;
+      Bool   dw64;
 
       /* Are we done? */
       if (data == ehframe_image + ehframe_sz)
@@ -2938,31 +2958,45 @@ void ML_(read_callframe_info_dwarf2)
 
       ciefde_start = data;
       if (si->trace_cfi) 
-         VG_(printf)("\ncie/fde.start   = %p (ehframe_image + 0x%x)\n", 
+         VG_(printf)("\ncie/fde.start   = %p (ehframe_image + 0x%lx)\n", 
                      ciefde_start, ciefde_start - ehframe_image);
 
-      ciefde_len = read_UInt(data); data += sizeof(UInt);
+      ciefde_len = (ULong) read_UInt(data); data += sizeof(UInt);
       if (si->trace_cfi) 
-         VG_(printf)("cie/fde.length  = %d\n", ciefde_len);
+         VG_(printf)("cie/fde.length  = %lld\n", ciefde_len);
 
       /* Apparently, if the .length field is zero, we are at the end
-         of the sequence.  ?? Neither the DWARF2 spec not the AMD64
-         ABI spec say this, though. */
+         of the sequence.  This is stated in the Generic Elf
+         Specification (see comments far above here) and is one of the
+         places where .eh_frame and .debug_frame data differ. */
       if (ciefde_len == 0) {
-         if (data == ehframe_image + ehframe_sz) {
-            if (si->ddump_frames)
-               VG_(printf)("%08lx ZERO terminator\n\n",
-                           ((Addr)ciefde_start) - ((Addr)ehframe_image));
-            return;
-         }
-         how = "zero-sized CIE/FDE but not at section end";
-         goto bad;
+         if (si->ddump_frames)
+            VG_(printf)("%08lx ZERO terminator\n\n",
+                        ((Addr)ciefde_start) - ((Addr)ehframe_image));
+         return;
       }
 
-      cie_pointer = read_UInt(data); 
-      data += sizeof(UInt); /* XXX see XXX below */
+      /* If the .length field is 0xFFFFFFFF then we're dealing with
+         64-bit DWARF, and the real length is stored as a 64-bit
+         number immediately following it. */
+      dw64 = False;
+      if (ciefde_len == 0xFFFFFFFFUL) {
+         dw64 = True;
+         ciefde_len = read_ULong(data); data += sizeof(ULong);
+      }
+
+      /* Now get the CIE ID, whose size depends on the DWARF 32 vs
+	 64-ness. */
+      if (dw64) {
+         cie_pointer = read_ULong(data); 
+         data += sizeof(ULong); /* XXX see XXX below */
+      } else {
+         cie_pointer = (ULong)read_UInt(data); 
+         data += sizeof(UInt); /* XXX see XXX below */
+      }
+
       if (si->trace_cfi) 
-         VG_(printf)("cie.pointer     = %d\n", cie_pointer);
+         VG_(printf)("cie.pointer     = %lld\n", cie_pointer);
 
       /* If cie_pointer is zero, we've got a CIE; else it's an FDE. */
       if (cie_pointer == 0) {
@@ -2989,13 +3023,13 @@ void ML_(read_callframe_info_dwarf2)
 
 	 /* Record its offset.  This is how we will find it again
             later when looking at an FDE. */
-         the_CIEs[this_CIE].offset = ciefde_start - ehframe_image;
+         the_CIEs[this_CIE].offset = (ULong)(ciefde_start - ehframe_image);
 
          if (si->ddump_frames)
             VG_(printf)("%08lx %08lx %08lx CIE\n",
                         ((Addr)ciefde_start) - ((Addr)ehframe_image),
                         (Addr)ciefde_len,
-                        (Addr)cie_pointer );
+                        (Addr)(UWord)cie_pointer );
 
          cie_version = read_UChar(data); data += sizeof(UChar);
          if (si->trace_cfi)
@@ -3147,7 +3181,7 @@ void ML_(read_callframe_info_dwarf2)
          AddressDecodingInfo adi;
          UnwindContext ctx, restore_ctx;
          Int    cie;
-         UInt   look_for;
+         ULong  look_for;
          Bool   ok;
          Addr   fde_initloc;
          UWord  fde_arange;
@@ -3159,12 +3193,13 @@ void ML_(read_callframe_info_dwarf2)
          /* Find the relevant CIE.  The CIE we want is located
             cie_pointer bytes back from here. */
 
-         /* re sizeof(UInt), matches XXX above.  For 64-bit dwarf this
-            will have to be a ULong instead. */
-         look_for = (data - sizeof(UInt) - ehframe_image) - cie_pointer;
+         /* re sizeof(UInt) / sizeof(ULong), matches XXX above. */
+         look_for = (data - (dw64 ? sizeof(ULong) : sizeof(UInt)) 
+                          - ehframe_image) 
+                    - cie_pointer;
 
          for (cie = 0; cie < n_CIEs; cie++) {
-            if (0) VG_(printf)("look for %d   %d\n",
+            if (0) VG_(printf)("look for %lld   %lld\n",
                                look_for, the_CIEs[cie].offset );
             if (the_CIEs[cie].offset == look_for)
                break;
@@ -3195,7 +3230,7 @@ void ML_(read_callframe_info_dwarf2)
             VG_(printf)("%08lx %08lx %08lx FDE cie=%08lx pc=%08lx..%08lx\n",
                         ((Addr)ciefde_start) - ((Addr)ehframe_image),
                         (Addr)ciefde_len,
-                        (Addr)cie_pointer,
+                        (Addr)(UWord)cie_pointer,
                         (Addr)look_for, 
                         ((Addr)fde_initloc) - si->text_start_avma, 
                         ((Addr)fde_initloc) - si->text_start_avma + fde_arange);

@@ -4465,21 +4465,21 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_ST_ST ( "mul", Iop_MulF64, modrm - 0xC8, 0, False );
                break;
 
-//.. #if 1
-//..             /* Dunno if this is right */
-//..             case 0xD0 ... 0xD7: /* FCOM %st(?),%st(0) */
-//..                r_dst = (UInt)modrm - 0xD0;
-//..                DIP("fcom %%st(0),%%st(%d)\n", r_dst);
-//..                /* This forces C1 to zero, which isn't right. */
-//..                put_C3210( 
-//..                    binop( Iop_And32,
-//..                           binop(Iop_Shl32, 
-//..                                 binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
-//..                                 mkU8(8)),
-//..                           mkU32(0x4500)
-//..                    ));
-//..                break;
-//.. #endif
+            /* Dunno if this is right */
+            case 0xD0 ... 0xD7: /* FCOM %st(?),%st(0) */
+               r_dst = (UInt)modrm - 0xD0;
+               DIP("fcom %%st(0),%%st(%d)\n", r_dst);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   unop(Iop_32Uto64,
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   )));
+               break;
+
 //.. #if 1
 //..             /* Dunno if this is right */
 //..             case 0xD8 ... 0xDF: /* FCOMP %st(?),%st(0) */
@@ -5761,19 +5761,20 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, True );
                break;
 
-//..             case 0xD9: /* FCOMPP %st(0),%st(1) */
-//..                DIP("fuompp %%st(0),%%st(1)\n");
-//..                /* This forces C1 to zero, which isn't right. */
-//..                put_C3210( 
-//..                    binop( Iop_And32,
-//..                           binop(Iop_Shl32, 
-//..                                 binop(Iop_CmpF64, get_ST(0), get_ST(1)),
-//..                                 mkU8(8)),
-//..                           mkU32(0x4500)
-//..                    ));
-//..                fp_pop();
-//..                fp_pop();
-//..                break;
+            case 0xD9: /* FCOMPP %st(0),%st(1) */
+               DIP("fcompp %%st(0),%%st(1)\n");
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   unop(Iop_32Uto64,
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(1)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   )));
+               fp_pop();
+               fp_pop();
+               break;
 
             case 0xE0 ... 0xE7: /* FSUBRP %st(0),%st(?) */
                fp_do_oprev_ST_ST ( "subr", Iop_SubF64, 0,  modrm - 0xE0, True );

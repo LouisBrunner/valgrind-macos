@@ -1872,6 +1872,7 @@ typedef
       UChar  encoding;
       UChar* ehframe_image;
       Addr   ehframe_avma;
+      Addr   text_bias;
    }
    AddressDecodingInfo;
 
@@ -2083,6 +2084,18 @@ static UChar read_UChar ( UChar* data )
    return data[0];
 }
 
+static ULong read_le_encoded_literal ( UChar* data, UInt size )
+{
+   switch (size) {
+      case 8:  return (ULong)read_ULong( data );
+      case 4:  return (ULong)read_UInt( data );
+      case 2:  return (ULong)read_UShort( data );
+      case 1:  return (ULong)read_UChar( data );
+      default: vg_assert(0); /*NOTREACHED*/ return 0;
+   }
+}
+
+
 static UChar default_Addr_encoding ( void )
 {
    switch (sizeof(Addr)) {
@@ -2110,6 +2123,25 @@ static Addr read_encoded_Addr ( /*OUT*/Int* nbytes,
                                 AddressDecodingInfo* adi,
                                 UChar* data )
 {
+   /* Regarding the handling of DW_EH_PE_absptr.  DWARF3 says this
+      denotes an absolute address, hence you would think 'base' is
+      zero.  However, that is nonsensical (unless relocations are to
+      be applied to the unwind data before reading it, which sounds
+      unlikely).  My interpretation is that DW_EH_PE_absptr indicates
+      an address relative to where the object was loaded (technically,
+      relative to its stated load VMA, hence the use of text_bias
+      rather than text_avma).  Hmm, should we use text_bias or
+      text_avma here?  Not sure.
+
+      This view appears to be supported by DWARF3 spec sec 7.3
+      "Executable Objects and Shared Objects":
+
+         This requirement makes the debugging information for shared
+         objects position independent.  Virtual addresses in a shared
+         object may be calculated by adding the offset to the base
+         address at which the object was attached.  This offset is
+         available in the run-time linker's data structures.
+   */
    Addr   base;
    Word   offset;
    UChar  encoding      = adi->encoding;
@@ -2122,7 +2154,7 @@ static Addr read_encoded_Addr ( /*OUT*/Int* nbytes,
 
    switch (encoding & 0x70) {
       case DW_EH_PE_absptr:
-         base = 0;
+         base = adi->text_bias;
          break;
       case DW_EH_PE_pcrel:
          base = ehframe_avma + ( data - ehframe_image );
@@ -2194,7 +2226,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
    Int   i   = 0;
    UChar hi2 = (instr[i] >> 6) & 3;
    UChar lo6 = instr[i] & 0x3F;
-   Addr  printing_bias = ((Addr)ctx->initloc) - ((Addr)si->text_start_avma);
+   Addr  printing_bias = ((Addr)ctx->initloc) - ((Addr)si->text_bias);
    i++;
 
    if (hi2 == DW_CFA_advance_loc) {
@@ -2245,6 +2277,9 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          /* WAS: 
             ctx->loc = read_Addr(&instr[i]) - ctx->initloc; i+= sizeof(Addr);
             Was this ever right? */
+         /* 2007 Feb 23: No.  binutils/dwarf.c treats it as an encoded
+            address and that appears to be in accordance with the
+            DWARF3 spec. */
          ctx->loc = read_encoded_Addr(&len, adi, &instr[i]);
          i += len;
          if (si->ddump_frames)
@@ -2336,8 +2371,10 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          ctx->reg[reg].tag = RR_CFAoff;
          ctx->reg[reg].coff = off * ctx->data_a_f;
          if (si->ddump_frames)
-            VG_(printf)("  rci:DW_CFA_offset_extended_sf\n");
-         break;         
+            VG_(printf)("  DW_CFA_offset_extended_sf: r%d at cfa%s%d\n", 
+                        reg, ctx->reg[reg].coff < 0 ? "" : "+", 
+                        (Int)ctx->reg[reg].coff);
+         break;
 
       case DW_CFA_GNU_negative_offset_extended:
          reg = read_leb128( &instr[i], &nleb, 0 );
@@ -2555,7 +2592,8 @@ static Int show_CF_instruction ( UChar* instr,
          break;
 
       case DW_CFA_set_loc:
-         /* WAS: loc = read_Addr(&instr[i]); i+= sizeof(Addr); */
+         /* WAS: loc = read_Addr(&instr[i]); i+= sizeof(Addr); 
+            (now known to be incorrect -- the address is encoded) */
          loc = read_encoded_Addr(&len, adi, &instr[i]);
          i += len;
          VG_(printf)("  sci:DW_CFA_set_loc(%p)\n", loc); 
@@ -2573,7 +2611,7 @@ static Int show_CF_instruction ( UChar* instr,
 
       case DW_CFA_advance_loc4:
          delta = (UInt)read_UInt(&instr[i]); i+= sizeof(UInt);
-         VG_(printf)("  sci:DW_CFA_advance_loc4(%d)\n", delta); 
+         VG_(printf)("  DW_CFA_advance_loc4(%d)\n", delta); 
          break;
 
       case DW_CFA_def_cfa:
@@ -2685,13 +2723,14 @@ static Int show_CF_instruction ( UChar* instr,
                      "off %d x data_af)\n", reg, off);
          break;
 
-       case DW_CFA_offset_extended_sf:
+      case DW_CFA_offset_extended_sf:
          reg = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
          off = read_leb128( &instr[i], &nleb, 1 );
          i += nleb;
-         VG_(printf)("  sci:DW_CFA_offset_extended_sf"
-                     "(r%d, off %d x data_af)\n", reg, off);
+	 coff = (Int)(off * data_a_f);
+         VG_(printf)("  DW_CFA_offset_extended_sf: r%d at cfa%s%d\n", 
+                        reg, coff < 0 ? "" : "+", coff);
          break;
 
       case DW_CFA_GNU_negative_offset_extended:
@@ -2747,64 +2786,6 @@ static void show_CF_instructions ( UChar* instrs, Int ilen,
 }
 
 
-/* Attempt to add a CFI record to the collection.  Nominally this just
-   hands the record off to ML_(addDiCfSI), which will ignore it if it
-   falls outside the mapped text segment of this SegInfo.  However, a
-   nasty kludge may be pre-applied: if the record's base address is
-   very small, and does not come anywhere near the mapped text
-   segment, then assume we forgot to add the text_bias for some
-   reason, so add it on and then try again. */
-static
-void kludge_then_addDiCfSI ( struct _SegInfo* si, DiCfSI* cfsi )
-{
-#  define IN_TEXT_SEG(_addr) \
-      ((_addr) >= si->text_start_avma \
-       && (_addr) < (si->text_start_avma + si->text_size))
-
-   if ( /* "has implausibly low addr" */
-        cfsi->base < 2 * 1024 * 1024
-        /* "has plausible size" */
-        && cfsi->len > 0
-        && cfsi->len < 50000
-        /* "is well clear of the text segment" */
-        && (2 * (cfsi->base + cfsi->len)) < si->text_start_avma
-        /* "adding text_bias would put the start in the text segment */
-        && IN_TEXT_SEG(si->text_bias + cfsi->base)
-        /* "adding text_bias would put the end in the text segment */
-        && IN_TEXT_SEG(si->text_bias + cfsi->base + cfsi->len - 1)
-        /* XXX and there isn't already a record present */ ) 
-   {
-      static Int complaints = 3;
-
-      /* Oh, well, let's kludge it into the text segment, then. */
-      /* First, though, complain: */
-      if (si->trace_cfi || complaints > 0) {
-         complaints--;
-         if (VG_(clo_verbosity) > 1) {
-            VG_(message)(
-               Vg_DebugMsg,
-               "warning: DiCfSI %p .. %p kludge reloc to %p .. %p",
-               cfsi->base, 
-               cfsi->base + cfsi->len - 1,
-               si->text_bias + cfsi->base, 
-               si->text_bias + cfsi->base + cfsi->len - 1
-            );
-         }
-         if (si->trace_cfi) 
-            ML_(ppDiCfSI)(cfsi);
-      }
-
-      /* last but not least ... */
-      cfsi->base += si->text_bias;
-   }
-
-   /* finished monkeying around, let's add it. */
-   ML_(addDiCfSI)(si, cfsi);
-
-#  undef IN_TEXT_SEG
-}
-
-
 /* Run the CF instructions in instrs[0 .. ilen-1], until the end is
    reached, or until there is a failure.  Return True iff success. 
 */
@@ -2835,7 +2816,7 @@ Bool run_CF_instructions ( struct _SegInfo* si,
       if (record && loc_prev != ctx->loc) {
          summ_ok = summarise_context ( &cfsi, loc_prev, ctx, si );
          if (summ_ok) {
-            kludge_then_addDiCfSI(si, &cfsi);
+            ML_(addDiCfSI)(si, &cfsi);
             if (si->trace_cfi)
                ML_(ppDiCfSI)(&cfsi);
          }
@@ -2847,7 +2828,7 @@ Bool run_CF_instructions ( struct _SegInfo* si,
       if (record) {
          summ_ok = summarise_context ( &cfsi, loc_prev, ctx, si );
          if (summ_ok) {
-            kludge_then_addDiCfSI(si, &cfsi);
+            ML_(addDiCfSI)(si, &cfsi);
             if (si->trace_cfi)
                ML_(ppDiCfSI)(&cfsi);
          }
@@ -3167,6 +3148,7 @@ void ML_(read_callframe_info_dwarf3)
             adi.encoding      = the_CIEs[this_CIE].address_encoding;
             adi.ehframe_image = ehframe_image;
             adi.ehframe_avma  = ehframe_avma;
+            adi.text_bias     = si->text_bias;
             show_CF_instructions( the_CIEs[this_CIE].instrs, 
                                   the_CIEs[this_CIE].ilen, &adi,
                                   the_CIEs[this_CIE].code_a_f,
@@ -3213,6 +3195,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.encoding      = the_CIEs[cie].address_encoding;
          adi.ehframe_image = ehframe_image;
          adi.ehframe_avma  = ehframe_avma;
+         adi.text_bias     = si->text_bias;
          fde_initloc = read_encoded_Addr(&nbytes, &adi, data);
          data += nbytes;
          if (si->trace_cfi) 
@@ -3221,8 +3204,26 @@ void ML_(read_callframe_info_dwarf3)
          adi.encoding      = the_CIEs[cie].address_encoding & 0xf;
          adi.ehframe_image = ehframe_image;
          adi.ehframe_avma  = ehframe_avma;
-         fde_arange = read_encoded_Addr(&nbytes, &adi, data);
-         data += nbytes;
+         adi.text_bias     = si->text_bias;
+
+         /* WAS (incorrectly):
+            fde_arange = read_encoded_Addr(&nbytes, &adi, data);
+            data += nbytes;
+            The following corresponds to what binutils/dwarf.c does:
+         */
+         { UInt ptr_size = size_of_encoded_Addr( adi.encoding );
+           switch (ptr_size) {
+              case 8: case 4: case 2: case 1: 
+                 fde_arange 
+                    = (UWord)read_le_encoded_literal(data, ptr_size);
+                 data += ptr_size;
+                 break;
+              default: 
+                 how = "unknown arange field encoding in FDE";
+                 goto bad;
+           }
+         }
+
          if (si->trace_cfi) 
             VG_(printf)("fde.arangec     = %p\n", (void*)fde_arange);
 
@@ -3232,8 +3233,8 @@ void ML_(read_callframe_info_dwarf3)
                         (Addr)ciefde_len,
                         (Addr)(UWord)cie_pointer,
                         (Addr)look_for, 
-                        ((Addr)fde_initloc) - si->text_start_avma, 
-                        ((Addr)fde_initloc) - si->text_start_avma + fde_arange);
+                        ((Addr)fde_initloc) - si->text_bias, 
+                        ((Addr)fde_initloc) - si->text_bias + fde_arange);
 
          if (the_CIEs[cie].saw_z_augmentation) {
             UInt length = read_leb128( data, &nbytes, 0);
@@ -3265,6 +3266,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.encoding      = the_CIEs[cie].address_encoding;
          adi.ehframe_image = ehframe_image;
          adi.ehframe_avma  = ehframe_avma;
+         adi.text_bias     = si->text_bias;
 
          if (si->trace_cfi)
             show_CF_instructions( fde_instrs, fde_ilen, &adi,

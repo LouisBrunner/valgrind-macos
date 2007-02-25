@@ -33,60 +33,14 @@
 
 //--------------------------------------------------------------------
 // PURPOSE: Provides a simple but useful structure, which is an array
-// in which elements can be added at the end.  The array is expanded
-// as needed by multiplying its size by a constant factor (usually 2).
-// This gives amortised O(1) insertion cost, and, following sorting,
-// the usual O(N log N) binary search cost.  Arbitrary element sizes
-// are allowed; the comparison function for sort/lookup can be changed
-// at any time, and duplicates (modulo the comparison function) are
-// allowed.
+// in which elements can be added at the end.  See pub_tool_xarray.h
+// for further details.
 //--------------------------------------------------------------------
 
+// No core-only exports; everything in this module is visible to both
+// the core and tools.
 
-/* It's an abstract type.  Bwaha. */
-typedef  void  XArray;
-
-/* Create new XArray, using given allocation and free function, and
-   for elements of the specified size.  Alloc fn must not fail (that
-   is, if it returns it must have succeeded.) */
-extern XArray* VG_(newXA) ( void*(*alloc_fn)(SizeT), 
-                            void(*free_fn)(void*),
-                            Word elemSzB );
-
-/* Free all memory associated with an XArray. */
-extern void VG_(deleteXA) ( XArray* );
-
-/* Set the comparison function for this XArray.  This clears an
-   internal 'array is sorted' flag, which means you must call sortXA
-   before making further queries with lookupXA. */
-extern void VG_(setCmpFnXA) ( XArray*, Word (*compar)(void*,void*) );
-
-/* Add an element to an XArray.  Element is copied into the XArray. */
-extern void VG_(addToXA) ( XArray*, void* elem );
-
-/* Sort an XArray using its comparison function, if set; else bomb.
-   Probably not a stable sort w.r.t. equal elements module cmpFn. */
-extern void VG_(sortXA) ( XArray* );
-
-/* Lookup (by binary search) 'key' in the array.  Set *first to be the
-   index of the first, and *last to be the index of the last matching
-   value found.  If any values are found, return True, else return
-   False, and don't change *first or *last.  Bomb if the array is not
-   sorted. */
-extern Bool VG_(lookupXA) ( XArray*, void* key, 
-                            /*OUT*/Word* first, /*OUT*/Word* last );
-
-/* How elements are there in this XArray now? */
-extern Word VG_(sizeXA) ( XArray* );
-
-/* Index into the XArray.  Checks bounds and bombs if the index is
-   invalid. */
-extern void* VG_(indexXA) ( XArray*, Word );
-
-/* Drop the last n elements of an XArray.  Bombs if there are less
-   than n elements in the array. */
-extern void VG_(dropTailXA) ( XArray*, Word );
-
+#include "pub_tool_xarray.h"
 
 #endif   // __PUB_CORE_XARRAY_H
 

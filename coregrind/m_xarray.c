@@ -35,7 +35,7 @@
 #include "pub_core_xarray.h"    /* self */
 
 
-/* See pub_core_xarray.h for details of what this is all about. */
+/* See pub_tool_xarray.h for details of what this is all about. */
 
 struct _XArray {
    void* (*alloc) ( SizeT );        /* alloc fn (nofail) */

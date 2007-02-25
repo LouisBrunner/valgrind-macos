@@ -84,6 +84,7 @@
 #include "pub_core_vkiscnums.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_threadstate.h"
+#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debugger.h"      // For VG_(start_debugger)

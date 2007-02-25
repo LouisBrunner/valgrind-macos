@@ -35,6 +35,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debuginfo.h"    // VG_(di_notify_*)
 #include "pub_core_transtab.h"     // VG_(discard_translations)
+#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"

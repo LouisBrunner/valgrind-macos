@@ -50,6 +50,7 @@
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_stacktrace.h"
 #include "pub_tool_tooliface.h"
+#include "pub_tool_xarray.h"
 #include "pub_tool_clientstate.h"
 
 #include "valgrind.h"           // For {MALLOC,FREE}LIKE_BLOCK
@@ -1296,9 +1297,10 @@ static void write_hp_file(void)
    if (VG_(args_the_exename)) {
       SPRINTF(buf, "%s", VG_(args_the_exename));
    }
-   for (i = 0; i < VG_(args_for_client).used; i++) {
-      if (VG_(args_for_client).strs[i])
-         SPRINTF(buf, " %s", VG_(args_for_client).strs[i]);
+   for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+       HChar* arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
+      if (arg)
+         SPRINTF(buf, " %s", arg);
    }
    SPRINTF(buf, /*" (%d ms/sample)\"\n"*/ "\"\n"
                 "DATE        \"\"\n"
@@ -1619,9 +1621,10 @@ write_text_file(ULong total_ST, ULong heap_ST)
    if (VG_(args_the_exename)) {
       SPRINTF(buf, " %s", VG_(args_the_exename));
    }
-   for (i = 0; i < VG_(args_for_client).used; i++) {
-      if (VG_(args_for_client).strs[i])
-         SPRINTF(buf, " %s", VG_(args_for_client).strs[i]);
+   for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+      HChar* arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
+      if (arg)
+         SPRINTF(buf, " %s", arg);
    }
    SPRINTF(buf, "\n%s\n", maybe_p);
 

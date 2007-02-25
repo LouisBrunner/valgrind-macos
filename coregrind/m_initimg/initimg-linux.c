@@ -37,6 +37,7 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_mallocfree.h"
@@ -438,6 +439,7 @@ Addr setup_client_stack( void*  init_sp,
    Bool have_exename;
 
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
+   vg_assert( VG_(args_for_client) );
 
    /* use our own auxv as a prototype */
    orig_auxv = VG_(find_auxv)(init_sp);
@@ -464,9 +466,11 @@ Addr setup_client_stack( void*  init_sp,
    if (have_exename)
       stringsize += VG_(strlen)( VG_(args_the_exename) ) + 1;
 
-   for (i = 0; i < VG_(args_for_client).used; i++) {
+   for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
       argc++;
-      stringsize += VG_(strlen)( VG_(args_for_client).strs[i] ) + 1;
+      stringsize += VG_(strlen)( * (HChar**) 
+                                   VG_(indexXA)( VG_(args_for_client), i ))
+                    + 1;
    }
 
    /* ...and the environment */
@@ -604,8 +608,11 @@ Addr setup_client_stack( void*  init_sp,
    if (have_exename)
       *ptr++ = (Addr)copy_str(&strtab, VG_(args_the_exename));
 
-   for (i = 0; i < VG_(args_for_client).used; i++) {
-      *ptr++ = (Addr)copy_str(&strtab, VG_(args_for_client).strs[i]);
+   for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+      *ptr++ = (Addr)copy_str(
+                       &strtab, 
+                       * (HChar**) VG_(indexXA)( VG_(args_for_client), i )
+                     );
    }
    *ptr++ = 0;
 

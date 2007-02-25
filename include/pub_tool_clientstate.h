@@ -31,21 +31,14 @@
 #ifndef __PUB_TOOL_CLIENTSTATE_H
 #define __PUB_TOOL_CLIENTSTATE_H
 
+/* Note, this header requires pub_{core,tool}_xarray.h to be
+   included ahead of it. */
 
 // Command line pieces, after they have been extracted from argv in
 // m_main.main().  These are all NULL-terminated vectors.
 
-/* Expandable arrays of strings. */
-typedef
-   struct {
-      Int     size;
-      Int     used;
-      HChar** strs;
-   }
-   XArrayStrings;
-
 /* Args for the client. */
-extern XArrayStrings VG_(args_for_client);
+extern XArray* /* of HChar* */ VG_(args_for_client);
 
 /* Args for V.  This is the concatenation of the following:
    - contents of ~/.valgrindrc
@@ -59,7 +52,7 @@ extern XArrayStrings VG_(args_for_client);
    categories for themselves.  Therefore we also record the number of
    these no-pass-at-execve arguments -- that is what
    VG_(args_for_valgrind_noexecpass) is. */
-extern XArrayStrings VG_(args_for_valgrind);
+extern XArray* /* of HChar* */ VG_(args_for_valgrind);
 
 /* Number of leading args in VG_(args_for_valgrind) not to pass on at
    exec time. */

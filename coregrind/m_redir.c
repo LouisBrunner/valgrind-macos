@@ -45,6 +45,7 @@
 #include "pub_core_tooliface.h"    // VG_(needs).malloc_replacement
 #include "pub_core_machine.h"      // VG_(fnptr_to_fnentry)
 #include "pub_core_aspacemgr.h"    // VG_(am_find_nsegment)
+#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"  // VG_(client___libc_freeres_wrapper)
 #include "pub_core_demangle.h"     // VG_(maybe_Z_demangle)
 

@@ -32,6 +32,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
+#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 
 /*-----------------------------------------------------------------*/
@@ -64,10 +65,10 @@ Int VG_(cl_cmdline_fd) = -1;
 // (the default arena).  They are never freed.
 
 /* Args for the client. */
-XArrayStrings VG_(args_for_client) = {0,0,NULL};
+XArray* /* of HChar* */ VG_(args_for_client) = NULL;
 
 /* Args for V (augments, then those from the launcher). */
-XArrayStrings VG_(args_for_valgrind) = {0,0,NULL};
+XArray* /* of HChar* */ VG_(args_for_valgrind) = NULL;
 
 /* How many of the above not to pass on at execve time? */
 Int VG_(args_for_valgrind_noexecpass) = 0;

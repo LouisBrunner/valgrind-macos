@@ -157,9 +157,11 @@ static void setup_control(void)
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     VG_(sprintf)(buf, " %s", VG_(args_the_exename));
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-    for (i = 0; i < VG_(args_for_client).used; i++) {
-	if (!VG_(args_for_client).strs[i]) continue;
-	VG_(sprintf)(buf, " %s", VG_(args_for_client).strs[i]);
+    for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+        HChar* arg = * (HChar**)VG_(indexXA)( VG_(args_for_client), i );
+	if (!arg) continue;
+        tl_assert( VG_(strlen)(arg) < 512-4 ); /* see [512] above */
+	VG_(sprintf)(buf, " %s", arg);
 	VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     }
     VG_(write)(fd, "\n", 1);
@@ -230,9 +232,10 @@ static Int dump_info(Int fd)
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     VG_(sprintf)(buf, " %s", VG_(args_the_exename));
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
-    for (i = 0; i < VG_(args_for_client).used; i++) {
-	if (!VG_(args_for_client).strs[i]) continue;
-	VG_(sprintf)(buf, " %s", VG_(args_for_client).strs[i]);
+    for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+        HChar* arg = * (HChar**)VG_(indexXA)( VG_(args_for_client), i );
+	if (!arg) continue;
+	VG_(sprintf)(buf, " %s", arg);
 	VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     }
     VG_(write)(fd, "\n", 1);

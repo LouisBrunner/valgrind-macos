@@ -1625,8 +1625,8 @@ void init_cmdbuf(void)
   if (VG_(args_the_exename))
       size = VG_(sprintf)(cmdbuf, " %s", VG_(args_the_exename));
 
-  for(i = 0; i < VG_(args_for_client).used; i++) {
-      argv = VG_(args_for_client).strs[i];
+  for(i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+      argv = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
       if (!argv) continue;
       if ((size>0) && (size < BUF_LEN)) cmdbuf[size++] = ' ';
       for(j=0;argv[j]!=0;j++)
@@ -1634,7 +1634,7 @@ void init_cmdbuf(void)
   }
 #else
   for(i = 0; i < VG_(client_argc); i++) {
-    argv = VG_(client_argv[i]);
+    argv = VG_(client_argv)[i];
     if (!argv) continue;
     if ((size>0) && (size < BUF_LEN)) cmdbuf[size++] = ' ';
     for(j=0;argv[j]!=0;j++)

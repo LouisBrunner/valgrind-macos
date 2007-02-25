@@ -42,6 +42,7 @@
 #include "pub_tool_options.h"
 #include "pub_tool_oset.h"
 #include "pub_tool_tooliface.h"
+#include "pub_tool_xarray.h"
 #include "pub_tool_clientstate.h"
 #include "pub_tool_machine.h"      // VG_(fnptr_to_fnentry)
 
@@ -1026,11 +1027,11 @@ static void fprint_CC_table_and_calc_totals(void)
       VG_(write)(fd, VG_(args_the_exename), 
                      VG_(strlen)( VG_(args_the_exename) ));
    }
-   for (i = 0; i < VG_(args_for_client).used; i++) {
-      if (VG_(args_for_client).strs[i]) {
+   for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+      HChar* arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
+      if (arg) {
          VG_(write)(fd, " ", 1);
-         VG_(write)(fd, VG_(args_for_client).strs[i], 
-                        VG_(strlen)(VG_(args_for_client).strs[i]));
+         VG_(write)(fd, arg, VG_(strlen)( arg ));
       }
    }
    // "events:" line

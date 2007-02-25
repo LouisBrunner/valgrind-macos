@@ -32,6 +32,7 @@
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
 #include "pub_core_threadstate.h"
+#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_commandline.h"
@@ -245,10 +246,12 @@ static void get_helprequest_and_toolname ( Int* need_help, HChar** tool )
    UInt   i;
    HChar* str;
 
-   /* parse the options we have (only the options we care about now) */
-   for (i = 0; i < VG_(args_for_valgrind).used; i++) {
+   vg_assert( VG_(args_for_valgrind) );
 
-      str = VG_(args_for_valgrind).strs[i];
+   /* parse the options we have (only the options we care about now) */
+   for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
+
+      str = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       vg_assert(str);
 
       if (VG_STREQ(str, "--version")) {
@@ -295,9 +298,11 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(err_config_error)("Please use absolute paths in "
                             "./configure --prefix=... or --libdir=...");
 
-   for (i = 0; i < VG_(args_for_valgrind).used; i++) {
+   vg_assert( VG_(args_for_valgrind) );
 
-      HChar* arg   = VG_(args_for_valgrind).strs[i];
+   for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
+
+      HChar* arg   = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       HChar* colon = arg;
 
       /* Look for a colon in the switch name */
@@ -494,7 +499,7 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(err_bad_option)(arg);
       }
     skip_arg:
-      if (arg != VG_(args_for_valgrind).strs[i]) {
+      if (arg != * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i )) {
          VG_(free)(arg);
       }
    }
@@ -744,6 +749,9 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
    HChar* xpost = VG_(clo_xml) ? "</line>" : "";
    Int    i;
 
+   vg_assert( VG_(args_for_client) );
+   vg_assert( VG_(args_for_valgrind) );
+
    if (VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "<?xml version=\"1.0\"?>");
       VG_(message)(Vg_UserMsg, "");
@@ -798,8 +806,10 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
          VG_(getpid)(), VG_(getppid)() );
       if (VG_(args_the_exename))
          VG_(message)(Vg_UserMsg, "   %s", VG_(args_the_exename));
-      for (i = 0; i < VG_(args_for_client).used; i++) 
-         VG_(message)(Vg_UserMsg, "   %s", VG_(args_for_client).strs[i]);
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) 
+	VG_(message)(Vg_UserMsg, 
+                     "   %s", 
+                     * (HChar**) VG_(indexXA)( VG_(args_for_client), i ));
       if (VG_(clo_log_file_qualifier)) {
          HChar* val = VG_(getenv)(VG_(clo_log_file_qualifier));
          VG_(message)(Vg_UserMsg, "");
@@ -835,10 +845,10 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       if (VG_(name_of_launcher))
          VG_(message)(Vg_UserMsg, "    <exe>%t</exe>", 
                                   VG_(name_of_launcher));
-      for (i = 0; i < VG_(args_for_valgrind).used; i++) {
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
          VG_(message)(Vg_UserMsg, 
                       "    <arg>%t</arg>", 
-                      VG_(args_for_valgrind).strs[i]);
+                      * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i ));
       }
       VG_(message)(Vg_UserMsg, "  </vargv>");
 
@@ -846,9 +856,10 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       if (VG_(args_the_exename))
          VG_(message)(Vg_UserMsg, "    <exe>%t</exe>", 
                                   VG_(args_the_exename));
-      for (i = 0; i < VG_(args_for_client).used; i++) {
-         VG_(message)(Vg_UserMsg, "    <arg>%t</arg>", 
-                                  VG_(args_for_client).strs[i]);
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+         VG_(message)(Vg_UserMsg,
+                      "    <arg>%t</arg>", 
+                      * (HChar**) VG_(indexXA)( VG_(args_for_client), i ));
       }
       VG_(message)(Vg_UserMsg, "  </argv>");
 
@@ -868,12 +879,16 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       VG_(message)(Vg_DebugMsg, "Command line");
       if (VG_(args_the_exename))
          VG_(message)(Vg_DebugMsg, "   %s", VG_(args_the_exename));
-      for (i = 0; i < VG_(args_for_client).used; i++)
-         VG_(message)(Vg_DebugMsg, "   %s", VG_(args_for_client).strs[i]);
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++)
+         VG_(message)(Vg_DebugMsg, 
+                     "   %s", 
+                     * (HChar**) VG_(indexXA)( VG_(args_for_client), i ));
 
       VG_(message)(Vg_DebugMsg, "Startup, with flags:");
-      for (i = 0; i < VG_(args_for_valgrind).used; i++) {
-         VG_(message)(Vg_DebugMsg, "   %s", VG_(args_for_valgrind).strs[i]);
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
+         VG_(message)(Vg_DebugMsg, 
+                     "   %s", 
+                     * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i ));
       }
 
       VG_(message)(Vg_DebugMsg, "Contents of /proc/version:");
@@ -1365,12 +1380,20 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Split up command line\n");
    VG_(split_up_argv)( argc, argv );
+   vg_assert( VG_(args_for_valgrind) );
+   vg_assert( VG_(args_for_client) );
    if (0) {
-      for (i = 0; i < VG_(args_for_valgrind).used; i++)
-         VG_(printf)("varg %s\n", VG_(args_for_valgrind).strs[i]);
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++)
+         VG_(printf)(
+            "varg %s\n", 
+            * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i )
+         );
       VG_(printf)(" exe %s\n", VG_(args_the_exename));
-      for (i = 0; i < VG_(args_for_client).used; i++)
-         VG_(printf)("carg %s\n", VG_(args_for_client).strs[i]);
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++)
+         VG_(printf)(
+            "carg %s\n", 
+            * (HChar**) VG_(indexXA)( VG_(args_for_client), i )
+         );
    }
 
    //--------------------------------------------------------------
@@ -1482,9 +1505,9 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                      VG_(strlen)( VG_(args_the_exename) ));
       VG_(write)(fd, nul, 1);
 
-      for (i = 0; i < VG_(args_for_client).used; i++) {
-         VG_(write)(fd, VG_(args_for_client).strs[i],
-                        VG_(strlen)( VG_(args_for_client).strs[i] ));
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+         HChar* arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
+         VG_(write)(fd, arg, VG_(strlen)( arg ));
          VG_(write)(fd, nul, 1);
       }
 

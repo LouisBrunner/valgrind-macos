@@ -38,6 +38,7 @@
 #include "pub_core_libcsignal.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_syscall.h"
+#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 
 /* ---------------------------------------------------------------------

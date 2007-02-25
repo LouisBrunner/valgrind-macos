@@ -104,6 +104,29 @@
    fun:_dl_relocate_object_internal
    fun:dl_open_worker
 }
+{
+   RedHat8-1
+   Memcheck:Cond
+   fun:elf_dynamic_do_rela.8
+   fun:_dl_relocate_object
+   fun:dl_main
+   fun:_dl_sysdep_start
+}
+{
+   RedHat8-2
+   Memcheck:Cond
+   fun:elf_dynamic_do_rel.7
+   fun:_dl_relocate_object
+   fun:dl_main
+   fun:_dl_sysdep_start
+}
+{
+   RedHat8-3
+   Memcheck:Cond
+   fun:elf_dynamic_do_rela.8
+   fun:_dl_relocate_object
+   fun:dl_open_worker
+}
 
 #-------- glibc 2.3.2/ Fedora Core 1
 {

@@ -130,6 +130,7 @@ noinst_HEADERS = \
 	pub_core_ume.h		\
 	pub_core_vki.h		\
 	pub_core_vkiscnums.h	\
+	pub_core_xarray.h	\
 	m_coredump/priv_elf.h	\
 	m_debuginfo/priv_storage.h	\
 	m_debuginfo/priv_readstabs.h	\
@@ -188,6 +189,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_ume.c \
 	m_vki.c \
 	m_vkiscnums.c \
+	m_xarray.c \
 	m_aspacemgr/aspacemgr-common.c \
 	m_debuginfo/storage.c \
 	m_debuginfo/debuginfo.c \

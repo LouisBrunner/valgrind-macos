@@ -1470,7 +1470,7 @@ void ML_(read_debuginfo_dwarf1) (
    the CFA]. 
 
    JRS: on amd64, the dwarf register numbering is, as per
-   gdb-6.3/gdb/tdep-amd64.c and also amd64-abi-0.95.pdf:
+   gdb-6.3/gdb/tdep-amd64.c and also amd64-abi-0.98.pdf:
 
       0    1    2    3    4    5    6    7
       RAX  RDX  RCX  RBX  RSI  RDI  RBP  RSP
@@ -1479,9 +1479,31 @@ void ML_(read_debuginfo_dwarf1) (
       R8 ... R15
 
       16 is the return address (RIP)
+      "The table defines Return Address to have a register number,
+      even though the address is stored in 0(%rsp) and not in a 
+      physical register."
 
-   This is pretty strange given this not the encoding scheme for
-   registers used in amd64 code.
+      17   ...   24
+      XMM0 ... XMM7
+
+      25   ...    32
+      XMM8 ... XMM15
+
+      33   ...   40
+      ST0  ...  ST7
+
+      41   ...   48
+      MM0  ...  MM7
+
+      49                  RFLAGS
+      50,51,52,53,54,55   ES,CS,SS,DS,FS,GS
+      58                  FS.BASE  (what's that?)
+      59                  GS.BASE  (what's that?)
+      62                  TR (task register)
+      63                  LDTR (LDT register)
+      64                  MXCSR
+      65                  FCW (x87 control word)
+      66                  FSW (x86 status word)
 
    On x86 I cannot find any documentation.  It _appears_ to be the
    actual instruction encoding, viz:

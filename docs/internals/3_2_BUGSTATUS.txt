@@ -33,9 +33,19 @@ vx1735   pending   32 141790   Missing amd64 x87 insns
 
 r6608    pending   32 n-i-bz   intercept for __memmove_chk
 
+r6593    pending   32 139363   callgrind: fix --collect-systime=yes
+                               with "no instrumentation" mode
+
+r6601    pending   32 n-i-bz   callgrind: Fix threads display
+                               of "callgrind_control -s"
+
 Ashley logfile qualifiers in coredumps patch
-RedHat8 needs suppressions
-where did mpi wrappers for Pack/Unpack go? (r6575 ?)
+RedHat8 needs suppressions (r6612) (definitely merge)
+64 bit DWARF in unwind (r6610) (definitely merge)
+Correctly handle DW_CFA_def_cfa_sf (r6599) (definitely merge)
+get rid of kludge_then_addDiCfSI (r6611; do not merge)
+
+sym reading problems?
 
 
 ------- Bugs reported and fixed in 3.2.3 ------
@@ -112,11 +122,6 @@ pending  pending      139076   valgrind VT_GETSTATE error
 pending  pending      138702   amd64->IR: 0xF0 0xF 0xC0 0x90
                                (lock xadd %dl,0xb5(%rax))
 
-r6593    pending      139363   callgrind: fix --collect-systime=yes
-                               with "no instrumentation" mode
-
-r6601    pending      n-i-bz   callgrind: Fix threads display
-                               of "callgrind_control -s"
 
 ------- Bugs reported and fixed in 3.2.2 ------
 

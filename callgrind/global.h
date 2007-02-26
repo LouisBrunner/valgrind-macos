@@ -121,6 +121,43 @@ struct _CommandLineOptions {
 #define LINE_BUF_LEN                     64
 
 
+/* Convenience macros */
+
+/* Use this only when size of sprintf args are known to fit into
+ * given buffer; for strings of unknown length, use WRITE_STR below
+ */
+#define WRITE_SPRINTF(fd, zz_buf, fmt, args...) \
+   do { Int len = VG_(sprintf)(zz_buf, fmt, ## args); \
+        VG_(write)(fd, (void*)zz_buf, len); \
+   } while (0)
+
+#define WRITE_STR(fd, str) \
+   do { if (str) { Int len = VG_(strlen)(str); \
+        VG_(write)(fd, (void*)str, len); } \
+        else VG_(write)(fd, "(null)", 6); \
+   } while (0)
+
+#define WRITE_STR2(fd, str1, str2) \
+   do { if (str1) { Int len = VG_(strlen)(str1); \
+        VG_(write)(fd, (void*)str1, len); } \
+        else VG_(write)(fd, "(null)", 6); \
+	if (str2) { Int len = VG_(strlen)(str2); \
+        VG_(write)(fd, (void*)str2, len); } \
+        else VG_(write)(fd, "(null)", 6); \
+   } while (0)
+
+#define WRITE_STR3(fd, str1, str2, str3) \
+   do { if (str1) { Int len = VG_(strlen)(str1); \
+        VG_(write)(fd, (void*)str1, len); } \
+        else VG_(write)(fd, "(null)", 6); \
+        if (str2) { Int len = VG_(strlen)(str2); \
+        VG_(write)(fd, (void*)str2, len); } \
+        else VG_(write)(fd, "(null)", 6); \
+        if (str3) { Int len = VG_(strlen)(str3); \
+        VG_(write)(fd, (void*)str3, len); } \
+        else VG_(write)(fd, "(null)", 6); \
+   } while (0)
+
 
 /*------------------------------------------------------------*/
 /*--- Statistics                                           ---*/

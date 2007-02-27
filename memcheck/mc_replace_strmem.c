@@ -538,6 +538,8 @@ MEMMOVE(m_libc_soname, memmove)
          "*** memmove_chk: buffer overflow detected ***: " \
          "program terminated"); \
      _exit(127); \
+     /*NOTREACHED*/ \
+     return NULL; \
    }
 
 GLIBC25___MEMMOVE_CHK(m_libc_soname, __memmove_chk)

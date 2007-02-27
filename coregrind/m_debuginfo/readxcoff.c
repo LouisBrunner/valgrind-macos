@@ -52,6 +52,7 @@
 #include "pub_core_libcfile.h"     /* stat, open, close */
 #include "pub_core_aspacemgr.h"    /* for mmaping debuginfo files */
 #include "pub_core_options.h"      /* VG_(clo_trace_symtab) */
+#include "pub_core_xarray.h"
 #include "priv_storage.h"
 #include "priv_readxcoff.h"        /* self */
 
@@ -568,7 +569,7 @@ HChar* read_symbol_table (
       add the rest to 'syms'.
       ---------------------------------------------------------- */
 
-   syms = newXA( malloc_AR_SYMTAB, free_AR_SYMTAB, sizeof(XCoffSym) );
+   syms = VG_(newXA)( malloc_AR_SYMTAB, free_AR_SYMTAB, sizeof(XCoffSym) );
 
    if (SHOW && SHOW_SYMS_P1) {
       VG_(printf)("--- BEGIN Phase1 (find text symbol starts) ---\n");
@@ -649,7 +650,7 @@ HChar* read_symbol_table (
                continue;
             if (is_empty_Name(name))
                continue;
-            addToXA(syms, &cand);
+            (void)VG_(addToXA)(syms, &cand);
          }
 
          if (CSECT_SMTYP(aux) == XTY_LD) {
@@ -705,7 +706,7 @@ HChar* read_symbol_table (
             if (is_empty_Name(name))
                continue;
 
-            addToXA(syms, &cand);
+            (void)VG_(addToXA)(syms, &cand);
          }
       }
       /* --- END regular(ish) symbol --- */
@@ -721,7 +722,7 @@ HChar* read_symbol_table (
       part, is correct.
       ---------------------------------------------------------- */
 
-   nsyms = sizeXA(syms);
+   nsyms = VG_(sizeXA)(syms);
 
    if (SHOW && SHOW_SYMS_P1)
       VG_(printf)("Phase1 acquired %d text symbols\n", nsyms);
@@ -731,8 +732,8 @@ HChar* read_symbol_table (
       VG_(printf)("--- note: shown addresses are ACTUAL VMAs ---\n");
    }
 
-   setCmpFnXA(syms, cmp_XCoffSym_by_start_then_name);
-   sortXA(syms);
+   VG_(setCmpFnXA)(syms, cmp_XCoffSym_by_start_then_name);
+   VG_(sortXA)(syms);
 
    /* We only know for sure the start addresses (actual VMAs) of
       symbols, and an overestimation of their end addresses.  So sort
@@ -755,17 +756,17 @@ HChar* read_symbol_table (
    for (i = 0; i < nsyms; i++) {
       for (k = i+1; 
            k < nsyms 
-             && ((XCoffSym*)indexXA(syms,i))->first 
-                 == ((XCoffSym*)indexXA(syms,k))->first; 
+             && ((XCoffSym*)VG_(indexXA)(syms,i))->first 
+                 == ((XCoffSym*)VG_(indexXA)(syms,k))->first; 
            k++)
          ;
       /* So now [i .. k-1] is a group all with the same start address.
          Clip their ending addresses so they don't overlap [k].  In
          the normal case (no overlaps), k == i+1. */
       if (k < nsyms) {
-         XCoffSym* next = (XCoffSym*)indexXA(syms,k);
+         XCoffSym* next = (XCoffSym*)VG_(indexXA)(syms,k);
          for (m = i; m < k; m++) {
-            XCoffSym* here = (XCoffSym*)indexXA(syms,m);
+            XCoffSym* here = (XCoffSym*)VG_(indexXA)(syms,m);
             vg_assert(here->first < next->first);
             if (here->last >= next->first)
                here->last = next->first-1;
@@ -780,9 +781,9 @@ HChar* read_symbol_table (
       j = 1;
       for (i = 1; i < nsyms; i++) {
          vg_assert(j <= i);
-         XCoffSym* s_j1 = (XCoffSym*)indexXA(syms, j-1);
-         XCoffSym* s_j  = (XCoffSym*)indexXA(syms, j);
-         XCoffSym* s_i  = (XCoffSym*)indexXA(syms, i);
+         XCoffSym* s_j1 = (XCoffSym*)VG_(indexXA)(syms, j-1);
+         XCoffSym* s_j  = (XCoffSym*)VG_(indexXA)(syms, j);
+         XCoffSym* s_i  = (XCoffSym*)VG_(indexXA)(syms, i);
          if (s_i->first != s_j1->first
              || s_i->last != s_j1->last
 	     || 0 != cmp_Names(s_i->name, s_j1->name)) {
@@ -798,12 +799,12 @@ HChar* read_symbol_table (
       }
    }
    vg_assert(j >= 0 && j <= nsyms);
-   dropTailXA(syms, nsyms - j);
+   VG_(dropTailXA)(syms, nsyms - j);
    nsyms = j;
 
    if (1) {
       for (i = 0; i < nsyms; i++) {
-         XCoffSym* s = (XCoffSym*)indexXA(syms, i);
+         XCoffSym* s = (XCoffSym*)VG_(indexXA)(syms, i);
          if (SHOW && SHOW_SYMS_P2) {
             VG_(printf)("Phase2: %d 0x%lx 0x%lx ", 
                         i, s->first, s->last);
@@ -827,8 +828,8 @@ HChar* read_symbol_table (
 
    /* The lookupXAs in the C_FUN(.bf) part have to operate by
       inclusion.  Hence: */
-   setCmpFnXA(syms, cmp_XCoffSym_by_overlap);
-   sortXA(syms);
+   VG_(setCmpFnXA)(syms, cmp_XCoffSym_by_overlap);
+   VG_(sortXA)(syms);
 
    /* In this loop, p3currsym is maintained as a pointer to the most
       recent XCoffSym identified as FCN(.bf) (function start).
@@ -1001,12 +1002,12 @@ HChar* read_symbol_table (
          Word ix_lo, ix_hi;
 
 	 /* Search for all symbols intersecting fn_start_avma. */
-         Bool found = lookupXA(syms, &key, &ix_lo, &ix_hi);
+         Bool found = VG_(lookupXA)(syms, &key, &ix_lo, &ix_hi);
          if (found) {
             /* All the 'syms' entries from ix_lo to ix_hi match. */
 
             for (k = ix_lo; k <= ix_hi; k++) {
-               XCoffSym* tsym = (XCoffSym*)indexXA(syms,k);
+               XCoffSym* tsym = (XCoffSym*)VG_(indexXA)(syms,k);
 
                /* note the start line number */
                if (tsym->slnno == 0 && fn_start_lnno > 0)
@@ -1095,8 +1096,8 @@ HChar* read_symbol_table (
 
    /* Re-sort 'syms' using the compare-start-addresses ordering, so we
       can use that in subsequent searches. */
-   setCmpFnXA(syms, cmp_XCoffSym_by_start);
-   sortXA(syms);
+   VG_(setCmpFnXA)(syms, cmp_XCoffSym_by_start);
+   VG_(sortXA)(syms);
 
    if (oi_lnos && oi_nent_lnos > 0) {
 
@@ -1146,11 +1147,11 @@ HChar* read_symbol_table (
             key.first = sym_avma;
             Word ix_lo, ix_hi;
 
-            Bool found = lookupXA(syms, &key, &ix_lo, &ix_hi);
+            Bool found = VG_(lookupXA)(syms, &key, &ix_lo, &ix_hi);
             if (found) {
                /* All the 'syms' entries from ix_lo to ix_hi match.
                   Just use the lowest (sigh ..) */
-               p4currsym = (XCoffSym*)indexXA(syms, ix_lo);
+               p4currsym = (XCoffSym*)VG_(indexXA)(syms, ix_lo);
             } else {
                /* We can't find the relevant sym, but we still have to
                   wade through the line number info for this function
@@ -1321,7 +1322,7 @@ HChar* read_symbol_table (
       VG_(memset)(&key, 0, sizeof(key));
       key.first = fndescr_0;
       Word ix_lo, ix_hi;
-      Bool found = lookupXA(syms, &key, &ix_lo, &ix_hi);
+      Bool found = VG_(lookupXA)(syms, &key, &ix_lo, &ix_hi);
       if (found) {
          /* So all the 'syms' entries from ix_lo to ix_hi have an
             address which matches the entry point address stated in
@@ -1332,7 +1333,7 @@ HChar* read_symbol_table (
             descriptor matches the text symbol we already have, and
             so we have a valid tocptr value from fndescr[1]. */
          for (k = ix_lo; k <= ix_hi; k++) {
-            XCoffSym* tsym = (XCoffSym*)indexXA(syms,k);
+            XCoffSym* tsym = (XCoffSym*)VG_(indexXA)(syms,k);
             vg_assert(!is_empty_Name(tsym->name));
             /* VG_(printf)("cmp %s %s\n", name, tsym->name); */
             /* VG_(printf)("found matching %d %s\n", k, tsym->name); */
@@ -1417,10 +1418,10 @@ HChar* read_symbol_table (
             if (SHOW && SHOW_SYMS_P5) {
                VG_(memset)(&key, 0, sizeof(key));
                key.first = wP[0];
-               found = lookupXA(syms, &key, &ix_lo, &ix_hi);
+               found = VG_(lookupXA)(syms, &key, &ix_lo, &ix_hi);
                if (found) {
                   vg_assert(ix_lo <= ix_hi);
-                  XCoffSym* tsym = (XCoffSym*)indexXA(syms,ix_lo);
+                  XCoffSym* tsym = (XCoffSym*)VG_(indexXA)(syms,ix_lo);
                   VG_(printf)("Phase5: bad tocptc at 0x%016llx={",
                               (ULong)(UWord)(wP-1));
                   print_Name(tsym->name);
@@ -1435,10 +1436,10 @@ HChar* read_symbol_table (
             have anything for wP[0]. */
          VG_(memset)(&key, 0, sizeof(key));
          key.first = wP[0];
-         found = lookupXA(syms, &key, &ix_lo, &ix_hi);
+         found = VG_(lookupXA)(syms, &key, &ix_lo, &ix_hi);
          if (found) {
             for (k = ix_lo; k <= ix_hi; k++) {
-               XCoffSym* tsym = (XCoffSym*)indexXA(syms,k);
+               XCoffSym* tsym = (XCoffSym*)VG_(indexXA)(syms,k);
                Addr r2val = wP[1];
                if (tsym->r2known) {
                   if (tsym->r2value != r2val)
@@ -1474,7 +1475,7 @@ HChar* read_symbol_table (
 
    for (i = 0; i < nsyms; i++) {
       DiSym     di;
-      XCoffSym* s = (XCoffSym*)indexXA(syms, i);
+      XCoffSym* s = (XCoffSym*)VG_(indexXA)(syms, i);
       Addr  addr = s->first;
       UWord size = s->last + 1 - s->first;
       Bool  guessed_toc = False;
@@ -1535,7 +1536,7 @@ HChar* read_symbol_table (
    }
 
    /* Free up the XA */
-   deleteXA(syms);
+   VG_(deleteXA)(syms);
 
 #  undef SYM_IX
 

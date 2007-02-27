@@ -38,6 +38,7 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_aspacemgr.h"
 #include "pub_core_mallocfree.h"
@@ -374,15 +375,19 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
 
 #  if defined(VGP_ppc32_aix5)
 
-   vg_assert(arch->vex.guest_GPR3 >= 1 + VG_(args_for_valgrind).used);
-   arch->vex.guest_GPR3 -= (1 + VG_(args_for_valgrind).used);
-   arch->vex.guest_GPR4 += sizeof(UWord) * (1 + VG_(args_for_valgrind).used);
+   { UWord n_vargs = VG_(sizeXA)( VG_(args_for_valgrind) );
+     vg_assert(arch->vex.guest_GPR3 >= 1 + n_vargs);
+     arch->vex.guest_GPR3 -= (1 + n_vargs);
+     arch->vex.guest_GPR4 += sizeof(UWord) * (1 + n_vargs);
+   }
 
 #  else /* defined(VGP_ppc64_aix5) */
 
-   vg_assert(arch->vex.guest_GPR14 >= 1 + VG_(args_for_valgrind).used);
-   arch->vex.guest_GPR14 -= (1 + VG_(args_for_valgrind).used);
-   arch->vex.guest_GPR15 += sizeof(UWord) * (1 + VG_(args_for_valgrind).used);
+   { UWord n_vargs = VG_(sizeXA)( VG_(args_for_valgrind) );
+     vg_assert(arch->vex.guest_GPR14 >= 1 + n_vargs);
+     arch->vex.guest_GPR14 -= (1 + n_vargs);
+     arch->vex.guest_GPR15 += sizeof(UWord) * (1 + n_vargs);
+   }
 
 #  endif
 

@@ -35,6 +35,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_debuginfo.h"    // VG_(di_notify_*)
 #include "pub_core_transtab.h"     // VG_(discard_translations)
+#include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_libcbase.h"
@@ -941,12 +942,12 @@ PRE(sys_execve)
    } else {
       vg_assert( VG_(args_for_valgrind_noexecpass) >= 0 );
       vg_assert( VG_(args_for_valgrind_noexecpass) 
-                   <= VG_(args_for_valgrind).used );
+                   <= VG_(sizeXA)( VG_(args_for_valgrind) ) );
       /* how many args in total will there be? */
       // launcher basename
       tot_args = 1;
       // V's args
-      tot_args += VG_(args_for_valgrind).used;
+      tot_args += VG_(sizeXA)( VG_(args_for_valgrind) );
       tot_args -= VG_(args_for_valgrind_noexecpass);
       // name of client exe
       tot_args++;
@@ -962,10 +963,10 @@ PRE(sys_execve)
       // copy
       j = 0;
       argv[j++] = launcher_basename;
-      for (i = 0; i < VG_(args_for_valgrind).used; i++) {
+      for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
          if (i < VG_(args_for_valgrind_noexecpass))
             continue;
-         argv[j++] = VG_(args_for_valgrind).strs[i];
+         argv[j++] = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       }
       argv[j++] = (Char*)ARG1;
       if (arg2copy && arg2copy[0])

@@ -198,9 +198,9 @@ typedef struct
 
 
 static 
-UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
+ULong read_leb128 ( UChar* data, Int* length_return, Int sign )
 {
-  UInt   result = 0;
+  ULong  result = 0;
   UInt   num_read = 0;
   Int    shift = 0;
   UChar  byte;
@@ -212,7 +212,7 @@ UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
       byte = * data ++;
       num_read ++;
 
-      result |= (byte & 0x7f) << shift;
+      result |= ((ULong)(byte & 0x7f)) << shift;
 
       shift += 7;
 
@@ -222,8 +222,8 @@ UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
   if (length_return != NULL)
     * length_return = num_read;
 
-  if (sign && (shift < 32) && (byte & 0x40))
-    result |= -1 << shift;
+  if (sign && (shift < 64) && (byte & 0x40))
+    result |= (-1ULL) << shift;
 
   return result;
 }
@@ -231,21 +231,21 @@ UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
 /* Small helper functions easier to use
  * value is returned and the given pointer is
  * moved past end of leb128 data */
-static UInt read_leb128U( UChar **data )
+static ULong read_leb128U( UChar **data )
 {
   Int len;
-  UInt val = read_leb128( *data, &len, 0 );
+  ULong val = read_leb128( *data, &len, 0 );
   *data += len;
   return val;
 }
 
 /* Same for signed data */
-static Int read_leb128S( UChar **data )
+static Long read_leb128S( UChar **data )
 {
    Int len;
-   UInt val = read_leb128( *data, &len, 1 );
+   ULong val = read_leb128( *data, &len, 1 );
    *data += len;
-   return val;
+   return (Long)val;
 }
 
 /* Read what the DWARF3 spec calls an "initial length field".  This
@@ -254,7 +254,16 @@ static Int read_leb128S( UChar **data )
 
    Read 32-bit value from p.  If it is 0xFFFFFFFF, instead read a
    64-bit bit value from p+4.  This is used in 64-bit dwarf to encode
-   some table lengths. */
+   some table lengths. 
+
+   XXX this is a hack: the endianness of the initial length field is
+   specified by the DWARF we're reading.  This happens to work only
+   because we don't do cross-arch jitting, hence this code runs on a
+   platform of the same endianness as the DWARF it is reading.  Same
+   applies for initial lengths for CIE/FDEs and probably in zillions
+   of other places -- to be precise, exactly the places where
+   binutils/dwarf.c calls byte_get().
+*/
 static ULong read_initial_length_field ( UChar* p_img, /*OUT*/Bool* is64 )
 {
    UInt w32 = *((UInt*)p_img);

@@ -39,6 +39,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
+#include "pub_core_xarray.h"
 #include "priv_storage.h"
 #include "priv_readdwarf.h"        /* self */
 
@@ -204,6 +205,8 @@ UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
   Int    shift = 0;
   UChar  byte;
 
+  vg_assert(sign == 0 || sign == 1);
+
   do
     {
       byte = * data ++;
@@ -224,7 +227,6 @@ UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
 
   return result;
 }
-
 
 /* Small helper functions easier to use
  * value is returned and the given pointer is
@@ -1807,35 +1809,65 @@ enum dwarf_cfa_secondary_ops
    The result is then summarised into a sequence of CfiSIs, if
    possible.  UnwindContext effectively holds the state of the
    abstract machine whilst it is running.
+
+   The CFA can either be a signed offset from a register,
+   or an expression:
+
+   CFA = cfa_reg + cfa_off   when UnwindContext.cfa_is_regoff==True
+       | [[ cfa_expr_id ]]
+
+   When .cfa_is_regoff == True,  cfa_expr_id must be zero
+   When .cfa_is_regoff == False, cfa_reg must be zero
+                                 and cfa_off must be zero
+
+   RegRule describes, for each register, how to get its
+   value in the previous frame, where 'cfa' denotes the cfa
+   for the frame as a whole:
+
+   RegRule = RR_Undef          -- undefined
+           | RR_Same           -- same as in previous frame
+           | RR_CFAOff    arg  -- is at * ( cfa + arg )
+           | RR_CFAValOff arg  -- is ( cfa + arg )
+           | RR_Reg       arg  -- is in register 'arg' 
+           | RR_Expr      arg  -- is at * [[ arg ]]
+           | RR_ValExpr   arg  -- is [[ arg ]]
+           | RR_Arch           -- dunno
+
+   All expressions are stored in exprs in the containing
+   UnwindContext.  Since the UnwindContext gets reinitialised for each
+   new FDE, summarise_context needs to copy out any expressions it
+   wants to keep into the cfsi_exprs field of the containing SegInfo.
 */
 typedef
    struct {
-      enum { RR_Undef, RR_Same, RR_CFAoff, RR_Reg, RR_Arch, RR_Expr,
-	     RR_CFAValoff, RR_ValExpr } tag;
-
-      /* Note, .coff and .reg are never both in use.  Therefore could
-         merge them into one. */
-
-      /* CFA offset if tag==RR_CFAoff */
-      Int coff;
-
-      /* reg, if tag==RR_Reg */
-      Int reg;
+      enum { RR_Undef, RR_Same, RR_CFAOff, RR_CFAValOff, 
+             RR_Reg, RR_Expr, RR_ValExpr, RR_Arch } tag;
+      /* meaning:  int offset for CFAoff/CFAValOff
+                   reg # for Reg
+                   expr index for Expr/ValExpr */
+      Int arg;
    }
    RegRule;
 
-static void ppRegRule ( RegRule* reg )
+static void ppRegRule ( XArray* exprs, RegRule* rrule )
 {
-   switch (reg->tag) {
-      case RR_Undef:  VG_(printf)("u  "); break;
-      case RR_Same:   VG_(printf)("s  "); break;
-      case RR_CFAoff: VG_(printf)("c%d ", reg->coff); break;
-      case RR_CFAValoff: VG_(printf)("v%d ", reg->coff); break;
-      case RR_Reg:    VG_(printf)("r%d ", reg->reg); break;
-      case RR_Arch:   VG_(printf)("a  "); break;
-      case RR_Expr:   VG_(printf)("e  "); break;
-      case RR_ValExpr:   VG_(printf)("ve "); break;
-      default:        VG_(core_panic)("ppRegRule");
+   vg_assert(exprs);
+   switch (rrule->tag) {
+      case RR_Undef:     VG_(printf)("u  "); break;
+      case RR_Same:      VG_(printf)("s  "); break;
+      case RR_CFAOff:    VG_(printf)("c%d ", rrule->arg); break;
+      case RR_CFAValOff: VG_(printf)("v%d ", rrule->arg); break;
+      case RR_Reg:       VG_(printf)("r%d ", rrule->arg); break;
+      case RR_Expr:      VG_(printf)("e{"); 
+                         ML_(ppCfiExpr)( exprs, rrule->arg ); 
+                         VG_(printf)("} "); 
+                         break;
+      case RR_ValExpr:   VG_(printf)("ve{"); 
+                         ML_(ppCfiExpr)( exprs, rrule->arg ); 
+                         VG_(printf)("} "); 
+                         break;
+      case RR_Arch:      VG_(printf)("a  "); break;
+      default:           VG_(core_panic)("ppRegRule");
    }
 }
 
@@ -1843,19 +1875,23 @@ static void ppRegRule ( RegRule* reg )
 typedef
    struct {
       /* Read-only fields (set by the CIE) */
-      Int  code_a_f;
-      Int  data_a_f;
-      Addr initloc;
-      Int  ra_reg;
+      Int     code_a_f;
+      Int     data_a_f;
+      Addr    initloc;
+      Int     ra_reg;
       /* The rest of these fields can be modifed by
          run_CF_instruction. */
       /* The LOC entry */
-      Addr loc;
-      /* The CFA entry.  If -1, means we don't know (Dwarf3 Expression). */
-      Int cfa_reg;
-      Int cfa_offset; /* in bytes */
+      Addr    loc;
+      /* The CFA entry.  This can be either reg+/-offset or an expr. */
+      Bool    cfa_is_regoff; /* True=>is reg+offset; False=>is expr */
+      Int     cfa_reg;
+      Int     cfa_off;  /* in bytes */
+      Int     cfa_expr_ix; /* index into cfa_exprs */
       /* register unwind rules */
       RegRule reg[N_CFI_REGS];
+      /* array of CfiExpr, shared by reg[] and cfa_expr_ix */
+      XArray* exprs;
    }
    UnwindContext;
 
@@ -1863,26 +1899,42 @@ static void ppUnwindContext ( UnwindContext* ctx )
 {
    Int i;
    VG_(printf)("0x%llx: ", (ULong)ctx->loc);
-   VG_(printf)("%d(r%d) ",  ctx->cfa_offset, ctx->cfa_reg);
+   if (ctx->cfa_is_regoff) {
+      VG_(printf)("%d(r%d) ",  ctx->cfa_off, ctx->cfa_reg);
+   } else {
+      vg_assert(ctx->exprs);
+      VG_(printf)("{");
+      ML_(ppCfiExpr)( ctx->exprs, ctx->cfa_expr_ix );
+      VG_(printf)("} ");
+   }
    for (i = 0; i < N_CFI_REGS; i++)
-      ppRegRule(&ctx->reg[i]);
+      ppRegRule(ctx->exprs, &ctx->reg[i]);
    VG_(printf)("\n");
+}
+
+static void* symtab_alloc ( SizeT szB ) {
+   return VG_(arena_malloc)( VG_AR_SYMTAB, szB );
+}
+static void symtab_free ( void* v ) {
+   VG_(arena_free)( VG_AR_SYMTAB, v );
 }
 
 static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
 {
    Int i;
-   ctx->code_a_f   = 0;
-   ctx->data_a_f   = 0;
-   ctx->initloc    = 0;
-   ctx->ra_reg     = RA_REG_DEFAULT;
-   ctx->loc        = 0;
-   ctx->cfa_reg    = 0;
-   ctx->cfa_offset = 0;
+   ctx->code_a_f      = 0;
+   ctx->data_a_f      = 0;
+   ctx->initloc       = 0;
+   ctx->ra_reg        = RA_REG_DEFAULT;
+   ctx->loc           = 0;
+   ctx->cfa_is_regoff = True;
+   ctx->cfa_reg       = 0;
+   ctx->cfa_off       = 0;
+   ctx->cfa_expr_ix   = 0;
+   ctx->exprs         = NULL;
    for (i = 0; i < N_CFI_REGS; i++) {
       ctx->reg[i].tag = RR_Undef;
-      ctx->reg[i].coff = 0;
-      ctx->reg[i].reg = 0;
+      ctx->reg[i].arg = 0;
    }
 }
 
@@ -1903,20 +1955,26 @@ typedef
 
 static void initCfiSI ( DiCfSI* si )
 {
-   si->base      = 0;
-   si->len       = 0;
-   si->cfa_sprel = False;
-   si->ra_how    = 0;
-   si->sp_how    = 0;
-   si->fp_how    = 0;
-   si->cfa_off   = 0;
-   si->ra_off    = 0;
-   si->sp_off    = 0;
-   si->fp_off    = 0;
+   si->base    = 0;
+   si->len     = 0;
+   si->cfa_how = 0;
+   si->ra_how  = 0;
+   si->sp_how  = 0;
+   si->fp_how  = 0;
+   si->cfa_off = 0;
+   si->ra_off  = 0;
+   si->sp_off  = 0;
+   si->fp_off  = 0;
 }
 
 
 /* --------------- Summarisation --------------- */
+
+/* Forward */
+static 
+Int copy_convert_CfiExpr_tree ( XArray*        dst,
+                                UnwindContext* srcuc, 
+                                Int            nd );
 
 /* Summarise ctx into si, if possible.  Returns True if successful.
    This is taken to be just after ctx's loc advances; hence the
@@ -1932,31 +1990,57 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    initCfiSI(si);
 
    /* How to generate the CFA */
-   if (ctx->cfa_reg == -1) {
+   if (!ctx->cfa_is_regoff) {
       /* it was set by DW_CFA_def_cfa_expression; we don't know what
          it really is */
       why = 6;
       goto failed;
    } else
-   if (ctx->cfa_reg == SP_REG) {
-      si->cfa_sprel = True;
-      si->cfa_off   = ctx->cfa_offset;
+   if (ctx->cfa_is_regoff && ctx->cfa_reg == SP_REG) {
+      si->cfa_how = CFIC_SPREL;
+      si->cfa_off = ctx->cfa_off;
    } else
-   if (ctx->cfa_reg == FP_REG) {
-      si->cfa_sprel = False;
-      si->cfa_off   = ctx->cfa_offset;
+   if (ctx->cfa_is_regoff && ctx->cfa_reg == FP_REG) {
+      si->cfa_how = CFIC_FPREL;
+      si->cfa_off = ctx->cfa_off;
    } else {
       why = 1;
       goto failed;
    }
 
-#  define SUMMARISE_HOW(_how, _off, _ctxreg)                             \
-   switch (_ctxreg.tag) {                                                \
-      case RR_Undef:  _how = CFIR_UNKNOWN;   _off = 0; break;            \
-      case RR_Same:   _how = CFIR_SAME;      _off = 0; break;            \
-      case RR_CFAoff: _how = CFIR_MEMCFAREL; _off = _ctxreg.coff; break; \
-      case RR_CFAValoff: _how = CFIR_CFAREL; _off = _ctxreg.coff; break; \
-      default:        { why = 2; goto failed; } /* otherwise give up */  \
+#  define SUMMARISE_HOW(_how, _off, _ctxreg)                  \
+   switch (_ctxreg.tag) {                                     \
+      case RR_Undef:                                          \
+         _how = CFIR_UNKNOWN;   _off = 0; break;              \
+      case RR_Same:                                           \
+         _how = CFIR_SAME;      _off = 0; break;              \
+      case RR_CFAOff:                                         \
+         _how = CFIR_MEMCFAREL; _off = _ctxreg.arg; break;    \
+      case RR_CFAValOff:                                      \
+         _how = CFIR_CFAREL;    _off = _ctxreg.arg; break;    \
+      case RR_ValExpr: {                                      \
+         XArray *src, *dst;                                   \
+         Int    conv;                                         \
+         src = ctx->exprs;                                    \
+         dst = seginfo->cfsi_exprs;                           \
+         if (src && (VG_(sizeXA)(src) > 0) && (!dst)) {       \
+            dst = VG_(newXA)( symtab_alloc, symtab_free,      \
+                              sizeof(CfiExpr) );              \
+            vg_assert(dst);                                   \
+            seginfo->cfsi_exprs = dst;                        \
+         }                                                    \
+         conv = copy_convert_CfiExpr_tree                     \
+                       ( dst, ctx, _ctxreg.arg );             \
+         vg_assert(conv >= -1);                               \
+         if (conv == -1) { why = 7; goto failed; }            \
+         _how = CFIR_EXPR;                                    \
+         _off = conv;                                         \
+         if (0 && seginfo->ddump_frames)                      \
+            ML_(ppCfiExpr)(dst, conv);                        \
+         break;                                               \
+      }                                                       \
+      default:                                                \
+         why = 2; goto failed; /* otherwise give up */        \
    }
 
    SUMMARISE_HOW(si->ra_how, si->ra_off, ctx->reg[ctx->ra_reg] );
@@ -2000,24 +2084,77 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    return False;
 }
 
+/* Copy the tree rooted at srcuc->exprs node srcix to dstxa, on the
+   way converting any DwReg regs (regs numbered using the Dwarf scheme
+   defined by each architecture's ABI) into CfiRegs, which are
+   platform independent.  If the conversion isn't possible because
+   there is no equivalent register, return -1.  This has the
+   undesirable side effect of de-dagifying the input; oh well. */
+static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
+                                       UnwindContext* srcuc, 
+                                       Int            srcix )
+{
+   CfiExpr* src;
+   Int      cpL, cpR, dwreg;
+   XArray*  srcxa = srcuc->exprs;
+   vg_assert(srcxa);
+   vg_assert(dstxa);
+   vg_assert(srcix >= 0 && srcix < VG_(sizeXA)(srcxa));
+
+   src = VG_(indexXA)( srcxa, srcix );
+   switch (src->tag) {
+      case Cex_Undef:
+         return ML_(CfiExpr_Undef)( dstxa );
+      case Cex_Deref:
+         return ML_(CfiExpr_Deref)( dstxa, src->Cex.Deref.ixAddr );
+      case Cex_Const:
+         return ML_(CfiExpr_Const)( dstxa, src->Cex.Const.con );
+      case Cex_Binop:
+         cpL = copy_convert_CfiExpr_tree( dstxa, srcuc, src->Cex.Binop.ixL );
+         cpR = copy_convert_CfiExpr_tree( dstxa, srcuc, src->Cex.Binop.ixR );
+         vg_assert(cpL >= -1 && cpR >= -1);
+         if (cpL == -1 || cpR == -1)
+            return -1; /* propagate failure */
+         return ML_(CfiExpr_Binop)( dstxa, src->Cex.Binop.op, cpL, cpR );
+      case Cex_CfiReg:
+         /* should not see these in input (are created only by this
+            conversion step!) */
+         VG_(core_panic)("copy_convert_CfiExpr_tree: CfiReg in input");
+      case Cex_DwReg:
+         /* This is the only place where the conversion can fail. */
+         dwreg = src->Cex.DwReg.reg;
+         if (dwreg == SP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_SP );
+         if (dwreg == FP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_FP );
+         if (dwreg == srcuc->ra_reg)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IP ); /* correct? */
+         /* else we must fail - can't represent the reg */
+         return -1;
+      default:
+         VG_(core_panic)("copy_convert_CfiExpr_tree: default");
+   }
+}
+
+
 static void ppUnwindContext_summary ( UnwindContext* ctx )
 {
    VG_(printf)("0x%llx-1: ", (ULong)ctx->loc);
 
    if (ctx->cfa_reg == SP_REG) {
-      VG_(printf)("SP/CFA=%d+SP   ", ctx->cfa_offset);
+      VG_(printf)("SP/CFA=%d+SP   ", ctx->cfa_off);
    } else
    if (ctx->cfa_reg == FP_REG) {
-      VG_(printf)("SP/CFA=%d+FP   ", ctx->cfa_offset);
+      VG_(printf)("SP/CFA=%d+FP   ", ctx->cfa_off);
    } else {
-      VG_(printf)("SP/CFA=unknown  ", ctx->cfa_offset);
+      VG_(printf)("SP/CFA=unknown  ", ctx->cfa_off);
    }
 
    VG_(printf)("RA=");
-   ppRegRule( &ctx->reg[ctx->ra_reg] );
+   ppRegRule( ctx->exprs, &ctx->reg[ctx->ra_reg] );
 
    VG_(printf)("FP=");
-   ppRegRule( &ctx->reg[FP_REG] );
+   ppRegRule( ctx->exprs, &ctx->reg[FP_REG] );
    VG_(printf)("\n");
 }
 
@@ -2106,7 +2243,7 @@ static UChar read_UChar ( UChar* data )
    return data[0];
 }
 
-static ULong read_le_encoded_literal ( UChar* data, UInt size )
+static ULong read_le_u_encoded_literal ( UChar* data, UInt size )
 {
    switch (size) {
       case 8:  return (ULong)read_ULong( data );
@@ -2117,6 +2254,18 @@ static ULong read_le_encoded_literal ( UChar* data, UInt size )
    }
 }
 
+static Long read_le_s_encoded_literal ( UChar* data, UInt size )
+{
+   Long s64 = read_le_u_encoded_literal( data, size );
+   switch (size) {
+      case 8:  break;
+      case 4:  s64 <<= 32; s64 >>= 32; break;
+      case 2:  s64 <<= 48; s64 >>= 48; break;
+      case 1:  s64 <<= 56; s64 >>= 56; break;
+      default: vg_assert(0); /*NOTREACHED*/ return 0;
+   }
+   return s64;
+}
 
 static UChar default_Addr_encoding ( void )
 {
@@ -2232,6 +2381,321 @@ static Addr read_encoded_Addr ( /*OUT*/Int* nbytes,
 }
 
 
+/* ------------ Run/show DWARF3 expressions ---------- */
+
+/* Taken from binutils-2.17/include/elf/dwarf2.h */
+enum dwarf_location_atom
+  {
+    DW_OP_addr = 0x03,
+    DW_OP_deref = 0x06,
+    DW_OP_const1u = 0x08,
+    DW_OP_const1s = 0x09,
+    DW_OP_const2u = 0x0a,
+    DW_OP_const2s = 0x0b,
+    DW_OP_const4u = 0x0c,
+    DW_OP_const4s = 0x0d,
+    DW_OP_const8u = 0x0e,
+    DW_OP_const8s = 0x0f,
+    DW_OP_constu = 0x10,
+    DW_OP_consts = 0x11,
+    DW_OP_dup = 0x12,
+    DW_OP_drop = 0x13,
+    DW_OP_over = 0x14,
+    DW_OP_pick = 0x15,
+    DW_OP_swap = 0x16,
+    DW_OP_rot = 0x17,
+    DW_OP_xderef = 0x18,
+    DW_OP_abs = 0x19,
+    DW_OP_and = 0x1a,
+    DW_OP_div = 0x1b,
+    DW_OP_minus = 0x1c,
+    DW_OP_mod = 0x1d,
+    DW_OP_mul = 0x1e,
+    DW_OP_neg = 0x1f,
+    DW_OP_not = 0x20,
+    DW_OP_or = 0x21,
+    DW_OP_plus = 0x22,
+    DW_OP_plus_uconst = 0x23,
+    DW_OP_shl = 0x24,
+    DW_OP_shr = 0x25,
+    DW_OP_shra = 0x26,
+    DW_OP_xor = 0x27,
+    DW_OP_bra = 0x28,
+    DW_OP_eq = 0x29,
+    DW_OP_ge = 0x2a,
+    DW_OP_gt = 0x2b,
+    DW_OP_le = 0x2c,
+    DW_OP_lt = 0x2d,
+    DW_OP_ne = 0x2e,
+    DW_OP_skip = 0x2f,
+    DW_OP_lit0 = 0x30,
+    DW_OP_lit1 = 0x31,
+    DW_OP_lit2 = 0x32,
+    DW_OP_lit3 = 0x33,
+    DW_OP_lit4 = 0x34,
+    DW_OP_lit5 = 0x35,
+    DW_OP_lit6 = 0x36,
+    DW_OP_lit7 = 0x37,
+    DW_OP_lit8 = 0x38,
+    DW_OP_lit9 = 0x39,
+    DW_OP_lit10 = 0x3a,
+    DW_OP_lit11 = 0x3b,
+    DW_OP_lit12 = 0x3c,
+    DW_OP_lit13 = 0x3d,
+    DW_OP_lit14 = 0x3e,
+    DW_OP_lit15 = 0x3f,
+    DW_OP_lit16 = 0x40,
+    DW_OP_lit17 = 0x41,
+    DW_OP_lit18 = 0x42,
+    DW_OP_lit19 = 0x43,
+    DW_OP_lit20 = 0x44,
+    DW_OP_lit21 = 0x45,
+    DW_OP_lit22 = 0x46,
+    DW_OP_lit23 = 0x47,
+    DW_OP_lit24 = 0x48,
+    DW_OP_lit25 = 0x49,
+    DW_OP_lit26 = 0x4a,
+    DW_OP_lit27 = 0x4b,
+    DW_OP_lit28 = 0x4c,
+    DW_OP_lit29 = 0x4d,
+    DW_OP_lit30 = 0x4e,
+    DW_OP_lit31 = 0x4f,
+    DW_OP_reg0 = 0x50,
+    DW_OP_reg1 = 0x51,
+    DW_OP_reg2 = 0x52,
+    DW_OP_reg3 = 0x53,
+    DW_OP_reg4 = 0x54,
+    DW_OP_reg5 = 0x55,
+    DW_OP_reg6 = 0x56,
+    DW_OP_reg7 = 0x57,
+    DW_OP_reg8 = 0x58,
+    DW_OP_reg9 = 0x59,
+    DW_OP_reg10 = 0x5a,
+    DW_OP_reg11 = 0x5b,
+    DW_OP_reg12 = 0x5c,
+    DW_OP_reg13 = 0x5d,
+    DW_OP_reg14 = 0x5e,
+    DW_OP_reg15 = 0x5f,
+    DW_OP_reg16 = 0x60,
+    DW_OP_reg17 = 0x61,
+    DW_OP_reg18 = 0x62,
+    DW_OP_reg19 = 0x63,
+    DW_OP_reg20 = 0x64,
+    DW_OP_reg21 = 0x65,
+    DW_OP_reg22 = 0x66,
+    DW_OP_reg23 = 0x67,
+    DW_OP_reg24 = 0x68,
+    DW_OP_reg25 = 0x69,
+    DW_OP_reg26 = 0x6a,
+    DW_OP_reg27 = 0x6b,
+    DW_OP_reg28 = 0x6c,
+    DW_OP_reg29 = 0x6d,
+    DW_OP_reg30 = 0x6e,
+    DW_OP_reg31 = 0x6f,
+    DW_OP_breg0 = 0x70,
+    DW_OP_breg1 = 0x71,
+    DW_OP_breg2 = 0x72,
+    DW_OP_breg3 = 0x73,
+    DW_OP_breg4 = 0x74,
+    DW_OP_breg5 = 0x75,
+    DW_OP_breg6 = 0x76,
+    DW_OP_breg7 = 0x77,
+    DW_OP_breg8 = 0x78,
+    DW_OP_breg9 = 0x79,
+    DW_OP_breg10 = 0x7a,
+    DW_OP_breg11 = 0x7b,
+    DW_OP_breg12 = 0x7c,
+    DW_OP_breg13 = 0x7d,
+    DW_OP_breg14 = 0x7e,
+    DW_OP_breg15 = 0x7f,
+    DW_OP_breg16 = 0x80,
+    DW_OP_breg17 = 0x81,
+    DW_OP_breg18 = 0x82,
+    DW_OP_breg19 = 0x83,
+    DW_OP_breg20 = 0x84,
+    DW_OP_breg21 = 0x85,
+    DW_OP_breg22 = 0x86,
+    DW_OP_breg23 = 0x87,
+    DW_OP_breg24 = 0x88,
+    DW_OP_breg25 = 0x89,
+    DW_OP_breg26 = 0x8a,
+    DW_OP_breg27 = 0x8b,
+    DW_OP_breg28 = 0x8c,
+    DW_OP_breg29 = 0x8d,
+    DW_OP_breg30 = 0x8e,
+    DW_OP_breg31 = 0x8f,
+    DW_OP_regx = 0x90,
+    DW_OP_fbreg = 0x91,
+    DW_OP_bregx = 0x92,
+    DW_OP_piece = 0x93,
+    DW_OP_deref_size = 0x94,
+    DW_OP_xderef_size = 0x95,
+    DW_OP_nop = 0x96,
+    /* DWARF 3 extensions.  */
+    DW_OP_push_object_address = 0x97,
+    DW_OP_call2 = 0x98,
+    DW_OP_call4 = 0x99,
+    DW_OP_call_ref = 0x9a,
+    DW_OP_form_tls_address = 0x9b,
+    DW_OP_call_frame_cfa = 0x9c,
+    DW_OP_bit_piece = 0x9d,
+    /* GNU extensions.  */
+    DW_OP_GNU_push_tls_address = 0xe0,
+    /* HP extensions.  */
+    DW_OP_HP_unknown     = 0xe0, /* Ouch, the same as GNU_push_tls_address.  */
+    DW_OP_HP_is_value    = 0xe1,
+    DW_OP_HP_fltconst4   = 0xe2,
+    DW_OP_HP_fltconst8   = 0xe3,
+    DW_OP_HP_mod_range   = 0xe4,
+    DW_OP_HP_unmod_range = 0xe5,
+    DW_OP_HP_tls         = 0xe6
+  };
+
+
+/* Convert the DWARF3 expression in expr[0 .. exprlen-1] into a dag
+   (of CfiExprs) stored in ctx->exprs, and return the index in
+   ctx->exprs of the root node.  Or fail in which case return -1. */
+
+static Int dwarfexpr_to_dag ( UnwindContext* ctx, 
+                              UChar* expr, Int exprlen, 
+                              Bool push_cfa_at_start,
+                              Bool ddump_frames )
+{
+#  define N_EXPR_STACK 20
+
+#  define PUSH(_arg)                               \
+      do {                                         \
+         vg_assert(sp >= -1 && sp < N_EXPR_STACK); \
+         if (sp == N_EXPR_STACK-1)                 \
+            return -1;                             \
+         sp++;                                     \
+         stack[sp] = (_arg);                       \
+      } while (0)
+
+#  define POP(_lval)                               \
+      do {                                         \
+         vg_assert(sp >= -1 && sp < N_EXPR_STACK); \
+         if (sp == -1)                             \
+            return -1;                             \
+         _lval = stack[sp];                        \
+         sp--;                                     \
+      } while (0)
+
+   Int   ix, ix2, reg;
+   UChar opcode;
+   Word  sw;
+
+   Int sp; /* # of top element: valid is -1 .. N_EXPR_STACK-1 */
+   Int stack[N_EXPR_STACK];  /* indices into ctx->exprs */
+
+   XArray* dst   = ctx->exprs;
+   UChar*  limit = expr + exprlen;
+
+   vg_assert(dst);
+   vg_assert(exprlen >= 0);
+
+   sp = -1; /* empty */
+
+   /* Synthesise the CFA as a CfiExpr */
+   if (push_cfa_at_start) {
+      if (ctx->cfa_is_regoff) {
+         /* cfa is reg +/- offset */
+         ix = ML_(CfiExpr_Binop)( dst,
+                 Cop_Add,
+                 ML_(CfiExpr_DwReg)( dst, ctx->cfa_reg ),
+                 ML_(CfiExpr_Const)( dst, (UWord)(Word)ctx->cfa_off )
+              );
+         PUSH(ix);
+      } else {
+         /* CFA is already an expr; use its root node */
+         PUSH(ctx->cfa_expr_ix);
+      }
+   }
+
+   while (True) {
+
+      vg_assert(sp >= -1 && sp < N_EXPR_STACK);
+
+      if (expr > limit) 
+         return -1;  /* overrun - something's wrong */
+
+      if (expr == limit) {
+        /* end of expr - return expr on the top of stack. */
+        if (sp == -1)
+           return -1; /* stack empty.  Bad. */
+        else
+           break;
+      }
+
+      opcode = *expr++;
+      switch (opcode) {
+
+         case DW_OP_breg0 ... DW_OP_breg31:
+            /* push: reg + sleb128 */
+            reg = (Int)opcode - (Int)DW_OP_breg0;
+            vg_assert(reg >= 0 && reg <= 31);
+            sw = read_leb128S( &expr );
+            ix = ML_(CfiExpr_Binop)( dst,
+                    Cop_Add,
+                    ML_(CfiExpr_DwReg)( dst, reg ),
+                    ML_(CfiExpr_Const)( dst, (UWord)sw )
+                 );
+            PUSH(ix);
+            if (ddump_frames)
+               VG_(printf)("DW_OP_breg%d: %ld", reg, sw);
+            break;
+
+         case DW_OP_const4s:
+            /* push: 32-bit signed immediate */
+            sw = read_le_s_encoded_literal( expr, 4 );
+            expr += 4;
+            PUSH( ML_(CfiExpr_Const)( dst, (UWord)sw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_const4s: %ld", sw);
+            break;
+
+         case DW_OP_minus:
+            POP( ix );
+            POP( ix2 );
+	    PUSH( ML_(CfiExpr_Binop)( dst, Cop_Sub, ix2, ix ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_minus");
+            break;
+
+         case DW_OP_plus:
+            POP( ix );
+            POP( ix2 );
+	    PUSH( ML_(CfiExpr_Binop)( dst, Cop_Add, ix2, ix ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_plus");
+            break;
+
+         default:
+            if (ddump_frames /* || trace_cfi*/)
+               VG_(printf)("XXX unhandled dwarf expr opcode 0x%x\n", 
+                           (Int)opcode );
+            return -1;
+      }
+
+      if (expr < limit && ddump_frames)
+         VG_(printf)("; ");
+
+   }
+
+   vg_assert(sp >= -1 && sp < N_EXPR_STACK);
+   if (sp == -1)
+      return -1;
+
+   if (0 && ddump_frames)
+      ML_(ppCfiExpr)( dst, stack[sp] );
+   return stack[sp];
+
+#  undef POP
+#  undef PUSH
+#  undef N_EXPR_STACK
+}
+
+
 /* ------------ Run/show CFI instructions ------------ */
 
 /* Run a CFI instruction, and also return its length.
@@ -2243,12 +2707,14 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
                                 AddressDecodingInfo* adi,
                                 struct _SegInfo* si )
 {
-   Int   off, reg, reg2, nleb, len;
-   UInt  delta;
-   Int   i   = 0;
-   UChar hi2 = (instr[i] >> 6) & 3;
-   UChar lo6 = instr[i] & 0x3F;
-   Addr  printing_bias = ((Addr)ctx->initloc) - ((Addr)si->text_bias);
+   Int    off, reg, reg2, nleb, len;
+   UInt   delta;
+   UChar* expr;
+   Int    j;
+   Int    i   = 0;
+   UChar  hi2 = (instr[i] >> 6) & 3;
+   UChar  lo6 = instr[i] & 0x3F;
+   Addr   printing_bias = ((Addr)ctx->initloc) - ((Addr)si->text_bias);
    i++;
 
    if (hi2 == DW_CFA_advance_loc) {
@@ -2261,18 +2727,18 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
    }
 
    if (hi2 == DW_CFA_offset) {
-      /* Set rule for reg 'lo6' to CFAoffset(off * data_af) */
+      /* Set rule for reg 'lo6' to CFAOff(off * data_af) */
       off = read_leb128( &instr[i], &nleb, 0 );
       i += nleb;
       reg = (Int)lo6;
       if (reg < 0 || reg >= N_CFI_REGS) 
          return 0; /* fail */
-      ctx->reg[reg].tag = RR_CFAoff;
-      ctx->reg[reg].coff = off * ctx->data_a_f;
+      ctx->reg[reg].tag = RR_CFAOff;
+      ctx->reg[reg].arg = off * ctx->data_a_f;
       if (si->ddump_frames)
          VG_(printf)("  DW_CFA_offset: r%d at cfa%s%d\n",
-                     (Int)reg, ctx->reg[reg].coff < 0 ? "" : "+", 
-                     (Int)ctx->reg[reg].coff  );
+                     (Int)reg, ctx->reg[reg].arg < 0 ? "" : "+", 
+                     (Int)ctx->reg[reg].arg );
       return i;
    }
 
@@ -2336,8 +2802,10 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          if (reg < 0 || reg >= N_CFI_REGS) 
             return 0; /* fail */
-         ctx->cfa_reg    = reg;
-         ctx->cfa_offset = off;
+         ctx->cfa_is_regoff = True;
+         ctx->cfa_expr_ix   = 0;
+         ctx->cfa_reg       = reg;
+         ctx->cfa_off       = off;
          if (si->ddump_frames)
             VG_(printf)("  DW_CFA_def_cfa: r%d ofs %d\n", (Int)reg, (Int)off);
          break;
@@ -2349,8 +2817,10 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          if (reg < 0 || reg >= N_CFI_REGS)
             return 0; /* fail */
-         ctx->cfa_reg    = reg;
-         ctx->cfa_offset = off * ctx->data_a_f;
+         ctx->cfa_is_regoff = True;
+         ctx->cfa_expr_ix   = 0;
+         ctx->cfa_reg       = reg;
+         ctx->cfa_off       = off * ctx->data_a_f;
          if (si->ddump_frames)
             VG_(printf)("  rci:DW_CFA_def_cfa_sf\n");
          break;
@@ -2365,9 +2835,10 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          if (reg2 < 0 || reg2 >= N_CFI_REGS) 
             return 0; /* fail */
          ctx->reg[reg].tag = RR_Reg;
-         ctx->reg[reg].reg = reg2;
+         ctx->reg[reg].arg = reg2;
          if (si->ddump_frames)
-            VG_(printf)("  rci:DW_CFA_register\n");
+            VG_(printf)("  DW_CFA_register: r%d in r%d\n", 
+                        (Int)reg, (Int)reg2);
          break;
 
       case DW_CFA_offset_extended:
@@ -2377,8 +2848,8 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          if (reg < 0 || reg >= N_CFI_REGS)
             return 0; /* fail */
-         ctx->reg[reg].tag = RR_CFAoff;
-         ctx->reg[reg].coff = off * ctx->data_a_f;
+         ctx->reg[reg].tag = RR_CFAOff;
+         ctx->reg[reg].arg = off * ctx->data_a_f;
          if (si->ddump_frames)
             VG_(printf)("  rci:DW_CFA_offset_extended\n");
          break;
@@ -2390,12 +2861,12 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          if (reg < 0 || reg >= N_CFI_REGS) 
             return 0; /* fail */
-         ctx->reg[reg].tag = RR_CFAoff;
-         ctx->reg[reg].coff = off * ctx->data_a_f;
+         ctx->reg[reg].tag = RR_CFAOff;
+         ctx->reg[reg].arg = off * ctx->data_a_f;
          if (si->ddump_frames)
             VG_(printf)("  DW_CFA_offset_extended_sf: r%d at cfa%s%d\n", 
-                        reg, ctx->reg[reg].coff < 0 ? "" : "+", 
-                        (Int)ctx->reg[reg].coff);
+                        reg, ctx->reg[reg].arg < 0 ? "" : "+", 
+                        (Int)ctx->reg[reg].arg);
          break;
 
       case DW_CFA_GNU_negative_offset_extended:
@@ -2405,8 +2876,8 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          if (reg < 0 || reg >= N_CFI_REGS)
             return 0; /* fail */
-         ctx->reg[reg].tag = RR_CFAoff;
-         ctx->reg[reg].coff = -off * ctx->data_a_f;
+         ctx->reg[reg].tag = RR_CFAOff;
+         ctx->reg[reg].arg = (-off) * ctx->data_a_f;
          if (si->ddump_frames)
             VG_(printf)("  rci:DW_CFA_GNU_negative_offset_extended\n");
          break;
@@ -2430,8 +2901,8 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          if (reg < 0 || reg >= N_CFI_REGS)
             return 0; /* fail */
-         ctx->reg[reg].tag = RR_CFAValoff;
-         ctx->reg[reg].coff = off * ctx->data_a_f;
+         ctx->reg[reg].tag = RR_CFAValOff;
+         ctx->reg[reg].arg = off * ctx->data_a_f;
          if (si->ddump_frames)
             VG_(printf)("  rci:DW_CFA_val_offset\n");
          break;
@@ -2443,8 +2914,8 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          if (reg < 0 || reg >= N_CFI_REGS)
             return 0; /* fail */
-         ctx->reg[reg].tag = RR_CFAValoff;
-         ctx->reg[reg].coff = off * ctx->data_a_f;
+         ctx->reg[reg].tag = RR_CFAValOff;
+         ctx->reg[reg].arg = off * ctx->data_a_f;
          if (si->ddump_frames)
             VG_(printf)("  rci:DW_CFA_val_offset_sf\n");
          break;
@@ -2454,7 +2925,10 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          i += nleb;
          if (reg < 0 || reg >= N_CFI_REGS) 
             return 0; /* fail */
-         ctx->cfa_reg = reg;
+         ctx->cfa_is_regoff = True;
+         ctx->cfa_expr_ix   = 0;
+         ctx->cfa_reg       = reg;
+         /* ->cfa_off unchanged */
          if (si->ddump_frames)
             VG_(printf)("  DW_CFA_def_cfa_reg: r%d\n", (Int)reg );
          break;
@@ -2462,7 +2936,10 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
       case DW_CFA_def_cfa_offset:
          off = read_leb128( &instr[i], &nleb, 0);
          i += nleb;
-         ctx->cfa_offset = off;
+         ctx->cfa_is_regoff = True;
+         ctx->cfa_expr_ix   = 0;
+         /* ->reg is unchanged */
+         ctx->cfa_off       = off;
          if (si->ddump_frames)
             VG_(printf)("  DW_CFA_def_cfa_offset: %d\n", (Int)off);
          break;
@@ -2470,9 +2947,12 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
       case DW_CFA_def_cfa_offset_sf:
          off = read_leb128( &instr[i], &nleb, 1);
          i += nleb;
-         ctx->cfa_offset = off * ctx->data_a_f;
+         ctx->cfa_is_regoff = True;
+         ctx->cfa_expr_ix   = 0;
+         /* ->reg is unchanged */
+         ctx->cfa_off       = off * ctx->data_a_f;
          if (si->ddump_frames)
-            VG_(printf)("  DW_CFA_def_cfa_offset_sf: %d\n", ctx->cfa_offset);
+            VG_(printf)("  DW_CFA_def_cfa_offset_sf: %d\n", ctx->cfa_off);
          break;
 
       case DW_CFA_undefined:
@@ -2481,8 +2961,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          if (reg < 0 || reg >= N_CFI_REGS) 
             return 0; /* fail */
          ctx->reg[reg].tag = RR_Undef;
-         ctx->reg[reg].coff = 0;
-         ctx->reg[reg].reg = 0;
+         ctx->reg[reg].arg = 0;
          if (si->ddump_frames)
             VG_(printf)("  rci:DW_CFA_undefined\n");
          break;
@@ -2515,22 +2994,32 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          break;
 
       case DW_CFA_val_expression:
-         /* Too difficult to really handle; just skip over it and say
-            that we don't know what do to with the register. */
-         if (si->trace_cfi)
-            VG_(printf)("DWARF2 CFI reader: "
-                        "ignoring DW_CFA_val_expression\n");
          reg = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
          len = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
+         expr = &instr[i];
          i += len;
          if (reg < 0 || reg >= N_CFI_REGS)
             return 0; /* fail */
-         ctx->reg[reg].tag = RR_ValExpr;
          if (si->ddump_frames)
-            VG_(printf)("  DW_CFA_val_expression: r%d (ignored)\n", 
+            VG_(printf)("  DW_CFA_val_expression: r%d (", 
                         (Int)reg);
+         /* Convert the expression into a dag rooted at ctx->exprs index j,
+            or fail. */
+         j = dwarfexpr_to_dag ( ctx, expr, len, True/*push CFA at start*/, 
+                                si->ddump_frames);
+         if (si->ddump_frames)
+            VG_(printf)(")\n");
+         vg_assert(j >= -1);
+         if (j >= 0) {
+            vg_assert(ctx->exprs);
+            vg_assert( j < VG_(sizeXA)(ctx->exprs) );
+         }
+         if (j == -1)
+            return 0; /* fail */
+         ctx->reg[reg].tag = RR_ValExpr;
+         ctx->reg[reg].arg = j;
          break;
 
       case DW_CFA_def_cfa_expression:
@@ -2540,7 +3029,10 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          len = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
          i += len;
-         ctx->cfa_reg = -1; /* indicating we don't know */
+         ctx->cfa_is_regoff = False;
+         ctx->cfa_reg       = 0;
+         ctx->cfa_off       = 0;
+         ctx->cfa_expr_ix   = -1; /* invalid - should handle properly */
          if (si->ddump_frames)
             VG_(printf)("  rci:DW_CFA_def_cfa_expression (ignored)\n");
          break;
@@ -2840,7 +3332,7 @@ Bool run_CF_instructions ( struct _SegInfo* si,
          if (summ_ok) {
             ML_(addDiCfSI)(si, &cfsi);
             if (si->trace_cfi)
-               ML_(ppDiCfSI)(&cfsi);
+               ML_(ppDiCfSI)(si->cfsi_exprs, &cfsi);
          }
       }
    }
@@ -2852,7 +3344,7 @@ Bool run_CF_instructions ( struct _SegInfo* si,
          if (summ_ok) {
             ML_(addDiCfSI)(si, &cfsi);
             if (si->trace_cfi)
-               ML_(ppDiCfSI)(&cfsi);
+               ML_(ppDiCfSI)(si->cfsi_exprs, &cfsi);
          }
       }
    }
@@ -3237,7 +3729,7 @@ void ML_(read_callframe_info_dwarf3)
            switch (ptr_size) {
               case 8: case 4: case 2: case 1: 
                  fde_arange 
-                    = (UWord)read_le_encoded_literal(data, ptr_size);
+                    = (UWord)read_le_u_encoded_literal(data, ptr_size);
                  data += ptr_size;
                  break;
               default: 
@@ -3300,6 +3792,9 @@ void ML_(read_callframe_info_dwarf3)
          ctx.data_a_f = the_CIEs[cie].data_a_f;
          ctx.initloc  = fde_initloc;
          ctx.ra_reg   = the_CIEs[cie].ra_reg;
+         ctx.exprs    = VG_(newXA)( symtab_alloc, symtab_free, 
+                                    sizeof(CfiExpr) );
+         vg_assert(ctx.exprs);
 
 	 /* Run the CIE's instructions.  Ugly hack: if
             --debug-dump=frames is in effect, suppress output for
@@ -3328,6 +3823,8 @@ void ML_(read_callframe_info_dwarf3)
             if (si->ddump_frames)
                VG_(printf)("\n");
 	 }
+
+         VG_(deleteXA)( ctx.exprs );
       }
    }
 

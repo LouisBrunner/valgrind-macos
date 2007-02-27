@@ -47,6 +47,7 @@
 #include "pub_core_redir.h"       // VG_(redir_notify_{new,delete}_SegInfo)
 #include "pub_core_aspacemgr.h"
 #include "pub_core_machine.h"     // VG_PLAT_USES_PPCTOC
+#include "pub_core_xarray.h"
 #include "priv_storage.h"
 #include "priv_readdwarf.h"
 #include "priv_readstabs.h"
@@ -141,7 +142,6 @@ SegInfo* alloc_SegInfo(Addr start, SizeT size, OffT foffset,
       si->ddump_frames = VG_(clo_debug_dump_frames);
    }
 
-
    return si;
 }
 
@@ -151,10 +151,11 @@ static void free_SegInfo ( SegInfo* si )
 {
    struct strchunk *chunk, *next;
    vg_assert(si != NULL);
-   if (si->filename) VG_(arena_free)(VG_AR_SYMTAB, si->filename);
-   if (si->symtab)   VG_(arena_free)(VG_AR_SYMTAB, si->symtab);
-   if (si->loctab)   VG_(arena_free)(VG_AR_SYMTAB, si->loctab);
-   if (si->cfsi)     VG_(arena_free)(VG_AR_SYMTAB, si->cfsi);
+   if (si->filename)   VG_(arena_free)(VG_AR_SYMTAB, si->filename);
+   if (si->symtab)     VG_(arena_free)(VG_AR_SYMTAB, si->symtab);
+   if (si->loctab)     VG_(arena_free)(VG_AR_SYMTAB, si->loctab);
+   if (si->cfsi)       VG_(arena_free)(VG_AR_SYMTAB, si->cfsi);
+   if (si->cfsi_exprs) VG_(deleteXA)(si->cfsi_exprs);
 
    for (chunk = si->strchunks; chunk != NULL; chunk = next) {
       next = chunk->next;
@@ -971,6 +972,72 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
 #  undef BUF_LEN
 }
 
+
+/*------------------------------------------------------------*/
+/*--- For unwinding the stack using                       --- */
+/*--- pre-summarised DWARF3 .eh_frame info                 ---*/
+/*------------------------------------------------------------*/
+
+/* Gather up all the constant pieces of info needed to evaluate
+   a CfiExpr into one convenient struct. */
+typedef
+   struct {
+      Addr ipHere;
+      Addr spHere;
+      Addr fpHere;
+      Addr min_accessible;
+      Addr max_accessible;
+   }
+   CfiExprEvalContext;
+
+/* Evaluate the CfiExpr rooted at ix in exprs given the context eec.
+   *ok is set to False on failure, but not to True on success.  The
+   caller must set it to True before calling. */
+static 
+UWord evalCfiExpr ( XArray* exprs, Int ix, 
+                    CfiExprEvalContext* eec, Bool* ok )
+{
+   UWord wL, wR;
+   CfiExpr* e = VG_(indexXA)( exprs, ix );
+   switch (e->tag) {
+      case Cex_Binop:
+         wL = evalCfiExpr( exprs, e->Cex.Binop.ixL, eec, ok );
+         if (!(*ok)) return 0;
+         wR = evalCfiExpr( exprs, e->Cex.Binop.ixR, eec, ok );
+         if (!(*ok)) return 0;
+         switch (e->Cex.Binop.op) {
+            case Cop_Add: return wL + wR;
+            case Cop_Sub: return wL - wR;
+            default: goto unhandled;
+         }
+         /*NOTREACHED*/
+      case Cex_CfiReg:
+         switch (e->Cex.CfiReg.reg) {
+            case Creg_IP: return (Addr)eec->ipHere;
+            case Creg_SP: return (Addr)eec->spHere;
+            case Creg_FP: return (Addr)eec->fpHere;
+            default: goto unhandled;
+         }
+         /*NOTREACHED*/
+      case Cex_Const:
+         return e->Cex.Const.con;
+      default: 
+         goto unhandled;
+   }
+   /*NOTREACHED*/
+  unhandled:
+   VG_(printf)("\n\nevalCfiExpr: unhandled\n");
+   ML_(ppCfiExpr)( exprs, ix );
+   VG_(printf)("\n");
+   vg_assert(0);
+   /*NOTREACHED*/
+   return 0;
+}
+
+
+/* The main function for DWARF2/3 CFI-based stack unwinding.
+   Given an IP/SP/FP triple, produce the IP/SP/FP values for the
+   previous frame, if possible. */
 /* Returns True if OK.  If not OK, *{ip,sp,fp}P are not changed. */
 /* NOTE: this function may rearrange the order of entries in the
    SegInfo list. */
@@ -980,10 +1047,13 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
                         Addr min_accessible,
                         Addr max_accessible )
 {
+   Bool     ok;
    Int      i;
    SegInfo* si;
    DiCfSI*  cfsi = NULL;
    Addr     cfa, ipHere, spHere, fpHere, ipPrev, spPrev, fpPrev;
+
+   CfiExprEvalContext eec;
 
    static UInt n_search = 0;
    static UInt n_steps = 0;
@@ -1016,7 +1086,7 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
       VG_(printf)("%u %u\n", n_search, n_steps);
 
    /* Start of performance-enhancing hack: once every 16 (chosen
-      hackily after profiling) successful searchs, move the found
+      hackily after profiling) successful searches, move the found
       SegInfo one step closer to the start of the list.  This makes
       future searches cheaper.  For starting konqueror on amd64, this
       in fact reduces the total amount of searching done by the above
@@ -1048,7 +1118,7 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
 
    if (0) {
       VG_(printf)("found cfisi: "); 
-      ML_(ppDiCfSI)(cfsi);
+      ML_(ppDiCfSI)(si->cfsi_exprs, cfsi);
    }
 
    ipPrev = spPrev = fpPrev = 0;
@@ -1057,7 +1127,24 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
    spHere = *spP;
    fpHere = *fpP;
 
-   cfa = cfsi->cfa_off + (cfsi->cfa_sprel ? spHere : fpHere);
+   /* First compute the CFA. */
+   cfa = 0;
+   switch (cfsi->cfa_how) {
+      case CFIC_SPREL: 
+         cfa = cfsi->cfa_off + spHere;
+         break;
+      case CFIC_FPREL: 
+         cfa = cfsi->cfa_off + fpHere;
+         break;
+      case CFIC_EXPR: 
+         vg_assert(0);
+         break;
+      default: 
+         vg_assert(0);
+   }
+
+   /* Now we know the CFA, use it to roll back the registers we're
+      interested in. */
 
 #  define COMPUTE(_prev, _here, _how, _off)             \
       do {                                              \
@@ -1077,6 +1164,20 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
             case CFIR_CFAREL:                           \
                _prev = cfa + (Word)_off;                \
                break;                                   \
+            case CFIR_EXPR:                             \
+               if (0)                                   \
+                  ML_(ppCfiExpr)(si->cfsi_exprs,_off);  \
+               eec.ipHere = ipHere;                     \
+               eec.spHere = spHere;                     \
+               eec.fpHere = fpHere;                     \
+               eec.min_accessible = min_accessible;     \
+               eec.max_accessible = max_accessible;     \
+               ok = True;                               \
+               _prev = evalCfiExpr(si->cfsi_exprs, _off, &eec, &ok ); \
+               if (!ok) return False;                   \
+               break;                                   \
+            default:                                    \
+               vg_assert(0);                            \
          }                                              \
       } while (0)
 

@@ -39,6 +39,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
+#include "pub_core_xarray.h"
 #include "priv_storage.h"
 #include "priv_readstabs.h"        /* self */
 

@@ -46,6 +46,7 @@
 #include "pub_core_options.h"
 #include "pub_core_oset.h"
 #include "pub_core_tooliface.h"    /* VG_(needs) */
+#include "pub_core_xarray.h"
 #include "priv_storage.h"
 #include "priv_readelf.h"          /* self */
 #include "priv_readdwarf.h"        /* 'cos ELF contains DWARF */

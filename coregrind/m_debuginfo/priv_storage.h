@@ -37,6 +37,8 @@
 /* See comment at top of debuginfo.c for explanation of
    the _svma / _avma / _image / _bias naming scheme.
 */
+/* Note this is not freestanding; needs pub_core_xarray.h to be
+   included before it. */
 
 #ifndef __PRIV_STORAGE_H
 #define __PRIV_STORAGE_H
@@ -97,7 +99,10 @@ typedef
 
    First off, calculate CFA, the Canonical Frame Address, thusly:
 
-     cfa = if cfa_sprel then sp+cfa_off else fp+cfa_off
+     cfa = case cfa_how of
+              CFIC_SPREL -> sp + cfa_off
+              CFIC_FPREL -> fp + cfa_off
+              CFIR_EXPR  -> expr whose index is in cfa_off
 
    Once that is done, the previous frame's sp/fp values and this
    frame's ra value can be calculated like this:
@@ -108,27 +113,98 @@ typedef
               CFIR_SAME      -> same as it was before (sp/fp only)
               CFIR_CFAREL    -> cfa + sp/fp/ra_off
               CFIR_MEMCFAREL -> *( cfa + sp/fp/ra_off )
+              CFIR_EXPR      -> expr whose index is in sp/fp/ra_off
 */
 
-#define CFIR_UNKNOWN   ((UChar)0)
-#define CFIR_SAME      ((UChar)1)
-#define CFIR_CFAREL    ((UChar)2)
-#define CFIR_MEMCFAREL ((UChar)3)
+#define CFIC_SPREL     ((UChar)1)
+#define CFIC_FPREL     ((UChar)2)
+#define CFIC_EXPR      ((UChar)3)
+
+#define CFIR_UNKNOWN   ((UChar)4)
+#define CFIR_SAME      ((UChar)5)
+#define CFIR_CFAREL    ((UChar)6)
+#define CFIR_MEMCFAREL ((UChar)7)
+#define CFIR_EXPR      ((UChar)8)
 
 typedef
    struct {
       Addr  base;
       UInt  len;
-      Bool  cfa_sprel;
-      UChar ra_how; /* a CFIR_ value */
-      UChar sp_how; /* a CFIR_ value */
-      UChar fp_how; /* a CFIR_ value */
+      UChar cfa_how; /* a CFIC_ value */
+      UChar ra_how;  /* a CFIR_ value */
+      UChar sp_how;  /* a CFIR_ value */
+      UChar fp_how;  /* a CFIR_ value */
       Int   cfa_off;
       Int   ra_off;
       Int   sp_off;
       Int   fp_off;
    }
    DiCfSI;
+
+
+typedef
+   enum {
+      Cop_Add=0x321,
+      Cop_Sub,
+      Cop_And
+   }
+   CfiOp;
+
+typedef
+   enum {
+      Creg_SP=0x213,
+      Creg_FP,
+      Creg_IP
+   }
+   CfiReg;
+
+typedef
+   enum {
+      Cex_Undef=0x123,
+      Cex_Deref,
+      Cex_Const,
+      Cex_Binop,
+      Cex_CfiReg,
+      Cex_DwReg
+   }
+   CfiExprTag;
+
+typedef 
+   struct {
+      CfiExprTag tag;
+      union {
+         struct {
+         } Undef;
+         struct {
+            Int ixAddr;
+         } Deref;
+         struct {
+            UWord con;
+         } Const;
+         struct {
+            CfiOp op;
+            Int ixL;
+            Int ixR;
+         } Binop;
+         struct {
+            CfiReg reg;
+         } CfiReg;
+         struct {
+            Int reg;
+         } DwReg;
+      }
+      Cex;
+   }
+   CfiExpr;
+
+extern Int ML_(CfiExpr_Undef) ( XArray* dst );
+extern Int ML_(CfiExpr_Deref) ( XArray* dst, Int ixAddr );
+extern Int ML_(CfiExpr_Const) ( XArray* dst, UWord con );
+extern Int ML_(CfiExpr_Binop) ( XArray* dst, CfiOp op, Int ixL, Int ixR );
+extern Int ML_(CfiExpr_CfiReg)( XArray* dst, CfiReg reg );
+extern Int ML_(CfiExpr_DwReg) ( XArray* dst, Int reg );
+
+extern void ML_(ppCfiExpr)( XArray* src, Int ix );
 
 /* --------------------- SEGINFO --------------------- */
 
@@ -159,12 +235,15 @@ struct _SegInfo {
    UInt    loctab_size;
    /* An expandable array of CFI summary info records.  Also includes
       summary address bounds, showing the min and max address covered
-      by any of the records, as an aid to fast searching. */
+      by any of the records, as an aid to fast searching.  And, if the
+      records require any expression nodes, they are stored in
+      cfsi_exprs. */
    DiCfSI* cfsi;
    UInt    cfsi_used;
    UInt    cfsi_size;
    Addr    cfsi_minaddr;
    Addr    cfsi_maxaddr;
+   XArray* cfsi_exprs; /* XArray of CfSiExpr */
 
    /* Expandable arrays of characters -- the string table.  Pointers
       into this are stable (the arrays are not reallocated). */
@@ -256,7 +335,7 @@ extern void ML_(symerr) ( HChar* msg );
 extern void ML_(ppSym) ( Int idx, DiSym* sym );
 
 /* Print a call-frame-info summary. */
-extern void ML_(ppDiCfSI) ( DiCfSI* si );
+extern void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si );
 
 
 #define TRACE_SYMTAB(format, args...) \

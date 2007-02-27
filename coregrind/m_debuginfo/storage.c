@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- Format-neutral storage of and querying of info acquired from ---*/
-/*--- ELF/XCOFF stabs/dwarf1/dwarf2 debug info.                    ---*/
+/*--- ELF/XCOFF stabs/dwarf1/dwarf2/dwarf3 debug info.             ---*/
 /*---                                                    storage.c ---*/
 /*--------------------------------------------------------------------*/
 
@@ -43,6 +43,7 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
+#include "pub_core_xarray.h"
 #include "priv_storage.h"          /* self */
 
 
@@ -69,7 +70,7 @@ void ML_(ppSym) ( Int idx, DiSym* sym )
 }
 
 /* Print a call-frame-info summary. */
-void ML_(ppDiCfSI) ( DiCfSI* si )
+void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
 {
 #  define SHOW_HOW(_how, _off)                   \
       do {                                       \
@@ -84,15 +85,34 @@ void ML_(ppDiCfSI) ( DiCfSI* si )
          } else                                  \
          if (_how == CFIR_MEMCFAREL) {           \
             VG_(printf)("*(cfa+%d)", _off);      \
+         } else                                  \
+         if (_how == CFIR_EXPR) {                \
+            VG_(printf)("{");                    \
+            ML_(ppCfiExpr)(exprs, _off);         \
+            VG_(printf)("}");                    \
          } else {                                \
-            VG_(printf)("???");                  \
+            vg_assert(0+0);                      \
          }                                       \
       } while (0)
 
    VG_(printf)("[%p .. %p]: ", si->base, 
                                si->base + (UWord)si->len - 1);
-   VG_(printf)("let cfa=%s+%d", 
-               si->cfa_sprel ? "oldSP" : "oldFP", si->cfa_off);
+   switch (si->cfa_how) {
+      case CFIC_SPREL: 
+         VG_(printf)("let cfa=oldSP+%d", si->cfa_off); 
+         break;
+      case CFIC_FPREL: 
+         VG_(printf)("let cfa=oldFP+%d", si->cfa_off); 
+         break;
+      case CFIC_EXPR: 
+         VG_(printf)("let cfa={"); 
+         ML_(ppCfiExpr)(exprs, si->cfa_off);
+         VG_(printf)("}"); 
+         break;
+      default: 
+         vg_assert(0);
+   }
+
    VG_(printf)(" in RA=");
    SHOW_HOW(si->ra_how, si->ra_off);
    VG_(printf)(" SP=");
@@ -308,7 +328,7 @@ void ML_(addDiCfSI) ( struct _SegInfo* si, DiCfSI* cfsi )
 
    if (debug) {
       VG_(printf)("adding DiCfSI: ");
-      ML_(ppDiCfSI)(cfsi);
+      ML_(ppDiCfSI)(si->cfsi_exprs, cfsi);
    }
 
    /* sanity */
@@ -338,7 +358,7 @@ void ML_(addDiCfSI) ( struct _SegInfo* si, DiCfSI* cfsi )
             );
          }
          if (VG_(clo_trace_cfi)) 
-            ML_(ppDiCfSI)(cfsi);
+            ML_(ppDiCfSI)(si->cfsi_exprs, cfsi);
       }
       return;
    }
@@ -359,6 +379,116 @@ void ML_(addDiCfSI) ( struct _SegInfo* si, DiCfSI* cfsi )
    si->cfsi[si->cfsi_used] = *cfsi;
    si->cfsi_used++;
    vg_assert(si->cfsi_used <= si->cfsi_size);
+}
+
+
+Int ML_(CfiExpr_Undef)( XArray* dst )
+{
+   CfiExpr e;
+   VG_(memset)( &e, 0, sizeof(e) );
+   e.tag = Cex_Undef;
+   return VG_(addToXA)( dst, &e );
+}
+Int ML_(CfiExpr_Deref)( XArray* dst, Int ixAddr )
+{
+   CfiExpr e;
+   VG_(memset)( &e, 0, sizeof(e) );
+   e.tag = Cex_Deref;
+   e.Cex.Deref.ixAddr = ixAddr;
+   return VG_(addToXA)( dst, &e );
+}
+Int ML_(CfiExpr_Const)( XArray* dst, UWord con )
+{
+   CfiExpr e;
+   VG_(memset)( &e, 0, sizeof(e) );
+   e.tag = Cex_Const;
+   e.Cex.Const.con = con;
+   return VG_(addToXA)( dst, &e );
+}
+Int ML_(CfiExpr_Binop)( XArray* dst, CfiOp op, Int ixL, Int ixR )
+{
+   CfiExpr e;
+   VG_(memset)( &e, 0, sizeof(e) );
+   e.tag = Cex_Binop;
+   e.Cex.Binop.op  = op;
+   e.Cex.Binop.ixL = ixL;
+   e.Cex.Binop.ixR = ixR;
+   return VG_(addToXA)( dst, &e );
+}
+Int ML_(CfiExpr_CfiReg)( XArray* dst, CfiReg reg )
+{
+   CfiExpr e;
+   VG_(memset)( &e, 0, sizeof(e) );
+   e.tag = Cex_CfiReg;
+   e.Cex.CfiReg.reg = reg;
+   return VG_(addToXA)( dst, &e );
+}
+Int ML_(CfiExpr_DwReg)( XArray* dst, Int reg )
+{
+   CfiExpr e;
+   VG_(memset)( &e, 0, sizeof(e) );
+   e.tag = Cex_DwReg;
+   e.Cex.DwReg.reg = reg;
+   return VG_(addToXA)( dst, &e );
+}
+
+static void ppCfiOp ( CfiOp op ) 
+{
+   switch (op) {
+      case Cop_Add: VG_(printf)("+"); break;
+      case Cop_Sub: VG_(printf)("-"); break;
+      case Cop_And: VG_(printf)("&"); break;
+      default:      vg_assert(0);
+   }
+}
+
+static void ppCfiReg ( CfiReg reg )
+{
+   switch (reg) {
+      case Creg_SP: VG_(printf)("SP"); break;
+      case Creg_FP: VG_(printf)("FP"); break;
+      case Creg_IP: VG_(printf)("IP"); break;
+      default: vg_assert(0);
+   }
+}
+
+void ML_(ppCfiExpr)( XArray* src, Int ix )
+{
+   /* VG_(indexXA) checks for invalid src/ix values, so we can
+      use it indiscriminately. */
+   CfiExpr* e = (CfiExpr*) VG_(indexXA)( src, ix );
+   switch (e->tag) {
+      case Cex_Undef: 
+         VG_(printf)("Undef"); 
+         break;
+      case Cex_Deref: 
+         VG_(printf)("*("); 
+         ML_(ppCfiExpr)(src, e->Cex.Deref.ixAddr);
+         VG_(printf)(")"); 
+         break;
+      case Cex_Const: 
+         VG_(printf)("0x%lx", e->Cex.Const.con); 
+         break;
+      case Cex_Binop: 
+         VG_(printf)("(");
+         ML_(ppCfiExpr)(src, e->Cex.Binop.ixL);
+         VG_(printf)(")");
+         ppCfiOp(e->Cex.Binop.op);
+         VG_(printf)("(");
+         ML_(ppCfiExpr)(src, e->Cex.Binop.ixR);
+         VG_(printf)(")");
+         break;
+      case Cex_CfiReg:
+         ppCfiReg(e->Cex.CfiReg.reg);
+         break;
+      case Cex_DwReg:
+         VG_(printf)("dwr%d", e->Cex.DwReg.reg);
+         break;
+      default: 
+         VG_(core_panic)("ML_(ppCfiExpr)"); 
+         /*NOTREACHED*/
+         break;
+   }
 }
 
 

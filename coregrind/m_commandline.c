@@ -45,7 +45,7 @@
 
 static void add_string ( XArray* /* of HChar* */xa, HChar* str )
 {
-   VG_(addToXA)( xa, (void*)(&str) );
+   (void) VG_(addToXA)( xa, (void*)(&str) );
 }
 
 

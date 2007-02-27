@@ -104,7 +104,7 @@ inline void* VG_(indexXA) ( XArray* xao, Word n )
    return ((char*)xa->arr) + n * xa->elemSzB;
 }
 
-void VG_(addToXA) ( XArray* xao, void* elem )
+Int VG_(addToXA) ( XArray* xao, void* elem )
 {
    struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
@@ -137,6 +137,7 @@ void VG_(addToXA) ( XArray* xao, void* elem )
                 elem, xa->elemSzB );
    xa->usedsizeE++;
    xa->sorted = False;
+   return xa->usedsizeE-1;
 }
 
 // Generic shell sort.  Like stdlib.h's qsort().

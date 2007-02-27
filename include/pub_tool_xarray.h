@@ -61,8 +61,10 @@ extern void VG_(deleteXA) ( XArray* );
    before making further queries with lookupXA. */
 extern void VG_(setCmpFnXA) ( XArray*, Word (*compar)(void*,void*) );
 
-/* Add an element to an XArray.  Element is copied into the XArray. */
-extern void VG_(addToXA) ( XArray*, void* elem );
+/* Add an element to an XArray.  Element is copied into the XArray.
+   Index at which it was added is returned.  Note this will be
+   invalidated if the array is later sortXA'd. */
+extern Int VG_(addToXA) ( XArray*, void* elem );
 
 /* Sort an XArray using its comparison function, if set; else bomb.
    Probably not a stable sort w.r.t. equal elements module cmpFn. */

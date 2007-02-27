@@ -443,8 +443,8 @@ core:PThread]]></programlisting>
 
   <listitem>
     <para>Remaining lines: This is the calling context for the error --
-    the chain of function calls that led to it.  There can be up to four
-    of these lines.</para>
+    the chain of function calls that led to it.  There can be up to
+    twenty-four of these lines.</para>
 
     <para>Locations may be either names of shared objects/executables or
     wildcards matching function names.  They begin

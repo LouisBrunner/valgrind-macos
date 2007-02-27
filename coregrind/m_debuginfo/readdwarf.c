@@ -2680,9 +2680,8 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             break;
 
          default:
-            if (ddump_frames /* || trace_cfi*/)
-               VG_(printf)("XXX unhandled dwarf expr opcode 0x%x\n", 
-                           (Int)opcode );
+            VG_(message)(Vg_DebugMsg, "DWARF2 CFI reader: unhandled DW_OP_ "
+                                      "opcode 0x%x", (Int)opcode); 
             return -1;
       }
 

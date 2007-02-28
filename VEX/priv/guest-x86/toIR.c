@@ -11208,6 +11208,12 @@ DisResult disInstr_X86_WRK (
 
    /* ------------------------ INT ------------------------ */
 
+   case 0xCC: /* INT 3 */
+      jmp_lit(Ijk_Trap,((Addr32)guest_EIP_bbstart)+delta);
+      dres.whatNext = Dis_StopHere;
+      DIP("int $0x3\n");
+      break;
+
    case 0xCD: /* INT imm8 */
       d32 = getIByte(delta); delta++;
       if (d32 != 0x80) goto decode_failure;

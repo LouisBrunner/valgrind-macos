@@ -39,13 +39,21 @@ r6593    pending   32 139363   callgrind: fix --collect-systime=yes
 r6601    pending   32 n-i-bz   callgrind: Fix threads display
                                of "callgrind_control -s"
 
+r6622    pending   32 n-i-bz   .eh_frame crud for m_trampoline.S fns
+
 Ashley logfile qualifiers in coredumps patch
+
 RedHat8 needs suppressions (r6612) (definitely merge)
+- see 142228 complaint of elf_dynamic_do_rela in trivial usage
+- also 142229 unexpected "write(buf) points to uninitialised byte(s)"
+
 64 bit DWARF in unwind (r6610) (definitely merge)
 Correctly handle DW_CFA_def_cfa_sf (r6599) (definitely merge)
 get rid of kludge_then_addDiCfSI (r6611; do not merge)
 
-sym reading problems?
+[Bug 142279] New: long indirect jmp unhandled: unhandled Grp5(M) case 5
+int3 (133984) ?
+
 
 
 ------- Bugs reported and fixed in 3.2.3 ------

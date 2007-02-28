@@ -1992,10 +1992,25 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
 
    /* How to generate the CFA */
    if (!ctx->cfa_is_regoff) {
-      /* it was set by DW_CFA_def_cfa_expression; we don't know what
-         it really is */
-      why = 6;
-      goto failed;
+      /* it was set by DW_CFA_def_cfa_expression; try to convert */
+      XArray *src, *dst;
+      Int    conv;
+      src = ctx->exprs;
+      dst = seginfo->cfsi_exprs;
+      if (src && (VG_(sizeXA)(src) > 0) && (!dst)) {
+         dst = VG_(newXA)( symtab_alloc, symtab_free,
+                           sizeof(CfiExpr) );
+         vg_assert(dst);
+         seginfo->cfsi_exprs = dst;
+      }
+      conv = copy_convert_CfiExpr_tree
+                    ( dst, ctx, ctx->cfa_expr_ix );
+      vg_assert(conv >= -1);
+      if (conv == -1) { why = 6; goto failed; }
+      si->cfa_how = CFIC_EXPR;
+      si->cfa_off = conv;
+      if (0 && seginfo->ddump_frames)
+         ML_(ppCfiExpr)(dst, conv);
    } else
    if (ctx->cfa_is_regoff && ctx->cfa_reg == SP_REG) {
       si->cfa_how = CFIC_SPREL;
@@ -2556,7 +2571,8 @@ enum dwarf_location_atom
 /* Convert the DWARF3 expression in expr[0 .. exprlen-1] into a dag
    (of CfiExprs) stored in ctx->exprs, and return the index in
    ctx->exprs of the root node.  Or fail in which case return -1. */
-
+/* IMPORTANT: when adding expression forms here, also remember to
+   add suitable evaluation code in evalCfiExpr in debuginfo.c. */
 static Int dwarfexpr_to_dag ( UnwindContext* ctx, 
                               UChar* expr, Int exprlen, 
                               Bool push_cfa_at_start,
@@ -2674,6 +2690,8 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             op = Cop_Add; opname = "plus"; goto binop;
          case DW_OP_and:
             op = Cop_And; opname = "and"; goto binop;
+         case DW_OP_mul:
+            op = Cop_Mul; opname = "mul"; goto binop;
          binop:
             POP( ix );
             POP( ix2 );
@@ -2683,8 +2701,10 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             break;
 
          default:
-            VG_(message)(Vg_DebugMsg, "DWARF2 CFI reader: unhandled DW_OP_ "
-                                      "opcode 0x%x", (Int)opcode); 
+            if (!VG_(clo_xml))
+               VG_(message)(Vg_DebugMsg, 
+                            "DWARF2 CFI reader: unhandled DW_OP_ "
+                            "opcode 0x%x", (Int)opcode); 
             return -1;
       }
 
@@ -3050,18 +3070,22 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          break;
 
       case DW_CFA_def_cfa_expression:
-         if (si->trace_cfi)
-            VG_(printf)("DWARF2 CFI reader: "
-                        "ignoring DW_CFA_def_cfa_expression\n");
          len = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
+         expr = &instr[i];
          i += len;
+         if (si->ddump_frames)
+            VG_(printf)("  DW_CFA_def_cfa_expression (");
+         /* Convert the expression into a dag rooted at ctx->exprs index j,
+            or fail. */
+         j = dwarfexpr_to_dag ( ctx, expr, len, True/*push CFA at start*/, 
+                                si->ddump_frames);
+         if (si->ddump_frames)
+            VG_(printf)(")\n");
          ctx->cfa_is_regoff = False;
          ctx->cfa_reg       = 0;
          ctx->cfa_off       = 0;
-         ctx->cfa_expr_ix   = -1; /* invalid - should handle properly */
-         if (si->ddump_frames)
-            VG_(printf)("  rci:DW_CFA_def_cfa_expression (ignored)\n");
+         ctx->cfa_expr_ix   = j;
          break;
 
       case DW_CFA_GNU_window_save:

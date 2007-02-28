@@ -146,7 +146,8 @@ typedef
    enum {
       Cop_Add=0x321,
       Cop_Sub,
-      Cop_And
+      Cop_And,
+      Cop_Mul
    }
    CfiOp;
 

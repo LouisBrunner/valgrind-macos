@@ -1010,6 +1010,7 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             case Cop_Add: return wL + wR;
             case Cop_Sub: return wL - wR;
             case Cop_And: return wL & wR;
+            case Cop_Mul: return wL * wR;
             default: goto unhandled;
          }
          /*NOTREACHED*/
@@ -1149,7 +1150,19 @@ Bool VG_(use_CF_info) ( /*MOD*/Addr* ipP,
          cfa = cfsi->cfa_off + fpHere;
          break;
       case CFIC_EXPR: 
-         vg_assert(0);
+         if (0) {
+            VG_(printf)("CFIC_EXPR: ");
+            ML_(ppCfiExpr)(si->cfsi_exprs, cfsi->cfa_off);
+            VG_(printf)("\n");
+         }
+         eec.ipHere = ipHere;
+         eec.spHere = spHere;
+         eec.fpHere = fpHere;
+         eec.min_accessible = min_accessible;
+         eec.max_accessible = max_accessible;
+         ok = True;
+         cfa = evalCfiExpr(si->cfsi_exprs, cfsi->cfa_off, &eec, &ok );
+         if (!ok) return False;
          break;
       default: 
          vg_assert(0);

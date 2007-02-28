@@ -998,6 +998,7 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
                     CfiExprEvalContext* eec, Bool* ok )
 {
    UWord wL, wR;
+   Addr  a;
    CfiExpr* e = VG_(indexXA)( exprs, ix );
    switch (e->tag) {
       case Cex_Binop:
@@ -1008,6 +1009,7 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
          switch (e->Cex.Binop.op) {
             case Cop_Add: return wL + wR;
             case Cop_Sub: return wL - wR;
+            case Cop_And: return wL & wR;
             default: goto unhandled;
          }
          /*NOTREACHED*/
@@ -1021,6 +1023,16 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
          /*NOTREACHED*/
       case Cex_Const:
          return e->Cex.Const.con;
+      case Cex_Deref:
+         a = evalCfiExpr( exprs, e->Cex.Deref.ixAddr, eec, ok );
+         if (!(*ok)) return 0;
+         if (a < eec->min_accessible
+             || (a + sizeof(UWord) - 1) > eec->max_accessible) {
+            *ok = False;
+            return 0;
+         }
+         /* let's hope it doesn't trap! */
+         return * ((UWord*)a);
       default: 
          goto unhandled;
    }

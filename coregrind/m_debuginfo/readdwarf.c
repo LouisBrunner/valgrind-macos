@@ -1524,14 +1524,6 @@ void ML_(read_debuginfo_dwarf1) (
 
       8 is the return address (EIP) */
 
-/* Note that we don't support DWARF3 expressions (DW_CFA_expression,
-   DW_CFA_def_cfa_expression, DW_CFA_val_expression).  The code just 
-   reads over them and ignores them. 
-
-   Note also, does not support the 64-bit DWARF format (only known
-   compiler that generates it so far is IBM's xlc/xlC/xlf suite).
-   Only handles 32-bit DWARF.
-*/
 
 /* Comments re DW_CFA_set_loc, 16 Nov 06.
 
@@ -1842,6 +1834,10 @@ enum dwarf_cfa_secondary_ops
            | RR_ValExpr   arg  -- is [[ arg ]]
            | RR_Arch           -- dunno
 
+   Note that RR_Expr is redundant since the same can be represented
+   using RR_ValExpr with an explicit dereference (CfiExpr_Deref) at
+   the outermost level.
+
    All expressions are stored in exprs in the containing
    UnwindContext.  Since the UnwindContext gets reinitialised for each
    new FDE, summarise_context needs to copy out any expressions it
@@ -1850,7 +1846,7 @@ enum dwarf_cfa_secondary_ops
 typedef
    struct {
       enum { RR_Undef, RR_Same, RR_CFAOff, RR_CFAValOff, 
-             RR_Reg, RR_Expr, RR_ValExpr, RR_Arch } tag;
+             RR_Reg, /*RR_Expr,*/ RR_ValExpr, RR_Arch } tag;
       /* meaning:  int offset for CFAoff/CFAValOff
                    reg # for Reg
                    expr index for Expr/ValExpr */
@@ -1867,10 +1863,6 @@ static void ppRegRule ( XArray* exprs, RegRule* rrule )
       case RR_CFAOff:    VG_(printf)("c%d ", rrule->arg); break;
       case RR_CFAValOff: VG_(printf)("v%d ", rrule->arg); break;
       case RR_Reg:       VG_(printf)("r%d ", rrule->arg); break;
-      case RR_Expr:      VG_(printf)("e{"); 
-                         ML_(ppCfiExpr)( exprs, rrule->arg ); 
-                         VG_(printf)("} "); 
-                         break;
       case RR_ValExpr:   VG_(printf)("ve{"); 
                          ML_(ppCfiExpr)( exprs, rrule->arg ); 
                          VG_(printf)("} "); 
@@ -2590,9 +2582,11 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
          sp--;                                     \
       } while (0)
 
-   Int   ix, ix2, reg;
-   UChar opcode;
-   Word  sw;
+   Int    ix, ix2, reg;
+   UChar  opcode;
+   Word   sw;
+   CfiOp  op;
+   HChar* opname;
 
    Int sp; /* # of top element: valid is -1 .. N_EXPR_STACK-1 */
    Int stack[N_EXPR_STACK];  /* indices into ctx->exprs */
@@ -2636,8 +2630,19 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
            break;
       }
 
+      op = 0; opname = NULL; /* excessively conservative */
+
       opcode = *expr++;
       switch (opcode) {
+
+         case DW_OP_lit0 ... DW_OP_lit31:
+            /* push: literal 0 .. 31 */
+            sw = (Word)opcode - (Word)DW_OP_lit0;
+            vg_assert(sw >= 0 && sw <= 31);
+            PUSH( ML_(CfiExpr_Const)( dst, (UWord)sw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_lit%ld", sw);
+            break;
 
          case DW_OP_breg0 ... DW_OP_breg31:
             /* push: reg + sleb128 */
@@ -2664,19 +2669,17 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             break;
 
          case DW_OP_minus:
-            POP( ix );
-            POP( ix2 );
-	    PUSH( ML_(CfiExpr_Binop)( dst, Cop_Sub, ix2, ix ) );
-            if (ddump_frames)
-               VG_(printf)("DW_OP_minus");
-            break;
-
+            op = Cop_Sub; opname = "minus"; goto binop;
          case DW_OP_plus:
+            op = Cop_Add; opname = "plus"; goto binop;
+         case DW_OP_and:
+            op = Cop_And; opname = "and"; goto binop;
+         binop:
             POP( ix );
             POP( ix2 );
-	    PUSH( ML_(CfiExpr_Binop)( dst, Cop_Add, ix2, ix ) );
+              PUSH( ML_(CfiExpr_Binop)( dst, op, ix2, ix ) );
             if (ddump_frames)
-               VG_(printf)("DW_OP_plus");
+               VG_(printf)("DW_OP_%s", opname);
             break;
 
          default:
@@ -2984,21 +2987,37 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          break;
 
       case DW_CFA_expression:
-         /* Too difficult to really handle; just skip over it and say
-            that we don't know what do to with the register. */
-         if (si->trace_cfi)
-            VG_(printf)("DWARF2 CFI reader: "
-                        "ignoring DW_CFA_expression\n");
+         /* Identical to DW_CFA_val_expression except that the value
+            computed is an address and so needs one final
+            dereference. */
          reg = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
          len = read_leb128( &instr[i], &nleb, 0 );
          i += nleb;
+         expr = &instr[i];
          i += len;
-         if (reg < 0 || reg >= N_CFI_REGS) 
+         if (reg < 0 || reg >= N_CFI_REGS)
             return 0; /* fail */
-         ctx->reg[reg].tag = RR_Expr;
          if (si->ddump_frames)
-            VG_(printf)("  rci:DW_CFA_expression (ignored)\n");
+            VG_(printf)("  DW_CFA_expression: r%d (", 
+                        (Int)reg);
+         /* Convert the expression into a dag rooted at ctx->exprs index j,
+            or fail. */
+         j = dwarfexpr_to_dag ( ctx, expr, len, True/*push CFA at start*/, 
+                                si->ddump_frames);
+         if (si->ddump_frames)
+            VG_(printf)(")\n");
+         vg_assert(j >= -1);
+         if (j >= 0) {
+            vg_assert(ctx->exprs);
+            vg_assert( j < VG_(sizeXA)(ctx->exprs) );
+         }
+         if (j == -1)
+            return 0; /* fail */
+         /* Add an extra dereference */
+         j = ML_(CfiExpr_Deref)( ctx->exprs, j );
+         ctx->reg[reg].tag = RR_ValExpr;
+         ctx->reg[reg].arg = j;
          break;
 
       case DW_CFA_val_expression:

@@ -1,0 +1,5 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: bbb (in ...)
+   by 0x........: aaa (in ...)
+   by 0x........: aaa (in ...)
+   by 0x........: main (in ...)

@@ -7272,6 +7272,18 @@ DisResult disInstr_X86_WRK (
    switch (getIByte(delta)) {
       case 0x3E: /* %DS: */
       case 0x26: /* %ES: */
+         /* Sun's JVM 1.5.0 uses the following as a NOP:
+            26 2E 64 65 90  %es:%cs:%fs:%gs:nop */
+         {
+            UChar* code = (UChar*)(guest_code + delta);
+            if (code[0] == 0x26 && code[1] == 0x2E && code[2] == 0x64 
+                && code[3] == 0x65 && code[4] == 0x90) {
+               DIP("%%es:%%cs:%%fs:%%gs:nop\n");
+               delta += 5;
+               goto decode_success;
+            }
+            /* else fall through */
+         }       
       case 0x64: /* %FS: */
       case 0x65: /* %GS: */
          sorb = getIByte(delta); delta++; 

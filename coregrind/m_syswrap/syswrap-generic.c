@@ -4113,6 +4113,16 @@ PRE(sys_ioctl)
       }
       break;
 
+      /* I2C (/dev/i2c-*) ioctls */
+   case VKI_I2C_SLAVE:
+   case VKI_I2C_SLAVE_FORCE:
+   case VKI_I2C_TENBIT:
+   case VKI_I2C_PEC:
+      break;
+   case VKI_I2C_FUNCS:
+      PRE_MEM_WRITE( "ioctl(I2C_FUNCS)", ARG3, sizeof(unsigned long) );
+      break;
+
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and
 	 size bits.  The encoding scheme is described in
@@ -4819,6 +4829,16 @@ POST(sys_ioctl)
                POST_MEM_WRITE((Addr)vkui->data, size2);
          }
       }
+      break;
+
+      /* I2C (/dev/i2c-*) ioctls */
+   case VKI_I2C_SLAVE:
+   case VKI_I2C_SLAVE_FORCE:
+   case VKI_I2C_TENBIT:
+   case VKI_I2C_PEC:
+      break;
+   case VKI_I2C_FUNCS:
+      POST_MEM_WRITE( ARG3, sizeof(unsigned long) );
       break;
 
       /* We don't have any specific information on it, so

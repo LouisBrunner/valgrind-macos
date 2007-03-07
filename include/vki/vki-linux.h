@@ -2314,6 +2314,20 @@ struct vki_usbdevfs_ioctl {
 #define VKI_USBDEVFS_CONNECTINFO       _VKI_IOW('U', 17, struct vki_usbdevfs_connectinfo)
 #define VKI_USBDEVFS_IOCTL             _VKI_IOWR('U', 18, struct vki_usbdevfs_ioctl)
 
+//----------------------------------------------------------------------
+// From linux-2.6.20.1/include/linux/i2c.h
+//----------------------------------------------------------------------
+
+#define VKI_I2C_SLAVE		0x0703	/* Change slave address			*/
+					/* Attn.: Slave address is 7 or 10 bits */
+#define VKI_I2C_SLAVE_FORCE	0x0706	/* Change slave address			*/
+					/* Attn.: Slave address is 7 or 10 bits */
+					/* This changes the address, even if it */
+					/* is already taken!			*/
+#define VKI_I2C_TENBIT		0x0704	/* 0 for 7 bit addrs, != 0 for 10 bit	*/
+#define VKI_I2C_FUNCS		0x0705	/* Get the adapter functionality */
+#define VKI_I2C_PEC		0x0708	/* != 0 for SMBus PEC                   */
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

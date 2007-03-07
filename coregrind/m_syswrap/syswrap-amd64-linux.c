@@ -517,7 +517,11 @@ PRE(sys_arch_prctl)
 }
 
 // Parts of this are amd64-specific, but the *PEEK* cases are generic.
-// XXX: Why is the memory pointed to by ARG3 never checked?
+//
+// ARG3 is only used for pointers into the traced process's address
+// space and for offsets into the traced process's struct
+// user_regs_struct. It is never a pointer into this process's memory
+// space, and we should therefore not check anything it points to.
 PRE(sys_ptrace)
 {
    PRINT("sys_ptrace ( %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4);
@@ -546,6 +550,15 @@ PRE(sys_ptrace)
       PRE_MEM_READ( "ptrace(setfpregs)", ARG4, 
 		     sizeof (struct vki_user_i387_struct));
       break;
+   case VKI_PTRACE_GETEVENTMSG:
+      PRE_MEM_WRITE( "ptrace(geteventmsg)", ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GETSIGINFO:
+      PRE_MEM_WRITE( "ptrace(getsiginfo)", ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_SETSIGINFO:
+      PRE_MEM_READ( "ptrace(setsiginfo)", ARG4, sizeof(vki_siginfo_t));
+      break;
    default:
       break;
    }
@@ -564,6 +577,15 @@ POST(sys_ptrace)
       break;
    case VKI_PTRACE_GETFPREGS:
       POST_MEM_WRITE( ARG4, sizeof (struct vki_user_i387_struct));
+      break;
+   case VKI_PTRACE_GETEVENTMSG:
+      POST_MEM_WRITE( ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GETSIGINFO:
+      /* XXX: This is a simplification. Different parts of the
+       * siginfo_t are valid depending on the type of signal.
+       */
+      POST_MEM_WRITE( ARG4, sizeof(vki_siginfo_t));
       break;
    default:
       break;

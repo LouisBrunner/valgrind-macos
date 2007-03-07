@@ -2091,7 +2091,7 @@ struct vki_console_font_op {
 typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory */
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/linux/ptrace.h
+// From linux-2.6.20.1/include/linux/ptrace.h
 //----------------------------------------------------------------------
 
 #define VKI_PTRACE_TRACEME         0
@@ -2100,7 +2100,11 @@ typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory 
 #define VKI_PTRACE_PEEKUSR	   3
 #define VKI_PTRACE_POKEUSR	   6
 
-#define VKI_PTRACE_DETACH       0x11
+#define VKI_PTRACE_DETACH         17
+
+#define VKI_PTRACE_GETEVENTMSG	0x4201
+#define VKI_PTRACE_GETSIGINFO	0x4202
+#define VKI_PTRACE_SETSIGINFO	0x4203
 
 //----------------------------------------------------------------------
 // From linux-2.6.14/include/sound/asound.h

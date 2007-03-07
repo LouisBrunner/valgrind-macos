@@ -140,6 +140,10 @@ DECL_TEMPLATE(linux, sys_readlinkat);
 DECL_TEMPLATE(linux, sys_fchmodat);
 DECL_TEMPLATE(linux, sys_faccessat);
 
+DECL_TEMPLATE(linux, sys_add_key);
+DECL_TEMPLATE(linux, sys_request_key);
+DECL_TEMPLATE(linux, sys_keyctl);
+
 // These ones have 32-bit generic equivalents, but the 16-bit versions (they
 // use 16-bit gid_t and uid_t types) seem to be Linux-specific.
 DECL_TEMPLATE(linux, sys_getuid16);

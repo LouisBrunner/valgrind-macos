@@ -2167,9 +2167,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINXY(__NR_waitid,            sys_waitid),         // 284
 
    GENX_(285,                    sys_ni_syscall),     // 285
-//   LINX_(__NR_add_key,           sys_add_key),        // 286
-//   LINX_(__NR_request_key,       sys_request_key),    // 287
-//   LINXY(__NR_keyctl,            sys_keyctl),         // 288
+   LINX_(__NR_add_key,           sys_add_key),        // 286
+   LINX_(__NR_request_key,       sys_request_key),    // 287
+   LINXY(__NR_keyctl,            sys_keyctl),         // 288
 //   LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 289
 
 //   LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 290

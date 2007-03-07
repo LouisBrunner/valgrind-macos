@@ -2613,9 +2613,175 @@ PRE(sys_faccessat)
    PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
 }
 
+/* ---------------------------------------------------------------------
+   key retention service wrappers
+   ------------------------------------------------------------------ */
+PRE(sys_request_key)
+{
+   PRINT("sys_request_key ( %p(%s), %p(%s), %p(%s), %d )",
+         ARG1,ARG1,ARG2,ARG2,ARG3,ARG3,ARG4);
+   PRE_REG_READ4(long, "request_key",
+                 const char *, type, const char *, description, 
+                 const char *, callout_info, vki_key_serial_t, keyring);
+   PRE_MEM_RASCIIZ( "request_key(type)", ARG1);
+   PRE_MEM_RASCIIZ( "request_key(description)", ARG2);
+   if (ARG3 != (UWord)NULL)
+      PRE_MEM_RASCIIZ( "request_key(callout_info)", ARG3);
+}
+
+PRE(sys_add_key)
+{
+   PRINT("sys_add_key ( %p(%s), %p(%s), %p, %d, %d )",
+         ARG1,ARG1,ARG2,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "add_key",
+                 const char *, type, const char *, description,
+                 const void *, payload, vki_size_t, plen, 
+                 vki_key_serial_t, keyring);
+   PRE_MEM_RASCIIZ( "add_key(type)", ARG1);
+   PRE_MEM_RASCIIZ( "add_key(description)", ARG2);
+   if (ARG3 != (UWord)NULL)
+      PRE_MEM_READ( "request_key(payload)", ARG3, ARG4);
+}
+
+PRE(sys_keyctl)
+{
+   switch (ARG1 /* option */) {
+   case VKI_KEYCTL_GET_KEYRING_ID:
+      PRINT("sys_keyctl ( KEYCTL_GET_KEYRING_ID, %d, %d )", ARG2,ARG3);
+      PRE_REG_READ3(long, "keyctl(KEYCTL_GET_KEYRING_ID)",
+                    int, option, vki_key_serial_t, id, int, create);
+      break;
+   case VKI_KEYCTL_JOIN_SESSION_KEYRING:
+      PRINT("sys_keyctl ( KEYCTL_JOIN_SESSION_KEYRING, %p(%s) )", ARG2,ARG2);
+      PRE_REG_READ2(long, "keyctl(KEYCTL_JOIN_SESSION_KEYRING)",
+                    int, option, const char *, name);
+      if (ARG2 != (UWord)NULL)
+         PRE_MEM_RASCIIZ("keyctl(KEYCTL_JOIN_SESSION_KEYRING, name)", ARG2);
+      break;
+   case VKI_KEYCTL_UPDATE:
+      PRINT("sys_keyctl ( KEYCTL_UPDATE, %d, %p, %d )", ARG2,ARG3,ARG4);
+      PRE_REG_READ4(long, "keyctl(KEYCTL_UPDATE)",
+                    int, option, vki_key_serial_t, key,
+                    const void *, payload, vki_size_t, plen);
+      if (ARG3 != (UWord)NULL)
+         PRE_MEM_READ("keyctl(KEYCTL_UPDATE, payload)", ARG3, ARG4);
+      break;
+   case VKI_KEYCTL_REVOKE:
+      PRINT("sys_keyctl ( KEYCTL_REVOKE, %d )", ARG2);
+      PRE_REG_READ2(long, "keyctl(KEYCTL_REVOKE)",
+                    int, option, vki_key_serial_t, id);
+      break;
+   case VKI_KEYCTL_CHOWN:
+      PRINT("sys_keyctl ( KEYCTL_CHOWN, %d, %d, %d )", ARG2,ARG3,ARG4);
+      PRE_REG_READ4(long, "keyctl(KEYCTL_CHOWN)",
+                    int, option, vki_key_serial_t, id,
+                    vki_uid_t, uid, vki_gid_t, gid);
+      break;
+   case VKI_KEYCTL_SETPERM:
+      PRINT("sys_keyctl ( KEYCTL_SETPERM, %d, %d )", ARG2,ARG3);
+      PRE_REG_READ3(long, "keyctl(KEYCTL_SETPERM)",
+                    int, option, vki_key_serial_t, id, vki_key_perm_t, perm);
+      break;
+   case VKI_KEYCTL_DESCRIBE:
+      PRINT("sys_keyctl ( KEYCTL_DESCRIBE, %d, %p, %d )", ARG2,ARG3,ARG4);
+      PRE_REG_READ4(long, "keyctl(KEYCTL_DESCRIBE)",
+                    int, option, vki_key_serial_t, id,
+                    char *, buffer, vki_size_t, buflen);
+      if (ARG3 != (UWord)NULL)
+         PRE_MEM_WRITE("keyctl(KEYCTL_DESCRIBE, buffer)", ARG3, ARG4);
+      break;
+   case VKI_KEYCTL_CLEAR:
+      PRINT("sys_keyctl ( KEYCTL_CLEAR, %d )", ARG2);
+      PRE_REG_READ2(long, "keyctl(KEYCTL_CLEAR)",
+                    int, option, vki_key_serial_t, keyring);
+      break;
+   case VKI_KEYCTL_LINK:
+      PRINT("sys_keyctl ( KEYCTL_LINK, %d, %d )", ARG2,ARG3);
+      PRE_REG_READ3(long, "keyctl(KEYCTL_LINK)", int, option,
+                    vki_key_serial_t, keyring, vki_key_serial_t, key);
+      break;
+   case VKI_KEYCTL_UNLINK:
+      PRINT("sys_keyctl ( KEYCTL_UNLINK, %d, %d )", ARG2,ARG3);
+      PRE_REG_READ3(long, "keyctl(KEYCTL_UNLINK)", int, option,
+                    vki_key_serial_t, keyring, vki_key_serial_t, key);
+      break;
+   case VKI_KEYCTL_SEARCH:
+      PRINT("sys_keyctl ( KEYCTL_SEARCH, %d, %p(%s), %p(%s), %d )",
+            ARG2,ARG3,ARG3,ARG4,ARG4,ARG5);
+      PRE_REG_READ5(long, "keyctl(KEYCTL_SEARCH)",
+                    int, option, vki_key_serial_t, keyring, 
+                    const char *, type, const char *, description,
+                    vki_key_serial_t, destring);
+      PRE_MEM_RASCIIZ("sys_keyctl(KEYCTL_SEARCH, type)", ARG3);
+      PRE_MEM_RASCIIZ("sys_keyctl(KEYCTL_SEARCH, description)", ARG4);
+      break;
+   case VKI_KEYCTL_READ:
+      PRINT("sys_keyctl ( KEYCTL_READ, %d, %p, %d )", ARG2,ARG3,ARG4);
+      PRE_REG_READ4(long, "keyctl(KEYCTL_READ)",
+                    int, option, vki_key_serial_t, keyring, 
+                    char *, buffer, vki_size_t, buflen);
+      if (ARG3 != (UWord)NULL)
+         PRE_MEM_WRITE("keyctl(KEYCTL_READ, buffer)", ARG3, ARG4);
+      break;
+   case VKI_KEYCTL_INSTANTIATE:
+      PRINT("sys_keyctl ( KEYCTL_INSTANTIATE, %d, %p, %d, %d )",
+            ARG2,ARG3,ARG4,ARG5);
+      PRE_REG_READ5(long, "keyctl(KEYCTL_INSTANTIATE)",
+                    int, option, vki_key_serial_t, key, 
+                    char *, payload, vki_size_t, plen,
+                    vki_key_serial_t, keyring);
+      if (ARG3 != (UWord)NULL)
+         PRE_MEM_READ("keyctl(KEYCTL_INSTANTIATE, payload)", ARG3, ARG4);
+      break;
+   case VKI_KEYCTL_NEGATE:
+      PRINT("sys_keyctl ( KEYCTL_NEGATE, %d, %u, %d )", ARG2,ARG3,ARG4);
+      PRE_REG_READ4(long, "keyctl(KEYCTL_NEGATE)",
+                    int, option, vki_key_serial_t, key, 
+                    unsigned, timeout, vki_key_serial_t, keyring);
+      break;
+   case VKI_KEYCTL_SET_REQKEY_KEYRING:
+      PRINT("sys_keyctl ( KEYCTL_SET_REQKEY_KEYRING, %d )", ARG2);
+      PRE_REG_READ2(long, "keyctl(KEYCTL_SET_REQKEY_KEYRING)",
+                    int, option, int, reqkey_defl);
+      break;
+   case VKI_KEYCTL_SET_TIMEOUT:
+      PRINT("sys_keyctl ( KEYCTL_SET_TIMEOUT, %d, %d )", ARG2,ARG3);
+      PRE_REG_READ3(long, "keyctl(KEYCTL_SET_TIMEOUT)",
+                    int, option, vki_key_serial_t, key, unsigned, timeout);
+      break;
+   case VKI_KEYCTL_ASSUME_AUTHORITY:
+      PRINT("sys_keyctl ( KEYCTL_ASSUME_AUTHORITY, %d )", ARG2);
+      PRE_REG_READ2(long, "keyctl(KEYCTL_ASSUME_AUTHORITY)",
+                    int, option, vki_key_serial_t, key);
+      break;
+   default:
+      PRINT("sys_keyctl ( %d ) ", ARG1);
+      PRE_REG_READ1(long, "keyctl", int, option);
+      break;
+   }
+}
+
+POST(sys_keyctl)
+{
+   vg_assert(SUCCESS);
+   switch (ARG1 /* option */) {
+   case VKI_KEYCTL_DESCRIBE:
+   case VKI_KEYCTL_READ:
+      if (RES > ARG4)
+         POST_MEM_WRITE(ARG3, ARG4);
+      else
+         POST_MEM_WRITE(ARG3, RES);
+      break;
+   default:
+      break;
+   }
+}
+
 #undef PRE
 #undef POST
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+
+

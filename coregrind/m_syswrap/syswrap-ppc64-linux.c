@@ -1492,10 +1492,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    LINX_(__NR_mq_notify,         sys_mq_notify),          // 266
    LINXY(__NR_mq_getsetattr,     sys_mq_getsetattr),      // 267
 // _____(__NR_kexec_load,        sys_kexec_load),         // 268
-// _____(__NR_add_key,           sys_add_key),            // 269
+   LINX_(__NR_add_key,           sys_add_key),            // 269
 
-// _____(__NR_request_key,       sys_request_key),        // 270
-// _____(__NR_keyctl,            sys_keyctl),             // 271
+   LINX_(__NR_request_key,       sys_request_key),        // 270
+   LINXY(__NR_keyctl,            sys_keyctl),             // 271
 // _____(__NR_waitid,            sys_waitid),             // 272
 // _____(__NR_ioprio_set,        sys_ioprio_set),         // 273
 // _____(__NR_ioprio_get,        sys_ioprio_get),         // 274

@@ -174,6 +174,14 @@ typedef unsigned int	        vki_uint;
 #endif
 
 //----------------------------------------------------------------------
+// From linux-2.6.20.1/include/linux/types.h
+//----------------------------------------------------------------------
+
+typedef		__vki_s32	vki_int32_t;
+
+typedef		__vki_u32	vki_uint32_t;
+
+//----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/limits.h
 //----------------------------------------------------------------------
 
@@ -2327,6 +2335,39 @@ struct vki_usbdevfs_ioctl {
 #define VKI_I2C_TENBIT		0x0704	/* 0 for 7 bit addrs, != 0 for 10 bit	*/
 #define VKI_I2C_FUNCS		0x0705	/* Get the adapter functionality */
 #define VKI_I2C_PEC		0x0708	/* != 0 for SMBus PEC                   */
+
+//----------------------------------------------------------------------
+// From linux-2.6.20.1/include/linux/keyctl.h
+//----------------------------------------------------------------------
+
+/* keyctl commands */
+#define VKI_KEYCTL_GET_KEYRING_ID	0	/* ask for a keyring's ID */
+#define VKI_KEYCTL_JOIN_SESSION_KEYRING	1	/* join or start named session keyring */
+#define VKI_KEYCTL_UPDATE		2	/* update a key */
+#define VKI_KEYCTL_REVOKE		3	/* revoke a key */
+#define VKI_KEYCTL_CHOWN		4	/* set ownership of a key */
+#define VKI_KEYCTL_SETPERM		5	/* set perms on a key */
+#define VKI_KEYCTL_DESCRIBE		6	/* describe a key */
+#define VKI_KEYCTL_CLEAR		7	/* clear contents of a keyring */
+#define VKI_KEYCTL_LINK			8	/* link a key into a keyring */
+#define VKI_KEYCTL_UNLINK		9	/* unlink a key from a keyring */
+#define VKI_KEYCTL_SEARCH		10	/* search for a key in a keyring */
+#define VKI_KEYCTL_READ			11	/* read a key or keyring's contents */
+#define VKI_KEYCTL_INSTANTIATE		12	/* instantiate a partially constructed key */
+#define VKI_KEYCTL_NEGATE		13	/* negate a partially constructed key */
+#define VKI_KEYCTL_SET_REQKEY_KEYRING	14	/* set default request-key keyring */
+#define VKI_KEYCTL_SET_TIMEOUT		15	/* set key timeout */
+#define VKI_KEYCTL_ASSUME_AUTHORITY	16	/* assume request_key() authorisation */
+
+/*--------------------------------------------------------------------*/
+// From linux-2.6.20.1/include/linux/key.h
+/*--------------------------------------------------------------------*/
+
+/* key handle serial number */
+typedef vki_int32_t vki_key_serial_t;
+
+/* key handle permissions mask */
+typedef vki_uint32_t vki_key_perm_t;
 
 #endif // __VKI_LINUX_H
 

@@ -41,6 +41,10 @@ r6601    pending   32 n-i-bz   callgrind: Fix threads display
 
 r6622    pending   32 n-i-bz   .eh_frame crud for m_trampoline.S fns
 
+r6630    pending      n-i-bz   add additional ptrace reason codes
+
+r6631    pending      142186   add I2C ioctl support
+
 Ashley logfile qualifiers in coredumps patch
 
 RedHat8 needs suppressions (r6612) (definitely merge)
@@ -130,6 +134,7 @@ pending  pending      139076   valgrind VT_GETSTATE error
 pending  pending      138702   amd64->IR: 0xF0 0xF 0xC0 0x90
                                (lock xadd %dl,0xb5(%rax))
 
+v6632    pending      139300   support linux key management system calls
 
 ------- Bugs reported and fixed in 3.2.2 ------
 

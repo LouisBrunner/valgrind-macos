@@ -845,6 +845,9 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       if (VG_(name_of_launcher))
          VG_(message)(Vg_UserMsg, "    <exe>%t</exe>", 
                                   VG_(name_of_launcher));
+      else
+         VG_(message)(Vg_UserMsg, "    <exe>%t</exe>",
+                                  "(launcher name unknown)");
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
          VG_(message)(Vg_UserMsg, 
                       "    <arg>%t</arg>", 

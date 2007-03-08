@@ -56,8 +56,16 @@ Correctly handle DW_CFA_def_cfa_sf (r6599) (definitely merge)
 get rid of kludge_then_addDiCfSI (r6611; do not merge)
 
 [Bug 142279] New: long indirect jmp unhandled: unhandled Grp5(M) case 5
-int3 (133984) ?
+int3 (133984): vx1736; merge to stable
 
+vx1737 (26 2E 64 65 90 %es:%cs:%fs:%gs:nop) - x86 - merge
+
+Make configure check try for -fno-stack-protector (users, 26 Feb)
+
+possible false errors on amd64 cmpq/jae, cmpq/jbe
+
+r6630  pending   ??  ptrace extra reason codes 
+r6631  pending   142186   dd support for some I2C ioctls.
 
 
 ------- Bugs reported and fixed in 3.2.3 ------

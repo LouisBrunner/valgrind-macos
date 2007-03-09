@@ -3519,7 +3519,8 @@ static Bool dis_int_load ( UInt theInstr )
    case 0x1F: // register offset
       assign( EA, ea_rAor0_idxd( rA_addr, rB_addr ) );
       break;
-   case 0x3A: // immediate offset: 64bit
+   case 0x3A: // immediate offset: 64bit: ld/ldu/lwa: mask off
+              // lowest 2 bits of immediate before forming EA
       simm16 = simm16 & 0xFFFFFFFC;
    default:   // immediate offset
       assign( EA, ea_rAor0_simm( rA_addr, simm16  ) );
@@ -3711,9 +3712,10 @@ static Bool dis_int_load ( UInt theInstr )
       }
       break;
 
-   /* DS Form - 64bit Loads */
+   /* DS Form - 64bit Loads.  In each case EA will have been formed
+      with the lowest 2 bits masked off the immediate offset. */
    case 0x3A:
-      switch (b1<<1 | b0) {
+      switch ((b1<<1) | b0) {
       case 0x0: // ld (Load DWord, PPC64 p472)
          DIP("ld r%u,%d(r%u)\n", rD_addr, simm16, rA_addr);
          putIReg( rD_addr, loadBE(Ity_I64, mkexpr(EA)) );
@@ -3725,7 +3727,6 @@ static Bool dis_int_load ( UInt theInstr )
             return False;
          }
          DIP("ldu r%u,%d(r%u)\n", rD_addr, simm16, rA_addr);
-         simm16 = simm16 & ~0x3;
          putIReg( rD_addr, loadBE(Ity_I64, mkexpr(EA)) );
          putIReg( rA_addr, mkexpr(EA) );
          break;
@@ -3779,7 +3780,8 @@ static Bool dis_int_store ( UInt theInstr, VexAbiInfo* vbi )
    case 0x1F: // register offset
       assign( EA, ea_rAor0_idxd( rA_addr, rB_addr ) );
       break;
-   case 0x3E: // immediate offset: 64bit
+   case 0x3E: // immediate offset: 64bit: std/stdu: mask off
+              // lowest 2 bits of immediate before forming EA
       simm16 = simm16 & 0xFFFFFFFC;
    default:   // immediate offset
       assign( EA, ea_rAor0_simm( rA_addr, simm16  ) );
@@ -3908,9 +3910,10 @@ static Bool dis_int_store ( UInt theInstr, VexAbiInfo* vbi )
       }
       break;
 
-   /* DS Form - 64bit Stores */
+   /* DS Form - 64bit Stores.  In each case EA will have been formed
+      with the lowest 2 bits masked off the immediate offset. */
    case 0x3E:
-      switch (b1<<1 | b0) {
+      switch ((b1<<1) | b0) {
       case 0x0: // std (Store DWord, PPC64 p580)
          DIP("std r%u,%d(r%u)\n", rS_addr, simm16, rA_addr);
          storeBE( mkexpr(EA), mkexpr(rS) );

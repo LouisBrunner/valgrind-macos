@@ -1301,7 +1301,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       Bool idxd = toBool(i->Pin.Load.src->tag == Pam_RR);
       UChar sz = i->Pin.Load.sz;
       UChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
-      vex_printf("l%cz%s ", c_sz, idxd ? "x" : "" );
+      vex_printf("l%c%s%s ", c_sz, sz==8 ? "" : "z", idxd ? "x" : "" );
       ppHRegPPC(i->Pin.Load.dst);
       vex_printf(",");
       ppPPCAMode(i->Pin.Load.src);
@@ -2388,8 +2388,9 @@ static UChar* doAMode_IR ( UChar* p, UInt opc1, UInt rSD,
 
    if (opc1 == 58 || opc1 == 62) { // ld/std: mode64 only
       vassert(mode64);
-      // kludge DS form: lowest 2 bits = 00
-      idx &= 0xFFFC;
+      /* stay sane with DS form: lowest 2 bits must be 00.  This
+         should be guaranteed to us by iselWordExpr_AMode. */
+      vassert(0 == (idx & 3));
    }
    p = mkFormD(p, opc1, rSD, rA, idx);
    return p;
@@ -3028,6 +3029,10 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
       UInt opc1, opc2, sz = i->Pin.Load.sz;
       switch (am_addr->tag) {
       case Pam_IR:
+         if (mode64 && (sz == 4 || sz == 8)) {
+            /* should be guaranteed to us by iselWordExpr_AMode */
+            vassert(0 == (am_addr->Pam.IR.index & 3));
+         }
          switch(sz) {
             case 1:  opc1 = 34; break;
             case 2:  opc1 = 40; break;
@@ -3099,6 +3104,10 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
       UInt opc1, opc2, sz = i->Pin.Store.sz;
       switch (i->Pin.Store.dst->tag) {
       case Pam_IR:
+         if (mode64 && (sz == 4 || sz == 8)) {
+            /* should be guaranteed to us by iselWordExpr_AMode */
+            vassert(0 == (am_addr->Pam.IR.index & 3));
+         }
          switch(sz) {
          case 1: opc1 = 38; break;
          case 2: opc1 = 44; break;

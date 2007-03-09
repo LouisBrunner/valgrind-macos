@@ -379,16 +379,25 @@ static PPCRI*        iselWordExpr_RI     ( ISelEnv* env, IRExpr* e );
 static PPCRH*        iselWordExpr_RH5u_wrk ( ISelEnv* env, IRExpr* e );
 static PPCRH*        iselWordExpr_RH5u     ( ISelEnv* env, IRExpr* e );
 
-/* In 64-bit mode ONLY, compute an I8 into a Compute an I8 into a
+/* In 64-bit mode ONLY, compute an I8 into a
    reg-or-6-bit-unsigned-immediate, the latter being an immediate in
    the range 1 .. 63 inclusive.  Used for doing shift amounts. */
 static PPCRH*        iselWordExpr_RH6u_wrk ( ISelEnv* env, IRExpr* e );
 static PPCRH*        iselWordExpr_RH6u     ( ISelEnv* env, IRExpr* e );
 
 /* 32-bit mode: compute an I32 into an AMode.
-   64-bit mode: compute an I64 into an AMode. */
-static PPCAMode*     iselWordExpr_AMode_wrk ( ISelEnv* env, IRExpr* e );
-static PPCAMode*     iselWordExpr_AMode     ( ISelEnv* env, IRExpr* e );
+   64-bit mode: compute an I64 into an AMode.
+
+   Requires to know (xferTy) the type of data to be loaded/stored
+   using this amode.  That is so that, for 64-bit code generation, any
+   PPCAMode_IR returned will have an index (immediate offset) field
+   that is guaranteed to be 4-aligned, if there is any chance that the
+   amode is to be used in ld/ldu/lda/std/stdu.
+
+   Since there are no such restrictions on 32-bit insns, xferTy is
+   ignored for 32-bit code generation. */
+static PPCAMode*     iselWordExpr_AMode_wrk ( ISelEnv* env, IRExpr* e, IRType xferTy );
+static PPCAMode*     iselWordExpr_AMode     ( ISelEnv* env, IRExpr* e, IRType xferTy );
 
 /* 32-bit mode ONLY: compute an I64 into a GPR pair. */
 static void          iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, 
@@ -1161,7 +1170,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- LOAD --------- */
    case Iex_Load: {
       HReg        r_dst   = newVRegI(env);
-      PPCAMode* am_addr = iselWordExpr_AMode( env, e->Iex.Load.addr );
+      PPCAMode* am_addr = iselWordExpr_AMode( env, e->Iex.Load.addr, ty/*of xfer*/ );
       if (e->Iex.Load.end != Iend_BE)
          goto irreducible;
       addInstr(env, PPCInstr_Load( toUChar(sizeofIRType(ty)), 
@@ -1513,7 +1522,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                              IRExpr_Load(Iend_BE,Ity_I16,bind(0))) );
          if (matchIRExpr(&mi,p_LDbe16_then_16Uto32,e)) {
             HReg r_dst = newVRegI(env);
-            PPCAMode* amode = iselWordExpr_AMode( env, mi.bindee[0] );
+            PPCAMode* amode = iselWordExpr_AMode( env, mi.bindee[0], Ity_I16/*xfer*/ );
             addInstr(env, PPCInstr_Load(2,r_dst,amode, mode64));
             return r_dst;
          }
@@ -1917,6 +1926,11 @@ static Bool uLong_fits_in_16_bits ( ULong u )
    return toBool(u == (ULong)i);
 }
 
+static Bool uLong_is_4_aligned ( ULong u )
+{
+   return toBool((u & 3ULL) == 0);
+}
+
 static Bool sane_AMode ( ISelEnv* env, PPCAMode* am )
 {
    Bool mode64 = env->mode64;
@@ -1937,19 +1951,29 @@ static Bool sane_AMode ( ISelEnv* env, PPCAMode* am )
    }
 }
 
-static PPCAMode* iselWordExpr_AMode ( ISelEnv* env, IRExpr* e )
+static 
+PPCAMode* iselWordExpr_AMode ( ISelEnv* env, IRExpr* e, IRType xferTy )
 {
-   PPCAMode* am = iselWordExpr_AMode_wrk(env, e);
+   PPCAMode* am = iselWordExpr_AMode_wrk(env, e, xferTy);
    vassert(sane_AMode(env, am));
    return am;
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static PPCAMode* iselWordExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
+static PPCAMode* iselWordExpr_AMode_wrk ( ISelEnv* env, IRExpr* e, IRType xferTy )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
 
    if (env->mode64) {
+
+      /* If the data load/store type is I32 or I64, this amode might
+         be destined for use in ld/ldu/lwa/st/stu.  In which case
+         insist that if it comes out as an _IR, the immediate must
+         have its bottom two bits be zero.  This does assume that for
+         any other type (I8/I16/I128/F32/F64/V128) the amode will not
+         be parked in any such instruction.  But that seems a
+         reasonable assumption.  */
+      Bool aligned4imm = toBool(xferTy == Ity_I32 || xferTy == Ity_I64);
 
       vassert(ty == Ity_I64);
    
@@ -1958,6 +1982,9 @@ static PPCAMode* iselWordExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
           && e->Iex.Binop.op == Iop_Add64
           && e->Iex.Binop.arg2->tag == Iex_Const
           && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U64
+          && (aligned4imm  ? uLong_is_4_aligned(e->Iex.Binop.arg2
+                                                 ->Iex.Const.con->Ico.U64)
+                           : True)
           && uLong_fits_in_16_bits(e->Iex.Binop.arg2
                                     ->Iex.Const.con->Ico.U64)) {
          return PPCAMode_IR( (Int)e->Iex.Binop.arg2->Iex.Const.con->Ico.U64,
@@ -2816,7 +2843,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       PPCAMode* am_addr;
       HReg r_dst = newVRegF(env);
       vassert(e->Iex.Load.ty == Ity_F32);
-      am_addr = iselWordExpr_AMode(env, e->Iex.Load.addr);
+      am_addr = iselWordExpr_AMode(env, e->Iex.Load.addr, Ity_F32/*xfer*/);
       addInstr(env, PPCInstr_FpLdSt(True/*load*/, 4, r_dst, am_addr));
       return r_dst;
    }
@@ -2964,7 +2991,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg r_dst = newVRegF(env);
       PPCAMode* am_addr;
       vassert(e->Iex.Load.ty == Ity_F64);
-      am_addr = iselWordExpr_AMode(env, e->Iex.Load.addr);
+      am_addr = iselWordExpr_AMode(env, e->Iex.Load.addr, Ity_F64/*xfer*/);
       addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, r_dst, am_addr));
       return r_dst;
    }
@@ -3211,7 +3238,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       PPCAMode* am_addr;
       HReg v_dst = newVRegV(env);
       vassert(e->Iex.Load.ty == Ity_V128);
-      am_addr = iselWordExpr_AMode(env, e->Iex.Load.addr);
+      am_addr = iselWordExpr_AMode(env, e->Iex.Load.addr, Ity_V128/*xfer*/);
       addInstr(env, PPCInstr_AvLdSt( True/*load*/, 16, v_dst, am_addr));
       return v_dst;
    }
@@ -3618,7 +3645,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
            ( mode64 && (tya != Ity_I64)) )
          goto stmt_fail;
 
-      am_addr = iselWordExpr_AMode(env, stmt->Ist.Store.addr);
+      am_addr = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd/*of xfer*/);
       if (tyd == Ity_I8 || tyd == Ity_I16 || tyd == Ity_I32 ||
           (mode64 && (tyd == Ity_I64))) {
          HReg r_src = iselWordExpr_R(env, stmt->Ist.Store.data);

@@ -101,7 +101,7 @@ following:
        grep NNN /usr/include/asm/unistd.h
 
     This should tell you something like  __NR_mysyscallname.
-    Copy this entry to coregrind/vki_unistd-$(VG_PLATFORM).h.
+    Copy this entry to include/vki/vki-scnums-$(VG_PLATFORM).h.
 
 
 2.  Do 'man 2 mysyscallname' to get some idea of what the syscall

@@ -6,8 +6,7 @@
 
 /*
    This file is part of MemCheck, a heavyweight Valgrind tool for
-   detecting memory errors, and AddrCheck, a lightweight Valgrind tool 
-   for detecting memory errors.
+   detecting memory errors.
 
    Copyright (C) 2000-2007 Julian Seward 
       jseward@acm.org

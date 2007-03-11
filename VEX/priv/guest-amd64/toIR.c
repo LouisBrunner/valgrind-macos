@@ -12375,9 +12375,21 @@ DisResult disInstr_AMD64_WRK (
    case 0xDC:
    case 0xDD:
    case 0xDE:
-   case 0xDF:
-      if (haveF2orF3(pfx)) goto decode_failure;
-      if (sz == 4 && haveNo66noF2noF3(pfx)) {
+   case 0xDF: {
+      Bool redundantREXWok = False;
+
+      if (haveF2orF3(pfx)) 
+         goto decode_failure;
+
+      /* kludge to tolerate redundant rex.w prefixes (should do this
+         properly one day) */
+      /* mono 1.1.18.1 produces 48 D9 FA, which is rex.w fsqrt */
+      if ( (opc == 0xD9 && getUChar(delta+0) == 0xFA)/*fsqrt*/ )
+         redundantREXWok = True;
+
+      if ( (sz == 4
+           || (sz == 8 && redundantREXWok))
+           && haveNo66noF2noF3(pfx)) {
          Long delta0    = delta;
          Bool decode_OK = False;
          delta = dis_FPU ( &decode_OK, pfx, delta );
@@ -12389,6 +12401,7 @@ DisResult disInstr_AMD64_WRK (
       } else {
          goto decode_failure;
       }
+   }
 
    /* ------------------------ INT ------------------------ */
 

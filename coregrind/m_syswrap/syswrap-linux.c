@@ -2616,6 +2616,7 @@ PRE(sys_faccessat)
 /* ---------------------------------------------------------------------
    key retention service wrappers
    ------------------------------------------------------------------ */
+
 PRE(sys_request_key)
 {
    PRINT("sys_request_key ( %p(%s), %p(%s), %p(%s), %d )",
@@ -2776,6 +2777,19 @@ POST(sys_keyctl)
       break;
    }
 }
+
+/* ---------------------------------------------------------------------
+   ioprio_ wrappers
+   ------------------------------------------------------------------ */
+
+/* _syscall3(int, ioprio_set, int, which, int, who, int, ioprio); */
+
+PRE(sys_ioprio_set)
+{
+   PRINT("sys_ioprio_set ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "ioprio_set", int, which, int, who, int, ioprio);
+}
+
 
 #undef PRE
 #undef POST

@@ -2640,6 +2640,9 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          case Ijk_NoRedir:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_NOREDIR); break;
+         case Ijk_Trap:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_TRAP); break;
          case Ijk_Ret:
          case Ijk_Call:
          case Ijk_Boring:

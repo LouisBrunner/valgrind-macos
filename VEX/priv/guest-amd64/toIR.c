@@ -12405,6 +12405,12 @@ DisResult disInstr_AMD64_WRK (
 
    /* ------------------------ INT ------------------------ */
 
+   case 0xCC: /* INT 3 */
+      jmp_lit(Ijk_Trap, guest_RIP_bbstart + delta);
+      dres.whatNext = Dis_StopHere;
+      DIP("int $0x3\n");
+      break;
+
    case 0xCD: { /* INT imm8 */
       IRJumpKind jk = Ijk_Boring;
       if (have66orF2orF3(pfx)) goto decode_failure;

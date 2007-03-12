@@ -1,0 +1,2 @@
+prog: std_reg_imm
+vgopts: -q

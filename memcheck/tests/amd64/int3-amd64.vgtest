@@ -1,0 +1,2 @@
+prog: int3-amd64
+vgopts: -q

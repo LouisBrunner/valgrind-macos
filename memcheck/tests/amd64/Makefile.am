@@ -11,7 +11,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bt_everything.stderr.exp bt_everything.stdout.exp \
 		bt_everything.vgtest \
 	bug132146.vgtest bug132146.stderr.exp bug132146.stdout.exp \
-	defcfaexpr.vgtest defcfaexpr.stderr.exp \
+	defcfaexpr.vgtest defcfaexpr.stderr.exp filter_defcfaexpr \
 	fxsave-amd64.vgtest fxsave-amd64.stdout.exp fxsave-amd64.stderr.exp \
 	int3-amd64.vgtest int3-amd64.stdout.exp int3-amd64.stderr.exp \
 	more_x87_fp.stderr.exp more_x87_fp.stdout.exp more_x87_fp.vgtest \

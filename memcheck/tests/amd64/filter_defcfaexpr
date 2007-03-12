@@ -1,0 +1,28 @@
+#! /bin/sh
+
+# change 
+#
+# ==6019==    at 0x400512: bbb (in 
+#           /home/sewardj/VgTRUNK/trunk/memcheck/tests/amd64/defcfaexpr)
+#
+# to
+#
+# ==6019==    at 0x400512: bbb (in bogus.S:0)
+#
+# and then to
+#
+# ==6019==    at 0x400512: bbb (bogus.S:0)
+#
+# Then the standard ./filter_stderr won't screw it up any more,
+# instead producing what we want, which is
+#
+#   at 0x........: bbb (bogus.S:0)
+#
+# where the important point is that the function name is intact.
+# since the point of this test is to check that V can unwind the
+# stack given the unusual CFAs describing it.
+
+
+sed "s/\/.*\/tests\/amd64\/defcfaexpr/bogus.S:0/" | \
+      sed "s/(in /(/" | \
+      ./filter_stderr

@@ -345,6 +345,14 @@
    fun:pthread_create@@GLIBC_2.1
 }
 {
+   LinuxThreads: write/pthread_create 2
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:pthread_create@@GLIBC_2.1
+   fun:main
+}
+{
    LinuxThreads: write/__pthread_initialize_manager/pthread_create
    Memcheck:Param
    write(buf)

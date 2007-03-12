@@ -11,6 +11,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	int3-x86.vgtest int3-x86.stderr.exp int3-x86.stdout.exp \
 	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
 	pushpopmem.stderr.exp pushpopmem.stdout.exp pushpopmem.vgtest \
 	scalar.stderr.exp scalar.stderr.exp2 scalar.vgtest \
@@ -31,6 +32,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	bug133694 \
 	espindola2 \
+	int3-x86 \
 	scalar_exit_group scalar_fork scalar_supp scalar_vfork \
 	fpeflags pushfpopf pushpopmem scalar sse_memory tronical \
 	more_x86_fp fprem xor-undef-x86

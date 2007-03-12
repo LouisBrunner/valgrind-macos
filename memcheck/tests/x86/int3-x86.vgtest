@@ -1,0 +1,2 @@
+prog: int3-x86
+vgopts: -q

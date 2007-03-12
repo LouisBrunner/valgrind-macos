@@ -13,15 +13,16 @@ PRI: 32  = fix this for 3.2.2
 
 ---------- Bugs reported after (in) 3.2.3 --------------------------
 
+//// possibly fix these for a 3.2.4 ?
+
 TRUNK   32BRANCH  PRI   BUG#   WHAT
 
 r6566    pending   32 n-i-bz   AT_FDCWD support for openat()
 
 r6575    pending   32 n-i-bz   walk_type: unhandled base type 0xe PACKED
 
-pending  pending      n-i-bz   --track-fds reports leakage of
+pending  pending      140939   --track-fds reports leakage of
                                stdout/in/err and doesn't respect -q
-                               XXX where is the patch?
 
 pending  pending      141366   Add sys_vserver support to valgrind (w/ patch)
 
@@ -47,25 +48,44 @@ r6631    pending      142186   add I2C ioctl support
 
 Ashley logfile qualifiers in coredumps patch
 
-RedHat8 needs suppressions (r6612) (definitely merge)
-- see 142228 complaint of elf_dynamic_do_rela in trivial usage
-- also 142229 unexpected "write(buf) points to uninitialised byte(s)"
+r6612    pending   32 142228   RedHat8: complaint of elf_dynamic_do_rela
+r6646    pending   32 142229   RedHat8: unexpected "write(buf) points
+                               to uninitialised byte(s)" (partial fix)
 
-64 bit DWARF in unwind (r6610) (definitely merge)
-Correctly handle DW_CFA_def_cfa_sf (r6599) (definitely merge)
-get rid of kludge_then_addDiCfSI (r6611; do not merge)
+vx1736   pending   32 133984   int3 (x86) support
+vx1741   pending   32 133984   int3 (amd64) support
 
-[Bug 142279] New: long indirect jmp unhandled: unhandled Grp5(M) case 5
-int3 (133984): vx1736; merge to stable
+r6599    pending   32 n-i-bz   Correctly handle DW_CFA_def_cfa_sf
 
-vx1737 (26 2E 64 65 90 %es:%cs:%fs:%gs:nop) - x86 - merge
+vx1737   pending   32 n-i-bz   x86->IR: 26 2E 64 65 90 %es:%cs:%fs:%gs:nop
+
+vx1739   pending   32 n-i-bz   ppc64 iselWordExpr_AMode fix
+
+r6641    pending   32 n-i-bz   handle sys_ioprio_set on amd64-linux
+
+vx1740   pending   ?? n-i-bz   handle REX.W fsqrt
 
 Make configure check try for -fno-stack-protector (users, 26 Feb)
 
 possible false errors on amd64 cmpq/jae, cmpq/jbe
 
-r6630  pending   ??  ptrace extra reason codes 
-r6631  pending   142186   dd support for some I2C ioctls.
+
+//// maybe do not fix in 3.2 branch
+
+64 bit DWARF in unwind (r6610) (definitely merge (??))
+
+get rid of kludge_then_addDiCfSI (r6611; do not merge)
+
+142279  long indirect jmp unhandled: unhandled Grp5(M) case 5
+        (intersegment jump?)
+
+r6630    pending   ??          ptrace extra reason codes 
+r6631    pending   ?? 142186   dd support for some I2C ioctls.
+
+r6640    pending   no n-i-bz   memcheck: intercept getenv
+(XXXX maybe get rid of this)
+
+3.2.4 criteria: FC7 runs, SuSE 10.3a? runs
 
 
 ------- Bugs reported and fixed in 3.2.3 ------

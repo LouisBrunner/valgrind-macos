@@ -670,40 +670,6 @@ GLIBC25_MEMPCPY(m_libc_soname, mempcpy)
 GLIBC25_MEMPCPY(m_ld_so_1,     mempcpy) /* ld.so.1 */
 
 
-/* getenv.  glibc-2.5 steps along the env strings in 2 byte chunks
-   which means it sometimes overreads.  sigh. */
-#define GLIBC25_GETENV(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* name0 ); \
-   char* VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* name0 )  \
-   { \
-      char** ep; \
-      char* cand; \
-      char* name; \
-      extern char** __environ; \
-      if (__environ == NULL || name0 == NULL || name0[0] == '\0') \
-         return NULL; \
-      for (ep = __environ; *ep; ep++) { \
-         cand = *ep; \
-         name = (char*)name0; \
-         /* advance cand and name until either points at zero or \
-            until what they both point at differs. */ \
-         while (1) { \
-            if (*cand == 0 || *name == 0) \
-               break; \
-            if (*cand != *name) \
-               break; \
-            cand++; \
-            name++; \
-         } \
-         if (*name == 0 && *cand == '=') \
-            return cand+1; \
-     } \
-     return NULL; \
-   }
-
-GLIBC25_GETENV(m_libc_soname, getenv)
-
-
 /*------------------------------------------------------------*/
 /*--- AIX stuff only after this point                      ---*/
 /*------------------------------------------------------------*/

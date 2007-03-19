@@ -669,9 +669,11 @@ POST(sys_thread_setstate)
 
 PRE(sys_FAKE_SIGRETURN)
 {
-   ThreadState* tst;
+   /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
+      an explanation of what follows. */
    /* This handles the fake signal-return system call created by
       sigframe-ppc32-aix5.c. */
+
    PRINT("FAKE_SIGRETURN ( )");
 
    vg_assert(VG_(is_valid_tid)(tid));
@@ -682,17 +684,13 @@ PRE(sys_FAKE_SIGRETURN)
       in the process restoring the pre-signal guest state. */
    VG_(sigframe_destroy)(tid, True);
 
-   /* Now the pre-signal registers are restored.  Unfortunately the
-      syscall driver logic will want to copy back the syscall result
-      (not that there is one) into guest r3/r4.  So we'd better cook
-      up a syscall result which, when copied back, makes no change. */ 
-   tst = VG_(get_ThreadState)(tid);
-   SET_STATUS_from_SysRes( 
-      VG_(mk_SysRes_ppc32_aix5)(
-         tst->arch.vex.guest_GPR3,
-         tst->arch.vex.guest_GPR4 
-      )
-   );
+   /* Tell the driver not to update the guest state with the "result",
+      and set a bogus result to keep it happy. */
+   *flags |= SfNoWriteResult;
+   SET_STATUS_Success(0);
+
+   /* Check to see if any signals arose as a result of this. */
+   *flags |= SfPollAfter;
 }
 
 

@@ -963,7 +963,7 @@ PRE(sys_sigreturn)
    *flags |= SfNoWriteResult;
    SET_STATUS_Success(0);
 
-   /* Check to see if some any signals arose as a result of this. */
+   /* Check to see if any signals arose as a result of this. */
    *flags |= SfPollAfter;
 }
 
@@ -997,7 +997,7 @@ PRE(sys_rt_sigreturn)
    *flags |= SfNoWriteResult;
    SET_STATUS_Success(0);
 
-   /* Check to see if some any signals arose as a result of this. */
+   /* Check to see if any signals arose as a result of this. */
    *flags |= SfPollAfter;
 }
 

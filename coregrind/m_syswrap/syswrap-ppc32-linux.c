@@ -1024,8 +1024,11 @@ PRE(sys_clone)
 
 PRE(sys_sigreturn)
 {
+   /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
+      an explanation of what follows. */
+
    ThreadState* tst;
-   PRINT("sigreturn ( )");
+   PRINT("sys_sigreturn ( )");
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);
@@ -1042,38 +1045,23 @@ PRE(sys_sigreturn)
    //ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
    // Should we do something equivalent on ppc32?  Who knows.
 
+   /* Restore register state from frame and remove it */
    VG_(sigframe_destroy)(tid, False);
 
-   /* For unclear reasons, it appears we need the syscall to return
-      without changing R3.  Since R3 is the return value, and can
-      denote either success or failure, we must set up so that the
-      driver logic copies it back unchanged.  Also, note R3 is of
-      the guest registers written by VG_(sigframe_destroy). */
-   /* jrs 16 Nov 05: for some reason this occasionally causes the 
-      is-this-a-sane-error-value sanity check to fail:
-      m_syswrap/syswrap-ppc32-linux.c:1037
-        (vgSysWrap_ppc32_linux_sys_sigreturn_before): 
-        Assertion 'wzz >= 0 && wzz < 10000' failed.
-      Hence use a sanity-check-free version.  
-      Perhaps we should ignore CR0.S0 here?
-      In general I have no idea what this is for or if it is necessary.
-      It's a conceptual copy-n-paste from the x86 equivalent, but I'm 
-      equally unclear as to whether it is needed there either.
-   */
-   SET_STATUS_from_SysRes(
-      VG_(mk_SysRes_ppc32_linux)( 
-         tst->arch.vex.guest_GPR3,
-         /* get CR0.SO */
-         (LibVEX_GuestPPC32_get_CR( &tst->arch.vex ) >> 28) & 1
-      )
-   );
+   /* Tell the driver not to update the guest state with the "result",
+      and set a bogus result to keep it happy. */
+   *flags |= SfNoWriteResult;
+   SET_STATUS_Success(0);
 
-   /* Check to see if some any signals arose as a result of this. */
+   /* Check to see if any signals arose as a result of this. */
    *flags |= SfPollAfter;
 }
 
 PRE(sys_rt_sigreturn)
 {
+   /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
+      an explanation of what follows. */
+
    ThreadState* tst;
    PRINT("rt_sigreturn ( )");
 
@@ -1092,18 +1080,15 @@ PRE(sys_rt_sigreturn)
    //ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
    // Should we do something equivalent on ppc32?  Who knows.
 
+   /* Restore register state from frame and remove it */
    VG_(sigframe_destroy)(tid, True);
 
-   /* See comments above in PRE(sys_sigreturn) about this. */
-   SET_STATUS_from_SysRes(
-      VG_(mk_SysRes_ppc32_linux)( 
-         tst->arch.vex.guest_GPR3,
-         /* get CR0.SO */
-         (LibVEX_GuestPPC32_get_CR( &tst->arch.vex ) >> 28) & 1
-      )
-   );
+   /* Tell the driver not to update the guest state with the "result",
+      and set a bogus result to keep it happy. */
+   *flags |= SfNoWriteResult;
+   SET_STATUS_Success(0);
 
-   /* Check to see if some any signals arose as a result of this. */
+   /* Check to see if any signals arose as a result of this. */
    *flags |= SfPollAfter;
 }
 

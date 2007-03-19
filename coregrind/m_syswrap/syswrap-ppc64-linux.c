@@ -1000,60 +1000,13 @@ PRE(sys_clone)
    }
 }
 
-//zz PRE(sys_sigreturn)
-//zz {
-//zz    ThreadState* tst;
-//zz    PRINT("sigreturn ( )");
-//zz 
-//zz    vg_assert(VG_(is_valid_tid)(tid));
-//zz    vg_assert(tid >= 1 && tid < VG_N_THREADS);
-//zz    vg_assert(VG_(is_running_thread)(tid));
-//zz 
-//zz    ///* Adjust esp to point to start of frame; skip back up over
-//zz    //   sigreturn sequence's "popl %eax" and handler ret addr */
-//zz    tst = VG_(get_ThreadState)(tid);
-//zz    //tst->arch.vex.guest_ESP -= sizeof(Addr)+sizeof(Word);
-//zz    // Should we do something equivalent on ppc64?  Who knows.
-//zz 
-//zz    ///* This is only so that the EIP is (might be) useful to report if
-//zz    //   something goes wrong in the sigreturn */
-//zz    //ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
-//zz    // Should we do something equivalent on ppc64?  Who knows.
-//zz 
-//zz    VG_(sigframe_destroy)(tid, False);
-//zz 
-//zz    /* For unclear reasons, it appears we need the syscall to return
-//zz       without changing R3.  Since R3 is the return value, and can
-//zz       denote either success or failure, we must set up so that the
-//zz       driver logic copies it back unchanged.  Also, note R3 is of
-//zz       the guest registers written by VG_(sigframe_destroy). */
-//zz    /* jrs 16 Nov 05: for some reason this occasionally causes the 
-//zz       is-this-a-sane-error-value sanity check to fail:
-//zz       m_syswrap/syswrap-ppc64-linux.c:1037
-//zz         (vgSysWrap_ppc64_linux_sys_sigreturn_before): 
-//zz         Assertion 'wzz >= 0 && wzz < 10000' failed.
-//zz       Hence use a sanity-check-free version.  
-//zz       Perhaps we should ignore CR0.S0 here?
-//zz       In general I have no idea what this is for or if it is necessary.
-//zz       It's a conceptual copy-n-paste from the x86 equivalent, but I'm 
-//zz       equally unclear as to whether it is needed there either.
-//zz    */
-//zz    SET_STATUS_from_SysRes_NO_SANITY_CHECK(
-//zz       VG_(mk_SysRes_ppc64_linux)( 
-//zz          tst->arch.vex.guest_GPR3,
-//zz          /* get CR0.SO */
-//zz          (LibVEX_GuestPPC32_get_CR( &tst->arch.vex ) >> 28) & 1
-//zz       )
-//zz    );
-//zz 
-//zz    /* Check to see if some any signals arose as a result of this. */
-//zz    *flags |= SfPollAfter;
-//zz }
-
 PRE(sys_rt_sigreturn)
 {
+   /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
+      an explanation of what follows. */
+
    ThreadState* tst;
-   PRINT("rt_sigreturn ( )");
+   PRINT("sys_rt_sigreturn ( )");
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);
@@ -1063,25 +1016,22 @@ PRE(sys_rt_sigreturn)
    //   ret addr */
    tst = VG_(get_ThreadState)(tid);
    //tst->arch.vex.guest_ESP -= sizeof(Addr);
-   // Should we do something equivalent on ppc64?  Who knows.
+   // Should we do something equivalent on ppc64-linux?  Who knows.
 
    ///* This is only so that the EIP is (might be) useful to report if
    //   something goes wrong in the sigreturn */
    //ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
    // Should we do something equivalent on ppc64?  Who knows.
 
+   /* Restore register state from frame and remove it */
    VG_(sigframe_destroy)(tid, True);
 
-   /* See comments above in PRE(sys_sigreturn) about this. */
-   SET_STATUS_from_SysRes(
-      VG_(mk_SysRes_ppc64_linux)( 
-         tst->arch.vex.guest_GPR3,
-         /* get CR0.SO */
-         (LibVEX_GuestPPC64_get_CR( &tst->arch.vex ) >> 28) & 1
-      )
-   );
+   /* Tell the driver not to update the guest state with the "result",
+      and set a bogus result to keep it happy. */
+   *flags |= SfNoWriteResult;
+   SET_STATUS_Success(0);
 
-   /* Check to see if some any signals arose as a result of this. */
+   /* Check to see if any signals arose as a result of this. */
    *flags |= SfPollAfter;
 }
 

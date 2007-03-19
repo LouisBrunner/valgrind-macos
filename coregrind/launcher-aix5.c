@@ -1329,7 +1329,7 @@ int main ( int argc, char** argv, char** envp )
    Child child;
    Int i, loglevel;
    const char *toolname = NULL;
-   const char *clientname = NULL;
+         char *clientname = NULL;
 
    /* First, look in our own /proc/<pid>/sysent file to find
       the syscall numbers for kwrite and _getpid.  These are needed
@@ -1421,6 +1421,44 @@ int main ( int argc, char** argv, char** envp )
 
    assert(PAGE_SIZE == 4096); /* stay sane */
 
+   const char* valgrind_lib = VG_LIBDIR;
+
+   /* If there is no program to run, which will be the case if the
+      user just does "valgrind --help", etc, run a dummy do-nothing
+      program so at least the tool can get started and handle the
+      --help/--version etc.  It spots the fact that this is a dummy
+      program and acts like it was started with no program, hence
+      behaving the same as the Linux ports would have. */
+   if (clientname == NULL) {
+      Int j;
+      char** new_argv;
+      const char* noop_exe_name = "no_op_client_for_valgrind";
+      const char* up_n_bindir = "/../../bin";
+      clientname = malloc(strlen(valgrind_lib) + strlen(up_n_bindir)
+                          + 2 + strlen(noop_exe_name));
+      if (clientname == NULL) {
+         fprintf(stderr,"%s: malloc of clientname failed\n", argv[0]);
+         return 1;
+      }
+      sprintf(clientname, "%s%s/%s", valgrind_lib, up_n_bindir, noop_exe_name);
+      /* now we have to add it to the end of argv, which means making
+	 that one word longer.  How tedious. */
+      for (j = 0; argv[j]; j++)
+	;
+      j += 2; 
+      new_argv = calloc(j, sizeof(char*));
+      if (new_argv == NULL) {
+         fprintf(stderr,"%s: malloc of new_argv failed\n", argv[0]);
+         return 1;
+      }
+      for (i = 0; i < j-2; i++)
+	new_argv[i] = argv[i];
+      new_argv[j-2] = clientname;
+      assert(new_argv[j-1] == NULL);
+      argv = new_argv;
+      argc++;
+   }
+
    if (argc < 2 || toolname == NULL || clientname == NULL)
       barf(1, argv[0], "usage: valgrind [args-for-valgrind] prog args"); 
 
@@ -1428,7 +1466,7 @@ int main ( int argc, char** argv, char** envp )
       executable. */
    VG_(debugLog)(1, "launcher", "searching for client in $PATH\n");
    if (strchr(clientname, '/') == NULL)
-      clientname = find_client(clientname);
+      clientname = (char*)find_client(clientname);
    VG_(debugLog)(1, "launcher", "found %s\n", clientname);
 
    Int client_exekind = examine_client ( clientname );
@@ -1450,7 +1488,6 @@ int main ( int argc, char** argv, char** envp )
    VG_(debugLog)(1, "launcher", "client is an XCOFF%d executable\n", 
                     client_exekind);
 
-   const char* valgrind_lib = VG_LIBDIR;
    const char* platform = child.is64 ? "ppc64-aix5" : "ppc32-aix5";
 
    VG_(debugLog)(1, "launcher", "looking for the tool file\n");

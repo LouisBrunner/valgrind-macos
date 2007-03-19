@@ -1399,6 +1399,18 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
          );
    }
 
+#  if defined(VGO_aix5)
+   /* Tolerate ptraced-based launchers.  They can't run 'no program'
+      if the user types "valgrind --help", so they run a do-nothing
+      program $prefix/bin/no_op_client_for_valgrind, and we catch that
+      here and turn it the exe name back into NULL.  Then --help,
+      --version etc work as they should. */
+   if (VG_(args_the_exename) 
+       && VG_(strstr)( VG_(args_the_exename), "/no_op_client_for_valgrind" )) {
+      VG_(args_the_exename) = NULL;
+   }
+#  endif
+
    //--------------------------------------------------------------
    // Extract tool name and whether help has been requested.
    // Note we can't print the help message yet, even if requested,

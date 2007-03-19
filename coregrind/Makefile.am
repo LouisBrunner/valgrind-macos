@@ -42,7 +42,7 @@ endif
 # Build the launcher (valgrind) for the primary target only.
 #
 bin_PROGRAMS = \
-	valgrind
+	valgrind no_op_client_for_valgrind
 
 if VGO_AIX5
 valgrind_SOURCES = \
@@ -59,6 +59,10 @@ valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
 valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
+
+no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
+no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+no_op_client_for_valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
 #
 #----------------------------------------------------------
 

@@ -96,6 +96,10 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
    IIFinaliseImageInfo iifii;
    VG_(memset)( &iifii, 0, sizeof(iifii) );
 
+   /* this can happen, if m_main decides to NULL it out */
+   if (VG_(args_the_exename) == NULL)
+      VG_(err_missing_prog)();
+
    vg_assert( iicii.toolname );
    pltool_len = VG_(strlen)( VG_(libdir) ) 
                 + 1 /*slash*/

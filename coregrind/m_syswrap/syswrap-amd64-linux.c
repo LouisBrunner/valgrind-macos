@@ -451,30 +451,41 @@ PRE(sys_clone)
 
 PRE(sys_rt_sigreturn)
 {
+   /* This isn't really a syscall at all - it's a misuse of the
+      syscall mechanism by m_sigframe.  VG_(sigframe_create) sets the
+      return address of the signal frames it creates to be a short
+      piece of code which does this "syscall".  The only purpose of
+      the syscall is to call VG_(sigframe_destroy), which restores the
+      thread's registers from the frame and then removes it.
+      Consequently we must ask the syswrap driver logic not to write
+      back the syscall "result" as that would overwrite the
+      just-restored register state. */
+
    ThreadState* tst;
-   PRINT("rt_sigreturn ( )");
+   PRINT("sys_rt_sigreturn ( )");
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);
    vg_assert(VG_(is_running_thread)(tid));
 
-   /* Adjust esp to point to start of frame; skip back up over handler
+   /* Adjust RSP to point to start of frame; skip back up over handler
       ret addr */
    tst = VG_(get_ThreadState)(tid);
    tst->arch.vex.guest_RSP -= sizeof(Addr);
 
    /* This is only so that the RIP is (might be) useful to report if
-      something goes wrong in the sigreturn */
+      something goes wrong in the sigreturn.  JRS 20070318: no idea
+      what this is for */
    ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
 
+   /* Restore register state from frame and remove it, as 
+      described above */
    VG_(sigframe_destroy)(tid, True);
 
-   /* For unclear reasons, it appears we need the syscall to return
-      without changing %RAX.  Since %RAX is the return value, and can
-      denote either success or failure, we must set up so that the
-      driver logic copies it back unchanged.  Also, note %RAX is of
-      the guest registers written by VG_(sigframe_destroy). */
-   SET_STATUS_from_SysRes( VG_(mk_SysRes_amd64_linux)( tst->arch.vex.guest_RAX ) );
+   /* Tell the driver not to update the guest state with the "result",
+      and set a bogus result to keep it happy. */
+   *flags |= SfNoWriteResult;
+   SET_STATUS_Success(0);
 
    /* Check to see if some any signals arose as a result of this. */
    *flags |= SfPollAfter;

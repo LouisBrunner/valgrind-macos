@@ -858,12 +858,17 @@ void VG_(client_syscall) ( ThreadId tid )
    if (sci->status.what == SsComplete && !sci->status.sres.isError) {
       /* The pre-handler completed the syscall itself, declaring
          success. */
-      PRINT(" --> [pre-success] Success(0x%llx)\n", (ULong)sci->status.sres.res );
-                                       
+      if (sci->flags & SfNoWriteResult) {
+         PRINT(" --> [pre-success] NoWriteResult\n");
+      } else {
+         PRINT(" --> [pre-success] Success(0x%llx)\n",
+               (ULong)sci->status.sres.res );
+      }                                      
       /* In this case the allowable flags are to ask for a signal-poll
          and/or a yield after the call.  Changing the args isn't
          allowed. */
-      vg_assert(0 == (sci->flags & ~(SfPollAfter | SfYieldAfter)));
+      vg_assert(0 == (sci->flags 
+                      & ~(SfPollAfter | SfYieldAfter | SfNoWriteResult)));
       vg_assert(eq_SyscallArgs(&sci->args, &sci->orig_args));
    }
 
@@ -971,7 +976,8 @@ void VG_(client_syscall) ( ThreadId tid )
 
    /* Dump the syscall result back in the guest state.  This is
       a platform-specific action. */
-   putSyscallStatusIntoGuestState( &sci->status, &tst->arch.vex );
+   if (!(sci->flags & SfNoWriteResult))
+      putSyscallStatusIntoGuestState( &sci->status, &tst->arch.vex );
 
    /* Situation now:
       - the guest state is now correctly modified following the syscall
@@ -1022,11 +1028,13 @@ void VG_(post_syscall) (ThreadId tid)
 
    /* Validate current syscallInfo entry.  In particular we require
       that the current .status matches what's actually in the guest
-      state. */
+      state.  At least in the normal case where we have actually
+      previously written the result into the guest state. */
    vg_assert(sci->status.what == SsComplete);
 
    getSyscallStatusFromGuestState( &test_status, &tst->arch.vex );
-   vg_assert(eq_SyscallStatus( &sci->status, &test_status ));
+   if (!(sci->flags & SfNoWriteResult))
+      vg_assert(eq_SyscallStatus( &sci->status, &test_status ));
    /* Ok, looks sane */
 
    /* Get the system call number.  Because the pre-handler isn't
@@ -1061,7 +1069,8 @@ void VG_(post_syscall) (ThreadId tid)
       post-handler for sys_open can change the result from success to
       failure if the kernel supplied a fd that it doesn't like), once
       again dump the syscall result back in the guest state.*/
-   putSyscallStatusIntoGuestState( &sci->status, &tst->arch.vex );
+   if (!(sci->flags & SfNoWriteResult))
+      putSyscallStatusIntoGuestState( &sci->status, &tst->arch.vex );
 
    /* Do any post-syscall actions required by the tool. */
    if (VG_(needs).syscall_wrapper)
@@ -1314,7 +1323,8 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
          canonical = convert_SysRes_to_SyscallStatus( 
                         VG_(mk_SysRes_Error)( VKI_EINTR ) 
                      );
-         putSyscallStatusIntoGuestState( &canonical, &th_regs->vex );
+         if (!(sci->flags & SfNoWriteResult))
+            putSyscallStatusIntoGuestState( &canonical, &th_regs->vex );
          sci->status = canonical;
          VG_(post_syscall)(tid);
       }
@@ -1328,7 +1338,8 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       if (debug)
          VG_(printf)("  completed\n");
       canonical = convert_SysRes_to_SyscallStatus( sres );
-      putSyscallStatusIntoGuestState( &canonical, &th_regs->vex );
+      if (!(sci->flags & SfNoWriteResult))
+         putSyscallStatusIntoGuestState( &canonical, &th_regs->vex );
       sci->status = canonical;
       VG_(post_syscall)(tid);
    } 

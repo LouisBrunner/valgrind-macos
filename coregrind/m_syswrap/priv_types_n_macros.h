@@ -94,10 +94,11 @@ typedef
    SyscallArgLayout;
 
 /* Flags describing syscall wrappers */
-#define SfMayBlock   (1 << 1)    /* may block                       */
-#define SfPostOnFail (1 << 2)    /* call POST() function on failure */
-#define SfPollAfter  (1 << 3)    /* poll for signals on completion  */
-#define SfYieldAfter (1 << 4)    /* yield on completion             */
+#define SfMayBlock      (1 << 1) /* may block                         */
+#define SfPostOnFail    (1 << 2) /* call POST() function on failure   */
+#define SfPollAfter     (1 << 3) /* poll for signals on completion    */
+#define SfYieldAfter    (1 << 4) /* yield on completion               */
+#define SfNoWriteResult (1 << 5) /* don't write result to guest state */
 
 
 /* ---------------------------------------------------------------------
@@ -310,13 +311,6 @@ static inline UWord getERR ( SyscallStatus* st ) {
    do {                                              \
      status->what = SsComplete;                      \
      status->sres = (zzz);                           \
-   } while (0)
-
-/* A lamentable kludge */
-#define SET_STATUS_Failure_NO_SANITY_CHECK(zzz)      \
-   do { Word wzz = (Word)(zzz);                      \
-        status->what = SsFailure;                    \
-        status->val  = wzz;                          \
    } while (0)
 
 

@@ -935,8 +935,11 @@ PRE(sys_clone)
 
 PRE(sys_sigreturn)
 {
+   /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
+      an explanation of what follows. */
+
    ThreadState* tst;
-   PRINT("sigreturn ( )");
+   PRINT("sys_sigreturn ( )");
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);
@@ -946,19 +949,19 @@ PRE(sys_sigreturn)
       sigreturn sequence's "popl %eax" and handler ret addr */
    tst = VG_(get_ThreadState)(tid);
    tst->arch.vex.guest_ESP -= sizeof(Addr)+sizeof(Word);
+   /* XXX why does ESP change differ from rt_sigreturn case below? */
 
    /* This is only so that the EIP is (might be) useful to report if
       something goes wrong in the sigreturn */
    ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
 
+   /* Restore register state from frame and remove it */
    VG_(sigframe_destroy)(tid, False);
 
-   /* For unclear reasons, it appears we need the syscall to return
-      without changing %EAX.  Since %EAX is the return value, and can
-      denote either success or failure, we must set up so that the
-      driver logic copies it back unchanged.  Also, note %EAX is of
-      the guest registers written by VG_(sigframe_destroy). */
-   SET_STATUS_from_SysRes( VG_(mk_SysRes_x86_linux)( tst->arch.vex.guest_EAX ) );
+   /* Tell the driver not to update the guest state with the "result",
+      and set a bogus result to keep it happy. */
+   *flags |= SfNoWriteResult;
+   SET_STATUS_Success(0);
 
    /* Check to see if some any signals arose as a result of this. */
    *flags |= SfPollAfter;
@@ -966,8 +969,11 @@ PRE(sys_sigreturn)
 
 PRE(sys_rt_sigreturn)
 {
+   /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
+      an explanation of what follows. */
+
    ThreadState* tst;
-   PRINT("rt_sigreturn ( )");
+   PRINT("sys_rt_sigreturn ( )");
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);
@@ -977,19 +983,19 @@ PRE(sys_rt_sigreturn)
       ret addr */
    tst = VG_(get_ThreadState)(tid);
    tst->arch.vex.guest_ESP -= sizeof(Addr);
+   /* XXX why does ESP change differ from sigreturn case above? */
 
    /* This is only so that the EIP is (might be) useful to report if
       something goes wrong in the sigreturn */
    ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
 
+   /* Restore register state from frame and remove it */
    VG_(sigframe_destroy)(tid, True);
 
-   /* For unclear reasons, it appears we need the syscall to return
-      without changing %EAX.  Since %EAX is the return value, and can
-      denote either success or failure, we must set up so that the
-      driver logic copies it back unchanged.  Also, note %EAX is of
-      the guest registers written by VG_(sigframe_destroy). */
-   SET_STATUS_from_SysRes( VG_(mk_SysRes_x86_linux)( tst->arch.vex.guest_EAX ) );
+   /* Tell the driver not to update the guest state with the "result",
+      and set a bogus result to keep it happy. */
+   *flags |= SfNoWriteResult;
+   SET_STATUS_Success(0);
 
    /* Check to see if some any signals arose as a result of this. */
    *flags |= SfPollAfter;

@@ -2934,6 +2934,7 @@ ULong dis_Grp1 ( Prefix pfx,
       case 3: break;  // SBB
       case 4: op8 = Iop_And8; break;  case 5: op8 = Iop_Sub8; break;
       case 6: op8 = Iop_Xor8; break;  case 7: op8 = Iop_Sub8; break;
+      /*NOTREACHED*/
       default: vpanic("dis_Grp1(amd64): unhandled case");
    }
 
@@ -3001,7 +3002,7 @@ static
 ULong dis_Grp2 ( Prefix pfx,
                  Long delta, UChar modrm,
                  Int am_sz, Int d_sz, Int sz, IRExpr* shift_expr,
-                 HChar* shift_expr_txt )
+                 HChar* shift_expr_txt, Bool* decode_OK )
 {
    /* delta on entry points at the modrm byte. */
    HChar  dis_buf[50];
@@ -3011,6 +3012,8 @@ ULong dis_Grp2 ( Prefix pfx,
    IRTemp dst0  = newTemp(ty);
    IRTemp dst1  = newTemp(ty);
    IRTemp addr  = IRTemp_INVALID;
+
+   *decode_OK = True;
 
    vassert(sz == 1 || sz == 2 || sz == 4 || sz == 8);
 
@@ -3033,8 +3036,13 @@ ULong dis_Grp2 ( Prefix pfx,
    isRotateC = False;
    switch (gregLO3ofRM(modrm)) { case 2: case 3: isRotateC = True; }
 
+   if (gregLO3ofRM(modrm) == 6) {
+      *decode_OK = False;
+      return delta;
+   }
+
    if (!isShift && !isRotate && !isRotateC) {
-      vex_printf("\ncase %d\n", gregLO3ofRM(modrm));
+      /*NOTREACHED*/
       vpanic("dis_Grp2(Reg): unhandled case(amd64)");
    }
 
@@ -3108,6 +3116,7 @@ ULong dis_Grp2 ( Prefix pfx,
          case 4: op64 = Iop_Shl64; break;
          case 5: op64 = Iop_Shr64; break;
          case 7: op64 = Iop_Sar64; break;
+         /*NOTREACHED*/
          default: vpanic("dis_Grp2:shift"); break;
       }
 
@@ -3442,7 +3451,7 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
 
 /* Group 3 extended opcodes. */
 static 
-ULong dis_Grp3 ( Prefix pfx, Int sz, Long delta )
+ULong dis_Grp3 ( Prefix pfx, Int sz, Long delta, Bool* decode_OK )
 {
    Long    d64;
    UChar   modrm;
@@ -3452,6 +3461,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, Long delta )
    IRType  ty = szToITy(sz);
    IRTemp  t1 = newTemp(ty);
    IRTemp dst1, src, dst0;
+   *decode_OK = True;
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
       switch (gregLO3ofRM(modrm)) {
@@ -3469,6 +3479,9 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, Long delta )
                 nameIRegE(sz, pfx, modrm));
             break;
          }
+         case 1:
+            *decode_OK = False;
+            return delta;
          case 2: /* NOT */
             delta++;
             putIRegE(sz, pfx, modrm,
@@ -3518,9 +3531,8 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, Long delta )
                                nameIRegE(sz, pfx, modrm));
             break;
          default: 
-            vex_printf(
-               "unhandled Grp3(R) case %d\n", (Int)gregLO3ofRM(modrm));
-            vpanic("Grp3(amd64)");
+            /*NOTREACHED*/
+            vpanic("Grp3(amd64,R)");
       }
    } else {
       addr = disAMode ( &len, pfx, delta, dis_buf,
@@ -3545,7 +3557,9 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, Long delta )
             DIP("test%c $%lld, %s\n", nameISize(sz), d64, dis_buf);
             break;
          }
-         /* probably OK, but awaiting test case */
+         case 1:
+            *decode_OK = False;
+            return delta;
          case 2: /* NOT */
             storeLE( mkexpr(addr), unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
             DIP("not%c %s\n", nameISize(sz), dis_buf);
@@ -3576,9 +3590,8 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, Long delta )
             DIP("idiv%c %s\n", nameISize(sz), dis_buf);
             break;
          default: 
-            vex_printf(
-               "unhandled Grp3(M) case %d\n", (Int)gregLO3ofRM(modrm));
-            vpanic("Grp3(amd64)");
+            /*NOTREACHED*/
+            vpanic("Grp3(amd64,M)");
       }
    }
    return delta;
@@ -3587,7 +3600,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, Long delta )
 
 /* Group 4 extended opcodes. */
 static
-ULong dis_Grp4 ( Prefix pfx, Long delta )
+ULong dis_Grp4 ( Prefix pfx, Long delta, Bool* decode_OK )
 {
    Int   alen;
    UChar modrm;
@@ -3595,6 +3608,8 @@ ULong dis_Grp4 ( Prefix pfx, Long delta )
    IRType ty = Ity_I8;
    IRTemp t1 = newTemp(ty);
    IRTemp t2 = newTemp(ty);
+
+   *decode_OK = True;
 
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
@@ -3611,9 +3626,8 @@ ULong dis_Grp4 ( Prefix pfx, Long delta )
             setFlags_INC_DEC( False, t2, ty );
             break;
          default: 
-            vex_printf(
-               "unhandled Grp4(R) case %d\n", (Int)gregLO3ofRM(modrm));
-            vpanic("Grp4(amd64,R)");
+            *decode_OK = False;
+            return delta;
       }
       delta++;
       DIP("%sb %s\n", nameGrp4(gregLO3ofRM(modrm)),
@@ -3633,9 +3647,8 @@ ULong dis_Grp4 ( Prefix pfx, Long delta )
             setFlags_INC_DEC( False, t2, ty );
             break;
          default: 
-            vex_printf(
-               "unhandled Grp4(M) case %d\n", (Int)gregLO3ofRM(modrm));
-            vpanic("Grp4(amd64,M)");
+            *decode_OK = False;
+            return delta;
       }
       delta += alen;
       DIP("%sb %s\n", nameGrp4(gregLO3ofRM(modrm)), dis_buf);
@@ -3647,7 +3660,8 @@ ULong dis_Grp4 ( Prefix pfx, Long delta )
 /* Group 5 extended opcodes. */
 static
 ULong dis_Grp5 ( VexAbiInfo* vbi,
-                 Prefix pfx, Int sz, Long delta, DisResult* dres )
+                 Prefix pfx, Int sz, Long delta,
+                 DisResult* dres, Bool* decode_OK )
 {
    Int     len;
    UChar   modrm;
@@ -3658,6 +3672,8 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
    IRTemp  t2 = IRTemp_INVALID;
    IRTemp  t3 = IRTemp_INVALID;
    Bool    showSz = True;
+
+   *decode_OK = True;
 
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
@@ -3703,9 +3719,8 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             showSz = False;
             break;
          default: 
-            vex_printf(
-               "unhandled Grp5(R) case %d\n", (Int)gregLO3ofRM(modrm));
-            vpanic("Grp5(amd64)");
+            *decode_OK = False;
+            return delta;
       }
       delta++;
       DIP("%s%c %s\n", nameGrp5(gregLO3ofRM(modrm)),
@@ -3774,9 +3789,8 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
 	    }
          default: 
          unhandled:
-            vex_printf(
-               "unhandled Grp5(M) case %d\n", (Int)gregLO3ofRM(modrm));
-            vpanic("Grp5(amd64)");
+            *decode_OK = False;
+            return delta;
       }
       delta += len;
       DIP("%s%c %s\n", nameGrp5(gregLO3ofRM(modrm)),
@@ -13669,7 +13683,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* ------------------------ (Grp2 extensions) ---------- */
 
-   case 0xC0: /* Grp2 Ib,Eb */
+   case 0xC0: { /* Grp2 Ib,Eb */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
@@ -13677,20 +13692,24 @@ DisResult disInstr_AMD64_WRK (
       d64   = getUChar(delta + am_sz);
       sz    = 1;
       delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
-                         mkU8(d64 & 0xFF), NULL );
+                         mkU8(d64 & 0xFF), NULL, &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
-
-   case 0xC1: /* Grp2 Ib,Ev */
+   }
+   case 0xC1: { /* Grp2 Ib,Ev */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
       d_sz  = 1;
       d64   = getUChar(delta + am_sz);
       delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
-                         mkU8(d64 & 0xFF), NULL );
+                         mkU8(d64 & 0xFF), NULL, &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
-
-   case 0xD0: /* Grp2 1,Eb */
+   }
+   case 0xD0: { /* Grp2 1,Eb */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
@@ -13698,62 +13717,82 @@ DisResult disInstr_AMD64_WRK (
       d64   = 1;
       sz    = 1;
       delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
-                         mkU8(d64), NULL );
+                         mkU8(d64), NULL, &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
-
-   case 0xD1: /* Grp2 1,Ev */
+   }
+   case 0xD1: { /* Grp2 1,Ev */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
       d_sz  = 0;
       d64   = 1;
       delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
-                         mkU8(d64), NULL );
+                         mkU8(d64), NULL, &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
-
-   case 0xD2: /* Grp2 CL,Eb */
+   }
+   case 0xD2: { /* Grp2 CL,Eb */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
       d_sz  = 0;
       sz    = 1;
       delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
-                         getIRegCL(), "%cl" );
+                         getIRegCL(), "%cl", &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
-
-   case 0xD3: /* Grp2 CL,Ev */
+   }
+   case 0xD3: { /* Grp2 CL,Ev */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
       modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
       d_sz  = 0;
       delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
-                         getIRegCL(), "%cl" );
+                         getIRegCL(), "%cl", &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
+   }
 
    /* ------------------------ (Grp3 extensions) ---------- */
 
-   case 0xF6: /* Grp3 Eb */
+   case 0xF6: { /* Grp3 Eb */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_Grp3 ( pfx, 1, delta );
+      delta = dis_Grp3 ( pfx, 1, delta, &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
-   case 0xF7: /* Grp3 Ev */
+   }
+   case 0xF7: { /* Grp3 Ev */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_Grp3 ( pfx, sz, delta );
+      delta = dis_Grp3 ( pfx, sz, delta, &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
+   }
 
    /* ------------------------ (Grp4 extensions) ---------- */
 
-   case 0xFE: /* Grp4 Eb */
+   case 0xFE: { /* Grp4 Eb */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_Grp4 ( pfx, delta );
+      delta = dis_Grp4 ( pfx, delta, &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
+   }
 
    /* ------------------------ (Grp5 extensions) ---------- */
 
-   case 0xFF: /* Grp5 Ev */
+   case 0xFF: { /* Grp5 Ev */
+      Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_Grp5 ( vmi, pfx, sz, delta, &dres );
+      delta = dis_Grp5 ( vmi, pfx, sz, delta, &dres, &decode_OK );
+      if (!decode_OK) goto decode_failure;
       break;
+   }
 
    /* ------------------------ Escapes to 2-byte opcodes -- */
 

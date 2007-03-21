@@ -63,6 +63,8 @@ valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
 no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
 no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 no_op_client_for_valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
+no_op_client_for_valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
+no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
 #
 #----------------------------------------------------------
 

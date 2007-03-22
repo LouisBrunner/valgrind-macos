@@ -744,6 +744,8 @@ fi
 
 
 # does the x86/amd64 assembler understand SSE3 instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_SSE3_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if x86/amd64 assembler speaks SSE3])
 
 AC_TRY_COMPILE(, [
@@ -758,9 +760,8 @@ AC_MSG_RESULT([yes])
 ac_have_as_sse3=no
 AC_MSG_RESULT([no])
 ])
-if test x$ac_have_as_sse3 = xyes ; then
-  AC_DEFINE(HAVE_AS_SSE3, 1, [Define to 1 if x86/amd64 as supports SSE3.])
-fi
+
+AM_CONDITIONAL(BUILD_SSE3_TESTS, test x$ac_have_as_sse3 = xyes)
 
 
 # Check for TLS support in the compiler and linker

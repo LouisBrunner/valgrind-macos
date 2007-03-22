@@ -1,9 +1,16 @@
 noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
-INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext \
-		insn_sse insn_sse2 insn_sse3
 
+INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext \
+		insn_sse insn_sse2
+if BUILD_SSE3_TESTS
+ INSN_TESTS += insn_sse3
+endif
+
+# Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
+# to avoid packaging screwups if 'make dist' is run on a machine
+# which failed the BUILD_SSE3_TESTS test in configure.in.
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	badseg.stderr.exp badseg.stdout.exp badseg.vgtest \
 	bt_everything.stderr.exp bt_everything.stdout.exp bt_everything.vgtest \
@@ -27,6 +34,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	insn_sse3.stdout.exp insn_sse3.stderr.exp insn_sse3.vgtest \
 	jcxz.stdout.exp jcxz.stderr.exp jcxz.vgtest \
 	lahf.stdout.exp lahf.stderr.exp lahf.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \

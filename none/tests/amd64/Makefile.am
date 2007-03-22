@@ -2,8 +2,15 @@
 noinst_SCRIPTS = filter_cpuid filter_stderr filter_int gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
-INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_sse3 insn_fpu
 
+INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
+if BUILD_SSE3_TESTS
+ INSN_TESTS += insn_sse3
+endif
+
+# Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
+# to avoid packaging screwups if 'make dist' is run on a machine
+# which failed the BUILD_SSE3_TESTS test in configure.in.
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
 	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
@@ -16,6 +23,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	insn_sse3.stdout.exp insn_sse3.stderr.exp insn_sse3.vgtest \
 	jrcxz.stderr.exp jrcxz.stdout.exp jrcxz.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
 	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \

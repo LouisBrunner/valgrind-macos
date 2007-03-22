@@ -743,6 +743,26 @@ if test x$ac_have_as_ppc_mftocrf = xyes ; then
 fi
 
 
+# does the x86/amd64 assembler understand SSE3 instructions?
+AC_MSG_CHECKING([if x86/amd64 assembler speaks SSE3])
+
+AC_TRY_COMPILE(, [
+  do { long long int x; 
+     __asm__ __volatile__("fisttpq (%0)" : :"r"(&x) ); } 
+  while (0)
+],
+[
+ac_have_as_sse3=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_sse3=no
+AC_MSG_RESULT([no])
+])
+if test x$ac_have_as_sse3 = xyes ; then
+  AC_DEFINE(HAVE_AS_SSE3, 1, [Define to 1 if x86/amd64 as supports SSE3.])
+fi
+
+
 # Check for TLS support in the compiler and linker
 AC_CACHE_CHECK([for TLS support], vg_cv_tls,
 	       [AC_ARG_ENABLE(tls, [  --enable-tls            platform supports TLS],

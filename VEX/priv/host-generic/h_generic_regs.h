@@ -87,10 +87,17 @@ typedef UInt HReg;
    available on any specific host.  For example on x86, the available
    classes are: Int32, Flt64, Vec128 only.
 
-   IMPORTANT NOTE: Vec128 is the only >= 128-bit-sized class, and
-   reg_alloc2.c handles it specially when assigning spill slots.  If
-   you add another 128-bit or larger regclass, you must remember to
-   update reg_alloc2.c accordingly.
+   IMPORTANT NOTE: reg_alloc2.c needs how much space is needed to spill
+   each class of register.  It has the following knowledge hardwired in:
+
+      HRcInt32     32 bits
+      HRcInt64     64 bits
+      HRcFlt64     80 bits (on x86 these are spilled by fstpt/fldt)
+      HRcVec64     64 bits
+      HRcVec128    128 bits
+
+   If you add another regclass, you must remember to update
+   reg_alloc2.c accordingly.
 */
 typedef
    enum { 

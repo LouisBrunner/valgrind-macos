@@ -778,8 +778,9 @@ HInstrArray* doRegisterAllocation (
 
    /* --------- Stage 3: allocate spill slots. --------- */
 
-   /* Each spill slot is 8 bytes long.  For 128-bit vregs
-      we have to allocate two spill slots.
+   /* Each spill slot is 8 bytes long.  For vregs which take more than
+      64 bits to spill (classes Flt64 and Vec128), we have to allocate
+      two spill slots.
 
       Do a rank-based allocation of vregs to spill slot numbers.  We
       put as few values as possible in spill slows, but nevertheless
@@ -799,13 +800,30 @@ HInstrArray* doRegisterAllocation (
          continue;
       }
 
-      /* The spill slots are 64 bits in size.  That means, to spill a
-         Vec128-class vreg, we'll need to find two adjacent spill
-         slots to use.  Note, this special-casing needs to happen for
-         all 128-bit sized register classes.  Currently though
-         HRcVector is the only such class. */
+      /* The spill slots are 64 bits in size.  As per the comment on
+         definition of HRegClass in h_generic_regs.h, that means, to
+         spill a vreg of class Flt64 or Vec128, we'll need to find two
+         adjacent spill slots to use.  Note, this logic needs to kept
+         in sync with the size info on the definition of HRegClass. */
 
-      if (vreg_lrs[j].reg_class != HRcVec128) {
+      if (vreg_lrs[j].reg_class == HRcVec128
+          || vreg_lrs[j].reg_class == HRcFlt64) {
+
+         /* Find two adjacent free slots in which between them provide
+            up to 128 bits in which to spill the vreg. */
+
+         for (k = 0; k < N_SPILL64S-1; k++)
+            if (ss_busy_until_before[k] <= vreg_lrs[j].live_after
+                && ss_busy_until_before[k+1] <= vreg_lrs[j].live_after)
+               break;
+         if (k == N_SPILL64S-1) {
+            vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
+                   "Increase and recompile.");
+         }
+         ss_busy_until_before[k+0] = vreg_lrs[j].dead_before;
+         ss_busy_until_before[k+1] = vreg_lrs[j].dead_before;
+
+      } else {
 
          /* The ordinary case -- just find a single spill slot. */
 
@@ -820,22 +838,6 @@ HInstrArray* doRegisterAllocation (
                    "Increase and recompile.");
          }
          ss_busy_until_before[k] = vreg_lrs[j].dead_before;
-
-      } else {
-
-	/* Find two adjacent free slots in which to spill a 128-bit
-           vreg. */
-
-         for (k = 0; k < N_SPILL64S-1; k++)
-            if (ss_busy_until_before[k] <= vreg_lrs[j].live_after
-                && ss_busy_until_before[k+1] <= vreg_lrs[j].live_after)
-               break;
-         if (k == N_SPILL64S-1) {
-            vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
-                   "Increase and recompile.");
-         }
-         ss_busy_until_before[k+0] = vreg_lrs[j].dead_before;
-         ss_busy_until_before[k+1] = vreg_lrs[j].dead_before;
 
       }
 

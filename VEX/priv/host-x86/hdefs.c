@@ -737,7 +737,7 @@ X86Instr* X86Instr_FpLdSt ( Bool isLoad, UChar sz, HReg reg, X86AMode* addr ) {
    i->Xin.FpLdSt.sz     = sz;
    i->Xin.FpLdSt.reg    = reg;
    i->Xin.FpLdSt.addr   = addr;
-   vassert(sz == 4 || sz == 8);
+   vassert(sz == 4 || sz == 8 || sz == 10);
    return i;
 }
 X86Instr* X86Instr_FpLdStI ( Bool isLoad, UChar sz,  
@@ -1005,12 +1005,14 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
          break;
       case Xin_FpLdSt:
          if (i->Xin.FpLdSt.isLoad) {
-            vex_printf("gld%c " , i->Xin.FpLdSt.sz==8 ? 'D' : 'F');
+            vex_printf("gld%c " ,  i->Xin.FpLdSt.sz==10 ? 'T'
+                                   : (i->Xin.FpLdSt.sz==8 ? 'D' : 'F'));
             ppX86AMode(i->Xin.FpLdSt.addr);
             vex_printf(", ");
             ppHRegX86(i->Xin.FpLdSt.reg);
          } else {
-            vex_printf("gst%c " , i->Xin.FpLdSt.sz==8 ? 'D' : 'F');
+            vex_printf("gst%c " , i->Xin.FpLdSt.sz==10 ? 'T'
+                                  : (i->Xin.FpLdSt.sz==8 ? 'D' : 'F'));
             ppHRegX86(i->Xin.FpLdSt.reg);
             vex_printf(", ");
             ppX86AMode(i->Xin.FpLdSt.addr);
@@ -1558,7 +1560,7 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offsetB, Bool mode64 )
       case HRcInt32:
          return X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), am );
       case HRcFlt64:
-         return X86Instr_FpLdSt ( False/*store*/, 8, rreg, am );
+         return X86Instr_FpLdSt ( False/*store*/, 10, rreg, am );
       case HRcVec128:
          return X86Instr_SseLdSt ( False/*store*/, rreg, am );
       default: 
@@ -1578,7 +1580,7 @@ X86Instr* genReload_X86 ( HReg rreg, Int offsetB, Bool mode64 )
       case HRcInt32:
          return X86Instr_Alu32R ( Xalu_MOV, X86RMI_Mem(am), rreg );
       case HRcFlt64:
-         return X86Instr_FpLdSt ( True/*load*/, 8, rreg, am );
+         return X86Instr_FpLdSt ( True/*load*/, 10, rreg, am );
       case HRcVec128:
          return X86Instr_SseLdSt ( True/*load*/, rreg, am );
       default: 
@@ -2497,14 +2499,27 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
       goto done;
 
    case Xin_FpLdSt:
-      vassert(i->Xin.FpLdSt.sz == 4 || i->Xin.FpLdSt.sz == 8);
       if (i->Xin.FpLdSt.isLoad) {
          /* Load from memory into %fakeN.  
-            --> ffree %st(7) ; fld{s/l} amode ; fstp st(N+1) 
+            --> ffree %st(7) ; fld{s/l/t} amode ; fstp st(N+1) 
          */
          p = do_ffree_st7(p);
-         *p++ = toUChar(i->Xin.FpLdSt.sz==4 ? 0xD9 : 0xDD);
-	 p = doAMode_M(p, fake(0)/*subopcode*/, i->Xin.FpLdSt.addr);
+         switch (i->Xin.FpLdSt.sz) {
+            case 4:
+               *p++ = 0xD9;
+               p = doAMode_M(p, fake(0)/*subopcode*/, i->Xin.FpLdSt.addr);
+               break;
+            case 8:
+               *p++ = 0xDD;
+               p = doAMode_M(p, fake(0)/*subopcode*/, i->Xin.FpLdSt.addr);
+               break;
+            case 10:
+               *p++ = 0xDB;
+               p = doAMode_M(p, fake(5)/*subopcode*/, i->Xin.FpLdSt.addr);
+               break;
+            default:
+               vpanic("emitX86Instr(FpLdSt,load)");
+         }
          p = do_fstp_st(p, 1+hregNumber(i->Xin.FpLdSt.reg));
          goto done;
       } else {
@@ -2513,8 +2528,22 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
 	 */
          p = do_ffree_st7(p);
          p = do_fld_st(p, 0+hregNumber(i->Xin.FpLdSt.reg));
-         *p++ = toUChar(i->Xin.FpLdSt.sz==4 ? 0xD9 : 0xDD);
-         p = doAMode_M(p, fake(3)/*subopcode*/, i->Xin.FpLdSt.addr);
+         switch (i->Xin.FpLdSt.sz) {
+            case 4:
+               *p++ = 0xD9;
+               p = doAMode_M(p, fake(3)/*subopcode*/, i->Xin.FpLdSt.addr);
+               break;
+            case 8:
+               *p++ = 0xDD;
+               p = doAMode_M(p, fake(3)/*subopcode*/, i->Xin.FpLdSt.addr);
+               break;
+            case 10:
+               *p++ = 0xDB;
+               p = doAMode_M(p, fake(7)/*subopcode*/, i->Xin.FpLdSt.addr);
+               break;
+            default:
+               vpanic("emitX86Instr(FpLdSt,store)");
+         }
          goto done;
       }
       break;

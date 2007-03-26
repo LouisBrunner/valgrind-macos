@@ -71,6 +71,10 @@ possible false errors on amd64 cmpq/jae, cmpq/jbe
 
 r6665    r6666        142488   ~/.valgrindrc is loaded twice if CWD==HOME
 
+r6668    r6669        142197   Tool-prefixed options like
+                               --massif:alloc-fn=foo are broken
+
+
 //// maybe do not fix in 3.2 branch
 
 64 bit DWARF in unwind (r6610) (definitely merge (??))

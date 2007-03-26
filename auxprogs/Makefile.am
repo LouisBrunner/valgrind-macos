@@ -5,6 +5,7 @@ bin_PROGRAMS = valgrind-listener
 
 noinst_SCRIPTS = gen-mdg DotToScc.hs Merge3Way.hs primes.c \
 		gsl16test gsl16-badfree.patch gsl16-wavelet.patch \
+		gsl19test \
 		ppcfround.c ppc64shifts.c libmpiwrap.c mpiwrap_type_test.c \
 		aix5_VKI_info.c libmpiwrap_aix5.exp \
 		aix5_proc_self_sysent.c \

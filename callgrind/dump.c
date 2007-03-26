@@ -1694,6 +1694,11 @@ void CLG_(init_dumps)()
                base_directory = 0;
                size *= 2;
            }
+           /* in fact, this loop could run forever (or at least till
+              CLG_MALLOC fails) if VG_(getcwd) returns False for any
+              reason other than the buffer is too small.  So be
+              safe: */
+           tl_assert( size < 100 * 200 );
        }
 
        size = VG_(strlen)(base_directory) + VG_(strlen)(CLG_(clo).filename_base) +2;

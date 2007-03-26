@@ -248,10 +248,10 @@ static UInt n_heap_blocks = 0;
 // Current directory at startup.
 static Char base_dir[VKI_PATH_MAX];
 
-#define MAX_ALLOC_FNS      32      // includes the builtin ones
+#define MAX_ALLOC_FNS      128     // includes the builtin ones
 
 // First few filled in, rest should be zeroed.  Zero-terminated vector.
-static UInt  n_alloc_fns = 11;
+static UInt  n_alloc_fns = 10;
 static Char* alloc_fns[MAX_ALLOC_FNS] = { 
    "malloc",
    "operator new(unsigned)",

@@ -9,12 +9,12 @@
 <title>An Overview of Valgrind</title>
 
 <para>Valgrind is a suite of simulation-based debugging and profiling
-tools for programs running on Linux (x86, amd64 and ppc32).  The system
-consists of a core, which provides a synthetic CPU in software, and a
-series of tools, each of which performs some kind of debugging,
-profiling, or similar task.  The architecture is modular, so that new
-tools can be created easily and without disturbing the existing
-structure.</para>
+tools for programs running on Linux (x86, amd64, ppc32 and ppc64).
+The system consists of a core, which provides a synthetic CPU in
+software, and a series of tools, each of which performs some kind of
+debugging, profiling, or similar task.  The architecture is modular,
+so that new tools can be created easily and without disturbing the
+existing structure.</para>
 
 <para>A number of useful tools are supplied as standard.  In
 summary, these are:</para>
@@ -104,9 +104,9 @@ summary, these are:</para>
     releasable state.</para>
 
     <para>NOTE: Helgrind is, unfortunately, not available in Valgrind
-    3.1.X, as a result of threading changes that happened in the 2.4.0
-    release.  We hope to reinstate its functionality in a future 3.2.0
-    release.</para>
+    3.2.X, as a result of threading changes that happened in the 2.4.0
+    release.  We hope to reinstate its functionality in the future.
+    </para>
    </listitem>
 
 </orderedlist>
@@ -122,14 +122,15 @@ integer and floating point operations your program does.</para>
 
 <para>Valgrind is closely tied to details of the CPU and operating
 system, and to a lesser extent, the compiler and basic C libraries.
-Nonetheless, as of version 3.1.0 it supports several platforms:
-x86/Linux (mature), AMD64/Linux (maturing), and PPC32/Linux (immature
-but works well).  Valgrind uses the standard Unix
+Nonetheless, as of version 3.2.0 it supports several platforms:
+x86/Linux (mature), AMD64/Linux (maturing), PPC32/Linux and 
+PPC64/Linux (less mature but work well in practice).
+Valgrind uses the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to ensure that
 it works on machines with kernel 2.4 or 2.6 and glibc
-2.2.X--2.3.X.</para>
+2.2.X to 2.5.X.</para>
 
 <para>Valgrind is licensed under the <xref linkend="license.gpl"/>,
 version 2.  The <computeroutput>valgrind/*.h</computeroutput> headers

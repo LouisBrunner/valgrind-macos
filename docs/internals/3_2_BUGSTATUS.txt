@@ -74,6 +74,8 @@ r6665    r6666        142488   ~/.valgrindrc is loaded twice if CWD==HOME
 r6668    r6669        142197   Tool-prefixed options like
                                --massif:alloc-fn=foo are broken
 
+r6671    r6672        142491   Maximise use of alloc_fns array
+
 
 //// maybe do not fix in 3.2 branch
 

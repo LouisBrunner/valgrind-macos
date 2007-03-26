@@ -69,6 +69,7 @@ Make configure check try for -fno-stack-protector (users, 26 Feb)
 
 possible false errors on amd64 cmpq/jae, cmpq/jbe
 
+r6665    r6666        142488   ~/.valgrindrc is loaded twice if CWD==HOME
 
 //// maybe do not fix in 3.2 branch
 

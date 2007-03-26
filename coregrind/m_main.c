@@ -305,17 +305,33 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       HChar* arg   = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       HChar* colon = arg;
 
-      /* Look for a colon in the switch name */
+      // Look for a colon in the option name.
       while (*colon && *colon != ':' && *colon != '=')
          colon++;
 
-      /* Look for matching "--toolname:foo" */
+      // Does it have the form "--toolname:foo"?  We have to do it at the start
+      // in case someone has combined a prefix with a core-specific option,
+      // eg.  "--memcheck:verbose".
       if (*colon == ':') {
          if (VG_CLO_STREQN(2,            arg,                "--") && 
              VG_CLO_STREQN(toolname_len, arg+2,              toolname) &&
              VG_CLO_STREQN(1,            arg+2+toolname_len, ":"))
          {
-            // prefix matches, convert "--toolname:foo" to "--foo"
+            // Prefix matches, convert "--toolname:foo" to "--foo".
+            // Two things to note:
+            // - We cannot modify the option in-place.  If we did, and then
+            //   a child was spawned with --trace-children=yes, the
+            //   now-non-prefixed option would be passed and could screw up
+            //   the child.
+            // - We create copies, and never free them.  Why?  Non-prefixed
+            //   options hang around forever, so tools need not make copies
+            //   of strings within them.  We need to have the same behaviour
+            //   for prefixed options.  The pointer to the copy will be lost
+            //   once we leave this function (although a tool may keep a
+            //   pointer into it), but the space wasted is insignificant.
+            //   (In bug #142197, the copies were being freed, which caused
+            //   problems for tools that reasonably assumed that arguments
+            //   wouldn't disappear on them.)
             if (0)
                VG_(printf)("tool-specific arg: %s\n", arg);
             arg = VG_(strdup)(arg + toolname_len + 1);
@@ -329,10 +345,10 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       }
       
       /* Ignore these options - they've already been handled */
-      if (VG_CLO_STREQN( 7, arg, "--tool="))              goto skip_arg;
-      if (VG_CLO_STREQN(20, arg, "--command-line-only=")) goto skip_arg;
-
-      if (     VG_CLO_STREQ(arg, "--"))                  goto skip_arg;
+      if      (VG_CLO_STREQN( 7, arg, "--tool="))              { }
+      else if (VG_CLO_STREQN(20, arg, "--command-line-only=")) { }
+      else if (VG_CLO_STREQ(arg, "--"))                        { }
+      else if (VG_CLO_STREQ(arg, "-d"))                        { }
 
       else if (VG_CLO_STREQ(arg, "-v") ||
                VG_CLO_STREQ(arg, "--verbose"))
@@ -341,10 +357,6 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else if (VG_CLO_STREQ(arg, "-q") ||
                VG_CLO_STREQ(arg, "--quiet"))
          VG_(clo_verbosity)--;
-
-      else if (VG_CLO_STREQ(arg, "-d")) {
-         /* do nothing */
-      }
 
       else VG_BOOL_CLO(arg, "--xml",              VG_(clo_xml))
       else VG_BOOL_CLO(arg, "--db-attach",        VG_(clo_db_attach))
@@ -497,10 +509,6 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else if ( ! VG_(needs).command_line_options
              || ! VG_TDICT_CALL(tool_process_cmd_line_option, arg) ) {
          VG_(err_bad_option)(arg);
-      }
-    skip_arg:
-      if (arg != * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i )) {
-         VG_(free)(arg);
       }
    }
 

@@ -368,7 +368,9 @@ extern void VG_(needs_superblock_discards) (
 /* Tool defines its own command line options? */
 extern void VG_(needs_command_line_options) (
    // Return True if option was recognised.  Presumably sets some state to
-   // record the option as well.
+   // record the option as well.  Nb: tools can assume that the argv will
+   // never disappear.  So they can, for example, store a pointer to a string
+   // within an option, rather than having to make a copy.
    Bool (*process_cmd_line_option)(Char* argv),
 
    // Print out command line usage for options for normal tool operation.

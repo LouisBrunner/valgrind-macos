@@ -33,6 +33,8 @@
 #define __PUB_TOOL_MALLOCFREE_H
 
 // These can be for allocating memory used by tools.
+// Nb: the allocators *always succeed* -- they never return NULL (Valgrind
+// will abort if they can't allocate the memory).
 extern void* VG_(malloc)         ( SizeT nbytes );
 extern void  VG_(free)           ( void* p );
 extern void* VG_(calloc)         ( SizeT n, SizeT bytes_per_elem );

@@ -40,7 +40,7 @@
 struct _XArray {
    void* (*alloc) ( SizeT );        /* alloc fn (nofail) */
    void  (*free) ( void* );         /* free fn */
-   Word  (*cmpFn) ( void*, void* ); /* cmp fn (may be NULL) */
+   Int   (*cmpFn) ( void*, void* ); /* cmp fn (may be NULL) */
    Word  elemSzB;   /* element size in bytes */
    void* arr;       /* pointer to elements */
    Word  usedsizeE; /* # used elements in arr */
@@ -86,7 +86,7 @@ void VG_(deleteXA) ( XArray* xao )
    xa->free(xa);
 }
 
-void VG_(setCmpFnXA) ( XArray* xao, Word (*compar)(void*,void*) )
+void VG_(setCmpFnXA) ( XArray* xao, Int (*compar)(void*,void*) )
 {
    struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
@@ -140,60 +140,12 @@ Int VG_(addToXA) ( XArray* xao, void* elem )
    return xa->usedsizeE-1;
 }
 
-// Generic shell sort.  Like stdlib.h's qsort().
-static void ssort( void* base, Word nmemb, Word size,
-                   Word (*compar)(void*, void*) )
-{
-   Int   incs[14] = { 1, 4, 13, 40, 121, 364, 1093, 3280,
-                      9841, 29524, 88573, 265720,
-                      797161, 2391484 };
-   Int   lo = 0;
-   Int   hi = nmemb-1;
-   Int   i, j, h, bigN, hp;
-
-   bigN = hi - lo + 1; if (bigN < 2) return;
-   hp = 0; while (hp < 14 && incs[hp] < bigN) hp++; hp--;
-
-   #define SORT \
-   for ( ; hp >= 0; hp--) { \
-      h = incs[hp]; \
-      for (i = lo + h; i <= hi; i++) { \
-         ASSIGN(v,0, a,i); \
-         j = i; \
-         while (COMPAR(a,(j-h), v,0) > 0) { \
-            ASSIGN(a,j, a,(j-h)); \
-            j = j - h; \
-            if (j <= (lo + h - 1)) break; \
-         } \
-         ASSIGN(a,j, v,0); \
-      } \
-   }
-
-   // General case
-   {
-      char* a = base;
-      char  v[size];      // will be at least 'size' bytes
-
-      #define ASSIGN(dst, dsti, src, srci) \
-      VG_(memcpy)( &dst[size*(dsti)], &src[size*(srci)], size );
-
-      #define COMPAR(dst, dsti, src, srci) \
-      compar( &dst[size*(dsti)], &src[size*(srci)] )
-
-      SORT;
-
-      #undef ASSIGN
-      #undef COMPAR
-   }
-   #undef SORT
-}
-
 void VG_(sortXA) ( XArray* xao )
 {
    struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(xa->cmpFn);
-   ssort( xa->arr, xa->usedsizeE, xa->elemSzB, xa->cmpFn );
+   VG_(ssort)( xa->arr, xa->usedsizeE, xa->elemSzB, xa->cmpFn );
    xa->sorted = True;
 }
 

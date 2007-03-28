@@ -59,7 +59,7 @@ extern void VG_(deleteXA) ( XArray* );
 /* Set the comparison function for this XArray.  This clears an
    internal 'array is sorted' flag, which means you must call sortXA
    before making further queries with lookupXA. */
-extern void VG_(setCmpFnXA) ( XArray*, Word (*compar)(void*,void*) );
+extern void VG_(setCmpFnXA) ( XArray*, Int (*compar)(void*,void*) );
 
 /* Add an element to an XArray.  Element is copied into the XArray.
    Index at which it was added is returned.  Note this will be

@@ -262,7 +262,7 @@ static Bool eq_string_Name ( Name name, UChar* str )
       return False;
 }
 
-static Word cmp_Names ( Name n1, Name n2 )
+static Int cmp_Names ( Name n1, Name n2 )
 {
    UInt i = 0;
    while (1) {
@@ -384,7 +384,7 @@ static void init_XCoffSym( XCoffSym* sym )
 }
 
 /* Compare XCoffSyms by their start address. */
-static Word cmp_XCoffSym_by_start ( void* v1, void* v2 )
+static Int cmp_XCoffSym_by_start ( void* v1, void* v2 )
 {
    XCoffSym* s1 = (XCoffSym*)v1;
    XCoffSym* s2 = (XCoffSym*)v2;
@@ -395,7 +395,7 @@ static Word cmp_XCoffSym_by_start ( void* v1, void* v2 )
 
 /* Compare XCoffSyms by a slightly weaker ordering, returning zero
    (equivalence) for any overlap, and -1 or 1 otherwise. */
-static Word cmp_XCoffSym_by_overlap ( void* v1, void* v2 )
+static Int cmp_XCoffSym_by_overlap ( void* v1, void* v2 )
 {
    XCoffSym* s1 = (XCoffSym*)v1;
    XCoffSym* s2 = (XCoffSym*)v2;
@@ -406,7 +406,7 @@ static Word cmp_XCoffSym_by_overlap ( void* v1, void* v2 )
 
 /* Compare XCoffSyms by their start address, and for equal addresses,
    use the name as a secondary sort key. */
-static Word cmp_XCoffSym_by_start_then_name ( void* v1, void* v2 )
+static Int cmp_XCoffSym_by_start_then_name ( void* v1, void* v2 )
 {
    XCoffSym* s1 = (XCoffSym*)v1;
    XCoffSym* s2 = (XCoffSym*)v2;

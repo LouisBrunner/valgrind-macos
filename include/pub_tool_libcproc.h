@@ -75,6 +75,9 @@ extern Int VG_(getegid) ( void );
    Timing
    ------------------------------------------------------------------ */
 
+// Returns the number of milliseconds passed since the progam started
+// (roughly;  it gets initialised partway through Valgrind's initialisation
+// steps).
 extern UInt VG_(read_millisecond_timer) ( void );
 
 #endif   // __PUB_TOOL_LIBCPROC_H

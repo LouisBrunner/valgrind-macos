@@ -133,8 +133,7 @@ void sendToMyself ( Bool commit_free, Ty* tyP, char* name )
        walk_type_fn;
   
    if (!dl_walk_type) {
-      printf("sendToMyself: can't find mpiwrap_walk_type_EXTERNALLY_VISIBLE"
-             " in current process image\n");
+      printf("sendToMyself: can't establish type walker fn\n");
       return;
    }
 
@@ -233,6 +232,8 @@ int main ( int argc, char** argv )
        return 1;
     }
 
+    /* Note: this trick doesn't work on 64-bit platforms, 
+       since MPI_Init returns int. */
     walk_type_fn = (void*)(long) MPI_Init( &argc, &argv );
     printf("mpiwrap_type_test: walk_type_fn = %p\n", walk_type_fn);
     assert(walk_type_fn);
@@ -242,8 +243,8 @@ int main ( int argc, char** argv )
 
     if (rank == 0) {
 
-    Ty t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13;
-    Nm n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13;
+    Ty t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18;
+    Nm n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16, n17, n18;
 
     t2 = tycon_Contiguous(3, MPI_INT);
     n2 = "Contig{3xINT}";
@@ -281,6 +282,21 @@ int main ( int argc, char** argv )
     t13 = MPI_SHORT_INT;
     n13 = "SHORT_INT";
 
+    t14 = MPI_REAL8;
+    n14 = "REAL8";
+
+    t15 = MPI_REAL4;
+    n15 = "REAL4";
+
+    t16 = MPI_INTEGER8;
+    n16 = "INTEGER8";
+
+    t17 = MPI_INTEGER4;
+    n17 = "INTEGER4";
+
+    t18 = MPI_2INT;
+    n18 = "2INT";
+
     sendToMyself(True,  &t2,  n2);
     sendToMyself(True,  &t3,  n3);
     sendToMyself(True,  &t4,  n4);
@@ -293,6 +309,11 @@ int main ( int argc, char** argv )
     sendToMyself(False, &t11, n11);
     sendToMyself(False, &t12, n12);
     sendToMyself(False, &t13, n13);
+    sendToMyself(False, &t14, n14);
+    sendToMyself(False, &t15, n15);
+    sendToMyself(False, &t16, n16);
+    sendToMyself(False, &t17, n17);
+    sendToMyself(False, &t18, n18);
     }
 
     MPI_Finalize();

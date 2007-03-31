@@ -354,6 +354,7 @@ typedef
       Xin_Test32,    /* 32-bit test of REG against imm32 (AND, set
                         flags, discard result) */
       Xin_Unary32,   /* 32-bit not and neg */
+      Xin_Lea32,     /* 32-bit compute EA into a reg */
       Xin_MulL,      /* 32 x 32 -> 64 multiply */
       Xin_Div,       /* 64/32 -> (32,32) div and mod */
       Xin_Sh3232,    /* shldl or shrdl */
@@ -420,6 +421,11 @@ typedef
             X86UnaryOp op;
             HReg       dst;
          } Unary32;
+         /* 32-bit compute EA into a reg */
+         struct {
+            X86AMode* am;
+            HReg      dst;
+         } Lea32;
          /* EDX:EAX = EAX *s/u r/m32 */
          struct {
             Bool   syned;
@@ -615,6 +621,8 @@ typedef
 extern X86Instr* X86Instr_Alu32R    ( X86AluOp, X86RMI*, HReg );
 extern X86Instr* X86Instr_Alu32M    ( X86AluOp, X86RI*,  X86AMode* );
 extern X86Instr* X86Instr_Unary32   ( X86UnaryOp op, HReg dst );
+extern X86Instr* X86Instr_Lea32     ( X86AMode* am, HReg dst );
+
 extern X86Instr* X86Instr_Sh32      ( X86ShiftOp, UInt, HReg );
 extern X86Instr* X86Instr_Test32    ( UInt imm32, HReg dst );
 extern X86Instr* X86Instr_MulL      ( Bool syned, X86RM* );

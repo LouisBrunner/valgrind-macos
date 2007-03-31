@@ -1315,6 +1315,30 @@ static X86AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32);
 
+   /* Add32( Add32(expr1, Shl32(expr2, simm)), imm32 ) */
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.op == Iop_Add32
+       && e->Iex.Binop.arg2->tag == Iex_Const
+       && e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U32
+       && e->Iex.Binop.arg1->tag == Iex_Binop
+       && e->Iex.Binop.arg1->Iex.Binop.op == Iop_Add32
+       && e->Iex.Binop.arg1->Iex.Binop.arg2->tag == Iex_Binop
+       && e->Iex.Binop.arg1->Iex.Binop.arg2->Iex.Binop.op == Iop_Shl32
+       && e->Iex.Binop.arg1
+           ->Iex.Binop.arg2->Iex.Binop.arg2->tag == Iex_Const
+       && e->Iex.Binop.arg1
+           ->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8) {
+      UInt shift = e->Iex.Binop.arg1
+                    ->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+      UInt imm32 = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+      if (shift == 1 || shift == 2 || shift == 3) {
+         HReg r1 = iselIntExpr_R(env, e->Iex.Binop.arg1->Iex.Binop.arg1);
+         HReg r2 = iselIntExpr_R(env, e->Iex.Binop.arg1
+                                       ->Iex.Binop.arg2->Iex.Binop.arg1 );
+         return X86AMode_IRRS(imm32, r1, r2, shift);
+      }
+   }
+
    /* Add32(expr1, Shl32(expr2, imm)) */
    if (e->tag == Iex_Binop
        && e->Iex.Binop.op == Iop_Add32
@@ -3489,6 +3513,30 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_WrTmp: {
       IRTemp tmp = stmt->Ist.WrTmp.tmp;
       IRType ty = typeOfIRTemp(env->type_env, tmp);
+
+      /* optimisation: if stmt->Ist.WrTmp.data is Add32(..,..),
+         compute it into an AMode and then use LEA.  This usually
+         produces fewer instructions, often because (for memcheck
+         created IR) we get t = address-expression, (t is later used
+         twice) and so doing this naturally turns address-expression
+         back into an X86 amode. */
+      if (ty == Ity_I32 
+          && stmt->Ist.WrTmp.data->tag == Iex_Binop
+          && stmt->Ist.WrTmp.data->Iex.Binop.op == Iop_Add32) {
+         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.WrTmp.data);
+         HReg dst = lookupIRTemp(env, tmp);
+         if (am->tag == Xam_IR && am->Xam.IR.imm == 0) {
+            /* Hmm, iselIntExpr_AMode wimped out and just computed the
+               value into a register.  Just emit a normal reg-reg move
+               so reg-alloc can coalesce it away in the usual way. */
+            HReg src = am->Xam.IR.reg;
+            addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(src), dst));
+         } else {
+            addInstr(env, X86Instr_Lea32(am,dst));
+         }
+         return;
+      }
+
       if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
          X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.WrTmp.data);
          HReg dst = lookupIRTemp(env, tmp);

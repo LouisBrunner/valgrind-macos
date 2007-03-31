@@ -612,6 +612,13 @@ X86Instr* X86Instr_Unary32 ( X86UnaryOp op, HReg dst ) {
    i->Xin.Unary32.dst = dst;
    return i;
 }
+X86Instr* X86Instr_Lea32 ( X86AMode* am, HReg dst ) {
+   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag             = Xin_Lea32;
+   i->Xin.Lea32.am    = am;
+   i->Xin.Lea32.dst   = dst;
+   return i;
+}
 X86Instr* X86Instr_MulL ( Bool syned, X86RM* src ) {
    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
    i->tag             = Xin_MulL;
@@ -907,6 +914,12 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
          vex_printf("%sl ", showX86UnaryOp(i->Xin.Unary32.op));
          ppHRegX86(i->Xin.Unary32.dst);
          return;
+      case Xin_Lea32:
+         vex_printf("leal ");
+         ppX86AMode(i->Xin.Lea32.am);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Lea32.dst);
+         return;
       case Xin_MulL:
          vex_printf("%cmull ", i->Xin.MulL.syned ? 's' : 'u');
          ppX86RM(i->Xin.MulL.src);
@@ -1165,6 +1178,10 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i, Bool mode64)
       case Xin_Unary32:
          addHRegUse(u, HRmModify, i->Xin.Unary32.dst);
          return;
+      case Xin_Lea32:
+         addRegUsage_X86AMode(u, i->Xin.Lea32.am);
+         addHRegUse(u, HRmWrite, i->Xin.Lea32.dst);
+         return;
       case Xin_MulL:
          addRegUsage_X86RM(u, i->Xin.MulL.src, HRmRead);
          addHRegUse(u, HRmModify, hregX86_EAX());
@@ -1389,6 +1406,10 @@ void mapRegs_X86Instr ( HRegRemap* m, X86Instr* i, Bool mode64 )
          return;
       case Xin_Unary32:
          mapReg(m, &i->Xin.Unary32.dst);
+         return;
+      case Xin_Lea32:
+         mapRegs_X86AMode(m, i->Xin.Lea32.am);
+         mapReg(m, &i->Xin.Lea32.dst);
          return;
       case Xin_MulL:
          mapRegs_X86RM(m, i->Xin.MulL.src);
@@ -2051,6 +2072,11 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
          goto done;
       }
       break;
+
+   case Xin_Lea32:
+      *p++ = 0x8D;
+      p = doAMode_M(p, i->Xin.Lea32.dst, i->Xin.Lea32.am);
+      goto done;
 
    case Xin_MulL:
       subopc = i->Xin.MulL.syned ? 5 : 4;

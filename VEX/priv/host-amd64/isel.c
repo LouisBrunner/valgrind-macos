@@ -3663,6 +3663,30 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_WrTmp: {
       IRTemp tmp = stmt->Ist.WrTmp.tmp;
       IRType ty = typeOfIRTemp(env->type_env, tmp);
+
+      /* optimisation: if stmt->Ist.WrTmp.data is Add64(..,..),
+         compute it into an AMode and then use LEA.  This usually
+         produces fewer instructions, often because (for memcheck
+         created IR) we get t = address-expression, (t is later used
+         twice) and so doing this naturally turns address-expression
+         back into an AMD64 amode. */
+      if (ty == Ity_I64 
+          && stmt->Ist.WrTmp.data->tag == Iex_Binop
+          && stmt->Ist.WrTmp.data->Iex.Binop.op == Iop_Add64) {
+         AMD64AMode* am = iselIntExpr_AMode(env, stmt->Ist.WrTmp.data);
+         HReg dst = lookupIRTemp(env, tmp);
+         if (am->tag == Aam_IR && am->Aam.IR.imm == 0) {
+            /* Hmm, iselIntExpr_AMode wimped out and just computed the
+               value into a register.  Just emit a normal reg-reg move
+               so reg-alloc can coalesce it away in the usual way. */
+            HReg src = am->Aam.IR.reg;
+            addInstr(env, AMD64Instr_Alu64R(Aalu_MOV, AMD64RMI_Reg(src), dst));
+         } else {
+            addInstr(env, AMD64Instr_Lea64(am,dst));
+         }
+         return;
+      }
+
       if (ty == Ity_I64 || ty == Ity_I32 
           || ty == Ity_I16 || ty == Ity_I8) {
          AMD64RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.WrTmp.data);

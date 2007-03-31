@@ -683,6 +683,13 @@ AMD64Instr* AMD64Instr_Unary64 ( AMD64UnaryOp op, HReg dst ) {
    i->Ain.Unary64.dst = dst;
    return i;
 }
+AMD64Instr* AMD64Instr_Lea64 ( AMD64AMode* am, HReg dst ) {
+   AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag             = Ain_Lea64;
+   i->Ain.Lea64.am    = am;
+   i->Ain.Lea64.dst   = dst;
+   return i;
+}
 AMD64Instr* AMD64Instr_MulL ( Bool syned, AMD64RM* src ) {
    AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag            = Ain_MulL;
@@ -1062,6 +1069,12 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
          vex_printf("%sq ", showAMD64UnaryOp(i->Ain.Unary64.op));
          ppHRegAMD64(i->Ain.Unary64.dst);
          return;
+      case Ain_Lea64:
+         vex_printf("leaq ");
+         ppAMD64AMode(i->Ain.Lea64.am);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.Lea64.dst);
+         return;
       case Ain_MulL:
          vex_printf("%cmulq ", i->Ain.MulL.syned ? 's' : 'u');
          ppAMD64RM(i->Ain.MulL.src);
@@ -1385,6 +1398,10 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
       case Ain_Unary64:
          addHRegUse(u, HRmModify, i->Ain.Unary64.dst);
          return;
+      case Ain_Lea64:
+         addRegUsage_AMD64AMode(u, i->Ain.Lea64.am);
+         addHRegUse(u, HRmWrite, i->Ain.Lea64.dst);
+         return;
       case Ain_MulL:
          addRegUsage_AMD64RM(u, i->Ain.MulL.src, HRmRead);
          addHRegUse(u, HRmModify, hregAMD64_RAX());
@@ -1664,6 +1681,10 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          return;
       case Ain_Unary64:
          mapReg(m, &i->Ain.Unary64.dst);
+         return;
+      case Ain_Lea64:
+         mapRegs_AMD64AMode(m, i->Ain.Lea64.am);
+         mapReg(m, &i->Ain.Lea64.dst);
          return;
       case Ain_MulL:
          mapRegs_AMD64RM(m, i->Ain.MulL.src);
@@ -2472,6 +2493,12 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          goto done;
       }
       break;
+
+   case Ain_Lea64:
+      *p++ = rexAMode_M(i->Ain.Lea64.dst, i->Ain.Lea64.am);
+      *p++ = 0x8D;
+      p = doAMode_M(p, i->Ain.Lea64.dst, i->Ain.Lea64.am);
+      goto done;
 
    case Ain_MulL:
       subopc = i->Ain.MulL.syned ? 5 : 4;

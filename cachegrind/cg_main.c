@@ -237,6 +237,15 @@ static LineCC* get_lineCC(Addr origAddr)
       lineCC->loc.file = get_perm_string(loc.file);
       lineCC->loc.fn   = get_perm_string(loc.fn);
       lineCC->loc.line = loc.line;
+      lineCC->Ir.a     = 0;
+      lineCC->Ir.m1    = 0;
+      lineCC->Ir.m2    = 0;
+      lineCC->Dr.a     = 0;
+      lineCC->Dr.m1    = 0;
+      lineCC->Dr.m2    = 0;
+      lineCC->Dw.a     = 0;
+      lineCC->Dw.m1    = 0;
+      lineCC->Dw.m2    = 0;
       VG_(OSet_Insert)(CC_table, lineCC);
    }
 

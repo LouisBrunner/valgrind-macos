@@ -1432,6 +1432,18 @@ static IRExpr* fold_Expr ( IRExpr* e )
                               IRExpr_Const(IRConst_U8(1)));
          } else
 
+         /* Add8(t,t) ==> t << 1;  rationale as for Add32(t,t) above. */
+         if (e->Iex.Binop.op == Iop_Add8
+             && e->Iex.Binop.arg1->tag == Iex_RdTmp
+             && e->Iex.Binop.arg2->tag == Iex_RdTmp
+             && e->Iex.Binop.arg1->Iex.RdTmp.tmp 
+                == e->Iex.Binop.arg2->Iex.RdTmp.tmp) {
+            e2 = IRExpr_Binop(Iop_Shl8,
+                              e->Iex.Binop.arg1,
+                              IRExpr_Const(IRConst_U8(1)));
+         } else
+         /* NB no Add16(t,t) case yet as no known test case exists */
+
          /* Or64/Add64(x,0) ==> x */
          if ((e->Iex.Binop.op == Iop_Add64 || e->Iex.Binop.op == Iop_Or64)
              && e->Iex.Binop.arg2->tag == Iex_Const

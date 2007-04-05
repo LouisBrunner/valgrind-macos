@@ -295,14 +295,6 @@ static IRTemp newTemp ( IRType ty )
    return newIRTemp( irsb->tyenv, ty );
 }
 
-/* Bomb out if we can't handle something. */
-__attribute__ ((noreturn))
-static void unimplemented ( HChar* str )
-{
-   vex_printf("x86toIR: unimplemented feature\n");
-   vpanic(str);
-}
-
 /* Various simple conversions */
 
 static UInt extend_s_8to32( UInt x )
@@ -1504,9 +1496,8 @@ IRTemp disAMode ( Int* len, UChar sorb, Int delta, HChar* buf )
 
          if (index_r == R_ESP && base_r == R_EBP) {
             UInt d = getUDisp32(delta);
-            DIS(buf, "%s0x%x()", sorbTxt(sorb), d);
+            DIS(buf, "%s0x%x(,,)", sorbTxt(sorb), d);
             *len = 6;
-            vpanic("disAMode(x86):untested amode: 8");
             return disAMode_copy2tmp(
                    handleSegOverride(sorb, mkU32(d)));
          }
@@ -2926,7 +2917,7 @@ void dis_string_op( void (*dis_OP)( Int, IRTemp ),
                     Int sz, HChar* name, UChar sorb )
 {
    IRTemp t_inc = newTemp(Ity_I32);
-   vassert(sorb == 0);
+   vassert(sorb == 0); /* hmm.  so what was the point of passing it in? */
    dis_string_op_increment(sz, t_inc);
    dis_OP( sz, t_inc );
    DIP("%s%c\n", name, nameISize(sz));
@@ -7338,13 +7329,11 @@ DisResult disInstr_X86_WRK (
                goto decode_success;
             }
          }
-         unimplemented("x86 segment override (SEG=CS) prefix");
-         /*NOTREACHED*/
-         break;
+         /* All other CS override cases are not handled */
+         goto decode_failure;
       case 0x36: /* %SS: */
-         unimplemented("x86 segment override (SEG=SS) prefix");
-         /*NOTREACHED*/
-         break;
+         /* SS override cases are not handled */
+         goto decode_failure;
       default:
          break;
    }
@@ -11715,6 +11704,7 @@ DisResult disInstr_X86_WRK (
 
    case 0x9D: /* POPF */
       vassert(sz == 2 || sz == 4);
+      if (sz != 4) goto decode_failure;
       vassert(sz == 4); // until we know a sz==2 test case exists
       t1 = newTemp(Ity_I32); t2 = newTemp(Ity_I32);
       assign(t2, getIReg(4, R_ESP));
@@ -11902,6 +11892,7 @@ DisResult disInstr_X86_WRK (
 
    case 0x9C: /* PUSHF */ {
       vassert(sz == 2 || sz == 4);
+      if (sz != 4) goto decode_failure;
       vassert(sz == 4);  // wait for sz==2 test case
 
       t1 = newTemp(Ity_I32);
@@ -12003,26 +11994,36 @@ DisResult disInstr_X86_WRK (
 
    case 0xA4: /* MOVS, no REP prefix */
    case 0xA5: 
+      if (sorb != 0)
+         goto decode_failure; /* else dis_string_op asserts */
       dis_string_op( dis_MOVS, ( opc == 0xA4 ? 1 : sz ), "movs", sorb );
       break;
 
   case 0xA6: /* CMPSb, no REP prefix */
   case 0xA7:
-     dis_string_op( dis_CMPS, ( opc == 0xA6 ? 1 : sz ), "cmps", sorb );
-     break;
+      if (sorb != 0)
+         goto decode_failure; /* else dis_string_op asserts */
+      dis_string_op( dis_CMPS, ( opc == 0xA6 ? 1 : sz ), "cmps", sorb );
+      break;
 
    case 0xAA: /* STOS, no REP prefix */
    case 0xAB:
+      if (sorb != 0)
+         goto decode_failure; /* else dis_string_op asserts */
       dis_string_op( dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
       break;
 
    case 0xAC: /* LODS, no REP prefix */
    case 0xAD:
+      if (sorb != 0)
+         goto decode_failure; /* else dis_string_op asserts */
       dis_string_op( dis_LODS, ( opc == 0xAC ? 1 : sz ), "lods", sorb );
       break;
 
    case 0xAE: /* SCAS, no REP prefix */
    case 0xAF:
+      if (sorb != 0) 
+         goto decode_failure; /* else dis_string_op asserts */
       dis_string_op( dis_SCAS, ( opc == 0xAE ? 1 : sz ), "scas", sorb );
       break;
 
@@ -12073,7 +12074,7 @@ DisResult disInstr_X86_WRK (
    /* REPNE prefix insn */
    case 0xF2: { 
       Addr32 eip_orig = guest_EIP_bbstart + delta - 1;
-      vassert(sorb == 0);
+      if (sorb != 0) goto decode_failure;
       abyte = getIByte(delta); delta++;
 
       if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }
@@ -12115,7 +12116,7 @@ DisResult disInstr_X86_WRK (
       for the rest, it means REP) */
    case 0xF3: { 
       Addr32 eip_orig = guest_EIP_bbstart + delta - 1;
-      vassert(sorb == 0);
+      if (sorb != 0) goto decode_failure;
       abyte = getIByte(delta); delta++;
 
       if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }

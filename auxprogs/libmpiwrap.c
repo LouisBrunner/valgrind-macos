@@ -256,6 +256,18 @@ static void showTy ( FILE* f, MPI_Datatype ty )
 #  if defined(MPI_UNSIGNED_LONG_LONG)
    else if (ty == MPI_UNSIGNED_LONG_LONG) fprintf(f,"UNSIGNED_LONG_LONG");
 #  endif
+#  if defined(MPI_REAL8)
+   else if (ty == MPI_REAL8)          fprintf(f, "REAL8");
+#  endif
+#  if defined(MPI_REAL4)
+   else if (ty == MPI_REAL4)          fprintf(f, "REAL4");
+#  endif
+#  if defined(MPI_INTEGER8)
+   else if (ty == MPI_INTEGER8)       fprintf(f, "INTEGER8");
+#  endif
+#  if defined(MPI_INTEGER4)
+   else if (ty == MPI_INTEGER4)       fprintf(f, "INTEGER4");
+#  endif
    else fprintf(f,"showTy:???");
 }
 
@@ -426,6 +438,19 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
    if (ty == MPI_LONG_DOUBLE)    return sizeof_long_double_image();
    if (ty == MPI_PACKED)         return 1;
 
+#  if defined(MPI_REAL8)
+   if (ty == MPI_REAL8)          return sizeof(double);
+#  endif
+#  if defined(MPI_REAL4)
+   if (ty == MPI_REAL4)          return sizeof(float);
+#  endif
+#  if defined(MPI_INTEGER8)
+   if (ty == MPI_INTEGER8)       return sizeof(signed long long int);
+#  endif
+#  if defined(MPI_INTEGER4)
+   if (ty == MPI_INTEGER4)       return sizeof(signed int);
+#  endif
+
    /* new in MPI2: */
 #  if defined(MPI_WCHAR)
    if (ty == MPI_WCHAR)              return sizeof(wchar_t);
@@ -523,6 +548,10 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    MPI_Aint*     addrs = NULL;
    MPI_Datatype* dtys  = NULL;
 
+   /* Stuff for limiting how much complaining text it spews out */
+   static int complaints = 3;
+   static int last_complained_about_tycon = -987654321; /* presumably bogus */
+
    if (0)
       printf("walk_type %p\n", (void*)(unsigned long)ty);
 
@@ -542,6 +571,12 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
          out these types.  At least Open MPI 1.0.1 appears to put
          the 'val' field first.
       */
+      if (ty == MPI_2INT) {
+         typedef struct { int val; int loc; } Ty;
+         f(base + offsetof(Ty,val), sizeof(int));
+         f(base + offsetof(Ty,loc), sizeof(int));
+         return;
+      }
       if (ty == MPI_LONG_INT) {
          typedef struct { long val; int loc; } Ty;
          f(base + offsetof(Ty,val), sizeof(long));
@@ -685,14 +720,21 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    return;
 
   unhandled:
-   if (tycon == MPI_COMBINER_NAMED) {
-      fprintf(stderr, "%s %5d: walk_type: unhandled base type 0x%lx ",
-                      preamble, my_pid, (long)ty);
-      showTy(stderr, ty);
-      fprintf(stderr, "\n");
-   } else {
-      fprintf(stderr, "%s %5d: walk_type: unhandled combiner 0x%lx\n",
-                      preamble, my_pid, (long)tycon);
+   /* Complain, but limit the amount of complaining that can happen to
+      the first 3 different unhandled tycons that show up, so as to
+      avoid swamping users with thousands of duplicate messages. */
+   if (complaints > 0 && tycon != last_complained_about_tycon) {
+      complaints--;
+      last_complained_about_tycon = tycon;
+      if (tycon == MPI_COMBINER_NAMED) {
+         fprintf(stderr, "%s %5d: walk_type: unhandled base type 0x%lx ",
+                         preamble, my_pid, (long)ty);
+         showTy(stderr, ty);
+         fprintf(stderr, "\n");
+      } else {
+         fprintf(stderr, "%s %5d: walk_type: unhandled combiner 0x%lx\n",
+                         preamble, my_pid, (long)tycon);
+      }
    }
    if (ints)  free(ints);
    if (addrs) free(addrs);

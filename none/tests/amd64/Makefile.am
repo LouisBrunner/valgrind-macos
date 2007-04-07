@@ -30,7 +30,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	nibz_bennee_mmap.vgtest \
 	rcl-amd64.vgtest rcl-amd64.stdout.exp rcl-amd64.stderr.exp \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
-	shrld.stderr.exp shrld.stdout.exp shrld.vgtest
+	shrld.stderr.exp shrld.stdout.exp shrld.vgtest \
+	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
+	slahf-amd64.stderr.vgtest
 
 
 check_PROGRAMS = \
@@ -38,7 +40,8 @@ check_PROGRAMS = \
 	clc \
 	faultstatus fcmovnu fxtract $(INSN_TESTS) looper jrcxz \
 	rcl-amd64 smc1 shrld \
-	nibz_bennee_mmap
+	nibz_bennee_mmap \
+	slahf-amd64
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 		@FLAG_M64@

@@ -258,9 +258,7 @@ Bool VG_(showing_core_errors)(void)
    return VG_(needs).core_errors && VG_(clo_verbosity) >= 1 && !VG_(clo_xml);
 }
 
-/* Compare error contexts, to detect duplicates.  Note that if they
-   are otherwise the same, the faulting addrs and associated rwoffsets
-   are allowed to be different.  */
+/* Compare errors, to detect duplicates. */
 static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
 {
    if (e1->ekind != e2->ekind) 

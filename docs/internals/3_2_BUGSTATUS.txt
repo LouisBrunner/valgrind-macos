@@ -19,7 +19,8 @@ TRUNK   32BRANCH  PRI   BUG#   WHAT
 
 r6566    pending   32 n-i-bz   AT_FDCWD support for openat()
 
-r6575    pending   32 n-i-bz   walk_type: unhandled base type 0xe PACKED
+r6575    r6693     32 n-i-bz   walk_type: unhandled base type 0xe PACKED
+r6692    r6694     32 n-i-bz   libmpiwrap.c: {REAL,INTEGER}{4,8}, 2INT
 
 pending  pending      140939   --track-fds reports leakage of
                                stdout/in/err and doesn't respect -q
@@ -27,8 +28,8 @@ pending  pending      140939   --track-fds reports leakage of
 pending  pending      141366   Add sys_vserver support to valgrind (w/ patch)
 
 pending  pending      140522   valgrind 3.2.2 libmpiwrap: MPI_STATUS_IGNORE
-                               and MPI_STATUSES_IGNORE not supported and makes 
-                               a valid MPI program crash.
+                               and MPI_STATUSES_IGNORE not supported
+                               and makes a valid MPI program crash.
 
 vx1735   pending   32 141790   Missing amd64 x87 insns
 
@@ -69,12 +70,36 @@ Make configure check try for -fno-stack-protector (users, 26 Feb)
 
 possible false errors on amd64 cmpq/jae, cmpq/jbe
 
+6649 64-bit allocation counts?
+
 r6665    r6666        142488   ~/.valgrindrc is loaded twice if CWD==HOME
+
+r6656 Clarify the "out of memory" message.
+
+6655/6657 SSE3 feature tests for regtests
+
+143079  vex: the `impossible' happened: unhandled Grp3(M) case 1 (x86)
+
+vx1742 (x86), 1743 (amd64) - merge
+
+vx1748   pending      143354   return nodecode instead of panic or 
+                               assert failures
+ditto 142279 
+142279  long indirect jmp unhandled: unhandled Grp5(M) case 5
+        (intersegment jump?)
+
+142104  pinsrw and pmovmskb with 64-bit regs
+
+add feature test to check sse3 is handled by assembler
 
 r6668    r6669        142197   Tool-prefixed options like
                                --massif:alloc-fn=foo are broken
 
 r6671    r6672        142491   Maximise use of alloc_fns array
+
+vx1747   pending   32 143817   Unused bitfield pad bits confuse memcheck
+
+vx1749   pending   32 143907   sahf/lahf on amd64
 
 
 //// maybe do not fix in 3.2 branch
@@ -83,14 +108,12 @@ r6671    r6672        142491   Maximise use of alloc_fns array
 
 get rid of kludge_then_addDiCfSI (r6611; do not merge)
 
-142279  long indirect jmp unhandled: unhandled Grp5(M) case 5
-        (intersegment jump?)
-
 r6630    pending   ??          ptrace extra reason codes 
 r6631    pending   ?? 142186   dd support for some I2C ioctls.
 
 r6640    pending   no n-i-bz   memcheck: intercept getenv
 (XXXX maybe get rid of this)
+
 
 3.2.4 criteria: FC7 runs, SuSE 10.3a? runs
 

@@ -7133,51 +7133,57 @@ void codegen_xchg_rAX_Reg ( Prefix pfx, Int sz, UInt regLo3 )
 }
 
 
-//.. static 
-//.. void codegen_SAHF ( void )
-//.. {
-//..    /* Set the flags to:
-//..       (x86g_calculate_flags_all() & X86G_CC_MASK_O)  -- retain the old O flag
-//..       | (%AH & (X86G_CC_MASK_S|X86G_CC_MASK_Z|X86G_CC_MASK_A
-//..                 |X86G_CC_MASK_P|X86G_CC_MASK_C)
-//..    */
-//..    UInt   mask_SZACP = X86G_CC_MASK_S|X86G_CC_MASK_Z|X86G_CC_MASK_A
-//..                        |X86G_CC_MASK_C|X86G_CC_MASK_P;
-//..    IRTemp oldflags   = newTemp(Ity_I32);
-//..    assign( oldflags, mk_x86g_calculate_eflags_all() );
-//..    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1,
-//..          binop(Iop_Or32,
-//..                binop(Iop_And32, mkexpr(oldflags), mkU32(X86G_CC_MASK_O)),
-//..                binop(Iop_And32, 
-//..                      binop(Iop_Shr32, getIReg(4, R_EAX), mkU8(8)),
-//..                      mkU32(mask_SZACP))
-//..               )
-//..    ));
-//.. }
-//.. 
-//.. 
-//.. //-- static 
-//.. //-- void codegen_LAHF ( UCodeBlock* cb )
-//.. //-- {
-//.. //--    Int t = newTemp(cb);
-//.. //-- 
-//.. //--    /* Pushed arg is ignored, it just provides somewhere to put the
-//.. //--       return value. */
-//.. //--    uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, t);
-//.. //--    uInstr0(cb, CALLM_S, 0);
-//.. //--    uInstr1(cb, PUSH,  4, TempReg, t);
-//.. //--    uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_LAHF));
-//.. //--    uFlagsRWU(cb, FlagsSZACP, FlagsEmpty, FlagsEmpty);
-//.. //--    uInstr1(cb, POP,   4, TempReg, t);
-//.. //--    uInstr0(cb, CALLM_E, 0);
-//.. //-- 
-//.. //--    /* At this point, the %ah sub-register in %eax has been updated,
-//.. //--       the rest is the same, so do a PUT of the whole thing. */
-//.. //--    uInstr2(cb, PUT,   4,  TempReg, t,   ArchReg, R_EAX);
-//.. //-- }
-//.. //-- 
+static 
+void codegen_SAHF ( void )
+{
+   /* Set the flags to:
+      (amd64g_calculate_flags_all() & AMD64G_CC_MASK_O) 
+                                    -- retain the old O flag
+      | (%AH & (AMD64G_CC_MASK_S|AMD64G_CC_MASK_Z|AMD64G_CC_MASK_A
+                |AMD64G_CC_MASK_P|AMD64G_CC_MASK_C)
+   */
+   ULong  mask_SZACP = AMD64G_CC_MASK_S|AMD64G_CC_MASK_Z|AMD64G_CC_MASK_A
+                       |AMD64G_CC_MASK_C|AMD64G_CC_MASK_P;
+   IRTemp oldflags   = newTemp(Ity_I64);
+   assign( oldflags, mk_amd64g_calculate_rflags_all() );
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP1,
+         binop(Iop_Or64,
+               binop(Iop_And64, mkexpr(oldflags), mkU64(AMD64G_CC_MASK_O)),
+               binop(Iop_And64, 
+                     binop(Iop_Shr64, getIReg64(R_RAX), mkU8(8)),
+                     mkU64(mask_SZACP))
+              )
+   ));
+}
+
+
+static 
+void codegen_LAHF ( void  )
+{
+   /* AH <- EFLAGS(SF:ZF:0:AF:0:PF:1:CF) */
+   IRExpr* rax_with_hole;
+   IRExpr* new_byte;
+   IRExpr* new_rax;
+   ULong   mask_SZACP = AMD64G_CC_MASK_S|AMD64G_CC_MASK_Z|AMD64G_CC_MASK_A
+                        |AMD64G_CC_MASK_C|AMD64G_CC_MASK_P;
+
+   IRTemp  flags = newTemp(Ity_I64);
+   assign( flags, mk_amd64g_calculate_rflags_all() );
+
+   rax_with_hole 
+      = binop(Iop_And64, getIReg64(R_RAX), mkU64(~0xFF00ULL));
+   new_byte 
+      = binop(Iop_Or64, binop(Iop_And64, mkexpr(flags), mkU64(mask_SZACP)),
+                        mkU64(1<<1));
+   new_rax 
+      = binop(Iop_Or64, rax_with_hole,
+                        binop(Iop_Shl64, new_byte, mkU8(8)));
+   putIReg64(R_RAX, new_rax);
+}
+
 
 static
 ULong dis_cmpxchg_G_E ( /*OUT*/Bool* ok,
@@ -12367,16 +12373,16 @@ DisResult disInstr_AMD64_WRK (
 
    /* ------------------------ FPU ops -------------------- */
 
-//..    case 0x9E: /* SAHF */
-//..       codegen_SAHF();
-//..       DIP("sahf\n");
-//..       break;
-//.. 
-//.. //--    case 0x9F: /* LAHF */
-//.. //--       codegen_LAHF ( cb );
-//.. //--       DIP("lahf\n");
-//.. //--       break;
-//.. //-- 
+   case 0x9E: /* SAHF */
+      codegen_SAHF();
+      DIP("sahf\n");
+      break;
+
+   case 0x9F: /* LAHF */
+      codegen_LAHF();
+      DIP("lahf\n");
+      break;
+
    case 0x9B: /* FWAIT */
       /* ignore? */
       DIP("fwait\n");

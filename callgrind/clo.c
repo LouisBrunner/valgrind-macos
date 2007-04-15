@@ -1,11 +1,11 @@
 /*
-   This file is part of Callgrind, a Valgrind skin for call graph
+   This file is part of Callgrind, a Valgrind tool for call graph
    profiling programs.
 
    Copyright (C) 2002-2007, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
-   This skin is derived from and contains lot of code from Cachegrind
-   Copyright (C) 2002 Nicholas Nethercote (njn25@cam.ac.uk)
+   This tool is derived from and contains lot of code from Cachegrind
+   Copyright (C) 2002 Nicholas Nethercote (njn@valgrind.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

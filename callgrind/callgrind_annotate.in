@@ -11,9 +11,9 @@
 #  Copyright (C) 2003 Josef Weidendorfer
 #     Josef.Weidendorfer@gmx.de
 #
-#  This file is based heavily on vg_annotate, part of Valgrind.
+#  This file is based heavily on cg_annotate, part of Valgrind.
 #  Copyright (C) 2002 Nicholas Nethercote
-#     njn25@cam.ac.uk
+#     njn@valgrind.org
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License as

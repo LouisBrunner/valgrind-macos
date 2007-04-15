@@ -10,7 +10,7 @@
 
    ----------------------------------------------------------------
 
-   This file is part of callgrind, a valgrind skin for cache simulation
+   This file is part of callgrind, a valgrind tool for cache simulation
    and call tree tracing.
 
    Copyright (C) 2003-2007 Josef Weidendorfer.  All rights reserved.

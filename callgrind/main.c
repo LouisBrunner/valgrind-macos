@@ -10,8 +10,8 @@
 
    Copyright (C) 2002-2007, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
-   This skin is derived from and contains code from Cachegrind
-   Copyright (C) 2002-2007 Nicholas Nethercote (njn25@cam.ac.uk)
+   This tool is derived from and contains code from Cachegrind
+   Copyright (C) 2002-2007 Nicholas Nethercote (njn@valgrind.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

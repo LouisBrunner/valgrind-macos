@@ -1,13 +1,13 @@
 
 /*--------------------------------------------------------------------*/
-/*--- PPC32-specific definitions.                 ppc32/cg-ppc32.c ---*/
+/*--- PPC32-specific definitions.                       cg-ppc32.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
    This file is part of Cachegrind, a Valgrind tool for cache
    profiling programs.
 
-   Copyright (C) 2005 Nicholas Nethercote
+   Copyright (C) 2005-2007 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or

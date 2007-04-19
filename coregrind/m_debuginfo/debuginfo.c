@@ -740,8 +740,11 @@ Bool VG_(get_filename_linenum) ( Addr a,
               (dirname != NULL && dirname_available != NULL) );
 
    search_all_loctabs ( a, &si, &locno );
-   if (si == NULL) 
+   if (si == NULL) {
+      if (dirname_available) *dirname_available = False;
       return False;
+   }
+
    VG_(strncpy_safely)(filename, si->loctab[locno].filename, n_filename);
    *lineno = si->loctab[locno].lineno;
 

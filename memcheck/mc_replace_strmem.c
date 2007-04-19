@@ -671,6 +671,67 @@ GLIBC25_MEMPCPY(m_ld_so_1,     mempcpy) /* ld.so.1 */
 
 
 /*------------------------------------------------------------*/
+/*--- Improve definedness checking of process environment  ---*/
+/*------------------------------------------------------------*/
+
+/* putenv */
+int VG_WRAP_FUNCTION_ZU(m_libc_soname, putenv) (char* string);
+int VG_WRAP_FUNCTION_ZU(m_libc_soname, putenv) (char* string)
+{
+    OrigFn fn;
+    Word result;
+    const char* p = string;
+    VALGRIND_GET_ORIG_FN(fn);
+    /* Now by walking over the string we magically produce
+       traces when hitting undefined memory. */
+    if (p)
+        while (*p++)
+            ;
+    CALL_FN_W_W(result, fn, string);
+    return result;
+}
+
+/* unsetenv */
+int VG_WRAP_FUNCTION_ZU(m_libc_soname, unsetenv) (const char* name);
+int VG_WRAP_FUNCTION_ZU(m_libc_soname, unsetenv) (const char* name)
+{
+    OrigFn fn;
+    Word result;
+    const char* p = name;
+    VALGRIND_GET_ORIG_FN(fn);
+    /* Now by walking over the string we magically produce
+       traces when hitting undefined memory. */
+    if (p)
+        while (*p++)
+            ;
+    CALL_FN_W_W(result, fn, name);
+    return result;
+}
+
+/* setenv */
+int VG_WRAP_FUNCTION_ZU(m_libc_soname, setenv)
+    (const char* name, const char* value, int overwrite);
+int VG_WRAP_FUNCTION_ZU(m_libc_soname, setenv)
+    (const char* name, const char* value, int overwrite)
+{
+    OrigFn fn;
+    Word result;
+    const char* p;
+    VALGRIND_GET_ORIG_FN(fn);
+    /* Now by walking over the string we magically produce
+       traces when hitting undefined memory. */
+    if (name)
+        for (p = name; *p; p++)
+            ;
+    if (value)
+        for (p = value; *p; p++)
+            ;
+    VALGRIND_CHECK_VALUE_IS_DEFINED (overwrite);
+    CALL_FN_W_WWW(result, fn, name, value, overwrite);
+    return result;
+}
+
+/*------------------------------------------------------------*/
 /*--- AIX stuff only after this point                      ---*/
 /*------------------------------------------------------------*/
 

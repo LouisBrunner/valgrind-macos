@@ -741,7 +741,10 @@ Bool VG_(get_filename_linenum) ( Addr a,
 
    search_all_loctabs ( a, &si, &locno );
    if (si == NULL) {
-      if (dirname_available) *dirname_available = False;
+      if (dirname_available) {
+         *dirname_available = False;
+         *dirname = 0;
+      }
       return False;
    }
 

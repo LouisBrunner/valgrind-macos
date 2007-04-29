@@ -6145,6 +6145,7 @@ void codegen_SAHF ( void )
    IRTemp oldflags   = newTemp(Ity_I32);
    assign( oldflags, mk_x86g_calculate_eflags_all() );
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
    stmt( IRStmt_Put( OFFB_CC_DEP1,
          binop(Iop_Or32,

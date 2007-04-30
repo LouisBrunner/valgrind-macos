@@ -886,7 +886,8 @@ void CLG_(pre_syscalltime)(ThreadId tid, UInt syscallno)
 static
 void CLG_(post_syscalltime)(ThreadId tid, UInt syscallno, SysRes res)
 {
-  if (CLG_(clo).collect_systime) {
+  if (CLG_(clo).collect_systime &&
+      CLG_(current_state).bbcc) {
     Int o = CLG_(sets).off_full_systime;
 #if CLG_MICROSYSTIME
     struct vki_timeval tv_now;

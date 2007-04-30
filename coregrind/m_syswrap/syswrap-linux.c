@@ -2434,7 +2434,7 @@ PRE(sys_openat)
                     int, dfd, const char *, filename, int, flags);
    }
 
-   if (!ML_(fd_allowed)(ARG1, "openat", tid, False))
+   if (ARG1 != VKI_AT_FDCWD && !ML_(fd_allowed)(ARG1, "openat", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
    else
       PRE_MEM_RASCIIZ( "openat(filename)", ARG2 );

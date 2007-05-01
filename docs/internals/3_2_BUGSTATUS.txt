@@ -17,7 +17,7 @@ PRI: 32  = fix this for 3.2.2
 
 TRUNK   32BRANCH  PRI   BUG#   WHAT
 
-r6566    pending   32 n-i-bz   AT_FDCWD support for openat()
+r6566    r6710     32 n-i-bz   AT_FDCWD support for openat()
 
 r6575    r6693     32 n-i-bz   walk_type: unhandled base type 0xe PACKED
 r6692    r6694     32 n-i-bz   libmpiwrap.c: {REAL,INTEGER}{4,8}, 2INT
@@ -31,17 +31,17 @@ pending  pending      140522   valgrind 3.2.2 libmpiwrap: MPI_STATUS_IGNORE
                                and MPI_STATUSES_IGNORE not supported
                                and makes a valid MPI program crash.
 
-vx1735   pending   32 141790   Missing amd64 x87 insns
+vx1735   vx1750    32 141790   Missing amd64 x87 insns (FCOM, FCOMPP)
 
 r6608    pending   32 n-i-bz   intercept for __memmove_chk
 
-r6593    pending   32 139363   callgrind: fix --collect-systime=yes
+r6593    r6711     32 139363   callgrind: fix --collect-systime=yes
                                with "no instrumentation" mode
 
-r6601    pending   32 n-i-bz   callgrind: Fix threads display
+r6601    r6712     32 n-i-bz   callgrind: Fix threads display
                                of "callgrind_control -s"
 
-r6622    pending   32 n-i-bz   .eh_frame crud for m_trampoline.S fns
+r6622    r6713     32 n-i-bz   .eh_frame crud for m_trampoline.S fns
 
 r6630    pending      n-i-bz   add additional ptrace reason codes
 
@@ -49,57 +49,58 @@ r6631    pending      142186   add I2C ioctl support
 
 Ashley logfile qualifiers in coredumps patch
 
-r6612    pending   32 142228   RedHat8: complaint of elf_dynamic_do_rela
-r6646    pending   32 142229   RedHat8: unexpected "write(buf) points
+r6612    r6718     32 142228   RedHat8: complaint of elf_dynamic_do_rela
+r6646    r6718     32 142229   RedHat8: unexpected "write(buf) points
                                to uninitialised byte(s)" (partial fix)
 
-vx1736   pending   32 133984   int3 (x86) support
-vx1741   pending   32 133984   int3 (amd64) support
+vx1736   vx1751    32 133984   int3 (x86) support
+vx1741   vx1751    32 133984   int3 (amd64) support
 
-r6599    pending   32 n-i-bz   Correctly handle DW_CFA_def_cfa_sf
+r6599    r6714     32 n-i-bz   Correctly handle DW_CFA_def_cfa_sf
 
-vx1737   pending   32 n-i-bz   x86->IR: 26 2E 64 65 90 %es:%cs:%fs:%gs:nop
+vx1737   vx1752    32 n-i-bz   x86->IR: 26 2E 64 65 90 %es:%cs:%fs:%gs:nop
 
-vx1739   pending   32 n-i-bz   ppc64 iselWordExpr_AMode fix
+vx1739   vx1753    32 n-i-bz   ppc64 iselWordExpr_AMode fix
 
-r6641    pending   32 n-i-bz   handle sys_ioprio_set on amd64-linux
+r6641    r6715     32 n-i-bz   handle sys_ioprio_set on amd64-linux
 
-vx1740   pending   ?? n-i-bz   handle REX.W fsqrt
+vx1740   vx1754    32 n-i-bz   handle REX.W fsqrt
 
 Make configure check try for -fno-stack-protector (users, 26 Feb)
+#144112
 
 possible false errors on amd64 cmpq/jae, cmpq/jbe
 
-6649 64-bit allocation counts?
+r6649    r6716     32 n-i-bz   64-bit allocation counts?
 
 r6665    r6666        142488   ~/.valgrindrc is loaded twice if CWD==HOME
 
-r6656 Clarify the "out of memory" message.
+r6656    r6717        n-i-bz   Clarify the "out of memory" message.
 
 6655/6657 SSE3 feature tests for regtests
 
-143079  vex: the `impossible' happened: unhandled Grp3(M) case 1 (x86)
+vx1742/3 vx1755  32   143079,142279
+                               fix some asserts in x86/amd64 front ends
 
-vx1742 (x86), 1743 (amd64) - merge
-
-vx1748   pending      143354   return nodecode instead of panic or 
+vx1748   vx1757  32   143354   return nodecode instead of panic or 
                                assert failures
-ditto 142279 
-142279  long indirect jmp unhandled: unhandled Grp5(M) case 5
-        (intersegment jump?)
+== 142279 
+== 143079
+
 
 142104  pinsrw and pmovmskb with 64-bit regs
-
-add feature test to check sse3 is handled by assembler
 
 r6668    r6669        142197   Tool-prefixed options like
                                --massif:alloc-fn=foo are broken
 
 r6671    r6672        142491   Maximise use of alloc_fns array
 
-vx1747   pending   32 143817   Unused bitfield pad bits confuse memcheck
+vx1747   vx1756    32 143817   Unused bitfield pad bits confuse memcheck
+                   XXXX check that x86/amd64 backends can deal with Shl8
 
-vx1749   pending   32 143907   sahf/lahf on amd64
+vx1749   vx1758    32 143907   sahf/lahf on amd64
+
+XXX copy spill area size, aspacem #segs and #segnames from trunk
 
 
 //// maybe do not fix in 3.2 branch
@@ -111,8 +112,9 @@ get rid of kludge_then_addDiCfSI (r6611; do not merge)
 r6630    pending   ??          ptrace extra reason codes 
 r6631    pending   ?? 142186   dd support for some I2C ioctls.
 
-r6640    pending   no n-i-bz   memcheck: intercept getenv
-(XXXX maybe get rid of this)
+r6706    pending   no n-i-bz   memcheck: wrap getenv/setenv/putenv
+
+143924: --db-attach=yes and --trace-children=yes
 
 
 3.2.4 criteria: FC7 runs, SuSE 10.3a? runs

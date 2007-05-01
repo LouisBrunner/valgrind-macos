@@ -2611,6 +2611,19 @@ PRE(sys_faccessat)
    PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
 }
 
+/* ---------------------------------------------------------------------
+   ioprio_ wrappers
+   ------------------------------------------------------------------ */
+
+/* _syscall3(int, ioprio_set, int, which, int, who, int, ioprio); */
+
+PRE(sys_ioprio_set)
+{
+   PRINT("sys_ioprio_set ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(int, "ioprio_set", int, which, int, who, int, ioprio);
+}
+
+
 #undef PRE
 #undef POST
 

@@ -706,6 +706,33 @@ if test x$declaration_after_statement = xyes; then
 fi
 
 
+# does this compiler support -fno-stack-protector ?
+AC_MSG_CHECKING([if gcc accepts -fno-stack-protector ])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-fno-stack-protector"
+
+AC_TRY_COMPILE(, [
+int main () { return 0 ; }
+],
+[
+no_stack_protector=yes
+FLAG_FNO_STACK_PROTECTOR="-fno-stack-protector"
+AC_MSG_RESULT([yes])
+], [
+no_stack_protector=no
+FLAG_FNO_STACK_PROTECTOR=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_FNO_STACK_PROTECTOR)
+
+if test x$no_stack_protector = xyes; then
+  CFLAGS="$CFLAGS -fno-stack-protector"
+fi
+
+
 # does this compiler support __builtin_expect?
 AC_MSG_CHECKING([if gcc supports __builtin_expect])
  

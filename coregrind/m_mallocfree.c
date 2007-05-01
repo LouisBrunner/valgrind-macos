@@ -506,26 +506,34 @@ void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB )
 {
    static Bool alreadyCrashing = False;
    ULong tot_alloc = VG_(am_get_anonsize_total)();
+   Char* s1 = 
+      "\n"
+      "    Valgrind's memory management: out of memory:\n"
+      "       %s's request for %llu bytes failed.\n"
+      "       %llu bytes have already been allocated.\n"
+      "    Valgrind cannot continue.  Sorry.\n\n"
+      "    There are several possible reasons for this.\n"
+      "    - You have some kind of memory limit in place.  Look at the\n"
+      "      output of 'ulimit -a'.  Is there a limit on the size of\n"
+      "      virtual memory or address space?\n"
+      "    - You have run out of swap space.\n"
+      "    - Valgrind has a bug.  If you think this is the case or you are\n"
+      "    not sure, please let us know and we'll try to fix it.\n"
+      "    Please note that programs can take substantially more memory than\n"
+      "    normal when running under Valgrind tools, eg. up to twice or\n"
+      "    more, depending on the tool.  On a 64-bit machine, Valgrind\n"
+      "    should be able to make use of up 32GB memory.  On a 32-bit\n"
+      "    machine, Valgrind should be able to use all the memory available\n"
+      "    to a single process, up to 4GB if that's how you have your\n"
+      "    kernel configured.  Most 32-bit Linux setups allow a maximum of\n"
+      "    3GB per process.\n\n"
+      "    Whatever the reason, Valgrind cannot continue.  Sorry.\n";
+
    if (!alreadyCrashing) {
       alreadyCrashing = True;
-      VG_(printf)("\n"
-                  "Valgrind's memory management: out of memory:\n");
-      VG_(printf)("   %s's request for %llu bytes failed.\n", 
-                  who, (ULong)szB );
-      VG_(printf)("   %llu bytes have already been allocated.\n", 
-                  tot_alloc);
-      VG_(printf)("Valgrind cannot continue.  Sorry.\n\n");
+      VG_(message)(Vg_UserMsg, s1, who, (ULong)szB, tot_alloc);
    } else {
-      VG_(debugLog)(0,"mallocfree","\n");
-      VG_(debugLog)(0,"mallocfree",
-                      "Valgrind's memory management: out of memory:\n");
-      VG_(debugLog)(0,"mallocfree",
-                      "   %s's request for %llu bytes failed.\n", 
-                      who, (ULong)szB );
-      VG_(debugLog)(0,"mallocfree",
-                      "   %llu bytes have already been allocated.\n", 
-                      tot_alloc);
-      VG_(debugLog)(0,"mallocfree","Valgrind cannot continue.  Sorry.\n\n");
+      VG_(debugLog)(0,"mallocfree", s1, who, (ULong)szB, tot_alloc);
    }
    VG_(exit)(1);
 }

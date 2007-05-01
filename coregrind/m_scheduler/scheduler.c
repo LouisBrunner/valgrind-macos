@@ -760,7 +760,7 @@ static void handle_tt_miss ( ThreadId tid )
 
 static void handle_syscall(ThreadId tid)
 {
-   ThreadState *tst = VG_(get_ThreadState)(tid);
+   ThreadState * volatile tst = VG_(get_ThreadState)(tid);
    Bool jumped; 
 
    /* Syscall may or may not block; either way, it will be

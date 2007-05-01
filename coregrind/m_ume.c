@@ -835,7 +835,8 @@ Int VG_(do_exec)(const HChar* exe_name, ExeInfo* info)
    ret = do_exec_inner(exe_name, info);
 
    if (0 != ret) {
-      ret = do_exec_shell_followup(ret, (Char*)exe_name, info);
+      Char* exe_name_casted = (Char*)exe_name;
+      ret = do_exec_shell_followup(ret, exe_name_casted, info);
    }
    return ret;
 }

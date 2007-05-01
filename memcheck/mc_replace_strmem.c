@@ -514,6 +514,40 @@ MEMSET(m_libc_so_star, memset)
 MEMMOVE(m_libc_so_star, memmove)
 
 
+/* glibc 2.5 variant of memmove which checks the dest is big enough.
+   There is no specific part of glibc that this is copied from. */
+#define GLIBC25___MEMMOVE_CHK(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            (void *dstV, const void *srcV, SizeT n, SizeT destlen); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+            (void *dstV, const void *srcV, SizeT n, SizeT destlen) \
+   { \
+      extern void _exit(int status); \
+      SizeT i; \
+      Char* dst = (Char*)dstV; \
+      Char* src = (Char*)srcV; \
+      if (destlen < n) \
+         goto badness; \
+      if (dst < src) { \
+         for (i = 0; i < n; i++) \
+            dst[i] = src[i]; \
+      } \
+      else  \
+      if (dst > src) { \
+         for (i = 0; i < n; i++) \
+            dst[n-i-1] = src[n-i-1]; \
+      } \
+      return dst; \
+     badness: \
+      VALGRIND_PRINTF_BACKTRACE( \
+         "*** memmove_chk: buffer overflow detected ***: " \
+         "program terminated"); \
+     _exit(127); \
+   }
+
+GLIBC25___MEMMOVE_CHK(m_libc_so_star, __memmove_chk)
+
+
 /* Find the first occurrence of C in S or the final NUL byte.  */
 #define GLIBC232_STRCHRNUL(soname, fnname) \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const char* s, int c_in); \
@@ -565,7 +599,8 @@ GLIBC232_RAWMEMCHR(m_libc_so_star, rawmemchr)
       return ret; \
      badness: \
       VALGRIND_PRINTF_BACKTRACE( \
-         "***buffer overflow detected ***: program terminated"); \
+         "*** strcpy_chk: buffer overflow detected ***: " \
+         "program terminated"); \
      _exit(127); \
      /*NOTREACHED*/ \
      return NULL; \
@@ -591,7 +626,8 @@ GLIBC25___STRCPY_CHK(m_libc_so_star, __strcpy_chk)
       return dst - 1; \
      badness: \
       VALGRIND_PRINTF_BACKTRACE( \
-         "***buffer overflow detected ***: program terminated"); \
+         "*** stpcpy_chk: buffer overflow detected ***: " \
+         "program terminated"); \
      _exit(127); \
      /*NOTREACHED*/ \
      return NULL; \

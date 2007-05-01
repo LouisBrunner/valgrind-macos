@@ -51,7 +51,7 @@
 /* Stats ... */
 static SizeT cmalloc_n_mallocs  = 0;
 static SizeT cmalloc_n_frees    = 0;
-static SizeT cmalloc_bs_mallocd = 0;
+static ULong cmalloc_bs_mallocd = 0;
 
 
 /*------------------------------------------------------------*/
@@ -187,7 +187,7 @@ void* MC_(new_block) ( ThreadId tid,
    }
 
    // Only update this stat if allocation succeeded.
-   cmalloc_bs_mallocd += size;
+   cmalloc_bs_mallocd += (ULong)size;
 
    VG_(HT_add_node)( table, create_MC_Chunk(tid, p, size, kind) );
 
@@ -316,7 +316,7 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_size )
 
    cmalloc_n_frees ++;
    cmalloc_n_mallocs ++;
-   cmalloc_bs_mallocd += new_size;
+   cmalloc_bs_mallocd += (ULong)new_size;
 
    if (complain_about_silly_args(new_size, "realloc")) 
       return NULL;
@@ -477,7 +477,7 @@ void MC_(print_malloc_stats) ( void )
 {
    MC_Chunk* mc;
    SizeT     nblocks = 0;
-   SizeT     nbytes  = 0;
+   ULong     nbytes  = 0;
    
    if (VG_(clo_verbosity) == 0)
       return;
@@ -488,14 +488,14 @@ void MC_(print_malloc_stats) ( void )
    VG_(HT_ResetIter)(MC_(malloc_list));
    while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
       nblocks++;
-      nbytes += mc->size;
+      nbytes += (ULong)mc->size;
    }
 
    VG_(message)(Vg_UserMsg, 
-                "malloc/free: in use at exit: %,lu bytes in %,lu blocks.",
+                "malloc/free: in use at exit: %,llu bytes in %,lu blocks.",
                 nbytes, nblocks);
    VG_(message)(Vg_UserMsg, 
-                "malloc/free: %,lu allocs, %,lu frees, %,lu bytes allocated.",
+                "malloc/free: %,lu allocs, %,lu frees, %,llu bytes allocated.",
                 cmalloc_n_mallocs,
                 cmalloc_n_frees, cmalloc_bs_mallocd);
    if (VG_(clo_verbosity) > 1)

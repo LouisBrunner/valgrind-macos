@@ -242,7 +242,7 @@ Bool get_elf_symbol_info (
       return False;
 
    /* Ignore if nameless, or zero-sized. */
-   if (sym->st_name == (ElfXX_Word)NULL
+   if (sym->st_name == (ElfXX_Word)0
        || /* VG_(strlen)(sym_name) == 0 */
           /* equivalent but cheaper ... */
           sym_name[0] == 0

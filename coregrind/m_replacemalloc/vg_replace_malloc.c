@@ -210,10 +210,10 @@ ALLOC_or_NULL(m_libc_soname,      malloc,      malloc);
 /*---------------------- new ----------------------*/
 
 // operator new(unsigned int), not mangled (for gcc 2.96)
-ALLOC_or_BOMB(m_libcstdcxx_soname, builtin_new,    __builtin_new);
+ALLOC_or_BOMB(m_libstdcxx_soname,  builtin_new,    __builtin_new);
 ALLOC_or_BOMB(m_libc_soname,       builtin_new,    __builtin_new);
 
-ALLOC_or_BOMB(m_libcstdcxx_soname, __builtin_new,  __builtin_new);
+ALLOC_or_BOMB(m_libstdcxx_soname,  __builtin_new,  __builtin_new);
 ALLOC_or_BOMB(m_libc_soname,       __builtin_new,  __builtin_new);
 
 // operator new(unsigned int), GNU mangling
@@ -257,7 +257,7 @@ ALLOC_or_BOMB(m_libc_soname,       __builtin_new,  __builtin_new);
 /*---------------------- new [] ----------------------*/
 
 // operator new[](unsigned int), not mangled (for gcc 2.96)
-ALLOC_or_BOMB(m_libcstdcxx_soname, __builtin_vec_new, __builtin_vec_new );
+ALLOC_or_BOMB(m_libstdcxx_soname,  __builtin_vec_new, __builtin_vec_new );
 ALLOC_or_BOMB(m_libc_soname,       __builtin_vec_new, __builtin_vec_new );
 
 // operator new[](unsigned int), GNU mangling
@@ -329,7 +329,7 @@ FREE(m_libc_soname,       cfree,                free );
 
 /*---------------------- delete ----------------------*/
 // operator delete(void*), not mangled (for gcc 2.96)
-FREE(m_libcstdcxx_soname,  __builtin_delete,     __builtin_delete );
+FREE(m_libstdcxx_soname,   __builtin_delete,     __builtin_delete );
 FREE(m_libc_soname,        __builtin_delete,     __builtin_delete );
 
 // operator delete(void*), GNU mangling
@@ -351,7 +351,7 @@ FREE(m_libc_soname,      _ZdlPvRKSt9nothrow_t,  __builtin_delete );
 
 /*---------------------- delete [] ----------------------*/
 // operator delete[](void*), not mangled (for gcc 2.96)
-FREE(m_libcstdcxx_soname,  __builtin_vec_delete, __builtin_vec_delete );
+FREE(m_libstdcxx_soname,   __builtin_vec_delete, __builtin_vec_delete );
 FREE(m_libc_soname,        __builtin_vec_delete, __builtin_vec_delete );
 
 // operator delete[](void*), GNU mangling

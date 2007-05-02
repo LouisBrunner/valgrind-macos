@@ -123,7 +123,7 @@ typedef  unsigned long HWord;
 
 /* This is so useful it should be visible absolutely everywhere. */
 #if !defined(offsetof)
-#   define offsetof(type,memb) ((Int)&((type*)0)->memb)
+#   define offsetof(type,memb) ((Int)(HWord)&((type*)0)->memb)
 #endif
 
 

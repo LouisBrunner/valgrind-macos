@@ -11,7 +11,7 @@ asm("\n"
 "\tmovabsq $0xFFFFFFFFFFFFFFFF, %rax\n"
 "\tmovabsq $0x8765432112345678, %rdx\n"
 "\tsubq %rax, %rdx\n"
-"\tlahf\n"
+"\t.byte 0x9F\n" /* lahf */
 "\tret\n"
 );
 
@@ -23,7 +23,7 @@ asm("\n"
 "\tmovabsq $0x0, %rax\n"
 "\tmovabsq $0x8765432112345678, %rdx\n"
 "\tsubq %rax, %rdx\n"
-"\tlahf\n"
+"\t.byte 0x9F\n" /* lahf */
 "\tret\n"
 );
 
@@ -31,9 +31,9 @@ extern ULong sahf_then_lahf ( ULong );
 asm("\n"
 "sahf_then_lahf:\n"
 "\tmovq %rdi, %rax\n"
-"\tsahf\n"
+"\t.byte 0x9E\n" /* sahf */
 "\tmovabsq $0, %rax\n"
-"\tlahf\n"
+"\t.byte 0x9F\n" /* lahf */
 "\tret\n"
 );
 

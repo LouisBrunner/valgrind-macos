@@ -4494,22 +4494,22 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                    )));
                break;
 
-//.. #if 1
-//..             /* Dunno if this is right */
-//..             case 0xD8 ... 0xDF: /* FCOMP %st(?),%st(0) */
-//..                r_dst = (UInt)modrm - 0xD8;
-//..                DIP("fcomp %%st(0),%%st(%d)\n", r_dst);
-//..                /* This forces C1 to zero, which isn't right. */
-//..                put_C3210( 
-//..                    binop( Iop_And32,
-//..                           binop(Iop_Shl32, 
-//..                                 binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
-//..                                 mkU8(8)),
-//..                           mkU32(0x4500)
-//..                    ));
-//..                fp_pop();
-//..                break;
-//.. #endif
+            /* Dunno if this is right */
+            case 0xD8 ... 0xDF: /* FCOMP %st(?),%st(0) */
+               r_dst = (UInt)modrm - 0xD8;
+               DIP("fcomp %%st(0),%%st(%d)\n", r_dst);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   unop(Iop_32Uto64,
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   )));
+               fp_pop();
+               break;
+
             case 0xE0 ... 0xE7: /* FSUB %st(?),%st(0) */
                fp_do_op_ST_ST ( "sub", Iop_SubF64, modrm - 0xE0, 0, False );
                break;

@@ -565,8 +565,8 @@ static Int do_exec_inner(const HChar* exe, ExeInfo* info);
 /* returns: 0 = success, non-0 is failure */
 static Int load_script(Int fd, const HChar* name, ExeInfo* info)
 {
-   Char  hdr[VKI_MAX_PAGE_SIZE];
-   Int   len = VKI_PAGE_SIZE;
+   Char  hdr[4096];
+   Int   len = 4096;
    Int   eol;
    Char* interp;
    Char* end;
@@ -640,8 +640,8 @@ SysRes VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd)
 {
    Int fd, ret;
    SysRes res;
-   Char  buf[VKI_MAX_PAGE_SIZE];
-   SizeT bufsz = VKI_PAGE_SIZE, fsz;
+   Char  buf[4096];
+   SizeT bufsz = 4096, fsz;
 
    // Check it's readable
    res = VG_(open)(exe_name, VKI_O_RDONLY, 0);

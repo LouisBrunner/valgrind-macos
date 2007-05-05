@@ -71,12 +71,12 @@ static HChar* temporary_last  = &temporary[N_TEMPORARY_BYTES-1];
 
 static ULong  temporary_bytes_allocd_TOT = 0;
 
-#define N_PERMANENT_BYTES 1000
+#define N_PERMANENT_BYTES 10000
 
-static HChar  permanent[N_TEMPORARY_BYTES] __attribute__((aligned(8)));
+static HChar  permanent[N_PERMANENT_BYTES] __attribute__((aligned(8)));
 static HChar* permanent_first = &permanent[0];
 static HChar* permanent_curr  = &permanent[0];
-static HChar* permanent_last  = &permanent[N_TEMPORARY_BYTES-1];
+static HChar* permanent_last  = &permanent[N_PERMANENT_BYTES-1];
 
 static VexAllocMode mode = VexAllocModeTEMP;
 
@@ -85,7 +85,7 @@ void vexAllocSanityCheck ( void )
    vassert(temporary_first == &temporary[0]);
    vassert(temporary_last  == &temporary[N_TEMPORARY_BYTES-1]);
    vassert(permanent_first == &permanent[0]);
-   vassert(permanent_last  == &permanent[N_TEMPORARY_BYTES-1]);
+   vassert(permanent_last  == &permanent[N_PERMANENT_BYTES-1]);
    vassert(temporary_first <= temporary_curr);
    vassert(temporary_curr  <= temporary_last);
    vassert(permanent_first <= permanent_curr);
@@ -178,7 +178,7 @@ void private_LibVEX_alloc_OOM(void)
               private_LibVEX_alloc_first,
               private_LibVEX_alloc_curr,
               private_LibVEX_alloc_last,
-              (Long)(private_LibVEX_alloc_last - private_LibVEX_alloc_first));
+              (Long)(private_LibVEX_alloc_last + 1 - private_LibVEX_alloc_first));
    vpanic("VEX temporary storage exhausted.\n"
           "Increase N_{TEMPORARY,PERMANENT}_BYTES and recompile.");
 }
@@ -202,6 +202,8 @@ void LibVEX_ShowAllocStats ( void )
 {
    vex_printf("vex storage: T total %lld bytes allocated\n",
               (Long)temporary_bytes_allocd_TOT );
+   vex_printf("vex storage: P total %lld bytes allocated\n",
+              (Long)(permanent_curr - permanent_first) );
 }
 
 

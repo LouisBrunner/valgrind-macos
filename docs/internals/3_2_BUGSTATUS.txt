@@ -32,8 +32,9 @@ pending  pending      140522   valgrind 3.2.2 libmpiwrap: MPI_STATUS_IGNORE
                                and makes a valid MPI program crash.
 
 vx1735   vx1750    32 141790   Missing amd64 x87 insns (FCOM, FCOMPP)
+vx1761   vx1762    32 n-i-bz   Missing amd64 x87 insns (FCOMP)
 
-r6608    pending   32 n-i-bz   intercept for __memmove_chk
+r6608    r6723     32 n-i-bz   intercept for __memmove_chk
 
 r6593    r6711     32 139363   callgrind: fix --collect-systime=yes
                                with "no instrumentation" mode
@@ -47,7 +48,7 @@ r6630    pending      n-i-bz   add additional ptrace reason codes
 
 r6631    pending      142186   add I2C ioctl support
 
-Ashley logfile qualifiers in coredumps patch
+XXX Ashley logfile qualifiers in coredumps patch
 
 r6612    r6718     32 142228   RedHat8: complaint of elf_dynamic_do_rela
 r6646    r6718     32 142229   RedHat8: unexpected "write(buf) points
@@ -66,8 +67,7 @@ r6641    r6715     32 n-i-bz   handle sys_ioprio_set on amd64-linux
 
 vx1740   vx1754    32 n-i-bz   handle REX.W fsqrt
 
-Make configure check try for -fno-stack-protector (users, 26 Feb)
-#144112
+r6721    r6724     32 144112   undefined reference to __stack_chk_fail 
 
 possible false errors on amd64 cmpq/jae, cmpq/jbe
 
@@ -100,7 +100,16 @@ vx1747   vx1756    32 143817   Unused bitfield pad bits confuse memcheck
 
 vx1749   vx1758    32 143907   sahf/lahf on amd64
 
-XXX copy spill area size, aspacem #segs and #segnames from trunk
+r6728    r6279     32 n-i-bz   ppc-linux startup stack overflow fix
+
+
+XXX increase #segs and #segnames from 5000/1000 ?
+
+vx1759,r6722
+         vx1760,r6725 n-i-bz   gcc-4.2 build fixes
+
+XXX 143924: --db-attach=yes and --trace-children=yes
+
 
 
 //// maybe do not fix in 3.2 branch
@@ -114,10 +123,8 @@ r6631    pending   ?? 142186   dd support for some I2C ioctls.
 
 r6706    pending   no n-i-bz   memcheck: wrap getenv/setenv/putenv
 
-143924: --db-attach=yes and --trace-children=yes
 
-
-3.2.4 criteria: FC7 runs, SuSE 10.3a? runs
+3.2.4 criteria: FC7 runs, SuSE 10.3a? runs, gcc-4.2 works OK
 
 
 ------- Bugs reported and fixed in 3.2.3 ------

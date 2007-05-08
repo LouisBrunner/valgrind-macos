@@ -6,6 +6,11 @@ XXX: AIX support (ppc32 and ppc64?)
 
 Other user-visible changes:
 
+- Cachegrind has been extended to do branch-misprediction profiling.
+  Both conditional and indirect branches are profiled.  The default
+  behaviour of Cachegrind is unchanged.  To use the new functionality,
+  give the option --branch-sim=yes.
+
 - A new suppression kind has been introduced: "Jump".  This is for
   suppressing jump-to-invalid-address errors.  Previously you had to use an
   "Addr1" suppression, which didn't make much sense.

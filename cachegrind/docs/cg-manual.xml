@@ -5,18 +5,23 @@
 
 
 <chapter id="cg-manual" xreflabel="Cachegrind: a cache-miss profiler">
-<title>Cachegrind: a cache profiler</title>
+<title>Cachegrind: a cache and branch profiler</title>
 
 <sect1 id="cg-manual.cache" xreflabel="Cache profiling">
-<title>Cache profiling</title>
+<title>Cache and branch profiling</title>
 
 <para>To use this tool, you must specify
 <computeroutput>--tool=cachegrind</computeroutput> on the
 Valgrind command line.</para>
 
-<para>Cachegrind is a tool for doing cache simulations and
-annotating your source line-by-line with the number of cache
-misses.  In particular, it records:</para>
+<para>Cachegrind is a tool for finding places where programs
+interact badly with typical modern superscalar processors
+and run slowly as a result.
+In particular, it will do a cache simulation of your program,
+and optionally a branch-predictor simulation, and can
+then annotate your source line-by-line with the number of cache
+misses and branch mispredictions.  The following statistics are 
+collected:</para>
 <itemizedlist>
   <listitem>
     <para>L1 instruction cache reads and misses;</para>
@@ -29,17 +34,30 @@ misses.  In particular, it records:</para>
     <para>L2 unified cache reads and read misses, writes and
     writes misses.</para>
   </listitem>
+  <listitem>
+    <para>Conditional branches and mispredicted conditional branches.</para>
+  </listitem>
+  <listitem>
+    <para>Indirect branches and mispredicted indirect branches.  An
+    indirect branch is a jump or call to a destination only known at
+    run time.</para>
+  </listitem>
 </itemizedlist>
 
 <para>On a modern machine, an L1 miss will typically cost
-around 10 cycles, and an L2 miss can cost as much as 200
-cycles. Detailed cache profiling can be very useful for improving
-the performance of your program.</para>
+around 10 cycles, an L2 miss can cost as much as 200
+cycles, and a mispredicted branch costs in the region of 10
+to 30 cycles.  Detailed cache and branch profiling can be very useful
+for improving the performance of your program.</para>
 
 <para>Also, since one instruction cache read is performed per
 instruction executed, you can find out how many instructions are
 executed per line, which can be useful for traditional profiling
 and test coverage.</para>
+
+<para>Branch profiling is not enabled by default.  To use it, you must
+additionally specify <computeroutput>--branch-sim=yes</computeroutput>
+on the command line.</para>
 
 <para>Any feedback, bug-fixes, suggestions, etc, welcome.</para>
 
@@ -66,6 +84,11 @@ be normally run.</para>
     <computeroutput>cachegrind.out.pid</computeroutput>, where
     <computeroutput>pid</computeroutput> is the program's process
     id.</para>
+
+    <para>Branch prediction statistics are not collected by default.
+    To do so, add the flag
+    <computeroutput>--branch-sim=yes</computeroutput>.
+    </para>
 
     <para>This step should be done every time you want to collect
     information about a new program, a changed program, or about
@@ -207,6 +230,49 @@ simulator, or to modify the existing ones in
 interested to hear from anyone who does.</para>
 
 </sect2>
+
+
+<sect2 id="branch-sim" xreflabel="Branch simulation specifics">
+<title>Branch simulation specifics</title>
+
+<para>Cachegrind simulates branch predictors intended to be
+typical of mainstream desktop/server processors of around 2004.</para>
+
+<para>Conditional branches are predicted using an array of 16384 2-bit
+saturating counters.  The array index used for a branch instruction is
+computed partly from the low-order bits of the branch instruction's
+address and partly using the taken/not-taken behaviour of the last few
+conditional branches.  As a result the predictions for any specific
+branch depend both on its own history and the behaviour of previous
+branches.  This is a standard technique for improving prediction
+accuracy.</para>
+
+<para>For indirect branches (that is, jumps to unknown destinations)
+Cachegrind uses a simple branch target address predictor.  Targets are
+predicted using an array of 512 entries indexed by the low order 9
+bits of the branch instruction's address.  Each branch is predicted to
+jump to the same address it did last time.  Any other behaviour causes
+a mispredict.</para>
+
+<para>More recent processors have better branch predictors, in
+particular better indirect branch predictors.  Cachegrind's predictor
+design is deliberately conservative so as to be representative of the
+large installed base of processors which pre-date widespread
+deployment of more sophisticated indirect branch predictors.  In
+particular, late model Pentium 4s (Prescott), Pentium M, Core and Core
+2 have more sophisticated indirect branch predictors than modelled by
+Cachegrind.  </para>
+
+<para>Cachegrind does not simulate a return stack predictor.  It
+assumes that processors perfectly predict function return addresses,
+an assumption which is probably close to being true.</para>
+
+<para>See Hennessy and Patterson's classic text "Computer
+Architecture: A Quantitative Approach", 4th edition (2007), Section
+2.3 (pages 80-89) for background on modern branch predictors.</para>
+
+</sect2>
+
 
 </sect1>
 
@@ -377,6 +443,31 @@ configuration, or failing that, via defaults).</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.cache-sim" xreflabel="--cache-sim">
+    <term>
+      <option><![CDATA[--cache-sim=no|yes [yes] ]]></option>
+    </term>
+    <listitem>
+      <para>Enables or disables collection of cache access and miss
+            counts.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.branch-sim" xreflabel="--branch-sim">
+    <term>
+      <option><![CDATA[--branch-sim=no|yes [no] ]]></option>
+    </term>
+    <listitem>
+      <para>Enables or disables collection of branch instruction and
+            misprediction counts.  By default this is disabled as it
+            slows Cachegrind down by approximately 25%.  Note that you
+            cannot specify <computeroutput>--cache-sim=no</computeroutput>
+            and <computeroutput>--branch-sim=no</computeroutput>
+            together, as that would leave Cachegrind with no
+            information to collect.</para>
+    </listitem>
+  </varlistentry>
+
 </variablelist>
 <!-- end of xi:include in the manpage -->
 
@@ -494,6 +585,22 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
      <listitem>
        <para><computeroutput>D2mw</computeroutput>: L2 cache data
        write misses</para>
+     </listitem>
+     <listitem>
+       <para><computeroutput>Bc</computeroutput>: Conditional branches
+       executed</para>
+     </listitem>
+     <listitem>
+       <para><computeroutput>Bcm</computeroutput>: Conditional branches
+       mispredicted</para>
+     </listitem>
+     <listitem>
+       <para><computeroutput>Bi</computeroutput>: Indirect branches
+       executed</para>
+     </listitem>
+     <listitem>
+       <para><computeroutput>Bim</computeroutput>: Conditional branches
+       mispredicted</para>
      </listitem>
    </itemizedlist>
 

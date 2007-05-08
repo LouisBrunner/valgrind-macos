@@ -2,7 +2,7 @@ include $(top_srcdir)/Makefile.tool.am
 
 bin_SCRIPTS = cg_annotate
 
-noinst_HEADERS = cg_arch.h cg_sim.c
+noinst_HEADERS = cg_arch.h cg_sim.c cg_branchpred.c
 
 noinst_PROGRAMS = 
 if VGP_X86_LINUX

@@ -48,6 +48,7 @@
 
 #include "cg_arch.h"
 #include "cg_sim.c"
+#include "cg_branchpred.c"
 
 /*------------------------------------------------------------*/
 /*--- Constants                                            ---*/
@@ -61,15 +62,30 @@
 #define FN_LEN                256
 
 /*------------------------------------------------------------*/
+/*--- Options                                              ---*/
+/*------------------------------------------------------------*/
+
+static Bool clo_cache_sim  = True;  /* do cache simulation? */
+static Bool clo_branch_sim = False; /* do branch simulation? */
+
+/*------------------------------------------------------------*/
 /*--- Types and Data Structures                            ---*/
 /*------------------------------------------------------------*/
 
-typedef struct _CC CC;
-struct _CC {
-   ULong a;
-   ULong m1;
-   ULong m2;
-};
+typedef
+   struct {
+      ULong a;  /* total # memory accesses of this kind */
+      ULong m1; /* misses in the first level cache */
+      ULong m2; /* misses in the second level cache */
+   }
+   CacheCC;
+
+typedef
+   struct {
+      ULong b;  /* total # branches of this kind */
+      ULong mp; /* number of branches mispredicted */
+   }
+   BranchCC;
 
 //------------------------------------------------------------
 // Primary data structure #1: CC table
@@ -85,13 +101,14 @@ typedef struct {
 }
 CodeLoc;
 
-typedef struct _LineCC LineCC;
-struct _LineCC {
-   CodeLoc loc;
-   CC      Ir;
-   CC      Dr;
-   CC      Dw;
-};
+typedef struct {
+   CodeLoc  loc; /* Source location that these counts pertain to */
+   CacheCC  Ir;  /* Insn read counts */
+   CacheCC  Dr;  /* Data read counts */
+   CacheCC  Dw;  /* Data write/modify counts */
+   BranchCC Bc;  /* Conditional branch counts */
+   BranchCC Bi;  /* Indirect branch counts */
+} LineCC;
 
 // First compare file, then fn, then line.
 static Word cmp_CodeLoc_LineCC(void *vloc, void *vcc)
@@ -246,6 +263,10 @@ static LineCC* get_lineCC(Addr origAddr)
       lineCC->Dw.a     = 0;
       lineCC->Dw.m1    = 0;
       lineCC->Dw.m2    = 0;
+      lineCC->Bc.b     = 0;
+      lineCC->Bc.mp    = 0;
+      lineCC->Bi.b     = 0;
+      lineCC->Bi.mp    = 0;
       VG_(OSet_Insert)(CC_table, lineCC);
    }
 
@@ -351,6 +372,32 @@ void log_0I_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
    n->parent->Dw.a++;
 }
 
+/* For branches, we consult two different predictors, one which
+   predicts taken/untaken for conditional branches, and the other
+   which predicts the branch target address for indirect branches
+   (jump-to-register style ones). */
+
+static VG_REGPARM(2)
+void log_cond_branch(InstrInfo* n, Word taken)
+{
+   //VG_(printf)("cbrnch:  CCaddr=0x%010lx,  taken=0x%010lx\n",
+   //             n, taken);
+   n->parent->Bc.b++;
+   n->parent->Bc.mp 
+      += (1 & do_cond_branch_predict(n->instr_addr, taken));
+}
+
+static VG_REGPARM(2)
+void log_ind_branch(InstrInfo* n, UWord actual_dst)
+{
+   //VG_(printf)("ibrnch:  CCaddr=0x%010lx,    dst=0x%010lx\n",
+   //             n, actual_dst);
+   n->parent->Bi.b++;
+   n->parent->Bi.mp
+      += (1 & do_ind_branch_predict(n->instr_addr, actual_dst));
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Instrumentation types and structures                 ---*/
 /*------------------------------------------------------------*/
@@ -389,17 +436,67 @@ typedef
    IRAtom;
 
 typedef 
-   enum { Event_Ir, Event_Dr, Event_Dw, Event_Dm }
-   EventKind;
+   enum { 
+      Ev_Ir,  // Instruction read
+      Ev_Dr,  // Data read
+      Ev_Dw,  // Data write
+      Ev_Dm,  // Data modify (read then write)
+      Ev_Bc,  // branch conditional
+      Ev_Bi   // branch indirect (to unknown destination)
+   }
+   EventTag;
 
 typedef
    struct {
-      EventKind  ekind;       // All
-      InstrInfo* inode;       // All;  inode for this event's instruction
-      Int        datasize;    // Dr/Dw/Dm only
-      IRAtom*    dataEA;      // Dr/Dw/Dm only;  IR ATOM ONLY
+      EventTag   tag;
+      InstrInfo* inode;
+      union {
+         struct {
+         } Ir;
+         struct {
+            IRAtom* ea;
+            Int     szB;
+         } Dr;
+         struct {
+            IRAtom* ea;
+            Int     szB;
+         } Dw;
+         struct {
+            IRAtom* ea;
+            Int     szB;
+         } Dm;
+         struct {
+            IRAtom* taken; /* :: Ity_I1 */
+         } Bc;
+         struct {
+            IRAtom* dst;
+         } Bi;
+      } Ev;
    }
    Event;
+
+static void init_Event ( Event* ev ) {
+   VG_(memset)(ev, 0, sizeof(Event));
+}
+
+static IRAtom* get_Event_dea ( Event* ev ) {
+   switch (ev->tag) {
+      case Ev_Dr: return ev->Ev.Dr.ea;
+      case Ev_Dw: return ev->Ev.Dw.ea;
+      case Ev_Dm: return ev->Ev.Dm.ea;
+      default:    tl_assert(0);
+   }
+}
+
+static Int get_Event_dszB ( Event* ev ) {
+   switch (ev->tag) {
+      case Ev_Dr: return ev->Ev.Dr.szB;
+      case Ev_Dw: return ev->Ev.Dw.szB;
+      case Ev_Dm: return ev->Ev.Dm.szB;
+      default:    tl_assert(0);
+   }
+}
+
 
 /* Up to this many unnotified events are allowed.  Number is
    arbitrary.  Larger numbers allow more event merging to occur, but
@@ -470,23 +567,33 @@ SB_info* get_SB_info(IRSB* sbIn, Addr origAddr)
 
 static void showEvent ( Event* ev )
 {
-   switch (ev->ekind) {
-      case Event_Ir: 
+   switch (ev->tag) {
+      case Ev_Ir: 
          VG_(printf)("Ir %p\n", ev->inode);
          break;
-      case Event_Dr:
-         VG_(printf)("Dr %p %d EA=", ev->inode, ev->datasize);
-         ppIRExpr(ev->dataEA); 
+      case Ev_Dr:
+         VG_(printf)("Dr %p %d EA=", ev->inode, ev->Ev.Dr.szB);
+         ppIRExpr(ev->Ev.Dr.ea); 
          VG_(printf)("\n");
          break;
-      case Event_Dw:
-         VG_(printf)("Dw %p %d EA=", ev->inode, ev->datasize);
-         ppIRExpr(ev->dataEA); 
+      case Ev_Dw:
+         VG_(printf)("Dw %p %d EA=", ev->inode, ev->Ev.Dw.szB);
+         ppIRExpr(ev->Ev.Dw.ea); 
          VG_(printf)("\n");
          break;
-      case Event_Dm:
-         VG_(printf)("Dm %p %d EA=", ev->inode, ev->datasize);
-         ppIRExpr(ev->dataEA); 
+      case Ev_Dm:
+         VG_(printf)("Dm %p %d EA=", ev->inode, ev->Ev.Dm.szB);
+         ppIRExpr(ev->Ev.Dm.ea); 
+         VG_(printf)("\n");
+         break;
+      case Ev_Bc:
+         VG_(printf)("Bc %p   GA=", ev->inode);
+         ppIRExpr(ev->Ev.Bc.taken); 
+         VG_(printf)("\n");
+         break;
+      case Ev_Bi:
+         VG_(printf)("Bi %p  DST=", ev->inode);
+         ppIRExpr(ev->Ev.Bi.dst); 
          VG_(printf)("\n");
          break;
       default: 
@@ -552,34 +659,42 @@ static void flushEvents ( CgState* cgs )
 
       /* Decide on helper fn to call and args to pass it, and advance
          i appropriately. */
-      switch (ev->ekind) {
-         case Event_Ir:
-            /* Merge with a following Dr/Dm if it is from this insn. */
-            if (ev2 && (ev2->ekind == Event_Dr || ev2->ekind == Event_Dm)) {
+      switch (ev->tag) {
+         case Ev_Ir:
+            /* Merge an Ir with a following Dr/Dm. */
+            if (ev2 && (ev2->tag == Ev_Dr || ev2->tag == Ev_Dm)) {
+               /* Why is this true?  It's because we're merging an Ir
+                  with a following Dr or Dm.  The Ir derives from the
+                  instruction's IMark and the Dr/Dm from data
+                  references which follow it.  In short it holds
+                  because each insn starts with an IMark, hence an
+                  Ev_Ir, and so these Dr/Dm must pertain to the
+                  immediately preceding Ir.  Same applies to analogous
+                  assertions in the subsequent cases. */
                tl_assert(ev2->inode == ev->inode);
                helperName = "log_1I_1Dr_cache_access";
                helperAddr = &log_1I_1Dr_cache_access;
                argv = mkIRExprVec_3( i_node_expr,
-                                     ev2->dataEA,
-                                     mkIRExpr_HWord( ev2->datasize ) );
+                                     get_Event_dea(ev2),
+                                     mkIRExpr_HWord( get_Event_dszB(ev2) ) );
                regparms = 3;
                i += 2;
             }
-            /* Merge with a following Dw if it is from this insn. */
+            /* Merge an Ir with a following Dw. */
             else
-            if (ev2 && ev2->ekind == Event_Dw) {
+            if (ev2 && ev2->tag == Ev_Dw) {
                tl_assert(ev2->inode == ev->inode);
                helperName = "log_1I_1Dw_cache_access";
                helperAddr = &log_1I_1Dw_cache_access;
                argv = mkIRExprVec_3( i_node_expr,
-                                     ev2->dataEA,
-                                     mkIRExpr_HWord( ev2->datasize ) );
+                                     get_Event_dea(ev2),
+                                     mkIRExpr_HWord( get_Event_dszB(ev2) ) );
                regparms = 3;
                i += 2;
             }
-            /* Merge with two following Irs if possible. */
+            /* Merge an Ir with two following Irs. */
             else
-            if (ev2 && ev3 && ev2->ekind == Event_Ir && ev3->ekind == Event_Ir)
+            if (ev2 && ev3 && ev2->tag == Ev_Ir && ev3->tag == Ev_Ir)
             {
                helperName = "log_3I_0D_cache_access";
                helperAddr = &log_3I_0D_cache_access;
@@ -589,9 +704,9 @@ static void flushEvents ( CgState* cgs )
                regparms = 3;
                i += 3;
             }
-            /* Merge with a following Ir if possible. */
+            /* Merge an Ir with one following Ir. */
             else
-            if (ev2 && ev2->ekind == Event_Ir) {
+            if (ev2 && ev2->tag == Ev_Ir) {
                helperName = "log_2I_0D_cache_access";
                helperAddr = &log_2I_0D_cache_access;
                argv = mkIRExprVec_2( i_node_expr,
@@ -601,10 +716,6 @@ static void flushEvents ( CgState* cgs )
             }
             /* No merging possible; emit as-is. */
             else {
-               // Assertion: this Event_Ir must be the last one in the
-               // events buffer, otherwise it would have been merged with a
-               // following event.
-               tl_assert(!ev2 && !ev3);
                helperName = "log_1I_0D_cache_access";
                helperAddr = &log_1I_0D_cache_access;
                argv = mkIRExprVec_1( i_node_expr );
@@ -612,23 +723,41 @@ static void flushEvents ( CgState* cgs )
                i++;
             }
             break;
-         case Event_Dr:
-         case Event_Dm:
+         case Ev_Dr:
+         case Ev_Dm:
+            /* Data read or modify */
             helperName = "log_0I_1Dr_cache_access";
             helperAddr = &log_0I_1Dr_cache_access;
             argv = mkIRExprVec_3( i_node_expr, 
-                                  ev->dataEA, 
-                                  mkIRExpr_HWord( ev->datasize ) );
+                                  get_Event_dea(ev), 
+                                  mkIRExpr_HWord( get_Event_dszB(ev) ) );
             regparms = 3;
             i++;
             break;
-         case Event_Dw:
+         case Ev_Dw:
+            /* Data write */
             helperName = "log_0I_1Dw_cache_access";
             helperAddr = &log_0I_1Dw_cache_access;
             argv = mkIRExprVec_3( i_node_expr,
-                                  ev->dataEA, 
-                                  mkIRExpr_HWord( ev->datasize ) );
+                                  get_Event_dea(ev), 
+                                  mkIRExpr_HWord( get_Event_dszB(ev) ) );
             regparms = 3;
+            i++;
+            break;
+         case Ev_Bc:
+            /* Conditional branch */
+            helperName = "log_cond_branch";
+            helperAddr = &log_cond_branch;
+            argv = mkIRExprVec_2( i_node_expr, ev->Ev.Bc.taken );
+            regparms = 2;
+            i++;
+            break;
+         case Ev_Bi:
+            /* Branch to an unknown destination */
+            helperName = "log_ind_branch";
+            helperAddr = &log_ind_branch;
+            argv = mkIRExprVec_2( i_node_expr, ev->Ev.Bi.dst );
+            regparms = 2;
             i++;
             break;
          default:
@@ -655,10 +784,9 @@ static void addEvent_Ir ( CgState* cgs, InstrInfo* inode )
       flushEvents(cgs);
    tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
    evt = &cgs->events[cgs->events_used];
-   evt->ekind    = Event_Ir;
+   init_Event(evt);
+   evt->tag      = Ev_Ir;
    evt->inode    = inode;
-   evt->datasize = 0;
-   evt->dataEA   = NULL; /*paranoia*/
    cgs->events_used++;
 }
 
@@ -668,14 +796,17 @@ void addEvent_Dr ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    Event* evt;
    tl_assert(isIRAtom(ea));
    tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   if (!clo_cache_sim)
+      return;
    if (cgs->events_used == N_EVENTS)
       flushEvents(cgs);
    tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
    evt = &cgs->events[cgs->events_used];
-   evt->ekind    = Event_Dr;
-   evt->inode    = inode;
-   evt->datasize = datasize;
-   evt->dataEA   = ea;
+   init_Event(evt);
+   evt->tag       = Ev_Dr;
+   evt->inode     = inode;
+   evt->Ev.Dr.szB = datasize;
+   evt->Ev.Dr.ea  = ea;
    cgs->events_used++;
 }
 
@@ -688,15 +819,18 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    tl_assert(isIRAtom(ea));
    tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
 
+   if (!clo_cache_sim)
+      return;
+
    /* Is it possible to merge this write with the preceding read? */
    lastEvt = &cgs->events[cgs->events_used-1];
    if (cgs->events_used > 0
-    && lastEvt->ekind    == Event_Dr
-    && lastEvt->datasize == datasize
-    && lastEvt->inode    == inode
-    && eqIRAtom(lastEvt->dataEA, ea))
+    && lastEvt->tag       == Ev_Dr
+    && lastEvt->Ev.Dr.szB == datasize
+    && lastEvt->inode     == inode
+    && eqIRAtom(lastEvt->Ev.Dr.ea, ea))
    {
-      lastEvt->ekind = Event_Dm;
+      lastEvt->tag   = Ev_Dm;
       return;
    }
 
@@ -705,10 +839,51 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
       flushEvents(cgs);
    tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
    evt = &cgs->events[cgs->events_used];
-   evt->ekind    = Event_Dw;
-   evt->inode    = inode;
-   evt->datasize = datasize;
-   evt->dataEA   = ea;
+   init_Event(evt);
+   evt->tag       = Ev_Dw;
+   evt->inode     = inode;
+   evt->Ev.Dw.szB = datasize;
+   evt->Ev.Dw.ea  = ea;
+   cgs->events_used++;
+}
+
+static
+void addEvent_Bc ( CgState* cgs, InstrInfo* inode, IRAtom* guard )
+{
+   Event* evt;
+   tl_assert(isIRAtom(guard));
+   tl_assert(typeOfIRExpr(cgs->sbOut->tyenv, guard) 
+             == (sizeof(HWord)==4 ? Ity_I32 : Ity_I64));
+   if (!clo_branch_sim)
+      return;
+   if (cgs->events_used == N_EVENTS)
+      flushEvents(cgs);
+   tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
+   evt = &cgs->events[cgs->events_used];
+   init_Event(evt);
+   evt->tag         = Ev_Bc;
+   evt->inode       = inode;
+   evt->Ev.Bc.taken = guard;
+   cgs->events_used++;
+}
+
+static
+void addEvent_Bi ( CgState* cgs, InstrInfo* inode, IRAtom* whereTo )
+{
+   Event* evt;
+   tl_assert(isIRAtom(whereTo));
+   tl_assert(typeOfIRExpr(cgs->sbOut->tyenv, whereTo) 
+             == (sizeof(HWord)==4 ? Ity_I32 : Ity_I64));
+   if (!clo_branch_sim)
+      return;
+   if (cgs->events_used == N_EVENTS)
+      flushEvents(cgs);
+   tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
+   evt = &cgs->events[cgs->events_used];
+   init_Event(evt);
+   evt->tag       = Ev_Bi;
+   evt->inode     = inode;
+   evt->Ev.Bi.dst = whereTo;
    cgs->events_used++;
 }
 
@@ -749,7 +924,12 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
    tl_assert(i < sbIn->stmts_used);
    st = sbIn->stmts[i];
    tl_assert(Ist_IMark == st->tag);
-   cia = st->Ist.IMark.addr;
+
+   cia   = st->Ist.IMark.addr;
+   isize = st->Ist.IMark.len;
+   // If Vex fails to decode an instruction, the size will be zero.
+   // Pretend otherwise.
+   if (isize == 0) isize = VG_MIN_INSTR_SZB;
 
    // Set up running state and get block info
    tl_assert(closure->readdr == vge->base[0]);
@@ -840,11 +1020,66 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
             break;
          }
 
-         case Ist_Exit:
+         case Ist_Exit: {
+            /* Stuff to widen the guard expression to a host word, so
+               we can pass it to the branch predictor simulation
+               functions easily. */
+            Bool     inverted;
+            Addr64   nia, sea;
+            IRConst* dst;
+            IROp     tyW    = hWordTy;
+            IROp     widen  = tyW==Ity_I32  ? Iop_1Uto32  : Iop_1Uto64;
+            IROp     opXOR  = tyW==Ity_I32  ? Iop_Xor32   : Iop_Xor64;
+            IRTemp   guard1 = newIRTemp(cgs.sbOut->tyenv, Ity_I1);
+            IRTemp   guardW = newIRTemp(cgs.sbOut->tyenv, tyW);
+            IRTemp   guard  = newIRTemp(cgs.sbOut->tyenv, tyW);
+            IRExpr*  one    = tyW==Ity_I32 ? IRExpr_Const(IRConst_U32(1))
+                                           : IRExpr_Const(IRConst_U64(1));
+
+            /* First we need to figure out whether the side exit got
+               inverted by the ir optimiser.  To do that, figure out
+               the next (fallthrough) instruction's address and the
+               side exit address and see if they are the same. */
+            nia = cia + (Addr64)isize;
+            if (tyW == Ity_I32) 
+               nia &= 0xFFFFFFFFULL;
+
+            /* Side exit address */
+            dst = st->Ist.Exit.dst;
+            if (tyW == Ity_I32) {
+               tl_assert(dst->tag == Ico_U32);
+               sea = (Addr64)(UInt)dst->Ico.U32;
+            } else {
+               tl_assert(tyW == Ity_I64);
+               tl_assert(dst->tag == Ico_U64);
+               sea = dst->Ico.U64;
+            }
+
+            inverted = nia == sea;
+
+            /* Widen the guard expression. */
+            addStmtToIRSB( cgs.sbOut, 
+                           IRStmt_WrTmp( guard1, st->Ist.Exit.guard ));
+            addStmtToIRSB( cgs.sbOut,
+                           IRStmt_WrTmp( guardW,
+                                         IRExpr_Unop(widen, 
+                                                     IRExpr_RdTmp(guard1))) );
+            /* If the exit is inverted, invert the sense of the guard. */
+            addStmtToIRSB( 
+               cgs.sbOut,
+               IRStmt_WrTmp( 
+                  guard,
+                  inverted ? IRExpr_Binop(opXOR, IRExpr_RdTmp(guardW), one)
+                           : IRExpr_RdTmp(guardW) 
+               ));
+            /* And post the event. */
+            addEvent_Bc( &cgs, curr_inode, IRExpr_RdTmp(guard) );
+
             /* We may never reach the next statement, so need to flush
                all outstanding transactions now. */
             flushEvents( &cgs );
             break;
+         }
 
          default:
             tl_assert(0);
@@ -857,6 +1092,26 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
       if (DEBUG_CG) {
          ppIRStmt(st);
          VG_(printf)("\n");
+      }
+   }
+
+   /* Deal with branches to unknown destinations.  Except ignore ones
+      which are function returns as we assume the return stack
+      predictor never mispredicts. */
+   if (sbIn->jumpkind == Ijk_Boring) {
+      if (0) { ppIRExpr( sbIn->next ); VG_(printf)("\n"); }
+      switch (sbIn->next->tag) {
+         case Iex_Const: 
+            break; /* boring - branch to known address */
+         case Iex_RdTmp: 
+            /* looks like an indirect branch (branch to unknown) */
+            addEvent_Bi( &cgs, curr_inode, sbIn->next );
+            break;
+         default:
+            /* shouldn't happen - if the incoming IR is properly
+               flattened, should only have tmp and const cases to
+               consider. */
+            tl_assert(0); 
       }
    }
 
@@ -983,9 +1238,11 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
 // Total reads/writes/misses.  Calculated during CC traversal at the end.
 // All auto-zeroed.
-static CC Ir_total;
-static CC Dr_total;
-static CC Dw_total;
+static CacheCC  Ir_total;
+static CacheCC  Dr_total;
+static CacheCC  Dw_total;
+static BranchCC Bc_total;
+static BranchCC Bi_total;
 
 // The output file base name specified by the user using the
 // --cachegrind-out-file switch.  This is combined with the
@@ -1044,7 +1301,21 @@ static void fprint_CC_table_and_calc_totals(void)
       }
    }
    // "events:" line
-   VG_(sprintf)(buf, "\nevents: Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw\n");
+   if (clo_cache_sim && clo_branch_sim) {
+      VG_(sprintf)(buf, "\nevents: Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw "
+                                  "Bc Bcm Bi Bim\n");
+   }
+   else if (clo_cache_sim && !clo_branch_sim) {
+      VG_(sprintf)(buf, "\nevents: Ir I1mr I2mr Dr D1mr D2mr Dw D1mw D2mw "
+                                  "\n");
+   }
+   else if (!clo_cache_sim && clo_branch_sim) {
+      VG_(sprintf)(buf, "\nevents: Ir "
+                                  "Bc Bcm Bi Bim\n");
+   }
+   else
+      tl_assert(0); /* can't happen */
+
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
    // Traverse every lineCC
@@ -1076,11 +1347,38 @@ static void fprint_CC_table_and_calc_totals(void)
       }
 
       // Print the LineCC
-      VG_(sprintf)(buf, "%u %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
-                         lineCC->loc.line,
-                         lineCC->Ir.a, lineCC->Ir.m1, lineCC->Ir.m2, 
-                         lineCC->Dr.a, lineCC->Dr.m1, lineCC->Dr.m2,
-                         lineCC->Dw.a, lineCC->Dw.m1, lineCC->Dw.m2);
+      if (clo_cache_sim && clo_branch_sim) {
+         VG_(sprintf)(buf, "%u %llu %llu %llu"
+                             " %llu %llu %llu"
+                             " %llu %llu %llu"
+                             " %llu %llu %llu %llu\n",
+                            lineCC->loc.line,
+                            lineCC->Ir.a, lineCC->Ir.m1, lineCC->Ir.m2, 
+                            lineCC->Dr.a, lineCC->Dr.m1, lineCC->Dr.m2,
+                            lineCC->Dw.a, lineCC->Dw.m1, lineCC->Dw.m2,
+                            lineCC->Bc.b, lineCC->Bc.mp, 
+                            lineCC->Bi.b, lineCC->Bi.mp);
+      }
+      else if (clo_cache_sim && !clo_branch_sim) {
+         VG_(sprintf)(buf, "%u %llu %llu %llu"
+                             " %llu %llu %llu"
+                             " %llu %llu %llu\n",
+                            lineCC->loc.line,
+                            lineCC->Ir.a, lineCC->Ir.m1, lineCC->Ir.m2, 
+                            lineCC->Dr.a, lineCC->Dr.m1, lineCC->Dr.m2,
+                            lineCC->Dw.a, lineCC->Dw.m1, lineCC->Dw.m2);
+      }
+      else if (!clo_cache_sim && clo_branch_sim) {
+         VG_(sprintf)(buf, "%u %llu"
+                             " %llu %llu %llu %llu\n",
+                            lineCC->loc.line,
+                            lineCC->Ir.a, 
+                            lineCC->Bc.b, lineCC->Bc.mp, 
+                            lineCC->Bi.b, lineCC->Bi.mp);
+      }
+      else
+         tl_assert(0);
+
       VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
       // Update summary stats
@@ -1093,17 +1391,48 @@ static void fprint_CC_table_and_calc_totals(void)
       Dw_total.a  += lineCC->Dw.a;
       Dw_total.m1 += lineCC->Dw.m1;
       Dw_total.m2 += lineCC->Dw.m2;
+      Bc_total.b  += lineCC->Bc.b;
+      Bc_total.mp += lineCC->Bc.mp;
+      Bi_total.b  += lineCC->Bi.b;
+      Bi_total.mp += lineCC->Bi.mp;
 
       distinct_lines++;
    }
 
    // Summary stats must come after rest of table, since we calculate them
-   // during traversal.  */ 
-   VG_(sprintf)(buf, "summary: "
-                     "%llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
-                     Ir_total.a, Ir_total.m1, Ir_total.m2,
-                     Dr_total.a, Dr_total.m1, Dr_total.m2,
-                     Dw_total.a, Dw_total.m1, Dw_total.m2);
+   // during traversal.  */
+   if (clo_cache_sim && clo_branch_sim) {
+      VG_(sprintf)(buf, "summary:"
+                        " %llu %llu %llu"
+                        " %llu %llu %llu"
+                        " %llu %llu %llu"
+                        " %llu %llu %llu %llu\n", 
+                        Ir_total.a, Ir_total.m1, Ir_total.m2,
+                        Dr_total.a, Dr_total.m1, Dr_total.m2,
+                        Dw_total.a, Dw_total.m1, Dw_total.m2,
+                        Bc_total.b, Bc_total.mp, 
+                        Bi_total.b, Bi_total.mp);
+   }
+   else if (clo_cache_sim && !clo_branch_sim) {
+      VG_(sprintf)(buf, "summary:"
+                        " %llu %llu %llu"
+                        " %llu %llu %llu"
+                        " %llu %llu %llu\n",
+                        Ir_total.a, Ir_total.m1, Ir_total.m2,
+                        Dr_total.a, Dr_total.m1, Dr_total.m2,
+                        Dw_total.a, Dw_total.m1, Dw_total.m2);
+   }
+   else if (!clo_cache_sim && clo_branch_sim) {
+      VG_(sprintf)(buf, "summary:"
+                        " %llu"
+                        " %llu %llu %llu %llu\n", 
+                        Ir_total.a,
+                        Bc_total.b, Bc_total.mp, 
+                        Bi_total.b, Bi_total.mp);
+   }
+   else
+      tl_assert(0);
+
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
    VG_(close)(fd);
 }
@@ -1123,11 +1452,16 @@ static void cg_fini(Int exitcode)
 {
    static Char buf1[128], buf2[128], buf3[128], buf4[123], fmt[128];
 
-   CC D_total;
+   CacheCC  D_total;
+   BranchCC B_total;
    ULong L2_total_m, L2_total_mr, L2_total_mw,
          L2_total, L2_total_r, L2_total_w;
-   Int l1, l2, l3;
+   Int l1, l2, l3, l4;
    Int p;
+
+   /* Running with both cache and branch simulation disabled is not
+      allowed (checked during command line option processing). */
+   tl_assert(clo_cache_sim || clo_branch_sim);
 
    fprint_CC_table_and_calc_totals();
 
@@ -1139,75 +1473,105 @@ static void cg_fini(Int exitcode)
    l1 = ULong_width(Ir_total.a);
    l2 = ULong_width(Dr_total.a);
    l3 = ULong_width(Dw_total.a);
+   l4 = ULong_width(Bc_total.b + Bi_total.b);
 
    /* Make format string, getting width right for numbers */
    VG_(sprintf)(fmt, "%%s %%,%dllu", l1);
 
+   /* Always print this */
    VG_(message)(Vg_UserMsg, fmt, "I   refs:     ", Ir_total.a);
-   VG_(message)(Vg_UserMsg, fmt, "I1  misses:   ", Ir_total.m1);
-   VG_(message)(Vg_UserMsg, fmt, "L2i misses:   ", Ir_total.m2);
 
-   p = 100;
+   /* If cache profiling is enabled, show D access numbers and all
+      miss numbers */
+   if (clo_cache_sim) {
+      VG_(message)(Vg_UserMsg, fmt, "I1  misses:   ", Ir_total.m1);
+      VG_(message)(Vg_UserMsg, fmt, "L2i misses:   ", Ir_total.m2);
 
-   if (0 == Ir_total.a) Ir_total.a = 1;
-   VG_(percentify)(Ir_total.m1, Ir_total.a, 2, l1+1, buf1);
-   VG_(message)(Vg_UserMsg, "I1  miss rate: %s", buf1);
+      p = 100;
 
-   VG_(percentify)(Ir_total.m2, Ir_total.a, 2, l1+1, buf1);
-   VG_(message)(Vg_UserMsg, "L2i miss rate: %s", buf1);
-   VG_(message)(Vg_UserMsg, "");
+      if (0 == Ir_total.a) Ir_total.a = 1;
+      VG_(percentify)(Ir_total.m1, Ir_total.a, 2, l1+1, buf1);
+      VG_(message)(Vg_UserMsg, "I1  miss rate: %s", buf1);
 
-   /* D cache results.  Use the D_refs.rd and D_refs.wr values to determine the
-    * width of columns 2 & 3. */
-   D_total.a  = Dr_total.a  + Dw_total.a;
-   D_total.m1 = Dr_total.m1 + Dw_total.m1;
-   D_total.m2 = Dr_total.m2 + Dw_total.m2;
+      VG_(percentify)(Ir_total.m2, Ir_total.a, 2, l1+1, buf1);
+      VG_(message)(Vg_UserMsg, "L2i miss rate: %s", buf1);
+      VG_(message)(Vg_UserMsg, "");
 
-   /* Make format string, getting width right for numbers */
-   VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu rd + %%,%dllu wr)", l1, l2, l3);
+      /* D cache results.  Use the D_refs.rd and D_refs.wr values to
+       * determine the width of columns 2 & 3. */
+      D_total.a  = Dr_total.a  + Dw_total.a;
+      D_total.m1 = Dr_total.m1 + Dw_total.m1;
+      D_total.m2 = Dr_total.m2 + Dw_total.m2;
 
-   VG_(message)(Vg_UserMsg, fmt, "D   refs:     ", 
-                            D_total.a, Dr_total.a, Dw_total.a);
-   VG_(message)(Vg_UserMsg, fmt, "D1  misses:   ",
-                            D_total.m1, Dr_total.m1, Dw_total.m1);
-   VG_(message)(Vg_UserMsg, fmt, "L2d misses:   ",
-                            D_total.m2, Dr_total.m2, Dw_total.m2);
+      /* Make format string, getting width right for numbers */
+      VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu rd   + %%,%dllu wr)", l1, l2, l3);
 
-   p = 10;
+      VG_(message)(Vg_UserMsg, fmt, "D   refs:     ", 
+                               D_total.a, Dr_total.a, Dw_total.a);
+      VG_(message)(Vg_UserMsg, fmt, "D1  misses:   ",
+                               D_total.m1, Dr_total.m1, Dw_total.m1);
+      VG_(message)(Vg_UserMsg, fmt, "L2d misses:   ",
+                               D_total.m2, Dr_total.m2, Dw_total.m2);
 
-   if (0 == D_total.a)   D_total.a = 1;
-   if (0 == Dr_total.a) Dr_total.a = 1;
-   if (0 == Dw_total.a) Dw_total.a = 1;
-   VG_(percentify)( D_total.m1,  D_total.a, 1, l1+1, buf1);
-   VG_(percentify)(Dr_total.m1, Dr_total.a, 1, l2+1, buf2);
-   VG_(percentify)(Dw_total.m1, Dw_total.a, 1, l3+1, buf3);
-   VG_(message)(Vg_UserMsg, "D1  miss rate: %s (%s   + %s  )", buf1, buf2,buf3);
+      p = 10;
 
-   VG_(percentify)( D_total.m2,  D_total.a, 1, l1+1, buf1);
-   VG_(percentify)(Dr_total.m2, Dr_total.a, 1, l2+1, buf2);
-   VG_(percentify)(Dw_total.m2, Dw_total.a, 1, l3+1, buf3);
-   VG_(message)(Vg_UserMsg, "L2d miss rate: %s (%s   + %s  )", buf1, buf2,buf3);
-   VG_(message)(Vg_UserMsg, "");
+      if (0 == D_total.a)  D_total.a = 1;
+      if (0 == Dr_total.a) Dr_total.a = 1;
+      if (0 == Dw_total.a) Dw_total.a = 1;
+      VG_(percentify)( D_total.m1,  D_total.a, 1, l1+1, buf1);
+      VG_(percentify)(Dr_total.m1, Dr_total.a, 1, l2+1, buf2);
+      VG_(percentify)(Dw_total.m1, Dw_total.a, 1, l3+1, buf3);
+      VG_(message)(Vg_UserMsg, "D1  miss rate: %s (%s     + %s  )", buf1, buf2,buf3);
 
-   /* L2 overall results */
+      VG_(percentify)( D_total.m2,  D_total.a, 1, l1+1, buf1);
+      VG_(percentify)(Dr_total.m2, Dr_total.a, 1, l2+1, buf2);
+      VG_(percentify)(Dw_total.m2, Dw_total.a, 1, l3+1, buf3);
+      VG_(message)(Vg_UserMsg, "L2d miss rate: %s (%s     + %s  )", buf1, buf2,buf3);
+      VG_(message)(Vg_UserMsg, "");
 
-   L2_total   = Dr_total.m1 + Dw_total.m1 + Ir_total.m1;
-   L2_total_r = Dr_total.m1 + Ir_total.m1;
-   L2_total_w = Dw_total.m1;
-   VG_(message)(Vg_UserMsg, fmt, "L2 refs:      ",
-                            L2_total, L2_total_r, L2_total_w);
+      /* L2 overall results */
 
-   L2_total_m  = Dr_total.m2 + Dw_total.m2 + Ir_total.m2;
-   L2_total_mr = Dr_total.m2 + Ir_total.m2;
-   L2_total_mw = Dw_total.m2;
-   VG_(message)(Vg_UserMsg, fmt, "L2 misses:    ",
-                            L2_total_m, L2_total_mr, L2_total_mw);
+      L2_total   = Dr_total.m1 + Dw_total.m1 + Ir_total.m1;
+      L2_total_r = Dr_total.m1 + Ir_total.m1;
+      L2_total_w = Dw_total.m1;
+      VG_(message)(Vg_UserMsg, fmt, "L2 refs:      ",
+                               L2_total, L2_total_r, L2_total_w);
 
-   VG_(percentify)(L2_total_m,  (Ir_total.a + D_total.a),  1, l1+1, buf1);
-   VG_(percentify)(L2_total_mr, (Ir_total.a + Dr_total.a), 1, l2+1, buf2);
-   VG_(percentify)(L2_total_mw, Dw_total.a,                1, l3+1, buf3);
-   VG_(message)(Vg_UserMsg, "L2 miss rate:  %s (%s   + %s  )", buf1, buf2,buf3);
+      L2_total_m  = Dr_total.m2 + Dw_total.m2 + Ir_total.m2;
+      L2_total_mr = Dr_total.m2 + Ir_total.m2;
+      L2_total_mw = Dw_total.m2;
+      VG_(message)(Vg_UserMsg, fmt, "L2 misses:    ",
+                               L2_total_m, L2_total_mr, L2_total_mw);
 
+      VG_(percentify)(L2_total_m,  (Ir_total.a + D_total.a),  1, l1+1, buf1);
+      VG_(percentify)(L2_total_mr, (Ir_total.a + Dr_total.a), 1, l2+1, buf2);
+      VG_(percentify)(L2_total_mw, Dw_total.a,                1, l3+1, buf3);
+      VG_(message)(Vg_UserMsg, "L2 miss rate:  %s (%s     + %s  )", buf1, buf2,buf3);
+   }
+
+   /* If branch profiling is enabled, show branch overall results. */
+   if (clo_branch_sim) {
+      /* Make format string, getting width right for numbers */
+      VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu cond + %%,%dllu ind)", l1, l2, l3);
+
+      if (0 == Bc_total.b)  Bc_total.b = 1;
+      if (0 == Bi_total.b)  Bi_total.b = 1;
+      B_total.b  = Bc_total.b  + Bi_total.b;
+      B_total.mp = Bc_total.mp + Bi_total.mp;
+
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, fmt, "Branches:     ",
+                               B_total.b, Bc_total.b, Bi_total.b);
+
+      VG_(message)(Vg_UserMsg, fmt, "Mispredicts:  ",
+                               B_total.mp, Bc_total.mp, Bi_total.mp);
+
+      VG_(percentify)(B_total.mp,  B_total.b,  1, l1+1, buf1);
+      VG_(percentify)(Bc_total.mp, Bc_total.b, 1, l2+1, buf2);
+      VG_(percentify)(Bi_total.mp, Bi_total.b, 1, l3+1, buf3);
+
+      VG_(message)(Vg_UserMsg, "Mispred rate:  %s (%s     + %s   )", buf1, buf2,buf3);
+   }
 
    // Various stats
    if (VG_(clo_verbosity) > 1) {
@@ -1318,6 +1682,8 @@ static Bool cg_process_cmd_line_option(Char* arg)
    else if (VG_CLO_STREQN(22, arg, "--cachegrind-out-file=")) {
       cachegrind_out_file_basename = &arg[22];
    }
+   else VG_BOOL_CLO(arg, "--cache-sim",  clo_cache_sim)
+   else VG_BOOL_CLO(arg, "--branch-sim", clo_branch_sim)
    else
       return False;
 
@@ -1330,6 +1696,8 @@ static void cg_print_usage(void)
 "    --I1=<size>,<assoc>,<line_size>  set I1 cache manually\n"
 "    --D1=<size>,<assoc>,<line_size>  set D1 cache manually\n"
 "    --L2=<size>,<assoc>,<line_size>  set L2 cache manually\n"
+"    --cache-sim=yes|no  [yes]        collect cache stats?\n"
+"    --branch-sim=yes|no [no]         collect branch prediction stats?\n"
 "    --cachegrind-out-file=<file>     write profile data to <file>.<pid>\n"
 "                                     [cachegrind.out.<pid>]\n"
    );
@@ -1354,7 +1722,7 @@ static void cg_pre_clo_init(void)
 {
    VG_(details_name)            ("Cachegrind");
    VG_(details_version)         (NULL);
-   VG_(details_description)     ("an I1/D1/L2 cache profiler");
+   VG_(details_description)     ("a cache and branch-prediction profiler");
    VG_(details_copyright_author)(
       "Copyright (C) 2002-2007, and GNU GPL'd, by Nicholas Nethercote et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
@@ -1375,6 +1743,15 @@ static void cg_post_clo_init(void)
    HChar* qual = NULL;
    cache_t I1c, D1c, L2c; 
    Int filename_szB;
+
+   /* Can't disable both cache and branch profiling */
+   if ((!clo_cache_sim) && (!clo_branch_sim)) {
+      VG_(message)(Vg_DebugMsg,
+                   "ERROR: --cache-sim=no --branch-sim=no is not allowed.");
+      VG_(message)(Vg_DebugMsg,
+                   "You must select cache profiling, or branch profiling, or both.");
+      VG_(exit)(2);
+   }
 
    /* Get working directory */
    tl_assert( VG_(getcwd)(base_dir, VKI_PATH_MAX) );

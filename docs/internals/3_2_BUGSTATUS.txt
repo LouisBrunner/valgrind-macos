@@ -42,6 +42,8 @@ r6593    r6711     32 139363   callgrind: fix --collect-systime=yes
 r6601    r6712     32 n-i-bz   callgrind: Fix threads display
                                of "callgrind_control -s"
 
+r6734    pending      n-i-nz   Callgrind: improve documentation
+
 r6622    r6713     32 n-i-bz   .eh_frame crud for m_trampoline.S fns
 
 r6630    pending      n-i-bz   add additional ptrace reason codes

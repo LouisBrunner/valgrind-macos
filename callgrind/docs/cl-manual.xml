@@ -10,11 +10,13 @@
 <sect1 id="cl-manual.use" xreflabel="Overview">
 <title>Overview</title>
 
-<para>Callgrind is a Valgrind tool for profiling programs.
-The collected data consists of
-the number of instructions executed on a run, their relationship
+<para>Callgrind is a Valgrind tool for profiling programs
+with the ability to construct a call graph from the execution.
+By default, the collected data consists of
+the number of instructions executed, their attribution
 to source lines, and
-call relationship among functions together with call counts.
+call relationship among functions together with number of
+actually executed calls.
 Optionally, a cache simulator (similar to cachegrind) can produce
 further information about the memory access behavior of the application.
 </para>
@@ -27,7 +29,7 @@ of the profiling, two command line tools are provided:</para>
   <term><command>callgrind_annotate</command></term>
   <listitem>
     <para>This command reads in the profile data, and prints a
-    sorted lists of functions, optionally with annotation.</para>
+    sorted lists of functions, optionally with source annotation.</para>
 <!--
     <para>You can read the manpage here: <xref
 	      linkend="callgrind-annotate"/>.</para>
@@ -44,8 +46,8 @@ of the profiling, two command line tools are provided:</para>
     <para>This command enables you to interactively observe and control 
     the status of currently running applications, without stopping
     the application.  You can 
-    get statistics information, the current stack trace, and request 
-    zeroing of counters, and dumping of profiles data.</para>
+    get statistics information as well as the current stack trace, and
+    you can request zeroing of counters or dumping of profile data.</para>
 <!--
     <para>You can read the manpage here: <xref linkend="callgrind-control"/>.</para>
 -->
@@ -58,86 +60,47 @@ of the profiling, two command line tools are provided:</para>
 command line or use the supplied script 
 <computeroutput>callgrind</computeroutput>.</para>
 
+  <sect2 id="cl-manual.functionality" xreflabel="Functionality">
+  <title>Functionality</title>
+
+<para>Cachegrind provides a flat profile: event counts (reads, misses etc.)
+attributed to functions exactly represent events which happened while the
+function itself was running, which also is called <emphasis>self</emphasis>
+or <emphasis>exclusive</emphasis> cost. In addition, Callgrind further
+attributes call sites inside functions with event counts for events which
+happened while the call was active, ie. while code was executed which actually
+was called from the given call site. Adding these call costs to the self cost of
+a function gives the so called <emphasis>inclusive</emphasis> cost.
+As an example, inclusive cost of <computeroutput>main()</computeroutput> should
+be almost 100 percent (apart from any cost spent in startup before main, such as
+initialization of the run time linker or construction of global C++ objects).
+</para>
+
+<para>Together with the call graph, this allows you to see the call chains starting
+from <computeroutput>main()</computeroutput>, inside which most of the
+events were happening. This especially is useful for functions called from
+multiple call sites, and where any optimization makes sense only by changing
+code in the caller (e.g. by reducing the call count).</para>
+
 <para>Callgrind's cache simulation is based on the 
-<ulink url="&cg-tool-url;">Cachegrind tool</ulink> of the 
-<ulink url="&vg-url;">Valgrind</ulink> package.  Read 
+<ulink url="&cg-tool-url;">Cachegrind tool</ulink>. Read 
 <ulink url="&cg-doc-url;">Cachegrind's documentation</ulink> first; 
 this page describes the features supported in addition to 
 Cachegrind's features.</para>
 
-</sect1>
-
-
-<sect1 id="cl-manual.purpose" xreflabel="Purpose">
-<title>Purpose</title>
-
-
-  <sect2 id="cl-manual.devel" 
-         xreflabel="Profiling as part of Application Development">
-  <title>Profiling as part of Application Development</title>
-
-  <para>With application development, a common step is
-  to improve runtime performance.  To not waste time on
-  optimizing functions which are rarely used, one needs to know
-  in which parts of the program most of the time is spent.</para>
-
-  <para>This is done with a technique called profiling. The program
-  is run under control of a profiling tool, which gives the time
-  distribution of executed functions in the run. After examination
-  of the program's profile, it should be clear if and where optimization
-  is useful. Afterwards, one should verify any runtime changes by another
-  profile run.</para>
+<para>Callgrinds ability to trace function call varies with the ISA of the
+platform it is run on. Its usage was specially tailored for x86 and amd64,
+and unfortunately, it currently happens to show quite bad call/return detection
+in PPC32/64 code (this is because there are only jump/branch instructions
+in the PPC ISA, and Callgrind has to rely on heuristics).</para>
 
   </sect2>
 
+  <sect2 id="cl-manual.basics" xreflabel="Basic Usage">
+  <title>Basic Usage</title>
 
-  <sect2 id="cl-manual.tools" xreflabel="Profiling Tools">
-  <title>Profiling Tools</title>
-
-  <para>Most widely known is the GCC profiling tool <command>GProf</command>:
-  one needs to compile an application with the compiler option 
-  <computeroutput>-pg</computeroutput>.  Running the program generates
-  a file <computeroutput>gmon.out</computeroutput>, which can be 
-  transformed into human readable form with the command line tool 
-  <computeroutput>gprof</computeroutput>.  A disadvantage here is the 
-  the need to recompile everything, and also the need to statically link the
-  executable.</para>
-
-  <para>Another profiling tool is <command>Cachegrind</command>, part
-  of <ulink url="&vg-url;">Valgrind</ulink>. It uses the processor
-  emulation of Valgrind to run the executable, and catches all memory
-  accesses, which are used to drive a cache simulator.
-  The program does not need to be
-  recompiled, it can use shared libraries and plugins, and the profile
-  measurement doesn't influence the memory access behaviour. 
-  The trace includes 
-  the number of instruction/data memory accesses and 1st/2nd level
-  cache misses, and relates it to source lines and functions of the
-  run program.  A disadvantage is the slowdown involved in the
-  processor emulation, around 50 times slower.</para>
-
-  <para>Cachegrind can only deliver a flat profile. There is no call 
-  relationship among the functions of an application stored.  Thus, 
-  inclusive costs, i.e. costs of a function including the cost of all 
-  functions called from there, cannot be calculated. Callgrind extends 
-  Cachegrind by including call relationship and exact event counts
-  spent while doing a call.</para>
-
-  <para>Because Callgrind (and Cachegrind) is based on simulation, the
-  slowdown due to processing the synthetic runtime events does not
-  influence the results.  See <xref linkend="cl-manual.usage"/> for more 
-  details on the possibilities.</para>
-
-  </sect2>
-
-</sect1>
-
-
-<sect1 id="cl-manual.usage" xreflabel="Usage">
-<title>Usage</title>
-
-  <sect2 id="cl-manual.basics" xreflabel="Basics">
-  <title>Basics</title>
+  <para>As with Cachegrind, you probably want to compile with debugging info
+  (the -g flag), but with optimization turned on.</para>
 
   <para>To start a profile run for a program, execute:
   <screen>callgrind [callgrind options] your-program [program options]</screen>
@@ -145,7 +108,7 @@ Cachegrind's features.</para>
 
   <para>While the simulation is running, you can observe execution with
   <screen>callgrind_control -b</screen>
-  This will print out a current backtrace. To annotate the backtrace with
+  This will print out the current backtrace. To annotate the backtrace with
   event counts, run
   <screen>callgrind_control -e -b</screen>
   </para>
@@ -153,26 +116,73 @@ Cachegrind's features.</para>
   <para>After program termination, a profile data file named 
   <computeroutput>callgrind.out.pid</computeroutput>
   is generated with <emphasis>pid</emphasis> being the process ID 
-  of the execution of this profile run.</para>
-
-  <para>The data file contains information about the calls made in the
+  of the execution of this profile run.
+  The data file contains information about the calls made in the
   program among the functions executed, together with events of type
   <command>Instruction Read Accesses</command> (Ir).</para>
 
+  <para>To generate a function-by-function summary from the profile
+  data file, use
+  <screen>callgrind_annotate [options] callgrind.out.pid</screen>
+  This summary is similar to the output you get from a Cachegrind
+  run with <computeroutput>cg_annotate</computeroutput>: the list
+  of functions is ordered by exclusive cost of functions, which also
+  are the ones that are shown.
+  Important for the additional features of Callgrind are
+  the following two options:</para>
+
+  <itemizedlist>
+    <listitem>
+      <para><option>--inclusive=yes</option>: Instead of using
+      exclusive cost of functions as sorting order, use and show
+      inclusive cost.</para>
+    </listitem>
+
+    <listitem>
+      <para><option>--tree=both</option>: Interleaved into the
+      ordered list of function, show the callers and the callees
+      of each function. In these lines, which represents executed
+      calls, the cost gives the number of events spent in the call.
+      Indented, above each given function, there is the list of callers,
+      and below, the list of callees. The sum of events in calls to
+      a given function (caller lines), as well as the sum of events in
+      calls from the function (callee lines) together with the self
+      cost, gives the total inclusive cost of the function.</para>
+     </listitem>
+  </itemizedlist>
+
+  <para>Use <option>--auto=yes</option> to get annotated source code
+  for all relevant functions for which the source can be found. In
+  addition to source annotation as produced by
+  <computeroutput>cg_annotate</computeroutput>, you will see the
+  annotated call sites with call counts. For all other options, look
+  up the manual for <computeroutput>cg_annotate</computeroutput>.
+  </para>
+
+  <para>For better call graph browsing experience, it is highly recommended
+  to use <ulink url="&cl-gui;">KCachegrind</ulink>. If your code happens
+  to spent relevant fractions of cost in <emphasis>cycles</emphasis> (sets
+  of functions calling each other in a recursive manner), you have to
+  use KCachegrind, as <computeroutput>callgrind_annotate</computeroutput>
+  currently does not do any cycle detection, which is important to get correct
+  results in this case.</para>
+
   <para>If you are additionally interested in measuring the 
-  cache behaviour of your 
+  cache behavior of your 
   program, use Callgrind with the option
   <option><xref linkend="opt.simulate-cache"/>=yes.</option>
-  This will further slow down the run approximately by a factor of 2.</para>
+  However, expect a  further slow down approximately by a factor of 2.</para>
 
   <para>If the program section you want to profile is somewhere in the
   middle of the run, it is beneficial to 
   <emphasis>fast forward</emphasis> to this section without any 
-  profiling at all, and switch it on later.  This is achieved by using
+  profiling at all, and switch profiling on later.  This is achieved by using
   <option><xref linkend="opt.instr-atstart"/>=no</option> 
   and interactively use 
   <computeroutput>callgrind_control -i on</computeroutput> before the 
-  interesting code section is about to be executed.</para>
+  interesting code section is about to be executed. To exactly specify
+  the code position where profiling should start, use the client request
+  <computeroutput>CALLGRIND_START_INSTRUMENTATION</computeroutput>.</para>
 
   <para>If you want to be able to see assembler annotation, specify
   <option><xref linkend="opt.dump-instr"/>=yes</option>. This will produce
@@ -185,12 +195,16 @@ Cachegrind's features.</para>
 
   </sect2>
 
+</sect1>
+
+<sect1 id="cl-manual.usage" xreflabel="Advanced Usage">
+<title>Advanced Usage</title>
 
   <sect2 id="cl-manual.dumps" 
          xreflabel="Multiple dumps from one program run">
   <title>Multiple profiling dumps from one program run</title>
 
-  <para>Often, you aren't interested in time characteristics of a full 
+  <para>Often, you are not interested in characteristics of a full 
   program run, but only of a small part of it (e.g. execution of one
   algorithm).  If there are multiple algorithms or one algorithm 
   running with different input data, it's even useful to get different

@@ -640,9 +640,18 @@ categories.</para>
       <option><![CDATA[--trace-children=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>When enabled, Valgrind will trace into child processes.
-      This can be confusing and isn't usually what you want, so it is
-      disabled by default.</para>
+      <para>When enabled, Valgrind will trace into sub-processes
+      initiated via the <varname>exec</varname> system call.  This can be
+      confusing and isn't usually what you want, so it is disabled by
+      default.  
+      </para>
+      <para>Note that Valgrind does trace into the child of a
+      <varname>fork</varname> (it would be difficult not too, since
+      <varname>fork</varname> makes an identical copy of a process), so this
+      option is arguably badly named.  However, most children of
+      <varname>fork</varname> calls immediately call <varname>exec</varname>
+      anyway.
+      </para>
     </listitem>
   </varlistentry>
 

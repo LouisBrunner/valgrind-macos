@@ -17,7 +17,8 @@ command line.</para>
 <para>Lackey is a simple valgrind tool that does some basic program
 measurement.  It adds quite a lot of simple instrumentation to the
 program's code.  It is primarily intended to be of use as an example
-tool.</para>
+tool, and consequently emphasises clarity of implementation
+over performance.</para>
 
 <para>It measures and reports various things.</para>
 
@@ -36,7 +37,7 @@ tool.</para>
     <computeroutput>_dl_runtime_resolve()</computeroutput>, the
     function in glibc's dynamic linker that resolves function
     references to shared objects.</para>
-    <para>You can change the name of the function tracekd with command line
+    <para>You can change the name of the function tracked with command line
     option <computeroutput>--fnname=&lt;name&gt;</computeroutput>.</para>
    </listitem>
 
@@ -46,9 +47,9 @@ tool.</para>
    </listitem>
 
    <listitem>
-    <para>The number of basic blocks entered and completed by the
+    <para>The number of superblocks entered and completed by the
     program.  Note that due to optimisations done by the JIT, this
-    is not really an accurate value.</para>
+    is not at all an accurate value.</para>
    </listitem>
 
    <listitem>
@@ -109,12 +110,12 @@ so.</para>
 <!-- start of xi:include in the manpage -->
 <variablelist id="lk.opts.list">
 
-  <varlistentry id="opt.fnname" xreflabel="--fnname">
+  <varlistentry id="opt.basic-counts" xreflabel="--basic-counts">
     <term>
-      <option><![CDATA[--fnname=<name> [default: _dl_runtime_resolve()] ]]></option>
+      <option><![CDATA[--basic-counts=<no|yes> [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>Count calls to &lt;name&gt;.</para>
+      <para>Count basic events, as described above.</para>
     </listitem>
   </varlistentry>
 
@@ -123,7 +124,27 @@ so.</para>
       <option><![CDATA[--detailed-counts=<no|yes> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>Count loads, stores and alu ops.</para>
+      <para>Count loads, stores and alu ops, differentiated by their
+            IR types.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.fnname" xreflabel="--fnname">
+    <term>
+      <option><![CDATA[--fnname=<name> [default: _dl_runtime_resolve()] ]]></option>
+    </term>
+    <listitem>
+      <para>Count calls to the function &lt;name&gt;.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.trace-mem" xreflabel="--trace-mem">
+    <term>
+      <option><![CDATA[--trace-mem=<no|yes> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Produce a log of all memory references, as described
+      above.</para>
     </listitem>
   </varlistentry>
 

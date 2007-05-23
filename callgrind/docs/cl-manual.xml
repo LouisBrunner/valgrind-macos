@@ -10,13 +10,12 @@
 <sect1 id="cl-manual.use" xreflabel="Overview">
 <title>Overview</title>
 
-<para>Callgrind is a Valgrind tool for profiling programs
-with the ability to construct a call graph from the execution.
+<para>Callgrind is profiling tool that can
+construct a call graph for a program's run.
 By default, the collected data consists of
-the number of instructions executed, their attribution
-to source lines, and
-call relationship among functions together with number of
-actually executed calls.
+the number of instructions executed, their relationship
+to source lines, the caller/callee relationship between functions,
+and the numbers of such calls.
 Optionally, a cache simulator (similar to cachegrind) can produce
 further information about the memory access behavior of the application.
 </para>
@@ -34,8 +33,10 @@ of the profiling, two command line tools are provided:</para>
     <para>You can read the manpage here: <xref
 	      linkend="callgrind-annotate"/>.</para>
 -->
-    <para>For graphical visualization of the data, check out
-    <ulink url="&cl-gui;">KCachegrind</ulink>.</para>
+    <para>For graphical visualization of the data, try
+    <ulink url="&cl-gui;">KCachegrind</ulink>, which is a KDE/Qt based
+    GUI that makes it easy to navigate the large amount of data that
+    Callgrind produces.</para>
 
   </listitem>
   </varlistentry>
@@ -62,36 +63,48 @@ command line.</para>
   <sect2 id="cl-manual.functionality" xreflabel="Functionality">
   <title>Functionality</title>
 
-<para>Cachegrind provides a flat profile: event counts (reads, misses etc.)
-attributed to functions exactly represent events which happened while the
-function itself was running, which also is called <emphasis>self</emphasis>
-or <emphasis>exclusive</emphasis> cost. In addition, Callgrind further
-attributes call sites inside functions with event counts for events which
-happened while the call was active, ie. while code was executed which actually
-was called from the given call site. Adding these call costs to the self cost of
-a function gives the so called <emphasis>inclusive</emphasis> cost.
-As an example, inclusive cost of <computeroutput>main()</computeroutput> should
-be almost 100 percent (apart from any cost spent in startup before main, such as
-initialization of the run time linker or construction of global C++ objects).
-</para>
+<para>Cachegrind collects flat profile data: event counts (data reads,
+cache misses, etc.) are attributed directly to the function they
+occurred in.  This simple cost attribution mechanism is sometimes
+called <emphasis>self</emphasis> or <emphasis>exclusive</emphasis>
+attribution.</para>
 
-<para>Together with the call graph, this allows you to see the call chains starting
-from <computeroutput>main()</computeroutput>, inside which most of the
-events were happening. This especially is useful for functions called from
-multiple call sites, and where any optimization makes sense only by changing
-code in the caller (e.g. by reducing the call count).</para>
+<para>Callgrind extends this functionality by propagating costs
+across function call boundaries.  If function <code>foo</code> calls
+<code>bar</code>, the costs from <code>bar</code> are added into
+<code>foo</code>'s costs.  When applied to the program as a whole,
+this builds up a picture of so called <emphasis>inclusive</emphasis>
+costs, that is, where the cost of each function includes the costs of
+all functions it called, directly or indirectly.</para>
+
+<para>As an example, the inclusive cost of
+<computeroutput>main</computeroutput> should be almost 100 percent
+of the total program cost.  Because of costs arising before 
+<computeroutput>main</computeroutput> is run, such as
+initialization of the run time linker and construction of global C++
+objects, the inclusive cost of <computeroutput>main</computeroutput>
+is not exactly 100 percent of the total program cost.</para>
+
+<para>Together with the call graph, this allows you to find the
+specific call chains starting from
+<computeroutput>main</computeroutput> in which the majority of the
+program's costs occur.  Caller/callee cost attribution is also useful
+for profiling functions called from multiple call sites, and where
+optimization opportunities depend on changing code in the callers, in
+particular by reducing the call count.</para>
 
 <para>Callgrind's cache simulation is based on the 
 <ulink url="&cg-tool-url;">Cachegrind tool</ulink>. Read 
-<ulink url="&cg-doc-url;">Cachegrind's documentation</ulink> first; 
-this page describes the features supported in addition to 
+<ulink url="&cg-doc-url;">Cachegrind's documentation</ulink> first.
+The material below describes the features supported in addition to 
 Cachegrind's features.</para>
 
-<para>Callgrinds ability to trace function call varies with the ISA of the
-platform it is run on. Its usage was specially tailored for x86 and amd64,
-and unfortunately, it currently happens to show quite bad call/return detection
-in PPC32/64 code (this is because there are only jump/branch instructions
-in the PPC ISA, and Callgrind has to rely on heuristics).</para>
+<para>Callgrind's ability to detect function calls and returns depends
+on the instruction set of the platform it is run on.  It works best
+on x86 and amd64, and unfortunately currently does not work so well
+on PowerPC code.  This is because there are no explicit call or return
+instructions in the PowerPC instruction set, so Callgrind has to rely
+on heuristics to detect calls and returns.</para>
 
   </sect2>
 
@@ -114,8 +127,8 @@ in the PPC ISA, and Callgrind has to rely on heuristics).</para>
 
   <para>After program termination, a profile data file named 
   <computeroutput>callgrind.out.pid</computeroutput>
-  is generated with <emphasis>pid</emphasis> being the process ID 
-  of the execution of this profile run.
+  is generated, where <emphasis>pid</emphasis> is the process ID 
+  of the program being profiled.
   The data file contains information about the calls made in the
   program among the functions executed, together with events of type
   <command>Instruction Read Accesses</command> (Ir).</para>
@@ -138,11 +151,11 @@ in the PPC ISA, and Callgrind has to rely on heuristics).</para>
     </listitem>
 
     <listitem>
-      <para><option>--tree=both</option>: Interleaved into the
-      ordered list of function, show the callers and the callees
+      <para><option>--tree=both</option>: Interleave into the
+      top level list of functions, information on the callers and the callees
       of each function. In these lines, which represents executed
       calls, the cost gives the number of events spent in the call.
-      Indented, above each given function, there is the list of callers,
+      Indented, above each function, there is the list of callers,
       and below, the list of callees. The sum of events in calls to
       a given function (caller lines), as well as the sum of events in
       calls from the function (callee lines) together with the self
@@ -154,13 +167,15 @@ in the PPC ISA, and Callgrind has to rely on heuristics).</para>
   for all relevant functions for which the source can be found. In
   addition to source annotation as produced by
   <computeroutput>cg_annotate</computeroutput>, you will see the
-  annotated call sites with call counts. For all other options, look
-  up the manual for <computeroutput>cg_annotate</computeroutput>.
+  annotated call sites with call counts. For all other options, 
+  consult the (Cachegrind) documentation for
+  <computeroutput>cg_annotate</computeroutput>.
   </para>
 
   <para>For better call graph browsing experience, it is highly recommended
-  to use <ulink url="&cl-gui;">KCachegrind</ulink>. If your code happens
-  to spent relevant fractions of cost in <emphasis>cycles</emphasis> (sets
+  to use <ulink url="&cl-gui;">KCachegrind</ulink>.
+  If your code
+  has a significant fraction of its cost in <emphasis>cycles</emphasis> (sets
   of functions calling each other in a recursive manner), you have to
   use KCachegrind, as <computeroutput>callgrind_annotate</computeroutput>
   currently does not do any cycle detection, which is important to get correct
@@ -175,19 +190,20 @@ in the PPC ISA, and Callgrind has to rely on heuristics).</para>
   <para>If the program section you want to profile is somewhere in the
   middle of the run, it is beneficial to 
   <emphasis>fast forward</emphasis> to this section without any 
-  profiling at all, and switch profiling on later.  This is achieved by using
+  profiling, and then switch on profiling.  This is achieved by using
+  the command line option
   <option><xref linkend="opt.instr-atstart"/>=no</option> 
-  and interactively use 
-  <computeroutput>callgrind_control -i on</computeroutput> before the 
-  interesting code section is about to be executed. To exactly specify
+  and running, in a shell,
+  <computeroutput>callgrind_control -i on</computeroutput> just before the 
+  interesting code section is executed. To exactly specify
   the code position where profiling should start, use the client request
   <computeroutput>CALLGRIND_START_INSTRUMENTATION</computeroutput>.</para>
 
-  <para>If you want to be able to see assembler annotation, specify
+  <para>If you want to be able to see assembly code level annotation, specify
   <option><xref linkend="opt.dump-instr"/>=yes</option>. This will produce
   profile data at instruction granularity. Note that the resulting profile
   data
-  can only be viewed with KCachegrind. For assembler annotation, it also is
+  can only be viewed with KCachegrind. For assembly annotation, it also is
   interesting to see more details of the control flow inside of functions,
   ie. (conditional) jumps. This will be collected by further specifying
   <option><xref linkend="opt.collect-jumps"/>=yes</option>.</para>
@@ -203,11 +219,11 @@ in the PPC ISA, and Callgrind has to rely on heuristics).</para>
          xreflabel="Multiple dumps from one program run">
   <title>Multiple profiling dumps from one program run</title>
 
-  <para>Often, you are not interested in characteristics of a full 
-  program run, but only of a small part of it (e.g. execution of one
-  algorithm).  If there are multiple algorithms or one algorithm 
-  running with different input data, it's even useful to get different
-  profile information for multiple parts of one program run.</para>
+  <para>Sometimes you are not interested in characteristics of a full 
+  program run, but only of a small part of it, for example execution of one
+  algorithm.  If there are multiple algorithms, or one algorithm 
+  running with different input data, it may even be useful to get different
+  profile information for different parts of a single program run.</para>
 
   <para>Profile data files have names of the form
 <screen>
@@ -233,7 +249,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
     <listitem>
       <para><command>Dump on program termination.</command>
       This method is the standard way and doesn't need any special
-      action from your side.</para>
+      action on your part.</para>
     </listitem>
 
     <listitem>
@@ -245,7 +261,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
       distinguish profile dumps.  The control program will not terminate
       before the dump is completely written.  Note that the application
       must be actively running for detection of the dump command. So,
-      for a GUI application, resize the window or for a server send a
+      for a GUI application, resize the window, or for a server, send a
       request.</para>
       <para>If you are using <ulink url="&cl-gui;">KCachegrind</ulink>
       for browsing of profile information, you can use the toolbar
@@ -348,7 +364,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   probably leading to many <emphasis>cold misses</emphasis>
   which would not have happened in reality. If you do not want to see these,
   start event collection a few million instructions after you have switched
-  on instrumentation</para>.
+  on instrumentation.</para>
 
 
   </sect2>
@@ -358,14 +374,21 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   <sect2 id="cl-manual.cycles" xreflabel="Avoiding cycles">
   <title>Avoiding cycles</title>
 
-  <para>Each group of functions with any two of them happening to have a
-  call chain from one to the other, is called a cycle.  For example,
-  with A calling B, B calling C, and C calling A, the three functions
-  A,B,C build up one cycle.</para>
+  <para>Informally speaking, a cycle is a group of functions which
+  call each other in a recursive way.</para>
 
-  <para>If a call chain goes multiple times around inside of a cycle,
+  <para>Formally speaking, a cycle is a nonempty set S of functions,
+  such that for every pair of functions F and G in S, it is possible
+  to call from F to G (possibly via intermediate functions) and also
+  from G to F.  Furthermore, S must be maximal -- that is, be the
+  largest set of functions satisfying this property.  For example, if
+  a third function H is called from inside S and calls back into S,
+  then H is also part of the cycle and should be included in S.</para>
+
+  <para>If a call chain goes multiple times around inside a cycle,
   with profiling, you can not distinguish event counts coming from the
-  first round or the second. Thus, it makes no sense to attach any inclusive
+  first, second or subsequent rounds.
+  Thus, it makes no sense to attach any inclusive
   cost to a call among functions inside of one cycle.
   If "A &gt; B" appears multiple times in a call chain, you
   have no way to partition the one big sum of all appearances of "A &gt;
@@ -383,11 +406,12 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   functions.</para>
 
   <para>There is an option to ignore calls to a function with
-  <option><xref linkend="opt.fn-skip"/>=funcprefix</option>.  E.g., you
+  <option><xref linkend="opt.fn-skip"/>=funcprefix</option>.  For
+  example you
   usually do not want to see the trampoline functions in the PLT sections
   for calls to functions in shared libraries. You can see the difference
   if you profile with <option><xref linkend="opt.skip-plt"/>=no</option>.
-  If a call is ignored, cost events happening will be attached to the
+  If a call is ignored, its cost events will be propagated to the
   enclosing function.</para>
 
   <para>If you have a recursive function, you can distinguish the first
@@ -468,9 +492,10 @@ These options influence the name and format of the profile data files.
       <computeroutput>.&lt;pid&gt;</computeroutput> is appended to the
       base dump file name with
       <computeroutput>&lt;pid&gt;</computeroutput> being the process ID
-      of the profile run (with multiple dumps happening, the file name
-      is modified further; see below).</para> <para>This option is
-      especially usefull if your application changes its working
+      of the profiled program.  When multiple dumps are made, the file name
+      is modified further; see below.</para> 
+      <para>This option is
+      especially useful if your application changes its working
       directory.  Usually, the dump file is generated in the current
       working directory of the application at program termination.  By
       giving an absolute path with the base specification, you can force
@@ -485,8 +510,9 @@ These options influence the name and format of the profile data files.
     <listitem>
       <para>This specifies that event counting should be performed at
       per-instruction granularity.
-      This allows for assembler code
-      annotation, but currently the results can only be shown with KCachegrind.</para>
+      This allows for assembly code
+      annotation.  Currently the results can only be 
+      displayed by KCachegrind.</para>
   </listitem>
   </varlistentry>
 
@@ -508,11 +534,9 @@ These options influence the name and format of the profile data files.
     <listitem>
       <para>This option influences the output format of the profile data.
       It specifies whether strings (file and function names) should be
-      identified by numbers. This shrinks the file size, but makes it more difficult
-      for humans to read (which is not recommand either way).</para>
-      <para>However, this currently has to be switched off if
-      the files are to be read by
-      <computeroutput>callgrind_annotate</computeroutput>!</para>
+      identified by numbers. This shrinks the file, 
+      but makes it more difficult
+      for humans to read (which is not recommended in any case).</para>
     </listitem>
   </varlistentry>
 
@@ -525,9 +549,6 @@ These options influence the name and format of the profile data files.
       It specifies whether numerical positions are always specified as absolute
       values or are allowed to be relative to previous numbers.
       This shrinks the file size,</para>
-      <para>However, this currently has to be switched off if
-      the files are to be read by
-      <computeroutput>callgrind_annotate</computeroutput>!</para>
     </listitem>
   </varlistentry>
 
@@ -538,7 +559,7 @@ These options influence the name and format of the profile data files.
     <listitem>
       <para>When multiple profile data parts are to be generated, these
       parts are appended to the same output file if this option is set to
-      "yes". Not recommand.</para>
+      "yes". Not recommended.</para>
   </listitem>
   </varlistentry>
 
@@ -690,7 +711,7 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.collect-jumps" xreflabel="--collect-jumps=">
+  <varlistentry id="opt.collect-jumps" xreflabel="--collect-jumps">
     <term>
       <option><![CDATA[--collect-jumps=<no|yes> [default: no] ]]></option>
     </term>
@@ -712,9 +733,9 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
 <para>
 These options specify how event counts should be attributed to execution
 contexts.
-More specifically, they specify e.g. if the recursion level or the
-call chain leading to a function should be accounted for, and whether the
-thread ID should be remembered.
+For example, they specify whether the recursion level or the
+call chain leading to a function should be taken into account, 
+and whether the thread ID should be considered.
 Also see <xref linkend="cl-manual.cycles"/>.</para>
 
 <variablelist id="cmd-options.separation">
@@ -735,7 +756,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       <option><![CDATA[--fn-recursion=<level> [default: 2] ]]></option>
     </term>
     <listitem>
-      <para>Separate function recursions, maximal &lt;level&gt;.
+      <para>Separate function recursions by at most &lt;level&gt; levels.
       See <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
@@ -745,7 +766,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       <option><![CDATA[--fn-caller=<callers> [default: 0] ]]></option>
     </term>
     <listitem>
-      <para>Separate contexts by maximal &lt;callers&gt; functions in the
+      <para>Separate contexts by at most &lt;callers&gt; functions in the
       call chain. See <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
@@ -768,7 +789,8 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       call chain A &gt; B &gt; C, and you specify function B to be
       ignored, you will only see A &gt; C.</para>
       <para>This is very convenient to skip functions handling callback
-      behaviour. E.g. for the SIGNAL/SLOT mechanism in QT, you only want
+      behaviour.  For example, with the signal/slot mechanism in the
+      Qt graphics library, you only want
       to see the function emitting a signal to call the slots connected
       to that signal. First, determine the real call chain to see the
       functions needed to be skipped, then use this option.</para>
@@ -781,7 +803,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </term>
     <listitem>
       <para>Put a function into a separate group. This influences the
-      context name for cycle avoidance. All functions inside of such a
+      context name for cycle avoidance. All functions inside such a
       group are treated as being the same for context name building, which
       resembles the call chain leading to a context. By specifying function
       groups with this option, you can shorten the context name, as functions

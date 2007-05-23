@@ -59,9 +59,6 @@ and test coverage.</para>
 additionally specify <computeroutput>--branch-sim=yes</computeroutput>
 on the command line.</para>
 
-<para>Any feedback, bug-fixes, suggestions, etc, welcome.</para>
-
-
 
 <sect2 id="cg-manual.overview" xreflabel="Overview">
 <title>Overview</title>
@@ -119,7 +116,7 @@ outputs of multiple Cachegrind runs, into a single file which you then
 use as the input for
 <computeroutput>cg_annotate</computeroutput>.</para>
 
-<para>The steps are described in detail in the following
+<para>These steps are described in detail in the following
 sections.</para>
 
 </sect2>
@@ -128,14 +125,14 @@ sections.</para>
 <sect2 id="cache-sim" xreflabel="Cache simulation specifics">
 <title>Cache simulation specifics</title>
 
-<para>Cachegrind uses a simulation for a machine with a split L1
-cache and a unified L2 cache.  This configuration is used for all
-(modern) x86-based machines we are aware of.  Old Cyrix CPUs had
-a unified I and D L1 cache, but they are ancient history
-now.</para>
+<para>Cachegrind simulates a machine with independent
+first level instruction and data caches (I1 and D1), backed by a
+unified second level cache (L2).  This configuration is used by almost
+all modern machines.  Some old Cyrix CPUs had a unified I and D L1
+cache, but they are ancient history now.</para>
 
-<para>The more specific characteristics of the simulation are as
-follows.</para>
+<para>Specific characteristics of the simulation are as
+follows:</para>
 
 <itemizedlist>
 
@@ -162,9 +159,9 @@ follows.</para>
   <listitem>
     <para>Inclusive L2 cache: the L2 cache replicates all the
     entries of the L1 cache.  This is standard on Pentium chips,
-    but AMD Athlons use an exclusive L2 cache that only holds
-    blocks evicted from L1.  Ditto AMD Durons and most modern
-    VIAs.</para>
+    but AMD Opterons, Athlons and Durons 
+    use an exclusive L2 cache that only holds
+    blocks evicted from L1.  Ditto most modern VIA CPUs.</para>
   </listitem>
 
 </itemizedlist>
@@ -178,6 +175,14 @@ Cachegrind will fall back to using a default configuration (that
 of a model 3/4 Athlon).  Cachegrind will tell you if this
 happens.  You can manually specify one, two or all three levels
 (I1/D1/L2) of the cache from the command line using the
+<computeroutput>--I1</computeroutput>,
+<computeroutput>--D1</computeroutput> and
+<computeroutput>--L2</computeroutput> options.</para>
+
+<para>On PowerPC platforms
+Cachegrind cannot automatically 
+determine the cache configuration, so you will 
+need to specify it with the
 <computeroutput>--I1</computeroutput>,
 <computeroutput>--D1</computeroutput> and
 <computeroutput>--L2</computeroutput> options.</para>
@@ -385,9 +390,11 @@ programs that spawn child processes.</para>
 <title>Cachegrind options</title>
 
 <!-- start of xi:include in the manpage -->
-<para id="cg.opts.para">Manually specifies the I1/D1/L2 cache
-configuration, where <varname>size</varname> and
-<varname>line_size</varname> are measured in bytes.  The three items
+<para id="cg.opts.para">Using command line options, you can 
+manually specify the I1/D1/L2 cache
+configuration to simulate.  For each cache, you can specify the
+size, associativity and line size.  The size and line size
+are measured in bytes.  The three items
 must be comma-separated, but with no spaces, eg:
 <literallayout>    valgrind --tool=cachegrind --I1=65535,2,64</literallayout>
 
@@ -551,7 +558,7 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
    <para>Events recorded: event abbreviations are:</para>
    <itemizedlist>
      <listitem>
-       <para><computeroutput>Ir </computeroutput>: I cache reads
+       <para><computeroutput>Ir</computeroutput>: I cache reads
        (ie. instructions executed)</para>
      </listitem>
      <listitem>
@@ -563,7 +570,7 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
        instruction read misses</para>
      </listitem>
      <listitem>
-       <para><computeroutput>Dr </computeroutput>: D cache reads
+       <para><computeroutput>Dr</computeroutput>: D cache reads
        (ie. memory reads)</para>
      </listitem>
      <listitem>
@@ -575,7 +582,7 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
        read misses</para>
      </listitem>
      <listitem>
-       <para><computeroutput>Dw </computeroutput>: D cache writes
+       <para><computeroutput>Dw</computeroutput>: D cache writes
        (ie. memory writes)</para>
      </listitem>
      <listitem>
@@ -613,8 +620,8 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
  </listitem>
 
  <listitem>
-   <para>Events shown: the events shown (a subset of events
-   gathered).  This can be adjusted with the
+   <para>Events shown: the events shown, which is a subset of the events
+   gathered.  This can be adjusted with the
    <computeroutput>--show</computeroutput> option.</para>
   </listitem>
 
@@ -637,8 +644,8 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
 
   <listitem>
     <para>Threshold: <computeroutput>cg_annotate</computeroutput>
-    by default omits functions that cause very low numbers of
-    misses to avoid drowning you in information.  In this case,
+    by default omits functions that cause very low counts
+    to avoid drowning you in information.  In this case,
     cg_annotate shows summaries the functions that account for
     99% of the <computeroutput>Ir</computeroutput> counts;
     <computeroutput>Ir</computeroutput> is chosen as the
@@ -682,28 +689,9 @@ unloading of shared objects) its counts are aggregated into a
 single cost centre written as
 <computeroutput>(discarded):(discarded)</computeroutput>.</para>
 
-<para>It is worth noting that functions will come from three
-types of source files:</para>
-
-<orderedlist>
-  <listitem>
-    <para>From the profiled program
-    (<filename>concord.c</filename> in this example).</para>
-  </listitem>
-  <listitem>
-    <para>From libraries (eg. <filename>getc.c</filename>)</para>
-  </listitem>
-  <listitem>
-    <para>From Valgrind's implementation of some libc functions
-    (eg. <computeroutput>vg_clientmalloc.c:malloc</computeroutput>).
-    These are recognisable because the filename begins with
-    <computeroutput>vg_</computeroutput>, and is probably one of
-    <filename>vg_main.c</filename>,
-    <filename>vg_clientmalloc.c</filename> or
-    <filename>vg_mylibc.c</filename>.</para>
-  </listitem>
-
-</orderedlist>
+<para>It is worth noting that functions will come both from
+the profiled program (eg. <filename>concord.c</filename>)
+and from libraries (eg. <filename>getc.c</filename>)</para>
 
 <para>There are two ways to annotate source files -- by choosing
 them manually, or with the
@@ -759,7 +747,7 @@ found in one of the directories specified with the
 and file are both given.</para>
 
 <para>Each line is annotated with its event counts.  Events not
-applicable for a line are represented by a `.'; this is useful
+applicable for a line are represented by a dot.  This is useful
 for distinguishing between an event which cannot happen, and one
 which can but did not.</para>
 
@@ -1063,7 +1051,7 @@ warnings.</para>
 
   <listitem>
     <para>Files with more than 65,535 lines cause difficulties
-    for the stabs debug info reader.  This is because the line
+    for the Stabs-format debug info reader.  This is because the line
     number in the <computeroutput>struct nlist</computeroutput>
     defined in <filename>a.out.h</filename> under Linux is only a
     16-bit value.  Valgrind can handle some files with more than
@@ -1071,6 +1059,11 @@ warnings.</para>
     line number overflows.  But some cases are beyond it, in
     which case you'll get a warning message explaining that
     annotations for the file might be incorrect.</para>
+    
+    <para>If you are using gcc 3.1 or later, this is most likely
+    irrelevant, since gcc switched to using the more modern DWARF2 
+    format by default at version 3.1.  DWARF2 does not have any such
+    limitations on line numbers.</para>
   </listitem>
 
   <listitem>
@@ -1086,14 +1079,6 @@ warnings.</para>
 
 <para>This list looks long, but these cases should be fairly
 rare.</para>
-
-<formalpara>
-  <title>Note:</title>
-  <para><computeroutput>stabs</computeroutput> is not an easy
-  format to read.  If you come across bizarre annotations that
-  look like might be caused by a bug in the stabs reader, please
-  let us know.</para>
-</formalpara>
 
 </sect2>
 
@@ -1112,16 +1097,17 @@ shortcomings:</para>
   </listitem>
 
   <listitem>
-    <para>It doesn't account for other process activity (although
-    this is probably desirable when considering a single
-    program).</para>
+    <para>It doesn't account for other process activity.
+    This is probably desirable when considering a single
+    program.</para>
   </listitem>
 
   <listitem>
     <para>It doesn't account for virtual-to-physical address
-    mappings; hence the entire simulation is not a true
+    mappings.  Hence the simulation is not a true
     representation of what's happening in the
-    cache.</para>
+    cache.  Most caches are physically indexed, but Cachegrind
+    simulates caches using virtual addresses.</para>
   </listitem>
 
   <listitem>
@@ -1157,17 +1143,17 @@ shortcomings:</para>
 
 </itemizedlist>
 
-<para>Another thing worth nothing is that results are very
-sensitive.  Changing the size of the
-the executable being profiled, or the size of the the shared objects
-it uses, or even the length of its name can perturb the
-results.  Variations will be small, but don't expect perfectly
-repeatable results if your program changes at all.</para>
+<para>Another thing worth noting is that results are very sensitive.
+Changing the size of the the executable being profiled, or the sizes
+of any of the shared libraries it uses, or even the length of their
+file names, can perturb the results.  Variations will be small, but
+don't expect perfectly repeatable results if your program changes at
+all.</para>
 
-<para>Beware also of address space randomisation, which many Linux
-distros now do by default.  This loads the program and its libraries
-at different randomly chosen address each run, and may also disturb
-the results.</para>
+<para>More recent GNU/Linux distributions do address space
+randomisation, in which identical runs of the same program have their
+shared libraries loaded at different locations, as a security measure.
+This also perturbs the results.</para>
 
 <para>While these factors mean you shouldn't trust the results to
 be super-accurate, hopefully they should be close enough to be

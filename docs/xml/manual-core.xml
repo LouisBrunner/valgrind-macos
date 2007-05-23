@@ -10,7 +10,7 @@
 <para>This section describes the Valgrind core services, flags and
 behaviours.  That means it is relevant regardless of what particular
 tool you are using.  A point of terminology: most references to
-"valgrind" in the rest of this section (Section 2) refer to the Valgrind
+"Valgrind" in the rest of this section refer to the Valgrind
 core services.</para>
 
 <sect1 id="manual-core.whatdoes" 
@@ -31,14 +31,14 @@ memory-checking tool Memcheck, issue the command:</para>
 <programlisting><![CDATA[
 valgrind --tool=memcheck ls -l]]></programlisting>
 
-<para>(Memcheck is the default, so if you want to use it you can
-actually omit the <option>--tool</option> flag.</para>
+<para>Memcheck is the default, so if you want to use it you can
+omit the <option>--tool</option> flag.</para>
 
 <para>Regardless of which tool is in use, Valgrind takes control of your
 program before it starts.  Debugging information is read from the
 executable and associated libraries, so that error messages and other
-outputs can be phrased in terms of source code locations (if that is
-appropriate).</para>
+outputs can be phrased in terms of source code locations, when
+appropriate.</para>
 
 <para>Your program is then run on a synthetic CPU provided by the
 Valgrind core.  As new code is executed for the first time, the core
@@ -49,10 +49,11 @@ code.</para>
 
 <para>The amount of instrumentation code added varies widely between
 tools.  At one end of the scale, Memcheck adds code to check every
-memory access and every value computed, increasing the size of the code
-at least 12 times, and making it run 25-50 times slower than natively.
+memory access and every value computed,
+making it run 10-50 times slower than natively.
 At the other end of the spectrum, the ultra-trivial "none" tool
-(a.k.a. Nulgrind) adds no instrumentation at all and causes in total
+(also referred to as Nulgrind) adds no instrumentation at all 
+and causes in total
 "only" about a 4 times slowdown.</para>
 
 <para>Valgrind simulates every single instruction your program executes.
@@ -62,17 +63,18 @@ in your application but also in all supporting dynamically-linked
 GNU C library, the X client libraries, Qt, if you work with KDE, and so
 on.</para>
 
-<para>If you're using one of the error-detection tools, Valgrind will
-often detect errors in libraries, for example the GNU C or X11
+<para>If you're using an error-detection tool, Valgrind may
+detect errors in libraries, for example the GNU C or X11
 libraries, which you have to use.  You might not be interested in these
 errors, since you probably have no control over that code.  Therefore,
 Valgrind allows you to selectively suppress errors, by recording them in
 a suppressions file which is read when Valgrind starts up.  The build
 mechanism attempts to select suppressions which give reasonable
-behaviour for the libc and XFree86 versions detected on your machine.
+behaviour for the C library
+and X11 client library versions detected on your machine.
 To make it easier to write suppressions, you can use the
-<option>--gen-suppressions=yes</option> option which tells Valgrind to
-print out a suppression for each error that appears, which you can then
+<option>--gen-suppressions=yes</option> option.  This tells Valgrind to
+print out a suppression for each reported error, which you can then
 copy into a suppressions file.</para>
 
 <para>Different error-checking tools report different kinds of errors.
@@ -90,13 +92,13 @@ your application and supporting libraries with debugging info enabled
 (the <option>-g</option> flag).  Without debugging info, the best
 Valgrind tools will be able to do is guess which function a particular
 piece of code belongs to, which makes both error messages and profiling
-output nearly useless.  With <option>-g</option>, you'll hopefully get
+output nearly useless.  With <option>-g</option>, you'll get
 messages which point directly to the relevant source code lines.</para>
 
 <para>Another flag you might like to consider, if you are working with
 C++, is <option>-fno-inline</option>.  That makes it easier to see the
 function-call chain, which can help reduce confusion when navigating
-around large C++ apps.  For whatever it's worth, debugging
+around large C++ apps.  For example, debugging
 OpenOffice.org with Memcheck is a bit easier when using this flag.  You
 don't have to do this, but doing so helps Valgrind produce more accurate
 and less confusing error reports.  Chances are you're set up like this
@@ -110,17 +112,18 @@ wrongly reporting uninitialised value errors.  We have looked in detail
 into fixing this, and unfortunately the result is that doing so would
 give a further significant slowdown in what is already a slow tool.  So
 the best solution is to turn off optimisation altogether.  Since this
-often makes things unmanagably slow, a plausible compromise is to use
+often makes things unmanagably slow, a reasonable compromise is to use
 <computeroutput>-O</computeroutput>.  This gets you the majority of the
 benefits of higher optimisation levels whilst keeping relatively small
 the chances of false complaints from Memcheck.  All other tools (as far
 as we know) are unaffected by optimisation level.</para>
 
 <para>Valgrind understands both the older "stabs" debugging format, used
-by gcc versions prior to 3.1, and the newer DWARF2 format used by gcc
-3.1 and later.  We continue to refine and debug our debug-info readers,
+by gcc versions prior to 3.1, and the newer DWARF2 and DWARF3 formats
+used by gcc
+3.1 and later.  We continue to develop our debug-info readers,
 although the majority of effort will naturally enough go into the newer
-DWARF2 reader.</para>
+DWARF2/3 reader.</para>
 
 <para>When you're ready to roll, just run your application as you
 would normally, but place 
@@ -175,7 +178,7 @@ re-run, passing the <option>-v</option> flag to Valgrind.  A second
     <option>--log-fd=9</option>.</para>
 
     <para>This is the simplest and most common arrangement, but can
-    cause problems when valgrinding entire trees of processes which
+    cause problems when Valgrinding entire trees of processes which
     expect specific file descriptors, particularly stdin/stdout/stderr,
     to be available for their own use.</para>
   </listitem>
@@ -187,7 +190,7 @@ re-run, passing the <option>-v</option> flag to Valgrind.  A second
     commentary is <command>not</command> written to the file you
     specify, but instead to one called
     <filename>filename.12345</filename>, if for example the pid of the
-    traced process is 12345.  This is helpful when valgrinding a whole
+    traced process is 12345.  This is helpful when Valgrinding a whole
     tree of processes at once, since it means that each process writes
     to its own logfile, rather than the result being jumbled up in one
     big logfile.  If <filename>filename.12345</filename> already exists,
@@ -199,12 +202,12 @@ re-run, passing the <option>-v</option> flag to Valgrind.  A second
     instead use <option>--log-file-exactly=filename</option>.</para>
 
     <para>You can also use the
-    <option>--log-file-qualifier=&lt;VAR&gt;</option> option to modify
-    the filename via according to the environment variable
+    <option>--log-file-qualifier=&lt;VAR&gt;</option> option to
+    incorporate into the filename the contents of environment variable
     <varname>VAR</varname>.  This is rarely needed, but very useful in
     certain circumstances (eg. when running MPI programs).  In this
     case, the trailing <computeroutput>.12345</computeroutput> part is
-    replaced by the contents of <varname>$VAR</varname>.  The idea is
+    replaced by (the contents of) <varname>$VAR</varname>.  The idea is
     that you specify a variable which will be set differently for each
     process in the job, for example
     <computeroutput>BPROC_RANK</computeroutput> or whatever is
@@ -216,7 +219,8 @@ re-run, passing the <option>-v</option> flag to Valgrind.  A second
     least intrusive option is to send the commentary to a network
     socket.  The socket is specified as an IP address and port number
     pair, like this: <option>--log-socket=192.168.0.1:12345</option> if
-    you want to send the output to host IP 192.168.0.1 port 12345 (I
+    you want to send the output to host IP 192.168.0.1 port 12345
+    (note: we
     have no idea if 12345 is a port of pre-existing significance).  You
     can also omit the port number:
     <option>--log-socket=192.168.0.1</option>, in which case a default
@@ -227,7 +231,7 @@ re-run, passing the <option>-v</option> flag to Valgrind.  A second
     <para>Note, unfortunately, that you have to use an IP address here,
     rather than a hostname.</para>
 
-    <para>Writing to a network socket is pretty useless if you don't
+    <para>Writing to a network socket is pointless if you don't
     have something listening at the other end.  We provide a simple
     listener program,
     <computeroutput>valgrind-listener</computeroutput>, which accepts
@@ -237,7 +241,7 @@ re-run, passing the <option>-v</option> flag to Valgrind.  A second
     listeners in the fullness of time.</para>
 
     <para>valgrind-listener can accept simultaneous connections from up
-    to 50 valgrinded processes.  In front of each line of output it
+    to 50 Valgrinded processes.  In front of each line of output it
     prints the current number of active connections in round
     brackets.</para>
 
@@ -258,7 +262,7 @@ re-run, passing the <option>-v</option> flag to Valgrind.  A second
       </listitem>
     </itemizedlist>
 
-    <para>If a valgrinded process fails to connect to a listener, for
+    <para>If a Valgrinded process fails to connect to a listener, for
     whatever reason (the listener isn't running, invalid or unreachable
     host or port, etc), Valgrind switches back to writing the commentary
     to stderr.  The same goes for any process which loses an established
@@ -285,9 +289,9 @@ further processing, which is why we have chosen this arrangement.</para>
 <sect1 id="manual-core.report" xreflabel="Reporting of errors">
 <title>Reporting of errors</title>
 
-<para>When one of the error-checking tools (Memcheck,
-Helgrind) detects something bad happening in the program, an error
-message is written to the commentary.  For example:</para>
+<para>When an error-checking tool
+detects something bad happening in the program, an error
+message is written to the commentary.  Here's an example from Memcheck:</para>
 
 <programlisting><![CDATA[
 ==25832== Invalid read of size 4
@@ -297,7 +301,7 @@ message is written to the commentary.  For example:</para>
 
 <para>This message says that the program did an illegal 4-byte read of
 address 0xBFFFF74C, which, as far as Memcheck can tell, is not a valid
-stack address, nor corresponds to any currently malloc'd or free'd
+stack address, nor corresponds to any current malloc'd or free'd
 blocks.  The read is happening at line 45 of
 <filename>bogon.cpp</filename>, called from line 66 of the same file,
 etc.  For errors associated with an identified malloc'd/free'd block,
@@ -317,7 +321,7 @@ counts.  This makes it easy to see which errors have occurred most
 frequently.</para>
 
 <para>Errors are reported before the associated operation actually
-happens.  If you're using a tool (Memcheck) which does
+happens.  If you're using a tool (eg. Memcheck) which does
 address checking, and your program attempts to read from address zero,
 the tool will emit a message to this effect, and the program will then
 duly die with a segmentation fault.</para>
@@ -333,10 +337,10 @@ root cause of the problem.</para>
 expensive one and can become a significant performance overhead
 if your program generates huge quantities of errors.  To avoid
 serious problems, Valgrind will simply stop collecting
-errors after 1000 different errors have been seen, or 10000000 errors
+errors after 1,000 different errors have been seen, or 10,000,000 errors
 in total have been seen.  In this situation you might as well
 stop your program and fix it, because Valgrind won't tell you
-anything else useful after this.  Note that the 1000/10000000 limits
+anything else useful after this.  Note that the 1,000/10,000,000 limits
 apply after suppressed errors are removed.  These limits are
 defined in <filename>m_errormgr.c</filename> and can be increased
 if necessary.</para>
@@ -353,11 +357,11 @@ since it may have a bad effect on performance.</para>
 <title>Suppressing errors</title>
 
 <para>The error-checking tools detect numerous problems in the base
-libraries, such as the GNU C library, and the XFree86 client libraries,
+libraries, such as the GNU C library, and the X11 client libraries,
 which come pre-installed on your GNU/Linux system.  You can't easily fix
 these, but you don't want to see these errors (and yes, there are many!)
 So Valgrind reads a list of errors to suppress at startup.  A default
-suppression file is cooked up by the
+suppression file is created by the
 <computeroutput>./configure</computeroutput> script when the system is
 built.</para>
 
@@ -381,7 +385,7 @@ specification of errors to suppress.</para>
 <para>If you use the <option>-v</option> flag, at the end of execution,
 Valgrind prints out one line for each used suppression, giving its name
 and the number of times it got used.  Here's the suppressions used by a
-run of <computeroutput>valgrind --tool=memcheck ls l</computeroutput>:</para>
+run of <computeroutput>valgrind --tool=memcheck ls -l</computeroutput>:</para>
 
 <programlisting><![CDATA[
 --27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getgrgid_r
@@ -396,7 +400,7 @@ ask to add suppressions from another file, by specifying
 
 <para>If you want to understand more about suppressions, look at an
 existing suppressions file whilst reading the following documentation.
-The file <filename>glibc-2.2.supp</filename>, in the source
+The file <filename>glibc-2.3.supp</filename>, in the source
 distribution, provides some good examples.</para>
 
 <para>Each suppression has the following components:</para>
@@ -427,12 +431,6 @@ tool_name1,tool_name2:suppression_name]]></programlisting>
     any suppression directed to it.  Tools ignore suppressions which are
     not directed to them.  As a result, it is quite practical to put
     suppressions for all tools into the same suppression file.</para>
-
-    <para>Valgrind's core can detect certain PThreads API errors, for
-    which this line reads:</para>
-
-<programlisting><![CDATA[
-core:PThread]]></programlisting>
   </listitem>
 
   <listitem>
@@ -443,8 +441,8 @@ core:PThread]]></programlisting>
 
   <listitem>
     <para>Remaining lines: This is the calling context for the error --
-    the chain of function calls that led to it.  There can be up to
-    twenty-four of these lines.</para>
+    the chain of function calls that led to it.  There can be up to 24
+    of these lines.</para>
 
     <para>Locations may be either names of shared objects/executables or
     wildcards matching function names.  They begin
@@ -511,13 +509,12 @@ anywhere in <filename>libX11.so.6.2</filename>, when called from
 anywhere in the same library, when called from anywhere in
 <filename>libXaw.so.7.0</filename>.  The inexact specification of
 locations is regrettable, but is about all you can hope for, given that
-the X11 libraries shipped with Red Hat 7.2 have had their symbol tables
-removed.</para>
+the X11 libraries shipped on the Linux distro on which this example
+was made have had their symbol tables removed.</para>
 
-<para>Note: since the above two examples did not make it clear, you can
-freely mix the <computeroutput>obj:</computeroutput> and
-<computeroutput>fun:</computeroutput> styles of description within a
-single suppression record.</para>
+<para>Although the above two examples do not make this clear, you can
+freely mix <computeroutput>obj:</computeroutput> and
+<computeroutput>fun:</computeroutput> lines in a suppression.</para>
 
 </sect1>
 
@@ -631,7 +628,7 @@ categories.</para>
     </term>
     <listitem>
       <para>Run the Valgrind tool called <varname>toolname</varname>,
-      e.g. Memcheck, Addrcheck, Cachegrind, etc.</para>
+      e.g. Memcheck, Cachegrind, etc.</para>
     </listitem>
   </varlistentry>
 
@@ -713,9 +710,7 @@ categories.</para>
     </term>
     <listitem>
       <para>Just like <option>--log-file</option>, but the suffix
-      <computeroutput>".pid"</computeroutput> is not added.  If you
-      trace multiple processes with Valgrind when using this option the
-      log file may get all messed up.</para>
+      <computeroutput>".pid"</computeroutput> is not added.</para>
     </listitem>
   </varlistentry>
 
@@ -912,7 +907,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
       <para>Note that the suppressions printed are as specific as
       possible.  You may want to common up similar ones, eg. by adding
-      wildcards to function names.  Also, sometimes two different errors
+      wildcards to function names.  Sometimes two different errors
       are suppressed by the same suppression, in which case Valgrind
       will output the suppression more than once, but you only need to
       have one copy in your suppression file (but having more than one
@@ -992,9 +987,9 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <option><![CDATA[--input-fd=<number> [default: 0, stdin] ]]></option>
     </term>
     <listitem>
-      <para>When using <option>--db-attach=yes</option> and
+      <para>When using <option>--db-attach=yes</option> or
       <option>--gen-suppressions=yes</option>, Valgrind will stop so as
-      to read keyboard input from you, when each error occurs.  By
+      to read keyboard input from you when each error occurs.  By
       default it reads from the standard input (stdin), which is
       problematic for programs which close stdin.  This option allows
       you to specify an alternative file descriptor from which to read
@@ -1007,7 +1002,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <option><![CDATA[--max-stackframe=<number> [default: 2000000] ]]></option>
     </term>
     <listitem>
-      <para>The maximum size of a stack frame - if the stack pointer moves by
+      <para>The maximum size of a stack frame.  If the stack pointer moves by
       more than this amount then Valgrind will assume that
       the program is switching to a different stack.</para>
 
@@ -1028,9 +1023,9 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       the new threshold you should specify.</para>
 
       <para>In general, allocating large structures on the stack is a
-      bad idea, because (1) you can easily run out of stack space,
+      bad idea, because you can easily run out of stack space,
       especially on systems with limited memory or which expect to
-      support large numbers of threads each with a small stack, and (2)
+      support large numbers of threads each with a small stack, and also
       because the error checking performed by Memcheck is more effective
       for heap-allocated data than for stack-allocated data.  If you
       have to use this flag, you may wish to consider rewriting your
@@ -1104,9 +1099,9 @@ need to use these.</para>
       Memcheck therefore tries to run
       <function>__libc_freeres</function> at exit.</para>
 
-      <para>Unfortunately, in some versions of glibc,
+      <para>Unfortunately, in some very old versions of glibc,
       <function>__libc_freeres</function> is sufficiently buggy to cause
-      segmentation faults.  This is particularly noticeable on Red Hat
+      segmentation faults.  This was particularly noticeable on Red Hat
       7.1.  So this flag is provided in order to inhibit the run of
       <function>__libc_freeres</function>.  If your program seems to run
       fine on Valgrind, but segfaults at exit, you may find that
@@ -1186,9 +1181,17 @@ need to use these.</para>
       the stack, or detect self-modifying code anywhere.  Note that the
       default option will catch the vast majority of cases, as far as we
       know.  Running with <varname>all</varname> will slow Valgrind down
-      greatly (but running with <varname>none</varname> will rarely
+      greatly.  Running with <varname>none</varname> will rarely
       speed things up, since very little code gets put on the stack for
-      most programs).</para>
+      most programs.</para>
+
+      <para>Some architectures (including ppc32 and ppc64) require
+      programs which create code at runtime to flush the instruction
+      cache in between code generation and first use.  Valgrind
+      observes and honours such instructions.  Hence, on ppc32/Linux
+      and ppc64/Linux, Valgrind always provides complete, transparent
+      support for self-modifying code.  It is only on x86/Linux
+      and amd64/Linux that you need to use this flag.</para>
     </listitem>
   </varlistentry>
 
@@ -1294,8 +1297,8 @@ are not forced to run your program under Valgrind just because you
 use the macros in this file.  Also, you are not required to link your
 program with any extra supporting libraries.</para>
 
-<para>The code left in your binary has negligible performance impact:
-on x86, amd64 and ppc32, the overhead is 6 simple integer instructions
+<para>The code added to your binary has negligible performance impact:
+on x86, amd64, ppc32 and ppc64, the overhead is 6 simple integer instructions
 and is probably undetectable except in tight loops.
 However, if you really wish to compile out the client requests, you can
 compile with <computeroutput>-DNVALGRIND</computeroutput> (analogous to
@@ -1319,9 +1322,9 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>RUNNING_ON_VALGRIND</computeroutput></command>:</term>
    <listitem>
-    <para>returns 1 if running on Valgrind, 0 if running on the
-    real CPU.  If you are running Valgrind on itself, it will return the
-    number of layers of Valgrind emulation we're running on.
+    <para>Returns 1 if running on Valgrind, 0 if running on the
+    real CPU.  If you are running Valgrind on itself, returns the
+    number of layers of Valgrind emulation you're running on.
     </para>
    </listitem>
   </varlistentry>
@@ -1329,8 +1332,8 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_DISCARD_TRANSLATIONS</computeroutput>:</command></term>
    <listitem>
-    <para>discard translations of code in the specified address
-    range.  Useful if you are debugging a JITter or some other
+    <para>Discards translations of code in the specified address
+    range.  Useful if you are debugging a JIT compiler or some other
     dynamic code generation system.  After this call, attempts to
     execute code in the invalidated address range will cause
     Valgrind to make new translations of that code, which is
@@ -1345,7 +1348,8 @@ tool-specific macros).</para>
     once.</para>
     <para>
     Alternatively, for transparent self-modifying-code support,
-    use<computeroutput>--smc-check=all</computeroutput>.
+    use<computeroutput>--smc-check=all</computeroutput>, or run
+    on ppc32/Linux or ppc64/Linux.
     </para>
    </listitem>
   </varlistentry>
@@ -1353,7 +1357,7 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_COUNT_ERRORS</computeroutput>:</command></term>
    <listitem>
-    <para>returns the number of errors found so far by Valgrind.  Can be
+    <para>Returns the number of errors found so far by Valgrind.  Can be
     useful in test harness code when combined with the
     <option>--log-fd=-1</option> option; this runs Valgrind silently,
     but the client program can detect when errors occur.  Only useful
@@ -1434,7 +1438,7 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_NON_SIMD_CALL[0123]</computeroutput>:</command></term>
    <listitem>
-    <para>executes a function of 0, 1, 2 or 3 args in the client
+    <para>Executes a function of 0, 1, 2 or 3 args in the client
     program on the <emphasis>real</emphasis> CPU, not the virtual
     CPU that Valgrind normally runs code on.  These are used in
     various ways internally to Valgrind.  They might be useful to
@@ -1467,7 +1471,7 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_STACK_REGISTER(start, end)</computeroutput>:</command></term>
    <listitem>
-    <para>Register a new stack.  Informs Valgrind that the memory range
+    <para>Registers a new stack.  Informs Valgrind that the memory range
     between start and end is a unique stack.  Returns a stack identifier
     that can be used with other
     <computeroutput>VALGRIND_STACK_*</computeroutput> calls.</para>
@@ -1482,7 +1486,7 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_STACK_DEREGISTER(id)</computeroutput>:</command></term>
    <listitem>
-    <para>Deregister a previously registered stack.  Informs
+    <para>Deregisters a previously registered stack.  Informs
     Valgrind that previously registered memory range with stack id
     <computeroutput>id</computeroutput> is no longer a stack.</para>
    </listitem>
@@ -1491,7 +1495,7 @@ tool-specific macros).</para>
   <varlistentry>
    <term><command><computeroutput>VALGRIND_STACK_CHANGE(id, start, end)</computeroutput>:</command></term>
    <listitem>
-    <para>Change a previously registered stack.  Informs
+    <para>Changes a previously registered stack.  Informs
     Valgrind that the previously registerer stack with stack id
     <computeroutput>id</computeroutput> has changed it's start and end
     values.  Use this if your user-level thread package implements
@@ -1514,11 +1518,11 @@ in your client if you include a tool-specific header.</para>
 <title>Support for Threads</title>
 
 <para>Valgrind supports programs which use POSIX pthreads.
-Getting this to work was technically challenging but it all works
+Getting this to work was technically challenging but it now works
 well enough for significant threaded applications to work.</para>
 
 <para>The main thing to point out is that although Valgrind works
-with the built-in threads system (eg. NPTL or LinuxThreads), it
+with the standard Linux threads library (eg. NPTL or LinuxThreads), it
 serialises execution so that only one thread is running at a time.  This
 approach avoids the horrible implementation problems of implementing a
 truly multiprocessor version of Valgrind, but it does mean that threaded
@@ -1527,7 +1531,7 @@ machine.</para>
 
 <para>Valgrind schedules your program's threads in a round-robin fashion,
 with all threads having equal priority.  It switches threads
-every 50000 basic blocks (on x86, typically around 300000
+every 100000 basic blocks (on x86, typically around 600000
 instructions), which means you'll get a much finer interleaving
 of thread executions than when run natively.  This in itself may
 cause your program to behave differently if you have some kind of
@@ -1539,8 +1543,8 @@ will work.  In particular, synchonisation of processes via shared-memory
 segments will not work.  This relies on special atomic instruction sequences 
 which Valgrind does not emulate in a way which works between processes.
 Unfortunately there's no way for Valgrind to warn when this is happening,
-and such calls will mostly work; it's only when there's a race that
-it will fail.
+and such calls will mostly work.  Only when there's a race will 
+it fail.
 </para>
 
 <para>Valgrind also supports direct use of the
@@ -1559,7 +1563,7 @@ memory between processes will not work reliably.
 <title>Handling of Signals</title>
 
 <para>Valgrind has a fairly complete signal implementation.  It should be
-able to cope with any valid use of signals.</para>
+able to cope with any POSIX-compliant use of signals.</para>
  
 <para>If you're using signals in clever ways (for example, catching
 SIGSEGV, modifying page state and restarting the instruction), you're
@@ -1575,7 +1579,7 @@ similar.  (Note: it will not generate a core if your core dump size limit is
 0.)  At the time of writing the core dumps do not include all the floating
 point register information.</para>
 
-<para>If Valgrind itself crashes (hopefully not) the operating system
+<para>In the unlikely event that Valgrind itself crashes, the operating system
 will create a core dump in the usual way.</para>
 
 </sect1>
@@ -1591,7 +1595,7 @@ supported targets.  In function wrapping, calls to some specified
 function are intercepted and rerouted to a different, user-supplied
 function.  This can do whatever it likes, typically examining the
 arguments, calling onwards to the original, and possibly examining the
-result.  Any number of different functions may be wrapped.</para>
+result.  Any number of functions may be wrapped.</para>
 
 <para>
 Function wrapping is useful for instrumenting an API in some way.  For
@@ -1653,7 +1657,7 @@ an ELF shared object with an empty
 ("<computeroutput>NONE</computeroutput>") soname field.  The specification 
 mechanism is powerful in
 that wildcards are allowed for both sonames and function names.  
-The fine details are discussed below.</para>
+The details are discussed below.</para>
 
 <para><computeroutput>VALGRIND_GET_ORIG_FN</computeroutput>: 
 once in the the wrapper, the first priority is
@@ -1694,7 +1698,7 @@ generally regarded as valid C identifier names.</para>
 <para>This flexibility is needed to write robust wrappers for POSIX pthread
 functions, where typically we are not completely sure of either the
 function name or the soname, or alternatively we want to wrap a whole
-bunch of functions at once.</para> 
+set of functions at once.</para> 
 
 <para>For example, <computeroutput>pthread_create</computeroutput> 
 in GNU libpthread is usually a
@@ -1724,6 +1728,8 @@ a capital Z acts as an escape character, with the following encoding:</para>
      Zs              (space)
      ZA              @
      ZZ              Z
+     ZL              (       # only in valgrind 3.3.0 and later
+     ZR              )       # only in valgrind 3.3.0 and later
 ]]></programlisting>
 
 <para>Hence <computeroutput>libpthreadZdsoZd0</computeroutput> is an 
@@ -1741,7 +1747,7 @@ often unnecessary, so a second macro,
 used instead.  The <computeroutput>_ZU</computeroutput> variant is 
 also useful for writing wrappers for
 C++ functions, in which the function name is usually already mangled
-using some other convention in which Z plays an important role; having
+using some other convention in which Z plays an important role.  Having
 to encode a second time quickly becomes confusing.</para>
 
 <para>Since the function name field may contain wildcards, it can be
@@ -1752,6 +1758,11 @@ have sonames.  Any object lacking a soname is treated as if its soname
 was <computeroutput>NONE</computeroutput>, which is why the original 
 example above had a name
 <computeroutput>I_WRAP_SONAME_FNNAME_ZU(NONE,foo)</computeroutput>.</para>
+
+<para>Note that the soname of an ELF object is not the same as its
+file name, although it is often similar.  You can find the soname of
+an object <computeroutput>libfoo.so</computeroutput> using the command
+<computeroutput>readelf -a libfoo.so | grep soname</computeroutput>.</para>
 </sect2>
 
 <sect2 id="manual-core.wrapping.semantics" xreflabel="Wrapping Semantics">
@@ -1872,7 +1883,7 @@ the <computeroutput>OrigFn</computeroutput> information using
 <computeroutput>VALGRIND_GET_ORIG_FN</computeroutput> before calling any
 other wrapped function.  Once you have the 
 <computeroutput>OrigFn</computeroutput>, arbitrary
-intercalling, recursion between, and longjumping out of wrappers
+calls between, recursion between, and longjumps out of wrappers
 should work correctly.  There is never any interaction between wrapped
 functions and merely replaced functions 
 (eg <computeroutput>malloc</computeroutput>), so you can call
@@ -1968,14 +1979,16 @@ almost 300 different wrappers.</para>
 
 
 <sect1 id="manual-core.install" xreflabel="Building and Installing">
-<title>Building and Installing</title>
+<title>Building and Installing Valgrind</title>
 
 <para>We use the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to
 ensure that it works on machines with kernel 2.4 or 2.6 and glibc
-2.2.X or 2.3.X.  You may then want to run the regression tests
+2.2.X to 2.5.X.  Once you have completed 
+<computeroutput>make install</computeroutput> you may then want 
+to run the regression tests
 with <computeroutput>make regtest</computeroutput>.
 </para>
 
@@ -2028,7 +2041,7 @@ with <computeroutput>make regtest</computeroutput>.
 <para>The <computeroutput>configure</computeroutput> script tests
 the version of the X server currently indicated by the current
 <computeroutput>$DISPLAY</computeroutput>.  This is a known bug.
-The intention was to detect the version of the current XFree86
+The intention was to detect the version of the current X
 client libraries, so that correct suppressions could be selected
 for them, but instead the test checks the server version.  This
 is just plain wrong.</para>
@@ -2058,10 +2071,8 @@ known not to work on it.</para>
 internal self-checks.  They are permanently enabled, and we have no 
 plans to disable them.  If one of them breaks, please mail us!</para>
 
-<para>If you get an assertion failure on the expression
-<computeroutput>blockSane(ch)</computeroutput> in
-<computeroutput>VG_(free)()</computeroutput> in
-<filename>m_mallocfree.c</filename>, this may have happened because
+<para>If you get an assertion failure
+in <filename>m_mallocfree.c</filename>, this may have happened because
 your program wrote off the end of a malloc'd block, or before its
 beginning.  Valgrind hopefully will have emitted a proper message to that
 effect before dying in this way.  This is a known problem which
@@ -2089,9 +2100,8 @@ following constraints:</para>
    <para>On x86 and amd64, there is no support for 3DNow! instructions.
    If the translator encounters these, Valgrind will generate a SIGILL
    when the instruction is executed.  Apart from that, on x86 and amd64,
-   essentially all instructions are supported, up to and including SSE2.
-   Version 3.1.0 includes limited support for SSE3 on x86.  This could
-   be improved if necessary.</para>
+   essentially all instructions are supported, up to and including SSE3.
+   </para>
 
    <para>On ppc32 and ppc64, almost all integer, floating point and Altivec
    instructions are supported.  Specifically: integer and FP insns that are
@@ -2130,7 +2140,7 @@ following constraints:</para>
    <para>Machine instructions, and system calls, have been implemented
    on demand.  So it's possible, although unlikely, that a program will
    fall over with a message to that effect.  If this happens, please
-   report ALL the details printed out, so we can try and implement the
+   report all the details printed out, so we can try and implement the
    missing feature.</para>
   </listitem>
 
@@ -2207,7 +2217,7 @@ following constraints:</para>
    precision control), it can print a message giving a traceback of
    where this has happened, and continue execution.  This behaviour used
    to be the default, but the messages are annoying and so showing them
-   is now optional.  Use <option>--show-emwarns=yes</option> to see
+   is now disabled by default.  Use <option>--show-emwarns=yes</option> to see
    them.</para>
 
    <para>The above limitations define precisely the IEEE754 'default'
@@ -2277,14 +2287,13 @@ following constraints:</para>
 <sect1 id="manual-core.example" xreflabel="An Example Run">
 <title>An Example Run</title>
 
-<para>This is the log for a run of a small program using Memcheck
+<para>This is the log for a run of a small program using Memcheck.
 The program is in fact correct, and the reported error is as the
 result of a potentially serious code generation bug in GNU g++
 (snapshot 20010527).</para>
 
 <programlisting><![CDATA[
-sewardj@phoenix:~/newmat10$
-~/Valgrind-6/valgrind -v ./bogon 
+sewardj@phoenix:~/newmat10$ ~/Valgrind-6/valgrind -v ./bogon 
 ==25832== Valgrind 0.10, a memory error detector for x86 RedHat 7.1.
 ==25832== Copyright (C) 2000-2001, and GNU GPL'd, by Julian Seward.
 ==25832== Startup, with flags:
@@ -2355,14 +2364,14 @@ shipped.</para>
   <listitem>
     <para><computeroutput>Warning: client switching stacks?</computeroutput></para>
 
-    <para>Valgrind spotted such a large change in the stack pointer,
-    <literal>%esp</literal>, that it guesses the client is switching to
+    <para>Valgrind spotted such a large change in the stack pointer
+    that it guesses the client is switching to
     a different stack.  At this point it makes a kludgey guess where the
     base of the new stack is, and sets memory permissions accordingly.
     You may get many bogus error messages following this, if Valgrind
     guesses wrong.  At the moment "large change" is defined as a change
-    of more that 2000000 in the value of the <literal>%esp</literal>
-    (stack pointer) register.</para>
+    of more that 2000000 in the value of the
+    stack pointer register.</para>
   </listitem>
 
   <listitem>
@@ -2382,8 +2391,8 @@ shipped.</para>
 
     <para>Valgrind observed a call to one of the vast family of
     <computeroutput>ioctl</computeroutput> system calls, but did not
-    modify its memory status info (because I have not yet got round to
-    it).  The call will still have gone through, but you may get
+    modify its memory status info (because nobody has yet written a 
+    suitable wrapper).  The call will still have gone through, but you may get
     spurious errors after this as a result of the non-update of the
     memory info.</para>
   </listitem>
@@ -2426,7 +2435,7 @@ buffer which is too small.</para>
 <para>Unlike most of the rest of Valgrind, the wrapper library is subject to a
 BSD-style license, so you can link it into any code base you like.
 See the top of <computeroutput>auxprogs/libmpiwrap.c</computeroutput>
-for details.</para>
+for license details.</para>
 
 
 <sect2 id="manual-core.mpiwrap.build" xreflabel="Building MPI Wrappers">
@@ -2614,6 +2623,8 @@ PMPI_Sendrecv
 
 PMPI_Type_commit PMPI_Type_free
 
+PMPI_Pack PMPI_Unpack
+
 PMPI_Bcast PMPI_Gather PMPI_Scatter PMPI_Alltoall
 PMPI_Reduce PMPI_Allreduce PMPI_Op_create
 
@@ -2757,6 +2768,18 @@ error rate.  A possible approach is to run with
 which lack proper wrappers but which are nevertheless used.  You can
 then write wrappers for them.
 </para>
+
+<para>A known source of potential false errors are the
+<computeroutput>PMPI_Reduce</computeroutput> family of functions, when
+using a custom (user-defined) reduction function.  In a reduction
+operation, each node notionally sends data to a "central point" which
+uses the specified reduction function to merge the data items into a
+single item.  Hence, in general, data is passed between nodes and fed
+to the reduction function, but the wrapper library cannot mark the
+transferred data as initialised before it is handed to the reduction
+function, because all that happens "inside" the
+<computeroutput>PMPI_Reduce</computeroutput> call.  As a result you
+may see false positives reported in your reduction function.</para>
 
 </sect2>
 

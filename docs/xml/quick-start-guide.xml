@@ -25,8 +25,9 @@
 <sect1 id="quick-start.intro" xreflabel="Introduction">
 <title>Introduction</title>
 
-<para>The Valgrind distribution has multiple tools.  The most popular is
-the memory checking tool (called Memcheck) which can detect many common
+<para>The Valgrind tool suite provides a number of debugging and
+profiling tools.  The most popular is
+Memcheck, a memory checking tool which can detect many common
 memory errors such as:</para>
 
 <itemizedlist>
@@ -48,7 +49,7 @@ memory errors such as:</para>
 
 <para>What follows is the minimum information you need to start
 detecting memory errors in your program with Memcheck.  Note that this
-guide applies to Valgrind version 2.4.0 and later; some of the
+guide applies to Valgrind version 2.4.0 and later.  Some of the
 information is not quite right for earlier versions.</para>
 
 </sect1>
@@ -209,13 +210,13 @@ However, it is typically right 99% of the time, so you should be wary of
 ignoring its error messages.  After all, you wouldn't ignore warning
 messages produced by a compiler, right?  The suppression mechanism is
 also useful if Memcheck is reporting errors in library code that you
-cannot change; the default suppression set hides a lot of these, but you
+cannot change.  The default suppression set hides a lot of these, but you
 may come across more.</para>
 
-<para>Memcheck also cannot detect every memory error your program has.
-For example, it can't detect if you overrun the bounds of an array that
-is allocated statically or on the stack.  But it should detect every
-error that could crash your program (eg. cause a segmentation
+<para>Memcheck cannot detect every memory error your program has.
+For example, it can't detect out-of-range reads or writes to arrays
+that are allocated statically or on the stack.  But it should detect many
+errors that could crash your program (eg. cause a segmentation
 fault).</para>
 
 </sect1>

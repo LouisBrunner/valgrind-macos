@@ -23,7 +23,7 @@ summary, these are:</para>
 
   <listitem>
     <para><command>Memcheck</command> detects memory-management problems
-    in your programs.  All reads and writes of memory are checked, and
+    in programs.  All reads and writes of memory are checked, and
     calls to malloc/new/free/delete are intercepted. As a result,
     Memcheck can detect the following problems:</para>
 
@@ -59,7 +59,7 @@ summary, these are:</para>
     </itemizedlist>
 
     <para>Problems like these can be difficult to find by other means,
-    often lying undetected for long periods, then causing occasional,
+    often remaining undetected for long periods, then causing occasional,
     difficult-to-diagnose crashes.</para>
    </listitem>
  
@@ -67,46 +67,43 @@ summary, these are:</para>
     <para><command>Cachegrind</command> is a cache profiler.  It
     performs detailed simulation of the I1, D1 and L2 caches in your CPU
     and so can accurately pinpoint the sources of cache misses in your
-    code.  If you desire, it will show the number of cache misses,
+    code.  It will show the number of cache misses,
     memory references and instructions accruing to each line of source
     code, with per-function, per-module and whole-program summaries.  If
     you ask really nicely it will even show counts for each individual
     machine instruction.</para>
 
-    <para>On x86 and AMD64, Cachegrind auto-detects your machine's cache
+    <para>On x86 and and64, Cachegrind auto-detects your machine's cache
     configuration using the <computeroutput>CPUID</computeroutput>
     instruction, and so needs no further configuration info, in most
     cases.</para>
-
-    <para>Cachegrind is nicely complemented by Josef Weidendorfer's
-    amazing KCacheGrind visualisation tool 
-    (<ulink url="http://kcachegrind.sourceforge.net/cgi-bin/show.cgi/KcacheGrindIndex">http://kcachegrind.sourceforge.net</ulink>),
-    a KDE application which presents these profiling results in a
-    graphical and easier-to-understand form.</para>
    </listitem>
 
    <listitem>
-    <para><command>Helgrind</command> finds data races in multithreaded
-    programs.  Helgrind looks for memory locations which are accessed by
-    more than one (POSIX p-)thread, but for which no consistently used
-    (pthread_mutex_)lock can be found.  Such locations are indicative of
-    missing synchronisation between threads, and could cause
-    hard-to-find timing-dependent problems.</para>
+     <para><command>Callgrind</command> is a profiler similar in
+     concept to Cachegrind, but which also tracks caller-callee
+     relationships.  By doing so it is able to show how instruction,
+     memory reference and cache miss costs flow between callers and
+     callees.  Callgrind collects a large amount of data which is best
+     navigated using Josef Weidendorfer's amazing KCachegrind
+     visualisation tool (<ulink
+     url="http://kcachegrind.sourceforge.net/cgi-bin/show.cgi/KcacheGrindIndex">http://kcachegrind.sourceforge.net</ulink>).
+     KCachegrind is a KDE application which presents 
+     these profiling results in a
+     graphical and easy-to-understand form.</para>
+   </listitem>
 
-    <para>Helgrind ("Hell's Gate", in Norse mythology) implements the
-    so-called "Eraser" data-race-detection algorithm, along with various
-    refinements (thread-segment lifetimes) which reduce the number of
-    false errors it reports.  It is as yet somewhat of an experimental
-    tool, so your feedback is especially welcomed here.</para>
+   <listitem>
+     <para><command>Massif</command> is a heap profiler.
+     It measures how much heap memory programs use.  In particular,
+     it can give you information about heap blocks, heap 
+     administration overheads, and stack sizes.</para>
 
-    <para>Helgrind has been hacked on extensively by Jeremy
-    Fitzhardinge, and we have him to thank for getting it to a
-    releasable state.</para>
-
-    <para>NOTE: Helgrind is, unfortunately, not available in Valgrind
-    3.2.X, as a result of threading changes that happened in the 2.4.0
-    release.  We hope to reinstate its functionality in the future.
-    </para>
+     <para>Heap profiling can help you reduce the amount of
+     memory your program uses.  On modern machines with virtual
+     memory, this reduces the chances that your program will run out
+     of memory, and may make it faster by reducing the amount of
+     paging needed.</para>
    </listitem>
 
 </orderedlist>
@@ -123,13 +120,12 @@ integer and floating point operations your program does.</para>
 <para>Valgrind is closely tied to details of the CPU and operating
 system, and to a lesser extent, the compiler and basic C libraries.
 Nonetheless, as of version 3.2.0 it supports several platforms:
-x86/Linux (mature), AMD64/Linux (maturing), PPC32/Linux and 
-PPC64/Linux (less mature but work well in practice).
-Valgrind uses the standard Unix
+x86/Linux (mature), amd64/Linux (maturing), ppc32/Linux and
+ppc64/Linux (less mature but work well).  Valgrind uses the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to ensure that
-it works on machines with kernel 2.4 or 2.6 and glibc
+it works on machines with Linux kernel 2.4.X or 2.6.X and glibc
 2.2.X to 2.5.X.</para>
 
 <para>Valgrind is licensed under the <xref linkend="license.gpl"/>,
@@ -150,7 +146,7 @@ Inc.</para>
 <title>How to navigate this manual</title>
 
 <para>The Valgrind distribution consists of the Valgrind core, upon
-which are built Valgrind tools, which do different kinds of debugging
+which are built Valgrind tools.  The tools do different kinds of debugging
 and profiling.  This manual is structured similarly.</para>
 
 <para>First, we describe the Valgrind core, how to use it, and the flags

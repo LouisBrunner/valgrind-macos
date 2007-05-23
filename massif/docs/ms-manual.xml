@@ -14,7 +14,7 @@ command line.</para>
 <sect1 id="ms-manual.spaceprof" xreflabel="Heap profiling">
 <title>Heap profiling</title>
 
-<para>Massif is a heap profiler, i.e. it measures how much heap
+<para>Massif is a heap profiler.  It measures how much heap
 memory programs use.  In particular, it can give you information
 about:</para>
 
@@ -113,8 +113,8 @@ be normally run.</para>
 <para>Then, run your program with <computeroutput>valgrind
 --tool=massif</computeroutput> in front of the normal command
 line invocation.  When the program finishes, Massif will print
-summary space statistics.  It also creates a graph representing
-the program's heap usage in a file called
+summary space statistics.  It also creates a graph showing
+the program's overall heap usage in a file called
 <filename>massif.pid.ps</filename>, which can be read by any
 PostScript viewer, such as Ghostview.</para>
 
@@ -181,8 +181,8 @@ possible parts of memory:</para>
 <title>Spacetime Graphs</title>
 
 <para>As well as printing summary information, Massif also
-creates a file representing a spacetime graph,
-<filename>massif.pid.hp</filename>.  It will produce a file
+creates a file showing the overall spacetime behaviour of the 
+program, in a file
 called <filename>massif.pid.ps</filename>, which can be viewed in
 a PostScript viewer.</para>
 
@@ -290,9 +290,9 @@ spacetime</para>
 
 <para>The first part shows the total spacetime due to heap
 allocations, and the places in the program where most memory was
-allocated (Nb: if this program had been compiled with
+allocated.  If this program had been compiled with
 <computeroutput>-g</computeroutput>, actual line numbers would be
-given).  These places are sorted, from most significant to least,
+given.  These places are sorted, from most significant to least,
 and correspond to the bands seen in the graph.  Insignificant
 sites (accounting for less than 0.5% of total spacetime) are
 omitted.</para>
@@ -374,8 +374,8 @@ the real code address is.</para>
 default, or HTML with the
 <computeroutput>--format=html</computeroutput> option.  The plain
 text version obviously doesn't have the links, but a similar
-effect can be achieved by searching on the code addresses.  (In
-Vim, the '*' and '#' searches are ideal for this.)</para>
+effect can be achieved by searching on the code addresses.  In
+the Vim editor, the '*' and '#' searches are ideal for this.</para>
 
 
 <sect2 id="ms-manual.accuracy" xreflabel="Accuracy">

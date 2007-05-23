@@ -449,6 +449,16 @@ AC_EGREP_CPP([GLIBC_25], [
 ],
 libc="2.5")
 
+AC_EGREP_CPP([GLIBC_26], [
+#include <features.h>
+#ifdef __GNU_LIBRARY__
+ #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 6)
+  GLIBC_26
+ #endif
+#endif
+],
+libc="2.6")
+
 AC_EGREP_CPP([AIX5_LIBC], [
 #include <standards.h>
 #if defined(_AIXVERSION_510) || defined(_AIXVERSION_520) || defined(_AIXVERSION_530)
@@ -483,7 +493,11 @@ case "${libc}" in
 	AC_DEFINE([GLIBC_2_5], 1, [Define to 1 if you're using glibc 2.5.x])
 	DEFAULT_SUPP="glibc-2.5.supp ${DEFAULT_SUPP}"
 	;;
-	
+     2.6)
+	AC_MSG_RESULT(2.6 family)
+	AC_DEFINE([GLIBC_2_6], 1, [Define to 1 if you're using glibc 2.6.x])
+	DEFAULT_SUPP="glibc-2.6.supp ${DEFAULT_SUPP}"
+	;;
      aix5)
 	AC_MSG_RESULT(AIX 5.1 or 5.2 or 5.3)
 	AC_DEFINE([AIX5_LIBC], 1, [Define to 1 if you're using AIX 5.1 or 5.2 or 5.3])
@@ -492,7 +506,7 @@ case "${libc}" in
 
      *)
 	AC_MSG_RESULT(unsupported version)
-	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.5])
+	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.6])
 	AC_MSG_ERROR([or AIX 5.1 or 5.2 or 5.3 libc])
 	;;
 esac

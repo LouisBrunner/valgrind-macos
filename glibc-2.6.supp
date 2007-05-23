@@ -1,0 +1,215 @@
+
+##----------------------------------------------------------------------##
+
+# Errors to suppress by default with glibc 2.4.x
+
+# Format of this file is:
+# {
+#     name_of_suppression
+#     tool_name:supp_kind
+#     (optional extra info for some suppression types)
+#     caller0 name, or /name/of/so/file.so
+#     caller1 name, or ditto
+#     (optionally: caller2 name)
+#     (optionally: caller3 name)
+#  }
+#
+# For Memcheck, the supp_kinds are:
+#
+#     Param Value1 Value2 Value4 Value8 Value16 Jump
+#     Free Addr1 Addr2 Addr4 Addr8 Addr16
+#     Cond (previously known as Value0)
+#
+# and the optional extra info is:
+#     if Param: name of system call param
+
+{
+   dl-hack1
+   Memcheck:Cond
+   fun:_dl_start
+   fun:_start
+}
+
+{
+   dl-hack2
+   Memcheck:Cond
+   obj:/lib*/ld-2.5*.so
+   obj:/lib*/ld-2.5*.so
+   obj:/lib*/ld-2.5*.so
+   obj:/lib*/ld-2.5*.so
+}
+
+{
+   dl-hack3
+   Memcheck:Cond
+   obj:/lib*/ld-2.5*so*
+   obj:/lib*/ld-2.5*so*
+   obj:/lib*/ld-2.5*so*
+}
+
+##----------------------------------------------------------------------##
+{
+   glibc-2.5.x-on-SUSE-10.2-(PPC)-1
+   Memcheck:Cond
+   fun:_dl_start_final
+   fun:_dl_start
+   fun:_start
+}
+{
+   glibc-2.5.x-on-SUSE-10.2-(PPC)-2a
+   Memcheck:Cond
+   fun:index
+   obj:*ld-2.5.*.so
+}
+{
+   glibc-2.5.x-on-SuSE-10.2-(PPC)-2b
+   Memcheck:Addr4
+   fun:index
+   fun:expand_dynamic_string_token
+}
+{
+   glibc-2.5.5-on-SuSE-10.2-(PPC)-2c
+   Memcheck:Addr4
+   fun:index
+   obj:*ld-2.5.*.so
+}
+{
+   glibc-2.3.5-on-SuSE-10.1-(PPC)-3
+   Memcheck:Addr4
+   fun:*wordcopy_fwd_dest_aligned*
+   fun:mem*cpy
+   obj:*lib*2.5.*.so
+}
+
+##----------------------------------------------------------------------##
+## Various structure padding things on SUSE 10.2
+##
+{
+   X11-64bit-padding-1a
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+   fun:X*
+}
+{
+   X11-64bit-padding-1b
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+   fun:_X*
+}
+{
+   X11-64bit-padding-1c
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+}
+{
+   X11-64bit-padding-1d
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   obj:/usr/lib*/libICE.so*
+   obj:/usr/lib*/libICE.so*
+   obj:/usr/lib*/libICE.so*
+}
+{
+   X11-64bit-padding-2a
+   Memcheck:Param
+   writev(vector[...])
+   fun:do_writev
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+}
+{
+   X11-64bit-padding-2b
+   Memcheck:Param
+   writev(vector[...])
+   fun:do_writev
+   fun:writev
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+}
+
+{
+   glibc24-64bit-padding-1a
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:send
+   fun:get_mapping
+   fun:__nscd_get_map_ref
+   fun:nscd*
+}
+{
+   glibc24-64bit-padding-1b
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:__sendto_nocancel
+   obj:/*libc-2.5.so
+   obj:/*libc-2.5.so
+   obj:/*libc-2.5.so
+}
+{
+   glibc24-64bit-padding-1c
+   Memcheck:Param
+   socketcall.send(msg)
+   fun:send
+   fun:__nscd_get_map_ref
+   fun:nscd_get*_r
+   fun:*nscd*
+   obj:/*libc-2.5.so
+}
+
+
+{
+   X11-64bit-padding-3a
+   Memcheck:Param
+   write(buf)
+   obj:/*libpthread-2.4.so*
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+   obj:/usr/lib*/libX11.so*
+}
+
+{
+   X11-64bit-padding-4a
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:send
+   obj:/*libc-2.5.so
+   obj:/*libc-2.5.so
+   obj:/*libc-2.5.so
+}
+{
+   X11-64bit-padding-4b
+   Memcheck:Param
+   socketcall.send(msg)
+   fun:send
+   obj:/*libc-2.5.so
+   obj:/*libc-2.5.so
+   obj:/*libc-2.5.so
+}
+
+##----------------------------------------------------------------------##
+# MontaVista Linux 4.0.1 on ppc32
+{
+    MVL-401-linuxthreads-pthread_create
+    Memcheck:Param
+    write(buf)
+    fun:pthread_create
+}
+{
+   MVL-401-linuxthreads-pthread_create
+   Memcheck:Param
+   write(buf)
+   obj:/lib/libpthread-0.10.so
+   fun:pthread_create
+}

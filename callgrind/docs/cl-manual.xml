@@ -395,7 +395,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   analysis of your code harder. This is because inclusive costs
   for calls inside of a cycle are meaningless. The definition of
   inclusive cost, ie. self cost of a function plus inclusive cost
-  of its callers, needs a topological order among functions. For
+  of its callees, needs a topological order among functions. For
   cycles, this does not hold true: callees of a function in a cycle include
   the function itself. Therefore, KCachegrind does cycle detection
   and skips visualization of any inclusive cost for calls inside

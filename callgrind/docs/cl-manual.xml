@@ -385,30 +385,65 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   a third function H is called from inside S and calls back into S,
   then H is also part of the cycle and should be included in S.</para>
 
-  <para>If a call chain goes multiple times around inside a cycle,
-  with profiling, you can not distinguish event counts coming from the
-  first, second or subsequent rounds.
-  Thus, it makes no sense to attach any inclusive
-  cost to a call among functions inside of one cycle.
-  If "A &gt; B" appears multiple times in a call chain, you
-  have no way to partition the one big sum of all appearances of "A &gt;
-  B".  Thus, for profile data presentation, all functions of a cycle are
-  seen as one big virtual function.</para>
+  <para>Recursion is quite usual in programs, and therefore, cycles
+  sometimes appear in the call graph output of Callgrind. However,
+  the title of this chapter should raise two questions: What is bad
+  about cycles which makes you want to avoid them? And: How can
+  cycles be avoided without changing program code?</para>
 
-  <para>Unfortunately, if you have an application using some callback
-  mechanism (like any GUI program), or even with normal polymorphism (as
-  in OO languages like C++), it's quite possible to get large cycles.
-  As it is often impossible to say anything about performance behaviour
-  inside of cycles, it is useful to introduce some mechanisms to avoid
-  cycles in call graphs.  This is done by treating the same
-  function in different ways, depending on the current execution
-  context, either by giving them different names, or by ignoring calls to
-  functions.</para>
+  <para>Cycles are not bad in itself, but tend to make performance
+  analysis of your code harder. This is because inclusive costs
+  for calls inside of a cycle are meaningless. The definition of
+  inclusive cost, ie. self cost of a function plus inclusive cost
+  of its callers, needs a topological order among functions. For
+  cycles, this does not hold true: callees of a function in a cycle include
+  the function itself. Therefore, KCachegrind does cycle detection
+  and skips visualization of any inclusive cost for calls inside
+  of cycles. Further, all functions in a cycle are collapsed into artifical
+  functions called like <computeroutput>Cycle 1</computeroutput>.</para>
 
-  <para>There is an option to ignore calls to a function with
-  <option><xref linkend="opt.fn-skip"/>=funcprefix</option>.  For
-  example you
-  usually do not want to see the trampoline functions in the PLT sections
+  <para>Now, when a program exposes really big cycles (as is
+  true for some GUI code, or in general code using event or callback based
+  programming style), you loose the nice property to let you pinpoint
+  the bottlenecks by following call chains from
+  <computeroutput>main()</computeroutput>, guided via
+  inclusive cost. In addition, KCachegrind looses its ability to show
+  interesting parts of the call graph, as it uses inclusive costs to
+  cut off uninteresting areas.</para>
+
+  <para>Despite the meaningless of inclusive costs in cycles, the big
+  drawback for visualization motivates the possibility to temporarely
+  switch off cycle detection in KCachegrind, which can lead to
+  misguiding visualization. However, often cycles appear because of
+  unlucky superposition of independant call chains in a way that
+  the profile result will see a cycle. Neglecting uninteresting
+  calls with very small measured inclusive cost would break these
+  cycles. In such cases, incorrect handling of cycles by not detecting
+  them still gives meaningful profiling visualization.</para>
+
+  <para>It has to be noted that currently, <command>callgrind_annotate</command>
+  does not do any cycle detection at all. For program executions with function
+  recursion, it e.g. can print nonsense inclusive costs way above 100%.</para>
+
+  <para>After describing why cycles are bad for profiling, it is worth
+  talking about cycle avoidance. The key insight here is that symbols in
+  the profile data do not have to exactly match the symbols found in the
+  program. Instead, the symbol name could encode additional information
+  from the current execution context such as recursion level of the
+  current function, or even some part of the call chain leading to the
+  function. While encoding of additional information into symbols is
+  quite capable of avoiding cycles, it has to be used carefully to not cause
+  symbol explosion. The latter imposes large memory requirement for Callgrind
+  with possible out-of-memory conditions, and big profile data files.</para>
+
+  <para>A further possibility to avoid cycles in Callgrinds profile data
+  output is to simply leave out given functions in the call graph. Of course, this
+  also skips any call information from and to an ignored function, and thus can
+  break a cycle. Candidates for this typically are dispatcher functions in event
+  driven code. The option to ignore calls to a function is
+  <option><xref linkend="opt.fn-skip"/>=funcprefix</option>. Aside from
+  possibly breaking cycles, this is used in Callgrind to skip
+  trampoline functions in the PLT sections
   for calls to functions in shared libraries. You can see the difference
   if you profile with <option><xref linkend="opt.skip-plt"/>=no</option>.
   If a call is ignored, its cost events will be propagated to the

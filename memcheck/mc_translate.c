@@ -50,6 +50,61 @@
 
      2005 USENIX Annual Technical Conference (General Track),
      Anaheim, CA, USA, April 10-15, 2005.
+
+   ----
+
+   Here is as good a place as any to record exactly when V bits are and
+   should be checked, why, and what function is responsible.
+
+   
+   Memcheck complains when an undefined value is used:
+
+   1. In the condition of a conditional branch.  Because it could cause
+      incorrect control flow, and thus cause incorrect externally-visible
+      behaviour.  [mc_translate.c:complainIfUndefined]
+
+   2. As an argument to a system call, or as the value that specifies
+      the system call number.  Because it could cause an incorrect
+      externally-visible side effect.  [mc_translate.c:mc_pre_reg_read]
+
+   3. As the address in a load or store.  Because it could cause an
+      incorrect value to be used later, which could cause externally-visible
+      behaviour (eg. via incorrect control flow or an incorrect system call
+      argument)  [complainIfUndefined]
+
+   4. As the target address of a branch.  Because it could cause incorrect
+      control flow.  [complainIfUndefined]
+
+   5. As an argument to setenv, unsetenv, or putenv.  Because it could put
+      an incorrect value into the external environment.
+      [mc_replace_strmem.c:VG_WRAP_FUNCTION_ZU(*, *env)]
+
+   6. As the index in a GETI or PUTI operation.  I'm not sure why... (njn).
+      [complainIfUndefined]
+
+   7. As an argument to the VALGRIND_CHECK_MEM_IS_DEFINED and
+      VALGRIND_CHECK_VALUE_IS_DEFINED client requests.  Because the user
+      requested it.  [in memcheck.h]
+
+
+   Memcheck also complains, but should not, when an undefined value is used:
+
+   8. As the shift value in certain SIMD shift operations (but not in the
+      standard integer shift operations).  This inconsistency is due to
+      historical reasons.)  [complainIfUndefined]
+
+
+   Memcheck does not complain, but should, when an undefined value is used:
+
+   9. As an input to a client request.  Because the client request may
+      affect the visible behaviour -- see bug #144362 for an example
+      involving the malloc replacements in vg_replace_malloc.c and
+      VALGRIND_NON_SIMD_CALL* requests, where an uninitialised argument
+      isn't identified.  That bug report also has some info on how to solve
+      the problem.  [valgrind.h:VALGRIND_DO_CLIENT_REQUEST]
+
+
+   In practice, 1 and 2 account for the vast majority of cases.
 */
 
 /*------------------------------------------------------------*/

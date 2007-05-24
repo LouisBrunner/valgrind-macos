@@ -867,7 +867,7 @@ sub print_summary_and_fn_totals ()
 	    if ($summary_CC->[$sort_order[$i]] >0) {
 	      $prop = $prop / $summary_CC->[$sort_order[$i]];
 	    }
-            $reached_all_thresholds &= ($prop >= $thresholds[$i]);
+            $reached_all_thresholds &&= ($prop >= $thresholds[$i]);
         }
         last if $reached_all_thresholds;
 

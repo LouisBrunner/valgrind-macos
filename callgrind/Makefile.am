@@ -34,7 +34,7 @@ CALLGRIND_SOURCES_AMD64 = ../cachegrind/cg-amd64.c
 CALLGRIND_SOURCES_PPC32 = ../cachegrind/cg-ppc32.c
 CALLGRIND_SOURCES_PPC64 = ../cachegrind/cg-ppc64.c
 
-CALLGRIND_CFLAGS_COMMON = -I../cachegrind
+CALLGRIND_CFLAGS_COMMON = -I$(top_srcdir)/cachegrind
 
 clincludedir = $(includedir)/valgrind
 clinclude_HEADERS = \

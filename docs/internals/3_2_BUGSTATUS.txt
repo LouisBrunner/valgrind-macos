@@ -112,7 +112,14 @@ vx1759,r6722
 
 XXX 143924: --db-attach=yes and --trace-children=yes
 
-pending  r6743     32 n-i-bz   Documentation overhaul
+r6745    r6743     32 n-i-bz   Documentation overhaul
+
+r6746/7/8  pending    n-i-bz   Improve callgrind documentation
+
+r6749    pending      n-i-bz   callgrind_annotate: Fix a warning
+
+r6751    pending      n-i-bz   callgrind: fix build with srcdir != builddir
+
 
 
 //// maybe do not fix in 3.2 branch

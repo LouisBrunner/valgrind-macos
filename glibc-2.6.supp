@@ -33,18 +33,18 @@
 {
    dl-hack2
    Memcheck:Cond
-   obj:/lib*/ld-2.5*.so
-   obj:/lib*/ld-2.5*.so
-   obj:/lib*/ld-2.5*.so
-   obj:/lib*/ld-2.5*.so
+   obj:/lib*/ld-2.6*.so
+   obj:/lib*/ld-2.6*.so
+   obj:/lib*/ld-2.6*.so
+   obj:/lib*/ld-2.6*.so
 }
 
 {
    dl-hack3
    Memcheck:Cond
-   obj:/lib*/ld-2.5*so*
-   obj:/lib*/ld-2.5*so*
-   obj:/lib*/ld-2.5*so*
+   obj:/lib*/ld-2.6.so*
+   obj:/lib*/ld-2.6.so*
+   obj:/lib*/ld-2.6.so*
 }
 
 ##----------------------------------------------------------------------##
@@ -59,7 +59,7 @@
    glibc-2.5.x-on-SUSE-10.2-(PPC)-2a
    Memcheck:Cond
    fun:index
-   obj:*ld-2.5.*.so
+   obj:*ld-2.6.*.so
 }
 {
    glibc-2.5.x-on-SuSE-10.2-(PPC)-2b
@@ -71,14 +71,14 @@
    glibc-2.5.5-on-SuSE-10.2-(PPC)-2c
    Memcheck:Addr4
    fun:index
-   obj:*ld-2.5.*.so
+   obj:*ld-2.6.*.so
 }
 {
    glibc-2.3.5-on-SuSE-10.1-(PPC)-3
    Memcheck:Addr4
    fun:*wordcopy_fwd_dest_aligned*
    fun:mem*cpy
-   obj:*lib*2.5.*.so
+   obj:*lib*2.6.*.so
 }
 
 ##----------------------------------------------------------------------##
@@ -153,9 +153,9 @@
    Memcheck:Param
    socketcall.sendto(msg)
    fun:__sendto_nocancel
-   obj:/*libc-2.5.so
-   obj:/*libc-2.5.so
-   obj:/*libc-2.5.so
+   obj:/*libc-2.6.so
+   obj:/*libc-2.6.so
+   obj:/*libc-2.6.so
 }
 {
    glibc24-64bit-padding-1c
@@ -165,7 +165,7 @@
    fun:__nscd_get_map_ref
    fun:nscd_get*_r
    fun:*nscd*
-   obj:/*libc-2.5.so
+   obj:/*libc-2.6.so
 }
 
 
@@ -184,18 +184,18 @@
    Memcheck:Param
    socketcall.sendto(msg)
    fun:send
-   obj:/*libc-2.5.so
-   obj:/*libc-2.5.so
-   obj:/*libc-2.5.so
+   obj:/*libc-2.6.so
+   obj:/*libc-2.6.so
+   obj:/*libc-2.6.so
 }
 {
    X11-64bit-padding-4b
    Memcheck:Param
    socketcall.send(msg)
    fun:send
-   obj:/*libc-2.5.so
-   obj:/*libc-2.5.so
-   obj:/*libc-2.5.so
+   obj:/*libc-2.6.so
+   obj:/*libc-2.6.so
+   obj:/*libc-2.6.so
 }
 
 ##----------------------------------------------------------------------##

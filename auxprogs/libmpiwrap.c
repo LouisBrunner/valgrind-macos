@@ -268,6 +268,9 @@ static void showTy ( FILE* f, MPI_Datatype ty )
 #  if defined(MPI_INTEGER4)
    else if (ty == MPI_INTEGER4)       fprintf(f, "INTEGER4");
 #  endif
+#  if defined(MPI_DOUBLE_PRECISION)
+   else if (ty == MPI_DOUBLE_PRECISION) fprintf(f, "DOUBLE_PRECISION");
+#  endif
    else fprintf(f,"showTy:???");
 }
 
@@ -449,6 +452,9 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
 #  endif
 #  if defined(MPI_INTEGER4)
    if (ty == MPI_INTEGER4)       return sizeof(signed int);
+#  endif
+#  if defined(MPI_DOUBLE_PRECISION)
+   if (ty == MPI_DOUBLE_PRECISION) return sizeof(double);
 #  endif
 
    /* new in MPI2: */

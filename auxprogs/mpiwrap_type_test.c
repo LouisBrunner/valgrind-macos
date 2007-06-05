@@ -201,10 +201,12 @@ void sendToMyself ( Bool commit_free, Ty* tyP, char* name )
    else
       printf("FAILED\n");
 
+   printf(" libmpiwrap=");
    for (i = 0; i < ub; i++)
       printf("%c", characterise(rbuf_walk[i]));
    printf("\n");
 
+   printf("MPI library=");
    for (i = 0; i < ub; i++)
       printf("%c", characterise(rbuf[i]));
    printf("\n");
@@ -243,77 +245,131 @@ int main ( int argc, char** argv )
 
     if (rank == 0) {
 
-    Ty t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18;
-    Nm n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16, n17, n18;
+#define TRY(_commit_free,_type,_name)              \
+       do { Ty ty = (_type);                       \
+            Nm nm = (_name);                       \
+            sendToMyself((_commit_free), &ty, nm); \
+       } while (0)
 
-    t2 = tycon_Contiguous(3, MPI_INT);
-    n2 = "Contig{3xINT}";
+    TRY(True, tycon_Contiguous(3, MPI_INT),
+              "Contig{3xINT}");
 
-    t3 = tycon_Struct2(3,2,MPI_CHAR, 8,1,MPI_DOUBLE);
-    n3 = "Struct{h3:2xCHAR, h8:1xDOUBLE}";
+    TRY(True, tycon_Struct2(3,2,MPI_CHAR, 8,1,MPI_DOUBLE),
+              "Struct{h3:2xCHAR, h8:1xDOUBLE}");
 
-    t4 = tycon_Struct2(0,1,MPI_CHAR, 8,1,tycon_Contiguous(4, MPI_DOUBLE));
-    n4 = "Struct{h0:1xCHAR, h8:1xContig{4xDOUBLE}}";
+    TRY(True, tycon_Struct2(0,1,MPI_CHAR, 8,1,tycon_Contiguous(4, MPI_DOUBLE)),
+              "Struct{h0:1xCHAR, h8:1xContig{4xDOUBLE}}");
 
-    t5 = tycon_Contiguous(10, tycon_Struct2(1,1,MPI_CHAR, 4,1,MPI_FLOAT));
-    n5 = "Contig{10xStruct{h1:1xCHAR, h4:1xFLOAT}}";
+    TRY(True, tycon_Contiguous(10, tycon_Struct2(1,1,MPI_CHAR, 4,1,MPI_FLOAT)),
+              "Contig{10xStruct{h1:1xCHAR, h4:1xFLOAT}}");
 
-    t6 = tycon_Vector(5, 2,3,MPI_DOUBLE);
-    n6 = "Vector{5x(2,3)xDOUBLE}";
+    TRY(True, tycon_Vector(5, 2,3,MPI_DOUBLE),
+              "Vector{5x(2,3)xDOUBLE}");
 
-    t7 = tycon_Vector(3, 1,2,MPI_LONG_DOUBLE);
-    n7 = "Vector{3x(1,2)xLONG_DOUBLE}";
+    TRY(True, tycon_Vector(3, 1,2,MPI_LONG_DOUBLE),
+              "Vector{3x(1,2)xLONG_DOUBLE}");
 
-    t8 = tycon_HVector(4, 1,3,MPI_SHORT);
-    n8 = "HVector{4x(1,h3)xSHORT}";
+    TRY(True, tycon_HVector(4, 1,3,MPI_SHORT),
+              "HVector{4x(1,h3)xSHORT}");
 
-    t9 = tycon_Indexed2(1,3, 5,2, MPI_UNSIGNED_CHAR);
-    n9 = "Indexed{1:3x,5:2x,UNSIGNED_CHAR}";
+    TRY(True, tycon_Indexed2(1,3, 5,2, MPI_UNSIGNED_CHAR),
+              "Indexed{1:3x,5:2x,UNSIGNED_CHAR}");
 
-    t10 = tycon_HIndexed2(1,2, 6,3, MPI_UNSIGNED_SHORT);
-    n10 = "HIndexed{h1:2x,h6:3x,UNSIGNED_SHORT}";
+    TRY(True,  tycon_HIndexed2(1,2, 6,3, MPI_UNSIGNED_SHORT),
+              "HIndexed{h1:2x,h6:3x,UNSIGNED_SHORT}");
 
-    t11 = MPI_LONG_INT;
-    n11 = "LONG_INT";
+    TRY(False, MPI_FLOAT_INT,        "FLOAT_INT");
+    TRY(False, MPI_DOUBLE_INT,       "DOUBLE_INT");
+    TRY(False, MPI_LONG_INT,         "LONG_INT");
+    TRY(False, MPI_SHORT_INT,        "SHORT_INT");
+    TRY(False, MPI_2INT,             "2INT");
+    TRY(False, MPI_LONG_DOUBLE_INT,  "LONG_DOUBLE_INT");
 
-    t12 = MPI_DOUBLE_INT;
-    n12 = "DOUBLE_INT";
+    /* The next 4 don't seem to exist on openmpi-1.2.2. */
 
-    t13 = MPI_SHORT_INT;
-    n13 = "SHORT_INT";
+#if defined(MPI_REAL8)
+    TRY(False,  MPI_REAL8,            "REAL8");
+#endif
+#if defined(MPI_REAL4)
+    TRY(False,  MPI_REAL4,            "REAL4");
+#endif
+#if defined(MPI_INTEGER8)
+    TRY(False,  MPI_INTEGER8,         "INTEGER8");
+#endif
+#if defined(MPI_INTEGER4)
+    TRY(False,  MPI_INTEGER4,         "INTEGER4");
+#endif
 
-    t14 = MPI_REAL8;
-    n14 = "REAL8";
+    TRY(False, MPI_COMPLEX,           "COMPLEX");
+    TRY(False, MPI_DOUBLE_COMPLEX,    "DOUBLE_COMPLEX");
 
-    t15 = MPI_REAL4;
-    n15 = "REAL4";
+    // On openmpi-1.2.2 on x86-linux, sendToMyself bombs openmpi,
+    // for some reason (openmpi thinks these all have zero size/extent
+    // and therefore can't be MPI_Send-ed, AIUI).
+    // TRY(False, MPI_LOGICAL,           "LOGICAL");
+    // TRY(False, MPI_REAL,              "REAL");
+    // TRY(False, MPI_DOUBLE_PRECISION,  "DOUBLE_PRECISION");
+    // TRY(False, MPI_INTEGER,           "INTEGER");
+    TRY(False, MPI_2INTEGER,          "2INTEGER");
+    TRY(False, MPI_2COMPLEX,          "2COMPLEX");
+    TRY(False, MPI_2DOUBLE_COMPLEX,   "2DOUBLE_COMPLEX");
+    TRY(False, MPI_2REAL,             "2REAL");
+    TRY(False, MPI_2DOUBLE_PRECISION, "2DOUBLE_PRECISION");
+    TRY(False, MPI_CHARACTER,         "CHARACTER");
 
-    t16 = MPI_INTEGER8;
-    n16 = "INTEGER8";
+    /* The following from a table in chapter 9 of the MPI2 spec
+       date Nov 15, 2003, page 247. */
+    TRY(False, MPI_PACKED, "PACKED");
+    TRY(False, MPI_BYTE, "BYTE");
+    TRY(False, MPI_CHAR, "CHAR");
+    TRY(False, MPI_UNSIGNED_CHAR, "UNSIGNED_CHAR");
+    TRY(False, MPI_SIGNED_CHAR, "SIGNED_CHAR");
+    TRY(False, MPI_WCHAR, "WCHAR");
+    TRY(False, MPI_SHORT, "SHORT");
+    TRY(False, MPI_UNSIGNED_SHORT, "UNSIGNED_SHORT");
+    TRY(False, MPI_INT, "INT");
+    TRY(False, MPI_UNSIGNED, "UNSIGNED");
+    TRY(False, MPI_LONG, "LONG");
+    TRY(False, MPI_UNSIGNED_LONG, "UNSIGNED_LONG");
+    TRY(False, MPI_FLOAT, "FLOAT");
+    TRY(False, MPI_DOUBLE, "DOUBLE");
+    TRY(False, MPI_LONG_DOUBLE, "LONG_DOUBLE");
+    TRY(False, MPI_CHARACTER, "CHARACTER");
 
-    t17 = MPI_INTEGER4;
-    n17 = "INTEGER4";
+    // Same deal as above
+    // TRY(False, MPI_LOGICAL, "LOGICAL");
+    // TRY(False, MPI_INTEGER, "INTEGER");
+    // TRY(False, MPI_REAL, "REAL");
+    // TRY(False, MPI_DOUBLE_PRECISION, "DOUBLE_PRECISION");
 
-    t18 = MPI_2INT;
-    n18 = "2INT";
+    TRY(False, MPI_COMPLEX, "COMPLEX");
+    TRY(False, MPI_DOUBLE_COMPLEX, "DOUBLE_COMPLEX");
+#if defined(MPI_INTEGER1)
+    TRY(False, MPI_INTEGER1, "INTEGER1");
+#endif
+#if defined(MPI_INTEGER2)
+    TRY(False, MPI_INTEGER2, "INTEGER2");
+#endif
+#if defined(MPI_INTEGER4)
+    TRY(False, MPI_INTEGER4, "INTEGER4");
+#endif
+#if defined(MPI_INTEGER8)
+    TRY(False, MPI_INTEGER8, "INTEGER8");
+#endif
+    TRY(False, MPI_LONG_LONG, "LONG_LONG");
+    TRY(False, MPI_UNSIGNED_LONG_LONG, "UNSIGNED_LONG_LONG");
+#if defined(MPI_REAL4)
+    TRY(False, MPI_REAL4, "REAL4");
+#endif
+#if defined(MPI_REAL8)
+    TRY(False, MPI_REAL8, "REAL8");
+#endif
+#if defined(MPI_REAL16)
+    TRY(False, MPI_REAL16, "REAL16");
+#endif
 
-    sendToMyself(True,  &t2,  n2);
-    sendToMyself(True,  &t3,  n3);
-    sendToMyself(True,  &t4,  n4);
-    sendToMyself(True,  &t5,  n5);
-    sendToMyself(True,  &t6,  n6);
-    sendToMyself(True,  &t7,  n7);
-    sendToMyself(True,  &t8,  n8);
-    sendToMyself(True,  &t9,  n9);
-    sendToMyself(True,  &t10, n10);
-    sendToMyself(False, &t11, n11);
-    sendToMyself(False, &t12, n12);
-    sendToMyself(False, &t13, n13);
-    sendToMyself(False, &t14, n14);
-    sendToMyself(False, &t15, n15);
-    sendToMyself(False, &t16, n16);
-    sendToMyself(False, &t17, n17);
-    sendToMyself(False, &t18, n18);
+#undef TRY
+
     }
 
     MPI_Finalize();

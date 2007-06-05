@@ -248,14 +248,47 @@ static void showTy ( FILE* f, MPI_Datatype ty )
 #  if defined(MPI_REAL4)
    else if (ty == MPI_REAL4)          fprintf(f, "REAL4");
 #  endif
+#  if defined(MPI_REAL)
+   else if (ty == MPI_REAL)           fprintf(f, "REAL");
+#  endif
 #  if defined(MPI_INTEGER8)
    else if (ty == MPI_INTEGER8)       fprintf(f, "INTEGER8");
 #  endif
 #  if defined(MPI_INTEGER4)
    else if (ty == MPI_INTEGER4)       fprintf(f, "INTEGER4");
 #  endif
+#  if defined(MPI_INTEGER)
+   else if (ty == MPI_INTEGER)        fprintf(f, "INTEGER");
+#  endif
 #  if defined(MPI_DOUBLE_PRECISION)
    else if (ty == MPI_DOUBLE_PRECISION) fprintf(f, "DOUBLE_PRECISION");
+#  endif
+#  if defined(MPI_COMPLEX)
+   else if (ty == MPI_COMPLEX)          fprintf(f, "COMPLEX");
+#  endif
+#  if defined(MPI_DOUBLE_COMPLEX)
+   else if (ty == MPI_DOUBLE_COMPLEX)   fprintf(f, "DOUBLE_COMPLEX");
+#  endif
+#  if defined(MPI_LOGICAL)
+   else if (ty == MPI_LOGICAL)          fprintf(f, "LOGICAL");
+#  endif
+#  if defined(MPI_2INTEGER)
+   else if (ty == MPI_2INTEGER)         fprintf(f, "2INTEGER");
+#  endif
+#  if defined(MPI_2COMPLEX)
+   else if (ty == MPI_2COMPLEX)         fprintf(f, "2COMPLEX");
+#  endif
+#  if defined(MPI_2DOUBLE_COMPLEX)
+   else if (ty == MPI_2DOUBLE_COMPLEX)  fprintf(f, "2DOUBLE_COMPLEX");
+#  endif
+#  if defined(MPI_2REAL)
+   else if (ty == MPI_2REAL)            fprintf(f, "2REAL");
+#  endif
+#  if defined(MPI_2DOUBLE_PRECISION)
+   else if (ty == MPI_2DOUBLE_PRECISION) fprintf(f, "2DOUBLE_PRECISION");
+#  endif
+#  if defined(MPI_CHARACTER)
+   else if (ty == MPI_CHARACTER)         fprintf(f, "CHARACTER");
 #  endif
    else fprintf(f,"showTy:???");
 }
@@ -426,34 +459,70 @@ static long sizeofOneNamedTy ( MPI_Datatype ty )
    if (ty == MPI_BYTE)           return 1;
    if (ty == MPI_LONG_DOUBLE)    return sizeof_long_double_image();
    if (ty == MPI_PACKED)         return 1;
+   if (ty == MPI_LONG_LONG_INT)  return sizeof(signed long long int);
 
 #  if defined(MPI_REAL8)
-   if (ty == MPI_REAL8)          return sizeof(double);
+   if (ty == MPI_REAL8)          return 8; /* MPI2 spec */;
 #  endif
 #  if defined(MPI_REAL4)
-   if (ty == MPI_REAL4)          return sizeof(float);
+   if (ty == MPI_REAL4)          return 4; /* MPI2 spec */;
+#  endif
+#  if defined(MPI_REAL)
+   if (ty == MPI_REAL)           return 4; /* MPI2 spec */;
 #  endif
 #  if defined(MPI_INTEGER8)
-   if (ty == MPI_INTEGER8)       return sizeof(signed long long int);
+   if (ty == MPI_INTEGER8)       return 8; /* MPI2 spec */;
 #  endif
 #  if defined(MPI_INTEGER4)
-   if (ty == MPI_INTEGER4)       return sizeof(signed int);
+   if (ty == MPI_INTEGER4)       return 4; /* MPI2 spec */;
+#  endif
+#  if defined(MPI_INTEGER)
+   if (ty == MPI_INTEGER)        return 4; /* MPI2 spec */;
 #  endif
 #  if defined(MPI_DOUBLE_PRECISION)
-   if (ty == MPI_DOUBLE_PRECISION) return sizeof(double);
+   if (ty == MPI_DOUBLE_PRECISION) return 8; /* MPI2 spec */;
 #  endif
 
    /* new in MPI2: */
 #  if defined(MPI_WCHAR)
-   if (ty == MPI_WCHAR)              return sizeof(wchar_t);
+   if (ty == MPI_WCHAR)              return 2; /* MPI2 spec */;
 #  endif
 #  if defined(MPI_SIGNED_CHAR)
-   if (ty == MPI_SIGNED_CHAR)        return sizeof(signed char);
+   if (ty == MPI_SIGNED_CHAR)        return 1; /* MPI2 spec */;
 #  endif
 #  if defined(MPI_UNSIGNED_LONG_LONG)
-   if (ty == MPI_UNSIGNED_LONG_LONG) return sizeof(unsigned long long int);
+   if (ty == MPI_UNSIGNED_LONG_LONG) return 8; /* MPI2 spec */;
 #  endif
-   if (ty == MPI_LONG_LONG_INT)      return sizeof(signed long long int);
+#  if defined(MPI_COMPLEX)
+   if (ty == MPI_COMPLEX)            return 2 * 4; /* MPI2 spec */
+#  endif
+#  if defined(MPI_DOUBLE_COMPLEX)
+   if (ty == MPI_DOUBLE_COMPLEX)     return 2 * 8; /* MPI2 spec */
+#  endif
+#  if defined(MPI_LOGICAL)
+   if (ty == MPI_LOGICAL)            return 4; /* MPI2 spec */
+#  endif
+#  if defined(MPI_2INTEGER)
+   if (ty == MPI_2INTEGER)      return 2 * 4; /* undocumented in MPI2 */
+#  endif
+#  if defined(MPI_2COMPLEX)
+   if (ty == MPI_2COMPLEX)      return 2 * 8; /* undocumented in MPI2 */
+#  endif
+#  if defined(MPI_2DOUBLE_COMPLEX)
+   /* 32: this is how openmpi-1.2.2 behaves on x86-linux, but I have
+      really no idea if this is right. */
+   if (ty == MPI_2DOUBLE_COMPLEX)   return 32; /* undocumented in MPI2 */
+#  endif
+#  if defined(MPI_2REAL)
+   if (ty == MPI_2REAL)              return 2 * 4; /* undocumented in MPI2 */
+#  endif
+#  if defined(MPI_2DOUBLE_PRECISION)
+   if (ty == MPI_2DOUBLE_PRECISION)  return 2 * 8; /* undocumented in MPI2 */
+#  endif
+#  if defined(MPI_CHARACTER)
+   if (ty == MPI_CHARACTER)          return 1; /* MPI2 spec */
+#  endif
+
    /* Note: the following are named structs, not named basic types,
       and so are not handled here:
          FLOAT_INT DOUBLE_INT LONG_INT 2INT SHORT_INT LONG_DOUBLE_INT
@@ -561,7 +630,7 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
          take them to bits so we have to do a really ugly hack, which
          makes assumptions about how the MPI implementation has laid
          out these types.  At least Open MPI 1.0.1 appears to put
-         the 'val' field first.
+         the 'val' field first.  MPICH2 agrees.
       */
       if (ty == MPI_2INT) {
          typedef struct { int val; int loc; } Ty;
@@ -584,6 +653,18 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
       if (ty == MPI_SHORT_INT) {
          typedef struct { short val; int loc; } Ty;
          f(base + offsetof(Ty,val), sizeof(short));
+         f(base + offsetof(Ty,loc), sizeof(int));
+         return;
+      }
+      if (ty == MPI_FLOAT_INT) {
+         typedef struct { float val; int loc; } Ty;
+         f(base + offsetof(Ty,val), sizeof(float));
+         f(base + offsetof(Ty,loc), sizeof(int));
+         return;
+      }
+      if (ty == MPI_LONG_DOUBLE_INT) {
+         typedef struct { long double val; int loc; } Ty;
+         f(base + offsetof(Ty,val), sizeof_long_double_image());
          f(base + offsetof(Ty,loc), sizeof(int));
          return;
       }

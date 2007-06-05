@@ -88,7 +88,7 @@ static UChar counters[N_COUNTERS]; /* Counter array; presumably auto-zeroed */
 
 static ULong do_cond_branch_predict ( Addr instr_addr, Word takenW )
 {
-   UWord index;
+   UWord indx;
    Bool  predicted_taken, actually_taken, mispredict;
 
    const UWord hist_mask = (1 << N_HIST_BITS) - 1;
@@ -99,12 +99,12 @@ static ULong do_cond_branch_predict ( Addr instr_addr, Word takenW )
 
    tl_assert(hist_bits <= hist_mask);
    tl_assert(iadd_bits <= iadd_mask);
-   index = (hist_bits << N_IADD_BITS) | iadd_bits;
-   tl_assert(index < N_COUNTERS);
-   if (0) VG_(printf)("index = %d\n", (Int)index);
+   indx = (hist_bits << N_IADD_BITS) | iadd_bits;
+   tl_assert(indx < N_COUNTERS);
+   if (0) VG_(printf)("index = %d\n", (Int)indx);
 
    tl_assert(takenW <= 1);
-   predicted_taken = counters[ index ] >= 2;
+   predicted_taken = counters[ indx ] >= 2;
    actually_taken  = takenW > 0;
 
    mispredict = (actually_taken && (!predicted_taken))
@@ -114,14 +114,14 @@ static ULong do_cond_branch_predict ( Addr instr_addr, Word takenW )
    shift_register |= (actually_taken ? 1 : 0);
 
    if (actually_taken) {
-      if (counters[index] < 3)
-         counters[index]++;
+      if (counters[indx] < 3)
+         counters[indx]++;
    } else {
-      if (counters[index] > 0)
-         counters[index]--;
+      if (counters[indx] > 0)
+         counters[indx]--;
    }
 
-   tl_assert(counters[index] <= 3);
+   tl_assert(counters[indx] <= 3);
 
    return mispredict ? 1 : 0;
 }
@@ -138,12 +138,12 @@ static Addr btac[N_BTAC]; /* BTAC; presumably auto-zeroed */
 static ULong do_ind_branch_predict ( Addr instr_addr, Addr actual )
 {
    Bool mispredict;
-   const UWord mask  = (1 << N_BTAC_BITS) - 1;
-         UWord index = (instr_addr >> N_IADDR_LO_ZERO_BITS) 
-                       & mask;
-   tl_assert(index < N_BTAC);
-   mispredict = btac[index] != actual;
-   btac[index] = actual;
+   const UWord mask = (1 << N_BTAC_BITS) - 1;
+         UWord indx = (instr_addr >> N_IADDR_LO_ZERO_BITS) 
+                      & mask;
+   tl_assert(indx < N_BTAC);
+   mispredict = btac[indx] != actual;
+   btac[indx] = actual;
    return mispredict ? 1 : 0;
 }
 

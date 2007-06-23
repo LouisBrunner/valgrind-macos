@@ -416,9 +416,6 @@ extern void VG_(needs_sanity_checks) (
 /* Do we need to see data symbols? */
 extern void VG_(needs_data_syms) ( void );
 
-/* Does the tool need shadow memory allocated? */
-extern void VG_(needs_shadow_memory)( void );
-
 /* Does the tool replace malloc() and friends with its own versions?
    This has to be combined with the use of a vgpreload_<tool>.so module
    or it won't work.  See massif/Makefile.am for how to build it. */

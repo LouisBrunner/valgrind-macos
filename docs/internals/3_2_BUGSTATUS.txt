@@ -120,7 +120,7 @@ r6749    pending      n-i-bz   callgrind_annotate: Fix a warning
 
 r6751    pending      n-i-bz   callgrind: fix build with srcdir != builddir
 
-r6744/53    pending      n-i-bz   valgrind: glibc 2.6 support
+r6744/53 r6762        n-i-bz   valgrind: glibc 2.6 support
 
 
 //// maybe do not fix in 3.2 branch

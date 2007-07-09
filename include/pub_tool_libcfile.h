@@ -56,6 +56,10 @@ extern Bool   VG_(getcwd) ( Char* buf, SizeT size );
 extern Int    VG_(readlink)( Char* path, Char* buf, UInt bufsize );
 extern Int    VG_(getdents)( UInt fd, struct vki_dirent *dirp, UInt count );
 
+/* Copy the working directory at startup into buf[0 .. size-1], or return
+   False if buf is too small. */
+extern Bool VG_(get_startup_wd) ( Char* buf, SizeT size );
+
 #endif   // __PUB_TOOL_LIBCFILE_H
 
 /*--------------------------------------------------------------------*/

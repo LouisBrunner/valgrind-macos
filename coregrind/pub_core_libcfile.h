@@ -81,6 +81,14 @@ extern SysRes VG_(pread) ( Int fd, void* buf, Int count, Int offset );
    written is guaranteed not to exceed 64+strlen(part_of_name). */
 extern Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname );
 
+/* Record the process' working directory at startup.  Is intended to
+   be called exactly once, at startup, before the working directory
+   changes.  Return True for success, False for failure, so that the
+   caller can bomb out suitably without creating module cycles if
+   there is a problem.  The saved value can later be acquired by
+   calling VG_(get_startup_wd) (in pub_tool_libcfile.h). */
+extern Bool VG_(record_startup_wd) ( void );
+
 #endif   // __PUB_CORE_LIBCFILE_H
 
 /*--------------------------------------------------------------------*/

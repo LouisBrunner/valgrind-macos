@@ -47,7 +47,7 @@
 
 /* As deduced from sp_at_startup, the client's argc, argv[] and
    envp[] as extracted from the client's stack at startup-time. */
-Char** VG_(client_envp);
+Char** VG_(client_envp) = NULL;
 
 /* Path to library directory */
 const Char *VG_(libdir) = VG_LIBDIR;
@@ -57,6 +57,7 @@ const Char *VG_(libdir) = VG_LIBDIR;
 Char *VG_(getenv)(Char *varname)
 {
    Int i, n;
+   vg_assert( VG_(client_envp) );
    n = VG_(strlen)(varname);
    for (i = 0; VG_(client_envp)[i] != NULL; i++) {
       Char* s = VG_(client_envp)[i];

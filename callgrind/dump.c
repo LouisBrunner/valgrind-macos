@@ -1689,7 +1689,7 @@ void CLG_(init_dumps)()
           until it succeeds. */
        while (NULL == base_directory) {
            base_directory = CLG_MALLOC(size);
-           if (!VG_(getcwd)(base_directory, size)) {
+           if (!VG_(get_startup_wd)(base_directory, size)) {
                VG_(free)(base_directory);
                base_directory = 0;
                size *= 2;

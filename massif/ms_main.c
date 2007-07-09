@@ -1758,7 +1758,7 @@ static void ms_pre_clo_init(void)
    // Dummy node at top of the context structure.
    alloc_xpt = new_XPt(0, NULL, /*is_bottom*/False);
 
-   tl_assert( VG_(getcwd)(base_dir, VKI_PATH_MAX) );
+   tl_assert( VG_(get_startup_wd)(base_dir, VKI_PATH_MAX) );
 }
 
 VG_DETERMINE_INTERFACE_VERSION(ms_pre_clo_init)

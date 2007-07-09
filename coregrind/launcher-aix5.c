@@ -1526,6 +1526,29 @@ int main ( int argc, char** argv, char** envp )
       return 1;
    }
 
+   /* Find out what the current working directory is, and stuff it into the
+      environment so that the child can find it. */
+   char wd_buf[4096];
+   memset(wd_buf, 0, sizeof(wd_buf));
+   if (getcwd(wd_buf, sizeof(wd_buf)-1) == NULL) {
+      fprintf(stderr,"%s: getcwd(..) failed\n", argv[0]);
+      return 1;
+   }
+   assert(wd_buf[ sizeof(wd_buf)-1 ] == 0);
+   char* set_cwd = calloc(1, 100+sizeof(wd_buf));   
+   if (set_cwd == NULL) {
+      fprintf(stderr,"%s: calloc of set_cwd failed\n", argv[0]);
+      return 1;
+   }
+   sprintf(set_cwd, "VALGRIND_STARTUP_PWD_%d_XYZZY=%s", getpid(), wd_buf);
+   VG_(debugLog)(1, "launcher", "doing putenv(\"%s\")\n", set_cwd);
+   putenv_err = putenv(set_cwd);
+   if (putenv_err) {
+      fprintf(stderr,"%s: putenv(\"VALGRIND_STARTUP_PWD_...\") failed\n", 
+                     argv[0]);
+      return 1;
+   }
+
    /* Also, cook up the fully qualified name of this executable.  The
       following is a kludge, but I don't see how to really get the
       fully qualified name on AIX. */

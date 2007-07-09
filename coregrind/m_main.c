@@ -1377,6 +1377,22 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      );
    }
 
+   //--------------------------------------------------------------
+   // Record the working directory at startup
+   //   p: none (Linux), getenv and sys_getpid work (AIX)
+   VG_(debugLog)(1, "main", "Getting the working directory at startup\n");
+   { Bool ok = VG_(record_startup_wd)();
+     if (!ok) 
+        VG_(err_config_error)( "Can't establish current working "
+                               "directory at startup");
+   }
+   { Char buf[VKI_PATH_MAX+1];
+     Bool ok = VG_(get_startup_wd)( buf, sizeof(buf) );
+     vg_assert(ok);
+     buf[VKI_PATH_MAX] = 0;
+     VG_(debugLog)(1, "main", "... %s\n", buf );
+   }
+
    //============================================================
    // Command line argument handling order:
    // * If --help/--help-debug are present, show usage message 

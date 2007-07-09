@@ -210,7 +210,7 @@ void VG_(split_up_argv)( Int argc, HChar** argv )
       // contents will be applied twice. (bug #142488)
       if (home) {
          HChar cwd[VKI_PATH_MAX+1];
-         Bool  cwd_ok = VG_(getcwd)(cwd, VKI_PATH_MAX);
+         Bool  cwd_ok = VG_(get_startup_wd)(cwd, VKI_PATH_MAX);
          f2_clo = ( (cwd_ok && VG_STREQ(home, cwd))
                        ? NULL : read_dot_valgrindrc(".") );
       }

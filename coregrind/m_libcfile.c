@@ -217,25 +217,71 @@ Int VG_(unlink) ( Char* file_name )
    return res.isError ? (-1) : 0;
 }
 
-Bool VG_(getcwd) ( Char* buf, SizeT size )
+/* The working directory at startup.  AIX doesn't provide an easy
+   system call to do getcwd, but fortunately we don't need arbitrary
+   getcwd support.  All that is really needed is to note the cwd at
+   process startup.  Hence VG_(record_startup_wd) notes it (in a
+   platform dependent way) and VG_(get_startup_wd) produces the noted
+   value.  Hence: */
+static HChar startup_wd[VKI_PATH_MAX];
+static Bool  startup_wd_acquired = False;
+
+/* Record the process' working directory at startup.  Is intended to
+   be called exactly once, at startup, before the working directory
+   changes.  Return True for success, False for failure, so that the
+   caller can bomb out suitably without creating module cycles if
+   there is a problem. */
+Bool VG_(record_startup_wd) ( void )
 {
+   const Int szB = sizeof(startup_wd);
+   vg_assert(!startup_wd_acquired);
+   vg_assert(szB >= 512 && szB <= 16384/*let's say*/); /* stay sane */
+   VG_(memset)(startup_wd, 0, szB);
 #  if defined(VGO_linux)
-   SysRes res;
-   vg_assert(buf != NULL);
-   res = VG_(do_syscall2)(__NR_getcwd, (UWord)buf, size);
-   return res.isError ? False : True;
+   /* Simple: just ask the kernel */
+   { SysRes res
+        = VG_(do_syscall2)(__NR_getcwd, (UWord)startup_wd, szB-1);
+     vg_assert(startup_wd[szB-1] == 0);
+     if (res.isError) {
+        return False;
+     } else {
+        startup_wd_acquired = True;
+        return True;
+     }
+   }
 #  elif defined(VGO_aix5)
-   static Int complaints = 3;
-   if (complaints-- > 0)
-      VG_(debugLog)(0, "libcfile",
-                       "Warning: AIX5: m_libcfile.c: kludged 'getcwd'\n");
-   if (size < 2) return False;
-   buf[0] = '.';
-   buf[1] = 0;
-   return True;
+   /* We can't ask the kernel, so instead rely on launcher-aix5.c to
+      tell us the startup path.  Note the env var is keyed to the
+      parent's PID, not ours, since our parent is the launcher
+      process. */
+   { Char  envvar[100];
+     Char* wd = NULL;
+     VG_(memset)(envvar, 0, sizeof(envvar));
+     VG_(sprintf)(envvar, "VALGRIND_STARTUP_PWD_%d_XYZZY", 
+                          (Int)VG_(getppid)());
+     wd = VG_(getenv)( envvar );
+     if (wd == NULL || (1+VG_(strlen)(wd) >= szB))
+        return False;
+     VG_(strncpy_safely)(startup_wd, wd, szB);
+     vg_assert(startup_wd[szB-1] == 0);
+     startup_wd_acquired = True;
+     return True;
+   }
 #  else
 #    error Unknown OS
 #  endif
+}
+
+/* Copy the previously acquired startup_wd into buf[0 .. size-1],
+   or return False if buf isn't big enough. */
+Bool VG_(get_startup_wd) ( Char* buf, SizeT size )
+{
+   vg_assert(startup_wd_acquired);
+   vg_assert(startup_wd[ sizeof(startup_wd)-1 ] == 0);
+   if (1+VG_(strlen)(startup_wd) >= size)
+      return False;
+   VG_(strncpy_safely)(buf, startup_wd, size);
+   return True;
 }
 
 Int VG_(readlink) (Char* path, Char* buf, UInt bufsiz)

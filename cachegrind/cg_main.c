@@ -1754,7 +1754,7 @@ static void cg_post_clo_init(void)
    }
 
    /* Get working directory */
-   tl_assert( VG_(getcwd)(base_dir, VKI_PATH_MAX) );
+   tl_assert( VG_(get_startup_wd)(base_dir, VKI_PATH_MAX) );
 
    /* Do we have a --log-file-qualifier= to consider? */
    if (VG_(clo_log_file_qualifier)) {

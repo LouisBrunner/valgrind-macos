@@ -563,16 +563,27 @@ Int VG_(aix5_NR_kunload64) = __NR_AIX5_UNKNOWN;
 Int VG_(aix5_NR_FAKE_SIGRETURN) = __NR_AIX5_UNKNOWN;
 
 
-static Bool local_streq ( UChar* s1, UChar* s2 )
-{
-   while (True) {
-      if (*s1 == 0 && *s2 == 0) return True;
-      if (*s1 == 0) return False;
-      if (*s2 == 0) return False;
-      if (*s1 != *s2) return False;
-      s1++; s2++;
-   }
+
+/* Also make a record of the registered syscalls, so we can print the
+   name in bad_before() (syswrap-main.c) if needed.  The obvious
+   approach would be to dump them in an XArray, but that requires
+   dynamic memory allocation, and syscall registration is done before
+   dynamic memory allocation is available.  So just use a fixed size
+   array and hope it doesn't fill up. */
+#define N_BINDINGS 2000
+static Int    bindings_used = 0;
+static Int    bindings_sysno[N_BINDINGS];
+static UChar* bindings_sysname[N_BINDINGS];
+
+UChar* VG_(aix5_sysno_to_sysname)( Int sysno ) {
+   Int i;
+   for (i = 0; i < bindings_used; i++)
+      if (bindings_sysno[i] == sysno)
+         return bindings_sysname[i];
+   return "(unknown name)";
 }
+
+static Bool local_streq ( UChar* s1, UChar* s2 ); /* fwds */
 
 Bool VG_(aix5_register_syscall)( Int sysno, UChar* sysname )
 {
@@ -581,7 +592,14 @@ Bool VG_(aix5_register_syscall)( Int sysno, UChar* sysname )
       VG_(aix5_NR_FAKE_SIGRETURN) = sysno + 10000;
    else
    if (sysno + 10000 > VG_(aix5_NR_FAKE_SIGRETURN))
-       VG_(aix5_NR_FAKE_SIGRETURN) = sysno + 10000;
+      VG_(aix5_NR_FAKE_SIGRETURN) = sysno + 10000;
+
+   /* Note the name, just in case bad_before() needs to complain. */
+   if (bindings_used < N_BINDINGS) {
+      bindings_sysno[bindings_used] = sysno;
+      bindings_sysname[bindings_used] = sysname;
+      bindings_used++;
+   }
 
    /* Now do the normal name-to-number binding checks. */
 #  define XXX(name)                            \
@@ -1090,6 +1108,18 @@ Bool VG_(aix5_register_syscall)( Int sysno, UChar* sysname )
    XXX(kunload64)
 #  undef XXX
    return False;
+}
+
+
+static Bool local_streq ( UChar* s1, UChar* s2 )
+{
+   while (True) {
+      if (*s1 == 0 && *s2 == 0) return True;
+      if (*s1 == 0) return False;
+      if (*s2 == 0) return False;
+      if (*s1 != *s2) return False;
+      s1++; s2++;
+   }
 }
 
 #endif /* defined(VGO_aix5) */

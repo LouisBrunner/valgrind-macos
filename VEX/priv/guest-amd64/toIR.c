@@ -4381,6 +4381,25 @@ static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
 }
 
 
+/* returns 
+   32to16( if e32 <s -32768 || e32 >s 32767 then -32768 else e32 )
+*/
+static IRExpr* x87ishly_qnarrow_32_to_16 ( IRExpr* e32 )
+{
+   IRTemp t32 = newTemp(Ity_I32);
+   assign( t32, e32 );
+   return
+      IRExpr_Mux0X( 
+         unop(Iop_1Uto8, 
+              binop(Iop_CmpLT64U, 
+                    unop(Iop_32Uto64, 
+                         binop(Iop_Add32, mkexpr(t32), mkU32(32768))), 
+                    mkU64(65536))),
+         mkU16( 0x8000 ),
+         unop(Iop_32to16, mkexpr(t32)));
+}
+
+
 static
 ULong dis_FPU ( /*OUT*/Bool* decode_ok, 
                 Prefix pfx, Long delta )
@@ -5837,8 +5856,8 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
             case 1: /* FISTTPS m16 (SSE3) */
                DIP("fisttps %s\n", dis_buf);
                storeLE( mkexpr(addr), 
-                        unop(Iop_32to16,
-                             binop(Iop_F64toI32, mkU32(Irrm_ZERO), get_ST(0))) );
+                        x87ishly_qnarrow_32_to_16( 
+                        binop(Iop_F64toI32, mkU32(Irrm_ZERO), get_ST(0)) ));
                fp_pop();
                break;
 
@@ -5848,12 +5867,13 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                         binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
 //..                break;
 
-//..             case 3: /* FISTP m16 */
-//..                DIP("fistps %s\n", dis_buf);
-//..                storeLE( mkexpr(addr), 
-//..                         binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
-//..                fp_pop();
-//..                break;
+            case 3: /* FISTP m16 */
+               DIP("fistps %s\n", dis_buf);
+               storeLE( mkexpr(addr),
+                        x87ishly_qnarrow_32_to_16( 
+                        binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) ));
+               fp_pop();
+               break;
 
             case 5: /* FILD m64 */
                DIP("fildll %s\n", dis_buf);

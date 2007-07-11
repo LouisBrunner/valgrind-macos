@@ -120,7 +120,11 @@ r6749    pending      n-i-bz   callgrind_annotate: Fix a warning
 
 r6751    pending      n-i-bz   callgrind: fix build with srcdir != builddir
 
-r6744/53 r6762        n-i-bz   valgrind: glibc 2.6 support
+r6744/53 r6762     32 n-i-bz   valgrind: glibc 2.6 support
+
+r6756    r6755     32 n-i-bz   handle MPI_DOUBLE_PRECISION
+
+r6758    r6760     32 n-i-bz   handle a whole bunch of MPI2 types
 
 
 //// maybe do not fix in 3.2 branch
@@ -134,6 +138,8 @@ r6631    pending   ?? 142186   dd support for some I2C ioctls.
 
 r6706    pending   no n-i-bz   memcheck: wrap getenv/setenv/putenv
 
+Christoph Barthoschek m_hashtable.c fixes, dev@, 11 July
+Christoph Barthoschek Superblock slowness test case, users@, 11 July
 
 3.2.4 criteria: FC7 runs, SuSE 10.3a? runs, gcc-4.2 works OK
 

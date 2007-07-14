@@ -18,8 +18,7 @@ DIST_SUBDIRS  = $(SUBDIRS)
 
 SUPP_FILES = \
 	glibc-2.2.supp glibc-2.3.supp glibc-2.4.supp glibc-2.5.supp \
-	aix5libc.supp \
-	xfree-3.supp xfree-4.supp
+	glibc-2.6.supp aix5libc.supp xfree-3.supp xfree-4.supp
 
 dist_val_DATA = $(SUPP_FILES) default.supp
 

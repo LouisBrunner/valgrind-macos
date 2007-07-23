@@ -81,6 +81,14 @@
    obj:*lib*2.6.*.so
 }
 
+{
+   glibc-2.6-on-SUSE-10.3-(x86)
+   Memcheck:Addr4
+   obj:/lib/ld-2.6.so
+   obj:/lib/ld-2.6.so
+   obj:/lib/ld-2.6.so
+}
+
 ##----------------------------------------------------------------------##
 ## Various structure padding things on SUSE 10.2
 ##

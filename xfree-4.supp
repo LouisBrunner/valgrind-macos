@@ -134,10 +134,33 @@
 }
 
 {
+   struct with uninitialized paddings - libxcb
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/ld-2.6.so
+   obj:/usr/lib*/libxcb.so.1.0.0
+   obj:/usr/lib*/libxcb.so.1.0.0
+   fun:xcb_send_request
+   fun:_X*
+}
+
+{
+   struct with uninitialized paddings - libxcb
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/ld-2.6.so
+   obj:/usr/lib*/libxcb.so.1.0.0
+   obj:/usr/lib*/libxcb.so.1.0.0
+   obj:/usr/lib*/libxcb.so.1.0.0
+   fun:xcb_*
+   fun:_X*
+}
+
+{
    another struct with uninitialized paddings
    Memcheck:Param
    write(buf)
-   fun:*
+   obj:*
    fun:_IceTransSocketWrite
    fun:_IceTransWrite
    fun:_IceWrite
@@ -165,17 +188,7 @@
    Xorg 6.8.1 ICE uninit __write* padding
    Memcheck:Param
    write(buf)
-   fun:__write*
-   fun:_IceTransWrite
-   fun:_IceWrite
-   fun:IceFlush
-}
-
-{
-   Xorg 6.8.1 ICE uninit write padding
-   Memcheck:Param
-   write(buf)
-   fun:write
+   obj:*
    fun:_IceTransWrite
    fun:_IceWrite
    fun:IceFlush
@@ -201,6 +214,8 @@
    fun:_X11TransWritev
    fun:_XSend
 }
+
+
 
 # There's something strange about a % 127 in XftFontOpenInfo
 # (hashing) which gcc turns into a multiply by 33818641 and

@@ -50,7 +50,7 @@
 /*--- Main types                                           ---*/
 /*------------------------------------------------------------*/
 
-#define N_MALLOC_LISTS     18    // do not change this
+#define N_MALLOC_LISTS     112    // do not change this
 
 // The amount you can ask for is limited only by sizeof(SizeT)...
 #define MAX_PSZB              (~((SizeT)0x0))
@@ -479,11 +479,13 @@ void ensure_mm_init ( ArenaId aid )
       // relatively large client blocks so as not to cause excessively
       // fine-grained interleaving of V and C address space.  On Linux
       // this is irrelevant since aspacem can keep the two spaces
-      // well apart, but not so on AIX.
+      // well apart, but not so on AIX.  On all platforms though, 
+      // increasing the superblock size reduces the number of superblocks
+      // in the client arena, which makes findSb cheaper.
 #     if defined(VGO_aix5)
       ar_client_sbszB = 16777216;
 #     else
-      ar_client_sbszB = 1048576;
+      ar_client_sbszB = 4194304;
 #     endif
       arena_init ( VG_AR_CLIENT,    "client",   client_rz_szB, ar_client_sbszB );
       client_inited = True;
@@ -494,10 +496,10 @@ void ensure_mm_init ( ArenaId aid )
       }
       // Initialise the non-client arenas
       arena_init ( VG_AR_CORE,      "core",     4,             1048576 );
-      arena_init ( VG_AR_TOOL,      "tool",     4,             1048576 );
+      arena_init ( VG_AR_TOOL,      "tool",     4,             4194304 );
       arena_init ( VG_AR_SYMTAB,    "symtab",   4,             1048576 );
       arena_init ( VG_AR_DEMANGLE,  "demangle", 4,               65536 );
-      arena_init ( VG_AR_EXECTXT,   "exectxt",  4,              262144 );
+      arena_init ( VG_AR_EXECTXT,   "exectxt",  4,             1048576 );
       arena_init ( VG_AR_ERRORS,    "errors",   4,               65536 );
       arena_init ( VG_AR_TTAUX,     "ttaux",    4,               65536 );
       nonclient_inited = True;
@@ -673,14 +675,60 @@ UInt pszB_to_listNo ( SizeT pszB )
    SizeT n = pszB / VG_MIN_MALLOC_SZB;
    vg_assert(0 == pszB % VG_MIN_MALLOC_SZB);
 
-   // The first 13 lists hold blocks of size VG_MIN_MALLOC_SZB * list_num.
-   // The final 5 hold bigger blocks.
-   if (n <= 12)  return (UInt)n;
-   if (n <= 16)  return 13;
-   if (n <= 32)  return 14;
-   if (n <= 64)  return 15;
-   if (n <= 128) return 16;
-   return 17;
+   // The first 64 lists hold blocks of size VG_MIN_MALLOC_SZB * list_num.
+   // The final 48 hold bigger blocks.
+   if (n < 64)   return (UInt)n;
+   /* Exponential slope up, factor 1.05 */
+   if (n < 67) return 64;
+   if (n < 70) return 65;
+   if (n < 74) return 66;
+   if (n < 77) return 67;
+   if (n < 81) return 68;
+   if (n < 85) return 69;
+   if (n < 90) return 70;
+   if (n < 94) return 71;
+   if (n < 99) return 72;
+   if (n < 104) return 73;
+   if (n < 109) return 74;
+   if (n < 114) return 75;
+   if (n < 120) return 76;
+   if (n < 126) return 77;
+   if (n < 133) return 78;
+   if (n < 139) return 79;
+   /* Exponential slope up, factor 1.10 */
+   if (n < 153) return 80;
+   if (n < 169) return 81;
+   if (n < 185) return 82;
+   if (n < 204) return 83;
+   if (n < 224) return 84;
+   if (n < 247) return 85;
+   if (n < 272) return 86;
+   if (n < 299) return 87;
+   if (n < 329) return 88;
+   if (n < 362) return 89;
+   if (n < 398) return 90;
+   if (n < 438) return 91;
+   if (n < 482) return 92;
+   if (n < 530) return 93;
+   if (n < 583) return 94;
+   if (n < 641) return 95;
+   /* Exponential slope up, factor 1.20 */
+   if (n < 770) return 96;
+   if (n < 924) return 97;
+   if (n < 1109) return 98;
+   if (n < 1331) return 99;
+   if (n < 1597) return 100;
+   if (n < 1916) return 101;
+   if (n < 2300) return 102;
+   if (n < 2760) return 103;
+   if (n < 3312) return 104;
+   if (n < 3974) return 105;
+   if (n < 4769) return 106;
+   if (n < 5723) return 107;
+   if (n < 6868) return 108;
+   if (n < 8241) return 109;
+   if (n < 9890) return 110;
+   return 111;
 }
 
 // What is the minimum payload size for a given list?

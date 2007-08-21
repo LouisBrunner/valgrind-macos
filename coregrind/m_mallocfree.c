@@ -43,8 +43,8 @@
 
 //zz#include "memcheck/memcheck.h"
 
-//#define DEBUG_MALLOC      // turn on heavyweight debugging machinery
-//#define VERBOSE_MALLOC    // make verbose, esp. in debugging machinery
+// #define DEBUG_MALLOC      // turn on heavyweight debugging machinery
+// #define VERBOSE_MALLOC    // make verbose, esp. in debugging machinery
 
 /*------------------------------------------------------------*/
 /*--- Main types                                           ---*/
@@ -54,6 +54,10 @@
 
 // The amount you can ask for is limited only by sizeof(SizeT)...
 #define MAX_PSZB              (~((SizeT)0x0))
+
+// Each arena has a sorted array of superblocks, which expands
+// dynamically.  This is its initial size.
+#define SBLOCKS_SIZE_INITIAL 50
 
 typedef UChar UByte;
 
@@ -125,12 +129,12 @@ typedef
 // created, and then can be split and the splittings remerged, but Blocks
 // always cover its entire length -- there's never any unused bytes at the
 // end, for example.
-typedef 
+typedef
    struct _Superblock {
-      struct _Superblock* next;
       SizeT n_payload_bytes;
-      UByte padding[ VG_MIN_MALLOC_SZB - 
-                        ((sizeof(struct _Superblock*) + sizeof(SizeT)) % 
+      void* padding2;
+      UByte padding[ VG_MIN_MALLOC_SZB -
+                        ((sizeof(struct _Superblock*) + sizeof(SizeT)) %
                          VG_MIN_MALLOC_SZB) ];
       UByte payload_bytes[0];
    }
@@ -138,19 +142,29 @@ typedef
 
 // An arena. 'freelist' is a circular, doubly-linked list.  'rz_szB' is
 // elastic, in that it can be bigger than asked-for to ensure alignment.
-typedef 
+typedef
    struct {
-      Char*       name;
-      Bool        clientmem;        // Allocates in the client address space?
-      SizeT       rz_szB;           // Red zone size in bytes
-      SizeT       min_sblock_szB;   // Minimum superblock size in bytes
-      Block*      freelist[N_MALLOC_LISTS];
-      Superblock* sblocks;
+      Char*        name;
+      Bool         clientmem;        // Allocates in the client address space?
+      SizeT        rz_szB;           // Red zone size in bytes
+      SizeT        min_sblock_szB;   // Minimum superblock size in bytes
+      Block*       freelist[N_MALLOC_LISTS];
+      // A dynamically expanding, ordered array of (pointers to)
+      // superblocks in the arena.  If this array is expanded, which
+      // is rare, the previous space it occupies is simply abandoned.
+      // To avoid having to get yet another block from m_aspacemgr for
+      // the first incarnation of this array, the first allocation of
+      // it is within this struct.  If it has to be expanded then the
+      // new space is acquired from m_aspacemgr as you would expect.
+      Superblock** sblocks;
+      SizeT        sblocks_size;
+      SizeT        sblocks_used;
+      Superblock*  sblocks_initial[SBLOCKS_SIZE_INITIAL];
       // Stats only.
-      SizeT bytes_on_loan;
-      SizeT bytes_mmaped;
-      SizeT bytes_on_loan_max;
-   } 
+      SizeT        bytes_on_loan;
+      SizeT        bytes_mmaped;
+      SizeT        bytes_on_loan_max;
+   }
    Arena;
 
 
@@ -383,7 +397,7 @@ static Arena* arenaId_to_ArenaP ( ArenaId arena )
 static
 void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
 {
-   SizeT i;
+   SizeT  i;
    Arena* a = arenaId_to_ArenaP(aid);
    
    // Ensure redzones are a reasonable size.  They must always be at least
@@ -405,10 +419,15 @@ void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
 
    a->min_sblock_szB = min_sblock_szB;
    for (i = 0; i < N_MALLOC_LISTS; i++) a->freelist[i] = NULL;
-   a->sblocks           = NULL;
+
+   a->sblocks           = & a->sblocks_initial[0];
+   a->sblocks_size      = SBLOCKS_SIZE_INITIAL;
+   a->sblocks_used      = 0;
    a->bytes_on_loan     = 0;
    a->bytes_mmaped      = 0;
    a->bytes_on_loan_max = 0;
+   vg_assert(sizeof(a->sblocks_initial) 
+             == SBLOCKS_SIZE_INITIAL * sizeof(Superblock*));
 }
 
 /* Print vital stats for an arena. */
@@ -433,11 +452,12 @@ void VG_(print_all_arena_stats) ( void )
    must do non-client allocation before the tool has a chance to set the
    client arena's redzone size.
 */
+static Bool     client_inited = False;
+static Bool  nonclient_inited = False;
+
 static
 void ensure_mm_init ( ArenaId aid )
 {
-   static Bool     client_inited = False;
-   static Bool  nonclient_inited = False;
    static SizeT client_rz_szB = 8;     // default: be paranoid
 
    /* We use checked red zones (of various sizes) for our internal stuff,
@@ -506,7 +526,9 @@ void ensure_mm_init ( ArenaId aid )
    }
 
 #  ifdef DEBUG_MALLOC
+   VG_(printf)("ZZZ1\n");
    VG_(sanity_check_malloc_all)();
+   VG_(printf)("ZZZ2\n");
 #  endif
 }
 
@@ -615,49 +637,29 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
 static
 Superblock* findSb ( Arena* a, Block* b )
 {
-   Superblock* sb;
-   static UInt n_search = 0;
-   for (sb = a->sblocks; sb; sb = sb->next) {
-      if ((Block*)&sb->payload_bytes[0] <= b 
-          && b < (Block*)&sb->payload_bytes[sb->n_payload_bytes])
-         break;
-   }
-   if (!sb) {
-      VG_(printf)("findSb: can't find pointer %p in arena '%s'\n", 
-                  b, a->name );
-      VG_(core_panic)("findSb: VG_(arena_free)() in wrong arena?");
-      return NULL; /*NOTREACHED*/
-   }
+   SizeT min = 0;
+   SizeT max = a->sblocks_used;
 
-   /* Start of performance-enhancing hack: once every 128 (chosen
-      hackily after profiling) successful searches, move the found
-      Superblock one step closer to the start of the list.  This makes
-      future searches cheaper. */
-   if ((n_search & 0x7F) == 0) {
-      /* Move sb one step closer to the start of the list. */
-      Superblock* sb0 = a->sblocks;
-      Superblock* sb1 = NULL;
-      Superblock* sb2 = NULL;
-      Superblock* tmp;
-      while (True) {
-         if (sb0 == NULL) break;
-         if (sb0 == sb) break;
-         sb2 = sb1;
-         sb1 = sb0;
-         sb0 = sb0->next;
-      }
-      if (sb0 == sb && sb0 != NULL && sb1 != NULL && sb2 != NULL) {
-         /* sb0 points to sb, sb1 to its predecessor, and sb2 to sb1's
-            predecessor.  Swap sb0 and sb1, that is, move sb0 one step
-            closer to the start of the list. */
-         tmp = sb0->next;
-         sb2->next = sb0;
-         sb0->next = sb1;
-         sb1->next = tmp;
+   while (min <= max) {
+      Superblock * sb; 
+      SizeT pos = min + (max - min)/2;
+
+      vg_assert(pos >= 0 && pos < a->sblocks_used);
+      sb = a->sblocks[pos];
+      if ((Block*)&sb->payload_bytes[0] <= b
+          && b < (Block*)&sb->payload_bytes[sb->n_payload_bytes])
+      {
+         return sb;
+      } else if ((Block*)&sb->payload_bytes[0] <= b) {
+         min = pos + 1;
+      } else {
+         max = pos - 1;
       }
    }
-   /* End of performance-enhancing hack. */
-   return sb;
+   VG_(printf)("findSb: can't find pointer %p in arena '%s'\n",
+                b, a->name );
+   VG_(core_panic)("findSb: VG_(arena_free)() in wrong arena?");
+   return NULL; /*NOTREACHED*/
 }
 
 
@@ -823,14 +825,15 @@ Bool blockSane ( Arena* a, Block* b )
 static 
 void ppSuperblocks ( Arena* a )
 {
-   UInt i, blockno = 1;
-   Superblock* sb = a->sblocks;
+   UInt i, j, blockno = 1;
    SizeT b_bszB;
 
-   while (sb) {
+   for (j = 0; j < a->sblocks_used; ++j) {
+      Superblock * sb = a->sblocks[j];
+
       VG_(printf)( "\n" );
-      VG_(printf)( "superblock %d at %p, sb->n_pl_bs = %d, next = %p\n", 
-                   blockno++, sb, sb->n_payload_bytes, sb->next );
+      VG_(printf)( "superblock %d at %p, sb->n_pl_bs = %d\n",
+                   blockno++, sb, sb->n_payload_bytes);
       for (i = 0; i < sb->n_payload_bytes; i += b_bszB) {
          Block* b = (Block*)&sb->payload_bytes[i];
          b_bszB   = get_bszB(b);
@@ -839,7 +842,6 @@ void ppSuperblocks ( Arena* a )
          VG_(printf)( "%s\n", blockSane(a, b) ? "ok" : "BAD" );
       }
       vg_assert(i == sb->n_payload_bytes);   // no overshoot at end of Sb
-      sb = sb->next;
    }
    VG_(printf)( "end of superblocks\n\n" );
 }
@@ -847,11 +849,10 @@ void ppSuperblocks ( Arena* a )
 // Sanity check both the superblocks and the chains.
 static void sanity_check_malloc_arena ( ArenaId aid )
 {
-   UInt        i, superblockctr, blockctr_sb, blockctr_li;
+   UInt        i, j, superblockctr, blockctr_sb, blockctr_li;
    UInt        blockctr_sb_free, listno;
    SizeT       b_bszB, b_pszB, list_min_pszB, list_max_pszB;
-   Superblock* sb;
-   Bool        thisFree, lastWasFree;
+   Bool        thisFree, lastWasFree, sblockarrOK;
    Block*      b;
    Block*      b_prev;
    SizeT       arena_bytes_on_loan;
@@ -860,12 +861,25 @@ static void sanity_check_malloc_arena ( ArenaId aid )
 #  define BOMB VG_(core_panic)("sanity_check_malloc_arena")
 
    a = arenaId_to_ArenaP(aid);
-   
+
+   // Check the superblock array.
+   sblockarrOK
+      = a->sblocks != NULL
+        && a->sblocks_size >= SBLOCKS_SIZE_INITIAL
+        && a->sblocks_used <= a->sblocks_size
+        && (a->sblocks_size == SBLOCKS_SIZE_INITIAL 
+            ? (a->sblocks == &a->sblocks_initial[0])
+            : (a->sblocks != &a->sblocks_initial[0]));
+   if (!sblockarrOK) {
+      VG_(printf)("sanity_check_malloc_arena: sblock array BAD\n");
+      BOMB;
+   }
+
    // First, traverse all the superblocks, inspecting the Blocks in each.
    superblockctr = blockctr_sb = blockctr_sb_free = 0;
    arena_bytes_on_loan = 0;
-   sb = a->sblocks;
-   while (sb) {
+   for (j = 0; j < a->sblocks_used; ++j) {
+      Superblock * sb = a->sblocks[j];
       lastWasFree = False;
       superblockctr++;
       for (i = 0; i < sb->n_payload_bytes; i += mk_plain_bszB(b_bszB)) {
@@ -885,7 +899,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
             BOMB;
          }
          if (thisFree) blockctr_sb_free++;
-         if (!thisFree) 
+         if (!thisFree)
             arena_bytes_on_loan += bszB_to_pszB(a, b_bszB);
          lastWasFree = thisFree;
       }
@@ -894,7 +908,6 @@ static void sanity_check_malloc_arena ( ArenaId aid )
                       "overshoots end\n", sb);
          BOMB;
       }
-      sb = sb->next;
    }
 
    if (arena_bytes_on_loan != a->bytes_on_loan) {
@@ -921,15 +934,15 @@ static void sanity_check_malloc_arena ( ArenaId aid )
          b = get_next_b(b);
          if (get_prev_b(b) != b_prev) {
             VG_(printf)( "sanity_check_malloc_arena: list %d at %p: "
-                         "BAD LINKAGE\n", 
+                         "BAD LINKAGE\n",
                          listno, b );
             BOMB;
          }
          b_pszB = get_pszB(a, b);
          if (b_pszB < list_min_pszB || b_pszB > list_max_pszB) {
-            VG_(printf)( 
+            VG_(printf)(
                "sanity_check_malloc_arena: list %d at %p: "
-               "WRONG CHAIN SIZE %dB (%dB, %dB)\n", 
+               "WRONG CHAIN SIZE %dB (%dB, %dB)\n",
                listno, b, b_pszB, list_min_pszB, list_max_pszB );
             BOMB;
          }
@@ -963,8 +976,11 @@ static void sanity_check_malloc_arena ( ArenaId aid )
 void VG_(sanity_check_malloc_all) ( void )
 {
    UInt i;
-   for (i = 0; i < VG_N_ARENAS; i++)
+   for (i = 0; i < VG_N_ARENAS; i++) {
+      if (i == VG_AR_CLIENT && !client_inited)
+         continue;
       sanity_check_malloc_arena ( i );
+   }
 }
 
 
@@ -1061,7 +1077,7 @@ SizeT align_req_pszB ( SizeT req_pszB )
 void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
 {
    SizeT       req_bszB, frag_bszB, b_bszB;
-   UInt        lno;
+   UInt        lno, i;
    Superblock* new_sb;
    Block*      b = NULL;
    Arena*      a;
@@ -1095,8 +1111,41 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
       vg_assert(VG_AR_CLIENT == aid);
       return NULL;
    }
-   new_sb->next = a->sblocks;
-   a->sblocks = new_sb;
+
+   vg_assert(a->sblocks_used <= a->sblocks_size);
+   if (a->sblocks_used == a->sblocks_size) {
+      Superblock ** array;
+      SysRes sres = VG_(am_sbrk_anon_float_valgrind)(sizeof(Superblock *) *
+                                                     a->sblocks_size * 2);
+      if (sres.isError) {
+         VG_(out_of_memory_NORETURN)("arena_init", sizeof(Superblock *) * 
+                                                   a->sblocks_size * 2);
+         /* NOTREACHED */
+      }
+      array = (Superblock**) sres.res;
+      for (i = 0; i < a->sblocks_used; ++i) array[i] = a->sblocks[i];
+
+      a->sblocks_size *= 2;
+      a->sblocks = array;
+      VG_(debugLog)(1, "mallocfree", 
+                       "sblock array for arena `%s' resized to %ld\n", 
+                       a->name, a->sblocks_size);
+   }
+
+   vg_assert(a->sblocks_used < a->sblocks_size);
+   
+   i = a->sblocks_used;
+   while (i > 0) {
+      if (a->sblocks[i-1] > new_sb) {
+         a->sblocks[i] = a->sblocks[i-1];
+      } else {
+         break;
+      }
+      --i;
+   }   
+   a->sblocks[i] = new_sb;
+   a->sblocks_used++;
+
    b = (Block*)&new_sb->payload_bytes[0];
    lno = pszB_to_listNo(bszB_to_pszB(a, new_sb->n_payload_bytes));
    mkFreeBlock ( a, b, new_sb->n_payload_bytes, lno);

@@ -8387,7 +8387,7 @@ DisResult disInstr_AMD64_WRK (
       as many invalid combinations as possible. */
    n_prefixes = 0;
    while (True) {
-      if (n_prefixes > 5) goto decode_failure;
+      if (n_prefixes > 7) goto decode_failure;
       pre = getUChar(delta);
       switch (pre) {
          case 0x66: pfx |= PFX_66; break;

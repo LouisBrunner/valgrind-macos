@@ -29,7 +29,8 @@
 */
 
 #include "pub_core_basics.h"
-#include "pub_core_execontext.h"
+#include "pub_core_debuglog.h"
+#include "pub_core_execontext.h"    // self
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"     // For VG_(message)()
 #include "pub_core_mallocfree.h"
@@ -40,12 +41,37 @@
 /*--- Low-level ExeContext storage.                        ---*/
 /*------------------------------------------------------------*/
 
-/* The first 4 IP values are used in comparisons to remove duplicate errors,
-   and for comparing against suppression specifications.  The rest are
-   purely informational (but often important). */
+/* The first 4 IP values are used in comparisons to remove duplicate
+   errors, and for comparing against suppression specifications.  The
+   rest are purely informational (but often important).
+
+   The contexts are stored in a traditional chained hash table, so as
+   to allow quick determination of whether a new context already
+   exists.  The hash table starts small and expands dynamically, so as
+   to keep the load factor below 1.0.
+
+   The idea is only to ever store any one context once, so as to save
+   space and make exact comparisons faster. */
+
+
+/* Primes for the hash table */
+
+#define N_EC_PRIMES 18
+
+static SizeT ec_primes[N_EC_PRIMES] = {
+         769UL,         1543UL,         3079UL,          6151UL,
+       12289UL,        24593UL,        49157UL,         98317UL,
+      196613UL,       393241UL,       786433UL,       1572869UL,
+     3145739UL,      6291469UL,     12582917UL,      25165843UL,
+    50331653UL,    100663319UL
+};
+
+
+/* Each element is present in a hash chain, and also contains a
+   variable length array of guest code addresses (the useful part). */
 
 struct _ExeContext {
-   struct _ExeContext * next;
+   struct _ExeContext* chain;
    UInt   n_ips;
    /* Variable-length array.  The size is 'n_ips'; at
       least 1, at most VG_DEEPEST_BACKTRACE.  [0] is the current IP,
@@ -53,14 +79,12 @@ struct _ExeContext {
    Addr ips[0];
 };
 
-/* Number of lists in which we keep track of ExeContexts.  Should be
-   prime. */
-#define N_EC_LISTS 393241 /*30011*/ /*4999*/ /* a prime number */
 
-/* The idea is only to ever store any one context once, so as to save
-   space and make exact comparisons faster. */
+/* This is the dynamically expanding hash table. */
+static ExeContext** ec_htab; /* array [ec_htab_size] of ExeContext* */
+static SizeT        ec_htab_size;     /* one of the values in ec_primes */
+static SizeT        ec_htab_size_idx; /* 0 .. N_EC_PRIMES-1 */
 
-static ExeContext* ec_list[N_EC_LISTS];
 
 /* Stats only: the number of times the system was searched to locate a
    context. */
@@ -96,8 +120,14 @@ static void init_ExeContext_storage ( void )
    ec_cmp2s = 0;
    ec_cmp4s = 0;
    ec_cmpAlls = 0;
-   for (i = 0; i < N_EC_LISTS; i++)
-      ec_list[i] = NULL;
+
+   ec_htab_size_idx = 0;
+   ec_htab_size = ec_primes[ec_htab_size_idx];
+   ec_htab = VG_(arena_malloc)(VG_AR_EXECTXT, 
+                               sizeof(ExeContext*) * ec_htab_size);
+   for (i = 0; i < ec_htab_size; i++)
+      ec_htab[i] = NULL;
+
    init_done = True;
 }
 
@@ -108,7 +138,7 @@ void VG_(print_ExeContext_stats) ( void )
    init_ExeContext_storage();
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %,lu lists, %,llu contexts (avg %,llu per list)",
-      N_EC_LISTS, ec_totstored, ec_totstored / N_EC_LISTS 
+      ec_htab_size, ec_totstored, ec_totstored / ec_htab_size
    );
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %,llu searches, %,llu full compares (%,llu per 1000)",
@@ -176,20 +206,75 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
    }
 }
 
-/* This guy is the head honcho here.  Take a snapshot of the client's
-   stack.  Search our collection of ExeContexts to see if we already
-   have it, and if not, allocate a new one.  Either way, return a
-   pointer to the context.  If there is a matching context we
+/* VG_(record_ExeContext) is the head honcho here.  Take a snapshot of
+   the client's stack.  Search our collection of ExeContexts to see if
+   we already have it, and if not, allocate a new one.  Either way,
+   return a pointer to the context.  If there is a matching context we
    guarantee to not allocate a new one.  Thus we never store
    duplicates, and so exact equality can be quickly done as equality
    on the returned ExeContext* values themselves.  Inspired by Hugs's
-   Text type.  
-*/
+   Text type.
+
+   Also checks whether the hash table needs expanding, and expands it
+   if so. */
+
 static inline UWord ROLW ( UWord w, Int n )
 {
    Int bpw = 8 * sizeof(UWord);
    w = (w << n) | (w >> (bpw-n));
    return w;
+}
+
+static UWord calc_hash ( Addr* ips, UInt n_ips, UWord htab_sz )
+{
+   UInt  i;
+   UWord hash = 0;
+   vg_assert(htab_sz > 0);
+   for (i = 0; i < n_ips; i++) {
+      hash ^= ips[i];
+      hash = ROLW(hash, 19);
+   }
+   return hash % htab_sz;
+}
+
+static void resize_ec_htab ( void )
+{
+   SizeT        i;
+   SizeT        new_size;
+   ExeContext** new_ec_htab;
+
+   vg_assert(ec_htab_size_idx >= 0 && ec_htab_size_idx < N_EC_PRIMES);
+   if (ec_htab_size_idx == N_EC_PRIMES-1)
+      return; /* out of primes - can't resize further */
+
+   new_size = ec_primes[ec_htab_size_idx + 1];
+   new_ec_htab = VG_(arena_malloc)(VG_AR_EXECTXT,
+                                   sizeof(ExeContext*) * new_size);
+
+   VG_(debugLog)(
+      1, "execontext",
+         "resizing htab from size %lu to %lu (idx %lu)  Total#ECs=%llu\n",
+         ec_htab_size, new_size, ec_htab_size_idx + 1, ec_totstored);
+
+   for (i = 0; i < new_size; i++)
+      new_ec_htab[i] = NULL;
+
+   for (i = 0; i < ec_htab_size; i++) {
+      ExeContext* cur = ec_htab[i];
+      while (cur) {
+         ExeContext* next = cur->chain;
+         UWord hash = calc_hash(cur->ips, cur->n_ips, new_size);
+         vg_assert(hash < new_size);
+         cur->chain = new_ec_htab[hash];
+         new_ec_htab[hash] = cur;
+         cur = next;
+      }
+   }
+
+   VG_(arena_free)(VG_AR_EXECTXT, ec_htab);
+   ec_htab      = new_ec_htab;
+   ec_htab_size = new_size;
+   ec_htab_size_idx++;
 }
 
 ExeContext* VG_(record_ExeContext) ( ThreadId tid )
@@ -213,27 +298,19 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
              VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
 
    n_ips = VG_(get_StackTrace)( tid, ips, VG_(clo_backtrace_size) );
-   tl_assert(n_ips >= 1);
+   tl_assert(n_ips >= 1 && n_ips <= VG_(clo_backtrace_size));
 
    /* Now figure out if we've seen this one before.  First hash it so
       as to determine the list number. */
+   hash = calc_hash( ips, n_ips, ec_htab_size );
 
-   hash = 0;
-   for (i = 0; i < n_ips; i++) {
-      hash ^= ips[i];
-      hash = ROLW(hash, 19);
-   }
-   if (0) VG_(printf)("hash  0x%lx  ", hash);
-   hash = hash % N_EC_LISTS;
-   if (0) VG_(printf)("%lu\n", hash);
-
-   /* And (the expensive bit) look a matching entry in the list. */
+   /* And (the expensive bit) look a for matching entry in the list. */
 
    ec_searchreqs++;
 
    prev2 = NULL;
    prev  = NULL;
-   list  = ec_list[hash];
+   list  = ec_htab[hash];
 
    while (True) {
       if (list == NULL) break;
@@ -248,19 +325,30 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
       if (same) break;
       prev2 = prev;
       prev  = list;
-      list  = list->next;
+      list  = list->chain;
    }
 
    if (list != NULL) {
       /* Yay!  We found it.  Once every 8 searches, move it one step
          closer to the start of the list to make future searches
          cheaper. */
-      if (prev2 && prev && 0 == ((ctr++) & 7))  {
-         vg_assert(prev2->next == prev);
-         vg_assert(prev->next  == list);
-         prev2->next = list;
-         prev->next  = list->next;
-         list->next  = prev;
+      if (0 == ((ctr++) & 7)) {
+         if (prev2 != NULL && prev != NULL) {
+            /* Found at 3rd or later position in the chain. */
+            vg_assert(prev2->chain == prev);
+            vg_assert(prev->chain  == list);
+            prev2->chain = list;
+            prev->chain  = list->chain;
+            list->chain  = prev;
+         }
+         else if (prev2 == NULL && prev != NULL) {
+            /* Found at 2nd position in the chain. */
+            vg_assert(ec_htab[hash] == prev);
+            vg_assert(prev->chain == list);
+            prev->chain = list->chain;
+            list->chain = prev;
+            ec_htab[hash] = list;
+         }
       }
       return list;
    }
@@ -276,8 +364,15 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
       new_ec->ips[i] = ips[i];
 
    new_ec->n_ips = n_ips;
-   new_ec->next  = ec_list[hash];
-   ec_list[hash] = new_ec;
+   new_ec->chain = ec_htab[hash];
+   ec_htab[hash] = new_ec;
+
+   /* Resize the hash table, maybe? */
+   if ( ((ULong)ec_totstored) > ((ULong)ec_htab_size) ) {
+      vg_assert(ec_htab_size_idx >= 0 && ec_htab_size_idx < N_EC_PRIMES);
+      if (ec_htab_size_idx < N_EC_PRIMES-1)
+         resize_ec_htab();
+   }
 
    return new_ec;
 }

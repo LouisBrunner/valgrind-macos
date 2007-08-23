@@ -737,10 +737,24 @@ UInt pszB_to_listNo ( SizeT pszB )
 static
 SizeT listNo_to_pszB_min ( UInt listNo )
 {
-   SizeT pszB = 0;
+   /* Repeatedly computing this function at every request is
+      expensive.  Hence at the first call just cache the result for
+      every possible argument. */
+   static SizeT cache[N_MALLOC_LISTS];
+   static Bool  cache_valid = False;
+   if (!cache_valid) {
+      UInt i;
+      for (i = 0; i < N_MALLOC_LISTS; i++) {
+         SizeT pszB = 0;
+         while (pszB_to_listNo(pszB) < i)
+            pszB += VG_MIN_MALLOC_SZB;
+         cache[i] = pszB;
+      }
+      cache_valid = True;
+   }
+   /* Returned cached answer. */
    vg_assert(listNo <= N_MALLOC_LISTS);
-   while (pszB_to_listNo(pszB) < listNo) pszB += VG_MIN_MALLOC_SZB;
-   return pszB;
+   return cache[listNo];
 }
 
 // What is the maximum payload size for a given list?

@@ -88,8 +88,8 @@ ML_(do_syscall_for_client_WRK):
 	   If eip is in the range [1,2), the syscall hasn't been started yet */
 
 	/* Set the signal mask which should be current during the syscall. */
-	movl	$__NR_rt_sigprocmask, %eax
-	movl	$VKI_SIG_SETMASK, %ebx
+	movl	$ __NR_rt_sigprocmask, %eax
+	movl	$ VKI_SIG_SETMASK, %ebx
 	movl	8+FSZ(%esp), %ecx
 	movl	12+FSZ(%esp), %edx
 	movl	16+FSZ(%esp), %esi
@@ -117,8 +117,8 @@ ML_(do_syscall_for_client_WRK):
 
 4:	/* Re-block signals.  If eip is in [4,5), then the syscall is complete and 
 	   we needn't worry about it. */
-	movl	$__NR_rt_sigprocmask, %eax
-	movl	$VKI_SIG_SETMASK, %ebx
+	movl	$ __NR_rt_sigprocmask, %eax
+	movl	$ VKI_SIG_SETMASK, %ebx
 	movl	12+FSZ(%esp), %ecx
 	xorl	%edx, %edx
 	movl	16+FSZ(%esp), %esi

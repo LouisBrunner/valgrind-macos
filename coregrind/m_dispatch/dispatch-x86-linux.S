@@ -121,7 +121,7 @@ VG_(run_innerloop__dispatch_unprofiled):
 
 	/* try a fast lookup in the translation cache */
 	movl	%eax, %ebx			/* next guest addr */
-	andl	$VG_TT_FAST_MASK, %ebx		/* entry# */
+	andl	$ VG_TT_FAST_MASK, %ebx		/* entry# */
 	movl	0+VG_(tt_fast)(,%ebx,8), %esi	/* .guest */
 	movl	4+VG_(tt_fast)(,%ebx,8), %edi	/* .host */
 	cmpl	%eax, %esi
@@ -157,7 +157,7 @@ VG_(run_innerloop__dispatch_profiled):
 
 	/* try a fast lookup in the translation cache */
 	movl	%eax, %ebx			/* next guest addr */
-	andl	$VG_TT_FAST_MASK, %ebx		/* entry# */
+	andl	$ VG_TT_FAST_MASK, %ebx		/* entry# */
 	movl	0+VG_(tt_fast)(,%ebx,8), %esi	/* .guest */
 	movl	4+VG_(tt_fast)(,%ebx,8), %edi	/* .host */
 	cmpl	%eax, %esi
@@ -199,7 +199,7 @@ counter_is_zero:
 	/* %EIP is up to date here */
 	/* back out decrement of the dispatch counter */
 	addl	$1, VG_(dispatch_ctr)
-	movl	$VG_TRC_INNER_COUNTERZERO, %eax
+	movl	$ VG_TRC_INNER_COUNTERZERO, %eax
 	jmp	run_innerloop_exit
 	/*NOTREACHED*/
 
@@ -207,7 +207,7 @@ fast_lookup_failed:
 	/* %EIP is up to date here */
 	/* back out decrement of the dispatch counter */
 	addl	$1, VG_(dispatch_ctr)
-	movl	$VG_TRC_INNER_FASTMISS, %eax
+	movl	$ VG_TRC_INNER_FASTMISS, %eax
 	jmp	run_innerloop_exit
 	/*NOTREACHED*/
 
@@ -240,7 +240,7 @@ L2:	/* otherwise we're OK */
 	jmp	run_innerloop_exit_REALLY
 
 invariant_violation:
-	movl	$VG_TRC_INVARIANT_FAILED, %eax
+	movl	$ VG_TRC_INVARIANT_FAILED, %eax
 	jmp	run_innerloop_exit_REALLY
 
 run_innerloop_exit_REALLY:

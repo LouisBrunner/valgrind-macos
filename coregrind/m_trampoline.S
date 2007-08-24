@@ -67,14 +67,14 @@ VG_(x86_linux_SUBST_FOR_sigreturn):
            x86_fallback_frame_state() in
            gcc-4.1.0/gcc/config/i386/linux-unwind.h */
         popl    %eax
-        movl    $__NR_sigreturn, %eax
+        movl    $ __NR_sigreturn, %eax
         int     $0x80
         ud2
 
 .global VG_(x86_linux_SUBST_FOR_rt_sigreturn)
 VG_(x86_linux_SUBST_FOR_rt_sigreturn):
         /* Likewise for rt signal frames */
-        movl    $__NR_rt_sigreturn, %eax
+        movl    $ __NR_rt_sigreturn, %eax
         int     $0x80
         ud2
 

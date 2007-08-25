@@ -416,7 +416,7 @@ void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
    mp->pool       = pool;
    mp->rzB        = rzB;
    mp->is_zeroed  = is_zeroed;
-   mp->chunks     = VG_(HT_construct)( 3001 );  // prime, not so big
+   mp->chunks     = VG_(HT_construct)( "MC_(create_mempool)" );
 
    /* Paranoia ... ensure this area is off-limits to the client, so
       the mp->data field isn't visible to the leak checker.  If memory

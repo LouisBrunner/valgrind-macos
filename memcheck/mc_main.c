@@ -5059,8 +5059,8 @@ static void mc_pre_clo_init(void)
    VG_(track_post_reg_write_clientcall_return)( mc_post_reg_write_clientcall );
 
    init_shadow_memory();
-   MC_(malloc_list)  = VG_(HT_construct)( 80021 );   // prime, big
-   MC_(mempool_list) = VG_(HT_construct)( 1009  );   // prime, not so big
+   MC_(malloc_list)  = VG_(HT_construct)( "MC_(malloc_list)" );
+   MC_(mempool_list) = VG_(HT_construct)( "MC_(mempool_list)" );
    init_prof_mem();
 
    tl_assert( mc_expensive_sanity_check() );

@@ -1753,7 +1753,7 @@ static void ms_pre_clo_init(void)
    VG_(track_die_mem_stack_signal)( die_mem_stack_signal );
 
    // HP_Chunks
-   malloc_list  = VG_(HT_construct)( 80021 );   // prime, big
+   malloc_list  = VG_(HT_construct)( "Massif's malloc list" );
 
    // Dummy node at top of the context structure.
    alloc_xpt = new_XPt(0, NULL, /*is_bottom*/False);

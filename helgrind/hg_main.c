@@ -1948,9 +1948,10 @@ void handle_free ( ThreadId tid, void* p )
 {
    HG_Chunk*  hc;
    HG_Chunk** prev_chunks_next_ptr;
-
+   /* Commented out 25 Aug 07 as VG_(HT_get_node) no longer exists.
    hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UWord)p,
                                       (VgHashNode***)&prev_chunks_next_ptr );
+   */
    if (hc == NULL) {
       return;
    }
@@ -1978,9 +1979,10 @@ static void* hg_realloc ( ThreadId tid, void* p, SizeT new_size )
    HG_Chunk **prev_chunks_next_ptr;
 
    /* First try and find the block. */
+   /* Commented out 25 Aug 07 as VG_(HT_get_node) no longer exists.
    hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UWord)p,
                                        (VgHashNode***)&prev_chunks_next_ptr );
-
+   */
    if (hc == NULL) {
       return NULL;
    }
@@ -2419,6 +2421,7 @@ void clear_HelgrindError ( HelgrindError* err_extra )
    putting the result in ai. */
 
 /* Callback for searching malloc'd and free'd lists */
+/*
 static Bool addr_is_in_block(VgHashNode *node, void *ap)
 {
    HG_Chunk* hc2 = (HG_Chunk*)node;
@@ -2426,6 +2429,7 @@ static Bool addr_is_in_block(VgHashNode *node, void *ap)
    
    return (hc2->data <= a && a < hc2->data + hc2->size);
 }
+*/
 
 static void describe_addr ( Addr a, AddrInfo* ai )
 {
@@ -2467,7 +2471,9 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    }
 
    /* Search for a currently malloc'd block which might bracket it. */
+   /* Commented out 25 Aug 07 as VG_(HT_first_match) no longer exists.
    hc = (HG_Chunk*)VG_(HT_first_match)(hg_malloc_list, addr_is_in_block, &a);
+   */
    if (NULL != hc) {
       ai->akind      = Mallocd;
       ai->blksize    = hc->size;
@@ -3478,7 +3484,7 @@ static void hg_pre_clo_init(void)
    }
 
    init_shadow_memory();
-   hg_malloc_list = VG_(HT_construct)( 80021 );    // prime, big
+   hg_malloc_list = VG_(HT_construct)( "Helgrind's malloc list" );
 }
 
 VG_DETERMINE_INTERFACE_VERSION(hg_pre_clo_init)

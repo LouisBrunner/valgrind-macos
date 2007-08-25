@@ -39,8 +39,6 @@
 // Problems with this data structure:
 // - Separate chaining gives bad cache behaviour.  Hash tables with linear
 //   probing give better cache behaviour.
-// - It's not very abstract, eg. deleting nodes exposes more internals than
-//   I'd like.
 
 typedef
    struct _VgHashNode {
@@ -51,9 +49,11 @@ typedef
 
 typedef struct _VgHashTable * VgHashTable;
 
-/* Make a new table.  Allocates the memory with VG_(calloc)(), so can be freed
-   with VG_(free)().  n_chains should be prime. */
-extern VgHashTable VG_(HT_construct) ( UInt n_chains );
+/* Make a new table.  Allocates the memory with VG_(calloc)(), so can
+   be freed with VG_(free)().  The table starts small but will
+   periodically be expanded.  This is transparent to the users of this
+   module. */
+extern VgHashTable VG_(HT_construct) ( HChar* name );
 
 /* Count the number of nodes in a table. */
 extern Int VG_(HT_count_nodes) ( VgHashTable table );
@@ -61,41 +61,32 @@ extern Int VG_(HT_count_nodes) ( VgHashTable table );
 /* Add a node to the table. */
 extern void VG_(HT_add_node) ( VgHashTable t, void* node );
 
-/* Looks up a node in the hash table.  Also returns the address of the
-   previous node's `next' pointer which allows it to be removed from the
-   list later without having to look it up again.  */
-extern void* VG_(HT_get_node) ( VgHashTable t, UWord key,
-                                    /*OUT*/VgHashNode*** next_ptr );
-
 /* Looks up a VgHashNode in the table.  Returns NULL if not found. */
 extern void* VG_(HT_lookup) ( VgHashTable table, UWord key );
 
 /* Removes a VgHashNode from the table.  Returns NULL if not found. */
 extern void* VG_(HT_remove) ( VgHashTable table, UWord key );
 
-/* Allocates an array of pointers to all the shadow chunks of malloc'd
-   blocks.  Must be freed with VG_(free)(). */
-extern VgHashNode** VG_(HT_to_array) ( VgHashTable t, /*OUT*/ UInt* n_shadows );
-
-/* Returns first node that matches predicate `p', or NULL if none do.
-   Extra arguments can be implicitly passed to `p' using `d' which is an
-   opaque pointer passed to `p' each time it is called. */
-extern void* VG_(HT_first_match) ( VgHashTable t,
-                                   Bool (*p)(VgHashNode*, void*),
-                                   void* d );
-
-/* Applies a function f() once to each node.  Again, `d' can be used
-   to pass extra information to the function. */
-extern void VG_(HT_apply_to_all_nodes)( VgHashTable t,
-                                        void (*f)(VgHashNode*, void*),
-                                        void* d );
+/* Allocates a suitably-sized array, copies all the hashtable elements
+   into it, then returns both the array and the size of it.  This is
+   used by the memory-leak detector.  The array must be freed with
+   VG_(free). */
+extern VgHashNode** VG_(HT_to_array) ( VgHashTable t, /*OUT*/ UInt* n_elems );
 
 /* Reset the table's iterator to point to the first element. */
 extern void VG_(HT_ResetIter) ( VgHashTable table );
 
-/* Return the element pointed to by the iterator and move on to the next
-   one.  Returns NULL if the last one has been passed, or if HT_ResetIter()
-   has not been called previously. */
+/* Return the element pointed to by the iterator and move on to the
+   next one.  Returns NULL if the last one has been passed, or if
+   HT_ResetIter() has not been called previously.  Asserts if the
+   table has been modified (HT_add_node, HT_remove) since
+   HT_ResetIter.  This guarantees that callers cannot screw up by
+   modifying the table whilst iterating over it (and is necessary to
+   make the implementation safe; specifically we must guarantee that
+   the table will not get resized whilst iteration is happening.
+   Since resizing only happens as a result of calling HT_add_node,
+   disallowing HT_add_node during iteration should give the required
+   assurance. */
 extern void* VG_(HT_Next) ( VgHashTable table );
 
 /* Destroy a table. */

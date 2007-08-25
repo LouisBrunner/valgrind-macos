@@ -475,10 +475,17 @@ STPCPY(m_ld_linux_x86_64_so_2, stpcpy)
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname)(void *s, Int c, SizeT n) \
    { \
       unsigned char *cp = s; \
- \
-      while(n--) \
+      while (n >= 4) { \
+         cp[0] = c; \
+         cp[1] = c; \
+         cp[2] = c; \
+         cp[3] = c; \
+         cp += 4; \
+         n -= 4; \
+      } \
+      while (n--) { \
          *cp++ = c; \
- \
+      } \
       return s; \
    }
 

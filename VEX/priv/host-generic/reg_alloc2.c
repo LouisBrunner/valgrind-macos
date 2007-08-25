@@ -323,10 +323,14 @@ HInstrArray* doRegisterAllocation (
    /* Apply a reg-reg mapping to an insn. */
    void (*mapRegs) ( HRegRemap*, HInstr*, Bool ),
 
-   /* Return an insn to spill/restore a real reg to a spill slot
-      byte offset. */
+   /* Return an insn to spill/restore a real reg to a spill slot byte
+      offset.  Also (optionally) a 'directReload' function, which
+      attempts to replace a given instruction by one which reads
+      directly from a specified spill slot.  May be NULL, in which
+      case the optimisation is not attempted. */
    HInstr* (*genSpill) ( HReg, Int, Bool ),
    HInstr* (*genReload) ( HReg, Int, Bool ),
+   HInstr* (*directReload) ( HInstr*, HReg, Short ),
    Int     guest_sizeB,
 
    /* For debug printing only. */
@@ -1161,6 +1165,76 @@ HInstrArray* doRegisterAllocation (
       (*getRegUsage)( &reg_usage, instrs_in->arr[ii], mode64 );
 
       initHRegRemap(&remap);
+
+      /* ------------ BEGIN directReload optimisation ----------- */
+
+      /* If the instruction reads exactly one vreg which is currently
+         in a spill slot, and this is last use of that vreg, see if we
+         can convert the instruction into one reads directly from the
+         spill slot.  This is clearly only possible for x86 and amd64
+         targets, since ppc is a load-store architecture.  If
+         successful, replace instrs_in->arr[ii] with this new
+         instruction, and recompute its reg usage, so that the change
+         is invisible to the standard-case handling that follows. */
+      
+      if (directReload && reg_usage.n_used <= 2) { 
+         Bool  debug_direct_reload = True && False;
+         HReg  cand     = INVALID_HREG;
+         Bool  nreads   = 0;
+         Short spilloff = 0;
+
+         for (j = 0; j < reg_usage.n_used; j++) {
+
+            vreg = reg_usage.hreg[j];
+
+            if (!hregIsVirtual(vreg)) 
+               continue;
+
+            if (reg_usage.mode[j] == HRmRead) {
+               nreads++;
+               m = hregNumber(vreg);
+               vassert(IS_VALID_VREGNO(m));
+               k = vreg_state[m];
+               if (!IS_VALID_RREGNO(k)) {
+                  /* ok, it is spilled.  Now, is this its last use? */
+                  vassert(vreg_lrs[m].dead_before >= ii+1);
+                  if (vreg_lrs[m].dead_before == ii+1
+                      && cand == INVALID_HREG) {
+                     spilloff = vreg_lrs[m].spill_offset;
+                     cand = vreg;
+                  }
+               }
+            }
+         }
+
+         if (nreads == 1 && cand != INVALID_HREG) {
+            HInstr* reloaded;
+            if (reg_usage.n_used == 2)
+               vassert(reg_usage.hreg[0] != reg_usage.hreg[1]);
+
+            reloaded = directReload ( instrs_in->arr[ii], cand, spilloff );
+            if (debug_direct_reload && !reloaded) {
+               vex_printf("[%3d] ", spilloff); ppHReg(cand); vex_printf(" "); 
+               ppInstr(instrs_in->arr[ii], mode64); 
+            }
+            if (reloaded) {
+               /* Update info about the insn, so it looks as if it had
+                  been in this form all along. */
+               instrs_in->arr[ii] = reloaded;
+               (*getRegUsage)( &reg_usage, instrs_in->arr[ii], mode64 );
+               if (debug_direct_reload && !reloaded) {
+                  vex_printf("  -->  ");
+                  ppInstr(reloaded, mode64);
+               }
+            }
+
+            if (debug_direct_reload && !reloaded)
+               vex_printf("\n");
+         }
+
+      }
+
+      /* ------------ END directReload optimisation ------------ */
 
       /* for each reg mentioned in the insn ... */
       for (j = 0; j < reg_usage.n_used; j++) {

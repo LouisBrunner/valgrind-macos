@@ -598,7 +598,7 @@ X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, HReg dst ) {
    i->Xin.Sh32.dst = dst;
    return i;
 }
-X86Instr* X86Instr_Test32 ( UInt imm32, HReg dst ) {
+X86Instr* X86Instr_Test32 ( UInt imm32, X86RM* dst ) {
    X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
    i->tag              = Xin_Test32;
    i->Xin.Test32.imm32 = imm32;
@@ -908,7 +908,7 @@ void ppX86Instr ( X86Instr* i, Bool mode64 ) {
          return;
       case Xin_Test32:
          vex_printf("testl $%d,", (Int)i->Xin.Test32.imm32);
-         ppHRegX86(i->Xin.Test32.dst);
+         ppX86RM(i->Xin.Test32.dst);
          return;
       case Xin_Unary32:
          vex_printf("%sl ", showX86UnaryOp(i->Xin.Unary32.op));
@@ -1173,7 +1173,7 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i, Bool mode64)
             addHRegUse(u, HRmRead, hregX86_ECX());
          return;
       case Xin_Test32:
-         addHRegUse(u, HRmRead, i->Xin.Test32.dst);
+         addRegUsage_X86RM(u, i->Xin.Test32.dst, HRmRead);
          return;
       case Xin_Unary32:
          addHRegUse(u, HRmModify, i->Xin.Unary32.dst);
@@ -1402,7 +1402,7 @@ void mapRegs_X86Instr ( HRegRemap* m, X86Instr* i, Bool mode64 )
          mapReg(m, &i->Xin.Sh32.dst);
          return;
       case Xin_Test32:
-         mapReg(m, &i->Xin.Test32.dst);
+         mapRegs_X86RM(m, i->Xin.Test32.dst);
          return;
       case Xin_Unary32:
          mapReg(m, &i->Xin.Unary32.dst);
@@ -1608,6 +1608,82 @@ X86Instr* genReload_X86 ( HReg rreg, Int offsetB, Bool mode64 )
          ppHRegClass(hregClass(rreg));
          vpanic("genReload_X86: unimplemented regclass");
    }
+}
+
+/* The given instruction reads the specified vreg exactly once, and
+   that vreg is currently located at the given spill offset.  If
+   possible, return a variant of the instruction which instead
+   references the spill slot directly. */
+
+X86Instr* directReload_X86( X86Instr* i, HReg vreg, Short spill_off )
+{
+   vassert(spill_off >= 0 && spill_off < 10000); /* let's say */
+
+   /* Deal with form: src=RMI_Reg, dst=Reg where src == vreg 
+      Convert to: src=RMI_Mem, dst=Reg 
+   */
+   if (i->tag == Xin_Alu32R
+       && (i->Xin.Alu32R.op == Xalu_MOV || i->Xin.Alu32R.op == Xalu_OR
+           || i->Xin.Alu32R.op == Xalu_XOR)
+       && i->Xin.Alu32R.src->tag == Xrmi_Reg
+       && i->Xin.Alu32R.src->Xrmi.Reg.reg == vreg) {
+      vassert(i->Xin.Alu32R.dst != vreg);
+      return X86Instr_Alu32R( 
+                i->Xin.Alu32R.op, 
+                X86RMI_Mem( X86AMode_IR( spill_off, hregX86_EBP())),
+                i->Xin.Alu32R.dst
+             );
+   }
+
+   /* Deal with form: src=RMI_Imm, dst=Reg where dst == vreg 
+      Convert to: src=RI_Imm, dst=Mem
+   */
+   if (i->tag == Xin_Alu32R
+       && (i->Xin.Alu32R.op == Xalu_CMP)
+       && i->Xin.Alu32R.src->tag == Xrmi_Imm
+       && i->Xin.Alu32R.dst == vreg) {
+      return X86Instr_Alu32M( 
+                i->Xin.Alu32R.op,
+		X86RI_Imm( i->Xin.Alu32R.src->Xrmi.Imm.imm32 ),
+                X86AMode_IR( spill_off, hregX86_EBP())
+             );
+   }
+
+   /* Deal with form: Push(RMI_Reg)
+      Convert to: Push(RMI_Mem) 
+   */
+   if (i->tag == Xin_Push
+       && i->Xin.Push.src->tag == Xrmi_Reg
+       && i->Xin.Push.src->Xrmi.Reg.reg == vreg) {
+      return X86Instr_Push(
+                X86RMI_Mem( X86AMode_IR( spill_off, hregX86_EBP()))
+             );
+   }
+
+   /* Deal with form: CMov32(src=RM_Reg, dst) where vreg == src
+      Convert to CMov32(RM_Mem, dst) */
+   if (i->tag == Xin_CMov32
+       && i->Xin.CMov32.src->tag == Xrm_Reg
+       && i->Xin.CMov32.src->Xrm.Reg.reg == vreg) {
+      vassert(i->Xin.CMov32.dst != vreg);
+      return X86Instr_CMov32( 
+                i->Xin.CMov32.cond,
+                X86RM_Mem( X86AMode_IR( spill_off, hregX86_EBP() )),
+                i->Xin.CMov32.dst
+             );
+   }
+
+   /* Deal with form: Test32(imm,RM_Reg vreg) -> Test32(imm,amode) */
+   if (i->tag == Xin_Test32
+       && i->Xin.Test32.dst->tag == Xrm_Reg
+       && i->Xin.Test32.dst->Xrm.Reg.reg == vreg) {
+      return X86Instr_Test32(
+                i->Xin.Test32.imm32,
+                X86RM_Mem( X86AMode_IR( spill_off, hregX86_EBP() ) )
+             );
+   }
+
+   return NULL;
 }
 
 
@@ -2010,6 +2086,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
       switch (i->Xin.Alu32M.op) {
          case Xalu_ADD: opc = 0x01; subopc_imm = 0; break;
          case Xalu_SUB: opc = 0x29; subopc_imm = 5; break;
+         case Xalu_CMP: opc = 0x39; subopc_imm = 7; break;
          default: goto bad;
       }
       switch (i->Xin.Alu32M.src->tag) {
@@ -2054,11 +2131,19 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
       goto done;
 
    case Xin_Test32:
-      /* testl $imm32, %reg */
-      *p++ = 0xF7;
-      p = doAMode_R(p, fake(0), i->Xin.Test32.dst);
-      p = emit32(p, i->Xin.Test32.imm32);
-      goto done;
+      if (i->Xin.Test32.dst->tag == Xrm_Reg) {
+         /* testl $imm32, %reg */
+         *p++ = 0xF7;
+         p = doAMode_R(p, fake(0), i->Xin.Test32.dst->Xrm.Reg.reg);
+         p = emit32(p, i->Xin.Test32.imm32);
+         goto done;
+      } else {
+         /* testl $imm32, amode */
+         *p++ = 0xF7;
+         p = doAMode_M(p, fake(0), i->Xin.Test32.dst->Xrm.Mem.am);
+         p = emit32(p, i->Xin.Test32.imm32);
+         goto done;
+      }
 
    case Xin_Unary32:
       if (i->Xin.Unary32.op == Xun_NOT) {

@@ -266,9 +266,10 @@ HInstrArray* doRegisterAllocation (
    void (*mapRegs) (HRegRemap*, HInstr*, Bool),
 
    /* Return an insn to spill/restore a real reg to a spill slot
-      offset. */
+      offset.  And optionally a function to do direct reloads. */
    HInstr* (*genSpill) ( HReg, Int, Bool ),
    HInstr* (*genReload) ( HReg, Int, Bool ),
+   HInstr* (*directReload) ( HInstr*, HReg, Short ),
    Int     guest_sizeB,
 
    /* For debug printing only. */

@@ -186,17 +186,18 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       from the target instruction set. */
    HReg* available_real_regs;
    Int   n_available_real_regs;
-   Bool         (*isMove)      ( HInstr*, HReg*, HReg* );
-   void         (*getRegUsage) ( HRegUsage*, HInstr*, Bool );
-   void         (*mapRegs)     ( HRegRemap*, HInstr*, Bool );
-   HInstr*      (*genSpill)    ( HReg, Int, Bool );
-   HInstr*      (*genReload)   ( HReg, Int, Bool );
-   void         (*ppInstr)     ( HInstr*, Bool );
-   void         (*ppReg)       ( HReg );
-   HInstrArray* (*iselSB)      ( IRSB*, VexArch, VexArchInfo*, 
-                                                 VexAbiInfo* );
-   Int          (*emit)        ( UChar*, Int, HInstr*, Bool, void* );
-   IRExpr*      (*specHelper)  ( HChar*, IRExpr** );
+   Bool         (*isMove)       ( HInstr*, HReg*, HReg* );
+   void         (*getRegUsage)  ( HRegUsage*, HInstr*, Bool );
+   void         (*mapRegs)      ( HRegRemap*, HInstr*, Bool );
+   HInstr*      (*genSpill)     ( HReg, Int, Bool );
+   HInstr*      (*genReload)    ( HReg, Int, Bool );
+   HInstr*      (*directReload) ( HInstr*, HReg, Short );
+   void         (*ppInstr)      ( HInstr*, Bool );
+   void         (*ppReg)        ( HReg );
+   HInstrArray* (*iselSB)       ( IRSB*, VexArch, VexArchInfo*, 
+                                                  VexAbiInfo* );
+   Int          (*emit)         ( UChar*, Int, HInstr*, Bool, void* );
+   IRExpr*      (*specHelper)   ( HChar*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
    DisOneInstrFn disInstrFn;
@@ -221,6 +222,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    mapRegs                = NULL;
    genSpill               = NULL;
    genReload              = NULL;
+   directReload           = NULL;
    ppInstr                = NULL;
    ppReg                  = NULL;
    iselSB                 = NULL;
@@ -246,18 +248,19 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    switch (vta->arch_host) {
 
       case VexArchX86:
-         mode64      = False;
+         mode64       = False;
          getAllocableRegs_X86 ( &n_available_real_regs,
                                 &available_real_regs );
-         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_X86Instr;
-         getRegUsage = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_X86Instr;
-         mapRegs     = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_X86Instr;
-         genSpill    = (HInstr*(*)(HReg,Int, Bool)) genSpill_X86;
-         genReload   = (HInstr*(*)(HReg,Int, Bool)) genReload_X86;
-         ppInstr     = (void(*)(HInstr*, Bool)) ppX86Instr;
-         ppReg       = (void(*)(HReg)) ppHRegX86;
-         iselSB      = iselSB_X86;
-         emit        = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_X86Instr;
+         isMove       = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_X86Instr;
+         getRegUsage  = (void(*)(HRegUsage*,HInstr*, Bool)) getRegUsage_X86Instr;
+         mapRegs      = (void(*)(HRegRemap*,HInstr*, Bool)) mapRegs_X86Instr;
+         genSpill     = (HInstr*(*)(HReg,Int, Bool)) genSpill_X86;
+         genReload    = (HInstr*(*)(HReg,Int, Bool)) genReload_X86;
+         directReload = (HInstr*(*)(HInstr*,HReg,Short)) directReload_X86;
+         ppInstr      = (void(*)(HInstr*, Bool)) ppX86Instr;
+         ppReg        = (void(*)(HReg)) ppHRegX86;
+         iselSB       = iselSB_X86;
+         emit         = (Int(*)(UChar*,Int,HInstr*,Bool,void*)) emit_X86Instr;
          host_is_bigendian = False;
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchX86, vta->archinfo_host.hwcaps));
@@ -581,7 +584,8 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    rcode = doRegisterAllocation ( vcode, available_real_regs,
                                   n_available_real_regs,
                                   isMove, getRegUsage, mapRegs, 
-                                  genSpill, genReload, guest_sizeB,
+                                  genSpill, genReload, directReload, 
+                                  guest_sizeB,
                                   ppInstr, ppReg, mode64 );
 
    vexAllocSanityCheck();

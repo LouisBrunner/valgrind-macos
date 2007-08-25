@@ -351,7 +351,7 @@ typedef
       Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG */
-      Xin_Test32,    /* 32-bit test of REG against imm32 (AND, set
+      Xin_Test32,    /* 32-bit test of REG or MEM against imm32 (AND, set
                         flags, discard result) */
       Xin_Unary32,   /* 32-bit not and neg */
       Xin_Lea32,     /* 32-bit compute EA into a reg */
@@ -413,8 +413,8 @@ typedef
             HReg  dst;
          } Sh32;
          struct {
-            UInt imm32;
-            HReg dst; /* not written, only read */
+            UInt   imm32;
+            X86RM* dst; /* not written, only read */
          } Test32;
          /* Not and Neg */
          struct {
@@ -624,7 +624,7 @@ extern X86Instr* X86Instr_Unary32   ( X86UnaryOp op, HReg dst );
 extern X86Instr* X86Instr_Lea32     ( X86AMode* am, HReg dst );
 
 extern X86Instr* X86Instr_Sh32      ( X86ShiftOp, UInt, HReg );
-extern X86Instr* X86Instr_Test32    ( UInt imm32, HReg dst );
+extern X86Instr* X86Instr_Test32    ( UInt imm32, X86RM* dst );
 extern X86Instr* X86Instr_MulL      ( Bool syned, X86RM* );
 extern X86Instr* X86Instr_Div       ( Bool syned, X86RM* );
 extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
@@ -672,6 +672,8 @@ extern Int          emit_X86Instr        ( UChar* buf, Int nbuf, X86Instr*,
                                            Bool, void* dispatch );
 extern X86Instr*    genSpill_X86         ( HReg rreg, Int offset, Bool );
 extern X86Instr*    genReload_X86        ( HReg rreg, Int offset, Bool );
+extern X86Instr*    directReload_X86     ( X86Instr* i, 
+                                           HReg vreg, Short spill_off );
 extern void         getAllocableRegs_X86 ( Int*, HReg** );
 extern HInstrArray* iselSB_X86           ( IRSB*, VexArch,
                                                   VexArchInfo*,

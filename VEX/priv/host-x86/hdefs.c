@@ -1612,7 +1612,7 @@ X86Instr* genReload_X86 ( HReg rreg, Int offsetB, Bool mode64 )
 
 /* The given instruction reads the specified vreg exactly once, and
    that vreg is currently located at the given spill offset.  If
-   possible, return a variant of the instruction which instead
+   possible, return a variant of the instruction to one which instead
    references the spill slot directly. */
 
 X86Instr* directReload_X86( X86Instr* i, HReg vreg, Short spill_off )
@@ -2404,6 +2404,13 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
          /* movzwl */
          *p++ = 0x0F;
          *p++ = 0xB7;
+         p = doAMode_M(p, i->Xin.LoadEX.dst, i->Xin.LoadEX.src); 
+         goto done;
+      }
+      if (i->Xin.LoadEX.szSmall == 1 && i->Xin.LoadEX.syned) {
+         /* movsbl */
+         *p++ = 0x0F;
+         *p++ = 0xBE;
          p = doAMode_M(p, i->Xin.LoadEX.dst, i->Xin.LoadEX.src); 
          goto done;
       }

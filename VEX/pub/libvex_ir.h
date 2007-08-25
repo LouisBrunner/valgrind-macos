@@ -422,7 +422,6 @@ typedef
       Iop_CmpNE8,  Iop_CmpNE16,  Iop_CmpNE32,  Iop_CmpNE64,
       /* Tags for unary ops */
       Iop_Not8,  Iop_Not16,  Iop_Not32,  Iop_Not64,
-      Iop_Neg8,  Iop_Neg16,  Iop_Neg32,  Iop_Neg64,
 
       /* -- Ordering not important after here. -- */
 
@@ -445,6 +444,8 @@ typedef
 
       /* As a sop to Valgrind-Memcheck, the following are useful. */
       Iop_CmpNEZ8, Iop_CmpNEZ16,  Iop_CmpNEZ32,  Iop_CmpNEZ64,
+      Iop_CmpwNEZ32, Iop_CmpwNEZ64, /* all-0s -> all-Os; other -> all-1s */
+      Iop_Left8, Iop_Left16, Iop_Left32, Iop_Left64, /*  \x -> x | -x */
 
       /* PowerPC-style 3-way integer comparisons.  Without them it is
          difficult to simulate PPC efficiently.

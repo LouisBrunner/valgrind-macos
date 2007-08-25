@@ -1569,8 +1569,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return r_dst;
       }
       case Iop_8Sto64:
-      case Iop_16Sto64:
-      case Iop_32Sto64: {
+      case Iop_16Sto64: {
          HReg   r_dst = newVRegI(env);
          HReg   r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
          UShort amt   = toUShort(op_unop==Iop_8Sto64  ? 56 :
@@ -1582,6 +1581,17 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env,
                   PPCInstr_Shft(Pshft_SAR, False/*64bit shift*/,
                                 r_dst, r_dst, PPCRH_Imm(False,amt)));
+         return r_dst;
+      }
+      case Iop_32Sto64: {
+         HReg   r_dst = newVRegI(env);
+         HReg   r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
+	 vassert(mode64);
+         /* According to the IBM docs, in 64 bit mode, srawi r,r,0
+            sign extends the lower 32 bits into the upper 32 bits. */
+         addInstr(env,
+                  PPCInstr_Shft(Pshft_SAR, True/*32bit shift*/,
+                                r_dst, r_src, PPCRH_Imm(False,0)));
          return r_dst;
       }
       case Iop_Not8:
@@ -1695,15 +1705,38 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, PPCInstr_Unary(op_clz,r_dst,r_src));
          return r_dst;
       }
-      case Iop_Neg8:
-      case Iop_Neg16:
-      case Iop_Neg32:
-      case Iop_Neg64: {
+
+      case Iop_Left8:
+      case Iop_Left32: 
+      case Iop_Left64: {
+         HReg r_src, r_dst;
+         if (op_unop == Iop_Left64 && !mode64)
+            goto irreducible;
+         r_dst = newVRegI(env);
+         r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, PPCInstr_Unary(Pun_NEG,r_dst,r_src));
+         addInstr(env, PPCInstr_Alu(Palu_OR, r_dst, r_dst, PPCRH_Reg(r_src)));
+         return r_dst;
+      }
+
+      case Iop_CmpwNEZ32: {
          HReg r_dst = newVRegI(env);
          HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
-         if (op_unop == Iop_Neg64 && !mode64)
-            goto irreducible;
          addInstr(env, PPCInstr_Unary(Pun_NEG,r_dst,r_src));
+         addInstr(env, PPCInstr_Alu(Palu_OR, r_dst, r_dst, PPCRH_Reg(r_src)));
+         addInstr(env, PPCInstr_Shft(Pshft_SAR, True/*32bit shift*/, 
+                                     r_dst, r_dst, PPCRH_Imm(False, 31)));
+         return r_dst;
+      }
+
+      case Iop_CmpwNEZ64: {
+         HReg r_dst = newVRegI(env);
+         HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
+         if (!mode64) goto irreducible;
+         addInstr(env, PPCInstr_Unary(Pun_NEG,r_dst,r_src));
+         addInstr(env, PPCInstr_Alu(Palu_OR, r_dst, r_dst, PPCRH_Reg(r_src)));
+         addInstr(env, PPCInstr_Shft(Pshft_SAR, False/*64bit shift*/, 
+                                     r_dst, r_dst, PPCRH_Imm(False, 63)));
          return r_dst;
       }
 
@@ -1761,8 +1794,6 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_32to16:
       case Iop_64to8:
          /* These are no-ops. */
-         if (op_unop == Iop_Neg64 && !mode64)
-            goto irreducible;
          return iselWordExpr_R(env, e->Iex.Unop.arg);
          
       /* ReinterpF64asI64(e) */
@@ -2685,6 +2716,24 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
    if (e->tag == Iex_Unop) {
       switch (e->Iex.Unop.op) {
 
+      /* CmpwNEZ64(e) */
+      case Iop_CmpwNEZ64: {
+         HReg argHi, argLo;
+         HReg tmp1  = newVRegI(env);
+         HReg tmp2  = newVRegI(env);
+         iselInt64Expr(&argHi, &argLo, env, e->Iex.Unop.arg);
+         /* tmp1 = argHi | argLo */
+         addInstr(env, PPCInstr_Alu(Palu_OR, tmp1, argHi, PPCRH_Reg(argLo)));
+         /* tmp2 = (tmp1 | -tmp1) >>s 31 */
+         addInstr(env, PPCInstr_Unary(Pun_NEG,tmp2,tmp1));
+         addInstr(env, PPCInstr_Alu(Palu_OR, tmp2, tmp2, PPCRH_Reg(tmp1)));
+         addInstr(env, PPCInstr_Shft(Pshft_SAR, True/*32bit shift*/, 
+                                     tmp2, tmp2, PPCRH_Imm(False, 31)));
+         *rHi = tmp2;
+         *rLo = tmp2; /* yes, really tmp2 */
+         return;
+      }
+
       /* 32Sto64(e) */
       case Iop_32Sto64: {
          HReg tHi = newVRegI(env);
@@ -2750,22 +2799,6 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          addInstr(env, PPCInstr_Shft(Pshft_SAR, True/*32bit shift*/,
                                      tLo, tLo, PPCRH_Imm(False,31)));
          addInstr(env, mk_iMOVds_RR(tHi, tLo));
-         *rHi = tHi;
-         *rLo = tLo;
-         return;
-      }
-         
-      case Iop_Neg64: {
-         HReg yLo, yHi;
-         HReg zero = newVRegI(env);
-         HReg tLo  = newVRegI(env);
-         HReg tHi  = newVRegI(env);
-         iselInt64Expr(&yHi, &yLo, env, e->Iex.Unop.arg);
-         addInstr(env, PPCInstr_LI(zero, 0, False/*mode32*/));
-         addInstr(env, PPCInstr_AddSubC( False/*sub*/, True/*set carry*/,
-                                         tLo, zero, yLo));
-         addInstr(env, PPCInstr_AddSubC( False/*sub*/, False/*read carry*/,
-                                         tHi, zero, yHi));
          *rHi = tHi;
          *rLo = tLo;
          return;

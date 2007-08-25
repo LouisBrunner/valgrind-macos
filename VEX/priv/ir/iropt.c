@@ -1011,19 +1011,6 @@ static IRExpr* fold_Expr ( IRExpr* e )
                     notBool(e->Iex.Unop.arg->Iex.Const.con->Ico.U1)));
             break;
 
-         case Iop_Neg64:
-            e2 = IRExpr_Const(IRConst_U64(
-                    - (e->Iex.Unop.arg->Iex.Const.con->Ico.U64)));
-            break;
-         case Iop_Neg32:
-            e2 = IRExpr_Const(IRConst_U32(
-                    - (e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
-            break;
-         case Iop_Neg8:
-            e2 = IRExpr_Const(IRConst_U8(toUChar(
-                    - (e->Iex.Unop.arg->Iex.Const.con->Ico.U8))));
-            break;
-
          case Iop_64to8: {
             ULong w64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
             w64 &= 0xFFULL;
@@ -1071,6 +1058,39 @@ static IRExpr* fold_Expr ( IRExpr* e )
                     0ULL != e->Iex.Unop.arg->Iex.Const.con->Ico.U64
                  )));
             break;
+
+         case Iop_CmpwNEZ32: {
+            UInt w32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            if (w32 == 0)
+               e2 = IRExpr_Const(IRConst_U32( 0 ));
+            else
+               e2 = IRExpr_Const(IRConst_U32( 0xFFFFFFFF ));
+            break;
+         }
+         case Iop_CmpwNEZ64: {
+            ULong w64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
+            if (w64 == 0)
+               e2 = IRExpr_Const(IRConst_U64( 0 ));
+            else
+               e2 = IRExpr_Const(IRConst_U64( 0xFFFFFFFFFFFFFFFFULL ));
+            break;
+         }
+
+         case Iop_Left32: {
+            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            Int  s32 = (Int)(u32 & 0xFFFFFFFF);
+            s32 = (s32 | (-s32));
+            e2 = IRExpr_Const( IRConst_U32( (UInt)s32 ));
+            break;
+         }
+
+         case Iop_Left64: {
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
+            Long  s64 = (Long)u64;
+            s64 = (s64 | (-s64));
+            e2 = IRExpr_Const( IRConst_U64( (ULong)s64 ));
+            break;
+         }
 
          default: 
             goto unhandled;
@@ -1465,11 +1485,18 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = IRExpr_Const(IRConst_U32(0));
          } else
 
-         /* And32(0,x) ==> 0 */
-         if (e->Iex.Binop.op == Iop_And32
+         /* And32/Shl32(0,x) ==> 0 */
+         if ((e->Iex.Binop.op == Iop_And32 || e->Iex.Binop.op == Iop_Shl32)
              && e->Iex.Binop.arg1->tag == Iex_Const
              && e->Iex.Binop.arg1->Iex.Const.con->Ico.U32 == 0) {
             e2 = IRExpr_Const(IRConst_U32(0));
+         } else
+
+         /* Or8(0,x) ==> x */
+         if (e->Iex.Binop.op == Iop_Or8
+             && e->Iex.Binop.arg1->tag == Iex_Const
+             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U8 == 0) {
+            e2 = e->Iex.Binop.arg2;
          } else
 
          /* Or32(0,x) ==> x */
@@ -3698,6 +3725,94 @@ static IRExpr* atbSubst_Temp ( ATmpInfo* env, IRTemp tmp )
    'single-shot', so once a binding is used, it is marked as no longer
    available, by setting its .bindee field to NULL. */
 
+static inline Bool is_Unop ( IRExpr* e, IROp op ) {
+   return e->tag == Iex_Unop && e->Iex.Unop.op == op;
+}
+static inline Bool is_Binop ( IRExpr* e, IROp op ) {
+   return e->tag == Iex_Binop && e->Iex.Binop.op == op;
+}
+
+static IRExpr* fold_IRExpr_Binop ( IROp op, IRExpr* a1, IRExpr* a2 )
+{
+   switch (op) {
+   case Iop_Or32:
+      /* Or32( CmpwNEZ32(x), CmpwNEZ32(y) ) --> CmpwNEZ32( Or32( x, y ) )  */
+      if (is_Unop(a1, Iop_CmpwNEZ32) && is_Unop(a2, Iop_CmpwNEZ32))
+         return IRExpr_Unop( Iop_CmpwNEZ32,
+                             IRExpr_Binop( Iop_Or32, a1->Iex.Unop.arg, 
+                                                     a2->Iex.Unop.arg ) );
+      break;
+   default:
+      break;
+   }
+   /* no reduction rule applies */
+   return IRExpr_Binop( op, a1, a2 );
+}
+
+static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
+{
+   switch (op) {
+   case Iop_CmpwNEZ64:
+      /* CmpwNEZ64( Or64 ( CmpwNEZ64(x), y ) ) --> CmpwNEZ64( Or64( x, y ) ) */
+      if (is_Binop(aa, Iop_Or64) 
+          && is_Unop(aa->Iex.Binop.arg1, Iop_CmpwNEZ64))
+         return fold_IRExpr_Unop(
+                   Iop_CmpwNEZ64,
+                   IRExpr_Binop(Iop_Or64, 
+                                aa->Iex.Binop.arg1->Iex.Unop.arg, 
+                                aa->Iex.Binop.arg2));
+      /* CmpwNEZ64( Or64 ( x, CmpwNEZ64(y) ) ) --> CmpwNEZ64( Or64( x, y ) ) */
+      if (is_Binop(aa, Iop_Or64)
+          && is_Unop(aa->Iex.Binop.arg2, Iop_CmpwNEZ64))
+         return fold_IRExpr_Unop(
+                   Iop_CmpwNEZ64,
+                   IRExpr_Binop(Iop_Or64, 
+                                aa->Iex.Binop.arg1, 
+                                aa->Iex.Binop.arg2->Iex.Unop.arg));
+      break;
+   case Iop_CmpNEZ64:
+      /* CmpNEZ64( Left64(x) ) --> CmpNEZ64(x) */
+      if (is_Unop(aa, Iop_Left64)) 
+         return IRExpr_Unop(Iop_CmpNEZ64, aa->Iex.Unop.arg);
+      break;
+   case Iop_CmpwNEZ32:
+      /* CmpwNEZ32( CmpwNEZ32 ( x ) ) --> CmpwNEZ32 ( x ) */
+      if (is_Unop(aa, Iop_CmpwNEZ32))
+         return IRExpr_Unop( Iop_CmpwNEZ32, aa->Iex.Unop.arg );
+      break;
+   case Iop_CmpNEZ32:
+      /* CmpNEZ32( Left32(x) ) --> CmpNEZ32(x) */
+      if (is_Unop(aa, Iop_Left32)) 
+         return IRExpr_Unop(Iop_CmpNEZ32, aa->Iex.Unop.arg);
+      break;
+   case Iop_Left32:
+      /* Left32( Left32(x) ) --> Left32(x) */
+      if (is_Unop(aa, Iop_Left32))
+         return IRExpr_Unop( Iop_Left32, aa->Iex.Unop.arg );
+      break;
+   case Iop_32to1:
+      /* 32to1( 1Uto32 ( x ) ) --> x */
+      if (is_Unop(aa, Iop_1Uto32))
+         return aa->Iex.Unop.arg;
+      /* 32to1( CmpwNEZ32 ( x )) --> CmpNEZ32(x) */
+      if (is_Unop(aa, Iop_CmpwNEZ32))
+         return IRExpr_Unop( Iop_CmpNEZ32, aa->Iex.Unop.arg );
+      break;
+   case Iop_64to1:
+      /* 64to1( 1Uto64 ( x ) ) --> x */
+      if (is_Unop(aa, Iop_1Uto64))
+         return aa->Iex.Unop.arg;
+      /* 64to1( CmpwNEZ64 ( x )) --> CmpNEZ64(x) */
+      if (is_Unop(aa, Iop_CmpwNEZ64))
+         return IRExpr_Unop( Iop_CmpNEZ64, aa->Iex.Unop.arg );
+      break;
+   default:
+      break;
+   }
+   /* no reduction rule applies */
+   return IRExpr_Unop( op, aa );
+}
+
 static IRExpr* atbSubst_Expr ( ATmpInfo* env, IRExpr* e )
 {
    IRExpr*  e2;
@@ -3740,13 +3855,13 @@ static IRExpr* atbSubst_Expr ( ATmpInfo* env, IRExpr* e )
                    atbSubst_Expr(env, e->Iex.Triop.arg3)
                 );
       case Iex_Binop:
-         return IRExpr_Binop(
+         return fold_IRExpr_Binop(
                    e->Iex.Binop.op,
                    atbSubst_Expr(env, e->Iex.Binop.arg1),
                    atbSubst_Expr(env, e->Iex.Binop.arg2)
                 );
       case Iex_Unop:
-         return IRExpr_Unop(
+         return fold_IRExpr_Unop(
                    e->Iex.Unop.op,
                    atbSubst_Expr(env, e->Iex.Unop.arg)
                 );

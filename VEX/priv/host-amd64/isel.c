@@ -278,14 +278,21 @@ static Bool fitsIn32Bits ( ULong x )
    return toBool(x == y1);
 }
 
-//.. /* Is this a 32-bit zero expression? */
-//.. 
-//.. static Bool isZero32 ( IRExpr* e )
-//.. {
-//..    return e->tag == Iex_Const
-//..           && e->Iex.Const.con->tag == Ico_U32
-//..           && e->Iex.Const.con->Ico.U32 == 0;
-//.. }
+/* Is this a 64-bit zero expression? */
+
+static Bool isZeroU64 ( IRExpr* e )
+{
+   return e->tag == Iex_Const
+          && e->Iex.Const.con->tag == Ico_U64
+          && e->Iex.Const.con->Ico.U64 == 0ULL;
+}
+
+static Bool isZeroU32 ( IRExpr* e )
+{
+   return e->tag == Iex_Const
+          && e->Iex.Const.con->tag == Ico_U32
+          && e->Iex.Const.con->Ico.U32 == 0;
+}
 
 /* Make a int reg-reg move. */
 
@@ -841,16 +848,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       AMD64AluOp   aluOp;
       AMD64ShiftOp shOp;
 
-//.. 
-//..       /* Pattern: Sub32(0,x) */
-//..       if (e->Iex.Binop.op == Iop_Sub32 && isZero32(e->Iex.Binop.arg1)) {
-//..          HReg dst = newVRegI(env);
-//..          HReg reg = iselIntExpr_R(env, e->Iex.Binop.arg2);
-//..          addInstr(env, mk_iMOVsd_RR(reg,dst));
-//..          addInstr(env, X86Instr_Unary32(Xun_NEG,X86RM_Reg(dst)));
-//..          return dst;
-//..       }
-//.. 
+      /* Pattern: Sub64(0,x) */
+      /*     and: Sub32(0,x) */
+      if ((e->Iex.Binop.op == Iop_Sub64 && isZeroU64(e->Iex.Binop.arg1))
+          || (e->Iex.Binop.op == Iop_Sub32 && isZeroU32(e->Iex.Binop.arg1))) {
+         HReg dst = newVRegI(env);
+         HReg reg = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_iMOVsd_RR(reg,dst));
+         addInstr(env, AMD64Instr_Unary64(Aun_NEG,dst));
+         return dst;
+      }
+
       /* Is it an addition or logical style op? */
       switch (e->Iex.Binop.op) {
          case Iop_Add8: case Iop_Add16: case Iop_Add32: case Iop_Add64: 
@@ -1449,14 +1457,41 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                             AMD64RMI_Reg(tmp), dst));
             return dst;
          }
-         case Iop_Neg8:
-         case Iop_Neg16:
-         case Iop_Neg32:
-         case Iop_Neg64: {
+
+         case Iop_CmpwNEZ64: {
             HReg dst = newVRegI(env);
-            HReg reg = iselIntExpr_R(env, e->Iex.Unop.arg);
-            addInstr(env, mk_iMOVsd_RR(reg,dst));
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, mk_iMOVsd_RR(src,dst));
             addInstr(env, AMD64Instr_Unary64(Aun_NEG,dst));
+            addInstr(env, AMD64Instr_Alu64R(Aalu_OR,
+                                            AMD64RMI_Reg(src), dst));
+            addInstr(env, AMD64Instr_Sh64(Ash_SAR, 63, dst));
+            return dst;
+         }
+
+         case Iop_CmpwNEZ32: {
+            HReg src = newVRegI(env);
+            HReg dst = newVRegI(env);
+            HReg pre = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, mk_iMOVsd_RR(pre,src));
+            addInstr(env, AMD64Instr_MovZLQ(src,src));
+            addInstr(env, mk_iMOVsd_RR(src,dst));
+            addInstr(env, AMD64Instr_Unary64(Aun_NEG,dst));
+            addInstr(env, AMD64Instr_Alu64R(Aalu_OR,
+                                            AMD64RMI_Reg(src), dst));
+            addInstr(env, AMD64Instr_Sh64(Ash_SAR, 63, dst));
+            return dst;
+         }
+
+         case Iop_Left8:
+         case Iop_Left16:
+         case Iop_Left32:
+         case Iop_Left64: {
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, mk_iMOVsd_RR(src, dst));
+            addInstr(env, AMD64Instr_Unary64(Aun_NEG, dst));
+            addInstr(env, AMD64Instr_Alu64R(Aalu_OR, AMD64RMI_Reg(src), dst));
             return dst;
          }
 
@@ -1965,10 +2000,6 @@ static AMD64CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
 static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 {
    MatchInfo mi;
-//..    DECLARE_PATTERN(p_1Uto32_then_32to1);
-//..    DECLARE_PATTERN(p_1Sto32_then_32to1);
-
-   DECLARE_PATTERN(p_1Uto64_then_64to1);
 
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
@@ -2001,30 +2032,6 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --- patterns rooted at: 64to1 --- */
-
-   /* 64to1(1Uto64(expr1)) ==> expr1 */
-   DEFINE_PATTERN( p_1Uto64_then_64to1,
-                   unop(Iop_64to1, unop(Iop_1Uto64, bind(0))) );
-   if (matchIRExpr(&mi,p_1Uto64_then_64to1,e)) {
-      IRExpr* expr1 = mi.bindee[0];
-      return iselCondCode(env, expr1);
-   }
-
-//..    /* 32to1(1Uto32(expr1)) -- the casts are pointless, ignore them */
-//..    DEFINE_PATTERN(p_1Uto32_then_32to1,
-//..                   unop(Iop_32to1,unop(Iop_1Uto32,bind(0))));
-//..    if (matchIRExpr(&mi,p_1Uto32_then_32to1,e)) {
-//..       IRExpr* expr1 = mi.bindee[0];
-//..       return iselCondCode(env, expr1);
-//..    }
-//.. 
-//..    /* 32to1(1Sto32(expr1)) -- the casts are pointless, ignore them */
-//..    DEFINE_PATTERN(p_1Sto32_then_32to1,
-//..                   unop(Iop_32to1,unop(Iop_1Sto32,bind(0))));
-//..    if (matchIRExpr(&mi,p_1Sto32_then_32to1,e)) {
-//..       IRExpr* expr1 = mi.bindee[0];
-//..       return iselCondCode(env, expr1);
-//..    }
 
    /* 64to1 */
    if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_64to1) {
@@ -2167,53 +2174,6 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          default: vpanic("iselCondCode(amd64): CmpXX64");
       }
    }
-
-//..    /* CmpNE64(1Sto64(b), 0) ==> b */
-//..    {
-//..       DECLARE_PATTERN(p_CmpNE64_1Sto64);
-//..       DEFINE_PATTERN(
-//..          p_CmpNE64_1Sto64,
-//..          binop(Iop_CmpNE64, unop(Iop_1Sto64,bind(0)), mkU64(0)));
-//..       if (matchIRExpr(&mi, p_CmpNE64_1Sto64, e)) {
-//..          return iselCondCode(env, mi.bindee[0]);
-//..       }
-//..    }
-//.. 
-//..    /* CmpNE64(x, 0) */
-//..    {
-//..       DECLARE_PATTERN(p_CmpNE64_x_zero);
-//..       DEFINE_PATTERN(
-//..          p_CmpNE64_x_zero,
-//..          binop(Iop_CmpNE64, bind(0), mkU64(0)) );
-//..       if (matchIRExpr(&mi, p_CmpNE64_x_zero, e)) {
-//..          HReg hi, lo;
-//..          IRExpr* x   = mi.bindee[0];
-//..          HReg    tmp = newVRegI(env);
-//..          iselInt64Expr( &hi, &lo, env, x );
-//..          addInstr(env, mk_iMOVsd_RR(hi, tmp));
-//..          addInstr(env, X86Instr_Alu32R(Xalu_OR,X86RMI_Reg(lo), tmp));
-//..          return Xcc_NZ;
-//..       }
-//..    }
-//.. 
-//..    /* CmpNE64 */
-//..    if (e->tag == Iex_Binop 
-//..        && e->Iex.Binop.op == Iop_CmpNE64) {
-//..       HReg hi1, hi2, lo1, lo2;
-//..       HReg tHi = newVRegI(env);
-//..       HReg tLo = newVRegI(env);
-//..       iselInt64Expr( &hi1, &lo1, env, e->Iex.Binop.arg1 );
-//..       iselInt64Expr( &hi2, &lo2, env, e->Iex.Binop.arg2 );
-//..       addInstr(env, mk_iMOVsd_RR(hi1, tHi));
-//..       addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(hi2), tHi));
-//..       addInstr(env, mk_iMOVsd_RR(lo1, tLo));
-//..       addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(lo2), tLo));
-//..       addInstr(env, X86Instr_Alu32R(Xalu_OR,X86RMI_Reg(tHi), tLo));
-//..       switch (e->Iex.Binop.op) {
-//..          case Iop_CmpNE64:  return Xcc_NZ;
-//..          default: vpanic("iselCondCode(x86): CmpXX64");
-//..       }
-//..    }
 
    ppIRExpr(e);
    vpanic("iselCondCode(amd64)");

@@ -441,6 +441,10 @@ UInt vprintf_wrk ( void(*sink)(HChar),
             PAD(len1); PUT('0'); PUT('x'); PUTSTR(intbuf); PAD(len3);
             break;
          }
+         case '%': {
+            PUT('%');
+            break;
+         }
          default:
             /* no idea what it is.  Print the format literally and
                move on. */

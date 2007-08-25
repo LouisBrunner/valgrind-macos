@@ -2706,7 +2706,13 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
                /* srawi (PPC32 p507) */
                UInt n = srcR->Prh.Imm.imm16;
                vassert(!srcR->Prh.Imm.syned);
-               vassert(n > 0 && n < 32);
+               /* In 64-bit mode, we allow right shifts by zero bits
+                  as that is a handy way to sign extend the lower 32
+                  bits into the upper 32 bits. */
+               if (mode64)
+                  vassert(n >= 0 && n < 32);
+               else 
+                  vassert(n > 0 && n < 32);
                p = mkFormX(p, 31, r_srcL, r_dst, n, 824, 0);
             } else {
                /* sraw (PPC32 p506) */

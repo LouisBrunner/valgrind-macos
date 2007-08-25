@@ -203,16 +203,19 @@ void ppIROp ( IROp op )
       case Iop_CmpNEZ32: vex_printf("CmpNEZ32"); return;
       case Iop_CmpNEZ64: vex_printf("CmpNEZ64"); return;
 
+      case Iop_CmpwNEZ32: vex_printf("CmpwNEZ32"); return;
+      case Iop_CmpwNEZ64: vex_printf("CmpwNEZ64"); return;
+
+      case Iop_Left8:  vex_printf("Left8"); return;
+      case Iop_Left16: vex_printf("Left16"); return;
+      case Iop_Left32: vex_printf("Left32"); return;
+      case Iop_Left64: vex_printf("Left64"); return;
+
       case Iop_CmpORD32U: vex_printf("CmpORD32U"); return;
       case Iop_CmpORD32S: vex_printf("CmpORD32S"); return;
 
       case Iop_CmpORD64U: vex_printf("CmpORD64U"); return;
       case Iop_CmpORD64S: vex_printf("CmpORD64S"); return;
-
-      case Iop_Neg8:  vex_printf("Neg8"); return;
-      case Iop_Neg16: vex_printf("Neg16"); return;
-      case Iop_Neg32: vex_printf("Neg32"); return;
-      case Iop_Neg64: vex_printf("Neg64"); return;
 
       case Iop_DivU32: vex_printf("DivU32"); return;
       case Iop_DivS32: vex_printf("DivS32"); return;
@@ -1517,14 +1520,13 @@ void typeOfPrimop ( IROp op,
       case Iop_Shl64: case Iop_Shr64: case Iop_Sar64:
          BINARY(Ity_I64,Ity_I8, Ity_I64);
 
-      case Iop_Not8: case Iop_Neg8:
+      case Iop_Not8:
          UNARY(Ity_I8, Ity_I8);
-      case Iop_Not16: case Iop_Neg16:
+      case Iop_Not16:
          UNARY(Ity_I16, Ity_I16);
-      case Iop_Not32: case Iop_Neg32:
+      case Iop_Not32:
          UNARY(Ity_I32, Ity_I32);
 
-      case Iop_Neg64:
       case Iop_Not64:
       case Iop_CmpNEZ32x2: case Iop_CmpNEZ16x4: case Iop_CmpNEZ8x8:
          UNARY(Ity_I64, Ity_I64);
@@ -1546,6 +1548,11 @@ void typeOfPrimop ( IROp op,
       case Iop_CmpNEZ16: UNARY_COMPARISON(Ity_I16);
       case Iop_CmpNEZ32: UNARY_COMPARISON(Ity_I32);
       case Iop_CmpNEZ64: UNARY_COMPARISON(Ity_I64);
+
+      case Iop_Left8:  UNARY(Ity_I8, Ity_I8);
+      case Iop_Left16: UNARY(Ity_I16,Ity_I16);
+      case Iop_CmpwNEZ32: case Iop_Left32: UNARY(Ity_I32,Ity_I32);
+      case Iop_CmpwNEZ64: case Iop_Left64: UNARY(Ity_I64,Ity_I64);
 
       case Iop_MullU8: case Iop_MullS8:
          BINARY(Ity_I8,Ity_I8, Ity_I16);

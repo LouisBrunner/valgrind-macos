@@ -684,7 +684,7 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
            || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
            || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
-           || op8 == Iop_Not8 || op8 == Iop_Neg8);
+           || op8 == Iop_Not8);
    adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
    return adj + op8;
 }
@@ -2631,7 +2631,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, Int delta, Bool* decode_OK )
             dst1 = newTemp(ty);
             assign(dst0, mkU(ty,0));
             assign(src,  getIReg(sz,eregOfRM(modrm)));
-            assign(dst1, unop(mkSizedOp(ty,Iop_Neg8), mkexpr(src)));
+            assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
             setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
             putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
             DIP("neg%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
@@ -2693,7 +2693,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, Int delta, Bool* decode_OK )
             dst1 = newTemp(ty);
             assign(dst0, mkU(ty,0));
             assign(src,  mkexpr(t1));
-            assign(dst1, unop(mkSizedOp(ty,Iop_Neg8), mkexpr(src)));
+            assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
             setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
             storeLE( mkexpr(addr), mkexpr(dst1) );
             DIP("neg%c %s\n", nameISize(sz), dis_buf);

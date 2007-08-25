@@ -411,38 +411,22 @@ static IRAtom* mkUifU ( MCEnv* mce, IRType vty, IRAtom* a1, IRAtom* a2 ) {
 
 static IRAtom* mkLeft8 ( MCEnv* mce, IRAtom* a1 ) {
    tl_assert(isShadowAtom(mce,a1));
-   /* It's safe to duplicate a1 since it's only an atom */
-   return assignNew(mce, Ity_I8, 
-                    binop(Iop_Or8, a1, 
-                          assignNew(mce, Ity_I8,
-                                         unop(Iop_Neg8, a1))));
+   return assignNew(mce, Ity_I8, unop(Iop_Left8, a1));
 }
 
 static IRAtom* mkLeft16 ( MCEnv* mce, IRAtom* a1 ) {
    tl_assert(isShadowAtom(mce,a1));
-   /* It's safe to duplicate a1 since it's only an atom */
-   return assignNew(mce, Ity_I16, 
-                    binop(Iop_Or16, a1, 
-                          assignNew(mce, Ity_I16,
-                                         unop(Iop_Neg16, a1))));
+   return assignNew(mce, Ity_I16, unop(Iop_Left16, a1));
 }
 
 static IRAtom* mkLeft32 ( MCEnv* mce, IRAtom* a1 ) {
    tl_assert(isShadowAtom(mce,a1));
-   /* It's safe to duplicate a1 since it's only an atom */
-   return assignNew(mce, Ity_I32, 
-                    binop(Iop_Or32, a1, 
-                          assignNew(mce, Ity_I32,
-                                         unop(Iop_Neg32, a1))));
+   return assignNew(mce, Ity_I32, unop(Iop_Left32, a1));
 }
 
 static IRAtom* mkLeft64 ( MCEnv* mce, IRAtom* a1 ) {
    tl_assert(isShadowAtom(mce,a1));
-   /* It's safe to duplicate a1 since it's only an atom */
-   return assignNew(mce, Ity_I64, 
-                    binop(Iop_Or64, a1, 
-                          assignNew(mce, Ity_I64,
-                                         unop(Iop_Neg64, a1))));
+   return assignNew(mce, Ity_I64, unop(Iop_Left64, a1));
 }
 
 /* --------- 'Improvement' functions for AND/OR. --------- */
@@ -557,14 +541,28 @@ static IRAtom* mkImproveORV128 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
 
 static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits ) 
 {
-   IRType  ty;
+   IRType  src_ty;
    IRAtom* tmp1;
    /* Note, dst_ty is a shadow type, not an original type. */
    /* First of all, collapse vbits down to a single bit. */
    tl_assert(isShadowAtom(mce,vbits));
-   ty   = typeOfIRExpr(mce->bb->tyenv, vbits);
-   tmp1 = NULL;
-   switch (ty) {
+   src_ty = typeOfIRExpr(mce->bb->tyenv, vbits);
+
+   /* Fast-track some common cases */
+   if (src_ty == Ity_I32 && dst_ty == Ity_I32)
+      return assignNew(mce, Ity_I32, unop(Iop_CmpwNEZ32, vbits));
+
+   if (src_ty == Ity_I64 && dst_ty == Ity_I64)
+      return assignNew(mce, Ity_I64, unop(Iop_CmpwNEZ64, vbits));
+
+   if (src_ty == Ity_I32 && dst_ty == Ity_I64) {
+      IRAtom* tmp = assignNew(mce, Ity_I32, unop(Iop_CmpwNEZ32, vbits));
+      return assignNew(mce, Ity_I64, binop(Iop_32HLto64, tmp, tmp));
+   }
+
+   /* Else do it the slow way .. */
+   tmp1   = NULL;
+   switch (src_ty) {
       case Ity_I1:
          tmp1 = vbits;
          break;
@@ -591,7 +589,7 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
          break;
       }
       default:
-         ppIRType(ty);
+         ppIRType(src_ty);
          VG_(tool_panic)("mkPCastTo(1)");
    }
    tl_assert(tmp1);
@@ -1315,9 +1313,27 @@ static
 IRAtom* mkLazyN ( MCEnv* mce, 
                   IRAtom** exprvec, IRType finalVtype, IRCallee* cee )
 {
-   Int i;
+   Int     i;
    IRAtom* here;
-   IRAtom* curr = definedOfType(Ity_I32);
+   IRAtom* curr;
+   IRType  mergeTy;
+   IRType  mergeTy64 = True;
+
+   /* Decide on the type of the merge intermediary.  If all relevant
+      args are I64, then it's I64.  In all other circumstances, use
+      I32. */
+   for (i = 0; exprvec[i]; i++) {
+      tl_assert(i < 32);
+      tl_assert(isOriginalAtom(mce, exprvec[i]));
+      if (cee->mcx_mask & (1<<i))
+         continue;
+      if (typeOfIRExpr(mce->bb->tyenv, exprvec[i]) != Ity_I64)
+         mergeTy64 = False;
+   }
+
+   mergeTy = mergeTy64  ? Ity_I64  : Ity_I32;
+   curr    = definedOfType(mergeTy);
+
    for (i = 0; exprvec[i]; i++) {
       tl_assert(i < 32);
       tl_assert(isOriginalAtom(mce, exprvec[i]));
@@ -1330,8 +1346,10 @@ IRAtom* mkLazyN ( MCEnv* mce,
       } else {
          /* calculate the arg's definedness, and pessimistically merge
             it in. */
-         here = mkPCastTo( mce, Ity_I32, expr2vbits(mce, exprvec[i]) );
-         curr = mkUifU32(mce, here, curr);
+         here = mkPCastTo( mce, mergeTy, expr2vbits(mce, exprvec[i]) );
+         curr = mergeTy64 
+                   ? mkUifU64(mce, here, curr)
+                   : mkUifU32(mce, here, curr);
       }
    }
    return mkPCastTo(mce, finalVtype, curr );
@@ -2519,17 +2537,6 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Not8:
       case Iop_Not1:
          return vatom;
-
-      /* Neg* really fall under the Add/Sub banner, and as such you
-         might think would qualify for the 'expensive add/sub'
-         treatment.  However, in this case since the implied literal
-         is zero (0 - arg), we just do the cheap thing anyway. */
-      case Iop_Neg8:
-         return mkLeft8(mce, vatom);
-      case Iop_Neg16:
-         return mkLeft16(mce, vatom);
-      case Iop_Neg32:
-         return mkLeft32(mce, vatom);
 
       default:
          ppIROp(op);

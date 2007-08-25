@@ -372,20 +372,54 @@ static void sub_from_rsp ( ISelEnv* env, Int n )
 //.. }
 
 
-/* Used only in doHelperCall.  See big comment in doHelperCall re
-   handling of register-parameter args.  This function figures out
-   whether evaluation of an expression might require use of a fixed
-   register.  If in doubt return True (safe but suboptimal).
-*/
-static
-Bool mightRequireFixedRegs ( IRExpr* e )
+/* Used only in doHelperCall.  If possible, produce a single
+   instruction which computes 'e' into 'dst'.  If not possible, return
+   NULL. */
+
+static AMD64Instr* iselIntExpr_single_instruction ( ISelEnv* env,
+                                                    HReg     dst,
+                                                    IRExpr*  e )
 {
-   switch (e->tag) {
-      case Iex_RdTmp: case Iex_Const: case Iex_Get: 
-         return False;
-      default:
-         return True;
+   vassert(typeOfIRExpr(env->type_env, e) == Ity_I64);
+
+   if (e->tag == Iex_Const) {
+      vassert(e->Iex.Const.con->tag == Ico_U64);
+      if (fitsIn32Bits(e->Iex.Const.con->Ico.U64)) {
+         return AMD64Instr_Alu64R(
+                   Aalu_MOV,
+                   AMD64RMI_Imm(toUInt(e->Iex.Const.con->Ico.U64)),
+                   dst
+                );
+      } else {
+         return AMD64Instr_Imm64(e->Iex.Const.con->Ico.U64, dst);
+      }
    }
+
+   if (e->tag == Iex_RdTmp) {
+      HReg src = lookupIRTemp(env, e->Iex.RdTmp.tmp);
+      return mk_iMOVsd_RR(src, dst);
+   }
+
+   if (e->tag == Iex_Get) {
+      vassert(e->Iex.Get.ty == Ity_I64);
+      return AMD64Instr_Alu64R(
+                Aalu_MOV,
+                AMD64RMI_Mem(
+                   AMD64AMode_IR(e->Iex.Get.offset,
+                                 hregAMD64_RBP())),
+                dst);
+   }
+
+   if (e->tag == Iex_Unop 
+       && e->Iex.Unop.op == Iop_32Uto64 
+       && e->Iex.Unop.arg->tag == Iex_RdTmp) {
+      HReg src = lookupIRTemp(env, e->Iex.Unop.arg->Iex.RdTmp.tmp);
+      return AMD64Instr_MovZLQ(src, dst);
+   }
+
+   if (0) { ppIRExpr(e); vex_printf("\n"); }
+
+   return NULL;
 }
 
 
@@ -401,7 +435,7 @@ void doHelperCall ( ISelEnv* env,
    AMD64CondCode cc;
    HReg          argregs[6];
    HReg          tmpregs[6];
-   Bool          go_fast;
+   AMD64Instr*   fastinstrs[6];
    Int           n_args, i, argreg;
 
    /* Marshal args for a call and do the call.
@@ -471,11 +505,12 @@ void doHelperCall ( ISelEnv* env,
    tmpregs[0] = tmpregs[1] = tmpregs[2] =
    tmpregs[3] = tmpregs[4] = tmpregs[5] = INVALID_HREG;
 
+   fastinstrs[0] = fastinstrs[1] = fastinstrs[2] =
+   fastinstrs[3] = fastinstrs[4] = fastinstrs[5] = NULL;
+
    /* First decide which scheme (slow or fast) is to be used.  First
       assume the fast scheme, and select slow if any contraindications
       (wow) appear. */
-
-   go_fast = True;
 
    if (guard) {
       if (guard->tag == Iex_Const 
@@ -484,91 +519,94 @@ void doHelperCall ( ISelEnv* env,
          /* unconditional */
       } else {
          /* Not manifestly unconditional -- be conservative. */
-         go_fast = False;
+         goto slowscheme;
       }
    }
 
-   if (go_fast) {
-      for (i = 0; i < n_args; i++) {
-         if (mightRequireFixedRegs(args[i])) {
-            go_fast = False;
-            break;
-         }
+   /* Ok, let's try for the fast scheme.  If it doesn't pan out, we'll
+      use the slow scheme.  Because this is tentative, we can't call
+      addInstr (that is, commit to) any instructions until we're
+      handled all the arguments.  So park the resulting instructions
+      in a buffer and emit that if we're successful. */
+
+   /* FAST SCHEME */
+   argreg = 0;
+   if (passBBP) {
+      fastinstrs[argreg] = mk_iMOVsd_RR( hregAMD64_RBP(), argregs[argreg]);
+      argreg++;
+   }
+
+   for (i = 0; i < n_args; i++) {
+      vassert(argreg < 6);
+      vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
+      fastinstrs[argreg] 
+         = iselIntExpr_single_instruction( env, argregs[argreg], args[i] );
+      if (fastinstrs[argreg] == NULL)
+         goto slowscheme;
+      argreg++;
+   }
+
+   /* Looks like we're in luck.  Emit the accumulated instructions and
+      move on to doing the call itself. */
+   vassert(argreg <= 6);
+   for (i = 0; i < argreg; i++)
+      addInstr(env, fastinstrs[i]);
+
+   /* Fast scheme only applies for unconditional calls.  Hence: */
+   cc = Acc_ALWAYS;
+
+   goto handle_call;
+
+
+   /* SLOW SCHEME; move via temporaries */
+  slowscheme:
+#if 0
+if (n_args > 0) {for (i = 0; args[i]; i++) {
+ppIRExpr(args[i]); vex_printf(" "); }
+vex_printf("\n");}
+#endif
+   argreg = 0;
+
+   if (passBBP) {
+      /* This is pretty stupid; better to move directly to rdi
+         after the rest of the args are done. */
+      tmpregs[argreg] = newVRegI(env);
+      addInstr(env, mk_iMOVsd_RR( hregAMD64_RBP(), tmpregs[argreg]));
+      argreg++;
+   }
+
+   for (i = 0; i < n_args; i++) {
+      vassert(argreg < 6);
+      vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
+      tmpregs[argreg] = iselIntExpr_R(env, args[i]);
+      argreg++;
+   }
+
+   /* Now we can compute the condition.  We can't do it earlier
+      because the argument computations could trash the condition
+      codes.  Be a bit clever to handle the common case where the
+      guard is 1:Bit. */
+   cc = Acc_ALWAYS;
+   if (guard) {
+      if (guard->tag == Iex_Const 
+          && guard->Iex.Const.con->tag == Ico_U1
+          && guard->Iex.Const.con->Ico.U1 == True) {
+         /* unconditional -- do nothing */
+      } else {
+         cc = iselCondCode( env, guard );
       }
    }
 
-   /* At this point the scheme to use has been established.  Generate
-      code to get the arg values into the argument rregs. */
-
-   if (go_fast) {
-
-      /* FAST SCHEME */
-      argreg = 0;
-      if (passBBP) {
-         addInstr(env, mk_iMOVsd_RR( hregAMD64_RBP(), argregs[argreg]));
-         argreg++;
-      }
-
-      for (i = 0; i < n_args; i++) {
-         vassert(argreg < 6);
-         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
-         addInstr(env, AMD64Instr_Alu64R(
-                          Aalu_MOV, 
-                          iselIntExpr_RMI(env, args[i]),
-                          argregs[argreg]
-                       )
-                 );
-         argreg++;
-      }
-
-      /* Fast scheme only applies for unconditional calls.  Hence: */
-      cc = Acc_ALWAYS;
-
-   } else {
-
-      /* SLOW SCHEME; move via temporaries */
-      argreg = 0;
-
-      if (passBBP) {
-         /* This is pretty stupid; better to move directly to rdi
-            after the rest of the args are done. */
-         tmpregs[argreg] = newVRegI(env);
-         addInstr(env, mk_iMOVsd_RR( hregAMD64_RBP(), tmpregs[argreg]));
-         argreg++;
-      }
-
-      for (i = 0; i < n_args; i++) {
-         vassert(argreg < 6);
-         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
-         tmpregs[argreg] = iselIntExpr_R(env, args[i]);
-         argreg++;
-      }
-
-      /* Now we can compute the condition.  We can't do it earlier
-         because the argument computations could trash the condition
-         codes.  Be a bit clever to handle the common case where the
-         guard is 1:Bit. */
-      cc = Acc_ALWAYS;
-      if (guard) {
-         if (guard->tag == Iex_Const 
-             && guard->Iex.Const.con->tag == Ico_U1
-             && guard->Iex.Const.con->Ico.U1 == True) {
-            /* unconditional -- do nothing */
-         } else {
-            cc = iselCondCode( env, guard );
-         }
-      }
-
-      /* Move the args to their final destinations. */
-      for (i = 0; i < argreg; i++) {
-         /* None of these insns, including any spill code that might
-            be generated, may alter the condition codes. */
-         addInstr( env, mk_iMOVsd_RR( tmpregs[i], argregs[i] ) );
-      }
-
+   /* Move the args to their final destinations. */
+   for (i = 0; i < argreg; i++) {
+      /* None of these insns, including any spill code that might
+         be generated, may alter the condition codes. */
+      addInstr( env, mk_iMOVsd_RR( tmpregs[i], argregs[i] ) );
    }
+
 
    /* Finally, the call itself. */
+  handle_call:
    addInstr(env, AMD64Instr_Call( 
                     cc, 
                     Ptr_to_ULong(cee->addr), 

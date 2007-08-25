@@ -1991,6 +1991,17 @@ static Bool fits8bits ( UInt w32 )
    Int i32 = (Int)w32;
    return toBool(i32 == ((i32 << 24) >> 24));
 }
+/* Can the lower 32 bits be signedly widened to produce the whole
+   64-bit value?  In other words, are the top 33 bits either all 0 or
+   all 1 ? */
+static Bool fitsIn32Bits ( ULong x )
+{
+   Long y0 = (Long)x;
+   Long y1 = y0;
+   y1 <<= 32;
+   y1 >>=/*s*/ 32;
+   return toBool(x == y1);
+}
 
 
 /* Forming mod-reg-rm bytes and scale-index-base bytes.
@@ -2601,25 +2612,36 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
             goto bad;
       }
 
-   case Ain_Call:
+   case Ain_Call: {
       /* As per detailed comment for Ain_Call in
          getRegUsage_AMD64Instr above, %r11 is used as an address
          temporary. */
       /* jump over the following two insns if the condition does not
          hold */
+      Bool shortImm = fitsIn32Bits(i->Ain.Call.target);
       if (i->Ain.Call.cond != Acc_ALWAYS) {
          *p++ = toUChar(0x70 + (0xF & (i->Ain.Call.cond ^ 1)));
-         *p++ = 13; /* 13 bytes in the next two insns */
+         *p++ = shortImm ? 10 : 13;
+         /* 10 or 13 bytes in the next two insns */
       }
-      /* movabsq $target, %r11 */
-      *p++ = 0x49;
-      *p++ = 0xBB;
-      p = emit64(p, i->Ain.Call.target);
-      /* call *%r11 */
+      if (shortImm) {
+         /* 7 bytes: movl sign-extend(imm32), %r11 */
+         *p++ = 0x49;
+         *p++ = 0xC7;
+         *p++ = 0xC3;
+         p = emit32(p, (UInt)i->Ain.Call.target);
+      } else {
+         /* 10 bytes: movabsq $target, %r11 */
+         *p++ = 0x49;
+         *p++ = 0xBB;
+         p = emit64(p, i->Ain.Call.target);
+      }
+      /* 3 bytes: call *%r11 */
       *p++ = 0x41;
       *p++ = 0xFF;
       *p++ = 0xD3;
       goto done;
+   }
 
    case Ain_Goto:
       /* Use ptmp for backpatching conditional jumps. */
@@ -2701,11 +2723,19 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i,
          destined for %rax immediately prior to this Ain_Goto. */
       vassert(sizeof(ULong) == sizeof(void*));
       vassert(dispatch != NULL);
-      /* movabsq $imm64, %rdx */
-      *p++ = 0x48;
-      *p++ = 0xBA;
-      p = emit64(p, Ptr_to_ULong(dispatch));
 
+      if (fitsIn32Bits(Ptr_to_ULong(dispatch))) {
+         /* movl sign-extend(imm32), %rdx */
+         *p++ = 0x48;
+         *p++ = 0xC7;
+         *p++ = 0xC2;
+         p = emit32(p, (UInt)Ptr_to_ULong(dispatch));
+      } else {
+         /* movabsq $imm64, %rdx */
+         *p++ = 0x48;
+         *p++ = 0xBA;
+         p = emit64(p, Ptr_to_ULong(dispatch));
+      }
       /* jmp *%rdx */
       *p++ = 0xFF;
       *p++ = 0xE2;

@@ -10,6 +10,35 @@ PRI: 32  = fix this for 3.2.2
      Vfd = fix has been verified on 3.2.X branch
      s93 = possible SuSE 9.3 amd64 assembler bug
 
+x86_linux_REDIR_FOR_index() broken (Fri Jul 27)
+
+priv/guest-amd64/toIR.c:2512 (dis_op2_E_G): Assertion `0' failed.
+(Michael Abshoff, users@, Sat Aug 11)
+
+145622             --db-attach broken again on x86-64
+145887             PPC32: getitimer() system call is not supported
+146252             amd64->IR: handle Group 5 extended CALL and JMP insns
+                   with non-reg operands of sz==8
+146781             Adding support for private futexes
+145559             valgrind aborts when malloc_stats is called
+147325             valgrind internal error on syscall (SYS_io_destroy, 0)
+147498             amd64->IR: 0xF0 0xF 0xB0 0xF (lock cmpxchg %cl,(%rdi))
+147628             SALC opcode 0xd6 unimplemented
+145609             valgrind aborts all runs with 'repeated section!'
+147825             crash on amd64-linux with gcc 4.2 and glibc 2.6 (CFI)
+148096             VALGRIND_MALLOCLIKE_BLOCK not working correctly?
+148174             Incorrect type of freed_list_volume causes
+                   assertion with large memory allocations
+148254             crash writing global var on ppc64 from instrumentation fn
+148363             amd64->IR: 0x65 0x4C 0x8B 0x1C (mov %gs:0x10,%r11)
+148742  cantrepro  Leak-check fails assert on exit
+134990  fixed      use -fno-stack-protector if possible
+136382  ==134990
+146701  ==134990
+148984  valid?     unhandled instruction bytes: 0xF3 0xDD 0x6 0xF3
+148447  vx1776     x86_64 : new NOP codes: 66 66 66 66 2e 0f 1f
+149182  pending    PPC Trap instructions not implemented in valgrind
+
 
 ---------- Bugs reported after (in) 3.2.3 --------------------------
 
@@ -138,8 +167,8 @@ r6631    pending   ?? 142186   dd support for some I2C ioctls.
 
 r6706    pending   no n-i-bz   memcheck: wrap getenv/setenv/putenv
 
-Christoph Barthoschek m_hashtable.c fixes, dev@, 11 July
-Christoph Barthoschek Superblock slowness test case, users@, 11 July
+Christoph Bartoschek m_hashtable.c fixes, dev@, 11 July
+Christoph Bartoschek Superblock slowness test case, users@, 11 July
 
 3.2.4 criteria: FC7 runs, SuSE 10.3a? runs, gcc-4.2 works OK
 

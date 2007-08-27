@@ -84,12 +84,11 @@ VG_(x86_linux_SUBST_FOR_rt_sigreturn):
 
    unsigned char* REDIR_FOR_index ( const char* s, int c ) 
    { 
-      unsigned char  ch   = (unsigned char)((unsigned int)c); 
-      unsigned char* p    = (unsigned char*)s; 
-      unsigned char* last = 0; 
+      unsigned char  ch = (unsigned char)((unsigned int)c); 
+      unsigned char* p  = (unsigned char*)s; 
       while (1) { 
-         if (*p == ch) last = p; 
-         if (*p == 0) return last; 
+         if (*p == ch) return p;
+         if (*p == 0)  return 0; 
          p++; 
       } 
    }
@@ -99,23 +98,22 @@ VG_(x86_linux_SUBST_FOR_rt_sigreturn):
 VG_(x86_linux_REDIR_FOR_index):
         pushl   %ebp
         movl    %esp, %ebp
-        pushl   %ebx
-        movb    12(%ebp), %al
-        movl    8(%ebp), %ecx
-        movl    $0, %ebx
-.L2:
-        movb    (%ecx), %dl
-        cmpb    %dl, %al
-        jne     .L3
-        movl    %ecx, %ebx
-.L3:
-        testb   %dl, %dl
-        je      .L8
-        addl    $1, %ecx
+        movl    8(%ebp), %eax
+        movzbl  12(%ebp), %ecx
+        movzbl  (%eax), %edx
+        cmpb    %dl, %cl
+        jne     .L9
         jmp     .L2
-.L8:
-        movl    %ebx, %eax
-        popl    %ebx
+.L11:
+        addl    $1, %eax
+        movzbl  (%eax), %edx
+        cmpb    %dl, %cl
+        je      .L2
+.L9:
+        testb   %dl, %dl
+        jne     .L11
+        xorl    %eax, %eax
+.L2:
         popl    %ebp
         ret
 .size VG_(x86_linux_REDIR_FOR_index), .-VG_(x86_linux_REDIR_FOR_index)

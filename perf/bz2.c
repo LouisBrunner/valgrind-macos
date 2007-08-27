@@ -12,8 +12,8 @@
 // So it does the latter iff given a command line arg.
 
 // Licensing: the code within is mostly taken from bzip2, which has a BSD
-// license.  There is a little code from Vex, which is GPL for
-// non-commercial use.  And it's all written by Julian Seward.
+// license.  There is a little code from VEX, which is licensed under GPLv2
+// And it's all written by Julian Seward.
 
 #define BZ_NO_STDIO
 

@@ -319,9 +319,9 @@ static Int type2index ( IRType ty )
    }
 }
 
-static HChar* nameOfTypeIndex ( IRType ty )
+static HChar* nameOfTypeIndex ( Int i )
 {
-   switch (ty) {
+   switch (i) {
       case 0: return "I1";   break;
       case 1: return "I8";   break;
       case 2: return "I16";  break;

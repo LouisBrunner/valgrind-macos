@@ -90,6 +90,7 @@ int main(int argc, char* argv[])
 		  case '-':
 		    iflag = -1;
 		  case '+':
+                    break;
 		  default:
 		    iflag = 1;
 		}

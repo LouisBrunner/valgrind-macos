@@ -306,21 +306,22 @@ VG_(ppc32_linux_REDIR_FOR_strcmp):
 .type   VG_(ppc32_linux_REDIR_FOR_strchr), @function
 VG_(ppc32_linux_REDIR_FOR_strchr):
         lbz 0,0(3)
+        rlwinm 4,4,0,0xff
         cmpw 7,4,0
         beqlr 7
         cmpwi 7,0,0
-        beq 7,.L307
-        .p2align 4,,15
-.L310:
+        bne 7,.L308
+        b .L304
+.L309:	
+        beq 6,.L304
+.L308:	
         lbzu 0,1(3)
-        cmpw 7,0,4
+        cmpw 7,4,0
         cmpwi 6,0,0
-        beq 7,.L313
-        bne 6,.L310
-.L307:
-        li 3,0
+        bne 7,.L309
         blr
-.L313:
+.L304:	
+        li 3,0
         blr
 .size   VG_(ppc32_linux_REDIR_FOR_strchr),.-VG_(ppc32_linux_REDIR_FOR_strchr)
 	
@@ -400,19 +401,23 @@ VG_(ppc64_linux_REDIR_FOR_strchr):
         .type   VG_(ppc64_linux_REDIR_FOR_strchr),@function
 	
 .L.VG_(ppc64_linux_REDIR_FOR_strchr):
+        lbz 0,0(3)
         rldicl 4,4,0,56
-        li 9,0
-.L11:
-        lbz 0,0(3)
-        cmpw 7,0,4
-        bne+ 7,.L12
-        mr 9,3
-.L12:
-        lbz 0,0(3)
-        addi 3,3,1
-        cmpwi 7,0,0
-        bne+ 7,.L11
-        mr 3,9
+        cmpw 7,4,0
+        beqlr 7
+        cmpdi 7,0,0
+        bne 7,.L18
+        b .L14
+.L19:	
+        beq 6,.L14
+.L18:	
+        lbzu 0,1(3)
+        cmpw 7,4,0
+        cmpdi 6,0,0
+        bne 7,.L19
+        blr
+.L14:	
+        li 3,0
         blr
         .long 0
         .byte 0,0,0,0,0,0,0,0

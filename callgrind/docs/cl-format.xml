@@ -146,8 +146,9 @@ fn=func2
 20 700</screen></para>
 
 <para>One can see that in "main" only code from line 16 is executed where also
-the other functions are called. Inclusive cost of "main" is 420, which is the
-sum of self cost 20 and costs spent in the calls.</para>
+the other functions are called. Inclusive cost of "main" is 820, which is the
+sum of self cost 20 and costs spent in the calls: 400 for the single call to
+"func1" and 400 as sum for the three calls to "func2".</para>
 
 <para>Function "func1" is located in "file1.c", the same as "main". Therefore,
 a "cfl=" specification for the call to "func1" is not needed. The function
@@ -162,7 +163,9 @@ a "cfl=" specification for the call to "func1" is not needed. The function
 <para>With the introduction of association specifications like calls it is
 needed to specify the same function or same file name multiple times. As
 absolute filenames or symbol names in C++ can be quite long, it is advantageous
-to be able to specify integer IDs for position specifications.</para>
+to be able to specify integer IDs for position specifications.
+Here, the term "position" corresponds to a file name (source or object file)
+or function name.</para>
 
 <para>To support name compression, a position specification can be not only of
 the format "spec=name", but also "spec=(ID) name" to specify a mapping of an
@@ -221,17 +224,24 @@ fn=(1)
 <sect2 id="cl-format.overview.compression2" xreflabel="Subposition Compression">
 <title>Subposition Compression</title>
 
-<para>If a Calltree data file should hold costs for each assembler instruction
+<para>If a Callgrind data file should hold costs for each assembler instruction
 of a program, you specify subpostion "instr" in the "positions:" header line,
 and each cost line has to include the address of some instruction. Addresses
-are allowed to have a size of 64bit to support 64bit architectures. This
+are allowed to have a size of 64bit to support 64bit architectures. Thus,
+repeating similar, long addresses for almost every line in the data file can
+enlarge the file size quite significantly, and
 motivates for subposition compression: instead of every cost line starting with
-a 16 character long address, one is allowed to specify relative subpositions.</para>
+a 16 character long address, one is allowed to specify relative addresses.
+This relative specification is not only allowed for instruction addresses, but
+also for line numbers; both addresses and line numbers are called "subpositions".</para>
 
 <para>A relative subposition always is based on the corresponding subposition
 of the last cost line, and starts with a "+" to specify a positive difference,
 a "-" to specify a negative difference, or consists of "*" to specify the same
-subposition. Assume the following example (subpositions can always be specified
+subposition. Because absolute subpositions always are positive (ie. never
+prefixed by "-"), any relative specification is non-ambigous; additionally,
+absolute and relative subposition specifications can be mixed freely.
+Assume the following example (subpositions can always be specified
 as hexadecimal numbers, beginning with "0x"):
 <screen>positions: instr line
 events: ticks

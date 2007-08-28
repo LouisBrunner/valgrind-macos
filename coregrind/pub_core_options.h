@@ -154,8 +154,9 @@ extern Bool VG_(clo_show_below_main);
 extern Bool VG_(clo_show_emwarns);
 
 /* How much does the stack pointer have to change before tools
-   consider a stack switch to have happened?  Default: 2000000 bytes */
-extern Int VG_(clo_max_stackframe);
+   consider a stack switch to have happened?  Default: 2000000 bytes
+   NB: must be host-word-sized to be correct (hence Word). */
+extern Word VG_(clo_max_stackframe);
 
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);

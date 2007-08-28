@@ -233,7 +233,7 @@ void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
             "Warning: client switching stacks?  "
             "SP change: %p --> %p", old_SP, new_SP);
          VG_(message)(Vg_UserMsg,
-            "         to suppress, use: --max-stackframe=%d or greater",
+            "         to suppress, use: --max-stackframe=%ld or greater",
             (delta < 0 ? -delta : delta));
          if (moans == 0)
             VG_(message)(Vg_UserMsg,

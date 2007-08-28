@@ -55,6 +55,13 @@
       (qq_var) = (Int)VG_(atoll)( &qq_arg[ VG_(strlen)(qq_option)+1 ] ); \
    }
 
+/* Same as VG_NUM_CLO but does not coerce the result value to 32 bits
+   on 64-bit platforms. */
+#define VG_NUMW_CLO(qq_arg, qq_option, qq_var) \
+   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
+      (qq_var) = (Word)VG_(atoll)( &qq_arg[ VG_(strlen)(qq_option)+1 ] ); \
+   }
+
 /* Bounded integer arg */
 #define VG_BNUM_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
    if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \

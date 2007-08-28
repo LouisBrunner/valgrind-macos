@@ -277,7 +277,7 @@ void ppIROp ( IROp op )
 
       case Iop_Est5FRSqrt:    vex_printf("Est5FRSqrt"); return;
       case Iop_TruncF64asF32: vex_printf("TruncF64asF32"); return;
-      case Iop_CalcFPRF:      vex_printf("CalcFPRF");
+      case Iop_CalcFPRF:      vex_printf("CalcFPRF"); return;
 
       case Iop_CmpF64:    vex_printf("CmpF64"); return;
 

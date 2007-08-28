@@ -4653,8 +4653,7 @@ static Bool dis_trapi ( UInt theInstr,
       uncond = do_trap( TO, 
                         mode64 ? unop(Iop_64to32, getIReg(rA_addr)) 
                                : getIReg(rA_addr),
-                        mode64 ? mkU64( (ULong)simm16 ) 
-                               : mkU32( (UInt)simm16 ),
+                        mkU32( (UInt)simm16 ),
                         cia );
       if (TO == 4) {
          DIP("tweqi r%u,%d\n", (UInt)rA_addr, (Int)simm16);
@@ -4714,6 +4713,16 @@ static Bool dis_trap ( UInt theInstr,
          DIP("tweq r%u,r%u\n", (UInt)rA_addr, (UInt)rB_addr);
       } else {
          DIP("tw%d r%u,r%u\n", (Int)TO, (UInt)rA_addr, (UInt)rB_addr);
+      }
+      break;
+   case 0x044: // td (Trap Doubleword, PPC64 p534)
+      if (!mode64)
+         return False;
+      uncond = do_trap( TO, getIReg(rA_addr), getIReg(rB_addr), cia );
+      if (TO == 4) {
+         DIP("tdeq r%u,r%u\n", (UInt)rA_addr, (UInt)rB_addr);
+      } else {
+         DIP("td%d r%u,r%u\n", (Int)TO, (UInt)rA_addr, (UInt)rB_addr);
       }
       break;
    default:
@@ -9326,12 +9335,9 @@ DisResult disInstr_PPC_WRK (
 //zz          goto decode_failure;
 
       /* Trap Instructions */
-      case 0x004:                         // tw
+      case 0x004: case 0x044:             // tw,   td
          if (dis_trap(theInstr, &dres)) goto decode_success;
          goto decode_failure;
-//zz       case 0x044:                         // td
-//zz          DIP("trap op (td) => not implemented\n");
-//zz          goto decode_failure;
 
       /* Floating Point Load Instructions */
       case 0x217: case 0x237: case 0x257: // lfsx, lfsux, lfdx

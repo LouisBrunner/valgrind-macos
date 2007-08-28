@@ -81,7 +81,7 @@ void VG_(deleteXA) ( XArray* xao )
    struct _XArray* xa = (struct _XArray*)xao;
    vg_assert(xa);
    vg_assert(xa->free);
-   if (xa->arr);
+   if (xa->arr)
       xa->free(xa->arr);
    xa->free(xa);
 }

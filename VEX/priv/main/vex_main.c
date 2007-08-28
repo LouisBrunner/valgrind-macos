@@ -544,6 +544,10 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       also throws away any dead bindings. */
    ado_treebuild_BB( irsb );
 
+   if (vta->finaltidy) {
+      irsb = vta->finaltidy(irsb);
+   }
+
    vexAllocSanityCheck();
 
    if (vex_traceflags & VEX_TRACE_TREES) {

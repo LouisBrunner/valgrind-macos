@@ -452,6 +452,8 @@ typedef
                                VexGuestExtents*,
                                IRType gWordTy, IRType hWordTy );
 
+      IRSB* (*finaltidy) ( IRSB* );
+
       /* IN: should this translation be self-checking?  default: False */
       Bool    do_self_check;
 

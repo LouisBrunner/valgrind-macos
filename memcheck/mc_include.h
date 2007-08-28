@@ -320,6 +320,9 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
                         VexGuestExtents* vge,
                         IRType gWordTy, IRType hWordTy );
 
+extern
+IRSB* MC_(final_tidy) ( IRSB* );
+
 #endif /* ndef __MC_INCLUDE_H */
 
 /*--------------------------------------------------------------------*/

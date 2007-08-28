@@ -37,6 +37,9 @@
 #include "pub_tool_machine.h"     // VG_(fnptr_to_fnentry)
 #include "mc_include.h"
 
+#include "pub_tool_xarray.h"
+#include "pub_tool_mallocfree.h"
+#include "pub_tool_libcbase.h"
 
 /* This file implements the Memcheck instrumentation, and in
    particular contains the core of its undefined value detection
@@ -3522,6 +3525,149 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
 
    return bb;
 }
+
+/*------------------------------------------------------------*/
+/*--- Post-tree-build final tidying                        ---*/
+/*------------------------------------------------------------*/
+
+/* This exploits the observation that Memcheck often produces
+   repeated conditional calls of the form
+
+   Dirty G MC_(helperc_value_check0/1/4/8_fail)()
+
+   with the same guard expression G guarding the same helper call.
+   The second and subsequent calls are redundant.  This usually
+   results from instrumentation of guest code containing multiple
+   memory references at different constant offsets from the same base
+   register.  After optimisation of the instrumentation, you get a
+   test for the definedness of the base register for each memory
+   reference, which is kinda pointless.  MC_(final_tidy) therefore
+   looks for such repeated calls and removes all but the first. */
+
+/* A struct for recording which (helper, guard) pairs we have already
+   seen. */
+typedef
+   struct { void* entry; IRExpr* guard; }
+   Pair;
+
+/* Return True if e1 and e2 definitely denote the same value (used to
+   compare guards).  Return False if unknown; False is the safe
+   answer.  Since guest registers and guest memory do not have the
+   SSA property we must return False if any Gets or Loads appear in
+   the expression. */
+
+static Bool sameIRValue ( IRExpr* e1, IRExpr* e2 )
+{
+   if (e1->tag != e2->tag)
+      return False;
+   switch (e1->tag) {
+      case Iex_Const:
+         return eqIRConst( e1->Iex.Const.con, e2->Iex.Const.con );
+      case Iex_Binop:
+         return e1->Iex.Binop.op == e2->Iex.Binop.op 
+                && sameIRValue(e1->Iex.Binop.arg1, e2->Iex.Binop.arg1)
+                && sameIRValue(e1->Iex.Binop.arg2, e2->Iex.Binop.arg2);
+      case Iex_Unop:
+         return e1->Iex.Unop.op == e2->Iex.Unop.op 
+                && sameIRValue(e1->Iex.Unop.arg, e2->Iex.Unop.arg);
+      case Iex_RdTmp:
+         return e1->Iex.RdTmp.tmp == e2->Iex.RdTmp.tmp;
+      case Iex_Mux0X:
+         return sameIRValue( e1->Iex.Mux0X.cond, e2->Iex.Mux0X.cond )
+                && sameIRValue( e1->Iex.Mux0X.expr0, e2->Iex.Mux0X.expr0 )
+                && sameIRValue( e1->Iex.Mux0X.exprX, e2->Iex.Mux0X.exprX );
+      case Iex_Qop:
+      case Iex_Triop:
+      case Iex_CCall:
+         /* be lazy.  Could define equality for these, but they never
+            appear to be used. */
+         return False;
+      case Iex_Get:
+      case Iex_GetI:
+      case Iex_Load:
+         /* be conservative - these may not give the same value each
+            time */
+         return False;
+      case Iex_Binder:
+         /* should never see this */
+         /* fallthrough */
+      default:
+         VG_(printf)("mc_translate.c: sameIRValue: unhandled: ");
+         ppIRExpr(e1); 
+         VG_(tool_panic)("memcheck:sameIRValue");
+         return False;
+   }
+}
+
+/* See if 'pairs' already has an entry for (entry, guard).  Return
+   True if so.  If not, add an entry. */
+
+static 
+Bool check_or_add ( XArray* /*of Pair*/ pairs, IRExpr* guard, void* entry )
+{
+   Pair  p;
+   Pair* pp;
+   Int   i, n = VG_(sizeXA)( pairs );
+   for (i = 0; i < n; i++) {
+      pp = VG_(indexXA)( pairs, i );
+      if (pp->entry == entry && sameIRValue(pp->guard, guard))
+         return True;
+   }
+   p.guard = guard;
+   p.entry = entry;
+   VG_(addToXA)( pairs, &p );
+   return False;
+}
+
+static Bool is_helperc_value_checkN_fail ( HChar* name )
+{
+   return
+      0==VG_(strcmp)(name, "MC_(helperc_value_check0_fail)")
+      || 0==VG_(strcmp)(name, "MC_(helperc_value_check1_fail)")
+      || 0==VG_(strcmp)(name, "MC_(helperc_value_check4_fail)")
+      || 0==VG_(strcmp)(name, "MC_(helperc_value_check8_fail)");
+}
+
+IRSB* MC_(final_tidy) ( IRSB* sb_in )
+{
+   Int i;
+   IRStmt*   st;
+   IRDirty*  di;
+   IRExpr*   guard;
+   IRCallee* cee;
+   Bool      alreadyPresent;
+   XArray*   pairs = VG_(newXA)( VG_(malloc), VG_(free), sizeof(Pair) );
+   /* Scan forwards through the statements.  Each time a call to one
+      of the relevant helpers is seen, check if we have made a
+      previous call to the same helper using the same guard
+      expression, and if so, delete the call. */
+   for (i = 0; i < sb_in->stmts_used; i++) {
+      st = sb_in->stmts[i];
+      tl_assert(st);
+      if (st->tag != Ist_Dirty)
+         continue;
+      di = st->Ist.Dirty.details;
+      guard = di->guard;
+      if (!guard)
+         continue;
+      if (0) { ppIRExpr(guard); VG_(printf)("\n"); }
+      cee = di->cee;
+      if (!is_helperc_value_checkN_fail( cee->name )) 
+         continue;
+       /* Ok, we have a call to helperc_value_check0/1/4/8_fail with
+          guard 'guard'.  Check if we have already seen a call to this
+          function with the same guard.  If so, delete it.  If not,
+          add it to the set of calls we do know about. */
+      alreadyPresent = check_or_add( pairs, guard, cee->addr );
+      if (alreadyPresent) {
+         sb_in->stmts[i] = IRStmt_NoOp();
+         if (0) VG_(printf)("XX\n");
+      }
+   }
+   VG_(deleteXA)( pairs );
+   return sb_in;
+}
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                           mc_translate.c ---*/

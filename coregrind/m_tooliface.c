@@ -94,6 +94,7 @@ VgNeeds VG_(needs) = {
    .data_syms	         = False,
    .malloc_replacement   = False,
    .xml_output           = False,
+   .final_IR_tidy_pass   = False
 };
 
 /* static */
@@ -260,6 +261,13 @@ void VG_(needs_malloc_replacement)(
    VG_(tdict).tool_client_redzone_szB   = client_malloc_redzone_szB;
 }
 
+void VG_(needs_final_IR_tidy_pass)( 
+   IRSB*(*final_tidy)(IRSB*)
+)
+{
+   VG_(needs).final_IR_tidy_pass = True;
+   VG_(tdict).tool_final_IR_tidy_pass = final_tidy;
+}
 
 /*--------------------------------------------------------------------*/
 /* Tracked events */

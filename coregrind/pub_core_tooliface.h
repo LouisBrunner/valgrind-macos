@@ -91,6 +91,7 @@ typedef
       Bool data_syms;
       Bool malloc_replacement;
       Bool xml_output;
+      Bool final_IR_tidy_pass;
    } 
    VgNeeds;
 
@@ -154,6 +155,9 @@ typedef struct {
    void  (*tool___builtin_vec_delete)(ThreadId, void*);
    void* (*tool_realloc)             (ThreadId, void*, SizeT);
    SizeT tool_client_redzone_szB;
+
+   // VG_(needs).final_IR_tidy_pass
+   IRSB* (*tool_final_IR_tidy_pass)  (IRSB*);
 
    // -- Event tracking functions ------------------------------------
    void (*track_new_mem_startup)     (Addr, SizeT, Bool, Bool, Bool);

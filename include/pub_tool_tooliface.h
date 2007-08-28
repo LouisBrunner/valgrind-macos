@@ -438,6 +438,12 @@ extern void VG_(needs_malloc_replacement)(
  * it". */
 extern void VG_(needs_xml_output)( void );
 
+/* Does the tool want to have one final pass over the IR after tree
+   building but before instruction selection?  If so specify the
+   function here. */
+extern void VG_(needs_final_IR_tidy_pass) ( IRSB*(*final_tidy)(IRSB*) );
+
+
 /* ------------------------------------------------------------------ */
 /* Core events to track */
 

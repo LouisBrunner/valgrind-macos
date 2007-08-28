@@ -4969,6 +4969,9 @@ static void mc_pre_clo_init(void)
                                    MC_(instrument),
                                    mc_fini);
 
+   VG_(needs_final_IR_tidy_pass)  ( MC_(final_tidy) );
+
+
    VG_(needs_core_errors)         ();
    VG_(needs_tool_errors)         (mc_eq_Error,
                                    mc_pp_Error,

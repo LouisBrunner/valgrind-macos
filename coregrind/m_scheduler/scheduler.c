@@ -1045,8 +1045,12 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
       }
 
-      case VEX_TRC_JMP_TRAP:
+      case VEX_TRC_JMP_SIGTRAP:
          VG_(synth_sigtrap)(tid);
+         break;
+
+      case VEX_TRC_JMP_SIGSEGV:
+         VG_(synth_fault)(tid);
          break;
 
       case VEX_TRC_JMP_NODECODE:

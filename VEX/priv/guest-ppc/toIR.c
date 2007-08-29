@@ -4586,7 +4586,7 @@ static Bool do_trap ( UChar TO,
          testing the arguments. */
       stmt( IRStmt_Exit( 
                binop(opCMPEQ, const0, const0), 
-               Ijk_Trap,
+               Ijk_SigTRAP,
                mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 
       ));
       return True; /* unconditional trap */
@@ -4629,7 +4629,7 @@ static Bool do_trap ( UChar TO,
    }
    stmt( IRStmt_Exit( 
             binop(opCMPNE, cond, const0), 
-            Ijk_Trap,
+            Ijk_SigTRAP,
             mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 
    ));
    return False; /* not an unconditional trap */

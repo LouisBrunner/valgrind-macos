@@ -2949,7 +2949,7 @@ Int emit_PPCInstr ( UChar* buf, Int nbuf, PPCInstr* i,
          case Ijk_NoDecode:    trc = VEX_TRC_JMP_NODECODE;    break;
          case Ijk_TInval:      trc = VEX_TRC_JMP_TINVAL;      break;
          case Ijk_NoRedir:     trc = VEX_TRC_JMP_NOREDIR;     break;
-         case Ijk_Trap:        trc = VEX_TRC_JMP_TRAP;        break;
+         case Ijk_SigTRAP:     trc = VEX_TRC_JMP_SIGTRAP;     break;
          case Ijk_Ret:
          case Ijk_Call:
          case Ijk_Boring:

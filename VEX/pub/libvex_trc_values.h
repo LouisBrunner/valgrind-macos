@@ -62,7 +62,9 @@
 #define VEX_TRC_JMP_TINVAL     61  /* invalidate translations before
                                       continuing */
 #define VEX_TRC_JMP_NOREDIR    81  /* jump to undirected guest addr */
-#define VEX_TRC_JMP_TRAP       85  /* deliver trap (SIGTRAP?) before
+#define VEX_TRC_JMP_SIGTRAP    85  /* deliver trap (SIGTRAP) before
+                                      continuing */
+#define VEX_TRC_JMP_SIGSEGV    87  /* deliver segv (SIGSEGV) before
                                       continuing */
 #define VEX_TRC_JMP_EMWARN     63  /* deliver emulation warning before
                                       continuing */

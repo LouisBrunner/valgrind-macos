@@ -11232,13 +11232,26 @@ DisResult disInstr_X86_WRK (
    /* ------------------------ INT ------------------------ */
 
    case 0xCC: /* INT 3 */
-      jmp_lit(Ijk_Trap,((Addr32)guest_EIP_bbstart)+delta);
+      jmp_lit(Ijk_SigTRAP,((Addr32)guest_EIP_bbstart)+delta);
       dres.whatNext = Dis_StopHere;
       DIP("int $0x3\n");
       break;
 
    case 0xCD: /* INT imm8 */
       d32 = getIByte(delta); delta++;
+
+      /* Handle int $0x40 .. $0x43 by synthesising a segfault and a
+         restart of this instruction (hence the "-2" two lines below,
+         to get the restart EIP to be this instruction.  This is
+         probably Linux-specific and it would be more correct to only
+         do this if the VexAbiInfo says that is what we should do. */
+      if (d32 >= 0x40 && d32 <= 0x43) {
+         jmp_lit(Ijk_SigSEGV,((Addr32)guest_EIP_bbstart)+delta-2);
+         dres.whatNext = Dis_StopHere;
+         DIP("int $0x%x\n", (Int)d32);
+         break;
+      }
+
       if (d32 != 0x80) goto decode_failure;
       /* It's important that all ArchRegs carry their up-to-date value
          at this point.  So we declare an end-of-block here, which

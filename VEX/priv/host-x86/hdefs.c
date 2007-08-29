@@ -2297,9 +2297,12 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i,
          case Ijk_Sys_sysenter:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_SYS_SYSENTER); break;
-         case Ijk_Trap:
+         case Ijk_SigTRAP:
             *p++ = 0xBD;
-            p = emit32(p, VEX_TRC_JMP_TRAP); break;
+            p = emit32(p, VEX_TRC_JMP_SIGTRAP); break;
+         case Ijk_SigSEGV:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_SIGSEGV); break;
          case Ijk_Ret:
 	 case Ijk_Call:
          case Ijk_Boring:

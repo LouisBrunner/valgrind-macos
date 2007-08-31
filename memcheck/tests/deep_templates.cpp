@@ -37,7 +37,7 @@ typedef  Stack<Foo9,Foo9> Foo10;
 typedef  Stack<Foo10,Foo10> Foo11;
 typedef  Stack<Foo11,Foo11> Foo12;
 
-int main ( char* argc, char** argv )
+int main ( int argc, char** argv )
 {
   Stack<Foo12,Foo12> * x = new Stack<Foo12,Foo12>(3);
   if (x == NULL)

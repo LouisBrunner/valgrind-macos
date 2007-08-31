@@ -2111,7 +2111,7 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
                                        Int            srcix )
 {
    CfiExpr* src;
-   Int      cpL, cpR, dwreg;
+   Int      cpL, cpR, cpA, dwreg;
    XArray*  srcxa = srcuc->exprs;
    vg_assert(srcxa);
    vg_assert(dstxa);
@@ -2122,7 +2122,10 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
       case Cex_Undef:
          return ML_(CfiExpr_Undef)( dstxa );
       case Cex_Deref:
-         return ML_(CfiExpr_Deref)( dstxa, src->Cex.Deref.ixAddr );
+         cpA = copy_convert_CfiExpr_tree( dstxa, srcuc, src->Cex.Deref.ixAddr );
+         if (cpA == -1)
+            return -1; /* propagate failure */
+         return ML_(CfiExpr_Deref)( dstxa, cpA );
       case Cex_Const:
          return ML_(CfiExpr_Const)( dstxa, src->Cex.Const.con );
       case Cex_Binop:
@@ -2695,9 +2698,16 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
          binop:
             POP( ix );
             POP( ix2 );
-              PUSH( ML_(CfiExpr_Binop)( dst, op, ix2, ix ) );
+            PUSH( ML_(CfiExpr_Binop)( dst, op, ix2, ix ) );
             if (ddump_frames)
                VG_(printf)("DW_OP_%s", opname);
+            break;
+
+         case DW_OP_deref:
+            POP( ix );
+            PUSH( ML_(CfiExpr_Deref)( dst, ix ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_deref");
             break;
 
          default:

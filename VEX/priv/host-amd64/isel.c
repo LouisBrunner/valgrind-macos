@@ -1111,6 +1111,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             fn = (HWord)h_generic_calc_SarN16x4;
             second_is_UInt = True; 
             break;
+         case Iop_SarN8x8:
+            fn = (HWord)h_generic_calc_SarN8x8;
+            second_is_UInt = True; 
+            break;
 
          default:
             fn = (HWord)0; break;

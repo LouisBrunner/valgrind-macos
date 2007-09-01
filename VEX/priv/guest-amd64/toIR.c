@@ -6631,6 +6631,38 @@ ULong dis_MMX ( Bool* decode_ok, Prefix pfx, Int sz, Long delta )
          break;
       }
 
+      case 0xF7: {
+         IRTemp addr    = newTemp(Ity_I64);
+         IRTemp regD    = newTemp(Ity_I64);
+         IRTemp regM    = newTemp(Ity_I64);
+         IRTemp mask    = newTemp(Ity_I64);
+         IRTemp olddata = newTemp(Ity_I64);
+         IRTemp newdata = newTemp(Ity_I64);
+
+         modrm = getUChar(delta);
+         if (sz != 4 || (!epartIsReg(modrm)))
+            goto mmx_decode_failure;
+         delta++;
+
+         assign( addr, handleAddrOverrides( pfx, getIReg64(R_RDI) ));
+         assign( regM, getMMXReg( eregLO3ofRM(modrm) ));
+         assign( regD, getMMXReg( gregLO3ofRM(modrm) ));
+         assign( mask, binop(Iop_SarN8x8, mkexpr(regM), mkU8(7)) );
+         assign( olddata, loadLE( Ity_I64, mkexpr(addr) ));
+         assign( newdata, 
+                 binop(Iop_Or64, 
+                       binop(Iop_And64, 
+                             mkexpr(regD), 
+                             mkexpr(mask) ),
+                       binop(Iop_And64, 
+                             mkexpr(olddata),
+                             unop(Iop_Not64, mkexpr(mask)))) );
+         storeLE( mkexpr(addr), mkexpr(newdata) );
+         DIP("maskmovq %s,%s\n", nameMMXReg( eregLO3ofRM(modrm) ),
+                                 nameMMXReg( gregLO3ofRM(modrm) ) );
+         break;
+      }
+
       /* --- MMX decode failure --- */
       default:
       mmx_decode_failure:
@@ -8906,6 +8938,17 @@ DisResult disInstr_AMD64_WRK (
       goto decode_success;
    }
 
+   /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
+   /* 0F F7 = MASKMOVQ -- 8x8 masked store */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0xF7) {
+      Bool ok = False;
+      delta = dis_MMX( &ok, pfx, sz, delta+1 );
+      if (!ok)
+         goto decode_failure;
+      goto decode_success;
+   }
+
    /* 0F 5F = MAXPS -- max 32Fx4 from R/M to R */
    if (haveNo66noF2noF3(pfx) && sz == 4 
        && insn[0] == 0x0F && insn[1] == 0x5F) {
@@ -10594,6 +10637,51 @@ DisResult disInstr_AMD64_WRK (
       }
       /* else fall through */
       goto decode_failure;
+   }
+
+   /* 66 0F F7 = MASKMOVDQU -- store selected bytes of double quadword */
+   if (have66noF2noF3(pfx) && sz == 2
+       && insn[0] == 0x0F && insn[1] == 0xF7) {
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         IRTemp regD    = newTemp(Ity_V128);
+         IRTemp mask    = newTemp(Ity_V128);
+         IRTemp olddata = newTemp(Ity_V128);
+         IRTemp newdata = newTemp(Ity_V128);
+                addr    = newTemp(Ity_I64);
+
+         assign( addr, handleAddrOverrides( pfx, getIReg64(R_RDI) ));
+         assign( regD, getXMMReg( gregOfRexRM(pfx,modrm) ));
+
+         /* Unfortunately can't do the obvious thing with SarN8x16
+            here since that can't be re-emitted as SSE2 code - no such
+            insn. */
+	 assign( 
+            mask, 
+            binop(Iop_64HLtoV128,
+                  binop(Iop_SarN8x8, 
+                        getXMMRegLane64( eregOfRexRM(pfx,modrm), 1 ), 
+                        mkU8(7) ),
+                  binop(Iop_SarN8x8, 
+                        getXMMRegLane64( eregOfRexRM(pfx,modrm), 0 ), 
+                        mkU8(7) ) ));
+         assign( olddata, loadLE( Ity_V128, mkexpr(addr) ));
+         assign( newdata, 
+                 binop(Iop_OrV128, 
+                       binop(Iop_AndV128, 
+                             mkexpr(regD), 
+                             mkexpr(mask) ),
+                       binop(Iop_AndV128, 
+                             mkexpr(olddata),
+                             unop(Iop_NotV128, mkexpr(mask)))) );
+         storeLE( mkexpr(addr), mkexpr(newdata) );
+
+         delta += 2+1;
+         DIP("maskmovdqu %s,%s\n", nameXMMReg( eregOfRexRM(pfx,modrm) ),
+                                   nameXMMReg( gregOfRexRM(pfx,modrm) ) );
+         goto decode_success;
+      }
+      /* else fall through */
    }
 
    /* 66 0F E7 = MOVNTDQ -- for us, just a plain SSE store. */

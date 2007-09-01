@@ -8,10 +8,11 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	std_reg_imm.vgtest std_reg_imm.stderr.exp std_reg_imm.stdout.exp \
 	round.stderr.exp round.stdout.exp round.vgtest \
-	twi_tdi.stderr.exp twi_tdi.stdout.exp twi_tdi.vgtest
+	twi_tdi.stderr.exp twi_tdi.stdout.exp twi_tdi.vgtest \
+	tw_td.stderr.exp tw_td.stdout.exp tw_td.vgtest
 
 check_PROGRAMS = \
-	jm-insns lsw round std_reg_imm twi_tdi
+	jm-insns lsw round std_reg_imm twi_tdi tw_td
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
 		@FLAG_M64@

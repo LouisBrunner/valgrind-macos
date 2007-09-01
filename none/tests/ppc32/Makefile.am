@@ -18,13 +18,14 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	test_gx.stderr.exp test_gx.stdout.exp test_gx.vgtest \
 	testVMX.stderr.exp  testVMX.stdout.exp  testVMX.vgtest \
 	twi.stderr.exp twi.stdout.exp twi.vgtest \
+	tw.stderr.exp tw.stdout.exp tw.vgtest \
 	xlc_dbl_u32.stderr.exp xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest
 
 check_PROGRAMS = \
 	bug129390-ppc32 \
 	bug139050-ppc32 \
 	ldstrev lsw jm-insns mftocrf mcrfs round test_fx test_gx \
-	testVMX twi xlc_dbl_u32
+	testVMX twi tw xlc_dbl_u32
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include \
 		@FLAG_M32@

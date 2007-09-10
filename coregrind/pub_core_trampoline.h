@@ -77,6 +77,7 @@ extern void* VG_(ppc32_linux_REDIR_FOR_strchr)( void*, Int );
 #endif
 
 #if defined(VGP_ppc64_linux)
+extern void  VG_(ppc64_linux_SUBST_FOR_rt_sigreturn);
 extern UInt  VG_(ppc64_linux_REDIR_FOR_strlen)( void* );
 extern void* VG_(ppc64_linux_REDIR_FOR_strchr)( void*, Int );
 /* A label (sans dot) marking the ultra-magical return stub via which

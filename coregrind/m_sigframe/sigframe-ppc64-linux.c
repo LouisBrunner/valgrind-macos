@@ -260,8 +260,16 @@ void VG_(sigframe_create)( ThreadId tid,
    /* XXX should do FP and vector regs */
 
    /* set up signal return trampoline */
-   frame->tramp[0] = 0x38000000U + __NR_rt_sigreturn; /* li 0,__NR_rt_sigreturn */
-   frame->tramp[1] = 0x44000002U;                     /* sc */
+   /* NB.  5 Sept 07.  mc->mc_pad[0..1] used to contain a the code to
+      which the signal handler returns, and it just did sys_sigreturn
+      or sys_rt_sigreturn.  But this doesn't work if the stack is
+      non-executable, and it isn't consistent with the x86-linux and
+      amd64-linux scheme for removing the stack frame.  So instead be
+      consistent and use a stub in m_trampoline.  Then it doesn't
+      matter whether or not the (guest) stack is executable.  This
+      fixes #149519 and #145837. */
+   frame->tramp[0] = 0; /* invalid */
+   frame->tramp[1] = 0; /* invalid */
    VG_TRACK(post_mem_write, Vg_CoreSignal, tst->tid,
             (Addr)&frame->tramp, sizeof(frame->tramp));
 
@@ -270,7 +278,7 @@ void VG_(sigframe_create)( ThreadId tid,
                               sizeof(frame->tramp), "stack_mcontext" );   
 
    /* set the signal handler to return to the trampoline */
-   SET_SIGNAL_LR(tst, (Addr) &frame->tramp[0]);
+   SET_SIGNAL_LR(tst, (Addr)&VG_(ppc64_linux_SUBST_FOR_rt_sigreturn));
 
    /* Stack pointer for the handler .. (note, back chain set
       earlier) */

@@ -365,6 +365,12 @@ VG_(trampoline_stuff_end):
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
 
+.global VG_(ppc64_linux_SUBST_FOR_rt_sigreturn)
+VG_(ppc64_linux_SUBST_FOR_rt_sigreturn):
+	li 0,__NR_rt_sigreturn
+        sc
+        .long 0	/*illegal insn*/
+
 	/* See comment in pub_core_trampoline.h for what this is for */
 .global VG_(ppctoc_magic_redirect_return_stub)
 VG_(ppctoc_magic_redirect_return_stub):

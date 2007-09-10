@@ -1164,8 +1164,8 @@ Bool VG_(translate) ( ThreadId tid,
    if ( (!translations_allowable_from_seg(seg))
         || addr == TRANSTAB_BOGUS_GUEST_ADDR ) {
       if (VG_(clo_trace_signals))
-         VG_(message)(Vg_DebugMsg, "translations not allowed here "
-                                   "- throwing SEGV");
+         VG_(message)(Vg_DebugMsg, "translations not allowed here (0x%llx)"
+                                   " - throwing SEGV", addr);
       /* U R busted, sonny.  Place your hands on your head and step
          away from the orig_addr. */
       /* Code address is bad - deliver a signal instead */

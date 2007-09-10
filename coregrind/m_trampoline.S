@@ -242,6 +242,18 @@ VG_(trampoline_stuff_end):
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
 
+.global VG_(ppc32_linux_SUBST_FOR_sigreturn)
+VG_(ppc32_linux_SUBST_FOR_sigreturn):
+	li 0,__NR_sigreturn
+        sc
+        .long 0	/*illegal insn*/
+
+.global VG_(ppc32_linux_SUBST_FOR_rt_sigreturn)
+VG_(ppc32_linux_SUBST_FOR_rt_sigreturn):
+	li 0,__NR_rt_sigreturn
+        sc
+        .long 0	/*illegal insn*/
+	
 /* There's no particular reason that this needs to be handwritten
    assembly, but since that's what this file contains, here's a
    simple strlen implementation (written in C and compiled by gcc.)

@@ -133,7 +133,7 @@ struct rt_sigframe {
 static 
 void stack_mcontext ( struct vki_mcontext *mc, 
                       ThreadState* tst, 
-                      Int ret,
+                      Bool use_rt_sigreturn,
                       UInt fault_addr )
 {
    VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal frame mcontext",
@@ -164,10 +164,18 @@ void stack_mcontext ( struct vki_mcontext *mc,
    /* XXX should do FP and vector regs */
 
    /* set up signal return trampoline */
+   /* NB.  5 Sept 07.  mc->mc_pad[0..1] used to contain a the code to
+      which the signal handler returns, and it just did sys_sigreturn
+      or sys_rt_sigreturn.  But this doesn't work if the stack is
+      non-executable, and it isn't consistent with the x86-linux and
+      amd64-linux scheme for removing the stack frame.  So instead be
+      consistent and use a stub in m_trampoline.  Then it doesn't
+      matter whether or not the (guest) stack is executable.  This
+      fixes #149519 and #145837. */
    VG_TRACK(pre_mem_write, Vg_CoreSignal, tst->tid, "signal frame mcontext",
             (Addr)&mc->mc_pad, sizeof(mc->mc_pad));
-   mc->mc_pad[0] = 0x38000000U + ret;   /* li 0,ret */
-   mc->mc_pad[1] = 0x44000002U;         /* sc */
+   mc->mc_pad[0] = 0; /* invalid */
+   mc->mc_pad[1] = 0; /* invalid */
    VG_TRACK( post_mem_write,  Vg_CoreSignal, tst->tid, 
              (Addr)&mc->mc_pad, sizeof(mc->mc_pad) );
    /* invalidate any translation of this area */
@@ -175,7 +183,10 @@ void stack_mcontext ( struct vki_mcontext *mc,
                               sizeof(mc->mc_pad), "stack_mcontext" );   
 
    /* set the signal handler to return to the trampoline */
-   SET_SIGNAL_LR(tst, (Addr) &mc->mc_pad[0]);
+   SET_SIGNAL_LR(tst, (Addr)(use_rt_sigreturn 
+                               ? (Addr)&VG_(ppc32_linux_SUBST_FOR_rt_sigreturn)
+                               : (Addr)&VG_(ppc32_linux_SUBST_FOR_sigreturn)
+                      ));
 }
 
 //:: /* Valgrind-specific parts of the signal frame */
@@ -719,7 +730,7 @@ void VG_(sigframe_create)( ThreadId tid,
                 (Addr)&ucp->uc_regs,
                 sizeof(ucp->uc_regs) + sizeof(ucp->uc_sigmask) );
 
-      stack_mcontext(&ucp->uc_mcontext, tst, __NR_rt_sigreturn, faultaddr);
+      stack_mcontext(&ucp->uc_mcontext, tst, True/*use_rt_sigreturn*/, faultaddr);
       priv = &frame->priv;
 
       SET_SIGNAL_GPR(tid, 4, (Addr) &frame->siginfo);
@@ -741,7 +752,7 @@ void VG_(sigframe_create)( ThreadId tid,
       VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
                 (Addr)&scp->_unused[3], sizeof(*scp) - 3 * sizeof(UInt) );
 
-      stack_mcontext(&frame->mcontext, tst, __NR_sigreturn, faultaddr);
+      stack_mcontext(&frame->mcontext, tst, False/*!use_rt_sigreturn*/, faultaddr);
       priv = &frame->priv;
 
       SET_SIGNAL_GPR(tid, 4, (Addr) scp);

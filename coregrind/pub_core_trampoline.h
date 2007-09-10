@@ -69,6 +69,8 @@ extern void VG_(amd64_linux_REDIR_FOR_vtime);
 #endif
 
 #if defined(VGP_ppc32_linux)
+extern void  VG_(ppc32_linux_SUBST_FOR_sigreturn);
+extern void  VG_(ppc32_linux_SUBST_FOR_rt_sigreturn);
 extern UInt  VG_(ppc32_linux_REDIR_FOR_strlen)( void* );
 extern UInt  VG_(ppc32_linux_REDIR_FOR_strcmp)( void*, void* );
 extern void* VG_(ppc32_linux_REDIR_FOR_strchr)( void*, Int );

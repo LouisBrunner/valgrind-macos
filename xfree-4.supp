@@ -137,7 +137,7 @@
    struct with uninitialized paddings - libxcb
    Memcheck:Param
    writev(vector[...])
-   obj:/lib/ld-2.6.so
+   obj:/lib*/libc-2.6*.so
    obj:/usr/lib*/libxcb.so.1.0.0
    obj:/usr/lib*/libxcb.so.1.0.0
    fun:xcb_send_request
@@ -148,7 +148,7 @@
    struct with uninitialized paddings - libxcb
    Memcheck:Param
    writev(vector[...])
-   obj:/lib/ld-2.6.so
+   obj:/lib*/libc-2.6*.so
    obj:/usr/lib*/libxcb.so.1.0.0
    obj:/usr/lib*/libxcb.so.1.0.0
    obj:/usr/lib*/libxcb.so.1.0.0

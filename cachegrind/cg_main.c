@@ -208,10 +208,12 @@ static Char* get_perm_string(Char* s)
 static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
                            Char fn[FN_LEN], Int* line)
 {
+   Char dir[FILE_LEN];
+   Bool found_dirname;
    Bool found_file_line = VG_(get_filename_linenum)(
                              instr_addr, 
                              file, FILE_LEN,
-                             NULL, 0, NULL,
+                             dir,  FILE_LEN, &found_dirname,
                              line
                           );
    Bool found_fn        = VG_(get_fnname)(instr_addr, fn, FN_LEN);
@@ -223,6 +225,15 @@ static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
    if (!found_fn) {
       VG_(strcpy)(fn,  "???");
    }
+
+   if (found_dirname) {
+      // +1 for the '/'.
+      tl_assert(VG_(strlen)(dir) + VG_(strlen)(file) + 1 < FILE_LEN);
+      VG_(strcat)(dir, "/");     // Append '/'
+      VG_(strcat)(dir, file);    // Append file to dir
+      VG_(strcpy)(file, dir);    // Move dir+file to file
+   }
+   
    if (found_file_line) {
       if (found_fn) full_debugs++;
       else          file_line_debugs++;

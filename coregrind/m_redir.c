@@ -544,7 +544,7 @@ static void maybe_add_active ( Active act )
       goto bad;
    }
 
-   old = VG_(OSet_Lookup)( activeSet, &act.from_addr );
+   old = VG_(OSetGen_Lookup)( activeSet, &act.from_addr );
    if (old) {
       /* Dodgy.  Conflicting binding. */
       vg_assert(old->from_addr == act.from_addr);
@@ -559,10 +559,10 @@ static void maybe_add_active ( Active act )
          /* XXXXXXXXXXX COMPLAIN if new and old parents differ */
       }
    } else {
-      Active* a = VG_(OSet_AllocNode)(activeSet, sizeof(Active));
+      Active* a = VG_(OSetGen_AllocNode)(activeSet, sizeof(Active));
       vg_assert(a);
       *a = act;
-      VG_(OSet_Insert)(activeSet, a);
+      VG_(OSetGen_Insert)(activeSet, a);
       /* Now that a new from->to redirection is in force, we need to
          get rid of any translations intersecting 'from' in order that
          they get redirected to 'to'.  So discard them.  Just for
@@ -597,7 +597,7 @@ void VG_(redir_notify_delete_SegInfo)( SegInfo* delsi )
    OSet*    tmpSet;
    Active*  act;
    Bool     delMe;
-   Addr*    addrP;
+   Addr     addr;
 
    vg_assert(delsi);
 
@@ -617,13 +617,12 @@ void VG_(redir_notify_delete_SegInfo)( SegInfo* delsi )
 
    /* Traverse the actives, copying the addresses of those we intend
       to delete into tmpSet. */
-   tmpSet = VG_(OSet_Create)( 0/*keyOff*/, NULL/*fastCmp*/,
-                              symtab_alloc, symtab_free);
+   tmpSet = VG_(OSetWord_Create)(symtab_alloc, symtab_free);
 
    ts->mark = True;
 
-   VG_(OSet_ResetIter)( activeSet );
-   while ( (act = VG_(OSet_Next)(activeSet)) ) {
+   VG_(OSetGen_ResetIter)( activeSet );
+   while ( (act = VG_(OSetGen_Next)(activeSet)) ) {
       delMe = act->parent_spec != NULL
               && act->parent_sym != NULL
               && act->parent_spec->seginfo != NULL
@@ -644,9 +643,7 @@ void VG_(redir_notify_delete_SegInfo)( SegInfo* delsi )
       }
 
       if (delMe) {
-         addrP = VG_(OSet_AllocNode)( tmpSet, sizeof(Addr) );
-         *addrP = act->from_addr;
-         VG_(OSet_Insert)( tmpSet, addrP );
+         VG_(OSetWord_Insert)( tmpSet, act->from_addr );
          /* While we have our hands on both the 'from' and 'to'
             of this Active, do paranoid stuff with tt/tc. */
          VG_(discard_translations)( (Addr64)act->from_addr, 1,
@@ -656,16 +653,15 @@ void VG_(redir_notify_delete_SegInfo)( SegInfo* delsi )
       }
    }
 
-   /* Now traverse tmpSet, deleting corresponding elements in
-      activeSet. */
-   VG_(OSet_ResetIter)( tmpSet );
-   while ( (addrP = VG_(OSet_Next)(tmpSet)) ) {
-      act = VG_(OSet_Remove)( activeSet, addrP );
+   /* Now traverse tmpSet, deleting corresponding elements in activeSet. */
+   VG_(OSetWord_ResetIter)( tmpSet );
+   while ( VG_(OSetWord_Next)(tmpSet, &addr) ) {
+      act = VG_(OSetGen_Remove)( activeSet, &addr );
       vg_assert(act);
-      VG_(OSet_FreeNode)( activeSet, act );
+      VG_(OSetGen_FreeNode)( activeSet, act );
    }
 
-   VG_(OSet_Destroy)( tmpSet, NULL );
+   VG_(OSetWord_Destroy)( tmpSet );
 
    /* The Actives set is now cleaned up.  Free up this TopSpec and
       everything hanging off it. */
@@ -698,7 +694,7 @@ void VG_(redir_notify_delete_SegInfo)( SegInfo* delsi )
    just before translating a basic block. */
 Addr VG_(redir_do_lookup) ( Addr orig, Bool* isWrap )
 {
-   Active* r = VG_(OSet_Lookup)(activeSet, &orig);
+   Active* r = VG_(OSetGen_Lookup)(activeSet, &orig);
    if (r == NULL)
       return orig;
 
@@ -776,10 +772,10 @@ void VG_(redir_initialise) ( void )
    vg_assert( VG_(next_seginfo)(NULL) == NULL );
 
    // Initialise active mapping.
-   activeSet = VG_(OSet_Create)(offsetof(Active, from_addr),
-                                NULL,     // Use fast comparison
-                                symtab_alloc,
-                                symtab_free);
+   activeSet = VG_(OSetGen_Create)(offsetof(Active, from_addr),
+                                   NULL,     // Use fast comparison
+                                   symtab_alloc,
+                                   symtab_free);
 
    // The rest of this function just adds initial Specs.   
 
@@ -1003,8 +999,8 @@ static void show_redir_state ( HChar* who )
          show_spec("     ", sp);
    }
    VG_(message)(Vg_DebugMsg, "   ------ ACTIVE ------");
-   VG_(OSet_ResetIter)( activeSet );
-   while ( (act = VG_(OSet_Next)(activeSet)) ) {
+   VG_(OSetGen_ResetIter)( activeSet );
+   while ( (act = VG_(OSetGen_Next)(activeSet)) ) {
       show_active("    ", act);
    }
 

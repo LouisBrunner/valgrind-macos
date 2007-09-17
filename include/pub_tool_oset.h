@@ -36,23 +36,31 @@
 // elements.  It does not allow duplicates, and will assert if you insert a
 // duplicate to an OSet.
 //
-// The structure is totally generic.  The user provides the allocation and
-// deallocation functions.  Also, each element has a key, which the lookup
-// is done with.  The key may be the whole element (eg. in an OSet of
-// integers, each integer serves both as an element and a key), or it may be
-// only part of it (eg. if the key is a single field in a struct).  The user
-// can provide a function that compares an element with a key;  this is very
-// flexible, and with the right comparison function even a (non-overlapping)
-// interval list can be created.  But the cost of calling a function for
-// every comparison can be high during lookup.  If no comparison function is
-// provided, we assume that keys are (signed or unsigned) words, and that
-// the key is the first word in each element.  This fast comparison is
-// suitable for an OSet of Words, or an OSet containing structs where the
-// first element is an Addr, for example.
+// It has two interfaces.  
 //
-// Each OSet also has an iterator, which makes it simple to traverse all the
-// nodes in order.  Note that the iterator maintains state and so is
-// non-reentrant.
+// - The "OSetWord_" interface provides an easier-to-use interface for the
+//   case where you just want to store Word-sized values.  The user provides
+//   the allocation and deallocation functions, and possibly a comparison
+//   function.
+//
+// - The "OSetGen_" interface provides a totally generic interface, which
+//   allows any kind of structure to be put into the set.  The user provides
+//   the allocation and deallocation functions.  Also, each element has a
+//   key, which the lookup is done with.  The key may be the whole element
+//   (eg. in an OSet of integers, each integer serves both as an element and
+//   a key), or it may be only part of it (eg. if the key is a single field
+//   in a struct).  The user can provide a function that compares an element
+//   with a key;  this is very flexible, and with the right comparison
+//   function even a (non-overlapping) interval list can be created.  But
+//   the cost of calling a function for every comparison can be high during
+//   lookup.  If no comparison function is provided, we assume that keys are
+//   (signed or unsigned) words, and that the key is the first word in each
+//   element.  This fast comparison is suitable for an OSet containing
+//   structs where the first element is an Addr, for example.
+//
+// Each OSet interface also has an iterator, which makes it simple to
+// traverse all the nodes in order.  Note that the iterator maintains state
+// and so is non-reentrant.
 //
 // Note that once you insert an element into an OSet, if you modify any part
 // of it looked at by your cmp() function, this may cause incorrect
@@ -63,15 +71,86 @@
 /*--------------------------------------------------------------------*/
 
 typedef struct _OSet     OSet;
-typedef struct _OSetNode OSetNode;
+
+// - Cmp: returns -1, 0 or 1 if key is <=, == or >= elem.
+// - Alloc: allocates a chunk of memory.
+// - Free: frees a chunk of memory allocated with Alloc.
 
 typedef Word  (*OSetCmp_t)         ( void* key, void* elem );
 typedef void* (*OSetAlloc_t)       ( SizeT szB );
 typedef void  (*OSetFree_t)        ( void* p );
-typedef void  (*OSetNodeDestroy_t) ( void* elem );
 
 /*--------------------------------------------------------------------*/
-/*--- Creating and destroying OSets and OSet members               ---*/
+/*--- Creating and destroying OSets (Word)                         ---*/
+/*--------------------------------------------------------------------*/
+
+// * Create: allocates and initialises the OSet.  Arguments:
+//   - alloc     The allocation function used internally for allocating the
+//               OSet and all its nodes.
+//   - free      The deallocation function used internally for freeing nodes
+//               called by VG_(OSetWord_Destroy)().
+//
+// * CreateWithCmp: like Create, but you specify your own comparison
+//   function.
+//
+// * Destroy: frees all nodes in the table, plus the memory used by
+//   the table itself.  The passed-in function is called on each node first
+//   to allow the destruction of any attached resources;  if NULL it is not
+//   called.
+
+extern OSet* VG_(OSetWord_Create)       ( OSetAlloc_t alloc, OSetFree_t free );
+extern void  VG_(OSetWord_Destroy)      ( OSet* os );
+
+/*--------------------------------------------------------------------*/
+/*--- Operations on OSets (Word)                                   ---*/
+/*--------------------------------------------------------------------*/
+
+// In everything that follows, the parameter 'key' is always the *address*
+// of the key, and 'elem' is *address* of the elem, as are the return values
+// of the functions that return elems.
+//
+// * Size: The number of elements in the set.
+//
+// * Contains: Determines if the value is in the set.
+//
+// * Insert: Inserts a new element into the set.  Duplicates are forbidden,
+//   and will cause assertion failures.
+//
+// * Remove: Removes the value from the set, if present.  Returns a Bool
+//   indicating if the value was removed.
+//
+// * ResetIter: Each OSet has an iterator.  This resets it to point to the
+//   first element in the OSet.
+// 
+// * Next: Copies the next value according to the OSet's iterator into &val,
+//   advances the iterator by one, and returns True;  the elements are
+//   visited in order.  Or, returns False if the iterator has reached the
+//   set's end.
+//   
+//   You can thus iterate in order through a set like this:
+//
+//     Word val;
+//     VG_(OSetWord_ResetIter)(oset);
+//     while ( VG_(OSetWord_Next)(oset, &val) ) {
+//        ... do stuff with 'val' ...
+//     }
+//
+//   Note that iterators are cleared any time an element is inserted or
+//   removed from the OSet, to avoid possible mayhem caused by the iterator
+//   getting out of sync with the OSet's contents.  "Cleared" means that
+//   they will return False if VG_(OSetWord_Next)() is called without an
+//   intervening call to VG_(OSetWord_ResetIter)().
+
+extern Int   VG_(OSetWord_Size)         ( OSet* os );
+extern void  VG_(OSetWord_Insert)       ( OSet* os, Word val );
+extern Bool  VG_(OSetWord_Contains)     ( OSet* os, Word val );
+extern Bool  VG_(OSetWord_Remove)       ( OSet* os, Word val );
+extern void  VG_(OSetWord_ResetIter)    ( OSet* os );
+extern Bool  VG_(OSetWord_Next)         ( OSet* os, Word* val );
+
+
+/*--------------------------------------------------------------------*/
+/*--- Creating and destroying OSets and OSet members (Gen)         ---*/
 /*--------------------------------------------------------------------*/
 
 // * Create: allocates and initialises the OSet.  Arguments:
@@ -79,9 +158,10 @@ typedef void  (*OSetNodeDestroy_t) ( void* elem );
 //   - cmp       The comparison function between keys and elements, or NULL
 //               if the OSet should use fast comparisons.
 //   - alloc     The allocation function used for allocating the OSet itself;
-//               it's also called for each invocation of VG_(OSet_AllocNode)().
-//   - free      The deallocation function used by VG_(OSet_FreeNode)() and
-//               VG_(OSet_Destroy)().
+//               it's also called for each invocation of
+//               VG_(OSetGen_AllocNode)().
+//   - free      The deallocation function used by VG_(OSetGen_FreeNode)() and
+//               VG_(OSetGen_Destroy)().
 //
 //   If cmp is NULL, keyOff must be zero.  This is checked.
 //
@@ -91,25 +171,25 @@ typedef void  (*OSetNodeDestroy_t) ( void* elem );
 //   called.
 //
 // * AllocNode: Allocate and zero memory for a node to go into the OSet.
-//   Uses the alloc function given to VG_(OSet_Create)() to allocated a node
-//   which is big enough for both an element and the OSet metadata.
+//   Uses the alloc function given to VG_(OSetGen_Create)() to allocated a
+//   node which is big enough for both an element and the OSet metadata.
 //   Not all elements in one OSet have to be the same size.
 //
 //   Note that the element allocated will be at most word-aligned, which may
 //   be less aligned than the element type would normally be.
 //
-// * FreeNode: Deallocate a node allocated with OSet_AllocNode().  Using
+// * FreeNode: Deallocate a node allocated with OSetGen_AllocNode().  Using
 //   a deallocation function (such as VG_(free)()) directly will likely
 //   lead to assertions in Valgrind's allocator.
 
-extern OSet* VG_(OSet_Create)    ( OffT keyOff, OSetCmp_t cmp,
-                                   OSetAlloc_t alloc, OSetFree_t free );
-extern void  VG_(OSet_Destroy)   ( OSet* os, OSetNodeDestroy_t destroyNode );
-extern void* VG_(OSet_AllocNode) ( OSet* os, SizeT elemSize );
-extern void  VG_(OSet_FreeNode)  ( OSet* os, void* elem );
+extern OSet* VG_(OSetGen_Create)    ( OffT keyOff, OSetCmp_t cmp,
+                                      OSetAlloc_t alloc, OSetFree_t free );
+extern void  VG_(OSetGen_Destroy)   ( OSet* os );
+extern void* VG_(OSetGen_AllocNode) ( OSet* os, SizeT elemSize );
+extern void  VG_(OSetGen_FreeNode)  ( OSet* os, void* elem );
 
 /*--------------------------------------------------------------------*/
-/*--- Operations on OSets                                          ---*/
+/*--- Operations on OSets (Gen)                                    ---*/
 /*--------------------------------------------------------------------*/
 
 // In everything that follows, the parameter 'key' is always the *address*
@@ -118,6 +198,11 @@ extern void  VG_(OSet_FreeNode)  ( OSet* os, void* elem );
 //
 // * Size: The number of elements in the set.
 //
+// * Insert: Inserts a new element into the set.  Note that 'elem' must
+//   have been allocated using VG_(OSetGen_AllocNode)(), otherwise you will
+//   get assertion failures about "bad magic".  Duplicates are forbidden,
+//   and will also cause assertion failures.
+//
 // * Contains: Determines if any element in the OSet matches the key.
 //
 // * Lookup: Returns a pointer to the element matching the key, if there is
@@ -125,11 +210,6 @@ extern void  VG_(OSet_FreeNode)  ( OSet* os, void* elem );
 //
 // * LookupWithCmp: Like Lookup, but you specify the comparison function,
 //   which overrides the OSet's normal one.
-//
-// * Insert: Inserts a new element into the list.  Note that 'elem' must
-//   have been allocated using VG_(OSet_AllocNode)(), otherwise you will get
-//   assertion failures about "bad magic".  Duplicates are forbidden, and
-//   will also cause assertion failures.
 //
 // * Remove: Removes the element matching the key, if there is one.  Returns
 //   NULL if no element matches the key.
@@ -141,27 +221,27 @@ extern void  VG_(OSet_FreeNode)  ( OSet* os, void* elem );
 //   iterator, and advances the iterator by one;  the elements are visited
 //   in order.  Or, returns NULL if the iterator has reached the OSet's end.
 //   
-//   You can thus iterate in order through an OSet like this:
+//   You can thus iterate in order through a set like this:
 //
-//     VG_(OSet_ResetIter)(oset);
-//     while ( (elem = VG_(OSet_Next)(oset)) ) {
+//     VG_(OSetGen_ResetIter)(oset);
+//     while ( (elem = VG_(OSetGen_Next)(oset)) ) {
 //        ... do stuff with 'elem' ...
 //     }
 //
 //   Note that iterators are cleared any time an element is inserted or
 //   removed from the OSet, to avoid possible mayhem caused by the iterator
 //   getting out of sync with the OSet's contents.  "Cleared" means that
-//   they will return NULL if VG_(OSet_Next)() is called without an
-//   intervening call to VG_(OSet_ResetIter)().
+//   they will return NULL if VG_(OSetGen_Next)() is called without an
+//   intervening call to VG_(OSetGen_ResetIter)().
 
-extern Int   VG_(OSet_Size)         ( OSet* os );
-extern void  VG_(OSet_Insert)       ( OSet* os, void* elem );
-extern Bool  VG_(OSet_Contains)     ( OSet* os, void* key  );
-extern void* VG_(OSet_Lookup)       ( OSet* os, void* key  );
-extern void* VG_(OSet_LookupWithCmp)( OSet* os, void* key, OSetCmp_t cmp );
-extern void* VG_(OSet_Remove)       ( OSet* os, void* key  );
-extern void  VG_(OSet_ResetIter)    ( OSet* os );
-extern void* VG_(OSet_Next)         ( OSet* os );
+extern Int   VG_(OSetGen_Size)         ( OSet* os );
+extern void  VG_(OSetGen_Insert)       ( OSet* os, void* elem );
+extern Bool  VG_(OSetGen_Contains)     ( OSet* os, void* key  );
+extern void* VG_(OSetGen_Lookup)       ( OSet* os, void* key  );
+extern void* VG_(OSetGen_LookupWithCmp)( OSet* os, void* key, OSetCmp_t cmp );
+extern void* VG_(OSetGen_Remove)       ( OSet* os, void* key  );
+extern void  VG_(OSetGen_ResetIter)    ( OSet* os );
+extern void* VG_(OSetGen_Next)         ( OSet* os );
 
 #endif   // __PUB_TOOL_OSET_H
 

@@ -516,9 +516,9 @@ void read_elf_symtab__ppc64_linux(
    TRACE_SYMTAB("\nReading (ELF, ppc64-linux) %s (%d entries)\n", tab_name, 
                 o_symtab_sz/sizeof(ElfXX_Sym) );
 
-   oset = VG_(OSet_Create)( offsetof(TempSym,key), 
-                            (OSetCmp_t)cmp_TempSymKey, 
-                            oset_malloc, oset_free );
+   oset = VG_(OSetGen_Create)( offsetof(TempSym,key), 
+                               (OSetCmp_t)cmp_TempSymKey, 
+                               oset_malloc, oset_free );
    vg_assert(oset);
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
@@ -542,7 +542,7 @@ void read_elf_symtab__ppc64_linux(
          /* Check if we've seen this (name,addr) key before. */
          key.addr = sym_addr_really;
          key.name = sym_name_really;
-         prev = VG_(OSet_Lookup)( oset, &key );
+         prev = VG_(OSetGen_Lookup)( oset, &key );
 
          if (prev) {
 
@@ -604,13 +604,13 @@ void read_elf_symtab__ppc64_linux(
          } else {
 
             /* A new (name,addr) key.  Add and continue. */
-            elem = VG_(OSet_AllocNode)(oset, sizeof(TempSym));
+            elem = VG_(OSetGen_AllocNode)(oset, sizeof(TempSym));
             vg_assert(elem);
             elem->key      = key;
             elem->tocptr   = sym_tocptr;
             elem->size     = sym_size;
             elem->from_opd = from_opd;
-            VG_(OSet_Insert)(oset, elem);
+            VG_(OSetGen_Insert)(oset, elem);
             if (si->trace_symtab) {
                VG_(printf)("   to-oset [%4d]:          "
                            " val %010p, toc %010p, sz %4d  %s\n",
@@ -629,9 +629,9 @@ void read_elf_symtab__ppc64_linux(
       build a "standard" symbol table, and nuke the oset. */
 
    i = 0;
-   VG_(OSet_ResetIter)( oset );
+   VG_(OSetGen_ResetIter)( oset );
 
-   while ( (elem = VG_(OSet_Next)(oset)) ) {
+   while ( (elem = VG_(OSetGen_Next)(oset)) ) {
       risym.addr   = elem->key.addr;
       risym.size   = elem->size;
       risym.name   = ML_(addStr) ( si, elem->key.name, -1 );
@@ -651,7 +651,7 @@ void read_elf_symtab__ppc64_linux(
       i++;
    }
 
-   VG_(OSet_Destroy)( oset, NULL );
+   VG_(OSetGen_Destroy)( oset );
 }
 
 

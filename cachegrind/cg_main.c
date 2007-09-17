@@ -190,13 +190,13 @@ static Word stringCmp( void* key, void* elem )
 // been encountered before, or dup it and put it into the string table.
 static Char* get_perm_string(Char* s)
 {
-   Char** s_ptr = VG_(OSet_Lookup)(stringTable, &s);
+   Char** s_ptr = VG_(OSetGen_Lookup)(stringTable, &s);
    if (s_ptr) {
       return *s_ptr;
    } else {
-      Char** s_node = VG_(OSet_AllocNode)(stringTable, sizeof(Char*));
+      Char** s_node = VG_(OSetGen_AllocNode)(stringTable, sizeof(Char*));
       *s_node = VG_(strdup)(s);
-      VG_(OSet_Insert)(stringTable, s_node);
+      VG_(OSetGen_Insert)(stringTable, s_node);
       return *s_node;
    }
 }
@@ -258,10 +258,10 @@ static LineCC* get_lineCC(Addr origAddr)
    loc.fn   = fn;
    loc.line = line;
 
-   lineCC = VG_(OSet_Lookup)(CC_table, &loc);
+   lineCC = VG_(OSetGen_Lookup)(CC_table, &loc);
    if (!lineCC) {
       // Allocate and zero a new node.
-      lineCC           = VG_(OSet_AllocNode)(CC_table, sizeof(LineCC));
+      lineCC           = VG_(OSetGen_AllocNode)(CC_table, sizeof(LineCC));
       lineCC->loc.file = get_perm_string(loc.file);
       lineCC->loc.fn   = get_perm_string(loc.fn);
       lineCC->loc.line = loc.line;
@@ -278,7 +278,7 @@ static LineCC* get_lineCC(Addr origAddr)
       lineCC->Bc.mp    = 0;
       lineCC->Bi.b     = 0;
       lineCC->Bi.mp    = 0;
-      VG_(OSet_Insert)(CC_table, lineCC);
+      VG_(OSetGen_Insert)(CC_table, lineCC);
    }
 
    return lineCC;
@@ -560,16 +560,16 @@ SB_info* get_SB_info(IRSB* sbIn, Addr origAddr)
    // If this assertion fails, there has been some screwup:  some
    // translations must have been discarded but Cachegrind hasn't discarded
    // the corresponding entries in the instr-info table.
-   sbInfo = VG_(OSet_Lookup)(instrInfoTable, &origAddr);
+   sbInfo = VG_(OSetGen_Lookup)(instrInfoTable, &origAddr);
    tl_assert(NULL == sbInfo);
 
    // BB never translated before (at this address, at least;  could have
    // been unloaded and then reloaded elsewhere in memory)
-   sbInfo = VG_(OSet_AllocNode)(instrInfoTable,
+   sbInfo = VG_(OSetGen_AllocNode)(instrInfoTable,
                                 sizeof(SB_info) + n_instrs*sizeof(InstrInfo)); 
    sbInfo->SB_addr  = origAddr;
    sbInfo->n_instrs = n_instrs;
-   VG_(OSet_Insert)( instrInfoTable, sbInfo );
+   VG_(OSetGen_Insert)( instrInfoTable, sbInfo );
    distinct_instrs++;
 
    return sbInfo;
@@ -1330,8 +1330,8 @@ static void fprint_CC_table_and_calc_totals(void)
    VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
 
    // Traverse every lineCC
-   VG_(OSet_ResetIter)(CC_table);
-   while ( (lineCC = VG_(OSet_Next)(CC_table)) ) {
+   VG_(OSetGen_ResetIter)(CC_table);
+   while ( (lineCC = VG_(OSetGen_Next)(CC_table)) ) {
       Bool just_hit_a_new_file = False;
       // If we've hit a new file, print a "fl=" line.  Note that because
       // each string is stored exactly once in the string table, we can use
@@ -1610,11 +1610,11 @@ static void cg_fini(Int exitcode)
                    buf4, no_debugs);
 
       VG_(message)(Vg_DebugMsg, "cachegrind: string table size: %u",
-                   VG_(OSet_Size)(stringTable));
+                   VG_(OSetGen_Size)(stringTable));
       VG_(message)(Vg_DebugMsg, "cachegrind: CC table size: %u",
-                   VG_(OSet_Size)(CC_table));
+                   VG_(OSetGen_Size)(CC_table));
       VG_(message)(Vg_DebugMsg, "cachegrind: InstrInfo table size: %u",
-                   VG_(OSet_Size)(instrInfoTable));
+                   VG_(OSetGen_Size)(instrInfoTable));
    }
 }
 
@@ -1640,9 +1640,9 @@ void cg_discard_superblock_info ( Addr64 orig_addr64, VexGuestExtents vge )
 
    // Get BB info, remove from table, free BB info.  Simple!  Note that we
    // use orig_addr, not the first instruction address in vge.
-   sbInfo = VG_(OSet_Remove)(instrInfoTable, &orig_addr);
+   sbInfo = VG_(OSetGen_Remove)(instrInfoTable, &orig_addr);
    tl_assert(NULL != sbInfo);
-   VG_(OSet_FreeNode)(instrInfoTable, sbInfo);
+   VG_(OSetGen_FreeNode)(instrInfoTable, sbInfo);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1800,15 +1800,18 @@ static void cg_post_clo_init(void)
 
    tl_assert( cachegrind_out_file[filename_szB-1] == 0 );
 
-   CC_table = VG_(OSet_Create)(offsetof(LineCC, loc),
-                               cmp_CodeLoc_LineCC,
-                               VG_(malloc), VG_(free));
-   instrInfoTable = VG_(OSet_Create)(/*keyOff*/0,
-                                     NULL,
-                                     VG_(malloc), VG_(free));
-   stringTable    = VG_(OSet_Create)(/*keyOff*/0,
-                                     stringCmp,
-                                     VG_(malloc), VG_(free));
+   CC_table =
+      VG_(OSetGen_Create)(offsetof(LineCC, loc),
+                          cmp_CodeLoc_LineCC,
+                          VG_(malloc), VG_(free));
+   instrInfoTable =
+      VG_(OSetGen_Create)(/*keyOff*/0,
+                          NULL,
+                          VG_(malloc), VG_(free));
+   stringTable =
+      VG_(OSetGen_Create)(/*keyOff*/0,
+                          stringCmp,
+                          VG_(malloc), VG_(free));
 
    configure_caches(&I1c, &D1c, &L2c);
 

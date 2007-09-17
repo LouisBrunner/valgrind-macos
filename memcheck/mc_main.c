@@ -387,9 +387,9 @@ static void init_auxmap_L1_L2 ( void )
 
    tl_assert(0 == offsetof(AuxMapEnt,base));
    tl_assert(sizeof(Addr) == sizeof(void*));
-   auxmap_L2 = VG_(OSet_Create)( /*keyOff*/  offsetof(AuxMapEnt,base),
-                                 /*fastCmp*/ NULL,
-                                 VG_(malloc), VG_(free) );
+   auxmap_L2 = VG_(OSetGen_Create)( /*keyOff*/  offsetof(AuxMapEnt,base),
+                                    /*fastCmp*/ NULL,
+                                    VG_(malloc), VG_(free) );
 }
 
 /* Check representation invariants; if OK return NULL; else a
@@ -418,7 +418,7 @@ static HChar* check_auxmap_L1_L2_sanity ( Word* n_secmaps_found )
    *n_secmaps_found = 0;
    if (sizeof(void*) == 4) {
       /* 32-bit platform */
-      if (VG_(OSet_Size)(auxmap_L2) != 0)
+      if (VG_(OSetGen_Size)(auxmap_L2) != 0)
          return "32-bit: auxmap_L2 is non-empty";
       for (i = 0; i < N_AUXMAP_L1; i++) 
         if (auxmap_L1[i].base != 0 || auxmap_L1[i].ent != NULL)
@@ -429,8 +429,8 @@ static HChar* check_auxmap_L1_L2_sanity ( Word* n_secmaps_found )
       AuxMapEnt *elem, *res;
       AuxMapEnt key;
       /* L2 table */
-      VG_(OSet_ResetIter)(auxmap_L2);
-      while ( (elem = VG_(OSet_Next)(auxmap_L2)) ) {
+      VG_(OSetGen_ResetIter)(auxmap_L2);
+      while ( (elem = VG_(OSetGen_Next)(auxmap_L2)) ) {
          elems_seen++;
          if (0 != (elem->base & (Addr)0xFFFF))
             return "64-bit: nonzero .base & 0xFFFF in auxmap_L2";
@@ -458,7 +458,7 @@ static HChar* check_auxmap_L1_L2_sanity ( Word* n_secmaps_found )
          /* Look it up in auxmap_L2. */
          key.base = auxmap_L1[i].base;
          key.sm   = 0;
-         res = VG_(OSet_Lookup)(auxmap_L2, &key);
+         res = VG_(OSetGen_Lookup)(auxmap_L2, &key);
          if (res == NULL)
             return "64-bit: _L1 .base not found in _L2";
          if (res != auxmap_L1[i].ent)
@@ -544,7 +544,7 @@ static INLINE AuxMapEnt* maybe_find_in_auxmap ( Addr a )
    key.base = a;
    key.sm   = 0;
 
-   res = VG_(OSet_Lookup)(auxmap_L2, &key);
+   res = VG_(OSetGen_Lookup)(auxmap_L2, &key);
    if (res)
       insert_into_auxmap_L1_at( AUXMAP_L1_INSERT_IX, res );
    return res;
@@ -563,11 +563,11 @@ static AuxMapEnt* find_or_alloc_in_auxmap ( Addr a )
       to allocate one. */
    a &= ~(Addr)0xFFFF;
 
-   nyu = (AuxMapEnt*) VG_(OSet_AllocNode)( auxmap_L2, sizeof(AuxMapEnt) );
+   nyu = (AuxMapEnt*) VG_(OSetGen_AllocNode)( auxmap_L2, sizeof(AuxMapEnt) );
    tl_assert(nyu);
    nyu->base = a;
    nyu->sm   = &sm_distinguished[SM_DIST_NOACCESS];
-   VG_(OSet_Insert)( auxmap_L2, nyu );
+   VG_(OSetGen_Insert)( auxmap_L2, nyu );
    insert_into_auxmap_L1_at( AUXMAP_L1_INSERT_IX, nyu );
    n_auxmap_L2_nodes++;
    return nyu;
@@ -879,9 +879,9 @@ typedef
 
 static OSet* createSecVBitTable(void)
 {
-   return VG_(OSet_Create)( offsetof(SecVBitNode, a), 
-                            NULL, // use fast comparisons
-                            VG_(malloc), VG_(free) );
+   return VG_(OSetGen_Create)( offsetof(SecVBitNode, a), 
+                               NULL, // use fast comparisons
+                               VG_(malloc), VG_(free) );
 }
 
 static void gcSecVBitTable(void)
@@ -896,8 +896,8 @@ static void gcSecVBitTable(void)
    secVBitTable2 = createSecVBitTable();
 
    // Traverse the table, moving fresh nodes into the new table.
-   VG_(OSet_ResetIter)(secVBitTable);
-   while ( (n = VG_(OSet_Next)(secVBitTable)) ) {
+   VG_(OSetGen_ResetIter)(secVBitTable);
+   while ( (n = VG_(OSetGen_Next)(secVBitTable)) ) {
       Bool keep = False;
       if ( (GCs_done - n->last_touched) <= MAX_STALE_AGE ) {
          // Keep node if it's been touched recently enough (regardless of
@@ -918,18 +918,18 @@ static void gcSecVBitTable(void)
       if ( keep ) {
          // Insert a copy of the node into the new table.
          SecVBitNode* n2 = 
-            VG_(OSet_AllocNode)(secVBitTable2, sizeof(SecVBitNode));
+            VG_(OSetGen_AllocNode)(secVBitTable2, sizeof(SecVBitNode));
          *n2 = *n;
-         VG_(OSet_Insert)(secVBitTable2, n2);
+         VG_(OSetGen_Insert)(secVBitTable2, n2);
       }
    }
 
    // Get the before and after sizes.
-   n_nodes     = VG_(OSet_Size)(secVBitTable);
-   n_survivors = VG_(OSet_Size)(secVBitTable2);
+   n_nodes     = VG_(OSetGen_Size)(secVBitTable);
+   n_survivors = VG_(OSetGen_Size)(secVBitTable2);
 
    // Destroy the old table, and put the new one in its place.
-   VG_(OSet_Destroy)(secVBitTable, NULL);
+   VG_(OSetGen_Destroy)(secVBitTable);
    secVBitTable = secVBitTable2;
 
    if (VG_(clo_verbosity) > 1) {
@@ -952,7 +952,7 @@ static UWord get_sec_vbits8(Addr a)
 {
    Addr         aAligned = VG_ROUNDDN(a, BYTES_PER_SEC_VBIT_NODE);
    Int          amod     = a % BYTES_PER_SEC_VBIT_NODE;
-   SecVBitNode* n        = VG_(OSet_Lookup)(secVBitTable, &aAligned);
+   SecVBitNode* n        = VG_(OSetGen_Lookup)(secVBitTable, &aAligned);
    UChar        vbits8;
    tl_assert2(n, "get_sec_vbits8: no node for address %p (%p)\n", aAligned, a);
    // Shouldn't be fully defined or fully undefined -- those cases shouldn't
@@ -966,7 +966,7 @@ static void set_sec_vbits8(Addr a, UWord vbits8)
 {
    Addr         aAligned = VG_ROUNDDN(a, BYTES_PER_SEC_VBIT_NODE);
    Int          i, amod  = a % BYTES_PER_SEC_VBIT_NODE;
-   SecVBitNode* n        = VG_(OSet_Lookup)(secVBitTable, &aAligned);
+   SecVBitNode* n        = VG_(OSetGen_Lookup)(secVBitTable, &aAligned);
    // Shouldn't be fully defined or fully undefined -- those cases shouldn't
    // make it to the secondary V bits table.
    tl_assert(V_BITS8_DEFINED != vbits8 && V_BITS8_UNDEFINED != vbits8);
@@ -977,7 +977,7 @@ static void set_sec_vbits8(Addr a, UWord vbits8)
    } else {
       // New node:  assign the specific byte, make the rest invalid (they
       // should never be read as-is, but be cautious).
-      n = VG_(OSet_AllocNode)(secVBitTable, sizeof(SecVBitNode));
+      n = VG_(OSetGen_AllocNode)(secVBitTable, sizeof(SecVBitNode));
       n->a            = aAligned;
       for (i = 0; i < BYTES_PER_SEC_VBIT_NODE; i++) {
          n->vbits8[i] = V_BITS8_UNDEFINED;
@@ -987,15 +987,15 @@ static void set_sec_vbits8(Addr a, UWord vbits8)
 
       // Do a table GC if necessary.  Nb: do this before inserting the new
       // node, to avoid erroneously GC'ing the new node.
-      if (secVBitLimit == VG_(OSet_Size)(secVBitTable)) {
+      if (secVBitLimit == VG_(OSetGen_Size)(secVBitTable)) {
          gcSecVBitTable();
       }
 
       // Insert the new node.
-      VG_(OSet_Insert)(secVBitTable, n);
+      VG_(OSetGen_Insert)(secVBitTable, n);
       sec_vbits_new_nodes++;
 
-      n_secVBit_nodes = VG_(OSet_Size)(secVBitTable);
+      n_secVBit_nodes = VG_(OSetGen_Size)(secVBitTable);
       if (n_secVBit_nodes > max_secVBit_nodes)
          max_secVBit_nodes = n_secVBit_nodes;
    }
@@ -4316,7 +4316,7 @@ static Bool mc_expensive_sanity_check ( void )
    /* If we're not checking for undefined value errors, the secondary V bit
     * table should be empty. */
    if (!MC_(clo_undef_value_errors)) {
-      if (0 != VG_(OSet_Size)(secVBitTable))
+      if (0 != VG_(OSetGen_Size)(secVBitTable))
          return False;
    }
 

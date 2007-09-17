@@ -1221,11 +1221,48 @@ fail these checks.</para>
 </sect1>
 
 
+<sect1>
+<title>Acting on Cachegrind's information</title>
+<para>
+So, you've managed to profile your program with Cachegrind.  Now what?
+What's the best way to actually act on the information it provides to speed
+up your program?</para>
+
+<para>
+First of all, the global hit/miss rate numbers are not that useful.  If you
+have multiple programs or multiple runs of a program, comparing the numbers
+might identify if any are outliers.  Otherwise, they're not enough to act
+on.</para>
+
+<para>
+The source code annotations are much more useful.  In our experience, the
+best place to start is by looking at the <computeroutput>Ir</computeroutput>
+numbers.  They simply measure how many instructions were executed for each
+line, and don't include any cache information, but they can still be very
+useful for identifying bottlenecks.</para>
+
+<para>
+After that, we have found that L2 misses are typically a much bigger source
+of slow-downs than L1 misses.  So it's worth looking for any snippets of
+code that cause a lot of L2 misses.  If you find any, it's still not always
+easy to work out how to improve things.  You need to have a reasonable
+understanding of how caches work, the principles of locality, and your
+program's data access patterns.  </para>
+
+<para>
+In short, Cachegrind can tell you where some of the bottlenecks in your code
+are, but it can't tell you how to fix them.  You have to work that out for
+yourself.  But at least you have the information!
+</para>
+
+</sect1>
 
 <sect1>
 <title>Implementation details</title>
+<para>
 This section talks about details you don't need to know about in order to
 use Cachegrind, but may be of interest to some people.
+</para>
 
 <sect2>
 <title>How Cachegrind works</title>
@@ -1294,8 +1331,8 @@ cache simulation.</para>
 <para>More than one line of info can be presented for each file/fn/line number.
 In such cases, the counts for the named events will be accumulated.</para>
 
-<para>Counts can be "." to represent zero.  This makes the files easier to
-read.</para>
+<para>Counts can be "." to represent zero.  This makes the files easier for
+humans to read.</para>
 
 <para>The number of counts in each
 <computeroutput>line</computeroutput> and the
@@ -1303,7 +1340,8 @@ read.</para>
 the number of events in the
 <computeroutput>event_line</computeroutput>.  If the number in
 each <computeroutput>line</computeroutput> is less, cg_annotate
-treats those missing as though they were a "." entry.</para>
+treats those missing as though they were a "." entry.  This saves space.
+</para>
 
 <para>A <computeroutput>file_line</computeroutput> changes the
 current file name.  A <computeroutput>fn_line</computeroutput>

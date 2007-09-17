@@ -26,6 +26,11 @@ Other user-visible changes:
   traces.  Second, a new option --trace-superblocks has been added, which
   shows the addresses of superblocks (code blocks) as they are executed.
 
+- Cachegrind now uses directory names where possible in its output files.
+  This means that the -I option to 'cg_annotate' should not be needed in
+  most cases.  It also means it can correctly handle the case where two
+  source files in different directories have the same name.
+
 Developer-visible changes:
 
 - New debugging command line options: --debug-dump, --trace-symtab-patt...

@@ -50,9 +50,6 @@ extern SysRes VG_(dup)    ( Int oldfd );
 extern Int    VG_(rename) ( Char* old_name, Char* new_name );
 extern Int    VG_(unlink) ( Char* file_name );
 
-// Returns False on failure (eg. if the buffer isn't big enough).
-extern Bool   VG_(getcwd) ( Char* buf, SizeT size );
-
 extern Int    VG_(readlink)( Char* path, Char* buf, UInt bufsize );
 extern Int    VG_(getdents)( UInt fd, struct vki_dirent *dirp, UInt count );
 

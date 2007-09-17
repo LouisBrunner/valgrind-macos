@@ -4367,7 +4367,7 @@ static Bool mc_expensive_sanity_check ( void )
 /*------------------------------------------------------------*/
 
 Bool          MC_(clo_partial_loads_ok)       = False;
-Int           MC_(clo_freelist_vol)           = 5000000;
+SSizeT        MC_(clo_freelist_vol)           = 5000000;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_LowRes;
 Bool          MC_(clo_show_reachable)         = False;

@@ -71,7 +71,7 @@ VgHashTable MC_(mempool_list) = NULL;
 /* Records blocks after freeing. */
 static MC_Chunk* freed_list_start  = NULL;
 static MC_Chunk* freed_list_end    = NULL;
-static Int       freed_list_volume = 0;
+static SSizeT    freed_list_volume = 0;
 
 /* Put a shadow chunk on the freed blocks queue, possibly freeing up
    some of the oldest blocks in the queue at the same time. */

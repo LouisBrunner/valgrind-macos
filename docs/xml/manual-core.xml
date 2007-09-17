@@ -710,7 +710,11 @@ categories.</para>
     </term>
     <listitem>
       <para>Just like <option>--log-file</option>, but the suffix
-      <computeroutput>".pid"</computeroutput> is not added.</para>
+      <computeroutput>".pid"</computeroutput> is not added.  WARNING: If you
+      use this option with <option>--trace-children=yes</option> and your
+      program invokes multiple processes, the Valgrind output from all those
+      processes will go into this one file, possibly jumbled up, and
+      possibly incomplete.</para>
     </listitem>
   </varlistentry>
 

@@ -30,7 +30,7 @@ priv/guest-amd64/toIR.c:2512 (dis_op2_E_G): Assertion `0' failed.
 145609             valgrind aborts all runs with 'repeated section!'
 147825  r6793      crash on amd64-linux with gcc 4.2 and glibc 2.6 (CFI)
 148096             VALGRIND_MALLOCLIKE_BLOCK not working correctly?
-148174             Incorrect type of freed_list_volume causes
+148174  r6855      Incorrect type of freed_list_volume causes
                       assertion with large memory allocations
 148254             crash writing global var on ppc64 from instrumentation fn
 148363             amd64->IR: 0x65 0x4C 0x8B 0x1C (mov %gs:0x10,%r11)

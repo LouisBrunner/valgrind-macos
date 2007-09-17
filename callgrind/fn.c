@@ -364,11 +364,12 @@ fn_node* get_fn_node_inseg(SegInfo* si,
 
 
 Bool CLG_(get_debug_info)(Addr instr_addr,
-			 Char filename[FILENAME_LEN],
+			 Char file[FILENAME_LEN],
 			 Char fn_name[FN_NAME_LEN], UInt* line_num,
 			 SegInfo** pSegInfo)
 {
-  Bool found1, found2, result = True;
+  Bool found_file_line, found_fn, found_dirname, result = True;
+  Char dir[FILENAME_LEN];
   UInt line;
   
   CLG_DEBUG(6, "  + get_debug_info(%p)\n", instr_addr);
@@ -379,32 +380,41 @@ Bool CLG_(get_debug_info)(Addr instr_addr,
       // for generated code in anonymous space, pSegInfo is 0
    }
 
-   found1 = VG_(get_filename_linenum)(instr_addr,
-				      filename, FILENAME_LEN,
-				      NULL, 0, NULL, // FIXME: add dirnames!
-				      &line);
-   found2 = VG_(get_fnname)(instr_addr, 
-			    fn_name, FN_NAME_LEN);
+   found_file_line = VG_(get_filename_linenum)(instr_addr,
+					       file, FILENAME_LEN,
+					       dir, FILENAME_LEN,
+					       &found_dirname,
+					       &line);
+   found_fn = VG_(get_fnname)(instr_addr,
+			      fn_name, FN_NAME_LEN);
 
-   if (!found1 && !found2) {
+   if (found_dirname) {
+       // +1 for the '/'.
+       CLG_ASSERT(VG_(strlen)(dir) + VG_(strlen)(file) + 1 < FILENAME_LEN);
+       VG_(strcat)(dir, "/");         // Append '/'
+       VG_(strcat)(dir, file);    // Append file to dir
+       VG_(strcpy)(file, dir);    // Move dir+file to file
+   }
+
+   if (!found_file_line && !found_fn) {
      CLG_(stat).no_debug_BBs++;
-     VG_(strcpy)(filename, "???");
+     VG_(strcpy)(file, "???");
      VG_(strcpy)(fn_name,  "???");
      if (line_num) *line_num=0;
      result = False;
 
-   } else if ( found1 &&  found2) {
+   } else if ( found_file_line &&  found_fn) {
      CLG_(stat).full_debug_BBs++;
      if (line_num) *line_num=line;
 
-   } else if ( found1 && !found2) {
+   } else if ( found_file_line && !found_fn) {
      CLG_(stat).file_line_debug_BBs++;
      VG_(strcpy)(fn_name,  "???");
      if (line_num) *line_num=line;
 
-   } else  /*(!found1 &&  found2)*/ {
+   } else  /*(!found_file_line &&  found_fn)*/ {
      CLG_(stat).fn_name_debug_BBs++;
-     VG_(strcpy)(filename, "???");
+     VG_(strcpy)(file, "???");
      if (line_num) *line_num=0;
    }
 

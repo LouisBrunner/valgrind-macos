@@ -438,27 +438,36 @@ static __inline__
 Bool get_debug_pos(BBCC* bbcc, Addr addr, AddrPos* p)
 {
     Char file[FILENAME_LEN];
-    Bool res;
+    Char dir[FILENAME_LEN];
+    Bool found_file_line, found_dirname;
 
     int cachepos = addr % DEBUG_CACHE_SIZE;
     
     if (debug_cache_addr[cachepos] == addr) {
 	p->line = debug_cache_line[cachepos];
 	p->file = debug_cache_file[cachepos];
-	res     = debug_cache_info[cachepos];
+	found_file_line = debug_cache_info[cachepos];
     }
     else {
-	res = VG_(get_filename_linenum)(addr,
-					file, FILENAME_LEN,
-					NULL, 0, NULL, //FIXME
-					&(p->line));
-	if (!res) {
+	found_file_line = VG_(get_filename_linenum)(addr,
+						    file, FILENAME_LEN,
+						    dir, FILENAME_LEN,
+						    &found_dirname,
+						    &(p->line));
+	if (!found_file_line) {
 	    VG_(strcpy)(file, "???");
 	    p->line = 0;
 	}
+	if (found_dirname) {
+	    // +1 for the '/'.
+	    CLG_ASSERT(VG_(strlen)(dir) + VG_(strlen)(file) + 1 < FILENAME_LEN);
+	    VG_(strcat)(dir, "/");     // Append '/'
+	    VG_(strcat)(dir, file);    // Append file to dir
+	    VG_(strcpy)(file, dir);    // Move dir+file to file
+	}
 	p->file    = CLG_(get_file_node)(bbcc->bb->obj, file);
 
-	debug_cache_info[cachepos] = res;
+	debug_cache_info[cachepos] = found_file_line;
 	debug_cache_addr[cachepos] = addr;
 	debug_cache_line[cachepos] = p->line;
 	debug_cache_file[cachepos] = p->file;
@@ -472,7 +481,7 @@ Bool get_debug_pos(BBCC* bbcc, Addr addr, AddrPos* p)
 	     addr, bb_addr(bbcc->bb), bbcc->cxt->fn[0]->name,
 	     p->file->name, p->line);
 
-    return res;
+    return found_file_line;
 }
 
 

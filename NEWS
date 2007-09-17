@@ -30,6 +30,9 @@ Other user-visible changes:
   This means that the -I option to 'cg_annotate' should not be needed in
   most cases.  It also means it can correctly handle the case where two
   source files in different directories have the same name.
+  The same is true for Callgrind and callgrind_annotate, respectively.
+  The benefits also apply to KCachegrind, without any further change
+  (ie. in most cases there is no configuration of source directories needed).
 
 Developer-visible changes:
 

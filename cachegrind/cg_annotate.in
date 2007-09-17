@@ -747,9 +747,9 @@ sub annotate_ann_files($)
 
         my $opened_file = "";
         my $full_file_name = "";
-        # We first try it with the empty include_dir, in case the filename has
-        # the full path.
-        foreach my $include_dir ("", @include_dirs) {
+        # Nb: include_dirs already includes "", so it works in the case
+        # where the filename has the full path.
+        foreach my $include_dir (@include_dirs) {
             my $try_name = $include_dir . $src_file;
             if (open(INPUTFILE, "< $try_name")) {
                 $opened_file    = $try_name;

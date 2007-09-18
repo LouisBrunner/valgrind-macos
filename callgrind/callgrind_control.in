@@ -43,7 +43,8 @@ sub getCallgrindPids {
     close MAP;
     if ($found == 0) { next; }
 
-    open INFO, "<$f";
+    $res = open INFO, "<$f";
+    if (!$res) { next; }
     while(<INFO>) {
       if (/version: (\d+)/) { $mversion{$pid} = $1; }
       if (/cmd: (.+)$/) { $cmd{$pid} = $1; }

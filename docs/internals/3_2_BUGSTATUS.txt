@@ -158,6 +158,7 @@ r6756    r6755     32 n-i-bz   handle MPI_DOUBLE_PRECISION
 
 r6758    r6760     32 n-i-bz   handle a whole bunch of MPI2 types
 
+r6861    pending      149963   fix behavior with callgrind runs of another user
 
 //// maybe do not fix in 3.2 branch
 

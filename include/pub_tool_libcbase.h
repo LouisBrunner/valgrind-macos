@@ -42,7 +42,9 @@ extern Bool VG_(isdigit) ( Char c );
    Converting strings to numbers
    ------------------------------------------------------------------ */
 
+   // Nb: atoll16 doesn't handle a "0x" prefix.
 extern Long  VG_(atoll)   ( Char* str );     // base 10
+extern Long  VG_(atoll16) ( Char* str );     // base 16
 extern Long  VG_(atoll36) ( Char* str );     // base 36
 
 /* ---------------------------------------------------------------------

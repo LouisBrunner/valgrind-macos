@@ -63,6 +63,33 @@ Long VG_(atoll) ( Char* str )
    return n;
 }
 
+Long VG_(atoll16) ( Char* str )
+{
+   Bool neg = False;
+   Long n = 0;
+   if (*str == '-') { str++; neg = True; };
+   while (True) {
+      Char c = *str;
+      if (c >= '0' && c <= (Char)'9') {
+         n = 16*n + (Long)(c - '0');
+      }
+      else 
+      if (c >= 'A' && c <= (Char)'F') {
+         n = 16*n + (Long)((c - 'A') + 10);
+      }
+      else 
+      if (c >= 'a' && c <= (Char)'f') {
+         n = 16*n + (Long)((c - 'a') + 10);
+      }
+      else {
+	break;
+      }
+      str++;
+   }
+   if (neg) n = -n;
+   return n;
+}
+
 Long VG_(atoll36) ( Char* str )
 {
    Bool neg = False;

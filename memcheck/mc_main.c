@@ -2196,7 +2196,7 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len )
 {
    tl_assert(sizeof(UWord) == sizeof(SizeT));
    if (0)
-      VG_(printf)("helperc_MAKE_STACK_UNINIT %p %d\n", base, len );
+      VG_(printf)("helperc_MAKE_STACK_UNINIT %p %lu\n", base, len );
 
 #  if 0
    /* Really slow version */

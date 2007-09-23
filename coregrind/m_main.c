@@ -958,7 +958,7 @@ static void setup_file_descriptors(void)
    }
 
    if (show)
-      VG_(printf)("fd limits: host, before: cur %u max %u\n", 
+      VG_(printf)("fd limits: host, before: cur %lu max %lu\n", 
                   rl.rlim_cur, rl.rlim_max);
 
 #  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
@@ -986,7 +986,7 @@ static void setup_file_descriptors(void)
    VG_(setrlimit)(VKI_RLIMIT_NOFILE, &rl);
 
    if (show) {
-      VG_(printf)("fd limits: host,  after: cur %u max %u\n",
+      VG_(printf)("fd limits: host,  after: cur %lu max %lu\n",
                   rl.rlim_cur, rl.rlim_max);
       VG_(printf)("fd limits: guest       : cur %u max %u\n",
                   VG_(fd_soft_limit), VG_(fd_hard_limit));

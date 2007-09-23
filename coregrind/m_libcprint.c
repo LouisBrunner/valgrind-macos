@@ -216,7 +216,7 @@ void VG_(percentify)(ULong n, ULong m, UInt d, Int n_buf, char buf[])
    if (m == 0) {
       // Have to generate the format string in order to be flexible about
       // the width of the field.
-      VG_(sprintf)(fmt, "%%-%lds", n_buf);
+      VG_(sprintf)(fmt, "%%-%ds", n_buf);
       // fmt is now "%<n_buf>s" where <d> is 1,2,3...
       VG_(sprintf)(buf, fmt, "--%");
       return;

@@ -184,7 +184,7 @@ miss_treatment:                                                             \
       if (is_miss) { MISS_TREATMENT; }                                      \
                                                                             \
    } else {                                                                 \
-       VG_(printf)("addr: %x  size: %u  sets: %d %d", a, size, set1, set2); \
+       VG_(printf)("addr: %lx  size: %u  sets: %d %d", a, size, set1, set2);\
        VG_(tool_panic)("item straddles more than two cache sets");          \
    }                                                                        \
    return;                                                                  \

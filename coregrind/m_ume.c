@@ -74,7 +74,7 @@ static void check_mmap(SysRes res, Addr base, SizeT len)
 {
    if (res.isError) {
       VG_(printf)("valgrind: mmap(0x%llx, %lld) failed in UME "
-                  "with error %d (%s).\n", 
+                  "with error %lu (%s).\n", 
                   (ULong)base, (Long)len, 
                   res.err, VG_(strerror)(res.err) );
       if (res.err == VKI_EINVAL) {

@@ -846,12 +846,12 @@ void ppSuperblocks ( Arena* a )
       Superblock * sb = a->sblocks[j];
 
       VG_(printf)( "\n" );
-      VG_(printf)( "superblock %d at %p, sb->n_pl_bs = %d\n",
+      VG_(printf)( "superblock %d at %p, sb->n_pl_bs = %lu\n",
                    blockno++, sb, sb->n_payload_bytes);
       for (i = 0; i < sb->n_payload_bytes; i += b_bszB) {
          Block* b = (Block*)&sb->payload_bytes[i];
          b_bszB   = get_bszB(b);
-         VG_(printf)( "   block at %d, bszB %d: ", i, b_bszB );
+         VG_(printf)( "   block at %d, bszB %lu: ", i, b_bszB );
          VG_(printf)( "%s, ", is_inuse_block(b) ? "inuse" : "free");
          VG_(printf)( "%s\n", blockSane(a, b) ? "ok" : "BAD" );
       }
@@ -901,15 +901,14 @@ static void sanity_check_malloc_arena ( ArenaId aid )
          b     = (Block*)&sb->payload_bytes[i];
          b_bszB = get_bszB_as_is(b);
          if (!blockSane(a, b)) {
-            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d (bszB %d): "
-                        " BAD\n", sb, i, b_bszB );
+            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d "
+                        "(bszB %lu):  BAD\n", sb, i, b_bszB );
             BOMB;
          }
          thisFree = !is_inuse_block(b);
          if (thisFree && lastWasFree) {
-            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d (bszB %d): "
-                        "UNMERGED FREES\n",
-                         sb, i, b_bszB );
+            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d "
+                        "(bszB %lu): UNMERGED FREES\n", sb, i, b_bszB );
             BOMB;
          }
          if (thisFree) blockctr_sb_free++;
@@ -956,7 +955,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
          if (b_pszB < list_min_pszB || b_pszB > list_max_pszB) {
             VG_(printf)(
                "sanity_check_malloc_arena: list %d at %p: "
-               "WRONG CHAIN SIZE %dB (%dB, %dB)\n",
+               "WRONG CHAIN SIZE %luB (%luB, %luB)\n",
                listno, b, b_pszB, list_min_pszB, list_max_pszB );
             BOMB;
          }
@@ -1359,7 +1358,7 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
    if (req_alignB < VG_MIN_MALLOC_SZB
        || req_alignB > 1048576
        || VG_(log2)( req_alignB ) == -1 /* not a power of 2 */) {
-      VG_(printf)("VG_(arena_memalign)(%p, %d, %d)\nbad alignment", 
+      VG_(printf)("VG_(arena_memalign)(%p, %lu, %lu)\nbad alignment", 
                   a, req_alignB, req_pszB );
       VG_(core_panic)("VG_(arena_memalign)");
       /*NOTREACHED*/

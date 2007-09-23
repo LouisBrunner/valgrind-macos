@@ -714,7 +714,7 @@ void CLG_(setup_bbcc)(BB* bb)
       else
 	  ppIRJumpKind( jmpkind );
 
-      VG_(printf)(" %08x -> %08x, SP %08x\n",
+      VG_(printf)(" %08lx -> %08x, SP %08x\n",
 		  last_bb ? bb_jmpaddr(last_bb) : 0,
 		  bb_addr(bb), sp);
   }

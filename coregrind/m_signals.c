@@ -2077,7 +2077,7 @@ void VG_(sigstartup_actions) ( void )
       VG_(max_signal) = i;
 
       if (VG_(clo_trace_signals) && VG_(clo_verbosity) > 2)
-         VG_(printf)("snaffling handler 0x%x for signal %d\n", 
+         VG_(printf)("snaffling handler 0x%lx for signal %d\n", 
                      (Addr)(sa.ksa_handler), i );
 
       scss.scss_per_sig[i].scss_handler  = sa.ksa_handler;

@@ -295,7 +295,7 @@ void CLG_(print_bbcc_fn)(BBCC* bbcc)
 	return;
     }
 
-    VG_(printf)("%08x/%c  %d:", bb_addr(bbcc->bb), 
+    VG_(printf)("%08lx/%c  %d:", bb_addr(bbcc->bb), 
 		(bbcc->bb->sect_kind == Vg_SectText) ? 'T' :
 		(bbcc->bb->sect_kind == Vg_SectData) ? 'D' :
 		(bbcc->bb->sect_kind == Vg_SectBSS) ? 'B' :
@@ -339,9 +339,9 @@ void CLG_(print_bbcc_cost)(int s, BBCC* bbcc)
   ecounter = bbcc->ecounter_sum;
 
   print_indent(s+2);
-  VG_(printf)("ECounter: sum %d ", ecounter);
+  VG_(printf)("ECounter: sum %llu ", ecounter);
   for(i=0; i<bb->cjmp_count; i++) {
-      VG_(printf)("[%d]=%d ",
+      VG_(printf)("[%d]=%llu ",
 		  bb->jmp[i].instr, bbcc->jmp[i].ecounter);
   }
   VG_(printf)("\n");
@@ -350,7 +350,7 @@ void CLG_(print_bbcc_cost)(int s, BBCC* bbcc)
   for(i=0; i<bb->instr_count; i++) {
       InstrInfo* ii = &(bb->instr[i]);
       print_indent(s+2);
-      VG_(printf)("[%2d] IOff %2d ecnt %3d ",
+      VG_(printf)("[%2d] IOff %2d ecnt %3llu ",
 		  i, ii->instr_offset, ecounter);
       CLG_(print_cost)(s+5, ii->eventset, bbcc->cost + ii->cost_offset);
 
@@ -374,7 +374,7 @@ void CLG_(print_addr)(Addr addr)
     int ln, i=0, opos=0;
 	
     if (addr == 0) {
-	VG_(printf)("%08x", addr);
+	VG_(printf)("%08lx", addr);
 	return;
     }
 
@@ -431,7 +431,7 @@ void CLG_(print_context)(void)
 
 void* CLG_(malloc)(UWord s, char* f)
 {
-    CLG_DEBUG(3, "Malloc(%d) in %s.\n", s, f);
+    CLG_DEBUG(3, "Malloc(%lu) in %s.\n", s, f);
     return VG_(malloc)(s);
 }
 

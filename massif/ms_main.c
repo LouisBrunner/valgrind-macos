@@ -1325,7 +1325,7 @@ static void write_hp_file(void)
             if ( ! VG_(get_fnname)(xtree_snapshot->xpt->ip, buf2, 16)) {
                VG_(sprintf)(buf2, "???");
             }
-            SPRINTF(buf, "x%x:%s %d\n", xtree_snapshot->xpt->ip,
+            SPRINTF(buf, "x%lx:%s %d\n", xtree_snapshot->xpt->ip,
                          clean_fnname(buf3, buf2), xtree_snapshot->space);
          }
 

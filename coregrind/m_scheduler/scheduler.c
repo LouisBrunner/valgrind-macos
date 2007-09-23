@@ -1337,7 +1337,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__DISCARD_TRANSLATIONS:
          if (VG_(clo_verbosity) > 2)
             VG_(printf)( "client request: DISCARD_TRANSLATIONS,"
-                         " addr %p,  len %d\n",
+                         " addr %p,  len %lu\n",
                          (void*)arg[1], arg[2] );
 
          VG_(discard_translations)( 
@@ -1358,7 +1358,7 @@ void do_client_request ( ThreadId tid )
 	    UWord ret;
 
             if (VG_(clo_verbosity) > 2)
-               VG_(printf)("client request: code %x,  addr %p,  len %d\n",
+               VG_(printf)("client request: code %lx,  addr %p,  len %lu\n",
                            arg[0], (void*)arg[1], arg[2] );
 
 	    if ( VG_TDICT_CALL(tool_handle_client_request, tid, arg, &ret) )

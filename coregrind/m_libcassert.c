@@ -189,7 +189,7 @@ void VG_(assert_fail) ( Bool isCore, const Char* expr, const Char* file,
    // Treat vg_assert2(0, "foo") specially, as a panicky abort
    if (VG_STREQ(expr, "0")) {
       VG_(printf)("\n%s: %s:%d (%s): the 'impossible' happened.\n",
-                  component, file, line, fn, expr );
+                  component, file, line, fn );
    } else {
       VG_(printf)("\n%s: %s:%d (%s): Assertion '%s' failed.\n",
                   component, file, line, fn, expr );

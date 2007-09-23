@@ -309,7 +309,7 @@ static CacheResult cachesim_ref(cache_t2* c, Addr a, UChar size)
 	return ((res1 == Miss) || (res2 == Miss)) ? Miss : Hit;
 
    } else {
-       VG_(printf)("addr: %x  size: %u  sets: %d %d", a, size, set1, set2);
+       VG_(printf)("addr: %lx  size: %u  sets: %d %d", a, size, set1, set2);
        VG_(tool_panic)("item straddles more than two cache sets");
    }
    return Hit;
@@ -416,7 +416,7 @@ CacheResult cachesim_ref_wb(cache_t2* c, RefType ref, Addr a, UChar size)
 	return ((res1 == Miss) || (res2 == Miss)) ? Miss : Hit;
 
    } else {
-       VG_(printf)("addr: %x  size: %u  sets: %d %d", a, size, set1, set2);
+       VG_(printf)("addr: %lx  size: %u  sets: %d %d", a, size, set1, set2);
        VG_(tool_panic)("item straddles more than two cache sets");
    }
    return Hit;

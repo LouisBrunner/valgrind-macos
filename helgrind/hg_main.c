@@ -553,7 +553,7 @@ void set_sword ( Addr a, shadow_word sword )
    sm->swords[(a & 0xFFFC) >> 2] = sword;
 
    if (VGE_IS_DISTINGUISHED_SM(sm)) {
-      VG_(printf)("wrote to distinguished 2ndary map! 0x%x\n", a);
+      VG_(printf)("wrote to distinguished 2ndary map! 0x%lx\n", a);
       // XXX: may be legit, but I want to know when it happens --njn
       VG_(tool_panic)("wrote to distinguished 2ndary map!");
    }
@@ -568,7 +568,7 @@ shadow_word* get_sword_addr ( Addr a )
    UInt    sm_off = (a & 0xFFFC) >> 2;
 
    if (VGE_IS_DISTINGUISHED_SM(sm)) {
-      VG_(printf)("accessed distinguished 2ndary map! 0x%x\n", a);
+      VG_(printf)("accessed distinguished 2ndary map! 0x%lx\n", a);
       // XXX: may be legit, but I want to know when it happens --njn
       //VG_(tool_panic)("accessed distinguished 2ndary map!");
       return SEC_MAP_ACCESS;
@@ -3000,7 +3000,7 @@ static void hg_mem_read_word(Addr a, ThreadId tid)
 
    sword = get_sword_addr(a);
    if (sword == SEC_MAP_ACCESS) {
-      VG_(printf)("read distinguished 2ndary map! 0x%x\n", a);
+      VG_(printf)("read distinguished 2ndary map! 0x%lx\n", a);
       return;
    }
 
@@ -3110,7 +3110,7 @@ static void hg_mem_write_word(Addr a, ThreadId tid)
 
    sword = get_sword_addr(a);
    if (sword == SEC_MAP_ACCESS) {
-      VG_(printf)("read distinguished 2ndary map! 0x%x\n", a);
+      VG_(printf)("read distinguished 2ndary map! 0x%lx\n", a);
       return;
    }
 

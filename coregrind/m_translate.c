@@ -590,7 +590,7 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
    /*NOTREACHED*/
 
   dontchase:
-   if (0) VG_(printf)("not chasing into 0x%x\n", addr);
+   if (0) VG_(printf)("not chasing into 0x%lx\n", addr);
    return False;
 }
 

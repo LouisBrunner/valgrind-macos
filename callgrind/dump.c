@@ -554,7 +554,7 @@ static
 void fprint_pos(Int fd, AddrPos* curr, AddrPos* last)
 {
     if (0) //CLG_(clo).dump_bbs)
-	VG_(sprintf)(outbuf, "%u ", curr->addr - curr->bb_addr);
+	VG_(sprintf)(outbuf, "%lu ", curr->addr - curr->bb_addr);
     else {
 	int p = 0;
 	if (CLG_(clo).dump_instr) {

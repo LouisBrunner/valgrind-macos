@@ -81,6 +81,7 @@ r6622    r6713     32 n-i-bz   .eh_frame crud for m_trampoline.S fns
 r6630    pending      n-i-bz   add additional ptrace reason codes
 
 r6631    pending      142186   add I2C ioctl support
+r6830    r6831        n-i-bz   division by zero in massif verbose output
 
 XXX Ashley logfile qualifiers in coredumps patch
 

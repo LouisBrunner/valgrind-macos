@@ -1305,7 +1305,7 @@ static void write_hp_file(void)
    SPRINTF(buf, /*" (%d ms/sample)\"\n"*/ "\"\n"
                 "DATE        \"\"\n"
                 "SAMPLE_UNIT \"ms\"\n"
-                "VALUE_UNIT  \"bytes\"\n", ms_interval);
+                "VALUE_UNIT  \"bytes\"\n" /*, ms_interval*/);
 
    // Censi
    for (i = 0; i < curr_census; i++) {
@@ -1500,9 +1500,9 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
          // Remember: exact_ST_dbld is space.time *doubled*
          perc = make_perc(xpt->exact_ST_dbld / 2, total_spacetime);
          if (is_HTML) {
-            SPRINTF(buf, "<a name=\"b%x\"></a>"
+            SPRINTF(buf, "<a name=\"b%p\"></a>"
                          "Context accounted for "
-                         "<a href=\"#a%x\">%s</a> of measured spacetime<br>\n",
+                         "<a href=\"#a%p\">%s</a> of measured spacetime<br>\n",
                          xpt, xpt, perc);
          } else {
             SPRINTF(buf, "Context accounted for %s of measured spacetime\n",
@@ -1535,10 +1535,10 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
          perc    = make_perc(child->exact_ST_dbld / 2, total_spacetime);
          ip_desc = VG_(describe_IP)(child->ip-1, buf2, BUF_LEN);
          if (is_HTML) {
-            SPRINTF(buf, "<li><a name=\"a%x\"></a>", child );
+            SPRINTF(buf, "<li><a name=\"a%p\"></a>", child );
 
             if (child->n_children > 0) {
-               SPRINTF(buf, "<a href=\"#b%x\">%s</a>", child, perc);
+               SPRINTF(buf, "<a href=\"#b%p\">%s</a>", child, perc);
             } else {
                SPRINTF(buf, "%s", perc);
             }

@@ -368,6 +368,32 @@ Invalid write of size 1
   </answer>
 </qandaentry>
 
+
+<qandaentry id="faq.crashes">
+  <question id="q-crashes">
+    <para>My program crashes normally, but doesn't under Valgrind, or vice
+    versa.  What's happening?</para>
+  </question>
+  <answer id="a-crashes">
+    <para>When a program runs under Valgrind, its environment is slightly
+    different to when it runs natively.  For example, the memory layout is
+    different, and the way that threads are scheduled is different.</para>
+    
+    <para>Most of the time this doesn't make any difference, but it can,
+    particularly if your program is buggy.  For example, if your program
+    crashes because it erroneously accesses memory that is unaddressable,
+    it's possible that this memory will not be unaddressable when run under
+    Valgrind.  Alternatively, if your program has data races, these may not
+    manifest under Valgrind.</para>
+
+    <para>There isn't anything you can do to change this, it's just the
+    nature of the way Valgrind works that it cannot exactly replicate a
+    native execution environment.  In the case where your program crashes
+    due to a memory error when run natively but not when run under Valgrind,
+    in most cases Memcheck should identify the bad memory operation.</para>.
+  </answer>
+</qandaentry>
+
 </qandadiv>
 
 

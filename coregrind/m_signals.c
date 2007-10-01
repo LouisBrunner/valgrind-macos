@@ -431,7 +431,7 @@ void pp_SKSS ( void )
    Int sig;
    VG_(printf)("\n\nSKSS:\n");
    for (sig = 1; sig <= _VKI_NSIG; sig++) {
-      VG_(printf)("sig %d:  handler 0x%x,  flags 0x%x\n", sig,
+      VG_(printf)("sig %d:  handler %p,  flags 0x%x\n", sig,
                   skss.skss_per_sig[sig].skss_handler,
                   skss.skss_per_sig[sig].skss_flags );
 

@@ -35,26 +35,19 @@
    Basic printing
    ------------------------------------------------------------------ */
 
-#ifdef __GNUC__
-#   define PRINTF_CHECK(x,y) __attribute__((format(__printf__, x, y)))
-#else
-#   define PRINTF_CHECK(x,y) /* x, y */
-#endif
-
 /* Note that they all output to the file descriptor given by the
  * --log-fd/--log-file/--log-socket argument, which defaults to 2 (stderr).
  * Hence no need for VG_(fprintf)().
  */
-
-extern UInt VG_(printf)   ( const HChar *format, ... ) PRINTF_CHECK(1,2);
+extern UInt VG_(printf)   ( const HChar *format, ... );
 extern UInt VG_(vprintf)  ( const HChar *format, va_list vargs );
 /* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */
 
-extern UInt VG_(sprintf)  ( Char* buf, const HChar* format, ... ) PRINTF_CHECK(2,3);
+extern UInt VG_(sprintf)  ( Char* buf, const HChar* format, ... );
 extern UInt VG_(vsprintf) ( Char* buf, const HChar* format, va_list vargs );
 
 extern UInt VG_(snprintf) ( Char* buf, Int size, 
-                                       const HChar *format, ... ) PRINTF_CHECK(3,4);
+                                       const HChar *format, ... );
 extern UInt VG_(vsnprintf)( Char* buf, Int size, 
                                        const HChar *format, va_list vargs );
 

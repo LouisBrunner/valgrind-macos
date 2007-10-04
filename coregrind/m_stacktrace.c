@@ -158,7 +158,7 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
          fp = (((UWord*)fp)[0]);
          ips[i++] = ip;
          if (debug)
-            VG_(printf)("     ipsF[%d]=%p\n", i-1, ips[i-1]);
+            VG_(printf)("     ipsF[%d]=0x%08lx\n", i-1, ips[i-1]);
          ip = ip - 1;
          continue;
       }
@@ -168,7 +168,7 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
       if ( VG_(use_CF_info)( &ip, &sp, &fp, fp_min, fp_max ) ) {
          ips[i++] = ip;
          if (debug)
-            VG_(printf)("     ipsC[%d]=%p\n", i-1, ips[i-1]);
+            VG_(printf)("     ipsC[%d]=0x%08lx\n", i-1, ips[i-1]);
          ip = ip - 1;
          continue;
       }

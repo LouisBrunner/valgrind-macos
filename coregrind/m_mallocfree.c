@@ -1104,6 +1104,24 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
    req_bszB = pszB_to_bszB(a, req_pszB);
 
    // Scan through all the big-enough freelists for a block.
+   //
+   // Nb: this scanning might be expensive in some cases.  Eg. if you
+   // allocate lots of small objects without freeing them, but no
+   // medium-sized objects, it will repeatedly scanning through the whole
+   // list, and each time not find any free blocks until the last element.
+   //
+   // If this becomes a noticeable problem... the loop answers the question
+   // "where is the first nonempty list above me?"  And most of the time,
+   // you ask the same question and get the same answer.  So it would be
+   // good to somehow cache the results of previous searches.
+   // One possibility is an array (with N_MALLOC_LISTS elements) of
+   // shortcuts.  shortcut[i] would give the index number of the nearest
+   // larger list above list i which is non-empty.  Then this loop isn't
+   // necessary.  However, we'd have to modify some section [ .. i-1] of the
+   // shortcut array every time a list [i] changes from empty to nonempty or
+   // back.  This would require care to avoid pathological worst-case
+   // behaviour.
+   //
    for (lno = pszB_to_listNo(req_pszB); lno < N_MALLOC_LISTS; lno++) {
       b = a->freelist[lno];
       if (NULL == b) continue;   // If this list is empty, try the next one.

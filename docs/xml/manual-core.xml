@@ -105,18 +105,19 @@ and less confusing error reports.  Chances are you're set up like this
 already, if you intended to debug your program with GNU gdb, or some
 other debugger.</para>
 
-<para>This paragraph applies only if you plan to use Memcheck: On rare
-occasions, optimisation levels at <computeroutput>-O2</computeroutput>
-and above have been observed to generate code which fools Memcheck into
-wrongly reporting uninitialised value errors.  We have looked in detail
-into fixing this, and unfortunately the result is that doing so would
-give a further significant slowdown in what is already a slow tool.  So
-the best solution is to turn off optimisation altogether.  Since this
-often makes things unmanagably slow, a reasonable compromise is to use
+<para>If you are planning to use Memcheck: On rare
+occasions, compiler optimisations (at <computeroutput>-O2</computeroutput>
+and above, and sometimes <computeroutput>-O1</computeroutput>) have been
+observed to generate code which fools Memcheck into wrongly reporting
+uninitialised value errors, or missing uninitialised value errors.  We have
+looked in detail into fixing this, and unfortunately the result is that
+doing so would give a further significant slowdown in what is already a slow
+tool.  So the best solution is to turn off optimisation altogether.  Since
+this often makes things unmanagably slow, a reasonable compromise is to use
 <computeroutput>-O</computeroutput>.  This gets you the majority of the
-benefits of higher optimisation levels whilst keeping relatively small
-the chances of false complaints from Memcheck.  All other tools (as far
-as we know) are unaffected by optimisation level.</para>
+benefits of higher optimisation levels whilst keeping relatively small the
+chances of false positives or false negatives from Memcheck.  All other
+tools (as far as we know) are unaffected by optimisation level.</para>
 
 <para>Valgrind understands both the older "stabs" debugging format, used
 by gcc versions prior to 3.1, and the newer DWARF2 and DWARF3 formats

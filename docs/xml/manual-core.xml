@@ -116,8 +116,12 @@ tool.  So the best solution is to turn off optimisation altogether.  Since
 this often makes things unmanagably slow, a reasonable compromise is to use
 <computeroutput>-O</computeroutput>.  This gets you the majority of the
 benefits of higher optimisation levels whilst keeping relatively small the
-chances of false positives or false negatives from Memcheck.  All other
-tools (as far as we know) are unaffected by optimisation level.</para>
+chances of false positives or false negatives from Memcheck.  Also, you
+should compile your code with <computeroutput>-Wall</computeroutput> because
+it can identify some or all of the problems that Valgrind can miss at the
+higher optimisations levels.  (Using <computeroutput>-Wall</computeroutput>
+is also a good idea in general.)  All other tools (as far as we know) are
+unaffected by optimisation level.</para>
 
 <para>Valgrind understands both the older "stabs" debugging format, used
 by gcc versions prior to 3.1, and the newer DWARF2 and DWARF3 formats

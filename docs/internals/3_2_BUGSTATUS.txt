@@ -83,6 +83,8 @@ r6630    pending      n-i-bz   add additional ptrace reason codes
 r6631    pending      142186   add I2C ioctl support
 r6830    r6831        n-i-bz   division by zero in massif verbose output
 
+r7028    pending      151209   valgrind unable to execute programs for users with UID > 2^16   
+
 XXX Ashley logfile qualifiers in coredumps patch
 
 r6612    r6718     32 142228   RedHat8: complaint of elf_dynamic_do_rela

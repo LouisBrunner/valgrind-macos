@@ -428,6 +428,8 @@ Int VG_(geteuid) ( void )
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
 #  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
    return VG_(do_syscall1)(__NR_AIX5_getuidx, 1) . res;
+#  elif defined(__NR_geteuid32)
+   return VG_(do_syscall0)(__NR_geteuid32) . res;
 #  else
    return VG_(do_syscall0)(__NR_geteuid) . res;
 #  endif
@@ -438,6 +440,8 @@ Int VG_(getegid) ( void )
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
 #  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
    return VG_(do_syscall1)(__NR_AIX5_getgidx, 1) . res;
+#  elif defined(__NR_getegid32)
+   return VG_(do_syscall0)(__NR_getegid32) . res;
 #  else
    return VG_(do_syscall0)(__NR_getegid) . res;
 #  endif

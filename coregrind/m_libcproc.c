@@ -429,6 +429,8 @@ Int VG_(geteuid) ( void )
 #  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
    return VG_(do_syscall1)(__NR_AIX5_getuidx, 1) . res;
 #  elif defined(__NR_geteuid32)
+   // We use the 32-bit version if it's supported.  Otherwise, IDs greater
+   // than 65536 cause problems, as bug #151209 showed.
    return VG_(do_syscall0)(__NR_geteuid32) . res;
 #  else
    return VG_(do_syscall0)(__NR_geteuid) . res;
@@ -441,6 +443,8 @@ Int VG_(getegid) ( void )
 #  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
    return VG_(do_syscall1)(__NR_AIX5_getgidx, 1) . res;
 #  elif defined(__NR_getegid32)
+   // We use the 32-bit version if it's supported.  Otherwise, IDs greater
+   // than 65536 cause problems, as bug #151209 showed.
    return VG_(do_syscall0)(__NR_getegid32) . res;
 #  else
    return VG_(do_syscall0)(__NR_getegid) . res;

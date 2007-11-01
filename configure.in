@@ -980,7 +980,6 @@ AC_OUTPUT(
    helgrind/tests/Makefile
    helgrind/docs/Makefile
    massif/Makefile
-   massif/hp2ps/Makefile
    massif/tests/Makefile
    massif/perf/Makefile
    massif/docs/Makefile

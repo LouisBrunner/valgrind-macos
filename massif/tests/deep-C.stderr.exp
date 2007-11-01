@@ -1,0 +1,53 @@
+Massif: alloc-fns:
+Massif:   0: malloc
+Massif:   1: __builtin_new
+Massif:   2: operator new(unsigned)
+Massif:   3: operator new(unsigned long)
+Massif:   4: __builtin_vec_new
+Massif:   5: operator new[](unsigned)
+Massif:   6: operator new[](unsigned long)
+Massif:   7: calloc
+Massif:   8: realloc
+Massif:   9: memalign
+Massif:   10: operator new(unsigned, std::nothrow_t const&)
+Massif:   11: operator new[](unsigned, std::nothrow_t const&)
+Massif:   12: operator new(unsigned long, std::nothrow_t const&)
+Massif:   13: operator new[](unsigned long, std::nothrow_t const&)
+Massif:   14: a3
+Massif:   15: a4
+Massif:   16: a5
+Massif:   17: a6
+Massif:   18: a7
+Massif:   19: a8
+Massif:   20: a9
+Massif:   21: a10
+Massif:   22: a11
+Massif:   23: a12
+Massif: startup S.  0 (t:0, hp:0, ad:0, st:0)
+Massif:   alloc S.  1 (t:108, hp:100, ad:8, st:0)
+Massif:   alloc S.  2 (t:216, hp:200, ad:16, st:0)
+Massif:   alloc S.  3 (t:324, hp:300, ad:24, st:0)
+Massif:   alloc S.  4 (t:432, hp:400, ad:32, st:0)
+Massif:   alloc S.  5 (t:540, hp:500, ad:40, st:0)
+Massif:   alloc S.  6 (t:648, hp:600, ad:48, st:0)
+Massif:   alloc S.  7 (t:756, hp:700, ad:56, st:0)
+Massif:   alloc S.  8 (t:864, hp:800, ad:64, st:0)
+Massif:   alloc Sd  9 (t:972, hp:900, ad:72, st:0)
+Massif:   alloc S. 10 (t:1080, hp:1000, ad:80, st:0)
+Massif: heap allocs:          10
+Massif: heap reallocs:        0
+Massif: heap frees:           0
+Massif: stack allocs:         0
+Massif: stack frees:          0
+Massif: XPts:                 6
+Massif: top-XPts:             1 (16%)
+Massif: XPt-init-expansions:  5
+Massif: XPt-later-expansions: 0
+Massif: SXPt allocs:          6
+Massif: SXPt frees:           0
+Massif: skipped snapshots:    0
+Massif: real snapshots:       11
+Massif: detailed snapshots:   1
+Massif: peak snapshots:       0
+Massif: cullings:             0
+Massif: XCon_redos:           10

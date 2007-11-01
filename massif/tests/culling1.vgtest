@@ -1,0 +1,4 @@
+prog: culling1
+vgopts: -v -v --stacks=no --time-unit=B
+stderr_filter: filter_verbose
+cleanup: rm massif.out

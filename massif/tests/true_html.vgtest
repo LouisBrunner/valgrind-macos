@@ -1,3 +1,0 @@
-prog: ../../tests/true
-vgopts: --format=html
-cleanup: rm massif.*.*

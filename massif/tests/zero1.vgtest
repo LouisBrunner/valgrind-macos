@@ -1,0 +1,4 @@
+prog: zero
+vgopts: --stacks=no --heap-admin=no --time-unit=B
+post: perl ../../massif/ms_print --threshold=0 massif.out | ../../tests/filter_addresses
+cleanup: rm massif.out

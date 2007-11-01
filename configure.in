@@ -982,6 +982,7 @@ AC_OUTPUT(
    massif/Makefile
    massif/hp2ps/Makefile
    massif/tests/Makefile
+   massif/perf/Makefile
    massif/docs/Makefile
    lackey/Makefile
    lackey/tests/Makefile

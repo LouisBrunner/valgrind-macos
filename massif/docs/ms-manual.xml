@@ -6,6 +6,25 @@
 <chapter id="ms-manual" xreflabel="Massif: a heap profiler">
   <title>Massif: a heap profiler</title>
 
+</pre>
+ Docs:
+ - Mention that complex functions names are best protected with single
+   quotes, eg:
+       --alloc-fn='operator new(unsigned, std::nothrow_t const&)'
+   [XXX: that doesn't work if the option is in a .valgrindrc file or in
+    $VALGRIND_OPTS.  In m_commandline.c:add_args_from_string() need to
+    respect single quotes...]
+ - Explain the --threshold=0 case -- entries with zero bytes must have
+   allocated some memory and then freed it all again.
+ - Explain that no peak will be taken if no deallocations are done.
+ - Explain how the stack is computed -- size is assumed to be zero when
+   code starts executing, which isn't true, but reflects what you have
+   control over in a normal program.
+ - file format -- not specified, because it may change in the future to 
+   become more generic
+</pre>
+
+
 <para>To use this tool, you must specify
 <computeroutput>--tool=massif</computeroutput> on the Valgrind
 command line.</para>

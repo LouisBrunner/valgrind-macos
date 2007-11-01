@@ -1,0 +1,2 @@
+prog: many-xpts
+vgopts: --time-unit=B --depth=100

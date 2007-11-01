@@ -1,6 +1,6 @@
 include $(top_srcdir)/Makefile.tool.am
 
-SUBDIRS += hp2ps
+SUBDIRS += perf
 
 noinst_PROGRAMS = 
 if VGP_X86_LINUX

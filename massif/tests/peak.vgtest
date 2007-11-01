@@ -1,0 +1,4 @@
+prog: peak
+vgopts: --stacks=no --time-unit=B --peak-inaccuracy=0
+post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
+cleanup: rm massif.out

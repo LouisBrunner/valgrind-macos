@@ -1,0 +1,5 @@
+prog: realloc
+vgopts: -v -v --stacks=no --heap-admin=0 --time-unit=B --threshold=0
+stderr_filter: filter_verbose
+post: perl ../../massif/ms_print --threshold=0 massif.out | ../../tests/filter_addresses
+cleanup: rm massif.out

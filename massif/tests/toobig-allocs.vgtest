@@ -1,1 +1,2 @@
 prog: ../../tests/toobig-allocs
+cleanup: rm massif.out

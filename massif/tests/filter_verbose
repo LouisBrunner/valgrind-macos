@@ -1,0 +1,12 @@
+#! /bin/sh
+
+# This filters out all the lines that don't have "Massif:" in them.  For
+# testing the -v option.
+
+dir=`dirname $0`
+
+$dir/filter_stderr | 
+
+# Only print lines that contain "Massif:".  The -n means don't print any
+# lines by default, and the 'p' means do print those that match the pattern.
+sed -n "/Massif:/p"

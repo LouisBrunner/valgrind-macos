@@ -2,7 +2,7 @@
 # For AM_FLAG_M3264_PRI
 include $(top_srcdir)/Makefile.flags.am
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
+EXTRA_DIST = \
 	many-xpts.vgperf
 
 check_PROGRAMS = \

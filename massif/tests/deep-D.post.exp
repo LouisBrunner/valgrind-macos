@@ -45,7 +45,7 @@ Number of snapshots: 11
   8            864              864              800            64            0
   9            972              972              900            72            0
 92.59% (900B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->92.59% (900B) 0x........: (below main) (in /lib/libc-2.3.5.so)
+->92.59% (900B) 0x........: (below main) (in /...libc...)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)

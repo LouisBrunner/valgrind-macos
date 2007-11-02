@@ -36,7 +36,25 @@
 //   documentation
 // - write documentation
 // - make --threshold and --peak-inaccuracy fractional
-// - do filename properly, clean up Valgrind-wide log file naming mess
+// - do filename properly, clean up Valgrind-wide log file naming mess.
+//   Expected behaviour:
+//   - Main log file:
+//     default                                      --> stderr
+//     --log-file=X                                 --> X.<pid>
+//     --log-file-exactly=X                         --> X
+//     --log-file-qualifier=QUAL                    --> [error]
+//     --log-file=X --log-file-qualifier=QUAL       --> X.$QUAL
+//   - Massif out file:
+//     default                                      --> cachegrind.out.<pid>
+//     --cg-out-file=X                              --> X.<pid>
+//     --cg-out-file-exactly=X                      --> X
+//     --cg-out-file-qualifier=QUAL                 --> [error]
+//     --cg-out-file=X --cg-out-file-qualifier=QUAL --> X.$QUAL
+//   - Likewise for Cachegrind, but with --cg-out/cg.out.
+//   - And in cg_annotate, remove the --<pid> option.
+//   - Likewise for Callgrind, but with --cl-out/cl.out (?)
+//   - And don't create .1, .2 etc suffixed files.
+//
 // - currently recording asked-for sizes of heap blocks, not actual sizes.
 //   Should add the difference to heap-admin, and change heap-admin name to
 //   something else (heap-extra?).

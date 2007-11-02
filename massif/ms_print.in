@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! @PERL@
 
 ##--------------------------------------------------------------------##
 ##--- Massif's results printer                         ms_print.in ---##
@@ -54,8 +54,8 @@ my $input_file = undef;
 # Tmp file name.
 my $tmp_file = "ms_print.tmp.$$";
 
-# Version number  (XXX: change it when I convert this file to ms_print.in)
-my $version = "XXX";    # "@VERSION@";
+# Version number.
+my $version = "@VERSION@";
 
 # Args passed, for printing.
 my $ms_print_args;

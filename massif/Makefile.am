@@ -2,6 +2,8 @@ include $(top_srcdir)/Makefile.tool.am
 
 SUBDIRS += perf
 
+bin_SCRIPTS = ms_print
+
 noinst_PROGRAMS = 
 if VGP_X86_LINUX
 noinst_PROGRAMS += massif-x86-linux vgpreload_massif-x86-linux.so

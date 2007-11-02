@@ -395,7 +395,11 @@ static Char* TimeUnit_to_string(TimeUnit time_unit)
 }
 
 static Bool clo_heap            = True;
-static UInt clo_heap_admin      = 8;
+   // clo_heap_admin is deliberately a word-sized type.  At one point it was
+   // a UInt, but this caused problems on 64-bit machines when it was
+   // multiplied by a small negative number and then promoted to a
+   // word-sized type -- it ended up with a value of 4.2 billion.  Sigh.
+static SizeT clo_heap_admin     = 8;
 static Bool clo_stacks          = False;
 static UInt clo_depth           = 30;
 static UInt clo_threshold       = 100;     // 100 == 1%

@@ -10,9 +10,9 @@
 using std::nothrow_t;
 
 // A big structure.  Its details don't matter.
-struct s {
-    int array[1000];
-};
+typedef struct {
+           int array[1000];
+        } s;
 
 void* operator new (std::size_t n) throw (std::bad_alloc)
 {
@@ -46,8 +46,8 @@ void operator delete[] (void* p)
 
 int main(void)
 {
-    struct s* p1 = new                struct s;
-    struct s* p2 = new (std::nothrow) struct s;
+    s*        p1 = new                s;
+    s*        p2 = new (std::nothrow) s;
     char*     c1 = new                char[2000];
     char*     c2 = new (std::nothrow) char[2000];
     delete p1;

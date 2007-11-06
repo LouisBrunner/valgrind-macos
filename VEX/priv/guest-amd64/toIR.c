@@ -8979,7 +8979,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* 0F 28 = MOVAPS -- move from E (mem or xmm) to G (xmm). */
    /* 0F 10 = MOVUPS -- move from E (mem or xmm) to G (xmm). */
-   if (haveNo66noF2noF3(pfx) && sz == 4
+   if (haveNo66noF2noF3(pfx) 
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && (insn[1] == 0x28 || insn[1] == 0x10)) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
@@ -9001,7 +9002,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* 0F 29 = MOVAPS -- move from G (xmm) to E (mem or xmm). */
    /* 0F 11 = MOVUPS -- move from G (xmm) to E (mem or xmm). */
-   if (haveNo66noF2noF3(pfx) && sz == 4
+   if (haveNo66noF2noF3(pfx)
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && (insn[1] == 0x29 || insn[1] == 0x11)) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
@@ -9018,7 +9020,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* 0F 16 = MOVHPS -- move from mem to high half of XMM. */
    /* 0F 16 = MOVLHPS -- move from lo half to hi half of XMM. */
-   if (haveNo66noF2noF3(pfx) && sz == 4
+   if (haveNo66noF2noF3(pfx)
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x16) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
@@ -9039,7 +9042,8 @@ DisResult disInstr_AMD64_WRK (
    }
 
    /* 0F 17 = MOVHPS -- move from high half of XMM to mem. */
-   if (haveNo66noF2noF3(pfx) && sz == 4 
+   if (haveNo66noF2noF3(pfx)
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x17) {
       if (!epartIsReg(insn[2])) {
          delta += 2;
@@ -9057,7 +9061,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* 0F 12 = MOVLPS -- move from mem to low half of XMM. */
    /* OF 12 = MOVHLPS -- from from hi half to lo half of XMM. */
-   if (haveNo66noF2noF3(pfx) && sz == 4
+   if (haveNo66noF2noF3(pfx)
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x12) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
@@ -9079,7 +9084,8 @@ DisResult disInstr_AMD64_WRK (
    }
 
    /* 0F 13 = MOVLPS -- move from low half of XMM to mem. */
-   if (haveNo66noF2noF3(pfx) && sz == 4 
+   if (haveNo66noF2noF3(pfx)
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x13) {
       if (!epartIsReg(insn[2])) {
          delta += 2;
@@ -9101,8 +9107,22 @@ DisResult disInstr_AMD64_WRK (
        && insn[0] == 0x0F && insn[1] == 0x50) {
       /* sz == 8 is a kludge to handle insns with REX.W redundantly
          set to 1, which has been known to happen:
+
          4c 0f 50 d9             rex64X movmskps %xmm1,%r11d
-      */
+
+         20071106: Intel docs say that REX.W isn't redundant: when
+         present, a 64-bit register is written; when not present, only
+         the 32-bit half is written.  However, testing on a Core2
+         machine suggests the entire 64 bit register is written
+         irrespective of the status of REX.W.  That could be because
+         of the default rule that says "if the lower half of a 32-bit
+         register is written, the upper half is zeroed".  By using
+         putIReg32 here we inadvertantly produce the same behaviour as
+         the Core2, for the same reason -- putIReg32 implements said
+         rule.
+
+         AMD docs give no indication that REX.W is even valid for this
+         insn. */
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
          Int src;
@@ -9179,7 +9199,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* F3 0F 10 = MOVSS -- move 32 bits from E (mem or lo 1/4 xmm) to G
       (lo 1/4 xmm).  If E is mem, upper 3/4 of G is zeroed out. */
-   if (haveF3no66noF2(pfx) && sz == 4
+   if (haveF3no66noF2(pfx) 
+       && (sz == 4|| /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x10) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
@@ -9703,15 +9724,17 @@ DisResult disInstr_AMD64_WRK (
    /* ---------------------------------------------------- */
 
    /* 66 0F 58 = ADDPD -- add 32Fx4 from R/M to R */
-   if (have66noF2noF3(pfx) && sz == 2 
+   if (have66noF2noF3(pfx) 
+       && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x58) {
       delta = dis_SSE_E_to_G_all( pfx, delta+2, "addpd", Iop_Add64Fx2 );
       goto decode_success;
    }
  
    /* F2 0F 58 = ADDSD -- add 64F0x2 from R/M to R */
-   if (haveF2no66noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x58) {
-      vassert(sz == 4);
+   if (haveF2no66noF3(pfx) 
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
+       && insn[0] == 0x0F && insn[1] == 0x58) {
       delta = dis_SSE_E_to_G_lo64( pfx, delta+2, "addsd", Iop_Add64F0x2 );
       goto decode_success;
    }
@@ -10349,7 +10372,8 @@ DisResult disInstr_AMD64_WRK (
    /* 66 0F 28 = MOVAPD -- move from E (mem or xmm) to G (xmm). */
    /* 66 0F 10 = MOVUPD -- move from E (mem or xmm) to G (xmm). */
    /* 66 0F 6F = MOVDQA -- move from E (mem or xmm) to G (xmm). */
-   if (have66noF2noF3(pfx) && sz == 2 
+   if (have66noF2noF3(pfx) 
+       && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F 
        && (insn[1] == 0x28 || insn[1] == 0x10 || insn[1] == 0x6F)) {
       HChar* wot = insn[1]==0x28 ? "apd" :
@@ -10614,6 +10638,7 @@ DisResult disInstr_AMD64_WRK (
       /* sz == 8 is a kludge to handle insns with REX.W redundantly
          set to 1, which has been known to happen:
          66 4c 0f 50 d9          rex64X movmskpd %xmm1,%r11d
+         20071106: see further comments on MOVMSKPS implementation above.
       */
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
@@ -10718,8 +10743,9 @@ DisResult disInstr_AMD64_WRK (
 
    /* 66 0F D6 = MOVQ -- move 64 bits from G (lo half xmm) to E (mem
       or lo half xmm).  */
-   if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0xD6) {
-      vassert(sz == 2);
+   if (have66noF2noF3(pfx) 
+       && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
+       && insn[0] == 0x0F && insn[1] == 0xD6) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
          /* fall through, awaiting test case */
@@ -10758,10 +10784,12 @@ DisResult disInstr_AMD64_WRK (
    /* F2 0F 10 = MOVSD -- move 64 bits from E (mem or lo half xmm) to
       G (lo half xmm).  If E is mem, upper half of G is zeroed out.
       If E is reg, upper half of G is unchanged. */
-   if ( (haveF2no66noF3(pfx) && sz == 4 
+   if ( (haveF2no66noF3(pfx) 
+         && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
          && insn[0] == 0x0F && insn[1] == 0x10)
         || 
-        (haveF3no66noF2(pfx) && sz == 4 
+        (haveF3no66noF2(pfx) 
+         && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
          && insn[0] == 0x0F && insn[1] == 0x7E)
       ) {
       modrm = getUChar(delta+2);
@@ -10789,7 +10817,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* F2 0F 11 = MOVSD -- move 64 bits from G (lo half xmm) to E (mem
       or lo half xmm). */
-   if (haveF2no66noF3(pfx) && sz == 4
+   if (haveF2no66noF3(pfx) 
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x11) {
       modrm = getUChar(delta+2);
       if (epartIsReg(modrm)) {
@@ -10806,14 +10835,16 @@ DisResult disInstr_AMD64_WRK (
    }
 
    /* 66 0F 59 = MULPD -- mul 64Fx2 from R/M to R */
-   if (have66noF2noF3(pfx) && sz == 2
+   if (have66noF2noF3(pfx) 
+       && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x59) {
       delta = dis_SSE_E_to_G_all( pfx, delta+2, "mulpd", Iop_Mul64Fx2 );
       goto decode_success;
    }
 
    /* F2 0F 59 = MULSD -- mul 64F0x2 from R/M to R */
-   if (haveF2no66noF3(pfx) && sz == 4
+   if (haveF2no66noF3(pfx) 
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x59) {
       delta = dis_SSE_E_to_G_lo64( pfx, delta+2, "mulsd", Iop_Mul64F0x2 );
       goto decode_success;
@@ -10900,8 +10931,9 @@ DisResult disInstr_AMD64_WRK (
    }
 
    /* F2 0F 5C = SUBSD -- sub 64F0x2 from R/M to R */
-   if (haveF2no66noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x5C) {
-      vassert(sz == 4);
+   if (haveF2no66noF3(pfx) 
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
+       && insn[0] == 0x0F && insn[1] == 0x5C) {
       delta = dis_SSE_E_to_G_lo64( pfx, delta+2, "subsd", Iop_Sub64F0x2 );
       goto decode_success;
    }
@@ -12091,7 +12123,8 @@ DisResult disInstr_AMD64_WRK (
 
    /* F2 0F 12 = MOVDDUP -- move from E (mem or xmm) to G (xmm),
       duplicating some lanes (0:1:0:1). */
-   if (haveF2no66noF3(pfx) && sz == 4 
+   if (haveF2no66noF3(pfx) 
+       && (sz == 4 || /* ignore redundant REX.W */ sz == 8)
        && insn[0] == 0x0F && insn[1] == 0x12) {
       IRTemp sV = newTemp(Ity_V128);
       IRTemp d0 = newTemp(Ity_I64);

@@ -10,6 +10,10 @@ PRI: 32  = fix this for 3.2.2
      Vfd = fix has been verified on 3.2.X branch
      s93 = possible SuSE 9.3 amd64 assembler bug
 
+Add regtest for #149519.
+
+ppc32-linux getitimer w/ patch, devs@, 3 Sept.
+
 r6783/6784  x86_linux_REDIR_FOR_index() broken (Fri Jul 27)
 
 priv/guest-amd64/toIR.c:2512 (dis_op2_E_G): Assertion `0' failed.

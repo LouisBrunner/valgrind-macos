@@ -138,6 +138,8 @@ xmltex
   tetex
   xaw3d
 passivetex
+xpdf
+  xpdf-tools
 
 pdfxmltex still bombs when building the print docs.  On SuSE 10.1 I
 edited /etc/texmf/web2c/texmf.cnf and changed

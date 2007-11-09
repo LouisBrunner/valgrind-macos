@@ -36,7 +36,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	shrld.stderr.exp shrld.stdout.exp shrld.vgtest \
 	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
-	slahf-amd64.stderr.vgtest
+	slahf-amd64.vgtest
 
 
 check_PROGRAMS = \

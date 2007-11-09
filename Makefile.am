@@ -9,17 +9,18 @@ TOOLS =		memcheck \
 		massif \
 		lackey \
 		none \
+		helgrind \
 		exp-omega
 
-# Temporary: we want to compile Helgrind, but not regtest it.
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.
-SUBDIRS = include coregrind . tests perf auxprogs $(TOOLS) helgrind docs
+SUBDIRS = include coregrind . tests perf auxprogs $(TOOLS) docs
 DIST_SUBDIRS  = $(SUBDIRS)
 
 SUPP_FILES = \
 	glibc-2.2.supp glibc-2.3.supp glibc-2.4.supp glibc-2.5.supp \
-	glibc-2.6.supp aix5libc.supp xfree-3.supp xfree-4.supp
+	glibc-2.6.supp aix5libc.supp xfree-3.supp xfree-4.supp \
+	glibc-2.X-helgrind.supp
 
 dist_val_DATA = $(SUPP_FILES) default.supp
 

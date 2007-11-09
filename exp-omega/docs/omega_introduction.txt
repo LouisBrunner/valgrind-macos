@@ -1,0 +1,95 @@
+Title
+=====
+Omega - A Valgrind tool for instant memory leak detection.
+Designed by Bryan "Brain Murders" Meredith with grateful thanks to the Valgrind team for making their tool and techniques available under the GPL and my employer Apertio (www.apertio.com) for allowing the use of their time, equipment for 64bit testing and providing moral support.
+
+Synopsis
+========
+Whilst Valgrind's MemCheck tool can currently detect and report that a memory leak has occurred, the debugging output only shows where the memory that has leaked was allocated. There are no clues as to where the last reference to the allocated block was lost. Omega uses a modified version of MemCheck's "definedness" ('V' bit tracking) technique in order to help track pointers to allocated memory, outputting debugging information when the final (hence Omega) pointer to an allocated block is over-written or lost through a call to free() or the stack unwinding.
+
+How it Works
+============
+The main task in tracking leaks is when a checking whenever a value is written into memory or a register. This can result in the creation of a new reference to an allocated block, the destruction of a current reference to an allocated block or both. If we determine that either the register to be written or the memory location to be written contains a pointer that we are tracking, we update our tracking system and report if we are losing the last pointer to a block.
+
+Because checking every single write to memory causes a huge overhead, we make a couple of assumptions about what constitutes a pointer in order to reduce hash table lookups of the internal data. In order to optimise checking for pointers during free() and stack unwinding, we maintain a set of PBits (Pointer Bits) that allow us to quickly check a range of addresses for pointers that will be lost.
+
+A Simple Example
+----------------
+The program under test calls malloc (or one of the other heap allocation functions). We generate an internal record to track the address and size of the new block.
+
+At each time we write to memory or a register is loaded, we check to see if we have a tracked pointer record for the location about to be written. If so, we remove this record and decrement the reference count for the block that it pointed to, generating an alarm if this was the last reference. We check if the value that we are writing matches the address of an allocated block. If we get a match, we add a tracked pointer record for the written address and increment the reference count. To speed things up, the internal records are stored in hash tables.
+
+When we call free (or one of the other heap de-allocation functions), we do cleanup processing on our internal record. There are two key activities that must be performed at this point.
+
+1) Clear and deallocate any hanging pointers.
+2) Recursively remove references to any pointers that are within the memory area that we are about to free.
+
+As an option, during stage 1 we could report on the hanging pointers.
+
+Note that stack unwinding also performs stage 2 to ensure that we don't leak through automatic variables going out of scope.
+
+'P' bit Propagation
+-------------------
+Each time we see an address of a memory block being written into an address or register, in addition to setting up the tracked pointer record, we also set a PBit to show that there is a tracked record for the address. By using PBit lookups and caching the PBit nodes between lookups (along with a dedicated PBit node for registers) we can get a significant performance gain. The time when PBits really come into their own is when we need to clear all of the tracked pointer records from a range of memory ie. invalidating the stack, calling free(). Using the PBit mechanism, we can check upto 64K in one go. This can be a huge gain as many structures do not hold nested pointers to allocated memory.
+
+Stuff that I really want to add
+===============================
+Client Calls - This would allow us to track client based memory pool implementations, MALLOC_LIKE_BLOCK() etc.
+Summary Report - I want some feedback on what the output of the Omega should be so watch this space.
+Suppression Support - I don't know how much this is needed but it would probably be worthwhile.
+
+What We Can Detect
+==================
+Using the above techniques, we can track the following leaks:
+
+Simple over-write of a tracked pointer.
+lastP = blah;
+
+Tracked pointer being modified (we wont raise a leak report on this - we will track the offset within the block - see "Shadowing").
+lastP++;
+
+Automatic variable going out of scope.
+{
+  void *lastP = malloc(64);
+  return;
+}
+
+Tracked pointer within allocated block being returned to OS.
+{
+  void *arrayP = malloc(10 * sizeof(void *));
+
+  arrayP[1] = malloc(64);
+  free(arrayP);
+}
+
+Shadowing
+=========
+This helps to solve the problem of where a program does its own memory management of the kind:
+
+1   secret *foo = malloc(sizeof(bar) + sizeof(secret) + alignment_correction);
+2   foo->secret_stuff = magic_key;
+3       etc.
+4   foo++;
+5   return (bar*)foo;
+
+If the  pointer to foo is shadowed at some internal offset to the block start, we create a shadow record and link it to the main block so that we can track references to either. Without this we do a leak alert at line 4 instead which is undesireable. There can only be one shadow to a block unless we really need more and someone wants to code it and send me a patch.
+
+
+What We Don't Detect
+--------------------
+Actually, we do pretty well here but there are a couple of things you need to know about.
+
+1) We track pointers in registers. Therefore, whilst the final code reference (on the stack say) may be lost, the pointer can (and does) live on within a register until the register is overwritten. The best way to help prevent this from making late reports is to compile with -O0. On x86, this makes quite a difference, especially to non-trivial functions.
+
+2) Some code is a little naughty when it comes to memory blocks that have been returned to the OS. Memcheck reports these read accesses to free()ed blocks as illegal reads. Omega also reports them as it gets annoyed when it has just reported a block as leaked only for a pointer to appear from "no-where". (Calling free() on a block does not erase the contents of the block so even though Omega removes all tracked pointer records for addresses within the block, the pointers themselves still exist. Once one of these pointers is read, Omega tracks it being loaded into a register at which point, it complains and resumes tracking the "leaked" block.)
+
+What Next?
+==========
+Feedback!!!
+
+The core of the tool is done and working. Now I need feedback from anyone out there that is interested in using it so I can make the output as usefull as it can be.
+
+If anyone is interested in helping me out on this, send your patches. I hope to get this accepted into Valgrind so it can get some serious attention but I dont know if that will happen so I will try to maintain a patch against svn or a tar of the whole thing if that gets too troublesome.
+
+Bryan "Brain Murders" Meredith
+Feel free to email me about this at omega at brainmurders d eclipse d co d uk so I can sort the incoming mail.

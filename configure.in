@@ -994,6 +994,9 @@ AC_OUTPUT(
    none/tests/ppc64/Makefile
    none/tests/x86/Makefile
    none/docs/Makefile
+   exp-omega/Makefile
+   exp-omega/tests/Makefile
+   exp-omega/docs/Makefile
 ) 
 
 cat<<EOF

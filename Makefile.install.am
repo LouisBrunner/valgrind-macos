@@ -1,4 +1,15 @@
 
+# What the first for loop does: it copies a bunch of files which names
+# of the form wurble-arch-os to $prefix/lib/valgrind/arch-os/wurble.
+# There is some complexity in the sed mangling because wurble may itself
+# contain a dash, which must be ignored.  For example we want
+#    exp-omega-x86-linux
+# to be installed in 
+#    $prefix/lib/valgrind/x86-linux/exp-omega
+# and not in
+#    $prefix/lib/valgrind/omega-x86-linux/exp
+# or similarly mutant place.
+
 # What the second for loop does: it copies libcoregrind.a and libvex.a
 # into the correct (target-specific) lib dirs at install time.
 # $(noinst_LIBRARIES) will look like this:
@@ -12,10 +23,10 @@
 install-exec-local:
 	if [ -n "$(noinst_PROGRAMS)" ] ; then \
 	  for f in $(noinst_PROGRAMS); do \
-	    p=`echo $$f | sed -e 's/^[^-]*-//' -e 's/\..*$$//'`; \
-	    n=`echo $$f | sed -e 's/-[^-]\{1,\}-[^-.]\{1,\}//'`; \
-	    $(mkinstalldirs) $(DESTDIR)$(valdir)/$$p; \
-	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir)/$$p/$$n; \
+	    name=`echo $$f | sed -e 's/-\([^-]*-[^-.]*\)\(\..*\)\?$$/\2/'`; \
+	    plat=`echo $$f | sed -e 's/^.*-\([^-]*-[^-.]*\)\(\..*\)\?$$/\1/'`; \
+	    $(mkinstalldirs) $(DESTDIR)$(valdir)/$$plat; \
+	    $(INSTALL_PROGRAM) $$f $(DESTDIR)$(valdir)/$$plat/$$name; \
 	  done ; \
 	fi ; \
 	if [ -n "$(noinst_LIBRARIES)" ] ; then \
@@ -24,7 +35,8 @@ install-exec-local:
 	      pU=`echo $$f | sed -e 's/libcoregrind_//g' -e 's/\.a//g'` ; \
 	      pD=`echo $$pU | sed -e 's/_/-/g'` ; \
 	      $(INSTALL_DATA) $$f $(DESTDIR)$(valdir)/$$pD/libcoregrind.a ; \
-	      $(INSTALL_DATA) @VEX_DIR@/libvex_$$pU.a $(DESTDIR)$(valdir)/$$pD/libvex.a ; \
+	      $(INSTALL_DATA) @VEX_DIR@/libvex_$$pU.a \
+				$(DESTDIR)$(valdir)/$$pD/libvex.a ; \
 	    fi ; \
 	  done ; \
 	fi

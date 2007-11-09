@@ -1,0 +1,44 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<chapter id="o-manual" xreflabel="Omega">
+
+<title>Omega: an instant memory leak detector</title>
+
+<para>Omega is a Valgrind tool that traces pointers to memory
+      allocations and produces debug output as the last reference
+      is removed to a block that has not been de-allocated.</para>
+
+<para>Omega works by tracking pointers with the use of p-bits.
+      In similar fashion to the methods used by memcheck and
+      addrcheck, each memory location is flagged by a p-bit which
+      indicates if the location is holding a pointer to an allocated
+      block. Since pointers are multibyte, we gain by only requiring
+      a single p-bit per pointer thus needing one p-bit per 4 bytes
+      on 32bit machines and one p-bit per 8 bytes on 64bit
+      architectures.</para>
+
+<para>Whilst this simplifies and reduces the memory footprint of
+      one aspect of the tracking methodology, the other aspect can be
+      a bit of a memory hog. As each block is allocated, we need to
+      maintain data about the block and hold back-references to any
+      live pointers. There are various ways of doing this and as the
+      tool evolves further upon its release, doubtless you will all
+      improve upon it (and that's why I love open source).</para>
+
+<para>This tool has been checked against the simple test cases in
+      the tests directory. Again, you will all have many more that
+      can be added.</para>
+
+<para>Note that in order to reduce the overheads that this tool
+      incurs, it is assumed that the only problems left are memory
+      leaks. This assumption allows many corner cases to be left
+      un-coded. As we stumble upon those that cannot be avoided,
+      they can be added. A major assumption in the tracking is
+      that all pointers are aligned in memory. If this one fails,
+      the tracking code will have to be re-jigged.</para>
+
+<para>Bryan "Brain Murders" Meredith, 2006</para>
+
+</chapter>

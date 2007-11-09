@@ -8,7 +8,8 @@ TOOLS =		memcheck \
 		callgrind \
 		massif \
 		lackey \
-		none
+		none \
+		exp-omega
 
 # Temporary: we want to compile Helgrind, but not regtest it.
 # Put docs last because building the HTML is slow and we want to get

@@ -759,6 +759,7 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
 
    vg_assert( VG_(args_for_client) );
    vg_assert( VG_(args_for_valgrind) );
+   vg_assert( toolname );
 
    if (VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, "<?xml version=\"1.0\"?>");
@@ -783,6 +784,16 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
                       ? (Char*)"" : VG_(details).version,
                    VG_(details).description,
                    xpost);
+
+      if (VG_(strlen)(toolname) >= 4 
+          && 0 == VG_(strncmp)(toolname, "exp-", 4)) {
+         VG_(message)(
+            Vg_UserMsg,
+            "%sNOTE: This is an Experimental-Class Valgrind Tool.%s",
+            xpre, xpost
+         );
+      }
+
       VG_(message)(Vg_UserMsg, "%s%s%s", 
                                xpre, VG_(details).copyright_author, xpost);
 

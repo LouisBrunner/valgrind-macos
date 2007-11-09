@@ -1963,7 +1963,7 @@ void make_redzone_AbiHint ( VexAbiInfo* vbi, IRTemp new_rsp, HChar* who )
 /*------------------------------------------------------------*/
 
 static 
-HChar* sorbTxt ( Prefix pfx )
+HChar* segRegTxt ( Prefix pfx )
 {
    if (pfx & PFX_CS) return "%cs:";
    if (pfx & PFX_DS) return "%ds:";
@@ -2115,7 +2115,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
       case 0x00: case 0x01: case 0x02: case 0x03: 
       /* ! 04 */ /* ! 05 */ case 0x06: case 0x07:
          { UChar rm = toUChar(mod_reg_rm & 7);
-           DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegRexB(8,pfx,rm));
+           DIS(buf, "%s(%s)", segRegTxt(pfx), nameIRegRexB(8,pfx,rm));
            *len = 1;
            return disAMode_copy2tmp(
                   handleAddrOverrides(pfx, getIRegRexB(8,pfx,rm)));
@@ -2129,9 +2129,9 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
          { UChar rm = toUChar(mod_reg_rm & 7);
            Long d   = getSDisp8(delta);
            if (d == 0) {
-              DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegRexB(8,pfx,rm));
+              DIS(buf, "%s(%s)", segRegTxt(pfx), nameIRegRexB(8,pfx,rm));
            } else {
-              DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegRexB(8,pfx,rm));
+              DIS(buf, "%s%lld(%s)", segRegTxt(pfx), d, nameIRegRexB(8,pfx,rm));
            }
            *len = 2;
            return disAMode_copy2tmp(
@@ -2146,7 +2146,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
       /* ! 14 */ case 0x15: case 0x16: case 0x17:
          { UChar rm = toUChar(mod_reg_rm & 7);
            Long  d  = getSDisp32(delta);
-           DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegRexB(8,pfx,rm));
+           DIS(buf, "%s%lld(%s)", segRegTxt(pfx), d, nameIRegRexB(8,pfx,rm));
            *len = 5;
            return disAMode_copy2tmp(
                   handleAddrOverrides(pfx,
@@ -2164,7 +2164,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
       case 0x05: 
          { Long d = getSDisp32(delta);
            *len = 5;
-           DIS(buf, "%s%lld(%%rip)", sorbTxt(pfx), d);
+           DIS(buf, "%s%lld(%%rip)", segRegTxt(pfx), d);
            /* We need to know the next instruction's start address.
               Try and figure out what it is, record the guess, and ask
               the top-level driver logic (bbToIR_AMD64) to check we
@@ -2207,11 +2207,11 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
 
          if ((!index_is_SP) && (!base_is_BPor13)) {
             if (scale == 0) {
-               DIS(buf, "%s(%s,%s)", sorbTxt(pfx), 
+               DIS(buf, "%s(%s,%s)", segRegTxt(pfx), 
                          nameIRegRexB(8,pfx,base_r), 
                          nameIReg64rexX(pfx,index_r));
             } else {
-               DIS(buf, "%s(%s,%s,%d)", sorbTxt(pfx), 
+               DIS(buf, "%s(%s,%s,%d)", segRegTxt(pfx), 
                          nameIRegRexB(8,pfx,base_r), 
                          nameIReg64rexX(pfx,index_r), 1<<scale);
             }
@@ -2227,7 +2227,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
 
          if ((!index_is_SP) && base_is_BPor13) {
             Long d = getSDisp32(delta);
-            DIS(buf, "%s%lld(,%s,%d)", sorbTxt(pfx), d, 
+            DIS(buf, "%s%lld(,%s,%d)", segRegTxt(pfx), d, 
                       nameIReg64rexX(pfx,index_r), 1<<scale);
             *len = 6;
             return
@@ -2240,7 +2240,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
          }
 
          if (index_is_SP && (!base_is_BPor13)) {
-            DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegRexB(8,pfx,base_r));
+            DIS(buf, "%s(%s)", segRegTxt(pfx), nameIRegRexB(8,pfx,base_r));
             *len = 2;
             return disAMode_copy2tmp(
                    handleAddrOverrides(pfx, getIRegRexB(8,pfx,base_r)));
@@ -2248,7 +2248,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
 
          if (index_is_SP && base_is_BPor13) {
             Long d = getSDisp32(delta);
-            DIS(buf, "%s%lld", sorbTxt(pfx), d);
+            DIS(buf, "%s%lld", segRegTxt(pfx), d);
             *len = 6;
             return disAMode_copy2tmp(
                    handleAddrOverrides(pfx, mkU64(d)));
@@ -2274,7 +2274,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
          Long d        = getSDisp8(delta+1);
 
          if (index_r == R_RSP && 0==getRexX(pfx)) {
-            DIS(buf, "%s%lld(%s)", sorbTxt(pfx), 
+            DIS(buf, "%s%lld(%s)", segRegTxt(pfx), 
                                    d, nameIRegRexB(8,pfx,base_r));
             *len = 3;
             return disAMode_copy2tmp(
@@ -2282,11 +2282,11 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
                       binop(Iop_Add64, getIRegRexB(8,pfx,base_r), mkU64(d)) ));
          } else {
             if (scale == 0) {
-               DIS(buf, "%s%lld(%s,%s)", sorbTxt(pfx), d, 
+               DIS(buf, "%s%lld(%s,%s)", segRegTxt(pfx), d, 
                          nameIRegRexB(8,pfx,base_r), 
                          nameIReg64rexX(pfx,index_r));
             } else {
-               DIS(buf, "%s%lld(%s,%s,%d)", sorbTxt(pfx), d, 
+               DIS(buf, "%s%lld(%s,%s,%d)", segRegTxt(pfx), d, 
                          nameIRegRexB(8,pfx,base_r), 
                          nameIReg64rexX(pfx,index_r), 1<<scale);
             }
@@ -2321,7 +2321,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
          Long d        = getSDisp32(delta+1);
 
          if (index_r == R_RSP && 0==getRexX(pfx)) {
-            DIS(buf, "%s%lld(%s)", sorbTxt(pfx), 
+            DIS(buf, "%s%lld(%s)", segRegTxt(pfx), 
                                    d, nameIRegRexB(8,pfx,base_r));
             *len = 6;
             return disAMode_copy2tmp(
@@ -2329,11 +2329,11 @@ IRTemp disAMode ( Int* len, Prefix pfx, Long delta,
                       binop(Iop_Add64, getIRegRexB(8,pfx,base_r), mkU64(d)) ));
          } else {
             if (scale == 0) {
-               DIS(buf, "%s%lld(%s,%s)", sorbTxt(pfx), d, 
+               DIS(buf, "%s%lld(%s,%s)", segRegTxt(pfx), d, 
                          nameIRegRexB(8,pfx,base_r), 
                          nameIReg64rexX(pfx,index_r));
             } else {
-               DIS(buf, "%s%lld(%s,%s,%d)", sorbTxt(pfx), d, 
+               DIS(buf, "%s%lld(%s,%s,%d)", segRegTxt(pfx), d, 
                          nameIRegRexB(8,pfx,base_r), 
                          nameIReg64rexX(pfx,index_r), 1<<scale);
             }
@@ -8299,6 +8299,96 @@ static IRExpr* mk64from16s ( IRTemp t3, IRTemp t2,
 }
 
 
+/* Helper for deciding whether a given insn (starting at the opcode
+   byte) may validly be used with a LOCK prefix.  The following insns
+   may be used with LOCK when their destination operand is in memory.
+   Note, this is slightly too permissive.  Oh well.  Note also, AFAICS
+   this is exactly the same for both 32-bit and 64-bit mode.
+
+   ADD        80 /0,  81 /0,  83 /0,  00, 01, 02, 03
+   OR         80 /1,  81 /1,  83 /1,  08, 09, 0A, 0B
+   ADC        80 /2,  81 /2,  83 /2,  10, 11, 12, 13
+   SBB        81 /3,  81 /3,  83 /3,  18, 19, 1A, 1B
+   AND        80 /4,  81 /4,  83 /4,  20, 21, 22, 23
+   SUB        80 /5,  81 /5,  83 /5,  28, 29, 2A, 2B
+   XOR        80 /6,  81 /6,  83 /6,  30, 31, 32, 33
+
+   DEC        FE /1,  FF /1
+   INC        FE /0,  FF /0
+
+   NEG        F6 /3,  F7 /3
+   NOT        F6 /2,  F7 /2
+
+   XCHG       86, 87 
+
+   BTC        0F BB,  0F BA /7
+   BTR        0F B3,  0F BA /6
+   BTS        0F AB,  0F BA /5
+
+   CMPXCHG    0F B0,  0F B1
+   CMPXCHG8B  0F C7 /1
+
+   XADD       0F C0,  0F C1
+*/
+static Bool can_be_used_with_LOCK_prefix ( UChar* opc )
+{
+   switch (opc[0]) {
+      case 0x00: case 0x01: case 0x02: case 0x03: return True;
+      case 0x08: case 0x09: case 0x0A: case 0x0B: return True;
+      case 0x10: case 0x11: case 0x12: case 0x13: return True;
+      case 0x18: case 0x19: case 0x1A: case 0x1B: return True;
+      case 0x20: case 0x21: case 0x22: case 0x23: return True;
+      case 0x28: case 0x29: case 0x2A: case 0x2B: return True;
+      case 0x30: case 0x31: case 0x32: case 0x33: return True;
+
+      case 0x80: case 0x81: case 0x83:
+         if (gregLO3ofRM(opc[1]) >= 0 && gregLO3ofRM(opc[1]) <= 6) 
+            return True;
+         break;
+
+      case 0xFE: case 0xFF:
+         if (gregLO3ofRM(opc[1]) >= 0 && gregLO3ofRM(opc[1]) <= 1) 
+            return True;
+         break;
+
+      case 0xF6: case 0xF7:
+         if (gregLO3ofRM(opc[1]) >= 2 && gregLO3ofRM(opc[1]) <= 3) 
+            return True;
+         break;
+
+      case 0x86: case 0x87:
+         return True;
+
+      case 0x0F: {
+         switch (opc[1]) {
+            case 0xBB: case 0xB3: case 0xAB:
+               return True;
+            case 0xBA: 
+               if (gregLO3ofRM(opc[2]) >= 5 && gregLO3ofRM(opc[2]) <= 7) 
+                  return True;
+               break;
+            case 0xB0: case 0xB1:
+               return True;
+            case 0xC7: 
+               if (gregLO3ofRM(opc[2]) == 1) 
+                  return True;
+               break;
+            case 0xC0: case 0xC1:
+               return True;
+            default:
+               break;
+         } /* switch (opc[1]) */
+         break;
+      }
+
+      default:
+         break;
+   } /* switch (opc[0]) */
+
+   return False;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
@@ -8340,6 +8430,9 @@ DisResult disInstr_AMD64_WRK (
 
    /* pfx holds the summary of prefixes. */
    Prefix pfx = PFX_EMPTY;
+
+   /* do we need follow the insn with MBusEvent(BusUnlock) ? */
+   Bool unlock_bus_after_insn = False;
 
    /* Set result defaults. */
    dres.whatNext   = Dis_Continue;
@@ -8477,17 +8570,40 @@ DisResult disInstr_AMD64_WRK (
    /* Kludge re LOCK prefixes.  We assume here that all code generated
       by Vex is going to be run in a single-threaded context, in other
       words that concurrent executions of Vex-generated translations
-      will not happen.  That is certainly the case for how the
-      Valgrind-3.0 code line uses Vex.  Given that assumption, it
-      seems safe to ignore LOCK prefixes since there will never be any
-      other thread running at the same time as this one.  However, at
-      least emit a memory fence on the basis that it would at least be
-      prudent to flush any memory transactions from this thread as far
-      as possible down the memory hierarchy. */
+      will not happen.  So we don't need to worry too much about
+      preserving atomicity.  However, mark the fact that the notional
+      hardware bus lock is being acquired (and, after the insn,
+      released), so that thread checking tools know this is a locked
+      insn. 
+
+      We check for, and immediately reject, (most) inappropriate uses
+      of the LOCK prefix.  Later (at decode_failure: and
+      decode_success:), if we've added a BusLock event, then we will
+      follow up with a BusUnlock event.  How do we know execution will
+      actually ever get to the BusUnlock event?  Because
+      can_be_used_with_LOCK_prefix rejects all control-flow changing
+      instructions.
+
+      One loophole, though: if a LOCK prefix insn (seg)faults, then
+      the BusUnlock event will never be reached.  This could cause
+      tools which track bus hardware lock to lose track.  Really, we
+      should explicitly release the lock after every insn, but that's
+      obviously way too expensive.  Really, any tool which tracks the
+      state of the bus lock needs to ask V's core/tool interface to
+      notify it of signal deliveries.  On delivery of SIGSEGV to the
+      guest, the tool will be notified, in which case it should
+      release the bus hardware lock if it is held.
+
+      Note, guest-x86/toIR.c contains identical logic.
+   */
    if (pfx & PFX_LOCK) {
-      /* vex_printf("vex amd64->IR: ignoring LOCK prefix on: ");
-         insn_verbose = True; */
-      stmt( IRStmt_MFence() );
+      if (can_be_used_with_LOCK_prefix( (UChar*)&guest_code[delta] )) {
+         stmt( IRStmt_MBE(Imbe_BusLock) );
+         unlock_bus_after_insn = True;
+         DIP("lock ");
+      } else {
+         goto decode_failure;
+      }
    }
 
 
@@ -9557,7 +9673,7 @@ DisResult disInstr_AMD64_WRK (
       delta += 3;
       /* Insert a memory fence.  It's sometimes important that these
          are carried through to the generated code. */
-      stmt( IRStmt_MFence() );
+      stmt( IRStmt_MBE(Imbe_Fence) );
       DIP("sfence\n");
       goto decode_success;
    }
@@ -10336,7 +10452,7 @@ DisResult disInstr_AMD64_WRK (
       delta += 3;
       /* Insert a memory fence.  It's sometimes important that these
          are carried through to the generated code. */
-      stmt( IRStmt_MFence() );
+      stmt( IRStmt_MBE(Imbe_Fence) );
       DIP("%sfence\n", gregLO3ofRM(insn[2])==5 ? "l" : "m");
       goto decode_success;
    }
@@ -12796,7 +12912,7 @@ DisResult disInstr_AMD64_WRK (
       assign( addr, handleAddrOverrides(pfx, mkU64(d64)) );
       putIRegRAX(sz, loadLE( ty, mkexpr(addr) ));
       DIP("mov%c %s0x%llx, %s\n", nameISize(sz), 
-                                  sorbTxt(pfx), d64,
+                                  segRegTxt(pfx), d64,
                                   nameIRegRAX(sz));
       break;
 
@@ -12814,7 +12930,7 @@ DisResult disInstr_AMD64_WRK (
       assign( addr, handleAddrOverrides(pfx, mkU64(d64)) );
       storeLE( mkexpr(addr), getIRegRAX(sz) );
       DIP("mov%c %s, %s0x%llx\n", nameISize(sz), nameIRegRAX(sz),
-                                  sorbTxt(pfx), d64);
+                                  segRegTxt(pfx), d64);
       break;
 
    /* XXXX be careful here with moves to AH/BH/CH/DH */
@@ -13644,6 +13760,12 @@ DisResult disInstr_AMD64_WRK (
 
    /* ------------------------ XCHG ----------------------- */
 
+   /* XCHG reg,mem automatically asserts LOCK# even without a LOCK
+      prefix.  Therefore, surround it with a IRStmt_MBE(Imbe_BusLock)
+      and IRStmt_MBE(Imbe_BusUnlock) pair.  But be careful; if it is
+      used with an explicit LOCK prefix, we don't want to end up with
+      two IRStmt_MBE(Imbe_BusLock)s -- one made here and one made by
+      the generic LOCK logic at the top of disInstr. */
    case 0x86: /* XCHG Gb,Eb */
       sz = 1;
       /* Fall through ... */
@@ -13662,6 +13784,18 @@ DisResult disInstr_AMD64_WRK (
              nameISize(sz), nameIRegG(sz, pfx, modrm), 
                             nameIRegE(sz, pfx, modrm));
       } else {
+         /* Need to add IRStmt_MBE(Imbe_BusLock). */
+         if (pfx & PFX_LOCK) {
+            /* check it's already been taken care of */
+            vassert(unlock_bus_after_insn);
+         } else {
+            vassert(!unlock_bus_after_insn);
+            stmt( IRStmt_MBE(Imbe_BusLock) );
+            unlock_bus_after_insn = True;
+         }
+         /* Because unlock_bus_after_insn is now True, generic logic
+            at the bottom of disInstr will add the
+            IRStmt_MBE(Imbe_BusUnlock). */
          addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
          assign( t1, loadLE(ty, mkexpr(addr)) );
          assign( t2, getIRegG(sz, pfx, modrm) );
@@ -14169,7 +14303,7 @@ DisResult disInstr_AMD64_WRK (
          stmt( IRStmt_Dirty(d) );
          /* CPUID is a serialising insn.  So, just in case someone is
             using it as a memory fence ... */
-         stmt( IRStmt_MFence() );
+         stmt( IRStmt_MBE(Imbe_Fence) );
          DIP("cpuid\n");
          break;
       }
@@ -14533,6 +14667,8 @@ DisResult disInstr_AMD64_WRK (
       insn, but nevertheless be paranoid and update it again right
       now. */
    stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_RIP_curr_instr) ) );
+   if (unlock_bus_after_insn)
+      stmt( IRStmt_MBE(Imbe_BusUnlock) );
    jmp_lit(Ijk_NoDecode, guest_RIP_curr_instr);
    dres.whatNext = Dis_StopHere;
    dres.len      = 0;
@@ -14543,6 +14679,8 @@ DisResult disInstr_AMD64_WRK (
   decode_success:
    /* All decode successes end up here. */
    DIP("\n");
+   if (unlock_bus_after_insn)
+      stmt( IRStmt_MBE(Imbe_BusUnlock) );
    dres.len = (Int)toUInt(delta - delta_start);
    return dres;
 }

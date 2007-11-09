@@ -229,8 +229,8 @@
    float, or a vector (SIMD) value. */
 typedef 
    enum { 
-      Ity_INVALID=0x10FFF,
-      Ity_I1=0x11000, 
+      Ity_INVALID=0x11000,
+      Ity_I1, 
       Ity_I8, 
       Ity_I16, 
       Ity_I32, 
@@ -254,8 +254,8 @@ extern Int sizeofIRType ( IRType );
 /* IREndness is used in load IRExprs and store IRStmts. */
 typedef
    enum { 
-      Iend_LE=22, /* little endian */
-      Iend_BE=33  /* big endian */
+      Iend_LE=0x12000, /* little endian */
+      Iend_BE          /* big endian */
    }
    IREndness;
 
@@ -267,7 +267,7 @@ typedef
 /* The various kinds of constant. */
 typedef
    enum { 
-      Ico_U1=0x12000,
+      Ico_U1=0x13000,
       Ico_U8, 
       Ico_U16, 
       Ico_U32, 
@@ -406,7 +406,7 @@ typedef
       /* -- Do not change this ordering.  The IR generators rely on
             (eg) Iop_Add64 == IopAdd8 + 3. -- */
 
-      Iop_INVALID=0x13000,
+      Iop_INVALID=0x14000,
       Iop_Add8,  Iop_Add16,  Iop_Add32,  Iop_Add64,
       Iop_Sub8,  Iop_Sub16,  Iop_Sub32,  Iop_Sub64,
       /* Signless mul.  MullS/MullU is elsewhere. */
@@ -884,7 +884,7 @@ typedef
    in the comments for IRExpr. */
 typedef
    enum { 
-      Iex_Binder,
+      Iex_Binder=0x15000,
       Iex_Get,
       Iex_GetI,
       Iex_RdTmp,
@@ -1181,7 +1181,7 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
 */
 typedef
    enum { 
-      Ijk_Boring=0x14000, /* not interesting; just goto next */
+      Ijk_Boring=0x16000, /* not interesting; just goto next */
       Ijk_Call,           /* guest is doing a call */
       Ijk_Ret,            /* guest is doing a return */
       Ijk_ClientReq,      /* do guest client req before continuing */
@@ -1254,7 +1254,7 @@ extern void ppIRJumpKind ( IRJumpKind );
 /* Effects on resources (eg. registers, memory locations) */
 typedef
    enum {
-      Ifx_None = 0x15000,   /* no effect */
+      Ifx_None = 0x17000,   /* no effect */
       Ifx_Read,             /* reads the resource */
       Ifx_Write,            /* writes the resource */
       Ifx_Modify,           /* modifies the resource */
@@ -1316,6 +1316,19 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
                              IRExpr** args );
 
 
+/* --------------- Memory Bus Events --------------- */
+
+typedef
+   enum { 
+      Imbe_Fence=0x18000, 
+      Imbe_BusLock, 
+      Imbe_BusUnlock
+   }
+   IRMBusEvent;
+
+extern void ppIRMBusEvent ( IRMBusEvent );
+
+
 /* ------------------ Statements ------------------ */
 
 /* The different kinds of statements.  Their meaning is explained
@@ -1327,9 +1340,10 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
    they are required by some IR consumers such as tools that
    instrument the code.
 */
+
 typedef 
    enum {
-      Ist_NoOp,
+      Ist_NoOp=0x19000,
       Ist_IMark,     /* META */
       Ist_AbiHint,   /* META */
       Ist_Put,
@@ -1337,7 +1351,7 @@ typedef
       Ist_WrTmp,
       Ist_Store,
       Ist_Dirty,
-      Ist_MFence,
+      Ist_MBE,       /* META (maybe) */
       Ist_Exit
    } 
    IRStmtTag;
@@ -1452,11 +1466,15 @@ typedef
             IRDirty* details;
          } Dirty;
 
-         /* A memory fence.
-            ppIRExpr output: IR-MFence
+         /* A memory bus event - a fence, or acquisition/release of the
+            hardware bus lock.  IR optimisation treats all these as fences
+            across which no memory references may be moved.
+            ppIRExpr output: MBusEvent-Fence,
+                             MBusEvent-BusLock, MBusEvent-BusUnlock.
          */
          struct {
-         } MFence;
+            IRMBusEvent event;
+         } MBE;
 
          /* Conditional exit from the middle of an IRSB.
             ppIRExpr output: if (<guard>) goto {<jk>} <dst>
@@ -1481,7 +1499,7 @@ extern IRStmt* IRStmt_PutI    ( IRRegArray* descr, IRExpr* ix, Int bias,
 extern IRStmt* IRStmt_WrTmp   ( IRTemp tmp, IRExpr* data );
 extern IRStmt* IRStmt_Store   ( IREndness end, IRExpr* addr, IRExpr* data );
 extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
-extern IRStmt* IRStmt_MFence  ( void );
+extern IRStmt* IRStmt_MBE     ( IRMBusEvent event );
 extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
 
 /* Deep-copy an IRStmt. */

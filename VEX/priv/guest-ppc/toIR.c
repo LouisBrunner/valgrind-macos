@@ -4816,7 +4816,7 @@ static Bool dis_memsync ( UInt theInstr )
          return False;
       }
       DIP("isync\n");
-      stmt( IRStmt_MFence() );
+      stmt( IRStmt_MBE(Imbe_Fence) );
       break;
 
    /* X-Form */
@@ -4829,7 +4829,7 @@ static Bool dis_memsync ( UInt theInstr )
          }
          DIP("eieio\n");
          /* Insert a memory fence, just to be on the safe side. */
-         stmt( IRStmt_MFence() );
+         stmt( IRStmt_MBE(Imbe_Fence) );
          break;
 
       case 0x014: // lwarx (Load Word and Reserve Indexed, PPC32 p458)
@@ -4918,7 +4918,7 @@ static Bool dis_memsync ( UInt theInstr )
          DIP("%ssync\n", flag_L == 1 ? "lw" : "");
          /* Insert a memory fence.  It's sometimes important that these
             are carried through to the generated code. */
-         stmt( IRStmt_MFence() );
+         stmt( IRStmt_MBE(Imbe_Fence) );
          break;
 
       /* 64bit Memsync */
@@ -5662,7 +5662,7 @@ static Bool dis_cache_manage ( UInt         theInstr,
       putGST( PPC_GST_TILEN, mkSzImm(ty, lineszB) );
 
       /* be paranoid ... */
-      stmt( IRStmt_MFence() );
+      stmt( IRStmt_MBE(Imbe_Fence) );
 
       irsb->jumpkind = Ijk_TInval;
       irsb->next     = mkSzImm(ty, nextInsnAddr());

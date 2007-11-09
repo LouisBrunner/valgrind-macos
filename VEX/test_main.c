@@ -127,7 +127,8 @@ int main ( int argc, char** argv )
 
       /* FIXME: put sensible values into the .hwcaps fields */
       LibVEX_default_VexArchInfo(&vai_x86);
-      vai_x86.hwcaps = 0;
+      vai_x86.hwcaps = VEX_HWCAPS_X86_SSE1
+                       | VEX_HWCAPS_X86_SSE2 | VEX_HWCAPS_X86_SSE3;
 
       LibVEX_default_VexArchInfo(&vai_amd64);
       vai_amd64.hwcaps = 0;
@@ -139,7 +140,7 @@ int main ( int argc, char** argv )
       LibVEX_default_VexAbiInfo(&vbi);
 
       /* ----- Set up args for LibVEX_Translate ----- */
-#if 1 /* ppc32 -> ppc32 */
+#if 0 /* ppc32 -> ppc32 */
       vta.arch_guest     = VexArchPPC32;
       vta.archinfo_guest = vai_ppc32;
       vta.arch_host      = VexArchPPC32;
@@ -151,7 +152,7 @@ int main ( int argc, char** argv )
       vta.arch_host      = VexArchAMD64;
       vta.archinfo_host  = vai_amd64;
 #endif
-#if 0 /* x86 -> x86 */
+#if 1 /* x86 -> x86 */
       vta.arch_guest     = VexArchX86;
       vta.archinfo_guest = vai_x86;
       vta.arch_host      = VexArchX86;
@@ -186,6 +187,8 @@ int main ( int argc, char** argv )
 #else /* ppc32, ppc64 hosts */
       vta.dispatch        = NULL;
 #endif
+
+      vta.finaltidy = NULL;
 
       for (i = 0; i < TEST_N_ITERS; i++)
          tres = LibVEX_Translate ( &vta );

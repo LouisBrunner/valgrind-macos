@@ -3802,9 +3802,18 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    }
 
    /* --------- MEM FENCE --------- */
-   case Ist_MFence:
-      addInstr(env, X86Instr_MFence(env->hwcaps));
-      return;
+   case Ist_MBE:
+      switch (stmt->Ist.MBE.event) {
+         case Imbe_Fence:
+            addInstr(env, X86Instr_MFence(env->hwcaps));
+            return;
+         case Imbe_BusLock:
+         case Imbe_BusUnlock:
+            return;
+         default:
+            break;
+      }
+      break;
 
    /* --------- INSTR MARK --------- */
    /* Doesn't generate any executable code ... */

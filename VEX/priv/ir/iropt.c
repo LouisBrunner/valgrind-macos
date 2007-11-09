@@ -442,7 +442,7 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
          addStmtToIRSB(bb, IRStmt_Dirty(d2));
          break;
       case Ist_NoOp:
-      case Ist_MFence:
+      case Ist_MBE:
       case Ist_IMark:
          addStmtToIRSB(bb, st);
          break;
@@ -708,11 +708,12 @@ static void handle_gets_Stmt (
          crude solution is just to flush everything; we could easily
          enough do a lot better if needed. */
       /* Probably also overly-conservative, but also dump everything
-         if we hit a memory fence.  Ditto AbiHints.*/
+         if we hit a memory bus event (fence, lock, unlock).  Ditto
+         AbiHints.*/
       case Ist_AbiHint:
          vassert(isIRAtom(st->Ist.AbiHint.base));
          /* fall through */
-      case Ist_MFence:
+      case Ist_MBE:
       case Ist_Dirty:
          for (j = 0; j < env->used; j++)
             env->inuse[j] = False;
@@ -1760,8 +1761,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
       case Ist_NoOp:
          return IRStmt_NoOp();
 
-      case Ist_MFence:
-         return IRStmt_MFence();
+      case Ist_MBE:
+         return IRStmt_MBE(st->Ist.MBE.event);
 
       case Ist_Exit: {
          IRExpr* fcond;
@@ -1967,7 +1968,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          return;
       case Ist_NoOp:
       case Ist_IMark:
-      case Ist_MFence:
+      case Ist_MBE:
          return;
       case Ist_Exit:
          addUses_Expr(set, st->Ist.Exit.guard);
@@ -2535,7 +2536,7 @@ static Bool do_cse_BB ( IRSB* bb )
       /* ------ BEGIN invalidate aenv bindings ------ */
       /* This is critical: remove from aenv any E' -> .. bindings
          which might be invalidated by this statement.  The only
-         vulnerable kind of bindings are the GetIt kind.
+         vulnerable kind of bindings are the GetI kind.
             Dirty call - dump (paranoia level -> 2) 
             Store      - dump (ditto) 
             Put, PutI  - dump unless no-overlap is proven (.. -> 1)
@@ -2543,12 +2544,12 @@ static Bool do_cse_BB ( IRSB* bb )
          to do the no-overlap assessments needed for Put/PutI.
       */
       switch (st->tag) {
-         case Ist_Dirty: case Ist_Store: 
+         case Ist_Dirty: case Ist_Store: case Ist_MBE:
             paranoia = 2; break;
          case Ist_Put: case Ist_PutI: 
             paranoia = 1; break;
          case Ist_NoOp: case Ist_IMark: case Ist_AbiHint: 
-         case Ist_WrTmp: case Ist_MFence: case Ist_Exit: 
+         case Ist_WrTmp: case Ist_Exit: 
             paranoia = 0; break;
          default: 
             vpanic("do_cse_BB(1)");
@@ -2963,7 +2964,7 @@ Bool guestAccessWhichMightOverlapPutI (
       case Ist_IMark:
          return False;
 
-      case Ist_MFence:
+      case Ist_MBE:
       case Ist_AbiHint:
          /* just be paranoid ... these should be rare. */
          return True;
@@ -3206,7 +3207,7 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
    switch (st->tag) {
       case Ist_NoOp:
       case Ist_IMark:
-      case Ist_MFence:
+      case Ist_MBE:
          break;
       case Ist_AbiHint:
          deltaIRExpr(st->Ist.AbiHint.base, delta);
@@ -3691,7 +3692,7 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
          return;
       case Ist_NoOp:
       case Ist_IMark:
-      case Ist_MFence:
+      case Ist_MBE:
          return;
       case Ist_Exit:
          aoccCount_Expr(uses, st->Ist.Exit.guard);
@@ -3933,8 +3934,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
       case Ist_NoOp:
          return IRStmt_NoOp();
-      case Ist_MFence:
-         return IRStmt_MFence();
+      case Ist_MBE:
+         return IRStmt_MBE(st->Ist.MBE.event);
       case Ist_Dirty:
          d  = st->Ist.Dirty.details;
          d2 = emptyIRDirty();
@@ -4093,11 +4094,11 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
                  question is marked as requiring precise
                  exceptions. */
               || (env[k].doesLoad && stmtPuts)
-              /* probably overly conservative: a memory fence
+              /* probably overly conservative: a memory bus event
                  invalidates absolutely everything, so that all
                  computation prior to it is forced to complete before
-                 proceeding with the fence. */
-              || st->tag == Ist_MFence
+                 proceeding with the event (fence,lock,unlock). */
+              || st->tag == Ist_MBE
               /* also be (probably overly) paranoid re AbiHints */
               || st->tag == Ist_AbiHint
               );
@@ -4265,7 +4266,7 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
             break;
          case Ist_NoOp:
          case Ist_IMark:
-         case Ist_MFence:
+         case Ist_MBE:
             break;
          case Ist_Exit:
             vassert(isIRAtom(st->Ist.Exit.guard));

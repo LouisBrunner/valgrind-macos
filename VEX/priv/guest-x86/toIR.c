@@ -7136,6 +7136,96 @@ static IRExpr* mk64from16s ( IRTemp t3, IRTemp t2,
 }
 
 
+/* Helper for deciding whether a given insn (starting at the opcode
+   byte) may validly be used with a LOCK prefix.  The following insns
+   may be used with LOCK when their destination operand is in memory.
+   Note, this is slightly too permissive.  Oh well.  Note also, AFAICS
+   this is exactly the same for both 32-bit and 64-bit mode.
+
+   ADD        80 /0,  81 /0,  83 /0,  00, 01, 02, 03
+   OR         80 /1,  81 /1,  83 /1,  08, 09, 0A, 0B
+   ADC        80 /2,  81 /2,  83 /2,  10, 11, 12, 13
+   SBB        81 /3,  81 /3,  83 /3,  18, 19, 1A, 1B
+   AND        80 /4,  81 /4,  83 /4,  20, 21, 22, 23
+   SUB        80 /5,  81 /5,  83 /5,  28, 29, 2A, 2B
+   XOR        80 /6,  81 /6,  83 /6,  30, 31, 32, 33
+
+   DEC        FE /1,  FF /1
+   INC        FE /0,  FF /0
+
+   NEG        F6 /3,  F7 /3
+   NOT        F6 /2,  F7 /2
+
+   XCHG       86, 87 
+
+   BTC        0F BB,  0F BA /7
+   BTR        0F B3,  0F BA /6
+   BTS        0F AB,  0F BA /5
+
+   CMPXCHG    0F B0,  0F B1
+   CMPXCHG8B  0F C7 /1
+
+   XADD       0F C0,  0F C1
+*/
+static Bool can_be_used_with_LOCK_prefix ( UChar* opc )
+{
+   switch (opc[0]) {
+      case 0x00: case 0x01: case 0x02: case 0x03: return True;
+      case 0x08: case 0x09: case 0x0A: case 0x0B: return True;
+      case 0x10: case 0x11: case 0x12: case 0x13: return True;
+      case 0x18: case 0x19: case 0x1A: case 0x1B: return True;
+      case 0x20: case 0x21: case 0x22: case 0x23: return True;
+      case 0x28: case 0x29: case 0x2A: case 0x2B: return True;
+      case 0x30: case 0x31: case 0x32: case 0x33: return True;
+
+      case 0x80: case 0x81: case 0x83:
+         if (gregOfRM(opc[1]) >= 0 && gregOfRM(opc[1]) <= 6) 
+            return True;
+         break;
+
+      case 0xFE: case 0xFF:
+         if (gregOfRM(opc[1]) >= 0 && gregOfRM(opc[1]) <= 1) 
+            return True;
+         break;
+
+      case 0xF6: case 0xF7:
+         if (gregOfRM(opc[1]) >= 2 && gregOfRM(opc[1]) <= 3) 
+            return True;
+         break;
+
+      case 0x86: case 0x87:
+         return True;
+
+      case 0x0F: {
+         switch (opc[1]) {
+            case 0xBB: case 0xB3: case 0xAB:
+               return True;
+            case 0xBA: 
+               if (gregOfRM(opc[2]) >= 5 && gregOfRM(opc[2]) <= 7) 
+                  return True;
+               break;
+            case 0xB0: case 0xB1:
+               return True;
+            case 0xC7: 
+               if (gregOfRM(opc[2]) == 1) 
+                  return True;
+               break;
+            case 0xC0: case 0xC1:
+               return True;
+            default:
+               break;
+         } /* switch (opc[1]) */
+         break;
+      }
+
+      default:
+         break;
+   } /* switch (opc[0]) */
+
+   return False;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
@@ -7155,10 +7245,10 @@ DisResult disInstr_X86_WRK (
    IRType    ty;
    IRTemp    addr, t0, t1, t2, t3, t4, t5, t6;
    Int       alen;
-   UChar     opc, modrm, abyte;
+   UChar     opc, modrm, abyte, pre;
    UInt      d32;
    HChar     dis_buf[50];
-   Int       am_sz, d_sz;
+   Int       am_sz, d_sz, n_prefixes;
    DisResult dres;
    UChar*    insn; /* used in SSE decoders */
 
@@ -7177,6 +7267,12 @@ DisResult disInstr_X86_WRK (
       prefix has been seen, else one of {0x26, 0x3E, 0x64, 0x65}
       indicating the prefix.  */
    UChar sorb = 0;
+
+   /* Gets set to True if a LOCK prefix is seen. */
+   Bool pfx_lock = False;
+
+   /* do we need follow the insn with MBusEvent(BusUnlock) ? */
+   Bool unlock_bus_after_insn = False;
 
    /* Set result defaults. */
    dres.whatNext   = Dis_Continue;
@@ -7242,102 +7338,128 @@ DisResult disInstr_X86_WRK (
       }
    }
 
-   /* Deal with prefixes. */
-   /* Skip a LOCK prefix. */
-   /* 2005 Jan 06: the following insns are observed to sometimes
-      have a LOCK prefix:
-         cmpxchgl %ecx,(%edx)
-         cmpxchgl %edx,0x278(%ebx) etc
-         xchgl %eax, (%ecx)
-         xaddl %eax, (%ecx)
-      We need to catch any such which appear to be being used as
-      a memory barrier, for example  lock addl $0,0(%esp)
-      and emit an IR MFence construct.
-   */
-   if (getIByte(delta) == 0xF0) {
-
+   /* Handle a couple of weird-ass NOPs that have been observed in the
+      wild. */
+   {
       UChar* code = (UChar*)(guest_code + delta);
-
-      /* Various bits of kernel headers use the following as a memory
-         barrier.  Hence, first emit an MFence and then let the insn
-         go through as usual. */
-      /* F08344240000:  lock addl $0, 0(%esp) */
-      if (code[0] == 0xF0 && code[1] == 0x83 && code[2] == 0x44 && 
-          code[3] == 0x24 && code[4] == 0x00 && code[5] == 0x00) {
-         stmt( IRStmt_MFence() );
+      /* Sun's JVM 1.5.0 uses the following as a NOP:
+         26 2E 64 65 90  %es:%cs:%fs:%gs:nop */
+      if (code[0] == 0x26 && code[1] == 0x2E && code[2] == 0x64 
+          && code[3] == 0x65 && code[4] == 0x90) {
+         DIP("%%es:%%cs:%%fs:%%gs:nop\n");
+         delta += 5;
+         goto decode_success;
       }
-      else
-      if (0) {
-         vex_printf("vex x86->IR: ignoring LOCK prefix on: ");
-         /* insn_verbose = True; */
+      /* don't barf on recent binutils padding 
+         66 2e 0f 1f 84 00 00 00 00 00   nopw %cs:0x0(%eax,%eax,1) */
+      if (code[0] == 0x66
+          && code[1] == 0x2E && code[2] == 0x0F && code[3] == 0x1F 
+          && code[4] == 0x84 && code[5] == 0x00 && code[6] == 0x00
+          && code[7] == 0x00 && code[8] == 0x00 && code[9] == 0x00 ) {
+         DIP("nopw %%cs:0x0(%%eax,%%eax,1)\n");
+         delta += 10;
+         goto decode_success;
       }
+   }       
 
-      /* In any case, skip the prefix. */
-      delta++;
-   }
+   /* Normal instruction handling starts here. */
 
-   /* Detect operand-size overrides.  It is possible for more than one
-      0x66 to appear. */
-   while (getIByte(delta) == 0x66) { sz = 2; delta++; };
-
-   /* segment override prefixes come after the operand-size override,
-      it seems */
-   switch (getIByte(delta)) {
-      case 0x3E: /* %DS: */
-      case 0x26: /* %ES: */
-         /* Sun's JVM 1.5.0 uses the following as a NOP:
-            26 2E 64 65 90  %es:%cs:%fs:%gs:nop */
-         {
-            UChar* code = (UChar*)(guest_code + delta);
-            if (code[0] == 0x26 && code[1] == 0x2E && code[2] == 0x64 
-                && code[3] == 0x65 && code[4] == 0x90) {
-               DIP("%%es:%%cs:%%fs:%%gs:nop\n");
-               delta += 5;
-               goto decode_success;
-            }
-            /* else fall through */
-         }       
-      case 0x64: /* %FS: */
-      case 0x65: /* %GS: */
-         sorb = getIByte(delta); delta++; 
-         break;
-      case 0x2E: /* %CS: */
-         /* 2E prefix on a conditional branch instruction is a
-            branch-prediction hint, which can safely be ignored.  */
-         {
+   /* Deal with some but not all prefixes: 
+         66(oso)
+         F0(lock)
+         2E(cs:) 3E(ds:) 26(es:) 64(fs:) 65(gs:) 36(ss:)
+      Not dealt with (left in place):
+         F2 F3
+   */
+   n_prefixes = 0;
+   while (True) {
+      if (n_prefixes > 7) goto decode_failure;
+      pre = getUChar(delta);
+      switch (pre) {
+         case 0x66: 
+            sz = 2;
+            break;
+         case 0xF0: 
+            pfx_lock = True; 
+            break;
+         case 0x3E: /* %DS: */
+         case 0x26: /* %ES: */
+         case 0x64: /* %FS: */
+         case 0x65: /* %GS: */
+            if (sorb != 0) 
+               goto decode_failure; /* only one seg override allowed */
+            sorb = pre;
+            break;
+         case 0x2E: { /* %CS: */
+            /* 2E prefix on a conditional branch instruction is a
+               branch-prediction hint, which can safely be ignored.  */
             UChar op1 = getIByte(delta+1);
             UChar op2 = getIByte(delta+2);
             if ((op1 >= 0x70 && op1 <= 0x7F)
                 || (op1 == 0xE3)
                 || (op1 == 0x0F && op2 >= 0x80 && op2 <= 0x8F)) {
                if (0) vex_printf("vex x86->IR: ignoring branch hint\n");
-               sorb = getIByte(delta); delta++;
-               break;
+            } else {
+               /* All other CS override cases are not handled */
+               goto decode_failure;
             }
+            break;
          }
-         /* don't barf on recent binutils padding 
-            66 2e 0f 1f 84 00 00 00 00 00   nopw %cs:0x0(%eax,%eax,1)
-         */
-         {
-            UChar* code = (UChar*)(guest_code + delta);
-            if (sz == 2 
-                && code[-1] == 0x66
-                && code[0] == 0x2E && code[1] == 0x0F && code[2] == 0x1F 
-                && code[3] == 0x84 && code[4] == 0x00 && code[5] == 0x00
-                && code[6] == 0x00 && code[7] == 0x00 && code[8] == 0x00 ) {
-               DIP("nopw %%cs:0x0(%%eax,%%eax,1)\n");
-               delta += 9;
-               goto decode_success;
-            }
-         }
-         /* All other CS override cases are not handled */
-         goto decode_failure;
-      case 0x36: /* %SS: */
-         /* SS override cases are not handled */
-         goto decode_failure;
-      default:
-         break;
+         case 0x36: /* %SS: */
+            /* SS override cases are not handled */
+            goto decode_failure;
+         default: 
+            goto not_a_prefix;
+      }
+      n_prefixes++;
+      delta++;
    }
+
+   not_a_prefix:
+
+   /* Now we should be looking at the primary opcode byte or the
+      leading F2 or F3.  Check that any LOCK prefix is actually
+      allowed. */
+
+   /* Kludge re LOCK prefixes.  We assume here that all code generated
+      by Vex is going to be run in a single-threaded context, in other
+      words that concurrent executions of Vex-generated translations
+      will not happen.  So we don't need to worry too much about
+      preserving atomicity.  However, mark the fact that the notional
+      hardware bus lock is being acquired (and, after the insn,
+      released), so that thread checking tools know this is a locked
+      insn. 
+
+      We check for, and immediately reject, (most) inappropriate uses
+      of the LOCK prefix.  Later (at decode_failure: and
+      decode_success:), if we've added a BusLock event, then we will
+      follow up with a BusUnlock event.  How do we know execution will
+      actually ever get to the BusUnlock event?  Because
+      can_be_used_with_LOCK_prefix rejects all control-flow changing
+      instructions.
+
+      One loophole, though: if a LOCK prefix insn (seg)faults, then
+      the BusUnlock event will never be reached.  This could cause
+      tools which track bus hardware lock to lose track.  Really, we
+      should explicitly release the lock after every insn, but that's
+      obviously way too expensive.  Really, any tool which tracks the
+      state of the bus lock needs to ask V's core/tool interface to
+      notify it of signal deliveries.  On delivery of SIGSEGV to the
+      guest, the tool will be notified, in which case it should
+      release the bus hardware lock if it is held.
+
+      Note, guest-amd64/toIR.c contains identical logic.
+   */
+   if (pfx_lock) {
+      if (can_be_used_with_LOCK_prefix( (UChar*)&guest_code[delta] )) {
+         stmt( IRStmt_MBE(Imbe_BusLock) );
+         unlock_bus_after_insn = True;
+         DIP("lock ");
+      } else {
+         goto decode_failure;
+      }
+   }
+
 
    /* ---------------------------------------------------- */
    /* --- The SSE decoder.                             --- */
@@ -8324,7 +8446,7 @@ DisResult disInstr_X86_WRK (
       delta += 3;
       /* Insert a memory fence.  It's sometimes important that these
          are carried through to the generated code. */
-      stmt( IRStmt_MFence() );
+      stmt( IRStmt_MBE(Imbe_Fence) );
       DIP("sfence\n");
       goto decode_success;
    }
@@ -9104,7 +9226,7 @@ DisResult disInstr_X86_WRK (
       delta += 3;
       /* Insert a memory fence.  It's sometimes important that these
          are carried through to the generated code. */
-      stmt( IRStmt_MFence() );
+      stmt( IRStmt_MBE(Imbe_Fence) );
       DIP("%sfence\n", gregOfRM(insn[2])==5 ? "l" : "m");
       goto decode_success;
    }
@@ -12184,6 +12306,12 @@ DisResult disInstr_X86_WRK (
 
    /* ------------------------ XCHG ----------------------- */
 
+   /* XCHG reg,mem automatically asserts LOCK# even without a LOCK
+      prefix.  Therefore, surround it with a IRStmt_MBE(Imbe_BusLock)
+      and IRStmt_MBE(Imbe_BusUnlock) pair.  But be careful; if it is
+      used with an explicit LOCK prefix, we don't want to end up with
+      two IRStmt_MBE(Imbe_BusLock)s -- one made here and one made by
+      the generic LOCK logic at the top of disInstr. */
    case 0x86: /* XCHG Gb,Eb */
       sz = 1;
       /* Fall through ... */
@@ -12201,6 +12329,18 @@ DisResult disInstr_X86_WRK (
              nameISize(sz), nameIReg(sz,gregOfRM(modrm)), 
                             nameIReg(sz,eregOfRM(modrm)));
       } else {
+         /* Need to add IRStmt_MBE(Imbe_BusLock). */
+         if (pfx_lock) {
+            /* check it's already been taken care of */
+            vassert(unlock_bus_after_insn);
+         } else {
+            vassert(!unlock_bus_after_insn);
+            stmt( IRStmt_MBE(Imbe_BusLock) );
+            unlock_bus_after_insn = True;
+         }
+         /* Because unlock_bus_after_insn is now True, generic logic
+            at the bottom of disInstr will add the
+            IRStmt_MBE(Imbe_BusUnlock). */
          addr = disAMode ( &alen, sorb, delta, dis_buf );
          assign( t1, loadLE(ty,mkexpr(addr)) );
          assign( t2, getIReg(sz,gregOfRM(modrm)) );
@@ -12699,7 +12839,7 @@ DisResult disInstr_X86_WRK (
          stmt( IRStmt_Dirty(d) );
          /* CPUID is a serialising insn.  So, just in case someone is
             using it as a memory fence ... */
-         stmt( IRStmt_MFence() );
+         stmt( IRStmt_MBE(Imbe_Fence) );
          DIP("cpuid\n");
          break;
       }
@@ -13086,6 +13226,8 @@ DisResult disInstr_X86_WRK (
       insn, but nevertheless be paranoid and update it again right
       now. */
    stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_EIP_curr_instr) ) );
+   if (unlock_bus_after_insn)
+      stmt( IRStmt_MBE(Imbe_BusUnlock) );
    jmp_lit(Ijk_NoDecode, guest_EIP_curr_instr);
    dres.whatNext = Dis_StopHere;
    dres.len = 0;
@@ -13096,7 +13238,8 @@ DisResult disInstr_X86_WRK (
   decode_success:
    /* All decode successes end up here. */
    DIP("\n");
-
+   if (unlock_bus_after_insn)
+      stmt( IRStmt_MBE(Imbe_BusUnlock) );
    dres.len = delta - delta_start;
    return dres;
 }

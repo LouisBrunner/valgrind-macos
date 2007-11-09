@@ -736,6 +736,16 @@ void ppIRJumpKind ( IRJumpKind kind )
    }
 }
 
+void ppIRMBusEvent ( IRMBusEvent event )
+{
+   switch (event) {
+      case Imbe_Fence:     vex_printf("Fence"); break;
+      case Imbe_BusLock:   vex_printf("BusLock"); break;
+      case Imbe_BusUnlock: vex_printf("BusUnlock"); break;
+      default:             vpanic("ppIRMBusEvent");
+   }
+}
+
 void ppIRStmt ( IRStmt* s )
 {
    if (!s) {
@@ -781,8 +791,9 @@ void ppIRStmt ( IRStmt* s )
       case Ist_Dirty:
          ppIRDirty(s->Ist.Dirty.details);
          break;
-      case Ist_MFence:
-         vex_printf("IR-MFence");
+      case Ist_MBE:
+         vex_printf("IR-");
+         ppIRMBusEvent(s->Ist.MBE.event);
          break;
       case Ist_Exit:
          vex_printf( "if (" );
@@ -1186,12 +1197,12 @@ IRStmt* IRStmt_Dirty ( IRDirty* d )
    s->Ist.Dirty.details = d;
    return s;
 }
-IRStmt* IRStmt_MFence ( void )
+IRStmt* IRStmt_MBE ( IRMBusEvent event )
 {
-   /* Just use a single static closure. */
-   static IRStmt static_closure;
-   static_closure.tag = Ist_MFence;
-   return &static_closure;
+   IRStmt* s        = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag           = Ist_MBE;
+   s->Ist.MBE.event = event;
+   return s;
 }
 IRStmt* IRStmt_Exit ( IRExpr* guard, IRJumpKind jk, IRConst* dst ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
@@ -1387,8 +1398,8 @@ IRStmt* deepCopyIRStmt ( IRStmt* s )
                              deepCopyIRExpr(s->Ist.Store.data));
       case Ist_Dirty: 
          return IRStmt_Dirty(deepCopyIRDirty(s->Ist.Dirty.details));
-      case Ist_MFence:
-         return IRStmt_MFence();
+      case Ist_MBE:
+         return IRStmt_MBE(s->Ist.MBE.event);
       case Ist_Exit: 
          return IRStmt_Exit(deepCopyIRExpr(s->Ist.Exit.guard),
                             s->Ist.Exit.jk,
@@ -2021,7 +2032,7 @@ Bool isFlatIRStmt ( IRStmt* st )
          return True;
       case Ist_NoOp:
       case Ist_IMark:
-      case Ist_MFence:
+      case Ist_MBE:
          return True;
       case Ist_Exit:
          return isIRAtom(st->Ist.Exit.guard);
@@ -2196,7 +2207,7 @@ void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
             useBeforeDef_Expr(bb,stmt,d->mAddr,def_counts);
          break;
       case Ist_NoOp:
-      case Ist_MFence:
+      case Ist_MBE:
          break;
       case Ist_Exit:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Exit.guard,def_counts);
@@ -2500,7 +2511,14 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
          bad_dirty:
          sanityCheckFail(bb,stmt,"IRStmt.Dirty: ill-formed");
       case Ist_NoOp:
-      case Ist_MFence:
+         break;
+      case Ist_MBE:
+         switch (stmt->Ist.MBE.event) {
+            case Imbe_Fence: case Imbe_BusLock: case Imbe_BusUnlock:
+               break;
+            default: sanityCheckFail(bb,stmt,"IRStmt.MBE.event: unknown");
+               break;
+         }
          break;
       case Ist_Exit:
          tcExpr( bb, stmt, stmt->Ist.Exit.guard, gWordTy );

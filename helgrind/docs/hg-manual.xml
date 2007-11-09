@@ -3,20 +3,20 @@
           "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
 
-<chapter id="tc-manual" xreflabel="Thrcheck: thread error detector">
-  <title>Thrcheck: a thread error detector</title>
+<chapter id="hg-manual" xreflabel="Helgrind: thread error detector">
+  <title>Helgrind: a thread error detector</title>
 
 <para>To use this tool, you must specify
-<computeroutput>--tool=thrcheck</computeroutput> on the Valgrind
+<computeroutput>--tool=helgrind</computeroutput> on the Valgrind
 command line.</para>
 
 
 
 
-<sect1 id="tc-manual.overview" xreflabel="Overview">
+<sect1 id="hg-manual.overview" xreflabel="Overview">
 <title>Overview</title>
 
-<para>Thrcheck is a Valgrind tool for detecting synchronisation errors
+<para>Helgrind is a Valgrind tool for detecting synchronisation errors
 in C, C++ and Fortran programs that use the POSIX pthreads
 threading primitives.</para>
 
@@ -25,7 +25,7 @@ sharing a common address space, thread creation, thread joinage,
 thread exit, mutexes (locks), condition variables (inter-thread event
 notifications), reader-writer locks, and semaphores.</para>
 
-<para>Thrcheck is aware of all these abstractions and tracks their
+<para>Helgrind is aware of all these abstractions and tracks their
 effects as accurately as it can.  Currently it does not correctly
 handle pthread barriers and pthread spinlocks, although it will not
 object if you use them.  On x86 and amd64 platforms, it understands
@@ -33,38 +33,38 @@ and partially handles implicit locking arising from the use of the
 LOCK instruction prefix.
 </para>
 
-<para>Thrcheck can detect three classes of errors, which are discussed
+<para>Helgrind can detect three classes of errors, which are discussed
 in detail in the next three sections:</para>
 
 <orderedlist>
  <listitem>
-  <para><link linkend="tc-manual.api-checks">
+  <para><link linkend="hg-manual.api-checks">
         Misuses of the POSIX pthreads API.</link></para>
  </listitem>
  <listitem>
-  <para><link linkend="tc-manual.lock-orders">
+  <para><link linkend="hg-manual.lock-orders">
         Potential deadlocks arising from lock
         ordering problems.</link></para>
  </listitem>
  <listitem>
-  <para><link linkend="tc-manual.data-races">
+  <para><link linkend="hg-manual.data-races">
         Data races -- accessing memory without adequate locking.
         </link></para>
  </listitem>
 </orderedlist>
 
 <para>Following those is a section containing 
-<link linkend="tc-manual.effective-use">
-hints and tips on how to get the best out of Thrcheck.</link>
+<link linkend="hg-manual.effective-use">
+hints and tips on how to get the best out of Helgrind.</link>
 </para>
 
 <para>Then there is a
-<link linkend="tc-manual.options">summary of command-line
+<link linkend="hg-manual.options">summary of command-line
 options.</link>
 </para>
 
 <para>Finally, there is 
-<link linkend="tc-manual.todolist">a brief summary of areas in which Thrcheck
+<link linkend="hg-manual.todolist">a brief summary of areas in which Helgrind
 could be improved.</link>
 </para>
 
@@ -73,10 +73,10 @@ could be improved.</link>
 
 
 
-<sect1 id="tc-manual.api-checks" xreflabel="API Checks">
+<sect1 id="hg-manual.api-checks" xreflabel="API Checks">
 <title>Detected errors: Misuses of the POSIX pthreads API</title>
 
-<para>Thrcheck intercepts calls to many POSIX pthreads functions, and
+<para>Helgrind intercepts calls to many POSIX pthreads functions, and
 is therefore able to report on various common problems.  Although
 these are unglamourous errors, their presence can lead to undefined
 program behaviour and hard-to-find bugs later in execution.  The
@@ -114,26 +114,26 @@ library.</para>
 where the error was detected.  They may also contain auxiliary stack
 traces giving additional information.  In particular, most errors
 relating to mutexes will also tell you where that mutex first came to
-Thrcheck's attention (the "<computeroutput>was first observed
+Helgrind's attention (the "<computeroutput>was first observed
 at</computeroutput>" part), so you have a chance of figuring out which
 mutex it is referring to.  For example:</para>
 
 <programlisting><![CDATA[
 Thread #1 unlocked a not-locked lock at 0x7FEFFFA90
-   at 0x4C2408D: pthread_mutex_unlock (tc_intercepts.c:492)
+   at 0x4C2408D: pthread_mutex_unlock (hg_intercepts.c:492)
    by 0x40073A: nearly_main (tc09_bad_unlock.c:27)
    by 0x40079B: main (tc09_bad_unlock.c:50)
   Lock at 0x7FEFFFA90 was first observed
-   at 0x4C25D01: pthread_mutex_init (tc_intercepts.c:326)
+   at 0x4C25D01: pthread_mutex_init (hg_intercepts.c:326)
    by 0x40071F: nearly_main (tc09_bad_unlock.c:23)
    by 0x40079B: main (tc09_bad_unlock.c:50)
 ]]></programlisting>
 
-<para>Thrcheck has a way of summarising thread identities, as
+<para>Helgrind has a way of summarising thread identities, as
 evidenced here by the text "<computeroutput>Thread
 #1</computeroutput>".  This is so that it can speak about threads and
 sets of threads without overwhelming you with details.  See 
-<link linkend="tc-manual.data-races.errmsgs">below</link>
+<link linkend="hg-manual.data-races.errmsgs">below</link>
 for more information on interpreting error messages.</para>
 
 </sect1>
@@ -141,14 +141,14 @@ for more information on interpreting error messages.</para>
 
 
 
-<sect1 id="tc-manual.lock-orders" xreflabel="Lock Orders">
+<sect1 id="hg-manual.lock-orders" xreflabel="Lock Orders">
 <title>Detected errors: Inconsistent Lock Orderings</title>
 
 <para>In this section, and in general, to "acquire" a lock simply
 means to lock that lock, and to "release" a lock means to unlock
 it.</para>
 
-<para>Thrcheck monitors the order in which threads acquire locks.
+<para>Helgrind monitors the order in which threads acquire locks.
 This allows it to detect potential deadlocks which could arise from
 the formation of cycles of locks.  Detecting such inconsistencies is
 useful because, whilst actual deadlocks are fairly obvious, potential
@@ -176,43 +176,43 @@ follows.</para>
  </listitem>
 </itemizedlist>
 
-<para>Thrcheck builds a directed graph indicating the order in which
+<para>Helgrind builds a directed graph indicating the order in which
 locks have been acquired in the past.  When a thread acquires a new
 lock, the graph is updated, and then checked to see if it now contains
 a cycle.  The presence of a cycle indicates a potential deadlock involving
 the locks in the cycle.</para>
 
 <para>In simple situations, where the cycle only contains two locks,
-Thrcheck will show where the required order was established:</para>
+Helgrind will show where the required order was established:</para>
 
 <programlisting><![CDATA[
 Thread #1: lock order "0x7FEFFFAB0 before 0x7FEFFFA80" violated
-   at 0x4C23C91: pthread_mutex_lock (tc_intercepts.c:388)
+   at 0x4C23C91: pthread_mutex_lock (hg_intercepts.c:388)
    by 0x40081F: main (tc13_laog1.c:24)
   Required order was established by acquisition of lock at 0x7FEFFFAB0
-   at 0x4C23C91: pthread_mutex_lock (tc_intercepts.c:388)
+   at 0x4C23C91: pthread_mutex_lock (hg_intercepts.c:388)
    by 0x400748: main (tc13_laog1.c:17)
   followed by a later acquisition of lock at 0x7FEFFFA80
-   at 0x4C23C91: pthread_mutex_lock (tc_intercepts.c:388)
+   at 0x4C23C91: pthread_mutex_lock (hg_intercepts.c:388)
    by 0x400773: main (tc13_laog1.c:18)
 ]]></programlisting>
 
 <para>When there are more than two locks in the cycle, the error is
-equally serious.  However, at present Thrcheck does not show the locks
+equally serious.  However, at present Helgrind does not show the locks
 involved, so as to avoid flooding you with information.  That could be
 fixed in future.  For example, here is a an example involving a cycle
 of five locks from a naive implementation the famous Dining
 Philosophers problem
-(see <computeroutput>thrcheck/tests/tc14_laog_dinphils.c</computeroutput>).
-In this case Thrcheck has detected that all 5 philosophers could
+(see <computeroutput>helgrind/tests/tc14_laog_dinphils.c</computeroutput>).
+In this case Helgrind has detected that all 5 philosophers could
 simultaneously pick up their left fork and then deadlock whilst
 waiting to pick up their right forks.</para>
 
 <programlisting><![CDATA[
 Thread #6: lock order "0x6010C0 before 0x601160" violated
-   at 0x4C23C91: pthread_mutex_lock (tc_intercepts.c:388)
+   at 0x4C23C91: pthread_mutex_lock (hg_intercepts.c:388)
    by 0x4007C0: dine (tc14_laog_dinphils.c:19)
-   by 0x4C25DF7: mythread_wrapper (tc_intercepts.c:178)
+   by 0x4C25DF7: mythread_wrapper (hg_intercepts.c:178)
    by 0x4E2F09D: start_thread (in /lib64/libpthread-2.5.so)
    by 0x51054CC: clone (in /lib64/libc-2.5.so)
 ]]></programlisting>
@@ -222,7 +222,7 @@ Thread #6: lock order "0x6010C0 before 0x601160" violated
 
 
 
-<sect1 id="tc-manual.data-races" xreflabel="Data Races">
+<sect1 id="hg-manual.data-races" xreflabel="Data Races">
 <title>Detected errors: Data Races</title>
 
 <para>A data race happens, or could happen, when two threads
@@ -232,12 +232,12 @@ obscure timing dependent bugs.  Ensuring programs are race-free is
 one of the central difficulties of threaded programming.</para>
 
 <para>Reliably detecting races is a difficult problem, and most
-of Thrcheck's internals are devoted to do dealing with it.  
+of Helgrind's internals are devoted to do dealing with it.  
 As a consequence this section is somewhat long and involved.
 We begin with a simple example.</para>
 
 
-<sect2 id="tc-manual.data-races.example" xreflabel="Simple Race">
+<sect2 id="hg-manual.data-races.example" xreflabel="Simple Race">
 <title>A Simple Data Race</title>
 
 <para>About the simplest possible example of a race is as follows.  In
@@ -269,7 +269,7 @@ stop <computeroutput>var</computeroutput> being updated simultaneously
 by both threads.  A correct program would 
 protect <computeroutput>var</computeroutput> with a lock of type
 <computeroutput>pthread_mutex_t</computeroutput>, which is acquired
-before each access and released afterwards.  Thrcheck's output for
+before each access and released afterwards.  Helgrind's output for
 this program is:</para>
 
 <programlisting><![CDATA[
@@ -279,7 +279,7 @@ Thread #2 was created
    at 0x510548E: clone (in /lib64/libc-2.5.so)
    by 0x4E2F305: do_clone (in /lib64/libpthread-2.5.so)
    by 0x4E2F7C5: pthread_create@@GLIBC_2.2.5 (in /lib64/libpthread-2.5.so)
-   by 0x4C23870: pthread_create@* (tc_intercepts.c:198)
+   by 0x4C23870: pthread_create@* (hg_intercepts.c:198)
    by 0x4005F1: main (simple_race.c:12)
 
 Possible data race during write of size 4 at 0x601034
@@ -309,34 +309,34 @@ exists.</para>
 sections below explain them.  Here we merely note their presence:</para>
 
 <itemizedlist>
- <listitem><para>Thrcheck maintains some kind of state machine for the
+ <listitem><para>Helgrind maintains some kind of state machine for the
   memory location in question, hence the "<computeroutput>Old
   state:</computeroutput>" and "<computeroutput>New
   state:</computeroutput>" lines.</para>
  </listitem>
- <listitem><para>Thrcheck keeps track of which threads have accessed
+ <listitem><para>Helgrind keeps track of which threads have accessed
   the location: "<computeroutput>threads #1, #2</computeroutput>".
   Before printing the main error message, it prints the creation
   points of these two threads, so you can see which threads it is
   referring to.</para>
  </listitem>
- <listitem><para>Thrcheck tries to provide an explaination of why the
+ <listitem><para>Helgrind tries to provide an explaination of why the
   race exists: "<computeroutput>Location 0x601034 has never been
   protected by any lock</computeroutput>".</para>
  </listitem>
 </itemizedlist>
 
 <para>Understanding the memory state machine is central to
-understanding Thrcheck's race-detection algorithm.  The next three
+understanding Helgrind's race-detection algorithm.  The next three
 subsections explain this.</para>
 
 </sect2>
 
 
-<sect2 id="tc-manual.data-races.memstates" xreflabel="Memory States">
-<title>Thrcheck's Memory State Machine</title>
+<sect2 id="hg-manual.data-races.memstates" xreflabel="Memory States">
+<title>Helgrind's Memory State Machine</title>
 
-<para>Thrcheck tracks the state of every byte of memory used by your
+<para>Helgrind tracks the state of every byte of memory used by your
 program.  There are a number of states, but only three are
 interesting:</para>
 
@@ -355,7 +355,7 @@ interesting:</para>
  <listitem><para>Shared-Modified: memory in this state is regarded as
   shared by multiple threads, at least one of which has written to it.
   All participating threads must hold at least one lock in common when
-  accessing the memory.  If no such lock exists, Thrcheck reports a
+  accessing the memory.  If no such lock exists, Helgrind reports a
   race error.</para>
  </listitem>
 </itemizedlist>
@@ -375,14 +375,14 @@ shared-readonly by both threads.</para>
 
 <para>This same thread adds one to the value it has and stores it back
 in <computeroutput>var</computeroutput>.  This causes another state
-change, this time to the shared-modified state.  Because Thrcheck has
+change, this time to the shared-modified state.  Because Helgrind has
 also been tracking which threads hold which locks, it can see that
 <computeroutput>var</computeroutput> is in shared-modified state but
 no lock has been used to consistently protect it.  Hence a race is
 reported exactly at the transition from shared-readonly to
 shared-modified.</para>
 
-<para>The essence of the algorithm is this.  Thrcheck keeps track of
+<para>The essence of the algorithm is this.  Helgrind keeps track of
 each memory location that has been accessed by more than one thread.
 For each such location it incrementally infers the set of locks which
 have consistently been used to protect that location.  If the
@@ -396,11 +396,11 @@ Sobalvarro and Thomas Anderson, ACM Transactions on Computer Systems,
 15(4):391-411, November 1997).</para>
 
 <para>Lockset inference has since been widely implemented, studied and
-extended.  Thrcheck incorporates several refinements aimed at avoiding
+extended.  Helgrind incorporates several refinements aimed at avoiding
 the high false error rate that naive versions of the algorithm suffer
 from.  A 
-<link linkend="tc-manual.data-races.summary">summary of the complete
-algorithm used by Thrcheck</link> is presented below.  First, however,
+<link linkend="hg-manual.data-races.summary">summary of the complete
+algorithm used by Helgrind</link> is presented below.  First, however,
 it is important to understand details of transitions pertaining to the
 Exclusive-ownership state.</para>
 
@@ -408,7 +408,7 @@ Exclusive-ownership state.</para>
 
 
 
-<sect2 id="tc-manual.data-races.exclusive" xreflabel="Excl Transfers">
+<sect2 id="hg-manual.data-races.exclusive" xreflabel="Excl Transfers">
 <title>Transfers of Exclusive Ownership Between Threads</title>
 
 <para>As presented, the algorithm is far too strict.  It reports many
@@ -460,7 +460,7 @@ after the parent initialises <computeroutput>buf</computeroutput>, and
 before the parent reads the results
 from <computeroutput>buf</computeroutput>.</para>
 
-<para>To model this, Thrcheck allows the child to steal, from the
+<para>To model this, Helgrind allows the child to steal, from the
 parent, exclusive ownership of any memory exclusively owned by the
 parent before the pthread_create call.  Similarly, once the parent's
 pthread_join call returns, it can steal back ownership of memory
@@ -479,8 +479,8 @@ reported.</para>
 segments" in "Runtime Checking of Multithreaded Applications with
 Visual Threads" (Jerry J. Harrow, Jr, Proceedings of the 7th
 International SPIN Workshop on Model Checking of Software Stanford,
-California, USA, August 2000, LNCS 1885, pp331--342).  Thrcheck
-implements an extended version of it.  Specifically, Thrcheck allows
+California, USA, August 2000, LNCS 1885, pp331--342).  Helgrind
+implements an extended version of it.  Specifically, Helgrind allows
 transfer of exclusive ownership in the following situations:</para>
 
 <itemizedlist>
@@ -511,7 +511,7 @@ transfer of exclusive ownership in the following situations:</para>
 
 
 
-<sect2 id="tc-manual.data-races.re-excl" xreflabel="Re-Excl Transfers">
+<sect2 id="hg-manual.data-races.re-excl" xreflabel="Re-Excl Transfers">
 <title>Restoration of Exclusive Ownership</title>
 
 <para>Another common idiom is to partition the lifetime of the program
@@ -543,7 +543,7 @@ var += 4; /* no lock used */
 ]]></programlisting>
 
 <para>This program is correct, but using only the mechanisms described
-so far, Thrcheck would report an error at
+so far, Helgrind would report an error at
 <computeroutput>var += 4</computeroutput>.  This is because, by that
 point, <computeroutput>var</computeroutput> is marked as being in the
 state "shared-modified and protected by the
@@ -552,10 +552,10 @@ without locking.  Really, what we want is
 for <computeroutput>var</computeroutput> to return to the parent
 thread's exclusive ownership after the child thread has exited.</para>
 
-<para>To make this possible, for every memory location Thrcheck also keeps
+<para>To make this possible, for every memory location Helgrind also keeps
 track of all the threads that have accessed that location
 -- its threadset.  When a thread Tquitter joins back to Tstayer,
-Thrcheck examines the locksets of all memory in shared-modified or
+Helgrind examines the locksets of all memory in shared-modified or
 shared-readable state.  In each such lockset, if Tquitter is
 mentioned, it is removed and replaced by Tstayer.  If, as a result, a
 lockset becomes a singleton set containing Tstayer, then the
@@ -568,7 +568,7 @@ parent after the child exits.</para>
 <para>More generally, when a group of threads merges back to a single
 thread via a cascade of pthread_join calls, any memory shared by the
 group (or a subset of it) ends up being owned exclusively by the sole
-surviving thread.  This significantly enhances Thrcheck's flexibility,
+surviving thread.  This significantly enhances Helgrind's flexibility,
 since it means that each memory location may make arbitrarily many
 transitions between exclusive and shared ownership.  Furthermore, a
 different lock may protect the location during each period of shared
@@ -578,22 +578,22 @@ ownership.</para>
 
 
 
-<sect2 id="tc-manual.data-races.summary" xreflabel="Race Det Summary">
+<sect2 id="hg-manual.data-races.summary" xreflabel="Race Det Summary">
 <title>A Summary of the Race Detection Algorithm</title>
 
-<para>Thrcheck looks for memory locations which are accessed by more
-than one thread.  For each such location, Thrcheck records which of
+<para>Helgrind looks for memory locations which are accessed by more
+than one thread.  For each such location, Helgrind records which of
 the program's locks were held by the accessing thread at the time of
 each access.  The hope is to discover that there is indeed at least
 one lock which is consistently used by all threads to protect that
 location.  If no such lock can be found, then there is apparently no
 consistent locking strategy being applied for that location, and so a
-possible data race might result.  Thrcheck accordingly reports an
+possible data race might result.  Helgrind accordingly reports an
 error.</para>
 
 <para>In practice this discipline is far too simplistic, and is
 unusable since it reports many races in some widely used and
-known-correct programming disciplines.  Thrcheck's checking therefore
+known-correct programming disciplines.  Helgrind's checking therefore
 incorporates many refinements to this basic idea, and can be
 summarised as follows:</para>
 
@@ -630,7 +630,7 @@ monitored:</para>
 
 <para>All memory accesses are intercepted and monitored.</para>
 
-<para>By observing the above events, Thrcheck can infer certain
+<para>By observing the above events, Helgrind can infer certain
 aspects of the program's locking discipline.  Programs which adhere to
 the following rules are considered to be acceptable:
 </para>
@@ -677,7 +677,7 @@ However, two exemptions apply:</para>
    on that same semaphore</para></listitem>
   </itemizedlist>
   <para>
-  This refinement allows Thrcheck to correctly track the ownership
+  This refinement allows Helgrind to correctly track the ownership
   state of inter-thread buffers used in the worker-thread and
   worker-thread-pool concurrent programming idioms (styles).</para>
  </listitem>
@@ -704,23 +704,23 @@ for each memory location are tracked at 8-bit granularity.  This means
 the algorithm is precise even for 16- and 8-bit memory
 accesses.</para>
 
-<para>Thrcheck correctly handles reader-writer locks in this
+<para>Helgrind correctly handles reader-writer locks in this
 framework.  Locations shared between multiple threads can be protected
 during reads by locks held in either read-mode or write-mode, but can
 only be protected during writes by locks held in write-mode.  Normal
 POSIX mutexes are treated as if they are reader-writer locks which are
 only ever held in write-mode.</para>
 
-<para>Thrcheck correctly handles POSIX mutexes for which recursive
+<para>Helgrind correctly handles POSIX mutexes for which recursive
 locking is allowed.</para>
 
-<para>Thrcheck partially correctly handles x86 and amd64 memory access
+<para>Helgrind partially correctly handles x86 and amd64 memory access
 instructions preceded by a LOCK prefix.  Writes are correctly handled,
 by pretending that the LOCK prefix implies acquisition and release of
 a magic "bus hardware lock" mutex before and after the instruction.
 This unfortunately requires subsequent reads from such locations to
 also use a LOCK prefix, which is not required by the real hardware.
-Thrcheck does not offer any equivalent handling for atomic sequences
+Helgrind does not offer any equivalent handling for atomic sequences
 on PowerPC/POWER platforms created by the use of lwarx/stwcx
 instructions.</para>
 
@@ -728,10 +728,10 @@ instructions.</para>
 
 
 
-<sect2 id="tc-manual.data-races.errmsgs" xreflabel="Race Error Messages">
+<sect2 id="hg-manual.data-races.errmsgs" xreflabel="Race Error Messages">
 <title>Interpreting Race Error Messages</title>
 
-<para>Thrcheck's race detection algorithm collects a lot of
+<para>Helgrind's race detection algorithm collects a lot of
 information, and tries to present it in a helpful way when a race is
 detected.  Here's an example:</para>
 
@@ -740,7 +740,7 @@ Thread #2 was created
    at 0x510548E: clone (in /lib64/libc-2.5.so)
    by 0x4E2F305: do_clone (in /lib64/libpthread-2.5.so)
    by 0x4E2F7C5: pthread_create@@GLIBC_2.2.5 (in /lib64/libpthread-2.5.so)
-   by 0x4C23870: pthread_create@* (tc_intercepts.c:198)
+   by 0x4C23870: pthread_create@* (hg_intercepts.c:198)
    by 0x400CEF: main (tc17_sembar.c:195)
 
 // And the same for threads #3, #4 and #5 -- omitted for conciseness
@@ -748,23 +748,23 @@ Thread #2 was created
 Possible data race during read of size 4 at 0x602174
    at 0x400BE5: gomp_barrier_wait (tc17_sembar.c:122)
    by 0x400C44: child (tc17_sembar.c:161)
-   by 0x4C25DF7: mythread_wrapper (tc_intercepts.c:178)
+   by 0x4C25DF7: mythread_wrapper (hg_intercepts.c:178)
    by 0x4E2F09D: start_thread (in /lib64/libpthread-2.5.so)
    by 0x51054CC: clone (in /lib64/libc-2.5.so)
   Old state: shared-modified by threads #2, #3, #4, #5
   New state: shared-modified by threads #2, #3, #4, #5
   Reason:    this thread, #2, holds no consistent locks
   Last consistently used lock for 0x602174 was first observed
-   at 0x4C25D01: pthread_mutex_init (tc_intercepts.c:326)
+   at 0x4C25D01: pthread_mutex_init (hg_intercepts.c:326)
    by 0x4009E4: gomp_barrier_init (tc17_sembar.c:46)
    by 0x400CBC: main (tc17_sembar.c:192)
 ]]></programlisting>
 
-<para>Thrcheck first announces the creation points of any threads
+<para>Helgrind first announces the creation points of any threads
 referenced in the error message.  This is so it can speak concisely
 about threads and sets of threads without repeatedly printing their
 creation point call stacks.  Each thread is only ever announced once,
-the first time it appears in any Thrcheck error message.</para>
+the first time it appears in any Helgrind error message.</para>
 
 <para>The main error message begins at the text
 "<computeroutput>Possible data race during read</computeroutput>".
@@ -779,7 +779,7 @@ making the access in question (thread #2, here) does not hold any
 locks in common with those held during all previous accesses to the
 location -- "no consistent locks", in other words.</para>
 
-<para>Finally, Thrcheck shows the lock which has protected this
+<para>Finally, Helgrind shows the lock which has protected this
 location in all previous accesses.  (If there is more than one, only
 one is shown).  This can be a useful hint, because it typically shows
 the lock that the programmers intended to use to protect the location,
@@ -814,7 +814,7 @@ Possible data race during read ...
 <para>The location is shared by 3 threads, all of which have been
 reading and writing it while (as required) holding at least one lock
 in common.  Now it is being read without that lock being held.  In the
-"Last consistently used lock" part, Thrcheck offers its best guess as
+"Last consistently used lock" part, Helgrind offers its best guess as
 to the identity of the lock that should have been used.</para>
 
 <programlisting><![CDATA[
@@ -837,10 +837,10 @@ Indeed, it could be using a lock for the location because it intends
 to make it available to other threads, one of which is thread #5 --
 and thread #5 has forgotten to use the lock.</para>
 
-<para>Also, this message implies that Thrcheck did not see any
+<para>Also, this message implies that Helgrind did not see any
 synchronisation event between threads #4 and #5 that would have
 allowed #5 to acquire exclusive ownership from #4.  See
-<link linkend="tc-manual.data-races.exclusive">above</link>
+<link linkend="hg-manual.data-races.exclusive">above</link>
 for a discussion of transfers of exclusive ownership states between
 threads.</para>
 
@@ -849,20 +849,20 @@ threads.</para>
 
 </sect1>
 
-<sect1 id="tc-manual.effective-use" xreflabel="Thrcheck Effective Use">
-<title>Hints and Tips for Effective Use of Thrcheck</title>
+<sect1 id="hg-manual.effective-use" xreflabel="Helgrind Effective Use">
+<title>Hints and Tips for Effective Use of Helgrind</title>
 
-<para>Thrcheck can be very helpful in finding and resolving
+<para>Helgrind can be very helpful in finding and resolving
 threading-related problems.  Like all sophisticated tools, it is most
 effective when you understand how to play to its strengths.</para>
 
-<para>Thrcheck will be less effective when you merely throw an
+<para>Helgrind will be less effective when you merely throw an
 existing threaded program at it and try to make sense of any reported
 errors.  It will be more effective if you design threaded programs
-from the start in a way that helps Thrcheck verify correctness.  The
+from the start in a way that helps Helgrind verify correctness.  The
 same is true for finding memory errors with Memcheck, but applies more
 here, because thread checking is a harder problem.  Consequently it is
-much easier to write a correct program for which Thrcheck falsely
+much easier to write a correct program for which Helgrind falsely
 reports (threading) errors than it is to write a correct program for
 which Memcheck falsely reports (memory) errors.</para>
 
@@ -876,23 +876,23 @@ of false data-race errors.</para>
 
   <listitem>
     <para>Make sure your application, and all the libraries it uses,
-    use the POSIX threading primitives.  Thrcheck needs to be able to
+    use the POSIX threading primitives.  Helgrind needs to be able to
     see all events pertaining to thread creation, exit, locking and
     other syncronisation events.  To do so it intercepts many POSIX
     pthread_ functions.</para>
 
     <para>Do not roll your own threading primitives (mutexes, etc)
     from combinations of the Linux futex syscall, counters and wotnot.
-    These throw Thrcheck's internal what's-going-on models way off
+    These throw Helgrind's internal what's-going-on models way off
     course and will give bogus results.</para>
 
     <para>Also, do not reimplement existing POSIX abstractions using
     other POSIX abstractions.  For example, don't build your own
     semaphore routines or reader-writer locks from POSIX mutexes and
     condition variables.  Instead use POSIX reader-writer locks and
-    semaphores directly, since Thrcheck supports them directly.</para>
+    semaphores directly, since Helgrind supports them directly.</para>
 
-    <para>Thrcheck directly supports the following POSIX threading
+    <para>Helgrind directly supports the following POSIX threading
     abstractions: mutexes, reader-writer locks, condition variables
     (but see below), and semaphores.  Currently spinlocks and barriers
     are not supported, although they could be in future.  A prototype
@@ -904,7 +904,7 @@ of false data-race errors.</para>
 
     <itemizedlist>
       <listitem><para>Qt version 4.X.  Qt 3.X is fine, but not 4.X.
-      Thrcheck contains partial direct support for Qt 4.X threading,
+      Helgrind contains partial direct support for Qt 4.X threading,
       but this is not yet in a usable state.  Assistance from folks
       knowledgeable in Qt 4 threading internals would be
       appreciated.</para></listitem>
@@ -912,28 +912,28 @@ of false data-race errors.</para>
       <listitem><para>Runtime support library for GNU OpenMP (part of
       GCC), at least GCC versions 4.2 and 4.3.  With some minor effort
       of modifying the GNU OpenMP runtime support sources, it is
-      possible to use Thrcheck on GNU OpenMP compiled codes.  Please
+      possible to use Helgrind on GNU OpenMP compiled codes.  Please
       contact the Valgrind authors for details.</para></listitem>
     </itemizedlist>
   </listitem>
 
   <listitem>
     <para>Avoid memory recycling.  If you can't avoid it, you must use
-    tell Thrcheck what is going on via the VALGRIND_HG_CLEAN_MEMORY
+    tell Helgrind what is going on via the VALGRIND_HG_CLEAN_MEMORY
     client request
-    (in <computeroutput>thrcheck.h</computeroutput>).</para>
+    (in <computeroutput>helgrind.h</computeroutput>).</para>
 
-    <para>Thrcheck is aware of standard memory allocation and
+    <para>Helgrind is aware of standard memory allocation and
     deallocation that occurs via malloc/free/new/delete and from entry
     and exit of stack frames.  In particular, when memory is
-    deallocated via free, delete, or function exit, Thrcheck considers
+    deallocated via free, delete, or function exit, Helgrind considers
     that memory clean, so when it is eventually reallocated, its
     history is irrelevant.</para>
 
     <para>However, it is common practice to implement memory recycling
     schemes.  In these, memory to be freed is not handed to
     malloc/delete, but instead put into a pool of free buffers to be
-    handed out again as required.  The problem is that Thrcheck has no
+    handed out again as required.  The problem is that Helgrind has no
     way to know that such memory is logically no longer in use, and
     its history is irrelevant.  Hence you must make that explicit,
     using the VALGRIND_HG_CLEAN_MEMORY client request to specify the
@@ -948,8 +948,8 @@ of false data-race errors.</para>
     signalling.  Semaphores with an initial value of zero are
     particularly useful for this.</para>
 
-    <para>Thrcheck only partially correctly handles POSIX condition
-    variables.  This is because Thrcheck can see inter-thread
+    <para>Helgrind only partially correctly handles POSIX condition
+    variables.  This is because Helgrind can see inter-thread
     dependencies between a pthread_cond_wait call and a
     pthread_cond_signal/broadcast call only if the waiting thread
     actually gets to the rendezvous first (so that it actually calls
@@ -957,9 +957,9 @@ of false data-race errors.</para>
     if the signaller arrives first.  In the latter case, POSIX
     guidelines imply that the associated boolean condition still
     provides an inter-thread synchronisation event, but one which is
-    invisible to Thrcheck.</para>
+    invisible to Helgrind.</para>
 
-    <para>The result of Thrcheck missing some inter-thread
+    <para>The result of Helgrind missing some inter-thread
     synchronisation events is to cause it to report false positives.
     That's because missing such events reduces the extent to which it
     can transfer exclusive memory ownership between threads.  So
@@ -989,7 +989,7 @@ unlock(mx)                             unlock(mx)
     <para>Assume <computeroutput>b</computeroutput> is False most of
     the time.  If the waiter arrives at the rendezvous first, it
     enters its while-loop, waits for the signaller to signal, and
-    eventually proceeds.  Thrcheck sees the signal, notes the
+    eventually proceeds.  Helgrind sees the signal, notes the
     dependency, and all is well.</para>
 
     <para>If the signaller arrives
@@ -1000,9 +1000,9 @@ unlock(mx)                             unlock(mx)
     until the signaller sets <computeroutput>b</computeroutput> to
     True.  Hence there is still the same inter-thread dependency, but
     this time it is through an arbitrary in-memory condition, and
-    Thrcheck cannot see it.</para>
+    Helgrind cannot see it.</para>
 
-    <para>By comparison, Thrcheck's detection of inter-thread
+    <para>By comparison, Helgrind's detection of inter-thread
     dependencies caused by semaphore operations is believed to be
     exactly correct.</para>
 
@@ -1013,14 +1013,14 @@ unlock(mx)                             unlock(mx)
 
   <listitem>
     <para>Make sure you are using a supported Linux distribution.  At
-    present, Thrcheck only properly supports x86-linux and amd64-linux
+    present, Helgrind only properly supports x86-linux and amd64-linux
     with glibc-2.3 or later.  The latter restriction means we only
     support glibc's NPTL threading implementation.  The old
     LinuxThreads implementation is not supported.</para>
 
     <para>Unsupported targets may work to varying degrees.  In
     particular ppc32-linux and ppc64-linux running NTPL should work,
-    but you will get false race errors because Thrcheck does not know
+    but you will get false race errors because Helgrind does not know
     how to properly handle atomic instruction sequences created using
     the lwarx/stwcx instructions.</para>
   </listitem>
@@ -1031,14 +1031,14 @@ unlock(mx)                             unlock(mx)
     don't call pthread_detach on existing threads.</para>
 
     <para>Using pthread_join to round up finished threads provides a
-    clear synchronisation point that both Thrcheck and programmers can
-    see.  This synchronisation point allows Thrcheck to adjust its
+    clear synchronisation point that both Helgrind and programmers can
+    see.  This synchronisation point allows Helgrind to adjust its
     memory ownership
-    models <link linkend="tc-manual.data-races.exclusive">as described
-    extensively above</link>, which helps Thrcheck produce more
+    models <link linkend="hg-manual.data-races.exclusive">as described
+    extensively above</link>, which helps Helgrind produce more
     accurate error reports.</para>
 
-    <para>If you don't call pthread_join on a thread, Thrcheck has no
+    <para>If you don't call pthread_join on a thread, Helgrind has no
     way to know when it finishes, relative to any significant
     synchronisation points for other threads in the program.  So it
     assumes that the thread lingers indefinitely and can potentially
@@ -1049,25 +1049,25 @@ unlock(mx)                             unlock(mx)
   </listitem>
 
   <listitem>
-    <para>Perform thread debugging (with Thrcheck) and memory
+    <para>Perform thread debugging (with Helgrind) and memory
     debugging (with Memcheck) together.</para>
 
-    <para>Thrcheck tracks the state of memory in detail, and memory
+    <para>Helgrind tracks the state of memory in detail, and memory
     management bugs in the application are liable to cause confusion.
     In extreme cases, applications which do many invalid reads and
     writes (particularly to freed memory) have been known to crash
-    Thrcheck.  So, ideally, you should make your application
-    Memcheck-clean before using Thrcheck.</para>
+    Helgrind.  So, ideally, you should make your application
+    Memcheck-clean before using Helgrind.</para>
 
     <para>It may be impossible to make your application Memcheck-clean
     unless you first remove threading bugs.  In particular, it may be
     difficult to remove all reads and writes to freed memory in
     multithreaded C++ destructor sequences at program termination.
-    So, ideally, you should make your application Thrcheck-clean
+    So, ideally, you should make your application Helgrind-clean
     before using Memcheck.</para>
 
     <para>Since this circularity is obviously unresolvable, at least
-    bear in mind that Memcheck and Thrcheck are to some extent
+    bear in mind that Memcheck and Helgrind are to some extent
     complementary, and you may need to use them together.</para>
   </listitem>
 
@@ -1075,17 +1075,17 @@ unlock(mx)                             unlock(mx)
     <para>POSIX requires that implementations of standard I/O (printf,
     fprintf, fwrite, fread, etc) are thread safe.  Unfortunately GNU
     libc implements this by using internal locking primitives that
-    Thrcheck is unable to intercept.  Consequently Thrcheck generates
+    Helgrind is unable to intercept.  Consequently Helgrind generates
     many false race reports when you use these functions.</para>
 
-    <para>Thrcheck attempts to hide these errors using the standard
+    <para>Helgrind attempts to hide these errors using the standard
     Valgrind error-suppression mechanism.  So, at least for simple
     test cases, you don't see any.  Nevertheless, some may slip
     through.  Just something to be aware of.</para>
   </listitem>
 
   <listitem>
-    <para>Thrcheck's error checks do not work properly inside the
+    <para>Helgrind's error checks do not work properly inside the
     system threading library itself
     (<computeroutput>libpthread.so</computeroutput>), and it usually
     observes large numbers of (false) errors in there.  Valgrind's
@@ -1106,13 +1106,13 @@ unlock(mx)                             unlock(mx)
 
 
 
-<sect1 id="tc-manual.options" xreflabel="Thrcheck Options">
-<title>Thrcheck Options</title>
+<sect1 id="hg-manual.options" xreflabel="Helgrind Options">
+<title>Helgrind Options</title>
 
 <para>The following end-user options are available:</para>
 
 <!-- start of xi:include in the manpage -->
-<variablelist id="tc.opts.list">
+<variablelist id="hg.opts.list">
 
   <varlistentry id="opt.happens-before" xreflabel="--happens-before">
     <term>
@@ -1120,13 +1120,13 @@ unlock(mx)                             unlock(mx)
       [default: all] ]]></option>
     </term>
     <listitem>
-      <para>Thrcheck always regards locks as the basis for
+      <para>Helgrind always regards locks as the basis for
        inter-thread synchronisation.  However, by default, before
-       reporting a race error, Thrcheck will also check whether
+       reporting a race error, Helgrind will also check whether
        certain other kinds of inter-thread synchronisation events
        happened.  It may be that if such events took place, then no
        race really occurred, and so no error needs to be reported.
-       See <link linkend="tc-manual.data-races.exclusive">above</link>
+       See <link linkend="hg-manual.data-races.exclusive">above</link>
        for a discussion of transfers of exclusive ownership states
        between threads.
       </para>
@@ -1146,7 +1146,7 @@ unlock(mx)                             unlock(mx)
       <para>Changing this setting from the default will increase your
        false-error rate but give little or no gain.  The only advantage
        is that <option>--happens-before=threads</option> and 
-       <option>--happens-before=none</option> should make Thrcheck
+       <option>--happens-before=none</option> should make Helgrind
        less and less sensitive to the scheduling of threads, and hence
        the output more and more repeatable across runs.
       </para>
@@ -1161,7 +1161,7 @@ unlock(mx)                             unlock(mx)
       ]]></option>
     </term>
     <listitem>
-      <para>Requests that Thrcheck produces a log of all state changes
+      <para>Requests that Helgrind produces a log of all state changes
       to location 0xXXYYZZ.  This can be helpful in tracking down
       tricky races.  <varname>--trace-level</varname> controls the
       verbosity of the log.  At the default setting (1), a one-line
@@ -1175,9 +1175,9 @@ unlock(mx)                             unlock(mx)
 
 <!-- start of xi:include in the manpage -->
 <para>In addition, the following debugging options are available for
-Thrcheck:</para>
+Helgrind:</para>
 
-<variablelist id="tc.debugopts.list">
+<variablelist id="hg.debugopts.list">
 
   <varlistentry id="opt.trace-malloc" xreflabel="--trace-malloc">
     <term>
@@ -1196,9 +1196,9 @@ Thrcheck:</para>
     </term>
     <listitem>
       <para>At exit, write to stderr a dump of the happens-before
-	graph computed by Thrcheck, in a format suitable for the VCG 
+	graph computed by Helgrind, in a format suitable for the VCG 
         graph visualisation tool.  A suitable command line is:</para>
-      <para><computeroutput>valgrind --tool=thrcheck 
+      <para><computeroutput>valgrind --tool=helgrind 
         --gen-vcg=yes my_app 2&gt;&amp;1
         | grep xxxxxx | sed "s/xxxxxx//g"
         | xvcg -</computeroutput></para>
@@ -1233,7 +1233,7 @@ Thrcheck:</para>
       ]]></option>
     </term>
     <listitem>
-      <para>Run extensive sanity checks on Thrcheck's internal
+      <para>Run extensive sanity checks on Helgrind's internal
         data structures at events defined by the bitstring, as
         follows:</para>
       <para><computeroutput>10000 </computeroutput>after changes to
@@ -1246,7 +1246,7 @@ Thrcheck:</para>
         lock or unlock event</para>
       <para><computeroutput>00001 </computeroutput>after every client
         thread creation or joinage event</para>
-      <para>Note these will make Thrcheck run very slowly, often to
+      <para>Note these will make Helgrind run very slowly, often to
         the point of being completely unusable.</para>
     </listitem>
   </varlistentry>
@@ -1257,8 +1257,8 @@ Thrcheck:</para>
 
 </sect1>
 
-<sect1 id="tc-manual.todolist" xreflabel="To Do List">
-<title>A To-Do List for Thrcheck</title>
+<sect1 id="hg-manual.todolist" xreflabel="To Do List">
+<title>A To-Do List for Helgrind</title>
 
 <para>The following is a list of loose ends which should be tidied up
 some time.</para>

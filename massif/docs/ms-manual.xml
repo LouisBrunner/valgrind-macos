@@ -6,7 +6,7 @@
 <chapter id="ms-manual" xreflabel="Massif: a heap profiler">
   <title>Massif: a heap profiler</title>
 
-</pre>
+<pre>
  Docs:
  - Mention that complex functions names are best protected with single
    quotes, eg:

@@ -670,7 +670,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
          case Ist_AbiHint:
          case Ist_Put:
          case Ist_PutI:
-         case Ist_MFence:
+         case Ist_MBE:
             addStmtToIRSB( sbOut, st );
             break;
 

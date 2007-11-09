@@ -3290,7 +3290,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
          return isBogusAtom(st->Ist.AbiHint.base);
       case Ist_NoOp:
       case Ist_IMark:
-      case Ist_MFence:
+      case Ist_MBE:
          return False;
       default: 
       unhandled:
@@ -3470,7 +3470,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
 
          case Ist_NoOp:
          case Ist_IMark:
-         case Ist_MFence:
+         case Ist_MBE:
             break;
 
          case Ist_Dirty:

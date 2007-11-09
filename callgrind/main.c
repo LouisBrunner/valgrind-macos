@@ -468,7 +468,7 @@ void collectStatementInfo(IRTypeEnv* tyenv, IRSB* bbOut, IRStmt* st,
 
    case Ist_Put:
    case Ist_PutI:
-   case Ist_MFence:
+   case Ist_MBE:
    case Ist_Exit:
        break;
 

@@ -10,7 +10,7 @@
  Docs:
  - Mention that complex functions names are best protected with single
    quotes, eg:
-       --alloc-fn='operator new(unsigned, std::nothrow_t const&)'
+       --alloc-fn='operator new(unsigned, std::nothrow_t const&amp;)'
    [XXX: that doesn't work if the option is in a .valgrindrc file or in
     $VALGRIND_OPTS.  In m_commandline.c:add_args_from_string() need to
     respect single quotes...]

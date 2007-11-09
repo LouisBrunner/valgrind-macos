@@ -37,8 +37,11 @@ typedef Addr* StackTrace;
 // Walks the stack to get instruction pointers from the top stack frames for
 // thread 'tid'.  Maximum of 'n_ips' addresses put into 'ips';  0 is the top
 // of the stack, 1 is its caller, etc.  Everything from ips[n_ips] onwards
-// is undefined and should not be read.
-extern UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips );
+// is undefined and should not be read.  The initial IP value to 
+// use is adjusted by first_ip_delta before the stack is unwound.
+// A safe value to pass is zero.
+extern UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips,
+                                  Word first_ip_delta );
 
 // Apply a function to every element in the StackTrace.  The parameter 'n'
 // gives the index of the passed ip.  Doesn't go below main() unless

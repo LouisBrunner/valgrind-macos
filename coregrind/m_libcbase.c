@@ -68,6 +68,9 @@ Long VG_(atoll16) ( Char* str )
    Bool neg = False;
    Long n = 0;
    if (*str == '-') { str++; neg = True; };
+   if (*str == '0' && (*(str+1) == 'x' || *(str+1) == 'X')) {
+      str += 2;
+   }
    while (True) {
       Char c = *str;
       if (c >= '0' && c <= (Char)'9') {

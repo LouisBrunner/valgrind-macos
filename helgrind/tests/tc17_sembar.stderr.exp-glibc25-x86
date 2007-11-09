@@ -1,0 +1,42 @@
+
+starting
+Thread #2 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc17_sembar.c:195)
+
+Thread #3 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc17_sembar.c:195)
+
+Thread #4 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc17_sembar.c:195)
+
+Thread #5 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc17_sembar.c:195)
+
+Possible data race during read of size 4 at 0x........
+   at 0x........: gomp_barrier_wait (tc17_sembar.c:122)
+   by 0x........: child (tc17_sembar.c:161)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: ...
+   by 0x........: ...
+  Old state: shared-modified by threads #2, #3, #4, #5
+  New state: shared-modified by threads #2, #3, #4, #5
+  Reason:    this thread, #2, holds no consistent locks
+  Last consistently used lock for 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: gomp_barrier_init (tc17_sembar.c:46)
+   by 0x........: main (tc17_sembar.c:192)
+done, result is 88, should be 88
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

@@ -1,0 +1,27 @@
+
+Thread #3 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (hg02_deadlock.c:36)
+
+Thread #3: lock order "0x........ before 0x........" violated
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: t2 (hg02_deadlock.c:20)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: ...
+   by 0x........: ...
+  Required order was established by acquisition of lock at 0x........
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: t1 (hg02_deadlock.c:9)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: ...
+   by 0x........: ...
+  followed by a later acquisition of lock at 0x........
+   at 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: t1 (hg02_deadlock.c:10)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: ...
+   by 0x........: ...
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

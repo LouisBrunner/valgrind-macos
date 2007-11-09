@@ -1,0 +1,26 @@
+
+before lock #1
+before lock #2
+before lock #3
+before unlock #1
+before unlock #2
+before unlock #3
+before unlock #4
+Thread #1 is the program's root thread
+
+Thread #1 unlocked a not-locked lock at 0x........ 
+   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc10_rec_lock.c:42)
+   by 0x........: main (tc10_rec_lock.c:47)
+  Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc10_rec_lock.c:24)
+   by 0x........: main (tc10_rec_lock.c:47)
+
+Thread #1's call to pthread_mutex_unlock failed
+   with error code 1 (EPERM: Operation not permitted)
+   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc10_rec_lock.c:42)
+   by 0x........: main (tc10_rec_lock.c:47)
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

@@ -1,0 +1,26 @@
+
+Thread #2 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: ...
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (hg04_race.c:19)
+
+Thread #3 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: ...
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (hg04_race.c:21)
+
+Possible data race during write of size 4 at 0x........
+   at 0x........: th (hg04_race.c:10)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: ...
+   by 0x........: ...
+  Old state: shared-readonly by threads #2, #3
+  New state: shared-modified by threads #2, #3
+  Reason:    this thread, #3, holds no consistent locks
+  Location 0x........ has never been protected by any lock
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

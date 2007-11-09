@@ -1,0 +1,25 @@
+
+Thread #1 is the program's root thread
+
+Thread #2 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: ...
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc06_two_races.c:26)
+
+Possible data race during write of size 4 at 0x........
+   at 0x........: main (tc06_two_races.c:31)
+  Old state: shared-readonly by threads #1, #2
+  New state: shared-modified by threads #1, #2
+  Reason:    this thread, #1, holds no consistent locks
+  Location 0x........ has never been protected by any lock
+
+Possible data race during write of size 4 at 0x........
+   at 0x........: main (tc06_two_races.c:35)
+  Old state: shared-readonly by threads #1, #2
+  New state: shared-modified by threads #1, #2
+  Reason:    this thread, #1, holds no consistent locks
+  Location 0x........ has never been protected by any lock
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

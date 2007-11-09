@@ -1,0 +1,86 @@
+
+Thread #1 is the program's root thread
+
+Thread #1 unlocked a not-locked lock at 0x........ 
+   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:27)
+   by 0x........: main (tc09_bad_unlock.c:49)
+  Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:23)
+   by 0x........: main (tc09_bad_unlock.c:49)
+
+Thread #2 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: ...
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:35)
+   by 0x........: main (tc09_bad_unlock.c:49)
+
+Thread #2 unlocked lock at 0x........ currently held by thread #1
+   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: child_fn (tc09_bad_unlock.c:11)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: ...
+   by 0x........: ...
+  Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:31)
+   by 0x........: main (tc09_bad_unlock.c:49)
+
+Thread #1 unlocked an invalid lock at 0x........ 
+   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:41)
+   by 0x........: main (tc09_bad_unlock.c:49)
+
+Thread #1 deallocated location 0x........ containing a locked lock
+   at 0x........: nearly_main (tc09_bad_unlock.c:45)
+   by 0x........: main (tc09_bad_unlock.c:49)
+  Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:31)
+   by 0x........: main (tc09_bad_unlock.c:49)
+
+Thread #1 unlocked a not-locked lock at 0x........ 
+   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:27)
+   by 0x........: main (tc09_bad_unlock.c:50)
+  Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:23)
+   by 0x........: main (tc09_bad_unlock.c:50)
+
+Thread #3 was created
+   at 0x........: clone (in /...libc...)
+   by 0x........: ...
+   by 0x........: pthread_create@GLIBC_ (in /lib/libpthread...)
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:35)
+   by 0x........: main (tc09_bad_unlock.c:50)
+
+Thread #3 unlocked lock at 0x........ currently held by thread #1
+   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: child_fn (tc09_bad_unlock.c:11)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   by 0x........: ...
+   by 0x........: ...
+  Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:31)
+   by 0x........: main (tc09_bad_unlock.c:50)
+
+Thread #1 unlocked an invalid lock at 0x........ 
+   at 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:41)
+   by 0x........: main (tc09_bad_unlock.c:50)
+
+Thread #1 deallocated location 0x........ containing a locked lock
+   at 0x........: nearly_main (tc09_bad_unlock.c:45)
+   by 0x........: main (tc09_bad_unlock.c:50)
+  Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:31)
+   by 0x........: main (tc09_bad_unlock.c:50)
+
+ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0)

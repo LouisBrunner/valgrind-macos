@@ -303,6 +303,9 @@ extern void VG_(needs_tool_errors) (
    // Print error context.
    void (*pp_Error)(Error* err),
 
+   // Should the core indicate which ThreadId each error comes from?
+   Bool show_ThreadIDs_for_errors,
+
    // Should fill in any details that could be postponed until after the
    // decision whether to ignore the error (ie. details not affecting the
    // result of VG_(tdict).tool_eq_Error()).  This saves time when errors
@@ -544,13 +547,14 @@ void VG_(track_post_reg_write_clientcall_return)(
 /* Scheduler events (not exhaustive) */
 
 /* Called when 'tid' starts or stops running client code blocks.
-   Gives the total dispatched block count at that event.  Note, this is
-   not the same as 'tid' holding the BigLock (the lock that ensures that
-   only one thread runs at a time): a thread can hold the lock for other
-   purposes (making translations, etc) yet not be running client blocks.
-   Obviously though, a thread must hold the lock in order to run client
-   code blocks, so the times bracketed by 'thread_run'..'thread_runstate'
-   are a subset of the times when thread 'tid' holds the cpu lock.
+   Gives the total dispatched block count at that event.  Note, this
+   is not the same as 'tid' holding the BigLock (the lock that ensures
+   that only one thread runs at a time): a thread can hold the lock
+   for other purposes (making translations, etc) yet not be running
+   client blocks.  Obviously though, a thread must hold the lock in
+   order to run client code blocks, so the times bracketed by
+   'start_client_code'..'stop_client_code' are a subset of the times
+   when thread 'tid' holds the cpu lock.
 */
 void VG_(track_start_client_code)(
         void(*f)(ThreadId tid, ULong blocks_dispatched)
@@ -562,11 +566,16 @@ void VG_(track_stop_client_code)(
 
 /* Thread events (not exhaustive)
 
-   Called during thread create, before the new thread has run any
-   instructions (or touched any memory).
- */
-void VG_(track_post_thread_create)(void(*f)(ThreadId tid, ThreadId child));
-void VG_(track_post_thread_join)  (void(*f)(ThreadId joiner, ThreadId joinee));
+   ll_create: low level thread creation.  Called before the new thread
+   has run any instructions (or touched any memory).  In fact, called
+   immediately before the new thread has come into existence; the new
+   thread can be assumed to exist when notified by this call.
+
+   ll_exit: low level thread exit.  Called after the exiting thread
+   has run its last instruction.
+*/
+void VG_(track_pre_thread_ll_create)(void(*f)(ThreadId tid, ThreadId child));
+void VG_(track_pre_thread_ll_exit)  (void(*f)(ThreadId tid));
 
 
 /* Signal events (not exhaustive)

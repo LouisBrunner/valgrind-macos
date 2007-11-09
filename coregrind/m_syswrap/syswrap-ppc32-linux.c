@@ -313,6 +313,12 @@ static SysRes do_clone ( ThreadId ptid,
       ctst->client_stack_szB  = 0;
    }
 
+   /* Assume the clone will succeed, and tell any tool that wants to
+      know that this thread has come into existence.  If the clone
+      fails, we'll send out a ll_exit notification for it at the out:
+      label below, to clean up. */
+   VG_TRACK ( pre_thread_ll_create, ptid, ctid );
+
    if (flags & VKI_CLONE_SETTLS) {
       if (debug)
          VG_(printf)("clone child has SETTLS: tls at %p\n", child_tls);
@@ -344,6 +350,8 @@ static SysRes do_clone ( ThreadId ptid,
       /* clone failed */
       VG_(cleanup_thread)(&ctst->arch);
       ctst->status = VgTs_Empty;
+      /* oops.  Better tell the tool the thread exited in a hurry :-) */
+      VG_TRACK( pre_thread_ll_exit, ctid );
    }
 
    return res;

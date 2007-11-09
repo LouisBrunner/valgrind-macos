@@ -293,7 +293,8 @@ static void pp_Error ( Error* err )
    }
 
    if (!VG_(clo_xml)) {
-      if (err->tid > 0 && err->tid != last_tid_printed) {
+     if (VG_(tdict).tool_show_ThreadIDs_for_errors
+         && err->tid > 0 && err->tid != last_tid_printed) {
          VG_(message)(Vg_UserMsg, "Thread %d:", err->tid );
          last_tid_printed = err->tid;
       }
@@ -380,7 +381,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    err->count    = 1;
    err->tid      = tid;
    if (NULL == where)
-      err->where = VG_(record_ExeContext)( tid );
+     err->where = VG_(record_ExeContext)( tid, 0 );
    else
       err->where = where;
 

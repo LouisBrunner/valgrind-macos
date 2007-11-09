@@ -78,8 +78,6 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
       VG_(printf)("thread tid %d started: stack = %p\n",
 		  tid, &tid);
 
-   VG_TRACK ( post_thread_create, tst->os_state.parent, tid );
-
    tst->os_state.lwpid = VG_(gettid)();
    tst->os_state.threadgroup = VG_(getpid)();
 
@@ -127,6 +125,9 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    c = VG_(count_living_threads)();
    vg_assert(c >= 1); /* stay sane */
+
+   // Tell the tool this thread is exiting
+   VG_TRACK( pre_thread_ll_exit, tid );
 
    if (c == 1) {
 

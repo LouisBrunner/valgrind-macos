@@ -118,6 +118,7 @@ typedef struct {
    // VG_(needs).tool_errors
    Bool  (*tool_eq_Error)                    (VgRes, Error*, Error*);
    void  (*tool_pp_Error)                    (Error*);
+   Bool  tool_show_ThreadIDs_for_errors;
    UInt  (*tool_update_extra)                (Error*);
    Bool  (*tool_recognised_suppression)      (Char*, Supp*);
    Bool  (*tool_read_extra_suppression_info) (Int, Char*, Int, Supp*);
@@ -207,8 +208,8 @@ typedef struct {
    void (*track_start_client_code)(ThreadId, ULong);
    void (*track_stop_client_code) (ThreadId, ULong);
 
-   void (*track_post_thread_create)(ThreadId, ThreadId);
-   void (*track_post_thread_join)  (ThreadId, ThreadId);
+   void (*track_pre_thread_ll_create)(ThreadId, ThreadId);
+   void (*track_pre_thread_ll_exit)  (ThreadId);
 
    void (*track_pre_deliver_signal) (ThreadId, Int sigNo, Bool);
    void (*track_post_deliver_signal)(ThreadId, Int sigNo);

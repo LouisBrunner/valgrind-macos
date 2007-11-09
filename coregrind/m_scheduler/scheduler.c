@@ -437,21 +437,16 @@ static void sched_fork_cleanup(ThreadId me)
 }
 
 
-/* Initialise the scheduler.  Create a single "main" thread ready to
-   run, with special ThreadId of one.  This is called at startup.  The
-   caller subsequently initialises the guest state components of this
-   main thread, thread 1.  
+/* First phase of initialisation of the scheduler.  Initialise the
+   bigLock, zeroise the VG_(threads) structure and decide on the
+   ThreadId of the root thread.
 */
-void VG_(scheduler_init) ( Addr clstack_end, SizeT clstack_size )
+ThreadId VG_(scheduler_init_phase1) ( void )
 {
    Int i;
    ThreadId tid_main;
 
-   VG_(debugLog)(1,"sched","sched_init: cls_end=0x%lx, cls_sz=%ld\n",
-                   clstack_end, clstack_size);
-
-   vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
-   vg_assert(VG_IS_PAGE_ALIGNED(clstack_size));
+   VG_(debugLog)(1,"sched","sched_init_phase1\n");
 
    ML_(sema_init)(&the_BigLock);
 
@@ -470,7 +465,27 @@ void VG_(scheduler_init) ( Addr clstack_end, SizeT clstack_size )
    }
 
    tid_main = VG_(alloc_ThreadState)();
-   vg_assert(tid_main == 1);
+
+   return tid_main;
+}
+
+
+/* Second phase of initialisation of the scheduler.  Given the root
+   ThreadId computed by first phase of initialisation, fill in stack
+   details and acquire bigLock.  Initialise the scheduler.  This is
+   called at startup.  The caller subsequently initialises the guest
+   state components of this main thread.
+*/
+void VG_(scheduler_init_phase2) ( ThreadId tid_main,
+                                  Addr     clstack_end, 
+                                  SizeT    clstack_size )
+{
+   VG_(debugLog)(1,"sched","sched_init_phase2: tid_main=%d, "
+                   "cls_end=0x%lx, cls_sz=%ld\n",
+                   tid_main, clstack_end, clstack_size);
+
+   vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
+   vg_assert(VG_IS_PAGE_ALIGNED(clstack_size));
 
    VG_(threads)[tid_main].client_stack_highest_word 
       = clstack_end + 1 - sizeof(UWord);
@@ -625,6 +640,7 @@ static UInt run_thread_for_a_while ( ThreadId tid )
                                       VG_(clo_profile_flags) > 0 ? 1 : 0 )
    );
 
+   vg_assert(VG_(in_generated_code) == True);
    VG_(in_generated_code) = False;
 
    if (jumped) {

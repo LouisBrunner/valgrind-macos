@@ -1174,6 +1174,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    HChar*  toolname           = "memcheck";    // default to Memcheck
    Int     need_help          = 0; // 0 = no, 1 = --help, 2 = --help-debug
    UInt*   client_auxv        = NULL;
+   ThreadId tid_main          = VG_INVALID_THREADID;
    Int     loglevel, i;
    Bool    logging_to_fd;
    struct vki_rlimit zero = { 0, 0 };
@@ -1766,6 +1767,17 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    }
 
    //--------------------------------------------------------------
+   // Initialise the scheduler (phase 1) [generates tid_main]
+   //   p: none, afaics
+   //--------------------------------------------------------------
+   VG_(debugLog)(1, "main", "Initialise scheduler (phase 1)\n");
+   tid_main = VG_(scheduler_init_phase1)();
+   vg_assert(tid_main >= 0 && tid_main < VG_N_THREADS
+             && tid_main != VG_INVALID_THREADID);
+   /* Tell the tool about tid_main */
+   VG_TRACK( pre_thread_ll_create, VG_INVALID_THREADID, tid_main );
+   
+   //--------------------------------------------------------------
    // Tell the tool about the initial client memory permissions
    //   p: aspacem
    //   p: mallocfree
@@ -1837,18 +1849,20 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    }
 
    //--------------------------------------------------------------
-   // Initialise the scheduler
+   // Initialise the scheduler (phase 2)
+   //   p: Initialise the scheduler (phase 1) [for tid_main]
    //   p: setup_file_descriptors() [else VG_(safe_fd)() breaks]
    //   p: setup_client_stack
    //--------------------------------------------------------------
-   VG_(debugLog)(1, "main", "Initialise scheduler\n");
+   VG_(debugLog)(1, "main", "Initialise scheduler (phase 2)\n");
    { NSegment const* seg 
         = VG_(am_find_nsegment)( the_iifii.initial_client_SP );
      vg_assert(seg);
      vg_assert(seg->kind == SkAnonC);
      vg_assert(the_iifii.initial_client_SP >= seg->start);
      vg_assert(the_iifii.initial_client_SP <= seg->end);
-     VG_(scheduler_init)( seg->end, the_iifii.clstack_max_size );
+     VG_(scheduler_init_phase2)( tid_main, 
+                                 seg->end, the_iifii.clstack_max_size );
    }
 
    //--------------------------------------------------------------

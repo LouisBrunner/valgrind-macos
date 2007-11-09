@@ -522,7 +522,7 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd, char *pathname)
 
    i->fd = fd;
    i->pathname = VG_(arena_strdup)(VG_AR_CORE, pathname);
-   i->where = (tid == -1) ? NULL : VG_(record_ExeContext)(tid);
+   i->where = (tid == -1) ? NULL : VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
 }
 
 // Record opening of an fd, and find its name.

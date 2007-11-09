@@ -63,7 +63,8 @@
 #
 # Expected stdout (filtered) is kept in <test>.stdout.exp[0-9]* (can be more
 # than one expected output).  It can be missing if it would be empty.  Expected
-# stderr (filtered) is kept in <test>.stderr.exp[0-9]*. 
+# stderr (filtered) is kept in <test>.stderr.exp*.   There must be at least
+# one stderr.exp* file.
 #
 # The prerequisite command, if present, must return 0 otherwise the test is
 # skipped.  The post-test command, if present, must return 0 and its stdout
@@ -328,9 +329,9 @@ sub do_one_test($$)
     # Filter stderr
     mysystem("$stderr_filter < $name.stderr.out > $tmp");
     rename($tmp, "$name.stderr.out");
-    # Find all the .stderr.exp files.  $name.stderr.exp must exist.
+    # Find all the .stderr.exp files.  At least one must exist.
     my @stderr_exps = <$name.stderr.exp*>;
-    (-r "$name.stderr.exp") or die "Could not read `$name.stderr.exp'\n";
+    (0 != scalar @stderr_exps) or die "Could not find `$name.stderr.exp*'\n";
     do_diffs($fullname, $name, "stderr", \@stderr_exps); 
 
     # Maybe do post-test check

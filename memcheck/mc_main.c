@@ -4659,7 +4659,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
             cgbs[i].start = arg[1];
             cgbs[i].size  = arg[2];
             cgbs[i].desc  = VG_(strdup)((Char *)arg[3]);
-            cgbs[i].where = VG_(record_ExeContext) ( tid );
+            cgbs[i].where = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
 
             *ret = i;
          } else
@@ -4975,6 +4975,7 @@ static void mc_pre_clo_init(void)
    VG_(needs_core_errors)         ();
    VG_(needs_tool_errors)         (mc_eq_Error,
                                    mc_pp_Error,
+                                   True,/*show TIDs for errors*/
                                    mc_update_extra,
                                    mc_recognised_suppression,
                                    mc_read_extra_suppression_info,

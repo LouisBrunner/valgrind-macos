@@ -875,7 +875,8 @@ Int get_IPs( ThreadId tid, Bool is_custom_alloc, Addr ips[])
          VG_(tool_panic)("get_IPs: ips[] too small, inc. MAX_OVERESTIMATE?");
 
       // Ask for more IPs than clo_depth suggests we need.
-      n_ips = VG_(get_StackTrace)( tid, ips, clo_depth + overestimate );
+      n_ips = VG_(get_StackTrace)( tid, ips, clo_depth + overestimate,
+                                        0/*first_ip_delta*/ );
       tl_assert(n_ips > 0);
 
       // If the original stack trace is smaller than asked-for, redo=False.

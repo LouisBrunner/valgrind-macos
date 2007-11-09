@@ -15,7 +15,7 @@
   providing moral support.)
 
   Partly based upon other Valgrind tools
-  Copyright (C) 2000-2006 Julian Seward, Nicholas Nethercote et al.
+  Copyright (C) 2000-2007 Julian Seward, Nicholas Nethercote et al.
   jseward@acm.org
   njn@valgrind.org
 
@@ -1582,7 +1582,8 @@ static void o_doLeakReport(MemBlock *mb)
   {
     O_MDEBUG("creating new context maybeLast=0");
     // Get the current stacktrace
-    mb->leaked = VG_(record_ExeContext)(VG_(get_running_tid)());
+    mb->leaked = VG_(record_ExeContext)(VG_(get_running_tid)(),
+                                        0/*first_ip_delta*/);
   }
 
   doReport = o_addLeakedBlock(mb->where, mb->leaked, mb->length);
@@ -1945,7 +1946,7 @@ static void o_createMemBlock(ThreadId tid, Addr start, SizeT size)
   */
   mb->hdr.key = start;
   mb->length = size;
-  mb->where = VG_(record_ExeContext)(tid);
+  mb->where = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
   
   /*
     O_DEBUG("Creating new MemBlock (%p) key = %p, length %d",
@@ -2036,7 +2037,8 @@ static void o_setupMaybeLast(Addr a)
     if(!tp->memBlock->maybeLast)
     {
       tp->memBlock->maybeLast = tp;
-      tp->memBlock->funcEnd = VG_(record_ExeContext)(VG_(get_running_tid)());
+      tp->memBlock->funcEnd = VG_(record_ExeContext)(VG_(get_running_tid)(),
+                                                     0/*first_ip_delta*/);
       O_MDEBUG("setting maybeLast to %p in block at %p",
                FROM_TRACKED_KEY(tp->hdr.key), tp->block);
     }

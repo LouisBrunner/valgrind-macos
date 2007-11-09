@@ -51,8 +51,11 @@ typedef
 //
 // If called from generated code, use VG_(get_running_tid)() to get the
 // current ThreadId.  If called from non-generated code, the current
-// ThreadId should be passed in by the core.
-extern ExeContext* VG_(record_ExeContext) ( ThreadId tid );
+// ThreadId should be passed in by the core.  The initial IP value to 
+// use is adjusted by first_ip_delta before the stack is unwound.
+// A safe value to pass is zero.
+extern 
+ExeContext* VG_(record_ExeContext) ( ThreadId tid, Word first_ip_delta );
 
 // Apply a function to every element in the ExeContext.  The parameter 'n'
 // gives the index of the passed ip.  Doesn't go below main() unless

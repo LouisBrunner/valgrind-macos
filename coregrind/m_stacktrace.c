@@ -240,7 +240,29 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
          continue;
       }
 
-      /* No luck there.  We have to give up. */
+      /* Last-ditch hack (evidently GDB does something similar).  We
+         are in the middle of nowhere and we have a nonsense value for
+         the frame pointer.  If the stack pointer is still valid,
+         assume that what it points at is a return address.  Yes,
+         desperate measures.  Could do better here:
+         - check that the supposed return address is in
+           an executable page
+         - check that the supposed return address is just after a call insn
+         - given those two checks, don't just consider *sp as the return 
+           address; instead scan a likely section of stack (eg sp .. sp+256)
+           and use suitable values found there.
+      */
+      if (fp_min <= sp && sp < fp_max) {
+         ip = ((UWord*)sp)[0];
+         ips[i++] = ip;
+         if (debug)
+            VG_(printf)("     ipsH[%d]=%08p\n", i-1, ips[i-1]);
+         ip = ip - 1;
+         sp += 8;
+         continue;
+      }
+
+      /* No luck at all.  We have to give up. */
       break;
    }
 
@@ -369,7 +391,8 @@ UInt VG_(get_StackTrace2) ( ThreadId tid_if_known,
    return n_found;
 }
 
-UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
+UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips, 
+                           Word first_ip_delta )
 {
    /* thread in thread table */
    Addr ip                 = VG_(get_IP)(tid);
@@ -404,6 +427,10 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
       sp += sizeof(Addr);
    }
 #  endif
+
+   /* Take into account the first_ip_delta. */
+   vg_assert( sizeof(Addr) == sizeof(Word) );
+   ip += first_ip_delta;
 
    if (0)
       VG_(printf)("tid %d: stack_highest=0x%08lx ip=0x%08lx sp=0x%08lx fp=0x%08lx\n",
@@ -446,7 +473,8 @@ void VG_(pp_StackTrace) ( StackTrace ips, UInt n_ips )
 void VG_(get_and_pp_StackTrace) ( ThreadId tid, UInt n_ips )
 {
    Addr ips[n_ips];
-   UInt n_ips_obtained = VG_(get_StackTrace)(tid, ips, n_ips);
+   UInt n_ips_obtained = VG_(get_StackTrace)(tid, ips, n_ips,
+                                             0/*first_ip_delta*/);
    VG_(pp_StackTrace)(ips, n_ips_obtained);
 }
 

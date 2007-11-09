@@ -131,7 +131,7 @@ MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT szB,
    mc->data      = p;
    mc->szB       = szB;
    mc->allockind = kind;
-   mc->where     = VG_(record_ExeContext)(tid);
+   mc->where     = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
 
    /* Paranoia ... ensure the MC_Chunk is off-limits to the client, so
       the mc->data field isn't visible to the leak checker.  If memory
@@ -271,7 +271,7 @@ void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
    /* Put it out of harm's way for a while, if not from a client request */
    if (MC_AllocCustom != mc->allockind) {
       /* Record where freed */
-      mc->where = VG_(record_ExeContext) ( tid );
+      mc->where = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
       add_to_freed_queue ( mc );
    } else {
       VG_(free) ( mc );
@@ -349,14 +349,14 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
 
    if (old_szB == new_szB) {
       /* size unchanged */
-      mc->where = VG_(record_ExeContext)(tid);
+      mc->where = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
       p_new = p_old;
       
    } else if (old_szB > new_szB) {
       /* new size is smaller */
       MC_(make_mem_noaccess)( mc->data+new_szB, mc->szB-new_szB );
       mc->szB = new_szB;
-      mc->where = VG_(record_ExeContext)(tid);
+      mc->where = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
       p_new = p_old;
 
    } else {

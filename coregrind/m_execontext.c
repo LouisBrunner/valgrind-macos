@@ -277,7 +277,7 @@ static void resize_ec_htab ( void )
    ec_htab_size_idx++;
 }
 
-ExeContext* VG_(record_ExeContext) ( ThreadId tid )
+ExeContext* VG_(record_ExeContext) ( ThreadId tid, Word first_ip_delta )
 {
    Int         i;
    Addr        ips[VG_DEEPEST_BACKTRACE];
@@ -297,7 +297,8 @@ ExeContext* VG_(record_ExeContext) ( ThreadId tid )
    vg_assert(VG_(clo_backtrace_size) >= 1 &&
              VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
 
-   n_ips = VG_(get_StackTrace)( tid, ips, VG_(clo_backtrace_size) );
+   n_ips = VG_(get_StackTrace)( tid, ips, VG_(clo_backtrace_size),
+                                first_ip_delta );
    tl_assert(n_ips >= 1 && n_ips <= VG_(clo_backtrace_size));
 
    /* Now figure out if we've seen this one before.  First hash it so

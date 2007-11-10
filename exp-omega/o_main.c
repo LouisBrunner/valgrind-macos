@@ -163,13 +163,27 @@ static UInt o_isReturnIgnoreReg(Addr reg)
   /*
   ** Indicate registers that are 'scratch' registers and should be ignored on
   ** function return for tracked pointer purposes.
+
+  JRS 10 Nov 2007: Seems to me this should be somehow related to
+  caller- vs callee-saved classification of registers, but not sure.
+  See docs/internal/register-uses.txt for a summary.
+
+  This fn really ought to be partitioned along VGP_arch_os lines
+  rather than VGA_arch lines, since register conventions are OS
+  dependant as well as CPU dependant.
   */
+#if defined(VGA_x86)
   switch(OFFSET_FROM_REG(reg))
   {
-#if defined(VGA_x86)
   case OFFSET_x86_ECX:
   case OFFSET_x86_EDX:
+    return 1;
+  default:
+    return 0;
+  }
 #elif defined(VGA_amd64)
+  switch(OFFSET_FROM_REG(reg))
+  {
   case OFFSET_amd64_RCX:
   case OFFSET_amd64_RSI:
   case OFFSET_amd64_RDI:
@@ -177,21 +191,20 @@ static UInt o_isReturnIgnoreReg(Addr reg)
   case OFFSET_amd64_R9:
   case OFFSET_amd64_R10:
   case OFFSET_amd64_R11:
-#elif defined(VGA_ppc32)
-#error I know even less about PPC than x86 - please add appropriate registers
-#elif defined(VGA_ppc64)
-#error I know even less about PPC than x86 - please add appropriate registers
-#else
-#  error Unknown arch
-#endif
     return 1;
-    break;
-      
   default:
-    break;
+    return 0;
   }
-
-  return 0;
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+  VG_(printf)("\n\nOmega does not currently work on ppc platforms."
+              "  Sorry.\n\n");
+  VG_(exit)(0);
+#else
+#  error "Unknown arch"
+#endif
+   
+  /*NOTREACHED*/
+  tl_assert(0);
 }
 
 
@@ -2805,14 +2818,11 @@ o_instrument(VgCallbackClosure* closure,
 	  case OFFSET_amd64_RIP:
 #endif
 
-#elif defined(VGA_ppc32)
-
-#error I know even less about PPC than x86 - please add appropriate registers
-
-#elif defined(VGA_ppc64)
-
-#error I know even less about PPC than x86 - please add appropriate registers
-
+#elif defined(VGA_ppc32) || defined(VGA_ppc64)
+  default:
+  VG_(printf)("\n\nOmega does not currently work on ppc platforms."
+              "  Sorry.\n\n");
+  VG_(exit)(0);
 #else
 
 #error Unknown arch

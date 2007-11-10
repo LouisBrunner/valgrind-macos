@@ -576,18 +576,18 @@ void VG_(track_stop_client_code)(
 
    The _ll_ part makes it clear these events are not to do with
    pthread_create or pthread_exit/pthread_join (etc), which are a
-   higher level abstraction synthesised by libpthread.  What you be
-   sure of from _ll_create/_ll_exit is the absolute limits of each
+   higher level abstraction synthesised by libpthread.  What you can
+   be sure of from _ll_create/_ll_exit is the absolute limits of each
    thread's lifetime, and hence be assured that all memory references
    made by the thread fall inside the _ll_create/_ll_exit pair.  This
    is important for tools that need a 100% accurate account of which
    thread is responsible for every memory reference in the process.
 
-   pthread_create/join/exit do not give this property - they will
-   calls/returns to/from them happen arbitrarily far away from the
-   relevant low-level thread create/quit event.  In general a few
-   hundred instructions; hence a few hundred(ish) memory references
-   could get misclassified each time.
+   pthread_create/join/exit do not give this property.  Calls/returns
+   to/from them happen arbitrarily far away from the relevant
+   low-level thread create/quit event.  In general a few hundred
+   instructions; hence a few hundred(ish) memory references could get
+   misclassified each time.
 */
 void VG_(track_pre_thread_ll_create)(void(*f)(ThreadId tid, ThreadId child));
 void VG_(track_pre_thread_ll_exit)  (void(*f)(ThreadId tid));

@@ -92,7 +92,7 @@ oincludedir = $(includedir)/valgrind
 
 oinclude_HEADERS =
 
-noinst_HEADERS =
+noinst_HEADERS = omega.h
 
 o_replace_memops.o: CFLAGS += -fno-omit-frame-pointer
 

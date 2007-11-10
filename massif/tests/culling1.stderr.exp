@@ -424,15 +424,15 @@ Massif: heap reallocs:        0
 Massif: heap frees:           0
 Massif: stack allocs:         0
 Massif: stack frees:          0
-Massif: XPts:                 4
-Massif: top-XPts:             1 (25%)
-Massif: XPt-init-expansions:  3
-Massif: XPt-later-expansions: 0
-Massif: SXPt allocs:          60
-Massif: SXPt frees:           36
+Massif: XPts:                 ...
+Massif: top-XPts:             ...
+Massif: XPt init expansions:  3
+Massif: XPt later expansions: 0
+Massif: SXPt allocs:          ...
+Massif: SXPt frees:           ...
 Massif: skipped snapshots:    51
 Massif: real snapshots:       150
 Massif: detailed snapshots:   15
 Massif: peak snapshots:       0
 Massif: cullings:             2
-Massif: XCon_redos:           0
+Massif: XCon redos:           ...

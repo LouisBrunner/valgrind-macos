@@ -9,4 +9,15 @@ $dir/filter_stderr |
 
 # Only print lines that contain "Massif:".  The -n means don't print any
 # lines by default, and the 'p' means do print those that match the pattern.
-sed -n "/Massif:/p"
+sed -n "/Massif:/p" |
+
+# These XPt counts vary from machine to machine, because the size of the
+# stack trace can vary -- eg. some machines have more stack frames below
+# zero than other machines.  So filter them out.
+sed "s/\(Massif: XPts:\).*/\1                 .../" |
+sed "s/\(Massif: top-XPts:\).*/\1             .../" |
+sed "s/\(Massif: XPt-init-expansions:\).*/\1  .../" |
+sed "s/\(Massif: XPt-later-expansions:\).*/\1 .../" |
+sed "s/\(Massif: SXPt allocs:\).*/\1          .../" |
+sed "s/\(Massif: SXPt frees:\).*/\1           .../" |
+sed "s/\(Massif: XCon redos:\).*/\1           .../"

@@ -2037,8 +2037,8 @@ static void ms_fini(Int exit_status)
    VERB(1, "top-XPts:             %u (%d%%)",
       alloc_xpt->n_children,
       ( n_xpts ? alloc_xpt->n_children * 100 / n_xpts : 0));
-   VERB(1, "XPt-init-expansions:  %u", n_xpt_init_expansions);
-   VERB(1, "XPt-later-expansions: %u", n_xpt_later_expansions);
+   VERB(1, "XPt init expansions:  %u", n_xpt_init_expansions);
+   VERB(1, "XPt later expansions: %u", n_xpt_later_expansions);
    VERB(1, "SXPt allocs:          %u", n_sxpt_allocs);
    VERB(1, "SXPt frees:           %u", n_sxpt_frees);
    VERB(1, "skipped snapshots:    %u", n_skipped_snapshots);
@@ -2046,7 +2046,7 @@ static void ms_fini(Int exit_status)
    VERB(1, "detailed snapshots:   %u", n_detailed_snapshots);
    VERB(1, "peak snapshots:       %u", n_peak_snapshots);
    VERB(1, "cullings:             %u", n_cullings);
-   VERB(1, "XCon_redos:           %u", n_XCon_redos);
+   VERB(1, "XCon redos:           %u", n_XCon_redos);
 }
 
 

@@ -38,6 +38,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
+#include "pub_core_threadstate.h"   // For VG_INVALID_THREADID
 #include "pub_core_tooliface.h"
 #include "valgrind.h"
 
@@ -1449,6 +1450,7 @@ void* VG_(arena_memalign) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
 }
 
 
+// The ThreadId doesn't matter, it's not used.
 SizeT VG_(arena_payload_szB) ( ThreadId tid, ArenaId aid, void* ptr )
 {
    Arena* a = arenaId_to_ArenaP(aid);
@@ -1569,6 +1571,13 @@ Char* VG_(strdup) ( const Char* s )
 {
    return VG_(arena_strdup) ( VG_AR_TOOL, s ); 
 }
+
+// Useful for querying user blocks.           
+SizeT VG_(malloc_usable_size) ( void* p )                    
+{                                                            
+   return VG_(arena_payload_szB)(VG_INVALID_THREADID, VG_AR_CLIENT, p);    
+}                                                            
+  
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

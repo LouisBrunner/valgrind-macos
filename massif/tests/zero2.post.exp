@@ -32,7 +32,7 @@ ms_print arguments: massif.out
 Number of snapshots: 21
  Detailed snapshots: [9, 19]
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
   0              0                0                0             0            0
   1              0                0                0             0            0
@@ -48,7 +48,7 @@ Number of snapshots: 21
 ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
 
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
  10              0                0                0             0            0
  11              0                0                0             0            0
@@ -64,6 +64,6 @@ Number of snapshots: 21
 ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
 
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
  20              0                0                0             0            0

@@ -5,29 +5,29 @@
 // programs, but not so common in small tests, so we test for it here.
 int main(void)
 {
-   malloc(1000);
-   malloc(15);
-   malloc(12);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
-   malloc(1);
+   malloc(8000);  // all sizes are divisible by 8 -- no slop
+   malloc(120);
+   malloc(96);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
+   malloc(8);
 
    
    return 0;

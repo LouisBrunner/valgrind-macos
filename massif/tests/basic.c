@@ -11,7 +11,7 @@ int main(void)
    int* a[N];
 
    for (i = 0; i < N; i++) {
-      a[i] = malloc(100);
+      a[i] = malloc(200);  // 200 is divisible by 8 -- so no slop.
    }
    for (i = 0; i < N-1; i++) {
       free(a[i]);

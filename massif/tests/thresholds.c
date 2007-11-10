@@ -35,24 +35,24 @@ void my_malloc3(int n)
 
 void a7550(void)
 {
-   my_malloc1(6000);
-   my_malloc2( 900);
+   my_malloc1(24000);
+   my_malloc2( 3600);
 }
 
 void a450(void)
 {
-   my_malloc2( 300);
-   my_malloc1( 100);
-   my_malloc2( 100);
-   my_malloc1(  50);
+   my_malloc2(1200);
+   my_malloc1( 400);
+   my_malloc2( 400);
+   my_malloc1( 200);
 }
 
 int main(void)
 {
    a7550(); 
    a450(); 
-   my_malloc1(500);
-   malloc(2000);
-   my_malloc3(50);
+   my_malloc1(2000);
+   malloc(8000);
+   my_malloc3(200);
    return 0;
 }

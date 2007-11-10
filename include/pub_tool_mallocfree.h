@@ -41,6 +41,10 @@ extern void* VG_(calloc)         ( SizeT n, SizeT bytes_per_elem );
 extern void* VG_(realloc)        ( void* p, SizeT size );
 extern Char* VG_(strdup)         ( const Char* s );
 
+// Returns the usable size of a heap-block.  It's the asked-for size plus
+// possibly some more due to rounding up.
+extern SizeT VG_(malloc_usable_size)( void* p );
+
 // TODO: move somewhere else
 // Call here to bomb the system when out of memory (mmap anon fails)
 extern void VG_(out_of_memory_NORETURN) ( HChar* who, SizeT szB );

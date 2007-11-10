@@ -377,7 +377,7 @@ sub read_input_file()
         ,   $time_column
         ,   "total(B)"
         ,   "useful-heap(B)"
-        ,   "admin-heap(B)"
+        ,   "extra-heap(B)"
         ,   "stacks(B)"
         ) .
         $fancy_nl;
@@ -391,9 +391,9 @@ sub read_input_file()
         my $snapshot_num     = equals_num_line($line,      "snapshot");
         my $time             = equals_num_line(get_line(), "time");
         my $mem_heap_B       = equals_num_line(get_line(), "mem_heap_B");
-        my $mem_heap_admin_B = equals_num_line(get_line(), "mem_heap_admin_B");
+        my $mem_heap_extra_B = equals_num_line(get_line(), "mem_heap_extra_B");
         my $mem_stacks_B     = equals_num_line(get_line(), "mem_stacks_B");
-        my $mem_total_B      = $mem_heap_B + $mem_heap_admin_B + $mem_stacks_B;
+        my $mem_total_B      = $mem_heap_B + $mem_heap_extra_B + $mem_stacks_B;
         my $heap_tree        = equals_num_line(get_line(), "heap_tree");
 
         # Print the snapshot data to $tmp_file.
@@ -402,7 +402,7 @@ sub read_input_file()
         ,   commify($time)
         ,   commify($mem_total_B)
         ,   commify($mem_heap_B)
-        ,   commify($mem_heap_admin_B)
+        ,   commify($mem_heap_extra_B)
         ,   commify($mem_stacks_B)
         );
 

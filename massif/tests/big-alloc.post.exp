@@ -32,7 +32,7 @@ ms_print arguments: massif.out
 Number of snapshots: 11
  Detailed snapshots: [9]
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
   0              0                0                0             0            0
   1     10,485,768       10,485,768       10,485,760             8            0
@@ -48,6 +48,6 @@ Number of snapshots: 11
 ->100.00% (94,371,840B) 0x........: main (big-alloc.c:13)
   
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
  10    104,857,680      104,857,680      104,857,600            80            0

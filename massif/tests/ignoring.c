@@ -10,11 +10,11 @@ int main(void)
    int i;
    
    // The peak is from the first allocation.
-   int* x = malloc(1000);
+   int* x = malloc(1024);
    free(x);
 
    // Now do an allocation to provide the post-peak baseline.
-   malloc(500);
+   malloc(512);
 
    // Now we do lots of allocations below the peak.  With the proper
    // handling, the allocations should still be smoothly distributed.
@@ -23,7 +23,7 @@ int main(void)
    //
 
    for (i = 0; i < 350; i++) {
-      int* y = malloc(250);
+      int* y = malloc(256);
       free(y);
    }
    

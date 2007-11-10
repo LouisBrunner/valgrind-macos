@@ -32,7 +32,7 @@ ms_print arguments: massif.out
 Number of snapshots: 10
  Detailed snapshots: [5 (peak)]
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
   0              0                0                0             0            0
   1          4,008            4,008            4,000             8            0
@@ -50,7 +50,7 @@ Number of snapshots: 10
 ->16.62% (2,000B) 0x........: main (new-cpp.cpp:22)
   
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
   6         16,040            8,024            8,000            24            0
   7         20,048            4,016            4,000            16            0

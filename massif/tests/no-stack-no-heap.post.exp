@@ -32,6 +32,6 @@ ms_print arguments: massif.out
 Number of snapshots: 1
  Detailed snapshots: []
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
   0              0                0                0             0            0

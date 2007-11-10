@@ -6,51 +6,51 @@ ms_print arguments: --threshold=0 massif.out
 
 
      B
-  150^                                            #                           
-     |                                            #                           
-     |                                            #                           
-     |                                            #                           
-     |                                            #                           
-     |                                            #                           
-     |                                            #                           
-     |                 @                          #                           
-     |                 @                          #                           
-     |                 @                          #                           
-     |                 @                          #                           
-     |                 @                          #                           
-     |                 @                          #                           
-     |                 @        .                 #                           
-     |                 @        :                 #                           
-     |                 @        :                 #                           
-     |                 @        :                 #                           
-     |                 @        :                 #                           
-     |                 @        :                 #                           
-     |                 @        :                 #                           
-   0 +-----------------@--------------------------#-------------------------->B
-     0                                                                     400
+  600^                                   #                                    
+     |                                   #                                    
+     |                                   #                                    
+     |                                   #                                    
+     |                                   #                                    
+     |                                   #                                    
+     |                                   #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+     |                       @           #                                    
+   0 +-----------------------@-----------#----------------------------------->KB
+     0                                                                   1.172
 
 Number of snapshots: 8
  Detailed snapshots: [3, 6 (peak)]
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
   0              0                0                0             0            0
-  1            100              100              100             0            0
-  2            100              100              100             0            0
-  3            100              100              100             0            0
-100.00% (100B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->100.00% (100B) 0x........: main (realloc.c:8)
+  1            400              400              400             0            0
+  2            400              400              400             0            0
+  3            400              400              400             0            0
+100.00% (400B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->100.00% (400B) 0x........: main (realloc.c:8)
 | 
 ->00.00% (0B) 0x........: main (realloc.c:5)
   
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  4            150               50               50             0            0
-  5            250              150              150             0            0
-  6            250              150              150             0            0
-100.00% (150B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->100.00% (150B) 0x........: main (realloc.c:12)
+  4            400              400              200           200            0
+  5            600              600              600             0            0
+  6            600              600              600             0            0
+100.00% (600B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->100.00% (600B) 0x........: main (realloc.c:12)
 | 
 ->00.00% (0B) 0x........: main (realloc.c:5)
 | 
@@ -59,6 +59,6 @@ Number of snapshots: 8
 ->00.00% (0B) 0x........: main (realloc.c:10)
   
 --------------------------------------------------------------------------------
-  n        time(B)         total(B)   useful-heap(B) admin-heap(B)    stacks(B)
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  7            400                0                0             0            0
+  7          1,200                0                0             0            0

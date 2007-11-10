@@ -9,87 +9,87 @@
 ## glibc 2.4, 2.3 and 2.6 follow below.
 {
    helgrind-glibc25-001
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.5.so
    obj:/lib*/ld-2.5.so
    obj:/lib*/ld-2.5.so
 }
 {
    helgrind-glibc25-002
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.5.so
    obj:/lib*/libc-2.5.so
    obj:/lib*/ld-2.5.so
 }
 {
    helgrind-glibc25-003
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.5.so
    obj:/lib*/libc-2.5.so
    obj:/lib*/libc-2.5.so
 }
 {
    helgrind-glibc25-004
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libc-2.5.so
    obj:/lib*/libc-2.5.so
 }
 {
    helgrind-glibc25-005
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.5.so
    obj:/lib*/libpthread-2.5.so
    obj:/lib*/libpthread-2.5.so
 }
 {
    helgrind-glibc25-006
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.5.so
    obj:/lib*/libpthread-2.5.so
    obj:/lib*/libc-2.5.so
 }
 {
    helgrind-glibc25-007
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.5.so
    obj:/lib*/libc-2.5.so
    obj:/lib*/libdl-2.5.so
 }
 {
    helgrind-glibc25-008
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.5.so
    obj:/lib*/libc-2.5.so
 }
 {
    helgrind-glibc25-009
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libc-2.5.so
    fun:*
    obj:/lib*/libc-2.5.so
 }
 {
    helgrind-glibc25-010
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.5.so
    obj:/lib*/libpthread-2.5.so
 }
 {
    helgrind-glibc25-011
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libc-2.5.so
    obj:/lib*/libpthread-2.5.so
 }
 {
    helgrind-glibc25-013
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.5.so
    fun:*
    obj:/lib*/ld-2.5.so
 }
 {
    helgrind-glibc25-014
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.5.so
    obj:/lib*/ld-2.5.so
    obj:/lib*/libpthread-2.5.so
@@ -104,29 +104,29 @@
 # user code rather than the 2 levels you'd expect.
 {
    helgrind-glibc25-101
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.5.so
    fun:pthread_*
 }
 {
    helgrind-glibc25-102
-   helgrind:Race
+   Helgrind:Race
    fun:mythread_wrapper
    obj:/lib*/libpthread-2.5.so
 }
 {
    helgrind-glibc25-103
-   helgrind:Race
+   Helgrind:Race
    fun:pthread_cond_*@@GLIBC_2.3.2
 }
 {
    helgrind-glibc25-104
-   helgrind:Race
+   Helgrind:Race
    fun:__lll_mutex_*
 }
 {
    helgrind-glibc25-105
-   helgrind:Race
+   Helgrind:Race
    fun:pthread_rwlock_*lock*
 }
 
@@ -134,66 +134,66 @@
 #
 {
    helgrind-glibc24-001
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.4.so
    obj:/lib*/ld-2.4.so
    obj:/lib*/ld-2.4.so
 }
 {
    helgrind-glibc24-003
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.4.so
    obj:/lib*/libc-2.4.so
    obj:/lib*/libc-2.4.so
 }
 {
    helgrind-glibc24-004
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libc-2.4.so
    obj:/lib*/libc-2.4.so
 }
 {
    helgrind-glibc24-005
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.4.so
    obj:/lib*/libpthread-2.4.so
    obj:/lib*/libpthread-2.4.so
 }
 {
    helgrind-glibc24-006
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.4.so
    obj:/lib*/libpthread-2.4.so
    obj:/lib*/libc-2.4.so
 }
 {
    helgrind-glibc24-008
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.4.so
    obj:/lib*/libc-2.4.so
 }
 {
    helgrind-glibc24-010
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.4.so
    obj:/lib*/libpthread-2.4.so
 }
 {
    helgrind-glibc24-011
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libc-2.4.so
    obj:/lib*/libpthread-2.4.so
 }
 
 {
    helgrind-glibc24-101
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.4.so
    fun:pthread_*
 }
 {
    helgrind-glibc24-102
-   helgrind:Race
+   Helgrind:Race
    fun:mythread_wrapper
    obj:/lib*/libpthread-2.4.so
 }
@@ -202,113 +202,113 @@
 #
 {
    helgrind-glibc26-001
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.6.*so
    obj:/lib*/ld-2.6.*so
    obj:/lib*/ld-2.6.*so
 }
 {
    helgrind-glibc26-003
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.6.*so
    obj:/lib*/libc-2.6.*so
    obj:/lib*/libc-2.6.*so
 }
 {
    helgrind-glibc26-004
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libc-2.6.*so
    obj:/lib*/libc-2.6.*so
 }
 {
    helgrind-glibc26-006
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.6.*so
    obj:/lib*/libpthread-2.6.*so
    obj:/lib*/libc-2.6.*so
 }
 {
    helgrind-glibc26-008
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.6.*so
    obj:/lib*/libc-2.6.*so
 }
 
 {
    helgrind-glibc26-101
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.6.*so
    fun:pthread_*
 }
 {
    helgrind-glibc26-102
-   helgrind:Race
+   Helgrind:Race
    fun:mythread_wrapper
    obj:/lib*/libpthread-2.6.*so
 }
 {
    helgrind-glibc26-106
-   helgrind:Race
+   Helgrind:Race
    fun:__lll_lock_wait
 }
 
 ######--------- glibc-2.3 specific ---------######
 {
    helgrind-glibc23-001
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.3.*so
    obj:/lib*/ld-2.3.*so
    obj:/lib*/ld-2.3.*so
 }
 {
    helgrind-glibc23-002
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.3.*so
    obj:/lib*/libc-2.3.*so
    obj:/lib*/ld-2.3.*so
 }
 {
    helgrind-glibc23-004
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libc-2.3.*so
    obj:/lib*/libc-2.3.*so
 }
 {
    helgrind-glibc23-006
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.3.*so
    obj:/lib*/libpthread-2.3.*so
    obj:/lib*/libc-2.3.*so
 }
 {
    helgrind-glibc23-008
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.3.*so
    obj:/lib*/libc-2.3.*so
 }
 {
    helgrind-glibc23-009
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libc-2.3.*so
    obj:/lib*/ld-2.3.*so
    obj:/lib*/libc-2.3.*so
 }
 {
    helgrind-glibc23-011
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libc-2.3.*so
    obj:/lib*/libpthread-2.3.*so
 }
 {
    helgrind-glibc23-012
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.3.*so
    obj:/lib*/ld-2.3.*so
    obj:/lib*/libc-2.3.*so
 }
 {
    helgrind-glibc23-014
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/ld-2.3.*so
    obj:/lib*/ld-2.3.*so
    obj:/lib*/libpthread-2.3.*so
@@ -316,13 +316,13 @@
 
 {
    helgrind-glibc23-100
-   helgrind:Race
+   Helgrind:Race
    obj:/lib*/libpthread-2.3.*so
    fun:pthread_*
 }
 {
    helgrind-glibc23-101
-   helgrind:Race
+   Helgrind:Race
    fun:mythread_wrapper
    obj:/lib*/libpthread-2.3.*so
 }
@@ -330,7 +330,7 @@
 ######------ qt4 specific (GNU mangling) ------######
 {
    helgrind-qt4-QMutex::lock()-twice
-   helgrind:Race
+   Helgrind:Race
    fun:_ZN6QMutex4lockEv
    fun:_ZN6QMutex4lockEv
 }

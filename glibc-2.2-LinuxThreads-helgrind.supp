@@ -1,0 +1,64 @@
+
+## Helgrind really doesn't support LinuxThreads-based threading
+## (which is absolutely ancient by now).  But just in case anyone
+## is nuts enough to try it, here are some suppressions.
+
+{
+   helgrind-glibc22-LinuxThreads-1
+   Helgrind:Race
+   obj:/lib*/libpthread-0.10.so*
+}
+{
+   helgrind-glibc22-LinuxThreads-2
+   Helgrind:Race
+   obj:/lib*/ld-2.2.*so*
+   obj:/lib*/ld-2.2.*so*
+}
+{
+   helgrind-glibc22-LinuxThreads-3
+   Helgrind:Race
+   obj:/lib*/libc-2.2.*so*
+   obj:/lib*/libc-2.2.*so*
+}
+{
+   helgrind-glibc22-LinuxThreads-4
+   Helgrind:Race
+   obj:/lib*/ld-2.2.*so*
+   obj:/lib*/libc-2.2.*so*
+}
+{
+   helgrind-glibc22-LinuxThreads-5
+   Helgrind:Race
+   obj:/lib*/libc-2.2.*so*
+   fun:pthread_*
+}
+{
+   helgrind-glibc22-LinuxThreads-6
+   Helgrind:Race
+   fun:pthread_*
+   obj:/lib*/libc-2.2.*so*
+}
+{
+   helgrind-glibc22-LinuxThreads-7
+   Helgrind:Race
+   fun:mythread_wrapper
+   fun:pthread_*
+}
+{
+   helgrind-glibc22-LinuxThreads-8
+   Helgrind:Misc
+   fun:pthread_mutex_lock
+   fun:_IO_*
+}
+{
+   helgrind-glibc22-LinuxThreads-9
+   Helgrind:UnlockForeign
+   fun:pthread_mutex_unlock
+   fun:_IO_*
+}
+{
+   helgrind-glibc22-LinuxThreads-10
+   Helgrind:Misc
+   fun:_Exit
+   obj:/lib*/libpthread-0.10.so*
+}

@@ -173,6 +173,8 @@ static char* lame_strerror ( long err )
 /*--- pthread_create, pthread_join, pthread_exit               ---*/
 /*----------------------------------------------------------------*/
 
+/* Do not rename this function.  It contains an unavoidable race and
+   so is mentioned by name in glibc-*helgrind*.supp. */
 static void* mythread_wrapper ( void* xargsV )
 {
    volatile Word volatile* xargs = (volatile Word volatile*) xargsV;

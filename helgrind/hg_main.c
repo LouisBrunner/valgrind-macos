@@ -2686,7 +2686,7 @@ static void shmem__sanity_check ( Char* who )
    while (HG_(nextIterFM)( map_shmem,
                            (Word*)(HChar*)&smga, (Word*)(HChar*)&sm )) {
       SecMapIter itr;
-      UInt*      w32p;
+      UInt*      w32p = NULL;
       Bool       mbHasShared = False;
       Bool       allNoAccess = True;
       if (!is_sane_SecMap(sm)) BAD("1");
@@ -4998,7 +4998,7 @@ static void shadow_mem_make_NoAccess ( Thread* thr, Addr aIN, SizeT len )
      Addr       ga;
      SecMap*    sm;
      SecMapIter itr;
-     UInt*      w32p;
+     UInt*      w32p = NULL;
 
      HG_(initIterFM)( map_shmem );
      while (HG_(nextIterFM)( map_shmem,
@@ -5668,7 +5668,7 @@ void evh__HG_PTHREAD_JOIN_POST ( ThreadId stay_tid, Thread* quit_thr )
    while (HG_(nextIterFM)( map_shmem,
                            (Word*)(HChar*)&ga, (Word*)(HChar*)&sm )) {
       SecMapIter itr;
-      UInt*      w32p;
+      UInt*      w32p = NULL;
       tl_assert(sm);
       stats_SMs++;
       /* Skip this SecMap if the summary bit indicates it is safe to

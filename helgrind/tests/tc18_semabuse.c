@@ -6,19 +6,19 @@
 
 /* This is pretty lame, because making the sem_ functions fail is
    difficult.  Not sure it's really worth having. */
-
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <string.h>
-
+void start_watchdog ( void );
 int main ( void )
 {
   int r;
   sem_t s1;
-
+  start_watchdog();
   /* Do sem_init with huge initial count */
   r= sem_init(&s1, 0, ~0);
 
@@ -39,4 +39,19 @@ int main ( void )
   sem_destroy(&s1);
 
   return 0;
+}
+
+void* watchdog ( void* v )
+{
+  sleep(10);
+  fprintf(stderr, "watchdog timer expired - not a good sign\n");
+  exit(0);
+}
+
+void start_watchdog ( void )
+{
+  pthread_t t;
+  int r;
+  r= pthread_create(&t, NULL, watchdog, NULL);
+  assert(!r);
 }

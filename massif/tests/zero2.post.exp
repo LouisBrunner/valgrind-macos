@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./zero
-Massif arguments:   --stacks=no --heap-admin=no --time-unit=B
+Massif arguments:   --stacks=no --heap-admin=0 --time-unit=B
 ms_print arguments: massif.out
 --------------------------------------------------------------------------------
 

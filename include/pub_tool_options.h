@@ -52,7 +52,11 @@
 
 #define VG_NUM_CLO(qq_arg, qq_option, qq_var) \
    if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
-      (qq_var) = (Int)VG_(atoll)( &qq_arg[ VG_(strlen)(qq_option)+1 ] ); \
+      Char* s; \
+      Long n = VG_(strtoll10)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
+      (qq_var) = n; \
+      /* Check for non-numeralness, or overflow */ \
+      if ('\0' != s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
    }
 
 /* Same as VG_NUM_CLO but does not coerce the result value to 32 bits

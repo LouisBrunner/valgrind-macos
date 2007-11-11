@@ -50,74 +50,176 @@ Bool VG_(isdigit) ( Char c )
    Converting strings to numbers
    ------------------------------------------------------------------ */
 
-Long VG_(atoll) ( Char* str )
+static Bool is_oct_digit(Char c, Long* digit)
+{
+   if (c >= '0' && c <= '7') { *digit = (Long)(c - '0'); return True; }
+   return False;
+}
+
+static Bool is_dec_digit(Char c, Long* digit)
+{
+   if (c >= '0' && c <= '9') { *digit = (Long)(c - '0'); return True; }
+   return False;
+}
+
+static Bool is_hex_digit(Char c, Long* digit)
+{
+   if (c >= '0' && c <= '9') { *digit = (Long)(c - '0');        return True; }
+   if (c >= 'A' && c <= 'F') { *digit = (Long)((c - 'A') + 10); return True; }
+   if (c >= 'a' && c <= 'f') { *digit = (Long)((c - 'a') + 10); return True; }
+   return False;
+}
+
+static Bool is_base36_digit(Char c, Long* digit)
+{
+   if (c >= '0' && c <= '9') { *digit = (Long)(c - '0');        return True; }
+   if (c >= 'A' && c <= 'Z') { *digit = (Long)((c - 'A') + 10); return True; }
+   if (c >= 'a' && c <= 'z') { *digit = (Long)((c - 'a') + 10); return True; }
+   return False;
+}
+
+Long VG_(strtoll8) ( Char* str, Char** endptr )
 {
    Bool neg = False;
-   Long n = 0;
-   if (*str == '-') { str++; neg = True; };
-   while (*str >= '0' && *str <= '9') {
-      n = 10*n + (Long)(*str - '0');
+   Long n = 0, digit;
+
+   // Skip leading whitespace.
+   while (VG_(isspace)(*str)) str++;
+
+   // Allow a leading '-' or '+'.
+   if (*str == '-') { str++; neg = True; }
+   else if (*str == '+') { str++; }
+
+   while (is_oct_digit(*str, &digit)) {
+      n = 8*n + digit;
       str++;
    }
+
    if (neg) n = -n;
+   if (endptr) *endptr = str;    // Record first failing character.
    return n;
+}
+
+Long VG_(strtoll10) ( Char* str, Char** endptr )
+{
+   Bool neg = False;
+   Long n = 0, digit;
+
+   // Skip leading whitespace.
+   while (VG_(isspace)(*str)) str++;
+
+   // Allow a leading '-' or '+'.
+   if (*str == '-') { str++; neg = True; }
+   else if (*str == '+') { str++; }
+
+   while (is_dec_digit(*str, &digit)) {
+      n = 10*n + digit;
+      str++;
+   }
+
+   if (neg) n = -n;
+   if (endptr) *endptr = str;    // Record first failing character.
+   return n;
+}
+
+Long VG_(strtoll16) ( Char* str, Char** endptr )
+{
+   Bool neg = False;
+   Long n = 0, digit;
+
+   // Skip leading whitespace.
+   while (VG_(isspace)(*str)) str++;
+
+   // Allow a leading '-' or '+'.
+   if (*str == '-') { str++; neg = True; }
+   else if (*str == '+') { str++; }
+
+   // Allow leading "0x", but only if there's a hex digit
+   // following it.
+   if (*str == '0'
+    && (*(str+1) == 'x' || *(str+1) == 'X')
+    && is_hex_digit( *(str+2), &digit )) {
+      str += 2;
+   }
+
+   while (is_hex_digit(*str, &digit)) {
+      n = 16*n + digit;
+      str++;
+   }
+
+   if (neg) n = -n;
+   if (endptr) *endptr = str;    // Record first failing character.
+   return n;
+}
+
+Long VG_(strtoll36) ( Char* str, Char** endptr )
+{
+   Bool neg = False;
+   Long n = 0, digit;
+
+   // Skip leading whitespace.
+   while (VG_(isspace)(*str)) str++;
+
+   // Allow a leading '-' or '+'.
+   if (*str == '-') { str++; neg = True; }
+   else if (*str == '+') { str++; }
+
+   while (is_base36_digit(*str, &digit)) {
+      n = 36*n + digit;
+      str++;
+   }
+
+   if (neg) n = -n;
+   if (endptr) *endptr = str;    // Record first failing character.
+   return n;
+}
+
+double VG_(strtod) ( Char* str, Char** endptr )
+{
+   Bool neg = False;
+   Long digit;
+   double n = 0, frac = 0, x = 0.1;
+
+   // Skip leading whitespace.
+   while (VG_(isspace)(*str)) str++;
+
+   // Allow a leading '-' or '+'.
+   if (*str == '-') { str++; neg = True; }
+   else if (*str == '+') { str++; }
+
+   while (is_dec_digit(*str, &digit)) {
+      n = 10*n + digit;
+      str++;
+   }
+
+   if (*str == '.') {
+      str++;
+      while (is_dec_digit(*str, &digit)) {
+         frac += x*digit;
+         x /= 10;
+         str++;
+      }
+   }
+
+   n += frac;
+   if (neg) n = -n;
+   if (endptr) *endptr = str;    // Record first failing character.
+   return n;
+}
+
+Long VG_(atoll) ( Char* str )
+{
+   return VG_(strtoll10)(str, NULL);
 }
 
 Long VG_(atoll16) ( Char* str )
 {
-   Bool neg = False;
-   Long n = 0;
-   if (*str == '-') { str++; neg = True; };
-   if (*str == '0' && (*(str+1) == 'x' || *(str+1) == 'X')) {
-      str += 2;
-   }
-   while (True) {
-      Char c = *str;
-      if (c >= '0' && c <= (Char)'9') {
-         n = 16*n + (Long)(c - '0');
-      }
-      else 
-      if (c >= 'A' && c <= (Char)'F') {
-         n = 16*n + (Long)((c - 'A') + 10);
-      }
-      else 
-      if (c >= 'a' && c <= (Char)'f') {
-         n = 16*n + (Long)((c - 'a') + 10);
-      }
-      else {
-	break;
-      }
-      str++;
-   }
-   if (neg) n = -n;
-   return n;
+   return VG_(strtoll16)(str, NULL);
 }
 
 Long VG_(atoll36) ( Char* str )
 {
-   Bool neg = False;
-   Long n = 0;
-   if (*str == '-') { str++; neg = True; };
-   while (True) {
-      Char c = *str;
-      if (c >= '0' && c <= (Char)'9') {
-         n = 36*n + (Long)(c - '0');
-      }
-      else 
-      if (c >= 'A' && c <= (Char)'Z') {
-         n = 36*n + (Long)((c - 'A') + 10);
-      }
-      else 
-      if (c >= 'a' && c <= (Char)'z') {
-         n = 36*n + (Long)((c - 'a') + 10);
-      }
-      else {
-	break;
-      }
-      str++;
-   }
-   if (neg) n = -n;
-   return n;
+   return VG_(strtoll36)(str, NULL);
 }
 
 /* ---------------------------------------------------------------------

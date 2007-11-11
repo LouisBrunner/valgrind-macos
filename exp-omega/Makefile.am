@@ -90,9 +90,9 @@ exp_omega_ppc64_linux_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_LINUX)
 
 oincludedir = $(includedir)/valgrind
 
-oinclude_HEADERS =
+oinclude_HEADERS = omega.h
 
-noinst_HEADERS = omega.h
+noinst_HEADERS =
 
 o_replace_memops.o: CFLAGS += -fno-omit-frame-pointer
 

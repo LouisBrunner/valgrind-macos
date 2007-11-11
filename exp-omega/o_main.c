@@ -3130,16 +3130,16 @@ static UInt o_buildMemblockTree(void)
   ** We dont do anything to balance things so this could decompose to a
   ** linear structure. Thankfully, we are not in a time critical section.
   */
-  UInt index;
+  UInt indx;
 
   o_memblockList = (MemBlock **)VG_(HT_to_array)(o_MemBlocks,
 						 &o_memblockListCount);
 
-  for(index = 0; index < o_memblockListCount; index++)
+  for(indx = 0; indx < o_memblockListCount; indx++)
   {
     TreeNode **parent = NULL;
     TreeNode *tn = NULL;
-    MemBlock *mb = o_memblockList[index];
+    MemBlock *mb = o_memblockList[indx];
 
     /*
     ** Only process main blocks that havent leaked.
@@ -3178,11 +3178,11 @@ static UInt o_buildMemblockTree(void)
 
 static void o_checkExternalPointers(void)
 {
-  UInt index;
+  UInt indx;
 
-  for(index = 0; index < o_memblockListCount; index++)
+  for(indx = 0; indx < o_memblockListCount; indx++)
   {
-    MemBlock *mb = o_memblockList[index];
+    MemBlock *mb = o_memblockList[indx];
 
     /*
     ** Only check blocks that haven't leaked.
@@ -3211,7 +3211,7 @@ static void o_checkExternalPointers(void)
 
 static void o_rippleExternelPointers(MemBlock *mb)
 {
-  UInt index;
+  UInt indx;
 
   if(!mb)
   {
@@ -3219,12 +3219,12 @@ static void o_rippleExternelPointers(MemBlock *mb)
     ** Iterate through the memory block list marking external blocks
     ** so that we dont process the same blocks twice.
     */
-    for(index = 0; index < o_memblockListCount; index++)
+    for(indx = 0; indx < o_memblockListCount; indx++)
     {
-      if(o_memblockList[index]->external > 0)
+      if(o_memblockList[indx]->external > 0)
       {
-	o_memblockList[index]->external = -1;
-	o_rippleExternelPointers(o_memblockList[index]);
+	o_memblockList[indx]->external = -1;
+	o_rippleExternelPointers(o_memblockList[indx]);
       }
     }
   }
@@ -3271,16 +3271,16 @@ static int o_reportCircularBlocks(void)
 {
   int count = 0;
   BlockRecord *block = NULL;
-  int index;
+  int indx;
 
   /*
   ** Iterate through the memory block list reporting any blocks not marked
   ** as external.
   ** We aggregate the list of blocks as many could come from the same context.
   */
-  for(index = 0; index < o_memblockListCount; index++)
+  for(indx = 0; indx < o_memblockListCount; indx++)
   {
-    MemBlock * mb = o_memblockList[index];
+    MemBlock * mb = o_memblockList[indx];
     if(!mb->shadowing && !mb->leaked && mb->external == 0)
     {
       block = o_findBlockRecord(&o_circularRecords, mb->where, NULL);

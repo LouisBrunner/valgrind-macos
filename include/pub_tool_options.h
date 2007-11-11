@@ -63,15 +63,33 @@
    on 64-bit platforms. */
 #define VG_NUMW_CLO(qq_arg, qq_option, qq_var) \
    if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
-      (qq_var) = (Word)VG_(atoll)( &qq_arg[ VG_(strlen)(qq_option)+1 ] ); \
+      Char* s; \
+      Long n = VG_(strtoll10)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
+      (qq_var) = n; \
+      /* Check for non-numeralness */ \
+      if ('\0' != s[0]) VG_(err_bad_option)(qq_arg); \
    }
 
 /* Bounded integer arg */
 #define VG_BNUM_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
    if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
-      (qq_var) = (Int)VG_(atoll)( &qq_arg[ VG_(strlen)(qq_option)+1 ] ); \
+      Char* s; \
+      Long n = VG_(strtoll10)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
+      (qq_var) = n; \
+      /* Check for non-numeralness, or overflow */ \
+      if ('\0' != s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
       if ((qq_var) < (qq_lo)) (qq_var) = (qq_lo); \
       if ((qq_var) > (qq_hi)) (qq_var) = (qq_hi); \
+   }
+
+/* Double arg */
+#define VG_DBL_CLO(qq_arg, qq_option, qq_var) \
+   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
+      Char* s; \
+      double n = VG_(strtod)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
+      (qq_var) = n; \
+      /* Check for non-numeralness */ \
+      if ('\0' != s[0]) VG_(err_bad_option)(qq_arg); \
    }
 
 /* Bool arg whose value is denoted by the exact presence of the given string. */

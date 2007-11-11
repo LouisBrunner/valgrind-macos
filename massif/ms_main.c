@@ -31,11 +31,11 @@
 // XXX:
 //---------------------------------------------------------------------------
 // Todo -- critical for release:
+// - write documentation
+// - address/close all the bug reports below (after writing docs)
 // - do a graph-drawing test
 // - write a good basic test that shows how the tool works, suitable for
 //   documentation
-// - write documentation
-// - make --threshold and --peak-inaccuracy fractional
 // - do filename properly, clean up Valgrind-wide log file naming mess.
 //   Expected behaviour:
 //   - Main log file:
@@ -412,14 +412,14 @@ static Bool clo_heap            = True;
    // a UInt, but this caused problems on 64-bit machines when it was
    // multiplied by a small negative number and then promoted to a
    // word-sized type -- it ended up with a value of 4.2 billion.  Sigh.
-static SizeT clo_heap_admin     = 8;
-static Bool clo_stacks          = False;
-static UInt clo_depth           = 30;
-static UInt clo_threshold       = 100;     // 100 == 1%
-static UInt clo_peak_inaccuracy = 100;     // 100 == 1%
-static UInt clo_time_unit       = TimeMS;
-static UInt clo_detailed_freq   = 10;
-static UInt clo_max_snapshots   = 100;
+static SizeT  clo_heap_admin      = 8;
+static Bool   clo_stacks          = False;
+static UInt   clo_depth           = 30;
+static double clo_threshold       = 1.0;  // percentage
+static double clo_peak_inaccuracy = 1.0;  // percentage
+static UInt   clo_time_unit       = TimeMS;
+static UInt   clo_detailed_freq   = 10;
+static UInt   clo_max_snapshots   = 100;
 
 static XArray* args_for_massif;
 
@@ -435,11 +435,9 @@ static Bool ms_process_cmd_line_option(Char* arg)
    else VG_NUM_CLO(arg, "--heap-admin", clo_heap_admin)
    else VG_NUM_CLO(arg, "--depth",      clo_depth)
 
-   // XXX: use a fractional number, so no division by 100
-   else VG_NUM_CLO(arg, "--threshold",     clo_threshold)
+   else VG_DBL_CLO(arg, "--threshold",  clo_threshold)
 
-   // XXX: use a fractional number, so no division by 100
-   else VG_NUM_CLO(arg, "--peak-inaccuracy", clo_peak_inaccuracy)
+   else VG_DBL_CLO(arg, "--peak-inaccuracy", clo_peak_inaccuracy)
 
    else VG_NUM_CLO(arg, "--detailed-freq", clo_detailed_freq)
    else VG_NUM_CLO(arg, "--max-snapshots", clo_max_snapshots)
@@ -467,11 +465,8 @@ static void ms_print_usage(void)
 "    --stacks=no|yes           profile stack(s) [no]\n"
 "    --depth=<number>          depth of contexts [30]\n"
 "    --alloc-fn=<name>         specify <fn> as an alloc function [empty]\n"
-"    --threshold=<n>           significance threshold, in 100ths of a percent\n"
-"                              (eg. <n>=100 shows nodes covering >= 1%% of\n"
-"                               total size, <n>=0 shows all nodes) [100]\n"
-"    --peak-inaccuracy=<n>     closeness of recorded peak to true peak,\n"
-"                               in 100ths of a percent\n"
+"    --threshold=<m.n>         significance threshold, as a percentage [1.0]\n"
+"    --peak-inaccuracy=<m.n>   maximum peak inaccuracy, as a percentage [1.0]\n"
 "    --time-unit=ms|B          time unit, milliseconds or bytes\n"
 "                               alloc'd/dealloc'd on the heap [ms]\n"
 "    --detailed-freq=<N>       every Nth snapshot should be detailed [10]\n"
@@ -687,7 +682,7 @@ static SXPt* dup_XTree(XPt* xpt, SizeT total_szB)
    if (total_szB == 0 && clo_threshold != 0) {
       sig_child_threshold_szB = 1;
    } else {
-      sig_child_threshold_szB = (((ULong)total_szB) * clo_threshold) / 10000ULL;
+      sig_child_threshold_szB = (SizeT)((total_szB * clo_threshold) / 100);
    }
 
    // How many children are significant?  And do we need an aggregate SXPt?
@@ -1347,7 +1342,7 @@ maybe_take_snapshot(SnapshotKind kind, Char* what)
       // because many peaks remain peak only for a short time.
       SizeT total_szB = heap_szB + heap_extra_szB + stacks_szB;
       SizeT excess_szB_for_new_peak =
-         (((ULong)peak_snapshot_total_szB) * clo_peak_inaccuracy) / 10000ULL;
+         (SizeT)((peak_snapshot_total_szB * clo_peak_inaccuracy) / 100);
       if (total_szB <= peak_snapshot_total_szB + excess_szB_for_new_peak) {
          return;
       }
@@ -1922,7 +1917,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, Char* depth_str,
       perc = make_perc(sxpt->szB, snapshot_total_szB);
       FP("%sn0: %lu in %d place%s below massif's threshold (%s)\n",
          depth_str, sxpt->szB, sxpt->Insig.n_xpts, s,
-         make_perc(clo_threshold, 10000));
+         make_perc((ULong)clo_threshold, 100));
       break;
     }
 
@@ -2067,8 +2062,8 @@ static void ms_post_clo_init(void)
       VG_(message)(Vg_UserMsg, "--depth must be between 1 and %d", MAX_DEPTH);
       VG_(err_bad_option)("--depth");
    }
-   if (clo_threshold < 0 || clo_threshold > 10000) {
-      VG_(message)(Vg_UserMsg, "--threshold must be between 0 and 10000");
+   if (clo_threshold < 0 || clo_threshold > 100) {
+      VG_(message)(Vg_UserMsg, "--threshold must be between 0.0 and 100.0");
       VG_(err_bad_option)("--threshold");
    }
    if (clo_detailed_freq < 1 || clo_detailed_freq > 10000) {

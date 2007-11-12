@@ -16,8 +16,8 @@ sed -n "/Massif:/p" |
 # zero than other machines.  So filter them out.
 sed "s/\(Massif: XPts:\).*/\1                 .../" |
 sed "s/\(Massif: top-XPts:\).*/\1             .../" |
-sed "s/\(Massif: XPt-init-expansions:\).*/\1  .../" |
-sed "s/\(Massif: XPt-later-expansions:\).*/\1 .../" |
+sed "s/\(Massif: XPt init expansions:\).*/\1  .../" |
+sed "s/\(Massif: XPt later expansions:\).*/\1 .../" |
 sed "s/\(Massif: SXPt allocs:\).*/\1          .../" |
 sed "s/\(Massif: SXPt frees:\).*/\1           .../" |
 sed "s/\(Massif: XCon redos:\).*/\1           .../"

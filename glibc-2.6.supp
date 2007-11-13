@@ -252,3 +252,13 @@
    obj:/lib/libpthread-0.10.so
    fun:pthread_create
 }
+
+##----------------------------------------------------------------------##
+# ppc32 running openSUSE 10.3
+{
+   X11-libXaw8-libXaw8-libXaw8
+   Memcheck:Cond
+   obj:/usr/lib*/libXaw8.so*
+   obj:/usr/lib*/libXaw8.so*
+   obj:/usr/lib*/libXaw8.so*
+}

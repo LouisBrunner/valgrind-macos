@@ -12,7 +12,6 @@
    Helgrind:Race
    obj:/lib*/ld-2.5.so
    obj:/lib*/ld-2.5.so
-   obj:/lib*/ld-2.5.so
 }
 {
    helgrind-glibc25-002
@@ -137,7 +136,6 @@
    Helgrind:Race
    obj:/lib*/ld-2.4.so
    obj:/lib*/ld-2.4.so
-   obj:/lib*/ld-2.4.so
 }
 {
    helgrind-glibc24-003
@@ -205,7 +203,6 @@
    Helgrind:Race
    obj:/lib*/ld-2.6.*so
    obj:/lib*/ld-2.6.*so
-   obj:/lib*/ld-2.6.*so
 }
 {
    helgrind-glibc26-003
@@ -264,12 +261,17 @@
    Helgrind:Race
    fun:__lll_lock_wait
 }
+{
+   helgrind-glibc26-107
+   Helgrind:Race
+   obj:/lib*/libpthread-2.6.*so
+   fun:sem_*
+}
 
 ######--------- glibc-2.3 specific ---------######
 {
    helgrind-glibc23-001
    Helgrind:Race
-   obj:/lib*/ld-2.3.*so
    obj:/lib*/ld-2.3.*so
    obj:/lib*/ld-2.3.*so
 }

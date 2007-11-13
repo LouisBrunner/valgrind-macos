@@ -21,31 +21,73 @@ priv/guest-amd64/toIR.c:2512 (dis_op2_E_G): Assertion `0' failed.
 
 (vx1786, r6791) x86 INT insn (29 June) (INT (0xCD) 0x40 - 0x43)
 
+ 79844  fixed      Helgrind complains about race condition which does not exist
 
+124478  glibc-fix  memcheck reports uninitialized bytes on
+                   timer_create() while it should not
+
+128359  glibc-fix  Please suppress the uninitialized bytes report 
+                   on getifaddrs() (glibc 2.3.3)
+
+133962  FIXED:r??  unhandled instruction bytes: 0xF2 0x4C 0xF 0x10
+
+134990  fixed      use -fno-stack-protector if possible
+
+136382  ==134990
+
+137396  fixed :-)  I would really like helgrind to work again...
+137714  vx1787     (maskmovq, maskmovdq - reopened for amd64)
+
+145559             valgrind aborts when malloc_stats is called
+145609             valgrind aborts all runs with 'repeated section!'
 145622             --db-attach broken again on x86-64
-145887             PPC32: getitimer() system call is not supported
+145837             ==149519
+145887             PPC32: getitimer() system call is not supported (patch)
+
 146252             amd64->IR: handle Group 5 extended CALL and JMP insns
                    with non-reg operands of sz==8
+146701             ==134990
 146781             Adding support for private futexes
-145559             valgrind aborts when malloc_stats is called
+
 147325             valgrind internal error on syscall (SYS_io_destroy, 0)
-147498             amd64->IR: 0xF0 0xF 0xB0 0xF (lock cmpxchg %cl,(%rdi))
+147498  popular    amd64->IR: 0xF0 0xF 0xB0 0xF (lock cmpxchg %cl,(%rdi))
 147628             SALC opcode 0xd6 unimplemented
-145609             valgrind aborts all runs with 'repeated section!'
 147825  r6793      crash on amd64-linux with gcc 4.2 and glibc 2.6 (CFI)
+
 148096             VALGRIND_MALLOCLIKE_BLOCK not working correctly?
 148174  r6855      Incorrect type of freed_list_volume causes
                       assertion with large memory allocations
 148254             crash writing global var on ppc64 from instrumentation fn
 148363             amd64->IR: 0x65 0x4C 0x8B 0x1C (mov %gs:0x10,%r11)
-148742  cantrepro  Leak-check fails assert on exit
-134990  fixed      use -fno-stack-protector if possible
-136382  ==134990
-146701  ==134990
-148984  valid?     unhandled instruction bytes: 0xF3 0xDD 0x6 0xF3
 148447  vx1776     x86_64 : new NOP codes: 66 66 66 66 2e 0f 1f
+148742  cantrepro  Leak-check fails assert on exit
+148984  valid?     unhandled instruction bytes: 0xF3 0xDD 0x6 0xF3
+
 149182  vx1784/5   PPC Trap instructions not implemented in valgrind
-137714  vx1787     (maskmovq, maskmovdq - reopened for amd64)
+149838             x86->IR: 0xF 0xAE 0xD 0xE0
+149519  r6813/4    ppc32: V aborts with SIGSEGV on execution of a signal handler
+149878             add (proper) check for calloc integer overflow
+149892             amd64->IR: 0x66 0xF 0xF7 0xD0
+
+150044             SEGV during stack deregister
+150045             Valgrind doesn't recognize pthread stack as a stack
+                   when context switching
+150380             dwarf/gcc interoperation (dwarf3 read problems)
+                   (related to 129937 ?)
+150408             ==148447
+150678             priv/guest-amd64/toIR.c:3741 (dis_Grp5): Assertion
+                   `sz == 4' failed when running Mono on x86_64
+150681             Check definedness of client request arguments
+
+151209  r7028      V unable to execute programs for users with UID > 2^16
+151570             Bogus "Conditional jump ..." error with bit field (3.1.1)
+151886             Suppression entry Memcheck:Param ignored
+151908             --db-attach unimplemented on ppc64
+151935             --db-command= not parsed properly in .valgrindrc
+151938             help on --db-command= misleading
+
+152022  r7147      subw $0x28, %%sp causes assertion failure in memcheck
+
 
 ---------- Bugs reported after (in) 3.2.3 --------------------------
 

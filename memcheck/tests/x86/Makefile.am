@@ -6,6 +6,7 @@ INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_ss
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	bug133694.vgtest bug133694.stderr.exp bug133694.stdout.exp \
+	bug152022.vgtest bug152022.stderr.exp bug152022.stdout.exp \
 	espindola2.vgtest espindola2.stderr.exp \
 	fpeflags.stderr.exp fpeflags.vgtest \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
@@ -31,6 +32,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	bug133694 \
+	bug152022 \
 	espindola2 \
 	int3-x86 \
 	scalar_exit_group scalar_fork scalar_supp scalar_vfork \

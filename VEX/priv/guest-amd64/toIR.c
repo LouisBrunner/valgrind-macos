@@ -2509,7 +2509,6 @@ ULong dis_op2_E_G ( Prefix      pfx,
       assign( src,  getIRegE(size,pfx,rm) );
 
       if (addSubCarry && op8 == Iop_Add8) {
-         vassert(0); /* awaiting test case */
          helper_ADC( size, dst1, dst0, src );
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else
@@ -13059,6 +13058,7 @@ DisResult disInstr_AMD64_WRK (
       break;
 
    case 0x14: /* ADC Ib, AL */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( 1, True, Iop_Add8, True, delta, "adc" );
       break;
 //.. //--    case 0x15: /* ADC Iv, eAX */
@@ -13137,11 +13137,13 @@ DisResult disInstr_AMD64_WRK (
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_E_G ( pfx, False, Iop_Or8, True, sz, delta, "or" );
       break;
-//-- 
-//.. //--    case 0x12: /* ADC Eb,Gb */
-//.. //--       delta = dis_op2_E_G ( sorb, True, ADC, True, 1, delta, "adc" );
-//.. //--       break;
+
+   case 0x12: /* ADC Eb,Gb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( pfx, True, Iop_Add8, True, 1, delta, "adc" );
+      break;
    case 0x13: /* ADC Ev,Gv */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_E_G ( pfx, True, Iop_Add8, True, sz, delta, "adc" );
       break;
 
@@ -13149,6 +13151,7 @@ DisResult disInstr_AMD64_WRK (
 //.. //--       delta = dis_op2_E_G ( sorb, True, SBB, True, 1, delta, "sbb" );
 //.. //--       break;
    case 0x1B: /* SBB Ev,Gv */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_E_G ( pfx, True, Iop_Sub8, True, sz, delta, "sbb" );
       break;
 

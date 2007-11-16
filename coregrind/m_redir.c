@@ -205,7 +205,15 @@
 
 /* A specification of a redirection we want to do.  Note that because
    both the "from" soname and function name may contain wildcards, the
-   spec can match an arbitrary number of times. */
+   spec can match an arbitrary number of times. 
+
+   16 Nov 2007: Comments re .mandatory field: The initial motivation
+   for this is making Memcheck work sanely on glibc-2.6.X ppc32-linux.
+   We really need to intercept 'strlen' in ld.so right from startup.
+   If ld.so does not have a visible 'strlen' symbol, Memcheck
+   generates an impossible number of errors resulting from highly
+   tuned strlen implementation in ld.so, and is completely unusable
+   -- the resulting undefinedness eventually seeps everywhere. */
 typedef
    struct _Spec {
       struct _Spec* next;  /* linked list */
@@ -863,21 +871,24 @@ void VG_(redir_initialise) ( void )
       the start, otherwise ld.so makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
       const HChar* croakage = "Possible fix: install glibc's debuginfo "
-                              "package on this machine";
+                              "package on this machine.";
+      /* this is mandatory - can't sanely continue without it */
       add_hardwired_spec(
          "ld.so.1", "strlen",
          (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen),
-         NULL
+         croakage
       );   
       add_hardwired_spec(
          "ld.so.1", "strcmp",
          (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp),
-         NULL
+         NULL /* not mandatory - so why bother at all? */
+         /* glibc-2.6.1 (openSUSE 10.3, ppc32) seems fine without it */
       );
       add_hardwired_spec(
          "ld.so.1", "index",
          (Addr)&VG_(ppc32_linux_REDIR_FOR_strchr),
-         NULL
+         NULL /* not mandatory - so why bother at all? */
+         /* glibc-2.6.1 (openSUSE 10.3, ppc32) seems fine without it */
       );
    }
 

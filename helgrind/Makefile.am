@@ -23,7 +23,7 @@ endif
 VGPRELOAD_HELGRIND_SOURCES_COMMON = hg_intercepts.c
 
 vgpreload_helgrind_x86_linux_so_SOURCES      = $(VGPRELOAD_HELGRIND_SOURCES_COMMON)
-vgpreload_helgrind_x86_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_LINUX) -O -g -fno-omit-frame-pointer
+vgpreload_helgrind_x86_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_X86_LINUX)
 vgpreload_helgrind_x86_linux_so_CFLAGS       = $(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
 vgpreload_helgrind_x86_linux_so_DEPENDENCIES = $(LIBREPLACEMALLOC_X86_LINUX)
 vgpreload_helgrind_x86_linux_so_LDFLAGS      = \
@@ -31,7 +31,7 @@ vgpreload_helgrind_x86_linux_so_LDFLAGS      = \
 	$(LIBREPLACEMALLOC_LDFLAGS_X86_LINUX)
 
 vgpreload_helgrind_amd64_linux_so_SOURCES      = $(VGPRELOAD_HELGRIND_SOURCES_COMMON)
-vgpreload_helgrind_amd64_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_LINUX) -O -g
+vgpreload_helgrind_amd64_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_AMD64_LINUX)
 vgpreload_helgrind_amd64_linux_so_CFLAGS       = $(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
 vgpreload_helgrind_amd64_linux_so_DEPENDENCIES = $(LIBREPLACEMALLOC_AMD64_LINUX)
 vgpreload_helgrind_amd64_linux_so_LDFLAGS      = \
@@ -39,7 +39,7 @@ vgpreload_helgrind_amd64_linux_so_LDFLAGS      = \
 	$(LIBREPLACEMALLOC_LDFLAGS_AMD64_LINUX)
 
 vgpreload_helgrind_ppc32_linux_so_SOURCES      = $(VGPRELOAD_HELGRIND_SOURCES_COMMON)
-vgpreload_helgrind_ppc32_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_LINUX) -O -g
+vgpreload_helgrind_ppc32_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_LINUX)
 vgpreload_helgrind_ppc32_linux_so_CFLAGS       = $(AM_CFLAGS_PPC32_LINUX) $(AM_CFLAGS_PIC)
 vgpreload_helgrind_ppc32_linux_so_DEPENDENCIES = $(LIBREPLACEMALLOC_PPC32_LINUX)
 vgpreload_helgrind_ppc32_linux_so_LDFLAGS      = \
@@ -47,7 +47,7 @@ vgpreload_helgrind_ppc32_linux_so_LDFLAGS      = \
 	$(LIBREPLACEMALLOC_LDFLAGS_PPC32_LINUX)
 
 vgpreload_helgrind_ppc64_linux_so_SOURCES      = $(VGPRELOAD_HELGRIND_SOURCES_COMMON)
-vgpreload_helgrind_ppc64_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_LINUX) -O -g
+vgpreload_helgrind_ppc64_linux_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_LINUX)
 vgpreload_helgrind_ppc64_linux_so_CFLAGS       = $(AM_CFLAGS_PPC64_LINUX) $(AM_CFLAGS_PIC)
 vgpreload_helgrind_ppc64_linux_so_DEPENDENCIES = $(LIBREPLACEMALLOC_PPC64_LINUX)
 vgpreload_helgrind_ppc64_linux_so_LDFLAGS      = \
@@ -55,7 +55,7 @@ vgpreload_helgrind_ppc64_linux_so_LDFLAGS      = \
 	$(LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX)
 
 vgpreload_helgrind_ppc32_aix5_so_SOURCES      = $(VGPRELOAD_HELGRIND_SOURCES_COMMON)
-vgpreload_helgrind_ppc32_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_AIX5) -O -g
+vgpreload_helgrind_ppc32_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_AIX5)
 vgpreload_helgrind_ppc32_aix5_so_CFLAGS       = $(AM_CFLAGS_PPC32_AIX5) $(AM_CFLAGS_PIC)
 vgpreload_helgrind_ppc32_aix5_so_DEPENDENCIES = $(LIBREPLACEMALLOC_PPC32_AIX5)
 vgpreload_helgrind_ppc32_aix5_so_LDFLAGS      = \
@@ -63,7 +63,7 @@ vgpreload_helgrind_ppc32_aix5_so_LDFLAGS      = \
 	$(LIBREPLACEMALLOC_LDFLAGS_PPC32_AIX5)
 
 vgpreload_helgrind_ppc64_aix5_so_SOURCES      = $(VGPRELOAD_HELGRIND_SOURCES_COMMON)
-vgpreload_helgrind_ppc64_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_AIX5) -O -g
+vgpreload_helgrind_ppc64_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_AIX5)
 vgpreload_helgrind_ppc64_aix5_so_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC)
 vgpreload_helgrind_ppc64_aix5_so_DEPENDENCIES = $(LIBREPLACEMALLOC_PPC64_AIX5)
 vgpreload_helgrind_ppc64_aix5_so_LDFLAGS      = \

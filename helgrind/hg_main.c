@@ -3818,7 +3818,7 @@ SVal* sequentialise_tree ( /*MOD*/SVal* dst, /*OUT*/Bool* anyShared,
 
 #  undef PUT
 
-   tl_assert( (((Char*)dst) - ((Char*)dst0)) == 8 * sizeof(UInt) );
+   tl_assert( (((Char*)dst) - ((Char*)dst0)) == 8 * sizeof(SVal) );
    return dst;
 }
 
@@ -3842,7 +3842,7 @@ Bool sequentialise_CacheLine ( /*OUT*/SVal* dst, Word nDst, CacheLine* src )
 
    /* Assert we wrote N_LINE_ARANGE shadow values. */
    tl_assert( ((HChar*)dst) - ((HChar*)dst0) 
-              == nDst * sizeof(UInt) );
+              == nDst * sizeof(SVal) );
 
    return anyShared;
 }

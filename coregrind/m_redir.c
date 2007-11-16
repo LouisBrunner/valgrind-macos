@@ -209,11 +209,17 @@
 typedef
    struct _Spec {
       struct _Spec* next;  /* linked list */
+      /* FIXED PARTS -- set when created and not changed */
       HChar* from_sopatt;  /* from soname pattern  */
       HChar* from_fnpatt;  /* from fnname pattern  */
       Addr   to_addr;      /* where redirecting to */
       Bool   isWrap;       /* wrap or replacement? */
-      Bool   mark; /* transient temporary used during matching */
+      HChar* mandatory;    /* non-NULL ==> abort V and print the
+                              string if from_sopatt is loaded but
+                              from_fnpatt cannot be found */
+      /* VARIABLE PARTS -- used transiently whilst processing redirections */
+      Bool   mark; /* set if spec requires further processing */
+      Bool   done; /* set if spec was successfully matched */
    }
    Spec;
 
@@ -266,7 +272,7 @@ static OSet* activeSet = NULL;
 
 static void maybe_add_active ( Active /*by value; callee copies*/ );
 
-static void*  symtab_alloc(SizeT);
+static void*  symtab_zalloc(SizeT);
 static void   symtab_free(void*);
 static HChar* symtab_strdup(HChar*);
 static Bool   is_plausible_guest_addr(Addr);
@@ -351,7 +357,7 @@ void VG_(redir_notify_new_SegInfo)( SegInfo* newsi )
             the following loop, and complain at that point. */
          continue;
       }
-      spec = symtab_alloc(sizeof(Spec));
+      spec = symtab_zalloc(sizeof(Spec));
       vg_assert(spec);
       spec->from_sopatt = symtab_strdup(demangled_sopatt);
       spec->from_fnpatt = symtab_strdup(demangled_fnpatt);
@@ -363,6 +369,7 @@ void VG_(redir_notify_new_SegInfo)( SegInfo* newsi )
       vg_assert(is_plausible_guest_addr(sym_addr));
       spec->next = specList;
       spec->mark = False; /* not significant */
+      spec->done = False; /* not significant */
       specList = spec;
    }
 
@@ -384,9 +391,9 @@ void VG_(redir_notify_new_SegInfo)( SegInfo* newsi )
                 && 0 == VG_(strcmp)(spec->from_fnpatt, demangled_fnpatt))
                break;
          if (spec)
-	   /* a redirect to some other copy of that symbol, which does have
-              a TOC value, already exists */
-          continue;
+            /* a redirect to some other copy of that symbol, which
+               does have a TOC value, already exists */
+            continue;
 
          /* Complain */
          VG_(message)(Vg_DebugMsg,
@@ -397,7 +404,7 @@ void VG_(redir_notify_new_SegInfo)( SegInfo* newsi )
 
    /* Ok.  Now specList holds the list of specs from the SegInfo. 
       Build a new TopSpec, but don't add it to topSpecs yet. */
-   newts = symtab_alloc(sizeof(TopSpec));
+   newts = symtab_zalloc(sizeof(TopSpec));
    vg_assert(newts);
    newts->next    = NULL; /* not significant */
    newts->seginfo = newsi;
@@ -471,10 +478,12 @@ void generate_and_add_actives (
    Addr   sym_addr;
    HChar* sym_name;
 
-   /* First figure out which of the specs match the seginfo's
-      soname. */
+   /* First figure out which of the specs match the seginfo's soname.
+      Also clear the 'done' bits, so that after the main loop below
+      tell which of the Specs really did get done. */
    anyMark = False;
    for (sp = specs; sp; sp = sp->next) {
+      sp->done = False;
       sp->mark = VG_(string_match)( sp->from_sopatt, 
                                     VG_(seginfo_soname)(si) );
       anyMark = anyMark || sp->mark;
@@ -510,9 +519,55 @@ void generate_and_add_actives (
             act.parent_spec = parent_spec;
             act.parent_sym  = parent_sym;
             act.isWrap      = sp->isWrap;
+            sp->done = True;
             maybe_add_active( act );
          }
-      }
+      } /* for (sp = specs; sp; sp = sp->next) */
+   } /* for (i = 0; i < nsyms; i++)  */
+
+   /* Now, finally, look for Specs which were marked to be done, but
+      didn't get matched.  If any such are mandatory we must abort the
+      system at this point. */
+   for (sp = specs; sp; sp = sp->next) {
+      if (!sp->mark)
+         continue;
+      if (sp->mark && (!sp->done) && sp->mandatory)
+         break;
+   }
+   if (sp) {
+      HChar* v = "valgrind:  ";
+      vg_assert(sp->mark);
+      vg_assert(!sp->done);
+      vg_assert(sp->mandatory);
+      VG_(printf)("\n");
+      VG_(printf)(
+      "%sFatal error at startup: a function redirection\n", v);
+      VG_(printf)(
+      "%swhich is mandatory for this platform-tool combination\n", v);
+      VG_(printf)(
+      "%scannot be set up.  Details of the redirection are:\n", v);
+      VG_(printf)(
+      "%s\n", v);
+      VG_(printf)(
+      "%sA must-be-redirected function\n", v);
+      VG_(printf)(
+      "%swhose name matches the pattern:      %s\n", v, sp->from_fnpatt);
+      VG_(printf)(
+      "%sin an object with soname matching:   %s\n", v, sp->from_sopatt);
+      VG_(printf)(
+      "%swas not found whilst processing\n", v);
+      VG_(printf)(
+      "%ssymbols from the object with soname: %s\n", v, VG_(seginfo_soname)(si));
+      VG_(printf)(
+      "%s\n", v);
+      VG_(printf)(
+      "%s%s\n", v, sp->mandatory);
+      VG_(printf)(
+      "%s\n", v);
+      VG_(printf)(
+      "%sCannot continue -- exiting now.  Sorry.\n", v);
+      VG_(printf)("\n");
+      VG_(exit)(1);
    }
 }
 
@@ -617,7 +672,7 @@ void VG_(redir_notify_delete_SegInfo)( SegInfo* delsi )
 
    /* Traverse the actives, copying the addresses of those we intend
       to delete into tmpSet. */
-   tmpSet = VG_(OSetWord_Create)(symtab_alloc, symtab_free);
+   tmpSet = VG_(OSetWord_Create)(symtab_zalloc, symtab_free);
 
    ts->mark = True;
 
@@ -731,29 +786,31 @@ static void add_hardwired_active ( Addr from, Addr to )
    entry that holds these initial specs. */
 
 __attribute__((unused)) /* not used on all platforms */
-static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt, Addr to_addr )
+static void add_hardwired_spec ( HChar* sopatt, HChar* fnpatt, 
+                                 Addr   to_addr,
+                                 HChar* mandatory )
 {
-   Spec* spec = symtab_alloc(sizeof(Spec));
+   Spec* spec = symtab_zalloc(sizeof(Spec));
    vg_assert(spec);
 
    if (topSpecs == NULL) {
-      topSpecs = symtab_alloc(sizeof(TopSpec));
+      topSpecs = symtab_zalloc(sizeof(TopSpec));
       vg_assert(topSpecs);
-      topSpecs->next    = NULL;
-      topSpecs->seginfo = NULL;
-      topSpecs->specs   = NULL;
-      topSpecs->mark    = False;
+      /* symtab_zalloc sets all fields to zero */
    }
 
    vg_assert(topSpecs != NULL);
    vg_assert(topSpecs->next == NULL);
    vg_assert(topSpecs->seginfo == NULL);
-
+   /* FIXED PARTS */
    spec->from_sopatt = sopatt;
    spec->from_fnpatt = fnpatt;
    spec->to_addr     = to_addr;
    spec->isWrap      = False;
+   spec->mandatory   = mandatory;
+   /* VARIABLE PARTS */
    spec->mark        = False; /* not significant */
+   spec->done        = False; /* not significant */
 
    spec->next = topSpecs->specs;
    topSpecs->specs = spec;
@@ -774,7 +831,7 @@ void VG_(redir_initialise) ( void )
    // Initialise active mapping.
    activeSet = VG_(OSetGen_Create)(offsetof(Active, from_addr),
                                    NULL,     // Use fast comparison
-                                   symtab_alloc,
+                                   symtab_zalloc,
                                    symtab_free);
 
    // The rest of this function just adds initial Specs.   
@@ -785,7 +842,8 @@ void VG_(redir_initialise) ( void )
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
       add_hardwired_spec(
          "ld-linux.so.2", "index",
-          (Addr)&VG_(x86_linux_REDIR_FOR_index)
+         (Addr)&VG_(x86_linux_REDIR_FOR_index),
+         NULL
       );
    }
 
@@ -804,17 +862,22 @@ void VG_(redir_initialise) ( void )
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      const HChar* croakage = "Possible fix: install glibc's debuginfo "
+                              "package on this machine";
       add_hardwired_spec(
          "ld.so.1", "strlen",
-          (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen)
+         (Addr)&VG_(ppc32_linux_REDIR_FOR_strlen),
+         NULL
       );   
       add_hardwired_spec(
          "ld.so.1", "strcmp",
-         (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp)
+         (Addr)&VG_(ppc32_linux_REDIR_FOR_strcmp),
+         NULL
       );
       add_hardwired_spec(
          "ld.so.1", "index",
-         (Addr)&VG_(ppc32_linux_REDIR_FOR_strchr)
+         (Addr)&VG_(ppc32_linux_REDIR_FOR_strchr),
+         NULL
       );
    }
 
@@ -825,13 +888,15 @@ void VG_(redir_initialise) ( void )
 
       add_hardwired_spec(
          "ld64.so.1", "strlen",
-         (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strlen) )
-      );   
+         (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strlen) ),
+         NULL
+      );
 
       add_hardwired_spec(
          "ld64.so.1", "index",
-         (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strchr) )
-      );   
+         (Addr)VG_(fnptr_to_fnentry)( &VG_(ppc64_linux_REDIR_FOR_strchr) ),
+         NULL
+      );
 
    }
 
@@ -854,13 +919,17 @@ void VG_(redir_initialise) ( void )
 /*--- MISC HELPERS                                         ---*/
 /*------------------------------------------------------------*/
 
-static void* symtab_alloc(SizeT n)
-{
-   return VG_(arena_malloc)(VG_AR_SYMTAB, n);
+static void* symtab_zalloc(SizeT n) {
+   void* p;
+   vg_assert(n > 0);
+   p = VG_(arena_malloc)(VG_AR_SYMTAB, n);
+   tl_assert(p);
+   VG_(memset)(p, 0, n);
+   return p;
 }
 
-static void symtab_free(void* p)
-{
+static void symtab_free(void* p) {
+   tl_assert(p);
    return VG_(arena_free)(VG_AR_SYMTAB, p);
 }
 

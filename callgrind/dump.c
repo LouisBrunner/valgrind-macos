@@ -434,7 +434,7 @@ void init_debug_cache(void)
     }
 }
 
-static __inline__
+static /* __inline__ */
 Bool get_debug_pos(BBCC* bbcc, Addr addr, AddrPos* p)
 {
     Char file[FILENAME_LEN];

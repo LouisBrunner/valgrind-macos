@@ -14247,9 +14247,13 @@ DisResult disInstr_AMD64_WRK (
 
       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
 
-//..       case 0xB0: /* CMPXCHG Gb,Eb */
-//..          delta = dis_cmpxchg_G_E ( sorb, 1, delta );
-//..          break;
+      case 0xB0: { /* CMPXCHG Gb,Eb */
+         Bool ok = True;
+         if (haveF2orF3(pfx)) goto decode_failure;
+         delta = dis_cmpxchg_G_E ( &ok, pfx, 1, delta );
+         if (!ok) goto decode_failure;
+         break;
+      }
       case 0xB1: { /* CMPXCHG Gv,Ev (allowed in 16,32,64 bit) */
          Bool ok = True;
          if (haveF2orF3(pfx)) goto decode_failure;

@@ -645,7 +645,7 @@ static Bool is_sane_Bag_of_Threads ( WordBag* bag )
    Thread* thr;
    Word    count;
    HG_(initIterBag)( bag );
-   while (HG_(nextIterBag)( bag, (Word*)(HChar*)&thr, &count )) {
+   while (HG_(nextIterBag)( bag, (Word*)&thr, &count )) {
       if (count < 1) return False;
       if (!is_sane_Thread(thr)) return False;
    }
@@ -840,7 +840,7 @@ static void remove_Lock_from_locksets_of_all_owning_Threads( Lock* lk )
    }
    /* for each thread that holds this lock do ... */
    HG_(initIterBag)( lk->heldBy );
-   while (HG_(nextIterBag)( lk->heldBy, (Word*)(HChar*)&thr, NULL )) {
+   while (HG_(nextIterBag)( lk->heldBy, (Word*)&thr, NULL )) {
       tl_assert(is_sane_Thread(thr));
       tl_assert(HG_(elemWS)( univ_lsets,
                              thr->locksetA, (Word)lk ));
@@ -1122,7 +1122,7 @@ static void pp_Lock ( Int d, Lock* lk )
       Word    count;
       VG_(printf)(" { ");
       HG_(initIterBag)( lk->heldBy );
-      while (HG_(nextIterBag)( lk->heldBy, (Word*)(HChar*)&thr, &count ))
+      while (HG_(nextIterBag)( lk->heldBy, (Word*)&thr, &count ))
          VG_(printf)("%lu:%p ", count, thr);
       HG_(doneIterBag)( lk->heldBy );
       VG_(printf)("}");
@@ -1156,8 +1156,8 @@ static void pp_map_locks ( Int d )
    space(d); VG_(printf)("map_locks (%d entries) {\n",
                          (Int)HG_(sizeFM)( map_locks ));
    HG_(initIterFM)( map_locks );
-   while (HG_(nextIterFM)( map_locks, (Word*)(HChar*)&gla,
-                                      (Word*)(HChar*)&lk )) {
+   while (HG_(nextIterFM)( map_locks, (Word*)&gla,
+                                      (Word*)&lk )) {
       space(d+3);
       VG_(printf)("guest %p -> Lock %p\n", gla, lk);
    }
@@ -1204,8 +1204,8 @@ static void pp_map_segments ( Int d )
    space(d); VG_(printf)("map_segments (%d entries) {\n", 
                          (Int)HG_(sizeFM)( map_segments ));
    HG_(initIterFM)( map_segments );
-   while (HG_(nextIterFM)( map_segments, (Word*)(HChar*)&segid,
-                                         (Word*)(HChar*)&seg )) {
+   while (HG_(nextIterFM)( map_segments, (Word*)&segid,
+                                         (Word*)&seg )) {
       space(d+3);
       VG_(printf)("segid 0x%x -> Segment %p\n", (UInt)segid, seg);
    }
@@ -1324,8 +1324,8 @@ static void pp_map_shmem_shared ( Int d )
    SecMap* sm;
    space(d); VG_(printf)("map_shmem_ShR_and_ShM_only {\n");
    HG_(initIterFM)( map_shmem );
-   while (HG_(nextIterFM)( map_shmem, (Word*)(HChar*)&ga,
-                                      (Word*)(HChar*)&sm )) {
+   while (HG_(nextIterFM)( map_shmem, (Word*)&ga,
+                                      (Word*)&sm )) {
       pp_SecMap_shared( d+3, sm, ga );
    }
    HG_(doneIterFM) ( map_shmem );
@@ -1537,7 +1537,7 @@ Lock* map_locks_lookup_or_create ( LockKind lkk, Addr ga, ThreadId tid )
    Lock* oldlock = NULL;
    tl_assert(is_sane_ThreadId(tid));
    found = HG_(lookupFM)( map_locks, 
-                          NULL, (Word*)(HChar*)&oldlock, (Word)ga );
+                          NULL, (Word*)&oldlock, (Word)ga );
    if (!found) {
       Lock* lock = mk_LockN(lkk, ga);
       lock->appeared_at = VG_(record_ExeContext)( tid, 0 );
@@ -1561,7 +1561,7 @@ static Lock* map_locks_maybe_lookup ( Addr ga )
 {
    Bool  found;
    Lock* lk = NULL;
-   found = HG_(lookupFM)( map_locks, NULL, (Word*)(HChar*)&lk, (Word)ga );
+   found = HG_(lookupFM)( map_locks, NULL, (Word*)&lk, (Word)ga );
    tl_assert(found  ?  lk != NULL  :  lk == NULL);
    if (found) {
       // check the relevant secondary map has .mbHasLocks?
@@ -1575,7 +1575,7 @@ static void map_locks_delete ( Addr ga )
    Addr  ga2 = 0;
    Lock* lk  = NULL;
    HG_(delFromFM)( map_locks,
-                   (Word*)(HChar*)&ga2, (Word*)(HChar*)&lk, (Word)ga );
+                   (Word*)&ga2, (Word*)&lk, (Word)ga );
    /* delFromFM produces the val which is being deleted, if it is
       found.  So assert it is non-null; that in effect asserts that we
       are deleting a (ga, Lock) pair which actually exists. */
@@ -1599,7 +1599,7 @@ static Segment* map_segments_lookup ( SegmentID segid )
    Segment* seg = NULL;
    tl_assert( is_sane_SegmentID(segid) );
    found = HG_(lookupFM)( map_segments,
-                          NULL, (Word*)(HChar*)&seg, (Word)segid );
+                          NULL, (Word*)&seg, (Word)segid );
    tl_assert(found);
    tl_assert(seg != NULL);
    return seg;
@@ -1611,7 +1611,7 @@ static Segment* map_segments_maybe_lookup ( SegmentID segid )
    Segment* seg = NULL;
    tl_assert( is_sane_SegmentID(segid) );
    found = HG_(lookupFM)( map_segments,
-                          NULL, (Word*)(HChar*)&seg, (Word)segid );
+                          NULL, (Word*)&seg, (Word)segid );
    if (!found) tl_assert(seg == NULL);
    return seg;
 }
@@ -2361,7 +2361,7 @@ static SecMap* shmem__find_or_alloc_SecMap ( Addr ga )
    SecMap* sm    = NULL;
    Addr    gaKey = shmem__round_to_SecMap_base(ga);
    if (HG_(lookupFM)( map_shmem,
-                      NULL/*keyP*/, (Word*)(HChar*)&sm, (Word)gaKey )) {
+                      NULL/*keyP*/, (Word*)&sm, (Word)gaKey )) {
       /* Found; address of SecMap is in sm */
       tl_assert(sm);
    } else {
@@ -2383,7 +2383,7 @@ static Bool shmem__get_mbHasLocks ( Addr a )
    SecMap* sm;
    Addr aKey = shmem__round_to_SecMap_base(a);
    if (HG_(lookupFM)( map_shmem,
-                      NULL/*keyP*/, (Word*)(HChar*)&sm, (Word)aKey )) {
+                      NULL/*keyP*/, (Word*)&sm, (Word)aKey )) {
       /* Found */
       return sm->mbHasLocks;
    } else {
@@ -2397,7 +2397,7 @@ static void shmem__set_mbHasLocks ( Addr a, Bool b )
    Addr aKey = shmem__round_to_SecMap_base(a);
    tl_assert(b == False || b == True);
    if (HG_(lookupFM)( map_shmem,
-                      NULL/*keyP*/, (Word*)(HChar*)&sm, (Word)aKey )) {
+                      NULL/*keyP*/, (Word*)&sm, (Word)aKey )) {
       /* Found; address of SecMap is in sm */
    } else {
       /* create a new one */
@@ -2414,7 +2414,7 @@ static void shmem__set_mbHasShared ( Addr a, Bool b )
    Addr aKey = shmem__round_to_SecMap_base(a);
    tl_assert(b == False || b == True);
    if (HG_(lookupFM)( map_shmem,
-                      NULL/*keyP*/, (Word*)(HChar*)&sm, (Word)aKey )) {
+                      NULL/*keyP*/, (Word*)&sm, (Word)aKey )) {
       /* Found; address of SecMap is in sm */
    } else {
       /* create a new one */
@@ -2574,7 +2574,7 @@ static void locks__sanity_check ( Char* who )
    //      gla == lk->guest_addr
    HG_(initIterFM)( map_locks );
    while (HG_(nextIterFM)( map_locks,
-                           (Word*)(HChar*)&gla, (Word*)(HChar*)&lk )) {
+                           (Word*)&gla, (Word*)&lk )) {
       if (lk->guestaddr != gla) BAD("2");
    }
    HG_(doneIterFM)( map_locks );
@@ -2597,7 +2597,7 @@ static void locks__sanity_check ( Char* who )
          Word    count;
          HG_(initIterBag)( lk->heldBy );
          while (HG_(nextIterBag)( lk->heldBy, 
-                                  (Word*)(HChar*)&thr, &count )) {
+                                  (Word*)&thr, &count )) {
             // is_sane_LockN above ensures these
             tl_assert(count >= 1);
             tl_assert(is_sane_Thread(thr));
@@ -2688,7 +2688,7 @@ static void shmem__sanity_check ( Char* who )
    HG_(initIterFM)( map_shmem );
    // for sm in SecMaps {
    while (HG_(nextIterFM)( map_shmem,
-                           (Word*)(HChar*)&smga, (Word*)(HChar*)&sm )) {
+                           (Word*)&smga, (Word*)&sm )) {
       SecMapIter itr;
       SVal*      w32p = NULL;
       Bool       mbHasShared = False;
@@ -2959,7 +2959,7 @@ static ExeContext* maybe_get_lastlock_initpoint ( Addr ga )
    ExeContext* ec_hint = NULL;
    if (ga_to_lastlock != NULL 
        && HG_(lookupFM)(ga_to_lastlock, 
-                        NULL, (Word*)(HChar*)&ec_hint, ga)) {
+                        NULL, (Word*)&ec_hint, ga)) {
       tl_assert(ec_hint != NULL);
       return ec_hint;
    } else {
@@ -4957,7 +4957,7 @@ static void shadow_mem_make_NoAccess ( Thread* thr, Addr aIN, SizeT len )
    /* FIXME: don't iterate over the complete lock set */
    HG_(initIterFM)( map_locks );
    while (HG_(nextIterFM)( map_locks,
-                           (Word*)(HChar*)&gla, (Word*)(HChar*)&lk )) {
+                           (Word*)&gla, (Word*)&lk )) {
       tl_assert(is_sane_LockN(lk));
       if (gla < firstA || gla > lastA)
          continue;
@@ -5006,7 +5006,7 @@ static void shadow_mem_make_NoAccess ( Thread* thr, Addr aIN, SizeT len )
 
      HG_(initIterFM)( map_shmem );
      while (HG_(nextIterFM)( map_shmem,
-                             (Word*)(HChar*)&ga, (Word*)(HChar*)&sm )) {
+                             (Word*)&ga, (Word*)&sm )) {
         tl_assert(sm);
         stats_SMs++;
         /* Skip this SecMap if the summary bit indicates it is safe to
@@ -5671,7 +5671,7 @@ void evh__HG_PTHREAD_JOIN_POST ( ThreadId stay_tid, Thread* quit_thr )
    stats_SMs = stats_SMs_scanned = stats_reExcls = 0;
    HG_(initIterFM)( map_shmem );
    while (HG_(nextIterFM)( map_shmem,
-                           (Word*)(HChar*)&ga, (Word*)(HChar*)&sm )) {
+                           (Word*)&ga, (Word*)&sm )) {
       SecMapIter itr;
       SVal*      w32p = NULL;
       tl_assert(sm);
@@ -6167,7 +6167,7 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
          edge back to it. */
       signalling_seg = NULL;
       found = HG_(lookupFM)( map_cond_to_Segment, 
-                             NULL, (Word*)(HChar*)&signalling_seg,
+                             NULL, (Word*)&signalling_seg,
                                    (Word)cond );
       if (found) {
          tl_assert(is_sane_Segment(signalling_seg));
@@ -6363,7 +6363,7 @@ static void push_Segment_for_sem ( void* sem, Segment* seg ) {
    tl_assert(seg);
    map_sem_to_Segment_stack_INIT();
    if (HG_(lookupFM)( map_sem_to_Segment_stack, 
-                      NULL, (Word*)(HChar*)&xa, (Word)sem )) {
+                      NULL, (Word*)&xa, (Word)sem )) {
       tl_assert(xa);
       VG_(addToXA)( xa, &seg );
    } else {
@@ -6378,7 +6378,7 @@ static Segment* mb_pop_Segment_for_sem ( void* sem ) {
    Segment* seg;
    map_sem_to_Segment_stack_INIT();
    if (HG_(lookupFM)( map_sem_to_Segment_stack, 
-                      NULL, (Word*)(HChar*)&xa, (Word)sem )) {
+                      NULL, (Word*)&xa, (Word)sem )) {
       /* xa is the stack for this semaphore. */
       Word sz = VG_(sizeXA)( xa );
       tl_assert(sz >= 0);
@@ -6586,8 +6586,8 @@ static void laog__show ( Char* who ) {
    HG_(initIterFM)( laog );
    me = NULL;
    links = NULL;
-   while (HG_(nextIterFM)( laog, (Word*)(HChar*)&me,
-                                 (Word*)(HChar*)&links )) {
+   while (HG_(nextIterFM)( laog, (Word*)&me,
+                                 (Word*)&links )) {
       tl_assert(me);
       tl_assert(links);
       VG_(printf)("   node %p:\n", me);
@@ -6624,7 +6624,7 @@ static void laog__add_edge ( Lock* src, Lock* dst ) {
    /* Update the out edges for src */
    keyW  = 0;
    links = NULL;
-   if (HG_(lookupFM)( laog, &keyW, (Word*)(HChar*)&links, (Word)src )) {
+   if (HG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)src )) {
       WordSetID outs_new;
       tl_assert(links);
       tl_assert(keyW == (Word)src);
@@ -6640,7 +6640,7 @@ static void laog__add_edge ( Lock* src, Lock* dst ) {
    /* Update the in edges for dst */
    keyW  = 0;
    links = NULL;
-   if (HG_(lookupFM)( laog, &keyW, (Word*)(HChar*)&links, (Word)dst )) {
+   if (HG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)dst )) {
       WordSetID inns_new;
       tl_assert(links);
       tl_assert(keyW == (Word)dst);
@@ -6691,7 +6691,7 @@ static void laog__del_edge ( Lock* src, Lock* dst ) {
    /* Update the out edges for src */
    keyW  = 0;
    links = NULL;
-   if (HG_(lookupFM)( laog, &keyW, (Word*)(HChar*)&links, (Word)src )) {
+   if (HG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)src )) {
       tl_assert(links);
       tl_assert(keyW == (Word)src);
       links->outs = HG_(delFromWS)( univ_laog, links->outs, (Word)dst );
@@ -6699,7 +6699,7 @@ static void laog__del_edge ( Lock* src, Lock* dst ) {
    /* Update the in edges for dst */
    keyW  = 0;
    links = NULL;
-   if (HG_(lookupFM)( laog, &keyW, (Word*)(HChar*)&links, (Word)dst )) {
+   if (HG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)dst )) {
       tl_assert(links);
       tl_assert(keyW == (Word)dst);
       links->inns = HG_(delFromWS)( univ_laog, links->inns, (Word)src );
@@ -6712,7 +6712,7 @@ static WordSetID /* in univ_laog */ laog__succs ( Lock* lk ) {
    LAOGLinks* links;
    keyW  = 0;
    links = NULL;
-   if (HG_(lookupFM)( laog, &keyW, (Word*)(HChar*)&links, (Word)lk )) {
+   if (HG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)lk )) {
       tl_assert(links);
       tl_assert(keyW == (Word)lk);
       return links->outs;
@@ -6727,7 +6727,7 @@ static WordSetID /* in univ_laog */ laog__preds ( Lock* lk ) {
    LAOGLinks* links;
    keyW  = 0;
    links = NULL;
-   if (HG_(lookupFM)( laog, &keyW, (Word*)(HChar*)&links, (Word)lk )) {
+   if (HG_(lookupFM)( laog, &keyW, (Word*)&links, (Word)lk )) {
       tl_assert(links);
       tl_assert(keyW == (Word)lk);
       return links->inns;
@@ -6748,8 +6748,8 @@ static void laog__sanity_check ( Char* who ) {
    me = NULL;
    links = NULL;
    if (0) VG_(printf)("laog sanity check\n");
-   while (HG_(nextIterFM)( laog, (Word*)(HChar*)&me,
-                                 (Word*)(HChar*)&links )) {
+   while (HG_(nextIterFM)( laog, (Word*)&me,
+                                 (Word*)&links )) {
       tl_assert(me);
       tl_assert(links);
       HG_(getPayloadWS)( &ws_words, &ws_size, univ_laog, links->inns );
@@ -6883,7 +6883,7 @@ static void laog__pre_thread_acquires_lock (
       key.dst_ec = NULL;
       found = NULL;
       if (HG_(lookupFM)( laog_exposition,
-                         (Word*)(HChar*)&found, NULL, (Word)&key )) {
+                         (Word*)&found, NULL, (Word)&key )) {
          tl_assert(found != &key);
          tl_assert(found->src_ga == key.src_ga);
          tl_assert(found->dst_ga == key.dst_ga);
@@ -7521,7 +7521,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
                      (void*)args[1]);
          map_pthread_t_to_Thread_INIT();
          found = HG_(lookupFM)( map_pthread_t_to_Thread, 
-                                NULL, (Word*)(HChar*)&thr_q, (Word)args[1] );
+                                NULL, (Word*)&thr_q, (Word)args[1] );
           /* Can this fail?  It would mean that our pthread_join
              wrapper observed a successful join on args[1] yet that
              thread never existed (or at least, it never lodged an
@@ -7673,7 +7673,7 @@ static HChar* string_table_strdup ( HChar* str ) {
       tl_assert(string_table);
    }
    if (HG_(lookupFM)( string_table,
-                      NULL, (Word*)(HChar*)&copy, (Word)str )) {
+                      NULL, (Word*)&copy, (Word)str )) {
       tl_assert(copy);
       if (0) VG_(printf)("string_table_strdup: %p -> %p\n", str, copy );
       return copy;
@@ -7707,7 +7707,7 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn )
       yaWFM = HG_(newFM)( hg_zalloc, hg_free, lock_unique_cmp );
       tl_assert(yaWFM);
    }
-   if (!HG_(lookupFM)( yaWFM, NULL, (Word*)(HChar*)&lkp, (Word)lkn)) {
+   if (!HG_(lookupFM)( yaWFM, NULL, (Word*)&lkp, (Word)lkn)) {
       lkp = hg_zalloc( sizeof(Lock) );
       *lkp = *lkn;
       lkp->admin = NULL;
@@ -8499,7 +8499,7 @@ static Bool hg_process_cmd_line_option ( Char* arg )
    /* "stuvw" --> stuvw (binary) */
    else if (VG_CLO_STREQN(18, arg, "--tc-sanity-flags=")) {
       Int j;
-      char* opt = & arg[18];
+      Char* opt = & arg[18];
    
       if (5 != VG_(strlen)(opt)) {
          VG_(message)(Vg_UserMsg, 

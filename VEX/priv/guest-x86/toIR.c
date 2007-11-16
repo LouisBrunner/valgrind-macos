@@ -12207,6 +12207,19 @@ DisResult disInstr_X86_WRK (
       stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
       break;
 
+   case 0xD6: /* SALC */
+      t0 = newTemp(Ity_I32);
+      t1 = newTemp(Ity_I32);
+      assign( t0,  binop(Iop_And32,
+                         mk_x86g_calculate_eflags_c(),
+                         mkU32(1)) );
+      assign( t1, binop(Iop_Sar32, 
+                        binop(Iop_Shl32, mkexpr(t0), mkU8(31)), 
+                        mkU8(31)) );
+      putIReg(1, R_EAX, unop(Iop_32to8, mkexpr(t1)) );
+      DIP("salc\n");
+      break;
+
    /* REPNE prefix insn */
    case 0xF2: { 
       Addr32 eip_orig = guest_EIP_bbstart + delta - 1;

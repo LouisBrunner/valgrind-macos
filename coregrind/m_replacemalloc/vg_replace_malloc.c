@@ -593,9 +593,18 @@ static void panic(const char *str)
    }
 
 PANIC(m_libc_soname, pvalloc);
-PANIC(m_libc_soname, malloc_stats);
 PANIC(m_libc_soname, malloc_get_state);
 PANIC(m_libc_soname, malloc_set_state);
+
+#define MALLOC_STATS(soname, fnname) \
+   \
+   void VG_REPLACE_FUNCTION_ZU(soname, fnname) ( void ); \
+   void VG_REPLACE_FUNCTION_ZU(soname, fnname) ( void )  \
+   { \
+      /* Valgrind's malloc_stats implementation does nothing. */ \
+   } 
+
+MALLOC_STATS(m_libc_soname, malloc_stats);
 
 
 /*---------------------- mallinfo ----------------------*/

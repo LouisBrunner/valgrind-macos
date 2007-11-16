@@ -129,7 +129,7 @@ static HReg newVRegI ( ISelEnv* env )
 static ARMAMode1*     iselIntExpr_AMode1_wrk ( ISelEnv* env, IRExpr* e );
 static ARMAMode1*     iselIntExpr_AMode1     ( ISelEnv* env, IRExpr* e );
 
-static ARMAMode2*     iselIntExpr_AMode2_wrk ( ISelEnv* env, IRExpr* e );
+/* static ARMAMode2*     iselIntExpr_AMode2_wrk ( ISelEnv* env, IRExpr* e ); */
 static ARMAMode2*     iselIntExpr_AMode2     ( ISelEnv* env, IRExpr* e );
 
 static ARMAMode3*     iselIntExpr_AMode3_wrk ( ISelEnv* env, IRExpr* e );
@@ -601,6 +601,7 @@ static ARMAMode1* iselIntExpr_AMode1_wrk ( ISelEnv* env, IRExpr* e )
 
 /* ---------------- Addressing Mode 2 ---------------- */
 
+__attribute__((unused))
 static Bool sane_AMode2 ( ARMAMode2* am )
 {
    switch (am->tag) {
@@ -609,12 +610,14 @@ static Bool sane_AMode2 ( ARMAMode2* am )
    }
 }
 
+/* Apparently unused
 static ARMAMode2* iselIntExpr_AMode2_wrk ( ISelEnv* env, IRExpr* e )
 {
     ARMAMode2* am = iselIntExpr_AMode2_wrk(env, e);
     vassert(sane_AMode2(am));
     return am;
 }
+*/
 
 /* DO NOT CALL THIS DIRECTLY ! */
 static ARMAMode2* iselIntExpr_AMode2 ( ISelEnv* env, IRExpr* e )

@@ -73,10 +73,10 @@ endif
 
 # Put -g -O2 after any flags we inherit from V.  -O2 vs -O
 # makes a significant difference, at least with gcc4.
-CCFLAGS = -Wall -Wmissing-prototypes -Wshadow -Winline \
+CCFLAGS = -Wall -Wmissing-prototypes -Wshadow \
 		-Wpointer-arith -Wbad-function-cast -Wcast-qual \
 		-Wcast-align -Wmissing-declarations \
-		$(EXTRA_CFLAGS) -g -O2
+		$(EXTRA_CFLAGS) -g -O2 -fstrict-aliasing
 
 #CC = icc
 #CCFLAGS = -g -Wall -wd981 -wd279 -wd1287 -wd869 -wd111 -wd188 -wd186

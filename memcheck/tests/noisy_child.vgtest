@@ -1,0 +1,2 @@
+prog: noisy_child
+vgopts: --child-silent-after-fork=yes

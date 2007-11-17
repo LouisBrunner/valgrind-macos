@@ -1223,17 +1223,18 @@ POST(sys_io_setup)
 // file-descriptors are closed...
 PRE(sys_io_destroy)
 {
-   struct vki_aio_ring *r;
-   SizeT size;
+   SizeT size = 0;
       
    PRINT("sys_io_destroy ( %llu )", (ULong)ARG1);
    PRE_REG_READ1(long, "io_destroy", vki_aio_context_t, ctx);
 
    // If we are going to seg fault (due to a bogus ARG1) do it as late as
    // possible...
-   r = (struct vki_aio_ring *)ARG1;
-   size = VG_PGROUNDUP(sizeof(struct vki_aio_ring) + 
-                       r->nr*sizeof(struct vki_io_event));
+   if (ML_(safe_to_deref)( (void*)ARG1, sizeof(struct vki_aio_ring))) {
+      struct vki_aio_ring *r = (struct vki_aio_ring *)ARG1;
+      size = VG_PGROUNDUP(sizeof(struct vki_aio_ring) + 
+                          r->nr*sizeof(struct vki_io_event));
+   }
 
    SET_STATUS_from_SysRes( VG_(do_syscall1)(SYSNO, ARG1) );
 

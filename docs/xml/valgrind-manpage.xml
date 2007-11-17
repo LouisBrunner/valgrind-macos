@@ -79,7 +79,7 @@ leaks.</para>
   <listitem>
     <para><option>callgrind</option> adds call graph tracing to cachegrind.  It can be
     used to get call counts and inclusive cost for each call happening in your
-    program. In addition to cachegrind, callgrind can annotate threads separatly,
+    program. In addition to cachegrind, callgrind can annotate threads separately,
     and every instruction of disassembler output of your program with the number of
     instructions executed and cache misses incurred.</para>
   </listitem>

@@ -153,7 +153,7 @@ and profiling.  This manual is structured similarly.</para>
 it supports.  Then, each tool has its own chapter in this manual.  You
 only need to read the documentation for the core and for the tool(s) you
 actually use, although you may find it helpful to be at least a little
-bit familar with what all tools do.  If you're new to all this, you probably
+bit familiar with what all tools do.  If you're new to all this, you probably
 want to run the Memcheck tool.  The final chapter explains how to write a
 new tool.</para>
 

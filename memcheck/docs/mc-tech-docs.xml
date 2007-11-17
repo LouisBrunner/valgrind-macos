@@ -708,7 +708,7 @@ follows:</para>
     do stores and loads of V bits to/from the sparse array which
     keeps track of V bits in memory, and
     <computeroutput>VGM_(handle_esp_assignment)</computeroutput>,
-    which messes with memory addressibility resulting from
+    which messes with memory addressability resulting from
     changes in <computeroutput>%ESP</computeroutput>.</para>
   </listitem>
 
@@ -1185,7 +1185,7 @@ express the instrumentation.  The former group contains:</para>
   <listitem>
     <para><computeroutput>LEA1</computeroutput> and
     <computeroutput>LEA2</computeroutput> are not strictly
-    necessary, but allow faciliate better translations.  They
+    necessary, but facilitate better translations.  They
     record the fancy x86 addressing modes in a direct way, which
     allows those amodes to be emitted back into the final
     instruction stream more or less verbatim.</para>
@@ -1302,7 +1302,7 @@ uopcodes are as follows:</para>
     from the synthesised shadow memory that Valgrind maintains.
     In fact they do more than that, since they also do
     address-validity checks, and emit complaints if the
-    read/written addresses are unaddressible.</para>
+    read/written addresses are unaddressable.</para>
   </listitem>
 
   <listitem>
@@ -1716,7 +1716,7 @@ transformations are done:</para>
     because it is vital the instrumenter always has an up-to-date
     <computeroutput>%ESP</computeroutput> value available,
     <computeroutput>%ESP</computeroutput> changes affect
-    addressibility of the memory around the simulated stack
+    addressability of the memory around the simulated stack
     pointer.</para>
 
     <para>The implication of the above paragraph is that the
@@ -2594,9 +2594,9 @@ if elements are used before they get new values.</para>
   VALGRIND_MAKE_READABLE(addr, len)]]></programlisting>
 
 <para>and also, to check that memory is
-addressible/initialised,</para>
+addressable/initialised,</para>
 <programlisting><![CDATA[
-  VALGRIND_CHECK_ADDRESSIBLE(addr, len)
+  VALGRIND_CHECK_ADDRESSABLE(addr, len)
   VALGRIND_CHECK_INITIALISED(addr, len)]]></programlisting>
 
 <para>I then include in my sources a header defining these
@@ -2691,7 +2691,7 @@ the error.</para>
     run it on post-CPP'd C/C++ source.  The parser/prettyprinter 
     is probably not as hard as it sounds; I would write it in Haskell, 
     a powerful functional language well suited to doing symbolic
-    computation, with which I am intimately familar.  There is
+    computation, with which I am intimately familiar.  There is
     already a C parser written in Haskell by someone in the
     Haskell community, and that would probably be a good starting
     point.</para>

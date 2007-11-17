@@ -73,7 +73,7 @@ number.</para>
 <para>Thus, the first cost line specifies that in line 15 of source file
 "file.f" there is code belonging to function "main". While running, 90 CPU
 cycles passed by, and 2 of the 14 instructions executed were floating point
-operations. Similarily, the next line specifies that there were 12 instructions
+operations. Similarly, the next line specifies that there were 12 instructions
 executed in the context of function "main" which can be related to line 16 in
 file "file.f", taking 20 CPU cycles. If a cost line specifies less event counts
 than given in the "events" line, the rest is assumed to be zero. I.e., there
@@ -93,8 +93,8 @@ called: profile data only contains sums.</para>
 
 <para>The most important extension to the original format of Cachegrind is the
 ability to specify call relationship among functions. More generally, you
-specify assoziations among positions. For this, the second part of the
-file also can contain assoziation specifications. These look similar to
+specify associations among positions. For this, the second part of the
+file also can contain association specifications. These look similar to
 position specifications, but consist of 2 lines. For calls, the format
 looks like 
 <screen>
@@ -109,7 +109,7 @@ called function, and a "cfl=" specification if the function is in another
 source file. The 2nd line looks like a regular cost line with the difference
 that inclusive cost spent inside of the function call has to be specified.</para> 
 
-<para>Other assoziations which or for example (conditional) jumps. See the
+<para>Other associations which or for example (conditional) jumps. See the
 reference below for details.</para>
 
 </sect2>
@@ -198,7 +198,7 @@ fl=(2)
 fn=(3)
 20 700</screen></para>
 
-<para>As position specifications carry no information themself, but only change
+<para>As position specifications carry no information themselves, but only change
 the meaning of subsequent cost lines or associations, they can appear
 everywhere in the file without any negative consequence. Especially, you can
 define name compression mappings directly after the header, and before any cost
@@ -225,7 +225,7 @@ fn=(1)
 <title>Subposition Compression</title>
 
 <para>If a Callgrind data file should hold costs for each assembler instruction
-of a program, you specify subpostion "instr" in the "positions:" header line,
+of a program, you specify subposition "instr" in the "positions:" header line,
 and each cost line has to include the address of some instruction. Addresses
 are allowed to have a size of 64bit to support 64bit architectures. Thus,
 repeating similar, long addresses for almost every line in the data file can
@@ -239,7 +239,7 @@ also for line numbers; both addresses and line numbers are called "subpositions"
 of the last cost line, and starts with a "+" to specify a positive difference,
 a "-" to specify a negative difference, or consists of "*" to specify the same
 subposition. Because absolute subpositions always are positive (ie. never
-prefixed by "-"), any relative specification is non-ambigous; additionally,
+prefixed by "-"), any relative specification is non-ambiguous; additionally,
 absolute and relative subposition specifications can be mixed freely.
 Assume the following example (subpositions can always be specified
 as hexadecimal numbers, beginning with "0x"):
@@ -292,7 +292,7 @@ Fetches", this can be specified the header line
 <screen>event: Ir : Instruction Fetches
 events: Ir Dr</screen></para>
 
-<para>In this example, "Dr" itself has no long name assoziated. The order of
+<para>In this example, "Dr" itself has no long name associated. The order of
 "event:" lines and the "events:" line is of no importance. Additionally,
 inherited event types can be introduced for which no raw data is available, but
 which are calculated from given types. Suppose the last example, you could add
@@ -339,7 +339,7 @@ for "Ir and "Dr".</para>
   | ('#' NoNewLineChar*)
   | CostLine
   | PositionSpecification
-  | AssoziationSpecification</screen>
+  | AssociationSpecification</screen>
 <screen>CostLine := SubPositionList Costs?</screen>
 <screen>SubPositionList := (SubPosition+ Space+)+</screen>
 <screen>SubPosition := Number | "+" Number | "-" Number | "*"</screen>
@@ -349,7 +349,7 @@ for "Ir and "Dr".</para>
 <screen>CostPosition := "ob" | "fl" | "fi" | "fe" | "fn"</screen>
 <screen>CalledPosition := " "cob" | "cfl" | "cfn"</screen>
 <screen>PositionName := ( "(" Number ")" )? (Space* NoNewLineChar* )?</screen>
-<screen>AssoziationSpecification := CallSpezification
+<screen>AssociationSpecification := CallSpecification
   | JumpSpecification</screen>
 <screen>CallSpecification := CallLine "\n" CostLine</screen>
 <screen>CallLine := "calls=" Space* Number Space+ SubPositionList</screen>
@@ -433,7 +433,7 @@ for "Ir and "Dr".</para>
   </listitem>
 
   <listitem>
-    <para><computeroutput>events: event type abbrevations</computeroutput> [Cachegrind]</para>
+    <para><computeroutput>events: event type abbreviations</computeroutput> [Cachegrind]</para>
     <para>A list of short names of the event types logged in this file. 
     The order is the same as in cost lines.  The first event type is the
     second or third number in a cost line, depending on the value of 

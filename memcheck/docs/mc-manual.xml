@@ -167,7 +167,7 @@ the following problems:</para>
     <listitem>
       <para>Controls how <constant>memcheck</constant> handles word-sized,
       word-aligned loads from addresses for which some bytes are
-      addressible and others are not.  When <varname>yes</varname>, such
+      addressable and others are not.  When <varname>yes</varname>, such
       loads do not produce an address error.  Instead, loaded bytes
       originating from illegal addresses are marked as uninitialised, and
       those corresponding to legal addresses are handled in the normal
@@ -418,12 +418,12 @@ permissions</title>
   </listitem> 
   <listitem>
     <para>Also, if a system call needs to read from a buffer provided by
-    your program, Memcheck checks that the entire buffer is addressible
+    your program, Memcheck checks that the entire buffer is addressable
     and has valid data, ie, it is readable.</para>
   </listitem>
   <listitem>
     <para>Also, if the system call needs to write to a user-supplied
-    buffer, Memcheck checks that the buffer is addressible.</para>
+    buffer, Memcheck checks that the buffer is addressable.</para>
   </listitem>
 </itemizedlist>
 </para>
@@ -937,7 +937,7 @@ follows:</para>
     <para>This apparently strange choice reduces the amount of confusing
     information presented to the user.  It avoids the unpleasant
     phenomenon in which memory is read from a place which is both
-    unaddressible and contains invalid values, and, as a result, you get
+    unaddressable and contains invalid values, and, as a result, you get
     not only an invalid-address (read/write) error, but also a
     potentially large set of uninitialised-value errors, one for every
     time the value is used.</para>
@@ -958,24 +958,24 @@ is:</para>
 <itemizedlist>
 
   <listitem>
-    <para>malloc/new/new[]: the returned memory is marked as addressible
+    <para>malloc/new/new[]: the returned memory is marked as addressable
     but not having valid values.  This means you have to write to it
     before you can read it.</para>
   </listitem>
 
   <listitem>
-    <para>calloc: returned memory is marked both addressible and valid,
+    <para>calloc: returned memory is marked both addressable and valid,
     since calloc clears the area to zero.</para>
   </listitem>
 
   <listitem>
     <para>realloc: if the new size is larger than the old, the new
-    section is addressible but invalid, as with malloc.</para>
+    section is addressable but invalid, as with malloc.</para>
   </listitem>
 
   <listitem>
     <para>If the new size is smaller, the dropped-off section is marked
-    as unaddressible.  You may only pass to realloc a pointer previously
+    as unaddressable.  You may only pass to realloc a pointer previously
     issued to you by malloc/calloc/realloc.</para>
   </listitem>
 
@@ -983,7 +983,7 @@ is:</para>
     <para>free/delete/delete[]: you may only pass to these functions a
     pointer previously issued to you by the corresponding allocation
     function.  Otherwise, Memcheck complains.  If the pointer is indeed
-    valid, Memcheck marks the entire area it points at as unaddressible,
+    valid, Memcheck marks the entire area it points at as unaddressable,
     and places the block in the freed-blocks-queue.  The aim is to defer
     as long as possible reallocation of this block.  Until that happens,
     all attempts to access it will elicit an invalid-address error, as

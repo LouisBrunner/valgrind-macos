@@ -193,7 +193,7 @@ collect2: ld returned 1 exit status
     much more slowly, but should detect the use of the out-of-date
     code.</para>
 
-    <para>Alternativaly, if you have the source code to the JIT compiler
+    <para>Alternatively, if you have the source code to the JIT compiler
     you can insert calls to the
     <computeroutput>VALGRIND_DISCARD_TRANSLATIONS</computeroutput>
     client request to mark out-of-date code, saving you from using
@@ -555,7 +555,7 @@ int main(void)
 
     <para>As for eager reporting of copies of uninitialised memory values,
     this has been suggested multiple times.  Unfortunately, almost all
-    programs legitimately copy uninitialise memory values around (because
+    programs legitimately copy uninitialised memory values around (because
     compilers pad structs to preserve alignment) and eager checking leads to
     hundreds of false positives.  Therefore Memcheck does not support eager
     checking at this time.</para>

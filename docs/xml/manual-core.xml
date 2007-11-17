@@ -113,7 +113,7 @@ uninitialised value errors, or missing uninitialised value errors.  We have
 looked in detail into fixing this, and unfortunately the result is that
 doing so would give a further significant slowdown in what is already a slow
 tool.  So the best solution is to turn off optimisation altogether.  Since
-this often makes things unmanagably slow, a reasonable compromise is to use
+this often makes things unmanageably slow, a reasonable compromise is to use
 <computeroutput>-O</computeroutput>.  This gets you the majority of the
 benefits of higher optimisation levels whilst keeping relatively small the
 chances of false positives or false negatives from Memcheck.  Also, you
@@ -422,7 +422,7 @@ distribution, provides some good examples.</para>
   <listitem>
     <para>Second line: name of the tool(s) that the suppression is for
     (if more than one, comma-separated), and the name of the suppression
-    itself, separated by a colon (Nb: no spaces are allowed), eg:</para>
+    itself, separated by a colon (n.b.: no spaces are allowed), eg:</para>
 <programlisting><![CDATA[
 tool_name1,tool_name2:suppression_name]]></programlisting>
 
@@ -530,7 +530,7 @@ freely mix <computeroutput>obj:</computeroutput> and
 
 <para>As mentioned above, Valgrind's core accepts a common set of flags.
 The tools also accept tool-specific flags, which are documented
-seperately for each tool.</para>
+separately for each tool.</para>
 
 <para>You invoke Valgrind like this:</para>
 
@@ -732,7 +732,7 @@ categories.</para>
       causes the log file name to be qualified using the contents of the
       environment variable <computeroutput>$VAR</computeroutput>.  This
       is useful when running MPI programs.  For further details, see
-      <link linkend="manual-core.comment">Section 2.3 "The Commentary"</link>
+      <link linkend="manual-core.comment">the commentary</link>
       in the manual.
       </para>
     </listitem>
@@ -751,7 +751,7 @@ categories.</para>
       be used in conjunction with the
       <computeroutput>valgrind-listener</computeroutput> program.  For
       further details, see 
-      <link linkend="manual-core.comment">Section 2.3 "The Commentary"</link>
+      <link linkend="manual-core.comment">the commentary</link>
       in the manual.</para>
     </listitem>
   </varlistentry>
@@ -890,7 +890,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.gen-suppressions" xreflabel="--gen-supressions">
+  <varlistentry id="opt.gen-suppressions" xreflabel="--gen-suppressions">
     <term>
       <option><![CDATA[--gen-suppressions=<yes|no|all> [default: no] ]]></option>
     </term>
@@ -1096,7 +1096,7 @@ need to use these.</para>
       <para>The GNU C library (<function>libc.so</function>), which is
       used by all programs, may allocate memory for its own uses.
       Usually it doesn't bother to free that memory when the program
-      ends - there would be no point, since the Linux kernel reclaims
+      ends&mdash;there would be no point, since the Linux kernel reclaims
       all process resources when a process exits anyway, so it would
       just slow things down.</para>
 
@@ -1418,7 +1418,7 @@ tool-specific macros).</para>
   <term><command><computeroutput>VALGRIND_DESTROY_MEMPOOL</computeroutput>:</command></term>
    <listitem>
     <para>This should be used in conjunction with
-    <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>
+    <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>.
     Again, see the comments in <filename>valgrind.h</filename> for
     information on how to use it.</para>
    </listitem>
@@ -1428,7 +1428,7 @@ tool-specific macros).</para>
    <term><command><computeroutput>VALGRIND_MEMPOOL_ALLOC</computeroutput>:</command></term>
    <listitem>
     <para>This should be used in conjunction with
-    <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>
+    <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>.
     Again, see the comments in <filename>valgrind.h</filename> for
     information on how to use it.</para>
    </listitem>
@@ -1438,7 +1438,7 @@ tool-specific macros).</para>
    <term><command><computeroutput>VALGRIND_MEMPOOL_FREE</computeroutput>:</command></term>
    <listitem>
     <para>This should be used in conjunction with
-    <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>
+    <computeroutput>VALGRIND_CREATE_MEMPOOL</computeroutput>.
     Again, see the comments in <filename>valgrind.h</filename> for
     information on how to use it.</para>
    </listitem>
@@ -1505,8 +1505,8 @@ tool-specific macros).</para>
    <term><command><computeroutput>VALGRIND_STACK_CHANGE(id, start, end)</computeroutput>:</command></term>
    <listitem>
     <para>Changes a previously registered stack.  Informs
-    Valgrind that the previously registerer stack with stack id
-    <computeroutput>id</computeroutput> has changed it's start and end
+    Valgrind that the previously registered stack with stack id
+    <computeroutput>id</computeroutput> has changed its start and end
     values.  Use this if your user-level thread package implements
     stack growth.</para>
    </listitem>
@@ -1548,7 +1548,7 @@ concurrency, critical race, locking, or similar, bugs.</para>
 
 <para>Your program will use the native
 <computeroutput>libpthread</computeroutput>, but not all of its facilities
-will work.  In particular, synchonisation of processes via shared-memory
+will work.  In particular, synchronisation of processes via shared-memory
 segments will not work.  This relies on special atomic instruction sequences 
 which Valgrind does not emulate in a way which works between processes.
 Unfortunately there's no way for Valgrind to warn when this is happening,
@@ -1599,7 +1599,7 @@ will create a core dump in the usual way.</para>
 <title>Function wrapping</title>
 
 <para>
-Valgrind versions 3.2.0 and above and can do function wrapping on all
+Valgrind versions 3.2.0 and above can do function wrapping on all
 supported targets.  In function wrapping, calls to some specified
 function are intercepted and rerouted to a different, user-supplied
 function.  This can do whatever it likes, typically examining the
@@ -2197,7 +2197,7 @@ following constraints:</para>
    programs behave as if they had been run on a machine with 64-bit IEEE
    floats, for example PowerPC.  On amd64 FP arithmetic is done by
    default on SSE2, so amd64 looks more like PowerPC than x86 from an FP
-   perspective, and there are far fewer noticable accuracy differences
+   perspective, and there are far fewer noticeable accuracy differences
    than with x86.</para>
 
    <para>Rounding: Valgrind does observe the 4 IEEE-mandated rounding
@@ -2212,7 +2212,7 @@ following constraints:</para>
    negative number, etc), division by zero, overflow, underflow,
    inexact (loss of precision).</para>
 
-   <para>For each exception, two courses of action are defined by 754:
+   <para>For each exception, two courses of action are defined by IEEE754:
    either (1) a user-defined exception handler may be called, or (2) a
    default action is defined, which "fixes things up" and allows the
    computation to proceed without throwing an exception.</para>

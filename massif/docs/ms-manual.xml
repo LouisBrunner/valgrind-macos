@@ -1,6 +1,7 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
 <chapter id="ms-manual" xreflabel="Massif: a heap profiler">

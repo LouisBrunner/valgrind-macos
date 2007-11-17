@@ -283,7 +283,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
       and <option><xref linkend="opt.dump-after"/>=funcprefix</option>.
       To zero cost counters before entering a function, use
       <option><xref linkend="opt.zero-before"/>=funcprefix</option>.
-      The prefix method for specifying function names was choosen to
+      The prefix method for specifying function names was chosen to
       ease the use with C++: you don't have to specify full
       signatures.</para> <para>You can specify these options multiple
       times for different function prefixes.</para>
@@ -412,10 +412,10 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   cut off uninteresting areas.</para>
 
   <para>Despite the meaningless of inclusive costs in cycles, the big
-  drawback for visualization motivates the possibility to temporarely
+  drawback for visualization motivates the possibility to temporarily
   switch off cycle detection in KCachegrind, which can lead to
   misguiding visualization. However, often cycles appear because of
-  unlucky superposition of independant call chains in a way that
+  unlucky superposition of independent call chains in a way that
   the profile result will see a cycle. Neglecting uninteresting
   calls with very small measured inclusive cost would break these
   cycles. In such cases, incorrect handling of cycles by not detecting
@@ -436,7 +436,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   symbol explosion. The latter imposes large memory requirement for Callgrind
   with possible out-of-memory conditions, and big profile data files.</para>
 
-  <para>A further possibility to avoid cycles in Callgrinds profile data
+  <para>A further possibility to avoid cycles in Callgrind's profile data
   output is to simply leave out given functions in the call graph. Of course, this
   also skips any call information from and to an ignored function, and thus can
   break a cycle. Candidates for this typically are dispatcher functions in event
@@ -619,7 +619,7 @@ be executed. For interactive control use
     </term>
     <listitem>
       <para>Dump profile data every &lt;count&gt; basic blocks.
-      Whether a dump is needed is only checked when Valgrinds internal
+      Whether a dump is needed is only checked when Valgrind's internal
       scheduler is run. Therefore, the minimum setting useful is about 100000.
       The count is a 64-bit value to make long dump periods possible.
       </para>

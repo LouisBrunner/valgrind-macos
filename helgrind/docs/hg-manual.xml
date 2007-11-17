@@ -1,6 +1,7 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
 <chapter id="hg-manual" xreflabel="Helgrind: thread error detector">
@@ -320,7 +321,7 @@ sections below explain them.  Here we merely note their presence:</para>
   points of these two threads, so you can see which threads it is
   referring to.</para>
  </listitem>
- <listitem><para>Helgrind tries to provide an explaination of why the
+ <listitem><para>Helgrind tries to provide an explanation of why the
   race exists: "<computeroutput>Location 0x601034 has never been
   protected by any lock</computeroutput>".</para>
  </listitem>
@@ -878,7 +879,7 @@ of false data-race errors.</para>
     <para>Make sure your application, and all the libraries it uses,
     use the POSIX threading primitives.  Helgrind needs to be able to
     see all events pertaining to thread creation, exit, locking and
-    other syncronisation events.  To do so it intercepts many POSIX
+    other synchronisation events.  To do so it intercepts many POSIX
     pthread_ functions.</para>
 
     <para>Do not roll your own threading primitives (mutexes, etc)

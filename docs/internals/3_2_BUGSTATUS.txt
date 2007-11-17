@@ -29,6 +29,9 @@ n-i-bz             [patch] Add sys_utimensat system call for Linux x86
 124478  glibc-fix  memcheck reports uninitialized bytes on
                    timer_create() while it should not
 
+127371  fixed      java vm giving unhandled instruction bytes: 
+                   0x26 0x2E 0x64 0x65
+
 128359  glibc-fix  Please suppress the uninitialized bytes report 
                    on getifaddrs() (glibc 2.3.3)
 
@@ -41,8 +44,8 @@ n-i-bz             [patch] Add sys_utimensat system call for Linux x86
 137396  fixed :-)  I would really like helgrind to work again...
 137714  vx1787     x86/amd64->IR: 0x66 0xF 0xF7 0xC6 (maskmovq, maskmovdq)
 
-145559             valgrind aborts when malloc_stats is called
-145609             valgrind aborts all runs with 'repeated section!'
+145559  r7168      valgrind aborts when malloc_stats is called
+145609  queried    valgrind aborts all runs with 'repeated section!'
 145622             --db-attach broken again on x86-64
 145837             ==149519
 145887             PPC32: getitimer() system call is not supported (patch)
@@ -50,9 +53,9 @@ n-i-bz             [patch] Add sys_utimensat system call for Linux x86
 146252  queried    amd64->IR: handle Group 5 extended CALL and JMP insns
                    with non-reg operands of sz==8
 146701             ==134990
-146781             Adding support for private futexes
+146781  r7169      Adding support for private futexes
 
-147325             valgrind internal error on syscall (SYS_io_destroy, 0)
+147325  r7170      valgrind internal error on syscall (SYS_io_destroy, 0)
 147498  vx1795     amd64->IR: 0xF0 0xF 0xB0 0xF (lock cmpxchg %cl,(%rdi))
 147628  vx1796     SALC opcode 0xd6 unimplemented
 147825  r6793      crash on amd64-linux with gcc 4.2 and glibc 2.6 (CFI)
@@ -69,11 +72,11 @@ n-i-bz             [patch] Add sys_utimensat system call for Linux x86
 149182  vx1784/5   PPC Trap instructions not implemented in valgrind
 149838  marginal   x86->IR: 0xF 0xAE 0xD 0xE0 (FXRSTOR ?)
 149519  r6813/4    ppc32: V aborts with SIGSEGV on execution of a signal handler
-149878             add (proper) check for calloc integer overflow
+149878  marginal   add (proper) check for calloc integer overflow
 149892             ==137714
 
-150044             SEGV during stack deregister
-150045             Valgrind doesn't recognize pthread stack as a stack
+150044  r7171      SEGV during stack deregister
+150045  fixable??  Valgrind doesn't recognize pthread stack as a stack
                    when context switching
 150380             dwarf/gcc interoperation (dwarf3 read problems)
                    (related to 129937 ?)

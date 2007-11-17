@@ -61,6 +61,12 @@ extern Int   VG_(clo_sanity_level);
 extern Bool  VG_(clo_demangle);
 /* Simulate child processes? default: NO */
 extern Bool  VG_(clo_trace_children);
+/* After a fork, the child's output can become confusingly
+   intermingled with the parent's output.  This is especially
+   problematic when VG_(clo_xml) is True.  Setting
+   VG_(clo_child_silent_after_fork) causes children to fall silent
+   after fork() calls. */
+extern Bool  VG_(clo_child_silent_after_fork);
 
 /* Where logging output is to be sent to.
 

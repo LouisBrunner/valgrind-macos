@@ -2895,13 +2895,22 @@ PRE(sys_fork)
    SET_STATUS_from_SysRes( VG_(do_syscall0)(__NR_fork) );
 
    if (SUCCESS && RES == 0) {
+      /* child */
       VG_(do_atfork_child)(tid);
 
       /* restore signal mask */
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
+
+      /* If --child-silent-after-fork=yes was specified, set the
+         logging file descriptor to an 'impossible' value.  This is
+         noticed by send_bytes_to_logging_sink in m_libcprint.c, which
+         duly stops writing any further logging output. */
+      if (!VG_(logging_to_socket) && VG_(clo_child_silent_after_fork))
+         VG_(clo_log_fd) = -1;
    } 
    else 
    if (SUCCESS && RES > 0) {
+      /* parent */
       PRINT("   fork: process %d created child %d\n", VG_(getpid)(), RES);
 
       /* restore signal mask */

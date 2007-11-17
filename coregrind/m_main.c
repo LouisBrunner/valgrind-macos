@@ -114,7 +114,8 @@ static void usage_NORETURN ( Bool debug_help )
 "    --version                 show version\n"
 "    -q --quiet                run silently; only print error msgs\n"
 "    -v --verbose              be more verbose, incl counts of errors\n"
-"    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
+"    --trace-children=no|yes   Valgrind-ise child processes (follow execve)? [no]\n"
+"    --child-silent-after-fork=no|yes  omit child output between fork & exec? [no]\n"
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
@@ -370,6 +371,8 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO(arg, "--time-stamp",       VG_(clo_time_stamp))
       else VG_BOOL_CLO(arg, "--track-fds",        VG_(clo_track_fds))
       else VG_BOOL_CLO(arg, "--trace-children",   VG_(clo_trace_children))
+      else VG_BOOL_CLO(arg, "--child-silent-after-fork",
+                            VG_(clo_child_silent_after_fork))
       else VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched))
       else VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals))
       else VG_BOOL_CLO(arg, "--trace-symtab",     VG_(clo_trace_symtab))

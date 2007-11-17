@@ -53,7 +53,12 @@ Bool VG_(logging_to_socket) = False;
 static void send_bytes_to_logging_sink ( Char* msg, Int nbytes )
 {
    if (!VG_(logging_to_socket)) {
-      VG_(write)( VG_(clo_log_fd), msg, nbytes );
+      /* VG_(clo_log_fd) could have been set to -1 in the various
+         sys-wrappers for sys_fork, if --child-silent-after-fork=yes
+         is in effect.  That is a signal that we should not produce
+         any more output. */
+      if (VG_(clo_log_fd) >= 0)
+         VG_(write)( VG_(clo_log_fd), msg, nbytes );
    } else {
       Int rc = VG_(write_socket)( VG_(clo_log_fd), msg, nbytes );
       if (rc == -1) {

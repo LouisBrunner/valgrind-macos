@@ -9,6 +9,8 @@
 # and not in
 #    $prefix/lib/valgrind/omega-x86-linux/exp
 # or similarly mutant place.
+#
+# Note there is identical sed magic in Makefile.tool-inplace.am.
 
 # What the second for loop does: it copies libcoregrind.a and libvex.a
 # into the correct (target-specific) lib dirs at install time.

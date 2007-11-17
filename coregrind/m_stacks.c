@@ -154,7 +154,7 @@ void VG_(deregister_stack)(UWord id)
 
    VG_(debugLog)(2, "stacks", "deregister stack %lu\n", id);
 
-   if (current_stack->id == id) {
+   if (current_stack && current_stack->id == id) { 
       current_stack = NULL;
    }
 
@@ -209,7 +209,8 @@ void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
    if (current_stack == NULL ||
        new_SP < current_stack->start || new_SP > current_stack->end) {
       Stack* new_stack = find_stack_by_addr(new_SP);
-      if (new_stack && new_stack->id != current_stack->id) {
+      if (new_stack 
+          && (current_stack == NULL || new_stack->id != current_stack->id)) { 
          /* The stack pointer is now in another stack.  Update the current
             stack information and return without doing anything else. */
          current_stack = new_stack;

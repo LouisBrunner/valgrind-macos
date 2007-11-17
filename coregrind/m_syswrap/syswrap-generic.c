@@ -2361,6 +2361,7 @@ PRE(sys_execve)
    ThreadState* tst;
    Int          i, j, tot_args;
    SysRes       res;
+   Bool         setuid_allowed;
 
    PRINT("sys_execve ( %p(%s), %p, %p )", ARG1, ARG1, ARG2, ARG3);
    PRE_REG_READ3(vki_off_t, "execve",
@@ -2388,8 +2389,10 @@ PRE(sys_execve)
    }
 
    // Do the important checks:  it is a file, is executable, permissions are
-   // ok, etc.
-   res = VG_(pre_exec_check)((const Char*)ARG1, NULL);
+   // ok, etc.  We allow setuid executables to run only in the case when
+   // we are not simulating them, that is, they to be run natively.
+   setuid_allowed = VG_(clo_trace_children)  ? False  : True;
+   res = VG_(pre_exec_check)((const Char*)ARG1, NULL, setuid_allowed);
    if (res.isError) {
       SET_STATUS_Failure( res.err );
       return;

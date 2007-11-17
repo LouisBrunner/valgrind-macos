@@ -45,6 +45,7 @@
 #include "pub_core_libcassert.h"  // VG_(exit), vg_assert
 #include "pub_core_mallocfree.h"  // VG_(malloc), VG_(free)
 #include "pub_core_syscall.h"     // VG_(strerror)
+#include "pub_core_options.h"     // VG_(clo_xml)
 #include "pub_core_ume.h"         // self
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
@@ -636,12 +637,14 @@ typedef enum {
 } ExeFormat;
 
 // Check the file looks executable.
-SysRes VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd)
+SysRes 
+VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd, Bool allow_setuid)
 {
    Int fd, ret;
    SysRes res;
    Char  buf[4096];
    SizeT bufsz = 4096, fsz;
+   Bool is_setuid = False;
 
    // Check it's readable
    res = VG_(open)(exe_name, VKI_O_RDONLY, 0);
@@ -651,9 +654,18 @@ SysRes VG_(pre_exec_check)(const HChar* exe_name, Int* out_fd)
    fd = res.res;
 
    // Check we have execute permissions
-   ret = VG_(check_executable)((HChar*)exe_name);
+   ret = VG_(check_executable)(&is_setuid, (HChar*)exe_name, allow_setuid);
    if (0 != ret) {
       VG_(close)(fd);
+      if (is_setuid && !VG_(clo_xml)) {
+         VG_(message)(Vg_UserMsg, "");
+         VG_(message)(Vg_UserMsg,
+                      "Warning: Can't execute setuid/setgid executable: %s",
+                      exe_name);
+         VG_(message)(Vg_UserMsg, "Possible workaround: remove "
+                      "--trace-children=yes, if in effect");
+         VG_(message)(Vg_UserMsg, "");
+      }
       return VG_(mk_SysRes_Error)(ret);
    }
 
@@ -697,7 +709,7 @@ static Int do_exec_inner(const HChar *exe, ExeInfo* info)
    Int fd;
    Int ret;
 
-   res = VG_(pre_exec_check)(exe, &fd);
+   res = VG_(pre_exec_check)(exe, &fd, False/*allow_setuid*/);
    if (res.isError)
       return res.err;
 
@@ -800,7 +812,8 @@ static Int do_exec_shell_followup(Int ret, HChar* exe_name,
          VG_(printf)("valgrind: %s: is a directory\n", exe_name);
       
       // Was it not executable?
-      } else if (0 != VG_(check_executable)(exe_name)) {
+      } else if (0 != VG_(check_executable)(NULL, exe_name, 
+                                            False/*allow_setuid*/)) {
          VG_(printf)("valgrind: %s: %s\n", exe_name, VG_(strerror)(ret));
 
       // Did it start with "#!"?  If so, it must have been a bad interpreter.

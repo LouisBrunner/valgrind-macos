@@ -332,12 +332,21 @@ Int VG_(access) ( HChar* path, Bool irusr, Bool iwusr, Bool ixusr )
    if group matches, then use the group permissions, else
    use other permissions.
 
-   Note that we can't deal with SUID/SGID, so we refuse to run them
-   (otherwise the executable may misbehave if it doesn't have the
-   permissions it thinks it does).
+   Note that we can't deal properly with SUID/SGID.  By default
+   (allow_setuid == False), we refuse to run them (otherwise the
+   executable may misbehave if it doesn't have the permissions it
+   thinks it does).  However, the caller may indicate that setuid
+   executables are allowed, for example if we are going to exec them
+   but not trace into them (iow, client sys_execve when
+   clo_trace_children == False).
+
+   If VKI_EACCES is returned (iow, permission was refused), then
+   *is_setuid is set to True iff permission was refused because the
+   executable is setuid.
 */
 /* returns: 0 = success, non-0 is failure */
-Int VG_(check_executable)(HChar* f)
+Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
+                          HChar* f, Bool allow_setuid)
 {
   /* This is something of a kludge.  Really we should fix VG_(stat) to
      do this itself, but not clear how to do it as it depends on
@@ -351,12 +360,16 @@ Int VG_(check_executable)(HChar* f)
    SysRes res = VG_(stat)(f, &st);
 #  endif
 
+   if (is_setuid)
+      *is_setuid = False;
+
    if (res.isError) {
       return res.err;
    }
 
-   if (st.st_mode & (VKI_S_ISUID | VKI_S_ISGID)) {
-      /* VG_(printf)("Can't execute suid/sgid executable %s\n", exe); */
+   if ( (st.st_mode & (VKI_S_ISUID | VKI_S_ISGID)) && !allow_setuid ) {
+      if (is_setuid)
+         *is_setuid = True;
       return VKI_EACCES;
    }
 

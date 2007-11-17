@@ -1151,6 +1151,7 @@ struct  vki_seminfo {
 #define VKI_FUTEX_FD (2)
 #define VKI_FUTEX_REQUEUE (3)
 #define VKI_FUTEX_CMP_REQUEUE (4)
+#define VKI_FUTEX_PRIVATE_FLAG (128)
 
 struct vki_robust_list {
 	struct vki_robust_list __user *next;

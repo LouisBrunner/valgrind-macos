@@ -822,7 +822,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    return VG_(mk_SysRes_Success)( 0 );
 
   bad_signo:
-   if (VG_(showing_core_errors)()) {
+   if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg,
                    "Warning: bad signal number %d in sigaction()", 
                    signo);
@@ -830,7 +830,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_signo_reserved:
-   if (VG_(showing_core_errors)()) {
+   if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg,
 		   "Warning: ignored attempt to set %s handler in sigaction();",
 		   signame(signo));
@@ -841,7 +841,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_sigkill_or_sigstop:
-   if (VG_(showing_core_errors)()) {
+   if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg,
 		   "Warning: ignored attempt to set %s handler in sigaction();",
 		   signame(signo));
@@ -1206,7 +1206,8 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	 core = False;
    }
 
-   if (VG_(clo_verbosity) > 1 || (could_core && info->si_code > VKI_SI_USER)) {
+   if ( (VG_(clo_verbosity) > 1 || (could_core && info->si_code > VKI_SI_USER)) 
+        && !VG_(clo_xml) ) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, 
                    "Process terminating with default action of signal %d (%s)%s", 

@@ -216,8 +216,13 @@ PTH_FUNC(int, pthreadZucreateZAZa, // pthread_create@*
       /* we have to wait for the child to notify the tool of its
          pthread_t before continuing */
       while (xargs[2] != 0) {
-         // FIXME: add a yield client request
-         /* do nothing */
+         /* Do nothing.  We need to spin until the child writes to
+            xargs[2].  However, that can lead to starvation in the
+            child and very long delays (eg, tc19_shadowmem on
+            ppc64-linux Fedora Core 6).  So yield the cpu if we can,
+            to let the child run at the earliest available
+            opportunity. */
+         sched_yield();
       }
    } else { 
       DO_PthAPIerror( "pthread_create", ret );

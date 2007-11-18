@@ -459,6 +459,16 @@ AC_EGREP_CPP([GLIBC_26], [
 ],
 libc="2.6")
 
+AC_EGREP_CPP([GLIBC_27], [
+#include <features.h>
+#ifdef __GNU_LIBRARY__
+ #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 7)
+  GLIBC_27
+ #endif
+#endif
+],
+libc="2.7")
+
 AC_EGREP_CPP([AIX5_LIBC], [
 #include <standards.h>
 #if defined(_AIXVERSION_510) || defined(_AIXVERSION_520) || defined(_AIXVERSION_530)
@@ -481,27 +491,33 @@ case "${libc}" in
 	AC_MSG_RESULT(2.3 family)
 	AC_DEFINE([GLIBC_2_3], 1, [Define to 1 if you're using glibc 2.3.x])
 	DEFAULT_SUPP="glibc-2.3.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.3456-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	;;
 
      2.4)
 	AC_MSG_RESULT(2.4 family)
 	AC_DEFINE([GLIBC_2_4], 1, [Define to 1 if you're using glibc 2.4.x])
 	DEFAULT_SUPP="glibc-2.4.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.3456-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	;;
 
      2.5)
 	AC_MSG_RESULT(2.5 family)
 	AC_DEFINE([GLIBC_2_5], 1, [Define to 1 if you're using glibc 2.5.x])
 	DEFAULT_SUPP="glibc-2.5.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.3456-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	;;
      2.6)
 	AC_MSG_RESULT(2.6 family)
 	AC_DEFINE([GLIBC_2_6], 1, [Define to 1 if you're using glibc 2.6.x])
 	DEFAULT_SUPP="glibc-2.6.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.3456-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	;;
+     2.7)
+	AC_MSG_RESULT(2.7 family)
+	AC_DEFINE([GLIBC_2_7], 1, [Define to 1 if you're using glibc 2.7.x])
+	DEFAULT_SUPP="glibc-2.7.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	;;
      aix5)
 	AC_MSG_RESULT(AIX 5.1 or 5.2 or 5.3)
@@ -511,7 +527,7 @@ case "${libc}" in
 
      *)
 	AC_MSG_RESULT(unsupported version)
-	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.6])
+	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.7])
 	AC_MSG_ERROR([or AIX 5.1 or 5.2 or 5.3 libc])
 	;;
 esac

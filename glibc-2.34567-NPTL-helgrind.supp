@@ -6,7 +6,7 @@
 ######------------ glibc-2.5 specific ------------######
 #
 ## NB.  This is the "reference set".  Derived sets for
-## glibc 2.4, 2.3 and 2.6 follow below.
+## glibc 2.7, 2.6, 2.4 and 2.3 follow below.
 {
    helgrind-glibc25-001
    Helgrind:Race
@@ -145,71 +145,51 @@
    fun:start_thread
 }
 
-######------------ glibc-2.4 specific ------------######
+######------------ glibc-2.7 specific ---------######
 #
 {
-   helgrind-glibc24-001
+   helgrind-glibc27-001
    Helgrind:Race
-   obj:/lib*/ld-2.4.*so
-   obj:/lib*/ld-2.4.*so
+   obj:/lib*/ld-2.7.*so
+   obj:/lib*/ld-2.7.*so
 }
 {
-   helgrind-glibc24-003
+   helgrind-glibc27-003
    Helgrind:Race
-   obj:/lib*/ld-2.4.*so
-   obj:/lib*/libc-2.4.*so
-   obj:/lib*/libc-2.4.*so
+   obj:/lib*/ld-2.7.*so
+   obj:/lib*/libc-2.7.*so
+   obj:/lib*/libc-2.7.*so
 }
 {
-   helgrind-glibc24-004
+   helgrind-glibc27-004
    Helgrind:Race
-   obj:/lib*/libc-2.4.*so
-   obj:/lib*/libc-2.4.*so
+   obj:/lib*/libc-2.7.*so
+   obj:/lib*/libc-2.7.*so
 }
 {
-   helgrind-glibc24-005
+   helgrind-glibc27-011
    Helgrind:Race
-   obj:/lib*/libpthread-2.4.*so
-   obj:/lib*/libpthread-2.4.*so
-   obj:/lib*/libpthread-2.4.*so
-}
-{
-   helgrind-glibc24-006
-   Helgrind:Race
-   obj:/lib*/libpthread-2.4.*so
-   obj:/lib*/libpthread-2.4.*so
-   obj:/lib*/libc-2.4.*so
-}
-{
-   helgrind-glibc24-008
-   Helgrind:Race
-   obj:/lib*/libpthread-2.4.*so
-   obj:/lib*/libc-2.4.*so
-}
-{
-   helgrind-glibc24-010
-   Helgrind:Race
-   obj:/lib*/ld-2.4.*so
-   obj:/lib*/libpthread-2.4.*so
-}
-{
-   helgrind-glibc24-011
-   Helgrind:Race
-   obj:/lib*/libc-2.4.*so
-   obj:/lib*/libpthread-2.4.*so
+   obj:/lib*/libc-2.7.*so
+   obj:/lib*/libpthread-2.7.*so
 }
 
 {
-   helgrind-glibc24-101
+   helgrind-glibc27-101
    Helgrind:Race
-   obj:/lib*/libpthread-2.4.*so
+   obj:/lib*/libpthread-2.7.*so
    fun:pthread_*
 }
 {
-   helgrind-glibc24-102
+   helgrind-glibc27-102
    Helgrind:Race
    fun:mythread_wrapper
-   obj:/lib*/libpthread-2.4.*so
+   obj:/lib*/libpthread-2.7.*so
+}
+{
+   helgrind-glibc27-107
+   Helgrind:Race
+   obj:/lib*/libpthread-2.7.*so
+   fun:sem_*
 }
 
 ######------------ glibc-2.6 specific ---------######
@@ -282,6 +262,73 @@
    Helgrind:Race
    obj:/lib*/libpthread-2.6.*so
    fun:sem_*
+}
+
+######------------ glibc-2.4 specific ------------######
+#
+{
+   helgrind-glibc24-001
+   Helgrind:Race
+   obj:/lib*/ld-2.4.*so
+   obj:/lib*/ld-2.4.*so
+}
+{
+   helgrind-glibc24-003
+   Helgrind:Race
+   obj:/lib*/ld-2.4.*so
+   obj:/lib*/libc-2.4.*so
+   obj:/lib*/libc-2.4.*so
+}
+{
+   helgrind-glibc24-004
+   Helgrind:Race
+   obj:/lib*/libc-2.4.*so
+   obj:/lib*/libc-2.4.*so
+}
+{
+   helgrind-glibc24-005
+   Helgrind:Race
+   obj:/lib*/libpthread-2.4.*so
+   obj:/lib*/libpthread-2.4.*so
+   obj:/lib*/libpthread-2.4.*so
+}
+{
+   helgrind-glibc24-006
+   Helgrind:Race
+   obj:/lib*/libpthread-2.4.*so
+   obj:/lib*/libpthread-2.4.*so
+   obj:/lib*/libc-2.4.*so
+}
+{
+   helgrind-glibc24-008
+   Helgrind:Race
+   obj:/lib*/libpthread-2.4.*so
+   obj:/lib*/libc-2.4.*so
+}
+{
+   helgrind-glibc24-010
+   Helgrind:Race
+   obj:/lib*/ld-2.4.*so
+   obj:/lib*/libpthread-2.4.*so
+}
+{
+   helgrind-glibc24-011
+   Helgrind:Race
+   obj:/lib*/libc-2.4.*so
+   obj:/lib*/libpthread-2.4.*so
+}
+
+{
+   helgrind-glibc24-101
+   Helgrind:Race
+   obj:/lib*/libpthread-2.4.*so
+   fun:pthread_*
+}
+{
+   helgrind-glibc24-102
+   Helgrind:Race
+   fun:mythread_wrapper
+   obj:/lib*/libpthread-2.4.*so
 }
 
 ######--------- glibc-2.3 specific ---------######

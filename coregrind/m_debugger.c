@@ -149,7 +149,59 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    return rc;
 
 #elif defined(VGP_ppc64_linux)
-   I_die_here;
+   Int rc = 0; 
+   /* FRJ: copied nearly verbatim from the ppc32 case. I compared the 
+      vki-ppc64-linux.h with its ppc32 counterpart and saw no 
+      appreciable differences, other than the registers being 8 bytes 
+      instead of 4. No idea why we don't set all of the entries 
+      declared in vki_pt_regs, but ppc32 doesn't so there must be a 
+      reason. 
+ 
+      Finally, note that CR and XER are 32 bits even for ppc64 (see 
+      libvex_guest_ppc64.h), but the vki_pt_regs struct still gives 
+      them 64 bits. 
+   */ 
+   /* apparently the casting to void* is the Right Thing To Do */ 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R0  * 8), (void*)vex->guest_GPR0); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R1  * 8), (void*)vex->guest_GPR1); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R2  * 8), (void*)vex->guest_GPR2); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R3  * 8), (void*)vex->guest_GPR3); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R4  * 8), (void*)vex->guest_GPR4); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R5  * 8), (void*)vex->guest_GPR5); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R6  * 8), (void*)vex->guest_GPR6); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R7  * 8), (void*)vex->guest_GPR7); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R8  * 8), (void*)vex->guest_GPR8); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R9  * 8), (void*)vex->guest_GPR9); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R10 * 8), (void*)vex->guest_GPR10); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R11 * 8), (void*)vex->guest_GPR11); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R12 * 8), (void*)vex->guest_GPR12); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R13 * 8), (void*)vex->guest_GPR13); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R14 * 8), (void*)vex->guest_GPR14); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R15 * 8), (void*)vex->guest_GPR15); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R16 * 8), (void*)vex->guest_GPR16); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R17 * 8), (void*)vex->guest_GPR17); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R18 * 8), (void*)vex->guest_GPR18); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R19 * 8), (void*)vex->guest_GPR19); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R20 * 8), (void*)vex->guest_GPR20); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R21 * 8), (void*)vex->guest_GPR21); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R22 * 8), (void*)vex->guest_GPR22); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R23 * 8), (void*)vex->guest_GPR23); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R24 * 8), (void*)vex->guest_GPR24); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R25 * 8), (void*)vex->guest_GPR25); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R26 * 8), (void*)vex->guest_GPR26); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R27 * 8), (void*)vex->guest_GPR27); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R28 * 8), (void*)vex->guest_GPR28); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R29 * 8), (void*)vex->guest_GPR29); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R30 * 8), (void*)vex->guest_GPR30); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_R31 * 8), (void*)vex->guest_GPR31); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_NIP * 8), (void*)vex->guest_CIA); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_CCR * 8), 
+                                              (void*)(long)LibVEX_GuestPPC64_get_CR(vex)); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_LNK * 8), (void*)vex->guest_LR); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_CTR * 8), (void*)vex->guest_CTR); 
+   rc |= VG_(ptrace)(VKI_PTRACE_POKEUSR, pid, (void*)(VKI_PT_XER * 8), 
+                                              (void*)(long)LibVEX_GuestPPC64_get_XER(vex)); 
+   return rc; 
 
 #elif defined(VGP_ppc32_aix5)
    I_die_here;
@@ -175,7 +227,6 @@ void VG_(start_debugger) ( ThreadId tid )
    pid = VG_(fork)();
 
    if (pid == 0) {
-      vki_sigset_t set;
       /* child */
       rc = VG_(ptrace)(VKI_PTRACE_TRACEME, 0, NULL, NULL);
       vg_assert(rc == 0);

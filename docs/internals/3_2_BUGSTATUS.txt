@@ -12,7 +12,6 @@ PRI: 32  = fix this for 3.2.2
 
 Add regtest for #149519.
 
-n-i-bz             ppc32-linux getitimer w/ patch, devs@, 3 Sept.
 
 n-i-bz  r6783/6784 x86_linux_REDIR_FOR_index() broken (Fri Jul 27)
 
@@ -25,6 +24,8 @@ n-i-bz             [patch] Add sys_utimensat system call for Linux x86
                    platform (Oct 25)
 
  79844  fixed      Helgrind complains about race condition which does not exist
+
+119404  r7175      problems running setuid executables (partial fix)
 
 124478  glibc-fix  memcheck reports uninitialized bytes on
                    timer_create() while it should not
@@ -46,13 +47,12 @@ n-i-bz             [patch] Add sys_utimensat system call for Linux x86
 
 145559  r7168      valgrind aborts when malloc_stats is called
 145609  queried    valgrind aborts all runs with 'repeated section!'
-145622             --db-attach broken again on x86-64
+145622  r7183      --db-attach broken again on x86-64
 145837             ==149519
 145887             PPC32: getitimer() system call is not supported (patch)
 
-146252  queried    amd64->IR: handle Group 5 extended CALL and JMP insns
-                   with non-reg operands of sz==8
-146701             ==134990
+146252  fixed      ==150678
+146701  fixed      ==134990
 146781  r7169      Adding support for private futexes
 
 147325  r7170      valgrind internal error on syscall (SYS_io_destroy, 0)
@@ -73,27 +73,28 @@ n-i-bz             [patch] Add sys_utimensat system call for Linux x86
 149838  marginal   x86->IR: 0xF 0xAE 0xD 0xE0 (FXRSTOR ?)
 149519  r6813/4    ppc32: V aborts with SIGSEGV on execution of a signal handler
 149878  marginal   add (proper) check for calloc integer overflow
-149892             ==137714
+149892  fixed      ==137714
 
 150044  r7171      SEGV during stack deregister
 150045  fixable??  Valgrind doesn't recognize pthread stack as a stack
                    when context switching
-150380             dwarf/gcc interoperation (dwarf3 read problems)
+150380  PRIO       dwarf/gcc interoperation (dwarf3 read problems)
                    (related to 129937 ?)
 150408             ==148447
-150678  queried    priv/guest-amd64/toIR.c:3741 (dis_Grp5): Assertion
+150678  vx1798d    priv/guest-amd64/toIR.c:3741 (dis_Grp5): Assertion
                    `sz == 4' failed when running Mono on x86_64
-                   (== 146252 ?)
 150681             Check definedness of client request arguments
 
 151209  r7028      V unable to execute programs for users with UID > 2^16
 151570  cantrepro  Bogus "Conditional jump ..." error with bit field (3.1.1)
-151886             Suppression entry Memcheck:Param ignored
-151908             --db-attach unimplemented on ppc64
+151886  PRIO       Suppression entry Memcheck:Param ignored
+151908  inprogress --db-attach unimplemented on ppc64
 151935             --db-command= not parsed properly in .valgrindrc
 151938             help on --db-command= misleading
 
 152022  r7147      subw $0x28, %%sp causes assertion failure in memcheck
+152357             inb and outb not recognized in 64-bit mode
+152501             vex x86->IR: 0x27 0x66 0x89 0x45 (daa) 
 
 
 ---------- Bugs reported after (in) 3.2.3 --------------------------

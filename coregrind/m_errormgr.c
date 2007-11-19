@@ -455,7 +455,7 @@ void do_actions_on_error(Error* err, Bool allow_db_attach)
    if (allow_db_attach &&
        VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) ))
    {   
-      VG_(printf)("starting debugger\n");
+      if (0) VG_(printf)("starting debugger\n");
       VG_(start_debugger)( err->tid );
    }  
    /* Or maybe we want to generate the error's suppression? */

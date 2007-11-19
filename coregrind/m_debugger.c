@@ -170,13 +170,20 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 void VG_(start_debugger) ( ThreadId tid )
 {
 #  define N_BUF 4096
-   Int pid;
+   Int pid, rc;
 
-   if ((pid = VG_(fork)()) == 0) {
-      VG_(ptrace)(VKI_PTRACE_TRACEME, 0, NULL, NULL);
-      VG_(kill)(VG_(getpid)(), VKI_SIGSTOP);
+   pid = VG_(fork)();
+
+   if (pid == 0) {
+      vki_sigset_t set;
+      /* child */
+      rc = VG_(ptrace)(VKI_PTRACE_TRACEME, 0, NULL, NULL);
+      vg_assert(rc == 0);
+      rc = VG_(kill)(VG_(getpid)(), VKI_SIGSTOP);
+      vg_assert(rc == 0);
 
    } else if (pid > 0) {
+      /* parent */
       Int status;
       Int res;
 

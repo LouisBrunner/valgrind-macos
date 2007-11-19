@@ -49,6 +49,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 {
 #if defined(VGP_x86_linux)
    struct vki_user_regs_struct regs;
+   VG_(memset)(&regs, 0, sizeof(regs));
    regs.cs     = vex->guest_CS;
    regs.ss     = vex->guest_SS;
    regs.ds     = vex->guest_DS;
@@ -69,6 +70,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 
 #elif defined(VGP_amd64_linux)
    struct vki_user_regs_struct regs;
+   VG_(memset)(&regs, 0, sizeof(regs));
    regs.rax    = vex->guest_RAX;
    regs.rbx    = vex->guest_RBX;
    regs.rcx    = vex->guest_RCX;

@@ -87,6 +87,21 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
    regs.r15    = vex->guest_R15;
    regs.eflags = LibVEX_GuestAMD64_get_rflags(vex);
    regs.rip    = vex->guest_RIP;
+   /* Set %{c,d,e,f,s,g}s and %{fs,gs}_base (whatever those are) to
+      values which don't fail the kernel's sanity checks.  I have no
+      idea what these should really be set to.  Anyway, mostly it
+      seems that zero is an allowable value, except for %cs and %ss
+      which have to have their lowest 2 bits be 11.  See putreg() in
+      linux-2.6.23/arch/x86_64/kernel/ptrace.c for the apparently
+      relevant sanity checks.  This fixes #145622. */
+   regs.cs      = 3;
+   regs.ds      = 0;
+   regs.es      = 0;
+   regs.fs      = 0;
+   regs.ss      = 3;
+   regs.gs      = 0;
+   regs.fs_base = 0;
+   regs.gs_base = 0;
    return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
 
 #elif defined(VGP_ppc32_linux)

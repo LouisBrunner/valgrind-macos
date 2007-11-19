@@ -3694,7 +3694,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             break;
          case 2: /* call Ev */
             /* Ignore any sz value and operate as if sz==8. */
-            vassert(sz == 4 || sz == 8);
+            if (!(sz == 4 || sz == 8)) goto unhandled;
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, getIRegE(sz,pfx,modrm));
@@ -3709,7 +3709,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             break;
          case 4: /* jmp Ev */
             /* Ignore any sz value and operate as if sz==8. */
-            vassert(sz == 4 || sz == 8);
+            if (!(sz == 4 || sz == 8)) goto unhandled;
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, getIRegE(sz,pfx,modrm));
@@ -3748,7 +3748,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             break;
          case 2: /* call Ev */
             /* Ignore any sz value and operate as if sz==8. */
-            vassert(sz == 4);
+            if (!(sz == 4 || sz == 8)) goto unhandled;
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, loadLE(Ity_I64,mkexpr(addr)));
@@ -3763,7 +3763,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
             break;
          case 4: /* JMP Ev */
             /* Ignore any sz value and operate as if sz==8. */
-            vassert(sz == 4);
+            if (!(sz == 4 || sz == 8)) goto unhandled;
             sz = 8;
             t3 = newTemp(Ity_I64);
             assign(t3, loadLE(Ity_I64,mkexpr(addr)));
@@ -3774,7 +3774,7 @@ ULong dis_Grp5 ( VexAbiInfo* vbi,
          case 6: /* PUSH Ev */
             /* There is no encoding for 32-bit operand size; hence ... */
             if (sz == 4) sz = 8;
-            vassert(sz == 8 || sz == 2);
+            if (!(sz == 8 || sz == 2)) goto unhandled;
             if (sz == 8) {
                t3 = newTemp(Ity_I64);
                assign(t3, loadLE(Ity_I64,mkexpr(addr)));

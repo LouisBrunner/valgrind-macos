@@ -81,7 +81,7 @@ static Bool is_base36_digit(Char c, Long* digit)
 Long VG_(strtoll8) ( Char* str, Char** endptr )
 {
    Bool neg = False;
-   Long n = 0, digit;
+   Long n = 0, digit = 0;
 
    // Skip leading whitespace.
    while (VG_(isspace)(*str)) str++;
@@ -103,7 +103,7 @@ Long VG_(strtoll8) ( Char* str, Char** endptr )
 Long VG_(strtoll10) ( Char* str, Char** endptr )
 {
    Bool neg = False;
-   Long n = 0, digit;
+   Long n = 0, digit = 0;
 
    // Skip leading whitespace.
    while (VG_(isspace)(*str)) str++;
@@ -125,7 +125,7 @@ Long VG_(strtoll10) ( Char* str, Char** endptr )
 Long VG_(strtoll16) ( Char* str, Char** endptr )
 {
    Bool neg = False;
-   Long n = 0, digit;
+   Long n = 0, digit = 0;
 
    // Skip leading whitespace.
    while (VG_(isspace)(*str)) str++;
@@ -155,7 +155,7 @@ Long VG_(strtoll16) ( Char* str, Char** endptr )
 Long VG_(strtoll36) ( Char* str, Char** endptr )
 {
    Bool neg = False;
-   Long n = 0, digit;
+   Long n = 0, digit = 0;
 
    // Skip leading whitespace.
    while (VG_(isspace)(*str)) str++;

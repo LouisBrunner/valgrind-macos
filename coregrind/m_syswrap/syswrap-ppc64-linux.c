@@ -1256,7 +1256,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_syslog,            sys_syslog),             // 103
    GENXY(__NR_setitimer,         sys_setitimer),          // 104
 
-// _____(__NR_getitimer,         sys_getitimer),          // 105
+   GENXY(__NR_getitimer,         sys_getitimer),          // 105
    GENXY(__NR_stat,              sys_newstat),            // 106
    GENXY(__NR_lstat,             sys_newlstat),           // 107
    GENXY(__NR_fstat,             sys_newfstat),           // 108

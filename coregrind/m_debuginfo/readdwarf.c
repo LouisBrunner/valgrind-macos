@@ -114,10 +114,16 @@ static void addto_WordArray ( WordArray* wa, Word w )
    wa->tab_used++;
 }
 
-static Word index_WordArray ( WordArray* wa, Int i )
+static Word index_WordArray ( /*OUT*/Bool* inRange, WordArray* wa, Int i )
 {
-   vg_assert(i >= 0 && i < wa->tab_used);
-   return wa->tab[i];
+   vg_assert(inRange);
+   if (i >= 0 && i < wa->tab_used) {
+      *inRange = True;
+      return wa->tab[i];
+   } else {
+      *inRange = False;
+      return 0;
+   }
 }
 
 
@@ -301,22 +307,31 @@ Char* lookupDir ( Int filename_index,
                   WordArray* fnidx2dir,
                   WordArray* dirnames )
 {
-   Word diridx  = index_WordArray( fnidx2dir, filename_index );
-   Word dirname = index_WordArray( dirnames, (Int)diridx );
+   Bool inRange;
+   Word diridx, dirname;
+
+   diridx = index_WordArray( &inRange, fnidx2dir, filename_index );
+   if (!inRange) goto bad;
+
+   dirname = index_WordArray( &inRange, dirnames, (Int)diridx );
+   if (!inRange) goto bad;
+
    return (Char*)dirname;
+  bad:
+   return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-/* Handled an extend line op.  Returns true if this is the end
-   of sequence.  */
+/* Handled an extended line op starting at 'data'.  Returns the number
+   of bytes that 'data' should be advanced by. */
 static 
-Int process_extended_line_op( struct _SegInfo* si, OffT debug_offset,
-                              WordArray* filenames, 
-                              WordArray* dirnames, 
-                              WordArray* fnidx2dir, 
-                              UChar* data, Int is_stmt)
+Word process_extended_line_op( struct _SegInfo* si, OffT debug_offset,
+                               WordArray* filenames, 
+                               WordArray* dirnames, 
+                               WordArray* fnidx2dir, 
+                               UChar* data, Int is_stmt)
 {
    UChar  op_code;
    Int    bytes_read;
@@ -329,8 +344,9 @@ Int process_extended_line_op( struct _SegInfo* si, OffT debug_offset,
 
    if (len == 0) {
       VG_(message)(Vg_UserMsg,
-                   "badly formed extended line op encountered!\n");
-      return bytes_read;
+                   "Warning: DWARF2 reader: "
+                   "Badly formed extended line op encountered");
+      return (Word)bytes_read;
    }
 
    len += bytes_read;
@@ -347,17 +363,23 @@ Int process_extended_line_op( struct _SegInfo* si, OffT debug_offset,
          state_machine_regs.end_sequence = 1; 
 
          if (state_machine_regs.is_stmt) {
-            if (state_machine_regs.last_address)
+            if (state_machine_regs.last_address) {
+               Bool inRange = False;
+               Char* filename
+                  = (Char*)index_WordArray( &inRange, filenames, 
+                                            state_machine_regs.last_file);
+               if (!inRange || !filename)
+                  filename = "???";
                ML_(addLineInfo) (
                   si, 
-                  (Char*)index_WordArray(filenames, 
-                                         state_machine_regs.last_file), 
+                  filename, 
                   lookupDir( state_machine_regs.last_file,
                              fnidx2dir, dirnames ),
                   debug_offset + state_machine_regs.last_address, 
                   debug_offset + state_machine_regs.address, 
                   state_machine_regs.last_line, 0
                );
+            }
          }
          reset_state_machine (is_stmt);
          if (si->ddump_line)
@@ -392,7 +414,7 @@ Int process_extended_line_op( struct _SegInfo* si, OffT debug_offset,
          break;
    }
 
-   return len;
+   return (Word)len;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -704,11 +726,16 @@ void read_dwarf2_lineblock ( struct _SegInfo*  si, OffT debug_offset,
 
          if (state_machine_regs.is_stmt) {
             /* only add a statement if there was a previous boundary */
-            if (state_machine_regs.last_address) 
+            if (state_machine_regs.last_address) {
+               Bool inRange = False;
+               Char* filename
+                  = (Char*)index_WordArray( &inRange, &filenames, 
+                                            state_machine_regs.last_file);
+               if (!inRange || !filename)
+                  filename = "???";
                ML_(addLineInfo)(
                   si, 
-                  (Char*)index_WordArray( &filenames,
-                                          state_machine_regs.last_file ),
+                  filename,
                   lookupDir( state_machine_regs.last_file,
                              &fnidx2dir, &dirnames ),
                   debug_offset + state_machine_regs.last_address, 
@@ -716,6 +743,7 @@ void read_dwarf2_lineblock ( struct _SegInfo*  si, OffT debug_offset,
                   state_machine_regs.last_line, 
                   0
                );
+            }
             state_machine_regs.last_address = state_machine_regs.address;
             state_machine_regs.last_file = state_machine_regs.file;
             state_machine_regs.last_line = state_machine_regs.line;
@@ -737,11 +765,16 @@ void read_dwarf2_lineblock ( struct _SegInfo*  si, OffT debug_offset,
                                debug_offset, state_machine_regs.address );
             if (state_machine_regs.is_stmt) {
                /* only add a statement if there was a previous boundary */
-               if (state_machine_regs.last_address) 
+               if (state_machine_regs.last_address) {
+                  Bool inRange = False;
+                  Char* filename
+                     = (Char*)index_WordArray( &inRange, &filenames,
+                                               state_machine_regs.last_file );
+                  if (!inRange || !filename)
+                     filename = "???";
                   ML_(addLineInfo)(
                      si, 
-                     (Char*)index_WordArray( &filenames,
-                                             state_machine_regs.last_file ),
+                     filename,
                      lookupDir( state_machine_regs.last_file,
                                 &fnidx2dir, &dirnames ),
                      debug_offset + state_machine_regs.last_address, 
@@ -749,6 +782,7 @@ void read_dwarf2_lineblock ( struct _SegInfo*  si, OffT debug_offset,
                      state_machine_regs.last_line, 
                      0
                   );
+               }
                state_machine_regs.last_address = state_machine_regs.address;
                state_machine_regs.last_file = state_machine_regs.file;
                state_machine_regs.last_line = state_machine_regs.line;
@@ -2713,7 +2747,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
          default:
             if (!VG_(clo_xml))
                VG_(message)(Vg_DebugMsg, 
-                            "DWARF2 CFI reader: unhandled DW_OP_ "
+                            "Warning: DWARF2 CFI reader: unhandled DW_OP_ "
                             "opcode 0x%x", (Int)opcode); 
             return -1;
       }

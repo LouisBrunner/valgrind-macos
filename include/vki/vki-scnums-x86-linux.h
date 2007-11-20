@@ -351,6 +351,7 @@
 #define __NR_sync_file_range	314
 #define __NR_tee		315
 #define __NR_vmsplice		316
+#define __NR_utimensat		320
 
 #endif /* __VKI_SCNUMS_X86_LINUX_H */
 

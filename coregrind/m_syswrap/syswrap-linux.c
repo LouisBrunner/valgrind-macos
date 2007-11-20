@@ -2808,6 +2808,18 @@ PRE(sys_ioprio_set)
 }
 
 
+/* XXX I don't think this is really the right place for this.
+   Move it elsewhere in this file? */
+PRE(sys_utimensat)
+{
+   PRINT("sys_utimensat ( %d, %p(%s), %p )", ARG1,ARG2,ARG2,ARG3);
+   PRE_REG_READ3(long, "utimensat",
+                 int, dfd, char *, filename, struct timespec *, tvp);
+   PRE_MEM_RASCIIZ( "utimensat(filename)", ARG2 );
+   if (ARG3 != 0)
+      PRE_MEM_READ( "utimensat(tvp)", ARG3, sizeof(struct vki_timespec) );
+}
+
 #undef PRE
 #undef POST
 

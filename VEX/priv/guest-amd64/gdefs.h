@@ -158,6 +158,10 @@ extern void  amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State*, HWord );
 
 extern ULong amd64g_dirtyhelper_RDTSC ( void );
 
+extern ULong amd64g_dirtyhelper_IN  ( ULong portno, ULong sz/*1,2 or 4*/ );
+extern void  amd64g_dirtyhelper_OUT ( ULong portno, ULong data, 
+                                      ULong sz/*1,2 or 4*/ );
+
 //extern void  amd64g_dirtyhelper_CPUID_sse0 ( VexGuestAMD64State* );
 //extern void  amd64g_dirtyhelper_CPUID_sse1 ( VexGuestAMD64State* );
 //extern void  amd64g_dirtyhelper_CPUID_sse2 ( VexGuestAMD64State* );

@@ -1981,6 +1981,66 @@ ULong amd64g_dirtyhelper_RDTSC ( void )
 }
 
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-amd64 platforms, return 0. */
+ULong amd64g_dirtyhelper_IN ( ULong portno, ULong sz/*1,2 or 4*/ )
+{
+#  if defined(__x86_64__)
+   ULong r = 0;
+   portno &= 0xFFFF;
+   switch (sz) {
+      case 4: 
+         __asm__ __volatile__("movq $0,%%rax; inl %w1,%%eax; movq %%rax,%0" 
+                              : "=a" (r) : "Nd" (portno));
+	 break;
+      case 2: 
+         __asm__ __volatile__("movq $0,%%rax; inw %w1,%w0" 
+                              : "=a" (r) : "Nd" (portno));
+	 break;
+      case 1: 
+         __asm__ __volatile__("movq $0,%%rax; inb %w1,%b0" 
+                              : "=a" (r) : "Nd" (portno));
+	 break;
+      default:
+         break; /* note: no 64-bit version of insn exists */
+   }
+   return r;
+#  else
+   return 0;
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-amd64 platforms, do nothing. */
+void amd64g_dirtyhelper_OUT ( ULong portno, ULong data, ULong sz/*1,2 or 4*/ )
+{
+#  if defined(__x86_64__)
+   portno &= 0xFFFF;
+   switch (sz) {
+      case 4: 
+         __asm__ __volatile__("movq %0,%%rax; outl %%eax, %w1" 
+                              : : "a" (data), "Nd" (portno));
+	 break;
+      case 2: 
+         __asm__ __volatile__("outw %w0, %w1" 
+                              : : "a" (data), "Nd" (portno));
+	 break;
+      case 1: 
+         __asm__ __volatile__("outb %b0, %w1" 
+                              : : "a" (data), "Nd" (portno));
+	 break;
+      default:
+         break; /* note: no 64-bit version of insn exists */
+   }
+#  else
+   /* do nothing */
+#  endif
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Helpers for MMX/SSE/SSE2.                               ---*/
 /*---------------------------------------------------------------*/

@@ -15,7 +15,11 @@ Scheduled for mid-to-late 2007?
 
 * Add some more experimental tools?
 
-* Rework Massif [Nick]
+* Rework Massif [Done by Nick]
+
+* Rework Helgrind [Done by Julian]
+
+* Add experimental tools (Omega + DRD) [Julian]
 
 -----------------------------------------------------------------------------
 3.2.4

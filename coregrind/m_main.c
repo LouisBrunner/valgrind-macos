@@ -209,12 +209,18 @@ static void usage_NORETURN ( Bool debug_help )
 "  tool's start-up message for more information.\n"
 "\n";
 
+#  if defined(GDB_PATH)
+   Char* gdb_path = GDB_PATH;
+#  else
+   Char* gdb_path = "/no/gdb/was/found/at/configure/time";
+#  endif
+
    // Ensure the message goes to stdout
    VG_(clo_log_fd) = 1;
    vg_assert( !VG_(logging_to_socket) );
 
    /* 'usage1' expects one char* argument */
-   VG_(printf)(usage1, GDB_PATH);
+   VG_(printf)(usage1, gdb_path);
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
       if (VG_(needs).command_line_options)

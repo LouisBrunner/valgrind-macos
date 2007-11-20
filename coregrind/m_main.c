@@ -104,6 +104,8 @@ static void print_all_stats ( void )
 
 static void usage_NORETURN ( Bool debug_help )
 {
+   /* 'usage1' contains a %s for the name of the GDB executable, which
+      must be supplied when it is VG_(printf)'d. */
    Char* usage1 = 
 "usage: valgrind [options] prog-and-args\n"
 "\n"
@@ -145,7 +147,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --suppressions=<filename> suppress errors described in <filename>\n"
 "    --gen-suppressions=no|yes|all    print suppressions for errors? [no]\n"
 "    --db-attach=no|yes        start debugger when errors detected? [no]\n"
-"    --db-command=<command>    command to start debugger [gdb -nw %%f %%p]\n"
+"    --db-command=<command>    command to start debugger [%s -nw %%f %%p]\n"
 "    --input-fd=<number>       file descriptor for input [0=stdin]\n"
 "    --max-stackframe=<number> assume stack switch for SP changes larger\n"
 "                              than <number> bytes [2000000]\n"
@@ -170,9 +172,6 @@ static void usage_NORETURN ( Bool debug_help )
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "    --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]\n"
-#if 0
-"    --model-pthreads=yes|no   model the pthreads library [no]\n"
-#endif
 "    --command-line-only=no|yes  only use command line options [no]\n"
 "\n"
 "    --vex-iropt-verbosity             0 .. 9 [0]\n"
@@ -214,7 +213,8 @@ static void usage_NORETURN ( Bool debug_help )
    VG_(clo_log_fd) = 1;
    vg_assert( !VG_(logging_to_socket) );
 
-   VG_(printf)(usage1);
+   /* 'usage1' expects one char* argument */
+   VG_(printf)(usage1, GDB_PATH);
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
       if (VG_(needs).command_line_options)

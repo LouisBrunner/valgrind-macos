@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./realloc
-Massif arguments:   --stacks=no --heap-admin=0 --time-unit=B --threshold=0
+Massif arguments:   --stacks=no --heap-admin=0 --time-unit=B --threshold=0 --massif-out-file=massif.out
 ms_print arguments: --threshold=0 massif.out
 --------------------------------------------------------------------------------
 

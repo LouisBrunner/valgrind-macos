@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./alloc-fns
-Massif arguments:   --stacks=no --time-unit=B --heap-admin=0
+Massif arguments:   --stacks=no --time-unit=B --heap-admin=0 --massif-out-file=massif.out
 ms_print arguments: massif.out
 --------------------------------------------------------------------------------
 

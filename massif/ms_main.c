@@ -326,8 +326,8 @@ static SizeT peak_snapshot_total_szB = 0;
 // memory.  An alternative to milliseconds as a unit of program "time".
 static ULong total_allocs_deallocs_szB = 0;
 
-// Current directory at startup.
-static Char base_dir[VKI_PATH_MAX]; // XXX: currently unused
+// The output file name.  Controlled by --massif-out-file.
+static Char* massif_out_file = NULL;
 
 // We don't start taking snapshots until the first basic block is executed,
 // rather than doing it in ms_post_clo_init (which is the obvious spot), for
@@ -420,6 +420,7 @@ static double clo_peak_inaccuracy = 1.0;  // percentage
 static UInt   clo_time_unit       = TimeMS;
 static UInt   clo_detailed_freq   = 10;
 static UInt   clo_max_snapshots   = 100;
+static Char*  clo_massif_out_file = "massif.out.%p";
 
 static XArray* args_for_massif;
 
@@ -450,6 +451,10 @@ static Bool ms_process_cmd_line_option(Char* arg)
       VG_(addToXA)(alloc_fns, &alloc_fn);
    }
 
+   else if (VG_CLO_STREQN(14, arg, "--massif-out-file=")) {
+      clo_massif_out_file = &arg[18];
+   }
+
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -471,6 +476,7 @@ static void ms_print_usage(void)
 "                               alloc'd/dealloc'd on the heap [ms]\n"
 "    --detailed-freq=<N>       every Nth snapshot should be detailed [10]\n"
 "    --max-snapshots=<N>       maximum number of snapshots recorded [100]\n"
+"    --massif-out-file=<s>     output file name [massif.out.%%p]\n"
    );
    VG_(replacement_malloc_print_usage)();
 }
@@ -1809,9 +1815,6 @@ IRSB* ms_instrument ( VgCallbackClosure* closure,
 //--- Writing snapshots                                    ---//
 //------------------------------------------------------------//
 
-// XXX: do the filename properly, eventually
-static Char* massif_out_file = "massif.out";
-
 #define FP_BUF_SIZE     1024
 Char FP_buf[FP_BUF_SIZE];
 
@@ -2049,6 +2052,69 @@ static void ms_fini(Int exit_status)
 //--- Initialisation                                       ---//
 //------------------------------------------------------------//
 
+// Copies the string, prepending it with the startup working directory, and
+// expanding %p and %q entries.  Returns a new, malloc'd string.
+static Char* expand_file_name(Char* format)
+{
+   static Char base_dir[VKI_PATH_MAX];
+   Int len, i = 0, j = 0;
+   Char* out;
+
+   Bool ok = VG_(get_startup_wd)(base_dir, VKI_PATH_MAX);
+   tl_assert(ok);
+
+   // The 10 is slop, it should be enough in most cases.
+   j = VG_(strlen)(base_dir);
+   len = j + VG_(strlen)(format) + 10;
+   out = VG_(malloc)( len );
+   VG_(strcpy)(out, base_dir);
+
+#define GROW_IF_j_IS_GEQ_THAN(x) \
+   if (j >= x) { \
+      len *= 2; \
+      out = VG_(realloc)(out, len); \
+      OINK(len);\
+   }
+
+   out[j++] = '/';
+   while (format[i]) {
+      if (format[i] != '%') {
+         GROW_IF_j_IS_GEQ_THAN(len);
+         out[j++] = format[i++];
+         
+      } else {
+         // We saw a '%'.  What's next...
+         i++;
+         if      (0   == format[i]) {
+            // At end of string, stop.
+            break;
+         }
+         else if ('%' == format[i]) {
+            // Replace '%%' with '%'.
+            GROW_IF_j_IS_GEQ_THAN(len);
+            out[j++] = format[i++];
+         }
+         else if ('p' == format[i]) {
+            // Print the PID.
+            GROW_IF_j_IS_GEQ_THAN(len - 10);
+            j += VG_(sprintf)(&out[j], "%d", VG_(getpid)());
+            i++;
+         } 
+         else {
+            // Other char, treat both the '%' and its subsequent normally.
+            GROW_IF_j_IS_GEQ_THAN(len - 1);
+            out[j++] = '%';
+            out[j++] = format[i++];
+         }
+      }
+   }
+   GROW_IF_j_IS_GEQ_THAN(len);
+   out[j++] = 0;
+
+   return out;
+}
+
+
 static void ms_post_clo_init(void)
 {
    Int i;
@@ -2106,6 +2172,9 @@ static void ms_post_clo_init(void)
       clear_snapshot( & snapshots[i], /*do_sanity_check*/False );
    }
    sanity_check_snapshots_array();
+
+   // Setup output filename.
+   massif_out_file = expand_file_name(clo_massif_out_file);
 }
 
 static void ms_pre_clo_init(void)
@@ -2152,8 +2221,6 @@ static void ms_pre_clo_init(void)
 
    // Initialise args_for_massif.
    args_for_massif = VG_(newXA)(VG_(malloc), VG_(free), sizeof(HChar*));
-
-   tl_assert( VG_(get_startup_wd)(base_dir, VKI_PATH_MAX) );
 }
 
 VG_DETERMINE_INTERFACE_VERSION(ms_pre_clo_init)

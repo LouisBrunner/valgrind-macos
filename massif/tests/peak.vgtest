@@ -1,4 +1,4 @@
 prog: peak
-vgopts: --stacks=no --time-unit=B --peak-inaccuracy=0 --heap-admin=64
+vgopts: --stacks=no --time-unit=B --peak-inaccuracy=0 --heap-admin=64 --massif-out-file=massif.out
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
 cleanup: rm massif.out

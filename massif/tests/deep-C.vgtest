@@ -1,5 +1,5 @@
 prog: deep
-vgopts: --stacks=no --time-unit=B --alloc-fn=a3 --alloc-fn=a4 --alloc-fn=a5 --alloc-fn=a6 --alloc-fn=a7 --alloc-fn=a8 --alloc-fn=a9 --alloc-fn=a10 --alloc-fn=a11 --alloc-fn=a12 -v -v --depth=8
+vgopts: --stacks=no --time-unit=B --alloc-fn=a3 --alloc-fn=a4 --alloc-fn=a5 --alloc-fn=a6 --alloc-fn=a7 --alloc-fn=a8 --alloc-fn=a9 --alloc-fn=a10 --alloc-fn=a11 --alloc-fn=a12 -v -v --depth=8 --massif-out-file=massif.out
 stderr_filter: filter_verbose
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
 cleanup: rm massif.out

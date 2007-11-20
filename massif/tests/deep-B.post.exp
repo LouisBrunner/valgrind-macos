@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./deep
-Massif arguments:   --stacks=no --time-unit=B --alloc-fn=a6 --alloc-fn=a7 --alloc-fn=a8 --alloc-fn=a9 --alloc-fn=a10 --alloc-fn=a11 --alloc-fn=a12 --depth=8
+Massif arguments:   --stacks=no --time-unit=B --alloc-fn=a6 --alloc-fn=a7 --alloc-fn=a8 --alloc-fn=a9 --alloc-fn=a10 --alloc-fn=a11 --alloc-fn=a12 --depth=8 --massif-out-file=massif.out
 ms_print arguments: massif.out
 --------------------------------------------------------------------------------
 

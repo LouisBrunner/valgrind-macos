@@ -1,5 +1,5 @@
 prog: peak
-vgopts: --stacks=no --time-unit=B -v -v --peak-inaccuracy=10.0 --heap-admin=64
+vgopts: --stacks=no --time-unit=B -v -v --peak-inaccuracy=10.0 --heap-admin=64 --massif-out-file=massif.out
 stderr_filter: filter_verbose
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
 cleanup: rm massif.out

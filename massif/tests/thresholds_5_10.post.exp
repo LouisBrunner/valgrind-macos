@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./thresholds
-Massif arguments:   --stacks=no --time-unit=B --heap-admin=0 --threshold=5
+Massif arguments:   --stacks=no --time-unit=B --heap-admin=0 --threshold=5 --massif-out-file=massif.out
 ms_print arguments: massif.out --threshold=10
 --------------------------------------------------------------------------------
 

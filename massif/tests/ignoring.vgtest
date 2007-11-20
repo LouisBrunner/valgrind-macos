@@ -1,4 +1,4 @@
 prog: ignoring
-vgopts: --stacks=no --time-unit=B
+vgopts: --stacks=no --time-unit=B --massif-out-file=massif.out
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
 cleanup: rm massif.out

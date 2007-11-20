@@ -1,4 +1,4 @@
 prog: alloc-fns
-vgopts: --stacks=no --time-unit=B --heap-admin=0
+vgopts: --stacks=no --time-unit=B --heap-admin=0 --massif-out-file=massif.out
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
 cleanup: rm massif.out

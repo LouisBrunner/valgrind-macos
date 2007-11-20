@@ -1,4 +1,4 @@
 prog: thresholds
-vgopts: --stacks=no --time-unit=B --heap-admin=0 --threshold=10
+vgopts: --stacks=no --time-unit=B --heap-admin=0 --threshold=10 --massif-out-file=massif.out
 post: perl ../../massif/ms_print massif.out --threshold=0 | ../../tests/filter_addresses
 cleanup: rm massif.out

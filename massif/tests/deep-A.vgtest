@@ -1,4 +1,4 @@
 prog: deep
-vgopts: --stacks=no --time-unit=B --depth=8
+vgopts: --stacks=no --time-unit=B --depth=8 --massif-out-file=massif.out
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
 cleanup: rm massif.out

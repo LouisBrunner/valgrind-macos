@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./insig
-Massif arguments:   --stacks=no --time-unit=B --heap-admin=64
+Massif arguments:   --stacks=no --time-unit=B --heap-admin=64 --massif-out-file=massif.out
 ms_print arguments: massif.out
 --------------------------------------------------------------------------------
 

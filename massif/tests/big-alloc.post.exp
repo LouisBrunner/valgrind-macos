@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./big-alloc
-Massif arguments:   --stacks=no --time-unit=B
+Massif arguments:   --stacks=no --time-unit=B --massif-out-file=massif.out
 ms_print arguments: massif.out
 --------------------------------------------------------------------------------
 

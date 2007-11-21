@@ -1142,6 +1142,9 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
                 && ehdr->e_shoff + ehdr->e_shnum*sizeof(ElfXX_Shdr) <= n_dimage)
             {
                Bool need_symtab = (NULL == symtab_img);
+               Bool need_stabs = (NULL == stab_img);
+               Bool need_dwarf2 = (NULL == debug_info_img);
+               Bool need_dwarf1 = (NULL == dwarf1d_img);
 
                for (i = 0; i < ehdr->e_phnum; i++) {
                   ElfXX_Phdr *o_phdr = &((ElfXX_Phdr *)(dimage + ehdr->e_phoff))[i];
@@ -1186,14 +1189,14 @@ Bool ML_(read_elf_debug_info) ( struct _SegInfo* si )
                   /*   ??           NAME             SIZE           IMAGE addr */
                   FIND(need_symtab, ".symtab",       symtab_sz,     symtab_img)
                   FIND(need_symtab, ".strtab",       strtab_sz,     strtab_img)
-                  FIND(1,           ".stab",         stab_sz,       stab_img)
-                  FIND(1,           ".stabstr",      stabstr_sz,    stabstr_img)
-                  FIND(1,           ".debug_line",   debug_line_sz, debug_line_img)
-                  FIND(1,           ".debug_info",   debug_info_sz, debug_info_img)
-                  FIND(1,           ".debug_abbrev", debug_abbv_sz, debug_abbv_img)
-                  FIND(1,           ".debug_str",    debug_str_sz,  debug_str_img)
-                  FIND(1,           ".debug",        dwarf1d_sz,    dwarf1d_img)
-                  FIND(1,           ".line",         dwarf1l_sz,    dwarf1l_img)
+                  FIND(need_stabs,  ".stab",         stab_sz,       stab_img)
+                  FIND(need_stabs,  ".stabstr",      stabstr_sz,    stabstr_img)
+                  FIND(need_dwarf2, ".debug_line",   debug_line_sz, debug_line_img)
+                  FIND(need_dwarf2, ".debug_info",   debug_info_sz, debug_info_img)
+                  FIND(need_dwarf2, ".debug_abbrev", debug_abbv_sz, debug_abbv_img)
+                  FIND(need_dwarf2, ".debug_str",    debug_str_sz,  debug_str_img)
+                  FIND(need_dwarf1, ".debug",        dwarf1d_sz,    dwarf1d_img)
+                  FIND(need_dwarf1, ".line",         dwarf1l_sz,    dwarf1l_img)
 
 #                 undef FIND
                }

@@ -46,7 +46,7 @@ n-i-bz             [patch] Add sys_utimensat system call for Linux x86
 137714  vx1787     x86/amd64->IR: 0x66 0xF 0xF7 0xC6 (maskmovq, maskmovdq)
 
 145559  r7168      valgrind aborts when malloc_stats is called
-145609  queried    valgrind aborts all runs with 'repeated section!'
+145609  r7191      valgrind aborts all runs with 'repeated section!'
 145622  r7183      --db-attach broken again on x86-64
 145837             ==149519
 145887             PPC32: getitimer() system call is not supported (patch)

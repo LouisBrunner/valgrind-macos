@@ -7,5 +7,6 @@ EXTRA_DIST =  \
 	manual-writing-tools.xml\
 	quick-start-guide.xml	\
 	tech-docs.xml 		\
+	new-tech-docs.xml 	\
 	vg-entities.xml 	\
 	xml_help.txt

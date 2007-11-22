@@ -6,8 +6,9 @@ dynamic-translation framework.
 
 Jeremy Fitzhardinge, jeremy@valgrind.org
 
-Jeremy wrote Helgrind and totally overhauled low-level syscall/signal
-and address space layout stuff, among many other improvements.
+Jeremy wrote Helgrind (in the 2.X line) and totally overhauled
+low-level syscall/signal and address space layout stuff, among many
+other improvements.
 
 Tom Hughes, tom@valgrind.org
 

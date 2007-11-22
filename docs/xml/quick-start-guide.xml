@@ -32,24 +32,64 @@ memory errors such as:</para>
 
 <itemizedlist>
   <listitem>
-    <para>touching memory you shouldn't (eg. overrunning heap block
-    boundaries);</para>
+    <para>Touching memory you shouldn't (eg. overrunning heap block
+    boundaries, or reading/writing freed memory).</para>
   </listitem>
   <listitem>
-    <para>using values before they have been initialized;</para>
+    <para>Using values before they have been initialized.</para>
   </listitem>
   <listitem>
-    <para>incorrect freeing of memory, such as double-freeing heap
-    blocks;</para>
+    <para>Incorrect freeing of memory, such as double-freeing heap
+    blocks.</para>
   </listitem>
   <listitem>
-    <para>memory leaks.</para>
+    <para>Memory leaks.</para>
   </listitem>
 </itemizedlist>
 
+<para>Memcheck is only one of the tools in the Valgrind suite.
+Other tools you may find useful are:</para>
+
+<itemizedlist>
+  <listitem>
+    <para>Cachegrind: a profiling tool which produces detailed data on
+    cache (miss) and branch (misprediction) events.  Statistics are
+    gathered for the entire program, for each function, for each line
+    of code, and even for each instruction, if you need that level of
+    detail.</para>
+  </listitem>
+  <listitem>
+    <para>Callgrind: a heavyweight profiling tool similar to
+    Cachegrind, but which also shows cost relationships across
+    function calls.  Information gathered by Callgrind can be viewed
+    using the KCachegrind GUI.  KCachegrind is not part of the
+    Valgrind suite - it is part of the KDE Desktop Environment.</para>
+  </listitem>
+  <listitem>
+    <para>Massif: a space profiling tool.  It allows you to explore
+    in detail which parts of your program allocate memory.</para>
+  </listitem>
+  <listitem>
+    <para>Helgrind: a debugging tool for threaded programs.  Helgrind
+    looks for various kinds of synchronisation errors in code that uses
+    the POSIX PThreads API.</para>
+  </listitem>
+  <listitem>
+    <para>In addition, there are a number of "experimental" tools in
+    the codebase.  They can be distinguished by the "exp-" prefix on
+    their names.  Experimental tools are not subject to the same
+    quality control standards that apply to our production-grade tools
+    (Memcheck, Cachegrind, Callgrind, Massif and Helgrind).</para>
+  </listitem>
+</itemizedlist>
+
+<para>The rest of this guide discusses only the Memcheck tool.  For
+full documentation on the other tools, see the Valgrind User
+Manual.</para>
+
 <para>What follows is the minimum information you need to start
 detecting memory errors in your program with Memcheck.  Note that this
-guide applies to Valgrind version 2.4.0 and later.  Some of the
+guide applies to Valgrind version 3.3.0 and later.  Some of the
 information is not quite right for earlier versions.</para>
 
 </sect1>
@@ -162,8 +202,9 @@ Things to notice:
   </listitem>
 </itemizedlist>
 
-It's worth fixing errors in the order they are reported, as later errors
-can be caused by earlier errors.</para>
+It's worth fixing errors in the order they are reported, as later
+errors can be caused by earlier errors.  Failing to do this is a
+common cause of difficulty with Memcheck.</para>
 
 <para>Memory leak messages look like this:
 
@@ -218,6 +259,15 @@ For example, it can't detect out-of-range reads or writes to arrays
 that are allocated statically or on the stack.  But it should detect many
 errors that could crash your program (eg. cause a segmentation
 fault).</para>
+
+<para>Try to make your program so clean that Memcheck reports no
+errors.  Once you achieve this state, it is much easier to see when
+changes to the program cause Memcheck to report new errors.
+Experience from several years of Memcheck use shows that it is
+possible to make even huge programs run Memcheck-clean.  For example,
+large parts of KDE 3.5.X, and recent versions of OpenOffice.org
+(2.3.0) are Memcheck-clean, or very close to it.</para>
+
 
 </sect1>
 

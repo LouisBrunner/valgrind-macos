@@ -17,11 +17,14 @@
   </legalnotice>
 </bookinfo>
 
-  <xi:include href="../../memcheck/docs/mc-tech-docs.xml" parse="xml"  
+<!--  <xi:include href="../../memcheck/docs/mc-tech-docs.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="../../callgrind/docs/cl-format.xml" parse="xml"  
+-->
+  <xi:include href="new-tech-docs.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="manual-writing-tools.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="../../callgrind/docs/cl-format.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </book>

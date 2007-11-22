@@ -937,7 +937,7 @@ way as for C/C++ programs.</para>
   
 
 
-<sect2>
+<sect2 id="cg-manual.annopts.warnings" xreflabel="Warnings">
 <title>Warnings</title>
 
 <para>There are a couple of situations in which
@@ -969,7 +969,8 @@ warnings.</para>
 
 
 
-<sect2>
+<sect2 id="cg-manual.annopts.things-to-watch-out-for"
+       xreflabel="Things to watch out for">
 <title>Things to watch out for</title>
 
 <para>Some odd things that can occur during annotation:</para>
@@ -1084,7 +1085,7 @@ rare.</para>
 
 
 
-<sect2>
+<sect2 id="cg-manual.annopts.accuracy" xreflabel="Accuracy">
 <title>Accuracy</title>
 
 <para>Valgrind's cache profiling has a number of
@@ -1221,7 +1222,8 @@ fail these checks.</para>
 </sect1>
 
 
-<sect1>
+<sect1 id="cg-manual.acting-on"
+       xreflabel="Acting on Cachegrind's information">
 <title>Acting on Cachegrind's information</title>
 <para>
 So, you've managed to profile your program with Cachegrind.  Now what?
@@ -1260,14 +1262,16 @@ yourself.  But at least you have the information!
 
 </sect1>
 
-<sect1>
+<sect1 id="cg-manual.impl-details"
+       xreflabel="Implementation details">
 <title>Implementation details</title>
 <para>
 This section talks about details you don't need to know about in order to
 use Cachegrind, but may be of interest to some people.
 </para>
 
-<sect2>
+<sect2 id="cg-manual.impl-details.how-cg-works"
+       xreflabel="How Cachegrind works">
 <title>How Cachegrind works</title>
 <para>The best reference for understanding how Cachegrind works is chapter 3 of
 "Dynamic Binary Analysis and Instrumentation", by Nicholas Nethercote.  It
@@ -1275,7 +1279,8 @@ is available on the <ulink url="&vg-pubs;">Valgrind publications
 page</ulink>.</para>
 </sect2>
 
-<sect2>
+<sect2 id="cg-manual.impl-details.file-format"
+       xreflabel="Cachegrind output file format">
 <title>Cachegrind output file format</title>
 <para>The file format is fairly straightforward, basically giving the
 cost centre for every line, grouped by files and

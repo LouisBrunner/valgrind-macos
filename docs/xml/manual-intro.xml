@@ -11,7 +11,7 @@
 <para>Valgrind is a suite of simulation-based debugging and profiling
 tools for programs running on Linux (x86, amd64, ppc32 and ppc64).
 The system consists of a core, which provides a synthetic CPU in
-software, and a series of tools, each of which performs some kind of
+software, and a set of tools, each of which performs some kind of
 debugging, profiling, or similar task.  The architecture is modular,
 so that new tools can be created easily and without disturbing the
 existing structure.</para>
@@ -106,6 +106,30 @@ summary, these are:</para>
      paging needed.</para>
    </listitem>
 
+   <listitem>
+     <para><command>Helgrind</command> detects synchronisation errors
+     in programs that use the POSIX pthreads threading primitives.  It
+     detects the following three classes of errors:</para>
+
+     <itemizedlist>
+      <listitem>
+        <para>Misuses of the POSIX pthreads API.</para>
+      </listitem>
+      <listitem>
+        <para>Potential deadlocks arising from lock ordering
+        problems.</para>
+      </listitem>
+      <listitem>
+       <para>Data races -- accessing memory without adequate locking.</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>Problems like these often result in unreproducible,
+    timing-dependent crashes, deadlocks and other misbehaviour, and
+    can be difficult to find by other means.</para>
+
+   </listitem>
+
 </orderedlist>
   
 
@@ -119,25 +143,35 @@ integer and floating point operations your program does.</para>
 
 <para>Valgrind is closely tied to details of the CPU and operating
 system, and to a lesser extent, the compiler and basic C libraries.
-Nonetheless, as of version 3.2.0 it supports several platforms:
+Nonetheless, as of version 3.3.0 it supports several platforms:
 x86/Linux (mature), amd64/Linux (maturing), ppc32/Linux and
-ppc64/Linux (less mature but work well).  Valgrind uses the standard Unix
+ppc64/Linux (less mature but work well).  There is also experimental
+support for ppc32/AIX5 and ppc64/AIX5 (AIX 5.2 and 5.3 only).
+Valgrind uses the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
 install</computeroutput> mechanism, and we have attempted to ensure that
 it works on machines with Linux kernel 2.4.X or 2.6.X and glibc
-2.2.X to 2.5.X.</para>
+2.2.X to 2.7.X.</para>
 
 <para>Valgrind is licensed under the <xref linkend="license.gpl"/>,
 version 2.  The <computeroutput>valgrind/*.h</computeroutput> headers
 that you may wish to include in your code (eg.
-<filename>valgrind.h</filename>, <filename>memcheck.h</filename>) are
+<filename>valgrind.h</filename>, <filename>memcheck.h</filename>,
+<filename>helgrind.h</filename>) are
 distributed under a BSD-style license, so you may include them in your
 code without worrying about license conflicts.  Some of the PThreads
 test cases, <filename>pth_*.c</filename>, are taken from "Pthreads
 Programming" by Bradford Nichols, Dick Buttlar &amp; Jacqueline Proulx
 Farrell, ISBN 1-56592-115-1, published by O'Reilly &amp; Associates,
 Inc.</para>
+
+<para>If you contribute code to Valgrind, please ensure your
+contributions are licensed as "GPLv2, or (at your option) any later
+version."  This is so as to allow the possibility of easily upgrading
+the license to GPLv3 in future.  If you want to modify code in the VEX
+subdirectory, please also see VEX/HACKING.README.</para>
+
 
 </sect1>
 
@@ -158,10 +192,14 @@ want to run the Memcheck tool.  The final chapter explains how to write a
 new tool.</para>
 
 <para>Be aware that the core understands some command line flags, and
-the tools have their own flags which they know about.  This means there
-is no central place describing all the flags that are accepted -- you
-have to read the flags documentation both for 
+the tools have their own flags which they know about.  This means
+there is no central place describing all the flags that are
+accepted -- you have to read the flags documentation both for
 <xref linkend="manual-core"/> and for the tool you want to use.</para>
+
+<para>The manual is quite big and complex.  If you are looking for a
+quick getting-started guide, have a look at
+<xref linkend="quick-start"/>.</para>
 
 </sect1>
 

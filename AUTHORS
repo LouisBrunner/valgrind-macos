@@ -2,8 +2,9 @@
 Cerion Armour-Brown worked on PowerPC instruction set support using
 the Vex dynamic-translation framework.
 
-Jeremy Fitzhardinge wrote Helgrind and totally overhauled low-level
-syscall/signal and address space layout stuff, among many other things.
+Jeremy Fitzhardinge wrote Helgrind (in the 2.X line) and totally
+overhauled low-level syscall/signal and address space layout stuff,
+among many other things.
 
 Tom Hughes did a vast number of bug fixes, and helped out with support
 for more recent Linux/glibc versions.

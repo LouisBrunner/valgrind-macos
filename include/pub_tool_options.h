@@ -124,6 +124,7 @@ extern VexControl VG_(clo_vex_control);
    'False' from VG_(tdict).tool_process_cmd_line_option) to indicate
    that.  This function prints an error message, then shuts down the
    entire system. */
+__attribute__((noreturn))
 extern void VG_(err_bad_option) ( Char* opt );
 
 

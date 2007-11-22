@@ -2054,7 +2054,7 @@ static void ms_fini(Int exit_status)
 
 // Copies the string, prepending it with the startup working directory, and
 // expanding %p and %q entries.  Returns a new, malloc'd string.
-static Char* expand_file_name(Char* format)
+static Char* VG_(expand_file_name)(Char* option_name, Char* format)
 {
    static Char base_dir[VKI_PATH_MAX];
    Int len, i = 0, j = 0;
@@ -2069,49 +2069,85 @@ static Char* expand_file_name(Char* format)
    out = VG_(malloc)( len );
    VG_(strcpy)(out, base_dir);
 
-#define GROW_IF_j_IS_GEQ_THAN(x) \
-   if (j >= x) { \
-      len *= 2; \
+#define ENSURE_THIS_MUCH_SPACE(x) \
+   if (j + x >= len) { \
+      len += (10 + x); \
       out = VG_(realloc)(out, len); \
-      OINK(len);\
    }
 
    out[j++] = '/';
    while (format[i]) {
       if (format[i] != '%') {
-         GROW_IF_j_IS_GEQ_THAN(len);
+         ENSURE_THIS_MUCH_SPACE(1);
          out[j++] = format[i++];
          
       } else {
          // We saw a '%'.  What's next...
          i++;
-         if      (0   == format[i]) {
-            // At end of string, stop.
-            break;
-         }
-         else if ('%' == format[i]) {
+         if      ('%' == format[i]) {
             // Replace '%%' with '%'.
-            GROW_IF_j_IS_GEQ_THAN(len);
+            ENSURE_THIS_MUCH_SPACE(1);
             out[j++] = format[i++];
          }
          else if ('p' == format[i]) {
-            // Print the PID.
-            GROW_IF_j_IS_GEQ_THAN(len - 10);
-            j += VG_(sprintf)(&out[j], "%d", VG_(getpid)());
+            // Print the PID.  Assume that it's not longer than 10 chars --
+            // reasonable since 'pid' is an Int (ie. 32 bits).
+            Int pid = VG_(getpid)();
+            ENSURE_THIS_MUCH_SPACE(10);
+            j += VG_(sprintf)(&out[j], "%d", pid);
             i++;
          } 
+         else if ('q' == format[i] && '{' == format[i+1]) {
+            // Get the env var name, print its contents.
+            Char* qualname;
+            Char* qual;
+            i += 2;
+            qualname = &format[i];
+            while (True) {
+               if (0 == format[i]) {
+                  VG_(message)(Vg_UserMsg, "%s: malformed %%q specifier",
+                     option_name);
+                  goto bad;
+               } else if ('}' == format[i]) {
+                  // Temporarily replace the '}' with NUL to extract var name.
+                  format[i] = 0;
+                  qual = VG_(getenv)(qualname);
+                  if (NULL == qual) {
+                     VG_(message)(Vg_UserMsg,
+                        "%s: environment variable %s is not set",
+                        option_name, qualname);
+                     goto bad;
+                  }
+                  format[i] = '}';     // Put the '}' back.
+                  i++;
+                  break;
+               }
+               i++;
+            }
+            ENSURE_THIS_MUCH_SPACE(VG_(strlen)(qual));
+            j += VG_(sprintf)(&out[j], "%s", qual);
+         } 
          else {
-            // Other char, treat both the '%' and its subsequent normally.
-            GROW_IF_j_IS_GEQ_THAN(len - 1);
-            out[j++] = '%';
-            out[j++] = format[i++];
+            // Something else, abort.
+            VG_(message)(Vg_UserMsg,
+               "%s: expected 'p' or 'q' or '%%' after '%%'", option_name);
+            goto bad;
          }
       }
    }
-   GROW_IF_j_IS_GEQ_THAN(len);
+   ENSURE_THIS_MUCH_SPACE(1);
    out[j++] = 0;
 
    return out;
+
+  bad: {
+   Char* opt =    // 2:  1 for the '=', 1 for the NUL.
+      VG_(malloc)( VG_(strlen)(option_name) + VG_(strlen)(format) + 2 );
+   VG_(strcpy)(opt, option_name);
+   VG_(strcat)(opt, "=");
+   VG_(strcat)(opt, format);
+   VG_(err_bad_option)(opt);
+  }
 }
 
 
@@ -2174,7 +2210,8 @@ static void ms_post_clo_init(void)
    sanity_check_snapshots_array();
 
    // Setup output filename.
-   massif_out_file = expand_file_name(clo_massif_out_file);
+   massif_out_file =
+      VG_(expand_file_name)("--massif-out-file", clo_massif_out_file);
 }
 
 static void ms_pre_clo_init(void)

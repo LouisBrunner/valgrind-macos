@@ -96,6 +96,7 @@ static void revert_to_stderr ( void )
    VG_(clo_log_fd) = 2; /* stderr */
 }
 
+__attribute__((noreturn))
 void VG_(err_bad_option) ( Char* opt )
 {
    revert_to_stderr();
@@ -104,6 +105,7 @@ void VG_(err_bad_option) ( Char* opt )
    VG_(exit)(1);
 }
 
+__attribute__((noreturn))
 void VG_(err_missing_prog) ( void  )
 {
    revert_to_stderr();
@@ -112,6 +114,7 @@ void VG_(err_missing_prog) ( void  )
    VG_(exit)(1);
 }
 
+__attribute__((noreturn))
 void VG_(err_config_error) ( Char* msg )
 {
    revert_to_stderr();

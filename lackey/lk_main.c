@@ -315,7 +315,7 @@ static Int type2index ( IRType ty )
       case Ity_F32:     return 6;
       case Ity_F64:     return 7;
       case Ity_V128:    return 8;
-      default: tl_assert(0); break;
+      default: tl_assert(0);
    }
 }
 
@@ -331,7 +331,7 @@ static HChar* nameOfTypeIndex ( Int i )
       case 6: return "F32";  break;
       case 7: return "F64";  break;
       case 8: return "V128"; break;
-      default: tl_assert(0); break;
+      default: tl_assert(0);
    }
 }
 

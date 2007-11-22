@@ -1,0 +1,64 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+
+<chapter id="new-tech-docs"
+         xreflabel="The design and implementation of Valgrind">
+
+<title>The Design and Implementation of Valgrind</title>
+
+
+<para>A number of academic publications nicely describe many aspects
+of Valgrind's design and implementation.  Online copies of all of
+them, and others, are available at
+http://valgrind.org/docs/pubs.html.</para>
+
+<para>A good top-level overview of Valgrind is given in:</para>
+
+<para>
+"Valgrind: A Framework for Heavyweight Dynamic Binary
+Instrumentation."  Nicholas Nethercote and Julian Seward.  Proceedings
+of ACM SIGPLAN 2007 Conference on Programming Language Design and
+Implementation (PLDI 2007), San Diego, California, USA, June 2007.
+This paper describes how Valgrind works, and how it differs from other
+DBI frameworks such as Pin and DynamoRIO.</para>
+
+
+<para>The following two papers together give a comprehensive
+description of how Memcheck works:</para>
+
+<para>"Using Valgrind to detect undefined value errors with
+bit-precision."  Julian Seward and Nicholas Nethercote.  Proceedings
+of the USENIX'05 Annual Technical Conference, Anaheim, California,
+USA, April 2005.  This paper describes in detail how Memcheck's
+undefined value error detection (a.k.a. V bits) works.</para>
+
+<para>"How to Shadow Every Byte of Memory Used by a Program."
+Nicholas Nethercote and Julian Seward.  Proceedings of the Third
+International ACM SIGPLAN/SIGOPS Conference on Virtual Execution
+Environments (VEE 2007), San Diego, California, USA, June 2007.  This
+paper describes in detail how Memcheck's shadow memory is implemented,
+and compares it to other alternative approaches.</para>
+
+
+<para>The following paper describes Callgrind:</para>
+
+<para>"A Tool Suite for Simulation Based Analysis of Memory Access
+Behavior."  Josef Weidendorfer, Markus Kowarschik and Carsten
+Trinitis.  Proceedings of the 4th International Conference on
+Computational Science (ICCS 2004), Krakow, Poland, June 2004.  This
+paper describes Callgrind.</para>
+
+<para>The following dissertation describes Valgrind in some detail
+(some of these details are now out-of-date) as well as Cachegrind,
+Annelid and Redux.  It also covers some underlying theory about
+dynamic binary analysis in general and what all these tools have in
+common:</para>
+
+<para>"Dynamic Binary Analysis and Instrumentation."  Nicholas
+Nethercote.  PhD Dissertation, University of Cambridge, November
+2004.</para>
+
+
+</chapter>

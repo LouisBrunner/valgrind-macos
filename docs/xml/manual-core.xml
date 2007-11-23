@@ -191,32 +191,12 @@ re-run, passing the <option>-v</option> flag to Valgrind.  A second
   <listitem id="manual-core.out2file" 
             xreflabel="Directing output to file"> <para>A less intrusive
     option is to write the commentary to a file, which you specify by
-    <option>--log-file=filename</option>.  Note carefully that the
-    commentary is <command>not</command> written to the file you
-    specify, but instead to one called
-    <filename>filename.12345</filename>, if for example the pid of the
-    traced process is 12345.  This is helpful when Valgrinding a whole
-    tree of processes at once, since it means that each process writes
-    to its own logfile, rather than the result being jumbled up in one
-    big logfile.  If <filename>filename.12345</filename> already exists,
-    then it will name new files <filename>filename.12345.1</filename>
-    and so on.</para>
-
-    <para>If you want to specify precisely the file name to use, without
-    the trailing <computeroutput>.12345</computeroutput> part, you can
-    instead use <option>--log-file-exactly=filename</option>.</para>
-
-    <para>You can also use the
-    <option>--log-file-qualifier=&lt;VAR&gt;</option> option to
-    incorporate into the filename the contents of environment variable
-    <varname>VAR</varname>.  This is rarely needed, but very useful in
-    certain circumstances (eg. when running MPI programs).  In this
-    case, the trailing <computeroutput>.12345</computeroutput> part is
-    replaced by (the contents of) <varname>$VAR</varname>.  The idea is
-    that you specify a variable which will be set differently for each
-    process in the job, for example
-    <computeroutput>BPROC_RANK</computeroutput> or whatever is
-    applicable in your MPI setup.</para>
+    <option>--log-file=filename</option>.  There are special format
+    specifiers that can be used to use a process ID or an environment
+    variable name in the log file name.  These are useful/necessary if your
+    program invokes multiple processes (especially for MPI programs).
+    See the <link linkend="manual-core.basicopts">basic options section</link>
+    for more details.</para>
   </listitem>
 
   <listitem id="manual-core.out2socket" 
@@ -720,40 +700,34 @@ categories.</para>
     </term>
     <listitem>
       <para>Specifies that Valgrind should send all of its messages to
-      the specified file. In fact, the file name used is created by
-      concatenating the text <filename>filename</filename>, "." and the
-      process ID, (ie. <![CDATA[<filename>.<pid>]]>), so as to create a
-      file per process.  The specified file name may not be the empty
-      string.</para>
-    </listitem>
-  </varlistentry>
+      the specified file.  If the file name is empty, it causes an abort.
+      There are three special format specifiers that can be used in the file
+      name.</para>
 
-  <varlistentry id="opt.log-file-exactly" xreflabel="--log-file-exactly">
-    <term>
-      <option><![CDATA[--log-file-exactly=<filename> ]]></option>
-    </term>
-    <listitem>
-      <para>Just like <option>--log-file</option>, but the suffix
-      <computeroutput>".pid"</computeroutput> is not added.  WARNING: If you
-      use this option with <option>--trace-children=yes</option> and your
-      program invokes multiple processes, the Valgrind output from all those
-      processes will go into this one file, possibly jumbled up, and
+      <para><option>%p</option> is replaced with the current process ID.
+      This is very useful for program that invoke multiple processes.
+      WARNING: If you use <option>--trace-children=yes</option> and your
+      program invokes multiple processes and you don't use this specifier
+      (or the <option>%q</option> specifier below), the Valgrind output from
+      all those processes will go into one file, possibly jumbled up, and
       possibly incomplete.</para>
-    </listitem>
-  </varlistentry>
 
-  <varlistentry id="opt.log-file-qualifier" xreflabel="--log-file-qualifier">
-    <term>
-      <option><![CDATA[--log-file-qualifier=<VAR> ]]></option>
-    </term>
-    <listitem>
-      <para>When used in conjunction with <option>--log-file</option>,
-      causes the log file name to be qualified using the contents of the
-      environment variable <computeroutput>$VAR</computeroutput>.  This
-      is useful when running MPI programs.  For further details, see
-      <link linkend="manual-core.comment">the commentary</link>
-      in the manual.
-      </para>
+      <para><option>%q{FOO}</option> is replaced with the contents of the
+      environment variable <varname>FOO</varname>.  If the
+      <option>{FOO}</option> part is malformed, it causes an abort.  This
+      specifier is rarely needed, but very useful in certain circumstances
+      (eg. when running MPI programs).  The idea is that you specify a
+      variable which will be set differently for each process in the job,
+      for example <computeroutput>BPROC_RANK</computeroutput> or whatever is
+      applicable in your MPI setup.  If the named environment variable is not
+      set, it causes an abort.  Note that in some shells, the
+      <option>{</option> and <option>}</option> characters may need to be
+      escaped with a backslash.</para>
+
+      <para><option>%%</option> is replaced with <option>%</option>.</para>
+      
+      <para>If an <option>%</option> is followed by any other character, it
+      causes an abort.</para>
     </listitem>
   </varlistentry>
 

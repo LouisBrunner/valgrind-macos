@@ -121,9 +121,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --track-fds=no|yes        track open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
-"    --log-file=<file>         log messages to <file>.<pid>\n"
-"    --log-file-exactly=<file> log messages to <file>\n"
-"    --log-file-qualifier=<VAR> incorporate $VAR in logfile name [none]\n"
+"    --log-file=<file>         log messages to <file>\n"
 "    --log-socket=ipaddr:port  log messages to socket ipaddr:port\n"
 "\n"
 "  uncommon user options for all Valgrind tools:\n"
@@ -293,7 +291,6 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
    enum {
       VgLogTo_Fd,
       VgLogTo_File,
-      VgLogTo_FileExactly,
       VgLogTo_Socket
    } log_to = VgLogTo_Fd;   // Where is logging output to be sent?
 
@@ -433,15 +430,6 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else if (VG_CLO_STREQN(11, arg, "--log-file=")) {
          log_to            = VgLogTo_File;
          VG_(clo_log_name) = &arg[11];
-      }
-
-      else if (VG_CLO_STREQN(21, arg, "--log-file-qualifier=")) {
-         VG_(clo_log_file_qualifier) = &arg[21];
-      }
-
-      else if (VG_CLO_STREQN(19, arg, "--log-file-exactly=")) {
-         log_to            = VgLogTo_FileExactly;
-         VG_(clo_log_name) = &arg[19];
       }
 
       else if (VG_CLO_STREQN(13, arg, "--log-socket=")) {
@@ -601,80 +589,27 @@ static Bool process_cmd_line_options( UInt* client_auxv, const char* toolname )
          break;
 
       case VgLogTo_File: {
-         HChar  logfilename[1000];
-	 Int    seq  = 0;
-	 Int    pid  = VG_(getpid)();
-         HChar* qual = NULL;
+         Char* logfilename;
 
          vg_assert(VG_(clo_log_name) != NULL);
          vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
 
-	 if (VG_(clo_log_file_qualifier)) {
-            qual = VG_(getenv)(VG_(clo_log_file_qualifier));
-	 }
-
-	 for (;;) {
-            HChar pidtxt[20], seqtxt[20];
-
-            VG_(sprintf)(pidtxt, "%d", pid);
-
-            if (seq == 0)
-               seqtxt[0] = 0;
-            else
-               VG_(sprintf)(seqtxt, ".%d", seq);
-
-	    seq++;
-
-            /* Result:
-                  if (qual)      base_name ++ "." ++ qual ++ seqtxt
-                  if (not qual)  base_name ++ "." ++ pid  ++ seqtxt
-            */
-            VG_(sprintf)( logfilename, 
-                          "%s.%s%s",
-                          VG_(clo_log_name), 
-                          qual ? qual : pidtxt,
-                          seqtxt );
-
-            // EXCL: it will fail with EEXIST if the file already exists.
-            sres = VG_(open)(logfilename, 
-                             VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
-                             VKI_S_IRUSR|VKI_S_IWUSR);
-	    if (!sres.isError) {
-               tmp_log_fd = sres.res;
-	       break; /* for (;;) */
-	    } else {
-               // If the file already existed, we try the next name.  If it
-               // was some other file error, we give up.
-	       if (sres.err != VKI_EEXIST) {
-		  VG_(message)(Vg_UserMsg, 
-			       "Can't create log file '%s' (%s); giving up!", 
-			       logfilename, VG_(strerror)(sres.err));
-		  VG_(err_bad_option)(
-		     "--log-file=<file> (didn't work out for some reason.)");
-                  /*NOTREACHED*/
-	       }
-	    }
-	 }
-         break; /* switch (VG_(clo_log_to)) */
-      }
-
-      case VgLogTo_FileExactly: {
-         vg_assert(VG_(clo_log_name) != NULL);
-         vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
-
-         sres = VG_(open)(VG_(clo_log_name),
+         // Nb: we overwrite an existing file of this name without asking
+         // any questions.
+         logfilename = VG_(expand_file_name)("--log-file", VG_(clo_log_name));
+         sres = VG_(open)(logfilename, 
                           VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
                           VKI_S_IRUSR|VKI_S_IWUSR);
          if (!sres.isError) {
             tmp_log_fd = sres.res;
          } else {
             VG_(message)(Vg_UserMsg, 
-                         "Can't create/open log file '%s'; giving up!", 
-                         VG_(clo_log_name));
+                         "Can't create log file '%s' (%s); giving up!", 
+                         logfilename, VG_(strerror)(sres.err));
             VG_(err_bad_option)(
-               "--log-file-exactly=<file> (didn't work out for some reason.)");
+               "--log-file=<file> (didn't work out for some reason.)");
             /*NOTREACHED*/
-	 }
+         }
          break; /* switch (VG_(clo_log_to)) */
       }
 
@@ -838,13 +773,6 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
 	VG_(message)(Vg_UserMsg, 
                      "   %s", 
                      * (HChar**) VG_(indexXA)( VG_(args_for_client), i ));
-      if (VG_(clo_log_file_qualifier)) {
-         HChar* val = VG_(getenv)(VG_(clo_log_file_qualifier));
-         VG_(message)(Vg_UserMsg, "");
-         VG_(message)(Vg_UserMsg, "Log file qualifier: var %s, value %s.",
-                                  VG_(clo_log_file_qualifier),
-                                  val ? val : "");
-      }
    }
    else
    if (VG_(clo_xml)) {
@@ -852,13 +780,16 @@ static void print_preamble(Bool logging_to_fd, const char* toolname)
       VG_(message)(Vg_UserMsg, "<pid>%d</pid>", VG_(getpid)());
       VG_(message)(Vg_UserMsg, "<ppid>%d</ppid>", VG_(getppid)());
       VG_(message)(Vg_UserMsg, "<tool>%t</tool>", toolname);
-      if (VG_(clo_log_file_qualifier)) {
-         HChar* val = VG_(getenv)(VG_(clo_log_file_qualifier));
-         VG_(message)(Vg_UserMsg, "<logfilequalifier> <var>%t</var> "
-                                  "<value>%t</value> </logfilequalifier>",
-                                  VG_(clo_log_file_qualifier),
-                                  val ? val : "");
-      }
+// [This was made obsolete by the --log-file change in 3.3.0.  But
+// I'm leaving it here (commented out) in case it needs to be reinstated in
+// some way --njn]
+//      if (VG_(clo_log_file_qualifier)) {
+//         HChar* val = VG_(getenv)(VG_(clo_log_file_qualifier));
+//         VG_(message)(Vg_UserMsg, "<logfilequalifier> <var>%t</var> "
+//                                  "<value>%t</value> </logfilequalifier>",
+//                                  VG_(clo_log_file_qualifier),
+//                                  val ? val : "");
+//      }
       if (VG_(clo_xml_user_comment)) {
          /* Note: the user comment itself is XML and is therefore to
             be passed through verbatim (%s) rather than escaped
@@ -1630,7 +1561,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    // Print the preamble
    //   p: tl_pre_clo_init            [for 'VG_(details).name' and friends]
    //   p: process_cmd_line_options() [for VG_(clo_verbosity), VG_(clo_xml),
-   //                                      VG_(clo_log_file_qualifier),
    //                                      logging_to_fd]
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Print the preamble...\n");

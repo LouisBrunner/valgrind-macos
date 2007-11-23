@@ -7,13 +7,12 @@ usage: valgrind [options] prog-and-args
     --version                 show version
     -q --quiet                run silently; only print error msgs
     -v --verbose              be more verbose, incl counts of errors
-    --trace-children=no|yes   Valgrind-ise child processes? [no]
+    --trace-children=no|yes   Valgrind-ise child processes (follow execve)? [no]
+    --child-silent-after-fork=no|yes  omit child output between fork & exec? [no]
     --track-fds=no|yes        track open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]
     --log-fd=<number>         log messages to file descriptor [2=stderr]
-    --log-file=<file>         log messages to <file>.<pid>
-    --log-file-exactly=<file> log messages to <file>
-    --log-file-qualifier=<VAR> incorporate $VAR in logfile name [none]
+    --log-file=<file>         log messages to <file>
     --log-socket=ipaddr:port  log messages to socket ipaddr:port
 
   uncommon user options for all Valgrind tools:

@@ -154,6 +154,8 @@ following in sequence:
 
   That is, both the name of the environment variable and its value
   are given.
+  [update:  as of v3.3.0, this is not present, as the --log-file-qualifier
+  option has been removed, replaced by the %q format specifier in --log-file.]
 
 * OPTIONALLY, if --xml-user-comment=STRING was given:
 

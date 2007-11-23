@@ -110,11 +110,6 @@ extern Bool VG_(clo_xml);
    XML output, in between <usercomment> tags. */
 extern HChar* VG_(clo_xml_user_comment);
 
-/* Name of an environment variable which, if set, is to be used as
-   part of any output file name.  See pub_core_options.h for
-   details. */
-extern Char* VG_(clo_log_file_qualifier);
-
 /* Vex iropt control.  Tool-visible so tools can make Vex optimise
    less aggressively if that is needed (callgrind needs this). */
 extern VexControl VG_(clo_vex_control);
@@ -127,6 +122,16 @@ extern VexControl VG_(clo_vex_control);
 __attribute__((noreturn))
 extern void VG_(err_bad_option) ( Char* opt );
 
+/* Used to expand file names.  'option_name" is the option name, eg.
+   "--log-file".  'format' is what follows, eg. "cachegrind.out.%p".  In
+   'format': 
+   - "%p" is replaced with PID.
+   - "%q{QUAL}" is replaced with the environment variable $QUAL.  If $QUAL
+     isn't set, we abort.  If the "{QUAL}" part is malformed, we abort.
+   - "%%" is replaced with "%".
+   Anything else after '%' causes an abort.
+*/
+extern Char* VG_(expand_file_name)(Char* option_name, Char* format);
 
 #endif   // __PUB_TOOL_OPTIONS_H
 

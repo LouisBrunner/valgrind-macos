@@ -36,24 +36,8 @@
 // - do a graph-drawing test
 // - write a good basic test that shows how the tool works, suitable for
 //   documentation
-// - do filename properly, clean up Valgrind-wide log file naming mess.
-//   Expected behaviour:
-//   - Main log file:
-//     default                                      --> stderr
-//     --log-file=X                                 --> X.<pid>
-//     --log-file-exactly=X                         --> X
-//     --log-file-qualifier=QUAL                    --> [error]
-//     --log-file=X --log-file-qualifier=QUAL       --> X.$QUAL
-//   - Massif out file:
-//     default                                      --> cachegrind.out.<pid>
-//     --cg-out-file=X                              --> X.<pid>
-//     --cg-out-file-exactly=X                      --> X
-//     --cg-out-file-qualifier=QUAL                 --> [error]
-//     --cg-out-file=X --cg-out-file-qualifier=QUAL --> X.$QUAL
-//   - Likewise for Cachegrind, but with --cg-out/cg.out.
-//   - And in cg_annotate, remove the --<pid> option.
-//   - Likewise for Callgrind, but with --cl-out/cl.out (?)
-//   - And don't create .1, .2 etc suffixed files.
+// - In cg_annotate, remove the --<pid> option.
+// - Get Josef to update the Callgrind --callgrind-out-file option.
 //
 // Todo -- nice, but less critical:
 // - make file format more generic.  Obstacles:
@@ -326,9 +310,6 @@ static SizeT peak_snapshot_total_szB = 0;
 // memory.  An alternative to milliseconds as a unit of program "time".
 static ULong total_allocs_deallocs_szB = 0;
 
-// The output file name.  Controlled by --massif-out-file.
-static Char* massif_out_file = NULL;
-
 // We don't start taking snapshots until the first basic block is executed,
 // rather than doing it in ms_post_clo_init (which is the obvious spot), for
 // two reasons.
@@ -476,7 +457,7 @@ static void ms_print_usage(void)
 "                               alloc'd/dealloc'd on the heap [ms]\n"
 "    --detailed-freq=<N>       every Nth snapshot should be detailed [10]\n"
 "    --max-snapshots=<N>       maximum number of snapshots recorded [100]\n"
-"    --massif-out-file=<s>     output file name [massif.out.%%p]\n"
+"    --massif-out-file=<file>  output file name [massif.out.%%p]\n"
    );
    VG_(replacement_malloc_print_usage)();
 }
@@ -1815,6 +1796,9 @@ IRSB* ms_instrument ( VgCallbackClosure* closure,
 //--- Writing snapshots                                    ---//
 //------------------------------------------------------------//
 
+// The output file name.  Controlled by --massif-out-file.
+static Char* massif_out_file = NULL;
+
 #define FP_BUF_SIZE     1024
 Char FP_buf[FP_BUF_SIZE];
 
@@ -2051,105 +2035,6 @@ static void ms_fini(Int exit_status)
 //------------------------------------------------------------//
 //--- Initialisation                                       ---//
 //------------------------------------------------------------//
-
-// Copies the string, prepending it with the startup working directory, and
-// expanding %p and %q entries.  Returns a new, malloc'd string.
-static Char* VG_(expand_file_name)(Char* option_name, Char* format)
-{
-   static Char base_dir[VKI_PATH_MAX];
-   Int len, i = 0, j = 0;
-   Char* out;
-
-   Bool ok = VG_(get_startup_wd)(base_dir, VKI_PATH_MAX);
-   tl_assert(ok);
-
-   // The 10 is slop, it should be enough in most cases.
-   j = VG_(strlen)(base_dir);
-   len = j + VG_(strlen)(format) + 10;
-   out = VG_(malloc)( len );
-   VG_(strcpy)(out, base_dir);
-
-#define ENSURE_THIS_MUCH_SPACE(x) \
-   if (j + x >= len) { \
-      len += (10 + x); \
-      out = VG_(realloc)(out, len); \
-   }
-
-   out[j++] = '/';
-   while (format[i]) {
-      if (format[i] != '%') {
-         ENSURE_THIS_MUCH_SPACE(1);
-         out[j++] = format[i++];
-         
-      } else {
-         // We saw a '%'.  What's next...
-         i++;
-         if      ('%' == format[i]) {
-            // Replace '%%' with '%'.
-            ENSURE_THIS_MUCH_SPACE(1);
-            out[j++] = format[i++];
-         }
-         else if ('p' == format[i]) {
-            // Print the PID.  Assume that it's not longer than 10 chars --
-            // reasonable since 'pid' is an Int (ie. 32 bits).
-            Int pid = VG_(getpid)();
-            ENSURE_THIS_MUCH_SPACE(10);
-            j += VG_(sprintf)(&out[j], "%d", pid);
-            i++;
-         } 
-         else if ('q' == format[i] && '{' == format[i+1]) {
-            // Get the env var name, print its contents.
-            Char* qualname;
-            Char* qual;
-            i += 2;
-            qualname = &format[i];
-            while (True) {
-               if (0 == format[i]) {
-                  VG_(message)(Vg_UserMsg, "%s: malformed %%q specifier",
-                     option_name);
-                  goto bad;
-               } else if ('}' == format[i]) {
-                  // Temporarily replace the '}' with NUL to extract var name.
-                  format[i] = 0;
-                  qual = VG_(getenv)(qualname);
-                  if (NULL == qual) {
-                     VG_(message)(Vg_UserMsg,
-                        "%s: environment variable %s is not set",
-                        option_name, qualname);
-                     goto bad;
-                  }
-                  format[i] = '}';     // Put the '}' back.
-                  i++;
-                  break;
-               }
-               i++;
-            }
-            ENSURE_THIS_MUCH_SPACE(VG_(strlen)(qual));
-            j += VG_(sprintf)(&out[j], "%s", qual);
-         } 
-         else {
-            // Something else, abort.
-            VG_(message)(Vg_UserMsg,
-               "%s: expected 'p' or 'q' or '%%' after '%%'", option_name);
-            goto bad;
-         }
-      }
-   }
-   ENSURE_THIS_MUCH_SPACE(1);
-   out[j++] = 0;
-
-   return out;
-
-  bad: {
-   Char* opt =    // 2:  1 for the '=', 1 for the NUL.
-      VG_(malloc)( VG_(strlen)(option_name) + VG_(strlen)(format) + 2 );
-   VG_(strcpy)(opt, option_name);
-   VG_(strcat)(opt, "=");
-   VG_(strcat)(opt, format);
-   VG_(err_bad_option)(opt);
-  }
-}
-
 
 static void ms_post_clo_init(void)
 {

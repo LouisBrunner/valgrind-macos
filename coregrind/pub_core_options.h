@@ -74,16 +74,11 @@ extern Bool  VG_(clo_child_silent_after_fork);
    taken from the command line.  (fd 2, stderr, is the default.)
    clo_log_name is irrelevant.
 
-   With --log-file/--log-file-exactly, clo_log_name holds the log-file
-   name, and is taken from the command line.  clo_log_fd is then
-   made to hold the relevant file id, by opening clo_log_name
-   (concatenated with the process ID) for writing.
-
-   With --log-file, there is an additional twist: if
-   clo_log_file_qualifier is non-NULL, the contents of the environment
-   variable specified by clo_log_file_qualifier is incorporated into
-   the logfile name.  This is useful in that it allows the logfile
-   name to incorporate environmental information.
+   With --log-file, clo_log_name holds the log-file name, and is taken from
+   the command line (and possibly has process ID/env var contents in it, if
+   the %p or %q format specifiers are used).  clo_log_fd is then made to
+   hold the relevant file id, by opening clo_log_name (concatenated with the
+   process ID) for writing.
 
    With --log-socket, clo_log_name holds the hostname:portnumber pair,
    and is taken from the command line.  clo_log_fd is then made to hold
@@ -94,7 +89,6 @@ extern Bool  VG_(clo_child_silent_after_fork);
    (stderr). */
 extern Int   VG_(clo_log_fd);
 extern Char* VG_(clo_log_name);
-/* extern Char* VG_(clo_log_file_qualifier); moved to pub_tool_options.h */
 
 /* Add timestamps to log messages?  default: NO */
 extern Bool  VG_(clo_time_stamp);

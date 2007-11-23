@@ -78,9 +78,9 @@ be normally run.</para>
     command line invocation.  When the program finishes,
     Cachegrind will print summary cache statistics. It also
     collects line-by-line information in a file
-    <computeroutput>cachegrind.out.pid</computeroutput>, where
-    <computeroutput>pid</computeroutput> is the program's process
-    id.</para>
+    <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput>, where
+    <computeroutput>&lt;pid&gt;</computeroutput> is the program's process
+    ID.</para>
 
     <para>Branch prediction statistics are not collected by default.
     To do so, add the flag
@@ -95,7 +95,7 @@ be normally run.</para>
   <listitem>
     <para>Generate a function-by-function summary, and possibly
     annotate source files, using the supplied
-    <computeroutput>cg_annotate</computeroutput> program. Source
+    cg_annotate program. Source
     files to annotate can be specified manually, or manually on
     the command line, or "interesting" source files can be
     annotated automatically with the
@@ -111,10 +111,9 @@ be normally run.</para>
 </orderedlist>
 
 <para>As an optional intermediate step, you can use the supplied
-<computeroutput>cg_merge</computeroutput> program to sum together the
+cg_merge program to sum together the
 outputs of multiple Cachegrind runs, into a single file which you then
-use as the input for
-<computeroutput>cg_annotate</computeroutput>.</para>
+use as the input for cg_annotate.</para>
 
 <para>These steps are described in detail in the following
 sections.</para>
@@ -336,46 +335,38 @@ follow that.</para>
 <para>As well as printing summary information, Cachegrind also
 writes line-by-line cache profiling information to a user-specified
 file.  By default this file is named
-<computeroutput>cachegrind.out.pid</computeroutput>.  This file
+<computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput>.  This file
 is human-readable, but is intended to be interpreted by the accompanying
-program <computeroutput>cg_annotate</computeroutput>, described
-in the next section.</para>
+program cg_annotate, described in the next section.</para>
 
 <para>Things to note about the
-<computeroutput>cachegrind.out.pid</computeroutput>
+<computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput>
 file:</para>
 
 <itemizedlist>
   <listitem>
     <para>It is written every time Cachegrind is run, and will
     overwrite any existing
-    <computeroutput>cachegrind.out.pid</computeroutput>
+    <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput>
     in the current directory (but that won't happen very often
     because it takes some time for process ids to be
     recycled).</para>
-    <para>
-    To use a basename other than the default
+  </listitem>
+  <listitem>
+    <para>To use an output file name other than the default
     <computeroutput>cachegrind.out</computeroutput>,
     use the <computeroutput>--cachegrind-out-file</computeroutput>
     switch.</para>
-    <para>
-    To add further qualifiers to the output filename you can use 
-    the core's <computeroutput>--log-file-qualifier</computeroutput>
-    flag.  This extends the file name further with the text
-    <computeroutput>.lfq.</computeroutput>followed by the
-    contents of the environment variable specified by 
-    <computeroutput>--log-file-qualifier</computeroutput>.
-      </para>
   </listitem>
   <listitem>
-    <para>It can be huge: <computeroutput>ls -l</computeroutput>
+    <para>It can be big: <computeroutput>ls -l</computeroutput>
     generates a file of about 350KB.  Browsing a few files and
     web pages with a Konqueror built with full debugging
     information generates a file of around 15 MB.</para>
   </listitem>
 </itemizedlist>
 
-<para>The <computeroutput>.pid</computeroutput> suffix
+<para>The default <computeroutput>.&lt;pid&gt;</computeroutput> suffix
 on the output file name serves two purposes.  Firstly, it means you 
 don't have to rename old log files that you don't want to overwrite.  
 Secondly, and more importantly, it allows correct profiling with the
@@ -439,13 +430,18 @@ configuration, or failing that, via defaults).</para>
 
   <varlistentry id="opt.cachegrind-out-file" xreflabel="--cachegrind-out-file">
     <term>
-      <option><![CDATA[--cachegrind-out-file=<basename> ]]></option>
+      <option><![CDATA[--cachegrind-out-file=<file> ]]></option>
     </term>
     <listitem>
       <para>Write the profile data to 
-            <computeroutput>basename.pid</computeroutput>
-            rather than to the default output file, 
-            <computeroutput>cachegrind.out.pid</computeroutput>.
+            <computeroutput>file</computeroutput> rather than to the default
+            output file,
+            <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput>.  The
+            <option>%p</option> and <option>%q</option> format specifiers
+            can be used to embed the process ID and/or the contents of an
+            environment variable in the name, as is the case for the core
+            option <option>--log-file</option>.  See <link
+            linkend="manual-core.basicopts">here</link> for details.
       </para>
     </listitem>
   </varlistentry>
@@ -485,16 +481,12 @@ configuration, or failing that, via defaults).</para>
 <sect2 id="cg-manual.annotate" xreflabel="Annotating C/C++ programs">
 <title>Annotating C/C++ programs</title>
 
-<para>Before using <computeroutput>cg_annotate</computeroutput>,
+<para>Before using cg_annotate,
 it is worth widening your window to be at least 120-characters
 wide if possible, as the output lines can be quite long.</para>
 
-<para>To get a function-by-function summary, run
-<computeroutput>cg_annotate --pid</computeroutput> in a directory
-containing a <filename>cachegrind.out.pid</filename> file.  The
-<emphasis>--pid</emphasis> is required so that
-<computeroutput>cg_annotate</computeroutput> knows which log file to use
-when several are present.</para>
+<para>To get a function-by-function summary, run <computeroutput>cg_annotate
+&lt;filename&gt;</computeroutput> on a Cachegrind output file.</para>
 
 <para>The output looks like this:</para>
 
@@ -643,7 +635,7 @@ Ir        I1mr I2mr Dr        D1mr  D2mr  Dw        D1mw   D2mw    file:function
   </listitem>
 
   <listitem>
-    <para>Threshold: <computeroutput>cg_annotate</computeroutput>
+    <para>Threshold: cg_annotate
     by default omits functions that cause very low counts
     to avoid drowning you in information.  In this case,
     cg_annotate shows summaries the functions that account for
@@ -696,12 +688,12 @@ and from libraries (eg. <filename>getc.c</filename>)</para>
 <para>There are two ways to annotate source files -- by choosing
 them manually, or with the
 <computeroutput>--auto=yes</computeroutput> option. To do it
-manually, just specify the filenames as arguments to
-<computeroutput>cg_annotate</computeroutput>. For example, the
-output from running <filename>cg_annotate concord.c</filename>
-for our example produces the same output as above followed by an
-annotated version of <filename>concord.c</filename>, a section of
-which looks like:</para>
+manually, just specify the filenames as additional arguments to
+cg_annotate. For example, the
+output from running <filename>cg_annotate &lt;filename&gt;
+concord.c</filename> for our example produces the same output as above
+followed by an annotated version of <filename>concord.c</filename>, a
+section of which looks like:</para>
 
 <programlisting><![CDATA[
 --------------------------------------------------------------------------------
@@ -768,7 +760,7 @@ controlled by the <computeroutput>--context</computeroutput>
 option.</para>
 
 <para>To get automatic annotation, run
-<computeroutput>cg_annotate --auto=yes</computeroutput>.
+<computeroutput>cg_annotate &lt;filename&gt; --auto=yes</computeroutput>.
 cg_annotate will automatically annotate every source file it can
 find that is mentioned in the function-by-function summary.
 Therefore, the files chosen for auto-annotation are affected by
@@ -798,7 +790,7 @@ for source files if the filenames found from the debugging
 information aren't specific enough.</para>
 
 <para>Beware that cg_annotate can take some time to digest large
-<computeroutput>cachegrind.out.pid</computeroutput> files,
+<computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput> files,
 e.g. 30 seconds or more.  Also beware that auto-annotation can
 produce a lot of output if your program is large!</para>
 
@@ -806,10 +798,10 @@ produce a lot of output if your program is large!</para>
 
 
 <sect2 id="cg-manual.assembler" xreflabel="Annotating assembler programs">
-<title>Annotating assembler programs</title>
+<title>Annotating assembly code programs</title>
 
-<para>Valgrind can annotate assembler programs too, or annotate
-the assembler generated for your C program.  Sometimes this is
+<para>Valgrind can annotate assembly code programs too, or annotate
+the assembly code generated for your C program.  Sometimes this is
 useful for understanding what is really happening when an
 interesting line of C code is translated into multiple
 instructions.</para>
@@ -832,34 +824,10 @@ way as for C/C++ programs.</para>
 
 
 <sect1 id="cg-manual.annopts" xreflabel="cg_annotate options">
-<title><computeroutput>cg_annotate</computeroutput> options</title>
+<title>cg_annotate options</title>
 
 <itemizedlist>
 
-  <listitem id="pid">
-    <para><computeroutput>--pid</computeroutput></para>
-    <para>Indicates that profile data should be read from 
-    the file
-    <computeroutput>cachegrind.out.pid</computeroutput>.
-    read.  
-    Note that you must specify either
-    <computeroutput>--pid</computeroutput>
-    or <computeroutput>--cachegrind-out-file=filename</computeroutput>
-    exactly once.
-    </para>
-  </listitem>
-    
-  <listitem id="cachegrind-out-file">
-    <para><computeroutput>--cachegrind-out-file=filename</computeroutput></para>
-    <para>Indicates that profile data
-    should be read from <computeroutput>filename</computeroutput>.
-    Note that you must specify either
-    <computeroutput>--pid</computeroutput>
-    or <computeroutput>--cachegrind-out-file=filename</computeroutput>
-    exactly once.
-    </para>
-  </listitem>
-    
   <listitem>
     <para><computeroutput>-h, --help</computeroutput></para>
     <para><computeroutput>-v, --version</computeroutput></para>
@@ -869,7 +837,7 @@ way as for C/C++ programs.</para>
   <listitem id="sort">
     <para><computeroutput>--sort=A,B,C</computeroutput> [default:
     order in
-    <computeroutput>cachegrind.out.pid</computeroutput>]</para>
+    <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput>]</para>
     <para>Specifies the events upon which the sorting of the
     function-by-function entries will be based.  Useful if you
     want to concentrate on eg. I cache misses
@@ -883,10 +851,10 @@ way as for C/C++ programs.</para>
   <listitem id="show">
     <para><computeroutput>--show=A,B,C</computeroutput> [default:
     all, using order in
-    <computeroutput>cachegrind.out.pid</computeroutput>]</para>
+    <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput>]</para>
     <para>Specifies which events to show (and the column
     order). Default is to use all present in the
-    <computeroutput>cachegrind.out.pid</computeroutput> file (and
+    <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput> file (and
     use the order in the file).</para>
   </listitem>
 
@@ -941,15 +909,14 @@ way as for C/C++ programs.</para>
 <title>Warnings</title>
 
 <para>There are a couple of situations in which
-<computeroutput>cg_annotate</computeroutput> issues
-warnings.</para>
+cg_annotate issues warnings.</para>
 
 <itemizedlist>
   <listitem>
     <para>If a source file is more recent than the
-    <computeroutput>cachegrind.out.pid</computeroutput> file.
+    <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput> file.
     This is because the information in
-    <computeroutput>cachegrind.out.pid</computeroutput> is only
+    <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput> is only
     recorded with line numbers, so if the line numbers change at
     all in the source (eg.  lines added, deleted, swapped), any
     annotations will be incorrect.</para>
@@ -958,7 +925,7 @@ warnings.</para>
     <para>If information is recorded about line numbers past the
     end of a file.  This can be caused by the above problem,
     ie. shortening the source file while using an old
-    <computeroutput>cachegrind.out.pid</computeroutput> file.  If
+    <computeroutput>cachegrind.out.&lt;pid&gt;</computeroutput> file.  If
     this happens, the figures for the bogus lines are printed
     anyway (clearly marked as bogus) in case they are
     important.</para>
@@ -1167,22 +1134,21 @@ useful.</para>
 
 
 <sect1 id="cg-manual.cg_merge" xreflabel="cg_merge">
-<title>Merging profiles with <computeroutput>cg_merge</computeroutput></title>
+<title>Merging profiles with cg_merge</title>
 
 <para>
-<computeroutput>cg_merge</computeroutput> is a simple program which
+cg_merge is a simple program which
 reads multiple profile files, as created by cachegrind, merges them
 together, and writes the results into another file in the same format.
 You can then examine the merged results using
-<computeroutput>cg_annotate
---cachegrind-out-file=outputfile</computeroutput>, as
+<computeroutput>cg_annotate &lt;filename&gt;</computeroutput>, as
 described above.  The merging functionality might be useful if you
 want to aggregate costs over multiple runs of the same program, or
 from a single parallel run with multiple instances of the same
 program.</para>
 
 <para>
-<computeroutput>cg_merge</computeroutput> is invoked as follows:
+cg_merge is invoked as follows:
 </para>
 
 <programlisting><![CDATA[
@@ -1203,7 +1169,7 @@ matter, although you should take care to only mention each file once,
 since any file mentioned twice will be added in twice.</para>
 
 <para>
-<computeroutput>cg_merge</computeroutput> does not attempt to check
+cg_merge does not attempt to check
 that the input files come from runs of the same executable.  It will
 happily merge together profile files from completely unrelated
 programs.  It does however check that the
@@ -1215,7 +1181,7 @@ write misses.</para>
 
 <para>
 A number of other syntax and sanity checks are done whilst reading the
-inputs.  <computeroutput>cg_merge</computeroutput> will stop and
+inputs.  cg_merge will stop and
 attempt to print a helpful error message if any of the input files
 fail these checks.</para>
 

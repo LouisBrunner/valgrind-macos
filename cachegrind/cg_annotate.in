@@ -142,13 +142,11 @@ my $version = "@VERSION@";
 
 # Usage message.
 my $usage = <<END
-usage: cg_annotate [options] [source-files]
+usage: cg_annotate [options] output-file [source-files]
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message
     -v --version          show version
-    --<pid>               read profile data from cachegrind.out.<pid>
-    --cachegrind-out-file=<file>   read profile data from <file>
     --show=A,B,C          only show figures for events A,B,C [all]
     --sort=A,B,C          sort columns by events A,B,C [event column order]
     --threshold=<0--100>  percentage of counts (of primary sort event) we
@@ -159,9 +157,6 @@ usage: cg_annotate [options] [source-files]
                           annotated lines [8]
     -I<d> --include=<d>   add <d> to list of directories to search for 
                           source files
-
-  You must use either --<pid> or --cachegrind-out-file exactly once
-  in order that cg_annotate knows what file to read profile data from.
 
   cg_annotate is Copyright (C) 2002-2007 Nicholas Nethercote.
   and licensed under the GNU General Public License, version 2.
@@ -241,25 +236,6 @@ sub process_cmd_line()
                 $inc =~ s|/$||;         # trim trailing '/'
                 push(@include_dirs, "$inc/");
 
-            # --cachegrind-out-file=<filename>
-            } elsif ($arg =~ /^--cachegrind-out-file=(.*)$/) {
-                if (not defined $input_file) {
-                    $input_file = $1;
-                } else {
-                    die("You may only specify one input file\n" .
-                        "using the --<pid> and --cachegrind-out-file options.\n");
-                }
-
-            # --<pid>
-            } elsif ($arg =~ /^--(\d+)$/) {
-                my $pid = $1;
-                if (not defined $input_file) {
-                    $input_file = "cachegrind.out.$pid";
-                } else {
-                    die("You may only specify one input file\n" .
-                        "using the --<pid> and --cachegrind-out-file options.\n");
-                }
-
             } else {            # -h and --help fall under this case
                 die($usage);
             }
@@ -267,14 +243,20 @@ sub process_cmd_line()
         # Argument handling -- annotation file checking and selection.
         # Stick filenames into a hash for quick 'n easy lookup throughout.
         } else {
-            my $readable = 0;
-            foreach my $include_dir (@include_dirs) {
-                if (-r $include_dir . $arg) {
-                    $readable = 1;
+            if (not defined $input_file) {
+                # First non-option argument is the output file.
+                $input_file = $arg;
+            } else {
+                # Subsequent non-option arguments are source files.
+                my $readable = 0;
+                foreach my $include_dir (@include_dirs) {
+                    if (-r $include_dir . $arg) {
+                        $readable = 1;
+                    }
                 }
+                $readable or die("File $arg not found in any of: @include_dirs\n");
+                $user_ann_files{$arg} = 1;
             }
-            $readable or die("File $arg not found in any of: @include_dirs\n");
-            $user_ann_files{$arg} = 1;
         }
     }
 

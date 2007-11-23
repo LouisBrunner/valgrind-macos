@@ -4,12 +4,66 @@ Release 3.3.0 (XX XXX 2007)
 
 XXX: AIX support (ppc32 and ppc64?)
 
-Other user-visible changes:
+Several large improvements to existing tools have been implemented.
+
+- Helgrind has been completely overhauled and now works for the first time
+  since Valgrind 2.2.0.  [XXX: ...]
+
+- Massif has been completely overhauled.  Instead of measuring space-time
+  usage -- which wasn't always useful and many people found confusing -- it
+  now measures space usage at various points in the execution, including the
+  point of peak memory allocation.  Its output format has also changed:
+  instead of producing PostScript graphs and HTML text, it produces a single
+  text output (via the new 'ms_print' script) that contains both a graph and
+  the old textual information, but in a more compact and readable form.
+  Finally, the new version should be more reliable than the old one, as it
+  has been tested more thoroughly.
 
 - Cachegrind has been extended to do branch-misprediction profiling.
   Both conditional and indirect branches are profiled.  The default
   behaviour of Cachegrind is unchanged.  To use the new functionality,
   give the option --branch-sim=yes.
+
+Two new tools have also been added.  These are "experimental tools", which
+means that they may not work as well as the standard tools, but they are
+included because some people will find them useful.  The notion of
+experimental tools was added in order to provide a way for tools to get
+wider exposure among Valgrind users.  These tools have a "exp-" prefix
+attached to their names to indicate their experimental nature.
+
+- exp-Omega [XXX ...]
+
+- exp-DRD [XXX ...]
+
+Other user-visible changes:
+
+- The --log-file-exactly and --log-file-qualifier options have been removed.
+  To make up for this --log-file option has been made more powerful and
+  flexible;  it can now accept a %p format specifier, which is replaced with
+  the process ID, and the a %q{FOO} format specifier, which is replaced with
+  the contents of the environment variable $FOO.
+
+- [XXX: --child-silent-after-fork...]
+
+- There are new --cachegrind-out-file, --callgrind-out-file and
+  --massif-out-file options, which control the names of the output files
+  produced by Cachegrind, Callgrind and Massif.  They accept the same %p and
+  %q format specifiers that --log-file accepts.
+
+- Cachegrind's 'cg_annotate' script no longer uses the --<pid> option to
+  specify the output file.  Instead, the first non-option argument is taken
+  to be the name of the output file, and any subsequent non-option arguments
+  are taken to be the names of source files to be annotated.  This change
+  was necessary due to the addition of the --cachegrind-out-file option.
+  'callgrind_annotate' already had this behaviour.
+
+- Cachegrind now uses directory names where possible in its output files.
+  This means that the -I option to 'cg_annotate' should not be needed in
+  most cases.  It also means it can correctly handle the case where two
+  source files in different directories have the same name.
+  The same is true for Callgrind and callgrind_annotate, respectively.
+  The benefits also apply to KCachegrind, without any further change
+  (ie. in most cases there is no configuration of source directories needed).
 
 - A new suppression kind has been introduced: "Jump".  This is for
   suppressing jump-to-invalid-address errors.  Previously you had to use an
@@ -25,14 +79,6 @@ Other user-visible changes:
   from --trace-mem has been made more compact, to reduce the size of the
   traces.  Second, a new option --trace-superblocks has been added, which
   shows the addresses of superblocks (code blocks) as they are executed.
-
-- Cachegrind now uses directory names where possible in its output files.
-  This means that the -I option to 'cg_annotate' should not be needed in
-  most cases.  It also means it can correctly handle the case where two
-  source files in different directories have the same name.
-  The same is true for Callgrind and callgrind_annotate, respectively.
-  The benefits also apply to KCachegrind, without any further change
-  (ie. in most cases there is no configuration of source directories needed).
 
 Developer-visible changes:
 

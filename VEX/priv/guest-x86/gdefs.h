@@ -114,6 +114,8 @@ extern ULong x86g_calculate_RCL (
                 UInt arg, UInt rot_amt, UInt eflags_in, UInt sz 
              );
 
+extern UInt x86g_calculate_daa_das_aaa_aas ( UInt AX_and_flags, UInt opcode );
+
 extern ULong x86g_check_fldcw ( UInt fpucw );
 
 extern UInt  x86g_create_fpucw ( UInt fpround );

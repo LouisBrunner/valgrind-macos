@@ -11196,44 +11196,62 @@ DisResult disInstr_X86_WRK (
       DIP("leave\n");
       break;
 
-//--    /* ---------------- Misc weird-ass insns --------------- */
-//-- 
-//--    case 0x27: /* DAA */
-//--    case 0x2F: /* DAS */
-//--       t1 = newTemp(cb);
-//--       uInstr2(cb, GET, 1, ArchReg, R_AL, TempReg, t1);
-//--       /* Widen %AL to 32 bits, so it's all defined when we push it. */
-//--       uInstr1(cb, WIDEN, 4, TempReg, t1);
-//--       uWiden(cb, 1, False);
-//--       uInstr0(cb, CALLM_S, 0);
-//--       uInstr1(cb, PUSH, 4, TempReg, t1);
-//--       uInstr1(cb, CALLM, 0, Lit16, 
-//--                   opc == 0x27 ? VGOFF_(helper_DAA) : VGOFF_(helper_DAS) );
-//--       uFlagsRWU(cb, FlagsAC, FlagsSZACP, FlagO);
-//--       uInstr1(cb, POP, 4, TempReg, t1);
-//--       uInstr0(cb, CALLM_E, 0);
-//--       uInstr2(cb, PUT, 1, TempReg, t1, ArchReg, R_AL);
-//--       DIP(opc == 0x27 ? "daa\n" : "das\n");
-//--       break;
-//-- 
-//--    case 0x37: /* AAA */
-//--    case 0x3F: /* AAS */
-//--       t1 = newTemp(cb);
-//--       uInstr2(cb, GET, 2, ArchReg, R_EAX, TempReg, t1);
-//--       /* Widen %AL to 32 bits, so it's all defined when we push it. */
-//--       uInstr1(cb, WIDEN, 4, TempReg, t1);
-//--       uWiden(cb, 2, False);
-//--       uInstr0(cb, CALLM_S, 0);
-//--       uInstr1(cb, PUSH, 4, TempReg, t1);
-//--       uInstr1(cb, CALLM, 0, Lit16, 
-//--                   opc == 0x37 ? VGOFF_(helper_AAA) : VGOFF_(helper_AAS) );
-//--       uFlagsRWU(cb, FlagA, FlagsAC, FlagsEmpty);
-//--       uInstr1(cb, POP, 4, TempReg, t1);
-//--       uInstr0(cb, CALLM_E, 0);
-//--       uInstr2(cb, PUT, 2, TempReg, t1, ArchReg, R_EAX);
-//--       DIP(opc == 0x37 ? "aaa\n" : "aas\n");
-//--       break;
-//-- 
+   /* ---------------- Misc weird-ass insns --------------- */
+
+   case 0x27: /* DAA */
+   case 0x2F: /* DAS */
+   case 0x37: /* AAA */
+   case 0x3F: /* AAS */
+      /* An ugly implementation for some ugly instructions.  Oh
+	 well. */
+      if (sz != 4) goto decode_failure;
+      t1 = newTemp(Ity_I32);
+      t2 = newTemp(Ity_I32);
+      /* Make up a 32-bit value (t1), with the old value of AX in the
+         bottom 16 bits, and the old OSZACP bitmask in the upper 16
+         bits. */
+      assign(t1, 
+             binop(Iop_16HLto32, 
+                   unop(Iop_32to16,
+                        mk_x86g_calculate_eflags_all()),
+                   getIReg(2, R_EAX)
+            ));
+      /* Call the helper fn, to get a new AX and OSZACP value, and
+         poke both back into the guest state.  Also pass the helper
+         the actual opcode so it knows which of the 4 instructions it
+         is doing the computation for. */
+      vassert(opc == 0x27 || opc == 0x2F || opc == 0x37 || opc == 0x3F);
+      assign(t2,
+              mkIRExprCCall(
+                 Ity_I32, 0/*regparm*/, "x86g_calculate_daa_das_aaa_aas",
+                 &x86g_calculate_daa_das_aaa_aas,
+                 mkIRExprVec_2( mkexpr(t1), mkU32( opc & 0xFF) )
+            ));
+     putIReg(2, R_EAX, unop(Iop_32to16, mkexpr(t2) ));
+
+     stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+     stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+     stmt( IRStmt_Put( OFFB_CC_DEP1, 
+                       binop(Iop_And32,
+                             binop(Iop_Shr32, mkexpr(t2), mkU8(16)),
+                             mkU32( X86G_CC_MASK_C | X86G_CC_MASK_P 
+                                    | X86G_CC_MASK_A | X86G_CC_MASK_Z 
+                                    | X86G_CC_MASK_S| X86G_CC_MASK_O )
+                            )
+                      )
+         );
+     /* Set NDEP even though it isn't used.  This makes redundant-PUT
+        elimination of previous stores to this field work better. */
+     stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
+     switch (opc) {
+        case 0x27: DIP("daa\n"); break;
+        case 0x2F: DIP("das\n"); break;
+        case 0x37: DIP("aaa\n"); break;
+        case 0x3F: DIP("aas\n"); break;
+        default: vassert(0);
+     }
+     break;
+
 //--    case 0xD4: /* AAM */
 //--    case 0xD5: /* AAD */
 //--       d32 = getIByte(delta); delta++;

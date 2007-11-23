@@ -144,11 +144,18 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
       goto bad;
    }
 
+   // If 'format' starts with a '/', do not prefix with startup dir.
+   if (format[0] != '/') {
+      j += VG_(strlen)(base_dir);
+   }
+
    // The 10 is slop, it should be enough in most cases.
-   j = VG_(strlen)(base_dir);
    len = j + VG_(strlen)(format) + 10;
    out = VG_(malloc)( len );
-   VG_(strcpy)(out, base_dir);
+   if (format[0] != '/') {
+      VG_(strcpy)(out, base_dir);
+      out[j++] = '/';
+   }
 
 #define ENSURE_THIS_MUCH_SPACE(x) \
    if (j + x >= len) { \
@@ -156,7 +163,6 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
       out = VG_(realloc)(out, len); \
    }
 
-   out[j++] = '/';
    while (format[i]) {
       if (format[i] != '%') {
          ENSURE_THIS_MUCH_SPACE(1);
@@ -178,35 +184,44 @@ Char* VG_(expand_file_name)(Char* option_name, Char* format)
             j += VG_(sprintf)(&out[j], "%d", pid);
             i++;
          } 
-         else if ('q' == format[i] && '{' == format[i+1]) {
-            // Get the env var name, print its contents.
-            Char* qualname;
-            Char* qual;
-            i += 2;
-            qualname = &format[i];
-            while (True) {
-               if (0 == format[i]) {
-                  VG_(message)(Vg_UserMsg, "%s: malformed %%q specifier",
-                     option_name);
-                  goto bad;
-               } else if ('}' == format[i]) {
-                  // Temporarily replace the '}' with NUL to extract var name.
-                  format[i] = 0;
-                  qual = VG_(getenv)(qualname);
-                  if (NULL == qual) {
-                     VG_(message)(Vg_UserMsg,
-                        "%s: environment variable %s is not set",
-                        option_name, qualname);
-                     goto bad;
-                  }
-                  format[i] = '}';     // Put the '}' back.
-                  i++;
-                  break;
-               }
+         else if ('q' == format[i]) {
+            i++;
+            if ('{' == format[i]) {
+               // Get the env var name, print its contents.
+               Char* qualname;
+               Char* qual;
                i++;
+               qualname = &format[i];
+               while (True) {
+                  if (0 == format[i]) {
+                     VG_(message)(Vg_UserMsg, "%s: malformed %%q specifier",
+                        option_name);
+                     goto bad;
+                  } else if ('}' == format[i]) {
+                     // Temporarily replace the '}' with NUL to extract var
+                     // name.
+                     format[i] = 0;
+                     qual = VG_(getenv)(qualname);
+                     if (NULL == qual) {
+                        VG_(message)(Vg_UserMsg,
+                           "%s: environment variable %s is not set",
+                           option_name, qualname);
+                        format[i] = '}';  // Put the '}' back.
+                        goto bad;
+                     }
+                     format[i] = '}';     // Put the '}' back.
+                     i++;
+                     break;
+                  }
+                  i++;
+               }
+               ENSURE_THIS_MUCH_SPACE(VG_(strlen)(qual));
+               j += VG_(sprintf)(&out[j], "%s", qual);
+            } else {
+               VG_(message)(Vg_UserMsg,
+                  "%s: expected '{' after '%%q'", option_name);
+               goto bad;
             }
-            ENSURE_THIS_MUCH_SPACE(VG_(strlen)(qual));
-            j += VG_(sprintf)(&out[j], "%s", qual);
          } 
          else {
             // Something else, abort.

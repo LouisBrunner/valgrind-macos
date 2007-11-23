@@ -130,6 +130,9 @@ extern void VG_(err_bad_option) ( Char* opt );
      isn't set, we abort.  If the "{QUAL}" part is malformed, we abort.
    - "%%" is replaced with "%".
    Anything else after '%' causes an abort.
+   If the format specifies a relative file name, it's put in the program's
+   initial working directory.  If it specifies an absolute file name (ie.
+   starts with '/') then it is put there.
 */
 extern Char* VG_(expand_file_name)(Char* option_name, Char* format);
 

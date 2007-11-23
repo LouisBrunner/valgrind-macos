@@ -4,6 +4,13 @@ Release 3.3.0 (XX XXX 2007)
 
 XXX: AIX support (ppc32 and ppc64?)
 
+XXX:
+* modestly restructured/rationalised documentation
+* support for latest toolchains/libs: gcc-4.3, glibc-2.7
+* many bugs fixed, as usual
+* scalability improvements (for v. large programs); some modest
+  performance improvements
+
 Several large improvements to existing tools have been implemented.
 
 - Helgrind has been completely overhauled and now works for the first time

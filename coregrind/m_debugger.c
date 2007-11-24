@@ -295,11 +295,17 @@ void VG_(start_debugger) ( ThreadId tid )
          if (res == 0) {      
             VG_(message)(Vg_UserMsg, "");
             VG_(message)(Vg_UserMsg, 
-                         "Debugger has detached.  Valgrind regains control.  We continue.");
+                         "Debugger has detached.  Valgrind regains control."
+                         "  We continue.");
          } else {
-            VG_(message)(Vg_UserMsg, "Apparently failed!");
+            VG_(message)(Vg_UserMsg, 
+                         "Warning: Debugger attach failed! (sys_system)");
             VG_(message)(Vg_UserMsg, "");
          }
+      } else {
+         VG_(message)(Vg_UserMsg, 
+                      "Warning: Debugger attach failed! (ptrace problem?)");
+         VG_(message)(Vg_UserMsg, "");
       }
 
       VG_(kill)(pid, VKI_SIGKILL);

@@ -1222,7 +1222,17 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
    v = get_block_payload(a, b);
    vg_assert( (((Addr)v) & (VG_MIN_MALLOC_SZB-1)) == 0 );
 
-   //zzVALGRIND_MALLOCLIKE_BLOCK(v, req_pszB, 0, False);
+   /* VALGRIND_MALLOCLIKE_BLOCK(v, req_pszB, 0, False); */
+
+   /* For debugging/testing purposes, fill the newly allocated area
+      with a definite value in an attempt to shake out any
+      uninitialised uses of the data (by V core / V tools, not by the
+      client).  Testing on 25 Nov 07 with the values 0x00, 0xFF, 0x55,
+      0xAA showed no differences in the regression tests on
+      amd64-linux.  Note, is disabled by default. */
+   if (0 && aid != VG_AR_CLIENT)
+      VG_(memset)(v, 0xAA, (SizeT)req_pszB);
+
    return v;
 }
 

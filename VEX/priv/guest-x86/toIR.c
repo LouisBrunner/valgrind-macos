@@ -12308,6 +12308,12 @@ DisResult disInstr_X86_WRK (
                                      guest_EIP_bbstart+delta, "rep stos" );
          break;
 
+      case 0xAC: sz = 1;   /* REP LODS<sz> */
+      case 0xAD:
+         dis_REP_op ( X86CondAlways, dis_LODS, sz, eip_orig, 
+                                     guest_EIP_bbstart+delta, "rep lods" );
+         break;
+
       case 0xAE: sz = 1;   /* REPE SCAS<sz> */
       case 0xAF: 
          dis_REP_op ( X86CondZ, dis_SCAS, sz, eip_orig, 

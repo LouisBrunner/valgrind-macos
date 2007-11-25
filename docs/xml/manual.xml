@@ -22,6 +22,8 @@
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="manual-core.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="manual-core-adv.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../memcheck/docs/mc-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../cachegrind/docs/cg-manual.xml" parse="xml"  

@@ -1,2 +1,0 @@
-prog: readshared
-vgopts: --optimise=no

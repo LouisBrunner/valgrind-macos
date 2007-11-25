@@ -1,1 +1,1 @@
-EXTRA_DIST = drd-manual.xml
+#EXTRA_DIST = drd-manual.xml

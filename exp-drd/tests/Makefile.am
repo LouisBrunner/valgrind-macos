@@ -10,14 +10,10 @@ noinst_SCRIPTS =                                          \
         filter_fdleak filter_none_discards filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS)                                  \
-	abort.vgtest                                            \
-	abort.stdout.exp abort.stderr.exp                       \
 	fp_race.vgtest                                          \
 	fp_race.stdout.exp fp_race.stderr.exp                   \
 	fp_race2.vgtest                                         \
 	fp_race2.stdout.exp fp_race2.stderr.exp                 \
-	new_delete.vgtest                                       \
-	new_delete.stdout.exp new_delete.stderr.exp             \
 	pth_broadcast.vgtest                                    \
 	pth_broadcast.stdout.exp pth_broadcast.stderr.exp       \
 	pth_cond_race.vgtest                                    \
@@ -31,9 +27,7 @@ EXTRA_DIST = $(noinst_SCRIPTS)                                  \
 	pth_detached2.vgtest                                    \
 	pth_detached2.stdout.exp pth_detached2.stderr.exp       \
 	sigalrm.vgtest                                          \
-	sigalrm.stdout.exp sigalrm.stderr.exp                   \
-	std-string.vgtest                                       \
-	std-string.stdout.exp std-string.stderr.exp
+	sigalrm.stdout.exp sigalrm.stderr.exp
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g $(AM_FLAG_M3264_PRI)
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include

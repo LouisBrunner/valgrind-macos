@@ -95,10 +95,10 @@ void before_test ( XMMRegs* regs, Mem* mem ) {
 void after_test ( char* who, XMMRegs* regs, Mem* mem ) {
    XMMRegs rdiff;
    Mem     mdiff;
+   char s[128];
    setup_regs_mem( &rdiff, &mdiff );
    xor_XMMRegs( regs, &rdiff );
    xor_Mem( mem, &mdiff );
-   char s[128];
    sprintf(s, "after \"%s\"", who );
    pp_Mem( s, &mdiff );
    pp_XMMRegs( s, &rdiff );

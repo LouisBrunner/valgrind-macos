@@ -2,7 +2,7 @@
 
 static void func1(char *pointer)
 {
-  int dummy = 0;
+  __attribute__((unused)) int dummy = 0;
   return;
 }              /* Line 7 x86-64*/
 

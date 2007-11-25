@@ -29,9 +29,8 @@
 
 int main(int argc, char * argv[])
 {
-	register unsigned long a, b, c;
+	register unsigned long a, b;
 	int i;
-	int sc;
 	if (argc == 2)
 		a = atol(argv[1]);
 	else

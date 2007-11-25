@@ -54,16 +54,16 @@ Other tools you may find useful are:</para>
   <listitem>
     <para>Cachegrind: a profiling tool which produces detailed data on
     cache (miss) and branch (misprediction) events.  Statistics are
-    gathered for the entire program, for each function, for each line
-    of code, and even for each instruction, if you need that level of
-    detail.</para>
+    gathered for the entire program, for each function, and for each
+    line of code, if you need that level of detail.</para>
   </listitem>
   <listitem>
-    <para>Callgrind: a heavyweight profiling tool similar to
-    Cachegrind, but which also shows cost relationships across
-    function calls.  Information gathered by Callgrind can be viewed
-    using the KCachegrind GUI.  KCachegrind is not part of the
-    Valgrind suite - it is part of the KDE Desktop Environment.</para>
+    <para>Callgrind: a profiling tool that shows cost relationships
+    across function calls, optionally with cache simulation similar to
+    Cachegrind.  Information gathered by Callgrind can be viewed
+    either with an included command line tool, or by using the
+    KCachegrind GUI.  KCachegrind is not part of the Valgrind suite 
+    -- it is part of the KDE Desktop Environment.</para>
   </listitem>
   <listitem>
     <para>Massif: a space profiling tool.  It allows you to explore
@@ -84,8 +84,8 @@ Other tools you may find useful are:</para>
 </itemizedlist>
 
 <para>The rest of this guide discusses only the Memcheck tool.  For
-full documentation on the other tools, see the Valgrind User
-Manual.</para>
+full documentation on the other tools, and for Memcheck, see the
+Valgrind User Manual.</para>
 
 <para>What follows is the minimum information you need to start
 detecting memory errors in your program with Memcheck.  Note that this

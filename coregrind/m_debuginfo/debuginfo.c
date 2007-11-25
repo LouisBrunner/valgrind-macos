@@ -1263,36 +1263,43 @@ ULong VG_(seginfo_sym_offset)(const SegInfo* si)
 
 VgSectKind VG_(seginfo_sect_kind)(Addr a)
 {
-   SegInfo* si;
+   SegInfo*   si;
    VgSectKind ret = Vg_SectUnknown;
 
-   for(si = segInfo_list; si != NULL; si = si->next) {
-      if (a >= si->text_start_avma 
-          && a < si->text_start_avma + si->text_size) {
-
-	 if (0)
-	    VG_(printf)(
-               "addr=%p si=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",
-               a, si, si->filename, 
-               si->got_start_avma,  si->got_size,
-               si->plt_start_avma,  si->plt_size,
-               si->data_start_avma, si->data_size,
-               si->bss_start_avma,  si->bss_size);
-
-	 ret = Vg_SectText;
-
-	 if (a >= si->data_start_avma && a < si->data_start_avma + si->data_size)
-	    ret = Vg_SectData;
-	 else 
-         if (a >= si->bss_start_avma && a < si->bss_start_avma + si->bss_size)
-	    ret = Vg_SectBSS;
-	 else 
-         if (a >= si->plt_start_avma && a < si->plt_start_avma + si->plt_size)
-	    ret = Vg_SectPLT;
-	 else 
-         if (a >= si->got_start_avma && a < si->got_start_avma + si->got_size)
-	    ret = Vg_SectGOT;
+   for (si = segInfo_list; si != NULL; si = si->next) {
+      if (a >= si->text_start_avma && a < si->text_start_avma + si->text_size) {
+         ret = Vg_SectText;
+         break;
       }
+      if (a >= si->data_start_avma && a < si->data_start_avma + si->data_size) {
+         ret = Vg_SectData;
+         break;
+      }
+      if (a >= si->bss_start_avma && a < si->bss_start_avma + si->bss_size) {
+         ret = Vg_SectBSS;
+         break;
+      }
+      if (a >= si->plt_start_avma && a < si->plt_start_avma + si->plt_size) {
+         ret = Vg_SectPLT;
+         break;
+      }
+      if (a >= si->got_start_avma && a < si->got_start_avma + si->got_size) {
+         ret = Vg_SectGOT;
+         break;
+      }
+   }
+
+   if (si != NULL)
+      vg_assert(ret != VgSectUnknown);
+
+   if (0 && si) {
+      VG_(printf)(
+         "addr=%p si=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",
+         a, si, si->filename, 
+         si->got_start_avma,  si->got_size,
+         si->plt_start_avma,  si->plt_size,
+         si->data_start_avma, si->data_size,
+         si->bss_start_avma,  si->bss_size);
    }
 
    return ret;

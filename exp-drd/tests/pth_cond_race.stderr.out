@@ -1,0 +1,11 @@
+exp-drd, a data race detector.
+
+Thread 2:
+Race condition: condition variable 0x........ has been signalled but the associated mutex 0x........ is not locked by the signalling thread
+   at 0x........: pthread_cond_signal@* (drd_preloaded.c:?)
+   by 0x........: thread_func(void*) (pth_cond_race.cpp:?)
+   by 0x........: vg_thread_wrapper (drd_preloaded.c:?)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

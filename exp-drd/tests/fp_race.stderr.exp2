@@ -1,0 +1,18 @@
+
+Conflicting load by main at 0x........ size 8
+   at 0x........: main (fp_race.cpp:?)
+Allocation context: unknown
+Other segment start (thread_func)
+   (thread finished, call stack no longer available)
+Other segment end (thread_func)
+   (thread finished, call stack no longer available)
+
+Conflicting store by main at 0x........ size 8
+   at 0x........: main (fp_race.cpp:?)
+Allocation context: unknown
+Other segment start (thread_func)
+   (thread finished, call stack no longer available)
+Other segment end (thread_func)
+   (thread finished, call stack no longer available)
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

@@ -1,0 +1,57 @@
+Last updated February 22, 2006
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Data-race detection algorithm
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Implement segment merging, such that the number of segments per thread
+  remains limited even when there is no synchronization between threads.
+- Find out why a race is reported on std::string::string(std::string const&)
+  (stc test case 16).
+- Make sure that drd supports more than 256 mutexes.
+- Performance testing and tuning.
+- pthread rwlock state tracking and support.
+- pthread barrier state tracking and support.
+- mutexes: support for pthread_mutex_timedlock() (recently added to the POSIX
+  spec, and present in glibc). See also
+  http://www.opengroup.org/onlinepubs/009695399/functions/pthread_mutex_timedlock.html
+- testing on PPC and AIX (current implementation is only tested on X86 and
+  AMD64).
+- Change s_threadinfo[] from an array into an OSet or VgHashTable, in order to
+  make ThreadId <> DrdThreadId <> pthread_t conversions faster.
+- Write a configure test that figures out sizeof(pthread_mutex_t) etc.
+- [AMD64] Find out why removing 'write(1, "", 0)' in drd_preloaded.c triggers
+  a crash on AMD64. Is this a drd or a VEX bug ?
+- Reintroduce the const keyword in the function declarations of the OSet
+  implementation in the core where appropriate.
+
+Testing
+~~~~~~~
+- testing with more complex multithreaded test programs.
+- test drd's performance with the SPLASH-2 software, e.g. fft
+  (http://www-flash.stanford.edu/apps/SPLASH/).
+- Add helgrind's unit tests to drd's unit test set by adding soft links
+  under drd/tests to the respective helgrind unit tests.
+
+
+Documentation
+~~~~~~~~~~~~~
+- Document the code.
+- Document how to use the tool.
+
+
+Known bugs
+~~~~~~~~~~
+- Gets killed by the OOM handler for some applications, e.g. knode and
+  OpenOffice.
+- [AMD64] Reports "Allocation context: unknown" for BSS symbols on AMD64
+  (works fine on X86). This is a bug in Valgrind's debug info reader
+  -- VG_(find_seginfo)() returns NULL for BSS symbols on AMD64. Not yet in
+  the KDE bug tracking system.
+- False positives are reported when a signal is sent via pthread_kill() from
+  one thread to another (bug 152728).
+- Crashes (cause not known): VALGRIND_LIB=$PWD/.in_place coregrind/valgrind --tool=exp-drd --trace-mem=yes /bin/ls
+
+Known performance issues:
+- According to cachegrind, VG_(OSet_Next)() is taking up most CPU cycles.
+  Probably due to the bitmap implementation.

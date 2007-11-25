@@ -1,0 +1,22 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic |
+
+# Remove "drd, ..." line and the following copyright line.
+# Remove line numbers referring to drd's source code.
+# Remove libpthread's version number.
+# Remove line numbers from stack traces.
+sed \
+-e "/^drd, a data race detector\.$/d" \
+-e "/^NOTE: This is an Experimental-Class Valgrind Tool.$/d"  \
+-e "/^Copyright (C) 2006-200., and GNU GPL'd, by Bart Van Assche.$/d" \
+-e "s/in [^ ]*libpthread-[0-9]*\.[0-9]*\.so/in libpthread-?.?.so/" \
+-e "s/in [^ ]*libpthread-[0-9]*\.[0-9]*\.[0-9]*\.so/in libpthread-?.?.so/" \
+-e "s/ (\([a-zA-Z_]*\.c\):[0-9]*)/ (\1:?)/" \
+-e "s/ (\([a-zA-Z_]*\.cpp\):[0-9]*)/ (\1:?)/" |
+
+# Anonymise addresses
+$dir/../../tests/filter_addresses
+

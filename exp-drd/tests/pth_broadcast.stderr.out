@@ -1,0 +1,102 @@
+exp-drd, a data race detector.
+
+Thread 9:
+Conflicting load by thread 9 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 8)
+   (thread finished, call stack no longer available)
+Other segment end (thread 8)
+   (thread finished, call stack no longer available)
+
+Thread 10:
+Conflicting load by thread 10 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 8)
+   (thread finished, call stack no longer available)
+Other segment end (thread 8)
+   (thread finished, call stack no longer available)
+
+Thread 11:
+Conflicting load by thread 11 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 8)
+   (thread finished, call stack no longer available)
+Other segment end (thread 8)
+   (thread finished, call stack no longer available)
+
+Thread 2:
+Conflicting load by thread 2 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 8)
+   (thread finished, call stack no longer available)
+Other segment end (thread 8)
+   (thread finished, call stack no longer available)
+
+Thread 3:
+Conflicting load by thread 3 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 8)
+   (thread finished, call stack no longer available)
+Other segment end (thread 8)
+   (thread finished, call stack no longer available)
+
+Thread 5:
+Conflicting load by thread 5 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 8)
+   (thread finished, call stack no longer available)
+Other segment end (thread 8)
+   (thread finished, call stack no longer available)
+
+Thread 4:
+Conflicting load by thread 4 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 8)
+   (thread finished, call stack no longer available)
+Other segment end (thread 8)
+   (thread finished, call stack no longer available)
+
+Thread 6:
+Conflicting load by thread 6 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 8)
+   (thread finished, call stack no longer available)
+Other segment end (thread 8)
+   (thread finished, call stack no longer available)
+
+Thread 7:
+Conflicting load by thread 7 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 8)
+   (thread finished, call stack no longer available)
+Other segment end (thread 8)
+   (thread finished, call stack no longer available)
+
+ERROR SUMMARY: 9 errors from 9 contexts (suppressed: 0 from 0)

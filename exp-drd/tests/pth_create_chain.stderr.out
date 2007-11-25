@@ -1,0 +1,59 @@
+exp-drd, a data race detector.
+
+Thread 2:
+Conflicting load by thread 2 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 3)
+   (thread finished, call stack no longer available)
+Other segment end (thread 3)
+   (thread finished, call stack no longer available)
+
+Thread 4:
+Conflicting load by thread 4 at 0x........ size 8
+   at 0x........: (within /home/sewardj/VgTRUNK/trunk/exp-drd/vgpreload_exp-drd-amd64-linux.so)
+   by 0x........: thread_func(void*) (pth_create_chain.cpp:?)
+   by 0x........: vg_thread_wrapper (drd_preloaded.c:?)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /home/sewardj/VgTRUNK/trunk/exp-drd/vgpreload_exp-drd-amd64-linux.so, NONE:Text
+Other segment start (thread 2)
+   (thread finished, call stack no longer available)
+Other segment end (thread 2)
+   (thread finished, call stack no longer available)
+
+Conflicting load by thread 4 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 3)
+   (thread finished, call stack no longer available)
+Other segment end (thread 3)
+   (thread finished, call stack no longer available)
+
+Thread 5:
+Conflicting load by thread 5 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 3)
+   (thread finished, call stack no longer available)
+Other segment end (thread 3)
+   (thread finished, call stack no longer available)
+
+Thread 2:
+Conflicting load by thread 2 at 0x........ size 8
+   at 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread (in libpthread-?.?.so)
+   by 0x........: clone (in /...libc...)
+Allocation context: /lib64/libpthread-2.5.so, libpthread.so.0:Text
+Other segment start (thread 3)
+   (thread finished, call stack no longer available)
+Other segment end (thread 3)
+   (thread finished, call stack no longer available)
+
+ERROR SUMMARY: 5 errors from 5 contexts (suppressed: 0 from 0)

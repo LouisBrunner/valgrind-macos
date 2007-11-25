@@ -501,6 +501,24 @@ void* VG_(memcpy) ( void *dest, const void *src, SizeT sz )
    return dest;
 }
 
+void* VG_(memmove)(void *dest, const void *src, SizeT sz)
+{
+   SizeT i;
+   if (sz == 0)
+      return dest;
+   if (dest < src) {
+      for (i = 0; i < sz; i++) {
+         ((UChar*)dest)[i] = ((UChar*)src)[i];
+      }
+   }
+   else if (dest > src) {
+      for (i = sz - 1; i >= 0; i--) {
+         ((UChar*)dest)[i] = ((UChar*)src)[i];
+      }
+   }
+   return dest;
+}
+
 void* VG_(memset) ( void *dest, Int c, SizeT sz )
 {
    Char *d = (Char *)dest;

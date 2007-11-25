@@ -100,6 +100,9 @@ extern void VG_(thread_stack_reset_iter) ( void );
 extern Bool VG_(thread_stack_next)       ( ThreadId* tid, Addr* stack_min,
                                                           Addr* stack_max );
 
+// Returns .client_stack_highest_word for the given thread
+extern Addr VG_(thread_get_stack_max) ( ThreadId tid );
+
 // Given a pointer to a function as obtained by "& functionname" in C,
 // produce a pointer to the actual entry point for the function.  For
 // most platforms it's the identity function.  Unfortunately, on

@@ -136,6 +136,9 @@ typedef
 
 extern VgSectKind VG_(seginfo_sect_kind)(Addr);
 
+extern Char* VG_(seginfo_sect_kind_name)(Addr a, Char* buf, UInt n_buf);
+
+
 #endif   // __PUB_TOOL_DEBUGINFO_H
 
 /*--------------------------------------------------------------------*/

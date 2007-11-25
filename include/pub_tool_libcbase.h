@@ -104,6 +104,7 @@ extern Bool  VG_(string_match)   ( const Char* pat, const Char* str );
    ------------------------------------------------------------------ */
 
 extern void* VG_(memcpy) ( void *d, const void *s, SizeT sz );
+extern void* VG_(memmove)( void *d, const void *s, SizeT sz );
 extern void* VG_(memset) ( void *s, Int c, SizeT sz );
 extern Int   VG_(memcmp) ( const void* s1, const void* s2, SizeT n );
 

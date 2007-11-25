@@ -1290,7 +1290,7 @@ VgSectKind VG_(seginfo_sect_kind)(Addr a)
    }
 
    if (si != NULL)
-      vg_assert(ret != VgSectUnknown);
+      vg_assert(ret != Vg_SectUnknown);
 
    if (0 && si) {
       VG_(printf)(
@@ -1303,6 +1303,33 @@ VgSectKind VG_(seginfo_sect_kind)(Addr a)
    }
 
    return ret;
+}
+
+Char* VG_(seginfo_sect_kind_name)(Addr a, Char* buf, UInt n_buf)
+{
+   switch (VG_(seginfo_sect_kind)(a)) {
+      case Vg_SectUnknown:
+         VG_(snprintf)(buf, n_buf, "Unknown");
+         break;
+      case Vg_SectText:
+         VG_(snprintf)(buf, n_buf, "Text");
+         break;
+      case Vg_SectData:
+         VG_(snprintf)(buf, n_buf, "Data");
+         break;
+      case Vg_SectBSS:
+         VG_(snprintf)(buf, n_buf, "BSS");
+         break;
+      case Vg_SectGOT:
+         VG_(snprintf)(buf, n_buf, "GOT");
+         break;
+      case Vg_SectPLT:
+         VG_(snprintf)(buf, n_buf, "PLT");
+         break;
+      default:
+         vg_assert(0);
+   }
+   return buf;
 }
 
 Int VG_(seginfo_syms_howmany) ( const SegInfo *si )

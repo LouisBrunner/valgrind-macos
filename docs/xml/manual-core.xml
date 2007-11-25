@@ -1501,7 +1501,7 @@ following constraints:</para>
    using malloc/new/free/delete, it should still work, but Memcheck's
    error checking won't be so effective.  If you describe your program's
    memory management scheme using "client requests" 
-   (see <xref linkend="manual-core.clientreq"/>), Memcheck can do
+   (see <xref linkend="manual-core-adv.clientreq"/>), Memcheck can do
    better.  Nevertheless, using malloc/new and free/delete is still the
    best approach.</para>
   </listitem>

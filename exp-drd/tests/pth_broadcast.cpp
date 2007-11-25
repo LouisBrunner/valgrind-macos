@@ -9,7 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <pthread.h>
-
+#include <unistd.h>
 
 // Class definitions.
 

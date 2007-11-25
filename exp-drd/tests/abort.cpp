@@ -8,7 +8,7 @@
 #include <fstream>
 #include <cassert>
 #include <pthread.h>
-
+#include <stdio.h>.
 static pthread_mutex_t s_mutex;
 
 void* thread_func(void*)

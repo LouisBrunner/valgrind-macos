@@ -335,6 +335,7 @@ DEF(track_start_client_code,     ThreadId, ULong)
 DEF(track_stop_client_code,      ThreadId, ULong)
 
 DEF(track_pre_thread_ll_create,  ThreadId, ThreadId)
+DEF(track_pre_thread_first_insn, ThreadId)
 DEF(track_pre_thread_ll_exit,    ThreadId)
 
 DEF(track_pre_deliver_signal,    ThreadId, Int sigNo, Bool)

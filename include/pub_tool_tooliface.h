@@ -588,9 +588,21 @@ void VG_(track_stop_client_code)(
    low-level thread create/quit event.  In general a few hundred
    instructions; hence a few hundred(ish) memory references could get
    misclassified each time.
+
+   pre_thread_first_insn: is called when the thread is all set up and
+   ready to go (stack in place, etc) but has not executed its first
+   instruction yet.  Gives threading tools a chance to ask questions
+   about the thread (eg, what is its initial client stack pointer)
+   that are not easily answered at pre_thread_ll_create time.
+
+   For a given thread, the call sequence is:
+      ll_create (in the parent's context)
+      first_insn (in the child's context)
+      ll_exit (in the child's context)
 */
-void VG_(track_pre_thread_ll_create)(void(*f)(ThreadId tid, ThreadId child));
-void VG_(track_pre_thread_ll_exit)  (void(*f)(ThreadId tid));
+void VG_(track_pre_thread_ll_create) (void(*f)(ThreadId tid, ThreadId child));
+void VG_(track_pre_thread_first_insn)(void(*f)(ThreadId tid));
+void VG_(track_pre_thread_ll_exit)   (void(*f)(ThreadId tid));
 
 
 /* Signal events (not exhaustive)

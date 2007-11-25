@@ -209,6 +209,7 @@ typedef struct {
    void (*track_stop_client_code) (ThreadId, ULong);
 
    void (*track_pre_thread_ll_create)(ThreadId, ThreadId);
+   void (*track_pre_thread_first_insn)(ThreadId);
    void (*track_pre_thread_ll_exit)  (ThreadId);
 
    void (*track_pre_deliver_signal) (ThreadId, Int sigNo, Bool);

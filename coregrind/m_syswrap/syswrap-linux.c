@@ -78,6 +78,8 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
       VG_(printf)("thread tid %d started: stack = %p\n",
 		  tid, &tid);
 
+   VG_TRACK(pre_thread_first_insn, tid);
+
    tst->os_state.lwpid = VG_(gettid)();
    tst->os_state.threadgroup = VG_(getpid)();
 

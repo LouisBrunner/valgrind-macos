@@ -4,12 +4,19 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <features.h>
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
+#include <string.h>
 #include "../drd_clientreq.h"
 #include <asm/unistd.h>
 
+#if !defined(__GLIBC_PREREQ)
+# error "This program requires __GLIBC_PREREQ (in /usr/include/features.h)"
+#endif
+
+#if __GLIBC_PREREQ(2,3)
 
 #define VALGRIND_START_NEW_SEGMENT    \
 {                                                                       \
@@ -17,7 +24,6 @@
   VALGRIND_DO_CLIENT_REQUEST(res, 0, VG_USERREQ__DRD_START_NEW_SEGMENT, \
                              pthread_self(), 0, 0,0,0);                 \
 }
-
 
 static bool s_debug = false;
 
@@ -95,3 +101,13 @@ int main(int argc, char** )
 
   return 0;
 }
+
+#else /* !__GLIBC_PREREQ(2,3) */
+
+int main(int argc, char** )
+{
+  std::cout << "program does not work on glibc < 2.3" << std::endl;
+  return 0;
+}
+
+#endif /* __GLIBC_PREREQ(2,3) */

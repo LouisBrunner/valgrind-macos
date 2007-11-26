@@ -35,7 +35,6 @@
 // - do a graph-drawing test
 // - Get Josef to update the Callgrind --callgrind-out-file option.
 // - Use '_' instead of '.' for detailed/peak bars?
-// - ms_print -- XXX on line 535
 //
 // Todo -- nice, but less critical:
 // - make file format more generic.  Obstacles:

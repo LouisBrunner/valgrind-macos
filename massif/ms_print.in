@@ -532,12 +532,6 @@ sub read_input_file()
     if (0 == $end_time          ) { $end_time           = 1; }
     my $K = $peak_mem_total_szB / $graph_y;
 
-# XXX: remove this?  see 10 lines down...
-    # If we leave end_time as is, the final snapshot will spill over past
-    # the last column.  So we add a small epsilon to it to prevent this from
-    # happening.
-    $end_time += 0.001;
-
     for (my $i = 0; $i < $n_snapshots; $i++) {
  
         # Work out which column this snapshot belongs to.  

@@ -56,7 +56,7 @@
       Long n = VG_(strtoll10)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
       (qq_var) = n; \
       /* Check for non-numeralness, or overflow */ \
-      if ('\0' != s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
+      if ('\0' == s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
    }
 
 /* Same as VG_NUM_CLO but does not coerce the result value to 32 bits
@@ -67,7 +67,7 @@
       Long n = VG_(strtoll10)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
       (qq_var) = n; \
       /* Check for non-numeralness */ \
-      if ('\0' != s[0]) VG_(err_bad_option)(qq_arg); \
+      if ('\0' == s[0]) VG_(err_bad_option)(qq_arg); \
    }
 
 /* Bounded integer arg */
@@ -77,7 +77,7 @@
       Long n = VG_(strtoll10)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
       (qq_var) = n; \
       /* Check for non-numeralness, or overflow */ \
-      if ('\0' != s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
+      if ('\0' == s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
       if ((qq_var) < (qq_lo)) (qq_var) = (qq_lo); \
       if ((qq_var) > (qq_hi)) (qq_var) = (qq_hi); \
    }
@@ -89,7 +89,7 @@
       double n = VG_(strtod)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
       (qq_var) = n; \
       /* Check for non-numeralness */ \
-      if ('\0' != s[0]) VG_(err_bad_option)(qq_arg); \
+      if ('\0' == s[0]) VG_(err_bad_option)(qq_arg); \
    }
 
 /* Bool arg whose value is denoted by the exact presence of the given string. */

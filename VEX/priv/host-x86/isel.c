@@ -3555,7 +3555,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- STORE --------- */
    case Ist_Store: {
-      X86AMode* am;
       IRType    tya = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);
       IRType    tyd = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
       IREndness end = stmt->Ist.Store.end;
@@ -3563,24 +3562,27 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (tya != Ity_I32 || end != Iend_LE) 
          goto stmt_fail;
 
-      am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
       if (tyd == Ity_I32) {
+         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          X86RI* ri = iselIntExpr_RI(env, stmt->Ist.Store.data);
          addInstr(env, X86Instr_Alu32M(Xalu_MOV,ri,am));
          return;
       }
       if (tyd == Ity_I8 || tyd == Ity_I16) {
+         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          HReg r = iselIntExpr_R(env, stmt->Ist.Store.data);
          addInstr(env, X86Instr_Store( toUChar(tyd==Ity_I8 ? 1 : 2),
                                        r,am ));
          return;
       }
       if (tyd == Ity_F64) {
+         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          HReg r = iselDblExpr(env, stmt->Ist.Store.data);
          addInstr(env, X86Instr_FpLdSt(False/*store*/, 8, r, am));
          return;
       }
       if (tyd == Ity_F32) {
+         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          HReg r = iselFltExpr(env, stmt->Ist.Store.data);
          addInstr(env, X86Instr_FpLdSt(False/*store*/, 4, r, am));
          return;
@@ -3596,6 +3598,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
       }
       if (tyd == Ity_V128) {
+         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          HReg r = iselVecExpr(env, stmt->Ist.Store.data);
          addInstr(env, X86Instr_SseLdSt(False/*store*/, r, am));
          return;

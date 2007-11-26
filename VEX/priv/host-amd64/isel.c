@@ -3537,7 +3537,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- STORE --------- */
    case Ist_Store: {
-      AMD64AMode* am;
       IRType    tya = typeOfIRExpr(env->type_env, stmt->Ist.Store.addr);
       IRType    tyd = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
       IREndness end = stmt->Ist.Store.end;
@@ -3545,13 +3544,14 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (tya != Ity_I64 || end != Iend_LE) 
          goto stmt_fail;
 
-      am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
       if (tyd == Ity_I64) {
+         AMD64AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          AMD64RI* ri = iselIntExpr_RI(env, stmt->Ist.Store.data);
          addInstr(env, AMD64Instr_Alu64M(Aalu_MOV,ri,am));
          return;
       }
       if (tyd == Ity_I8 || tyd == Ity_I16 || tyd == Ity_I32) {
+         AMD64AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          HReg r = iselIntExpr_R(env, stmt->Ist.Store.data);
          addInstr(env, AMD64Instr_Store(
                           toUChar(tyd==Ity_I8 ? 1 : (tyd==Ity_I16 ? 2 : 4)),
@@ -3559,26 +3559,19 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
       }
       if (tyd == Ity_F64) {
+         AMD64AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          HReg r = iselDblExpr(env, stmt->Ist.Store.data);
          addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, r, am));
          return;
       }
       if (tyd == Ity_F32) {
+         AMD64AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          HReg r = iselFltExpr(env, stmt->Ist.Store.data);
          addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 4, r, am));
          return;
       }
-//..       if (tyd == Ity_I64) {
-//..          HReg vHi, vLo, rA;
-//..          iselInt64Expr(&vHi, &vLo, env, stmt->Ist.Store.data);
-//..          rA = iselIntExpr_R(env, stmt->Ist.Store.addr);
-//..          addInstr(env, X86Instr_Alu32M(
-//..                           Xalu_MOV, X86RI_Reg(vLo), X86AMode_IR(0, rA)));
-//..          addInstr(env, X86Instr_Alu32M(
-//..                           Xalu_MOV, X86RI_Reg(vHi), X86AMode_IR(4, rA)));
-//..          return;
-//..       }
       if (tyd == Ity_V128) {
+         AMD64AMode* am = iselIntExpr_AMode(env, stmt->Ist.Store.addr);
          HReg r = iselVecExpr(env, stmt->Ist.Store.data);
          addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 16, r, am));
          return;

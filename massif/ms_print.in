@@ -275,6 +275,27 @@ sub max_label_2($$)
     else                       { return sprintf("%5.1f", $szB_scaled); }
 }
 
+# Work out the units for the max value, measured in instructions.
+sub i_max_label($)
+{
+    my ($nI) = @_;
+
+    # We repeat until the number is less than 1000.
+    my $nI_scaled = $nI;
+    my $unit = "i";
+    # Nb: 'k' is the "kilo" (1000) prefix.
+    if ($nI_scaled >= 1000) { $unit = "ki"; $nI_scaled /= 1024; }
+    if ($nI_scaled >= 1000) { $unit = "Mi"; $nI_scaled /= 1024; }
+    if ($nI_scaled >= 1000) { $unit = "Gi"; $nI_scaled /= 1024; }
+    if ($nI_scaled >= 1000) { $unit = "Ti"; $nI_scaled /= 1024; }
+    if ($nI_scaled >= 1000) { $unit = "Pi"; $nI_scaled /= 1024; }
+    if ($nI_scaled >= 1000) { $unit = "Ei"; $nI_scaled /= 1024; }
+    if ($nI_scaled >= 1000) { $unit = "Zi"; $nI_scaled /= 1024; }
+    if ($nI_scaled >= 1000) { $unit = "Yi"; $nI_scaled /= 1024; }
+
+    return (max_label_2($nI, $nI_scaled), $unit);
+}
+
 # Work out the units for the max value, measured in bytes.
 sub B_max_label($)
 {
@@ -284,6 +305,9 @@ sub B_max_label($)
     # each scaling.
     my $szB_scaled = $szB;
     my $unit = "B";
+    # Nb: 'K' or 'k' are acceptable as the "binary kilo" (1024) prefix.
+    # (Strictly speaking, should use "KiB" (kibibyte), "MiB" (mebibyte), etc,
+    # but they're not in common use.)
     if ($szB_scaled >= 1000) { $unit = "KB"; $szB_scaled /= 1024; }
     if ($szB_scaled >= 1000) { $unit = "MB"; $szB_scaled /= 1024; }
     if ($szB_scaled >= 1000) { $unit = "GB"; $szB_scaled /= 1024; }
@@ -508,6 +532,7 @@ sub read_input_file()
     if (0 == $end_time          ) { $end_time           = 1; }
     my $K = $peak_mem_total_szB / $graph_y;
 
+# XXX: remove this?  see 10 lines down...
     # If we leave end_time as is, the final snapshot will spill over past
     # the last column.  So we add a small epsilon to it to prevent this from
     # happening.
@@ -533,9 +558,9 @@ sub read_input_file()
         #   detailed column. 
         my $should_draw_column = 
             (($i == $peak_num) or                            
-             ($is_detaileds[$i] and $graph[$x][0] ne $peak_full_char) or   
-             ($graph[$x][0] ne $peak_full_char and           
-              $graph[$x][0] ne $detailed_full_char));        
+             ($is_detaileds[$i] and $graph[$x][1] ne $peak_full_char) or   
+             ($graph[$x][1] ne $peak_full_char and           
+              $graph[$x][1] ne $detailed_full_char));        
 
         if ($should_draw_column) {
             # If it's detailed, mark the X-axis.  Also choose the full-slot
@@ -543,10 +568,8 @@ sub read_input_file()
             my $full_char;
             if ($i == $peak_num)  {                          
                 $full_char = $peak_full_char;                
-                $graph[$x][0] = $full_char;                  
             } elsif ($is_detaileds[$i])  {    
                 $full_char = $detailed_full_char;
-                $graph[$x][0] = $full_char;                  
             } else {
                 $full_char = $normal_full_char;
             }
@@ -566,9 +589,11 @@ sub read_input_file()
     # Print graph[][].
     #-------------------------------------------------------------------------
     my ($y_label, $y_unit) = B_max_label($peak_mem_total_szB);
-    my ($x_label, $x_unit) = ( $time_unit eq "ms" 
-                             ? t_max_label($end_time) 
-                             : B_max_label($end_time) );
+    my ($x_label, $x_unit);
+    if    ($time_unit eq "i") { ($x_label, $x_unit) = i_max_label($end_time) }
+    elsif ($time_unit eq "s") { ($x_label, $x_unit) = t_max_label($end_time) }
+    elsif ($time_unit eq "B") { ($x_label, $x_unit) = B_max_label($end_time) }
+    else                      { die "bad time_unit: $time_unit\n"; }
 
     printf("    %2s\n", $y_unit);
     for ($y = $graph_y; $y >= 0; $y--) {
@@ -612,7 +637,7 @@ sub read_input_file()
             }
         }
     }
-    print("]\n");
+    print("]\n\n");
 
     #-------------------------------------------------------------------------
     # Print snapshots, from $tmp_file.

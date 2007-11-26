@@ -1,0 +1,4 @@
+prog: basic
+vgopts: --stacks=no --time-unit=B --massif-out-file=massif.out --detailed-freq=1 --max-snapshots=10
+post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
+cleanup: rm massif.out

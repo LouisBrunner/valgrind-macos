@@ -31,13 +31,11 @@
 // XXX:
 //---------------------------------------------------------------------------
 // Todo -- critical for release:
-// - write documentation
 // - address/close all the bug reports below (after writing docs)
 // - do a graph-drawing test
-// - write a good basic test that shows how the tool works, suitable for
-//   documentation
-// - In cg_annotate, remove the --<pid> option.
 // - Get Josef to update the Callgrind --callgrind-out-file option.
+// - Use '_' instead of '.' for detailed/peak bars?
+// - ms_print -- XXX on line 535
 //
 // Todo -- nice, but less critical:
 // - make file format more generic.  Obstacles:
@@ -57,6 +55,10 @@
 //   identified?  [hmm, could make getting the name of alloc-fns more
 //   difficult] [could dump full names to file, truncate in ms_print]
 // - make --show-below-main=no work
+// - Options like --alloc-fn='operator new(unsigned, std::nothrow_t const&amp;)'
+//   don't work in a .valgrindrc file or in $VALGRIND_OPTS. 
+//   m_commandline.c:add_args_from_string() needs to respect single quotes.
+//   
 //
 // Performance:
 // - To run the benchmarks:
@@ -80,8 +82,6 @@
 //   VG_(bsearch) function.  
 //
 // Todo -- low priority:
-// - Consider 'instructions executed' as a time unit -- more regular than
-//   ms, less artificial than B (bug #121629).
 // - In each XPt, record both bytes and the number of allocations, and
 //   possibly the global number of allocations.
 // - (Artur Wisz) add a feature to Massif to ignore any heap blocks larger
@@ -297,6 +297,10 @@ static UInt n_XCon_redos           = 0;
 //--- Globals                                              ---//
 //------------------------------------------------------------//
 
+// Number of guest instructions executed so far.  Only used with
+// --time-unit=i.
+static Long guest_instrs_executed = 0;
+
 static SizeT heap_szB       = 0; // Live heap size
 static SizeT heap_extra_szB = 0; // Live heap extra size -- slop + admin bytes
 static SizeT stacks_szB     = 0; // Live stacks size
@@ -377,11 +381,12 @@ static Bool is_alloc_fn(Char* fnname)
 
 #define MAX_DEPTH       200
 
-typedef enum { TimeMS, TimeB } TimeUnit;
+typedef enum { TimeI, TimeMS, TimeB } TimeUnit;
 
 static Char* TimeUnit_to_string(TimeUnit time_unit)
 {
    switch (time_unit) {
+   case TimeI:  return "i";
    case TimeMS: return "ms";
    case TimeB:  return "B";
    default:     tl_assert2(0, "TimeUnit_to_string: unrecognised TimeUnit");
@@ -398,7 +403,7 @@ static Bool   clo_stacks          = False;
 static UInt   clo_depth           = 30;
 static double clo_threshold       = 1.0;  // percentage
 static double clo_peak_inaccuracy = 1.0;  // percentage
-static UInt   clo_time_unit       = TimeMS;
+static UInt   clo_time_unit       = TimeI;
 static UInt   clo_detailed_freq   = 10;
 static UInt   clo_max_snapshots   = 100;
 static Char*  clo_massif_out_file = "massif.out.%p";
@@ -413,7 +418,6 @@ static Bool ms_process_cmd_line_option(Char* arg)
         VG_BOOL_CLO(arg, "--heap",   clo_heap)
    else VG_BOOL_CLO(arg, "--stacks", clo_stacks)
 
-   // XXX: "--heap-admin= " is accepted!
    else VG_NUM_CLO(arg, "--heap-admin", clo_heap_admin)
    else VG_NUM_CLO(arg, "--depth",      clo_depth)
 
@@ -424,6 +428,7 @@ static Bool ms_process_cmd_line_option(Char* arg)
    else VG_NUM_CLO(arg, "--detailed-freq", clo_detailed_freq)
    else VG_NUM_CLO(arg, "--max-snapshots", clo_max_snapshots)
 
+   else if (VG_CLO_STREQ(arg, "--time-unit=i"))  clo_time_unit = TimeI;
    else if (VG_CLO_STREQ(arg, "--time-unit=ms")) clo_time_unit = TimeMS;
    else if (VG_CLO_STREQ(arg, "--time-unit=B"))  clo_time_unit = TimeB;
 
@@ -446,15 +451,15 @@ static void ms_print_usage(void)
 {
    VG_(printf)(
 "    --heap=no|yes             profile heap blocks [yes]\n"
-"    --heap-admin=<number>     average admin bytes per heap block;"
+"    --heap-admin=<number>     average admin bytes per heap block;\n"
 "                               ignored if --heap=no [8]\n"
 "    --stacks=no|yes           profile stack(s) [no]\n"
 "    --depth=<number>          depth of contexts [30]\n"
 "    --alloc-fn=<name>         specify <fn> as an alloc function [empty]\n"
 "    --threshold=<m.n>         significance threshold, as a percentage [1.0]\n"
 "    --peak-inaccuracy=<m.n>   maximum peak inaccuracy, as a percentage [1.0]\n"
-"    --time-unit=ms|B          time unit, milliseconds or bytes\n"
-"                               alloc'd/dealloc'd on the heap [ms]\n"
+"    --time-unit=i|ms|B        time unit: instructions executed, milliseconds\n"
+"                              or heap bytes alloc'd/dealloc'd [i]\n"
 "    --detailed-freq=<N>       every Nth snapshot should be detailed [10]\n"
 "    --max-snapshots=<N>       maximum number of snapshots recorded [100]\n"
 "    --massif-out-file=<file>  output file name [massif.out.%%p]\n"
@@ -963,7 +968,7 @@ static void update_XCon(XPt* xpt, SSizeT space_delta)
 // limit again, we again cull and then take them even more slowly, and so
 // on.
 
-// Time is measured either in ms or bytes, depending on the --time-unit
+// Time is measured either in i or ms or bytes, depending on the --time-unit
 // option.  It's a Long because it can exceed 32-bits reasonably easily, and
 // because we need to allow negative values to represent unset times.
 typedef Long Time;
@@ -1227,7 +1232,9 @@ static UInt cull_snapshots(void)
 static Time get_time(void)
 {
    // Get current time, in whatever time unit we're using.
-   if (clo_time_unit == TimeMS) {
+   if (clo_time_unit == TimeI) {
+      return guest_instrs_executed;
+   } else if (clo_time_unit == TimeMS) {
       // Some stuff happens between the millisecond timer being initialised
       // to zero and us taking our first snapshot.  We determine that time
       // gap so we can subtract it from all subsequent times so that our
@@ -1774,9 +1781,74 @@ static Bool ms_handle_client_request ( ThreadId tid, UWord* argv, UWord* ret )
 //--- Instrumentation                                      ---//
 //------------------------------------------------------------//
 
+static void add_counter_update(IRSB* sbOut, Int n)
+{
+   #if defined(VG_BIGENDIAN)
+   # define END Iend_BE
+   #elif defined(VG_LITTLEENDIAN)
+   # define END Iend_LE
+   #else
+   # error "Unknown endianness"
+   #endif
+   // Add code to increment 'guest_instrs_executed' by 'n', like this:
+   //   WrTmp(t1, Load64(&guest_instrs_executed))
+   //   WrTmp(t2, Add64(RdTmp(t1), Const(n)))
+   //   Store(&guest_instrs_executed, t2)
+   IRTemp t1 = newIRTemp(sbOut->tyenv, Ity_I64);
+   IRTemp t2 = newIRTemp(sbOut->tyenv, Ity_I64);
+   IRExpr* counter_addr = mkIRExpr_HWord( (HWord)&guest_instrs_executed );
+
+   IRStmt* st1 = IRStmt_WrTmp(t1, IRExpr_Load(END, Ity_I64, counter_addr));
+   IRStmt* st2 =
+      IRStmt_WrTmp(t2,
+                   IRExpr_Binop(Iop_Add64, IRExpr_RdTmp(t1),
+                                           IRExpr_Const(IRConst_U64(n))));
+   IRStmt* st3 = IRStmt_Store(END, counter_addr, IRExpr_RdTmp(t2));
+
+   addStmtToIRSB( sbOut, st1 );
+   addStmtToIRSB( sbOut, st2 );
+   addStmtToIRSB( sbOut, st3 );
+}
+
+static IRSB* ms_instrument2( IRSB* sbIn )
+{
+   Int   i, n = 0;
+   IRSB* sbOut;
+
+   // We increment the instruction count in two places:
+   // - just before any Ist_Exit statements;
+   // - just before the IRSB's end.
+   // In the former case, we zero 'n' and then continue instrumenting.
+   
+   sbOut = deepCopyIRSBExceptStmts(sbIn);
+   
+   for (i = 0; i < sbIn->stmts_used; i++) {
+      IRStmt* st = sbIn->stmts[i];
+      
+      if (!st || st->tag == Ist_NoOp) continue;
+      
+      if (st->tag == Ist_IMark) {
+         n++;
+      } else if (st->tag == Ist_Exit) {
+         if (n > 0) {
+            // Add an increment before the Exit statement, then reset 'n'.
+            add_counter_update(sbOut, n);
+            n = 0;
+         }
+      }
+      addStmtToIRSB( sbOut, st );
+   }
+
+   if (n > 0) {
+      // Add an increment before the SB end.
+      add_counter_update(sbOut, n);
+   }
+   return sbOut;
+}
+
 static
 IRSB* ms_instrument ( VgCallbackClosure* closure,
-                      IRSB* bb_in,
+                      IRSB* sbIn,
                       VexGuestLayout* layout,
                       VexGuestExtents* vge,
                       IRType gWordTy, IRType hWordTy )
@@ -1788,7 +1860,11 @@ IRSB* ms_instrument ( VgCallbackClosure* closure,
       have_started_executing_code = True;
       maybe_take_snapshot(Normal, "startup");
    }
-   return bb_in;
+
+   if      (clo_time_unit == TimeI)  { return ms_instrument2(sbIn); }
+   else if (clo_time_unit == TimeMS) { return sbIn; }
+   else if (clo_time_unit == TimeB)  { return sbIn; }
+   else                              { tl_assert2(0, "bad --time-unit value"); }
 }
 
 
@@ -1816,7 +1892,7 @@ static Char* make_perc(ULong x, ULong y)
 
 //   tl_assert(x <= y);    XXX; put back in later...
 
-// XXX: I'm not confident that VG_(percentify) works as it should...
+   // XXX: I'm not confident that VG_(percentify) works as it should...
    VG_(percentify)(x, y, 2, 6, mbuf);
    // XXX: this is bogus if the denominator was zero -- resulting string is
    // something like "0 --%")
@@ -2103,7 +2179,7 @@ static void ms_pre_clo_init(void)
 {
    VG_(details_name)            ("Massif");
    VG_(details_version)         (NULL);
-   VG_(details_description)     ("a space profiler");
+   VG_(details_description)     ("a heap profiler");
    VG_(details_copyright_author)(
       "Copyright (C) 2003-2007, and GNU GPL'd, by Nicholas Nethercote");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);

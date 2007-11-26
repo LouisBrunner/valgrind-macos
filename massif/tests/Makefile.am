@@ -8,6 +8,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	alloc-fns-A.post.exp alloc-fns-A.stderr.exp alloc-fns-A.vgtest \
 	alloc-fns-B.post.exp alloc-fns-B.stderr.exp alloc-fns-B.vgtest \
 	basic.post.exp basic.stderr.exp basic.vgtest \
+	basic2.post.exp basic2.stderr.exp basic2.vgtest \
 	insig.post.exp insig.stderr.exp insig.vgtest \
 	big-alloc.post.exp big-alloc.stderr.exp big-alloc.vgtest \
 	deep-A.post.exp deep-A.stderr.exp deep-A.vgtest \

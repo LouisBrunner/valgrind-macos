@@ -34,7 +34,6 @@
 // - address/close all the bug reports below (after writing docs)
 // - do a graph-drawing test
 // - Get Josef to update the Callgrind --callgrind-out-file option.
-// - Use '_' instead of '.' for detailed/peak bars?
 //
 // Todo -- nice, but less critical:
 // - make file format more generic.  Obstacles:

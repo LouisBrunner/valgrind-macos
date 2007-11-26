@@ -523,7 +523,9 @@ sub read_input_file()
     my $peak_full_char     = '#';                            
     my $detailed_full_char = '@';
     my $normal_full_char   = ':';
-    my $half_char          = '.';
+    my $peak_half_char     = ',';                            
+    my $detailed_half_char = ',';
+    my $normal_half_char   = '.';
 
     # Work out how many bytes each row represents.  If the peak size was 0,
     # make it 1 so that the Y-axis covers a non-zero range of values.
@@ -559,13 +561,16 @@ sub read_input_file()
         if ($should_draw_column) {
             # If it's detailed, mark the X-axis.  Also choose the full-slot
             # char.
-            my $full_char;
+            my ($full_char, $half_char);
             if ($i == $peak_num)  {                          
                 $full_char = $peak_full_char;                
+                $half_char = $peak_half_char;
             } elsif ($is_detaileds[$i])  {    
                 $full_char = $detailed_full_char;
+                $half_char = $detailed_half_char;
             } else {
                 $full_char = $normal_full_char;
+                $half_char = $normal_half_char;
             }
             # Grow this snapshot bar from bottom to top.
             for ($y = 1; $y <= $graph_y; $y++) {

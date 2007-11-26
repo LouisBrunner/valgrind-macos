@@ -212,7 +212,7 @@ re-run ms_print, we get this more useful graph:</para>
      |                                      :        #  : :  : : :  : .       
      |                            :         :        #  : :  : : :  : :  .    
      |                            :         :        #  : :  : : :  : :  : .  
-     |                        :   :         :        #  : :  : : :  : :  : : .
+     |                        :   :         :        #  : :  : : :  : :  : : ,
      |                     @  :   :         :        #  : :  : : :  : :  : : @
      |                   : @  :   :         :        #  : :  : : :  : :  : : @
      |                :  : @  :   :         :        #  : :  : : :  : :  : : @
@@ -248,7 +248,7 @@ graph by bars consisting of ':' and '.' characters.</para>
 <para>Some snapshots are <emphasis>detailed</emphasis>.  Information about
 where allocations happened are recorded for these snapshots, as we will see
 shortly.  Detailed snapshots are represented in the graph by bars consisting
-of '@' and '.' characters.  The text at the bottom show that 3 detailed
+of '@' and ',' characters.  The text at the bottom show that 3 detailed
 snapshots were taken for this program (snapshots 9, 14 and 24).  By default,
 every 10th snapshot is detailed, although this can be changed via the
 <computeroutput>--detailed-freq</computeroutput>option.</para>
@@ -260,7 +260,7 @@ default Massif records a peak whose size is within 1% of the size of the
 true peak.  See the description of the
 <computeroutput>--peak-inaccuracy</computeroutput> option below for more
 details.) The peak snapshot is represented in the graph by a bar consisting
-of '#' and '.' characters.  The text at the bottom show that snapshot 14 was
+of '#' and ',' characters.  The text at the bottom show that snapshot 14 was
 the peak.  Note that for tiny programs that never deallocate heap memory,
 Massif will record a peak snapshot.</para>
 
@@ -269,24 +269,24 @@ browser.  It shows what graphs for larger programs look like.</para>
 <screen><![CDATA[
     MB
 3.952^                                                                    #.
-     |                                                                  .@#:
-     |                                                            . .. :@@#:
+     |                                                                  ,@#:
+     |                                                            , .. :@@#:
      |                                                            @ :: :@@#:.
-     |                                                           .@ :: :@@#::
-     |                                                       . .@@@ :: :@@#:.
+     |                                                           ,@ :: :@@#::
+     |                                                       , .@@@ :: :@@#:.
      |                                                      .@ :@@@ :: :@@#::
      |                                                    : :@ :@@@ :: :@@#::
-     |                                                   .: :@ :@@@ :: :@@#::
-     |                                                 .:@: :@ :@@@ :: :@@#::.
+     |                                                   ,: :@ :@@@ :: :@@#::
+     |                                                 ,:@: :@ :@@@ :: :@@#::.
      |                                                @@:@: :@ :@@@ :: :@@#:::
-     |                         ..:      .::   . .  .::@@:@: :@ :@@@ :: :@@#:::
+     |                         ,,:      .::   . ,  .::@@:@: :@ :@@@ :: :@@#:::
      |                       .:@@:   .: ::: ::: @  :::@@:@: :@ :@@@ :: :@@#:::
-     |                    .: ::@@:  ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
+     |                    ,: ::@@:  ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
      |                    @: ::@@:  ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#::.
      |                    @: ::@@:  ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
-     |                  . @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
+     |                  , @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
      |                ::@ @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
-     |           . :::::@ @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
+     |           , :::::@ @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
      |         ..@ :::::@ @: ::@@:: ::: ::::::: @  :::@@:@: :@ :@@@ :: :@@#:::
    0 +----------------------------------------------------------------------->Mi
      0                                                                   626.4

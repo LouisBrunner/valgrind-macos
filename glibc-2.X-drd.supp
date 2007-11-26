@@ -78,6 +78,30 @@
 {
    pthread
    exp-drd:ConflictingAccess
+   obj:/lib64/libpthread-2.6.1.so
+   fun:start_thread
+   fun:clone
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
+   obj:/lib64/libc-2.6.1.so
+   fun:__libc_thread_freeres
+   fun:start_thread
+   fun:clone
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
+   obj:/lib64/libc-2.6.1.so
+   obj:/lib64/libc-2.6.1.so
+   fun:__libc_thread_freeres
+   fun:start_thread
+   fun:clone
+}
+{
+   pthread
+   exp-drd:ConflictingAccess
    fun:__nptl_deallocate_tsd
    fun:start_thread
    fun:clone

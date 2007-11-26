@@ -9,7 +9,7 @@ $dir/../../tests/filter_stderr_basic |
 # Remove libpthread's version number.
 # Remove line numbers from stack traces.
 sed \
--e "/^drd, a data race detector\.$/d" \
+-e "/^exp-drd, a data race detector\.$/d" \
 -e "/^NOTE: This is an Experimental-Class Valgrind Tool.$/d"  \
 -e "/^Copyright (C) 2006-200., and GNU GPL'd, by Bart Van Assche.$/d" \
 -e "s/in [^ ]*libpthread-[0-9]*\.[0-9]*\.so/in libpthread-?.?.so/" \

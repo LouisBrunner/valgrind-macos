@@ -369,6 +369,16 @@ AC_EGREP_CPP([GLIBC_26], [
 ],
 glibc="2.6")
 
+AC_EGREP_CPP([GLIBC_27], [
+#include <features.h>
+#ifdef __GNU_LIBRARY__
+ #if (__GLIBC__ == 2 && __GLIBC_MINOR__ == 7)
+  GLIBC_27
+ #endif
+#endif
+],
+glibc="2.7")
+
 AC_MSG_CHECKING([the glibc version])
 
 case "${glibc}" in
@@ -401,10 +411,15 @@ case "${glibc}" in
 	AC_DEFINE([GLIBC_2_5], 1, [Define to 1 if you're using glibc 2.5.x])
 	DEFAULT_SUPP="glibc-2.6.supp ${DEFAULT_SUPP}"
 	;;
-
+     2.7)
+        AC_MSG_RESULT(2.7 family)
+        AC_DEFINE([GLIBC_2_7], 1, [Define to 1 if you're using glibc 2.7.x])
+        DEFAULT_SUPP="glibc-2.7.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+       ;;
      *)
 	AC_MSG_RESULT(unsupported version)
-	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.6])
+	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.7])
 	;;
 esac
 

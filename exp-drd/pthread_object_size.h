@@ -8,7 +8,7 @@
 # define PTHREAD_MUTEX_SIZE    40
 # define PTHREAD_COND_SIZE     48
 #else
-# warning "Unknown platform for PTHREAD_{MUTEX,COND}_SIZE"
+  /* FIXME: fill these fields in correctly.  32 is arbitrary. */
 # define PTHREAD_MUTEX_SIZE    32
 # define PTHREAD_COND_SIZE     32
 #endif

@@ -553,7 +553,16 @@ void drd_pre_cond_destroy(Addr cond, SizeT s)
 
 static
 void drd_post_clo_init(void)
-{ }
+{
+#  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)
+   /* fine */
+#  else
+   VG_(printf)("\nDRD currently only works on x86-linux and amd64-linux.\n");
+   VG_(printf)("At the very least you need to set PTHREAD_{MUTEX,COND}_SIZE\n");
+   VG_(printf)("in pthread_object_size.h to correct values.  Sorry.\n\n");
+   VG_(exit)(0);
+#  endif
+}
 
 static
 IRSB* drd_instrument(VgCallbackClosure* const closure,

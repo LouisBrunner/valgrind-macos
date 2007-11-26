@@ -196,7 +196,7 @@ static UInt o_isReturnIgnoreReg(Addr reg)
     return 0;
   }
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
-  VG_(printf)("\n\nOmega does not currently work on ppc platforms."
+  VG_(printf)("\nOmega does not currently work on PowerPC/POWER platforms."
               "  Sorry.\n\n");
   VG_(exit)(0);
 #else
@@ -2820,7 +2820,7 @@ o_instrument(VgCallbackClosure* closure,
 
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
   default:
-  VG_(printf)("\n\nOmega does not currently work on ppc platforms."
+  VG_(printf)("\nOmega does not currently work on PowerPC/POWER platforms."
               "  Sorry.\n\n");
   VG_(exit)(0);
 #else

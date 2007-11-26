@@ -14,6 +14,12 @@ endif
 if VGP_PPC64_LINUX
 noinst_PROGRAMS += exp-omega-ppc64-linux vgpreload_exp-omega-ppc64-linux.so
 endif
+if VGP_PPC32_AIX5
+noinst_PROGRAMS += exp-omega-ppc32-aix5 vgpreload_exp-omega-ppc32-aix5.so
+endif
+if VGP_PPC64_AIX5
+noinst_PROGRAMS += exp-omega-ppc64-aix5 vgpreload_exp-omega-ppc64-aix5.so
+endif
 
 VGPRELOAD_OMEGA_SOURCES_COMMON = o_replace_memops.c
 
@@ -53,6 +59,24 @@ vgpreload_exp_omega_ppc64_linux_so_LDFLAGS      = \
 	$(PRELOAD_LDFLAGS_PPC64_LINUX) \
 	$(LIBREPLACEMALLOC_LDFLAGS_PPC64_LINUX)
 
+vgpreload_exp_omega_ppc32_aix5_so_SOURCES      = $(VGPRELOAD_OMEGA_SOURCES_COMMON)
+vgpreload_exp_omega_ppc32_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_AIX5)
+vgpreload_exp_omega_ppc32_aix5_so_CFLAGS       = $(AM_CFLAGS_PPC32_AIX5) $(AM_CFLAGS_PIC) -O2
+vgpreload_exp_omega_ppc32_aix5_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC32_AIX5)
+vgpreload_exp_omega_ppc32_aix5_so_DEPENDENCIES = $(LIBREPLACEMALLOC_PPC32_AIX5)
+vgpreload_exp_omega_ppc32_aix5_so_LDFLAGS      = \
+	$(PRELOAD_LDFLAGS_PPC32_AIX5) \
+	$(LIBREPLACEMALLOC_LDFLAGS_PPC32_AIX5)
+
+vgpreload_exp_omega_ppc64_aix5_so_SOURCES      = $(VGPRELOAD_OMEGA_SOURCES_COMMON)
+vgpreload_exp_omega_ppc64_aix5_so_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_AIX5)
+vgpreload_exp_omega_ppc64_aix5_so_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5) $(AM_CFLAGS_PIC) -O2
+vgpreload_exp_omega_ppc64_aix5_so_CCASFLAGS    = $(AM_CCASFLAGS_PPC64_AIX5)
+vgpreload_exp_omega_ppc64_aix5_so_DEPENDENCIES = $(LIBREPLACEMALLOC_PPC64_AIX5)
+vgpreload_exp_omega_ppc64_aix5_so_LDFLAGS      = \
+	$(PRELOAD_LDFLAGS_PPC64_AIX5) \
+	$(LIBREPLACEMALLOC_LDFLAGS_PPC64_AIX5)
+
 OMEGA_SOURCES_COMMON = \
 	o_main.c
 
@@ -87,6 +111,22 @@ exp_omega_ppc64_linux_CCASFLAGS    = $(AM_CCASFLAGS_PPC64_LINUX)
 exp_omega_ppc64_linux_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_LINUX)
 exp_omega_ppc64_linux_LDADD        = $(TOOL_LDADD_PPC64_LINUX)
 exp_omega_ppc64_linux_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_LINUX)
+
+exp_omega_ppc32_aix5_SOURCES      = $(OMEGA_SOURCES_COMMON)
+exp_omega_ppc32_aix5_CPPFLAGS     = $(AM_CPPFLAGS_PPC32_AIX5)
+exp_omega_ppc32_aix5_CFLAGS       = $(AM_CFLAGS_PPC32_AIX5) -O2
+exp_omega_ppc32_aix5_CCASFLAGS    = $(AM_CCASFLAGS_PPC32_AIX5)
+exp_omega_ppc32_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC32_AIX5)
+exp_omega_ppc32_aix5_LDADD        = $(TOOL_LDADD_PPC32_AIX5)
+exp_omega_ppc32_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC32_AIX5)
+
+exp_omega_ppc64_aix5_SOURCES      = $(OMEGA_SOURCES_COMMON)
+exp_omega_ppc64_aix5_CPPFLAGS     = $(AM_CPPFLAGS_PPC64_AIX5)
+exp_omega_ppc64_aix5_CFLAGS       = $(AM_CFLAGS_PPC64_AIX5) -O2
+exp_omega_ppc64_aix5_CCASFLAGS    = $(AM_CCASFLAGS_PPC64_AIX5)
+exp_omega_ppc64_aix5_DEPENDENCIES = $(COREGRIND_LIBS_PPC64_AIX5)
+exp_omega_ppc64_aix5_LDADD        = $(TOOL_LDADD_PPC64_AIX5)
+exp_omega_ppc64_aix5_LDFLAGS      = $(TOOL_LDFLAGS_PPC64_AIX5)
 
 oincludedir = $(includedir)/valgrind
 

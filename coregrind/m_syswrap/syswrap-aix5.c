@@ -805,6 +805,7 @@ static SysRes simple_pre_exec_check(const HChar* exe_name)
 {
    Int fd, ret;
    SysRes res;
+   Bool setuid_allowed;
 
    // Check it's readable
    res = VG_(open)(exe_name, VKI_O_RDONLY, 0);
@@ -814,9 +815,12 @@ static SysRes simple_pre_exec_check(const HChar* exe_name)
    fd = res.res;
    VG_(close)(fd);
 
-   // Check we have execute permissions
-   ret = VG_(check_executable)((HChar*)exe_name);
-
+   // Check we have execute permissions.  We allow setuid executables
+   // to be run only in the case when we are not simulating them, that
+   // is, they to be run natively.
+   setuid_allowed = VG_(clo_trace_children)  ? False  : True;
+   ret = VG_(check_executable)(NULL/*&is_setuid*/,
+                               (HChar*)exe_name, setuid_allowed);
    if (0 != ret) {
       return VG_(mk_SysRes_Error)(ret);
    }

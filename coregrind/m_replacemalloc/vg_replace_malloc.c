@@ -103,7 +103,7 @@ extern void _exit(int);
    memcpy() is used by gcc for a struct assignment in mallinfo()
    below.  Add the following conservative implementation (memmove,
    really). */
-#if defined(VGO_aix5)
+#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
 __attribute__((weak))
 void *memcpy(void *destV, const void *srcV, unsigned long n)
 {
@@ -205,6 +205,9 @@ static void init(void) __attribute__((constructor));
 // malloc
 ALLOC_or_NULL(m_libstdcxx_soname, malloc,      malloc);
 ALLOC_or_NULL(m_libc_soname,      malloc,      malloc);
+#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+ALLOC_or_NULL(m_libc_soname,      malloc_common, malloc);
+#endif
 
 
 /*---------------------- new ----------------------*/
@@ -318,6 +321,9 @@ ALLOC_or_BOMB(m_libc_soname,       __builtin_vec_new, __builtin_vec_new );
 // free
 FREE(m_libstdcxx_soname,  free,                 free );
 FREE(m_libc_soname,       free,                 free );
+#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+FREE(m_libc_soname,       free_common,          free );
+#endif
 
 
 /*---------------------- cfree ----------------------*/
@@ -389,6 +395,9 @@ FREE(m_libc_soname,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
    }
 
 CALLOC(m_libc_soname, calloc);
+#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+CALLOC(m_libc_soname, calloc_common);
+#endif
 
 
 /*---------------------- realloc ----------------------*/
@@ -418,6 +427,9 @@ CALLOC(m_libc_soname, calloc);
    }
 
 REALLOC(m_libc_soname, realloc);
+#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+REALLOC(m_libc_soname, realloc_common);
+#endif
 
 
 /*---------------------- memalign ----------------------*/
@@ -450,15 +462,23 @@ MEMALIGN(m_libc_soname, memalign);
 
 /*---------------------- valloc ----------------------*/
 
+static int local__getpagesize ( void ) {
+#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+   return 4096; /* kludge - toc problems prevent calling getpagesize() */
+#  else
+   extern int getpagesize (void);
+   return getpagesize();
+#  endif
+}
+
 #define VALLOC(soname, fnname) \
    \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( SizeT size ); \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( SizeT size )  \
    { \
       static int pszB = 0; \
-      extern int getpagesize (void); \
       if (pszB == 0) \
-         pszB = getpagesize(); \
+         pszB = local__getpagesize(); \
       return VG_REPLACE_FUNCTION_ZU(m_libc_soname,memalign) \
                 ((SizeT)pszB, size); \
    }
@@ -547,6 +567,12 @@ MALLOC_TRIM(m_libc_soname, malloc_trim);
    }
 
 POSIX_MEMALIGN(m_libc_soname, posix_memalign);
+#if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
+/* 27 Nov 07: it appears that xlc links into executables, a
+   posix_memalign, which calls onwards to memalign_common, with the
+   same args. */
+POSIX_MEMALIGN(m_libc_soname, memalign_common);
+#endif
 
 
 /*---------------------- malloc_usable_size ----------------------*/

@@ -725,6 +725,8 @@ GLIBC26___MEMCPY_CHK(m_libc_soname, __memcpy_chk)
 /*--- Improve definedness checking of process environment  ---*/
 /*------------------------------------------------------------*/
 
+#if defined(VGO_linux)
+
 /* putenv */
 int VG_WRAP_FUNCTION_ZU(m_libc_soname, putenv) (char* string);
 int VG_WRAP_FUNCTION_ZU(m_libc_soname, putenv) (char* string)
@@ -782,50 +784,54 @@ int VG_WRAP_FUNCTION_ZU(m_libc_soname, setenv)
     return result;
 }
 
+#endif /* defined(VGO_linux) */
+
+
 /*------------------------------------------------------------*/
 /*--- AIX stuff only after this point                      ---*/
 /*------------------------------------------------------------*/
 
-/* Generate replacements for strcat, strncat, strcpy, strncpy,
+/* Generate replacements for strcat, strncat, strcpy, strncpy, strcmp
    in the given soname. */
-#define Str4FNs(_soname)       \
+#define Str5FNs(_soname)       \
     STRCAT(_soname, strcat)    \
    STRNCAT(_soname, strncat)   \
     STRCPY(_soname, strcpy)    \
-   STRNCPY(_soname, strncpy)
+   STRNCPY(_soname, strncpy)   \
+    STRCMP(_soname, strcmp)
 
 #if defined(VGP_ppc32_aix5)
-Str4FNs(NONE)                             /* in main exe */
-Str4FNs(libCZdaZLshrcoreZdoZR)            /* libC.a(shrcore.o) */
-Str4FNs(libX11ZdaZLshr4ZdoZR)             /* libX11.a(shr4.o) */
-Str4FNs(libXmZdaZLshrZaZdoZR)             /* libXm.a(shr*.o) */
-Str4FNs(libXtZdaZLshr4ZdoZR)              /* libXt.a(shr4.o) */
-Str4FNs(libppeZurZdaZLdynamicZdoZR)       /* libppe_r.a(dynamic.o) */
-Str4FNs(libodmZdaZLshrZdoZR)              /* libodm.a(shr.o) */
-Str4FNs(libmpiZurZdaZLmpicoreZurZdoZR)    /* libmpi_r.a(mpicore_r.o) */
-Str4FNs(libmpiZurZdaZLmpipoeZurZdoZR)     /* libmpi_r.a(mpipoe_r.o) */
-Str4FNs(libmpiZurZdaZLmpciZurZdoZR)       /* libmpi_r.a(mpci_r.o) */
-Str4FNs(libslurmZdso)                     /* libslurm.so */
-Str4FNs(libglibZdso)                      /* libglib.so */
-Str4FNs(libIMZdaZLshrZdoZR)               /* libIM.a(shr.o) */
-Str4FNs(libiconvZdaZLshr4ZdoZR)           /* libiconv.a(shr4.o) */
-Str4FNs(libGLZdaZLshrZdoZR)               /* libGL.a(shr.o) */
-Str4FNs(libgdkZdso)                       /* libgdk.so */
-Str4FNs(libcursesZdaZLshr42ZdoZR)         /* libcurses.a(shr42.o) */
-Str4FNs(libqtZda)                         /* libqt.a */
+Str5FNs(NONE)                             /* in main exe */
+Str5FNs(libCZdaZLshrcoreZdoZR)            /* libC.a(shrcore.o) */
+Str5FNs(libX11ZdaZLshr4ZdoZR)             /* libX11.a(shr4.o) */
+Str5FNs(libXmZdaZLshrZaZdoZR)             /* libXm.a(shr*.o) */
+Str5FNs(libXtZdaZLshr4ZdoZR)              /* libXt.a(shr4.o) */
+Str5FNs(libppeZurZdaZLdynamicZdoZR)       /* libppe_r.a(dynamic.o) */
+Str5FNs(libodmZdaZLshrZdoZR)              /* libodm.a(shr.o) */
+Str5FNs(libmpiZurZdaZLmpicoreZurZdoZR)    /* libmpi_r.a(mpicore_r.o) */
+Str5FNs(libmpiZurZdaZLmpipoeZurZdoZR)     /* libmpi_r.a(mpipoe_r.o) */
+Str5FNs(libmpiZurZdaZLmpciZurZdoZR)       /* libmpi_r.a(mpci_r.o) */
+Str5FNs(libslurmZdso)                     /* libslurm.so */
+Str5FNs(libglibZdso)                      /* libglib.so */
+Str5FNs(libIMZdaZLshrZdoZR)               /* libIM.a(shr.o) */
+Str5FNs(libiconvZdaZLshr4ZdoZR)           /* libiconv.a(shr4.o) */
+Str5FNs(libGLZdaZLshrZdoZR)               /* libGL.a(shr.o) */
+Str5FNs(libgdkZdso)                       /* libgdk.so */
+Str5FNs(libcursesZdaZLshr42ZdoZR)         /* libcurses.a(shr42.o) */
+Str5FNs(libqtZda)                         /* libqt.a */
 #endif
 #if defined(VGP_ppc64_aix5)
-Str4FNs(NONE)                             /* in main exe */
-Str4FNs(libX11ZdaZLshrZu64ZdoZR)          /* libX11.a(shr_64.o) */
-Str4FNs(libiconvZdaZLshr4Zu64ZdoZR)       /* libiconv.a(shr4_64.o) */
-Str4FNs(libGLZdaZLshrZu64ZdoZR)           /* libGL.a(shr_64.o) */
-Str4FNs(libppeZurZdaZLdynamic64ZdoZR)     /* libppe_r.a(dynamic64.o) */
-Str4FNs(libodmZdaZLshrZu64ZdoZR)          /* libodm.a(shr_64.o) */
-Str4FNs(libmpiZurZdaZLmpicore64ZurZdoZR)  /* libmpi_r.a(mpicore64_r.o) */
-Str4FNs(libmpiZurZdaZLmpipoe64ZurZdoZR)   /* libmpi_r.a(mpipoe64_r.o) */
-Str4FNs(libCZdaZLshrcoreZu64ZdoZR)        /* libC.a(shrcore_64.o) */
-Str4FNs(libmpiZurZdaZLmpci64ZurZdoZR)     /* libmpi_r.a(mpci64_r.o) */
-Str4FNs(libqtZda)                         /* libqt.a */
+Str5FNs(NONE)                             /* in main exe */
+Str5FNs(libX11ZdaZLshrZu64ZdoZR)          /* libX11.a(shr_64.o) */
+Str5FNs(libiconvZdaZLshr4Zu64ZdoZR)       /* libiconv.a(shr4_64.o) */
+Str5FNs(libGLZdaZLshrZu64ZdoZR)           /* libGL.a(shr_64.o) */
+Str5FNs(libppeZurZdaZLdynamic64ZdoZR)     /* libppe_r.a(dynamic64.o) */
+Str5FNs(libodmZdaZLshrZu64ZdoZR)          /* libodm.a(shr_64.o) */
+Str5FNs(libmpiZurZdaZLmpicore64ZurZdoZR)  /* libmpi_r.a(mpicore64_r.o) */
+Str5FNs(libmpiZurZdaZLmpipoe64ZurZdoZR)   /* libmpi_r.a(mpipoe64_r.o) */
+Str5FNs(libCZdaZLshrcoreZu64ZdoZR)        /* libC.a(shrcore_64.o) */
+Str5FNs(libmpiZurZdaZLmpci64ZurZdoZR)     /* libmpi_r.a(mpci64_r.o) */
+Str5FNs(libqtZda)                         /* libqt.a */
 #endif
 
 

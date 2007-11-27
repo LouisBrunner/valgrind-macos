@@ -16,7 +16,11 @@ static int s_debug = 0;
 
 static int getktid()
 {
+#ifdef __NR_gettid
   return syscall(__NR_gettid);
+#else
+  return -1;
+#endif
 }
 
 static int getvgtid()
@@ -26,31 +30,28 @@ static int getvgtid()
   return res;
 }
 
-static void SignalHandler(const int iSignal)
+static void print_thread_id(const char* const label)
 {
   if (s_debug)
   {
     char msg[256];
-    snprintf(msg, sizeof(msg), "Signal %d was delivered to kernel thread ID %d"
-           " / Valgrind thread ID %d\n",
-             iSignal, getktid(), getvgtid());
+    snprintf(msg, sizeof(msg),
+             "%spid %d / kernel thread ID %d / Valgrind thread ID %d\n",
+             label, getpid(), getktid(), getvgtid());
     write(STDOUT_FILENO, msg, strlen(msg));
   }
 }
 
+static void SignalHandler(const int iSignal)
+{
+  print_thread_id("Signal was delivered to ");
+}
+
 void* thread_func(void* thread_arg)
 {
-  struct timespec tsRemain, tsDelay;
+  print_thread_id("thread: ");
 
-  if (s_debug)
-  {
-    printf("thread: kernel thread ID %d  / Valgrind thread ID %d\n",
-	   getktid(), getvgtid());
-  }
-
-  tsDelay.tv_sec = 10;
-  tsDelay.tv_nsec = 0;
-  clock_nanosleep(CLOCK_MONOTONIC, 0, &tsDelay, &tsRemain);
+  sleep(10);
   //assert(result < 0 && errno == EINTR);
 
   return 0;
@@ -68,11 +69,7 @@ int main(int argc, char** argv)
 
   vgthreadid = getvgtid();
 
-  if (s_debug)
-  {
-    printf("main: kernel thread ID %d / Valgrind thread ID %d\n",
-	   getktid(), vgthreadid);
-  }
+  print_thread_id("main: ");
 
   {
     struct sigaction sa;
@@ -86,7 +83,7 @@ int main(int argc, char** argv)
   // Wait until the thread is inside clock_nanosleep().
   tsDelay.tv_sec = 0;
   tsDelay.tv_nsec = 20 * 1000 * 1000;
-  clock_nanosleep(CLOCK_MONOTONIC, 0, &tsDelay, 0);
+  nanosleep(&tsDelay, 0);
   // And send SIGALRM to the thread.
   pthread_kill(threadid, SIGALRM);
   pthread_join(threadid, 0);

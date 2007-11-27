@@ -587,8 +587,8 @@ Bool CLG_(process_cmd_line_option)(Char* arg)
        fnc->separate_recursions = n;
    }
 
-   else if (0 == VG_(strncmp)(arg, "--base=", 7))
-       CLG_(clo).filename_base = VG_(strdup)(arg+7);
+   else if (0 == VG_(strncmp)(arg, "--callgrind-out-file=", 21))
+       CLG_(clo).out_format = VG_(strdup)(arg+21);
 
    else if (0 == VG_(strcmp)(arg, "--mangle-names=yes"))
        CLG_(clo).mangle_names = True;
@@ -656,7 +656,7 @@ void CLG_(print_usage)(void)
 {
    VG_(printf)(
 "\n   dump creation options:\n"
-"    --base=<prefix>           Prefix for profile files [" DEFAULT_DUMPNAME "]\n"
+"    --callgrind-out-file=<f>  Output file name [callgrind.out.%%p]\n"
 "    --dump-line=no|yes        Dump source lines of costs? [yes]\n"
 "    --dump-instr=no|yes       Dump instruction address of costs? [no]\n"
 "    --compress-strings=no|yes Compress strings in profile dump? [yes]\n"
@@ -731,7 +731,7 @@ void CLG_(set_clo_defaults)(void)
   /* Default values for command line arguments */
 
   /* dump options */
-  CLG_(clo).filename_base    = 0;
+  CLG_(clo).out_format       = 0;
   CLG_(clo).combine_dumps    = False;
   CLG_(clo).compress_strings = True;
   CLG_(clo).compress_mangled = False;

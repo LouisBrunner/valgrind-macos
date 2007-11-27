@@ -40,7 +40,7 @@ profiling data can be stored into an output file multiple times in a
 program run, optionally separately for every thread in the case of 
 multithreaded code.  For interactive inspection and control, see
 <command>callgrind_control</command>.  The data produced 
-(callgrind.out.PID) can be analysed with 
+(callgrind.out.&lt;pid&gt;) can be analysed with 
 <command>callgrind_annotate</command> or better with the graphical profile 
 visualization <command>KCachegrind</command>.  Further documentation can 
 be found in HTML format either on your filesystem: 

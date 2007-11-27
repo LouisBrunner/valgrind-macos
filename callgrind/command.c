@@ -46,7 +46,7 @@ static Char* result_file = 0;
 static Char* result_file2 = 0;
 static Char* current_result_file = 0;
 static Char* info_file = 0;
-static Char* dump_base = 0;
+static Char* out_file = 0;
 
 static Int thisPID = 0;
 
@@ -57,19 +57,13 @@ static void setup_control(void)
 {
   Int fd, size;
   SysRes res;
-  Char* dir, *dump_filename;
+  Char* dir;
 
   CLG_ASSERT(thisPID != 0);
 
   fd = -1;
-  dir = CLG_(get_base_directory)();
-  dump_base = CLG_(get_dump_file_base)();
-
-  /* base name of dump files with PID ending */
-  size = VG_(strlen)(dump_base) + 10;
-  dump_filename = (char*) CLG_MALLOC(size);
-  CLG_ASSERT(dump_filename != 0);
-  VG_(sprintf)(dump_filename, "%s.%d", dump_base, thisPID);
+  dir = CLG_(get_out_directory)();
+  out_file = CLG_(get_out_file)();
 
   /* name of command file */
   size = VG_(strlen)(dir) + VG_(strlen)(DEFAULT_COMMANDNAME) +10;
@@ -106,7 +100,7 @@ static void setup_control(void)
   VG_(sprintf)(info_file, "%s.%d", DEFAULT_INFONAME, thisPID);
 
   CLG_DEBUG(1, "Setup for interactive control (PID: %d):\n", thisPID);
-  CLG_DEBUG(1, "  dump file base: '%s'\n", dump_filename);
+  CLG_DEBUG(1, "  output file:    '%s'\n", out_file);
   CLG_DEBUG(1, "  command file:   '%s'\n", command_file);
   CLG_DEBUG(1, "  result file:    '%s'\n", result_file);
   CLG_DEBUG(1, "  info file:      '%s'\n", info_file);
@@ -139,7 +133,7 @@ static void setup_control(void)
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     
     WRITE_STR3(fd, "base: ", dir, "\n");
-    WRITE_STR3(fd, "dumps: ", dump_filename, "\n");
+    WRITE_STR3(fd, "dumps: ", out_file, "\n");
     WRITE_STR3(fd, "control: ", command_file, "\n");
     WRITE_STR3(fd, "result: ", result_file, "\n");
 
@@ -209,7 +203,7 @@ static Int dump_info(Int fd)
     VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
     
     /* "base:" line */
-    WRITE_STR3(fd, "base: ", dump_base, "\n");
+    WRITE_STR3(fd, "base: ", out_file, "\n");
     
     /* "cmd:" line */
     WRITE_STR2(fd, "cmd: ", VG_(args_the_exename));

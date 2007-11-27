@@ -210,9 +210,20 @@ leaks.</para>
 <title>Callgrind Options</title>
 
 <xi:include href="../../callgrind/docs/cl-manual.xml" 
-            xpointer="cl.opts.list"
+            xpointer="cl.opts.list.misc"
             xmlns:xi="http://www.w3.org/2001/XInclude" />
-
+<xi:include href="../../callgrind/docs/cl-manual.xml" 
+            xpointer="cl.opts.list.creation"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+<xi:include href="../../callgrind/docs/cl-manual.xml" 
+            xpointer="cl.opts.list.activity"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+<xi:include href="../../callgrind/docs/cl-manual.xml" 
+            xpointer="cl.opts.list.collection"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+<xi:include href="../../callgrind/docs/cl-manual.xml" 
+            xpointer="cl.opts.list.simulation"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
 </refsect1>
 
 

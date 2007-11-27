@@ -15,7 +15,7 @@
 <refnamediv id="a-name">
   <refname>callgrind_annotate</refname>
   <refpurpose>produces human readable ASCII output from profile 
-  information in <command>cachegrind.out</command> files</refpurpose>
+  information in <command>callgrind.out.&lt;pid&gt;</command> files</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id="a-synopsis">

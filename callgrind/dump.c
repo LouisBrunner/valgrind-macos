@@ -36,8 +36,8 @@
 /* Dump Part Counter */
 static Int out_counter = 0;
 
-static Char* dump_file_base = 0;
-static Char* base_directory = 0;
+static Char* out_file = 0;
+static Char* out_directory = 0;
 static Bool dumps_initialized = False;
 
 /* Command */
@@ -62,16 +62,16 @@ Int CLG_(get_dump_counter)(void)
   return out_counter;
 }
 
-Char* CLG_(get_dump_file_base)()
+Char* CLG_(get_out_file)()
 {
     CLG_ASSERT(dumps_initialized);
-    return dump_file_base;
+    return out_file;
 }
 
-Char* CLG_(get_base_directory)()
+Char* CLG_(get_out_directory)()
 {
     CLG_ASSERT(dumps_initialized);
-    return base_directory;
+    return out_directory;
 }
 
 /*------------------------------------------------------------*/
@@ -1282,7 +1282,7 @@ static int new_dumpfile(Char buf[BUF_LEN], int tid, Char* trigger)
     CLG_ASSERT(filename != 0);
 
     if (!CLG_(clo).combine_dumps) {
-	i = VG_(sprintf)(filename, "%s.%d", dump_file_base, VG_(getpid)());
+	i = VG_(sprintf)(filename, "%s", out_file);
     
 	if (trigger)
 	    i += VG_(sprintf)(filename+i, ".%d", out_counter);
@@ -1293,7 +1293,7 @@ static int new_dumpfile(Char buf[BUF_LEN], int tid, Char* trigger)
 	res = VG_(open)(filename, VKI_O_WRONLY|VKI_O_TRUNC, 0);
     }
     else {
-	VG_(sprintf)(filename, "%s.%d", dump_file_base, VG_(getpid)());
+	VG_(sprintf)(filename, "%s", out_file);
         res = VG_(open)(filename, VKI_O_WRONLY|VKI_O_APPEND, 0);
 	if (!res.isError && out_counter>1)
 	    appending = True;
@@ -1656,69 +1656,43 @@ void init_cmdbuf(void)
 }
 
 /*
- * Set up file names for dump output: base_directory, dump_file_base
- * The final filename of a dump is constructed at dump time from
- * the PID, thread ID and dump counter.
+ * Set up file names for dump output: <out_directory>, <out_file>.
+ * <out_file> is derived from the output format string, which defaults
+ * to "callgrind.out.%p", where %p is replaced with the PID.
+ * For the final file name, on intermediate dumps a counter is appended,
+ * and further, if separate dumps per thread are requested, the thread ID.
  *
- * These always will contain a full absolute path.
- * If no prefix is given (via option "--base=<prefix>"), the current
- * working directory at program start is used, otherwise <prefix> can
- * be relative to cwd or absolute.
+ * <out_file> always starts with a full absolute path.
+ * If the output format string represents a relative path, the current
+ * working directory at program start is used.
  */
 void CLG_(init_dumps)()
 {
-   Int size;
+   Int lastSlash, i;
    SysRes res;
 
-   if (!CLG_(clo).filename_base)
-     CLG_(clo).filename_base = DEFAULT_DUMPNAME;
+   if (!CLG_(clo).out_format)
+     CLG_(clo).out_format = DEFAULT_OUTFORMAT;
+
+   // Setup output filename.
+   out_file =
+       VG_(expand_file_name)("--callgrind-out-file", CLG_(clo).out_format);
 
    /* get base directory for dump/command/result files */
-   if (CLG_(clo).filename_base[0] == '/') {
-       int lastSlash = 0, i =1;
-       while(CLG_(clo).filename_base[i]) {
-	 for(; CLG_(clo).filename_base[i] &&
-	       CLG_(clo).filename_base[i] != '/'; i++);
-	   if (CLG_(clo).filename_base[i] != '/') break;
-	   lastSlash = i;
-	   i++;
-       }
-       i = lastSlash;
-       base_directory = (Char*) CLG_MALLOC(i+1);
-       VG_(strncpy)(base_directory, CLG_(clo).filename_base, i);
-       base_directory[i] = 0;
-
-       dump_file_base = CLG_(clo).filename_base;
+   CLG_ASSERT(out_file[0] == '/');
+   lastSlash = 0;
+   i = 1;
+   while(out_file[i]) {
+       if (out_file[i] == '/') lastSlash = i;
+       i++;
    }
-   else {
-       size = 100;
-       base_directory = 0;
-
-       /* getcwd() fails if the buffer isn't big enough -- keep doubling size
-          until it succeeds. */
-       while (NULL == base_directory) {
-           base_directory = CLG_MALLOC(size);
-           if (!VG_(get_startup_wd)(base_directory, size)) {
-               VG_(free)(base_directory);
-               base_directory = 0;
-               size *= 2;
-           }
-           /* in fact, this loop could run forever (or at least till
-              CLG_MALLOC fails) if VG_(getcwd) returns False for any
-              reason other than the buffer is too small.  So be
-              safe: */
-           tl_assert( size < 100 * 200 );
-       }
-
-       size = VG_(strlen)(base_directory) + VG_(strlen)(CLG_(clo).filename_base) +2;
-       dump_file_base = (Char*) CLG_MALLOC(size);
-       CLG_ASSERT(dump_file_base != 0);
-       VG_(sprintf)(dump_file_base, "%s/%s",
-		    base_directory, CLG_(clo).filename_base);
-   }
+   i = lastSlash;
+   out_directory = (Char*) CLG_MALLOC(i+1);
+   VG_(strncpy)(out_directory, out_file, i);
+   out_directory[i] = 0;
 
    /* allocate space big enough for final filenames */
-   filename = (Char*) CLG_MALLOC(VG_(strlen)(dump_file_base)+32);
+   filename = (Char*) CLG_MALLOC(VG_(strlen)(out_file)+32);
    CLG_ASSERT(filename != 0);
        
    /* Make sure the output base file can be written.
@@ -1727,7 +1701,7 @@ void CLG_(init_dumps)()
     * file: This is probably because of missing rights,
     * and trace parts wouldn't be allowed to be written, too.
     */ 
-    VG_(sprintf)(filename, "%s.%d", dump_file_base, VG_(getpid)());
+    VG_(strcpy)(filename, out_file);
     res = VG_(open)(filename, VKI_O_WRONLY|VKI_O_TRUNC, 0);
     if (res.isError) { 
 	res = VG_(open)(filename, VKI_O_CREAT|VKI_O_WRONLY,

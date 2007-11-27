@@ -126,7 +126,7 @@ on heuristics to detect calls and returns.</para>
   </para>
 
   <para>After program termination, a profile data file named 
-  <computeroutput>callgrind.out.pid</computeroutput>
+  <computeroutput>callgrind.out.&lt;pid&gt;</computeroutput>
   is generated, where <emphasis>pid</emphasis> is the process ID 
   of the program being profiled.
   The data file contains information about the calls made in the
@@ -135,7 +135,7 @@ on heuristics to detect calls and returns.</para>
 
   <para>To generate a function-by-function summary from the profile
   data file, use
-  <screen>callgrind_annotate [options] callgrind.out.pid</screen>
+  <screen>callgrind_annotate [options] callgrind.out.&lt;pid&gt;</screen>
   This summary is similar to the output you get from a Cachegrind
   run with <computeroutput>cg_annotate</computeroutput>: the list
   of functions is ordered by exclusive cost of functions, which also
@@ -487,7 +487,7 @@ the output as <computeroutput>callgrind --help</computeroutput>.
        xreflabel="Miscellaneous options">
 <title>Miscellaneous options</title>
 
-<variablelist id="cmd-options.misc">
+<variablelist id="cl.opts.list.misc">
 
   <varlistentry>
     <term><option>--help</option></term>
@@ -515,26 +515,24 @@ the output as <computeroutput>callgrind --help</computeroutput>.
 These options influence the name and format of the profile data files.
 </para>
 
-<variablelist id="cmd-options.creation">
+<variablelist id="cl.opts.list.creation">
 
-  <varlistentry id="opt.base">
+  <varlistentry id="opt.callgrind-out-file" xreflabel="--callgrind-out-file">
     <term>
-      <option><![CDATA[--base=<prefix> [default: callgrind.out] ]]></option>
+      <option><![CDATA[--callgrind-out-file=<file> ]]></option>
     </term>
     <listitem>
-      <para>Specify the base name for the dump file names. To
-      distinguish different profile runs of the same application,
-      <computeroutput>.&lt;pid&gt;</computeroutput> is appended to the
-      base dump file name with
-      <computeroutput>&lt;pid&gt;</computeroutput> being the process ID
-      of the profiled program.  When multiple dumps are made, the file name
-      is modified further; see below.</para> 
-      <para>This option is
-      especially useful if your application changes its working
-      directory.  Usually, the dump file is generated in the current
-      working directory of the application at program termination.  By
-      giving an absolute path with the base specification, you can force
-      a fixed directory for the dump files.</para>
+      <para>Write the profile data to
+            <computeroutput>file</computeroutput> rather than to the default
+            output file,
+            <computeroutput>callgrind.out.&lt;pid&gt;</computeroutput>.  The
+            <option>%p</option> and <option>%q</option> format specifiers
+            can be used to embed the process ID and/or the contents of an
+            environment variable in the name, as is the case for the core
+            option <option>--log-file</option>.  See <link
+            linkend="manual-core.basicopts">here</link> for details.
+            When multiple dumps are made, the file name
+            is modified further; see below.</para> 
     </listitem>
   </varlistentry>
 
@@ -611,7 +609,7 @@ be executed. For interactive control use
 <computeroutput>callgrind_control</computeroutput>.
 </para>
 
-<variablelist id="cmd-options.activity">
+<variablelist id="cl.opts.list.activity">
 
   <varlistentry id="opt.dump-every-bb" xreflabel="--dump-every-bb">
     <term>
@@ -664,7 +662,7 @@ be executed. For interactive control use
 These options specify when events are to be aggregated into event counts.
 Also see <xref linkend="cl-manual.limits"/>.</para>
 
-<variablelist id="cmd-options.collection">
+<variablelist id="cl.opts.list.collection">
 
   <varlistentry id="opt.instr-atstart" xreflabel="--instr-atstart">
     <term>
@@ -873,7 +871,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
        xreflabel="Cache simulation options">
 <title>Cache simulation options</title>
 
-<variablelist id="cmd-options.simulation">
+<variablelist id="cl.opts.list.simulation">
   
   <varlistentry id="opt.simulate-cache" xreflabel="--simulate-cache">
     <term>
@@ -884,7 +882,22 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
       only instruction read accesses will be profiled.</para>
     </listitem>
   </varlistentry>
-  
+
+  <varlistentry id="opt.simulate-hwpref" xreflabel="--simulate-hwpref">
+    <term>
+      <option><![CDATA[--simulate-hwpref=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Specify whether simulation of a hardware prefetcher should be
+      added which is able to detect stream access in the second level cache
+      by comparing accesses to separate to each page.
+      As the simulation can not decide about any timing issues of prefetching,
+      it is assumed that any hardware prefetch triggered succeeds before a
+      real access is done. Thus, this gives a best-case scenario by covering
+      all possible stream accesses.</para>
+    </listitem>
+  </varlistentry>
+
 </variablelist>
 
 </sect2>

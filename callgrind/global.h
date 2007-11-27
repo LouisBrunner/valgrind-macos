@@ -50,7 +50,7 @@
 /*--- Command line options                                 ---*/
 /*------------------------------------------------------------*/
 
-#define DEFAULT_DUMPNAME    "callgrind.out"
+#define DEFAULT_OUTFORMAT   "callgrind.out.%p"
 #define DEFAULT_COMMANDNAME "callgrind.cmd"
 #define DEFAULT_RESULTNAME  "callgrind.res"
 #define DEFAULT_INFONAME    "/tmp/callgrind.info"
@@ -59,7 +59,7 @@ typedef struct _CommandLineOptions CommandLineOptions;
 struct _CommandLineOptions {
 
   /* Dump format options */
-  Char* filename_base;   /* Base name for dumps */
+  Char* out_format;      /* Format string for callgrind output file name */
   Bool combine_dumps;    /* Dump trace parts into same file? */
   Bool compress_strings;
   Bool compress_events;
@@ -801,8 +801,8 @@ void CLG_(run_post_signal_on_call_stack_bottom)(void);
 /* from dump.c */
 extern FullCost CLG_(total_cost);
 void CLG_(init_dumps)(void);
-Char* CLG_(get_dump_file_base)(void);
-Char* CLG_(get_base_directory)(void);
+Char* CLG_(get_out_file)(void);
+Char* CLG_(get_out_directory)(void);
 
 /*------------------------------------------------------------*/
 /*--- Exported global variables                            ---*/

@@ -254,15 +254,19 @@ every 10th snapshot is detailed, although this can be changed via the
 <computeroutput>--detailed-freq</computeroutput> option.</para>
 
 <para>Finally, there is at most one <emphasis>peak</emphasis> snapshot.  The
-peak snapshot is detailed, and records the point where memory consumption
-was greatest.  (Actually, recording the true peak is expensive, and so by
-default Massif records a peak whose size is within 1% of the size of the
-true peak.  See the description of the
+peak snapshot is a detailed snapshot, and records the point where memory
+consumption was greatest.  The peak snapshot is represented in the graph by
+a bar consisting of '#' and ',' characters.  The text at the bottom shows
+that snapshot 14 was the peak.  Note that for tiny programs that never
+deallocate heap memory, Massif will not record a peak snapshot.</para>
+
+<para>Some more details about the peak:  the peak is determined by looking
+at every allocation, i.e. it is <emphasis>not</emphasis> just the peak among
+the regular snapshots.  However, recording the true peak is expensive, and
+so by default Massif records a peak whose size is within 1% of the size of
+the true peak.  See the description of the
 <computeroutput>--peak-inaccuracy</computeroutput> option below for more
-details.) The peak snapshot is represented in the graph by a bar consisting
-of '#' and ',' characters.  The text at the bottom show that snapshot 14 was
-the peak.  Note that for tiny programs that never deallocate heap memory,
-Massif will not record a peak snapshot.</para>
+details.</peak>
 
 <para>The following graph is from an execution of Konqueror, the KDE web
 browser.  It shows what graphs for larger programs look like.</para>
@@ -589,7 +593,7 @@ operator new[](unsigned long, std::nothrow_t const&)
       <para>Massif does not necessarily record the actual global memory
       allocation peak;  by default it records a peak only when the global
       memory allocation size exceeds the previous peak by at least 1.0%.
-      This is because there are many local allocation peaks along the way,
+      This is because there can be many local allocation peaks along the way,
       and doing a detailed snapshot for every one would be expensive and
       wasteful, as all but one of them will be later discarded.  This
       inaccuracy can be changed (even to 0.0%) via this option, but Massif

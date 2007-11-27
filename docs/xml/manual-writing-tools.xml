@@ -158,16 +158,17 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
    The output should be something like this:</para>
 <programlisting><![CDATA[
   ==738== foobar-0.0.1, a foobarring tool for x86-linux.
-  ==738== Copyright (C) 1066AD, and GNU GPL'd, by J. Random Hacker.
-  ==738== Built with valgrind-1.1.0, a program execution monitor.
-  ==738== Copyright (C) 2000-2003, and GNU GPL'd, by Julian Seward.
-  ==738== Estimated CPU clock rate is 1400 MHz
+  ==738== Copyright (C) 2002-2007, and GNU GPL'd, by Julian Seward et al.
+  ==738== Using LibVEX rev 1791, a library for dynamic binary translation.
+  ==738== Copyright (C) 2004-2007, and GNU GPL'd, by OpenWorks LLP.
+  ==738== Using valgrind-3.3.0, a dynamic binary instrumentation framework.
+  ==738== Copyright (C) 2000-2007, and GNU GPL'd, by Julian Seward et al.
   ==738== For more details, rerun with: -v
-  ==738== Wed Sep 25 10:31:54 BST 2002
+  ==738==
+  Tue Nov 27 12:40:49 EST 2007
   ==738==]]></programlisting>
 
-   <para>The tool does nothing except run the program
-   uninstrumented.</para>
+   <para>The tool does nothing except run the program uninstrumented.</para>
   </listitem>
 
 </orderedlist>
@@ -270,8 +271,9 @@ can be found in
 
 <para><function>instrument()</function> is the interesting one.  It
 allows you to instrument <emphasis>VEX IR</emphasis>, which is
-Valgrind's RISC-like intermediate language.  VEX IR is best described in
-the header file <filename>VEX/pub/libvex_ir.h</filename>.</para>
+Valgrind's RISC-like intermediate language.  VEX IR is described fairly well
+in the comments of the header file
+<filename>VEX/pub/libvex_ir.h</filename>.</para>
 
 <para>The easiest way to instrument VEX IR is to insert calls to C
 functions when interesting things happen.  See the tool "Lackey"
@@ -305,29 +307,33 @@ thought of.</para>
 <para>The files <filename>include/pub_tool_*.h</filename> contain all the
 types, macros, functions, etc. that a tool should (hopefully) need, and are
 the only <filename>.h</filename> files a tool should need to
-<computeroutput>#include</computeroutput>.</para>
+<computeroutput>#include</computeroutput>.  They have a reasonable amount of
+documentation in it that should hopefully be enough to get you going.</para>
 
-<para>In particular, you can't use anything from the C library (there
+<para>Note that you can't use anything from the C library (there
 are deep reasons for this, trust us).  Valgrind provides an
 implementation of a reasonable subset of the C library, details of which
 are in <filename>pub_tool_libc*.h</filename>.</para>
 
-<para>Similarly, when writing a tool, you shouldn't need to look at any
-of the code in Valgrind's core.  Although it might be useful sometimes
-to help understand something.</para>
+<para>When writing a tool, you shouldn't need to look at any of the code in
+Valgrind's core.  Although it might be useful sometimes to help understand
+something.</para>
 
-<para>The <filename>pub_tool_*.h</filename> files have a reasonable
-amount of documentation in it that should hopefully be enough to get
-you going.  
-Also, <filename>VEX/pub/libvex_basictypes.h</filename> and
-<filename>VEX/pub/libvex_ir.h</filename> have some more details that are
-worth reading, particularly about VEX IR.  But ultimately, the tools
-distributed (Memcheck, Cachegrind, Lackey, etc.) are probably the best
-documentation of all, for the moment.</para>
+<para>The <filename>include/pub_tool_basics.h</filename> and
+<filename>VEX/pub/libvex_basictypes.h</filename> files file have some basic
+types that are widely used.</para>
+
+<para>Ultimately, the tools distributed (Memcheck, Cachegrind, Lackey, etc.)
+are probably the best documentation of all, for the moment.</para>
 
 <para>Note that the <computeroutput>VG_</computeroutput> macro is used
 heavily.  This just prepends a longer string in front of names to avoid
-potential namespace clashes.</para>
+potential namespace clashes.  It is defined in
+<filename>include/pub_tool_basics_asm.h</filename>.</para>
+
+<para>There are some assorted notes about various aspects of the
+implementation in <filename>docs/internals/</filename>.  Much of it
+isn't that relevant to tool-writers, however.</para>
 
 </sect2>
 
@@ -653,6 +659,10 @@ write regression tests for your tool:</para>
 
 <para>To profile a tool, use Cachegrind on it.  Read README_DEVELOPERS for
 details on running Valgrind under Valgrind.</para>
+
+<para>Alternatively, you can use OProfile.  In most cases, it is better than
+Cachegrind because it's much faster, and gives real times, as opposed to
+instruction and cache hit/miss counts.</para>
 
 </sect2>
 

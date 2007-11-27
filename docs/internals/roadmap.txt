@@ -13,8 +13,6 @@ Scheduled for mid-to-late 2007?
 
 * Add ppc{32,64}/AIX5 support [Done by Julian]
 
-* Add some more experimental tools?
-
 * Rework Massif [Done by Nick]
 
 * Rework Helgrind [Done by Julian]

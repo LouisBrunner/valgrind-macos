@@ -20,7 +20,7 @@ command line.</para>
 <title>Heap profiling</title>
 
 <para>Massif is a heap profiler.  It measures how much heap memory your
-program uses.  This includes both the useful space, as well as extra bytes
+program uses.  This includes both the useful space, and the extra bytes
 allocated for book-keeping purposes and alignment purposes.  It can also
 measure the size of your program's stack(s), although it does not do so by
 default.</para>
@@ -85,8 +85,8 @@ the ms_print script.  If the output file's name is
 the program's execution, and (b) detailed information about the responsible
 allocation sites at various points in the program, including the point of
 peak memory allocation.  The use of a separate script for presenting the
-results is deliberate;  it separates the data gathering from its
-presentation, and means that new ones of presenting the data can be added in
+results is deliberate:  it separates the data gathering from its
+presentation, and means that new methods of presenting the data can be added in
 the future.</para>
 
 <sect2 id="ms-manual.anexample" xreflabel="An Example">
@@ -189,8 +189,8 @@ Number of snapshots: 25
 
 <para>Why is most of the graph empty, with only a couple of bars at the very
 end?  By default, Massif uses "instructions executed" as the unit of time.
-For very short-run programs such as the example, most of the execution
-instructions involved the loading and dynamic linking of the program.  The
+For very short-run programs such as the example, most of the executed
+instructions involve the loading and dynamic linking of the program.  The
 execution of <computeroutput>main</computeroutput> (and thus the heap
 allocations) only occur at the very end.  For a short-running program like
 this, we can use the <computeroutput>--time-unit=B</computeroutput> option
@@ -251,7 +251,7 @@ shortly.  Detailed snapshots are represented in the graph by bars consisting
 of '@' and ',' characters.  The text at the bottom show that 3 detailed
 snapshots were taken for this program (snapshots 9, 14 and 24).  By default,
 every 10th snapshot is detailed, although this can be changed via the
-<computeroutput>--detailed-freq</computeroutput>option.</para>
+<computeroutput>--detailed-freq</computeroutput> option.</para>
 
 <para>Finally, there is at most one <emphasis>peak</emphasis> snapshot.  The
 peak snapshot is detailed, and records the point where memory consumption
@@ -262,7 +262,7 @@ true peak.  See the description of the
 details.) The peak snapshot is represented in the graph by a bar consisting
 of '#' and ',' characters.  The text at the bottom show that snapshot 14 was
 the peak.  Note that for tiny programs that never deallocate heap memory,
-Massif will record a peak snapshot.</para>
+Massif will not record a peak snapshot.</para>
 
 <para>The following graph is from an execution of Konqueror, the KDE web
 browser.  It shows what graphs for larger programs look like.</para>
@@ -353,7 +353,7 @@ a small amount of information is recorded for each one:</para>
   larger number.  By default, if N bytes are asked for, Massif rounds N up
   to the nearest multiple of 8 that is equal to or greater than N.  This is
   typical behaviour for allocators, and is required to ensure that elements
-  within the block are suitable aligned.  The rounding size can be changed
+  within the block are suitably aligned.  The rounding size can be changed
   with the <computeroutput>--alignment</computeroutput> option, although it
   cannot be less than 8, and must be a power of two.</para></listitem>
 
@@ -455,12 +455,14 @@ how and why all heap memory was allocated.</para>
 The 00.00% entry represents the code locations for which memory was
 allocated and then freed (line 20 in this case, the memory for which was
 freed on line 28).  However, no code location details are given for this
-entry;  by default, Massif/ms_print only show the details for code locations
-responsible for more than 1% of useful memory bytes.  The entries that do
-not meet this threshold are aggregated.  This avoids filling up the output
-with large numbers of unimportant entries.  This threshold can be changed
-with the <computeroutput>--threshold</computeroutput> option of both Massif
-and ms_print.</para>
+entry;  by default, Massif only records the details for code locations
+responsible for more than 1% of useful memory bytes, and ms_print likewise
+only prints the details for code locations responsible for more than 1%.
+The entries that do not meet this threshold are aggregated.  This avoids
+filling up the output with large numbers of unimportant entries.  The
+thresholds threshold can be changed with the
+<computeroutput>--threshold</computeroutput> option that both Massif and
+ms_print support.</para>
 
 </sect2>
 
@@ -489,7 +491,7 @@ and ms_print.</para>
       <option><![CDATA[--heap-admin=<number> [default: 8] ]]></option>
     </term>
     <listitem>
-      <para>If heap profiling is on, gives the number of administrative
+      <para>If heap profiling is enabled, gives the number of administrative
       bytes per block to use.  This should be an estimate of the average,
       since it may vary.  For example, the allocator used by
       <computeroutput>glibc</computeroutput> requires somewhere between 4 to
@@ -602,11 +604,11 @@ operator new[](unsigned long, std::nothrow_t const&)
     <listitem>
       <para>The time unit used for the profiling.  There are three
       possibilities: instructions executed (i), which is good for most
-      cases; real time (ms, i.e. milliseconds), which is useful sometimes;
-      and bytes allocated/deallocated on the heap and/or stack (B), which is
-      useful for very short-run programs, and for testing purposes, because
-      it is the most reproducible across different machines.</para>
-    </listitem>
+      cases; real (wallclock) time (ms, i.e. milliseconds), which is
+      sometimes useful; and bytes allocated/deallocated on the heap and/or
+      stack (B), which is useful for very short-run programs, and for
+      testing purposes, because it is the most reproducible across different
+      machines.</para> </listitem>
   </varlistentry>
 
   <varlistentry id="opt.detailed-freq" xreflabel="--detailed-freq">
@@ -642,15 +644,15 @@ operator new[](unsigned long, std::nothrow_t const&)
       <option>%p</option> and <option>%q</option> format specifiers can be
       used to embed the process ID and/or the contents of an environment
       variable in the name, as is the case for the core option
-      <option>--log-file</option>.  See <link
-      linkend="manual-core.basicopts">here</link> for details.
+      <option>--log-file</option>.  See <xref
+      linkend="manual-core.basicopts"/> for details.
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry id="opt.alignment" xreflabel="--alignment">
     <term>
-      <option><![CDATA[--threshold=<m.n> [default: 1.0] ]]></option>
+      <option><![CDATA[--alignment=<n> [default: 1.0] ]]></option>
     </term>
     <listitem>
       <para>The minimum alignment (and thus size) of heap blocks.</para>

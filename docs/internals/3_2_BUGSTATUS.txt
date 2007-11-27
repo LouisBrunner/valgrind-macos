@@ -24,7 +24,16 @@ n-i-bz  r7195      Add sys_utimensat system call for Linux x86 platform
 
  79844  fixed      Helgrind complains about race condition which does not exist
 
+82871   fixed      Massif output function names too short
+89061   fixed      Massif: ms_main.c:485 (get_XCon): Assertion `xpt->max_chi...
+92615   fixed      Write output from Massif at crash
+95483   fixed      massif feature request: include peak allocation in report
+
+112163  fixed      MASSIF crashed with signal 7 (SIGBUS) after running 2 days
+
 119404  r7175      problems running setuid executables (partial fix)
+
+121629  fixed      add instruction-counting mode for timing
 
 124478  glibc-fix  memcheck reports uninitialized bytes on
                    timer_create() while it should not
@@ -37,6 +46,12 @@ n-i-bz  r7195      Add sys_utimensat system call for Linux x86 platform
 
 129937  fixed      ==150380
 
+129576  fixed      Massif loses track of memory, incorrect graphs
+
+132132  fixed      massif --format=html output does not do html entity escaping
+
+132950  wontfix    Heap alloc/usage summary
+
 133962  vx1792     unhandled instruction bytes: 0xF2 0x4C 0xF 0x10
 
 134990  fixed      use -fno-stack-protector if possible
@@ -46,6 +61,11 @@ n-i-bz  r7195      Add sys_utimensat system call for Linux x86 platform
 137396  fixed :-)  I would really like helgrind to work again...
 137714  vx1787     x86/amd64->IR: 0x66 0xF 0xF7 0xC6 (maskmovq, maskmovdq)
 
+141631  fixed      Massif: percentages don't add up correctly
+142706  fixed      massif numbers don't seem to add up
+143062  fixed      massif crashes on app exit with signal 8 SIGFPE
+144453  fixed      (get_XCon): Assertion 'xpt->max_children != 0' failed.
+
 145559  r7168      valgrind aborts when malloc_stats is called
 145609  r7191      valgrind aborts all runs with 'repeated section!'
 145622  r7183      --db-attach broken again on x86-64
@@ -53,6 +73,7 @@ n-i-bz  r7195      Add sys_utimensat system call for Linux x86 platform
 145887  r7193      PPC32: getitimer() system call is not supported (patch)
 
 146252  fixed      ==150678
+146456  fixed      (update_XCon): Assertion 'xpt->curr_space >= -space_delta'...
 146701  fixed      ==134990
 146781  r7169      Adding support for private futexes
 
@@ -72,6 +93,7 @@ n-i-bz  r7195      Add sys_utimensat system call for Linux x86 platform
 
 149182  vx1784/5   PPC Trap instructions not implemented in valgrind
 149838  marginal   x86->IR: 0xF 0xAE 0xD 0xE0 (FXRSTOR ?)
+149504  fixed      Assertion hit on alloc_xpt->curr_space >= -space_delta
 149519  r6813/4    ppc32: V aborts with SIGSEGV on execution of a signal handler
 149878  marginal   add (proper) check for calloc integer overflow
 149892  fixed      ==137714

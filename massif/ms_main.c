@@ -32,10 +32,10 @@
 //---------------------------------------------------------------------------
 // Todo -- critical for release:
 // - address/close all the bug reports below (after writing docs)
-// - do a graph-drawing test
 // - Get Josef to update the Callgrind --callgrind-out-file option.
 //
 // Todo -- nice, but less critical:
+// - do a graph-drawing test
 // - make file format more generic.  Obstacles:
 //   - unit prefixes are not generic
 //   - preset column widths for stats are not generic
@@ -73,6 +73,9 @@
 //     tinycc    0.46s  ma: 4.9s (10.7x, -----)
 //     many-xpts 0.08s  ma: 2.0s (25.0x, -----)
 //     konqueror 29.6s real  0:21.0s user
+//
+//   [Introduction of --time-unit=i as the default slowed things down by
+//   roughly 0--20%.]
 //
 // - get_XCon accounts for about 9% of konqueror startup time.  Try
 //   keeping XPt children sorted by 'ip' and use binary search in get_XCon.

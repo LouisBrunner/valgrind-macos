@@ -34,39 +34,27 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_builddir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 check_PROGRAMS =   \
-  abort            \
   fp_race          \
-  new_delete       \
   pth_broadcast    \
   pth_cond_race    \
   pth_create_chain \
   pth_detached     \
-  sigalrm          \
-  std-string
+  sigalrm
 
-abort_SOURCES         = abort.cpp
-abort_LDADD           = -lpthread
-
-fp_race_SOURCES       = fp_race.cpp
+fp_race_SOURCES       = fp_race.c
 fp_race_LDADD         = -lpthread
 
-new_delete_SOURCES    = new_delete.cpp
-new_delete_LDADD      = -lpthread
-
-pth_broadcast_SOURCES = pth_broadcast.cpp
+pth_broadcast_SOURCES = pth_broadcast.c
 pth_broadcast_LDADD   = -lpthread
 
-pth_cond_race_SOURCES = pth_cond_race.cpp
+pth_cond_race_SOURCES = pth_cond_race.c
 pth_cond_race_LDADD   = -lpthread
 
-pth_create_chain_SOURCES = pth_create_chain.cpp
+pth_create_chain_SOURCES = pth_create_chain.c
 pth_create_chain_LDADD   = -lpthread
 
 pth_detached_SOURCES  = pth_detached.c
 pth_detached_LDADD    = -lpthread
 
-sigalrm_SOURCES       = sigalrm.cpp
+sigalrm_SOURCES       = sigalrm.c
 sigalrm_LDADD         = -lpthread -lrt
-
-std_string_SOURCES    = std-string.cpp
-std_string_LDADD      = -lpthread

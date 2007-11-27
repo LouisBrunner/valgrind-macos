@@ -74,7 +74,7 @@
    exp-drd:ConflictingAccess
    fun:start_thread
    fun:clone
-} 
+}
 {
    pthread
    exp-drd:ConflictingAccess

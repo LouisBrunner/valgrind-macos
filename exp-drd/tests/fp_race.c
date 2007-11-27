@@ -24,8 +24,8 @@
 
 // Test data race detection between floating point variables.
 
-#include <cassert>
-#include <cstdio>      // printf()
+#include <assert.h>
+#include <stdio.h>      // printf()
 #include <pthread.h>
 #include <unistd.h>    // usleep()
 #include "../drd_clientreq.h"
@@ -45,23 +45,9 @@ static double s_d1; // accessed before thread creation and in the created
 static double s_d2; // accessed in the created thread and after the join
                     // (not a race).
 static double s_d3; // accessed simultaneously from both threads (race).
-static bool   s_debug     = false;
-static bool   s_do_printf = false;
-static bool   s_use_mutex = false;
-
-
-class CScopedLock
-{
-public:
-  CScopedLock()
-  { if (s_use_mutex) pthread_mutex_lock(&s_mutex); }
-  ~CScopedLock()
-  { if (s_use_mutex) pthread_mutex_unlock(&s_mutex); }
-
-private:
-  CScopedLock(CScopedLock const&);
-  CScopedLock& operator=(CScopedLock const&);
-};
+static int    s_debug     = 0;
+static int    s_do_printf = 0;
+static int    s_use_mutex = 0;
 
 
 // Function definitions.
@@ -75,24 +61,26 @@ static void set_thread_name(const char* const name)
 
 int main(int argc, char** argv)
 {
+  int optchar;
+  pthread_t threadid;
+
   set_thread_name("main");
 
-  int optchar;
   while ((optchar = getopt(argc, argv, "dmp")) != EOF)
   {
     switch (optchar)
     {
     case 'd':
-      s_debug = true;
+      s_debug = 1;
       break;
     case 'm':
-      s_use_mutex = true;
+      s_use_mutex = 1;
       break;
     case 'p':
-      s_do_printf = true;
+      s_do_printf = 1;
       break;
     default:
-      assert(false);
+      assert(0);
     }
   }
 
@@ -110,13 +98,13 @@ int main(int argc, char** argv)
   s_d1 = 1;
   s_d3 = 3;
 
-  pthread_t threadid;
   pthread_create(&threadid, 0, thread_func, 0);
   // Wait until the printf() in the created thread finished.
 
   {
-    CScopedLock ScopedLock;
+    if (s_use_mutex) pthread_mutex_lock(&s_mutex);
     s_d3++;
+    if (s_use_mutex) pthread_mutex_unlock(&s_mutex);
   }
 
   // Wait until the thread finished.
@@ -133,7 +121,7 @@ int main(int argc, char** argv)
   return 0;
 }
 
-static void* thread_func(void*)
+static void* thread_func(void* thread_arg)
 {
   set_thread_name("thread_func");
 
@@ -143,8 +131,9 @@ static void* thread_func(void*)
   }
   s_d2 = 2;
   {
-    CScopedLock ScopedLock;
+    if (s_use_mutex) pthread_mutex_lock(&s_mutex);
     s_d3++;
+    if (s_use_mutex) pthread_mutex_unlock(&s_mutex);
   }
   return 0;
 }

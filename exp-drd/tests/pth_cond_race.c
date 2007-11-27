@@ -2,8 +2,8 @@
    variable. By Bart Van Assche.
 */
 
-#include <cassert>
-#include <cstdio>      // printf()
+#include <assert.h>
+#include <stdio.h>      // printf()
 #include <pthread.h>
 #include <unistd.h>    // usleep()
 #include "../drd_clientreq.h"
@@ -11,28 +11,14 @@
 
 // Local functions declarations.
 
-static void* thread_func(void*);
+static void* thread_func(void* thread_arg);
 
 
 // Local variables.
 
 static pthread_mutex_t s_mutex;
 static pthread_cond_t  s_cond;
-static bool   s_use_mutex = false;
-
-
-class CScopedLock
-{
-public:
-  CScopedLock()
-  { if (s_use_mutex) pthread_mutex_lock(&s_mutex); }
-  ~CScopedLock()
-  { if (s_use_mutex) pthread_mutex_unlock(&s_mutex); }
-
-private:
-  CScopedLock(CScopedLock const&);
-  CScopedLock& operator=(CScopedLock const&);
-};
+static int             s_use_mutex = 0;
 
 
 // Function definitions.
@@ -46,18 +32,20 @@ static void set_thread_name(const char* const name)
 
 int main(int argc, char** argv)
 {
+  int optchar;
+  pthread_t threadid;
+
   set_thread_name("main");
 
-  int optchar;
   while ((optchar = getopt(argc, argv, "m")) != EOF)
   {
     switch (optchar)
     {
     case 'm':
-      s_use_mutex = true;
+      s_use_mutex = 1;
       break;
     default:
-      assert(false);
+      assert(0);
     }
   }
 
@@ -65,7 +53,6 @@ int main(int argc, char** argv)
   pthread_mutex_init(&s_mutex, 0);
   pthread_mutex_lock(&s_mutex);
 
-  pthread_t threadid;
   pthread_create(&threadid, 0, thread_func, 0);
 
   pthread_cond_wait(&s_cond, &s_mutex);
@@ -79,7 +66,7 @@ int main(int argc, char** argv)
   return 0;
 }
 
-static void* thread_func(void*)
+static void* thread_func(void* thread_arg)
 {
   set_thread_name("thread_func");
 

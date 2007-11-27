@@ -30,10 +30,6 @@
 //---------------------------------------------------------------------------
 // XXX:
 //---------------------------------------------------------------------------
-// Todo -- critical for release:
-// - address/close all the bug reports below (after writing docs)
-// - Get Josef to update the Callgrind --callgrind-out-file option.
-//
 // Todo -- nice, but less critical:
 // - do a graph-drawing test
 // - make file format more generic.  Obstacles:
@@ -56,7 +52,6 @@
 // - Options like --alloc-fn='operator new(unsigned, std::nothrow_t const&amp;)'
 //   don't work in a .valgrindrc file or in $VALGRIND_OPTS. 
 //   m_commandline.c:add_args_from_string() needs to respect single quotes.
-//   
 //
 // Performance:
 // - To run the benchmarks:
@@ -85,53 +80,13 @@
 // Todo -- low priority:
 // - In each XPt, record both bytes and the number of allocations, and
 //   possibly the global number of allocations.
+// - (Andy Lin) Give a stack trace on detailed snapshots?
 // - (Artur Wisz) add a feature to Massif to ignore any heap blocks larger
 //   than a certain size!  Because: "linux's malloc allows to set a
 //   MMAP_THRESHOLD value, so we set it to 4096 - all blocks above that will
 //   be handled directly by the kernel, and are guaranteed to be returned to
 //   the system when freed. So we needed to profile only blocks below this
 //   limit."
-//
-// Examine and fix bugs on bugzilla:
-// IGNORE:
-// 112163  nor     MASSIF crashed with signal 7 (SIGBUS) after running 2 days
-//   - weird, crashes in VEX, ignore
-// 82871   nor     Massif output function names too short
-//   - on .ps graph, now irrelevant, ignore
-// 129576  nor     Massif loses track of memory, incorrect graphs
-//   - dunno, hard to reproduce, ignore
-// 132132  nor     massif --format=html output does not do html entity escaping
-//   - only for HTML output, irrelevant, ignore
-// 132950   Heap alloc/usage summary
-//   - doesn't seem that interesting or general
-//
-// FIXED/NOW IRRELEVANT:
-// 89061   cra     Massif: ms_main.c:485 (get_XCon): Assertion `xpt->max_chi...
-//   - relevant code now gone
-// 143062  cra     massif crashes on app exit with signal 8 SIGFPE
-//   - fixed
-// 95483   nor     massif feature request: include peak allocation in report
-//   - implemented in Massif2
-// 92615    nor    Write output from Massif at crash
-//   - this happens unless Massif2 itself crashes
-// 121629   add instruction-counting mode for timing
-//   - time-unit=B is similar, plus I'm considering this above anyway
-// 142197  nor     massif tool ignores --massif:alloc-fn parameters in .valg...
-//   - fixed in trunk
-// 142491  nor     Maximise use of alloc_fns array
-//   - addressed, it's now an XArray and thus unlimited in size
-// 144453   (get_XCon): Assertion 'xpt->max_children != 0' failed.
-//   - relevant code now gone
-//
-// POSSIBLY FIXED BY BETTER SANITY CHECKING, BUT HARD TO TELL:
-// 141631   Massif: percentages don't add up correctly
-//   - better sanity-checking should help this greatly
-// 142706   massif numbers don't seem to add up
-//   - better sanity-checking should help this greatly
-// 149504   Assertion hit on alloc_xpt->curr_space >= -space_delta
-//   - better sanity-checking should help this greatly
-// 146456   (update_XCon): Assertion 'xpt->curr_space >= -space_delta' failed.
-//   - better sanity-checking should help this greatly
 //
 // File format working notes:
 

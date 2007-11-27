@@ -55,7 +55,8 @@ Other user-visible changes:
 - There are new --cachegrind-out-file, --callgrind-out-file and
   --massif-out-file options, which control the names of the output files
   produced by Cachegrind, Callgrind and Massif.  They accept the same %p and
-  %q format specifiers that --log-file accepts.
+  %q format specifiers that --log-file accepts.  --callgrind-out-file
+  replaces Callgrind's old --base option.
 
 - Cachegrind's 'cg_annotate' script no longer uses the --<pid> option to
   specify the output file.  Instead, the first non-option argument is taken

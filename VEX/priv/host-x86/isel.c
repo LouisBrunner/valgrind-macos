@@ -2107,6 +2107,25 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
          /* Add64/Sub64 */
          case Iop_Add64:
+            if (e->Iex.Binop.arg2->tag == Iex_Const) {
+               /* special case Add64(e, const) */
+               ULong w64 = e->Iex.Binop.arg2->Iex.Const.con->Ico.U64;
+               UInt  wHi = toUInt(w64 >> 32);
+               UInt  wLo = toUInt(w64);
+               HReg  tLo = newVRegI(env);
+               HReg  tHi = newVRegI(env);
+               HReg  xLo, xHi;
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U64);
+               iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
+               addInstr(env, mk_iMOVsd_RR(xHi, tHi));
+               addInstr(env, mk_iMOVsd_RR(xLo, tLo));
+               addInstr(env, X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(wLo), tLo));
+               addInstr(env, X86Instr_Alu32R(Xalu_ADC, X86RMI_Imm(wHi), tHi));
+               *rHi = tHi;
+               *rLo = tLo;
+               return;
+            }
+            /* else fall through to the generic case */
          case Iop_Sub64: {
             HReg xLo, xHi, yLo, yHi;
             HReg tLo = newVRegI(env);

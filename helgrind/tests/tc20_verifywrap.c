@@ -1,4 +1,3 @@
-
 /* This program attempts to verify that all functions that are
    supposed to be wrapped by tc_intercepts.c really are wrapped.  The
    main way it does this is to cause failures in those functions, so
@@ -12,13 +11,14 @@
    otherwise "know" about some more exotic pthread stuff, in this case
    PTHREAD_MUTEX_ERRORCHECK. */
 #define _GNU_SOURCE 1
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
+
+#if !defined(_AIX)
 
 #if !defined(__GLIBC_PREREQ)
 # error "This program needs __GLIBC_PREREQ (in /usr/include/features.h)"
@@ -260,3 +260,11 @@ int main ( void )
 
    return 0;
 }
+
+#else /* defined(_AIX) */
+int main ( void )
+{
+   fprintf(stderr, "This program does not work on AIX.\n");
+   return 0;
+}
+#endif

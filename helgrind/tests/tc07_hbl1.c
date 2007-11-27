@@ -27,19 +27,19 @@
 #  define PLAT_ppc32_aix5 1
 #endif
 
-
 #if defined(PLAT_amd64_linux) || defined(PLAT_x86_linux)
-#  define INC(_lval) \
+#  define INC(_lval,_lqual) \
       __asm__ __volatile__ ( \
       "lock ; incl (%0)" : /*out*/ : /*in*/"r"(&(_lval)) : "memory", "cc" )
-#elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux)
-#  define INC(_lval)                      \
+#elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux) \
+      || defined(PLAT_ppc32_aix5) || defined(PLAT_ppc64_aix5)
+#  define INC(_lval,_lqual)               \
    __asm__ __volatile__(                  \
-      "1:\n"                              \
+      "L1xyzzy1" _lqual ":\n"             \
       "        lwarx 15,0,%0\n"           \
       "        addi 15,15,1\n"            \
       "        stwcx. 15,0,%0\n"          \
-      "        bne- 1b"                   \
+      "        bne- L1xyzzy1" _lqual      \
       : /*out*/ : /*in*/ "b"(&(_lval))    \
       : /*trash*/ "r15", "cr0", "memory"  \
    )
@@ -52,7 +52,7 @@ int x = 0;
 
 void* child_fn ( void* arg )
 {
-   INC(x);
+   INC(x, "childfn");
    return NULL;
 }
 
@@ -65,7 +65,7 @@ int main ( void )
       exit(1);
    }
 
-   INC(x);
+   INC(x, "main");
 
    if (pthread_join(child, NULL)) {
       perror("pthread join");

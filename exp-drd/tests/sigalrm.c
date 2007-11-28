@@ -1,3 +1,4 @@
+#if !defined(_AIX)
 #include <assert.h>
 #include <errno.h>
 #include <pthread.h>
@@ -9,7 +10,6 @@
 #include <unistd.h>
 #include <asm/unistd.h>
 #include "../drd_clientreq.h"
-
 
 static int s_debug = 0;
 
@@ -90,3 +90,11 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
+#else /* !defined(_AIX) */
+#include <stdio.h>
+int main ( void ) {
+  fprintf(stderr, "This test does not compile on AIX5.\n");
+  return 0;
+}
+#endif /* !defined(_AIX) */

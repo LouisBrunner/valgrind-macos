@@ -266,7 +266,7 @@ the regular snapshots.  However, recording the true peak is expensive, and
 so by default Massif records a peak whose size is within 1% of the size of
 the true peak.  See the description of the
 <computeroutput>--peak-inaccuracy</computeroutput> option below for more
-details.</peak>
+details.</para>
 
 <para>The following graph is from an execution of Konqueror, the KDE web
 browser.  It shows what graphs for larger programs look like.</para>
@@ -296,7 +296,8 @@ browser.  It shows what graphs for larger programs look like.</para>
      0                                                                   626.4
 
 Number of snapshots: 63
- Detailed snapshots: [3, 4, 10, 11, 15, 16, 29, 33, 34, 36, 39, 41, 42, 43, 44, 49, 50, 51, 53, 55, 56, 57 (peak)]
+ Detailed snapshots: [3, 4, 10, 11, 15, 16, 29, 33, 34, 36, 39, 41,
+                      42, 43, 44, 49, 50, 51, 53, 55, 56, 57 (peak)]
 ]]></screen>
 
 <para>Note that the larger size units are KB, MB, GB, etc.  As is typical

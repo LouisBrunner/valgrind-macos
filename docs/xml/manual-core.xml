@@ -635,7 +635,7 @@ categories.</para>
       default.  
       </para>
       <para>Note that Valgrind does trace into the child of a
-      <varname>fork</varname> (it would be difficult not too, since
+      <varname>fork</varname> (it would be difficult not to, since
       <varname>fork</varname> makes an identical copy of a process), so this
       option is arguably badly named.  However, most children of
       <varname>fork</varname> calls immediately call <varname>exec</varname>

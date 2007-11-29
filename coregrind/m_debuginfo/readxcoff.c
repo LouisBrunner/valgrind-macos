@@ -1708,7 +1708,7 @@ Bool read_xcoff_mapped_object ( SegInfo* si,
 #  endif
 
    if (n_oimage < sizeof(FILHDR))
-      BAD("readxcoff.c: XCOFF object file header is implausibly small");
+      BAD("readxcoff.c: XCOFF object file header is implausibly small (2)");
 
    FILHDR* t_filehdr = (FILHDR*)cursor;
    cursor += sizeof(FILHDR);
@@ -2233,7 +2233,7 @@ Bool read_xcoff_o_or_a ( /*MOD*/SegInfo* si,
          peer at the archive's fixed header. */
 
       if (n_image < sizeof(FL_HDR)) {
-         ML_(symerr)("XCOFF archive to small for fixed header");
+         ML_(symerr)("XCOFF archive too small for fixed header");
          goto done;
       }
 
@@ -2269,7 +2269,7 @@ Bool read_xcoff_o_or_a ( /*MOD*/SegInfo* si,
       /* should be: backquote newline */
       if (mt_hdr->_ar_name.ar_name[0] != 0x60 /* backquote */
           || mt_hdr->_ar_name.ar_name[1] != 0x0A /* \n */) {
-        ML_(symerr)("XCOFF archive member table header is invalid");
+         ML_(symerr)("XCOFF archive member table header is invalid");
          goto done;
       }
 
@@ -2304,17 +2304,76 @@ Bool read_xcoff_o_or_a ( /*MOD*/SegInfo* si,
                         i, (Int)ascii_to_ULong(data + 20 + 20*i, 20));
       }
 
-      UInt objoff = 0; /* none of the archive members can have zero
-                          offset, since the fixed header is at the
-                          start of the file. */
-
       UChar* p = data + 20 + 20*nmembers;
+
       for (i = 0; i < nmembers; i++) {
-         if (0 == VG_(strcmp)(p, o_name)) {
-            objoff = ascii_to_ULong(data + 20 + 20*i, 20);
-            if (SHOW && SHOW_AR_DETAILS)
-               VG_(printf)("got offset = %u\n", objoff);
+
+         if (0 != VG_(strcmp)(p, o_name))
+            goto move_on;
+
+         UInt objoff = ascii_to_ULong(data + 20 + 20*i, 20);
+
+         if (SHOW && SHOW_AR_DETAILS)
+            VG_(printf)("got offset = %u\n", objoff);
+
+         vg_assert(ok == False);
+
+         /* Sanity check the selected member */
+         UChar* o_hdrC = image + objoff;
+         if (o_hdrC + sizeof(AR_HDR) >= image + n_image) {
+            ML_(symerr)("XCOFF archive member header exceeds image");
+            goto done;
          }
+         AR_HDR* o_hdr  = (AR_HDR*)o_hdrC;
+         UWord   o_size = (UWord)ascii_to_ULong(&o_hdr->ar_size, 20);
+         UChar*  o_data = o_hdrC + sizeof(AR_HDR)
+                                 + (UWord)ascii_to_ULong(&o_hdr->ar_namlen,4);
+
+         /* ALIGN */
+         if ( ((UWord)o_data) & 1 ) o_data++;
+
+         if (SHOW)
+            VG_(printf)("member data = %p, size = %ld\n", o_data, o_size);
+
+         if (!(o_data >= image && o_data + o_size <= image + n_image)) {
+            ML_(symerr)("XCOFF archive member exceeds image");
+            goto done;
+         }
+
+         if (o_size < sizeof(FILHDR)) {
+            ML_(symerr)("XCOFF object file header is implausibly small (1)");
+	    goto done;
+	 }
+
+         /* It's the right name, but need to also check the magic
+            number, since some archives contain both a 32-bit and
+            64-bit version of the same object. */
+         FILHDR* t_filhdr = (FILHDR*)o_data;
+#        if defined(VGP_ppc32_aix5)
+         if (t_filhdr->f_magic == 0x01F7 /* XCOFF64 */) {
+            if (0)
+               VG_(printf)("Skipping 64-bit archive on 32-bit platform\n");
+            goto move_on;
+         }
+#        elif defined(VGP_ppc64_aix5)
+         if (t_filhdr->f_magic == 0x01DF /* XCOFF32 */) {
+            if (0)
+               VG_(printf)("Skipping 32-bit archive on 64-bit platform\n");
+            goto move_on;
+         }
+#        endif
+
+         if (SHOW && SHOW_AR_DETAILS)
+            VG_(printf)("\nimage: %p-%p   object: %p-%p\n\n", 
+                        image, image+n_image-1, o_data, o_data+o_size-1);
+         ok = read_xcoff_mapped_object( si, o_data, o_size,
+                                        data_avma, data_alen );
+         goto done;
+
+         vg_assert(0);
+	 /* NOTREACHED */
+
+        move_on:
          while (*p) {
             if (SHOW && SHOW_AR_DETAILS)
                VG_(printf)("%c", *p);
@@ -2325,39 +2384,8 @@ Bool read_xcoff_o_or_a ( /*MOD*/SegInfo* si,
          p++;
       }
 
-      vg_assert(ok == False);
-
-      if (objoff == 0) {
-         ML_(symerr)("can't find object in XCOFF archive file");
-         goto done;
-      }
-
-      /* Sanity check the selected member */
-      UChar* o_hdrC = image + objoff;
-      if (o_hdrC + sizeof(AR_HDR) >= image + n_image) {
-         ML_(symerr)("XCOFF archive member header exceeds image");
-         goto done;
-      }
-      AR_HDR* o_hdr  = (AR_HDR*)o_hdrC;
-      UWord   o_size = (UWord)ascii_to_ULong(&o_hdr->ar_size, 20);
-      UChar*  o_data = o_hdrC + sizeof(AR_HDR)
-                              + (UWord)ascii_to_ULong(&o_hdr->ar_namlen,4);
-
-      /* ALIGN */
-      if ( ((UWord)o_data) & 1 ) o_data++;
-
-      if (SHOW)
-         VG_(printf)("member data = %p, size = %ld\n", o_data, o_size);
-
-      if (o_data >= image && o_data + o_size <= image + n_image) {
-         if (SHOW && SHOW_AR_DETAILS)
-            VG_(printf)("\nimage: %p-%p   object: %p-%p\n\n", 
-                        image, image+n_image-1, o_data, o_data+o_size-1);
-         ok = read_xcoff_mapped_object( si, o_data, o_size,
-                                        data_avma, data_alen );
-      } else {
-         ML_(symerr)("XCOFF archive member exceeds image");
-      }
+      vg_assert(i == nmembers);
+      ML_(symerr)("can't find object in XCOFF archive file");
 
      done:
       if (image) {

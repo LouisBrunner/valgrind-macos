@@ -6241,7 +6241,7 @@ void evh__HG_PTHREAD_RWLOCK_DESTROY_PRE( ThreadId tid, void* rwl )
          HG_(deleteBag)( lk->heldBy );
          lk->heldBy = NULL;
          lk->heldW = False;
-         lk->acquired_at = False;
+         lk->acquired_at = NULL;
       }
       tl_assert( !lk->heldBy );
       tl_assert( is_sane_LockN(lk) );

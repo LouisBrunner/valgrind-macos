@@ -479,12 +479,6 @@ PRE(sys___msleep)
 
 /* __unload is handled in the platform-specific files. */
 
-PRE(sys__clock_gettime)
-{
-   PRINT("_clock_gettime (UNDOCUMENTED) ( %d, %p )", ARG1, ARG2);
-   PRE_REG_READ2(int, "_clock_gettime", int, arg1, int, arg2);
-}
-
 PRE(sys__clock_settime)
 {
    PRINT("_clock_settime (UNDOCUMENTED) ( %d, %p )", ARG1, ARG2);
@@ -1069,6 +1063,17 @@ POST(sys_finfo)
    POST_MEM_WRITE( ARG3, ARG4 );
 }
 
+PRE(sys_fstatfs)
+{
+   PRINT("sys_fstatfs ( %ld, %p )", ARG1, ARG2);
+   PRE_REG_READ2(UWord, "fstatfs", UWord, fd, struct statfs *, buf);
+   PRE_MEM_WRITE( "fstatfs(buf)", ARG2, sizeof(struct statfs) );
+}
+POST(sys_fstatfs)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct statfs) );
+}
+
 PRE(sys_fstatx)
 {
    PRINT("fstatx ( %ld, %p, %ld, %ld )", ARG1, ARG2, ARG3, ARG4 );
@@ -1599,6 +1604,13 @@ PRE(sys_kthread_ctl)
    PRINT("kthread_ctl (BOGUS HANDLER)");
 }
 
+PRE(sys_ktruncate)
+{
+   PRINT("ktruncate( %p(%s), %lx, %lx )", ARG1,ARG1, ARG2, ARG3 );
+   PRE_REG_READ3(int, "ktruncate", char*, path, long, arg2, long, arg3 );
+   PRE_MEM_RASCIIZ( "ktruncate(path)", ARG1 );
+}
+
 PRE(sys_kwaitpid)
 {
    /* Note: args 1 and 2 (status, pid) opposite way round
@@ -1700,6 +1712,27 @@ POST(sys_mmap)
                                         0/*fake fd*/, 0/*fake offset*/);
    if (d) 
       VG_(discard_translations)( addr, len, "POST(sys_mmap)" );
+}
+
+PRE(sys_mntctl)
+{
+   PRINT("mntctl ( %ld, %ld, %p )", ARG1, ARG2, ARG3 );
+   PRE_REG_READ3(long, "mntctl", long, command, long, size, char*, buffer);
+   PRE_MEM_WRITE( "mntctl(buffer)", ARG3, ARG2 );
+}
+POST(sys_mntctl)
+{
+   vg_assert(SUCCESS);
+   if (RES == 0) {
+      /* Buffer too small.  First word is the real required size. */
+      POST_MEM_WRITE( ARG3, sizeof(Word) );
+   } else {
+      /* RES is the number of struct vmount's written to the buf.  But
+         these are variable length and to find the end would require
+         inspecting each in turn.  So be simple and just mark the
+         entire buffer as defined. */
+      POST_MEM_WRITE( ARG3, ARG2 );
+   }
 }
 
 PRE(sys_mprotect)

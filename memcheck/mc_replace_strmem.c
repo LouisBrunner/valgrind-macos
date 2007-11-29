@@ -819,6 +819,9 @@ Str5FNs(libGLZdaZLshrZdoZR)               /* libGL.a(shr.o) */
 Str5FNs(libgdkZdso)                       /* libgdk.so */
 Str5FNs(libcursesZdaZLshr42ZdoZR)         /* libcurses.a(shr42.o) */
 Str5FNs(libqtZda)                         /* libqt.a */
+Str5FNs(ZaZLlibglibZhZaZdsoZaZR)          /* *(libglib-*.so*) */
+Str5FNs(ZaZLlibfontconfigZdsoZaZR)        /* *(libfontconfig.so*) */
+Str5FNs(libQtZaa)                         /* libQt*.a */
 #endif
 #if defined(VGP_ppc64_aix5)
 Str5FNs(NONE)                             /* in main exe */
@@ -832,6 +835,9 @@ Str5FNs(libmpiZurZdaZLmpipoe64ZurZdoZR)   /* libmpi_r.a(mpipoe64_r.o) */
 Str5FNs(libCZdaZLshrcoreZu64ZdoZR)        /* libC.a(shrcore_64.o) */
 Str5FNs(libmpiZurZdaZLmpci64ZurZdoZR)     /* libmpi_r.a(mpci64_r.o) */
 Str5FNs(libqtZda)                         /* libqt.a */
+Str5FNs(ZaZLlibglibZhZaZdsoZaZR)          /* *(libglib-*.so*) */
+Str5FNs(ZaZLlibfontconfigZdsoZaZR)        /* *(libfontconfig.so*) */
+Str5FNs(libQtZaa)                         /* libQt*.a */
 #endif
 
 

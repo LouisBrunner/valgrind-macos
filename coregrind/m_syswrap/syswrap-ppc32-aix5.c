@@ -340,6 +340,7 @@ void VG_(cleanup_thread) ( ThreadArchState* arch )
 
 DECL_TEMPLATE(ppc32_aix5, sys___loadx);
 DECL_TEMPLATE(ppc32_aix5, sys___unload);
+DECL_TEMPLATE(ppc32_aix5, sys__clock_gettime);
 DECL_TEMPLATE(ppc32_aix5, sys_thread_setmymask_fast);
 DECL_TEMPLATE(ppc32_aix5, sys_thread_setstate);
 DECL_TEMPLATE(ppc32_aix5, sys_FAKE_SIGRETURN);
@@ -450,6 +451,20 @@ POST(sys___unload)
    /* A module unload succeeded.  Tell m_debuginfo, m_transtab, and the
       tool. */
    ML_(aix5_rescan_procmap_after_load_or_unload)();
+}
+
+PRE(sys__clock_gettime)
+{
+   /* Seems like ARG3 points at a destination buffer? */
+   /* _clock_gettime (UNDOCUMENTED) ( 0, 0xA, 0x2FF21808 ) */
+   PRINT("_clock_gettime (UNDOCUMENTED) ( %d, %p, %p )", ARG1, ARG2, ARG3 );
+   PRE_REG_READ3(int, "_clock_gettime", int, arg1, int, arg2, void*, arg3);
+   PRE_MEM_WRITE( "_clock_gettime(dst)", ARG3, sizeof(struct timespec) );
+}
+POST(sys__clock_gettime)
+{
+   vg_assert(SUCCESS);
+   POST_MEM_WRITE( ARG3, sizeof(struct timespec) );
 }
 
 PRE(sys_thread_setmymask_fast)
@@ -730,7 +745,7 @@ AIX5SCTabEntry aix5_ppc32_syscall_table[]
     PLAXY(__NR_AIX5___loadx,            sys___loadx),
     AIXX_(__NR_AIX5___msleep,           sys___msleep),
     PLAXY(__NR_AIX5___unload,           sys___unload),
-    AIXX_(__NR_AIX5__clock_gettime,     sys__clock_gettime),
+    PLAXY(__NR_AIX5__clock_gettime,     sys__clock_gettime),
     AIXX_(__NR_AIX5__clock_settime,     sys__clock_settime),
     AIXX_(__NR_AIX5__exit,              sys__exit),
     AIXX_(__NR_AIX5__fp_fpscrx_sc,      sys__fp_fpscrx_sc),
@@ -763,6 +778,7 @@ AIX5SCTabEntry aix5_ppc32_syscall_table[]
     AIXX_(__NR_AIX5_connext,            sys_connext),
     AIXX_(__NR_AIX5_execve,             sys_execve),
     AIXXY(__NR_AIX5_finfo,              sys_finfo),
+    AIXXY(__NR_AIX5_fstatfs,            sys_fstatfs),
     AIXXY(__NR_AIX5_fstatx,             sys_fstatx),
     AIXX_(__NR_AIX5_fsync,              sys_fsync),
     AIXXY(__NR_AIX5_getdirent,          sys_getdirent),
@@ -790,6 +806,7 @@ AIX5SCTabEntry aix5_ppc32_syscall_table[]
     AIXXY(__NR_AIX5_kread,              sys_kread),
     AIXXY(__NR_AIX5_kreadv,             sys_kreadv),
     AIXX_(__NR_AIX5_kthread_ctl,        sys_kthread_ctl),
+    AIXX_(__NR_AIX5_ktruncate,          sys_ktruncate),
     AIXXY(__NR_AIX5_kwaitpid,           sys_kwaitpid),
     AIXX_(__NR_AIX5_kwrite,             sys_kwrite),
     AIXX_(__NR_AIX5_kwritev,            sys_kwritev),
@@ -799,6 +816,7 @@ AIX5SCTabEntry aix5_ppc32_syscall_table[]
     AIXX_(__NR_AIX5_lseek,              sys_lseek),
     AIXX_(__NR_AIX5_mkdir,              sys_mkdir),
     AIXXY(__NR_AIX5_mmap,               sys_mmap),
+    AIXXY(__NR_AIX5_mntctl,             sys_mntctl),
     AIXXY(__NR_AIX5_mprotect,           sys_mprotect),
     AIXXY(__NR_AIX5_munmap,             sys_munmap),
     AIXXY(__NR_AIX5_naccept,            sys_naccept),

@@ -312,8 +312,9 @@ typedef
       /* EXPOSITION */
       /* Place where lock first came to the attention of Helgrind. */
       ExeContext*   appeared_at;
-      /* Place where the lock most recently made an unlocked->locked
-         transition. */
+      /* If the lock is held, place where the lock most recently made
+         an unlocked->locked transition.  Must be sync'd with .heldBy:
+         either both NULL or both non-NULL. */
       ExeContext*   acquired_at;
       /* USEFUL-STATIC */
       Addr          guestaddr; /* Guest address of lock */
@@ -6240,6 +6241,7 @@ void evh__HG_PTHREAD_RWLOCK_DESTROY_PRE( ThreadId tid, void* rwl )
          HG_(deleteBag)( lk->heldBy );
          lk->heldBy = NULL;
          lk->heldW = False;
+         lk->acquired_at = False;
       }
       tl_assert( !lk->heldBy );
       tl_assert( is_sane_LockN(lk) );

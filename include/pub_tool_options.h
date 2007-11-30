@@ -50,6 +50,7 @@
       (qq_var) = &qq_arg[ VG_(strlen)(qq_option)+1 ]; \
    }
 
+/* Unbounded integer arg */
 #define VG_NUM_CLO(qq_arg, qq_option, qq_var) \
    if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
       Char* s; \
@@ -57,17 +58,6 @@
       (qq_var) = n; \
       /* Check for non-numeralness, or overflow */ \
       if ('\0' != s[0] || (qq_var) != n) VG_(err_bad_option)(qq_arg); \
-   }
-
-/* Same as VG_NUM_CLO but does not coerce the result value to 32 bits
-   on 64-bit platforms. */
-#define VG_NUMW_CLO(qq_arg, qq_option, qq_var) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
-      Char* s; \
-      Long n = VG_(strtoll10)( &qq_arg[ VG_(strlen)(qq_option)+1 ], &s );\
-      (qq_var) = n; \
-      /* Check for non-numeralness */ \
-      if ('\0' != s[0]) VG_(err_bad_option)(qq_arg); \
    }
 
 /* Bounded integer arg */

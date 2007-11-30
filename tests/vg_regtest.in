@@ -89,7 +89,11 @@ use strict;
 #----------------------------------------------------------------------------
 # Global vars
 #----------------------------------------------------------------------------
-my $usage="vg_regtest [--all, --valgrind, --valgrind-lib]\n";
+my $usage="\n"
+          . "Usage:\n"
+          . "   vg_regtest [--all, --valgrind, --valgrind-lib]\n"
+          . "   Use EXTRA_REGTEST_OPTS to supply extra args for all tests\n"
+          . "\n";
 
 my $tmp="vg_regtest.tmp.$$";
 

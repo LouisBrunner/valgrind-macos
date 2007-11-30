@@ -4373,6 +4373,8 @@ VgRes         MC_(clo_leak_resolution)        = Vg_LowRes;
 Bool          MC_(clo_show_reachable)         = False;
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Bool          MC_(clo_undef_value_errors)     = True;
+Int           MC_(clo_malloc_fill)            = -1;
+Int           MC_(clo_free_fill)              = -1;
 
 static Bool mc_process_cmd_line_options(Char* arg)
 {
@@ -4429,6 +4431,9 @@ static Bool mc_process_cmd_line_options(Char* arg)
       }
    }
 
+   else VG_BHEX_CLO(arg, "--malloc-fill", MC_(clo_malloc_fill), 0x00, 0xFF)
+   else VG_BHEX_CLO(arg, "--free-fill",   MC_(clo_free_fill), 0x00, 0xFF)
+
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -4446,6 +4451,8 @@ static void mc_print_usage(void)
 "    --freelist-vol=<number>          volume of freed blocks queue [10000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
 "    --ignore-ranges=0xPP-0xQQ[,0xRR-0xSS]   assume given addresses are OK\n"
+"    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
+"    --free-fill=<hexnumber>          fill free'd areas with given value\n"
    );
    VG_(replacement_malloc_print_usage)();
 }

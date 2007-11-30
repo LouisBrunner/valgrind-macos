@@ -1,0 +1,57 @@
+
+test simple malloc/free:
+Use of uninitialised value of size 8
+   at 0x........: _itoa_word (in /...libc...)
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: main (malloc_free_fill.c:17)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: _itoa_word (in /...libc...)
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: main (malloc_free_fill.c:17)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: vfprintf (in /...libc...)
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: ...
+   by 0x........: main (malloc_free_fill.c:17)
+(should be malloc-filled)     a[4] = 55555555
+
+Invalid read of size 4
+   at 0x........: main (malloc_free_fill.c:20)
+ Address 0x........ is 20 bytes inside a block of size 40 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (malloc_free_fill.c:19)
+(should be free-filled)       a[5] = 77777777
+test realloc-larger:
+(should be malloc-filled)    r[25] = 55555555
+
+Invalid read of size 4
+   at 0x........: main (malloc_free_fill.c:33)
+ Address 0x........ is 104 bytes inside a block of size 120 free'd
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (malloc_free_fill.c:31)
+(should be free-filled)   oldr[26] = 77777777
+(should be malloc-filled)    r[35] = 55555555
+test realloc-smaller:
+(should be malloc-filled)    r[25] = 55555555
+
+Invalid read of size 4
+   at 0x........: main (malloc_free_fill.c:49)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+(should be free-filled)   oldr[26] = 77777777
+test calloc:
+(should be zero)             a[42] = 0
+
+ERROR SUMMARY: 67 errors from 6 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 0 bytes in 0 blocks.
+malloc/free: 6 allocs, 6 frees, 920 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

@@ -182,8 +182,8 @@ static Bool complain_about_silly_args2(SizeT n, SizeT sizeB)
 
 /* Allocate memory and note change in memory available */
 void* MC_(new_block) ( ThreadId tid,
-                        Addr p, SizeT szB, SizeT alignB, UInt rzB,
-                        Bool is_zeroed, MC_AllocKind kind, VgHashTable table)
+                       Addr p, SizeT szB, SizeT alignB, UInt rzB,
+                       Bool is_zeroed, MC_AllocKind kind, VgHashTable table)
 {
    cmalloc_n_mallocs ++;
 
@@ -196,7 +196,13 @@ void* MC_(new_block) ( ThreadId tid,
       if (!p) {
          return NULL;
       }
-      if (is_zeroed) VG_(memset)((void*)p, 0, szB);
+      if (is_zeroed) {
+         VG_(memset)((void*)p, 0, szB);
+      } else 
+      if (MC_(clo_malloc_fill) != -1) {
+         tl_assert(MC_(clo_malloc_fill) >= 0x00 && MC_(clo_malloc_fill) <= 0xFF);
+         VG_(memset)((void*)p, MC_(clo_malloc_fill), szB);
+      }
    }
 
    // Only update this stat if allocation succeeded.
@@ -270,6 +276,11 @@ void* MC_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size1 )
 static
 void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
 {
+   if (MC_(clo_free_fill) != -1) {
+      tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
+      VG_(memset)((void*)mc->data, MC_(clo_free_fill), mc->szB);
+   }
+
    /* Note: make redzones noaccess again -- just in case user made them
       accessible with a client request... */
    MC_(make_mem_noaccess)( mc->data-rzB, mc->szB + 2*rzB );
@@ -363,11 +374,19 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
       mc->szB = new_szB;
       mc->where = VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
       p_new = p_old;
+      /* Possibly fill freed area with specified junk. */
+      if (MC_(clo_free_fill) != -1) {
+         tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
+         VG_(memset)((void*)(mc->data+new_szB), MC_(clo_free_fill), 
+                                                old_szB-new_szB);
+      }
 
    } else {
       /* new size is bigger */
+      Addr a_new; 
+      tl_assert(old_szB < new_szB);
       /* Get new memory */
-      Addr a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_szB);
+      a_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_szB);
 
       if (a_new) {
          /* First half kept and copied, second half new, red zones as normal */
@@ -376,8 +395,22 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
          MC_(make_mem_undefined)( a_new+mc->szB, new_szB-mc->szB );
          MC_(make_mem_noaccess) ( a_new+new_szB, MC_MALLOC_REDZONE_SZB );
 
+         /* Possibly fill new area with specified junk */
+         if (MC_(clo_malloc_fill) != -1) {
+            tl_assert(MC_(clo_malloc_fill) >= 0x00
+                      && MC_(clo_malloc_fill) <= 0xFF);
+            VG_(memset)((void*)(a_new+old_szB), MC_(clo_malloc_fill), 
+                                                new_szB-old_szB);
+         }
+
          /* Copy from old to new */
          VG_(memcpy)((void*)a_new, p_old, mc->szB);
+
+         /* Possibly fill freed area with specified junk. */
+         if (MC_(clo_free_fill) != -1) {
+            tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
+            VG_(memset)((void*)p_old, MC_(clo_free_fill), old_szB);
+         }
 
          /* Free old memory */
          /* Nb: we have to allocate a new MC_Chunk for the new memory rather

@@ -66,6 +66,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	leakotron.vgtest leakotron.stdout.exp leakotron.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp \
+	malloc_free_fill.vgtest malloc_free_fill.stdout.exp \
+	malloc_free_fill.stderr.exp \
 	malloc_usable.stderr.exp malloc_usable.vgtest \
 	malloc1.stderr.exp malloc1.vgtest \
 	malloc2.stderr.exp malloc2.vgtest \
@@ -157,6 +159,7 @@ check_PROGRAMS = \
 	fprw fwrite hello inits inline \
 	leak-0 leak-cycle leak-pool leak-tree leak-regroot leakotron \
 	long_namespace_xml \
+	malloc_free_fill \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \
 	memalign_test memalign2 memcmptest mempool mmaptest \

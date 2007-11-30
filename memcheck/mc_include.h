@@ -282,6 +282,15 @@ extern Bool MC_(clo_workaround_gcc296_bugs);
  * default: YES */
 extern Bool MC_(clo_undef_value_errors);
 
+/* Fill malloc-d/free-d client blocks with a specific value?  -1 if
+   not, else 0x00 .. 0xFF indicating the fill value to use.  Can be
+   useful for causing programs with bad heap corruption to fail in
+   more repeatable ways.  Note that malloc-filled and free-filled
+   areas are still undefined and noaccess respectively.  This merely
+   causes them to contain the specified values. */
+extern Int MC_(clo_malloc_fill);
+extern Int MC_(clo_free_fill);
+
 
 /*------------------------------------------------------------*/
 /*--- Instrumentation                                      ---*/

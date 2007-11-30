@@ -9,7 +9,6 @@
   leaks as they occur.
 
   Copyright (C) 2006-2007 Bryan "Brain Murders" Meredith 
-  omega@brainmurders.eclipse.co.uk
   (A note of personal thanks to my employers at Apertio (www.apertio.com)
   for allowing the use of their time, equipment for 64bit testing and
   providing moral support.)
@@ -35,6 +34,8 @@
   02111-1307, USA.
 
   The GNU General Public License is contained in the file COPYING.
+
+  The current maintainer is Rich Coe <richard.coe@med.ge.com>.
 */
 
 /*
@@ -3542,7 +3543,7 @@ static void o_pre_clo_init(void)
   VG_(details_description)     ("an instant memory leak detector");
   VG_(details_copyright_author)("Copyright (C) 2006-2007, and GNU GPL'd, "
                                 "by Bryan Meredith.");
-  VG_(details_bug_reports_to)  ("omega at brainmurders d eclipse d co d uk");
+  VG_(details_bug_reports_to)  ("richard.coe@med.ge.com");
   
   // Basic functions
   VG_(basic_tool_funcs)        (o_post_clo_init,

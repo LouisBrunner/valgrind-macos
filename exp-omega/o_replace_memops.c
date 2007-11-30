@@ -8,8 +8,7 @@
    This file is part of Omega, a Valgrind tool for instantly detecting
    memory leaks.
 
-   Copyright (C) 2006 Bryan "Brain Murders" Meredith
-      omega@brainmurders.eclipse.co.uk
+   Copyright (C) 2006-2007 Bryan "Brain Murders" Meredith
 
    Derived from mac_replace_strmem.c
    Copyright (C) 2000-2006 Julian Seward 
@@ -31,6 +30,8 @@
    02111-1307, USA.
 
    The GNU General Public License is contained in the file COPYING.
+
+   The current maintainer is Rich Coe <richard.coe@med.ge.com>.
 */
 
 #include <stdio.h>
